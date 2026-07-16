@@ -10,16 +10,18 @@
 
 | Item | Nilai |
 |---|---|
-| Total entri referensi dalam basis data (`references.bib`) | **154** |
-| Sitasi unik yang benar-benar dirujuk di naskah LaTeX | **153** |
-| Target minimum yang diminta | 100 ✅ **terlampaui** |
+| Total entri referensi dalam basis data (`references.bib`) | **202** |
+| Sitasi unik yang benar-benar dirujuk di naskah LaTeX | **202** |
+| Target minimum yang diminta | 100 ✅ **terlampaui 2×** |
 | Rentang tahun fokus | 2019–2026 (plus karya fondasi 2014–2018 sebagai konteks) |
 | Poros riset | (1) Evolusi YOLO · (2) Deteksi RGB · (3) Fusi RGB+Depth · (4) YOLO+RGB-D |
 | Jumlah tema/klaster | 14 |
 
 **Status penyelesaian:** Naskah LaTeX + basis data BibTeX telah ditulis; seluruh
-153 sitasi tervalidasi (tidak ada sitasi menggantung). Ambang 100 sitasi
-tercapai dan terlampaui.
+202 sitasi tervalidasi (tidak ada sitasi menggantung). Ambang 100 sitasi
+tercapai dan terlampaui. Batch entri 155–202 (penyeimbang ujung rentang, termasuk
+jurnal 2025–2026 yang diverifikasi via arXiv) telah terintegrasi penuh ke naskah
+dan tabel taksonomi.
 
 ---
 
@@ -88,20 +90,24 @@ tercapai dan terlampaui.
 
 | # | Tema | Jumlah karya inti | Contoh kunci |
 |---|---|---|---|
-| 1 | Evolusi YOLO | 11 | YOLOv1–v11, YOLOX, PP-YOLO |
+| 1 | Evolusi YOLO | 14 | YOLOv1–v11, YOLOX, PP-YOLO, Gold-YOLO, YOLO-World, YOLO26 |
 | 2 | Survei YOLO | 9 | Terven 2023, Hussain 2023, Sapkota 2024 |
-| 3 | Fondasi RGB & Transformer | 16 | Faster R-CNN, DETR, Swin, EfficientDet |
-| 4 | Estimasi Kedalaman | 10 | Monodepth2, DPT, MiDaS, Depth Anything |
-| 5 | RGB-D Salient Object Detection | 17 | BBS-Net, JL-DCF, VST, SwinNet, CIR-Net |
-| 6 | Segmentasi Semantik RGB-D | 11 | FuseNet, ACNet, SA-Gate, CMX, DFormer |
+| 3 | Fondasi RGB & Transformer | 27 | Faster R-CNN, DETR, RT-DETR, DINO, ConvNeXt, Swin V2, RF-DETR, Le-DETR |
+| 4 | Estimasi Kedalaman | 20 | DPT, MiDaS, Depth Anything V2/3, ZoeDepth, Metric3D, Marigold, UniDAC |
+| 5 | RGB-D Salient Object Detection | 23 | BBS-Net, VST, CIR-Net, CoNet, CAVER, MobileSal, GL-DMNet |
+| 6 | Segmentasi Semantik RGB-D | 16 | FuseNet, SA-Gate, CMX, DFormer, SegFormer, GeminiFusion, DiffPixelFormer |
 | 7 | Fusi RGB+Depth (deteksi) | 5 | Ophoff 2019, Farahnakian 2021 |
 | 8 | **YOLO+RGB-D** | 7 | Expandable YOLO, FusionVision, Tian 2023 |
-| 9 | Pose 6D & Grasp Robotik | 14 | DenseFusion, PVN3D, FFB6D, GG-CNN, GR-ConvNet |
-| 10 | Deteksi 3D LiDAR–Kamera | 14 | PointPillars, Frustum PointNets, BEVFusion |
-| 11 | Pedestrian Multispektral RGB-T | 6 | KAIST, MBNet, GAFF |
-| 12 | RGB-D SLAM Dinamis | 5 | ORB-SLAM2, DynaSLAM, DS-SLAM, CFP-SLAM |
-| 13 | Aplikasi (tani/medis/industri/RS) | 21 | MangoYOLO, PCB-YOLO, TPH-YOLOv5 |
+| 9 | Pose 6D & Grasp Robotik | 19 | DenseFusion, FFB6D, GR-ConvNet, GDR-Net, ZebraPose, Contact-GraspNet, VGN |
+| 10 | Deteksi 3D LiDAR–Kamera | 18 | PointPillars, BEVFusion, CenterPoint, PV-RCNN, BEVFormer, DETR3D |
+| 11 | Pedestrian Multispektral RGB-T | 7 | KAIST, MBNet, GAFF, CFT |
+| 12 | RGB-D SLAM Dinamis | 7 | ORB-SLAM2/3, DynaSLAM, DS-SLAM, CFP-SLAM, DROID-SLAM |
+| 13 | Aplikasi (tani/medis/industri/RS) | 22 | MangoYOLO, PCB-YOLO, TPH-YOLOv5, RiO-DETR |
 | 14 | Dataset & Tolok Ukur | 7 | NYUv2, SUN RGB-D, ScanNet, KITTI, COCO |
+
+> Total karya inti bertambah dari 153 menjadi **201+** seiring integrasi batch
+> 155–202; sejumlah entri fondasi lintas-tema membuat jumlah baris sedikit
+> melampaui hitung unik 202.
 
 ---
 
@@ -137,7 +143,7 @@ tercapai dan terlampaui.
 
 ---
 
-## 7. Daftar Referensi (Roster 154 Entri)
+## 7. Daftar Referensi (Roster 202 Entri)
 
 > Dikelompokkan sesuai bagian di `references.bib`. Rentang fokus 2019–2026;
 > karya fondasi disertakan sebagai konteks.
@@ -330,6 +336,70 @@ tercapai dan terlampaui.
 153. Zhou dkk. (2021). *RGB-D Salient Object Detection: A Survey*. Comput. Visual Media.
 154. Lopes dkk. (2022). *A Survey on RGB-D Datasets*. CVIU.
 
+### R. Detektor RGB & Transformer Lanjutan
+155. Zhao dkk. (2024). *DETRs Beat YOLOs on Real-Time Object Detection (RT-DETR)*. CVPR.
+156. Cheng dkk. (2024). *YOLO-World: Real-Time Open-Vocabulary Object Detection*. CVPR.
+157. Wang dkk. (2023). *Gold-YOLO: Efficient Object Detector via Gather-and-Distribute Mechanism*. NeurIPS.
+158. Zhang dkk. (2023). *DINO: DETR with Improved DeNoising Anchor Boxes*. ICLR.
+159. Li dkk. (2022). *DN-DETR: Accelerate DETR Training by Introducing Query DeNoising*. CVPR.
+160. Meng dkk. (2021). *Conditional DETR for Fast Training Convergence*. ICCV.
+161. Sun dkk. (2021). *Sparse R-CNN: End-to-End Detection with Learnable Proposals*. CVPR.
+162. Liu dkk. (2022). *A ConvNet for the 2020s (ConvNeXt)*. CVPR.
+163. Liu dkk. (2022). *Swin Transformer V2: Scaling Up Capacity and Resolution*. CVPR.
+164. Wang dkk. (2021). *Pyramid Vision Transformer (PVT)*. ICCV.
+165. Zong dkk. (2023). *DETRs with Collaborative Hybrid Assignments Training (Co-DETR)*. ICCV.
+
+### S. RGB-D Salient Object Detection (Lanjutan)
+166. Ji dkk. (2020). *Accurate RGB-D SOD via Collaborative Learning (CoNet)*. ECCV.
+167. Ji dkk. (2021). *Calibrated RGB-D Salient Object Detection (DCF)*. CVPR.
+168. Zhou dkk. (2021). *Specificity-Preserving RGB-D Saliency Detection (SPNet)*. ICCV.
+169. Pang dkk. (2023). *CAVER: Cross-Modal View-Mixed Transformer for SOD*. IEEE TIP.
+170. Wu dkk. (2022). *MobileSal: Extremely Efficient RGB-D SOD*. IEEE TPAMI.
+
+### T. Segmentasi Semantik RGB-D (Lanjutan)
+171. Xie dkk. (2021). *SegFormer: Simple, Efficient Segmentation with Transformers*. NeurIPS.
+172. Seichter dkk. (2022). *Efficient Multi-Task RGB-D Scene Analysis (EMSANet)*. IJCNN.
+173. Jia dkk. (2024). *GeminiFusion: Efficient Pixel-wise Multimodal Fusion for ViT*. ICML.
+174. Girdhar dkk. (2022). *Omnivore: A Single Model for Many Visual Modalities*. CVPR.
+
+### U. Estimasi Kedalaman (Lanjutan: Metrik & Fondasi)
+175. Yang dkk. (2024). *Depth Anything V2*. NeurIPS.
+176. Bhat dkk. (2023). *ZoeDepth: Combining Relative and Metric Depth*. arXiv:2302.12288.
+177. Yin dkk. (2023). *Metric3D: Zero-Shot Metric 3D Prediction from a Single Image*. ICCV.
+178. Ke dkk. (2024). *Marigold: Diffusion-Based Monocular Depth Estimation*. CVPR.
+179. Yuan dkk. (2022). *Neural Window Fully-Connected CRFs for Depth (NeWCRFs)*. CVPR.
+
+### V. Estimasi Pose 6D & Grasp (Lanjutan)
+180. Wang dkk. (2021). *GDR-Net: Geometry-Guided Direct Regression for 6D Pose*. CVPR.
+181. Su dkk. (2022). *ZebraPose: Coarse-to-Fine Surface Encoding for 6DoF Pose*. CVPR.
+182. Sun dkk. (2022). *OnePose: One-Shot Object Pose Estimation without CAD Models*. CVPR.
+183. Sundermeyer dkk. (2021). *Contact-GraspNet: 6-DoF Grasp Generation in Clutter*. ICRA.
+184. Breyer dkk. (2020). *Volumetric Grasping Network (VGN): Real-Time 6-DOF Grasp*. CoRL.
+
+### W. Deteksi 3D (Lanjutan)
+185. Yin dkk. (2021). *Center-Based 3D Object Detection and Tracking (CenterPoint)*. CVPR.
+186. Shi dkk. (2020). *PV-RCNN: Point-Voxel Feature Set Abstraction for 3D Detection*. CVPR.
+187. Li dkk. (2022). *BEVFormer: BEV Representation via Spatiotemporal Transformers*. ECCV.
+188. Wang dkk. (2022). *DETR3D: 3D Detection from Multi-View Images via 3D-to-2D Queries*. CoRL.
+
+### X. Pedestrian RGB-T & RGB-D SLAM (Lanjutan)
+189. Fang dkk. (2022). *Cross-Modality Fusion Transformer for Multispectral Detection (CFT)*. arXiv:2111.00273.
+190. Campos dkk. (2021). *ORB-SLAM3: Visual, Visual-Inertial, and Multimap SLAM*. IEEE T-RO.
+191. Teed & Deng (2021). *DROID-SLAM: Deep Visual SLAM (Mono/Stereo/RGB-D)*. NeurIPS.
+
+### Y. Jurnal Terbaru 2025–2026 (Diverifikasi arXiv)
+192. Sapkota dkk. (2025). *YOLO26: Real-Time End-to-End Object Detection*. arXiv:2509.25164.
+193. Robinson dkk. (2025). *RF-DETR: NAS for Real-Time Detection Transformers*. ICLR.
+194. Huang dkk. (2026). *Le-DETR: Real-Time DETR with Efficient Encoder Design*. arXiv:2602.21010.
+195. Hu dkk. (2026). *RiO-DETR: DETR for Real-Time Oriented Object Detection*. arXiv:2603.09411.
+196. Yi dkk. (2025). *GL-DMNet: Dual Mutual Learning with Global-Local Awareness (RGB-D SOD)*. arXiv:2501.01648.
+197. Gong dkk. (2025). *DiffPixelFormer: Pixel-Aware Transformer for RGB-D Indoor Segmentation*. arXiv:2511.13047.
+198. Lin dkk. (2025). *Depth Anything 3: Recovering Visual Space from Any Views*. arXiv:2511.10647.
+199. Zhang (2025). *Survey on Monocular Metric Depth Estimation*. arXiv:2501.11841.
+200. Ma dkk. (2026). *AsyncMDE: Real-Time Monocular Depth via Asynchronous Spatial Memory*. arXiv:2603.10438.
+201. Ganesan dkk. (2026). *UniDAC: Universal Metric Depth Estimation for Any Camera*. arXiv:2603.27105.
+202. Du dkk. (2026). *Focusable Monocular Depth Estimation*. arXiv:2605.11756.
+
 ---
 
 ## 8. Berkas Terkait
@@ -337,7 +407,7 @@ tercapai dan terlampaui.
 | Berkas | Isi |
 |---|---|
 | [`tinjauan-pustaka.tex`](tinjauan-pustaka.tex) | Naskah tinjauan pustaka lengkap (LaTeX), 16 bagian |
-| [`references.bib`](references.bib) | Basis data BibTeX, 154 entri |
+| [`references.bib`](references.bib) | Basis data BibTeX, 202 entri |
 | `TEMUAN.md` (berkas ini) | Ringkasan temuan dalam Markdown |
 
 **Kompilasi LaTeX:**
