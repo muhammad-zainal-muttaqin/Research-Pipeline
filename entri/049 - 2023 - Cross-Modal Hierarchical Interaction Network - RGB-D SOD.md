@@ -1,205 +1,98 @@
 # 049 - Cross-Modal Hierarchical Interaction Network for RGB-D Salient Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 049 dari 154 |
 | Kunci BibTeX | `chen2023cmhi` |
-| Judul | Cross-Modal Hierarchical Interaction Network for RGB-D Salient Object Detection |
-| Penulis | Bi, Hangbo; Wu, Ruimin; Liu, Ziqi; Zhu, Huihui; Zhang, Cong; Xiang, Tian-Zhu |
-| Tahun | 2023 |
-| Venue / Jurnal | Pattern Recognition |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, interaksi hierarkis, cross-modal, multi-level, Pattern Recognition |
+| Judul asli | Cross-modal Hierarchical Interaction Network for RGB-D Salient Object Detection |
+| Penulis | Hongbo Bi, Ranwan Wu, Ziqi Liu, Huihui Zhu, Cong Zhang, Tian-Zhu Xiang |
+| Tahun | 2023 (daring 2022; volume 136, April 2023) |
+| Venue | Pattern Recognition, vol. 136, artikel 109194 |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **DOI (versi penerbit):** https://doi.org/10.1016/j.patcog.2022.109194
+- **ScienceDirect (PII):** https://www.sciencedirect.com/science/article/pii/S0031320322006732
+- **Kode resmi (dirilis penulis):** https://github.com/RanwanWu/HINet
+- **Google Scholar:** https://scholar.google.com/scholar?q=Cross-Modal%20Hierarchical%20Interaction%20Network%20for%20RGB-D%20Salient%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Cross-Modal%20Hierarchical%20Interaction%20Network%20for%20RGB-D%20Salient%20Object%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Cross-Modal%20Hierarchical%20Interaction%20Network%20for%20RGB-D%20Salient%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Cross-Modal%20Hierarchical%20Interaction%20Network%20for%20RGB-D%20Salient%20Object%20Detection&sort=relevance
+Makalah ini mengusulkan HINet, jaringan deteksi objek salien RGB-D yang memadukan modalitas warna (RGB) dan kedalaman (*depth*) melalui interaksi yang disusun berjenjang mengikuti hierarki fitur. Deteksi objek salien (*salient object detection*, SOD) adalah tugas menghasilkan peta saliensi, yaitu citra keabuan yang tiap pikselnya menyatakan seberapa menonjol piksel itu sebagai bagian objek yang paling menarik perhatian. Pada varian RGB-D, masukan berupa citra warna dan peta kedalaman, yaitu citra satu kanal yang tiap pikselnya berisi perkiraan jarak ke kamera. Alih-alih menggabungkan kedua modalitas sekali pada satu titik, HINet memasang modul pertukaran informasi lintas-modal (CIE) pada lima tahap ekstraksi fitur, lalu menggabungkan hasilnya secara bertingkat: fitur level tinggi yang kaya semantik lebih dahulu difusikan menjadi peta atensi, dan peta atensi itu kemudian memandu fusi fitur level rendah yang kaya detail tepi.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Model dilatih *end-to-end* (dari masukan ke keluaran tanpa tahap terpisah) di atas dua *backbone* ResNet-50 dan diuji pada lima tolok ukur RGB-D standar. Pada NJU2K, HINet mencapai S-*measure* 0,915, unggul atas sembilan pembanding yang dipublikasikan sebelumnya; pada LFSD, galat MAE turun menjadi 0,076 dari 0,087 milik pembanding terbaik. Kode, bobot terlatih, dan peta hasil dirilis penulis secara terbuka.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 136 |
-| Halaman | 109194 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Jaringan RGB-D SOD yang menyusun pertukaran informasi lintas-modal bertingkat (hierarkis) untuk memanfaatkan hierarki fitur RGB dan kedalaman.
+Citra warna menyimpan tekstur dan rupa objek, tetapi lemah pada adegan dengan latar yang mirip warna objek, pencahayaan buruk, atau objek tembus cahaya. Peta kedalaman menyimpan struktur geometri yang tidak peka terhadap warna, sehingga kedua modalitas bersifat komplementer: menggabungkannya terbukti menaikkan akurasi SOD, seperti ditunjukkan DMRA (bab 035) yang membuang sebagian peta kedalaman buruk dan mengalihkan fokus ke modalitas RGB.
 
-## Abstrak (Parafrase)
-Makalah ini (di Pattern Recognition) mengusulkan cross-modal hierarchical interaction network yang menyusun interaksi RGB-D secara bertingkat sesuai hierarki fitur (rendah ke tinggi), sehingga detail dan semantik dipertukarkan pada level yang sesuai. Agregasi bertingkat menghasilkan saliency yang lebih konsisten.
+Persoalannya adalah *cara* menggabungkan. Pendekatan awal memakai fusi dini (menyambung RGB dan kedalaman sebagai masukan), fusi akhir (menggabungkan peta hasil dua jaringan), atau fusi satu level pada fitur tengah. Ketiganya mengabaikan fakta bahwa fitur CNN (*convolutional neural network*, jaringan saraf konvolusi) tersusun berjenjang: level rendah menyimpan tepi dan tekstur beresolusi tinggi, sedangkan level tinggi menyimpan makna objek beresolusi rendah. Menukar informasi RGB dan kedalaman hanya pada satu level berarti memaksakan satu jenis interaksi untuk dua kebutuhan berbeda — detail tepi memerlukan dukungan geometri lokal, sedangkan penentuan batas objek memerlukan kesepakatan semantik antarmodalitas. Metode seperti BBS-Net (bab 036) dan D3Net (bab 037) mulai memanfaatkan beberapa level fitur, tetapi pertukaran lintas-modal yang eksplisit di setiap level, dengan agregasi yang menghubungkan level tinggi ke level rendah, belum dirumuskan. HINet mengisi celah ini.
 
-## Latar Belakang & Konteks
-Interaksi lintas-modal yang datar (satu level) mengabaikan hierarki fitur, padahal detail (level rendah) dan semantik (level tinggi) memerlukan interaksi berbeda.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Interaksi lintas-modal datar mengabaikan hierarki fitur.
-- Detail & semantik perlu interaksi berbeda.
-- Agregasi antar-level belum optimal.
-- Konsistensi saliency sulit dijaga.
-- Fusi statis kurang kaya.
+Gagasan inti HINet terdiri atas dua prinsip. Pertama, **pertukaran di mana-mana**: pada setiap tahap ekstraksi fitur, kedua modalitas saling menambahkan informasi melalui modul CIE, sehingga setiap level memperoleh versi fitur yang sudah memuat informasi modalitas pasangannya. Kedua, **fusi terpandu dari atas ke bawah**: fitur hasil pertukaran tidak digabung sekaligus, melainkan dikelompokkan menjadi level tinggi dan level rendah; level tinggi difusikan lebih dahulu menjadi peta atensi kasar, dan atensi ini dipakai sebagai pengali pembimbing saat level rendah difusikan. Dengan cara ini, lokasi objek yang disepakati kedua modalitas pada level semantik menentukan bagian tepi mana pada level detail yang diperkuat.
 
-## Tujuan & Pertanyaan Penelitian
-- Menyusun interaksi lintas-modal hierarkis.
-- Mempertukarkan fitur pada level yang sesuai.
-- Mengagregasi hasil secara bertingkat.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-Makalah mengembangkan interaksi lintas-modal hierarkis untuk RGB-D SOD.
+### Encoder Dua Arus
 
-Karya/konsep pembanding yang relevan:
+Masukan berupa citra RGB 352×352×3 dan peta kedalaman 352×352×1. Keduanya diproses oleh dua ResNet-50 terpisah — ResNet-50 adalah jaringan konvolusi 50 lapis dengan sambungan residual (keluaran lapis ditambah masukannya) yang menjadi model ekstraksi fitur standar; bobot awalnya berasal dari pelatihan klasifikasi pada ImageNet (dataset klasifikasi citra berskala besar). Setiap arus menghasilkan lima tahap fitur: 88×88 dengan 64 kanal, 88×88 dengan 256 kanal, 44×44 dengan 512 kanal, 22×22 dengan 1.024 kanal, dan 11×11 dengan 2.048 kanal. Kanal adalah dimensi fitur per piksel; semakin dalam tahapnya, resolusi spasial mengecil tetapi isi tiap kanal semakin abstrak.
 
-- RGB-D SOD berbasis fusi — dasar.
-- Hierarki fitur multi-level (FPN-like).
-- Cross-modal interaction.
-- Agregasi bertingkat.
+### Modul Pertukaran Informasi Lintas-Modal (CIE)
 
-## Metodologi & Arsitektur
-Modul interaksi hierarkis mempertukarkan fitur RGB-D pada tiap level hierarki (rendah->tinggi); agregasi bertingkat menyatukan hasil; decoder menghasilkan saliency dengan supervisi multi-level.
+Modul CIE (*cross-modal information exchange*) dipasang di kelima titik pertemuan tahap. Untuk sepasang fitur RGB dan kedalaman berukuran sama, misalnya 88×88×64 pada tahap pertama, langkahnya: (1) kedua fitur dikalikan per elemen (*element-wise multiplication*) — perkalian ini hanya menyisakan respons yang kuat di kedua modalitas, sehingga berperan sebagai penyaring kesepakatan; (2) hasilnya dilewatkan ke konvolusi 3×3, *batch normalization* (normalisasi statistik per kanal untuk menstabilkan pelatihan), dan aktivasi ReLU (fungsi max(0, x)); (3) sinyal bersama ini ditambahkan secara residual kembali ke fitur RGB dan fitur kedalaman, sehingga masing-masing arus menerima informasi modalitas pasangannya tanpa kehilangan isinya sendiri; (4) di antaranya dipakai perataan *upsampling* bilinear diikuti *max-pooling* 2×2 yang mempertahankan resolusi tetapi menghaluskan derau terisolasi. Keluaran CIE berupa fitur gabungan per level (f1 sampai f5) yang diteruskan ke dekoder, sementara kedua arus melanjutkan ekstraksi dengan fitur yang sudah dipertukarkan.
 
-Komponen / langkah metodologis utama:
+### Modul Konvolusi Multi-Skala (MC)
 
-- Modul interaksi hierarkis RGB-D.
-- Pertukaran fitur per-level hierarki.
-- Agregasi bertingkat.
-- Konteks multi-level.
-- Decoder saliency.
-- Pelatihan end-to-end RGB-D.
+Sebelum difusikan, setiap fitur gabungan dilewatkan ke modul MC yang merangkum konteks beberapa ukuran wilayah. Modul ini memiliki empat cabang paralel: satu cabang konvolusi 1×1 polos, dan tiga cabang dengan konvolusi melebar (*dilated convolution* — konvolusi yang titik-titik tapisnya direnggangkan sehingga menangkap wilayah lebih luas tanpa menambah parameter) dengan laju pelebaran 3, 5, dan 7, didahului konvolusi asimetris 1×k dan k×1 untuk menekan biaya. Keluaran keempat cabang disambung lalu dipadatkan menjadi 32 kanal. Hasilnya, fitur pada setiap level memuat konteks lokal sekaligus konteks berjangkauan luas.
 
-## Kontribusi Utama
-1. Interaksi lintas-modal hierarkis (per-level).
-2. Agregasi bertingkat konsisten.
-3. Detail & semantik dipertukarkan tepat level.
-4. Peningkatan konsisten pada benchmark.
+### Fusi Hierarkis Terpandu (PGF)
 
-## Rincian Eksperimen
-Diuji pada benchmark RGB-D SOD standar dengan metrik S/F/E-measure dan MAE (dipublikasikan di Pattern Recognition).
+Tahap inilah yang disebut makalah sebagai *progressively guided fusion* (PGF). Alurnya ditunjukkan diagram berikut:
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+  RGB 352x352x3 ──► ResNet-50 RGB    (5 tahap: 64/256/512/1024/2048 kanal)
+                          │ CIE ×5  (pertukaran lintas-modal per tahap)
+  Depth 352x352x1 ──► ResNet-50 Depth
+                          │
+        f1(88x88) f2(88x88) f3(44x44) f4(22x22) f5(11x11)
+          │         │         └────┬─────┴────┐
+          │         │             MC ──► MC ──► MC
+          │         │                  HFF level tinggi
+          │         │                  peta atensi M_hl (32 kanal, 44x44)
+          │         │                       │ panduan balik:
+          │         ▼                       ▼ sigmoid, pengali residual
+          └───► MC ──► MC ◄──── diperkuat atensi
+                       HFF level rendah ──► dekoder dekonvolusi
+                                              │
+   keluaran: M_hl (disupervisi)   peta saliensi akhir M_ll (disupervisi)
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NJU2K/NLPR | S/F/E, MAE | peningkatan konsisten |
-| STERE/SIP | S/F/E, MAE | kompetitif |
-| Ablation | hierarchical interaction | interaksi bertingkat menyumbang gain |
+Fitur level tinggi (f3, f4, f5) difusikan oleh blok HFF (*hierarchical feature fusion*): fitur teratas dinaikkan resolusinya, disambung dengan level di bawahnya, diproses konvolusi, lalu dikalikan per elemen dengan fitur teratas tadi — perkalian ini membuat level atas berperan sebagai pengali selektif yang memilih isi level bawah. Proses berulang sampai menghasilkan peta atensi M_hl. Selanjutnya terjadi panduan balik: M_hl diaktivasi sigmoid (fungsi yang memetakan nilai ke rentang 0–1) dan dipakai memodulasi fitur level rendah (f1, f2, f3) dengan rumus x + x⊙sigmoid(atensi) — wilayah yang disepakati sebagai objek pada level semantik diperkuat pada level detail, wilayah lain dibiarkan. Fitur yang telah dipandu lalu difusikan oleh HFF level rendah dan diteruskan ke dekoder bertingkat berisi dekonvolusi (konvolusi transpos yang menaikkan resolusi) hingga menghasilkan peta saliensi akhir M_ll.
 
-## Temuan Kunci
-- Interaksi hierarkis mengungguli interaksi datar.
-- Detail & semantik dipertukarkan pada level tepat.
-- Agregasi bertingkat meningkatkan konsistensi.
-- Hierarki fitur penting untuk fusi.
+### Pelatihan
 
-## Keunggulan
-- Interaksi hierarkis lintas-modal.
-- Agregasi bertingkat.
-- Peningkatan konsisten.
+Kedua keluaran, M_hl dan M_ll, diawasi langsung terhadap *ground truth* (peta saliensi benar) dengan fungsi galat *binary cross-entropy* (BCE), dan total galat adalah jumlah keduanya — skema ini disebut supervisi dalam (*deep supervision*) karena keluaran perantara ikut dilatih. Optimisasi memakai Adam (algoritme pembaruan bobot adaptif berbasis gradien) dengan laju pembelajaran 10⁻⁴, ukuran *batch* 7, 200 epoch (satu epoch berarti satu putaran penuh atas data latih), peluruhan laju 0,1 setiap 60 epoch, dan pemotongan gradien 0,5. Data latih mengikuti protokol standar bidang ini: gabungan bagian latih NJU2K dan NLPR.
 
-## Keterbatasan
-- Interaksi bertingkat menambah komputasi.
-- Bergantung kualitas kedalaman.
-- Backbone CNN (konteks terbatas).
+## Eksperimen dan Hasil
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Evaluasi memakai lima tolok ukur: NJU2K (±1.985 pasang citra stereo), NLPR (1.000 pasang RGB–kedalaman dari Kinect), STERE (1.000 citra stereo dari internet), SSD (80 citra stereo), dan LFSD (100 citra *light field*). Empat metrik dipakai: S-*measure* (kesesuaian struktur peta prediksi dengan kebenaran; maksimal 1), F-*measure* maksimum (rata-rata harmonik presisi — proporsi piksel prediksi yang benar — dan recall — proporsi piksel benar yang terdeteksi — pada ambang terbaik), E-*measure* maksimum (kesesajajaran gabungan tingkat piksel dan tingkat citra), dan MAE (*mean absolute error*, rata-rata selisih mutlak per piksel; semakin kecil semakin baik). Pembandingnya sembilan metode: DMRA, CPFP, S2MA, DCMF, cmSalGAN, DRLF, MCMFNet, CMF, dan D3Net.
 
-## Relevansi terhadap Tema Tinjauan
-Makalah ini memperkuat argumen interaksi hierarkis lintas-modal, prinsip desain fusi RGB+Depth yang relevan bagi tinjauan.
+Hasil utama HINet (S/F/E/MAE): NJU2K 0,915/0,914/0,945/0,039; NLPR 0,922/0,906/0,957/0,026; SSD 0,865/0,852/0,916/0,049; STERE 0,892/0,883/0,933/0,049; LFSD 0,852/0,847/0,888/0,076. Interpretasinya: pada NJU2K, S-*measure* 0,915 melampaui pembanding terbaik cmSalGAN (0,903) dengan selisih 1,2 poin — peningkatan nyata pada metrik yang sudah jenuh di atas 0,9. Pada LFSD, MAE 0,076 berarti galat rata-rata turun 12,6% relatif terhadap 0,087 milik pembanding terbaik; LFSD dikenal sulit karena kedalamannya berasal dari kamera *light field*. Pada NLPR, selisihnya tipis (0,922 lawan 0,921), menandakan dataset itu mendekati titik jenuh. Secara keseluruhan HINet menjadi terbaik pada mayoritas baris metrik di kelima dataset.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+Sebagai konteks lanjutan, tabel perbandingan pada karya-karya sesudahnya (misalnya SwinNet berbasis *transformer*, arsitektur berbasis mekanisme atensi) melaporkan S-*measure* NJU2K sekitar 0,935; posisi HINet kini berada di bawah generasi yang lebih baru.
 
-- [035 - 2019 - DMRA - RGB-D SOD](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)
-- [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)
-- [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)
-- [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md)
-- [039 - 2020 - S2MA - RGB-D SOD](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)
-- [040 - 2020 - HDFNet - RGB-D SOD](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)
-- [041 - 2020 - UC-Net - RGB-D SOD](./041%20-%202020%20-%20UC-Net%20-%20RGB-D%20SOD.md)
-- [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)
+## Kelebihan dan Keterbatasan
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Kelebihan: (1) pertukaran lintas-modal terjadi di semua level, bukan satu titik, sehingga detail dan semantik sama-sama dipertukarkan; (2) mekanisme panduan balik membuat fusi level rendah selektif terhadap lokasi objek, bukan sekadar penjumlahan fitur; (3) desainnya sederhana — hanya konvolusi, perkalian, dan penjumlahan — sehingga mudah direproduksi, terbukti dari kode resmi yang lengkap; (4) unggul konsisten terhadap sembilan pembanding pada masanya.
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
+Keterbatasan: (1) dua ResNet-50 penuh menjadikan model besar; dari sisi rekayasa, biaya parameter dan komputasinya berat untuk perangkat terbatas; (2) perkalian lintas-modal pada CIE mengandalkan kesepakatan kedua modalitas — secara konseptual, bila peta kedalaman rusak total pada suatu objek, respons bersama bisa ikut hilang dan tambahan informasi menjadi lemah; (3) panduan balik bersifat satu arah (tinggi ke rendah), sehingga kesalahan lokalisasi pada peta atensi level tinggi merambat ke fusi level rendah; (4) evaluasi terbatas pada lima dataset dengan protokol latih konvensional, tanpa pengujian lintas-dataset untuk mengukur generalisasi. Keterbatasan (1)–(3) merupakan analisis penulis bab, bukan pernyataan penulis makalah.
 
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
+## Kaitan dengan Bab Lain
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+HINet melanjutkan garis fusi RGB-D yang dibuka DMRA (bab [035](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)) dengan pertanyaan berbeda: bukan lagi bagaimana menyaring kedalaman buruk, melainkan bagaimana menyusun pertukaran antarmodalitas. Dibandingkan BBS-Net (bab [036](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)) yang memadukan fitur multi-level dua arus, HINet menambahkan pertukaran eksplisit per level dan atensi terpandu. D3Net (bab [037](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)) hadir dalam tabel pembandingnya, sedangkan S2MA (bab [039](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)) mewakili jalur pembelajaran bersama dua modalitas yang menjadi alternatif desainnya. Generasi sesudahnya beralih ke *transformer*, misalnya VST (bab [042](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)), dan dalam literatur pasca-2023 nama HINet rutin muncul sebagai baseline CNN kuat yang harus dilampaui.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Poin untuk Sitasi
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Cross-Modal Hierarchical Interaction Network menyusun pertukaran informasi RGB-D bertingkat sesuai hierarki fitur, meningkatkan konsistensi saliency dan memperkuat argumen interaksi hierarkis.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `chen2023cmhi` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 049/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `chen2023cmhi`. Ringkasan yang aman dikutip: "HINet (Bi dkk., Pattern Recognition 2023) memadukan RGB dan kedalaman melalui modul pertukaran informasi lintas-modal pada setiap level hierarki fitur, lalu menggabungkan hasilnya secara bertingkat dengan fusi terpandu progresif, sehingga mencapai S-*measure* 0,915 pada NJU2K dan MAE 0,076 pada LFSD." Catatan verifikasi sebelum sitasi formal: (1) metadata lama dan `references.bib` menulis nama "Bi, Hangbo" dan "Wu, Ruimin", padahal Crossref, Semantic Scholar, dan repositori resmi menyebut "Hongbo Bi" dan "Ranwan Wu" — nama pada berkas bib perlu diperbaiki; (2) angka hasil di atas disalin dari tabel kuantitatif pada repositori resmi penulis dan cocok dengan tabel ulangan di dua makalah pihak ketiga, tetapi tetap perlu dicocokkan dengan naskah penerbit; (3) rincian studi ablasi, jumlah parameter, serta hasil pada dataset SIP dan DES yang dikutip karya lain tidak sempat diverifikasi dari naskah asli dalam penulisan bab ini.

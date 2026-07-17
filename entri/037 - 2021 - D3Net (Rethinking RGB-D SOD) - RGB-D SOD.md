@@ -1,206 +1,96 @@
 # 037 - Rethinking RGB-D Salient Object Detection: Models, Data Sets, and Large-Scale Benchmarks
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
+
 | Field | Nilai |
 |---|---|
-| Nomor entri | 037 dari 154 |
 | Kunci BibTeX | `fan2020d3net` |
-| Judul | Rethinking RGB-D Salient Object Detection: Models, Data Sets, and Large-Scale Benchmarks |
-| Penulis | Fan, Deng-Ping; Lin, Zheng; Zhang, Zhao; Zhu, Menglong; Cheng, Ming-Ming |
+| Judul asli | Rethinking RGB-D Salient Object Detection: Models, Data Sets, and Large-Scale Benchmarks |
+| Penulis | Deng-Ping Fan, Zheng Lin, Zhao Zhang, Menglong Zhu, Ming-Ming Cheng |
 | Tahun | 2021 |
-| Venue / Jurnal | IEEE Transactions on Neural Networks and Learning Systems |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, depth depurator, tiga-aliran, benchmark, dataset SIP |
+| Venue | IEEE Transactions on Neural Networks and Learning Systems, 32(5): 2075–2089 |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+- **arXiv (naskah lengkap):** https://arxiv.org/abs/1907.06781
+- **DOI (versi jurnal):** https://doi.org/10.1109/TNNLS.2020.2996406
+- **Kode, dataset SIP, dan alat evaluasi:** https://github.com/DengPingFan/D3NetBenchmark
+- **Google Scholar:** https://scholar.google.com/scholar?q=Rethinking%20RGB-D%20Salient%20Object%20Detection%3A%20Models%2C%20Data%20Sets%2C%20and%20Large-Scale%20Benchmarks
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Rethinking%20RGB-D%20Salient%20Object%20Detection%3A%20Models%2C%20Data%20Sets%2C%20and%20Large-Scale%20Benchmarks
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Rethinking%20RGB-D%20Salient%20Object%20Detection%3A%20Models%2C%20Data%20Sets%2C%20and%20Large-Scale%20Benchmarks&sort=relevance
+## Gambaran Umum
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Makalah ini menata ulang bidang deteksi objek menonjol (*salient object detection*, SOD) pada citra RGB-D, yaitu citra berwarna dengan peta kedalaman (jarak tiap piksel ke kamera). Penulis melakukan tiga hal sekaligus: membangun dataset SIP berisi 929 citra orang menonjol dari ponsel, menjalankan *benchmark* terbesar pada masanya dengan meringkas 32 model dan mengevaluasi 18 model pada tujuh dataset (±97 ribu citra), serta mengusulkan model D3Net (*Deep Depth-Depurator Network*). Gagasan kuncinya: kedalaman tidak selalu bermanfaat — peta berkualitas rendah justru merusak prediksi — sehingga D3Net dilengkapi unit penyaring yang otomatis membuang kedalaman buruk. Hasilnya, D3Net mengungguli 17 model pembanding pada kelima metrik dengan kecepatan ±65 citra per detik pada satu GPU.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 32 |
-| Nomor | 5 |
-| Halaman | 2075--2089 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Studi 'rethinking' RGB-D SOD yang memperkenalkan gerbang penyaring kedalaman (depth depurator), model tiga-aliran, serta benchmark skala besar dan dataset SIP, menekankan pentingnya kualitas kedalaman.
+SOD adalah tugas memetakan objek yang paling menarik perhatian dalam citra menjadi peta saliensi, yaitu citra keabuan yang tiap pikselnya bernilai 0 sampai 1 sesuai tingkat kemenonjolannya. Aplikasinya meliputi pemrosesan potret dan pemisahan latar di ponsel. Sebagian besar metode SOD awal hanya memakai citra RGB. Informasi kedalaman kemudian dimanfaatkan karena batas objek yang samar pada citra warna sering kali tegas pada peta kedalaman, sehingga muncul aliran RGB-D SOD yang menggabungkan (memfusikan) fitur warna dan fitur kedalaman.
 
-## Abstrak (Parafrase)
-D3Net menyoroti bahwa peta kedalaman berkualitas rendah dapat merusak fusi. Solusinya adalah Depth Depurator Unit (DDU) yang menyaring peta kedalaman buruk sebelum digunakan, dipadukan model tiga-aliran (RGB, depth, dan aliran fusi). Makalah juga menyediakan benchmark skala besar dan dataset SIP (person-oriented), menstandarkan evaluasi RGB-D SOD.
+Sebelum makalah ini, tiga masalah menahan bidang tersebut. Pertama, hampir semua model mengasumsikan kedalaman selalu membantu, padahal peta dari sensor nyata sering berderau; fusi buta menurunkan kinerja, dan belum ada model yang secara eksplisit membuang peta kedalaman buruk. Kedua, dataset RGB-D yang ada direkam dengan kamera Kinect atau kamera *light field*, bukan dengan ponsel, dan belum ada yang berfokus pada manusia, padahal aplikasi ponsel hampir selalu memotret orang. Ketiga, evaluasi antarmodel tidak setara: makalah terdahulu umumnya hanya menguji satu sampai empat dataset, memakai metrik tingkat piksel yang tidak menilai struktur objek, serta melaporkan F-measure tanpa menyebut statistik dan ambang yang dipakai. Kondisi ini menjadi konteks bagi bab fusi sebelumnya, misalnya [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md), yang memakai protokol berbeda.
 
-## Latar Belakang & Konteks
-Banyak metode RGB-D SOD mengasumsikan kedalaman selalu bermanfaat, padahal sensor menghasilkan depth berderau/tidak akurat yang justru menurunkan kinerja fusi; selain itu evaluasi RGB-D SOD belum terstandar.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Peta kedalaman berkualitas buruk merusak fusi.
-- Metode mengasumsikan kedalaman selalu bermanfaat.
-- Benchmark RGB-D SOD belum terstandar.
-- Dataset person-oriented masih kurang.
-- Perbandingan antar-metode tak setara.
+Ide utama makalah ini dapat dinyatakan dalam satu kalimat: kedalaman adalah masukan opsional yang harus lulus uji kualitas sebelum dipakai. Secara mekanis, D3Net menerima citra RGB dan peta kedalaman, lalu menghasilkan tiga peta saliensi dari tiga aliran terpisah: satu dari RGB saja, satu dari gabungan RGB dan kedalaman, satu dari kedalaman saja. Pada saat pengujian, sebuah gerbang bernama *depth depurator unit* (DDU) memutuskan apakah hasil fusi boleh dipakai. Ujinya sederhana: bila prediksi aliran fusi konsisten dengan prediksi aliran kedalaman, kedalaman dianggap andal dan hasil fusi dipilih; bila tidak, kedalaman dianggap menyesatkan dan model kembali ke prediksi RGB saja. Masukannya dua citra, keluarannya satu peta saliensi, dan yang berubah dibanding fusi biasa adalah keputusan biner per citra tentang boleh tidaknya kedalaman dipakai.
 
-## Tujuan & Pertanyaan Penelitian
-- Menyaring kedalaman buruk sebelum fusi (DDU).
-- Menstandarkan evaluasi RGB-D SOD.
-- Menyediakan dataset SIP baru.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-D3Net meninjau ulang model, dataset, dan protokol evaluasi RGB-D SOD secara menyeluruh.
+### Modul Pembelajaran Fitur Tiga Aliran (FLM)
 
-Karya/konsep pembanding yang relevan:
+Komponen pertama adalah *feature learning module* (FLM), yang terdiri atas tiga sub-jaringan paralel: RgbNet, RgbdNet, dan DepthNet. Ketiganya berarsitektur sama dan hanya berbeda kanal masukan: RgbNet menerima RGB tiga kanal, RgbdNet menerima gabungan RGB dan kedalaman empat kanal, DepthNet menerima kedalaman satu kanal; semua masukan diubah ukurannya menjadi 224×224 piksel.
 
-- RGB-D SOD berbasis fusi — dasar.
-- Depth quality gating — gagasan penyaringan.
-- Benchmark SOD sebelumnya.
-- Dataset RGB-D (NJU2K, NLPR).
+Setiap sub-jaringan adalah modifikasi *Feature Pyramid Network* (FPN), yaitu struktur yang mengekstraksi fitur pada beberapa resolusi sekaligus melalui jalur menurun (menangkap makna global) dan jalur menaik (menggabungkan kembali detail halus). *Backbone* (jaringan pengekstraksi fitur dasar) yang dipakai adalah VGG-16, jaringan konvolusi 16 lapis yang umum pada masanya, ditambah lapisan keenam berisi dua konvolusi 3×3 untuk memperkuat fitur semantik lokasi objek. Berbeda dari FPN asli yang menggabungkan fitur dengan penjumlahan, D3Net memakai konkatenasi: fitur kasar dinaikkan resolusinya dua kali lipat dengan *nearest neighbor*, fitur halus dikurangi kanalnya dengan konvolusi 1×1, lalu keduanya disambungkan. Pada masukan 224×224, tensor fitur menyusuri piramida dari 64×224×224 hingga 32×7×7, lalu menaik kembali sampai peta akhir 32×224×224. Keluarannya tiga peta saliensi ukuran penuh: *S_rgb*, *S_rgbd*, *S_depth*.
 
-## Metodologi & Arsitektur
-Depth Depurator Unit menilai kualitas peta kedalaman dan menyaringnya (gating) agar hanya kedalaman andal masuk fusi; jaringan tiga aliran memproses RGB, depth, dan fusi; evaluasi dilakukan pada benchmark besar termasuk dataset SIP.
+### Unit Penyaring Kedalaman (DDU)
 
-Komponen / langkah metodologis utama:
+Komponen kedua adalah DDU, yang hanya aktif pada fase pengujian. Dasar pemikirannya: pada peta kedalaman berkualitas tinggi, objek menonjol berbatas tegas dengan distribusi kedalaman berpuncak dua (objek dan latar), sehingga aliran DepthNet akan menemukan objek yang sama dengan aliran RgbdNet dan kedua peta keluarannya mirip; pada peta buruk, keduanya berbeda jauh.
 
-- Depth Depurator Unit (DDU) penyaring kualitas depth.
-- Jaringan tiga aliran (RGB, depth, fusi).
-- Gating kedalaman sebelum fusi.
-- Benchmark skala besar terstandar.
-- Dataset SIP (person-oriented).
-- Protokol evaluasi seragam.
+Kemiripan itu diukur unit pembanding *F_cu* dengan fungsi jarak MAE (*mean absolute error*), yaitu rata-rata selisih mutlak antarpiksel dua peta pada rentang 0 sampai 1. Bila jarak antara *S_rgbd* dan *S_depth* tidak melebihi ambang *t*, unit bernilai 1; selain itu bernilai 0. Peta akhir ditentukan rumus gerbang *P = F_cu · S_rgbd + (1 − F_cu) · S_rgb*. Ambang *t* = 0,15 dipilih dari enam nilai kandidat (0,01 sampai 0,20) karena berkinerja terbaik. Contoh numerik: bila MAE kedua peta adalah 0,10, maka *F_cu* = 1 dan keluaran berupa *S_rgbd*; bila MAE-nya 0,23, kedalaman dibuang dan keluaran berupa *S_rgb*. Diagram berikut merangkum alur datanya.
 
-## Kontribusi Utama
-1. DDU menyaring kedalaman buruk agar fusi robust.
-2. Model tiga-aliran yang efektif.
-3. Benchmark besar & dataset SIP menstandarkan bidang.
-4. Menekankan peran kualitas kedalaman.
+```
+citra RGB 224x224 ──┬─► RgbNet (3 kanal) ────────► S_rgb ─────────┐
+                    │                                             │
+                    └─► RgbdNet (RGB+depth, 4 kanal) ─► S_rgbd ──┤
+                                                                  │
+peta kedalaman ─────┴─► DepthNet (1 kanal) ─────────► S_depth ──┤
+224x224                                                         ▼
+                                        ┌──────────────────────────────┐
+                                        │ DDU (hanya saat pengujian):  │
+                                        │ δ = MAE(S_rgbd, S_depth)     │
+                                        │ δ ≤ 0,15 → P = S_rgbd        │
+                                        │ δ > 0,15 → P = S_rgb         │
+                                        └──────────────┬───────────────┘
+                                                       ▼
+                                          peta saliensi akhir P
+```
 
-## Rincian Eksperimen
-Diuji ekstensif lintas dataset RGB-D SOD (NJU2K, NLPR, STERE, SIP, dll.) dengan metrik S/F/E-measure dan MAE, plus analisis ketahanan terhadap depth buruk.
+Ketiga sub-jaringan dilatih bersama sebagai struktur bersarang, sedangkan keputusan gerbang dibuat per citra saat inferensi, sehingga DDU tidak menambah parameter yang harus dilatih.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Pelatihan
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Benchmark besar | S/F/E, MAE | kokoh terhadap depth berkualitas rendah |
-| SIP (baru) | S/F/E, MAE | dataset person-oriented |
-| Ablation | DDU | gating meningkatkan ketahanan |
+Ketiga aliran dilatih dengan fungsi rugi *cross-entropy* per piksel, yang mengukur selisih peta prediksi bernilai 0–1 terhadap peta kebenaran biner pada seluruh 224×224 = 50.176 piksel. Data latih mengikuti protokol model CPFP agar perbandingan adil: 1.485 pasang citra dari NJU2K dan 700 pasang dari NLPR. Optimisasi memakai Adam dengan laju pembelajaran 10⁻⁴, *batch* 8, selama 30 epoch pada satu GPU GTX TITAN X, dengan augmentasi pembalikan horizontal. D3Net tidak memakai pasca-pemrosesan CRF (*conditional random field*, pemulus batas objek untuk menaikkan skor), sehingga hasilnya murni keluaran jaringan.
 
-## Temuan Kunci
-- Kualitas kedalaman krusial untuk fusi RGB-D.
-- Gating depth meningkatkan ketahanan.
-- Standarisasi evaluasi penting bagi bidang.
-- Dataset SIP memperkaya benchmark.
+### Dataset SIP
 
-## Keunggulan
-- Menekankan & menangani kualitas kedalaman.
-- Menstandarkan evaluasi RGB-D SOD.
-- Menyediakan dataset baru.
+Dataset ini dibangun untuk skenario ponsel: citra direkam dengan kamera belakang Huawei Mate 10 (sensor RGB 12 MP dan monokrom 20 MP), dan peta kedalamannya diestimasi otomatis oleh ponsel. Dari 5.269 citra mentah hasil aksi sembilan orang pada berbagai latar luar ruang, seleksi manual, pemungutan suara enam penilai, dan penapisan kualitas anotasi menyisakan 929 citra final dengan anotasi tingkat piksel yang halus. Cakupannya meliputi delapan kategori latar (mobil, bunga, rumput, jalan, pohon, rambu, penghalang, lainnya), kondisi pencahayaan gelap dan terang, serta satu sampai lima objek menonjol per citra. Ukuran objek relatif terhadap luas citra berkisar 0,48%–66,85% (rata-rata 20,43%), dan berbeda dari kebanyakan dataset pendahulu, SIP nyaris bebas bias ke tengah citra.
 
-## Keterbatasan
-- Gating menambah komponen/heuristik.
-- Bergantung metrik kualitas depth.
-- Backbone CNN (konteks global terbatas).
+## Eksperimen dan Hasil
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Evaluasi dilakukan pada tujuh dataset (STERE, NJU2K, DES, NLPR, SSD, LFSD, SIP) dengan total 5.398 citra uji dikali 18 model, atau sekitar 97 ribu evaluasi. Lima metrik dipakai serentak: MAE (galat rata-rata peta, makin kecil makin baik), kurva *precision-recall* dan F-measure maksimum (keseimbangan presisi dan rekoleksi pada berbagai ambang), S-measure (kemiripan struktur objek dan region dengan peta kebenaran), serta E-measure (keselarasan tingkat piksel dan tingkat citra).
 
-## Relevansi terhadap Tema Tinjauan
-D3Net menegaskan prinsip penting bagi seluruh tinjauan RGB+Depth: kedalaman tidak selalu bermanfaat dan perlu disaring — pelajaran yang relevan bagi semua fusi RGB-D termasuk YOLO+RGB-D.
+Pada S-measure, D3Net mencapai 0,899 pada NJU2K dan 0,912 pada NLPR, dibanding pesaing terkuat CPFP dengan 0,879 dan 0,888; selisih 2,0 dan 2,4 poin berarti struktur objek hasil D3Net lebih menyerupai kebenaran pada dua dataset terbesar. Secara keseluruhan D3Net mengalahkan hasil terbaik yang pernah dipublikasikan dengan margin 1,0% sampai 5,8% pada enam dari tujuh dataset, termasuk 1,4% pada SIP; satu-satunya pengecualian adalah LFSD, tempat D3Net (0,825) sedikit di bawah CPFP (0,828), sehingga keunggulannya tidak mutlak. D3Net juga tercepat dalam tabel: 0,015 detik per citra (±65 FPS), lebih dari sepuluh kali kecepatan CPFP (0,170 detik), tanpa pasca-pemrosesan CRF.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+Studi ablasi mengukur kontribusi tiap komponen. Pada NJU2K, S-measure RgbNet saja 0,888, RgbdNet saja 0,898, DepthNet saja 0,857, dan D3Net lengkap 0,900; fusi terbukti membantu bila kedalaman baik, dan gerbang DDU masih menambah 0,2 poin di atas jalur fusi saja. Pada STERE, DepthNet anjlok ke 0,713 karena banyak peta kedalamannya rusak, tetapi D3Net tetap mencapai 0,899 — bukti langsung bahwa penyaringan melindungi model dari kedalaman buruk. Penulis juga menghitung batas bawah (selalu memilih jalur terburuk) dan batas atas (selalu memilih jalur terbaik per citra): rata-rata D3Net masih terpaut 1,6% dari batas atasnya, artinya gerbang biner ini belum optimal.
 
-- [035 - 2019 - DMRA - RGB-D SOD](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)
-- [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)
-- [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md)
-- [039 - 2020 - S2MA - RGB-D SOD](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)
-- [040 - 2020 - HDFNet - RGB-D SOD](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)
-- [041 - 2020 - UC-Net - RGB-D SOD](./041%20-%202020%20-%20UC-Net%20-%20RGB-D%20SOD.md)
-- [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)
-- [043 - 2022 - SwinNet - RGB-D SOD](./043%20-%202022%20-%20SwinNet%20-%20RGB-D%20SOD.md)
+## Kelebihan dan Keterbatasan
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Kelebihan makalah ini terletak pada tiga lapis. Sebagai model, D3Net adalah kerangka sederhana yang tidak mengikat backbone tertentu, unggul pada lima metrik sekaligus, dan cukup cepat untuk aplikasi waktu nyata. Sebagai *benchmark*, evaluasi 18 model pada tujuh dataset dengan statistik metrik yang dinyatakan eksplisit menghilangkan ketidakadilan perbandingan yang sebelumnya umum terjadi, dan papan peringkat daringnya terus diperbarui. Sebagai data, SIP mengisi celah dataset berorientasi manusia dari sensor ponsel sungguhan, lengkap dengan pasangan citra RGB dan monokrom untuk riset kedalaman stereo.
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
+Keterbatasannya diakui penulis: ukuran SIP (929 citra) kecil dibanding dataset SOD berbasis RGB; arsitektur tiga aliran melipatgandakan kebutuhan memori, sehingga penulis menyarankan penggantian backbone dengan MobileNet V2 atau ESPNet V2 untuk perangkat ringan; dan DDU tidak mencapai batas atasnya sendiri (selisih rata-rata 1,6%). Dari sisi rekayasa, keputusan biner dengan ambang tetap *t* = 0,15 adalah heuristik kasar: citra dengan kedalaman berkualitas menengah dipaksa memilih satu jalur sepenuhnya, padahal pembobotan adaptif berpotensi lebih baik — penulis sendiri mencadangkannya sebagai pekerjaan lanjutan. Secara konseptual, kualitas kedalaman hanya dinilai tidak langsung lewat konsistensi dua prediksi, dengan asumsi DepthNet pasti gagal saat kedalaman buruk; asumsi ini tidak selalu terpenuhi, misalnya pada dataset DES tempat DepthNet justru menjadi aliran terkuat.
 
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
+## Kaitan dengan Bab Lain
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Bab ini menjadi titik balik dalam klaster RGB-D SOD. Model yang dibahas sebelumnya, seperti [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md), berfokus pada cara memfusikan kedua modalitas sebaik mungkin, sedangkan D3Net menambah pertanyaan yang mendahuluinya: apakah modalitas kedalaman layak ikut serta. *Benchmark*-nya mengevaluasi pendahulu seperti CPFP, TANet, dan PCF, sehingga bab ini menjadi titik pembanding baku. Setelah naskah ini terbit, model seperti [035 - 2019 - DMRA - RGB-D SOD](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md), [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md), dan [041 - 2020 - UC-Net - RGB-D SOD](./041%20-%202020%20-%20UC-Net%20-%20RGB-D%20SOD.md) dimasukkan penulis ke papan peringkat daringnya, dan dataset SIP menjadi dataset uji standar bagi bab-bab selanjutnya, termasuk [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md) yang mengganti backbone CNN dengan transformer.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Poin untuk Sitasi
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-D3Net memikirkan ulang RGB-D SOD dengan menyaring kedalaman buruk (DDU), model tiga-aliran, dan benchmark/dataset SIP, menegaskan bahwa kualitas kedalaman adalah faktor kunci fusi.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `fan2020d3net` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 037/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kunci BibTeX: `fan2020d3net`. Ringkasan yang aman dikutip: Fan dkk. (2021) meninjau ulang RGB-D SOD secara sistematis dengan membangun dataset SIP (929 citra orang menonjol dari ponsel), mengevaluasi 18 model pada tujuh dataset (±97 ribu citra), serta mengusulkan D3Net yang menyaring peta kedalaman berkualitas rendah melalui unit gerbang DDU di atas tiga aliran FPN; model ini dilaporkan mengungguli 17 pembanding pada lima metrik dengan kecepatan ±65 FPS. Catatan verifikasi: seluruh angka pada bab ini diambil dari versi arXiv v2 (1907.06781) yang identitas jurnalnya cocok dengan TNNLS 32(5): 2075–2089; sebelum sitasi formal, cocokkan angka Tabel IV dan Tabel V dengan PDF jurnal, karena tabelnya padat dan rawan salah baca kolom.

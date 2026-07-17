@@ -1,204 +1,117 @@
 # 041 - UC-Net: Uncertainty Inspired RGB-D Saliency Detection via Conditional Variational Autoencoders
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 041 dari 154 |
 | Kunci BibTeX | `zhang2020ucnet` |
-| Judul | UC-Net: Uncertainty Inspired RGB-D Saliency Detection via Conditional Variational Autoencoders |
-| Penulis | Zhang, Jing; Fan, Deng-Ping; Dai, Yuchao; Anwar, Saeed; Saleh, Fatemeh Sadat; Zhang, Tong; Barnes, Nick |
+| Judul asli | UC-Net: Uncertainty Inspired RGB-D Saliency Detection via Conditional Variational Autoencoders |
+| Penulis | Jing Zhang, Deng-Ping Fan, Yuchao Dai, Saeed Anwar, Fatemeh Sadat Saleh, Tong Zhang, Nick Barnes |
 | Tahun | 2020 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, ketidakpastian, conditional VAE, probabilistik, kalibrasi |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2020, presentasi oral), halaman 8582–8591 |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2004.05763
+- **Kode sumber resmi:** https://github.com/JingZhang617/UCNet
+- **Google Scholar:** https://scholar.google.com/scholar?q=UC-Net%3A%20Uncertainty%20Inspired%20RGB-D%20Saliency%20Detection%20via%20Conditional%20Variational%20Autoencoders
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=UC-Net%3A%20Uncertainty%20Inspired%20RGB-D%20Saliency%20Detection%20via%20Conditional%20Variational%20Autoencoders
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=UC-Net%3A%20Uncertainty%20Inspired%20RGB-D%20Saliency%20Detection%20via%20Conditional%20Variational%20Autoencoders&sort=relevance
+Makalah ini memperkenalkan UC-Net, model deteksi objek salien RGB-D pertama yang memperlakukan tugas tersebut sebagai estimasi distribusi, bukan estimasi titik. Deteksi objek salien (*salient object detection*, SOD) adalah tugas memisahkan objek yang paling menarik perhatian manusia dari latar belakang; varian RGB-D memakai pasangan citra warna dan peta kedalaman (*depth map*, citra yang tiap pikselnya menyatakan jarak ke kamera). Semua metode sebelumnya menghasilkan tepat satu peta saliensi deterministik per masukan, padahal anotasi peta kebenaran (*ground truth*) dibuat manusia yang penilaiannya subjektif dan bervariasi.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Gagasan intinya adalah memakai *conditional variational autoencoder* (CVAE) untuk memodelkan variasi anotasi sebagai distribusi atas peta saliensi. Mengambil sampel pada ruang laten menghasilkan beberapa peta prediksi yang berbeda namun sama-sama sahih; modul *saliency consensus* merangkumnya menjadi satu peta akhir. Sebuah jaringan koreksi kedalaman melengkapi model untuk meredam derau data *depth*. Evaluasi pada enam dataset tolok ukur melawan 18 algoritme pembanding menempatkan UC-Net sebagai yang terbaik pada keenamnya menurut empat metrik standar.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 8582--8591 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode RGB-D SOD pertama yang memodelkan ketidakpastian anotasi manusia via conditional VAE untuk menghasilkan beragam prediksi saliency yang lebih kalibratif.
+Sebelum 2020, metode SOD RGB-D berbasis pembelajaran dalam dikelompokkan menurut cara memfusi informasi RGB dan kedalaman: fusi awal (penggabungan di tingkat masukan), fusi akhir (penggabungan prediksi dari cabang RGB dan kedalaman yang terpisah), serta fusi lintas-tingkat (pertukaran fitur antar-modalitas pada beberapa tingkat jaringan, misalnya DMRA pada [bab 035](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)). Apa pun strategi fusinya, semuanya memakai satu asumsi: untuk setiap pasangan RGB-D ada satu peta saliensi benar yang tunggal, dan tugas jaringan adalah meregresi peta itu. Inilah formulasi estimasi titik.
 
-## Abstrak (Parafrase)
-UC-Net (Uncertainty inspired RGB-D saliency) memodelkan ambiguitas dan variasi anotasi manusia dengan conditional variational autoencoder (CVAE). Alih-alih satu peta deterministik, jaringan menghasilkan distribusi prediksi saliency; sampling menghasilkan ensembel yang menangkap ketidakpastian, meningkatkan kalibrasi dan robustness.
+Asumsi itu bertentangan dengan cara peta *ground truth* diperoleh. Penilaian saliensi bersifat subjektif; karena itu dataset saliensi lazim dilabeli beberapa anotator dan peta akhirnya diambil lewat mekanisme semacam voting mayoritas. Variasi antar-anotator — ketidakpastian anotasi — nyata ada, tetapi dibuang saat dataset dirilis dengan satu peta tunggal. Model yang dilatih pada peta tunggal tidak dapat menyatakan keraguan: pada citra dengan beberapa objek yang sama-sama mencolok, model deterministik terpaksa memilih satu jawaban dan mengabaikan jawaban lain yang sama sahnya.
 
-## Latar Belakang & Konteks
-SOD deterministik menghasilkan satu peta 'benar', mengabaikan fakta bahwa anotasi manusia bervariasi (subjektif/ambigu), sehingga model tak menangkap ketidakpastian.
+Masalah kedua bersifat teknis: data kedalaman selalu mengandung derau, baik dari sensor kedalaman (misalnya Microsoft Kinect pada dataset DES dan NLPR) maupun dari perhitungan stereo (misalnya dataset SSB dan NJU2K). Fusi langsung RGB dengan kedalaman berderau dapat membuat jaringan ikut mempelajari deraunya. UC-Net menangani keduanya: ketidakpastian anotasi lewat CVAE, derau kedalaman lewat jaringan koreksi.
 
-## Permasalahan yang Diangkat
-- SOD deterministik mengabaikan ambiguitas anotasi.
-- Anotasi manusia bervariasi/subjektif.
-- Ketidakpastian prediksi tidak dimodelkan.
-- Kalibrasi output kurang.
-- Robustness terhadap ambiguitas rendah.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Memodelkan ketidakpastian anotasi via CVAE.
-- Menghasilkan beragam prediksi saliency.
-- Meningkatkan kalibrasi dan robustness.
+Ide utama UC-Net adalah meniru proses pelabelan dataset ke dalam arsitektur jaringan. Alih-alih mempelajari pemetaan deterministik dari citra ke satu peta, jaringan mempelajari distribusi bersyarat: diberikan pasangan RGB-D, seperti apa sebaran peta saliensi yang mungkin ditulis anotator. Distribusi ini dimodelkan dengan CVAE, model generatif yang menghasilkan keluaran dari dua sumber: fitur deterministik citra masukan dan variabel laten acak berdimensi rendah yang mewakili variasi anotasi. Sampel laten yang berbeda menghasilkan peta yang berbeda.
 
-## Tinjauan Terdahulu / Posisi Literatur
-UC-Net membawa VAE/probabilistic modeling ke RGB-D SOD.
+Karena dataset hanya menyediakan satu anotasi per citra, variasi sintetis dibangkitkan dengan penyembunyian iteratif: objek salien pada citra latih disembunyikan berulang kali sehingga objek lain muncul sebagai anotasi alternatif. Pada pengujian, beberapa sampel prediksi dirangkum dengan modul *saliency consensus* yang meniru voting mayoritas antar-anotator — persis mekanisme pembuatan *ground truth*.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- Conditional VAE — pemodelan distribusi.
-- RGB-D SOD berbasis fusi.
-- Probabilistic prediction.
-- Ensembling via sampling.
+UC-Net terdiri atas lima modul: LatentNet (PriorNet dan PosteriorNet), DepthCorrectionNet, SaliencyNet, PredictionNet, dan modul *saliency consensus* yang hanya aktif saat pengujian. Alur datanya dirangkum pada diagram berikut.
 
-## Metodologi & Arsitektur
-CVAE mengondisikan pada fitur RGB-D dan variabel laten; saat inferensi, sampling variabel laten menghasilkan beragam peta saliency (ensembel) yang menangkap ketidakpastian; peta akhir dapat diagregasi.
+```
+I + D ──> DepthCorrectionNet ──> D' ──┐
+I ──────┐                             ▼
+        └─────> SaliencyNet (VGG16 + DenseASPP) ─> S^d (M = 32 kanal)
+                                                          │
+X = (I,D) ──> PriorNet ─> (mu, sigma)   [latihan: PosteriorNet
+              │                          melihat GT Y; loss KL
+              ▼                          mendekatkan prior]
+        z ~ N(mu, sigma^2), K = 8 ─> Feature Expanding ─> S^s (8 kanal)
+                                                          │
+                              S^d + S^s ─> campur kanal (urutan r)
+                                                          ▼
+                              PredictionNet (konv 1x1: 8 > 4 > 1)
+                                                          ▼
+                              peta saliensi P; pengujian: sampling C kali
+                              -> saliency consensus (voting mayoritas)
+                              -> peta akhir
+```
 
-Komponen / langkah metodologis utama:
+Diagram menunjukkan dua jalur fitur yang bertemu di PredictionNet: jalur deterministik S^d yang menyaring isi citra, dan jalur stokastik S^s yang menyuntikkan variasi anotasi lewat sampling variabel laten z.
 
-- Conditional VAE memodelkan distribusi saliency.
-- Variabel laten menangkap ambiguitas anotasi.
-- Sampling menghasilkan ensembel prediksi.
-- Fusi fitur RGB-D sebagai kondisi.
-- Agregasi ensembel untuk peta akhir.
-- Estimasi ketidakpastian per-piksel.
+### LatentNet: Memodelkan Variasi Anotasi
 
-## Kontribusi Utama
-1. Pemodelan ketidakpastian pertama pada RGB-D SOD.
-2. CVAE menghasilkan beragam prediksi kalibratif.
-3. Menangkap variasi anotasi manusia.
-4. Hasil kompetitif dengan estimasi ketidakpastian.
+*Variational autoencoder* (VAE) adalah model generatif yang memetakan data ke distribusi Gaussian pada ruang laten berdimensi rendah, lalu membangkitkan data dari sampel ruang itu; CVAE mengondisikan distribusi tersebut pada data masukan. LatentNet berisi dua jaringan berstruktur sama, masing-masing lima lapis konvolusi diakhiri *global average pooling* (perataan peta fitur menjadi satu vektor) dan konvolusi 1×1. PriorNet memetakan pasangan RGB-D (X) ke parameter Gaussian (mu_prior, sigma_prior); PosteriorNet melihat juga peta *ground truth* Y dan menghasilkan (mu_post, sigma_post). PosteriorNet hanya dipakai saat pelatihan: loss CVAE memakai *KL divergence* — ukuran jarak antar-distribusi — untuk mendekatkan PriorNet ke PosteriorNet, sehingga saat pengujian PriorNet menghasilkan sampel yang seolah tahu variasi anotasi. Dimensi ruang laten disetel K = 8.
 
-## Rincian Eksperimen
-Diuji pada benchmark RGB-D SOD standar dengan metrik S/F/E-measure dan MAE, plus analisis kualitas ketidakpastian/ensembel.
+Sampel z diperoleh dengan trik reparameterisasi: z = sigma ⊙ epsilon + mu, dengan epsilon noise Gaussian standar. Vektor z diekspansi menjadi peta fitur stokastik S^s seukuran spasial S^d dengan menjadikan epsilon peta noise dua dimensi.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Membangkitkan Variasi Anotasi (AugedGT)
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NJU2K/NLPR | S/F/E, MAE | kompetitif saat rilis |
-| Uncertainty | kalibrasi | estimasi ketidakpastian per-piksel |
-| Ablation | CVAE | sampling meningkatkan robustness |
+CVAE lazim dilatih dengan beberapa versi anotasi per citra, sedangkan dataset RGB-D hanya punya satu. Solusinya: objek salien pada citra RGB disembunyikan (ditimpa nilai rata-rata dataset), lalu citra hasilnya dilewatkan ke model SOD RGB yang sudah ada (BASNet) untuk menghasilkan peta saliensi baru sebagai anotasi alternatif. Penyembunyian diulang tiga kali per citra — setelah itu biasanya tidak ada objek mencolok tersisa — sehingga setiap citra latih memiliki empat versi anotasi termasuk *ground truth* asli. Dataset latih hasil prosedur ini diberi nama AugedGT.
 
-## Temuan Kunci
-- Ketidakpastian anotasi dapat dimodelkan CVAE.
-- Ensembel prediksi lebih kalibratif.
-- Robustness meningkat terhadap ambiguitas.
-- Membuka arah probabilistik RGB-D SOD.
+### SaliencyNet dan DepthCorrectionNet
 
-## Keunggulan
-- Pelopor pemodelan ketidakpastian.
-- Output kalibratif.
-- Robust terhadap ambiguitas.
+SaliencyNet menghasilkan fitur saliensi deterministik S^d. Enkodernya VGG16 (jaringan konvolusi 16 lapis yang dilatih awal pada ImageNet) yang dipotong setelah lapis *pooling* kelima; setiap tingkat dilengkapi modul DenseASPP — konvolusi *atrous* (berlubang, memperluas *receptive field* tanpa menurunkan resolusi) yang tersambung rapat — agar peta fitur tiap tingkat memiliki *receptive field* seluas citra penuh. Peta-peta itu digabung dan diringkas menjadi S^d dengan M = 32 kanal.
 
-## Keterbatasan
-- Sampling menambah biaya inferensi.
-- Bergantung kualitas kedalaman.
-- Interpretasi ketidakpastian perlu hati-hati.
+DepthCorrectionNet memperbaiki kedalaman mentah sebelum dipakai SaliencyNet; enkodernya berbagi struktur dengan SaliencyNet, dekodernya empat lapis konvolusi dengan *upsampling* bilinear. Loss-nya dua: *smooth L1* antara kedalaman terkoreksi dan mentah (agar koreksi tidak menyimpang jauh), serta *boundary IOU loss* yang memaksa tepian kedalaman sejajar dengan tepian intensitas citra RGB, berdasarkan asumsi bahwa batas objek konsisten pada kedua modalitas.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### PredictionNet: Pencampuran Kanal
 
-## Relevansi terhadap Tema Tinjauan
-UC-Net memperkenalkan dimensi ketidakpastian yang relevan bagi keandalan fusi RGB+Depth secara umum — penting saat kedalaman/anotasi tak pasti.
+PredictionNet menggabungkan S^s dan S^d. Penggabungan naif sebagai blok kanal terpisah berisiko membuat jaringan hanya memakai jalur deterministik. Solusinya, kedua peta disatukan menjadi K + M = 40 kanal, lalu urutan kanalnya diacak menurut variabel r berdimensi 40 yang dipelajari selama pelatihan, sehingga jaringan tidak dapat membedakan asal kanal. Tiga konvolusi 1×1 berukuran kanal berturut-turut K, K/2, dan 1 (yaitu 8, 4, 1) memetakan fitur campuran menjadi peta saliensi satu kanal P.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+### Saliency Consensus saat Pengujian
 
-- [035 - 2019 - DMRA - RGB-D SOD](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)
-- [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)
-- [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)
-- [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md)
-- [039 - 2020 - S2MA - RGB-D SOD](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)
-- [040 - 2020 - HDFNet - RGB-D SOD](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)
-- [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)
-- [043 - 2022 - SwinNet - RGB-D SOD](./043%20-%202022%20-%20SwinNet%20-%20RGB-D%20SOD.md)
+Saat pengujian, PriorNet disampling C kali menghasilkan C prediksi. Setiap prediksi dibinerkan dengan ambang adaptif; untuk setiap piksel dihitung voting mayoritas di antara C prediksi biner. Peta akhir dihitung hanya dari prediksi yang sesuai voting mayoritas, sehingga prediksi minoritas yang menyimpang tidak menentukan hasil.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+### Pelatihan
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
+Loss total terdiri atas loss CVAE (rekonstruksi peta ditambah regularisasi KL), loss kedalaman, dan *smoothness loss* sadar-tepian yang menekan perubahan saliensi pada daerah citra yang intensitasnya rata; bobotnya lambda_1 = lambda_2 = 0,3. Model dilatih dengan PyTorch, pengoptimal Adam (laju awal 10^-4, turun 10% per epoch), *batch* 6, maksimal 30 epoch, sekitar 13 jam pada satu GPU NVIDIA GeForce RTX. Pada masukan 352×352, inferensi rata-rata 0,06 detik per citra — sekitar 16 citra per detik, di bawah kecepatan *real-time* tetapi layak untuk pemrosesan luring.
 
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
+## Eksperimen dan Hasil
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Pengujian dilakukan pada enam dataset RGB-D: NJU2K, NLPR, SSB, LFSD, DES, dan SIP (dataset baru yang dirilis bersama D3Net). Pembandingnya 18 algoritme: sepuluh metode fitur rancangan tangan dan delapan model deep learning. Empat metrik dipakai: MAE (*Mean Absolute Error*, rata-rata selisih absolut prediksi terhadap *ground truth*; makin kecil makin baik), F-measure (rata harmonik presisi–recall), E-measure (keselarasan piksel sekaligus statistik global), dan S-measure (kemiripan struktur regional peta).
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Hasil utamanya: UC-Net terbaik pada keenam dataset untuk seluruh metrik, dengan peningkatan paling besar pada SSB dan SIP. Angka pasti per dataset tercantum pada Tabel 1 naskah dan tidak dikutip di sini. Studi ablasi (uji dengan mencabut atau mengganti komponen) memberi bukti per komponen:
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+- Mencabut DepthCorrectionNet menurunkan kinerja; pada DES, kehadirannya menambah sekitar 4 poin persen pada S-measure, E-measure, dan F-measure — bukti kuantitatif bahwa koreksi kedalaman berderau berdampak.
+- Mengganti CVAE dengan VAE biasa, model multi-kepala, atau *MC-dropout* tetap menghasilkan kinerja setara atau di atas metode mutakhir saat itu, tetapi semuanya di bawah CVAE penuh; secara kualitatif, hanya CVAE yang menghasilkan prediksi beragam pada citra ambigu, sedangkan kedua alternatif menghasilkan prediksi yang hampir sama.
+- Dimensi laten K = 8 terpilih terbaik; K = 32 menurunkan kinerja, dan rentang K antara 6 sampai 10 relatif stabil.
+- Pelatihan dengan AugedGT mengalahkan dataset asli, mengonfirmasi manfaat anotasi alternatif.
+- Mengganti *depth* mentah dengan representasi HHA (pengkodean kedalaman tiga kanal) memberi kinerja serupa; model tidak peka terhadap representasi kedalaman.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Interpretasi keseluruhan: keunggulan UC-Net bukan hanya pada angka, melainkan pada kemampuan menghasilkan beberapa prediksi sahih untuk citra bermakna ganda — sesuatu yang secara struktural mustahil bagi model estimasi titik.
 
-## Kesimpulan
-UC-Net memodelkan ketidakpastian anotasi manusia via conditional VAE untuk menghasilkan prediksi RGB-D SOD yang beragam dan kalibratif, menjadi pelopor pendekatan probabilistik di bidang ini.
+## Kelebihan dan Keterbatasan
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zhang2020ucnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Kelebihan: (1) pelopor formulasi probabilistik pada SOD RGB-D, menghasilkan distribusi prediksi bukan satu titik; (2) *saliency consensus* menyelaraskan inferensi dengan cara dataset dibuat; (3) koreksi kedalaman memberi keuntungan terukur (sekitar 4 poin pada DES); (4) keberagaman prediksi terbukti melebihi alternatif stokastik yang lebih sederhana.
 
----
-*Lembar 041/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Keterbatasan: (1) inferensi memerlukan C kali sampling dan konsensus, sehingga biayanya kelipatan model satu-jalan; dengan 0,06 detik per citra model tidak *real-time*; (2) pembangkitan anotasi alternatif bergantung pada model SOD RGB eksternal (BASNet), sehingga kualitas AugedGT dibatasi kualitas model itu; (3) dari sisi rekayasa, arsitektur berbasis VGG16 berat dibanding *backbone* modern, dan metrik tolok ukur hanya menilai peta konsensus — keragaman prediksi itu sendiri hanya ditunjukkan kualitatif; (4) secara konseptual, ketidakpastian yang dimodelkan adalah ketidakpastian anotasi, bukan ketidakpastian model terhadap data di luar distribusi latih.
+
+## Kaitan dengan Bab Lain
+
+UC-Net berdiri di tengah gelombang SOD RGB-D 2019–2021. Ia mewarisi *backbone* VGG16 dan fusi lintas-modal dari generasi sebelumnya, khususnya DMRA ([bab 035](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)) yang menjadi pembanding utama evaluasi kualitatifnya. Kontemporernya setahun itu — BBS-Net ([bab 036](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)), JL-DCF ([bab 038](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md)), S2MA ([bab 039](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)), dan HDFNet ([bab 040](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)) — tetap deterministik dan berlomba pada angka metrik, sedangkan UC-Net mengubah pertanyaannya: bukan "peta apa yang benar" melainkan "peta-peta apa yang mungkin". Dataset SIP yang dipakai menguji UC-Net berasal dari karya D3Net ([bab 037](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)). Masalah anotasi tunggal yang diangkatnya tetap relevan bagi arsitektur penerus, termasuk pendekatan Transformer pada VST ([bab 042](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)) dan SwinNet ([bab 043](./043%20-%202022%20-%20SwinNet%20-%20RGB-D%20SOD.md)).
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `zhang2020ucnet`. Ringkasan yang aman dikutip: "UC-Net adalah kerangka SOD RGB-D pertama yang memodelkan ketidakpastian anotasi manusia dengan *conditional variational autoencoder*, menghasilkan beragam peta saliensi lewat sampling ruang laten dan merangkumnya lewat modul *saliency consensus*; model ini mencapai kinerja terbaik pada enam dataset tolok ukur RGB-D." Catatan verifikasi: angka pasti per dataset pada Tabel 1 naskah tidak dikutip dalam bab ini dan wajib diperiksa ke naskah asli sebelum sitasi formal; klaim peningkatan sekitar 4 poin pada DES, inferensi 0,06 detik pada 352×352, dan hiperparameter (K = 8, M = 32, lambda = 0,3) berasal dari teks naskah arXiv:2004.05763.

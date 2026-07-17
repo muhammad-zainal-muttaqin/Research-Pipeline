@@ -1,203 +1,116 @@
 # 066 - AdaBins: Depth Estimation Using Adaptive Bins
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 066 dari 154 |
 | Kunci BibTeX | `bhat2021adabins` |
-| Judul | AdaBins: Depth Estimation Using Adaptive Bins |
-| Penulis | Bhat, Shariq Farooq; Alhashim, Ibraheem; Wonka, Peter |
+| Judul asli | AdaBins: Depth Estimation Using Adaptive Bins |
+| Penulis | Shariq Farooq Bhat, Ibraheem Alhashim, Peter Wonka |
 | Tahun | 2021 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Estimasi Kedalaman |
-| Kata kunci | depth monokular, adaptive bins, Transformer, diskretisasi, NYUv2/KITTI |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2021) |
+| Tema | Estimasi Kedalaman |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2011.14141
+- **DOI (versi penerbit):** https://doi.org/10.1109/CVPR46437.2021.00400
+- **Kode sumber resmi:** https://github.com/shariqfarooq123/AdaBins
+- **Google Scholar:** https://scholar.google.com/scholar?q=AdaBins%3A%20Depth%20Estimation%20Using%20Adaptive%20Bins
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=AdaBins%3A%20Depth%20Estimation%20Using%20Adaptive%20Bins&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-estimasi-kedalaman)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=AdaBins%3A%20Depth%20Estimation%20Using%20Adaptive%20Bins
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=AdaBins%3A%20Depth%20Estimation%20Using%20Adaptive%20Bins&sort=relevance
+Makalah ini memperkenalkan AdaBins, sebuah blok arsitektur untuk memprediksi peta kedalaman rapat (*dense depth map*) dari satu citra RGB, yaitu tugas menetapkan satu nilai jarak kamera untuk setiap piksel. Masalah yang diserang adalah cara jaringan memperlakukan rentang kedalaman: metode regresi langsung dan metode klasifikasi dengan pembagian rentang yang tetap sama-sama mengabaikan kenyataan bahwa distribusi nilai kedalaman sangat berbeda antar-citra. Citra furnitur dari jarak dekat memusat pada kedalaman kecil, sedangkan citra koridor menyebar sampai kedalaman maksimum.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Gagasan utamanya adalah membagi rentang kedalaman menjadi N *bin* (sub-rentang) yang lebarnya dihitung ulang secara adaptif untuk setiap citra masukan oleh sebuah modul *Transformer* kecil bernama mini-ViT. Kedalaman akhir setiap piksel bukan hasil memilih satu bin, melainkan kombinasi linear berbobot *softmax* dari pusat seluruh bin. Dengan desain ini, model mencapai akurasi terbaik pada masanya di dua tolok ukur utama: akurasi ambang δ < 1,25 sebesar 0,903 pada NYU Depth v2 dan 0,964 pada KITTI, mengungguli pembanding kuat seperti BTS dan DAV pada semua metrik yang dilaporkan.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 4009--4018 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode depth monokular yang memprediksi kedalaman sebagai kombinasi linear bin adaptif per-citra yang diputuskan modul Transformer, bukan regresi kontinu langsung.
+Estimasi kedalaman monokular adalah masalah *ill-posed*: satu citra dapat bersesuaian dengan banyak geometri adegan yang berbeda, sehingga jaringan harus memanfaatkan statistik dan konteks adegan, bukan hanya isyarat lokal. Sejak Eigen dkk. (bab 062) memperkenalkan regresi kedalaman dengan CNN multi-skala pada 2014, pendekatan dominan memprediksi satu nilai kontinu per piksel secara langsung. Fu dkk. (2018) lewat metode DORN menempuh jalan lain: regresi diubah menjadi klasifikasi ordinal dengan membagi rentang kedalaman menjadi sejumlah *bin* berlebar tetap, dan kedalaman piksel ditetapkan dari bin yang menang. Akurasi metriknya membaik, tetapi karena setiap piksel dipetakan ke tepat satu bin, peta kedalaman mengandung artefak diskretisasi berupa diskontinuitas tajam yang mengganggu aplikasi lanjutan seperti rekonstruksi 3D.
 
-## Abstrak (Parafrase)
-AdaBins mengubah estimasi kedalaman menjadi klasifikasi-regresi hibrida: modul mini-ViT memutuskan pusat bin kedalaman yang adaptif per-citra, lalu kedalaman tiap piksel diprediksi sebagai kombinasi linear (softmax) dari pusat bin tersebut. Adaptasi bin ke distribusi kedalaman spesifik citra meningkatkan akurasi, mencapai SOTA saat rilis.
+Dua metode terkuat menjelang 2021, yaitu BTS (bab 065) dengan *local planar guidance* dan DAV dengan atensi koplanaritas, bergantung pada asumsi bahwa permukaan adegan cenderung planar — asumsi yang tidak selalu berlaku, terutama di luar ruangan. Ada pula masalah arsitektural yang lebih umum: pada arsitektur konvolusi biasa, informasi global baru terolah setelah tensor menyusut ke resolusi spasial sangat rendah di sekitar *bottleneck* (titik tersempit jaringan). Padahal distribusi kedalaman berbeda tajam antar-citra, dan analisis global atas distribusi tersebut jauh lebih berguna bila dilakukan pada resolusi tinggi, ketika informasi spasial masih utuh.
 
-## Latar Belakang & Konteks
-Regresi kedalaman kontinu global mengabaikan bahwa distribusi kedalaman berbeda antar-citra (mis. ruangan sempit vs koridor panjang), sehingga suboptimal.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Regresi kontinu global mengabaikan distribusi per-citra.
-- Distribusi kedalaman berbeda antar-adegan.
-- Diskretisasi tetap (bin seragam) suboptimal.
-- Konteks global kurang dimanfaatkan.
-- Akurasi depth perlu ditingkatkan.
+AdaBins memperbaiki skema bin melalui tiga perubahan. Pertama, lebar bin tidak ditetapkan di muka dan tidak pula satu pembagian untuk seluruh dataset, melainkan dihitung ulang untuk setiap citra oleh modul *Transformer* yang membaca fitur seluruh adegan — jaringan sendiri yang memutuskan bagian rentang kedalaman mana yang layak mendapat resolusi halus. Kedua, kedalaman piksel bukan pusat bin pemenang, melainkan nilai harapan atas semua pusat bin dengan bobot probabilitas *softmax*; keluaran tetap kontinu sehingga artefak diskretisasi hilang. Ketiga, pemrosesan global ini ditempatkan setelah dekoder pada tensor beresolusi setengah citra, bukan di *bottleneck*. Masukan blok adalah tensor fitur hasil dekode; keluarannya adalah vektor lebar bin dan satu set peta perhatian; keduanya digabungkan menjadi peta kedalaman.
 
-## Tujuan & Pertanyaan Penelitian
-- Menentukan bin kedalaman adaptif per-citra.
-- Memprediksi kedalaman sebagai kombinasi bin.
-- Memanfaatkan konteks global (Transformer).
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-AdaBins menggabungkan diskretisasi adaptif dan Transformer untuk depth.
+### Baseline Encoder-Decoder
 
-Karya/konsep pembanding yang relevan:
+Komponen pertama adalah jaringan *encoder-decoder* konvensional yang diadaptasi dari arsitektur Alhashim dan Wonka: *encoder* menurunkan resolusi citra sambil mengekstrak fitur, *decoder* menaikkannya kembali secara bertahap. Enkoder memakai EfficientNet-B5, jaringan konvolusi yang skala lebar, kedalaman, dan resolusinya diseimbangkan menurut satu koefisien majemuk. Berbeda dari jaringan dasar tersebut, keluaran dekoder bukan peta kedalaman, melainkan tensor fitur terdekode berukuran h × w × Cd dengan h = H/2 dan w = W/2 (setengah resolusi citra masukan, demi menghemat memori GPU). Kedalaman akhir diperoleh dengan *upsampling* bilinear dua kali pada tahap paling akhir.
 
-- Depth supervised (encoder-decoder) — dasar.
-- Ordinal regression/diskretisasi depth.
-- Mini-ViT — modul global.
-- Dataset NYUv2/KITTI.
+### Mini-ViT: Penentu Lebar Bin Adaptif
 
-## Metodologi & Arsitektur
-Encoder-decoder menghasilkan fitur; modul AdaBins (mini-ViT) memproses fitur global untuk menghasilkan pusat bin adaptif per-citra; tiap piksel diprediksi sebagai kombinasi linear (bobot softmax) dari pusat bin; loss depth + bin-center regularization.
+Blok AdaBins diawali mini-ViT, versi kecil dari *Vision Transformer* — arsitektur berbasis mekanisme atensi yang memroses sekuens vektor dan memungkinkan setiap elemen sekuens saling memperhatikan tanpa konvolusi. Fitur terdekode dilewatkan konvolusi berkernel p × p dengan *stride* p (p = 16), menghasilkan tensor h/p × w/p × E yang diratakan menjadi sekuens S = hw/p² vektor berdimensi E = 128 yang disebut *patch embedding*. Setelah ditambah enkoding posisi yang dipelajari, sekuens ini diproses *encoder Transformer* kecil (4 lapis, 4 kepala atensi, MLP 1024). Sebuah *MLP head* beraktivasi ReLU membaca embedding keluaran pertama dan menghasilkan vektor N dimensi b′, yang dinormalisasi menjadi lebar bin b_i = (b′_i + ε) / Σ_j(b′_j + ε) dengan ε = 10⁻³, sehingga jumlah seluruh lebar bin tepat satu.
 
-Komponen / langkah metodologis utama:
+Normalisasi ini menciptakan kompetisi: memperlebar satu bin harus mengorbankan bin lain. Jaringan dengan demikian didorong menempatkan bin sempit pada sub-rentang yang padat nilai kedalaman dan bin lebar pada sub-rentang yang jarang. Pada citra koridor, bin menyebar sampai kedalaman maksimum; pada citra furnitur jarak dekat, bin terkonsentrasi di sekitar 1–2 meter. Pusat setiap bin dihitung sebagai c(b_i) = dmin + (dmax − dmin)(b_i/2 + Σ_{j<i} b_j). Sebagai contoh, pada rentang D = (0, 10) meter: bila b_1 = 0,2 maka c(b_1) = 10 × 0,1 = 1,0 meter, dan bila b_2 = 0,1 maka c(b_2) = 10 × (0,05 + 0,2) = 2,5 meter.
 
-- Encoder-decoder depth.
-- Modul AdaBins berbasis mini-ViT (global).
-- Adaptive bin centers per-citra.
-- Prediksi = kombinasi linear pusat bin.
-- Pelatihan supervised.
-- Evaluasi NYUv2 & KITTI.
+### Range-Attention-Maps
 
-## Kontribusi Utama
-1. Diskretisasi depth adaptif per-citra.
-2. Modul Transformer untuk konteks global.
-3. Prediksi sebagai kombinasi bin (hibrida).
-4. SOTA saat rilis.
+Keluaran kedua mini-ViT adalah *Range-Attention-Maps* (R). Embedding keluaran ke-2 sampai ke-(C+1) dari Transformer dipakai sebagai kernel konvolusi 1 × 1 yang dikonvolusikan dengan fitur terdekode (setelah satu konvolusi 3 × 3), menghasilkan tensor R berukuran h × w × C. Operasi ini setara dengan atensi hasil kali titik: fitur setiap piksel berperan sebagai *key* dan embedding Transformer sebagai *query*. Dengan cara ini, informasi global yang diolah Transformer disuntikkan ke informasi lokal setiap piksel pada resolusi tinggi.
 
-## Rincian Eksperimen
-Diuji pada NYUv2 dan KITTI dengan metrik depth standar, dibandingkan BTS dan metode supervised lain, plus ablation adaptive bins.
+### Regresi Hibrida
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Tensor R dilewatkan konvolusi 1 × 1 menjadi N kanal, lalu diaktifkan *softmax* sehingga setiap piksel memiliki distribusi probabilitas p_k atas N pusat bin. Kedalaman piksel dihitung sebagai kombinasi linear d̃ = Σ_k c(b_k) · p_k. Misalnya sebuah piksel dengan p = (0,7; 0,3) pada pusat bin 2,0 meter dan 2,5 meter memperoleh d̃ = 0,7 × 2,0 + 0,3 × 2,5 = 2,15 meter — nilai kontinu yang tidak terkunci pada pusat bin mana pun, sehingga peta kedalaman halus tanpa tingkatan diskrit.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NYUv2 | AbsRel/RMSE | SOTA saat rilis |
-| KITTI | AbsRel/RMSE | SOTA/kompetitif |
-| Ablation | adaptive bins | adaptasi per-citra menyumbang gain |
+Alur lengkap dari citra ke kedalaman:
 
-## Temuan Kunci
-- Adaptasi bin per-citra meningkatkan akurasi.
-- Konteks global (Transformer) bermanfaat.
-- Hibrida klasifikasi-regresi efektif.
-- Distribusi kedalaman spesifik citra penting.
+```
+citra RGB  H x W x 3
+     |
+     v
++------------------------------------------+
+| encoder EfficientNet-B5  +  decoder      |
++------------------------------------------+
+     | fitur terdekode h x w x Cd  (h = H/2, w = W/2)
+     v
++------------------------------------------+
+| mini-ViT (Transformer, 4 lapis)          |
++------------------------------------------+
+     |
+     +-> vektor lebar bin b (jumlah = 1) -> pusat bin c(b)
+     +-> Range-Attention-Maps R -> conv 1x1 -> softmax p
+     v
++------------------------------------------+
+| regresi hibrida:  d = sum p_k * c(b_k)   |
++------------------------------------------+
+     | peta kedalaman h x w x 1
+     v
+ upsampling bilinear x2  ->  kedalaman akhir H x W x 1
+```
 
-## Keunggulan
-- Diskretisasi adaptif efektif.
-- Konteks global via Transformer.
-- SOTA saat rilis.
+Diagram di atas memperlihatkan dua keluaran mini-ViT yang menyatu pada tahap regresi hibrida: lebar bin menentukan posisi pusat bin pada rentang kedalaman, sedangkan R menentukan bobot per piksel atas pusat-pusat tersebut.
 
-## Keterbatasan
-- Butuh ground-truth depth.
-- Modul global menambah komputasi.
-- Jumlah bin perlu penyetelan.
+### Fungsi Loss
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Pelatihan memakai dua suku. Suku pertama adalah versi berskala dari *scale-invariant loss* Eigen dkk.: dengan g_i = log d̃_i − log d_i, loss dihitung dari rata-rata kuadrat g_i dikurangi λ kali kuadrat rata-ratanya (λ = 0,85, dikali faktor skala μ = 10); bentuk ini menghukum ketidakkonsistenan galat log antar-piksel sehingga tidak sensitif terhadap galat skala global. Suku kedua adalah loss densitas pusat bin berupa *Chamfer loss* dua arah antara himpunan pusat bin dan himpunan nilai kedalaman kebenaran dasar (*ground truth*): setiap pusat bin didorong mendekati nilai kedalaman yang benar-benar ada pada citra, dan sebaliknya. Loss total adalah L_total = L_pixel + 0,1 · L_bins.
 
-## Relevansi terhadap Tema Tinjauan
-AdaBins memperkaya klaster Estimasi Kedalaman dengan ide diskretisasi adaptif + Transformer; relevan bagi kualitas pseudo-depth untuk RGB-D.
+### Pelatihan
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Estimasi Kedalaman** yang baik dibaca berdampingan:
+Model dilatih dengan pengoptimal AdamW (*weight decay* 10⁻²), kebijakan laju pembelajaran 1-*cycle* dengan maksimum 3,5 × 10⁻⁴, selama 25 epoch dengan *batch* 16 — sekitar 20 menit per epoch pada empat GPU V100 32 GB. Model berisi ±78 juta parameter: 28 juta pada enkoder, 44 juta pada dekoder, dan 5,8 juta pada modul AdaBins. Saat pengujian, kedalaman akhir adalah rata-rata prediksi citra asli dan prediksi citra cerminnya.
 
-- [062 - 2014 - Depth dari Citra Tunggal (Eigen dkk.) - Estimasi Kedalaman](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md)
-- [063 - 2017 - Monodepth (Left-Right Consistency) - Estimasi Kedalaman](./063%20-%202017%20-%20Monodepth%20%28Left-Right%20Consistency%29%20-%20Estimasi%20Kedalaman.md)
-- [064 - 2019 - Monodepth2 - Estimasi Kedalaman](./064%20-%202019%20-%20Monodepth2%20-%20Estimasi%20Kedalaman.md)
-- [065 - 2019 - BTS (Local Planar Guidance) - Estimasi Kedalaman](./065%20-%202019%20-%20BTS%20%28Local%20Planar%20Guidance%29%20-%20Estimasi%20Kedalaman.md)
-- [067 - 2021 - DPT (Dense Prediction Transformer) - Estimasi Kedalaman](./067%20-%202021%20-%20DPT%20%28Dense%20Prediction%20Transformer%29%20-%20Estimasi%20Kedalaman.md)
-- [068 - 2022 - MiDaS (Robust Monocular Depth) - Estimasi Kedalaman](./068%20-%202022%20-%20MiDaS%20%28Robust%20Monocular%20Depth%29%20-%20Estimasi%20Kedalaman.md)
-- [069 - 2020 - PackNet - Estimasi Kedalaman](./069%20-%202020%20-%20PackNet%20-%20Estimasi%20Kedalaman.md)
-- [070 - 2021 - MonoIndoor - Estimasi Kedalaman](./070%20-%202021%20-%20MonoIndoor%20-%20Estimasi%20Kedalaman.md)
+## Eksperimen dan Hasil
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Estimasi Kedalaman** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Evaluasi dilakukan pada tiga dataset. NYU Depth v2 memuat 654 citra uji dalam ruangan (resolusi 640 × 480, kedalaman maksimum 10 meter); model dilatih pada subset 50 ribu citra. KITTI memuat adegan luar ruangan dari kendaraan bergerak; pelatihan memakai ±26 ribu citra dan pengujian 697 citra menurut pemisahan Eigen, pada rentang 0–80 meter. SUN RGB-D (5.050 citra uji) hanya dipakai untuk uji silang tanpa penyetelan ulang. Metrik yang dipakai: akurasi ambang δ < 1,25 (persentase piksel yang rasio terburuknya terhadap kebenaran dasar di bawah 1,25; makin besar makin baik), AbsRel (rata-rata galat relatif absolut; makin kecil makin baik), RMSE (akar rata-rata kuadrat galat), serta SqRel (kuadrat galat relatif) untuk KITTI.
 
-## Glosarium Istilah (tema Estimasi Kedalaman)
-Istilah penting untuk memahami makalah ini:
+Hasil utama:
 
-- **Depth monokular** — Estimasi kedalaman dari satu citra RGB (ill-posed).
-- **Supervised** — Dilatih dengan ground-truth depth.
-- **Self-supervised** — Dilatih tanpa label depth via konsistensi stereo/video.
-- **Disparitas** — Pergeseran piksel antar-pandangan stereo.
-- **Skala metrik vs relatif** — Depth satuan nyata vs hanya urutan relatif.
-- **AbsRel** — Absolute Relative error (makin kecil makin baik).
-- **RMSE** — Root Mean Square Error peta depth.
-- **delta<1.25** — Persentase piksel dengan error di bawah ambang.
-- **Zero-shot** — Generalisasi ke dataset tak dilihat saat pelatihan.
-- **Pseudo-depth** — Depth prediksi model, pengganti sensor depth.
+- **NYU Depth v2:** δ1 = 0,903; AbsRel = 0,103; RMSE = 0,364. Pembanding terkuat sebelumnya, BTS, mencapai 0,885 / 0,110 / 0,392 dan DAV 0,882 / 0,108 / 0,412. Artinya, 90,3% piksel prediksi AdaBins menyimpang kurang dari 25% dari kebenaran dasar, galat relatif turun sekitar 6% dari pesaing terbaik, dan RMSE turun sekitar 7%.
+- **KITTI:** δ1 = 0,964; AbsRel = 0,058; RMSE = 2,360; SqRel = 0,190, dibandingkan BTS 0,956 / 0,059 / 2,756 / 0,245. Makalah melaporkan perbaikan RMSE sekitar 13,5% dan SqRel 22,4% terhadap keadaan seni sebelumnya; penurunan galat kuadrat yang besar menandakan galat besar pada piksel jarak jauh berhasil ditekan.
+- **SUN RGB-D (uji silang):** AbsRel = 0,159 dan δ1 = 0,771, dibandingkan BTS 0,172 dan 0,740. Model yang dilatih di NYU menggeneralisasi lebih baik ke sensor dan adegan baru, meskipun galatnya tetap jauh di atas pengujian dalam-domain (0,103).
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Studi ablasi pada NYU mengukur sumbangan tiap pilihan desain (δ1 / AbsRel / RMSE): regresi standar tanpa modul 0,881 / 0,111 / 0,419; bin tetap seragam 0,892 / 0,107 / 0,383; bin tetap skala log 0,896 / 0,108 / 0,379; bin terlatih tetapi tetap untuk semua citra 0,893 / 0,109 / 0,381; AdaBins penuh 0,903 / 0,103 / 0,364. Semua varian berbasis bin mengungguli regresi standar, tetapi hanya bin adaptif per citra yang memberi lompatan besar — bukti bahwa adaptasi terhadap distribusi kedalaman spesifik citra adalah sumber utama perbaikan. Penambahan loss Chamfer menurunkan AbsRel dari 0,106 menjadi 0,103. Jumlah bin ditetapkan N = 256 karena perbaikan di atas nilai itu jenuh.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kelebihan dan Keterbatasan
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Kelebihan utama adalah adaptivitas tanpa asumsi geometris: berbeda dari BTS dan DAV, tidak ada asumsi planaritas yang dapat dilanggar adegan nyata. Regresi hibrida menghilangkan artefak diskretisasi metode bin tetap seperti DORN, pemrosesan global dilakukan pada resolusi tinggi, dan kode beserta bobot terlatih dirilis publik.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Keterbatasannya: (1) metode ini *supervised* penuh dan membutuhkan kebenaran dasar kedalaman rapat, kontras dengan jalur *self-supervised* Monodepth2 (bab 064); (2) rentang (dmin, dmax) dan jumlah bin N harus ditetapkan manual per dataset; (3) modul global menambah 5,8 juta parameter dan komputasi atensi pada resolusi tinggi — dari sisi rekayasa, total 78 juta parameter lebih berat dari BTS (47 juta) dan DAV (25 juta); (4) secara konseptual, generalisasi lintas dataset tetap terbatas, terlihat dari kenaikan AbsRel dari 0,103 menjadi 0,159 pada uji silang SUN RGB-D.
 
-## Kesimpulan
-AdaBins memprediksi kedalaman sebagai kombinasi bin adaptif per-citra yang diputuskan modul Transformer, memanfaatkan distribusi kedalaman spesifik citra untuk akurasi SOTA.
+## Kaitan dengan Bab Lain
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `bhat2021adabins` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Bab ini mewarisi dua hal dari [062 - 2014 - Depth dari Citra Tunggal (Eigen dkk.) - Estimasi Kedalaman](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md): loss *scale-invariant* dan protokol pemisahan data uji yang menjadi standar evaluasi. Posisinya merupakan jawaban langsung atas keterbatasan regresi murni yang dipakai [065 - 2019 - BTS (Local Planar Guidance) - Estimasi Kedalaman](./065%20-%202019%20-%20BTS%20%28Local%20Planar%20Guidance%29%20-%20Estimasi%20Kedalaman.md), pembanding utamanya, sekaligus penyempurnaan skema bin tetap DORN. Jalurnya berseberangan dengan [064 - 2019 - Monodepth2 - Estimasi Kedalaman](./064%20-%202019%20-%20Monodepth2%20-%20Estimasi%20Kedalaman.md) yang mengejar akurasi tanpa label kedalaman. Pada tahun yang sama, [067 - 2021 - DPT (Dense Prediction Transformer) - Estimasi Kedalaman](./067%20-%202021%20-%20DPT%20%28Dense%20Prediction%20Transformer%29%20-%20Estimasi%20Kedalaman.md) membawa Transformer ke prediksi rapat dengan cara berbeda — mengganti *backbone* konvolusi sepenuhnya — sehingga kedua bab ini menandai masuknya Transformer ke estimasi kedalaman.
 
----
-*Lembar 066/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Poin untuk Sitasi
+
+Kutip dengan kunci `bhat2021adabins`. Ringkasan yang aman dikutip: "AdaBins membagi rentang kedalaman menjadi bin yang lebarnya diprediksi secara adaptif per citra oleh modul Transformer, dan menghitung kedalaman piksel sebagai kombinasi linear pusat bin; metode ini melampaui keadaan seni pada NYU Depth v2 (δ1 = 0,903, AbsRel = 0,103) dan KITTI (δ1 = 0,964, AbsRel = 0,058) pada semua metrik standar." Seluruh angka di bab ini diverifikasi dari naskah CVPR 2021 versi *open access*; satu hal yang perlu diperiksa ulang sebelum sitasi formal adalah klaim "perbaikan RMSE 13,5%" pada KITTI, karena naskah tidak menyebut eksplisit pembanding acuan persentase tersebut pada kalimat klaimnya.

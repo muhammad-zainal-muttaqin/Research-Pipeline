@@ -1,207 +1,119 @@
 # 014 - Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 014 dari 154 |
 | Kunci BibTeX | `ren2017fasterrcnn` |
-| Judul | Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks |
-| Penulis | Ren, Shaoqing; He, Kaiming; Girshick, Ross; Sun, Jian |
+| Judul asli | Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks |
+| Penulis | Shaoqing Ren, Kaiming He, Ross Girshick, Jian Sun |
 | Tahun | 2017 |
-| Venue / Jurnal | IEEE Transactions on Pattern Analysis and Machine Intelligence |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | Faster R-CNN, RPN, anchor, dua-tahap, region proposal |
+| Venue | IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI), vol. 39 no. 6, hal. 1137–1149 |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1506.01497
+- **Google Scholar:** https://scholar.google.com/scholar?q=Faster%20R-CNN%3A%20Towards%20Real-Time%20Object%20Detection%20with%20Region%20Proposal%20Networks
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Faster%20R-CNN%3A%20Towards%20Real-Time%20Object%20Detection%20with%20Region%20Proposal%20Networks&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Faster%20R-CNN%3A%20Towards%20Real-Time%20Object%20Detection%20with%20Region%20Proposal%20Networks
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Faster%20R-CNN%3A%20Towards%20Real-Time%20Object%20Detection%20with%20Region%20Proposal%20Networks&sort=relevance
+Makalah ini memperkenalkan Faster R-CNN, detektor objek dua tahap yang menghilangkan ketergantungan pada algoritme *region proposal* (kandidat wilayah objek) eksternal. Komponen barunya adalah *Region Proposal Network* (RPN): jaringan konvolusi yang memprediksi kandidat wilayah beserta skor keobjekan (*objectness*) langsung dari peta fitur — larik keluaran lapisan konvolusi yang mempertahankan susunan spasial citra — yang sama dengan yang dipakai detektor. Karena perhitungan konvolusi dibagi antara pengusul wilayah dan detektor, biaya tambahan untuk menghasilkan proposal turun menjadi sekitar 10 milidetik per citra.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasilnya, dengan model VGG-16, sistem lengkap berjalan 5 *frame* per detik (FPS) di GPU dengan hanya 300 proposal per citra, sambil mencapai akurasi tertinggi pada masanya: 73,2% mAP pada PASCAL VOC 2007 dan 70,4% pada VOC 2012. Mekanisme *anchor* yang diperkenalkan di sini menjadi komponen standar detektor sesudahnya, termasuk YOLO sejak YOLOv2.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 39 |
-| Nomor | 6 |
-| Halaman | 1137--1149 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Memperkenalkan Region Proposal Network yang berbagi fitur dengan detektor sehingga proposal nyaris gratis, menjadikan deteksi dua-tahap mendekati real-time dan menetapkan paradigma anchor.
+Detektor berbasis wilayah bekerja dalam dua tahap: pertama mengusulkan kandidat wilayah, kemudian mengklasifikasikan setiap wilayah. Pada R-CNN (bab 012), kedua tahap ini mahal karena setiap wilayah diproses terpisah oleh CNN. Fast R-CNN (bab 013) memangkas biaya tahap kedua dengan menghitung konvolusi satu kali untuk seluruh citra, sehingga tahap deteksinya mendekati *real-time*. Namun tahap pertama tetap diserahkan pada algoritme eksternal, terutama *selective search* — metode yang menggabungkan superpiksel (kelompok piksel homogen) secara bertahap berdasarkan fitur tingkat rendah rancangan manual.
 
-## Abstrak (Parafrase)
-Faster R-CNN menyatukan proposal ke dalam jaringan lewat Region Proposal Network (RPN) yang berbagi backbone dengan detektor Fast R-CNN. RPN memprediksi objectness dan offset box dari sekumpulan anchor berukuran/rasio tetap di tiap lokasi feature map. Proposal berkualitas dihasilkan hampir tanpa biaya tambahan, menjadikan sistem akurat dan jauh lebih cepat.
+Selepas Fast R-CNN, tahap proposal itulah yang menjadi penghambat. *Selective search* memerlukan sekitar 1,5–2 detik per citra di CPU, satu orde lebih lambat daripada jaringan deteksinya; alternatif tercepat saat itu, EdgeBoxes, masih memerlukan 0,2 detik per citra. Ada dua masalah yang lebih mendasar. Pertama, proposal dihasilkan oleh algoritme tetap yang tidak dapat dilatih, sehingga kualitasnya tidak ikut membaik ketika detektor membaik. Kedua, proposal dan deteksi dihitung oleh dua sistem terpisah, sehingga tidak ada perhitungan yang dibagi. Makalah ini menyerang kedua masalah tersebut sekaligus.
 
-## Latar Belakang & Konteks
-Fast R-CNN masih memakai selective search yang menjadi bottleneck kecepatan. Diperlukan mekanisme proposal yang cepat, dapat dilatih, dan berbagi komputasi dengan detektor.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Selective search menjadi bottleneck kecepatan Fast R-CNN.
-- Proposal eksternal tak dapat dioptimalkan bersama detektor.
-- Perlu proposal berkualitas dengan biaya minimal.
-- Objek multi-skala/rasio perlu ditangani proposal.
-- Pelatihan berbagi fitur antara proposal dan deteksi.
+Gagasan intinya: peta fitur yang sudah dihitung detektor ternyata cukup untuk menghasilkan proposal; proposal tidak perlu dihitung algoritme lain. RPN ditempatkan di atas peta fitur akhir detektor sebagai jaringan *fully convolutional* (jaringan yang seluruh lapisnya berupa konvolusi, sehingga dapat menerima citra berukuran berapa pun). Di setiap lokasi peta fitur, RPN memprediksi dua hal sekaligus: skor *objectness* (peluang wilayah itu berisi objek, tanpa memedulikan kelasnya) dan koreksi posisi kotak.
 
-## Tujuan & Pertanyaan Penelitian
-- Mengintegrasikan proposal ke dalam jaringan (RPN).
-- Berbagi fitur antara proposal dan deteksi.
-- Mencapai deteksi dua-tahap mendekati real-time.
+Prediksi tidak dilakukan terhadap satu kotak per lokasi, melainkan terhadap sekumpulan kotak acuan berukuran dan berrasio tetap yang disebut *anchor*. Jaringan tidak menebak koordinat kotak dari nol; ia cukup menjawab dua pertanyaan per *anchor*: "apakah *anchor* ini menutupi objek?" dan "bagaimana kotak ini harus digeser dan diubah ukurannya agar pas?". Dengan desain ini, objek aneka ukuran dan bentuk dapat ditangani pada satu skala citra tanpa piramida citra yang mahal.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Faster R-CNN menggantikan selective search dengan RPN berbasis anchor terintegrasi, membangun di atas Fast R-CNN.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Arsitektur Keseluruhan
 
-- Fast R-CNN — detektor dasar.
-- Selective search — proposal yang digantikan.
-- Anchor box — konsep yang diperkenalkan.
-- Multi-task loss — klasifikasi+regresi.
+Sistem Faster R-CNN terdiri atas dua modul di atas satu tumpukan lapisan konvolusi bersama. Makalah menguji dua tumpukan: ZF (5 lapis konvolusi) dan VGG-16 (13 lapis konvolusi). Citra diskalakan sehingga sisi pendeknya 600 piksel, dan stride total (rasio pengecilan resolusi) kedua jaringan adalah 16 piksel, sehingga peta fitur akhir berukuran sekitar 1/16 dari citra masukan.
 
-## Metodologi & Arsitektur
-RPN meluncur di atas feature map bersama, memprediksi objectness dan offset untuk k anchor per lokasi (beragam skala/rasio); proposal teratas diteruskan ke RoI pooling + head Fast R-CNN. Pelatihan memakai skema bergantian atau approximate joint training.
+Alur data sistem lengkapnya:
 
-Komponen / langkah metodologis utama:
+```
+citra (sisi pendek diskala 600 piksel)
+        │
+        ▼
+┌───────────────────────────────┐
+│ konvolusi bersama (VGG-16,    │  peta fitur keluaran:
+│ 13 lapis konv, stride 16)     │  W x H x 512
+└───────────────┬───────────────┘
+                │
+   ┌────────────┴────────────┐
+   ▼                         │
+┌──────────────────────┐     │
+│ RPN                  │     │
+│ konv 3x3 -> 512-d    │     │
+│ ├─ cls: 2k skor      │     │
+│ └─ reg: 4k offset    │     │
+│ k = 9 anchor/lokasi  │     │
+└──────────┬───────────┘     │
+           │ ±20.000 anchor  │
+           │ NMS (IoU 0,7)   │
+           │ 300 teratas     │
+           ▼                 ▼
+┌───────────────────────────────────────┐
+│ RoI pooling pada peta fitur bersama   │
+│ -> lapisan terhubung penuh            │
+│ -> kelas (20 + latar) + koreksi kotak │
+└───────────────────────────────────────┘
+```
 
-- RPN memprediksi objectness + offset dari anchor.
-- Anchor multi-skala/rasio di tiap lokasi.
-- Berbagi backbone antara RPN dan detektor.
-- RoI pooling + head klasifikasi/regresi.
-- Pelatihan alternating / approximate joint.
-- NMS pada proposal dan deteksi akhir.
+Diagram di atas menunjukkan pembagian perhitungan: peta fitur dihitung sekali, lalu dipakai dua kali — oleh RPN untuk mengusulkan wilayah, dan oleh tahap deteksi untuk menilainya.
 
-## Kontribusi Utama
-1. RPN menghasilkan proposal cepat dan berbagi fitur.
-2. Menetapkan paradigma anchor yang berpengaruh luas.
-3. Deteksi dua-tahap mendekati real-time (~5-17 FPS).
-4. Menjadi standar detektor dua-tahap.
+### Region Proposal Network dan Anchor
 
-## Rincian Eksperimen
-Diuji pada PASCAL VOC dan COCO dengan analisis kualitas proposal (recall) dan mAP/kecepatan terhadap Fast R-CNN + selective search.
+RPN menggeser jendela konvolusi 3×3 di atas peta fitur akhir. Setiap jendela dipetakan menjadi vektor fitur 256 dimensi (ZF) atau 512 dimensi (VGG), kemudian diumpankan ke dua lapisan saudara: lapisan klasifikasi (cls) yang mengeluarkan 2k skor — objek atau bukan, untuk k kotak — dan lapisan regresi (reg) yang mengeluarkan 4k angka koreksi koordinat. Karena berbentuk konvolusi, kedua lapisan ini terbagi di seluruh lokasi.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Di setiap lokasi dipasang k = 9 *anchor*: kombinasi 3 luas kotak (128², 256², dan 512² piksel) dan 3 rasio aspek (1:1, 1:2, 2:1). Untuk citra sekitar 1000×600 piksel, peta fitur berukuran ±60×40, sehingga terdapat ±60×40×9 ≈ 20.000 *anchor* per citra. Ukuran *anchor* tidak harus pas dengan objek; regresi kotak yang akan mengoreksinya. Selama pelatihan, *anchor* yang melintasi batas citra diabaikan, menyisakan sekitar 6.000 *anchor* per citra.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| PASCAL VOC 2007 | mAP | ~73-76% dengan VGG/ResNet |
-| COCO | mAP | baseline dua-tahap kuat |
-| Kecepatan | FPS | ~5-17 FPS (jauh > selective search) |
+### Penetapan Label dan Fungsi Loss
 
-## Temuan Kunci
-- RPN membuat proposal nyaris gratis dan dapat dilatih.
-- Anchor menangani objek multi-skala/rasio.
-- Berbagi fitur kunci untuk kecepatan.
-- Kualitas proposal (recall) tinggi menaikkan mAP.
+Setiap *anchor* diberi label biner berdasarkan IoU (*Intersection over Union* — rasio luas irisan terhadap luas gabungan antara *anchor* dan kotak kebenaran, yaitu kotak anotasi posisi objek yang sebenarnya). *Anchor* berlabel positif bila memiliki IoU di atas 0,7 dengan suatu kotak kebenaran, atau bila ia adalah *anchor* dengan IoU tertinggi untuk suatu kotak kebenaran (kondisi cadangan agar setiap objek terwakili). *Anchor* berlabel negatif bila IoU-nya di bawah 0,3 terhadap semua kotak kebenaran; sisanya tidak ikut dihitung.
 
-## Keunggulan
-- Akurat dan menjadi standar dua-tahap.
-- Proposal terintegrasi dan cepat.
-- Fleksibel dengan berbagai backbone.
+Fungsi loss mengikuti pola *multi-task* Fast R-CNN: loss klasifikasi berupa *log loss* dua kelas (negatif logaritma peluang prediksi pada kelas yang benar) ditambah loss regresi berupa *smooth L1* (fungsi yang kuadratik di sekitar nol dan linear untuk galat besar, sehingga tidak peka terhadap pencilan). Loss regresi hanya aktif untuk *anchor* positif. Karena *anchor* negatif jauh lebih banyak, setiap mini-batch — kelompok contoh yang diproses dalam satu langkah pembaruan bobot — dibatasi 256 *anchor* terpilih acak dari satu citra dengan rasio positif:negatif maksimal 1:1.
 
-## Keterbatasan
-- Masih lebih lambat dari detektor satu-tahap.
-- Anchor menambah hyperparameter.
-- Dua-tahap lebih kompleks dari YOLO.
+### Parameterisasi Regresi Kotak
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Regresi memprediksi transformasi dari *anchor* ke kotak objek, bukan koordinat absolut. Untuk pusat kotak dipakai selisih ternormalisasi, t_x = (x − x_a)/w_a, sedangkan untuk ukuran dipakai skala logaritmik, t_w = log(w/w_a), dan setara untuk t_y dan t_h. Bentuk logaritmik membuat koreksi bersifat relatif: memperbesar kotak 2 kali lipat bernilai sama di mana pun ukuran awalnya. Setiap *anchor* memiliki regresornya sendiri, sehingga 9 regresor belajar koreksi khas untuk skala dan rasionya masing-masing.
 
-## Relevansi terhadap Tema Tinjauan
-Faster R-CNN adalah baseline dua-tahap utama pembanding YOLO dan sering dipakai (dengan RGB-D) pada aplikasi seperti deteksi apel berdaun lebat dalam tinjauan ini.
+### Dari Proposal ke Deteksi
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Setelah skor dan offset dihitung, *anchor* diubah menjadi kotak proposal, lalu dirampingkan dengan *Non-Maximum Suppression* (NMS): dari sekumpulan kotak yang saling tumpang tindih dengan IoU di atas 0,7, hanya yang berskor *objectness* tertinggi yang dipertahankan. NMS menyisakan sekitar 2.000 proposal; 300 teratas dipakai pada saat pengujian. Setiap proposal dinilai tahap Fast R-CNN: *RoI pooling* (operasi yang memotong wilayah berukuran bebas dari peta fitur menjadi fitur berukuran tetap) mengekstrak fiturnya, lalu lapisan terhubung penuh mengeluarkan kelas akhir (20 kelas VOC ditambah latar) beserta koreksi kotak per kelas.
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
+### Pelatihan Bersama
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+RPN dan Fast R-CNN yang dilatih terpisah akan mengubah lapisan konvolusi ke arah berbeda. Makalah memakai pelatihan bergantian empat langkah: (1) latih RPN dari bobot hasil pralatih klasifikasi ImageNet; (2) latih Fast R-CNN memakai proposal RPN tersebut; (3) pakai bobot detektor untuk menginisialisasi RPN, bekukan lapisan bersama, dan setel hanya lapisan khas RPN; (4) setel lapisan khas Fast R-CNN dengan lapisan bersama tetap beku. Hasilnya satu jaringan dengan lapisan konvolusi yang melayani dua tugas. Makalah juga melaporkan pelatihan gabungan aproksimatif yang mengabaikan gradien terhadap koordinat proposal; hasilnya hampir sama dengan waktu latih 25–50% lebih singkat.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+## Eksperimen dan Hasil
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+Evaluasi dilakukan pada PASCAL VOC 2007 dan 2012 (20 kelas) serta MS COCO (80 kelas), dengan metrik mAP (*mean Average Precision*: rata-rata presisi lintas kelas, maksimal 100%). Pada VOC 2007, detektor Fast R-CNN berbasis ZF dengan proposal *selective search* memperoleh 58,7% mAP; mengganti proposalnya dengan RPN (jaringan ZF yang sama, 300 proposal) menaikkan mAP menjadi 59,9% sekaligus memangkas waktu proposal dari ±1,5 detik menjadi 10 milidetik. Dengan VGG-16 dan fitur bersama, mAP mencapai 69,9% saat dilatih pada VOC 2007 dan 73,2% saat dilatih pada gabungan VOC 2007+2012; pada VOC 2012 hasilnya 70,4%, dan bertambah menjadi 75,9% bila data COCO ikut dipakai untuk pelatihan. Angka terakhir menunjukkan data tambahan berdampak lebih besar daripada perubahan metode.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Pada MS COCO, Faster R-CNN memperoleh 42,1% mAP@0,5 dan 21,5% mAP@[.5,.95] (rata-rata mAP pada sepuluh ambang IoU dari 0,5 hingga 0,95, metrik yang lebih menuntut ketepatan lokalisasi), naik 2,8 poin dan 2,2 poin dari pembanding Fast R-CNN pada protokol yang sama; melatihkan data validasi menaikkannya menjadi 42,7% dan 21,9%. Peningkatan pada ambang IoU tinggi menandakan proposal RPN memang lebih tepat posisinya.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Dua ablasi penting memperkuat klaim desain. Pertama, mengganti tahap proposal dengan jendela geser padat satu tahap menurunkan mAP dari 58,7% menjadi 53,9% (jaringan ZF), sehingga kaskade dua tahap terbukti berkontribusi langsung terhadap akurasi. Kedua, memakai hanya satu *anchor* per lokasi menurunkan mAP 3–4 poin, sehingga *anchor* multi-skala dan multi-rasio terbukti berfungsi. Kecepatan akhir: 198 milidetik per citra (±5 FPS) dengan VGG-16 dan 17 FPS dengan ZF, dibandingkan ±2 detik bila proposal masih dihitung *selective search*. Kerangka ini menjadi dasar entri juara pertama beberapa jalur kompetisi ILSVRC dan COCO 2015.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kelebihan dan Keterbatasan
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Kelebihannya: proposal menjadi nyaris gratis karena berbagi konvolusi; kualitas proposal ikut terlatih dan meningkat bersama jaringan yang lebih baik; desain *anchor* menangani multi-skala pada satu skala citra; dan seluruh sistem dapat dilatih menyeluruh.
 
-## Kesimpulan
-Faster R-CNN menetapkan RPN dan paradigma anchor, menjadikan deteksi dua-tahap akurat dan mendekati real-time serta baseline pembanding utama bagi detektor satu-tahap.
+Keterbatasannya: kecepatan 5 FPS dengan VGG-16 masih jauh dari *real-time* ketat, dan detektor satu tahap seperti YOLO (bab 001) tetap satu orde lebih cepat dengan akurasi sedikit lebih rendah. Desain *anchor* memperkenalkan parameter rancangan baru — skala, rasio, dan ambang IoU label — yang harus disesuaikan per dataset; makalah sendiri menambah skala 64² khusus untuk objek kecil di COCO. Dari sisi rekayasa, pelatihan empat langkah lebih rumit daripada pelatihan satu jaringan tunggal, dan tahap NMS pada ±20.000 kandidat tetap menyisakan biaya dan ambang rancangan. Secara konseptual, ketergantungan pada *anchor* rancangan tangan menjadi titik yang diserang generasi detektor *anchor-free*.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `ren2017fasterrcnn` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Kaitan dengan Bab Lain
 
----
-*Lembar 014/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Bab ini meneruskan garis keluarga R-CNN: [bab 012](./012%20-%202014%20-%20R-CNN%20-%20Fondasi%20RGB.md) memperkenalkan deteksi berbasis proposal, [bab 013](./013%20-%202015%20-%20Fast%20R-CNN%20-%20Fondasi%20RGB.md) mempercepat tahap deteksi, dan bab ini menghapus hambatan terakhirnya dengan mengintegrasikan proposal ke dalam jaringan. Warisannya melintasi paradigma: [bab 002](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md) meminjam konsep *anchor* untuk detektor satu tahap YOLO; [bab 017](./017%20-%202017%20-%20Mask%20R-CNN%20-%20Fondasi%20RGB.md) memperluas Faster R-CNN menjadi segmentasi instans; dan [bab 018](./018%20-%202017%20-%20Feature%20Pyramid%20Networks%20%28FPN%29%20-%20Fondasi%20RGB.md) menyempurnakan penanganan multi-skala di atasnya. Sebagai pembanding, [bab 016](./016%20-%202017%20-%20RetinaNet%20%28Focal%20Loss%29%20-%20Fondasi%20RGB.md) menunjukkan detektor satu tahap dapat menyaingi akurasi dua tahap yang diletakkan di sini.
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `ren2017fasterrcnn`. Ringkasan yang aman dikutip: "Faster R-CNN memperkenalkan Region Proposal Network yang berbagi fitur konvolusi dengan detektor Fast R-CNN melalui mekanisme *anchor*, sehingga proposal berkualitas diperoleh dengan biaya sekitar 10 milidetik per citra; sistem mencapai 73,2% mAP pada PASCAL VOC 2007 dengan kecepatan 5 FPS menggunakan VGG-16." Seluruh angka pada bab ini dikutip dari naskah versi jurnal (TPAMI 2017) di arXiv; untuk sitasi formal, cocokkan angka mAP per konfigurasi data latih (misalnya 69,9% untuk latih VOC 2007 saja) dengan tabel naskah asli.

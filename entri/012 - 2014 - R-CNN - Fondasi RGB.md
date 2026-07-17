@@ -1,205 +1,118 @@
 # 012 - Rich Feature Hierarchies for Accurate Object Detection and Semantic Segmentation
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 012 dari 154 |
 | Kunci BibTeX | `girshick2014rcnn` |
-| Judul | Rich Feature Hierarchies for Accurate Object Detection and Semantic Segmentation |
-| Penulis | Girshick, Ross; Donahue, Jeff; Darrell, Trevor; Malik, Jitendra |
+| Judul asli | Rich Feature Hierarchies for Accurate Object Detection and Semantic Segmentation |
+| Penulis | Ross Girshick, Jeff Donahue, Trevor Darrell, Jitendra Malik |
 | Tahun | 2014 |
-| Venue / Jurnal | Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | R-CNN, region proposal, selective search, CNN features, deteksi objek |
+| Venue | IEEE Conference on Computer Vision and Pattern Recognition (CVPR 2014) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis, versi tech report v5):** https://arxiv.org/abs/1311.2524
+- **Google Scholar:** https://scholar.google.com/scholar?q=Rich%20Feature%20Hierarchies%20for%20Accurate%20Object%20Detection%20and%20Semantic%20Segmentation
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Rich%20Feature%20Hierarchies%20for%20Accurate%20Object%20Detection%20and%20Semantic%20Segmentation&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Rich%20Feature%20Hierarchies%20for%20Accurate%20Object%20Detection%20and%20Semantic%20Segmentation
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Rich%20Feature%20Hierarchies%20for%20Accurate%20Object%20Detection%20and%20Semantic%20Segmentation&sort=relevance
+Makalah ini memperkenalkan R-CNN (*Regions with CNN features*), detektor objek pertama yang menunjukkan secara telak bahwa fitur jaringan saraf konvolusi (CNN) mengungguli fitur rancangan tangan untuk deteksi objek. Sistemnya bekerja tiga tahap: sekitar 2.000 kandidat wilayah dihasilkan oleh *selective search*, setiap wilayah diekstrak fiturnya oleh CNN, diklasifikasikan oleh SVM linear per kelas, lalu posisi kotak dikoreksi sebuah regresor. Pada PASCAL VOC 2012, R-CNN mencapai 53,3% mAP, yaitu perbaikan relatif lebih dari 30% terhadap hasil terbaik sebelumnya.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Kontribusi kedua bersifat metodologis: saat data deteksi terbatas, CNN dilatih dengan pra-latih terbimbing pada klasifikasi ILSVRC yang berlimpah data, lalu disetel halus untuk deteksi. Paradigma dan arsitektur tiga tahap ini menjadi titik awal keluarga detektor dua tahap yang dirujuk hampir semua bab lain.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 580--587 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Makalah pelopor yang membawa fitur CNN ke deteksi objek melalui region proposal, memicu lompatan besar akurasi dan membuka era deteksi berbasis deep learning.
+Deteksi objek adalah tugas menemukan posisi semua objek dalam citra — dinyatakan sebagai *bounding box* (kotak pembatas berisi koordinat dan ukuran objek) — sekaligus menentukan kelas setiap objek. Pada rentang 2010–2012, akurasi deteksi pada tolok ukur standar PASCAL VOC praktis stagnan. Metode terbaik saat itu berupa sistem *ensemble* (gabungan banyak komponen) yang memadukan fitur rancangan tangan, terutama SIFT dan HOG (*Histogram of Oriented Gradients*: histogram arah gradien intensitas pada blok-blok kecil citra), dengan konteks tingkat tinggi. Detektor yang paling banyak dipakai adalah DPM (*Deformable Part Model*), yang memandang objek sebagai susunan bagian-bagian yang dapat bergeser relatif satu sama lain dan dievaluasi dengan pola *sliding window*: pengklasifikasi dijalankan berulang pada jendela-jendela yang digeser menutupi seluruh citra pada beberapa skala.
 
-## Abstrak (Parafrase)
-R-CNN (Regions with CNN features) menggabungkan region proposal (selective search) dengan fitur CNN yang dipra-latih pada ImageNet lalu di-fine-tune untuk deteksi. Setiap region diproyeksikan ke ukuran tetap, diekstrak fiturnya oleh CNN, lalu diklasifikasikan oleh SVM per kelas dan diperhalus oleh bounding-box regression. Pendekatan ini menaikkan mAP secara dramatis dibanding metode fitur-tangan.
+Tahun 2012, CNN bernama AlexNet memenangkan kompetisi klasifikasi ImageNet setelah dilatih pada 1,2 juta citra berlabel. Keberhasilan itu memunculkan pertanyaan terbuka: seberapa jauh akurasi klasifikasi CNN dapat dialihkan ke deteksi objek? Dua halangan teknis muncul. Pertama, unit lapis atas AlexNet memiliki *receptive field* (wilayah masukan yang memengaruhi satu unit) 195×195 piksel dengan *stride* (jarak langkah antar-unit) 32×32 piksel, sehingga lokalisasi presisi dalam paradigma *sliding window* sulit. Kedua, data deteksi berlabel kotak terlalu sedikit untuk melatih CNN besar dari nol.
 
-## Latar Belakang & Konteks
-Sebelum R-CNN, deteksi bergantung pada fitur buatan tangan (HOG, SIFT) yang telah mencapai plateau. Keberhasilan CNN pada klasifikasi ImageNet menimbulkan pertanyaan apakah fitur CNN dapat mengangkat akurasi deteksi.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Fitur buatan tangan membatasi akurasi deteksi (plateau).
-- Menjalankan CNN pada sliding window sangat mahal.
-- Data deteksi berlabel terbatas untuk melatih CNN besar.
-- Perlu cara memetakan region ke fitur CNN berukuran tetap.
-- Lokalisasi presisi memerlukan penyempurnaan box.
+Gagasan inti R-CNN terdiri atas dua bagian. Bagian pertama: jangan jalankan CNN sebagai *sliding window*; jalankan CNN pada *region proposal* — kandidat wilayah citra yang berpeluang memuat objek, dihasilkan oleh algoritme bawah-atas tanpa mengetahui kelas objeknya. Dengan cara ini, masalah lokalisasi diserahkan kepada pengusul wilayah, dan CNN cukup mengenali isi setiap wilayah. Masukan sistem satu citra; keluarannya daftar kotak objek, kelas, dan skor; yang berubah dari pendekatan sebelumnya adalah fitur HOG digantikan fitur CNN yang dipelajari dari data.
 
-## Tujuan & Pertanyaan Penelitian
-- Membuktikan fitur CNN meningkatkan akurasi deteksi drastis.
-- Memanfaatkan pra-pelatihan ImageNet untuk data deteksi terbatas.
-- Menyediakan pipeline deteksi berbasis proposal yang efektif.
+Bagian kedua: atasi kelangkaan data deteksi dengan *transfer learning*. CNN dilatih terlebih dahulu secara terbimbing untuk klasifikasi citra pada data ILSVRC yang melimpah, lalu bobotnya disetel halus (*fine-tuning*) — dilatih lanjut dengan laju pembelajaran kecil — pada data deteksi yang sedikit.
 
-## Tinjauan Terdahulu / Posisi Literatur
-R-CNN menggantikan fitur klasik pada pipeline DPM/sliding-window dengan fitur CNN, memakai selective search sebagai penghasil proposal.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+Sistem R-CNN terdiri atas tiga modul: pengusul wilayah, CNN pengekstrak fitur, dan himpunan SVM per kelas, ditambah satu regresor koreksi kotak. Alur datanya:
 
-- DPM — detektor fitur-tangan sebelumnya.
-- Selective search — penghasil region proposal.
-- AlexNet — CNN pra-latih ImageNet.
-- OverFeat — deteksi berbasis CNN sezaman.
+```
+citra masukan
+     │
+     ▼
+┌──────────────────────┐
+│ selective search     │  ±2.000 proposal wilayah per citra,
+│ (mode "fast")        │  independen terhadap kelas objek
+└──────────────────────┘
+     │ ±2.000 kotak kandidat
+     ▼
+┌──────────────────────┐
+│ warping ke 227x227   │  setiap wilayah diregangkan ke ukuran
+│ + konteks 16 piksel  │  tetap masukan CNN
+└──────────────────────┘
+     │
+     ▼
+┌──────────────────────┐
+│ CNN (AlexNet)        │  5 lapis konvolusi + 2 lapis fully
+│ 2.000 kali forward   │  connected -> fitur fc7: 4.096 dimensi
+└──────────────────────┘
+     │ matriks fitur 2.000 x 4.096
+     ▼
+┌──────────────────────┐
+│ SVM linear per kelas │  matriks bobot 4.096 x N (N = jumlah
+│ + NMS per kelas      │  kelas); NMS merampingkan kotak ganda
+└──────────────────────┘
+     │
+     ▼
+┌──────────────────────┐
+│ regresi bounding box │  koreksi posisi kotak dari fitur pool5
+└──────────────────────┘
+     │
+     ▼
+deteksi akhir: kotak + kelas + skor
+```
 
-## Metodologi & Arsitektur
-Selective search menghasilkan ~2000 region per citra; tiap region diwarp ke 227x227 dan diekstrak fiturnya oleh CNN (AlexNet); fitur diklasifikasikan SVM linear per kelas; bounding-box regression memperhalus lokalisasi. Fine-tuning CNN pada data deteksi meningkatkan akurasi.
+### Tahap 1: Pengusulan Wilayah dengan Selective Search
 
-Komponen / langkah metodologis utama:
+*Selective search* adalah algoritme segmentasi hierarkis: piksel citra dikelompokkan berangsur-angsur berdasarkan kemiripan warna, tekstur, ukuran, dan kesesuaian bentuk antar wilayah, lalu kotak pembatas diambil dari wilayah hasil pengelompokan pada semua tingkatan. Hasilnya sekitar 2.000 proposal per citra (mode "fast"). R-CNN bebas memakai pengusul wilayah apa pun; selective search dipilih agar perbandingan dengan pendahulu berproposal sama berlangsung adil.
 
-- Region proposal via selective search (~2000/citra).
-- Warp region ke ukuran tetap untuk CNN.
-- Ekstraksi fitur CNN pra-latih + fine-tune.
-- Klasifikasi SVM linear per kelas.
-- Bounding-box regression untuk lokalisasi.
-- Supervised pre-training + domain-specific fine-tuning.
+### Tahap 2: Warping dan Ekstraksi Fitur CNN
 
-## Kontribusi Utama
-1. Membawa fitur CNN ke deteksi objek pertama kali secara efektif.
-2. Menaikkan mAP VOC secara dramatis (~30% relatif).
-3. Menetapkan paradigma pra-latih + fine-tune untuk deteksi.
-4. Leluhur seluruh keluarga R-CNN.
+CNN yang dipakai (implementasi Caffe dari AlexNet: lima lapis konvolusi diikuti dua lapis *fully connected* — lapis yang setiap unitnya terhubung ke seluruh unit sebelumnya) menuntut masukan tetap 227×227 piksel, sedangkan proposal berbentuk sembarang persegi panjang. Solusinya adalah *warping*: seluruh piksel dalam kotak pembatas proposal diregangkan anisotropik (skala horizontal dan vertikal boleh berbeda) menjadi 227×227. Sebelum diregangkan, kotak diperlebar dahulu sehingga tersisa konteks 16 piksel di sekeliling objek. Sebagai contoh, proposal berukuran 300×80 piksel dipaksa menjadi citra persegi 227×227, sehingga rasio aspeknya berubah. Setiap citra hasil warping dilewatkan ke CNN, dan keluaran lapis fc7 (lapis *fully connected* terakhir) diambil sebagai vektor fitur 4.096 dimensi per wilayah.
 
-## Rincian Eksperimen
-Diuji pada PASCAL VOC dan ILSVRC2013 detection, dengan analisis kontribusi fine-tuning dan bounding-box regression.
+### Tahap 3: Klasifikasi SVM dan NMS
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Fitur setiap wilayah dinilai oleh satu SVM (*support vector machine*: pengklasifikasi linear yang mencari bidang pemisah dengan margin selebar mungkin) biner per kelas — 20 SVM untuk PASCAL VOC. Karena bobot CNN dipakai bersama semua kelas, satu-satunya komputasi spesifik kelas adalah perkalian matriks fitur 2.000×4.096 dengan bobot SVM 4.096×N. Setelah semua wilayah berskor, *Non-Maximum Suppression* (NMS) dijalankan per kelas: dari sekumpulan kotak yang saling tumpang tindih, hanya kotak berskor tertinggi yang dipertahankan, dan kotak lain dibuang bila IoU-nya (*Intersection over Union*: rasio luas irisan terhadap luas gabungan dua kotak) melebihi ambang.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| PASCAL VOC 2012 | mAP | ~53.3% (lompatan besar dari fitur-tangan) |
-| ILSVRC2013 det | mAP | kompetitif/unggul saat itu |
-| Ablation | fine-tuning | peningkatan besar dari fine-tuning |
+### Tahap 4: Regresi Bounding Box
 
-## Temuan Kunci
-- Fitur CNN jauh mengungguli fitur-tangan untuk deteksi.
-- Pra-latih + fine-tune efektif untuk data terbatas.
-- Bounding-box regression penting untuk lokalisasi.
-- Pipeline lambat (CNN per-region) menjadi motivasi Fast R-CNN.
+Analisis galat pada makalah menunjukkan bahwa kesalahan dominan R-CNN adalah mislokalisasi (kotak kurang tepat posisinya), bukan salah kelas. Untuk memperbaikinya, sebuah model regresi linear per kelas dilatih memprediksi jendela deteksi baru dari fitur pool5 proposal — pool5 adalah keluaran lapis konvolusi kelima setelah penggabungan maksimum (*max-pooling*), berukuran 6×6×256 = 9.216 dimensi.
 
-## Keunggulan
-- Lompatan akurasi historis.
-- Memanfaatkan transfer learning.
-- Membuka era deteksi deep learning.
+### Pelatihan: Pra-latih, Penyetelan Halus, dan SVM
 
-## Keterbatasan
-- Sangat lambat (CNN dijalankan per-region).
-- Pelatihan bertingkat yang rumit (CNN, SVM, regressor terpisah).
-- Butuh penyimpanan fitur besar.
+Mula-mula CNN dilatih untuk klasifikasi pada ILSVRC2012 (1.000 kelas, tanpa label kotak). Untuk penyetelan halus ke deteksi, lapis klasifikasi 1.000 arah diganti lapis (N+1) arah — N kelas objek ditambah satu kelas latar belakang — lalu pelatihan dilanjutkan hanya pada proposal hasil warping. Proposal dengan IoU ≥ 0,5 terhadap kotak *ground truth* (anotasi kebenaran) dianggap positif, sisanya negatif. Setiap *mini-batch* berisi 128 jendela: 32 positif dan 96 latar, dengan laju pembelajaran 0,001. Untuk ILSVRC2013, penyetelan halus berjalan 50.000 iterasi selama 13 jam pada satu GPU NVIDIA Tesla K20. Terakhir, SVM per kelas dilatih dengan definisi label berbeda: kotak *ground truth* menjadi contoh positif, sedangkan proposal dengan IoU di bawah 0,3 menjadi negatif — ambang 0,3 hasil pencarian grid ini penting, karena ambang 0,5 menurunkan mAP sekitar 5 poin. Pelatihannya memakai *hard negative mining*: contoh negatif yang paling sulit diklasifikasikan ditambang berulang untuk memperbarui pemisah.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-Sebagai leluhur detektor dua-tahap, R-CNN adalah pembanding historis penting bagi YOLO dan dasar memahami mengapa detektor satu-tahap real-time dibutuhkan pada aplikasi RGB-D.
+Evaluasi dilakukan pada PASCAL VOC 2007/2010/2012 (20 kelas) dan ILSVRC2013 detection (200 kelas), dengan metrik mAP (*mean Average Precision*: rata-rata presisi pada berbagai tingkat *recall*, dirata-ratakan lintas kelas; maksimal 100%). Pada VOC 2010, R-CNN memperoleh 53,7% mAP. Pembanding paling adil adalah sistem UVA, yang memakai proposal selective search identik tetapi fitur SIFT berpiramida: 35,1% — selisih 18,6 poin pada proposal yang sama membuktikan peningkatan berasal dari fitur CNN. DPM hanya mencapai 33,4%. Pada VOC 2012, R-CNN mencapai 53,3% mAP — perbaikan relatif lebih dari 30% atas hasil terbaik sebelumnya.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Ablasi pada VOC 2007: penyetelan halus menambah 8,0 poin mAP menjadi 54,2% — representasi pra-latih ImageNet bersifat umum, dan adaptasi domain memberi lompatan besar. Regresi *bounding box* menambah 3–4 poin menjadi 58,5%; dibandingkan DPM berbasis HOG (33,7%), ini setara perbaikan relatif 61%. Versi lanjutan laporan menguji arsitektur VGG-16 (16 lapis): mAP naik menjadi 66,0%, tetapi *forward pass*-nya tujuh kali lebih lambat.
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
+Pada ILSVRC2013, R-CNN mencapai 31,4% mAP, jauh di atas OverFeat (detektor CNN berbasis *sliding window*) dengan 24,3%. Rantai ablasinya: tanpa penyetelan halus dengan data validasi terbatas, 20,9%; menambah data positif menjadi 24,1%; penyetelan halus pada data terbatas 26,5%; penyetelan halus dengan data diperluas 29,7%; regresi kotak menutupnya menjadi 31,0%. Selisih 7 poin ini menunjukkan paradigma proposal-plus-klasifikasi lebih efektif untuk lokalisasi, sekalipun OverFeat sembilan kali lebih cepat (2 detik per citra). Kelemahan terukurnya: *recall* proposal selective search (proporsi kotak kebenaran yang tertutup proposal pada IoU 0,5) hanya 91,6% pada ILSVRC versus sekitar 98% pada PASCAL — tahap proposal menjadi plafon akurasi.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Untuk segmentasi semantik, fitur R-CNN mencapai akurasi rata-rata 47,9% pada VOC 2011 test, sebanding dengan sistem O2P yang memimpin tolok ukur. Kecepatan deteksi: 13 detik per citra pada GPU atau 53 detik pada CPU untuk proposal dan ekstraksi fitur — jauh dari *real-time*.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+## Kelebihan dan Keterbatasan
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+Kelebihan R-CNN: (1) lompatan akurasi sangat besar terhadap fitur rancangan tangan, dibuktikan oleh perbandingan dengan proposal identik; (2) fitur 4.096 dimensi dipakai bersama semua kelas dan jauh lebih ringkas daripada fitur wilayah sebelumnya (360.000 dimensi pada sistem UVA), sehingga penambahan kelas hanya menambah kolom bobot SVM; (3) paradigma pra-latih terbimbing plus penyetelan halus menjawab kelangkaan data dan berlaku umum ke tugas visi lain.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Keterbatasannya: (1) lambat, karena sekitar 2.000 *forward pass* CNN per citra tanpa berbagi komputasi; dari sisi rekayasa, kecepatan ini menutup pemakaian waktu nyata; (2) pelatihan multi-tahap — CNN, SVM, dan regresor kotak dilatih terpisah dengan definisi label berbeda-beda, sehingga tidak dioptimalkan menyeluruh; (3) dari sisi rekayasa, fitur 2.000×4.096 per citra harus disimpan ke diska untuk melatih SVM dan regresor, menuntut ruang penyimpanan besar; (4) secara konseptual, tahap proposal tidak dipelajari dari data: selective search tetap algoritme rancangan tangan yang lambat dan *recall*-nya membatasi akurasi akhir; (5) warping mengubah rasio aspek objek, distorsi yang dianalisis penulis pada lampiran makalah.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kaitan dengan Bab Lain
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Bab ini titik awal silsilah detektor dua tahap, sehingga tidak ada bab pendahulu dalam garis keturunannya; warisannya terlihat pada bab-bab sesudahnya. Bab 013 ([Fast R-CNN](./013%20-%202015%20-%20Fast%20R-CNN%20-%20Fondasi%20RGB.md)) menyerang langsung keterbatasan (1) dan (2): konvolusi dijalankan satu kali per citra dan fitur setiap proposal dipetik dari peta fitur bersama. Bab 014 ([Faster R-CNN](./014%20-%202017%20-%20Faster%20R-CNN%20-%20Fondasi%20RGB.md)) mengganti selective search dengan jaringan pengusul wilayah yang dipelajari, menjawab keterbatasan (4). Sebaliknya, bab 001 ([YOLOv1](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)) mengambil jalan berlawanan — membuang tahap proposal sama sekali demi kecepatan — dan menjadikan R-CNN pembanding utama. Regresi *bounding box* dan skema pra-latih-plus-penyetelan-halus yang diperkenalkan di sini diwarisi oleh ketiganya.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+## Poin untuk Sitasi
 
-## Kesimpulan
-R-CNN membuktikan fitur CNN mengangkat akurasi deteksi secara dramatis dan menetapkan paradigma pra-latih+fine-tune, membuka era deteksi berbasis deep learning meski dengan biaya komputasi tinggi.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `girshick2014rcnn` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 012/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `girshick2014rcnn`. Ringkasan yang aman dikutip: "R-CNN menggabungkan *region proposal* bottom-up dari selective search dengan fitur CNN untuk deteksi objek, mencapai 53,3% mAP pada PASCAL VOC 2012 — perbaikan relatif lebih dari 30% terhadap hasil terbaik sebelumnya — dan 31,4% mAP pada ILSVRC2013, mengungguli OverFeat (24,3%). Makalah ini juga menetapkan paradigma pra-latih terbimbing pada klasifikasi berdata besar diikuti penyetelan halus pada data deteksi yang terbatas." Angka 53,3%, 31,4%, dan 24,3% berasal dari abstrak kedua versi naskah. Catatan verifikasi: angka VOC 2007 (58,5% dengan AlexNet; 66,0% dengan VGG-16), ablasi ILSVRC (20,9% hingga 31,0%), hasil segmentasi 47,9%, dan waktu 13 detik per citra dikutip dari tech report arXiv v5 yang diperluas; cocokkan dengan tabel versi konferensi bila mensitasi makalah CVPR 2014 versi pendek.

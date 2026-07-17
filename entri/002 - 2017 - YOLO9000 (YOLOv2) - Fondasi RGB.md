@@ -1,205 +1,108 @@
 # 002 - YOLO9000: Better, Faster, Stronger
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 002 dari 154 |
 | Kunci BibTeX | `redmon2017yolo9000` |
-| Judul | YOLO9000: Better, Faster, Stronger |
-| Penulis | Redmon, Joseph; Farhadi, Ali |
+| Judul asli | YOLO9000: Better, Faster, Stronger |
+| Penulis | Joseph Redmon, Ali Farhadi |
 | Tahun | 2017 |
-| Venue / Jurnal | Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | YOLOv2, anchor box, multi-skala, WordTree, 9000 kelas |
+| Venue | IEEE Conference on Computer Vision and Pattern Recognition (CVPR 2017) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1612.08242
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLO9000%3A%20Better%2C%20Faster%2C%20Stronger
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLO9000%3A%20Better%2C%20Faster%2C%20Stronger&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLO9000%3A%20Better%2C%20Faster%2C%20Stronger
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLO9000%3A%20Better%2C%20Faster%2C%20Stronger&sort=relevance
+Makalah ini memperbaiki YOLOv1 (bab 001) pada tiga poros yang menjadi judulnya. *Better*: serangkaian perbaikan arsitektur dan pelatihan — *batch normalization*, pengklasifikasi resolusi tinggi, *anchor box* yang ditentukan dari data, dan pelatihan multi-skala — menaikkan akurasi dari 63,4% menjadi 78,6% mAP pada PASCAL VOC 2007 sambil mempertahankan kecepatan *real-time*. *Faster*: backbone baru Darknet-19 yang jauh lebih ringan dari pendahulunya. *Stronger*: mekanisme pelatihan gabungan bernama WordTree yang memungkinkan model mendeteksi lebih dari 9.000 kategori objek, jauh melampaui 20–80 kelas yang umum saat itu.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Kontribusi yang paling tahan lama dari makalah ini adalah *anchor box* dan pelatihan multi-skala; keduanya menjadi komponen baku pada hampir semua YOLO generasi berikutnya hingga era *anchor-free* (bab 005).
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 7263--7271 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Generasi kedua YOLO yang menaikkan akurasi dan recall melalui anchor box, batch normalization, dan pelatihan multi-skala, sekaligus memperkenalkan pelatihan gabungan deteksi-klasifikasi untuk mengenali lebih dari 9000 kategori.
+YOLOv1 membuktikan deteksi *real-time* itu mungkin, tetapi membayar dua harga. Pertama, *recall*-nya rendah: karena setiap sel grid hanya memprediksi satu kelas dan dua kotak, banyak objek — terutama objek kecil berkelompok — terlewat. Kedua, lokalisasinya kurang presisi; galat lokalisasi adalah sumber kesalahan dominannya. Akibatnya mAP YOLOv1 (63,4%) tertinggal sekitar 10 poin dari detektor dua tahap seperti Faster R-CNN (73,2%).
 
-## Abstrak (Parafrase)
-YOLOv2 memperbaiki YOLOv1 pada tiga poros: 'Better' (batch normalization, klasifier resolusi tinggi, anchor box dengan dimension clusters, pelatihan multi-skala), 'Faster' (backbone Darknet-19 yang efisien), dan 'Stronger' (mekanisme WordTree yang menggabungkan dataset deteksi COCO dan klasifikasi ImageNet). Hasilnya, YOLO9000 mampu mendeteksi lebih dari 9000 kategori objek meski hanya sebagian kecil memiliki label kotak, dengan mentransfer pengetahuan dari klasifikasi ke deteksi lewat hierarki label.
+Ada pula masalah kedua yang lebih mendasar: jumlah kategori yang dapat dideteksi. Dataset deteksi mahal dibuat karena setiap objek harus dilabeli kotak; VOC hanya memiliki 20 kelas dan COCO 80 kelas. Sementara itu, dataset klasifikasi seperti ImageNet memiliki ribuan kelas karena pelabelan per citra jauh lebih murah. Tanpa mekanisme baru, kosakata deteksi objek akan selalu tertinggal jauh di belakang klasifikasi.
 
-## Latar Belakang & Konteks
-YOLOv1 unggul dalam kecepatan namun tertinggal dalam recall dan presisi lokalisasi dibanding metode berbasis region. Selain itu, jumlah kategori yang bisa dideteksi dibatasi oleh mahalnya anotasi kotak, sehingga skala kosakata deteksi jauh lebih kecil daripada klasifikasi.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Recall dan presisi lokalisasi YOLOv1 masih kalah dari dua-tahap.
-- Jumlah kelas deteksi terbatas oleh mahalnya label kotak.
-- Ketidakstabilan pelatihan tanpa normalisasi.
-- Resolusi klasifier pra-latih tak cocok dengan deteksi.
-- Anchor manual pada metode lain tak optimal untuk dataset tertentu.
+Untuk masalah akurasi, gagasannya bukan satu perubahan besar, melainkan akumulasi perbaikan yang masing-masing diukur kontribusinya: sebagian membuat pelatihan lebih stabil, sebagian membuat prediksi lebih fleksibel, sebagian memperkuat fitur. Prinsipnya adalah mempertahankan formulasi satu jaringan dari YOLOv1, tetapi menghilangkan hambatan-hambatan yang menekan recall dan presisi lokalisasi.
 
-## Tujuan & Pertanyaan Penelitian
-- Meningkatkan akurasi/recall tanpa mengorbankan kecepatan.
-- Memperluas skala kategori deteksi hingga ribuan.
-- Menyediakan mekanisme penggabungan dataset heterogen.
+Untuk masalah kosakata, gagasannya adalah **pelatihan gabungan**: saat menerima citra dari dataset deteksi, jaringan belajar mendeteksi; saat menerima citra dari dataset klasifikasi (yang tidak punya label kotak), jaringan hanya belajar mengenali kelasnya. Hambatannya, label kedua dataset tidak konsisten — ImageNet memiliki "Norfolk terrier", COCO hanya memiliki "anjing". Solusinya adalah WordTree: label-label dari semua dataset disusun dalam satu pohon hierarki (dari umum ke khusus), dan jaringan memprediksi probabilitas di setiap tingkat pohon, bukan satu *softmax* datar. Dengan cara ini, kelas yang saling beririsan tidak lagi bertentangan.
 
-## Tinjauan Terdahulu / Posisi Literatur
-YOLOv2 mengadopsi anchor dari Faster R-CNN namun menentukannya via k-means (dimension clusters), meminjam prediksi multi-skala, dan memperkenalkan WordTree berbasis WordNet untuk menyatukan label deteksi dan klasifikasi.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Batch Normalization
 
-- Faster R-CNN — sumber gagasan anchor box.
-- SSD — prediksi multi-skala.
-- WordNet — hierarki label untuk WordTree.
-- Batch Normalization — stabilisasi pelatihan.
+Semua lapis konvolusi diberi *batch normalization* (normalisasi keluaran lapis terhadap statistik satu *batch* data). Teknik ini menstabilkan distribusi sinyal selama pelatihan sehingga laju pembelajaran bisa lebih besar dan konvergensi lebih cepat; sebagai bonus, ia bertindak sebagai regularisasi sehingga *dropout* dapat dibuang tanpa *overfitting*. Kontribusinya terukur +2% mAP.
 
-## Metodologi & Arsitektur
-Darknet-19 (19 lapis konvolusi) menjadi backbone; anchor box ditentukan lewat k-means pada kotak ground truth; koordinat diprediksi relatif terhadap sel (direct location prediction) agar stabil; pelatihan multi-skala mengganti resolusi input tiap beberapa iterasi. WordTree memungkinkan softmax hierarkis atas gabungan ImageNet+COCO.
+### Pengklasifikasi Resolusi Tinggi
 
-Komponen / langkah metodologis utama:
+YOLOv1 melatih backbone sebagai pengklasifikasi ImageNet pada 224×224, lalu langsung menaikkan resolusi ke 448×448 untuk deteksi — jaringan harus beradaptasi pada resolusi baru dan tugas baru secara bersamaan. YOLOv2 memecah transisi ini: backbone terlebih dahulu disetel halus sebagai pengklasifikasi pada 448×448 selama 10 *epoch*, baru kemudian dipasang ke tugas deteksi. Kontribusinya +4% mAP.
 
-- Batch normalization di semua konvolusi (+mAP, regularisasi).
-- High-resolution classifier (fine-tune 448x448).
-- Anchor box via dimension clusters (k-means, jarak IoU).
-- Direct location prediction (sigmoid pada offset sel).
-- Pelatihan multi-skala (input 320-608) untuk ketahanan skala.
-- WordTree + joint training deteksi/klasifikasi (9000+ kelas).
+### Anchor Box dan Penentuannya dari Data
 
-## Kontribusi Utama
-1. Anchor berbasis clustering + prediksi lokasi langsung yang stabil.
-2. Darknet-19 sebagai backbone cepat dan akurat.
-3. Pelatihan multi-skala dalam satu model.
-4. WordTree untuk deteksi 9000+ kategori.
+Ini perubahan struktural terbesar. YOLOv1 memprediksi koordinat kotak secara bebas; YOLOv2 mengadopsi *anchor box* dari Faster R-CNN: setiap sel tidak lagi memprediksi kotak dari nol, melainkan memprediksi **koreksi** terhadap beberapa kotak acuan (anchor) berbentuk tetap. Belajar menjadi lebih mudah karena jaringan hanya menyesuaikan, bukan mengarang bentuk. Lapis *fully connected* dibuang dan prediksi dipindah ke peta fitur konvolusional.
 
-## Rincian Eksperimen
-Diuji pada PASCAL VOC dan COCO untuk deteksi, serta ImageNet untuk evaluasi YOLO9000 pada kategori tanpa label kotak, dengan analisis kontribusi tiap peningkatan (ablation).
+Berbeda dari Faster R-CNN yang memilih bentuk anchor secara manual, YOLOv2 menentukannya dari data dengan **dimension clusters**: seluruh kotak kebenaran pada dataset pelatihan dikelompokkan dengan *k-means*, dengan jarak d(kotak, pusat) = 1 − IOU(kotak, pusat). Memakai IOU alih-alih jarak Euclidean penting, karena yang dicari adalah anchor yang "paling mudah disesuaikan menjadi kotak nyata", dan IOU mengukur tepat itu. Dipilih k = 5 anchor sebagai titik imbang recall-kompleksitas. Dengan anchor, recall naik dari 81% menjadi 88% dengan harga mAP yang nyaris tidak berubah.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Prediksi Lokasi Langsung
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| PASCAL VOC 2007 | mAP / FPS | 76.8% mAP @67 FPS (fleksibel via multi-skala) |
-| COCO | mAP | kompetitif untuk detektor real-time |
-| ImageNet (9000) | deteksi | YOLO9000 mendeteksi 9418 kategori |
+Memakai anchor saja ternyata membuat pelatihan awal tidak stabil: prediksi posisi yang bebas dapat mengirim kotak ke mana saja di citra. Solusinya, YOLOv2 mengikat prediksi posisi pada sel asalnya: jaringan memprediksi offset yang dilewatkan fungsi logistik (σ, pembatas nilai 0–1), sehingga pusat kotak selalu jatuh di dalam (atau dekat) sel yang memprediksinya. Kombinasi dimension clusters dan prediksi lokasi langsung ini menyumbang sekitar +5% mAP.
 
-## Temuan Kunci
-- Anchor via clustering lebih baik daripada anchor manual.
-- Pelatihan multi-skala memberi trade-off kecepatan-akurasi fleksibel.
-- Joint training memperluas kosakata deteksi drastis.
-- Batch norm + resolusi tinggi menaikkan mAP signifikan.
+Cara sebuah sel mengubah prediksi mentah menjadi kotak akhir:
 
-## Keunggulan
-- Akurasi dan recall jauh lebih baik dari YOLOv1.
-- Fleksibel skala (satu model banyak resolusi).
-- Skalabilitas kelas ekstrem via WordTree.
+```
+sel grid (cx, cy)                rumus konversi
+┌─────────────┐    pusat:  bx = σ(tx) + cx   → diikat di dalam sel
+│  ●(bx,by)   │            by = σ(ty) + cy
+│ ┌─────────┐ │    ukuran: bw = pw · e^(tw)  → skala thd anchor
+│ │ kotak   │ │            bh = ph · e^(th)
+│ │ prediksi│ │    keyakinan: σ(to) = Pr(objek) × IOU
+│ └─────────┘ │
+│ ░ anchor    │    jaringan hanya memprediksi tx, ty, tw, th, to;
+│ ░ (pw, ph)  │    anchor (pw, ph) menyediakan bentuk awal
+└─────────────┘
+```
 
-## Keterbatasan
-- Deteksi 9000 kelas masih jauh di bawah akurasi kelas berlabel penuh.
-- Objek kecil tetap menantang.
-- WordTree bergantung kualitas hierarki label.
+### Fitur Rinci dan Pelatihan Multi-Skala
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+YOLOv2 memprediksi pada peta fitur 13×13 (citra 416×416 dibagi 32). Untuk membantu deteksi objek kecil, fitur dari lapis lebih awal beresolusi 26×26 disalurkan melalui *passthrough layer*: peta 26×26×512 disusun ulang menjadi 13×13×2048 lalu digabung (*concatenate*) dengan peta utama. Kontribusinya +1% mAP.
 
-## Relevansi terhadap Tema Tinjauan
-Menetapkan anchor box dan pelatihan multi-skala sebagai komponen standar YOLO yang diwarisi versi-versi berikutnya; relevan sebagai batu loncatan evolusi arsitektur yang dipakai pada pipeline RGB-D.
+Terakhir, karena arsitekturnya sepenuhnya konvolusional, ukuran masukan dapat diubah-ubah. Setiap 10 *batch*, pelatihan berganti resolusi secara acak dari himpunan {320, 352, …, 608} piksel. Model yang sama dengan demikian belajar bekerja pada banyak resolusi; saat dipakai, pengguna dapat memilih sendiri titik imbang kecepatan-akurasi (masukan kecil = cepat, masukan besar = akurat) tanpa melatih ulang.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+### Darknet-19 (Faster)
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
-- [009 - 2024 - YOLOv10 - Fondasi RGB](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)
+Backbone baru, Darknet-19, terdiri atas 19 lapis konvolusi (mayoritas 3×3 dengan konvolusi 1×1 sebagai pereduksi kanal) dan 5 lapis *max-pooling*, ditutup *global average pooling*. Biayanya hanya 5,58 miliar FLOPs per citra, dibandingkan ±30,7 miliar pada VGG-16, dengan akurasi klasifikasi ImageNet top-1 72,9% — jauh lebih ringan dengan akurasi yang layak.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+### WordTree (Stronger)
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+WordTree dibangun dari graf konsep WordNet: setiap label ditelusuri jalurnya ke akar (mis. "Norfolk terrier" → "terrier" → "anjing pemburu" → "anjing" → … → "objek fisik"). Prediksi kelas dilakukan secara hierarkis: pada setiap simpul, jaringan menghitung *softmax* hanya terhadap saudara-saudara satu induk; probabilitas sebuah kelas adalah perkalian probabilitas sepanjang jalurnya. Dengan struktur ini, dataset deteksi dan klasifikasi dapat dilatih bergantian pada satu jaringan — citra COCO memperbarui seluruh komponen deteksi, citra ImageNet hanya memperbarui bagian klasifikasi. Hasilnya, YOLO9000 mengenali 9.418 kategori.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+## Eksperimen dan Hasil
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Deteksi diuji pada PASCAL VOC 2007 dan COCO; mekanisme WordTree diuji pada tugas deteksi ImageNet. Hasil utama:
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+- YOLOv2 416×416: 76,8% mAP pada 67 FPS (VOC 2007).
+- YOLOv2 544×544: 78,6% mAP pada 40 FPS — melampaui Faster R-CNN (73,2% pada 7 FPS) baik dalam akurasi maupun kecepatan.
+- Fleksibilitas resolusi: pada 288×288 model tetap berjalan ±90 FPS dengan mAP ±69%, sehingga satu model melayani spektrum kecepatan-akurasi.
+- YOLO9000 pada tugas deteksi ImageNet (200 kelas, hanya 44 yang memiliki label kotak saat pelatihan): 19,7% mAP keseluruhan; pada 156 kelas yang tidak pernah berlabel kotak, 16,0% mAP.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Interpretasi baris terakhir: akurasi pada kelas tanpa label kotak memang jauh di bawah kelas berlabel penuh, tetapi angka itu membuktikan pengetahuan klasifikasi benar-benar berpindah ke kemampuan deteksi — sesuatu yang tidak mungkin dilakukan pelatihan deteksi biasa.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+## Kelebihan dan Keterbatasan
 
-## Kesimpulan
-YOLOv2/YOLO9000 menaikkan akurasi dan skala kosakata deteksi secara bersamaan, menegaskan anchor berbasis data dan pelatihan multi-skala sebagai praktik baku yang bertahan pada generasi YOLO selanjutnya.
+Kelebihan: (1) akurasi dan recall naik tajam tanpa mengorbankan kecepatan; (2) satu model fleksibel terhadap resolusi masukan; (3) Darknet-19 ringan dan menjadi fondasi Darknet-53 pada generasi berikutnya; (4) WordTree membuka pelatihan lintas-dataset berskala ribuan kelas.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `redmon2017yolo9000` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Keterbatasan: (1) objek kecil membaik tetapi belum tuntas — prediksi tetap pada satu skala 13×13; (2) deteksi 9.000 kelas jauh lebih lemah daripada deteksi kelas berlabel penuh, sehingga WordTree lebih bernilai sebagai bukti konsep; (3) kualitas WordTree bergantung pada kualitas hierarki WordNet; (4) dari sisi rekayasa, banyaknya perbaikan yang ditumpuk membuat kontribusi masing-masing sulit dipisahkan di luar ablation makalah.
 
----
-*Lembar 002/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Kaitan dengan Bab Lain
+
+Bab ini adalah perbaikan langsung atas kelemahan bab 001 (recall rendah, lokalisasi kasar). Gagasan *anchor box*-nya dipinjam dari Faster R-CNN (keluarga bab 012–014), lalu disempurnakan dengan penentuan dari data. Bab 003 (YOLOv3) akan mengganti Darknet-19 dengan backbone residual dan menyerang sisa masalah objek kecil lewat prediksi multi-skala — pelatihan multi-skala di bab ini adalah pendahulunya. *Anchor* berbasis klaster yang diperkenalkan di sini menjadi standar hingga dihapus oleh bab 005 (YOLOX).
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `redmon2017yolo9000`. Ringkasan yang aman dikutip: "YOLOv2 meningkatkan akurasi YOLO melalui *anchor box* berbasis klaster dimensi, prediksi lokasi langsung, dan pelatihan multi-skala (76,8–78,6% mAP VOC 2007 pada 40–67 FPS); mekanisme WordTree memperluas deteksi ke 9.418 kategori melalui pelatihan gabungan deteksi-klasifikasi." Seluruh angka di atas berasal dari naskah; rincian ablation per komponen (mis. +2%, +4%, +5%) sebaiknya dikutip langsung dari tabel ablation naskah bila diperlukan.

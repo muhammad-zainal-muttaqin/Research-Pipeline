@@ -1,206 +1,111 @@
 # 043 - SwinNet: Swin Transformer Drives Edge-Aware RGB-D and RGB-T Salient Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 043 dari 154 |
 | Kunci BibTeX | `liu2021swinnet` |
-| Judul | SwinNet: Swin Transformer Drives Edge-Aware RGB-D and RGB-T Salient Object Detection |
-| Penulis | Liu, Zhengyi; Tan, Yacheng; He, Qian; Xiao, Yun |
+| Judul asli | SwinNet: Swin Transformer Drives Edge-Aware RGB-D and RGB-T Salient Object Detection |
+| Penulis | Zhengyi Liu, Yacheng Tan, Qian He, Yun Xiao |
 | Tahun | 2022 |
-| Venue / Jurnal | IEEE Transactions on Circuits and Systems for Video Technology |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, RGB-T SOD, Swin Transformer, edge-aware, cross-modal |
+| Venue | IEEE Transactions on Circuits and Systems for Video Technology (TCSVT), vol. 32, no. 7, hlm. 4486–4497 |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2204.05585
+- **DOI (versi penerbit):** https://doi.org/10.1109/TCSVT.2021.3127149
+- **Kode sumber (GitHub):** https://github.com/liuzywen/SwinNet
+- **Google Scholar:** https://scholar.google.com/scholar?q=SwinNet%3A%20Swin%20Transformer%20Drives%20Edge-Aware%20RGB-D%20and%20RGB-T%20Salient%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=SwinNet%3A%20Swin%20Transformer%20Drives%20Edge-Aware%20RGB-D%20and%20RGB-T%20Salient%20Object%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=SwinNet%3A%20Swin%20Transformer%20Drives%20Edge-Aware%20RGB-D%20and%20RGB-T%20Salient%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=SwinNet%3A%20Swin%20Transformer%20Drives%20Edge-Aware%20RGB-D%20and%20RGB-T%20Salient%20Object%20Detection&sort=relevance
+SwinNet adalah model fusi lintas-modalitas untuk *salient object detection* (SOD), yaitu tugas memetakan piksel pembentuk objek paling menonjol dalam citra. Satu desain yang sama dipakai untuk dua tugas: SOD pada pasangan citra RGB dan peta kedalaman (RGB-D), serta SOD pada pasangan citra RGB dan citra termal (RGB-T). Tiga komponen menyusun model ini: *backbone* Swin Transformer dua aliran untuk mengekstrak fitur hierarkis kedua modalitas, modul penyelarasan spasial dan rekalibrasi kanal untuk fusi fitur per tingkat, serta dekoder terpandu tepi yang mempertajam kontur objek.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Model ini melaporkan kinerja terbaik pada enam tolok ukur RGB-D dan tiga tolok ukur RGB-T. Pada dataset NLPR, S-measure mencapai 0,941, melampaui Visual Saliency Transformer (0,931) sebagai pembanding *transformer* terdekat. Biaya yang harus dibayar adalah kompleksitas tinggi, sebagaimana dibahas pada bagian Keterbatasan.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 32 |
-| Nomor | 7 |
-| Halaman | 4486--4497 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Kerangka SOD yang memakai backbone Swin Transformer dengan modul edge-aware dan fusi lintas-modal untuk RGB-D dan RGB-T, menyatukan dua modalitas kedua dalam satu desain.
+SOD pada citra RGB tunggal menurun ketika pencahayaan kurang atau latar belakang rumit. Dua modalitas pelengkap terbukti membantu: peta kedalaman menyediakan informasi geometri yang tidak peka terhadap perubahan cahaya, sedangkan citra termal menangkap radiasi panas objek sehingga tetap bekerja dalam gelap atau cuaca buruk. Informasi pelengkap ini hanya berguna bila fusi lintas-modalitas dilakukan dengan tepat.
 
-## Abstrak (Parafrase)
-SwinNet memakai backbone Swin Transformer dua-aliran untuk menangkap konteks global, dengan modul spatial alignment dan channel re-calibration untuk fusi lintas-modal, serta edge-aware guidance untuk mempertajam batas objek. Kerangka ini bekerja untuk RGB-D maupun RGB-T (thermal) dan mencapai SOTA pada banyak dataset.
+Sebelum SwinNet, metode RGB-D dan RGB-T SOD hampir seluruhnya dibangun di atas jaringan saraf konvolusi (CNN), misalnya BBS-Net (bab 036). CNN mengumpulkan informasi dari piksel tetangga dalam *receptive field* (wilayah pandang) terbatas dan kehilangan informasi spasial akibat operasi *pooling*, sehingga ketergantungan semantik jarak jauh sulit dipelajari. Visual Saliency Transformer atau VST (bab 042) menjadi pelopor penggunaan *transformer* untuk tugas ini; SwinNet mengambil langkah berikutnya dengan Swin Transformer (bab 025) yang memadukan lokalitas dan hierarki ala CNN dengan pemodelan ketergantungan global. Makalah ini sekaligus menjawab dua masalah lain: metode sebelumnya umumnya khusus untuk kedalaman saja atau termal saja, dan batas objek cenderung kabur karena fitur dangkal pembawa detail tepi bercampur derau latar.
 
-## Latar Belakang & Konteks
-Backbone CNN membatasi konteks global sehingga batas objek sering kabur, dan metode biasanya khusus satu jenis modalitas kedua (depth ATAU thermal).
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Backbone CNN membatasi konteks global.
-- Batas objek sering kabur pada SOD.
-- Metode sering khusus depth ATAU thermal.
-- Fusi lintas-modal perlu penyelarasan spasial/kanal.
-- Kebutuhan desain umum lintas modalitas kedua.
+Gagasan intinya terdiri atas tiga keputusan. Pertama, dua *backbone* Swin Transformer mengekstrak fitur RGB dan modalitas pelengkap sehingga fitur hierarkis keduanya berkonteks global. Kedua, fusi lintas-modalitas pada setiap tingkat fitur dilakukan dalam dua langkah: penyelarasan spasial terlebih dahulu, karena posisi objek menonjol harus sama pada kedua modalitas; kemudian rekalibrasi kanal, karena tiap modalitas menonjolkan isi yang berbeda — RGB kaya tekstur, kedalaman kaya struktur. Ketiga, kontur dipertajam oleh fitur tepi dari lapisan dangkal *backbone* kedalaman yang memandu dekoder. Karena kedalaman dan termal berperan sama sebagai modalitas pelengkap, desain yang identik berlaku untuk kedua tugas tanpa perubahan.
 
-## Tujuan & Pertanyaan Penelitian
-- Memakai backbone Transformer untuk konteks global.
-- Menyatukan RGB-D dan RGB-T dalam satu kerangka.
-- Mempertajam batas via edge-aware guidance.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-SwinNet menggabungkan Swin Transformer dan panduan tepi untuk fusi lintas-modal.
+### Backbone Swin Transformer Dua Aliran
 
-Karya/konsep pembanding yang relevan:
+Swin Transformer adalah *backbone* berbasis *self-attention* (mekanisme di mana tiap elemen fitur menimbang hubungannya dengan elemen lain) yang bekerja di dalam jendela lokal dan memindahkan jendela itu antarlapisan (*shifted window*), sehingga informasi menyebar lintas jendela dengan biaya linear terhadap ukuran citra. SwinNet memakai varian Swin-B yang digandakan menjadi dua aliran. Setiap aliran memecah citra masukan 384×384 menjadi *patch* (petak) tak bertumpang-tindih, kemudian memperkecil jumlah token secara bertahap melalui *patch merging* menjadi empat tingkat fitur hierarkis {STic} (warna) dan {STid} (kedalaman), i = 1 sampai 4. Karena peta kedalaman hanya berisi satu kanal, nilainya disalin menjadi tiga kanal agar cocok dengan bobot Swin-B terlatih. Alur lengkap model tergambar pada diagram berikut.
 
-- Swin Transformer — backbone.
-- RGB-D & RGB-T SOD — target.
-- Edge/boundary guidance.
-- Cross-modal fusion (alignment/recalibration).
+```
+masukan: citra RGB + peta kedalaman (atau citra termal), masing-masing 384x384
 
-## Metodologi & Arsitektur
-Dua backbone Swin memproses RGB dan modal kedua (depth/thermal); spatial alignment module menyelaraskan fitur lintas-modal, channel re-calibration menimbang kanal; edge-aware guidance memandu penajaman batas; decoder menghasilkan saliency.
+ RGB --> [Swin-B aliran warna] --> STic (i=1..4) --+
+                                                   |
+ D/T --> [Swin-B aliran depth] --> STid (i=1..4) --+
+            |                                      |
+            | STid (i=1,2,3)                       v
+            v                        [penyelarasan spasial +
+   [modul sadar-tepi]                 rekalibrasi kanal]
+   konv 1x1, upsampling,                         |
+   penggabungan, atensi kanal                    v
+            |                            Fic, Fid per tingkat
+            v                                      |
+      fitur tepi Fe                    fusi Fi = gabungan(Fid+Fic, Fid*Fic)
+            |                                      |
+            |                                      v
+            |                    dekoder progresif gaya U-Net:
+            |                    FF4 = F4
+            |                    FFi = Fi + konv3(naik2(FFi+1)), i=1..3
+            |                                      |
+            +---------> gabungan(Fe, FF1) <--------+
+                                  |
+                                  v
+                  konv 3x3 + upsampling 4x --> peta saliens S
+```
 
-Komponen / langkah metodologis utama:
+Fusi terjadi dua kali: intra-tingkat pada setiap keluaran *backbone*, dan antar-tingkat di dalam dekoder.
 
-- Backbone Swin Transformer dua-aliran.
-- Spatial alignment lintas-modal.
-- Channel re-calibration.
-- Edge-aware guidance (penajaman batas).
-- Fusi lintas-modal terpandu.
-- Bekerja untuk RGB-D & RGB-T.
+### Penyelarasan Spasial dan Rekalibrasi Kanal
 
-## Kontribusi Utama
-1. Backbone Transformer untuk konteks global.
-2. Desain umum RGB-D & RGB-T.
-3. Edge-aware guidance mempertajam batas.
-4. SOTA pada banyak dataset.
+Modul ini bekerja terpisah pada setiap tingkat i. Pada penyelarasan spasial, fitur warna STic dan fitur kedalaman STid dikalikan elemen demi elemen; hasilnya diringkas dengan *global max pooling* sepanjang arah kanal, dilewatkan ke konvolusi 3×3, lalu diaktivasi sigmoid menjadi peta atensi spasial bersama SAi. Karena perkalian elemen hanya bernilai besar di posisi yang aktif pada kedua modalitas, SAi menyorot posisi menonjol yang disepakati keduanya; peta ini dikalikan kembali ke STic dan STid sehingga keduanya selaras. Pada rekalibrasi kanal, fitur yang telah selaras diringkas dengan *global max pooling*, dilewatkan ke konvolusi 1×1 dan sigmoid menjadi bobot atensi kanal yang berbeda untuk tiap modalitas. Bobot ini dikalikan ke fitur asal, menghasilkan fitur akhir Fic dan Fid yang selaras secara posisi dan tertimbang secara isi.
 
-## Rincian Eksperimen
-Diuji pada benchmark RGB-D SOD dan RGB-T SOD dengan metrik S/F/E-measure dan MAE, dibandingkan metode CNN/Transformer.
+### Modul Sadar-Tepi
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Fitur tingkat tinggi membawa makna semantik, sedangkan fitur dangkal membawa detail batas; objek menonjol juga cenderung *pop-out* pada peta kedalaman sehingga kontras kedalamannya memudahkan penggambaran kontur. Karena itu modul ini mengambil tiga fitur dangkal aliran kedalaman (STid untuk i = 1, 2, 3), memproyeksikan masing-masing dengan konvolusi 1×1, menyamakan ukurannya dengan *upsampling*, lalu menggabungkan ketiganya melalui konkatenasi (penyusunan fitur sepanjang dimensi kanal). Hasilnya dilewatkan ke atensi kanal dan koneksi residual — keluaran modul ditambahkan kembali ke masukannya — untuk menghasilkan fitur tepi Fe yang lebih bersih.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| RGB-D SOD | S/F/E, MAE | SOTA pada banyak dataset |
-| RGB-T SOD | S/F/E, MAE | SOTA pada banyak dataset |
-| Ablation | edge/align | keduanya menyumbang gain |
+### Dekoder Terpandu Tepi
 
-## Temuan Kunci
-- Backbone Transformer meningkatkan konteks global.
-- Satu desain menangani depth & thermal.
-- Edge-aware guidance penting untuk batas.
-- Penyelarasan spasial/kanal krusial.
+Pada setiap tingkat, Fic dan Fid dipadukan dengan penjumlahan, perkalian elemen, dan konkatenasi sekaligus: Fi = gabungan((Fid + Fic), (Fid × Fic)). Dekoder mengikuti pola U-Net, yaitu skema yang mengalirkan fitur tingkat tinggi ke tingkat yang lebih dangkal melalui *upsampling*: dimulai dari FF4 = F4, kemudian FFi = Fi + konv3(naik2(FFi+1)) untuk i = 1 sampai 3 (naik2 = pembesaran dua kali; konv3 = konvolusi 3×3). Terakhir, fitur tepi Fe digabungkan dengan FF1 menjadi fitur saliens terpandu tepi, yang dikonvolusi 3×3 dan diperbesar empat kali menjadi peta saliens akhir S. Peran Fe ganda: menekan derau latar yang terbawa fitur dangkal sekaligus mempertajam kontur.
 
-## Keunggulan
-- Backbone Transformer edge-aware.
-- Umum lintas modalitas kedua.
-- SOTA luas.
+### Fungsi Loss dan Pelatihan
 
-## Keterbatasan
-- Transformer mahal komputasi.
-- Bergantung kualitas modal kedua.
-- Penyelarasan menambah kompleksitas.
+Pelatihan diawasi dua fungsi *cross-entropy*: loss tepi dan loss saliens. Peta tepi dihasilkan dari fitur tepi Fe, dan targetnya diperoleh otomatis dengan menjalankan detektor tepi Canny pada peta saliens kebenaran, tanpa anotasi tepi tambahan. Masukan dilatih pada 384×384 dengan augmentasi pembalikan, rotasi, dan pemotongan tepi acak. Pengoptimal Adam dipakai dengan ukuran *batch* 3 dan laju pembelajaran awal 5×10⁻⁵ yang dibagi sepuluh setiap 100 *epoch*. Model konvergen dalam 200 *epoch*, sekitar 26 jam pada satu GPU NVIDIA RTX 2080Ti.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-SwinNet mencontohkan penerapan Swin (entri 025) pada fusi lintas-modal RGB-D/RGB-T; relevan bagi tren Transformer pada tinjauan RGB+Depth.
+Evaluasi RGB-D dilakukan pada enam dataset: NLPR (1.000 citra), NJU2K (2.003 pasang citra stereo), STERE (1.000 pasang), DES (135 citra Kinect dalam ruang), SIP (1.000 citra manusia beresolusi tinggi), dan DUT (1.200 citra kamera Lytro). Data latih RGB-D berisi 2.185 pasang dari NJU2K dan NLPR, ditambah 800 pasang DUT bila pengujian dilakukan pada DUT. Evaluasi RGB-T dilakukan pada VT821 (821 pasang), VT1000 (1.000 pasang), dan VT5000 (5.000 pasang), dengan 2.500 pasang dari VT5000 sebagai data latih. Empat metrik dipakai: S-measure (kemiripan struktur antara prediksi dan kebenaran), F-measure (rata-rata harmonik berbobot *precision* dan *recall*), E-measure (kesejajaran global dan kecocokan piksel), serta MAE (rata-rata selisih absolut per piksel; semakin kecil semakin baik).
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+Hasil RGB-D: pada NLPR, S-measure 0,941 — naik 0,010 atas VST (0,931) dan 0,029 atas D3Net (0,912). Pada NJU2K, S-measure 0,935 dengan MAE 0,027; pada STERE 0,919; pada SIP 0,911 dengan MAE 0,035. Pengecualiannya DES: SwinNet hanya unggul tipis atas VST (0,945 lawan 0,943) karena dataset ini berisi 135 citra dalam ruang yang relatif mudah. Dibandingkan VST secara rata-rata lintas dataset, SwinNet memperbaiki keempat metrik sekitar 0,007 (S), 0,017 (F), 0,010 (E), dan 0,005 (MAE). Pada RGB-T marginnya lebih lebar: S-measure 0,904 pada VT821 (pembanding terbaik 0,885), 0,938 pada VT1000 (0,923), dan 0,912 pada VT5000 (0,883). Selisih hampir tiga poin pada dataset terbesar itu menunjukkan fusi yang tahan terhadap data beragam.
 
-- [035 - 2019 - DMRA - RGB-D SOD](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)
-- [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)
-- [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)
-- [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md)
-- [039 - 2020 - S2MA - RGB-D SOD](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)
-- [040 - 2020 - HDFNet - RGB-D SOD](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)
-- [041 - 2020 - UC-Net - RGB-D SOD](./041%20-%202020%20-%20UC-Net%20-%20RGB-D%20SOD.md)
-- [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)
+Ablasi memisahkan kontribusi tiap komponen. Pengujian *backbone* menempatkan Swin-B di atas semua alternatif: pada NLPR, S-measure 0,941 melawan 0,924 (ResNet-101), 0,932 (ResNet-50+ViT16), dan 0,925 (PVT-M). Mengganti modul penyelarasan dan rekalibrasi dengan *Depth-enhanced Module* dari BBS-Net (bab 036) menurunkan S-measure sekitar 0,006; penyelarasan posisi terbukti bernilai tambah di luar atensi biasa. Tanpa panduan tepi, S-measure turun sekitar 0,004 dan F-measure 0,009 (pada NJU2K dari 0,935 menjadi 0,928), sehingga kontribusi tepi nyata tetapi lebih kecil daripada *backbone*. Ablasi modalitas menunjukkan kedalaman saja (0,896 pada NLPR) kalah dari RGB saja (0,932), dan fusi (0,941) mengungguli keduanya; pada STERE, kedalaman saja anjlok ke 0,768 karena sebagian peta kedalamannya bermutu rendah.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kelebihan dan Keterbatasan
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
+Kelebihan utama SwinNet adalah generalitas desain: satu arsitektur identik menangani kedalaman dan termal tanpa rekayasa khusus per modalitas. Panduan tepi menghasilkan kontur lebih tajam dengan biaya komputasi nyaris nol menurut analisis penulis, dan kode sumber tersedia publik sehingga hasil mudah direproduksi.
 
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
+Keterbatasannya diakui penulis: 198,7 juta parameter, beban komputasi sekitar 124,3 GFLOPs, dan inferensi hanya sekitar 10 FPS termasuk prapemrosesan, dengan sebagian besar biaya pada dua *backbone* Swin-B; penulis menjadwalkan desain ringan sebagai pekerjaan lanjutan. Keunggulan pada DES juga sangat tipis, sehingga klaim keunggulan tidak seragam di semua kondisi. Dari sisi rekayasa, model bergantung pada mutu modalitas pelengkap: anjloknya hasil kedalaman saja pada STERE (0,768) menunjukkan fusi terbebani modalitas berderau, dan tidak ada mekanisme eksplisit untuk menilai keandalannya.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kaitan dengan Bab Lain
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+SwinNet berdiri langsung di atas [025 - 2021 - Swin Transformer - Fondasi RGB](./025%20-%202021%20-%20Swin%20Transformer%20-%20Fondasi%20RGB.md): *backbone* Swin-B beserta bobot terlatihnya dipakai apa adanya; kontribusinya terletak pada cara memadukan dua aliran. Dalam klaster RGB-D SOD, posisinya melanjutkan [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md): keduanya menggantikan CNN dengan *transformer*, tetapi SwinNet memindahkan fusi lintas-modalitas ke mekanisme atensi spasial-kanal yang lebih sederhana daripada *cross-attention* VST, sekaligus mewarisi supervisi tepi. Terhadap metode CNN seperti [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md) dan [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md), SwinNet menunjukkan lewat ablasi bahwa keunggulannya bukan sekadar *backbone*, melainkan juga strategi penyelarasan lintas modalitas.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Kunci BibTeX: `liu2021swinnet`.
 
-## Kesimpulan
-SwinNet memanfaatkan backbone Swin Transformer dengan edge-aware guidance dan fusi lintas-modal untuk RGB-D dan RGB-T SOD, menyatukan dua modalitas kedua dalam satu desain SOTA.
+Ringkasan aman untuk dikutip: SwinNet (Liu dkk., TCSVT 2022) adalah model fusi lintas-modalitas berbasis *backbone* Swin Transformer dua aliran untuk deteksi objek menonjol RGB-D dan RGB-T dalam satu desain. Model ini menyelaraskan fitur kedua modalitas secara spasial dan menimbang ulang kanalnya pada setiap tingkat, lalu memadukannya antar-tingkat melalui dekoder yang dipandu fitur tepi dari lapisan dangkal modalitas pelengkap. Pada enam tolok ukur RGB-D dan tiga tolok ukur RGB-T, model melaporkan kinerja terbaik pada hampir semua metrik, dengan S-measure 0,941 pada NLPR dan 0,912 pada VT5000.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `liu2021swinnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 043/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan verifikasi sebelum sitasi formal: (1) seluruh angka pada bab ini diambil dari preprint arXiv:2204.05585v1; penulis menyatakan versi ini identik dengan artikel TCSVT, tetapi cocokkan kembali dengan Tabel I–VII versi penerbit. (2) Hasil pada dataset DUT tidak dikutip di sini karena kolomnya tidak terbaca utuh pada preprint. (3) Pada F-measure VT1000, CGFNet (0,906) tercatat di atas SwinNet (0,896), sehingga klaim "terbaik pada semua metrik" tidak tepat untuk sel tunggal tersebut. (4) Volume, nomor, dan halaman (32(7):4486–4497) berasal dari metadata repositori ini dan belum dicocokkan dengan sitasi IEEE.

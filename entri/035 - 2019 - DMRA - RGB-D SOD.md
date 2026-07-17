@@ -1,204 +1,105 @@
 # 035 - Depth-Induced Multi-Scale Recurrent Attention Network for Saliency Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 035 dari 154 |
 | Kunci BibTeX | `piao2019dmra` |
-| Judul | Depth-Induced Multi-Scale Recurrent Attention Network for Saliency Detection |
-| Penulis | Piao, Yongri; Ji, Wei; Li, Jingjing; Zhang, Miao; Lu, Huchuan |
+| Judul asli | Depth-Induced Multi-Scale Recurrent Attention Network for Saliency Detection |
+| Penulis | Yongri Piao, Wei Ji, Jingjing Li, Miao Zhang, Huchuan Lu (Dalian University of Technology) |
 | Tahun | 2019 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, depth-induced, recurrent attention, multi-skala, saliency |
+| Venue | Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV 2019), hlm. 7254–7263 |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **PDF resmi (CVF Open Access):** https://openaccess.thecvf.com/content_ICCV_2019/html/Piao_Depth-Induced_Multi-Scale_Recurrent_Attention_Network_for_Saliency_Detection_ICCV_2019_paper.html
+- **Kode dan dataset (GitHub resmi):** https://github.com/DUT-IIAU-OIP-Lab/DMRA_RGBD-SOD
+- **Google Scholar:** https://scholar.google.com/scholar?q=Depth-Induced%20Multi-Scale%20Recurrent%20Attention%20Network%20for%20Saliency%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Depth-Induced%20Multi-Scale%20Recurrent%20Attention%20Network%20for%20Saliency%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Depth-Induced%20Multi-Scale%20Recurrent%20Attention%20Network%20for%20Saliency%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Depth-Induced%20Multi-Scale%20Recurrent%20Attention%20Network%20for%20Saliency%20Detection&sort=relevance
+Makalah ini memperkenalkan DMRANet (*Depth-induced Multi-scale Recurrent Attention Network*), jaringan untuk deteksi objek menonjol (*salient object detection*, SOD) dari pasangan citra RGB dan peta kedalaman. SOD menghasilkan *peta saliency*, peta keabuan yang nilainya menyatakan tingkat kemenonjolan tiap piksel; peta kedalaman adalah citra yang tiap pikselnya menyatakan jarak permukaan ke kamera. Masalah yang dipecahkan adalah kegagalan metode SOD pada skenario kompleks — objek transparan, objek ganda, latar serupa objek, pencahayaan rendah — serta cara fusi RGB-D sebelumnya yang menggabungkan kedua modalitas tanpa membedakan kontribusi tiap tingkat dan tiap skala fitur.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Jaringan ini tersusun atas tiga komponen: *depth refinement block* (DRB) yang memadukan fitur RGB dan kedalaman pada lima tingkat secara residual, modul pembobotan multi-skala terinduksi kedalaman (DMSW) yang menimbang enam fitur berskala berbeda berdasarkan isyarat kedalaman, dan modul atensi berulang (RAM) yang menyempurnakan peta saliency dalam tiga langkah berbasis memori. Pada tujuh dataset, model ini menempati peringkat pertama untuk seluruh metrik yang diuji terhadap 16 metode pembanding. Makalah ini juga merilis dataset RGB-D baru berisi 1.200 pasangan citra dengan skenario yang lebih kompleks.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 7254--7263 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Jaringan RGB-D salient object detection yang memakai pembobotan multi-skala terinduksi kedalaman dan recurrent attention untuk memandu deteksi objek menonjol, sekaligus merilis dataset DUT-RGBD.
+Sebelum era CNN, metode SOD bergantung pada fitur rancangan manual seperti kontras warna dan prior latar, yang daya generalisasinya terbatas. Metode SOD berbasis CNN pada citra RGB kemudian jauh lebih akurat, tetapi tetap keliru ketika objek dan sekelilingnya serupa secara warna dan tekstur — misalnya objek transparan atau ruangan redup. Informasi kedalaman memuat struktur spasial dan tata letak tiga dimensi yang tidak bergantung pada penampakan, sehingga pasangan RGB-D menjadi jalur untuk menangani kasus-kasus tersebut.
 
-## Abstrak (Parafrase)
-DMRA (Depth-induced Multi-scale Recurrent Attention) memanfaatkan peta kedalaman untuk menghasilkan bobot multi-skala yang memandu fusi fitur RGB, lalu menerapkan recurrent attention untuk menyempurnakan peta saliency secara bertahap. Makalah juga memperkenalkan dataset DUT-RGBD. Pendekatan ini menegaskan peran kedalaman sebagai pemandu attention lintas-skala pada RGB-D SOD.
+Namun fusi RGB-D pada 2019 menyimpan tiga kelemahan spesifik. Pertama, sebagian besar metode menggabungkan fitur RGB dan kedalaman hanya dengan penggabungan kanal (*concatenation*) atau penjumlahan pada satu tingkat saja, padahal sifat fitur berbeda antar-tingkat: fitur dalam memuat semantik diskriminatif, fitur dangkal memuat detail tepi lokal, dan keduanya saling melengkapi. Kedua, objek dalam satu adegan tersebar pada jarak dan ukuran yang berbeda; kaitan antara kedalaman dan skala objek belum pernah dimanfaatkan untuk menentukan fitur skala mana yang seharusnya dominan. Ketiga, fitur hasil fusi langsung dipakai untuk prediksi dalam satu lintasan tanpa penyempurnaan bertahap. Selain itu, dataset RGB-D SOD yang tersedia saat itu relatif kecil dan adegannya sederhana. Celah-celah inilah yang dijawab makalah ini.
 
-## Latar Belakang & Konteks
-Fusi RGB-D naif memperlakukan kontribusi kedalaman seragam padahal isyarat kedalaman bervariasi antar-skala dan wilayah, sehingga penyempurnaan saliency kurang optimal.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Fusi RGB-D naif mengabaikan variasi kontribusi kedalaman.
-- Isyarat kedalaman berbeda antar-skala/wilayah.
-- Penyempurnaan saliency satu-lintasan kurang optimal.
-- Dataset RGB-D SOD masih terbatas.
-- Attention lintas-modal belum matang.
+Gagasan intinya tiga kalimat. Pertama, fitur kedalaman di setiap tingkat jaringan tidak dijumlahkan mentah ke fitur RGB, melainkan diubah dulu menjadi *residu* (selisih pelengkap hasil transformasi kecil), sehingga fitur RGB tetap menjadi poros dan kedalaman menambahkan isyarat yang hilang. Kedua, karena objek pada kedalaman berbeda cenderung tampak pada skala berbeda, vektor yang disarikan dari peta kedalaman dipakai sebagai bobot yang menentukan sumbangan tiap fitur multi-skala — inilah makna terinduksi kedalaman (*depth-induced*). Ketiga, peta saliency tidak dihasilkan sekali jalan, melainkan diperbaiki berulang oleh modul atensi yang membawa memori dari langkah sebelumnya.
 
-## Tujuan & Pertanyaan Penelitian
-- Memanfaatkan kedalaman sebagai pemandu multi-skala.
-- Menyempurnakan saliency secara bertahap (recurrent).
-- Menyediakan dataset RGB-D SOD baru (DUT-RGBD).
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-DMRA membangun di atas SOD berbasis CNN dan mekanisme attention, mengintegrasikan kedalaman sebagai pemandu.
+### Arsitektur Dua Aliran
 
-Karya/konsep pembanding yang relevan:
+Jaringan mengikuti pola dua aliran: satu aliran untuk citra RGB, satu aliran untuk peta kedalaman. Keduanya memakai struktur sama, yaitu lima blok konvolusi VGG-19 — jaringan konvolusi 19 lapis yang bobotnya dipr latih pada ImageNet — dengan lapis *pooling* terakhir dan lapis terhubung penuh dibuang agar sesuai untuk prediksi peta. Satu-satunya perbedaan: keluaran blok terakhir aliran kedalaman diolah menjadi vektor kedalaman untuk modul DMSW. Citra masukan diseragamkan ke 256×256 piksel. Alur data selengkapnya:
 
-- SOD berbasis CNN — dasar.
-- Attention mechanism — penyempurna fitur.
-- Recurrent refinement — iterasi saliency.
-- Dataset RGB-D SOD sebelumnya (NJU2K, NLPR).
+```
+citra RGB ──► aliran VGG-19 (5 blok) ──► f1..f5 RGB
+peta depth ─► aliran VGG-19 (5 blok) ──► f1..f5 depth
+                                             │
+        ┌─────────────► DRB x5 ◄─────────────┘
+        │  f_i = W_i( reshape( f_i^RGB + phi(f_i^depth) ) )
+        ▼
+   F_fuse = f1+..+f5   (resolusi 1/4 masukan, 64 kanal)
+        │
+        ▼                                   conv5_4 depth
+   DMSW: 6 cabang paralel              pooling + conv + softmax
+   (1x1 | 3x3 | pool+3x3 | D=3 | D=5 | D=7)  = V_depth (1x1x6)
+        │                                          │
+        ▼  F = jumlah V_depth[m] . F_m ◄───────────┘
+   RAM: 3 langkah   atensi(h_{t-1}, F) ──► ConvLSTM ──► h_t
+        │
+        ▼  atensi spasial ──► conv 1x1 ──► upsampling x4
+   peta saliency akhir
+```
 
-## Metodologi & Arsitektur
-Modul depth-induced multi-scale weighting memakai peta kedalaman untuk menimbang fitur RGB lintas skala; recurrent attention module menyempurnakan peta saliency secara iteratif; jaringan dilatih end-to-end pada pasangan RGB-D.
+Diagram menunjukkan empat tahap berurutan: DRB memadukan fitur kedua aliran per tingkat menjadi `F_fuse`; DMSW memecahnya menjadi enam fitur multi-skala yang ditimbang vektor kedalaman `V_depth`; RAM menyempurnakan hasilnya dalam tiga langkah; peta akhir diperoleh setelah atensi spasial dan *upsampling* empat kali.
 
-Komponen / langkah metodologis utama:
+### Depth Refinement Block (DRB)
 
-- Depth-induced multi-scale weighting module.
-- Recurrent attention untuk penyempurnaan bertahap.
-- Fusi fitur RGB terpandu kedalaman.
-- Pelatihan end-to-end RGB-D.
-- Dataset DUT-RGBD baru.
-- Decoder saliency multi-skala.
+DRB bekerja pada tiap tingkat i = 1..5. Fitur kedalaman tingkat itu dilewatkan ke dua lapis konvolusi dengan aktivasi PReLU (fungsi aktivasi seperti ReLU, tetapi lereng sisi negatifnya ikut dipelajari), menghasilkan residu kedalaman. Residu ini ditambahkan ke fitur RGB melalui sambungan residual (penjumlahan keluaran suatu blok dengan masukannya, yang memudahkan aliran gradien saat pelatihan), sehingga fitur RGB dilengkapi isyarat kedalaman tanpa ditimpa. Hasil fusi tiap tingkat lalu diseragamkan resolusinya — diperbesar dengan interpolasi bilinear atau diperkecil dengan *max-pooling* — dirapikan skalanya oleh satu unit residual, dan disesuaikan kanalnya dengan konvolusi 1×1. Kelima fitur tingkat dijumlahkan per elemen menjadi `F_fuse`.
 
-## Kontribusi Utama
-1. Kedalaman sebagai pemandu attention multi-skala.
-2. Recurrent attention menyempurnakan saliency.
-3. Dataset DUT-RGBD untuk komunitas.
-4. Hasil kompetitif pada benchmark RGB-D SOD.
+### Depth-Induced Multi-Scale Weighting (DMSW)
 
-## Rincian Eksperimen
-Diuji pada benchmark RGB-D SOD (NJU2K, NLPR, DUT-RGBD, dll.) dengan metrik S-measure, F-measure, E-measure, MAE, dibandingkan metode SOD sezaman.
+DMSW menjawab pertanyaan: fitur skala mana yang paling relevan untuk adegan ini? Dari `F_fuse`, enam cabang paralel menghasilkan enam fitur beresolusi sama dengan cakupan konteks berbeda: konvolusi 1×1, konvolusi 3×3, *max-pooling* diikuti konvolusi 3×3, dan konvolusi 3×3 terdilatasi berdilasi 3, 5, dan 7. Konvolusi terdilatasi (*atrous convolution*) merenggangkan titik sampel kernel sehingga *receptive field* (wilayah citra yang memengaruhi satu piksel keluaran) membesar tanpa menambah parameter atau menurunkan resolusi. Secara bersamaan, keluaran blok terakhir aliran kedalaman dipadatkan oleh *global average pooling* (perata-rataan seluruh peta menjadi satu angka per kanal), sebuah konvolusi, dan fungsi *softmax* (normalisasi menjadi bobot non-negatif berjumlah satu) menjadi vektor kedalaman `V_depth` berukuran 1×1×6. Fitur akhir adalah jumlah tertimbang `F = Σ V_depth[m] × F_m`: kedalaman menentukan bobot, sehingga misalnya cabang berdilasi besar yang menangkap objek besar mendapat porsi lebih ketika isyarat kedalaman menunjukkan objek dekat yang memenuhi bingkai.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Recurrent Attention Module (RAM)
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NJU2K/NLPR | S/F/E, MAE | kompetitif saat rilis |
-| DUT-RGBD | S/F/E, MAE | dataset baru diperkenalkan |
-| Ablation | depth weighting | peningkatan dengan panduan kedalaman |
+RAM terinspirasi *Internal Generative Mechanism* (IGM), teori persepsi yang menyatakan kemenonjolan pada penglihatan manusia bukan pemindahan langsung dari masukan mata, melainkan hasil serangkaian inferensi yang memanfaatkan memori. RAM menggabungkan mekanisme atensi dengan ConvLSTM — varian LSTM (*long short-term memory*, jaringan berulang dengan sel memori dan gerbang masukan, lupa, dan keluaran) yang mengganti perkalian matriks dengan konvolusi sehingga struktur spasial peta fitur terjaga.
 
-## Temuan Kunci
-- Panduan kedalaman multi-skala meningkatkan saliency.
-- Recurrent attention efektif menyempurnakan hasil.
-- Dataset baru memperkaya evaluasi.
-- Fusi terpandu lebih baik dari fusi naif.
+Pada tiap langkah t, memori sebelumnya `h_{t-1}` dan fitur `F` masing-masing dikonvolusi, dijumlahkan, dipadatkan dengan *global average pooling*, dan dinormalisasi *softmax* menjadi peta atensi kanal — bobot per kanal yang menandai kanal mana yang informatif. Fitur `F` dikalikan bobot ini, lalu hasilnya masuk ConvLSTM yang memperbarui memori menjadi `h_t`. Proses berulang N = 3 langkah; keluarannya `F_c = h_3` dengan demikian membawa memori langkah-langkah sebelumnya. Sesudahnya, atensi spasial (peta bobot per piksel dari konvolusi 1×1 dan fungsi sigmoid) menekankan lokasi penting, lalu konvolusi 1×1 dan *upsampling* empat kali menghasilkan peta saliency seukuran masukan.
 
-## Keunggulan
-- Memanfaatkan kedalaman secara adaptif.
-- Penyempurnaan bertahap.
-- Menyediakan dataset baru.
+### Pelatihan
 
-## Keterbatasan
-- Bergantung kualitas peta kedalaman.
-- Recurrent menambah biaya komputasi.
-- Arsitektur CNN (konteks global terbatas).
+Jaringan dilatih *end-to-end* (seluruh komponen dioptimalkan bersama terhadap satu fungsi galat) dengan PyTorch pada satu GPU GTX 1080, memakai *softmax cross-entropy loss* terhadap kebenaran (*ground truth*), ukuran *batch* 2, momentum 0,9, dan konvergen setelah 50 epoch. Data latih adalah 800 citra dari dataset usulan ditambah 1.485 citra NJUD dan 700 citra NLPR, diperkaya augmentasi pembalikan, pemotongan, dan rotasi.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-DMRA adalah salah satu entri fondasi klaster RGB-D SOD dalam tinjauan; menegaskan prinsip bahwa kedalaman memandu attention, yang relevan bagi fusi RGB+Depth secara umum.
+Evaluasi dilakukan pada tujuh dataset: enam dataset publik — NJUD (1.985 citra), NLPR (1.000 citra, Kinect), STEREO (797 citra), LFSD (100 citra, Lytro), RGBD135 (135 citra, Kinect), SSD (80 citra) — serta dataset usulan berisi 1.200 pasangan citra RGB–kedalaman (800 dalam ruang, 400 luar ruang, kamera Lytro) yang memuat objek ganda, objek transparan, latar serupa objek, dan pencahayaan rendah. Metriknya lima: kurva *precision–recall*; F-measure (rata-rata harmonik berbobot antara *precision* dan *recall*); MAE (rata-rata selisih absolut dengan kebenaran); S-measure (kemiripan struktur kawasan); dan E-measure (keselarasan statistik tingkat citra dan kecocokan piksel lokal). Untuk MAE makin kecil makin baik; untuk tiga lainnya makin besar makin baik. Pembandingnya 16 metode: 5 RGB-D berbasis CNN (antara lain PCA, jaringan fusi progresif CVPR 2018, pembanding terkuat), 5 RGB-D tradisional, dan 6 RGB berbasis CNN.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+DMRANet menempati peringkat pertama pada ketujuh dataset untuk seluruh metrik. Pada NLPR, F-measure 0,855 dan MAE 0,031, dibandingkan PCA 0,794 dan 0,044 — kesalahan peta turun sekitar 30% relatif. Pada NJUD, F-measure 0,872 dan MAE 0,051 versus 0,844 dan 0,059 milik PCA. Pada dataset usulan yang paling sulit, jarak melebar: F-measure 0,883 versus 0,760 dan MAE 0,048 versus 0,100, artinya kesalahan rata-rata terpangkas lebih dari separuh — konsisten dengan tujuan desain untuk adegan kompleks. Terhadap metode RGB murni terbaik (PiCANet), selisihnya lebih besar: pada NJUD PiCANet mencapai F-measure 0,806, sekitar 6,6 poin di bawah DMRANet, yang menunjukkan kontribusi nyata modalitas kedalaman.
 
-- [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)
-- [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)
-- [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md)
-- [039 - 2020 - S2MA - RGB-D SOD](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)
-- [040 - 2020 - HDFNet - RGB-D SOD](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)
-- [041 - 2020 - UC-Net - RGB-D SOD](./041%20-%202020%20-%20UC-Net%20-%20RGB-D%20SOD.md)
-- [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)
-- [043 - 2022 - SwinNet - RGB-D SOD](./043%20-%202022%20-%20SwinNet%20-%20RGB-D%20SOD.md)
+Analisis ablasi (uji kontribusi tiap komponen dengan melepasnya satu per satu) menunjukkan kenaikan bertingkat. Pada dataset usulan, F-measure naik dari 0,828 (garis dasar fusi biasa) menjadi 0,839 dengan DRB, 0,861 dengan DMSW, dan 0,883 dengan RAM penuh; MAE turun dari 0,070 menjadi 0,048. Menghilangkan panduan kedalaman pada DMSW (bobot diganti konvolusi 1×1 biasa) menurunkan F-measure ke 0,855 — bukti bahwa vektor kedalaman, bukan sekadar tambahan parameter, yang membawa perbaikan. Mengganti RAM dengan blok atensi kanal–spasial biasa hanya mencapai 0,869; keunggulan RAM berasal dari penyempurnaan berulang bermemori, bukan dari atensi semata. Pada NLPR, lonjakan terbesar justru datang dari RAM: 0,801 menjadi 0,855.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kelebihan dan Keterbatasan
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
+Kelebihan utama adalah fusi yang berprinsip pada dua arah: komplementaritas multi-tingkat ditangani DRB, dan seleksi skala ditangani DMSW dengan bobot yang diturunkan dari data kedalaman itu sendiri. RAM memberi keuntungan terbesar pada dataset tersulit. Model dilatih *end-to-end* tanpa pasca-pemrosesan, dan kode, model terlatih, serta dataset dirilis terbuka sehingga mudah direproduksi.
 
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
+Keterbatasannya, pertama, jalur panduan DMSW bergantung pada mutu peta kedalaman; kedalaman berderau dari sensor murah akan merambat ke bobot skala. Kedua, dari sisi rekayasa, dua aliran VGG-19 ditambah enam cabang multi-skala dan tiga langkah ConvLSTM membuat komputasi jauh lebih berat daripada SOD satu aliran; makalah tidak melaporkan kecepatan inferensi maupun jumlah parameter, sehingga biaya penerapannya tidak dapat dinilai dari naskah. Ketiga, secara konseptual, RAM menjalankan tiga langkah berulang tanpa analisis sensitivitas terhadap jumlah langkah; belum jelas apakah tiga adalah titik optimal. Keempat, *backbone* VGG-19 membatasi mutu representasi dibandingkan jaringan yang lebih baru.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kaitan dengan Bab Lain
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Bab ini adalah entri pertama klaster RGB-D SOD dalam tinjauan dan menetapkan dua gagasan yang diwarisi bab-bab berikutnya: fusi multi-tingkat RGB–kedalaman dan pemanfaatan kedalaman sebagai pemandu, bukan sekadar masukan tambahan. Fusi yang lebih hemat melalui interaksi dua arah antar-aliran dikembangkan pada [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md), sedangkan pertanyaan kapan kedalaman benar-benar membantu dijawab eksplisit oleh [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md). Pembelajaran gabungan lintas-tugas untuk fusi RGB-D dibahas pada [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md). Dari sisi pondasi, pemakaian *backbone* CNN terpralatih mengikuti tradisi yang sama dengan bab [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md), meskipun tugasnya berbeda: SOD menghasilkan peta per piksel, bukan kotak objek.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Kunci BibTeX: `piao2019dmra`.
 
-## Kesimpulan
-DMRA menunjukkan kedalaman dapat memandu pembobotan multi-skala dan recurrent attention untuk RGB-D SOD, serta menyumbang dataset DUT-RGBD bagi komunitas.
+Ringkasan aman dikutip: DMRANet (Piao dkk., ICCV 2019) adalah jaringan SOD RGB-D dua aliran berbasis VGG-19 dengan tiga komponen — fusi residual multi-tingkat (DRB), pembobotan fitur multi-skala yang dipandu vektor kedalaman (DMSW), dan penyempurnaan saliency berulang tiga langkah berbasis ConvLSTM dan atensi (RAM). Model ini menempati peringkat pertama pada tujuh dataset RGB-D terhadap 16 metode pembanding, dan makalahnya memperkenalkan dataset RGB-D baru berisi 1.200 pasangan citra dengan pembagian 800 latih dan 400 uji.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `piao2019dmra` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 035/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan verifikasi sebelum sitasi formal: (1) seluruh angka pada bab ini dibaca langsung dari Tabel 1–3 naskah PDF CVF, tetapi disarankan mencocokkan ulang bila dikutip satu per satu; (2) nama resmi dataset pada repositori penulis adalah *DUTLF-Depth*, sedangkan literatur selanjutnya banyak menyebutnya *DUT-RGBD* — pastikan nama yang dipakai konsisten dengan naskah yang dirujuk; (3) kecepatan inferensi dan jumlah parameter tidak dilaporkan dalam naskah; (4) makalah ini tidak memiliki versi arXiv, sehingga rujukan kanonik adalah prosiding ICCV 2019.

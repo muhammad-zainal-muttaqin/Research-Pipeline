@@ -1,203 +1,128 @@
 # 056 - Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 056 dari 154 |
 | Kunci BibTeX | `seichter2021esanet` |
-| Judul | Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis |
-| Penulis | Seichter, Daniel; K{\"o |
+| Judul asli | Efficient RGB-D Semantic Segmentation for Indoor Scene Analysis |
+| Penulis | Daniel Seichter, Mona Köhler, Benjamin Lewandowski, Tim Wengefeld, Horst-Michael Gross |
 | Tahun | 2021 |
-| Venue / Jurnal | Proceedings of the IEEE International Conference on Robotics and Automation (ICRA) |
-| Tema klaster | Segmentasi RGB-D |
-| Kata kunci | segmentasi RGB-D, efisien, real-time, robotika, SE-attention |
+| Venue | IEEE International Conference on Robotics and Automation (ICRA 2021), hlm. 13525–13531 |
+| Tema | Segmentasi RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2011.06961
+- **Kode sumber resmi (PyTorch + TensorRT):** https://github.com/TUI-NICR/ESANet
+- **Google Scholar:** https://scholar.google.com/scholar?q=Efficient%20RGB-D%20Semantic%20Segmentation%20for%20Indoor%20Scene%20Analysis
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Efficient%20RGB-D%20Semantic%20Segmentation%20for%20Indoor%20Scene%20Analysis&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-segmentasi-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Efficient%20RGB-D%20Semantic%20Segmentation%20for%20Indoor%20Scene%20Analysis
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Efficient%20RGB-D%20Semantic%20Segmentation%20for%20Indoor%20Scene%20Analysis&sort=relevance
+Makalah ini memperkenalkan ESANet (*Efficient Scene Analysis Network*), jaringan segmentasi semantik RGB-D yang dirancang untuk robot mobile dengan daya komputasi terbatas. Segmentasi semantik adalah pemberian label kelas pada setiap piksel; RGB-D berarti masukan berupa citra warna (RGB) dan citra kedalaman (*depth*) yang teregistrasi. Masalahnya, metode segmentasi RGB-D yang akurat pada masa itu memakai dua sampai tiga encoder dalam dan terlalu lambat untuk inferensi *real-time* (mengikuti laju kamera) pada perangkat robot.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasil utama: pada dataset NYUv2, varian ESANet-R34-NBt1D mencapai 50,30 mIoU pada 29,7 *frame* per detik (FPS) di NVIDIA Jetson AGX Xavier dengan optimasi TensorRT. SA-Gate yang berakurasi setara mencapai 50,4 mIoU tetapi hanya 11,9 FPS pada perangkat yang sama.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 13525--13531 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Arsitektur segmentasi RGB-D yang efisien (encoder ganda ResNet + attention) dioptimalkan untuk inferensi real-time pada robot indoor.
+Robot mobile di lingkungan dalam ruangan menjalankan beberapa tugas persepsi sekaligus — penghindaran rintangan, pemetaan, navigasi, persepsi manusia — dengan daya komputasi dan baterai terbatas. Segmentasi semantik cocok menjadi tahap pemrosesan awal bersama karena masker kelas per piksel dapat dipakai ulang oleh banyak tugas lanjutan. Deteksi manusia cukup dijalankan pada daerah berlabel "orang"; piksel berlabel "lantai" menandai ruang bebas gerak.
 
-## Abstrak (Parafrase)
-ESANet (Efficient Scene Analysis Network) menyeimbangkan akurasi dan efisiensi untuk analisis scene RGB-D real-time. Ia memakai dua encoder ResNet ringan dengan SE-attention untuk fusi, decoder efisien, dan dioptimasi untuk TensorRT sehingga cocok untuk robot indoor. Akurasinya kompetitif pada kecepatan jauh lebih tinggi.
+Adegan dalam ruangan umumnya rapat dengan objek yang saling menutupi. Informasi kedalaman memberi isyarat geometris yang tidak bergantung pencahayaan, dan terbukti menaikkan akurasi segmentasi sejak FuseNet (bab 051) dan RedNet (bab 052). Masalahnya, metode RGB-D yang akurat pada 2017–2020 memakai encoder ResNet-50 sampai ResNet-152 ganda dengan mekanisme fusi berlapis. RDFNet (bab 053) dengan dua encoder ResNet-152 hanya berjalan 5,8 FPS dan SA-Gate (bab 055) 11,9 FPS pada Jetson AGX Xavier. Di sisi lain, riset segmentasi efisien (ERFNet, SwiftNet, BiSeNet) berfokus pada RGB saja dan umumnya diuji pada GPU kelas atas, bukan perangkat *embedded* (tertanam) robot. Celah yang diisi makalah ini: arsitektur RGB-D yang akurat sekaligus cukup cepat untuk *real-time* pada perangkat robot.
 
-## Latar Belakang & Konteks
-Metode RGB-D akurat sering terlalu berat untuk robot dengan komputasi terbatas dan kebutuhan real-time; diperlukan keseimbangan akurasi-efisiensi.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Metode RGB-D akurat terlalu berat untuk robot.
-- Kebutuhan real-time pada komputasi terbatas.
-- Fusi RGB-D harus efisien.
-- Deployment (TensorRT) perlu dipertimbangkan.
-- Akurasi tak boleh dikorbankan berlebihan.
+Gagasan inti ESANet: dua encoder dangkal yang dirancang hemat, digabung dengan fusi murah, dapat menyamai metode RGB-D yang jauh lebih berat asalkan tiap komponen kompatibel dengan pengoptimal inferensi. Citra RGB dan citra kedalaman masing-masing diproses oleh encoder ResNet-34 yang blok konvolusinya difaktorkan sehingga lebih sedikit operasinya. Pada lima tingkat resolusi, fitur kedalaman ditimbang per kanal dengan mekanisme perhatian (*attention*) lalu dijumlahkan ke fitur RGB. Sebuah decoder dangkal dengan *upsampling* yang dipelajari memulihkan resolusi penuh. Karena seluruh komponen memakai operasi standar, jaringan dapat dikompilasi menjadi satu graf NVIDIA TensorRT.
 
-## Tujuan & Pertanyaan Penelitian
-- Menyeimbangkan akurasi & efisiensi segmentasi RGB-D.
-- Mengoptimalkan untuk inferensi real-time.
-- Menyediakan model praktis untuk robot indoor.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-ESANet menyeimbangkan akurasi-efisiensi terhadap metode berat seperti SA-Gate/ACNet.
+Alur data lengkap dari dua masukan ke peta kelas akhir:
 
-Karya/konsep pembanding yang relevan:
+```
+citra RGB 640x480                citra depth 640x480
+      │                                │
+      ▼                                ▼
+┌───────────────┐                ┌───────────────┐
+│ encoder RGB   │                │ encoder depth │
+│ ResNet34      │                │ ResNet34      │
+│ (blok NBt1D)  │                │ (blok NBt1D)  │
+└──────┬────────┘                └──────┬────────┘
+       │   fusi pada 5 tingkat resolusi │
+       │  ┌─────────────────────────────┴─┐
+       │  │ fitur tiap modalitas ditimbang│
+       └─►│ per kanal dengan modul SE,    │
+          │ lalu dijumlahkan per elemen   │
+          └──────────────┬────────────────┘
+                         ▼
+              peta fitur gabungan 20x15
+              (1/32 resolusi masukan)
+                    ┌────────────┐
+                    │   modul    │ pooling global
+                    │  konteks   │ + pooling 4x3
+                    └─────┬──────┘
+                          ▼
+   ┌───────────────────────────────────────────┐
+   │ decoder: 3 modul                          │
+   │ (konv 3x3 -> 3 blok NBt1D -> upsampling   │
+   │  terpelajari x2); skip connection dari    │
+   │  encoder diproyeksikan konv 1x1 lalu      │
+   │  dijumlahkan ke peta decoder              │
+   └──────────────────┬────────────────────────┘
+                      ▼
+        peta kelas 160x120 (1/4 resolusi)
+        -> 2 upsampling terpelajari lagi (x2)
+                      ▼
+            segmentasi akhir 640x480
+```
 
-- SA-Gate/ACNet — pembanding akurat namun berat.
-- ResNet ringan — backbone efisien.
-- SE-attention — fusi ringan.
-- TensorRT — optimasi deployment.
+### Dua Encoder dengan Blok Konvolusi Terfaktor (NBt1D)
 
-## Metodologi & Arsitektur
-Dua encoder ResNet (RGB & depth) yang ringan; fusi memakai SE-attention untuk menimbang kanal; decoder efisien memulihkan resolusi; model dioptimasi TensorRT untuk inferensi cepat pada GPU embedded.
+Encoder adalah bagian jaringan yang mengekstrak fitur sekaligus mengecilkan resolusi. ESANet memakai dua encoder ResNet-34, satu untuk RGB dan satu untuk kedalaman. ResNet adalah keluarga jaringan konvolusi dengan sambungan residual (keluaran blok dijumlahkan dengan masukannya) yang menjadi *backbone* standar visi komputer. Berbeda dengan metode segmentasi akurat yang mengganti konvolusi berlangkah (*stride*) dengan konvolusi terdilatasi demi menjaga resolusi, ESANet membiarkan resolusi turun 32 kali: pada masukan 640×480, peta fitur akhir encoder berukuran 20×15. Pengecilan resolusi agresif ini adalah sumber utama kecepatannya.
 
-Komponen / langkah metodologis utama:
+Perubahan kedua ada pada blok dasar ResNet. Setiap konvolusi 3×3 diganti pasangan konvolusi 3×1 dan 1×3 yang diselingi aktivasi ReLU. Blok ini disebut *Non-Bottleneck-1D* (NBt1D) dan diambil dari ERFNet. Konvolusi 3×3 memerlukan 9 perkalian per piksel per kanal; pasangan 3×1 dan 1×3 hanya 3+3=6, sehingga biaya turun sekitar sepertiga tanpa mengubah ukuran medan reseptif (luas daerah masukan yang memengaruhi satu piksel keluaran). Uji ablasi menunjukkan penggantian ini memperbaiki akurasi dan kecepatan sekaligus: pada varian ResNet-34, mIoU NYUv2 naik dari 48,81 menjadi 50,30 dan FPS dari 27,5 menjadi 29,7. Kedua encoder dilatih awal (*pretraining*) pada dataset klasifikasi ImageNet sebelum disetel untuk segmentasi.
 
-- Dual ResNet encoder ringan (RGB & depth).
-- Fusi berbasis SE-attention.
-- Decoder efisien.
-- Optimasi TensorRT untuk deployment.
-- Segmentasi per-piksel indoor.
-- Pelatihan end-to-end RGB-D.
+### Fusi Kedalaman dengan Penimbangan Kanal SE
 
-## Kontribusi Utama
-1. Segmentasi RGB-D real-time untuk robot.
-2. Encoder ganda ringan + SE-attention.
-3. Akurasi kompetitif pada kecepatan tinggi.
-4. Optimasi deployment (TensorRT).
+Citra kedalaman memiliki statistik yang berbeda dari RGB karena nilai pikselnya menyatakan jarak, bukan warna. Karena itu kedalaman diproses pada cabang terpisah, bukan ditumpuk sebagai kanal keempat. Pada kelima tingkat resolusi encoder, fitur kedalaman difusikan ke encoder RGB. Sebelum dijumlahkan per elemen, fitur kedua modalitas ditimbang ulang per kanal dengan modul *Squeeze-and-Excitation* (SE): setiap kanal peta fitur dirangkum menjadi satu angka rata-rata global, lalu dua lapis terhubung penuh dan fungsi sigmoid menghasilkan satu bobot per kanal yang mengalikan peta fitur tersebut. Jaringan dengan demikian belajar menekan kanal modalitas yang tidak membantu dan menonjolkan yang informatif, tergantung isi masukan. Uji ablasi menunjukkan penimbangan SE sebelum fusi menaikkan mIoU secara terpisah dari komponen lain.
 
-## Rincian Eksperimen
-Diuji pada NYUv2, SUN RGB-D, dan Cityscapes dengan metrik mIoU dan pengukuran kecepatan (FPS pada GPU embedded).
+### Modul Konteks dengan Pooling Ukuran Tetap
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Medan reseptif efektif encoder dangkal ini terbatas. ESANet menambahkan modul konteks bergaya *Pyramid Pooling Module* (PPM) dari PSPNet: fitur dirangkum pada beberapa ukuran *pooling* secara paralel lalu digabungkan, sehingga jaringan melihat konteks global dan lokal sekaligus. Agar kompatibel dengan TensorRT — yang hanya mendukung *pooling* berukuran tetap — ukuran *pooling* dipilih sebagai faktor dari resolusi masukan modul. Pada masukan 640×480, masukan modul konteks berukuran 20×15, sehingga dipakai dua cabang: *pooling* rata-rata global (20×15 menjadi 1×1) dan *pooling* 4×3.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NYUv2/SUN RGB-D | mIoU/FPS | akurasi kompetitif, real-time |
-| Cityscapes | mIoU | kompetitif |
-| Kecepatan | FPS | real-time pada GPU embedded |
+### Decoder dengan Upsampling Terpelajari
 
-## Temuan Kunci
-- Efisiensi memungkinkan segmentasi RGB-D real-time.
-- SE-attention cukup untuk fusi ringan.
-- Akurasi terjaga pada kecepatan tinggi.
-- Deployment nyata layak (TensorRT).
+Decoder memulihkan resolusi dan menghasilkan label kelas per piksel. ESANet memakai tiga modul decoder. Setiap modul terdiri atas konvolusi 3×3 (512 kanal pada modul pertama, menurun seiring kenaikan resolusi), tiga blok NBt1D tambahan, dan *upsampling* dua kali lipat. *Upsampling* tidak memakai *transposed convolution* — konvolusi balik yang mahal dan menimbulkan artefak pola grid — melainkan *upsampling* terpelajari yang ringan: resolusi diperbesar dengan interpolasi *nearest neighbor* (piksel terdekat digandakan), lalu konvolusi 3×3 *depthwise* (tiap kanal dikonvolusi terpisah) menggabungkan fitur piksel bertetangga. Kernel konvolusi ini diinisialisasi agar meniru interpolasi bilinear, kemudian bobotnya ikut dilatih. Penggantian dari bilinear ke *upsampling* terpelajari menaikkan mIoU 0,9 poin pada ablasi.
 
-## Keunggulan
-- Real-time & efisien.
-- Cocok untuk robot indoor.
-- Akurasi kompetitif.
+Detail halus yang hilang saat pengecilan resolusi dikembalikan lewat *skip connection* (sambungan lompatan): peta fitur gabungan RGB-D dari tingkat encoder beresolusi sama diproyeksikan dengan konvolusi 1×1 untuk menyesuaikan jumlah kanal, lalu dijumlahkan ke peta decoder. Decoder hanya memproses fitur sampai resolusi seperempat masukan (160×120). Sebuah konvolusi 3×3 kemudian memetakan fitur ke 40 kelas NYUv2, dan dua modul *upsampling* terpelajari terakhir mengembalikan resolusi penuh 640×480.
 
-## Keterbatasan
-- Akurasi sedikit di bawah metode terberat.
-- Bergantung kualitas kedalaman.
-- Optimasi terikat perangkat.
+### Supervisi dan Optimasi Inferensi
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Pelatihan memakai supervisi pada setiap skala decoder: konvolusi 1×1 menghasilkan segmentasi beresolusi kecil dari tiap modul yang dibandingkan dengan peta label yang diperkecil. Jaringan dilatih 500 *epoch* (putaran penuh atas data latih) dengan batch 8, pengoptimal SGD (momentum 0,9) atau Adam, penjadwal laju pembelajaran *one-cycle*, serta augmentasi penskalaan, pemotongan, pembalikan, dan jitter warna HSV. Kelas langka ditangani dengan *median frequency balancing* (bobot kelas dari kebalikan frekuensi kemunculannya). Untuk penerapan, jaringan diekspor ke ONNX (format pertukaran model antar-*framework*) lalu dikompilasi menjadi satu graf TensorRT dengan presisi Float16. Inferensi menjadi sampai lima kali lebih cepat daripada PyTorch pada perangkat yang sama.
 
-## Relevansi terhadap Tema Tinjauan
-ESANet penting bagi tinjauan karena menautkan segmentasi RGB-D dengan robotika real-time — konteks yang sama dengan banyak sistem YOLO+RGB-D.
+## Eksperimen dan Hasil
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Segmentasi RGB-D** yang baik dibaca berdampingan:
+Evaluasi dilakukan pada tiga dataset. NYUv2 memuat 1.449 citra RGB-D dalam ruangan (795 latih, 654 uji) dengan 40 kelas. SUNRGB-D memuat 10.335 citra (5.285 latih, 5.050 uji) dengan 37 kelas. Cityscapes memuat 5.000 citra jalanan beranotasi halus dalam 19 kelas pada resolusi 2048×1024, dengan kedalaman dihitung dari peta *disparity* (selisih posisi objek pada pasangan kamera stereo). Metrik utama adalah mIoU (*mean Intersection over Union*): rata-rata, per kelas, dari rasio luas irisan terhadap luas gabungan antara piksel prediksi dan piksel kebenaran. Kecepatan diukur pada NVIDIA Jetson AGX Xavier (TensorRT 7.1, Float16) — perangkat yang dipasang pada robot, bukan GPU server.
 
-- [051 - 2016 - FuseNet - Segmentasi RGB-D](./051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md)
-- [052 - 2018 - RedNet - Segmentasi RGB-D](./052%20-%202018%20-%20RedNet%20-%20Segmentasi%20RGB-D.md)
-- [053 - 2017 - RDFNet - Segmentasi RGB-D](./053%20-%202017%20-%20RDFNet%20-%20Segmentasi%20RGB-D.md)
-- [054 - 2019 - ACNet - Segmentasi RGB-D](./054%20-%202019%20-%20ACNet%20-%20Segmentasi%20RGB-D.md)
-- [055 - 2020 - SA-Gate - Segmentasi RGB-D](./055%20-%202020%20-%20SA-Gate%20-%20Segmentasi%20RGB-D.md)
-- [057 - 2021 - ShapeConv - Segmentasi RGB-D](./057%20-%202021%20-%20ShapeConv%20-%20Segmentasi%20RGB-D.md)
-- [058 - 2023 - CMX - Segmentasi RGB-D](./058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md)
-- [059 - 2023 - PGDENet - Segmentasi RGB-D](./059%20-%202023%20-%20PGDENet%20-%20Segmentasi%20RGB-D.md)
+Hasil utama pada dataset uji:
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Segmentasi RGB-D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+- ESANet-R34-NBt1D: 50,30 mIoU NYUv2 dan 48,17 mIoU SUNRGB-D pada 29,7 FPS.
+- Varian yang sama dengan pelatihan awal pada SceneNet RGB-D (data sintetis): 51,58 mIoU NYUv2 — tertinggi pada tabel perbandingan makalah — pada kecepatan sama.
+- Pembanding: SA-Gate 50,4 mIoU NYUv2 pada 11,9 FPS; ACNet 48,3/48,1 mIoU pada 16,5 FPS; RDFNet dengan ResNet-152 50,1/47,7 mIoU pada 5,8 FPS.
 
-## Glosarium Istilah (tema Segmentasi RGB-D)
-Istilah penting untuk memahami makalah ini:
+Interpretasinya: ESANet menyamai akurasi SA-Gate di NYUv2 (selisih 0,1 poin) dengan kecepatan 2,5 kali lipat, dan mengalahkan RDFNet-152 pada kedua dataset dengan kecepatan lima kali lipat. Pelatihan awal pada data sintetis menambah 1,28 poin mIoU NYUv2, lebih besar daripada perpindahan ke *backbone* lebih dalam — ResNet-50 hanya menambah 0,23 poin tetapi memperlambat inferensi dari 29,7 menjadi 22,6 FPS. Perbandingan modalitas memperkuat desain dua cabang: jaringan RGB-D berbasis ResNet-18 mengalahkan jaringan RGB saja berbasis ResNet-50 yang jauh lebih dalam, sekaligus lebih cepat.
 
-- **Segmentasi semantik** — Pelabelan kelas per-piksel.
-- **Scene parsing** — Pemahaman menyeluruh isi scene via segmentasi.
-- **Encoder-decoder** — Arsitektur mengecilkan lalu memulihkan resolusi.
-- **Fusi RGB-D** — Penggabungan cabang warna dan kedalaman.
-- **mIoU** — mean Intersection-over-Union; metrik segmentasi utama.
-- **Gating** — Gerbang penyaring/penimbang fitur sebelum digabung.
-- **Cross-modal** — Antar-modalitas (RGB dan depth/thermal/LiDAR).
-- **NYUv2** — Dataset RGB-D indoor standar.
-- **SUN RGB-D** — Dataset RGB-D indoor berskala.
-- **Pixel accuracy** — Persentase piksel terlabel benar.
+Pada Cityscapes, varian RGB tunggal ESANet-R34-NBt1D pada resolusi 1024×512 berjalan di atas 30 FPS dan melampaui metode efisien lain (ERFNet, LEDNet, ESPNetv2, SwiftNet) setidaknya 2,2 poin mIoU. Bobot resmi RGB-D mencapai 75,22 mIoU pada 23,4 FPS (1024×512) dan 80,09 mIoU pada 6,2 FPS saat dievaluasi pada resolusi penuh 2048×1024. Peningkatan dari kedalaman lebih kecil daripada di NYUv2; penulis menduga peta *disparity* Cityscapes kurang presisi dibandingkan kedalaman sensor dalam ruangan. Makalah juga melaporkan penerapan pada robot bersensor Kinect2 untuk persepsi manusia, deteksi ruang bebas, dan pemetaan semantik.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kelebihan dan Keterbatasan
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Kelebihan. Pertama, akurasi setara metode berat dicapai dengan kecepatan 2,5 sampai 5 kali lipat pada perangkat *embedded* yang benar-benar dipakai robot. Kedua, seluruh komponen berupa operasi standar sehingga kompatibel ONNX dan TensorRT; sebagian metode pembanding memuat operasi yang tidak didukung TensorRT. Ketiga, kode dan bobot terlatih tersedia terbuka sehingga dapat direproduksi. Keempat, terbukti berlaku di luar domain dalam ruangan (Cityscapes).
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Keterbatasan. Akurasi absolutnya tetap di bawah metode terberat pada SUNRGB-D (48,17 berbanding 49,4 milik SA-Gate). Ketergantungan pada kualitas kedalaman tampak dari kecilnya peningkatan pada Cityscapes; dari sisi rekayasa, perpindahan sensor kedalaman juga berisiko karena pada SUNRGB-D mIoU per kamera bervariasi dari 32,42 sampai 53,39. Angka FPS terikat pada kombinasi perangkat dan pustaka tertentu (Jetson AGX Xavier, Jetpack 4.4, TensorRT 7.1), sehingga tidak otomatis berlaku pada perangkat lain. Secara konseptual, dua encoder ResNet-34 masih lebih berat daripada arsitektur yang dirancang khusus untuk efisiensi, sehingga ruang penghematan tambahan tetap terbuka.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+## Kaitan dengan Bab Lain
 
-## Kesimpulan
-ESANet menyediakan segmentasi RGB-D efisien dengan encoder ganda ringan dan SE-attention, dioptimasi untuk inferensi real-time pada robot indoor tanpa mengorbankan akurasi berlebihan.
+ESANet melanjutkan garis fusi dua cabang yang diletakkan [FuseNet (bab 051)](./051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md) dan [RedNet (bab 052)](./052%20-%202018%20-%20RedNet%20-%20Segmentasi%20RGB-D.md): fitur kedalaman disuntikkan ke encoder RGB pada banyak tingkat resolusi, bukan hanya di awal atau di akhir. Terhadap mekanisme perhatian yang lebih berat pada [ACNet (bab 054)](./054%20-%202019%20-%20ACNet%20-%20Segmentasi%20RGB-D.md) dan [SA-Gate (bab 055)](./055%20-%202020%20-%20SA-Gate%20-%20Segmentasi%20RGB-D.md), ESANet menunjukkan bahwa penimbangan kanal SE yang ringan sudah memadai. [RDFNet (bab 053)](./053%20-%202017%20-%20RDFNet%20-%20Segmentasi%20RGB-D.md) menempuh jalur berbeda dengan memakai fitur kedua modalitas di decoder; ESANet tetap memakai satu decoder untuk fitur gabungan demi efisiensi. Makalah ini juga menjadi pembanding praktis bagi konvolusi khusus kedalaman seperti [ShapeConv (bab 057)](./057%20-%202021%20-%20ShapeConv%20-%20Segmentasi%20RGB-D.md), karena konvolusi standar 3×3 yang teroptimasi perangkat keras ternyata lebih cepat. Generasi berikutnya seperti [CMX (bab 058)](./058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md) mengejar akurasi lebih tinggi dengan arsitektur transformer lintas modalitas.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `seichter2021esanet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Poin untuk Sitasi
 
----
-*Lembar 056/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `seichter2021esanet`. Ringkasan yang aman dikutip: "ESANet adalah arsitektur segmentasi semantik RGB-D yang efisien, terdiri atas dua encoder ResNet terfaktor (blok NBt1D), fusi kedalaman berbasis Squeeze-and-Excitation, dan decoder dengan upsampling terpelajari. Arsitektur ini mencapai akurasi setara metode yang jauh lebih berat sekaligus inferensi real-time pada perangkat embedded NVIDIA Jetson AGX Xavier."
+
+Angka mIoU dan FPS di bab ini berasal dari Tabel I naskah (arXiv:2011.06961v3) dan README repositori resmi; FPS berlaku untuk konfigurasi Jetpack 4.4, TensorRT 7.1, Float16. Angka Cityscapes (75,22 dan 80,09 mIoU) bersumber dari README repositori — Tabel II naskah sebaiknya diperiksa langsung sebelum sitasi formal. Klaim ">30 FPS dan +2,2 mIoU" pada Cityscapes merujuk pada varian RGB tunggal, bukan model RGB-D.

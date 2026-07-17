@@ -1,203 +1,118 @@
 # 060 - Multimodal Token Fusion for Vision Transformers
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 060 dari 154 |
 | Kunci BibTeX | `wang2022tokenfusion` |
-| Judul | Multimodal Token Fusion for Vision Transformers |
-| Penulis | Wang, Yikai; Chen, Xinghao; Cao, Lele; Huang, Wenbing; Sun, Fuchun; Wang, Yunhe |
+| Judul asli | Multimodal Token Fusion for Vision Transformers |
+| Penulis | Yikai Wang, Xinghao Chen, Lele Cao, Wenbing Huang, Fuchun Sun, Yunhe Wang |
 | Tahun | 2022 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Segmentasi RGB-D |
-| Kata kunci | Transformer, token fusion, multimodal, pruning, RGB-D |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2022) |
+| Tema | Segmentasi RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2204.08721
+- **DOI (arXiv):** https://doi.org/10.48550/arXiv.2204.08721
+- **Kode sumber resmi:** https://github.com/yikaiw/TokenFusion
+- **Google Scholar:** https://scholar.google.com/scholar?q=Multimodal%20Token%20Fusion%20for%20Vision%20Transformers
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Multimodal%20Token%20Fusion%20for%20Vision%20Transformers&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-segmentasi-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Multimodal%20Token%20Fusion%20for%20Vision%20Transformers
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Multimodal%20Token%20Fusion%20for%20Vision%20Transformers&sort=relevance
+Makalah ini memperkenalkan TokenFusion, metode fusi multimodal untuk *vision transformer* — arsitektur jaringan saraf yang memproses citra sebagai urutan token. Masalah yang dipecahkan adalah cara menggabungkan beberapa transformer satu modal (misalnya satu untuk citra warna RGB dan satu untuk peta kedalaman) tanpa merusak struktur atensi yang telah dipelajari masing-masing model. Alih-alih menggabungkan seluruh token dari semua modalitas, TokenFusion mendeteksi token yang tidak informatif pada satu modalitas, lalu menggantinya dengan token dari modalitas lain pada posisi yang bersesuaian.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Metode ini diuji pada tiga tugas: translasi citra multimodal (dataset Taskonomy), segmentasi semantik RGB-D (NYUDv2 dan SUN RGB-D), serta deteksi objek 3D dari awan titik dan citra (SUN RGB-D dan ScanNetV2). Pada tugas yang paling relevan dengan bab ini, TokenFusion mencapai 54,2% mIoU pada NYUDv2, melampaui metode fusi CNN terbaik saat itu (CEN, 52,5%), dengan *backbone* transformer ringan. Kode sumbernya dirilis terbuka.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 12186--12195 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode fusi multimodal untuk Vision Transformer yang menukar token tak-informatif satu modal dengan token proyeksi antar-modal secara efisien.
+Segmentasi semantik RGB-D adalah pelabelan kelas untuk setiap piksel citra dengan memakai dua masukan: citra warna (RGB) dan peta kedalaman (D) yang menyimpan jarak setiap piksel ke kamera. Silsilah metode pada klaster ini — dari FuseNet (bab 051) yang memadukan dua aliran CNN, hingga ESANet (bab 056) dan CMX (bab 058) — menunjukkan bahwa kedalaman konsisten menambah akurasi, karena bentuk geometri objek tetap terbaca ketika penampilan warna ambigu. Hampir semua berbasis CNN; fusi dilakukan lewat penjumlahan fitur, penyambungan kanal, atau gerbang perhatian.
 
-## Abstrak (Parafrase)
-TokenFusion mendeteksi token yang tidak informatif pada satu modalitas lalu menggantinya dengan token hasil proyeksi dari modalitas lain, dengan residual positional alignment untuk menjaga struktur. Ini memungkinkan fusi multimodal (mis. RGB-D) pada Transformer secara selektif dan efisien tanpa mencampur semua token.
+Sementara itu, *vision transformer* (ViT) menjadi pilihan arsitektur baru. Pada ViT, citra dipotong menjadi *patch* (potongan berukuran tetap, misalnya 16×16 piksel), setiap potongan diproyeksikan linier menjadi sebuah vektor yang disebut token, dan urutan token diproses oleh lapis *self-attention* — mekanisme yang menghitung bobot interaksi untuk setiap pasangan token sehingga representasi tiap token memuat konteks seluruh citra. Ketika dua modalitas hendak dipadukan pada arsitektur ini, muncul pertanyaan desain: di mana dan bagaimana interaksi antar-modal harus terjadi.
 
-## Latar Belakang & Konteks
-Fusi Transformer multimodal naif (menggabungkan semua token) mahal dan tak selektif, padahal sebagian token satu modal tidak informatif dan sebaiknya digantikan modal lain.
+Dua jawaban intuitif tidak memuaskan. Pertama, fusi *tanpa penyelarasan* (*alignment-agnostic*): seluruh token dari kedua modalitas disambung menjadi satu urutan, seperti pada model bahasa-visi semacam ViLT. Cara ini menggandakan panjang urutan dan, menurut penulis, melemahkan bobot atensi dalam satu modal; eksperimen makalah menunjukkan keuntungannya kecil. Kedua, fusi *sadar penyelarasan* (*alignment-aware*) secara langsung: token diproyeksikan antar-modal mengikuti korespondensi posisi piksel. Cara ini memaksa perancang memilih lapis dan token yang diproyeksikan, serta berisiko mengubah alur data asli sehingga bobot pralatih tidak lagi optimal.
 
-## Permasalahan yang Diangkat
-- Fusi Transformer multimodal naif mahal.
-- Penggabungan semua token tak selektif.
-- Sebagian token satu modal tak informatif.
-- Struktur posisi perlu dijaga saat pertukaran.
-- Efisiensi fusi diperlukan.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Mendeteksi token tak-informatif.
-- Menukarnya dengan token antar-modal.
-- Menjaga struktur via positional alignment.
+Gagasan inti TokenFusion: jangan menambah token, melainkan memakai kembali slot token yang tidak informatif. Setiap lapis transformer dilengkapi penilaian skor yang menandai token-token berkontribusi kecil; token yang tertandai kemudian diganti oleh token dari modalitas pasangan pada posisi yang bersesuaian, sedangkan token penting dibiarkan utuh. Dengan cara ini, relasi atensi antar token penting dalam satu modal tidak berubah, dan informasi antar-modal masuk melalui slot yang memang kurang berguna.
 
-## Tinjauan Terdahulu / Posisi Literatur
-TokenFusion mengembangkan pemangkasan dan pertukaran token pada ViT untuk fusi multimodal.
+Agar token pengganti tetap membawa informasi posisi, dipakai *residual positional alignment* (RPA): embedding posisi asli token yang diganti tetap ditambahkan pada fitur hasil substitusi. Hasilnya fusi yang selektif, dinamis, dan hemat: struktur transformer satu modal praktis utuh sehingga bobot pralatih tetap diwarisi.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- Vision Transformer (ViT) — arsitektur dasar.
-- Token pruning — deteksi token tak-penting.
-- Multimodal fusion.
-- Residual positional alignment.
+### Representasi Token dan Lapis Transformer
 
-## Metodologi & Arsitektur
-Modul deteksi menandai token tak-informatif pada satu modal; token tersebut digantikan proyeksi token dari modal lain; residual positional alignment menjaga korespondensi spasial; berlaku untuk berbagai tugas multimodal termasuk segmentasi RGB-D.
+Setiap modalitas diolah menjadi *N* token berdimensi seragam. Satu lapis transformer terdiri atas dua blok: MSA (*multi-head self-attention*, yaitu *self-attention* dengan beberapa kepala yang dihitung paralel) diikuti MLP (*multi-layer perceptron*, jaringan dua lapis penuh per token), dan masing-masing blok didahului LN (*layer normalization*, normalisasi rata-rata dan varians fitur per token). Untuk masukan dua modalitas dipakai dua urutan token, misalnya token RGB dan token kedalaman, yang keduanya melewati struktur lapis yang sama.
 
-Komponen / langkah metodologis utama:
+### Skor Kepentingan Token
 
-- Deteksi token tak-informatif per-modal.
-- Substitusi antar-modal (token swap).
-- Residual positional alignment.
-- Fusi selektif dan efisien.
-- Berlaku lintas tugas multimodal.
-- Pelatihan end-to-end.
+Kepentingan setiap token diukur fungsi skor s(e) = MLP(e) yang menghasilkan satu nilai dalam rentang [0,1] per token per lapis. Skor dilatih bersama jaringan utama; agar gradien mengalir, skor dikalikan ke fitur token sebelum blok MSA. Selain rugi tugas utama (misalnya rugi segmentasi), ditambahkan rugi sparsitas berupa norma *l1* — jumlah nilai absolut seluruh skor — dengan bobot λ. Rugi ini mendorong sebagian skor turun mendekati nol, sehingga sebagian token secara eksplisit ditandai tidak penting. Karena dihitung dari isi fitur, penandaan bersifat dinamis per citra.
 
-## Kontribusi Utama
-1. Mekanisme fusi token selektif & efisien.
-2. Pertukaran token antar-modal.
-3. Menjaga struktur posisi.
-4. Efektif untuk RGB-D dan tugas multimodal lain.
+### Substitusi Token Antar-Modal
 
-## Rincian Eksperimen
-Diuji pada tugas multimodal termasuk segmentasi RGB-D dan lainnya dengan metrik yang sesuai (mis. mIoU), plus ablation mekanisme pertukaran token.
+Substitusi diterapkan sebelum setiap lapis dengan ambang θ. Token dengan skor ≥ θ dipertahankan; token dengan skor < θ diganti token dari modalitas pasangan pada posisi yang bersesuaian. Sebagai ilustrasi, pada citra 480×640 dengan *patch* 16×16 terbentuk 30×40 = 1.200 token per modalitas; bila 200 token RGB memperoleh skor di bawah θ, tepat 200 slot itu diisi token kedalaman pada posisi piksel yang sama, sedangkan 1.000 token lain tidak berubah. Untuk RGB-D yang pikselnya teregistrasi, proyeksi antar-modal cukup fungsi identitas: token ke-*n* kedua modal menunjuk piksel yang sama. Untuk segmentasi, makalah memakai θ = 2×10⁻².
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Alur fusi untuk dua modalitas homogen (RGB dan kedalaman):
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| RGB-D segmentation | mIoU | efisien & akurat |
-| Tugas multimodal lain | metrik terkait | generalisasi |
-| Ablation | token swap | pertukaran selektif menyumbang gain |
+```
+RGB (citra warna)                    D (peta kedalaman)
+     |                                    |
+     v potong patch + proyeksi linier     v potong patch + proyeksi linier
+ N token e_RGB + embedding posisi    N token e_D + embedding posisi
+     |                                    |
+     v skor s = MLP(e) dalam [0,1]        v skor s = MLP(e) dalam [0,1]
+┌────────────── transformer berbagi bobot, per lapis ──────────────┐
+│  s >= theta : token asli dipertahankan                           │
+│  s <  theta : token diganti token pada posisi sama dari modal    │
+│               pasangannya; embedding posisi asli tetap (RPA)     │
+└──────────────────────────────────────────────────────────────────┘
+     |                                    |
+     +-----------------+------------------+
+                       v
+        kepala segmentasi -> peta kelas per piksel
+```
 
-## Temuan Kunci
-- Sebagian token satu modal dapat digantikan modal lain.
-- Fusi token selektif lebih efisien.
-- Positional alignment penting.
-- Generalisasi lintas tugas multimodal.
+Diagram menekankan dua hal: bobot transformer dibagi sehingga parameter tidak berlipat, dan jumlah token konstan *N* per modalitas sehingga biaya *self-attention* tidak bertambah seperti pada fusi penyambungan.
 
-## Keunggulan
-- Fusi token efisien.
-- Selektif (bukan menggabung semua).
-- Generalis lintas tugas.
+### Residual Positional Alignment
 
-## Keterbatasan
-- Deteksi token tak-informatif bergantung heuristik.
-- Transformer mahal untuk resolusi tinggi.
-- Bergantung kualitas modal kedua.
+*Positional embedding* (embedding posisi) adalah vektor yang ditambahkan ke setiap token untuk menyandi posisi *patch*-nya dalam kisi citra; tanpanya, *self-attention* tidak dapat membedakan urutan spasial token. Substitusi menimbulkan masalah: token kedalaman yang ditempatkan pada slot RGB tidak otomatis membawa posisi slot tersebut. RPA mengatasinya dengan tetap menambahkan embedding posisi asli slot pada token hasil substitusi. Gradien embedding posisi juga dihentikan setelah lapis pertama, sehingga korespondensi posisi antar-modal tetap stabil selama pelatihan.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Penyetelan untuk Modalitas Homogen
 
-## Relevansi terhadap Tema Tinjauan
-TokenFusion menawarkan mekanisme fusi token efisien untuk Transformer multimodal — relevan bagi tren fusi RGB+Depth berbasis Transformer dalam tinjauan.
+Untuk modalitas yang teregistrasi per piksel (RGB, kedalaman, normal, tekstur), seluruh parameter MSA dan MLP dibagi antar-modalitas, tetapi LN dibuat terpisah per modalitas karena statistik masing-masing modal berbeda jauh. Substitusi berjalan dua arah: token RGB yang lemah diisi token kedalaman, dan sebaliknya. Untuk lebih dari dua modalitas, *N* token dibagi acak menjadi *M*−1 kelompok berukuran sama sebelum pelatihan; setiap kelompok diikat ke satu modalitas lain sebagai sumber pengganti, dan pembagian ini dibekukan selama pelatihan.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Segmentasi RGB-D** yang baik dibaca berdampingan:
+### Penyetelan untuk Modalitas Heterogen
 
-- [051 - 2016 - FuseNet - Segmentasi RGB-D](./051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md)
-- [052 - 2018 - RedNet - Segmentasi RGB-D](./052%20-%202018%20-%20RedNet%20-%20Segmentasi%20RGB-D.md)
-- [053 - 2017 - RDFNet - Segmentasi RGB-D](./053%20-%202017%20-%20RDFNet%20-%20Segmentasi%20RGB-D.md)
-- [054 - 2019 - ACNet - Segmentasi RGB-D](./054%20-%202019%20-%20ACNet%20-%20Segmentasi%20RGB-D.md)
-- [055 - 2020 - SA-Gate - Segmentasi RGB-D](./055%20-%202020%20-%20SA-Gate%20-%20Segmentasi%20RGB-D.md)
-- [056 - 2021 - ESANet - Segmentasi RGB-D](./056%20-%202021%20-%20ESANet%20-%20Segmentasi%20RGB-D.md)
-- [057 - 2021 - ShapeConv - Segmentasi RGB-D](./057%20-%202021%20-%20ShapeConv%20-%20Segmentasi%20RGB-D.md)
-- [058 - 2023 - CMX - Segmentasi RGB-D](./058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md)
+Untuk modalitas dengan struktur berbeda — deteksi objek 3D dari awan titik dan deteksi 2D dari citra — dipakai dua transformer terpisah tanpa berbagi bobot. Cabang 3D mengikuti Group-Free (detektor 3D berbasis transformer yang memperlakukan titik contoh dan titik usulan sebagai token), cabang 2D mengikuti YOLOS (detektor 2D yang meneruskan *patch* citra langsung ke ViT). Karena dimensi kedua cabang berbeda, proyeksi antar-modal diganti dari identitas menjadi MLP dangkal. Korespondensi posisi memakai geometri kamera: titik 3D diproyeksikan ke piksel citra dengan matriks intrinsik dan ekstrinsik kamera, lalu piksel itu dipetakan ke indeks *patch*. Token titik 3D yang terpangkas diganti oleh token *patch* citra pada lokasi proyeksinya.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Segmentasi RGB-D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+### Fungsi Rugi Gabungan
 
-## Glosarium Istilah (tema Segmentasi RGB-D)
-Istilah penting untuk memahami makalah ini:
+Rugi total adalah jumlah rugi tugas setiap modalitas ditambah rugi sparsitas skor di seluruh lapis, dengan bobot λ = 10⁻³ untuk segmentasi dan 10⁻⁴ untuk translasi citra. Seluruh sistem dilatih *end-to-end* (satu proses pelatihan menyatu dari masukan ke keluaran), dengan bobot awal dari pralatih ImageNet.
 
-- **Segmentasi semantik** — Pelabelan kelas per-piksel.
-- **Scene parsing** — Pemahaman menyeluruh isi scene via segmentasi.
-- **Encoder-decoder** — Arsitektur mengecilkan lalu memulihkan resolusi.
-- **Fusi RGB-D** — Penggabungan cabang warna dan kedalaman.
-- **mIoU** — mean Intersection-over-Union; metrik segmentasi utama.
-- **Gating** — Gerbang penyaring/penimbang fitur sebelum digabung.
-- **Cross-modal** — Antar-modalitas (RGB dan depth/thermal/LiDAR).
-- **NYUv2** — Dataset RGB-D indoor standar.
-- **SUN RGB-D** — Dataset RGB-D indoor berskala.
-- **Pixel accuracy** — Persentase piksel terlabel benar.
+## Eksperimen dan Hasil
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Evaluasi mencakup tiga tugas dengan tujuh modalitas pada empat dataset. Metrik utama segmentasi adalah mIoU (*mean Intersection over Union*: rata-rata rasio irisan terhadap gabungan antara piksel prediksi dan kebenaran, dihitung per kelas; maksimal 100%).
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+**Segmentasi RGB-D.** Pada NYUDv2 (795 citra latih, 654 uji, 40 kelas) dengan *backbone* SegFormer ringan: model satu modal RGB saja memperoleh 49,7% mIoU (versi kecil) dan 50,6% (versi besar); fusi penyambungan token hanya menambah menjadi 50,8% dan 51,4%; TokenFusion mencapai 53,3% dan 54,2%. Angka terakhir melampaui CEN, metode fusi CNN terbaik pembanding, yang memperoleh 52,5%. Pada SUN RGB-D (5.285 latih, 5.050 uji, 37 kelas) polanya sama: TokenFusion versi besar mencapai 53,0% mIoU dibanding CEN 51,1% dan penyambungan 49,0%. Interpretasinya: penyambungan naif hanya bernilai sekitar satu poin, sedangkan substitusi selektif menambah 3,6 poin di atas model satu modal — keuntungan datang dari *cara* fusi, bukan sekadar dari keberadaan modal kedua.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+**Deteksi objek 3D.** Metriknya mAP@0,25 (*mean Average Precision* dengan ambang IoU 3D 0,25). Pada SUN RGB-D, TokenFusion mencapai 64,9 dibanding *backbone* Group-Free 63,0; menempelkan warna RGB langsung ke titik justru menurunkan kinerja menjadi 62,1. Pada ScanNetV2, TokenFusion mencapai 70,8 dibanding 69,1 milik pembanding terkuat. Artinya, fusi heterogen yang keliru dapat merugikan, sedangkan substitusi terpandu skor menguntungkan.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+**Translasi citra.** Pada Taskonomy (1.000 citra latih, 500 validasi), tugas Shade+Texture→RGB, TokenFusion mencapai FID 43,92 — FID (*Fréchet Inception Distance*) mengukur jarak distribusi citra hasil terhadap citra asli, makin kecil makin baik — dibanding CEN 62,63, atau penurunan relatif 29,8%.
 
-## Kesimpulan
-TokenFusion menukar token tak-informatif satu modal dengan token antar-modal secara selektif dan efisien pada Vision Transformer, menyediakan fusi multimodal (termasuk RGB-D) yang hemat.
+**Ablasi.** Norma *l1* sendirian tanpa substitusi praktis tidak mengubah hasil (49,5% vs 49,7% mIoU). Substitusi acak 10% token hanya mencapai 50,1%, dan 30% justru menurunkan ke 48,2% — bukti bahwa pemilihan token berbasis skor, bukan substitusi itu sendiri, yang menyumbang keuntungan. RPA menambah 0,4 poin mIoU pada segmentasi (52,9% menjadi 53,3%) dan 1,3 poin mAP pada deteksi 3D (63,6 menjadi 64,9).
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `wang2022tokenfusion` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Kelebihan dan Keterbatasan
 
----
-*Lembar 060/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kelebihan utama adalah generalitas: satu mekanisme berlaku untuk modalitas homogen maupun heterogen pada tiga tugas, tanpa merancang ulang arsitektur dasar. Struktur transformer satu modal praktis utuh sehingga bobot pralatih ImageNet terwarisi, jumlah token konstan sehingga biaya atensi tidak bertambah, dan berbagi parameter menekan ukuran model.
+
+Keterbatasannya sebagai berikut. Ambang θ dan bobot λ disetel berbeda per tugas (10⁻³ versus 10⁻⁴), sehingga dari sisi rekayasa metode ini menambah hiperparameter yang peka terhadap penyetelan. Fusi menuntut penyelarasan antar-modal: pasangan RGB-D harus teregistrasi, dan fusi titik-citra memerlukan parameter kamera; pada data tanpa korespondensi eksplisit mekanisme ini tidak berlaku langsung. Rasio token yang dipangkas tidak dikendalikan eksplisit melainkan mengikuti data dan kekuatan rugi sparsitas. Terakhir, makalah tidak melaporkan latensi atau FLOPs untuk tugas segmentasi, sehingga klaim efisiensi bersifat struktural — jumlah token konstan — bukan hasil pengukuran waktu nyata.
+
+## Kaitan dengan Bab Lain
+
+Bab ini meneruskan garis fusi RGB-D yang diletakkan [bab 051 (FuseNet)](./051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md) — pemaduan dua aliran CNN pertama untuk segmentasi RGB-D — tetapi mengganti medium fusinya: bukan lagi penggabungan peta fitur konvolusi, melainkan pertukaran token di dalam transformer. Dibanding [bab 058 (CMX)](./058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md) yang memadukan modalitas lewat pertukaran fitur dan rektifikasi antar-*backbone* transformer, TokenFusion mengambil jalan berbeda: arsitektur satu modal dibiarkan utuh dan fusi hanya mengisi slot token tak informatif. [Bab 061 (DFormer)](./061%20-%202024%20-%20DFormer%20-%20Segmentasi%20RGB-D.md) kemudian memperlihatkan rancangan *backbone* transformer RGB-D terpadu yang lebih baru; keduanya layak dibaca berdampingan sebagai dua strategi fusi era transformer.
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `wang2022tokenfusion`. Ringkasan yang aman dikutip: "TokenFusion memadukan beberapa *vision transformer* satu modal dengan mendeteksi token tak informatif lewat skor terlatih, menggantinya dengan token modalitas lain pada posisi bersesuaian, dan mempertahankan embedding posisi asli melalui *residual positional alignment*; metode ini melampaui fusi berbasis CNN pada segmentasi RGB-D (54,2% mIoU di NYUDv2) serta pada deteksi objek 3D (64,9 mAP@0,25 di SUN RGB-D)."
+
+Catatan verifikasi sebelum sitasi formal: (1) seluruh angka di bab ini diambil dari tabel naskah arXiv v2, sebaiknya dicocokkan ulang dengan versi prosiding CVPR; (2) naskah tidak konsisten menyebut ambang θ (10⁻² di bagian metode, 2×10⁻² di bagian eksperimen) dan pengaturan *backbone* (B2/B3 di bagian eksperimen, tetapi B1/B2 di paragraf hasil); (3) angka FID 43,92 dan klaim penurunan relatif 29,8% berasal dari Tabel 1 naskah.

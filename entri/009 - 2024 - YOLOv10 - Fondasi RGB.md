@@ -1,205 +1,116 @@
 # 009 - YOLOv10: Real-Time End-to-End Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 009 dari 154 |
 | Kunci BibTeX | `wang2024yolov10` |
-| Judul | YOLOv10: Real-Time End-to-End Object Detection |
-| Penulis | Wang, Ao; Chen, Hui; Liu, Lihao; Chen, Kai; Lin, Zijia; Han, Jungong; Ding, Guiguang |
+| Judul asli | YOLOv10: Real-Time End-to-End Object Detection |
+| Penulis | Ao Wang, Hui Chen, Lihao Liu, Kai Chen, Zijia Lin, Jungong Han, Guiguang Ding |
 | Tahun | 2024 |
-| Venue / Jurnal | Advances in Neural Information Processing Systems (NeurIPS) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | YOLOv10, NMS-free, dual assignment, end-to-end, efisiensi holistik |
+| Venue | Advances in Neural Information Processing Systems (NeurIPS 2024) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF dan HTML gratis):** https://arxiv.org/abs/2405.14458
+- **Kode sumber resmi (THU-MIG, Tsinghua):** https://github.com/THU-MIG/yolov10
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLOv10%3A%20Real-Time%20End-to-End%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLOv10%3A%20Real-Time%20End-to-End%20Object%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLOv10%3A%20Real-Time%20End-to-End%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLOv10%3A%20Real-Time%20End-to-End%20Object%20Detection&sort=relevance
+Makalah ini memperkenalkan YOLOv10, detektor objek satu tahap (memprediksi kotak objek langsung tanpa tahap pengusulan wilayah) yang menghilangkan *Non-Maximum Suppression* (NMS) dari alur inferensi: citra masuk, kotak objek beserta kelasnya langsung keluar, tanpa pasca-proses. Dua gagasan menopangnya. Pertama, *consistent dual assignments*: model dilatih dengan dua kepala prediksi — satu dengan penugasan satu-ke-banyak untuk supervisi kaya, satu dengan penugasan satu-ke-satu untuk inferensi tanpa NMS — yang diselaraskan oleh metrik pencocokan yang sama. Kedua, desain arsitektur holistik yang memangkas redundansi komputasi pada hampir semua komponen YOLO.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada tolok ukur COCO, YOLOv10-S mencapai 46,3% AP dengan latensi 2,49 milidetik — 1,8 kali lebih cepat daripada RT-DETR-R18 pada akurasi setara, dengan parameter dan komputasi 2,8 kali lebih kecil. YOLOv10-B juga memangkas 46% latensi dan 25% parameter terhadap YOLOv9-C pada performa sama. Makalah ini membuktikan detektor konvolusi satu tahap dapat bersifat *end-to-end* seperti detektor transformer tanpa mengorbankan kecepatan.
 
-| Atribut | Nilai |
-|---|---|
-| — | — |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Merealisasikan YOLO end-to-end tanpa NMS melalui pelatihan consistent dual assignments dan desain ulang komponen secara holistik, menurunkan latensi pada akurasi setara.
+Sejak YOLOv1 (bab 001), seluruh keluarga YOLO dilatih dengan penugasan label satu-ke-banyak: setiap objek kebenaran (*ground truth*) dipasangkan dengan banyak prediksi positif. Akibatnya, pada inferensi satu objek dilaporkan banyak kotak yang saling tumpang tindih, sehingga dibutuhkan NMS — prosedur yang membuang kotak berskor lebih rendah bila tumpang tindihnya melebihi ambang *Intersection over Union* (IoU, rasio luas irisan terhadap luas gabungan dua kotak). NMS menimbulkan tiga persoalan: latensi bertambah dan bergantung pada jumlah objek; hasil sensitif terhadap hiperparameter ambangnya; dan model tidak dapat diterapkan *end-to-end* (dari masukan langsung ke keluaran akhir) karena ada tahap non-diferensial di ujung alur.
 
-## Abstrak (Parafrase)
-YOLOv10 menghapus kebutuhan Non-Maximum Suppression (NMS) yang selama ini menjadi hambatan latensi dan penerapan end-to-end. Caranya adalah consistent dual label assignments: cabang one-to-many untuk supervisi kaya saat pelatihan dan cabang one-to-one untuk inferensi bebas-NMS, dengan metrik pencocokan yang konsisten. Selain itu, desain holistik efisiensi-akurasi (head ringan, downsampling terpisah spasial-kanal, rank-guided block) menekan redundansi. Hasilnya latensi lebih rendah pada akurasi setara dibanding YOLOv8/v9 dan RT-DETR.
+Detektor transformer seperti DETR (bab 022) dan RT-DETR (bab 155) sudah bebas NMS melalui penugasan satu-ke-satu: tiap objek hanya dipasangkan ke satu prediksi. Namun, penugasan satu-ke-satu yang diterapkan langsung pada YOLO memberi supervisi lemah — konvergensi lambat dan akurasi rendah — sedangkan detektor transformer masih kalah efisien dari YOLO pada proses umpan-maju murni. Persoalan kedua bersifat arsitektural: komponen YOLO berkembang bertahap lintas generasi tanpa pemeriksaan menyeluruh, sehingga menyimpan redundansi komputasi. YOLOv10 menangani keduanya sekaligus.
 
-## Latar Belakang & Konteks
-NMS sebagai pasca-proses menambah latensi yang bervariasi dan menyulitkan penerapan end-to-end di perangkat. Upaya sebelumnya (one-to-one assignment) sering menurunkan akurasi atau memperlambat konvergensi.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- NMS menambah latensi variabel dan menghambat end-to-end.
-- One-to-one assignment naif menurunkan akurasi/konvergensi.
-- Komponen YOLO menyimpan redundansi komputasi.
-- Head konvensional mahal secara parameter.
-- Trade-off latensi-akurasi belum optimal untuk deployment.
+Gagasan pertama: NMS adalah solusi pasca-proses untuk masalah yang ditimbulkan pelatihan satu-ke-banyak; solusi yang lebih langsung adalah melatih model agar hanya menghasilkan satu prediksi per objek tanpa kehilangan supervisi kaya. Caranya: dua kepala prediksi berbagi tubuh jaringan yang sama — kepala satu-ke-banyak hanya hidup saat pelatihan, kepala satu-ke-satu dilatih dengan metrik pencocokan yang sama bentuknya sehingga pilihannya selaras dengan sampel terbaik kepala pertama. Saat inferensi, kepala pertama dibuang: tanpa biaya tambahan, tanpa NMS.
 
-## Tujuan & Pertanyaan Penelitian
-- Menghapus NMS lewat pelatihan dual assignment konsisten.
-- Merancang ulang komponen untuk efisiensi holistik.
-- Menurunkan latensi tanpa mengorbankan akurasi.
+Gagasan kedua: periksa setiap komponen YOLO dan potong komputasi yang tidak sebanding dengan sumbangannya pada akurasi. Kepala klasifikasi yang terlalu besar diperkecil, penurunan resolusi dan penambahan kanal dipisahkan, blok pada tahap redundan diganti blok ringkas, dan kapasitas yang hilang dipulihkan dengan konvolusi berkernel besar serta perhatian-diri parsial pada posisi yang murah.
 
-## Tinjauan Terdahulu / Posisi Literatur
-YOLOv10 memadukan gagasan end-to-end (DETR/one-to-one) dengan efisiensi arsitektur YOLO, mengatasi kelemahan masing-masing.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Penugasan Ganda untuk Pelatihan Tanpa NMS
 
-- DETR — deteksi end-to-end bebas NMS.
-- One-to-one/one-to-many assignment — supervisi label.
-- YOLOv8 — basis arsitektur.
-- Rank/efficiency design — kompresi komponen.
+Istilah kuncinya adalah *label assignment* (penugasan label): aturan yang menentukan prediksi mana yang menjadi sampel positif untuk tiap objek kebenaran selama pelatihan, sehingga fungsi loss (fungsi kerugian yang diminimalkan) tahu prediksi mana yang harus diperbaiki. YOLOv8 — basis arsitektur YOLOv10 — memakai TAL (*Task-Aligned Learning*), penugasan satu-ke-banyak yang memilih beberapa sampel positif berdasarkan keselarasan skor klasifikasi dan kualitas kotak.
 
-## Metodologi & Arsitektur
-Dua head berbagi backbone: one-to-many (pelatihan) dan one-to-one (inferensi) dengan matching metric konsisten agar tak konflik. Desain efisiensi: lightweight classification head, spatial-channel decoupled downsampling, rank-guided block allocation; desain akurasi: large-kernel conv dan partial self-attention (PSA).
+YOLOv10 menambahkan kepala kedua yang strukturnya identik dan memakai fungsi loss yang sama, tetapi penugasannya satu-ke-satu: untuk tiap objek, hanya prediksi berskor pencocokan tertinggi yang menjadi sampel positif (seleksi *top-1*). Seleksi top-1 ini terbukti menyamai kualitas *Hungarian matching* — pencocokan bipartit optimal yang dipakai DETR — dengan waktu pelatihan tambahan lebih kecil. Selama pelatihan, kedua kepala dioptimalkan bersama; *backbone* (jaringan pengekstraksi fitur) dan *neck* (modul penggabung fitur lintas skala) menerima supervisi kaya dari kepala satu-ke-banyak. Selama inferensi, kepala satu-ke-banyak dibuang, sehingga latensi identik dengan model berkepala tunggal.
 
-Komponen / langkah metodologis utama:
+### Metrik Pencocokan yang Konsisten
 
-- Consistent dual label assignment (one-to-many + one-to-one).
-- Inferensi bebas NMS via cabang one-to-one.
-- Spatial-channel decoupled downsampling.
-- Rank-guided block design (kurangi redundansi).
-- Partial self-attention (PSA) untuk akurasi.
-- Head klasifikasi ringan.
+Kedua kepala menilai kecocokan prediksi–objek dengan metrik berbentuk sama: m(α,β) = s · p^α · IoU^β, dengan p skor klasifikasi, IoU ketepatan kotak, dan s prior spasial (bernilai 1 bila titik *anchor* — titik acuan prediksi pada peta fitur — berada di dalam wilayah objek, dan 0 bila tidak). Hiperparameter α dan β mengatur timbangan tugas klasifikasi terhadap regresi kotak; kepala satu-ke-banyak memakai α = 0,5 dan β = 6 sebagaimana TAL pada YOLOv8.
 
-## Kontribusi Utama
-1. YOLO end-to-end tanpa NMS yang praktis.
-2. Consistent dual assignment menjaga akurasi.
-3. Desain holistik menekan latensi & parameter.
-4. Trade-off latensi-akurasi lebih baik dari v8/v9/RT-DETR.
+Bila kedua kepala memakai α dan β berbeda, prediksi terbaik menurut kepala satu-ke-satu belum tentu termasuk sampel positif terbaik kepala satu-ke-banyak, sehingga keduanya dioptimalkan ke arah yang tidak selaras. Penulis mengukur celah supervisi ini dengan jarak 1-Wasserstein (ukuran selisih dua distribusi) antara target klasifikasi kedua cabang, dan menunjukkan celah itu minimum bila metriknya konsisten: α_o2o = r·α_o2m dan β_o2o = r·β_o2m. Dengan r = 1, kedua metrik sama persis, sehingga sampel terbaik kepala satu-ke-banyak otomatis menjadi pilihan kepala satu-ke-satu. Verifikasi empirisnya: dengan metrik konsisten, pasangan satu-ke-satu lebih sering berada dalam peringkat top-1/5/10 hasil satu-ke-banyak.
 
-## Rincian Eksperimen
-Diuji di COCO lintas skala dengan pengukuran latensi end-to-end (tanpa NMS), dibandingkan YOLOv8, YOLOv9, RT-DETR, dan PP-YOLOE.
+Alur pelatihan dua kepala dan inferensi satu kepala:
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+PELATIHAN (kedua head aktif, berbagi backbone dan neck)
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | AP / latensi | latensi lebih rendah pada AP setara |
-| COCO | end-to-end | bebas NMS, latensi stabil |
-| Perbandingan | vs RT-DETR | lebih efisien pada akurasi mirip |
+                ┌────────────┐
+                │   citra    │
+                └─────┬──────┘
+                      ▼
+              backbone + neck
+                │           │
+                ▼           ▼
+        head one-to-many  head one-to-one
+        (TAL, banyak +)   (top-1, satu +)
+                │           │
+                ▼           ▼
+            loss o2m  +   loss o2o  ──►  loss total
 
-## Temuan Kunci
-- Dual assignment konsisten memungkinkan bebas-NMS tanpa rugi akurasi.
-- Redundansi komponen YOLO dapat ditekan signifikan.
-- Latensi end-to-end menjadi stabil/terprediksi.
-- PSA menambah akurasi dengan biaya kecil.
+INFERENSI (head one-to-many dibuang, tanpa NMS)
 
-## Keunggulan
-- Deteksi end-to-end tanpa NMS.
-- Latensi rendah dan stabil.
-- Efisiensi parameter/komputasi tinggi.
+  citra ─► backbone + neck ─► head one-to-one ─► kotak + kelas
+```
 
-## Keterbatasan
-- Manfaat bervariasi menurut skala model.
-- Kompleksitas pelatihan dual-head.
-- Ekosistem/tooling masih berkembang saat rilis.
+Pada fase inferensi, keluaran kepala satu-ke-satu langsung menjadi hasil deteksi akhir tanpa pemrosesan lanjutan.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Kepala Klasifikasi yang Ringan
 
-## Relevansi terhadap Tema Tinjauan
-YOLOv10 mendekatkan detektor satu-tahap ke inferensi bebas pasca-proses, menguntungkan pipeline RGB-D real-time yang sensitif latensi (robotika, navigasi).
+Dalam YOLO, kepala klasifikasi dan kepala regresi kotak lazimnya berstruktur sama. Pengukuran penulis menemukan ketimpangan: pada YOLOv8-S, kepala klasifikasi menelan 5,95 GFLOPs dan 1,51 juta parameter — 2,5 dan 2,4 kali lipat biaya kepala regresi (2,34 GFLOPs; 0,64 juta parameter). FLOPs (*floating-point operations*) adalah jumlah operasi hitung titik mengambang, satuan baku biaya komputasi. Analisis galat menunjukkan regresi kotak lebih menentukan performa: menghilangkan seluruh galat regresi menaikkan AP jauh lebih tinggi daripada menghilangkan seluruh galat klasifikasi. Karena itu, kepala klasifikasi aman diperkecil menjadi dua konvolusi *depthwise* 3×3 (konvolusi yang mengolah tiap kanal secara terpisah, jauh lebih murah daripada konvolusi biasa) diikuti satu konvolusi 1×1.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+### Penurunan Resolusi Terpisah Spasial–Kanal
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
+Lapisan *downsampling* pada YOLO biasanya berupa konvolusi 3×3 berlangkah 2 yang sekaligus membelah dua resolusi spasial (H×W menjadi H/2×W/2) dan menggandakan kanal (C menjadi 2C), dengan biaya O(9/2·HWC²) dan parameter O(18C²). YOLOv10 memisahkan kedua operasi: konvolusi *pointwise* (konvolusi 1×1 yang mencampur antar-kanal tanpa mengubah resolusi) menaikkan kanal lebih dahulu, lalu konvolusi *depthwise* menurunkan resolusi. Biayanya turun menjadi O(2HWC² + 9/2·HWC) dengan parameter O(2C² + 18C). Urutan ini mempertahankan lebih banyak informasi: dibanding urutan terbalik, akurasi naik 0,7 poin AP pada YOLOv10-S.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+### Desain Blok Berpanduan Peringkat Intrinsik
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+Penulis mengukur *intrinsic rank* (peringkat intrinsik: jumlah nilai singular di atas ambang pada konvolusi terakhir tiap tahap) sebagai penanda redundansi — peringkat rendah berarti fitur tahap itu banyak mengulang informasi. Pada YOLOv8, tahap-tahap dalam dan model-model besar berperingkat rendah, sehingga paling redundan. Untuk tahap seperti itu disediakan CIB (*compact inverted block*), blok ringkas berisi konvolusi *depthwise* untuk pencampuran spasial dan konvolusi *pointwise* untuk pencampuran kanal, disisipkan ke dalam struktur ELAN (struktur agregasi fitur multi-cabang dari YOLOv7, bab 007). Penggantian bersifat adaptif: tahap diurutkan dari peringkat terendah, blok diganti satu per satu, dan proses berhenti begitu akurasi turun. Pada YOLOv10-S degradasi baru muncul di tahap ketiga dalam urutan, sehingga hanya dua tahap terburuk yang memakai CIB.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+### Konvolusi Kernel Besar dan Perhatian-Diri Parsial
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Dua komponen menambah akurasi dengan biaya kecil. Pertama, konvolusi *depthwise* 3×3 kedua di dalam CIB pada tahap dalam diperbesar menjadi 7×7 untuk memperluas *receptive field* (wilayah citra yang memengaruhi satu unit fitur). Selama pelatihan ditambahkan cabang konvolusi 3×3 yang dilebur ke cabang utama saat inferensi (*structural reparameterization*), sehingga tidak ada biaya inferensi tambahan. Komponen ini hanya dipakai pada model kecil (N dan S), karena model besar sudah memiliki receptive field yang luas.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Kedua, PSA (*partial self-attention*). *Self-attention* adalah mekanisme yang membobot relasi setiap posisi fitur terhadap semua posisi lain; kuat untuk pemodelan global, tetapi biayanya tumbuh kuadratik terhadap jumlah posisi. PSA membelah kanal menjadi dua bagian sama besar setelah konvolusi 1×1; hanya satu bagian yang melewati satu blok *multi-head self-attention* (perhatian-diri dengan beberapa kepala paralel) dan jaringan umpan-maju (dua lapisan linier dengan aktivasi), lalu keduanya disambung dan dilebur dengan konvolusi 1×1. Dimensi kueri dan kunci dibuat separuh dimensi nilai, dan normalisasi memakai BatchNorm alih-alih LayerNorm demi kecepatan. PSA hanya dipasang setelah tahap 4 — tahap beresolusi terendah — sehingga biaya kuadratiknya tetap kecil.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Eksperimen dan Hasil
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Seluruh model dilatih dari awal pada COCO (*Common Objects in Context*, tolok ukur 80 kelas objek; AP adalah rata-rata presisi pada ambang IoU 0,50 hingga 0,95) dengan resolusi uji 640 piksel. Latensi diukur end-to-end pada GPU NVIDIA T4 dengan TensorRT FP16 (pustaka inferensi NVIDIA, presisi 16-bit). Enam varian dihasilkan: YOLOv10-N/S/M/B/L/X.
 
-## Kesimpulan
-YOLOv10 mewujudkan YOLO end-to-end tanpa NMS melalui dual assignment konsisten dan efisiensi holistik, memperbaiki trade-off latensi-akurasi untuk deployment nyata.
+Angka utamanya: dari N ke X, AP berturut-turut 38,5 / 46,3 / 51,1 / 52,5 / 53,2 / 54,4%, latensi 1,84 / 2,49 / 4,74 / 5,74 / 7,28 / 10,70 ms, dan parameter 2,3 / 7,2 / 15,4 / 19,1 / 24,4 / 29,5 juta. Interpretasinya: YOLOv10-N berjalan lebih dari 500 kali per detik pada T4, dan kenaikan dari N ke S menambah 7,8 poin AP hanya dengan tambahan 0,65 ms.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `wang2024yolov10` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Terhadap YOLOv8 sebagai basis, perbaikan AP pada varian N/S/M/L/X masing-masing +1,2 / +1,4 / +0,5 / +0,3 / +0,5 poin, dengan parameter berkurang 28/36/41/44/57%, komputasi 23/24/25/27/38%, dan latensi end-to-end turun 70/65/50/41/37%. Penurunan 70% pada varian N terutama berasal dari hilangnya NMS, karena pada model kecil porsi waktu pasca-proses relatif besar. Terhadap RT-DETR, YOLOv10-S dan YOLOv10-X 1,8 dan 1,3 kali lebih cepat daripada varian R18 dan R101 pada AP setara. Terhadap YOLOv9-C (bab 008), YOLOv10-B mencapai performa sama dengan latensi 46% lebih rendah dan parameter 25% lebih sedikit; terhadap Gold-YOLO-L, YOLOv10-L unggul 1,4 poin AP sekaligus 68% lebih ramping dan 32% lebih cepat.
 
----
-*Lembar 009/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Ablasi memisahkan sumbangan tiap komponen. Penugasan ganda konsisten memangkas latensi end-to-end YOLOv10-S sebesar 4,63 ms dibanding inferensi dengan NMS, sembari mempertahankan AP 44,3% — bukti bahwa pada model kecil sebagian besar waktu inferensi selama ini habis untuk pasca-proses. Desain efisiensi memangkas 11,8 juta parameter dan 20,8 GFLOPs serta mengurangi latensi 0,65 ms pada YOLOv10-M tanpa merusak akurasi. Desain akurasi menambah 1,8 poin AP pada varian S dan 0,7 poin pada varian M dengan biaya hanya 0,18 dan 0,17 ms; rinciannya, kernel besar menyumbang +0,4 poin AP (0,03 ms) dan PSA +1,4 poin AP (0,15 ms) pada varian S.
+
+## Kelebihan dan Keterbatasan
+
+Kelebihan: (1) inferensi end-to-end tanpa NMS — latensi stabil, tidak bergantung jumlah objek, dan bebas penyetelan ambang NMS; (2) tanpa biaya inferensi tambahan karena kepala satu-ke-banyak dibuang setelah pelatihan; (3) efisiensi parameter dan komputasi terbaik di kelasnya pada semua skala; (4) komponennya terpisah dan dapat diadopsi sebagian pada arsitektur lain.
+
+Keterbatasan yang diakui penulis: pelatihan tanpa NMS masih menyisakan celah akurasi terhadap pelatihan satu-ke-banyak plus NMS pada model kecil — 1,0 poin AP pada YOLOv10-N — karena fitur model kecil kurang diskriminatif untuk pencocokan satu-ke-satu; celah ini menutup sepenuhnya pada YOLOv10-X. Manfaat konvolusi kernel besar juga menghilang pada model menengah ke atas. Dari sisi rekayasa, tiga catatan tambahan: angka latensi diukur pada satu konfigurasi perangkat keras (T4 dengan TensorRT FP16) sehingga dapat berbeda pada perangkat lain; pelatihan dua kepala menambah biaya dan kerumitan tahap pelatihan; dan tanpa NMS, praktisi kehilangan ambang pasca-proses yang biasa dipakai mengatur keseimbangan presisi–recall per aplikasi.
+
+## Kaitan dengan Bab Lain
+
+Bab ini menjawab masalah yang ada sejak bab 001: NMS menjadi bagian tak terpisahkan dari keluarga YOLO sejak YOLOv1, dan generasi berikutnya hingga [bab 008 (YOLOv9)](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md) memperbaiki arsitektur tanpa menyentuh pasca-proses tersebut. Gagasan end-to-end-nya mewarisi garis [bab 022 (DETR)](./022%20-%202020%20-%20DETR%20-%20Fondasi%20RGB.md) dan dibandingkan dengan [bab 155 (RT-DETR)](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md), detektor transformer real-time yang lebih dulu bebas NMS. Basis arsitekturnya adalah YOLOv8, pembanding utamanya YOLOv9, dan struktur ELAN yang dipakai CIB berasal dari [bab 007 (YOLOv7)](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md). Garis ini berlanjut ke [bab 010 (YOLOv11)](./010%20-%202024%20-%20YOLOv11%20%28Overview%29%20-%20Fondasi%20RGB.md) sebagai generasi berikutnya, serta ke [bab 192 (YOLO26)](./192%20-%202025%20-%20YOLO26%20Detektor%20Real-Time%20End-to-End%20-%20Fondasi%20RGB.md) yang meneruskan agenda detektor real-time end-to-end yang dibakukan di sini.
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `wang2024yolov10`. Ringkasan yang aman dikutip: "YOLOv10 menghilangkan NMS dari inferensi YOLO melalui pelatihan penugasan ganda yang konsisten — kepala satu-ke-banyak untuk supervisi, kepala satu-ke-satu untuk inferensi — ditambah desain ulang arsitektur berbasis efisiensi dan akurasi; pada COCO, YOLOv10-S 1,8 kali lebih cepat daripada RT-DETR-R18 pada AP setara dengan 2,8 kali lebih sedikit parameter dan komputasi." Catatan verifikasi sebelum sitasi formal: seluruh angka per varian (AP, latensi, parameter, FLOPs) berasal dari Tabel 1 makalah versi *camera-ready* NeurIPS 2024 (arXiv v2) dan telah dicocokkan dengan tabel pada repositori resmi THU-MIG; angka latensi hanya berlaku untuk konfigurasi T4 dengan TensorRT FP16; rincian ablasi sebaiknya dikutip langsung dari Tabel 2 naskah asli.

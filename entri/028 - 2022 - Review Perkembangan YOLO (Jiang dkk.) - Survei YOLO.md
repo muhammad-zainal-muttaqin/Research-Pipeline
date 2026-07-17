@@ -1,204 +1,106 @@
 # 028 - A Review of YOLO Algorithm Developments
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 028 dari 154 |
 | Kunci BibTeX | `jiang2022yoloreview` |
-| Judul | A Review of YOLO Algorithm Developments |
-| Penulis | Jiang, Peiyuan; Ergu, Daji; Liu, Fangyao; Cai, Ying; Ma, Bo |
+| Judul asli | A Review of Yolo Algorithm Developments |
+| Penulis | Peiyuan Jiang, Daji Ergu, Fangyao Liu, Ying Cai, Bo Ma |
 | Tahun | 2022 |
-| Venue / Jurnal | Procedia Computer Science |
-| Tema klaster | Survei YOLO |
-| Kata kunci | survei, YOLO, perkembangan algoritma, perbandingan versi, pengantar |
+| Venue | Procedia Computer Science, vol. 199, hlm. 1066–1073 (prosiding ITQM 2021, *International Conference on Information Technology and Quantitative Management*) |
+| Tema | Survei YOLO |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **DOI (akses terbuka):** https://doi.org/10.1016/j.procs.2022.01.135
+- **Semantic Scholar:** https://www.semanticscholar.org/paper/0c5c842529ec2f1ad6213f1827456ae77761d523
+- **Google Scholar:** https://scholar.google.com/scholar?q=A%20Review%20of%20YOLO%20Algorithm%20Developments
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-survei-yolo)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=A%20Review%20of%20YOLO%20Algorithm%20Developments
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=A%20Review%20of%20YOLO%20Algorithm%20Developments&sort=relevance
+Makalah ini adalah survei naratif singkat (delapan halaman) yang mengikhtisarkan algoritma YOLO (*You Only Look Once*) dan versi-versi lanjutannya sampai tahun 2021. YOLO adalah detektor objek satu tahap: lokasi dan kelas objek pada citra diprediksi dalam satu lintasan jaringan saraf, bukan melalui dua tahap terpisah. Masalah yang dipecahkan makalah ini bersifat kebahasaan-literatur: rangkaian versi YOLO berkembang cepat dan makalah primernya tersebar, sehingga pembaca baru sulit memetakan apa yang berubah dari satu versi ke versi berikutnya. Hasil utama makalah adalah analisis persamaan dan perbedaan antarversi YOLO, perbandingan antara YOLO dan detektor berbasis jaringan saraf konvolusi (CNN) pada umumnya, serta kesimpulan bahwa penyempurnaan YOLO masih berlangsung. Makalah ini juga membingkai YOLO sebagai penunjang ekstraksi fitur pada berita bergambar di bidang keuangan dan bidang lain.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 199 |
-| Halaman | 1066--1073 |
+Deteksi objek adalah tugas menemukan posisi objek pada citra sekaligus menentukan kelasnya, dan menjadi dasar bagi banyak aplikasi visi komputer. Antara 2016 dan 2021, rangkaian versi YOLO bertambah dengan cepat: YOLOv1 (2016) memperkenalkan deteksi satu tahap berbasis grid, YOLO9000/YOLOv2 (2017) menambahkan kotak jangkar dan *batch normalization*, YOLOv3 (2018) memperkenalkan prediksi multi-skala, dan YOLOv4 (2020) merangkai sejumlah teknik pelatihan dan arsitektur menjadi detektor yang lebih akurat. Perkembangan ini diuraikan dalam bab-bab fondasi tinjauan ini, misalnya [bab 001](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md) untuk YOLOv1 dan [bab 004](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md) untuk YOLOv4.
 
-## Ringkasan Eksekutif
-Ulasan ringkas perkembangan algoritma YOLO dan perbandingan antar-versi awal yang berfungsi sebagai pengantar padat bagi praktisi.
+Kondisi tersebut menimbulkan tiga kesulitan praktis. Pertama, makalah primer tiap versi tersebar di venue berbeda dan masing-masing mengubah beberapa komponen sekaligus, sehingga sulit diperoleh gambaran utuh tanpa membaca semuanya. Kedua, survei deteksi objek yang sudah ada, misalnya tinjauan model deteksi berbasis CNN, menempatkan YOLO hanya sebagai satu metode di antara banyak metode, bukan sebagai rangkaian yang dievolusikan. Ketiga, komunitas di luar visi komputer inti, termasuk bidang teknologi informasi dan manajemen kuantitatif yang menjadi wadah publikasi makalah ini, membutuhkan ringkasan yang padat untuk menilai kelayakan YOLO bagi aplikasinya. Makalah Jiang dkk. mengisi celah tersebut dengan sebuah tinjauan khusus terhadap perkembangan YOLO.
 
-## Abstrak (Parafrase)
-Makalah ini merangkum prinsip kerja dan perbedaan utama antar-versi YOLO awal (terutama v1-v4 dan turunan), membandingkan kecepatan-akurasi serta perubahan arsitektural inti. Sebagai ulasan ringkas, ia sering dijadikan referensi awal untuk memahami dasar YOLO.
+## Ide Utama
 
-## Latar Belakang & Konteks
-Praktisi baru membutuhkan ringkasan aksesibel yang menjelaskan perbedaan antar-versi YOLO tanpa harus membaca banyak makalah teknis terpisah.
+Gagasan inti makalah ini sederhana: seluruh perkembangan YOLO dapat dipahami sebagai satu garis perubahan yang konsisten, dan garis itu dapat disajikan dalam satu dokumen perbandingan. Masukannya adalah literatur YOLO yang sudah terbit; keluarannya adalah sintesis yang menjawab tiga pertanyaan — apa yang dipertahankan semua versi, apa yang diubah tiap versi, dan bagaimana posisi YOLO terhadap pendekatan deteksi berbasis CNN lainnya. Makalah tidak mengusulkan metode baru dan tidak menjalankan eksperimen baru; kontribusinya adalah pemadatan dan pembandingan literatur. Kesimpulan sentral yang ditarik penulis adalah bahwa penyempurnaan YOLO bersifat berkelanjutan, bukan rangkaian yang sudah selesai.
 
-## Permasalahan yang Diangkat
-- Perbedaan antar-versi YOLO membingungkan pemula.
-- Makalah teknis tersebar dan padat.
-- Perlu ringkasan aksesibel dan ringkas.
-- Trade-off kecepatan-akurasi perlu dijelaskan sederhana.
-- Konteks aplikasi perlu diberikan.
+## Cara Kerja Langkah demi Langkah
 
-## Tujuan & Pertanyaan Penelitian
-- Menyediakan pengantar padat evolusi YOLO.
-- Membandingkan prinsip dan kinerja antar-versi.
-- Memudahkan pemahaman dasar bagi praktisi.
+### Titik Tolak: Prinsip Dasar YOLO
 
-## Tinjauan Terdahulu / Posisi Literatur
-Survei ini meninjau YOLOv1-v4 dan turunannya sebagai pengantar.
+Survei dimulai dari prinsip kerja YOLO yang menjadi dasar semua versi. Citra masukan dibagi menjadi grid berukuran S×S sel. Setiap sel bertanggung jawab memprediksi objek yang titik pusatnya jatuh di dalam sel tersebut. Setiap sel menghasilkan sejumlah prediksi *bounding box*, yaitu kotak pembatas berparameter (x, y, w, h) yang menyatakan pusat, lebar, dan tinggi objek, beserta skor *confidence* yang menyatakan seberapa yakin model bahwa kotak itu berisi objek. Selain itu setiap sel memprediksi probabilitas kelas objek. Sebagai contoh numerik, pada citra 448×448 piksel dengan grid 7×7, setiap sel mencakup wilayah 64×64 piksel, dan seluruh prediksi dari 49 sel dihitung dalam satu lintasan maju jaringan konvolusi. Karena satu objek dapat diprediksi oleh beberapa sel, dihasilkan kotak-kotak yang tumpang tindih; tahap *non-maximum suppression* (NMS) kemudian membuang kotak duplikat yang memiliki *intersection over union* (IoU) tinggi terhadap kotak berskor lebih besar, di mana IoU adalah rasio luas irisan terhadap luas gabungan dua kotak. Alur lengkapnya dapat digambarkan sebagai berikut.
 
-Karya/konsep pembanding yang relevan:
+```
+citra masukan (mis. 448 x 448 piksel)
+        |
+        v
++------------------------------------------+
+| jaringan konvolusi (backbone):           |
+| ekstraksi fitur seluruh citra            |
+| dalam satu lintasan                      |
++------------------------------------------+
+        |
+        v
+peta fitur dibagi grid S x S sel
+(grid 7 x 7 -> tiap sel 64 x 64 piksel)
+        |
+        v
+tiap sel memprediksi:
+- sejumlah bounding box (x, y, w, h)
+  beserta skor confidence
+- probabilitas kelas objek
+        |
+        v
+non-maximum suppression (NMS):
+kotak duplikat ber-IoU tinggi dibuang
+        |
+        v
+hasil: kotak akhir + label kelas + skor
+```
 
-- YOLOv1-v4 — fokus utama.
-- Detektor pembanding (R-CNN, SSD).
-- Metrik kecepatan-akurasi.
-- Aplikasi umum YOLO.
+Diagram di atas memperlihatkan ciri yang membedakan YOLO: seluruh tahap, dari ekstraksi fitur hingga prediksi kotak, terjadi dalam satu jaringan, sehingga kecepatan inferensinya tinggi.
 
-## Metodologi & Arsitektur
-Metodologi survei ringkas: menjelaskan prinsip tiap versi, membandingkan arsitektur dan kinerja, serta menyoroti aplikasi umum.
+### Dimensi Perbandingan Antarversi
 
-Komponen / langkah metodologis utama:
+Bagian inti survei membandingkan versi-versi YOLO pada beberapa dimensi yang berulang. Dimensi pertama adalah *backbone*, yaitu jaringan konvolusi ekstraksi fitur yang membentuk peta fitur dari citra; tiap versi mengganti atau memperkuat backbone-nya. Dimensi kedua adalah kotak jangkar (*anchor box*), yaitu sekumpulan bentuk kotak acuan yang dipakai model sebagai titik awal regresi ukuran objek; mekanisme ini diperkenalkan pada YOLOv2 dan dipertahankan versi-versi sesudahnya. Dimensi ketiga adalah prediksi multi-skala, yaitu pembacaan peta fitur pada beberapa resolusi sekaligus agar objek kecil dan besar terdeteksi; mekanisme ini menjadi ciri YOLOv3. Dimensi keempat adalah komposisi teknik pelatihan dan arsitektur tambahan yang dirangkai pada YOLOv4. Perbandingan pada dimensi-dimensi ini menghasilkan temuan bahwa tiap versi mempertahankan kerangka dasar grid satu tahap, sementara akurasi dinaikkan bertahap melalui perubahan komponen, dengan konsekuensi pergeseran imbangan antara kecepatan dan akurasi.
 
-- Ringkasan prinsip tiap versi YOLO awal.
-- Perbandingan kecepatan-akurasi.
-- Ikhtisar perubahan arsitektural inti.
-- Diskusi aplikasi umum.
-- Format ringkas dan aksesibel.
-- Referensi untuk pemula.
+### Perbandingan YOLO dengan Detektor CNN Dua Tahap
 
-## Kontribusi Utama
-1. Pengantar padat evolusi YOLO yang mudah dipahami.
-2. Perbandingan antar-versi yang ringkas.
-3. Sering dikutip sebagai referensi awal.
-4. Aksesibel bagi praktisi baru.
+Survei juga membandingkan YOLO dengan keluarga detektor CNN dua tahap seperti R-CNN. Detektor dua tahap bekerja dengan mengusulkan sejumlah kandidat wilayah objek (*region proposal*) pada tahap pertama, lalu mengklasifikasikan tiap wilayah pada tahap kedua. Struktur ini umumnya lebih akurat tetapi lebih lambat karena komputasi diulang untuk setiap kandidat wilayah. YOLO menghapus tahap usulan wilayah dan memprediksi langsung dari grid, sehingga unggul pada kecepatan dan cocok untuk pemrosesan waktu nyata, dengan kelemahan yang dicatat literatur berupa kesulitan pada objek kecil dan objek yang berdekatan, karena satu sel hanya memprediksi sedikit kotak.
 
-## Rincian Eksperimen
-Sebagai survei ringkas, evaluasi berupa kompilasi kinerja terpublikasi antar-versi, bukan eksperimen baru.
+### Pengenalan Target, Pemilihan Fitur, dan Aplikasi
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Bagian lanjutan survei merangkum metode pengenalan target dan pemilihan fitur (*feature selection*), yaitu cara memilih ciri citra yang paling informatif untuk membedakan objek. Penulis membingkai rangkuman ini sebagai dukungan literatur bagi aplikasi pemrosesan berita bergambar di bidang keuangan dan bidang lain, sesuai konteks konferensi tempat makalah diterbitkan. Contoh aplikasi yang tercermin dalam daftar rujukannya meliputi deteksi kepala gandum, deteksi pelat nomor kendaraan, deteksi buah apel di kebun, deteksi kendaraan pada citra udara, dan penggabungan data LiDAR dengan kamera.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| YOLOv1-v4 | kecepatan/akurasi | kompilasi ringkas |
-| Perbandingan | versi | perubahan inti antar-versi |
-| Aplikasi | cakupan | ikhtisar umum |
+### Prosedur Survei
 
-## Temuan Kunci
-- Evolusi YOLO awal meningkatkan kecepatan & akurasi bertahap.
-- Tiap versi menambah komponen kunci (anchor, multi-skala, dll.).
-- Trade-off kecepatan-akurasi menjadi tema sentral.
-- YOLO cocok untuk beragam aplikasi real-time.
+Secara metodologis makalah ini adalah survei naratif, bukan tinjauan sistematis: tidak dilaporkan protokol pencarian basis data, kriteria inklusi, atau jumlah artikel yang disaring. Daftar rujukannya hanya memuat delapan dokumen, dan seluruhnya adalah literatur sekunder — survei deteksi objek lain dan makalah terapan YOLO — tanpa satu pun makalah primer YOLO. Angka kinerja yang dibahas di dalamnya merupakan kompilasi dari publikasi lain, bukan hasil pengukuran ulang pada pengaturan yang seragam.
 
-## Keunggulan
-- Ringkas dan aksesibel.
-- Cocok sebagai pengantar.
-- Banyak dikutip.
+## Eksperimen dan Hasil
 
-## Keterbatasan
-- Cakupan terbatas (versi awal).
-- Kedalaman teknis rendah.
-- Cepat usang.
+Makalah ini tidak memuat eksperimen baru; hasilnya berupa temuan analitis. Pertama, seluruh versi YOLO berbagi kerangka yang sama — grid, prediksi kotak per sel, dan satu lintasan jaringan — sehingga persamaannya lebih mendasar daripada perbedaannya. Kedua, perbedaan antarversi terletak pada komponen yang diganti bertahap: backbone, kotak jangkar, prediksi multi-skala, dan teknik pelatihan, yang secara kumulatif menaikkan akurasi sambil mempertahankan kecepatan tinggi. Interpretasinya, evolusi YOLO bersifat inkremental dan berorientasi imbangan kecepatan-akurasi, bukan pergantian paradigma. Ketiga, dibandingkan detektor CNN dua tahap, YOLO menang pada kecepatan dan kalah pada sebagian aspek akurasi, terutama objek kecil; ini menegaskan posisi YOLO sebagai pilihan untuk aplikasi waktu nyata. Keempat, penulis menyimpulkan penyempurnaan YOLO masih berlangsung, yang terbukti konsisten dengan munculnya versi-versi baru setelah makalah ini terbit.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Satu bukti eksternal tentang dampak makalah: per Juli 2026, OpenAlex mencatat 2.639 sitasi dan Semantic Scholar mencatat 2.458 sitasi untuk makalah ini. Angka sebesar itu untuk survei delapan halaman menunjukkan makalah ini dipakai luas sebagai rujukan pengantar YOLO, walaupun jumlah sitasi bukan ukuran kedalaman teknis.
 
-## Relevansi terhadap Tema Tinjauan
-Ulasan ini berguna sebagai pengantar cepat evolusi YOLO yang menaungi entri-entri YOLO dalam tinjauan, terutama untuk pembaca yang baru mengenal bidang.
+## Kelebihan dan Keterbatasan
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Survei YOLO** yang baik dibaca berdampingan:
+Kelebihan makalah ini adalah kepadatannya: dalam delapan halaman, pembaca memperoleh peta rangkaian versi YOLO, perbandingan dengan pendekatan CNN lain, dan penunjukan aplikasi. Status akses terbukanya memudahkan penyebaran, dan fokusnya pada satu rangkaian versi membuatnya lebih mudah dibaca daripada survei deteksi objek umum.
 
-- [026 - 2023 - Review YOLO (Terven dkk.) - Survei YOLO](./026%20-%202023%20-%20Review%20YOLO%20%28Terven%20dkk.%29%20-%20Survei%20YOLO.md)
-- [027 - 2023 - Review YOLO Manufaktur (Hussain) - Survei YOLO](./027%20-%202023%20-%20Review%20YOLO%20Manufaktur%20%28Hussain%29%20-%20Survei%20YOLO.md)
-- [029 - 2024 - Review YOLO Pertanian (Sapkota dkk.) - Survei YOLO](./029%20-%202024%20-%20Review%20YOLO%20Pertanian%20%28Sapkota%20dkk.%29%20-%20Survei%20YOLO.md)
-- [030 - 2024 - Review Model & Aplikasi YOLO (Ali & Zhang) - Survei YOLO](./030%20-%202024%20-%20Review%20Model%20%26%20Aplikasi%20YOLO%20%28Ali%20%26%20Zhang%29%20-%20Survei%20YOLO.md)
-- [031 - 2024 - Systematic Review YOLO (Vijayakumar & Vairavasundaram) - Survei YOLO](./031%20-%202024%20-%20Systematic%20Review%20YOLO%20%28Vijayakumar%20%26%20Vairavasundaram%29%20-%20Survei%20YOLO.md)
-- [032 - 2024 - YOLO Evolution Benchmark (Alif & Hussain) - Survei YOLO](./032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md)
-- [033 - 2024 - Review YOLOv8 (Sohan dkk.) - Survei YOLO](./033%20-%202024%20-%20Review%20YOLOv8%20%28Sohan%20dkk.%29%20-%20Survei%20YOLO.md)
-- [034 - 2023 - Object Detection using YOLO (Diwan dkk.) - Survei YOLO](./034%20-%202023%20-%20Object%20Detection%20using%20YOLO%20%28Diwan%20dkk.%29%20-%20Survei%20YOLO.md)
+Keterbatasannya juga jelas. Dari sisi metodologi survei, delapan rujukan yang seluruhnya literatur sekunder adalah basis yang sangat sempit; temuannya dengan demikian merupakan ringkasan tingkat tinggi yang tidak diverifikasi terhadap makalah primer, dan tidak ada angka kinerja yang diukur ulang pada pengaturan seragam. Dari sisi cakupan, pembahasan berhenti pada versi yang tersedia sampai 2021, sehingga versi-versi sesudahnya tidak tercakup dan sebagian isinya cepat tertinggal. Secara konseptual, karena tidak ada protokol tinjauan sistematis, pemilihan bahan bergantung pada penulis dan rawan bias pemilihan. Keterbatasan-keterbatasan ini merupakan analisis penulis bab, bukan pernyataan penulis makalah.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Survei YOLO** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kaitan dengan Bab Lain
 
-## Glosarium Istilah (tema Survei YOLO)
-Istilah penting untuk memahami makalah ini:
+Bab ini bergantung pada bab-bab fondasi yang menguraikan tiap versi YOLO secara rinci: [bab 001](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md), [bab 002](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md), [bab 003](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md), dan [bab 004](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md). Keempatnya menyediakan detail teknis yang oleh survei ini hanya diringkas.
 
-- **Survei/tinjauan** — Makalah yang mensintesis banyak studi, bukan metode baru.
-- **Taksonomi** — Skema klasifikasi metode ke kategori terstruktur.
-- **Silsilah YOLO** — Rangkaian versi YOLO (v1..v12, PP-YOLO, YOLOX).
-- **Benchmark** — Evaluasi terstandar untuk perbandingan adil.
-- **mAP** — mean Average Precision; metrik deteksi utama.
-- **Bag-of-Freebies** — Teknik menaikkan akurasi tanpa menambah biaya inferensi.
-- **Celah riset** — Isu terbuka yang diidentifikasi sebagai arah lanjutan.
-- **PRISMA** — Protokol tinjauan sistematis (identifikasi-seleksi-inklusi).
-- **Real-time** — Kemampuan berjalan pada laju tinggi (>=30 FPS).
-- **Domain aplikasi** — Bidang penerapan yang dipetakan survei.
+Dalam klaster Survei YOLO, bab ini adalah entri paling awal dan paling ringkas; pembaca yang membutuhkan cakupan lebih baru atau lebih dalam dapat melanjutkan ke [bab 026](./026%20-%202023%20-%20Review%20YOLO%20%28Terven%20dkk.%29%20-%20Survei%20YOLO.md) yang meninjau versi lebih lengkap, [bab 027](./027%20-%202023%20-%20Review%20YOLO%20Manufaktur%20%28Hussain%29%20-%20Survei%20YOLO.md) untuk aplikasi manufaktur, [bab 029](./029%20-%202024%20-%20Review%20YOLO%20Pertanian%20%28Sapkota%20dkk.%29%20-%20Survei%20YOLO.md) untuk aplikasi pertanian, serta [bab 032](./032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md) yang mengevaluasi evolusi YOLO secara eksperimental — melengkapi sifat naratif survei Jiang dkk.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Poin untuk Sitasi
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Jiang dkk. menyajikan pengantar padat perkembangan YOLO awal dan perbandingan antar-versi, menjadi referensi awal yang aksesibel bagi praktisi.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `jiang2022yoloreview` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 028/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+- **Kunci BibTeX:** `jiang2022yoloreview`
+- **Ringkasan yang aman dikutip:** Jiang dkk. (2022) menyajikan tinjauan naratif atas perkembangan algoritma YOLO dan versi-versi lanjutannya, membandingkan persamaan dan perbedaan antarversi serta posisi YOLO terhadap detektor berbasis CNN, dan menyimpulkan bahwa penyempurnaan YOLO masih berlangsung. Makalah diterbitkan di Procedia Computer Science vol. 199 (prosiding ITQM 2021), hlm. 1066–1073, dengan status akses terbuka.
+- **Catatan verifikasi:** teks lengkap di ScienceDirect tidak dapat diakses saat penulisan bab ini (dibatasi anti-bot); narasi disusun dari abstrak terverifikasi (OpenAlex), metadata (DOI, volume, halaman), dan daftar rujukan (Semantic Scholar). Sebelum sitasi formal, verifikasi ke naskah asli: (1) cakupan versi yang dibahas persisnya, khususnya apakah YOLOv5 ikut ditinjau; (2) ada tidaknya tabel atau angka perbandingan kuantitatif spesifik; (3) butir keterbatasan di bab ini adalah analisis penulis bab, bukan pernyataan makalah. Jumlah sitasi bersifat dinamis dan dicatat per Juli 2026.

@@ -1,205 +1,120 @@
 # 022 - End-to-End Object Detection with Transformers
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 022 dari 154 |
 | Kunci BibTeX | `carion2020detr` |
-| Judul | End-to-End Object Detection with Transformers |
-| Penulis | Carion, Nicolas; Massa, Francisco; Synnaeve, Gabriel; Usunier, Nicolas; Kirillov, Alexander; Zagoruyko, Sergey |
+| Judul asli | End-to-End Object Detection with Transformers |
+| Penulis | Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, Sergey Zagoruyko |
 | Tahun | 2020 |
-| Venue / Jurnal | Proceedings of the European Conference on Computer Vision (ECCV) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | DETR, Transformer, set prediction, bipartite matching, end-to-end |
+| Venue | European Conference on Computer Vision (ECCV 2020) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2005.12872
+- **DOI:** https://doi.org/10.48550/arXiv.2005.12872
+- **Repositori kode resmi:** https://github.com/facebookresearch/detr
+- **Google Scholar:** https://scholar.google.com/scholar?q=End-to-End%20Object%20Detection%20with%20Transformers
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=End-to-End%20Object%20Detection%20with%20Transformers&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=End-to-End%20Object%20Detection%20with%20Transformers
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=End-to-End%20Object%20Detection%20with%20Transformers&sort=relevance
+Makalah ini memperkenalkan DETR (*DEtection TRansformer*), detektor objek yang merumuskan deteksi sebagai masalah prediksi himpunan langsung (*direct set prediction*): model menerima satu citra dan langsung mengeluarkan satu himpunan berukuran tetap berisi prediksi (kelas, kotak pembatas), tanpa komponen rancangan tangan seperti *anchor box* (kotak acuan berukuran dan berasio tetap yang menjadi titik tolak regresi pada detektor konvensional) maupun *Non-Maximum Suppression* (NMS, pasca-pemrosesan yang membuang kotak duplikat yang saling tumpang tindih). Dua komponen kuncinya adalah *loss* himpunan berbasis pencocokan bipartit (*bipartite matching*) yang memaksakan pemasangan satu-satu antara prediksi dan objek sebenarnya, serta arsitektur *transformer* encoder-decoder yang menalar relasi antar-objek dan konteks global citra.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasil utamanya: DETR dengan *backbone* ResNet-50 mencapai 42,0 AP pada COCO 2017 — setara dengan baseline Faster R-CNN yang telah dioptimalkan bertahun-tahun, dengan jumlah parameter sama dan sekitar separuh beban komputasi. DETR unggul pada objek besar tetapi tertinggal pada objek kecil. Makalah ini membuka garis detektor berbasis *transformer*, dari Deformable DETR (bab 023) hingga deteksi bebas-NMS pada YOLOv10 (bab 009).
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 213--229 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Merumuskan deteksi sebagai prediksi himpunan langsung memakai Transformer encoder-decoder dan bipartite matching loss, menghapus anchor dan NMS.
+Detektor modern sebelum 2020, baik satu tahap (YOLO, SSD, RetinaNet) maupun dua tahap (Faster R-CNN, bab 014), memprediksi objek secara tidak langsung: jaringan mengeluarkan skor dan regresi relatif terhadap kandidat awal — *anchor box*, *region proposal*, atau titik pusat pada kisi — dalam jumlah sangat besar. Karena satu objek dicakup banyak kandidat, keluaran mentah selalu mengandung duplikat, sehingga seluruh detektor ini bergantung pada NMS untuk merampingkan hasil akhir.
 
-## Abstrak (Parafrase)
-DETR (DEtection TRansformer) memandang deteksi sebagai prediksi himpunan tetap: sejumlah object query diproses Transformer decoder untuk langsung mengeluarkan himpunan (kelas, box). Pelatihan memakai Hungarian bipartite matching yang memasangkan prediksi dengan ground truth secara unik, sehingga tidak butuh anchor maupun NMS. Self-attention encoder menangkap konteks global antar-fitur.
+Ketergantungan ini menimbulkan tiga masalah. Pertama, kinerja akhir sangat dipengaruhi keputusan rancangan manual: jumlah, ukuran, dan rasio *anchor*; aturan penetapan label yang memasangkan kandidat dengan objek sebenarnya; serta ambang NMS. Kedua, NMS adalah prosedur heuristik di luar jaringan, sehingga sistem tidak dilatih *end-to-end* terhadap tujuan akhir deteksi; pada adegan padat, NMS dapat membuang deteksi yang benar. Ketiga, upaya prediksi himpunan langsung sebelumnya, umumnya berbasis jaringan berulang (RNN) yang memprediksi objek satu per satu, tidak mampu bersaing dengan baseline kuat pada tolok ukur besar seperti COCO. Masalah yang diangkat makalah ini adalah merumuskan deteksi sebagai prediksi himpunan yang benar-benar langsung — tanpa *anchor*, tanpa NMS — sambil tetap kompetitif melawan Faster R-CNN yang sudah matang.
 
-## Latar Belakang & Konteks
-Pipeline deteksi konvensional bergantung pada komponen manual (anchor, NMS, penetapan sampel) yang rumit dan memerlukan tuning. DETR menawarkan formulasi end-to-end yang benar-benar menghapus komponen tersebut.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Anchor dan NMS adalah komponen manual yang rumit.
-- Penetapan sampel heuristik memerlukan tuning.
-- Duplikasi prediksi memerlukan pasca-proses.
-- Konteks global antar-objek kurang dimanfaatkan.
-- Deteksi belum benar-benar end-to-end.
+Gagasan inti DETR adalah memperlakukan deteksi sebagai penerjemahan dari citra ke himpunan berukuran tetap. Model dilatih untuk selalu mengeluarkan tepat N = 100 prediksi — jauh lebih banyak dari jumlah objek pada citra umum (rata-rata 7 objek per citra di COCO) — dan setiap prediksi berupa satu kotak beserta kelasnya, atau kelas khusus ∅ ("bukan objek") untuk slot yang tidak terpakai.
 
-## Tujuan & Pertanyaan Penelitian
-- Merumuskan deteksi sebagai prediksi himpunan langsung.
-- Menghapus anchor dan NMS.
-- Memanfaatkan attention global untuk konteks.
+Dua mekanisme membuat rumusan ini dapat bekerja. Pertama, fungsi *loss* pencocokan bipartit: pada setiap langkah pelatihan, algoritme Hungarian mencari pemasangan satu-satu terbaik antara 100 prediksi dan objek *ground truth* (kebenaran acuan); hanya prediksi yang terpasang dihukum atas galat kotak dan kelasnya, sedangkan sisanya dilatih memprediksi ∅. Karena setiap objek hanya boleh dipasangkan ke tepat satu prediksi, model dipaksa tidak menghasilkan duplikat — peran yang selama ini diemban NMS dipindahkan ke dalam *loss* itu sendiri. Kedua, arsitektur *transformer*: mekanisme *self-attention* membuat setiap elemen komputasi menimbang relasinya terhadap seluruh elemen lain, sehingga model dapat menalar konteks global citra dan interaksi antar-prediksi secara eksplisit.
 
-## Tinjauan Terdahulu / Posisi Literatur
-DETR membawa Transformer dari NLP ke deteksi sebagai alternatif end-to-end terhadap Faster R-CNN.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+Aliran data DETR dari citra hingga himpunan prediksi:
 
-- Transformer — arsitektur attention dari NLP.
-- Faster R-CNN — pembanding dua-tahap.
-- Hungarian algorithm — bipartite matching.
-- Set prediction — formulasi tujuan.
+```
+citra masukan (3 x H0 x W0)
+        |
+        v
++-------------------+   peta fitur C = 2048 kanal,
+| backbone ResNet-50|   resolusi H0/32 x W0/32
++-------------------+
+        | konvolusi 1x1 mereduksi kanal: 2048 -> d = 256
+        v
+sekuen H*W token + positional encoding (kode posisi sinusoidal)
+        |
+        v
++--------------------------+   6 lapis; self-attention global
+| encoder transformer (6x) |   antar seluruh token citra
++--------------------------+
+        |
+        v
++--------------------------+   100 object query (vektor yang
+| decoder transformer (6x) | <== dipelajari); self-attention antar-
++--------------------------+     query + cross-attention ke encoder
+        | 100 embedding keluaran
+        v
+FFN bersama (perceptron 3 lapis, diterapkan per embedding)
+        |
+        v
+100 prediksi: (kelas, cx, cy, w, h) atau "bukan objek" (∅)
 
-## Metodologi & Arsitektur
-Backbone CNN mengekstrak fitur; Transformer encoder (self-attention) memperkaya konteks; decoder memproses N object query (paralel) menjadi prediksi (kelas, box); Hungarian matching memasangkan prediksi-GT untuk loss; query belajar menspesialisasi wilayah/ukuran.
+pelatihan: Hungarian matching memasangkan tiap objek ground truth
+ke tepat satu prediksi; prediksi tak terpasang dilatih memprediksi ∅
+```
 
-Komponen / langkah metodologis utama:
+### Backbone dan Peta Fitur
 
-- Backbone CNN + positional encoding.
-- Transformer encoder (self-attention global).
-- Decoder dengan N object query paralel.
-- Prediksi himpunan (kelas + box) langsung.
-- Hungarian bipartite matching loss.
-- Tanpa anchor & NMS.
+*Backbone* adalah jaringan konvolusi pengekstrak fitur di awal detektor; di sini dipakai ResNet-50 atau ResNet-101 yang dilatih awal pada ImageNet (dataset klasifikasi skala besar). Citra masukan 3×H0×W0 dipetakan menjadi peta aktivasi berkanal C = 2048 dengan resolusi 1/32 dari masukan; pada citra 800×1333 piksel, petanya berukuran sekitar 25×42. Sebuah konvolusi 1×1 kemudian mereduksi 2048 kanal menjadi d = 256 kanal, dan dimensi spasialnya diratakan menjadi sekuen berisi H×W token (masing-masing vektor 256 dimensi) — dalam contoh di atas sekitar 1.050 token.
 
-## Kontribusi Utama
-1. Deteksi end-to-end tanpa anchor/NMS pertama berbasis Transformer.
-2. Bipartite matching menghilangkan duplikasi.
-3. Attention global menangkap relasi antar-objek.
-4. Memicu gelombang detektor berbasis Transformer.
+### Encoder Transformer
 
-## Rincian Eksperimen
-Diuji di COCO dengan perbandingan terhadap Faster R-CNN, analisis konvergensi lambat dan performa per ukuran objek.
+*Transformer* adalah arsitektur berbasis *attention* yang diperkenalkan untuk penerjemahan mesin: pada *self-attention*, setiap token memperbarui representasinya dengan mengagregasi informasi dari seluruh token lain dengan bobot yang dihitung dari kemiripannya. Karena operasi ini invariant terhadap urutan token, *positional encoding* sinusoidal (kode posisi yang diturunkan dari fungsi sinus) ditambahkan ke setiap lapis agar model mengetahui posisi spasial tiap token. Encoder DETR terdiri atas 6 lapis, masing-masing berisi *multi-head self-attention* (attention dengan 8 kepala paralel) dan jaringan *feed-forward* (FFN). Fungsi encoder adalah memperkaya fitur setiap lokasi dengan konteks seluruh citra; ablasi makalah menunjukkan penghapusan encoder menurunkan AP sebesar 3,9 poin, terutama pada objek besar (−6,0 AP_L), yang menegaskan perannya dalam memisahkan instans melalui penalaran global.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Decoder dan Object Query
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | AP | setara Faster R-CNN (baseline kuat) |
-| COCO (objek besar) | AP-L | unggul berkat konteks global |
-| COCO (objek kecil) | AP-S | lebih lemah; konvergensi lambat |
+Decoder juga terdiri atas 6 lapis. Masukannya adalah 100 *object query*: vektor 256 dimensi yang dipelajari, berperan sebagai posisi awal yang berbeda-beda agar 100 slot keluaran tidak identik. Setiap lapis decoder menjalankan *self-attention* antar-query — di sinilah prediksi-prediksi saling "melihat" sehingga duplikasi dapat ditekan — diikuti *cross-attention* (encoder-decoder attention) yang membuat setiap query menimbang token-token citra dari encoder. Seluruh 100 objek didekode secara paralel dalam satu kali lintasan, bukan satu per satu. Analisis makalah menunjukkan setiap slot query belajar menspesialisasi wilayah dan ukuran kotak tertentu, tanpa spesialisasi kelas: model tetap mampu mendeteksi 24 jerapah meskipun data latih tidak memuat lebih dari 13 jerapah per citra.
 
-## Temuan Kunci
-- Deteksi dapat dirumuskan sebagai set prediction murni.
-- Anchor/NMS tidak wajib.
-- Konvergensi lambat & objek kecil jadi kelemahan awal.
-- Attention global unggul untuk objek besar.
+### Kepala Prediksi
 
-## Keunggulan
-- End-to-end sejati (tanpa anchor/NMS).
-- Konsep elegan dan berpengaruh.
-- Kuat pada objek besar.
+Setiap embedding keluaran decoder dilewatkan ke FFN bersama yang sama: perceptron 3 lapis dengan aktivasi ReLU yang memprediksi empat angka kotak — pusat (cx, cy) serta lebar dan tinggi yang dinormalisasi terhadap ukuran citra — dan satu lapis linier dengan *softmax* yang memprediksi kelas, termasuk kelas ∅. Karena kotak diprediksi absolut (bukan selisih terhadap *anchor*), dipakai *box loss* gabungan: *loss* L1 pada koordinat ditambah *loss* GIoU (*generalized Intersection over Union*, perluasan IoU — rasio luas irisan terhadap luas gabungan dua kotak — yang invariant terhadap skala). Ablasi menunjukkan GIoU menanggung sebagian besar kinerja: melatih tanpa *loss* L1 hanya mengurangi 0,7 AP, sedangkan L1 tanpa GIoU jauh lebih buruk.
 
-## Keterbatasan
-- Konvergensi pelatihan lambat (ratusan epoch).
-- Lemah pada objek kecil.
-- Butuh komputasi attention besar.
+### Pencocokan Bipartit dan Hungarian Loss
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Biaya pemasangan sebuah objek *ground truth* dengan sebuah prediksi menggabungkan probabilitas kelas prediksi dan *box loss* di atas. Algoritme Hungarian mencari permutasi 100 prediksi dengan total biaya terendah, sehingga setiap objek memperoleh tepat satu prediksi pasangan. *Loss* akhir (disebut *Hungarian loss*) adalah *negative log-likelihood* kelas untuk semua slot ditambah *box loss* hanya untuk slot terpasang; suku kelas pada slot ∅ diturunkan bobotnya 10 kali untuk mengimbangi banyaknya slot kosong. Fungsi *loss* ini invariant terhadap permutasi prediksi, sesuai sifat himpunan. Selama pelatihan, *loss* auxiliary juga diterapkan setelah setiap lapis decoder; evaluasi per lapis menunjukkan AP naik total +8,2 poin dari lapis decoder pertama ke terakhir, dan menjalankan NMS pada keluaran lapis-lapis akhir justru sedikit menurunkan AP — bukti bahwa mekanisme bebas-duplikat sudah bekerja di dalam jaringan.
 
-## Relevansi terhadap Tema Tinjauan
-DETR membuka paradigma deteksi Transformer end-to-end yang memengaruhi RT-DETR dan YOLOv10 (ide bebas-NMS); relevan untuk memahami arah detektor pada tinjauan ini.
+### Pelatihan
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Model dilatih dengan pengoptimal AdamW (laju pembelajaran 10⁻⁴ untuk *transformer*, 10⁻⁵ untuk *backbone*), *dropout* (regularisasi pemadaman acak sebagian unit) 0,1, dan *batch* 64. Citra diskalakan sehingga sisi terpendek 480–800 piksel (terpanjang maksimal 1.333), ditambah pemotongan acak (*random crop*) yang menambah sekitar 1 AP. Jadwal panjang 500 *epoch* (penurunan laju pembelajaran setelah epoch 400) menambah 1,5 AP dibanding jadwal 300 *epoch*; pelatihan 300 *epoch* memerlukan 3 hari pada 16 GPU V100.
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
+## Eksperimen dan Hasil
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Evaluasi utama dilakukan pada COCO 2017 (118 ribu citra latih, 5 ribu citra validasi, 80 kelas), tolok ukur standar deteksi objek. Metriknya adalah AP (*Average Precision* terintegrasi atas beberapa ambang IoU), beserta AP_S/AP_M/AP_L untuk objek kecil/sedang/besar. Pembanding utamanya adalah Faster R-CNN ber-backbone sama yang diperkuat penulis dengan GIoU, *random crop*, dan jadwal pelatihan panjang.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+Hasil kunci pada COCO val2017:
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+- DETR (ResNet-50): 42,0 AP, 28 *frame* per detik (FPS), 41,3 juta parameter (23,5 juta di ResNet-50, 17,8 juta di *transformer*) — menyamai Faster R-CNN yang diperkuat dengan jumlah parameter sama dan separuh FLOPs.
+- Rincian ukuran: DETR menang +7,8 poin AP_L tetapi kalah −5,5 poin AP_S dari Faster R-CNN; interpretasinya, *self-attention* global menguntungkan objek besar, sementara resolusi fitur tunggal 1/32 merugikan objek kecil.
+- Varian beresolusi lebih tinggi (DETR-DC5, tahap terakhir *backbone* didilatasi) mencapai 43,3 AP dengan biaya komputasi total sekitar dua kali lipat; varian ResNet-101 mencapai 43,5 AP, dan gabungan keduanya 44,9 AP.
+- Generalisasi ke segmentasi panoptik (tugas pelabelan tiap piksel menjadi kelas benda dan latar secara serentak): kepala masker sederhana yang dilatih 25 *epoch* di atas DETR yang dibekukan mencapai 46 PQ (*Panoptic Quality*) pada *test set* COCO, mengungguli baseline UPSNet dan Panoptic FPN, terutama pada kelas latar (*stuff*).
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kelebihan dan Keterbatasan
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Kelebihan: (1) *pipeline* deteksi paling sederhana di masanya — tanpa *anchor*, tanpa NMS, tanpa lapis khusus; kode inferensi muat dalam kurang dari 50 baris PyTorch; (2) prediksi paralel satu kali lintasan dengan kecepatan setara Faster R-CNN; (3) penalaran global *self-attention* memberi keunggulan besar pada objek besar dan pada kelas latar segmentasi panoptik, sekaligus menunjukkan desain yang mudah diperluas ke tugas lain.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Keterbatasan: (1) konvergensi pelatihan sangat lambat — hingga 500 *epoch*, dan 300 *epoch* pun memerlukan 3 hari pada 16 V100; (2) kinerja objek kecil tertinggal (−5,5 AP_S) karena peta fitur tunggal beresolusi 1/32, persoalan yang pada Faster R-CNN diselesaikan FPN (bab 018, jaringan piramida fitur yang menggabungkan peta multi-skala); (3) dari sisi rekayasa, biaya *self-attention* encoder tumbuh kuadratik terhadap jumlah token — pada varian DC5 biaya *attention* naik 16 kali dan biaya total dua kali; (4) secara konseptual, himpunan tetap 100 slot menyisakan banyak slot kosong yang harus ditekan lewat pembobotan kelas ∅, beban yang tidak ada pada detektor berbasis kandidat.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+## Kaitan dengan Bab Lain
 
-## Kesimpulan
-DETR merumuskan deteksi sebagai prediksi himpunan berbasis Transformer dengan bipartite matching, menghapus anchor/NMS dan memicu keluarga detektor Transformer end-to-end.
+DETR adalah titik balik dari paradigma prediksi padat berbasis kandidat yang dibentuk keluarga YOLO (bab 001, [001 - YOLOv1](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)) dan Faster R-CNN (bab 014, [014 - Faster R-CNN](./014%20-%202017%20-%20Faster%20R-CNN%20-%20Fondasi%20RGB.md)): kedua garis itu memerlukan NMS, sedangkan DETR menghapusnya lewat pencocokan satu-satu. Kelemahannya pada objek kecil dan konvergensi lambat langsung diserang oleh penerusnya, Deformable DETR (bab 023, [023 - Deformable DETR](./023%20-%202021%20-%20Deformable%20DETR%20-%20Fondasi%20RGB.md)), yang mengganti *attention* global dengan *attention* terdeformasi multi-skala. Gagasan prediksi satu-satu bebas-NMS juga kembali muncul pada YOLOv10 (bab 009, [009 - YOLOv10](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)), yang mengadopsi penetapan satu-satu sehingga YOLO berjalan tanpa NMS.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `carion2020detr` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Poin untuk Sitasi
 
----
-*Lembar 022/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `carion2020detr`. Ringkasan yang aman dikutip: "DETR merumuskan deteksi objek sebagai prediksi himpunan langsung dengan arsitektur *transformer* encoder-decoder dan *loss* pencocokan bipartit Hungarian, menghapus kebutuhan *anchor* dan NMS; pada COCO 2017 model ini menyamai Faster R-CNN yang dioptimalkan (42,0 AP dengan ResNet-50), unggul pada objek besar tetapi tertinggal pada objek kecil." Seluruh angka di atas berasal dari naskah dan repositori resmi; rincian Tabel 1 makalah (AP50 dan AP_M absolut) serta nilai PQ validasi per varian sebaiknya diverifikasi ulang ke tabel naskah sebelum sitasi formal.

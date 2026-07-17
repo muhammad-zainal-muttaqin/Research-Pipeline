@@ -1,204 +1,98 @@
 # 036 - BBS-Net: RGB-D Salient Object Detection with a Bifurcated Backbone Strategy Network
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 036 dari 154 |
 | Kunci BibTeX | `fan2020bbsnet` |
-| Judul | BBS-Net: RGB-D Salient Object Detection with a Bifurcated Backbone Strategy Network |
-| Penulis | Fan, Deng-Ping; Zhai, Yingjie; Borji, Ali; Yang, Jufeng; Shao, Ling |
+| Judul asli | BBS-Net: RGB-D Salient Object Detection with a Bifurcated Backbone Strategy Network |
+| Penulis | Deng-Ping Fan; Yingjie Zhai; Ali Borji; Jufeng Yang; Ling Shao |
 | Tahun | 2020 |
-| Venue / Jurnal | Proceedings of the European Conference on Computer Vision (ECCV) |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, bifurcated backbone, depth-enhanced, cascaded refinement, fusi |
+| Venue | European Conference on Computer Vision (ECCV), hlm. 275–292 |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (teks lengkap):** https://arxiv.org/abs/2007.02713
+- **DOI versi jurnal (IEEE TIP 2021):** https://doi.org/10.1109/TIP.2021.3116793
+- **Repositori kode resmi:** https://github.com/DengPingFan/BBS-Net
+- **Google Scholar:** https://scholar.google.com/scholar?q=BBS-Net%3A%20RGB-D%20Salient%20Object%20Detection%20with%20a%20Bifurcated%20Backbone%20Strategy%20Network
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=BBS-Net%3A%20RGB-D%20Salient%20Object%20Detection%20with%20a%20Bifurcated%20Backbone%20Strategy%20Network&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
+BBS-Net adalah jaringan saraf untuk deteksi objek menonjol (*salient object detection*, SOD) pada masukan RGB-D, yaitu pasangan citra warna dan peta kedalaman yang setiap pikselnya menyatakan jarak ke kamera. Makalah ini menangani dua kelemahan metode RGB-D SOD sebelumnya: penggabungan fitur multi-level yang tidak membedakan karakter tiap level, dan pemanfaatan peta kedalaman yang dangkal. Solusinya dua. Pertama, *bifurcated backbone strategy* (BBS) membagi fitur multi-level menjadi kelompok fitur guru (level tinggi) dan fitur murid (level rendah), lalu memakai peta saliens dari fitur guru untuk membersihkan derau pada fitur murid. Kedua, *depth-enhanced module* (DEM) memperkuat fitur kedalaman dengan perhatian kanal dan spasial sebelum digabung dengan fitur RGB. Pada delapan dataset benchmark dan lima metrik evaluasi, BBS-Net mengungguli 18 model pembanding, dengan peningkatan S-measure sekitar 4% terhadap model peringkat teratas saat itu, DMRA (ICCV 2019).
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=BBS-Net%3A%20RGB-D%20Salient%20Object%20Detection%20with%20a%20Bifurcated%20Backbone%20Strategy%20Network
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=BBS-Net%3A%20RGB-D%20Salient%20Object%20Detection%20with%20a%20Bifurcated%20Backbone%20Strategy%20Network&sort=relevance
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+SOD bertujuan menemukan dan mensegmentasi objek yang paling menonjol secara visual dalam sebuah citra, dan hasilnya berupa peta saliens biner. Model SOD yang hanya memakai citra RGB mengalami penurunan kinerja pada skenario sulit: latar belakang kompleks, objek ganda, dan pencahayaan bervariasi. Peta kedalaman membantu karena memuat struktur spasial dan tata letak objek, dan kini mudah diperoleh dari kamera stereo, Kinect, maupun telepon pintar.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Masalah pertama adalah agregasi fitur multi-level. *Backbone* konvolusi menghasilkan fitur pada beberapa level: fitur level rendah memuat detail tepi tetapi juga derau dari latar belakang, sedangkan fitur level tinggi memuat informasi semantik tetapi kehilangan detail spasial. Metode seperti DMRA (dibahas pada [bab 035](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)) menggabungkan semua level secara langsung, sehingga derau fitur rendah ikut masuk ke prediksi.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 275--292 |
+Masalah kedua adalah ekstraksi informasi dari modalitas kedalaman. Pendekatan yang lazim sebelumnya hanya menjadikan peta kedalaman sebagai kanal masukan keempat, atau menggabungkan fitur RGB dan kedalaman dengan penjumlahan atau perkalian sederhana. Perlakuan ini mengabaikan perbedaan modalitas: citra RGB merekam warna dan tekstur, sedangkan peta kedalaman merekam relasi spasial. Selain itu, peta kedalaman dari sensor konsumen sering kabur dan berderau, sehingga fusi yang naif justru memasukkan galat ke dalam jaringan.
 
-## Ringkasan Eksekutif
-Jaringan RGB-D SOD yang memisahkan fitur multi-level menjadi kelompok via strategi bifurcated backbone dan memperkuatnya dengan modul depth-enhanced, dengan penyempurnaan bertahap.
+## Ide Utama
+Gagasan inti BBS-Net adalah memperlakukan fitur multi-level secara berbeda sesuai karakternya, alih-alih menggabungkannya sekaligus. Fitur level tinggi (disebut fitur guru, *teacher features*) diproses lebih dahulu untuk menghasilkan peta saliens awal S1. Peta bernilai [0,1] ini berfungsi sebagai penapis: fitur level rendah (fitur murid, *student features*) dikalikan elemen-demi-elemen dengan S1, sehingga respons pada daerah latar ditekan sedangkan respons pada daerah objek dipertahankan. Fitur murid yang telah dibersihkan kemudian diproses menjadi peta saliens akhir S2. Modalitas kedalaman pun tidak digabung mentah-mentah; fitur kedalaman diperkuat dahulu oleh DEM melalui dua operasi perhatian berurutan, baru kemudian dijumlahkan dengan fitur RGB. Masukan jaringan adalah sepasang citra RGB dan peta kedalaman; keluarannya adalah dua peta saliens, S1 dan S2, dengan S2 sebagai hasil akhir.
 
-## Abstrak (Parafrase)
-BBS-Net (Bifurcated Backbone Strategy Network) membagi fitur backbone menjadi kelompok level-rendah dan level-tinggi, memprosesnya secara berbeda, lalu menyatukannya dengan Depth-Enhanced Module (DEM) yang memanfaatkan kedalaman untuk memperkuat fitur. Penyempurnaan bertingkat (cascaded refinement) meningkatkan kualitas peta saliency, mencapai SOTA pada beberapa metrik saat rilis.
+## Cara Kerja Langkah demi Langkah
+Alur data BBS-Net digambarkan pada diagram berikut.
 
-## Latar Belakang & Konteks
-Integrasi fitur lintas-level dan lintas-modal pada RGB-D SOD masih suboptimal: fitur level-rendah (detail) dan level-tinggi (semantik) memerlukan perlakuan berbeda, dan kedalaman perlu dimanfaatkan efektif.
+```
+ RGB 352×352×3  ┌───────────────┐
+ ──────────────►│ ResNet-50     │──► f1..f5 (RGB) ────────────────┐
+                │ (cabang RGB)  │                                 │
+                └───────────────┘                                 ▼
+                                                  f_cm = f_rgb + DEM(f_d)
+ Depth 352×352×1┌───────────────┐   f1..f5 (D)  ┌───────┐         │
+ ──────────────►│ ResNet-50     │──────────────►│  DEM  │─────────┘
+                │ (cabang D)    │               └───────┘
+                └───────────────┘
 
-## Permasalahan yang Diangkat
-- Integrasi lintas-level fitur belum optimal.
-- Fitur rendah (detail) & tinggi (semantik) perlu perlakuan berbeda.
-- Pemanfaatan kedalaman sering dangkal.
-- Fusi lintas-modal menyebarkan derau.
-- Penyempurnaan saliency satu-lintasan terbatas.
+ Fitur lintas-modal f1..f5 (cm), titik belah pada Conv3:
 
-## Tujuan & Pertanyaan Penelitian
-- Memisahkan & memperlakukan fitur multi-level berbeda.
-- Memperkuat fitur dengan kedalaman (DEM).
-- Menyempurnakan saliency secara bertingkat.
+  guru  {f3,f4,f5} ─► CD1 (GCM + agregasi) ─► T1 ─► S1 ─────────┐
+                                                                │ perkalian
+  murid {f1,f2,f3} ─► f'(i) = f(i) + f(i)⊙S1 ◄──────────────────┘
+                      ─► CD2 ─► PTM ──► S2 (peta saliens akhir)
+```
 
-## Tinjauan Terdahulu / Posisi Literatur
-BBS-Net memperbaiki fusi RGB-D dan agregasi multi-level dengan strategi bifurkasi.
+Diagram di atas merangkum dua cabang ekstraksi fitur, penggabungan lintas-modal setelah DEM, dan pemrosesan berurutan kelompok guru-murid oleh dua dekoder bertingkat (CD1, CD2). Rincian tiap tahap diuraikan di bawah.
 
-Karya/konsep pembanding yang relevan:
+### Ekstraksi fitur dua cabang
+Masukan RGB dan kedalaman masing-masing diubah ukurannya menjadi 352×352 piksel dan diproses oleh dua backbone ResNet-50 yang terpisah tanpa berbagi bobot. ResNet-50 adalah jaringan konvolusi 50 lapis dengan sambungan residual (jalan pintas yang menjumlahkan masukan dan keluaran blok), yang bobot awalnya diambil dari pelatihan klasifikasi ImageNet. Kedua cabang identik kecuali jumlah kanal masukan: tiga untuk RGB, satu untuk kedalaman. Lima blok konvolusi (Conv1 sampai Conv5) menghasilkan fitur multi-level dengan ukuran spasial menurun dan kanal meningkat: Conv1 menghasilkan 88×88×64, Conv3 menghasilkan 44×44×512, dan Conv5 menghasilkan 11×11×2048. Fitur Conv1 yang beresolusi tinggi memuat detail tepi; fitur Conv5 yang beresolusi rendah memuat rangkuman semantik posisi objek.
 
-- RGB-D SOD berbasis CNN — dasar.
-- Agregasi multi-level (mirip FPN).
-- Depth enhancement — pemanfaatan kedalaman.
-- Cascaded refinement — penyempurnaan bertahap.
+### Depth-Enhanced Module (DEM)
+DEM ditempatkan pada setiap keluaran samping (*side-out*) cabang kedalaman sebelum penggabungan. Fungsinya meningkatkan kompatibilitas dengan fitur RGB sekaligus meredam derau kedalaman. DEM terdiri dari dua operasi perhatian berurutan. Operasi pertama, perhatian kanal (*channel attention*), menerapkan penyatuan maksimum global (*global max pooling*) pada setiap kanal peta fitur, meneruskan vektor hasilnya ke perceptron dua lapis, dan mengalikan kembali bobot yang diperoleh ke tiap kanal untuk menonjolkan kanal informatif. Operasi kedua, perhatian spasial (*spatial attention*), mengambil nilai maksimum sepanjang sumbu kanal pada setiap posisi piksel, menerapkan satu lapis konvolusi, dan mengalikan peta bobot spasial hasilnya ke fitur untuk menonjolkan lokasi informatif. Fitur lintas-modal kemudian dibentuk dengan penjumlahan elemen-demi-elemen: f(i,cm) = f(i,rgb) + DEM(f(i,d)). DEM hanya memakai penyatuan maksimum global tanpa penyatuan rata-rata, karena SOD hanya memerlukan isyarat paling menonjol; pilihan ini menekan kompleksitas modul.
 
-## Metodologi & Arsitektur
-Backbone (mis. ResNet) menghasilkan fitur multi-level yang dibifurkasi menjadi kelompok rendah/tinggi; Depth-Enhanced Module memakai kedalaman untuk merekalibrasi fitur; agregasi dan cascaded refinement menghasilkan peta saliency akhir.
+### Strategi bifurkasi dan penyempurnaan bertingkat
+Lima fitur lintas-modal dibagi menjadi dua kelompok yang tumpang tindih pada Conv3 sebagai titik belah: kelompok murid G1 = {f1, f2, f3} dan kelompok guru G2 = {f3, f4, f5}. Tahap pertama, dekoder bertingkat CD1 mengagregasi ketiga fitur guru, dan dua lapis konvolusi sederhana (T1) mengubah kanal menjadi satu untuk menghasilkan peta awal S1. Karena fitur guru kaya semantik, S1 menandai posisi objek dengan andal tetapi bertepi kasar. Tahap kedua, setiap fitur murid diperbarui dengan aturan residual: f'(i) = f(i) + f(i)⊙S1, dengan ⊙ menyatakan perkalian elemen-demi-elemen. Perkalian menekan aktivasi latar, dan penjumlahan menjaga detail objek tetap utuh. Fitur murid hasil pembaruan diagregasi oleh dekoder kedua CD2 menjadi peta akhir S2.
 
-Komponen / langkah metodologis utama:
+### Dekoder bertingkat: GCM dan agregasi piramidal
+Setiap dekoder bertingkat terdiri dari tiga *global context module* (GCM) dan satu strategi agregasi. GCM adalah penyempurnaan dari *receptive field block* (RFB), modul multi-cabang yang memperluas lapang reseptif (wilayah citra yang memengaruhi satu unit fitur). Setiap GCM memiliki empat cabang paralel: semua cabang diawali konvolusi 1×1 yang mereduksi kanal menjadi 32; cabang ke-k (k = 2, 3, 4) menerapkan konvolusi berkernel 2k−1 (3, 5, dan 7) berdilatasi 1, diikuti konvolusi 3×3 berdilatasi 2k−1. Dilatasi, yaitu jarak antar-titik sampel kernel, membuat kernel kecil mencakup wilayah luas tanpa tambahan parameter. Keluaran keempat cabang digabungkan, direduksi kembali menjadi 32 kanal oleh konvolusi 3×3, dan dijumlahkan dengan masukan melalui sambungan residual. Setelah GCM, agregasi piramidal dilakukan: setiap fitur dikalikan dengan versi tercuplik-naik (*upsampling*, peningkatan resolusi spasial melalui interpolasi) dari semua fitur level lebih tinggi, kemudian hasilnya digabungkan dengan konkatenasi progresif.
 
-- Bifurcated backbone (fitur rendah vs tinggi).
-- Depth-Enhanced Module (DEM) rekalibrasi fitur.
-- Agregasi multi-level terkelompok.
-- Cascaded refinement bertingkat.
-- Supervisi multi-skala.
-- Pelatihan end-to-end RGB-D.
+### Modul peluas bertahap dan pelatihan
+Keluaran CD2 berukuran 88×88, yaitu seperempat resolusi masukan 352×352. Pencuplikan naik langsung empat kali akan menghilangkan detail, sehingga dipakai *progressively transposed module* (PTM): dua blok residual berbasis konvolusi tertransposisi (konvolusi yang menaikkan resolusi) dan tiga konvolusi 1×1, yang memperbesar peta secara bertahap hingga ukuran penuh. Pelatihan mengoptimalkan rugi entropi silang biner (ukuran selisih antara peta prediksi dan acuan piksel demi piksel) pada S1 dan S2 dengan bobot sama (λ = 0,5). Optimisasi memakai Adam dengan laju pembelajaran awal 10⁻⁴ yang dibagi sepuluh setiap 60 epoch, ukuran batch 10, selama 150 epoch (±10 jam pada satu GPU GTX 1080 Ti), dengan augmentasi pembalikan, rotasi, dan pemotongan batas acak.
 
-## Kontribusi Utama
-1. Strategi bifurkasi untuk fitur multi-level.
-2. DEM memanfaatkan kedalaman secara efektif.
-3. Cascaded refinement meningkatkan kualitas.
-4. SOTA pada beberapa metrik saat rilis.
+## Eksperimen dan Hasil
+Evaluasi dilakukan pada tujuh dataset benchmark RGB-D SOD: NJU2K (1.985 pasangan), NLPR (1.000 pasangan, Kinect 640×480), STERE (1.000 pasangan), DES (135 pasangan dalam ruang), LFSD (100 pasangan), SSD (80 pasangan), dan SIP (1.000 pasangan dari telepon pintar, 992×744); versi jurnal menambahkan dataset DUT sehingga menjadi delapan. Sesuai protokol DMRA, pelatihan memakai 1.485 sampel NJU2K dan 700 sampel NLPR; sisanya menjadi data uji. Lima metrik dipakai: S-measure (kesamaan struktur peta dengan acuan), F-measure maksimum (rata-rata harmonik presisi dan *recall*), E-measure maksimum (keselarasan piksel dan global), MAE (galat absolut rata-rata; makin kecil makin baik), dan kurva presisi-recall.
 
-## Rincian Eksperimen
-Diuji pada benchmark RGB-D SOD standar (NJU2K, NLPR, STERE, DES, SIP, dll.) dengan metrik S/F/E-measure dan MAE.
+Tabel berikut membandingkan S-measure BBS-Net (backbone ResNet-50) dengan DMRA, pembanding terkuat, pada tujuh dataset.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
-
-| Dataset / Uji | Metrik | Catatan hasil |
+| Dataset | S-measure DMRA | S-measure BBS-Net |
 |---|---|---|
-| NJU2K/NLPR | S/F/E, MAE | SOTA saat rilis |
-| SIP/STERE | S/F/E, MAE | kompetitif/unggul |
-| Ablation | bifurkasi/DEM | keduanya menyumbang gain |
+| NJU2K | 0,886 | 0,921 |
+| NLPR | 0,899 | 0,930 |
+| STERE | 0,886 | 0,908 |
+| DES | 0,900 | 0,933 |
+| LFSD | 0,839 | 0,864 |
+| SSD | 0,857 | 0,882 |
+| SIP | 0,806 | 0,879 |
 
-## Temuan Kunci
-- Perlakuan berbeda untuk fitur multi-level bermanfaat.
-- Kedalaman efektif memperkuat fitur (DEM).
-- Penyempurnaan bertingkat meningkatkan detail.
-- Strategi bifurkasi banyak diadopsi.
+BBS-Net unggul pada seluruh dataset, dengan selisih 2,1 sampai 7,3 poin S-measure. Keunggulan terbesar terjadi pada SIP, dataset dengan latar paling bervariasi, yang menunjukkan bahwa penekanan derau fitur murid paling berdampak pada skenario sulit. Pada NJU2K, MAE turun dari 0,051 menjadi 0,035 (sekitar sepertiga lebih kecil). Secara keseluruhan, peningkatan terhadap pembanding terbaik berkisar 2,5–3,5% untuk S-measure dan 0,009–0,016 untuk MAE, konsisten dengan klaim abstrak berupa perbaikan S-measure ±4% terhadap DMRA. Kecepatan inferensi mencapai 24,32 fps pada GTX 1080 Ti dengan 49,77 juta parameter dan 31,40 GFLOPs, cukup untuk pemrosesan mendekati waktu nyata. Versi jurnal menambahkan varian efisien yang berbagi bobot antar-cabang dengan modul adaptasi kedalaman: parameternya tinggal 25,96 juta (±50%) dengan kinerja hampir sama.
 
-## Keunggulan
-- Arsitektur berpengaruh & banyak dirujuk.
-- Pemanfaatan kedalaman efektif.
-- Penyempurnaan bertingkat berkualitas.
+## Kelebihan dan Keterbatasan
+Kelebihan utama BBS-Net adalah kesederhanaan konsepnya: strategi bifurkasi dan DEM tidak terikat pada backbone tertentu, dan keunggulan tetap diperoleh dengan backbone VGG-16 maupun VGG-19, bukan hanya ResNet-50. Penyempurnaan hanya memerlukan satu putaran, tidak berulang seperti metode pemurnian sebelumnya, sehingga biaya komputasi terkendali.
 
-## Keterbatasan
-- Bergantung kualitas kedalaman.
-- Backbone CNN (konteks global terbatas).
-- Kompleksitas cascaded refinement.
+Keterbatasan pertama adalah ukuran model: dua backbone tanpa berbagi bobot menghasilkan 49,77 juta parameter. Dari sisi rekayasa, angka ini berat untuk perangkat tepi, dan penulis sendiri mengusulkan varian efisien pada versi jurnal. Keterbatasan kedua, secara konseptual DEM meredam tetapi tidak menghilangkan ketergantungan pada kualitas peta kedalaman; pada kedalaman yang sangat rusak, isyarat spasial yang diekstrak tetap terbatas. Keterbatasan ketiga, backbone konvolusi memiliki lapang reseptif terbatas; GCM memperluasnya, tetapi konteks global tetap tidak ditangkap sebaik pada arsitektur berbasis *transformer* yang muncul kemudian.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Kaitan dengan Bab Lain
+BBS-Net melanjutkan garis karya RGB-D SOD berbasis CNN: DMRA pada [bab 035](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md) adalah pembanding utama sekaligus sumber protokol pelatihan yang dipakai ulang, sedangkan dekoder bertingkatnya dikembangkan dari CPD (Wu dkk., CVPR 2019) yang kodenya menjadi dasar implementasi resmi. Gagasan memilah fitur sebelum diagregasi menjadi acuan karya berikutnya; D3Net pada [bab 037](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md) mempertanyakan ulang desain fusi RGB-D, dan strategi pemisahan fitur guru-murid banyak diadopsi arsitektur RGB-D SOD setelahnya.
 
-## Relevansi terhadap Tema Tinjauan
-BBS-Net adalah entri inti klaster RGB-D SOD; strategi bifurkasi dan pemanfaatan kedalaman relevan sebagai prinsip fusi RGB+Depth yang dibahas dalam tinjauan.
-
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
-
-- [035 - 2019 - DMRA - RGB-D SOD](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)
-- [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)
-- [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md)
-- [039 - 2020 - S2MA - RGB-D SOD](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)
-- [040 - 2020 - HDFNet - RGB-D SOD](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)
-- [041 - 2020 - UC-Net - RGB-D SOD](./041%20-%202020%20-%20UC-Net%20-%20RGB-D%20SOD.md)
-- [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)
-- [043 - 2022 - SwinNet - RGB-D SOD](./043%20-%202022%20-%20SwinNet%20-%20RGB-D%20SOD.md)
-
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
-
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
-
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-BBS-Net memperkenalkan strategi bifurcated backbone dan Depth-Enhanced Module dengan cascaded refinement untuk RGB-D SOD, menjadi arsitektur berpengaruh dalam pemanfaatan kedalaman.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `fan2020bbsnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 036/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Poin untuk Sitasi
+Kunci BibTeX: `fan2020bbsnet`. Ringkasan yang aman dikutip: BBS-Net (Fan dkk., ECCV 2020) mengusulkan strategi backbone bercabang yang memisahkan fitur multi-level menjadi fitur guru dan murid, modul penguat kedalaman berbasis perhatian kanal-spasial, serta penyempurnaan bertingkat satu putaran untuk RGB-D SOD; model ini mengungguli 18 metode pada delapan dataset dengan peningkatan S-measure sekitar 4% terhadap DMRA. Catatan verifikasi: angka S-measure dan MAE per dataset, parameter, FLOPs, dan kecepatan diambil dari tabel versi jurnal IEEE TIP 2021 (arXiv v3); tabel versi prosiding ECCV 2020 dapat sedikit berbeda dan perlu dicocokkan sebelum sitasi formal. Varian efisien dengan modul adaptasi kedalaman hanya ada pada versi jurnal, bukan versi konferensi.

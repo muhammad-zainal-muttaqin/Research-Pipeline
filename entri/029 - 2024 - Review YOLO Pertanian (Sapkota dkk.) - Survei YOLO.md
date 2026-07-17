@@ -1,204 +1,137 @@
 # 029 - YOLOv1 to YOLOv10: A Comprehensive Review of YOLO Variants and Their Application in the Agricultural Domain
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 029 dari 154 |
 | Kunci BibTeX | `sapkota2024yoloagri` |
-| Judul | YOLOv1 to YOLOv10: A Comprehensive Review of YOLO Variants and Their Application in the Agricultural Domain |
-| Penulis | Sapkota, Ranjan; Meng, Zhichao; Churuvija, Manoj; Du, Xiaoming; Ma, Zhenghao; Karkee, Manoj |
+| Judul asli | YOLOv1 to YOLOv10: A Comprehensive Review of YOLO Variants and Their Application in the Agricultural Domain |
+| Penulis | Mujadded Al Rabbani Alif, Muhammad Hussain (sesuai naskah arXiv:2406.10139; entri `references.bib` mencantumkan nama lain — lihat Poin untuk Sitasi) |
 | Tahun | 2024 |
-| Venue / Jurnal | arXiv preprint arXiv:2406.10139 |
-| Tema klaster | Survei YOLO |
-| Kata kunci | survei, YOLO, pertanian, deteksi buah, YOLOv1-v10 |
+| Venue | arXiv preprint arXiv:2406.10139 |
+| Tema | Survei YOLO |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-survei-yolo)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2406.10139
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLOv1%20to%20YOLOv10%3A%20A%20Comprehensive%20Review%20of%20YOLO%20Variants%20and%20Their%20Application%20in%20the%20Agricultural%20Domain
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLOv1%20to%20YOLOv10%3A%20A%20Comprehensive%20Review%20of%20YOLO%20Variants%20and%20Their%20Application%20in%20the%20Agricultural%20Domain&sort=relevance
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLOv1%20to%20YOLOv10%3A%20A%20Comprehensive%20Review%20of%20YOLO%20Variants%20and%20Their%20Application%20in%20the%20Agricultural%20Domain
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLOv1%20to%20YOLOv10%3A%20A%20Comprehensive%20Review%20of%20YOLO%20Variants%20and%20Their%20Application%20in%20the%20Agricultural%20Domain&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2406.10139 |
+Makalah ini adalah survei — sintesis atas banyak studi yang sudah terbit, bukan metode baru — yang membahas dua arus literatur sekaligus: evolusi keluarga detektor objek YOLO dari YOLOv1 (2015) hingga YOLOv10 (2024), dan penerapan versi-versi tersebut di domain pertanian. Menurut abstraknya, survei ini termasuk yang pertama memasukkan YOLOv10. Lima tujuan dinyatakan eksplisit, dari penelusuran kemajuan tiap versi sampai proyeksi tren berikutnya.
 
-## Ringkasan Eksekutif
-Tinjauan komprehensif YOLOv1-v10 dan penerapannya di domain pertanian (deteksi buah, gulma, hama, ternak), memetakan versi ke tugas dan tantangan lapangan.
+Hasilnya peta dua sumbu: garis waktu inovasi sepuluh versi YOLO dan taksonomi lima bidang aplikasi pertanian (deteksi gulma, deteksi tanaman, pelacakan hewan, deteksi penyakit, pertanian presisi), ditutup analisis komparatif, empat tantangan lapangan, dan empat arah riset lanjutan.
 
-## Abstrak (Parafrase)
-Makalah survei ini memetakan seluruh silsilah YOLO (v1-v10) ke beragam tugas pertanian: deteksi dan penghitungan buah, identifikasi gulma/hama, pemantauan ternak, dan estimasi hasil. Ia membahas dataset pertanian, tantangan lapangan (oklusi, pencahayaan, angin), serta merekomendasikan arah riset, menjadikannya panduan pemilihan varian YOLO untuk agrikultur.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Latar Belakang & Konteks
-Adopsi YOLO di pertanian tumbuh pesat namun terfragmentasi antar-tugas, versi, dan kondisi lapangan, sehingga sulit menentukan pendekatan yang tepat untuk suatu masalah pertanian.
+Sejak YOLOv1 (bab 001) merumuskan deteksi objek sebagai regresi satu kali evaluasi, keluarga YOLO berganti versi hampir setiap tahun; sampai 2024 terdapat sepuluh versi arus utama. Pada saat yang sama, komunitas pertanian mengadopsi YOLO untuk deteksi gulma (tumbuhan liar pesaing tanaman budidaya), identifikasi buah, dan diagnosis penyakit daun, karena sifat *real-time*-nya cocok untuk robot lapangan.
 
-## Permasalahan yang Diangkat
-- Adopsi YOLO di pertanian terfragmentasi antar-tugas/versi.
-- Tantangan lapangan (oklusi, cahaya, angin) beragam.
-- Dataset pertanian tersebar dan tak seragam.
-- Sulit memilih versi YOLO yang tepat per tugas.
-- Kebutuhan sintesis dan rekomendasi arah.
+Masalahnya, literatur penerapan itu terfragmentasi: setiap studi memakai versi berbeda, dataset sempit (satu komoditas, satu wilayah), dan metrik tidak seragam, sehingga praktisi sukar memilih versi untuk tugas tertentu. Kondisi lapangan juga berbeda dari tolok ukur seperti MS COCO: objek kecil (gulma muda, serangga), oklusi (buah tertutup daun), dan variasi cahaya menuntut kemampuan khusus. Survei YOLO sebelumnya (mis. bab 028) bersifat umum dan belum memetakan versi ke tugas pertanian, apalagi memasukkan YOLOv9/v10 (2024). Celah itulah yang diisi makalah ini.
 
-## Tujuan & Pertanyaan Penelitian
-- Memetakan versi YOLO ke tugas-tugas pertanian.
-- Mensintesis dataset dan tantangan lapangan.
-- Merekomendasikan arah riset agrikultur.
+## Ide Utama
 
-## Tinjauan Terdahulu / Posisi Literatur
-Survei ini mengagregasi silsilah YOLO dan literatur agrikultur berbasis penglihatan.
+Gagasan inti survei ini adalah memperlakukan hubungan YOLO dan pertanian sebagai masalah pemetaan dua sumbu: evolusi teknis tiap versi (apa yang diubah dan masalah apa yang dipecahkannya) dipertemukan dengan kebutuhan aplikasi (tugas apa yang telah dicoba dan dengan hasil apa). Dengan begitu, kekuatan dan kelemahan tiap versi dinilai terhadap tuntutan tugas lapangan, bukan terhadap dataset tolok ukur semata.
 
-Karya/konsep pembanding yang relevan:
+Secara mekanis, masukannya dua arus literatur (makalah versi YOLO dan makalah aplikasi pertanian); keluarannya tabel perbandingan, daftar tantangan, dan agenda riset — tanpa eksperimen baru.
 
-- Seluruh silsilah YOLO (v1-v10).
-- Studi deteksi buah/gulma/hama/ternak.
-- Dataset pertanian.
-- Sensor RGB & RGB-D di lapangan.
+## Cara Kerja Langkah demi Langkah
 
-## Metodologi & Arsitektur
-Metodologi survei: klasifikasi aplikasi pertanian, pemetaan versi YOLO ke tugas, tinjauan dataset, analisis tantangan lapangan, dan rekomendasi arah.
+### Cakupan dan Metode Survei
 
-Komponen / langkah metodologis utama:
+Survei ini bersifat naratif-terstruktur, bukan tinjauan sistematis berprotokol. Alurnya: (1) dasar CNN (*Convolutional Neural Network*, jaringan pengekstrak fitur citra lewat operasi konvolusi dan *pooling*); (2) taksonomi deteksi objek — detektor dua tahap (keluarga R-CNN: mengusulkan kandidat wilayah lalu mengklasifikasikannya) versus detektor satu tahap (SSD, YOLO: memprediksi kotak langsung dari peta fitur); (3) pembahasan versi per versi; (4) aplikasi per bidang; (5) analisis komparatif dan tantangan.
 
-- Pemetaan versi YOLO ke tugas pertanian.
-- Klasifikasi aplikasi (buah/gulma/hama/ternak).
-- Tinjauan dataset agrikultur.
-- Analisis tantangan lapangan (oklusi/cahaya).
-- Kompilasi metrik dari banyak studi.
-- Rekomendasi arah riset.
+Kerangka dua sumbu tersebut digambarkan sebagai berikut:
 
-## Kontribusi Utama
-1. Panduan pemilihan varian YOLO untuk pertanian.
-2. Pemetaan versi->tugas yang praktis.
-3. Sintesis tantangan lapangan.
-4. Rekomendasi arah yang berguna.
+```
+SUMBU 1: evolusi versi         SUMBU 2: aplikasi pertanian
+----------------------         ---------------------------
+v1  2015 : grid + regresi      deteksi gulma
+v2  2016 : anchor + batchnorm  deteksi tanaman / buah
+v3  2018 : multi-skala         pelacakan hewan
+v4  2020 : CSP + CIoU          deteksi penyakit / hama
+v5  2020 : PyTorch             pertanian presisi
+v6  2022 : head terpisah                |
+v7  2022 : E-ELAN                       v
+v8  2023 : anchor-free         analisis komparatif versi x tugas:
+v9  2024 : PGI + GELAN         kekuatan, kelemahan, hardware,
+v10 2024 : NMS-free            metrik galat
+                                        |
+                                        v
+        tantangan: data, hardware, lingkungan, objek kecil
+        arah riset: multimodal, XAI, sistem adaptif, human-AI
+```
 
-## Rincian Eksperimen
-Sebagai survei, evaluasi berupa agregasi metrik dari banyak studi pertanian dan analisis komparatif, bukan eksperimen baru.
+Inovasi tiap versi (kolom kiri) dipertemukan dengan kebutuhan tiap bidang aplikasi (kolom kanan); irisan keduanya dianalisis, lalu ditarik menjadi tantangan dan arah riset.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Sumbu Pertama: Evolusi YOLOv1–YOLOv10
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Studi pertanian | mAP/PR | agregasi lintas studi |
-| Versi YOLO | kesesuaian | pemetaan ke tugas agrikultur |
-| Tantangan | lapangan | oklusi, cahaya, dataset |
+Tiap versi dibahas dengan pola tetap: masalah pendahulunya, perubahan yang dilakukan, dan angka kinerja. Dua metrik dipakai berulang: mAP (*mean Average Precision*, rata-rata presisi deteksi di seluruh kelas, maksimal 100%) dan FPS (*frame* per detik, laju pemrosesan).
 
-## Temuan Kunci
-- YOLO diadopsi luas lintas tugas pertanian.
-- Kondisi lapangan menuntut adaptasi model.
-- RGB-D membantu lokalisasi 3D buah.
-- Standarisasi dataset masih kurang.
+**YOLOv1 (2015).** Citra dibagi grid S×S; sel yang memuat pusat objek memprediksi *bounding box* (kotak pembatas berisi koordinat, ukuran, dan *confidence score* — probabilitas adanya objek dikali IoU, rasio irisan-gabungan dua kotak) beserta kelasnya; kotak ganda dirampingkan NMS (*Non-Maximum Suppression*: hanya kotak berskor tertinggi yang dipertahankan). Hasilnya 63,4% mAP pada 45 FPS di PASCAL VOC 2007 — jauh lebih cepat dari detektor dua tahap masanya, tetapi *recall* (proporsi objek yang tertemukan) rendah.
 
-## Keunggulan
-- Komprehensif untuk domain pertanian.
-- Pemetaan versi->tugas praktis.
-- Mencakup hingga v10.
+**YOLOv2 (2016).** *Backbone* (jaringan pengekstrak fitur) Darknet-19; *anchor box* (kotak referensi berbentuk tetap, dipilih dengan klastering K-means). Perbaikannya terukur satu per satu: klasifier resolusi tinggi +4% mAP, *batch normalization* (normalisasi aktivasi agar pelatihan stabil) +2%, prediksi relatif sel +5%, anchor box +7% recall, dan koneksi lompat +1%.
 
-## Keterbatasan
-- Bersifat survei domain-spesifik.
-- Perbandingan antar-studi tak setara.
-- Cepat usang seiring rilis versi.
+**YOLOv3 (2018).** Darknet-53 dengan koneksi residual; prediksi pada tiga skala peta fitur (13×13, 26×26, 52×52) agar objek kecil terwakili. Pada MS COCO dicapai AP 36,2% dan AP50 60,6% pada 20 FPS — lompatan akurasi dari era VOC.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+**YOLOv4 (2020).** Merangkai CSPDarknet53 (CSP: aliran fitur dibelah dua cabang untuk memperbaiki gradien), SPP (penggabungan fitur multi-skala), leher PAN (agregasi fitur dua arah antar-resolusi), dan loss CIoU (IoU ditambah penalti jarak pusat dan rasio aspek).
 
-## Relevansi terhadap Tema Tinjauan
-Survei ini langsung relevan dengan klaster Pertanian dan YOLO+RGB-D dalam tinjauan (deteksi buah, panen robotik), menyediakan konteks untuk entri-entri tersebut.
+**YOLOv5 (2020).** Berpindah dari Darknet ke PyTorch; loss gabungan *binary cross-entropy* (kelas dan keobjekan) dan CIoU (lokalisasi). YOLOv5x mencapai AP 50,7% pada citra 640 piksel dengan 200 FPS pada NVIDIA V100 — titik ketika versi arus utama menembus 50% AP COCO sambil tetap *real-time*.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Survei YOLO** yang baik dibaca berdampingan:
+**YOLOv6 (2022).** Memakai FPN (*Feature Pyramid Network*, piramida fitur multi-resolusi) dan kepala klasifikasi yang dipisah dari regresi kotak. YOLOv6-L mencapai AP 52,5% (AP50 70%) pada sekitar 50 FPS di GPU Tesla T4; varian nano/tiny menyasar perangkat berdaya rendah seperti robot lapangan.
 
-- [026 - 2023 - Review YOLO (Terven dkk.) - Survei YOLO](./026%20-%202023%20-%20Review%20YOLO%20%28Terven%20dkk.%29%20-%20Survei%20YOLO.md)
-- [027 - 2023 - Review YOLO Manufaktur (Hussain) - Survei YOLO](./027%20-%202023%20-%20Review%20YOLO%20Manufaktur%20%28Hussain%29%20-%20Survei%20YOLO.md)
-- [028 - 2022 - Review Perkembangan YOLO (Jiang dkk.) - Survei YOLO](./028%20-%202022%20-%20Review%20Perkembangan%20YOLO%20%28Jiang%20dkk.%29%20-%20Survei%20YOLO.md)
-- [030 - 2024 - Review Model & Aplikasi YOLO (Ali & Zhang) - Survei YOLO](./030%20-%202024%20-%20Review%20Model%20%26%20Aplikasi%20YOLO%20%28Ali%20%26%20Zhang%29%20-%20Survei%20YOLO.md)
-- [031 - 2024 - Systematic Review YOLO (Vijayakumar & Vairavasundaram) - Survei YOLO](./031%20-%202024%20-%20Systematic%20Review%20YOLO%20%28Vijayakumar%20%26%20Vairavasundaram%29%20-%20Survei%20YOLO.md)
-- [032 - 2024 - YOLO Evolution Benchmark (Alif & Hussain) - Survei YOLO](./032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md)
-- [033 - 2024 - Review YOLOv8 (Sohan dkk.) - Survei YOLO](./033%20-%202024%20-%20Review%20YOLOv8%20%28Sohan%20dkk.%29%20-%20Survei%20YOLO.md)
-- [034 - 2023 - Object Detection using YOLO (Diwan dkk.) - Survei YOLO](./034%20-%202023%20-%20Object%20Detection%20using%20YOLO%20%28Diwan%20dkk.%29%20-%20Survei%20YOLO.md)
+**YOLOv7 (2022).** Memperkenalkan E-ELAN (pengelolaan jalur gradien pada blok bertumpuk), penskalaan kedalaman-lebar seragam, dan kepala bantu yang hanya aktif saat pelatihan. YOLOv7-E6 mencapai AP 55,9% dan AP50 73,5%.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Survei YOLO** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+**YOLOv8 (2023).** Beralih ke skema *anchor-free*: pusat objek diprediksi langsung tanpa kotak referensi, ditambah augmentasi mosaik (empat citra latih digabung menjadi satu). YOLOv8x mencapai AP 53,9% — naik 3,2 poin dari YOLOv5x — dengan 280 FPS pada NVIDIA A100 dan TensorRT.
 
-## Glosarium Istilah (tema Survei YOLO)
-Istilah penting untuk memahami makalah ini:
+**YOLOv9 (2024).** Memperkenalkan PGI (mekanisme menjaga informasi gradien tetap utuh selama pelatihan) dan GELAN (arsitektur efisien yang ringan). Survei melaporkan kenaikan AP 0,6 poin atas YOLOv8 dengan parameter lebih sedikit.
 
-- **Survei/tinjauan** — Makalah yang mensintesis banyak studi, bukan metode baru.
-- **Taksonomi** — Skema klasifikasi metode ke kategori terstruktur.
-- **Silsilah YOLO** — Rangkaian versi YOLO (v1..v12, PP-YOLO, YOLOX).
-- **Benchmark** — Evaluasi terstandar untuk perbandingan adil.
-- **mAP** — mean Average Precision; metrik deteksi utama.
-- **Bag-of-Freebies** — Teknik menaikkan akurasi tanpa menambah biaya inferensi.
-- **Celah riset** — Isu terbuka yang diidentifikasi sebagai arah lanjutan.
-- **PRISMA** — Protokol tinjauan sistematis (identifikasi-seleksi-inklusi).
-- **Real-time** — Kemampuan berjalan pada laju tinggi (>=30 FPS).
-- **Domain aplikasi** — Bidang penerapan yang dipetakan survei.
+**YOLOv10 (2024).** Pelatihan *NMS-free* dengan penugasan label ganda sehingga NMS dihapus, ditambah kepala klasifikasi ringan dan *downsampling* terpisah jalur spasial-kanal. Survei melaporkan latensi dan ukuran model turun terhadap YOLOv9 dengan akurasi setara atau lebih baik, tanpa angka rinci.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+### Sumbu Kedua: Taksonomi Aplikasi Pertanian
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Literatur aplikasi dikelompokkan ke dalam lima bidang berikut.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+**Deteksi gulma.** YOLO-WEED (YOLOv3 pada video UAV, *unmanned aerial vehicle* atau wahana udara nirawak) untuk ladang bawang daun mencapai mAP 93,81% dan F1 0,94 — angka tinggi, tetapi hanya berlaku pada satu komoditas dan resolusi tertentu, dan gulma kecil masih terlewat.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+**Deteksi tanaman.** Model YOLO-P mengenali tandan buah segar, alat pemetik, dan pohon kelapa sawit dengan mAP 98,68%, F1 0,97, dan ukuran 76 MB — akurasi nyaris sempurna, tetapi lingkupnya tiga kelas objek pada satu jenis perkebunan.
 
-## Kesimpulan
-Sapkota dkk. memetakan penerapan YOLOv1-v10 di pertanian secara komprehensif, menjadi panduan pemilihan varian dan pemahaman tantangan lapangan termasuk untuk sistem RGB-D panen.
+**Pelacakan hewan.** YOLOv3 mengenali perilaku ayam petelur; YOLO-BYTE melacak sapi perah dari satu kamera; EmbeddedPigCount (TinyYOLOv4) menghitung babi dengan akurasi 99,44% dari 2.675 citra — angka itu diperoleh pada koridor kandang terkontrol, bukan kandang terbuka.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `sapkota2024yoloagri` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+**Deteksi penyakit.** YOLOv3 yang diperbaiki mendeteksi penyakit dan hama tomat dengan akurasi 92,39% dalam 20,39 ms per citra — setara sekitar 49 FPS, melampaui ambang *real-time* 30 FPS. Tiny-YOLOv3 untuk padi mencapai 98,92%, tetapi studi padi lain dengan Raspberry Pi 3 hanya 73,33%; selisih lebih dari 25 poin ini menunjukkan hasil sangat bergantung perangkat keras dan kualitas citra, bukan algoritme semata.
 
----
-*Lembar 029/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+**Pertanian presisi.** Pembedaan tanaman dan gulma pada ladang stroberi dan kacang polong dari citra UAV mencapai akurasi 94,73%. Deteksi lalat buah zaitun mencatat presisi 0,84, recall 0,97, dan mAP 96,68% — recall tinggi berarti hampir semua hama tertangkap, tetapi presisi lebih rendah menyiratkan sebagian deteksi merupakan alarm keliru.
+
+### Analisis Komparatif dan Sintesis
+
+Survei menyusun tabel kekuatan–kelemahan tiap versi per bidang: misalnya YOLOv1 cepat tetapi lemah pada objek kecil; YOLOv8 sangat cepat tetapi kesulitan pada objek sangat kecil. Tiga aspek dinilai: kompleksitas tugas, ketergantungan perangkat keras (dari GPU kelas atas sampai sistem tertanam seperti NVIDIA Jetson), dan metrik galat (presisi, recall, mAP, F1, serta jenis kesalahan lokalisasi, klasifikasi, positif/negatif palsu). Simpulannya: tidak ada satu versi terbaik untuk semua tugas; pemilihan harus menimbang akurasi, ukuran objek, dan daya komputasi yang tersedia.
+
+## Eksperimen dan Hasil
+
+Sebagai survei, makalah ini tidak menjalankan eksperimen baru; buktinya berupa agregasi puluhan studi aplikasi. Temuan yang disintesis:
+
+- YOLO telah dipakai pada kelima bidang aplikasi, dengan YOLOv3, v4, dan v5 paling sering muncul — versi-versi itu paling matang dokumentasinya ketika studi aplikasi dilakukan.
+- Angka kinerja lintas studi umumnya tinggi (93–99% mAP atau akurasi pada tugas spesifik), tetapi tidak dapat dibandingkan satu sama lain karena dataset, kondisi, dan metriknya berbeda.
+- Hambatan yang berulang dilaporkan: objek kecil terlewat, dataset sempit per komoditas, dan kebutuhan komputer *onboard* pada wahana seperti UAV penyemprot.
+- Empat tantangan dirumuskan: (1) spesifisitas data — model sukar pindah komoditas, disarankan *transfer learning* (penyetelan model terlatih ke tugas baru); (2) keterbatasan perangkat keras — disarankan kuantisasi (pemampatan bobot ke presisi lebih rendah) dan arsitektur ringan untuk perangkat tepi; (3) variabilitas cahaya, cuaca, dan medan; (4) deteksi objek kecil — disarankan mekanisme atensi dan strategi multi-skala.
+- Empat arah riset diproyeksikan: integrasi multimodal (citra RGB digabung data termal atau hiperspektral), keterjelasan model (XAI), sistem adaptif *real-time*, dan kolaborasi manusia–AI.
+
+Interpretasi keseluruhan: bukti menunjukkan YOLO layak dipakai di lapangan, tetapi kematangannya timpang — deteksi gulma dan penyakit daun paling banyak diuji, sedangkan penerapan versi terbaru (v9, v10) di pertanian praktis belum ada saat survei ditulis.
+
+## Kelebihan dan Keterbatasan
+
+Kelebihannya: cakupan versi terlengkap pada masanya (v1 sampai v10 dalam satu naskah); taksonomi aplikasi yang jelas; perhatian pada aspek penerapan nyata seperti perangkat tepi; dan tabel komparatif yang memudahkan pemilihan varian per tugas.
+
+Keterbatasannya: pertama, survei naratif tanpa protokol seleksi literatur eksplisit, sehingga cakupannya bergantung pilihan penulis. Kedua, dari sisi ketelitian, beberapa tabel ringkasannya tidak konsisten dengan teksnya sendiri — misalnya tabel versi mencantumkan YOLOv5 sebagai *anchor-free*, padahal teksnya sendiri menjelaskan YOLOv5 berbasis anchor — sehingga rincian versi perlu diverifikasi ke makalah aslinya. Ketiga, secara konseptual survei silsilah cepat usang: YOLO11 dan YOLOv12 terbit tidak lama setelahnya dan berada di luar cakupan.
+
+## Kaitan dengan Bab Lain
+
+Bab ini membungkus seluruh silsilah fondasi — mulai dari [bab 001 (YOLOv1)](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md) — ke dalam konteks aplikasi, sehingga menjadi jembatan antara bab-bab arsitektur dan klaster penerapan. Dibanding survei umum [bab 026 (Terven dkk.)](./026%20-%202023%20-%20Review%20YOLO%20%28Terven%20dkk.%29%20-%20Survei%20YOLO.md) dan [bab 028 (Jiang dkk.)](./028%20-%202022%20-%20Review%20Perkembangan%20YOLO%20%28Jiang%20dkk.%29%20-%20Survei%20YOLO.md), fokusnya domain-spesifik. Ia terbit berdampingan dengan [bab 030 (Ali & Zhang)](./030%20-%202024%20-%20Review%20Model%20%26%20Aplikasi%20YOLO%20%28Ali%20%26%20Zhang%29%20-%20Survei%20YOLO.md) yang juga meninjau model dan aplikasi YOLO pada 2024. Ketiadaan eksperimen pembanding di bab ini dilengkapi oleh [bab 032 (Jegham dkk.)](./032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md), yang menguji ulang 33 model YOLO pada pengaturan seragam — bacaan pasangan yang menutup kelemahan survei naratif.
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `sapkota2024yoloagri`. Ringkasan yang aman dikutip: "Survei ini menelusuri evolusi YOLOv1 hingga YOLOv10 dan memetakan penerapannya pada lima bidang pertanian — deteksi gulma, deteksi tanaman, pelacakan hewan, deteksi penyakit, dan pertanian presisi — disertai analisis komparatif tiap versi serta perumusan tantangan lapangan dan arah riset lanjutan."
+
+Catatan verifikasi wajib sebelum sitasi formal:
+
+- **Atribusi penulis perlu diperbaiki.** Naskah arXiv:2406.10139 berpenulis Mujadded Al Rabbani Alif dan Muhammad Hussain (University of Huddersfield); entri `references.bib` saat ini mencantumkan Sapkota dkk., yang tidak cocok dengan naskah.
+- Angka studi aplikasi (93,81%; 98,68%; 99,44%; 92,39%; 94,73%; 96,68%) adalah hasil studi yang dikutip survei, bukan pengukuran survei sendiri; kutip studi aslinya untuk sitasi hasil tersebut.
+- Angka kinerja versi (63,4% mAP/45 FPS; AP 53,9%) diringkas survei dari makalah versi asli; verifikasi ke makalah versi yang bersangkutan bila akan dikutip.

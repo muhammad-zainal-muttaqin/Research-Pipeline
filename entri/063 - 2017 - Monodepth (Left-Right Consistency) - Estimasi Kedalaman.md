@@ -1,203 +1,124 @@
 # 063 - Unsupervised Monocular Depth Estimation with Left-Right Consistency
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 063 dari 154 |
 | Kunci BibTeX | `godard2017monodepth` |
-| Judul | Unsupervised Monocular Depth Estimation with Left-Right Consistency |
-| Penulis | Godard, Cl{\'e |
+| Judul asli | Unsupervised Monocular Depth Estimation with Left-Right Consistency |
+| Penulis | Clément Godard, Oisin Mac Aodha, Gabriel J. Brostow |
 | Tahun | 2017 |
-| Venue / Jurnal | Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Estimasi Kedalaman |
-| Kata kunci | depth monokular, self-supervised, stereo, left-right consistency, KITTI |
+| Venue | IEEE Conference on Computer Vision and Pattern Recognition (CVPR 2017) |
+| Tema | Estimasi Kedalaman |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1609.03677
+- **Google Scholar:** https://scholar.google.com/scholar?q=Unsupervised%20Monocular%20Depth%20Estimation%20with%20Left-Right%20Consistency
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Unsupervised%20Monocular%20Depth%20Estimation%20with%20Left-Right%20Consistency&sort=relevance
+- **Kode sumber (TensorFlow):** https://github.com/mrharicot/monodepth
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-estimasi-kedalaman)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Unsupervised%20Monocular%20Depth%20Estimation%20with%20Left-Right%20Consistency
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Unsupervised%20Monocular%20Depth%20Estimation%20with%20Left-Right%20Consistency&sort=relevance
+Makalah ini memperkenalkan Monodepth, jaringan saraf konvolusi yang belajar memprediksi peta kedalaman (jarak setiap piksel ke kamera) dari satu citra, tanpa kedalaman acuan (*ground truth*) saat pelatihan. Sebagai pengganti label, pelatihan memakai pasangan citra stereo terkalibrasi: jaringan memprediksi disparitas — pergeseran piksel antara pandangan kiri dan kanan — yang dinilai dari kemampuannya merekonstruksi citra pandangan seberang. Kontribusi kuncinya adalah rugi konsistensi kiri–kanan (*left-right consistency*), yang memaksa dua peta disparitas prediksi saling cocok secara geometris.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada tolok ukur KITTI, model mencapai galat relatif mutlak (AbsRel) 0,114 — sekitar 44% lebih rendah daripada pembanding terawasi (dilatih dengan kedalaman acuan) terbaik masanya, Eigen dkk., dengan 0,203. Saat pengujian model hanya memerlukan satu citra dan berjalan lebih dari 28 bingkai per detik. Makalah ini menjadi dasar metode kedalaman swa-awas (*self-supervised*) berikutnya.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 270--279 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode depth monokular swa-awas yang belajar tanpa label kedalaman melalui rekonstruksi stereo dan batasan konsistensi kiri-kanan disparitas.
+Estimasi kedalaman monokular — menghitung kedalaman setiap piksel dari satu citra RGB — adalah masalah tanpa solusi unik (*ill-posed*): satu citra dapat dihasilkan oleh tak terhingga susunan geometri tiga dimensi. Pendekatan klasik mengandalkan banyak pengamatan (stereo binokular, *multi-view*), sehingga tidak berlaku untuk citra tunggal. Pendekatan pembelajaran pada 2014–2016 memformulasikannya sebagai regresi terawasi: jaringan dilatih memetakan citra ke peta kedalaman memakai pasangan citra dan kedalaman acuan, seperti dibahas pada [bab 062 (Eigen dkk., 2014)](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md).
 
-## Abstrak (Parafrase)
-Monodepth melatih jaringan memprediksi disparitas dari satu citra dengan mensintesis citra pandangan lain (stereo) dan meminimalkan galat rekonstruksi. Left-right consistency loss memaksa disparitas kiri dan kanan konsisten, menghasilkan kedalaman berkualitas tanpa ground-truth. Ini mengungguli metode swa-awas sezaman di KITTI.
+Kelemahannya adalah ketersediaan label. Kedalaman padat hanya dapat direkam sensor aktif seperti LiDAR (pemindai laser pengukur jarak), yang mahal dan berkeluaran jarang: pada KITTI, proyeksi titiknya menutup kurang dari 5% piksel, dengan galat akibat gerakan kendaraan dan oklusi (wilayah yang tertutup objek lain). Karya swa-awas awal, Garg dkk. (2016), mengganti label dengan rekonstruksi citra stereo, tetapi model pembentuk citranya tidak sepenuhnya dapat diturunkan sehingga pelatihannya suboptimal; Deep3D (Xie dkk., 2016) memerlukan distribusi atas semua kandidat disparitas sehingga tidak berskala ke resolusi besar. Masalah yang diangkat makalah ini: melatih kedalaman monokular tanpa label melalui model pembentuk citra yang sepenuhnya terdiferensialkan.
 
-## Latar Belakang & Konteks
-Label kedalaman padat (LiDAR) mahal dan jarang, sehingga metode supervised terbatas; dibutuhkan pelatihan swa-awas dari data stereo yang lebih murah.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Label kedalaman padat mahal dan langka.
-- Metode supervised terbatas oleh data berlabel.
-- Rekonstruksi stereo naif tidak konsisten.
-- Oklusi merusak sinyal rekonstruksi.
-- Kualitas disparitas swa-awas perlu ditingkatkan.
+Gagasan intinya adalah mengubah prediksi kedalaman menjadi rekonstruksi citra. Jika sebuah fungsi mampu membangkitkan citra pandangan kanan dari citra pandangan kiri, fungsi itu harus memuat pengetahuan tentang geometri tiga dimensi pemandangan. Geometri tersebut diwujudkan sebagai peta disparitas: besaran pergeseran horizontal setiap piksel antara dua citra stereo yang telah direktifikasi (diluruskan sehingga titik yang sama terletak pada baris piksel yang sama di kedua citra). Pada pasangan stereo terkalibrasi, kedalaman diperoleh langsung melalui hubungan kedalaman = b·f/d, dengan b jarak antar-kamera (*baseline*) dan f panjang fokus kamera.
 
-## Tujuan & Pertanyaan Penelitian
-- Melatih depth tanpa label (swa-awas stereo).
-- Memaksa konsistensi kiri-kanan disparitas.
-- Menghasilkan kedalaman berkualitas dari stereo.
+Dua keputusan desain membedakan makalah ini. Pertama, sintesis citra memakai *bilinear sampling* — pengambilan warna pada posisi bukan bulat sebagai interpolasi berbobot empat piksel tetangga — yang sepenuhnya dapat diturunkan, sehingga gradien rugi mengalir utuh ke jaringan. Kedua, jaringan memprediksi dua peta disparitas (kiri dan kanan) dari satu citra kiri saja, dan fungsi rugi memaksa keduanya konsisten: disparitas yang benar harus menjelaskan kedua pandangan secara serentak.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Monodepth mengembangkan pendekatan self-supervised berbasis stereo.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Formulasi: Kedalaman sebagai Hasil Samping Rekonstruksi
 
-- Depth supervised — pembanding.
-- Rekonstruksi citra stereo (view synthesis).
-- Left-right consistency — batasan baru.
-- Dataset KITTI.
+Saat pelatihan tersedia pasangan stereo terrektifikasi (I_kiri, I_kanan). Jaringan menerima hanya I_kiri dan mengeluarkan dua peta disparitas: d_kanan, yang diterapkan pada I_kiri menghasilkan rekonstruksi Ĩ_kanan, dan d_kiri, yang diterapkan pada I_kanan menghasilkan Ĩ_kiri. Penerapan dilakukan dengan pemetaan balik (*backward mapping*): warna setiap piksel rekonstruksi diambil dari citra sumber pada posisi yang digeser sejauh nilai disparitas, dan karena posisi itu bukan bilangan bulat, warnanya dihitung dengan *bilinear sampling*. Operator inilah yang membuat alur dapat dilatih *end-to-end* (gradien rugi citra mengalir langsung ke bobot), berbeda dengan Garg dkk. yang memerlukan aproksimasi deret Taylor.
 
-## Metodologi & Arsitektur
-Jaringan memprediksi disparitas kiri dan kanan dari satu citra; citra pandangan lain disintesis via warping; loss = rekonstruksi (appearance) + smoothness + left-right consistency; pelatihan tanpa ground-truth depth.
+### Arsitektur Encoder–Decoder
 
-Komponen / langkah metodologis utama:
+Jaringan bersifat *fully convolutional* (hanya lapis konvolusi, tanpa lapis terhubung penuh) dan terinspirasi DispNet, arsitektur regresi disparitas terawasi dari Mayer dkk. Bagian *encoder* (lapis cnv1–cnv7b) mengekstrak fitur sambil menurunkan resolusi; bagian *decoder* menaikkan kembali resolusi sambil menerima *skip connection* (penyaluran peta fitur *encoder* ke lapis *decoder* beresolusi sama) agar detail tepi terjaga. Disparitas diprediksi pada empat skala keluaran (disp4 sampai disp1; resolusi berlipat dua per skala), dua peta per skala (kiri dan kanan). Keluaran dibatasi ke rentang [0, d_max] oleh fungsi *sigmoid* (nonlinier pembatas keluaran) yang diskalakan, dengan d_max = 0,3 × lebar citra per skala. Model utama berparameter 31 juta; varian *encoder* ResNet50 (jaringan 50 lapis bersambungan residual) 48 juta.
 
-- Prediksi disparitas dari satu citra.
-- View synthesis (warping) stereo.
-- Appearance/reconstruction loss.
-- Left-right consistency loss.
-- Disparity smoothness loss.
-- Pelatihan self-supervised (tanpa label depth).
+Fungsi aktivasi memakai ELU (*exponential linear unit*) alih-alih ReLU, yang cenderung mengunci disparitas skala menengah ke satu nilai di awal pelatihan; perbesaran resolusi *decoder* memakai *upsampling nearest-neighbor* diikuti konvolusi, bukan dekonvolusi, demi menghindari artefak papan catur.
 
-## Kontribusi Utama
-1. Depth swa-awas berkualitas tanpa label.
-2. Left-right consistency meningkatkan akurasi.
-3. Mengungguli metode swa-awas sezaman.
-4. Membuka jalur swa-awas praktis.
+### Fungsi Rugi Tiga Komponen
 
-## Rincian Eksperimen
-Diuji pada KITTI dengan metrik depth (AbsRel, RMSE, akurasi ambang), dibandingkan metode supervised dan swa-awas lain.
+Rugi dihitung pada keempat skala lalu dijumlahkan; setiap skala menggabungkan tiga suku dalam versi kiri dan kanan:
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+1. **Kecocokan tampilan (C_ap).** Kemiripan citra rekonstruksi dengan citra asli sebagai kombinasi SSIM — ukuran kemiripan struktur lokal yang lebih peka terhadap tekstur daripada selisih piksel mentah — dan L1 (rata-rata selisih absolut). Dipakai SSIM berblok 3×3 dengan bobot α = 0,85.
+2. **Kehalusan disparitas (C_ds).** Penalti L1 pada gradien disparitas yang diboboti gradien citra: di daerah tanpa tepi, disparitas didorong rata; di dekat tepi — tempat diskontinuitas kedalaman — penalti dilonggarkan. Bobotnya α_ds = 0,1/r (r = faktor pengecilan skala) agar kehalusan setara di semua resolusi.
+3. **Konsistensi kiri–kanan (C_lr).** Penalti L1 antara d_kiri dan d_kanan yang di-*warp* mengikuti d_kiri: bila d_kiri menyatakan piksel P bergeser 10 piksel ke kanan, d_kanan pada posisi tujuan harus menyatakan pergeseran balik yang sama besar.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI | AbsRel/RMSE | mengungguli swa-awas sezaman |
-| KITTI | akurasi ambang | kompetitif dengan supervised tertentu |
-| Ablation | LR consistency | konsistensi menyumbang gain |
+Rugi kecocokan tampilan saja menghasilkan citra rekonstruksi yang tampak benar, tetapi peta disparitas yang buruk — artefak salinan tekstur dan galat pada diskontinuitas kedalaman — karena banyak medan disparitas yang salah secara geometris tetap merekonstruksi citra dengan baik. Suku C_lr mengatasi masalah ini tanpa memerlukan label.
 
-## Temuan Kunci
-- Swa-awas stereo layak untuk depth monokular.
-- Left-right consistency penting.
-- Smoothness menstabilkan disparitas.
-- Oklusi tetap menjadi tantangan.
+Alur pelatihan dan pengujian tersebut diringkas pada diagram berikut:
 
-## Keunggulan
-- Tanpa label kedalaman.
-- Left-right consistency efektif.
-- Baseline swa-awas kuat.
+```
+   PELATIHAN (masukan: pasangan stereo terrektifikasi I_kiri, I_kanan)
 
-## Keterbatasan
-- Butuh data stereo terkalibrasi saat latih.
-- Oklusi merusak rekonstruksi.
-- Skala metrik dari stereo baseline.
+ I_kiri
+   │
+   ▼
+ ┌──────────┐   skip connection   ┌──────────┐
+ │ ENCODER  │ ──────────────────► │ DECODER  │
+ │ cnv1..7  │                     │ upcnv7.. │
+ └──────────┘                     └──────────┘
+                                       │
+             d_kiri dan d_kanan pada 4 skala (disp4..disp1)
+                                       │
+        ┌──────────────────────────────┴──────────────────────┐
+        ▼                                                     ▼
+  warp(I_kanan, d_kiri) = Ĩ_kiri             warp(I_kiri, d_kanan) = Ĩ_kanan
+        │                                                     │
+  C_ap: SSIM+L1 vs I_kiri                     C_ap: SSIM+L1 vs I_kanan
+        │                                                     │
+  C_ds: disparitas halus, diboboti tepi       C_lr: d_kiri ≈ warp(d_kanan)
+        └──────────► rugi total = jumlah atas 4 skala ◄───────┘
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+   PENGUJIAN (masukan: satu citra saja)
 
-## Relevansi terhadap Tema Tinjauan
-Monodepth adalah tonggak swa-awas dalam klaster Estimasi Kedalaman; relevan bagi pseudo-depth murah untuk pipeline RGB-D pada tinjauan.
+ citra ─► jaringan ─► d_kiri resolusi penuh ─► kedalaman = b · f / d_kiri
+```
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Estimasi Kedalaman** yang baik dibaca berdampingan:
+Diagram menegaskan dua hal: hanya citra kiri yang masuk ke jaringan, dan ketiga suku rugi dievaluasi pada keempat skala sehingga sinyal pelatihan tersedia dari resolusi kasar hingga penuh.
 
-- [062 - 2014 - Depth dari Citra Tunggal (Eigen dkk.) - Estimasi Kedalaman](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md)
-- [064 - 2019 - Monodepth2 - Estimasi Kedalaman](./064%20-%202019%20-%20Monodepth2%20-%20Estimasi%20Kedalaman.md)
-- [065 - 2019 - BTS (Local Planar Guidance) - Estimasi Kedalaman](./065%20-%202019%20-%20BTS%20%28Local%20Planar%20Guidance%29%20-%20Estimasi%20Kedalaman.md)
-- [066 - 2021 - AdaBins - Estimasi Kedalaman](./066%20-%202021%20-%20AdaBins%20-%20Estimasi%20Kedalaman.md)
-- [067 - 2021 - DPT (Dense Prediction Transformer) - Estimasi Kedalaman](./067%20-%202021%20-%20DPT%20%28Dense%20Prediction%20Transformer%29%20-%20Estimasi%20Kedalaman.md)
-- [068 - 2022 - MiDaS (Robust Monocular Depth) - Estimasi Kedalaman](./068%20-%202022%20-%20MiDaS%20%28Robust%20Monocular%20Depth%29%20-%20Estimasi%20Kedalaman.md)
-- [069 - 2020 - PackNet - Estimasi Kedalaman](./069%20-%202020%20-%20PackNet%20-%20Estimasi%20Kedalaman.md)
-- [070 - 2021 - MonoIndoor - Estimasi Kedalaman](./070%20-%202021%20-%20MonoIndoor%20-%20Estimasi%20Kedalaman.md)
+### Pelatihan dan Inferensi
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Estimasi Kedalaman** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Pelatihan berlangsung 50 *epoch* (putaran penuh atas data latih) dengan *batch* 8 citra, pengoptimal Adam (pembaruan bobot berlaju adaptif per parameter), dan laju pembelajaran awal 10⁻⁴ yang dibagi dua setiap 10 *epoch* setelah *epoch* ke-30 — total sekitar 25 jam pada satu GPU Titan X untuk 30 ribu citra. Augmentasi data meliputi pembalikan horizontal dengan penukaran posisi kedua citra, serta pergeseran acak gamma, kecerahan, dan warna. Saat pengujian, peta disparitas kiri pada resolusi penuh dikonversi menjadi kedalaman memakai *baseline* dan panjang fokus kamera data latih; disparitas kanan tidak dipakai. Inferensi berjalan kurang dari 35 milidetik per citra 512×256 (lebih dari 28 bingkai per detik). Pascapemrosesan opsional (*pp*) menjalankan jaringan pada citra asli dan bayangan cerminnya lalu menggabungkan kedua peta disparitas guna menekan artefak tepi oklusi, dengan biaya komputasi uji dua kali lipat.
 
-## Glosarium Istilah (tema Estimasi Kedalaman)
-Istilah penting untuk memahami makalah ini:
+## Eksperimen dan Hasil
 
-- **Depth monokular** — Estimasi kedalaman dari satu citra RGB (ill-posed).
-- **Supervised** — Dilatih dengan ground-truth depth.
-- **Self-supervised** — Dilatih tanpa label depth via konsistensi stereo/video.
-- **Disparitas** — Pergeseran piksel antar-pandangan stereo.
-- **Skala metrik vs relatif** — Depth satuan nyata vs hanya urutan relatif.
-- **AbsRel** — Absolute Relative error (makin kecil makin baik).
-- **RMSE** — Root Mean Square Error peta depth.
-- **delta<1.25** — Persentase piksel dengan error di bawah ambang.
-- **Zero-shot** — Generalisasi ke dataset tak dilihat saat pelatihan.
-- **Pseudo-depth** — Depth prediksi model, pengganti sensor depth.
+Evaluasi utama memakai dataset KITTI (42.382 pasangan stereo dari 61 adegan; citra tipikal 1242×375 piksel) dengan dua pemisahan: Eigen (697 citra uji; 22.600 citra latih; acuan proyeksi LiDAR) dan KITTI (200 citra uji; 29.000 citra latih). Metriknya: AbsRel (rata-rata |prediksi − acuan|/acuan), RMSE (akar rata-rata kuadrat galat), δ < 1,25 (persentase piksel dengan simpangan di bawah 25% dari acuan), dan D1-all (persentase piksel bergalat disparitas besar menurut definisi KITTI).
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Hasil kunci pada pemisahan Eigen (kedalaman dibatasi 80 m):
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+- Monodepth (latih KITTI saja): AbsRel 0,148; δ<1,25 = 0,803.
+- Monodepth (pralatih Cityscapes + KITTI): AbsRel 0,124; δ<1,25 = 0,847.
+- Monodepth ResNet + *pp* (CS+K): AbsRel 0,114; RMSE 4,935; δ<1,25 = 0,861.
+- Pembanding terawasi: Eigen dkk. 0,203 dan 0,702; Liu dkk. 0,201 dan 0,680.
+- Pembanding swa-awas Garg dkk. (batas 50 m): AbsRel 0,169; Monodepth dengan pengaturan setara mencapai 0,140.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Interpretasinya: tanpa satu pun label kedalaman, model ini mengalahkan dua metode terawasi (galat relatif 0,114 berbanding 0,203, turun ±44%) sembari menaikkan proporsi piksel akurat dari 70,2% menjadi 86,1%; terhadap Garg dkk., galat turun ±17% pada pengaturan sama. Pralatihan pada Cityscapes (22.973 pasangan stereo perkotaan) memperbaiki AbsRel dari 0,148 menjadi 0,124 — keragaman data latih terbukti sepenting arsitektur.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Ablasi pada pemisahan KITTI mengukuhkan peran tiap komponen: model pembentuk citra Deep3D pada arsitektur yang sama hanya mencapai AbsRel 0,412 dan D1-all 66,85%, sedangkan *bilinear sampling* dengan rugi lengkap menurunkannya ke 0,124 dan 30,27%; menghilangkan suku C_lr memperburuk metrik (AbsRel 0,148 → 0,152; RMSE 5,927 → 6,098 pada Eigen) dan menimbulkan artefak salinan tekstur pada tepi objek. Varian stereo, yang menerima kedua citra saat uji, mencapai AbsRel 0,068 dan D1-all 9,19% — acuan atas yang menunjukkan biaya pemakaian satu citra saja.
 
-## Kesimpulan
-Monodepth menunjukkan depth monokular berkualitas dapat dipelajari secara swa-awas dari stereo dengan left-right consistency, tanpa label kedalaman.
+Pada Make3D — dataset RGB–kedalaman tanpa stereo, sehingga tidak dapat dipakai melatih — model yang hanya dilatih pada Cityscapes mencapai AbsRel 0,443: kalah dari metode terawasi Make3D terbaik (0,198), tetapi masih mengungguli dua metode terawasi lama pada sebagian metrik, tanpa pernah melihat data domain itu.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `godard2017monodepth` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Kelebihan dan Keterbatasan
 
----
-*Lembar 063/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kelebihan: (1) pelatihan tanpa label kedalaman — bahan latihnya pasangan video stereo yang lebih mudah diperoleh daripada rekaman LiDAR; (2) model pembentuk citra sepenuhnya terdiferensialkan, tanpa aproksimasi rugi; (3) konsistensi kiri–kanan menaikkan akurasi dan membersihkan artefak tepi tanpa komponen tambahan saat inferensi; (4) inferensi cepat, lebih dari 28 bingkai per detik.
+
+Keterbatasan yang diakui penulis: (1) artefak tetap muncul pada batas oklusi, karena piksel yang hanya terlihat di satu pandangan tidak memiliki pasangan untuk direkonstruksi; (2) pelatihan memerlukan stereo terrektifikasi dan selaras waktu, sehingga dataset citra tunggal tidak dapat dipakai; (3) permukaan memantul (spekular) dan transparan menghasilkan kedalaman tidak konsisten, karena rugi utama bertumpu pada kemiripan tampilan. Dari sisi rekayasa, dua hal layak dicatat. Pertama, skala kedalaman terikat kalibrasi kamera data latih: model yang hanya dilatih pada Cityscapes merosot ke AbsRel 0,699 saat diuji pada KITTI — generalisasi numerik lintas kamera lemah tanpa penyetelan halus. Kedua, pascapemrosesan yang menambah akurasi menggandakan biaya inferensi.
+
+## Kaitan dengan Bab Lain
+
+Bab ini melanjutkan garis estimasi kedalaman monokular dari [bab 062 (Eigen dkk., 2014)](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md): bab 062 menunjukkan jaringan dalam dapat meregresikan kedalaman dari satu citra, tetapi menuntut label yang mahal; bab ini mempertahankan keluaran serupa sekaligus mengganti label dengan supervisi geometri stereo. Rumusan ini menjadi dasar [bab 064 (Monodepth2, 2019)](./064%20-%202019%20-%20Monodepth2%20-%20Estimasi%20Kedalaman.md), penerus langsung oleh kelompok yang sama: oklusi ditangani dengan rugi *minimum reprojection*, adegan statis dengan *auto-masking*, dan supervisi diperluas ke video monokular sehingga kebutuhan stereo saat latih gugur. Bagi tinjauan YOLO/RGB-D, bab ini relevan sebagai dasar penggunaan *pseudo-depth* — kedalaman prediksi model sebagai pengganti sensor kedalaman — untuk melengkapi citra RGB.
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `godard2017monodepth`. Ringkasan yang aman dikutip: "Godard dkk. (CVPR 2017) melatih estimasi kedalaman monokular tanpa label kedalaman melalui rekonstruksi citra stereo dengan *bilinear sampling* yang terdiferensialkan dan rugi konsistensi kiri–kanan; pada KITTI, model ini mengungguli metode terawasi pembanding masanya (AbsRel 0,114 versus 0,203) dengan inferensi lebih dari 28 bingkai per detik." Catatan verifikasi: angka diambil dari teks dan tabel arXiv v3 (versi CVPR 2017) via render ar5iv; cocokkan ulang angka Tabel 1–3 (khususnya baris CS+K dan *pp*) dengan PDF naskah asli sebelum sitasi formal. Klaim "mengungguli metode terawasi" hanya berlaku untuk pembanding 2014–2015 (Eigen dkk.; Liu dkk.), bukan metode terawasi yang lebih baru.

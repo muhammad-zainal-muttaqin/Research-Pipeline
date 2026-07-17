@@ -1,205 +1,109 @@
 # 001 - You Only Look Once: Unified, Real-Time Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 001 dari 154 |
 | Kunci BibTeX | `redmon2016yolo` |
-| Judul | You Only Look Once: Unified, Real-Time Object Detection |
-| Penulis | Redmon, Joseph; Divvala, Santosh; Girshick, Ross; Farhadi, Ali |
+| Judul asli | You Only Look Once: Unified, Real-Time Object Detection |
+| Penulis | Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi |
 | Tahun | 2016 |
-| Venue / Jurnal | Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | deteksi objek, real-time, one-stage, regresi tunggal, PASCAL VOC |
+| Venue | IEEE Conference on Computer Vision and Pattern Recognition (CVPR 2016) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1506.02640
+- **Google Scholar:** https://scholar.google.com/scholar?q=You%20Only%20Look%20Once%3A%20Unified%2C%20Real-Time%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=You%20Only%20Look%20Once%3A%20Unified%2C%20Real-Time%20Object%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=You%20Only%20Look%20Once%3A%20Unified%2C%20Real-Time%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=You%20Only%20Look%20Once%3A%20Unified%2C%20Real-Time%20Object%20Detection&sort=relevance
+Makalah ini memperkenalkan YOLO (*You Only Look Once*), detektor objek pertama yang merumuskan deteksi objek sebagai satu masalah regresi tunggal: dari piksel citra masukan langsung ke koordinat *bounding box* (kotak pembatas objek) dan probabilitas kelas, diselesaikan oleh satu jaringan saraf konvolusi dalam satu kali evaluasi. Rumusan ini menggantikan *pipeline* multi-tahap yang dipakai detektor paling akurat pada masanya (keluarga R-CNN) menjadi satu jaringan yang dilatih *end-to-end* (dari masukan ke keluaran tanpa tahap terpisah).
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasilnya adalah lompatan kecepatan: model penuh mencapai 45 *frame* per detik (FPS) dengan 63,4% mAP pada PASCAL VOC 2007, dan varian ringkasnya (Fast YOLO) mencapai 155 FPS. Sebagai perbandingan, detektor dua tahap tercepat saat itu hanya berjalan 0,5–7 FPS. Makalah ini adalah titik awal seluruh keluarga YOLO; hampir semua bab klaster Fondasi RGB dalam tinjauan ini mewarisi formulasi yang diletakkan di sini.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 779--788 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Makalah pelopor yang mendefinisikan ulang deteksi objek sebagai satu masalah regresi tunggal, menghasilkan detektor real-time pertama yang benar-benar terpadu dan menjadi cikal bakal seluruh keluarga YOLO.
+Sebelum 2016, detektor objek paling akurat bekerja dalam dua tahap. R-CNN (bab 012) terlebih dahulu mengusulkan sekitar 2.000 kandidat wilayah citra (*region proposal*) dengan algoritme *selective search*, kemudian mengekstrak fitur setiap wilayah dengan CNN dan mengklasifikasikannya satu per satu. Fast R-CNN (bab 013) mempercepat proses ini dengan berbagi perhitungan konvolusi untuk seluruh citra, tetapi tetap bergantung pada *region proposal* dari algoritme eksternal. Pendekatan yang lebih tua, DPM (*Deformable Parts Model*), memakai *sliding window*: sebuah pengklasifikasi dievaluasi berulang kali pada banyak jendela yang digeser menutupi seluruh citra.
 
-## Abstrak (Parafrase)
-YOLO (You Only Look Once) memandang deteksi objek sebagai regresi langsung dari piksel citra ke koordinat bounding box dan probabilitas kelas. Sebuah jaringan saraf konvolusi tunggal membagi citra menjadi grid S x S; setiap sel bertanggung jawab memprediksi sejumlah bounding box beserta skor confidence dan distribusi kelas. Karena seluruh pipeline adalah satu jaringan yang dievaluasi sekali, YOLO dapat dilatih end-to-end dan dioptimalkan langsung terhadap kinerja deteksi. Sistem berjalan sangat cepat (45 FPS untuk model penuh, 155 FPS untuk Fast YOLO) sambil mempertahankan akurasi yang kompetitif, serta bernalar secara global sehingga membuat lebih sedikit kesalahan latar dibanding metode berbasis region.
+Ketiga pendekatan tersebut memiliki tiga masalah yang sama. Pertama, komponen-komponennya dilatih secara terpisah (pengusul wilayah, pengekstrak fitur, pengklasifikasi, pasca-pemrosesan), sehingga sistem tidak dapat dioptimalkan secara menyeluruh terhadap tujuan akhir deteksi. Kedua, kecepatannya jauh dari *real-time* — orde detik per citra — sehingga tidak layak untuk robotika atau kendaraan otonom. Ketiga, karena setiap kandidat wilayah dinilai terpisah dari konteks penuh, metode berbasis wilayah relatif sering salah mengenali latar belakang sebagai objek (*false positive* latar).
 
-## Latar Belakang & Konteks
-Sebelum YOLO, detektor terbaik (keluarga R-CNN) memakai pipeline kompleks: menghasilkan ribuan region proposal, mengklasifikasikan tiap region, lalu pasca-pemrosesan. Pipeline itu lambat dan sulit dioptimalkan karena komponennya dilatih terpisah. Kebutuhan aplikasi real-time (robotika, kendaraan otonom) menuntut pendekatan yang jauh lebih sederhana dan cepat.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Pipeline deteksi dua-tahap sangat lambat sehingga tak layak real-time.
-- Komponen yang dilatih terpisah sulit dioptimalkan secara menyeluruh.
-- Metode berbasis sliding-window/region banyak menghasilkan false positive latar.
-- Kompleksitas sistem menyulitkan penerapan dan pemeliharaan.
-- Belum ada kerangka deteksi tunggal yang benar-benar end-to-end dan cepat.
+Gagasan inti YOLO adalah membuang tahap pengusulan wilayah sama sekali. Deteksi dipandang sebagai regresi: satu jaringan menerima seluruh citra dan, dalam satu evaluasi, mengeluarkan semua kotak objek beserta kelasnya secara serentak. Karena jaringan memproses citra penuh sekaligus, informasi konteks global tersedia pada saat prediksi dibuat — berbeda dengan metode wilayah yang hanya melihat potongan citra.
 
-## Tujuan & Pertanyaan Penelitian
-- Merumuskan deteksi sebagai regresi tunggal end-to-end.
-- Mencapai kecepatan real-time tanpa mengorbankan akurasi secara berlebihan.
-- Menyederhanakan arsitektur deteksi menjadi satu jaringan.
+Mekanismenya sederhana: citra dibagi menjadi *grid* (kisi) S×S sel. Setiap sel diberi tanggung jawab mendeteksi objek yang **titik pusatnya** jatuh di dalam sel tersebut. Setiap sel langsung memprediksi posisi kotak objek, tingkat keyakinan bahwa kotak itu berisi objek, dan kelas objeknya. Dengan desain ini, deteksi tidak lagi merupakan rangkaian tahap, melainkan satu pemetaan dari citra ke tensor keluaran.
 
-## Tinjauan Terdahulu / Posisi Literatur
-YOLO diposisikan sebagai antitesis pipeline dua-tahap R-CNN/Fast R-CNN. Ia mewarisi ide CNN untuk fitur namun membuang tahap proposal, dan dibandingkan dengan DPM berbasis sliding window.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Pembagian Grid dan Tanggung Jawab Prediksi
 
-- DPM (Deformable Parts Model) — pendekatan sliding-window klasik.
-- R-CNN / Fast R-CNN — dua-tahap berbasis region proposal.
-- OverFeat — deteksi berbasis konvolusi multi-skala.
-- Deep MultiBox — pelopor prediksi box berbasis jaringan.
+YOLO memakai S = 7, sehingga citra dibagi menjadi 7×7 = 49 sel. Pada citra masukan 448×448 piksel, setiap sel mencakup wilayah 64×64 piksel. Bila pusat sebuah objek jatuh pada sel tertentu, hanya sel itu yang diharapkan memprediksi objek tersebut; sel lain mengabaikannya. Pembagian tanggung jawab inilah yang membuat satu jaringan dapat menghasilkan banyak deteksi sekaligus tanpa tahap proposal.
 
-## Metodologi & Arsitektur
-Arsitektur GoogLeNet-termodifikasi (24 lapis konvolusi + 2 fully-connected) memproses citra 448x448 dan mengeluarkan tensor S x S x (B*5 + C). Setiap sel memprediksi B kotak (x,y,w,h,confidence) dan C probabilitas kelas bersyarat. Loss adalah jumlah kuadrat terboboti yang menyeimbangkan lokalisasi, confidence, dan klasifikasi.
+Skema pembagian tugas dari citra ke tensor keluaran:
 
-Komponen / langkah metodologis utama:
+```
+citra 448x448                        keluaran: tensor 7 x 7 x 30
+┌───┬───┬───┬───┬───┬───┬───┐
+│   │   │   │   │   │   │   │      setiap sel berisi 30 angka:
+├───┼───┼───┼───┼───┼───┼───┤      ┌─ kotak 1: x, y, w, h, confidence
+│   │   │   │   │   │   │   │      ├─ kotak 2: x, y, w, h, confidence
+├───┼───┼───┼───┼───┼───┼───┤      └─ 20 probabilitas kelas (per sel)
+│   │   │   │╔═══╗│   │   │ │
+├───┼───┼───┤║anjing║├───┼───┤      pusat objek jatuh di sel (3,2)
+│   │   │   │╚═══╝│   │   │ │  ->  hanya sel itu yang memprediksi
+├───┼───┼───┼───┼───┼───┼───┤      kotak dan kelas anjing
+│   │   │   │   │   │   │   │
+└───┴───┴───┴───┴───┴───┴───┘
+   sel 64x64 piksel
+```
 
-- Grid S x S (7x7) membagi citra; tiap sel memprediksi B=2 kotak.
-- Confidence = P(objek) x IoU prediksi-ground truth.
-- Prediksi kelas bersyarat per sel, digabung dengan confidence saat inferensi.
-- Loss sum-squared dengan bobot lambda_coord dan lambda_noobj.
-- Akar kuadrat pada w,h untuk menyeimbangkan objek besar-kecil.
-- NMS pada keluaran akhir untuk membuang duplikasi.
+### Keluaran Jaringan
 
-## Kontribusi Utama
-1. Merumuskan deteksi sebagai regresi tunggal grid — paradigma baru.
-2. Detektor real-time terpadu pertama (45-155 FPS).
-3. Penalaran global menurunkan kesalahan latar dibanding R-CNN.
-4. Generalisasi kuat ke domain di luar foto natural (mis. lukisan).
+Setiap sel memprediksi dua hal sekaligus:
 
-## Rincian Eksperimen
-Dievaluasi pada PASCAL VOC 2007 dan 2012, dibandingkan dengan DPM, R-CNN, dan Fast R-CNN, baik pada akurasi (mAP) maupun kecepatan (FPS), disertai analisis galat lokalisasi vs latar.
+1. **B = 2 kandidat kotak.** Setiap kotak dinyatakan lima angka: (x, y) posisi pusat kotak relatif terhadap batas sel, (w, h) lebar dan tinggi relatif terhadap ukuran citra, serta skor *confidence*. Skor ini didefinisikan sebagai Pr(objek) × IOU, yaitu probabilitas adanya objek dikali IOU (*Intersection over Union* — rasio luas irisan terhadap luas gabungan antara kotak prediksi dan kotak kebenaran). Jadi, skor tinggi menuntut keduanya: ada objek dan posisinya tepat.
+2. **C = 20 probabilitas kelas** (PASCAL VOC memiliki 20 kelas), berupa probabilitas bersyarat Pr(kelas | objek): bila sel ini memang berisi objek, berapa peluang objek itu termasuk tiap kelas.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Dengan demikian, keluaran akhir jaringan adalah tensor berukuran 7×7×(2×5 + 20) = 7×7×30: 49 sel, masing-masing memuat 10 angka kotak dan 20 angka kelas. Perlu dicatat bahwa probabilitas kelas dibuat **satu set per sel**, bukan per kotak — konsekuensi ini penting pada bagian keterbatasan.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| PASCAL VOC 2007 | mAP / FPS | 63.4% mAP @45 FPS; Fast YOLO 52.7% @155 FPS |
-| PASCAL VOC 2012 | mAP | kompetitif terhadap detektor sezaman |
-| Analisis galat | tipe error | galat lokalisasi tinggi, galat latar rendah |
+### Arsitektur Jaringan
 
-## Temuan Kunci
-- Regresi tunggal grid memungkinkan deteksi real-time terpadu.
-- Trade-off: lokalisasi kurang presisi terutama objek kecil berkelompok.
-- Penalaran global mengurangi false positive latar.
-- Kombinasi YOLO+Fast R-CNN meningkatkan mAP (saling melengkapi).
+Jaringan terdiri atas 24 lapis konvolusi diikuti 2 lapis *fully connected* (terhubung penuh). Polanya terinspirasi GoogLeNet: konvolusi 1×1 dipakai untuk mereduksi jumlah kanal sebelum konvolusi 3×3, sehingga biaya komputasi tertekan. Bobot awal diperoleh dengan melatih 20 lapis pertama sebagai pengklasifikasi ImageNet pada resolusi 224×224, kemudian seluruh jaringan disetel halus (*fine-tuning*) untuk deteksi pada resolusi 448×448. Varian Fast YOLO memangkas arsitektur menjadi 9 lapis konvolusi dengan jumlah *filter* lebih sedikit.
 
-## Keunggulan
-- Sangat cepat dan sederhana (satu jaringan).
-- Generalisasi domain yang baik.
-- Sedikit kesalahan latar.
+### Fungsi Loss
 
-## Keterbatasan
-- Lokalisasi kurang presisi; lemah pada objek kecil yang berkelompok.
-- Batasan jumlah objek per sel grid.
-- Recall lebih rendah dari metode dua-tahap.
+Pelatihan memakai *sum-squared error* (jumlah kuadrat selisih) antara prediksi dan target, dengan tiga komponen: galat koordinat kotak, galat skor *confidence*, dan galat probabilitas kelas. Dua bobot pengimbang diperlukan karena struktur keluarannya tidak simetris. Sebagian besar sel tidak berisi objek (dari 49×2 = 98 kotak kandidat, mungkin hanya beberapa yang benar-benar menutupi objek); tanpa pembobotan, gradien akan didominasi oleh sel-sel kosong. Karena itu bobot galat koordinat dinaikkan (λ_coord = 5) dan bobot galat *confidence* pada sel tanpa objek diturunkan (λ_noobj = 0,5). Selain itu, lebar dan tinggi kotak diprediksi dalam bentuk akar kuadrat (√w, √h): selisih 10 piksel pada kotak kecil jauh lebih fatal daripada pada kotak besar, dan bentuk akar membuat fungsi loss mencerminkan hal itu tanpa memerlukan dua fungsi berbeda.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Inferensi
 
-## Relevansi terhadap Tema Tinjauan
-Sebagai akar silsilah YOLO, entri ini adalah fondasi paling penting bagi seluruh tinjauan: setiap varian YOLO+RGB-D yang dibahas mewarisi formulasi regresi-grid dan filosofi real-time dari makalah ini.
+Saat inferensi, citra dilewatkan melalui jaringan satu kali. Untuk setiap kotak, skor kepercayaan per kelas dihitung sebagai Pr(kelas | objek) × *confidence*. Kotak-kotak yang tumpang tindih untuk objek yang sama kemudian dirampingkan dengan *Non-Maximum Suppression* (NMS): dari sekumpulan kotak yang saling menutupi, hanya kotak berskor tertinggi yang dipertahankan. Seluruh proses ini berjalan 45 kali per detik pada GPU saat itu.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+## Eksperimen dan Hasil
 
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
-- [009 - 2024 - YOLOv10 - Fondasi RGB](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)
+Evaluasi utama dilakukan pada PASCAL VOC 2007 dan 2012, tolok ukur standar deteksi objek saat itu. Metrik yang dipakai adalah mAP (*mean Average Precision*): rata-rata presisi di seluruh kelas dan ambang — semakin tinggi semakin baik, maksimal 100%.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Hasil kunci pada VOC 2007:
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+- YOLO (model penuh): 63,4% mAP pada 45 FPS.
+- Fast YOLO: 52,7% mAP pada 155 FPS.
+- Pembanding pada saat yang sama: Fast R-CNN 70,0% mAP pada ±0,5 FPS; Faster R-CNN 73,2% mAP pada 7 FPS.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+Interpretasinya: YOLO mengorbankan sekitar 10 poin mAP terhadap detektor dua tahap terbaik, tetapi memperoleh kecepatan 6–90 kali lipat — dan untuk pertama kalinya membuktikan deteksi akurat dapat berjalan *real-time*.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Analisis galat pada makalah membandingkan jenis kesalahan YOLO dengan Fast R-CNN. Galat dominan YOLO adalah **lokalisasi** (kotak kurang tepat posisinya), sedangkan galat dominan Fast R-CNN adalah **latar belakang** (mengenali daerah tanpa objek sebagai objek; ±13,6% deteksi teratasnya berupa *false positive* latar, dibandingkan ±4,75% pada YOLO). Perbedaan ini konsisten dengan desain masing-masing: YOLO menilai citra penuh sehingga jarang tertipu tekstur latar, tetapi prediksi satu sel mencakup wilayah luas sehingga posisi kotak kurang halus. Karena tipe galatnya berbeda, menggabungkan keduanya menaikkan mAP gabungan hingga ±75% — bukti bahwa kedua pendekatan saling menutupi kelemahan.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Temuan terakhir: YOLO menggeneralisasi lebih baik ke domain di luar foto natural. Pada pengujian dengan citra lukisan (dataset People-Art dan Picasso), YOLO mempertahankan akurasi jauh lebih baik daripada R-CNN dan DPM.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kelebihan dan Keterbatasan
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Kelebihan: (1) sangat cepat karena hanya satu evaluasi jaringan; (2) satu model utuh yang dilatih *end-to-end*, tanpa komponen eksternal; (3) *false positive* latar rendah berkat konteks global; (4) generalisasi lintas domain lebih baik dari pesaingnya.
 
-## Kesimpulan
-YOLOv1 membuktikan deteksi objek dapat dirumuskan sebagai regresi tunggal yang cepat dan end-to-end, membuka era detektor satu-tahap dan menjadi titik awal semua varian YOLO berikutnya yang menjadi tulang punggung pipeline RGB-D modern.
+Keterbatasan: (1) setiap sel hanya memprediksi satu kelas dan dua kotak, sehingga objek kecil yang berkelompok — misalnya sekawanan burung dalam satu sel — sering terlewat; (2) total deteksi dibatasi desain spasial 49 sel, sehingga *recall* (proporsi objek yang berhasil ditemukan) lebih rendah dari metode dua tahap; (3) lokalisasi kurang presisi, terutama untuk objek dengan rasio aspek yang tidak lazim; (4) fungsi loss sum-squared memperlakukan galat pada kotak besar dan kecil hampir setara — diperbaiki sebagian oleh bentuk akar kuadrat, tetapi tidak tuntas. Keterbatasan (1) dan (2) inilah yang menjadi sasaran perbaikan langsung pada generasi berikutnya.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `redmon2016yolo` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Kaitan dengan Bab Lain
 
----
-*Lembar 001/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Bab ini berdiri sebagai antitesis dari paradigma dua tahap yang dibahas pada bab 012 (R-CNN) dan bab 013 (Fast R-CNN). Generasi penerusnya membentuk garis lurus perbaikan: bab 002 (YOLOv2) menyerang masalah *recall* dan lokalisasi lewat *anchor box* dan pelatihan multi-skala; bab 003 (YOLOv3) menambah prediksi tiga skala untuk objek kecil; bab 004 (YOLOv4) menyusun resep pelatihan optimal di atas fondasi yang sama; bab 005 (YOLOX) kemudian melepaskan *anchor* dan menyempurnakan penetapan label. Formulasi "grid + regresi langsung" yang diperkenalkan di sini diwarisi oleh semuanya, termasuk turunan aplikatif pada klaster YOLO plus RGB-D.
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `redmon2016yolo`. Ringkasan yang aman dikutip: "YOLO merumuskan deteksi objek sebagai regresi tunggal dari citra penuh ke kotak pembatas dan probabilitas kelas, mencapai 63,4% mAP pada PASCAL VOC 2007 dengan kecepatan 45 FPS — detektor *real-time* terpadu pertama." Angka 63,4% / 45 FPS / 52,7% / 155 FPS berasal dari naskah; rincian analisis galat (13,6% vs 4,75%) dan hasil kombinasi dengan Fast R-CNN (±75% mAP) sebaiknya diverifikasi ulang ke tabel naskah sebelum dikutip dalam karya formal.

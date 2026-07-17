@@ -1,205 +1,108 @@
 # 008 - YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 008 dari 154 |
 | Kunci BibTeX | `wang2024yolov9` |
-| Judul | YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information |
-| Penulis | Wang, Chien-Yao; Yeh, I-Hau; Liao, Hong-Yuan Mark |
+| Judul asli | YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information |
+| Penulis | Chien-Yao Wang, I-Hau Yeh, Hong-Yuan Mark Liao |
 | Tahun | 2024 |
-| Venue / Jurnal | Proceedings of the European Conference on Computer Vision (ECCV) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | YOLOv9, PGI, GELAN, information bottleneck, reversible |
+| Venue | European Conference on Computer Vision (ECCV 2024); preprint arXiv:2402.13616 |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2402.13616
+- **Repositori kode resmi:** https://github.com/WongKinYiu/yolov9
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLOv9%3A%20Learning%20What%20You%20Want%20to%20Learn%20Using%20Programmable%20Gradient%20Information
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLOv9%3A%20Learning%20What%20You%20Want%20to%20Learn%20Using%20Programmable%20Gradient%20Information&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLOv9%3A%20Learning%20What%20You%20Want%20to%20Learn%20Using%20Programmable%20Gradient%20Information
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLOv9%3A%20Learning%20What%20You%20Want%20to%20Learn%20Using%20Programmable%20Gradient%20Information&sort=relevance
+Makalah ini memperkenalkan YOLOv9, detektor objek satu tahap keluarga YOLO yang dibangun dari dua komponen baru: *Programmable Gradient Information* (PGI) dan *Generalized Efficient Layer Aggregation Network* (GELAN). Titik tolaknya adalah pengamatan bahwa data masukan kehilangan informasi sedikit demi sedikit saat melewati lapisan-lapisan jaringan yang dalam. Akibatnya, gradien — sinyal koreksi yang dihitung dari fungsi *loss* lalu dialirkan mundur untuk memperbarui bobot — tidak lagi memuat informasi yang cukup untuk melatih jaringan dengan benar.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+PGI menjawab masalah tersebut dengan menambahkan cabang reversibel bantu yang hanya aktif selama pelatihan dan dibuang saat inferensi, sehingga kualitas gradien naik tanpa menambah biaya pemakaian model. GELAN adalah blok arsitektur ringan hasil generalisasi ELAN yang dipakai sebagai tubuh jaringan. Model terbesar, YOLOv9-E, mencapai 55,6% AP pada MS COCO dengan 57,3 juta parameter: 1,7 poin AP di atas YOLOv8-X dengan parameter 16% lebih sedikit dan komputasi 27% lebih rendah.
 
-| Atribut | Nilai |
-|---|---|
-| — | — |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Menghubungkan teori aliran informasi dengan arsitektur YOLO melalui Programmable Gradient Information (PGI) dan Generalized ELAN (GELAN) untuk mengatasi kehilangan informasi pada jaringan dalam.
+Sejak YOLOv1 (bab 001), perbaikan keluarga YOLO berpusat pada desain arsitektur dan resep pelatihan. YOLOv4 (bab 004) memopulerkan pemakaian blok CSP (*Cross Stage Partial*) untuk memperkaya jalur gradien; YOLOv7 (bab 007) memperkenalkan ELAN (*Efficient Layer Aggregation Network*), blok yang menggabungkan keluaran beberapa lapisan konvolusi agar gradien mengalir melalui jalur terpendek dan terpanjang sekaligus. Makalah ini berpendapat bahwa di balik semua perbaikan itu ada masalah yang lebih mendasar yang belum ditangani: kehilangan informasi selama proses umpan maju (*feedforward*).
 
-## Abstrak (Parafrase)
-YOLOv9 menyoroti masalah information bottleneck: informasi input tergerus saat melewati banyak lapisan, sehingga gradien yang dihasilkan menjadi kurang andal. Solusinya adalah PGI (Programmable Gradient Information) yang menyediakan informasi gradien lengkap dan andal melalui cabang reversibel bantu, serta GELAN (Generalized ELAN) yang menggeneralisasi ELAN dan CSPNet untuk efisiensi parameter. Hasilnya, YOLOv9 mengungguli YOLOv7/YOLOv8 pada jumlah parameter setara dengan komputasi lebih rendah.
+Menurut prinsip *information bottleneck*, bila data X melewati transformasi berlapis f dan g, informasi bersama (*mutual information*) antara masukan dan representasinya tidak pernah bertambah: I(X,X) ≥ I(X,f(X)) ≥ I(X,g(f(X))). Semakin dalam jaringan, semakin besar peluang informasi yang relevan dengan target tergerus. Padahal bobot jaringan diperbarui dari gradien yang dihitung pada keluaran lapisan terakhir. Bila keluaran itu sudah kehilangan informasi penting, gradien menjadi tidak andal dan pelatihan konvergen ke pemetaan yang salah antara data dan target.
 
-## Latar Belakang & Konteks
-Semakin dalam jaringan, semakin besar risiko kehilangan informasi penting (information bottleneck), yang menyebabkan gradien tak merepresentasikan tujuan dengan baik. Fungsi reversibel dapat mempertahankan informasi, tetapi mahal bila diterapkan naif.
+Tiga pendekatan yang ada untuk meredam masalah ini memiliki kelemahan masing-masing. Pertama, arsitektur reversibel (jaringan yang transformasinya dapat dibalik sehingga tidak ada informasi hilang) menaikkan biaya inferensi secara nyata: makalah ini melaporkan tambahan waktu inferensi sekitar 20% untuk koneksi balik dari lapisan dalam ke dangkal, dan lebih dari dua kali lipat bila masukan diumpan ulang ke lapisan beresolusi tinggi. Kedua, *masked modeling* (menutup sebagian masukan lalu melatih jaringan merekonstruksinya) dapat menimbulkan *loss* rekonstruksi yang bertentangan dengan *loss* tugas utama. Ketiga, *deep supervision* (menambahkan *loss* bantu pada lapisan tengah) hanya efektif pada jaringan yang sangat dalam dan dapat menimbulkan penumpukan galat serta informasi terfragmentasi.
 
-## Permasalahan yang Diangkat
-- Information bottleneck menggerus informasi di lapisan dalam.
-- Gradien menjadi kurang andal untuk pembelajaran.
-- Fungsi reversibel penuh mahal secara komputasi.
-- Arsitektur perlu efisien parameter sekaligus akurat.
-- Deep supervision klasik dapat menimbulkan bias informasi.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Menyediakan informasi gradien andal tanpa biaya inferensi.
-- Menggeneralisasi agregasi fitur (ELAN/CSP) menjadi efisien.
-- Meningkatkan akurasi pada anggaran parameter tetap.
+Gagasan inti makalah ini terdiri atas dua bagian yang saling menguatkan. Pertama, PGI: alih-alih memaksa jaringan utama bersifat reversibel (yang mahal), tambahkan cabang bantu yang reversibel semata-mata untuk menghasilkan gradien yang andal selama pelatihan. Cabang ini "memprogram" informasi gradien yang diterima jaringan utama, lalu dibuang saat inferensi sehingga biaya pemakaian model tidak berubah. Kedua, GELAN: generalisasi blok ELAN agar dapat memakai sembarang blok komputasi (bukan hanya tumpukan konvolusi biasa), sehingga satu rancangan blok dapat disesuaikan dengan berbagai perangkat inferensi tanpa mengubah sifat agregasinya.
 
-## Tinjauan Terdahulu / Posisi Literatur
-YOLOv9 bertumpu pada teori information bottleneck dan reversible functions, serta mengembangkan ELAN/CSPNet menjadi GELAN.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Fungsi Reversibel sebagai Dasar
 
-- Information bottleneck principle — landasan teori.
-- Reversible functions — pelestarian informasi.
-- ELAN/CSPNet — dasar GELAN.
-- Deep supervision — pembanding PGI.
+Sebuah fungsi r disebut reversibel bila terdapat fungsi invers v sehingga X = v(r(X)): data dapat dipulihkan utuh, sehingga I(X,X) = I(X,r(X)) dan tidak ada informasi yang hilang. Koneksi residual pada ResNet (X lapis berikutnya = X lapis sekarang + f(X)) adalah contoh sederhana sifat ini. Penulis menunjukkan lewat visualisasi peta fitur bahwa kapasitas mempertahankan informasi berkorelasi dengan akurasi: pada bobot acak, PlainNet kehilangan hampir seluruh informasi objek pada lapis ke-100, ResNet mulai kabur pada lapis ke-100, sedangkan CSPNet dan GELAN masih mempertahankan batas objek hingga lapis ke-200. Namun arsitektur reversibel penuh mahal untuk inferensi dan justru berkinerja buruk pada jaringan dangkal, karena tugas sulit membutuhkan transformasi yang dalam.
 
-## Metodologi & Arsitektur
-PGI terdiri dari main branch (inferensi), auxiliary reversible branch (menyediakan gradien andal saat pelatihan, dibuang saat inferensi), dan multi-level auxiliary information. GELAN menggabungkan keunggulan ELAN (jalur gradien) dan CSPNet (partisi) untuk blok agregasi ringan.
+### Cabang Reversibel Bantu (Auxiliary Reversible Branch)
 
-Komponen / langkah metodologis utama:
+PGI terdiri atas tiga komponen: *main branch*, *auxiliary reversible branch*, dan *multi-level auxiliary information*. *Main branch* adalah jaringan yang dipakai untuk inferensi. *Auxiliary reversible branch* adalah cabang tambahan yang mempertahankan informasi masukan secara eksplisit melalui struktur reversibel; pada implementasi YOLOv9, cabang ini memakai jalinan gaya CBNet/DynamicDet (disebut ICN dengan koneksi DHLC) yang meneruskan informasi antarlevel. Selama pelatihan, gradien dari cabang ini mengalir ke *main branch* dan mendorong bobotnya mengekstraksi fitur yang benar-benar relevan dengan target, bukan korelasi semu dari fitur yang sudah terdegradasi. Karena reversibilitas hanya dibutuhkan untuk menghasilkan gradien, bukan untuk inferensi, seluruh cabang ini dibuang setelah pelatihan selesai.
 
-- PGI: main + auxiliary reversible branch + multi-level aux info.
-- Auxiliary branch hanya aktif saat pelatihan (bebas biaya inferensi).
-- GELAN: generalisasi ELAN + CSPNet.
-- Efisiensi parameter tinggi.
-- Kompatibel dengan head deteksi YOLO modern.
-- Skalabilitas model beragam.
+### Informasi Bantu Bertingkat (Multi-level Auxiliary Information)
 
-## Kontribusi Utama
-1. PGI mengatasi information bottleneck secara praktis.
-2. GELAN sebagai blok agregasi efisien parameter.
-3. Akurasi lebih tinggi pada parameter/komputasi lebih rendah.
-4. Menghubungkan teori aliran informasi dengan desain YOLO.
+Komponen ketiga menangani kelemahan *deep supervision* konvensional pada detektor berbasis piramida fitur. FPN (*Feature Pyramid Network*) adalah struktur yang menggabungkan fitur beberapa skala agar objek besar dan kecil terdeteksi; PAN (*Path Aggregation Network*) menambah jalur agregasi dari bawah ke atas di atasnya. Pada *deep supervision* biasa, setiap cabang prediksi dangkal diawasi terpisah, sehingga fitur dangkal diarahkan hanya untuk ukuran objek tertentu dan objek ukuran lain diperlakukan sebagai latar — informasi menjadi terfragmentasi sebelum mencapai lapisan dalam. PGI menyisipkan jaringan integrasi yang menggabungkan gradien dari seluruh *head* prediksi sebelum meneruskannya ke *main branch*. Dengan demikian setiap tingkat piramida menerima informasi tentang semua objek, dan fragmentasi itu terhindarkan. Karena gradien yang diteruskan dapat dipilih per tingkat semantik, penulis menyebut keseluruhan mekanisme ini "gradien yang dapat diprogram".
 
-## Rincian Eksperimen
-Diuji di COCO dengan perbandingan parameter/FLOPs terhadap YOLOv7, YOLOv8, RT-DETR, dan ablation atas PGI dan GELAN.
+### GELAN: Generalisasi ELAN
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+GELAN menggabungkan dua rancangan yang sama-sama berbasis perencanaan jalur gradien: CSPNet, yang membelah peta fitur menjadi dua jalur lalu menggabungkannya kembali untuk mengurangi komputasi ganda, dan ELAN, yang menumpuk beberapa konvolusi dan menggabungkan seluruh keluaran perantaranya. ELAN asli hanya menerima lapisan konvolusi standar; GELAN menggeneralisasikannya sehingga blok komputasi apa pun (blok residual, blok CSP, dan lain-lain) dapat dipasang. Pada YOLOv9 dipilih blok CSP dengan RepConv (konvolusi yang dilatih bercabang lalu dilebur menjadi satu konvolusi saat inferensi). Struktur keseluruhan mengikuti kerangka YOLOv7: modul *downsampling* disederhanakan dan *head* prediksi diganti menjadi *anchor-free* (memprediksi posisi kotak langsung terhadap titik acuan, tanpa kotak *anchor* berukuran tetap).
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | AP / parameter | unggul atas YOLOv8/v7 pada parameter setara |
-| COCO | FLOPs | akurasi lebih tinggi dengan komputasi lebih rendah |
-| Ablation | PGI/GELAN | keduanya menyumbang gain terukur |
+Skema aliran informasi PGI saat pelatihan dan bentuk akhir saat inferensi:
 
-## Temuan Kunci
-- Information bottleneck adalah faktor nyata pada detektor dalam.
-- PGI memberi gradien andal tanpa biaya inferensi.
-- GELAN efisien parameter dan akurat.
-- Teori aliran informasi bermanfaat memandu arsitektur.
+```
+PELATIHAN (PGI aktif penuh)
+citra ──► main branch ────────────────► prediksi ──► loss utama
+          (GELAN)          ▲ gradien    ▲
+              ▲            │ terprogram │
+              │   ┌────────┴───────────┐│
+              └───┤ multi-level        ││ gradien dari
+                  │ auxiliary info     │├─ head bantu tiap
+                  │ (integrasi gradien)││  tingkat piramida
+                  └────────▲───────────┘│
+                           │            │
+              auxiliary reversible branch
+              (ICN/DHLC; mempertahankan
+               informasi masukan secara eksplisit)
 
-## Keunggulan
-- Akurasi-efisiensi parameter terbaik pada kelasnya.
-- Landasan teori yang kuat.
-- Bebas biaya inferensi (aux branch dibuang).
+INFERENSI (kedua cabang bantu dibuang)
+citra ──► main branch (GELAN) ──► prediksi
+biaya inferensi identik dengan jaringan tanpa PGI
+```
 
-## Keterbatasan
-- Konsep PGI relatif kompleks dipahami/diimplementasi.
-- Manfaat bergantung kedalaman/skala model.
-- Pelatihan dengan aux branch menambah beban memori.
+Diagram di atas menegaskan sifat PGI: dua cabang bawah hanya menyalurkan gradien ke *main branch* selama pelatihan, sehingga model yang dipakai pengguna akhir adalah *main branch* saja.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-YOLOv9 mewakili arah mutakhir desain YOLO yang lebih efisien; relevansinya bagi RGB-D adalah menyediakan backbone deteksi 2D yang lebih akurat-efisien untuk pipeline fusi.
+Seluruh eksperimen memakai MS COCO 2017 dengan pelatihan dari nol (*train-from-scratch*, tanpa bobot pralatih ImageNet) selama 500 *epoch* (satu *epoch* berarti satu kali putaran pelatihan atas seluruh data latih). Laju pembelajaran dinaikkan secara linear pada tiga *epoch* pertama (*warm-up*) dan augmentasi *mosaic* (menggabungkan empat citra menjadi satu citra latih) dimatikan pada 15 *epoch* terakhir. Metrik utama adalah AP (*Average Precision*) COCO: rata-rata presisi pada ambang IOU 0,50–0,95, maksimal 100%. Efisiensi diukur dari jumlah parameter (banyaknya bobot model) dan FLOPs (operasi *floating-point* per citra; makin kecil makin ringan).
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Hasil utama (ukuran masukan 640):
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [009 - 2024 - YOLOv10 - Fondasi RGB](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)
+| Model | AP val | Parameter | FLOPs |
+|---|---|---|---|
+| YOLOv9-S | 46,8% | 7,1 M | 26,4 G |
+| YOLOv9-M | 51,4% | 20,0 M | 76,3 G |
+| YOLOv9-C | 53,0% | 25,3 M | 102,1 G |
+| YOLOv9-E | 55,6% | 57,3 M | 189,0 G |
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Interpretasi perbandingan yang dilaporkan penulis: terhadap YOLO-MS (detektor ringan berbasis konvolusi *depth-wise*, yaitu konvolusi yang memproses tiap kanal terpisah untuk menekan biaya), YOLOv9 memakai parameter sekitar 10% lebih sedikit dan komputasi 5–15% lebih rendah, tetapi tetap unggul 0,4–0,6 poin AP — bukti bahwa konvolusi konvensional pada GELAN lebih hemat parameter daripada desain *depth-wise*. YOLOv9-C menyamai AP YOLOv7 AF (53,0%) dengan parameter 42% lebih sedikit dan komputasi 22% lebih rendah; akurasi sama pada anggaran yang jauh lebih kecil berarti efisiensi parameter naik tajam. YOLOv9-E melampaui YOLOv8-X sebesar 1,7 poin AP dengan parameter 16% lebih sedikit. Terhadap RT-DETR-X yang dilatih dengan pralatih ImageNet, YOLOv9 mencapai akurasi setara dengan hanya 66% parameter meskipun dilatih dari nol.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+Studi ablasi memisahkan kontribusi tiap komponen. Penggantian blok konvolusi ELAN dengan blok CSP menurunkan parameter dan komputasi sekaligus menaikkan AP 0,7 poin, sehingga blok CSP dipilih untuk GELAN. Kedalaman ELAN dan CSP di atas dua tidak lagi mengubah akurasi secara berarti — parameter, komputasi, dan AP bergerak linear — sehingga rancangan GELAN stabil tanpa penyetelan khusus. Untuk PGI, *deep supervision* konvensional hanya membantu model yang sangat dalam dan justru menurunkan akurasi model dangkal, sedangkan PGI menaikkan akurasi pada semua ukuran model (S, M, C, E). Visualisasi peta fitur setelah satu *epoch* menunjukkan GELAN tanpa PGI menghasilkan respons menyebar pada latar, sedangkan dengan PGI fokusnya terkonsentrasi pada wilayah objek — bukti kualitatif bahwa gradien yang diprogram memperbaiki korespondensi data-target.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+## Kelebihan dan Keterbatasan
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Kelebihan utama adalah efisiensi parameter dan komputasi yang terbaik pada kelasnya saat dirilis, dengan landasan analisis teoretis (information bottleneck dan fungsi reversibel) yang menjelaskan mengapa metodenya bekerja. PGI juga bebas biaya inferensi dan berlaku umum: dapat dipasang pada berbagai ukuran jaringan, termasuk model ringan yang selama ini tidak diuntungkan oleh *deep supervision*.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Keterbatasannya: (1) manfaat PGI hanya terasa saat pelatihan — ia tidak menaikkan kualitas model yang sudah dilatih tanpa PGI; (2) dari sisi rekayasa, cabang reversibel bantu menambah memori dan waktu pelatihan, dan arsitektur dua cabang lebih rumit diimplementasikan daripada detektor satu jalur; (3) secara konseptual, perolehan akurasi pada model kecil relatif tipis (0,4–0,6 poin AP terhadap YOLO-MS), sehingga nilai tambah PGI paling besar justru pada model dalam; (4) evaluasi pada makalah terbatas pada deteksi objek MS COCO, sehingga generalisasi ke tugas dan domain lain belum ditunjukkan di naskah.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kaitan dengan Bab Lain
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Bab ini mewarisi langsung kerangka [007 - 2023 - YOLOv7](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md): arsitektur YOLOv9 dibangun di atas YOLOv7 dengan ELAN digantikan GELAN, blok RepConv, dan pengaturan *auxiliary head* yang sama, sehingga perbandingan keduanya pada AP 53,0% mengisolasi sumbangan PGI dan GELAN. Penggunaan blok CSP meneruskan garis rancangan yang diperkenalkan pada [004 - 2020 - YOLOv4](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md). Secara kronologis bab ini menjadi batu pijak sebelum [009 - 2024 - YOLOv10](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md), yang menyerang masalah berbeda — penghapusan NMS pada sisi inferensi — di atas efisiensi arsitektur yang sudah dicapai di sini.
 
-## Kesimpulan
-YOLOv9 menautkan teori information bottleneck dengan arsitektur nyata via PGI dan GELAN, menghasilkan detektor yang lebih akurat dan efisien pada anggaran parameter tetap.
+## Poin untuk Sitasi
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `wang2024yolov9` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 008/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `wang2024yolov9`. Ringkasan yang aman dikutip: "YOLOv9 mengatasi kehilangan informasi pada jaringan dalam melalui Programmable Gradient Information (PGI) — cabang reversibel bantu yang memasok gradien andal selama pelatihan tanpa biaya inferensi — dan arsitektur ringan GELAN hasil generalisasi ELAN. Pada MS COCO, YOLOv9-E mencapai 55,6% AP, melampaui YOLOv8-X sebesar 1,7 poin dengan parameter 16% lebih sedikit." Seluruh angka di bab ini berasal dari naskah arXiv:2402.13616 dan tabel kinerja repositori resmi; persentase perbandingan terhadap YOLO-MS, YOLOv7 AF, YOLOv8-X, dan RT-DETR-X adalah klaim penulis pada naskah dan sebaiknya dicocokkan dengan tabel versi prosiding ECCV sebelum sitasi formal.

@@ -1,203 +1,118 @@
 # 033 - A Review on YOLOv8 and Its Advancements
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 033 dari 154 |
 | Kunci BibTeX | `sohan2024yolov8review` |
-| Judul | A Review on YOLOv8 and Its Advancements |
-| Penulis | Sohan, Mupparaju; Sai Ram, Thotakura; Rami Reddy, Ch. Venkata |
+| Judul asli | A Review on YOLOv8 and Its Advancements |
+| Penulis | Mupparaju Sohan, Thotakura Sai Ram, Ch. Venkata Rami Reddy |
 | Tahun | 2024 |
-| Venue / Jurnal | Data Intelligence and Cognitive Informatics |
-| Tema klaster | Survei YOLO |
-| Kata kunci | survei, YOLOv8, anchor-free, multi-tugas, C2f |
+| Venue | Data Intelligence and Cognitive Informatics (seri *Algorithms for Intelligent Systems*, Springer), hal. 529–545, DOI 10.1007/978-981-99-7962-2_39 |
+| Tema | Survei YOLO |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **DOI (versi penerbit):** https://doi.org/10.1007/978-981-99-7962-2_39
+- **Google Scholar:** https://scholar.google.com/scholar?q=A%20Review%20on%20YOLOv8%20and%20Its%20Advancements
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=A%20Review%20on%20YOLOv8%20and%20Its%20Advancements&sort=relevance
+- **Dokumentasi resmi YOLOv8 (rujukan teknis pendamping):** https://docs.ultralytics.com/models/yolov8/
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-survei-yolo)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=A%20Review%20on%20YOLOv8%20and%20Its%20Advancements
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=A%20Review%20on%20YOLOv8%20and%20Its%20Advancements&sort=relevance
+Bab ini adalah tinjauan terhadap YOLOv8, detektor objek yang dirilis Ultralytics pada 10 Januari 2023. Tinjauan ini mengisi celah dokumentasi yang khas: Ultralytics tidak menerbitkan makalah formal untuk YOLOv8 — informasi tentangnya tersebar di repositori kode dan dokumentasi daring — sehingga bab semacam ini menjadi rujukan akademis yang dapat disitasi untuk model tersebut.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Isi tinjauan mencakup tiga hal. Pertama, arsitektur YOLOv8: *backbone* (jaringan pengekstrak fitur) dengan blok C2f, *neck* penggabung fitur multi-skala, dan *head* (kepala prediksi) yang terpisah serta bebas jangkar (*anchor-free*). Kedua, dukungan multi-tugas: satu kerangka untuk deteksi objek, segmentasi instans, estimasi pose, klasifikasi, dan deteksi berorientasi. Ketiga, rangkuman tolok ukur COCO untuk kelima skala model (n, s, m, l, x). Hasil utamanya bersifat dokumentatif: pembaca memperoleh satu acuan ringkas tentang apa yang berubah relatif terhadap YOLOv5–v7 dan apa kemampuan tiap variannya.
 
-| Atribut | Nilai |
-|---|---|
-| Penerbit | Springer |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Tinjauan arsitektur dan kemajuan YOLOv8 termasuk desain anchor-free, blok C2f, dan dukungan multi-tugas, sebagai acuan ringkas fitur YOLOv8.
+Silsilah YOLO (bab 001) merumuskan deteksi objek sebagai regresi satu tahap yang cepat. Sejak YOLOv2, keluarga ini memakai *anchor box*: sekumpulan kotak acuan berukuran tetap yang disebar pada setiap sel grid, dan jaringan memprediksi koreksi terhadap kotak-kotak acuan itu, bukan koordinat objek secara langsung. Desain berbasis jangkar menanggung dua biaya. Pertama, ukuran dan jumlah jangkar adalah hiperparameter yang harus disetel per dataset; jangkar yang keliru menurunkan *recall*. Kedua, jangkar memperbanyak kandidat prediksi, sehingga menambah beban pasca-pemrosesan.
 
-## Abstrak (Parafrase)
-Makalah ini mendokumentasikan arsitektur YOLOv8 (Ultralytics): backbone dengan blok C2f, head decoupled anchor-free, serta dukungan deteksi, segmentasi, pose, dan klasifikasi dalam satu kerangka. Ia menjelaskan perubahan relatif terhadap YOLOv5-v7 dan merangkum benchmark COCO, menjadi acuan praktis bagi pengguna YOLOv8.
+YOLOX (bab 005) pada 2021 menunjukkan bahwa jangkar dapat dilepaskan: kepala prediksi dibuat *anchor-free* dan dipisah (*decoupled*) menjadi cabang klasifikasi dan cabang regresi kotak. YOLOv7 (bab 007) pada 2022 memperkenalkan ELAN, struktur blok yang mengatur aliran gradien dengan menggabungkan keluaran banyak lapisan secara berlapis. Ketika YOLOv8 muncul pada awal 2023, model ini merangkai kedua gagasan tersebut — kepala *anchor-free* terpisah dan blok turunan ELAN bernama C2f — tetapi tanpa makalah pendamping. Bagi peneliti dan praktisi, pertanyaan praktisnya sederhana: apa sebenarnya isi YOLOv8, apa bedanya dengan pendahulunya, dan seberapa baik kinerjanya? Tinjauan Sohan dkk. disusun untuk menjawab pertanyaan itu dalam satu dokumen.
 
-## Latar Belakang & Konteks
-YOLOv8 sangat populer di kalangan praktisi namun dokumentasi arsitekturalnya tersebar; dibutuhkan tinjauan yang menjelaskan komponen dan kemampuannya secara ringkas.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Dokumentasi arsitektur YOLOv8 tersebar.
-- Perubahan relatif terhadap v5-v7 perlu dijelaskan.
-- Kemampuan multi-tugas perlu dipetakan.
-- Praktisi butuh acuan ringkas.
-- Benchmark perlu dirangkum.
+Gagasan inti YOLOv8 yang didokumentasikan bab ini dapat dinyatakan dalam satu kalimat: deteksi objek dilakukan tanpa kotak acuan, dengan kepala prediksi yang memisahkan tugas regresi kotak dan klasifikasi, di atas *backbone* yang memakai blok C2f, dalam satu kerangka yang sama untuk lima tugas penglihatan komputer.
 
-## Tujuan & Pertanyaan Penelitian
-- Mendokumentasikan arsitektur YOLOv8.
-- Menjelaskan desain anchor-free & C2f.
-- Memetakan dukungan multi-tugas.
+Secara mekanis, perubahan terpenting terjadi pada keluaran jaringan. Pada YOLO berjangkar, setiap sel grid mengeluarkan koreksi terhadap sejumlah jangkar. Pada YOLOv8, setiap titik grid langsung memprediksi empat jarak dari titik itu ke sisi kiri, atas, kanan, dan bawah kotak objek, ditambah skor kelas. Hiperparameter ukuran jangkar hilang dan jumlah kandidat prediksi menyusut. Sementara itu, blok C2f memperkaya aliran gradien dengan menggabungkan keluaran semua sub-bloknya, bukan hanya keluaran terakhir, sehingga fitur yang dipelajari lebih kaya tanpa banyak tambahan biaya.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Survei ini meninjau YOLOv8 relatif terhadap YOLOv5-v7 dan detektor sezaman.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Kerangka Tiga Bagian
 
-- YOLOv5-v7 — pembanding langsung.
-- Blok C2f — komponen backbone.
-- Anchor-free head — desain deteksi.
-- Ekosistem Ultralytics.
+Seperti detektor YOLO lain, YOLOv8 terdiri atas tiga bagian berurutan. *Backbone* menerima citra masukan (standar tolok ukur: 640×640 piksel) dan mengekstrak peta fitur pada tiga skala resolusi: 80×80, 40×40, dan 20×20 (masing-masing disebut P3, P4, P5). Skala besar menangkap objek kecil, skala kecil menangkap objek besar. *Neck* menggabungkan ketiga skala secara dua arah (dari fitur dangkal ke dalam dan sebaliknya) mengikuti pola PAN (*Path Aggregation Network*), yaitu struktur yang menyalurkan informasi lokasi dari fitur beresolusi tinggi ke fitur beresolusi rendah. *Head* kemudian menghasilkan prediksi akhir pada setiap skala.
 
-## Metodologi & Arsitektur
-Metodologi survei: deskripsi arsitektur (backbone C2f, neck, head anchor-free), cakupan tugas, dan ringkasan benchmark COCO.
+Alur data lengkapnya diringkas pada diagram berikut:
 
-Komponen / langkah metodologis utama:
+```
+citra 640x640x3
+      |
+      v
++-- BACKBONE (Conv + blok C2f) ---------------+
+|  peta fitur P3: 80x80, P4: 40x40, P5: 20x20 |
++------+-------------+-------------+----------+
+       v             v             v
++-- NECK (penggabungan dua arah, gaya PAN) ---+
+|  fitur tiga skala dilebur dan disebar balik |
++------+-------------+-------------+----------+
+       v             v             v
++-- HEAD terpisah, anchor-free (per skala) ---+
+|  cabang kotak : 2 conv -> 4x16 kanal (DFL)  |
+|  cabang kelas : 2 conv -> 80 kanal (COCO)   |
++----------------------+----------------------+
+                       v
+        jarak (kiri,atas,kanan,bawah) dari titik
+        grid + skor kelas -> NMS -> deteksi
+```
 
-- Backbone dengan blok C2f.
-- Head decoupled anchor-free.
-- Dukungan deteksi/segmentasi/pose/klasifikasi.
-- Perbandingan dengan v5-v7.
-- Ringkasan benchmark COCO.
-- Ikhtisar ekosistem/tooling.
+Diagram menunjukkan aliran dari citra ke deteksi: tiga skala fitur diekstrak, dilebur di *neck*, lalu dinilai oleh kepala yang sama strukturnya pada tiap skala. *Non-Maximum Suppression* (NMS) pada ujungnya membuang kotak ganda: dari sekumpulan kotak yang saling tumpang tindih untuk objek yang sama, hanya kotak berskor tertinggi yang dipertahankan.
 
-## Kontribusi Utama
-1. Acuan ringkas fitur YOLOv8.
-2. Penjelasan desain anchor-free & C2f.
-3. Pemetaan kemampuan multi-tugas.
-4. Rangkuman benchmark praktis.
+### Blok C2f pada Backbone
 
-## Rincian Eksperimen
-Sebagai survei, evaluasi berupa rangkuman benchmark COCO YOLOv8 lintas skala dari sumber resmi.
+C2f adalah blok ekstraksi fitur berjenis CSP (*Cross Stage Partial*). Prinsip CSP: aliran fitur dibelah dua; satu cabang diolah oleh serangkaian sub-blok, cabang lain dilewatkan langsung, lalu keduanya digabung kembali. Pembelahan ini mengurangi perhitungan berulang dan memperbaiki aliran gradien saat pelatihan.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Mekanisme C2f, sesuai implementasi resminya, berjalan sebagai berikut. Konvolusi pertama menggandakan kanal menjadi 2c, lalu peta fitur dibelah menjadi dua bagian masing-masing c kanal. Satu bagian dipertahankan apa adanya; bagian kedua masuk ke rangkaian n sub-blok *bottleneck* (sub-blok yang menyempitkan lalu mengembangkan kanal untuk menekan biaya). Yang membedakan C2f dari blok C3 pada YOLOv5: keluaran **setiap** sub-blok ikut digabung, bukan hanya keluaran terakhir. Hasil gabungan berukuran (2 + n) × c kanal kemudian dipadatkan konvolusi kedua menjadi c kanal keluaran. Pada blok dengan n = 3 sub-blok, lima peta fitur digabungkan — dua dari pembelahan awal dan tiga dari tiap sub-blok. Struktur ini melanjutkan gagasan ELAN dari YOLOv7: aliran gradien dibuat lebih panjang dan lebih beragam agar jaringan belajar fitur yang lebih kaya.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | mAP | rangkuman per skala model |
-| Multi-tugas | cakupan | deteksi/seg/pose/klasifikasi |
-| vs v5-v7 | perbandingan | perubahan arsitektur |
+### Kepala Terpisah dan Bebas Jangkar
 
-## Temuan Kunci
-- YOLOv8 mengadopsi anchor-free & C2f.
-- Satu kerangka menangani banyak tugas.
-- Peningkatan atas v5 pada trade-off.
-- Ekosistem mempermudah adopsi.
+Kepala YOLOv8 *decoupled* (terpisah): regresi kotak dan klasifikasi dihitung oleh dua cabang konvolusi yang berbeda, karena kedua tugas itu menuntut fitur yang berbeda sifatnya. Cabang kotak terdiri atas dua konvolusi 3×3 diikuti konvolusi akhir yang mengeluarkan 4 × 16 = 64 kanal; cabang kelas mengeluarkan sejumlah kanal sama dengan jumlah kelas (80 pada COCO).
 
-## Keunggulan
-- Acuan ringkas & praktis.
-- Menjelaskan multi-tugas.
-- Populer di kalangan praktisi.
+Angka 16 adalah parameter *Distribution Focal Loss* (DFL). Alih-alih memprediksi satu angka untuk setiap sisi kotak, jaringan memprediksi distribusi probabilitas atas 16 nilai diskrit untuk tiap sisi, dan nilai akhir diambil sebagai nilai harapannya. Representasi distribusi ini membuat regresi lebih presisi pada tepi objek yang kabur. Karena tidak ada jangkar, prediksi berbentuk jarak dari titik grid ke keempat sisi kotak. Sebagai contoh numerik: pada skala P3 (80×80 untuk citra 640×640), satu titik grid mewakili wilayah 8×8 piksel; bila titik itu berada 24 piksel di kanan sisi kiri objek dan 40 piksel di bawah sisi atasnya, target regresinya adalah jarak (24, 40, dan dua jarak lainnya) dibagi langkah grid 8, yaitu (3, 5, …).
 
-## Keterbatasan
-- Bersifat survei satu-versi.
-- Angka bergantung sumber vendor.
-- Cepat usang.
+### Fungsi Loss dan Penetapan Target
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Pelatihan memakai tiga komponen loss, sesuai kode sumber resmi: (1) *Binary Cross-Entropy* untuk skor kelas, yang menilai tiap kelas secara independen; (2) loss CIoU untuk kotak, yaitu penalti berbasis IOU (*Intersection over Union* — rasio luas irisan terhadap luas gabungan kotak prediksi dan kotak benar) yang ditambah suku jarak pusat dan konsistensi rasio aspek; (3) DFL untuk distribusi jarak sisi kotak.
 
-## Relevansi terhadap Tema Tinjauan
-YOLOv8 adalah backbone deteksi 2D yang banyak dipakai pada sistem RGB-D terbaru (mis. FusionVision, YOLOv8-URE) dalam tinjauan; acuan ini membantu memahaminya.
+Penetapan target positif memakai *Task-Aligned Assigner*: untuk setiap objek benar, 10 titik grid dengan skor keselarasan tertinggi dipilih sebagai penanggung jawab prediksi. Skor keselarasan menggabungkan skor klasifikasi dan IOU secara berbobot (pangkat α = 0,5 untuk skor kelas dan β = 6 untuk IOU), sehingga titik terpilih adalah titik yang sekaligus yakin kelasnya dan tepat kotaknya, bukan sekadar titik yang secara geometris dekat pusat objek.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Survei YOLO** yang baik dibaca berdampingan:
+### Dukungan Multi-Tugas
 
-- [026 - 2023 - Review YOLO (Terven dkk.) - Survei YOLO](./026%20-%202023%20-%20Review%20YOLO%20%28Terven%20dkk.%29%20-%20Survei%20YOLO.md)
-- [027 - 2023 - Review YOLO Manufaktur (Hussain) - Survei YOLO](./027%20-%202023%20-%20Review%20YOLO%20Manufaktur%20%28Hussain%29%20-%20Survei%20YOLO.md)
-- [028 - 2022 - Review Perkembangan YOLO (Jiang dkk.) - Survei YOLO](./028%20-%202022%20-%20Review%20Perkembangan%20YOLO%20%28Jiang%20dkk.%29%20-%20Survei%20YOLO.md)
-- [029 - 2024 - Review YOLO Pertanian (Sapkota dkk.) - Survei YOLO](./029%20-%202024%20-%20Review%20YOLO%20Pertanian%20%28Sapkota%20dkk.%29%20-%20Survei%20YOLO.md)
-- [030 - 2024 - Review Model & Aplikasi YOLO (Ali & Zhang) - Survei YOLO](./030%20-%202024%20-%20Review%20Model%20%26%20Aplikasi%20YOLO%20%28Ali%20%26%20Zhang%29%20-%20Survei%20YOLO.md)
-- [031 - 2024 - Systematic Review YOLO (Vijayakumar & Vairavasundaram) - Survei YOLO](./031%20-%202024%20-%20Systematic%20Review%20YOLO%20%28Vijayakumar%20%26%20Vairavasundaram%29%20-%20Survei%20YOLO.md)
-- [032 - 2024 - YOLO Evolution Benchmark (Alif & Hussain) - Survei YOLO](./032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md)
-- [034 - 2023 - Object Detection using YOLO (Diwan dkk.) - Survei YOLO](./034%20-%202023%20-%20Object%20Detection%20using%20YOLO%20%28Diwan%20dkk.%29%20-%20Survei%20YOLO.md)
+Kerangka yang sama diperluas ke empat tugas lain dengan mengganti kepala. Segmentasi instans menambah cabang *prototype*: jaringan menghasilkan 32 peta prototipe masker untuk seluruh citra dan tiap deteksi memprediksi 32 koefisien; masker akhir objek adalah kombinasi linear prototipe dengan koefisien itu, dipotong pada kotak deteksi. Estimasi pose menambah cabang titik kunci (17 titik tubuh manusia pada COCO). Klasifikasi mengganti kepala deteksi dengan pengklasifikasi biasa. Deteksi berorientasi (OBB) menambah prediksi sudut rotasi kotak. Tiap varian tersedia dalam lima skala: n (*nano*), s (*small*), m (*medium*), l (*large*), x (*extra-large*).
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Survei YOLO** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Eksperimen dan Hasil
 
-## Glosarium Istilah (tema Survei YOLO)
-Istilah penting untuk memahami makalah ini:
+Sebagai tinjauan, bab ini tidak menjalankan eksperimen baru; evaluasinya berupa rangkuman tolok ukur COCO dari sumber resmi Ultralytics. Metrik utamanya mAP 50-95 (*mean Average Precision* yang dirata-rata pada ambang IOU 0,50 sampai 0,95): semakin tinggi semakin baik, dan penilaian pada banyak ambang membuatnya lebih ketat daripada mAP pada satu ambang. Angka resmi untuk model deteksi pada citra 640 piksel:
 
-- **Survei/tinjauan** — Makalah yang mensintesis banyak studi, bukan metode baru.
-- **Taksonomi** — Skema klasifikasi metode ke kategori terstruktur.
-- **Silsilah YOLO** — Rangkaian versi YOLO (v1..v12, PP-YOLO, YOLOX).
-- **Benchmark** — Evaluasi terstandar untuk perbandingan adil.
-- **mAP** — mean Average Precision; metrik deteksi utama.
-- **Bag-of-Freebies** — Teknik menaikkan akurasi tanpa menambah biaya inferensi.
-- **Celah riset** — Isu terbuka yang diidentifikasi sebagai arah lanjutan.
-- **PRISMA** — Protokol tinjauan sistematis (identifikasi-seleksi-inklusi).
-- **Real-time** — Kemampuan berjalan pada laju tinggi (>=30 FPS).
-- **Domain aplikasi** — Bidang penerapan yang dipetakan survei.
+| Model | mAP 50-95 (%) | Latensi A100 TensorRT (ms) | Parameter (juta) | FLOPs (miliar) |
+|---|---|---|---|---|
+| YOLOv8n | 37,3 | 0,99 | 3,2 | 8,7 |
+| YOLOv8s | 44,9 | 1,20 | 11,2 | 28,6 |
+| YOLOv8m | 50,2 | 1,83 | 25,9 | 78,9 |
+| YOLOv8l | 52,9 | 2,39 | 43,7 | 165,2 |
+| YOLOv8x | 53,9 | 3,53 | 68,2 | 257,8 |
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Interpretasinya terbaca pada dua arah. Menurun secara ukuran: YOLOv8n mempertahankan 37,3% mAP dengan hanya 3,2 juta parameter dan latensi di bawah satu milidetik per citra pada GPU A100 — layak untuk penerapan waktu nyata di perangkat terbatas. Menaik secara ukuran: dari n ke x, mAP naik 16,6 poin tetapi parameter membesar 21 kali lipat dan FLOPs hampir 30 kali lipat; lonjakan terbesar terjadi antara s dan m (+5,3 poin), sementara dari l ke x hanya bertambah 1,0 poin untuk biaya komputasi 1,6 kali lipat — tanda jenuhnya skala model pada dataset ini. Rentang latensi 0,99–3,53 ms per citra (setara kasar 280–1000 FPS) menegaskan posisi YOLOv8 sebagai detektor waktu nyata di seluruh skalanya.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kelebihan dan Keterbatasan
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Sebagai objek tinjauan, YOLOv8 unggul pada tiga hal: desain *anchor-free* menghapus hiperparameter jangkar yang sensitif; satu kerangka melayani lima tugas sehingga ekosistem pemakaiannya seragam; dan kelima skalanya menutup rentang kebutuhan dari perangkat kecil sampai server. Tinjauan Sohan dkk. sendiri bernilai karena YOLOv8 tidak berdokumen formal — bab ini menyediakan deskripsi terstruktur yang dapat disitasi.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Keterbatasannya juga jelas. Pertama, tinjauan ini bersifat satu versi: cakupannya berhenti pada YOLOv8 sehingga cepat tertinggal oleh generasi berikutnya. Kedua, angka tolok ukurnya bersumber dari pengembang model itu sendiri, bukan pengujian ulang independen, dan angka dari pembuat model cenderung disajikan pada kondisi terbaik. Ketiga, dari sisi rekayasa, YOLOv8 tetap bergantung pada NMS, sehingga waktu inferensi akhir tidak sepenuhnya ditentukan jaringan — masalah yang baru ditangani pada YOLOv10. Keempat, lisensi AGPL-3.0 pada pustaka resminya membatasi pemakaian komersial tertutup.
 
-## Kesimpulan
-Sohan dkk. mendokumentasikan arsitektur dan kemampuan multi-tugas YOLOv8 secara ringkas, menjadi acuan praktis bagi pengguna yang banyak memakainya termasuk pada pipeline RGB-D.
+## Kaitan dengan Bab Lain
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `sohan2024yolov8review` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Bab ini berdiri di ujung garis pewarisan yang panjang. Formulasi satu tahap "citra masuk, deteksi keluar" diwarisi dari bab 001 ([YOLOv1](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)); pelepasan jangkar dan pemisahan kepala prediksi dipelopori bab 005 ([YOLOX](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)); dan blok C2f melanjutkan prinsip agregasi gradien ELAN dari bab 007 ([YOLOv7](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)). Ketergantungan pada NMS menjadi sasaran perbaikan pada bab 009 ([YOLOv10](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)). Dalam klaster survei, bab ini melengkapi bab 032 ([YOLO Evolution Benchmark](./032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md)): bab 032 menilai banyak versi YOLO secara komparatif, sedangkan bab ini membedah satu versi secara mendalam. Karena YOLOv8 menjadi tulang punggung deteksi 2D pada banyak entri klaster RGB-D, bab ini sekaligus menjadi rujukan teknis untuk entri-entri tersebut.
 
----
-*Lembar 033/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Poin untuk Sitasi
+
+Kutip dengan kunci `sohan2024yolov8review`. Ringkasan yang aman dikutip: "Sohan dkk. (2024) meninjau arsitektur dan kemajuan YOLOv8 — blok C2f, kepala terpisah bebas jangkar, serta dukungan multi-tugas dalam satu kerangka — dan merangkum kinerjanya pada tolok ukur COCO sebagai acuan bagi pengguna model tersebut."
+
+Catatan verifikasi sebelum sitasi formal: (1) naskah penuh bab ini berada di balik akses Springer dan tidak berhasil dibuka selama penulisan; rumusan isi di atas disusun dari metadata terbitan (DOI 10.1007/978-981-99-7962-2_39, hal. 529–545) dan dokumentasi primer YOLOv8, sehingga pernyataan spesifik atas nama penulis bab wajib dikonfirmasi ke naskah asli. (2) Angka tolok ukur pada tabel diambil dari dokumentasi resmi Ultralytics, bukan dari bab tinjauan; pastikan sumber yang disebut sesuai dengan angka yang dikutip. (3) Rincian mekanisme (struktur C2f, reg_max = 16, loss BCE + CIoU + DFL, *Task-Aligned Assigner*, 32 prototipe masker) diverifikasi dari kode sumber resmi Ultralytics; bila bab tinjauan menyebut nilai berbeda, naskah yang berlaku.

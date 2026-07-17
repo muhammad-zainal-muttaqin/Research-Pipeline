@@ -1,203 +1,121 @@
 # 057 - ShapeConv: Shape-Aware Convolutional Layer for Indoor RGB-D Semantic Segmentation
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 057 dari 154 |
 | Kunci BibTeX | `cao2021shapeconv` |
-| Judul | ShapeConv: Shape-Aware Convolutional Layer for Indoor RGB-D Semantic Segmentation |
-| Penulis | Cao, Jinming; Leng, Hanchao; Lischinski, Dani; Cohen-Or, Daniel; Tu, Changhe; Li, Yangyan |
+| Judul asli | ShapeConv: Shape-aware Convolutional Layer for Indoor RGB-D Semantic Segmentation |
+| Penulis | Jinming Cao, Hanchao Leng, Dani Lischinski, Danny Cohen-Or, Changhe Tu, Yangyan Li |
 | Tahun | 2021 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) |
-| Tema klaster | Segmentasi RGB-D |
-| Kata kunci | segmentasi RGB-D, shape-aware, konvolusi, geometri, plug-and-play |
+| Venue | IEEE/CVF International Conference on Computer Vision (ICCV 2021), hal. 7088–7097 |
+| Tema | Segmentasi RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2108.10528
+- **Repositori kode resmi (PyTorch):** https://github.com/hanchaoleng/ShapeConv
+- **Google Scholar:** https://scholar.google.com/scholar?q=ShapeConv%3A%20Shape-Aware%20Convolutional%20Layer%20for%20Indoor%20RGB-D%20Semantic%20Segmentation
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=ShapeConv%3A%20Shape-Aware%20Convolutional%20Layer%20for%20Indoor%20RGB-D%20Semantic%20Segmentation&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-segmentasi-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=ShapeConv%3A%20Shape-Aware%20Convolutional%20Layer%20for%20Indoor%20RGB-D%20Semantic%20Segmentation
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=ShapeConv%3A%20Shape-Aware%20Convolutional%20Layer%20for%20Indoor%20RGB-D%20Semantic%20Segmentation&sort=relevance
+Makalah ini memperkenalkan ShapeConv (*Shape-aware Convolutional layer*), lapisan konvolusi yang dirancang khusus untuk memproses fitur kedalaman pada segmentasi semantik RGB-D. Segmentasi semantik adalah pelabelan kelas objek untuk setiap piksel citra; pada varian RGB-D, masukannya berupa citra warna (RGB) yang dipasangkan dengan peta kedalaman, yaitu citra yang setiap pikselnya menyimpan jarak permukaan ke kamera. Dasar gagasannya: nilai kedalaman sebuah *patch* — jendela kecil seluas ukuran *kernel* konvolusi — memuat dua informasi berbeda, yaitu posisi dasar *patch* itu dalam ruang dan bentuk geometri lokalnya (variasi relatif antarpiksel). Konvolusi biasa mencampur keduanya, padahal bentuk memiliki hubungan lebih kuat dengan kelas semantik daripada posisi absolut.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+ShapeConv memisahkan kedua komponen tersebut, menimbangnya dengan dua bobot terlatih yang berbeda, lalu menggabungkannya kembali sebelum konvolusi diterapkan. Karena bobot itu menjadi konstanta setelah pelatihan, keduanya dapat dilebur ke dalam *kernel* konvolusi, sehingga jaringan saat inferensi identik dengan jaringan konvolusi biasa — tanpa tambahan komputasi maupun memori. Diuji pada tiga *benchmark* dalam-ruang (NYUDv2, SUN RGB-D, SID) dan lima arsitektur segmentasi, ShapeConv menaikkan mean IoU antara 0,7 hingga 6,0 poin.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 7088--7097 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Lapisan konvolusi sadar-bentuk yang memisahkan komponen nilai-dasar dan bentuk dari patch kedalaman untuk memperkuat fitur geometris pada segmentasi RGB-D.
+Sebelum 2021, metode segmentasi RGB-D umumnya menempuh dua jalur. Jalur pertama memakai dua jaringan paralel yang fiturnya digabung pada titik-titik tertentu: FuseNet (bab 051) menjumlahkan fitur kedalaman ke cabang RGB, RDFNet (bab 053) memperluas fusi ke banyak tingkat jaringan, dan ACNet (bab 054) menimbang fitur kedua modalitas dengan modul atensi. Jalur ini menyisakan dua masalah: sulit menentukan pada tahap mana fusi paling tepat dilakukan, dan arsitektur dua cabang menaikkan biaya komputasi secara signifikan.
 
-## Abstrak (Parafrase)
-ShapeConv (Shape-aware Convolutional layer) mendekomposisi patch kedalaman menjadi komponen base (nilai rata-rata) dan shape (variasi relatif), lalu memproses keduanya dengan bobot terpisah yang dapat dipelajari. Ini secara eksplisit memodelkan bentuk geometris, meningkatkan segmentasi RGB-D, dan bersifat plug-and-play menggantikan konvolusi standar.
+Jalur kedua merancang lapisan baru yang sadar geometri. Konvolusi sadar-kedalaman (*depth-aware convolution*, Wang dan Neumann 2018) menimbang kontribusi piksel berdasarkan kesamaan kedalamannya melalui fungsi Gaussian yang dirancang manual. Konvolusi 2,5D *malleable* (Xing dkk. 2020) mempelajari luas reseptif sepanjang sumbu kedalaman. S-Conv pada SGNet (Chen dkk. 2021) memprediksi pergeseran titik *sampling* konvolusi dari informasi spasial tiga dimensi. Ketiganya sejalan: konvolusi standar bukan alat yang tepat untuk data kedalaman.
 
-## Latar Belakang & Konteks
-Konvolusi standar tidak secara eksplisit memodelkan bentuk pada patch kedalaman, padahal informasi bentuk (kelengkungan, kemiringan) penting untuk segmentasi geometris.
+Kekurangan spesifik yang disasar ShapeConv adalah ketiadaan pembedaan informasi di dalam *patch* kedalaman. Dua kursi berbentuk sama tetapi berjarak berbeda menghasilkan *patch* bernilai berbeda, sehingga konvolusi biasa mengekstrak fitur berbeda untuk keduanya — padahal bentuk keduanya identik. Sebaliknya, komponen dasar juga tidak dapat dibuang begitu saja: pada lapisan berikutnya yang konteksnya lebih luas, komponen dasar inilah yang menyusun informasi bentuk berskala lebih besar.
 
-## Permasalahan yang Diangkat
-- Konvolusi standar tak eksplisit memodelkan bentuk.
-- Informasi bentuk pada kedalaman kurang dimanfaatkan.
-- Fitur geometris perlu diperkuat.
-- Butuh solusi plug-and-play.
-- Segmentasi indoor menuntut isyarat geometri.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Memodelkan bentuk secara eksplisit dari patch kedalaman.
-- Memisahkan komponen base dan shape.
-- Menyediakan lapisan plug-and-play.
+Setiap *patch* kedalaman didekomposisi menjadi dua bagian. Komponen dasar (*base-component*) adalah rata-rata nilai *patch*, yang menyatakan di mana *patch* itu berada relatif terhadap kamera. Komponen bentuk (*shape-component*) adalah sisa setelah rata-rata dikurangkan, yang menyatakan perubahan relatif kedalaman di dalam *patch*, yaitu bentuk geometrinya. Dua bobot terlatih yang terpisah — satu skalar untuk komponen dasar, satu matriks untuk komponen bentuk — menimbang ulang keduanya sebelum dijumlahkan kembali menjadi *patch* sadar-bentuk yang kemudian dikonvolusi seperti biasa. Dengan cara ini, jaringan belajar menekan atau menonjolkan informasi bentuk sesuai kebutuhan.
 
-## Tinjauan Terdahulu / Posisi Literatur
-ShapeConv memodifikasi operasi konvolusi untuk data kedalaman.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Dekomposisi Patch
 
-- Konvolusi standar — yang dimodifikasi.
-- Segmentasi RGB-D.
-- Shape/geometry modeling.
-- Plug-and-play layer.
+Konvolusi standar menghitung F = Conv(K, P): setiap elemen keluaran adalah jumlah hasil kali elemen *patch* P (berukuran Kh×Kw×Cin; Kh dan Kw ukuran spasial *kernel*, Cin jumlah kanal masukan) dengan bobot *kernel* K yang bersesuaian. Karena perhitungan ini linear terhadap nilai *patch*, dua *patch* berbentuk sama yang seluruh nilainya berbeda satu meter menghasilkan fitur berbeda.
 
-## Metodologi & Arsitektur
-Patch kedalaman didekomposisi menjadi base-component (nilai dasar) dan shape-component (variasi relatif); masing-masing dikalikan bobot terlatih terpisah lalu digabung sebelum konvolusi; menggantikan konvolusi standar di jaringan segmentasi.
+ShapeConv memecah P menjadi P_B = m(P), yaitu rata-rata seluruh nilai *patch* per kanal (berukuran 1×1×Cin), dan P_S = P − m(P), yaitu komponen bentuk yang berukuran sama dengan P. Contoh numerik: *patch* 2×2 bernilai [[2,0; 2,0]; [2,2; 2,4]] meter memiliki rata-rata 2,15, sehingga komponen dasarnya 2,15 dan komponen bentuknya [[−0,15; −0,15]; [+0,05; +0,25]]. *Patch* lain dengan bentuk sama pada jarak satu meter lebih jauh, [[3,0; 3,0]; [3,2; 3,4]], memiliki komponen bentuk yang persis sama — hanya komponen dasarnya berbeda. Pemisahan inilah sumber invariansi yang dicari.
 
-Komponen / langkah metodologis utama:
+### Dua Bobot Terpisah: Base-Product dan Shape-Product
 
-- Dekomposisi base-component & shape-component.
-- Bobot terlatih terpisah untuk tiap komponen.
-- Pemodelan bentuk eksplisit.
-- Plug-and-play menggantikan konvolusi.
-- Diterapkan lintas backbone.
-- Pelatihan end-to-end RGB-D.
+Komponen dasar ditimbang oleh *base-kernel* W_B, satu skalar terlatih yang mengalikannya (operasi *base-product*). Komponen bentuk diproses oleh *shape-kernel* W_S, matriks terlatih berukuran (Kh×Kw)×(Kh×Kw) untuk setiap kanal masukan (operasi *shape-product*): setiap posisi keluaran merupakan kombinasi terboboti dari seluruh posisi komponen bentuk, sehingga pola relatif antarpiksel — bukan nilai absolut — yang dipetakan. Untuk *kernel* 3×3 dan 256 kanal masukan, W_S berisi 9×9×256, atau sekitar 20.700 bobot per lapisan. Kedua hasil penimbangan dijumlahkan elemen demi elemen menjadi *patch* sadar-bentuk P_BS yang berukuran sama dengan P, lalu keluaran lapisan dihitung sebagai F = Conv(K, P_BS).
 
-## Kontribusi Utama
-1. Pemodelan bentuk eksplisit pada patch kedalaman.
-2. Lapisan plug-and-play lintas backbone.
-3. Peningkatan konsisten segmentasi RGB-D.
-4. Memperkuat fitur geometris.
+### Ekivalensi Dua Rumusan
 
-## Rincian Eksperimen
-Diuji pada NYUv2 dan SUN RGB-D dengan berbagai backbone, metrik mIoU, plus ablation komponen shape.
+Menghitung dua operasi produk pada setiap *patch* menambah biaya pelatihan. Penulis membuktikan bahwa operasi yang sama dapat dipindahkan dari *patch* ke *kernel*: *kernel* K didekomposisi menjadi K_B = m(K) dan K_S = K − m(K), lalu digabung menjadi K_BS = W_B⋄K_B + W_S∗K_S. Berlaku Conv(K, P_BS) = Conv(K_BS, P); kedua rumusan identik secara matematis, tetapi rumusan *kernel* tidak mengubah data masukan. Implementasi resmi memakai rumusan kedua ini.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Inisialisasi Identitas dan Fusi Saat Inferensi
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NYUv2 | mIoU | peningkatan konsisten lintas backbone |
-| SUN RGB-D | mIoU | peningkatan konsisten |
-| Ablation | shape-component | pemodelan bentuk menyumbang gain |
+W_B diinisialisasi 1 dan W_S diinisialisasi matriks identitas, sehingga pada awal pelatihan berlaku K_BS = K: ShapeConv persis merupakan konvolusi biasa. Inisialisasi ini memberi dua keuntungan: fitur RGB diproses sama seperti jaringan asalnya, dan bobot pralatih ImageNet dapat dipakai ulang apa adanya. Setelah pelatihan, W_B dan W_S menjadi konstanta dan dilebur permanen ke dalam K_BS, yang berukuran persis sama dengan K. Jaringan inferensi yang dihasilkan identik dengan jaringan konvolusi biasa; tambahan waktu komputasi dan memori saat inferensi adalah nol.
 
-## Temuan Kunci
-- Pemodelan bentuk eksplisit meningkatkan segmentasi.
-- Plug-and-play memudahkan adopsi.
-- Konsisten lintas backbone.
-- Fitur geometris diperkuat.
+### Penempatan dalam Jaringan Segmentasi
 
-## Keunggulan
-- Plug-and-play & sederhana.
-- Peningkatan konsisten.
-- Memodelkan geometri eksplisit.
+ShapeConv menggantikan seluruh lapisan konvolusi, baik pada *backbone* (jaringan pengekstrak fitur, misalnya ResNet) maupun pada tahap segmentasi. Masukan jaringan adalah penggabungan kanal RGB dengan kanal kedalaman; kedalaman dapat berupa nilai mentah atau pengkodean HHA — tiga kanal turunan kedalaman yang terdiri atas disparitas horizontal, tinggi di atas lantai, dan sudut normal permukaan terhadap sumbu vertikal (diperkenalkan Gupta dkk. 2014). Alur pemrosesan satu *patch* pada satu lapisan:
 
-## Keterbatasan
-- Menambah sedikit parameter/komputasi.
-- Bergantung kualitas kedalaman.
-- Manfaat bervariasi antar-dataset.
+```
+        patch kedalaman P (Kh x Kw x Cin)
+        |
+        +-------------------+--------------------+
+        v                   v                    |
+  P_B = rata-rata(P)   P_S = P - rata-rata(P)    |
+  (1x1xCin)            (Kh x Kw x Cin)           |
+  "di mana"            "bentuk apa"              |
+        |                   |                    |
+        v                   v                    |
+  base-product         shape-product             |
+  W_B . P_B            W_S * P_S                 |
+  (1 skalar terlatih)  (matriks terlatih)        |
+        |                   |                    |
+        +------->(+)--------+                    |
+                  v                              |
+        patch sadar-bentuk P_BS                  |
+                  v                              |
+        F = Conv(K, P_BS)                        |
+                                                 |
+  inferensi: W_B, W_S konstan, dilebur ke kernel |
+  K_BS = W_B.K_B + W_S*K_S  ->  F = Conv(K_BS, P)|
+  (jaringan identik konvolusi biasa, biaya +0)   |
+```
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Satu-satunya perbedaan terhadap konvolusi biasa terletak pada cabang dekomposisi dan penimbangan; cabang itu hilang saat inferensi karena bobotnya menyatu ke dalam *kernel*.
 
-## Relevansi terhadap Tema Tinjauan
-ShapeConv menunjukkan pemanfaatan geometri kedalaman pada level operasi — wawasan yang melengkapi strategi fusi RGB+Depth lain dalam tinjauan.
+## Eksperimen dan Hasil
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Segmentasi RGB-D** yang baik dibaca berdampingan:
+Pengujian dilakukan pada tiga *benchmark* segmentasi dalam-ruang. NYUDv2 memuat 1.449 citra RGB-D (795 latih, 654 uji) dengan dua pengaturan: 13 kelas dan 40 kelas. SUN RGB-D memuat 10.355 citra dari 37 kelas (5.285 latih, 5.050 uji). SID (*Stanford Indoor Dataset*) jauh lebih besar, yaitu 70.496 citra dari 13 kelas, dengan pengujian pada area gedung yang tidak muncul saat pelatihan. Metrik yang dilaporkan mencakup akurasi piksel, akurasi rata-rata kelas, mean IoU (mIoU — rata-rata rasio irisan terhadap gabungan per kelas, metrik utama segmentasi), dan *frequency-weighted* IoU. *Baseline* dan versi ShapeConv hanya berbeda pada lapisan konvolusinya; seluruh pengaturan lain sama, sehingga selisih kinerja murni berasal dari ShapeConv.
 
-- [051 - 2016 - FuseNet - Segmentasi RGB-D](./051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md)
-- [052 - 2018 - RedNet - Segmentasi RGB-D](./052%20-%202018%20-%20RedNet%20-%20Segmentasi%20RGB-D.md)
-- [053 - 2017 - RDFNet - Segmentasi RGB-D](./053%20-%202017%20-%20RDFNet%20-%20Segmentasi%20RGB-D.md)
-- [054 - 2019 - ACNet - Segmentasi RGB-D](./054%20-%202019%20-%20ACNet%20-%20Segmentasi%20RGB-D.md)
-- [055 - 2020 - SA-Gate - Segmentasi RGB-D](./055%20-%202020%20-%20SA-Gate%20-%20Segmentasi%20RGB-D.md)
-- [056 - 2021 - ESANet - Segmentasi RGB-D](./056%20-%202021%20-%20ESANet%20-%20Segmentasi%20RGB-D.md)
-- [058 - 2023 - CMX - Segmentasi RGB-D](./058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md)
-- [059 - 2023 - PGDENet - Segmentasi RGB-D](./059%20-%202023%20-%20PGDENet%20-%20Segmentasi%20RGB-D.md)
+Hasil mIoU utama (pengujian skala tunggal, arsitektur DeepLabv3+):
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Segmentasi RGB-D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+| Dataset | *Backbone* | *Baseline* | +ShapeConv | Selisih |
+|---|---|---|---|---|
+| NYUDv2-13 | ResNeXt-101 | 63,2 | 65,1 | +1,9 |
+| NYUDv2-40 | ResNet-101 | 45,9 | 47,4 | +1,5 |
+| SUN RGB-D | ResNet-101 | 46,9 | 47,6 | +0,7 |
+| SID | ResNet-101 | 54,6 | 60,6 | +6,0 |
 
-## Glosarium Istilah (tema Segmentasi RGB-D)
-Istilah penting untuk memahami makalah ini:
+Lonjakan terbesar pada SID (+6,0 poin mIoU, akurasi piksel 78,7 menjadi 82,7) konsisten dengan ukuran datasetnya yang puluhan kali lebih besar: W_S memuat banyak bobot, dan 70 ribu citra menyediakan cukup data untuk mempelajarinya. Sebaliknya, kenaikan pada SUN RGB-D hanya +0,7 poin, menunjukkan manfaat yang bergantung pada karakteristik dataset.
 
-- **Segmentasi semantik** — Pelabelan kelas per-piksel.
-- **Scene parsing** — Pemahaman menyeluruh isi scene via segmentasi.
-- **Encoder-decoder** — Arsitektur mengecilkan lalu memulihkan resolusi.
-- **Fusi RGB-D** — Penggabungan cabang warna dan kedalaman.
-- **mIoU** — mean Intersection-over-Union; metrik segmentasi utama.
-- **Gating** — Gerbang penyaring/penimbang fitur sebelum digabung.
-- **Cross-modal** — Antar-modalitas (RGB dan depth/thermal/LiDAR).
-- **NYUv2** — Dataset RGB-D indoor standar.
-- **SUN RGB-D** — Dataset RGB-D indoor berskala.
-- **Pixel accuracy** — Persentase piksel terlabel benar.
+Terhadap metode lain pada NYUDv2-40 dengan pengujian multi-skala (citra diuji pada beberapa skala lalu hasilnya digabung), ShapeConv mencapai 51,3% mIoU, di atas SGNet (51,1), konvolusi 2,5D *malleable* (50,9), RDFNet (50,1), dan ACNet (48,3). Pada NYUDv2-13, skornya 65,6 dibandingkan 59,3 milik PVNet, selisih 6,3 poin. Uji generalisasi pada lima arsitektur — DeepLabv3+, DeepLabv3, UNet, PSPNet, dan FPN — dengan *backbone* ResNet-50/101 pada NYUDv2-40 menunjukkan kenaikan mIoU 1,2 hingga 2,3 poin pada seluruh sepuluh kombinasi, membuktikan sifat *plug-and-play* (dapat disisipkan tanpa mengubah arsitektur).
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Pada ablasi NYUDv2-40, tanpa kedua bobot (konvolusi biasa) mIoU 45,9; hanya W_B menghasilkan 47,0; hanya W_S menghasilkan 46,3; keduanya bersama menghasilkan 47,4. Kedua bobot terbukti saling melengkapi, dan W_B yang hanya satu skalar memberi sumbangan terbesar sendirian. Masukan HHA mengungguli kedalaman mentah (47,4 berbanding 46,2 dengan ShapeConv). Analisis *trimap* — penghitungan piksel salah-kelas dalam pita sempit di sekitar batas objek, mengikuti metode Kohli dkk. — menunjukkan ShapeConv unggul pada semua lebar pita, artinya perbaikannya terkonsentrasi pada tepi objek, sesuai tujuan pemodelan bentuk.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kelebihan dan Keterbatasan
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Kelebihan utama ShapeConv adalah biaya inferensi nol: seluruh mekanisme tambahan menyatu ke dalam *kernel* setelah pelatihan, sehingga tidak ada penalti kecepatan maupun memori saat model dipakai. Sifatnya yang *model-agnostic* memungkinkannya menggantikan konvolusi pada hampir semua CNN, dan inisialisasi identitas membuat bobot pralatih tetap dapat dipakai apa adanya.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Keterbatasannya, penulis sendiri menyatakan bahwa dekomposisi berbasis rata-rata hanya menangani perbedaan translasi kedalaman; transformasi rotasi akibat sudut pandang kamera tidak teratasi. Dari sisi rekayasa, W_S menambah sekitar 20.700 parameter per lapisan 3×3 berkanal 256, sehingga biaya pelatihan dan kebutuhan data naik — gejala ini terlihat dari kecilnya peningkatan pada dataset yang lebih kecil. Secara konseptual, manfaatnya bergantung pada kualitas peta kedalaman dan, untuk hasil terbaik, pada prapemrosesan HHA; selain itu penerapannya menuntut pelatihan ulang jaringan secara penuh, bukan penyetelan ringan.
 
-## Kesimpulan
-ShapeConv memisahkan komponen base dan shape dari patch kedalaman untuk memodelkan bentuk secara eksplisit, meningkatkan segmentasi RGB-D sebagai lapisan plug-and-play.
+## Kaitan dengan Bab Lain
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `cao2021shapeconv` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+ShapeConv mengambil arah berlawanan dari jalur fusi dua cabang pada bab-bab sebelumnya. [FuseNet](./051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md) (bab 051), [RDFNet](./053%20-%202017%20-%20RDFNet%20-%20Segmentasi%20RGB-D.md) (bab 053), dan [ACNet](./054%20-%202019%20-%20ACNet%20-%20Segmentasi%20RGB-D.md) menggabungkan fitur dua modalitas melalui arsitektur; ShapeConv justru menggabungkan masukan sejak awal lalu memodifikasi operator konvolusinya — dan pada NYUDv2-40 dilaporkan melampaui RDFNet (50,1 berbanding 51,3) serta ACNet (48,3). Ia seangkatan dengan [ESANet](./056%20-%202021%20-%20ESANet%20-%20Segmentasi%20RGB-D.md) (bab 056), yang juga terbit 2021 tetapi mengejar efisiensi lewat arsitektur ringan. Gagasan memanfaatkan perbedaan sifat RGB dan kedalaman kemudian dilanjutkan pada arsitektur *transformer* oleh [CMX](./058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md) (bab 058), yang menukar fusi konvolusi dengan mekanisme *cross-attention* antarmodalitas.
 
----
-*Lembar 057/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Poin untuk Sitasi
+
+Kunci BibTeX: `cao2021shapeconv`. Ringkasan aman kutip: ShapeConv (Cao dkk., ICCV 2021) adalah lapisan konvolusi untuk fitur kedalaman yang mendekomposisi *patch* menjadi komponen dasar (rata-rata) dan komponen bentuk (residu), menimbang keduanya dengan bobot terlatih terpisah, lalu menggabungkannya kembali sebelum konvolusi. Bobot tersebut dapat dilebur ke *kernel* saat inferensi sehingga tidak menambah komputasi, dan penggantian konvolusi biasa dengan ShapeConv menaikkan mIoU pada NYUDv2, SUN RGB-D, dan SID lintas lima arsitektur segmentasi.
+
+Catatan verifikasi sebelum sitasi formal: seluruh angka pada bab ini diambil dari arXiv v1 (Agustus 2021) dan README repositori resmi; cocokkan dengan versi kamera-siap ICCV 2021 (hal. 7088–7097) karena angka tabel dapat berbeda tipis antarversi. Klaim "biaya inferensi nol" hanya berlaku setelah fusi bobot — pada fase pelatihan tetap ada tambahan parameter dan komputasi. Klaim analisis *trimap* bersifat grafis (kurva pada Gambar 5 makalah), tanpa tabel angka.

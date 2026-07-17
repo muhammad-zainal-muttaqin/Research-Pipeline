@@ -1,204 +1,128 @@
 # 059 - PGDENet: Progressive Guided Fusion and Depth Enhancement Network for RGB-D Indoor Scene Parsing
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 059 dari 154 |
 | Kunci BibTeX | `zhou2022pgdenet` |
-| Judul | PGDENet: Progressive Guided Fusion and Depth Enhancement Network for RGB-D Indoor Scene Parsing |
-| Penulis | Zhou, Wujie; Yang, Enquan; Lei, Jingsheng; Yu, Lu |
-| Tahun | 2023 |
-| Venue / Jurnal | IEEE Transactions on Multimedia |
-| Tema klaster | Segmentasi RGB-D |
-| Kata kunci | segmentasi RGB-D, depth enhancement, progressive guided fusion, indoor, scene parsing |
+| Judul asli | PGDENet: Progressive Guided Fusion and Depth Enhancement Network for RGB-D Indoor Scene Parsing |
+| Penulis | Wujie Zhou, Enquan Yang, Jingsheng Lei, Jian Wan, Lu Yu |
+| Tahun | 2023 (daring 2022) |
+| Venue | IEEE Transactions on Multimedia, vol. 25, hlm. 3483–3494 |
+| Tema | Segmentasi RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **DOI (halaman penerbit IEEE):** https://doi.org/10.1109/TMM.2022.3161852
+- **Google Scholar:** https://scholar.google.com/scholar?q=PGDENet%3A%20Progressive%20Guided%20Fusion%20and%20Depth%20Enhancement%20Network%20for%20RGB-D%20Indoor%20Scene%20Parsing
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=PGDENet%3A%20Progressive%20Guided%20Fusion%20and%20Depth%20Enhancement%20Network%20for%20RGB-D%20Indoor%20Scene%20Parsing&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-segmentasi-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=PGDENet%3A%20Progressive%20Guided%20Fusion%20and%20Depth%20Enhancement%20Network%20for%20RGB-D%20Indoor%20Scene%20Parsing
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=PGDENet%3A%20Progressive%20Guided%20Fusion%20and%20Depth%20Enhancement%20Network%20for%20RGB-D%20Indoor%20Scene%20Parsing&sort=relevance
+Makalah ini memperkenalkan PGDENet (*Progressive Guided Fusion and Depth Enhancement Network*), jaringan segmentasi semantik RGB-D untuk pemahaman adegan dalam ruangan (*indoor scene parsing*). Segmentasi semantik adalah tugas melabeli setiap piksel citra dengan kelas objeknya, misalnya dinding, lantai, atau kursi; masukan RGB-D berarti jaringan menerima citra warna (RGB) sekaligus peta kedalaman (*depth map*), yaitu citra yang setiap pikselnya menyimpan jarak permukaan ke kamera.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Makalah ini mengidentifikasi dua sumber galat pada metode fusi RGB-D yang ada: fitur cabang kedalaman lemah karena peta kedalaman mentah berkualitas rendah, dan penggabungan fitur antarmodalitas dilakukan tanpa memperhitungkan perbedaan tingkat abstraksi fitur. PGDENet menjawab keduanya dengan dua modul: modul penguatan kedalaman (*depth enhancement module*, DEM) yang memperbaiki fitur kedalaman dengan panduan RGB, dan modul fusi komplementer progresif (*progressive complementary fusion module*, PCFM) yang menggabungkan kedua modalitas bertingkat dari fitur semantik tertinggi ke fitur detail terendah. Dengan *backbone* ResNet-34, PGDENet mencapai 53,7% mIoU pada NYUv2 dan 51,0% mIoU pada SUN RGB-D — di atas metode konvolusional dua cabang sezamannya.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 25 |
-| Halaman | 3483--3494 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Arsitektur scene parsing RGB-D indoor yang memakai progressive guided fusion dan depth enhancement untuk memperbaiki kualitas fitur kedalaman sebelum digabung.
+Metode segmentasi RGB-D umumnya memakai arsitektur dua cabang: satu *encoder* mengekstrak fitur dari citra RGB, satu *encoder* lain dari peta kedalaman, kemudian keduanya digabung dan diteruskan ke *decoder* yang menghasilkan peta kelas per piksel. Pola ini diletakkan oleh FuseNet (bab 051) dan diwarisi hampir semua metode sesudahnya. Perbedaan antarmetode terletak pada cara penggabungan (fusi) fitur kedua cabang.
 
-## Abstrak (Parafrase)
-PGDENet (Progressive Guided fusion and Depth Enhancement Network) memperkuat fitur kedalaman yang berderau melalui modul depth enhancement, lalu menggabungkannya dengan RGB melalui progressive guided fusion bertahap. Peningkatan kualitas kedalaman pra-fusi meningkatkan akurasi scene parsing indoor.
+Dua kelemahan spesifik menjadi sasaran makalah ini. Pertama, RGB dan kedalaman berbeda sifatnya: RGB kaya tekstur tetapi peka pencahayaan, sedangkan peta kedalaman dari sensor konsumen (misalnya Kinect) sering berderau dan berlubang — nilai hilang pada permukaan mengilap, gelap, atau terlalu jauh — sehingga fitur cabang kedalaman lemah dan representasi gabungannya ikut menurun. Kedua, fusi sekaligus pada satu titik tidak mengatur kerja sama fitur tingkat tinggi dan tingkat rendah: fitur tingkat rendah menyimpan detail spasial seperti tepi objek, fitur tingkat tinggi menyimpan makna semantik, dan menggabungkan keduanya tanpa panduan dapat memasukkan derau atau menghilangkan informasi kunci, sehingga peta segmentasi menjadi tidak akurat. Pendekatan sebelumnya menangani sebagian masalah ini: SA-Gate (bab 055) menyaring fitur antarmodalitas dengan mekanisme gerbang, dan ESANet (bab 056) mengejar efisiensi dengan fusi satu arah. Namun perbaikan fitur kedalaman sebelum fusi, serta pengaturan urutan fusi antar-tingkat, belum digarap secara eksplisit.
 
-## Latar Belakang & Konteks
-Peta kedalaman mentah sering berderau/tidak lengkap, sehingga langsung memfusikannya menurunkan kualitas; kedalaman perlu ditingkatkan lebih dahulu.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Kedalaman mentah berderau/tidak lengkap.
-- Fusi langsung menurunkan kualitas.
-- Kedalaman perlu ditingkatkan pra-fusi.
-- Panduan fusi perlu bertahap.
-- Scene parsing indoor kompleks.
+Gagasan inti PGDENet terdiri atas dua bagian yang saling melengkapi. Bagian pertama: jangan langsung memakai kedalaman mentah. Karena citra RGB berkualitas tinggi dan merekam struktur adegan yang sama, fitur RGB dipakai untuk memperkuat fitur kedalaman lebih dahulu — menekan bagian yang tidak dapat dipercaya dan menonjolkan struktur yang konsisten dengan citra warna. Bagian kedua: jangan menggabungkan semua tingkat fitur sekaligus. Fusi dimulai dari fitur tingkat tertinggi yang paling kaya makna semantik, lalu hasilnya dijadikan panduan saat menggabungkan fitur tingkat di bawahnya, dan seterusnya sampai tingkat paling dangkal. Dengan urutan ini, informasi semantik yang sudah tergabung mengarahkan fusi fitur detail, sehingga perbedaan sifat antar-tingkat menyusut di setiap langkah.
 
-## Tujuan & Pertanyaan Penelitian
-- Meningkatkan fitur kedalaman sebelum fusi.
-- Menggabungkan modal via fusi terpandu progresif.
-- Meningkatkan akurasi scene parsing indoor.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-PGDENet mengembangkan penguatan kedalaman dan fusi terpandu progresif.
+### Garis Besar Arsitektur
 
-Karya/konsep pembanding yang relevan:
+PGDENet adalah jaringan *fully convolutional* (seluruhnya tersusun dari lapis konvolusi, sehingga dapat menerima citra berbagai ukuran) dengan pola *encoder-decoder*: *encoder* mengecilkan resolusi spasial sambil memperdalam makna fitur, *decoder* memulihkan resolusi untuk menghasilkan label per piksel. Dua *encoder* ResNet-34 — jaringan konvolusi residual 34 lapis dengan sambungan pintas (*skip connection*) antarblok — dipakai sebagai *backbone*: satu untuk RGB, satu untuk kedalaman. Keluaran setiap *encoder* dibagi menjadi empat tingkat sesuai tahapan ResNet; tingkat 1 beresolusi paling tinggi (detail), tingkat 4 paling rendah (semantik). Alur lengkapnya:
 
-- Segmentasi/scene parsing RGB-D — dasar.
-- Depth enhancement — penguatan kedalaman.
-- Progressive/guided fusion.
-- Dataset NYUv2/SUN RGB-D.
+```
+citra RGB                    peta kedalaman (mentah, berderau/berlubang)
+   │                               │
+   ▼                               ▼
+┌────────────┐               ┌────────────┐
+│ encoder    │               │ encoder    │
+│ RGB        │               │ kedalaman  │
+│ ResNet-34  │               │ ResNet-34  │
+└─────┬──────┘               └─────┬──────┘
+      │ R1 R2 R3 R4                │ D1 D2 D3 D4   (R4/D4 = semantik)
+      │                            ▼
+      │                    ┌───────────────┐
+      │                    │ DEM per       │  penguatan korelasi kanal
+      │                    │ tingkat       │  dan spasial, dipandu RGB
+      │                    └─────┬─────────┘
+      │                          │ D1' D2' D3' D4'
+      │                          ▼
+      │   fusi progresif: tingkat tinggi memandu tingkat di bawahnya
+      │
+      └─R4──┐
+            ├──► PCFM ──► F4 ──┐ panduan
+        D4'─┘                  ▼
+      └─R3──┐
+            ├──► PCFM ──► F3 ──┐
+        D3'─┘                  ▼
+      └─R2──┐
+            ├──► PCFM ──► F2 ──┐
+        D2'─┘                  ▼
+      └─R1──┐
+            ├──► PCFM ──► F1
+        D1'─┘                  │
+                               ▼
+                          decoder ──► peta segmentasi per piksel
+```
 
-## Metodologi & Arsitektur
-Depth enhancement module memperbaiki/menguatkan fitur kedalaman; progressive guided fusion menggabungkan RGB dan kedalaman secara bertahap dengan panduan; decoder menghasilkan peta segmentasi indoor.
+Diagram menunjukkan dua pembeda PGDENet dari fusi biasa: cabang kedalaman melewati DEM sebelum difusi, dan PCFM berjalan berantai dari tingkat 4 ke tingkat 1 dengan hasil fusi tingkat atas sebagai panduan.
 
-Komponen / langkah metodologis utama:
+### Modul Penguatan Kedalaman (DEM)
 
-- Depth enhancement module (penguatan kedalaman).
-- Progressive guided fusion bertahap.
-- Penguatan kedalaman pra-fusi.
-- Fusi terpandu multi-level.
-- Decoder segmentasi.
-- Pelatihan end-to-end RGB-D.
+DEM ditempatkan pada cabang kedalaman sebelum fusi. Masukannya adalah fitur kedalaman pada suatu tingkat beserta fitur RGB yang bersesuaian; keluarannya adalah fitur kedalaman yang diperkuat. Penguatan dilakukan pada dua dimensi sebagaimana dinyatakan penulis. Pertama, korelasi kanal: sebuah peta fitur konvolusi tersusun atas banyak kanal, masing-masing menanggapi pola tertentu (misalnya tepi vertikal atau permukaan datar). Penguatan kanal berarti menimbang ulang setiap kanal — kanal yang konsisten dengan struktur pada citra RGB diperbesar bobotnya, kanal yang didominasi derau sensor ditekan. Kedua, korelasi spasial: setiap posisi pada peta fitur ditimbang berdasarkan hubungannya dengan posisi lain, sehingga wilayah kedalaman yang rusak (lubang) dapat diisi oleh konteks sekitarnya yang sejalan dengan tepi objek pada RGB. Citra RGB berperan sebagai sumber panduan karena resolusinya sama dan kualitasnya tinggi; kedalaman tidak diperbaiki sendirian, melainkan dikoreksi oleh modalitas yang lebih bersih.
 
-## Kontribusi Utama
-1. Penguatan kedalaman sebelum fusi.
-2. Fusi terpandu progresif.
-3. Peningkatan akurasi scene parsing.
-4. Menangani kedalaman berderau.
+### Modul Fusi Komplementer Progresif (PCFM)
 
-## Rincian Eksperimen
-Diuji pada NYUv2 dan SUN RGB-D dengan metrik mIoU dan pixel accuracy, plus ablation depth enhancement.
+Setelah fitur kedalaman diperkuat, penggabungan dengan RGB dilakukan bertingkat oleh PCFM. Istilah *progresif* berarti fusi tidak terjadi dalam satu operasi, melainkan empat langkah berurutan. Pada langkah pertama, fitur tingkat 4 (paling semantik) dari kedua cabang digabung menjadi fitur gabungan F4. Pada langkah kedua, F4 dibawa ke tingkat 3 dan dipakai sebagai panduan saat menggabungkan R3 dengan D3′ menjadi F3; pola yang sama berlanjut ke tingkat 2 dan tingkat 1. Sifat *komplementer* berarti kedua modalitas saling melengkapi: RGB menyumbang tekstur dan warna, kedalaman menyumbang geometri dan batas objek yang tegas.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Urutan dari atas ke bawah dipilih karena fitur tingkat tinggi sudah menyaring derau lokal dan memuat makna adegan. Ketika hasilnya turun sebagai panduan, fusi pada tingkat yang lebih dangkal tidak mencampur dua modalitas secara bebas, melainkan menempatkan detail spasial di bawah kendali konteks semantik; perbedaan abstraksi antar-tingkat pun diperkecil selapis demi selapis.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NYUv2 | mIoU | peningkatan atas baseline |
-| SUN RGB-D | mIoU | kompetitif/unggul |
-| Ablation | depth enhancement | penguatan kedalaman menyumbang gain |
+### Contoh Alur Numerik
 
-## Temuan Kunci
-- Penguatan kedalaman pra-fusi bermanfaat.
-- Fusi terpandu progresif efektif.
-- Kedalaman berderau dapat ditangani.
-- Akurasi scene parsing meningkat.
+Pada masukan NYUv2 480×640 piksel, keluaran empat tingkat ResNet-34 (dengan penurunan resolusi bertahap 4, 8, 16, dan 32 kali) kira-kira berukuran 120×160, 60×80, 30×40, dan 15×20 posisi. Misalkan peta kedalaman mentah kehilangan nilai pada permukaan layar televisi yang gelap. DEM pada tingkat 1–2 menekan bobot posisi berlubang itu dan memperkuat tepi layar yang terlihat jelas pada RGB. PCFM kemudian menggabungkan fitur tingkat 4 (15×20) lebih dahulu — pada skala ini, daerah televisi sudah terwakili sebagai satu konsep semantik — lalu F4 memandu fusi tingkat 3 (30×40), dan seterusnya sampai tingkat 1 (120×160). *Decoder* akhirnya menaikkan resolusi fitur gabungan kembali ke 480×640 dan mengeluarkan satu dari 40 kelas NYUv2 untuk setiap piksel.
 
-## Keunggulan
-- Menangani kedalaman berderau.
-- Fusi terpandu progresif.
-- Peningkatan konsisten.
+## Eksperimen dan Hasil
 
-## Keterbatasan
-- Modul enhancement menambah komputasi.
-- Bergantung kualitas kedalaman awal.
-- Backbone relatif berat.
+Evaluasi dilakukan pada dua tolok ukur standar segmentasi dalam ruangan. NYUv2 memuat 1.449 pasangan RGB-D berlabel padat (795 untuk pelatihan, 654 untuk pengujian) dengan 40 kelas. SUN RGB-D lebih besar: 10.335 citra dengan 37 kelas. Metrik utama adalah mIoU (*mean Intersection over Union*): untuk setiap kelas dihitung rasio luas irisan terhadap luas gabungan antara piksel prediksi dan piksel kebenaran, lalu dirata-ratakan ke semua kelas; nilai maksimal 100%.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Angka utama PGDENet (dikutip dari tabel perbandingan DFormer dan DFormerv2 yang saling cocok):
 
-## Relevansi terhadap Tema Tinjauan
-PGDENet menekankan peningkatan kualitas kedalaman pra-fusi — melengkapi tema keandalan kedalaman (D3Net/SA-Gate) yang berulang dalam tinjauan.
+| Dataset | Resolusi masukan | Komputasi | mIoU |
+|---|---|---|---|
+| NYUv2 (40 kelas) | 480×640 | 178,8 GFLOPs | 53,7% |
+| SUN RGB-D (37 kelas) | 530×730 | 229,1 GFLOPs | 51,0% |
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Segmentasi RGB-D** yang baik dibaca berdampingan:
+Interpretasi: pada NYUv2, PGDENet (53,7%) berada tepat di atas FRNet (53,6%) yang memakai *backbone* ResNet-34 yang sama, dan di atas ESANet (50,3%) serta EMSANet (51,0%); pada SUN RGB-D, 51,0% sejajar dengan TokenFusion MiT-B3 (51,0%) dan berada di bawah CMX MiT-B4 (52,1%). Dengan demikian klaim penulis terkonfirmasi untuk kelas metode konvolusional dua cabang; metode berbasis *transformer* yang muncul hampir bersamaan (CMX, bab 058) kemudian menyalipnya. Dua catatan biaya: PGDENet memuat 100,7 juta parameter — sekitar tiga kali ESANet (31,2 juta) — sehingga peningkatan akurasinya dibayar dengan model yang jauh lebih besar.
+
+## Kelebihan dan Keterbatasan
+
+Kelebihan PGDENet adalah menangani dua sumber galat sekaligus dalam satu rancangan: kualitas fitur kedalaman diperbaiki sebelum fusi (DEM), dan kerja sama antar-tingkat diatur lewat urutan fusi terpandu (PCFM). Kedua gagasan bersifat umum, tidak terikat pada satu *backbone* tertentu, dan peningkatannya terbukti pada dua dataset sekaligus.
+
+Keterbatasannya, sebagian berupa analisis penulis bab. Dari sisi rekayasa, 100,7 juta parameter dan 178,8–229,1 GFLOPs per citra tergolong berat untuk pemakaian *real-time* pada robot atau kamera tertanam, terutama dibandingkan keluarga ESANet yang dirancang untuk efisiensi. Secara konseptual, penguatan kedalaman bergantung pada ketersediaan RGB berkualitas tinggi — pada adegan gelap di mana RGB ikut rusak, panduan untuk DEM melemah, dan makalah tidak menguji kondisi tersebut. Keterbatasan lain: evaluasi hanya mencakup adegan dalam ruangan, sehingga perilaku metode pada data luar ruangan tidak diketahui.
+
+## Kaitan dengan Bab Lain
+
+PGDENet meneruskan garis fusi dua cabang yang dibuka FuseNet (bab 051), yang menggabungkan fitur RGB dan kedalaman secara langsung. Gagasan menyaring informasi antarmodalitas sebelum fusi telah muncul pada SA-Gate (bab 055) lewat mekanisme gerbang; PGDENet mengalihkan penyaringan itu satu langkah lebih awal, ke perbaikan fitur kedalaman itu sendiri. Dibandingkan ESANet (bab 056) yang mengutamakan efisiensi, PGDENet memilih akurasi dengan biaya komputasi lebih besar. Pada tahun yang sama, CMX (bab 058) menempuh jalur berbeda dengan fusi berbasis *transformer* dan melampaui akurasi PGDENet pada kedua dataset.
 
 - [051 - 2016 - FuseNet - Segmentasi RGB-D](./051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md)
-- [052 - 2018 - RedNet - Segmentasi RGB-D](./052%20-%202018%20-%20RedNet%20-%20Segmentasi%20RGB-D.md)
-- [053 - 2017 - RDFNet - Segmentasi RGB-D](./053%20-%202017%20-%20RDFNet%20-%20Segmentasi%20RGB-D.md)
-- [054 - 2019 - ACNet - Segmentasi RGB-D](./054%20-%202019%20-%20ACNet%20-%20Segmentasi%20RGB-D.md)
 - [055 - 2020 - SA-Gate - Segmentasi RGB-D](./055%20-%202020%20-%20SA-Gate%20-%20Segmentasi%20RGB-D.md)
 - [056 - 2021 - ESANet - Segmentasi RGB-D](./056%20-%202021%20-%20ESANet%20-%20Segmentasi%20RGB-D.md)
-- [057 - 2021 - ShapeConv - Segmentasi RGB-D](./057%20-%202021%20-%20ShapeConv%20-%20Segmentasi%20RGB-D.md)
 - [058 - 2023 - CMX - Segmentasi RGB-D](./058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md)
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Segmentasi RGB-D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema Segmentasi RGB-D)
-Istilah penting untuk memahami makalah ini:
+Kutip dengan kunci `zhou2022pgdenet`. Ringkasan yang aman dikutip: "PGDENet memperbaiki fitur peta kedalaman dengan modul penguatan kedalaman berpandu RGB, kemudian menggabungkan kedua modalitas secara progresif dari fitur semantik tingkat tinggi ke fitur detail tingkat rendah; dengan backbone ResNet-34, metode ini mencapai 53,7% mIoU pada NYUv2 dan 51,0% mIoU pada SUN RGB-D."
 
-- **Segmentasi semantik** — Pelabelan kelas per-piksel.
-- **Scene parsing** — Pemahaman menyeluruh isi scene via segmentasi.
-- **Encoder-decoder** — Arsitektur mengecilkan lalu memulihkan resolusi.
-- **Fusi RGB-D** — Penggabungan cabang warna dan kedalaman.
-- **mIoU** — mean Intersection-over-Union; metrik segmentasi utama.
-- **Gating** — Gerbang penyaring/penimbang fitur sebelum digabung.
-- **Cross-modal** — Antar-modalitas (RGB dan depth/thermal/LiDAR).
-- **NYUv2** — Dataset RGB-D indoor standar.
-- **SUN RGB-D** — Dataset RGB-D indoor berskala.
-- **Pixel accuracy** — Persentase piksel terlabel benar.
+Catatan verifikasi sebelum sitasi formal:
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-PGDENet memperkuat fitur kedalaman via depth enhancement lalu menggabungkannya dengan RGB melalui progressive guided fusion, meningkatkan akurasi scene parsing indoor RGB-D.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zhou2022pgdenet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 059/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+1. Daftar penulis pada `references.bib` hanya memuat empat nama (Zhou, Yang, Lei, Yu); DBLP dan Semantic Scholar mencatat lima penulis, termasuk **Jian Wan**. Periksa naskah asli dan lengkapi `references.bib`.
+2. Angka 53,7% / 51,0% mIoU, 100,7 juta parameter, dan 178,8 / 229,1 GFLOPs diambil dari tabel perbandingan DFormer (arXiv:2309.09668) dan DFormerv2 (arXiv:2504.04701) yang konsisten satu sama lain; naskah asli tertutup di IEEE, sehingga angka tersebut perlu dikonfirmasi ke tabel naskah.
+3. Nilai *pixel accuracy* dan rincian hasil ablasi (kontribusi DEM dan PCFM secara terpisah) tidak berhasil diperoleh dari sumber terbuka dan sengaja tidak dicantumkan.
+4. Deskripsi internal DEM dan PCFM pada bab ini dibatasi pada pernyataan abstrak (korelasi kanal dan spasial; fusi terpandu dari tingkat tinggi ke rendah); nama submodul dan persamaan rinci tidak diakses.

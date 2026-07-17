@@ -1,205 +1,144 @@
 # 007 - YOLOv7: Trainable Bag-of-Freebies Sets New State-of-the-Art for Real-Time Object Detectors
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 007 dari 154 |
 | Kunci BibTeX | `wang2023yolov7` |
-| Judul | YOLOv7: Trainable Bag-of-Freebies Sets New State-of-the-Art for Real-Time Object Detectors |
-| Penulis | Wang, Chien-Yao; Bochkovskiy, Alexey; Liao, Hong-Yuan Mark |
-| Tahun | 2023 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | YOLOv7, E-ELAN, reparameterisasi terencana, deep supervision, real-time |
+| Judul asli | YOLOv7: Trainable Bag-of-Freebies Sets New State-of-the-Art for Real-Time Object Detectors |
+| Penulis | Chien-Yao Wang, Alexey Bochkovskiy, Hong-Yuan Mark Liao |
+| Tahun | 2023 (pracetak arXiv Juli 2022) |
+| Venue | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2207.02696
+- **DOI (arXiv):** https://doi.org/10.48550/arXiv.2207.02696
+- **Repositori kode resmi:** https://github.com/WongKinYiu/yolov7
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLOv7%3A%20Trainable%20Bag-of-Freebies%20Sets%20New%20State-of-the-Art%20for%20Real-Time%20Object%20Detectors
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLOv7%3A%20Trainable%20Bag-of-Freebies%20Sets%20New%20State-of-the-Art%20for%20Real-Time%20Object%20Detectors&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLOv7%3A%20Trainable%20Bag-of-Freebies%20Sets%20New%20State-of-the-Art%20for%20Real-Time%20Object%20Detectors
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLOv7%3A%20Trainable%20Bag-of-Freebies%20Sets%20New%20State-of-the-Art%20for%20Real-Time%20Object%20Detectors&sort=relevance
+Makalah ini memperkenalkan YOLOv7, detektor objek satu tahap *real-time* yang dilatih dari awal hanya pada dataset MS COCO, tanpa bobot pralatih maupun data tambahan. Gagasan sentralnya adalah *trainable bag-of-freebies*: teknik yang menambah biaya pelatihan demi akurasi, tanpa menambah biaya inferensi (biaya menjalankan model jadi). Tiga komponen utamanya adalah blok agregasi fitur E-ELAN, konvolusi reparameterisasi terencana, dan penetapan label *coarse-to-fine* yang memakai kepala bantu.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasil utamanya: pada rentang 5 hingga 160 *frame* per detik (FPS) di GPU V100, YOLOv7 melampaui detektor *real-time* lain pada masanya dalam kombinasi kecepatan dan akurasi. Varian terbesarnya, YOLOv7-E6E, mencapai 56,8% AP (metrik akurasi utama COCO) pada 36 FPS — tertinggi di antara detektor *real-time* berkecepatan minimal 30 FPS saat terbit.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 7464--7475 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Detektor real-time terkuat pada masanya yang memperkenalkan E-ELAN dan strategi trainable Bag-of-Freebies termasuk reparameterisasi terencana serta penetapan label coarse-to-fine dengan lead/auxiliary head.
+Silsilah YOLO merupakan upaya menaikkan akurasi tanpa mengorbankan kecepatan. YOLOv4 (bab 004) memperkenalkan konsep *bag-of-freebies* — teknik pelatihan yang menaikkan akurasi tanpa menambah biaya inferensi. YOLOX (bab 005) memopulerkan penetapan label dinamis: target pelatihan dihitung dari kualitas prediksi jaringan, bukan ditetapkan kaku dari kebenaran dasar (*ground truth*). YOLOv6 (bab 006) memakai reparameterisasi struktural gaya RepVGG: modul bercabang banyak saat pelatihan dilebur menjadi satu lapis konvolusi saat inferensi.
 
-## Abstrak (Parafrase)
-YOLOv7 berfokus pada 'trainable bag-of-freebies': teknik yang menaikkan akurasi tanpa menambah biaya inferensi. Inti arsitekturnya adalah E-ELAN (Extended Efficient Layer Aggregation Network) yang mengontrol panjang jalur gradien untuk pembelajaran fitur efisien, ditambah reparameterisasi terencana (planned re-parameterized convolution) dan penetapan label coarse-to-fine yang memakai lead head dan auxiliary head (deep supervision). Hasilnya mengungguli detektor real-time 5-160 FPS pada saat rilis.
+Penulis menemukan dua masalah baru. Pertama, RepConv — gabungan konvolusi 3×3, konvolusi 1×1, dan koneksi identitas (penjumlahan langsung masukan ke keluaran) — bekerja baik pada arsitektur polos, tetapi akurasinya turun saat diterapkan langsung pada arsitektur berkoneksi residual (blok yang menjumlahkan masukan ke keluarannya, seperti ResNet) atau berbasis konkatenasi (penggabungan peta fitur sepanjang dimensi kanal, seperti DenseNet); belum ada aturan kapan kombinasi itu aman. Kedua, bila detektor dilatih dengan lebih dari satu kepala keluaran melalui *deep supervision* (penambahan kepala bantu di lapisan tengah), muncul pertanyaan: kepala mana yang menetapkan target untuk kepala yang lain. Selain itu, penskalaan model lazimnya menganalisis tiap faktor secara terpisah, padahal pada model konkatenasi keduanya saling terkait.
 
-## Latar Belakang & Konteks
-Meningkatkan akurasi detektor real-time tanpa menaikkan latensi inferensi adalah tantangan utama. Reparameterisasi dan deep supervision menjanjikan namun penerapannya harus 'terencana' agar tidak merusak struktur atau gradien.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Menaikkan akurasi tanpa menambah biaya inferensi itu sulit.
-- Reparameterisasi naif dapat merusak koneksi residual/konkatenasi.
-- Deep supervision membutuhkan penetapan label yang tepat.
-- Agregasi fitur perlu efisien dari sisi gradien.
-- Skalabilitas model untuk beragam kebutuhan.
+Pisahkan tegas biaya pelatihan dari biaya inferensi. Selama pelatihan, jaringan boleh dibebani struktur tambahan — cabang konvolusi ekstra, kepala keluaran bantu, mekanisme penetapan label berlapis — asalkan semuanya dapat dilebur ke lapis lain atau dibuang saat inferensi.
 
-## Tujuan & Pertanyaan Penelitian
-- Merancang agregasi fitur efisien (E-ELAN).
-- Menerapkan reparameterisasi yang 'terencana' dan aman.
-- Menyediakan penetapan label coarse-to-fine untuk lead/aux head.
+Jalur datanya sendiri tidak berubah dari keluarga YOLO: citra mengalir melalui *backbone* (bagian awal jaringan yang mengekstraksi fitur) dan leher (*neck*, modul penggabung fitur multi-skala) berbasis blok E-ELAN, lalu ke kepala deteksi. Yang diubah makalah ini adalah cara blok dilatih, cara target pelatihan dibuat, dan cara model diskalakan.
 
-## Tinjauan Terdahulu / Posisi Literatur
-YOLOv7 mengembangkan ELAN dan model scaling, mengintegrasikan reparameterisasi (RepConv) secara terencana, serta memakai deep supervision melalui auxiliary head.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Blok E-ELAN
 
-- ELAN — agregasi lapisan efisien.
-- RepVGG/RepConv — reparameterisasi.
-- Deep supervision — auxiliary head.
-- Model scaling — penskalaan gabungan.
+Dasar arsitektur YOLOv7 adalah ELAN (*Efficient Layer Aggregation Network*), strategi desain dari grup penulis yang sama: jaringan dalam dapat belajar efektif bila jalur gradien terpendek dan terpanjangnya dikendalikan. Jalur gradien (*gradient path*) adalah rute sinyal gradien saat pembaruan bobot; jalur yang terlalu panjang menyulitkan konvergensi.
 
-## Metodologi & Arsitektur
-E-ELAN mengatur cardinality dan panjang jalur gradien; reparameterisasi terencana menyesuaikan RepConv agar kompatibel dengan koneksi identitas; penetapan label coarse-to-fine menghasilkan label lembut untuk auxiliary head dan label halus untuk lead head; penskalaan compound untuk model berbasis konkatenasi.
+E-ELAN memperluas ELAN tanpa mengubah jalur gradiennya melalui tiga operasi: *expand*, *shuffle*, dan *merge cardinality* (*cardinality* = jumlah cabang paralel dalam satu blok). Setiap blok hitung diperluas memakai konvolusi grup (*group convolution* — konvolusi yang membagi kanal menjadi beberapa grup yang diproses terpisah). Peta fitur keluaran tiap blok dibagi menjadi g grup, dipertukarkan antarblok, lalu dikonkatenasi; terakhir, g grup dijumlahkan elemen demi elemen. Hanya bagian dalam blok hitung yang berubah, sedangkan lapisan transisi dipertahankan, sehingga kemampuan belajar naik tanpa merusak stabilitas gradien ELAN.
 
-Komponen / langkah metodologis utama:
+Alur data dalam satu lapisan E-ELAN:
 
-- E-ELAN untuk agregasi fitur dan aliran gradien efisien.
-- Planned re-parameterized convolution.
-- Coarse-to-fine lead/auxiliary head label assignment.
-- Compound scaling untuk model konkatenasi.
-- Bag-of-Freebies yang dapat dilatih.
-- Head deteksi gaya YOLO multi-skala.
+```
+masukan
+   │
+   ▼
+┌──────────────────────────────────────┐
+│ n blok hitung paralel; jalur gradien │   tiap blok: konvolusi grup,
+│ ELAN dipertahankan utuh              │   kanal diperluas × pengali
+└───┬────────┬────────┬────────┬───────┘
+    ▼        ▼        ▼        ▼
+  [FM1]    [FM2]    [FM3]    [FM4]   peta fitur tiap cabang
+    │        │        │        │
+    └────────┴───┬────┴────────┘
+                 ▼
+     shuffle: tiap peta dibagi g grup,
+     grup dipertukarkan antarcabang,
+     lalu dikonkatenasi
+                 │
+                 ▼
+     merge cardinality:
+     g grup dijumlahkan elemen demi elemen
+                 │
+                 ▼
+             keluaran
+```
 
-## Kontribusi Utama
-1. E-ELAN sebagai blok agregasi efisien-gradien.
-2. Reparameterisasi terencana yang aman terhadap residual.
-3. Coarse-to-fine label assignment untuk deep supervision.
-4. SOTA real-time 5-160 FPS saat rilis.
+### Penskalaan Gabungan untuk Model Berbasis Konkatenasi
 
-## Rincian Eksperimen
-Diuji di COCO dengan pengukuran kecepatan pada V100, dibandingkan YOLOR, YOLOX, YOLOv5, dan detektor Transformer, disertai ablation E-ELAN dan reparameterisasi.
+*Model scaling* menghasilkan varian model berbeda ukuran dari satu desain dasar dengan mengubah kedalaman (jumlah lapis) atau lebar (jumlah kanal). Pada arsitektur biasa, tiap faktor dapat dianalisis terpisah karena memperdalam jaringan tidak mengubah lebar lapis lain. Pada model berbasis konkatenasi hal itu tidak berlaku: menaikkan kedalaman sebuah blok menambah jumlah peta fitur yang dikonkatenasi, sehingga lebar keluaran blok dan lebar masukan lapisan transisi berikutnya ikut berubah.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Solusinya, penskalaan gabungan (*compound scaling*): saat faktor kedalaman blok hitung dinaikkan, perubahan lebar keluarannya dihitung, lalu faktor lebar lapisan transisi dinaikkan dengan besar yang setara, sehingga rasio kanal optimal model dasar terjaga. Pada studi ablasi (uji yang mematikan komponen satu per satu untuk mengukur sumbangannya) dipakai kedalaman ×1,5 dan lebar transisi ×1,25. Cara ini menghasilkan varian YOLOv7-X, E6, dan D6.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | AP | hingga ~56.8% AP untuk model besar |
-| COCO | AP/FPS | mengungguli detektor real-time sezaman |
-| Ablation | E-ELAN/RepConv | tiap komponen menyumbang gain |
+### Reparameterisasi Terencana
 
-## Temuan Kunci
-- Trainable BoF menaikkan akurasi tanpa biaya inferensi.
-- E-ELAN penting untuk efisiensi gradien.
-- Reparameterisasi harus terencana agar tak merusak struktur.
-- Deep supervision efektif dengan label coarse-to-fine.
+Reparameterisasi struktural melatih modul bercabang banyak, lalu menggabungkannya menjadi satu lapis yang ekuivalen secara matematis saat inferensi. Penulis menemukan cabang koneksi identitas di dalam RepConv sumber masalahnya: ia tumpang tindih dengan koneksi residual ResNet dan mengganggu pola konkatenasi DenseNet, sehingga mengurangi keberagaman gradien antarpeta fitur dan menurunkan akurasi. Aturan yang diusulkan — reparameterisasi terencana (*planned re-parameterization*) — berbunyi sederhana: bila lapis konvolusi berada pada koneksi residual atau konkatenasi, pakai RepConvN (RepConv tanpa cabang identitas); RepConv penuh hanya untuk arsitektur polos.
 
-## Keunggulan
-- SOTA real-time pada masanya.
-- Peningkatan tanpa menambah latensi.
-- Desain agregasi & reparameterisasi yang matang.
+Struktur RepConvN saat pelatihan dan hasil peleburannya saat inferensi:
 
-## Keterbatasan
-- Kompleksitas strategi pelatihan.
-- Masih berbasis anchor pada rilis awal.
-- Sensitif terhadap konfigurasi reparameterisasi.
+```
+saat pelatihan (dua cabang)          saat inferensi (dilebur)
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+        masukan                             masukan
+      ┌────┴─────┐                              │
+      ▼          ▼                              ▼
+ ┌─────────┐ ┌─────────┐                 ┌─────────────┐
+ │ conv 3x3│ │ conv 1x1│                 │ satu conv   │
+ │  + BN   │ │  + BN   │                 │ 3x3 + bias  │
+ └────┬────┘ └────┬────┘                 └──────┬──────┘
+      └─────┬─────┘                             │
+            ▼                                   ▼
+      dijumlahkan                           keluaran
+            │
+            ▼
+        keluaran
 
-## Relevansi terhadap Tema Tinjauan
-YOLOv7 menjadi tulang punggung banyak sistem deteksi 2023-an, termasuk yang dipadukan dengan depth; memahaminya penting untuk menilai pipeline YOLO+RGB-D mutakhir.
+cabang identitas sengaja dibuang (RepConvN) pada lapis
+yang memiliki koneksi residual atau konkatenasi
+```
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+### Penetapan Label Coarse-to-Fine dengan Kepala Bantu
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
-- [009 - 2024 - YOLOv10 - Fondasi RGB](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)
+Makalah ini menamai kepala penghasil keluaran akhir sebagai *lead head* dan kepala bantu *deep supervision* sebagai *auxiliary head*; kepala bantu dibuang setelah pelatihan. Masalahnya ada pada penetapan target. Detektor modern memakai *label assigner*: mekanisme yang menghitung label lunak (*soft label*) dari gabungan prediksi jaringan dan *ground truth* — misalnya target skor keberadaan objek diset sebesar IoU (rasio luas irisan terhadap gabungan dua kotak) antara kotak prediksi dan kotak benar. Dengan dua kepala, praktik lazim saat itu adalah tiap kepala menghitung labelnya sendiri secara independen.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Strategi pertama, *lead head guided label assigner*: label lunak dihitung dari prediksi *lead head* dan *ground truth*, lalu dipakai melatih kedua kepala sekaligus. Alasannya, *lead head* lebih dalam sehingga prediksinya lebih mewakili data; kepala bantu yang dangkal mempelajari informasi yang sudah dikuasai *lead head*, sedangkan *lead head* memusatkan diri pada informasi sisa.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+Strategi kedua, yang dipakai pada model final, adalah *coarse-to-fine lead head guided label assigner*. Label halus (*fine*) untuk *lead head* dibuat seperti strategi pertama; label kasar (*coarse*) untuk *auxiliary head* dibuat dengan melonggarkan syarat penetapan sampel positif, sehingga lebih banyak sel grid (sel pada peta fitur keluaran) dianggap positif dan *recall* (proporsi objek yang ditemukan) kepala bantu naik. Agar label kasar tidak merusak prior prediksi akhir, keluaran kepala bantu diberi batas atas: grid positif kasar tambahan tidak dapat menghasilkan label lunak sempurna karena skornya dibatasi menurut jarak ke pusat objek. Dengan begitu, batas optimasi label halus selalu lebih tinggi daripada label kasar.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+### Bag-of-Freebies Lainnya
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Tiga teknik tambahan melengkapi paket tanpa biaya inferensi. Pertama, fusi *batch normalization* (BN — normalisasi statistik tiap kanal terhadap rata-rata dan varians mini-batch): saat inferensi, parameter BN dilebur ke bobot dan bias lapis konvolusi yang bersebelahan. Kedua, pengetahuan implisit dari YOLOR: vektor yang saat pelatihan digabungkan dengan peta fitur konvolusi; saat inferensi vektor ini diprahitung dan dilebur ke bias atau bobot konvolusi di dekatnya. Ketiga, model *EMA* (*exponential moving average*): bobot inferensi diambil dari rata-rata bergerak eksponensial bobot selama pelatihan.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Eksperimen dan Hasil
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Seluruh eksperimen memakai MS COCO: *train2017* untuk pelatihan, *val2017* untuk verifikasi, dan *test-dev* (split uji resmi) untuk perbandingan akhir. AP dilaporkan menurut protokol COCO: rata-rata presisi pada ambang IoU 0,50–0,95. Tiga model dasar dirancang untuk tiga kelas perangkat: YOLOv7-tiny untuk GPU tepi (fungsi aktivasi *leaky ReLU*), YOLOv7 untuk GPU umum (aktivasi *SiLU*), dan YOLOv7-W6 untuk GPU *cloud*; varian lain diperoleh lewat penskalaan. Hasil utama pada resolusi 640:
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+- YOLOv7: 36,9 juta parameter, 104,7 GFLOPs (miliar operasi floating-point per citra, ukuran biaya komputasi), 161 FPS, 51,4% AP *test-dev*. Dibandingkan YOLOR-CSP (52,9 juta parameter, 120,4 GFLOPs, 106 FPS, 51,1% AP), model ini memangkas 43% parameter dan 15% komputasi sekaligus 55 FPS lebih cepat dengan AP sedikit lebih tinggi — paket *bag-of-freebies* hadir bersama arsitektur yang lebih hemat.
+- YOLOv7-tiny-SiLU: 6,2 juta parameter, 286 FPS, 38,7% AP — 127 FPS lebih cepat dan 10,7 poin AP lebih tinggi daripada YOLOv5-N r6.1 (159 FPS, 28,0% AP *val*). Selisih ini menunjukkan perbaikan arsitektur paling terasa pada model kecil dengan anggaran komputasi sempit.
+- YOLOv7-X: 53,1% AP pada 114 FPS; dibandingkan YOLOv5-X r6.1 (50,7% AP *val*, 83 FPS), ia 31 FPS lebih cepat dengan 22% parameter dan 8% komputasi lebih sedikit.
 
-## Kesimpulan
-YOLOv7 memperkuat peran reparameterisasi terencana dan agregasi efisien (E-ELAN), menjadikannya salah satu detektor real-time terkuat yang banyak diadopsi.
+Pada resolusi 1280, YOLOv7-E6 mencapai 55,9% AP *val* pada 56 FPS; detektor transformer (detektor berbasis arsitektur atensi) SWIN-L Cascade Mask R-CNN mencapai 53,9% AP pada 9,2 FPS (GPU A100), sehingga YOLOv7-E6 unggul 2 poin AP sekaligus sekitar enam kali lebih cepat. YOLOv7-E6E mencapai 56,8% AP pada 36 FPS; dibandingkan YOLOR-D6 (56,5% AP *test*, 34 FPS) yang berparameter sama (151,7 juta), E6E memakai komputasi lebih rendah (843,2 lawan 935,6 GFLOPs) dengan AP 0,3 poin lebih tinggi — keuntungan datang dari desain, bukan penambahan ukuran.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `wang2023yolov7` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Studi ablasi mengonfirmasi tiap komponen. Penskalaan gabungan memberi AP 0,5 poin lebih tinggi daripada penskalaan lebar saja, dengan parameter dan komputasi lebih kecil. Reparameterisasi terencana menghasilkan AP tertinggi pada model konkatenasi (3-stacked ELAN) maupun residual (CSPDarknet, *backbone* keluarga Darknet) dibanding RepConv biasa. Penambahan *loss* (fungsi galat yang diminimalkan saat pelatihan) bantu selalu menaikkan AP, dan strategi *coarse-to-fine* mengungguli penetapan independen maupun *lead-guided* biasa. Ketiga uji ini menunjukkan tiap klaim kontribusi berdiri sendiri.
 
----
-*Lembar 007/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Kelebihan dan Keterbatasan
+
+Kelebihan makalah ini adalah efisiensi bukti: akurasi naik nyaris tanpa biaya inferensi karena seluruh struktur tambahan dilebur atau dibuang, cakupan variannya luas (5–160 FPS), dan pelatihan serta kode resminya terbuka untuk direproduksi dari awal tanpa data eksternal.
+
+Keterbatasan berikut merupakan analisis penulis bab, bukan pernyataan penulis makalah. Dari sisi rekayasa, resep pelatihannya lebih kompleks daripada pendahulunya: dua kepala, dua set label, dan modul yang harus dilebur ulang lewat prosedur reparameterisasi terpisah sebelum dipakai. Dari sisi rekayasa pula, perbandingan kecepatan kelas berat dilakukan lintas GPU (V100 untuk YOLOv7, A100 untuk pembanding transformer), sehingga selisihnya tidak sepenuhnya setara. Secara konseptual, model utama tetap memakai kepala deteksi berbasis *anchor* (kotak acuan berukuran tetap yang menjadi titik tolak regresi posisi objek) dan masih memerlukan *Non-Maximum Suppression* (NMS — pembuangan kotak ganda yang tumpang tindih); varian *anchor-free* (u6) disediakan repositori, tetapi di luar hasil utama makalah.
+
+## Kaitan dengan Bab Lain
+
+Bab ini melanjutkan langsung resep [bab 004 (YOLOv4)](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md): konsep *bag-of-freebies* diperluas dari kumpulan trik pelatihan menjadi paket terstruktur yang mencakup arsitektur, reparameterisasi, dan penetapan label. Terhadap [bab 005 (YOLOX)](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md) dan [bab 006 (YOLOv6)](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md), YOLOv7 berperan sebagai koreksi sekaligus kelanjutan: penetapan label dinamis dan reparameterisasi struktural yang dipopulerkan kedua bab itu dianalisis ulang lalu diberi aturan pakai yang aman. Sebaliknya, [bab 008 (YOLOv9)](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md) dan [bab 009 (YOLOv10)](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md) menjadikan hasil bab ini garis dasar perbandingan utama pada kelas detektor *real-time*. Fondasi satu tahapnya mewarisi [bab 001 (YOLOv1)](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md): regresi langsung dari citra ke kotak objek dalam satu evaluasi.
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `wang2023yolov7`. Ringkasan yang aman dikutip: "YOLOv7 memperkenalkan *trainable bag-of-freebies* — paket teknik pelatihan yang menaikkan akurasi tanpa menambah biaya inferensi — melalui blok E-ELAN, reparameterisasi terencana, dan penetapan label *coarse-to-fine*; varian E6E-nya mencapai 56,8% AP COCO pada 36 FPS (GPU V100), akurasi tertinggi di antara detektor *real-time* minimal 30 FPS saat terbit, dan seluruh model dilatih dari awal hanya pada MS COCO."
+
+Catatan verifikasi: tabel ablasi lengkap (Tabel 3–8 naskah) tidak terrender pada sumber HTML; angka ablasi di sini (kedalaman ×1,5, lebar ×1,25, +0,5 poin AP) berasal dari teks naskah — cocokkan ke tabel PDF sebelum sitasi formal. Klaim kecepatan kelas berat diukur lintas GPU (V100 lawan A100); kutip beserta konteksnya. Pernyataan bahwa model utama berbasis *anchor* dan memerlukan NMS diverifikasi dari repositori kode resmi, bukan dari naskah.

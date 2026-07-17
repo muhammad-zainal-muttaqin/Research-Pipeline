@@ -1,206 +1,98 @@
 # 004 - YOLOv4: Optimal Speed and Accuracy of Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 004 dari 154 |
 | Kunci BibTeX | `bochkovskiy2020yolov4` |
-| Judul | YOLOv4: Optimal Speed and Accuracy of Object Detection |
-| Penulis | Bochkovskiy, Alexey; Wang, Chien-Yao; Liao, Hong-Yuan Mark |
+| Judul asli | YOLOv4: Optimal Speed and Accuracy of Object Detection |
+| Penulis | Alexey Bochkovskiy, Chien-Yao Wang, Hong-Yuan Mark Liao |
 | Tahun | 2020 |
-| Venue / Jurnal | arXiv preprint arXiv:2004.10934 |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | YOLOv4, CSPDarknet53, Bag-of-Freebies, Mosaic, CIoU |
+| Venue | arXiv preprint arXiv:2004.10934 |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2004.10934
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLOv4%3A%20Optimal%20Speed%20and%20Accuracy%20of%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLOv4%3A%20Optimal%20Speed%20and%20Accuracy%20of%20Object%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2004.10934
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLOv4%3A%20Optimal%20Speed%20and%20Accuracy%20of%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLOv4%3A%20Optimal%20Speed%20and%20Accuracy%20of%20Object%20Detection&sort=relevance
+YOLOv4 bukanlah paradigma baru, melainkan **sintesis rekayasa**: penulisnya mengumpulkan puluhan teknik peningkatan deteksi yang tersebar di literatur 2015–2020, menguji kombinasinya secara sistematis, dan menyusun hasil terbaiknya menjadi satu resep detektor. Resep itu terdiri atas backbone CSPDarknet53, neck SPP + PANet, dan head YOLOv3 (bab 003), dilatih dengan seperangkat teknik yang dikelompokkan menjadi *Bag of Freebies* (teknik yang menambah biaya hanya saat pelatihan) dan *Bag of Specials* (modul yang menambah sedikit biaya inferensi demi akurasi yang jauh lebih besar).
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasilnya: 43,5% AP (65,7% AP50) pada COCO dengan kecepatan ±65 FPS pada satu GPU V100 — titik kecepatan-akurasi terbaik pada masanya. Sama pentingnya, seluruh resep dapat dilatih pada **satu GPU konsumen** (1080 Ti atau 2080 Ti), sehingga detektor kelas riset menjadi terjangkau bagi praktisi — alasan utama YOLOv4 menjadi basis banyak bab aplikasi dalam tinjauan ini.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2004.10934 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Sintesis rekayasa yang menyatukan puluhan teknik pelatihan dan arsitektur (Bag-of-Freebies/Specials) menjadi satu resep detektor optimal yang dapat dilatih pada satu GPU konsumen.
+Antara 2015 dan 2020, literatur deteksi objek menghasilkan banyak teknik perbaikan: fungsi loss baru, metode augmentasi, modul perhatian, desain backbone hemat komputasi, dan sebagainya. Namun teknik-teknik itu diusulkan terpisah-pisah, diuji pada detektor yang berbeda-beda, dan tidak jelas kombinasi mana yang benar-benar bekerja ketika disatukan. Praktisi yang ingin memakai detektor terbaik harus menebak sendiri resepnya — dan sebagian resep menuntut pelatihan multi-GPU yang mahal.
 
-## Abstrak (Parafrase)
-YOLOv4 secara sistematis menyeleksi dan menggabungkan teknik terbaik: backbone CSPDarknet53, neck SPP+PANet, serta kumpulan 'Bag-of-Freebies' (Mosaic augmentation, CutMix, DropBlock, CIoU loss, self-adversarial training) dan 'Bag-of-Specials' (Mish, SAM, modifikasi PAN). Tujuannya adalah detektor dengan kurva kecepatan-akurasi optimal yang dapat dilatih pada satu GPU (mis. 1080Ti/2080Ti), membuatnya sangat praktis untuk industri.
+YOLOv3 (bab 003) pada saat yang sama sudah menjadi baseline industri karena cepat dan stabil, tetapi akurasinya mulai tertinggal dari detektor baru seperti EfficientDet (bab 021). Pertanyaan yang dijawab makalah ini: seberapa jauh akurasi YOLOv3 dapat dinaikkan hanya dengan memilih dan mengombinasikan teknik yang sudah ada, tanpa mengorbankan kecepatan *real-time* dan tanpa menuntut perangkat pelatihan besar?
 
-## Latar Belakang & Konteks
-Banyak trik peningkatan deteksi tersebar di literatur tanpa panduan kombinasi optimal, dan sebagian menuntut sumber daya besar. Praktisi membutuhkan resep yang teruji, efisien, dan dapat direproduksi pada perangkat terbatas.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Teknik peningkatan tersebar tanpa kombinasi optimal terverifikasi.
-- Banyak metode menuntut multi-GPU untuk pelatihan.
-- Trade-off kecepatan-akurasi belum dioptimalkan menyeluruh.
-- Reproduksibilitas dan kepraktisan industri kurang.
-- Interaksi antar-teknik (BoF/BoS) belum dipetakan.
+Gagasan pengorganisasian makalah ini adalah pembagian semua teknik peningkatan ke dalam dua kantong:
 
-## Tujuan & Pertanyaan Penelitian
-- Menyusun resep detektor optimal yang dapat dilatih satu GPU.
-- Memetakan pengaruh Bag-of-Freebies dan Bag-of-Specials.
-- Memaksimalkan kecepatan-akurasi untuk penerapan nyata.
+- ***Bag of Freebies* (BoF)** — teknik yang hanya mengubah strategi pelatihan tanpa menambah biaya inferensi sedikit pun: metode augmentasi data, fungsi loss yang lebih baik, regularisasi, penjadwalan laju pembelajaran. Karena "gratis" saat model dipakai, teknik ini murni menguntungkan bila terbukti menaikkan akurasi.
+- ***Bag of Specials* (BoS)** — modul arsitektur atau pasca-pemrosesan yang menambah sedikit biaya inferensi tetapi memberi lompatan akurasi yang tidak sebanding kecilnya: perluasan receptive field, modul perhatian, agregasi fitur, NMS yang lebih baik.
 
-## Tinjauan Terdahulu / Posisi Literatur
-YOLOv4 membangun di atas YOLOv3 dan mensintesis komponen dari CSPNet, SPP, PANet, serta pustaka augmentasi dan fungsi loss modern.
+Dengan kerangka ini, kontribusi makalah adalah **kurasi berbasis eksperimen**: setiap kandidat teknik diuji pengaruhnya pada detektor yang sama, dan hanya yang terbukti pada konfigurasi YOLO yang dipertahankan.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- CSPNet — desain backbone hemat komputasi.
-- SPP — perluasan receptive field.
-- PANet — agregasi jalur bottom-up.
-- CIoU/GIoU — fungsi loss box yang lebih baik.
+### Arsitektur: Backbone, Neck, Head
 
-## Metodologi & Arsitektur
-Arsitektur: CSPDarknet53 (backbone) + SPP + PANet (neck) + head YOLOv3. Pelatihan memakai Mosaic (menggabungkan 4 citra), CmBN, DropBlock, label smoothing, CIoU loss, dan self-adversarial training. Aktivasi Mish dan modul SAM/PAN termodifikasi termasuk Bag-of-Specials.
+Detektor YOLOv4 dipahami paling mudah sebagai tiga bagian. **Backbone** CSPDarknet53 adalah Darknet-53 (bab 003) yang dimodifikasi dengan *Cross Stage Partial* (CSP): peta fitur pada setiap tahap dibelah dua — satu cabang melewati blok residual, satu cabang menjadi pintasan — lalu keduanya digabung kembali. Pembelahan ini mengurangi komputasi sekitar 20% sekaligus memperkaya aliran gradien, sehingga akurasi terjaga atau justru naik dengan biaya lebih murah.
 
-Komponen / langkah metodologis utama:
+**Neck** terdiri atas dua modul. SPP (*Spatial Pyramid Pooling*) meneruskan peta fitur melalui beberapa *max-pooling* berukuran berbeda (5×5, 9×9, 13×13) secara paralel lalu menggabungkan hasilnya dengan masukan asal; efeknya, receptive field diperluas tanpa mengubah resolusi. PANet (*Path Aggregation Network*) menambah jalur agregasi **bottom-up** di atas jalur top-down ala FPN (bab 018): informasi lokasi yang rinci dari lapis dangkal disalurkan ke atas, melengkapi informasi semantik dari lapis dalam yang disalurkan ke bawah. **Head** tetap kepala prediksi YOLOv3 — tiga skala, berbasis *anchor*.
 
-- Backbone CSPDarknet53 (partial cross-stage).
-- Neck SPP + PANet untuk fitur multi-skala kaya.
-- Mosaic + CutMix augmentation.
-- CIoU loss untuk regresi box lebih akurat.
-- Self-Adversarial Training (SAT) & CmBN.
-- Aktivasi Mish, modul SAM (Bag-of-Specials).
+Susunan ketiga bagian dan tempat dua "kantong" teknik bekerja:
 
-## Kontribusi Utama
-1. Resep detektor optimal untuk pelatihan GPU tunggal.
-2. Studi ekstensif pengaruh BoF/BoS pada akurasi.
-3. Peningkatan mAP signifikan atas YOLOv3 pada kecepatan setara.
-4. Sangat praktis dan mudah direproduksi.
+```
+citra ──► backbone CSPDarknet53 ──► neck ──► head YOLOv3 ──► deteksi
+              │                  ┌──┴──┐        │              │
+              │                  ▼     ▼        ▼              ▼
+        fitur dibelah dua,    SPP   PANet   3 skala,     NMS (DIoU):
+        digabung kembali   (pool  (top-down  anchor      saring kotak
+        (hemat ±20% FLOPs)  5/9/13) +bottom-up)           duplikat
 
-## Rincian Eksperimen
-Diuji di COCO dengan analisis ablation menyeluruh atas kombinasi teknik, membandingkan kecepatan (V100) dan akurasi terhadap YOLOv3, EfficientDet, dan detektor lain.
+  Bag of Freebies (hanya saat latih): Mosaic, CutMix, CmBN, DropBlock,
+      label smoothing, CIoU loss, SAT, cosine annealing
+  Bag of Specials (biaya inferensi kecil): Mish, CSP, SPP, SAM, PAN, DIoU-NMS
+```
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Bag of Freebies: Teknik Pelatihan
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | AP / FPS | ~43.5% AP @~65 FPS (V100) |
-| COCO | AP50 | ~65% AP50 |
-| Ablation | BoF/BoS | tiap komponen dikuantifikasi kontribusinya |
+Teknik BoF yang dipertahankan setelah seleksi antara lain:
 
-## Temuan Kunci
-- Kombinasi teknik cermat memberi lompatan kecepatan-akurasi.
-- Mosaic augmentation sangat berdampak.
-- CIoU dan CSP backbone menyumbang gain konsisten.
-- Pelatihan GPU-tunggal tetap kompetitif dengan sistem besar.
+- **Mosaic augmentation**: empat citra pelatihan digabung menjadi satu citra komposit. Model belajar mengenali objek pada konteks dan skala yang lebih beragam dalam satu masukan, dan statistik *batch normalization* dihitung dari empat citra sekaligus — ini mengurangi kebutuhan *mini-batch* besar, kunci pelatihan pada satu GPU.
+- **CIoU loss**: fungsi loss regresi kotak pengganti sum-squared. Selain menghukum ketidakcocokan luasan (IoU), CIoU juga menghukum jarak antara pusat kotak prediksi dan kebenaran serta ketidaksesuaian rasio aspek, sehingga regresi kotak konvergen lebih cepat dan lebih tepat.
+- **Self-Adversarial Training (SAT)**: pelatihan dua tahap di mana model terlebih dahulu menghasilkan citra adversarial terhadap dirinya sendiri (mengubah piksel, bukan bobot, untuk "menipu" deteksi), kemudian dilatih agar tetap mendeteksi dengan benar pada citra yang diubah itu — bentuk regularisasi yang memperkuat ketahanan.
+- **CmBN** (*Cross mini-Batch Normalization*): statistik normalisasi dikumpulkan dari beberapa iterasi kecil dalam satu *batch*, menstabilkan pelatihan batch kecil.
+- Pendukung lain: *label smoothing* (target kelas dilembutkan dari 0/1 keras menjadi nilai antara, mengurangi overconfidence), *DropBlock* (regularisasi yang membuang blok wilayah bersebelahan pada peta fitur alih-alih piksel acak), penjadwalan *cosine annealing*, dan bentuk masukan acak.
 
-## Keunggulan
-- Kurva kecepatan-akurasi terbaik pada kelasnya saat rilis.
-- Praktis dan reprodusibel.
-- Dokumentasi teknik yang kaya.
+### Bag of Specials: Modul Tambahan
 
-## Keterbatasan
-- Kompleksitas banyak hyperparameter/teknik.
-- Masih berbasis anchor.
-- Peningkatan bersifat rekayasa, bukan paradigma baru.
+Teknik BoS yang dipertahankan antara lain: aktivasi **Mish** (fungsi aktivasi halus pengganti ReLU yang terbukti memberi akurasi sedikit lebih baik pada backbone ini), **SAM** termodifikasi (*Spatial Attention Module*: modul perhatian yang menimbang wilayah penting pada peta fitur; penulis mengubahnya dari perhatian spasial menjadi perhatian titik), dan **DIoU-NMS**: *Non-Maximum Suppression* yang menyeleksi kotak duplikat bukan hanya dari luas irisan, tetapi juga jarak antar-pusat kotak, sehingga dua objek bersebelahan lebih jarang saling hapus.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-Sebagai resep rekayasa acuan, YOLOv4 sering menjadi basis modifikasi domain (termasuk deteksi bunga apel dengan pruning dalam tinjauan ini), sehingga relevan untuk memahami varian aplikatif RGB/RGB-D.
+Pengujian dilakukan pada COCO dengan analisis ablation menyeluruh — inilah nilai ilmiah utama makalah ini: pengaruh tiap fitur, tiap kombinasi BoF/BoS, dan tiap pilihan backbone diukur terpisah. Hasil akhir pada COCO test-dev:
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+- YOLOv4: 43,5% AP dan 65,7% AP50, pada kecepatan ±65 FPS (Tesla V100).
+- Peningkatan terhadap YOLOv3 (33,0% AP, bab 003): sekitar 10 poin AP tanpa kehilangan status *real-time*.
+- Perbandingan sezaman: mengungguli kombinasi kecepatan-akurasi EfficientDet pada pengujian penulis, dengan kebutuhan pelatihan jauh lebih ringan.
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
-- [009 - 2024 - YOLOv10 - Fondasi RGB](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)
+Ablation menunjukkan CSP backbone, Mosaic, dan CIoU termasuk penyumbang gain paling konsisten; dan yang tak kalah penting bagi praktik, seluruh konfigurasi terbukti dapat dilatih pada satu GPU 1080 Ti/2080 Ti.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kelebihan dan Keterbatasan
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+Kelebihan: (1) titik kecepatan-akurasi terbaik saat rilis; (2) resep lengkap dan terdokumentasi, direproduksi luas; (3) hemat perangkat — pelatihan satu GPU; (4) nilai metodologis: peta kontribusi puluhan teknik dalam satu kerangka uji.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+Keterbatasan: (1) jumlah teknik dan hiperparameter yang ditumpuk sangat banyak, sehingga menyetel ulang untuk dataset baru tidak sepele; (2) tetap berbasis *anchor*; (3) peningkatannya bersifat rekayasa inkremental, bukan gagasan konseptual baru; (4) dari sisi reproduksi, sebagian klaim ablation sensitif pada detail implementasi yang tidak semuanya terdokumentasi selengkap kode sumbernya.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kaitan dengan Bab Lain
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Resep YOLOv4 berdiri langsung di atas bab 003: head dan kerangka dasarnya adalah YOLOv3. Bahan-bahannya datang dari banyak bab lain: piramida fitur FPN (bab 018), pola CSP dari keluarga desain backbone, serta tradisi augmentasi dan loss dari literatur deteksi umum. Sebagai "resep jadi", YOLOv4 menjadi basis modifikasi aplikatif dalam tinjauan ini — misalnya deteksi bunga apel dengan pemangkasan model (bab 122) — dan menjadi titik referensi bagi YOLOX (bab 005) yang kemudian merombak head-nya menjadi *anchor-free*.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-YOLOv4 menyatukan praktik terbaik deteksi menjadi resep tunggal yang optimal dan praktis, memperkuat peran augmentasi (Mosaic) dan loss modern (CIoU) sebagai standar pada detektor real-time.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `bochkovskiy2020yolov4` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 004/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `bochkovskiy2020yolov4`. Ringkasan yang aman dikutip: "YOLOv4 menyeleksi dan mengombinasikan teknik pelatihan (Bag of Freebies: Mosaic, CIoU loss, SAT) dan modul arsitektur (Bag of Specials: CSP, SPP, PAN, Mish) menjadi detektor 43,5% AP pada COCO dengan ±65 FPS yang dapat dilatih pada satu GPU konsumen." Angka 43,5% / 65,7% AP50 / ±65 FPS dari abstrak naskah; rincian ablation per komponen sebaiknya dikutip langsung dari tabel-tabel naskah.

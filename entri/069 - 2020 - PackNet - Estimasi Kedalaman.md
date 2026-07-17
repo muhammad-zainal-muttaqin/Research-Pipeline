@@ -1,203 +1,105 @@
 # 069 - 3D Packing for Self-Supervised Monocular Depth Estimation
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 069 dari 154 |
 | Kunci BibTeX | `guizilini2020packnet` |
-| Judul | 3D Packing for Self-Supervised Monocular Depth Estimation |
-| Penulis | Guizilini, Vitor; Ambrus, Rares; Pillai, Sudeep; Raventos, Allan; Gaidon, Adrien |
+| Judul asli | 3D Packing for Self-Supervised Monocular Depth Estimation |
+| Penulis | Vitor Guizilini, Rares Ambrus, Sudeep Pillai, Allan Raventos, Adrien Gaidon (Toyota Research Institute) |
 | Tahun | 2020 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Estimasi Kedalaman |
-| Kata kunci | depth monokular, self-supervised, 3D packing, skala metrik, DDAD |
+| Venue | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2020), hal. 2485–2494 |
+| Tema | Estimasi Kedalaman |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1905.02693
+- **CVPR Open Access (versi penerbit):** https://openaccess.thecvf.com/content_CVPR_2020/html/Guizilini_3D_Packing_for_Self-Supervised_Monocular_Depth_Estimation_CVPR_2020_paper.html
+- **Repositori kode resmi (TRI-ML):** https://github.com/TRI-ML/packnet-sfm
+- **Google Scholar:** https://scholar.google.com/scholar?q=3D%20Packing%20for%20Self-Supervised%20Monocular%20Depth%20Estimation
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=3D%20Packing%20for%20Self-Supervised%20Monocular%20Depth%20Estimation&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-estimasi-kedalaman)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=3D%20Packing%20for%20Self-Supervised%20Monocular%20Depth%20Estimation
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=3D%20Packing%20for%20Self-Supervised%20Monocular%20Depth%20Estimation&sort=relevance
+Makalah ini memperkenalkan PackNet, jaringan untuk estimasi kedalaman monokular — memprediksi jarak setiap piksel dari satu citra RGB saja — yang dilatih secara swa-awas (*self-supervised*), yaitu hanya dari video monokular tanpa label kedalaman dan tanpa pra-pelatihan tersupervisi di ImageNet. Kontribusi utamanya ada dua. Pertama, arsitektur *encoder-decoder* baru yang mengganti *downsampling* (penurunan resolusi) dan *upsampling* (penaikan resolusi) standar dengan blok *packing* dan *unpacking* simetris berbasis konvolusi 3D, sehingga detail spasial yang biasanya hilang saat kompresi fitur dapat dipertahankan dan dipulihkan. Kedua, skema supervisi kecepatan lemah (*weak velocity supervision*): besaran translasi ego-gerak kendaraan yang diprediksi jaringan pose dicocokkan dengan pengukuran kecepatan kamera, sehingga peta kedalaman yang dihasilkan berskala metrik (satuan meter nyata), bukan sekadar skala relatif.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasil utamanya: meskipun hanya dilatih dari video mentah, PackNet mengungguli metode swa-awas, semi-supervisi, dan bahkan beberapa metode tersupervisi penuh pada tolok ukur KITTI; performanya membaik ketika resolusi masukan dan jumlah parameter dinaikkan tanpa *overfitting*; serta berjalan *real-time*. Makalah ini juga merilis DDAD (*Dense Depth for Automated Driving*), dataset berkendara baru dengan ground truth LiDAR berjangkauan hingga 250 m.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 2485--2494 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode depth monokular swa-awas yang memakai operasi packing/unpacking 3D untuk mempertahankan detail spasial dan estimasi skala metrik memakai isyarat kecepatan kamera.
+Estimasi kedalaman dari satu citra adalah masalah *ill-posed*: satu piksel pada citra berkorespondensi dengan tak berhingga titik di sepanjang sinar pandang kamera. Metode tersupervisi awal, misalnya Eigen dkk. (bab 062), memecahkannya dengan melatih jaringan pada pasangan citra dan peta kedalaman dari sensor, tetapi label semacam itu mahal dan jarang. Jalur swa-awas dibuka oleh Monodepth (bab 063), yang memakai konsistensi kiri-kanan pada pasangan stereo, lalu disempurnakan Monodepth2 (bab 064), yang melatih kedalaman dan ego-gerak bersamaan dari video monokular dengan *loss* fotometrik.
 
-## Abstrak (Parafrase)
-PackNet memakai blok packing dan unpacking 3D (mengganti downsampling/upsampling standar) untuk mempertahankan detail spasial pada depth swa-awas video. Ia juga memanfaatkan weak velocity supervision (kecepatan kamera) untuk memulihkan skala metrik yang biasanya ambigu pada monokular. Makalah merilis dataset DDAD dan mencapai SOTA swa-awas.
+Dua kelemahan spesifik masih melekat pada jalur swa-awas itu. Pertama, arsitektur *encoder-decoder* konvensional menurunkan resolusi fitur dengan *max-pooling* atau konvolusi berlangkah (*strided convolution*). Kedua operasi itu membuang informasi spasial frekuensi tinggi, sehingga objek tipis dan jauh — tiang, pejalan kaki — menjadi kabur pada peta kedalaman keluaran. Kedua, kedalaman monokular swa-awas hanya terdefinisi sampai faktor skala yang tidak diketahui: video yang sama direkonstruksi sama baiknya pada dunia berukuran dua kali lipat dengan kamera bergerak dua kali lebih cepat. Akibatnya, evaluasi standar harus menyamakan skala prediksi dengan ground truth menggunakan median, dan hasilnya tidak langsung dapat dipakai untuk navigasi kendaraan yang menuntut jarak dalam meter.
 
-## Latar Belakang & Konteks
-Downsampling standar menghilangkan detail spasial penting, dan estimasi skala metrik sulit dari monokular tanpa isyarat tambahan.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Downsampling standar menghilangkan detail spasial.
-- Skala metrik ambigu pada monokular.
-- Detail objek jauh sulit dipertahankan.
-- Swa-awas video menuntut kualitas tinggi.
-- Dataset berkendara berkualitas terbatas.
+Gagasan inti PackNet adalah mengganti pembuangan informasi dengan pemadatan informasi. Alih-alih menurunkan resolusi dengan membuang piksel, blok *packing* memindahkan detail spasial ke dimensi kanal secara utuh melalui operasi *space-to-depth*, lalu memadatkannya dengan konvolusi 3D yang dipelajari. Di sisi dekoder, blok *unpacking* melakukan proses cermin: konvolusi 3D menyiarkan kembali informasi kanal ke ruang spasial melalui operasi *depth-to-space*. Karena pemadatan dan pemulihan sama-sama dipelajari dan simetris, jaringan dapat memutuskan sendiri detail mana yang disimpan pada setiap tingkat resolusi.
 
-## Tujuan & Pertanyaan Penelitian
-- Mempertahankan detail via packing/unpacking 3D.
-- Memulihkan skala metrik via kecepatan kamera.
-- Menyediakan dataset berkendara (DDAD).
+Gagasan kedua bersifat geometris. Ketidakpastian skala monokular dapat dihapus dengan satu pengukuran eksternal yang murah: kecepatan kamera, yang pada kendaraan tersedia dari odometri. Dengan menambahkan *loss* yang mencocokkan besaran translasi prediksi jaringan pose terhadap kecepatan terukur, seluruh sistem — kedalaman dan gerak — terkunci pada skala metrik tanpa satu pun label kedalaman.
 
-## Tinjauan Terdahulu / Posisi Literatur
-PackNet menyempurnakan depth swa-awas video (Monodepth2) dengan operasi 3D.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Pelatihan Swa-awas dengan Loss Fotometrik
 
-- Monodepth2 — swa-awas video (pembanding).
-- 3D packing/unpacking — operasi baru.
-- Weak velocity supervision — skala metrik.
-- Dataset DDAD (dirilis).
+Kerangka pelatihan mewarisi Monodepth2 (bab 064). Dua jaringan dilatih bersama: jaringan kedalaman (PackNet) yang menerima satu *frame* target dan mengeluarkan peta kedalaman per piksel, serta jaringan pose yang menerima pasangan *frame* dan mengeluarkan satu transformasi kaku (rotasi dan translasi) di antara keduanya. Dengan kedalaman target, pose relatif, dan intrinsik kamera yang diketahui, piksel dari *frame* tetangga dapat diproyeksikan ulang ke *frame* target. Selisih fotometrik antara citra target asli dan citra hasil pelengkungan (*warping*) — diukur dengan kombinasi L1 dan SSIM (*Structural Similarity*, ukuran kemiripan struktur citra) — menjadi sinyal pelatihan. Kedalaman yang salah menghasilkan rekonstruksi yang buruk, sehingga meminimalkan selisih ini sama artinya dengan mempelajari geometri adegan, tanpa label kedalaman.
 
-## Metodologi & Arsitektur
-Packing blocks memampatkan detail spasial ke kanal (Space2Depth + 3D conv) dan unpacking memulihkannya, menjaga detail; pelatihan swa-awas photometric; weak velocity supervision memakai kecepatan kamera untuk skala metrik; evaluasi pada KITTI & DDAD.
+### Blok Packing: Space-to-Depth dan Konvolusi 3D
 
-Komponen / langkah metodologis utama:
+Komponen pertama blok packing adalah *space-to-depth* (diperkenalkan pada SuperDepth, ICRA 2019): piksel disusun ulang tanpa ada yang dibuang. Secara konkret, fitur berukuran H×W×C dipartisi menjadi blok 2×2 piksel; keempat piksel setiap blok ditumpuk menjadi empat kanal pada satu posisi, menghasilkan H/2×W/2×4C. Resolusi spasial berkurang separuh pada tiap sumbu, tetapi seluruh informasi tetap ada — berbeda dengan *max-pooling* yang membuang tiga dari empat nilai.
 
-- 3D packing/unpacking blocks (menjaga detail).
-- Photometric self-supervision (video).
-- Weak velocity supervision (skala metrik).
-- Backbone dalam untuk detail.
-- Dataset DDAD baru.
-- Evaluasi KITTI & DDAD.
+Komponen kedua adalah konvolusi 3D, yaitu konvolusi yang kaidahnya sama dengan konvolusi 2D tetapi kernel-nya membentang pada tiga dimensi. Pada PackNet, tumpukan kanal hasil *space-to-depth* diperlakukan sebagai volume dengan dimensi kedalaman buatan, sehingga kernel 3D dapat mencampur informasi antar-piksel yang semula bertetangga sekaligus antar-kanal fitur. Hasilnya adalah representasi termampatkan yang mempertahankan detail halus; penulis menyebutnya *3D inductive bias* (bias struktural yang cocok dengan sifat 3D adegan). *Encoder* PackNet menyusun beberapa blok packing bertingkat hingga fitur mencapai resolusi terkecil.
 
-## Kontribusi Utama
-1. Operasi packing/unpacking 3D menjaga detail.
-2. Skala metrik dari isyarat kecepatan.
-3. SOTA swa-awas saat rilis.
-4. Dataset DDAD untuk komunitas.
+### Blok Unpacking: Proses Cermin di Dekoder
 
-## Rincian Eksperimen
-Diuji pada KITTI dan DDAD dengan metrik depth (termasuk evaluasi skala metrik), dibandingkan Monodepth2 dan swa-awas lain.
+Dekoder membalik urutan tersebut dengan blok *unpacking*: konvolusi 3D terlebih dahulu memperluas informasi kanal, kemudian *depth-to-space* menyusun ulang kanal menjadi piksel spasial — kebalikan persis dari *space-to-depth* — sehingga resolusi naik dua kali per blok tanpa interpolasi. Pada *upsampling* konvensional (misalnya *nearest-neighbor* lalu konvolusi), nilai piksel baru dihasilkan dengan menebak dari tetangganya; pada *unpacking*, nilai piksel baru direkonstruksi dari informasi yang memang disimpan saat *packing*. Dekoder juga menerapkan super-resolusi kedalaman ala SuperDepth: kedalaman diprediksi pada beberapa resolusi dan dihaluskan hingga resolusi penuh.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Diagram alur satu pasang blok simetris:
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI | AbsRel/RMSE | SOTA swa-awas saat rilis |
-| DDAD | AbsRel/RMSE | dataset baru, skala metrik |
-| Ablation | packing/velocity | keduanya menyumbang gain |
+```
+ENCODER (packing)                  DECODER (unpacking)
+H x W x C                          H/2 x W/2 x C'
+   | space-to-depth                    | konvolusi 3D
+   v (blok 2x2 -> kanal)               v
+H/2 x W/2 x 4C  ---------------->  H x W x C''  (keluaran)
+   | konvolusi 3D                  ^ depth-to-space
+   v (padatkan kanal)              | (kanal -> blok 2x2)
+H/2 x W/2 x C'  ------------------ +
+```
 
-## Temuan Kunci
-- Operasi 3D menjaga detail lebih baik dari downsampling.
-- Isyarat kecepatan memulihkan skala metrik.
-- Swa-awas dapat mencapai skala metrik.
-- Detail objek jauh membaik.
+Panah mendatar menyatakan hubungan simetris: apa yang dipadatkan *encoder* pada resolusi tertentu dipulihkan dekoder pada resolusi yang sama, ditambah koneksi lintas (*skip connection*) seperti pada U-Net pada umumnya.
 
-## Keunggulan
-- Detail spasial terjaga.
-- Skala metrik swa-awas.
-- Dataset DDAD.
+### Supervisi Kecepatan untuk Skala Metrik
 
-## Keterbatasan
-- Operasi 3D menambah komputasi.
-- Skala metrik bergantung isyarat kecepatan.
-- Fokus domain berkendara.
+Jaringan pose memprediksi vektor translasi antar-*frame*. Tanpa pengikat eksternal, norma vektor ini bebas berskala. Supervisi kecepatan menambahkan *loss* sederhana: norma translasi prediksi pada interval waktu antar-*frame* harus cocok dengan jarak tempuh yang dihitung dari kecepatan kendaraan terukur. Karena kedalaman dan pose dilatih bersama dan saling terkait melalui proyeksi geometris, penguncian skala pada pose merambat ke peta kedalaman. Hasilnya, model (disebut PackNet-SfM, *structure-from-motion*) mengeluarkan kedalaman dalam meter dan tidak lagi memerlukan penyamaan skala median terhadap ground truth saat pengujian — pada tolok ukur odometri KITTI, varian ini tetap kompetitif terhadap metode monokular lain yang justru masih memerlukan penskalaan ground truth.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Inferensi
 
-## Relevansi terhadap Tema Tinjauan
-PackNet menunjukkan swa-awas dapat mencapai skala metrik — relevan bagi pseudo-depth metrik untuk deteksi 3D/RGB-D dalam tinjauan.
+Saat inferensi hanya jaringan kedalaman yang dipakai: satu citra masuk, peta kedalaman per piksel keluar dalam satu lintasan maju. Karena tidak bergantung pada pra-pelatihan ImageNet, seluruh bobot dipelajari untuk tugas geometris ini; dengan optimasi TensorRT, model berjalan *real-time*.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Estimasi Kedalaman** yang baik dibaca berdampingan:
+## Eksperimen dan Hasil
 
-- [062 - 2014 - Depth dari Citra Tunggal (Eigen dkk.) - Estimasi Kedalaman](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md)
-- [063 - 2017 - Monodepth (Left-Right Consistency) - Estimasi Kedalaman](./063%20-%202017%20-%20Monodepth%20%28Left-Right%20Consistency%29%20-%20Estimasi%20Kedalaman.md)
-- [064 - 2019 - Monodepth2 - Estimasi Kedalaman](./064%20-%202019%20-%20Monodepth2%20-%20Estimasi%20Kedalaman.md)
-- [065 - 2019 - BTS (Local Planar Guidance) - Estimasi Kedalaman](./065%20-%202019%20-%20BTS%20%28Local%20Planar%20Guidance%29%20-%20Estimasi%20Kedalaman.md)
-- [066 - 2021 - AdaBins - Estimasi Kedalaman](./066%20-%202021%20-%20AdaBins%20-%20Estimasi%20Kedalaman.md)
-- [067 - 2021 - DPT (Dense Prediction Transformer) - Estimasi Kedalaman](./067%20-%202021%20-%20DPT%20%28Dense%20Prediction%20Transformer%29%20-%20Estimasi%20Kedalaman.md)
-- [068 - 2022 - MiDaS (Robust Monocular Depth) - Estimasi Kedalaman](./068%20-%202022%20-%20MiDaS%20%28Robust%20Monocular%20Depth%29%20-%20Estimasi%20Kedalaman.md)
-- [070 - 2021 - MonoIndoor - Estimasi Kedalaman](./070%20-%202021%20-%20MonoIndoor%20-%20Estimasi%20Kedalaman.md)
+Evaluasi mengikuti protokol Eigen dengan praproses Zhou dkk. (membuang *frame* statis dari data latih) pada KITTI. Metrik utama: AbsRel (*absolute relative error*, rata-rata selisih relatif terhadap ground truth, makin kecil makin baik), RMSE (akar rata-rata kuadrat galat dalam meter), dan δ<1,25 (persentase piksel dengan rasio prediksi/ground truth di bawah 1,25, makin besar makin baik). Angka berikut dari repositori resmi TRI-ML (resolusi masukan 192×640, kecuali disebut lain):
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Estimasi Kedalaman** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+- *Baseline* ResNet18 swa-awas (pra-latih ImageNet): AbsRel 0,116; RMSE 4,902; δ<1,25 = 0,865.
+- PackNet swa-awas (tanpa pra-latih ImageNet): AbsRel 0,111; RMSE 4,576; δ<1,25 = 0,880.
+- PackNet sadar-skala (CS→K, dilatih awal di Cityscapes lalu KITTI): AbsRel 0,108; δ<1,25 = 0,887; pada resolusi 384×1280 membaik menjadi AbsRel 0,106 dan δ<1,25 = 0,895.
 
-## Glosarium Istilah (tema Estimasi Kedalaman)
-Istilah penting untuk memahami makalah ini:
+Interpretasinya tiga hal. Pertama, pada arsitektur dan data yang sama, mengganti *downsampling* standar dengan blok packing mengurangi AbsRel dari 0,116 ke 0,111 dan mengungguli Monodepth2 (sekitar 0,115 pada pengaturan setara), padahal tanpa bantuan bobot ImageNet. Kedua, kenaikan resolusi masukan dua kali lipat memperbaiki semua metrik — perilaku yang jarang pada arsitektur 2D, yang cenderung jenuh atau *overfitting* — dan dijadikan bukti *3D inductive bias*. Ketiga, makalah melaporkan bahwa pada tolok ukur daring KITTI (dengan ground truth yang diperbaiki) PackNet-SfM mengungguli metode swa-awas, semi-supervisi, dan tersupervisi penuh saat rilis.
 
-- **Depth monokular** — Estimasi kedalaman dari satu citra RGB (ill-posed).
-- **Supervised** — Dilatih dengan ground-truth depth.
-- **Self-supervised** — Dilatih tanpa label depth via konsistensi stereo/video.
-- **Disparitas** — Pergeseran piksel antar-pandangan stereo.
-- **Skala metrik vs relatif** — Depth satuan nyata vs hanya urutan relatif.
-- **AbsRel** — Absolute Relative error (makin kecil makin baik).
-- **RMSE** — Root Mean Square Error peta depth.
-- **delta<1.25** — Persentase piksel dengan error di bawah ambang.
-- **Zero-shot** — Generalisasi ke dataset tak dilihat saat pelatihan.
-- **Pseudo-depth** — Depth prediksi model, pengganti sensor depth.
+Pada DDAD (384×640), PackNet swa-awas mencapai AbsRel 0,162 dan δ<1,25 = 0,823, dibandingkan baseline ResNet18 0,213 dan 0,761. Nilai AbsRel DDAD jauh lebih besar daripada di KITTI bukan karena model memburuk, melainkan karena ground truth DDAD menjangkau jarak jauh (hingga 250 m), sehingga galat pada jarak yang sulit ikut dihitung — celah antarmetode justru melebar pada rentang jauh. Generalisasi lintas domain diuji dengan mengevaluasi model terlatih langsung pada NuScenes tanpa penyetelan, dan PackNet dilaporkan menggeneralisasi lebih baik dari pembanding.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+DDAD sendiri adalah kontribusi data: 194 adegan latih (17.050 sampel) dan 60 adegan validasi (4.150 sampel) dari Amerika Serikat (San Francisco, Detroit, Ann Arbor) dan Jepang (Tokyo, Odaiba); enam kamera *global-shutter* 2,4 MP (1936×1216) tersinkron 10 Hz dengan cakupan 360°; ground truth dari LiDAR Luminar berjangkauan 250 m dengan presisi di bawah 1 cm. Pada makalah ini hanya kamera depan yang dipakai.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kelebihan dan Keterbatasan
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Kelebihan: (1) detail spasial terjaga berkat pemadatan tanpa pembuangan informasi, terlihat dari perbaikan konsisten atas baseline ber-pooling; (2) skala metrik dari isyarat kecepatan menghapus kebutuhan penskalaan ground truth saat pengujian; (3) membaik dengan resolusi dan parameter, sehingga pengguna dapat menukar komputasi dengan akurasi; (4) tidak memerlukan pra-pelatihan ImageNet dan berjalan *real-time*; (5) DDAD menyediakan evaluasi jarak jauh yang lebih rapat daripada KITTI.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Keterbatasan: (1) konvolusi 3D dan penyimpanan kanal hasil *packing* menambah beban komputasi dan memori dibanding *encoder* 2D setara, sehingga mode *real-time* memerlukan optimasi khusus seperti TensorRT; (2) skala metrik bergantung pada ketersediaan pengukuran kecepatan kamera — pada video umum tanpa odometri, keunggulan sadar-skala tidak berlaku; (3) seluruh evaluasi berada pada domain berkendara dengan gerak kamera dominan maju, sehingga klaim pada adegan umum belum teruji; (4) dari sisi rekayasa, *loss* fotometrik tetap mewarisi kelemahan Monodepth2 terhadap objek bergerak dan permukaan tak bertekstur, karena mekanisme pelatihannya tidak diubah pada makalah ini.
 
-## Kesimpulan
-PackNet memakai packing/unpacking 3D untuk menjaga detail dan weak velocity supervision untuk skala metrik pada depth swa-awas, serta merilis dataset DDAD.
+## Kaitan dengan Bab Lain
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `guizilini2020packnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Bab ini meneruskan garis swa-awas yang dibangun pada bab-bab sebelumnya: formulasi kedalaman-dari-video beserta *loss* fotometrik dan jaringan pose diwarisi langsung dari [Monodepth2](./064%20-%202019%20-%20Monodepth2%20-%20Estimasi%20Kedalaman.md) (bab 064), yang sendiri melanjutkan konsistensi fotometrik [Monodepth](./063%20-%202017%20-%20Monodepth%20%28Left-Right%20Consistency%29%20-%20Estimasi%20Kedalaman.md) (bab 063) dan tradisi regresi kedalaman monokular [Eigen dkk.](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md) (bab 062). Kontribusi PackNet bersifat ortogonal: bukan mengubah sumber supervisi, melainkan mengganti mekanisme kompresi fitur. Posisinya berseberangan dengan [MiDaS](./068%20-%202022%20-%20MiDaS%20%28Robust%20Monocular%20Depth%29%20-%20Estimasi%20Kedalaman.md) (bab 068) yang mengejar ketangguhan lintas dataset dengan kedalaman relatif — PackNet justru mengejar skala metrik pada satu domain berkendara. Bagi tinjauan RGB-D, PackNet memperlihatkan bahwa pseudo-kedalaman dari kamera tunggal dapat mencapai kualitas dan skala metrik yang layak menjadi pengganti atau pelengkap sensor kedalaman aktif.
 
----
-*Lembar 069/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Poin untuk Sitasi
+
+Kutip dengan kunci `guizilini2020packnet`. Ringkasan yang aman dikutip: "PackNet melatih estimasi kedalaman monokular secara swa-awas dari video dengan blok packing/unpacking simetris berbasis konvolusi 3D yang mempertahankan detail spasial, serta supervisi kecepatan lemah yang memulihkan skala metrik; pada KITTI model ini mengungguli metode swa-awas dan sejumlah metode tersupervisi saat rilis, dan ikut merilis dataset DDAD dengan ground truth LiDAR berjangkauan 250 m."
+
+Catatan verifikasi: angka AbsRel/RMSE/δ pada bagian Eksperimen dikutip dari tabel model pada repositori resmi TRI-ML, bukan dari tabel naskah; angka naskah sedikit berbeda karena DDAD diperbarui setelah CVPR 2020. Klaim "mengungguli metode tersupervisi penuh" merujuk pada tolok ukur daring KITTI sebagaimana dinyatakan abstrak — angka persisnya pada tabel naskah perlu dicek sebelum sitasi formal. Detail internal konvolusi 3D (jumlah blok, jumlah kanal per tingkat) tidak diperinci dalam bab ini dan perlu dirujuk ke naskah atau kode sumber.

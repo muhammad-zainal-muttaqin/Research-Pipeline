@@ -1,205 +1,131 @@
 # 025 - Swin Transformer: Hierarchical Vision Transformer Using Shifted Windows
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 025 dari 154 |
 | Kunci BibTeX | `liu2021swin` |
-| Judul | Swin Transformer: Hierarchical Vision Transformer Using Shifted Windows |
-| Penulis | Liu, Ze; Lin, Yutong; Cao, Yue; Hu, Han; Wei, Yixuan; Zhang, Zheng; Lin, Stephen; Guo, Baining |
+| Judul asli | Swin Transformer: Hierarchical Vision Transformer Using Shifted Windows |
+| Penulis | Ze Liu, Yutong Lin, Yue Cao, Han Hu, Yixuan Wei, Zheng Zhang, Stephen Lin, Baining Guo |
 | Tahun | 2021 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | Swin Transformer, shifted window, hierarkis, backbone, linear |
+| Venue | Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV 2021) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2103.14030
+- **Kode sumber resmi:** https://github.com/microsoft/Swin-Transformer
+- **Google Scholar:** https://scholar.google.com/scholar?q=Swin%20Transformer%3A%20Hierarchical%20Vision%20Transformer%20Using%20Shifted%20Windows
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Swin%20Transformer%3A%20Hierarchical%20Vision%20Transformer%20Using%20Shifted%20Windows&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Swin%20Transformer%3A%20Hierarchical%20Vision%20Transformer%20Using%20Shifted%20Windows
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Swin%20Transformer%3A%20Hierarchical%20Vision%20Transformer%20Using%20Shifted%20Windows&sort=relevance
+Makalah ini memperkenalkan Swin Transformer, *backbone* (jaringan pengekstrak fitur) visi berbasis Transformer untuk tujuan umum. Dua kelemahan Transformer visi sebelumnya, ViT (bab 024), diperbaiki sekaligus: biaya *self-attention* (atensi-diri, mekanisme yang membobot relasi antartoken) yang kuadratik terhadap jumlah token, dan peta fitur beresolusi tunggal yang tidak cocok untuk prediksi padat seperti deteksi objek dan segmentasi semantik. Solusinya: *self-attention* hanya dihitung di dalam jendela lokal yang tidak tumpang tindih, partisi jendela digeser pada lapisan berikutnya agar informasi tetap mengalir antar-jendela, dan peta fitur disusun hierarkis dari resolusi tinggi ke rendah.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Model terbesarnya mencapai akurasi top-1 87,3% pada klasifikasi ImageNet-1K (dengan pra-pelatihan ImageNet-22K), 58,7 box AP dan 51,1 mask AP pada COCO *test-dev*, serta 53,5 mIoU pada ADE20K — ketiganya melampaui hasil terbaik sebelumnya dengan margin lebih dari dua poin.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 10012--10022 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Membangun representasi hierarkis dengan self-attention berjendela bergeser (shifted windows), memberi kompleksitas linear dan menjadikannya backbone tujuan umum untuk deteksi/segmentasi.
+Pemodelan visi lama didominasi jaringan saraf konvolusi (CNN) seperti ResNet, yang membangun representasi secara hierarkis: resolusi peta fitur diturunkan bertahap sambil jumlah kanal dinaikkan. Struktur multi-skala ini penting karena ukuran objek dalam citra sangat bervariasi, dan kerangka hilir seperti FPN (*Feature Pyramid Network*, modul yang menggabungkan peta fitur beberapa resolusi untuk mendeteksi objek berbagai ukuran) dirancang di atasnya.
 
-## Abstrak (Parafrase)
-Swin Transformer menghitung self-attention di dalam jendela lokal non-overlap untuk kompleksitas linear terhadap ukuran citra, lalu menggeser partisi jendela antar-lapisan (shifted window) agar informasi mengalir antar-jendela. Peta fitur hierarkis multi-skala (via patch merging) menjadikannya backbone tujuan umum yang unggul pada klasifikasi, deteksi, dan segmentasi.
+Vision Transformer (ViT, bab 024) membuktikan arsitektur Transformer mampu menyaingi CNN pada klasifikasi: citra dipotong menjadi *patch* (petak piksel) berukuran tetap, setiap petak diubah menjadi satu *token* (vektor satuan pemrosesan), dan semua token berinteraksi melalui *self-attention* global. Desain ini menyimpan dua masalah. Pertama, biaya komputasinya kuadratik terhadap jumlah token karena setiap token berelasi dengan semua token lain — tidak terjangkau pada citra beresolusi tinggi yang menghasilkan ribuan token. Kedua, resolusi token dipertahankan sama dari awal sampai akhir, sehingga hanya dihasilkan peta fitur satu skala.
 
-## Latar Belakang & Konteks
-ViT global memiliki kompleksitas kuadratik terhadap jumlah token dan menghasilkan fitur single-scale, kurang ideal untuk prediksi padat (deteksi/segmentasi) yang membutuhkan multi-skala dan efisiensi.
+Upaya lain menekan biaya attention dengan *sliding window* (jendela geser): attention setiap piksel dibatasi pada tetangganya, tetapi himpunan pembanding yang berbeda per piksel membuat akses memorinya tidak efisien. Makalah ini merancang Transformer yang sekaligus efisien, hierarkis, dan kuat daya modelnya.
 
-## Permasalahan yang Diangkat
-- Attention global ViT kuadratik terhadap ukuran citra.
-- ViT menghasilkan fitur single-scale.
-- Prediksi padat butuh fitur hierarkis multi-skala.
-- Efisiensi diperlukan untuk resolusi tinggi.
-- Backbone tujuan umum berbasis Transformer belum ada.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Menurunkan kompleksitas attention menjadi linear.
-- Membangun fitur hierarkis multi-skala.
-- Menyediakan backbone Transformer tujuan umum.
+Gagasan intinya terdiri atas dua bagian yang saling melengkapi. Pertama, *self-attention* dihitung hanya di dalam **jendela lokal** yang mempartisi citra tanpa tumpang tindih; karena ukuran jendela tetap, biaya per jendela konstan dan total biaya linear terhadap jumlah token. Kedua, partisi jendela **digeser** pada blok berikutnya, sehingga jendela baru melintasi batas jendela lama dan token yang tadinya terpisah kini berbagi satu jendela. Pergantian dua konfigurasi ini memulihkan konektivitas antar-jendela tanpa mengorbankan efisiensi.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Swin menyatukan keunggulan CNN hierarkis dengan attention Transformer, sebagai backbone untuk berbagai tugas.
+Di atas keduanya, representasi dibuat hierarkis melalui *patch merging*: kelompok token bertetangga digabung menjadi satu token baru per tahap, mengikuti pola penurunan resolusi pada CNN. Keluaran tiap tahap berbeda resolusi, sehingga Swin dapat langsung menggantikan *backbone* CNN pada kerangka deteksi atau segmentasi yang ada.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- ViT — Transformer global (pembanding).
-- CNN hierarkis (ResNet) — inspirasi multi-skala.
-- Window attention — kompleksitas linear.
-- Patch merging — pengurangan resolusi bertahap.
+### Partisi Patch dan Token
 
-## Metodologi & Arsitektur
-Citra dipartisi menjadi jendela; W-MSA menghitung attention dalam jendela; lapisan berikutnya memakai SW-MSA (jendela digeser) untuk koneksi antar-jendela; patch merging mengurangi resolusi dan menaikkan dimensi (tahap hierarkis); relative position bias ditambahkan.
+Citra RGB masukan dibagi menjadi *patch* 4×4 piksel yang tidak tumpang tindih. Setiap petak direpresentasikan sebagai gabungan nilai piksel mentahnya: 4×4×3 = 48 angka. Sebuah lapisan linear (*linear embedding*) memproyeksikan vektor 48 dimensi ini menjadi vektor C dimensi, dengan C sebagai lebar kanal dasar model. Pada citra 224×224, pembagian ini menghasilkan 56×56 = 3.136 token.
 
-Komponen / langkah metodologis utama:
+### Blok Swin Transformer
 
-- Window-based MSA (W-MSA) — kompleksitas linear.
-- Shifted window MSA (SW-MSA) — koneksi antar-jendela.
-- Patch merging untuk fitur hierarkis multi-skala.
-- Relative position bias.
-- Empat tahap resolusi menurun.
-- Backbone plug-in untuk deteksi/segmentasi.
+Blok Swin Transformer adalah blok Transformer standar yang modul attention-nya diganti attention berjendela. Susunannya: normalisasi *LayerNorm* (LN, penormalan fitur per token), modul *multi-head self-attention* berjendela, koneksi residual (keluaran modul ditambahkan ke masukannya), LN kedua, MLP dua lapis dengan aktivasi GELU, dan koneksi residual kedua. *Multi-head* berarti attention dihitung paralel pada beberapa sub-ruang fitur (kepala) yang lalu digabung; dimensi tiap kepala 32. Blok dipasangkan: blok berpartisi reguler (W-MSA) diikuti blok berpartisi bergeser (SW-MSA).
 
-## Kontribusi Utama
-1. Attention berjendela bergeser (linear + koneksi antar-jendela).
-2. Fitur hierarkis multi-skala.
-3. Backbone tujuan umum yang unggul lintas tugas.
-4. SOTA klasifikasi/deteksi/segmentasi saat rilis.
+### Attention di dalam Jendela (W-MSA)
 
-## Rincian Eksperimen
-Diuji pada ImageNet (klasifikasi), COCO (deteksi/segmentasi), dan ADE20K (segmentasi) dengan perbandingan terhadap CNN dan ViT.
+Pada W-MSA (*window multi-head self-attention*), peta fitur h×w token dipartisi menjadi jendela-jendela berisi M×M token (M = 7 secara baku, 49 token per jendela), dan attention hanya dihitung antar-token dalam jendela yang sama. Biaya attention global adalah Ω(MSA) = 4hwC² + 2(hw)²C — suku kedua kuadratik terhadap jumlah token hw — sedangkan versi berjendela Ω(W-MSA) = 4hwC² + 2M²hwC, linear terhadap hw karena M tetap.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Contoh numerik pada tahap pertama (h = w = 56): attention global membutuhkan 3.136² ≈ 9,8 juta pasangan token per kepala, sedangkan W-MSA membutuhkan 64 jendela × 49² = 153.664 pasangan — 64 kali lebih sedikit. Selisih ini makin besar pada citra beresolusi tinggi.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| ImageNet | top-1 | SOTA saat rilis |
-| COCO | AP box/mask | SOTA sebagai backbone |
-| ADE20K | mIoU | SOTA segmentasi semantik |
+### Partisi Jendela yang Digeser (SW-MSA)
 
-## Temuan Kunci
-- Shifted window menyeimbangkan efisiensi dan koneksi global.
-- Fitur hierarkis penting untuk prediksi padat.
-- Backbone Transformer dapat menyaingi/mengungguli CNN.
-- Serbaguna lintas tugas visi.
+Attention murni berjendela tidak memiliki koneksi antar-jendela, sehingga daya modelnya turun. SW-MSA (*shifted window*) menggeser partisi jendela sejauh ⌊M/2⌋ token ke arah kiri-atas (3 token untuk M = 7), sehingga informasi menyebar antar-jendela melalui kedalaman jaringan. Ilustrasinya pada peta 8×8 token dengan jendela 4×4 (geseran 2 token):
 
-## Keunggulan
-- Efisien (linear) dan hierarkis.
-- Backbone serbaguna dan kuat.
-- Banyak diadopsi luas.
+```
+partisi reguler (W-MSA)         partisi bergeser (SW-MSA)
+peta 8x8 token, jendela 4x4     digeser (2,2): 9 jendela
+┌────────┬────────┐             ┌───┬──────┬───┐
+│        │        │             │   │      │   │
+│   A    │   B    │             ├───┼──────┼───┤
+│        │        │             │   │      │   │
+├────────┼────────┤    ---->    ├───┼──────┼───┤
+│        │        │             │   │      │   │
+│   C    │   D    │             ├───┼──────┼───┤
+│        │        │             │   │      │   │
+└────────┴────────┘             └───┴──────┴───┘
+```
 
-## Keterbatasan
-- Lebih kompleks dari CNN standar.
-- Window attention membatasi konteks sangat jauh.
-- Butuh implementasi khusus untuk shifting.
+Jendela tengah pada konfigurasi bergeser mencakup seperempat wilayah jendela A, B, C, dan D; token yang tadinya terpisah kini saling ber-attention. Pergeseran menambah jumlah jendela (2×2 menjadi 3×3) dengan jendela tepi lebih kecil dari M×M. Solusi naif berupa *padding* (token kosong tambahan) menaikkan komputasi sampai 2,25 kali; makalah memakai *cyclic shift* (bagian yang keluar tepi dipindahkan ke sisi berlawanan) diikuti *attention mask* (larangan attention antar-token yang semula tidak bersebelahan), sehingga jumlah jendela yang dihitung tetap. Implementasi ini 13–18% lebih cepat daripada *padding* naif.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Penggabungan Patch dan Empat Tahap Hierarkis
 
-## Relevansi terhadap Tema Tinjauan
-Swin Transformer adalah backbone yang dipakai pada RGB-D/RGB-T SOD (mis. SwinNet) dan segmentasi RGB-D dalam tinjauan ini; fundamental untuk memahami metode berbasis Transformer.
+Lapisan *patch merging* ditempatkan antar-tahap: fitur setiap kelompok 2×2 token bertetangga digabungkan menjadi vektor 4C, lalu lapisan linear memproyeksikannya ke 2C. Jumlah token berkurang empat kali lipat dan resolusi turun dua kali lipat per dimensi. Pengulangan prosedur ini membentuk empat tahap beresolusi H/4×W/4, H/8×W/8, H/16×W/16, dan H/32×W/32 — sama dengan pembagian resolusi pada CNN seperti ResNet. Alurnya untuk Swin-T pada citra 224×224:
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+```
+citra RGB 224x224
+   │  patch 4x4 + linear embedding (48 -> C=96)
+   ▼
+Tahap 1:  56x56 token, dim 96    [2 blok Swin]
+   │  patch merging: gabung 2x2 tetangga (96 -> 192)
+   ▼
+Tahap 2:  28x28 token, dim 192   [2 blok Swin]
+   │  patch merging (192 -> 384)
+   ▼
+Tahap 3:  14x14 token, dim 384   [6 blok Swin]
+   │  patch merging (384 -> 768)
+   ▼
+Tahap 4:  7x7 token, dim 768     [2 blok Swin]
+   ▼
+keluaran multi-skala -> klasifikasi / deteksi / segmentasi
+```
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
+### Bias Posisi Relatif
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Attention tidak mengetahui posisi token. Alih-alih *absolute position embedding* (vektor posisi per token seperti pada ViT), Swin menambahkan *relative position bias* (bias posisi relatif) B pada skor kesamaan: Attention(Q,K,V) = SoftMax(QKᵀ/√d + B)V. Q, K, V adalah matriks *query*, *key*, dan *value*: proyeksi linear fitur token untuk mencari kesamaan, membandingkan, dan membawa isi yang dibobotkan. B diambil dari matriks (2M−1)×(2M−1) = 13×13 yang dipelajari, diindeks oleh jarak relatif antar-token pada kedua sumbu. Bias relatif ini memberi ketidakpekaan terhadap pergeseran posisi objek (*translation invariance*) yang berguna untuk prediksi padat.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+### Varian Model
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+Empat varian disediakan dengan mengatur lebar kanal dasar C dan jumlah blok per tahap: Swin-T (C = 96, blok {2,2,6,2}; 29 juta parameter dan 4,5 GFLOPs, sekelas ResNet-50), Swin-S (C = 96, blok {2,2,18,2}; 50 juta parameter, sekelas ResNet-101), Swin-B (C = 128, blok {2,2,18,2}; 88 juta parameter, sekelas ViT-B), dan Swin-L (C = 192, blok {2,2,18,2}; 197 juta parameter). FLOPs (*floating-point operations*) mengukur biaya komputasi satu inferensi; G berarti giga (miliar).
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Eksperimen dan Hasil
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Tiga tolok ukur dipakai: klasifikasi pada ImageNet-1K (1,28 juta citra latih, 1.000 kelas) dengan metrik akurasi top-1 (proporsi citra yang kelas teratas prediksinya benar); deteksi objek dan segmentasi instans pada COCO 2017 (118 ribu citra latih) dengan AP (*Average Precision*, ringkasan kurva presisi-recall pada berbagai ambang tumpang tindih) untuk kotak (*box AP*) dan masker piksel (*mask AP*); serta segmentasi semantik pada ADE20K (150 kategori) dengan mIoU (*mean Intersection over Union*, rata-rata rasio irisan terhadap gabungan antara peta kelas prediksi dan kebenaran). Deteksi diuji pada empat kerangka (Cascade Mask R-CNN, ATSS, RepPoints v2, Sparse R-CNN) dan segmentasi pada kerangka UperNet, dengan hanya mengganti *backbone*-nya.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Hasil utamanya sebagai berikut:
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+- ImageNet-1K: Swin-T mencapai 81,3% top-1, melampaui DeiT-S (79,8%), varian ViT berukuran sebanding, dengan margin +1,5 poin. Dengan pra-pelatihan ImageNet-22K (14,2 juta citra), Swin-B mencapai 86,4% pada resolusi 384², unggul 2,4 poin atas ViT-B/16 (84,0%) pada *throughput* (citra per detik) yang hampir sama (84,7 banding 85,9) dan FLOPs lebih rendah (47,0G banding 55,4G). Swin-L mencapai 87,3%.
+- COCO: Swin-T unggul konsisten +3,4 sampai +4,2 box AP atas ResNet-50 pada keempat kerangka deteksi (pada Cascade Mask R-CNN: 50,5 banding 46,3). Pada ukuran model dan kecepatan sebanding, Swin-B mencapai 51,9 box AP dan 45,0 mask AP, mengungguli ResNeXt101-64x4d (48,3 dan 41,7). Sistem terbaik (Swin-L pada kerangka HTC++ dengan pengujian multi-skala) mencapai 58,7 box AP dan 51,1 mask AP pada *test-dev*, melampaui hasil terbaik sebelumnya sebesar +2,7 (Copy-paste) dan +2,6 (DetectoRS). Kenaikan beberapa poin AP tergolong besar untuk tolok ukur ini.
+- ADE20K: Swin-S mencapai 49,3 mIoU, jauh di atas DeiT-S (44,0) pada biaya komputasi sebanding. Swin-L dengan pra-pelatihan ImageNet-22K mencapai 53,5 mIoU, unggul +3,2 atas SETR (50,3) — pendekatan berbasis ViT untuk segmentasi — dengan model lebih kecil (234 juta banding 308 juta parameter).
 
-## Kesimpulan
-Swin Transformer menghadirkan attention berjendela bergeser yang linear dan hierarkis, menjadi backbone Transformer tujuan umum yang banyak dipakai pada tugas RGB-D.
+Ablasi (uji dengan mematikan satu komponen) pada Swin-T menegaskan rancangannya. Tanpa penggeseran jendela, akurasi turun ke 80,2% top-1 (−1,1), 47,7 box AP (−2,8), dan 43,3 mIoU (−2,8) — bukti bahwa koneksi antar-jendela berkontribusi nyata. Bias posisi relatif memberi tambahan +1,2 poin top-1 dibanding tanpa posisi dan +2,3 mIoU; menambahkan posisi absolut justru sedikit merugikan deteksi dan segmentasi. Partisi bergeser seakurat *sliding window* (81,3% banding 81,4% top-1), tetapi Swin-T utuh 4,1 kali lebih cepat daripada implementasi *sliding window* naif.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `liu2021swin` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Kelebihan dan Keterbatasan
 
----
-*Lembar 025/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kelebihan: (1) kompleksitas linear membuat attention terjangkau pada citra beresolusi tinggi; (2) peta fitur hierarkis beresolusi standar CNN sehingga langsung kompatibel dengan FPN maupun UperNet; (3) partisi bergeser memulihkan koneksi antar-jendela dengan latensi tambahan kecil dan efisien pada perangkat keras umum; (4) satu arsitektur yang sama kuat pada klasifikasi, deteksi, dan segmentasi.
+
+Keterbatasan: attention tetap lokal per lapisan; interaksi sangat jauh hanya terjalin tidak langsung melalui tumpukan lapisan. Dari sisi rekayasa, implementasinya lebih rumit dari CNN standar (partisi bergeser, *cyclic shift*, *attention mask* khusus), dan *throughput* yang dilaporkan masih berbasis fungsi PyTorch umum — pembanding ResNe(X)t diuntungkan kernel cuDNN yang sangat dioptimalkan, sehingga perbandingan kecepatan belum final. Angka terbaik pada ketiga tolok ukur juga bergantung pada pra-pelatihan ImageNet-22K; tanpa data tambahan itu keunggulannya lebih tipis. Ukuran jendela baku 7×7 mengikat: pada resolusi yang jauh berbeda diperlukan *padding* atau interpolasi bias posisi.
+
+## Kaitan dengan Bab Lain
+
+Bab ini menjawab keterbatasan ViT pada [bab 024](./024%20-%202021%20-%20Vision%20Transformer%20%28ViT%29%20-%20Fondasi%20RGB.md): attention global kuadratik digantikan attention berjendela linear, dan peta fitur satu skala digantikan hierarki empat tahap. Pyramid Vision Transformer ([bab 164](./164%20-%202021%20-%20Pyramid%20Vision%20Transformer%20-%20Fondasi%20RGB.md)) turut membangun fitur multi-resolusi tetapi mempertahankan attention kuadratik. Desain ini disempurnakan penerusnya, Swin Transformer V2 ([bab 163](./163%20-%202022%20-%20Swin%20Transformer%20V2%20-%20Fondasi%20RGB.md)), yang menskalakan kapasitas dan resolusi model. Dari sisi CNN, ConvNeXt ([bab 162](./162%20-%202022%20-%20ConvNeXt%20-%20Fondasi%20RGB.md)) memodernisasi ResNet dengan menyerap pilihan desain Transformer sebagai pembanding kuat Swin. Jejak praktisnya terlihat pada metode hilir yang memakainya sebagai *backbone*, misalnya SwinNet ([bab 043](./043%20-%202022%20-%20SwinNet%20-%20RGB-D%20SOD.md)) untuk deteksi objek menonjol RGB-D.
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `liu2021swin` (ICCV 2021, halaman 10012–10022). Ringkasan yang aman dikutip: "Swin Transformer adalah *backbone* visi hierarkis yang menghitung *self-attention* di dalam jendela lokal tidak tumpang tindih dan menggeser partisi jendela antar-lapisan, sehingga berkompleksitas linear terhadap ukuran citra sekaligus tetap menghubungkan antar-jendela. Model ini mencapai 87,3% top-1 pada ImageNet-1K, 58,7 box AP pada COCO *test-dev*, dan 53,5 mIoU pada ADE20K."
+
+Catatan verifikasi sebelum sitasi formal: angka 87,3% top-1 dan 53,5 mIoU diperoleh dengan pra-pelatihan ImageNet-22K, dan angka COCO terbaik memakai kerangka HTC++ dengan pengujian multi-skala — sebutkan konteks ini bila mengutip. Akurasi Swin-B 224² pada ImageNet-1K tercatat 83,3% pada teks tetapi 83,5% pada tabel makalah (arXiv v2); periksa versi prosiding sebelum mengutipnya.

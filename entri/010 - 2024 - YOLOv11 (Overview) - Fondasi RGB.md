@@ -1,206 +1,116 @@
 # 010 - YOLOv11: An Overview of the Key Architectural Enhancements
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 010 dari 154 |
 | Kunci BibTeX | `khanam2024yolov11` |
-| Judul | YOLOv11: An Overview of the Key Architectural Enhancements |
-| Penulis | Khanam, Rahima; Hussain, Muhammad |
+| Judul asli | YOLOv11: An Overview of the Key Architectural Enhancements |
+| Penulis | Rahima Khanam, Muhammad Hussain |
 | Tahun | 2024 |
-| Venue / Jurnal | arXiv preprint arXiv:2410.17725 |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | YOLOv11, C3k2, C2PSA, multi-tugas, Ultralytics |
+| Venue | arXiv preprint arXiv:2410.17725 |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2410.17725
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLOv11%3A%20An%20Overview%20of%20the%20Key%20Architectural%20Enhancements
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLOv11%3A%20An%20Overview%20of%20the%20Key%20Architectural%20Enhancements&sort=relevance
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLOv11%3A%20An%20Overview%20of%20the%20Key%20Architectural%20Enhancements
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLOv11%3A%20An%20Overview%20of%20the%20Key%20Architectural%20Enhancements&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2410.17725 |
+Makalah ini adalah tinjauan arsitektural atas YOLOv11, detektor objek satu tahap yang dirilis Ultralytics pada September 2024 dan diperkenalkan pada konferensi YOLO Vision 2024 (YV24). Penulisnya dua peneliti Universitas Huddersfield, bukan pengembang YOLOv11; deskripsinya dihimpun dari sumber resmi yang tersebar karena Ultralytics tidak menerbitkan makalah formal untuk rilisnya. Tiga perubahan utama yang diidentifikasi: blok C3k2 menggantikan blok C2f di seluruh bagian jaringan, modul atensi spasial C2PSA ditambahkan setelah blok SPPF pada *backbone*, dan *head* deteksi disusun ulang. Satu keluarga model, dari ukuran *nano* hingga *extra-large*, menangani enam tugas visi: deteksi objek, segmentasi instans, klasifikasi citra, estimasi pose, deteksi objek berorientasi, dan pelacakan objek.
 
-## Ringkasan Eksekutif
-Tinjauan ringkas peningkatan arsitektural YOLOv11 (Ultralytics) yang memperkenalkan blok C3k2 dan modul attention C2PSA serta dukungan multi-tugas dalam satu kerangka.
+Hasil utama yang dilaporkan: varian YOLOv11m mencapai mAP 51,5% pada dataset COCO dengan 20,1 juta parameter, yaitu 22% lebih sedikit daripada YOLOv8m (25,9 juta parameter, 50,2% mAP). Seluruh angka kinerja dalam makalah mengacu dokumentasi dan tolok ukur resmi Ultralytics, bukan eksperimen yang dijalankan penulis tinjauan.
 
-## Abstrak (Parafrase)
-Makalah ini merangkum peningkatan kunci YOLOv11: penggantian blok C2f dengan C3k2 yang lebih efisien, penambahan modul C2PSA (Cross Stage Partial with Spatial Attention) untuk memperkuat fitur secara spasial, serta head yang dioptimalkan. YOLOv11 mendukung deteksi, segmentasi instance, estimasi pose, klasifikasi, dan oriented bounding box (OBB) dalam satu kerangka, dengan klaim peningkatan mAP pada parameter lebih sedikit dibanding YOLOv8.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Latar Belakang & Konteks
-Perkembangan YOLO sangat cepat sehingga praktisi memerlukan peta ringkas perubahan arsitektural tiap versi. YOLOv11 sebagai rilis Ultralytics membawa sejumlah blok baru yang perlu dipahami relatif terhadap YOLOv8-v10.
+Lini YOLO berkembang dalam iterasi yang rapat. Sejak deteksi satu tahap dirumuskan (bab 001), versi baru muncul hampir setiap tahun dengan blok arsitektur dan resep pelatihan yang berbeda. Tahun 2024 saja melahirkan YOLOv9 (bab 008) dengan mekanisme informasi gradien terprogram dan YOLOv10 (bab 009) dengan pelatihan bebas NMS (*Non-Maximum Suppression*, tahap penghapusan kotak duplikat sesudah prediksi).
 
-## Permasalahan yang Diangkat
-- Perubahan antar-versi YOLO cepat dan sulit dilacak.
-- Perlu ringkasan arsitektural yang jelas untuk praktisi.
-- Integrasi attention pada YOLO perlu dipetakan.
-- Kebutuhan satu kerangka multi-tugas.
-- Klaim efisiensi perlu konteks pembanding.
+Masalah yang diangkat makalah ini bersifat dokumentatif. Ultralytics, pemelihara YOLOv8 dan YOLOv11, tidak menerbitkan makalah formal untuk kedua model tersebut; detail arsitekturnya tersebar di repositori kode, dokumentasi daring, dan artikel blog. Akibatnya, praktisi yang hendak mengetahui apa yang berubah dari YOLOv8 ke YOLOv11 tidak memiliki satu rujukan tertulis yang runtut. Makalah ini mengisi celah itu dengan deskripsi arsitektural YOLOv11 yang dihimpun dari sumber resmi per Oktober 2024.
 
-## Tujuan & Pertanyaan Penelitian
-- Merangkum perubahan arsitektural kunci YOLOv11.
-- Menjelaskan peran blok C3k2 dan C2PSA.
-- Memetakan dukungan multi-tugas.
+## Ide Utama
 
-## Tinjauan Terdahulu / Posisi Literatur
-Sebagai tinjauan, makalah ini merangkum lini YOLOv8-v10 dan komponen attention/efisiensi terkini untuk memposisikan YOLOv11.
+Gagasan inti yang dilaporkan makalah: YOLOv11 mempertahankan kerangka tiga bagian YOLOv8, tetapi mengganti blok pemroses fitur utamanya dan menambahkan satu modul atensi. Secara mekanis, masukan tetap sebuah citra dan keluaran tetap kotak pembatas beserta kelasnya dalam satu kali evaluasi jaringan; yang berubah adalah cara fitur diolah di dalamnya. Blok C3k2 menggantikan blok C2f pada *backbone*, *neck*, dan *head* dengan struktur yang lebih hemat parameter. Modul C2PSA disisipkan di ujung *backbone* agar jaringan membobot posisi-posisi informatif pada peta fitur. Karena perubahannya modular, satu arsitektur yang sama diskalakan menjadi lima ukuran (n, s, m, l, x) dan dipasangi keluaran berbeda untuk enam tugas visi.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- YOLOv8 — basis (blok C2f).
-- Attention spasial/PSA — komponen C2PSA.
-- CSP design — dasar C3k2.
-- Ultralytics framework — implementasi multi-tugas.
+### Kerangka Tiga Bagian
 
-## Metodologi & Arsitektur
-Ulasan menjelaskan penggantian C2f->C3k2 (kernel lebih kecil, efisiensi), penambahan C2PSA untuk attention spasial, serta head yang disempurnakan; menampilkan konfigurasi skala model (n/s/m/l/x) dan cakupan tugas.
+Seperti seluruh YOLO modern, YOLOv11 terdiri atas tiga komponen. *Backbone* adalah jaringan konvolusi pengekstrak fitur: citra masukan diproses berlapis-lapis menjadi peta fitur pada beberapa resolusi. *Neck* menggabungkan peta fitur antarresolusi, umumnya dengan *upsampling* (penaikan resolusi) diikuti penggabungan kanal, agar informasi objek kecil dan besar tersedia bersama. *Head* menghasilkan prediksi akhir dari fitur gabungan tersebut. Perubahan YOLOv11 terhadap YOLOv8 terletak pada isi blok di ketiga komponen, bukan pada kerangka ini.
 
-Komponen / langkah metodologis utama:
+### Blok C3k2
 
-- Blok C3k2 menggantikan C2f (efisiensi).
-- Modul C2PSA (spatial attention) memperkuat fitur.
-- Head deteksi yang dioptimalkan.
-- Dukungan deteksi/segmentasi/pose/klasifikasi/OBB.
-- Skala model n hingga x.
-- Kompatibilitas ekosistem Ultralytics.
+Perubahan pertama adalah penggantian blok C2f dengan blok C3k2. Keduanya adalah varian dari desain CSP (*Cross Stage Partial*): aliran fitur dibagi dua cabang, satu cabang diolah melalui tumpukan konvolusi dan cabang lain diteruskan langsung, kemudian keduanya digabung kembali; pembagian ini menekan biaya komputasi tanpa memutus aliran gradien saat pelatihan. C2f, yang dipakai YOLOv8, mengolah cabangnya melalui serangkaian *bottleneck* (pasangan konvolusi yang mereduksi lalu mengembangkan jumlah kanal) dengan keluaran yang diakumulasikan terus-menerus. Menurut makalah, C3k2 adalah implementasi CSP yang lebih efisien: alih-alih satu konvolusi besar, dipakai dua konvolusi yang lebih kecil, dan penanda "k2" ditafsirkan sebagai ukuran *kernel* yang lebih kecil — *kernel* adalah matriks bobot konvolusi, misalnya 3×3, yang digeser di atas peta fitur.
 
-## Kontribusi Utama
-1. Meringkas peningkatan arsitektural YOLOv11 secara sistematis.
-2. Menyoroti integrasi attention (C2PSA).
-3. Menegaskan cakupan multi-tugas satu kerangka.
-4. Menyediakan acuan cepat bagi praktisi.
+Perilaku blok ditentukan parameter c3k. Bila c3k = False, C3k2 bekerja menyerupai C2f dengan *bottleneck* standar. Bila c3k = True, *bottleneck* digantikan modul C3 yang memungkinkan ekstraksi fitur lebih dalam. Tersedia pula varian C3k dengan ukuran *kernel* yang dapat disesuaikan untuk menangkap detail lebih halus. Efek praktisnya terukur pada jumlah parameter: dua konvolusi kecil berbobot lebih sedikit daripada satu konvolusi besar dengan jangkauan piksel yang setara.
 
-## Rincian Eksperimen
-Berbasis rilis dan benchmark Ultralytics di COCO, ulasan melaporkan peningkatan mAP dengan parameter lebih sedikit dibanding YOLOv8 (angka mengacu dokumentasi resmi).
+### SPPF dan C2PSA
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Pada ujung *backbone*, YOLOv11 mempertahankan blok SPPF (*Spatial Pyramid Pooling – Fast*) dari versi sebelumnya. SPPF melewatkan peta fitur melalui beberapa lapisan *max-pooling* (pengambilan nilai maksimum per jendela kecil) yang disusun seri, sehingga jaringan memperoleh konteks dari beberapa ukuran wilayah sekaligus tanpa mengubah resolusi. Setelah SPPF, YOLOv11 menambahkan blok baru C2PSA — dalam isi makalah ditulis *Cross Stage Partial with Spatial Attention*. Modul ini menerapkan atensi spasial: setiap posisi pada peta fitur diberi bobot, sehingga wilayah informatif mendapat bobot lebih besar daripada wilayah latar. Tujuannya memperkuat respons pada objek kecil atau objek yang tertutup sebagian, yang pada versi tanpa atensi lebih mudah hilang setelah resolusi diturunkan berkali-kali.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | mAP / parameter | peningkatan mAP dengan parameter lebih sedikit vs YOLOv8 |
-| Multi-tugas | cakupan | deteksi/segmentasi/pose/klasifikasi/OBB |
-| Skala model | n-x | trade-off kecepatan-akurasi per skala |
+### Head dan Lapisan Detect
 
-## Temuan Kunci
-- C3k2 dan C2PSA adalah perubahan inti YOLOv11.
-- Attention spasial meningkatkan kualitas fitur.
-- Satu kerangka menangani banyak tugas visi.
-- Efisiensi parameter membaik dibanding YOLOv8.
+*Head* YOLOv11 memproses tiga skala fitur dari *neck*, satu cabang per skala. Setiap cabang memakai blok C3k2 yang diikuti beberapa lapisan CBS — singkatan dari Convolution, BatchNorm, SiLU. *Batch normalization* menormalkan nilai aktivasi per batch agar pelatihan stabil; SiLU (*Sigmoid Linear Unit*) adalah fungsi aktivasi nonlinier berbentuk x dikali sigmoid(x). Lapisan Conv2D kemudian mereduksi fitur menjadi jumlah kanal keluaran yang dibutuhkan, dan lapisan Detect mengonsolidasikan prediksi akhir: koordinat kotak pembatas, skor *objectness* (keyakinan bahwa kotak berisi objek apa pun), dan skor kelas. Skema prediksi ini mewarisi desain *anchor-free* YOLOv8: posisi kotak diregresikan langsung, tanpa kotak acuan berukuran tetap.
 
-## Keunggulan
-- Ringkasan arsitektural yang jelas.
-- Menyoroti tren integrasi attention.
-- Berguna sebagai rujukan cepat.
+Alur data satu kali inferensi dirangkum pada diagram berikut:
 
-## Keterbatasan
-- Bersifat tinjauan (bukan kontribusi metode baru).
-- Angka bergantung dokumentasi vendor.
-- Detail teknis sebagian belum dipublikasi formal.
+```
+citra masukan 640x640 piksel
+        │
+        ▼
+┌─ BACKBONE ───────────────────────────────────────────┐
+│ konvolusi + blok C3k2 berulang (resolusi turun)       │
+│ ujung: SPPF -> C2PSA (pembobotan spasial peta fitur)  │
+└──────────────────────────────────────────────────────┘
+   ▼ P3 80x80      ▼ P4 40x40      ▼ P5 20x20
+┌─ NECK ───────────────────────────────────────────────┐
+│ upsample + gabungan fitur antarskala + blok C3k2      │
+└──────────────────────────────────────────────────────┘
+        │  (tiga cabang ke head, satu per skala)
+        ▼
+┌─ HEAD ───────────────────────────────────────────────┐
+│ C3k2 -> CBS -> Conv2D -> lapisan Detect               │
+└──────────────────────────────────────────────────────┘
+        ▼
+keluaran deteksi: koordinat box + objectness + skor kelas
+tugas lain: masker segmentasi | titik pose | box bersudut OBB
+```
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+P3, P4, dan P5 adalah peta fitur pada tiga tingkat resolusi; cabang 80×80 menangkap objek kecil, cabang 20×20 menangkap objek besar. Blok C3k2 muncul di ketiga komponen, sedangkan C2PSA hanya muncul sekali, di ujung *backbone*.
 
-## Relevansi terhadap Tema Tinjauan
-YOLOv11 sebagai rilis terbaru sering dijadikan backbone deteksi 2D pada sistem RGB-D mutakhir; tinjauan ini membantu memahami fitur yang relevan untuk integrasi tersebut.
+### Cakupan Tugas dan Skala Model
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Di luar deteksi standar, arsitektur yang sama mendukung lima tugas tambahan: segmentasi instans (pemisahan tiap objek hingga tingkat piksel), klasifikasi citra, estimasi pose (pendeteksian titik-titik kunci tubuh), deteksi objek berorientasi atau OBB (kotak pembatas dengan sudut rotasi, dipakai antara lain untuk citra udara), serta pelacakan objek antar-*frame*. Setiap tugas tersedia dalam lima ukuran model: n dengan 2,6 juta parameter, s dengan 9,4 juta, m dengan 20,1 juta, l dengan 25,3 juta, dan x dengan 56,9 juta — rentang yang dimaksudkan dari perangkat tepi (*edge device*, komputer kecil di dekat sumber data) hingga server ber-GPU.
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
+## Eksperimen dan Hasil
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Pengujian yang dirangkum makalah memakai dataset COCO, tolok ukur deteksi objek dengan 80 kelas. Metriknya mAP50-95, yaitu *mean Average Precision* (rata-rata presisi pada berbagai ambang *recall*, dirata-ratakan lintas kelas) yang dihitung pada ambang IoU 0,50 hingga 0,95 dengan langkah 0,05; IoU (*Intersection over Union*) adalah rasio luas irisan terhadap luas gabungan antara kotak prediksi dan kotak kebenaran. Makalah menampilkan kurva tolok ukur YOLOv11 terhadap YOLOv5 sampai YOLOv10 dengan angka yang mengacu dokumentasi resmi Ultralytics.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+Angka kunci pada COCO, masukan 640 piksel (FLOPs adalah jumlah operasi *floating-point*, ukuran biaya komputasi per citra):
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+| Model | mAP50-95 | Parameter (juta) | FLOPs (miliar) |
+|---|---|---|---|
+| YOLOv8n | 37,3 | 3,2 | 8,7 |
+| YOLO11n | 39,5 | 2,6 | 6,5 |
+| YOLOv8m | 50,2 | 25,9 | 78,9 |
+| YOLO11m | 51,5 | 20,1 | 68,0 |
+| YOLO11x | 54,7 | 56,9 | 194,9 |
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Interpretasi per pasangan ukuran. Pada skala *nano*, YOLO11n menaikkan mAP 2,2 poin sekaligus memangkas parameter sekitar 19% dan FLOPs sekitar 25%; akurasi dan efisiensi membaik bersamaan, bukan saling tukar. Pada skala *medium*, YOLO11m unggul 1,3 poin mAP dengan 22% parameter lebih sedikit — inilah klaim efisiensi utama yang dikutip makalah. Pada skala terbesar, YOLO11x mencapai 54,7% mAP, melampaui YOLOv8x (53,9%).
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Sisi kecepatan dilaporkan dalam bentuk latensi, yaitu waktu pemrosesan satu citra. Menurut makalah, YOLOv11s mempertahankan akurasi sekitar 47% mAP pada latensi 2–6 milidetik, dan YOLOv11x sekitar 54,5% mAP pada 13 milidetik. Dokumentasi Ultralytics yang dirujuk mencatat angka lebih rinci: YOLO11s 47,0% mAP pada 2,5 ms dan YOLO11x 54,7% mAP pada 11,3 ms, diukur pada GPU T4 dengan TensorRT (pustaka optimasi inferensi NVIDIA). Latensi 2,5 ms setara dengan 400 citra per detik, jauh di atas kebutuhan video 30 FPS.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kelebihan dan Keterbatasan
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Kelebihan makalah: menyusun deskripsi arsitektur YOLOv11 yang runtut dari sumber resmi yang tersebar; mengidentifikasi tiga perubahan inti (C3k2, C2PSA, head) secara tepat; serta mendokumentasikan cakupan multi-tugas dan skala model dalam satu rujukan. Bagi pembaca, makalah ini berfungsi sebagai acuan komponen sebelum membaca kode sumber.
 
-## Kesimpulan
-Tinjauan ini menyediakan peta cepat peningkatan YOLOv11 (C3k2, C2PSA, multi-tugas), menegaskan tren integrasi attention pada YOLO modern.
+Keterbatasan: (1) naskah bersifat tinjauan, bukan kontribusi metode; seluruh angka kinerja bersumber dari tolok ukur vendor dan tidak direproduksi secara independen oleh penulis. (2) Detail pelatihan — fungsi *loss*, augmentasi data, anggaran epoch — tidak dibahas karena Ultralytics memang tidak mempublikasikannya, sehingga perbandingan terbatas pada arsitektur. (3) Penamaan C2PSA tidak konsisten antara abstrak dan isi naskah (dicatat pada bagian Poin untuk Sitasi). (4) Secara konseptual, tafsiran "k2" sebagai "kernel size 2" adalah penjelasan penulis tinjauan, bukan dokumentasi resmi Ultralytics. (5) Dari sisi rekayasa, angka latensi diukur pada konfigurasi spesifik (GPU T4, TensorRT), sehingga tidak otomatis berlaku pada perangkat tepi lain.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `khanam2024yolov11` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Kaitan dengan Bab Lain
 
----
-*Lembar 010/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Bab ini melanjutkan garis yang diletakkan [bab 001 (YOLOv1)](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md): formulasi regresi satu tahap tetap menjadi dasar, hanya blok pengolah fiturnya yang berganti. Dari sisi waktu, YOLOv11 hadir sesudah dua pembaruan konseptual pada tahun yang sama, yaitu [bab 008 (YOLOv9)](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md) dan [bab 009 (YOLOv10)](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md), tetapi tidak mewarisi gagasan keduanya secara langsung; basisnya justru YOLOv8 dari pengembang yang sama. Perubahannya bersifat evolusi blok (C2f menjadi C3k2) dan penambahan atensi (C2PSA), bukan perubahan paradigma. Posisi YOLOv11 dalam keseluruhan evolusi lini ini juga dibahas pada [bab 032 (survei evolusi YOLO)](./032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md), yang menempatkannya sebagai rilis terbaru dalam perbandingan lintas versi.
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `khanam2024yolov11`. Ringkasan yang aman dikutip: "Khanam dan Hussain (2024) menyusun tinjauan arsitektural YOLOv11 dan mengidentifikasi blok C3k2, modul atensi spasial C2PSA, serta head yang disusun ulang sebagai perubahan utama terhadap YOLOv8, dengan dukungan enam tugas visi dalam satu kerangka."
+
+Catatan verifikasi sebelum sitasi formal: (1) seluruh angka mAP, parameter, FLOPs, dan latensi pada bab ini mengacu dokumentasi resmi Ultralytics (docs.ultralytics.com) sebagaimana dikutip makalah, bukan eksperimen penulis; cocokkan ulang sebelum dikutip. (2) Abstrak makalah menulis C2PSA sebagai "*Convolutional block with Parallel Spatial Attention*", sedangkan bagian 4.1.2 menulis "*Cross Stage Partial with Spatial Attention*" — pilih sesuai konteks kutipan. (3) Untuk model YOLOv11 itu sendiri, rujukan primer yang diminta Ultralytics adalah entri perangkat lunak (Jocher dan Qiu, 2024, repositori Ultralytics), bukan makalah tinjauan ini. (4) Tafsiran "k2" sebagai ukuran *kernel* 2 adalah penjelasan penulis makalah, bukan dokumentasi resmi.

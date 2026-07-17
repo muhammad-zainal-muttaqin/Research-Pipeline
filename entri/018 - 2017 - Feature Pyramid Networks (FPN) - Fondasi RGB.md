@@ -1,205 +1,104 @@
 # 018 - Feature Pyramid Networks for Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
+
 | Field | Nilai |
 |---|---|
-| Nomor entri | 018 dari 154 |
 | Kunci BibTeX | `lin2017fpn` |
-| Judul | Feature Pyramid Networks for Object Detection |
-| Penulis | Lin, Tsung-Yi; Doll{\'a |
+| Judul asli | Feature Pyramid Networks for Object Detection |
+| Penulis | Tsung-Yi Lin, Piotr Dollár, Ross Girshick, Kaiming He, Bharath Hariharan, Serge Belongie |
 | Tahun | 2017 |
-| Venue / Jurnal | Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | FPN, piramida fitur, top-down, koneksi lateral, multi-skala |
+| Venue | Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), hal. 2117–2125 |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+- **arXiv (naskah lengkap):** https://arxiv.org/abs/1612.03144
+- **DOI:** https://doi.org/10.48550/arXiv.1612.03144
+- **CVPR Open Access:** https://openaccess.thecvf.com/content_cvpr_2017/html/Lin_Feature_Pyramid_Networks_CVPR_2017_paper.html
+- **Google Scholar:** https://scholar.google.com/scholar?q=Feature%20Pyramid%20Networks%20for%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Feature%20Pyramid%20Networks%20for%20Object%20Detection&sort=relevance
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Feature%20Pyramid%20Networks%20for%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Feature%20Pyramid%20Networks%20for%20Object%20Detection&sort=relevance
+## Gambaran Umum
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Makalah ini memperkenalkan *Feature Pyramid Network* (FPN), arsitektur yang membangun piramida fitur bersemantik kuat pada semua skala dari satu citra masukan berskala tunggal. Masalah yang dipecahkan adalah ketimpangan pada jaringan konvolusi dalam: peta fitur beresolusi tinggi tepat lokalisasinya tetapi lemah semantiknya, sedangkan peta fitur dalam kaya semantik tetapi kasar resolusinya. FPN menyelesaikannya dengan jalur *top-down* yang mengalirkan semantik ke resolusi tinggi dan koneksi lateral yang menggabungkannya dengan fitur *backbone* (jaringan konvolusi ekstraksi fitur utama), hampir tanpa biaya tambahan karena memakai kembali fitur yang sudah dihitung. Dipasang pada detektor Faster R-CNN, FPN mencapai 36,2 *Average Precision* (AP) pada COCO *test-dev*, melampaui semua hasil model tunggal sebelumnya termasuk pemenang kompetisi COCO 2016, dengan kecepatan inferensi sekitar 5 *frame* per detik (FPS).
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 2117--2125 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Membangun piramida fitur bermakna semantik di semua skala melalui jalur top-down dan koneksi lateral, meningkatkan deteksi objek multi-skala secara hemat komputasi.
+Mengenali objek pada ukuran yang sangat bervariasi merupakan tantangan dasar dalam deteksi objek. Solusi standar sebelum jaringan konvolusi dalam adalah piramida citra berfitur: citra diubah ukurannya ke banyak skala, lalu fitur (misalnya HOG atau SIFT) dihitung pada setiap skala secara independen; detektor DPM bahkan mengambil sampel hingga 10 skala per oktaf. Pendekatan ini akurat tetapi mahal: waktu inferensi meningkat hingga empat kali lipat, dan pelatihan *end-to-end* pada piramida citra tidak memungkinkan karena keterbatasan memori. Akibatnya, detektor berbasis jaringan dalam seperti Fast R-CNN dan Faster R-CNN — detektor dua tahap yang memakai proposal wilayah (lihat [bab 014](./014%20-%202017%20-%20Faster%20R-CNN%20-%20Fondasi%20RGB.md)) — memakai peta fitur satu skala saja demi kecepatan, dengan konsekuensi deteksi objek kecil yang terbatas.
 
-## Abstrak (Parafrase)
-FPN mengatasi dilema bahwa fitur beresolusi tinggi minim semantik sedangkan fitur dalam kaya semantik namun beresolusi rendah. Dengan menambahkan jalur top-down yang menyalurkan semantik dari level tinggi ke rendah dan koneksi lateral yang menggabungkannya dengan fitur beresolusi tinggi, FPN menghasilkan piramida fitur kaya-semantik di semua level dengan tambahan biaya minimal.
+Jaringan konvolusi sebenarnya sudah menghasilkan hierarki fitur multi-skala secara internal, tetapi terdapat jurang semantik antarlevel: fitur dangkal hanya mengodekan pola tingkat rendah seperti tepi. Detektor satu tahap SSD (lihat [bab 015](./015%20-%202016%20-%20SSD%20-%20Fondasi%20RGB.md)) memakai hierarki ini untuk prediksi multi-skala, tetapi sengaja menghindari peta fitur dangkal dan mulai membangun piramida dari lapisan atas (misalnya conv4_3), sehingga kehilangan peta beresolusi tinggi yang justru penting bagi objek kecil. Inilah yang diperbaiki FPN: piramida fitur internal yang kuat semantik di semua level, tanpa harga komputasi piramida citra.
 
-## Latar Belakang & Konteks
-Deteksi objek multi-skala, khususnya objek kecil, sulit karena tidak ada representasi yang sekaligus beresolusi tinggi dan kaya semantik. Piramida citra mahal, sedangkan prediksi multi-skala terpisah kurang optimal.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Fitur resolusi tinggi minim semantik.
-- Fitur dalam minim resolusi untuk objek kecil.
-- Piramida citra mahal secara komputasi.
-- Prediksi multi-skala terpisah tak berbagi semantik.
-- Objek kecil sulit dideteksi.
+Gagasan inti FPN sederhana: hierarki multi-skala yang sudah ada di dalam jaringan konvolusi dapat dijadikan piramida fitur penuh asalkan setiap levelnya diperkaya dengan semantik dari level di atasnya. Masukannya satu citra berskala tunggal; keluarannya sekumpulan peta fitur pada beberapa resolusi, masing-masing dengan jumlah kanal sama dan semantik kuat. Pengayaan dilakukan oleh jalur *top-down*: peta fitur kasar dari level atas diperbesar resolusinya (*upsampling*) lalu dijumlahkan elemen demi elemen dengan peta fitur *backbone* pada resolusi yang sama melalui koneksi lateral berupa konvolusi 1×1. Prediksi dilakukan independen pada setiap level, seperti pada piramida citra berfitur, tetapi hampir tanpa biaya tambahan.
 
-## Tujuan & Pertanyaan Penelitian
-- Membangun piramida fitur kaya-semantik di semua skala.
-- Menyalurkan semantik top-down secara hemat.
-- Meningkatkan deteksi objek multi-skala.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-FPN memperbaiki piramida citra dan prediksi multi-skala terpisah dengan arsitektur top-down + lateral yang dapat dipasang pada RPN/Fast R-CNN.
+### Jalur Bottom-Up
 
-Karya/konsep pembanding yang relevan:
+Jalur *bottom-up* adalah perhitungan umpan maju *backbone* konvolusi biasa; makalah ini memakai ResNet, jaringan konvolusi dalam dengan koneksi residual. *Backbone* dibagi menjadi beberapa tahap (*stage*) yang masing-masing menurunkan resolusi spasial dengan faktor dua. Keluaran blok residual terakhir setiap tahap diambil sebagai acuan, diberi nama {C2, C3, C4, C5} dengan *stride* {4, 8, 16, 32} piksel terhadap citra masukan. *Stride* adalah jarak piksel pada citra asal yang diwakili satu sel peta fitur; stride 32 berarti satu sel mencakup wilayah 32×32 piksel. Tahap conv1 tidak disertakan karena jejak memorinya besar. Sebagai contoh, untuk citra 800×800 piksel, C2 berukuran 200×200, C3 100×100, C4 50×50, dan C5 25×25.
 
-- Piramida citra — pendekatan mahal sebelumnya.
-- Prediksi multi-skala (SSD) — tanpa berbagi semantik.
-- U-Net/hourglass — arsitektur top-down terkait.
-- Faster R-CNN — kerangka yang ditingkatkan.
+### Jalur Top-Down dan Koneksi Lateral
 
-## Metodologi & Arsitektur
-Jalur bottom-up (backbone) menghasilkan fitur multi-level; jalur top-down mengupsample fitur semantik tinggi; koneksi lateral (1x1 conv) menggabungkan dengan fitur bottom-up beresolusi sama; hasilnya piramida P2-P6 untuk prediksi. Dipasang sebagai neck ke RPN dan head.
+Pembangunan piramida dimulai dari atas: C5 dilewatkan ke konvolusi 1×1 yang mereduksi jumlah kanal menjadi 256. Konvolusi 1×1 (kernel satu kali satu piksel) mengubah jumlah kanal tanpa mengubah resolusi spasial. Hasilnya kemudian diperbesar resolusinya dua kali lipat dengan *upsampling* *nearest neighbor* (setiap nilai disalin ke empat sel berdekatan), lalu dijumlahkan elemen demi elemen dengan hasil konvolusi 1×1 dari C4. Proses yang sama diulang hingga level paling halus. Terakhir, setiap peta hasil penjumlahan dilewatkan ke konvolusi 3×3 untuk meredam efek *aliasing* (artefak tepi akibat *upsampling*), menghasilkan himpunan akhir {P2, P3, P4, P5}. Semua level piramida memiliki dimensi kanal tetap d = 256, dan lapisan-lapisan tambahan ini tidak memakai fungsi nonlinier karena pengaruhnya terbukti kecil. Satu level tambahan, P6, dibentuk dengan pencuplikan P5 berstride dua dan hanya dipakai oleh RPN untuk menampung *anchor* terbesar.
 
-Komponen / langkah metodologis utama:
+Diagram berikut menggambarkan aliran data antara kedua jalur pada ResNet dengan citra masukan 800×800 piksel.
 
-- Jalur bottom-up (backbone standar).
-- Jalur top-down (upsample semantik).
-- Koneksi lateral (1x1 conv) menggabungkan level.
-- Prediksi pada tiap level piramida.
-- Plug-in ke RPN/Fast R-CNN.
-- Biaya tambahan minimal.
+```
+ bottom-up (ResNet)      fusi                top-down        piramida akhir
+                                                              (d = 256 kanal)
 
-## Kontribusi Utama
-1. Piramida fitur kaya-semantik di semua skala.
-2. Peningkatan konsisten, terutama objek kecil.
-3. Hemat komputasi (tambahan minimal).
-4. Menjadi neck standar detektor modern.
+ C5 (25x25)  ──[1x1 konv]────────────────────────[3x3 konv]──► P5 (s=32)
+                    │
+                    ▼ upsampling 2x (nearest neighbor)
+ C4 (50x50)  ──[1x1 konv]──►(+) penjumlahan ────[3x3 konv]──► P4 (s=16)
+                    │
+                    ▼ upsampling 2x
+ C3 (100x100)──[1x1 konv]──►(+) penjumlahan ────[3x3 konv]──► P3 (s=8)
+                    │
+                    ▼ upsampling 2x
+ C2 (200x200)──[1x1 konv]──►(+) penjumlahan ────[3x3 konv]──► P2 (s=4)
+```
 
-## Rincian Eksperimen
-Diuji di COCO sebagai neck untuk RPN dan Fast R-CNN, dengan analisis peningkatan per ukuran objek (terutama kecil).
+Titik (+) menunjukkan penjumlahan elemen demi elemen antara peta hasil *upsampling* dari level di atasnya dan peta hasil konvolusi 1×1 dari *backbone*. Karena penjumlahan memerlukan dimensi sama, konvolusi 1×1 menyetarakan jumlah kanal terlebih dahulu. Hasilnya, P2 beresolusi tinggi tetapi kini membawa semantik kuat yang diwariskan berjenjang dari C5.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### FPN pada RPN
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | AP | peningkatan konsisten sebagai neck |
-| COCO (objek kecil) | AP-S | peningkatan terbesar |
-| Proposal (RPN) | recall | recall multi-skala meningkat |
+*Region Proposal Network* (RPN) adalah detektor *sliding window* kelas-agnostik: jaringan kecil digeser rapat di atas peta fitur untuk memprediksi skor keberadaan objek dan regresi *bounding box* (kotak pembatas objek) terhadap sekumpulan kotak acuan berukuran tetap yang disebut *anchor*. RPN asli bekerja pada satu peta fitur skala tunggal sehingga memerlukan banyak skala *anchor*. Dengan FPN, *head* yang sama (konvolusi 3×3 diikuti dua konvolusi 1×1 untuk klasifikasi dan regresi) dipasang pada setiap level, dan setiap level cukup diberi satu skala *anchor*: {32², 64², 128², 256², 512²} piksel pada {P2, P3, P4, P5, P6}, masing-masing dengan tiga rasio aspek {1:2, 1:1, 2:1}, total 15 *anchor* di seluruh piramida. Parameter *head* dibagi di semua level; pembagian ini tidak menurunkan akurasi, bukti bahwa semua level memiliki tingkat semantik setara. Pelabelan mengikuti aturan RPN asli berdasarkan *Intersection over Union* (IoU), rasio luas irisan terhadap gabungan dua kotak: *anchor* ber-IoU di atas 0,7 terhadap kotak benar berlabel positif, di bawah 0,3 berlabel negatif.
 
-## Temuan Kunci
-- Top-down + lateral menghasilkan semantik multi-skala.
-- Objek kecil paling diuntungkan.
-- Biaya komputasi kecil untuk gain besar.
-- Menjadi komponen standar (PAN/BiFPN turunannya).
+### FPN pada Fast R-CNN
 
-## Keunggulan
-- Sederhana dan hemat.
-- Peningkatan multi-skala konsisten.
-- Mudah dipasang ke banyak detektor.
+Fast R-CNN adalah detektor berbasis wilayah: setiap proposal wilayah (*Region of Interest*, RoI) diekstrak fiturnya dengan *RoI pooling* lalu diklasifikasikan. Agar RoI berbagai ukuran diarahkan ke level piramida yang tepat, dipakai rumus penempatan k = ⌊k₀ + log₂(√(wh)/224)⌋, dengan w dan h lebar-tinggi RoI pada citra masukan dan k₀ = 4 sebagai level acuan untuk RoI 224×224 (ukuran kanonis pra-pelatihan ImageNet). Contohnya, RoI 112×112 menghasilkan √(wh) = 112, sehingga log₂(112/224) = −1 dan k = 3: objek kecil diarahkan ke level beresolusi lebih halus. Setiap RoI kemudian dipooling ke ukuran 7×7 dan dilewatkan ke dua lapisan terhubung penuh (*fully-connected*) 1024 dimensi sebelum lapisan klasifikasi dan regresi. *Head* dua lapisan ini lebih ringan daripada *head* conv5 sembilan lapis pada Faster R-CNN berbasis ResNet, sehingga sebagian biaya piramida terkompensasi.
 
-## Keterbatasan
-- Menambah sedikit memori/komputasi.
-- Fusi penjumlahan sederhana (turunan memperbaiki).
-- Desain koneksi perlu penyesuaian per-arsitektur.
+## Eksperimen dan Hasil
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Eksperimen dilakukan pada dataset COCO 80 kelas: pelatihan pada gabungan 80 ribu citra latih dan 35 ribu citra validasi (*trainval35k*), ablasi pada 5 ribu citra *minival*, dan hasil akhir pada *test-dev* yang labelnya tidak dipublikasikan. Sisi pendek citra diubah menjadi 800 piksel saat pelatihan dan pengujian.
 
-## Relevansi terhadap Tema Tinjauan
-Konsep piramida fitur FPN mendasari neck (PANet, BiFPN) pada hampir semua YOLO modern; fundamental untuk memahami arsitektur detektor pada tinjauan YOLO+RGB-D.
+Hasil utama dengan ResNet-50 dirangkum pada tabel berikut.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+| Pengujian | Metrik | Baseline | FPN | Selisih |
+|---|---|---|---|---|
+| RPN (proposal) | AR1k | 48,3 (pada C4) | 56,3 | +8,0 |
+| RPN, objek kecil | AR1k-S | 32,0 | 44,9 | +12,9 |
+| Fast R-CNN (proposal tetap) | AP | 31,9 | 33,9 | +2,0 |
+| Fast R-CNN, objek kecil | AP-S | 15,7 | 17,8 | +2,1 |
+| Faster R-CNN (test-dev, ResNet-101) | AP | 35,7 (G-RMI, pemenang 2016) | 36,2 | +0,5 |
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
+Interpretasinya sebagai berikut. Pada RPN, metrik AR1k (rata-rata *recall*, yakni proporsi objek benar yang terjangkau, dengan 1000 proposal per citra) naik 8,0 poin, dan kenaikan terbesar terjadi pada objek kecil (+12,9 poin), menegaskan bahwa level halus bersemantik kuat menjawab kelemahan pendekatan skala tunggal. Pada Fast R-CNN dengan proposal yang sama, AP naik 2,0 poin, sehingga perbaikan tidak hanya datang dari proposal yang lebih baik tetapi juga dari fitur klasifikasi yang lebih kuat. Pada sistem Faster R-CNN penuh, FPN mengungguli baseline skala tunggal yang kuat sebesar 2,3 poin AP dan 3,8 poin AP@0,5 (AP pada ambang IoU 0,5). Di papan peringkat COCO, model tunggal ini melampaui pemenang kompetisi 2016 (G-RMI) tanpa memakai piramida citra.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Uji ablasi menegaskan peran tiap komponen. Menghapus koneksi lateral menurunkan AR1k RPN dari 56,3 menjadi 46,1 (turun 10,2 poin) karena lokalisasi fitur tidak lagi tepat setelah penurunan-penaikan resolusi berulang. Menghapus jalur *top-down* menurunkan AP Fast R-CNN dari 33,9 menjadi 24,9 (−9,0 poin), bukti kerugian besar bila fitur dangkal dipakai tanpa pengayaan semantik. Memakai hanya level P2 (dengan 750 ribu *anchor*) hanya mencapai 33,4 AP, sehingga jumlah *anchor* besar saja tidak menggantikan representasi piramida. Dari sisi kecepatan, inferensi memerlukan 0,148 detik per citra (ResNet-50) dan 0,172 detik (ResNet-101) pada satu GPU NVIDIA M40, lebih cepat daripada baseline skala tunggal ResNet-50 (0,32 detik) karena *head* yang lebih ringan. Sebagai ekstraktor fitur generik, FPN juga dipakai untuk proposal segmentasi: AR 48,1, melampaui DeepMask, SharpMask, dan InstanceFCN lebih dari 8,3 poin dengan kecepatan 6–7 FPS.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+## Kelebihan dan Keterbatasan
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+Kelebihan utama FPN adalah manfaat piramida citra berfitur dengan biaya tambahan marjinal: semua level dihitung dari satu skala masukan, dilatih *end-to-end*, dan konsisten antara pelatihan dan pengujian. Perbaikan terbesar terjadi pada objek kecil. Rancangannya sederhana dan independen terhadap pilihan *backbone*, sehingga mudah dipasang pada berbagai detektor.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Keterbatasannya bersifat halus. Penulis melaporkan bahwa lapisan ekstra menambah jejak memori, meski sebagian terkompensasi oleh *head* yang lebih ringan. Dari sisi rekayasa, fusi penjumlahan memperlakukan kontribusi kedua jalur sama rata, dan *upsampling* *nearest neighbor* tidak menyelaraskan fitur secara adaptif; PANet menambahkan jalur agregasi *bottom-up* kedua dan BiFPN memakai fusi berbobot untuk menutup kekurangan ini. Secara konseptual, rumus penempatan RoI adalah heuristik tetap dengan acuan 224 piksel, sehingga pembagian objek ke level piramida tidak dipelajari dari data.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kaitan dengan Bab Lain
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Bab ini melanjutkan silsilah detektor dua tahap: FPN menggantikan peta fitur skala tunggal pada Faster R-CNN ([bab 014](./014%20-%202017%20-%20Faster%20R-CNN%20-%20Fondasi%20RGB.md)) dan menjawab keterbatasan SSD ([bab 015](./015%20-%202016%20-%20SSD%20-%20Fondasi%20RGB.md)) yang memakai hierarki fitur tanpa pengayaan *top-down*. Dua makalah dari kelompok yang sama membangun di atasnya: RetinaNet ([bab 016](./016%20-%202017%20-%20RetinaNet%20%28Focal%20Loss%29%20-%20Fondasi%20RGB.md)) memakai FPN sebagai tulang punggung detektor satu tahapnya, dan Mask R-CNN ([bab 017](./017%20-%202017%20-%20Mask%20R-CNN%20-%20Fondasi%20RGB.md)) memadukan FPN untuk deteksi sekaligus segmentasi instans. Di jalur YOLO, prediksi multi-skala pada piramida fitur muncul pada YOLOv3 ([bab 003](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)), lalu *neck* turunan FPN seperti PAN dipakai pada YOLOv4 ([bab 004](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)); FPN kemudian menjadi pola *neck* standar, yakni modul penghubung *backbone* dan *head*, pada hampir semua detektor modern.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+## Poin untuk Sitasi
 
-## Kesimpulan
-FPN menyediakan piramida fitur kaya-semantik multi-skala secara hemat, menjadi neck standar yang mendasari desain PAN/BiFPN pada detektor modern termasuk YOLO.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `lin2017fpn` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 018/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kunci BibTeX: `lin2017fpn`. Ringkasan yang aman dikutip: FPN membangun piramida fitur kaya semantik pada semua skala melalui jalur *top-down* dan koneksi lateral di atas hierarki bawaan jaringan konvolusi, dengan biaya komputasi tambahan marjinal; dipasang pada Faster R-CNN, metode ini mencapai 36,2 AP pada COCO *test-dev* dan melampaui seluruh hasil model tunggal sebelumnya, termasuk pemenang kompetisi COCO 2016. Catatan verifikasi: abstrak versi CVPR menyebut 5 FPS sedangkan abstrak arXiv v2 menyebut 6 FPS; cocokkan versi naskah yang dikutip sebelum sitasi formal.

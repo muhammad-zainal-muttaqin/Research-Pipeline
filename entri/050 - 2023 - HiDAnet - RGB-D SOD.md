@@ -1,205 +1,112 @@
 # 050 - HiDAnet: RGB-D Salient Object Detection via Hierarchical Depth Awareness
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 050 dari 154 |
 | Kunci BibTeX | `wu2023hidanet` |
-| Judul | HiDAnet: RGB-D Salient Object Detection via Hierarchical Depth Awareness |
-| Penulis | Wu, Zongwei; Allibert, Guillaume; Meriaudeau, Fabrice; Ma, Chao; Demonceaux, C{\'e |
+| Judul asli | HiDAnet: RGB-D Salient Object Detection via Hierarchical Depth Awareness |
+| Penulis | Zongwei Wu, Guillaume Allibert, Fabrice Meriaudeau, Chao Ma, Cédric Demonceaux |
 | Tahun | 2023 |
-| Venue / Jurnal | IEEE Transactions on Image Processing |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, hierarchical depth awareness, granularity attention, geometri, fusi |
+| Venue | IEEE Transactions on Image Processing (TIP), vol. 32, hlm. 2160–2173 |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2301.07405
+- **Kode sumber (GitHub):** https://github.com/Zongwei97/HIDANet
+- **Google Scholar:** https://scholar.google.com/scholar?q=HiDAnet%3A%20RGB-D%20Salient%20Object%20Detection%20via%20Hierarchical%20Depth%20Awareness
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=HiDAnet%3A%20RGB-D%20Salient%20Object%20Detection%20via%20Hierarchical%20Depth%20Awareness&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=HiDAnet%3A%20RGB-D%20Salient%20Object%20Detection%20via%20Hierarchical%20Depth%20Awareness
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=HiDAnet%3A%20RGB-D%20Salient%20Object%20Detection%20via%20Hierarchical%20Depth%20Awareness&sort=relevance
+Makalah ini memperkenalkan HiDAnet (*Hierarchical Depth Awareness network*), jaringan untuk *salient object detection* (SOD) RGB-D: tugas memetakan objek paling menonjol secara visual pada citra, dibantu peta kedalaman (*depth map*) — citra yang tiap pikselnya menyatakan jarak ke kamera. Sasaran perbaikannya adalah pemanfaatan kedalaman yang dangkal: *channel attention* (pembobotan kanal fitur menurut kepentingannya) pada metode sebelumnya dihitung dari *global average pooling* (perata-rataan seluruh piksel menjadi satu nilai per kanal), sehingga latar dan objek berkontribusi sama besar; akibatnya, objek yang mirip latar tetapi berbeda jarak dari kamera sulit dipisahkan.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Solusinya adalah *hierarchical depth awareness*: histogram kedalaman didiskretisasi menjadi wilayah granularitas jarak dengan *multi-thresholding* Otsu (ambang yang memaksimalkan perbedaan antarkelompok nilai), tiap wilayah menjadi maska untuk attention kanal lokal di setiap level *encoder*, dan satu modul attention silang menangani fusi antarmodalitas sekaligus antarlevel. Model dilatih *end-to-end* (tanpa tahap terpisah), melampaui metode sebelumnya pada lima tolok ukur RGB-D SOD dengan tiga *backbone* (pengekstrak fitur dasar), dan paling stabil ketika peta kedalaman diberi derau.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 32 |
-| Halaman | 2160--2173 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode RGB-D SOD yang memakai hierarchical depth awareness dengan granularity-based attention untuk mengeksploitasi geometri kedalaman secara berlapis.
+SOD berbasis citra warna rapuh pada pencahayaan kontras rendah dan oklusi (objek tertutup sebagian). Sensor RGB-D murah menyediakan petunjuk geometri, dan literatur mengembangkan dua keluarga fusi: *single-stream* menggabungkan RGB dan depth sejak masukan (DANet dengan masukan empat kanal; JL-DCF pada bab 038 dengan desain siamese), sedangkan *multi-stream* memakai dua *encoder* paralel yang fiturnya digabung pada tingkat semantik (DMRA pada bab 035; BBS-Net pada bab 036).
 
-## Abstrak (Parafrase)
-HiDAnet (Hierarchical Depth Awareness network) mengeksploitasi geometri kedalaman melalui granularity-based attention yang sadar akan struktur berlapis kedalaman, dipadukan multi-modal refinement. Ini melampaui pemanfaatan kedalaman yang dangkal dan mencapai SOTA pada beberapa metrik.
+Dua kelemahan tersisa. Pertama, attention kanal yang umum dipakai merata-ratakan peta fitur secara global; kedalaman tidak dipakai memisahkan statistik objek dari latar, sehingga detail berbutir halus (*fine-grained*) jarang dieksploitasi eksplisit. Kedua, pemanfaatan prior kedalaman secara langsung masih terbatas: DSA2F (bab 045), karya sezaman terdekat, memakai ambang tetap pada histogram kedalaman — tidak adaptif antarcitra — dan attention-nya hanya konvolusi 1×1. Sebagian peta kedalaman dataset juga berkualitas rendah karena bias pengukuran atau estimasi, sehingga ketahanan terhadap derau menjadi syarat praktis.
 
-## Latar Belakang & Konteks
-Kedalaman sering dieksploitasi secara dangkal tanpa memperhatikan struktur geometris berlapis (granularity), sehingga potensi geometri kurang dimanfaatkan.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Kedalaman sering dieksploitasi dangkal.
-- Struktur geometris berlapis diabaikan.
-- Granularity kedalaman kurang dimanfaatkan.
-- Fusi multi-modal perlu penyempurnaan.
-- Konsistensi geometri-semantik sulit.
+Pengamatan awalnya: objek salien biasanya menempati rentang jarak tertentu — satu *granularitas* (tingkat kebutiran) histogram kedalaman — sedangkan latar menempati granularitas lain. Struktur kedalaman yang berlapis ini sejajar dengan hirarki jaringan: level awal *encoder* memuat detail halus, level dalam memuat abstraksi semantik.
 
-## Tujuan & Pertanyaan Penelitian
-- Mengeksploitasi geometri kedalaman berlapis.
-- Memakai granularity-based attention.
-- Menyempurnakan fusi multi-modal.
+Gagasan inti HiDAnet adalah mengubah granularitas kedalaman menjadi mekanisme attention. Histogram kedalaman dibagi statis menjadi beberapa wilayah — tanpa parameter yang dipelajari — dan tiap wilayah menjadi maska: attention kanal dihitung lokal di dalam tiap wilayah, bukan dari seluruh peta fitur, sehingga statistik latar tidak ikut menentukan bobot fitur objek. Bila seluruh piksel berkedalaman sama, maska menutupi citra penuh dan modul tereduksi menjadi attention kanal konvensional. Gagasan kedua: fusi antarmodalitas (RGB–depth) dan antarlevel (encoder–decoder) adalah satu masalah yang sama — dua sumber fitur heterogen yang saling mempertegas — sehingga satu modul attention silang dipakai untuk keduanya.
 
-## Tinjauan Terdahulu / Posisi Literatur
-HiDAnet mengembangkan pemodelan kedalaman hierarkis untuk RGB-D SOD.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+Arsitektur HiDAnet mengikuti pola U-Net: dua *encoder* paralel, satu *decoder* bersama lima level, serta *skip connection* (jalur pintas yang menyalin fitur encoder ke decoder pada resolusi yang sama). Alur datanya, dengan tiga komponen utama GBA (encoder), CDA (fusi), dan EMI (decoder):
 
-- RGB-D SOD berbasis fusi — dasar.
-- Depth geometry exploitation.
-- Granularity/attention berlapis.
-- Multi-modal refinement.
+```
+masukan: citra RGB 352x352  +  peta depth 352x352
 
-## Metodologi & Arsitektur
-Granularity-based attention menangkap struktur kedalaman pada beberapa tingkat granularity; hierarchical depth awareness menyalurkan geometri ke fitur RGB berlapis; multi-modal refinement menyempurnakan saliency.
+[pra-proses] histogram depth ─► multi-Otsu (T=2) ─► 3 maska wilayah
+             (dekat / tengah / jauh); dihitung sekali per citra,
+             lalu di-resize ke 5 resolusi peta fitur
 
-Komponen / langkah metodologis utama:
+[encoder]    RGB   ─► fR1..fR5, tiap level ditegas GBA ─┐
+             depth ─► fD1..fD5, tiap level ditegas GBA ─┤
+   GBA = attention kanal lokal per maska (pooling lokal + ECA)
+                                                        ▼
+[fusi]   CDA tiap level: attention kanal+spasial dari RGB mempertegas
+         fitur depth, dan sebaliknya; concat + konvolusi 3x3;
+         hasil digabung keluaran level sebelumnya (kasar ► halus)
+                                                        │
+[decoder]  decoder RGB ─┐                               │ skip via CDA
+           decoder depth ├─► EMI ─► DECODER BERSAMA ◄───┘
+                        ─┘   (concat + konvolusi 3x3 + ECA + residual)
+                             5 level, tiap level ─► RFB ─► peta saliency
 
-- Granularity-based attention (multi-granularity).
-- Hierarchical depth awareness.
-- Eksploitasi geometri kedalaman berlapis.
-- Multi-modal refinement.
-- Decoder saliency.
-- Pelatihan end-to-end RGB-D.
+[keluaran]  5 peta x 3 cabang (RGB, depth, bersama)
+            loss tiap level = BCE + IoU, bobot {1; 0,8; 0,6; 0,4; 0,2}
+            inferensi: hanya cabang bersama
+```
 
-## Kontribusi Utama
-1. Granularity-based attention mengeksploitasi geometri.
-2. Hierarchical depth awareness berlapis.
-3. Multi-modal refinement menyempurnakan hasil.
-4. SOTA pada beberapa metrik saat rilis.
+### Diskretisasi Kedalaman dengan Multi-Otsu
 
-## Rincian Eksperimen
-Diuji pada benchmark RGB-D SOD standar dengan metrik S/F/E-measure dan MAE, plus ablation depth awareness.
+Dari peta kedalaman dibentuk histogram nilai jarak. Algoritme Otsu mencari ambang pembagi histogram yang memaksimalkan varians antarkelas: kelompok nilai kedalaman dibuat seberbeda mungkin satu sama lain. HiDAnet memakai perluasan multi-level (multi-Otsu) dengan T ambang yang membagi kedalaman menjadi T+1 wilayah; ablasi menetapkan T = 2, menghasilkan tiga wilayah yang dapat dibaca sebagai "dekat", "tengah", dan "jauh". Ambang dihitung satu kali per citra pada pra-pemrosesan — menjadikannya adaptif terhadap isi citra — lalu maska wilayah di-resize mengikuti resolusi peta fitur tiap level.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### GBA: Attention Kanal Berbasis Granularitas
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NJU2K/NLPR | S/F/E, MAE | SOTA pada beberapa metrik |
-| STERE/SIP | S/F/E, MAE | kompetitif/unggul |
-| Ablation | depth awareness | pemanfaatan geometri menyumbang gain |
+GBA (*granularity-based attention*) dipasang pada setiap level kedua encoder. Diberikan peta fitur f_in berukuran C×h×w (C kanal, tinggi h, lebar w) dan maska wilayah m_i (i = 1..T+1), langkahnya: (1) fitur diseleksi per wilayah lewat perkalian elemen demi elemen f_in ⊗ m_i; (2) *local average pooling* merata-ratakan hanya piksel di dalam wilayah menjadi vektor 1×1×C; (3) vektor ini dilewatkan ke ECA (*Efficient Channel Attention*: attention kanal ringan berbasis konvolusi satu dimensi antarkanal) dan fungsi sigmoid (pemetaan ke rentang 0–1) menjadi bobot kanal; (4) bobot dikalikan kembali ke fitur wilayah. Keluaran seluruh wilayah dijumlahkan, lalu ditambah f_in lewat koneksi residual (penjumlahan identitas yang menjaga informasi asal).
 
-## Temuan Kunci
-- Geometri kedalaman berlapis kaya informasi.
-- Granularity attention efektif.
-- Refinement multi-modal meningkatkan hasil.
-- Pemanfaatan kedalaman lebih dalam bermanfaat.
+Contoh numerik: pada peta fitur 44×44 (1.936 piksel) dan wilayah seluas 30%, pooling lokal merangkum ±580 piksel, bukan seluruh 1.936 piksel; statistik latar tidak lagi mengencerkan bobot kanal objek. Pada level awal, GBA mempertajam batas objek; pada level dalam, GBA memperkuat diskriminasi semantik antarobjek yang mirip penampilannya.
 
-## Keunggulan
-- Eksploitasi geometri berlapis.
-- Granularity attention.
-- SOTA sebagian metrik.
+### CDA: Attention Silang untuk Fusi Encoder
 
-## Keterbatasan
-- Bergantung kualitas kedalaman.
-- Kompleksitas multi-granularity.
-- Backbone CNN (konteks terbatas).
+Fusi fitur RGB (f_x) dan depth (f_y) per level diawali konvolusi 1×1 yang memparuhkan kanal, diikuti konvolusi 3×3 untuk respons tepi. Dari tiap fitur dihitung dua attention: attention kanal M_c (vektor C×1×1) dari *average* dan *max pooling* global yang dilewatkan ke MLP (*multi-layer perceptron*, jaringan terhubung penuh kecil), dan attention spasial M_s (peta 1×h×w) dari konvolusi 7×7 atas rata-rata dan maksimum antarkanal; keduanya diaktifkan sigmoid. Fusi dilakukan menyilang: fitur RGB dikalikan attention milik depth, dan fitur depth dikalikan attention milik RGB, sehingga tiap modalitas mempertegas modalitas lain pada kanal dan lokasi yang relevan; ketika kedalaman gagal memisahkan objek dari permukaan sejarak, penampilan memberi pembeda. Hasil kedua arah digabung lewat konkatenasi dan konvolusi 3×3; mulai level kedua, keluaran fusi digabung pula dengan keluaran level sebelumnya, mengalir dari kasar ke halus (*coarse-to-fine*). Modul CDA (*cross dual-attention*) yang sama dipakai ulang pada *skip connection*: fitur encoder dan decoder diperlakukan sebagai pasangan "multi-modal".
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### EMI: Agregasi Decoder Bersama
 
-## Relevansi terhadap Tema Tinjauan
-HiDAnet menegaskan pemanfaatan geometri kedalaman berlapis — wawasan yang relevan bagi seluruh fusi RGB+Depth termasuk deteksi/pose dalam tinjauan.
+Fitur hasil fusi encoder diteruskan ke tiga cabang decoder: decoder RGB, decoder depth, dan decoder bersama. Pada tiap level, EMI (*efficient multi-input fusion*) menggabungkan fitur decoder RGB, fitur decoder depth, dan keluaran bersama level sebelumnya: ketiganya dikonkatenasi, dirampingkan konvolusi 3×3, diseleksi dengan G-ECA (ECA dengan pooling global), lalu ditambah koneksi residual dari level sebelumnya. Berbeda dengan CDA, EMI hanya memakai attention kanal karena petunjuk spasial telah terkikis pada fitur dalam. Setiap level decoder bersama diakhiri RFB (*Receptive Field Block*: modul multi-cabang dengan konvolusi berdilasi yang memperluas daerah tangkapan fitur) sebelum menghasilkan peta saliency.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+### Supervisi Multi-Skala
 
-- [035 - 2019 - DMRA - RGB-D SOD](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)
-- [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)
-- [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)
-- [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md)
-- [039 - 2020 - S2MA - RGB-D SOD](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)
-- [040 - 2020 - HDFNet - RGB-D SOD](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)
-- [041 - 2020 - UC-Net - RGB-D SOD](./041%20-%202020%20-%20UC-Net%20-%20RGB-D%20SOD.md)
-- [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)
+Kelima level pada ketiga cabang menghasilkan peta prediksi yang disamakan ukurannya dengan *ground truth* (maska kebenaran) dan dinilai dua fungsi *loss*: BCE (*binary cross-entropy*, galat per piksel) dan *IoU loss* (galat global berbasis rasio irisan terhadap gabungan prediksi dan kebenaran). *Loss* total menjumlahkan kelima level dengan bobot menurun {1; 0,8; 0,6; 0,4; 0,2}, sehingga tiap level dipaksa belajar representasi yang berguna. Saat inferensi, hanya keluaran cabang bersama yang dipakai.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Eksperimen dan Hasil
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
+Pelatihan mengikuti protokol standar: 2.195 sampel (1.485 dari NJU2K-train dan 700 dari NLPR-train), dengan pengujian pada DES (135 citra), NLPR-test (300), NJU2K-test (500), STERE (1.000), dan SIP (929), ditambah COME15K (dilatih pada 8.025 sampel, diuji pada himpunan "Difficult" berisi 3.000 citra). Metriknya: MAE (*mean absolute error*; lebih kecil lebih baik), F-measure maksimum (rata-rata harmonik presisi dan *recall*, β² = 0,3), S-measure (kemiripan struktur objek dan wilayah), dan E-measure maksimum (kesejajaran tingkat citra dan piksel). Model dilatih pada GPU V100 dengan masukan 352×352, pengoptimal Adam berlaju awal 0,0001, selama 100 *epoch* (±6 jam).
 
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
+Dengan *backbone* Res2Net50 (525 MB, ±11 FPS), HiDAnet mencapai MAE 0,013 dan F-measure 0,952 pada DES — di atas SPNet (0,014 dan 0,950) dengan model 25% lebih kecil (SPNet 702 MB). Pada NJU2K dan STERE, F-measure 0,939 dan 0,921 melawan 0,935 dan 0,915 milik SPNet: keunggulan konsisten tetapi berorde persepuluh poin. Dengan ResNet50 (523 MB, ±12 FPS) ia mencetak nilai terbaik pada DES, NLPR, dan NJU2K; dengan VGG16 (269 MB, ±6 FPS) unggul terutama pada NLPR dan SIP. Pada COME15K "Difficult", MAE 0,062 adalah yang terkecil di antara tujuh pembanding (SPNet 0,065; CMINet 0,064) dengan E-measure 0,893 yang setara CMINet.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Ketika peta kedalaman uji diberi derau Gaussian (RMSE 0,261), penurunan S-measure HiDAnet pada DES hanya 0,3%, dibandingkan 1,0% pada SPNet dan 2,0% pada CMINet; pada NJU2K penurunannya 0,1% (SPNet 0,5%; CMINet 0,7%). Wilayah Otsu statis terbukti lebih stabil daripada fusi berbasis informasi-mutual milik CMINet.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Ablasi mengonfirmasi tiap komponen. Memasang GBA pada alur RGB saja menurunkan MAE DES dari 0,015 ke 0,014, dan pada kedua alur menjadi 0,013; mengganti pooling lokal dengan pooling global menaikkan MAE kembali ke 0,019. T = 2 adalah titik terbaik: T = 1 membelah kedalaman terlalu kasar, T = 3 menghasilkan diskretisasi berlebih dengan F-measure turun dan kecepatan turun dari 13,3 FPS (tanpa GBA) menjadi 10,5 FPS. Mengganti modul fusi HiDAnet dengan fusi milik BBS-Net, CDINet, DCF, atau SPNet pada pengaturan identik menurunkan kinerja: sumbangan utama datang dari desain fusi, bukan *backbone* atau decoder.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kelebihan dan Keterbatasan
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Kelebihan utama HiDAnet adalah pemanfaatan prior geometri tanpa parameter tambahan yang dipelajari: maska granularitas dihitung statis, sehingga murah dan stabil, dengan ketahanan derau terbaik di antara pembanding. Satu desain attention untuk tiga kebutuhan (fusi modalitas, fusi level, *skip connection*) menjaga arsitektur koheren; keunggulannya konsisten lintas tiga *backbone*.
 
-## Kesimpulan
-HiDAnet mengeksploitasi geometri kedalaman berlapis via granularity-based attention dan hierarchical depth awareness untuk RGB-D SOD, memanfaatkan kedalaman lebih dalam daripada fusi dangkal.
+Keterbatasannya: (1) kecepatan ±11 FPS dengan model 525 MB masih jauh dari *real-time*; dari sisi rekayasa, tiga cabang decoder dan fusi di setiap level menambah konsumsi memori pelatihan. (2) Manfaat granularitas menyusut ketika objek salien berada di latar: pada NLPR yang banyak memuat kasus demikian, sensitivitas terhadap T rendah dan keunggulan menipis. (3) Secara konseptual, metode ini tetap bergantung pada kualitas kedalaman — derau besar dapat merusak diskretisasi Otsu itu sendiri — sedangkan makalah hanya menguji derau Gaussian tersimulasi. (4) Seluruh eksperimen memakai *backbone* konvolusional; arsitektur *transformer* yang sezaman tidak dieksplorasi.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `wu2023hidanet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Kaitan dengan Bab Lain
 
----
-*Lembar 050/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+HiDAnet melanjutkan garis fusi *multi-stream* RGB-D SOD: [DMRA (bab 035)](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md) sebagai pelopor attention kedalaman multi-skala, [BBS-Net (bab 036)](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md) dengan CBAM pada fitur depth, dan [JL-DCF (bab 038)](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md) yang mewakili keluarga *single-stream*. Attention kanal yang dipakai pendahulunya dibuat sadar kedalaman lewat pooling lokal per wilayah Otsu. Karya sezaman terdekat adalah [DSA2F (bab 045)](./045%20-%202021%20-%20DSA2F%20-%20RGB-D%20SOD.md): keduanya membelah histogram kedalaman, tetapi DSA2F memakai ambang tetap dan konvolusi 1×1, sedangkan HiDAnet mengoptimalkan ambang dengan multi-Otsu dan memadukan wilayah dengan attention kanal. Jalur alternatif pada periode yang sama dibawa [VST (bab 042)](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md) dan [TriTransNet (bab 044)](./044%20-%202021%20-%20TriTransNet%20-%20RGB-D%20SOD.md) yang mengganti *backbone* konvolusional dengan transformer. Tolok ukurnya dibakukan antara lain oleh [D3Net (bab 037)](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md).
+
+## Poin untuk Sitasi
+
+Kutip dengan kunci `wu2023hidanet`. Ringkasan yang aman dikutip: "HiDAnet memanfaatkan prior geometri kedalaman secara berlapis: histogram kedalaman didiskretisasi dengan multi-Otsu menjadi beberapa wilayah granularitas yang dipakai sebagai maska untuk attention kanal lokal (GBA), lalu fusi multimodal-multilevel dilakukan satu modul *cross dual-attention* (CDA) dengan supervisi multi-skala. Model ini melampaui metode RGB-D SOD sebelumnya pada lima tolok ukur dengan tiga backbone berbeda dan menunjukkan ketahanan terbaik terhadap derau kedalaman."
+
+Catatan verifikasi: seluruh angka pada bab ini dikutip dari preprint arXiv v1 (Januari 2023); sebelum sitasi formal, cocokkan dengan versi terbit IEEE TIP vol. 32 hlm. 2160–2173. Arah urutan bobot *loss* multi-skala {1; 0,8; 0,6; 0,4; 0,2} terhadap level tidak dirinci pada preprint.

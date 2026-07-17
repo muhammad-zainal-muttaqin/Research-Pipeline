@@ -1,206 +1,124 @@
 # 198 - Depth Anything 3: Recovering the Visual Space from Any Views
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 198 dari 202 |
 | Kunci BibTeX | `lin2025depthanything3` |
-| Judul | Depth Anything 3: Recovering the Visual Space from Any Views |
-| Penulis | Lin, Haotong; Chen, Sili; Liew, Junhao; Chen, Donny Y.; Li, Zhenyu; Shi, Guang; Feng, Jiashi; Kang, Bingyi |
+| Judul asli | Depth Anything 3: Recovering the Visual Space from Any Views |
+| Penulis | Haotong Lin, Sili Chen, Jun Hao Liew, Donny Y. Chen, Zhenyu Li, Guang Shi, Jiashi Feng, Bingyi Kang (ByteDance Seed) |
 | Tahun | 2025 |
-| Venue / Jurnal | arXiv preprint arXiv:2511.10647 |
-| Tema klaster | Estimasi Kedalaman |
-| Kata kunci | Depth Anything 3, multi-view, geometry, DINOv2, novel view |
+| Venue | arXiv preprint arXiv:2511.10647 |
+| Tema | Estimasi Kedalaman |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2511.10647
+- **Versi HTML naskah:** https://arxiv.org/html/2511.10647v1
+- **Google Scholar:** https://scholar.google.com/scholar?q=Depth%20Anything%203%3A%20Recovering%20the%20Visual%20Space%20from%20Any%20Views
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Depth%20Anything%203%3A%20Recovering%20the%20Visual%20Space%20from%20Any%20Views&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-estimasi-kedalaman)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2511.10647
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Depth%20Anything%203%3A%20Recovering%20the%20Visual%20Space%20from%20Any%20Views
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Depth%20Anything%203%3A%20Recovering%20the%20Visual%20Space%20from%20Any%20Views&sort=relevance
+Depth Anything 3 (DA3) memperluas keluarga Depth Anything dari estimasi kedalaman satu citra menjadi model geometri untuk **sembarang jumlah citra masukan**: satu foto, beberapa foto dari sudut berbeda, atau bingkai-bingkai video — dengan atau tanpa posisi kamera yang diketahui. Dari masukan itu model menghasilkan geometri 3D yang konsisten antarcitra, sehingga kedalaman dari semua pandangan dapat dilebur menjadi satu awan titik 3D yang utuh.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Kontribusi konseptualnya adalah **penyederhanaan ekstrem** pada dua sisi. Pertama, arsitektur: alih-alih merancang jaringan khusus multi-pandangan seperti pendahulunya (VGGT), DA3 memakai satu transformer polos — encoder DINOv2 standar — tanpa satu pun modifikasi struktural; satu-satunya penyesuaian adalah cara token ditata saat *forward pass*. Kedua, target pelatihan: alih-alih dilatih multi-tugas dengan banyak keluaran (kedalaman, pose, peta titik, pelacakan), DA3 hanya memprediksi dua peta per citra — peta kedalaman dan peta sinar (*depth-ray*) — yang ternyata cukup untuk menurunkan semua besaran lain, termasuk pose kamera.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2511.10647 |
+Hasilnya: SOTA pada 18 dari 20 konfigurasi tolok ukur geometri visual baru yang dibangun penulis, melampaui VGGT dengan margin rata-rata 44,3% pada akurasi pose kamera dan 25,1% pada akurasi geometri (menurut abstrak versi terbaru), sekaligus mengungguli Depth Anything 2 pada kedalaman monokular.
 
-## Ringkasan Eksekutif
-Depth Anything 3 (Lin dkk., arXiv November 2025) memprediksi geometri yang konsisten secara spasial dari sejumlah pandangan sembarang (dengan atau tanpa pose kamera diketahui), memakai satu transformer polos dan target prediksi depth-ray tunggal, dan menetapkan SOTA baru melampaui VGGT.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Abstrak (Parafrase)
-Depth Anything 3 (DA3) memperluas paradigma Depth Anything dari depth monokular ke pemulihan ruang visual dari banyak pandangan. Cukup dengan satu transformer polos (mis. encoder DINOv2 vanilla) tanpa spesialisasi arsitektur, dan satu target prediksi depth-ray yang menghapus kebutuhan pembelajaran multi-tugas rumit. Mekanisme cross-view self-attention adaptif-masukan menata ulang token untuk pertukaran informasi antar-pandangan yang efisien. DA3 melakukan depth monokular, depth multi-view, depth berkondisi-pose, estimasi pose kamera, dan estimasi 3D Gaussian untuk sintesis pandangan baru - menetapkan SOTA di semua tugas, melampaui VGGT rata-rata 44.3% pada akurasi pose kamera dan 25.1% pada akurasi geometri.
+Estimasi kedalaman monokular (bab 071, 175) menghasilkan peta kedalaman yang tampak meyakinkan per citra, tetapi tidak menjamin **konsistensi lintas pandangan**: dua foto dari sudut berbeda bisa memperoleh kedalaman yang saling bertentangan pada titik 3D yang sama. Padahal robotika, pemetaan, dan realitas tertambah justru menuntut konsistensi itu.
 
-## Latar Belakang & Konteks
-Depth Anything V1/V2 unggul pada depth monokular. Namun aplikasi robotika/AR menuntut geometri konsisten lintas banyak pandangan. DA3 menyatukan estimasi geometri multi-view dalam satu model sederhana.
+Cara klasik mengatasinya adalah *Structure from Motion* (SfM) dan *Multi-View Stereo* (MVS): deteksi titik kunci, pencocokan antarcitra, estimasi pose, *bundle adjustment*, lalu stereo padat. Pipeline modular ini rapuh pada permukaan polos, reflektif, atau perubahan sudut besar. Generasi terpelajar menggantinya dengan satu jaringan: DUSt3R memprediksi peta titik 3D dari pasangan citra, dan VGGT — pemegang SOTA sebelum DA3 — melangkah lebih jauh dengan pelatihan berskala besar. Tetapi keduanya, terutama VGGT, membayar dengan **kompleksitas**: arsitektur multi-tahap yang dirancang khusus, target prediksi yang redundan (pose + peta titik lokal dan global + kedalaman), dan pelatihan multi-tugas dari nol yang tidak dapat memanfaatkan model pralatih berskala besar. Dua pertanyaan yang dijawab DA3: (1) apakah target prediksi bisa direduksi ke himpunan minimal, dan (2) apakah satu transformer polos sudah cukup.
 
-## Permasalahan yang Diangkat
-- Depth monokular tidak menjamin konsistensi geometri lintas pandangan.
-- Pipeline multi-view klasik butuh arsitektur/multi-tugas rumit.
-- Pose kamera kadang tak diketahui.
-- Pertukaran informasi antar-pandangan mahal.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Memulihkan geometri konsisten dari sembarang jumlah pandangan.
-- Menyederhanakan arsitektur menjadi transformer polos.
-- Menyatukan depth, pose, dan 3D Gaussian dalam satu model.
-- Menghadirkan cross-view attention yang efisien.
+Jawaban DA3 atas kedua pertanyaan itu adalah "ya". Transformernya boleh polos asalkan token lintas pandangan dapat bertukar informasi — dan itu bisa dicapai hanya dengan **menata ulang token** pada sebagian lapis, tanpa mengubah arsitektur. Target prediksinya boleh tunggal asalkan bentuknya tepat — dan bentuk yang tepat adalah **sinar kamera per piksel**: bila untuk setiap piksel diketahui dari titik mana sinar itu berangkat, ke arah mana, dan seberapa jauh ia mengenai permukaan, maka posisi kamera dan struktur 3D seluruhnya sudah ditentukan. Tidak perlu kepala pose, kepala peta titik, atau kepala pelacakan terpisah.
 
-## Tinjauan Terdahulu / Posisi Literatur
-DA3 melanjutkan Depth Anything V2 (entri 175) dan menandingi VGGT/DUSt3R pada geometri multi-view, tetapi dengan backbone polos dan target depth-ray tunggal.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Apa yang Disederhanakan
 
-- Depth Anything V2 - depth monokular SOTA (entri 175).
-- VGGT - geometri multi-view (baseline yang dilampaui).
-- DUSt3R/MASt3R - rekonstruksi 3D dari pasangan citra.
-- DINOv2 - encoder self-supervised sebagai backbone.
+Perbandingan berikut merangkum apa yang dikurangi DA3 dari desain ala VGGT:
 
-## Metodologi & Arsitektur
-Satu transformer polos berbasis DINOv2 memproses banyak pandangan; cross-view self-attention adaptif-masukan menata ulang token antar-view; target prediksi tunggal (depth-ray) menyatukan tugas tanpa cabang multi-tugas terpisah; keluaran mendukung depth, pose, dan 3D Gaussian.
+```
+Desain khusus multi-tugas (mis. VGGT)        Depth Anything 3
+─────────────────────────────────────        ─────────────────
+N citra                                      N citra (+pose, opsional)
+  │                                            │
+  ▼                                            ▼
+transformer khusus multi-tahap:              SATU transformer polos (DINOv2),
+blok atensi bergantian yang                  tanpa modifikasi arsitektur;
+dirancang khusus + redundansi                hanya penataan ulang token:
+  │                                            lapis awal  : atensi dalam-citra
+  ▼                                            lapis akhir : atensi silang/dalam
+banyak kepala prediksi:                        │      (bergantian, rasio 1:2)
+ ├─ kepala pose                                ▼
+ ├─ kepala kedalaman                         Dual-DPT head (reassembly berbagi,
+ ├─ kepala peta titik (lokal+global)          ├─ cabang fusi depth -> peta kedalaman
+ └─ kepala pelacakan                          └─ cabang fusi ray   -> peta sinar
+  │                                            │
+  ▼                                            ▼
+banyak loss multi-tugas yang                 P = t + D(u,v)·d  →  titik 3D, pose,
+harus ditimbang satu per satu                dan awan titik diturunkan dari
+                                             dua peta ini saja
+```
 
-Komponen / langkah metodologis utama:
+Yang dikurangi: blok-blok atensi khusus, kepala-kepala prediksi tambahan, dan penimbangan banyak loss multi-tugas. Yang dipertahankan justru aset paling berharga: bobot pralatih DINOv2 berskala besar, sehingga DA3 mewarisi kemampuan ekstraksi fiturnya secara penuh — sesuatu yang hilang bila arsitektur dilatih dari nol.
 
-- Backbone transformer polos (DINOv2 vanilla).
-- Input-adaptive cross-view self-attention.
-- Target prediksi depth-ray tunggal (bukan multi-tugas).
-- Keluaran depth/pose/3D Gaussian untuk sintesis pandangan.
+### Masukan dan Token Kamera
 
-## Kontribusi Utama
-1. Model tunggal geometri multi-view dari sembarang pandangan.
-2. Penyederhanaan ke transformer polos + target depth-ray.
-3. SOTA melampaui VGGT (+44.3% pose, +25.1% geometri).
-4. Dukungan sintesis pandangan baru via 3D Gaussian.
+Model menerima N citra (N = 1 berarti monokular biasa). Setiap citra dibagi menjadi *patch* dan diubah menjadi token oleh encoder DINOv2. Di depan token-token setiap citra ditambahkan satu **token kamera**: bila parameter kamera (intrinsik K, rotasi, translasi) diketahui, token itu diisi hasil lewat satu MLP kecil; bila tidak, dipakai token bersama yang dipelajari. Token kamera ikut dalam semua operasi atensi, sehingga informasi pose — bila ada — menyebar ke seluruh fitur. Karena pose bersifat opsional, satu model yang sama melayani masukan berpose maupun tanpa pose.
 
-## Rincian Eksperimen
-Dievaluasi lintas tugas: depth monokular/multi-view, estimasi pose kamera, dan geometri; dibandingkan dengan VGGT dan metode multi-view terkini.
+### Atensi Silang Adaptif-Masukan
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+L lapis transformer dibagi dua kelompok dengan rasio 2:1. Pada Ls lapis pertama, atensi bekerja **di dalam masing-masing citra** (token satu foto hanya beratensi dengan token foto itu sendiri). Pada Lg lapis terakhir, atensi **bergantian** antara dalam-citra dan lintas-citra — dan di sinilah satu-satunya "penyesuaian" terjadi: token-token dari semua citra ditata ulang (*rearranged*) sehingga operasi atensi standar transformer sekaligus menjangkau pandangan lain. Tidak ada modul baru; yang berubah hanyalah susunan data yang masuk operasi yang sudah ada. Desain ini adaptif terhadap masukan: dengan satu citra, model secara alami merosot menjadi estimator kedalaman monokular tanpa biaya tambahan.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Pose kamera | Akurasi | +44.3% rata-rata vs VGGT |
-| Geometri | Akurasi | +25.1% rata-rata vs VGGT |
-| Multi-tugas | Depth/pose/3DGS | SOTA lintas tugas (lihat naskah) |
+### Representasi Depth-Ray
 
-## Temuan Kunci
-- Transformer polos cukup untuk geometri multi-view.
-- Target depth-ray tunggal menyederhanakan pelatihan.
-- Cross-view attention adaptif efisien dan akurat.
-- Satu model melayani depth, pose, dan sintesis pandangan.
+Ini kunci mengapa satu target cukup. Untuk setiap piksel p = (u, v), kamera memandang dunia melalui sebuah **sinar** yang dinyatakan enam angka: titik asal t (posisi pusat kamera di dunia, 3 angka) dan arah d (3 angka). Secara geometri, arah itu adalah d = R·K⁻¹·p: piksel diproyeksikan-balik ke ruang kamera lalu diputar ke ruang dunia. Model memprediksi, untuk setiap citra, **peta kedalaman** D (satu nilai per piksel) dan **peta sinar** M (enam nilai per piksel). Titik 3D dunia yang dilihat piksel itu kemudian diperoleh dengan satu perkalian dan satu penjumlahan:
 
-## Keunggulan
-- SOTA geometri multi-view dengan arsitektur sederhana.
-- Fleksibel: dengan/tanpa pose diketahui.
-- Menyatukan banyak tugas 3D.
+```
+                     kamera (pusat t)
+                        \
+                         \   sinar: arah d = R·K⁻¹·p
+                          \
+   piksel p=(u,v) ────────●────────────────●  P = t + D(u,v) · d
+   pada citra             ^                ^
+                          sinar kamera     titik 3D di dunia,
+                                           jaraknya = kedalaman D(u,v)
+```
 
-## Keterbatasan
-- Kebutuhan komputasi multi-view besar.
-- Angka perlu dikonfirmasi via naskah.
-- Ketergantungan pada backbone DINOv2 skala besar.
+Mengapa tidak langsung memprediksi pose (matriks rotasi R)? Karena matriks rotasi memiliki kendala ortogonalitas yang sulit dipelajari jaringan secara stabil. Sinar per piksel menyandikan pose yang sama **secara implisit** tanpa kendala itu; bila pose eksplisit diperlukan, ia dapat diturunkan dari peta sinar melalui perhitungan homografi (algoritme DLT dilanjutkan dekomposisi RQ untuk memisahkan K dan R). Untuk kepraktisan, DA3 juga menyediakan **kepala kamera ringan** yang memprediksi FOV, rotasi (kuaternion), dan translasi langsung dari token kamera — biayanya diabaikan karena hanya mengolah satu token per citra. Eksperimen ablation makalah (Tabel 6) menunjukkan target depth-ray ini bukan hanya minimal, tetapi juga **mengungguli** alternatifnya: peta titik saja (ala DUSt3R) tidak menjamin konsistensi, sedangkan target redundan (ala VGGT) justru menimbulkan keterkaitan antar-keluaran yang menurunkan akurasi pose.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Dual-DPT Head
 
-## Relevansi terhadap Tema Tinjauan
-Rujukan mutakhir estimasi kedalaman/geometri (2025), lanjutan langsung Depth Anything V2 (entri 175); relevan untuk RGB-D dan rekonstruksi 3D dalam tinjauan.
+Kedua peta diproduksi oleh satu kepala prediksi bernama Dual-DPT. Fitur dari backbone mula-mula melewati modul *reassembly* **yang dipakai bersama**, lalu bercabang ke dua set lapis fusi yang berbeda — satu untuk kedalaman, satu untuk sinar — dan ditutup dua lapis keluaran. Berbagi pemrosesan awal membuat kedua tugas saling menguatkan (kedalaman dan sinar adalah dua sisi dari geometri yang sama), sementara pemisahan di ujung mencegah representasi yang redundan.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Estimasi Kedalaman** yang baik dibaca berdampingan:
+### Pelatihan Guru–Murid
 
-- [199 - 2025 - Survei Estimasi Kedalaman Metrik Monokular - Estimasi Kedalaman](./199%20-%202025%20-%20Survei%20Estimasi%20Kedalaman%20Metrik%20Monokular%20-%20Estimasi%20Kedalaman.md)
-- [200 - 2026 - AsyncMDE Kedalaman Monokular Real-Time Memori Spasial - Estimasi Kedalaman](./200%20-%202026%20-%20AsyncMDE%20Kedalaman%20Monokular%20Real-Time%20Memori%20Spasial%20-%20Estimasi%20Kedalaman.md)
-- [201 - 2026 - UniDAC Kedalaman Metrik Universal untuk Sembarang Kamera - Estimasi Kedalaman](./201%20-%202026%20-%20UniDAC%20Kedalaman%20Metrik%20Universal%20untuk%20Sembarang%20Kamera%20-%20Estimasi%20Kedalaman.md)
-- [202 - 2026 - Focusable Monocular Depth Estimation - Estimasi Kedalaman](./202%20-%202026%20-%20Focusable%20Monocular%20Depth%20Estimation%20-%20Estimasi%20Kedalaman.md)
+Data nyata berlabel kedalaman sering kali jarang atau bising (penuh lubang dan derau). Karena itu DA3 memakai paradigma guru–murid: sebuah model **guru** — estimator kedalaman monokular yang juga hanya berupa DINOv2 + decoder DPT — dilatih khusus pada ±20 dataset **sintetik** (yang labelnya sempurna) hingga menghasilkan kedalaman berkualitas tinggi. Untuk setiap citra nyata, kedalaman relatif dari guru diselaraskan ke pengukuran asli yang jarang/bising melalui estimasi skala-geser RANSAC, sehingga diperoleh label yang padat, halus, tetapi tetap setia secara geometris. DA3 (murid) dilatih pada campuran label asli dan label guru ini — supervisi beralih ke label guru setelah langkah ke-120 ribu dari total 200 ribu langkah pada 128 GPU H100. Guru yang sama juga dipakai melatih varian monokular (mengungguli Depth Anything 2) dan varian kedalaman metrik (mengikuti kerangka ruang kanonik Metric3Dv2).
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Estimasi Kedalaman** dalam peta tinjauan (17 klaster, 202 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Eksperimen dan Hasil
 
-## Glosarium Istilah (tema Estimasi Kedalaman)
-Istilah penting untuk memahami makalah ini:
+Penulis membangun tolok ukur geometri visual dari lima dataset (HiRoom, ETH3D, DTU, 7Scenes, ScanNet++; total ±89 scene, dari level objek hingga luar ruang) dengan tiga kelompok pengujian: akurasi pose (metrik AUC dari galat rotasi/translasi relatif), akurasi rekonstruksi (F1 atas awan titik hasil leburan TSDF), dan kualitas *rendering* (PSNR/SSIM/LPIPS pada sintesis pandangan baru). Hasil utama:
 
-- **Depth monokular** — Estimasi kedalaman dari satu citra RGB (ill-posed).
-- **Supervised** — Dilatih dengan ground-truth depth.
-- **Self-supervised** — Dilatih tanpa label depth via konsistensi stereo/video.
-- **Disparitas** — Pergeseran piksel antar-pandangan stereo.
-- **Skala metrik vs relatif** — Depth satuan nyata vs hanya urutan relatif.
-- **AbsRel** — Absolute Relative error (makin kecil makin baik).
-- **RMSE** — Root Mean Square Error peta depth.
-- **delta<1.25** — Persentase piksel dengan error di bawah ambang.
-- **Zero-shot** — Generalisasi ke dataset tak dilihat saat pelatihan.
-- **Pseudo-depth** — Depth prediksi model, pengganti sensor depth.
+- **SOTA pada 18 dari 20 konfigurasi pengujian** dalam tolok ukur tersebut.
+- Melampaui VGGT dengan margin rata-rata **44,3% akurasi pose** dan **25,1% akurasi geometri** (abstrak versi terbaru; versi v1 melaporkan 35,7% dan 23,6% — lihat Poin untuk Sitasi). Pada tabel pose v1, misalnya, AUC@30 DA3 pada ETH3D dan DTU mengungguli VGGT, Pi3, MapAnything, dan DUSt3R/Fast3R dengan jarak lebar.
+- Pada tolok ukur monokular standar, varian monokularnya **mengungguli Depth Anything 2** — model guru/basisnya sendiri.
+- Sebagai aplikasi hilir, fine-tuning DA3 dengan kepala Gaussian (GS-DPT) untuk sintesis pandangan baru *feed-forward* (FF-NVS) mengungguli model khusus tugas itu (mis. DepthSplat), dan makin baik geometri DA3, makin baik pula hasil NVS — bukti bahwa geometri adalah fondasi tugas-tugas 3D lain.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Interpretasinya: margin diperoleh bukan dari arsitektur yang lebih besar (parameter DA3 justru lebih ramping dari VGGT 1,19B), melainkan dari pemilihan target yang tepat dan pemanfaatan penuh pralatih DINOv2 — persis tesis "pemodelan minimal" yang diusung makalah.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kelebihan dan Keterbatasan
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Kelebihan: (1) satu model untuk spektrum penuh masukan — monokular, multi-pandangan, video, berpose/tanpa pose; (2) arsitektur sederhana yang mewarisi skala pralatih DINOv2 dan mudah direproduksi konsepnya; (3) target depth-ray yang minimal terbukti mengungguli target yang lebih kaya; (4) fondasi kuat untuk tugas hilir (NVS, varian metrik); (5) seluruh pelatihan memakai dataset akademik publik.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Keterbatasan: (1) biaya pelatihan sangat besar (128 GPU H100, 200 ribu langkah) — reproduksi penuh di luar jangkauan kebanyakan laboratorium; (2) tolok ukur baru dibangun oleh tim yang sama, sehingga validasi independen masih diperlukan; (3) inferensi multi-pandangan pada transformer tetap mahal seiring bertambahnya jumlah citra (pelatihan memakai 2–18 pandangan); (4) karya akhir 2025 — angka dan protokolnya belum lama terbuka untuk pemeriksaan komunitas.
 
-## Kesimpulan
-Depth Anything 3 menyatukan geometri multi-view dalam satu transformer polos dengan target depth-ray tunggal, melampaui VGGT. Sebagai karya 2025, angka perlu diverifikasi via arXiv sebelum sitasi formal.
+## Kaitan dengan Bab Lain
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `lin2025depthanything3` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Bab ini puncak sementara garis kedalaman dalam tinjauan: berawal dari estimasi per-citra (bab 062–068), dimantapkan Depth Anything (bab 071) dan Depth Anything V2 (bab 175) — yang menjadi basis arsitektur guru sekaligus pembanding langsung. Varian metriknya mengikuti kerangka kanonik Metric3Dv2, sejalan dengan bab 177 (Metric3D). Pergeserannya dari "kedalaman per citra" ke "geometri konsisten lintas pandangan" melayani kebutuhan klaster Deteksi 3D (bab 087–098) dan RGB-D SLAM (bab 107–111), dan paling enak dibaca berdampingan dengan survei kedalaman metrik (bab 199) serta varian *real-time* AsyncMDE (bab 200).
 
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
+## Poin untuk Sitasi
 
----
-*Lembar 198/202 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `lin2025depthanything3`. Ringkasan yang aman dikutip: "Depth Anything 3 menunjukkan satu transformer polos (DINOv2) dengan target prediksi depth-ray tunggal cukup untuk memulihkan geometri konsisten dari sembarang jumlah pandangan, dengan atau tanpa pose kamera, melampaui VGGT pada seluruh tugas tolok ukur geometri visual." **Catatan versi:** abstrak arXiv terbaru melaporkan margin 44,3% (pose) dan 25,1% (geometri), sedangkan teks v1 melaporkan 35,7% dan 23,6% — angka berubah antarversi, maka kutiplah angka sesuai versi yang dirujuk dan sebutkan versinya. Rincian arsitektur pada bab ini (rasio lapis 2:1, Dual-DPT, token kamera, pelatihan guru–murid) diambil dari teks lengkap v1; verifikasi ke naskah sebelum penggunaan formal.

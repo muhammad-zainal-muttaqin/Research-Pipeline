@@ -1,201 +1,115 @@
 # 074 - DenseFusion: 6D Object Pose Estimation by Iterative Dense Fusion
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 074 dari 154 |
 | Kunci BibTeX | `wang2019densefusion` |
-| Judul | DenseFusion: 6D Object Pose Estimation by Iterative Dense Fusion |
-| Penulis | Wang, Chen; Xu, Danfei; Zhu, Yuke; Mart{\'i |
+| Judul asli | DenseFusion: 6D Object Pose Estimation by Iterative Dense Fusion |
+| Penulis | Chen Wang, Danfei Xu, Yuke Zhu, Roberto Martín-Martín, Cewu Lu, Li Fei-Fei, Silvio Savarese |
 | Tahun | 2019 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Pose 6D |
-| Kata kunci | pose 6D, RGB-D, dense fusion, iterative refinement, per-pixel |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2019) |
+| Tema | Pose 6D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1901.04780
+- **Halaman proyek:** https://sites.google.com/view/densefusion/
+- **Repositori kode resmi:** https://github.com/j96w/DenseFusion
+- **Google Scholar:** https://scholar.google.com/scholar?q=DenseFusion%3A%206D%20Object%20Pose%20Estimation%20by%20Iterative%20Dense%20Fusion
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=DenseFusion%3A%206D%20Object%20Pose%20Estimation%20by%20Iterative%20Dense%20Fusion&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-pose-6d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=DenseFusion%3A%206D%20Object%20Pose%20Estimation%20by%20Iterative%20Dense%20Fusion
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=DenseFusion%3A%206D%20Object%20Pose%20Estimation%20by%20Iterative%20Dense%20Fusion&sort=relevance
+Makalah ini memperkenalkan DenseFusion, kerangka *end-to-end* (dilatih dari masukan ke keluaran sebagai satu kesatuan) untuk mengestimasi pose 6D objek yang model 3D-nya telah diketahui, dari satu citra RGB-D. Pose 6D adalah enam derajat kebebasan posisi objek relatif terhadap kamera — tiga komponen translasi dan tiga komponen rotasi, ditulis sebagai matriks transformasi p = [R|t]. Citra RGB-D adalah citra warna yang setiap pikselnya juga memuat nilai kedalaman (jarak ke kamera), misalnya dari sensor Kinect. Masalah yang dipecahkan adalah dua kelemahan metode sebelumnya: pemrosesan warna dan kedalaman secara terpisah yang membuang sifat saling melengkapi keduanya, serta ketergantungan pada pasca-pemrosesan ICP yang lambat.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Gagasan utamanya adalah fusi padat (*dense fusion*) tingkat piksel: setiap titik 3D dari peta kedalaman dipasangkan dengan fitur warna piksel yang bersesuaian, sehingga setiap titik membawa informasi geometri sekaligus penampakan. Dari setiap fitur gabungan, jaringan memprediksi satu pose lengkap beserta skor kepercayaan; prediksi berkepercayaan tertinggi menjadi keluaran, lalu sebuah modul *refinement* iteratif berbasis jaringan saraf memperbaikinya tanpa ICP. Pada tolok ukur YCB-Video, DenseFusion mengungguli PoseCNN yang sudah dimurnikan dengan ICP sebesar 3,5% pada metrik akurasi presisi tinggi, sambil berjalan sekitar 200 kali lebih cepat (16 *frame* per detik). Dalam uji robot nyata, pose hasil estimasi cukup akurat untuk mengangkat objek dengan tingkat keberhasilan 73%.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 3343--3352 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode estimasi pose 6D RGB-D yang menyatukan fitur RGB dan point cloud kedalaman secara per-piksel (dense) lalu memurnikan pose secara iteratif.
+Estimasi pose 6D diperlukan pada aplikasi yang menuntut interaksi fisik dengan objek: pemegangan robot (*grasping*), navigasi otonom, dan *augmented reality*. Metode klasik mengekstrak fitur rancangan manual (*handcrafted*) dari data RGB-D, mengelompokkan korespondensi, lalu memverifikasi hipotesis pose. Pendekatan ini rapuh terhadap oklusi (objek terhalang sebagian) dan perubahan pencahayaan, karena fiturnya tidak dipelajari dari data.
 
-## Abstrak (Parafrase)
-DenseFusion mengekstrak fitur RGB (CNN) dan geometri dari point cloud kedalaman (PointNet-like) lalu menggabungkannya secara per-piksel (dense fusion), sehingga tiap titik memiliki embedding warna+geometri. Pose diestimasi per-titik lalu diagregasi, dan sebuah jaringan refinement iteratif menyempurnakannya. Hasilnya SOTA real-time saat rilis.
+Generasi berikutnya memakai jaringan saraf dalam. [PoseCNN](./073%20-%202018%20-%20PoseCNN%20-%20Pose%206D.md) (bab 073) mengestimasi pose langsung dari citra RGB, tetapi untuk memanfaatkan kedalaman ia memerlukan tahap ICP (*Iterative Closest Point*): algoritme iteratif yang menyelaraskan model 3D objek ke *point cloud* — himpunan titik 3D hasil pengukuran sensor kedalaman — dengan meminimalkan jarak titik-terdekat secara berulang. ICP pada PoseCNN sangat disesuaikan, tidak dapat dilatih bersama jaringan utama, dan menjadi penghambat kecepatan. Pendekatan lain dari bidang mengemudi otonom, PointFusion, memadukan warna dan geometri dalam satu jaringan, tetapi fusinya bersifat global: satu vektor fitur citra disambungkan dengan satu vektor fitur geometri untuk seluruh objek. Fusi global semacam ini menghapus detail lokal; ketika objek terhalang, bagian yang keliru ikut menentukan pose. Kebutuhan yang belum terpenuhi saat itu adalah metode yang memanfaatkan kedua modalitas secara lokal per piksel, tetap akurat pada adegan berdesakan, dan berjalan *real-time* untuk kendali robot.
 
-## Latar Belakang & Konteks
-Fusi RGB-D tingkat-global kehilangan detail lokal penting untuk pose presisi, dan pendekatan yang mengandalkan ICP mahal secara komputasi.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Fusi RGB-D tingkat-global kehilangan detail lokal.
-- ICP untuk refinement mahal secara komputasi.
-- Pose presisi butuh fusi warna+geometri lokal.
-- Oklusi menyulitkan estimasi pose.
-- Real-time diperlukan untuk robotika.
+Gagasan inti DenseFusion adalah mengganti fusi global dengan fusi lokal yang disertai pemilihan prediksi. Secara mekanis: peta kedalaman diubah menjadi *point cloud* memakai parameter intrinsik kamera; setiap titik diproyeksikan kembali ke bidang citra sehingga dapat dipasangkan dengan fitur warna pikselnya; hasilnya adalah himpunan fitur gabungan, satu per titik. Setiap fitur gabungan memprediksi satu kandidat pose lengkap beserta skor *confidence* (kepercayaan) yang dipelajari jaringan secara mandiri. Titik pada bagian objek yang terlihat jelas menghasilkan prediksi baik dan kepercayaan tinggi; titik pada bagian terhalang atau salah segmentasi menghasilkan prediksi buruk, tetapi kepercayaannya otomatis direndahkan. Pose akhir adalah kandidat dengan kepercayaan tertinggi. Dengan cara ini oklusi tidak lagi mencemari satu prediksi global, karena prediksi dipilih dari bagian objek yang benar-benar terlihat. Di atas mekanisme tersebut, sebuah modul jaringan memperbaiki pose secara iteratif, menggantikan peran ICP dengan komponen yang dapat dilatih dan cepat.
 
-## Tujuan & Pertanyaan Penelitian
-- Menyatukan RGB & geometri secara per-piksel.
-- Mengestimasi pose per-titik lalu agregasi.
-- Memurnikan pose via refinement iteratif (bukan ICP).
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-DenseFusion mengembangkan fusi RGB-D dense untuk pose.
+Alur keseluruhan dari masukan ke keluaran:
 
-Karya/konsep pembanding yang relevan:
+```
+ masukan: citra RGB-D + mask segmen per objek
+        │                                   │
+        ▼                                   ▼
+ potongan RGB (crop)             kedalaman termask -> P titik 3D
+        │                                   │
+        ▼                                   ▼
+ ResNet-18 + 4 lapis up-sampling  PointNet (MLP, reduksi avg-pool)
+        │                                   │
+        ▼                                   ▼
+ embedding warna 128-d/piksel     fitur geometri 128-d/titik
+        │                                   │
+        └─── pemasangan titik-piksel via intrinsik kamera ────┘
+                                │
+                                ▼
+     fusi per titik: [warna 128 | geometri 128 | fitur global]
+                                │
+                                ▼
+      P kandidat pose [R|t], masing-masing + confidence c
+                                │
+                                ▼
+        pose terpilih = kandidat dengan c tertinggi
+                                │
+                                ▼
+        refinement: 2 iterasi prediksi residu pose
+```
 
-- PoseCNN — pose 6D (pembanding).
-- PointNet — fitur point cloud.
-- Dense fusion per-pixel.
-- Iterative refinement network.
+Diagram menunjukkan dua cabang heterogen (citra dan titik) yang bertemu pada fusi per titik. Bagian berikut menguraikan setiap tahap.
 
-## Metodologi & Arsitektur
-CNN mengekstrak embedding warna per-piksel; PointNet-like mengekstrak geometri per-titik dari point cloud (depth); dense fusion menggabungkan keduanya per-titik; jaringan memprediksi pose per-titik + confidence, diagregasi; refinement network menyempurnakan pose iteratif.
+### Segmentasi Semantik sebagai Tahap Pertama
 
-Komponen / langkah metodologis utama:
+Tahap pertama menghasilkan mask (peta biner per kelas) untuk setiap objek yang dikenal. Jaringannya berarsitektur *encoder-decoder* (enkoder memampatkan citra menjadi fitur, dekoder mengembalikannya ke resolusi penuh) dengan keluaran N+1 kanal untuk N kelas objek ditambah latar belakang. DenseFusion memakai jaringan segmentasi PoseCNN apa adanya; kontribusi makalah ini bukan pada segmentasi. Untuk tiap objek, mask menentukan dua hal: potongan citra (*crop*) di dalam kotak pembatas (*bounding box*) mask, dan himpunan piksel kedalaman yang akan diubah menjadi titik 3D.
 
-- Ekstraksi embedding RGB per-piksel (CNN).
-- Ekstraksi geometri per-titik (PointNet-like).
-- Dense fusion per-pixel (warna+geometri).
-- Prediksi pose per-titik + confidence.
-- Iterative refinement network.
-- Input RGB-D, real-time.
+### Ekstraksi Fitur Warna per Piksel
 
-## Kontribusi Utama
-1. Fusi RGB-D dense per-titik untuk pose.
-2. Estimasi pose per-titik + agregasi confidence.
-3. Refinement iteratif menggantikan ICP.
-4. SOTA real-time saat rilis.
+Potongan RGB diproses oleh enkoder ResNet-18 — jaringan residual 18 lapis yang memakai sambungan pintas untuk memudahkan pelatihan jaringan dalam — diikuti empat lapis *up-sampling* sebagai dekoder. Keluarannya adalah peta *embedding* (vektor fitur hasil pembelajaran) berukuran H×W×128: setiap piksel potongan membawa vektor 128 dimensi yang meringkaskan penampakan lokalnya. Resolusi keluaran dijaga agar korespondensi piksel-titik tetap dapat dibentuk.
 
-## Rincian Eksperimen
-Diuji pada YCB-Video dan LineMOD dengan metrik ADD/ADD-S dan pengukuran kecepatan, dibandingkan PoseCNN(+ICP).
+### Ekstraksi Fitur Geometri per Titik
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Piksel kedalaman termask diubah menjadi titik 3D dengan parameter intrinsik kamera: untuk piksel (u, v) berkedalaman d, koordinat titiknya adalah ((u−cx)·d/fx, (v−cy)·d/fy, d), dengan (fx, fy) panjang fokus dan (cx, cy) titik utama kamera. Titik-titik ini diproses varian PointNet, jaringan milik Qi dkk. (2017) yang dirancang untuk himpunan titik tidak berurutan: sebuah MLP (perseptron multilapis) memetakan setiap titik secara independen ke ruang fitur, lalu fungsi reduksi simetris menggabungkan seluruh fitur menjadi satu vektor global — disebut simetris karena hasilnya tidak bergantung urutan titik. DenseFusion memakai *average-pooling* (perata-rataan) alih-alih *max-pooling* yang lazim dipakai. Setiap titik keluar dengan fitur geometri 128 dimensi.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| YCB-Video | ADD-S | SOTA real-time saat rilis |
-| LineMOD | ADD | SOTA/kompetitif |
-| Kecepatan | FPS | real-time (tanpa ICP mahal) |
+### Fusi Padat per Piksel
 
-## Temuan Kunci
-- Fusi dense per-titik unggul untuk pose 6D.
-- Refinement iteratif menggantikan ICP.
-- Confidence per-titik menangani oklusi.
-- Real-time tercapai.
+Setiap titik 3D diproyeksikan ke bidang citra memakai intrinsik yang sama, sehingga pasangan (fitur geometri titik, *embedding* warna piksel) terbentuk satu per satu. Pasangan disatukan dengan penyambungan (*concatenation*), lalu sebuah jaringan mereduksi seluruh pasangan menjadi satu fitur global; fitur global ini disalin dan disambungkan ke setiap fitur per titik agar konteks seluruh objek tersedia pada tiap prediksi lokal. Hasil tahap ini: P fitur gabungan, satu untuk setiap titik.
 
-## Keunggulan
-- Fusi dense per-titik.
-- Real-time tanpa ICP.
-- SOTA saat rilis.
+### Prediksi Pose per Titik dengan Confidence
 
-## Keterbatasan
-- Bergantung kualitas kedalaman/point cloud.
-- Butuh model objek untuk evaluasi ADD.
-- Oklusi berat tetap menantang.
+Setiap fitur gabungan dilewatkan ke prediktor yang mengeluarkan satu pose [R|t] dan satu skor *confidence* c. Fungsi *loss* untuk kandidat ke-i adalah rata-rata jarak antara titik-titik model objek pada pose kebenaran dan pada pose prediksi — bentuk yang sama dengan metrik ADD pada bagian eksperimen. Untuk objek simetris (misalnya mangkuk) definisi itu ambigu karena banyak orientasi tampak identik; *loss*-nya diganti jarak ke titik model terdekat. Total *loss* berbentuk L = (1/N) Σ (Lᵢ·cᵢ − w·log cᵢ) dengan w = 0,01. Mekanismenya: prediksi buruk dapat menekan kontribusinya dengan menurunkan c, tetapi suku −w·log c menghukum kepercayaan yang terlalu rendah. Jaringan dengan demikian belajar sendiri titik mana yang layak dipercaya, tanpa label kepercayaan eksplisit — inilah *self-supervised confidence*. Pose keluaran adalah kandidat dengan c tertinggi.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Refinement Iteratif Berbasis Jaringan
 
-## Relevansi terhadap Tema Tinjauan
-DenseFusion menegaskan fusi RGB-D dense per-titik untuk pose 6D — contoh kuat pemanfaatan kedalaman geometris dalam tinjauan.
+Modul terakhir menggantikan ICP. Setelah pose awal diperoleh, *point cloud* ditransformasikan dengan pose tersebut; pada kerangka baru ini, sisa galat pose tampak sebagai pergeseran kecil dari posisi kanonik objek. Fitur geometri dihitung ulang pada titik hasil transformasi, difusikan kembali dengan *embedding* warna yang dipakai ulang, lalu jaringan residu (empat lapis terhubung penuh) memprediksi koreksi pose. Prosedur diulang K = 2 kali; pose akhir adalah komposisi seluruh koreksi. Modul ini baru mulai dilatih setelah jaringan utama konvergen, karena prediksi pada awal pelatihan terlalu bising untuk dipelajari koreksinya.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Pose 6D** yang baik dibaca berdampingan:
+## Eksperimen dan Hasil
 
-- [073 - 2018 - PoseCNN - Pose 6D](./073%20-%202018%20-%20PoseCNN%20-%20Pose%206D.md)
-- [075 - 2020 - PVN3D - Pose 6D](./075%20-%202020%20-%20PVN3D%20-%20Pose%206D.md)
-- [076 - 2021 - FFB6D - Pose 6D](./076%20-%202021%20-%20FFB6D%20-%20Pose%206D.md)
-- [077 - 2020 - G2L-Net - Pose 6D](./077%20-%202020%20-%20G2L-Net%20-%20Pose%206D.md)
-- [078 - 2024 - FoundationPose - Pose 6D](./078%20-%202024%20-%20FoundationPose%20-%20Pose%206D.md)
-- [079 - 2021 - Review Pose 6D & Deteksi 3D (Hoque dkk.) - Pose 6D](./079%20-%202021%20-%20Review%20Pose%206D%20%26%20Deteksi%203D%20%28Hoque%20dkk.%29%20-%20Pose%206D.md)
+Evaluasi dilakukan pada dua tolok ukur. YCB-Video memuat 21 objek pada 92 video RGB-D: 80 video untuk pelatihan, 2.949 *keyframe* dari 12 video sisanya untuk pengujian, ditambah 80.000 citra sintetis yang sama dengan yang dipakai PoseCNN. LineMOD memuat 13 objek bertekstur rendah. Metriknya: ADD adalah rata-rata jarak antara titik-titik model 3D yang ditransformasikan pose prediksi dan pose kebenaran; ADD-S memakai jarak ke titik terdekat sehingga adil bagi objek simetris. Pada YCB-Video dilaporkan AUC (luas di bawah kurva akurasi sampai ambang 0,1 m) dan persentase prediksi dengan ADD-S di bawah 2 cm; ambang 2 cm dipilih karena mendekati toleransi cengkeraman robot pada umumnya.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Pose 6D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Hasil utama pada YCB-Video: varian lengkap mengalahkan PoseCNN+ICP sebesar 3,5% pada metrik ADD-S<2cm, dan varian tanpa *refinement* pun sudah mengunggulinya. Perbaikan ini terjadi justru pada tingkat presisi yang relevan untuk manipulasi. Uji ablasi menunjukkan kedua varian fusi padat mengungguli PointFusion dengan selisih besar; keunggulan dengan demikian berasal dari fusi lokal, bukan sekadar arsitektur yang lebih baru. *Refinement* paling membantu objek simetris tak bertekstur: akurasi mangkuk naik 29%, pisang 6%, dan *extra large clamp* 6%. Pada uji oklusi, kinerja DenseFusion hanya turun sekitar 2% ketika tingkat keterhalangan naik, sedangkan PoseCNN+ICP dan PointFusion menurun signifikan — bukti kuantitatif bahwa prediksi per titik menahan oklusi. Kecepatannya 16 FPS dengan rata-rata lima objek per *frame*, sekitar 200 kali lebih cepat daripada PoseCNN+ICP yang sebagian besar waktunya habis pada tahap ICP.
 
-## Glosarium Istilah (tema Pose 6D)
-Istilah penting untuk memahami makalah ini:
+Pada LineMOD, varian per piksel tanpa *refinement* sudah 7% di atas metode pemurnian kedalaman terbaik saat itu, dan *refinement* menambah 8% lagi; rata-rata perbaikan galat ADD setelah dua iterasi adalah 0,8 cm. Uji robot memakai Toyota HSR bersensor Asus Xtion — berbeda dari Kinect-v2 pada data latih — dengan 60 percobaan mengangkat lima objek YCB; 73% berhasil. Objek tersulit adalah pisang (7 dari 12 percobaan), yang menurut penulis disebabkan model pisang pada eksperimen berbeda penampakan dari model pada data latih.
 
-- **Pose 6D** — Tiga translasi + tiga rotasi objek relatif kamera.
-- **RGB-D** — Citra warna berpasangan peta kedalaman.
-- **Point cloud** — Himpunan titik 3D dari depth/LiDAR.
-- **Keypoint voting** — Titik memilih lokasi keypoint 3D untuk pose.
-- **ADD/ADD-S** — Metrik pose: rata-rata jarak titik model (S=simetris).
-- **Fusi dense** — Penggabungan fitur RGB dan geometri per-titik.
-- **YCB-Video** — Dataset pose 6D scene berantakan.
-- **LineMOD** — Dataset pose 6D objek tunggal klasik.
-- **Refinement iteratif** — Penyempurnaan pose bertahap (ICP/jaringan).
-- **Oklusi** — Objek terhalang sebagian.
+## Kelebihan dan Keterbatasan
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Kelebihan: (1) fusi lokal per titik menjadikan estimasi tahan terhadap oklusi dan kesalahan segmentasi, terbukti dari degradasi hanya 2% pada uji oklusi; (2) seluruh komponen utama dapat dilatih *end-to-end* tanpa tahap ICP; (3) kecepatan hampir *real-time* pada 16 FPS; (4) model berpindah lintas sensor (Kinect-v2 ke Asus Xtion) tanpa penyetelan ulang pada uji robot.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Keterbatasan: (1) metode bersifat *instance-level* — hanya berlaku untuk objek yang model CAD-nya tersedia; (2) ia bergantung pada hasil segmentasi, dan repositori resmi mencatat kebingungan detektor antara objek *large clamp* dan *extra large clamp* yang menurunkan skor keseluruhan; (3) pelatihan bertahap dua — modul *refinement* baru dilatih setelah jaringan utama konvergen — memperumit reproduksi; (4) dari sisi rekayasa, *loss* objek simetris memerlukan pencarian tetangga terdekat per piksel yang menurut dokumentasi resmi sangat lambat di CPU, sehingga praktis membutuhkan GPU; (5) kegagalan pada pisang menunjukkan sensitivitas terhadap ketidakcocokan penampakan antara model dan objek nyata.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kaitan dengan Bab Lain
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+DenseFusion berdiri langsung di atas [PoseCNN](./073%20-%202018%20-%20PoseCNN%20-%20Pose%206D.md) (bab 073): jaringan segmentasinya dipakai apa adanya, protokol data YCB-Video beserta pembagian latih-ujinya diikuti persis, dan tahap ICP PoseCNN menjadi sasaran penggantian. Garis penerusnya terlihat pada bab-bab berikutnya dalam klaster ini: [PVN3D](./075%20-%202020%20-%20PVN3D%20-%20Pose%206D.md) (bab 075) memindahkan gagasan prediksi per titik ke pemungutan suara *keypoint* murni pada *point cloud* 3D; [FFB6D](./076%20-%202021%20-%20FFB6D%20-%20Pose%206D.md) (bab 076) memperdalam fusi RGB-D dengan pertukaran fitur dua arah pada setiap skala; sedangkan [FoundationPose](./078%20-%202024%20-%20FoundationPose%20-%20Pose%206D.md) (bab 078) menandai peralihan ke model fondasi yang melonggarkan asumsi ketersediaan model CAD per objek. Perbandingan menyeluruh antarmetode dapat dibaca pada [bab 079](./079%20-%202021%20-%20Review%20Pose%206D%20%26%20Deteksi%203D%20%28Hoque%20dkk.%29%20-%20Pose%206D.md).
 
-## Kesimpulan
-DenseFusion menyatukan fitur RGB dan geometri point cloud secara per-piksel dengan refinement iteratif untuk pose 6D RGB-D, mencapai SOTA real-time tanpa ICP mahal.
+## Poin untuk Sitasi
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `wang2019densefusion` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Kutip dengan kunci `wang2019densefusion`. Ringkasan yang aman dikutip: "DenseFusion mengestimasi pose 6D dari citra RGB-D dengan memfusikan fitur warna dan geometri secara padat per piksel, memprediksi satu pose per titik beserta skor kepercayaan yang dipelajari secara mandiri, lalu memurnikan hasilnya dengan jaringan *refinement* iteratif. Metode ini mengungguli PoseCNN yang dimurnikan ICP pada tolok ukur YCB-Video dan LineMOD, dengan inferensi hampir *real-time* (16 FPS)."
 
----
-*Lembar 074/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan verifikasi: klaim "3,5% pada ADD-S<2cm", "sekitar 200 kali lebih cepat", "16 FPS", "7% lalu 8% pada LineMOD", "0,8 cm", "73% keberhasilan pegangan", serta rincian arsitektur (ResNet-18, embedding 128 dimensi, w = 0,01, dua iterasi) tertulis eksplisit pada teks naskah arXiv:1901.04780. Nilai per objek dan agregat pada Tabel 1–3 naskah (antara lain AUC keseluruhan dan rincian waktu per komponen) tidak dikutip pada bab ini karena tabel tidak tersedia dalam bentuk teks pada sumber yang diakses; cocokkan ke PDF naskah sebelum mengutip angka tersebut.

@@ -1,206 +1,87 @@
 # 003 - YOLOv3: An Incremental Improvement
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 003 dari 154 |
 | Kunci BibTeX | `redmon2018yolov3` |
-| Judul | YOLOv3: An Incremental Improvement |
-| Penulis | Redmon, Joseph; Farhadi, Ali |
+| Judul asli | YOLOv3: An Incremental Improvement |
+| Penulis | Joseph Redmon, Ali Farhadi |
 | Tahun | 2018 |
-| Venue / Jurnal | arXiv preprint arXiv:1804.02767 |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | YOLOv3, Darknet-53, multi-skala, residual, multi-label |
+| Venue | arXiv preprint arXiv:1804.02767 (laporan teknis) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1804.02767
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLOv3%3A%20An%20Incremental%20Improvement
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLOv3%3A%20An%20Incremental%20Improvement&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/1804.02767
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLOv3%3A%20An%20Incremental%20Improvement
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLOv3%3A%20An%20Incremental%20Improvement&sort=relevance
+YOLOv3 adalah pemutakhiran inkremental atas YOLOv2 (bab 002): tidak ada perubahan paradigma, melainkan tiga perbaikan terarah. Pertama, backbone Darknet-19 diganti Darknet-53 — jaringan 53 lapis dengan koneksi residual yang memperkuat ekstraksi fitur tanpa memperlambat berarti. Kedua, prediksi dilakukan pada tiga skala peta fitur sekaligus (bukan satu skala seperti sebelumnya), yang secara langsung menyerang kelemahan terbesar YOLOv2: deteksi objek kecil. Ketiga, klasifikasi memakai pengklasifikasi logistik independen per kelas alih-alih *softmax*, sehingga label yang saling tumpang tindih dapat ditangani.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasilnya adalah keseimbangan kecepatan-akurasi yang matang: YOLOv3-608 mencapai 33,0% AP pada COCO dengan 51 milidetik per citra — sekitar 3,8 kali lebih cepat dari RetinaNet pada akurasi yang masih kompetitif, dan unggul pada metrik longgar (AP50 57,9%). Kombinasi kecepatan, kemudahan modifikasi, dan dokumentasi yang terbuka menjadikan YOLOv3 baseline paling banyak dipakai dalam tinjauan ini, termasuk pada klaster aplikasi pertanian dan integrasi RGB-D.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 1804.02767 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Versi ketiga YOLO yang memperkenalkan backbone Darknet-53 residual dan prediksi pada tiga skala berbeda, menjadikannya baseline YOLO paling banyak diadopsi karena keseimbangan kecepatan-akurasi yang matang.
+Dua masalah tersisa dari YOLOv2. Masalah pertama adalah objek kecil. YOLOv2 memang menambahkan *passthrough layer*, tetapi prediksi tetap dilakukan pada satu peta fitur 13×13: pada peta serinci itu, objek yang hanya berukuran beberapa piksel pada citra asal sudah terlalu tereduksi untuk dikenali. Detektor pesaing seperti RetinaNet (bab 016) dan SSD (bab 015) mengatasi masalah ini dengan memprediksi pada beberapa skala fitur sekaligus — fitur dangkal yang rinci untuk objek kecil, fitur dalam yang kaya makna untuk objek besar.
 
-## Abstrak (Parafrase)
-YOLOv3 melakukan sejumlah peningkatan inkremental namun berdampak: backbone Darknet-53 dengan koneksi residual yang jauh lebih kuat dari Darknet-19, prediksi pada tiga skala fitur (mirip FPN) untuk menangani objek besar hingga kecil, serta klasifikasi multi-label memakai logistic regression independen alih-alih softmax. Kombinasi ini membuat YOLOv3 sangat kompetitif pada ambang IoU longgar dengan kecepatan tinggi, dan unggul mendeteksi objek kecil dibanding pendahulunya.
+Masalah kedua adalah kapasitas fitur. Darknet-19 relatif dangkal; menambah kedalaman jaringan biasa justru menurunkan kinerja karena degradasi gradien — masalah yang di komunitas visi dipecahkan oleh koneksi residual pada ResNet (bab 147). Selain itu, mekanisme WordTree dari YOLO9000 terbukti rumit dan tidak dilanjutkan; sebagai gantinya diperlukan cara sederhana untuk menangani label yang saling tumpang tindih (mis. sebuah kotak bisa sah berlabel "perempuan" dan "orang" sekaligus), yang tidak dapat dilakukan *softmax* karena *softmax* memaksa satu kelas pemenang.
 
-## Latar Belakang & Konteks
-YOLOv2 masih lemah pada objek kecil dan representasi fiturnya terbatas. Kebutuhan mendeteksi objek pada rentang skala lebar sekaligus mempertahankan kecepatan mendorong desain multi-skala dengan backbone yang lebih dalam namun tetap efisien.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Deteksi objek kecil masih lemah pada YOLOv2.
-- Representasi fitur perlu diperkuat tanpa mengorbankan kecepatan.
-- Softmax tak ideal untuk label yang tumpang tindih/multi-label.
-- Rentang skala objek yang lebar sulit ditangani satu skala.
-- Kedalaman jaringan membutuhkan mekanisme anti-degradasi.
+Gagasan YOLOv3 dapat diringkas menjadi: pertahankan mesin prediksi YOLOv2 yang sudah stabil, lalu perkuat dua komponen penentunya — fitur dan skala. Fitur diperkuat dengan backbone residual yang dalam; skala diperbanyak dengan menempelkan kepala prediksi pada tiga tingkat kedalaman jaringan, mengikuti pola piramida fitur (FPN, bab 018). Setiap skala diberi tanggung jawab terhadap ukuran objek yang berbeda melalui pembagian *anchor*, sehingga objek kecil dideteksi pada peta rinci dan objek besar pada peta kasar. Untuk klasifikasi, satu *softmax* diganti banyak pengklasifikasi biner independen — perubahan kecil yang menghapus asumsi bahwa kelas-kelas saling eksklusif.
 
-## Tujuan & Pertanyaan Penelitian
-- Meningkatkan deteksi multi-skala, khususnya objek kecil.
-- Memperkuat backbone dengan koneksi residual.
-- Mendukung klasifikasi multi-label.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-YOLOv3 memadukan gagasan residual (ResNet) dan piramida fitur (FPN) ke dalam kerangka YOLO, mempertahankan filosofi satu-tahap real-time.
+### Darknet-53
 
-Karya/konsep pembanding yang relevan:
+Backbone baru ini memiliki 53 lapis konvolusi, tersusun dari pasangan konvolusi 1×1 dan 3×3 yang diulang, dengan **koneksi residual**: keluaran suatu blok ditambahkan dengan masukannya sendiri sebelum diteruskan. Penjumlahan pintas ini memberi gradien jalur langsung saat pelatihan, sehingga jaringan yang dalam tetap dapat dilatih tanpa degradasi. Tidak ada *pooling*; pengecilan resolusi dilakukan konvolusi berlangkah (*stride*) 2. Menurut naskah, Darknet-53 mencapai akurasi klasifikasi ImageNet setara ResNet-101 dengan kecepatan 1,5 kali lipat, dan setara ResNet-152 dengan kecepatan 2 kali lipat.
 
-- ResNet — koneksi residual pada Darknet-53.
-- FPN — prediksi multi-skala top-down.
-- YOLOv2 — anchor dan direct location prediction.
-- Logistic classifiers — klasifikasi multi-label.
+### Prediksi Tiga Skala
 
-## Metodologi & Arsitektur
-Darknet-53 (53 lapis, blok residual) mengekstrak fitur; prediksi dilakukan pada tiga skala dengan anchor berbeda per skala (total 9 anchor). Setiap prediksi mencakup objectness (logistic), offset box, dan skor kelas independen. Upsampling + konkatenasi menyatukan fitur antar-skala.
+Keluaran Darknet-53 pada citra masukan 416×416 menghasilkan peta fitur 13×13 (dibagi 32). YOLOv3 memasang kepala prediksi pada peta ini, kemudian mengambil fitur dua tingkat lebih awal: peta 13×13 di-*upsample* dua kali menjadi 26×26 dan digabung (*concatenate*) dengan fitur dari lapis tengah; kepala kedua memprediksi pada 26×26 (dibagi 16). Proses yang sama diulang sekali lagi untuk menghasilkan kepala ketiga pada 52×52 (dibagi 8). Dengan demikian objek besar dideteksi pada peta 13×13, objek sedang pada 26×26, dan objek kecil pada peta 52×52 yang rinci.
 
-Komponen / langkah metodologis utama:
+```
+citra 416x416
+     │
+     ▼
+Darknet-53 (residual)                 kepala prediksi (per skala:
+     │                                3 anchor × (4 box + 1 objek + C kelas))
+     ├── 13x13  ──────────────────►  objek besar   (anchor terbesar)
+     │      │
+     │      └─ upsample ×2, gabung fitur lapis tengah
+     ├── 26x26  ──────────────────►  objek sedang
+     │      │
+     │      └─ upsample ×2, gabung fitur lapis awal
+     └── 52x52  ──────────────────►  objek kecil   (anchor terkecil)
+```
 
-- Backbone Darknet-53 dengan blok residual.
-- Prediksi pada 3 skala (mirip FPN) dengan 3 anchor per skala.
-- Objectness score via logistic regression.
-- Klasifikasi independen per-kelas (multi-label, tanpa softmax).
-- Upsample + concat untuk menyatukan fitur multi-skala.
-- NMS akhir per kelas.
+Setiap skala memakai 3 *anchor box*, sehingga totalnya 9 anchor yang ditentukan dengan *k-means clustering* pada dataset COCO (mewarisi teknik dimension clusters dari bab 002). Anchor terbesar ditempatkan pada skala terkasar, anchor terkecil pada skala terinci. Rumus prediksi kotak identik dengan YOLOv2: offset pusat diikat pada sel melalui fungsi logistik, ukuran diprediksi sebagai faktor skala terhadap anchor.
 
-## Kontribusi Utama
-1. Darknet-53 residual yang dalam namun efisien.
-2. Prediksi tiga-skala meningkatkan deteksi objek kecil.
-3. Klasifikasi multi-label yang lebih fleksibel.
-4. Baseline stabil yang sangat banyak diadopsi & dimodifikasi.
+### Skor Objek dan Klasifikasi Multi-Label
 
-## Rincian Eksperimen
-Dievaluasi pada COCO dengan penekanan pada trade-off kecepatan-akurasi dan performa lintas ukuran objek (AP-small/medium/large), dibandingkan RetinaNet dan SSD.
+Setiap kotak prediksi memperoleh skor *objectness* melalui regresi logistik: nilai 1 untuk anchor yang tumpang tindih paling baik dengan objek kebenaran, 0 untuk lainnya. Untuk kelas, YOLOv3 mengganti *softmax* dengan **pengklasifikasi logistik independen per kelas** yang dilatih dengan *binary cross-entropy*. Artinya setiap kelas dinilai sendiri-sendiri "ya/tidak", sehingga satu kotak dapat memperoleh beberapa label sekaligus tanpa dipaksa memilih satu pemenang. Perubahan ini sekaligus menutup mekanisme WordTree yang rumit dari generasi sebelumnya.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+## Eksperimen dan Hasil
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | AP / AP50 | kuat pada AP50, cepat; AP ketat lebih rendah dari RetinaNet |
-| COCO (objek kecil) | AP-S | membaik dibanding YOLOv2 |
-| Kecepatan | FPS | jauh lebih cepat dari RetinaNet pada akurasi setara |
+Evaluasi dilakukan pada COCO dengan metrik AP rata-rata pada ambang IOU 0,5:0,95 (metrik ketat), AP50 (ambang longgar), serta AP per ukuran objek (kecil/sedang/besar). Hasil utama:
 
-## Temuan Kunci
-- Prediksi multi-skala krusial untuk objek kecil.
-- Backbone residual meningkatkan kualitas fitur signifikan.
-- Unggul pada IoU longgar, sedikit tertinggal pada IoU ketat.
-- Sangat praktis: cepat, stabil, mudah dimodifikasi.
+- YOLOv3-608: 33,0% AP, 57,9% AP50, pada 51 ms per citra (Titan X).
+- YOLOv3-320: 28,2% AP pada 22 ms — setara akurasi SSD-321 tetapi tiga kali lebih cepat.
+- Pembanding: RetinaNet-101-800 mencapai 37,8% AP dan 61,1% AP50 pada 198 ms.
 
-## Keunggulan
-- Keseimbangan kecepatan-akurasi yang matang.
-- Deteksi multi-skala efektif.
-- Menjadi fondasi rekayasa banyak turunan.
+Interpretasinya dua sisi. Pada ambang longgar (AP50) YOLOv3 nyaris menyamai RetinaNet dengan kecepatan hampir 4 kali lipat — untuk banyak aplikasi praktis, ini titik yang lebih berguna. Namun pada ambang ketat YOLOv3 tertinggal, yang menunjukkan lokalisasinya masih kurang halus: kotaknya benar, tetapi tidak tepat-tepat. Pada sisi positif, AP untuk objek kecil naik jelas dibanding YOLOv2 berkat prediksi tiga skala — persis masalah yang hendak dipecahkan.
 
-## Keterbatasan
-- AP pada IoU ketat kalah dari detektor fokus-akurasi.
-- Masih memakai anchor (butuh penyetelan).
-- Objek sangat kecil/berhimpitan tetap menantang.
+## Kelebihan dan Keterbatasan
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Kelebihan: (1) keseimbangan kecepatan-akurasi terbaik pada masanya untuk kelas detektor *real-time*; (2) deteksi objek kecil membaik signifikan lewat prediksi tiga skala; (3) backbone residual menjadi fondasi yang kuat untuk modifikasi lanjutan; (4) desainnya sederhana, terdokumentasi terbuka, dan mudah dipotong-tempel — alasan utamanya menjadi baseline de-facto pada banyak bab aplikasi dalam tinjauan ini.
 
-## Relevansi terhadap Tema Tinjauan
-YOLOv3 adalah baseline yang paling sering dipakai/dimodifikasi dalam aplikasi RGB-D dan pertanian pada tinjauan ini (mis. deteksi apel), sehingga memahaminya penting untuk menilai turunan-turunannya.
+Keterbatasan: (1) AP pada ambang IOU ketat kalah dari detektor yang berorientasi akurasi seperti RetinaNet; (2) masih bergantung pada *anchor* yang harus disetel per dataset (baru dihapus pada bab 005); (3) objek yang sangat kecil atau berhimpitan rapat tetap sulit; (4) dari sisi ilmiah, makalah ini berupa laporan teknis tanpa ablation formal yang mendalam — klaim kontribusi tiap komponen tidak sekuat makalah konferensi penuh.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+## Kaitan dengan Bab Lain
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [005 - 2021 - YOLOX - Fondasi RGB](./005%20-%202021%20-%20YOLOX%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
-- [009 - 2024 - YOLOv10 - Fondasi RGB](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)
+Bab ini melanjutkan langsung bab 002: mesin prediksi (anchor, offset terikat sel, *objectness* logistik) diwarisi, sedangkan WordTree ditinggalkan. Dua komponen barunya adalah adopsi dari luar keluarga YOLO: koneksi residual dari ResNet (bab 147) dan piramida fitur multi-skala dari FPN (bab 018), keduanya menjawab kelemahan objek kecil yang tersisa sejak bab 001. Resep YOLOv3 inilah yang disempurnakan secara masif oleh bab 004 (YOLOv4), dan head-nya yang berbasis *anchor* menjadi titik berangkat pembaruan bab 005 (YOLOX). Pada klaster aplikasi — terutama pertanian (bab 120–127) — YOLOv3 adalah backbone yang paling sering dimodifikasi.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
-
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-YOLOv3 memantapkan desain backbone residual + prediksi multi-skala pada YOLO, memberi keseimbangan kecepatan-akurasi yang menjadikannya baseline de-facto bagi banyak sistem deteksi termasuk integrasi RGB-D.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `redmon2018yolov3` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 003/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `redmon2018yolov3`; perhatikan bahwa terbitannya berupa laporan teknis arXiv, bukan prosiding konferensi. Ringkasan yang aman dikutip: "YOLOv3 memadukan backbone residual Darknet-53 dengan prediksi tiga skala bergaya piramida fitur dan klasifikasi logistik multi-label, mencapai 33,0% AP (57,9% AP50) pada COCO dengan 51 ms per citra." Angka hasil di atas dari tabel naskah; perbandingan kecepatan antarperangkat keras sebaiknya dikutip bersama keterangan GPU yang dipakai naskah.

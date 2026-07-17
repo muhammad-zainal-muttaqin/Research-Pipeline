@@ -1,206 +1,92 @@
 # 005 - YOLOX: Exceeding YOLO Series in 2021
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 005 dari 154 |
 | Kunci BibTeX | `ge2021yolox` |
-| Judul | YOLOX: Exceeding YOLO Series in 2021 |
-| Penulis | Ge, Zheng; Liu, Songtao; Wang, Feng; Li, Zeming; Sun, Jian |
+| Judul asli | YOLOX: Exceeding YOLO Series in 2021 |
+| Penulis | Zheng Ge, Songtao Liu, Feng Wang, Zeming Li, Jian Sun |
 | Tahun | 2021 |
-| Venue / Jurnal | arXiv preprint arXiv:2107.08430 |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | YOLOX, anchor-free, decoupled head, SimOTA, label assignment |
+| Venue | arXiv preprint arXiv:2107.08430 (Megvii Technology) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2107.08430
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLOX%3A%20Exceeding%20YOLO%20Series%20in%202021
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLOX%3A%20Exceeding%20YOLO%20Series%20in%202021&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2107.08430
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLOX%3A%20Exceeding%20YOLO%20Series%20in%202021
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLOX%3A%20Exceeding%20YOLO%20Series%20in%202021&sort=relevance
+YOLOX membongkar tiga asumsi desain yang diwarisi YOLO sejak bab 002: penggunaan *anchor box*, head yang menggabungkan klasifikasi dan regresi dalam satu cabang, dan penetapan label positif yang statis. Ketiganya diganti: prediksi menjadi *anchor-free* (setiap lokasi pada peta fitur langsung memprediksi satu objek), head dipisah menjadi cabang klasifikasi dan cabang regresi (*decoupled head*), dan penetapan label dilakukan secara dinamis oleh algoritme SimOTA yang memilih kandidat terbaik berdasarkan biaya prediksi.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Dampaknya konsisten di seluruh skala model. YOLOX menaikkan YOLOv3-Darknet53 menjadi 47,3% AP pada COCO (melampaui praktik terbaik saat itu sebesar 3,0 poin), YOLOX-L mencapai 50,0% AP pada 68,9 FPS (V100) melampaui YOLOv5-L sebesar 1,8 poin, dan YOLOX-Nano — hanya 0,91 juta parameter — mencapai 25,3% AP. Satu model YOLOX-L juga memenangi Streaming Perception Challenge pada Workshop on Autonomous Driving, CVPR 2021.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2107.08430 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Mengubah YOLO menjadi anchor-free dengan decoupled head dan penetapan label dinamis SimOTA, memberikan lonjakan akurasi konsisten lintas skala model dan memengaruhi desain YOLO generasi berikutnya.
+Sejak YOLOv2 (bab 002), keluarga YOLO memprediksi kotak sebagai koreksi terhadap *anchor* — kotak acuan yang bentuknya ditentukan lebih dahulu. Desain ini membawa tiga beban. Pertama, *anchor* adalah hiperparameter: jumlah, skala, dan rasionya harus disetel per dataset (mis. lewat klastering), dan setelan yang baik pada COCO belum tentu baik pada domain lain — inilah salah satu sumber bias domain. Kedua, penggunaan banyak *anchor* per lokasi memperbesar kepala prediksi. Ketiga, mekanisme penetapan label positif yang berbasis *anchor* bersifat statis: kandidat ditetapkan positif bila IOU-nya dengan objek kebenaran melampaui ambang tetap, tanpa memperhitungkan kualitas prediksi itu sendiri.
 
-## Abstrak (Parafrase)
-YOLOX merombak YOLO klasik menjadi anchor-free, memisahkan cabang klasifikasi dan regresi (decoupled head), serta memakai SimOTA — penyederhanaan OTA (Optimal Transport Assignment) untuk penetapan label positif secara dinamis. Ditambah augmentasi kuat (Mosaic+MixUp) dan strategi end-to-end opsional, YOLOX konsisten mengungguli YOLOv3-v5 pada skala model setara dan memenangi tantangan Streaming Perception (WAD 2021).
+Di sisi lain, komunitas deteksi telah menunjukkan dua hal. FCOS (bab 019) membuktikan detektor *anchor-free* — satu prediksi per lokasi, langsung dari titik — dapat menyamai detektor berbasis *anchor*. Dan studi tentang *label assignment* menunjukkan bahwa memilih kandidat positif secara dinamis berdasarkan biaya (seperti OTA, *Optimal Transport Assignment*) menaikkan akurasi tanpa mengubah arsitektur. YOLOX adalah upaya membawa dua gagasan itu — ditambah pemisahan head — ke dalam keluarga YOLO yang telah terbukti praktis.
 
-## Latar Belakang & Konteks
-Desain berbasis anchor menambah hyperparameter (skala, rasio, jumlah) dan menimbulkan bias domain, sementara head yang terkopel (klasifikasi dan regresi berbagi fitur) diketahui membatasi kinerja. Tren anchor-free (FCOS) menunjukkan penyederhanaan bisa meningkatkan akurasi.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Anchor menambah hyperparameter dan bias domain.
-- Head terkopel membatasi kinerja klasifikasi vs regresi.
-- Penetapan label statis (IoU) suboptimal.
-- Gap akurasi YOLO terhadap detektor akademik terbaru.
-- Kebutuhan detektor kuat namun tetap sederhana.
+Gagasan pemersatu ketiga perubahan YOLOX adalah menyederhanakan apa yang dapat disederhanakan dan memindahkan kompleksitas ke tempat yang dapat dihitung otomatis. *Anchor* dihapus sehingga tidak ada lagi hiperparameter bentuk kotak yang harus disetel manusia. Head dipisah karena klasifikasi dan regresi adalah dua tugas berbeda yang selama ini dipaksa berbagi fitur yang sama. Dan penetapan label — keputusan "kandidat mana yang menjadi contoh positif untuk objek ini" — diserahkan kepada optimisasi biaya yang dihitung dari prediksi model itu sendiri, bukan aturan ambang tetap.
 
-## Tujuan & Pertanyaan Penelitian
-- Menghapus anchor untuk menyederhanakan dan menaikkan akurasi.
-- Memisahkan head untuk klasifikasi dan regresi.
-- Menetapkan label positif secara dinamis dan optimal.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-YOLOX mengambil ide anchor-free (FCOS), decoupled head, dan penetapan label berbasis optimal transport (OTA), lalu menyederhanakannya menjadi SimOTA agar efisien.
+### Anchor-Free
 
-Karya/konsep pembanding yang relevan:
+Pada YOLO berbasis *anchor*, setiap lokasi peta fitur mengeluarkan beberapa prediksi (satu per anchor). YOLOX mereduksi ini menjadi **satu prediksi per lokasi**: setiap titik pada peta fitur langsung memprediksi empat nilai — dua offset pusat relatif terhadap titik itu dan dua dimensi kotak — plus skor objek dan skor kelas. Titik-titik yang jatuh di dalam wilayah pusat objek (bukan hanya satu sel, tetapi area 3×3 di sekitar pusat, disebut *multi positives*) menjadi kandidat positif. Hasilnya: jumlah prediksi dan parameter head menyusut, dan seluruh hiperparameter *anchor* hilang.
 
-- FCOS — deteksi anchor-free per-lokasi.
-- OTA — penetapan label sebagai optimal transport.
-- YOLOv3/DarkNet — basis backbone.
-- Decoupled head — pemisahan cabang tugas.
+### Decoupled Head
 
-## Metodologi & Arsitektur
-Backbone Darknet/CSP; head dipisah menjadi cabang klasifikasi, regresi, dan objectness. Titik grid diperlakukan anchor-free; SimOTA memilih sejumlah k prediksi terbaik per objek berdasarkan biaya klasifikasi+lokalisasi dinamis. Augmentasi Mosaic+MixUp dimatikan menjelang akhir pelatihan.
+Pada YOLO klasik, satu cabang konvolusi menghasilkan keluaran klasifikasi dan regresi sekaligus. Kedua tugas ini memiliki kebutuhan fitur berbeda: klasifikasi membutuhkan fitur semantik "objek apa", regresi membutuhkan fitur geometris "di mana dan seberapa besar". YOLOX memisahkannya: satu konvolusi 1×1 mereduksi kanal, lalu dua cabang paralel (masing-masing dua konvolusi 3×3) menghasilkan keluaran klasifikasi dan regresi-objek secara terpisah. Efek yang dilaporkan: konvergensi pelatihan jauh lebih cepat dan akurasi akhir naik sekitar 1 poin AP — biaya komputasi tambahannya kecil.
 
-Komponen / langkah metodologis utama:
+```
+peta fitur dari backbone+neck
+        │  konvolusi 1×1 (reduksi kanal)
+        ├──────────────┬──────────────────┐
+        ▼              ▼                  ▼
+  cabang klasifikasi  cabang regresi     (skor objek)
+  2× konvolusi 3×3    2× konvolusi 3×3
+        │              │                  │
+        ▼              ▼                  ▼
+   skor kelas      x, y, w, h         objectness
+   per lokasi      per lokasi         per lokasi
 
-- Desain anchor-free (satu prediksi per lokasi grid).
-- Decoupled head (klasifikasi/regresi/objectness terpisah).
-- SimOTA: penetapan label dinamis berbasis biaya.
-- Mosaic + MixUp augmentation kuat.
-- Opsi end-to-end (tanpa NMS) yang dieksplorasi.
-- Skala model dari Nano hingga X.
+  setiap lokasi = SATU prediksi (anchor-free, tanpa anchor berlapis)
+```
 
-## Kontribusi Utama
-1. Konversi YOLO ke anchor-free yang meningkatkan akurasi.
-2. Decoupled head mempercepat konvergensi & menaikkan AP.
-3. SimOTA sebagai penetapan label dinamis yang efisien.
-4. Kemenangan Streaming Perception Challenge (WAD 2021).
+### SimOTA: Penetapan Label Dinamis
 
-## Rincian Eksperimen
-Diuji di COCO lintas skala (Nano-X) dengan ablation atas decoupled head, anchor-free, dan SimOTA, dibandingkan YOLOv3/v4/v5 pada akurasi dan kecepatan.
+Ini komponen paling teknis. Saat melatih detektor, setiap objek kebenaran harus "dipasangkan" dengan kandidat prediksi yang akan diawasi — pasangan inilah *label assignment*. OTA memformulasikannya sebagai masalah *optimal transport*: memasangkan pemasok (kandidat prediksi) ke penerima (objek kebenaran dan latar) dengan biaya total minimum, di mana biaya sebuah pasangan dihitung dari kualitas prediksi (galat klasifikasi + galat regresi). Formulasi ini bagus tetapi mahal — menambah ±25% waktu pelatihan karena algoritme iteratifnya.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+SimOTA adalah penyederhanaannya: alih-alih menyelesaikan transport optimal penuh, untuk setiap objek dipilih **top-k** kandidat berbiaya terendah — dan k-nya sendiri diperkirakan dinamis dari distribusi IOU kandidat terbaik objek itu. Objek yang memiliki banyak kandidat berkualitas mendapat banyak contoh positif; objek yang sulit mendapat sedikit tetapi yang terbaik. Menurut naskah, SimOTA mempertahankan seluruh keuntungan OTA tanpa biaya iterasinya.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | AP | YOLOX-L ~50.0% AP; unggul atas YOLOv5-L setara |
-| COCO (Nano/Tiny) | AP | lebih tinggi dari pesaing ringan |
-| Streaming Perception | juara | WAD 2021 winner |
+### Pelatihan
 
-## Temuan Kunci
-- Anchor-free + label dinamis menaikkan akurasi konsisten.
-- Decoupled head penting untuk konvergensi & AP.
-- SimOTA memberi gain tanpa biaya besar.
-- Skalabilitas baik dari perangkat tepi hingga server.
+Di atas tiga perubahan itu, YOLOX memakai resep pelatihan kuat: augmentasi Mosaic (dari bab 004) ditambah MixUp (mencampur dua citra dan labelnya secara proporsional), keduanya dimatikan pada 15 *epoch* terakhir agar model menutup pelatihan pada data bersih. Baseline-nya sendiri sudah kuat: YOLOv3-SPP dengan *weight averaging* (EMA), penjadwalan kosinus, dan IoU loss.
 
-## Keunggulan
-- Akurasi tinggi lintas skala model.
-- Desain lebih sederhana (tanpa anchor).
-- Berpengaruh pada YOLO generasi berikut.
+## Eksperimen dan Hasil
 
-## Keterbatasan
-- Kompleksitas SimOTA dibanding penetapan statis.
-- Augmentasi kuat menuntut penjadwalan pelatihan cermat.
-- Manfaat end-to-end (tanpa NMS) masih terbatas saat itu.
+Pengujian utama pada COCO lintas skala model, dari Nano hingga X, dengan ablation atas tiap komponen. Hasil utama:
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+- YOLOX-DarkNet53: 47,3% AP — menaikkan backbone YOLOv3 melampaui praktik terbaik sebelumnya sebesar 3,0 poin.
+- YOLOX-L: 50,0% AP pada 68,9 FPS (Tesla V100), melampaui YOLOv5-L sebesar 1,8 poin pada jumlah parameter setara.
+- YOLOX-Nano: 25,3% AP dengan 0,91 juta parameter dan 1,08 GFLOPs (melampaui NanoDet 1,8 poin); YOLOX-Tiny 32,8% AP — membuka pemakaian pada perangkat tepi.
+- Satu model YOLOX-L memenangi Streaming Perception Challenge (WAD, CVPR 2021).
 
-## Relevansi terhadap Tema Tinjauan
-YOLOX menandai peralihan YOLO ke paradigma anchor-free dan label assignment dinamis yang diwarisi banyak detektor RGB modern, relevan untuk memahami arah desain YOLO+RGB-D terbaru.
+Ablation menunjukkan kontribusi berjenjang: augmentasi kuat memberi lompatan terbesar dari baseline, disusul *decoupled head* (yang juga mempercepat konvergensi) dan SimOTA sebagai pendorong akhir tanpa biaya inferensi.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+## Kelebihan dan Keterbatasan
 
-- [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md)
-- [002 - 2017 - YOLO9000 (YOLOv2) - Fondasi RGB](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)
-- [003 - 2018 - YOLOv3 - Fondasi RGB](./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md)
-- [004 - 2020 - YOLOv4 - Fondasi RGB](./004%20-%202020%20-%20YOLOv4%20-%20Fondasi%20RGB.md)
-- [006 - 2022 - YOLOv6 - Fondasi RGB](./006%20-%202022%20-%20YOLOv6%20-%20Fondasi%20RGB.md)
-- [007 - 2023 - YOLOv7 - Fondasi RGB](./007%20-%202023%20-%20YOLOv7%20-%20Fondasi%20RGB.md)
-- [008 - 2024 - YOLOv9 - Fondasi RGB](./008%20-%202024%20-%20YOLOv9%20-%20Fondasi%20RGB.md)
-- [009 - 2024 - YOLOv10 - Fondasi RGB](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)
+Kelebihan: (1) akurasi naik konsisten pada semua skala model, dari perangkat tepi hingga server; (2) desain lebih sederhana — tanpa *anchor*, tanpa hiperparameter bentuk kotak; (3) SimOTA memberi gain tanpa menambah biaya inferensi; (4) dukungan *deployment* luas (ONNX, TensorRT, NCNN, OpenVINO).
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Keterbatasan: (1) SimOTA menambah kompleksitas prosedur pelatihan dibanding penetapan statis; (2) resep augmentasi kuat menuntut penjadwalan cermat (harus dimatikan di akhir pelatihan); (3) opsi *end-to-end* tanpa NMS yang dieksplorasi makalah masih kalah dari varian ber-NMS; (4) dari sisi konseptual, perubahan-perubahan ini adalah adopsi terukur dari literatur (FCOS, OTA) — kekuatan makalah ada pada integrasinya, bukan pada kebaruan tiap komponen.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+## Kaitan dengan Bab Lain
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+YOLOX menutup garis evolusi yang dimulai bab 001: formulasi grid-regresi dipertahankan, tetapi *anchor* yang diperkenalkan bab 002 justru dihapus — kembali ke prediksi langsung, kini dengan mesin yang jauh lebih matang. Gagasan *anchor-free*-nya mewarisi FCOS (bab 019), resep pelatihannya mewarisi Mosaic dari bab 004, dan backbone-nya adalah Darknet-53 dari bab 003. Ke depan, desain *anchor-free* + *decoupled head* + penetapan label dinamis menjadi cetak biru yang diikuti banyak YOLO generasi berikutnya dalam tinjauan ini (bab 006–009), dan menjadi titik berangkat alami bagi integrasi RGB-D modern.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Poin untuk Sitasi
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-YOLOX menunjukkan bahwa anchor-free dengan penetapan label dinamis dan head terdekopel meningkatkan YOLO secara nyata, memengaruhi arah desain generasi YOLO selanjutnya.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `ge2021yolox` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 005/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `ge2021yolox`. Ringkasan yang aman dikutip: "YOLOX mengonversi YOLO menjadi detektor *anchor-free* dengan *decoupled head* dan penetapan label dinamis SimOTA, mencapai 47,3% AP (backbone YOLOv3) hingga 50,0% AP pada 68,9 FPS (YOLOX-L) pada COCO." Seluruh angka pada bab ini berasal dari abstrak dan tabel naskah; rincian ablation per komponen sebaiknya dikutip langsung dari tabel naskah.

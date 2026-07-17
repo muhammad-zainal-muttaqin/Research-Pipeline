@@ -1,203 +1,106 @@
 # 064 - Digging into Self-Supervised Monocular Depth Estimation
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 064 dari 154 |
 | Kunci BibTeX | `godard2019monodepth2` |
-| Judul | Digging into Self-Supervised Monocular Depth Estimation |
-| Penulis | Godard, Cl{\'e |
+| Judul asli | Digging into Self-Supervised Monocular Depth Estimation |
+| Penulis | Clément Godard, Oisin Mac Aodha, Michael Firman, Gabriel J. Brostow |
 | Tahun | 2019 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) |
-| Tema klaster | Estimasi Kedalaman |
-| Kata kunci | depth monokular, self-supervised, minimum reprojection, auto-masking, KITTI |
+| Venue | Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV 2019) |
+| Tema | Estimasi Kedalaman |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1806.01260
+- **Repositori kode resmi (Niantic Labs):** https://github.com/nianticlabs/monodepth2
+- **Google Scholar:** https://scholar.google.com/scholar?q=Digging%20into%20Self-Supervised%20Monocular%20Depth%20Estimation
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Digging%20into%20Self-Supervised%20Monocular%20Depth%20Estimation&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-estimasi-kedalaman)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Digging%20into%20Self-Supervised%20Monocular%20Depth%20Estimation
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Digging%20into%20Self-Supervised%20Monocular%20Depth%20Estimation&sort=relevance
+Makalah ini memperkenalkan Monodepth2, model yang memprediksi peta kedalaman (jarak setiap piksel ke kamera) dari satu citra RGB tunggal, dilatih secara *self-supervised* (swa-awas) tanpa data kedalaman kebenaran: sinyal pelatihannya adalah pasangan stereo atau rangkaian video monokular. Alih-alih memperbesar arsitektur, tiga perbaikan sederhana pada fungsi loss dan skema pelatihan cukup untuk melampaui seluruh metode swa-awas sebelumnya: loss reproyeksi minimum per piksel untuk menangani oklusi, *auto-masking* untuk membuang piksel stasioner yang melanggar asumsi gerak kamera, dan *multi-scale* resolusi penuh untuk menghilangkan artefak visual.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada tolok ukur KITTI (pembagian Eigen), model monokular penuh mencapai galat AbsRel 0,115 dengan 87,7% piksel di bawah ambang δ<1,25, dan varian gabungan mono-plus-stereo mencapai 0,106. Berkat kesederhanaan dan ketersediaan kodenya, Monodepth2 menjadi garis dasar (*baseline*) paling banyak dipakai dalam penelitian kedalaman monokular setelah 2019.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 3828--3838 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Penyempurnaan depth swa-awas dengan minimum reprojection loss, auto-masking piksel diam, dan multi-scale sampling, menjadi baseline swa-awas yang banyak diadopsi.
+Estimasi kedalaman dari satu citra adalah masalah *ill-posed*: satu citra yang sama dapat dihasilkan oleh tak terhingga susunan geometri tiga dimensi. Pendekatan terawasi (*supervised*), yang dimulai oleh Eigen dkk. (bab 062), mengatasi ambiguitas ini dengan belajar dari pasangan citra dan kedalaman kebenaran, tetapi data tersebut sulit diperoleh dalam skala besar — sensor LiDAR mahal dan hanya memberi titik-titik renggang.
 
-## Abstrak (Parafrase)
-Monodepth2 memperbaiki depth swa-awas video/stereo melalui tiga inovasi: minimum reprojection loss yang menangani oklusi (memilih sumber terbaik antar-frame), auto-masking yang membuang piksel stasioner (objek bergerak searah kamera), dan full-resolution multi-scale sampling untuk mengurangi artefak. Hasilnya SOTA swa-awas di KITTI dan menjadi baseline populer.
+Jalur alternatif adalah pelatihan swa-awas berbasis rekonstruksi citra: kedalaman diprediksi, lalu citra sumber (berangka stereo atau *frame* video tetangga) digeser (*warping*) ke posisi kamera citra target; selisih warna antara hasil warping dan citra target menjadi sinyal pelatihan. Garg dkk. (2016) dan Monodepth (bab 063) memakai pasangan stereo, sedangkan Zhou dkk. (2017) memakai video monokular dengan jaringan pose tambahan. Kualitas kedua jalur tertahan oleh tiga masalah: (1) oklusi — piksel yang terlihat di target tetapi tertutup di sumber menghasilkan galat besar yang menghukum prediksi kedalaman yang sebenarnya sudah benar; (2) objek bergerak searah dan secepat kamera, atau kamera yang berhenti, melanggar asumsi "kamera bergerak, dunia statis" dan menimbulkan lubang kedalaman tak hingga saat pengujian; (3) skema multi-skala lazim menghitung loss pada citra resolusi rendah sehingga menimbulkan artefak *texture-copy* (pola tekstur citra yang keliru menempel pada peta kedalaman).
 
-## Latar Belakang & Konteks
-Objek bergerak dan oklusi merusak asumsi photometric consistency pada swa-awas video/stereo, menimbulkan galat pada kedalaman.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Oklusi merusak rekonstruksi photometric.
-- Objek bergerak melanggar asumsi kamera-statis.
-- Multi-scale naif menimbulkan artefak.
-- Piksel stasioner menyesatkan sinyal.
-- Kualitas swa-awas perlu ditingkatkan lagi.
+Gagasan inti Monodepth2 adalah memperbaiki cara galat rekonstruksi dihitung, bukan memperbesar model. Masukannya satu citra target I(t) dan satu atau lebih citra sumber; keluarannya kedalaman per piksel D(t). Tiga perubahan diperkenalkan.
 
-## Tujuan & Pertanyaan Penelitian
-- Menangani oklusi via minimum reprojection.
-- Membuang piksel diam via auto-masking.
-- Mengurangi artefak dengan full-res multi-scale.
+Pertama, galat fotometrik tidak lagi **dirata-ratakan** antar-sumber, melainkan diambil **nilai minimumnya** per piksel: piksel yang teroklusi di satu sumber cukup dicocokkan ke sumber tempat ia memang terlihat, sehingga batas oklusi menjadi tajam. Kedua, piksel yang tidak berubah penampilannya antar-*frame* — tanda kamera diam, objek bergerak seiring kamera, atau daerah tanpa tekstur — otomatis dibuang: loss dihitung hanya bila warping benar-benar memperbaiki rekonstruksi. Ketiga, peta disparitas (pergeseran piksel antar-pandangan, kebalikan kedalaman) dari tiap skala dekoder di-*upsampling* ke resolusi penuh sebelum loss dihitung, sehingga semua skala bekerja pada sasaran yang sama dan artefak resolusi rendah hilang.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Monodepth2 menyempurnakan Monodepth dan metode video self-supervised.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Kerangka Swa-Awas sebagai Sintesis Pandangan Baru
 
-- Monodepth — pendahulu (stereo).
-- SfMLearner — swa-awas video.
-- Photometric loss — dasar.
-- Dataset KITTI.
+Pelatihan dirumuskan sebagai sintesis pandangan baru (*novel view synthesis*): merekonstruksi citra target I(t) dari citra sumber I(t'). Diperlukan tiga hal: kedalaman D(t) yang diprediksi jaringan kedalaman, pose relatif antar-kamera T(t→t') (rotasi dan translasi 6 derajat kebebasan), dan parameter internal kamera K (titik utama dan panjang fokus). Setiap piksel target diproyeksikan ke citra sumber memakai ketiganya; warna pada koordinat hasil proyeksi diambil dengan *bilinear sampling* (interpolasi antar empat piksel tetangga yang dapat diturunkan, sehingga gradien tetap mengalir). Untuk pelatihan monokular, sumbernya dua *frame* tetangga dan pose diprediksi jaringan terpisah; untuk stereo, sumbernya citra pasangan kamera kanan dengan pose diketahui dari kalibrasi; untuk gabungan (MS), keduanya dipakai sekaligus.
 
-## Metodologi & Arsitektur
-Minimum reprojection loss mengambil galat minimum antar-frame sumber (mengatasi oklusi); auto-masking membuang piksel dengan galat statis lebih rendah (objek bergerak searah kamera); full-resolution multi-scale sampling mengupsample disparitas sebelum menghitung loss.
+Galat fotometrik (*photometric reprojection error*) per piksel adalah gabungan dua ukuran kemiripan: pe = (α/2)·(1 − SSIM) + (1 − α)·‖Ia − Ib‖₁, dengan α = 0,85. SSIM (*Structural Similarity Index*) mengukur kemiripan struktur lokal dan lebih tahan terhadap perubahan pencahayaan daripada selisih piksel mentah; ‖·‖₁ adalah selisih absolut L1. Selain itu dipakai loss kehalusan (*edge-aware smoothness*) Ls yang menghukum perbedaan kedalaman antar-piksel tetangga kecuali di tepi citra — bobotnya mengecil secara eksponensial mengikuti gradien warna — sehingga kedalaman boleh melompat tepat di batas objek. Kedalaman dalam Ls dinormalkan terhadap rata-ratanya agar jaringan tidak mengecilkan seluruh prediksi demi memperkecil loss.
 
-Komponen / langkah metodologis utama:
+### Arsitektur Kedalaman dan Pose
 
-- Minimum reprojection loss (anti-oklusi).
-- Auto-masking piksel stasioner.
-- Full-resolution multi-scale sampling.
-- Photometric + smoothness loss.
-- Pelatihan mono/stereo/keduanya.
-- Self-supervised tanpa label depth.
+Jaringan kedalaman adalah U-Net: arsitektur enkoder-dekoder konvolusional dengan *skip connection* (sambungan pintas yang menyalin fitur enkoder ke dekoder pada resolusi yang sama). Enkodernya ResNet18 — jaringan residual 18 lapis dengan 11 juta parameter — yang diinisialisasi dari bobot *pretraining* ImageNet. Dekoder mengikuti desain Monodepth (bab 063): aktivasi *sigmoid* pada keluaran, yang dikonversi menjadi kedalaman melalui D = 1/(a·σ + b) dengan a dan b dipilih agar kedalaman terbatas pada rentang 0,1 sampai 100 satuan; *reflection padding* (bantalan yang memantulkan piksel tepi) menekan artefak di batas citra. Jaringan pose adalah ResNet18 lain yang dimodifikasi untuk menerima dua citra bertumpuk (6 kanal) dan mengeluarkan satu pose relatif 6 derajat kebebasan.
 
-## Kontribusi Utama
-1. Minimum reprojection menangani oklusi.
-2. Auto-masking membuang piksel menyesatkan.
-3. Multi-scale full-res mengurangi artefak.
-4. SOTA swa-awas & baseline populer.
+### Loss Reproyeksi Minimum per Piksel
 
-## Rincian Eksperimen
-Diuji pada KITTI dengan metrik depth standar, dibandingkan Monodepth, SfMLearner, dan metode swa-awas lain, plus ablation tiap komponen.
+Perata-rataan galat ke seluruh sumber gagal pada piksel tepi citra yang keluar bidang pandang akibat gerak kamera dan pada piksel yang teroklusi di salah satu sumber. Monodepth2 mengganti rata-rata dengan operator minimum per piksel. Contoh numerik: bila sebuah piksel bergalat 0,40 terhadap I(t-1) tetapi hanya 0,05 terhadap I(t+1) karena tertutup objek lain di *frame* sebelumnya, rata-rata memberi 0,225 dan mendorong jaringan "memperbaiki" kedalaman yang sudah benar; minimum memberi 0,05 dan membiarkan kedalaman itu apa adanya. Hasilnya: artefak tepi citra berkurang dan batas oklusi lebih tajam.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Auto-Masking Piksel Stasioner
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI | AbsRel/RMSE | SOTA swa-awas saat rilis |
-| KITTI | akurasi ambang | kompetitif dengan supervised |
-| Ablation | 3 komponen | masing-masing menyumbang gain |
+Masker biner μ ∈ {0,1} dihitung otomatis pada *forward pass*, tanpa jaringan tambahan. Aturannya: μ = 1 hanya bila galat reproyeksi hasil warping lebih kecil daripada galat terhadap citra sumber asli yang tidak di-*warp*. Piksel yang penampilannya identik antar-*frame* — kamera berhenti, atau objek bergerak dengan kecepatan relatif sama terhadap kamera — memiliki galat tanpa-*warp* yang sudah rendah, sehingga μ = 0 dan piksel itu tidak menyumbang loss. Bila kamera benar-benar diam, seluruh piksel satu *frame* dapat terbuang sekaligus. Loss akhirnya L = μ·Lp + λ·Ls dengan λ = 0,001, dirata-ratakan atas piksel, skala, dan *batch*.
 
-## Temuan Kunci
-- Minimum reprojection efektif melawan oklusi.
-- Auto-masking menangani objek bergerak.
-- Full-res multi-scale mengurangi artefak.
-- Baseline swa-awas yang kuat & banyak diadopsi.
+### Multi-Skala Resolusi Penuh
 
-## Keunggulan
-- Baseline swa-awas populer.
-- Menangani oklusi & objek bergerak.
-- Sederhana & efektif.
+Dekoder mengeluarkan disparitas pada beberapa skala agar pelatihan tidak terjebak minimum lokal. Alih-alih menghitung loss fotometrik pada citra yang ikut diperkecil ke resolusi tiap skala, Monodepth2 meng-*upsampling* peta disparitas resolusi rendah ke resolusi masukan penuh terlebih dahulu, baru kemudian menghitung galatnya. Satu nilai disparitas resolusi rendah dengan demikian meng-*warp* satu petak piksel resolusi penuh — setara pencocokan petak (*patch matching*) klasik — dan semua skala mengejar sasaran yang sama: merekonstruksi citra target seakurat mungkin.
 
-## Keterbatasan
-- Skala metrik ambigu (mono).
-- Objek bergerak kompleks tetap menantang.
-- Bergantung asumsi photometric.
+Alur pelatihan monokular secara keseluruhan:
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+```
+ I(t-1) ─┐
+         ├─> [jaringan pose: ResNet18, 6 kanal] ─> pose relatif T(t->t')
+ I(t+1) ─┘                                            |
+                                                      v
+ I(t) ──> [jaringan kedalaman: U-Net + ResNet18] ─> D(t) ─> [proyeksi +
+            11 juta parameter, keluaran multi-skala        sampling
+                                                            bilinear]
+                                                                |
+            galat fotometrik per piksel per sumber <------------+
+            pe = 0,425 x (1 - SSIM) + 0,15 x |Ia - Ib|
+                            |
+         ┌──────────────────┼───────────────────┐
+         v                  v                   v
+  Lp = min antar-sumber  mu = 1 hanya jika   tiap skala di-upsampling
+  (anti-oklusi)          pe warp < pe tanpa  ke resolusi penuh sebelum
+                         warp (piksel diam   pe dihitung
+                         dibuang)
+         └──────── L = mu x Lp + 0,001 x Ls ─────────┘
+```
 
-## Relevansi terhadap Tema Tinjauan
-Monodepth2 adalah baseline swa-awas rujukan dalam klaster Estimasi Kedalaman; relevan bagi penyediaan pseudo-depth murah untuk RGB-D.
+Jaringan pose hanya diperlukan saat pelatihan; saat pengujian cukup satu citra tunggal dilewatkan ke jaringan kedalaman. Model dilatih 20 *epoch* dengan pengoptimal Adam, *batch* 12 citra 640×192, laju pembelajaran 10⁻⁴ selama 15 *epoch* pertama lalu 10⁻⁵; waktu latih 8 jam (stereo), 12 jam (mono), dan 15 jam (gabungan) pada satu GPU Titan Xp.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Estimasi Kedalaman** yang baik dibaca berdampingan:
+## Eksperimen dan Hasil
 
-- [062 - 2014 - Depth dari Citra Tunggal (Eigen dkk.) - Estimasi Kedalaman](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md)
-- [063 - 2017 - Monodepth (Left-Right Consistency) - Estimasi Kedalaman](./063%20-%202017%20-%20Monodepth%20%28Left-Right%20Consistency%29%20-%20Estimasi%20Kedalaman.md)
-- [065 - 2019 - BTS (Local Planar Guidance) - Estimasi Kedalaman](./065%20-%202019%20-%20BTS%20%28Local%20Planar%20Guidance%29%20-%20Estimasi%20Kedalaman.md)
-- [066 - 2021 - AdaBins - Estimasi Kedalaman](./066%20-%202021%20-%20AdaBins%20-%20Estimasi%20Kedalaman.md)
-- [067 - 2021 - DPT (Dense Prediction Transformer) - Estimasi Kedalaman](./067%20-%202021%20-%20DPT%20%28Dense%20Prediction%20Transformer%29%20-%20Estimasi%20Kedalaman.md)
-- [068 - 2022 - MiDaS (Robust Monocular Depth) - Estimasi Kedalaman](./068%20-%202022%20-%20MiDaS%20%28Robust%20Monocular%20Depth%29%20-%20Estimasi%20Kedalaman.md)
-- [069 - 2020 - PackNet - Estimasi Kedalaman](./069%20-%202020%20-%20PackNet%20-%20Estimasi%20Kedalaman.md)
-- [070 - 2021 - MonoIndoor - Estimasi Kedalaman](./070%20-%202021%20-%20MonoIndoor%20-%20Estimasi%20Kedalaman.md)
+Evaluasi utama memakai dataset KITTI dengan pembagian Eigen (pembelah data dari bab 062). Setelah penyaringan *frame* statis ala Zhou dkk., tersedia 39.810 triplet monokular untuk pelatihan dan 4.424 untuk validasi. Kedalaman dibatasi maksimum 80 meter sesuai praktik standar. Metrik yang dilaporkan: AbsRel (galat relatif absolut, rata-rata |prediksi − benar|/benar; makin kecil makin baik), RMSE (akar kuadrat galat rata-rata, sensitif pada galat besar), dan akurasi ambang δ<1,25 (persentase piksel dengan rasio prediksi/kebenaran di bawah 1,25; makin besar makin baik). Karena pelatihan monokular hanya menghasilkan kedalaman relatif, prediksi model mono diskalakan dengan median kedalaman kebenaran per citra uji (*median scaling*).
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Estimasi Kedalaman** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Hasil utama pada KITTI (resolusi 640×192): model monokular (M) mencapai AbsRel 0,115 dan δ<1,25 sebesar 87,7%; model stereo (S) 0,109 dan 86,4%; model gabungan (MS) 0,106 dan 87,4%. Ketiganya melampaui seluruh metode swa-awas sebelumnya, termasuk yang memodelkan gerak objek secara eksplisit dengan *optical flow* (Ranjan dkk., EPC++). RMSE model M sebesar 4,863 menunjukkan galat besar tersisa terkonsentrasi pada objek jauh; resolusi 1024×320 menurunkannya menjadi 4,701 dengan δ<1,25 87,9% — sebagian galat berasal dari resolusi, bukan metode.
 
-## Glosarium Istilah (tema Estimasi Kedalaman)
-Istilah penting untuk memahami makalah ini:
+Studi ablasi (mematikan komponen satu per satu, pelatihan mono) mengukuhkan sumbangan tiap bagian. Model dasar tanpa satu pun kontribusi bernilai AbsRel 0,140; menambahkan reproyeksi minimum saja menurunkannya ke 0,122, *auto-masking* saja ke 0,124, dan multi-skala resolusi penuh ke 0,124; gabungan ketiganya mencapai 0,115. Sebaliknya, membuang *auto-masking* dari model penuh menaikkan galat ke 0,120, dan menggantinya dengan masker prediktif Zhou dkk. justru menghasilkan 0,123 — lebih buruk daripada tanpa masker sama sekali. Pada pembagian Eigen penuh yang masih memuat *frame* kamera-diam, model dasar anjlok ke 0,146 sedangkan Monodepth2 tetap 0,116: *auto-masking* menghapus kebutuhan praproses *optical flow* untuk membuang *frame* statis. Tanpa *pretraining* ImageNet pun Monodepth2 (0,132) tetap jauh di atas model dasar (0,150). Pada dataset Make3D — evaluasi lintas domain tanpa pelatihan ulang — model ini mengalahkan semua metode yang tidak memakai supervisi kedalaman, bukti generalisasi di luar data latih.
 
-- **Depth monokular** — Estimasi kedalaman dari satu citra RGB (ill-posed).
-- **Supervised** — Dilatih dengan ground-truth depth.
-- **Self-supervised** — Dilatih tanpa label depth via konsistensi stereo/video.
-- **Disparitas** — Pergeseran piksel antar-pandangan stereo.
-- **Skala metrik vs relatif** — Depth satuan nyata vs hanya urutan relatif.
-- **AbsRel** — Absolute Relative error (makin kecil makin baik).
-- **RMSE** — Root Mean Square Error peta depth.
-- **delta<1.25** — Persentase piksel dengan error di bawah ambang.
-- **Zero-shot** — Generalisasi ke dataset tak dilihat saat pelatihan.
-- **Pseudo-depth** — Depth prediksi model, pengganti sensor depth.
+## Kelebihan dan Keterbatasan
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Kelebihannya adalah perbandingan biaya-manfaat: tiga kontribusi tidak menambah komponen terlatih baru dan murah dihitung, dengan sumbangan masing-masing terbukti pada ablasi. Model dapat dilatih dari video monokular biasa, stereo, atau keduanya, dan arsitekturnya (ResNet18) jauh lebih ringan daripada enkoder ResNet50/DispNet metode sebelumnya. Ketersediaan kode resmi membuatnya mudah direproduksi.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Keterbatasan tetap ada. Pertama, kedalaman monokular murni hanya terdefinisi sampai faktor skala yang tidak diketahui, sehingga evaluasinya masih bergantung pada *median scaling* terhadap data kebenaran. Kedua, penulis makalah sendiri menunjukkan kegagalan pada permukaan yang melanggar asumsi Lambertian — reflektif, transparan, atau jenuh warnanya — serta pada batas objek yang ambigu atau bentuk yang rumit. Ketiga, dari sisi rekayasa, *auto-masking* hanya menangani objek yang bergerak seiring kamera; objek yang bergerak bebas tetap merusak asumsi kekakuan dan tidak diselesaikan di sini. Keempat, secara konseptual, seluruh kerangka bergantung pada kemiripan penampilan antar-*frame*, sehingga perubahan pencahayaan besar atau adegan malam berada di luar jangkauannya tanpa modifikasi.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kaitan dengan Bab Lain
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Bab ini melanjutkan garis swa-awas sebagai lawan kutub jalur terawasi yang dimulai [062 - Depth dari Citra Tunggal (Eigen dkk.)](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md) — pembagian data Eigen yang dipakai di sini dinamai dari makalah tersebut — dan secara langsung menyempurnakan [063 - Monodepth (Left-Right Consistency)](./063%20-%202017%20-%20Monodepth%20%28Left-Right%20Consistency%29%20-%20Estimasi%20Kedalaman.md): loss fotometrik SSIM+L1, kehalusan sadar-tepi, dan desain dekoder diwarisi, sedangkan konsistensi kiri-kanan digantikan oleh reproyeksi minimum yang lebih umum. Ke depan, Monodepth2 menjadi titik tolak hampir seluruh penelitian kedalaman monokular swa-awas; [069 - PackNet](./069%20-%202020%20-%20PackNet%20-%20Estimasi%20Kedalaman.md) mempertahankan kerangka pelatihannya sambil mengganti arsitektur agar lebih akurat pada resolusi tinggi. Bagi tinjauan RGB-D, bab ini relevan sebagai penyedia *pseudo-depth* murah: kedalaman prediksinya dapat melengkapi kanal RGB tanpa sensor kedalaman fisik.
 
-## Kesimpulan
-Monodepth2 menyempurnakan depth swa-awas dengan minimum reprojection, auto-masking, dan full-res multi-scale, menjadi baseline swa-awas SOTA yang banyak diadopsi.
+## Poin untuk Sitasi
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `godard2019monodepth2` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 064/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `godard2019monodepth2`. Ringkasan yang aman dikutip: "Monodepth2 (Godard dkk., ICCV 2019) menunjukkan bahwa tiga perbaikan pada loss pelatihan swa-awas — reproyeksi minimum per piksel, *auto-masking* piksel stasioner, dan multi-skala resolusi penuh — cukup untuk melampaui seluruh metode swa-awas sebelumnya pada KITTI (AbsRel 0,115, monokular murni tanpa label kedalaman)." Angka hasil pada bab ini diverifikasi dari naskah (tabel ablasi) dan repositori resmi. Catatan verifikasi: angka pembanding spesifik pada Tabel 1 naskah (Zhou dkk., Monodepth, EPC++) tidak dikutip di sini; cocokkan ke tabel naskah asli sebelum mengutipnya. Versi awal pracetak (v1) memakai enkoder bersama untuk pose dan kedalaman serta belum memuat *auto-masking*; kutipan sebaiknya merujuk versi ICCV (v3/v4).
