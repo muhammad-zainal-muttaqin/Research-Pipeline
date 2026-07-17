@@ -188,55 +188,60 @@ Disimpan di repo → build berikutnya tidak butuh internet. Versi dipin (12.0.0)
 
 ## 6. Design System
 
-Menggabungkan dua skill: **minimalist-ui** (palet warm monochrome, tipografi
-editorial, flat bento) + **high-end-visual-design** (micro-motion, double-bezel,
-ritme spasial). Vibe yang dipilih: **Editorial Luxury** — "ruang baca digital"
-untuk dokumen akademik; tenang, kertas hangat, aksen pastel muted.
+Vibe: **Katalog** — "indeks perpustakaan modern" untuk dokumen akademik:
+tipografi serif sebagai suara utama, hairline 1px sebagai pemisah, nomor indeks
+mono, satu aksen merah bata. Tanpa kartu berlapis/bento; kedalaman visual
+dibangun dari ritme baris dan ruang, bukan bayangan atau tekstur.
 
 ### 6.1 Palet (CSS custom properties, mode terang)
 
 | Token | Nilai | Pakai untuk |
 |---|---|---|
-| `--bg` | `#F7F6F3` | kanvas aplikasi (warm bone) |
-| `--surface` | `#FFFFFF` | kartu & area baca |
-| `--surface-2` | `#FBFAF8` | sidebar / panel sekunder |
-| `--ink` | `#1F2328` | teks utama (bukan hitam murni) |
-| `--ink-2` | `#6B6F76` | teks sekunder / meta |
-| `--line` | `#E8E6E1` | hairline 1px di mana-mana |
-| `--accent` | `#9F2F2D` | merah bata pudar — tautan, state aktif |
-| `--accent-bg` | `#FDEBEC` | latar aksen sangat lembut |
+| `--bg` | `#FAF9F6` | kanvas aplikasi (kertas terang) |
+| `--surface` | `#FFFFFF` | area baca / latar baris |
+| `--surface-2` | `#F4F2EC` | sidebar / panel sekunder |
+| `--ink` | `#1A1D21` | teks utama (bukan hitam murni) |
+| `--ink-2` | `#5E6267` | teks sekunder / meta |
+| `--line` | `#E6E3DA` | hairline 1px di mana-mana |
+| `--accent` | `#A03028` | merah bata — tautan, state aktif |
+| `--accent-bg` | `#F8E9E5` | latar aksen sangat lembut |
 
-**Aksen tema (17 tema)** — masing-masing pasangan bg+ink muted pastel,
-contoh: Fondasi RGB `#E1F3FE/#1F6C9F`, RGB-D SOD `#EDF3EC/#346538`,
-Estimasi Kedalaman `#FBF3DB/#956400`, Pose 6D `#F3EDF7/#6B4E8E`, dst.
-(Palet lengkap ditetapkan di `THEMES` dalam app runtime; semua desaturated.)
+**Aksen tema (17 tema + Sintesis)** — satu hue jewel-tone per tema dengan
+saturasi/lightness seragam, dipakai sebagai `--tc` (dot, chip, bar porsi peta
+tema, kolom Tema di katalog). Daftar lengkap di `THEME_COLORS` dalam runtime
+(lihat §13).
 
-**Mode gelap:** inversi hangat — `--bg:#16161​4`, `--surface:#1D1C1A`,
-`--ink:#E8E6E1`, `--ink-2:#9A978F`, `--line:#2C2B28`; aksen pastel diganti
-versi translucent (`rgba` rendah) dengan teks terang. Diset via
-`html[data-theme="dark"]`; default mengikuti `prefers-color-scheme`.
+**Mode gelap:** warm charcoal — `--bg:#171613`, `--surface:#1F1E19`,
+`--ink:#E9E6DD`, `--ink-2:#A7A296`, `--line:#2C2A24`; aksen `#E2988E`. Diset
+via `html[data-theme="dark"]`; default mengikuti `prefers-color-scheme`.
 
 ### 6.2 Tipografi
 
 | Peran | Font stack | Skala |
 |---|---|---|
-| Serif editorial (judul entri, hero) | `'Newsreader', 'Georgia', serif` — Google Fonts, `opsz` | H1 34–40px, tracking −0.02em, line-height 1.15 |
-| Sans UI (label, sidebar, tombol) | `'Plus Jakarta Sans', 'Helvetica Neue', system-ui, sans-serif` — Google Fonts | 13–15px, weight 400/500/600 |
-| Mono (meta, kunci BibTeX, kbd) | `'JetBrains Mono', 'SF Mono', monospace` — Google Fonts | 12–13px |
+| Serif editorial (judul, hero, **isi artikel**) | `'Newsreader', 'Georgia', serif` — Google Fonts, `opsz` | hero 44–74px; H1 entri 30–44px; body bacaan 17.5px / 1.78 |
+| Sans UI (label, sidebar, tabel, tombol) | `'Plus Jakarta Sans', 'Helvetica Neue', system-ui, sans-serif` — Google Fonts | 11.5–15px, weight 400/500/600 |
+| Mono (meta, nomor indeks, kunci BibTeX, kbd) | `'JetBrains Mono', 'SF Mono', monospace` — Google Fonts | 10–12px, letterspacing lebar untuk label |
 
 Font dimuat via `<link>` Google Fonts dengan `display=swap`; **tanpa internet
-situs tetap utuh** (fallback Georgia + system-ui tetap editorial). Body teks
-bacaan: 16–17px, `line-height: 1.7`, lebar kolom baca `max-width: 720px`.
+situs tetap utuh** (fallback Georgia + system-ui tetap editorial). Lebar kolom
+baca `max-width: 740px`.
 
-### 6.3 Kaidah visual (dari kedua skill, diringkas)
+### 6.3 Kaidah visual
 
-- **Tanpa** gradasi mencolok, tanpa shadow berat, tanpa emoji, tanpa pill raksasa untuk kartu. Border selalu `1px solid var(--line)`, radius 8–12px (kartu) / 4–6px (tombol).
-- **Double-bezel** untuk kartu penting di Beranda: shell luar `padding:6px; background:color-mix(in srgb, var(--ink) 3%, transparent); border:1px solid var(--line); border-radius:14px` → inti dalam `background:var(--surface); border-radius:10px`.
-- **Shadow** hanya ultra-diffuse: `0 2px 12px rgba(31,35,40,.05)` saat hover kartu.
-- **Motion:** semua transisi `cubic-bezier(.32,.72,0,1)` 200–500ms; scroll-reveal via `IntersectionObserver` (`translateY(14px) + opacity 0 → 1`, stagger `calc(var(--i)*50ms)`); hanya `transform` & `opacity` yang dianimasi.
-- **Ikon:** SVG inline custom garis tipis 1.5px (search, sun/moon, chevron, arrow-left/right, list, x, copy, check, book, filter) — tanpa library ikon.
-- **Grain halus:** overlay noise SVG `feTurbulence` pada pseudo-element fixed `opacity:.025`, `pointer-events:none` — kesan kertas.
-- `kbd` untuk shortcut: `border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; background:var(--surface-2); font mono 11px`.
+- **Tanpa** gradasi mencolok, tanpa shadow berat, tanpa emoji, tanpa kartu
+  berlapis (pola double-bezel dihapus). Pemisah utama = hairline
+  `1px solid var(--line)` dan ruang putih; radius 10px (kartu) / 6px (tombol).
+- **Bahasa indeks:** daftar datar berpemisah hairline (peta tema, jalur baca,
+  katalog) menggantikan grid kartu; mono untuk semua angka & meta.
+- **Shadow** hanya ultra-tipis: `0 1px 10px rgba(26,29,33,.07)` saat hover.
+- **Motion:** semua transisi `cubic-bezier(.32,.72,0,1)` 180ms; scroll-reveal
+  via `IntersectionObserver` (`translateY(12px) + opacity 0 → 1`, stagger
+  `calc(var(--i)*45ms)`); hanya `transform` & `opacity` yang dianimasi.
+- **Ikon:** SVG inline custom garis tipis 1.5–1.7px (search, sun/moon, arrow,
+  copy, check, book, spark) — tanpa library ikon.
+- **Tanpa grain/tekstur** — kanvas bersih.
+- `kbd` untuk shortcut: `border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; background:var(--surface-2); font mono 10.5px`.
 
 ---
 
@@ -246,79 +251,85 @@ Aplikasi punya 3 "layar" (semua dalam satu file, di-switch via hash router):
 
 ### 7.1 Kerangka umum
 
+Dua mode tata letak, di-switch router lewat kelas `body.on-home` / `body.on-entry`:
+
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│ TOPBAR (sticky, h=56px, blur saat scroll)                        │
-│  ☰ │ ⌘K Cari…            Tema ◐  │ progress baca (hairline 2px)  │
-├──────────────┬─────────────────────────────────┬───────────────┤
-│ SIDEBAR      │  KONTEN (scroll independen)     │  PANEL TOC    │
-│ 300px        │  max-w 720px, padding 48–64px   │  240px        │
-│ • search     │                                 │  (≥1200px)    │
-│ • chip tema  │                                 │               │
-│ • filter thn │                                 │               │
-│ • daftar     │                                 │               │
-│   entri      │                                 │               │
-└──────────────┴─────────────────────────────────┴───────────────┘
- < 900px: sidebar jadi drawer overlay (hamburger morph → X)       
- 900–1200px: TOC disembunyikan, TOC inline di atas artikel         
+BERANDA (#/)                            ENTRI (#/042)
+┌───────────────────────────────────────┐   ┌───────────────────────────────────────┐
+│ TOPBAR (sticky, h=52px, blur)         │   │ TOPBAR + progress baca 2px            │
+│  ☰ │ ⌘K Cari…       Tema ◐  Bantuan ? │   │                                       │
+├─────────┬─────────────────────────────┤   ├──────────────────────────────┬────────┤
+│ SIDEBAR │  KONTEN (max-w 1080px)      │   │  ARTIKEL terpusat            │ TOC    │
+│ 300px   │  hero · stats · timeline ·  │   │  max-w 740px                 │ layang │
+│ saring  │  peta tema · KATALOG · jalur│   │  (sidebar tersembunyi ≥981px)│ ≥1260px│
+└─────────┴─────────────────────────────┘   └──────────────────────────────┴────────┘
+ < 980px: sidebar jadi drawer overlay (hamburger morph → X) di kedua mode
 ```
+
+Sidebar **khusus penyaring** — daftar entri pindah ke tabel Katalog di kolom
+utama Beranda; mode entri memakai kolom tunggal terpusat.
 
 ### 7.2 Layar Beranda (`#/`)
 
-1. **Hero editorial:** eyebrow pill `TINJAUAN PUSTAKA · 2012–2026`, judul serif
-   besar "Ruang Baca Riset\nYOLO · RGB · RGB-D", subjudul 1 kalimat, dua CTA:
-   [Mulai dari Temuan →] (solid ink) dan [Jelajahi 202 entri] (ghost).
-2. **Strip statistik (bento 4 sel):** 202 entri · 17 tema · rentang 2012–2026 ·
-   ±X jam total waktu baca. Angka besar serif, label mono uppercase kecil.
-3. **Timeline per tahun:** bar chart murni CSS (flex kolom tinggi = jumlah
-   entri; hover → tooltip angka; klik → filter tahun itu). Ini "grafik" tanpa
-   library apa pun.
-4. **Grid tema (17 kartu):** tiap kartu = nama tema, jumlah entri, 3 judul
-   contoh kecil, chip warna pastelnya; klik → daftar terfilter. Kartu memakai
-   pola double-bezel + hover lift halus.
-5. **"Mulai di sini":** 4 kurasi jalur baca (mis. *Alur YOLO*: 001→010;
-   *Alur Fusi RGB-D*; *Survei*; *Fondasi*) — daftar tautan cepat berbasis
-   nomor entri yang sudah diketahui dari README.
-6. Footer kecil: jumlah entri, petunjuk regenerasi (`node build.js`), tautan
-   repo berkas (`tinjauan-pustaka.tex`, `references.bib`).
+1. **Hero editorial:** eyebrow mono `TINJAUAN PUSTAKA · 2012–2026`, judul serif
+   besar "Ruang Baca Riset\nYOLO · RGB · RGB-D", lede 1 kalimat, dua CTA:
+   [Mulai dari Temuan →] (solid ink) dan [Jelajahi katalog 202 entri] (ghost,
+   scroll ke katalog). Baris "Lanjutkan membaca" (mono + judul italic serif).
+2. **Strip statistik:** satu baris ber-hairline atas-bawah, 4 sel (202 entri ·
+   17 tema · rentang tahun · ±X jam baca); angka besar serif, label mono uppercase.
+3. **Timeline per tahun:** bar chart murni CSS (batang tipis, label tahun mono;
+   hover → tooltip angka; klik → filter tahun itu dan scroll ke katalog).
+4. **Peta tema:** daftar datar 17 baris (dot warna, nama, 2 judul contoh, bar
+   porsi, jumlah mono); klik baris → filter tema dan scroll ke katalog.
+5. **Katalog:** tabel indeks seluruh entri — kolom No / Judul / Tema / Tahun /
+   Baca (menit); header kolom bisa diklik untuk mengurutkan (asc/desc; TEMUAN
+   selalu ter-pin di atas); klik baris (atau Enter/Space) membuka entri;
+   mengikuti penyaring sidebar + pencarian, istilah cocok tersorot `<mark>`.
+6. **"Mulai di sini":** 4 jalur baca terkurasi dengan chip entri cepat. Tiap
+   jalur diberi bobotnya sendiri (jumlah entri + estimasi menit), bukan nomor
+   urut — keempatnya sejajar, bukan langkah berurutan.
+7. Footer: hairline, info mono (jumlah entri, tanggal build, cara regenerasi
+   `node build.js`, tautan `tinjauan-pustaka.tex` & `references.bib`).
 
 ### 7.3 Layar Entri (`#/042`)
 
+- **Tautan balik:** `← Katalog` (mono) kembali ke Beranda dengan filter aktif.
 - **Header entri:** eyebrow `ENTRI 042 / 202 · 2021 · chip tema berwarna` →
   judul serif → baris meta mono (kunci BibTeX dengan tombol salin, estimasi
   waktu baca, tautan Scholar/Semantic Scholar yang diekstrak dari isi).
-- **TOC:** rail kanan sticky (heading H2/H3 dari data build; item aktif
-  di-highlight via `IntersectionObserver` saat scroll — scroll-spy).
-- **Isi:** hasil render `marked` dengan styling bacaan:
-  - tabel → dibungkus `.table-wrap` (scroll horizontal di mobile), header
-    `surface-2`, zebra rows `#000` 2%, border hairline;
-  - blockquote → border-left 2px aksen + latar aksen-bg 40%;
+- **TOC melayang:** `position:fixed` di margin kanan (hanya ≥1260px); item
+  aktif di-highlight via scroll-spy `IntersectionObserver`.
+- **Isi:** hasil render `marked` dengan styling bacaan — **body serif
+  Newsreader 17.5px / 1.78**:
+  - tabel → dibungkus `.table-wrap` (scroll horizontal di mobile), sans 13.5px,
+    header `surface-2`, border hairline;
+  - blockquote → pull-quote italic, border-left 2px aksen (tanpa latar);
   - tautan eksternal → aksen, underline saat hover, `target=_blank rel=noopener`;
-  - HR → hairline lebar pendek terpusat;
-  - heading H2 diberi anchor `#` yang muncul saat hover (deep-link).
-- **Navigasi bawah:** kartu « Entri sebelumnya / berikutnya » (nomor + judul),
-  menghormati urutan filter aktif (jika datang dari hasil filter, prev/next
-  mengikuti daftar terfilter).
-- **Progress baca:** bar 2px di bawah topbar mengikuti scroll artikel.
+  - HR → penanda `···` mono terpusat;
+  - heading H2/H3 diberi anchor `#` yang muncul saat hover (deep-link).
+- **Navigasi bawah:** kartu hairline « Entri sebelumnya / berikutnya » (nomor +
+  judul), menghormati urutan filter aktif (jika datang dari hasil filter,
+  prev/next mengikuti daftar terfilter).
+- **Progress baca:** bar 2px aksen di bawah topbar mengikuti scroll artikel.
 
 ### 7.4 Layar Sintesis (`#/temuan`)
 
-Sama seperti layar entri, tetapi: di-pin di atas sidebar (label khusus
-"SINTESIS"), ikon berbeda, dan jadi tujuan CTA utama Beranda.
+Sama seperti layar entri, tetapi: TEMUAN di-pin sebagai baris pertama katalog
+(nomor `§`, judul italic), eyebrow berlabel "SINTESIS", dan jadi tujuan CTA
+utama Beranda.
 
-### 7.5 Sidebar (komponen inti navigasi)
+### 7.5 Sidebar (khusus penyaring)
 
 - **Search box** dengan ikon, `placeholder: Cari judul, tema, isi…`, tombol
-  `Esc`/`x` clear; hasil live (debounce 120ms).
-- **Chip tema** horizontal-scroll (maks 2 baris, "+N lagi" expand) — toggle
-  multi-select; chip aktif memakai warna pastel temanya.
-- **Select tahun** (dropdown custom sederhana) + tombol reset filter.
-- **Daftar entri virtual-scroll ringan:** 202 item cukup dirender semua
-  (DOM ± 202 baris × 2 span — masih ringan), tiap baris: nomor mono 3 digit,
-  judul (ellipsis), tahun kecil + dot warna tema. Item aktif: latar aksen-bg,
-  bar aksen 2px di kiri. TEMUAN di-pin paling atas dengan divider.
-- Saat pencarian aktif: tampilkan jumlah hasil ("17 dari 202") + sorot
-  istilah cocok pada judul (`<mark>` aksen-bg).
+  clear; hasil live (debounce 120ms) diterapkan ke katalog di Beranda.
+- **Chip tema** (toggle multi-select; dot warna tema + jumlah) dengan tombol
+  "+ Semua N tema" / "− Ringkas"; chip aktif memakai warna temanya.
+- **Select tahun** + tombol Reset.
+- **Hitungan** hasil penyaringan ("17 dari 202 entri") atau ringkasan korpus.
+- **Catatan kaki** kecil: penjelasan bahwa penyaring diterapkan ke katalog +
+  ringkasan pintasan.
+- Di mode entri (≥981px) sidebar tersembunyi (kolom baca tunggal terpusat);
+  di layar sempit (<980px) ia jadi drawer overlay di kedua mode.
 
 ---
 
@@ -328,19 +339,20 @@ Sama seperti layar entri, tetapi: di-pin di atas sidebar (label khusus
 |---|---|---|
 | F1 | Router hash | `hashchange` → parse `#/`, `#/042`, `#/temuan`, query `?q=&tema=&thn=`; render layar; scroll ke atas; simpan riwayat filter |
 | F2 | Render Markdown | `marked.parse(md)` + renderer custom: tabel dibungkus div, tautan eksternal `target=_blank`, heading diberi `id` slug + anchor; **sanitasi**: konten milik sendiri (tepercaya), tetap set `marked` `headerIds` manual & hindari injeksi lewat pencarian (input user hanya dipakai untuk `<mark>` via `textContent`) |
-| F3 | Pencarian full-text | Normalisasi (lowercase, strip diakritik via `normalize('NFD')`); skor: judul ×5, tema ×3, isi ×1; hasil diurut skor; `<mark>` pada judul; batasi render 60 hasil pertama + "tampilkan semua" |
+| F3 | Pencarian full-text | Normalisasi (lowercase, strip diakritik via `normalize('NFD')`); skor: judul ×5, tema ×3, isi ×1; hasil diurut skor lalu nomor; `<mark>` pada judul di baris katalog (lewat `textContent`, bukan HTML); render seluruh hasil — tabel katalog ringan, tak perlu batas |
 | F4 | Filter tema & tahun | Multi-select tema (Set), single-select tahun; kombinasi AND dengan query; URL ikut berubah (replaceState) |
 | F5 | Mode gelap/terang | Toggle topbar; `localStorage.rp-theme`; default `prefers-color-scheme`; transisi warna 250ms |
-| F6 | TOC + scroll-spy | Dari `headings` data build; `IntersectionObserver` rootMargin `-20% 0px -70%`; klik → smooth scroll |
+| F6 | TOC + scroll-spy | Heading dipungut dari DOM (`h2, h3`) sesudah render, bukan dari data build; TOC melayang hanya ≥1260px & disembunyikan bila heading < 2; `IntersectionObserver` + klik → smooth scroll |
 | F7 | Progress baca | `scroll` listener (passive, rAF-throttle) pada kontainer konten → lebar bar |
 | F8 | Prev/Next | Berdasar daftar terfilter terakhir (atau urutan nomor bila tanpa filter) |
 | F9 | Shortcut keyboard | `/` atau `Ctrl/⌘+K` fokus search · `Esc` clear/tutup drawer · `←/→` prev/next entri · `t` toggle tema · `?` buka modal bantuan shortcut (grid kbd) |
 | F10 | Salin tautan & BibTeX | Tombol copy di header entri → `navigator.clipboard` + feedback ikon check 1,2s |
 | F11 | Waktu baca | `words/200` menit, dibulatkan; tampil di meta entri & total di Beranda |
-| F12 | Scroll-reveal | `IntersectionObserver` untuk kartu Beranda & header entri, stagger `--i` |
+| F12 | Scroll-reveal | `IntersectionObserver` pada `.rv` (hero, judul seksi, strip stat, timeline, katalog, header entri), stagger lewat `--i` |
 | F13 | Drawer mobile | Sidebar jadi overlay; hamburger 2 garis morph → X (rotate ±45°); kunci scroll body saat terbuka |
 | F14 | State baca terakhir | `localStorage.rp-last` = id entri; Beranda menampilkan chip "Lanjutkan: 042 …" bila ada |
 | F15 | Deep-link heading | `#/042#metodologi--arsitektur` → scroll ke heading setelah render |
+| F16 | Katalog terurut | Klik `th[data-sort]` (No/Judul/Tema/Tahun/Menit) → toggle naik-turun, panah ↑↓ di header; entri sintesis dipin di atas apa pun urutannya; baris bisa dibuka via klik atau Enter/Spasi |
 
 **Batasan sadar:** tanpa service worker/PWA (single-file tetap bisa offline penuh
 karena tak ada request lain setelah font); tanpa sinkronisasi antar-perangkat.
@@ -363,17 +375,19 @@ karena tak ada request lain setelah font); tanpa sinkronisasi antar-perangkat.
 - [ ] Jalankan: `node build.js --dry` (mode laporan saja, belum menulis HTML)
 
 ### Fase 2 — Template & design system
-- [ ] Tulis CSS lengkap (token terang/gelap, layout 3 kolom, tipografi bacaan,
-      tabel, blockquote, chip, kartu bento, drawer, kbd, grain, motion) di
-      dalam template `build.js`
-- [ ] Tulis markup kerangka (topbar, sidebar, main, toc-rail, modal bantuan)
+- [ ] Tulis CSS lengkap (token terang/gelap, dua mode tata letak, tipografi
+      bacaan serif, tabel, blockquote, chip, strip stat, indeks tema, katalog,
+      drawer, kbd, motion) di dalam template `build.js`
+- [ ] Tulis markup kerangka (topbar, sidebar penyaring, main, toc melayang,
+      modal bantuan)
 - [ ] **Cek:** buka `index.html` dummy (data 3 entri) di browser → layout
       responsif 360px / 768px / 1440px benar
 
 ### Fase 3 — Runtime app
-- [ ] Router hash + render Beranda / Entri / Temuan
+- [ ] Router hash + render Beranda / Entri / Temuan + kelas mode `body`
 - [ ] Integrasi `marked` + renderer custom + anchor heading
-- [ ] Sidebar: daftar, chip tema, filter tahun, pencarian + `<mark>`
+- [ ] Sidebar penyaring: chip tema, filter tahun, pencarian + `<mark>`;
+      katalog sortable di Beranda (render baris, klik/Enter → entri)
 - [ ] Tema gelap/terang + persist; TOC scroll-spy; progress bar; prev/next;
       shortcut; copy; drawer mobile; scroll-reveal; state baca terakhir
 - [ ] **Cek manual:** semua F1–F15 di browser
@@ -431,8 +445,8 @@ karena tak ada request lain setelah font); tanpa sinkronisasi antar-perangkat.
 5. Mode gelap/terang konsisten di semua komponen; preferensi tersimpan.
 6. `#/042` disalin ke tab baru langsung membuka entri 042.
 7. `node build.js` meregenerasi file identik-fungsional kapan pun.
-8. Tampilan 360px-4K rapi: drawer mobile, TOC hilang di layar sempit, kolom
-   baca tetap 720px di layar lebar.
+8. Tampilan 360px-4K rapi: drawer mobile, TOC melayang hanya ≥1260px, kolom
+   baca 740px di layar lebar, kolom katalog menyusut anggun di layar sempit.
 9. Tidak ada emoji, gradasi mencolok, shadow berat, atau font terlarang —
    kesan akhir: *editorial, mahal, tenang*.
 
@@ -446,54 +460,46 @@ karena tak ada request lain setelah font); tanpa sinkronisasi antar-perangkat.
 ```css
 :root{
   /* warna */
-  --bg:#F7F6F3; --surface:#FFFFFF; --surface-2:#FBFAF8;
-  --ink:#1F2328; --ink-2:#6B6F76; --ink-3:#9A978F;
-  --line:#E8E6E1; --line-strong:#D9D6CF;
-  --accent:#9F2F2D; --accent-bg:#FDEBEC; --accent-ink:#9F2F2D;
-  --mark:#FBF3DB;
+  --bg:#FAF9F6; --surface:#FFFFFF; --surface-2:#F4F2EC; --surface-3:#ECE9E1;
+  --ink:#1A1D21; --ink-2:#5E6267; --ink-3:#8B8778;
+  --line:#E6E3DA; --line-strong:#D4D0C4;
+  --accent:#A03028; --accent-bg:#F8E9E5; --accent-ink:#A03028;
+  --mark:#FCEEC5; --mark-ink:#5A4300;
   /* tipografi */
   --serif:'Newsreader',Georgia,'Times New Roman',serif;
   --sans:'Plus Jakarta Sans','Helvetica Neue',system-ui,sans-serif;
   --mono:'JetBrains Mono','SF Mono',Consolas,monospace;
   /* geometri */
-  --r-card:12px; --r-btn:6px; --r-pill:999px;
-  --topbar-h:56px; --sidebar-w:300px; --toc-w:240px; --read-w:720px;
+  --r-card:10px; --r-btn:6px; --r-pill:999px;
+  --topbar-h:52px; --sidebar-w:300px; --toc-w:220px; --read-w:740px; --home-w:1080px;
   /* motion */
-  --ease:cubic-bezier(.32,.72,0,1); --dur:240ms;
-  --shadow-hover:0 2px 12px rgba(31,35,40,.05);
+  --ease:cubic-bezier(.32,.72,0,1); --dur:180ms;
+  --shadow-hover:0 1px 10px rgba(26,29,33,.07);
 }
 html[data-theme="dark"]{
-  --bg:#141311; --surface:#1C1B18; --surface-2:#181715;
-  --ink:#E8E6E1; --ink-2:#A39F96; --ink-3:#6E6A62;
-  --line:#2B2A26; --line-strong:#3A3833;
-  --accent:#D98A86; --accent-bg:rgba(217,138,134,.12); --accent-ink:#E5A9A4;
-  --mark:rgba(251,243,219,.14);
-  --shadow-hover:0 2px 12px rgba(0,0,0,.35);
+  --bg:#171613; --surface:#1F1E19; --surface-2:#1B1A16; --surface-3:#272520;
+  --ink:#E9E6DD; --ink-2:#A7A296; --ink-3:#7E796C;
+  --line:#2C2A24; --line-strong:#3E3B32;
+  --accent:#E2988E; --accent-bg:rgba(226,152,142,.12); --accent-ink:#EBADA3;
+  --mark:rgba(252,228,160,.18); --mark-ink:#F2DFAF;
+  --shadow-hover:0 1px 10px rgba(0,0,0,.5);
 }
 ```
 
-**Palet 17 tema** (bg / ink — terang; gelap memakai bg `rgba` 12%):
+**Palet 17 tema + Sintesis** (satu hue jewel-tone per tema, dipakai sebagai
+`--tc` untuk dot, chip, bar porsi, dan kolom Tema katalog):
 
-| Tema | bg | ink |
-|---|---|---|
-| Fondasi RGB | `#E1F3FE` | `#1F6C9F` |
-| Survei YOLO | `#E1F3FE` | `#1F6C9F` |
-| YOLO plus RGB-D | `#DAEFFB` | `#175E8C` |
-| RGB-D SOD | `#EDF3EC` | `#346538` |
-| Segmentasi RGB-D | `#E6F0E4` | `#2F5C33` |
-| Estimasi Kedalaman | `#FBF3DB` | `#956400` |
-| Pose 6D | `#F3EDF7` | `#6B4E8E` |
-| Deteksi 3D | `#EFEAF6` | `#5D4A86` |
-| Grasp Robotik | `#FDEBEC` | `#9F2F2D` |
-| RGB-D SLAM | `#FDEFF0` | `#8E3A52` |
-| Pedestrian RGB-T | `#FDF0E4` | `#97550F` |
-| Pertanian | `#F0F4DF` | `#5E7016` |
-| Medis | `#E4F4F1` | `#0F6E63` |
-| Industri | `#EEF0F2` | `#4E5A66` |
-| Remote Sensing | `#E8F0FA` | `#3A5C94` |
-| Fusi Multimodal | `#F5EEFB` | `#7A4FA0` |
-| Dataset | `#F2F0EB` | `#6B6552` |
-| Sintesis (TEMUAN) | `#1F2328` | `#FFFFFF` (solid ink, beda sendiri) |
+| Tema | hue | Tema | hue |
+|---|---|---|---|
+| Fondasi RGB | `#2B6CB0` | Grasp Robotik | `#B0433F` |
+| Survei YOLO | `#2F7D5B` | RGB-D SLAM | `#A04763` |
+| YOLO plus RGB-D | `#0E7490` | Pedestrian RGB-T | `#A9611A` |
+| RGB-D SOD | `#3F7A44` | Pertanian | `#6C8018` |
+| Segmentasi RGB-D | `#617A1F` | Medis | `#128577` |
+| Estimasi Kedalaman | `#A6740E` | Industri | `#5C6875` |
+| Pose 6D | `#7A5AA0` | Remote Sensing | `#2E86AB` |
+| Deteksi 3D | `#4F46A5` | Fusi Multimodal | `#8B5CB4` |
+| Dataset | `#7C755E` | Sintesis (TEMUAN) | `#A03028` (aksen utama) |
 
 ---
 
@@ -501,36 +507,41 @@ html[data-theme="dark"]{
 
 ```
 init()
-  theme.init()            // baca localStorage / prefers-color-scheme
-  buildIndex()            // normalisasi teks utk pencarian (lazy per entri)
-  router.mount()          // hashchange -> route()
-  sidebar.mount()         // render chip tema, select tahun, daftar
-  shortcuts.mount()       // /, Esc, panah, t, ?
-  reveal.mount()          // IntersectionObserver .rv
-  route(location.hash)    // layar awal
+  setTheme(localStorage['rp-theme'] ?? prefers-color-scheme)
+  buildChips(); buildYears()          // sidebar penyaring: chip tema + select tahun
+  if (!location.hash) location.replace('#/')
+  route()                             // layar awal
+  // listener terpasang di scope modul: hashchange -> route, keydown global,
+  // input pencarian (debounce 120ms), tombol tema/menu/bantuan/reset
 
-route(hash)
-  {path, query} = parse(hash)          // "#/", "#/042", "#/temuan", "?q=..&tema=..&thn=.."
-  state.filter = query
-  sidebar.applyFilter(state.filter)    // -> filtered[]  (disimpan utk prev/next)
-  switch path:
-    ""        -> viewHome()            // statistik, timeline, grid tema, jalur baca
-    "temuan"  -> viewEntry(SPECIAL)
-    /^\d{3}$/ -> viewEntry(byId[path]) // 404 inline bila tak ada
-  window.scrollTo(0,0); toc.build(); progress.reset()
+route()
+  {path, query, heading} = parseHash()  // "#/", "#/042?q=..&tema=A|B&thn=2021", "#/042#slug"
+  applyQueryToState(query)              // state.q, state.tema{}, state.thn
+  if (path tidak berubah)               // filter berubah saja -> jangan render ulang layar
+    renderList(); scrollToHeading?; return
+  body.classList.toggle('on-home' / 'on-entry')   // dua mode tata letak
+  renderList()                          // hitung state.ordered + gambar katalog/daftar
+  teardownObservers()
+  path == '' | '/'  -> viewHome()       // hero, stat, timeline, peta tema, katalog, jalur baca
+  byId[path]        -> viewEntry(e)     // termasuk 'temuan' (special)
+  selain itu        -> view404(path)
+  scrollTo(0,0); updateProgress(); closeDrawer(); main.focus()
 
 viewEntry(e)
-  html = marked.parse(e.md, {renderer: custom})   // tabel dibungkus, link eksternal, heading id
-  header = entryHeader(e)                          // eyebrow, judul, meta, copy bib, tautan
-  nav    = prevNext(e, sidebar.filtered)
-  main.innerHTML = header + html + nav
-  spy.observe(main.querySelectorAll('h2,h3'))      // scroll-spy TOC
-  localStorage.rp-last = e.id
+  main.innerHTML = entryHeader(e) + marked.parse(e.md) + prevNext(e)
+  enhance(main, e)     // bungkus tabel, link eksternal -> target=_blank, id+anchor pada h2/h3
+  buildTOC(heads, e); spy(heads)         // TOC melayang, scroll-spy IntersectionObserver
+  localStorage['rp-last'] = e.id
+  // prevNext mengikuti state.ordered (urutan filter aktif), fallback ke ENTRIES penuh
 
-search(q)
-  nq = norm(q)                                       // lowercase + strip diakritik
-  for e in DATA: score = 5*has(e.title)+3*has(e.theme)+1*has(e.md)
-  return top results (cache norm per entri di Map)
+computeList()                            // dipanggil renderList()
+  terms = norm(state.q).split()          // lowercase + strip diakritik
+  for e in DATA:
+    lolos filter tema/tahun?  -> tidak: lewati
+    terms kosong              -> skor 0
+    selain itu                -> skor = 5*hit(judul) + 3*hit(tema) + 1*hit(isi)
+  state.ordered = terurut (skor desc, lalu num) bila ada query; selain itu num asc
+  // haystack ter-normalisasi di-cache per entri (ensureHay)
 ```
 
 ---
@@ -547,15 +558,21 @@ search(q)
 - [ ] `#/001` -> `#/202` semua bisa dibuka; id tak dikenal -> pesan 404 anggun
 - [ ] Prev/next mengikuti urutan filter aktif
 - [ ] Tombol anchor `#` pada H2 menghasilkan URL yang bisa dibuka ulang ke posisi sama
+- [ ] Baris katalog bisa dibuka lewat klik maupun Enter/Spasi (keyboard)
+- [ ] Klik batang timeline & baris tema menyaring katalog, lalu URL ikut berubah
+- [ ] Klik header kolom katalog mengurutkan naik/turun (No, Judul, Tema, Tahun)
 
 **Pencarian & filter**
 - [ ] `q=fusion` -> hasil < 150 ms, istilah tersorot `<mark>`
 - [ ] Kombinasi tema "RGB-D SOD" + tahun 2021 + query "transformer"
 - [ ] Reset filter mengembalikan 202 entri; URL ikut bersih
+- [ ] `/` atau Ctrl/Cmd+K dari layar entri: pulang ke katalog lalu fokus ke kotak cari
 
 **Tampilan**
-- [ ] 360px: drawer buka/tutup, hamburger morph X, konten tak terpotong
-- [ ] 768px: TOC hilang, sidebar drawer; 1440px: 3 kolom penuh
+- [ ] 360px: drawer buka/tutup, konten tak terpotong, tabel katalog bisa di-scroll
+- [ ] 768px: sidebar jadi drawer, katalog tetap terbaca
+- [ ] 1260px+: TOC melayang muncul di layar entri; di bawah itu tersembunyi
+- [ ] Mode entri: sidebar penyaring tersembunyi, kolom baca terkunci 740px
 - [ ] Gelap/terang: semua warna ikut berubah, tersimpan setelah reload
 - [ ] Tidak ada layout shift besar saat font ter-loading (display=swap)
 
