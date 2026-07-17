@@ -1,211 +1,118 @@
 # 089 - PointRCNN: 3D Object Proposal Generation and Detection from Point Cloud
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 089 dari 154 |
 | Kunci BibTeX | `shi2019pointrcnn` |
-| Judul | PointRCNN: 3D Object Proposal Generation and Detection from Point Cloud |
-| Penulis | Shi, Shaoshuai; Wang, Xiaogang; Li, Hongsheng |
+| Judul asli | PointRCNN: 3D Object Proposal Generation and Detection from Point Cloud |
+| Penulis | Shaoshuai Shi, Xiaogang Wang, Hongsheng Li |
 | Tahun | 2019 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Deteksi 3D |
-| Kata kunci | deteksi 3D, point cloud, dua-tahap, proposal per-titik, KITTI |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2019), hlm. 770–779 |
+| Tema | Deteksi 3D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1812.04244
+- **Google Scholar:** https://scholar.google.com/scholar?q=PointRCNN%3A%203D%20Object%20Proposal%20Generation%20and%20Detection%20from%20Point%20Cloud
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=PointRCNN%3A%203D%20Object%20Proposal%20Generation%20and%20Detection%20from%20Point%20Cloud&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-deteksi-3d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=PointRCNN%3A%203D%20Object%20Proposal%20Generation%20and%20Detection%20from%20Point%20Cloud
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=PointRCNN%3A%203D%20Object%20Proposal%20Generation%20and%20Detection%20from%20Point%20Cloud&sort=relevance
+PointRCNN adalah detektor objek 3D dua tahap yang bekerja langsung pada *point cloud* (kumpulan titik koordinat 3D dari sensor LiDAR, tanpa struktur grid), tanpa mengubahnya lebih dahulu menjadi *voxel* (sel volume 3D diskret) atau proyeksi tampak-atas. Tahap pertama mensegmentasi setiap titik menjadi latar depan (bagian objek) atau latar belakang, lalu setiap titik latar depan langsung mengusulkan satu kotak 3D — proposal *bottom-up* yang bergerak dari titik individual ke kotak, bukan dari kumpulan *anchor* (kotak acuan berukuran tetap) yang disebar merata di ruang 3D. Tahap kedua mengambil titik di dalam setiap proposal, memindahkannya ke koordinat kanonik (kerangka acuan lokal berpusat dan berorientasi pada proposal itu sendiri), lalu menyempurnakan posisi, ukuran, dan orientasi kotak.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada benchmark KITTI 3D (data deteksi objek kendaraan otonom berisi *scan* LiDAR dan citra kamera berpasangan), PointRCNN memakai *modality* LiDAR saja dan mencapai *average precision* (AP, metrik presisi rata-rata pada berbagai ambang *recall*) sebesar 85,94% (mudah), 75,76% (sedang), dan 68,32% (sulit) untuk kelas mobil pada set uji, melampaui metode berbasis *voxel* seperti SECOND maupun metode fusi citra-LiDAR seperti F-PointNet dan AVOD-FPN. Makalah ini menjadi rujukan awal bahwa proposal berbasis titik murni dapat mengungguli pendekatan berbasis *voxel* atau multimodal pada deteksi mobil.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 770--779 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Detektor 3D dua-tahap yang menghasilkan proposal bottom-up langsung dari point cloud per-titik lalu menyempurnakannya di koordinat kanonik.
+Sebelum PointRCNN, dua jalur utama mendominasi deteksi objek 3D dari LiDAR. Jalur pertama mengubah *point cloud* menjadi representasi grid: VoxelNet (bab 087) membagi ruang 3D menjadi *voxel* lalu menerapkan konvolusi 3D, sementara metode berbasis proyeksi tampak-atas (*bird's-eye view*, BEV) memampatkan ketinggian menjadi kanal fitur pada peta 2D. Diskretisasi ini menyederhanakan komputasi tetapi membuang detail geometri halus — dua titik berjarak berbeda di dalam satu *voxel* menjadi tidak terbedakan. Jalur kedua, seperti F-PointNet dan MV3D (bab 091), menghasilkan proposal 3D dengan bantuan citra RGB: deteksi 2D pada kamera membatasi wilayah pencarian di ruang 3D (disebut *frustum*, volume piramida yang memanjang dari kamera). Pendekatan ini bergantung pada kualitas deteksi 2D dan kalibrasi kamera-LiDAR yang presisi, sehingga gagal bila citra tidak tersedia atau kalibrasi meleset.
 
-## Abstrak (Parafrase)
-PointRCNN mendeteksi objek 3D dalam dua tahap tanpa voxelisasi kasar: tahap pertama mensegmentasi titik foreground dan menghasilkan proposal 3D per-titik (bottom-up) dari point cloud mentah (PointNet++); tahap kedua mengubah proposal ke koordinat kanonik dan menyempurnakan box. Ini mencapai SOTA LiDAR-only pada KITTI saat rilis.
+Alternatif yang belum banyak dieksplorasi saat itu adalah menghasilkan proposal 3D langsung dari titik mentah, tanpa voxelisasi maupun bantuan citra. Kesulitannya dua hal. Pertama, *point cloud* dari LiDAR bersifat jarang dan tidak seragam kerapatannya — titik yang jauh dari sensor lebih renggang daripada yang dekat — sehingga jaringan harus tahan terhadap kepadatan yang bervariasi. Kedua, ruang pencarian proposal 3D jauh lebih besar daripada ruang 2D: setiap kotak memerlukan tujuh parameter (pusat x, y, z; panjang, lebar, tinggi; sudut hadap/*yaw*), sehingga menyebar *anchor* padat ke seluruh ruang 3D menjadi mahal secara komputasi dan boros memori.
 
-## Latar Belakang & Konteks
-Deteksi 3D memerlukan proposal berkualitas, namun voxelisasi kasar kehilangan detail dan pendekatan anchor 3D boros; proposal langsung dari titik lebih presisi.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Voxelisasi kasar kehilangan detail geometri.
-- Anchor 3D boros dan sulit disetel.
-- Proposal 3D berkualitas sulit dihasilkan.
-- Point cloud jarang & tak seragam.
-- Penyempurnaan box perlu konteks lokal.
+Gagasan inti PointRCNN adalah membalik urutan kerja: alih-alih menebak lokasi objek lebih dahulu lalu memeriksa titik di sekitarnya (cara kerja berbasis *anchor*), jaringan terlebih dahulu memutuskan titik mana yang merupakan bagian dari objek, kemudian membiarkan setiap titik tersebut mengusulkan kotaknya sendiri. Karena setiap titik latar depan sudah berada tepat pada permukaan objek, proposal yang dihasilkan secara alami memiliki lokasi awal yang akurat — berbeda dengan *anchor* yang disebar merata tanpa mengetahui isi *scene*.
 
-## Tujuan & Pertanyaan Penelitian
-- Menghasilkan proposal 3D per-titik (bottom-up).
-- Menyempurnakan box di koordinat kanonik.
-- Meningkatkan presisi deteksi 3D LiDAR-only.
+Gagasan kedua, setelah proposal terbentuk, adalah menyempurnakan kotak bukan di koordinat dunia asli, melainkan di koordinat kanonik: setiap proposal memindahkan titik-titik lokalnya sehingga pusat proposal menjadi titik asal dan salah satu sumbunya sejajar dengan arah hadap proposal. Dengan kerangka acuan seragam ini, jaringan penyempurnaan tahap kedua tidak perlu mempelajari variasi posisi absolut di seluruh *scene* — cukup koreksi kecil relatif terhadap proposal, tugas yang jauh lebih sederhana.
 
-## Tinjauan Terdahulu / Posisi Literatur
-PointRCNN menggabungkan PointNet++ dan RPN dua-tahap untuk deteksi 3D.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Praproses dan Backbone PointNet++
 
-- PointNet++ — fitur point cloud hierarkis.
-- Faster R-CNN — paradigma dua-tahap.
-- Foreground segmentation — proposal.
-- Canonical refinement — penyempurnaan.
+Setiap adegan (*scene*) LiDAR disubsampel menjadi 16.384 titik sebagai masukan; adegan dengan titik lebih sedikit diisi ulang dengan pengulangan titik acak. Setiap titik direpresentasikan oleh koordinat (x, y, z) dan intensitas pantulan laser, lalu diproses oleh *backbone* PointNet++ dengan skema *multi-scale grouping* (MSG): jaringan bekerja langsung pada titik tanpa voxelisasi, mengelompokkan titik bertetangga pada beberapa radius berbeda secara bertingkat sehingga fitur yang dipelajari mencakup konteks lokal pada berbagai skala jarak. Keluarannya adalah satu vektor fitur per titik masukan.
 
-## Metodologi & Arsitektur
-Tahap 1: PointNet++ mensegmentasi titik foreground dan tiap titik foreground menghasilkan proposal 3D (bottom-up). Tahap 2: titik dalam proposal ditransformasi ke koordinat kanonik untuk penyempurnaan box (regresi + klasifikasi confidence).
+### Tahap 1: Segmentasi Titik dan Proposal Bottom-Up
 
-Komponen / langkah metodologis utama:
+Dari fitur per titik itu, dua kepala (*head*) jaringan bekerja paralel. Kepala segmentasi mengklasifikasikan setiap titik sebagai latar depan (bagian objek target) atau latar belakang. Karena jumlah titik latar depan pada satu adegan jalan raya jauh lebih sedikit daripada titik latar belakang (jalan, gedung, vegetasi), pelatihan kepala ini memakai *focal loss* — fungsi kerugian yang menurunkan bobot kontribusi contoh yang mudah diklasifikasikan agar pembelajaran tidak didominasi titik latar belakang.
 
-- Segmentasi foreground per-titik (PointNet++).
-- Proposal 3D bottom-up per-titik.
-- Transformasi ke koordinat kanonik.
-- Penyempurnaan box tahap-2.
-- LiDAR-only (point cloud mentah).
-- Pelatihan dua-tahap.
+Kepala kedua, regresi kotak, berjalan pada setiap titik latar depan dan menghasilkan satu proposal 3D per titik. Regresi ini memakai skema *bin-based*: rentang nilai koordinat pusat pada sumbu X dan Z, serta sudut orientasi, dibagi menjadi sejumlah *bin* (kotak nilai diskret). Jaringan memilih *bin* yang benar lewat klasifikasi *cross-entropy*, kemudian meregresi residu halus di dalam *bin* tersebut dengan *smooth L1 loss* (fungsi kerugian regresi yang tidak terlalu sensitif terhadap galat besar). Sumbu Y (ketinggian), yang rentangnya jauh lebih sempit karena objek jalan raya berada pada bidang tanah relatif datar, diregresi langsung dengan *smooth L1* tanpa pembagian *bin*. Skema ini terbukti pada uji ablasi makalah konvergen lebih cepat dan mencapai *recall* (proporsi objek yang berhasil diusulkan) lebih tinggi dibandingkan regresi langsung, regresi berbasis kosinus sudut, maupun regresi berbasis sudut kotak.
 
-## Kontribusi Utama
-1. Proposal 3D bottom-up per-titik yang presisi.
-2. Penyempurnaan di koordinat kanonik.
-3. SOTA LiDAR-only pada KITTI saat rilis.
-4. Menghindari voxelisasi kasar.
+Kualitas proposal yang dihasilkan diukur lewat *recall*: dengan hanya 50 proposal per adegan, PointRCNN mencapai 96,01% *recall* pada ambang IoU (*Intersection over Union*, rasio irisan terhadap gabungan luas antara kotak prediksi dan kebenaran) 0,5 untuk kelas mobil tingkat kesulitan sedang — jauh melampaui 91% yang dicapai AVOD dengan jumlah proposal yang sebanding. Angka ini menunjukkan bahwa proposal berbasis titik menghasilkan kandidat kotak yang jauh lebih sedikit terbuang dibandingkan pendekatan berbasis *anchor*.
 
-## Rincian Eksperimen
-Diuji pada KITTI 3D dengan metrik AP 3D/BEV, dibandingkan VoxelNet dan metode berbasis voxel/anchor.
+### Tahap 2: Transformasi Kanonik dan Penyempurnaan
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Untuk setiap proposal, titik di dalam dan di sekitarnya (dengan margin konteks tambahan) dikumpulkan, lalu koordinatnya ditransformasikan ke sistem kanonik: asal (0,0,0) dipindah ke pusat proposal dan sumbu diputar sejajar arah hadap proposal. Pada koordinat baru ini, jaringan tahap kedua menggabungkan tiga sumber informasi — koordinat lokal titik dalam kerangka kanonik, intensitas laser dan skor segmentasi dari tahap pertama, serta fitur semantik global dari *backbone* — untuk meregresi koreksi akhir posisi, ukuran, dan orientasi kotak, sekaligus memprediksi skor keyakinan (*confidence*) bahwa kotak tersebut berisi objek. Margin konteks di sekitar proposal (disebut η) diuji pada beberapa nilai; nilai optimal ditemukan pada η = 1,0 meter, sedangkan margin lebih besar mulai menyertakan titik dari objek tetangga yang mengganggu penyempurnaan.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI 3D | AP 3D | SOTA LiDAR-only saat rilis |
-| KITTI BEV | AP BEV | kuat |
-| Ablation | canonical refinement | penyempurnaan menyumbang gain |
+Alur dua tahap ini dapat diringkas sebagai berikut:
 
-## Temuan Kunci
-- Proposal berbasis titik lebih presisi dari voxel/anchor.
-- Koordinat kanonik memudahkan penyempurnaan.
-- Segmentasi foreground kunci proposal.
-- Point cloud mentah mempertahankan detail.
+```
+point cloud mentah (16.384 titik: x,y,z,intensitas)
+                |
+                v
+   backbone PointNet++ (multi-scale grouping)
+                |
+        +-------+-------+
+        |               |
+        v               v
+ segmentasi titik   regresi kotak
+ (latar depan/     bin-based per
+  latar belakang)   titik latar depan
+        |               |
+        +-------+-------+
+                v
+     proposal 3D bottom-up
+     (klasifikasi bin + residu)
+                |
+                v
+  transformasi ke koordinat kanonik
+  per proposal (pusat & orientasi)
+                |
+                v
+   tahap 2: gabung fitur lokal
+   kanonik + fitur global tahap 1
+                |
+                v
+   kotak 3D akhir (x,y,z,l,w,h,yaw)
+        + skor confidence
+```
 
-## Keunggulan
-- Presisi (berbasis titik).
-- Dua-tahap kuat.
-- SOTA LiDAR-only.
+### Fungsi Loss
 
-## Keterbatasan
-- Dua-tahap relatif lambat.
-- LiDAR-only (tanpa tekstur).
-- PointNet++ mahal pada scene besar.
+Pelatihan menggabungkan empat komponen: *focal loss* untuk segmentasi titik, *cross-entropy* untuk klasifikasi *bin* pada regresi kotak tahap pertama, *smooth L1* untuk residu dalam *bin* dan sumbu Y, serta kerugian serupa pada tahap kedua untuk penyempurnaan kotak dan klasifikasi *confidence* akhir. Tahap kedua hanya menerima proposal yang sudah dihasilkan tahap pertama sebagai masukan, sehingga kualitasnya bergantung pada kualitas tahap pertama.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-PointRCNN memperkuat klaster Deteksi 3D dengan pendekatan berbasis titik; menghubungkan geometri kedalaman/point cloud dengan deteksi objek 3D dalam tinjauan.
+Evaluasi utama dilakukan pada KITTI 3D Object Detection Benchmark, data deteksi objek untuk skenario mengemudi yang memakai sensor LiDAR Velodyne dan kamera stereo terkalibrasi. Metrik utamanya AP 3D pada tiga tingkat kesulitan (mudah, sedang, sulit — dibedakan dari ukuran objek pada citra, tingkat oklusi, dan pemotongan tepi citra), dengan tingkat sedang umumnya dipakai sebagai acuan peringkat utama.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Deteksi 3D** yang baik dibaca berdampingan:
+| Metode | Modalitas | Mobil (mudah) | Mobil (sedang) | Mobil (sulit) |
+|---|---|---|---|---|
+| PointRCNN | LiDAR saja | 85,94% | 75,76% | 68,32% |
+| SECOND | LiDAR saja | 83,13% | 73,66% | 66,20% |
+| AVOD-FPN | RGB + LiDAR | 81,94% | 71,88% | 66,38% |
+| F-PointNet | RGB + LiDAR | 81,20% | 70,39% | 62,19% |
 
-- [087 - 2018 - VoxelNet - Deteksi 3D](./087%20-%202018%20-%20VoxelNet%20-%20Deteksi%203D.md)
-- [088 - 2019 - PointPillars - Deteksi 3D](./088%20-%202019%20-%20PointPillars%20-%20Deteksi%203D.md)
-- [090 - 2018 - Frustum PointNets - Deteksi 3D](./090%20-%202018%20-%20Frustum%20PointNets%20-%20Deteksi%203D.md)
-- [091 - 2017 - MV3D - Deteksi 3D](./091%20-%202017%20-%20MV3D%20-%20Deteksi%203D.md)
-- [092 - 2018 - AVOD - Deteksi 3D](./092%20-%202018%20-%20AVOD%20-%20Deteksi%203D.md)
-- [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md)
-- [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md)
-- [095 - 2019 - Pseudo-LiDAR - Deteksi 3D](./095%20-%202019%20-%20Pseudo-LiDAR%20-%20Deteksi%203D.md)
+Pada tingkat kesulitan sedang, PointRCNN unggul sekitar 2,1 poin AP dari SECOND (metode berbasis *voxel* terkuat pada tabel ini) dan sekitar 3,9–5,4 poin dari dua metode yang justru memakai tambahan citra RGB. Interpretasinya: informasi tekstur dari kamera tidak lantas menjamin proposal 3D yang lebih baik jika geometri titik sudah diproses dengan cukup teliti — proposal berbasis titik murni pada PointRCNN menghasilkan lokalisasi yang lebih presisi tanpa bantuan citra sama sekali.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Deteksi 3D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Uji ablasi menunjukkan kontribusi setiap komponen. Menghilangkan transformasi kanonik pada tahap kedua menjatuhkan AP tingkat sedang secara drastis dari 77,67% menjadi 13,68% — bukti bahwa kerangka acuan lokal, bukan sekadar penyempurnaan lanjutan, adalah komponen yang menentukan keberhasilan tahap kedua. Menyertakan fitur semantik global dari tahap pertama sebagai masukan tambahan tahap kedua menyumbang kenaikan sekitar 2,71 poin AP pada tingkat sedang, menunjukkan bahwa konteks yang dipelajari pada tahap awal tetap berguna meski titik sudah dipindah ke koordinat kanonik.
 
-## Glosarium Istilah (tema Deteksi 3D)
-Istilah penting untuk memahami makalah ini:
+## Kelebihan dan Keterbatasan
 
-- **Deteksi 3D** — Prediksi kotak 3D beorientasi (x,y,z,l,w,h,yaw).
-- **LiDAR** — Sensor laser menghasilkan point cloud akurat.
-- **BEV** — Bird's-Eye View; proyeksi tampak-atas.
-- **Voxel/pillar** — Diskretisasi point cloud ke sel 3D / kolom.
-- **Fusi LiDAR-kamera** — Penggabungan geometri LiDAR dan tekstur kamera.
-- **Frustum** — Volume 3D dibatasi deteksi 2D pada citra.
-- **Pseudo-LiDAR** — Point cloud dari depth kamera.
-- **KITTI/nuScenes** — Benchmark deteksi 3D berkendara.
-- **AP 3D / NDS** — Metrik deteksi 3D (NDS khusus nuScenes).
-- **Kalibrasi sensor** — Penyelarasan koordinat antar-sensor.
+Kelebihan utama PointRCNN adalah presisi proposal: karena proposal berasal langsung dari titik latar depan, bukan dari *anchor* yang disebar tanpa mengetahui isi *scene*, kualitas kandidat kotak pada tahap awal sudah tinggi (96,01% *recall* dengan hanya 50 proposal). Pendekatan ini juga tidak bergantung pada citra RGB maupun kalibrasi kamera-LiDAR, sehingga tetap berfungsi pada sensor LiDAR-saja. Skema *bin-based regression* memberi jaringan target yang lebih mudah dipelajari dibandingkan regresi langsung nilai kontinu, terbukti dari uji ablasi pada makalah.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Dari sisi rekayasa, arsitektur dua tahap dengan *backbone* PointNet++ per titik cenderung lebih mahal secara komputasi dibandingkan metode satu tahap berbasis *voxel* atau *pillar* seperti VoxelNet atau PointPillars (bab 088), karena pemrosesan titik individual pada PointNet++ tidak semudah dipetakan ke operasi konvolusi grid yang teroptimasi perangkat keras. Sumber yang diperiksa untuk bab ini tidak melaporkan angka kecepatan inferensi (FPS), sehingga perbandingan kecepatan tidak dapat dinyatakan kuantitatif di sini. Secara konseptual, karena metode ini murni mengandalkan geometri titik LiDAR, ia tidak memanfaatkan informasi tekstur atau warna pada citra kamera — keterbatasan yang menjadi motivasi metode fusi LiDAR-kamera pada bab-bab lain di klaster ini.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kaitan dengan Bab Lain
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+PointRCNN berada pada posisi kontras dengan dua jalur deteksi 3D lain dalam klaster ini. Terhadap bab 087 (VoxelNet), yang mendiskretisasi *point cloud* menjadi *voxel* sebelum konvolusi 3D, PointRCNN menunjukkan bahwa proposal langsung dari titik menghindari kehilangan detail akibat diskretisasi. Terhadap bab 088 (PointPillars), yang memilih representasi kolom (*pillar*) demi kecepatan, PointRCNN mewakili ujung spektrum yang mengutamakan presisi proposal di atas kecepatan. Tabel eksperimen di atas juga langsung melibatkan F-PointNet, metode fusi berbasis *frustum* yang dibahas pada [090 - 2018 - Frustum PointNets - Deteksi 3D](./090%20-%202018%20-%20Frustum%20PointNets%20-%20Deteksi%203D.md), serta pendekatan multimodal berbasis BEV pada [091 - 2017 - MV3D - Deteksi 3D](./091%20-%202017%20-%20MV3D%20-%20Deteksi%203D.md). Skema segmentasi titik dan regresi *bin-based* di sini menjadi rujukan desain bagi metode fusi LiDAR-kamera yang lebih baru, seperti [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md), yang mewarisi ide "menandai titik lalu memprosesnya per titik" namun menambahkan informasi semantik dari citra sebelum segmentasi.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+## Poin untuk Sitasi
 
-## Kesimpulan
-PointRCNN mendeteksi objek 3D dua-tahap dengan proposal bottom-up per-titik dan penyempurnaan di koordinat kanonik, mencapai SOTA LiDAR-only pada KITTI tanpa voxelisasi kasar.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `shi2019pointrcnn` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 089/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `shi2019pointrcnn`. Ringkasan yang aman dikutip: "PointRCNN menghasilkan proposal 3D bottom-up langsung dari titik point cloud lewat segmentasi latar depan dan regresi bin-based, lalu menyempurnakannya dalam koordinat kanonik pada tahap kedua, mencapai 75,76% AP 3D (tingkat sedang) untuk kelas mobil pada KITTI test set menggunakan LiDAR saja." Angka AP (85,94/75,76/68,32 untuk PointRCNN; 83,13/73,66/66,20 untuk SECOND; 81,94/71,88/66,38 untuk AVOD-FPN; 81,20/70,39/62,19 untuk F-PointNet), angka *recall* proposal (96,01% versus 91% AVOD dengan 50 proposal), dan hasil ablasi (77,67% versus 13,68% tanpa transformasi kanonik; +2,71 poin dari fitur tahap 1) diperoleh dari penelusuran isi naskah lewat perangkat pengambil web, bukan dari pembacaan langsung berkas PDF/HTML asli — **wajib diverifikasi ulang terhadap tabel dan teks naskah CVPR 2019 sebelum dikutip dalam karya formal**. Angka FPS/kecepatan inferensi tidak ditemukan pada sumber yang diperiksa dan tidak dicantumkan dalam narasi di atas.

@@ -1,211 +1,105 @@
 # 093 - PointPainting: Sequential Fusion for 3D Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 093 dari 154 |
 | Kunci BibTeX | `vora2020pointpainting` |
-| Judul | PointPainting: Sequential Fusion for 3D Object Detection |
-| Penulis | Vora, Sourabh; Lang, Alex H.; Helou, Bassam; Beijbom, Oscar |
+| Judul asli | PointPainting: Sequential Fusion for 3D Object Detection |
+| Penulis | Sourabh Vora, Alex H. Lang, Bassam Helou, Oscar Beijbom |
 | Tahun | 2020 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Deteksi 3D |
-| Kata kunci | deteksi 3D, fusi sekuensial, segmentasi, LiDAR-kamera, plug-in |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2020) |
+| Tema | Deteksi 3D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1911.10150
+- **Google Scholar:** https://scholar.google.com/scholar?q=PointPainting%3A%20Sequential%20Fusion%20for%203D%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=PointPainting%3A%20Sequential%20Fusion%20for%203D%20Object%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-deteksi-3d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=PointPainting%3A%20Sequential%20Fusion%20for%203D%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=PointPainting%3A%20Sequential%20Fusion%20for%203D%20Object%20Detection&sort=relevance
+PointPainting mengusulkan skema fusi kamera-LiDAR yang disebut fusi sekuensial: skor segmentasi semantik dari citra RGB diproyeksikan ke setiap titik *point cloud* (kumpulan titik koordinat 3D hasil pindaian LiDAR) LiDAR sebelum titik tersebut diproses oleh detektor 3D yang sudah ada. Setiap titik LiDAR "dicat" dengan vektor skor kelas hasil segmentasi citra, sehingga titik yang semula hanya membawa informasi geometri (koordinat dan intensitas pantulan) kini juga membawa informasi semantik dari kamera. Detektor hilir — PointPillars, VoxelNet, atau PointRCNN — menerima titik yang telah diperkaya ini tanpa perubahan arsitektur, kecuali penyesuaian jumlah kanal masukan.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada validasi KITTI, penyisipan skema ini menaikkan *mean Average Precision* (mAP) ketiga detektor tersebut, dan pada tolok ukur nuScenes selisihnya lebih besar lagi. Kontribusi utama makalah bukan detektor baru, melainkan bukti bahwa informasi semantik citra dapat disuntikkan ke detektor LiDAR mana pun melalui titik masukannya sendiri, tanpa menyentuh lapisan jaringan di dalamnya. Pendekatan ini menempatkan PointPainting sebagai lapisan pra-pemrosesan yang dapat dipasang di depan (*plug-in*) berbagai detektor 3D berbasis LiDAR.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 4604--4612 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode fusi sekuensial yang 'mengecat' titik LiDAR dengan skor segmentasi semantik dari citra RGB sebelum masuk detektor 3D — sederhana namun efektif dan plug-in.
+Sampai 2019, detektor 3D berbasis LiDAR saja — seperti VoxelNet (bab 087), PointPillars (bab 088), dan PointRCNN (bab 089) — secara konsisten mengungguli metode fusi kamera-LiDAR pada tolok ukur populer semacam KITTI. Kesenjangan ini janggal karena citra RGB memuat informasi tekstur dan warna yang tidak dimiliki *point cloud*, sehingga secara intuitif fusi seharusnya menambah, bukan mengurangi, akurasi. Makalah PointPainting menjadikan kesenjangan ini sebagai motivasi langsung: metode fusi yang ada gagal memanfaatkan citra secara efektif.
 
-## Abstrak (Parafrase)
-PointPainting memproyeksikan skor segmentasi semantik dari citra RGB ke titik-titik LiDAR (setiap titik 'dicat' dengan vektor skor kelas), lalu detektor 3D berbasis LiDAR (mis. PointPillars) memproses point cloud yang telah diperkaya. Fusi sekuensial sederhana ini meningkatkan berbagai detektor 3D pada KITTI dan nuScenes tanpa mengubah arsitektur detektor.
+Penyebabnya terletak pada desain metode fusi terdahulu. MV3D (bab 091) dan AVOD (bab 092) melakukan fusi pada level fitur di tengah jaringan: fitur dari cabang citra dan cabang *point cloud* digabungkan pada peta fitur menengah, sehingga arsitektur kedua cabang harus dirancang berpasangan dan disesuaikan ulang setiap kali salah satu cabang diganti. Frustum PointNets (bab 090) memakai deteksi 2D pada citra untuk membatasi ruang pencarian 3D berbentuk kerucut pandang (*frustum*), tetapi kesalahan pada tahap deteksi 2D langsung membatasi ruang pencarian 3D secara permanen. Ketiganya berbagi masalah yang sama: fusi terikat erat pada arsitektur detektor tertentu, sehingga metode fusi tidak dapat langsung dipasangkan ke detektor LiDAR generasi baru begitu detektor itu terbit. PointPainting mencari cara memasukkan informasi semantik citra tanpa mengikat diri pada satu arsitektur detektor.
 
-## Latar Belakang & Konteks
-Fusi LiDAR-kamera sering rumit dan terikat arsitektur; dibutuhkan cara sederhana, general, dan plug-in untuk menambahkan informasi semantik RGB ke detektor LiDAR.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Fusi LiDAR-kamera sering rumit & terikat arsitektur.
-- Informasi semantik RGB kurang dimanfaatkan.
-- Perlu metode fusi general & plug-in.
-- Detektor LiDAR-only mengabaikan tekstur.
-- Penyelarasan citra-titik diperlukan.
+Gagasan inti PointPainting adalah memindahkan titik penggabungan informasi dari level fitur jaringan ke level data masukan. Alih-alih menggabungkan fitur di tengah jaringan, setiap titik LiDAR diperkaya lebih dulu, sebelum masuk ke detektor mana pun, dengan skor kelas hasil segmentasi semantik citra pada piksel yang berkorespondensi dengannya. Titik yang telah diperkaya ini disebut titik yang "dicat" (*painted point*): representasinya tetap berupa titik individual dengan koordinat (x, y, z) dan intensitas pantulan, hanya saja kini ditambahi beberapa angka skor kelas.
 
-## Tujuan & Pertanyaan Penelitian
-- Memperkaya titik LiDAR dengan skor semantik RGB.
-- Menyediakan fusi sekuensial plug-in.
-- Meningkatkan berbagai detektor 3D.
+Karena penggabungan terjadi pada data masukan, bukan pada arsitektur jaringan, detektor hilir tidak perlu tahu bagaimana skor semantik itu dihasilkan. Detektor hanya melihat titik dengan jumlah kanal masukan yang lebih banyak dari biasanya. Konsekuensinya, metode ini dapat dipasangkan ke detektor LiDAR generasi mana pun tanpa mendesain ulang arsitektur — cukup mengubah lapisan pertama yang membaca jumlah kanal masukan.
 
-## Tinjauan Terdahulu / Posisi Literatur
-PointPainting menggabungkan segmentasi citra dan detektor LiDAR secara sekuensial.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+Alur PointPainting terdiri atas tiga tahap berurutan: segmentasi semantik citra, proyeksi dan pengecatan titik, lalu deteksi 3D oleh jaringan LiDAR standar.
 
-- Segmentasi semantik citra — sumber skor.
-- PointPillars/detektor LiDAR — hilir.
-- Proyeksi citra-ke-titik (kalibrasi).
-- Fusi sekuensial (sequential fusion).
+```
+citra RGB                        point cloud LiDAR (mentah)
+   |                                     |
+   v                                     |
+segmentasi semantik                      |
+(mis. DeepLabv3+)                        |
+   |                                     |
+   v                                     v
+skor kelas per piksel  ----->  proyeksi titik ke citra
+(mis. 4 kelas di KITTI)         (kalibrasi kamera-LiDAR)
+                                          |
+                                          v
+                          titik "dicat": (x, y, z, refleksi,
+                                skor kelas 1..K)
+                                          |
+                                          v
+                       detektor 3D LiDAR (PointPillars,
+                       VoxelNet, atau PointRCNN) — arsitektur
+                       tidak berubah, hanya kanal masukan
+```
 
-## Metodologi & Arsitektur
-Jaringan segmentasi memberi skor kelas per-piksel pada citra RGB; skor diproyeksikan ke titik LiDAR memakai kalibrasi (painting); titik yang telah 'dicat' (koordinat + skor semantik) diproses detektor 3D LiDAR standar; plug-in ke berbagai detektor.
+### Segmentasi Semantik Citra
 
-Komponen / langkah metodologis utama:
+Tahap pertama menjalankan jaringan segmentasi semantik pada citra RGB untuk menghasilkan skor kelas bagi setiap piksel. Segmentasi semantik adalah tugas memberi label kelas pada tiap piksel citra (bukan hanya kotak pembatas). Pada eksperimen KITTI, makalah memakai DeepLabv3+ yang dilatih pada Mapillary, disetel halus pada Cityscapes, lalu disetel halus lagi pada anotasi segmentasi KITTI dengan 4 kelas keluaran (mobil, pejalan kaki, pesepeda, dan latar belakang). Pada eksperimen nuScenes dipakai jaringan berbasis ResNet dengan 11 kelas keluaran (10 kelas objek deteksi ditambah latar belakang), dilatih pada dataset nuImages.
 
-- Segmentasi semantik citra (skor per-piksel).
-- Proyeksi skor ke titik LiDAR (painting).
-- Titik diperkaya (geometri + semantik).
-- Detektor 3D LiDAR standar hilir.
-- Fusi sekuensial plug-in.
-- Evaluasi KITTI & nuScenes.
+### Proyeksi dan "Pengecatan" Titik LiDAR
 
-## Kontribusi Utama
-1. Fusi sekuensial sederhana & efektif.
-2. Plug-in ke berbagai detektor 3D.
-3. Meningkatkan akurasi tanpa ubah arsitektur.
-4. Memanfaatkan semantik RGB untuk LiDAR.
+Tahap kedua memproyeksikan setiap titik LiDAR ke bidang citra memakai parameter kalibrasi kamera-LiDAR yang sudah diketahui (matriks rotasi, translasi, dan proyeksi kamera). Titik yang jatuh pada koordinat piksel tertentu diberi (dicat dengan) vektor skor kelas piksel tersebut. Hasilnya, satu titik yang semula hanya memuat 4 angka (x, y, z, intensitas pantulan) kini memuat 4 + K angka, dengan K jumlah kelas segmentasi. Titik yang berada di luar jangkauan pandang kamera (misalnya di belakang kendaraan) tidak memperoleh skor tambahan dan biasanya diberi vektor nol atau ditandai sebagai tidak tercakup.
 
-## Rincian Eksperimen
-Diuji dengan beberapa detektor 3D (PointPillars, PointRCNN, dll.) pada KITTI dan nuScenes dengan metrik AP 3D/NDS.
+### Penyesuaian Detektor Hilir
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Tahap ketiga memasukkan titik yang telah dicat ke detektor 3D LiDAR standar. Karena hanya dimensi vektor fitur titik yang bertambah, penyesuaian yang diperlukan terbatas pada lapisan pembacaan fitur pertama. Untuk PointPillars, dimensi fitur per titik naik dari 9 menjadi 13 (menambahkan 4 skor kelas KITTI), dan lapisan penyandi (*encoder*) pilar disesuaikan dari (9, 64) menjadi (13, 64) saluran. Untuk VoxelNet, dimensi naik dari 7 menjadi 11, dengan lapisan penyandi voxel berubah dari (7, 32) dan (64, 128) menjadi (11, 32) dan (64, 128). Untuk PointRCNN, dimensi naik dari 4 menjadi 8, dan penyesuaian diterapkan baik pada penyandi maupun pada tahap *region pooling* (pengumpulan fitur wilayah kandidat) tahap kedua. Tidak ada lapisan baru yang ditambahkan; hanya lebar kanal masukan yang berubah.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI 3D | AP 3D | peningkatan lintas detektor |
-| nuScenes | NDS | peningkatan konsisten |
-| Plug-in | generalisasi | bekerja lintas detektor |
+### Pertimbangan Waktu Nyata
 
-## Temuan Kunci
-- Semantik RGB memperkaya titik LiDAR efektif.
-- Fusi sekuensial sederhana bisa sangat efektif.
-- Plug-in memudahkan adopsi.
-- Kalibrasi akurat penting untuk painting.
+Karena segmentasi citra dan pemindaian LiDAR berjalan pada laju berbeda, makalah membandingkan dua skema pencocokan waktu: pencocokan bersamaan (*concurrent matching*, memakai citra pada waktu yang sama persis dengan pindaian LiDAR) dan pencocokan berurutan (*consecutive matching*, memakai citra dari siklus sebelumnya agar kedua proses dapat dijalankan berpipa/*pipelined*). Skema kedua menambah latensi proyeksi sekitar 0,15 milidetik dan latensi penyandi sekitar 0,6 milidetik, total tambahan sekitar 0,75 milidetik, tanpa penurunan akurasi dibandingkan pencocokan bersamaan — artinya PointPainting dapat dijalankan berpipa pada sistem waktu nyata tanpa mengorbankan latensi maupun akurasi.
 
-## Keunggulan
-- Sederhana & plug-in.
-- Efektif lintas detektor.
-- Memanfaatkan semantik RGB.
+## Eksperimen dan Hasil
 
-## Keterbatasan
-- Bergantung kualitas segmentasi & kalibrasi.
-- Sekuensial (bukan end-to-end).
-- Error segmentasi merambat.
+Evaluasi utama dilakukan pada set validasi KITTI (deteksi kendaraan, pejalan kaki, dan pesepeda) serta pada nuScenes. Metrik BEV (*bird's-eye view*, deteksi dari sudut pandang atas) dilaporkan sebagai mAP pada tingkat kesulitan sedang (*moderate*):
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+| Detektor | mAP dasar | mAP setelah dicat | Selisih |
+|---|---|---|---|
+| PointPillars | 73,78 | 76,27 | +2,50 |
+| VoxelNet | 71,83 | 73,55 | +1,71 |
+| PointRCNN | 72,42 | 75,80 | +3,37 |
 
-## Relevansi terhadap Tema Tinjauan
-PointPainting adalah contoh fusi sekuensial RGB->geometri yang paralel dengan gagasan menyuntikkan kedalaman/semantik ke pipeline deteksi dalam tinjauan.
+Ketiga detektor — masing-masing mewakili desain berbeda (satu tahap berbasis pilar, satu tahap berbasis *voxel*, dan dua tahap berbasis titik) — memperoleh kenaikan mAP setelah dicat, dengan total 24 dari 27 perbandingan (3 detektor × 3 kelas × 3 tingkat kesulitan) membaik. Kenaikan terbesar konsisten terjadi pada kelas yang lebih sulit dideteksi dari geometri saja: pejalan kaki dan pesepeda naik lebih tajam daripada mobil (misalnya pesepeda PointRCNN naik 6,10 poin, sedangkan mobil PointRCNN hanya naik 1,45 poin). Pola ini masuk akal karena mobil sudah cukup dikenali dari bentuk geometrinya, sementara pejalan kaki dan pesepeda lebih mudah dibedakan lewat tekstur dan warna citra yang tidak tersedia bagi detektor LiDAR saja.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Deteksi 3D** yang baik dibaca berdampingan:
+Pada set uji KITTI, PointRCNN yang dicat mencapai mAP BEV 69,86, naik 2,94 poin dari PointRCNN dasar (66,92), dan pada saat publikasi menjadi hasil terbaik pada papan peringkat KITTI untuk tugas deteksi BEV. Pada nuScenes, PointPillars+ (varian PointPillars yang telah ditingkatkan penulis makalah, dengan resolusi pilar diperkecil dari 0,25 m menjadi 0,2 m serta arsitektur dan augmentasi data yang disempurnakan) mencapai mAP 46,4 dan *NuScenes Detection Score* (NDS, metrik gabungan akurasi deteksi dan estimasi atribut) 58,1, naik dari 40,1 dan 55,0 pada versi tanpa pengecatan — kenaikan 6,3 poin mAP. Kenaikan terbesar pada nuScenes terjadi pada kelas sepeda (+10,1 AP) dan kerucut lalu lintas (+16,8 AP), kelas yang secara geometri kecil dan mirip objek lain, tetapi mudah dibedakan secara visual.
 
-- [087 - 2018 - VoxelNet - Deteksi 3D](./087%20-%202018%20-%20VoxelNet%20-%20Deteksi%203D.md)
-- [088 - 2019 - PointPillars - Deteksi 3D](./088%20-%202019%20-%20PointPillars%20-%20Deteksi%203D.md)
-- [089 - 2019 - PointRCNN - Deteksi 3D](./089%20-%202019%20-%20PointRCNN%20-%20Deteksi%203D.md)
-- [090 - 2018 - Frustum PointNets - Deteksi 3D](./090%20-%202018%20-%20Frustum%20PointNets%20-%20Deteksi%203D.md)
-- [091 - 2017 - MV3D - Deteksi 3D](./091%20-%202017%20-%20MV3D%20-%20Deteksi%203D.md)
-- [092 - 2018 - AVOD - Deteksi 3D](./092%20-%202018%20-%20AVOD%20-%20Deteksi%203D.md)
-- [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md)
-- [095 - 2019 - Pseudo-LiDAR - Deteksi 3D](./095%20-%202019%20-%20Pseudo-LiDAR%20-%20Deteksi%203D.md)
+Studi ablasi pada nuScenes menunjukkan hubungan hampir linear antara mIoU (*mean Intersection over Union*, metrik kualitas segmentasi) segmentasi dan mAP deteksi 3D: semakin baik segmentasi, semakin besar kenaikan deteksi. Ketika skor segmentasi diganti kotak kebenaran (*oracle*, seolah segmentasi sempurna), mAP naik hingga 27 poin — angka ini menunjukkan bahwa perbaikan segmentasi 2D di masa depan berpotensi meningkatkan deteksi 3D lebih jauh tanpa mengubah detektor sama sekali.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Deteksi 3D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kelebihan dan Keterbatasan
 
-## Glosarium Istilah (tema Deteksi 3D)
-Istilah penting untuk memahami makalah ini:
+Kelebihan utama PointPainting adalah kesederhanaan dan sifat *plug-in*-nya: metode ini tidak memerlukan pelatihan gabungan dua cabang jaringan seperti MV3D atau AVOD, dan terbukti meningkatkan tiga arsitektur detektor yang berbeda desainnya tanpa modifikasi arsitektur di luar lapisan masukan. Kenaikan akurasi paling nyata justru pada kelas sulit (pejalan kaki, pesepeda, objek kecil di nuScenes), yang secara langsung relevan untuk keselamatan kendaraan otonom.
 
-- **Deteksi 3D** — Prediksi kotak 3D beorientasi (x,y,z,l,w,h,yaw).
-- **LiDAR** — Sensor laser menghasilkan point cloud akurat.
-- **BEV** — Bird's-Eye View; proyeksi tampak-atas.
-- **Voxel/pillar** — Diskretisasi point cloud ke sel 3D / kolom.
-- **Fusi LiDAR-kamera** — Penggabungan geometri LiDAR dan tekstur kamera.
-- **Frustum** — Volume 3D dibatasi deteksi 2D pada citra.
-- **Pseudo-LiDAR** — Point cloud dari depth kamera.
-- **KITTI/nuScenes** — Benchmark deteksi 3D berkendara.
-- **AP 3D / NDS** — Metrik deteksi 3D (NDS khusus nuScenes).
-- **Kalibrasi sensor** — Penyelarasan koordinat antar-sensor.
+Dari sisi rekayasa, keterbatasan pertama adalah sifat sekuensialnya: karena segmentasi dan deteksi dilatih terpisah, galat pada tahap segmentasi merambat ke tahap deteksi tanpa jalur koreksi baliknya. Makalah sendiri mencatat bahwa performa jauh menurun pada kelas dengan segmentasi buruk, misalnya *trailer* (perolehan/*recall* segmentasi 39%) dan kendaraan konstruksi (40%) pada nuScenes. Kedua, titik yang jatuh pada wilayah tumpang tindih antar-kamera (pada susunan sensor dengan citra dari berbagai sudut) dipilih skor kelasnya secara acak dari salah satu citra; makalah mengusulkan pemilihan berbasis entropi sebagai perbaikan yang belum diuji. Ketiga, secara konseptual, ketidakcocokan definisi kelas antara segmentasi dan deteksi (misalnya sepeda sebagai objek versus pesepeda sebagai gabungan objek dan pengendara di KITTI) memerlukan penanganan manual pasca-proses. Terakhir, pada set validasi mini KITTI yang kecil, hasil deteksi 3D (bukan BEV) untuk kelas mobil pada PointRCNN yang dicat justru sedikit menurun, kemungkinan akibat ukuran set validasi yang terlalu kecil untuk kesimpulan yang stabil.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kaitan dengan Bab Lain
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+PointPainting mewarisi tiga detektor LiDAR yang dibahas pada bab 087 (VoxelNet), bab 088 (PointPillars), dan bab 089 (PointRCNN) sebagai basis yang diperkaya, tanpa mengubah arsitekturnya. Metode ini juga menjawab keterbatasan pendekatan fusi level-fitur yang dibahas pada bab 091 (MV3D), bab 092 (AVOD), dan bab 090 (Frustum PointNets): ketiganya mengikat fusi pada arsitektur tertentu, sedangkan PointPainting memindahkan fusi ke level data sehingga lepas dari arsitektur detektor. Bab 094 ([3D-CVF](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md)) mengambil arah berbeda pada masalah yang sama — fusi kamera-LiDAR — dengan menggabungkan fitur pada level tersembunyi jaringan dan bobot adaptif antar-sensor, sehingga kedua bab dapat dibaca berdampingan sebagai dua strategi fusi yang berlawanan filosofi: fusi pada data mentah versus fusi pada fitur. Bab 095 ([Pseudo-LiDAR](./095%20-%202019%20-%20Pseudo-LiDAR%20-%20Deteksi%203D.md)) juga menyuntikkan informasi kamera ke jalur deteksi berbasis titik, tetapi dengan cara berbeda: mengubah citra kedalaman menjadi *point cloud* semu, bukan mengecat titik LiDAR asli dengan skor semantik.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-PointPainting 'mengecat' titik LiDAR dengan skor segmentasi RGB sebelum detektor 3D, menyediakan fusi sekuensial sederhana, plug-in, dan efektif lintas berbagai detektor.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `vora2020pointpainting` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 093/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `vora2020pointpainting`. Ringkasan yang aman dikutip: "PointPainting memproyeksikan skor segmentasi semantik citra ke titik LiDAR sebelum diproses detektor 3D standar, menaikkan mAP PointPillars, VoxelNet, dan PointRCNN pada KITTI, serta mencapai hasil terbaik papan peringkat KITTI BEV untuk PointRCNN yang dicat pada saat publikasi." Angka mAP KITTI validasi (73,78→76,27 untuk PointPillars; 71,83→73,55 untuk VoxelNet; 72,42→75,80 untuk PointRCNN), hasil uji KITTI (66,92→69,86), dan hasil nuScenes (40,1→46,4 mAP; 55,0→58,1 NDS) diambil dari pembacaan versi HTML naskah (ar5iv); disarankan verifikasi ulang ke tabel asli PDF/CVF sebelum dikutip dalam karya formal, khususnya rincian per-kelas dan per-tingkat kesulitan yang tidak tercakup penuh di ringkasan ini.

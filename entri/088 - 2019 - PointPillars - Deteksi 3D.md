@@ -1,203 +1,110 @@
 # 088 - PointPillars: Fast Encoders for Object Detection from Point Clouds
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 088 dari 154 |
 | Kunci BibTeX | `lang2019pointpillars` |
-| Judul | PointPillars: Fast Encoders for Object Detection from Point Clouds |
-| Penulis | Lang, Alex H.; Vora, Sourabh; Caesar, Holger; Zhou, Lubing; Yang, Jiong; Beijbom, Oscar |
+| Judul asli | PointPillars: Fast Encoders for Object Detection from Point Clouds |
+| Penulis | Alex H. Lang, Sourabh Vora, Holger Caesar, Lubing Zhou, Jiong Yang, Oscar Beijbom |
 | Tahun | 2019 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Deteksi 3D |
-| Kata kunci | deteksi 3D, pillar, BEV, real-time, LiDAR |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2019) |
+| Tema | Deteksi 3D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1812.05784
+- **Google Scholar:** https://scholar.google.com/scholar?q=PointPillars%3A%20Fast%20Encoders%20for%20Object%20Detection%20from%20Point%20Clouds
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=PointPillars%3A%20Fast%20Encoders%20for%20Object%20Detection%20from%20Point%20Clouds&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-deteksi-3d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=PointPillars%3A%20Fast%20Encoders%20for%20Object%20Detection%20from%20Point%20Clouds
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=PointPillars%3A%20Fast%20Encoders%20for%20Object%20Detection%20from%20Point%20Clouds&sort=relevance
+PointPillars memperkenalkan cara meng-*encode* (mengubah menjadi representasi numerik yang dapat diproses jaringan saraf) *point cloud* — kumpulan titik 3D hasil pemindaian sensor *LiDAR* (*Light Detection and Ranging*, sensor yang mengukur jarak dengan memantulkan berkas laser) — menjadi kolom-kolom vertikal yang disebut *pillar*, sehingga seluruh proses deteksi objek 3D dapat dijalankan memakai konvolusi 2D biasa, bukan konvolusi 3D yang jauh lebih mahal. Rumusan ini menghindari dua kelemahan pendekatan sebelumnya sekaligus: konvolusi 3D pada grid *voxel* yang lambat, dan proyeksi 2D dengan fitur buatan tangan (*hand-crafted*) yang membatasi akurasi.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasilnya adalah kombinasi kecepatan dan akurasi yang belum tercapai metode lain saat itu: pada *benchmark* KITTI, PointPillars mencapai 74,99% *average precision* (AP) 3D kelas mobil pada tingkat kesulitan sedang, berjalan pada 62 Hz (62 kali per detik) — dua sampai empat kali lebih cepat dari metode pembanding sekelas, bahkan mengungguli beberapa metode fusi kamera-LiDAR meski hanya memakai data LiDAR. Makalah ini menjadi rujukan arsitektur bagi banyak detektor 3D dan metode fusi sensor sesudahnya dalam klaster Deteksi 3D pada tinjauan ini.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 12697--12705 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode deteksi 3D yang meng-encode point cloud menjadi kolom vertikal (pillar) 2D sehingga dapat memakai CNN 2D cepat, mencapai deteksi 3D real-time.
+*Point cloud* dari LiDAR berbentuk himpunan titik 3D tak terurut dengan kerapatan tidak merata: titik memadat di dekat sensor dan menjarang pada jarak jauh. Bentuk data ini tidak cocok langsung dengan konvolusi 2D, yang membutuhkan grid piksel teratur. Dua strategi lebih dahulu mengatasi ketidakcocokan tersebut, masing-masing dengan kompromi berbeda.
 
-## Abstrak (Parafrase)
-PointPillars mengorganisasi point cloud menjadi pillar (kolom vertikal pada grid BEV); fitur tiap pillar dipelajari (PointNet mini) lalu disusun menjadi pseudo-image 2D yang diproses backbone 2D CNN dan head deteksi (SSD). Karena menghindari konvolusi 3D mahal, PointPillars sangat cepat (>60 FPS) dengan akurasi kompetitif, menjadi detektor 3D LiDAR populer.
+Strategi pertama, dipakai VoxelNet (bab 087), membagi ruang 3D menjadi grid *voxel* (elemen volume, analog piksel dalam 3D) lalu menjalankan konvolusi 3D pada grid tersebut. Pendekatan ini mempertahankan struktur 3D penuh, tetapi konvolusi 3D pada grid yang sebagian besar kosong (titik LiDAR jarang mengisi seluruh volume) sangat boros komputasi — makalah ini mencatat waktu pengkodean fitur VoxelNet mencapai 190 milidetik per citra, jauh melebihi anggaran waktu operasi *real-time*. Strategi kedua, dipakai MV3D (bab 091) dan AVOD (bab 092), memproyeksikan *point cloud* ke peta ketinggian dan kepadatan yang dirancang manual dari sudut pandang atas (*bird's-eye view*/BEV) dan sudut pandang depan. Proyeksi ini menghindari konvolusi 3D, tetapi fiturnya bersifat tetap dan dirancang manusia, bukan dipelajari dari data, sehingga membatasi kemampuan model menyesuaikan representasi dengan pola data sebenarnya.
 
-## Latar Belakang & Konteks
-Konvolusi 3D (VoxelNet) mahal dan lambat, menghambat deteksi 3D real-time yang dibutuhkan berkendara otonom.
+Kesenjangan yang tersisa: dibutuhkan encoder yang, seperti VoxelNet, mempelajari fiturnya sendiri dari titik mentah, tetapi seperti MV3D/AVOD, hanya memakai operasi 2D yang cepat. PointPillars mengisi celah itu.
 
-## Permasalahan yang Diangkat
-- Konvolusi 3D (VoxelNet) mahal & lambat.
-- Deteksi 3D real-time sulit dicapai.
-- Representasi voxel 3D boros komputasi.
-- Point cloud tak terstruktur untuk CNN 2D.
-- Kebutuhan efisiensi untuk berkendara.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Meng-encode point cloud menjadi pillar 2D.
-- Memakai CNN 2D cepat (hindari konvolusi 3D).
-- Mencapai deteksi 3D real-time.
+Gagasan inti PointPillars adalah mengganti *voxel* 3D dengan *pillar*: kolom vertikal tanpa pembagian pada sumbu tinggi (z). Bidang datar x-y dibagi menjadi grid sel persegi; setiap sel diperluas menjadi satu kolom yang mencakup seluruh rentang tinggi *point cloud*. Karena tidak ada pembagian pada sumbu z, tidak diperlukan hyperparameter resolusi vertikal seperti pada *voxel* 3D, dan konvolusi 3D dapat dihindari sepenuhnya.
 
-## Tinjauan Terdahulu / Posisi Literatur
-PointPillars menyederhanakan VoxelNet ke representasi pillar.
+Fitur setiap *pillar* dipelajari, bukan dirancang manual: sebuah jaringan sederhana bergaya *PointNet* (jaringan yang memproses titik satu per satu lalu menggabungkannya dengan operasi tak bergantung urutan, seperti max-pooling) mengubah titik-titik dalam satu *pillar* menjadi satu vektor fitur. Vektor fitur tiap *pillar* ditempatkan kembali pada lokasi (x, y) asalnya, membentuk gambar semu (*pseudo-image*) dua dimensi, yang lalu diproses tulang punggung (*backbone*) CNN 2D standar dan kepala deteksi bergaya SSD (*Single Shot Detector*, detektor satu tahap yang memprediksi kotak langsung dari peta fitur tanpa tahap pengusulan wilayah terpisah — dibahas pada bab 015). Seluruh proses dari titik mentah sampai kotak 3D dilatih *end-to-end*.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- VoxelNet — voxel 3D (pembanding).
-- PointNet — fitur pillar.
-- SSD — head deteksi.
-- BEV representation.
+### Pembentukan Pillar dan Augmentasi Titik
 
-## Metodologi & Arsitektur
-Point cloud dikelompokkan ke pillar pada grid BEV; PointNet mini mengekstrak fitur tiap pillar; fitur disusun menjadi pseudo-image 2D; backbone 2D CNN + SSD head menghasilkan deteksi 3D. Tanpa konvolusi 3D.
+Bidang x-y dibagi menjadi grid sel berukuran 0,16 × 0,16 meter. Setiap sel yang memuat minimal satu titik disebut *pillar* aktif. Karena jumlah *pillar* aktif berbeda antar citra, model membatasi jumlah maksimum *pillar* (P = 12.000 per citra) dan titik per *pillar* (N = 100); kelebihan diambil sampel acak, kekurangan diisi nol.
 
-Komponen / langkah metodologis utama:
+Setiap titik mentah memiliki empat nilai terukur: koordinat (x, y, z) dan r (intensitas pantulan/*reflectance* sinar laser). Nilai ini didekorasi (ditambah) lima nilai turunan: selisih (x, y, z) titik terhadap rata-rata aritmetik seluruh titik dalam *pillar*-nya (posisi relatif terhadap pusat massa *pillar*), serta selisih (x, y) titik terhadap titik tengah geometris sel *pillar*-nya. Dengan tambahan ini, setiap titik memiliki D = 9 dimensi fitur, dan seluruh citra direpresentasikan sebagai tensor (D=9, P=12.000, N=100).
 
-- Pillar feature encoding (kolom vertikal).
-- PointNet mini per-pillar.
-- Pseudo-image 2D (BEV).
-- Backbone 2D CNN.
-- SSD detection head.
-- Deteksi 3D real-time.
+### Pillar Feature Network (PFN)
 
-## Kontribusi Utama
-1. Representasi pillar menghindari konvolusi 3D mahal.
-2. Deteksi 3D real-time (>60 FPS).
-3. Akurasi kompetitif.
-4. Fondasi banyak pipeline fusi berikutnya.
+Tensor titik yang telah didekorasi diproses satu lapis linear (setara konvolusi 1×1) diikuti *batch normalization* dan ReLU, menghasilkan C = 64 fitur per titik. Seluruh titik dalam satu *pillar* lalu digabung dengan max-pooling di sepanjang dimensi N (titik), menghasilkan satu vektor fitur berdimensi C = 64 untuk mewakili seluruh *pillar* — operasi yang membuat hasil tidak bergantung pada urutan titik, karena titik dalam satu *pillar* tidak memiliki urutan alami.
 
-## Rincian Eksperimen
-Diuji pada KITTI dan nuScenes dengan metrik AP 3D/BEV/NDS dan kecepatan, dibandingkan VoxelNet dan metode lain.
+### Pemindaian Kembali ke Pseudo-Image
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Vektor fitur tiap *pillar* ditempatkan kembali (*scatter*) ke lokasi (x, y) sel asalnya pada grid; sel tanpa *pillar* aktif diisi nol. Hasilnya adalah tensor tiga dimensi (C=64, H, W), secara struktural identik dengan citra biasa (tinggi H, lebar W, C kanal), sehingga alat CNN 2D standar dapat langsung dipakai tanpa modifikasi.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI 3D | AP 3D | kompetitif |
-| nuScenes | NDS | kuat |
-| Kecepatan | FPS | >60 FPS (real-time) |
+Alur data lengkap dari titik mentah sampai keluaran kotak dirangkum berikut ini.
 
-## Temuan Kunci
-- Representasi pillar 2D sangat efisien.
-- CNN 2D cukup untuk deteksi 3D BEV.
-- Trade-off kecepatan-akurasi unggul.
-- Menjadi backbone fusi populer.
+```
+titik mentah per titik: (x, y, z, r)          4 nilai per titik
+        |  kelompokkan ke pillar pada bidang x-y (sel 0,16 x 0,16 m)
+        v
+tensor titik  (D=9, P=12.000, N=100)      D=9: 4 asli + 5 offset
+        |  Pillar Feature Network (linear + BatchNorm + ReLU)
+        v
+fitur titik   (C=64, P=12.000, N=100)
+        |  max-pooling atas dimensi N (titik dalam satu pillar)
+        v
+fitur pillar  (C=64, P=12.000)
+        |  scatter ke lokasi (x, y) sel asal pillar
+        v
+pseudo-image  (C=64, H, W)                 setara citra 2D biasa
+        |  backbone 2D CNN (3 blok downsample, gabung ke 6C=384)
+        v
+peta fitur gabungan  (384, H', W')
+        |  kepala deteksi SSD (jangkar 2D per kelas, 2 orientasi)
+        v
+kotak 3D (x, y, z, l, w, h, yaw) + kelas + skor per jangkar
+```
 
-## Keunggulan
-- Real-time & efisien.
-- Akurasi kompetitif.
-- Populer & mudah diperluas.
+### Backbone 2D dan Kepala Deteksi
 
-## Keterbatasan
-- Kehilangan detail vertikal (pillar).
-- LiDAR-only (butuh fusi untuk tekstur).
-- Objek kecil menantang.
+*Backbone* terdiri atas tiga blok konvolusi berurutan, masing-masing menurunkan resolusi spasial pseudo-image sambil menaikkan jumlah kanal (64, 128, dan 256 kanal, dengan 4, 6, dan 6 lapis konvolusi). Keluaran tiap blok diskalakan naik (*upsampling*) ke satu resolusi bersama lalu digabungkan (*concatenate*) menjadi satu peta fitur berkanal 384 (enam kali C=64), menyatukan fitur beresolusi kasar (konteks luas, cocok objek besar seperti mobil) dan fitur beresolusi halus (detail lokal, cocok objek kecil seperti pejalan kaki).
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Kepala deteksi mengikuti gaya SSD: pada setiap lokasi grid ditempatkan kotak jangkar (*anchor*) berukuran tetap sesuai statistik ukuran objek per kelas (misalnya jangkar mobil berukuran 1,6 × 3,9 × 1,5 meter), masing-masing dalam dua orientasi (0° dan 90°). Jaringan memprediksi selisih (residual) posisi, ukuran, dan sudut hadap terhadap jangkar terdekat, bukan koordinat mutlak. Kecocokan jangkar dengan kotak kebenaran (*ground truth*) ditentukan memakai IOU (*Intersection over Union*, rasio luas irisan terhadap gabungan) pada bidang BEV.
 
-## Relevansi terhadap Tema Tinjauan
-PointPillars adalah detektor 3D LiDAR real-time yang menjadi basis banyak pipeline fusi LiDAR-kamera dalam tinjauan (mis. PointPainting).
+### Fungsi Loss dan Pelatihan
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Deteksi 3D** yang baik dibaca berdampingan:
+Pelatihan memakai tiga komponen loss yang sama dengan SECOND (metode voxel-3D pembanding utama). Loss klasifikasi memakai *focal loss* (menurunkan bobot contoh mudah, memusatkan pembelajaran pada contoh sulit; α=0,25, γ=2), penting karena jangkar latar belakang jauh lebih banyak daripada jangkar berisi objek. Loss lokalisasi memakai *Smooth L1* pada tujuh parameter kotak (x, y, z, panjang, lebar, tinggi, sudut hadap). Karena regresi sudut saja tidak dapat membedakan kotak dengan orientasi terbalik 180°, ditambahkan loss klasifikasi arah berupa *softmax* dua kelas (maju/mundur). Ketiga loss dijumlahkan dengan bobot berbeda (2 lokalisasi, 1 klasifikasi, 0,2 arah) dan dinormalkan dengan jumlah jangkar positif.
 
-- [087 - 2018 - VoxelNet - Deteksi 3D](./087%20-%202018%20-%20VoxelNet%20-%20Deteksi%203D.md)
-- [089 - 2019 - PointRCNN - Deteksi 3D](./089%20-%202019%20-%20PointRCNN%20-%20Deteksi%203D.md)
-- [090 - 2018 - Frustum PointNets - Deteksi 3D](./090%20-%202018%20-%20Frustum%20PointNets%20-%20Deteksi%203D.md)
-- [091 - 2017 - MV3D - Deteksi 3D](./091%20-%202017%20-%20MV3D%20-%20Deteksi%203D.md)
-- [092 - 2018 - AVOD - Deteksi 3D](./092%20-%202018%20-%20AVOD%20-%20Deteksi%203D.md)
-- [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md)
-- [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md)
-- [095 - 2019 - Pseudo-LiDAR - Deteksi 3D](./095%20-%202019%20-%20Pseudo-LiDAR%20-%20Deteksi%203D.md)
+## Eksperimen dan Hasil
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Deteksi 3D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Evaluasi utama dilakukan pada *benchmark* KITTI (kumpulan data deteksi objek berkendara otonom dari Karlsruhe Institute of Technology, tiga kelas: mobil, pejalan kaki, pesepeda; tiga tingkat kesulitan berdasarkan ukuran, oklusi, dan pemotongan citra objek: mudah, sedang, sulit). Metrik yang dipakai adalah AP (*average precision*) pada evaluasi kotak 3D penuh dan proyeksi BEV, dibandingkan dengan VoxelNet, SECOND, F-PointNet (fusi kamera-LiDAR), MV3D, dan AVOD.
 
-## Glosarium Istilah (tema Deteksi 3D)
-Istilah penting untuk memahami makalah ini:
+Pada tingkat kesulitan sedang di data uji KITTI, AP 3D kelas mobil PointPillars mencapai 74,99% pada 62 Hz, mengungguli SECOND (73,66% AP, 20 Hz) dan VoxelNet (65,11% AP, 4,4 Hz), serta F-PointNet (70,39% AP, 5,9 Hz) yang memakai fusi kamera dan LiDAR. Untuk BEV, AP kesulitan sedang PointPillars adalah 86,10% (mobil), 50,23% (pejalan kaki), dan 62,25% (pesepeda). Interpretasinya: PointPillars unggul akurasi atas seluruh metode LiDAR-saja yang dibandingkan, sekaligus tiga kali lebih cepat dari SECOND dan lebih dari sepuluh kali lebih cepat dari VoxelNet — capaian ini didapat tanpa data kamera sama sekali, mengungguli F-PointNet yang justru memakai informasi tambahan dari citra.
 
-- **Deteksi 3D** — Prediksi kotak 3D beorientasi (x,y,z,l,w,h,yaw).
-- **LiDAR** — Sensor laser menghasilkan point cloud akurat.
-- **BEV** — Bird's-Eye View; proyeksi tampak-atas.
-- **Voxel/pillar** — Diskretisasi point cloud ke sel 3D / kolom.
-- **Fusi LiDAR-kamera** — Penggabungan geometri LiDAR dan tekstur kamera.
-- **Frustum** — Volume 3D dibatasi deteksi 2D pada citra.
-- **Pseudo-LiDAR** — Point cloud dari depth kamera.
-- **KITTI/nuScenes** — Benchmark deteksi 3D berkendara.
-- **AP 3D / NDS** — Metrik deteksi 3D (NDS khusus nuScenes).
-- **Kalibrasi sensor** — Penyelarasan koordinat antar-sensor.
+Rincian waktu inferensi menunjukkan sumber utama percepatan: dari total 16,2 milidetik (62 Hz), penyaringan titik memakan 1,4 ms, pembentukan *pillar* 2,7 ms, unggah data ke GPU 2,9 ms, PFN hanya 1,3 ms, dan *backbone* beserta kepala deteksi 7,7 ms. Angka 1,3 ms untuk PFN kontras tajam dengan 190 ms untuk pengkodean fitur voxel 3D VoxelNet — selisih inilah yang menjelaskan sebagian besar keunggulan kecepatan PointPillars. Varian yang dipercepat lebih lanjut, dengan grid lebih kasar dan optimisasi TensorRT, mencapai 9 ms (105 Hz) dengan akurasi sedikit menurun.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Studi ablasi (pengujian pengaruh satu komponen dengan menonaktifkan/mengubahnya) menunjukkan encoder yang dipelajari (PFN) secara konsisten mengungguli encoder tetap berbasis fitur tangan pada seluruh resolusi grid yang diuji, dan augmentasi titik dengan offset posisi menambah sekitar 0,5 poin mAP (*mean average precision*, rata-rata AP di seluruh kelas).
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kelebihan dan Keterbatasan
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Kelebihan utama PointPillars adalah kesederhanaan arsitektur: seluruh operasi setelah pembentukan *pillar* memakai konvolusi 2D standar, tanpa konvolusi 3D atau fitur buatan tangan, sehingga mudah diimplementasikan dan mudah dipercepat perangkat keras yang sudah dioptimalkan untuk CNN 2D. Kombinasi kecepatan (62–105 Hz) dan akurasi yang mengungguli metode LiDAR-saja lain, bahkan sebagian metode fusi, menjadikannya pilihan praktis untuk aplikasi *real-time* seperti kendaraan otonom.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Dari sisi rekayasa, max-pooling pada Pillar Feature Network menyatukan seluruh titik dalam satu kolom vertikal menjadi satu vektor, sehingga sebagian informasi struktur vertikal di dalam *pillar* — misalnya perbedaan bentuk pada ketinggian berbeda dalam satu objek — tidak dipertahankan secara eksplisit setelahnya. Secara konseptual, PointPillars hanya memproses data LiDAR sehingga tidak memakai informasi warna atau tekstur dari kamera; ketiadaan ini membatasi kemampuan model membedakan objek dengan bentuk geometris mirip namun kelas berbeda. Ukuran sel grid yang seragam juga berarti objek jauh atau kecil, yang tercakup lebih sedikit titik LiDAR, direpresentasikan dengan lebih sedikit informasi dibanding objek dekat — konsisten dengan AP pejalan kaki (43,53–51,91% pada berbagai kesulitan) yang jauh di bawah AP mobil.
 
-## Kesimpulan
-PointPillars meng-encode point cloud menjadi pillar 2D untuk memakai CNN 2D cepat, mencapai deteksi 3D real-time dengan akurasi kompetitif dan menjadi fondasi banyak pipeline fusi.
+## Kaitan dengan Bab Lain
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `lang2019pointpillars` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+PointPillars secara langsung menjawab kelemahan komputasi VoxelNet (bab 087): dengan mengganti *voxel* dan konvolusi 3D dengan *pillar* dan konvolusi 2D, PFN pada makalah ini menggantikan tahap pengkodean fitur yang memakan 190 ms pada VoxelNet menjadi 1,3 ms, sementara akurasi tetap meningkat. Arsitektur *pillar*-nya menjadi kerangka dasar bagi metode fusi sensor sesudahnya: [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md) menambahkan skor semantik dari jaringan segmentasi citra ke tiap titik LiDAR sebelum diproses backbone bergaya PointPillars, dan [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md) memakai representasi BEV serupa untuk menggabungkan fitur kamera dan LiDAR. Untuk pendekatan yang tidak bergantung pada LiDAR sama sekali, [095 - 2019 - Pseudo-LiDAR - Deteksi 3D](./095%20-%202019%20-%20Pseudo-LiDAR%20-%20Deteksi%203D.md) membangun *point cloud* semu dari citra kedalaman kamera monokular/stereo untuk diproses dengan encoder sejenis PointPillars.
 
----
-*Lembar 088/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Poin untuk Sitasi
+
+Kutip dengan kunci `lang2019pointpillars`. Ringkasan aman dikutip: "PointPillars meng-encode *point cloud* menjadi kolom vertikal (*pillar*) yang diproses jaringan bergaya PointNet, memungkinkan seluruh pipeline deteksi 3D berjalan dengan konvolusi 2D; pada KITTI, metode ini mencapai 74,99% AP 3D kelas mobil (tingkat sedang) pada 62 Hz, mengungguli VoxelNet dan SECOND baik akurasi maupun kecepatan." Angka AP 3D/BEV, waktu inferensi (190 ms VoxelNet vs 1,3 ms PFN), dan parameter loss (α, γ, bobot β) diperoleh dari salinan HTML naskah (ar5iv) karena versi CVF Open Access memblokir pengambilan otomatis; verifikasi ulang terhadap Tabel 1 dan 2 makalah asli dianjurkan sebelum dikutip dalam karya formal, khususnya angka pada tingkat kesulitan mudah dan sulit yang tidak dibahas rinci di sini.

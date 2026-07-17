@@ -1,203 +1,108 @@
 # 087 - VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 087 dari 154 |
 | Kunci BibTeX | `zhou2018voxelnet` |
-| Judul | VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Detection |
-| Penulis | Zhou, Yin; Tuzel, Oncel |
+| Judul asli | VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Detection |
+| Penulis | Yin Zhou, Oncel Tuzel |
 | Tahun | 2018 |
-| Venue / Jurnal | Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Deteksi 3D |
-| Kata kunci | deteksi 3D, point cloud, voxel, VFE, LiDAR |
+| Venue | IEEE Conference on Computer Vision and Pattern Recognition (CVPR 2018) |
+| Tema | Deteksi 3D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1711.06396
+- **Versi resmi CVPR (IEEE/CVF Open Access):** https://openaccess.thecvf.com/content_cvpr_2018/html/Zhou_VoxelNet_End-to-End_Learning_CVPR_2018_paper.html
+- **Google Scholar:** https://scholar.google.com/scholar?q=VoxelNet%3A%20End-to-End%20Learning%20for%20Point%20Cloud%20Based%203D%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=VoxelNet%3A%20End-to-End%20Learning%20for%20Point%20Cloud%20Based%203D%20Object%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-deteksi-3d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=VoxelNet%3A%20End-to-End%20Learning%20for%20Point%20Cloud%20Based%203D%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=VoxelNet%3A%20End-to-End%20Learning%20for%20Point%20Cloud%20Based%203D%20Object%20Detection&sort=relevance
+VoxelNet adalah jaringan deteksi objek 3D pertama yang dilatih *end-to-end* (dari data mentah ke keluaran akhir tanpa tahap terpisah) langsung dari *point cloud* (kumpulan titik koordinat 3D hasil pemindaian sensor jarak, di sini LiDAR) mentah, tanpa fitur buatan tangan. Makalah ini membagi *point cloud* menjadi *voxel* (sel volumetrik 3D, analog piksel berdimensi tiga), mempelajari fitur tiap *voxel* dengan lapisan *Voxel Feature Encoding* (VFE) yang terinspirasi PointNet, lalu memproses tensor *voxel* dengan konvolusi 3D dan *Region Proposal Network* (RPN, jaringan pengusul wilayah yang sebelumnya dipakai Faster R-CNN) untuk menghasilkan kotak pembatas 3D berorientasi.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada set validasi KITTI, tolok ukur standar deteksi objek untuk kendaraan otonom, VoxelNet mencapai *Average Precision* (AP) 3D untuk kelas mobil sebesar 81,97% (mudah), 65,46% (sedang), dan 62,85% (sulit), mengungguli metode berbasis fitur buatan tangan pada masanya, terutama untuk pejalan kaki dan pesepeda yang bentuknya lebih kecil dan tidak kaku. Makalah ini meletakkan paradigma "voxelisasi lalu pelajari fitur" yang dirujuk langsung oleh metode deteksi 3D berbasis *point cloud* sesudahnya, termasuk PointPillars yang menyederhanakan konvolusi 3D-nya demi kecepatan.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 4490--4499 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode deteksi objek 3D end-to-end yang mempelajari fitur dari point cloud mentah via voxel feature encoding lalu RPN 3D.
+Sebelum VoxelNet, sensor LiDAR (*Light Detection and Ranging*, sensor laser yang mengukur jarak dengan memantulkan cahaya) menghasilkan *point cloud* tidak beraturan: jumlah titik per satuan volume bervariasi tajam menurut jarak ke sensor, dan titik-titiknya tidak tersusun dalam kisi tetap seperti piksel pada citra. Jaringan konvolusi (CNN) dirancang untuk data berkisi seragam, sehingga tidak dapat diterapkan langsung pada data ini.
 
-## Abstrak (Parafrase)
-VoxelNet membagi point cloud menjadi voxel 3D dan mempelajari fitur tiap voxel dengan Voxel Feature Encoding (VFE) berbasis PointNet, menghasilkan representasi volumetrik yang diproses konvolusi 3D dan RPN untuk deteksi objek 3D. Ini adalah pipeline end-to-end pertama yang belajar fitur langsung dari point cloud mentah tanpa fitur buatan tangan.
+Dua pendekatan mengatasi ketidaksesuaian ini. Pertama, metode berbasis proyeksi dan fitur buatan tangan: *point cloud* diproyeksikan ke tampilan tampak-atas (*bird's-eye view*/BEV) atau tampak-depan, lalu setiap sel proyeksi diberi statistik rancangan manual seperti kepadatan titik, tinggi rata-rata, dan intensitas maksimum, sebelum diproses CNN 2D biasa. MV3D (bab 091) menggabungkan fitur BEV, tampak-depan, dan citra RGB dengan cara ini, tetapi representasi yang dirancang manual tidak ikut dioptimalkan bersama tujuan akhir deteksi, sehingga sebagian informasi bentuk 3D yang relevan untuk lokalisasi presisi hilang sebelum sampai ke jaringan.
 
-## Latar Belakang & Konteks
-Fitur point cloud buatan tangan (statistik lokal) membatasi akurasi deteksi 3D; diperlukan pembelajaran fitur end-to-end dari data mentah.
+Kedua, PointNet (2017) menunjukkan fitur dapat dipelajari langsung dari titik mentah memakai jaringan terhubung penuh per titik dikombinasikan dengan fungsi simetris (*max pooling*, pengambilan nilai maksimum) agar hasilnya tidak bergantung pada urutan titik, tetapi dirancang untuk klasifikasi dan segmentasi pada himpunan titik berskala kecil, bukan untuk deteksi pada adegan luar ruang berskala besar dengan puluhan ribu titik. Masalah yang tersisa adalah mempelajari fitur diskriminatif langsung dari *point cloud* mentah, tanpa rekayasa fitur manual, sekaligus tetap efisien untuk adegan sebesar itu.
 
-## Permasalahan yang Diangkat
-- Fitur point cloud buatan tangan membatasi akurasi.
-- Point cloud tak terstruktur sulit untuk CNN grid.
-- Perlu representasi volumetrik yang dipelajari.
-- Deteksi 3D end-to-end belum ada.
-- Kepadatan titik tidak seragam.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Mempelajari fitur voxel dari point cloud mentah.
-- Menyediakan pipeline deteksi 3D end-to-end.
-- Menggabungkan VFE dan RPN 3D.
+VoxelNet menggabungkan dua gagasan. Pertama, *point cloud* yang tidak beraturan dipartisi menjadi *voxel* berukuran tetap: ruang 3D kontinu didiskretkan menjadi kisi sel, sehingga titik-titik yang jatuh dalam satu sel dapat dikelompokkan dan diproses bersama sebagai himpunan titik lokal berskala kecil. Kedua, di dalam setiap *voxel* yang tidak kosong, sebuah jaringan kecil bergaya PointNet (VFE) mempelajari satu vektor fitur yang meringkas bentuk lokal titik-titik di dalamnya, mengubah himpunan titik tidak beraturan menjadi tensor 4 dimensi terstruktur — mirip citra tetapi dengan sumbu kedalaman tambahan — yang dapat diproses konvolusi 3D biasa.
 
-## Tinjauan Terdahulu / Posisi Literatur
-VoxelNet menggabungkan PointNet (per-voxel) dan RPN untuk deteksi 3D.
+Setelah representasi terstruktur ini terbentuk, VoxelNet menerapkan komponen yang sudah dikenal dari detektor 2D: konvolusi 3D untuk mengumpulkan konteks antar-*voxel* tetangga, kemudian RPN untuk menghasilkan kotak pembatas 3D akhir berisi posisi, dimensi, dan sudut orientasi (*yaw*) objek. Seluruh proses, dari titik mentah sampai kotak 3D, dilatih sebagai satu jaringan tunggal.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- PointNet — fitur per-titik.
-- RPN — proposal (Faster R-CNN).
-- Konvolusi 3D.
-- Dataset KITTI.
+### Partisi Voxel dan Pengambilan Sampel Titik
 
-## Metodologi & Arsitektur
-Point cloud dipartisi menjadi voxel; VFE layers (PointNet mini) mengekstrak fitur tiap voxel; konvolusi 3D memproses tensor voxel; RPN menghasilkan deteksi 3D (box beorientasi). Dilatih end-to-end.
+Untuk deteksi mobil, ruang 3D di sekitar kendaraan dipartisi menjadi *voxel* berukuran 0,2 m × 0,2 m pada bidang horizontal dan 0,4 m pada sumbu tegak, menghasilkan kisi berdimensi 10 × 400 × 352 (kedalaman × tinggi × lebar). Karena kepadatan titik LiDAR menurun tajam terhadap jarak, jumlah titik per *voxel* berkisar dari nol hingga ribuan. Untuk membatasi beban komputasi dan memori, jumlah titik per *voxel* dibatasi maksimum T (T = 35 untuk mobil, T = 45 untuk pejalan kaki dan pesepeda); bila suatu *voxel* memiliki titik lebih banyak dari T, sejumlah T titik diambil secara acak, sekaligus mengurangi bias jaringan terhadap *voxel* yang kebetulan berisi lebih banyak titik.
 
-Komponen / langkah metodologis utama:
+### Voxel Feature Encoding (VFE)
 
-- Partisi point cloud menjadi voxel 3D.
-- Voxel Feature Encoding (VFE) berbasis PointNet.
-- Konvolusi 3D pada tensor voxel.
-- Region Proposal Network 3D.
-- Deteksi box 3D beorientasi.
-- Pelatihan end-to-end.
+Setiap titik dalam *voxel* direpresentasikan dengan 7 angka: koordinat (x, y, z), intensitas pantulan r, dan selisih posisi titik terhadap titik rata-rata seluruh titik dalam *voxel* tersebut (Δx, Δy, Δz). Lapisan VFE-1 mengubah 7 angka ini menjadi 32 angka melalui jaringan terhubung penuh, diikuti normalisasi *batch* (penyeragaman statistik aktivasi antar-titik agar pelatihan stabil) dan ReLU (fungsi aktivasi yang mempertahankan nilai positif dan menolkan nilai negatif). Dari fitur 32 angka setiap titik dilakukan *max pooling* di seluruh titik dalam *voxel* untuk memperoleh satu fitur teragregasi lokal yang mewakili seluruh isi *voxel*; fitur ini digabungkan kembali ke fitur setiap titik sehingga setiap titik memperoleh konteks dari tetangganya. Susunan yang sama diulang pada VFE-2, memetakan 32 menjadi 128 angka, lalu satu kali *max pooling* terakhir menghasilkan satu vektor 128 dimensi per *voxel*, terlepas dari berapa banyak titik yang semula ada di dalamnya.
 
-## Kontribusi Utama
-1. Pembelajaran fitur voxel end-to-end dari point cloud.
-2. VFE menggantikan fitur buatan tangan.
-3. Pipeline deteksi 3D terpadu.
-4. Baseline penting deteksi 3D LiDAR.
+Hasil dari seluruh proses ini adalah tensor jarang (*sparse*, sebagian besar selnya kosong karena banyak *voxel* tidak memiliki titik) berukuran 128 × 10 × 400 × 352 (kanal × kedalaman × tinggi × lebar) untuk kasus mobil.
 
-## Rincian Eksperimen
-Diuji pada KITTI 3D (mobil/pejalan/pesepeda) dengan metrik AP 3D/BEV, dibandingkan metode berbasis fitur tangan.
+Alur data dari titik mentah sampai kotak 3D dapat diringkas sebagai berikut:
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+point cloud mentah (tak beraturan, ratusan ribu titik)
+        |
+        v   partisi ke voxel 0,2 x 0,2 x 0,4 m (kisi 352x400x10)
+voxel berisi 0..T titik -> VFE-1(7,32) -> VFE-2(32,128) -> max-pool
+        |          (tiap voxel diringkas jadi satu vektor 128 dim)
+        v
+tensor voxel jarang: 128 x 10 x 400 x 352 (kanal x D x H x W)
+        |
+        v   tiga lapis konvolusi 3D (mereduksi sumbu kedalaman 10 -> 2)
+peta fitur mirip 2D: 128 x 400 x 352
+        |
+        v   RPN: tiga blok konvolusi + upsampling + penggabungan
+peta skor objek  +  peta regresi parameter kotak
+        |
+        v   Non-Maximum Suppression pada bidang tampak-atas (BEV)
+kotak 3D akhir per objek: (x, y, z, l, w, h, yaw)
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI 3D | AP 3D | baseline end-to-end LiDAR |
-| KITTI BEV | AP BEV | kompetitif saat rilis |
-| Ablation | VFE | fitur dipelajari > fitur tangan |
+### Lapisan Konvolusi Tengah dan Reduksi ke Peta 2D
 
-## Temuan Kunci
-- Fitur voxel dipelajari mengungguli fitur tangan.
-- Voxelisasi memungkinkan konvolusi 3D.
-- End-to-end menyederhanakan pipeline.
-- Konvolusi 3D mahal (motivasi PointPillars).
+Tiga lapis konvolusi 3D memproses tensor *voxel* untuk memperluas jangkauan reseptif (wilayah masukan yang memengaruhi satu keluaran) dan mengumpulkan konteks antar-*voxel*, sambil bertahap mereduksi sumbu kedalaman dari 10 menjadi 2. Tensor 64 × 2 × 400 × 352 yang tersisa ditumpuk (kedua irisan kedalaman digabung sepanjang sumbu kanal) menjadi peta fitur 128 × 400 × 352 yang berperilaku seperti fitur 2D bagi RPN, tetapi seluruh nilainya dipelajari, bukan dihitung dengan rumus statistik tetap seperti BEV buatan tangan.
 
-## Keunggulan
-- Pelopor deteksi 3D end-to-end.
-- VFE efektif.
-- Baseline penting.
+### Region Proposal Network dan Anchor 3D
 
-## Keterbatasan
-- Konvolusi 3D mahal (lambat).
-- Voxelisasi kehilangan detail.
-- Hanya LiDAR (belum fusi).
+RPN tersusun atas tiga blok konvolusi dengan penurunan resolusi (*stride* 2) bertahap, diikuti *upsampling* (pembesaran kembali resolusi peta fitur) dan penggabungan (*concatenation*) ketiga skala menjadi satu peta fitur beresolusi tinggi, lalu memprediksi peta skor keberadaan objek dan peta regresi parameter kotak 3D. Setiap posisi diberi dua *anchor* (kotak acuan berukuran tetap, dirotasi 0° dan 90°); untuk mobil, ukurannya panjang 3,9 m, lebar 1,6 m, tinggi 1,56 m dengan pusat ketinggian −1,0 m, sedangkan pejalan kaki dan pesepeda memakai *anchor* lebih kecil. Setiap *anchor* diberi label positif/negatif berdasarkan IOU (*Intersection over Union*, rasio luas irisan terhadap luas gabungan) terhadap kotak kebenaran pada bidang BEV, mengikuti konvensi RPN pada Faster R-CNN (bab 014), diperluas ke ruang 3D.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Fungsi Loss dan Pelatihan
 
-## Relevansi terhadap Tema Tinjauan
-VoxelNet adalah fondasi deteksi 3D berbasis point cloud dalam tinjauan; menetapkan representasi voxel yang menghubungkan geometri kedalaman dan deteksi 3D.
+Fungsi *loss* terdiri atas *loss* klasifikasi berupa *binary cross-entropy* (galat entropi silang biner) untuk membedakan *anchor* positif dan negatif, serta *loss* regresi berupa *Smooth L1* untuk tujuh parameter kotak (selisih posisi Δx, Δy, Δz; selisih dimensi Δl, Δw, Δh; selisih sudut Δθ), dinormalisasi terhadap diagonal *anchor*. Untuk mobil, kedua komponen diberi bobot α = 1,5 pada suku positif dan β = 1,0 pada suku negatif, menyeimbangkan pengaruh *anchor* berisi objek yang jauh lebih sedikit daripada *anchor* kosong.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Deteksi 3D** yang baik dibaca berdampingan:
+### Inferensi
 
-- [088 - 2019 - PointPillars - Deteksi 3D](./088%20-%202019%20-%20PointPillars%20-%20Deteksi%203D.md)
-- [089 - 2019 - PointRCNN - Deteksi 3D](./089%20-%202019%20-%20PointRCNN%20-%20Deteksi%203D.md)
-- [090 - 2018 - Frustum PointNets - Deteksi 3D](./090%20-%202018%20-%20Frustum%20PointNets%20-%20Deteksi%203D.md)
-- [091 - 2017 - MV3D - Deteksi 3D](./091%20-%202017%20-%20MV3D%20-%20Deteksi%203D.md)
-- [092 - 2018 - AVOD - Deteksi 3D](./092%20-%202018%20-%20AVOD%20-%20Deteksi%203D.md)
-- [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md)
-- [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md)
-- [095 - 2019 - Pseudo-LiDAR - Deteksi 3D](./095%20-%202019%20-%20Pseudo-LiDAR%20-%20Deteksi%203D.md)
+Saat inferensi, satu kali evaluasi jaringan pada GPU Titan X memerlukan total 225 milidetik (setara sekitar 4,4 FPS): 5 milidetik voxelisasi, 20 milidetik lapisan VFE, 170 milidetik konvolusi tengah 3D (komponen paling mahal), dan 30 milidetik RPN. Kotak-kotak yang tumpang tindih dirampingkan dengan *Non-Maximum Suppression*, mempertahankan hanya kotak berskor tertinggi pada tiap kelompok kotak yang saling menutupi.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Deteksi 3D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Eksperimen dan Hasil
 
-## Glosarium Istilah (tema Deteksi 3D)
-Istilah penting untuk memahami makalah ini:
+Evaluasi dilakukan pada set validasi KITTI, tolok ukur deteksi objek untuk skenario berkendara, dengan tiga kelas: mobil, pejalan kaki, dan pesepeda. Metrik yang dipakai adalah AP 3D (dari volume irisan kotak 3D) dan AP BEV (dari irisan kotak pada proyeksi tampak-atas), masing-masing dilaporkan pada tiga tingkat kesulitan yang ditetapkan KITTI berdasarkan ukuran objek, oklusi, dan pemotongan tepi citra: mudah, sedang, dan sulit.
 
-- **Deteksi 3D** — Prediksi kotak 3D beorientasi (x,y,z,l,w,h,yaw).
-- **LiDAR** — Sensor laser menghasilkan point cloud akurat.
-- **BEV** — Bird's-Eye View; proyeksi tampak-atas.
-- **Voxel/pillar** — Diskretisasi point cloud ke sel 3D / kolom.
-- **Fusi LiDAR-kamera** — Penggabungan geometri LiDAR dan tekstur kamera.
-- **Frustum** — Volume 3D dibatasi deteksi 2D pada citra.
-- **Pseudo-LiDAR** — Point cloud dari depth kamera.
-- **KITTI/nuScenes** — Benchmark deteksi 3D berkendara.
-- **AP 3D / NDS** — Metrik deteksi 3D (NDS khusus nuScenes).
-- **Kalibrasi sensor** — Penyelarasan koordinat antar-sensor.
+Hasil AP 3D VoxelNet: mobil 81,97%/65,46%/62,85%, pejalan kaki 57,86%/53,42%/48,87%, pesepeda 67,17%/47,65%/45,11% (mudah/sedang/sulit). Hasil AP BEV: mobil 89,60%/84,81%/78,57%, pejalan kaki 65,95%/61,05%/56,98%, pesepeda 74,41%/52,18%/50,49%. Dibandingkan HC-baseline, metode BEV berbasis fitur buatan tangan, VoxelNet unggul pada AP BEV mobil tingkat sedang (84,81% berbanding 78,42%, selisih 6,4 poin) dan lebih lebar pada pejalan kaki tingkat sedang (61,05% berbanding 53,79%, selisih 7,3 poin) — selisih terbesar justru pada kelas kecil dan tidak kaku, tempat statistik buatan tangan paling sulit merepresentasikan bentuk secara akurat.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Dari sisi kecepatan, 225 milidetik per citra (4,4 FPS) jauh di bawah kebutuhan *real-time* kendaraan otonom dan kecepatan detektor 2D seperti YOLO (45 FPS, bab 001); sebagian besar waktu habis pada konvolusi 3D di lapisan tengah, motivasi langsung metode deteksi 3D berikutnya mengganti konvolusi 3D dengan operasi lebih murah.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kelebihan dan Keterbatasan
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Kelebihan utama VoxelNet adalah menghapus kebutuhan rekayasa fitur manual: seluruh proses, dari titik mentah sampai kotak 3D, dipelajari dan dioptimalkan sebagai satu jaringan, sehingga representasi *voxel* lebih sesuai dengan tujuan deteksi dibandingkan statistik buatan tangan. Keunggulan ini paling terasa pada kelas kecil dan tidak kaku seperti pejalan kaki dan pesepeda, sebagaimana ditunjukkan selisih AP terhadap HC-baseline pada bagian sebelumnya.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Dari sisi rekayasa, konvolusi 3D pada tensor *voxel* yang sebagian besar kosong memakan porsi waktu terbesar (170 dari 225 milidetik), sehingga VoxelNet tidak mencapai kecepatan *real-time* yang dibutuhkan aplikasi kendaraan otonom. Secara konseptual, pembagian ruang menjadi *voxel* tetap juga membatasi presisi posisi titik di dalam satu sel, karena semua titik dalam *voxel* yang sama diringkas menjadi satu vektor sehingga variasi posisi di bawah resolusi *voxel* tidak lagi dibedakan; pembatasan jumlah titik per *voxel* menjadi maksimum T dengan sampel acak juga berarti sebagian titik pada *voxel* padat dibuang, berpotensi menghilangkan detail bentuk dekat sensor. VoxelNet hanya memanfaatkan data LiDAR tanpa citra RGB, berbeda dari MV3D yang memfusikan kedua sumber.
 
-## Kesimpulan
-VoxelNet mempelajari fitur voxel dari point cloud mentah via VFE dan RPN 3D, menjadi pipeline deteksi 3D end-to-end pelopor yang menggantikan fitur buatan tangan.
+## Kaitan dengan Bab Lain
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zhou2018voxelnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+RPN yang dipakai VoxelNet mewarisi langsung konsep *Region Proposal Network* dari Faster R-CNN (bab 014), diperluas dari kotak 2D ke kotak 3D berorientasi. VoxelNet juga berlawanan posisi dengan pendekatan fitur buatan tangan MV3D (bab 091), yang memproyeksikan *point cloud* ke BEV dan tampak-depan lalu menggabungkannya dengan citra RGB memakai statistik rancangan manual. Biaya konvolusi 3D yang tinggi pada VoxelNet menjadi motivasi langsung PointPillars (bab 088), yang mengganti *voxel* 3D dengan kolom vertikal (*pillar*) agar data dapat diproses konvolusi 2D dan berjalan lebih cepat tanpa mengubah gagasan inti "pelajari fitur dari titik mentah". Paradigma ini juga berkaitan dengan Pseudo-LiDAR (bab 095), yang mengubah peta kedalaman kamera menjadi *point cloud* semu agar dapat diproses jaringan bergaya VoxelNet.
 
----
-*Lembar 087/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Poin untuk Sitasi
+
+Kutip dengan kunci `zhou2018voxelnet`. Ringkasan aman dikutip: "VoxelNet mempelajari fitur *voxel* langsung dari *point cloud* LiDAR mentah melalui lapisan *Voxel Feature Encoding*, lalu memproses tensor *voxel* dengan konvolusi 3D dan *Region Proposal Network* untuk deteksi 3D *end-to-end*, mencapai AP BEV mobil 84,81% pada tingkat sedang di KITTI, mengungguli metode berbasis fitur buatan tangan pada masanya." Angka AP 3D/BEV, konfigurasi *voxel* (0,2 m × 0,2 m × 0,4 m, T = 35/45), dan waktu inferensi 225 milidetik telah diverifikasi terhadap naskah arXiv/ar5iv. Ambang IOU untuk penetapan label *anchor* positif/negatif tidak berhasil diverifikasi langsung dari sumber yang diakses dan sebaiknya dicek ulang ke naskah asli sebelum dikutip dalam karya formal.

@@ -1,203 +1,90 @@
 # 085 - Bilateral Cross-Modal Fusion Network for Robot Grasp Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 085 dari 154 |
 | Kunci BibTeX | `zhang2023bcmfnet` |
-| Judul | Bilateral Cross-Modal Fusion Network for Robot Grasp Detection |
-| Penulis | Zhang, Qiang; Sun, Xueying |
+| Judul asli | Bilateral Cross-Modal Fusion Network for Robot Grasp Detection |
+| Penulis | Qiang Zhang, Xueying Sun |
 | Tahun | 2023 |
-| Venue / Jurnal | Sensors |
-| Tema klaster | Grasp Robotik |
-| Kata kunci | grasp, bilateral fusion, cross-modal, RGB-D, Cornell/Jacquard |
+| Venue | Sensors, vol. 23, no. 6, artikel 3340 |
+| Tema | Grasp Robotik |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **DOI (versi penerbit, akses terbuka):** https://doi.org/10.3390/s23063340
+- **PMC (teks penuh gratis):** https://pmc.ncbi.nlm.nih.gov/articles/PMC10057080/
+- **Google Scholar:** https://scholar.google.com/scholar?q=Bilateral%20Cross-Modal%20Fusion%20Network%20for%20Robot%20Grasp%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Bilateral%20Cross-Modal%20Fusion%20Network%20for%20Robot%20Grasp%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-grasp-robotik)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Bilateral%20Cross-Modal%20Fusion%20Network%20for%20Robot%20Grasp%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Bilateral%20Cross-Modal%20Fusion%20Network%20for%20Robot%20Grasp%20Detection&sort=relevance
+Makalah ini memperkenalkan BCMFNet (*Bilateral Cross-Modal Fusion Network*), sebuah jaringan deteksi cengkeraman robotik yang mengolah citra RGB dan kedalaman melalui tiga aliran paralel — aliran RGB, aliran kedalaman, dan aliran gabungan — sehingga kedua modal saling memandu satu sama lain, bukan hanya digabungkan searah. Masalah yang disasar adalah cengkeraman visual dua derajat kebebasan (2-DoF, posisi dan sudut penjepit pada bidang citra): bagaimana memanfaatkan informasi warna (tekstur permukaan) dan kedalaman (geometri jarak) secara serentak agar posisi dan orientasi cengkeraman diprediksi lebih akurat daripada bila kedua modal digabung secara statis di awal.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Inti kontribusinya adalah modul interaksi modal (*Modal Interaction Module*, MIM) yang memakai perhatian silang (*cross-attention*) spasial dua arah, sehingga fitur RGB ikut menimbang fitur kedalaman dan sebaliknya, dilengkapi modul interaksi kanal (*Channel Interaction Module*, CIM) yang menyaring fitur gabungan sebelum diteruskan ke kepala prediksi. Pada dataset baku Cornell dan Jacquard, BCMFNet mencapai akurasi *object-wise* 97,8% dan 94,6%, mengungguli sejumlah metode RGB-D sezaman, dan tervalidasi pada lengan robot fisik dengan tingkat keberhasilan 94,5% dari 200 percobaan cengkeraman pada 30 objek rumah tangga yang belum pernah dilihat model. Bab ini melanjutkan garis GR-ConvNet (bab 082) dengan mengganti fusi kanal statis dengan mekanisme interaksi yang dapat dilatih.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 23 |
-| Nomor | 6 |
-| Halaman | 3340 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Jaringan deteksi grasp yang memakai fusi lintas-modal bilateral untuk menggabungkan fitur RGB dan kedalaman secara dua-arah.
+Deteksi cengkeraman berbasis RGB-D umumnya menggabungkan kedua modal dengan salah satu dari tiga strategi: fusi dini (menumpuk kanal warna dan kedalaman sebagai satu masukan sebelum diproses jaringan), fusi lanjut (memproses kedua modal terpisah lalu menjumlahkan/mengonkatenasi keluarannya), atau fusi menengah pada beberapa titik tetap di dalam jaringan. GR-ConvNet (bab 082), misalnya, menumpuk kanal RGB dan kedalaman menjadi satu masukan *n*-kanal di awal jaringan — pendekatan yang sederhana dan cepat, tetapi bobot relatif antara warna dan kedalaman ditentukan oleh pelatihan konvolusi biasa, bukan disesuaikan secara adaptif per lokasi citra.
 
-## Abstrak (Parafrase)
-BCMFNet (Bilateral Cross-Modal Fusion Network) menggabungkan fitur RGB dan kedalaman melalui modul fusi lintas-modal bilateral (dua-arah), sehingga kedua modal saling memandu, lalu memprediksi grasp. Fusi bilateral melampaui fusi searah/dangkal dan mencapai akurasi kompetitif/SOTA pada Cornell/Jacquard.
+Makalah ini beralasan bahwa strategi semacam itu memanfaatkan komplementaritas RGB-kedalaman secara tidak menyeluruh: kedua modal diperlakukan setara di semua wilayah citra, padahal pada kenyataannya kontribusi masing-masing modal berbeda-beda tergantung kondisi permukaan. Pada permukaan datar dan bertekstur jelas, warna lebih informatif untuk menentukan tepi objek; pada permukaan mengilap atau nyaris tanpa tekstur, kedalaman lebih dapat diandalkan untuk menentukan bentuk. Fusi statis tidak dapat menyesuaikan bobot ini per piksel, sehingga akurasi berpotensi tersandera oleh modal yang lebih lemah pada wilayah tertentu. Masalah ini menjadi lebih penting seiring makin banyaknya penerapan lengan robot pada objek rumah tangga yang permukaannya beragam dan kondisi pencahayaannya tidak terkendali.
 
-## Latar Belakang & Konteks
-Fusi RGB-D untuk grasp sering searah atau dangkal, membatasi pemanfaatan komplementaritas warna (tekstur) dan kedalaman (geometri).
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Fusi RGB-D untuk grasp sering searah/dangkal.
-- Komplementaritas warna-geometri kurang dimanfaatkan.
-- Aliran informasi lintas-modal terbatas.
-- Akurasi grasp perlu ditingkatkan.
-- Fusi statis kurang adaptif.
+Gagasan inti BCMFNet adalah membuat kedua modal saling menanyai satu sama lain lewat mekanisme perhatian (*attention*) sebelum digabungkan, bukan sekadar ditumpuk atau dijumlahkan. Fitur RGB pada suatu lokasi citra dipakai sebagai kueri untuk "bertanya" ke seluruh peta fitur kedalaman, mencari lokasi kedalaman yang relevan untuk memperkaya pemahaman tentang lokasi RGB itu; pada saat yang sama, fitur kedalaman melakukan hal yang sama terhadap fitur RGB. Karena kedua arah pertanyaan ini berjalan bersamaan, mekanismenya disebut bilateral (dua arah) — berbeda dari fusi searah yang hanya membiarkan satu modal memandu modal lainnya.
 
-## Tujuan & Pertanyaan Penelitian
-- Menggabungkan RGB & kedalaman secara bilateral.
-- Membuat kedua modal saling memandu.
-- Meningkatkan akurasi deteksi grasp.
+Selain interaksi antar-modal secara spasial, jaringan juga membutuhkan penyaringan antar-kanal: setelah fitur RGB, kedalaman, dan gabungan ketiganya disatukan, tidak semua kanal fitur sama pentingnya untuk prediksi akhir. Modul interaksi kanal memberi bobot pada tiap kanal berdasarkan kontribusinya, meredam kanal yang kurang informatif. Kombinasi interaksi spasial (antar-piksel, antar-modal) dan interaksi kanal (antar-fitur) inilah yang membedakan BCMFNet dari pendekatan fusi RGB-D sebelumnya.
 
-## Tinjauan Terdahulu / Posisi Literatur
-BCMFNet mengembangkan fusi lintas-modal dua-arah untuk grasp.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Arsitektur Tiga Aliran
 
-- GR-ConvNet — grasp RGB-D (pembanding).
-- Bilateral/bidirectional fusion.
-- Cross-modal interaction.
-- Cornell/Jacquard dataset.
+Jaringan menerima citra RGB dan citra kedalaman sebagai dua masukan terpisah, masing-masing diolah oleh aliran konvolusi tersendiri berpola *encoder–decoder* (menyandikan citra ke fitur padat berresolusi rendah, lalu menyandikannya kembali ke resolusi tinggi). Bagian penyandi kedua aliran memakai modul batang berbasis koneksi residual (*Residual Stem Module*, RSM) yang menurunkan resolusi spasial bertahap sambil menghasilkan fitur multi-skala — dilambangkan cf0 hingga cf4 untuk aliran RGB dan df0 hingga df4 untuk aliran kedalaman, dengan indeks yang lebih besar menandakan fitur beresolusi lebih rendah namun lebih kaya makna. Fitur-fitur ini kemudian disandikan kembali ke resolusi tinggi lewat penaikan skala dengan koneksi pintas (*skip connection* — menyalurkan langsung fitur dari tahap penyandi ke tahap penyandi ulang pada resolusi yang sama, mengurangi hilangnya detail spasial), menghasilkan fitur akhir cf7 dan df7. Aliran ketiga, aliran gabungan, dibangun paralel dengan fitur ff7 yang menyerap hasil interaksi kedua modal pada tiap tingkat skala.
 
-## Metodologi & Arsitektur
-Cabang RGB dan cabang kedalaman mengekstrak fitur; bilateral cross-modal fusion module mempertukarkan informasi dua-arah antar-modal di beberapa level; fitur tergabung memprediksi peta grasp (quality/angle/width).
+### Modul Interaksi Modal (MIM)
 
-Komponen / langkah metodologis utama:
+Pada beberapa titik di antara tahap penyandi, fitur RGB dan kedalaman dilewatkan ke MIM. Modul ini terlebih dahulu memecah peta fitur menjadi kepingan kecil (*patch embedding* — membagi peta fitur menjadi blok-blok kecil yang masing-masing diperlakukan sebagai satu unit token), lalu menerapkan perhatian mandiri ringan (*Lightweight Multi-Head Self-Attention*, LMHSA) yang menghubungkan kepingan-kepingan dalam satu modal, dan perhatian silang ringan (*Lightweight Multi-Head Cross-Attention*, LMHCA) yang menghubungkan kepingan RGB dengan kepingan kedalaman secara dua arah. LMHCA inilah mekanisme cross-attention spasial yang menjadi inti bilateral: setiap kepingan RGB memperoleh kueri terhadap seluruh kepingan kedalaman, dan sebaliknya, sehingga bobot penggabungan ditentukan berdasarkan kemiripan fitur pada tiap pasangan lokasi, bukan bobot tetap yang sama untuk seluruh citra.
 
-- Cabang RGB & cabang kedalaman.
-- Bilateral cross-modal fusion module (dua-arah).
-- Pertukaran informasi antar-modal multi-level.
-- Prediksi peta grasp dari fitur tergabung.
-- Input RGB-D.
-- Evaluasi Cornell/Jacquard.
+### Modul Interaksi Kanal (CIM)
 
-## Kontribusi Utama
-1. Fusi lintas-modal bilateral untuk grasp.
-2. Kedua modal saling memandu.
-3. Akurasi kompetitif/SOTA.
-4. Memanfaatkan komplementaritas RGB-D.
+Setelah fitur RGB (cf7), kedalaman (df7), dan gabungan (ff7) mencapai resolusi penuh, ketiganya dikonkatenasi (ditumpuk sepanjang dimensi kanal) dan diproses oleh CIM. Modul ini menerapkan mekanisme mirip blok *squeeze-and-excitation* (SE): setiap kanal fitur gabungan diberi bobot skalar hasil pembelajaran, sehingga kanal yang membawa informasi berguna dipertahankan dan kanal yang kurang relevan diredam sebelum diteruskan ke kepala prediksi.
 
-## Rincian Eksperimen
-Diuji pada Cornell dan Jacquard dengan metrik akurasi grasp, plus ablation fusi bilateral.
+Alur data dari dua citra masukan hingga peta cengkeraman dapat diringkas sebagai berikut.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+RGB  --> aliran RGB (RSM, turun-skala)  --> cf0..cf4 --> cf7
+                    \                                    |
+                     \--- MIM: LMHSA + LMHCA (dua arah) --+--> ff7
+                    /                                    |
+Depth --> aliran Depth (RSM, turun-skala) --> df0..df4 --> df7
+                                                          |
+                    CIM: konkatenasi [cf7, df7, ff7]
+                         + bobot kanal ala SE-block
+                                                          |
+              peta grasp: Q (mutu) | sin2phi, cos2phi (sudut) | W (lebar)
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Cornell | akurasi grasp | kompetitif/SOTA |
-| Jacquard | akurasi grasp | kompetitif/SOTA |
-| Ablation | bilateral fusion | fusi dua-arah menyumbang gain |
+### Representasi Cengkeraman dan Fungsi Loss
 
-## Temuan Kunci
-- Fusi bilateral mengungguli fusi searah.
-- Komplementaritas RGB-D dimanfaatkan.
-- Aliran informasi dua-arah bermanfaat.
-- Akurasi grasp meningkat.
+Mengikuti rumusan yang sama dengan GG-CNN (bab 081) dan GR-ConvNet (bab 082), keluaran jaringan berupa empat peta seukuran citra: peta mutu cengkeraman Q̃ (skor kelayakan tiap piksel sebagai pusat cengkeraman), dua peta sudut sin(2φ̃) dan cos(2φ̃) (penggandaan sudut menghindari ambiguitas orientasi antipodal 180°), dan peta lebar bukaan penjepit W̃. Pelatihan memakai *smooth L1 loss* (fungsi galat yang kuadratik untuk selisih kecil dan linear untuk selisih besar, sehingga tidak terlalu sensitif terhadap pencilan) dengan parameter ambang β = 1, dihitung sebagai jumlah galat pada seluruh piksel keempat peta terhadap kebenaran anotasi.
 
-## Keunggulan
-- Fusi bilateral efektif.
-- Memanfaatkan komplementaritas.
-- Akurasi tinggi.
+## Eksperimen dan Hasil
 
-## Keterbatasan
-- Grasp planar (bukan 6-DoF penuh).
-- Bergantung kualitas RGB-D.
-- Fusi dua-arah menambah komputasi.
+Evaluasi dilakukan pada dua tolok ukur baku deteksi cengkeraman. Dataset Cornell berisi 885 sampel dari 240 objek nyata, dipecah 90% latih dan 10% uji, diperbesar lewat augmentasi (pemotongan dan rotasi acak) karena ukurannya kecil. Dataset Jacquard (bab 086) jauh lebih besar, tersusun dari puluhan ribu citra sintetis hasil simulasi fisika dengan jutaan anotasi cengkeraman, juga dipecah 90:10. Kedua dataset diuji dengan dua skema pemisahan data: *image-wise* (IW, membagi berdasarkan citra sehingga objek yang sama dapat muncul di data latih dan uji) dan *object-wise* (OW, memisahkan berdasarkan objek sehingga model diuji pada objek yang benar-benar baru — skema yang lebih ketat menilai generalisasi). Sebuah prediksi cengkeraman dinyatakan benar bila IoU (*Intersection over Union*, rasio luas irisan terhadap luas gabungan kotak) terhadap anotasi lebih dari 25% dan selisih sudut kurang dari 30°, definisi yang sama dipakai GR-ConvNet.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+BCMFNet mencapai akurasi 99,4% (IW) dan 97,8% (OW) pada Cornell, serta 96,7% (IW) dan 94,6% (OW) pada Jacquard, dengan waktu inferensi 17,7 milidetik per citra. Dibandingkan GR-ConvNet (97,7% IW / 96,6% OW pada Cornell, ~20 milidetik), BCMFNet unggul tipis pada akurasi Cornell dengan kecepatan yang sebanding; pada Jacquard, angka akurasi objek-wise BCMFNet (94,6%) setara dengan yang dilaporkan GR-ConvNet. Studi ablasi menunjukkan kontribusi tiap modul: tanpa MIM, akurasi *object-wise* turun tajam ke 89,7% (Cornell) dan 84,6% (Jacquard); tanpa CIM, akurasi turun lebih kecil ke 96,4% dan 92,6%. Selisih penurunan ini mengindikasikan interaksi silang spasial (MIM) menyumbang porsi akurasi yang jauh lebih besar daripada penyaringan kanal (CIM), meski keduanya tetap saling melengkapi karena model penuh (97,8% / 94,6%) mengungguli kedua varian tanpa modul.
 
-## Relevansi terhadap Tema Tinjauan
-BCMFNet menegaskan fusi RGB-D bilateral bermanfaat untuk grasp — sejalan dengan tema fusi dua-arah (FFB6D) dalam tinjauan.
+Validasi fisik dilakukan pada lengan robot kolaboratif Elite EC-66 berpenjepit paralel dengan kamera RGB-D Orbbec Femto-W. Dari 200 percobaan cengkeraman pada 30 objek rumah tangga yang tidak termasuk data latih, 189 berhasil (94,5%). Angka ini konsisten dengan pola pada bab 082: akurasi tinggi pada tolok ukur akademik diikuti tingkat keberhasilan yang tetap tinggi ketika dipindahkan ke perangkat keras nyata pada objek baru. Penulis makalah mencatat inferensi 17,7 milidetik masih lebih lambat daripada sejumlah metode pembanding lain yang dilaporkan berjalan sekitar 12 milidetik, dan menyebutnya sebagai arah perbaikan pada kerja mendatang.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Grasp Robotik** yang baik dibaca berdampingan:
+## Kelebihan dan Keterbatasan
 
-- [080 - 2015 - Deep Learning Robotic Grasps (Lenz dkk.) - Grasp Robotik](./080%20-%202015%20-%20Deep%20Learning%20Robotic%20Grasps%20%28Lenz%20dkk.%29%20-%20Grasp%20Robotik.md)
-- [081 - 2018 - GG-CNN - Grasp Robotik](./081%20-%202018%20-%20GG-CNN%20-%20Grasp%20Robotik.md)
-- [082 - 2020 - GR-ConvNet - Grasp Robotik](./082%20-%202020%20-%20GR-ConvNet%20-%20Grasp%20Robotik.md)
-- [083 - 2022 - GR-ConvNet v2 - Grasp Robotik](./083%20-%202022%20-%20GR-ConvNet%20v2%20-%20Grasp%20Robotik.md)
-- [084 - 2020 - GraspNet-1Billion - Grasp Robotik](./084%20-%202020%20-%20GraspNet-1Billion%20-%20Grasp%20Robotik.md)
-- [086 - 2018 - Jacquard Dataset - Grasp Robotik](./086%20-%202018%20-%20Jacquard%20Dataset%20-%20Grasp%20Robotik.md)
+Kelebihan utama BCMFNet terletak pada mekanisme interaksi lintas-modal yang dapat menyesuaikan bobot RGB dan kedalaman secara adaptif per lokasi citra, alih-alih memakai bobot tetap seperti fusi kanal statis pada GR-ConvNet. Studi ablasi mengonfirmasi bahwa interaksi ini — bukan sekadar menambah parameter jaringan — yang menyumbang kenaikan akurasi paling besar. Validasi pada robot fisik dengan objek di luar data latih juga memperkuat klaim generalisasi model.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Grasp Robotik** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Dari sisi rekayasa, arsitektur tiga aliran plus modul perhatian silang menambah kompleksitas komputasi dibandingkan jaringan konvolusi murni seperti GR-ConvNet, tercermin pada waktu inferensi yang lebih lambat daripada sejumlah metode pembanding sezaman meski masih tergolong dekat waktu nyata. Secara konseptual, BCMFNet tetap terbatas pada cengkeraman planar 2-DoF: posisi dan sudut penjepit ditentukan pada bidang citra, bukan pada ruang tiga dimensi penuh seperti pendekatan 6-DoF pada bab 084. Keberhasilan model juga tetap bergantung pada kualitas kanal kedalaman; sensor RGB-D konsumen rentan menghasilkan derau atau lubang data pada permukaan mengilap, kondisi yang tidak diuji secara eksplisit pada evaluasi robot 30 objek di atas.
 
-## Glosarium Istilah (tema Grasp Robotik)
-Istilah penting untuk memahami makalah ini:
+## Kaitan dengan Bab Lain
 
-- **Grasp detection** — Prediksi cengkeraman stabil untuk objek.
-- **Grasp rectangle** — Grasp sebagai kotak beorientasi (posisi, sudut, lebar).
-- **Antipodal grasp** — Cengkeraman dua-jari berlawanan.
-- **RGB-D** — Warna + kedalaman untuk geometri grasp.
-- **6-DoF grasp** — Grasp enam derajat kebebasan di ruang 3D.
-- **Cornell dataset** — Dataset grasp kecil klasik.
-- **Jacquard** — Dataset grasp sintetis berskala besar.
-- **Closed-loop** — Kontrol grasp real-time berbasis umpan-balik.
-- **Success rate** — Persentase percobaan grasp berhasil.
-- **Point cloud fusion** — Penggabungan geometri titik 3D.
+Bab ini melanjutkan garis fusi RGB-D untuk cengkeraman planar yang dimulai GG-CNN (bab 081) dan diperkuat GR-ConvNet ([082 - GR-ConvNet](./082%20-%202020%20-%20GR-ConvNet%20-%20Grasp%20Robotik.md)): representasi keluaran Q/sudut/lebar dan definisi validitas IoU>25%/sudut<30° diwarisi langsung, sedangkan strategi fusi diganti dari penumpukan kanal statis menjadi interaksi lintas-modal yang dapat dilatih. Dataset Jacquard yang dipakai untuk salah satu evaluasi utama diuraikan pada [086 - Jacquard Dataset](./086%20-%202018%20-%20Jacquard%20Dataset%20-%20Grasp%20Robotik.md). Penyempurnaan arsitektur generatif lain pada garis yang sama dibahas pada [083 - GR-ConvNet v2](./083%20-%202022%20-%20GR-ConvNet%20v2%20-%20Grasp%20Robotik.md), sementara batasan 2-DoF pada bab ini berkontraskan dengan pendekatan cengkeraman 6-DoF berskala besar pada [084 - GraspNet-1Billion](./084%20-%202020%20-%20GraspNet-1Billion%20-%20Grasp%20Robotik.md). Kontribusi bab ini bagi tinjauan adalah menunjukkan bahwa mekanisme perhatian lintas-modal dapat menaikkan akurasi fusi RGB-D untuk grasp tanpa mengorbankan kelayakan waktu nyata secara signifikan.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Poin untuk Sitasi
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-BCMFNet memakai fusi lintas-modal bilateral yang membuat RGB dan kedalaman saling memandu untuk deteksi grasp, mencapai akurasi kompetitif/SOTA pada Cornell/Jacquard.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zhang2023bcmfnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 085/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `zhang2023bcmfnet`. Ringkasan yang aman dikutip: "BCMFNet memakai arsitektur tiga aliran dengan modul interaksi modal berbasis perhatian silang dua arah dan modul interaksi kanal untuk menggabungkan fitur RGB dan kedalaman, mencapai akurasi *object-wise* 97,8% pada Cornell dan 94,6% pada Jacquard, serta keberhasilan 94,5% pada 200 percobaan cengkeraman robot fisik." Angka akurasi (99,4%/97,8% Cornell; 96,7%/94,6% Jacquard), waktu inferensi (17,7 ms), dan hasil robot (189/200, 30 objek) diperoleh dari abstrak dan isi artikel versi PMC; angka rinci tabel pembanding metode lain (mis. Kumra dkk., Tian dkk.) dan angka ablasi per modul (89,7%/84,6% tanpa MIM; 96,4%/92,6% tanpa CIM) sebaiknya diverifikasi ulang terhadap tabel PDF resmi sebelum dikutip dalam karya formal, karena diekstraksi lewat alat baca otomatis, bukan pembacaan tabel langsung.

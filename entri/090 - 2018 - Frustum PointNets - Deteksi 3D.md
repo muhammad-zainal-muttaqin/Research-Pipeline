@@ -1,211 +1,98 @@
 # 090 - Frustum PointNets for 3D Object Detection from RGB-D Data
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 090 dari 154 |
 | Kunci BibTeX | `qi2018frustum` |
-| Judul | Frustum PointNets for 3D Object Detection from RGB-D Data |
-| Penulis | Qi, Charles R.; Liu, Wei; Wu, Chenxia; Su, Hao; Guibas, Leonidas J. |
+| Judul asli | Frustum PointNets for 3D Object Detection from RGB-D Data |
+| Penulis | Charles R. Qi, Wei Liu, Chenxia Wu, Hao Su, Leonidas J. Guibas |
 | Tahun | 2018 |
-| Venue / Jurnal | Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Deteksi 3D |
-| Kata kunci | deteksi 3D, RGB-D, frustum, PointNet, fusi kaskade |
+| Venue | IEEE Conference on Computer Vision and Pattern Recognition (CVPR 2018) |
+| Tema | Deteksi 3D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1711.08488
+- **Halaman proyek (kode & data):** http://stanford.edu/~rqi/frustum-pointnets/
+- **Kode sumber resmi:** https://github.com/charlesq34/frustum-pointnets
+- **Google Scholar:** https://scholar.google.com/scholar?q=Frustum%20PointNets%20for%203D%20Object%20Detection%20from%20RGB-D%20Data
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-deteksi-3d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Frustum%20PointNets%20for%203D%20Object%20Detection%20from%20RGB-D%20Data
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Frustum%20PointNets%20for%203D%20Object%20Detection%20from%20RGB-D%20Data&sort=relevance
+Makalah ini memperkenalkan Frustum PointNets, metode deteksi objek tiga dimensi (3D) yang memadukan citra RGB dengan data kedalaman (*depth*) berbentuk *point cloud* (kumpulan titik koordinat 3D hasil pengukuran sensor jarak, misalnya LiDAR atau kamera *depth*). Alih-alih mencari objek di seluruh ruang 3D yang mahal secara komputasi, metode ini memakai detektor 2D matang pada citra RGB untuk mempersempit pencarian menjadi sebuah *frustum* (volume berbentuk piramida terpotong) yang diproyeksikan dari kotak deteksi 2D ke ruang 3D. Di dalam *frustum* itu, jaringan PointNet — arsitektur yang memproses *point cloud* langsung tanpa mengubahnya menjadi grid atau voxel — mensegmentasi titik milik objek dan meregresi kotak 3D berorientasi (memiliki sudut hadap/*yaw*, bukan sekadar sejajar sumbu).
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada tolok ukur KITTI (deteksi objek luar ruang untuk kendaraan otonom), Frustum PointNets mencapai *average precision* (AP) 3D sebesar 81,20% untuk kategori mobil pada subset "mudah", mengungguli metode dua-tahap berbasis proyeksi sebelumnya dengan margin besar. Pada SUN RGB-D (tolok ukur dalam ruang), metode ini mencapai mAP (*mean average precision*, rata-rata presisi di seluruh kelas) sebesar 54,0% pada ambang *intersection over union* (IoU, rasio irisan terhadap gabungan dua kotak) 0,25, sekaligus berjalan jauh lebih cepat daripada pendekatan berbasis pencarian penuh di ruang 3D.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 918--927 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode deteksi 3D yang memakai deteksi 2D RGB untuk membangkitkan frustum 3D lalu PointNet mensegmentasi dan meregresi box di dalam frustum — contoh kanonik fusi RGB (2D) + kedalaman (3D).
+Sebelum makalah ini, deteksi objek 3D umumnya diselesaikan dengan dua kelompok pendekatan. Kelompok pertama mendiskretisasi seluruh *point cloud* menjadi volume grid 3D (voxel) atau proyeksi tampak-atas (*bird's-eye view*), lalu menjalankan konvolusi pada representasi tersebut, seperti pada MV3D (bab 091), yang memproyeksikan LiDAR ke beberapa tampilan dan menggabungkannya dengan citra RGB. Pendekatan ini mahal karena sebagian besar ruang 3D kosong — hanya sebagian kecil voxel yang berisi titik objek — sehingga banyak komputasi terbuang pada ruang tanpa isi. Kelompok kedua menjalankan jaringan langsung pada seluruh *point cloud* tanpa panduan citra, sehingga pencarian objek tetap mencakup ruang yang sangat luas.
 
-## Abstrak (Parafrase)
-Frustum PointNets memanfaatkan detektor 2D matang pada citra RGB untuk menghasilkan proposal 2D, lalu memproyeksikannya menjadi frustum 3D pada point cloud. Di dalam frustum, PointNet melakukan instance segmentation (memisahkan objek dari latar) dan meregresi box 3D beorientasi. Pendekatan kaskade ini efisien dan SOTA pada KITTI serta SUN RGB-D saat rilis.
+Masalah mendasar lainnya adalah *point cloud* dari sensor jarak bersifat jarang (*sparse*): pada jarak jauh atau untuk objek kecil, jumlah titik yang jatuh pada permukaan objek bisa sangat sedikit. Metode yang mencari objek langsung di ruang 3D penuh tanpa panduan sulit membedakan sedikit titik itu dari latar belakang. Di sisi lain, pada saat itu detektor 2D pada citra RGB (misalnya Faster R-CNN, bab 014) telah matang dan akurat, memanfaatkan tekstur serta kepadatan informasi citra yang jauh lebih tinggi daripada *point cloud*. Pertanyaan yang mendasari makalah ini adalah bagaimana memanfaatkan kematangan detektor 2D tersebut untuk mempersempit pencarian 3D, alih-alih mengulangi seluruh proses pencarian di ruang tiga dimensi.
 
-## Latar Belakang & Konteks
-Mencari objek di seluruh ruang 3D mahal; deteksi 2D RGB yang matang dapat mempersempit pencarian secara efisien, memadukan tekstur dan geometri.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Pencarian objek di seluruh ruang 3D mahal.
-- Point cloud jarang menyulitkan lokalisasi langsung.
-- Tekstur RGB & geometri 3D perlu dipadukan.
-- Deteksi 3D real-time sulit.
-- Objek dalam frustum perlu dipisah dari latar.
+Gagasan inti Frustum PointNets adalah kaskade dua tahap: deteksi 2D lebih dulu menentukan *di mana* mencari, kemudian jaringan 3D menentukan secara presisi *bentuk dan posisi* objek di dalam wilayah yang telah dipersempit itu. Sebuah kotak deteksi 2D pada citra RGB, jika diproyeksikan kembali ke ruang 3D memakai parameter kalibrasi kamera (hubungan geometris antara koordinat citra dan koordinat dunia nyata), tidak menghasilkan satu titik atau satu kotak, melainkan sebuah *frustum*: piramida terpotong yang memanjang dari kamera ke kedalaman tak terhingga, dibatasi oleh empat sisi kotak 2D tersebut. Semua titik *point cloud* yang jatuh di dalam *frustum* itu adalah kandidat kuat milik objek yang terdeteksi, karena proyeksinya ke citra 2D berada di dalam kotak deteksi.
 
-## Tujuan & Pertanyaan Penelitian
-- Membangkitkan frustum 3D dari deteksi 2D RGB.
-- Mensegmentasi & meregresi box dalam frustum (PointNet).
-- Memadukan tekstur RGB dan geometri kedalaman.
+Dengan mempersempit ruang pencarian dari seluruh adegan menjadi satu *frustum* per deteksi 2D, jaringan PointNet berikutnya hanya perlu menyelesaikan dua tugas yang lebih sederhana: memisahkan titik objek dari titik latar di dalam *frustum* (segmentasi instans), lalu meregresi parameter kotak 3D dari titik-titik yang tersisa. Karena wilayah pencarian sudah kecil, kedua tugas ini dapat dikerjakan cepat dan akurat, sekalipun jumlah titik pada objek tersebut sedikit.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Frustum PointNets menggabungkan deteksi 2D matang dan PointNet.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Tahap 1: Proposal Frustum dari Detektor 2D
 
-- Detektor 2D (Faster R-CNN) — proposal.
-- PointNet — segmentasi/regresi 3D.
-- Frustum proposal — dari 2D ke 3D.
-- Dataset KITTI/SUN RGB-D.
+Sebuah detektor 2D berbasis *Feature Pyramid Network* (FPN, jaringan yang menggabungkan peta fitur dari berbagai skala resolusi) dilatih awal pada ImageNet dan COCO, kemudian disetel halus (*fine-tuned*) pada data deteksi 2D KITTI. Detektor ini menghasilkan kotak 2D beserta label kelasnya pada citra RGB. Setiap kotak 2D diangkat menjadi *frustum* 3D memakai parameter kalibrasi kamera, dan seluruh titik *point cloud* yang terproyeksi ke dalam kotak tersebut diekstrak sebagai masukan tahap berikutnya. Karena orientasi *frustum* bergantung pada posisi kotak di citra, setiap *frustum* dirotasi terlebih dahulu ke sistem koordinat pandangan-tengah (*center view*): sumbu pandang diputar sehingga sumbu-z sejajar dengan sumbu tengah *frustum*, mengurangi variasi sudut pandang yang harus dipelajari jaringan berikutnya.
 
-## Metodologi & Arsitektur
-Detektor 2D menghasilkan box pada citra RGB; box diproyeksikan menjadi frustum 3D (memakai kalibrasi/kedalaman); PointNet mensegmentasi instance dalam frustum; T-Net + PointNet meregresi box 3D beorientasi. Kaskade RGB->3D.
+### Tahap 2: Segmentasi Instans 3D dengan PointNet
 
-Komponen / langkah metodologis utama:
+Titik-titik di dalam *frustum* umumnya masih bercampur antara objek dan latar (tanah, dinding, atau objek lain pada garis pandang yang sama). Sebuah PointNet — jaringan yang memproses tiap titik secara independen lalu menggabungkan fitur global lewat *max pooling* (pengambilan nilai maksimum antar-titik) — melakukan klasifikasi biner per titik: objek atau bukan. Informasi kelas dari detektor 2D disertakan sebagai vektor *one-hot* (representasi biner bernilai 1 pada posisi kelas yang benar, 0 di posisi lain) yang digabungkan dengan fitur titik, sehingga jaringan segmentasi mengetahui jenis objek yang dicari sebelum memisahkannya dari latar.
 
-- Deteksi 2D RGB menghasilkan proposal.
-- Proyeksi ke frustum 3D (point cloud).
-- Instance segmentation dalam frustum (PointNet).
-- T-Net untuk normalisasi & estimasi box 3D.
-- Regresi box 3D beorientasi.
-- Fusi kaskade RGB + kedalaman.
+### Tahap 3: Estimasi Pusat dengan T-Net
 
-## Kontribusi Utama
-1. Fusi kaskade RGB (2D) + point cloud (3D).
-2. Frustum mempersempit pencarian 3D efisien.
-3. PointNet memisahkan objek dalam frustum.
-4. SOTA KITTI & SUN RGB-D saat rilis.
+Titik yang telah disegmentasi sebagai objek biasanya tidak berpusat tepat pada pusat geometris objek sesungguhnya, karena sensor hanya menangkap permukaan yang terlihat — bagian objek yang terhalang tidak memiliki titik sama sekali. T-Net, sebuah PointNet regresi berukuran ringan, mengestimasi pergeseran dari pusat massa titik yang teramati menuju pusat objek sesungguhnya, lalu koordinat titik digeser sehingga pusat objek menjadi titik asal (origin) sistem koordinat lokal. Langkah ini disebut estimasi *amodal* karena kotak akhir mencakup bagian objek yang tidak teramati langsung oleh sensor.
 
-## Rincian Eksperimen
-Diuji pada KITTI (outdoor LiDAR) dan SUN RGB-D (indoor RGB-D) dengan metrik AP 3D, dibandingkan metode 3D lain.
+### Tahap 4: Estimasi Kotak 3D Berorientasi
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+PointNet ketiga menerima titik yang sudah dipusatkan dan meregresi parameter kotak: pusat (residu kecil terhadap hasil T-Net), ukuran (tinggi, lebar, panjang), dan sudut hadap (*heading angle*). Ukuran dan sudut diprediksi dengan skema hibrida klasifikasi-lalu-regresi: beberapa templat ukuran dan beberapa bin sudut dipilih lewat klasifikasi, kemudian residu halus terhadap pilihan itu diregresi terpisah — lebih stabil daripada meregresi nilai kontinu secara langsung karena jaringan cukup memilih kategori terdekat lalu menghaluskannya.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI 3D | AP 3D | SOTA saat rilis |
-| SUN RGB-D | AP 3D | SOTA indoor saat rilis |
-| Efisiensi | frustum | mempersempit pencarian 3D |
+Pelatihan memakai fungsi *loss* gabungan: *loss* segmentasi titik, *loss* regresi pusat dari T-Net, *loss* klasifikasi-regresi ukuran, *loss* klasifikasi-regresi sudut, ditambah *corner loss* — suku tambahan yang meminimalkan jarak antara delapan sudut kotak prediksi dan delapan sudut kotak kebenaran (*ground truth*), sehingga kesalahan pusat, ukuran, dan sudut sama-sama tercermin pada posisi sudut kotak akhir.
 
-## Temuan Kunci
-- Deteksi 2D matang mempercepat deteksi 3D.
-- Frustum efektif mempersempit ruang cari.
-- PointNet baik untuk segmentasi frustum.
-- Fusi RGB+kedalaman kaskade efektif.
+Alur data dari citra hingga kotak 3D dapat diringkas sebagai berikut:
 
-## Keunggulan
-- Contoh kanonik fusi RGB-D.
-- Efisien (frustum).
-- SOTA indoor & outdoor.
+```
+citra RGB --[detektor 2D FPN]--> kotak 2D + kelas
+                                     |
+                        (proyeksi via kalibrasi kamera)
+                                     v
+point cloud --------------------> frustum 3D (dirotasi ke center view)
+                                     |
+                         PointNet segmentasi instans
+                        (titik objek vs titik latar)
+                                     v
+                    titik objek --> T-Net (estimasi pusat)
+                                     v
+                    titik terpusatkan --> PointNet estimasi box
+                                     v
+                    kotak 3D: pusat, ukuran (h,w,l), sudut hadap
+```
 
-## Keterbatasan
-- Bergantung kualitas deteksi 2D.
-- Error 2D merambat ke 3D.
-- Kaskade (bukan end-to-end penuh).
+## Eksperimen dan Hasil
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Evaluasi utama dilakukan pada dua tolok ukur dengan karakteristik sensor berbeda. KITTI adalah tolok ukur luar ruang untuk kendaraan otonom, dengan *point cloud* dari LiDAR berputar dan citra dari kamera stereo/mono; metriknya AP 3D pada tiga tingkat kesulitan (mudah, sedang, sulit) berdasarkan tingkat oklusi dan ukuran objek. SUN RGB-D adalah tolok ukur dalam ruang dengan kedalaman dari kamera RGB-D jarak dekat; metriknya mAP pada ambang IoU 0,25.
 
-## Relevansi terhadap Tema Tinjauan
-Frustum PointNets adalah contoh kanonik fusi RGB (2D) + kedalaman (3D) yang secara konseptual paralel dengan pipeline YOLO+RGB-D dalam tinjauan.
+Pada KITTI *test set*, AP 3D untuk kategori mobil mencapai 81,20% (mudah), 70,39% (sedang), dan 62,19% (sulit); untuk pejalan kaki 51,21%/44,89%/40,23%; untuk pesepeda 71,96%/56,77%/50,39%. Menurut makalah, hasil ini mengungguli metode pembanding sebelumnya (termasuk MV3D) pada seluruh kategori dan subset, dengan selisih AP mobil sekitar delapan poin persentase di atas metode terbaik sebelumnya. Pola angka ini logis: mobil berbentuk kaku dan berukuran relatif besar sehingga titik permukaannya lebih padat, sedangkan pejalan kaki bertubuh tipis dan tidak kaku sehingga AP-nya jauh lebih rendah pada seluruh metode, termasuk Frustum PointNets.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Deteksi 3D** yang baik dibaca berdampingan:
+Pada SUN RGB-D, mAP keseluruhan mencapai 54,0%, sekitar 6-9 poin persentase di atas metode pembanding. Kecepatan inferensi berkisar 5 *frame* per detik untuk keseluruhan pipa (deteksi 2D ditambah tiga tahap PointNet), dengan bagian 3D saja berjalan sekitar 88 milidetik pada varian dasar (v1) dan 167 milidetik pada varian lebih besar (v2). Dibandingkan metode pencarian penuh di ruang 3D pada SUN RGB-D saat itu, makalah melaporkan percepatan sampai orde 10 hingga 1.000 kali — bukti bahwa mempersempit pencarian lewat *frustum* memberi keuntungan kecepatan jauh lebih besar daripada peningkatan akurasi itu sendiri.
 
-- [087 - 2018 - VoxelNet - Deteksi 3D](./087%20-%202018%20-%20VoxelNet%20-%20Deteksi%203D.md)
-- [088 - 2019 - PointPillars - Deteksi 3D](./088%20-%202019%20-%20PointPillars%20-%20Deteksi%203D.md)
-- [089 - 2019 - PointRCNN - Deteksi 3D](./089%20-%202019%20-%20PointRCNN%20-%20Deteksi%203D.md)
-- [091 - 2017 - MV3D - Deteksi 3D](./091%20-%202017%20-%20MV3D%20-%20Deteksi%203D.md)
-- [092 - 2018 - AVOD - Deteksi 3D](./092%20-%202018%20-%20AVOD%20-%20Deteksi%203D.md)
-- [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md)
-- [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md)
-- [095 - 2019 - Pseudo-LiDAR - Deteksi 3D](./095%20-%202019%20-%20Pseudo-LiDAR%20-%20Deteksi%203D.md)
+## Kelebihan dan Keterbatasan
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Deteksi 3D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Kelebihan utama metode ini adalah efisiensi: dengan menyerahkan pencarian kasar kepada detektor 2D matang, jaringan 3D hanya memproses titik dalam wilayah sempit, sehingga akurasi tinggi dan kecepatan *near real-time* tercapai sekaligus. Estimasi kotak bersifat *amodal* sehingga kotak akhir tetap masuk akal meski sebagian objek terhalang atau titiknya sangat jarang.
 
-## Glosarium Istilah (tema Deteksi 3D)
-Istilah penting untuk memahami makalah ini:
+Penulis sendiri mengakui beberapa keterbatasan. Segmentasi PointNet dapat menghasilkan hasil bercampur bila lebih dari satu instans objek berada dalam *frustum* yang sama, karena arsitektur mengasumsikan satu objek dominan per *frustum*. Ketergantungan pada detektor 2D bersifat mutlak: bila detektor 2D gagal mendeteksi suatu objek, tidak ada *frustum* yang diusulkan sehingga objek itu tidak akan pernah terdeteksi di 3D, betapapun jelas titik *point cloud*-nya. Titik yang sangat jarang (kurang dari lima titik) juga menyulitkan segmentasi maupun regresi kotak. Dari sisi rekayasa, arsitektur dua tahap ini bukan sistem *end-to-end* penuh: kesalahan detektor 2D merambat langsung ke tahap 3D tanpa mekanisme koreksi balik. Kualitas anotasi turut memengaruhi hasil: akurasi segmentasi kebenaran (*ground truth*) otomatis pada SUN RGB-D hanya 82,7% dibandingkan sekitar 90% pada KITTI, akibat oklusi berat dan penataan objek yang lebih rapat pada adegan dalam ruang.
 
-- **Deteksi 3D** — Prediksi kotak 3D beorientasi (x,y,z,l,w,h,yaw).
-- **LiDAR** — Sensor laser menghasilkan point cloud akurat.
-- **BEV** — Bird's-Eye View; proyeksi tampak-atas.
-- **Voxel/pillar** — Diskretisasi point cloud ke sel 3D / kolom.
-- **Fusi LiDAR-kamera** — Penggabungan geometri LiDAR dan tekstur kamera.
-- **Frustum** — Volume 3D dibatasi deteksi 2D pada citra.
-- **Pseudo-LiDAR** — Point cloud dari depth kamera.
-- **KITTI/nuScenes** — Benchmark deteksi 3D berkendara.
-- **AP 3D / NDS** — Metrik deteksi 3D (NDS khusus nuScenes).
-- **Kalibrasi sensor** — Penyelarasan koordinat antar-sensor.
+## Kaitan dengan Bab Lain
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Frustum PointNets berada pada silsilah yang sama dengan MV3D (bab 091), yang menjadi salah satu *baseline* pembandingnya: keduanya memadukan RGB dan LiDAR, tetapi MV3D memproyeksikan *point cloud* ke beberapa tampilan grid, sedangkan Frustum PointNets memakai *frustum* sebagai penyaring wilayah dan PointNet sebagai pemroses titik langsung. Ketergantungan pada detektor 2D matang menautkannya ke garis keluarga deteksi 2D pada [014 - 2017 - Faster R-CNN - Fondasi RGB](./014%20-%202017%20-%20Faster%20R-CNN%20-%20Fondasi%20RGB.md), rujukan arsitektur detektor tahap pertama pada makalah ini.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Di dalam klaster Deteksi 3D, bab ini berdampingan dengan pendekatan yang memproses *point cloud* langsung tanpa proyeksi kaskade, seperti [089 - 2019 - PointRCNN - Deteksi 3D](./089%20-%202019%20-%20PointRCNN%20-%20Deteksi%203D.md), serta pendekatan berbasis voxelisasi seperti [087 - 2018 - VoxelNet - Deteksi 3D](./087%20-%202018%20-%20VoxelNet%20-%20Deteksi%203D.md). Gagasan mempersempit pencarian 3D memakai isyarat RGB diwarisi dan diperluas oleh metode fusi yang lebih erat, seperti [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md), yang mewarnai titik LiDAR dengan skor semantik dari segmentasi citra, dan [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md), yang menggabungkan fitur kamera dan LiDAR pada tingkat fitur, bukan tingkat kaskade keputusan.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Frustum PointNets memakai deteksi 2D RGB untuk membangkitkan frustum 3D lalu PointNet mensegmentasi dan meregresi box, menjadi contoh kanonik fusi kaskade RGB + kedalaman untuk deteksi 3D.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `qi2018frustum` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 090/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `qi2018frustum`. Ringkasan yang aman dikutip: "Frustum PointNets memproyeksikan kotak deteksi 2D pada citra RGB menjadi *frustum* 3D, lalu memakai rangkaian PointNet untuk mensegmentasi dan meregresi kotak 3D berorientasi di dalamnya, mencapai AP 3D 81,20% (mobil, subset mudah) pada KITTI dan mAP 54,0% pada SUN RGB-D." Angka AP KITTI (81,20/70,39/62,19 untuk mobil; nilai pejalan kaki dan pesepeda) serta mAP SUN RGB-D 54,0% diperoleh dari pembacaan naskah ar5iv dan sebaiknya dicocokkan sekali lagi dengan tabel PDF resmi CVPR sebelum dikutip dalam karya formal. Angka kecepatan (5 FPS pipa penuh; 88 ms dan 167 ms untuk varian v1/v2) juga berasal dari sumber sekunder yang merujuk naskah dan disarankan diverifikasi ke Tabel eksperimen asli, karena kedua angka tersebut tidak sepenuhnya konsisten secara aritmetik satu sama lain.

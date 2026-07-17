@@ -1,211 +1,108 @@
 # 092 - Joint 3D Proposal Generation and Object Detection from View Aggregation
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 092 dari 154 |
 | Kunci BibTeX | `ku2018avod` |
-| Judul | Joint 3D Proposal Generation and Object Detection from View Aggregation |
-| Penulis | Ku, Jason; Mozifian, Melissa; Lee, Jungwook; Harakeh, Ali; Waslander, Steven L. |
+| Judul asli | Joint 3D Proposal Generation and Object Detection from View Aggregation |
+| Penulis | Jason Ku, Melissa Mozifian, Jungwook Lee, Ali Harakeh, Steven L. Waslander |
 | Tahun | 2018 |
-| Venue / Jurnal | Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) |
-| Tema klaster | Deteksi 3D |
-| Kata kunci | deteksi 3D, fusi proposal, BEV, efisien memori, LiDAR-kamera |
+| Venue | IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS 2018) |
+| Tema | Deteksi 3D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1712.02294
+- **Kode sumber:** https://github.com/kujason/avod
+- **Google Scholar:** https://scholar.google.com/scholar?q=Joint%203D%20Proposal%20Generation%20and%20Object%20Detection%20from%20View%20Aggregation
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Joint%203D%20Proposal%20Generation%20and%20Object%20Detection%20from%20View%20Aggregation&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-deteksi-3d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Joint%203D%20Proposal%20Generation%20and%20Object%20Detection%20from%20View%20Aggregation
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Joint%203D%20Proposal%20Generation%20and%20Object%20Detection%20from%20View%20Aggregation&sort=relevance
+Makalah ini memperkenalkan AVOD (*Aggregate View Object Detection*), detektor objek 3D untuk kendaraan otonom yang menggabungkan citra RGB dan *point cloud* (himpunan titik koordinat 3D) dari sensor LiDAR pada tahap pembangkitan proposal, bukan hanya pada tahap deteksi akhir. Fusi dilakukan di dalam satu *Region Proposal Network* (RPN, jaringan pengusul wilayah) yang menerima fitur dari kedua modalitas sekaligus, dengan peta fitur beresolusi tinggi yang dijaga tetap detail melalui arsitektur *encoder-decoder* bergaya *Feature Pyramid Network* (FPN, jaringan piramida fitur yang menggabungkan peta fitur kasar dan halus). Tujuannya adalah memperbaiki deteksi objek kecil seperti pejalan kaki dan pesepeda, yang pada pendekatan fusi lambat sebelumnya sering hilang akibat fitur yang terlalu diperkecil resolusinya.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada tolok ukur KITTI, AVOD mencapai *average precision* (AP, presisi rata-rata di seluruh ambang deteksi) 3D sebesar 71,88% untuk kelas mobil tingkat kesulitan moderat, mengungguli MV3D (bab 091) dan bersaing ketat dengan metode berbasis titik F-PointNet. Model berjalan pada 0,10 detik per citra (10 Hz) dengan memori GPU sekitar 2 GB saat inferensi dan hanya 38,073 juta parameter — sekitar 16% dari ukuran MV3D. Kombinasi akurasi, kecepatan, dan efisiensi memori inilah yang menjadi klaim utama makalah.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 1--8 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode deteksi 3D yang membangkitkan proposal dari fusi fitur BEV LiDAR dan citra RGB pada resolusi tinggi, efisien memori dan akurat pada objek kecil.
+MV3D (bab 091), pendahulu langsung AVOD, memfusikan fitur dari *bird's-eye view* (BEV, proyeksi tampak-atas *point cloud*), tampak depan LiDAR, dan citra RGB, tetapi baru menggabungkan ketiganya pada tahap deteksi akhir setelah setiap cabang melalui banyak lapis *pooling* (penyatuan spasial yang mengecilkan peta fitur). Akibatnya, peta fitur yang dipakai untuk mengusulkan wilayah objek sudah kehilangan resolusi spasial jauh sebelum informasi antar-modalitas sempat digabung. Objek besar seperti mobil masih cukup tercakup pada peta fitur yang mengecil, tetapi objek kecil seperti pejalan kaki dan pesepeda — yang pada BEV hanya menempati beberapa piksel — mudah hilang sebelum fusi terjadi.
 
-## Abstrak (Parafrase)
-AVOD (Aggregate View Object Detection) memfusikan fitur BEV LiDAR dan citra RGB pada tahap proposal (bukan hanya deteksi akhir), memakai feature map beresolusi tinggi dan crop-and-resize agar objek kecil (pejalan/pesepeda) terdeteksi baik. Desainnya efisien memori dan akurat pada KITTI.
+Masalah kedua adalah efisiensi memori. Deteksi 3D memerlukan jumlah *anchor* (kotak referensi berukuran dan berposisi tetap yang dipakai sebagai titik awal regresi) yang jauh lebih banyak daripada deteksi 2D, karena ruang pencarian mencakup posisi x, y, z serta orientasi. MV3D memakai representasi kotak 3D dengan 8 sudut (24 angka per kotak), sehingga jaringan pada tahap kedua menjadi berat dan boros memori ketika jumlah proposal besar. Ketiga, penyelarasan spasial antara fitur BEV dan fitur citra RGB pada resolusi tinggi bukan hal sepele: kedua modalitas memiliki geometri proyeksi yang berbeda, sehingga menyatukan fitur keduanya secara akurat memerlukan mekanisme pemetaan koordinat yang eksplisit.
 
-## Latar Belakang & Konteks
-Proposal 3D berkualitas untuk objek kecil membutuhkan fitur beresolusi tinggi; MV3D memfusikan terlalu belakangan dan boros untuk objek kecil.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Proposal objek kecil butuh fitur resolusi tinggi.
-- Fusi hanya di deteksi akhir kurang optimal.
-- MV3D boros memori untuk objek kecil.
-- Penyelarasan BEV-RGB pada proposal sulit.
-- Efisiensi memori diperlukan.
+AVOD mengusulkan tiga perubahan atas kerangka MV3D. Pertama, fusi BEV-RGB dipindahkan ke tahap paling awal yang mungkin, yaitu di dalam RPN itu sendiri, sehingga proposal 3D sudah mempertimbangkan kedua modalitas sejak awal, bukan hanya divalidasi ulang di tahap akhir. Kedua, setiap modalitas diproses oleh ekstraktor fitur *encoder-decoder* yang menghasilkan peta fitur beresolusi penuh (sama dengan resolusi masukan), bukan peta fitur yang telah menyusut delapan kali lipat seperti pada jaringan klasifikasi biasa. Resolusi penuh ini penting karena objek kecil pada BEV bisa jadi hanya berukuran beberapa piksel setelah beberapa kali *pooling*; menjaga resolusi berarti menjaga informasi itu tetap ada saat fusi dilakukan.
 
-## Tujuan & Pertanyaan Penelitian
-- Memfusikan fitur BEV+RGB pada tahap proposal.
-- Memakai fitur resolusi tinggi untuk objek kecil.
-- Meningkatkan efisiensi memori.
+Ketiga, representasi kotak 3D disederhanakan. Alih-alih meregresi delapan sudut kotak (24 angka) seperti MV3D, AVOD meregresi empat sudut BEV ditambah dua nilai tinggi (10 angka), karena kotak 3D beraturan pada dasarnya adalah persegi panjang BEV yang diberi tinggi — merepresentasikan lebih banyak angka daripada derajat kebebasan sebenarnya justru menambah kesempatan jaringan melakukan kesalahan yang saling bertentangan secara geometris. Orientasi kotak diregresi terpisah sebagai vektor (cos θ, sin θ) agar tidak ada ambiguitas sudut di sekitar ±π (nilai sudut yang berlawanan arah tetapi secara numerik terpisah jauh).
 
-## Tinjauan Terdahulu / Posisi Literatur
-AVOD menyempurnakan MV3D dengan fusi pada tahap proposal.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Representasi Data Masukan
 
-- MV3D — pendahulu fusi multi-view.
-- BEV LiDAR + RGB — modalitas.
-- Crop-and-resize — penyelarasan fitur.
-- RPN 3D — proposal.
+*Point cloud* LiDAR diproyeksikan menjadi peta BEV beresolusi 0,1 meter per piksel, mencakup wilayah 80×70 meter di sekitar kendaraan. Peta ini memiliki enam kanal: lima kanal ketinggian (setiap kanal merepresentasikan irisan ketinggian 0 sampai 2,5 meter yang dibagi rata) ditambah satu kanal kerapatan titik. Citra RGB dipakai apa adanya tanpa proyeksi ulang. Kedua masukan ini diproses oleh dua ekstraktor fitur terpisah namun berarsitektur identik.
 
-## Metodologi & Arsitektur
-Fitur BEV LiDAR dan RGB (beresolusi tinggi) difusikan pada RPN untuk menghasilkan proposal 3D; crop-and-resize menyelaraskan fitur; head kedua menyempurnakan box 3D. Fusi awal (proposal) meningkatkan objek kecil dan efisiensi.
+### Ekstraksi Fitur Beresolusi Tinggi
 
-Komponen / langkah metodologis utama:
+Setiap ekstraktor memakai VGG-16 (jaringan konvolusi 16 lapis) yang dimodifikasi: jumlah kanal setiap lapis dipangkas separuh, dan jaringan dipotong pada blok konvolusi keempat. Bagian *encoder* ini mengecilkan peta fitur menjadi 1/8 dari resolusi masukan. Bagian *decoder* kemudian mengembalikan resolusi secara bertahap memakai konvolusi transpos (operasi kebalikan konvolusi yang memperbesar peta fitur), digabungkan dengan fitur *encoder* pada resolusi yang sama, lalu disaring ulang dengan konvolusi 3×3 — pola yang sama dengan FPN. Keluarannya adalah peta fitur beresolusi penuh untuk BEV maupun RGB, masing-masing telah membawa informasi semantik dari lapis dalam sekaligus detail spasial dari lapis dangkal.
 
-- Fusi fitur multimodal pada RPN 3D.
-- Fitur beresolusi tinggi (objek kecil).
-- Crop-and-resize penyelarasan fitur.
-- Head penyempurnaan box 3D.
-- Efisiensi memori.
-- BEV LiDAR + RGB.
+### Pembangkitan dan Reduksi Anchor 3D
 
-## Kontribusi Utama
-1. Fusi pada tahap proposal (bukan hanya akhir).
-2. Akurat pada objek kecil (pejalan/pesepeda).
-3. Efisien memori.
-4. Memperkuat fusi LiDAR-kamera.
+*Anchor* 3D disebar pada kisi BEV dengan jarak 0,5 meter; ukuran (panjang, lebar, tinggi) setiap kelas ditentukan dari statistik data latih, sedangkan posisi ketinggian mengikuti elevasi sensor. Jumlah *anchor* per citra berkisar 80.000–100.000 sebelum penyaringan. *Anchor* yang jatuh pada wilayah kosong (tidak ada titik LiDAR) dibuang lebih dulu memakai *integral image* (teknik penjumlahan kumulatif untuk menghitung isi suatu wilayah secara cepat), sehingga jumlah *anchor* yang benar-benar dievaluasi jauh berkurang. Sebelum masuk RPN, kedalaman peta fitur juga direduksi memakai konvolusi 1×1, karena dengan puluhan ribu *anchor*, penyimpanan fitur berdimensi penuh untuk setiap *anchor* akan membengkakkan memori.
 
-## Rincian Eksperimen
-Diuji pada KITTI 3D (mobil/pejalan/pesepeda) dengan metrik AP 3D/BEV, dibandingkan MV3D.
+### Fusi Fitur pada RPN
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Untuk setiap *anchor*, operasi *crop-and-resize* (memotong wilayah peta fitur sesuai proyeksi *anchor*, lalu mengubah ukurannya ke dimensi tetap dengan interpolasi) diterapkan pada kedua peta fitur — BEV dan RGB — menghasilkan potongan berukuran 3×3 dari masing-masing modalitas. Kedua potongan ini digabung dengan **fusi rata-rata elemen-per-elemen** (menjumlah nilai fitur bersesuaian dari kedua modalitas lalu membaginya dua). Hasil fusi diteruskan ke dua cabang *fully connected* berukuran 256 unit: satu memprediksi skor objektif (ada objek atau tidak) lewat *cross-entropy*, satu lagi meregresi pergeseran posisi dan dimensi kotak (Δx, Δy, Δz, Δpanjang, Δlebar, Δtinggi) lewat *Smooth L1 loss* (fungsi galat regresi yang tidak terlalu sensitif terhadap nilai pencilan). Proposal yang tumpang tindih dirampingkan dengan *Non-Maximum Suppression* pada ambang IOU 0,8 di BEV, menyisakan 1.024 proposal saat pelatihan dan 300–1.024 proposal per kelas saat inferensi.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI 3D (mobil) | AP 3D | kompetitif/unggul |
-| KITTI (pejalan/pesepeda) | AP 3D | akurat untuk objek kecil |
-| Efisiensi | memori | lebih hemat dari MV3D |
+Diagram berikut merangkum alur data dari kedua modalitas sampai kotak 3D akhir:
 
-## Temuan Kunci
-- Fusi pada proposal meningkatkan objek kecil.
-- Fitur resolusi tinggi penting.
-- Crop-and-resize menyelaraskan fitur.
-- Efisiensi memori tercapai.
+```
+BEV LiDAR (6 kanal)              Citra RGB
+      |                               |
+      v                               v
+ Encoder-Decoder VGG-16        Encoder-Decoder VGG-16
+ (fitur resolusi penuh)        (fitur resolusi penuh)
+      |                               |
+      +---------------+---------------+
+                      v
+        RPN: crop-and-resize 3x3
+        per anchor, fusi rata-rata
+                      |
+                      v
+     ~1.024 proposal 3D (NMS BEV, IOU 0,8)
+                      |
+                      v
+     crop-and-resize 7x7, fusi rata-rata
+                      |
+                      v
+   3 lapis FC (2.048 unit): kotak 4-sudut
+   + 2 tinggi, orientasi (cos θ, sin θ), kelas
+```
 
-## Keunggulan
-- Akurat objek kecil.
-- Efisien memori.
-- Fusi pada proposal.
+### Tahap Kedua: Regresi Kotak dan Orientasi
 
-## Keterbatasan
-- Bergantung kalibrasi LiDAR-kamera.
-- Dua-tahap relatif lambat.
-- Fusi BEV kehilangan detail vertikal.
+Proposal yang lolos dipotong kembali dari peta fitur (kali ini berukuran 7×7, dengan kedalaman fitur direduksi ke 32 kanal) dan difusikan dengan cara yang sama, rata-rata elemen-per-elemen. Tiga lapis *fully connected* berukuran 2.048 unit kemudian memprediksi tiga hal: regresi kotak 3D dalam format 4-sudut-plus-2-tinggi, vektor orientasi (cos θ, sin θ), dan probabilitas kelas. Sudut akhir kotak ditentukan dengan mencocokkan sudut BEV yang paling dekat dengan arah vektor orientasi yang diregresi, sehingga ambiguitas arah terselesaikan tanpa perlu memprediksi sudut secara langsung dalam radian.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-AVOD memperkuat fusi LiDAR-kamera pada tahap proposal dalam klaster Deteksi 3D; prinsip fusi awal relevan bagi desain fusi RGB+Depth.
+Evaluasi dilakukan pada tolok ukur KITTI 3D Object Detection, dengan metrik AP 3D dan AP BEV pada tiga tingkat kesulitan (mudah, moderat, sulit) dan ambang IOU 0,7 untuk mobil serta 0,5 untuk pejalan kaki dan pesepeda. Pada set uji, untuk kelas mobil AVOD mencapai AP 3D 81,94% (mudah), 71,88% (moderat), dan 66,38% (sulit), dengan waktu proses 0,10 detik per citra pada GPU Titan Xp. Sebagai pembanding, MV3D memerlukan 0,36 detik dan memperoleh AP 3D moderat 62,35%; VoxelNet 0,23 detik dengan 65,11%; F-PointNet 0,17 detik dengan 70,39%. AVOD dengan demikian unggul pada akurasi mobil sekaligus lebih cepat 1,7 kali dibandingkan F-PointNet.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Deteksi 3D** yang baik dibaca berdampingan:
+| Kelas | AP 3D Mudah | AP 3D Moderat | AP 3D Sulit |
+|---|---|---|---|
+| Mobil | 81,94% | 71,88% | 66,38% |
+| Pejalan kaki | 50,80% | 42,81% | 40,88% |
+| Pesepeda | 64,00% | 52,18% | 46,61% |
 
-- [087 - 2018 - VoxelNet - Deteksi 3D](./087%20-%202018%20-%20VoxelNet%20-%20Deteksi%203D.md)
-- [088 - 2019 - PointPillars - Deteksi 3D](./088%20-%202019%20-%20PointPillars%20-%20Deteksi%203D.md)
-- [089 - 2019 - PointRCNN - Deteksi 3D](./089%20-%202019%20-%20PointRCNN%20-%20Deteksi%203D.md)
-- [090 - 2018 - Frustum PointNets - Deteksi 3D](./090%20-%202018%20-%20Frustum%20PointNets%20-%20Deteksi%203D.md)
-- [091 - 2017 - MV3D - Deteksi 3D](./091%20-%202017%20-%20MV3D%20-%20Deteksi%203D.md)
-- [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md)
-- [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md)
-- [095 - 2019 - Pseudo-LiDAR - Deteksi 3D](./095%20-%202019%20-%20Pseudo-LiDAR%20-%20Deteksi%203D.md)
+Untuk pejalan kaki, AVOD sedikit lebih unggul daripada F-PointNet pada AP BEV, tetapi tertinggal tipis pada AP 3D moderat (42,81% berbanding 44,89%). Untuk pesepeda, AVOD tertinggal lebih jauh dari F-PointNet (52,18% berbanding 56,77% pada moderat); penulis mengaitkan selisih ini dengan bias jumlah contoh pesepeda yang sedikit pada data latih KITTI, bukan kelemahan arsitektural yang mendasar. Studi ablasi pada set validasi menunjukkan bahwa penggantian ekstraktor fitur biasa dengan arsitektur *encoder-decoder* beresolusi tinggi menaikkan AP moderat pejalan kaki dan pesepeda secara signifikan, sementara fusi RGB pada RPN (dibandingkan RPN yang hanya memakai BEV) menambah beberapa poin persentase AP pada kedua kelas objek kecil tersebut — mengonfirmasi bahwa resolusi tinggi dan fusi dini memang menyasar persoalan objek kecil yang menjadi motivasi utama makalah. Dari sisi efisiensi, model memiliki 38,073 juta parameter (sekitar 16% dari ukuran MV3D) dan memerlukan sekitar 231,263 miliar operasi hitung (FLOPs) per citra, dengan penggunaan memori GPU sekitar 2 GB saat inferensi.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Deteksi 3D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kelebihan dan Keterbatasan
 
-## Glosarium Istilah (tema Deteksi 3D)
-Istilah penting untuk memahami makalah ini:
+Kelebihan AVOD meliputi kecepatan *real-time* (10 Hz) dengan jejak memori rendah, cocok untuk perangkat keras kendaraan otonom yang terbatas; akurasi mobil yang melampaui MV3D dan VoxelNet; representasi kotak 3D yang lebih ringkas dan konsisten secara geometris dibandingkan format 8-sudut MV3D; serta perbaikan nyata pada deteksi objek kecil berkat fusi dini dan fitur beresolusi tinggi. Regresi orientasi lewat vektor (cos θ, sin θ) juga menghindari kegagalan umum pada metode yang meregresi sudut secara langsung.
 
-- **Deteksi 3D** — Prediksi kotak 3D beorientasi (x,y,z,l,w,h,yaw).
-- **LiDAR** — Sensor laser menghasilkan point cloud akurat.
-- **BEV** — Bird's-Eye View; proyeksi tampak-atas.
-- **Voxel/pillar** — Diskretisasi point cloud ke sel 3D / kolom.
-- **Fusi LiDAR-kamera** — Penggabungan geometri LiDAR dan tekstur kamera.
-- **Frustum** — Volume 3D dibatasi deteksi 2D pada citra.
-- **Pseudo-LiDAR** — Point cloud dari depth kamera.
-- **KITTI/nuScenes** — Benchmark deteksi 3D berkendara.
-- **AP 3D / NDS** — Metrik deteksi 3D (NDS khusus nuScenes).
-- **Kalibrasi sensor** — Penyelarasan koordinat antar-sensor.
+Keterbatasan yang diakui penulis adalah kinerja pesepeda yang masih di bawah metode berbasis titik seperti F-PointNet, yang dikaitkan dengan kelangkaan contoh pada data latih. Dari sisi rekayasa, arsitektur dua tahap (RPN diikuti jaringan penyempurnaan) tetap menanggung biaya komputasi tambahan dibandingkan detektor satu tahap, meski AVOD sudah jauh lebih efisien daripada pendahulunya. Secara konseptual, representasi BEV dengan lima irisan ketinggian tetap merupakan diskritisasi kasar terhadap struktur vertikal sesungguhnya, sehingga objek dengan variasi ketinggian halus (misalnya bagian tubuh pejalan kaki) tidak seluruhnya terekam sebelum fusi terjadi. Metode ini juga bergantung pada kalibrasi geometris yang akurat antara LiDAR dan kamera, karena operasi *crop-and-resize* memerlukan proyeksi titik 3D yang tepat ke kedua bidang citra.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kaitan dengan Bab Lain
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+AVOD merupakan penyempurnaan langsung atas [091 - 2017 - MV3D - Deteksi 3D](./091%20-%202017%20-%20MV3D%20-%20Deteksi%203D.md): keduanya memakai BEV LiDAR dan RGB, tetapi AVOD memindahkan titik fusi ke tahap proposal dan mengganti ekstraktor fitur dengan arsitektur beresolusi tinggi. Prinsip menjaga resolusi fitur untuk objek kecil sejalan dengan gagasan [090 - 2018 - Frustum PointNets - Deteksi 3D](./090%20-%202018%20-%20Frustum%20PointNets%20-%20Deteksi%203D.md), yang menyelesaikan masalah serupa lewat pendekatan berbasis titik alih-alih fusi peta fitur. Gagasan fusi LiDAR-kamera pada resolusi tinggi ini kemudian diteruskan dan diperluas oleh metode yang lebih baru pada klaster yang sama, termasuk [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md) dan [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md), yang masing-masing mengusulkan skema fusi lain antara citra dan *point cloud*.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-AVOD membangkitkan proposal 3D dari fusi fitur BEV LiDAR dan RGB beresolusi tinggi, meningkatkan deteksi objek kecil dan efisiensi memori dibanding MV3D.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `ku2018avod` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 092/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `ku2018avod`. Ringkasan yang aman dikutip: "AVOD memfusikan fitur BEV LiDAR dan RGB pada tahap pengusulan proposal memakai ekstraktor fitur beresolusi tinggi bergaya FPN, mencapai AP 3D 71,88% pada kelas mobil tingkat moderat di KITTI dengan waktu proses 0,10 detik per citra dan 38,073 juta parameter." Angka-angka AP 3D/BEV per kelas, jumlah parameter (38,073 juta), FLOPs (231,263 miliar), memori GPU (2 GB), serta rincian studi ablasi diperoleh dari pembacaan otomatis naskah arXiv dan sebaiknya dicocokkan ulang dengan tabel asli sebelum dikutip dalam karya formal, khususnya nilai *Average Heading Similarity* (AHS) dan angka ablasi per komponen yang tidak direproduksi lengkap di bab ini.
