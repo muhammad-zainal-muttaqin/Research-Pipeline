@@ -1,201 +1,96 @@
 # 082 - Antipodal Robotic Grasping Using Generative Residual Convolutional Neural Network
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 082 dari 154 |
 | Kunci BibTeX | `kumra2020grconvnet` |
-| Judul | Antipodal Robotic Grasping Using Generative Residual Convolutional Neural Network |
-| Penulis | Kumra, Sulabh; Joshi, Shirin; Sahin, Ferat |
+| Judul asli | Antipodal Robotic Grasping using Generative Residual Convolutional Neural Network |
+| Penulis | Sulabh Kumra, Shirin Joshi, Ferat Sahin |
 | Tahun | 2020 |
-| Venue / Jurnal | Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) |
-| Tema klaster | Grasp Robotik |
-| Kata kunci | grasp, generative residual, RGB-D, antipodal, Cornell/Jacquard |
+| Venue | IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS 2020), hlm. 9626–9633 |
+| Tema | Grasp Robotik |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1909.04810
+- **Google Scholar:** https://scholar.google.com/scholar?q=Antipodal%20Robotic%20Grasping%20Using%20Generative%20Residual%20Convolutional%20Neural%20Network
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Antipodal%20Robotic%20Grasping%20Using%20Generative%20Residual%20Convolutional%20Neural%20Network&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-grasp-robotik)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Antipodal%20Robotic%20Grasping%20Using%20Generative%20Residual%20Convolutional%20Neural%20Network
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Antipodal%20Robotic%20Grasping%20Using%20Generative%20Residual%20Convolutional%20Neural%20Network&sort=relevance
+Makalah ini memperkenalkan GR-ConvNet (*Generative Residual Convolutional Neural Network*), sebuah jaringan saraf konvolusi yang memprediksi cengkeraman robotik langsung dari citra suatu adegan. Tugas yang dipecahkan adalah *robotic grasping*: menentukan di mana dan bagaimana sebuah lengan robot berpenjepit dua jari harus menutup untuk mengangkat objek yang belum pernah dilihat sebelumnya. GR-ConvNet menerima citra masukan *n*-kanal — bisa berupa RGB, kedalaman (*depth*), atau gabungan RGB-D (warna empat kanal digabung dengan satu kanal kedalaman) — dan menghasilkan tiga peta prediksi seukuran citra masukan yang, pada setiap piksel, menyatakan mutu, orientasi, dan lebar cengkeraman yang berpusat di piksel itu.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Rumusan ini bersifat generatif dan per-piksel: alih-alih menilai sejumlah kotak kandidat satu per satu, jaringan menghasilkan seluruh peta cengkeraman untuk citra penuh dalam satu evaluasi berkecepatan sekitar 20 milidetik. Pada dua tolok ukur standar, model ini mencapai akurasi 97,7% pada dataset Cornell dan 94,6% pada dataset Jacquard, serta tingkat keberhasilan cengkeraman 95,4% pada objek rumah tangga dan 93% pada objek adversarial ketika diuji pada lengan robot fisik 7 derajat kebebasan. GR-ConvNet menjadi salah satu baseline kuat untuk cengkeraman berbasis RGB-D di klaster ini.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 9626--9633 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Jaringan grasp generatif residual yang memprediksi grasp antipodal per-piksel dari input RGB-D n-kanal untuk grasp multi-objek dengan akurasi tinggi.
+Mendeteksi cengkeraman berbeda dari mendeteksi objek. Deteksi objek cukup menandai kotak pembatas dan kelas; cengkeraman menuntut geometri yang dapat dieksekusi lengan robot: posisi titik cengkeram, sudut rotasi penjepit, dan bukaan jari. Representasi baku yang dipakai bidang ini adalah *grasp rectangle* (kotak cengkeraman), yaitu kotak berorientasi yang dua sisinya mewakili pelat penjepit dan sudutnya mewakili orientasi tangan. Istilah *antipodal* merujuk pada cengkeraman dua jari yang menekan objek dari dua sisi berlawanan sepanjang satu garis lurus — model kontak paling sederhana yang tetap stabil secara fisik.
 
-## Abstrak (Parafrase)
-GR-ConvNet (Generative Residual Convolutional Network) memprediksi peta grasp antipodal per-piksel (quality, angle, width) dari input RGB-D (n-kanal). Dengan blok residual, ia lebih akurat dari GG-CNN, mendukung grasp multi-objek, mencapai akurasi ~97%/95% pada Cornell/Jacquard, dan divalidasi pada robot nyata.
+Pendekatan awal memperlakukan pencarian cengkeraman sebagai klasifikasi banyak kandidat: sistem seperti yang dibahas pada bab 080 mengevaluasi ribuan kotak cengkeraman calon dan memilih yang terbaik, sehingga lambat dan tidak sesuai untuk kendali waktu nyata. GG-CNN pada bab 081 mengubah paradigma menjadi generatif — memprediksi satu cengkeraman per piksel secara langsung — dan sangat ringan, tetapi jaringannya dangkal sehingga akurasinya terbatas dan sulit menangani objek yang bervariasi. GR-ConvNet mengambil kerangka generatif per-piksel dari GG-CNN, lalu memperdalam jaringan dengan blok residual agar akurasi naik tanpa mengorbankan kecepatan waktu nyata, sekaligus memanfaatkan fusi warna dan kedalaman.
 
-## Latar Belakang & Konteks
-Grasp perlu akurat, cepat, dan general untuk banyak objek/multi-objek; pendekatan sebelumnya (GG-CNN) ringan namun akurasinya dapat ditingkatkan.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Grasp perlu akurat sekaligus cepat.
-- Generalisasi ke banyak objek/multi-objek.
-- GG-CNN ringan namun akurasi bisa ditingkatkan.
-- Fusi RGB dan kedalaman perlu dimanfaatkan.
-- Validasi robot nyata diperlukan.
+Gagasan inti GR-ConvNet adalah memisahkan prediksi cengkeraman menjadi tiga besaran per-piksel yang mudah dipelajari jaringan, lalu merakit kembali cengkeraman terbaik dari peta-peta itu. Untuk setiap piksel citra, jaringan memprediksi: (1) *grasp quality* Q, skor antara 0 dan 1 yang menyatakan seberapa mungkin cengkeraman berpusat di piksel itu berhasil; (2) sudut orientasi Θ; dan (3) lebar bukaan penjepit W dalam piksel. Piksel dengan Q tertinggi menunjuk pusat cengkeraman terbaik, dan nilai Θ serta W pada piksel itu melengkapi geometrinya.
 
-## Tujuan & Pertanyaan Penelitian
-- Memprediksi grasp antipodal per-piksel dari RGB-D.
-- Meningkatkan akurasi via blok residual.
-- Mendukung grasp multi-objek & robot nyata.
+Kesulitan teknisnya terletak pada sudut. Orientasi penjepit bersifat *antipodal*, sehingga sudut Θ dan Θ+180° menghasilkan cengkeraman fisik yang sama; sudut juga melingkar, sehingga −90° dan +90° berdampingan. Regresi langsung terhadap nilai Θ akan membingungkan jaringan di titik lipatan ini. GR-ConvNet menghindarinya dengan tidak memprediksi Θ secara langsung, melainkan dua komponen cos(2Θ) dan sin(2Θ). Penggandaan sudut membuat Θ dan Θ+180° dipetakan ke nilai yang sama, dan pasangan (cos, sin) bersifat kontinu tanpa lompatan, sehingga menghasilkan target regresi yang mulus.
 
-## Tinjauan Terdahulu / Posisi Literatur
-GR-ConvNet menyempurnakan grasp generatif (GG-CNN) dengan arsitektur residual.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Masukan dan Representasi Cengkeraman
 
-- GG-CNN — pendahulu generatif.
-- Residual blocks (ResNet).
-- RGB-D input (n-channel).
-- Cornell/Jacquard dataset.
+Jaringan menerima citra 224×224 piksel dengan *n* kanal. Pada mode RGB-D, kanal warna dan kanal kedalaman digabung menjadi masukan tunggal sehingga jaringan dapat memanfaatkan tekstur (dari warna) dan geometri (dari kedalaman) sekaligus. Keluarannya adalah empat peta beresolusi 224×224: satu peta Q, dua peta sudut (cos 2Θ dan sin 2Θ), dan satu peta lebar W. Sudut hasil rekonstruksi berada pada rentang [−π/2, π/2]. Karena keempat peta seukuran citra masukan, setiap piksel merupakan kandidat pusat cengkeraman, dan satu evaluasi jaringan menghasilkan seluruh medan kandidat sekaligus — inilah arti "generatif" pada konteks ini.
 
-## Metodologi & Arsitektur
-Arsitektur generative residual (encoder konvolusi + blok residual + decoder) menerima input RGB-D n-kanal dan menghasilkan tiga peta per-piksel (quality/angle/width); grasp terbaik dipilih dari peta quality; divalidasi pada robot.
+### Arsitektur Generatif Residual
 
-Komponen / langkah metodologis utama:
+Struktur jaringan mengikuti pola *encoder–decoder*. Bagian awal berisi tiga lapis konvolusi yang secara bertahap menurunkan resolusi spasial dari 224×224 menjadi 56×56 sambil menambah jumlah kanal fitur; tahap ini memadatkan citra menjadi representasi fitur yang ringkas. Bagian tengah berisi lima blok residual. Blok residual adalah susunan konvolusi yang keluarannya dijumlahkan kembali dengan masukannya melalui koneksi pintas (*skip connection*); penjumlahan ini membuat gradien mengalir lebih mudah saat pelatihan sehingga jaringan dapat diperdalam tanpa gejala gradien menghilang. Bagian akhir berisi lapis konvolusi transpos (*transpose convolution*), yaitu operasi yang menaikkan kembali resolusi dari 56×56 ke 224×224 agar keluaran sepadan dengan citra masukan piksel demi piksel. Seluruh jaringan hanya memuat 1.900.900 parameter yang dapat dilatih — tergolong kecil untuk jaringan konvolusi dalam — dan justru keringkasan inilah yang memungkinkan inferensi ~20 milidetik.
 
-- Generative residual architecture.
-- Input RGB-D (n-channel).
-- Output peta grasp per-piksel (quality/angle/width).
-- Blok residual untuk akurasi.
-- Grasp multi-objek.
-- Validasi robot nyata.
+Alur data ringkas dari citra ke peta cengkeraman:
 
-## Kontribusi Utama
-1. Grasp generatif residual akurat dari RGB-D.
-2. Mendukung multi-objek.
-3. Akurasi ~97%/95% (Cornell/Jacquard).
-4. Divalidasi pada robot nyata.
+```
+citra RGB-D 224x224xN
+        │
+   ┌────▼─────┐  3 konvolusi
+   │ encoder  │  224 -> 112 -> 56 (resolusi turun)
+   └────┬─────┘
+   ┌────▼─────┐  5 blok residual
+   │ residual │  fitur diperdalam, resolusi 56x56 tetap
+   └────┬─────┘
+   ┌────▼─────┐  konvolusi transpos
+   │ decoder  │  56 -> 112 -> 224 (resolusi naik)
+   └────┬─────┘
+        │
+   4 peta 224x224:  Q │ cos2Θ │ sin2Θ │ W
+        │
+   pilih piksel Q maksimum -> (posisi, Θ, W) cengkeraman
+```
 
-## Rincian Eksperimen
-Diuji pada Cornell dan Jacquard dengan metrik akurasi grasp, plus eksperimen robot fisik.
+Diagram di atas menunjukkan bahwa resolusi diturunkan agar fitur dapat dipadatkan lalu dinaikkan kembali agar prediksi tetap per-piksel; blok residual bekerja pada resolusi rendah tempat komputasi paling murah.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Pelatihan
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Cornell | akurasi grasp | ~97% |
-| Jacquard | akurasi grasp | ~95% |
-| Robot nyata | success rate | tinggi |
+Pelatihan memakai *smooth L1 loss* (juga disebut *Huber loss*): fungsi galat yang berperilaku kuadratik untuk selisih kecil dan linear untuk selisih besar, sehingga tidak terlalu sensitif terhadap pencilan dan mencegah gradien meledak. Optimasi memakai Adam dengan laju belajar 10⁻³ dan ukuran *batch* 8. Dataset Cornell yang berukuran kecil diperbesar lewat augmentasi (rotasi dan pergeseran acak) menjadi sekitar 51.000 contoh agar cukup untuk melatih jaringan; dataset Jacquard yang sudah besar (sekitar 54.000 citra dengan 1,1 juta anotasi cengkeraman) dipakai apa adanya.
 
-## Temuan Kunci
-- Blok residual meningkatkan akurasi grasp.
-- RGB-D lebih baik dari depth saja pada kasus tertentu.
-- Grasp generatif per-piksel efektif multi-objek.
-- Validasi robot memperkuat kepraktisan.
+### Evaluasi dan Eksekusi pada Robot
 
-## Keunggulan
-- Akurasi tinggi.
-- Multi-objek.
-- Divalidasi robot.
+Sebuah cengkeraman prediksi dinyatakan benar bila memenuhi dua syarat sekaligus terhadap cengkeraman kebenaran: (1) IoU (*Intersection over Union* — rasio luas irisan terhadap luas gabungan dua kotak) lebih dari 25%, dan (2) selisih sudut kurang dari 30°. Pada robot fisik, peta Q dipakai untuk memilih piksel terbaik, nilai Θ dan W pada piksel itu diubah ke koordinat dunia lewat kalibrasi kamera, lalu lengan digerakkan untuk mengeksekusi cengkeraman.
 
-## Keterbatasan
-- Grasp planar (bukan 6-DoF penuh).
-- Bergantung kualitas RGB-D.
-- Objek berhimpitan tetap menantang.
+## Eksperimen dan Hasil
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Evaluasi dilakukan pada dua dataset baku. Pada Cornell, pengujian memakai dua skema validasi silang: *image-wise* (IW), yang membagi data per citra sehingga objek yang sama bisa muncul di latih dan uji, dan *object-wise* (OW), yang memisahkan per objek sehingga model diuji pada objek yang benar-benar baru — OW menguji generalisasi lebih ketat. Varian RGB-D mencapai 97,7% (IW) dan 96,6% (OW) dengan inferensi 20 milidetik. Sebagai pembanding, GG-CNN (bab 081) dilaporkan pada kisaran 73% (IW) dan 69% (OW) pada 19 milidetik: GR-ConvNet menaikkan akurasi secara besar dengan kecepatan hampir setara. Model FCGN berbasis ResNet-101 mencapai akurasi setara GR-ConvNet tetapi dengan inferensi 117 milidetik, sekitar enam kali lebih lambat; interpretasinya, GR-ConvNet menandingi akurasi jaringan yang jauh lebih berat sambil mempertahankan kelayakan waktu nyata.
 
-## Relevansi terhadap Tema Tinjauan
-GR-ConvNet adalah baseline kuat grasp berbasis RGB-D dalam tinjauan; menegaskan manfaat fusi RGB+Depth untuk manipulasi.
+Ablasi modalitas masukan pada Cornell memperjelas kontribusi tiap kanal: kedalaman saja mencapai 93,2% (IW), RGB saja 96,6% (IW), dan RGB-D 97,7% (IW). Urutan ini menunjukkan warna lebih informatif daripada kedalaman untuk tugas ini, tetapi menggabungkan keduanya tetap memberi kenaikan — bukti bahwa fusi RGB-D menyumbang informasi yang tidak dimiliki masing-masing kanal sendirian. Pada Jacquard yang lebih besar dan beragam, model mencapai 94,6%.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Grasp Robotik** yang baik dibaca berdampingan:
+Pengujian fisik memakai lengan robot 7 derajat kebebasan (Baxter) dengan penjepit paralel dan kamera Intel RealSense D435. Pada objek rumah tangga, keberhasilan 95,4% (334 dari 350 percobaan); pada objek adversarial berbentuk sulit, 93% (93 dari 100); pada adegan berjejal (*cluttered*), sekitar 93,5%. Angka-angka ini menunjukkan akurasi tinggi pada dataset diikuti keberhasilan yang tetap tinggi saat dipindahkan ke perangkat keras nyata, termasuk pada objek di luar data latih.
 
-- [080 - 2015 - Deep Learning Robotic Grasps (Lenz dkk.) - Grasp Robotik](./080%20-%202015%20-%20Deep%20Learning%20Robotic%20Grasps%20%28Lenz%20dkk.%29%20-%20Grasp%20Robotik.md)
-- [081 - 2018 - GG-CNN - Grasp Robotik](./081%20-%202018%20-%20GG-CNN%20-%20Grasp%20Robotik.md)
-- [083 - 2022 - GR-ConvNet v2 - Grasp Robotik](./083%20-%202022%20-%20GR-ConvNet%20v2%20-%20Grasp%20Robotik.md)
-- [084 - 2020 - GraspNet-1Billion - Grasp Robotik](./084%20-%202020%20-%20GraspNet-1Billion%20-%20Grasp%20Robotik.md)
-- [085 - 2023 - BCMFNet (Bilateral Cross-Modal Fusion) - Grasp Robotik](./085%20-%202023%20-%20BCMFNet%20%28Bilateral%20Cross-Modal%20Fusion%29%20-%20Grasp%20Robotik.md)
-- [086 - 2018 - Jacquard Dataset - Grasp Robotik](./086%20-%202018%20-%20Jacquard%20Dataset%20-%20Grasp%20Robotik.md)
+## Kelebihan dan Keterbatasan
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Grasp Robotik** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Kelebihan utama: akurasi setara metode terbaik pada masanya dengan biaya komputasi kecil (1,9 juta parameter, ~20 milidetik), rumusan generatif per-piksel yang mendukung deteksi banyak cengkeraman sekaligus untuk adegan multi-objek, fleksibilitas masukan *n*-kanal, dan validasi langsung pada robot fisik. Penanganan sudut lewat cos(2Θ)/sin(2Θ) menyelesaikan masalah periodisitas orientasi dengan rapi.
 
-## Glosarium Istilah (tema Grasp Robotik)
-Istilah penting untuk memahami makalah ini:
+Keterbatasan: cengkeraman yang dihasilkan bersifat planar — kotak berorientasi pada bidang citra, bukan cengkeraman 6 derajat kebebasan penuh yang bebas memilih arah pendekatan di ruang tiga dimensi (bandingkan dengan bab 084). Dari sisi rekayasa, kualitas prediksi bergantung pada kualitas kanal kedalaman; sensor RGB-D konsumen menghasilkan lubang dan derau pada permukaan mengilap atau tepi objek, yang dapat menurunkan akurasi. Secara konseptual, dataset Cornell sangat kecil sehingga akurasi IW yang tinggi sebagian mencerminkan kemiripan latih–uji; skema OW dan pengujian Jacquard memitigasi hal ini, tetapi objek berhimpitan pada adegan berjejal tetap menjadi kasus tersulit.
 
-- **Grasp detection** — Prediksi cengkeraman stabil untuk objek.
-- **Grasp rectangle** — Grasp sebagai kotak beorientasi (posisi, sudut, lebar).
-- **Antipodal grasp** — Cengkeraman dua-jari berlawanan.
-- **RGB-D** — Warna + kedalaman untuk geometri grasp.
-- **6-DoF grasp** — Grasp enam derajat kebebasan di ruang 3D.
-- **Cornell dataset** — Dataset grasp kecil klasik.
-- **Jacquard** — Dataset grasp sintetis berskala besar.
-- **Closed-loop** — Kontrol grasp real-time berbasis umpan-balik.
-- **Success rate** — Persentase percobaan grasp berhasil.
-- **Point cloud fusion** — Penggabungan geometri titik 3D.
+## Kaitan dengan Bab Lain
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Bab ini adalah kelanjutan langsung dari dua pendahulunya pada klaster Grasp Robotik. Dari [080 - Deep Learning Robotic Grasps (Lenz dkk.)](./080%20-%202015%20-%20Deep%20Learning%20Robotic%20Grasps%20%28Lenz%20dkk.%29%20-%20Grasp%20Robotik.md) diwarisi representasi *grasp rectangle* dan tolok ukur Cornell, tetapi paradigma klasifikasi kandidat yang lambat ditinggalkan. Dari [081 - GG-CNN](./081%20-%202018%20-%20GG-CNN%20-%20Grasp%20Robotik.md) diwarisi rumusan generatif per-piksel; GR-ConvNet memperdalamnya dengan blok residual untuk menaikkan akurasi. Penyempurnaan lanjutan dibahas pada [083 - GR-ConvNet v2](./083%20-%202022%20-%20GR-ConvNet%20v2%20-%20Grasp%20Robotik.md), sementara pendekatan cengkeraman 6 derajat kebahasan berskala besar muncul pada [084 - GraspNet-1Billion](./084%20-%202020%20-%20GraspNet-1Billion%20-%20Grasp%20Robotik.md). Dataset Jacquard yang dipakai untuk evaluasi kedua diuraikan pada [086 - Jacquard Dataset](./086%20-%202018%20-%20Jacquard%20Dataset%20-%20Grasp%20Robotik.md). Kontribusi bab ini bagi tinjauan adalah menegaskan manfaat fusi RGB-D untuk manipulasi robotik dengan biaya komputasi rendah.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Poin untuk Sitasi
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-GR-ConvNet memprediksi grasp antipodal per-piksel dari RGB-D dengan arsitektur generative residual, mencapai akurasi tinggi pada Cornell/Jacquard dan validasi robot nyata.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `kumra2020grconvnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 082/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `kumra2020grconvnet`. Ringkasan yang aman dikutip: "GR-ConvNet memprediksi cengkeraman antipodal per-piksel (mutu, sudut, lebar) dari citra RGB-D memakai arsitektur generatif residual, mencapai akurasi 97,7% pada Cornell dan 94,6% pada Jacquard dengan inferensi ~20 milidetik, serta keberhasilan 95,4% pada objek rumah tangga dengan lengan robot 7 derajat kebebasan." Angka akurasi (97,7% / 94,6%), kecepatan (~20 ms), jumlah parameter (1.900.900), dan keberhasilan robot (95,4% / 93%) berasal dari abstrak dan naskah versi HTML arXiv. Rincian yang sebaiknya diverifikasi ulang ke tabel naskah sebelum sitasi formal: angka ablasi per modalitas (D 93,2% / RGB 96,6% / RGB-D 97,7%), angka baseline pembanding (GG-CNN 73% / 69%; FCGN 117 ms), keberhasilan pada adegan berjejal (±93,5%), dan identitas persis perangkat keras (lengan Baxter, kamera RealSense D435) yang dikutip dari ekstraksi HTML, bukan dari PDF resmi.

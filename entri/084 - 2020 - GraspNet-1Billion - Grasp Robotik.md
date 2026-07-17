@@ -1,201 +1,89 @@
 # 084 - GraspNet-1Billion: A Large-Scale Benchmark for General Object Grasping
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 084 dari 154 |
 | Kunci BibTeX | `fang2020graspnet` |
-| Judul | GraspNet-1Billion: A Large-Scale Benchmark for General Object Grasping |
-| Penulis | Fang, Hao-Shu; Wang, Chenxi; Gou, Minghao; Lu, Cewu |
+| Judul asli | GraspNet-1Billion: A Large-Scale Benchmark for General Object Grasping |
+| Penulis | Hao-Shu Fang, Chenxi Wang, Minghao Gou, Cewu Lu |
 | Tahun | 2020 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Grasp Robotik |
-| Kata kunci | grasp, benchmark, 6-DoF, point cloud, dataset besar |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2020) |
+| Tema | Grasp Robotik |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **Halaman proyek (dataset + kode):** https://graspnet.net/
+- **Kode baseline (GitHub):** https://github.com/graspnet/graspnet-baseline
+- **Google Scholar:** https://scholar.google.com/scholar?q=GraspNet-1Billion%3A%20A%20Large-Scale%20Benchmark%20for%20General%20Object%20Grasping
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=GraspNet-1Billion%3A%20A%20Large-Scale%20Benchmark%20for%20General%20Object%20Grasping&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-grasp-robotik)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=GraspNet-1Billion%3A%20A%20Large-Scale%20Benchmark%20for%20General%20Object%20Grasping
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=GraspNet-1Billion%3A%20A%20Large-Scale%20Benchmark%20for%20General%20Object%20Grasping&sort=relevance
+Makalah ini bukan usulan satu arsitektur, melainkan sebuah *benchmark*: dataset berskala besar beserta protokol evaluasi baku untuk masalah *grasping* objek umum, yaitu memprediksi cara sebuah lengan robot mencengkeram objek yang sebelumnya tidak dikenal. GraspNet-1Billion menyediakan 190 pemandangan (*scene*) meja berisi tumpukan objek, direkam sebagai 97.280 citra RGB-D (citra warna yang setiap pikselnya juga menyimpan jarak ke kamera), dan dianotasi dengan lebih dari 1,1 miliar *grasp pose* enam derajat kebebasan (6-DoF). Setiap anotasi grasp diberi label kualitas melalui perhitungan analitik, bukan pelabelan manual satu per satu, sehingga jumlah anotasi dapat mencapai orde miliaran.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Kontribusi makalah ada tiga: dataset berskala besar dengan anotasi grasp padat, metrik evaluasi analitik yang menilai grasp apa pun tanpa memerlukan daftar jawaban benar yang lengkap, dan satu jaringan *baseline* ujung-ke-ujung (*end-to-end*) yang memprediksi grasp langsung dari *point cloud* (himpunan titik 3D hasil proyeksi citra kedalaman). Ketiganya bersama-sama menstandarkan penilaian riset grasp, yang sebelumnya sulit dibandingkan antar-makalah karena setiap kelompok memakai objek, perangkat, dan definisi keberhasilan yang berbeda.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 11444--11453 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Benchmark grasp umum berskala besar (1 miliar anotasi grasp) dengan jaringan baseline end-to-end dari point cloud RGB-D, menstandarkan evaluasi grasp 6-DoF.
+Sebelum GraspNet, dua dataset grasp berbasis pembelajaran yang paling banyak dipakai adalah Cornell Grasping Dataset dan Jacquard (bab 086). Keduanya memiliki dua keterbatasan struktural. Pertama, representasi grasp-nya *planar*: cengkeraman dinyatakan sebagai persegi panjang beorientasi pada bidang citra (posisi pusat, sudut putar, lebar), yang mengasumsikan robot mendekati objek tegak lurus dari atas. Representasi ini hanya mencakup empat derajat kebebasan efektif dan tidak dapat menyatakan pendekatan menyerong yang sering diperlukan pada objek nyata. Kedua, skalanya terbatas dan latar setnya sederhana; Cornell hanya memuat sekitar seribu citra objek tunggal, sehingga model yang dilatih padanya sukar digeneralisasikan ke tumpukan objek yang saling menutupi (*clutter*).
 
-## Abstrak (Parafrase)
-GraspNet-1Billion menyediakan dataset grasp berskala masif: 190 scene tumpukan objek dengan ~1 miliar anotasi grasp 6-DoF terlabel dari point cloud RGB-D. Makalah juga menyediakan jaringan baseline end-to-end dan metrik evaluasi baru (berbasis analitik) yang menstandarkan penilaian grasp umum, menjadi infrastruktur kunci riset grasp modern.
+Masalah kedua yang lebih halus adalah evaluasi. Pada grasp 6-DoF, ruang kemungkinan cengkeraman untuk satu objek sangat besar dan kontinu, sehingga mustahil menyusun daftar lengkap semua grasp benar sebagai acuan. Akibatnya, banyak makalah menilai metode dengan eksperimen robot fisik pada sekumpulan kecil objek pilihan sendiri. Cara ini tidak dapat direproduksi: hasil satu laboratorium tidak sebanding dengan laboratorium lain karena objek, gripper, dan kriteria "berhasil" berbeda. Bidang ini membutuhkan tolok ukur bersama yang, seperti PASCAL VOC bagi deteksi objek (bab 001), memungkinkan perbandingan adil di atas data dan metrik yang sama.
 
-## Latar Belakang & Konteks
-Dataset grasp sebelumnya (Cornell/Jacquard) kecil dan terbatas grasp planar, membatasi generalisasi dan evaluasi adil untuk grasp 6-DoF umum.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Dataset grasp lama kecil (Cornell/Jacquard).
-- Terbatas grasp planar (bukan 6-DoF).
-- Generalisasi & evaluasi adil terbatas.
-- Anotasi grasp mahal secara manual.
-- Metrik evaluasi grasp belum seragam.
+Gagasan inti makalah adalah memindahkan beban pelabelan dari manusia ke perhitungan analitik, sehingga dataset grasp 6-DoF berskala besar menjadi mungkin. Untuk setiap objek, banyak kandidat grasp disebar di permukaan modelnya, lalu tiap kandidat dinilai dengan kriteria *force-closure*: sebuah grasp dikatakan stabil bila gaya kontak kedua jari gripper mampu menahan objek terhadap gaya dan torsi sembarang. Penilaian ini dihitung otomatis dari geometri kontak, tanpa percobaan fisik.
 
-## Tujuan & Pertanyaan Penelitian
-- Menyediakan dataset grasp 6-DoF berskala masif.
-- Menyediakan baseline end-to-end & metrik baru.
-- Menstandarkan evaluasi grasp umum.
+Karena setiap objek memiliki model 3D dan pose 6D-nya di setiap *scene* diketahui, label grasp yang dihitung pada satu objek dapat diproyeksikan ke seluruh *scene* dan seluruh sudut pandang kamera secara otomatis, dengan pemeriksaan tabrakan terhadap objek lain di tumpukan. Perkalian antara jumlah objek, jumlah *scene*, jumlah sudut pandang, dan jumlah kandidat grasp per objek inilah yang menghasilkan lebih dari satu miliar anotasi. Prinsip yang sama dipakai kembali saat evaluasi: kualitas grasp apa pun yang diprediksi model dapat dinilai langsung dengan force-closure, tanpa perlu mencocokkannya dengan daftar jawaban.
 
-## Tinjauan Terdahulu / Posisi Literatur
-GraspNet menyediakan dataset & metrik grasp berskala.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Pengumpulan Data
 
-- Cornell/Jacquard — dataset kecil (pembanding).
-- Point cloud RGB-D — masukan.
-- 6-DoF grasp — target.
-- Metrik analitik grasp.
+Sebanyak 190 *scene* disusun dari 88 objek yang setiap modelnya dipindai menjadi mesh 3D bertekstur. Tiap *scene* berisi sekitar sepuluh objek yang ditumpuk pada meja. Perekaman dilakukan oleh dua kamera RGB-D berbeda kualitas yang dipasang pada lengan robot — Intel RealSense D435 dan Microsoft Kinect Azure — sehingga metode dapat diuji ketahanannya terhadap perbedaan sensor. Lengan menggerakkan kamera menyusuri lintasan tetap sehingga setiap *scene* terekam dari banyak sudut. Total 97.280 citra RGB-D terkumpul; pembagiannya konsisten dengan 512 citra per *scene*, yaitu 256 sudut pandang untuk masing-masing dari dua kamera (97.280 ÷ 190 = 512; 512 ÷ 2 = 256).
 
-## Metodologi & Arsitektur
-190 scene tumpukan objek difoto multi-view (RGB-D); anotasi ~1B grasp 6-DoF dihasilkan (analitik + verifikasi); baseline end-to-end memprediksi grasp dari point cloud; metrik evaluasi baru menilai kualitas grasp secara analitik.
+### Anotasi Grasp 6-DoF
 
-Komponen / langkah metodologis utama:
+Sebuah *grasp pose* 6-DoF dinyatakan lengkap oleh posisi titik cengkeram dalam ruang 3D, arah pendekatan gripper (vektor menuju objek), sudut putar gripper terhadap sumbu pendekatannya, serta lebar bukaan jari. Enam derajat kebebasan (tiga translasi, tiga rotasi) inilah yang membedakannya dari grasp planar. Anotasi dibangun sekali per objek: kandidat grasp disampel padat pada permukaan mesh, dinilai dengan force-closure pada beberapa nilai koefisien gesek, lalu setiap kandidat menyandang skor kualitas. Label per objek kemudian ditransfer ke setiap *scene* memakai pose 6D objek dan disaring dengan pemeriksaan tabrakan terhadap tumpukan. Rata-rata, akumulasi ini menghasilkan lebih dari sepuluh ribu grasp berlabel per citra (1,1 miliar ÷ 97.280 ≈ 1,1 × 10⁴), padat jauh melampaui dataset planar terdahulu.
 
-- Dataset 190 scene, ~1B grasp 6-DoF.
-- Anotasi dari point cloud RGB-D multi-view.
-- Baseline end-to-end (point cloud -> grasp).
-- Metrik evaluasi grasp analitik baru.
-- Skenario tumpukan (clutter).
-- Benchmark grasp umum.
+Diagram berikut merangkum aliran dari objek tunggal sampai anotasi tingkat *scene*:
 
-## Kontribusi Utama
-1. Dataset grasp 6-DoF berskala terbesar saat rilis.
-2. Baseline end-to-end dari point cloud.
-3. Metrik evaluasi grasp baru & seragam.
-4. Infrastruktur kunci riset grasp modern.
+```
+  88 objek           190 scene              97.280 citra RGB-D
+  (mesh 3D)          (tumpukan ~10 objek)   (2 kamera x 256 view)
+      │                    │                        │
+      ▼                    ▼                        ▼
+  sampel grasp    ┌── pose 6D objek ──┐     proyeksi label +
+  + skor force-   │   diketahui        │ ──> cek tabrakan per view
+  closure         └────────────────────┘            │
+      │                                              ▼
+      └──────────────> label grasp per objek ──> >1,1 miliar grasp 6-DoF
+```
 
-## Rincian Eksperimen
-Menyediakan benchmark GraspNet dengan metrik grasp analitik, dievaluasi oleh baseline dan banyak metode berikutnya.
+### Metrik Evaluasi
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Metrik utama adalah AP (*Average Precision*) berbasis force-closure. Model diminta menghasilkan sejumlah grasp untuk sebuah *scene*; tiap grasp prediksi dinilai langsung apakah *force-closure*-nya terpenuhi pada koefisien gesek tertentu, lalu dihitung Precision@k, yaitu proporsi grasp valid di antara k prediksi berperingkat teratas. Nilai AP adalah rata-rata Precision@k tersebut di seluruh nilai k dan seluruh koefisien gesek yang diuji. Koefisien gesek kecil berarti syarat stabil lebih ketat, sehingga notasi seperti AP0.8 dan AP0.4 menandai AP pada koefisien gesek 0,8 dan 0,4; angka AP0.4 selalu lebih rendah karena syaratnya lebih keras. Karena penilaian bersifat analitik, metrik ini menilai grasp apa pun tanpa daftar jawaban lengkap — inilah yang membuat evaluasi 6-DoF berskala besar menjadi praktis.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| GraspNet benchmark | AP grasp | standar evaluasi 6-DoF |
-| Dataset | skala | ~1B grasp, 190 scene |
-| Baseline | end-to-end | point cloud -> grasp |
+### Jaringan Baseline
 
-## Temuan Kunci
-- Skala data besar penting untuk generalisasi grasp.
-- Grasp 6-DoF lebih umum dari planar.
-- Metrik seragam memungkinkan perbandingan adil.
-- Point cloud RGB-D memadai untuk grasp umum.
+*Baseline* memproses *point cloud* *scene* dengan tulang punggung (*backbone*) PointNet++, jaringan yang mengekstrak fitur langsung dari titik 3D tak beraturan. Prediksi grasp dipecah menjadi beberapa tahap terpisah. Tahap pertama memilih titik-titik kandidat dan memprediksi arah pendekatan gripper di tiap titik. Tahap kedua, bergantung pada arah tersebut, memprediksi parameter operasi gripper — sudut putar dalam bidang, lebar bukaan, dan kedalaman cengkeram. Pemisahan bertahap ini menyederhanakan ruang keluaran yang berdimensi tinggi menjadi sub-prediksi yang lebih mudah dipelajari, dan menghasilkan grasp 6-DoF utuh langsung dari satu *point cloud* tanpa tahap usulan eksternal.
 
-## Keunggulan
-- Dataset & metrik standar.
-- Grasp 6-DoF berskala.
-- Baseline end-to-end.
+## Eksperimen dan Hasil
 
-## Keterbatasan
-- Anotasi analitik (bukan seluruhnya manual).
-- Fokus setup tumpukan tertentu.
-- Komputasi pemrosesan point cloud besar.
+Protokol pengujian membagi 190 *scene* menjadi 100 *scene* latih dan 90 *scene* uji. Bagian uji dipecah lagi menjadi tiga tingkat generalisasi berdasarkan kemiripan objeknya dengan objek latih: *seen* (objek yang sama dengan saat latih), *similar* (objek berbeda tetapi mirip), dan *novel* (objek yang sama sekali baru). Pembagian ini memisahkan hafalan dari generalisasi sejati: performa pada *novel* menunjukkan seberapa baik model mencengkeram objek yang belum pernah dilihat.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Menurut hasil yang dilaporkan repositori resmi untuk kamera RealSense (dengan pascapemrosesan deteksi tabrakan satu tampilan), *baseline* mencapai AP 47,47 pada *seen*, 42,27 pada *similar*, dan 16,61 pada *novel*. Pola angkanya informatif: performa turun tajam dari *similar* ke *novel*, memperlihatkan bahwa generalisasi ke bentuk objek yang benar-benar baru adalah bagian tersulit dari masalah ini dan menyisakan ruang besar untuk perbaikan. Nilai AP yang jauh di bawah 100 juga menegaskan bahwa *benchmark* ini tidak jenuh — masih menantang bagi metode sesudahnya, yang justru menjadi tujuan sebuah tolok ukur.
 
-## Relevansi terhadap Tema Tinjauan
-GraspNet-1Billion adalah infrastruktur data-benchmark yang menopang riset grasp RGB-D modern dalam tinjauan (bandingkan YOLOv8-URE, BCMFNet).
+## Kelebihan dan Keterbatasan
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Grasp Robotik** yang baik dibaca berdampingan:
+Kelebihan utama adalah skala dan kebakuan: dataset grasp 6-DoF nyata terbesar pada saat rilis, dengan dua kamera untuk menguji ketahanan lintas-sensor, dan metrik analitik yang dapat direproduksi tanpa robot fisik. Kombinasi ini menjadikannya infrastruktur bersama sehingga metode baru dapat dibandingkan pada dasar yang sama.
 
-- [080 - 2015 - Deep Learning Robotic Grasps (Lenz dkk.) - Grasp Robotik](./080%20-%202015%20-%20Deep%20Learning%20Robotic%20Grasps%20%28Lenz%20dkk.%29%20-%20Grasp%20Robotik.md)
-- [081 - 2018 - GG-CNN - Grasp Robotik](./081%20-%202018%20-%20GG-CNN%20-%20Grasp%20Robotik.md)
-- [082 - 2020 - GR-ConvNet - Grasp Robotik](./082%20-%202020%20-%20GR-ConvNet%20-%20Grasp%20Robotik.md)
-- [083 - 2022 - GR-ConvNet v2 - Grasp Robotik](./083%20-%202022%20-%20GR-ConvNet%20v2%20-%20Grasp%20Robotik.md)
-- [085 - 2023 - BCMFNet (Bilateral Cross-Modal Fusion) - Grasp Robotik](./085%20-%202023%20-%20BCMFNet%20%28Bilateral%20Cross-Modal%20Fusion%29%20-%20Grasp%20Robotik.md)
-- [086 - 2018 - Jacquard Dataset - Grasp Robotik](./086%20-%202018%20-%20Jacquard%20Dataset%20-%20Grasp%20Robotik.md)
+Keterbatasannya sebagian melekat pada pilihan desain. Secara konseptual, penilaian force-closure adalah model analitik stabilitas; grasp yang lolos secara analitik belum tentu berhasil pada perangkat fisik yang memiliki gesekan, deformasi, dan galat kalibrasi nyata, sehingga AP tinggi tidak otomatis berarti tingkat keberhasilan fisik tinggi. Dari sisi rekayasa, latar set terbatas pada tumpukan objek di atas meja yang direkam dengan satu jenis gripper paralel, sehingga generalisasi ke gripper lain atau latar di luar meja tidak dijamin. Selain itu, pemrosesan *point cloud* padat menuntut komputasi yang tidak ringan untuk penerapan waktu-nyata.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Grasp Robotik** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kaitan dengan Bab Lain
 
-## Glosarium Istilah (tema Grasp Robotik)
-Istilah penting untuk memahami makalah ini:
+Bab ini berdiri sebagai lanjutan skala-besar dari dua dataset grasp planar terdahulu, terutama [086 - Jacquard Dataset](./086%20-%202018%20-%20Jacquard%20Dataset%20-%20Grasp%20Robotik.md), yang juga menempuh jalan anotasi otomatis tetapi masih pada representasi planar; GraspNet menaikkannya ke 6-DoF dan latar tumpukan. Ia melengkapi garis metode prediksi grasp planar dari citra pada [082 - GR-ConvNet](./082%20-%202020%20-%20GR-ConvNet%20-%20Grasp%20Robotik.md) dan [083 - GR-ConvNet v2](./083%20-%202022%20-%20GR-ConvNet%20v2%20-%20Grasp%20Robotik.md) dengan menyediakan tolok ukur untuk grasp berbasis geometri 3D. Metrik dan datanya kemudian menjadi acuan evaluasi bagi metode fusi RGB-D pada [085 - BCMFNet](./085%20-%202023%20-%20BCMFNet%20%28Bilateral%20Cross-Modal%20Fusion%29%20-%20Grasp%20Robotik.md). Gagasan menghasilkan grasp langsung dari data sensor tanpa tahap usulan eksternal sejalan dengan semangat detektor satu tahap pada klaster Fondasi RGB, khususnya [001 - YOLOv1](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md).
 
-- **Grasp detection** — Prediksi cengkeraman stabil untuk objek.
-- **Grasp rectangle** — Grasp sebagai kotak beorientasi (posisi, sudut, lebar).
-- **Antipodal grasp** — Cengkeraman dua-jari berlawanan.
-- **RGB-D** — Warna + kedalaman untuk geometri grasp.
-- **6-DoF grasp** — Grasp enam derajat kebebasan di ruang 3D.
-- **Cornell dataset** — Dataset grasp kecil klasik.
-- **Jacquard** — Dataset grasp sintetis berskala besar.
-- **Closed-loop** — Kontrol grasp real-time berbasis umpan-balik.
-- **Success rate** — Persentase percobaan grasp berhasil.
-- **Point cloud fusion** — Penggabungan geometri titik 3D.
+## Poin untuk Sitasi
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Kutip dengan kunci `fang2020graspnet`. Ringkasan yang aman dikutip: "GraspNet-1Billion adalah *benchmark* grasp 6-DoF berskala besar yang menyediakan 190 *scene* (97.280 citra RGB-D dari dua kamera), lebih dari 1,1 miliar anotasi grasp berbasis force-closure, sebuah metrik evaluasi analitik, dan jaringan *baseline* ujung-ke-ujung dari *point cloud*."
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-GraspNet-1Billion menyediakan dataset grasp 6-DoF berskala miliaran anotasi dari point cloud RGB-D beserta baseline dan metrik, menstandarkan evaluasi grasp umum.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `fang2020graspnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 084/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Angka yang telah terverifikasi dari halaman proyek resmi dan repositori: 190 *scene*, 88 objek, 97.280 citra RGB-D, dua kamera (RealSense D435 dan Kinect Azure), serta lebih dari 1,1 miliar grasp. Pembagian 100 *scene* latih / 90 *scene* uji terverifikasi dari ringkasan publik. Perlu diverifikasi ke naskah asli sebelum sitasi formal: (1) pembagian *scene* uji menjadi tepat 30 *seen* / 30 *similar* / 30 *novel* — belum dikonfirmasi dari sumber primer pada penulisan ini; (2) himpunan nilai koefisien gesek yang dipakai pada metrik AP (mis. rentang dan langkahnya); (3) nama dan pembagian tepat submodul *baseline* (ApproachNet / OperationNet / ToleranceNet) — struktur bertahapnya benar, tetapi penamaan komponen belum diverifikasi dari naskah; (4) angka AP *baseline* 47,47 / 42,27 / 16,61 berasal dari tabel repositori resmi (RealSense, dengan deteksi tabrakan satu tampilan) dan dapat berbeda dari tabel di naskah CVPR — cocokkan dengan tabel makalah asli.

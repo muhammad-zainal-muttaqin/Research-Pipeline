@@ -1,201 +1,94 @@
 # 081 - Closing the Loop for Robotic Grasping: A Real-Time, Generative Grasp Synthesis Approach
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 081 dari 154 |
 | Kunci BibTeX | `morrison2018ggcnn` |
-| Judul | Closing the Loop for Robotic Grasping: A Real-Time, Generative Grasp Synthesis Approach |
-| Penulis | Morrison, Douglas; Corke, Peter; Leitner, J{\"u |
+| Judul asli | Closing the Loop for Robotic Grasping: A Real-Time, Generative Grasp Synthesis Approach |
+| Penulis | Douglas Morrison, Peter Corke, Jürgen Leitner |
 | Tahun | 2018 |
-| Venue / Jurnal | Robotics: Science and Systems (RSS) |
-| Tema klaster | Grasp Robotik |
-| Kata kunci | grasp, generative, per-pixel, real-time, closed-loop |
+| Venue | Robotics: Science and Systems (RSS 2018) |
+| Tema | Grasp Robotik |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1804.05172
+- **Google Scholar:** https://scholar.google.com/scholar?q=Closing%20the%20Loop%20for%20Robotic%20Grasping%3A%20A%20Real-Time%2C%20Generative%20Grasp%20Synthesis%20Approach
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Closing%20the%20Loop%20for%20Robotic%20Grasping%3A%20A%20Real-Time%2C%20Generative%20Grasp%20Synthesis%20Approach&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-grasp-robotik)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Closing%20the%20Loop%20for%20Robotic%20Grasping%3A%20A%20Real-Time%2C%20Generative%20Grasp%20Synthesis%20Approach
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Closing%20the%20Loop%20for%20Robotic%20Grasping%3A%20A%20Real-Time%2C%20Generative%20Grasp%20Synthesis%20Approach&sort=relevance
+Makalah ini memperkenalkan GG-CNN (*Generative Grasping Convolutional Neural Network*), sebuah jaringan konvolusi yang memetakan citra kedalaman menjadi prediksi cengkeraman (*grasp*) untuk setiap piksel dalam satu lintasan jaringan. Tugas cengkeraman robotik adalah menentukan posisi dan orientasi penjepit (*gripper*) dua jari agar dapat mengangkat objek secara stabil. GG-CNN menyelesaikan tugas ini bukan dengan menilai ribuan kandidat cengkeraman satu per satu, melainkan dengan langsung menghasilkan tiga peta beresolusi sama dengan citra masukan: peta mutu cengkeraman, peta sudut, dan peta lebar bukaan penjepit.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Karena jaringannya sangat kecil — hanya 62.420 parameter, beberapa orde lebih kecil daripada jaringan pembanding yang berukuran puluhan juta parameter — inferensinya cukup ringan untuk berjalan berulang-ulang selama lengan robot bergerak. Waktu komputasi jaringan sekitar 6 milidetik dan seluruh alur pemrosesan sekitar 19 milidetik, sehingga cengkeraman dapat diperbarui sampai 50 kali per detik. Kecepatan inilah yang memungkinkan kontrol *closed-loop*: prediksi cengkeraman dihitung ulang terus-menerus dan lengan robot mengoreksi sasarannya secara *real-time*, sehingga tetap berhasil ketika objek digeser saat percobaan berlangsung. Pada objek rumah tangga yang dipindahkan selama percobaan, sistem mencapai keberhasilan 88%, dan 81% pada objek yang tersusun berantakan (*clutter*) yang dinamis.
 
-| Atribut | Nilai |
-|---|---|
-| — | — |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode grasp yang memprediksi kualitas dan pose grasp secara per-piksel dari citra kedalaman, memungkinkan grasp closed-loop real-time pada objek tak dikenal.
+Sebelum makalah ini, pendekatan cengkeraman berbasis pembelajaran mendalam yang dominan bekerja dengan menyampel kandidat. Metode Lenz dkk. (bab 080) menghasilkan banyak kotak cengkeraman kandidat, lalu mengevaluasi setiap kandidat dengan jaringan pengklasifikasi untuk memilih yang terbaik. Pendekatan ini memiliki dua kelemahan yang saling berkaitan. Pertama, biaya komputasinya tinggi: mengevaluasi banyak kandidat satu per satu memakan waktu dari ratusan milidetik hingga beberapa detik per citra. Kedua, karena lambat, cengkeraman hanya dapat dihitung sekali di awal, lalu dieksekusi secara *open-loop* — yaitu lengan robot menjalankan rencana yang dihitung di muka tanpa mengoreksinya di tengah jalan.
 
-## Abstrak (Parafrase)
-GG-CNN (Generative Grasping CNN) memprediksi peta grasp per-piksel: kualitas, sudut, dan lebar grasp untuk setiap piksel citra kedalaman, dalam satu lintasan jaringan yang sangat ringan. Karena cepat, ia memungkinkan kontrol closed-loop (memperbarui grasp real-time saat objek/robot bergerak) dan berhasil pada objek tak dikenal termasuk dinamis.
+Eksekusi *open-loop* mengandaikan tiga hal yang sering tidak terpenuhi di dunia nyata: kalibrasi kamera-ke-robot yang presisi, kendali lengan yang akurat, dan objek yang diam sempurna. Bila objek bergeser, tersenggol, atau posisi awalnya salah diukur, cengkeraman yang sudah direncanakan menjadi meleset dan tidak ada mekanisme untuk memperbaikinya. Selain itu, banyak metode terdahulu mendiskretkan ruang cengkeraman menjadi kisi posisi dan sudut yang terbatas, sehingga membuang informasi kontinu tentang di mana cengkeraman terbaik sesungguhnya berada. Makalah ini menargetkan ketiga kelemahan tersebut sekaligus: kecepatan, kemampuan koreksi, dan representasi yang kontinu.
 
-## Latar Belakang & Konteks
-Pendekatan grasp berbasis sampling kandidat (mis. dua-tahap) lambat dan tidak cocok untuk kontrol closed-loop yang membutuhkan pembaruan grasp real-time.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Grasp berbasis sampling kandidat lambat.
-- Tidak cocok untuk kontrol closed-loop.
-- Objek dinamis butuh pembaruan real-time.
-- Diskretisasi kandidat membuang informasi.
-- Model besar sulit di perangkat robot.
+Gagasan inti GG-CNN adalah memperlakukan pendeteksian cengkeraman seperti pekerjaan segmentasi per-piksel, bukan pemilihan kandidat. Alih-alih bertanya "manakah dari sekian kandidat yang terbaik", jaringan langsung menjawab, untuk setiap piksel citra kedalaman, "seberapa baik cengkeraman yang berpusat di sini, pada sudut berapa, dan selebar apa". Keluaran jaringan berupa peta yang setiap pikselnya memuat jawaban itu; cengkeraman terbaik dipilih belakangan cukup dengan mencari piksel bernilai mutu tertinggi.
 
-## Tujuan & Pertanyaan Penelitian
-- Memprediksi grasp per-piksel dalam satu lintasan.
-- Memungkinkan kontrol closed-loop real-time.
-- Menangani objek tak dikenal & dinamis.
+Karena satu lintasan jaringan konvolusi penuh (*fully convolutional*, yaitu jaringan tanpa lapis terhubung penuh sehingga keluarannya berbentuk peta spasial) menghasilkan seluruh peta sekaligus, biaya komputasi tidak lagi bergantung pada jumlah kandidat. Ini membuat prediksi cukup cepat untuk diulang di setiap langkah gerak lengan. Dengan begitu, cengkeraman berubah dari rencana statis menjadi sasaran yang diperbarui terus-menerus — inti dari "menutup gelung" (*closing the loop*) pada judul makalah.
 
-## Tinjauan Terdahulu / Posisi Literatur
-GG-CNN adalah alternatif ringan terhadap grasp berbasis CNN besar/sampling.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Representasi Cengkeraman
 
-- Grasp dua-tahap (Lenz) — pembanding.
-- Generative per-pixel prediction.
-- Depth image input.
-- Closed-loop control.
+Sebuah cengkeraman di ruang nyata dinyatakan sebagai g = (p, φ, w, q): p = (x, y, z) adalah posisi pusat penjepit, φ adalah rotasi penjepit terhadap sumbu tegak, w adalah lebar bukaan yang diperlukan, dan q adalah skor mutu antara 0 dan 1 yang menyatakan perkiraan peluang keberhasilan. Di ruang citra, cengkeraman yang sama dinyatakan sebagai g̃ = (s, φ̃, w̃, q), dengan s = (u, v) titik pusat dalam koordinat piksel, φ̃ sudut dalam kerangka kamera, dan w̃ lebar dalam satuan piksel (rentang 0–150). Konversi dari ruang citra ke ruang nyata dilakukan dengan transformasi geometri kamera yang sudah diketahui, sehingga jaringan cukup bekerja sepenuhnya dalam ruang citra.
 
-## Metodologi & Arsitektur
-Jaringan konvolusi ringan (fully-convolutional) memetakan citra kedalaman ke tiga peta per-piksel: grasp quality, angle (sin/cos), dan width; grasp terbaik dipilih dari peta quality; karena ringan, dapat berjalan real-time untuk closed-loop grasping.
+### Peta Cengkeraman sebagai Keluaran
 
-Komponen / langkah metodologis utama:
+Untuk seluruh citra, GG-CNN memprediksi peta cengkeraman G = (Q, Φ, W), yaitu tiga peta beresolusi sama dengan citra masukan. Q adalah peta mutu: nilai tiap piksel antara 0 dan 1 menyatakan sebaik apa cengkeraman yang berpusat di piksel itu. Φ adalah peta sudut dengan nilai pada rentang [−π/2, π/2]. W adalah peta lebar dalam piksel (0–150), yang kemudian diskalakan ke lebar fisik penjepit.
 
-- Generative grasp map per-pixel (quality/angle/width).
-- Jaringan fully-convolutional sangat ringan.
-- Input citra kedalaman.
-- Prediksi sudut via sin/cos.
-- Real-time (closed-loop capable).
-- Grasp objek tak dikenal.
+Sudut cengkeraman tidak diprediksi langsung sebagai satu angka, karena sudut memiliki diskontinuitas: cengkeraman antipodal (dua jari berlawanan) bersifat simetris, sehingga sudut −π/2 dan +π/2 sebenarnya setara, dan regresi angka tunggal akan tersendat di titik lompatan itu. Solusinya, jaringan memprediksi dua komponen, cos 2φ dan sin 2φ. Kelipatan dua membuat rentang [−π/2, π/2] terpetakan penuh satu putaran, dan sudut dipulihkan dengan φ = ½ arctan(sin 2φ / cos 2φ). Cara ini menghilangkan diskontinuitas tanpa mengubah tugasnya menjadi klasifikasi sudut diskret.
 
-## Kontribusi Utama
-1. Grasp generatif per-piksel yang cepat.
-2. Closed-loop real-time.
-3. Ringan (cocok di robot).
-4. Berhasil pada objek dinamis/tak dikenal.
+Diagram berikut merangkum alur dari citra kedalaman ke satu cengkeraman terpilih.
 
-## Rincian Eksperimen
-Diuji dalam eksperimen fisik (robot) pada objek statis dan dinamis dengan metrik success rate grasp, dibandingkan pendekatan sampling.
+```
+citra kedalaman           GG-CNN            tiga peta keluaran (300 x 300)
+   300 x 300      ->   62.420 parameter  ->  ┌─ Q  : mutu cengkeraman (0..1)
+  (satu kanal)         fully-conv, ~6 ms     ├─ Phi: sudut, via cos2phi & sin2phi
+                                             └─ W  : lebar bukaan (0..150 piksel)
+                                                       │
+                          argmax pada Q  <────────────┘
+                                │
+                                ▼
+                cengkeraman terpilih g~ = (s, phi~, w~, q)
+```
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Arsitektur dan Pelatihan
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Objek statis | success rate | tinggi |
-| Objek dinamis | success rate | tinggi (closed-loop) |
-| Kecepatan | latensi | real-time, sangat ringan |
+Jaringannya kecil dan sepenuhnya konvolusional, berjumlah 62.420 parameter — dibandingkan puluhan juta parameter pada jaringan pembanding. Masukannya citra kedalaman 300×300 piksel satu kanal; keluarannya empat peta (Q, cos 2φ, sin 2φ, W) beresolusi sama.
 
-## Temuan Kunci
-- Grasp per-piksel generatif cepat & andal.
-- Closed-loop meningkatkan keberhasilan pada dinamika.
-- Model ringan praktis untuk robot.
-- Kedalaman cukup untuk grasp banyak objek.
+Data pelatihan berasal dari *Cornell Grasping Dataset*, yaitu himpunan 885 citra RGB-D objek nyata yang dilengkapi 5.110 anotasi cengkeraman positif. Data ini diperbanyak (*augmentasi*) menjadi 8.840 citra melalui pemotongan, penyekalaan, dan rotasi acak, sehingga secara efektif memberi puluhan ribu contoh cengkeraman. Anotasi kotak cengkeraman diubah menjadi label per-piksel: piksel di sekitar pusat setiap cengkeraman positif diberi mutu 1, dan nilai sudut serta lebar cengkeraman itu ditanamkan pada peta Φ dan W di wilayah tersebut. Jaringan dilatih untuk mereproduksi peta-peta ini dengan galat kuadrat.
 
-## Keunggulan
-- Sangat ringan & real-time.
-- Closed-loop capable.
-- Andal pada objek tak dikenal.
+### Kontrol Closed-Loop
 
-## Keterbatasan
-- Grasp planar (bukan 6-DoF penuh).
-- Bergantung kualitas kedalaman.
-- Objek sangat kompleks/berhimpitan menantang.
+Saat eksekusi, kamera *Intel RealSense SR300* dipasang di pergelangan lengan *Kinova Mico* 6 derajat kebebasan yang memakai penjepit dua jari KG-2. Selama lengan mendekati objek, GG-CNN dijalankan berulang pada aliran citra kedalaman. Pada setiap iterasi, piksel bermutu tertinggi pada peta Q menjadi sasaran cengkeraman baru, dan lengan mengoreksi lintasannya ke sasaran itu. Karena satu siklus prediksi hanya sekitar 19 milidetik (termasuk pra-pemrosesan citra dan pemilihan cengkeraman), pembaruan dapat terjadi sampai 50 kali per detik — jauh lebih cepat daripada gerak objek yang lazim, sehingga sasaran selalu mengikuti posisi objek terkini.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-GG-CNN menegaskan grasp generatif per-piksel dari kedalaman — contoh langsung pemanfaatan depth untuk manipulasi real-time dalam tinjauan.
+Pengujian dilakukan pada robot fisik, bukan hanya pada dataset. Objek uji terdiri atas dua himpunan: 8 objek "adversarial" hasil cetak 3D dengan geometri sulit, dan sekumpulan objek rumah tangga dari benda sehari-hari. Metrik utamanya adalah *success rate*, yaitu persentase percobaan cengkeraman yang berhasil mengangkat objek.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Grasp Robotik** yang baik dibaca berdampingan:
+Pada cengkeraman objek statis (*open-loop*, objek diam), GG-CNN mencapai 84% pada objek adversarial dan 92% pada objek rumah tangga. Angka ini setara atau lebih baik daripada metode terdahulu yang berukuran puluhan juta parameter dan memerlukan waktu 0,2 hingga 13,5 detik per cengkeraman, padahal GG-CNN hanya butuh sekitar 19 milidetik. Perbandingan ini menunjukkan bahwa jaringan kecil per-piksel tidak mengorbankan akurasi demi kecepatan.
 
-- [080 - 2015 - Deep Learning Robotic Grasps (Lenz dkk.) - Grasp Robotik](./080%20-%202015%20-%20Deep%20Learning%20Robotic%20Grasps%20%28Lenz%20dkk.%29%20-%20Grasp%20Robotik.md)
-- [082 - 2020 - GR-ConvNet - Grasp Robotik](./082%20-%202020%20-%20GR-ConvNet%20-%20Grasp%20Robotik.md)
-- [083 - 2022 - GR-ConvNet v2 - Grasp Robotik](./083%20-%202022%20-%20GR-ConvNet%20v2%20-%20Grasp%20Robotik.md)
-- [084 - 2020 - GraspNet-1Billion - Grasp Robotik](./084%20-%202020%20-%20GraspNet-1Billion%20-%20Grasp%20Robotik.md)
-- [085 - 2023 - BCMFNet (Bilateral Cross-Modal Fusion) - Grasp Robotik](./085%20-%202023%20-%20BCMFNet%20%28Bilateral%20Cross-Modal%20Fusion%29%20-%20Grasp%20Robotik.md)
-- [086 - 2018 - Jacquard Dataset - Grasp Robotik](./086%20-%202018%20-%20Jacquard%20Dataset%20-%20Grasp%20Robotik.md)
+Keunggulan sebenarnya muncul pada kondisi dinamis. Ketika objek digeser tangan manusia selama lengan mendekat, mode *closed-loop* mempertahankan keberhasilan 83% pada objek adversarial dan 88% pada objek rumah tangga — kondisi yang akan menggagalkan eksekusi *open-loop* karena rencana awal menjadi usang. Pada tumpukan objek berantakan yang juga diganggu selama percobaan, keberhasilannya 81%. Interpretasinya: manfaat koreksi *real-time* paling terasa persis pada situasi yang selama ini menjadi titik lemah metode sampling lambat, yakni objek yang bergerak dan penempatan yang tidak presisi.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Grasp Robotik** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kelebihan dan Keterbatasan
 
-## Glosarium Istilah (tema Grasp Robotik)
-Istilah penting untuk memahami makalah ini:
+Kelebihan utama GG-CNN adalah ukurannya yang ringkas dan kecepatannya, yang secara langsung membuka kontrol *closed-loop* pada perangkat robot tanpa komputasi berat. Prediksi per-piksel yang kontinu menghindari diskretisasi ruang cengkeraman, dan pelatihan dari dataset publik berukuran kecil membuktikan bahwa jaringan mungil pun cukup untuk generalisasi ke objek tak dikenal.
 
-- **Grasp detection** — Prediksi cengkeraman stabil untuk objek.
-- **Grasp rectangle** — Grasp sebagai kotak beorientasi (posisi, sudut, lebar).
-- **Antipodal grasp** — Cengkeraman dua-jari berlawanan.
-- **RGB-D** — Warna + kedalaman untuk geometri grasp.
-- **6-DoF grasp** — Grasp enam derajat kebebasan di ruang 3D.
-- **Cornell dataset** — Dataset grasp kecil klasik.
-- **Jacquard** — Dataset grasp sintetis berskala besar.
-- **Closed-loop** — Kontrol grasp real-time berbasis umpan-balik.
-- **Success rate** — Persentase percobaan grasp berhasil.
-- **Point cloud fusion** — Penggabungan geometri titik 3D.
+Keterbatasannya berakar pada representasinya. GG-CNN memprediksi cengkeraman planar — posisi pada bidang citra, sudut satu putaran, dan lebar — bukan cengkeraman 6 derajat kebebasan penuh di ruang tiga dimensi, sehingga cengkeraman dari arah menyamping atau miring tidak terwakili. Dari sisi rekayasa, kinerjanya bergantung pada mutu citra kedalaman; permukaan yang memantul atau menyerap sinar inframerah dapat menghasilkan kedalaman yang buruk dan menurunkan prediksi. Secara konseptual, karena masukannya hanya kedalaman tanpa warna, isyarat visual seperti tekstur dan batas objek yang tampak pada kanal RGB tidak dimanfaatkan — celah yang kelak diisi metode fusi warna-kedalaman.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kaitan dengan Bab Lain
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Bab ini berdiri sebagai jawaban langsung atas keterbatasan pendekatan sampling yang dibahas pada [080 - Deep Learning Robotic Grasps (Lenz dkk.)](./080%20-%202015%20-%20Deep%20Learning%20Robotic%20Grasps%20%28Lenz%20dkk.%29%20-%20Grasp%20Robotik.md): dari mengevaluasi banyak kandidat secara lambat menjadi menghasilkan peta cengkeraman sekali jalan. Representasi cengkeraman per-piksel yang diperkenalkan di sini diwarisi dan diperluas oleh [082 - GR-ConvNet](./082%20-%202020%20-%20GR-ConvNet%20-%20Grasp%20Robotik.md), yang menambahkan kanal warna dan jaringan lebih dalam, serta lanjutannya [083 - GR-ConvNet v2](./083%20-%202022%20-%20GR-ConvNet%20v2%20-%20Grasp%20Robotik.md). Dataset *Cornell* yang dipakai di sini kelak dilengkapi oleh dataset sintetis berskala besar pada [086 - Jacquard Dataset](./086%20-%202018%20-%20Jacquard%20Dataset%20-%20Grasp%20Robotik.md), sedangkan lompatan ke cengkeraman 6 derajat kebebasan yang menjadi keterbatasan bab ini diangkat pada [084 - GraspNet-1Billion](./084%20-%202020%20-%20GraspNet-1Billion%20-%20Grasp%20Robotik.md).
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Kutip dengan kunci `morrison2018ggcnn`. Ringkasan yang aman dikutip: "GG-CNN memprediksi peta cengkeraman per-piksel (mutu, sudut, lebar) dari citra kedalaman dalam satu lintasan jaringan berukuran 62.420 parameter dengan inferensi sekitar 19 milidetik, memungkinkan cengkeraman *closed-loop* *real-time* yang tetap berhasil pada objek yang bergerak."
 
-## Kesimpulan
-GG-CNN memprediksi peta grasp per-piksel dari citra kedalaman dalam jaringan ringan, memungkinkan grasp closed-loop real-time yang andal termasuk pada objek dinamis dan tak dikenal.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `morrison2018ggcnn` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 081/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Angka yang berasal langsung dari naskah dan aman dirujuk: 62.420 parameter, masukan 300×300, waktu jaringan ±6 ms dan alur penuh ±19 ms, laju sampai 50 Hz, serta *Cornell Grasping Dataset* (885 citra, 5.110 anotasi, diaugmentasi menjadi 8.840 citra). Angka keberhasilan perlu dicermati karena bergantung kondisi uji: statis *open-loop* 84% (adversarial) dan 92% (rumah tangga); dinamis *closed-loop* 83% (adversarial) dan 88% (rumah tangga); *clutter* dinamis 81%. Pasangan angka statis 84%/92% dan rincian jumlah percobaan per objek sebaiknya diverifikasi ulang ke tabel naskah asli sebelum sitasi formal, karena abstrak menonjolkan 83%/88%/81% sementara tabel hasil melaporkan angka statis yang terpisah.
