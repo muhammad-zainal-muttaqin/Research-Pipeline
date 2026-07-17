@@ -301,10 +301,16 @@ a:focus-visible,button:focus-visible,select:focus-visible,[tabindex]:focus-visib
   background:color-mix(in srgb, var(--bg) 86%, transparent);
   backdrop-filter:saturate(1.3) blur(10px); -webkit-backdrop-filter:saturate(1.3) blur(10px);
   border-bottom:1px solid var(--line)}
-.topbar .brand{display:flex; align-items:center; gap:9px; font-family:var(--serif);
+/* Newsreader: font ascent (12px) == cap height, tapi descent 5px. Ruang bawah
+   baseline > ruang atas kapital, jadi align-items:center menaikkan tinta huruf
+   2.5px di atas ikon topbar. margin-top mengembalikannya sejajar. */
+.topbar .brand{display:flex; align-items:center; gap:9px; margin-top:5px; font-family:var(--serif);
   font-size:17px; letter-spacing:-.01em; white-space:nowrap}
 .topbar .brand b{font-weight:600}
-.topbar .brand .dot{width:8px; height:8px; border-radius:50%; background:var(--accent); transition:transform var(--dur) var(--ease)}
+/* margin-bottom menaikkan titik 3px ke pusat optis huruf: align-items:center
+   menengahkan kotak margin, bukan massa glif di dalam line box. */
+.topbar .brand .dot{width:8px; height:8px; flex-shrink:0; margin-bottom:6px;
+  border-radius:50%; background:var(--accent); transition:transform var(--dur) var(--ease)}
 .topbar .brand:hover .dot{transform:scale(1.3)}
 .topbar .spacer{flex:1}
 .search-trigger{display:flex; align-items:center; gap:8px; height:34px; padding:0 9px 0 10px;
