@@ -1,205 +1,92 @@
 # 047 - C2DFNet: Criss-Cross Dynamic Filter Network for RGB-D Salient Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 047 dari 154 |
 | Kunci BibTeX | `zhang2022c2dfnet` |
-| Judul | C2DFNet: Criss-Cross Dynamic Filter Network for RGB-D Salient Object Detection |
-| Penulis | Zhang, Miao; Yao, Shunyu; Hu, Beiqi; Piao, Yongri; Ji, Wei |
-| Tahun | 2023 |
-| Venue / Jurnal | IEEE Transactions on Multimedia |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, criss-cross, dynamic filter, efisien, depth guidance |
+| Judul asli | C2DFNet: Criss-Cross Dynamic Filter Network for RGB-D Salient Object Detection |
+| Penulis | Miao Zhang, Shunyu Yao, Beiqi Hu, Yongri Piao, Wei Ji |
+| Tahun | 2023 (versi awal daring 2022) |
+| Venue | IEEE Transactions on Multimedia, vol. 25, hlm. 5142–5154 |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **DOI (versi penerbit):** https://doi.org/10.1109/TMM.2022.3187856
+- **Kode dan hasil (GitHub):** https://github.com/OIPLab-DUT/C2DFNet
+- **Google Scholar:** https://scholar.google.com/scholar?q=C2DFNet%3A%20Criss-Cross%20Dynamic%20Filter%20Network%20for%20RGB-D%20Salient%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=C2DFNet%3A%20Criss-Cross%20Dynamic%20Filter%20Network%20for%20RGB-D%20Salient%20Object%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=C2DFNet%3A%20Criss-Cross%20Dynamic%20Filter%20Network%20for%20RGB-D%20Salient%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=C2DFNet%3A%20Criss-Cross%20Dynamic%20Filter%20Network%20for%20RGB-D%20Salient%20Object%20Detection&sort=relevance
+Makalah ini memperkenalkan C2DFNet (*Criss-Cross Dynamic Filter Network*), sebuah metode deteksi objek menonjol dwimodal RGB-D. Deteksi objek menonjol (*Salient Object Detection*, SOD) adalah tugas menandai piksel objek yang paling menarik perhatian pada sebuah citra dan memisahkannya dari latar; varian RGB-D menambahkan peta kedalaman (*depth map* — citra yang tiap pikselnya menyatakan jarak permukaan ke kamera) sebagai masukan kedua di samping citra warna RGB. Persoalan yang diserang C2DFNet adalah cara menggabungkan (memfusi) dua modalitas yang sifatnya berbeda ini tanpa memakai konvolusi berparameter tetap yang, menurut penulis, tidak peka terhadap perbedaan bawaan antara data RGB dan kedalaman.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Gagasan intinya adalah mengganti konvolusi statis dengan *dynamic filter* (tapis dinamis) yang bobotnya dibangkitkan mengikuti isi citra, lalu menerapkannya sepanjang pola *criss-cross* (silang mendatar-menegak) agar biaya komputasinya rendah. Model ini disusun dari dua modul: satu untuk memperkuat fitur di dalam tiap modalitas, satu lagi untuk memilih fitur lintas-modalitas secara adaptif. Menurut naskah, C2DFNet memperoleh kinerja yang bersaing terhadap 28 metode RGB-D SOD mutakhir pada 7 set data publik.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 25 |
-| Halaman | 5142--5154 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode RGB-D SOD yang memakai criss-cross dynamic filter untuk menyalurkan panduan kedalaman secara efisien, menyeimbangkan akurasi dan efisiensi.
+Bab-bab RGB-D SOD sebelumnya menegakkan gagasan bahwa peta kedalaman memberi isyarat geometri yang memisahkan objek dari latar ketika warna saja ambigu, dan bahwa cara fusi menentukan kualitas hasil. DMRA (bab [035](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)) memakai *attention* untuk menyaring kedalaman, dan BBS-Net (bab [036](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)) memisahkan fitur beraras rendah dan tinggi sebelum menggabungkannya. Sebagian besar metode ini dibangun di atas konvolusi konvensional, yaitu operasi yang bobot tapisnya dipelajari saat pelatihan lalu dibekukan: satu set bobot yang sama dipakai untuk semua citra saat inferensi, tanpa memandang isi adegan.
 
-## Abstrak (Parafrase)
-C2DFNet (Criss-Cross Dynamic Filter Network) memakai filter dinamis dengan pola criss-cross untuk menyalurkan panduan kedalaman ke fitur RGB secara hemat komputasi. Desain ini menjaga akurasi sambil menekan biaya, menghasilkan fusi RGB-D yang efisien dan efektif.
+Penulis menilai pemakaian bobot tetap ini sebagai keterbatasan mendasar untuk data dwimodal. RGB membawa tekstur dan warna, sedangkan kedalaman membawa struktur jarak; keduanya memiliki statistik dan tingkat keandalan yang berbeda, dan keandalan itu berubah antar-adegan. Peta kedalaman dari sebuah adegan bisa tajam, tetapi pada adegan lain berderau atau salah pada bidang tembus pandang. Tapis berparameter tetap memperlakukan semua masukan seragam, sehingga tidak dapat menyesuaikan pemrosesan menurut kondisi modalitas pada tiap citra. Masalah inilah yang ingin dipecahkan: memberi jaringan kemampuan menyesuaikan operasinya terhadap adegan, sambil menjaga biaya komputasi tetap terkendali.
 
-## Latar Belakang & Konteks
-Banyak metode fusi RGB-D berat secara komputasi, sementara panduan kedalaman perlu efisien dan terarah agar praktis diterapkan.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Fusi RGB-D sering berat komputasi.
-- Panduan kedalaman perlu efisien & terarah.
-- Filter dinamis penuh mahal.
-- Keseimbangan akurasi-efisiensi sulit.
-- Konteks spasial perlu disalurkan hemat.
+Solusi C2DFNet berpijak pada *dynamic filter network*, yaitu jaringan yang tidak menyimpan satu set bobot tapis tetap, melainkan membangkitkan bobot tapis secara langsung dari fitur masukan melalui subjaringan kecil. Dengan cara ini, operasi konvolusi menjadi bergantung pada isi citra: adegan yang berbeda menghasilkan tapis yang berbeda pula. Kelemahan pendekatan ini adalah biayanya — membangkitkan tapis dua dimensi penuh untuk tiap posisi spasial sangat mahal.
 
-## Tujuan & Pertanyaan Penelitian
-- Menyalurkan panduan kedalaman secara efisien.
-- Memakai pola criss-cross untuk hemat komputasi.
-- Menyeimbangkan akurasi dan efisiensi.
+C2DFNet menekan biaya itu dengan menguraikan (*decoupling*) konvolusi dinamis menjadi pola *criss-cross*. Alih-alih membangkitkan dan menerapkan tapis atas seluruh bidang dua dimensi sekaligus, model menyalurkan panduan hanya sepanjang jalur mendatar dan menegak yang melewati tiap posisi. Dua modul dibangun di atas prinsip ini: *Model-specific Dynamic Enhanced Module* (MDEM) yang memperkuat fitur di dalam satu modalitas dengan panduan konteks global, dan *Scene-aware Dynamic Fusion Module* (SDFM) yang memilih fitur antar-modalitas secara adaptif terhadap adegan. Yang masuk adalah dua aliran fitur (RGB dan kedalaman); yang keluar adalah peta saliensi; yang berubah dibanding pendahulunya adalah tapis penggabung yang kini dibangkitkan per adegan, bukan dibekukan.
 
-## Tinjauan Terdahulu / Posisi Literatur
-C2DFNet mengembangkan dynamic filtering dengan pola criss-cross untuk RGB-D SOD.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Tapis Statis versus Tapis Dinamis
 
-- Dynamic filter networks — dasar.
-- Criss-cross attention — efisiensi spasial.
-- Depth-guided fusion.
-- RGB-D SOD berbasis fusi.
+Pada konvolusi biasa, sebuah tapis 3×3 memiliki sembilan bobot yang ditetapkan saat pelatihan dan dipakai identik untuk setiap citra uji. Pada tapis dinamis, kesembilan bobot itu tidak disimpan; sebuah subjaringan membacanya dari fitur masukan sehingga menghasilkan bobot yang berbeda untuk masukan yang berbeda. Konsekuensinya, operasi yang sama dapat menonjolkan tepi pada satu adegan dan meratakan derau pada adegan lain, sesuai isi masing-masing. Untuk fusi RGB-D hal ini berguna karena bobot penggabung dapat mengecil ketika kedalaman berkualitas rendah dan membesar ketika kedalaman informatif.
 
-## Metodologi & Arsitektur
-Criss-cross dynamic filter menyalurkan panduan kedalaman sepanjang jalur horizontal-vertikal (hemat dibanding full attention); filter dinamis menyesuaikan pemrosesan fitur RGB; decoder menghasilkan saliency efisien.
+### Pola Criss-Cross untuk Menekan Biaya
 
-Komponen / langkah metodologis utama:
+Pola *criss-cross* diambil dari gagasan agregasi konteks sepanjang baris dan kolom. Setiap posisi hanya mengumpulkan informasi dari posisi lain yang sebaris (mendatar) dan sekolom (menegak) dengannya, bukan dari seluruh bidang. Perbedaan biayanya besar. Pada peta fitur berukuran 80×80 = 6.400 posisi, operasi konteks padat (*non-local*) yang menghubungkan tiap posisi ke semua posisi lain memerlukan sekitar 6.400 × 6.400 ≈ 41 juta pasangan keterhubungan. Pola criss-cross hanya menghubungkan tiap posisi ke 80 + 80 − 1 = 159 posisi pada silangnya, sehingga menjadi sekitar 6.400 × 159 ≈ 1 juta pasangan — turun sekitar 40 kali lipat. Dengan menerapkan operasi criss-cross dua kali berurutan, informasi dari satu posisi tetap dapat menjangkau seluruh peta melalui perpotongan jalur, sehingga konteks global tercapai tanpa biaya penuh. C2DFNet memindahkan prinsip ini ke ranah tapis dinamis: tapis dibangkitkan dan diterapkan sepanjang jalur criss-cross, bukan atas kernel dua dimensi penuh.
 
-- Criss-cross dynamic filter network.
-- Panduan kedalaman sepanjang jalur criss-cross.
-- Filter dinamis hemat komputasi.
-- Fusi RGB-D efisien.
-- Decoder saliency.
-- Pelatihan end-to-end RGB-D.
+Alur data ringkas kedua modul terhadap dua aliran masukan:
 
-## Kontribusi Utama
-1. Criss-cross dynamic filter yang hemat komputasi.
-2. Panduan kedalaman terarah dan efisien.
-3. Akurasi terjaga dengan biaya rendah.
-4. Keseimbangan akurasi-efisiensi baik.
+```
+   RGB  ──►┌──────────────┐        ┌──────────────┐
+           │    MDEM       │──feat─►│              │
+           │ (perkuat fitur│  RGB   │    SDFM       │──► decoder ──► peta
+           │  intra-modal, │        │ (fusi lintas- │        saliensi
+   depth ─►│  panduan      │──feat─►│  modal,       │
+           │  global)      │  depth │  sadar-adegan)│
+           └──────────────┘        └──────────────┘
+             tapis criss-cross        tapis criss-cross
+             dibangkitkan per         memilih RGB vs
+             modalitas                depth per adegan
+```
 
-## Rincian Eksperimen
-Diuji pada benchmark RGB-D SOD standar dengan metrik S/F/E-measure, MAE, dan analisis efisiensi (parameter/kecepatan).
+### Model-specific Dynamic Enhanced Module (MDEM)
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+MDEM bekerja di dalam satu modalitas, terpisah untuk aliran RGB dan aliran kedalaman. Modul ini membangkitkan tapis dinamis yang dikondisikan oleh konteks global fitur, lalu memakainya untuk memperkuat fitur intra-modalitas tersebut. Istilah "konteks global" merujuk pada ringkasan informasi dari seluruh peta fitur, bukan hanya tetangga lokal; dengan menyertakannya, penonjolan sebuah objek dinilai relatif terhadap keseluruhan adegan. Karena tapisnya criss-cross, konteks global itu disalurkan melalui jalur baris-kolom, sehingga penguatan tetap peka posisi tanpa biaya operasi padat.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NJU2K/NLPR | S/F/E, MAE | akurat dan efisien |
-| Efisiensi | parameter/kecepatan | lebih hemat dari full attention |
-| Ablation | criss-cross | pola efisien menyumbang gain |
+### Scene-aware Dynamic Fusion Module (SDFM)
 
-## Temuan Kunci
-- Criss-cross efisien untuk menyalurkan panduan kedalaman.
-- Akurasi terjaga dengan biaya lebih rendah.
-- Filter dinamis adaptif.
-- Keseimbangan akurasi-efisiensi baik.
+SDFM bekerja antar-modalitas. Setelah RGB dan kedalaman diperkuat secara mandiri, modul ini melakukan pemilihan fitur dinamis di antara keduanya: bobot penggabung dibangkitkan menurut adegan sehingga kontribusi RGB dan kedalaman dapat ditimbang berbeda dari satu citra ke citra lain. Frasa "sadar-adegan" (*scene-aware*) menandai bahwa keputusan fusi bergantung pada isi adegan tertentu, bukan aturan tetap. Rancangan ini menjawab langsung masalah keandalan kedalaman yang berubah-ubah: pada adegan dengan kedalaman buruk, SDFM dapat menekan kontribusi kedalaman, dan sebaliknya.
 
-## Keunggulan
-- Efisien secara komputasi.
-- Panduan kedalaman terarah.
-- Akurat.
+### Prediksi Peta Saliensi
 
-## Keterbatasan
-- Pola criss-cross membatasi konteks tertentu.
-- Bergantung kualitas kedalaman.
-- Backbone CNN (konteks global terbatas).
+Fitur hasil fusi dari SDFM diteruskan ke sebuah *decoder*, yaitu bagian jaringan yang secara bertahap menaikkan resolusi fitur kembali ke ukuran citra untuk menghasilkan peta saliensi akhir. Peta ini bernilai kontinu per piksel dan menyatakan derajat penonjolan; nilai tinggi menandai piksel objek menonjol. Seluruh jaringan dilatih *end-to-end*, yakni dari masukan sampai keluaran dalam satu proses optimasi tanpa tahap terpisah.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-C2DFNet menekankan efisiensi fusi RGB-D — pertimbangan penting untuk penerapan real-time yang juga relevan bagi YOLO+RGB-D dalam tinjauan.
+Evaluasi dilakukan pada 7 set data publik RGB-D SOD dan membandingkan C2DFNet terhadap 28 metode mutakhir, angka yang keduanya dinyatakan pada abstrak makalah. Set data yang lazim dipakai pada evaluasi seperti ini mencakup NJU2K, NLPR, STERE, DES, LFSD, SSD, dan SIP; daftar tepat ketujuh set data yang dipakai perlu dipastikan ke naskah.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+Metrik penilaian standar untuk tugas ini ada empat. *S-measure* (*Structure-measure*) menilai kemiripan struktur antara peta prediksi dan kebenaran acuan, menggabungkan kesamaan berorientasi objek dan berorientasi wilayah. *F-measure* adalah rata-rata harmonik presisi dan *recall* pada peta saliensi yang diambangkan. *E-measure* (*Enhanced-alignment measure*) menilai kesejajaran pada aras piksel sekaligus aras citra global. *MAE* (*Mean Absolute Error*) mengukur selisih rata-rata absolut antara peta prediksi dan acuan; berbeda dari tiga metrik sebelumnya, nilai MAE yang lebih rendah menandakan hasil lebih baik. Klaim inti makalah adalah bahwa C2DFNet mencapai kinerja yang bersaing pada gabungan metrik ini terhadap sederet metode pembanding, sekaligus mempertahankan biaya komputasi yang terkendali berkat penguraian criss-cross. Nilai numerik per set data serta biaya komputasi (jumlah parameter, FLOPs, dan kecepatan inferensi) tidak dikutip di sini dan harus dibaca langsung dari tabel naskah.
 
-- [035 - 2019 - DMRA - RGB-D SOD](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)
-- [036 - 2020 - BBS-Net - RGB-D SOD](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)
-- [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)
-- [038 - 2020 - JL-DCF - RGB-D SOD](./038%20-%202020%20-%20JL-DCF%20-%20RGB-D%20SOD.md)
-- [039 - 2020 - S2MA - RGB-D SOD](./039%20-%202020%20-%20S2MA%20-%20RGB-D%20SOD.md)
-- [040 - 2020 - HDFNet - RGB-D SOD](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)
-- [041 - 2020 - UC-Net - RGB-D SOD](./041%20-%202020%20-%20UC-Net%20-%20RGB-D%20SOD.md)
-- [042 - 2021 - Visual Saliency Transformer (VST) - RGB-D SOD](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)
+## Kelebihan dan Keterbatasan
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Kelebihan utama C2DFNet adalah pemakaian tapis dinamis yang menyesuaikan pemrosesan terhadap tiap adegan, sehingga fusi dapat menimbang RGB dan kedalaman menurut keandalannya, bukan menurut aturan tetap. Penguraian criss-cross membuat kemampuan adaptif ini dapat diperoleh dengan biaya jauh lebih rendah daripada operasi konteks padat. Pemisahan tugas antara MDEM (penguatan intra-modalitas) dan SDFM (fusi antar-modalitas) juga membuat peran tiap modul jelas dan dapat diuji secara terpisah melalui *ablation*.
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
+Keterbatasan berikut merupakan analisis penulis bab, bukan pernyataan eksplisit penulis makalah. Secara konseptual, pola criss-cross membatasi jalur agregasi pada arah mendatar dan menegak; konteks di arah diagonal hanya terjangkau tidak langsung melalui dua langkah, sehingga pola ini merupakan pendekatan terhadap konteks penuh, bukan penggantinya. Dari sisi rekayasa, ketergantungan SDFM pada peta kedalaman tetap ada: modul dapat menekan kedalaman yang buruk, tetapi tidak dapat memulihkan informasi yang tidak tersedia di dalamnya. Selain itu, C2DFNet memakai *backbone* konvolusi (dilaporkan ResNet-50 pada praktik umum bidang ini, perlu dipastikan ke naskah), sehingga penangkapan konteks global bertumpu pada modul tambahan, berbeda dari pendekatan berbasis *Transformer* seperti VST (bab [042](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)) yang menyatukan konteks global ke dalam encoder.
 
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
+## Kaitan dengan Bab Lain
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+C2DFNet berada pada silsilah RGB-D SOD yang dibuka DMRA (bab [035](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md)) dan diperkuat BBS-Net (bab [036](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md)). Ia mewarisi persoalan pusat klaster ini, yakni cara memfusi RGB dan kedalaman, tetapi menggeser jawabannya dari *attention* berbobot tetap ke tapis yang dibangkitkan per adegan. Kekhawatiran tentang kedalaman berkualitas rendah yang menonjol pada D3Net (bab [037](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md)) dan HDFNet (bab [040](./040%20-%202020%20-%20HDFNet%20-%20RGB-D%20SOD.md)) dijawab C2DFNet melalui pemilihan fitur adaptif pada SDFM. Terhadap VST (bab [042](./042%20-%202021%20-%20Visual%20Saliency%20Transformer%20%28VST%29%20-%20RGB-D%20SOD.md)) yang mengejar konteks global lewat *Transformer*, C2DFNet menempuh jalur berbeda: mempertahankan *backbone* konvolusi tetapi menambahkan konteks global murah melalui pola criss-cross. Penekanan pada keseimbangan akurasi dan efisiensi inilah yang menghubungkan bab ini dengan minat tinjauan pada penerapan waktu nyata, termasuk turunan YOLO plus RGB-D.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Poin untuk Sitasi
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-C2DFNet memakai criss-cross dynamic filter untuk menyalurkan panduan kedalaman secara efisien pada RGB-D SOD, menyeimbangkan akurasi dan biaya komputasi.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zhang2022c2dfnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
----
-*Lembar 047/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `zhang2022c2dfnet`. Ringkasan yang aman dikutip: "C2DFNet mengganti konvolusi berparameter tetap pada fusi RGB-D dengan tapis dinamis berpola criss-cross, disusun dari modul penguatan intra-modalitas (MDEM) dan modul fusi antar-modalitas sadar-adegan (SDFM), dan dilaporkan bersaing terhadap 28 metode mutakhir pada 7 set data publik." Fakta terverifikasi dari sumber primer (abstrak dan halaman resmi): identitas modul MDEM dan SDFM, konsep penguraian konvolusi dinamis menjadi pola criss-cross, jumlah 28 metode pembanding dan 7 set data, serta venue IEEE Transactions on Multimedia (vol. 25, hlm. 5142–5154, DOI 10.1109/TMM.2022.3187856). Klaim yang **belum** dapat diverifikasi dari sumber primer dan harus dicek ke naskah sebelum sitasi formal: nilai numerik S-/F-/E-measure dan MAE per set data; jumlah parameter, FLOPs, dan kecepatan inferensi; daftar tepat ketujuh set data; serta identitas *backbone* (ResNet-50 disebut berdasarkan praktik umum bidang, bukan konfirmasi naskah).
