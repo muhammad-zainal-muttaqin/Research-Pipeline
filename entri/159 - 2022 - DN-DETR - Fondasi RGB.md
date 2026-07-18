@@ -1,209 +1,153 @@
 # 159 - DN-DETR: Accelerate DETR Training by Introducing Query DeNoising
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 159 dari 191 |
 | Kunci BibTeX | `li2022dndetr` |
-| Judul | DN-DETR: Accelerate DETR Training by Introducing Query DeNoising |
-| Penulis | Li, Feng; Zhang, Hao; Liu, Shilong; Guo, Jian; Ni, Lionel M.; Zhang, Lei |
+| Judul asli | DN-DETR: Accelerate DETR Training by Introducing Query DeNoising |
+| Penulis | Feng Li, Hao Zhang, Shilong Liu, Jian Guo, Lionel M. Ni, Lei Zhang |
 | Tahun | 2022 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | DETR, query denoising, fast convergence, bipartite matching |
+| Venue | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2022) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2203.01305
+- **Google Scholar:** https://scholar.google.com/scholar?q=DN-DETR%3A%20Accelerate%20DETR%20Training%20by%20Introducing%20Query%20DeNoising
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=DN-DETR%3A%20Accelerate%20DETR%20Training%20by%20Introducing%20Query%20DeNoising&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2203.01305
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=DN-DETR%3A%20Accelerate%20DETR%20Training%20by%20Introducing%20Query%20DeNoising
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=DN-DETR%3A%20Accelerate%20DETR%20Training%20by%20Introducing%20Query%20DeNoising&sort=relevance
+Makalah ini memperkenalkan DN-DETR (*Denoising* DEtection TRansformer), metode pelatihan baru untuk mempercepat konvergensi model deteksi objek berbasis *transformer*. Sebelum penelitian ini, detektor keluarga DETR (*DEtection TRansformer*) membutuhkan ratusan *epoch* pelatihan untuk mencapai akurasi optimal. Penulis mengidentifikasi bahwa kelambatan konvergensi disebabkan oleh ketidakstabilan proses pencocokan bipartit (*bipartite matching*) menggunakan algoritme Hungarian pada awal pelatihan. Ketidakstabilan ini membuat target pembelajaran kueri *decoder* berfluktuasi secara acak antar-*epoch*, sehingga menghambat optimasi jaringan.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+DN-DETR mengatasi masalah ini dengan mengintegrasikan tugas pembantu berupa rekonstruksi kotak pembatas (*bounding box*) dan klasifikasi kategori langsung dari kueri yang telah dirusak oleh derau (*noise*), yaitu *query denoising*. Jalur *denoising* ini tidak melewati pencocokan Hungarian, melainkan langsung dicocokkan secara deterministik dengan objek kebenaran acuan (*ground-truth*). Hal ini memberikan sinyal optimasi yang stabil sejak awal pelatihan tanpa memberikan beban komputasi tambahan (*overhead*) saat inferensi karena jalur *denoising* dibuang setelah pelatihan. Pada dataset COCO 2017, DN-DETR mencapai akurasi 43,4% AP dalam 12 *epoch*, dan mencapai 48,6% AP dalam 50 *epoch* menggunakan *backbone* ResNet-50.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2203.01305 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-DN-DETR mengidentifikasi bahwa ketidakstabilan pencocokan bipartit adalah penyebab utama lambatnya konvergensi DETR, lalu memperkenalkan query denoising untuk mengatasinya sehingga pelatihan jauh lebih cepat.
+Paradigma deteksi objek mengalami pergeseran penting dengan diperkenalkannya DETR ([bab 022](./022%20-%202020%20-%20DETR%20-%20Fondasi%20RGB.md)) yang merumuskan deteksi objek secara langsung sebagai masalah prediksi himpunan (*set prediction*). Detektor ini berhasil mengeliminasi kebutuhan akan komponen manual seperti *Non-Maximum Suppression* (NMS) dan kotak acuan (*anchor boxes*). Namun, kelemahan utama DETR orisinal terletak pada efisiensi pelatihannya: model memerlukan hingga 500 *epoch* untuk konvergen penuh pada dataset COCO.
 
-## Abstrak (Parafrase)
-Penulis menunjukkan bahwa penetapan target Hungarian yang berubah-ubah antar-epoch membuat optimasi DETR tak stabil. Dengan menambahkan kueri denoising - yaitu ground-truth box yang diberi derau dan diminta direkonstruksi model tanpa lewat pencocokan - model belajar hubungan kueri-ke-objek lebih langsung. Ini memangkas epoch pelatihan drastis dan menaikkan AP.
+Beberapa modifikasi diajukan untuk memitigasi masalah ini. Misalnya, Deformable DETR ([bab 023](./023%20-%202021%20-%20Deformable%20DETR%20-%20Fondasi%20RGB.md)) menggantikan mekanisme perhatian penuh dengan perhatian terdeformasi (*deformable attention*) untuk menghemat biaya komputasi dan mempercepat konvergensi. Conditional DETR ([bab 160](./160%20-%202021%20-%20Conditional%20DETR%20-%20Fondasi%20RGB.md)) mempermudah pembelajaran pencocokan kueri spasial. Selanjutnya, DAB-DETR (bab terkait) memformulasikan kueri sebagai kotak jangkar (*anchor boxes*) 4D berupa $(x, y, w, h)$ untuk memfasilitasi pembaruan koordinat lapis demi lapis di dalam *decoder*. Meskipun metode-metode ini mempercepat konvergensi, penyebab mendasar dari lambatnya konvergensi DETR belum sepenuhnya terpecahkan secara teoretis.
 
-## Latar Belakang & Konteks
-DETR butuh ratusan epoch untuk konvergen; penyebabnya diperdebatkan. DN-DETR memberi diagnosis (ketidakstabilan matching) dan solusi sederhana.
+DN-DETR mengisi celah pemahaman tersebut dengan menganalisis ketidakstabilan pencocokan bipartit. Dalam DETR, pencocokan Hungarian bersifat diskret dan bergantung pada nilai prediksi yang dihasilkan oleh *decoder*. Selama fase awal pelatihan, bobot model belum stabil sehingga prediksi kueri berubah secara drastis untuk citra yang sama pada *epoch* yang berdekatan. Akibatnya, satu objek kebenaran acuan dapat dicocokkan dengan kueri $q_a$ pada *epoch* $t$, kemudian dialokasikan ke kueri $q_b$ pada *epoch* $t+1$. Ketidakkonsistenan target optimasi ini memaksa parameter jaringan melakukan penyesuaian yang saling bertolak belakang, sehingga memperlambat konvergensi model secara keseluruhan.
 
-## Permasalahan yang Diangkat
-- Pencocokan bipartit tak konsisten antar-epoch.
-- Konvergensi DETR sangat lambat.
-- Sinyal pelatihan awal berisik.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Menstabilkan penetapan target DETR.
-- Mempercepat konvergensi.
-- Meningkatkan akurasi deteksi.
+Gagasan utama DN-DETR adalah menghadirkan tugas pembantu (*auxiliary task*) berupa pemulihan derau (*denoising*) kueri yang memintas proses pencocokan Hungarian. Pendekatan ini terinspirasi dari prinsip kerja *denoising autoencoder* yang dilatih untuk merekonstruksi data asli dari versi berderau.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Berpasangan dengan DAB-DETR (kueri anchor) dan mendahului DINO; melengkapi Deformable DETR dalam upaya percepatan.
+Dalam DN-DETR, input kueri yang dikirimkan ke Transformer *decoder* dibagi menjadi dua kelompok terpisah:
+1. Jalur Pencocokan (*Matching Part*): Bagian ini memproses kueri deteksi standar yang bersifat dinamis dan dapat dipelajari. Kueri-kueri ini dicocokkan dengan objek kebenaran acuan menggunakan pencocokan Hungarian.
+2. Jalur Denoising (*Denoising Part*): Bagian ini memproses kueri pembantu yang dibuat dengan menambahkan derau acak secara langsung pada koordinat kotak pembatas dan label kelas dari objek kebenaran acuan.
 
-Karya/konsep pembanding yang relevan:
+Karena jalur *denoising* menggunakan data yang diturunkan langsung dari kebenaran acuan, pencocokan Hungarian tidak diperlukan. Kueri *denoising* ke-$i$ secara otomatis dipasangkan dengan objek kebenaran acuan ke-$i$. Melalui pemetaan deterministik ini, *decoder* dapat mempelajari regresi kotak pembatas dan klasifikasi kelas secara langsung sejak awal pelatihan. Tugas rekonstruksi ini menstabilkan gradien dan memberikan arah optimasi yang konsisten bagi seluruh lapisan *decoder*. Ketika model digunakan untuk inferensi, seluruh kueri dan komputasi di jalur *denoising* dihilangkan. Dengan demikian, model tetap memiliki parameter dan latensi komputasi yang identik dengan model dasar saat dioperasikan di lingkungan produksi.
 
-- DETR - baseline lambat konvergen.
-- Deformable DETR - percepatan via attention terdeformasi.
-- DAB-DETR - kueri kotak dinamis.
-- DINO - penerus dengan denoising kontrastif.
+## Cara Kerja Langkah demi Langkah
 
-## Metodologi & Arsitektur
-Selama pelatihan, tambahkan grup kueri denoising: GT box + derau acak dimasukkan ke decoder dengan attention mask agar tak bocor ke kueri deteksi; tugasnya merekonstruksi box asli. Saat inferensi grup ini dibuang.
+### Alur Kerja Pelatihan dan Inferensi
+Dalam fase pelatihan, jaringan mengekstrak fitur memori dari citra masukan menggunakan *backbone* dan Transformer *encoder*. Fitur memori ini dihubungkan dengan kueri *decoder* melalui lapisan perhatian silang (*cross-attention*). Kueri *decoder* dibentuk oleh penggabungan kueri pencocokan standar dan kueri *denoising*. Diagram di bawah mengilustrasikan alur data di dalam sistem DN-DETR:
 
-Komponen / langkah metodologis utama:
+```
+Citra Masukan ──> Backbone ──> Encoder ──> Fitur Memori ────┐
+                                                            │ (Cross-Attention)
+                                                            ▼
+GT Bboxes  ──> Tambah Derau ──> Kueri Denoising ───┐     ┌──────┐
+                                                   ├────>│      │ ──> Loss Denoising
+GT Labels  ──> Tambah Derau ──> Kueri Konten    ───┘     │      │
+                                                         │Decdr.│
+Jangkar Baru ─────────────────> Kueri Pencocokan ────────>│      │ ──> Loss Matching
+(Learnable Anchors)                                      └──────┘
+```
 
-- Kueri denoising dari GT + derau terkontrol.
-- Attention mask memisahkan grup denoising dan deteksi.
-- Tanpa overhead saat inferensi.
-- Kompatibel dengan arsitektur DETR umum.
+### Pembuatan Kueri Denoising Kotak Pembatas
+Untuk setiap objek kebenaran acuan yang direpresentasikan oleh koordinat kotak pembatas $(x, y, w, h)$ di mana $(x, y)$ adalah titik pusat dan $(w, h)$ adalah lebar serta tinggi kotak, sistem menambahkan derau acak untuk menghasilkan kotak berderau $(x', y', w', h')$.
 
-## Kontribusi Utama
-1. Diagnosis ketidakstabilan matching sebagai akar lambatnya DETR.
-2. Query denoising sebagai solusi.
-3. Percepatan konvergensi signifikan.
-4. Dasar bagi DINO.
+1. Pergeseran Pusat (*Center Shifting*): Koordinat pusat digeser dengan menambahkan nilai $(\Delta x, \Delta y)$ yang diatur agar titik pusat baru tetap berada di dalam kotak asli. Batasan pergeseran ini diformulasikan sebagai:
+   $$| \Delta x | < \lambda_1 \frac{w}{2}$$
+   $$| \Delta y | < \lambda_1 \frac{h}{2}$$
+   Di sini, $\lambda_1$ adalah parameter skala derau pusat yang bernilai antara $0$ dan $1$.
+2. Penskalaan Ukuran (*Box Scaling*): Ukuran lebar dan tinggi kotak pembatas dikalikan dengan faktor skala acak berdasarkan parameter $\lambda_2$. Batasannya adalah:
+   $$w' \in [(1 - \lambda_2)w, (1 + \lambda_2)w]$$
+   $$h' \in [(1 - \lambda_2)h, (1 + \lambda_2)h]$$
+Dalam implementasi praktisnya, parameter $\lambda_1$ dan $\lambda_2$ disamakan menjadi $\lambda = 0,4$.
 
-## Rincian Eksperimen
-COCO dengan berbagai backbone; membandingkan AP pada 12/50 epoch terhadap DETR/Deformable DETR.
+### Pembuatan Kueri Denoising Label Kelas
+Label kelas dari objek kebenaran acuan $c$ juga diberikan derau dengan metode pembalikan label (*label flipping*). 
+1. Sebuah probabilitas pembalikan kelas $\gamma$ ditentukan (secara default bernilai $0,2$).
+2. Dengan probabilitas $1 - \gamma$, label masukan tetap berupa kelas asli $c$.
+3. Dengan probabilitas $\gamma$, label masukan digantikan oleh label kelas lain yang disampel secara acak dari daftar kelas dataset.
+Label berderau ini kemudian dipetakan ke dalam bentuk representasi vektor (*embedding*) sebelum dimasukkan ke dalam *decoder* sebagai kueri konten.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Pengelompokan Kueri Denoising
+Untuk menghindari bias dari satu variasi derau tunggal, DN-DETR menerapkan beberapa kelompok *denoising* secara paralel. Jika sebuah citra memiliki $N$ objek kebenaran acuan dan sistem dikonfigurasi dengan $M$ kelompok *denoising*, maka total kueri *denoising* yang dibuat adalah $M \times N$. Setiap kelompok dibuat secara independen dengan nilai derau acak yang berbeda.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO 12 ep | AP | jauh di atas DETR pada epoch sama |
-| COCO 50 ep | AP | kompetitif/unggul |
-| Ablation derau | AP | tingkat derau memengaruhi hasil |
+### Penerapan Masker Perhatian (Attention Mask)
+Ketika kueri pencocokan standar ($N_q$) dan kueri *denoising* ($M \times N$) diumpankan secara bersamaan ke dalam Transformer *decoder*, interaksi perhatian-mandiri (*self-attention*) berpotensi menyebabkan kebocoran informasi. Kueri pencocokan standar tidak boleh melihat koordinat kebenaran acuan yang terkandung di dalam kueri *denoising*. 
 
-## Temuan Kunci
-- Menstabilkan target mempercepat DETR.
-- Denoising bekerja lintas backbone.
-- Overhead pelatihan kecil, inferensi nol.
+Untuk mencegah hal tersebut, sebuah masker perhatian diterapkan dengan aturan:
+- Kueri pencocokan standar ($Q_{match}$) hanya diizinkan berinteraksi dengan $Q_{match}$ lainnya.
+- Kueri *denoising* dalam kelompok $g$ ($Q_{dn}^{(g)}$) diizinkan berinteraksi dengan $Q_{match}$ dan sesama kueri $Q_{dn}^{(g)}$ di dalam kelompok $g$ tersebut.
+- Kueri *denoising* dari kelompok yang berbeda tidak diperbolehkan berinteraksi satu sama lain ($Q_{dn}^{(g)}$ diblokir dari $Q_{dn}^{(g')}$ jika $g \neq g'$).
 
-## Keunggulan
-- Sederhana dan efektif.
-- Percepatan besar.
-- Mudah diintegrasi.
+Struktur blok masker perhatian ini digambarkan secara visual pada matriks di bawah ini:
 
-## Keterbatasan
-- Perlu penyetelan tingkat derau.
-- Manfaat menyusut pada model sangat besar.
-- Tetap arsitektur DETR (berat relatif YOLO).
+```
+              Q_match      Q_dn(1)      Q_dn(2)    ...    Q_dn(M)
+            ┌───────────┬────────────┬────────────┬───┬────────────┐
+    Q_match │    IZIN   │    BLOK    │    BLOK    │...│    BLOK    │
+            ├───────────┼────────────┼────────────┼───┼────────────┤
+    Q_dn(1) │    IZIN   │    IZIN    │    BLOK    │...│    BLOK    │
+            ├───────────┼────────────┼────────────┼───┼────────────┤
+    Q_dn(2) │    IZIN   │    BLOK    │    IZIN    │...│    BLOK    │
+            ├───────────┼────────────┼────────────┼───┼────────────┤
+      ...   │    ...    │    ...     │    ...     │...│    ...     │
+            ├───────────┼────────────┼────────────┼───┼────────────┤
+    Q_dn(M) │    IZIN   │    BLOK    │    BLOK    │...│    IZIN    │
+            └───────────┴────────────┴────────────┴───┴────────────┘
+```
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Nilai "IZIN" merepresentasikan nilai nol (perhatian diperbolehkan), sedangkan "BLOK" merepresentasikan nilai $-\infty$ yang meniadakan bobot perhatian setelah fungsi eksponensial *softmax*.
 
-## Relevansi terhadap Tema Tinjauan
-Memberi pemahaman fundamental cara mempercepat detektor end-to-end, berguna bila mengadopsi DETR pada pipeline RGB-D.
+### Perhitungan Fungsi Kerugian
+Pelatihan DN-DETR mengoptimalkan fungsi kerugian gabungan. Untuk jalur pencocokan, fungsi kerugian $\mathcal{L}_{match}$ dihitung setelah melakukan pencocokan Hungarian. Untuk jalur *denoising*, fungsi kerugian $\mathcal{L}_{dn}$ dihitung langsung antara hasil rekonstruksi kueri *denoising* kelompok $g$ dan objek kebenaran acuan yang menjadi sumber deraunya.
+$$\mathcal{L}_{total} = \mathcal{L}_{match} + \mathcal{L}_{dn}$$
+Kerugian $\mathcal{L}_{dn}$ terdiri dari kerugian klasifikasi entropi silang, kerugian koordinat L1, dan kerugian GIoU, yang dibobot dengan faktor pengali yang sama dengan jalur pencocokan standar.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Setelah pelatihan selesai, modul pembuat derau dan seluruh kueri *denoising* dinonaktifkan. Decoder hanya menerima kueri pencocokan standar $N_q$ (biasanya berjumlah 100 atau 300 kueri). Akibatnya, grafik komputasi model pada saat penerapan praktis (*deployment*) bersih dari komputasi tambahan jalur *denoising*.
 
-- [155 - 2024 - RT-DETR - Fondasi RGB](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md)
-- [156 - 2024 - YOLO-World - Fondasi RGB](./156%20-%202024%20-%20YOLO-World%20-%20Fondasi%20RGB.md)
-- [157 - 2023 - Gold-YOLO - Fondasi RGB](./157%20-%202023%20-%20Gold-YOLO%20-%20Fondasi%20RGB.md)
-- [158 - 2023 - DINO detector - Fondasi RGB](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md)
-- [160 - 2021 - Conditional DETR - Fondasi RGB](./160%20-%202021%20-%20Conditional%20DETR%20-%20Fondasi%20RGB.md)
-- [161 - 2021 - Sparse R-CNN - Fondasi RGB](./161%20-%202021%20-%20Sparse%20R-CNN%20-%20Fondasi%20RGB.md)
-- [162 - 2022 - ConvNeXt - Fondasi RGB](./162%20-%202022%20-%20ConvNeXt%20-%20Fondasi%20RGB.md)
-- [163 - 2022 - Swin Transformer V2 - Fondasi RGB](./163%20-%202022%20-%20Swin%20Transformer%20V2%20-%20Fondasi%20RGB.md)
+## Eksperimen dan Hasil
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Evaluasi metode DN-DETR dilakukan pada dataset Microsoft COCO 2017 val dengan model dasar DAB-DETR.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+Berikut adalah ringkasan hasil performa deteksi pada COCO 2017:
+- DN-DETR dengan *backbone* ResNet-50 mencapai akurasi **43,4% AP** setelah dilatih selama 12 *epoch*. Capaian ini menunjukkan efisiensi yang sangat tinggi, melampaui hasil detektor DETR orisinal (R50) yang membutuhkan 500 *epoch* untuk mencapai 42,0% AP.
+- Dalam pelatihan standar 50 *epoch*, DN-DETR dengan *backbone* ResNet-50 mencapai **48,6% AP**. Jika dibandingkan dengan baseline DAB-DETR (R50) tanpa metode *denoising* yang mencapai 45,7% AP pada 50 *epoch*, DN-DETR memberikan peningkatan performa sebesar **2,9% AP** pada anggaran pelatihan yang sama.
+- Pada model yang menggunakan *backbone* lebih besar seperti ResNet-101, DN-DETR secara konsisten meningkatkan kinerja baseline sebesar lebih dari 2% AP.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+Dalam studi ablasi (*ablation study*) yang dilaporkan oleh penulis:
+- Efek Derau Kotak vs Label: Menambahkan derau kotak saja pada DAB-DETR R50 meningkatkan AP sebesar 1,5% AP. Menambahkan derau label saja memberikan kontribusi stabilisasi klasifikasi. Kombinasi keduanya menghasilkan peningkatan penuh sebesar 2,9% AP.
+- Jumlah Kelompok Denoising ($M$): Eksperimen menunjukkan bahwa meningkatkan jumlah kelompok dari $1$ ke $5$ memberikan peningkatan performa dari 47,8% AP menjadi 48,6% AP. Namun, penambahan kelompok di atas 5 (misalnya hingga 10 kelompok) hanya memberikan peningkatan minor di bawah 0,2% AP sementara membebani memori VRAM GPU selama proses pelatihan secara linier. Oleh karena itu, $M = 5$ dipilih sebagai nilai default yang optimal.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kelebihan dan Keterbatasan
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Kelebihan:
+1. **Peningkatan Efisiensi Pelatihan**: DN-DETR memangkas kebutuhan waktu komputasi hingga 50% untuk mencapai tingkat performa yang setara dengan model detektor berbasis *transformer* lainnya.
+2. **Ketiadaan Beban Komputasi Inferensi**: Karena jalur *denoising* dibuang setelah pelatihan selesai, model tidak mengalami penambahan latensi deteksi, ukuran penyimpanan parameter, atau kompleksitas saat dijalankan pada perangkat keras target.
+3. **Fleksibilitas Integrasi**: Metode *query denoising* dapat diaplikasikan ke hampir semua model detektor dalam keluarga DETR dengan modifikasi kode minimal.
+4. **Stabilitas Konvergensi**: Menyediakan sinyal gradien yang lebih konsisten pada lapisan-lapisan *decoder* sejak awal pelatihan, mengurangi osilasi parameter akibat fluktuasi pencocokan Hungarian.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Keterbatasan:
+1. **Sensitivitas Terhadap Hyperparameter Derau**: Penentuan nilai skala derau spasial ($\lambda_1, \lambda_2$) dan tingkat pembalikan kelas ($\gamma$) membutuhkan penalaan yang cermat. Dari sisi rekayasa, jika derau terlalu rendah, efek stabilisasi tidak tercapai; jika derau terlalu tinggi, tugas rekonstruksi menjadi terlalu sulit dan dapat merusak representasi fitur yang dipelajari model.
+2. **Peningkatan Konsumsi Memori Pelatihan**: Meskipun tidak ada *overhead* saat inferensi, penggunaan kelompok *denoising* multipel ($M \times N$) secara langsung meningkatkan jumlah token kueri yang diproses oleh *decoder* selama pelatihan. Hal ini menyebabkan lonjakan konsumsi memori GPU pada fase pelatihan.
+3. **Penyusutan Efektivitas pada Model Skala Besar**: Secara konseptual, keuntungan efisiensi yang ditawarkan oleh metode ini cenderung berkurang pada skenario pelatihan model skala sangat besar dengan volume data yang masif. Pada kondisi tersebut, ketidakstabilan *Hungarian matching* dapat teratasi secara alami seiring dengan berjalannya proses pelatihan yang sangat panjang.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+## Kaitan dengan Bab Lain
 
-## Kesimpulan
-DN-DETR menunjukkan solusi elegan bagi lambatnya DETR dan menjadi batu loncatan menuju detektor DETR SOTA.
+DN-DETR berada di posisi transisi yang krusial dalam peta perkembangan detektor objek berbasis *transformer*. Konsep kueri jangkar dinamis yang digunakannya diadopsi langsung dari DAB-DETR (bab terkait), yang merupakan pengembangan dari DETR orisinal ([bab 022](./022%20-%202020%20-%20DETR%20-%20Fondasi%20RGB.md)) yang memiliki masalah konvergensi lambat.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `li2022dndetr` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+Metode *query denoising* yang diletakkan dalam bab ini terbukti sangat berpengaruh dan diwarisi oleh generasi detektor *SOTA* (*State-Of-The-Art*) setelahnya. Secara khusus, DINO detector ([bab 158](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md)) menyempurnakan formulasi DN-DETR dengan memperkenalkan *contrastive denoising* menggunakan contoh negatif untuk melatih kemampuan diskriminasi model. Di sisi lain, RT-DETR ([bab 155](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md)), yang merupakan detektor *transformer* real-time pertama yang kompetitif dengan keluarga YOLO, mengadopsi skema latihan berbasis *query denoising* ini untuk mempercepat pelatihannya pada arsitektur hibrida CNN-Transformer. Selain itu, DN-DETR juga menginspirasi skema pelatihan multi-skala dan multi-tugas yang dijumpai pada detektor komposit seperti Co-DETR ([bab 165](./165%20-%202023%20-%20Co-DETR%20-%20Fondasi%20RGB.md)).
 
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
+Kaitan dengan bab-bab lain juga mencakup perbandingan dengan upaya optimasi kueri seperti Deformable DETR ([bab 023](./023%20-%202021%20-%20Deformable%20DETR%20-%20Fondasi%20RGB.md)) dan Conditional DETR ([bab 160](./160%20-%202021%20-%20Conditional%20DETR%20-%20Fondasi%20RGB.md)). Dari segi ekstraksi fitur, model ini dapat dikombinasikan dengan tulang punggung Transformer modern seperti Vision Transformer ([bab 024](./024%20-%202021%20-%20Vision%20Transformer%20%28ViT%29%20-%20Fondasi%20RGB.md)), Swin Transformer ([bab 025](./025%20-%202021%20-%20Swin%20Transformer%20-%20Fondasi%20RGB.md)), Swin Transformer V2 ([bab 163](./163%20-%202022%20-%20Swin%20Transformer%20V2%20-%20Fondasi%20RGB.md)), ConvNeXt ([bab 162](./162%20-%202022%20-%20ConvNeXt%20-%20Fondasi%20RGB.md)), dan Pyramid Vision Transformer ([bab 164](./164%20-%202021%20-%20Pyramid%20Vision%20Transformer%20-%20Fondasi%20RGB.md)).
 
----
-*Lembar 159/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Poin untuk Sitasi
+
+Kutip dengan kunci `li2022dndetr`. Ringkasan yang aman dikutip dalam tinjauan pustaka:
+"DN-DETR mempercepat konvergensi pelatihan detektor berbasis *transformer* dengan memperkenalkan tugas pembantu berupa rekonstruksi kueri berderau (*query denoising*). Metode ini menstabilkan proses pembelajaran dengan memintas ketidakstabilan algoritme pencocokan Hungarian selama fase awal pelatihan, sehingga meningkatkan akurasi deteksi secara signifikan hingga mencapai 48,6% AP pada dataset COCO 2017 val menggunakan *backbone* ResNet-50 tanpa penambahan biaya komputasi saat inferensi."
+Catatan verifikasi: Hasil eksperimen spesifik (43,4% AP pada 12 *epoch* dan 48,6% AP pada 50 *epoch*) diperoleh dari pengujian pada dataset COCO 2017 val. Verifikasi manual disarankan untuk memastikan parameter derau $\lambda$ dan $\gamma$ yang digunakan saat mereproduksi metode ini pada arsitektur non-DAB-DETR.
