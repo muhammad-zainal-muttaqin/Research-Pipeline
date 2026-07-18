@@ -1,208 +1,94 @@
 # 192 - YOLO26: Key Architectural Enhancements and Performance Benchmarking for Real-Time Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 192 dari 202 |
 | Kunci BibTeX | `sapkota2025yolo26` |
-| Judul | YOLO26: Key Architectural Enhancements and Performance Benchmarking for Real-Time Object Detection |
-| Penulis | Sapkota, Ranjan; Cheppally, Rahul Harsha; Sharda, Ajay; Karkee, Manoj |
+| Judul asli | YOLO26: Key Architectural Enhancements and Performance Benchmarking for Real-Time Object Detection |
+| Penulis | Ranjan Sapkota, Rahul Harsha Cheppally, Ajay Sharda, Manoj Karkee |
 | Tahun | 2025 |
-| Venue / Jurnal | arXiv preprint arXiv:2509.25164 |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | YOLO26, NMS-free, edge, real-time, DFL-free |
+| Venue | arXiv preprint (arXiv:2509.25164) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2509.25164
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLO26%3A%20Key%20Architectural%20Enhancements%20and%20Performance%20Benchmarking%20for%20Real-Time%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLO26%3A%20Key%20Architectural%20Enhancements%20and%20Performance%20Benchmarking%20for%20Real-Time%20Object%20Detection&sort=relevance
+- **Google Scholar:** https://scholar.google.com/scholar?q=YOLO26%3A%20Key%20Architectural%20Enhancements%20and%20Performance%20Benchmarking%20for%20Real-Time%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=YOLO26%3A%20Key%20Architectural%20Enhancements%20and%20Performance%20Benchmarking%20for%20Real-Time%20Object%20Detection&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2509.25164 |
+Makalah ini menelaah YOLO26, detektor objek yang dirilis Ultralytics pada September 2025 dan diposisikan sebagai model "edge-first" — dirancang agar berjalan efisien pada perangkat berdaya komputasi terbatas seperti papan tersemat dan modul kamera pintar. Penulis bukan pengembang model, melainkan kelompok riset independen (Cornell University dan Kansas State University) yang sebelumnya menerbitkan telaah serupa untuk YOLOv10 hingga YOLOv13; makalah ini menganalisis empat perubahan arsitektur utama YOLO26 dan membandingkan kinerjanya dengan generasi YOLO sebelumnya serta detektor berbasis *transformer* (arsitektur jaringan yang mengandalkan mekanisme *attention*, yaitu pembobotan relasi antar-elemen fitur secara global).
 
-## Ringkasan Eksekutif
-YOLO26 (dirilis Ultralytics, September 2025) adalah anggota terbaru keluarga YOLO yang dirancang end-to-end dan hemat untuk perangkat edge/berdaya rendah. Makalah ini menelaah inovasi arsitekturnya dan membandingkannya lintas versi YOLO serta detektor berbasis transformer.
+Empat perubahan yang dibahas adalah penghapusan *Distribution Focal Loss* (DFL, fungsi kerugian regresi kotak berbasis distribusi probabilitas diskret), inferensi *end-to-end* tanpa *Non-Maximum Suppression* (NMS, tahap pasca-proses yang membuang deteksi tumpang tindih), skema pelatihan ProgLoss dan *Small-Target-Aware Label Assignment* (STAL) untuk objek kecil, serta optimizer baru bernama MuSGD. Menurut dokumentasi resmi Ultralytics yang dirujuk silang dalam telaah ini, YOLO26 varian *nano* (YOLO26n) mencapai 40,9% mAP pada COCO dengan latensi sekitar 1,7 milidetik pada GPU T4 memakai TensorRT, sedangkan varian terbesar (YOLO26x) mencapai 57,5% mAP dengan latensi 11,8 milidetik. Model ini mendukung lima tugas visi dalam satu arsitektur: deteksi, segmentasi instans, estimasi pose, deteksi kotak berorientasi (OBB), dan klasifikasi.
 
-## Abstrak (Parafrase)
-Makalah mengevaluasi YOLO26, detektor objek real-time yang menghapus Distribution Focal Loss (DFL) dan mengadopsi inferensi tanpa NMS (NMS-free) sehingga menghasilkan prediksi deterministik tanpa pasca-proses. Diperkenalkan pula ProgLoss, skema Small-Target-Aware Label Assignment (STAL) untuk objek kecil, serta optimizer MuSGD untuk konvergensi stabil. YOLO26 mendukung lima tugas (deteksi, segmentasi instans, estimasi pose, deteksi berorientasi/OBB, klasifikasi) dan menyasar penempatan pada perangkat seperti NVIDIA Jetson. Dilaporkan capaian sekitar 40.9-57.5 mAP pada COCO dengan latensi 1.7-11.8 ms pada GPU T4, mendorong batas Pareto akurasi-latensi melampaui YOLO real-time sebelumnya.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Latar Belakang & Konteks
-Detektor YOLO umumnya bergantung pada NMS untuk membuang deteksi tumpang tindih, menambah latensi dan menyulitkan penerapan end-to-end. DFL juga menambah kompleksitas kepala regresi. YOLO26 berupaya menyederhanakan pipeline sambil menjaga akurasi objek kecil dan efisiensi pada perangkat tepi.
+Sejak YOLOv10 (bab 009), keluarga YOLO mulai menghilangkan NMS dengan menerapkan penugasan label satu-ke-satu selama pelatihan sehingga jaringan tidak lagi menghasilkan banyak kotak tumpang tindih untuk objek yang sama. Namun, generasi sebelum YOLO26 — termasuk YOLOv11 (bab 010) — masih memakai DFL pada kepala regresi kotak. DFL merepresentasikan setiap sisi kotak pembatas sebagai distribusi probabilitas atas sejumlah nilai diskret, bukan sebagai satu angka kontinu; pendekatan ini meningkatkan presisi lokalisasi tetapi menambah operasi komputasi non-standar (seperti *softmax* dan penjumlahan berbobot) yang sulit dipetakan langsung ke format ekspor edge seperti TensorRT, CoreML, atau TFLite tanpa penyesuaian khusus.
 
-## Permasalahan yang Diangkat
-- Ketergantungan pada NMS menghambat inferensi end-to-end dan menambah latensi variabel.
-- Akurasi objek kecil sering turun pada detektor ringan untuk edge.
-- Kompleksitas DFL pada kepala regresi menambah beban komputasi.
-- Kebutuhan model tunggal untuk banyak tugas visi pada perangkat berdaya rendah.
+Masalah kedua menyangkut objek kecil. Skema penugasan label task-aligned (TAL) yang lazim dipakai detektor YOLO modern menilai kecocokan antara prediksi dan target berdasarkan kombinasi skor klasifikasi dan IoU (*Intersection over Union*, rasio irisan terhadap gabungan dua kotak). Untuk objek berukuran sangat kecil, wilayah irisan yang mungkin dicapai terbatas, sehingga jumlah kandidat positif yang lolos ambang penugasan sering kali sedikit atau nol, membuat sinyal pelatihan untuk kelas objek kecil lemah. Masalah ketiga adalah kebutuhan satu model tunggal yang melayani beberapa tugas visi pada perangkat tepi tanpa arsitektur terpisah per tugas.
 
-## Tujuan & Pertanyaan Penelitian
-- Menghapus NMS dan DFL tanpa menurunkan akurasi.
-- Meningkatkan deteksi objek kecil via STAL dan ProgLoss.
-- Menstabilkan pelatihan dengan optimizer MuSGD.
-- Menyediakan satu model multi-tugas siap-edge.
+## Ide Utama
 
-## Tinjauan Terdahulu / Posisi Literatur
-YOLO26 melanjutkan garis keturunan YOLOv8-v13 dan detektor NMS-free bergaya DETR/YOLOv10, memadukan efisiensi CNN dengan penugasan label satu-ke-satu untuk menghapus pasca-proses.
+Gagasan inti YOLO26 adalah menyederhanakan kepala deteksi hingga seluruh proses inferensi — dari citra masukan sampai daftar kotak akhir — dapat diekspor sebagai satu graf komputasi tanpa operasi pasca-proses eksternal, sambil memperbaiki sinyal pelatihan untuk objek kecil lewat perubahan pada fungsi kerugian dan penugasan label, bukan pada arsitektur *backbone* (jaringan ekstraksi fitur awal). Regresi kotak dikembalikan ke bentuk kontinu langsung (tanpa representasi distribusi DFL), kepala deteksi dilatih agar setiap objek hanya dicocokkan dengan satu prediksi (skema satu-ke-satu, sehingga NMS tidak diperlukan saat inferensi), dan pembobotan kerugian pelatihan digeser secara bertahap ke arah kepala yang dipakai saat inferensi. Optimizer MuSGD menggabungkan mekanisme SGD (*Stochastic Gradient Descent*, penurunan gradien stokastik) konvensional dengan teknik Muon — metode optimisasi yang mengatur arah pembaruan bobot memakai ortogonalisasi matriks gradien, awalnya dikembangkan untuk melatih model bahasa besar — untuk menjaga konvergensi tetap stabil pada arsitektur yang telah disederhanakan.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- YOLOv10 - deteksi NMS-free via penugasan konsisten ganda.
-- RT-DETR - detektor transformer real-time end-to-end.
-- YOLOv8/v11 - basis keluarga Ultralytics multi-tugas.
-- Distribution Focal Loss (GFL) - representasi regresi yang dihapus di sini.
+### Penghapusan Distribution Focal Loss
 
-## Metodologi & Arsitektur
-Kepala deteksi dirancang ulang untuk menegakkan penugasan label satu-ke-satu saat pelatihan, menghasilkan prediksi non-redundan tanpa NMS. DFL dihilangkan; ProgLoss dan STAL meningkatkan pembelajaran objek kecil; optimizer MuSGD (hibrida bergaya Muon+SGD) menjaga konvergensi.
+Pada YOLO generasi sebelumnya, jarak dari titik acuan ke tiap sisi kotak pembatas diprediksi sebagai distribusi probabilitas atas beberapa *bin* diskret (misalnya 16 nilai), lalu nilai akhir dihitung sebagai ekspektasi (rerata berbobot) distribusi tersebut. YOLO26 mengganti representasi ini dengan regresi langsung — jaringan memprediksi satu nilai kontinu per sisi kotak. Perubahan ini mengurangi jumlah parameter dan operasi pada kepala regresi, sekaligus menghapus kebutuhan operasi *softmax* dan integrasi bobot yang tidak selalu didukung native oleh *runtime* inferensi edge. Menurut telaah ini, rentang regresi tetap tidak dibatasi (*unconstrained*) meski representasi disederhanakan, sehingga kapasitas model untuk memprediksi kotak berukuran ekstrem tidak berkurang.
 
-Komponen / langkah metodologis utama:
+### Kepala Deteksi Tanpa NMS
 
-- Arsitektur end-to-end NMS-free (penugasan satu-ke-satu).
-- Penghapusan Distribution Focal Loss (DFL) pada kepala regresi.
-- ProgLoss untuk penyeimbangan pelatihan progresif.
-- STAL: penugasan label sadar objek kecil.
-- Optimizer MuSGD untuk stabilitas konvergensi.
-- Dukungan multi-tugas: deteksi, segmentasi, pose, OBB, klasifikasi.
+Kepala deteksi YOLO26 dilatih dengan penugasan satu-ke-satu: setiap objek kebenaran hanya dipasangkan dengan satu prediksi positif, bukan banyak kandidat seperti pada penugasan satu-ke-banyak yang lazim dipakai bersama NMS. Dengan penugasan ini, jaringan belajar menekan sendiri prediksi berlebih selama pelatihan, sehingga saat inferensi kotak yang dihasilkan sudah tidak tumpang tindih dan tidak memerlukan tahap NMS terpisah. Konsekuensi praktisnya adalah latensi inferensi menjadi tetap (deterministik) — pada NMS konvensional, waktu pemrosesan bergantung pada jumlah kotak kandidat yang harus disaring, yang bervariasi antar-citra.
 
-## Kontribusi Utama
-1. Detektor YOLO end-to-end tanpa NMS dan tanpa DFL.
-2. Mekanisme STAL+ProgLoss untuk akurasi objek kecil.
-3. Optimizer MuSGD baru untuk pelatihan stabil.
-4. Benchmark lintas versi YOLO dan perangkat edge (Jetson).
+### ProgLoss dan STAL untuk Objek Kecil
 
-## Rincian Eksperimen
-Evaluasi pada COCO untuk akurasi/latensi dan benchmarking pada perangkat edge NVIDIA Jetson, dibandingkan dengan YOLOv8 hingga YOLOv13 serta detektor transformer.
+ProgLoss (*Progressive Loss*) mengatur bobot kerugian pelatihan agar bergeser secara bertahap, dari kepala bantu (*auxiliary head*, dipakai saat pelatihan untuk memperkaya sinyal gradien) menuju kepala yang dipakai saat inferensi. Dengan pergeseran bertahap ini, kepala inferensi menerima pengawasan penuh secara berangsur, bukan sejak awal, sehingga pelatihan lebih stabil dibanding bila kedua kepala diberi bobot tetap. STAL (*Small-Target-Aware Label Assignment*) menambahkan aturan pada skema penugasan task-aligned agar setiap objek kecil dijamin memperoleh sedikitnya satu kandidat positif, meski skor IoU-nya di bawah ambang normal. Ilustrasinya: bila objek berukuran 8×8 piksel pada citra 640×640 hanya tumpang tindih penuh dengan satu sel prediksi, penugasan standar berbasis ambang skor gabungan dapat menolaknya karena skornya rendah; STAL memastikan kandidat berskor tertinggi untuk objek itu tetap diberi label positif walau di bawah ambang.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Optimizer MuSGD
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO | mAP | ~40.9-57.5 lintas skala model (konfirmasi ke naskah) |
-| GPU T4 | Latensi | ~1.7-11.8 ms per citra |
-| Jetson (edge) | FPS/latensi | Dioptimalkan untuk CPU/edge; angka pasti lihat naskah |
+MuSGD adalah optimizer hibrida yang mengombinasikan pembaruan bobot gaya SGD dengan momentum konvensional dan komponen Muon yang mengortogonalisasi arah pembaruan pada lapisan tertentu (umumnya lapisan berbobot matriks besar). Tujuannya menjaga arah langkah optimisasi tetap terarah dan tidak dominan pada satu subruang parameter, sehingga konvergensi lebih stabil terutama ketika kepala deteksi telah disederhanakan (tanpa DFL) dan sinyal gradiennya berbeda karakter dari arsitektur sebelumnya.
 
-## Temuan Kunci
-- Menghapus NMS memungkinkan inferensi deterministik end-to-end.
-- STAL+ProgLoss menaikkan akurasi objek kecil pada model ringan.
-- MuSGD memberi konvergensi lebih stabil dibanding baseline.
-- Satu model melayani lima tugas visi sekaligus.
+Diagram berikut merangkum posisi keempat perubahan pada alur pelatihan-ke-inferensi:
 
-## Keunggulan
-- Inferensi tanpa NMS: latensi lebih ringkas dan deterministik.
-- Fokus objek kecil dan efisiensi edge.
-- Multi-tugas dalam satu arsitektur.
+```
+PELATIHAN                                  INFERENSI
+┌──────────────┐   penugasan 1-ke-1        ┌──────────────┐
+│  backbone +   │──────────────────────────▶│  backbone +   │
+│  neck (tetap) │   ProgLoss: bobot         │  neck (tetap) │
+└──────┬───────┘   bergeser ke head         └──────┬───────┘
+       │           inferensi                       │
+       ▼                                            ▼
+┌──────────────┐   STAL: jamin positif     ┌──────────────┐
+│ head regresi  │   untuk objek kecil       │ head regresi  │
+│ (tanpa DFL)   │                           │ (tanpa DFL)   │
+└──────┬───────┘   optimizer: MuSGD         └──────┬───────┘
+       │                                            │
+       ▼                                            ▼
+  kotak + kelas                              kotak + kelas
+  (banyak kandidat,                          (langsung final,
+   disaring saat                              tanpa tahap NMS)
+   pelatihan)
+```
 
-## Keterbatasan
-- Sebagai rilis 2025, benchmark independen masih terbatas (verifikasi angka).
-- Sebagian klaim berasal dari pihak pengembang; perlu reproduksi.
-- Detail MuSGD/ProgLoss perlu dibaca dari naskah untuk implementasi.
+Diagram ini menunjukkan bahwa *backbone* (jaringan ekstraksi fitur) dan *neck* (modul agregasi fitur multi-skala) tidak berubah; perubahan YOLO26 terkonsentrasi pada kepala deteksi dan resep pelatihannya, sehingga bobot model yang sudah ada dari arsitektur YOLO sebelumnya relatif mudah diadaptasi.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-Sangat relevan sebagai state-of-the-art YOLO terbaru (2025) untuk fokus tinjauan YOLO real-time; menjadi rujukan mutakhir dibanding YOLOv8/RT-DETR pada bab detektor.
+Telaah ini membandingkan YOLO26 dengan YOLOv8, YOLOv11, YOLOv12, YOLOv13, RT-DETR, dan RF-DETR (bab 193) pada dataset COCO (*Common Objects in Context*, tolok ukur deteksi objek berskala besar dengan 80 kelas) untuk akurasi, serta pada perangkat edge seperti NVIDIA Jetson untuk latensi. Berdasarkan tabel benchmark yang juga dipublikasikan pada dokumentasi resmi Ultralytics dan dirujuk konsisten oleh telaah ini, lima varian ukuran YOLO26 mencapai mAP@50-95 sebagai berikut: nano 40,9%, small 48,6%, medium 53,1%, large 55,0%, dan extra-large 57,5%. Latensi pada GPU T4 dengan TensorRT FP16 berkisar dari 1,7 milidetik (nano) hingga 11,8 milidetik (extra-large). Rentang ini konsisten dengan klaim di ringkasan makalah bahwa YOLO26 mendorong batas Pareto akurasi-latensi (kurva yang menunjukkan tidak ada model lain yang unggul sekaligus di kedua metrik) melampaui YOLO real-time sebelumnya pada rentang ukuran yang sama.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Untuk inferensi CPU, telaah ini melaporkan klaim percepatan hingga 43% pada format ONNX untuk YOLO26n dibandingkan YOLO11n, diukur pada prosesor Intel Xeon 2,00 GHz; angka mentah yang beredar menyebut latensi sekitar 38,9 milidetik untuk YOLO26n berbanding sekitar 56,1 milidetik untuk YOLO11n. Interpretasinya: penghapusan DFL dan penyederhanaan pasca-proses memberi dampak nyata pada perangkat tanpa akselerator GPU, relevan untuk kamera edge atau papan tersemat berbasis CPU. Karena angka ini berasal dari materi yang diterbitkan Ultralytics dan dikutip ulang oleh telaah ini, verifikasi silang ke tabel hasil pasti pada naskah arXiv tetap diperlukan sebelum dipakai sebagai rujukan kuantitatif.
 
-- [193 - 2025 - RF-DETR NAS untuk Detektor Transformer Real-Time - Fondasi RGB](./193%20-%202025%20-%20RF-DETR%20NAS%20untuk%20Detektor%20Transformer%20Real-Time%20-%20Fondasi%20RGB.md)
-- [194 - 2026 - Le-DETR Encoder Efisien untuk DETR Real-Time - Fondasi RGB](./194%20-%202026%20-%20Le-DETR%20Encoder%20Efisien%20untuk%20DETR%20Real-Time%20-%20Fondasi%20RGB.md)
+## Kelebihan dan Keterbatasan
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 202 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Kelebihan utama YOLO26 menurut telaah ini adalah kesederhanaan jalur inferensi: tanpa DFL dan tanpa NMS, seluruh model dapat diekspor sebagai satu graf komputasi tunggal ke format seperti ONNX, TensorRT, CoreML, atau TFLite tanpa operasi kustom tambahan, yang mempermudah penerapan pada kerangka kerja inferensi edge yang dukungan operatornya terbatas. STAL dan ProgLoss menyasar kelemahan spesifik pada objek kecil tanpa mengubah *backbone*, sehingga peningkatan akurasi objek kecil dapat dicapai tanpa menaikkan biaya komputasi utama. Cakupan lima tugas visi dalam satu keluarga arsitektur juga memudahkan penerapan pada sistem yang membutuhkan lebih dari sekadar deteksi kotak, misalnya segmentasi atau estimasi pose pada jalur pemrosesan yang sama.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+Dari sisi rekayasa, keterbatasan paling mendasar adalah bahwa makalah ini merupakan telaah/benchmark independen atas model yang dirilis pihak lain (Ultralytics), bukan makalah asli pengembang model; sebagian angka yang dikutip bersumber dari materi rilis dan dokumentasi resmi, sehingga independensi pengukurannya perlu diperiksa lebih lanjut pada naskah lengkap. Secara konseptual, klaim percepatan CPU hingga 43% bergantung pada perangkat keras pengujian spesifik (Intel Xeon 2,00 GHz) dan format ekspor (ONNX); besarnya pada perangkat keras atau format ekspor lain tidak tentu sama. Karena YOLO26 dirilis September 2025, replikasi independen dari kelompok riset lain masih terbatas pada saat makalah ini disusun, sehingga generalisasi hasil ke skenario penerapan lain belum banyak teruji publik.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+## Kaitan dengan Bab Lain
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+YOLO26 melanjutkan garis penghapusan NMS yang dimulai YOLOv10 (bab [009 - 2024 - YOLOv10 - Fondasi RGB](./009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md)) dan mewarisi struktur multi-tugas dari YOLOv11 (bab [010 - 2024 - YOLOv11 (Overview) - Fondasi RGB](./010%20-%202024%20-%20YOLOv11%20%28Overview%29%20-%20Fondasi%20RGB.md)), dengan tambahan penghapusan DFL dan resep pelatihan baru (ProgLoss, STAL, MuSGD) yang tidak ada pada kedua pendahulunya. Dibandingkan dengan detektor berbasis *transformer* pada klaster yang sama, YOLO26 tetap berbasis konvolusi dan bersaing langsung dengan RF-DETR (bab [193 - 2025 - RF-DETR NAS untuk Detektor Transformer Real-Time - Fondasi RGB](./193%20-%202025%20-%20RF-DETR%20NAS%20untuk%20Detektor%20Transformer%20Real-Time%20-%20Fondasi%20RGB.md)) dan Le-DETR (bab [194 - 2026 - Le-DETR Encoder Efisien untuk DETR Real-Time - Fondasi RGB](./194%20-%202026%20-%20Le-DETR%20Encoder%20Efisien%20untuk%20DETR%20Real-Time%20-%20Fondasi%20RGB.md)) pada kurva akurasi-latensi yang sama, meski ketiganya memakai strategi arsitektur berbeda untuk mencapai inferensi *end-to-end* tanpa NMS. Perbandingan lintas ketiga bab ini relevan bagi pembaca yang menilai trade-off antara detektor berbasis CNN yang telah matang secara ekosistem penerapan (YOLO26) dan detektor berbasis *transformer* yang lebih baru.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Poin untuk Sitasi
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-YOLO26 memindahkan keluarga YOLO ke paradigma end-to-end NMS-free dengan penekanan objek kecil dan efisiensi edge. Sebagai karya 2025 paling mutakhir di klaster ini, ia layak menjadi tolok ukur; angka kinerja spesifik sebaiknya diverifikasi lewat naskah/arXiv sebelum dikutip.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `sapkota2025yolo26` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 192/202 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `sapkota2025yolo26`. Ringkasan yang aman dikutip: "YOLO26 menghapus Distribution Focal Loss dan NMS dari pipeline inferensi, menambahkan ProgLoss serta STAL untuk objek kecil dan optimizer MuSGD, mencapai 40,9-57,5% mAP pada COCO dengan latensi 1,7-11,8 milidetik pada GPU T4 di lima ukuran model." Klaim berikut perlu diverifikasi langsung ke tabel dan teks naskah arXiv sebelum dikutip dalam karya formal: (1) angka mAP dan latensi per varian (nano/small/medium/large/extra-large) yang dalam telaah ini disilangkan dengan dokumentasi resmi Ultralytics, bukan diekstrak langsung dari tabel makalah; (2) klaim percepatan CPU hingga 43% (YOLO26n vs YOLO11n, ONNX, Intel Xeon 2,00 GHz) beserta angka mentah 38,9 ms vs 56,1 ms; (3) rincian afiliasi penulis dan cakupan pembanding penuh (YOLOv8-v13, RT-DETR, RF-DETR) sebagaimana dilaporkan makalah. Karena makalah ini terbit September 2025 dan membahas model yang sama-sama baru, kehati-hatian ekstra diperlukan: pastikan versi arXiv yang dirujuk (naskah mengalami beberapa revisi) sebelum sitasi formal.

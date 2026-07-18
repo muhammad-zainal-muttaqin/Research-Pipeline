@@ -1,200 +1,98 @@
 # 191 - DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 191 dari 191 |
 | Kunci BibTeX | `teed2021droidslam` |
-| Judul | DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras |
-| Penulis | Teed, Zachary; Deng, Jia |
+| Judul asli | DROID-SLAM: Deep Visual SLAM for Monocular, Stereo, and RGB-D Cameras |
+| Penulis | Zachary Teed, Jia Deng |
 | Tahun | 2021 |
-| Venue / Jurnal | Advances in Neural Information Processing Systems (NeurIPS) |
-| Tema klaster | RGB-D SLAM |
-| Kata kunci | deep SLAM, dense bundle adjustment, optical flow, RGB-D |
+| Venue | Advances in Neural Information Processing Systems (NeurIPS 2021) |
+| Tema | RGB-D SLAM |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-slam)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2108.10869
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=DROID-SLAM%3A%20Deep%20Visual%20SLAM%20for%20Monocular%2C%20Stereo%2C%20and%20RGB-D%20Cameras
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=DROID-SLAM%3A%20Deep%20Visual%20SLAM%20for%20Monocular%2C%20Stereo%2C%20and%20RGB-D%20Cameras&sort=relevance
+- **Proceedings NeurIPS (PDF resmi):** https://proceedings.neurips.cc/paper/2021/hash/89fcd07f20b6785b92134bd6c1d0fa42-Abstract.html
+- **Google Scholar:** https://scholar.google.com/scholar?q=DROID-SLAM%3A%20Deep%20Visual%20SLAM%20for%20Monocular%2C%20Stereo%2C%20and%20RGB-D%20Cameras
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2108.10869 |
+DROID-SLAM adalah sistem *SLAM* (*Simultaneous Localization and Mapping*, estimasi posisi kamera dan peta lingkungan secara serentak) berbasis pembelajaran dalam yang menyatukan estimasi *optical flow* (aliran optik, perpindahan piksel antar-*frame*) yang dipelajari dengan optimasi geometris klasik. Inti sistemnya adalah lapis *Dense Bundle Adjustment* (DBA, penyesuaian berkas pandang padat yang dapat didiferensialkan) yang disisipkan langsung di dalam jaringan saraf berulang (*recurrent*): pada setiap iterasi, jaringan memprediksi revisi korespondensi piksel antar-*frame* beserta tingkat kepercayaannya, lalu lapis DBA menyelesaikan pose kamera dan *depth* (kedalaman) per-piksel yang konsisten secara geometris. Sistem ini dilatih hanya pada video monokular sintetis, tetapi saat pengujian menerima masukan monokular, stereo, maupun RGB-D tanpa mengubah arsitektur — hanya menambah kendala geometris pada graf yang dioptimalkan. Pada TartanAir, EuRoC, dan TUM-RGBD, DROID-SLAM dilaporkan menekan galat trajektori jauh di bawah metode SLAM berbasis pembelajaran sebelumnya dan jarang mengalami kegagalan pelacakan total, kondisi yang masih sering muncul pada sistem klasik berbasis fitur ketika gerak kamera cepat atau tekstur adegan minim.
 
-## Ringkasan Eksekutif
-DROID-SLAM adalah sistem SLAM berbasis deep learning yang memperbarui pose kamera dan depth secara iteratif melalui Dense Bundle Adjustment (DBA) yang dapat dilatih, mencapai akurasi dan robustnes tinggi untuk kamera monokular, stereo, dan RGB-D.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Abstrak (Parafrase)
-Penulis membangun SLAM di sekitar operator DBA layer yang dapat didiferensialkan: jaringan (mirip RAFT) memprediksi koreksi aliran optik antar-frame, lalu DBA memperbarui pose dan depth per-piksel secara konsisten geometris. Diulang dalam struktur rekuren, DROID-SLAM jauh mengungguli SLAM klasik dan deep sebelumnya dalam akurasi dan robustnes, dengan sedikit kegagalan tracking, dan mendukung mono/stereo/RGB-D.
+Sistem SLAM klasik berbasis fitur, seperti ORB-SLAM2 (bab 107) dan ORB-SLAM3 (bab 190), membangun peta dari sekumpulan titik fitur jarang (*sparse*) yang dideteksi dan dicocokkan antar-*frame*, lalu memperbaiki pose dan posisi titik peta melalui *bundle adjustment* — optimasi bersama yang meminimalkan galat reproyeksi seluruh titik dan pose secara serentak. Pendekatan ini akurat pada kondisi baik, tetapi rapuh ketika korespondensi fitur sulit ditemukan: gerak kamera cepat menyebabkan *motion blur*, permukaan bertekstur minim tidak menghasilkan cukup titik fitur yang andal, dan pencahayaan berubah drastis membuat deskriptor fitur tidak cocok. Kegagalan pencocokan fitur pada tahap awal berpotensi menjalar menjadi kegagalan pelacakan total (*catastrophic tracking failure*): sistem kehilangan estimasi pose sepenuhnya dan tidak dapat pulih tanpa inisialisasi ulang.
 
-## Latar Belakang & Konteks
-SLAM klasik akurat tetapi rapuh pada kondisi sulit; metode deep sebelumnya sering kurang akurat. DROID-SLAM menyatukan pembelajaran dan optimasi geometris.
+Generasi awal SLAM berbasis pembelajaran dalam, seperti DeepV2D dan DeepFactors, mencoba mengatasi kerapuhan ini dengan meregresi pose dan *depth* langsung memakai jaringan konvolusi. Pendekatan tersebut lebih tangguh terhadap variasi visual, tetapi umumnya kurang akurat dibandingkan metode klasik karena tidak menegakkan konsistensi geometris seketat *bundle adjustment* eksplisit — regresi jaringan cenderung menghasilkan estimasi yang mulus secara statistik, tetapi tidak selalu memenuhi kendala proyeksi kamera yang tepat. Celah yang tersisa adalah menggabungkan ketangguhan fitur yang dipelajari dengan ketelitian geometris optimasi klasik, dalam satu sistem yang dapat dilatih *end-to-end* (dari masukan ke keluaran tanpa tahap terpisah) dan bekerja pada berbagai jenis sensor kamera tanpa dilatih ulang untuk masing-masing.
 
-## Permasalahan yang Diangkat
-- SLAM klasik rapuh (gerak cepat, tekstur miskin).
-- Metode deep kurang akurat/geometris.
-- Butuh pembaruan pose+depth yang konsisten.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Menyatukan deep flow dan bundle adjustment.
-- Pembaruan pose+depth iteratif terlatih.
-- Akurasi dan robustnes tinggi lintas modalitas.
+Gagasan inti DROID-SLAM adalah menempatkan optimasi *bundle adjustment* sebagai satu lapis yang dapat didiferensialkan di dalam arsitektur jaringan berulang, bukan sebagai tahap pasca-pemrosesan terpisah dari fitur yang dipelajari. Pada setiap iterasi, jaringan menerima sepasang *frame* dan memprediksi dua hal: ke mana korespondensi piksel seharusnya direvisi (mirip prediksi *flow*), dan seberapa yakin jaringan terhadap revisi tersebut untuk tiap piksel. Kedua keluaran ini diperlakukan sebagai target korespondensi sementara yang diselesaikan lapis DBA menjadi pembaruan pose kamera dan *depth* per-piksel yang taat kaidah proyeksi kamera, lalu diumpankan kembali ke iterasi berikutnya sehingga estimasi makin presisi. Karena DBA diformulasikan sebagai operasi yang dapat diturunkan (*differentiable*), galat pada keluaran akhir dapat merambat balik (*backpropagation*) melalui seluruh proses optimasi hingga ke bobot jaringan fitur — jaringan belajar memprediksi korespondensi yang membuat optimasi geometris konvergen ke hasil benar, bukan sekadar mendekati target secara statistik.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Menggabungkan RAFT (optical flow) dan bundle adjustment; berdialog dengan ORB-SLAM3 dan DeepV2D.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Representasi Keadaan dan Graf Frame
 
-- RAFT - optical flow rekuren.
-- ORB-SLAM3 - SLAM fitur klasik.
-- BA-Net/DeepV2D - deep SfM/SLAM.
-- Bundle adjustment diferensiabel.
+DROID-SLAM menyimpan dua variabel keadaan per *frame*: pose kamera dalam grup SE(3) (rotasi dan translasi tiga dimensi) dan peta *inverse depth* (kebalikan kedalaman, satu nilai per piksel pada resolusi 1/8 citra masukan). Hubungan antar-*frame* direpresentasikan sebagai graf *frame*: setiap *node* adalah satu *frame*, dan setiap sisi (*edge*) menghubungkan dua *frame* yang dianggap saling tumpang tindih pandangannya (*co-visible*). Graf ini diperbarui secara dinamis seiring video berjalan — ketika kamera kembali melintasi wilayah yang pernah direkam, sisi baru dapat terbentuk kembali ke *frame* lama yang relevan, memberi efek koreksi jalur berulang (mirip fungsi *loop closure*, pengenalan tempat yang pernah dikunjungi untuk mengoreksi akumulasi galat) tanpa modul pengenalan tempat terpisah seperti pada sistem klasik.
 
-## Metodologi & Arsitektur
-Graf frame; update operator memprediksi revisi korespondensi/flow dengan confidence; Dense Bundle Adjustment layer menyelesaikan pose kamera dan depth per-piksel; iterasi rekuren memperbaiki estimasi; mendukung mono/stereo/RGB-D.
+### Enkoder Fitur dan Volume Korelasi
 
-Komponen / langkah metodologis utama:
+Setiap *frame* diproses oleh dua jaringan konvolusi terpisah: enkoder fitur untuk pencocokan antar-*frame*, dan enkoder konteks yang menghasilkan fitur sebagai masukan tambahan pengoperasi pembaruan. Untuk setiap sisi pada graf *frame*, volume korelasi 4-dimensi dibentuk dengan menghitung hasil kali titik (*dot product*) antara vektor fitur setiap piksel *frame* pertama terhadap seluruh piksel *frame* kedua, mengikuti skema RAFT (*Recurrent All-Pairs Field Transforms*, jaringan estimasi *optical flow* berulang). Volume ini dikumpulkan pada beberapa skala resolusi (piramida) sehingga pencarian korespondensi mencakup pergeseran piksel besar maupun kecil.
 
-- Update operator gaya RAFT (flow + bobot).
-- Dense Bundle Adjustment layer diferensiabel.
-- Pembaruan pose + depth per-piksel iteratif.
-- Dukungan mono/stereo/RGB-D.
+### Pengoperasi Pembaruan Berulang (ConvGRU)
 
-## Kontribusi Utama
-1. SLAM dengan DBA layer terlatih end-to-end.
-2. Akurasi/robustnes jauh di atas baseline.
-3. Sedikit kegagalan tracking.
-4. Generalisasi lintas modalitas kamera.
+Sebuah *Gated Recurrent Unit* (GRU) konvolusi — unit jaringan berulang yang mempertahankan keadaan tersembunyi (*hidden state*) antar-iterasi — menerima fitur hasil pencarian pada volume korelasi di sekitar estimasi korespondensi saat ini, ditambah fitur konteks dan keadaan tersembunyi sebelumnya. Keluarannya adalah dua peta per-piksel untuk setiap sisi graf: medan revisi korespondensi (arah dan besar perubahan yang diusulkan) dan peta kepercayaan (bobot yang menunjukkan seberapa dapat diandalkan revisi tersebut, misalnya rendah pada area bertekstur minim atau teroklusi). Pengoperasi ini dijalankan berulang sehingga estimasi makin tajam pada iterasi berikutnya.
 
-## Rincian Eksperimen
-TartanAir, EuRoC, TUM-RGBD, dan ETH3D untuk ATE dan tingkat keberhasilan tracking.
+### Lapis Dense Bundle Adjustment
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Revisi korespondensi dan peta kepercayaan dari GRU diperlakukan sebagai pengamatan yang harus dijelaskan oleh geometri kamera. Lapis DBA menyelesaikan pembaruan pose dan *depth* yang meminimalkan galat reproyeksi berbobot kepercayaan, memakai pembaruan Gauss-Newton (metode optimasi iteratif untuk masalah kuadrat terkecil nonlinear) yang dilinearisasi pada koordinat lokal aljabar Lie dari SE(3). Karena jumlah variabel *depth* jauh lebih banyak daripada variabel pose, struktur matriks Hessian yang blok-diagonal dimanfaatkan melalui komplemen Schur: variabel *depth* per-piksel dieliminasi terlebih dahulu, menyisakan sistem persamaan kecil pada variabel pose yang lebih murah diselesaikan, sebelum *depth* dihitung kembali dari hasilnya. Skema ini struktural sama dengan *bundle adjustment* klasik, tetapi dirancang agar tetap dapat diturunkan sehingga gradien merambat balik ke bobot jaringan.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| EuRoC | ATE | jauh lebih akurat dari baseline |
-| TUM-RGBD | ATE | robust & akurat |
-| TartanAir | ATE/success | sedikit kegagalan |
+Alur satu putaran pembaruan dapat diringkas sebagai berikut:
 
-## Temuan Kunci
-- Menyatukan deep flow + BA memberi akurasi tinggi.
-- DBA diferensiabel menstabilkan geometri.
-- Robust lintas kondisi sulit.
+```
+frame i, frame j (sisi pada graf frame)
+        |
+        v
+  enkoder fitur+konteks -> volume korelasi 4D
+        |
+        v
+  ConvGRU (keadaan tersembunyi t-1)
+        |
+        v
+  revisi korespondensi + peta kepercayaan
+        |
+        v
+  lapis Dense Bundle Adjustment
+  (Gauss-Newton, komplemen Schur)
+        |
+        v
+  pose SE(3) & inverse depth diperbarui  --> diumpankan ke iterasi t+1
+```
 
-## Keunggulan
-- Akurat & sangat robust.
-- Serbaguna (mono/stereo/RGB-D).
-- Sedikit kegagalan tracking.
+### Dukungan Stereo dan RGB-D
 
-## Keterbatasan
-- Komputasi GPU besar.
-- Memori tumbuh dengan graf frame.
-- Objek dinamis tak ditangani eksplisit.
+Untuk masukan stereo, graf *frame* diperluas dengan menambahkan sisi tetap antara citra kiri dan kanan pada setiap langkah waktu, memberi kendala *baseline* (jarak antar-lensa) yang diketahui sehingga skala metrik langsung tersedia. Untuk masukan RGB-D, nilai *depth* dari sensor ditambahkan sebagai suku penalti dalam optimasi — bukan diperlakukan sebagai kebenaran mutlak, melainkan kendala tambahan yang menarik estimasi *depth* jaringan agar tidak menyimpang jauh dari pengukuran sensor, sambil tetap dikoreksi oleh konsistensi geometris antar-*frame*. Karena mekanisme dasarnya sama untuk ketiga modalitas, satu bobot jaringan yang dilatih pada video monokular sintetis dapat langsung dipakai untuk stereo maupun RGB-D tanpa pelatihan ulang khusus modalitas.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Prosedur Pelatihan
 
-## Relevansi terhadap Tema Tinjauan
-SLAM RGB-D deep yang akurat, relevan untuk navigasi robot berbasis kamera+depth dan sistem persepsi 3D.
+DROID-SLAM dilatih pada TartanAir, kumpulan data video sintetis dengan lintasan kamera dan lingkungan tiga dimensi beragam yang menyediakan pose kamera dan *depth* kebenaran-dasar (*ground truth*) secara presisi karena dihasilkan dari simulasi. Pelatihan dilakukan hanya dengan masukan monokular; galat dihitung dengan membandingkan pose dan korespondensi hasil optimasi tiap iterasi terhadap kebenaran-dasar, lalu dirambatkan balik melalui seluruh rantai iterasi GRU dan lapis DBA sekaligus.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SLAM** yang baik dibaca berdampingan:
+## Eksperimen dan Hasil
 
-- [190 - 2021 - ORB-SLAM3 - RGB-D SLAM](./190%20-%202021%20-%20ORB-SLAM3%20-%20RGB-D%20SLAM.md)
+Evaluasi utama dilakukan pada tiga tolok ukur: TartanAir (lintasan sintetis yang tidak dipakai untuk pelatihan), EuRoC (rekaman drone dalam ruangan dengan kebenaran-dasar dari sistem penangkap gerak), dan TUM-RGBD (rekaman kamera genggam berpasangan RGB dan *depth*). Metrik utama adalah *Absolute Trajectory Error* (ATE, galat posisi rata-rata antara trajektori estimasi dan kebenaran-dasar setelah penyelarasan skala/rotasi, dalam meter — semakin kecil semakin baik) serta jumlah kegagalan pelacakan total per rangkaian uji.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SLAM** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Menurut publikasi dan ringkasan hasil yang beredar, pada TartanAir DROID-SLAM mencapai galat rata-rata sekitar delapan kali lebih rendah daripada TartanVO dan sekitar dua puluh kali lebih rendah daripada DeepV2D, tanpa kegagalan pelacakan. Selisih sebesar itu menunjukkan bahwa penggabungan optimasi geometris eksplisit dengan fitur yang dipelajari memberi keuntungan akurasi yang jauh melampaui perbaikan inkremental atas metode regresi langsung. Pada EuRoC monokular, galat ditekan sekitar 82% dibandingkan metode lain yang juga tanpa kegagalan, dan sekitar 43% lebih rendah daripada ORB-SLAM3 bila dibatasi pada rangkaian yang berhasil dilacak ORB-SLAM3; dengan stereo, selisihnya sekitar 71% terhadap ORB-SLAM3. Pada TUM-RGBD, seluruh sembilan rangkaian uji berhasil dilacak, dengan ATE sekitar 83% lebih rendah daripada DeepFactors dan 90% lebih rendah daripada DeepV2D. Pola konsistennya: DROID-SLAM tidak hanya lebih akurat, tetapi terutama lebih jarang gagal total — sedangkan ORB-SLAM3 pada sebagian rangkaian EuRoC gagal melacak sepenuhnya karena kehilangan korespondensi fitur.
 
-## Glosarium Istilah (tema RGB-D SLAM)
-Istilah penting untuk memahami makalah ini:
+## Kelebihan dan Keterbatasan
 
-- **SLAM** — Simultaneous Localization and Mapping.
-- **RGB-D SLAM** — SLAM kamera warna+kedalaman (skala metrik).
-- **Lingkungan dinamis** — Scene dengan objek bergerak.
-- **Loop closure** — Pengenalan tempat untuk koreksi drift.
-- **Bundle adjustment** — Optimasi bersama pose dan titik peta.
-- **ATE/RPE** — Absolute/Relative Trajectory/Pose Error.
-- **Semantic SLAM** — SLAM memanfaatkan label semantik.
-- **Fitur ORB** — Fitur cepat rotasi-invarian.
-- **TUM RGB-D** — Benchmark SLAM RGB-D standar.
-- **Deteksi objek dinamis** — Menandai objek bergerak (YOLO/Mask R-CNN).
+Kelebihan utamanya adalah penyatuan fitur yang dipelajari dengan optimasi geometris eksplisit dalam satu arsitektur yang dapat dilatih *end-to-end*, sehingga sistem memperoleh akurasi mendekati atau melampaui *bundle adjustment* klasik sekaligus ketangguhan generalisasi jaringan saraf. Sifat serba guna lintas modalitas — satu bobot jaringan bekerja pada monokular, stereo, dan RGB-D — juga menonjol karena kebanyakan sistem SLAM klasik memerlukan penyesuaian *pipeline* berbeda untuk tiap jenis sensor. Mekanisme graf *frame* yang membentuk sisi baru ke *frame* lama memberi ketangguhan tambahan terhadap drift jangka panjang tanpa modul pengenalan tempat terpisah.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Dari sisi rekayasa, kebutuhan komputasinya besar: volume korelasi dihitung untuk setiap pasangan piksel pada setiap sisi graf, dan jumlah variabel *depth* yang dioptimalkan tumbuh sebanding dengan resolusi citra serta ukuran jendela aktif graf, sehingga memori GPU menjadi kendala nyata untuk lintasan panjang atau perangkat berdaya rendah. Secara konseptual, sistem ini mengasumsikan adegan statis; objek dinamis tidak dimodelkan secara eksplisit dan berpotensi mencemari korespondensi yang dipakai lapis DBA, meskipun peta kepercayaan yang dipelajari dapat menekan sebagian pengaruhnya secara implisit. Penanganan *depth* RGB-D sebagai penalti lunak juga berarti sensor yang sangat *noisy* pada kondisi tertentu (permukaan reflektif, jarak jauh) tidak diberi perlakuan koreksi eksplisit di luar bobot kepercayaan umum.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kaitan dengan Bab Lain
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+DROID-SLAM berada pada klaster RGB-D SLAM yang sama dengan ORB-SLAM3 (bab [190 - 2021 - ORB-SLAM3 - RGB-D SLAM](./190%20-%202021%20-%20ORB-SLAM3%20-%20RGB-D%20SLAM.md)) dan pendahulunya ORB-SLAM2 (bab [107 - 2017 - ORB-SLAM2 - RGB-D SLAM](./107%20-%202017%20-%20ORB-SLAM2%20-%20RGB-D%20SLAM.md)). Ketiganya dibandingkan langsung pada EuRoC dan TUM-RGBD, tetapi berangkat dari paradigma berbeda: ORB-SLAM2/3 membangun peta dari fitur ORB jarang yang dicocokkan dan dioptimalkan lewat *bundle adjustment* pasca-deteksi fitur, sedangkan DROID-SLAM melipat seluruh proses pencocokan dan optimasi ke dalam satu jaringan berulang yang dilatih *end-to-end*. Ketangguhan DROID-SLAM pada rangkaian yang membuat ORB-SLAM3 gagal menunjukkan posisinya sebagai alternatif yang menutupi kelemahan utama pendekatan berbasis fitur tangan, sekaligus menjadi rujukan arsitektur bagi karya SLAM/*visual odometry* berbasis pembelajaran berikutnya yang mengadopsi graf *frame* dan optimasi diferensiabel serupa.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+## Poin untuk Sitasi
 
-## Kesimpulan
-DROID-SLAM menyatukan deep learning dan bundle adjustment untuk SLAM yang akurat dan robust lintas modalitas, tonggak SLAM modern.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `teed2021droidslam` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 191/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `teed2021droidslam`. Ringkasan yang aman dikutip: "DROID-SLAM menggabungkan pengoperasi pembaruan berulang berbasis *optical flow* dengan lapis *Dense Bundle Adjustment* yang dapat didiferensialkan untuk memperbarui pose kamera dan *depth* per-piksel secara bersamaan; dilatih hanya pada video monokular sintetis (TartanAir), sistem ini digeneralisasi ke masukan stereo dan RGB-D serta menunjukkan galat trajektori dan tingkat kegagalan pelacakan yang jauh lebih rendah daripada metode SLAM klasik maupun berbasis pembelajaran sebelumnya pada EuRoC dan TUM-RGBD." Angka persentase penurunan ATE (sekitar 8x dan 20x pada TartanAir; 82%, 43%, dan 71% pada EuRoC; 83% dan 90% pada TUM-RGBD) berasal dari ringkasan sekunder karena ekstraksi teks langsung dari PDF NeurIPS tidak berhasil — wajib diverifikasi terhadap tabel asli sebelum dikutip dalam karya formal. Jumlah iterasi GRU, hyperparameter pelatihan, dan mekanisme eksplisit pengenalan tempat di luar sisi graf yang terbentuk ulang juga belum terverifikasi langsung dari naskah.

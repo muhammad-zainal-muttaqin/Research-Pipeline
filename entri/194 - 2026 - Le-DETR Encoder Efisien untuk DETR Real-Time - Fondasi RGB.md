@@ -1,205 +1,92 @@
 # 194 - Le-DETR: Revisiting Real-Time Detection Transformer with Efficient Encoder Design
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 194 dari 202 |
 | Kunci BibTeX | `huang2026ledetr` |
-| Judul | Le-DETR: Revisiting Real-Time Detection Transformer with Efficient Encoder Design |
-| Penulis | Huang, Jiannan; Kane, Aditya; Zhou, Fengzhe; Wei, Yunchao; Shi, Humphrey |
+| Judul asli | Le-DETR: Revisiting Real-Time Detection Transformer with Efficient Encoder Design |
+| Penulis | Jiannan Huang, Aditya Kane, Fengzhe Zhou, Yunchao Wei, Humphrey Shi |
 | Tahun | 2026 |
-| Venue / Jurnal | arXiv preprint arXiv:2602.21010 |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | Le-DETR, efficient encoder, real-time, COCO, DETR |
+| Venue | arXiv preprint (arXiv:2602.21010) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2602.21010
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Le-DETR%3A%20Revisiting%20Real-Time%20Detection%20Transformer%20with%20Efficient%20Encoder%20Design
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Le-DETR%3A%20Revisiting%20Real-Time%20Detection%20Transformer%20with%20Efficient%20Encoder%20Design&sort=relevance
+- **Google Scholar:** https://scholar.google.com/scholar?q=Le-DETR%3A%20Revisiting%20Real-Time%20Detection%20Transformer%20with%20Efficient%20Encoder%20Design
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Le-DETR%3A%20Revisiting%20Real-Time%20Detection%20Transformer%20with%20Efficient%20Encoder%20Design&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2602.21010 |
+Le-DETR meninjau ulang arsitektur *DETR* (*Detection Transformer*, detektor objek berbasis *transformer* yang memprediksi kotak dan kelas secara langsung tanpa pasca-pemrosesan *Non-Maximum Suppression*/NMS) *real-time* dengan menyoroti biaya pra-pelatihan *backbone* (jaringan ekstraksi fitur di awal detektor) sebagai hambatan yang selama ini tersembunyi di balik angka akurasi. Penulis mempertanyakan apakah kebutuhan data pra-pelatihan yang sangat besar pada RT-DETRv2 dan turunannya merupakan keharusan fundamental atau sekadar kompensasi atas desain arsitektur yang belum optimal. Untuk menjawabnya, makalah ini mengusulkan *backbone* baru bernama EfficientNAT dan modul *encoder* (penyandi fitur multi-skala) baru bernama NAIFI, keduanya dibangun di atas *neighborhood attention* (perhatian bertetangga, mekanisme atensi yang dibatasi pada jendela spasial lokal).
 
-## Ringkasan Eksekutif
-Le-DETR (arXiv, Februari 2026) meninjau ulang detektor transformer real-time dengan desain encoder yang efisien, melaporkan 52.9/54.3/55.1 mAP pada COCO val2017 dengan efisiensi pelatihan yang membaik.
+Hasilnya, Le-DETR mencapai status baru dalam trade-off akurasi-latensi pada deteksi *real-time*: varian M/L/X memperoleh 52,9/54,3/55,1 *mean Average Precision* (mAP, rata-rata presisi lintas kelas dan ambang IoU) pada COCO Val2017 dengan latensi 4,45/5,01/6,68 milidetik pada GPU RTX 4090, sekaligus memangkas sekitar 80% volume citra pra-pelatihan dibandingkan RT-DETRv2. Makalah ini melanjutkan garis RT-DETR (bab 155) dan bersaing langsung dengan D-FINE serta DEIM, dengan kontribusi yang difokuskan pada efisiensi *backbone* dan *encoder*, bukan pada kepala prediksi atau strategi pencocokan label.
 
-## Abstrak (Parafrase)
-Le-DETR mengusulkan desain ulang encoder untuk DETR real-time agar lebih efisien secara komputasi tanpa mengorbankan akurasi. Dengan encoder ringan yang menata ulang agregasi fitur multi-skala, model mencapai 52.9/54.3/55.1 mAP pada COCO Val2017 untuk beberapa skala, sekaligus mempercepat konvergensi pelatihan. Karya ini menempatkan diri dalam tren RT-DETR/D-FINE dengan penekanan pada beban encoder yang selama ini menjadi hambatan latensi.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Latar Belakang & Konteks
-Pada DETR real-time, encoder multi-skala kerap menjadi bagian termahal. Menyederhanakannya dapat memangkas latensi dan mempercepat konvergensi, dua isu klasik keluarga DETR.
+RT-DETR (bab 155) membuktikan bahwa detektor berbasis *transformer* dapat menandingi kecepatan YOLO dengan memisahkan interaksi fitur intra-skala berbasis atensi (AIFI) dari fusi fitur lintas-skala berbasis konvolusi (CCFF) di dalam *hybrid encoder*-nya. Pengembangan lanjutan seperti RT-DETRv2 mempertahankan formula ini tetapi menaikkan akurasi dengan menambah beban pra-pelatihan *backbone*: menurut penulis Le-DETR, RT-DETRv2 memerlukan sekitar empat juta citra tambahan — kira-kira empat kali ukuran ImageNet-1K — beserta jadwal distilasi pengetahuan (*knowledge distillation*, proses mentransfer kemampuan model besar ke model kecil) sebelum disetel halus pada COCO. Kebutuhan data dan komputasi sebesar ini menyulitkan reproduksi hasil dari nol.
 
-## Permasalahan yang Diangkat
-- Encoder multi-skala DETR mahal secara komputasi.
-- Konvergensi pelatihan DETR lambat.
-- Trade-off akurasi-latensi belum optimal pada rezim real-time.
-- Perlu desain encoder yang ringan namun tetap akurat.
+Masalah kedua bersumber dari komponen atensi global pada *encoder* DETR standar. Operasi *self-attention* (atensi-diri, mekanisme yang membobot relasi setiap elemen fitur terhadap seluruh elemen lain) memiliki kompleksitas kuadratik terhadap jumlah piksel fitur, sehingga menjadi bagian termahal pada model DETR multi-skala seperti Deformable DETR. RT-DETR menekan biaya ini dengan membatasi atensi hanya pada peta fitur beresolusi terendah, tetapi pembatasan itu berarti interaksi fitur pada skala lain sepenuhnya bergantung pada konvolusi, yang jangkauan reseptifnya lebih terbatas. Le-DETR memosisikan diri untuk menjawab dua masalah ini sekaligus: menekan biaya pra-pelatihan *backbone* dan memperbaiki cara *encoder* memproses fitur multi-skala.
 
-## Tujuan & Pertanyaan Penelitian
-- Merancang encoder efisien untuk DETR real-time.
-- Mempercepat konvergensi pelatihan.
-- Mempertahankan/menaikkan mAP COCO pada latensi rendah.
-- Menyediakan beberapa skala model.
+## Ide Utama
 
-## Tinjauan Terdahulu / Posisi Literatur
-Le-DETR melanjutkan RT-DETR dan pesaing D-FINE/DEIM, memfokuskan kontribusi pada bagian encoder alih-alih kepala/pencocokan.
+Gagasan inti Le-DETR adalah mengganti komponen berbiaya tinggi pada *backbone* dan *encoder* DETR dengan *neighborhood attention* (NA) — bentuk atensi yang hanya dihitung antara setiap elemen fitur dan tetangga spasialnya dalam jendela berukuran tetap, bukan terhadap seluruh peta fitur. Dengan membatasi jangkauan atensi, kompleksitas komputasi turun dari kuadratik penuh menjadi bergantung pada ukuran jendela lokal, sementara struktur spasial lokal tetap terjaga lebih baik daripada bila hanya mengandalkan konvolusi.
 
-Karya/konsep pembanding yang relevan:
+Prinsip ini diterapkan pada dua tempat. Pertama, pada *backbone* baru EfficientNAT, blok NA dipadukan dengan *MBConv* (*Mobile Inverted Bottleneck Convolution*, blok konvolusi efisien yang memperluas lalu menyempitkan jumlah kanal fitur) sebagai jaringan umpan-maju (*feed-forward network*), menghasilkan ekstraktor fitur yang menggabungkan efisiensi konvolusi modern dengan jangkauan atensi lokal. Kedua, pada *encoder*, modul AIFI milik RT-DETR — yang memakai atensi global penuh pada satu skala fitur — digantikan oleh modul baru bernama NAIFI yang memakai atensi bertetangga pada satu lapis transformer tunggal. Perubahan ini menekan waktu proses *encoder* sekaligus mempertahankan interaksi fitur yang relevan secara spasial.
 
-- RT-DETR - encoder hibrida efisien pelopor.
-- D-FINE - penyempurnaan regresi.
-- DEIM - pencocokan lebih baik untuk konvergensi.
-- Deformable DETR - attention multi-skala yang mahal.
+## Cara Kerja Langkah demi Langkah
 
-## Metodologi & Arsitektur
-Encoder dirancang ulang agar hemat (efficient encoder design) dengan agregasi fitur yang lebih ringkas, menekan biaya attention multi-skala dan mempercepat pelatihan.
+### Backbone EfficientNAT
 
-Komponen / langkah metodologis utama:
+EfficientNAT disusun berjenjang menjadi beberapa tahap dengan strategi berbeda sesuai kedalamannya. Bagian awal (*stem*) memakai konvolusi terpisah-mendalam (*depthwise separable convolution*, konvolusi yang memisahkan pemrosesan spasial dan pemrosesan kanal untuk menekan jumlah parameter). Dua tahap awal memakai *Fused-MBConv* (varian MBConv yang menggabungkan konvolusi ekspansi dan konvolusi utama menjadi satu operasi agar lebih cepat pada perangkat keras modern), sedangkan tahap yang lebih dalam memakai MBConv standar. Tahap terakhir memakai downsampling berbasis konvolusi mobile diikuti oleh serangkaian blok EfficientNAT, yaitu blok yang memadukan *neighborhood attention* dengan MBConv sebagai FFN. Susunan ini menempatkan komputasi murah (konvolusi) pada resolusi tinggi di awal jaringan, dan komputasi atensi yang lebih mahal pada resolusi rendah di tahap akhir.
 
-- Desain encoder efisien pengganti encoder berat.
-- Agregasi fitur multi-skala yang ringkas.
-- Skema pelatihan yang mempercepat konvergensi.
-- Beberapa varian skala model (mAP 52.9/54.3/55.1).
+Ukuran jendela atensi bertetangga (*kernel size*) konsisten pada nilai 63 di seluruh varian M, L, dan X. Ablasi arsitektur *backbone* menunjukkan dua pola penataan blok yang optimal berbeda menurut ukuran model: susunan blok seimbang (pola PA) lebih baik untuk skala L, sedangkan susunan yang menumpuk beban komputasi pada tahap awal (pola PC) lebih baik untuk skala X.
 
-## Kontribusi Utama
-1. Encoder efisien untuk DETR real-time.
-2. Peningkatan efisiensi pelatihan (konvergensi lebih cepat).
-3. Akurasi COCO kompetitif (52.9-55.1 mAP).
-4. Analisis biaya encoder pada detektor transformer.
+### Encoder NAIFI
 
-## Rincian Eksperimen
-Dievaluasi pada COCO Val2017 untuk mAP lintas skala model, dengan penekanan pada efisiensi pelatihan dan latensi encoder.
+Diagram berikut merangkum posisi NAIFI dalam alur data Le-DETR, dibandingkan dengan AIFI pada RT-DETR:
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+RT-DETR:  backbone -> S3,S4,S5 -> AIFI (atensi global,
+                                    hanya skala S5) -> CCFF -> decoder
+Le-DETR:  EfficientNAT -> S3,S4,S5 -> NAIFI (atensi
+                                   bertetangga, 1 lapis) -> fusi -> decoder
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO Val2017 | mAP | 52.9 / 54.3 / 55.1 pada varian berbeda |
-| Pelatihan | Konvergensi | Lebih cepat dibanding baseline (lihat naskah) |
-| Encoder | Biaya | Ditekan vs encoder DETR standar |
+NAIFI (*Neighborhood Attention-based Improved Feature Inference*) menggantikan modul AIFI RT-DETR dengan satu lapis transformer atensi bertetangga. Jika AIFI menghitung atensi global penuh pada peta fitur skala tertinggi (S5, beresolusi paling rendah namun paling kaya makna semantik), NAIFI membatasi jangkauan atensi pada jendela lokal berukuran tetap, sehingga biaya komputasinya lebih rendah tanpa kehilangan interaksi fitur pada wilayah yang relevan secara spasial. Modul ini dipadukan dengan komponen fusi fitur agar tetap kompatibel dengan struktur *hybrid encoder* multi-skala yang diwariskan dari RT-DETR. Pada *decoder*, Le-DETR memakai *Flash Attention* (implementasi atensi yang dioptimalkan pada tingkat memori GPU) untuk mempercepat lapisan perhatian-silang tanpa mengubah rumusan matematisnya.
 
-## Temuan Kunci
-- Encoder adalah titik hemat utama pada DETR real-time.
-- Efisiensi encoder mempercepat konvergensi tanpa menurunkan mAP.
-- Trade-off akurasi-latensi membaik pada rezim real-time.
+### Skema Pelatihan
 
-## Keunggulan
-- Encoder ringan namun akurat.
-- Konvergensi pelatihan lebih cepat.
-- Kompetitif di COCO.
+Pelatihan Le-DETR terdiri atas dua tahap. Pra-pelatihan pada ImageNet-1K berjalan 300 *epoch* (satu putaran penuh atas data pelatihan) dengan penjadwalan laju belajar kosinus, ukuran *batch* 128 per GPU, laju belajar dasar 1e-3, dan pengoptimal AdamW. Tahap kedua menyetel halus (*fine-tuning*) pada COCO selama 80 *epoch* dengan ukuran *batch* total 64 dan laju belajar dasar 1,25e-4. Konfigurasi *encoder* memakai satu lapis (sesuai desain NAIFI satu-lapis), sedangkan *decoder* memakai 6 lapis saat pelatihan, dengan 100 token *denoising* dan 300 kueri objek. Fungsi *loss* menggabungkan *Varifocal Loss* (VFL, untuk klasifikasi), regresi kotak, dan *Generalized IoU* (GIoU); rincian bobot masing-masing komponen tidak dikutip di sini dan perlu diverifikasi ke naskah asli.
 
-## Keterbatasan
-- Karya 2026 sangat baru; validasi independen minim.
-- Angka perlu dikonfirmasi via naskah arXiv.
-- Generalisasi lintas domain belum banyak diuji.
+Klaim efisiensi pra-pelatihan yang menjadi salah satu kontribusi utama makalah adalah pengurangan sekitar 80% volume citra pra-pelatihan dibandingkan RT-DETRv2, karena Le-DETR hanya memakai ImageNet-1K standar tanpa data tambahan maupun distilasi pengetahuan berjenjang.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-Melengkapi bab DETR real-time dengan sudut efisiensi encoder (2026); dibaca berdampingan RF-DETR (193) dan RT-DETR (155).
+Evaluasi utama dilakukan pada COCO Val2017, tolok ukur standar deteksi objek, dengan metrik mAP dan latensi inferensi yang diukur pada GPU RTX 4090. Tiga varian dilaporkan: Le-DETR-M mencapai 52,9 mAP dengan 31,4 juta parameter, 114,1 GFLOPs (miliar operasi titik-mengambang, ukuran biaya komputasi), dan latensi 4,45 milidetik; Le-DETR-L mencapai 54,3 mAP dengan 41,5 juta parameter, 124,3 GFLOPs, dan latensi 5,01 milidetik; Le-DETR-X mencapai 55,1 mAP dengan 44,9 juta parameter, 196,9 GFLOPs, dan latensi 6,68 milidetik.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Dibandingkan RT-DETRv2-L (53,4 mAP, 5,46 ms), Le-DETR-L unggul 0,9 poin mAP sekaligus sekitar 9% lebih cepat — perbaikan pada kedua sumbu trade-off sekaligus, bukan hanya salah satunya. Dibandingkan YOLOv12-L (53,7 mAP, 4,89 ms, 26,4 juta parameter), Le-DETR-L unggul akurasi tetapi dengan latensi dan jumlah parameter lebih besar, konsisten dengan pola umum bahwa detektor berbasis *transformer* masih membawa biaya komputasi lebih tinggi per titik akurasi dibandingkan YOLO pada skala sebanding. Terhadap DEIM-D-FINE-M (52,7 mAP), Le-DETR-M unggul tipis 0,2 poin mAP dengan latensi sebanding (4,39 ms berbanding 4,45 ms).
 
+Studi ablasi menunjukkan kontribusi masing-masing komponen. Mengganti *backbone* EfficientNAT dengan ResNet50-vd-ssld (varian ResNet-50 yang dilatih dengan distilasi tambahan) menurunkan mAP dari 54,3 menjadi 53,6 sekaligus menaikkan latensi dari 5,01 menjadi 5,80 milidetik, menunjukkan bahwa EfficientNAT menyumbang baik pada akurasi maupun kecepatan. Mengganti NAIFI dengan AIFI asli menurunkan mAP dari 54,3 menjadi 54,1 dan menaikkan latensi dari 5,01 menjadi 5,18 milidetik — perbaikan lebih kecil dibandingkan kontribusi *backbone*, tetapi arahnya konsisten. Memakai 5 lapisan *decoder* saat inferensi (satu lebih sedikit dari saat pelatihan) mempercepat inferensi 0,26 milidetik tanpa penurunan akurasi yang tercatat.
+
+## Kelebihan dan Keterbatasan
+
+Kelebihan utama Le-DETR terletak pada penekanan biaya pra-pelatihan tanpa mengorbankan posisi kompetitif pada trade-off akurasi-latensi COCO. Pendekatan mengganti atensi global dengan atensi bertetangga pada dua titik arsitektur (*backbone* dan *encoder*) memberi bukti ablasi yang cukup rinci mengenai sumber perbaikan, bukan sekadar klaim agregat. Dari sisi rekayasa, penataan tahap *backbone* yang mencampur konvolusi murah di resolusi tinggi dan atensi lokal di resolusi rendah adalah pola desain yang wajar mengingat biaya atensi meningkat tajam pada resolusi spasial besar.
+
+Keterbatasan yang diakui penulis sendiri ada dua. Pertama, meski volume data pra-pelatihan turun sekitar 80% dibandingkan RT-DETRv2, Le-DETR tetap memerlukan pra-pelatihan ImageNet-1K, sedangkan model YOLO umumnya dapat dilatih dari nol langsung pada COCO. Kedua, dukungan ekspor *neighborhood attention* ke format deployment seperti ONNX dan TensorRT belum matang, sehingga penerapan praktis pada jalur produksi tertentu dapat terhambat sampai kerangka kerja tersebut menambah dukungan native untuk operasi ini. Dari sisi konseptual, keunggulan Le-DETR dibandingkan DEIM-D-FINE tampak tidak konsisten pada seluruh skala berdasarkan angka yang berhasil diverifikasi (lihat Poin untuk Sitasi); klaim keunggulan menyeluruh atas seluruh varian pembanding sebaiknya diperiksa ulang terhadap tabel lengkap naskah asli.
+
+## Kaitan dengan Bab Lain
+
+Le-DETR mewarisi kerangka *hybrid encoder* dari RT-DETR (bab 155): pemisahan interaksi fitur intra-skala dari fusi lintas-skala tetap dipertahankan, tetapi komponen atensi intra-skala (AIFI) diganti NAIFI berbasis atensi bertetangga. Silsilah ini menempatkan Le-DETR sebagai penerus garis efisiensi *encoder* yang juga digarap Co-DETR (bab 165) dari sudut pandang berbeda — Co-DETR menambah cabang pelatihan kolaboratif untuk mempercepat konvergensi, sedangkan Le-DETR menekan biaya komputasi *backbone* dan *encoder* itu sendiri. Le-DETR juga sejalan dengan RF-DETR (bab 193), yang memakai pencarian arsitektur (*Neural Architecture Search*) untuk menemukan konfigurasi DETR *real-time* optimal; keduanya berbagi tujuan menekan biaya arsitektural DETR, tetapi RF-DETR mengandalkan pencarian otomatis sedangkan Le-DETR mengandalkan desain manual berbasis atensi bertetangga.
+
+Sebagai pembanding lintas paradigma, Le-DETR diuji langsung terhadap YOLO26 (bab 192) dan seri YOLOv12 pada tabel hasil COCO yang sama, menegaskan posisi keluarga DETR *real-time* sebagai pesaing langsung YOLO pada rezim latensi rendah — tema yang pertama kali diangkat RT-DETR pada bab 155.
+
+- [155 - 2024 - RT-DETR - Fondasi RGB](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md)
+- [165 - 2023 - Co-DETR - Fondasi RGB](./165%20-%202023%20-%20Co-DETR%20-%20Fondasi%20RGB.md)
 - [192 - 2025 - YOLO26 Detektor Real-Time End-to-End - Fondasi RGB](./192%20-%202025%20-%20YOLO26%20Detektor%20Real-Time%20End-to-End%20-%20Fondasi%20RGB.md)
 - [193 - 2025 - RF-DETR NAS untuk Detektor Transformer Real-Time - Fondasi RGB](./193%20-%202025%20-%20RF-DETR%20NAS%20untuk%20Detektor%20Transformer%20Real-Time%20-%20Fondasi%20RGB.md)
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 202 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+Kutip dengan kunci `huang2026ledetr`. Ringkasan yang aman dikutip: "Le-DETR mengganti *backbone* dan *encoder* DETR *real-time* dengan komponen berbasis *neighborhood attention* (EfficientNAT dan NAIFI), mencapai 52,9/54,3/55,1 mAP pada COCO Val2017 dengan latensi 4,45/5,01/6,68 milidetik pada RTX 4090, sekaligus memangkas sekitar 80% volume data pra-pelatihan dibandingkan RT-DETRv2." Angka mAP, latensi, parameter, dan GFLOPs pada bagian Eksperimen berasal dari versi HTML arXiv (2602.21010v1) yang berhasil diakses, sehingga secara umum lebih dapat dipercaya daripada parafrase murni.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Le-DETR menegaskan bahwa merampingkan encoder adalah jalur efektif menuju DETR real-time yang cepat-berlatih dan akurat. Sebagai karya 2026, angka spesifik perlu diverifikasi melalui arXiv sebelum dikutip formal.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `huang2026ledetr` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 194/202 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Namun, dua hal berikut perlu diverifikasi ulang langsung ke naskah PDF/versi final sebelum sitasi formal: (1) klaim perbandingan "Le-DETR-L mengungguli DEIM-D-FINE-L sebesar 0,4 mAP" yang muncul pada satu sumber ringkasan bertentangan dengan tabel angka yang sama (DEIM-D-FINE-L tercatat 54,7 mAP, lebih tinggi dari Le-DETR-L 54,3 mAP) — narasi di atas hanya memakai perbandingan Le-DETR-M vs DEIM-D-FINE-M yang konsisten pada kedua sumber; (2) makalah ini terindikasi juga muncul pada CVPR 2026 (ditemukan tautan openaccess.thecvf.com), tetapi venue akhir belum terkonfirmasi langsung dari halaman arXiv resmi sehingga tabel Metadata tetap mencantumkan arXiv sebagai venue sampai dikonfirmasi. Rincian bobot fungsi *loss* dan detail lengkap tabel ablasi juga sebaiknya dicek ulang ke naskah karena hanya dikutip sebagian di sini.
