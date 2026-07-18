@@ -1,209 +1,108 @@
 # 108 - DynaSLAM: Tracking, Mapping, and Inpainting in Dynamic Scenes
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 108 dari 154 |
 | Kunci BibTeX | `bescos2018dynaslam` |
-| Judul | DynaSLAM: Tracking, Mapping, and Inpainting in Dynamic Scenes |
-| Penulis | Bescos, Berta; F{\'a |
+| Judul asli | DynaSLAM: Tracking, Mapping, and Inpainting in Dynamic Scenes |
+| Penulis | Berta Bescos, José M. Fácil, Javier Civera, José Neira |
 | Tahun | 2018 |
-| Venue / Jurnal | IEEE Robotics and Automation Letters |
-| Tema klaster | RGB-D SLAM |
-| Kata kunci | RGB-D SLAM, dinamis, Mask R-CNN, inpainting, ORB-SLAM2 |
+| Venue | IEEE Robotics and Automation Letters (RA-L), dipresentasikan di IEEE/RSJ IROS 2018 |
+| Tema | RGB-D SLAM |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv:** https://arxiv.org/abs/1806.05620
+- **DOI:** https://doi.org/10.1109/LRA.2018.2860039
+- **Google Scholar:** https://scholar.google.com/scholar?q=DynaSLAM%3A%20Tracking%2C%20Mapping%2C%20and%20Inpainting%20in%20Dynamic%20Scenes
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-slam)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=DynaSLAM%3A%20Tracking%2C%20Mapping%2C%20and%20Inpainting%20in%20Dynamic%20Scenes
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=DynaSLAM%3A%20Tracking%2C%20Mapping%2C%20and%20Inpainting%20in%20Dynamic%20Scenes&sort=relevance
+DynaSLAM memperluas ORB-SLAM2 — sistem *SLAM* (*Simultaneous Localization and Mapping*, pelokalan dan pemetaan serentak) berbasis fitur ORB yang dibahas pada bab 107 — agar tetap akurat pada lingkungan berisi objek yang bergerak. Sistem menambahkan dua tahap di depan jalur pelacakan dan pemetaan asli: deteksi konten dinamis, yang menggabungkan segmentasi semantik dari Mask R-CNN dengan pemeriksaan geometri multi-*view* (multi-sudut-pandang) berbasis kedalaman, dan pengisian latar (*background inpainting*) yang merekonstruksi bagian citra yang tertutup objek bergerak. DynaSLAM mendukung tiga konfigurasi kamera: monokular, stereo, dan RGB-D (warna dan kedalaman).
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada sekuens paling dinamis dalam tolok ukur TUM RGB-D, yaitu *walking_xyz* (dua orang berjalan sementara kamera bergerak bebas pada tiga sumbu), galat trajektori absolut (ATE RMSE — *Absolute Trajectory Error*, *Root-Mean-Square*, ukuran rata-rata jarak antara lintasan kamera yang diestimasi dan lintasan sebenarnya) turun dari 0,459 m pada ORB-SLAM2 menjadi 0,015 m pada DynaSLAM, penurunan sekitar 96,7%. Selain pose kamera yang jauh lebih akurat, sistem ini menghasilkan keluaran tambahan berupa peta statis yang bersih dari objek bergerak, dicapai lewat penambalan latar.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 3 |
-| Nomor | 4 |
-| Halaman | 4076--4083 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Perluasan ORB-SLAM2 yang menangani lingkungan dinamis dengan deteksi objek bergerak (Mask R-CNN + geometri multi-view) dan inpainting latar.
+ORB-SLAM2 (bab 107) mengasumsikan *scene* (adegan/lingkungan yang direkam) bersifat kaku (*rigid*): seluruh titik fitur yang teramati dianggap diam terhadap dunia, sehingga posisi kamera dapat diestimasi dari pergeseran titik-titik itu antar-*frame*. Asumsi ini valid untuk ruangan kosong, tetapi gagal ketika ada objek yang benar-benar bergerak — orang berjalan, kendaraan melintas, kursi dipindahkan. Fitur yang menempel pada objek bergerak ikut berpindah karena gerakan objek itu sendiri, bukan karena gerakan kamera, sehingga mencemari perhitungan pose bila ikut disertakan.
 
-## Abstrak (Parafrase)
-DynaSLAM memperluas ORB-SLAM2 untuk lingkungan dinamis: Mask R-CNN mensegmentasi objek berpotensi bergerak (orang, kendaraan) dan pemeriksaan geometri multi-view mendeteksi gerak nyata, lalu fitur pada objek dinamis dibuang dari SLAM. Background inpainting mengisi area yang tertutup objek bergerak untuk peta statis yang bersih. Akurasi pose meningkat drastis pada scene dinamis.
+Penanganan bawaan pada SLAM klasik hanya berupa penolakan pencilan (*outlier*) jangka pendek, misalnya lewat RANSAC (*Random Sample Consensus*, algoritme pemilihan subset data acak untuk mengestimasi model yang tahan pencilan). Mekanisme ini memadai bila objek dinamis kecil dan sesaat, tetapi rusak ketika objek dinamis menutupi porsi besar citra atau bergerak konsisten sepanjang banyak *frame* berurutan — persis situasi yang umum di kantor, rumah, atau jalan yang dilalui orang dan kendaraan. Karena robot layanan dan aplikasi realitas tertambah (*augmented reality*) umumnya beroperasi di lingkungan berpenghuni seperti itu, kegagalan pada *scene* dinamis membatasi penerapan SLAM klasik di luar laboratorium.
 
-## Latar Belakang & Konteks
-SLAM klasik (ORB-SLAM2) mengasumsikan scene statis dan gagal ketika banyak objek bergerak merusak asosiasi fitur dan estimasi pose.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- SLAM klasik mengasumsikan scene statis.
-- Objek bergerak merusak asosiasi fitur & pose.
-- Fitur dinamis harus dibuang.
-- Peta statis perlu bersih dari objek bergerak.
-- Deteksi objek bergerak diperlukan.
+DynaSLAM mendeteksi konten dinamis lewat dua sinyal yang saling melengkapi, lalu membuang seluruh fitur yang jatuh pada area dinamis sebelum fitur itu dipakai untuk pelacakan pose maupun pembangunan peta. Sinyal pertama adalah prior semantik: sebuah jaringan segmentasi instans mengenali kelas objek yang *biasanya* dapat bergerak — misalnya orang atau sepeda — dari satu citra saja, tanpa perlu membandingkan dengan *frame* lain. Sinyal kedua adalah verifikasi geometris: posisi titik pada *frame* saat ini diproyeksikan dari beberapa *keyframe* (citra kunci yang disimpan sebagai rujukan) sebelumnya menggunakan data kedalaman; titik yang kedalamannya berubah signifikan dianggap benar-benar bergerak, terlepas dari kelas objeknya.
 
-## Tujuan & Pertanyaan Penelitian
-- Mendeteksi & membuang objek bergerak.
-- Membersihkan peta via background inpainting.
-- Meningkatkan akurasi pose pada scene dinamis.
+Kedua sinyal ini menutup kelemahan masing-masing. Prior semantik langsung mengenali orang yang berjalan sejak *frame* pertama tanpa menunggu riwayat gerak, tetapi tidak dapat mendeteksi objek yang secara kelas biasanya diam namun kebetulan sedang dipindahkan, misalnya buku atau kursi. Verifikasi geometris menangkap gerak objek jenis apa pun, tetapi memerlukan beberapa *keyframe* rujukan dengan tumpang tindih pandangan yang cukup, sehingga tidak dapat langsung menilai *frame* pertama sebuah urutan. Menggabungkan keduanya memberi cakupan deteksi yang lebih luas daripada memakai salah satunya saja.
 
-## Tinjauan Terdahulu / Posisi Literatur
-DynaSLAM menggabungkan segmentasi instan dan geometri untuk menyaring dinamika.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Segmentasi Objek Berpotensi Dinamis dengan Mask R-CNN
 
-- ORB-SLAM2 — basis SLAM.
-- Mask R-CNN — segmentasi objek bergerak.
-- Multi-view geometry — deteksi gerak.
-- Background inpainting — peta bersih.
+Setiap *frame* RGB diproses oleh Mask R-CNN, jaringan segmentasi instans yang memperluas Faster R-CNN dengan cabang tambahan untuk memprediksi masker piksel per objek (dibahas lebih rinci pada bab 017). Implementasi yang dipakai dilatih pada dataset MS COCO dan difokuskan pada belasan kelas yang dianggap berpotensi bergerak, seperti orang, sepeda, mobil, sepeda motor, dan bus. Keluaran tahap ini adalah masker biner per piksel untuk objek-objek tersebut, disebut masker "dinamis apriori" karena hanya berdasarkan kelas objek, tanpa memeriksa apakah objek itu benar-benar sedang bergerak pada saat perekaman.
 
-## Metodologi & Arsitektur
-Mask R-CNN mendeteksi objek berpotensi bergerak (prior kelas); multi-view geometry memverifikasi gerak nyata (kedalaman/reprojeksi); fitur pada objek dinamis dibuang sebelum tracking/mapping; background inpainting mengisi area tertutup untuk peta statis.
+### Verifikasi Gerak Nyata dengan Geometri Multi-View
 
-Komponen / langkah metodologis utama:
+Untuk konfigurasi RGB-D, sistem lebih dulu memakai pelacakan berbiaya rendah (dijelaskan berikutnya) untuk memperoleh estimasi pose kasar pada *frame* saat ini. Titik-titik fitur dari beberapa *keyframe* sebelumnya — dipilih lima *keyframe* dengan tumpang tindih pandangan tertinggi terhadap *frame* saat ini — diproyeksikan ke citra saat ini memakai pose dan peta kedalaman yang tersedia. Kedalaman hasil proyeksi ini dibandingkan dengan kedalaman yang benar-benar terukur pada posisi tersebut; bila selisihnya (Δz) melewati ambang τz = 0,4 m, titik itu ditandai sebagai bergerak. Ambang ini ditentukan secara empiris dari anotasi manual pada sekumpulan citra contoh. Mekanisme ini menangkap objek yang secara kelas tidak masuk daftar Mask R-CNN, misalnya kursi yang dipindahkan seseorang.
 
-- Mask R-CNN untuk objek berpotensi bergerak.
-- Multi-view geometry mendeteksi gerak nyata.
-- Pembuangan fitur dinamis dari SLAM.
-- Background inpainting (peta statis bersih).
-- Berbasis ORB-SLAM2 (RGB-D).
-- Evaluasi TUM RGB-D dinamis.
+### Menggabungkan Kedua Masker dan Membuang Fitur Dinamis
 
-## Kontribusi Utama
-1. Penyaringan objek dinamis (segmentasi + geometri).
-2. Peta statis bersih via inpainting.
-3. Peningkatan akurasi pose besar pada scene dinamis.
-4. Contoh integrasi deteksi + SLAM.
+Masker dinamis akhir merupakan gabungan (union) dari masker Mask R-CNN dan masker geometri. Semua titik fitur ORB yang jatuh pada masker gabungan ini dikeluarkan sebelum tahap asosiasi fitur untuk pelacakan pose maupun sebelum titik itu dimasukkan ke peta. Dengan begitu, baik estimasi pose maupun peta 3D yang terbentuk hanya dibangun dari bagian *scene* yang diyakini statis.
 
-## Rincian Eksperimen
-Diuji pada TUM RGB-D (urutan dinamis) dengan metrik ATE/RPE, dibandingkan ORB-SLAM2.
+Alur data dari citra masukan sampai peta statis dapat diringkas sebagai berikut.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+citra RGB-D (frame ke-t)
+        |
+        v
+  Mask R-CNN --------> masker dinamis apriori
+        |                (orang, sepeda, mobil, dst.)
+        v
+  Geometri multi-view (5 keyframe, threshold Dz=0,4 m)
+        |             -> masker gerak nyata
+        v
+  Gabungan masker dinamis (N+G)
+        |
+        v
+  Buang fitur ORB pada masker --> pelacakan pose + pemetaan
+        |
+        v
+  Background inpainting (RGB+D dari keyframe lampau)
+        |
+        v
+  Peta statis bersih + citra latar terekonstruksi
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| TUM RGB-D dinamis | ATE | jauh lebih baik dari ORB-SLAM2 |
-| Peta statis | kualitas | bersih via inpainting |
-| Ablation | geometry+CNN | keduanya menyumbang gain |
+### Pelacakan Berbiaya Rendah dan Pemetaan Utama
 
-## Temuan Kunci
-- Penyaringan objek dinamis penting untuk pose.
-- Segmentasi + geometri saling melengkapi.
-- Inpainting menghasilkan peta statis bersih.
-- Deteksi objek meningkatkan SLAM dinamis.
+Sebelum verifikasi geometris dapat dijalankan, sistem memerlukan estimasi pose awal yang cepat. Untuk itu, sebuah pelacak ringan memproyeksikan titik peta yang sudah diketahui statis ke *frame* saat ini dan meminimalkan galat reproyeksi hanya pada wilayah tersebut, menghasilkan pose awal dalam orde 1,6–1,7 milidetik per *frame*. Pose awal ini dipakai untuk proyeksi pada tahap geometri di atas. Setelah masker dinamis final diperoleh, jalur pelacakan dan pemetaan utama — mewarisi mesin ORB-SLAM2, termasuk *bundle adjustment* (optimisasi bersama pose dan titik peta) dan *loop closing* (penutupan lintasan berulang) — dijalankan hanya dengan fitur pada wilayah statis.
 
-## Keunggulan
-- Akurasi tinggi pada scene dinamis.
-- Peta statis bersih.
-- Integrasi deteksi+SLAM.
+### Background Inpainting
 
-## Keterbatasan
-- Mask R-CNN lambat (bukan real-time penuh).
-- Bergantung kualitas segmentasi.
-- Inpainting menambah komputasi.
+Setelah peta statis dan pose kamera tersedia, piksel latar yang tertutup objek bergerak pada *frame* saat ini direkonstruksi dengan memproyeksikan warna dan kedalaman dari *keyframe* statis sebelumnya yang memiliki pandangan ke area tersebut. Hasilnya adalah citra latar yang bersih dari objek dinamis, dapat dipakai untuk visualisasi maupun sebagai masukan bersih bagi sistem lain.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-DynaSLAM adalah contoh kunci integrasi deteksi/segmentasi ke SLAM RGB-D dalam tinjauan, menegaskan peran deteksi objek bagi robustness SLAM dinamis.
+Evaluasi utama dilakukan pada sekuens dinamis tolok ukur TUM RGB-D — kumpulan data standar untuk SLAM RGB-D berisi urutan orang berjalan dan duduk sambil kamera bergerak dalam berbagai pola (xyz, *half sphere*, *rpy*, statis) — serta pada tolok ukur KITTI untuk konfigurasi stereo di lingkungan jalan raya. Metrik utamanya adalah ATE RMSE, sebagaimana dijelaskan di bagian Gambaran Umum.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SLAM** yang baik dibaca berdampingan:
+Angka yang paling dapat diverifikasi dari naskah adalah hasil pada sekuens *walking_xyz*: DynaSLAM dengan kombinasi Mask R-CNN dan geometri (N+G) mencapai ATE RMSE 0,015 m, dibandingkan 0,459 m pada ORB-SLAM2 tanpa penyaringan dinamis — penurunan galat sekitar 96,7%, atau lintasan yang diestimasi mendekati 30 kali lebih presisi. Perbaikan sebesar ini konsisten dengan desain sistem: pada sekuens tersebut, dua orang yang berjalan menutupi porsi besar citra, sehingga tanpa penyaringan, mayoritas fitur yang dipakai ORB-SLAM2 justru berasal dari objek bergerak, bukan latar diam.
+
+Naskah juga melaporkan tiga konfigurasi berbeda dari sistem: hanya memakai Mask R-CNN (N), hanya memakai geometri multi-view (G), dan gabungan keduanya (N+G). Konfigurasi gabungan secara konsisten menjadi yang terbaik pada sekuens yang diuji, karena menutup kelemahan yang telah dijelaskan pada bagian Ide Utama — N saja gagal pada objek dinamis di luar daftar kelas MS COCO, sedangkan G saja bergantung pada ketersediaan *keyframe* rujukan yang cukup. Dari sisi kecepatan, komponen-komponen pipeline memiliki biaya yang timpang: inferensi Mask R-CNN memakan sekitar 195 milidetik per citra pada GPU, verifikasi geometri sekitar 235–333 milidetik, dan pengisian latar sekitar 183–208 milidetik, jauh lebih mahal daripada pelacakan berbiaya rendah yang hanya 1,6–1,7 milidetik. Pada tolok ukur KITTI, yang didominasi *scene* jalan raya relatif statis, hasil DynaSLAM sebanding dengan ORB-SLAM2 pada sebagian besar sekuens, dengan selisih yang lebih terasa pada sekuens dengan kandungan dinamis lebih tinggi.
+
+## Kelebihan dan Keterbatasan
+
+Kelebihan utama DynaSLAM adalah lompatan akurasi pada *scene* dinamis dibandingkan SLAM berbasis fitur klasik, dibuktikan lewat penurunan ATE RMSE sekitar 96,7% pada sekuens *walking_xyz*. Sistem juga menghasilkan keluaran tambahan yang bernilai praktis, yaitu peta statis bersih lewat penambalan latar, dan fleksibel karena mendukung tiga konfigurasi kamera. Penggabungan sinyal semantik dan geometris membuat cakupan deteksi dinamis lebih luas daripada mengandalkan salah satu pendekatan saja.
+
+Keterbatasan yang diakui penulis meliputi dua kasus spesifik: kendaraan yang sedang parkir — meski termasuk kelas "mobil" yang dianggap berpotensi dinamis — turut dibuang dari perhitungan pose walaupun sebenarnya diam, sehingga berpotensi membuang fitur berguna pada *scene* yang didominasi kendaraan diam; dan sekuens dengan gerakan kamera murni berupa rotasi (*rpy*) menghasilkan kualitas inpainting yang menurun, karena verifikasi geometri multi-view memerlukan pergeseran translasi kamera yang cukup untuk membandingkan kedalaman antar-*keyframe*.
+
+Dari sisi rekayasa, biaya komputasi pipeline — terutama inferensi Mask R-CNN dan verifikasi geometri yang bersama-sama memakan ratusan milidetik per *frame* — membuat sistem ini tidak berjalan waktu nyata secara keseluruhan, sehingga lebih cocok untuk pemetaan luring (*offline*) atau pemetaan jangka panjang daripada navigasi daring pada robot bergerak. Secara konseptual, ketergantungan pada daftar kelas MS COCO yang telah ditentukan berarti objek dinamis di luar daftar tersebut hanya dapat dikenali lewat jalur geometri, yang sendiri memerlukan riwayat *keyframe* dan pergeseran kamera yang memadai.
+
+## Kaitan dengan Bab Lain
+
+DynaSLAM adalah perluasan langsung dari ORB-SLAM2 (bab 107): seluruh mesin pelacakan, pemetaan, dan *loop closing* diwarisi utuh, dengan tambahan tahap penyaringan dinamis dan inpainting di depannya. Komponen segmentasinya memakai Mask R-CNN, jaringan yang dibahas tersendiri pada bab 017, sehingga bab tersebut relevan untuk memahami bagaimana masker piksel per objek dihasilkan. Dalam klaster RGB-D SLAM, DynaSLAM sezaman dengan DS-SLAM (bab 109), yang memakai jalur berbeda — segmentasi semantik SegNet dikombinasikan dengan pemeriksaan konsistensi epipolar — untuk memecahkan masalah yang sama, sehingga kedua bab layak dibaca berdampingan sebagai dua strategi berbeda menuju tujuan yang sama. Kajian lanjutan pada bab 111 (Soares dkk., perbandingan YOLO dan Mask R-CNN untuk SLAM) memperluas pertanyaan yang diangkat DynaSLAM, yaitu memilih detektor mana yang paling seimbang antara akurasi segmentasi dan biaya komputasi untuk peran serupa.
 
 - [107 - 2017 - ORB-SLAM2 - RGB-D SLAM](./107%20-%202017%20-%20ORB-SLAM2%20-%20RGB-D%20SLAM.md)
 - [109 - 2018 - DS-SLAM - RGB-D SLAM](./109%20-%202018%20-%20DS-SLAM%20-%20RGB-D%20SLAM.md)
-- [110 - 2022 - CFP-SLAM - RGB-D SLAM](./110%20-%202022%20-%20CFP-SLAM%20-%20RGB-D%20SLAM.md)
 - [111 - 2019 - Visual SLAM YOLO vs Mask R-CNN (Soares dkk.) - RGB-D SLAM](./111%20-%202019%20-%20Visual%20SLAM%20YOLO%20vs%20Mask%20R-CNN%20%28Soares%20dkk.%29%20-%20RGB-D%20SLAM.md)
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SLAM** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema RGB-D SLAM)
-Istilah penting untuk memahami makalah ini:
-
-- **SLAM** — Simultaneous Localization and Mapping.
-- **RGB-D SLAM** — SLAM kamera warna+kedalaman (skala metrik).
-- **Lingkungan dinamis** — Scene dengan objek bergerak.
-- **Loop closure** — Pengenalan tempat untuk koreksi drift.
-- **Bundle adjustment** — Optimasi bersama pose dan titik peta.
-- **ATE/RPE** — Absolute/Relative Trajectory/Pose Error.
-- **Semantic SLAM** — SLAM memanfaatkan label semantik.
-- **Fitur ORB** — Fitur cepat rotasi-invarian.
-- **TUM RGB-D** — Benchmark SLAM RGB-D standar.
-- **Deteksi objek dinamis** — Menandai objek bergerak (YOLO/Mask R-CNN).
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-DynaSLAM memperluas ORB-SLAM2 dengan Mask R-CNN, geometri multi-view, dan background inpainting untuk menangani lingkungan dinamis, meningkatkan akurasi pose secara drastis.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `bescos2018dynaslam` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 108/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `bescos2018dynaslam`. Ringkasan yang aman dikutip: "DynaSLAM memperluas ORB-SLAM2 dengan menggabungkan segmentasi Mask R-CNN dan verifikasi geometri multi-view untuk membuang fitur pada objek dinamis, menurunkan ATE RMSE pada sekuens TUM RGB-D *walking_xyz* dari 0,459 m menjadi 0,015 m, serta menambahkan penambalan latar untuk menghasilkan peta statis bersih." Angka 0,015 m / 0,459 m serta parameter (5 *keyframe* rujukan, ambang Δz = 0,4 m) berasal dari penelusuran naskah dan cukup dapat diandalkan; angka ATE RMSE untuk sekuens lain (*walking_halfsphere*, *walking_rpy*, *walking_static*, *sitting_xyz*, dan seterusnya), rincian angka pada tolok ukur KITTI, serta angka waktu komputasi per tahap (± 195 ms Mask R-CNN, ± 235–333 ms geometri, ± 183–208 ms inpainting) diperoleh dari pembacaan sekunder atas naskah dan sebaiknya dicocokkan langsung dengan tabel pada PDF asli sebelum dikutip dalam karya formal.

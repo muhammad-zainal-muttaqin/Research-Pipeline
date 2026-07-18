@@ -1,209 +1,100 @@
 # 107 - ORB-SLAM2: An Open-Source SLAM System for Monocular, Stereo, and RGB-D Cameras
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 107 dari 154 |
 | Kunci BibTeX | `murartal2017orbslam2` |
-| Judul | ORB-SLAM2: An Open-Source SLAM System for Monocular, Stereo, and RGB-D Cameras |
-| Penulis | Mur-Artal, Ra{\'u |
+| Judul asli | ORB-SLAM2: An Open-Source SLAM System for Monocular, Stereo, and RGB-D Cameras |
+| Penulis | Raúl Mur-Artal, Juan D. Tardós |
 | Tahun | 2017 |
-| Venue / Jurnal | IEEE Transactions on Robotics |
-| Tema klaster | RGB-D SLAM |
-| Kata kunci | RGB-D SLAM, open-source, stereo/mono/RGB-D, loop closure, ORB |
+| Venue | IEEE Transactions on Robotics, vol. 33, no. 5, hlm. 1255–1262 |
+| Tema | RGB-D SLAM |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1610.06475
+- **Google Scholar:** https://scholar.google.com/scholar?q=ORB-SLAM2%3A%20An%20Open-Source%20SLAM%20System%20for%20Monocular%2C%20Stereo%2C%20and%20RGB-D%20Cameras
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=ORB-SLAM2%3A%20An%20Open-Source%20SLAM%20System%20for%20Monocular%2C%20Stereo%2C%20and%20RGB-D%20Cameras&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-slam)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=ORB-SLAM2%3A%20An%20Open-Source%20SLAM%20System%20for%20Monocular%2C%20Stereo%2C%20and%20RGB-D%20Cameras
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=ORB-SLAM2%3A%20An%20Open-Source%20SLAM%20System%20for%20Monocular%2C%20Stereo%2C%20and%20RGB-D%20Cameras&sort=relevance
+Makalah ini memperkenalkan ORB-SLAM2, sistem *SLAM* (*Simultaneous Localization and Mapping* — estimasi posisi kamera dan pembangunan peta lingkungan secara bersamaan dan seketika) berbasis fitur yang bekerja untuk tiga jenis sensor: kamera monokular (satu lensa), stereo (dua lensa dengan jarak baseline tetap), dan RGB-D (warna ditambah kedalaman per piksel). Sistem ini menyatukan pelacakan pose kamera per bingkai (*tracking*), pembangunan dan penghalusan peta titik tiga dimensi (*mapping*), serta pengenalan tempat yang pernah dikunjungi untuk mengoreksi galat kumulatif (*loop closing*, penutupan lingkar), seluruhnya berjalan waktu nyata pada CPU standar tanpa GPU.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Kontribusi utama ORB-SLAM2 terhadap pendahulunya, ORB-SLAM (monokular saja), adalah perluasan ke stereo dan RGB-D dengan pemanfaatan langsung informasi kedalaman untuk memperoleh skala metrik sejak bingkai pertama, serta mode lokalisasi ringan yang dapat beroperasi tanpa terus memperbarui peta. Pada evaluasi terhadap 29 barisan data (*sequence*) publik yang mencakup KITTI, EuRoC MAV, dan TUM RGB-D, sistem ini mencatat akurasi lintasan yang menyamai atau melampaui metode sejenis pada masanya, sambil mempertahankan kecepatan waktu nyata. Kode sumber dipublikasikan terbuka, dan implementasi ini menjadi rujukan baku (*baseline*) bagi banyak sistem SLAM turunan, termasuk yang menambahkan kesadaran semantik untuk menangani objek bergerak.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 33 |
-| Nomor | 5 |
-| Halaman | 1255--1262 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Sistem SLAM lengkap sumber-terbuka untuk kamera monokular, stereo, dan RGB-D dengan tracking, mapping, relokalisasi, dan loop closing berbasis fitur ORB.
+Sebelum ORB-SLAM2, sistem SLAM visual umumnya terpecah menurut jenis sensor: ada metode yang dirancang khusus monokular, khusus stereo, atau khusus RGB-D, masing-masing dengan basis kode dan asumsi berbeda. Metode berbasis kedalaman seperti KinectFusion berfokus pada rekonstruksi permukaan yang padat dan rinci, tetapi pendekatan ini mahal secara komputasi dan sulit menjaga konsistensi lintasan pada wilayah luas karena representasi permukaannya menyulitkan koreksi global saat lingkar (*loop*) dikenali kembali. Metode berbasis fitur monokular murni menghadapi masalah ambiguitas skala: dari citra tunggal, jarak sebenarnya antar-titik tidak dapat ditentukan tanpa informasi tambahan, dan inisialisasi peta awal memerlukan pergeseran sudut pandang (paralaks) yang memadai antara dua bingkai — sesuatu yang tidak selalu tersedia, misalnya saat kamera murni berputar di tempat.
 
-## Abstrak (Parafrase)
-ORB-SLAM2 adalah sistem SLAM berbasis fitur yang lengkap dan andal untuk tiga jenis kamera (monokular, stereo, RGB-D). Ia mencakup tracking, local mapping, loop closing, dan relokalisasi, memakai fitur ORB yang cepat dan bundle adjustment untuk akurasi. Mode RGB-D memberi skala metrik langsung. Sistem berjalan real-time pada CPU dan menjadi baseline SLAM paling berpengaruh.
+Masalah kedua adalah galat kumulatif (*drift*): karena setiap estimasi pose baru dibangun di atas estimasi sebelumnya, kesalahan kecil menumpuk seiring panjang lintasan. Solusinya adalah pengenalan lingkar (*loop closure*) — mendeteksi bahwa kamera kembali ke tempat yang pernah direkam, lalu menyebarkan koreksi ke seluruh riwayat pose — tetapi deteksi yang andal dan koreksi yang murah bukan hal sepele pada peta besar. Masalah ketiga adalah kegagalan pelacakan: bila kamera bergerak terlalu cepat atau pandangan terhalang, sistem kehilangan jejak pose dan perlu **relokalisasi** (menemukan kembali posisi kamera di peta yang sudah ada) tanpa memulai peta dari nol. ORB-SLAM2 diajukan untuk menjawab ketiga masalah ini sekaligus, dalam satu kerangka yang seragam untuk monokular, stereo, dan RGB-D.
 
-## Latar Belakang & Konteks
-Dibutuhkan sistem SLAM yang andal, akurat, real-time, dan serbaguna lintas jenis kamera, dengan penanganan drift (loop closure) dan kegagalan tracking (relokalisasi).
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Perlu SLAM andal & akurat lintas jenis kamera.
-- Drift akumulatif memerlukan loop closure.
-- Kegagalan tracking memerlukan relokalisasi.
-- Real-time pada CPU diinginkan.
-- Skala metrik penting (RGB-D/stereo).
+Gagasan inti ORB-SLAM2 adalah memakai satu arsitektur berbasis fitur ORB (*Oriented FAST and Rotated BRIEF* — deskriptor titik-kunci citra yang cepat dihitung dan tahan terhadap rotasi) untuk tiga modalitas sensor, dengan perbedaan utama hanya pada cara memperoleh kedalaman tiap titik fitur: pada stereo, kedalaman dihitung dari selisih posisi fitur di dua citra (disparitas); pada RGB-D, kedalaman dibaca langsung dari sensor. Dengan kedalaman tersedia sejak bingkai pertama, peta awal dapat dibangun seketika dari satu bingkai saja — berbeda dengan monokular murni yang harus menunggu paralaks memadai antara dua bingkai sebelum triangulasi dapat dilakukan.
 
-## Tujuan & Pertanyaan Penelitian
-- Menyediakan SLAM lengkap mono/stereo/RGB-D.
-- Menangani drift via loop closing & BA.
-- Menyediakan relokalisasi yang andal.
+Di atas fondasi ini, sistem menjalankan tiga alur kerja paralel yang saling melengkapi: satu alur memperkirakan pose kamera bingkai demi bingkai, satu alur menjaga kualitas peta lokal, dan satu alur mendeteksi kapan kamera kembali ke tempat lama untuk membetulkan seluruh lintasan sekaligus. Karena ketiganya berjalan sebagai proses terpisah, pelacakan pose tidak perlu menunggu peta selesai dioptimalkan penuh.
 
-## Tinjauan Terdahulu / Posisi Literatur
-ORB-SLAM2 menyempurnakan ORB-SLAM (monokular) ke stereo/RGB-D.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Ekstraksi Fitur dan Estimasi Kedalaman per Sensor
 
-- ORB-SLAM (monokular) — pendahulu.
-- Fitur ORB — cepat & rotasi-invarian.
-- Bundle adjustment — akurasi.
-- DBoW2 — loop closure/relokalisasi.
+Setiap bingkai masuk diproses dengan mengekstraksi titik-kunci ORB pada beberapa tingkat skala citra (piramida skala), sehingga fitur pada objek dekat maupun jauh tetap terdeteksi. Untuk stereo, setiap fitur di citra kiri dicocokkan dengan kandidatnya di citra kanan sepanjang garis epipolar untuk menghitung disparitas, yang dikonversi menjadi kedalaman memakai baseline (jarak tetap antar-dua lensa) dan panjang fokus kamera. Untuk RGB-D, kedalaman diambil langsung dari peta kedalaman sensor pada koordinat piksel fitur tersebut.
 
-## Metodologi & Arsitektur
-Tiga thread paralel: tracking (estimasi pose per-frame via fitur ORB), local mapping (menyempurnakan peta + local BA), dan loop closing (deteksi loop via bag-of-words + pose graph optimization + full BA); mode RGB-D memakai kedalaman untuk skala metrik dan inisialisasi cepat.
+Makalah membedakan titik **dekat** dan **jauh** berdasarkan ambang kedalaman relatif terhadap baseline stereo: titik dengan kedalaman kurang dari sekitar 40 kali baseline dianggap dekat dan dapat ditriangulasi andal dari satu bingkai saja, memberi informasi skala, translasi, dan rotasi yang kuat. Titik yang lebih jauh hanya memberi informasi rotasi yang andal; skala dan translasinya baru dapat dipertajam setelah diamati dari beberapa sudut pandang. Pembedaan ini membuat sistem stereo/RGB-D berinisialisasi lebih cepat dan stabil dibandingkan monokular murni, karena titik dekat langsung menyediakan skala metrik tanpa menunggu pergerakan kamera yang cukup untuk triangulasi multi-bingkai.
 
-Komponen / langkah metodologis utama:
+### Tiga Alur Kerja Paralel
 
-- Fitur ORB untuk tracking & pemetaan.
-- Tiga thread: tracking, mapping, loop closing.
-- Bundle adjustment (local & full).
-- Loop closure + relokalisasi (DBoW2).
-- Mode RGB-D (skala metrik langsung).
-- Real-time pada CPU.
+```
+Bingkai baru (RGB / stereo / RGB-D)
+        |
+        v
+ [ TRACKING ]  --pose per bingkai--> keluaran lintasan
+   cocokkan fitur ke peta lokal,
+   minimkan galat reproyeksi
+        |
+        | (bingkai kunci baru)
+        v
+ [ LOCAL MAPPING ]
+   sisipkan keyframe, triangulasi
+   titik baru, bundle adjustment
+   lokal, buang keyframe redundan
+        |
+        | (kandidat lingkar terdeteksi)
+        v
+ [ LOOP CLOSING ]
+   cocokkan dengan DBoW2,
+   optimasi pose graph,
+   picu bundle adjustment penuh
+   (thread ke-4, di latar belakang)
+```
 
-## Kontribusi Utama
-1. Sistem SLAM lengkap & serbaguna (mono/stereo/RGB-D).
-2. Loop closing + relokalisasi andal.
-3. Akurasi tinggi (bundle adjustment).
-4. Baseline SLAM paling berpengaruh, open-source.
+Alur **tracking** (pelacakan) berjalan setiap bingkai: fitur ORB bingkai saat ini dicocokkan dengan titik peta yang sudah ada, lalu pose kamera diperkirakan dengan meminimalkan galat reproyeksi (selisih antara posisi titik yang diamati dan posisi yang diprediksi bila titik peta diproyeksikan ke citra). Bila jumlah titik yang berhasil dilacak menurun cukup banyak dibandingkan *keyframe* (bingkai kunci, bingkai yang disimpan permanen sebagai rujukan peta) terakhir, bingkai saat ini dijadikan *keyframe* baru dan diteruskan ke alur berikutnya.
 
-## Rincian Eksperimen
-Diuji pada KITTI, EuRoC, dan TUM RGB-D dengan metrik akurasi trajektori (ATE/RPE) dan kecepatan, dibandingkan sistem SLAM lain.
+Alur **local mapping** (pemetaan lokal) menerima *keyframe* baru, mentriangulasi titik fitur baru yang belum ada di peta, lalu menjalankan *bundle adjustment* lokal — optimasi bersama pose beberapa *keyframe* bertetangga dan titik peta yang mereka amati agar peta tetap konsisten secara geometris. Alur ini juga membuang *keyframe* redundan agar ukuran peta tidak membengkak tanpa menambah informasi baru.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Alur **loop closing** (penutupan lingkar) mencari kecocokan tempat pada setiap *keyframe* baru memakai DBoW2 (*bag-of-words* dari deskriptor ORB — representasi citra sebagai histogram kemunculan pola visual, memungkinkan pencarian kecocokan tempat cepat tanpa membandingkan piksel). Bila lingkar terdeteksi dan tervalidasi, sistem menjalankan optimasi *pose graph* (optimasi hanya atas hubungan relatif antar-*keyframe*, lebih murah daripada mengoptimalkan seluruh titik peta), lalu memicu *bundle adjustment* penuh di latar belakang. DBoW2 juga dipakai untuk relokalisasi ketika pelacakan gagal.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| TUM RGB-D | ATE | akurasi tinggi (statis) |
-| KITTI/EuRoC | ATE/RPE | SOTA saat rilis |
-| Kecepatan | real-time | CPU real-time |
+### Mode Lokalisasi Ringan
 
-## Temuan Kunci
-- SLAM berbasis fitur andal & akurat.
-- Loop closure krusial menekan drift.
-- RGB-D memberi skala metrik langsung.
-- Lemah pada lingkungan dinamis (motivasi turunan).
+ORB-SLAM2 menyediakan mode tambahan yang menonaktifkan *local mapping* dan *loop closing*. Pelacakan pada mode ini memakai odometri visual (perkiraan gerak antar-bingkai) untuk wilayah yang belum terpetakan, dan pencocokan langsung ke titik peta yang sudah ada untuk mencegah galat menumpuk (*zero-drift localization*) saat kamera memasuki kembali wilayah yang telah dipetakan.
 
-## Keunggulan
-- Lengkap & serbaguna.
-- Akurat & real-time (CPU).
-- Open-source berpengaruh.
+## Eksperimen dan Hasil
 
-## Keterbatasan
-- Rentan pada lingkungan dinamis.
-- Berbasis fitur (gagal pada tekstur minim).
-- Tak menangani objek bergerak.
+Evaluasi dilakukan pada 29 barisan data publik yang mencakup tiga tolok ukur berbeda. Pada **KITTI** (barisan data luar ruangan dari kendaraan, stereo), ORB-SLAM2 mengungguli Stereo LSD-SLAM dengan galat translasi relatif umumnya di bawah 1% dan galat posisi absolut (RMSE — *root mean square error*, akar rata-rata kuadrat selisih posisi terhadap posisi kebenaran lapangan) berkisar 0,2–10,4 meter, bergantung panjang dan kompleksitas lintasan tiap barisan data. Pada **EuRoC MAV** (barisan data drone dalam pabrik, stereo), galat translasi RMSE konsisten di bawah 12 sentimeter pada 11 barisan data, bahkan mencapai 1,8–3,7 sentimeter pada barisan data bertingkat kesulitan rendah, melampaui Stereo LSD-SLAM pada barisan data yang sama-sama terselesaikan.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Pada **TUM RGB-D** (barisan data genggam dalam ruangan, RGB-D), ORB-SLAM2 mencatat akurasi lebih baik dibandingkan metode padat berbasis kedalaman seperti ElasticFusion, Kintinuous, DVO-SLAM, dan RGB-D SLAM, dengan galat RMSE 0,004 meter pada barisan fr2/xyz, 0,009 meter pada fr2/desk, dan 0,010 meter pada fr3/office — bukti bahwa pendekatan berbasis fitur jarang tetap menyamai atau melampaui akurasi metode berbasis kedalaman penuh, sekaligus jauh lebih ringan secara komputasi.
 
-## Relevansi terhadap Tema Tinjauan
-ORB-SLAM2 adalah fondasi klaster RGB-D SLAM dalam tinjauan dan basis banyak SLAM dinamis (DynaSLAM, DS-SLAM, CFP-SLAM) yang mengintegrasikan deteksi.
+Dari sisi kecepatan, tracking memerlukan 25,6–49,5 milidetik per bingkai dan local mapping 129,5–267,3 milidetik per *keyframe*, cukup cepat agar tracking selesai sebelum bingkai berikutnya tiba. Loop closing, saat terpicu, memakan 108,6–598,7 milidetik, dan bundle adjustment penuh 349–1.793 milidetik, keduanya berjalan di latar belakang tanpa mengganggu tracking utama. Penulis mencatat dua kegagalan spesifik: motion blur (citra kabur akibat gerak cepat) memutus pelacakan pada barisan data V2_03_difficult di EuRoC, dan mode monokular murni gagal pada satu barisan data KITTI jalan raya karena kurangnya titik dekat untuk skala yang stabil.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SLAM** yang baik dibaca berdampingan:
+## Kelebihan dan Keterbatasan
 
-- [108 - 2018 - DynaSLAM - RGB-D SLAM](./108%20-%202018%20-%20DynaSLAM%20-%20RGB-D%20SLAM.md)
-- [109 - 2018 - DS-SLAM - RGB-D SLAM](./109%20-%202018%20-%20DS-SLAM%20-%20RGB-D%20SLAM.md)
-- [110 - 2022 - CFP-SLAM - RGB-D SLAM](./110%20-%202022%20-%20CFP-SLAM%20-%20RGB-D%20SLAM.md)
-- [111 - 2019 - Visual SLAM YOLO vs Mask R-CNN (Soares dkk.) - RGB-D SLAM](./111%20-%202019%20-%20Visual%20SLAM%20YOLO%20vs%20Mask%20R-CNN%20%28Soares%20dkk.%29%20-%20RGB-D%20SLAM.md)
+Kelebihan utama ORB-SLAM2 adalah keseragaman arsitektur lintas tiga jenis sensor dalam satu basis kode, sehingga peneliti dapat berpindah modalitas tanpa mengganti kerangka algoritmenya. Akurasi yang dicapai menyamai atau melampaui metode padat berbasis kedalaman pada TUM RGB-D, sekaligus jauh lebih hemat komputasi karena hanya memproses fitur jarang. Sistem berjalan waktu nyata pada CPU standar tanpa GPU, dan kode sumbernya dipublikasikan terbuka — faktor yang menjelaskan mengapa metode ini menjadi rujukan baku yang luas dipakai pada riset SLAM berikutnya.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SLAM** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Keterbatasan yang diakui penulis meliputi kerentanan terhadap motion blur pada gerak cepat dan kegagalan inisialisasi monokular pada adegan dengan sedikit titik dekat. Dari sisi konseptual, representasi peta ORB-SLAM2 berupa awan titik jarang, bukan permukaan padat, sehingga tidak cocok untuk aplikasi yang membutuhkan rekonstruksi rinci seperti perencanaan genggaman robot; penulis sendiri menyatakan sistem ini memprioritaskan konsistensi lokalisasi jangka panjang di atas kelengkapan rekonstruksi. Dari sisi rekayasa, sistem juga mengasumsikan lingkungan sebagian besar statis — fitur ORB yang menempel pada objek bergerak dapat merusak estimasi pose karena algoritme tidak membedakan titik pada latar diam dan titik pada objek dinamis. Asumsi inilah yang menjadi motivasi langsung bagi sejumlah sistem turunan yang menambahkan deteksi objek untuk menyaring fitur pada area bergerak sebelum estimasi pose dijalankan.
 
-## Glosarium Istilah (tema RGB-D SLAM)
-Istilah penting untuk memahami makalah ini:
+## Kaitan dengan Bab Lain
 
-- **SLAM** — Simultaneous Localization and Mapping.
-- **RGB-D SLAM** — SLAM kamera warna+kedalaman (skala metrik).
-- **Lingkungan dinamis** — Scene dengan objek bergerak.
-- **Loop closure** — Pengenalan tempat untuk koreksi drift.
-- **Bundle adjustment** — Optimasi bersama pose dan titik peta.
-- **ATE/RPE** — Absolute/Relative Trajectory/Pose Error.
-- **Semantic SLAM** — SLAM memanfaatkan label semantik.
-- **Fitur ORB** — Fitur cepat rotasi-invarian.
-- **TUM RGB-D** — Benchmark SLAM RGB-D standar.
-- **Deteksi objek dinamis** — Menandai objek bergerak (YOLO/Mask R-CNN).
+ORB-SLAM2 adalah fondasi klaster RGB-D SLAM dalam tinjauan ini: arsitektur tiga alur dan representasi peta berbasis fitur ORB yang diwariskannya dipakai kembali oleh [190 - 2021 - ORB-SLAM3 - RGB-D SLAM](./190%20-%202021%20-%20ORB-SLAM3%20-%20RGB-D%20SLAM.md), yang memperluas kerangka ini dengan penggabungan sensor inersia dan peta multi-sesi. Asumsi lingkungan statis pada ORB-SLAM2 menjadi celah yang langsung disasar oleh [108 - 2018 - DynaSLAM - RGB-D SLAM](./108%20-%202018%20-%20DynaSLAM%20-%20RGB-D%20SLAM.md) dan [109 - 2018 - DS-SLAM - RGB-D SLAM](./109%20-%202018%20-%20DS-SLAM%20-%20RGB-D%20SLAM.md), yang menambahkan deteksi semantik untuk menyaring fitur pada objek bergerak sebelum estimasi pose. Bab [111 - 2019 - Visual SLAM YOLO vs Mask R-CNN (Soares dkk.) - RGB-D SLAM](./111%20-%202019%20-%20Visual%20SLAM%20YOLO%20vs%20Mask%20R-CNN%20%28Soares%20dkk.%29%20-%20RGB-D%20SLAM.md) membandingkan detektor objek yang dipasangkan di atas kerangka SLAM sejenis, sedangkan [191 - 2021 - DROID-SLAM - RGB-D SLAM](./191%20-%202021%20-%20DROID-SLAM%20-%20RGB-D%20SLAM.md) mewakili arah alternatif yang menggantikan tracking berbasis fitur ORB dengan estimasi berbasis pembelajaran mendalam ujung ke ujung.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Poin untuk Sitasi
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-ORB-SLAM2 menyediakan SLAM lengkap sumber-terbuka untuk mono/stereo/RGB-D dengan tracking, loop closing, dan relokalisasi berbasis ORB, menjadi baseline SLAM RGB-D paling berpengaruh.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `murartal2017orbslam2` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 107/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `murartal2017orbslam2`. Ringkasan yang aman dikutip: "ORB-SLAM2 adalah sistem SLAM berbasis fitur ORB yang bekerja pada kamera monokular, stereo, dan RGB-D dengan tracking, local mapping, dan loop closing berjalan paralel; pada evaluasi 29 barisan data publik (KITTI, EuRoC MAV, TUM RGB-D), sistem ini mencatat akurasi yang menyamai atau melampaui metode SLAM sejenis sambil tetap berjalan waktu nyata pada CPU standar." Angka RMSE (mis. 0,2–10,4 m pada KITTI; di bawah 12 cm pada EuRoC; 0,004–0,010 m pada TUM RGB-D) dan waktu pemrosesan per tahap diambil dari abstrak dan isi naskah arXiv/ar5iv yang berhasil diakses, tetapi rincian tabel lengkap per barisan data sebaiknya diverifikasi ulang ke Tabel III–VI naskah asli sebelum dikutip dalam karya formal. Ambang klasifikasi titik dekat/jauh (~40× baseline) juga berasal dari naskah dan sebaiknya dicek ulang terhadap definisi presisi pada bagian metodologi.

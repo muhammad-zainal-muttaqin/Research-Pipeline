@@ -1,212 +1,83 @@
 # 116 - A Robot Grasp Detection Method Based on YOLO and RGB-D Feature Fusion
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 116 dari 154 |
 | Kunci BibTeX | `tian2023grasp` |
-| Judul | A Robot Grasp Detection Method Based on YOLO and RGB-D Feature Fusion |
+| Judul asli | A Robot Grasp Detection Method Based on YOLO and RGB-D Feature Fusion |
 | Penulis | Tian, Hao; Song, Kechen; Li, Song; Ma, Shaoning; Yan, Yunhui |
 | Tahun | 2023 |
-| Venue / Jurnal | Journal of Intelligent \& Robotic Systems |
-| Tema klaster | YOLO plus RGB-D |
-| Kata kunci | YOLO+RGB-D, grasp, fusi fitur, deteksi, robotik |
+| Venue | Journal of Intelligent & Robotic Systems |
+| Tema | YOLO plus RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **Google Scholar:** https://scholar.google.com/scholar?q=A%20Robot%20Grasp%20Detection%20Method%20Based%20on%20YOLO%20and%20RGB-D%20Feature%20Fusion
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=A%20Robot%20Grasp%20Detection%20Method%20Based%20on%20YOLO%20and%20RGB-D%20Feature%20Fusion&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-yolo-plus-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=A%20Robot%20Grasp%20Detection%20Method%20Based%20on%20YOLO%20and%20RGB-D%20Feature%20Fusion
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=A%20Robot%20Grasp%20Detection%20Method%20Based%20on%20YOLO%20and%20RGB-D%20Feature%20Fusion&sort=relevance
+Makalah ini mengusulkan metode deteksi *grasp* (konfigurasi genggaman robot pada suatu objek) yang menggabungkan arsitektur detektor bergaya YOLO dengan fusi fitur RGB-D: citra warna (RGB) dan peta kedalaman (*depth map*, citra yang setiap pikselnya berisi jarak permukaan objek ke kamera) diproses bersama untuk memprediksi posisi dan orientasi genggaman yang layak dieksekusi lengan robot. Tujuannya adalah memindahkan paradigma "satu evaluasi jaringan untuk seluruh citra" — ciri khas YOLO pada deteksi objek (bab 001) — ke tugas deteksi *grasp*, sehingga kecepatan satu tahap tetap terjaga sambil memanfaatkan informasi geometri dari kanal kedalaman yang tidak tersedia pada citra RGB semata.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Berkas sumber untuk entri ini terbatas pada metadata bibliografis (judul, penulis, tahun, venue) tanpa tautan arXiv atau DOI yang dapat diakses langsung, dan pencarian daring lanjutan tidak berhasil menemukan salinan naskah lengkap atau abstrak resmi yang dapat difetch. Akibatnya, uraian pada bab ini membatasi diri pada apa yang dapat disimpulkan secara aman dari judul dan konvensi umum kelas metode sejenis (deteksi *grasp* berbasis fusi RGB-D dengan tulang punggung detektor satu tahap), sementara seluruh angka kinerja, rincian dataset, dan konfigurasi arsitektur spesifik ditandai sebagai belum terverifikasi pada bagian *Poin untuk Sitasi*.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 107 |
-| Nomor | 3 |
-| Halaman | 38 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode deteksi grasp robotik yang memfusikan fitur RGB dan kedalaman dalam kerangka berbasis YOLO untuk memprediksi grasp.
+Deteksi *grasp* robotik memprediksi di mana dan dengan sudut berapa sebuah *gripper* (penjepit) harus menutup untuk mengangkat suatu objek tanpa terlepas atau merusaknya. Sejak Jiang dkk. (2011) merumuskan representasi genggaman sebagai kotak berorientasi lima parameter — posisi pusat, sudut rotasi, lebar bukaan *gripper*, dan tinggi pelat kontak — sebagian besar metode berikutnya memprediksi parameter ini dari citra masukan dengan jaringan konvolusi. Generasi awal metode ini, misalnya jaringan dua tahap yang menyaring ribuan kandidat kotak sebelum mengklasifikasikannya, mewarisi kelemahan yang sama dengan detektor objek dua tahap yang dibahas pada bab 012–014: proses bertahap membuat latensi tinggi, sehingga sulit dipakai pada lini produksi atau manipulasi *real-time*.
 
-## Abstrak (Parafrase)
-Tian dkk. mengusulkan deteksi grasp robotik yang menggabungkan kecepatan detektor gaya YOLO dengan fusi fitur RGB-D: fitur warna (tekstur) dan kedalaman (geometri) difusikan untuk memprediksi konfigurasi grasp. Pendekatan ini memanfaatkan komplementaritas RGB-D dalam kerangka deteksi cepat, mencapai akurasi grasp kompetitif.
+Sumber informasi kedua yang lazim dipakai untuk mengatasi ambiguitas visual adalah kanal kedalaman. Citra RGB saja rentan tertipu tekstur permukaan, bayangan, dan pantulan cahaya, sedangkan peta kedalaman memberi ukuran geometri objek secara langsung — jarak tepi objek terhadap latar, kemiringan permukaan, dan ketebalan bagian yang bisa dijepit. Masalahnya, RGB dan *depth* memiliki statistik yang sangat berbeda: RGB kaya tekstur dan warna, sedangkan *depth* dari sensor konsumen (seperti Kinect atau RealSense) sering memiliki lubang data (*noise*) di tepi objek dan permukaan reflektif. Menggabungkan keduanya secara naif — misalnya sekadar menumpuk sebagai kanal keempat — sering gagal memanfaatkan komplementaritas kedua modalitas ini secara optimal. Klaster YOLO plus RGB-D pada tinjauan ini (bab 112–119) mengumpulkan berbagai jawaban atas masalah fusi ini pada konteks yang berbeda-beda; makalah Tian dkk. memposisikan jawabannya spesifik pada tugas deteksi *grasp*.
 
-## Latar Belakang & Konteks
-Deteksi grasp perlu cepat (seperti YOLO) sekaligus memanfaatkan geometri kedalaman; menggabungkan keduanya dalam satu kerangka belum banyak dieksplorasi.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Grasp perlu cepat dan akurat.
-- Geometri kedalaman penting untuk grasp.
-- Detektor cepat (YOLO) belum banyak difusikan dengan depth untuk grasp.
-- Komplementaritas RGB-D kurang dimanfaatkan.
-- Real-time diinginkan untuk robotika.
+Gagasan inti makalah, sejauh dapat disimpulkan dari judulnya, adalah mengganti tahap pengklasifikasian kandidat genggaman yang terpisah dengan satu jaringan bergaya YOLO yang meregresi parameter *grasp* langsung dari citra, sebagaimana YOLO meregresi kotak objek langsung dari citra pada deteksi umum. Perbedaannya terletak pada masukan: alih-alih hanya RGB, jaringan menerima pasangan RGB dan *depth* yang fiturnya digabungkan lewat modul fusi sebelum mencapai lapisan prediksi. Dengan demikian, kecepatan satu tahap (satu kali evaluasi jaringan per citra) dipertahankan, sementara akurasi geometri genggaman ditingkatkan oleh informasi kedalaman yang tidak dimiliki metode RGB tunggal.
 
-## Tujuan & Pertanyaan Penelitian
-- Membangun detektor grasp gaya YOLO.
-- Memfusikan fitur RGB dan kedalaman.
-- Memprediksi grasp secara cepat & akurat.
+Prinsip ini konsisten dengan pola umum pada metode fusi RGB-D untuk deteksi maupun *grasp*: kedua modalitas diproses dengan cabang fitur masing-masing sebelum digabungkan pada satu titik dalam jaringan — dikenal sebagai fusi awal (*early fusion*, penggabungan sebelum ekstraksi fitur), fusi tengah (*mid fusion*, penggabungan pada peta fitur pertengahan), atau fusi akhir (*late fusion*, penggabungan pada tahap keputusan). Titik fusi spesifik yang dipakai makalah ini tidak dapat dipastikan tanpa akses ke naskah penuh, sehingga disebutkan di sini sebagai kerangka konseptual, bukan klaim rinci tentang implementasinya.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Makalah menggabungkan detektor YOLO dan fusi fitur RGB-D untuk grasp.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Representasi Genggaman
 
-- YOLO — detektor cepat.
-- RGB-D feature fusion.
-- Grasp detection (Cornell/Jacquard).
-- Robotik manipulasi.
+Konvensi yang lazim dipakai pada deteksi *grasp* planar (genggaman searah sumbu vertikal, dua dimensi) menyatakan setiap genggaman sebagai lima angka: g = (x, y, θ, w, h). Sebagai ilustrasi hipotetis: pada citra 640×480 piksel, sebuah genggaman dapat dinyatakan sebagai pusat (320, 240), sudut rotasi 30 derajat terhadap sumbu horizontal, lebar bukaan *gripper* 80 piksel, dan tinggi pelat kontak 40 piksel. Format ini setara secara struktural dengan kotak pembatas pada deteksi objek biasa, hanya ditambah satu parameter sudut — kesamaan struktural inilah yang membuat kerangka detektor satu tahap seperti YOLO dapat diadaptasi untuk tugas *grasp* dengan mengganti kepala prediksi (bagian akhir jaringan yang menghasilkan angka keluaran).
 
-## Metodologi & Arsitektur
-Backbone gaya YOLO mengekstrak fitur; modul fusi menggabungkan fitur RGB dan kedalaman; head memprediksi konfigurasi grasp (posisi/sudut/lebar); dilatih pada dataset grasp dan/atau divalidasi robot.
+### Dua Cabang Ekstraksi Fitur dan Modul Fusi
 
-Komponen / langkah metodologis utama:
+Pola arsitektural yang umum pada kelas metode ini memakai dua cabang paralel: satu cabang konvolusi memproses citra RGB, satu cabang lain memproses peta kedalaman yang telah dinormalisasi ke rentang nilai piksel yang sebanding. Keluaran kedua cabang pada satu atau beberapa tingkat resolusi kemudian digabungkan oleh modul fusi, yang dapat berupa penjumlahan kanal, penyambungan kanal (*concatenation*) diikuti konvolusi 1×1 untuk mereduksi dimensi, atau mekanisme perhatian (*attention*) yang memberi bobot berbeda pada tiap modalitas sesuai keandalannya di lokasi tertentu. Diagram berikut merangkum alur data yang konsisten dengan judul makalah dan konvensi umum kelas metode ini:
 
-- Backbone gaya YOLO (cepat).
-- Modul fusi fitur RGB-D.
-- Head prediksi grasp (posisi/sudut/lebar).
-- Pemanfaatan komplementaritas warna-geometri.
-- Pelatihan pada dataset grasp.
-- Orientasi real-time.
+```
+citra RGB (3 kanal)          peta depth (1 kanal)
+        |                            |
+  cabang fitur RGB              cabang fitur depth
+  (blok konvolusi)               (blok konvolusi)
+        |                            |
+        +-------------+  +-----------+
+                      |  |
+                modul fusi RGB-D
+           (gabung kanal / spasial)
+                      |
+             head gaya YOLO (grid SxS)
+                      |
+   per sel grid: x, y, sudut, lebar, tinggi, skor
+```
 
-## Kontribusi Utama
-1. Detektor grasp gaya YOLO dengan fusi RGB-D.
-2. Memanfaatkan komplementaritas RGB-D.
-3. Akurasi grasp kompetitif.
-4. Cepat (basis YOLO).
+Fitur gabungan diteruskan ke bagian jaringan yang meniru kepala prediksi YOLO: citra dibagi menjadi grid sel, dan setiap sel bertanggung jawab memprediksi parameter genggaman bila pusat suatu genggaman jatuh di dalamnya — mekanisme pembagian tanggung jawab yang sama seperti dijelaskan pada bab 001 untuk deteksi objek, hanya keluarannya berupa lima parameter *grasp* dan satu skor keyakinan alih-alih kelas objek.
 
-## Rincian Eksperimen
-Diuji pada dataset grasp (Cornell/Jacquard) dan/atau robot dengan metrik akurasi grasp (J. Intelligent & Robotic Systems 2023).
+### Pelatihan dan Inferensi
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Pelatihan jaringan semacam ini umumnya memakai fungsi *loss* regresi (galat kuadrat atau galat absolut) antara parameter genggaman prediksi dan anotasi kebenaran, ditambah galat klasifikasi bila jaringan turut memprediksi kelas objek. Pada inferensi, citra RGB dan *depth* dilewatkan bersamaan melalui jaringan dalam satu evaluasi, menghasilkan satu atau beberapa kandidat genggaman per objek yang kemudian disaring dengan mekanisme penekanan duplikat, serupa *Non-Maximum Suppression* pada YOLO, sebelum genggaman dengan skor tertinggi dieksekusi oleh lengan robot. Rincian hiperparameter, ukuran *backbone* (tulang punggung ekstraksi fitur), dan pengaturan pelatihan spesifik pada makalah ini tidak dapat dipastikan dari sumber yang tersedia.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Cornell/Jacquard | akurasi grasp | kompetitif |
-| Robot/uji | success rate | validasi grasp |
-| Fusi | RGB-D | komplementaritas dimanfaatkan |
+## Eksperimen dan Hasil
 
-## Temuan Kunci
-- YOLO dapat diadaptasi untuk grasp cepat.
-- Fusi RGB-D meningkatkan akurasi grasp.
-- Komplementaritas warna-geometri bermanfaat.
-- Real-time terjaga.
+Kelas metode deteksi *grasp* berbasis RGB-D umumnya dievaluasi pada dua jenis pengujian: akurasi deteksi pada dataset benchmark berlabel genggaman (misalnya dataset yang berisi pasangan citra RGB-D dengan anotasi kotak genggaman), dan validasi fisik berupa tingkat keberhasilan (*success rate*) saat lengan robot benar-benar mengeksekusi genggaman yang diprediksi. Berdasarkan judul dan venue makalah, dapat diperkirakan bahwa Tian dkk. mengikuti pola evaluasi yang sama, namun dataset yang dipakai, metrik akurasi, dan angka spesifik lain tidak dapat dikonfirmasi karena naskah penuh maupun abstrak resminya tidak berhasil ditemukan melalui pencarian yang dilakukan untuk bab ini. Interpretasi kuantitatif — misalnya seberapa besar fusi RGB-D menaikkan akurasi dibanding RGB tunggal, atau seberapa cepat model berjalan dibanding metode dua tahap — karena itu belum dapat dituliskan secara bertanggung jawab di sini dan harus diambil langsung dari tabel hasil pada naskah asli sebelum dikutip.
 
-## Keunggulan
-- Integrasi YOLO + fusi RGB-D eksplisit.
-- Cepat.
-- Akurasi kompetitif.
+## Kelebihan dan Keterbatasan
 
-## Keterbatasan
-- Grasp planar (bukan 6-DoF penuh).
-- Bergantung kualitas RGB-D.
-- Detail bergantung implementasi.
+Kelebihan yang dapat disimpulkan secara konseptual dari desainnya: pendekatan satu tahap mewarisi keunggulan kecepatan YOLO dibanding metode *grasp* dua tahap, sementara fusi RGB-D berpotensi memperbaiki akurasi orientasi dan skala genggaman dibanding metode RGB tunggal, karena kedalaman memberi ukuran geometri langsung yang tidak dapat diperoleh dari warna dan tekstur saja.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Dari sisi rekayasa, terdapat sejumlah keterbatasan struktural yang lazim menyertai kelas metode ini dan yang secara spesifik berlaku bila makalah ini menggunakan representasi genggaman planar lima parameter: pertama, representasi tersebut mengasumsikan genggaman searah sumbu vertikal terhadap permukaan objek, sehingga tidak mencakup genggaman enam derajat kebebasan (6-DoF, posisi dan orientasi bebas dalam ruang tiga dimensi) yang dibutuhkan untuk objek dengan geometri kompleks atau posisi miring. Kedua, kualitas peta kedalaman dari sensor konsumen — lubang data pada tepi objek transparan atau reflektif — dapat menurunkan kualitas fusi bila jaringan tidak dirancang tahan terhadap derau ini. Ketiga, sebagaimana metode fusi RGB-D lain pada klaster ini, pemilihan titik fusi (awal, tengah, atau akhir) melibatkan kompromi antara kekayaan interaksi antarmodalitas dan biaya komputasi tambahan, dan kompromi spesifik yang diambil makalah ini tidak dapat dinilai tanpa akses ke naskah lengkap.
 
-## Relevansi terhadap Tema Tinjauan
-Entri ini adalah contoh eksplisit integrasi YOLO dan fusi RGB-D untuk grasp dalam tinjauan, menautkan deteksi cepat dengan manipulasi.
+## Kaitan dengan Bab Lain
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **YOLO plus RGB-D** yang baik dibaca berdampingan:
+Bab ini mewarisi format keluaran satu tahap yang diperkenalkan YOLO pada bab 001, diadaptasi dari deteksi kelas objek menjadi regresi parameter genggaman. Di dalam klaster YOLO plus RGB-D, bab ini berdampingan dengan bab [115 - 2025 - YOLOv8-URE 2D+Point Cloud Grasping - YOLO plus RGB-D](./115%20-%202025%20-%20YOLOv8-URE%202D+Point%20Cloud%20Grasping%20-%20YOLO%20plus%20RGB-D.md), yang juga menyasar prediksi genggaman namun memakai representasi titik awan (*point cloud*) alih-alih peta kedalaman dua dimensi, dan bab [118 - 2019 - Exploring RGB+Depth Fusion (Ophoff dkk.) - YOLO plus RGB-D](./118%20-%202019%20-%20Exploring%20RGB+Depth%20Fusion%20%28Ophoff%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md), yang mengeksplorasi titik fusi RGB-D pada detektor YOLO secara lebih umum tanpa spesifik ke tugas *grasp*. Perbandingan ketiganya berguna untuk melihat bagaimana pertanyaan "di mana dan bagaimana menggabungkan RGB dengan kedalaman" dijawab berbeda-beda bergantung pada representasi keluaran yang ditargetkan.
 
-- [112 - 2020 - Expandable YOLO - YOLO plus RGB-D](./112%20-%202020%20-%20Expandable%20YOLO%20-%20YOLO%20plus%20RGB-D.md)
-- [113 - 2024 - FusionVision - YOLO plus RGB-D](./113%20-%202024%20-%20FusionVision%20-%20YOLO%20plus%20RGB-D.md)
-- [114 - 2024 - Pumpkin Pick-and-Place Robot (Ito dkk.) - YOLO plus RGB-D](./114%20-%202024%20-%20Pumpkin%20Pick-and-Place%20Robot%20%28Ito%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [115 - 2025 - YOLOv8-URE 2D+Point Cloud Grasping - YOLO plus RGB-D](./115%20-%202025%20-%20YOLOv8-URE%202D+Point%20Cloud%20Grasping%20-%20YOLO%20plus%20RGB-D.md)
-- [117 - 2024 - Onboard Dynamic-Object Detection (Xu dkk.) - YOLO plus RGB-D](./117%20-%202024%20-%20Onboard%20Dynamic-Object%20Detection%20%28Xu%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [118 - 2019 - Exploring RGB+Depth Fusion (Ophoff dkk.) - YOLO plus RGB-D](./118%20-%202019%20-%20Exploring%20RGB+Depth%20Fusion%20%28Ophoff%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [119 - 2023 - Distance Measurement via YOLO + Depth (Chen dkk.) - YOLO plus RGB-D](./119%20-%202023%20-%20Distance%20Measurement%20via%20YOLO%20+%20Depth%20%28Chen%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
+## Poin untuk Sitasi
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **YOLO plus RGB-D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
-
-## Glosarium Istilah (tema YOLO plus RGB-D)
-Istilah penting untuk memahami makalah ini:
-
-- **YOLO** — Detektor satu-tahap real-time regresi tunggal.
-- **Kanal depth** — Peta kedalaman sebagai masukan tambahan.
-- **Fusi RGB-D** — Penggabungan warna dan kedalaman pada deteksi.
-- **Lokalisasi 3D** — Posisi objek dalam koordinat 3D via depth.
-- **Point cloud** — Titik 3D dari depth untuk grasp/rekonstruksi.
-- **Pick-and-place** — Tugas robot mengambil dan menempatkan objek.
-- **RealSense/Kinect** — Kamera RGB-D konsumen umum.
-- **Early/mid/late fusion** — Titik penggabungan depth pada arsitektur.
-- **Segment Anything (SAM)** — Model segmentasi umum; FastSAM=versi cepat.
-- **Real-time deployment** — Penerapan dengan kendala latensi.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Tian dkk. mengusulkan deteksi grasp robotik berbasis YOLO dengan fusi fitur RGB-D, memanfaatkan komplementaritas warna dan geometri dalam kerangka deteksi cepat.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `tian2023grasp` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 116/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `tian2023grasp`. Ringkasan yang aman dikutip terbatas pada metadata bibliografis: "Tian, Song, Li, Ma, dan Yan mengusulkan metode deteksi *grasp* robotik yang memfusikan fitur RGB dan kedalaman dalam kerangka bergaya YOLO, dipublikasikan di Journal of Intelligent & Robotic Systems (2023)." Seluruh hal berikut BELUM terverifikasi terhadap naskah asli dan wajib dicek sebelum dikutip dalam karya formal: (1) tautan arXiv/DOI langsung ke naskah tidak ditemukan pada berkas sumber maupun pencarian lanjutan, sehingga isi abstrak dan metodologi rinci pada bab ini adalah simpulan dari judul dan konvensi umum kelas metode sejenis, bukan kutipan dari naskah; (2) rincian volume 107, nomor 3, dan halaman 38 yang tercatat pada berkas lama belum dikonfirmasi ke basis data penerbit; (3) dataset evaluasi, metrik akurasi, kecepatan inferensi, dan hasil uji robot fisik sepenuhnya belum terkonfirmasi; (4) titik fusi RGB-D (awal/tengah/akhir) dan representasi genggaman (planar lima parameter atau varian lain) yang dipakai makalah masih berupa inferensi, bukan fakta yang terverifikasi.

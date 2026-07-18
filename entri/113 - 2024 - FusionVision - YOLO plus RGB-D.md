@@ -1,211 +1,112 @@
 # 113 - FusionVision: A Comprehensive Approach of 3D Object Reconstruction and Segmentation from RGB-D Cameras Using YOLO and Fast Segment Anything
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 113 dari 154 |
 | Kunci BibTeX | `elamraoui2024fusionvision` |
-| Judul | FusionVision: A Comprehensive Approach of 3D Object Reconstruction and Segmentation from RGB-D Cameras Using YOLO and Fast Segment Anything |
-| Penulis | El Amraoui, Safouane; others |
+| Judul asli | FusionVision: A Comprehensive Approach of 3D Object Reconstruction and Segmentation from RGB-D Cameras Using YOLO and Fast Segment Anything |
+| Penulis | Safouane El Ghazouali, Youssef Mhirit, Ali Oukhrid, Umberto Michelucci, Hichem Nouira |
 | Tahun | 2024 |
-| Venue / Jurnal | arXiv preprint arXiv:2403.00175 |
-| Tema klaster | YOLO plus RGB-D |
-| Kata kunci | YOLO+RGB-D, YOLOv8, FastSAM, rekonstruksi 3D, point cloud |
+| Venue | *Sensors* (MDPI), vol. 24, no. 9, artikel 2889; pracetak arXiv:2403.00175 |
+| Tema | YOLO plus RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-yolo-plus-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2403.00175
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=FusionVision%3A%20A%20Comprehensive%20Approach%20of%203D%20Object%20Reconstruction%20and%20Segmentation%20from%20RGB-D%20Cameras%20Using%20YOLO%20and%20Fast%20Segment%20Anything
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=FusionVision%3A%20A%20Comprehensive%20Approach%20of%203D%20Object%20Reconstruction%20and%20Segmentation%20from%20RGB-D%20Cameras%20Using%20YOLO%20and%20Fast%20Segment%20Anything&sort=relevance
+- **Google Scholar:** https://scholar.google.com/scholar?q=FusionVision%3A%20A%20Comprehensive%20Approach%20of%203D%20Object%20Reconstruction%20and%20Segmentation%20from%20RGB-D%20Cameras%20Using%20YOLO%20and%20Fast%20Segment%20Anything
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=FusionVision%3A%20A%20Comprehensive%20Approach%20of%203D%20Object%20Reconstruction%20and%20Segmentation%20from%20RGB-D%20Cameras%20Using%20YOLO%20and%20Fast%20Segment%20Anything&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
+FusionVision mengusulkan *pipeline* (alur pemrosesan bertahap) yang memadukan detektor YOLOv8 dengan FastSAM — versi cepat dari *Segment Anything Model* (SAM), model segmentasi umum yang mampu mensegmentasi objek apa pun berdasarkan isyarat masukan (*prompt*) tanpa pelatihan khusus per kelas — untuk mengubah aliran citra dari kamera RGB-D menjadi rekonstruksi dan segmentasi objek dalam ruang tiga dimensi. Kotak deteksi dari YOLOv8 dipakai sebagai *prompt* kotak bagi FastSAM sehingga segmentasi hanya memproses wilayah yang relevan, bukan seluruh bidang citra. Masker piksel hasil segmentasi kemudian diselaraskan dengan peta kedalaman memakai parameter kalibrasi kamera, menghasilkan awan titik (*point cloud* — kumpulan titik koordinat 3D) khusus per objek yang selanjutnya disaring dari titik-titik derau sebelum menjadi kotak pembatas 3D.
+
+Pada himpunan data khusus beranggotakan tiga kelas objek (cup/gelas, computer/komputer, bottle/botol) yang direkam dengan kamera Intel RealSense D435i, YOLOv8n hasil pelatihan mencapai mAP50 97,92% dan presisi 97,08%. Tahap deteksi dan segmentasi berjalan sekitar 27–34 *frame* per detik (FPS), sedangkan *pipeline* penuh yang menyertakan rekonstruksi dan visualisasi 3D melambat menjadi sekitar 5 FPS. Kode sumber dan model terlatih dipublikasikan terbuka di GitHub oleh penulis. Makalah ini menjadi salah satu contoh terbaru pada klaster YOLO plus RGB-D karena menggabungkan tiga komponen berbeda — deteksi 2D, segmentasi generik, dan geometri kamera — dalam satu sistem yang bertujuan tetap berjalan mendekati waktu nyata.
+
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+
+Kamera RGB-D — seperti Intel RealSense atau Microsoft Kinect — merekam warna dan kedalaman setiap piksel sekaligus, sehingga posisi tiga dimensi tiap titik citra dapat dihitung bila parameter kalibrasi kameranya diketahui. Untuk mengolah rekaman ini menjadi objek 3D, dua strategi umum sudah ada sebelumnya. Strategi pertama memasukkan kanal *depth* (kedalaman) sebagai kanal tambahan pada masukan jaringan deteksi sejak lapis pertama — pendekatan *early fusion* (fusi dini) yang dipakai pada bab 112 (Expandable YOLO). Strategi kedua memakai model segmentasi umum seperti SAM, yang dapat mensegmentasi objek apa pun dari sebuah titik, kotak, atau teks tanpa pelatihan ulang, tetapi mahal secara komputasi karena mekanisme atensinya dievaluasi pada seluruh citra untuk setiap permintaan segmentasi.
+
+Kedua kelemahan ini saling berlawanan: SAM penuh presisi tetapi terlalu lambat untuk robotika atau navigasi, sedangkan deteksi kotak saja cepat tetapi tidak presisi — latar di dalam kotak ikut terhitung sebagai objek saat diproyeksikan ke 3D, sehingga rekonstruksinya kotor oleh titik yang bukan permukaan objek. Masalah yang ingin dipecahkan FusionVision adalah menggabungkan kecepatan detektor dengan presisi batas segmentasi, lalu memproyeksikan hasilnya ke ruang 3D memakai kanal kedalaman, tanpa mengorbankan kecepatan hingga tidak layak dipakai pada aliran video langsung.
+
+## Ide Utama
+
+Gagasan inti FusionVision adalah menyusun dua model murah secara berjenjang, bukan menjalankan satu model mahal pada seluruh citra. Detektor cepat (YOLOv8) dijalankan lebih dahulu untuk mempersempit wilayah pencarian menjadi kotak-kotak kandidat per objek. Kotak-kotak ini dipakai sebagai *prompt* bagi FastSAM — arsitektur segmentasi instansi satu tahap yang membangkitkan mask dari prototipe konvolusi, mirip YOLACT — sehingga FastSAM hanya menghaluskan batas objek pada wilayah yang sudah ditunjuk, bukan mencari objek dari nol pada seluruh citra. Karena beban komputasi FastSAM sebanding dengan jumlah dan ukuran kotak yang diberikan, bukan dengan ukuran penuh citra, total waktu pemrosesan tetap terkendali.
+
+Masker piksel hasil segmentasi lalu dipetakan ke koordinat 3D memakai kalibrasi kamera dan peta kedalaman; hanya piksel di dalam masker yang diikutkan, sehingga awan titik yang terbentuk sudah bersih dari latar sejak awal, kemudian disaring lagi dengan teknik pemrosesan titik klasik sebelum menjadi kotak pembatas 3D akhir. Rangkaian tahap inilah yang membedakan FusionVision dari pendekatan fusi dini: kedalaman dipakai belakangan, hanya untuk proyeksi geometris, setelah deteksi dan segmentasi RGB selesai.
+
+## Cara Kerja Langkah demi Langkah
+
+Diagram berikut merangkum alur data dari citra RGB dan peta kedalaman hingga kotak pembatas 3D:
+
+```
+citra RGB 640x480              peta kedalaman 640x480
+        |                                |
+        v                                |
+   YOLOv8n (deteksi objek)               |
+        | kotak (x,y,w,h) per objek      |
+        v                                |
+   FastSAM (prompt = kotak)              |
+        | mask biner per objek           |
+        +----------------+---------------+
+                          v
+         penyelarasan RGB-D (Kc, Kd, Tcd)
+                          v
+                awan titik per objek
+                          |
+        downsampling voxel (ukuran 5)
+                          |
+   penghilangan outlier statistik
+   (300 tetangga, rasio 2,0)
+                          v
+        kotak pembatas 3D + rekonstruksi bersih
+```
+
+### Akuisisi Data dan Pelatihan YOLOv8
+
+Penulis merekam 100 citra khusus dengan kamera Intel RealSense D435i untuk tiga kelas objek — cup (gelas), computer (komputer/laptop), dan bottle (botol) — dalam berbagai posisi dan kondisi pencahayaan, lalu memberi anotasi kotak pembatas secara manual. Data ini diperbanyak dengan augmentasi flip horizontal dan vertikal serta rotasi sudut, kemudian dibagi 80% untuk pelatihan dan 20% untuk validasi. Model yang dilatih adalah YOLOv8n, varian teringan dari keluarga YOLOv8, selama 300 *epoch* dengan optimizer Adam dan laju belajar 0,01, memakai empat komponen *loss*: *objectness loss* (entropi silang biner untuk keberadaan objek), *classification loss* (entropi silang lintas kelas), *bounding box loss* (galat kuadrat rata-rata koordinat kotak), dan *center coordinate loss* (*focal loss* pada prediksi titik pusat). Kurva pelatihan mulai stabil sekitar *epoch* ke-170, dengan hasil akhir presisi 97,08%, *recall* 96,94% (proporsi objek sebenarnya yang berhasil terdeteksi), mAP50 97,92%, dan mAP50-95 87,9% (mAP dirata-ratakan pada ambang IOU 0,50 sampai 0,95).
+
+### Segmentasi Batas Objek dengan FastSAM
+
+FastSAM menerima kotak keluaran YOLOv8 sebagai *prompt* dan menghasilkan masker piksel untuk objek di dalam kotak tersebut, yang kemudian diubah menjadi masker biner (setiap piksel bernilai objek atau bukan objek). Karena FastSAM hanya memproses wilayah yang sudah ditunjuk oleh kotak deteksi, tahap ini menambah beban komputasi yang relatif kecil dibandingkan menjalankan segmentasi umum pada seluruh citra — terlihat pada kecepatan pemrosesan yang hampir tidak berubah antara tahap deteksi saja dan deteksi ditambah segmentasi (rinciannya di bagian eksperimen).
+
+### Penyelarasan RGB-Depth dan Proyeksi ke Awan Titik
+
+Piksel pada peta kedalaman dan piksel pada citra RGB berasal dari dua sensor fisik berbeda pada badan kamera, sehingga posisinya perlu diselaraskan sebelum digabung. Makalah merumuskan transformasi ini sebagai Z₀[u₀ v₀ 1]ᵀ = Kc · Tcd · Kd⁻¹ · [Z u v 1]ᵀ: Kc dan Kd adalah matriks intrinsik (parameter internal lensa dan sensor) kamera RGB dan kamera kedalaman, sedangkan Tcd adalah matriks transformasi rigid (rotasi dan translasi) yang menyatakan selisih posisi fisik kedua sensor. Melalui persamaan ini, setiap piksel kedalaman (u, v, Z) dipetakan ke koordinat piksel RGB (u₀, v₀, Z₀); hanya piksel yang jatuh di dalam masker biner FastSAM yang diikutsertakan, sehingga keluarannya adalah awan titik yang sudah terbatas pada permukaan objek, bukan seluruh adegan.
+
+### Pembersihan Awan Titik dan Rekonstruksi 3D
+
+Awan titik per objek melewati dua tahap pembersihan klasik. Pertama, *downsampling* berbasis *voxel* (kubus ruang diskret) dengan ukuran sisi 5 satuan memadatkan titik-titik yang berdekatan menjadi satu titik representatif, mengurangi jumlah titik tanpa mengubah bentuk objek secara berarti. Kedua, penghilangan pencilan statistik (*statistical outlier removal*) memeriksa 300 tetangga terdekat tiap titik dan membuang titik yang jaraknya melampaui rasio deviasi standar 2,0 dari rata-rata tetangganya — menyaring titik derau yang muncul akibat kesalahan pembacaan kedalaman di tepi objek atau pada permukaan yang memantulkan cahaya. Awan titik bersih inilah yang dipakai menghitung kotak pembatas 3D dan bentuk rekonstruksi akhir per objek.
+
+## Eksperimen dan Hasil
+
+Seluruh pengujian dijalankan pada perangkat keras yang sama: GPU NVIDIA RTX 2080 Ti, sistem operasi Ubuntu 22.04 LTS, dan kamera Intel RealSense D435i dengan resolusi 640×480 untuk citra RGB maupun peta kedalaman. Tabel berikut merangkum kecepatan pemrosesan pada tiap tahap tambahan yang disusupkan ke *pipeline*:
+
+| Tahap | Perkiraan laju (FPS) |
 |---|---|
-| arXiv | 2403.00175 |
+| RGB + kedalaman mentah | ~90 |
+| + deteksi YOLOv8 | ~34 |
+| + segmentasi FastSAM | ~33,7 |
+| + rekonstruksi & visualisasi 3D | ~5 |
 
-## Ringkasan Eksekutif
-Pendekatan yang memadukan YOLOv8 (deteksi) dan FastSAM (segmentasi) pada citra RGB-D untuk rekonstruksi dan segmentasi objek 3D dari kamera kedalaman.
+Interpretasinya: menambahkan deteksi YOLOv8 menurunkan laju dari ~90 menjadi ~34 FPS, sedangkan menambahkan segmentasi FastSAM di atasnya hampir tidak menurunkan laju lebih jauh (~33,7 FPS) karena FastSAM hanya bekerja pada wilayah kotak yang sudah dipersempit — bukti strategi berjenjang menekan biaya segmentasi. Biaya terbesar justru muncul pada rekonstruksi dan visualisasi 3D, yang menjatuhkan laju hingga ~5 FPS: inti deteksi-dan-segmentasi 2D tetap mendekati waktu nyata, sementara keluaran 3D tervisualisasi penuh jauh dari itu. Makalah juga melaporkan penyaringan awan titik menghilangkan sebagian besar titik yang tidak relevan dari bidang pandang penuh — angka persentase persisnya berbeda antar bagian naskah sehingga perlu dicek ulang sebelum dikutip (lihat *Poin untuk Sitasi*).
 
-## Abstrak (Parafrase)
-FusionVision membangun pipeline end-to-end untuk rekonstruksi dan segmentasi objek 3D dari kamera RGB-D (mis. RealSense): YOLOv8 melokalisasi objek, FastSAM mensegmentasinya secara cepat, lalu mask diproyeksikan ke point cloud (via kedalaman) untuk menghasilkan objek 3D yang bersih. [Detail dari abstrak arXiv 2024 — verifikasi ke naskah.]
+Kualitas segmentasi FastSAM diukur dengan sejumlah metrik: indeks Jaccard (IOU antar masker) 0,94, koefisien Dice (ukuran tumpang tindih dua himpunan piksel, mirip F1 pada level piksel) 0,92, presisi 0,93, *recall* 0,94, skor F1 0,92, dan akurasi piksel 0,96. Angka-angka ini menunjukkan masker FastSAM secara konsisten menutupi bentuk objek dengan baik setelah diberi *prompt* kotak dari YOLOv8.
 
-## Latar Belakang & Konteks
-Rekonstruksi 3D objek yang bersih dari RGB-D membutuhkan deteksi dan segmentasi yang terintegrasi dan cepat, sekaligus proyeksi ke geometri 3D.
+Pengujian generalisasi pada kondisi lingkungan yang belum pernah dilihat saat pelatihan menunjukkan penurunan performa yang tidak merata antar kelas. Kelas botol paling terdampak: presisi turun hingga 0,31 dan IOU turun hingga 0,52 pada subset uji paling menantang, jauh di bawah kelas cup dan computer pada subset yang sama. Penulis mengaitkan penurunan ini dengan permukaan botol yang transparan atau memantulkan cahaya, yang membuat sensor kedalaman salah membaca jarak permukaan — kesalahan yang lalu ikut memengaruhi kualitas proyeksi 3D, bukan hanya deteksi 2D.
 
-## Permasalahan yang Diangkat
-- Rekonstruksi 3D objek bersih butuh deteksi+segmentasi.
-- Segmentasi umum (SAM) bisa lambat.
-- Proyeksi mask ke point cloud perlu kedalaman.
-- Pipeline end-to-end RGB-D diinginkan.
-- Objek perlu dipisah dari latar 3D.
+## Kelebihan dan Keterbatasan
 
-## Tujuan & Pertanyaan Penelitian
-- Melokalisasi objek via YOLOv8.
-- Mensegmentasi cepat via FastSAM.
-- Merekonstruksi/segmentasi objek 3D dari RGB-D.
+Kelebihan utama FusionVision terletak pada strategi berjenjangnya: menjalankan detektor murah lebih dahulu untuk mempersempit wilayah kerja model segmentasi menekan biaya komputasi dibandingkan menjalankan SAM penuh, terbukti dari laju pemrosesan yang nyaris tidak turun antara tahap deteksi saja dan deteksi-ditambah-segmentasi. Rancangannya modular — YOLOv8, FastSAM, dan tahap geometri 3D dapat diganti model lain tanpa mengubah keseluruhan alur — dan keluarannya lebih lengkap daripada sekadar kotak 2D, yakni rekonstruksi 3D yang sudah dibersihkan dari derau. Ketersediaan kode dan model terlatih secara terbuka mendukung reproduksi hasil oleh pihak lain.
 
-## Tinjauan Terdahulu / Posisi Literatur
-FusionVision menggabungkan YOLO dan Segment Anything cepat pada RGB-D.
+Keterbatasan yang diakui penulis mencakup penurunan tajam performa pada kondisi lingkungan baru, khususnya untuk objek transparan atau reflektif seperti botol, serta kesalahan estimasi masker FastSAM pada sudut pandang sensor tertentu. Dari sisi rekayasa, himpunan data pelatihan sangat kecil — 100 citra untuk tiga kelas objek sederhana — sehingga metrik pelatihan yang sangat tinggi (mAP50 97,92%) mencerminkan kondisi terkontrol, bukan bukti generalisasi luas, sejalan dengan anjloknya presisi kelas botol pada uji kondisi baru. Secara konseptual, seluruh *pipeline* bergantung pada kualitas sensor kedalaman: pada permukaan transparan, mengilap, atau di luar jangkauan sensor stereo/*time-of-flight*, baik deteksi 2D maupun proyeksi 3D ikut terganggu. Laju ~5 FPS untuk keluaran 3D tervisualisasi juga masih jauh dari cukup untuk aplikasi robotik yang menuntut reaksi cepat, meski inti deteksi-segmentasi saja sudah mendekati waktu nyata.
 
-Karya/konsep pembanding yang relevan:
+## Kaitan dengan Bab Lain
 
-- YOLOv8 — deteksi objek.
-- FastSAM — segmentasi cepat (SAM).
-- Kamera RGB-D (RealSense) — kedalaman.
-- Point cloud projection — 3D.
-
-## Metodologi & Arsitektur
-YOLOv8 mendeteksi objek pada citra RGB; FastSAM mensegmentasi objek berdasarkan prompt kotak; mask diproyeksikan ke point cloud memakai kedalaman untuk mengisolasi objek 3D; menghasilkan rekonstruksi/segmentasi 3D objek. [Rincian teknis perlu konfirmasi ke naskah asli.]
-
-Komponen / langkah metodologis utama:
-
-- YOLOv8 melokalisasi objek (prompt kotak).
-- FastSAM segmentasi cepat per-objek.
-- Proyeksi mask ke point cloud (kedalaman).
-- Isolasi & rekonstruksi objek 3D.
-- Pipeline end-to-end RGB-D.
-- Kamera depth (mis. RealSense).
-
-## Kontribusi Utama
-1. Pipeline YOLO+SAM pada RGB-D untuk 3D.
-2. Rekonstruksi & segmentasi objek 3D.
-3. Integrasi deteksi-segmentasi-geometri.
-4. Contoh mutakhir YOLO+RGB-D (2024).
-
-## Rincian Eksperimen
-Diuji pada kamera kedalaman (RealSense) untuk rekonstruksi/segmentasi 3D objek. [Metrik/hasil spesifik perlu diverifikasi ke naskah arXiv asli.]
-
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
-
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Kamera RGB-D | rekonstruksi/seg 3D | objek 3D bersih (per abstrak) |
-| Integrasi | YOLOv8+FastSAM | deteksi + segmentasi cepat |
-| Catatan | verifikasi | angka/detail dari abstrak daring |
-
-## Temuan Kunci
-- YOLO+SAM+kedalaman menghasilkan objek 3D bersih.
-- FastSAM menjaga kecepatan segmentasi.
-- Proyeksi kedalaman kunci isolasi 3D.
-- Pipeline modular praktis.
-
-## Keunggulan
-- Integrasi deteksi-segmentasi-3D.
-- Memakai model mutakhir (YOLOv8/FastSAM).
-- Pipeline RGB-D praktis.
-
-## Keterbatasan
-- Detail dari abstrak daring — belum diverifikasi penuh.
-- Bergantung kualitas kedalaman & segmentasi.
-- Kinerja bergantung kamera/skenario.
-
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
-
-## Relevansi terhadap Tema Tinjauan
-FusionVision adalah contoh mutakhir pipeline YOLO+RGB-D untuk 3D dalam tinjauan; namun detailnya berasal dari abstrak daring dan perlu diverifikasi ke naskah asli sebelum dikutip formal.
-
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **YOLO plus RGB-D** yang baik dibaca berdampingan:
+FusionVision berada pada klaster YOLO plus RGB-D bersama sejumlah bab lain yang memakai kedalaman untuk tugas berbeda. Bab 112 (Expandable YOLO) memasukkan kanal *depth* sebagai masukan tambahan sejak lapis pertama jaringan (fusi dini), berlawanan dengan strategi FusionVision yang memakai kedalaman belakangan, hanya untuk proyeksi geometris setelah deteksi dan segmentasi RGB selesai — dua filosofi fusi yang dapat dibandingkan langsung karena menyasar masalah serupa dengan urutan pemrosesan berbeda. Bab 115 (YOLOv8-URE) juga menggabungkan deteksi berbasis YOLOv8 dengan awan titik untuk tugas *robotic grasping* (pengambilan objek oleh lengan robot) pada adegan bertumpuk, dan bab 116 (Grasp via YOLO + RGB-D Fusion) mengangkat tema serupa pada domain penggenggaman objek. Ketiganya berbagi kebutuhan yang sama dengan FusionVision: mengubah deteksi 2D menjadi representasi 3D untuk aplikasi hilir, meski jalur teknis menuju ke sana berbeda-beda.
 
 - [112 - 2020 - Expandable YOLO - YOLO plus RGB-D](./112%20-%202020%20-%20Expandable%20YOLO%20-%20YOLO%20plus%20RGB-D.md)
-- [114 - 2024 - Pumpkin Pick-and-Place Robot (Ito dkk.) - YOLO plus RGB-D](./114%20-%202024%20-%20Pumpkin%20Pick-and-Place%20Robot%20%28Ito%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
 - [115 - 2025 - YOLOv8-URE 2D+Point Cloud Grasping - YOLO plus RGB-D](./115%20-%202025%20-%20YOLOv8-URE%202D+Point%20Cloud%20Grasping%20-%20YOLO%20plus%20RGB-D.md)
 - [116 - 2023 - Grasp via YOLO + RGB-D Fusion (Tian dkk.) - YOLO plus RGB-D](./116%20-%202023%20-%20Grasp%20via%20YOLO%20+%20RGB-D%20Fusion%20%28Tian%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [117 - 2024 - Onboard Dynamic-Object Detection (Xu dkk.) - YOLO plus RGB-D](./117%20-%202024%20-%20Onboard%20Dynamic-Object%20Detection%20%28Xu%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [118 - 2019 - Exploring RGB+Depth Fusion (Ophoff dkk.) - YOLO plus RGB-D](./118%20-%202019%20-%20Exploring%20RGB+Depth%20Fusion%20%28Ophoff%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [119 - 2023 - Distance Measurement via YOLO + Depth (Chen dkk.) - YOLO plus RGB-D](./119%20-%202023%20-%20Distance%20Measurement%20via%20YOLO%20+%20Depth%20%28Chen%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **YOLO plus RGB-D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema YOLO plus RGB-D)
-Istilah penting untuk memahami makalah ini:
-
-- **YOLO** — Detektor satu-tahap real-time regresi tunggal.
-- **Kanal depth** — Peta kedalaman sebagai masukan tambahan.
-- **Fusi RGB-D** — Penggabungan warna dan kedalaman pada deteksi.
-- **Lokalisasi 3D** — Posisi objek dalam koordinat 3D via depth.
-- **Point cloud** — Titik 3D dari depth untuk grasp/rekonstruksi.
-- **Pick-and-place** — Tugas robot mengambil dan menempatkan objek.
-- **RealSense/Kinect** — Kamera RGB-D konsumen umum.
-- **Early/mid/late fusion** — Titik penggabungan depth pada arsitektur.
-- **Segment Anything (SAM)** — Model segmentasi umum; FastSAM=versi cepat.
-- **Real-time deployment** — Penerapan dengan kendala latensi.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-FusionVision memadukan YOLOv8 dan FastSAM pada citra RGB-D untuk rekonstruksi dan segmentasi objek 3D dari kamera kedalaman; rinciannya perlu diverifikasi ke naskah arXiv asli.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `elamraoui2024fusionvision` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 113/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `elamraoui2024fusionvision`. Ringkasan yang aman dikutip: "FusionVision memadukan YOLOv8 dan FastSAM secara berjenjang untuk mensegmentasi objek pada citra RGB-D, lalu memproyeksikan masker hasilnya ke awan titik memakai kalibrasi kamera, mencapai mAP50 97,92% pada deteksi dan laju sekitar 5 FPS untuk keluaran rekonstruksi 3D penuh." Perlu diverifikasi ulang ke tabel asli pada jurnal *Sensors* sebelum dikutip formal: (1) angka persentase pengurangan jumlah titik awan setelah penyaringan — dua bagian sumber yang dirujuk untuk penulisan bab ini menyebut nilai dasar dan hasil akhir yang berbeda, sehingga hanya arah penurunannya (signifikan) yang dapat dipastikan, bukan angka persisnya; (2) rincian metrik IOU/presisi per subset uji generalisasi (Set 1/2/3) yang dikutip di sini berasal dari ekstraksi otomatis naskah, bukan pembacaan langsung tabel PDF/HTML asli.

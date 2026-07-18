@@ -1,212 +1,97 @@
 # 115 - Research on a Fusion Technique of YOLOv8-URE-Based 2D Vision and Point Cloud for Robotic Grasping in Stacked Scenarios
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 115 dari 154 |
 | Kunci BibTeX | `yang2025yolov8ure` |
-| Judul | Research on a Fusion Technique of YOLOv8-URE-Based 2D Vision and Point Cloud for Robotic Grasping in Stacked Scenarios |
-| Penulis | Yang, Wen; others |
+| Judul asli | Research on a Fusion Technique of YOLOv8-URE-Based 2D Vision and Point Cloud for Robotic Grasping in Stacked Scenarios |
+| Penulis | Xuhui Ye, Xiaoyang Qin, Leming Zhan, Jun Wang, Yan Chen |
 | Tahun | 2025 |
-| Venue / Jurnal | Applied Sciences |
-| Tema klaster | YOLO plus RGB-D |
-| Kata kunci | YOLO+RGB-D, YOLOv8, point cloud, grasp, tumpukan |
+| Venue | Applied Sciences (MDPI), volume 15, nomor 12, artikel 6583 |
+| Tema | YOLO plus RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **DOI (penerbit, akses terbuka):** https://doi.org/10.3390/app15126583
+- **Halaman naskah (MDPI):** https://www.mdpi.com/2076-3417/15/12/6583
+- **Google Scholar:** https://scholar.google.com/scholar?q=Research%20on%20a%20Fusion%20Technique%20of%20YOLOv8-URE-Based%202D%20Vision%20and%20Point%20Cloud%20for%20Robotic%20Grasping%20in%20Stacked%20Scenarios
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Research%20on%20a%20Fusion%20Technique%20of%20YOLOv8-URE-Based%202D%20Vision%20and%20Point%20Cloud%20for%20Robotic%20Grasping%20in%20Stacked%20Scenarios&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-yolo-plus-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Research%20on%20a%20Fusion%20Technique%20of%20YOLOv8-URE-Based%202D%20Vision%20and%20Point%20Cloud%20for%20Robotic%20Grasping%20in%20Stacked%20Scenarios
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Research%20on%20a%20Fusion%20Technique%20of%20YOLOv8-URE-Based%202D%20Vision%20and%20Point%20Cloud%20for%20Robotic%20Grasping%20in%20Stacked%20Scenarios&sort=relevance
+Makalah ini, ditulis peneliti dari Hubei University of Technology, mengusulkan YOLOv8-URE: varian YOLOv8 dengan tiga modifikasi arsitektur, dipadukan dengan registrasi *point cloud* (kumpulan titik koordinat 3D hasil pemindaian kedalaman) untuk memperkirakan pose *grasp* (pose cengkeraman robot) pada objek yang saling bertumpuk. Deteksi 2D dari YOLOv8-URE dipakai lebih dulu untuk mempersempit wilayah pencarian pada citra; hanya *point cloud* di wilayah itu yang kemudian diregistrasi terhadap model acuan objek untuk memperoleh pose 3D yang dipakai lengan robot saat mencengkeram.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Hasil yang dilaporkan penulis: YOLOv8-URE meningkatkan akurasi deteksi 9,21% dibandingkan YOLOv8n (varian YOLOv8 terkecil) dan memangkas waktu registrasi *point cloud* sebesar 60,5%, dengan ukuran model hanya 4,46 MB. Kontribusi makalah ini bagi tinjauan pustaka adalah menunjukkan bahwa penyaringan wilayah oleh detektor 2D dapat memangkas biaya komputasi tahap 3D secara signifikan, menjadikannya salah satu bukti konkret pola integrasi YOLO dengan data kedalaman dalam klaster YOLO plus RGB-D.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 15 |
-| Nomor | 12 |
-| Halaman | 6583 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Teknik fusi visi 2D berbasis YOLOv8-URE dengan point cloud untuk grasp robotik pada skenario objek bertumpuk.
+Pada tugas *bin picking* (pengambilan objek dari wadah atau tumpukan) di lini produksi, objek yang akan diambil sering saling menutupi dan bersinggungan. Metode registrasi *point cloud* klasik — menyelaraskan awan titik hasil pemindaian dengan model 3D acuan objek untuk menentukan posisi dan orientasinya — biasanya dijalankan pada seluruh *point cloud* adegan tanpa penyaringan awal. Pada skenario bertumpuk, hal ini menimbulkan dua masalah: pertama, jumlah titik yang harus dicocokkan sangat besar sehingga waktu registrasi memanjang; kedua, titik-titik dari objek tetangga yang saling menutupi ikut tercampur dalam pencarian korespondensi, sehingga akurasi pose yang dihasilkan menurun.
 
-## Abstrak (Parafrase)
-Makalah ini mengusulkan fusi antara deteksi 2D berbasis YOLOv8-URE (varian YOLOv8 dengan modul peningkatan) dan point cloud untuk memperkirakan pose grasp objek pada tumpukan (stacked scenarios). Deteksi 2D mempersempit wilayah lalu geometri point cloud memberi pose grasp 3D, meningkatkan keberhasilan grasp. [Detail dari metadata daring 2025 — verifikasi.]
+Pendekatan yang lebih efisien adalah mempersempit wilayah pencarian 3D lebih dahulu memakai deteksi 2D, sebagaimana sudah dieksplorasi pada bab-bab lain klaster YOLO plus RGB-D. FusionVision (bab 113), misalnya, memakai YOLO untuk deteksi awal sebelum segmentasi kedalaman. Namun demikian, detektor 2D dasar seperti YOLOv8n dilatih untuk objek yang umumnya terpisah jelas; pada citra objek logam identik yang bertumpuk rapat — kasus uji makalah ini — batas antarobjek kabur dan tekstur permukaan seragam, sehingga kotak pembatas (*bounding box*) yang dihasilkan kurang presisi dan sebagian objek kecil di celah tumpukan terlewat. Masalah inilah yang mendorong penulis memodifikasi arsitektur YOLOv8 sebelum menggabungkannya dengan registrasi 3D.
 
-## Latar Belakang & Konteks
-Grasp pada tumpukan objek menuntut integrasi deteksi 2D (identifikasi objek) dan geometri 3D (pose grasp), karena kotak 2D saja tak cukup untuk cengkeraman di tumpukan.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Grasp pada tumpukan objek sangat menantang.
-- Kotak 2D saja tak cukup untuk pose grasp.
-- Geometri 3D (point cloud) diperlukan.
-- Oklusi/tumpang tindih pada tumpukan.
-- Integrasi 2D-3D belum optimal.
+Gagasan inti makalah adalah dua lapis penyaringan berurutan: penyaringan kasar oleh deteksi 2D, diikuti penghalusan pose oleh registrasi 3D pada wilayah yang sudah dipersempit. YOLOv8-URE tidak dirancang untuk menggantikan registrasi *point cloud*, melainkan untuk membuatnya bekerja pada subset titik yang jauh lebih kecil dan lebih relevan, sehingga proses pencarian korespondensi 3D lebih cepat dan tidak terganggu titik dari objek tetangga.
 
-## Tujuan & Pertanyaan Penelitian
-- Mendeteksi objek via YOLOv8-URE (2D).
-- Memperkirakan pose grasp via point cloud (3D).
-- Meningkatkan keberhasilan grasp pada tumpukan.
+Untuk mencapai penyaringan 2D yang cukup andal pada objek bertumpuk dan bertekstur seragam, penulis memodifikasi tiga bagian YOLOv8: tulang punggung (*backbone*, bagian jaringan yang mengekstraksi fitur dari citra masukan) diberi blok konvolusi bernama C2f_UniRepLKNetBlock yang memperluas *receptive field* (wilayah citra masukan yang memengaruhi satu nilai fitur keluaran) tanpa menambah banyak parameter; sebuah modul perhatian (*attention*) bernama *Efficient Local Attention* (ELA) disisipkan untuk menajamkan fokus fitur pada lokasi objek; serta bagian leher jaringan (*neck*, bagian yang menggabungkan fitur antar-skala) memakai strategi fusi multi-skala yang lebih efisien untuk memperbaiki regresi kotak pembatas. Ketiganya bekerja sama sebelum kotak deteksi diteruskan ke tahap registrasi 3D.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Makalah menggabungkan YOLOv8 termodifikasi dan point cloud untuk grasp.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Modifikasi Tulang Punggung: C2f_UniRepLKNetBlock
 
-- YOLOv8 — detektor 2D dasar.
-- Modul URE — peningkatan YOLOv8.
-- Point cloud (RGB-D) — geometri 3D.
-- Grasp pada tumpukan.
+Modul C2f pada YOLOv8 asli adalah blok konvolusi bertumpuk yang mengekstraksi fitur bertahap dari citra. Penulis mengganti sebagian isinya dengan blok bergaya UniRepLKNet: sedikit lapis konvolusi berkernel besar dipakai untuk menangkap konteks spasial luas dalam satu operasi, dikombinasikan dengan lapis konvolusi berkernel kecil untuk menangkap pola spasial yang lebih rinci. Kernel besar memungkinkan satu unit fitur "melihat" area citra yang lebih luas sekaligus — berguna ketika batas antarobjek pada tumpukan kabur dan konteks di sekitar objek diperlukan untuk memastikan lokasi sebenarnya.
 
-## Metodologi & Arsitektur
-YOLOv8-URE mendeteksi objek pada citra 2D untuk mempersempit wilayah; point cloud (dari RGB-D) di wilayah tersebut dipakai memperkirakan pose grasp 3D; sistem memilih grasp untuk objek pada tumpukan. [Rincian perlu konfirmasi ke naskah.]
+### Modul Perhatian: Efficient Local Attention (ELA)
 
-Komponen / langkah metodologis utama:
+Setelah fitur diekstraksi, modul ELA memberi bobot lebih besar pada wilayah fitur yang relevan dengan keberadaan objek dan menekan bobot wilayah latar. Mekanisme perhatian semacam ini menghitung skor kepentingan untuk tiap lokasi fitur, kemudian mengalikan fitur asli dengan skor tersebut sehingga sinyal objek diperkuat relatif terhadap derau latar sebelum diteruskan ke lapis berikutnya.
 
-- Deteksi 2D via YOLOv8-URE.
-- Modul URE meningkatkan deteksi.
-- Fusi dengan point cloud untuk pose 3D.
-- Estimasi grasp pada tumpukan.
-- Pipeline 2D-3D terintegrasi.
-- Evaluasi skenario stacked.
+### Fusi Multi-Skala pada Leher Jaringan
 
-## Kontribusi Utama
-1. Fusi YOLOv8-URE (2D) + point cloud (3D).
-2. Peningkatan keberhasilan grasp pada tumpukan.
-3. Modul URE menyempurnakan deteksi.
-4. Contoh YOLO+point cloud untuk grasp (2025).
+Bagian leher YOLOv8 standar menggabungkan peta fitur dari beberapa skala resolusi (fitur resolusi tinggi untuk objek kecil, resolusi rendah untuk objek besar). Makalah ini memakai strategi fusi yang lebih efisien pada tahap ini untuk memperbaiki akurasi regresi koordinat kotak pembatas, sehingga posisi dan ukuran kotak yang diprediksi lebih dekat dengan kotak kebenaran, khususnya untuk objek kecil yang terselip di celah tumpukan.
 
-## Rincian Eksperimen
-Diuji pada skenario objek bertumpuk dengan metrik keberhasilan grasp. [Angka spesifik perlu diverifikasi ke naskah asli.]
+### Dari Kotak 2D ke Segmentasi Point Cloud
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Kotak pembatas hasil YOLOv8-URE diproyeksikan ke citra kedalaman (*depth*) yang sejajar (*aligned*) dengan citra RGB — teknik yang sama dipakai bab-bab lain klaster ini, misalnya Expandable YOLO (bab 112). Hanya titik-titik *point cloud* yang berada di dalam proyeksi kotak itu yang diambil untuk tahap berikutnya, sehingga *point cloud* seluruh adegan (yang bisa memuat puluhan ribu titik dari banyak objek bertumpuk) dipangkas menjadi subset kecil milik satu objek target.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Skenario tumpukan | success rate | peningkatan grasp (per makalah) |
-| Fusi | 2D+point cloud | deteksi + pose 3D |
-| Catatan | verifikasi | detail dari metadata daring |
+Alur data dari citra masukan sampai pose *grasp* dapat diringkas sebagai berikut.
 
-## Temuan Kunci
-- Fusi 2D-3D meningkatkan grasp pada tumpukan.
-- YOLOv8-URE menyempurnakan deteksi.
-- Point cloud kunci pose grasp 3D.
-- Tumpukan menuntut geometri 3D.
+```
+citra RGB ---> YOLOv8-URE (backbone UniRepLKNet + ELA + neck fusi)
+                    |
+                    v
+             kotak pembatas 2D per objek
+                    |
+                    v
+citra depth --> proyeksi kotak ke depth --> segmentasi point cloud
+                                                   |
+                                                   v
+                                   registrasi terhadap model acuan objek
+                                                   |
+                                                   v
+                                        pose grasp 3D (posisi + orientasi)
+```
 
-## Keunggulan
-- Fusi 2D+point cloud.
-- Fokus skenario tumpukan.
-- Memakai YOLOv8 mutakhir.
+### Registrasi Point Cloud dan Estimasi Pose
 
-## Keterbatasan
-- Detail dari metadata daring — verifikasi.
-- Bergantung kualitas point cloud.
-- Kinerja spesifik-skenario.
+Titik-titik yang sudah tersegmentasi diselaraskan (diregistrasi) terhadap model 3D acuan objek untuk menghitung transformasi (translasi dan rotasi) yang menempatkan model acuan pada posisi objek nyata. Karena registrasi hanya bekerja pada subset titik milik satu objek — bukan seluruh adegan bertumpuk — jumlah titik yang harus dicocokkan berkurang drastis, dan kemungkinan pencocokan keliru dengan titik objek tetangga berkurang. Pose 3D hasil registrasi inilah yang dipakai lengan robot untuk menentukan posisi dan sudut pendekatan saat mencengkeram objek.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-Entri ini menghubungkan YOLO+RGB-D dan grasp robotik dalam tinjauan; rinciannya perlu diverifikasi ke naskah asli sebelum dikutip formal.
+Penulis menguji YOLOv8-URE pada tugas deteksi objek dan membandingkannya dengan YOLOv8n serta detektor sejenis lain sebagai garis dasar (*baseline*). Pada pengujian ini, YOLOv8-URE mencapai *recall* (proporsi objek sebenarnya yang berhasil terdeteksi) sebesar 80,4% pada set uji, dilaporkan lebih tinggi daripada algoritme pembanding utama; akurasi deteksi keseluruhan meningkat 9,21% dibandingkan YOLOv8n. Ukuran model hasil akhir hanya 4,46 MB, jauh lebih ringkas daripada varian YOLOv8 yang lebih besar, sehingga sesuai untuk penempatan pada perangkat dengan sumber daya komputasi terbatas di lini produksi.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **YOLO plus RGB-D** yang baik dibaca berdampingan:
+Pada tahap gabungan 2D-3D, penyaringan wilayah oleh YOLOv8-URE memangkas waktu registrasi *point cloud* sebesar 60,5% dibandingkan menjalankan registrasi pada *point cloud* adegan penuh tanpa penyaringan. Interpretasinya: sebagian besar penghematan waktu berasal dari berkurangnya jumlah titik yang harus dicocokkan, bukan dari perubahan algoritme registrasi itu sendiri — kontribusi YOLOv8-URE di sini adalah sebagai tahap penyaring, bukan pengganti registrasi. Penulis juga melaporkan bahwa fusi ini meningkatkan keberhasilan pengambilan objek pada skenario bertumpuk dibandingkan tanpa penyaringan 2D, meskipun angka pasti tingkat keberhasilan pengambilan (*grasp success rate*) pada uji lengan robot fisik tidak diperoleh secara pasti dari sumber sekunder yang diakses penulis bab ini dan perlu dicek langsung pada tabel eksperimen naskah asli.
 
-- [112 - 2020 - Expandable YOLO - YOLO plus RGB-D](./112%20-%202020%20-%20Expandable%20YOLO%20-%20YOLO%20plus%20RGB-D.md)
-- [113 - 2024 - FusionVision - YOLO plus RGB-D](./113%20-%202024%20-%20FusionVision%20-%20YOLO%20plus%20RGB-D.md)
-- [114 - 2024 - Pumpkin Pick-and-Place Robot (Ito dkk.) - YOLO plus RGB-D](./114%20-%202024%20-%20Pumpkin%20Pick-and-Place%20Robot%20%28Ito%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [116 - 2023 - Grasp via YOLO + RGB-D Fusion (Tian dkk.) - YOLO plus RGB-D](./116%20-%202023%20-%20Grasp%20via%20YOLO%20+%20RGB-D%20Fusion%20%28Tian%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [117 - 2024 - Onboard Dynamic-Object Detection (Xu dkk.) - YOLO plus RGB-D](./117%20-%202024%20-%20Onboard%20Dynamic-Object%20Detection%20%28Xu%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [118 - 2019 - Exploring RGB+Depth Fusion (Ophoff dkk.) - YOLO plus RGB-D](./118%20-%202019%20-%20Exploring%20RGB+Depth%20Fusion%20%28Ophoff%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [119 - 2023 - Distance Measurement via YOLO + Depth (Chen dkk.) - YOLO plus RGB-D](./119%20-%202023%20-%20Distance%20Measurement%20via%20YOLO%20+%20Depth%20%28Chen%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
+## Kelebihan dan Keterbatasan
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **YOLO plus RGB-D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Kelebihan utama makalah ini adalah kombinasi tiga modifikasi arsitektur yang saling melengkapi — perluasan *receptive field* di *backbone*, penguatan fokus fitur lewat ELA, dan fusi multi-skala yang lebih rapi di *neck* — untuk mengatasi kasus spesifik objek identik yang bertumpuk rapat, ditambah model yang tetap ringkas (4,46 MB). Penyaringan wilayah oleh detektor 2D sebelum registrasi 3D terbukti memberi penghematan waktu registrasi yang besar (60,5%), sebuah hasil yang relevan bagi seluruh klaster YOLO plus RGB-D karena menunjukkan nilai praktis integrasi 2D-3D, bukan sekadar nilai akademik.
 
-## Glosarium Istilah (tema YOLO plus RGB-D)
-Istilah penting untuk memahami makalah ini:
+Dari sisi rekayasa, kombinasi tiga modifikasi (*backbone*, *attention*, *neck*) membuat kontribusi masing-masing komponen sulit dipisahkan tanpa studi ablasi (pengujian menghapus satu komponen untuk mengukur kontribusinya) yang rinci; makalah dilaporkan menyertakan sebagian pengujian semacam ini, tetapi rincian kuantitatifnya tidak terjangkau dari sumber sekunder yang diakses. Secara konseptual, keandalan metode masih bergantung pada ketersediaan model 3D acuan untuk setiap objek yang hendak diregistrasi — pendekatan ini kurang langsung berlaku untuk objek baru yang belum memiliki model acuan, berbeda dengan metode estimasi pose berbasis pembelajaran langsung dari data (*data-driven*) tanpa model CAD. Keterbatasan lain yang lazim pada metode berbasis registrasi adalah kepekaannya terhadap kualitas *point cloud*: derau atau titik hilang akibat permukaan objek yang mengilap atau saling menutupi dapat memengaruhi akurasi registrasi meski wilayah sudah dipersempit oleh YOLOv8-URE.
 
-- **YOLO** — Detektor satu-tahap real-time regresi tunggal.
-- **Kanal depth** — Peta kedalaman sebagai masukan tambahan.
-- **Fusi RGB-D** — Penggabungan warna dan kedalaman pada deteksi.
-- **Lokalisasi 3D** — Posisi objek dalam koordinat 3D via depth.
-- **Point cloud** — Titik 3D dari depth untuk grasp/rekonstruksi.
-- **Pick-and-place** — Tugas robot mengambil dan menempatkan objek.
-- **RealSense/Kinect** — Kamera RGB-D konsumen umum.
-- **Early/mid/late fusion** — Titik penggabungan depth pada arsitektur.
-- **Segment Anything (SAM)** — Model segmentasi umum; FastSAM=versi cepat.
-- **Real-time deployment** — Penerapan dengan kendala latensi.
+## Kaitan dengan Bab Lain
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Bab ini melanjutkan pola integrasi 2D-3D yang juga muncul pada bab 112 (Expandable YOLO), yang memakai kotak deteksi YOLO untuk memandu segmentasi kedalaman, dan bab 113 (FusionVision), yang menggabungkan deteksi, segmentasi, dan estimasi pose 3D dalam satu *pipeline*. Perbedaannya, bab ini menempatkan registrasi *point cloud* klasik — bukan jaringan estimasi pose berbasis pembelajaran end-to-end — sebagai tahap akhir setelah penyaringan 2D, sehingga menjadi contoh jalur hibrida yang menggabungkan detektor CNN modern dengan geometri 3D klasik. Bab ini juga berkaitan dengan klaster Grasp Robotik, khususnya bab 084 (GraspNet-1Billion), yang membangun tolok ukur besar untuk estimasi pose *grasp* dari data RGB-D; makalah 115 dapat dibaca sebagai penerapan gagasan penyaringan wilayah berbasis deteksi pada konteks industri yang lebih sempit (objek identik bertumpuk) dibandingkan tolok ukur objek beragam pada GraspNet-1Billion. Pembaca yang tertarik pada varian lain penggabungan YOLO dan registrasi/fusi kedalaman untuk *grasp* dapat melanjutkan ke bab 116 (Tian dkk., Grasp via YOLO + RGB-D Fusion).
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Tautan terkait: [112 - Expandable YOLO](./112%20-%202020%20-%20Expandable%20YOLO%20-%20YOLO%20plus%20RGB-D.md), [113 - FusionVision](./113%20-%202024%20-%20FusionVision%20-%20YOLO%20plus%20RGB-D.md), [116 - Grasp via YOLO + RGB-D Fusion (Tian dkk.)](./116%20-%202023%20-%20Grasp%20via%20YOLO%20+%20RGB-D%20Fusion%20%28Tian%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md), [084 - GraspNet-1Billion](./084%20-%202020%20-%20GraspNet-1Billion%20-%20Grasp%20Robotik.md).
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-YOLOv8-URE memadukan deteksi 2D dan point cloud untuk grasp robotik pada tumpukan objek; rinciannya perlu diverifikasi ke naskah asli.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `yang2025yolov8ure` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 115/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `yang2025yolov8ure`. Ringkasan yang aman dikutip: "YOLOv8-URE memodifikasi *backbone*, modul perhatian, dan *neck* YOLOv8 untuk deteksi objek bertumpuk, lalu memakai kotak deteksinya untuk menyaring *point cloud* sebelum registrasi 3D pose *grasp*; penulis melaporkan peningkatan akurasi deteksi 9,21% atas YOLOv8n dan pemangkasan waktu registrasi 60,5%, dengan ukuran model 4,46 MB." Butir yang perlu diverifikasi langsung ke naskah sebelum sitasi formal: definisi metrik persis di balik angka "akurasi deteksi 9,21%" (apakah mAP@0,5 atau metrik lain), nama dataset/jumlah citra yang dipakai untuk melatih dan menguji YOLOv8-URE, nama algoritme registrasi *point cloud* yang dipakai pada tahap akhir, serta angka tingkat keberhasilan pengambilan objek (*grasp success rate*) pada uji lengan robot fisik, yang tidak diperoleh secara pasti dari sumber sekunder yang diakses penulis bab ini.

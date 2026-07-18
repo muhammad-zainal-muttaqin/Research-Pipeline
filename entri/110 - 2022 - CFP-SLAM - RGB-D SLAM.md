@@ -1,207 +1,96 @@
 # 110 - CFP-SLAM: A Real-Time Visual SLAM Based on Coarse-to-Fine Probability in Dynamic Environments
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 110 dari 154 |
 | Kunci BibTeX | `hu2022cfpslam` |
-| Judul | CFP-SLAM: A Real-Time Visual SLAM Based on Coarse-to-Fine Probability in Dynamic Environments |
-| Penulis | Hu, Xinggang; Zhang, Yunzhou; Cao, Zhenzhong; Ma, Rong; Wu, Yanmin; Deng, Zhiqiang; Sun, Wenkai |
+| Judul asli | CFP-SLAM: A Real-Time Visual SLAM Based on Coarse-to-Fine Probability in Dynamic Environments |
+| Penulis | Xinggang Hu, Yunzhou Zhang, Zhenzhong Cao, Rong Ma, Yanmin Wu, Zhiqiang Deng, Wenkai Sun |
 | Tahun | 2022 |
-| Venue / Jurnal | Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) |
-| Tema klaster | RGB-D SLAM |
-| Kata kunci | RGB-D SLAM, dinamis, YOLO, probabilistik, real-time |
+| Venue | IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS 2022), Kyoto, hlm. 4399–4406 |
+| Tema | RGB-D SLAM |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2202.01938
+- **DOI (IEEE Xplore):** https://ieeexplore.ieee.org/document/9981826/
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=CFP-SLAM%3A%20A%20Real-Time%20Visual%20SLAM%20Based%20on%20Coarse-to-Fine%20Probability%20in%20Dynamic%20Environments&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-slam)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=CFP-SLAM%3A%20A%20Real-Time%20Visual%20SLAM%20Based%20on%20Coarse-to-Fine%20Probability%20in%20Dynamic%20Environments
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=CFP-SLAM%3A%20A%20Real-Time%20Visual%20SLAM%20Based%20on%20Coarse-to-Fine%20Probability%20in%20Dynamic%20Environments&sort=relevance
+CFP-SLAM (*Coarse-to-Fine Probability SLAM*) adalah sistem *visual SLAM* (*Simultaneous Localization and Mapping* — pelokalan kamera dan pemetaan lingkungan yang dilakukan serentak) untuk lingkungan dengan objek bergerak. Masalah yang dipecahkan adalah bagaimana menilai keandalan titik-titik fitur di tengah adegan dinamis tanpa membuang seluruhnya secara biner (statis atau dinamis, tanpa nilai antara). Gagasan utamanya adalah menghitung sebuah "probabilitas statis" bertingkat, dimulai dari objek yang dideteksi jaringan saraf, diturunkan ke setiap titik kunci (*keypoint* — titik citra yang khas dan mudah dicocokkan antar-*frame*) di dalam kotak objek tersebut, lalu ke titik peta 3D yang bersangkutan. Nilai probabilitas ini dipakai sebagai bobot pada optimasi pose kamera, bukan sebagai penyaring biner.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada rangkaian uji dinamis-tinggi TUM RGB-D `fr3/walking_xyz`, makalah melaporkan galat trayektori absolut (ATE) sekitar 0,014 m, jauh di bawah ORB-SLAM2 (basis sistem ini) yang mencapai 0,72 m pada urutan yang sama, dan lebih baik daripada DS-SLAM (sekitar 0,025 m). Sistem berjalan mendekati *real-time*, dilaporkan sekitar 42,7 milidetik per *frame* (setara 23 *frame per second*/FPS) untuk versi penuh, dengan varian ringkas yang lebih cepat. Bab ini melanjutkan garis SLAM dinamis berbasis deteksi objek yang dirintis DynaSLAM (bab 108) dan DS-SLAM (bab 109), dengan penekanan pada pembobotan probabilistik bertahap alih-alih penghapusan area dinamis secara langsung.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 4399--4406 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-SLAM dinamis real-time yang memakai probabilitas coarse-to-fine (deteksi YOLO + geometri epipolar) untuk membobot titik dinamis secara probabilistik, bukan biner.
+Algoritme SLAM klasik seperti ORB-SLAM2 (bab 107) mengasumsikan lingkungan statis: seluruh titik fitur yang teramati dianggap tetap posisinya di dunia nyata, sehingga pergerakannya di citra murni disebabkan gerak kamera. Ketika ada objek bergerak — orang berjalan, kursi didorong — asumsi ini dilanggar, dan titik fitur pada objek tersebut menyesatkan estimasi pose kamera karena pergerakannya bercampur antara gerak kamera dan gerak objek.
 
-## Abstrak (Parafrase)
-CFP-SLAM (Coarse-to-Fine Probability) memakai deteksi objek (YOLO) untuk prior kasar objek dinamis lalu model probabilistik coarse-to-fine (memanfaatkan geometri epipolar dan pengelompokan) untuk menetapkan probabilitas dinamis tiap titik. Titik diberi bobot dalam optimasi pose (bukan dibuang biner), sehingga fitur statis pada objek 'dinamis' tetap dimanfaatkan. Akurasi SOTA di antara SLAM dinamis, real-time.
+Generasi SLAM dinamis sebelumnya menangani masalah ini dengan menghapus seluruh wilayah yang dicurigai dinamis. DynaSLAM memakai segmentasi Mask R-CNN untuk menandai piksel manusia dan menghilangkan seluruh titik fitur di dalamnya sebelum estimasi pose berjalan. DS-SLAM menandai objek berpotensi dinamis dengan SegNet lalu memverifikasinya dengan kendala geometri sebelum membuang titik yang lolos verifikasi. Pendekatan penghapusan biner semacam ini memiliki dua kelemahan. Pertama, objek yang berpotensi bergerak tidak selalu benar-benar bergerak pada saat pengambilan citra — seseorang yang sedang duduk diam tetap ditandai "manusia" dan seluruh fitur di tubuhnya terbuang, padahal fitur tersebut statis dan berguna untuk pelokalan. Kedua, keputusan biner sepenuhnya bergantung pada akurasi kotak atau masker deteksi; kesalahan deteksi (kotak terlalu besar, mencakup latar belakang statis di sekitarnya) ikut membuang fitur statis yang seharusnya dipertahankan. Masalah yang belum terpecahkan pada generasi ini adalah bagaimana memanfaatkan derajat keyakinan dinamis secara bertingkat, bukan sekadar ya/tidak.
 
-## Latar Belakang & Konteks
-Penghapusan biner objek dinamis (mis. seluruh area orang) membuang fitur statis berguna dan bergantung akurasi deteksi; pendekatan probabilistik lebih halus.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Penghapusan biner membuang fitur statis berguna.
-- Bergantung akurasi deteksi (kotak kasar).
-- Objek 'dinamis' bisa diam sebagian.
-- Real-time perlu dijaga.
-- Probabilitas dinamis belum dimanfaatkan penuh.
+Gagasan inti CFP-SLAM adalah mengganti keputusan biner "dinamis vs statis" dengan sebuah nilai probabilitas kontinu antara 0 dan 1 untuk setiap titik fitur, dihitung melalui dua tahap berurutan: tahap kasar (*coarse*) pada tingkat objek, dan tahap halus (*fine*) pada tingkat titik kunci individual. Objek yang dideteksi jaringan saraf memberi perkiraan awal yang murah secara komputasi tetapi kasar resolusinya (satu kotak mencakup banyak titik dengan sifat gerak yang mungkin berbeda-beda). Tahap halus kemudian mengoreksi perkiraan itu titik demi titik memakai kendala geometri, sehingga titik statis di dalam kotak objek dinamis (misalnya latar di belakang orang yang tercakup kotak deteksi) tidak ikut terbuang, dan titik yang benar-benar bergerak tetap diberi bobot rendah. Probabilitas akhir dipakai sebagai bobot pada fungsi galat optimasi pose: titik berprobabilitas statis tinggi memengaruhi estimasi pose lebih besar, titik berprobabilitas rendah nyaris diabaikan tanpa perlu dihapus secara eksplisit.
 
-## Tujuan & Pertanyaan Penelitian
-- Menetapkan probabilitas dinamis tiap titik.
-- Membobot titik dalam optimasi (bukan biner).
-- Menjaga real-time dan akurasi tinggi.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-CFP-SLAM menyempurnakan DynaSLAM/DS-SLAM dengan bobot probabilistik.
+### Modul Deteksi dan Kompensasi
 
-Karya/konsep pembanding yang relevan:
+CFP-SLAM dibangun di atas kerangka ORB-SLAM2, dengan modul semantik tambahan berbasis YOLOv5s (varian ringkas dari keluarga detektor YOLO, dijelaskan pada bab 001 dan penerusnya) yang mendeteksi objek berpotensi dinamis pada tiap *frame* RGB. Karena detektor tidak selalu berhasil mendeteksi objek pada setiap *frame* (misalnya saat objek sebagian tertutup), sistem menambahkan kompensasi memakai *Extended Kalman Filter* (EKF — penduga keadaan rekursif yang memprediksi posisi kotak deteksi pada *frame* berikutnya berdasarkan riwayat gerak, lalu mengoreksinya bila deteksi baru tersedia) dan algoritme Hungarian (metode optimasi kombinatorial yang mencari pemasangan satu-ke-satu optimal) untuk mencocokkan kotak deteksi antar-*frame* yang berurutan. Dengan kompensasi ini, kotak objek tetap tersedia meski deteksi sesaat gagal, sehingga probabilitas dinamis tidak terputus di tengah lintasan objek.
 
-- ORB-SLAM2 — basis SLAM.
-- YOLO — deteksi objek (prior kasar).
-- Epipolar geometry — verifikasi gerak.
-- Probabilistic weighting (coarse-to-fine).
+### Tahap Kasar: Probabilitas Tingkat Objek
 
-## Metodologi & Arsitektur
-YOLO memberi prior kasar objek dinamis; model coarse-to-fine memakai geometri epipolar dan pengelompokan untuk menghitung probabilitas dinamis tiap titik; probabilitas dipakai membobot titik dalam optimasi pose (weighted); berbasis ORB-SLAM2, real-time.
+Untuk tiap objek yang terdeteksi, sistem menghitung galat konsistensi geometris memakai kombinasi *optical flow* (estimasi pergerakan piksel antar dua *frame* berurutan) dan galat epipolar (ukuran seberapa jauh sebuah titik menyimpang dari batasan geometris yang berlaku bila titik itu statis dan hanya kamera yang bergerak). Galat ini diuji terhadap distribusi *chi-square* (distribusi statistik yang dipakai di sini untuk menilai apakah besar galat tersebut wajar bagi titik statis atau menandakan gerak independen) untuk menghasilkan satu nilai probabilitas statis per objek. Objek dengan probabilitas ≤ 0,9 diklasifikasikan "dinamis tinggi", sedangkan yang di atas ambang itu diklasifikasikan "dinamis rendah". Untuk memisahkan piksel objek dari latar di sekitarnya pada peta kedalaman, tahap ini memakai DBSCAN (*Density-Based Spatial Clustering of Applications with Noise* — algoritme pengelompokan berbasis kepadatan titik yang tidak memerlukan jumlah kelompok ditentukan di muka) sehingga batas objek pada citra kedalaman lebih presisi daripada sekadar kotak persegi hasil deteksi. Probabilitas objek ini menjadi nilai awal bagi seluruh titik kunci yang berada di dalamnya.
 
-Komponen / langkah metodologis utama:
+### Tahap Halus: Probabilitas Tingkat Titik Kunci
 
-- Deteksi objek (YOLO) sebagai prior kasar.
-- Probabilitas dinamis coarse-to-fine.
-- Geometri epipolar untuk verifikasi.
-- Pembobotan titik dalam optimasi pose.
-- Real-time (deteksi cepat).
-- Evaluasi TUM RGB-D dinamis.
+Nilai awal dari tahap kasar kemudian disempurnakan per titik kunci memakai dua kendala geometris tambahan. Kendala proyeksi mengukur galat reproyeksi (selisih posisi sebuah titik peta 3D yang diproyeksikan ke citra dibandingkan posisi pengamatan sebenarnya) dan mengubahnya menjadi nilai probabilitas lewat fungsi sigmoid (fungsi berbentuk S yang memetakan bilangan real ke rentang 0–1 secara mulus). Kendala epipolar memverifikasi ulang konsistensi geometris tiap titik secara individual, lebih rinci daripada verifikasi tingkat objek pada tahap kasar. Kedua kendala digabungkan dengan strategi berbeda bergantung status objek induknya (dinamis tinggi atau rendah), lalu probabilitas titik kunci diperbarui secara kumulatif seiring waktu ketika titik yang sama teramati pada beberapa *frame* berturut-turut.
 
-## Kontribusi Utama
-1. Penanganan dinamika probabilistik (bukan biner).
-2. Memanfaatkan YOLO untuk prior cepat.
-3. Menjaga fitur statis berguna.
-4. SOTA SLAM dinamis, real-time.
+Alur keseluruhan dari citra masukan hingga pose kamera dapat diringkas sebagai berikut.
 
-## Rincian Eksperimen
-Diuji pada TUM RGB-D dinamis dengan metrik ATE/RPE dan kecepatan, dibandingkan DynaSLAM/DS-SLAM.
+```
+citra RGB-D masuk
+        |
+        v
+deteksi objek (YOLOv5s) -- kompensasi (EKF + Hungarian)
+        |  kotak objek berpotensi dinamis
+        v
+TAHAP KASAR (tingkat objek)
+  optical flow + galat epipolar (uji chi-square)
+  -> probabilitas objek; <=0,9 dinamis tinggi, >0,9 dinamis rendah
+  -> DBSCAN memisahkan batas objek pada peta kedalaman
+        |  probabilitas awal tiap titik kunci di dalam objek
+        v
+TAHAP HALUS (tingkat titik kunci)
+  kendala proyeksi (sigmoid atas galat reproyeksi)
+  kendala epipolar per titik, digabung sesuai status objek induk
+        |  probabilitas titik kunci diperbarui
+        v
+pembobotan titik dalam optimasi pose (bundle adjustment)
+        |
+        v
+   pose kamera + peta titik berbobot probabilitas statis
+```
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Titik kunci dan titik peta yang telah memiliki bobot ini kemudian dimasukkan ke *bundle adjustment* (optimasi bersama pose kamera dan posisi titik peta yang meminimalkan total galat reproyeksi) mengikuti kerangka ORB-SLAM2, tetapi dengan kontribusi tiap titik pada fungsi galat dikalikan bobot probabilitas statisnya, bukan dengan opsi hadir/tidak hadir.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| TUM RGB-D dinamis | ATE | SOTA di antara SLAM dinamis |
-| Kecepatan | real-time | lebih cepat (YOLO) |
-| Ablation | probabilistik | bobot > penghapusan biner |
+## Eksperimen dan Hasil
 
-## Temuan Kunci
-- Bobot probabilistik unggul atas penghapusan biner.
-- YOLO memberi prior cepat untuk real-time.
-- Fitur statis dipertahankan.
-- Geometri + deteksi saling melengkapi.
+Evaluasi dilakukan pada TUM RGB-D, kumpulan data benchmark standar untuk SLAM RGB-D yang menyediakan lintasan kebenaran (*ground truth*) dari sistem penangkap gerak eksternal. Makalah menguji pada delapan rangkaian: empat rangkaian dinamis rendah (kategori "sitting", subjek duduk dengan gerakan terbatas) dan empat rangkaian dinamis tinggi (kategori "walking", subjek berjalan penuh di dalam ruang). Metrik utamanya adalah ATE (*Absolute Trajectory Error* — galat antara lintasan kamera yang diestimasi dan lintasan kebenaran setelah keduanya disejajarkan, dilaporkan sebagai *root mean square error*/RMSE dalam meter) dan RPE (*Relative Pose Error* — galat pose relatif pada interval waktu tetap, mengukur drift lokal).
 
-## Keunggulan
-- Probabilistik & real-time.
-- SOTA dinamis.
-- Memakai YOLO.
+Pada rangkaian dinamis tinggi `fr3/walking_xyz`, ATE CFP-SLAM tercatat sekitar 0,014 m, dibandingkan ORB-SLAM2 tanpa penanganan dinamis sebesar 0,72 m dan DS-SLAM sekitar 0,025 m. Selisih terhadap ORB-SLAM2 menegaskan bahwa penanganan objek dinamis memang diperlukan pada adegan ini — tanpa penanganan itu, galat membesar puluhan kali lipat karena titik fitur pada tubuh yang bergerak ikut dipakai seolah statis. Selisih terhadap DS-SLAM, meski lebih kecil, tetap menunjukkan keuntungan dari pembobotan bertingkat dibandingkan skema penghapusan objek DS-SLAM yang lebih sederhana. Pada rangkaian dinamis rendah `fr3/sitting_xyz`, ATE CFP-SLAM (sekitar 0,009 m) dan ORB-SLAM2 (sekitar 0,009 m) nyaris setara — masuk akal karena gerak subjek pada rangkaian ini minim, sehingga keuntungan penanganan dinamis tidak banyak berperan dan sistem dasar sudah memadai.
 
-## Keterbatasan
-- Bergantung kualitas deteksi/geometri.
-- Model probabilistik lebih kompleks.
-- Fokus lingkungan indoor dinamis.
+Dari sisi kecepatan, makalah melaporkan sistem penuh berjalan sekitar 42,7 milidetik per *frame*, setara 23 FPS, dengan varian ringkas (disebut CFP-SLAM tanpa modul tertentu) mencapai sekitar 24,8 milidetik per *frame* atau 40 FPS. Angka ini mengindikasikan sistem tetap berada pada kisaran mendekati *real-time* untuk aplikasi robotika, meski di bawah kecepatan ORB-SLAM2 murni yang tidak memiliki beban komputasi modul deteksi dan probabilitas tambahan. Studi ablasi pada makalah menunjukkan bahwa menghilangkan kompensasi deteksi hilang menyebabkan kegagalan berat pada adegan dinamis tinggi, dan menghilangkan pembaruan probabilitas titik kunci pada tahap halus membuat kinerja tidak konsisten antar-rangkaian — keduanya menunjukkan bahwa kedua tahap saling melengkapi, bukan berdiri sendiri.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Kelebihan dan Keterbatasan
 
-## Relevansi terhadap Tema Tinjauan
-CFP-SLAM menunjukkan integrasi YOLO ke SLAM dengan penanganan probabilistik — contoh langsung YOLO+RGB-D untuk SLAM dinamis dalam tinjauan.
+Kelebihan utama CFP-SLAM adalah pembobotan probabilistik bertingkat yang mempertahankan fitur statis di dalam kotak objek yang tertandai dinamis, sesuatu yang tidak dapat dilakukan skema penghapusan biner DynaSLAM maupun DS-SLAM. Sistem juga menunjukkan akurasi tinggi pada adegan dinamis tinggi tanpa mengorbankan akurasi pada adegan dinamis rendah, dan tetap berjalan pada kisaran mendekati *real-time*.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SLAM** yang baik dibaca berdampingan:
+Dari sisi rekayasa, sistem ini menambahkan beberapa komponen berurutan — deteksi, kompensasi EKF/Hungarian, klasifikasi *chi-square*, klasterisasi DBSCAN, dan dua lapis kendala geometri — sehingga jumlah parameter ambang batas dan bobot fusi yang perlu disetel lebih banyak dibandingkan ORB-SLAM2 dasar. Secara konseptual, keandalan tahap kasar tetap bergantung pada kualitas deteksi YOLOv5s; bila objek gagal terdeteksi berkepanjangan meski sudah dikompensasi EKF, probabilitas awal yang diwariskan ke titik kunci berpotensi keliru. Evaluasi juga difokuskan pada rangkaian TUM RGB-D dalam ruangan; generalisasi ke lingkungan luar ruangan atau kondisi pencahayaan yang berbeda tidak dibahas pada makalah ini.
 
-- [107 - 2017 - ORB-SLAM2 - RGB-D SLAM](./107%20-%202017%20-%20ORB-SLAM2%20-%20RGB-D%20SLAM.md)
-- [108 - 2018 - DynaSLAM - RGB-D SLAM](./108%20-%202018%20-%20DynaSLAM%20-%20RGB-D%20SLAM.md)
-- [109 - 2018 - DS-SLAM - RGB-D SLAM](./109%20-%202018%20-%20DS-SLAM%20-%20RGB-D%20SLAM.md)
-- [111 - 2019 - Visual SLAM YOLO vs Mask R-CNN (Soares dkk.) - RGB-D SLAM](./111%20-%202019%20-%20Visual%20SLAM%20YOLO%20vs%20Mask%20R-CNN%20%28Soares%20dkk.%29%20-%20RGB-D%20SLAM.md)
+## Kaitan dengan Bab Lain
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SLAM** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+CFP-SLAM dibangun langsung di atas kerangka ORB-SLAM2 (bab [107](./107%20-%202017%20-%20ORB-SLAM2%20-%20RGB-D%20SLAM.md)), yang menyediakan struktur pelacakan fitur ORB dan *bundle adjustment* yang tetap dipakai sebagai inti optimasi pose. Terhadap DynaSLAM (bab [108](./108%20-%202018%20-%20DynaSLAM%20-%20RGB-D%20SLAM.md)) dan DS-SLAM (bab [109](./109%20-%202018%20-%20DS-SLAM%20-%20RGB-D%20SLAM.md)), bab ini menawarkan alternatif terhadap skema penghapusan biner objek dinamis keduanya, dengan menggantinya menjadi pembobotan probabilistik bertingkat. Perbandingan lebih lanjut dengan pendekatan berbasis deteksi objek untuk SLAM dapat dibaca pada bab [111](./111%20-%202019%20-%20Visual%20SLAM%20YOLO%20vs%20Mask%20R-CNN%20%28Soares%20dkk.%29%20-%20RGB-D%20SLAM.md), yang membandingkan langsung pilihan detektor objek (YOLO versus Mask R-CNN) sebagai modul semantik dalam SLAM dinamis, tema yang sejalan dengan penggunaan YOLOv5s pada makalah ini.
 
-## Glosarium Istilah (tema RGB-D SLAM)
-Istilah penting untuk memahami makalah ini:
+## Poin untuk Sitasi
 
-- **SLAM** — Simultaneous Localization and Mapping.
-- **RGB-D SLAM** — SLAM kamera warna+kedalaman (skala metrik).
-- **Lingkungan dinamis** — Scene dengan objek bergerak.
-- **Loop closure** — Pengenalan tempat untuk koreksi drift.
-- **Bundle adjustment** — Optimasi bersama pose dan titik peta.
-- **ATE/RPE** — Absolute/Relative Trajectory/Pose Error.
-- **Semantic SLAM** — SLAM memanfaatkan label semantik.
-- **Fitur ORB** — Fitur cepat rotasi-invarian.
-- **TUM RGB-D** — Benchmark SLAM RGB-D standar.
-- **Deteksi objek dinamis** — Menandai objek bergerak (YOLO/Mask R-CNN).
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-CFP-SLAM memakai deteksi YOLO dan probabilitas coarse-to-fine untuk membobot titik dinamis secara probabilistik, mencapai SLAM dinamis real-time SOTA yang menjaga fitur statis berguna.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `hu2022cfpslam` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 110/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `hu2022cfpslam`. Ringkasan yang aman dikutip: "CFP-SLAM menghitung probabilitas statis bertingkat (dari objek hasil deteksi YOLOv5s ke titik kunci individual) memakai kendala *optical flow*, epipolar, dan reproyeksi, lalu memakainya sebagai bobot pada optimasi pose ORB-SLAM2, mencapai ATE jauh lebih rendah daripada ORB-SLAM2 dasar pada rangkaian dinamis tinggi TUM RGB-D." Angka ATE (sekitar 0,014 m pada `fr3/walking_xyz`, sekitar 0,72 m untuk ORB-SLAM2, sekitar 0,025 m untuk DS-SLAM; sekitar 0,009 m pada `fr3/sitting_xyz`) dan angka kecepatan (42,7 ms/23 FPS untuk versi penuh, 24,8 ms/40 FPS untuk versi ringkas) diambil dari ekstraksi otomatis naskah dan sumber sekunder yang saling sedikit berbeda pada digit desimal (satu sumber melaporkan sekitar 1,5 cm dan 27 FPS untuk rangkaian yang sama) — **wajib diverifikasi ulang terhadap tabel asli pada PDF makalah** sebelum dikutip presisi dalam karya formal. Ambang klasifikasi "dinamis tinggi" (probabilitas ≤ 0,9) juga sebaiknya dicocokkan ke naskah asli.

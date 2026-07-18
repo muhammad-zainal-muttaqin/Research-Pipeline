@@ -1,211 +1,113 @@
 # 114 - Development of a Pumpkin Fruits Pick-and-Place Robot Using an RGB-D Camera and a YOLO Based Object Detection AI Model
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 114 dari 154 |
 | Kunci BibTeX | `ito2024pumpkin` |
-| Judul | Development of a Pumpkin Fruits Pick-and-Place Robot Using an RGB-D Camera and a YOLO Based Object Detection AI Model |
-| Penulis | Ito, Nakaguchi; others |
+| Judul asli | Development of a Pumpkin Fruits Pick-and-Place Robot Using an RGB-D Camera and a YOLO Based Object Detection AI Model |
+| Penulis | Liangliang Yang, Tomoki Noguchi, Yohei Hoshino |
 | Tahun | 2024 |
-| Venue / Jurnal | Computers and Electronics in Agriculture |
-| Tema klaster | YOLO plus RGB-D |
-| Kata kunci | YOLO+RGB-D, pertanian, pick-and-place, panen robotik, lokalisasi 3D |
+| Venue | Computers and Electronics in Agriculture, vol. 227, artikel 109625 |
+| Tema | YOLO plus RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **DOI (penerbit):** https://doi.org/10.1016/j.compag.2024.109625
+- **ScienceDirect:** https://www.sciencedirect.com/science/article/pii/S0168169924010160
+- **Google Scholar:** https://scholar.google.com/scholar?q=Development%20of%20a%20Pumpkin%20Fruits%20Pick-and-Place%20Robot%20Using%20an%20RGB-D%20Camera%20and%20a%20YOLO%20Based%20Object%20Detection%20AI%20Model
+- **Semantic Scholar:** https://www.semanticscholar.org/paper/Development-of-a-pumpkin-fruits-pick-and-place-an-a-Yang-Noguchi/647c2a91c65d91a64f7d1f506039bdf319357ae1
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-yolo-plus-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Development%20of%20a%20Pumpkin%20Fruits%20Pick-and-Place%20Robot%20Using%20an%20RGB-D%20Camera%20and%20a%20YOLO%20Based%20Object%20Detection%20AI%20Model
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Development%20of%20a%20Pumpkin%20Fruits%20Pick-and-Place%20Robot%20Using%20an%20RGB-D%20Camera%20and%20a%20YOLO%20Based%20Object%20Detection%20AI%20Model&sort=relevance
+Makalah ini melaporkan pengembangan robot pemanen buah labu yang bekerja secara *pick-and-place* (mengambil objek dari satu posisi dan meletakkannya di posisi lain) di ladang terbuka. Sistem menggabungkan tiga bagian: kamera RGB-D (kamera yang menghasilkan citra warna sekaligus peta kedalaman per piksel) untuk menangkap posisi buah, model deteksi YOLO untuk mengenali buah pada citra warna, dan lengan robot kolaboratif yang dipasang di atas kendaraan beroda rantai (*crawler*) untuk menjangkau dan mengangkat buah. Penulis membandingkan lima versi YOLO — v2, v3, v5, v7, dan v8 — pada tugas deteksi buah labu, kemudian memilih model dengan kinerja terbaik untuk dipakai pada sistem penuh.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Kontribusi utama makalah bukan arsitektur deteksi baru, melainkan integrasi sistem: metode kalibrasi satu langkah (*one-shot calibration*) yang memetakan posisi buah dari koordinat kamera ke koordinat lengan robot tanpa prosedur kalibrasi berulang, serta pengujian rangkaian penuh di ladang labu sungguhan, bukan hanya di laboratorium. Menurut penulis, sistem mencapai tingkat deteksi buah di atas 99% dan tingkat keberhasilan pengambilan (*grasp*) di atas 90%, dengan kegagalan utama terjadi pada buah yang tertutup rapat oleh sulur tanaman.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 227 |
-| Halaman | 109625 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Pengembangan robot pick-and-place buah labu memakai kamera RGB-D dan deteksi berbasis YOLO untuk melokalisasi dan mengambil buah.
+Panen buah labu adalah pekerjaan fisik berat: satu buah dapat berbobot belasan kilogram, permukaan ladang tidak rata, dan buah sering separuh tertutup daun atau sulur. Di Jepang, populasi petani yang menua membuat pekerjaan seberat ini semakin sulit dipenuhi tenaga manusia, sehingga otomasi panen menjadi kebutuhan praktis, bukan sekadar topik riset akademik.
 
-## Abstrak (Parafrase)
-Makalah ini mengembangkan sistem robot pick-and-place untuk memanen buah labu: model deteksi berbasis YOLO melokalisasi buah pada citra RGB, dan kamera RGB-D memberikan koordinat 3D untuk perencanaan pengambilan (grasp). Sistem robot terintegrasi diuji untuk pemanenan. [Detail penulis/halaman dari metadata daring — verifikasi.]
+Riset deteksi buah berbasis YOLO yang dibahas pada bab-bab lain klaster ini banyak berfokus pada buah ringan seperti pada studi fusi RGB dan kedalaman dasar (bab [118](./118%20-%202019%20-%20Exploring%20RGB+Depth%20Fusion%20%28Ophoff%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)), yang cukup diambil dengan pengisap atau jari penggenggam ringan. Buah labu menuntut platform mekanis yang berbeda: lengan berdaya angkat besar dan tangan penggenggam yang menahan bobot serta permukaan buah yang licin dan melengkung. Selain itu, sebagian besar sistem panen robotik yang dilaporkan sebelumnya diuji pada barisan tanaman yang rapi di rumah kaca atau kebun terstruktur; ladang labu tidak memiliki keteraturan spasial semacam itu, sehingga posisi buah relatif terhadap lengan robot bervariasi jauh lebih besar antar-percobaan.
 
-## Latar Belakang & Konteks
-Pemanenan labu padat karya dan membutuhkan deteksi serta lokalisasi 3D buah yang andal di lapangan untuk otomasi pick-and-place.
+Variasi posisi ini membuat kalibrasi kamera-lengan menjadi masalah tersendiri. Prosedur kalibrasi konvensional pada robotika umumnya menuntut penggerakan lengan ke banyak titik acuan untuk menghitung transformasi koordinat antara kamera dan lengan, sebuah proses yang memakan waktu dan harus diulang setiap kali platform dipindahkan ke petak ladang baru. Masalah gabungan — deteksi buah yang andal pada kondisi lapangan yang bervariasi, kalibrasi yang cepat diulang, dan manipulasi buah berat — belum banyak dipecahkan secara terintegrasi dalam satu sistem sebelum makalah ini.
 
-## Permasalahan yang Diangkat
-- Pemanenan labu padat karya.
-- Deteksi & lokalisasi 3D buah di lapangan sulit.
-- Kondisi lapangan bervariasi (cahaya/oklusi).
-- Manipulasi butuh koordinat 3D akurat.
-- Otomasi pick-and-place diperlukan.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Mendeteksi buah labu via YOLO.
-- Melokalisasi buah dalam 3D via RGB-D.
-- Mengotomasi pick-and-place pemanenan.
+Gagasan inti makalah adalah menyusun jalur pemrosesan (*pipeline*) tunggal yang mengubah citra RGB-D menjadi perintah gerak lengan robot, dengan dua keputusan desain penting. Pertama, deteksi dua dimensi (2D) dan lokalisasi tiga dimensi (3D) dipisahkan: YOLO hanya bertugas menemukan kotak pembatas (*bounding box*) buah pada citra warna datar, sedangkan jarak kedalamannya diambil langsung dari piksel peta kedalaman yang sudah sejajar dengan piksel warna pada koordinat kotak yang sama. Kedua, transformasi dari koordinat kamera ke koordinat lengan robot disederhanakan menjadi satu prosedur kalibrasi tunggal, bukan kalibrasi multi-titik berulang, karena posisi kamera tetap terhadap pangkal lengan sepanjang operasi.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Sistem menggabungkan deteksi YOLO dan penginderaan kedalaman untuk manipulasi.
+Dengan pemisahan ini, penggantian versi YOLO tidak mengubah bagian kalibrasi maupun kendali lengan; hanya kotak pembatas yang berubah nilainya. Struktur modular semacam ini memudahkan penulis membandingkan lima versi YOLO tanpa merombak seluruh sistem untuk tiap perbandingan.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- YOLO — deteksi buah pada RGB.
-- Kamera RGB-D — koordinat 3D.
-- Robot manipulator — pick-and-place.
-- Domain pertanian (panen).
+### Platform dan Perangkat Keras
 
-## Metodologi & Arsitektur
-Model YOLO mendeteksi buah labu pada citra RGB; kedalaman dari kamera RGB-D memberi posisi 3D buah; sistem perencanaan menggerakkan lengan robot untuk mengambil dan menempatkan buah; diuji pada skenario pemanenan. [Rincian perlu konfirmasi ke naskah.]
+Dasar robot adalah kendaraan beroda rantai (*crawler*) tipe pertanian (NC16A, Yanmar) yang dipakai sebagai penopang bergerak di ladang tidak rata. Di atas kendaraan ini dipasang lengan robot kolaboratif enam sumbu (UR10, Universal Robots), dan pada pangkal lengan dipasang kamera RGB-D (RealSense D455, Intel) yang menghadap ke arah kerja lengan. Penempatan kamera di pangkal lengan, bukan di ujung efektor, membuat posisi kamera relatif terhadap dasar lengan tetap konstan selama pengoperasian, sehingga transformasi koordinat antara keduanya hanya perlu dihitung satu kali. Pada ujung lengan dipasang tangan robot rancangan khusus untuk mencengkeram buah labu.
 
-Komponen / langkah metodologis utama:
+### Deteksi Buah dengan YOLO
 
-- Deteksi buah labu via YOLO (RGB).
-- Estimasi koordinat 3D via kedalaman.
-- Perencanaan grasp/pick-and-place.
-- Lengan robot manipulator.
-- Integrasi sistem panen.
-- Uji lapangan/lab.
+Citra warna dari kamera RGB-D dilewatkan ke model deteksi objek untuk menemukan kotak pembatas setiap buah labu yang tampak. Penulis melatih dan menguji lima versi YOLO — YOLOv2, YOLOv3, YOLOv5, YOLOv7, dan YOLOv8 — pada citra ladang labu, lalu membandingkan kinerjanya untuk memilih satu model yang dipakai pada sistem lapangan penuh. Perbandingan lintas generasi ini relevan karena tiap versi mewarisi rumusan dasar "grid dan regresi langsung" yang pertama diperkenalkan pada YOLO generasi awal (bab [002](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md)), tetapi berbeda pada kedalaman jaringan, mekanisme *anchor*, dan strategi pelatihan, sehingga akurasi dan kecepatannya juga berbeda pada tugas khusus ini.
 
-## Kontribusi Utama
-1. Sistem panen labu berbasis YOLO+RGB-D.
-2. Lokalisasi 3D buah dari kedalaman.
-3. Otomasi pick-and-place terintegrasi.
-4. Aplikasi konkret YOLO+RGB-D di pertanian.
+### Dari Kotak 2D ke Koordinat 3D
 
-## Rincian Eksperimen
-Diuji pada skenario pemanenan (lab/lapangan) dengan metrik keberhasilan pick-and-place. [Angka spesifik perlu diverifikasi ke naskah asli.]
+Setiap kotak pembatas yang dihasilkan YOLO memiliki titik pusat pada koordinat piksel (u, v) di citra warna. Karena kamera RGB-D menghasilkan peta kedalaman yang sejajar pikselnya dengan citra warna, nilai kedalaman pada piksel (u, v) yang sama memberi jarak buah dari kamera. Ketiga nilai ini — posisi horizontal, posisi vertikal, dan jarak — kemudian diubah menjadi satu titik koordinat tiga dimensi pada kerangka acuan kamera, memakai parameter internal kamera (panjang fokus dan titik pusat optik) yang sudah diketahui dari pabrikan.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Kalibrasi Kamera-Lengan Satu Langkah
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Pemanenan | success rate | keberhasilan pick-and-place (per makalah) |
-| Lokalisasi | 3D | koordinat buah dari RGB-D |
-| Catatan | verifikasi | detail dari metadata daring |
+Titik 3D pada kerangka kamera belum dapat langsung dipakai lengan robot, karena lengan bergerak dalam kerangka koordinatnya sendiri. Makalah mengusulkan metode kalibrasi satu langkah: alih-alih menggerakkan lengan ke banyak titik acuan seperti kalibrasi konvensional, hubungan antara kerangka kamera dan kerangka lengan dihitung dari satu pengukuran acuan tunggal, memanfaatkan posisi kamera yang tetap terhadap pangkal lengan. Transformasi ini berupa perkalian matriks rotasi dan translasi yang, begitu dihitung sekali, dipakai berulang untuk setiap buah yang terdeteksi selama operasi berlangsung.
 
-## Temuan Kunci
-- YOLO+RGB-D memungkinkan panen labu otomatis.
-- Kedalaman memberi lokalisasi 3D untuk grasp.
-- Integrasi deteksi-manipulasi praktis.
-- Kondisi lapangan tetap menantang.
+Alur data dari citra sampai gerak lengan dapat diringkas sebagai berikut:
 
-## Keunggulan
-- Aplikasi konkret pertanian.
-- Integrasi YOLO+RGB-D+robot.
-- Pick-and-place otomatis.
+```
+kamera RGB-D di pangkal lengan UR10 (posisi kamera tetap)
 
-## Keterbatasan
-- Detail penulis/halaman dari metadata daring — verifikasi.
-- Bergantung kualitas kedalaman & deteksi.
-- Kinerja spesifik-tanaman/lapangan.
+  citra RGB               peta depth (piksel sejajar RGB)
+      |                             |
+      v                             |
+ +-----------+                      |
+ | YOLO      |  kotak buah          |
+ | (v2..v8)  |------+               |
+ +-----------+      |               |
+                     v               v
+              pusat kotak (u,v) -> ambil nilai depth di (u,v)
+                     |
+                     v
+         titik 3D kerangka kamera (Xc, Yc, Zc)
+                     |
+                     v
+      kalibrasi satu-langkah kamera -> lengan (rotasi+translasi)
+                     |
+                     v
+         titik 3D kerangka robot (Xr, Yr, Zr)
+                     |
+                     v
+      kinematika balik UR10 -> gerak lengan -> tangan menggenggam
+```
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Perencanaan dan Eksekusi Pengambilan
 
-## Relevansi terhadap Tema Tinjauan
-Entri ini menghubungkan klaster YOLO+RGB-D dan Pertanian dalam tinjauan; contoh penerapan nyata deteksi+kedalaman untuk panen robotik.
+Titik 3D pada kerangka robot menjadi target bagi perhitungan kinematika balik (*inverse kinematics*): proses menghitung sudut tiap sendi lengan yang membuat ujung efektor mencapai posisi target tertentu. Setelah sudut sendi dihitung, lengan bergerak menuju posisi buah, tangan penggenggam menutup untuk mencengkeram buah, lengan mengangkat dan memindahkannya ke titik peletakan (misalnya bak penampung pada kendaraan), lalu siklus berulang untuk buah berikutnya yang terdeteksi.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **YOLO plus RGB-D** yang baik dibaca berdampingan:
+## Eksperimen dan Hasil
 
-- [112 - 2020 - Expandable YOLO - YOLO plus RGB-D](./112%20-%202020%20-%20Expandable%20YOLO%20-%20YOLO%20plus%20RGB-D.md)
-- [113 - 2024 - FusionVision - YOLO plus RGB-D](./113%20-%202024%20-%20FusionVision%20-%20YOLO%20plus%20RGB-D.md)
-- [115 - 2025 - YOLOv8-URE 2D+Point Cloud Grasping - YOLO plus RGB-D](./115%20-%202025%20-%20YOLOv8-URE%202D+Point%20Cloud%20Grasping%20-%20YOLO%20plus%20RGB-D.md)
-- [116 - 2023 - Grasp via YOLO + RGB-D Fusion (Tian dkk.) - YOLO plus RGB-D](./116%20-%202023%20-%20Grasp%20via%20YOLO%20+%20RGB-D%20Fusion%20%28Tian%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [117 - 2024 - Onboard Dynamic-Object Detection (Xu dkk.) - YOLO plus RGB-D](./117%20-%202024%20-%20Onboard%20Dynamic-Object%20Detection%20%28Xu%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [118 - 2019 - Exploring RGB+Depth Fusion (Ophoff dkk.) - YOLO plus RGB-D](./118%20-%202019%20-%20Exploring%20RGB+Depth%20Fusion%20%28Ophoff%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
-- [119 - 2023 - Distance Measurement via YOLO + Depth (Chen dkk.) - YOLO plus RGB-D](./119%20-%202023%20-%20Distance%20Measurement%20via%20YOLO%20+%20Depth%20%28Chen%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md)
+Pengujian dilakukan pada citra ladang labu untuk tahap pelatihan/pembandingan model deteksi, dan pada uji lapangan langsung di ladang terbuka untuk tahap pengambilan fisik oleh robot. Pada tahap deteksi, kelima versi YOLO (v2, v3, v5, v7, v8) diuji pada kumpulan citra yang sama dan dibandingkan kinerjanya; penulis melaporkan bahwa salah satu versi lebih baru (YOLOv8 pada sebagian rangkuman sekunder yang tersedia) memberi kinerja deteksi terbaik dan dipakai pada sistem akhir. Pada tahap uji lapangan penuh, penulis melaporkan tingkat deteksi buah di atas 99% dan tingkat keberhasilan pengambilan fisik (*grasp*) di atas 90%.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **YOLO plus RGB-D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Interpretasi kedua angka ini penting dibedakan: tingkat deteksi mengukur seberapa sering YOLO benar mengenali buah pada citra, sedangkan tingkat keberhasilan pengambilan mengukur seberapa sering seluruh rantai (deteksi, lokalisasi 3D, kalibrasi, dan gerak lengan-tangan) berhasil memindahkan buah tanpa gagal secara fisik. Selisih sekitar 9 poin antara keduanya konsisten dengan sumber kegagalan yang dilaporkan penulis: buah yang terdeteksi dengan benar pada citra tetap dapat gagal diambil bila permukaannya tertutup rapat oleh sulur tanaman, karena tangan penggenggam tidak memiliki jalur bebas untuk mencengkeram buah secara aman. Dengan kata lain, kegagalan sistem pada percobaan ini lebih banyak berasal dari keterbatasan mekanis penggenggaman di lapangan, bukan dari kesalahan deteksi visual.
 
-## Glosarium Istilah (tema YOLO plus RGB-D)
-Istilah penting untuk memahami makalah ini:
+Beberapa angka rinci lain — nilai *precision* per versi YOLO, metrik *mean Average Precision* (mAP, rata-rata presisi di seluruh kelas dan ambang deteksi), skor F1, serta waktu siklus pengambilan per buah — disebutkan pada sejumlah rangkuman sekunder tetapi tidak seragam antar-sumber dan tidak berhasil diverifikasi langsung dari naskah lengkap (artikel berada di balik akses berbayar penerbit). Angka-angka tersebut ditandai di bagian Poin untuk Sitasi dan sebaiknya dicocokkan dengan tabel hasil pada naskah asli sebelum dikutip.
 
-- **YOLO** — Detektor satu-tahap real-time regresi tunggal.
-- **Kanal depth** — Peta kedalaman sebagai masukan tambahan.
-- **Fusi RGB-D** — Penggabungan warna dan kedalaman pada deteksi.
-- **Lokalisasi 3D** — Posisi objek dalam koordinat 3D via depth.
-- **Point cloud** — Titik 3D dari depth untuk grasp/rekonstruksi.
-- **Pick-and-place** — Tugas robot mengambil dan menempatkan objek.
-- **RealSense/Kinect** — Kamera RGB-D konsumen umum.
-- **Early/mid/late fusion** — Titik penggabungan depth pada arsitektur.
-- **Segment Anything (SAM)** — Model segmentasi umum; FastSAM=versi cepat.
-- **Real-time deployment** — Penerapan dengan kendala latensi.
+## Kelebihan dan Keterbatasan
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Kelebihan utama makalah terletak pada cakupan pengujiannya: sistem diuji sebagai satu kesatuan (deteksi, lokalisasi 3D, kalibrasi, dan manipulasi fisik) di ladang labu sungguhan, bukan hanya komponen deteksi di laboratorium. Perbandingan lima versi YOLO pada tugas yang sama juga memberi dasar empiris untuk memilih model, alih-alih mengasumsikan versi terbaru otomatis paling sesuai. Metode kalibrasi satu langkah menyederhanakan penyiapan lapangan dibandingkan kalibrasi multi-titik konvensional, yang relevan untuk platform bergerak yang berpindah petak secara rutin.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Dari sisi rekayasa, keterbatasan yang tampak adalah ketergantungan keberhasilan pengambilan pada kondisi lapangan yang cukup spesifik: kepadatan sulur, arah pertumbuhan tanaman, dan pencahayaan pada saat pengujian belum tentu mewakili seluruh musim tanam atau varietas labu lain. Secara konseptual, pemisahan deteksi 2D dan lokalisasi 3D memudahkan integrasi tetapi juga berarti sistem tidak memiliki mekanisme eksplisit untuk menangani oklusi struktural (buah tertutup sulur); perbaikan pada bagian deteksi saja tidak akan menaikkan tingkat keberhasilan pengambilan jika masalahnya terletak pada akses fisik tangan penggenggam. Ketergantungan pada platform crawler dan lengan kolaboratif berukuran industri juga membatasi kemudahan penerapan pada operasi berskala kecil atau ladang dengan lorong antar-baris yang sempit.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kaitan dengan Bab Lain
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Bab ini merupakan salah satu contoh penerapan paling konkret dari klaster YOLO plus RGB-D untuk tugas manipulasi fisik, sejalan dengan bab [115](./115%20-%202025%20-%20YOLOv8-URE%202D+Point%20Cloud%20Grasping%20-%20YOLO%20plus%20RGB-D.md) yang juga menggabungkan deteksi 2D dan data kedalaman untuk perencanaan penggenggaman, serta bab [116](./116%20-%202023%20-%20Grasp%20via%20YOLO%20+%20RGB-D%20Fusion%20%28Tian%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md) yang mengangkat masalah serupa dari sudut fusi fitur deteksi dan kedalaman. Dibandingkan keduanya, bab ini menonjol pada sisi rekayasa sistem lapangan penuh (kendaraan, lengan, kalibrasi) alih-alih perbaikan arsitektur model.
 
-## Kesimpulan
-Ito dkk. mengembangkan robot pick-and-place buah labu berbasis deteksi YOLO dan kamera RGB-D untuk lokalisasi 3D; rincian metadata perlu diverifikasi ke naskah asli.
+Ketergantungan makalah pada keluarga YOLO menautkannya ke bab-bab fondasi Fondasi RGB, khususnya bab [002](./002%20-%202017%20-%20YOLO9000%20%28YOLOv2%29%20-%20Fondasi%20RGB.md) sebagai versi paling awal yang diuji, hingga versi-versi lebih baru yang tidak memiliki bab tersendiri dalam tinjauan ini (YOLOv5 dan YOLOv8). Karena tugas akhirnya adalah penggenggaman fisik, bab ini juga berkaitan dengan klaster Grasp Robotik, misalnya bab [081](./081%20-%202018%20-%20GG-CNN%20-%20Grasp%20Robotik.md) yang membahas sintesis penggenggaman secara langsung dari citra kedalaman tanpa deteksi objek eksplisit — kontras metodologis yang berguna untuk membandingkan dua pendekatan berbeda dalam memutuskan titik cengkeram.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `ito2024pumpkin` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Poin untuk Sitasi
 
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
+Kutip dengan kunci `ito2024pumpkin`. Ringkasan yang aman dikutip: "Yang, Noguchi, dan Hoshino (2024) mengembangkan robot panen labu berbasis deteksi YOLO dan kamera RGB-D pada kendaraan crawler dan lengan kolaboratif, dengan metode kalibrasi kamera-lengan satu langkah, dan melaporkan tingkat deteksi buah di atas 99% serta tingkat keberhasilan pengambilan fisik di atas 90% pada uji lapangan."
 
----
-*Lembar 114/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Butir yang belum terverifikasi langsung dari naskah lengkap (akses berbayar) dan perlu dicocokkan sebelum dikutip formal: versi YOLO mana persis yang terpilih sebagai model terbaik pada sistem akhir; nilai *precision*, mAP, dan skor F1 per versi YOLO; waktu siklus pengambilan per buah; jumlah dan komposisi citra pada kumpulan data pelatihan; serta rincian desain tangan penggenggam (jumlah jari, rentang gaya cengkeram).
