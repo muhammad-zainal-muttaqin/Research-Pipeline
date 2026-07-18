@@ -1,206 +1,91 @@
 # 199 - Survey on Monocular Metric Depth Estimation
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 199 dari 202 |
 | Kunci BibTeX | `zhang2025metricdepthsurvey` |
-| Judul | Survey on Monocular Metric Depth Estimation |
-| Penulis | Zhang, Jiuling |
+| Judul asli | Survey on Monocular Metric Depth Estimation |
+| Penulis | Jiuling Zhang |
 | Tahun | 2025 |
-| Venue / Jurnal | arXiv preprint arXiv:2501.11841 |
-| Tema klaster | Estimasi Kedalaman |
-| Kata kunci | survei, monocular metric depth, zero-shot, scale-agnostic, MMDE |
+| Venue | arXiv preprint (arXiv:2501.11841) |
+| Tema | Estimasi Kedalaman |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-estimasi-kedalaman)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2501.11841
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Survey%20on%20Monocular%20Metric%20Depth%20Estimation
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Survey%20on%20Monocular%20Metric%20Depth%20Estimation&sort=relevance
+- **Google Scholar:** https://scholar.google.com/scholar?q=Survey%20on%20Monocular%20Metric%20Depth%20Estimation
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Survey%20on%20Monocular%20Metric%20Depth%20Estimation&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2501.11841 |
+Makalah ini adalah survei yang merangkum perkembangan *Monocular Metric Depth Estimation* (MMDE, estimasi kedalaman metrik dari satu citra), yaitu cabang estimasi kedalaman monokular (*Monocular Depth Estimation*/MDE) yang keluarannya berupa peta kedalaman dengan skala nyata (metrik), bukan sekadar urutan jarak relatif antarpiksel. Survei ini menelusuri evolusi MMDE dari metode berbasis geometri klasik hingga model pembelajaran mendalam (*deep learning*) mutakhir, dengan penekanan khusus pada peran kumpulan data (*dataset*) sebagai pendorong kemajuan bidang ini. Empat tolok ukur (*benchmark*) utama dibahas dari segi modalitas, jenis adegan (*scene*), dan domain aplikasinya: KITTI, NYU-D, ApolloScape, dan TartanAir.
 
-## Ringkasan Eksekutif
-Survei ini (Zhang, arXiv Januari 2025) mensintesis kemajuan Monocular Metric Depth Estimation (MMDE), menyoroti metode scale-agnostic untuk generalisasi zero-shot serta tantangan generalisasi model dan hilangnya detail pada batas scene.
+Kontribusi utama makalah bukan metode baru, melainkan sintesis: pengelompokan kemajuan metodologis — generalisasi lintas domain, pelestarian batas objek pada peta kedalaman, serta pemaduan data sintetis dan data nyata — dan evaluasi berimbang atas sejumlah teknik, meliputi pembelajaran tanpa-pengawasan (*unsupervised*) dan semi-pengawasan (*semi-supervised*), inferensi berbasis potongan citra (*patch-based inference*), inovasi arsitektur, serta pemodelan generatif berbasis difusi. Pembaca yang hanya mengambil bagian ini memperoleh inti bab: makalah berperan sebagai peta rujukan MMDE per awal 2025, bukan sumber angka hasil tunggal untuk dikutip.
 
-## Abstrak (Parafrase)
-Makalah adalah survei atas estimasi kedalaman metrik monokular (MMDE) - memprediksi depth berskala nyata dari satu citra. Ia menaksonomikan pendekatan supervised, self-supervised, dan foundation model (mis. Metric3D, ZoeDepth, Depth Anything, UniDepth), menekankan metode scale-agnostic untuk generalisasi zero-shot lintas kamera/domain. Survei membahas tantangan utama: generalisasi model, hilangnya detail pada batas scene, serta peran model difusi generatif (Marigold, GeoWizard) dalam memulihkan detail frekuensi-tinggi.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Latar Belakang & Konteks
-MMDE penting untuk robotika/AR karena memberi skala metrik, bukan sekadar depth relatif. Namun generalisasi lintas kamera dan pelestarian detail masih menantang, memicu banyak pendekatan yang perlu disintesis.
+Estimasi kedalaman dari satu citra RGB adalah persoalan bermakna ganda (*ill-posed*): dari satu citra saja, secara matematis tidak ada solusi tunggal yang pasti benar, karena kombinasi jarak objek dan ukuran objek yang berbeda dapat menghasilkan citra yang identik pada bidang gambar. Sebagian besar pendekatan pembelajaran mendalam yang berkembang sejak pertengahan dekade 2010-an mengatasi ambiguitas ini dengan memprediksi kedalaman **relatif** — urutan jarak antarbagian citra tanpa satuan nyata. Keluaran semacam ini memadai untuk tugas seperti penyusunan ulang tampilan (*view synthesis*) sederhana, tetapi tidak dapat langsung dipakai pada aplikasi yang menuntut jarak sebenarnya dalam meter, misalnya *Simultaneous Localization and Mapping* (SLAM, penentuan posisi kamera dan pemetaan lingkungan secara bersamaan), pemodelan 3D presisi, atau navigasi robot — kecuali dilakukan kalibrasi tambahan yang merepotkan penerapan.
 
-## Permasalahan yang Diangkat
-- Depth relatif tak cukup untuk aplikasi berskala metrik.
-- Generalisasi lintas kamera/domain (intrinsik berbeda) sulit.
-- Detail pada batas scene sering hilang.
-- Beragamnya metode menuntut taksonomi terpadu.
+Masalah kedua yang diangkat survei ini adalah generalisasi lintas kamera dan domain. Model yang dilatih pada satu kumpulan data dengan parameter intrinsik kamera tertentu (fokus lensa, ukuran sensor) sering gagal memprediksi skala metrik yang benar ketika dihadapkan pada kamera atau adegan berbeda, karena hubungan antara ukuran objek pada citra dan jarak sebenarnya bergantung langsung pada parameter kamera tersebut. Masalah ketiga adalah hilangnya detail pada batas objek (*boundary*): banyak arsitektur cenderung menghaluskan tepi antarobjek, sehingga kontur benda kabur pada peta kedalaman yang dihasilkan. Karena jumlah metode yang mencoba mengatasi ketiga masalah ini bertambah cepat dan tersebar pada arsitektur yang beragam, survei ini disusun untuk memberi taksonomi terpadu yang memetakan hubungan antarmetode.
 
-## Tujuan & Pertanyaan Penelitian
-- Menaksonomikan metode MMDE secara sistematis.
-- Menyoroti pendekatan scale-agnostic zero-shot.
-- Merangkum tantangan generalisasi dan detail.
-- Memetakan arah riset (foundation & difusi).
+## Ide Utama
 
-## Tinjauan Terdahulu / Posisi Literatur
-Survei merangkum foundation model depth (Metric3D entri 177, ZoeDepth entri 176, Depth Anything V2 entri 175) dan difusi (Marigold entri 178), memberi peta menyeluruh MMDE.
+Sebagai makalah survei, gagasan intinya bukan mekanisme model baru, melainkan kerangka klasifikasi yang menempatkan metode MMDE ke dalam kategori berdasarkan dua sumbu: bagaimana metode memperoleh sinyal pelatihan (berbasis geometri, diawasi penuh, diawasi sebagian, atau tanpa pengawasan) dan bagaimana metode menangani ambiguitas skala metrik (memprediksi kedalaman metrik langsung dari data berlabel skala nyata, atau memprediksi kedalaman relatif terlebih dahulu kemudian menyisipkan informasi skala lewat parameter kamera). Sumbu kedua inilah yang menjadi benang merah pembeda MMDE generasi lama dan generasi model fondasi (*foundation model*) terbaru: metode lama umumnya dilatih ulang per kumpulan data dengan skala metrik yang tetap, sedangkan metode fondasi terbaru dirancang agar satu model dapat menghasilkan kedalaman metrik yang benar pada kamera dan domain yang belum pernah dilihat saat pelatihan (generalisasi *zero-shot*, yaitu kinerja pada data yang sama sekali baru tanpa pelatihan tambahan).
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- ZoeDepth - gabungan depth relatif+metrik (entri 176).
-- Metric3D - depth metrik zero-shot (entri 177).
-- Marigold - difusi untuk depth (entri 178).
-- Depth Anything V2 - foundation depth (entri 175).
+### Kelompok Metode Berbasis Geometri dan Diawasi Klasik
 
-## Metodologi & Arsitektur
-Sebagai survei, metodenya adalah tinjauan sistematis: mengklasifikasikan metode (supervised/self-supervised/foundation/difusi), membandingkan strategi penanganan skala kamera, dan mengidentifikasi celah riset.
+Sebelum era pembelajaran mendalam dominan, kedalaman metrik diturunkan dari isyarat geometris eksplisit: pergeseran piksel pada pasangan citra stereo (disparitas), pergerakan piksel pada video (*structure from motion*), atau sensor tambahan. Generasi awal pembelajaran mendalam menggantikan sebagian isyarat ini dengan jaringan konvolusi yang dilatih memakai peta kedalaman berlabel dari sensor LiDAR atau kamera depth. Survei mencatat pendekatan berbasis pembagian rentang kedalaman menjadi kelas-kelas diskret (*binning*), tempat jaringan memprediksi probabilitas setiap piksel termasuk kelas rentang jarak tertentu alih-alih meregresi satu angka kontinu langsung — strategi ini mengurangi ketidakstabilan pelatihan dibanding regresi langsung.
 
-Komponen / langkah metodologis utama:
+### Kelompok Metode Semi- dan Tanpa-Pengawasan
 
-- Taksonomi metode MMDE.
-- Analisis strategi scale-agnostic (canonical camera, intrinsik).
-- Perbandingan benchmark dan metrik (AbsRel, RMSE, delta<1.25).
-- Identifikasi celah dan arah riset.
+Karena label kedalaman metrik mahal diperoleh (memerlukan sensor khusus), sekelompok metode memakai sinyal pelatihan tidak langsung. Pendekatan tanpa-pengawasan memanfaatkan konsistensi fotometrik: citra pada satu waktu diproyeksikan ulang ke waktu lain memakai kedalaman dan pergerakan kamera yang diprediksi, lalu selisih dengan citra asli dipakai sebagai sinyal galat. Pendekatan semi-pengawasan menggabungkan sebagian label nyata dengan sinyal konsistensi ini, mengurangi kebutuhan data berlabel penuh tanpa kehilangan patokan skala metrik.
 
-## Kontribusi Utama
-1. Taksonomi terpadu MMDE.
-2. Sintesis metode scale-agnostic zero-shot.
-3. Ringkasan tantangan generalisasi & detail.
-4. Peta arah riset (foundation & difusi generatif).
+### Kelompok Model Fondasi dan Strategi Scale-Agnostic
 
-## Rincian Eksperimen
-Bukan eksperimen baru; survei membandingkan hasil terlapor lintas benchmark depth (KITTI, NYUv2, dll.) dan metrik standar untuk memetakan lanskap.
+Kelompok ini adalah fokus utama perkembangan terbaru yang disorot survei. Model fondasi dilatih pada gabungan besar kumpulan data lintas domain (dalam ruangan, luar ruangan, sintetis, nyata) agar representasi fitur yang dipelajari cukup umum untuk digeneralisasi. Untuk menangani perbedaan skala antarkumpulan data pelatihan, sebagian metode memakai strategi *scale-agnostic* (tak bergantung skala tunggal): kedalaman relatif diprediksi lebih dulu oleh tulang punggung (*backbone*) bersama, kemudian kepala jaringan terpisah menyisipkan faktor skala metrik berdasarkan parameter kamera atau kepala regresi tambahan. Pendekatan ini memisahkan masalah "bentuk permukaan adegan" dari masalah "berapa skala sebenarnya", sehingga bagian pertama dapat dilatih pada data lintas domain yang jauh lebih banyak, sementara bagian kedua ditangani terpisah.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Skema hubungan antara dua sumbu klasifikasi tersebut dapat digambarkan sebagai berikut:
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI/NYUv2 (dari literatur) | AbsRel, RMSE, delta<1.25 | Perbandingan lintas metode (rangkuman) |
-| Zero-shot | Generalisasi | Fokus pada metode scale-agnostic |
-| Arah riset | Celah | Detail batas & generalisasi kamera |
+```
+Sumber sinyal pelatihan        Penanganan skala metrik
+┌─────────────────────┐        ┌──────────────────────────┐
+│ berbasis geometri    │        │ metrik langsung            │
+│ diawasi penuh         │──────▶│ (dilatih per skala tetap)  │
+│ semi-diawasi          │        ├──────────────────────────┤
+│ tanpa pengawasan      │──────▶│ relatif + skala terpisah   │
+└─────────────────────┘        │ (scale-agnostic, zero-shot)│
+                                └──────────────────────────┘
+```
 
-## Temuan Kunci
-- Scale-agnostic adalah kunci generalisasi zero-shot MMDE.
-- Foundation model mendorong lompatan generalisasi.
-- Difusi generatif membantu detail frekuensi-tinggi.
-- Detail batas dan intrinsik kamera tetap menantang.
+Diagram ini menunjukkan bahwa metode lama umumnya berujung pada kolom "metrik langsung", sedangkan sebagian besar model fondasi terbaru berujung pada kolom "relatif + skala terpisah" karena kolom ini yang memungkinkan generalisasi lintas kamera.
 
-## Keunggulan
-- Peta menyeluruh dan mutakhir (2025) bidang MMDE.
-- Taksonomi jelas untuk orientasi pembaca.
-- Menautkan foundation & difusi.
+### Kelompok Model Difusi Generatif
 
-## Keterbatasan
-- Sebagai survei, tak menyumbang metode baru.
-- Cakupan bergantung tanggal tinjau (revisi Agu 2025).
-- Tak semua metode terbaru bisa tercakup.
+Bagian akhir taksonomi membahas model difusi (*diffusion model*, model generatif yang belajar membalikkan proses penambahan derau bertahap pada data) yang diadaptasi untuk estimasi kedalaman. Karena model difusi awalnya dilatih untuk menghasilkan citra realistis dengan detail frekuensi tinggi, adaptasinya untuk kedalaman berpotensi memulihkan detail tepi objek yang lazim hilang pada arsitektur regresi langsung. Survei menempatkan kelompok ini sebagai arah yang masih berkembang, dengan biaya komputasi inferensi yang umumnya lebih tinggi dibanding jaringan regresi satu tahap.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Peran Kumpulan Data dan Inferensi Berbasis Potongan
 
-## Relevansi terhadap Tema Tinjauan
-Sangat relevan sebagai rujukan pengantar/sitasi payung untuk bab estimasi kedalaman (2025); memberi konteks bagi entri 175-179 dan 198-202.
+Survei menekankan bahwa kemajuan MMDE tidak dapat dipisahkan dari ketersediaan data pelatihan yang beragam. Karena resolusi tinggi dan variasi skala adegan sulit ditangani jaringan tunggal secara langsung, sebagian metode memproses citra sebagai potongan-potongan (*patch*) yang dievaluasi terpisah kemudian digabungkan (*patch-based inference*), sehingga detail resolusi tinggi tetap terjaga tanpa membengkakkan kebutuhan memori.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Estimasi Kedalaman** yang baik dibaca berdampingan:
+## Eksperimen dan Hasil
 
-- [198 - 2025 - Depth Anything 3 Geometri dari Sembarang Pandangan - Estimasi Kedalaman](./198%20-%202025%20-%20Depth%20Anything%203%20Geometri%20dari%20Sembarang%20Pandangan%20-%20Estimasi%20Kedalaman.md)
-- [200 - 2026 - AsyncMDE Kedalaman Monokular Real-Time Memori Spasial - Estimasi Kedalaman](./200%20-%202026%20-%20AsyncMDE%20Kedalaman%20Monokular%20Real-Time%20Memori%20Spasial%20-%20Estimasi%20Kedalaman.md)
-- [201 - 2026 - UniDAC Kedalaman Metrik Universal untuk Sembarang Kamera - Estimasi Kedalaman](./201%20-%202026%20-%20UniDAC%20Kedalaman%20Metrik%20Universal%20untuk%20Sembarang%20Kamera%20-%20Estimasi%20Kedalaman.md)
-- [202 - 2026 - Focusable Monocular Depth Estimation - Estimasi Kedalaman](./202%20-%202026%20-%20Focusable%20Monocular%20Depth%20Estimation%20-%20Estimasi%20Kedalaman.md)
+Survei ini bukan penelitian eksperimen baru, melainkan tinjauan sistematis atas hasil yang telah dilaporkan pada literatur MMDE. Empat kumpulan data disorot sebagai tolok ukur utama: KITTI (adegan luar ruangan dari kendaraan berkamera, umum dipakai untuk skenario mengemudi otonom), NYU-D atau NYU Depth v2 (adegan dalam ruangan berlabel kedalaman dari sensor Kinect), ApolloScape (kumpulan data luar ruangan berskala besar untuk mengemudi otonom dengan anotasi padat), dan TartanAir (kumpulan data sintetis yang mencakup kondisi lingkungan sulit seperti pencahayaan ekstrem dan cuaca beragam). Setiap kumpulan data dibandingkan dari segi modalitas sensor, jenis adegan, dan domain aplikasi yang diwakilinya — perbandingan ini menjadi dasar bagi survei untuk menjelaskan mengapa model yang unggul pada satu kumpulan data belum tentu digeneralisasi ke kumpulan data lain.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Estimasi Kedalaman** dalam peta tinjauan (17 klaster, 202 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Metrik evaluasi standar yang dirujuk mengikuti konvensi umum literatur MDE: *Absolute Relative Error* (AbsRel, rata-rata selisih absolut antara kedalaman prediksi dan kebenaran lapangan dibagi kedalaman kebenaran lapangan — makin kecil makin baik), *Root Mean Square Error* (RMSE, akar rata-rata kuadrat selisih dalam satuan meter), dan akurasi ambang delta (δ < 1,25; δ < 1,25²; δ < 1,25³ — persentase piksel yang rasio prediksi-terhadap-kebenarannya berada di bawah ambang tertentu, makin besar makin baik). Survei menyintesis pola umum dari metrik-metrik ini lintas metode, bukan melaporkan tabel angka barunya sendiri; karena itu, angka spesifik per metode pada makalah ini perlu dicek langsung ke naskah sebelum dikutip sebagai perbandingan kuantitatif.
 
-## Glosarium Istilah (tema Estimasi Kedalaman)
-Istilah penting untuk memahami makalah ini:
+## Kelebihan dan Keterbatasan
 
-- **Depth monokular** — Estimasi kedalaman dari satu citra RGB (ill-posed).
-- **Supervised** — Dilatih dengan ground-truth depth.
-- **Self-supervised** — Dilatih tanpa label depth via konsistensi stereo/video.
-- **Disparitas** — Pergeseran piksel antar-pandangan stereo.
-- **Skala metrik vs relatif** — Depth satuan nyata vs hanya urutan relatif.
-- **AbsRel** — Absolute Relative error (makin kecil makin baik).
-- **RMSE** — Root Mean Square Error peta depth.
-- **delta<1.25** — Persentase piksel dengan error di bawah ambang.
-- **Zero-shot** — Generalisasi ke dataset tak dilihat saat pelatihan.
-- **Pseudo-depth** — Depth prediksi model, pengganti sensor depth.
+Kelebihan utama makalah ini adalah cakupannya yang menyatukan dua sumbu klasifikasi (sumber sinyal pelatihan dan strategi penanganan skala) yang pada literatur asli tersebar di berbagai makalah individual tanpa kerangka pembanding yang seragam. Penekanan pada peran kumpulan data — bukan hanya arsitektur — juga relevan secara praktis karena banyak kegagalan generalisasi MMDE pada penerapan nyata bersumber dari ketidaksesuaian domain data pelatihan, bukan semata keterbatasan arsitektur.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Dari sisi rekayasa, keterbatasan struktural survei adalah tidak adanya kontribusi metode baru maupun eksperimen ulang yang independen; seluruh angka dan klaim kinerja bersumber dari makalah asli masing-masing metode, sehingga kesalahan pelaporan pada sumber aslinya berpotensi terbawa. Secara konseptual, karena makalah ini adalah prapublikasi (*preprint*) yang terus direvisi — versi terbaru tercatat Agustus 2025 — cakupan metode bergantung pada tanggal revisi yang dipakai; metode yang dipublikasikan setelah revisi terakhir tidak tercakup. Survei juga tidak melaporkan metodologi seleksi makalah secara eksplisit (misalnya kriteria basis data pencarian atau rentang tahun sistematis), sehingga cakupannya kemungkinan mengikuti penilaian penulis, bukan protokol survei sistematis formal.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kaitan dengan Bab Lain
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Makalah ini berfungsi sebagai peta payung bagi metode-metode individual pada klaster Estimasi Kedalaman dalam tinjauan ini. Sebagian metode yang termasuk dalam taksonomi survei — model fondasi dan pendekatan *scale-agnostic* — dibahas tersendiri pada [175 - 2024 - Depth Anything V2 - Estimasi Kedalaman](./175%20-%202024%20-%20Depth%20Anything%20V2%20-%20Estimasi%20Kedalaman.md) sebagai model fondasi kedalaman relatif dan metrik, [176 - 2023 - ZoeDepth - Estimasi Kedalaman](./176%20-%202023%20-%20ZoeDepth%20-%20Estimasi%20Kedalaman.md) sebagai contoh arsitektur yang menggabungkan pelatihan kedalaman relatif dan metrik, [177 - 2023 - Metric3D - Estimasi Kedalaman](./177%20-%202023%20-%20Metric3D%20-%20Estimasi%20Kedalaman.md) sebagai metode prediksi kedalaman metrik zero-shot lintas kamera, [178 - 2024 - Marigold - Estimasi Kedalaman](./178%20-%202024%20-%20Marigold%20-%20Estimasi%20Kedalaman.md) sebagai representasi kelompok model difusi generatif yang disorot survei, dan [179 - 2022 - NeWCRFs - Estimasi Kedalaman](./179%20-%202022%20-%20NeWCRFs%20-%20Estimasi%20Kedalaman.md) sebagai contoh arsitektur diawasi penuh berbasis medan acak bersyarat (*conditional random field*) yang mewakili generasi metode sebelum era model fondasi.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Bab ini sebaiknya dibaca sebelum kelima bab tersebut ketika pembaca memerlukan konteks posisi setiap metode dalam lanskap MMDE secara keseluruhan, dan dibaca kembali setelahnya untuk menilai sejauh mana klaim generalisasi tiap metode individual konsisten dengan tantangan umum yang diidentifikasi survei ini.
 
-## Kesimpulan
-Survei ini memberi kerangka mutakhir untuk memahami MMDE, menekankan scale-agnostic dan foundation model. Sebagai rujukan payung 2025, cocok dikutip untuk konteks; klaim spesifik metode individual tetap dicek ke sumber primernya.
+## Poin untuk Sitasi
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zhang2025metricdepthsurvey` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 199/202 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `zhang2025metricdepthsurvey`. Ringkasan yang aman dikutip: "Survei ini menelusuri evolusi estimasi kedalaman metrik monokular dari metode berbasis geometri hingga model pembelajaran mendalam mutakhir, dengan penekanan pada peran kumpulan data KITTI, NYU-D, ApolloScape, dan TartanAir, serta menganalisis kemajuan metodologis pada generalisasi domain, pelestarian batas objek, dan pemaduan data sintetis-nyata." Rincian taksonomi metode spesifik (daftar lengkap metode per kategori seperti AdaBins, BinsFormer, PatchFusion, UniDepth, GeoWizard) diperoleh dari ringkasan otomatis atas isi naskah, bukan pembacaan langsung tabel taksonomi asli, sehingga penempatan metode ke kategori tertentu **wajib diverifikasi ulang** ke naskah sebelum dikutip. Metrik evaluasi (AbsRel, RMSE, delta<1,25) mengikuti konvensi umum bidang dan kemungkinan besar dipakai naskah, tetapi angka hasil kuantitatif per metode tidak dikutip di bab ini dan harus diambil langsung dari naskah asli.

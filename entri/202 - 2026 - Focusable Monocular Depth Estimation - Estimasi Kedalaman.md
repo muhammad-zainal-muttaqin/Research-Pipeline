@@ -1,205 +1,100 @@
 # 202 - Focusable Monocular Depth Estimation
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 202 dari 202 |
 | Kunci BibTeX | `du2026focusabledepth` |
-| Judul | Focusable Monocular Depth Estimation |
-| Penulis | Du, Yuxin; others |
+| Judul asli | Focusable Monocular Depth Estimation |
+| Penulis | Yuxin Du, Tao Lin, Zile Zhong, Runting Li, Xiyao Chen, Jiting Liu, Chenglin Liu, Ying-Cong Chen, Yuqian Fu, Bo Zhao |
 | Tahun | 2026 |
-| Venue / Jurnal | arXiv preprint arXiv:2605.11756 |
-| Tema klaster | Estimasi Kedalaman |
-| Kata kunci | focusable, monocular depth, region prior, boundary, foreground |
+| Venue | arXiv preprint arXiv:2605.11756 (belum melalui peer review pada saat penulisan bab ini) |
+| Tema | Estimasi Kedalaman |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-estimasi-kedalaman)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2605.11756
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Focusable%20Monocular%20Depth%20Estimation
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Focusable%20Monocular%20Depth%20Estimation&sort=relevance
+- **Google Scholar:** https://scholar.google.com/scholar?q=Focusable%20Monocular%20Depth%20Estimation
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Focusable%20Monocular%20Depth%20Estimation&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2605.11756 |
+Makalah ini mendefinisikan tugas baru bernama *Focusable Depth Estimation* (FDE, estimasi kedalaman yang dapat difokuskan): diberi sebuah citra RGB tunggal dan penanda wilayah target (berupa kotak pembatas atau deskripsi teks), model harus memprediksi peta kedalaman (*depth map*, citra yang setiap pikselnya menyatakan jarak permukaan ke kamera) yang secara khusus akurat pada wilayah target itu, mempertahankan batas objek yang tajam, tanpa merusak koherensi geometri seluruh citra. Untuk menjawab tugas ini, penulis mengusulkan **FocusDepth**, kerangka yang menggabungkan model fondasi segmentasi *Segment Anything Model 3* (SAM3) dengan model fondasi kedalaman keluarga *Depth Anything* melalui modul fusi bernama *Multi-Scale Spatial-Aligned Fusion* (MSSA). Sebagai alat ukur, makalah ini juga membangun **FDE-Bench**, kumpulan data evaluasi berisi 252.900 triplet (citra, wilayah target, kedalaman) untuk pelatihan dan 72.500 triplet untuk validasi, disusun dari lima kumpulan data RGB-D yang sudah ada. Hasil utama menunjukkan FocusDepth secara konsisten mengungguli model Depth Anything yang disetel halus (*fine-tuned*) pada metrik wilayah latar-depan dan batas objek, dengan penurunan akurasi global yang minimal.
 
-## Ringkasan Eksekutif
-Focusable Monocular Depth Estimation (Du dkk., arXiv Mei 2026) memperkenalkan kerangka yang, diberi wilayah target, memprioritaskan akurasi depth latar-depan, menjaga transisi batas tajam, dan mempertahankan geometri global yang koheren.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Abstrak (Parafrase)
-Focusable Monocular Depth Estimation mengusulkan model yang dapat 'difokuskan' pada wilayah target: ketika diberi region of interest, model memprioritaskan akurasi kedalaman objek latar-depan, mempertahankan transisi batas yang tajam, sekaligus menjaga koherensi geometri scene secara global. Pendekatan ini mengatasi kelemahan depth monokular yang memperlakukan seluruh piksel seragam, sehingga detail objek penting sering kabur di batas.
+Model estimasi kedalaman monokular modern, seperti Depth Anything V2 (bab 175) dan Depth Anything 3 (bab 198), dilatih dengan tujuan meminimalkan galat rata-rata pada seluruh piksel citra. Perlakuan seragam ini masuk akal untuk pemetaan ruangan atau navigasi umum, tetapi bermasalah pada aplikasi yang berpusat pada satu objek. Dalam manipulasi robotik, lengan robot perlu mengetahui kedalaman objek yang akan digenggam dengan presisi tinggi di sekitar batas objeknya, sementara galat kecil pada latar belakang jauh tidak berpengaruh terhadap keberhasilan tugas. Karena fungsi *loss* standar memberi bobot setara ke semua piksel, model semacam itu cenderung menghasilkan kedalaman yang baik secara rata-rata tetapi kabur tepat di batas objek — daerah yang justru paling menentukan bagi genggaman atau augmented reality (AR, penambahan objek virtual yang berinteraksi dengan geometri nyata).
 
-## Latar Belakang & Konteks
-Depth monokular umum memperlakukan semua wilayah sama, sehingga objek fokus (mis. yang akan digenggam robot) bisa kehilangan ketajaman batas. Kemampuan memfokuskan estimasi pada wilayah target berguna untuk manipulasi dan AR.
+Pendekatan lain, seperti model kedalaman metrik universal UniDAC (bab 201) atau kerangka *real-time* AsyncMDE (bab 200), memperbaiki aspek skala metrik dan kecepatan inferensi, tetapi tidak menyediakan mekanisme bagi pengguna untuk menyatakan wilayah mana yang penting saat itu. Survei estimasi kedalaman metrik monokular (bab 199) mencatat pola umum ini: hampir seluruh tolok ukur kedalaman menilai kinerja secara global, tanpa metrik yang secara eksplisit menilai wilayah target. Ketiadaan pengondisian wilayah dan ketiadaan tolok ukur yang menilainya menjadi dua kekosongan yang coba diisi oleh makalah ini.
 
-## Permasalahan yang Diangkat
-- Depth seragam mengaburkan batas objek fokus.
-- Akurasi latar-depan penting untuk manipulasi/grasp.
-- Menjaga koherensi global sambil fokus lokal sulit.
-- Kebutuhan kontrol wilayah pada estimasi depth.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Memprioritaskan akurasi depth wilayah target.
-- Mempertahankan transisi batas yang tajam.
-- Menjaga geometri global tetap koheren.
-- Memberi kontrol 'fokus' pada estimasi depth.
+Gagasan inti FocusDepth adalah memisahkan dua kebutuhan yang selama ini digabung dalam satu jaringan: kemampuan memahami geometri scene secara umum (disediakan oleh model kedalaman fondasi yang sudah terlatih) dan kemampuan memahami *ke mana* pengguna ingin model itu memperhatikan wilayah tertentu (disediakan oleh model segmentasi fondasi yang sudah terlatih untuk memahami prompt/penanda). Alih-alih melatih ulang model kedalaman dari nol dengan data berlabel wilayah, FocusDepth menyuntikkan sinyal fokus dari SAM3 ke dalam jalur fitur Depth Anything melalui modul fusi yang menjaga korespondensi posisi spasial antara kedua sumber fitur.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Karya ini melanjutkan foundation depth (Depth Anything, Marigold) dengan menambah mekanisme fokus wilayah, berbeda dari estimasi seragam pada literatur sebelumnya.
+Secara mekanis, model menerima tiga masukan: citra RGB, dan prompt wilayah berupa kotak pembatas atau kalimat deskripsi objek (misalnya "cangkir merah di meja"). Cabang geometri (Depth Anything) mengekstrak fitur multi-skala dari citra seperti biasa, tanpa mengetahui prompt. Cabang prompt (SAM3) menghasilkan token yang menandai lokasi wilayah target. Modul MSSA kemudian menyelaraskan kedua kelompok fitur ini secara spasial pada tiap skala, lalu menyuntikkan informasi wilayah target ke fitur geometri hanya pada lokasi yang relevan, tanpa mengganggu representasi geometri di wilayah lain. Keluaran akhirnya tetap berupa satu peta kedalaman utuh untuk seluruh citra, tetapi bagian yang berkorespondensi dengan wilayah target diberi perhatian ekstra selama pelatihan dan inferensi.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- Depth Anything V2 - depth monokular seragam (entri 175).
-- Marigold - difusi depth berdetail (entri 178).
-- NeWCRFs - perbaikan struktur depth (entri 179).
-- Depth Anything 3 - geometri multi-view (entri 198).
+### Dua Cabang Ekstraksi Fitur
 
-## Metodologi & Arsitektur
-Diberi prior wilayah/region target, model menimbang objektif agar galat depth latar-depan diminimalkan dan batas dipertajam, sambil regularisasi menjaga konsistensi geometri global.
+FocusDepth memakai dua model fondasi yang sudah terlatih sebagai tulang punggung (*backbone*, jaringan ekstraksi fitur dasar). Cabang geometri memakai *encoder* Depth Anything (varian DA2 atau DA3) untuk menghasilkan fitur multi-skala dari citra RGB — fitur pada beberapa resolusi berbeda, dari kasar (menangkap struktur scene) sampai halus (menangkap tekstur dan batas objek). Cabang prompt memakai SAM3, model segmentasi yang mampu menghasilkan token sadar-prompt (*prompt-aware token*) dari masukan berupa kotak pembatas atau teks, yaitu representasi vektor yang menandai lokasi dan bentuk kasar wilayah yang dimaksud pengguna.
 
-Komponen / langkah metodologis utama:
+### Multi-Scale Spatial-Aligned Fusion (MSSA)
 
-- Pengondisian pada wilayah target (focus prior).
-- Objektif prioritas latar-depan.
-- Penajaman transisi batas.
-- Regularisasi koherensi geometri global.
+MSSA adalah komponen yang menggabungkan dua cabang tersebut, terdiri atas tiga tahap pada setiap skala fitur geometri:
 
-## Kontribusi Utama
-1. Konsep depth monokular yang dapat difokuskan.
-2. Prioritas akurasi latar-depan + batas tajam.
-3. Keseimbangan fokus lokal dan koherensi global.
-4. Kegunaan untuk manipulasi/AR berbasis wilayah.
+1. **Penyelarasan spasial per-skala**: token prompt dari SAM3 diproyeksikan ke ruang token geometri Depth Anything, dengan korespondensi satu-ke-satu terhadap grid patch (petak kecil citra yang menjadi unit dasar token) pada skala tersebut. Tanpa penyelarasan ini, informasi prompt bisa "bocor" ke lokasi yang salah pada peta kedalaman.
+2. **Fusi kondisional beralur (routed conditional fusion)**: fitur yang sudah selaras diproses lewat lapisan *Mixture-of-Experts* (MoE, gabungan beberapa sub-jaringan "ahli" ringan yang masing-masing menspesialisasi diri) berisi empat *expert*, sehingga koreksi yang diterapkan dapat berbeda-beda bergantung lokasi spasial pada citra.
+3. **Fusi bergerbang (gated fusion)**: hasil fusi digabungkan kembali dengan fitur geometri asli melalui gerbang sigmoid yang dapat dipelajari (*learnable sigmoid gate*, unit yang mengatur seberapa besar proporsi sinyal baru dicampur dengan sinyal lama). Mekanisme ini menjaga agar pengetahuan yang sudah dipelajari Depth Anything pada tahap pra-pelatihan tidak dirusak oleh sinyal prompt yang baru.
 
-## Rincian Eksperimen
-Dievaluasi pada benchmark depth dengan penekanan pada akurasi wilayah/latar-depan dan ketajaman batas, di samping metrik global (AbsRel/RMSE); detail pada naskah.
+Berikut diagram alur data dari dua cabang masukan hingga peta kedalaman akhir:
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+citra RGB ──► Depth Anything (encoder) ──► fitur geometri multi-skala
+                                                    │
+prompt (kotak/teks) ──► SAM3 ──► token prompt       │
+                                       │             │
+                                       ▼             ▼
+                              ┌─────────────────────────────┐
+                              │   MSSA (per skala fitur)     │
+                              │  1. penyelarasan spasial     │
+                              │  2. fusi MoE (4 expert)      │
+                              │  3. gerbang sigmoid          │
+                              └─────────────────────────────┘
+                                            │
+                                            ▼
+                                   decoder kedalaman
+                                            │
+                                            ▼
+                              peta kedalaman (fokus tajam
+                              pada wilayah target, global
+                              tetap koheren)
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Wilayah fokus | Akurasi latar-depan | Membaik vs estimasi seragam (lihat naskah) |
-| Batas objek | Ketajaman | Transisi lebih tajam |
-| Global | AbsRel/RMSE | Koherensi geometri terjaga |
+### Strategi Pelatihan Dua Tahap
 
-## Temuan Kunci
-- Memfokuskan estimasi menaikkan akurasi wilayah target.
-- Batas objek dapat dipertajam tanpa merusak global.
-- Kontrol wilayah berguna untuk aplikasi manipulasi/AR.
+Pelatihan dilakukan dalam dua tahap. Pada tahap pertama, seluruh modul pralatih (Depth Anything dan SAM3) dibekukan (*frozen*, bobotnya tidak diperbarui), dan hanya modul penyelarasan MSSA yang dioptimalkan, sehingga proses belajar penyelarasan spasial tidak terganggu oleh perubahan representasi dasar. Pada tahap kedua, *encoder* tetap dibekukan, sementara MSSA, *decoder* kedalaman, dan cabang segmentasi bantu disetel halus bersama. Pemisahan dua tahap ini mencegah sinyal fokus yang masih kasar merusak fitur geometri yang sudah matang sejak awal pelatihan.
 
-## Keunggulan
-- Depth wilayah-fokus dengan batas tajam.
-- Koherensi global tetap terjaga.
-- Relevan untuk grasp/manipulasi.
+### Kerugian (Loss) Sadar-Wilayah
 
-## Keterbatasan
-- Karya 2026 sangat baru; validasi independen minim.
-- Perlu definisi wilayah target saat inferensi.
-- Angka perlu dikonfirmasi via naskah.
+Fungsi *loss* pelatihan dipecah menjadi tiga komponen wilayah: galat pada wilayah latar-depan (bagian dalam target), galat pada pita batas objek (didefinisikan sebagai pita morfologis selebar 10 piksel di sekitar tepi target), dan galat global pada seluruh citra. Ketiganya diberi bobot terpisah sehingga model didorong memprioritaskan latar-depan dan batas tanpa mengabaikan konsistensi geometri di luar wilayah target.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-Relevan untuk depth pada manipulasi robotik RGB-D (fokus objek yang akan digenggam); melengkapi bab kedalaman (175-179, 198-202) dengan sudut fokus-wilayah (2026).
+Evaluasi utama memakai FDE-Bench, yang dibangun dari lima kumpulan data RGB-D: NYU v2 (adegan dalam ruangan), RLBench dan RoboTwin (simulasi tugas robotik/*embodied*), YCB-Video (objek meja), dan TUM RGB-D (sekuens SLAM — *Simultaneous Localization and Mapping*, pemetaan sekaligus penentuan posisi kamera). Metrik yang dilaporkan adalah AbsRel (*Absolute Relative error*, rata-rata selisih absolut relatif terhadap kedalaman sebenarnya — makin kecil makin baik) dan δ₁ (persentase piksel dengan galat di bawah ambang tertentu — makin besar makin baik), masing-masing dihitung terpisah untuk tiga wilayah: latar-depan, batas, dan global.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Estimasi Kedalaman** yang baik dibaca berdampingan:
+Pada pengujian dengan prompt kotak di RLBench, FocusDepth berbasis DA3 dilaporkan menurunkan AbsRel batas objek dari 0,073 (baseline DA3 yang disetel halus tanpa fokus wilayah) menjadi 0,049, AbsRel latar-depan dari 0,095 menjadi 0,056, dan AbsRel global dari 0,042 menjadi 0,030. Interpretasinya: perbaikan terbesar terjadi tepat pada dua wilayah yang menjadi sasaran utama makalah ini (batas dan latar-depan), sementara metrik global justru ikut sedikit membaik, bukan memburuk — menunjukkan bahwa penyuntikan sinyal fokus tidak mengorbankan pemahaman geometri keseluruhan. Model juga diuji dengan prompt berbasis teks; ketika teks yang diberikan tidak akurat atau dikosongkan, kinerja menurun dibandingkan prompt yang benar, tetapi tetap melampaui baseline tanpa fokus wilayah sama sekali, yang oleh penulis disebut sebagai kegunaan sisa (*residual usefulness*) dari arsitektur MSSA meski tanpa panduan prompt yang tepat.
 
-- [198 - 2025 - Depth Anything 3 Geometri dari Sembarang Pandangan - Estimasi Kedalaman](./198%20-%202025%20-%20Depth%20Anything%203%20Geometri%20dari%20Sembarang%20Pandangan%20-%20Estimasi%20Kedalaman.md)
-- [199 - 2025 - Survei Estimasi Kedalaman Metrik Monokular - Estimasi Kedalaman](./199%20-%202025%20-%20Survei%20Estimasi%20Kedalaman%20Metrik%20Monokular%20-%20Estimasi%20Kedalaman.md)
-- [200 - 2026 - AsyncMDE Kedalaman Monokular Real-Time Memori Spasial - Estimasi Kedalaman](./200%20-%202026%20-%20AsyncMDE%20Kedalaman%20Monokular%20Real-Time%20Memori%20Spasial%20-%20Estimasi%20Kedalaman.md)
-- [201 - 2026 - UniDAC Kedalaman Metrik Universal untuk Sembarang Kamera - Estimasi Kedalaman](./201%20-%202026%20-%20UniDAC%20Kedalaman%20Metrik%20Universal%20untuk%20Sembarang%20Kamera%20-%20Estimasi%20Kedalaman.md)
+Uji ablasi (pengujian dengan mencabut satu komponen untuk mengukur kontribusinya) menunjukkan penyelarasan spasial sebagai komponen paling kritis: mengacak urutan token prompt menaikkan AbsRel sekitar 13,8%. Menghilangkan fusi khusus per-skala menurunkan kinerja sekitar 10%, demikian pula mengganti fusi MoE beralur dengan satu lapisan *multilayer perceptron* (MLP) tunggal. Menghilangkan gerbang sigmoid menurunkan kinerja 2–5,4%. Melatih hanya dengan *loss* global tanpa pemecahan wilayah mengorbankan akurasi latar-depan sebesar 10,7–12%. Angka-angka ablasi ini konsisten menunjukkan bahwa setiap komponen MSSA memberi kontribusi terukur, dengan penyelarasan spasial sebagai fondasi yang paling menentukan.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Estimasi Kedalaman** dalam peta tinjauan (17 klaster, 202 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kelebihan dan Keterbatasan
 
-## Glosarium Istilah (tema Estimasi Kedalaman)
-Istilah penting untuk memahami makalah ini:
+Kelebihan utama makalah ini terletak pada pemanfaatan dua model fondasi yang sudah matang (Depth Anything untuk geometri, SAM3 untuk pemahaman wilayah) tanpa melatih ulang keduanya dari nol, sehingga biaya pelatihan lebih rendah dibandingkan membangun model kedalaman sadar-wilayah dari awal. Pembangunan FDE-Bench juga mengisi kekosongan tolok ukur yang secara eksplisit menilai wilayah target, bukan hanya rata-rata seluruh citra, sehingga menyediakan alat ukur yang lebih relevan untuk aplikasi manipulasi robotik dan AR.
 
-- **Depth monokular** — Estimasi kedalaman dari satu citra RGB (ill-posed).
-- **Supervised** — Dilatih dengan ground-truth depth.
-- **Self-supervised** — Dilatih tanpa label depth via konsistensi stereo/video.
-- **Disparitas** — Pergeseran piksel antar-pandangan stereo.
-- **Skala metrik vs relatif** — Depth satuan nyata vs hanya urutan relatif.
-- **AbsRel** — Absolute Relative error (makin kecil makin baik).
-- **RMSE** — Root Mean Square Error peta depth.
-- **delta<1.25** — Persentase piksel dengan error di bawah ambang.
-- **Zero-shot** — Generalisasi ke dataset tak dilihat saat pelatihan.
-- **Pseudo-depth** — Depth prediksi model, pengganti sensor depth.
+Dari sisi rekayasa, kerangka ini bergantung pada kualitas dua model fondasi eksternal; kesalahan SAM3 dalam memahami prompt atau Depth Anything dalam memahami geometri scene berpotensi merambat ke hasil akhir. Secara konseptual, definisi pita batas selebar 10 piksel adalah pilihan desain evaluasi, bukan properti yang melekat pada tugasnya, sehingga hasil kuantitatif metrik batas sensitif terhadap definisi ini. Penulis sendiri mengakui bahwa pelatihan gabungan berskala lebih besar dan integrasi dengan tugas hilir (misalnya keberhasilan genggaman robot nyata) belum dieksplorasi — evaluasi makalah ini berhenti pada kualitas peta kedalaman, bukan hasil tugas manipulasi sesungguhnya.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kaitan dengan Bab Lain
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+FocusDepth dibangun langsung di atas fondasi kedalaman monokular yang dibahas pada bab 175 ([Depth Anything V2](./175%20-%202024%20-%20Depth%20Anything%20V2%20-%20Estimasi%20Kedalaman.md)) dan bab 198 (Depth Anything 3), memakai keduanya sebagai *encoder* geometri tanpa pelatihan ulang penuh. Ia berbeda dari ZoeDepth (bab 176, [ZoeDepth](./176%20-%202023%20-%20ZoeDepth%20-%20Estimasi%20Kedalaman.md)) dan Metric3D (bab 177, [Metric3D](./177%20-%202023%20-%20Metric3D%20-%20Estimasi%20Kedalaman.md)) yang berfokus pada penskalaan metrik seragam, karena FocusDepth tidak menambahkan kemampuan metrik melainkan kemampuan pengondisian wilayah pada kedalaman relatif. Kesenjangan yang dicatat pada survei estimasi kedalaman metrik monokular (bab 199, [Survei Estimasi Kedalaman Metrik Monokular](./199%20-%202025%20-%20Survei%20Estimasi%20Kedalaman%20Metrik%20Monokular%20-%20Estimasi%20Kedalaman.md)) — ketiadaan tolok ukur yang menilai wilayah target secara eksplisit — langsung dijawab oleh FDE-Bench. Bab ini juga melengkapi dua bab sezaman: AsyncMDE (bab 200, [AsyncMDE Kedalaman Monokular Real-Time Memori Spasial](./200%20-%202026%20-%20AsyncMDE%20Kedalaman%20Monokular%20Real-Time%20Memori%20Spasial%20-%20Estimasi%20Kedalaman.md)) yang mengejar kecepatan inferensi, serta UniDAC (bab 201, [UniDAC Kedalaman Metrik Universal untuk Sembarang Kamera](./201%20-%202026%20-%20UniDAC%20Kedalaman%20Metrik%20Universal%20untuk%20Sembarang%20Kamera%20-%20Estimasi%20Kedalaman.md)) yang mengejar generalisasi lintas kamera; ketiganya menyerang dimensi berbeda dari masalah kedalaman monokular praktis tanpa saling tumpang tindih. Untuk klaster manipulasi robotik RGB-D, kemampuan memfokuskan kedalaman pada objek target relevan langsung terhadap perencanaan genggaman yang membutuhkan batas objek presisi.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Focusable Monocular Depth Estimation menambahkan kontrol fokus wilayah pada depth monokular, menajamkan batas objek target tanpa mengorbankan geometri global. Sebagai karya 2026, verifikasi metrik/protokol via arXiv sebelum sitasi.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `du2026focusabledepth` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 202/202 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `du2026focusabledepth`. Ringkasan aman untuk dikutip: FocusDepth memperkenalkan tugas *Focusable Depth Estimation*, menggabungkan SAM3 dan Depth Anything melalui modul fusi MSSA untuk menghasilkan kedalaman monokular yang memprioritaskan akurasi latar-depan dan ketajaman batas pada wilayah target sesuai prompt pengguna, dievaluasi pada tolok ukur baru FDE-Bench (252,9 ribu triplet latih, 72,5 ribu triplet validasi dari lima kumpulan data). Karena makalah ini adalah preprint arXiv terbitan Mei 2026 yang belum melalui peer review, seluruh angka kuantitatif berikut wajib diverifikasi ulang terhadap tabel resmi pada naskah sebelum dikutip formal: angka AbsRel 0,073/0,049 (batas), 0,095/0,056 (latar-depan), dan 0,042/0,030 (global) pada pengujian RLBench prompt-kotak; persentase penurunan pada uji ablasi (13,8%; 10%; 2–5,4%; 10,7–12%); serta rincian jumlah kategori (972) dan komposisi lima kumpulan data penyusun FDE-Bench. Status publikasi (apakah diterima di venue tertentu setelah preprint) juga perlu dicek ulang karena tanggal penulisan bab ini mendekati tanggal terbit makalah.
