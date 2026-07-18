@@ -1,204 +1,110 @@
 # 169 - CAVER: Cross-Modal View-Mixed Transformer for Bi-Modal Salient Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 169 dari 191 |
 | Kunci BibTeX | `pang2023caver` |
-| Judul | CAVER: Cross-Modal View-Mixed Transformer for Bi-Modal Salient Object Detection |
-| Penulis | Pang, Youwei; Zhao, Xiaoqi; Zhang, Lihe; Lu, Huchuan |
+| Judul asli | CAVER: Cross-Modal View-Mixed Transformer for Bi-Modal Salient Object Detection |
+| Penulis | Youwei Pang, Xiaoqi Zhao, Lihe Zhang, Huchuan Lu |
 | Tahun | 2023 |
-| Venue / Jurnal | IEEE Transactions on Image Processing |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, RGB-T, transformer, view-mixed attention |
+| Venue | IEEE Transactions on Image Processing (TIP), vol. 32, hlm. 892–904 |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2112.02363
+- **Kode sumber:** https://github.com/lartpang/CAVER
+- **Google Scholar:** https://scholar.google.com/scholar?q=CAVER%3A%20Cross-Modal%20View-Mixed%20Transformer%20for%20Bi-Modal%20Salient%20Object%20Detection
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=CAVER%3A%20Cross-Modal%20View-Mixed%20Transformer%20for%20Bi-Modal%20Salient%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=CAVER%3A%20Cross-Modal%20View-Mixed%20Transformer%20for%20Bi-Modal%20Salient%20Object%20Detection&sort=relevance
+Makalah ini mengusulkan CAVER (*Cross-Modal View-Mixed Transformer*), kerangka kerja untuk *salient object detection* (SOD) dwi-modal — tugas menandai piksel objek paling menonjol pada citra, dibantu satu modalitas kedua selain warna RGB (baik peta kedalaman/*depth* maupun citra termal). Alih-alih menyusun modul fusi konvolusi terpisah untuk RGB-D dan RGB-T seperti kebanyakan metode sebelumnya, CAVER memakai satu jalur dekoder berbasis *transformer* (arsitektur berbasis mekanisme *self-attention*, yang menghitung bobot relevansi antar seluruh pasangan elemen fitur, bukan hanya tetangga lokal) yang sama untuk kedua kombinasi modalitas.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Gagasan intinya adalah memandang penggabungan fitur multiskala dan multimodal sebagai proses propagasi konteks berurutan (*sequence-to-sequence*), dijalankan lewat mekanisme *view-mixed attention* (VMA) yang menggabungkan atensi spasial dan atensi kanal. Pada evaluasi rata-rata tujuh dataset benchmark RGB-D, varian CAVER dengan *backbone* ResNet-101 melaporkan S-measure 0,912, hasil yang menurut makalah lebih tinggi daripada TriTransNet — pembanding transformer sezaman — sekaligus menuntut biaya komputasi jauh lebih rendah, sekitar 44,4 GFLOPs berbanding 680 GFLOPs pada varian ResNet-50.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 32 |
-| Halaman | 892--904 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-CAVER adalah Transformer lintas-modal untuk salient object detection dwi-modal (RGB-D dan RGB-T) yang memadukan pandangan antar-modalitas melalui view-mixed attention efisien, menyatukan penanganan depth dan thermal dalam satu kerangka.
+Metode RGB-D SOD berbasis jaringan konvolusi (CNN) yang mendominasi periode 2019–2021 — termasuk pendekatan fusi bercabang seperti pada bab 168 (SPNet) — mengandalkan operasi konvolusi untuk menyatukan fitur RGB dan *depth*. Konvolusi bersifat lokal: setiap unit keluaran hanya melihat wilayah kecil di sekitarnya (ditentukan ukuran kernel), sehingga jaringan perlu ditumpuk banyak lapis agar memperoleh konteks yang lebih luas. Keterbatasan ini menyulitkan model menangkap ketergantungan jarak jauh antar wilayah citra yang saling terpisah tetapi relevan bagi keputusan salien-tidaknya suatu objek.
 
-## Abstrak (Parafrase)
-Penulis mengusung cross-modal view-mixed transformer yang memperlakukan fusi RGB-D dan RGB-T secara seragam. Modul attention memandang fitur lintas-modal sebagai token campuran dan menggunakan operasi patch-wise yang efisien untuk pertukaran informasi, ditambah dekoder progresif. CAVER mencapai kinerja SOTA pada benchmark RGB-D maupun RGB-T SOD.
+Masalah kedua bersifat arsitektural: metode RGB-D dan metode RGB-T (menggunakan citra termal alih-alih *depth*) umumnya dirancang sebagai dua kerangka kerja terpisah, masing-masing dengan modul fusi khusus yang disesuaikan tangan untuk karakteristik modalitas keduanya. Padahal secara struktural kedua tugas serupa: keduanya menggabungkan RGB dengan satu kanal informasi tambahan bernilai tunggal per piksel. Kebutuhan merancang ulang modul fusi untuk setiap kombinasi modalitas membuat metode sulit digeneralisasi dan mahal dari sisi rekayasa.
 
-## Latar Belakang & Konteks
-Metode SOD dwi-modal sering dirancang khusus RGB-D atau RGB-T; kerangka terpadu berbasis Transformer masih jarang dan mahal.
+Pada saat yang sama, model *transformer* penuh (tanpa komponen konvolusi) yang dipakai pada tugas visi lain memiliki kompleksitas komputasi yang tumbuh kuadratik terhadap jumlah token — pada citra beresolusi tinggi dengan token per piksel, biaya atensi menjadi sangat mahal. Metode transformer awal untuk SOD, seperti TriTransNet, mengatasi hal ini dengan menumpuk banyak lapis atensi penuh, sehingga biaya GFLOPs dan jumlah parameternya membengkak dibandingkan metode berbasis CNN.
 
-## Permasalahan yang Diangkat
-- Metode terpisah untuk RGB-D vs RGB-T.
-- Attention lintas-modal mahal.
-- Fusi multiskala kurang efisien.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Menyatukan SOD RGB-D dan RGB-T.
-- Merancang attention lintas-modal efisien.
-- Mencapai SOTA dwi-modal.
+CAVER memperlakukan integrasi fitur multiskala dan multimodal sebagai satu rangkaian pembaruan konteks berurutan yang dijalankan oleh unit-unit atensi yang sama, bukan modul fusi khusus per modalitas. Fitur RGB dan fitur modalitas kedua (*depth* atau termal) diekstraksi terpisah oleh *backbone* konvolusi (ResNet), kemudian keduanya dipertemukan pada dekoder melalui lapisan-lapisan atensi yang menukar informasi antar-modalitas dan antar-skala secara eksplisit.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Berpijak pada Transformer SOD (VST, SwinNet) dan fusi RGB-T; menekankan keseragaman penanganan modalitas kedua.
+Komponen penukar informasi itu adalah *view-mixed attention* (VMA): satu modul atensi yang menghitung dua jenis hubungan sekaligus dan menjumlahkannya dengan bobot yang dipelajari. Cabang pertama, atensi spasial, menghitung relevansi antar-lokasi pada peta fitur — mekanisme *self-attention* baku yang mencari lokasi mana yang saling memengaruhi. Cabang kedua, atensi kanal, memperlakukan setiap kanal fitur sebagai satu elemen urutan dan menghitung relevansi antar-kanal, menangkap hubungan yang tidak bergantung posisi spasial. Dua bobot terlatih, disebut α dan β pada makalah, menggabungkan keluaran kedua cabang secara adaptif alih-alih menjumlahkannya secara tetap.
 
-Karya/konsep pembanding yang relevan:
+Untuk menekan biaya komputasi atensi penuh pada peta fitur beresolusi tinggi, makalah menambahkan *patch-wise token re-embedding* (PTRE): sekumpulan token per piksel diagregasi menjadi token per tambalan (*patch*) berukuran p×p sebelum masuk ke lapisan atensi, menurunkan jumlah token — dan karenanya biaya atensi kuadratik — sebesar faktor p². Dengan p = 8, misalnya, peta fitur 64×64 (4.096 token per piksel) menyusut menjadi 8×8 (64 token per tambalan) sebelum dihitung atensinya, lalu dikembalikan ke resolusi asal setelah pembaruan konteks selesai.
 
-- VST - visual saliency transformer.
-- SwinNet - Swin untuk RGB-D/RGB-T SOD.
-- BBS-Net - fusi bercabang.
-- Transformer lintas-modal umum.
+## Cara Kerja Langkah demi Langkah
 
-## Metodologi & Arsitektur
-Encoder ganda mengekstrak fitur RGB dan modal kedua; view-mixed attention module menukar informasi lintas-modal secara efisien; dekoder progresif menyatukan skala untuk peta saliency.
+### Encoder Dua Aliran
 
-Komponen / langkah metodologis utama:
+CAVER memakai dua *backbone* ResNet (varian ResNet-50 atau ResNet-101, keduanya dilatih awal pada ImageNet-1K) yang berjalan paralel: satu menerima citra RGB tiga kanal, satu lagi menerima citra modalitas kedua (peta *depth* atau citra termal, direplikasi menjadi tiga kanal bila perlu). Setiap *backbone* menghasilkan fitur pada empat tingkat resolusi berbeda (dari resolusi tinggi/detail halus ke resolusi rendah/konteks luas), sehingga tersedia pasangan fitur RGB dan modalitas kedua pada tiap skala.
 
-- Encoder dua-aliran (RGB + depth/thermal).
-- View-mixed attention efisien.
-- Fusi lintas-modal patch-wise.
-- Dekoder progresif multiskala.
+### Unit Interaksi Lintas-Modal (CMIU)
 
-## Kontribusi Utama
-1. Kerangka Transformer terpadu RGB-D/RGB-T SOD.
-2. View-mixed attention efisien.
-3. SOTA di kedua tugas.
-4. Desain modular lintas-modal.
+Empat skala fitur tersebut diproses oleh empat *Cross-Modal Interaction Unit* (CMIU) yang disusun berjenjang dari skala kasar ke skala halus, membentuk jalur propagasi informasi bernama *Transformer Information Propagation Path* (TIPP). Tiap CMIU terdiri atas tiga tahap atensi berurutan:
 
-## Rincian Eksperimen
-Benchmark RGB-D SOD dan RGB-T SOD (mis. VT821/VT1000/VT5000 untuk RGB-T) dengan S/F/E-measure dan MAE.
+1. **Atensi mandiri intra-modal (IMSA)** — VMA diterapkan pada fitur RGB terhadap dirinya sendiri, dan pada fitur modalitas kedua terhadap dirinya sendiri, memperkuat konteks internal masing-masing modalitas sebelum digabung.
+2. **Atensi silang antar-modal (IMCA)** — VMA diterapkan lintas-modal: fitur RGB dipakai sebagai kueri (*query*) terhadap fitur modalitas kedua sebagai kunci-nilai (*key-value*), dan sebaliknya, sehingga tiap modalitas dapat "bertanya" ke modalitas lain bagian mana yang relevan.
+3. **Atensi mandiri lintas-skala (CSSA)** — fitur hasil tahap sebelumnya pada skala saat ini digabung dengan fitur terpropagasi dari skala yang lebih kasar (keluaran CMIU sebelumnya), sehingga informasi konteks global dari resolusi rendah ikut menyempurnakan detail pada resolusi lebih tinggi.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Keluaran tiap CMIU diteruskan ke jaringan umpan-maju konvolusional (*Conv-FFN*), yaitu blok umpan-maju yang biasanya berupa dua lapisan linear penuh pada transformer standar, di sini digantikan konvolusi kecil agar tetap menangkap detail tekstur lokal yang cenderung hilang pada atensi murni. Pada makalah, varian dengan Conv-FFN dilaporkan mengungguli varian umpan-maju linear biasa.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| RGB-D SOD | S/E-measure | SOTA/kompetitif |
-| RGB-T SOD | F-measure/MAE | SOTA saat rilis |
-| Efisiensi | params/FLOPs | lebih ringan dari Transformer fusi naif |
+Diagram berikut merangkum alur satu CMIU pada satu tingkat skala:
 
-## Temuan Kunci
-- Satu kerangka dapat menangani depth dan thermal.
-- Attention efisien menjaga biaya rendah.
-- Fusi lintas-modal terpadu efektif.
+```
+fitur RGB skala-i        fitur modal-2 skala-i     fitur dari CMIU
+      │                          │                  skala lebih kasar
+      ▼                          ▼                          │
+  ┌───────┐                 ┌───────┐                        │
+  │ IMSA  │ (VMA-mandiri)   │ IMSA  │ (VMA-mandiri)           │
+  └───┬───┘                 └───┬───┘                        │
+      └───────────┬─────────────┘                            │
+                   ▼                                          │
+              ┌─────────┐                                     │
+              │  IMCA   │  atensi silang RGB <-> modal-2       │
+              └────┬────┘                                     │
+                   ▼                                          │
+              ┌─────────┐                                     │
+              │  CSSA   │◄────────────────────────────────────┘
+              └────┬────┘  gabung dgn konteks skala kasar
+                   ▼
+              ┌─────────┐
+              │Conv-FFN │  penguat detail lokal
+              └────┬────┘
+                   ▼
+         fitur tergabung skala-i
+```
 
-## Keunggulan
-- Terpadu dan efisien.
-- SOTA dwi-modal.
-- Modular.
+### Dekoder dan Prediksi Akhir
 
-## Keterbatasan
-- Tetap butuh dua encoder.
-- Bergantung kualitas modal kedua.
-- Transformer relatif berat untuk edge.
+Keluaran CMIU pada skala paling halus, setelah menerima kontribusi seluruh skala di atasnya melalui CSSA, diteruskan ke kepala prediksi yang menghasilkan peta saliensi satu kanal berukuran sama dengan citra masukan. Pelatihan memakai fungsi *loss* gabungan piksel dan struktur, mengikuti praktik umum pada metode SOD terbaru, agar batas objek yang diprediksi selaras dengan batas objek pada label kebenaran.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-Menyatukan fusi depth dan thermal, relevan untuk persepsi multimodal (RGB-D/RGB-T) pada kondisi pencahayaan menantang.
+Evaluasi RGB-D SOD memakai tujuh dataset benchmark standar bidang ini: NJUD, NLPR, SIP, STEREO1000, SSD, LFSD, dan DUT-RGBD, masing-masing berisi pasangan citra RGB dan peta *depth* dengan label saliensi piksel demi piksel. Evaluasi RGB-T SOD memakai tiga dataset citra termal: VT821, VT1000, dan VT5000-TE. Empat metrik dipakai secara konsisten: S-measure (kemiripan struktural antara peta prediksi dan kebenaran, memperhitungkan wilayah maupun objek), F-measure berbobot (harmonisasi presisi dan *recall* dengan pembobotan spasial), E-measure (kesesuaian pada tingkat piksel sekaligus citra secara keseluruhan), dan MAE (*mean absolute error*, selisih rata-rata absolut antara nilai piksel prediksi dan kebenaran, dengan nilai lebih rendah lebih baik).
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+Pada rata-rata tujuh dataset RGB-D, varian CAVER dengan *backbone* ResNet-101 melaporkan S-measure 0,912, F-measure berbobot 0,886, E-measure 0,947, dan MAE 0,035. Makalah menyatakan hasil ini mengungguli TriTransNet, pembanding berbasis transformer yang dirilis pada periode berdekatan, dengan selisih S-measure sekitar satu poin persentase. Pada dataset RGB-T VT821, varian ResNet-101 melaporkan S-measure 0,898, F-measure berbobot 0,845, dan MAE 0,027 — menunjukkan kerangka yang sama, tanpa modifikasi arsitektur, tetap kompetitif pada modalitas termal.
 
-- [166 - 2020 - CoNet - RGB-D SOD](./166%20-%202020%20-%20CoNet%20-%20RGB-D%20SOD.md)
-- [167 - 2021 - DCF - RGB-D SOD](./167%20-%202021%20-%20DCF%20-%20RGB-D%20SOD.md)
-- [168 - 2021 - SPNet - RGB-D SOD](./168%20-%202021%20-%20SPNet%20-%20RGB-D%20SOD.md)
-- [170 - 2022 - MobileSal - RGB-D SOD](./170%20-%202022%20-%20MobileSal%20-%20RGB-D%20SOD.md)
+Dari sisi efisiensi, varian ResNet-50 (Ours50) dilaporkan membutuhkan 44,4 GFLOPs dan 55,8 juta parameter dengan kecepatan inferensi 35,2 *frame* per detik (FPS), dibandingkan TriTransNet yang membutuhkan 680 GFLOPs dan 139,5 juta parameter pada 10,2 FPS. Selisih ini menunjukkan PTRE dan desain atensi ganda VMA berhasil menekan biaya komputasi tanpa kehilangan akurasi terhadap pembanding transformer penuh — argumen inti makalah bahwa reduksi token per tambalan lebih efektif daripada menumpuk lapisan atensi murni.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Studi ablasi pada makalah menunjukkan setiap komponen berkontribusi: menonaktifkan IMCA menurunkan S-measure dari 0,909 menjadi 0,905 pada pengujian internal, mengindikasikan atensi silang antar-modal berperan signifikan dalam fusi; kombinasi IMSA dan CSSA bersama-sama diperlukan untuk mencapai S-measure puncak 0,909, lebih tinggi daripada memakai salah satunya; serta ukuran tambalan 8×8 dilaporkan sebagai titik seimbang terbaik antara efisiensi dan akurasi dibandingkan ukuran lain yang diuji.
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
+## Kelebihan dan Keterbatasan
 
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
+Kelebihan utama CAVER adalah kesatuan arsitektur: satu kerangka dekoder berbasis atensi menangani RGB-D maupun RGB-T tanpa modul fusi khusus per modalitas, mengurangi kebutuhan rekayasa ulang saat berpindah tugas. Desain VMA yang memisahkan atensi spasial dan kanal, dipadu PTRE, memberi efisiensi komputasi yang jauh lebih baik daripada transformer penuh sezaman sambil tetap unggul pada metrik akurasi standar bidang ini.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Dari sisi konseptual, kerangka ini tetap bergantung pada *backbone* CNN (ResNet) untuk ekstraksi fitur awal — bukan transformer murni dari awal hingga akhir — sehingga keterbatasan lokalitas konvolusi pada tahap awal ekstraksi fitur belum sepenuhnya teratasi, hanya dipindahkan tanggung jawabnya ke tahap fusi pada dekoder. Makalah sendiri melaporkan tiga kategori kegagalan: batas objek yang ambigu pada citra dengan tekstur kompleks, definisi saliensi yang tidak konsisten antar-dataset (objek yang dianggap salien pada satu dataset belum tentu demikian pada dataset lain), dan label kebenaran yang tidak selaras atau tidak lengkap pada sebagian data uji. Dari sisi rekayasa, dua aliran *backbone* paralel tetap menggandakan biaya ekstraksi fitur awal dibandingkan pendekatan satu aliran, dan kualitas keluaran tetap bergantung pada kualitas modalitas kedua — peta *depth* yang berderau atau citra termal bernoise berpotensi menurunkan hasil fusi, sekalipun mekanisme atensi memberi model peluang lebih besar untuk menekan kontribusi wilayah tidak andal dibandingkan fusi konvolusi tetap.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kaitan dengan Bab Lain
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+CAVER berada pada klaster RGB-D SOD bersama bab 166 (CoNet), bab 167 (DCF), bab 168 (SPNet), dan bab 170 (MobileSal); keempatnya mengatasi masalah fusi RGB-D dengan pendekatan berbeda — CoNet lewat pembelajaran kolaboratif, DCF lewat kalibrasi *depth*, SPNet lewat pemisahan cabang spesifik-modal (lihat bab 168) — sementara CAVER menjawabnya dengan mekanisme atensi lintas-modal yang eksplisit menggantikan konvolusi fusi. Perbandingan langsung dengan bab 168 relevan karena keduanya berangkat dari kritik yang sama terhadap fusi konvolusi tunggal, tetapi menempuh jalan berlawanan: SPNet menambah cabang arsitektural, CAVER mengganti mekanisme fusinya.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Dari sisi silsilah teknik, penggunaan *self-attention* dan struktur *encoder-decoder* berbasis atensi pada CAVER mewarisi prinsip yang sama dengan bab 165 (Co-DETR) dan keluarga *Vision Transformer* pada klaster fondasi transformer: kedua jalur menggantikan operasi lokal konvolusi dengan penghitungan relevansi global antar-token, hanya diterapkan pada tugas berbeda (deteksi objek kelas umum pada Co-DETR, segmentasi saliensi dwi-modal pada CAVER). Prinsip *patch-wise token re-embedding* pada CAVER juga sejalan dengan strategi reduksi token pada *backbone* transformer hierarkis seperti PVT, yang membagi citra menjadi tambalan bertahap untuk menekan biaya atensi pada resolusi tinggi.
 
-## Kesimpulan
-CAVER menghadirkan Transformer lintas-modal terpadu yang efisien untuk SOD dwi-modal, menjembatani RGB-D dan RGB-T.
+## Poin untuk Sitasi
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `pang2023caver` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 169/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `pang2023caver`. Ringkasan yang aman dikutip: "CAVER mengusulkan *view-mixed attention* yang menggabungkan atensi spasial dan kanal untuk menyatukan penanganan RGB-D dan RGB-T SOD dalam satu kerangka dekoder berbasis transformer, melaporkan S-measure rata-rata 0,912 pada tujuh dataset RGB-D dengan biaya komputasi jauh lebih rendah daripada TriTransNet." Angka S-measure 0,912, F-measure berbobot 0,886, E-measure 0,947, MAE 0,035 (rata-rata RGB-D), hasil VT821 (S-measure 0,898), serta angka efisiensi 44,4 GFLOPs/55,8 juta parameter/35,2 FPS diambil dari pemrosesan naskah arXiv versi HTML (ar5iv) dan perlu dicocokkan ulang dengan tabel resmi pada versi IEEE TIP (vol. 32, hlm. 892–904, DOI 10.1109/TIP.2023.3234702) sebelum dikutip dalam karya formal. Rincian ablasi (S-measure 0,905 tanpa IMCA, 0,909 dengan IMSA+CSSA) juga berasal dari pemrosesan sumber sekunder dan memerlukan verifikasi ke tabel ablasi asli.

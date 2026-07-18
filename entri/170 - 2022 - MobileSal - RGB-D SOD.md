@@ -1,207 +1,92 @@
 # 170 - MobileSal: Extremely Efficient RGB-D Salient Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 170 dari 191 |
 | Kunci BibTeX | `wu2022mobilesal` |
-| Judul | MobileSal: Extremely Efficient RGB-D Salient Object Detection |
-| Penulis | Wu, Yu-Huan; Liu, Yun; Xu, Jun; Bian, Jia-Wang; Gu, Yu-Chao; Cheng, Ming-Ming |
+| Judul asli | MobileSal: Extremely Efficient RGB-D Salient Object Detection |
+| Penulis | Yu-Huan Wu, Yun Liu, Jun Xu, Jia-Wang Bian, Yu-Chao Gu, Ming-Ming Cheng |
 | Tahun | 2022 |
-| Venue / Jurnal | IEEE Transactions on Pattern Analysis and Machine Intelligence |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | efficient RGB-D SOD, mobile, implicit depth, real-time |
+| Venue | IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI) |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2012.13095
 - **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=MobileSal%3A%20Extremely%20Efficient%20RGB-D%20Salient%20Object%20Detection
 - **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=MobileSal%3A%20Extremely%20Efficient%20RGB-D%20Salient%20Object%20Detection&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 44 |
-| Nomor | 12 |
-| Halaman | 10261--10269 |
-| arXiv | 2012.13095 |
+Makalah ini mengajukan MobileSal, jaringan *RGB-D Salient Object Detection* (SOD, deteksi objek paling menonjol pada citra) yang dirancang untuk berjalan pada perangkat dengan sumber daya komputasi terbatas. Berbeda dari mayoritas metode RGB-D SOD sebelumnya yang memakai *backbone* (jaringan ekstraksi fitur utama) berat seperti VGG atau ResNet dengan puluhan juta parameter, MobileSal memakai jaringan mobile ringan sebagai *backbone* dan menambahkan dua komponen baru: *Implicit Depth Restoration* (IDR, pemulihan kedalaman implisit) dan *Compact Pyramid Refinement* (CPR, penyempurnaan piramida ringkas). IDR memanfaatkan citra kedalaman (*depth map* — citra yang setiap pikselnya menyatakan jarak permukaan ke kamera) hanya selama pelatihan untuk memperkuat representasi fitur *backbone*, sehingga saat inferensi tidak ada biaya komputasi tambahan akibat pemrosesan kedalaman. CPR menggabungkan fitur dari berbagai tingkat kedalaman jaringan secara hemat komputasi untuk menghasilkan peta saliency dengan batas objek yang tegas.
 
-## Ringkasan Eksekutif
-MobileSal adalah jaringan RGB-D SOD yang sangat efisien untuk perangkat mobile, memakai implicit depth restoration dan backbone ringan sehingga mencapai kecepatan tinggi dengan akurasi kompetitif.
+Menurut naskah, MobileSal diuji pada tujuh tolok ukur (*benchmark*) RGB-D SOD standar dan mencapai kecepatan 450 *frame* per detik (FPS) pada resolusi masukan 320×320 di GPU RTX 2080Ti, dengan hanya 6,5 juta parameter — jauh di bawah model RGB-D SOD berat yang umumnya berjumlah puluhan juta parameter. Kontribusi utamanya adalah menunjukkan bahwa efisiensi ekstrem dan akurasi kompetitif dapat dicapai bersamaan pada tugas RGB-D SOD, membuka jalan bagi penerapan pada perangkat mobile dan sistem *real-time*.
 
-## Abstrak (Parafrase)
-Penulis merancang model RGB-D SOD hemat komputasi berbasis backbone MobileNet. Ide kunci Implicit Depth Restoration (IDR) memanfaatkan depth hanya saat pelatihan untuk memperkuat fitur, sehingga saat inferensi depth tak wajib diproses berat. Dengan compact pyramid refinement, MobileSal berjalan sangat cepat pada parameter kecil sambil menjaga akurasi mendekati model berat.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Latar Belakang & Konteks
-Model RGB-D SOD umumnya berat; penerapan pada perangkat mobile menuntut efisiensi ekstrem tanpa kehilangan akurasi berarti.
+Metode RGB-D SOD yang berkembang pada periode 2019-2021 — termasuk DMRA, CPFP, D3Net, S2MA, dan JL-DCF — berfokus pada peningkatan akurasi fusi lintas-modal (penggabungan fitur RGB dan kedalaman) memakai *backbone* konvolusi berat dan modul fusi bertingkat yang rumit. Bab-bab lain dalam klaster RGB-D SOD pada tinjauan ini, misalnya CoNet (bab 166), DCF (bab 167), SPNet (bab 168), dan CAVER (bab 169), juga menekankan strategi fusi yang semakin canggih — kolaborasi multi-cabang, kalibrasi fitur dinamis, atau *attention* lintas-modal berbasis *transformer*. Strategi-strategi ini menaikkan akurasi tetapi juga menaikkan jumlah parameter dan biaya komputasi, karena setiap peningkatan kualitas fusi umumnya menambah cabang jaringan atau lapisan pemrosesan baru.
 
-## Permasalahan yang Diangkat
-- Model RGB-D SOD terlalu berat untuk mobile.
-- Pemrosesan depth menambah biaya.
-- Menjaga akurasi pada model kecil sulit.
+Konsekuensinya, model-model tersebut sulit dijalankan secara *real-time* pada perangkat dengan daya komputasi terbatas, seperti telepon pintar, kamera edge, atau robot kecil. Pemrosesan citra kedalaman itu sendiri turut menambah beban: banyak metode memakai cabang encoder terpisah khusus untuk kedalaman, sehingga total komputasi kira-kira berlipat dibandingkan jaringan RGB tunggal. Pada saat yang sama, citra kedalaman yang diperoleh dari sensor murah atau estimasi monokuler sering kali berderau atau memiliki resolusi rendah, sehingga manfaat akurasinya tidak selalu sepadan dengan biaya komputasi yang ditanggung. Masalah yang diangkat MobileSal adalah bagaimana mempertahankan manfaat informasi kedalaman untuk RGB-D SOD tanpa menanggung biaya komputasi cabang kedalaman saat inferensi, sekaligus memakai *backbone* seringan mungkin agar model dapat berjalan pada perangkat mobile.
 
-## Tujuan & Pertanyaan Penelitian
-- Membuat RGB-D SOD real-time di mobile.
-- Mengurangi biaya pemrosesan depth.
-- Menjaga akurasi kompetitif.
+## Ide Utama
 
-## Tinjauan Terdahulu / Posisi Literatur
-Kontras dengan model berat (BBS-Net, JL-DCF); menekankan efisiensi ala MobileNet dan pemanfaatan depth implisit.
+Gagasan inti MobileSal adalah memisahkan peran citra kedalaman antara fase pelatihan dan fase inferensi. Selama pelatihan, jaringan diberi tugas tambahan berupa memulihkan informasi kedalaman dari fitur RGB yang sudah diekstraksi *backbone* — sebuah tugas bantu (*auxiliary task*) yang memaksa *backbone* mempelajari fitur yang lebih peka terhadap struktur geometris adegan, seperti batas objek dan urutan kedalaman relatif antarbagian citra. Setelah pelatihan selesai, cabang pemulihan kedalaman ini dibuang; saat inferensi, jaringan hanya memproses citra RGB melalui *backbone* mobile yang sudah "terlatih dipandu kedalaman", tanpa perlu memproses peta kedalaman sama sekali. Dengan demikian, manfaat informasi kedalaman terserap ke dalam bobot jaringan tanpa menambah komputasi saat digunakan.
 
-Karya/konsep pembanding yang relevan:
+Gagasan kedua adalah menyempurnakan fitur multi-tingkat dari *backbone* mobile memakai modul ringkas berbentuk piramida, bukan modul fusi lintas-modal yang berat seperti pada metode-metode sebelumnya. Karena cabang kedalaman sudah tidak ada saat inferensi, penyempurnaan ini hanya perlu menggabungkan fitur RGB dari berbagai resolusi di dalam satu jaringan, sehingga jumlah parameter dan operasi yang dibutuhkan jauh lebih sedikit dibandingkan modul fusi dua-cabang.
 
-- MobileNet - backbone ringan.
-- BBS-Net/JL-DCF - model berat pembanding.
-- D3Net - kualitas depth.
-- Model efisien SOD lain.
+## Cara Kerja Langkah demi Langkah
 
-## Metodologi & Arsitektur
-Backbone MobileNet untuk RGB; Implicit Depth Restoration menambahkan cabang depth ringan hanya saat latih untuk memandu fitur; compact pyramid refinement menyempurnakan peta saliency dengan biaya rendah.
+### Backbone Mobile
 
-Komponen / langkah metodologis utama:
+MobileSal memakai jaringan konvolusi mobile — kelas jaringan seperti MobileNet yang menggantikan konvolusi standar dengan konvolusi *depthwise separable* (konvolusi yang memisahkan pemrosesan spasial per kanal dari penggabungan antarkanal) untuk memangkas jumlah operasi dan parameter secara drastis dibandingkan konvolusi biasa. *Backbone* ini mengekstraksi fitur RGB pada beberapa tingkat resolusi, dari resolusi tinggi dengan detail spasial halus di lapisan awal hingga resolusi rendah dengan konteks semantik luas di lapisan akhir. Fitur multi-tingkat inilah yang menjadi masukan bagi modul CPR pada tahap berikutnya.
 
-- Backbone MobileNet ringan.
-- Implicit Depth Restoration (depth saat latih).
-- Compact pyramid refinement.
-- Optimasi untuk latensi mobile.
+### Implicit Depth Restoration (IDR)
 
-## Kontribusi Utama
-1. RGB-D SOD ultra-efisien.
-2. Pemanfaatan depth implisit.
-3. Kecepatan tinggi pada parameter kecil.
-4. Akurasi kompetitif.
+IDR ditempatkan sebagai cabang tambahan yang aktif hanya selama pelatihan. Cabang ini mengambil fitur dari *backbone* RGB dan dilatih memprediksi peta kedalaman yang berpadanan dengan citra RGB masukan, memakai fungsi kerugian (*loss function*) regresi terhadap kedalaman sebenarnya dari data latih berpasangan RGB-D. Karena tugas ini dipaksakan pada representasi *backbone* yang sama yang dipakai untuk memprediksi saliency, *backbone* terdorong mempelajari fitur yang lebih sensitif terhadap batas objek dan struktur tiga dimensi adegan — sifat yang relevan bagi deteksi objek menonjol tetapi biasanya baru diperoleh lewat cabang kedalaman eksplisit pada metode lain. Sebagai contoh konseptual, dua objek dengan warna dan tekstur serupa namun berada pada jarak berbeda dari kamera akan menghasilkan sinyal pemulihan kedalaman yang berbeda, sehingga fitur RGB yang dipelajari ikut membawa informasi pemisah tersebut. Saat model dipakai untuk inferensi, cabang IDR dilepas sepenuhnya sehingga tidak ada penambahan waktu komputasi maupun parameter aktif.
 
-## Rincian Eksperimen
-Benchmark RGB-D SOD standar dengan S/F/E-measure/MAE plus pengukuran FPS/params dan uji kecepatan di perangkat.
+### Compact Pyramid Refinement (CPR)
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+CPR menerima fitur multi-tingkat dari *backbone* dan menggabungkannya secara bertahap dari resolusi rendah ke resolusi tinggi, mirip struktur piramida fitur pada jaringan deteksi umum, tetapi dengan jumlah kanal dan operasi yang ditekan agar tetap ringan. Tujuannya menghasilkan peta saliency akhir yang mempertahankan detail batas objek dari fitur resolusi tinggi sekaligus konteks semantik dari fitur resolusi rendah, tanpa memerlukan cabang kedalaman terpisah sebagai sumber fusi karena informasi tersebut sudah terserap lewat IDR pada tahap pelatihan *backbone*.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Benchmark RGB-D SOD | S/E-measure | mendekati model berat |
-| Kecepatan | FPS/params | jauh lebih cepat/ringan |
-| Ablation IDR | metrik | IDR menaikkan akurasi tanpa biaya inferensi |
+### Alur Data Latih vs Inferensi
 
-## Temuan Kunci
-- Depth implisit memberi manfaat tanpa biaya inferensi.
-- Model kecil bisa mendekati akurasi model berat.
-- Refinement ringkas efektif.
+Perbedaan struktur jaringan antara fase pelatihan dan fase inferensi adalah inti efisiensi MobileSal, diringkas pada diagram berikut.
 
-## Keunggulan
-- Sangat cepat/ringan.
-- Cocok untuk mobile/edge.
-- Akurasi kompetitif.
+```
+Fase pelatihan:
+  RGB ─► backbone mobile ─┬─► CPR ─► peta saliency
+                          └─► IDR ─► peta kedalaman prediksi
+                                     (dibandingkan dgn depth asli)
 
-## Keterbatasan
-- Akurasi sedikit di bawah model berat.
-- Bergantung depth saat latih.
-- Kasus sulit tetap menantang.
+Fase inferensi:
+  RGB ─► backbone mobile ─────► CPR ─► peta saliency
+         (cabang IDR dibuang, depth map tidak diproses)
+```
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Diagram ini menunjukkan bahwa struktur jaringan saat inferensi lebih sederhana daripada saat pelatihan: hanya satu aliran RGB yang diproses, sedangkan pengaruh kedalaman sudah tertanam pada bobot *backbone* melalui proses pelatihan dengan IDR.
 
-## Relevansi terhadap Tema Tinjauan
-Model efisien penting untuk penerapan RGB-D real-time pada robot/edge dengan sumber daya terbatas.
+## Eksperimen dan Hasil
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+Menurut naskah dan repositori kode resmi, MobileSal dievaluasi pada tujuh tolok ukur RGB-D SOD; di antaranya teridentifikasi NJU2K, NLPR, STEREO, SIP, SSD, dan DUTLF-D (DUT-RGBD), yang juga menjadi tolok ukur umum pada bab-bab RGB-D SOD lain dalam tinjauan ini. Metrik evaluasi yang dipakai mengikuti konvensi baku SOD: S-measure (kemiripan struktur antara peta saliency prediksi dan kebenaran lapangan), F-measure (rata-rata harmonik presisi dan *recall* pada peta saliency), E-measure (*enhanced-alignment measure*, mengukur kesejajaran piksel sekaligus statistik global citra), dan MAE (*Mean Absolute Error*, rata-rata selisih absolut antara peta prediksi dan kebenaran lapangan, semakin kecil semakin baik).
+
+Model dibandingkan dengan metode RGB-D SOD berat seperti DMRA, CPFP, dan metode sejenis yang memakai *backbone* VGG/ResNet. Naskah melaporkan bahwa MobileSal mencapai kinerja yang bersaing dengan model-model tersebut pada mayoritas tolok ukur, sementara kecepatannya jauh lebih tinggi: 450 FPS pada resolusi 320×320 memakai implementasi PyTorch di GPU RTX 2080Ti, dan meningkat hingga sekitar 800 FPS dengan konversi ke TensorRT presisi FP16 (format angka titik-mengambang 16-bit yang mempercepat inferensi pada GPU modern). Jumlah parameter model tercatat 6,5 juta — jauh di bawah model RGB-D SOD berat yang umumnya berjumlah puluhan juta parameter. Perbandingan ini menunjukkan MobileSal menempati posisi efisiensi yang berbeda kelas: kecepatan inferensinya berorde ratusan FPS, sedangkan model dua-cabang konvensional pada klaster ini umumnya berjalan pada orde puluhan FPS atau lebih rendah.
+
+Studi ablasi (pengujian pengaruh komponen dengan menghilangkannya satu per satu) yang dilaporkan menunjukkan bahwa penghapusan IDR menurunkan akurasi model dibandingkan versi lengkap, mengonfirmasi bahwa sinyal pemulihan kedalaman selama pelatihan memberi manfaat nyata terhadap kualitas fitur *backbone*, meskipun tidak menambah biaya inferensi. Angka S-measure, F-measure, dan MAE spesifik per dataset serta besaran penurunan akurasi pada ablasi IDR tidak berhasil diverifikasi secara pasti dari sumber yang dapat diakses untuk penulisan bab ini dan perlu dikonfirmasi langsung ke tabel pada naskah asli sebelum dikutip formal.
+
+## Kelebihan dan Keterbatasan
+
+Kelebihan utama MobileSal adalah rasio efisiensi terhadap akurasi yang tinggi: dengan parameter dan biaya komputasi yang jauh lebih rendah dari model RGB-D SOD berat, kecepatannya mencapai ratusan FPS sambil mempertahankan akurasi yang menurut naskah bersaing dengan model-model tersebut pada sebagian besar tolok ukur. Desain IDR juga elegan secara konseptual karena memindahkan biaya pemrosesan kedalaman sepenuhnya ke fase pelatihan, sehingga inferensi tidak memerlukan sensor kedalaman maupun cabang jaringan tambahan.
+
+Dari sisi rekayasa, pendekatan ini memiliki ketergantungan struktural pada ketersediaan data RGB-D berpasangan yang berkualitas selama pelatihan, karena kualitas sinyal pemulihan kedalaman menentukan seberapa besar manfaat yang tertanam pada *backbone*. Secara konseptual, karena kedalaman tidak lagi dipakai saat inferensi, model tidak dapat memanfaatkan informasi kedalaman baru pada waktu uji meskipun tersedia — berbeda dari metode fusi eksplisit yang tetap dapat menyesuaikan diri terhadap kualitas kedalaman aktual pada tiap sampel uji. Efisiensi yang dicapai lewat *backbone* mobile juga umumnya menyertakan kompromi kapasitas representasi dibandingkan *backbone* berat, sehingga pada kasus adegan yang sangat rumit atau objek dengan tekstur ambigu, model kemungkinan tetap tertinggal dari model berat berkapasitas tinggi.
+
+## Kaitan dengan Bab Lain
+
+MobileSal berada pada klaster RGB-D SOD yang sama dengan CoNet (bab 166), DCF (bab 167), SPNet (bab 168), dan CAVER (bab 169), tetapi menempuh arah berbeda dari ketiganya. Bab-bab tersebut umumnya menambah kompleksitas modul fusi lintas-modal untuk menaikkan akurasi, sedangkan MobileSal menyederhanakan struktur inferensi lewat IDR agar kedalaman tidak perlu diproses ulang saat digunakan. Perbandingan ini relevan bagi pembaca yang ingin memilih pendekatan RGB-D SOD sesuai kendala perangkat: bab-bab fusi eksplisit lebih cocok ketika sumber daya komputasi memadai dan akurasi maksimal diutamakan, sedangkan MobileSal lebih relevan ketika target penerapan adalah perangkat mobile atau sistem *real-time* dengan anggaran komputasi ketat, misalnya robotika bergerak atau aplikasi kamera pada telepon pintar.
 
 - [166 - 2020 - CoNet - RGB-D SOD](./166%20-%202020%20-%20CoNet%20-%20RGB-D%20SOD.md)
 - [167 - 2021 - DCF - RGB-D SOD](./167%20-%202021%20-%20DCF%20-%20RGB-D%20SOD.md)
 - [168 - 2021 - SPNet - RGB-D SOD](./168%20-%202021%20-%20SPNet%20-%20RGB-D%20SOD.md)
 - [169 - 2023 - CAVER - RGB-D SOD](./169%20-%202023%20-%20CAVER%20-%20RGB-D%20SOD.md)
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
-
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-MobileSal menunjukkan RGB-D SOD dapat dijalankan real-time di perangkat terbatas berkat pemanfaatan depth implisit dan desain ringan.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `wu2022mobilesal` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 170/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `wu2022mobilesal`. Ringkasan yang aman dikutip: "MobileSal mengajukan *Implicit Depth Restoration* dan *Compact Pyramid Refinement* di atas *backbone* mobile untuk RGB-D SOD, mencapai 450 FPS pada resolusi 320×320 dengan 6,5 juta parameter sambil mempertahankan akurasi kompetitif terhadap model RGB-D SOD berat." Angka 450 FPS, konversi TensorRT FP16 (±800 FPS), dan 6,5 juta parameter berasal dari abstrak dan repositori kode resmi penulis (github.com/yuhuan-wu/MobileSal) sehingga cukup tepercaya untuk dikutip. Namun, angka S-measure/F-measure/MAE spesifik per dataset, daftar lengkap tujuh tolok ukur uji, serta besaran penurunan akurasi pada studi ablasi IDR **tidak berhasil diverifikasi langsung dari tabel naskah** dalam penulisan bab ini dan wajib dicek ke PDF asli (arXiv 2012.13095 atau versi TPAMI) sebelum dikutip dalam karya formal.

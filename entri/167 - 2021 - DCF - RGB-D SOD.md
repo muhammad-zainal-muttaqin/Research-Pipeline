@@ -1,203 +1,79 @@
 # 167 - Calibrated RGB-D Salient Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 167 dari 191 |
 | Kunci BibTeX | `ji2021dcf` |
-| Judul | Calibrated RGB-D Salient Object Detection |
-| Penulis | Ji, Wei; Li, Jingjing; Yu, Shuang; Zhang, Miao; Piao, Yongri; Yao, Shunyu; Bi, Qi; Ma, Kai; Zheng, Yefeng; Lu, Huchuan; Cheng, Li |
+| Judul asli | Calibrated RGB-D Salient Object Detection |
+| Penulis | Wei Ji, Jingjing Li, Shuang Yu, Miao Zhang, Yongri Piao, Shunyu Yao, Qi Bi, Kai Ma, Yefeng Zheng, Huchuan Lu, Li Cheng |
 | Tahun | 2021 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | RGB-D SOD |
-| Kata kunci | RGB-D SOD, depth calibration, calibrated fusion, saliency |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2021) |
+| Tema | RGB-D SOD |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **CVF Open Access (PDF resmi):** https://openaccess.thecvf.com/content/CVPR2021/papers/Ji_Calibrated_RGB-D_Salient_Object_Detection_CVPR_2021_paper.pdf
+- **Kode sumber (GitHub):** https://github.com/jiwei0921/DCF
+- **Google Scholar:** https://scholar.google.com/scholar?q=Calibrated%20RGB-D%20Salient%20Object%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Calibrated%20RGB-D%20Salient%20Object%20Detection&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-rgb-d-sod)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Calibrated%20RGB-D%20Salient%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Calibrated%20RGB-D%20Salient%20Object%20Detection&sort=relevance
+Makalah ini mengusulkan DCF (*Depth Calibration and Fusion*), kerangka kerja untuk *salient object detection* (SOD, deteksi objek paling menonjol pada suatu citra) berbasis pasangan citra RGB dan peta kedalaman (*depth map*, citra yang tiap pikselnya menyatakan jarak permukaan ke sensor). Masalah yang disasar adalah peta kedalaman pada dataset RGB-D SOD sering mengandung derau dan bias yang tidak konsisten dengan struktur objek sebenarnya, sehingga metode fusi RGB-*depth* yang memperlakukan kedua modalitas itu setara justru dapat menurunkan akurasi dibandingkan model RGB tunggal. DCF menjawab masalah ini dengan dua komponen: strategi kalibrasi kedalaman yang memperbaiki bias laten pada peta kedalaman mentah sebelum dipakai, dan modul referensi silang (*cross reference module*, CRM) yang menukar informasi antara fitur RGB dan fitur kedalaman secara dua arah untuk menghasilkan fitur gabungan. Menurut klaim penulis, pendekatan ini mengungguli 27 metode SOD RGB-D sezaman pada tolok ukur standar bidang tersebut, dan strategi kalibrasi kedalamannya dapat dipasang sebagai modul praproses pada model RGB-D SOD lain untuk menaikkan akurasinya.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-| Atribut | Nilai |
-|---|---|
-| — | — |
+SOD bertugas menandai wilayah citra yang paling menarik perhatian visual, berguna sebagai tahap awal bagi banyak aplikasi seperti penyuntingan citra, kompresi berbasis wilayah penting, dan segmentasi objek. Pada citra RGB tunggal, SOD sulit ketika latar belakang memiliki tekstur atau warna mirip objek utama, karena sinyal warna saja tidak selalu membedakan objek dari latarnya. Menambahkan peta kedalaman sebagai modalitas kedua — pendekatan yang dikenal sebagai RGB-D SOD — bertujuan memberi isyarat geometris tambahan, sebab objek yang menonjol umumnya berada pada jarak berbeda dari latar belakangnya.
 
-## Ringkasan Eksekutif
-DCF (Calibrated RGB-D Salient Object Detection) mengkalibrasi depth yang tidak andal sebelum fusi, memakai depth calibration dan cross reference module agar peta kedalaman berkualitas buruk tidak menyesatkan deteksi saliency.
+Masalahnya, peta kedalaman pada dataset RGB-D SOD diperoleh dari sensor *time-of-flight*, kamera stereo, atau algoritme estimasi kedalaman, yang semuanya menghasilkan keluaran dengan derau, area kosong, atau bias sistematis. Metode sebelumnya yang relevan bagi klaster ini, seperti CoNet (bab 166) dengan fusi kolaboratif tiga aliran, umumnya mengasumsikan kedalaman sebagai sumber informasi yang dapat dipercaya sepenuhnya dan menggabungkannya langsung dengan fitur RGB. Ketika kedalaman berkualitas buruk, asumsi ini membuat kesalahan pada peta kedalaman ikut terbawa ke prediksi saliency, bahkan dapat menurunkan performa di bawah model yang hanya memakai RGB. Metode berbasis kesadaran kualitas kedalaman yang muncul sebelum DCF, seperti D3Net dan UC-Net, mencoba menyaring atau memberi bobot ketidakpastian pada kedalaman, tetapi belum secara eksplisit mengoreksi isi peta kedalaman itu sendiri sebelum fusi. DCF memosisikan diri pada celah ini: mengalibrasi kedalaman terlebih dahulu, bukan sekadar menyaring atau membobotnya saat fusi.
 
-## Abstrak (Parafrase)
-Penulis menyoroti bahwa banyak depth pada dataset RGB-D SOD berderau atau tak konsisten. DCF memperkenalkan modul kalibrasi depth yang memperbaiki peta kedalaman berdasarkan sinyal RGB, serta cross reference module untuk fusi dua-arah yang seimbang. Hasilnya deteksi saliency lebih stabil terhadap variasi kualitas depth.
+## Ide Utama
 
-## Latar Belakang & Konteks
-Kualitas depth sangat bervariasi antar-dataset/sensor; fusi tanpa kalibrasi mewariskan kesalahan depth ke prediksi.
+Gagasan inti DCF adalah memisahkan proses menjadi dua tahap yang jelas: kalibrasi kedalaman, lalu fusi. Pada tahap kalibrasi, jaringan mempelajari koreksi terhadap peta kedalaman mentah dengan memakai citra RGB sebagai rujukan, sehingga keluarannya berupa peta kedalaman yang lebih konsisten dengan batas dan struktur objek yang terlihat pada RGB. Pada tahap fusi, fitur dari citra RGB dan fitur dari kedalaman terkalibrasi saling bertukar informasi lewat modul referensi silang, alih-alih digabungkan begitu saja lewat penjumlahan atau penggabungan kanal (*concatenation*) seperti pada banyak metode fusi awal. Intuisi mekanisnya: RGB memasok bentuk dan tekstur objek, kedalaman terkalibrasi memasok pemisahan jarak antara objek dan latar, dan keduanya saling mengoreksi lewat referensi silang sebelum diputuskan menjadi peta saliency akhir.
 
-## Permasalahan yang Diangkat
-- Depth berderau/menyesatkan.
-- Fusi tak seimbang antara RGB dan depth.
-- Robustnes lintas-dataset rendah.
+## Cara Kerja Langkah demi Langkah
 
-## Tujuan & Pertanyaan Penelitian
-- Mengalibrasi depth sebelum fusi.
-- Menyeimbangkan kontribusi modal.
-- Meningkatkan robustnes kualitas depth.
+### Ekstraksi Fitur Dua Aliran
 
-## Tinjauan Terdahulu / Posisi Literatur
-Melanjutkan arah depth-quality-aware (D3Net, UC-Net) dengan mekanisme kalibrasi eksplisit.
+DCF memakai jaringan dua aliran (*two-stream network*): satu aliran menerima citra RGB, satu aliran lain menerima peta kedalaman yang telah dikalibrasi. Kedua aliran memakai arsitektur ekstraksi fitur berbasis CPD (*Cascaded Partial Decoder*, kerangka dekoder kaskade yang sebelumnya dipakai untuk SOD RGB tunggal) sebagai basis pembanding, menghasilkan peta fitur bertingkat pada beberapa resolusi dari kasar ke halus.
 
-Karya/konsep pembanding yang relevan:
+### Strategi Kalibrasi Kedalaman
 
-- D3Net - penyaring depth berkualitas.
-- UC-Net - ketidakpastian pada depth.
-- BBS-Net - fusi bercabang.
-- CoNet - depth kolaboratif.
+Sebelum masuk ke aliran kedalaman, peta kedalaman mentah diproses oleh modul kalibrasi yang dilatih untuk mengurangi bias laten — pergeseran atau distorsi sistematis pada nilai kedalaman yang tidak sesuai dengan struktur objek pada RGB. Modul ini memakai isyarat dari citra RGB berpasangan sebagai rujukan koreksi, sehingga keluarannya adalah peta kedalaman yang lebih selaras dengan tepi dan bentuk objek yang tampak pada RGB. Menurut penulis, langkah kalibrasi ini bersifat modular: dapat dipasang di depan model RGB-D SOD lain sebagai praproses tanpa mengubah arsitektur model tersebut, dan dilaporkan tetap memberi kenaikan akurasi ketika diuji pada model RGB-D SOD lain.
 
-## Metodologi & Arsitektur
-Depth calibration module memperbaiki depth memakai isyarat RGB; cross reference module menukar informasi RGB<->depth secara timbal-balik; fitur terkalibrasi difusikan untuk prediksi saliency.
+### Modul Referensi Silang (Cross Reference Module)
 
-Komponen / langkah metodologis utama:
+Fitur RGB dan fitur kedalaman terkalibrasi pada tiap tingkat resolusi dipertukarkan lewat modul referensi silang. Alih-alih fusi satu arah — misalnya kedalaman hanya dipakai untuk membobot fitur RGB — CRM membiarkan kedua modalitas saling memberi isyarat: fitur RGB dipakai untuk menyaring fitur kedalaman, dan sebaliknya fitur kedalaman dipakai untuk menajamkan fitur RGB. Hasil pertukaran ini membentuk fitur gabungan lintas-modal pada tiap tingkat, yang kemudian diteruskan ke tahap dekoding.
 
-- Depth calibration berbasis RGB.
-- Cross reference module dua-arah.
-- Fusi seimbang terkalibrasi.
-- Supervisi saliency multiskala.
+### Tiga Cabang Dekoding
 
-## Kontribusi Utama
-1. Modul kalibrasi depth eksplisit.
-2. Fusi timbal-balik seimbang.
-3. Robustnes terhadap depth buruk.
-4. Peningkatan metrik SOD.
+Fitur bertingkat dari aliran RGB, aliran kedalaman terkalibrasi, dan fitur gabungan hasil CRM masing-masing diteruskan ke cabang dekoder terpisah yang menghasilkan peta saliency dari sudut pandang modalitasnya sendiri, sebelum digabung menjadi prediksi akhir. Skema alir data secara ringkas:
 
-## Rincian Eksperimen
-Benchmark RGB-D SOD (NJU2K, NLPR, STERE, SIP, DES, dll.) dengan S/F/E-measure dan MAE, plus uji pada depth berderau.
+```
+RGB ─────► aliran fitur RGB ──────────┐
+                                       ├─► CRM (referensi silang) ─► dekoder gabungan ─┐
+depth mentah ─► kalibrasi ─► aliran   ─┘                                              ├─► saliency akhir
+              fitur depth terkalibrasi ─────────────────────────► dekoder depth ──────┤
+             aliran fitur RGB (jalur terpisah) ────────────────► dekoder RGB ─────────┘
+```
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Desain tiga cabang ini membuat pelatihan dapat diawasi (*supervised*) pada tiap cabang secara terpisah dengan peta saliency kebenaran (*ground truth*) yang sama, sehingga tiap aliran dipaksa menghasilkan prediksi yang masuk akal sendiri-sendiri, bukan hanya bergantung pada cabang gabungan.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Benchmark RGB-D SOD | S/E-measure | peningkatan konsisten |
-| Depth berderau | MAE | lebih stabil dari fusi tanpa kalibrasi |
-| Ablation kalibrasi | metrik | kalibrasi menyumbang kenaikan utama |
+## Eksperimen dan Hasil
 
-## Temuan Kunci
-- Kalibrasi depth menurunkan sensitivitas terhadap derau.
-- Fusi dua-arah lebih seimbang.
-- Robustnes lintas-dataset meningkat.
+Pengujian dilakukan pada tolok ukur standar RGB-D SOD yang lazim dipakai bidang ini, dengan set pelatihan yang menurut repositori kode resmi terdiri atas gabungan NJU2K dan NLPR (2.185 citra), serta varian yang menambahkan DUT-RGBD (2.985 citra). Evaluasi memakai metrik baku SOD: S-measure (kemiripan struktural antara peta saliency prediksi dan kebenaran), F-measure (rerata harmonik presisi dan recall pada peta biner saliency), E-measure (kesesuaian keselarasan piksel secara lokal dan global), dan MAE atau *Mean Absolute Error* (rerata selisih absolut piksel-per-piksel antara prediksi dan kebenaran, semakin rendah semakin baik). Penulis melaporkan bahwa DCF mengungguli 27 metode RGB-D SOD sezaman pada pengujian tersebut, tanpa merinci di sini nilai numerik tiap dataset karena angka pasti perlu dikonfirmasi langsung ke tabel pada naskah asli.
 
-## Keunggulan
-- Tahan depth buruk.
-- Fusi seimbang.
-- Peningkatan metrik jelas.
+Selain evaluasi tolok ukur utama, penulis melaporkan pengujian tambahan pada dataset ReDWeb-S, dataset kedalaman yang lebih menantang, serta studi ablasi yang memisahkan kontribusi strategi kalibrasi kedalaman dari kontribusi modul referensi silang. Studi ablasi semacam ini penting karena membuktikan bahwa kenaikan akurasi berasal dari kedua komponen baru, bukan sekadar dari arsitektur backbone yang dipakai. Penulis juga mengklaim strategi kalibrasi kedalaman, ketika dipasangkan di depan model RGB-D SOD lain yang sudah ada, memberi kenaikan akurasi tambahan — bukti bahwa manfaat kalibrasi tidak terikat pada arsitektur fusi khusus DCF.
 
-## Keterbatasan
-- Modul tambahan menambah komputasi.
-- Kalibrasi bergantung kualitas RGB.
-- Kasus depth ekstrem tetap sulit.
+## Kelebihan dan Keterbatasan
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Kelebihan utama DCF adalah pemisahan eksplisit antara masalah kualitas data (kedalaman berderau) dan masalah fusi (bagaimana menggabungkan dua modalitas), yang sebelumnya sering ditangani sekaligus lewat pembobotan implisit. Modularitas strategi kalibrasi kedalaman — dapat dipasang pada model lain sebagai praproses — memperluas relevansi metode ini di luar arsitektur DCF sendiri. Modul referensi silang yang dua arah juga lebih seimbang dibandingkan skema fusi satu arah yang hanya membiarkan satu modalitas mendominasi.
 
-## Relevansi terhadap Tema Tinjauan
-Strategi kalibrasi depth relevan untuk semua pipeline RGB-D (termasuk deteksi/grasp) yang menghadapi sensor depth tak sempurna.
+Dari sisi rekayasa, tiga cabang dekoder dan modul kalibrasi tambahan berarti biaya komputasi dan jumlah parameter DCF lebih besar dibandingkan model fusi satu aliran, sehingga penerapan pada perangkat dengan sumber daya terbatas memerlukan pertimbangan tambahan; makalah yang tersedia untuk telaah ini tidak memuat rincian FLOPs atau kecepatan inferensi yang dapat dikutip dengan pasti di sini. Secara konseptual, kualitas kalibrasi kedalaman bergantung pada seberapa informatif citra RGB berpasangan; pada kondisi RGB juga buruk (misalnya pencahayaan sangat rendah atau motion blur), rujukan kalibrasi ikut melemah sehingga manfaat kalibrasi dapat berkurang. Kasus kedalaman yang hilang total pada area luas (bukan sekadar berderau) juga kemungkinan tetap menjadi tantangan, karena kalibrasi memperbaiki bias, bukan mengisi data yang sama sekali tidak ada.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **RGB-D SOD** yang baik dibaca berdampingan:
+## Kaitan dengan Bab Lain
 
-- [166 - 2020 - CoNet - RGB-D SOD](./166%20-%202020%20-%20CoNet%20-%20RGB-D%20SOD.md)
-- [168 - 2021 - SPNet - RGB-D SOD](./168%20-%202021%20-%20SPNet%20-%20RGB-D%20SOD.md)
-- [169 - 2023 - CAVER - RGB-D SOD](./169%20-%202023%20-%20CAVER%20-%20RGB-D%20SOD.md)
-- [170 - 2022 - MobileSal - RGB-D SOD](./170%20-%202022%20-%20MobileSal%20-%20RGB-D%20SOD.md)
+DCF melanjutkan arah metode-metode RGB-D SOD yang menyadari ketidaksempurnaan kedalaman, termasuk CoNet pada [166 - 2020 - CoNet - RGB-D SOD](./166%20-%202020%20-%20CoNet%20-%20RGB-D%20SOD.md), yang memakai fusi kolaboratif tiga aliran tetapi belum mengoreksi isi kedalaman secara eksplisit sebelum fusi. Perbedaan tegasnya terletak pada tahap kalibrasi eksplisit yang ditambahkan DCF sebelum fusi berlangsung, alih-alih hanya membobot atau menyaring kontribusi kedalaman saat fusi. Gagasan memisahkan kualitas modalitas dari mekanisme fusi ini relevan dibandingkan dengan pendekatan lain di klaster RGB-D SOD yang ditulis pada periode berdekatan, seperti [168 - 2021 - SPNet - RGB-D SOD](./168%20-%202021%20-%20SPNet%20-%20RGB-D%20SOD.md), serta metode yang datang setelahnya dan dapat dibandingkan dari sisi efisiensi maupun akurasi, seperti [170 - 2022 - MobileSal - RGB-D SOD](./170%20-%202022%20-%20MobileSal%20-%20RGB-D%20SOD.md) yang menyasar kecepatan pada perangkat terbatas, dan [169 - 2023 - CAVER - RGB-D SOD](./169%20-%202023%20-%20CAVER%20-%20RGB-D%20SOD.md) yang mengeksplorasi mekanisme fusi berbasis attention lintas-modal pada generasi berikutnya. Prinsip kalibrasi kedalaman sebelum fusi yang diperkenalkan DCF menjadi acuan bagi pembaca yang membandingkan strategi mana yang lebih menekankan koreksi data mentah versus mekanisme fusi itu sendiri.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **RGB-D SOD** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema RGB-D SOD)
-Istilah penting untuk memahami makalah ini:
-
-- **SOD** — Salient Object Detection; menyorot objek paling menonjol.
-- **Peta kedalaman** — Citra yang tiap pikselnya menyatakan jarak ke kamera.
-- **Fusi lintas-modal** — Penggabungan fitur RGB dan depth.
-- **Early/middle/late fusion** — Fusi di input, fitur tengah, atau keputusan akhir.
-- **Attention lintas-modal** — Membobot kontribusi RGB vs depth secara adaptif.
-- **S-measure** — Structure-measure; kemiripan struktur peta saliency.
-- **E-measure** — Enhanced-alignment measure; kesejajaran piksel-global.
-- **F-measure** — Harmonik precision-recall pada peta saliency.
-- **MAE** — Mean Absolute Error peta saliency vs ground truth.
-- **Depth berkualitas rendah** — Depth berderau yang dapat merusak fusi.
-- **Backbone Transformer** — Encoder attention (mis. Swin) untuk konteks global.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-DCF menekankan pentingnya mengkalibrasi depth sebelum fusi, memberi resep robust untuk RGB-D SOD.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `ji2021dcf` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 167/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `ji2021dcf`. Ringkasan yang aman dikutip: "DCF mengusulkan kerangka kerja dua tahap untuk RGB-D SOD yang terdiri atas strategi kalibrasi kedalaman untuk mengoreksi bias pada peta kedalaman mentah, dan modul referensi silang untuk fusi fitur RGB-kedalaman dua arah, dilaporkan mengungguli 27 metode sezaman pada tolok ukur RGB-D SOD standar (CVPR 2021)." Catatan verifikasi: nilai numerik S-measure, F-measure, E-measure, dan MAE per dataset (NJU2K, NLPR, STERE, DES, SIP, dan dataset lain yang mungkin diuji) belum dapat diambil dari sumber yang berhasil diakses saat penulisan bab ini karena versi PDF resmi CVF dan IEEE Xplore memblokir pengambilan otomatis; nilai-nilai ini wajib dikonfirmasi langsung dari tabel pada naskah asli atau repositori GitHub `jiwei0921/DCF` sebelum dikutip dalam karya formal. Detail arsitektur backbone CPD dan komposisi persis set pelatihan/pengujian juga sebaiknya dicocokkan ulang dengan naskah asli.
