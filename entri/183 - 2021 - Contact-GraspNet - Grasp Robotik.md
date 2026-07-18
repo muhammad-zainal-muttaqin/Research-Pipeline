@@ -1,200 +1,96 @@
 # 183 - Contact-GraspNet: Efficient 6-DoF Grasp Generation in Cluttered Scenes
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 183 dari 191 |
 | Kunci BibTeX | `sundermeyer2021contactgraspnet` |
-| Judul | Contact-GraspNet: Efficient 6-DoF Grasp Generation in Cluttered Scenes |
-| Penulis | Sundermeyer, Martin; Mousavian, Arsalan; Triebel, Rudolph; Fox, Dieter |
+| Judul asli | Contact-GraspNet: Efficient 6-DoF Grasp Generation in Cluttered Scenes |
+| Penulis | Martin Sundermeyer, Arsalan Mousavian, Rudolph Triebel, Dieter Fox |
 | Tahun | 2021 |
-| Venue / Jurnal | IEEE International Conference on Robotics and Automation (ICRA) |
-| Tema klaster | Grasp Robotik |
-| Kata kunci | 6-DoF grasp, cluttered scenes, point cloud, contact points |
+| Venue | IEEE International Conference on Robotics and Automation (ICRA 2021) |
+| Tema | Grasp Robotik |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2103.14127
+- **Google Scholar:** https://scholar.google.com/scholar?q=Contact-GraspNet%3A%20Efficient%206-DoF%20Grasp%20Generation%20in%20Cluttered%20Scenes
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Contact-GraspNet%3A%20Efficient%206-DoF%20Grasp%20Generation%20in%20Cluttered%20Scenes&sort=relevance
+- **Kode resmi:** https://github.com/NVlabs/contact_graspnet
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-grasp-robotik)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2103.14127
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Contact-GraspNet%3A%20Efficient%206-DoF%20Grasp%20Generation%20in%20Cluttered%20Scenes
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Contact-GraspNet%3A%20Efficient%206-DoF%20Grasp%20Generation%20in%20Cluttered%20Scenes&sort=relevance
+Contact-GraspNet adalah jaringan saraf yang menghasilkan *grasp* (cengkeraman) 6-DoF (*degree of freedom*, derajat kebebasan pergerakan penjepit di ruang tiga dimensi: tiga translasi dan tiga rotasi) langsung dari satu *point cloud* (kumpulan titik koordinat 3D) tunggal hasil pemindaian kedalaman, tanpa tahap pengusulan wilayah terpisah. Masalah yang dipecahkan adalah menghasilkan cengkeraman *parallel-jaw* (penjepit dua rahang sejajar) yang andal untuk objek yang belum pernah dilihat sebelumnya, pada susunan objek yang saling berhimpitan (*cluttered scene*, scene berantakan). Gagasan intinya adalah menautkan setiap grasp pada titik kontak yang benar-benar teramati di permukaan objek pada point cloud, sehingga posisi grasp tidak perlu dicari di seluruh ruang 6-DoF, melainkan diturunkan dari titik yang sudah pasti berada pada permukaan benda nyata. Jaringan dibangun di atas *backbone* (tulang punggung ekstraksi fitur) PointNet++ dan dilatih pada data sintetis dari dataset ACRONYM. Pada uji robot fisik dengan lengan Franka Panda terhadap 51 objek yang belum pernah dilihat dalam susunan berantakan, metode ini melaporkan tingkat keberhasilan grasp di atas 90%.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2103.14127 |
+Menghasilkan grasp 6-DoF untuk objek arbitrer memerlukan pencarian pada ruang parameter yang sangat besar: tiga nilai posisi dan tiga nilai orientasi penjepit, dikalikan dengan seluruh kemungkinan lokasi di scene. Pendekatan sebelumnya, misalnya 6-DOF GraspNet, menangani ruang ini dengan melatih *variational autoencoder* (VAE, jaringan generatif yang mempelajari distribusi data laten) untuk mengusulkan (*sample*) kandidat grasp secara acak di sekitar objek, kemudian menilai dan memperbaiki kandidat tersebut lewat jaringan evaluator terpisah dan proses iteratif *grasp refinement* (perbaikan bertahap posisi grasp). Proses sampling-lalu-evaluasi ini memerlukan banyak iterasi sebelum kandidat berkualitas ditemukan, sehingga lambat untuk digunakan pada kontrol robot secara reaktif. Pendekatan lain, GraspNet-1Billion, menyediakan benchmark berskala besar tetapi tetap bergantung pada tahap pengusulan kandidat yang terpisah dari tahap penilaian akhir.
 
-## Ringkasan Eksekutif
-Contact-GraspNet menghasilkan grasp 6-DoF langsung dari point cloud scene berantakan dengan merepresentasikan grasp sebagai berlabuh pada titik kontak yang teramati, menyederhanakan ruang pencarian dan mencapai keberhasilan tinggi.
+Kelemahan bersama dari pendekatan sampling-dan-evaluasi adalah tidak adanya jaminan bahwa kandidat yang diusulkan berada dekat dengan permukaan objek yang benar-benar teramati sensor. Karena scene kedalaman hanya menangkap permukaan objek yang terlihat dari satu sudut pandang (data setengah, *single-view partial point cloud*), banyak kandidat grasp yang dihasilkan secara acak jatuh pada ruang kosong atau menembus geometri objek, sehingga harus disaring lebih lanjut. Pada scene berantakan, masalah ini makin berat karena objek saling menghalangi (*occlusion*) dan ruang gerak penjepit dibatasi objek tetangga, sehingga jumlah kandidat yang benar-benar dapat dieksekusi tanpa tabrakan menjadi kecil dibanding jumlah kandidat yang diusulkan.
 
-## Abstrak (Parafrase)
-Penulis mengurangi dimensi ruang grasp dengan menautkan setiap grasp 6-DoF ke titik kontak pada point cloud teramati; jaringan memprediksi grasp per-titik beserta skor. Karena grasp berakar pada titik nyata, representasi menjadi lebih ringkas dan generalizable. Dilatih pada data sintetis, metode ini menggeneralisasi ke scene nyata berantakan dengan tingkat keberhasilan grasp tinggi.
+## Ide Utama
 
-## Latar Belakang & Konteks
-Grasp 6-DoF di scene berantakan memerlukan pencarian ruang besar. Menautkan grasp ke titik kontak mengurangi kompleksitas.
+Gagasan inti Contact-GraspNet adalah mengurangi dimensi pencarian grasp dengan menetapkan titik kontak grasp langsung pada titik-titik point cloud yang teramati. Karena titik-titik itu sudah pasti berada pada permukaan objek nyata, tiga derajat kebebasan translasi grasp otomatis terpenuhi begitu satu titik dipilih. Jaringan tidak lagi perlu mengusulkan posisi grasp dari ruang kosong 6-DoF; ia cukup memprediksi, untuk setiap titik pada point cloud, apakah titik itu merupakan titik kontak yang baik, dan bila ya, orientasi serta lebar bukaan penjepit yang sesuai. Representasi ini disebut penulis sebagai reduksi ke 4-DoF: translasi grasp diwarisi dari koordinat titik yang diamati, sedangkan sisa derajat kebebasan yang benar-benar perlu diprediksi jaringan adalah orientasi penjepit (arah pendekatan dan rotasi di sekitarnya) beserta lebar bukaan. Konsekuensinya, jaringan menghasilkan grasp untuk seluruh scene dalam satu kali proses maju (*forward pass*), bukan lewat iterasi sampling-evaluasi berulang.
 
-## Permasalahan yang Diangkat
-- Ruang grasp 6-DoF sangat besar.
-- Scene berantakan menyulitkan.
-- Generalisasi sintetis ke nyata.
+## Cara Kerja Langkah demi Langkah
 
-## Tujuan & Pertanyaan Penelitian
-- Menyederhanakan representasi grasp via titik kontak.
-- Menghasilkan grasp 6-DoF dari point cloud.
-- Generalisasi ke scene nyata.
+### Representasi Grasp Berbasis Titik Kontak
 
-## Tinjauan Terdahulu / Posisi Literatur
-Melanjutkan GraspNet-1Billion dan 6-DOF GraspNet; kebaruan pada penautan grasp ke titik kontak teramati.
+Setiap grasp dinyatakan oleh lima besaran: titik kontak c (koordinat 3D pada point cloud tempat salah satu rahang penjepit menyentuh permukaan objek), vektor arah dasar b (*baseline direction*, arah garis yang menghubungkan kedua rahang penjepit), vektor arah pendekatan a (*approach direction*, arah gerak penjepit menuju objek, tegak lurus terhadap b), lebar bukaan w (*grasp width*, jarak antar-rahang saat mencengkeram), dan jarak *standoff* d (jarak dari titik kontak ke titik acuan penjepit di sepanjang arah pendekatan). Karena c diambil langsung dari koordinat titik point cloud, jaringan hanya perlu memprediksi b, a, w, dan d untuk setiap titik kandidat — inilah reduksi ke 4-DoF yang dimaksud.
 
-Karya/konsep pembanding yang relevan:
+### Backbone PointNet++
 
-- GraspNet-1Billion - benchmark grasp besar.
-- 6-DOF GraspNet - sampling+evaluasi grasp.
-- VGN - grasp volumetrik.
-- PointNet++ - encoder point cloud.
+Point cloud masukan, hasil pengangkatan (*back-projection*) citra kedalaman tunggal ke ruang 3D, disaring menjadi sekitar 20.000 titik lalu diproses oleh PointNet++ (jaringan pemroses point cloud yang bekerja langsung pada himpunan titik tak beraturan, dibahas pada bab 148). PointNet++ menyusun fitur secara hierarkis lewat lapis *set abstraction* (pengelompokan titik-titik bertetangga menjadi fitur lokal pada skala kian membesar) diikuti lapis *feature propagation* (interpolasi fitur global kembali ke resolusi titik yang lebih rapat). Hasil akhirnya adalah vektor fitur per titik untuk sekitar 2.048 titik yang dipilih lewat *farthest point sampling* (pengambilan sampel titik yang saling berjauhan agar mewakili seluruh permukaan objek secara merata).
 
-## Metodologi & Arsitektur
-Encoder point cloud (PointNet++) memproses scene; untuk tiap titik kontak, prediksi arah/baseline/lebar grasp dan skor; representasi contact-based mengurangi parameter grasp; filter collision menyeleksi grasp final.
+```
+point cloud tunggal (±20.000 titik, dari 1 citra kedalaman)
+              │
+              ▼
+   PointNet++ (set abstraction bertingkat)
+              │  fitur lokal skala kian besar
+              ▼
+   feature propagation (interpolasi ke titik rapat)
+              │
+              ▼
+   2.048 titik terpilih, tiap titik -> kepala prediksi
+   ┌─────────────┬─────────────┬─────────────┐
+   │  skor        │  orientasi   │  lebar (w)   │
+   │  keberhasilan│  (a, b)      │  10 bin      │
+   └─────────────┴─────────────┴─────────────┘
+              │
+              ▼
+      filter tabrakan (buang grasp yang menembus geometri)
+              │
+              ▼
+        grasp 6-DoF final per scene
+```
 
-Komponen / langkah metodologis utama:
+### Kepala Prediksi per Titik
 
-- Grasp berakar pada titik kontak teramati.
-- Prediksi grasp per-titik + skor.
-- Pelatihan pada data sintetis.
-- Penyaringan tabrakan untuk seleksi.
+Untuk setiap titik terpilih, jaringan mengeluarkan tiga hal: skor keberhasilan grasp (probabilitas bahwa titik tersebut merupakan titik kontak yang layak), vektor rotasi yang menentukan arah dasar dan arah pendekatan, dan lebar bukaan penjepit yang diprediksi sebagai klasifikasi ke dalam 10 kelas rentang lebar (*binning*), bukan regresi nilai kontinu langsung — pendekatan ini dipilih penulis untuk menangani ketidakseimbangan distribusi lebar grasp pada data pelatihan. Karena prediksi dilakukan serentak untuk seluruh 2.048 titik dalam satu proses maju, jaringan menghasilkan ribuan kandidat grasp per scene tanpa iterasi.
 
-## Kontribusi Utama
-1. Representasi grasp berbasis titik kontak.
-2. Grasp 6-DoF efisien di clutter.
-3. Generalisasi sintetis ke nyata.
-4. Keberhasilan grasp tinggi.
+### Filter Tabrakan dan Pemilihan Akhir
 
-## Rincian Eksperimen
-Scene berantakan sintetis dan robot nyata (bin-picking) dengan metrik success rate dan clearance rate.
+Kandidat grasp hasil prediksi kemudian disaring dengan pemeriksaan tabrakan geometris terhadap point cloud scene: kandidat yang penjepitnya akan menembus titik-titik lain (baik objek target maupun objek tetangga) dibuang. Penyaringan ini memanfaatkan kembali informasi geometri yang sudah tersedia di point cloud, tanpa memerlukan model 3D lengkap dari setiap objek. Kandidat yang lolos diurutkan berdasarkan skor keberhasilan, dan grasp berskor tertinggi yang bebas tabrakan dipilih untuk dieksekusi.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Data Pelatihan: ACRONYM
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Sintetis clutter | precision | grasp berkualitas tinggi |
-| Robot nyata | success rate | tinggi pada bin-picking |
-| Generalisasi | - | sintetis ke nyata efektif |
+Jaringan dilatih pada dataset ACRONYM, kumpulan data grasp sintetis berskala besar dari kelompok riset yang sama, berisi label grasp untuk 8.872 model mesh (bentuk 3D) yang diambil dari ShapeNet, dengan total sekitar 17,7 juta grasp berlabel hasil simulasi fisika. Untuk melatih Contact-GraspNet, objek-objek ACRONYM disusun ke dalam scene tabletop sintetis berisi banyak objek sekaligus, lalu grasp yang berhasil pada susunan tunggal disaring ulang dengan pemeriksaan tabrakan terhadap susunan berantakan tersebut sebelum dipetakan ke titik kontak pada point cloud hasil rendering. Dengan cara ini, label pelatihan berupa titik kontak beserta orientasi dan lebar grasp yang valid diperoleh murni dari simulasi, tanpa anotasi manual pada citra nyata.
 
-## Temuan Kunci
-- Menautkan grasp ke titik kontak menyederhanakan masalah.
-- Data sintetis cukup untuk generalisasi.
-- Efektif di scene berantakan.
+## Eksperimen dan Hasil
 
-## Keunggulan
-- Grasp 6-DoF efisien.
-- Robust di clutter.
-- Generalisasi baik.
+Evaluasi dilakukan pada dua tingkat: simulasi fisika untuk mengukur kualitas dan cakupan grasp yang dihasilkan pada scene sintetis, dan uji fisik pada lengan robot Franka Panda untuk mengukur keberhasilan grasp di dunia nyata. Pada uji robot fisik, 51 objek yang tidak pernah dilihat selama pelatihan disusun dalam kondisi berantakan (*bin-picking*, pengambilan objek dari wadah tercampur), dan metode ini melaporkan tingkat keberhasilan grasp keseluruhan 90,20% serta tingkat keberhasilan pada percobaan pertama (*first-attempt success*) 84,31%. Kecepatan inferensi dilaporkan sekitar 0,28 detik untuk memproses satu scene penuh, dan sekitar 0,19 detik bila hanya memproses wilayah lokal tertentu — cukup cepat untuk mendukung kontrol grasp reaktif dalam lingkar tertutup (*closed-loop*), yaitu penyesuaian ulang grasp saat robot masih bergerak mendekati objek.
 
-## Keterbatasan
-- Bergantung kualitas point cloud/depth.
-- Objek transparan/mengkilap sulit.
-- Perlu penyaringan tabrakan.
+Interpretasi angka ini: tingkat keberhasilan di atas 90% pada objek yang sama sekali baru menunjukkan bahwa representasi berbasis titik kontak menggeneralisasi dengan baik dari data sintetis ke sensor kedalaman nyata, meski pelatihan sepenuhnya berlangsung dalam simulasi. Selisih antara keberhasilan keseluruhan (90,20%) dan keberhasilan percobaan pertama (84,31%) menunjukkan bahwa sebagian kegagalan awal masih dapat dipulihkan lewat percobaan ulang, konsisten dengan kecepatan inferensi yang mendukung eksekusi berulang tanpa biaya komputasi besar. Klaim penulis bahwa metode ini mengungguli metode *state-of-the-art* sebelumnya sebesar sekitar 10 poin persentase — kemungkinan besar merujuk pada 6-DOF GraspNet sebagai pembanding — perlu diverifikasi langsung ke tabel hasil pada naskah asli karena rincian metode pembanding dan kondisi pengujian yang setara belum terkonfirmasi penuh dari sumber sekunder yang diakses.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Kelebihan dan Keterbatasan
 
-## Relevansi terhadap Tema Tinjauan
-Langsung relevan untuk manipulasi robotik RGB-D (bin-picking), inti aplikasi YOLO+RGB-D + grasp.
+Kelebihan utama metode ini adalah kesederhanaan jalur inferensi: satu proses maju melalui jaringan menghasilkan seluruh kandidat grasp untuk scene, tanpa iterasi sampling-evaluasi seperti pada 6-DOF GraspNet. Representasi berbasis titik kontak juga secara inheren menghindari kandidat grasp yang melayang jauh dari permukaan objek, karena translasi grasp diwarisi langsung dari geometri yang teramati. Generalisasi dari data sintetis ACRONYM ke sensor kedalaman nyata terbukti kuat pada uji robot fisik dengan objek yang belum pernah dilihat.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Grasp Robotik** yang baik dibaca berdampingan:
+Dari sisi rekayasa, metode ini tetap bergantung pada kualitas dan kelengkapan point cloud masukan: karena hanya satu sudut pandang yang direkam, permukaan objek yang tidak terlihat sensor (misalnya sisi belakang objek yang menghadap menjauh dari kamera) tidak dapat dijadikan titik kontak, sehingga sebagian grasp yang secara geometris valid tidak pernah diusulkan. Secara konseptual, reduksi ke 4-DoF menyederhanakan pencarian tetapi mengasumsikan bahwa titik kontak yang baik selalu berada pada titik yang teramati langsung; untuk objek dengan permukaan transparan atau memantulkan cahaya, sensor kedalaman sering gagal menangkap geometri secara akurat, sehingga kualitas titik kontak yang dihasilkan ikut menurun. Filter tabrakan yang dipakai juga hanya memeriksa geometri point cloud yang tersedia, bukan model 3D lengkap objek, sehingga bagian yang tersembunyi dari sensor berpotensi menyebabkan tabrakan yang tidak terdeteksi saat eksekusi nyata.
 
-- [184 - 2020 - VGN - Grasp Robotik](./184%20-%202020%20-%20VGN%20-%20Grasp%20Robotik.md)
+## Kaitan dengan Bab Lain
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Grasp Robotik** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Contact-GraspNet mewarisi PointNet++ sebagai backbone pemroses point cloud, konsep yang diperkenalkan pada bab [148 - PointNet - Fusi Multimodal](./148%20-%202017%20-%20PointNet%20-%20Fusi%20Multimodal.md) dan pengembangannya. Dalam klaster Grasp Robotik, bab ini berdampingan dengan bab [184 - VGN - Grasp Robotik](./184%20-%202020%20-%20VGN%20-%20Grasp%20Robotik.md), yang memecahkan masalah serupa — grasp 6-DoF di scene berantakan — dengan pendekatan berbeda: VGN memproses scene sebagai grid volumetrik (TSDF, *truncated signed distance function*, representasi kepadatan permukaan pada grid 3D) dan memprediksi grasp per voxel, sementara Contact-GraspNet memprediksi grasp langsung per titik point cloud tanpa vokselisasi. Perbandingan keduanya relevan untuk menilai trade-off antara representasi grid (VGN, lebih mudah diproses konvolusi 3D tetapi resolusi dibatasi ukuran voxel) dan representasi titik (Contact-GraspNet, resolusi mengikuti kepadatan sensor tetapi memerlukan backbone khusus data tak beraturan seperti PointNet++). Kedua bab menjadi rujukan utama untuk aplikasi manipulasi robotik berbasis RGB-D dalam tinjauan ini.
 
-## Glosarium Istilah (tema Grasp Robotik)
-Istilah penting untuk memahami makalah ini:
+## Poin untuk Sitasi
 
-- **Grasp detection** — Prediksi cengkeraman stabil untuk objek.
-- **Grasp rectangle** — Grasp sebagai kotak beorientasi (posisi, sudut, lebar).
-- **Antipodal grasp** — Cengkeraman dua-jari berlawanan.
-- **RGB-D** — Warna + kedalaman untuk geometri grasp.
-- **6-DoF grasp** — Grasp enam derajat kebebasan di ruang 3D.
-- **Cornell dataset** — Dataset grasp kecil klasik.
-- **Jacquard** — Dataset grasp sintetis berskala besar.
-- **Closed-loop** — Kontrol grasp real-time berbasis umpan-balik.
-- **Success rate** — Persentase percobaan grasp berhasil.
-- **Point cloud fusion** — Penggabungan geometri titik 3D.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Contact-GraspNet menyederhanakan grasp 6-DoF via titik kontak, memberi generasi grasp efisien dan andal untuk scene berantakan.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `sundermeyer2021contactgraspnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 183/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `sundermeyer2021contactgraspnet`. Ringkasan yang aman dikutip: "Contact-GraspNet menghasilkan grasp 6-DoF langsung dari satu point cloud dengan menautkan setiap grasp pada titik kontak yang teramati di permukaan objek, mereduksi dimensi pencarian menjadi 4-DoF; dilatih pada dataset sintetis ACRONYM (PointNet++ sebagai backbone), metode ini mencapai tingkat keberhasilan grasp 90,20% pada uji robot fisik terhadap 51 objek baru dalam kondisi berantakan." Angka berikut belum terverifikasi langsung ke tabel/teks lengkap naskah asli dan perlu dicek ulang sebelum dikutip secara formal: jumlah pasti grasp berlabel pada ACRONYM (dilaporkan sekitar 17,7 juta), jumlah mesh (8.872), angka keberhasilan percobaan pertama (84,31%), waktu inferensi (0,28 detik per scene penuh, 0,19 detik per wilayah lokal), serta klaim selisih sekitar 10 poin persentase di atas metode pembanding (identitas metode pembanding — diduga 6-DOF GraspNet — perlu dikonfirmasi ke naskah).

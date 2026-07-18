@@ -1,200 +1,87 @@
 # 184 - Volumetric Grasping Network: Real-Time 6 DOF Grasp Detection in Clutter
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 184 dari 191 |
 | Kunci BibTeX | `breyer2021vgn` |
-| Judul | Volumetric Grasping Network: Real-Time 6 DOF Grasp Detection in Clutter |
-| Penulis | Breyer, Michel; Chung, Jen Jen; Ott, Lionel; Siegwart, Roland; Nieto, Juan |
+| Judul asli | Volumetric Grasping Network: Real-Time 6 DOF Grasp Detection in Clutter |
+| Penulis | Michel Breyer, Jen Jen Chung, Lionel Ott, Roland Siegwart, Juan Nieto |
 | Tahun | 2020 |
-| Venue / Jurnal | Conference on Robot Learning (CoRL) |
-| Tema klaster | Grasp Robotik |
-| Kata kunci | volumetric grasping, TSDF, real-time, 6-DoF grasp |
+| Venue | Conference on Robot Learning (CoRL 2020) |
+| Tema | Grasp Robotik |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-grasp-robotik)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2101.01132
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Volumetric%20Grasping%20Network%3A%20Real-Time%206%20DOF%20Grasp%20Detection%20in%20Clutter
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Volumetric%20Grasping%20Network%3A%20Real-Time%206%20DOF%20Grasp%20Detection%20in%20Clutter&sort=relevance
+- **Proceedings resmi (PMLR):** https://proceedings.mlr.press/v155/breyer21a.html
+- **Kode sumber:** https://github.com/ethz-asl/vgn
+- **Google Scholar:** https://scholar.google.com/scholar?q=Volumetric%20Grasping%20Network%3A%20Real-Time%206%20DOF%20Grasp%20Detection%20in%20Clutter
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2101.01132 |
+Makalah ini memperkenalkan VGN (*Volumetric Grasping Network*), jaringan konvolusi 3D yang memprediksi *grasp* (cengkeraman) 6-*DoF* (*degrees of freedom*, derajat kebebasan posisi dan orientasi di ruang 3D) langsung dari representasi volumetrik sebuah *scene* (adegan) berisi objek yang bertumpuk. Alih-alih mengevaluasi kandidat *grasp* satu per satu, VGN menerima *Truncated Signed Distance Function* (TSDF) — representasi volumetrik permukaan yang dibangun dari beberapa citra kedalaman (*depth image*) — dan mengeluarkan, dalam satu kali evaluasi jaringan, peta kualitas *grasp*, orientasi *gripper* (pencengkeram), dan lebar bukaan untuk setiap *voxel* (elemen volume, unit terkecil grid 3D) dalam volume kerja. Pendekatan ini menghasilkan waktu perencanaan sekitar 10 milidetik pada GPU, cukup cepat untuk perencanaan *closed-loop* (lingkar tertutup, keputusan diperbarui berulang dari umpan balik sensor) tanpa pemeriksaan tabrakan eksplisit. Pada uji robot nyata dengan lengan Franka Emika Panda, VGN membersihkan 92% objek dari tumpukan campuran dengan tingkat keberhasilan cengkeraman per percobaan sekitar 80%.
 
-## Ringkasan Eksekutif
-VGN (Volumetric Grasping Network) memprediksi grasp 6-DoF secara real-time dari volume TSDF scene, menghasilkan peta kualitas grasp 3D dalam satu forward pass untuk decluttering cepat.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Abstrak (Parafrase)
-Penulis merepresentasikan scene sebagai Truncated Signed Distance Function (TSDF) volumetrik dari citra depth, lalu jaringan 3D-konvolusi memprediksi kualitas grasp, orientasi, dan lebar untuk setiap voxel sekaligus. Karena keluaran padat dihitung dalam satu pass, VGN menghasilkan grasp 6-DoF real-time dan berhasil membersihkan tumpukan objek pada eksperimen robot nyata.
+Metode deteksi *grasp* 6-*DoF* pada masanya umumnya bekerja dengan skema *sample-then-evaluate* (contoh dulu, lalu nilai): sistem membangkitkan ratusan hingga ribuan kandidat pose *grasp* dari data sensor, kemudian setiap kandidat dinilai satu per satu oleh jaringan klasifikasi terpisah untuk menentukan kualitasnya. Skema ini, dipakai misalnya oleh GPD (*Grasp Pose Detection*, metode pembanding pada makalah ini yang mengevaluasi kandidat *grasp* dari *point cloud* memakai jaringan klasifikasi), mahal secara komputasi karena setiap kandidat memerlukan evaluasi jaringan sendiri, sehingga total waktu tumbuh sebanding dengan jumlah kandidat yang diuji. Akibatnya proses menjadi lambat untuk skenario yang membutuhkan keputusan cepat berulang, seperti *decluttering* (membersihkan tumpukan objek satu demi satu) di lingkungan gudang atau daur ulang.
 
-## Latar Belakang & Konteks
-Banyak metode grasp mengevaluasi kandidat satu per satu (lambat). Prediksi volumetrik padat memungkinkan grasp real-time.
+Masalah kedua terkait representasi data. Sebagian metode grasp bekerja langsung pada *point cloud* mentah atau citra RGB-D tunggal, yang tidak secara eksplisit mengintegrasikan informasi dari berbagai sudut pandang dan rawan terhadap bagian permukaan objek yang tidak terlihat sensor (*occlusion*, penghalangan pandangan). Pendekatan berbasis grid 2D seperti GG-CNN (*Generative Grasping CNN*, metode yang memprediksi peta kualitas grasp piksel demi piksel dari satu citra kedalaman) mengatasi kecepatan lewat prediksi padat, tetapi terbatas pada *grasp* dengan orientasi searah sumbu kamera karena representasinya dua dimensi. VGN diajukan untuk menggabungkan dua kebutuhan itu sekaligus: prediksi padat (seperti GG-CNN) tetapi dalam ruang tiga dimensi penuh (6-*DoF*, bukan hanya 2D atau 4-*DoF*), dengan data yang mengintegrasikan banyak sudut pandang lewat TSDF.
 
-## Permasalahan yang Diangkat
-- Evaluasi grasp kandidat-per-kandidat lambat.
-- Butuh grasp 6-DoF real-time.
-- Integrasi geometri scene 3D.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Prediksi grasp padat dari volume TSDF.
-- Grasp 6-DoF real-time.
-- Decluttering andal pada robot nyata.
+Gagasan inti VGN adalah mengubah deteksi *grasp* dari masalah klasifikasi kandidat menjadi masalah regresi padat pada volume. *Scene* direpresentasikan sebagai grid TSDF: setiap *voxel* menyimpan nilai jarak bertanda (positif di luar permukaan, negatif di dalam, dipotong/*truncated* pada rentang tertentu) terhadap permukaan objek terdekat, dibangun dengan menggabungkan (*fusion*) beberapa citra kedalaman dari sudut pandang berbeda. Jaringan 3D CNN kemudian memproses seluruh grid TSDF sekaligus dan, untuk **setiap** *voxel* dalam volume, memprediksi tiga besaran: skor kualitas *grasp* (peluang keberhasilan bila *gripper* dicengkeramkan pada posisi itu), orientasi *gripper* dalam bentuk kuaternion (representasi rotasi 3D memakai empat angka, menghindari masalah *gimbal lock* pada representasi sudut Euler), dan lebar bukaan *gripper* yang sesuai. Karena keluarannya padat — mencakup seluruh volume dalam satu *forward pass* — VGN tidak perlu membangkitkan dan menilai kandidat satu per satu; kandidat terbaik cukup diambil dari *voxel* dengan skor kualitas tertinggi pada peta keluaran.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Berbeda dari sampling-evaluate (6-DOF GraspNet) dengan prediksi volumetrik satu-pass; berkaitan dengan GG-CNN (2D) yang diangkat ke 3D.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Konstruksi TSDF dari Citra Kedalaman
 
-- GG-CNN - grasp generatif 2D real-time.
-- 6-DOF GraspNet - sampling grasp.
-- TSDF fusion - representasi volumetrik.
-- 3D CNN untuk voxel.
+Sistem mengumpulkan beberapa citra kedalaman dari kamera yang bergerak mengelilingi *scene* (pada data simulasi, jumlah sudut pandang bervariasi antara satu hingga enam per adegan). Setiap citra kedalaman diintegrasikan ke grid TSDF berukuran 40×40×40 *voxel* yang mencakup ruang kerja fisik 30×30×30 sentimeter, sehingga setiap *voxel* merepresentasikan kubus berukuran 0,75×0,75×0,75 sentimeter. Proses integrasi ini menggabungkan informasi permukaan dari berbagai sudut, mengisi bagian yang terhalang pada satu sudut pandang dengan informasi dari sudut pandang lain, dan menghasilkan representasi geometri *scene* yang lebih lengkap daripada satu citra kedalaman tunggal.
 
-## Metodologi & Arsitektur
-Integrasikan beberapa citra depth ke TSDF; 3D CNN memprediksi peta kualitas grasp, orientasi (quaternion), dan lebar per-voxel; seleksi grasp terbaik lalu eksekusi robot.
+### Arsitektur 3D CNN
 
-Komponen / langkah metodologis utama:
+Jaringan berbentuk *encoder-decoder* (penyandi-penyurai) tiga dimensi. Bagian *encoder* terdiri atas tiga lapis konvolusi berstride (langkah geser lebih dari satu, mengecilkan resolusi spasial) dengan 16, 32, dan 64 kanal filter berturut-turut, mengecilkan grid 40³ menjadi peta fitur berukuran 64×5³. Bagian *decoder* mengembalikan resolusi lewat tiga lapis konvolusi yang diselingi operasi *upsampling* (pembesaran resolusi) bilinear dua kali lipat pada tiap tahap, sehingga keluaran akhir kembali ke resolusi 40³. Dari peta fitur pada resolusi penuh ini, tiga cabang keluaran terpisah menghasilkan: peta kualitas *grasp* berukuran 1×40³ (satu skor per *voxel*), peta orientasi berupa kuaternion per *voxel*, dan peta lebar bukaan *gripper* per *voxel*.
 
-- Representasi scene TSDF volumetrik.
-- 3D CNN prediksi grasp padat.
-- Keluaran kualitas+orientasi+lebar per-voxel.
-- Inferensi satu-pass real-time.
+Diagram berikut merangkum alur data dari citra kedalaman hingga peta *grasp*:
 
-## Kontribusi Utama
-1. Jaringan grasp volumetrik real-time.
-2. Prediksi grasp padat satu-pass.
-3. Validasi robot nyata (declutter).
-4. Dataset/simulasi grasp.
+```
+beberapa citra depth        grid TSDF 40x40x40         3D CNN (encoder-decoder)
+(1-6 sudut pandang)   -->   (ruang kerja 30x30x30cm) -->  encoder: 16,32,64 filter
+                                                           bottleneck: 64 x 5^3
+                                                           decoder: upsample 2x, 3 lapis
+                                                                    |
+                                                                    v
+                                        tiga peta 40x40x40, satu per voxel:
+                                        - kualitas grasp (skor 0-1)
+                                        - orientasi (kuaternion)
+                                        - lebar bukaan gripper
+                                                    |
+                                                    v
+                                   pilih voxel skor tertinggi -> pose grasp 6-DoF
+```
 
-## Rincian Eksperimen
-Simulasi (pile/packed scenes) dan robot nyata dengan metrik grasp/clearance success rate dan waktu inferensi.
+### Pelatihan dan Pembangkitan Data
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Data latih dibangkitkan secara sintetis memakai simulator fisika PyBullet, bukan dikumpulkan dari robot nyata. Dua strategi penataan *scene* dipakai: "*pile*" (objek dijatuhkan bebas ke dalam kotak sehingga bertumpuk acak) dan "*packed*" (objek disusun berdiri berdekatan, meniru rak atau kemasan). Jumlah objek per adegan mengikuti distribusi acak (rerata sekitar 4–5 objek), diambil dari kumpulan 303 model 3D untuk pelatihan dan 40 model terpisah untuk pengujian, guna memastikan objek uji tidak pernah dilihat model saat pelatihan. Untuk setiap adegan, kandidat *grasp* dicoba secara acak dan diberi label berhasil/gagal berdasarkan simulasi fisika parallel-jaw *gripper* (pencengkeram dua rahang sejajar) yang benar-benar mengangkat objek. Label kandidat-kandidat ini kemudian dipetakan ke *voxel* terdekat pada grid TSDF untuk membentuk target pelatihan padat. Total data latih berskala jutaan label *grasp* terseimbang antara kelas berhasil dan gagal.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Simulasi pile/packed | success rate | tinggi |
-| Robot nyata | clearance rate | efektif declutter |
-| Kecepatan | ms | real-time (satu pass) |
+### Inferensi dan Eksekusi
 
-## Temuan Kunci
-- Prediksi volumetrik padat memungkinkan grasp real-time.
-- TSDF menyediakan geometri scene berguna.
-- Satu-pass mengungguli sampling lambat.
+Saat digunakan pada robot, kamera kedalaman terpasang pada pergelangan lengan (*wrist-mounted*) menangkap beberapa citra dari sudut berbeda, TSDF dibangun, dan satu *forward pass* jaringan menghasilkan tiga peta keluaran. Sistem memilih *voxel* dengan skor kualitas tertinggi (di atas ambang tertentu) sebagai kandidat *grasp*, mengonversi indeks *voxel* dan kuaternion terkait menjadi pose 6-*DoF* dalam koordinat dunia nyata, lalu mengeksekusikannya lewat kontroler robot. Karena seluruh proses dari citra ke pose berjalan dalam orde milidetik, keputusan grasp dapat diperbarui berulang selama pergerakan lengan menuju target — inilah yang memungkinkan operasi *closed-loop*.
 
-## Keunggulan
-- Real-time.
-- Grasp 6-DoF padat.
-- Tervalidasi robot nyata.
+## Eksperimen dan Hasil
 
-## Keterbatasan
-- Resolusi voxel membatasi detail.
-- Bergantung kualitas depth/TSDF.
-- Volume besar mahal memori.
+Evaluasi dilakukan pada dua lingkungan: simulasi PyBullet dan robot nyata. Pada simulasi, uji *clutter removal* (pembersihan tumpukan objek berulang hingga habis atau gagal berturut-turut) dijalankan pada skenario *pile* dan *packed* dengan variasi jumlah objek, membandingkan VGN dengan baseline GPD. Pada skenario *packed* dengan lima objek, VGN mencapai tingkat keberhasilan cengkeraman dan tingkat pembersihan (*clearance rate*, proporsi objek yang berhasil diangkat dari total objek awal) yang lebih tinggi daripada GPD; pada skenario *pile*, keunggulan VGN paling terlihat pada *clearance rate* dibandingkan GPD, sementara tingkat keberhasilan per percobaan tunggal antara keduanya lebih dekat pada beberapa kondisi. Perbedaan ini menunjukkan bahwa keunggulan VGN bukan hanya pada akurasi satu percobaan, melainkan pada konsistensi menyelesaikan seluruh tumpukan — relevan karena *decluttering* menuntut keberhasilan berturut-turut, bukan satu kali cengkeraman terisolasi.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Pada uji robot nyata memakai lengan Franka Emika Panda tujuh sumbu dengan *gripper* paralel, sepuluh putaran percobaan dijalankan dengan campuran objek rumah tangga. VGN mencatat *clearance rate* 92% (hampir seluruh objek berhasil diangkat dari tumpukan) dengan tingkat keberhasilan per percobaan cengkeraman sekitar 80%. Selisih antara kedua angka ini wajar: *clearance rate* menghitung keberhasilan akhir per objek (termasuk percobaan ulang), sedangkan tingkat keberhasilan per percobaan menghitung setiap upaya individual, sehingga objek yang gagal pada percobaan pertama masih bisa berhasil diangkat pada percobaan berikutnya berkat sifat *closed-loop* sistem. Waktu inferensi jaringan pada GPU kelas GTX 1080 Ti tercatat sekitar 10 milidetik, jauh di bawah anggaran waktu siklus kontrol robot, sehingga memungkinkan pembaruan keputusan grasp beberapa kali per detik selama pergerakan lengan.
 
-## Relevansi terhadap Tema Tinjauan
-Metode grasp real-time berbasis depth, komponen praktis untuk sistem manipulasi RGB-D.
+## Kelebihan dan Keterbatasan
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Grasp Robotik** yang baik dibaca berdampingan:
+Kelebihan utama VGN adalah kecepatan: prediksi padat satu-*pass* menghilangkan kebutuhan mengevaluasi kandidat satu per satu, sehingga waktu perencanaan tidak bergantung pada jumlah kandidat yang dipertimbangkan. Representasi TSDF multi-sudut-pandang memberi jaringan informasi geometri *scene* yang lebih lengkap daripada satu citra kedalaman tunggal, dan validasi pada robot nyata — bukan hanya simulasi — memperkuat klaim kepraktisan metode.
 
-- [183 - 2021 - Contact-GraspNet - Grasp Robotik](./183%20-%202021%20-%20Contact-GraspNet%20-%20Grasp%20Robotik.md)
+Dari sisi rekayasa, representasi grid 40³ pada ruang kerja 30 sentimeter membatasi resolusi spasial hingga sekitar 0,75 sentimeter per *voxel*; objek kecil atau bagian pegangan yang sempit berisiko tidak terwakili cukup detail pada grid sekasar ini. Secara konseptual, kualitas keluaran juga bergantung penuh pada kualitas TSDF yang dibentuk dari citra kedalaman — derau sensor kedalaman atau kegagalan integrasi antar-sudut-pandang akan menurunkan mutu peta *grasp* tanpa mekanisme koreksi eksplisit dalam jaringan. Volume 3D berukuran 40³ juga jauh lebih mahal secara memori dan komputasi daripada representasi 2D setara seperti pada GG-CNN, sehingga skalabilitas ke ruang kerja yang jauh lebih besar dari 30 sentimeter memerlukan penyesuaian resolusi atau arsitektur.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Grasp Robotik** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kaitan dengan Bab Lain
 
-## Glosarium Istilah (tema Grasp Robotik)
-Istilah penting untuk memahami makalah ini:
+VGN berada dalam klaster Grasp Robotik bersama bab [183 - 2021 - Contact-GraspNet - Grasp Robotik](./183%20-%202021%20-%20Contact-GraspNet%20-%20Grasp%20Robotik.md). Kedua metode sama-sama menyasar *grasp* 6-*DoF* pada *scene* cluttered, tetapi berangkat dari filosofi berbeda: Contact-GraspNet memprediksi *grasp* dari *point cloud* dengan pendekatan berbasis titik kontak pada permukaan objek, sedangkan VGN memprediksi dari representasi volumetrik grid TSDF dengan konvolusi 3D penuh. Perbandingan ini relevan untuk pembaca yang mengevaluasi trade-off antara representasi berbasis titik (lebih hemat memori, resolusi mengikuti kepadatan titik) dan representasi berbasis grid (resolusi tetap, tetapi cocok untuk konvolusi standar dan integrasi multi-sudut-pandang seperti TSDF). Formulasi prediksi padat per-*voxel* pada VGN juga sejalan dengan prinsip GG-CNN yang diangkat dari 2D ke 3D, menempatkan VGN sebagai kelanjutan garis penelitian *dense grasp prediction* (prediksi grasp padat) ke ruang tiga dimensi penuh.
 
-- **Grasp detection** — Prediksi cengkeraman stabil untuk objek.
-- **Grasp rectangle** — Grasp sebagai kotak beorientasi (posisi, sudut, lebar).
-- **Antipodal grasp** — Cengkeraman dua-jari berlawanan.
-- **RGB-D** — Warna + kedalaman untuk geometri grasp.
-- **6-DoF grasp** — Grasp enam derajat kebebasan di ruang 3D.
-- **Cornell dataset** — Dataset grasp kecil klasik.
-- **Jacquard** — Dataset grasp sintetis berskala besar.
-- **Closed-loop** — Kontrol grasp real-time berbasis umpan-balik.
-- **Success rate** — Persentase percobaan grasp berhasil.
-- **Point cloud fusion** — Penggabungan geometri titik 3D.
+## Poin untuk Sitasi
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-VGN menghasilkan grasp 6-DoF real-time dari volume TSDF, mendukung decluttering robotik yang cepat dan andal.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `breyer2021vgn` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 184/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `breyer2021vgn`. Ringkasan yang aman dikutip: "VGN memprediksi grasp 6-DoF dari representasi volumetrik TSDF lewat 3D CNN yang mengeluarkan peta kualitas, orientasi, dan lebar grasp untuk setiap voxel dalam satu forward pass, mencapai waktu perencanaan sekitar 10 milidetik dan clearance rate 92% pada uji robot nyata dengan lengan Franka Emika Panda." Angka detail berikut diambil dari versi HTML arXiv dan sebaiknya diverifikasi ulang terhadap PDF resmi sebelum dikutip dalam karya formal: resolusi grid 40×40×40 pada ruang kerja 30×30×30 cm, komposisi jaringan *encoder* 16/32/64 filter dengan *bottleneck* 64×5³, jumlah model 3D latih (303) dan uji (40), total label grasp sekitar dua juta, serta tabel hasil simulasi *pile*/*packed* untuk VGN versus GPD (mis. 62,3%/46,4% berbanding 59,9%/26,1% pada lima objek *pile*) dan tingkat keberhasilan robot nyata 80% (55 dari 68 percobaan). Nilai inferensi CPU (±1,25 detik pada Intel Core i7-8550U) juga perlu konfirmasi ulang.
