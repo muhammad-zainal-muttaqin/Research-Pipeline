@@ -1,203 +1,101 @@
 # 179 - Neural Window Fully-Connected CRFs for Monocular Depth Estimation
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 179 dari 191 |
 | Kunci BibTeX | `yuan2022newcrfs` |
-| Judul | Neural Window Fully-Connected CRFs for Monocular Depth Estimation |
-| Penulis | Yuan, Weihao; Gu, Xiaodong; Dai, Zuozhuo; Zhu, Siyu; Tan, Ping |
+| Judul asli | Neural Window Fully-connected CRFs for Monocular Depth Estimation |
+| Penulis | Weihao Yuan, Xiaodong Gu, Zuozhuo Dai, Siyu Zhu, Ping Tan |
 | Tahun | 2022 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Estimasi Kedalaman |
-| Kata kunci | monocular depth, neural window CRF, attention, supervised |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2022) |
+| Tema | Estimasi Kedalaman |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2203.01502
+- **Repositori kode resmi:** https://github.com/aliyun/NeWCRFs
+- **Halaman proyek:** https://weihaosky.github.io/newcrfs/
+- **Google Scholar:** https://scholar.google.com/scholar?q=Neural%20Window%20Fully-Connected%20CRFs%20for%20Monocular%20Depth%20Estimation
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-estimasi-kedalaman)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2203.01502
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Neural%20Window%20Fully-Connected%20CRFs%20for%20Monocular%20Depth%20Estimation
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Neural%20Window%20Fully-Connected%20CRFs%20for%20Monocular%20Depth%20Estimation&sort=relevance
+NeWCRFs (*Neural Window Fully-connected Conditional Random Fields*) merumuskan estimasi kedalaman monokular — memperkirakan jarak setiap piksel ke kamera dari satu citra RGB tunggal — sebagai masalah optimisasi *conditional random field* (CRF, model probabilistik yang menghubungkan variabel-variabel bertetangga agar prediksinya saling konsisten) yang dihitung secara lokal per jendela citra, bukan sebagai regresi langsung dari jaringan konvolusi dalam. Alih-alih menghubungkan seluruh piksel citra dalam satu graf CRF berukuran penuh — yang secara komputasi terlalu mahal — makalah ini membagi peta fitur menjadi jendela-jendela kecil dan menghitung CRF *fully-connected* (setiap simpul terhubung ke semua simpul lain dalam jendela yang sama) di dalam tiap jendela, lalu mengimplementasikan penghitungan itu sebagai mekanisme *multi-head attention* (perhatian bertingkat, cara jaringan memberi bobot berbeda pada tiap pasangan elemen fitur) sehingga seluruh proses dapat dilatih secara *end-to-end* bersama jaringan saraf. Arsitekturnya memakai Swin Transformer sebagai *encoder* (pengekstrak fitur) dan modul CRF berjendela ini sebagai *decoder* bertingkat, dari resolusi kasar ke resolusi halus. Pada saat rilis, metode ini mencapai kinerja *state-of-the-art* (kondisi terbaik yang tercatat) pada NYU Depth v2 dan KITTI, dua tolok ukur standar estimasi kedalaman indoor dan outdoor.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2203.01502 |
+Estimasi kedalaman dari satu citra bersifat *ill-posed* (kurang terdefinisi secara matematis): satu citra RGB dapat berasal dari banyak konfigurasi 3D berbeda, sehingga model harus menyimpulkan petunjuk tidak langsung seperti tekstur, oklusi, dan ukuran relatif objek. Generasi metode sebelum NeWCRFs — misalnya BTS (*Big to Small*, memakai panduan planar lokal bertingkat) dan AdaBins (mengelompokkan kedalaman ke dalam sejumlah *bin* adaptif) — menyerang masalah ini dengan merancang arsitektur regresi yang semakin rumit, tanpa mekanisme eksplisit untuk memaksa konsistensi spasial antarpiksel bertetangga. DPT menunjukkan bahwa mengganti *backbone* konvolusi dengan Vision Transformer memperbaiki hasil, tetapi juga tanpa komponen konsistensi lokal semacam itu.
 
-## Ringkasan Eksekutif
-NeWCRFs memadukan Conditional Random Fields (CRF) dengan Transformer berjendela untuk estimasi kedalaman monokular tersupervisi, menghitung energi CRF dalam jendela lokal via mekanisme mirip attention untuk hasil yang tajam dan akurat.
+CRF adalah alat klasik untuk memperbaiki masalah ini: dengan menghubungkan piksel bertetangga dan mendorong nilai kedalaman yang berdekatan agar konsisten, CRF mempertajam batas objek dan mengurangi derau prediksi. Sebelum era pembelajaran dalam, CRF banyak dipakai sebagai lapisan pasca-pemrosesan pada tugas prediksi *dense* (padat per piksel) seperti segmentasi semantik. Masalahnya, CRF *fully-connected* pada graf sebesar citra penuh — di mana setiap piksel berpotensi terhubung ke semua piksel lain — memiliki kompleksitas komputasi yang tumbuh sangat cepat seiring jumlah piksel, sehingga dalam praktiknya CRF hanya dihitung antar-tetangga terdekat. Pembatasan ini mengurangi kemampuan CRF menangkap relasi jarak jauh dalam citra.
 
-## Abstrak (Parafrase)
-Penulis menghidupkan kembali CRF dalam kerangka deep learning modern. Alih-alih CRF global mahal, NeWCRFs menghitung CRF fully-connected dalam jendela lokal, diimplementasikan sebagai neural window attention. Dengan struktur multiskala top-down, model menghasilkan depth halus namun tajam pada batas, mencapai SOTA pada KITTI dan NYU v2 saat rilis.
+## Ide Utama
 
-## Latar Belakang & Konteks
-CRF klasik memperbaiki batas prediksi dense tetapi mahal secara global. Menyatukannya dengan attention berjendela membuatnya efisien dan dapat dilatih end-to-end.
+Gagasan inti NeWCRFs adalah membagi citra menjadi jendela-jendela kecil dan menghitung CRF *fully-connected* di dalam tiap jendela, alih-alih pada seluruh citra sekaligus. Karena tiap jendela hanya berisi sejumlah kecil simpul (piksel atau petak fitur), penghitungan hubungan antarsemua pasangan simpul di dalamnya tetap murah secara komputasi, sementara sifat "terhubung penuh" (setiap simpul saling memengaruhi) tetap terjaga secara lokal. Operasi ini kemudian direalisasikan bukan sebagai algoritme optimisasi CRF tradisional (misalnya *mean-field inference*, pendekatan iteratif untuk menaksir distribusi CRF), melainkan sebagai satu lapisan *neural network* yang meniru bentuk CRF: potensi hubungan antarsimpul dihitung memakai *multi-head attention*, mekanisme yang sama dipakai Transformer untuk menimbang relevansi antarelemen fitur. Dengan cara ini, langkah optimisasi CRF menyatu ke dalam arsitektur jaringan dan dapat dilatih bersama seluruh model memakai *backpropagation*, bukan dijalankan sebagai tahap terpisah setelah jaringan menghasilkan prediksi awal.
 
-## Permasalahan yang Diangkat
-- CRF global mahal.
-- Batas depth sering kabur.
-- Menyatukan CRF dengan deep net secara efisien.
+## Cara Kerja Langkah demi Langkah
 
-## Tujuan & Pertanyaan Penelitian
-- Menghitung CRF efisien via jendela lokal.
-- Menghasilkan depth tajam dan akurat.
-- Melatih end-to-end dengan attention.
+### Encoder Swin Transformer
 
-## Tinjauan Terdahulu / Posisi Literatur
-Berpijak pada BTS/AdaBins/DPT dan tradisi CRF untuk prediksi dense; kebaruan pada neural window CRF.
+Citra masukan diproses oleh Swin Transformer, arsitektur Transformer citra yang membagi citra menjadi jendela-jendela lokal untuk menghitung *self-attention* (mekanisme di mana tiap elemen fitur menimbang relevansi elemen lain) secara efisien, lalu menggeser posisi jendela antar-lapis agar informasi tetap mengalir lintas batas jendela (dibahas rinci pada bab 025). *Encoder* ini menghasilkan fitur multiskala: peta fitur beresolusi kasar di lapis dalam dan beresolusi halus di lapis dangkal, pola umum arsitektur Transformer citra hierarkis.
 
-Karya/konsep pembanding yang relevan:
+### Struktur Bottom-Up-Top-Down dan Level Jendela
 
-- BTS - local planar guidance.
-- AdaBins - metric bins.
-- DPT - Transformer dense.
-- CRF klasik - penghalusan batas.
+Dekoder NeWCRFs disusun dalam empat level, dari petak fitur berukuran 4×4 piksel pada level bawah hingga 32×32 piksel pada level atas. Pada tiap level, sejumlah petak digabung menjadi satu jendela berukuran tetap N×N (makalah menetapkan N = 7). Untuk citra berukuran H×W, jumlah jendela pada level bawah adalah (H/4N)×(W/4N), dan pada level atas (H/32N)×(W/32N) — level atas memiliki jendela lebih sedikit karena tiap petaknya mencakup wilayah citra yang lebih luas. Struktur ini disebut *bottom-up-top-down*: fitur diekstraksi dari resolusi tinggi ke rendah oleh *encoder* (arah *bottom-up*), kemudian prediksi kedalaman disempurnakan dari resolusi rendah ke tinggi oleh dekoder (arah *top-down*), dengan modul CRF berjendela dijalankan pada tiap level.
 
-## Metodologi & Arsitektur
-Encoder (mis. Swin) menghasilkan fitur multiskala; modul neural window fully-connected CRF menghitung energi pasangan dalam jendela via attention; dekoder top-down memadukan skala untuk depth akhir.
+### Modul Neural Window FC-CRF
 
-Komponen / langkah metodologis utama:
+Pada tiap level, modul CRF menerima dua masukan: peta fitur dari *encoder* pada level tersebut, dan prediksi kedalaman kasar dari level di atasnya (level dengan resolusi lebih rendah). Modul menghitung dua jenis potensi CRF klasik dengan cara baru:
 
-- Neural window fully-connected CRF.
-- Implementasi mirip window attention.
-- Struktur multiskala top-down.
-- Encoder Transformer (Swin).
+- **Potensi uner** (*unary potential*, mencerminkan kecocokan nilai kedalaman suatu simpul dengan fiturnya sendiri) dihitung oleh jaringan konvolusi.
+- **Potensi pasangan** (*pairwise potential*, mencerminkan seberapa konsisten dua simpul bertetangga seharusnya) dihitung memakai *multi-head attention*: tiap simpul dalam jendela dibandingkan dengan semua simpul lain dalam jendela yang sama, menghasilkan bobot yang menentukan seberapa besar nilai kedalaman simpul tetangga memengaruhi simpul tersebut.
 
-## Kontribusi Utama
-1. CRF berjendela yang efisien dan dapat dilatih.
-2. Depth tajam pada batas.
-3. SOTA KITTI/NYU saat rilis.
-4. Jembatan CRF-attention.
+Karena mekanismenya memakai banyak *head* (kepala perhatian paralel, tiap kepala mempelajari pola hubungan berbeda), makalah menyebutnya sebagai "fungsi potensi multi-kepala". Keluaran modul pada tiap level adalah peta kedalaman yang telah disempurnakan, diteruskan ke level berikutnya yang resolusinya lebih tinggi.
 
-## Rincian Eksperimen
-KITTI (outdoor) dan NYU Depth v2 (indoor) untuk metrik depth tersupervisi (RMSE/AbsRel/delta).
+### Modul Pyramid Pooling untuk Informasi Global
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Karena CRF berjendela hanya menghubungkan simpul dalam jendela yang sama, informasi dari bagian citra yang jauh tidak langsung tersalur. Untuk mengompensasi ini, pada level teratas (resolusi terkasar) ditambahkan modul *pyramid pooling* yang menghimpun rata-rata fitur pada beberapa skala (1, 2, 3, dan 6 bagian citra), menyediakan konteks global sebelum informasi disempurnakan secara lokal di level-level berikutnya.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI | RMSE | SOTA saat rilis |
-| NYU v2 | AbsRel/delta | akurat, batas tajam |
-| Ablation CRF | metrik | CRF berjendela menaikkan hasil |
+Diagram berikut merangkum alur bertingkat tersebut:
 
-## Temuan Kunci
-- CRF lokal efektif menajamkan batas depth.
-- Attention berjendela mewujudkan CRF efisien.
-- Multiskala penting untuk akurasi.
+```
+citra RGB
+   │  Swin Transformer (encoder)
+   ▼
+fitur level-4 (kasar, petak 32x32) ── Pyramid Pooling (konteks global)
+   │  Neural Window FC-CRF (jendela 7x7 petak)
+   ▼  upsample
+fitur level-3 (petak 16x16)
+   │  Neural Window FC-CRF
+   ▼  upsample
+fitur level-2 (petak 8x8)
+   │  Neural Window FC-CRF
+   ▼  upsample
+fitur level-1 (halus, petak 4x4)
+   │  Neural Window FC-CRF
+   ▼
+peta kedalaman akhir
+```
 
-## Keunggulan
-- Batas tajam.
-- Akurasi tinggi.
-- Efisien relatif CRF global.
+Tiap panah turun menandai penyempurnaan resolusi (*upsample*) sekaligus penerapan CRF berjendela baru pada level yang lebih halus; hasilnya adalah peta kedalaman yang secara bertahap makin tajam pada batas objek.
 
-## Keterbatasan
-- Tersupervisi (butuh label depth).
-- Backbone Transformer relatif berat.
-- Fokus depth (bukan multitugas).
+## Eksperimen dan Hasil
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Evaluasi dilakukan pada dua tolok ukur utama: NYU Depth v2 (adegan indoor, kedalaman metrik hingga sekitar 10 meter) dan KITTI *Eigen split* (adegan jalan raya outdoor, pembagian data standar yang diperkenalkan Eigen dkk.). Metrik yang dilaporkan meliputi AbsRel (*Absolute Relative error*, rata-rata selisih absolut relatif terhadap kedalaman sebenarnya — makin kecil makin baik), RMSE (*Root Mean Square Error*, akar rata-rata kuadrat galat dalam satuan meter), log10 (galat pada skala logaritmik), dan δ<1,25 (persentase piksel dengan rasio prediksi-terhadap-kebenaran di bawah ambang 1,25 — makin besar makin baik).
 
-## Relevansi terhadap Tema Tinjauan
-Estimasi depth akurat mendukung konstruksi input RGB-D dan lokalisasi 3D pada aplikasi berbasis kamera.
+Pada NYU Depth v2, NeWCRFs mencapai AbsRel 0,095, RMSE 0,334, log10 0,041, dan δ<1,25 sebesar 0,922. Sebagai perbandingan, BTS mencatat AbsRel 0,110 dan RMSE 0,392; AdaBins mencatat AbsRel 0,103 dan RMSE 0,364; DPT mencatat AbsRel 0,110 dan RMSE 0,357. Artinya, NeWCRFs menurunkan AbsRel sekitar 8–14% relatif terhadap ketiga metode tersebut sekaligus memperbaiki RMSE, menunjukkan prediksi yang secara konsisten lebih dekat ke kedalaman sebenarnya, bukan hanya unggul pada satu metrik.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Estimasi Kedalaman** yang baik dibaca berdampingan:
+Pada KITTI *Eigen split*, NeWCRFs mencapai AbsRel 0,052 dan RMSE 2,129 meter, dibandingkan BTS (AbsRel 0,059, RMSE 2,756), AdaBins (AbsRel 0,058, RMSE 2,360), dan DPT (AbsRel 0,062, RMSE 2,573). Selisih RMSE terhadap AdaBins, metode pembanding terbaik pada baris ini, sekitar 0,23 meter atau sekitar 10% relatif — cukup besar untuk adegan outdoor berskala puluhan meter. NeWCRFs juga tercatat menempati peringkat pertama pada papan peringkat daring (*online benchmark*) KITTI depth pada periode Oktober 2021–Maret 2022.
 
-- [175 - 2024 - Depth Anything V2 - Estimasi Kedalaman](./175%20-%202024%20-%20Depth%20Anything%20V2%20-%20Estimasi%20Kedalaman.md)
-- [176 - 2023 - ZoeDepth - Estimasi Kedalaman](./176%20-%202023%20-%20ZoeDepth%20-%20Estimasi%20Kedalaman.md)
-- [177 - 2023 - Metric3D - Estimasi Kedalaman](./177%20-%202023%20-%20Metric3D%20-%20Estimasi%20Kedalaman.md)
-- [178 - 2024 - Marigold - Estimasi Kedalaman](./178%20-%202024%20-%20Marigold%20-%20Estimasi%20Kedalaman.md)
+Selain dua tolok ukur utama tersebut, makalah menguji metode pada MatterPort3D, kumpulan data citra panorama indoor, dan melaporkan hasil yang melampaui metode estimasi kedalaman panorama sebelumnya — menunjukkan modul CRF berjendela dapat diadaptasi ke proyeksi citra yang berbeda dari citra perspektif standar.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Estimasi Kedalaman** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kelebihan dan Keterbatasan
 
-## Glosarium Istilah (tema Estimasi Kedalaman)
-Istilah penting untuk memahami makalah ini:
+Kelebihan utama NeWCRFs adalah menyatukan prinsip klasik CRF — konsistensi spasial antarsimpul bertetangga — dengan efisiensi komputasi Transformer berjendela, sehingga optimisasi CRF dapat dilatih *end-to-end* tanpa tahap pasca-pemrosesan terpisah. Struktur bertingkat dari kasar ke halus memungkinkan model menangkap konteks luas pada level atas (dibantu *pyramid pooling*) sekaligus detail batas objek pada level bawah. Hasil pada tiga dataset berbeda (indoor, outdoor, panorama) menunjukkan mekanismenya cukup umum untuk beragam domain citra.
 
-- **Depth monokular** — Estimasi kedalaman dari satu citra RGB (ill-posed).
-- **Supervised** — Dilatih dengan ground-truth depth.
-- **Self-supervised** — Dilatih tanpa label depth via konsistensi stereo/video.
-- **Disparitas** — Pergeseran piksel antar-pandangan stereo.
-- **Skala metrik vs relatif** — Depth satuan nyata vs hanya urutan relatif.
-- **AbsRel** — Absolute Relative error (makin kecil makin baik).
-- **RMSE** — Root Mean Square Error peta depth.
-- **delta<1.25** — Persentase piksel dengan error di bawah ambang.
-- **Zero-shot** — Generalisasi ke dataset tak dilihat saat pelatihan.
-- **Pseudo-depth** — Depth prediksi model, pengganti sensor depth.
+Dari sisi rekayasa, ketergantungan pada Swin Transformer sebagai *encoder* membuat model relatif berat dibandingkan arsitektur konvolusi murni seperti BTS, sehingga kebutuhan memori dan waktu inferensi lebih tinggi — makalah tidak menonjolkan perbandingan kecepatan sebagai kontribusi utamanya. Secara konseptual, metode ini tetap sepenuhnya tersupervisi: pelatihan membutuhkan label kedalaman padat dari sensor (LiDAR untuk KITTI, sensor Kinect untuk NYU Depth v2), berbeda dari pendekatan *self-supervised* yang belajar dari konsistensi antar-*frame* video atau pasangan stereo tanpa label kedalaman langsung. Fokus makalah juga murni pada estimasi kedalaman tunggal, tanpa menjadikan kedalaman sebagai bagian dari sistem multitugas.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Kaitan dengan Bab Lain
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+NeWCRFs memakai Swin Transformer (bab 025) sebagai *encoder*, mewarisi mekanisme *window attention* Swin dan menerapkannya kembali dengan interpretasi baru sebagai penghitung potensi pasangan CRF — perluasan konseptual dari penggunaan Swin murni sebagai pengklasifikasi atau pendeteksi. Dibandingkan dengan metode estimasi kedalaman lain pada klaster yang sama, ZoeDepth (bab 176) dan Metric3D (bab 177) berfokus pada generalisasi metrik lintas domain memakai *backbone* dan strategi pelatihan berbeda, sedangkan Depth Anything V2 (bab 175) menekankan skala data pelatihan yang sangat besar dan distilasi dari model guru. Marigold (bab 178) mengambil pendekatan berbeda secara mendasar, memakai model difusi yang awalnya dilatih untuk sintesis citra. NeWCRFs berkontribusi pada garis penelitian ini dengan menunjukkan bahwa komponen klasik seperti CRF masih dapat memberi perbaikan terukur ketika diimplementasikan ulang sebagai lapisan *neural network* yang dapat dilatih, bukan sebagai tahap pasca-pemrosesan terpisah — gagasan yang relevan dibandingkan dengan pendekatan berbasis *backbone* besar atau difusi pada bab-bab lain di klaster Estimasi Kedalaman.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Poin untuk Sitasi
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-NeWCRFs menyatukan CRF dan attention berjendela untuk depth monokular yang tajam dan akurat, menyegarkan peran CRF di era deep learning.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `yuan2022newcrfs` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 179/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `yuan2022newcrfs`. Ringkasan aman: "NeWCRFs merumuskan estimasi kedalaman monokular sebagai optimisasi CRF *fully-connected* yang dihitung per jendela citra memakai *multi-head attention*, dengan Swin Transformer sebagai *encoder* dan struktur dekoder *bottom-up-top-down* empat level, mencapai kinerja *state-of-the-art* pada NYU Depth v2 dan KITTI saat dipublikasikan pada CVPR 2022." Angka hasil (NYU: AbsRel 0,095, RMSE 0,334, log10 0,041, δ<1,25 0,922; KITTI: AbsRel 0,052, RMSE 2,129, δ<1,25 0,974) dan angka pembanding BTS/AdaBins/DPT diperoleh dari ringkasan tabel hasil makalah via sumber sekunder (bukan pembacaan langsung tabel PDF asli) — sebaiknya diverifikasi ulang terhadap Tabel 1 dan Tabel 2 naskah asli sebelum dikutip dalam karya formal. Ukuran varian Swin Transformer yang dipakai untuk hasil utama (Tiny/Base/Large) tidak berhasil dipastikan dari sumber yang diakses dan perlu dicek langsung ke naskah.

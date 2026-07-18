@@ -1,203 +1,93 @@
 # 176 - ZoeDepth: Zero-Shot Transfer by Combining Relative and Metric Depth
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 176 dari 191 |
 | Kunci BibTeX | `bhat2023zoedepth` |
-| Judul | ZoeDepth: Zero-Shot Transfer by Combining Relative and Metric Depth |
-| Penulis | Bhat, Shariq Farooq; Birkl, Reiner; Wofk, Diana; Wonka, Peter; M{\"u |
+| Judul asli | ZoeDepth: Zero-shot Transfer by Combining Relative and Metric Depth |
+| Penulis | Shariq Farooq Bhat, Reiner Birkl, Diana Wofk, Peter Wonka, Matthias Müller |
 | Tahun | 2023 |
-| Venue / Jurnal | arXiv preprint arXiv:2302.12288 |
-| Tema klaster | Estimasi Kedalaman |
-| Kata kunci | metric depth, zero-shot, relative-to-metric, monocular |
+| Venue | arXiv preprint arXiv:2302.12288 |
+| Tema | Estimasi Kedalaman |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2302.12288
+- **Google Scholar:** https://scholar.google.com/scholar?q=ZoeDepth%3A%20Zero-Shot%20Transfer%20by%20Combining%20Relative%20and%20Metric%20Depth
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=ZoeDepth%3A%20Zero-Shot%20Transfer%20by%20Combining%20Relative%20and%20Metric%20Depth&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-estimasi-kedalaman)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2302.12288
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=ZoeDepth%3A%20Zero-Shot%20Transfer%20by%20Combining%20Relative%20and%20Metric%20Depth
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=ZoeDepth%3A%20Zero-Shot%20Transfer%20by%20Combining%20Relative%20and%20Metric%20Depth&sort=relevance
+ZoeDepth mengusulkan model estimasi kedalaman monokular (dari satu citra RGB) yang menggabungkan dua sifat yang sebelumnya sulit didapat bersamaan: generalisasi lintas-domain dari model *depth* relatif, dan skala metrik (satuan nyata, misalnya meter) dari model *depth* metrik. Pendekatannya bertahap dua tahap: pra-pelatihan pada *depth* relatif memakai gabungan dua belas kumpulan data, diikuti penambahan kepala prediksi metrik ringan yang disebut *metric bins module* (modul bin metrik) dan disetel halus (*fine-tuning*) pada data berlabel metrik. Penulis melaporkan model gabungan mereka meningkatkan galat relatif absolut (REL) pada NYU Depth v2 sekitar 21% dibandingkan metode metrik terbaik sebelumnya, sekaligus mempertahankan generalisasi zero-shot (tanpa pelatihan ulang) ke delapan kumpulan data yang tidak pernah dilihat saat pelatihan.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Kontribusi utamanya adalah arsitektur yang memisahkan tanggung jawab: *backbone* (jaringan tulang punggung) belajar struktur *depth* umum dari data relatif yang melimpah dan beragam domain, sedangkan kepala metrik domain-spesifik menerjemahkan struktur itu menjadi jarak nyata. Model penuh, disebut ZoeD-M12-NK, dilatih pada gabungan domain indoor dan outdoor sekaligus tanpa penurunan akurasi berarti pada kedua domain — sebuah hasil yang menurut penulis belum dicapai model metrik sebelumnya.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2302.12288 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-ZoeDepth menjembatani depth relatif dan metrik: model dilatih untuk depth relatif zero-shot lintas-dataset lalu ditambah kepala metrik-bins per-domain, sehingga menghasilkan depth berskala metrik yang tetap general.
+Estimasi *depth* monokular terbagi menjadi dua aliran riset dengan tujuan berbeda. Aliran pertama, *depth* relatif, dipelopori model seperti MiDaS: dilatih pada campuran banyak kumpulan data dari sumber heterogen (foto internet, video, sintesis), sehingga menggeneralisasi baik ke domain baru, tetapi keluarannya hanya urutan kedalaman relatif antarpiksel — tanpa skala satuan nyata, sehingga tidak langsung dapat dipakai untuk pengukuran jarak atau rekonstruksi 3D yang presisi. Aliran kedua, *depth* metrik, dilatih langsung dengan target kedalaman berlabel meter pada satu kumpulan data spesifik (misalnya NYU Depth v2 untuk indoor atau KITTI untuk outdoor), sehingga akurat pada domain itu tetapi jatuh performanya secara tajam bila diuji pada domain lain — sebuah model yang dilatih pada ruangan kantor umumnya gagal menaksir jarak pada jalan raya.
 
-## Abstrak (Parafrase)
-Penulis menggabungkan pra-pelatihan depth relatif pada banyak dataset (untuk generalisasi) dengan kepala metric bins (turunan AdaBins/LocalBins) yang diaktifkan per-domain via router ringan. Hasilnya satu model dapat menghasilkan depth metrik pada domain indoor/outdoor sekaligus mempertahankan kemampuan zero-shot, mengungguli baseline metrik pada beberapa benchmark.
+Upaya sebelumnya seperti AdaBins dan LocalBins memperbaiki akurasi metrik lewat mekanisme *adaptive binning* (pembagian rentang kedalaman menjadi sejumlah bin yang lebar dan posisinya disesuaikan per citra), tetapi tetap dilatih dan dievaluasi dalam satu domain tunggal. Belum ada model yang menggabungkan kekuatan pra-pelatihan relatif skala besar dengan keluaran metrik yang akurat pada lebih dari satu domain sekaligus. ZoeDepth diposisikan untuk mengisi celah ini: menghasilkan satu model yang memprediksi kedalaman berskala metrik namun tetap general seperti model relatif.
 
-## Latar Belakang & Konteks
-Depth relatif general tapi tak berskala metrik; depth metrik akurat tapi domain-spesifik. ZoeDepth menyatukan keduanya.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Depth relatif tak punya skala metrik.
-- Model metrik tak general lintas-domain.
-- Butuh satu model serbaguna.
+Gagasan inti ZoeDepth adalah memisahkan pelatihan menjadi dua tahap yang saling melengkapi. Tahap pertama melatih *encoder-decoder* (jaringan penyandi-pengurai fitur) pada tugas *depth* relatif memakai gabungan dua belas kumpulan data, sehingga jaringan mempelajari representasi struktur kedalaman yang kaya dan tidak terikat satu domain. Tahap kedua menempelkan kepala prediksi tambahan — modul bin metrik — di atas *decoder* yang sudah terlatih itu, lalu menyetel halus keseluruhan jaringan dengan target *depth* metrik dari NYU Depth v2 dan/atau KITTI.
 
-## Tujuan & Pertanyaan Penelitian
-- Menghasilkan depth metrik yang tetap general.
-- Menggabungkan pra-latih relatif dan kepala metrik.
-- Menangani multi-domain via router.
+Modul bin metrik bekerja dengan memprediksi sejumlah pusat bin kedalaman (nilai kedalaman kandidat) untuk tiap citra, kemudian menghitung kedalaman akhir tiap piksel sebagai kombinasi bobot dari pusat-pusat bin tersebut. Bobot ini diperhalus lewat lapisan yang disebut *attractor* (penarik): lapisan ini menggeser posisi pusat bin awal secara bertahap berdasarkan fitur multi-skala dari *decoder*, sehingga posisi bin makin presisi menjelang lapisan akhir jaringan. Karena kedalaman bersifat berurutan (bin yang berdekatan mewakili jarak yang berdekatan pula), distribusi bobot bin dihitung memakai distribusi log-binomial, bukan *softmax* biasa — pilihan ini menjaga sifat berurutan antarbin alih-alih memperlakukannya sebagai kelas independen.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Berpijak pada MiDaS (relatif) dan AdaBins/LocalBins (metric bins); menekankan penggabungan keduanya.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Tahap 1 — Pra-pelatihan Depth Relatif
 
-- MiDaS - depth relatif lintas-dataset.
-- AdaBins - metric bins adaptif.
-- LocalBins - bins lokal.
-- DPT - backbone prediksi dense.
+Jaringan *backbone* memakai arsitektur bertipe MiDaS/DPT (*Dense Prediction Transformer*, arsitektur berbasis *transformer* untuk prediksi padat per piksel). Jaringan ini dilatih pada dua belas kumpulan data *depth* relatif yang digabung, mencakup citra indoor, outdoor, dan sintetis dengan label kedalaman berskala tak seragam. Tujuan tahap ini semata melatih jaringan mengenali struktur permukaan, tepi objek, dan urutan kedalaman — bukan nilai metrik absolut. Hasil tahap ini adalah *backbone* dengan bobot awal yang sudah terbukti menggeneralisasi ke domain visual yang luas, sama seperti model MiDaS pada umumnya.
 
-## Metodologi & Arsitektur
-Backbone terlatih relatif (MiDaS/DPT) di-fine-tune dengan kepala metric bins; router ringan memilih kepala domain (indoor/outdoor); dekoder menghasilkan depth metrik.
+### Tahap 2 — Modul Bin Metrik dan Attractor
 
-Komponen / langkah metodologis utama:
+Di atas *decoder* tahap pertama, ditempelkan kepala metrik ringan. Untuk setiap citra, kepala ini memprediksi satu himpunan awal pusat bin kedalaman, misalnya 64 pusat yang tersebar pada rentang kedalaman domain yang ditarget (0–10 meter untuk indoor, 0–80 meter untuk outdoor). Lapisan *attractor* kemudian menyempurnakan posisi pusat-pusat ini secara berjenjang mengikuti resolusi fitur yang membesar di *decoder*: pada resolusi rendah, pusat bin digeser secara kasar; pada resolusi tinggi, pergeseran menjadi halus dan spesifik-piksel. Kedalaman akhir tiap piksel dihasilkan dari jumlah berbobot pusat bin akhir, dengan bobot dihitung lewat distribusi log-binomial berdasarkan fitur piksel tersebut.
 
-- Pra-latih depth relatif multi-dataset.
-- Kepala metric bins per-domain.
-- Router pemilih domain ringan.
-- Fine-tune metrik indoor+outdoor.
+### Router Domain untuk Model Multi-Dataset
 
-## Kontribusi Utama
-1. Kerangka relative-to-metric terpadu.
-2. Depth metrik zero-shot yang general.
-3. Router multi-domain.
-4. Peningkatan pada benchmark metrik.
+Ketika model dilatih pada lebih dari satu kumpulan data metrik sekaligus (varian ZoeD-M12-NK, dilatih pada NYU Depth v2 dan KITTI bersamaan), setiap citra masukan pertama melewati pengklasifikasi laten ringan yang menentukan citra tersebut kemungkinan berasal dari domain indoor atau outdoor, lalu merutekannya ke kepala metrik yang sesuai. Mekanisme ini memungkinkan satu jaringan *backbone* dibagi pakai lintas-domain sementara kepala metriknya tetap terspesialisasi, sehingga menghindari penurunan akurasi yang biasanya muncul saat satu kepala tunggal dipaksa menangani rentang kedalaman indoor dan outdoor yang berbeda jauh skalanya.
 
-## Rincian Eksperimen
-NYU Depth v2 (indoor) dan KITTI (outdoor) untuk metrik (AbsRel/RMSE/delta), plus uji zero-shot lintas-dataset.
+Diagram berikut merangkum alur dua tahap tersebut:
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+tahap 1: pra-latih relatif          tahap 2: fine-tune metrik
+┌──────────────────────┐            ┌───────────────────────────┐
+│ 12 dataset depth      │            │ backbone hasil tahap 1      │
+│ relatif (indoor+      │  bobot     │  + modul bin metrik         │
+│ outdoor+sintetis)     │ ────────► │  + lapisan attractor        │
+└──────────────────────┘  awal      │  + router domain (opsional) │
+                                     └──────────────┬──────────────┘
+                                                     │
+                                    citra masukan ──►│── router ──► kepala N (indoor)
+                                                     │           atau kepala K (outdoor)
+                                                     ▼
+                                            peta depth metrik (meter)
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| NYU v2 | AbsRel/delta | SOTA/kompetitif metrik indoor |
-| KITTI | RMSE | kuat outdoor |
-| Zero-shot | rank | generalisasi terjaga |
+Diagram ini menunjukkan bahwa bobot dari pra-pelatihan relatif menjadi titik awal, bukan target akhir; skala metrik hanya diperoleh setelah kepala bin dan *attractor* ditambahkan dan disetel halus pada data berlabel metrik.
 
-## Temuan Kunci
-- Pra-latih relatif meningkatkan generalisasi metrik.
-- Router memungkinkan multi-domain.
-- Satu model melayani indoor+outdoor.
+### Varian Model
 
-## Keunggulan
-- Depth metrik + general.
-- Multi-domain.
-- Memanfaatkan pra-latih kuat.
+Penulis melaporkan beberapa varian sesuai kombinasi data pelatihan: model yang dilatih langsung pada data metrik tanpa pra-pelatihan relatif (misalnya ZoeD-N untuk NYU saja, ZoeD-K untuk KITTI saja, ZoeD-NK untuk keduanya), dan model dengan pra-pelatihan dua belas dataset relatif (ZoeD-M12-N, ZoeD-M12-K, ZoeD-M12-NK). Perbandingan antarvarian dipakai untuk mengisolasi kontribusi pra-pelatihan relatif terhadap akurasi metrik akhir.
 
-## Keterbatasan
-- Router menambah kompleksitas.
-- Skala metrik bergantung kalibrasi domain.
-- Domain baru mungkin butuh fine-tune.
+## Eksperimen dan Hasil
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Evaluasi utama dilakukan pada NYU Depth v2 (kumpulan data indoor dengan label kedalaman dari sensor RGB-D) dan KITTI (kumpulan data outdoor dari kendaraan berkamera dan LiDAR), memakai metrik standar estimasi *depth*: REL (galat relatif absolut, rata-rata selisih absolut antara prediksi dan kebenaran dibagi kebenaran — makin kecil makin baik), RMSE (*root mean square error*, akar rata-rata kuadrat galat), dan delta1 (persentase piksel dengan rasio prediksi-terhadap-kebenaran di bawah ambang 1,25).
 
-## Relevansi terhadap Tema Tinjauan
-Depth metrik dari satu kamera sangat berguna untuk lokalisasi 3D pada pipeline RGB-D tanpa sensor depth khusus.
+Pada NYU Depth v2, penulis melaporkan peningkatan REL sekitar 21% dibandingkan metode metrik *state-of-the-art* sebelumnya (di antaranya NeWCRFs, dibahas pada bab 179). Angka ini menunjukkan galat relatif model menyusut sekitar seperlima dibandingkan pembanding terbaik pada domain yang sama — sebuah perbaikan besar untuk tugas yang sudah kompetitif.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Estimasi Kedalaman** yang baik dibaca berdampingan:
+Pengujian generalisasi dilakukan pada delapan kumpulan data yang tidak dilihat saat pelatihan metrik, mencakup domain indoor dan outdoor lain. Penulis melaporkan peningkatan zero-shot yang sangat besar pada sebagian dataset tersebut, termasuk klaim peningkatan REL hingga 976,4% pada dataset DIML Outdoor dibandingkan baseline metrik yang tidak memakai pra-pelatihan relatif. Angka sebesar ini kemungkinan mencerminkan kegagalan total model baseline pada domain di luar cakupan pelatihannya, bukan semata keunggulan absolut ZoeDepth; interpretasi tepatnya perlu dicek pada tabel lengkap naskah asli. Secara umum, temuan eksperimen menunjukkan bahwa pra-pelatihan relatif skala besar adalah faktor dominan di balik generalisasi zero-shot, sedangkan modul bin metrik dan *attractor* berkontribusi pada presisi metrik akhir setelah *fine-tuning*.
 
-- [175 - 2024 - Depth Anything V2 - Estimasi Kedalaman](./175%20-%202024%20-%20Depth%20Anything%20V2%20-%20Estimasi%20Kedalaman.md)
-- [177 - 2023 - Metric3D - Estimasi Kedalaman](./177%20-%202023%20-%20Metric3D%20-%20Estimasi%20Kedalaman.md)
-- [178 - 2024 - Marigold - Estimasi Kedalaman](./178%20-%202024%20-%20Marigold%20-%20Estimasi%20Kedalaman.md)
-- [179 - 2022 - NeWCRFs - Estimasi Kedalaman](./179%20-%202022%20-%20NeWCRFs%20-%20Estimasi%20Kedalaman.md)
+## Kelebihan dan Keterbatasan
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Estimasi Kedalaman** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Kelebihan utama ZoeDepth terletak pada penyatuan dua tujuan yang secara historis dianggap berkompromi: skala metrik dan generalisasi domain. Arsitekturnya modular — *backbone* relatif dapat dipakai ulang untuk domain metrik baru hanya dengan melatih kepala bin baru, tanpa mengulang pra-pelatihan besar. Router domain pada varian gabungan memungkinkan satu model melayani indoor dan outdoor tanpa kepala tunggal yang dipaksa menangani rentang skala yang jauh berbeda.
 
-## Glosarium Istilah (tema Estimasi Kedalaman)
-Istilah penting untuk memahami makalah ini:
+Dari sisi rekayasa, ketergantungan pada router domain berarti akurasi model gabungan bergantung pada seberapa tepat pengklasifikasi laten menebak domain citra; kesalahan rute berpotensi menghasilkan prediksi kedalaman pada skala yang salah. Secara konseptual, model tetap memerlukan data metrik berlabel dari domain yang ingin dicapai akurasi tingginya — generalisasi zero-shot yang dilaporkan baik untuk domain yang mirip NYU/KITTI, tetapi domain yang sangat berbeda (misalnya citra bawah air atau medis) kemungkinan tetap membutuhkan *fine-tuning* tambahan. Jumlah bin dan rentang kedalaman per domain juga merupakan hiperparameter yang ditentukan di muka, sehingga model kurang fleksibel terhadap rentang kedalaman ekstrem yang tidak diantisipasi saat perancangan kepala metrik.
 
-- **Depth monokular** — Estimasi kedalaman dari satu citra RGB (ill-posed).
-- **Supervised** — Dilatih dengan ground-truth depth.
-- **Self-supervised** — Dilatih tanpa label depth via konsistensi stereo/video.
-- **Disparitas** — Pergeseran piksel antar-pandangan stereo.
-- **Skala metrik vs relatif** — Depth satuan nyata vs hanya urutan relatif.
-- **AbsRel** — Absolute Relative error (makin kecil makin baik).
-- **RMSE** — Root Mean Square Error peta depth.
-- **delta<1.25** — Persentase piksel dengan error di bawah ambang.
-- **Zero-shot** — Generalisasi ke dataset tak dilihat saat pelatihan.
-- **Pseudo-depth** — Depth prediksi model, pengganti sensor depth.
+## Kaitan dengan Bab Lain
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+ZoeDepth mewarisi *backbone* dan filosofi pra-pelatihan lintas-dataset dari garis model *depth* relatif seperti MiDaS, dan berbagi prinsip modul bin adaptif dengan AdaBins/LocalBins yang mendahuluinya. Pada klaster Estimasi Kedalaman dalam tinjauan ini, ZoeDepth berada di antara pendekatan *depth* relatif murni yang dibahas pada bab [175 - 2024 - Depth Anything V2](./175%20-%202024%20-%20Depth%20Anything%20V2%20-%20Estimasi%20Kedalaman.md) — yang juga mengandalkan pra-pelatihan skala besar tetapi tanpa kepala metrik eksplisit — dan pendekatan metrik langsung seperti bab [179 - 2022 - NeWCRFs](./179%20-%202022%20-%20NeWCRFs%20-%20Estimasi%20Kedalaman.md), salah satu pembanding yang dilampaui pada NYU Depth v2. Bab [177 - 2023 - Metric3D](./177%20-%202023%20-%20Metric3D%20-%20Estimasi%20Kedalaman.md) mengangkat masalah serupa — metrik yang general lintas-kamera — dengan strategi berbeda (normalisasi geometri kamera alih-alih router domain). Bab [178 - 2024 - Marigold](./178%20-%202024%20-%20Marigold%20-%20Estimasi%20Kedalaman.md) mendekati generalisasi *depth* lewat model difusi, jalur arsitektur yang berbeda dari pendekatan diskriminatif berbasis bin pada ZoeDepth. Bagi pipeline RGB-D pada tinjauan ini, ZoeDepth relevan sebagai sumber pseudo-*depth* berskala metrik dari kamera RGB tunggal tanpa sensor kedalaman khusus.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Poin untuk Sitasi
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-ZoeDepth menyatukan keunggulan depth relatif dan metrik, menyediakan estimasi kedalaman metrik yang general lintas-domain.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `bhat2023zoedepth` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 176/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `bhat2023zoedepth`. Ringkasan yang aman dikutip: "ZoeDepth menggabungkan pra-pelatihan *depth* relatif pada dua belas kumpulan data dengan modul bin metrik dan lapisan *attractor* yang disetel halus pada data metrik (NYU Depth v2, KITTI), mencapai peningkatan REL sekitar 21% pada NYU Depth v2 dibanding metode metrik sebelumnya serta generalisasi zero-shot ke delapan kumpulan data tak terlihat." Angka 21% REL pada NYU Depth v2 dan klaim peningkatan hingga 976,4% REL pada DIML Outdoor perlu diverifikasi ulang terhadap tabel lengkap pada naskah asli sebelum dikutip dalam karya formal, termasuk nilai RMSE dan delta1 spesifik yang tidak dikutip di sini karena belum terkonfirmasi presisi angkanya dari sumber yang diakses.
