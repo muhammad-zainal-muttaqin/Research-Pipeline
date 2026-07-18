@@ -8,7 +8,7 @@ Gambar~\ref{fig:taksonomi}) dan Tabel~\ref{tab:taksonomi}. Sumber:
 
 ## 2. Konten faktual (node & edge — jangan tambah/kurangi)
 Akar: **Deteksi Objek RGB-D untuk Sawit**. Empat cabang poros; tiap poros
-menaungi klaster (angka = jumlah karya inti):
+menaungi klaster (angka = jumlah karya inti). Jumlah antarklaster tidak boleh dijumlahkan: satu karya dapat berada pada lebih dari satu klaster sehingga total badge bukan jumlah korpus:
 
 - **Poros 1 — Evolusi YOLO**
   - Evolusi YOLO (14)
@@ -48,8 +48,8 @@ RGB-D (16), Fusi RGB+Depth Deteksi (5), Pose 6D & Grasp (19), Deteksi 3D
 LiDAR-Kamera (18), Pedestrian RGB-T (7), RGB-D SLAM (7), Dataset & Tolok
 Ukur (7)]; Poros 4 Integrasi -> [YOLO+RGB-D (7), Aplikasi (22)]. Warnai
 Poros 1 #0F766E, Poros 2 #2B6CB0, Poros 3 #8B5CB4, Poros 4 #A03028. Beri
-outline aksen tebal pada node "YOLO+RGB-D (7)". Struktur pasti; jangan
-tambah/kurangi node. Ekspor SVG/PDF vektor.
+outline aksen tebal pada node "YOLO+RGB-D (7)". Tambahkan catatan kaki
+kecil: "Jumlah antarklaster tidak dijumlahkan; satu karya dapat muncul pada lebih dari satu klaster." Struktur pasti; jangan tambah/kurangi node. Ekspor SVG/PDF vektor.
 ```
 
 ## 5. Sumber mermaid (spesifikasi kebenaran / fallback)

@@ -215,12 +215,12 @@ Chart C1/C2 boleh alternatif native `pgfplots` bila ingin reproducible tanpa Gem
 
 Karena `pdflatex` lokal tidak tersedia (GateGuard), verifikasi utama berbasis teks:
 
-- **0 sitasi menggantung:** setiap kunci di `\cite{...}` (`main.tex`) ada di
-  `references.bib`.
+- **0 sitasi menggantung:** setiap kunci di `\cite{...}` dalam `body.tex`
+  (yang diinput oleh `main.tex` dan `main-elsarticle.tex`) ada di `references.bib`.
 - **0 sitasi yatim:** setiap kunci `@...{key,` di `references.bib` dirujuk ≥1× di
-  `main.tex` → menjamin **202 entri terbahas**.
+  `body.tex` → menjamin **202 entri terbahas**.
 - **Cek berbasis `grep` (lokal, tanpa kompilasi):** ekstrak kunci `\cite` dari
-  `main.tex` dan kunci `@` dari `references.bib`, bandingkan dua himpunan (selisih dua
+  `body.tex` dan kunci `@` dari `references.bib`, bandingkan dua himpunan (selisih dua
   arah harus kosong).
 - **Kompilasi PDF:** dilakukan pengguna via **Overleaf** (unggah `main.tex` +
   `references.bib` + `figures/`) atau *runner* remote. Urutan: `pdflatex` → `bibtex`
