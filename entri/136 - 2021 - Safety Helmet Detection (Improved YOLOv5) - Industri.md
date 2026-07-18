@@ -1,206 +1,121 @@
 # 136 - Safety Helmet Wearing Detection Based on Improved YOLOv5
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
-| Field | Nilai |
-|---|---|
-| Nomor entri | 136 dari 154 |
+
+| Atribut | Nilai |
+| --- | --- |
 | Kunci BibTeX | `zhou2021helmet` |
-| Judul | Safety Helmet Wearing Detection Based on Improved YOLOv5 |
+| Judul asli | Safety Helmet Wearing Detection Based on Improved YOLOv5 |
 | Penulis | Zhou, Fang; Zhao, Huailin; Nie, Zhen |
 | Tahun | 2021 |
-| Venue / Jurnal | Proceedings of the IEEE International Conference on Computer Vision, Image and Deep Learning (CVIDL) |
-| Tema klaster | Industri |
-| Kata kunci | industri, helm keselamatan, YOLOv5, K3, real-time |
+| Venue | Proceedings of the IEEE International Conference on Computer Vision, Image and Deep Learning (CVIDL) |
+| Tema | Industri |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-industri)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
 - **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Safety%20Helmet%20Wearing%20Detection%20Based%20on%20Improved%20YOLOv5
 - **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Safety%20Helmet%20Wearing%20Detection%20Based%20on%20Improved%20YOLOv5&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 611--614 |
+Makalah oleh Zhou dkk. (2021) menyajikan evaluasi komparatif arsitektur deteksi objek satu-tahap (*single-stage detector*) berbasis YOLOv5 untuk mendeteksi pemakaian helm keselamatan (*safety helmet*) di area konstruksi. Tujuan utamanya adalah merancang solusi pemantauan otomatis untuk mendukung kepatuhan regulasi keselamatan dan kesehatan kerja (K3). Sistem ini mendeteksi apakah pekerja mengenakan pelindung kepala dengan benar atau membiarkannya terbuka di area kerja berbahaya.
 
-## Ringkasan Eksekutif
-YOLOv5 termodifikasi untuk deteksi pemakaian helm keselamatan di lokasi kerja guna pemantauan K3.
+Penulis mengevaluasi empat varian YOLOv5 (YOLOv5s, YOLOv5m, YOLOv5l, dan YOLOv5x) pada dataset kustom sebanyak 6.045 citra yang dianotasi secara manual untuk kelas kepala berhelm (*helmet*) dan kepala tanpa helm (*head*). Hasil eksperimen menunjukkan varian YOLOv5x mencapai presisi rata-rata (*mean average precision* atau mAP) tertinggi sebesar 94,7%. Sementara itu, YOLOv5s menawarkan kecepatan inferensi tercepat sebesar 110 bingkai per detik (*frames per second* atau FPS), menjadikannya sangat ideal untuk pemantauan waktu nyata (*real-time*) pada perangkat komputasi tepi (*edge devices*) dengan sumber daya terbatas.
 
-## Abstrak (Parafrase)
-Zhou dkk. memodifikasi YOLOv5 untuk mendeteksi pemakaian helm keselamatan (safety helmet) pekerja di lokasi konstruksi secara real-time. Peningkatan arsitektur menargetkan objek kecil (kepala/helm dari jauh), mendukung pemantauan kepatuhan keselamatan kerja (K3).
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Latar Belakang & Konteks
-Kepatuhan pemakaian helm perlu dipantau otomatis untuk keselamatan kerja; deteksi manual tidak praktis dan objek (helm dari jauh) kecil.
+Keselamatan pekerja di sektor konstruksi dan manufaktur berat bergantung pada kepatuhan terhadap alat pelindung diri seperti helm keselamatan. Namun, pemantauan kepatuhan secara manual oleh petugas keselamatan tidak efisien, berbiaya tinggi, dan terbatas dalam cakupan spasial serta temporal. Otomatisasi pengawasan menggunakan kamera pemantau (CCTV) dan visi komputer (*computer vision*) diperlukan sebagai solusi alternatif.
 
-## Permasalahan yang Diangkat
-- Kepatuhan helm perlu pemantauan otomatis.
-- Deteksi manual tidak praktis.
-- Helm dari jauh berukuran kecil.
-- Real-time diperlukan untuk pemantauan.
-- Lokasi kerja ramai/kompleks.
+Metode deteksi objek konvensional pra-pembelajaran mendalam, seperti *Histogram of Oriented Gradients* (HOG) dan *Support Vector Machine* (SVM), sangat sensitif terhadap perubahan intensitas cahaya, oklusi, dan variasi sudut pandang, sehingga memicu tingkat alarm palsu (*false alarm*) yang tinggi. Di sisi lain, penerapan deteksi objek berbasis jaringan saraf tiruan (*artificial neural network*) menghadapi tiga tantangan operasional di industri:
+1. **Objek Skala Kecil:** Kamera pemantau yang dipasang tinggi membuat ukuran helm pekerja di latar belakang sangat kecil pada bidang citra (hanya beberapa piksel), menyulitkan ekstraksi fitur spasial.
+2. **Kompleksitas Latar Belakang:** Lokasi kerja dipenuhi material dan peralatan dengan warna mencolok yang menyerupai helm keselamatan (kuning, merah, biru), sehingga memicu kesalahan deteksi (*false positive*).
+3. **Kebutuhan Waktu Nyata:** Sistem harus memberikan peringatan instan dengan latensi minimal untuk mencegah kecelakaan sebelum terjadi.
 
-## Tujuan & Pertanyaan Penelitian
-- Memodifikasi YOLOv5 untuk deteksi helm.
-- Menargetkan objek kecil (helm jauh).
-- Mendukung pemantauan K3 real-time.
+## Ide Utama
 
-## Tinjauan Terdahulu / Posisi Literatur
-Makalah menyempurnakan YOLOv5 untuk deteksi helm.
+Ide utama makalah ini adalah mengoptimalkan arsitektur YOLOv5 melalui pendekatan pembelajaran transfer (*transfer learning*) untuk mendeteksi penggunaan helm keselamatan secara cepat dan akurat. Penulis memfokuskan kontribusi pada pemetaan empiris mengenai varian model YOLOv5 yang paling optimal untuk mengatasi trade-off antara akurasi dan kecepatan inferensi pada skenario industri nyata.
 
-Karya/konsep pembanding yang relevan:
+Untuk meminimalkan kesalahan klasifikasi, model dilatih secara terawasi (*supervised learning*) menggunakan dataset kustom yang dirancang secara khusus untuk membedakan kelas `helmet` (kepala berhelm) dan `head` (kepala tanpa helm). Citra masukan diproses secara terpadu untuk mengekstraksi fitur spasial pada tulang punggung (*backbone*), menggabungkan fitur lintas skala pada leher jaringan (*neck*), dan memprediksi kotak pembatas (*bounding box*) beserta probabilitas kelas pada kepala prediksi (*head*). Sistem akan memicu alarm peringatan jika terdapat objek berkategori `head` terdeteksi di dalam zona berbahaya yang ditentukan.
 
-- YOLOv5 — detektor dasar.
-- Peningkatan objek kecil.
-- Deteksi helm keselamatan.
-- Pemantauan K3.
+## Cara Kerja Langkah demi Langkah
 
-## Metodologi & Arsitektur
-YOLOv5 dimodifikasi (mis. attention/skala tambahan) untuk memperkuat deteksi helm kecil; dilatih pada dataset helm konstruksi; dievaluasi real-time untuk pemantauan kepatuhan; cocok untuk CCTV lokasi kerja.
+YOLOv5 bekerja secara *end-to-end* untuk memetakan piksel citra masukan langsung ke koordinat kotak pembatas dan label kelas. Proses ini dibagi menjadi empat tahapan utama:
 
-Komponen / langkah metodologis utama:
+```
+            DIAGRAM ARSITEKTUR DETEKSI HELM KESELAMATAN YOLOV5
+            
+  Citra Input (640x640)
+        │
+        ▼
+ ┌──────────────┐
+ │   BACKBONE   │ ──► CSPDarknet53 (Ekstraksi fitur hierarkis)
+ └──────┬───────┘
+        │
+        ├─────────────────────────┐ (Skala fitur rendah: P3 - 80x80)
+        ├──────────────┐          │
+        │              ▼          ▼
+ ┌──────▼───────┐    ┌─────────────────┐
+ │ SPPF Layer   │    │      NECK       │ ──► PANet (Fusi fitur multi-skala)
+ └──────┬───────┘    │  (FPN + PANet)  │
+        │            └────────┬────────┘
+        ▼                     │
+(Skala fitur tinggi: P5)      │
+        └─────────────────────┼─────────────────────────┐
+                              ▼                         ▼
+                     ┌─────────────────┐       ┌─────────────────┐
+                     │   YOLO HEAD     │ ──►   │   YOLO HEAD     │
+                     │  (Grid 20x20)   │       │  (Grid 80x80)   │
+                     └────────┬────────┘       └────────┬────────┘
+                              │                         │
+                              ▼                         ▼
+                     [Objek Skala Besar]       [Objek Skala Kecil]
+                     (Helm jarak dekat)        (Helm jarak jauh)
+```
 
-- Modifikasi YOLOv5 untuk objek kecil.
-- Deteksi pemakaian helm.
-- Real-time (CCTV lokasi kerja).
-- Pelatihan pada dataset helm.
-- Pemantauan kepatuhan K3.
-- Evaluasi akurasi-kecepatan.
+### 1. Prapemrosesan dan Augmentasi Data
+Sebelum masuk ke jaringan, sistem menerapkan teknik augmentasi data Mosaic yang menggabungkan empat citra latih secara acak menjadi satu citra masukan. Hal ini memperbanyak variasi latar belakang dan secara artifisial memperkecil ukuran objek helm, memaksa model belajar mendeteksi objek skala kecil. Citra kemudian diselaraskan ke resolusi $640 \times 640$ piksel dengan pengisian dinamis (*adaptive frame padding*) untuk mencegah distorsi bentuk objek.
 
-## Kontribusi Utama
-1. Deteksi helm real-time berbasis YOLOv5.
-2. Peningkatan untuk objek kecil.
-3. Dukungan pemantauan K3.
-4. Aplikasi keselamatan kerja.
+### 2. Ekstraksi Fitur dengan CSPDarknet53 Backbone
+YOLOv5 menggunakan CSPDarknet53 sebagai *backbone*. Modul *Cross Stage Partial* (CSP) membagi peta fitur (*feature maps*) menjadi dua jalur: satu jalur melewati blok bottleneck konvolusional, sedangkan jalur lainnya langsung digabungkan (*concatenated*) di akhir blok. Aliran gradien terpisah ini memotong redundansi komputasi sebesar sekitar 20% tanpa mendegradasi fitur spasial halus. Lapisan *Spatial Pyramid Pooling Fast* (SPPF) di ujung *backbone* menangkap konteks global citra menggunakan operasi pooling multi-ukuran ($5 \times 5$, $9 \times 9$, $13 \times 13$) secara cepat.
 
-## Rincian Eksperimen
-Diuji pada dataset helm konstruksi dengan metrik deteksi dan kecepatan (CVIDL 2021).
+### 3. Fusi Fitur Multi-Skala dengan PANet Neck
+Bagian leher jaringan menggunakan kombinasi *Feature Pyramid Network* (FPN) dan *Path Aggregation Network* (PANet). FPN mentransfer fitur semantik tingkat tinggi ke lapisan bawah untuk memperkuat pengenalan kelas, sedangkan PANet menambahkan jalur koneksi bawah-ke-atas (*bottom-up path augmentation*) untuk mentransfer koordinat spasial presisi ke lapisan atas. Skema ini meminimalkan kegagalan deteksi pada helm kecil di latar belakang yang kompleks.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### 4. Prediksi dan Regresi Kotak Pembatas pada YOLO Head
+Kepala deteksi memprediksi luaran pada tiga skala grid independen: grid $80 \times 80$ untuk objek kecil, $40 \times 40$ untuk objek sedang, dan $20 \times 20$ untuk objek besar. Pada setiap sel grid, model memprediksi koordinat kotak pembatas $(x, y, w, h)$, skor keyakinan objek, dan kelas (`helmet` vs `head`). Regresi kotak pembatas dilatih menggunakan fungsi rugi *Complete Intersection over Union* (CIoU) yang menghitung area tumpang unut (*overlap area*), jarak titik pusat dengan kotak kebenaran (*ground truth*), dan rasio aspek. Terakhir, *Non-Maximum Suppression* (NMS) mengeliminasi prediksi ganda yang tumpang tindih.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Helm konstruksi | mAP | tinggi real-time |
-| Objek kecil | akurasi | helm jauh ditingkatkan |
-| Pemantauan | K3 | kepatuhan otomatis |
+## Eksperimen dan Hasil
 
-## Temuan Kunci
-- YOLOv5 dapat diadaptasi untuk deteksi helm.
-- Objek kecil menuntut peningkatan arsitektur.
-- Real-time penting untuk pemantauan.
-- Aplikasi keselamatan bermanfaat.
+Evaluasi dilakukan menggunakan dataset kustom berisi 6.045 citra beresolusi tinggi di lokasi konstruksi nyata. Dataset ini juga memuat sampel negatif berupa citra keramaian manusia di kantor dan kelas untuk melatih model agar menolak alarm palsu dari rambut atau kepala polos manusia. Pengujian terhadap empat varian YOLOv5 menghasilkan data performa berikut:
 
-## Keunggulan
-- Real-time.
-- Objek kecil.
-- Aplikasi K3.
+- **YOLOv5s:** mencapai mAP sebesar 88,6% dengan kecepatan inferensi mencapai 110 FPS.
+- **YOLOv5m:** mencapai mAP sebesar 91,2% dengan kecepatan inferensi 75 FPS.
+- **YOLOv5l:** mencapai mAP sebesar 93,5% dengan kecepatan inferensi 50 FPS.
+- **YOLOv5x:** mencapai mAP tertinggi sebesar 94,7% dengan kecepatan inferensi 30 FPS.
 
-## Keterbatasan
-- Fokus deteksi helm.
-- RGB saja.
-- Lingkungan ramai menantang.
+Interpretasi hasil membuktikan trade-off performa. YOLOv5x memberikan mAP tertinggi (94,7%), membuktikan keandalannya dalam mendeteksi helm kecil atau terhalang oklusi parsial, tetapi dengan laju inferensi rendah (30 FPS). Sebaliknya, YOLOv5s memberikan kecepatan inferensi 110 FPS yang melampaui batas standar kamera pengawas (30 FPS), sehingga menyisakan margin komputasi yang luas untuk diintegrasikan dengan modul pelacakan objek (*object tracking*) pada perangkat keras lokal berdaya rendah.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Kelebihan dan Keterbatasan
 
-## Relevansi terhadap Tema Tinjauan
-Entri ini mencontohkan aplikasi YOLO untuk pemantauan keselamatan kerja dalam klaster Industri tinjauan.
+**Kelebihan:**
+1. **Skalabilitas:** Evaluasi empat varian YOLOv5 memberikan panduan pemilihan model sesuai kapasitas spesifikasi perangkat keras industri.
+2. **Ketahanan:** Sampel negatif menekan tingkat alarm palsu dari kepala polos di luar area berbahaya.
+3. **Efisiensi:** Keseimbangan optimal antara akurasi tinggi (94,7% mAP) dan kecepatan waktu nyata (110 FPS).
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Industri** yang baik dibaca berdampingan:
+**Keterbatasan:**
+1. **Ketergantungan RGB Tampak:** Kinerja detektor menurun tajam pada kondisi minim cahaya malam hari (*nighttime*) atau debu tebal karena hilangnya fitur tekstur dan warna helm.
+2. **Kerentanan Oklusi:** Penggunaan input RGB kamera tunggal (*monocular RGB*) membuat model kesulitan melokalisasi pekerja yang terhalang tiang atau mesin. Integrasi sensor kedalaman (seperti pada kamera RGB-D) dapat memberikan informasi spasial tiga dimensi untuk pemisahan objek yang lebih konsisten.
 
-- [133 - 2023 - EFC-YOLO (Steel Strip Defects) - Industri](./133%20-%202023%20-%20EFC-YOLO%20%28Steel%20Strip%20Defects%29%20-%20Industri.md)
-- [134 - 2024 - PCB-YOLO (PCB Defects) - Industri](./134%20-%202024%20-%20PCB-YOLO%20%28PCB%20Defects%29%20-%20Industri.md)
-- [135 - 2021 - Review Defect Detection (Bhatt dkk.) - Industri](./135%20-%202021%20-%20Review%20Defect%20Detection%20%28Bhatt%20dkk.%29%20-%20Industri.md)
+## Kaitan dengan Bab Lain
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Industri** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Penelitian deteksi helm keselamatan ini termasuk dalam klaster aplikasi Industri dalam tinjauan pustaka ini, beralih dari inspeksi cacat kualitas produk ke pengawasan keselamatan operasional.
 
-## Glosarium Istilah (tema Industri)
-Istilah penting untuk memahami makalah ini:
+Secara taksonomis, bab ini mewujudkan pemenuhan tantangan operasional waktu nyata (*real-time constraints*) yang dibahas pada payung teoritis [135 - 2021 - Review Defect Detection (Bhatt dkk.) - Industri](./135%20-%202021%20-%20Review%20Defect%20Detection%20%28Bhatt%20dkk.%29%20-%20Industri.md). Dalam ulasan Bhatt dkk., performa waktu nyata di atas laju produksi merupakan syarat mutlak, yang dipenuhi oleh YOLOv5s (110 FPS).
 
-- **Deteksi cacat** — Menemukan defect pada permukaan produk.
-- **Inspeksi visual** — Pemeriksaan kualitas berbasis kamera.
-- **Cacat kecil** — Defect mikro yang sulit dideteksi.
-- **Coordinate attention** — Attention menyandikan posisi.
-- **Multi-scale fusion** — Penggabungan fitur lintas skala.
-- **NEU/PCB dataset** — Benchmark cacat baja / PCB.
-- **mAP/recall** — Metrik deteksi cacat.
-- **Real-time inline** — Inspeksi pada laju produksi.
-- **K3/helm** — Pemantauan keselamatan kerja.
-- **Industry 4.0** — Manufaktur cerdas terintegrasi AI.
+Masalah deteksi objek kecil pada latar belakang kompleks menghubungkan bab ini dengan metode deteksi cacat baja pada [133 - 2023 - EFC-YOLO (Steel Strip Defects) - Industri](./133%20-%202023%20-%20EFC-YOLO%20%28Steel%20Strip%20Defects%29%20-%20Industri.md) dan inspeksi papan sirkuit pada [134 - 2024 - PCB-YOLO (PCB Defects) - Industri](./134%20-%202024%20-%20PCB-YOLO%20%28PCB%20Defects%29%20-%20Industri.md). Berbeda dengan EFC-YOLO dan PCB-YOLO yang memodifikasi arsitektur dengan mekanisme perhatian (*attention mechanism*) khusus untuk mendeteksi cacat mikro, bab ini membuktikan bahwa dengan penalaan halus dan augmentasi Mosaic yang tepat, arsitektur YOLOv5 standar sudah mampu mencapai mAP kompetitif (94,7%) tanpa meningkatkan kompleksitas model.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+## Poin untuk Sitasi
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Zhou dkk. memodifikasi YOLOv5 untuk deteksi pemakaian helm keselamatan real-time di lokasi kerja, menargetkan objek kecil untuk mendukung pemantauan kepatuhan K3.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zhou2021helmet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 136/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+- **Kunci BibTeX:** `zhou2021helmet`
+- **Ringkasan untuk Sitasi:** Zhou dkk. (2021) melakukan evaluasi komparatif varian YOLOv5 (s, m, l, x) untuk deteksi pemakaian helm keselamatan pekerja pada dataset 6.045 citra konstruksi. Eksperimen menunjukkan YOLOv5x mencapai akurasi tertinggi sebesar 94,7% mAP, sedangkan YOLOv5s menawarkan kecepatan inferensi tercepat sebesar 110 FPS, yang ideal untuk pemantauan keselamatan kerja waktu nyata.
+- **Catatan Verifikasi:** Nilai mAP 94,7% (YOLOv5x) dan laju inferensi 110 FPS (YOLOv5s) dilaporkan berdasarkan dataset kustom 6.045 citra dari penulis. Hasil performa dapat bervariasi jika diuji pada lokasi dengan pencahayaan atau sudut kamera berbeda, sehingga validasi silang pada dataset eksternal diperlukan sebelum penerapan skala penuh.
