@@ -1,202 +1,100 @@
 # 188 - DETR3D: 3D Object Detection from Multi-View Images via 3D-to-2D Queries
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 188 dari 191 |
 | Kunci BibTeX | `wang2022detr3d` |
-| Judul | DETR3D: 3D Object Detection from Multi-View Images via 3D-to-2D Queries |
-| Penulis | Wang, Yue; Guizilini, Vitor; Zhang, Tianyuan; Wang, Yilun; Zhao, Hang; Solomon, Justin |
+| Judul asli | DETR3D: 3D Object Detection from Multi-View Images via 3D-to-2D Queries |
+| Penulis | Yue Wang, Vitor Campagnolo Guizilini, Tianyuan Zhang, Yilun Wang, Hang Zhao, Justin Solomon |
 | Tahun | 2022 |
-| Venue / Jurnal | Conference on Robot Learning (CoRL) |
-| Tema klaster | Deteksi 3D |
-| Kata kunci | multi-view 3D, 3D-to-2D queries, camera-only, set prediction |
+| Venue | Conference on Robot Learning (CoRL 2021, dipublikasikan dalam prosiding 2022) |
+| Tema | Deteksi 3D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2110.06922
+- **Google Scholar:** https://scholar.google.com/scholar?q=DETR3D%3A%203D%20Object%20Detection%20from%20Multi-View%20Images%20via%203D-to-2D%20Queries
+- **Repositori kode resmi:** https://github.com/WangYueFt/detr3d
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-deteksi-3d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2110.06922
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=DETR3D%3A%203D%20Object%20Detection%20from%20Multi-View%20Images%20via%203D-to-2D%20Queries
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=DETR3D%3A%203D%20Object%20Detection%20from%20Multi-View%20Images%20via%203D-to-2D%20Queries&sort=relevance
+Makalah ini memperkenalkan DETR3D, metode deteksi objek 3D dari beberapa kamera sekaligus (*multi-view*) yang bekerja langsung dalam ruang 3D tanpa membangun representasi *bird's-eye view* (BEV, tampak-atas) yang padat dan tanpa memerlukan estimasi kedalaman (*depth*) per piksel. Gagasan intinya adalah membalik arah aliran informasi dibandingkan metode sebelumnya: alih-alih mengangkat setiap piksel citra ke ruang 3D lalu menyatukannya, DETR3D menempatkan sekumpulan kueri objek (*object query*) langsung di ruang 3D, memproyeksikan titik acuannya ke setiap citra kamera untuk mengambil fitur yang relevan, kemudian menyempurnakan posisi dan kelas objek lewat lapisan-lapisan *decoder Transformer*. Seluruh proses dilatih *end-to-end* (dari masukan ke keluaran tanpa tahap terpisah) dan prediksi akhir diperoleh lewat pencocokan himpunan (*set prediction*), sehingga tahap *Non-Maximum Suppression* (NMS, penekanan kotak tumpang tindih pasca-prediksi) tidak diperlukan.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada *benchmark* nuScenes, DETR3D dengan *backbone* (jaringan ekstraksi fitur dasar) ResNet-101 mencapai *NDS* (nuScenes Detection Score, metrik gabungan nuScenes) 0,425 dan *mAP* (*mean Average Precision*, rata-rata presisi seluruh kelas) 0,346 pada data validasi, mengungguli FCOS3D yang mencapai NDS 0,415 dan mAP 0,343 dengan NMS sebagai pasca-pemrosesan. Kontribusi utamanya bukan sekadar akurasi, melainkan arsitektur kamera-saja pertama yang menyatukan pandangan dari banyak kamera secara implisit lewat kueri 3D bersama, tanpa langkah penggabungan eksplisit di ruang BEV.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2110.06922 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-DETR3D melakukan deteksi objek 3D dari banyak kamera secara end-to-end dengan kueri objek 3D yang memproyeksikan titik referensi ke citra (3D-to-2D) untuk mengambil fitur, menghapus post-processing NMS dan penggabungan BEV eksplisit.
+Sebelum DETR3D, deteksi 3D dari kamera tunggal maupun multi-kamera umumnya mengikuti pola *bottom-up*: setiap piksel atau setiap deteksi 2D pada citra terlebih dahulu diangkat ke ruang 3D, baru kemudian hasil-hasil per kamera digabungkan. FCOS3D, misalnya, memprediksi kotak 3D langsung dari setiap citra kamera secara independen, lalu menyatukan deteksi antar-kamera dengan NMS pada tahap pasca-pemrosesan. Pendekatan berbasis *pseudo-LiDAR* (titik 3D semu) memprediksi peta kedalaman per piksel, mengubahnya menjadi *point cloud* (kumpulan titik 3D), lalu menjalankan detektor 3D di atasnya seperti pada data LiDAR asli.
 
-## Abstrak (Parafrase)
-Penulis memperluas DETR ke 3D multi-kamera: tiap kueri objek memprediksi titik referensi 3D yang diproyeksikan ke seluruh citra untuk sampling fitur, lalu disempurnakan lintas-layer. Prediksi himpunan 3D dilakukan langsung tanpa NMS dan tanpa membangun BEV padat, mencapai deteksi 3D kamera-saja yang kompetitif pada nuScenes.
+Pola *bottom-up* ini memiliki tiga kelemahan yang saling terkait. Pertama, estimasi kedalaman per piksel rawan galat, terutama pada objek jauh atau permukaan tanpa tekstur; galat ini merambat ke tahap-tahap berikutnya dan tidak dapat dikoreksi lagi. Kedua, karena setiap kamera diproses terpisah, objek yang terlihat pada dua kamera bertetangga (misalnya di sudut pandang tumpang tindih antara kamera depan dan kamera samping) dapat terdeteksi dua kali dengan posisi 3D yang sedikit berbeda; NMS antar-kamera yang menanganinya bersifat heuristik dan tidak ikut dilatih bersama jaringan. Ketiga, seluruh *pipeline* tidak dioptimalkan menyeluruh terhadap tujuan akhir deteksi 3D, sebab tahap estimasi kedalaman dan tahap deteksi sering dilatih dengan target yang berbeda. Metode berbasis BEV eksplisit, yang muncul kira-kira bersamaan dengan DETR3D, mengatasi sebagian masalah ini dengan memproyeksikan fitur seluruh kamera ke satu peta tampak-atas bersama, tetapi memerlukan pembangunan representasi padat yang berat secara komputasi.
 
-## Latar Belakang & Konteks
-Metode kamera-saja awal membangun BEV eksplisit atau depth per-piksel. DETR3D menawarkan alternatif berbasis kueri sparse.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- BEV padat/depth eksplisit mahal & rawan galat.
-- Butuh deteksi 3D end-to-end multi-kamera.
-- Menghapus NMS antar-view.
+Gagasan inti DETR3D adalah menjadikan kueri objek sebagai satu-satunya representasi yang dibagi antar-kamera, dan membiarkan kueri itu sendiri yang menentukan citra bagian mana yang relevan untuknya. Setiap kueri objek adalah vektor yang dipelajari selama pelatihan; jaringan kecil memetakan vektor ini menjadi satu titik acuan 3D di ruang koordinat kendaraan. Titik acuan tersebut diproyeksikan ke setiap citra kamera memakai matriks kalibrasi kamera (parameter intrinsik dan ekstrinsik yang menghubungkan koordinat 3D dunia dengan koordinat piksel 2D). Pada lokasi proyeksi itu, fitur citra diambil lewat interpolasi bilinear (pencampuran nilai empat piksel tetangga berdasarkan jarak) dari peta fitur multi-skala. Fitur dari kamera-kamera yang berhasil melihat titik tersebut dijumlahkan, lalu dipakai untuk menyempurnakan kueri: posisi 3D, dimensi kotak, orientasi, dan kelas objek diperbarui bertahap pada setiap lapisan *decoder*.
 
-## Tujuan & Pertanyaan Penelitian
-- Deteksi 3D multi-kamera berbasis kueri.
-- Sampling fitur via proyeksi 3D-to-2D.
-- End-to-end tanpa NMS/BEV eksplisit.
+Dengan skema ini, penggabungan informasi antar-kamera terjadi di ruang kueri, bukan di ruang fitur citra maupun di ruang BEV. Tidak ada peta padat yang harus dibangun untuk seluruh area di sekitar kendaraan; hanya sejumlah kecil kueri (ratusan, bukan puluhan ribu sel BEV) yang diproses. Karena satu kueri dapat menarik fitur dari beberapa kamera sekaligus, masalah duplikasi deteksi pada sudut pandang tumpang tindih berkurang tanpa memerlukan NMS eksplisit.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Mengadaptasi DETR/Deformable DETR ke 3D; mendahului/berdialog dengan BEVFormer dan PETR.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Ekstraksi Fitur Multi-Kamera
 
-- DETR - set prediction 2D.
-- Deformable DETR - sampling fitur terdeformasi.
-- BEVFormer - BEV spatiotemporal.
-- FCOS3D - deteksi 3D mono.
+Setiap citra dari enam kamera nuScenes (depan, depan-kiri, depan-kanan, belakang, belakang-kiri, belakang-kanan) diproses oleh *backbone* konvolusi bersama (ResNet-50/ResNet-101, atau VoVNet pada beberapa varian) dilengkapi *Feature Pyramid Network* (FPN, jaringan piramida fitur yang menghasilkan peta fitur pada beberapa resolusi). Keluarannya adalah empat tingkat peta fitur per kamera dengan resolusi menurun bertahap, sehingga objek besar dan objek kecil sama-sama terwakili pada skala yang sesuai.
 
-## Metodologi & Arsitektur
-Kueri objek memprediksi titik referensi 3D; titik diproyeksikan ke tiap kamera memakai matriks kalibrasi untuk sampling fitur; fitur teragregasi menyempurnakan kueri lintas-layer; kepala memprediksi box 3D + kelas.
+### Kueri Objek dan Titik Acuan 3D
 
-Komponen / langkah metodologis utama:
+Model memakai sejumlah kueri objek yang dipelajari — makalah melaporkan bahwa 900 kueri memberi kinerja terbaik pada eksperimen ablasi mereka, dengan penambahan lebih lanjut tidak lagi memberi perbaikan berarti. Setiap kueri melewati jaringan umpan-maju kecil (Φ_ref) yang menghasilkan satu titik koordinat 3D (x, y, z) di ruang referensi kendaraan. Titik ini berperan sebagai hipotesis awal posisi objek yang diwakili kueri tersebut.
 
-- Kueri objek 3D + titik referensi.
-- Proyeksi 3D-to-2D untuk sampling fitur.
-- Refinement kueri lintas-layer.
-- Set prediction tanpa NMS.
+### Proyeksi 3D-ke-2D dan Sampling Fitur
 
-## Kontribusi Utama
-1. Deteksi 3D multi-kamera berbasis kueri.
-2. Sampling fitur geometris (3D-to-2D).
-3. End-to-end tanpa BEV eksplisit/NMS.
-4. Baseline berpengaruh kamera-saja.
+Titik acuan 3D diproyeksikan ke bidang citra tiap-tiap kamera memakai matriks proyeksi kamera (hasil kali parameter intrinsik dan ekstrinsik yang sudah dikalibrasi). Karena satu titik 3D umumnya hanya terlihat dalam satu atau dua dari enam kamera akibat sudut pandang yang tidak saling tumpang tindih sepenuhnya, proyeksi yang jatuh di luar batas citra ditandai tidak valid lewat mask biner dan diabaikan. Pada proyeksi yang valid, fitur diambil dengan interpolasi bilinear dari peta fitur FPN pada level yang sesuai, kemudian fitur dari seluruh kamera valid dijumlahkan menjadi satu vektor fitur per kueri.
 
-## Rincian Eksperimen
-nuScenes untuk deteksi 3D (NDS/mAP), pembandingan dengan FCOS3D dan metode BEV.
+Diagram berikut meringkas alur dari kueri ke fitur teragregasi:
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+6 citra kamera --> backbone+FPN --> peta fitur multi-skala (per kamera)
+                                            ^
+kueri objek (900) --> titik acuan 3D (x,y,z)
+                            |
+                proyeksi ke tiap kamera (matriks kalibrasi)
+                            |
+                titik 2D valid pada kamera 1..k (mask biner)
+                            |
+                interpolasi bilinear -> fitur per kamera valid
+                            |
+                    penjumlahan fitur --> perbarui kueri
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| nuScenes | NDS/mAP | kompetitif kamera-saja |
-| End-to-end | - | tanpa NMS/BEV padat |
-| Ablation sampling | mAP | proyeksi geometris penting |
+Diagram ini menegaskan bahwa jumlah kueri, bukan jumlah sel BEV, yang menentukan biaya komputasi tahap penggabungan; setiap kueri hanya menarik fitur dari kamera yang relevan, bukan dari seluruh area pemandangan.
 
-## Temuan Kunci
-- Kueri sparse + proyeksi geometris efektif untuk 3D.
-- BEV padat tak wajib.
-- Kalibrasi kamera dimanfaatkan langsung.
+### Decoder Transformer dan Penyempurnaan Bertahap
 
-## Keunggulan
-- End-to-end, tanpa NMS.
-- Kamera-saja.
-- Sparse & elegan.
+Fitur teragregasi dipakai memperbarui representasi kueri lewat lapisan *self-attention* (kueri saling bertukar informasi) dan umpan-maju, mengikuti struktur *decoder* DETR (*Detection Transformer*, model deteksi berbasis Transformer yang merumuskan deteksi sebagai prediksi himpunan langsung). Proses titik-acuan-ke-proyeksi-ke-fitur-ke-pembaruan-kueri diulang pada enam lapisan *decoder*; posisi 3D disempurnakan bertahap pada tiap lapisan, bukan diprediksi sekali. Kepala prediksi akhir pada tiap lapisan menghasilkan kelas objek, pusat 3D, dimensi kotak, dan orientasi (*yaw*).
 
-## Keterbatasan
-- Bergantung kalibrasi akurat.
-- Tanpa temporal (versi dasar).
-- Di bawah LiDAR pada kasus tertentu.
+### Fungsi Loss dan Pencocokan Himpunan
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Pelatihan memakai pencocokan bipartit Hungaria (algoritme optimasi yang mencari pasangan satu-satu optimal) antara himpunan prediksi dan himpunan kotak kebenaran (*ground truth*), sehingga setiap objek nyata dipasangkan tepat dengan satu kueri prediksi tanpa memerlukan *anchor* (kotak jangkar bawaan) maupun NMS. Loss klasifikasi memakai *focal loss* (varian *cross-entropy* yang menekan bobot contoh mudah agar pelatihan fokus pada contoh sulit), sedangkan loss regresi kotak memakai L1 (jumlah selisih mutlak) pada parameter posisi, dimensi, dan orientasi. Karena pencocokan dan loss dihitung pada level himpunan, jaringan dilatih *end-to-end* dari citra mentah sampai kotak 3D akhir.
 
-## Relevansi terhadap Tema Tinjauan
-Pendekatan deteksi 3D berbasis kueri geometris relevan untuk menyatukan kamera/depth ke persepsi 3D pada pipeline RGB-D/otonom.
+## Eksperimen dan Hasil
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Deteksi 3D** yang baik dibaca berdampingan:
+Evaluasi utama dilakukan pada nuScenes, *benchmark* deteksi 3D untuk kendaraan otonom yang berisi data dari enam kamera, radar, dan LiDAR, meski DETR3D hanya memakai citra kamera. Metrik utamanya adalah mAP dan NDS; NDS menggabungkan mAP dengan galat translasi, skala, orientasi, kecepatan, dan atribut menjadi satu skor tunggal.
 
-- [185 - 2021 - CenterPoint - Deteksi 3D](./185%20-%202021%20-%20CenterPoint%20-%20Deteksi%203D.md)
-- [186 - 2020 - PV-RCNN - Deteksi 3D](./186%20-%202020%20-%20PV-RCNN%20-%20Deteksi%203D.md)
-- [187 - 2022 - BEVFormer - Deteksi 3D](./187%20-%202022%20-%20BEVFormer%20-%20Deteksi%203D.md)
+Pada data validasi, DETR3D dengan *backbone* ResNet-101 mencapai NDS 0,425 dan mAP 0,346 tanpa NMS, sedangkan FCOS3D terbaik pada pengaturan sebanding mencapai NDS 0,415 dan mAP 0,343 dengan NMS. Interpretasinya: DETR3D mengungguli metode kamera-saja *bottom-up* sekaligus menghilangkan tahap pasca-pemrosesan heuristik, menunjukkan bahwa penggabungan lewat kueri 3D bersama mencukupi tanpa perlu NMS antar-kamera. Pada data uji (*test set*) tersembunyi nuScenes, DETR3D mencapai NDS 0,479 dan mAP 0,412, sebanding dengan metode kamera-saja terkuat lain pada masanya seperti DD3D.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Deteksi 3D** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Studi ablasi menunjukkan dua temuan penting. Pertama, penyempurnaan bertahap lewat enam lapisan *decoder* memberi kenaikan progresif — NDS lapisan pertama sekitar 0,380 naik menjadi 0,425 pada lapisan keenam — membuktikan bahwa proyeksi-dan-sampling berulang, bukan sekali jalan, yang mendorong akurasi. Kedua, jumlah kueri 900 memberi keseimbangan terbaik; menambah kueri lebih lanjut tidak memberi perbaikan berarti karena jumlah objek nyata per adegan pada nuScenes terbatas. Backbone yang lebih besar (ResNet-101 dibandingkan ResNet-50 atau DLA34) secara konsisten memberi skor lebih tinggi, sejalan dengan pola umum bahwa fitur citra yang lebih kaya mempermudah estimasi posisi 3D.
 
-## Glosarium Istilah (tema Deteksi 3D)
-Istilah penting untuk memahami makalah ini:
+Penulis mencatat bahwa galat translasi (pergeseran posisi pusat objek dari nilai sebenarnya) tetap menjadi komponen galat terbesar meskipun DETR3D menghindari estimasi kedalaman eksplisit, menunjukkan bahwa kesulitan mendasar memperkirakan jarak dari citra 2D belum sepenuhnya teratasi oleh perubahan arsitektur.
 
-- **Deteksi 3D** — Prediksi kotak 3D beorientasi (x,y,z,l,w,h,yaw).
-- **LiDAR** — Sensor laser menghasilkan point cloud akurat.
-- **BEV** — Bird's-Eye View; proyeksi tampak-atas.
-- **Voxel/pillar** — Diskretisasi point cloud ke sel 3D / kolom.
-- **Fusi LiDAR-kamera** — Penggabungan geometri LiDAR dan tekstur kamera.
-- **Frustum** — Volume 3D dibatasi deteksi 2D pada citra.
-- **Pseudo-LiDAR** — Point cloud dari depth kamera.
-- **KITTI/nuScenes** — Benchmark deteksi 3D berkendara.
-- **AP 3D / NDS** — Metrik deteksi 3D (NDS khusus nuScenes).
-- **Kalibrasi sensor** — Penyelarasan koordinat antar-sensor.
+## Kelebihan dan Keterbatasan
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Kelebihan DETR3D meliputi: (1) penggabungan multi-kamera implisit lewat kueri bersama tanpa representasi BEV padat yang mahal secara komputasi; (2) pelatihan *end-to-end* penuh tanpa NMS, sehingga seluruh komponen dioptimalkan terhadap tujuan deteksi akhir; (3) jumlah kueri yang jauh lebih sedikit daripada jumlah sel pada peta BEV, sehingga biaya komputasi tahap penggabungan tetap rendah; (4) pemakaian langsung matriks kalibrasi kamera sebagai penghubung geometris antara ruang 3D dan ruang citra, tanpa jaringan tambahan untuk mempelajari hubungan ini.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Keterbatasan yang diakui penulis: galat translasi tetap dominan, menandakan estimasi jarak dari citra kamera tanpa depth eksplisit masih menjadi hambatan utama akurasi. Keterbatasan lain merupakan analisis penulis bab ini, bukan pernyataan eksplisit makalah. Dari sisi rekayasa, mekanisme proyeksi bergantung penuh pada kalibrasi kamera yang akurat; kesalahan kalibrasi ekstrinsik akan langsung menggeser titik sampling fitur dan menurunkan kualitas deteksi, tanpa mekanisme koreksi di dalam arsitektur. Secara konseptual, versi dasar DETR3D tidak memanfaatkan informasi temporal antar-*frame* video, sehingga objek yang sesaat tertutup (*occluded*) pada satu *frame* tidak mendapat bantuan konteks dari *frame* sebelumnya — keterbatasan yang menjadi arah pengembangan metode-metode kamera-saja berikutnya. Dibandingkan detektor berbasis LiDAR, akurasi kamera-saja seperti DETR3D pada umumnya masih di bawahnya untuk kelas objek kecil dan jarak jauh, konsekuensi wajar dari ketiadaan pengukuran jarak langsung yang dimiliki sensor laser.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kaitan dengan Bab Lain
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+DETR3D memperluas rumusan *set prediction* berbasis kueri milik DETR ke ruang 3D. Bab 165 (Co-DETR) membahas garis pengembangan arsitektur DETR di ranah 2D, termasuk perbaikan pencocokan label dan konvergensi pelatihan yang menjadi latar teknis bagi keluarga DETR yang diwarisi DETR3D. Dataset nuScenes yang dipakai untuk seluruh evaluasi dijelaskan lebih rinci pada bab 145 (nuScenes), termasuk struktur enam kamera, radar, LiDAR, dan definisi metrik NDS yang dipakai bersama oleh seluruh bab klaster Deteksi 3D.
 
-## Kesimpulan
-DETR3D menghadirkan deteksi 3D multi-kamera end-to-end berbasis kueri dengan sampling 3D-to-2D, fondasi banyak metode kamera-saja berikutnya.
+Dalam klaster Deteksi 3D, DETR3D berdiri berseberangan secara arsitektural dengan bab 185 (CenterPoint) dan bab 186 (PV-RCNN), yang keduanya bekerja pada data LiDAR memakai representasi voxel atau titik padat, bukan kueri sparse berbasis kamera. Perbandingan paling langsung ada dengan bab 187 (BEVFormer), yang juga kamera-saja tetapi memilih membangun representasi BEV eksplisit lewat *attention* spatiotemporal, berlawanan dengan pilihan DETR3D menghindari representasi padat sama sekali. Kedua pendekatan — kueri sparse langsung ke 3D pada DETR3D versus BEV padat pada BEVFormer — mewakili dua cabang utama metode deteksi 3D kamera-saja yang berkembang paralel setelah kedua makalah ini terbit.
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `wang2022detr3d` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
+## Poin untuk Sitasi
 
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 188/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `wang2022detr3d`. Ringkasan yang aman dikutip: "DETR3D memproyeksikan titik acuan 3D dari kueri objek yang dipelajari ke citra multi-kamera memakai matriks kalibrasi untuk mengambil fitur lewat interpolasi bilinear, lalu menyempurnakan kotak 3D lewat enam lapisan decoder Transformer tanpa NMS maupun representasi BEV eksplisit, mencapai NDS 0,425 dan mAP 0,346 pada data validasi nuScenes dengan backbone ResNet-101." Angka NDS/mAP validasi (0,425/0,346), angka data uji (NDS 0,479/mAP 0,412), jumlah kueri optimal (900), jumlah lapisan decoder (6), dan detail progresi ablasi per lapisan (NDS 0,380 pada lapisan pertama) diperoleh dari pembacaan naskah lewat alat pengambil konten otomatis, bukan dari tabel asli yang dibaca langsung baris per baris — sebaiknya diverifikasi ulang ke Tabel 1, Tabel 2, dan Tabel 6 pada naskah arXiv/CoRL sebelum dikutip dalam karya formal.

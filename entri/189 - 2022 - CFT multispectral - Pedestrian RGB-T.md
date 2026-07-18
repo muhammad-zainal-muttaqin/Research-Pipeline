@@ -1,200 +1,104 @@
 # 189 - Cross-Modality Fusion Transformer for Multispectral Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 189 dari 191 |
 | Kunci BibTeX | `fang2022cft` |
-| Judul | Cross-Modality Fusion Transformer for Multispectral Object Detection |
-| Penulis | Fang, Qingyun; Han, Dapeng; Wang, Zhaokui |
-| Tahun | 2022 |
-| Venue / Jurnal | arXiv preprint arXiv:2111.00273 |
-| Tema klaster | Pedestrian RGB-T |
-| Kata kunci | multispectral detection, RGB-thermal, fusion transformer, cross-modality |
+| Judul asli | Cross-Modality Fusion Transformer for Multispectral Object Detection |
+| Penulis | Qingyun Fang, Dapeng Han, Zhaokui Wang |
+| Tahun | 2021 (arXiv), diproses untuk *Image and Vision Computing* |
+| Venue | arXiv preprint arXiv:2111.00273 |
+| Tema | Pedestrian RGB-T |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-pedestrian-rgb-t)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2111.00273
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Cross-Modality%20Fusion%20Transformer%20for%20Multispectral%20Object%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Cross-Modality%20Fusion%20Transformer%20for%20Multispectral%20Object%20Detection&sort=relevance
+- **Kode resmi (GitHub):** https://github.com/DocF/multispectral-object-detection
+- **Google Scholar:** https://scholar.google.com/scholar?q=Cross-Modality%20Fusion%20Transformer%20for%20Multispectral%20Object%20Detection
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2111.00273 |
+Makalah ini memperkenalkan CFT (*Cross-Modality Fusion Transformer*, Transformer fusi lintas-modal), sebuah modul yang menyisipkan mekanisme *self-attention* Transformer ke dalam *backbone* (jaringan penarik fitur) dua aliran YOLOv5 untuk menggabungkan citra RGB (merah-hijau-biru, citra warna biasa) dan citra termal (inframerah panjang gelombang jauh yang merekam suhu permukaan objek). Alih-alih menggabungkan fitur kedua modalitas secara bertahap dengan operasi konvolusi seperti pada metode sebelumnya, CFT mengubah peta fitur RGB dan termal menjadi barisan token, menggabungkan token dari kedua modalitas, lalu memprosesnya bersama dengan satu blok *encoder* Transformer.
 
-## Ringkasan Eksekutif
-CFT (Cross-Modality Fusion Transformer) memfusikan fitur RGB dan thermal menggunakan Transformer sehingga interaksi intra- dan inter-modal terjadi bersamaan, meningkatkan deteksi objek multispektral pada kondisi cahaya menantang.
+Pendekatan ini diuji pada tiga dataset dengan karakteristik berbeda: FLIR (citra jalan siang-malam), VEDAI (citra udara), dan LLVIP (citra pejalan kaki malam hari beresolusi tinggi). Pada ketiganya, penyisipan modul CFT meningkatkan akurasi deteksi dibandingkan YOLOv5 dua aliran tanpa Transformer. Kontribusi utama makalah adalah menunjukkan bahwa fusi berbasis *attention* global menangkap ketergantungan antar-modal yang tidak terjangkau oleh konvolusi lokal, sambil tetap dapat dipasang sebagai modul tambahan pada arsitektur detektor yang sudah ada.
 
-## Abstrak (Parafrase)
-Penulis menyisipkan modul Transformer fusi lintas-modal ke backbone deteksi dua-aliran (RGB dan thermal). Dengan self-attention atas token gabungan kedua modalitas, CFT menangkap ketergantungan intra-modal dan inter-modal sekaligus, tanpa desain fusi manual bertahap. Diterapkan pada detektor seperti YOLOv5, CFT meningkatkan akurasi pada FLIR, LLVIP, dan VEDAI.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Latar Belakang & Konteks
-Deteksi multispektral RGB-thermal andal siang-malam, tetapi fusi CNN bertahap sering suboptimal. Transformer menawarkan fusi global sekaligus.
+Detektor objek yang hanya memakai citra RGB — termasuk seluruh keluarga YOLO yang dibahas pada klaster Fondasi RGB, misalnya YOLOv1 (bab 001) — mengandalkan warna dan tekstur permukaan. Pada cahaya rendah, kabut, atau malam hari, kontras dan tekstur pada citra RGB menyusut sehingga tingkat kegagalan deteksi meningkat, terutama untuk objek bersuhu tubuh seperti pejalan kaki. Citra termal tidak bergantung pada pencahayaan tampak karena merekam radiasi panas, tetapi resolusinya lebih rendah dan tidak memuat informasi warna atau tekstur permukaan halus, sehingga objek dengan bentuk mirip pada suhu serupa sulit dibedakan.
 
-## Permasalahan yang Diangkat
-- Fusi CNN bertahap suboptimal.
-- Interaksi intra+inter-modal perlu simultan.
-- Kondisi cahaya bervariasi menyulitkan.
+Kombinasi kedua modalitas ini melahirkan sejumlah metode fusi RGB-termal sebelum CFT. Pendekatan fusi CNN (jaringan saraf konvolusi) bertahap, misalnya *halfway fusion*, menggabungkan peta fitur kedua modalitas pada satu titik tertentu di tengah jaringan memakai operasi seperti penjumlahan atau penggabungan kanal. MBNet (bab 102) menambahkan mekanisme untuk menangani ketimpangan keandalan antar-modal (*modality imbalance* — kondisi saat satu modal lebih dapat dipercaya daripada yang lain tergantung pencahayaan), sedangkan GAFF (bab 103) memakai *attention* berpemandu untuk memberi bobot fitur tiap modal. Namun, seluruh pendekatan ini beroperasi lewat konvolusi, yang secara alami hanya melihat wilayah lokal (ditentukan oleh ukuran *kernel*). Interaksi antar-piksel yang berjauhan pada satu modal (ketergantungan jarak jauh, *long-range dependency*) maupun antar-modal pada posisi berbeda sulit ditangkap tanpa menumpuk banyak lapisan konvolusi. Masalah inilah yang menjadi sasaran CFT: menyediakan mekanisme fusi yang dapat mempertimbangkan seluruh posisi peta fitur sekaligus, bukan hanya jendela lokal.
 
-## Tujuan & Pertanyaan Penelitian
-- Fusi RGB-thermal berbasis Transformer.
-- Menangkap ketergantungan intra+inter-modal.
-- Meningkatkan deteksi multispektral.
+## Ide Utama
 
-## Tinjauan Terdahulu / Posisi Literatur
-Berdialog dengan MBNet/GAFF (fusi RGB-T) dan detektor YOLO; kebaruan pada modul fusi Transformer.
+Gagasan inti CFT adalah memperlakukan penggabungan fitur RGB dan termal sebagai satu masalah *self-attention* atas satu barisan token gabungan, bukan sebagai operasi konvolusi terpisah per modal. Peta fitur konvolusi dari cabang RGB dan cabang termal, yang masing-masing berbentuk tiga dimensi (tinggi × lebar × kanal), diratakan (*flatten*) menjadi barisan vektor — setiap posisi spasial pada peta fitur menjadi satu token, mirip token kata pada teks. Token dari kedua modal digabungkan menjadi satu barisan panjang, ditambah *positional embedding* (penyandian posisi yang dapat dipelajari, agar Transformer tetap mengetahui letak asli tiap token setelah diratakan), lalu diproses oleh *encoder* Transformer standar dengan *multi-head self-attention* (perhatian diri bercabang, setiap token dapat "melihat" dan menimbang seluruh token lain saat memperbarui representasinya).
 
-Karya/konsep pembanding yang relevan:
+Karena token RGB dan token termal berada dalam satu barisan yang sama, *self-attention* secara otomatis menghitung dua jenis relasi sekaligus: relasi antar-token dalam modal yang sama (fusi intra-modal, mis. antar-bagian tubuh pejalan pada citra RGB) dan relasi antar-token lintas modal (fusi inter-modal, mis. antara wilayah bersuhu tinggi pada citra termal dan wilayah bertekstur pada citra RGB pada posisi yang sama). Kedua jenis fusi ini terjadi dalam satu operasi matriks tanpa desain terpisah untuk masing-masing, berbeda dari metode CNN yang umumnya memerlukan modul khusus untuk tiap jenis interaksi.
 
-- MBNet - modality imbalance.
-- GAFF - guided attentive feature fusion.
-- YOLOv5 - detektor dasar.
-- Halfway fusion - baseline fusi.
+## Cara Kerja Langkah demi Langkah
 
-## Metodologi & Arsitektur
-Dua backbone mengekstrak fitur RGB dan thermal; pada beberapa skala, token kedua modalitas digabung dan diproses self-attention (CFT module) untuk fusi; fitur terfusi diteruskan ke kepala deteksi.
+### Backbone Dua Aliran
 
-Komponen / langkah metodologis utama:
+Arsitektur dasar CFT memakai YOLOv5 dengan *backbone* CSPDarknet53 (jaringan konvolusi berlapis dengan koneksi *cross-stage partial* yang memecah aliran data untuk mengurangi komputasi berulang) yang diduplikasi menjadi dua cabang paralel: satu menerima citra RGB, satu menerima citra termal. Kedua cabang mengekstrak fitur secara independen pada beberapa tahap kedalaman, menghasilkan peta fitur dengan resolusi spasial yang menyusut dan jumlah kanal yang membesar pada tiap tahap, sama seperti *backbone* YOLOv5 biasa.
 
-- Backbone dua-aliran RGB + thermal.
-- Modul CFT (self-attention token gabungan).
-- Fusi multiskala.
-- Integrasi ke detektor YOLO.
+### Modul CFT: Tokenisasi dan Self-Attention
 
-## Kontribusi Utama
-1. Modul fusi Transformer lintas-modal.
-2. Interaksi intra+inter-modal simultan.
-3. Peningkatan pada beberapa dataset multispektral.
-4. Mudah diintegrasi ke detektor umum.
+Pada titik tertentu di tiap tahap, peta fitur RGB berukuran H×W×C dan peta fitur termal berukuran sama diratakan menjadi (H×W) token berdimensi C, kemudian keduanya digabungkan menjadi satu barisan sepanjang 2×(H×W) token. *Positional embedding* ditambahkan pada tiap token agar informasi posisi spasial dan asal-modal tidak hilang setelah perataan. Barisan ini melewati blok *encoder* Transformer: lapisan *multi-head self-attention* dengan koneksi sisa (*residual connection*) dan normalisasi lapisan (*layer normalization*), diikuti jaringan umpan-maju (*feed-forward network*) posisi-demi-posisi. Keluaran Transformer, dengan panjang barisan yang sama, ditata ulang (*reshape*) kembali menjadi dua peta fitur H×W×C dan dipisah kembali menurut asal modalnya untuk dilanjutkan ke tahap konvolusi berikutnya pada tiap cabang.
 
-## Rincian Eksperimen
-FLIR, LLVIP, dan VEDAI untuk deteksi (mAP) siang/malam; ablation modul fusi.
+Skema alur satu modul CFT pada satu tahap *backbone*:
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+peta fitur RGB          peta fitur termal
+  H x W x C                H x W x C
+      |                        |
+   flatten                  flatten
+      |                        |
+      +---------+   +----------+
+                |   |
+         gabung token: 2(HW) x C
+                 |
+        + positional embedding
+                 |
+      encoder Transformer
+   (self-attention + FFN)
+                 |
+        pisah & reshape
+      |                        |
+  H x W x C                H x W x C
+  (RGB terfusi)          (termal terfusi)
+      |                        |
+  lanjut konvolusi        lanjut konvolusi
+  cabang RGB               cabang termal
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| FLIR/LLVIP | mAP | peningkatan atas fusi CNN |
-| VEDAI | mAP | kuat pada citra udara |
-| Ablation CFT | mAP | fusi Transformer menyumbang kenaikan |
+Menurut deskripsi kode resmi, tiga modul CFT semacam ini disisipkan pada tiga kedalaman berbeda di *backbone*, sehingga fusi lintas-modal terjadi berulang pada beberapa skala resolusi, bukan hanya sekali di tengah jaringan seperti pada *halfway fusion*.
 
-## Temuan Kunci
-- Transformer menangkap fusi intra+inter-modal sekaligus.
-- Fusi global mengungguli fusi bertahap manual.
-- Manfaat konsisten lintas dataset.
+### Neck dan Head
 
-## Keunggulan
-- Fusi lintas-modal kuat.
-- Mudah diintegrasi.
-- Andal siang-malam.
+Setelah *backbone* dua aliran dengan tiga titik fusi CFT, fitur dari kedua cabang pada tahap akhir digabungkan (mengikuti praktik YOLOv5, umumnya lewat konkatenasi kanal) sebelum masuk ke *neck* — struktur PANet (*Path Aggregation Network*, jaringan agregasi jalur yang menggabungkan fitur berbagai skala) — dan *head* deteksi standar YOLOv5 yang memprediksi kotak pembatas, skor keyakinan, dan kelas objek pada tiga skala grid.
 
-## Keterbatasan
-- Attention menambah biaya.
-- Butuh pasangan RGB-thermal terkalibrasi.
-- Bergantung kualitas registrasi modal.
+## Eksperimen dan Hasil
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Modul CFT diuji dengan menyisipkannya ke YOLOv5 dua aliran dan membandingkan hasilnya dengan YOLOv5 dua aliran tanpa Transformer (fusi lewat konkatenasi biasa) sebagai baseline, pada tiga dataset publik. Menurut hasil yang dilaporkan pada repositori kode resmi:
 
-## Relevansi terhadap Tema Tinjauan
-Fusi RGB-thermal berbasis Transformer melengkapi fusi RGB-D; keduanya contoh persepsi multimodal untuk kondisi menantang.
+Pada FLIR (dataset citra jalan raya siang-malam berpasangan RGB-termal), mAP50 (rata-rata presisi pada ambang *Intersection over Union* 0,5) naik dari 73,0% pada baseline menjadi 78,7% dengan CFT, dan mAP (dirata-ratakan pada rentang ambang IoU 0,5–0,95) naik dari 37,4% menjadi 40,2%. Kenaikan 5,7 poin pada mAP50 menunjukkan CFT terutama memperbaiki deteksi yang sudah cukup tepat posisinya, sedangkan kenaikan mAP yang lebih kecil menandakan sebagian kotak masih kurang presisi pada ambang IoU ketat.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Pedestrian RGB-T** yang baik dibaca berdampingan:
+Pada VEDAI (dataset citra udara untuk deteksi kendaraan), mAP50 naik dari 79,7% menjadi 85,3%, dan mAP naik dari 46,8% menjadi 56,0% — kenaikan 9,2 poin pada mAP merupakan perbaikan relatif terbesar di antara ketiga dataset, menunjukkan fusi berbasis Transformer memberi manfaat lebih besar pada citra udara dengan objek kecil dan rapat.
 
-- (tidak ada entri lain pada tema ini)
+Pada LLVIP (dataset pejalan kaki malam hari beresolusi tinggi), metrik yang dipakai adalah *log-average miss rate* (rata-rata logaritmik tingkat kelewatan — proporsi objek yang gagal terdeteksi, dirata-ratakan pada beberapa titik operasi; semakin kecil semakin baik). Nilainya turun dari 6,91% pada baseline menjadi 5,40% dengan CFT, penurunan 1,51 poin yang menunjukkan lebih sedikit pejalan kaki terlewat pada kondisi malam.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Pedestrian RGB-T** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Konsistensi kenaikan akurasi pada tiga domain berbeda — jalan raya, udara, dan pejalan kaki malam — menjadi bukti utama makalah bahwa fusi berbasis *self-attention* bermanfaat secara umum, bukan hanya pada satu jenis skenario RGB-termal.
 
-## Glosarium Istilah (tema Pedestrian RGB-T)
-Istilah penting untuk memahami makalah ini:
+## Kelebihan dan Keterbatasan
 
-- **Multispektral** — Citra beberapa pita (RGB + thermal).
-- **RGB-T** — Pasangan citra warna dan termal.
-- **Thermal/LWIR** — Inframerah panjang; andal saat gelap.
-- **Illumination-aware** — Bobot modal menyesuaikan kondisi cahaya.
-- **Modality imbalance** — Ketimpangan keandalan antar-modal.
-- **Miss rate (MR)** — Metrik deteksi pejalan (makin kecil makin baik).
-- **KAIST** — Dataset pejalan multispektral standar.
-- **CVC-14** — Dataset pejalan siang-malam RGB-thermal.
-- **Feature alignment** — Penyelarasan spasial fitur antar-modal.
-- **Cross-modal attention** — Attention pemandu fusi RGB-thermal.
+Kelebihan utama CFT terletak pada kesederhanaan integrasinya: modul ini dipasang di titik-titik tertentu pada *backbone* yang sudah ada tanpa mengubah *neck* atau *head* deteksi, sehingga dapat dicangkokkan ke detektor berbasis YOLO lain dengan penyesuaian minimal. Mekanisme *self-attention* juga menyatukan fusi intra- dan inter-modal dalam satu operasi, menghindarkan kebutuhan merancang modul terpisah untuk tiap jenis interaksi seperti pada metode berbasis *attention* berpemandu sebelumnya. Perbaikan akurasi yang konsisten pada tiga dataset dengan karakteristik objek dan sudut pandang berbeda menunjukkan generalisasi metode.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Dari sisi rekayasa, penyisipan tiga modul *self-attention* pada beberapa skala menambah biaya komputasi dibandingkan *backbone* konvolusi murni, karena kompleksitas *self-attention* tumbuh kuadratik terhadap panjang barisan token — pada peta fitur beresolusi tinggi di tahap awal *backbone*, jumlah token bisa besar sehingga biaya memori dan waktu komputasi meningkat tajam. Makalah tidak melaporkan secara eksplisit angka FPS (*frame per second*) atau jumlah parameter tambahan akibat CFT dalam ringkasan yang tersedia, sehingga trade-off kecepatan-akurasi belum sepenuhnya terverifikasi dari sumber yang diakses. Secara konseptual, metode ini juga mensyaratkan pasangan citra RGB-termal yang sudah selaras secara spasial (teregistrasi); bila kalibrasi kedua kamera tidak presisi, token pada posisi yang sama dari kedua modal tidak lagi merujuk objek fisik yang sama, sehingga fusi *self-attention* berisiko menggabungkan informasi yang salah pasangan.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kaitan dengan Bab Lain
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+CFT memakai YOLOv5 sebagai kerangka detektor dasar, yang mewarisi formulasi grid dan regresi langsung dari YOLOv1 (bab 001) serta jalur pengembangan *backbone* CSPDarknet yang mulai dipakai pada generasi YOLOv4 (bab 004). Mekanisme *self-attention* yang menjadi inti CFT berakar pada arsitektur Transformer yang diadaptasi untuk citra oleh Vision Transformer (bab 024); CFT menerapkan prinsip yang sama pada peta fitur konvolusi menengah, bukan pada citra mentah yang dipecah menjadi *patch* seperti pada ViT.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+Dalam klaster Pedestrian RGB-T, CFT berdiri di atas dataset KAIST (bab 100) yang menjadi tolok ukur awal deteksi pejalan multispektral, dan berdialog langsung dengan metode fusi CNN sebelumnya: IAF R-CNN (bab 101) yang memakai bobot sadar-cahaya, MBNet (bab 102) yang menangani ketimpangan modal, GAFF (bab 103) yang memakai *attention* berpemandu tanpa Transformer penuh, dan Cyclic Fuse-and-Refine (bab 104) yang memakai skema fusi siklik. CMPD (bab 105), yang terbit pada tahun yang sama, menempuh jalur berbeda dengan menambahkan ketidakpastian sebagai pemandu fusi. CFT menjadi rujukan bagi metode-metode fusi RGB-termal berbasis Transformer yang terbit setelahnya, yang umumnya membandingkan diri terhadap angka CFT sebagai baseline Transformer pertama pada tugas ini.
 
-## Kesimpulan
-CFT menghadirkan fusi RGB-thermal berbasis Transformer yang menangkap interaksi lintas-modal secara simultan, meningkatkan deteksi multispektral.
+## Poin untuk Sitasi
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `fang2022cft` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 189/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `fang2022cft`. Ringkasan yang aman dikutip: "CFT menyisipkan modul *self-attention* Transformer ke dalam *backbone* dua aliran YOLOv5, menggabungkan token RGB dan termal menjadi satu barisan sehingga fusi intra-modal dan inter-modal terjadi dalam satu operasi, dan meningkatkan akurasi deteksi pada dataset FLIR, VEDAI, dan LLVIP dibandingkan fusi konvolusi biasa." Angka mAP50/mAP pada FLIR (73,0→78,7 / 37,4→40,2), VEDAI (79,7→85,3 / 46,8→56,0), dan *miss rate* LLVIP (6,91%→5,40%) berasal dari tabel hasil pada repositori kode resmi (DocF/multispectral-object-detection) dan sebaiknya dicocokkan ulang dengan tabel pada naskah arXiv final sebelum dikutip dalam karya formal. Penggunaan dataset KAIST oleh makalah ini, jumlah parameter tambahan, dan kecepatan inferensi (FPS) tidak berhasil diverifikasi secara pasti dari sumber yang diakses dan perlu dicek langsung pada teks lengkap arXiv:2111.00273 sebelum disitasi.

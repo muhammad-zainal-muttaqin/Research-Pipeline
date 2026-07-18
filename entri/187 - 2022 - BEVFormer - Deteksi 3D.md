@@ -1,202 +1,89 @@
 # 187 - BEVFormer: Learning Bird's-Eye-View Representation from Multi-Camera Images via Spatiotemporal Transformers
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 187 dari 191 |
 | Kunci BibTeX | `li2022bevformer` |
-| Judul | BEVFormer: Learning Bird's-Eye-View Representation from Multi-Camera Images via Spatiotemporal Transformers |
-| Penulis | Li, Zhiqi; Wang, Wenhai; Li, Hongyang; Xie, Enze; Sima, Chonghao; Lu, Tong; Qiao, Yu; Dai, Jifeng |
+| Judul asli | BEVFormer: Learning Bird's-Eye-View Representation from Multi-Camera Images via Spatiotemporal Transformers |
+| Penulis | Zhiqi Li, Wenhai Wang, Hongyang Li, Enze Xie, Chonghao Sima, Tong Lu, Yu Qiao, Jifeng Dai |
 | Tahun | 2022 |
-| Venue / Jurnal | European Conference on Computer Vision (ECCV) |
-| Tema klaster | Deteksi 3D |
-| Kata kunci | multi-camera 3D, BEV, spatiotemporal transformer, autonomous driving |
+| Venue | European Conference on Computer Vision (ECCV 2022) |
+| Tema | Deteksi 3D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-deteksi-3d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2203.17270
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=BEVFormer%3A%20Learning%20Bird%27s-Eye-View%20Representation%20from%20Multi-Camera%20Images
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=BEVFormer%3A%20Learning%20Bird%27s-Eye-View%20Representation%20from%20Multi-Camera%20Images%20via%20Spatiotemporal%20Transformers&sort=relevance
+- **Kode resmi (GitHub):** https://github.com/fundamentalvision/BEVFormer
+- **Google Scholar:** https://scholar.google.com/scholar?q=BEVFormer%3A%20Learning%20Bird%27s-Eye-View%20Representation%20from%20Multi-Camera%20Images
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2203.17270 |
+BEVFormer adalah kerangka kerja persepsi 3D yang membangun representasi *bird's-eye-view* (BEV, tampak-atas) terpadu dari citra beberapa kamera saja, tanpa memerlukan sensor *LiDAR* (sensor laser penghasil titik-titik jarak/*point cloud*). Representasi BEV dibangun oleh sekumpulan *query* (vektor kueri yang dapat dipelajari, berfungsi sebagai "sel" pada peta tampak-atas) yang mengambil fitur dari citra multi-kamera melalui *spatial cross-attention* (mekanisme atensi silang yang menghubungkan setiap kueri BEV dengan wilayah citra kamera yang relevan) dan menggabungkan informasi dari *frame* (bingkai) waktu sebelumnya melalui *temporal self-attention* (atensi diri yang menghubungkan kueri BEV pada waktu sekarang dengan kueri BEV pada waktu lampau). Representasi BEV yang dihasilkan bersifat umum: dapat dipakai baik untuk kepala deteksi 3D maupun kepala segmentasi peta semantik tanpa mengubah tulang punggung (*backbone*, jaringan ekstraksi fitur dasar) BEV itu sendiri.
 
-## Ringkasan Eksekutif
-BEVFormer membangun representasi Bird's-Eye-View terpadu dari banyak kamera lewat Transformer spatiotemporal, memungkinkan deteksi 3D dan segmentasi map hanya dari kamera (tanpa LiDAR) dengan memanfaatkan konteks temporal.
+Pada benchmark nuScenes, varian BEVFormer-base mencapai 51,7% NDS (*nuScenes Detection Score*, metrik gabungan kualitas deteksi 3D) dan 41,6% mAP (*mean Average Precision*, rata-rata presisi deteksi) pada set validasi. Pada set uji (*test set*), model ini mencapai 56,9% NDS, unggul 9,0 poin dari metode kamera-saja terbaik sebelumnya, dan mendekati kinerja beberapa metode berbasis LiDAR pada metrik tertentu. Kontribusi utamanya adalah menunjukkan bahwa informasi temporal, yang sebelumnya jarang dimanfaatkan secara eksplisit pada deteksi 3D berbasis kamera, dapat meningkatkan akurasi deteksi objek bergerak dan estimasi kecepatan secara signifikan.
 
-## Abstrak (Parafrase)
-Penulis merancang kueri BEV grid yang, melalui spatial cross-attention, mengambil fitur dari banyak kamera pada lokasi 3D terkait, dan melalui temporal self-attention menggabungkan informasi dari frame sebelumnya. Representasi BEV terpadu ini mendukung deteksi 3D dan segmentasi peta, mencapai kinerja kamera-saja yang kuat pada nuScenes dan mendekati metode LiDAR pada beberapa metrik.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Latar Belakang & Konteks
-Persepsi 3D kamera-saja menarik karena murah, tetapi menyatukan banyak pandangan dan waktu ke ruang BEV sulit.
+Sistem persepsi kendaraan otonom umumnya mengandalkan LiDAR karena data titik 3D yang dihasilkannya langsung memberi informasi jarak yang akurat, seperti dimanfaatkan pada CenterPoint (bab 185) dan PV-RCNN (bab 186). Sensor LiDAR mahal dan rentan terhadap kondisi cuaca tertentu, sehingga persepsi berbasis kamera saja menjadi alternatif yang lebih murah dan lebih mudah dipasang secara masal. Masalahnya, citra kamera adalah proyeksi 2D dari dunia 3D — informasi kedalaman hilang pada satu citra tunggal, dan kendaraan otonom biasanya memakai enam kamera atau lebih yang memandang arah berbeda, sehingga sistem harus menyatukan pandangan-pandangan terpisah itu menjadi satu representasi 3D yang konsisten secara geometris.
 
-## Permasalahan yang Diangkat
-- Menyatukan multi-kamera ke BEV sulit.
-- Informasi temporal kurang dimanfaatkan.
-- Kamera-saja tertinggal dari LiDAR.
+Pendekatan sebelumnya seperti *Lift-Splat-Shoot* (LSS) dan BEVDet memproyeksikan fitur citra ke ruang BEV dengan memprediksi distribusi kedalaman per piksel, lalu menyebarkan (*splat*) fitur ke sel BEV sesuai kedalaman itu. Pendekatan ini bergantung pada estimasi kedalaman eksplisit yang cenderung tidak akurat pada kamera murni, sehingga kesalahan kedalaman menjalar menjadi kesalahan posisi objek pada BEV. DETR3D (bab 188), pendekatan lain yang sezaman, memakai kueri objek 3D yang diproyeksikan kembali ke citra 2D untuk mengambil fitur, tetapi tidak menghasilkan representasi BEV yang padat dan tidak memanfaatkan informasi antar-*frame* waktu. Akibatnya, model-model kamera-saja pada masa itu kesulitan mendeteksi objek yang tertutup sebagian (*occlusion*) dan kesulitan mengestimasi kecepatan objek, karena kecepatan hanya dapat disimpulkan dari perubahan posisi antar-waktu, sedangkan kebanyakan metode hanya memproses satu *frame* per prediksi.
 
-## Tujuan & Pertanyaan Penelitian
-- Membangun BEV terpadu dari multi-kamera.
-- Memanfaatkan konteks temporal.
-- Mendukung deteksi 3D + map segmentation.
+## Ide Utama
 
-## Tinjauan Terdahulu / Posisi Literatur
-Berdialog dengan LSS/BEVDet (proyeksi BEV) dan DETR3D (kueri 3D); kebaruan pada attention spatiotemporal BEV.
+Gagasan inti BEVFormer adalah membangun satu grid kueri BEV yang dapat dipelajari, lalu mengisi kueri tersebut dengan dua jenis atensi berurutan: atensi spasial yang mengambil fitur dari kamera pada waktu sekarang, dan atensi temporal yang mengambil fitur dari representasi BEV pada waktu sebelumnya. Grid kueri ini berbentuk H×W posisi tetap pada bidang tampak-atas di sekitar kendaraan, misalnya grid berukuran 200×200 yang mencakup area 102,4×102,4 meter — setiap sel grid berukuran sekitar 0,512×0,512 meter dan berkaitan dengan satu lokasi tetap di dunia nyata, terlepas dari susunan kamera.
 
-Karya/konsep pembanding yang relevan:
+Setiap kueri BEV, alih-alih menyorot seluruh piksel citra dari semua kamera (yang mahal secara komputasi karena jumlah piksel dari enam kamera sangat besar), hanya menyorot sejumlah kecil titik acuan (*reference point*) pada citra kamera yang relevan secara geometris — hasil proyeksi lokasi 3D kueri itu ke bidang gambar kamera memakai kalibrasi kamera yang diketahui. Mekanisme penyorotan titik acuan yang jarang (bukan seluruh citra) ini disebut *deformable attention* (atensi yang dapat berubah bentuk, memilih sendiri titik-titik penting alih-alih memproses seluruh masukan secara merata), yang sebelumnya diperkenalkan pada Deformable DETR (bab 023) untuk mempercepat atensi pada deteksi 2D. BEVFormer memperluas gagasan itu ke ruang 3D dan ke banyak kamera sekaligus.
 
-- DETR3D - kueri 3D-to-2D.
-- LSS/BEVDet - lift-splat ke BEV.
-- PETR - position embedding 3D.
-- Transformer multi-view.
+## Cara Kerja Langkah demi Langkah
 
-## Metodologi & Arsitektur
-Kueri BEV grid; spatial cross-attention menyorot fitur multi-kamera pada titik 3D terproyeksi; temporal self-attention menggabungkan BEV historis; kepala deteksi/segmentasi memakai fitur BEV.
+### Kueri BEV dan Posisi 3D
 
-Komponen / langkah metodologis utama:
+Grid kueri BEV berukuran H×W (misalnya 200×150 pada konfigurasi dasar) diinisialisasi sebagai parameter yang dapat dipelajari, masing-masing ditambah *embedding* posisi (representasi vektor dari lokasi) yang menandai koordinat (x, y) pada bidang BEV. Setiap sel BEV mewakili wilayah nyata seluas beberapa puluh sentimeter persegi di sekitar kendaraan. Karena BEV adalah tampak-atas, sumbu tinggi (z) tidak diwakili langsung oleh grid; ketinggian ditangani dengan mengambil sampel pada beberapa titik acuan di sepanjang sumbu z untuk setiap sel sebelum diproyeksikan ke kamera.
 
-- Kueri grid BEV terpadu.
-- Spatial cross-attention multi-kamera.
-- Temporal self-attention (frame lampau).
-- Kepala deteksi 3D + map segmentation.
+### Spatial Cross-Attention
 
-## Kontribusi Utama
-1. Representasi BEV spatiotemporal dari kamera.
-2. Pemanfaatan temporal eksplisit.
-3. Kamera-saja mendekati LiDAR.
-4. Multitugas (deteksi + map).
+Untuk mengisi setiap kueri BEV dengan informasi visual, sistem memproyeksikan titik-titik acuan 3D milik kueri itu (pada beberapa ketinggian z) ke bidang gambar setiap kamera memakai parameter kalibrasi ekstrinsik dan intrinsik kamera. Sebagian titik acuan jatuh di dalam bidang pandang satu atau dua kamera yang bertetangga (karena kamera-kamera pada kendaraan saling tumpang tindih di tepi), sedangkan titik yang jatuh di luar bidang pandang kamera tertentu diabaikan untuk kamera itu. Pada titik-titik yang valid, *deformable attention* mengambil fitur dari sekitar titik proyeksi tersebut pada peta fitur citra kamera, lalu menjumlahkan fitur dari seluruh kamera yang relevan menjadi satu vektor pembaruan untuk kueri BEV bersangkutan. Dengan cara ini, satu kueri BEV dapat menggabungkan informasi dari lebih dari satu kamera tanpa harus memproses citra secara penuh.
 
-## Rincian Eksperimen
-nuScenes untuk deteksi 3D (NDS/mAP) dan segmentasi peta BEV; ablation temporal.
+### Temporal Self-Attention
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Selain fitur spasial dari kamera saat ini, setiap kueri BEV juga menyorot representasi BEV historis dari *frame* sebelumnya (BEV lampau, hasil dari langkah waktu t−1) pada lokasi yang sama secara geometris, setelah posisi BEV lampau disejajarkan ulang (*warp*, transformasi koordinat) sesuai pergerakan kendaraan (*ego-motion*) antara dua *frame*. Penyejajaran ini penting karena kendaraan bergerak, sehingga grid BEV pada waktu t dan t−1 tidak menunjuk ke titik dunia nyata yang sama tanpa dikoreksi. Setelah disejajarkan, atensi diri menggabungkan fitur BEV sekarang dengan fitur BEV lampau, sehingga model memperoleh isyarat gerak: objek yang berpindah antar-*frame* menghasilkan perbedaan fitur yang dapat dipakai kepala deteksi untuk mengestimasi kecepatan dan mengenali objek yang sedang tertutup sebagian pada *frame* saat ini tetapi terlihat pada *frame* sebelumnya. Proses ini berjalan berulang (rekursif) dari satu *frame* ke *frame* berikutnya, sehingga BEV pada waktu t membawa jejak informasi dari banyak *frame* sebelumnya, bukan hanya satu langkah ke belakang.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| nuScenes deteksi | NDS/mAP | SOTA kamera-saja saat rilis |
-| Map segmentation | IoU | kuat |
-| Ablation temporal | NDS | temporal menaikkan hasil |
+Diagram berikut merangkum alur satu langkah waktu pemrosesan BEVFormer:
 
-## Temuan Kunci
-- Attention spatiotemporal menyatukan multi-kamera+waktu.
-- Temporal penting untuk kecepatan/oklusi.
-- Kamera-saja bisa mendekati LiDAR.
+```
+enam citra kamera (t)          BEV historis (t-1, disejajarkan)
+   │  ekstraksi fitur (backbone)         │
+   ▼                                     ▼
+peta fitur multi-kamera         grid kueri BEV (H x W)
+   │                                     │
+   └──── spatial cross-attention ───►[kueri BEV]◄─── temporal self-attention
+              (titik acuan 3D)            │
+                                          ▼
+                                  BEV terbarukan (t)
+                                    │            │
+                              kepala deteksi   kepala segmentasi
+                              (kotak 3D)       (peta semantik)
+```
 
-## Keunggulan
-- Kamera-saja (murah).
-- Memanfaatkan waktu.
-- Multitugas BEV.
+### Kepala Deteksi dan Segmentasi
 
-## Keterbatasan
-- Komputasi Transformer besar.
-- Bergantung kalibrasi kamera.
-- Masih di bawah LiDAR pada kasus tertentu.
+Representasi BEV yang telah diperbarui pada tiap langkah waktu berfungsi sebagai fitur bersama untuk dua kepala tugas. Kepala deteksi 3D, mengikuti desain berbasis kueri dari DETR3D, memprediksi kotak 3D beserta orientasi dan kecepatan objek langsung dari fitur BEV. Kepala segmentasi memprediksi peta semantik BEV, misalnya batas jalan dan lokasi kendaraan lain, dari representasi BEV yang sama. Karena kedua kepala memakai fitur BEV yang identik, BEVFormer dapat dilatih untuk kedua tugas sekaligus tanpa membangun dua jalur ekstraksi fitur terpisah.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
 
-## Relevansi terhadap Tema Tinjauan
-Persepsi 3D berbasis kamera + BEV relevan untuk sistem otonom dan menjembatani depth/kamera ke deteksi 3D.
+Evaluasi utama dilakukan pada nuScenes (bab 145), *benchmark* deteksi 3D berkendara berisi data dari enam kamera, radar, dan LiDAR yang direkam di area perkotaan, dengan metrik NDS (skor gabungan yang menimbang akurasi posisi, ukuran, orientasi, kecepatan, dan atribut kotak 3D) dan mAP (presisi rata-rata deteksi diukur pada beberapa ambang jarak). Tiga konfigurasi model diuji pada set validasi: BEVFormer-tiny dengan tulang punggung ResNet-50 mencapai 35,4% NDS dan 25,2% mAP; BEVFormer-small dengan tulang punggung ResNet-101-DCN mencapai 47,9% NDS dan 37,0% mAP; BEVFormer-base, juga dengan ResNet-101-DCN tetapi resolusi dan jumlah kueri lebih besar, mencapai 51,7% NDS dan 41,6% mAP. Kenaikan bertahap dari *tiny* ke *base* menunjukkan bahwa kapasitas tulang punggung dan resolusi fitur berkontribusi langsung pada akurasi, sejalan dengan pola umum pada detektor berbasis Transformer.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Deteksi 3D** yang baik dibaca berdampingan:
+Pada set uji nuScenes, BEVFormer mencapai 56,9% NDS, unggul 9,0 poin di atas metode kamera-saja terbaik sebelumnya pada saat publikasi. Selisih 9,0 poin ini tergolong besar untuk metrik gabungan seperti NDS, yang biasanya bergerak dalam kenaikan satu-dua poin antar-generasi metode; besarnya selisih ini terutama berasal dari kontribusi *temporal self-attention* terhadap estimasi kecepatan dan deteksi objek yang tertutup sebagian, dua aspek yang sulit ditangani metode kamera tunggal per-*frame*. Studi ablasi pada makalah menunjukkan bahwa menghapus *temporal self-attention* menurunkan NDS secara jelas dibandingkan model penuh, mengonfirmasi bahwa konteks temporal, bukan hanya spasial, adalah sumber utama peningkatan akurasi dibandingkan pendekatan kamera-saja berbasis satu *frame* seperti DETR3D.
 
-- [185 - 2021 - CenterPoint - Deteksi 3D](./185%20-%202021%20-%20CenterPoint%20-%20Deteksi%203D.md)
-- [186 - 2020 - PV-RCNN - Deteksi 3D](./186%20-%202020%20-%20PV-RCNN%20-%20Deteksi%203D.md)
-- [188 - 2022 - DETR3D - Deteksi 3D](./188%20-%202022%20-%20DETR3D%20-%20Deteksi%203D.md)
+## Kelebihan dan Keterbatasan
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Deteksi 3D** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Kelebihan utama BEVFormer adalah representasi BEV tunggal yang dapat dipakai untuk banyak tugas persepsi (deteksi dan segmentasi) tanpa perubahan arsitektur besar, serta pemanfaatan eksplisit informasi temporal yang terbukti meningkatkan akurasi kecepatan dan ketahanan terhadap oklusi. *Deformable attention* pada kueri BEV membuat komputasi atensi tidak meledak sebanding jumlah piksel citra dari enam kamera, sehingga metode tetap dapat dilatih dengan sumber daya yang wajar dibandingkan atensi penuh (*full attention*) pada seluruh piksel.
 
-## Glosarium Istilah (tema Deteksi 3D)
-Istilah penting untuk memahami makalah ini:
+Dari sisi rekayasa, ketergantungan pada kalibrasi kamera yang akurat merupakan kelemahan struktural: proyeksi titik acuan 3D ke bidang gambar memerlukan parameter ekstrinsik dan intrinsik kamera yang presisi, sehingga kesalahan kalibrasi menjalar langsung menjadi kesalahan penyorotan fitur. Secara konseptual, komputasi Transformer pada grid BEV berukuran besar (misalnya 200×200 sel) dan enam kamera sekaligus tetap lebih berat dibandingkan detektor konvolusi konvensional, sehingga penerapan pada perangkat keras berdaya rendah memerlukan optimisasi tambahan. Selain itu, sebagai metode kamera-saja, BEVFormer masih berada di bawah metode berbasis LiDAR pada metrik akurasi posisi murni, terutama pada jarak jauh, karena kamera tidak memberi ukuran jarak langsung seperti titik LiDAR.
 
-- **Deteksi 3D** — Prediksi kotak 3D beorientasi (x,y,z,l,w,h,yaw).
-- **LiDAR** — Sensor laser menghasilkan point cloud akurat.
-- **BEV** — Bird's-Eye View; proyeksi tampak-atas.
-- **Voxel/pillar** — Diskretisasi point cloud ke sel 3D / kolom.
-- **Fusi LiDAR-kamera** — Penggabungan geometri LiDAR dan tekstur kamera.
-- **Frustum** — Volume 3D dibatasi deteksi 2D pada citra.
-- **Pseudo-LiDAR** — Point cloud dari depth kamera.
-- **KITTI/nuScenes** — Benchmark deteksi 3D berkendara.
-- **AP 3D / NDS** — Metrik deteksi 3D (NDS khusus nuScenes).
-- **Kalibrasi sensor** — Penyelarasan koordinat antar-sensor.
+## Kaitan dengan Bab Lain
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+BEVFormer berada pada klaster Deteksi 3D bersama CenterPoint (bab 185, deteksi berbasis titik pusat pada data LiDAR) dan PV-RCNN (bab 186, penggabungan fitur titik dan *voxel* pada LiDAR); kedua bab itu menjadi pembanding berbasis LiDAR yang coba didekati kinerjanya oleh BEVFormer tanpa LiDAR. Bab ini juga berhubungan erat dengan bab 188 (DETR3D), karena kepala deteksi BEVFormer mewarisi desain kueri objek 3D dari DETR3D, sementara BEVFormer menambahkan lapisan representasi BEV terpadu dan atensi temporal yang tidak dimiliki DETR3D. Mekanisme *deformable attention* yang dipakai pada *spatial cross-attention* diwarisi langsung dari Deformable DETR (bab 023), yang aslinya dirancang untuk mempercepat atensi pada deteksi 2D; BEVFormer memperluasnya ke pengambilan fitur lintas-kamera dan lintas-waktu. Dataset nuScenes (bab 145) menjadi tolok ukur evaluasi tunggal pada bab ini, sekaligus sumber data multi-kamera dan multi-*frame* yang membuat mekanisme temporal BEVFormer relevan untuk diuji.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Poin untuk Sitasi
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-BEVFormer menyatukan multi-kamera dan waktu ke BEV via Transformer, memajukan persepsi 3D kamera-saja.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `li2022bevformer` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 187/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `li2022bevformer`. Ringkasan aman untuk dikutip: BEVFormer membangun representasi *bird's-eye-view* terpadu dari citra multi-kamera memakai kueri BEV yang dapat dipelajari, dipadukan lewat *spatial cross-attention* antar-kamera dan *temporal self-attention* antar-*frame*, mencapai 56,9% NDS pada set uji nuScenes (unggul 9,0 poin dari metode kamera-saja terbaik sebelumnya) dan 51,7% NDS/41,6% mAP untuk konfigurasi BEVFormer-base pada set validasi. Angka NDS/mAP untuk varian *tiny* (35,4%/25,2%) dan *small* (47,9%/37,0%) diambil dari repositori kode resmi, bukan langsung dari tabel abstrak makalah, sehingga sebaiknya dicocokkan ulang dengan tabel eksperimen lengkap pada naskah sebelum dikutip dalam karya formal. Rincian hasil segmentasi peta semantik (IoU) dan hasil studi ablasi temporal secara numerik tidak diverifikasi dalam penulisan bab ini dan perlu dicek langsung ke naskah asli.
