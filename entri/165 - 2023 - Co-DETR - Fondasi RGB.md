@@ -1,209 +1,125 @@
 # 165 - DETRs with Collaborative Hybrid Assignments Training
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
-| Field | Nilai |
-|---|---|
-| Nomor entri | 165 dari 191 |
-| Kunci BibTeX | `zong2023codetr` |
-| Judul | DETRs with Collaborative Hybrid Assignments Training |
-| Penulis | Zong, Zhuofan; Song, Guanglu; Liu, Yu |
-| Tahun | 2023 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | DETR, collaborative training, hybrid assignment, object detection |
-
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2211.12860
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=DETRs%20with%20Collaborative%20Hybrid%20Assignments%20Training
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=DETRs%20with%20Collaborative%20Hybrid%20Assignments%20Training&sort=relevance
-
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
-
 | Atribut | Nilai |
 |---|---|
-| arXiv | 2211.12860 |
+| Kunci BibTeX | `zong2023codetr` |
+| Judul asli | DETRs with Collaborative Hybrid Assignments Training |
+| Penulis | Zhuofan Zong, Guanglu Song, Yu Liu |
+| Tahun | 2023 |
+| Venue | Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) |
+| Tema | Fondasi RGB |
 
-## Ringkasan Eksekutif
-Co-DETR (Collaborative Hybrid Assignments Training) meningkatkan detektor DETR dengan menambahkan kepala bantu berlabel one-to-many (ala ATSS/Faster R-CNN) saat pelatihan, memperkaya supervisi encoder tanpa mengubah inferensi end-to-end.
+## Tautan Akses
+- arXiv: https://arxiv.org/abs/2211.12860
+- Google Scholar: https://scholar.google.com/scholar?q=DETRs%20with%20Collaborative%20Hybrid%20Assignments%20Training
+- Semantic Scholar: https://www.semanticscholar.org/search?q=DETRs%20with%20Collaborative%20Hybrid%20Assignments%20Training&sort=relevance
 
-## Abstrak (Parafrase)
-Penulis berpendapat bahwa penetapan one-to-one DETR memberi supervisi encoder yang jarang. Co-DETR menambah beberapa kepala bantu dengan penetapan one-to-many selama pelatihan untuk memperkaya gradien pada fitur encoder, lalu menghapusnya saat inferensi. Pendekatan ini mendorong DETR ke akurasi SOTA pada COCO, termasuk >66 AP dengan backbone sangat besar.
+## Gambaran Umum
+*DEtection TRansformer* (DETR) memperkenalkan paradigma deteksi objek *end-to-end* bebas *Non-Maximum Suppression* (NMS) berbasis pencocokan satu-ke-satu (*one-to-one set matching*). Namun, pencocokan ini menyebabkan supervisi jarang (*sparse supervision*) pada keluaran *encoder*. Hanya sedikit kueri yang mendapat label positif saat pelatihan, menghambat pembelajaran fitur diskriminatif oleh *encoder* dan memperlambat konvergensi.
 
-## Latar Belakang & Konteks
-DETR memakai satu kueri per objek (one-to-one), efisien saat inferensi tetapi memberi sinyal latih terbatas untuk encoder yang besar.
+*Collaborative Hybrid Assignments Training* (Co-DETR) mengatasi masalah ini dengan mengintegrasikan beberapa kepala bantu (*auxiliary heads*) paralel bersupervisi satu-ke-banyak (*one-to-many*) seperti *Adaptive Training Sample Selection* (ATSS) dan Faster R-CNN selama pelatihan. Skema ini memaksa *encoder* mempelajari fitur spasial yang padat. Koordinat positif dari kepala bantu diekstraksi menjadi kueri positif kustom (*customized positive queries*) untuk mempercepat pembelajaran atensi *decoder*. Saat inferensi, seluruh kepala bantu dibuang sehingga model beroperasi tanpa beban komputasi tambahan.
 
-## Permasalahan yang Diangkat
-- Supervisi encoder DETR terlalu jarang.
-- Konvergensi dan akurasi terbatas pada skala.
-- Ingin menjaga inferensi end-to-end.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+DETR (022) mengubah paradigma deteksi objek dengan merumuskan tugas sebagai prediksi himpunan langsung via pencocokan bipartit satu-ke-satu. Pendekatan ini mengeliminasi komponen NMS buatan tangan dan kotak acuan (*anchor box*). Namun, DETR membutuhkan konvergensi pelatihan yang sangat lambat (hingga 500 epoch) dan kinerjanya tertinggal dari detektor berbasis CNN pada skala tertentu.
 
-## Tujuan & Pertanyaan Penelitian
-- Memperkaya supervisi pelatihan DETR.
-- Menaikkan akurasi tanpa mengubah inferensi.
-- Menskalakan ke backbone besar.
+Upaya seperti *Deformable DETR* (023) dan *DN-DETR* (159) mempercepat konvergensi pada sisi *decoder* lewat atensi lokal terdeformasi dan latihan denoising. Namun, masalah kurangnya efisiensi fitur *encoder* belum teratasi. Pada DETR standar, representasi spasial *encoder* disupervisi secara tidak langsung melalui *decoder* satu-ke-satu. Karena jumlah objek dalam citra sedikit dibanding total piksel, hanya sebagian kecil token fitur *encoder* yang menerima gradien supervisi positif. Token lainnya dipaksa menjadi latar belakang (*background*). Supervisi yang jarang ini menghambat *encoder* mempelajari fitur visual diskriminatif. Sebaliknya, detektor konvensional menggunakan penetapan satu-ke-banyak (*one-to-many*) di mana beberapa *anchor* dipasangkan ke satu objek target, menghasilkan supervisi yang jauh lebih padat pada fitur representasional.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Menggabungkan wawasan detektor klasik (ATSS, Faster R-CNN one-to-many) dengan DETR (DINO, Deformable DETR).
+## Ide Utama
+Ide utama Co-DETR adalah menggabungkan keunggulan supervisi padat skema satu-ke-banyak (*one-to-many*) tradisional untuk melatih *encoder*, sementara *decoder* utama tetap menggunakan skema satu-ke-satu (*one-to-one*) demi mempertahankan deteksi *end-to-end* tanpa NMS. Pendekatan ini dinamakan pelatihan kolaboratif hibrida.
 
-Karya/konsep pembanding yang relevan:
+Fitur multi-skala hasil *encoder* dikirim ke kepala *decoder* DETR utama dan beberapa kepala bantu satu-ke-banyak secara paralel. Kepala bantu bertindak sebagai pengawas tambahan yang memaksa *encoder* mempelajari fitur di seluruh area potensial objek, bukan hanya representasi tunggal dari pencocokan Hungarian. Umpan balik gradien dari kepala-kepala bantu diakumulasikan untuk memperbarui parameter *encoder*. Selain itu, koordinat spasial positif kepala bantu diekstraksi menjadi kueri tambahan untuk mempercepat pembelajaran *decoder*. Seluruh kepala bantu ini dibuang saat inferensi, sehingga model hasil pelatihan tetap berupa detektor DETR standar yang efisien tanpa parameter tambahan pada data uji.
 
-- DINO - DETR SOTA dengan denoising.
-- ATSS - penetapan label adaptif.
-- Faster R-CNN - kepala one-to-many.
-- Deformable DETR - attention terdeformasi.
+## Cara Kerja Langkah demi Langkah
 
-## Metodologi & Arsitektur
-Selama pelatihan, beberapa auxiliary head (mis. berbasis ATSS/RCNN) memakai penetapan one-to-many pada fitur encoder yang sama; kueri positif tambahan diturunkan untuk decoder. Saat inferensi hanya kepala DETR utama dipakai.
+### Aliran Data Utama dan Ekstraksi Fitur Multi-Skala
+Aliran data dimulai dengan memproses citra masukan melalui *backbone* untuk menghasilkan peta fitur multi-skala. Pada citra masukan beresolusi $800 \times 800$ piksel, *backbone* mengekstrak fitur pada resolusi spasial yang menurun, misalnya tingkat C3 ($100 \times 100$ piksel), C4 ($50 \times 50$ piksel), dan C5 ($25 \times 25$ piksel). Fitur multi-skala ini diratakan dan dimasukkan ke dalam *encoder* Transformer (seperti *Deformable Encoder*) untuk menghasilkan representasi fitur terenkode dengan dimensi spasial yang sama.
 
-Komponen / langkah metodologis utama:
+```
+                             ┌──────────────┐
+                             │ Citra Input  │
+                             └──────┬───────┘
+                                    ▼
+                             ┌──────────────┐
+                             │   Backbone   │
+                             └──────┬───────┘
+                                    ▼
+                             ┌──────────────┐
+                             │   Encoder    │
+                             └───┬───┬───┬──┘
+                                 │   │   │  (Fitur Encoder Berbagi)
+        ┌────────────────────────┘   │   └───────────────────────┐
+        ▼                            ▼                           ▼
+┌──────────────┐             ┌──────────────┐             ┌──────────────┐
+│  Aux Head 1  │             │  Aux Head 2  │             │   Decoder    │
+│ (One-to-Many)│             │ (One-to-Many)│             │ (One-to-One) │
+│  [ATSS/FCOS] │             │ [Faster RCN] │             └──────┬───────┘
+└──────┬───────┘             └──────┬───────┘                    │
+       │                            │                            │
+       └──────────────┬─────────────┘                            │
+                      ▼                                          │
+       (Koordinat Positif Diekstraksi)                           │
+                      │                                          │
+                      ▼                                          │
+       ┌──────────────────────────────┐                          │
+       │ Customized Positive Queries  │                          │
+       └──────────────┬───────────────┘                          │
+                      └──────────────────────────────────────────┼───┐
+                                                                 ▼   ▼
+                                                            ┌──────────────┐
+                                                            │ Prediksi Box │
+                                                            └──────────────┘
+                                                             (Hanya Cabang
+                                                             Utama Digunakan
+                                                             saat Inferensi)
+```
 
-- Auxiliary heads one-to-many saat latih.
-- Berbagi encoder untuk supervisi lebih padat.
-- Kueri positif tambahan untuk decoder.
-- Inferensi tetap end-to-end (kepala utama saja).
+### Pelatihan Kolaboratif dengan Kepala Bantu Satu-ke-Banyak
+Fitur terenkode multi-skala dari *encoder* didistribusikan ke kepala detektor utama (DETR) dan $M$ kepala bantu paralel. Setiap kepala bantu dikonfigurasi menggunakan metode deteksi tradisional seperti ATSS (menetapkan sampel positif secara adaptif berdasarkan kalkulasi statistik jarak terdekat dan IoU) atau FCOS (pemetaan objek secara *anchor-free* berdasarkan pusat piksel).
 
-## Kontribusi Utama
-1. Skema collaborative hybrid assignment.
-2. Kenaikan AP signifikan lintas DETR.
-3. SOTA COCO dengan backbone besar.
-4. Tanpa biaya inferensi tambahan.
+Sebagai contoh, jika menggunakan kepala ATSS, metode ini menetapkan beberapa token fitur spasial dekat pusat objek sebagai sampel positif. Ini memberikan pengawasan padat kepada *encoder* karena banyak token didorong untuk memprediksi kelas dan penyimpangan (*offset*) kotak pembatas (*bounding box*) objek target. Setiap kepala bantu menghitung nilai kerugiannya sendiri secara independen.
 
-## Rincian Eksperimen
-COCO dengan Deformable-DETR/DINO sebagai basis dan backbone hingga sangat besar (mis. ViT-L), melaporkan AP.
+### Pembuatan Kueri Positif Kustom untuk Decoder
+Selain memberikan supervisi gradien pada *encoder*, kepala bantu membantu mempercepat pelatihan *decoder*. Dari setiap kepala bantu, koordinat spasial ($x, y, w, h$) yang ditetapkan sebagai sampel positif diekstraksi. Koordinat ini merepresentasikan area yang sangat mungkin mengandung objek target (*foreground*).
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Koordinat positif tersebut ditransformasikan menjadi kueri posisi (*positional queries*) tambahan untuk *decoder* utama. Pada fase pelatihan, $N$ buah kueri objek acak pada *decoder* ditambahkan dengan kueri positif kustom ini. Dengan menyajikan kueri yang terarah langsung ke lokasi objek positif kepada *decoder*, beban *decoder* dalam mempelajari atensi silang (*cross-attention*) berkurang signifikan, mempercepat konvergensi.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO (basis DINO) | AP | kenaikan beberapa poin AP |
-| COCO (backbone besar) | AP | >66 AP saat rilis |
-| Ablation heads | AP | lebih banyak kepala bantu menaikkan hasil |
+### Formulasi Fungsi Rugi Total
+Fungsi rugi total $\mathcal{L}_{\text{total}}$ yang dioptimalkan selama pelatihan dirumuskan sebagai akumulasi bobot dari rugi detektor utama dan rugi seluruh kepala bantu:
 
-## Temuan Kunci
-- Supervisi one-to-many memperkaya encoder DETR.
-- Manfaat konsisten lintas basis DETR.
-- Inferensi tetap ringkas.
+$$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{main}} + \sum_{i=1}^{M} \lambda_i \mathcal{L}_{\text{aux}}^{(i)}$$
 
-## Keunggulan
-- Akurasi puncak.
-- Kompatibel dengan banyak DETR.
-- Tanpa overhead inferensi.
+Di mana $\mathcal{L}_{\text{main}}$ melambangkan fungsi rugi detektor DETR utama (mencakup *Hungarian classification*, *L1 regression*, dan *GIoU loss*). $\mathcal{L}_{\text{aux}}^{(i)}$ menyatakan fungsi rugi kepala bantu ke-$i$ (klasifikasi menggunakan *Focal Loss* dan regresi kotak pembatas menggunakan kombinasi *L1* dan *GIoU loss*). Parameter $\lambda_i$ bertindak sebagai koefisien bobot penyeimbang kontribusi setiap kepala bantu, yang biasanya diatur mendekati $1,0$.
 
-## Keterbatasan
-- Biaya pelatihan meningkat (banyak kepala).
-- Kompleksitas implementasi.
-- Backbone besar mahal.
+### Proses Inferensi Tanpa Overhead
+Setelah pelatihan selesai, seluruh kepala bantu dan mekanisme kueri positif kustom dilepaskan. Bobot parameter pada *encoder* dan *decoder* utama yang telah dioptimalkan disimpan. Pada fase inferensi, citra masukan hanya melewati *backbone*, *encoder*, and *decoder* utama menggunakan kueri standar. Karena jalur bantu tidak diproses, waktu komputasi, penggunaan memori GPU, dan latensi inferensi persis sama dengan detektor DETR dasar.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Eksperimen dan Hasil
+Evaluasi eksperimental Co-DETR dilakukan pada dataset MS COCO 2017 (118 ribu citra latih, 5 ribu citra validasi, dan 20 ribu citra *test-dev*). Arsitektur dasar yang diuji mencakup *DAB-DETR*, *Deformable DETR*, dan detektor *DINO*.
 
-## Relevansi terhadap Tema Tinjauan
-Menunjukkan cara mendorong detektor end-to-end ke akurasi tertinggi, relevan bila kualitas deteksi RGB/RGB-D jadi prioritas.
+Pada pengujian menggunakan *Deformable DETR* dengan *backbone* ResNet-50 pada skema pelatihan singkat 12 epoch, Co-DETR meningkatkan performa dari 43,8% *mean Average Precision* (AP) menjadi 49,6% AP (+5,8% AP). Untuk skema pelatihan 36 epoch, performa meningkat dari 46,9% AP menjadi 50,1% AP (+3,2% AP). Peningkatan tinggi pada epoch awal membuktikan bahwa Co-DETR berhasil mempercepat konvergensi melalui supervisi padat pada fitur *encoder*.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Ketika diintegrasikan dengan detektor SOTA *DINO-Deformable-DETR* berbasis *Swin-L*, Co-DETR meningkatkan performa pada data validasi COCO dari 58,5% AP menjadi 59,5% AP (+1,0% AP). Dengan memanfaatkan *backbone* ViT-L (304 juta parameter) yang dilatih awal pada dataset Objects365, Co-DETR mencapai 66,0% AP pada COCO *test-dev* dan 67,9% AP pada LVIS val. Hasil ini menetapkan standar kinerja baru saat publikasi dan menunjukkan skalabilitas metode ke arsitektur model besar tanpa menambah beban komputasi ketika digunakan pada sistem produksi.
 
-- [155 - 2024 - RT-DETR - Fondasi RGB](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md)
-- [156 - 2024 - YOLO-World - Fondasi RGB](./156%20-%202024%20-%20YOLO-World%20-%20Fondasi%20RGB.md)
-- [157 - 2023 - Gold-YOLO - Fondasi RGB](./157%20-%202023%20-%20Gold-YOLO%20-%20Fondasi%20RGB.md)
-- [158 - 2023 - DINO detector - Fondasi RGB](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md)
-- [159 - 2022 - DN-DETR - Fondasi RGB](./159%20-%202022%20-%20DN-DETR%20-%20Fondasi%20RGB.md)
-- [160 - 2021 - Conditional DETR - Fondasi RGB](./160%20-%202021%20-%20Conditional%20DETR%20-%20Fondasi%20RGB.md)
-- [161 - 2021 - Sparse R-CNN - Fondasi RGB](./161%20-%202021%20-%20Sparse%20R-CNN%20-%20Fondasi%20RGB.md)
-- [162 - 2022 - ConvNeXt - Fondasi RGB](./162%20-%202022%20-%20ConvNeXt%20-%20Fondasi%20RGB.md)
+## Kelebihan dan Keterbatasan
+Kelebihan utama Co-DETR terletak pada efisiensinya yang asimetris. Model diuntungkan oleh supervisi padat satu-ke-banyak selama pelatihan, namun tetap mempertahankan kesederhanaan arsitektur satu-ke-satu tanpa NMS saat inferensi. Hal ini sangat berguna untuk penerapan praktis karena tidak menambah operasi matematika (*FLOPs*) atau latensi inferensi pada perangkat target.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Namun, dari sisi rekayasa, keterbatasan utama Co-DETR adalah kebutuhan memori GPU (*VRAM*) yang melonjak selama pelatihan karena pengaktifan beberapa kepala bantu secara paralel di atas fitur multi-skala. Secara konseptual, jumlah kepala bantu juga memiliki batas optimal sekitar 4 kepala. Menambahkan lebih dari 6 kepala bantu justru menurunkan akurasi akibat timbulnya konflik penetapan label (*label assignment conflict*). Konflik ini terjadi ketika satu token fitur menerima instruksi gradien kontradiktif dari beberapa kepala bantu yang menerapkan kriteria sampel positif-negatif berbeda, menghambat pembaruan bobot *encoder*.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
+## Kaitan dengan Bab Lain
+Co-DETR memiliki keterkaitan erat dengan beberapa bab dalam silsilah deteksi objek berbasis Transformer dan CNN:
+- **[DETR (022)](./022%20-%202020%20-%20DETR%20-%20Fondasi%20RGB.md)**: Sebagai fondasi utama, DETR memperkenalkan paradigma deteksi *end-to-end* bebas NMS. Co-DETR secara langsung mengatasi kelemahan mendasar DETR berupa supervisi yang jarang pada *encoder*.
+- **[Deformable DETR (023)](./023%20-%202021%20-%20Deformable%20DETR%20-%20Fondasi%20RGB.md)**: Co-DETR sering menggunakan Deformable DETR sebagai arsitektur dasar. Pembatasan atensi pada Deformable DETR dikombinasikan dengan supervisi padat Co-DETR menghasilkan konvergensi yang sangat cepat.
+- **[Vision Transformer (ViT) (024)](./024%20-%202021%20-%20Vision%20Transformer%20(ViT)%20-%20Fondasi%20RGB.md)** dan **[Swin Transformer (025)](./025%20-%202021%20-%20Swin%20Transformer%20-%20Fondasi%20RGB.md)**: Kedua arsitektur ini bertindak sebagai *backbone* ekstraksi fitur yang digunakan oleh Co-DETR untuk mencapai performa akurasi puncak di atas 66,0% AP pada COCO.
+- **[DINO detector (158)](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md)**: DINO merupakan salah satu model detektor dasar yang diintegrasikan dengan skema pelatihan Co-DETR untuk mencatatkan rekor akurasi tertinggi pada masanya.
+- **[DN-DETR (159)](./159%20-%202022%20-%20DN-DETR%20-%20Fondasi%20RGB.md)**: Sementara DN-DETR berfokus pada stabilisasi *decoder* melalui latihan denoising, Co-DETR melengkapinya dengan memperkuat representasi *encoder* menggunakan skema hibrida kolaboratif.
+- **[RT-DETR (155)](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md)**: RT-DETR berfokus pada kecepatan inferensi waktu nyata dengan merancang ulang *encoder*. Sebaliknya, Co-DETR berfokus pada akurasi maksimal dengan mengoptimalkan pelatihan *encoder* yang kompleks dan membuang seluruh modul tambahan saat inferensi.
 
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
+## Poin untuk Sitasi
+Kunci BibTeX: `zong2023codetr`
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Ringkasan untuk sitasi:
+"Co-DETR memperkenalkan kerangka kerja pelatihan kolaboratif hibrida yang menempatkan beberapa kepala bantu satu-ke-banyak (seperti ATSS dan Faster R-CNN) secara paralel di atas *encoder* DETR selama fase pelatihan. Metode ini memperkaya supervisi fitur *encoder* dan mempercepat konvergensi *decoder* melalui ekstraksi kueri positif kustom, tanpa memberikan beban komputasi tambahan atau parameter ekstra pada saat proses inferensi dijalankan."
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Co-DETR memadukan kekuatan penetapan klasik dan DETR untuk akurasi SOTA tanpa mengorbankan inferensi end-to-end.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zong2023codetr` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 165/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan verifikasi:
+"Perlu diverifikasi apakah hasil 66,0% AP pada COCO *test-dev* menggunakan model ViT-L melibatkan teknik penambahan skala gambar masukan bervariasi (*multi-scale testing*) dan *Test-Time Augmentation* (TTA), serta pastikan kecukupan kapasitas memori GPU saat mereproduksi skema latihan dengan 4 kepala bantu paralel."

@@ -1,209 +1,128 @@
 # 162 - A ConvNet for the 2020s
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 162 dari 191 |
 | Kunci BibTeX | `liu2022convnext` |
-| Judul | A ConvNet for the 2020s |
+| Judul asli | A ConvNet for the 2020s |
 | Penulis | Liu, Zhuang; Mao, Hanzi; Wu, Chao-Yuan; Feichtenhofer, Christoph; Darrell, Trevor; Xie, Saining |
 | Tahun | 2022 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | modern CNN, backbone, ConvNet, image classification |
+| Venue | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2201.03545
 - **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=A%20ConvNet%20for%20the%202020s
 - **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=A%20ConvNet%20for%20the%202020s&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
+ConvNeXt adalah arsitektur *convolutional neural network* (CNN) murni yang dirancang untuk membuktikan bahwa struktur konvolusi standar tetap kompetitif di era dominasi *Vision Transformer* (ViT). Makalah ini memodernisasi arsitektur klasik ResNet-50 secara bertahap dengan mengadopsi berbagai keputusan desain makro dan mikro yang digunakan dalam model ViT, khususnya Swin Transformer. Melalui perbaikan bertahap pada resep pelatihan, rasio komputasi tahapan, *patchify stem*, *depthwise convolution*, *inverted bottleneck*, peningkatan ukuran kernel, serta penyederhanaan fungsi aktivasi dan lapisan normalisasi, ConvNeXt berhasil menandingi atau bahkan melampaui akurasi serta efisiensi komputasi Swin Transformer pada tugas klasifikasi citra ImageNet, deteksi objek COCO, dan segmentasi semantik ADE20K.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2201.03545 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+Sebelum kemunculan ConvNeXt, literatur visi komputer didominasi oleh pergeseran dari arsitektur berbasis konvolusi seperti ResNet ke arsitektur berbasis perhatian global seperti ViT dan Swin Transformer. Swin Transformer menunjukkan kinerja unggul pada berbagai tugas hilir karena kemampuannya memodelkan ketergantungan jarak jauh dan fleksibilitas dalam menangani input multi-skala. Fenomena ini memicu asumsi bahwa CNN konvensional memiliki keterbatasan inheren dibandingkan dengan mekanisme perhatian (*attention mechanism*) dalam memproses representasi spasial citra yang kompleks. Namun, analisis mendalam menunjukkan bahwa keunggulan Transformer tidak hanya berasal dari mekanisme perhatian global, melainkan juga didukung oleh teknik pelatihan modern serta konfigurasi arsitektur makro-mikro yang lebih optimal. Masalah utama yang ingin dipecahkan oleh penelitian ini adalah menguji apakah CNN murni dapat mencapai tingkat kinerja yang setara dengan Transformer jika diberikan teknik pelatihan dan prinsip desain arsitektural modern yang serupa.
 
-## Ringkasan Eksekutif
-ConvNeXt memodernkan arsitektur CNN murni dengan meniru pilihan desain Vision Transformer (patchify, kernel besar, LayerNorm, GELU), membuktikan ConvNet masih dapat menyaingi Transformer pada klasifikasi dan tugas dense.
+## Ide Utama
+Gagasan inti dari ConvNeXt adalah merekonstruksi arsitektur CNN klasik (menggunakan ResNet-50 sebagai baseline) dengan meniru elemen-elemen kunci dari Swin Transformer tanpa memasukkan mekanisme perhatian spasial atau *self-attention* yang dinamis. Jaringan tetap mempertahankan sifat konvolusi murni yang memiliki bias induktif berupa lokalisasi spasial (*spatial locality*) dan ekuivariansi translasi (*translation equivariance*). Transformasi arsitektur ini dilakukan melalui eksplorasi empiris sistematis yang mengisolasi kontribusi setiap elemen desain. Hasil akhirnya adalah model konvolusi yang memiliki representasi fitur hierarkis mirip dengan Swin Transformer, tetapi dengan implementasi komputasi yang lebih sederhana dan kecepatan inferensi (*throughput*) yang lebih tinggi pada unit pemroses grafis (GPU) standar.
 
-## Abstrak (Parafrase)
-Penulis secara bertahap memodernkan ResNet menuju desain ala Swin Transformer: stem patchify, tahap dengan rasio blok mirip Transformer, depthwise conv kernel 7x7, inverted bottleneck, LayerNorm menggantikan BatchNorm, dan aktivasi GELU. ConvNeXt hasilnya menyamai/melebihi Swin pada ImageNet dan sebagai backbone deteksi/segmentasi, dengan efisiensi lebih baik.
+## Cara Kerja Langkah demi Langkah
+Untuk memahami bagaimana ConvNeXt dibangun, proses transisi dari ResNet-50 ke ConvNeXt-T dibagi menjadi beberapa fase terukur yang mempertahankan kapasitas komputasi (*floating-point operations* atau FLOPs) agar tetap setara dengan Swin-T (~4,5G FLOPs):
 
-## Latar Belakang & Konteks
-Vision Transformer sempat dianggap menggantikan CNN. ConvNeXt menguji apakah keunggulan itu berasal dari arsitektur Transformer atau dari resep pelatihan/desain modern.
+### 1. Resep Pelatihan Modern (Training Recipe)
+Langkah pertama tidak mengubah arsitektur fisik model, melainkan memperbarui protokol pelatihan agar setara dengan teknik pelatihan Vision Transformer (DeiT-style). Protokol ini mencakup perpanjangan masa pelatihan dari 90 *epoch* menjadi 300 *epoch*, penggunaan pengoptimal AdamW menggantikan SGD (*Stochastic Gradient Descent*), serta penerapan augmentasi data yang agresif seperti *Mixup*, *CutMix*, dan *RandAugment*. Selain itu, regulasi ditambahkan melalui *Stochastic Depth* (DropPath) dan *Label Smoothing*. Penerapan resep pelatihan baru ini meningkatkan akurasi *top-1* ResNet-50 pada ImageNet-1K secara signifikan dari 76,1% menjadi 78,8%.
 
-## Permasalahan yang Diangkat
-- Apakah CNN kalah inheren dari Transformer?
-- Desain CNN klasik (ResNet) tertinggal.
-- Perlu backbone kuat namun sederhana/efisien.
+### 2. Desain Makro (Macro Design)
+Desain makro jaringan disesuaikan untuk meniru cara Swin Transformer membagi komputasi di setiap tahap:
+- **Rasio Komputasi Tahapan (Stage Compute Ratio):** Rasio jumlah blok residual pada setiap tahap (*stage*) diubah dari konfigurasi ResNet-50 (3, 4, 6, 3) menjadi (3, 3, 9, 3) agar serupa dengan Swin-T (1:1:3:1). Modifikasi ini meningkatkan akurasi dari 78,8% menjadi 79,4%.
+- **Patchify Stem:** ResNet menggunakan lapisan masuk (*stem*) berupa konvolusi 7x7 dengan langkah (*stride*) 2 diikuti oleh lapisan *max pooling* 3x3 dengan langkah 2 yang melakukan reduksi spasial sebesar 4 kali. Lapisan ini diganti dengan lapisan *patchify* seperti pada ViT, yaitu konvolusi 4x4 dengan langkah 4, yang langsung mereduksi resolusi spasial citra input sebesar 4 kali. Perubahan ini meningkatkan akurasi dari 79,4% menjadi 79,5%.
 
-## Tujuan & Pertanyaan Penelitian
-- Memodernkan CNN murni.
-- Menyaingi Transformer tanpa attention.
-- Menyediakan backbone serbaguna untuk tugas dense.
+### 3. ResNeXt-ify (Grouped Convolution)
+Struktur blok residual dimodifikasi dengan menggunakan *depthwise convolution*, di mana konvolusi dilakukan secara terpisah untuk setiap saluran (*channel*). Konvolusi ini sebanding dengan mekanisme *self-attention* di mana informasi spasial diproses per saluran sebelum diintegrasikan secara linear. Karena operasi *depthwise* mengurangi jumlah FLOPs, lebar saluran dasar jaringan ditingkatkan dari 64 menjadi 96 saluran guna menjaga komputasi keseluruhan tetap setara dengan Swin-T. Langkah ini menaikkan akurasi dari 79,5% menjadi 80,5%.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Dialog langsung dengan Swin Transformer dan ViT; menegaskan pentingnya resep pelatihan (augmentasi, epoch panjang) yang diadopsi dari Transformer.
+### 4. Inverted Bottleneck
+Blok bottleneck ResNet klasik memproses fitur dengan urutan dimensi besar-kecil-besar (lebar saluran masukan diperkecil oleh konvolusi 1x1, diproses oleh konvolusi 3x3, lalu diperbesar kembali oleh konvolusi 1x1). ConvNeXt membalik urutan ini menjadi konfigurasi *inverted bottleneck* (kecil-besar-kecil), mirip dengan struktur blok MLP (*multilayer perceptron*) pada Transformer dan blok MobileNetV2. Saluran masukan diperbesar 4 kali lipat oleh konvolusi 1x1 sebelum diproses oleh lapisan konvolusi spasial. Akurasi naik dari 80,5% menjadi 80,6%.
 
-Karya/konsep pembanding yang relevan:
+### 5. Large Kernel Size (Ukuran Kernel Besar)
+Untuk meniru area pandangan (*receptive field*) global dari perhatian Transformer, ukuran kernel pada lapisan konvolusi diperbesar:
+- **Pergeseran Posisi Konvolusi Spasial:** Lapisan konvolusi *depthwise* dipindahkan ke bagian paling awal blok (sebelum konvolusi 1x1 ekspansi), mirip dengan posisi lapisan perhatian pada Transformer yang mendahului blok MLP. Langkah ini menurunkan akurasi menjadi 79,9%, namun merupakan prasyarat penting untuk optimalisasi kernel besar.
+- **Kernel 7x7:** Ukuran kernel ditingkatkan dari 3x3 menjadi 7x7. Dengan posisi konvolusi spasial di depan blok yang memiliki saluran lebih sedikit (96 saluran dibandingkan 384 saluran setelah ekspansi), operasi kernel besar menjadi efisien tanpa lonjakan FLOPs yang signifikan. Peningkatan ukuran kernel menaikkan akurasi kembali ke 80,6%.
 
-- ResNet - baseline CNN klasik.
-- Swin Transformer - Transformer hierarkis.
-- ViT - Transformer citra murni.
-- EfficientNet - CNN terskala.
+### 6. Desain Mikro (Micro Design)
+Beberapa penyesuaian detail dilakukan pada tingkat fungsi aktivasi dan lapisan normalisasi:
+- **Penggunaan GELU:** Fungsi aktivasi ReLU diganti dengan *Gaussian Error Linear Unit* (GELU) untuk menyelaraskan dengan ViT. Akurasi tetap stabil pada 80,6%.
+- **Reduksi Lapisan Aktivasi:** Jika ResNet menaruh aktivasi setelah setiap konvolusi, ConvNeXt hanya menggunakan satu lapisan aktivasi GELU per blok, yang ditempatkan di antara dua konvolusi 1x1 (setelah ekspansi saluran). Reduksi ini meningkatkan akurasi dari 80,6% menjadi 81,3%.
+- **Reduksi Lapisan Normalisasi:** Lapisan normalisasi dikurangi menjadi hanya satu lapisan per blok, ditempatkan sebelum konvolusi 1x1 ekspansi. Akurasi naik dari 81,3% menjadi 81,4%.
+- **Layer Normalization (LayerNorm):** Lapisan *Batch Normalization* (BatchNorm) diganti sepenuhnya dengan LayerNorm. Ini menstabilkan pelatihan dan memudahkan transfer fitur ke model lain. Akurasi meningkat dari 81,4% menjadi 81,5%.
+- **Pemisahan Lapisan Downsampling:** Lapisan penurun resolusi (*downsampling*) dipisahkan dari blok residual utama. ConvNeXt menggunakan lapisan konvolusi 2x2 dengan langkah 2 yang didahului oleh LayerNorm di antara tahapan komputasi. Modifikasi ini menghasilkan peningkatan akurasi dari 81,5% menjadi 82,0%.
 
-## Metodologi & Arsitektur
-Serangkaian modifikasi desain: patchify stem, kernel depthwise besar, inverted bottleneck, LN+GELU, fewer normalization, penskalaan tahap; dievaluasi dampak tiap langkah.
+Melalui optimasi halus tambahan, akurasi model ConvNeXt-T mencapai 82,1%.
 
-Komponen / langkah metodologis utama:
+Berikut adalah perbandingan arsitektur blok antara ResNet klasik dan ConvNeXt:
 
-- Stem patchify 4x4.
-- Depthwise conv 7x7.
-- Inverted bottleneck ala Transformer.
-- LayerNorm + GELU, sedikit normalisasi.
+```
+       [ ResNet Block ]                      [ ConvNeXt Block ]
+       
+            Input                                 Input
+              │                                     │
+              ├───┐ (shortcut)                      ├───┐ (shortcut)
+              ▼   │                                 ▼   │
+           Conv 1x1                               Depthwise
+         (down-proj)                              Conv 7x7
+              │                                     │
+          BatchNorm                                 │
+              │                                 LayerNorm
+            ReLU                                    │
+              │                                     ▼
+           Conv 3x3                              Conv 1x1
+              │                              (expansion, 4x)
+          BatchNorm                                 │
+              │                                   GELU
+            ReLU                                    │
+              │                                     ▼
+           Conv 1x1                              Conv 1x1
+          (up-proj)                            (reduction)
+              │                                     │
+          BatchNorm                                 │
+              │   │                                 │   │
+              ▼   │                                 ▼   │
+              ┼◄──┘ (tambah)                        ┼◄──┘ (tambah)
+              │                                     │
+            ReLU                                 Output
+              │
+            Output
+```
 
-## Kontribusi Utama
-1. ConvNet modern yang menyaingi Transformer.
-2. Studi ablasi desain yang informatif.
-3. Backbone efisien untuk deteksi/segmentasi.
-4. Menantang narasi Transformer > CNN.
+## Eksperimen dan Hasil
+ConvNeXt dievaluasi pada berbagai tugas visual standar untuk membuktikan kemampuannya sebagai pengekstraksi fitur umum.
 
-## Rincian Eksperimen
-ImageNet-1K/22K untuk klasifikasi; COCO (deteksi) dan ADE20K (segmentasi) sebagai backbone.
+### Klasifikasi Citra pada ImageNet-1K
+Dalam evaluasi klasifikasi menggunakan dataset ImageNet-1K (resolusi 224x224), varian-varian ConvNeXt menunjukkan performa yang unggul jika dibandingkan dengan varian Swin Transformer yang setara dalam hal jumlah parameter dan FLOPs:
+- **ConvNeXt-T** meraih akurasi *top-1* sebesar 82,1% dengan komputasi 4,5G FLOPs dan 28 juta parameter, melampaui **Swin-T** yang meraih 81,3% pada komputasi yang sama.
+- **ConvNeXt-S** meraih akurasi 83,1% (50 juta parameter, 8,7G FLOPs), setara dengan **Swin-S** yang meraih 83,2%.
+- **ConvNeXt-B** meraih akurasi 83,8% (89 juta parameter, 15,4G FLOPs), mengungguli **Swin-B** yang meraih 83,5%.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Deteksi Objek pada COCO
+Sebagai *backbone* pada detektor objek Cascade Mask R-CNN, ConvNeXt dievaluasi menggunakan metrik *box Average Precision* (AP^box) dan *mask Average Precision* (AP^mask). Menggunakan ConvNeXt-T sebagai pengganti Swin-T meningkatkan AP^box dari 50,4 menjadi 51,3 (+0,9 AP). Pada skala yang lebih besar, Cascade Mask R-CNN dengan *backbone* ConvNeXt-B menghasilkan AP^box sebesar 52,7, mengungguli Swin-B yang menghasilkan 51,9.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| ImageNet | Top-1 | menyamai/melebihi Swin sebanding |
-| COCO | AP | backbone kompetitif |
-| ADE20K | mIoU | segmentasi kuat |
+### Segmentasi Semantik pada ADE20K
+Pada tugas segmentasi semantik menggunakan kerangka kerja UperNet pada dataset ADE20K, ConvNeXt-T mencapai nilai *mean Intersection over Union* (mIoU) sebesar 46,0%, melampaui Swin-T yang mencatat 44,5%. ConvNeXt-B mencapai 49,1% mIoU, berada di atas Swin-B dengan 48,1% mIoU. Hasil eksperimen ini mengonfirmasi bahwa representasi spasial yang dihasilkan oleh operasi konvolusi dengan kernel besar dan ter-modernisasi sangat efektif untuk tugas-tugas prediksi piksel padat (*dense prediction*).
 
-## Temuan Kunci
-- Banyak keunggulan Transformer berasal dari desain/pelatihan, bukan attention semata.
-- Kernel besar depthwise efektif.
-- CNN tetap relevan sebagai backbone.
+## Kelebihan dan Keterbatasan
+Secara konseptual, kelebihan utama ConvNeXt adalah kesederhanaan arsitekturnya. Dengan mempertahankan struktur konvolusi murni, model ini tidak memerlukan mekanisme perhitungan perhatian kuadratik yang mahal pada citra beresolusi tinggi, sehingga memiliki memori *overhead* yang lebih rendah saat pelatihan. Dari sisi rekayasa hardware, konvolusi standar telah dioptimalkan secara mendalam pada level *driver* CUDA dan perpustakaan cuDNN. Hal ini membuat ConvNeXt memiliki kecepatan pemrosesan (*throughput*) yang lebih tinggi pada GPU dibandingkan dengan Swin Transformer yang memiliki operasi penataan ulang memori (*memory reshaping*) yang kompleks akibat *shifted windows*.
 
-## Keunggulan
-- Sederhana, efisien.
-- Serbaguna lintas tugas.
-- Throughput baik.
+Namun, secara konseptual, ConvNeXt memiliki keterbatasan berupa tidak adanya mekanisme perbandingan global dinamis secara eksplisit pada lapisan-lapisan awal. Meskipun kernel 7x7 memperlebar *receptive field*, area tersebut tetap bersifat lokal dan tidak dapat menangani ketergantungan jarak jauh (*long-range dependencies*) sefleksibel mekanisme *self-attention* tanpa adanya penumpukan lapisan yang cukup dalam. Selain itu, model ini membutuhkan durasi pelatihan yang sangat panjang (minimal 300 *epoch*) dan augmentasi data yang sangat intensif agar dapat mencapai konvergensi optimal; jika dilatih dengan protokol klasifikasi konvensional ResNet yang pendek (90 *epoch*), keunggulannya atas CNN klasik tidak akan terlihat secara maksimal.
 
-## Keterbatasan
-- Tanpa attention global eksplisit.
-- Manfaat pada konteks jarak-jauh terbatas.
-- Butuh pelatihan panjang untuk puncak.
+## Kaitan dengan Bab Lain
+ConvNeXt menempati posisi silsilah penting dalam klaster **Fondasi RGB**. Jaringan ini mewarisi ide ekstraksi fitur hierarkis multi-skala dari arsitektur konvolusi klasik, namun secara radikal merombak konfigurasinya dengan mengadopsi struktur non-konvolusi dari era Transformer.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Secara genealogis, ConvNeXt bertindak sebagai jembatan konseptual antara model-model berbasis perhatian global seperti [Pyramid Vision Transformer](./164%20-%202021%20-%20Pyramid%20Vision%20Transformer%20-%20Fondasi%20RGB.md) (PVT) serta [Swin Transformer V2](./163%20-%202022%20-%20Swin%20Transformer%20V2%20-%20Fondasi%20RGB.md) dengan model deteksi objek modern yang membutuhkan *backbone* pengekstraksi fitur berkinerja tinggi. Desain *inverted bottleneck* dan penyederhanaan normalisasi dalam ConvNeXt terbukti menjadi fondasi penting bagi arsitektur detektor satu-tahap (*one-stage detector*) dan dua-tahap (*two-stage detector*). Representasi fitur yang dihasilkan oleh ConvNeXt banyak digunakan untuk memasok detektor modern seperti [RT-DETR](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md) dan [Co-DETR](./165%20-%202023%20-%20Co-DETR%20-%20Fondasi%20RGB.md), di mana efisiensi *backbone* menentukan kelayakan model untuk aplikasi waktu-nyata (*real-time*). Kemampuannya mempertahankan stabilitas representasi spasial juga membuatnya sering digunakan sebagai ekstraktor fitur visual primer pada model deteksi kosakata terbuka (*open-vocabulary detection*) seperti [YOLO-World](./156%20-%202024%20-%20YOLO-World%20-%20Fondasi%20RGB.md) dan detektor canggih berbasis kueri seperti [Gold-YOLO](./157%20-%202023%20-%20Gold-YOLO%20-%20Fondasi%20RGB.md), [DINO detector](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md), [DN-DETR](./159%20-%202022%20-%20DN-DETR%20-%20Fondasi%20RGB.md), [Conditional DETR](./160%20-%202021%20-%20Conditional%20DETR%20-%20Fondasi%20RGB.md), serta [Sparse R-CNN](./161%20-%202021%20-%20Sparse%20R-CNN%20-%20Fondasi%20RGB.md).
 
-## Relevansi terhadap Tema Tinjauan
-Sebagai backbone alternatif, ConvNeXt dapat menggantikan ResNet/Swin pada detektor RGB atau cabang RGB pada model RGB-D.
+## Poin untuk Sitasi
+Kunci BibTeX untuk mensitasi karya ini adalah `liu2022convnext`.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Ringkasan kutipan yang aman digunakan dalam tinjauan pustaka:
+> Jaringan ConvNeXt memodernisasi arsitektur CNN murni dengan mengadopsi pilihan desain makro dan mikro dari Vision Transformer, seperti patchify stem, depthwise convolution kernel 7x7, inverted bottleneck, serta minimalisasi lapisan normalisasi dan aktivasi. Eksperimen menunjukkan bahwa ConvNeXt menandingi atau melampaui kinerja Swin Transformer pada ImageNet-1K, COCO, dan ADE20K dengan efisiensi inferensi hardware yang lebih optimal.
 
-- [155 - 2024 - RT-DETR - Fondasi RGB](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md)
-- [156 - 2024 - YOLO-World - Fondasi RGB](./156%20-%202024%20-%20YOLO-World%20-%20Fondasi%20RGB.md)
-- [157 - 2023 - Gold-YOLO - Fondasi RGB](./157%20-%202023%20-%20Gold-YOLO%20-%20Fondasi%20RGB.md)
-- [158 - 2023 - DINO detector - Fondasi RGB](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md)
-- [159 - 2022 - DN-DETR - Fondasi RGB](./159%20-%202022%20-%20DN-DETR%20-%20Fondasi%20RGB.md)
-- [160 - 2021 - Conditional DETR - Fondasi RGB](./160%20-%202021%20-%20Conditional%20DETR%20-%20Fondasi%20RGB.md)
-- [161 - 2021 - Sparse R-CNN - Fondasi RGB](./161%20-%202021%20-%20Sparse%20R-CNN%20-%20Fondasi%20RGB.md)
-- [163 - 2022 - Swin Transformer V2 - Fondasi RGB](./163%20-%202022%20-%20Swin%20Transformer%20V2%20-%20Fondasi%20RGB.md)
-
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
-
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
-
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-ConvNeXt menegaskan CNN murni yang dirancang modern tetap kompetitif, memperluas pilihan backbone untuk persepsi visual.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `liu2022convnext` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 162/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan verifikasi data:
+- Akurasi *top-1* sebesar 82,1% untuk ConvNeXt-T, 83,1% untuk ConvNeXt-S, dan 83,8% untuk ConvNeXt-B pada ImageNet-1K dengan resolusi input 224x224.
+- Hasil deteksi objek pada COCO menggunakan Cascade Mask R-CNN menghasilkan 51,3 AP untuk ConvNeXt-T (naik dari 50,4 AP pada Swin-T) dan 52,7 AP untuk ConvNeXt-B (naik dari 51,9 AP pada Swin-B).
+- Hasil segmentasi semantik pada ADE20K menggunakan UperNet menghasilkan 46,0% mIoU untuk ConvNeXt-T dan 49,1% mIoU untuk ConvNeXt-B.
