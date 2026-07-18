@@ -1,209 +1,125 @@
 # 156 - YOLO-World: Real-Time Open-Vocabulary Object Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
-| Field | Nilai |
+| Atribut | Nilai |
 |---|---|
-| Nomor entri | 156 dari 191 |
 | Kunci BibTeX | `cheng2024yoloworld` |
-| Judul | YOLO-World: Real-Time Open-Vocabulary Object Detection |
+| Judul asli | YOLO-World: Real-Time Open-Vocabulary Object Detection |
 | Penulis | Cheng, Tianheng; Song, Lin; Ge, Yixiao; Liu, Wenyu; Wang, Xinggang; Shan, Ying |
 | Tahun | 2024 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
+| Venue | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
 | Tema klaster | Fondasi RGB |
-| Kata kunci | open-vocabulary, YOLO, vision-language, zero-shot detection |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2401.17270
 - **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=YOLO-World%3A%20Real-Time%20Open-Vocabulary%20Object%20Detection
 - **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=YOLO-World%3A%20Real-Time%20Open-Vocabulary%20Object%20Detection&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
+YOLO-World memperkenalkan kerangka kerja deteksi objek *open-vocabulary* yang mampu beroperasi secara *real-time*. Model ini melampaui batasan detektor tradisional yang hanya mampu mendeteksi kategori objek dalam set tertutup yang telah ditentukan sebelumnya. Dengan mengintegrasikan efisiensi arsitektur deteksi YOLOv8 dan kekuatan representasi semantik bahasa dari *Contrastive Language-Image Pre-training* (CLIP), YOLO-World mampu mengenali berbagai macam objek secara *zero-shot* hanya berdasarkan input *prompt* teks deskriptif dari pengguna.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2401.17270 |
+Masalah utama yang diselesaikan oleh YOLO-World adalah tingginya latensi komputasi pada detektor kosakata terbuka berbasis *transformer* terdahulu. Kerangka kerja ini mengadopsi modul *Re-parameterizable Vision-Language Path Aggregation Network* (RepVL-PAN) untuk memfasilitasi fusi informasi multi-skala yang efisien antara fitur visual dan tekstual. Melalui skema *prompt-then-detect*, *embeddings* teks dari *prompt* pengguna dapat diparameterisasikan ulang secara *offline* menjadi bobot klasifikasi visual. Hal ini membuang kebutuhan untuk menjalankan *text encoder* saat inferensi, sehingga model dapat mempertahankan kecepatan tinggi khas keluarga YOLO untuk kebutuhan aplikasi dunia nyata.
 
-## Ringkasan Eksekutif
-YOLO-World memperluas YOLO menjadi detektor open-vocabulary real-time: mampu mendeteksi kelas yang tidak dilatih secara eksplisit dengan memanfaatkan penyelarasan visi-bahasa, sambil mempertahankan kecepatan khas YOLO.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+Sebelum kemunculan YOLO-World, ranah deteksi objek didominasi oleh dua paradigma dengan kompromi yang bertolak belakang:
+1. **Detektor Kelas Tertutup (*Closed-Set Detectors*):** Model satu-tahap (*one-stage*) seperti YOLOv8 sangat cepat dan efisien untuk kebutuhan komputasi praktis. Namun, model ini dibatasi oleh dataset pelatihan yang memiliki jumlah kategori kelas tetap (seperti 80 kelas pada COCO). Apabila terdapat kebutuhan untuk mendeteksi objek baru, pengembang harus mengumpulkan data anotasi baru, menggabungkannya, dan melakukan pelatihan ulang (*retraining*) dari awal, yang memakan waktu dan biaya komputasi yang besar.
+2. **Detektor Kosakata Terbuka (*Open-Vocabulary Detectors*):** Model seperti GLIP atau Grounding DINO memanfaatkan *text encoder* untuk menyelaraskan fitur regional visual dengan representasi bahasa guna mengenali kelas baru tanpa pelatihan ulang. Namun, penyelarasan ini sangat bergantung pada arsitektur berbasis *transformer* dengan mekanisme *self-attention* lintas-modal yang intensif secara komputasi. Akibatnya, model-model ini memiliki kecepatan inferensi yang sangat lambat (sering kali di bawah 10 FPS), sehingga tidak layak untuk diterapkan pada skenario waktu nyata atau pada perangkat keras dengan daya komputasi terbatas (*edge devices*).
 
-## Abstrak (Parafrase)
-Penulis menggabungkan detektor YOLOv8 dengan encoder teks CLIP melalui modul Re-parameterizable Vision-Language Path Aggregation Network (RepVL-PAN) dan pelatihan kontrastif region-teks. Dengan pra-pelatihan pada dataset deteksi, grounding, dan citra-teks berskala besar, model dapat mendeteksi objek berdasarkan prompt teks arbitrer (zero-shot). Prompt dapat diparametrikan ulang menjadi bobot ofline sehingga inferensi tetap secepat YOLO biasa.
+Kesenjangan ini memicu urgensi untuk mengembangkan arsitektur detektor yang tidak hanya fleksibel dalam mendeteksi objek apa pun melalui instruksi bahasa, tetapi juga cukup ringan untuk dieksekusi secara *real-time* di lingkungan industri.
 
-## Latar Belakang & Konteks
-Detektor tradisional terbatas pada kosakata kelas tetap. Model open-vocabulary seperti GLIP kuat tetapi lambat. Kebutuhan deteksi fleksibel dan real-time mendorong penggabungan YOLO dengan representasi bahasa.
+## Ide Utama
+Gagasan utama di balik YOLO-World adalah memisahkan proses ekstraksi representasi bahasa dari proses deteksi visual menggunakan paradigma *prompt-then-detect*. Secara konseptual, alih-alih memproses teks dan citra secara bersamaan pada setiap bingkai (*frame*) video, *prompt* kosakata dari pengguna dikodekan terlebih dahulu menjadi vektor representasi statis (*text embeddings*).
 
-## Permasalahan yang Diangkat
-- Detektor kelas-tetap tak bisa mengenali objek baru tanpa pelatihan ulang.
-- Metode open-vocabulary yang ada lambat untuk real-time.
-- Menyatukan kecepatan YOLO dan fleksibilitas bahasa itu sulit.
+Mekanisme ini memanfaatkan *text encoder* CLIP yang dibekukan (*frozen*) untuk memproyeksikan daftar nama objek menjadi *embeddings* tekstual. Melalui modul RepVL-PAN, representasi teks ini diselaraskan dengan fitur gambar multi-skala selama fase pelatihan. Pada saat inferensi, *embeddings* bahasa yang telah diselaraskan tersebut ditransformasikan secara matematis menjadi parameter filter lapisan konvolusi atau proyeksi linear pada kepala klasifikasi detektor. Dengan melipat (*folding*) informasi tekstual langsung ke dalam parameter visual secara *offline*, model dapat melakukan deteksi kosakata terbuka tanpa perlu menjalankan modul *text encoder* yang berat selama inferensi langsung.
 
-## Tujuan & Pertanyaan Penelitian
-- Membuat detektor open-vocabulary real-time berbasis YOLO.
-- Menyelaraskan fitur region visual dengan embedding teks.
-- Mempertahankan kecepatan inferensi lewat reparameterisasi prompt.
+## Cara Kerja Langkah demi Langkah
+Operasi deteksi objek kosakata terbuka pada YOLO-World diimplementasikan melalui tahapan terstruktur berikut:
 
-## Tinjauan Terdahulu / Posisi Literatur
-Berpijak pada GLIP dan Grounding DINO (open-vocabulary/grounding) namun menukar akurasi-berat dengan kecepatan; memakai YOLOv8 sebagai tulang punggung deteksi dan CLIP sebagai encoder teks.
+### 1. Ekstraksi Fitur Citra (Visual Backbone)
+Citra masukan dilewatkan melalui jaringan tulang punggung (*backbone*) visual berbasis CSPDarknet milik YOLOv8. Jaringan ini mengekstrak representasi fitur spasial multi-skala pada tingkat resolusi $C_3$, $C_4$, dan $C_5$. Langkah ini penting untuk mendeteksi objek dengan variasi ukuran spasial yang berbeda dalam sebuah gambar.
 
-Karya/konsep pembanding yang relevan:
+### 2. Pengodean Teks (Frozen Text Encoder)
+Secara paralel, daftar kosakata objek yang ingin dideteksi (misalnya "gelas plastik", "kucing hitam", "rambu lalu lintas") dimasukkan ke dalam *text encoder* CLIP (menggunakan varian ViT-B/32). Untuk mempertahankan pengetahuan semantik luas yang telah dipelajari CLIP dari ratusan juta pasangan citra-teks, bobot dari *text encoder* ini sepenuhnya dibekukan selama proses pelatihan detektor. Output dari tahap ini adalah matriks *embeddings* teks $W \in \mathbb{R}^{C \times D}$, dengan $C$ mewakili jumlah kelas kosakata dan $D$ melambangkan dimensi representasi (512 dimensi).
 
-- GLIP - grounded language-image pre-training.
-- Grounding DINO - deteksi open-set berbasis Transformer.
-- CLIP - penyelarasan citra-teks kontrastif.
-- YOLOv8 - detektor real-time dasar.
+### 3. Fusi Informasi Dua Arah di RepVL-PAN
+Fitur gambar multi-skala dan *embeddings* teks dimasukkan ke dalam RepVL-PAN yang menggantikan modul PAN tradisional pada YOLOv8. RepVL-PAN melakukan fusi informasi lintas-modal dua arah menggunakan dua komponen utama:
+*   **Text-guided CSPLayer (T-CSPLayer):** Komponen ini menyuntikkan panduan bahasa ke dalam fitur gambar. Di setiap skala fitur visual $X_l$, model menghitung bobot perhatian spasial menggunakan mekanisme *Max-Sigmoid Attention*. Persamaan untuk pembaruan fitur gambar ini adalah:
+    $$X'_l = X_l \cdot \delta\left(\max_{j \in \{1 \dots C\}} (X_l W_j^\top)\right)^\top$$
+    Di sini, $\delta$ melambangkan fungsi aktivasi sigmoid yang menormalisasi bobot perhatian antara nilai 0 dan 1. Operasi $\max$ di sepanjang dimensi kelas memastikan bahwa fitur visual hanya memusatkan perhatian pada area spasial yang relevan dengan *prompt* teks mana pun dalam kosakata yang diberikan.
+*   **Image-Pooling Attention (I-Pooling Attention):** Untuk memberikan umpan balik visual ke domain bahasa, fitur visual multi-skala direduksi melalui operasi *max-pooling* menjadi representasi regional ringkas $\tilde{X} \in \mathbb{R}^{N \times D_{vis}}$, di mana $N$ mewakili jumlah token wilayah visual. Representasi regional ini kemudian digunakan untuk memperbarui *embeddings* teks asli melalui mekanisme perhatian multi-kepala (*Multi-Head Attention*):
+    $$W' = W + \text{MultiHead-Attention}(W, \tilde{X}, \tilde{X})$$
+    Proses ini membuat representasi teks menjadi sadar visual (*image-aware*), menyesuaikan pemahaman semantik kata dengan karakteristik gambar yang sedang diproses.
 
-## Metodologi & Arsitektur
-Encoder teks CLIP menghasilkan embedding untuk daftar kelas/prompt; RepVL-PAN memfusikan fitur multiskala citra dengan embedding teks; kepala kontrastif menyelaraskan region dengan teks. Untuk inferensi, kosakata dapat dibekukan menjadi bobot (prompt-then-detect) agar tanpa overhead teks.
+### 4. Kepala Klasifikasi Kontrastif
+Setelah fitur gambar dan teks diselaraskan di RepVL-PAN, kepala detektor menghasilkan prediksi koordinat kotak pembatas (*bounding box*) dan representasi wilayah visual $e_k$ untuk setiap kandidat objek. Skor probabilitas deteksi $s_{k,j}$ untuk objek ke-$k$ terhadap kelas teks ke-$j$ dihitung menggunakan kemiripan kosinus (*cosine similarity*):
+$$s_{k,j} = \alpha \cdot \text{L2-Norm}(e_k) \cdot \text{L2-Norm}(w_j)^\top + \beta$$
+Di mana $\alpha$ dan $\beta$ adalah parameter skala dan pergeseran yang dapat dipelajari untuk menstabilkan distribusi nilai skor selama proses pelatihan.
 
-Komponen / langkah metodologis utama:
+### 5. Reparameterisasi Inferensi (*Offline Vocabulary*)
+Pada fase penerapan praktis, pengguna menentukan daftar kosakata target sekali di awal. Matriks klasifikasi *offline* dihitung dengan menormalisasi representasi teks yang telah diperbarui:
+$$W_{cl} = \text{L2-Norm}(W')$$
+Matriks $W_{cl}$ ini kemudian dimasukkan langsung sebagai parameter bobot pada lapisan proyeksi linear terakhir di kepala detektor. Modul *text encoder* CLIP dan operasi fusi lintas-modal dalam RepVL-PAN dinonaktifkan sepenuhnya. Selama proses inferensi berjalan, model hanya mengeksekusi operasi konvolusi visual murni pada citra masukan dengan bobot klasifikasi yang telah disesuaikan secara dinamis tersebut.
 
-- RepVL-PAN memadukan fitur visual dan tekstual multiskala.
-- Pelatihan kontrastif region-teks berskala besar.
-- Reparameterisasi prompt menjadi bobot ofline.
-- Basis YOLOv8 untuk kecepatan.
+```
+[ Citra ] ---> [ YOLOv8 Backbone ] ───> Fitur Multi-Skala (C3, C4, C5)
+                                                      │
+                                                      ▼
+[ Teks  ] ---> [ CLIP Text Encoder ] ──> [ RepVL-PAN (Fusi Fitur) ]
+                  (Frozen ViT-B/32)     ├── T-CSPLayer (Max-Sigmoid Attn)
+                                        └── I-Pooling Attention (MHA)
+                                                      │
+                                                      ▼
+                                           [ Fitur Terpadu Lintas-Modal ]
+                                                      │
+                                                      ▼
+                                           [ Contrastive Head ]
+                                                      │
+                                                      ▼
+                                           [ Box & Klasifikasi Objek ]
+```
 
-## Kontribusi Utama
-1. Detektor open-vocabulary real-time pertama berbasis YOLO.
-2. RepVL-PAN untuk fusi visi-bahasa.
-3. Skema prompt-then-detect agar inferensi tetap cepat.
-4. Zero-shot kuat pada LVIS.
+## Eksperimen dan Hasil
+YOLO-World dilatih terlebih dahulu (*pre-trained*) menggunakan dataset deteksi berskala besar yang mencakup Objects365 (V1), GoldG (gabungan grounding dari GQA dan Flickr30k), serta sampel citra-teks dari CC3M. Model kemudian diuji secara *zero-shot* pada dataset LVIS yang memiliki kosakata sangat luas (1.203 kelas objek) untuk memvalidasi kemampuannya dalam mendeteksi kelas objek langka (*rare categories*).
 
-## Rincian Eksperimen
-Zero-shot dievaluasi pada LVIS (terutama kelas langka/rare) dan transfer ke COCO/Objects365, dengan pelaporan AP dan FPS.
+Evaluasi yang dilakukan pada kartu grafis NVIDIA V100 menunjukkan hasil performa berikut:
+*   **YOLO-World-S (Small):** Memiliki parameter visual sekitar 13 juta. Model ini memperoleh nilai Average Precision (AP) sebesar `26,2` pada LVIS *zero-shot* dengan kecepatan mencapai `74,1 FPS`.
+*   **YOLO-World-M (Medium):** Memiliki parameter visual sekitar 29 juta. Varian ini mencatatkan nilai AP berkisar antara `30,6` hingga `32,8` bergantung pada resolusi citra input yang digunakan.
+*   **YOLO-World-L (Large):** Memiliki parameter visual sekitar 48 juta. Model ini menghasilkan akurasi tertinggi dengan nilai AP sebesar `35,4` serta kecepatan inferensi pada `52,0 FPS`.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Hasil transfer domain melalui *fine-tuning* pada dataset COCO menunjukkan bahwa bobot pra-pelatihan lintas-modal pada YOLO-World secara konsisten mempercepat konvergensi pelatihan dan menghasilkan akurasi yang kompetitif jika dibandingkan dengan detektor yang dilatih secara tertutup dari awal.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| LVIS zero-shot | AP/AP_rare | akurasi open-vocabulary tinggi pada kecepatan real-time |
-| COCO transfer | AP | kompetitif setelah fine-tuning |
-| Kecepatan | FPS | mendekati YOLO standar berkat reparameterisasi |
+## Kelebihan dan Keterbatasan
+**Kelebihan:**
+*   **Efisiensi Komputasi Tinggi:** Paradigma *prompt-then-detect* memotong kebutuhan komputasi bahasa secara *online*. Hal ini menjadikannya salah satu dari sedikit detektor *open-vocabulary* yang siap digunakan pada lingkungan komputasi tepi secara *real-time*.
+*   **Fleksibilitas Penggunaan:** Pengguna dapat memodifikasi daftar kelas objek secara dinamis melalui teks bahasa alami tanpa perlu mengumpulkan data anotasi baru atau melakukan pelatihan ulang model.
+*   **Fusi Informasi Dua Arah:** Penggunaan RepVL-PAN yang menggabungkan T-CSPLayer dan I-Pooling Attention secara aktif menyelaraskan representasi visual dengan representasi tekstual secara simetris, menghasilkan visualisasi fitur yang sangat peka terhadap bahasa.
 
-## Temuan Kunci
-- Penyelarasan visi-bahasa dapat dijalankan real-time.
-- Reparameterisasi prompt menghapus overhead teks saat inferensi.
-- Pra-pelatihan beragam sumber meningkatkan generalisasi.
+**Keterbatasan:**
+*   **Ketergantungan pada Kualitas CLIP:** Karena performa klasifikasinya sangat bergantung pada *frozen text encoder* CLIP, model ini mewarisi kelemahan bawaan CLIP. Model sering kali gagal mendeteksi objek apabila *prompt* teks yang dimasukkan terlalu panjang, menggunakan struktur sintaksis yang rumit, atau merujuk pada konsep abstrak yang jarang ditemui dalam dataset pra-pelatihan CLIP.
+*   **Akurasi Deteksi Objek Kecil:** Dari sisi rekayasa visual, sebagai model satu-tahap, YOLO-World masih memiliki performa deteksi objek kecil yang berada di bawah tingkat akurasi detektor berbasis *transformer* murni seperti Grounding DINO, meskipun unggul jauh dalam kecepatan komputasi.
+*   **Kebutuhan Data Pra-Pelatihan:** Secara konseptual, pelatihan awal model kontrastif wilayah-teks membutuhkan volume data spasial-bahasa yang sangat besar dan proses kurasi data yang ketat agar penyelarasan modalitas tidak bias.
 
-## Keunggulan
-- Deteksi kelas arbitrer tanpa retraining.
-- Real-time.
-- Zero-shot kuat pada kelas langka.
+## Kaitan dengan Bab Lain
+YOLO-World memiliki keterkaitan erat dengan beberapa bab lain dalam klaster **Fondasi RGB**:
+*   [001 - You Only Look Once (YOLOv1)](./001%20-%202016%20-%20You%20Only%20Look%20Once%20(YOLOv1)%20-%20Fondasi%20RGB.md): Hubungan silsilah mendasar. YOLOv1 merintis konsep deteksi objek satu-tahap yang memprediksi koordinat kotak pembatas dan kelas secara simultan, yang kemudian disempurnakan hingga YOLOv8 dan akhirnya diadopsi oleh YOLO-World untuk deteksi kosakata terbuka.
+*   [155 - RT-DETR](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md): RT-DETR menawarkan deteksi *real-time* berbasis arsitektur *transformer* (DETR) namun terbatas pada set kelas tertutup. YOLO-World memberikan alternatif deteksi kosakata terbuka berkecepatan tinggi dengan mengandalkan arsitektur konvolusional (YOLOv8 backbone) yang direparameterisasi untuk menghindari beban komputasi *self-attention* global yang ada pada RT-DETR.
+*   [157 - Gold-YOLO](./157%20-%202023%20-%20Gold-YOLO%20-%20Fondasi%20RGB.md): Model ini memperkenalkan mekanisme *Gather-and-Distribute PAN* (GD-PAN) untuk meningkatkan transmisi informasi visual multi-skala secara efisien. RepVL-PAN pada YOLO-World mengadaptasi struktur PAN serupa tetapi dengan penekanan pada interaksi lintas-modal dua arah antara visi dan bahasa.
+*   [158 - DINO detector](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md): DINO merupakan salah satu model deteksi berbasis *transformer* paling akurat untuk evaluasi set tertutup, dan variannya (Grounding DINO) mendominasi akurasi *open-vocabulary*. YOLO-World memposisikan diri sebagai alternatif praktis yang menukar sedikit akurasi Grounding DINO untuk mendapatkan kecepatan inferensi hingga 20 kali lipat lebih cepat demi mendukung skenario operasional waktu nyata.
 
-## Keterbatasan
-- Bergantung kualitas embedding teks CLIP.
-- Prompt sangat spesifik/atipikal bisa gagal.
-- Butuh data pra-pelatihan besar.
+## Poin untuk Sitasi
+Kunci BibTeX:
+```bibtex
+@inproceedings{cheng2024yoloworld,
+  title={YOLO-World: Real-Time Open-Vocabulary Object Detection},
+  author={Cheng, Tianheng and Song, Lin and Ge, Yixiao and Liu, Wenyu and Wang, Xinggang and Shan, Ying},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={16901--16911},
+  year={2024}
+}
+```
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Kutipan Ringkas untuk Tinjauan Pustaka:
+YOLO-World (Cheng dkk., 2024) adalah model deteksi objek *open-vocabulary* satu-tahap berbasis YOLOv8. Model ini menggunakan modul *Re-parameterizable Vision-Language Path Aggregation Network* (RepVL-PAN) untuk interaksi dua arah antara fitur citra dan *embeddings* teks CLIP. Dengan reparameterisasi *offline*, model ini mampu membuang komponen pemrosesan bahasa saat waktu inferensi sehingga dapat berjalan secara *real-time*.
 
-## Relevansi terhadap Tema Tinjauan
-Menunjukkan arah deteksi fleksibel (RGB) yang dapat dikombinasikan dengan kedalaman untuk aplikasi robotik yang objeknya berubah-ubah tanpa pelatihan ulang.
-
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
-
-- [155 - 2024 - RT-DETR - Fondasi RGB](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md)
-- [157 - 2023 - Gold-YOLO - Fondasi RGB](./157%20-%202023%20-%20Gold-YOLO%20-%20Fondasi%20RGB.md)
-- [158 - 2023 - DINO detector - Fondasi RGB](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md)
-- [159 - 2022 - DN-DETR - Fondasi RGB](./159%20-%202022%20-%20DN-DETR%20-%20Fondasi%20RGB.md)
-- [160 - 2021 - Conditional DETR - Fondasi RGB](./160%20-%202021%20-%20Conditional%20DETR%20-%20Fondasi%20RGB.md)
-- [161 - 2021 - Sparse R-CNN - Fondasi RGB](./161%20-%202021%20-%20Sparse%20R-CNN%20-%20Fondasi%20RGB.md)
-- [162 - 2022 - ConvNeXt - Fondasi RGB](./162%20-%202022%20-%20ConvNeXt%20-%20Fondasi%20RGB.md)
-- [163 - 2022 - Swin Transformer V2 - Fondasi RGB](./163%20-%202022%20-%20Swin%20Transformer%20V2%20-%20Fondasi%20RGB.md)
-
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
-
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
-
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-YOLO-World menyatukan kecepatan YOLO dengan fleksibilitas open-vocabulary, relevan untuk sistem persepsi yang harus mengenali objek baru secara dinamis.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `cheng2024yoloworld` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 156/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan Angka untuk Verifikasi:
+Klaim kinerja deteksi *zero-shot* pada LVIS sebesar 26,2 AP (YOLO-World-S pada 74,1 FPS) dan 35,4 AP (YOLO-World-L pada 52,0 FPS) diukur pada GPU NVIDIA V100 dengan resolusi gambar masukan sebesar 640×640 piksel. Angka-angka ini perlu diverifikasi dengan Tabel 2 pada naskah CVPR 2024 resmi. Kecepatan FPS dilaporkan menggunakan reparameterisasi *offline* penuh tanpa menyertakan latensi dari pengoperasian *text encoder* CLIP.

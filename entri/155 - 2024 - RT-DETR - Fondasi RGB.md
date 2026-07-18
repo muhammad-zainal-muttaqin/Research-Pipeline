@@ -5,204 +5,129 @@
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 155 dari 191 |
 | Kunci BibTeX | `zhao2024rtdetr` |
-| Judul | DETRs Beat YOLOs on Real-Time Object Detection |
+| Judul asli | DETRs Beat YOLOs on Real-Time Object Detection |
 | Penulis | Zhao, Yian; Lv, Wenyu; Xu, Shangliang; Wei, Jinman; Wang, Guanzhong; Dang, Qingqing; Liu, Yi; Chen, Jie |
 | Tahun | 2024 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
-| Kata kunci | DETR real-time, hybrid encoder, object detection, end-to-end |
+| Venue | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
+| Tema | Fondasi RGB |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fondasi-rgb)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2304.08069
 - **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=DETRs%20Beat%20YOLOs%20on%20Real-Time%20Object%20Detection
 - **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=DETRs%20Beat%20YOLOs%20on%20Real-Time%20Object%20Detection&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
+Dalam deteksi objek *real-time*, arsitektur satu-tahap berbasis konvolusi seperti seri YOLO (*You Only Look Once*) mendominasi karena menawarkan keseimbangan optimal antara akurasi dan kecepatan. Namun, model-model ini memiliki ketergantungan kritis pada *Non-Maximum Suppression* (NMS) untuk menyaring prediksi yang tumpang-tindih. Tahap NMS ini menimbulkan hambatan komputasi karena memiliki latensi yang tidak stabil dan sangat sensitif terhadap jumlah objek dalam gambar. Di sisi lain, detektor berbasis *Transformer* seperti DETR (*Detection Transformer*) menawarkan alternatif deteksi *end-to-end* yang meniadakan NMS, tetapi terkendala oleh tingginya biaya komputasi *encoder* multi-skala serta lambatnya konvergensi saat pelatihan.
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2304.08069 |
+Makalah ini memperkenalkan RT-DETR (*Real-Time Detection Transformer*), detektor objek berbasis *Transformer* pertama yang mampu beroperasi dalam kecepatan *real-time* sekaligus melampaui performa detektor YOLO yang sekelas. Penulis merancang RT-DETR dengan memodifikasi komponen krusial DETR untuk meminimalkan beban komputasi. Melalui desain *hybrid encoder* yang efisien dan pemilihan kueri awal berbasis ketidakpastian minimum (*uncertainty-minimal query selection*), model ini mampu memproses fitur spasial dengan sangat cepat tanpa menurunkan akurasi deteksi. Hasil eksperimen pada dataset MS COCO menunjukkan bahwa RT-DETR-R50 mencapai 53,1% *Average Precision* (AP) dengan kecepatan 108 bingkai per detik (*frames per second* / FPS) pada GPU NVIDIA T4, menjadikannya standar baru bagi sistem deteksi objek *end-to-end* tanpa pasca-pemrosesan konvensional.
 
-## Ringkasan Eksekutif
-RT-DETR adalah detektor berbasis Transformer (DETR) pertama yang benar-benar real-time dan, pada anggaran latensi setara, mengungguli seri YOLO tanpa memerlukan Non-Maximum Suppression (NMS). Kuncinya adalah efficient hybrid encoder dan seleksi kueri berbasis ketidakpastian minimum.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+Detektor objek berbasis konvolusi modern menghasilkan ribuan kandidat *bounding box* (kotak pembatas) untuk disaring menggunakan algoritme NMS (*Non-Maximum Suppression*) sebagai pasca-pemrosesan. NMS membandingkan nilai *Intersection over Union* (IoU) antarkotak dan menyingkirkan prediksi dengan skor kepercayaan (*confidence score*) rendah. Namun, waktu eksekusi NMS bervariasi bergantung pada kepadatan objek dalam citra. Ketidakstabilan latensi ini menghambat implementasi pada sistem *real-time* industri yang membutuhkan jaminan waktu respons konstan.
 
-## Abstrak (Parafrase)
-Makalah ini berargumen bahwa detektor end-to-end berbasis DETR sebenarnya dapat bersaing dengan YOLO dalam kecepatan bila hambatan komputasinya diatasi. Penulis merancang hybrid encoder yang memisahkan interaksi intra-skala dan fusi lintas-skala sehingga biaya attention pada peta fitur beresolusi tinggi ditekan. Ditambah pemilihan kueri objek berbasis skor ketidakpastian (uncertainty-minimal query selection), RT-DETR mencapai akurasi tinggi pada COCO sambil menghapus NMS yang menjadi sumber latensi variabel pada detektor konvensional.
+DETR menawarkan deteksi *end-to-end* tanpa NMS dengan memprediksi objek secara langsung. Namun, DETR memiliki dua kendala utama. Pertama, mahalnya perhatian multi-skala: untuk mendeteksi objek multiskala, operasi atensi-diri (*self-attention*) global pada seluruh tingkat fitur memiliki kompleksitas kuadratik terhadap jumlah piksel, membuat pemrosesan *encoder* (penyandi) sangat lambat. Kedua, inisialisasi kueri yang buruk: DETR menginisialisasi kueri objek (*object query*) sebagai vektor acak tanpa korelasi langsung dengan fitur citra masukan. Akibatnya, *decoder* (penafsir) membutuhkan banyak lapisan perhatian-silang (*cross-attention*) untuk menyelaraskan kueri, memperlambat konvergensi pelatihan.
 
-## Latar Belakang & Konteks
-Seri YOLO mendominasi deteksi real-time namun bergantung pada NMS yang menambah latensi tak stabil dan hyperparameter tambahan. DETR menghapus NMS tetapi lambat konvergen dan berat komputasinya, sehingga jarang dipakai untuk aplikasi real-time hingga munculnya varian efisien seperti RT-DETR.
+## Ide Utama
+RT-DETR mengatasi keterbatasan DETR konvensional melalui dua strategi utama yang berfokus pada kecepatan dan akurasi:
+1. Dekopling Pemrosesan Fitur Multi-skala: Penulis mengajukan konsep *hybrid encoder* untuk menggantikan *encoder* Transformer standar. Beban komputasi ditekan dengan memisahkan pemrosesan fitur menjadi interaksi intra-skala berbasis perhatian (*Attention-based Intra-scale Feature Interaction* / AIFI) dan fusi lintas-skala berbasis konvolusi (*CNN-based Cross-scale Feature Fusion* / CCFF). AIFI membatasi operasi *self-attention* hanya pada tingkat fitur paling atas yang kaya akan informasi semantik global tetapi memiliki resolusi spasial paling rendah. CCFF kemudian melakukan fusi fitur spasial lintas-skala yang lebih efisien menggunakan lapisan konvolusional.
+2. Pemilihan Kueri Berbasis Ketidakpastian Minimum: Daripada menggunakan kueri objek acak atau kueri berbasis skor klasifikasi murni, RT-DETR mengusulkan mekanisme *uncertainty-minimal query selection*. Metode ini memilih kueri objek awal berdasarkan skor ketidakpastian yang menggabungkan prediksi kategori dan kualitas lokalisasi (IoU). Dengan memilih fitur yang paling pasti (klasifikasi tinggi dan koordinat kotak stabil), *decoder* menerima representasi awal yang sangat dekat dengan objek nyata, sehingga mempercepat proses konvergensi dan meningkatkan akurasi deteksi.
 
-## Permasalahan yang Diangkat
-- NMS pada YOLO menambah latensi yang bergantung jumlah deteksi dan sulit dioptimasi seragam.
-- Encoder Transformer DETR mahal pada fitur multiskala beresolusi tinggi.
-- Inisialisasi kueri objek yang buruk memperlambat konvergensi dan menurunkan akurasi.
+## Cara Kerja Langkah demi Langkah
+Arsitektur RT-DETR terdiri dari tiga komponen utama: *backbone* untuk ekstraksi fitur, *hybrid encoder* untuk pemrosesan fitur multi-skala, dan *decoder* Transformer untuk prediksi objek langsung.
 
-## Tujuan & Pertanyaan Penelitian
-- Membangun detektor end-to-end tanpa NMS yang real-time.
-- Menekan biaya encoder Transformer pada fitur multiskala.
-- Menyediakan skema penskalaan kecepatan-akurasi yang fleksibel.
+### Aliran Fitur dari Backbone
+Citra masukan dilewatkan melalui *backbone* CNN (seperti ResNet-50 atau HGNetv2) untuk mengekstrak fitur visual pada berbagai tingkat kedalaman. Secara spesifik, model mengekstrak tiga peta fitur multi-skala dari lapisan akhir *backbone*, yang dinotasikan sebagai $S_3$, $S_4$, dan $S_5$. Untuk citra masukan dengan resolusi $640 \times 640$ piksel, ketiga peta fitur ini memiliki resolusi spasial berturut-turut sebesar $80 \times 80$, $40 \times 40$, dan $20 \times 20$ piksel. Fitur tingkat rendah seperti $S_3$ kaya akan informasi geometris (tepi dan detail spasial), sedangkan fitur tingkat tinggi seperti $S_5$ kaya akan informasi semantik (kategori objek).
 
-## Tinjauan Terdahulu / Posisi Literatur
-Menempatkan diri sebagai penerus DETR (Carion 2020) dan Deformable DETR yang mempercepat konvergensi, sekaligus pembanding langsung terhadap YOLOv5/YOLOv8. Berbeda dari keduanya, RT-DETR menggabungkan efisiensi CNN backbone dengan decoder Transformer bebas-NMS.
+### Attention-based Intra-scale Feature Interaction (AIFI)
+Pada DETR biasa, semua fitur multi-skala diratakan menjadi satu sekuens panjang lalu diproses oleh modul *self-attention*. RT-DETR menghindari hal ini dengan menyadari bahwa redundansi informasi spasial paling tinggi berada pada skala resolusi besar ($S_3$ dan $S_4$). Oleh karena itu, modul AIFI dirancang untuk hanya melakukan interaksi intra-skala menggunakan *self-attention* pada peta fitur $S_5$. Karena resolusi spasial $S_5$ terkecil ($20 \times 20 = 400$ token), biaya komputasi perhatian global berkurang drastis dari skala kuadratik $O((HW)^2)$ menjadi hanya $O(400^2)$. Operasi ini menghasilkan fitur baru yang merepresentasikan hubungan semantik global antar-wilayah citra pada skala terkecil.
 
-Karya/konsep pembanding yang relevan:
+### CNN-based Cross-scale Feature Fusion (CCFF)
+Setelah interaksi intra-skala selesai pada $S_5$, fitur tersebut perlu digabungkan kembali dengan informasi spasial dari $S_4$ dan $S_3$. Proses ini ditangani oleh CCFF menggunakan blok-blok konvolusional berbasis *RepVGG-style* yang efisien. CCFF melakukan fusi atas-bawah (*top-down*) dan bawah-atas (*bottom-up*) untuk menyebarkan informasi. Pertama, peta fitur $S_5$ yang telah diperkaya oleh AIFI diperbesar ukurannya (*up-sample*) dan digabungkan secara konkatenasi dengan $S_4$. Hasil gabungan ini kemudian diproses dengan blok konvolusi untuk membentuk fitur terfusi tingkat menengah. Proses serupa diulangi ke arah bawah ke tingkat $S_3$, dan dilanjutkan dengan lintasan bawah-atas untuk menghasilkan peta fitur terfusi akhir.
 
-- DETR - fondasi deteksi berbasis kueri Transformer.
-- Deformable DETR - attention terdeformasi untuk konvergensi lebih cepat.
-- YOLOv5/YOLOv8 - baseline real-time berbasis anchor/anchor-free.
+### Diagram Arsitektur RT-DETR
+Alur pemrosesan fitur dan pembentukan prediksi pada RT-DETR divisualisasikan dalam diagram berikut:
 
-## Metodologi & Arsitektur
-Backbone CNN mengekstrak fitur multiskala; hybrid encoder melakukan Attention-based Intra-scale Feature Interaction (AIFI) hanya pada level tertinggi lalu CNN-based Cross-scale Feature Fusion (CCFF) untuk menggabungkan skala. Decoder DETR memakai kueri terpilih dan menghasilkan prediksi langsung tanpa NMS.
+```
+           ┌───────────────────────────────────────────────┐
+           │              Citra Input (640x640)            │
+           └───────────────────────┬───────────────────────┘
+                                   ▼
+           ┌───────────────────────────────────────────────┐
+           │            Backbone (ResNet / HGNet)          │
+           └────┬──────────────────┬──────────────────┬────┘
+                │ S3 (80x80)       │ S4 (40x40)       │ S5 (20x20)
+                ▼                  ▼                  ▼
+           ┌──────────┐       ┌──────────┐       ┌──────────┐
+           │          │       │          │       │   AIFI   │ (Self-Attention
+           │          │       │          │       │ (Spatial)│  hanya pada S5)
+           │          │       │          │       └────┬─────┘
+           │          │       │          │            │
+           │   CCFF   │◄──────┤   CCFF   │◄───────────┘
+           │ (Fusion) │       │ (Fusion) │
+           └────┬─────┘       └────┬─────┘
+                │                  │
+                └────────┬─────────┘
+                         ▼
+           ┌───────────────────────────────────────────────┐
+           │       Uncertainty-Minimal Query Selection     │ (Memilih K kueri)
+           └───────────────────────┬───────────────────────┘
+                                   ▼
+           ┌───────────────────────────────────────────────┐
+           │              Transformer Decoder              │
+           └───────────────────────┬───────────────────────┘
+                                   ▼
+           ┌───────────────────────────────────────────────┐
+           │          Prediksi Kategori & Box              │
+           └───────────────────────────────────────────────┘
+```
 
-Komponen / langkah metodologis utama:
+### Uncertainty-Minimal Query Selection
+Setelah fitur multi-skala akhir diproduksi oleh CCFF, sistem harus memilih $K$ token fitur (secara default $K = 300$) untuk dijadikan sebagai inisialisasi kueri posisi (*position queries*) dan kueri konten (*content queries*) bagi *decoder*. Metode seleksi tradisional hanya mengandalkan skor klasifikasi terbesar untuk memilih token. Namun, token dengan probabilitas klasifikasi tinggi belum tentu memiliki koordinat kotak pembatas yang akurat, sehingga sering kali menghasilkan kueri yang kurang optimal. 
 
-- Hybrid encoder (AIFI + CCFF) memangkas biaya attention resolusi tinggi.
-- Uncertainty-minimal query selection memilih kueri awal berkualitas.
-- Decoder bebas-NMS dengan jumlah query tetap.
-- Penskalaan model (R18/R34/R50/R101) untuk trade-off kecepatan-akurasi.
+RT-DETR mengatasi ini dengan memprediksi skor klasifikasi $P$ dan kualitas lokalisasi berupa IoU secara bersamaan selama pelatihan. Skor ketidakpastian minimum didefinisikan sebagai kombinasi linier dari probabilitas kategori dan keselarasan lokalisasi. Token-token dengan ketidakpastian terkecil dipilih sebagai kueri awal. Hal ini memastikan bahwa koordinat kueri awal sudah sangat dekat dengan objek riil, sehingga meringankan beban optimasi pada lapisan *decoder*.
 
-## Kontribusi Utama
-1. Detektor DETR real-time pertama yang mengalahkan YOLO pada latensi setara.
-2. Hybrid encoder efisien untuk fitur multiskala.
-3. Skema seleksi kueri berbasis ketidakpastian.
-4. Bebas-NMS sehingga latensi lebih stabil.
+### Decoder Transformer dan Flexible Speed Tuning
+Kueri yang telah terpilih diumpankan ke *decoder* Transformer multi-lapisan untuk melakukan pembaruan representasi fitur secara iteratif melalui interaksi perhatian-silang dengan fitur keluaran *encoder*. *Decoder* memprediksi koordinat *bounding box* secara langsung dalam ruang kontinu dan kelas kategorinya secara independen tanpa memerlukan NMS. 
 
-## Rincian Eksperimen
-Dievaluasi pada MS COCO dengan pengukuran mAP dan latensi/FPS pada GPU T4/TensorRT, dibandingkan langsung dengan seri YOLO pada anggaran kecepatan setara.
+Sifat modular dari lapisan *decoder* pada RT-DETR memungkinkan fitur *Flexible Speed Tuning*. Pengguna dapat secara dinamis membatasi jumlah lapisan *decoder* yang diaktifkan selama inferensi (misalnya hanya menggunakan 3 lapisan pertama dari total 6 lapisan) tanpa perlu melatih ulang model. Pengurangan lapisan *decoder* ini menurunkan latensi komputasi secara linier dengan hanya mengorbankan sedikit akurasi deteksi.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+## Eksperimen dan Hasil
+RT-DETR dievaluasi secara komprehensif pada dataset MS COCO val2017 menggunakan GPU NVIDIA T4 dan dioptimalkan melalui pustaka TensorRT dengan presisi FP16. Evaluasi ini membandingkan akurasi deteksi (AP) serta latensi inferensi terhadap model YOLOv5, YOLOv6, YOLOv8, dan detektor berbasis DETR sebelumnya.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| MS COCO val | AP | RT-DETR-R50 ~53 AP, mengungguli YOLO sebanding pada FPS setara |
-| Latensi (T4/TensorRT) | ms/FPS | real-time tanpa NMS, latensi lebih stabil |
-| Ablation encoder | AP/latensi | hybrid encoder menaikkan efisiensi vs encoder DETR penuh |
+Pada pengujian model dengan skala menengah, RT-DETR-R50 mencapai akurasi sebesar 53,1% AP dengan latensi inferensi 9,2 milidetik (setara 108 FPS). Sebagai perbandingan, YOLOv8-L menghasilkan akurasi 52,9% AP tetapi dengan latensi yang bervariasi bergantung pada jumlah objek akibat hambatan komputasi NMS. Untuk model berskala besar, RT-DETR-R101 mencapai 54,3% AP pada latensi 13,4 milidetik (74 FPS), yang secara signifikan mengungguli YOLOv8-X dalam efisiensi latensi dan akurasi deteksi pada GPU.
 
-## Temuan Kunci
-- DETR dapat real-time bila encoder multiskala dirancang efisien.
-- Menghapus NMS menstabilkan latensi inferensi.
-- Seleksi kueri berkualitas mempercepat konvergensi.
+Selain menggunakan tulang punggung ResNet, penulis juga menguji varian RT-DETR dengan tulang punggung HGNetv2 yang dikembangkan oleh Baidu. Model RT-DETR-L (Large) dengan HGNetv2 memperoleh akurasi 53,0% AP pada kecepatan 114 FPS dengan parameter sekitar 32,9M dan komputasi 108 GFLOPs. Varian RT-DETR-X (Extra-Large) mencapai akurasi tertinggi sebesar 54,8% AP dengan kecepatan 74 FPS menggunakan parameter sekitar 67,3M dan komputasi 234,4 GFLOPs.
 
-## Keunggulan
-- Bebas-NMS, end-to-end.
-- Akurasi/kecepatan kompetitif terhadap YOLO.
-- Mudah diskalakan lewat backbone berbeda.
+Eksperimen dengan skema pra-pelatihan (*pre-training*) pada dataset skala besar Objects365 juga menunjukkan peningkatan performa yang sangat signifikan. Setelah dilatih awal pada Objects365, RT-DETR-R50 mampu mencapai akurasi 55,3% AP, sementara RT-DETR-R101 mencapai 56,2% AP pada dataset COCO. Ketika dibandingkan dengan detektor DINO-R50 (salah satu varian DETR non-real-time yang canggih), RT-DETR-R50 menunjukkan keunggulan mutlak dengan melampaui akurasi DINO-R50 sebesar 2,2% AP sekaligus berjalan 21 kali lebih cepat dalam hal FPS.
 
-## Keterbatasan
-- Memori pelatihan lebih besar dari YOLO ringan.
-- Manfaat penuh perlu optimasi TensorRT.
-- Tetap butuh backbone CNN besar untuk akurasi puncak.
+## Kelebihan dan Keterbatasan
+RT-DETR menawarkan keunggulan struktural yang signifikan bagi sistem visi komputer modern:
+- Keunggulan Bebas NMS: Dengan meniadakan proses pasca-pemrosesan NMS, model ini memberikan jaminan latensi konstan yang tidak terpengaruh oleh jumlah objek dalam gambar. Hal ini sangat krusial untuk kestabilan sistem *real-time* di lingkungan industri.
+- Desain Efisiensi Tinggi: Penggabungan AIFI dan CCFF memangkas redundansi komputasi pada *encoder* hingga mampu bersaing dengan kecepatan detektor berbasis CNN murni.
+- Penyetelan Fleksibel: Kemampuan untuk mengurangi lapisan *decoder* secara dinamis saat inferensi memberikan fleksibilitas operasional tanpa membutuhkan siklus pelatihan ulang yang mahal.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Namun, model ini juga memiliki beberapa keterbatasan praktis:
+- Ketergantungan Akselerator: Dari sisi rekayasa, keunggulan kecepatan RT-DETR sangat bergantung pada optimasi grafik komputasi khusus seperti TensorRT pada GPU NVIDIA. Pada perangkat keras tanpa akselerator khusus, operasi perhatian dalam *decoder* masih dapat menjadi hambatan.
+- Kebutuhan Memori Pelatihan: Secara konseptual, pelatihan RT-DETR membutuhkan kapasitas memori GPU yang jauh lebih besar dan waktu konvergensi yang relatif lebih lama dibandingkan dengan model YOLO yang murni berbasis konvolusi ringan.
+- Kompleksitas Implementasi: Struktur *hybrid encoder* dan integrasi perhatian-silang membuat proses ekspor model ke format edge (seperti ONNX atau TFLite) untuk dijalankan di mikrokontroler atau NPU berdaya rendah menjadi lebih kompleks dibandingkan detektor YOLO konvensional.
 
-## Relevansi terhadap Tema Tinjauan
-Sebagai pembanding modern terhadap YOLO, entri ini penting untuk memposisikan pilihan detektor real-time pada pipeline RGB/RGB-D dan mempertimbangkan alternatif bebas-NMS.
+## Kaitan dengan Bab Lain
+RT-DETR mewarisi fondasi arsitektur deteksi objek end-to-end berbasis kueri yang diperkenalkan pertama kali oleh DETR. Makalah ini secara langsung memodifikasi mekanisme inisialisasi kueri dari model-model seperti Conditional DETR (lihat [160 - 2021 - Conditional DETR - Fondasi RGB](./160%20-%202021%20-%20Conditional%20DETR%20-%20Fondasi%20RGB.md)) dan DN-DETR (lihat [159 - 2022 - DN-DETR - Fondasi RGB](./159%20-%202022%20-%20DN-DETR%20-%20Fondasi%20RGB.md)), serta memanfaatkan pemelajaran representasi tingkat lanjut yang diwarisi dari DINO (lihat [158 - 2023 - DINO detector - Fondasi RGB](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md)). 
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fondasi RGB** yang baik dibaca berdampingan:
+Dalam silsilah detektor real-time, RT-DETR berdiri sebagai penantang langsung bagi keluarga YOLO seperti Gold-YOLO (lihat [157 - 2023 - Gold-YOLO - Fondasi RGB](./157%20-%202023%20-%20Gold-YOLO%20-%20Fondasi%20RGB.md)) dan YOLOv8. Konsep detektor bebas NMS yang diusung oleh RT-DETR kemudian menginspirasi dan diadopsi secara luas oleh model deteksi multi-modal modern seperti YOLO-World (lihat [156 - 2024 - YOLO-World - Fondasi RGB](./156%20-%202024%20-%20YOLO-World%20-%20Fondasi%20RGB.md)), yang memperluas kemampuan deteksi real-time ke domain kosakata terbuka (*open-vocabulary*).
 
-- [156 - 2024 - YOLO-World - Fondasi RGB](./156%20-%202024%20-%20YOLO-World%20-%20Fondasi%20RGB.md)
-- [157 - 2023 - Gold-YOLO - Fondasi RGB](./157%20-%202023%20-%20Gold-YOLO%20-%20Fondasi%20RGB.md)
-- [158 - 2023 - DINO detector - Fondasi RGB](./158%20-%202023%20-%20DINO%20detector%20-%20Fondasi%20RGB.md)
-- [159 - 2022 - DN-DETR - Fondasi RGB](./159%20-%202022%20-%20DN-DETR%20-%20Fondasi%20RGB.md)
-- [160 - 2021 - Conditional DETR - Fondasi RGB](./160%20-%202021%20-%20Conditional%20DETR%20-%20Fondasi%20RGB.md)
-- [161 - 2021 - Sparse R-CNN - Fondasi RGB](./161%20-%202021%20-%20Sparse%20R-CNN%20-%20Fondasi%20RGB.md)
-- [162 - 2022 - ConvNeXt - Fondasi RGB](./162%20-%202022%20-%20ConvNeXt%20-%20Fondasi%20RGB.md)
-- [163 - 2022 - Swin Transformer V2 - Fondasi RGB](./163%20-%202022%20-%20Swin%20Transformer%20V2%20-%20Fondasi%20RGB.md)
+## Poin untuk Sitasi
+Kunci BibTeX untuk merujuk makalah ini adalah:
+```bibtex
+@inproceedings{zhao2024rtdetr,
+  title     = {DETRs Beat YOLOs on Real-Time Object Detection},
+  author    = {Zhao, Yian and Lv, Wenyu and Xu, Shangliang and Wei, Jinman and Wang, Guanzhong and Dang, Qingqing and Liu, Yi and Chen, Jie},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2024}
+}
+```
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fondasi RGB** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Ringkasan berikut dapat digunakan untuk merujuk makalah ini dalam karya akademis:
+> Zhao dkk. (2024) memperkenalkan RT-DETR, detektor objek berbasis Transformer pertama yang mencapai performa real-time dengan meniadakan kebutuhan akan Non-Maximum Suppression (NMS). Model ini memanfaatkan hybrid encoder yang memisahkan interaksi fitur intra-skala dan lintas-skala, serta mekanisme inisialisasi kueri berbasis ketidakpastian minimum untuk mempercepat konvergensi dan mencapai akurasi superior pada anggaran latensi yang setara dengan seri YOLO.
 
-## Glosarium Istilah (tema Fondasi RGB)
-Istilah penting untuk memahami makalah ini:
-
-- **Bounding box** — Kotak pembatas yang melingkupi objek; (x,y,w,h) atau (x1,y1,x2,y2).
-- **Anchor box** — Kotak acuan berukuran/rasio tetap tempat jaringan meregresi offset objek.
-- **Anchor-free** — Deteksi tanpa anchor; memprediksi pusat/keypoint atau jarak ke sisi box.
-- **mAP** — mean Average Precision; rata-rata AP lintas kelas/ambang IoU.
-- **IoU** — Intersection over Union; rasio irisan/gabungan dua box.
-- **NMS** — Non-Maximum Suppression; membuang deteksi berlebih yang tumpang tindih.
-- **Backbone** — Jaringan ekstraksi fitur (ResNet, CSPDarknet) di awal detektor.
-- **Neck** — Modul agregasi fitur multi-skala (FPN, PAN, BiFPN).
-- **Head** — Bagian akhir yang menghasilkan prediksi kelas dan box.
-- **One-stage vs two-stage** — Satu-tahap (YOLO/SSD) langsung; dua-tahap (Faster R-CNN) pakai proposal.
-- **FLOPs** — Floating-point operations; ukuran biaya komputasi.
-- **Attention/Transformer** — Mekanisme membobot relasi antar-token/fitur secara global.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-RT-DETR menunjukkan detektor Transformer bisa real-time dan mengungguli YOLO tanpa NMS, menjadikannya rujukan penting untuk keputusan arsitektur deteksi mutakhir.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zhao2024rtdetr` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 155/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan verifikasi: Klaim latensi dan throughput (misalnya 108 FPS pada RT-DETR-R50) diukur menggunakan NVIDIA TensorRT FP16 pada kartu grafis NVIDIA T4 dengan resolusi input $640 \times 640$. Pengukuran ini menyertakan waktu pemrosesan jaringan secara end-to-end tanpa overhead pasca-pemrosesan eksternal. Performa pada perangkat keras tepi non-GPU atau pustaka runtime standar lainnya (seperti CPU ONNX Runtime) perlu diuji secara terpisah karena karakteristik komputasi operasi atensi yang berbeda dari konvolusi standar.
