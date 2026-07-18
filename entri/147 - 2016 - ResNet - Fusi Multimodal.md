@@ -1,210 +1,117 @@
 # 147 - Deep Residual Learning for Image Recognition
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 147 dari 154 |
 | Kunci BibTeX | `he2016resnet` |
-| Judul | Deep Residual Learning for Image Recognition |
+| Judul asli | Deep Residual Learning for Image Recognition |
 | Penulis | He, Kaiming; Zhang, Xiangyu; Ren, Shaoqing; Sun, Jian |
 | Tahun | 2016 |
-| Venue / Jurnal | Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fusi Multimodal |
-| Kata kunci | backbone, residual, skip connection, jaringan dalam, ImageNet |
+| Venue | IEEE Conference on Computer Vision and Pattern Recognition (CVPR 2016) |
+| Tema | Fusi Multimodal |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/1512.03385
+- **Google Scholar:** https://scholar.google.com/scholar?q=Deep%20Residual%20Learning%20for%20Image%20Recognition
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Deep%20Residual%20Learning%20for%20Image%20Recognition&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-fusi-multimodal)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Deep%20Residual%20Learning%20for%20Image%20Recognition
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Deep%20Residual%20Learning%20for%20Image%20Recognition&sort=relevance
+Makalah ini memperkenalkan ResNet (*Residual Networks*), sebuah arsitektur jaringan saraf konvolusi yang dirancang untuk mengatasi masalah degradasi akurasi pada jaringan sangat dalam. Dengan memperkenalkan koneksi jalan pintas (*shortcut connection* atau *skip connection*), ResNet memformulasikan ulang lapisan-lapisan konvolusi agar mempelajari fungsi residual terhadap input identitas. Pendekatan ini memungkinkan pelatihan arsitektur jaringan yang jauh lebih dalam tanpa mengalami penurunan akurasi akibat sulitnya optimasi.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Model ResNet dengan kedalaman hingga 152 lapisan berhasil dilatih pada dataset ImageNet, mencapai tingkat kesalahan klasifikasi *top-5 error* sebesar 3,57% menggunakan metode ansambel (*ensemble*). Keberhasilan ini mengantarkan ResNet memenangi berbagai kategori dalam kompetisi ILSVRC and MS COCO 2015. Dalam konteks fusi multimodal, ResNet memainkan peran penting sebagai ekstraktor fitur visual atau tulang punggung (*backbone*) berkinerja tinggi sebelum fiturnya dipadukan dengan modalitas sensor lain.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 770--778 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Memperkenalkan koneksi residual (skip connection) yang memungkinkan pelatihan jaringan sangat dalam tanpa degradasi, menjadi backbone paling fundamental dalam visi.
+Sebelum diperkenalkannya ResNet, peningkatan kinerja model visi komputer berbasis pembelajaran mendalam sangat bergantung pada penambahan kedalaman jaringan. Model seperti AlexNet, VGG, dan GoogLeNet membuktikan bahwa representasi fitur yang lebih kaya diekstrak dengan menumpuk lebih banyak lapisan konvolusi. Namun, melatih jaringan yang sangat dalam menimbulkan tantangan optimasi berat.
 
-## Abstrak (Parafrase)
-ResNet (He dkk.) memperkenalkan residual learning: alih-alih memetakan langsung, tiap blok mempelajari residu terhadap identitas melalui skip connection. Ini mengatasi masalah degradasi pada jaringan sangat dalam, memungkinkan arsitektur hingga 152 lapis, dan memenangi ILSVRC/COCO 2015. ResNet menjadi backbone paling banyak dipakai.
+Hambatan pertama adalah gradien menghilang atau meledak (*vanishing or exploding gradient*), yang menghambat aliran gradien saat penyebaran balik (*backpropagation*). Masalah ini sebagian besar diatasi dengan inisialisasi bobot terstandardisasi dan normalisasi *batch* (*batch normalization*), tetapi muncul hambatan lain yang dikenal sebagai masalah degradasi (*degradation problem*).
 
-## Latar Belakang & Konteks
-Menambah kedalaman jaringan seharusnya meningkatkan kapasitas, namun secara empiris jaringan sangat dalam justru mengalami degradasi akurasi (bukan hanya overfitting).
+Masalah degradasi ditandai dengan saturasi akurasi saat kedalaman jaringan meningkat, diikuti penurunan akurasi yang tajam pada model yang lebih dalam. Berbeda dengan kelebihan kecocokan (*overfitting*), galat pelatihan (*training error*) juga meningkat secara signifikan. Sebagai contoh, jaringan polos (*plain network*) dengan 34 lapisan menunjukkan galat pelatihan dan validasi yang lebih buruk dibanding versi 18 lapisan. Secara teoretis, jaringan lebih dalam seharusnya dapat menduplikasi kinerja model dangkal dengan mempelajari pemetaan identitas (*identity mapping*). Namun, optimasi berbasis gradien terbukti kesulitan mengarahkan lapisan non-linear dalam mempelajari pemetaan identitas secara langsung.
 
-## Permasalahan yang Diangkat
-- Jaringan sangat dalam mengalami degradasi akurasi.
-- Vanishing/exploding gradient menghambat pelatihan.
-- Pemetaan identitas sulit dipelajari langsung.
-- Kapasitas kedalaman belum termanfaatkan.
-- Arsitektur dalam sulit dioptimalkan.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Memungkinkan pelatihan jaringan sangat dalam.
-- Mengatasi degradasi via residual learning.
-- Menyediakan backbone kuat serbaguna.
+Gagasan inti ResNet adalah pembelajaran residual (*residual learning*). Alih-alih membiarkan tumpukan lapisan konvolusi non-linear memetakan fungsi target $H(x)$ (dengan $x$ sebagai masukan), lapisan-lapisan tersebut diarahkan mempelajari fungsi residual $F(x) := H(x) - x$. Dengan demikian, pemetaan target didefinisikan sebagai $H(x) = F(x) + x$.
 
-## Tinjauan Terdahulu / Posisi Literatur
-ResNet menjawab masalah degradasi arsitektur dalam.
+Secara mekanis, formulasi ini diimplementasikan melalui koneksi jalan pintas yang melewati satu atau beberapa lapisan. Koneksi ini melakukan penjumlahan elemen demi elemen (*element-wise addition*) antara masukan identitas $x$ dan keluaran blok konvolusi $F(x)$ tanpa menambah parameter tambahan atau beban komputasi. Intuisinya adalah jika pemetaan identitas optimal, mengarahkan bobot-bobot lapisan non-linear mendekati nol (sehingga $F(x) = 0$) lebih mudah dicapai dibanding memaksa lapisan konvolusi biasa mempelajari pemetaan identitas dari awal melalui transformasi non-linear kompleks.
 
-Karya/konsep pembanding yang relevan:
+## Cara Kerja Langkah demi Langkah
 
-- CNN dalam (VGG/GoogLeNet) — pembanding.
-- Residual learning — gagasan inti.
-- Skip/identity connection.
-- ImageNet/COCO — benchmark.
+### Struktur Blok Residual: BasicBlock dan Bottleneck
+Dua jenis blok residual digunakan berdasarkan kedalaman arsitektur:
+- **Blok Dasar (*BasicBlock*)**: Digunakan pada ResNet-18 dan ResNet-34. Blok ini terdiri atas dua lapisan konvolusi $3\times3$ berturut-turut. Setiap lapisan diikuti normalisasi *batch* dan fungsi aktivasi unit linear terarah (*rectified linear unit* atau ReLU). Koneksi jalan pintas menghubungkan masukan awal langsung ke hasil sebelum ReLU kedua.
+- **Blok Penyempitan (*Bottleneck Block*)**: Dirancang untuk ResNet-50, ResNet-101, dan ResNet-152 guna menekan parameter. Blok ini menggunakan tiga lapisan: konvolusi $1\times1$ untuk mereduksi dimensi saluran (*channel dimension*), konvolusi $3\times3$ untuk ekstraksi fitur spasial, dan konvolusi $1\times1$ untuk mengembalikan jumlah saluran ke dimensi semula. Operasi $3\times3$ yang mahal dilakukan pada dimensi saluran yang diperkecil.
 
-## Metodologi & Arsitektur
-Tiap blok residual menghitung F(x)+x, di mana skip connection membawa input x langsung ke output sehingga jaringan hanya perlu mempelajari residu F(x); ini memudahkan optimasi dan aliran gradien; arsitektur ResNet-18/34/50/101/152.
+Struktur arsitektur ini digambarkan dalam diagram ASCII berikut:
 
-Komponen / langkah metodologis utama:
+```
+       [ BasicBlock ]                     [ Bottleneck Block ]
+       
+            Masukan x                           Masukan x
+               │                                   │
+         ┌─────┴─────┐                       ┌─────┴─────┐
+         │           ▼                       │           ▼
+         │      Conv 3x3 (F)                 │      Conv 1x1 (Reduksi)
+         │           │                       │           │
+         │         ReLU                      │         ReLU
+         │           │                       │           │
+         │      Conv 3x3                     │      Conv 3x3
+         │           │                       │           │
+         │           │                       │         ReLU
+         │           │                       │           │
+         │           │                       │      Conv 1x1 (Restorasi)
+         │           ▼                       │           ▼
+    Identity ────────►+                 Identity ────────►+
+                     │                                   │
+                    ReLU                                ReLU
+                     │                                   │
+                  Keluaran                            Keluaran
+```
 
-- Residual learning (F(x)+x).
-- Skip/identity connection.
-- Blok residual (bottleneck untuk model besar).
-- Arsitektur hingga 152 lapis.
-- Batch normalization.
-- Pra-latih ImageNet.
+### Penyelarasan Dimensi Spasial dan Saluran
+Penjumlahan $y = F(x) + x$ mensyaratkan dimensi spasial dan jumlah saluran $F(x)$ and $x$ sama persis. Namun, resolusi spasial sering kali dikurangi setengahnya (lewat *stride* = 2) sedangkan jumlah saluran dilipatgandakan. Untuk mengatasi ketidakcocokan ini, dirumuskan tiga opsi koneksi jalan pintas:
+- **Opsi A (*Zero-Padding*)**: Menggunakan pengisian nol (*zero-padding*) untuk meningkatkan dimensi saluran tanpa parameter latih baru, serta pencocokan resolusi spasial menggunakan *stride*.
+- **Opsi B (Proyeksi Parameter Parsial)**: Menggunakan konvolusi proyeksi $1\times1$ hanya saat dimensi berubah, sedangkan blok dengan dimensi tetap menggunakan jalan pintas identitas murni.
+- **Opsi C (Proyeksi Parameter Penuh)**: Menggunakan konvolusi proyeksi $1\times1$ untuk seluruh jalan pintas di jaringan. Opsi C memberikan hasil terbaik secara marjinal namun menambah beban parameter, sehingga opsi B dipilih sebagai kompromi terbaik.
 
-## Kontribusi Utama
-1. Residual learning memungkinkan jaringan sangat dalam.
-2. Skip connection memperbaiki aliran gradien.
-3. Memenangi ILSVRC/COCO 2015.
-4. Backbone paling fundamental & serbaguna.
+### Normalisasi Batch dan Skema Pelatihan
+Stabilitas pelatihan pada kedalaman ekstrem dijamin dengan menerapkan normalisasi *batch* segera setelah konvolusi dan sebelum aktivasi ReLU. Optimasi menggunakan penurunan gradien stokastik (*stochastic gradient descent* atau SGD) dengan ukuran *batch* 256. Laju pembelajaran awal diatur 0,1 dan diturunkan dengan faktor 10 setiap galat mengalami saturasi. Inisialisasi bobot menerapkan metode He (*He initialization*). Model dilatih dengan peluruhan bobot (*weight decay*) 0,0001 dan momentum 0,9.
 
-## Rincian Eksperimen
-Diuji pada ImageNet (klasifikasi) dan COCO (deteksi/segmentasi), dengan analisis kedalaman (18-152), memenangi berbagai tantangan 2015.
+## Eksperimen dan Hasil
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Evaluasi kinerja dilakukan pada dataset ImageNet 2012 yang mencakup tugas klasifikasi dengan 1.000 kelas. Perbandingan kuantitatif dilakukan antara jaringan polos (*plain*) dan jaringan residual (ResNet) pada varian 18 dan 34 lapisan.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| ImageNet | top-1/top-5 | SOTA 2015, memenangi ILSVRC |
-| COCO | AP | backbone pemenang deteksi/segmentasi |
-| Kedalaman | 18-152 | degradasi teratasi |
+Hasil evaluasi *10-crop* pada set validasi menunjukkan:
+- **Plain-18 vs ResNet-18**: Jaringan polos mencapai *top-1 error* 27,94%, sedangkan ResNet-18 mencapai 27,88%. Pada kedalaman dangkal ini, akurasi keduanya sebanding, tetapi ResNet-18 mengalami konvergensi awal yang jauh lebih cepat.
+- **Plain-34 vs ResNet-34**: Versi polos menunjukkan degradasi dengan galat naik menjadi 28,54%. Sebaliknya, ResNet-34 berhasil membalikkan tren degradasi dengan menekan galat menjadi 25,03% (penurunan galat sebesar 3,51%).
 
-## Temuan Kunci
-- Residual learning mengatasi degradasi kedalaman.
-- Skip connection memperbaiki gradien.
-- Kedalaman ekstrem menjadi layak dilatih.
-- Backbone serbaguna untuk banyak tugas.
+Evaluasi model yang lebih dalam dengan blok *bottleneck* pada set validasi ImageNet menunjukkan:
+- **ResNet-50**: *Top-1 error* 22,85%, *top-5 error* 6,71%.
+- **ResNet-101**: *Top-1 error* 21,75%, *top-5 error* 6,05%.
+- **ResNet-152**: *Top-1 error* 21,43%, *top-5 error* 5,71%.
 
-## Keunggulan
-- Backbone fundamental & serbaguna.
-- Melatih jaringan sangat dalam.
-- Berpengaruh luas.
+Pada pengujian model tunggal (*single-model*), ResNet-152 mencapai *top-5 error* 4,49% melalui evaluasi multi-skala. Ansambel model ResNet memenangi ILSVRC 2015 dengan *top-5 error* 3,57% pada set pengujian. Pada dataset MS COCO, ResNet sebagai tulang punggung deteksi objek meningkatkan nilai *mean Average Precision* (mAP) sebesar 28% secara relatif dibanding model berbasis VGG.
 
-## Keterbatasan
-- Model besar (152) mahal.
-- Bukan spesifik RGB-D.
-- Digantikan sebagian oleh Transformer pada tugas tertentu.
+## Kelebihan dan Keterbatasan
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+- **Kelebihan**: Keunggulan utama ResNet adalah pemecahan masalah degradasi akurasi, sehingga memungkinkan pelatihan jaringan hingga ratusan lapisan. Secara teoretis, penjumlahan jalan pintas menjamin aliran gradien langsung tanpa reduksi eksponensial. Penggunaan blok *bottleneck* memberikan efisiensi komputasi tinggi; FLOPs ResNet-152 lebih rendah dibanding VGG-16/19 yang jauh lebih dangkal. ResNet juga memiliki kemampuan generalisasi tinggi, menjadikannya tulang punggung transfer pembelajaran (*transfer learning*) standar untuk tugas penalaan halus.
+- **Keterbatasan**: Dari sisi rekayasa, kebutuhan memori aktivasi (*activation memory*) saat pelatihan meningkat secara linear sesuai kedalaman lapisan, membatasi ukuran *batch* pada perangkat keras dengan memori terbatas. Secara konseptual, terdapat redundansi representasi (*representation redundancy*) pada model yang sangat dalam, di mana banyak lapisan hanya mempelajari perubahan fitur kecil tanpa kontribusi representasi baru. Terakhir, model ini dirancang untuk data unimodal (RGB), sehingga memerlukan modul fusi eksternal untuk digabungkan dengan sensor lain (seperti sensor kedalaman).
 
-## Relevansi terhadap Tema Tinjauan
-ResNet adalah backbone yang mendasari hampir semua detektor dan jaringan RGB-D dalam tinjauan; skip connection juga menginspirasi banyak desain (DarkNet-53, dll.).
+## Kaitan dengan Bab Lain
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Fusi Multimodal** yang baik dibaca berdampingan:
+Sebagai salah satu karya paling berpengaruh dalam sejarah pembelajaran mendalam, ResNet meletakkan dasar arsitektur yang diwarisi oleh hampir semua model visi modern, khususnya dalam klaster **Fusi Multimodal** (bab 148-154) dan klaster YOLO lainnya.
 
-- [148 - 2017 - PointNet - Fusi Multimodal](./148%20-%202017%20-%20PointNet%20-%20Fusi%20Multimodal.md)
-- [149 - 2018 - CBAM - Fusi Multimodal](./149%20-%202018%20-%20CBAM%20-%20Fusi%20Multimodal.md)
-- [150 - 2021 - Survei Deteksi & Segmentasi Multimodal (Feng dkk.) - Fusi Multimodal](./150%20-%202021%20-%20Survei%20Deteksi%20%26%20Segmentasi%20Multimodal%20%28Feng%20dkk.%29%20-%20Fusi%20Multimodal.md)
-- [151 - 2023 - Object Detection in 20 Years (Zou dkk.) - Fusi Multimodal](./151%20-%202023%20-%20Object%20Detection%20in%2020%20Years%20%28Zou%20dkk.%29%20-%20Fusi%20Multimodal.md)
-- [152 - 2017 - Deep Multimodal Learning A Survey (Ramachandram & Taylor) - Fusi Multimodal](./152%20-%202017%20-%20Deep%20Multimodal%20Learning%20A%20Survey%20%28Ramachandram%20%26%20Taylor%29%20-%20Fusi%20Multimodal.md)
-- [153 - 2021 - Survei RGB-D SOD (Zhou dkk.) - Fusi Multimodal](./153%20-%202021%20-%20Survei%20RGB-D%20SOD%20%28Zhou%20dkk.%29%20-%20Fusi%20Multimodal.md)
-- [154 - 2022 - Survei Dataset RGB-D (Lopes dkk.) - Fusi Multimodal](./154%20-%202022%20-%20Survei%20Dataset%20RGB-D%20%28Lopes%20dkk.%29%20-%20Fusi%20Multimodal.md)
+Hubungan konseptual dan implementatif ResNet dengan bab-bab terkait meliputi:
+- **[148 - PointNet](./148%20-%202017%20-%20PointNet%20-%20Fusi%20Multimodal.md)**: Memperkenalkan pemrosesan awan titik (*point cloud*) 3D langsung. Pada sistem fusi multimodal 2D-3D, ResNet mengekstrak fitur visual RGB (2D), sedangkan PointNet mengekstrak fitur geometris 3D, sebelum keduanya dilebur dalam ruang laten bersama.
+- **[149 - CBAM](./149%20-%202018%20-%20CBAM%20-%20Fusi%20Multimodal.md)**: Modul perhatian (*attention module*) yang disisipkan ke dalam blok residual ResNet sebelum penjumlahan jalan pintas untuk memperkaya fitur melalui pembobotan saluran dan spasial dinamis.
+- **[150 - Survei Deteksi & Segmentasi Multimodal (Feng dkk.)](./150%20-%202021%20-%20Survei%20Deteksi%20%26%20Segmentasi%20Multimodal%20%28Feng%20dkk.%29%20-%20Fusi%20Multimodal.md)**: Menyebutkan ResNet sebagai *standard baseline backbone* yang dominan untuk mengekstrak fitur visual pada arsitektur fusi awal (*early fusion*), akhir (*late fusion*), maupun mendalam (*deep fusion*).
+- **[151 - Object Detection in 20 Years (Zou dkk.)](./151%20-%202023%20-%20Object%20Detection%20in%2020%20Years%20%28Zou%20dkk.%29%20-%20Fusi%20Multimodal.md)**: Memetakan evolusi deteksi objek dari metode konvensional ke pembelajaran mendalam, di mana koneksi residual ResNet menjadi pilar utama yang menggantikan dominasi VGG pada detektor modern seperti Faster R-CNN dan menginspirasi arsitektur DarkNet pada YOLOv3.
+- **[152 - Deep Multimodal Learning A Survey (Ramachandram & Taylor)](./152%20-%202017%20-%20Deep%20Multimodal%20Learning%20A%20Survey%20%28Ramachandram%20%26%20Taylor%29%20-%20Fusi%20Multimodal.md)**: Menyediakan fondasi teori penggabungan representasi lintas modal. ResNet di sini berfungsi sebagai pilar penting untuk ekstraksi fitur citra representasional (modalitas visual) sebelum dipadukan dengan modalitas suara atau teks.
+- **[153 - Survei RGB-D SOD (Zhou dkk.)](./153%20-%202021%20-%20Survei%20RGB-D%20SOD%20%28Zhou%20dkk.%29%20-%20Fusi%20Multimodal.md)**: Mengulas deteksi objek menonjol berbasis RGB-D, di mana arsitektur berbasis ResNet sering kali diduplikasi menjadi struktur dua aliran (*two-stream architecture*) untuk mengekstrak fitur spasial multi-level baik dari aliran warna (RGB) maupun kedalaman (depth).
+- **[154 - Survei Dataset RGB-D (Lopes dkk.)](./154%20-%202022%20-%20Survei%20Dataset%20RGB-D%20%28Lopes%20dkk.%29%20-%20Fusi%20Multimodal.md)**: Mengkatalogkan dataset RGB-D yang sering digunakan untuk mengevaluasi model fusi berbasis ResNet pada domain pengenalan adegan.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Fusi Multimodal** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema Fusi Multimodal)
-Istilah penting untuk memahami makalah ini:
-
-- **Multimodal** — Menggabungkan >1 modalitas data.
-- **Backbone** — Jaringan ekstraksi fitur fundamental.
-- **Residual/skip** — Jalan pintas memudahkan pelatihan jaringan dalam.
-- **Attention (CBAM/SE)** — Modul penimbang fitur kanal-spasial.
-- **PointNet** — Jaringan pemroses point cloud mentah.
-- **Early/late/deep fusion** — Tingkat penggabungan modalitas.
-- **Survei** — Sintesis literatur lintas metode.
-- **Generalisasi lintas-sensor** — Ketahanan terhadap kombinasi sensor.
-- **Kalibrasi/penyelarasan** — Penyelarasan spasial-temporal antar-modal.
-- **Representasi bersama** — Ruang fitur gabungan lintas-modal.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-ResNet memperkenalkan residual learning dengan skip connection untuk melatih jaringan sangat dalam tanpa degradasi, menjadi backbone paling fundamental yang mendasari banyak detektor dan jaringan RGB-D.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `he2016resnet` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 147/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kunci BibTeX untuk sitasi formal adalah `he2016resnet`. Ringkasan deskriptif yang aman dikutip:
+"ResNet memperkenalkan kerangka kerja pembelajaran residual menggunakan koneksi jalan pintas (*skip connection*) untuk mengatasi masalah degradasi akurasi pada jaringan sangat dalam. Pendekatan ini memungkinkan pelatihan model hingga kedalaman 152 lapisan pada ImageNet, menghasilkan tingkat kesalahan *top-5* sebesar 3,57% dan memenangi kompetisi ILSVRC serta COCO 2015."
+Catatan verifikasi data: Angka kesalahan validasi 25,03% (ResNet-34) dan 21,43% (ResNet-152) diperoleh menggunakan pengujian *10-crop* pada set validasi ImageNet 2012, sedangkan nilai kesalahan ansambel 3,57% diperoleh pada set pengujian ImageNet. Pengguna disarankan memverifikasi jenis evaluasi (single-crop vs multi-crop) saat membandingkan metrik secara formal.
