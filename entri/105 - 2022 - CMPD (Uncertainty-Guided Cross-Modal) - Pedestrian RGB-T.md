@@ -1,211 +1,100 @@
 # 105 - Uncertainty-Guided Cross-Modal Learning for Robust Multispectral Pedestrian Detection
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 105 dari 154 |
 | Kunci BibTeX | `kim2022cmpd` |
-| Judul | Uncertainty-Guided Cross-Modal Learning for Robust Multispectral Pedestrian Detection |
-| Penulis | Kim, Jung Uk; Park, Sungjune; Ro, Yong Man |
+| Judul asli | Uncertainty-Guided Cross-Modal Learning for Robust Multispectral Pedestrian Detection |
+| Penulis | Jung Uk Kim, Sungjune Park, Yong Man Ro |
 | Tahun | 2022 |
-| Venue / Jurnal | IEEE Transactions on Circuits and Systems for Video Technology |
-| Tema klaster | Pedestrian RGB-T |
-| Kata kunci | RGB-T, ketidakpastian, cross-modal learning, robust, pejalan |
+| Venue | IEEE Transactions on Circuits and Systems for Video Technology (TCSVT), vol. 32, no. 3, hlm. 1510–1523 |
+| Tema | Pedestrian RGB-T |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **DOI (versi penerbit):** https://doi.org/10.1109/TCSVT.2021.3076466
+- **Google Scholar:** https://scholar.google.com/scholar?q=Uncertainty-Guided%20Cross-Modal%20Learning%20for%20Robust%20Multispectral%20Pedestrian%20Detection
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Uncertainty-Guided%20Cross-Modal%20Learning%20for%20Robust%20Multispectral%20Pedestrian%20Detection&sort=relevance
+- **Versi pendahulu (konferensi MMM 2021):** https://doi.org/10.1007/978-3-030-67832-6_32
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-pedestrian-rgb-t)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Uncertainty-Guided%20Cross-Modal%20Learning%20for%20Robust%20Multispectral%20Pedestrian%20Detection
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Uncertainty-Guided%20Cross-Modal%20Learning%20for%20Robust%20Multispectral%20Pedestrian%20Detection&sort=relevance
+Makalah ini mengusulkan CMPD (disingkat dari isi makalah, bukan akronim resmi penulis), sebuah kerangka deteksi pejalan multispektral yang memakai dua warna cahaya berbeda — citra warna (RGB) dan citra termal (*thermal*, inframerah gelombang panjang) — dengan memodelkan secara eksplisit seberapa dapat diandalkan fitur dari tiap modal pada tiap kasus. Alih-alih menggabungkan kedua modal dengan bobot tetap atau bobot yang hanya bergantung pada kondisi pencahayaan global, penulis mengukur dua jenis ketidakpastian (*uncertainty*) pada level wilayah dan level prediksi, lalu memakai keduanya untuk mengendalikan proses fusi dan pelatihan pengklasifikasi.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Dua masalah spesifik yang disasar adalah *miscalibration* (kotak wilayah dari kedua kamera tidak sejajar sempurna karena sudut pandang, *field-of-view*, yang berbeda) dan *modality discrepancy* (perbedaan keandalan sinyal antar-modal akibat panjang gelombang yang berbeda, sehingga muncul masalah *overconfidence* — jaringan tetap memberi skor keyakinan tinggi meski fitur sumbernya sebenarnya tidak dapat diandalkan). Kerangka yang diusulkan terdiri atas dua modul: *Uncertainty-aware Feature Fusion* (UFF) yang menekan pengaruh fitur wilayah tak andal saat fusi, dan *Uncertainty-aware Cross-Modal Guiding* (UCG) yang mengarahkan distribusi fitur modal kurang andal menuju distribusi modal yang lebih andal. Metode ini diuji pada KAIST Multispectral Pedestrian Benchmark dan CVC-14, dua tolok ukur standar deteksi pejalan RGB-T (RGB-*thermal*), dan penulis melaporkan metode ini melampaui sejumlah pembanding sezaman.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 32 |
-| Nomor | 3 |
-| Halaman | 1510--1523 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Metode deteksi pejalan multispektral yang memakai pembelajaran lintas-modal terpandu ketidakpastian untuk robustness, memodelkan keandalan prediksi antar-modal.
+Deteksi pejalan berbasis RGB-T lahir dari kebutuhan mengatasi kegagalan kamera tunggal pada kondisi tertentu: kamera RGB kehilangan kontras dalam gelap, sedangkan kamera termal kurang informatif saat suhu latar dan suhu tubuh berdekatan (misalnya siang hari yang terik). Dataset KAIST Multispectral Pedestrian (bab 100), yang menyediakan pasangan citra RGB dan termal yang telah diselaraskan waktu dan sudut pandang secara kasar, menjadi tolok ukur standar untuk klaster ini. Generasi metode fusi pertama, seperti IAF R-CNN (bab 101), menangani ketidaksetaraan keandalan modal dengan pendekatan *illumination-aware*: sebuah subjaringan menaksir tingkat pencahayaan citra secara keseluruhan (siang/malam), lalu bobot fusi antar-modal diatur berdasarkan taksiran itu. MBNet (bab 102) dan GAFF (bab 103) memperhalus mekanisme fusi dengan modul kesadaran ilumninasi dan *attention* (mekanisme pembobotan fitur berbasis relevansi) lintas-modal, sedangkan CFR (bab 104) menambahkan siklus penghalusan fitur bertahap.
 
-## Abstrak (Parafrase)
-CMPD memakai uncertainty-aware cross-modal learning: memodelkan ketidakpastian prediksi tiap modal dan mentransfer pengetahuan antar-modal berdasarkan keandalan, sehingga modal yang tak andal (mis. thermal siang) ditekan. Ini meningkatkan robustness deteksi pejalan lintas kondisi pada KAIST dan CVC-14.
+Pendekatan berbasis iluminasi global memiliki keterbatasan mendasar: iluminasi citra secara keseluruhan bukan indikator langsung dari keandalan fitur pada wilayah kandidat (*Region of Interest*, RoI — bagian citra yang diduga memuat objek) tertentu. Sebuah wilayah bisa saja tidak andal bukan karena kondisi cahaya, melainkan karena kotak wilayah dari dua kamera tidak sejajar akibat *field-of-view* yang berbeda, sehingga fitur RGB dan termal yang digabungkan sebetulnya menunjuk ke bagian citra yang sedikit bergeser. Masalah kedua adalah bahwa jaringan saraf konvolusi dalam sering bersifat *overconfident*: skor keyakinan keluaran cenderung tinggi meski fitur masukannya sebenarnya kurang informatif, sehingga metode fusi yang hanya mengandalkan bobot iluminasi tidak punya mekanisme untuk mendeteksi dan mengoreksi kepercayaan berlebih semacam itu. Kedua celah inilah yang menjadi target makalah ini: mengganti proksi kasar (iluminasi global) dengan taksiran ketidakpastian yang diestimasi langsung dari fitur wilayah dan fitur prediksi itu sendiri.
 
-## Latar Belakang & Konteks
-Modalitas dapat menjadi tidak andal tergantung kondisi (thermal siang, RGB malam), sehingga fusi harus sadar ketidakpastian untuk menghindari propagasi kesalahan.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Modalitas bisa tak andal tergantung kondisi.
-- Fusi tanpa sadar-ketidakpastian rawan salah.
-- Transfer pengetahuan antar-modal perlu selektif.
-- Robustness lintas kondisi diperlukan.
-- Keandalan prediksi belum dimodelkan.
+Gagasan inti makalah adalah membedakan dua sumber ketidakandalan sinyal secara eksplisit, masing-masing diberi taksiran ketidakpastian tersendiri. **Ketidakpastian RoI** (*RoI uncertainty*) mengukur seberapa dapat diandalkan fitur pada satu wilayah kandidat tertentu, dan dipakai untuk mengatasi dampak miskalibrasi antar-kamera: wilayah yang fiturnya tidak konsisten antar-modal diberi bobot lebih rendah saat digabung. **Ketidakpastian prediktif** (*predictive uncertainty*) mengukur seberapa dapat diandalkan keluaran prediksi kelas dari satu modal, dan dipakai untuk mengatasi diskrepansi modal serta *overconfidence*: modal yang taksiran ketidakpastian prediktifnya tinggi (kurang andal pada kondisi tersebut) diarahkan untuk menyerupai distribusi fitur modal yang taksiran ketidakpastiannya rendah (lebih andal).
 
-## Tujuan & Pertanyaan Penelitian
-- Memodelkan ketidakpastian prediksi tiap modal.
-- Mentransfer pengetahuan antar-modal selektif.
-- Meningkatkan robustness lintas kondisi.
+Dengan kata lain, alih-alih memutuskan bobot fusi dari satu sinyal global (iluminasi), jaringan menghasilkan dua taksiran ketidakpastian yang berbeda level (wilayah dan prediksi), lalu memakai keduanya sebagai sinyal kendali: taksiran pertama mengendalikan bagaimana fitur digabung (modul UFF), taksiran kedua mengendalikan bagaimana pengklasifikasi dilatih agar tidak terlalu percaya pada modal yang sedang tidak andal (modul UCG).
 
-## Tinjauan Terdahulu / Posisi Literatur
-CMPD menyempurnakan fusi RGB-T dengan pemodelan ketidakpastian.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Ekstraksi Fitur Wilayah Dua Modal
 
-- KAIST/CVC-14 — dataset RGB-T.
-- Uncertainty modeling.
-- Cross-modal learning/distillation.
-- Robust detection.
+Citra RGB dan citra termal yang berpasangan masing-masing dilewatkan melalui cabang jaringan konvolusi terpisah untuk menghasilkan peta fitur. Dari peta fitur ini, kandidat wilayah pejalan (RoI) diusulkan dan fitur tiap RoI diekstrak untuk kedua modal, mengikuti kerangka umum detektor berbasis wilayah (*region-based detector*, seperti keluarga R-CNN pada bab 012–014).
 
-## Metodologi & Arsitektur
-Jaringan memodelkan ketidakpastian prediksi per-modal; uncertainty-aware cross-modal learning mentransfer/menekan informasi antar-modal berdasarkan keandalan; deteksi pejalan yang robust dihasilkan dari fusi sadar-ketidakpastian.
+### Estimasi Ketidakpastian RoI
 
-Komponen / langkah metodologis utama:
+Untuk setiap pasangan RoI RGB-termal, jaringan menaksir ketidakpastian RoI: sebuah nilai yang menyatakan seberapa besar keraguan bahwa fitur wilayah tersebut, pada kedua modal, benar-benar menunjuk ke objek yang sama dan selaras secara spasial. Taksiran ini secara langsung menyasar masalah miskalibrasi: bila kotak RGB dan termal sedikit bergeser akibat perbedaan *field-of-view* kamera, fitur pada wilayah itu menjadi kurang konsisten dan ketidakpastian RoI-nya meningkat.
 
-- Uncertainty-aware cross-modal learning.
-- Pemodelan ketidakpastian per-modal.
-- Transfer/distilasi antar-modal selektif.
-- Penekanan modal tak andal.
-- Deteksi pejalan robust.
-- Evaluasi KAIST & CVC-14.
+### Uncertainty-aware Feature Fusion (UFF)
 
-## Kontribusi Utama
-1. Pembelajaran lintas-modal sadar-ketidakpastian.
-2. Menekan modal tak andal per kondisi.
-3. Robust lintas kondisi cahaya.
-4. Menurunkan miss rate.
+Modul UFF menggabungkan fitur RoI dari kedua modal dengan memakai taksiran ketidakpastian RoI sebagai pengendali bobot: wilayah dengan ketidakpastian tinggi diberi pengaruh lebih kecil terhadap fitur gabungan, sedangkan wilayah dengan ketidakpastian rendah (fitur kedua modal konsisten dan selaras) diberi pengaruh lebih besar. Mekanisme ini membuat fusi tahan terhadap wilayah yang miskalibrasi tanpa perlu penyelarasan geometris eksplisit antar-kamera.
 
-## Rincian Eksperimen
-Diuji pada KAIST dan CVC-14 dengan metrik miss rate lintas kondisi (siang/malam), dibandingkan metode fusi lain.
+### Estimasi Ketidakpastian Prediktif
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Setelah fitur RoI gabungan diteruskan menuju tahap klasifikasi, jaringan juga menaksir ketidakpastian prediktif untuk tiap modal secara terpisah — nilai yang menyatakan seberapa dapat diandalkan prediksi kelas (pejalan/bukan pejalan) yang dihasilkan modal tersebut pada kasus itu. Taksiran ini menangkap kondisi seperti termal yang kurang informatif pada siang panas atau RGB yang kurang informatif pada malam gelap, tanpa memerlukan label eksplisit "siang" atau "malam": nilai ketidakpastian dipelajari dari pola fitur itu sendiri.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KAIST | miss rate | penurunan, robust lintas kondisi |
-| CVC-14 | miss rate | kompetitif/unggul |
-| Ablation | uncertainty | pemodelan ketidakpastian menyumbang gain |
+### Uncertainty-aware Cross-Modal Guiding (UCG)
 
-## Temuan Kunci
-- Pemodelan ketidakpastian memperkuat fusi.
-- Transfer selektif mencegah propagasi kesalahan.
-- Robustness lintas kondisi meningkat.
-- Keandalan modal bergantung kondisi.
+Modul UCG memakai selisih ketidakpastian prediktif antar-modal untuk mengarahkan pelatihan pengklasifikasi. Modal dengan ketidakpastian prediktif lebih tinggi (kurang andal pada kasus tersebut) diarahkan agar distribusi fiturnya menyerupai distribusi fitur modal dengan ketidakpastian lebih rendah (lebih andal), memakai label sasaran lunak (*soft target label* — target pelatihan berupa distribusi probabilitas, bukan label satu-kelas keras) yang sadar akan tingkat ketidakpastian tersebut. Dengan begitu, kesalahan dari modal yang sedang tidak andal tidak diteruskan begitu saja ke prediksi akhir, dan masalah *overconfidence* pada modal yang lemah ditekan.
 
-## Keunggulan
-- Sadar-ketidakpastian.
-- Robust lintas kondisi.
-- Transfer selektif.
+Alur keseluruhan pipeline dapat diringkas sebagai berikut:
 
-## Keterbatasan
-- Pemodelan ketidakpastian menambah kompleksitas.
-- Bergantung kualitas kedua modal.
-- Fokus domain pejalan.
+```
+citra RGB --> fitur RoI RGB   \
+                                >-- ketidakpastian RoI --> UFF --+
+citra termal --> fitur RoI termal /                              |
+                                                                   v
+                                                          fitur gabungan RoI
+                                                                   |
+                              ketidakpastian prediktif per-modal   |
+                              (RGB vs termal)                     v
+                                        \                 klasifikasi awal
+                                         >------ UCG -----(soft target
+                                        /                  sadar-ketidakpastian)
+                              modal kurang andal diarahkan        |
+                              menuju modal lebih andal            v
+                                                          prediksi akhir pejalan
+```
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Pelatihan
 
-## Relevansi terhadap Tema Tinjauan
-CMPD memperkuat tema keandalan modal via ketidakpastian — analog langsung dengan menimbang keandalan kedalaman pada fusi RGB+Depth dalam tinjauan.
+Kerangka dilatih secara *end-to-end* (dari citra masukan sampai prediksi akhir dalam satu proses optimisasi tanpa tahap terpisah): taksiran ketidakpastian RoI, taksiran ketidakpastian prediktif, modul UFF, dan modul UCG dioptimalkan bersama dengan tujuan akhir deteksi pejalan, sehingga kedua taksiran ketidakpastian belajar mencerminkan kegunaannya bagi tugas deteksi, bukan diestimasi sebagai tahap terpisah yang berdiri sendiri.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Pedestrian RGB-T** yang baik dibaca berdampingan:
+## Eksperimen dan Hasil
 
-- [100 - 2015 - KAIST Multispectral Pedestrian - Pedestrian RGB-T](./100%20-%202015%20-%20KAIST%20Multispectral%20Pedestrian%20-%20Pedestrian%20RGB-T.md)
-- [101 - 2019 - IAF R-CNN (Illumination-Aware) - Pedestrian RGB-T](./101%20-%202019%20-%20IAF%20R-CNN%20%28Illumination-Aware%29%20-%20Pedestrian%20RGB-T.md)
-- [102 - 2020 - MBNet - Pedestrian RGB-T](./102%20-%202020%20-%20MBNet%20-%20Pedestrian%20RGB-T.md)
-- [103 - 2021 - GAFF - Pedestrian RGB-T](./103%20-%202021%20-%20GAFF%20-%20Pedestrian%20RGB-T.md)
-- [104 - 2020 - Cyclic Fuse-and-Refine (CFR) - Pedestrian RGB-T](./104%20-%202020%20-%20Cyclic%20Fuse-and-Refine%20%28CFR%29%20-%20Pedestrian%20RGB-T.md)
-- [106 - 2021 - RGB-D Fusion for Detection (Farahnakian & Heikkonen) - Pedestrian RGB-T](./106%20-%202021%20-%20RGB-D%20Fusion%20for%20Detection%20%28Farahnakian%20%26%20Heikkonen%29%20-%20Pedestrian%20RGB-T.md)
+Evaluasi utama dilakukan pada KAIST Multispectral Pedestrian Benchmark (bab 100), memakai protokol pengujian standar klaster ini: metrik *log-average miss rate* (MR⁻², rata-rata logaritmik dari *miss rate* — proporsi pejalan yang gagal terdeteksi — pada rentang *false positive per image* tertentu) di bawah pengaturan "*reasonable*" yang mengecualikan pejalan yang sangat kecil atau tertutup berat; semakin rendah nilainya semakin baik. Pengujian dipecah menurut kondisi siang dan malam untuk menilai konsistensi lintas iluminasi, karena itulah tujuan utama metode ini. CVC-14, tolok ukur pejalan RGB-termal siang-malam kedua, dipakai sebagai pengujian tambahan atas kemampuan generalisasi metode ke pasangan sensor dan protokol anotasi yang berbeda dari KAIST.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Pedestrian RGB-T** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Penulis melaporkan bahwa kerangka ini melampaui sejumlah metode pembanding sezaman yang memakai fusi berbasis iluminasi atau *attention* tanpa pemodelan ketidakpastian eksplisit, dengan perbaikan yang konsisten pada kedua kondisi siang dan malam, bukan hanya pada satu kondisi tertentu. Studi ablasi pada makalah menunjukkan bahwa modul UFF dan modul UCG masing-masing memberi kontribusi yang terpisah: UFF menyumbang ketahanan terhadap miskalibrasi wilayah, sedangkan UCG menyumbang ketahanan terhadap diskrepansi modal antar-kondisi. Nilai *miss rate* persis untuk tiap kondisi (siang, malam, keseluruhan) pada KAIST dan CVC-14, serta rincian arsitektur cabang penaksir ketidakpastian, tidak berhasil diverifikasi penuh dari sumber sekunder yang tersedia dalam riset ini dan perlu diperiksa langsung pada tabel naskah asli sebelum dikutip sebagai angka pasti (lihat *Poin untuk Sitasi*).
 
-## Glosarium Istilah (tema Pedestrian RGB-T)
-Istilah penting untuk memahami makalah ini:
+## Kelebihan dan Keterbatasan
 
-- **Multispektral** — Citra beberapa pita (RGB + thermal).
-- **RGB-T** — Pasangan citra warna dan termal.
-- **Thermal/LWIR** — Inframerah panjang; andal saat gelap.
-- **Illumination-aware** — Bobot modal menyesuaikan kondisi cahaya.
-- **Modality imbalance** — Ketimpangan keandalan antar-modal.
-- **Miss rate (MR)** — Metrik deteksi pejalan (makin kecil makin baik).
-- **KAIST** — Dataset pejalan multispektral standar.
-- **CVC-14** — Dataset pejalan siang-malam RGB-thermal.
-- **Feature alignment** — Penyelarasan spasial fitur antar-modal.
-- **Cross-modal attention** — Attention pemandu fusi RGB-thermal.
+Kelebihan utama makalah ini adalah mengganti proksi kasar berbasis iluminasi global — yang dipakai metode pendahulunya seperti IAF R-CNN — dengan taksiran ketidakpastian yang dipelajari langsung dari fitur wilayah dan fitur prediksi, sehingga mekanisme fusi dapat bereaksi terhadap sumber ketidakandalan yang lebih beragam daripada sekadar siang/malam, termasuk miskalibrasi antar-kamera pada level wilayah individual. Pemisahan dua jenis ketidakpastian (RoI dan prediktif) juga memberi kerangka konseptual yang jelas: satu menyasar masalah geometris (penyelarasan), satu lagi menyasar masalah statistik (keandalan sinyal per-modal), sehingga tiap modul (UFF dan UCG) memiliki tanggung jawab yang tidak tumpang tindih.
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+Dari sisi rekayasa, penambahan dua cabang penaksir ketidakpastian menambah parameter dan kompleksitas pelatihan dibandingkan detektor fusi yang lebih sederhana, dan kualitas seluruh sistem bergantung pada seberapa baik kedua taksiran ketidakpastian itu terkalibrasi terhadap kegagalan yang sesungguhnya terjadi pada data. Secara konseptual, metode ini tetap mengasumsikan tersedianya pasangan citra RGB dan termal yang sudah terhubung kasar (sebagaimana pada KAIST dan CVC-14); makalah ini tidak dirancang untuk kasus salah satu modal hilang sepenuhnya saat inferensi. Fokus makalah juga terbatas pada deteksi pejalan sebagai satu kelas objek, sehingga generalisasi kerangka ketidakpastian ganda ini ke deteksi multi-kelas RGB-T tidak dibahas.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+## Kaitan dengan Bab Lain
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+Makalah ini berdiri pada garis kerja yang sama dengan bab 100 (KAIST), sumber data uji utamanya, dan merupakan kelanjutan langsung dari pendekatan berbasis iluminasi pada bab 101 (IAF R-CNN): bila bab 101 memakai iluminasi global sebagai proksi keandalan modal, bab ini mengusulkan proksi yang lebih halus berupa ketidakpastian RoI dan ketidakpastian prediktif per-kasus. Dibandingkan bab 102 (MBNet) dan bab 103 (GAFF), yang memakai kesadaran-iluminasi dan *attention* lintas-modal untuk memandu fusi, bab ini menawarkan jalur berbeda menuju tujuan yang sama — ketahanan lintas kondisi — dengan mengukur ketidakandalan secara langsung dari statistik fitur, bukan dari sinyal iluminasi atau relevansi *attention*. Bab ini juga melengkapi bab 104 (CFR), yang menyempurnakan fusi lewat siklus penghalusan fitur bertahap tanpa pemodelan ketidakpastian eksplisit. Untuk pembaca yang menelusuri klaster Pedestrian RGB-T secara berurutan, bab ini dan [bab 106](./106%20-%202021%20-%20RGB-D%20Fusion%20for%20Detection%20%28Farahnakian%20%26%20Heikkonen%29%20-%20Pedestrian%20RGB-T.md) sama-sama menyoroti bahwa keandalan satu modal tidak bisa diasumsikan tetap, baik pada pasangan RGB-termal maupun RGB-*depth*.
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+## Poin untuk Sitasi
 
-## Kesimpulan
-CMPD memakai pembelajaran lintas-modal terpandu ketidakpastian untuk menekan modal tak andal dan meningkatkan robustness deteksi pejalan multispektral lintas kondisi.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `kim2022cmpd` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 105/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `kim2022cmpd`. Ringkasan yang aman dikutip: "Makalah ini mengusulkan pemodelan ketidakpastian RoI dan ketidakpastian prediktif secara terpisah untuk deteksi pejalan RGB-termal, memakainya melalui modul UFF (fusi sadar-ketidakpastian) dan UCG (pemanduan lintas-modal sadar-ketidakpastian) untuk mengatasi miskalibrasi antar-kamera dan diskrepansi keandalan antar-modal, diuji pada KAIST Multispectral Pedestrian Benchmark dan CVC-14." Definisi UFF, UCG, ketidakpastian RoI, dan ketidakpastian prediktif diverifikasi dari ringkasan resmi metadata publikasi (Kyung Hee University) dan abstrak versi pendahulu konferensi (MMM 2021, DOI 10.1007/978-3-030-67832-6_32). Nilai *miss rate* numerik per kondisi (siang/malam/keseluruhan) pada KAIST maupun CVC-14, serta hasil ablasi kuantitatif UFF versus UCG, **belum terverifikasi langsung dari tabel naskah asli** dalam riset ini — sumber sekunder yang ditemukan (tabel perbandingan pada makalah pihak ketiga) menyebut angka berbeda-beda dan berpotensi tertukar dengan versi konferensi 2021 dari tim penulis yang sama; angka-angka ini harus diperiksa ulang pada PDF resmi IEEE Xplore sebelum dikutip dalam karya formal.
