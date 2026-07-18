@@ -1,202 +1,97 @@
 # 171 - SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 171 dari 191 |
 | Kunci BibTeX | `xie2021segformer` |
-| Judul | SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers |
-| Penulis | Xie, Enze; Wang, Wenhai; Yu, Zhiding; Anandkumar, Anima; Alvarez, Jose M.; Luo, Ping |
+| Judul asli | SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers |
+| Penulis | Enze Xie, Wenhai Wang, Zhiding Yu, Anima Anandkumar, Jose M. Alvarez, Ping Luo |
 | Tahun | 2021 |
-| Venue / Jurnal | Advances in Neural Information Processing Systems (NeurIPS) |
-| Tema klaster | Segmentasi RGB-D |
-| Kata kunci | semantic segmentation, transformer, hierarchical encoder, efficient |
+| Venue | Advances in Neural Information Processing Systems (NeurIPS 2021) |
+| Tema | Segmentasi RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-segmentasi-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2105.15203
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=SegFormer%3A%20Simple%20and%20Efficient%20Design%20for%20Semantic%20Segmentation%20with%20Transformers
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=SegFormer%3A%20Simple%20and%20Efficient%20Design%20for%20Semantic%20Segmentation%20with%20Transformers&sort=relevance
+- **Google Scholar:** https://scholar.google.com/scholar?q=SegFormer%3A%20Simple%20and%20Efficient%20Design%20for%20Semantic%20Segmentation%20with%20Transformers
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=SegFormer%3A%20Simple%20and%20Efficient%20Design%20for%20Semantic%20Segmentation%20with%20Transformers&sort=relevance
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2105.15203 |
+SegFormer adalah kerangka kerja segmentasi semantik (pelabelan kelas untuk setiap piksel citra) berbasis Transformer yang menggabungkan *encoder* hierarkis tanpa *positional encoding* (kode posisi) dengan *decoder* berupa lapisan MLP (*multilayer perceptron*, jaringan saraf lapis-penuh sederhana) tanpa konvolusi. Makalah ini menjawab dua masalah pada segmentasi berbasis Transformer generasi awal: ketergantungan pada kode posisi yang rapuh terhadap perubahan resolusi uji, dan *decoder* yang berat secara komputasi. Dengan *encoder* bernama MiT (*Mix Transformer*) berskala enam varian (B0 hingga B5) dan *decoder* MLP yang hanya mengagregasi fitur multiskala, SegFormer mencapai 51,0% mIoU (*mean Intersection-over-Union*, rata-rata rasio irisan-gabungan antara wilayah prediksi dan wilayah kebenaran, metrik utama segmentasi semantik) pada ADE20K dan 84,0% mIoU pada Cityscapes menggunakan varian terbesarnya, sekaligus menunjukkan ketahanan tinggi terhadap citra terkorupsi. Model ini menjadi salah satu tulang punggung (*backbone*) yang sering diadaptasi pada cabang RGB dari sistem segmentasi RGB-D.
 
-## Ringkasan Eksekutif
-SegFormer menyatukan Transformer hierarkis tanpa positional encoding dengan dekoder MLP ringan, menghasilkan segmentasi semantik yang akurat, efisien, dan robust - menjadi baseline populer termasuk untuk cabang RGB pada segmentasi RGB-D.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Abstrak (Parafrase)
-Penulis merancang encoder Transformer hierarkis (MiT) yang menghasilkan fitur multiskala tanpa positional encoding (memakai Mix-FFN), sehingga robust terhadap perubahan resolusi. Dekodernya hanya MLP sederhana yang mengagregasi fitur multiskala. SegFormer mencapai akurasi tinggi pada ADE20K/Cityscapes dengan efisiensi dan ketahanan terhadap korupsi yang baik.
+Sebelum SegFormer, segmentasi semantik didominasi jaringan konvolusi (*Convolutional Neural Network*, CNN) dengan struktur *encoder-decoder* (arsitektur yang mengecilkan resolusi citra secara bertahap lalu memulihkannya kembali), seperti DeepLabv3+ yang memakai konvolusi berdilasi untuk memperbesar bidang pandang tanpa menambah parameter berlebihan. Pendekatan CNN memiliki bidang pandang efektif (*effective receptive field*, wilayah citra masukan yang benar-benar memengaruhi satu keluaran fitur) yang terbatas secara struktural sehingga sulit menangkap konteks global tanpa tumpukan lapisan yang sangat dalam.
 
-## Latar Belakang & Konteks
-Segmentasi berbasis Transformer awal (SETR) berat dan butuh positional encoding yang rapuh terhadap resolusi. Dibutuhkan desain efisien dan robust.
+Upaya pertama menerapkan Transformer murni pada segmentasi, yaitu SETR, menggunakan *encoder* Vision Transformer (ViT, dibahas pada bab 024) yang menghasilkan fitur beresolusi tunggal dan kasar, lalu menambahkan *decoder* CNN yang berat untuk memulihkan resolusi. ViT juga bergantung pada *positional encoding* tetap yang ditambahkan ke setiap *patch* (potongan citra) di awal jaringan agar model mengetahui posisi spasialnya. Kode posisi semacam ini dilatih pada resolusi tertentu, sehingga saat citra uji berukuran berbeda dari citra latih, kode posisi harus diinterpolasi ulang secara manual dan hal ini menurunkan akurasi. Pyramid Vision Transformer (PVT, bab 164) dan Swin Transformer (bab 025) memperbaiki sisi efisiensi dengan struktur piramida multiskala dan atensi berjendela, tetapi keduanya masih mewarisi kode posisi dan umumnya dipasangkan dengan *decoder* segmentasi yang kompleks seperti *Feature Pyramid Network*. Masalah yang belum terpecahkan pada saat SegFormer diajukan adalah bagaimana merancang segmentasi berbasis Transformer yang efisien secara komputasi, tidak rapuh terhadap perubahan resolusi, dan tidak memerlukan *decoder* rumit.
 
-## Permasalahan yang Diangkat
-- Positional encoding rapuh lintas resolusi.
-- Dekoder segmentasi berat.
-- Trade-off akurasi-efisiensi.
+## Ide Utama
 
-## Tujuan & Pertanyaan Penelitian
-- Encoder Transformer hierarkis bebas positional encoding.
-- Dekoder ringan.
-- Segmentasi akurat dan efisien.
+Gagasan inti SegFormer adalah memisahkan tugas ekstraksi fitur multiskala dan agregasi fitur menjadi dua komponen yang masing-masing dibuat sesederhana mungkin. *Encoder* MiT menghasilkan fitur pada empat resolusi berbeda tanpa kode posisi eksplisit; informasi posisi disisipkan secara implisit melalui konvolusi 3×3 yang ditanam di dalam blok umpan-maju (*feed-forward*) Transformer, disebut Mix-FFN. Karena konvolusi bersifat lokal dan bergantung pada susunan piksel yang berdekatan, ia secara alami membawa informasi posisi tanpa perlu parameter kode posisi yang terikat pada resolusi tertentu. *Decoder*-nya berupa MLP ringan yang hanya melakukan proyeksi linear, penyamaan resolusi, dan penggabungan fitur dari keempat tahap *encoder* — tanpa konvolusi atau modul kompleks lain. Fitur dari tahap dangkal (resolusi tinggi) membawa detail lokal, sedangkan fitur dari tahap dalam (resolusi rendah) membawa konteks global; MLP sederhana cukup untuk menggabungkan keduanya karena Transformer, tidak seperti CNN, mampu menghasilkan atensi non-lokal bahkan pada tahap awal jaringan.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Kontras dengan SETR (Transformer berat) dan CNN (DeepLab); menekankan Mix-FFN dan dekoder MLP.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Encoder Hierarkis MiT
 
-- SETR - Transformer segmentasi awal.
-- DeepLabv3+ - CNN dilatasi.
-- PVT - Transformer piramidal.
-- Swin - Transformer berjendela.
+MiT terdiri atas empat tahap yang masing-masing menghasilkan peta fitur pada resolusi 1/4, 1/8, 1/16, dan 1/32 dari citra masukan, menyerupai struktur piramida pada CNN seperti ResNet. Pada citra masukan 512×512 piksel misalnya, keempat tahap menghasilkan peta fitur berukuran 128×128, 64×64, 32×32, dan 16×16. Peralihan antar-tahap dilakukan dengan *overlapped patch merging*: alih-alih memotong citra menjadi *patch* yang saling terpisah seperti pada ViT, MiT menggunakan konvolusi dengan ukuran kernel K, langkah geser (*stride*) S, dan *padding* P — tahap pertama memakai K=7, S=4, P=3, sedangkan tahap selanjutnya memakai K=3, S=2, P=1. Karena jendela konvolusi ini saling tumpang tindih, kontinuitas informasi di sekitar batas antar-*patch* tetap terjaga, berbeda dari pemotongan *patch* tanpa tumpang tindih yang memutus konteks lokal.
 
-## Metodologi & Arsitektur
-MiT encoder menghasilkan fitur 4 skala; Mix-FFN menyisipkan konvolusi 3x3 untuk info posisi implisit; dekoder MLP menyatukan fitur multiskala ke prediksi per-piksel.
+### Efficient Self-Attention
 
-Komponen / langkah metodologis utama:
+Mekanisme atensi mandiri (*self-attention*) standar pada Transformer memiliki kompleksitas komputasi O(N²) terhadap panjang urutan N (jumlah *patch*), karena setiap elemen dibandingkan dengan seluruh elemen lain. Pada tahap dangkal MiT, N sangat besar sebab resolusi fitur masih tinggi, sehingga komputasi ini menjadi mahal. SegFormer mereduksi urutan kunci (*key*) dan nilai (*value*) dengan rasio reduksi R sebelum dihitung skor atensinya, menurunkan kompleksitas menjadi O(N²/R). Rasio reduksi yang dipakai pada empat tahap berturut-turut adalah [64, 16, 4, 1] — tahap dangkal dengan N besar direduksi paling agresif, sedangkan tahap terdalam dengan N sudah kecil tidak direduksi sama sekali.
 
-- Encoder hierarkis MiT (B0-B5).
-- Mix-FFN (tanpa positional encoding).
-- Efficient self-attention (reduksi sequence).
-- Dekoder All-MLP ringan.
+### Mix-FFN sebagai Pengganti Kode Posisi
 
-## Kontribusi Utama
-1. Encoder Transformer segmentasi efisien & robust.
-2. Dekoder MLP sederhana.
-3. Skalabilitas B0-B5.
-4. Baseline luas dipakai.
+Blok umpan-maju standar pada Transformer hanya terdiri atas dua lapisan linear dengan fungsi aktivasi di antaranya. Mix-FFN menyisipkan satu konvolusi 3×3 di antara dua lapisan tersebut:
 
-## Rincian Eksperimen
-ADE20K, Cityscapes, COCO-Stuff untuk mIoU; uji robustnes terhadap korupsi (Cityscapes-C).
+```
+Mix-FFN(x) = MLP( GELU( Conv3x3( MLP(x) ) ) ) + x
+```
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Konvolusi 3×3 ini menyebabkan kebocoran informasi posisi (*leaked location information*) karena keluaran setiap posisi kini bergantung pada susunan piksel tetangganya, bukan hanya nilai piksel itu sendiri. Dengan demikian, model tidak memerlukan parameter kode posisi terpisah yang ukurannya terikat pada resolusi citra latih.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| ADE20K | mIoU | SOTA/efisien saat rilis |
-| Cityscapes | mIoU | akurasi tinggi |
-| Robustnes | mIoU | lebih tahan korupsi |
+### Decoder All-MLP
 
-## Temuan Kunci
-- Positional encoding tak wajib bila ada Mix-FFN.
-- Dekoder ringan cukup dengan encoder kuat.
-- Transformer segmentasi bisa robust.
+*Decoder* menerima empat peta fitur dari MiT dan memprosesnya dalam empat langkah: (1) proyeksi linear menyamakan jumlah kanal setiap peta fitur menjadi dimensi C yang seragam; (2) seluruh peta fitur diperbesar (*upsampling*) ke resolusi 1/4 citra masukan lalu digabung (*concatenate*) sepanjang dimensi kanal; (3) satu lapisan MLP menggabungkan (*fuse*) fitur gabungan tersebut; (4) satu lapisan MLP terakhir memetakan fitur ke peta segmentasi berukuran H/4 × W/4 × N_kelas, dengan N_kelas jumlah kategori target. Peta segmentasi ini kemudian diperbesar ke resolusi penuh untuk menghasilkan label per piksel.
 
-## Keunggulan
-- Efisien dan robust.
-- Skalabel.
-- Dekoder sederhana.
+Diagram berikut merangkum aliran data dari citra masukan hingga peta segmentasi:
 
-## Keterbatasan
-- Varian besar tetap berat.
-- Attention resolusi tinggi mahal.
-- RGB-only (perlu adaptasi untuk depth).
+```
+citra HxWx3
+   │
+   ▼ Tahap 1 (K7,S4)      fitur H/4 x W/4     ──┐
+   ▼ Tahap 2 (K3,S2)      fitur H/8 x W/8     ──┤ proyeksi linear
+   ▼ Tahap 3 (K3,S2)      fitur H/16 x W/16   ──┤ + upsampling ke H/4
+   ▼ Tahap 4 (K3,S2)      fitur H/32 x W/32   ──┘ + concat kanal
+        (MiT: attention + Mix-FFN tiap tahap)      │
+                                                     ▼
+                                          MLP fusi -> MLP prediksi
+                                                     │
+                                                     ▼
+                                      peta segmentasi H/4 x W/4 x N_kelas
+```
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+### Varian Model B0–B5
 
-## Relevansi terhadap Tema Tinjauan
-Encoder/backbone segmentasi yang sering dijadikan cabang RGB pada model segmentasi RGB-D (mis. keluarga CMX/DFormer terkait).
+SegFormer disediakan dalam enam ukuran, dari B0 (3,7 juta parameter, ditujukan untuk aplikasi ringan) hingga B5 (82,0 juta parameter, ditujukan untuk akurasi maksimal). Perbedaan antar-varian terutama terletak pada jumlah lapisan Transformer di tiap tahap dan lebar (dimensi tersembunyi) setiap tahap; struktur empat tahap dan mekanisme Mix-FFN tetap sama di seluruh varian, sehingga pengguna dapat memilih titik seimbang akurasi-efisiensi tanpa mengubah desain dasar.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Segmentasi RGB-D** yang baik dibaca berdampingan:
+## Eksperimen dan Hasil
 
-- [172 - 2022 - EMSANet - Segmentasi RGB-D](./172%20-%202022%20-%20EMSANet%20-%20Segmentasi%20RGB-D.md)
-- [173 - 2024 - GeminiFusion - Segmentasi RGB-D](./173%20-%202024%20-%20GeminiFusion%20-%20Segmentasi%20RGB-D.md)
-- [174 - 2022 - Omnivore - Segmentasi RGB-D](./174%20-%202022%20-%20Omnivore%20-%20Segmentasi%20RGB-D.md)
+SegFormer diuji pada tiga tolok ukur segmentasi semantik: ADE20K (data dalam ruangan dan luar ruangan dengan 150 kelas), Cityscapes (data jalan raya perkotaan dengan 19 kelas), dan COCO-Stuff (data 164 ribu citra dengan kelas benda dan latar). Pada ADE20K, SegFormer-B0 mencapai 37,4% mIoU dengan 8,4 GFLOPs (miliar operasi titik-mengambang), sedangkan SegFormer-B5 mencapai 51,0% mIoU dengan 183,3 GFLOPs — menunjukkan bahwa menambah kapasitas model menaikkan akurasi sekitar 13,6 poin dengan biaya komputasi naik lebih dari dua puluh kali lipat. Pada Cityscapes, SegFormer-B0 mencapai 76,2% mIoU pada kecepatan sekitar 48 *frame per second* (FPS) menggunakan citra beresolusi rendah, cocok untuk aplikasi waktu nyata, sedangkan SegFormer-B5 mencapai 84,0% mIoU pada kecepatan yang jauh lebih rendah karena resolusi uji dan kapasitas model lebih besar. Dibandingkan SETR (pendahulu berbasis Transformer), SegFormer mencapai akurasi lebih tinggi dengan model yang jauh lebih kecil dan lebih cepat — makalah melaporkan SegFormer-B5 unggul di atas SETR pada Cityscapes sambil beberapa kali lebih ringan dan lebih cepat pada tahap inferensi.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Segmentasi RGB-D** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Pengujian ketahanan (*robustness*) dilakukan pada Cityscapes-C, versi Cityscapes yang dicemari beragam jenis korupsi citra (derau, cuaca, gangguan optik) pada berbagai tingkat keparahan, tanpa pelatihan ulang model (*zero-shot*). SegFormer-B5 mempertahankan akurasi jauh lebih tinggi daripada DeepLabv3+ di hampir seluruh jenis korupsi; makalah melaporkan keunggulan besar pada kondisi seperti derau Gaussian dan salju, menunjukkan bahwa *encoder* Transformer tanpa kode posisi tetap lebih tahan terhadap gangguan yang mengubah statistik citra dibandingkan CNN dengan *decoder* konvensional.
 
-## Glosarium Istilah (tema Segmentasi RGB-D)
-Istilah penting untuk memahami makalah ini:
+Studi ablasi pada makalah membandingkan Mix-FFN dengan kode posisi tetap saat resolusi uji diubah dari resolusi latih: model dengan Mix-FFN kehilangan akurasi jauh lebih sedikit dibandingkan model dengan kode posisi tetap, mengonfirmasi bahwa Mix-FFN adalah pengganti yang lebih tahan-resolusi. Ablasi lain mengganti *encoder* MiT dengan ResNet-101 pada *decoder* MLP yang sama; hasilnya jauh lebih rendah daripada memakai MiT berukuran sebanding, menunjukkan bahwa keunggulan *decoder* MLP bergantung pada bidang pandang non-lokal yang hanya dihasilkan Transformer, bukan berlaku umum untuk sembarang *encoder*.
 
-- **Segmentasi semantik** — Pelabelan kelas per-piksel.
-- **Scene parsing** — Pemahaman menyeluruh isi scene via segmentasi.
-- **Encoder-decoder** — Arsitektur mengecilkan lalu memulihkan resolusi.
-- **Fusi RGB-D** — Penggabungan cabang warna dan kedalaman.
-- **mIoU** — mean Intersection-over-Union; metrik segmentasi utama.
-- **Gating** — Gerbang penyaring/penimbang fitur sebelum digabung.
-- **Cross-modal** — Antar-modalitas (RGB dan depth/thermal/LiDAR).
-- **NYUv2** — Dataset RGB-D indoor standar.
-- **SUN RGB-D** — Dataset RGB-D indoor berskala.
-- **Pixel accuracy** — Persentase piksel terlabel benar.
+## Kelebihan dan Keterbatasan
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
+SegFormer menghilangkan dua sumber kerapuhan sekaligus: kode posisi yang terikat resolusi dan *decoder* segmentasi yang berat, sambil mempertahankan akurasi kompetitif melalui bidang pandang non-lokal bawaan Transformer. Skalabilitas enam varian memudahkan penerapan pada rentang kebutuhan komputasi yang luas, dari perangkat tepi (B0) hingga server dengan akurasi maksimal (B5). Ketahanan terhadap korupsi citra menjadikannya pilihan yang relevan untuk aplikasi luar ruangan dengan kondisi pencahayaan atau cuaca yang bervariasi.
 
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
+Dari sisi rekayasa, varian besar seperti B4 dan B5 tetap menuntut memori dan komputasi yang signifikan, sehingga penerapan waktu nyata pada resolusi tinggi hanya realistis untuk varian kecil. Secara konseptual, meskipun reduksi rasio R menurunkan kompleksitas atensi, biaya komputasi pada tahap dangkal dengan resolusi tinggi tetap menjadi penyumbang FLOPs terbesar dibandingkan CNN pada tahap setara. SegFormer juga dirancang murni untuk masukan RGB; makalah tidak membahas penggabungan modalitas kedalaman (*depth*), sehingga adaptasi ke segmentasi RGB-D memerlukan modifikasi tambahan berupa cabang atau modul fusi terpisah di luar cakupan makalah aslinya.
 
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
+## Kaitan dengan Bab Lain
 
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
+SegFormer mewarisi konsep *encoder* hierarkis multiskala yang diperkenalkan Pyramid Vision Transformer ([bab 164](./164%20-%202021%20-%20Pyramid%20Vision%20Transformer%20-%20Fondasi%20RGB.md)) dan menjawab kerapuhan kode posisi yang melekat pada Vision Transformer ([bab 024](./024%20-%202021%20-%20Vision%20Transformer%20%28ViT%29%20-%20Fondasi%20RGB.md)); desain atensi berjendela pada Swin Transformer ([bab 025](./025%20-%202021%20-%20Swin%20Transformer%20-%20Fondasi%20RGB.md)) merupakan pendekatan sezaman yang menyasar masalah efisiensi serupa dengan mekanisme berbeda. Sebagai *encoder* RGB yang ringan dan bebas kode posisi, SegFormer menjadi rujukan desain bagi metode segmentasi RGB-D berikutnya dalam klaster ini: EMSANet ([bab 172](./172%20-%202022%20-%20EMSANet%20-%20Segmentasi%20RGB-D.md)) dan GeminiFusion ([bab 173](./173%20-%202024%20-%20GeminiFusion%20-%20Segmentasi%20RGB-D.md)) memakai strategi fusi multimodal yang dapat dipasangkan dengan *encoder* bergaya MiT, sedangkan Omnivore ([bab 174](./174%20-%202022%20-%20Omnivore%20-%20Segmentasi%20RGB-D.md)) mengeksplorasi *backbone* Transformer tunggal untuk berbagai modalitas visual sekaligus, arah yang sejalan dengan prinsip kesederhanaan arsitektur yang diusung SegFormer.
 
-## Kesimpulan
-SegFormer menyediakan tulang punggung segmentasi Transformer yang efisien dan robust, fondasi banyak metode RGB dan RGB-D.
+## Poin untuk Sitasi
 
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `xie2021segformer` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 171/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `xie2021segformer`. Ringkasan yang aman dikutip: SegFormer menggabungkan *encoder* Transformer hierarkis MiT tanpa *positional encoding* (memakai Mix-FFN sebagai gantinya) dengan *decoder* MLP ringan, mencapai efisiensi dan ketahanan terhadap korupsi citra yang lebih baik daripada metode CNN dan Transformer segmentasi sebelumnya pada ADE20K dan Cityscapes. Angka yang perlu diverifikasi ulang ke naskah asli sebelum sitasi formal: mIoU SegFormer-B5 pada ADE20K (sumber berbeda melaporkan kisaran 51,0%–51,8% tergantung versi/protokol pengujian skala tunggal-vs-multiskala), jumlah parameter B4 (kisaran 62–64 juta pada sumber berbeda), FPS persis untuk setiap varian pada Cityscapes, angka mIoU per jenis korupsi pada Cityscapes-C, serta hasil lengkap pada COCO-Stuff.

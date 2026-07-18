@@ -1,202 +1,81 @@
 # 174 - Omnivore: A Single Model for Many Visual Modalities
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 174 dari 191 |
 | Kunci BibTeX | `girdhar2022omnivore` |
-| Judul | Omnivore: A Single Model for Many Visual Modalities |
-| Penulis | Girdhar, Rohit; Singh, Mannat; Ravi, Nikhila; van der Maaten, Laurens; Joulin, Armand; Misra, Ishan |
+| Judul asli | Omnivore: A Single Model for Many Visual Modalities |
+| Penulis | Rohit Girdhar, Mannat Singh, Nikhila Ravi, Laurens van der Maaten, Armand Joulin, Ishan Misra |
 | Tahun | 2022 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Segmentasi RGB-D |
-| Kata kunci | multimodal, single model, images video RGB-D, modality-agnostic |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2022) |
+| Tema | Segmentasi RGB-D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv (PDF gratis):** https://arxiv.org/abs/2201.08377
+- **Google Scholar:** https://scholar.google.com/scholar?q=Omnivore%3A%20A%20Single%20Model%20for%20Many%20Visual%20Modalities
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Omnivore%3A%20A%20Single%20Model%20for%20Many%20Visual%20Modalities&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-segmentasi-rgb-d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2201.08377
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Omnivore%3A%20A%20Single%20Model%20for%20Many%20Visual%20Modalities
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Omnivore%3A%20A%20Single%20Model%20for%20Many%20Visual%20Modalities&sort=relevance
+Omnivore adalah satu jaringan Transformer yang mengklasifikasikan tiga jenis data visual berbeda — citra tunggal, klip video, dan citra RGB-D (citra warna dengan kanal kedalaman tambahan) — memakai bobot yang sepenuhnya sama, tanpa cabang atau modul khusus per modalitas. Gagasan intinya adalah mengubah ketiga jenis masukan menjadi format token spatio-temporal yang seragam sehingga satu *backbone* Swin Transformer (varian Transformer visi yang memproses citra secara hierarkis dengan jendela lokal) dapat memprosesnya langsung. Model ini dilatih sekaligus pada ImageNet-1K (klasifikasi citra), Kinetics-400 (klasifikasi video), dan SUN RGB-D (klasifikasi citra RGB-D), dan pada konfigurasi Swin-L mencapai 86,0% akurasi top-1 di ImageNet, 84,1% di Kinetics-400, dan 67,1% di SUN RGB-D — hasil yang sepadan dengan model khusus per modalitas berukuran serupa. Kontribusi utamanya bukan arsitektur baru, melainkan bukti bahwa satu jaringan tunggal dapat menggantikan tiga jaringan terpisah tanpa kehilangan akurasi berarti, sekaligus memunculkan kemampuan lintas-modal yang tidak diajarkan secara eksplisit.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-| Atribut | Nilai |
-|---|---|
-| arXiv | 2201.08377 |
+Sebelum Omnivore, model visi hampir selalu dirancang untuk satu jenis data. Klasifikasi citra memakai CNN atau Vision Transformer (ViT, bab 024) yang menerima tensor 2D H×W×3. Klasifikasi video memakai jaringan 3D CNN atau Transformer video yang menerima tensor tambahan berdimensi waktu. Pengenalan RGB-D — citra berpasangan dengan peta kedalaman, umum pada robotika dan pemahaman ruangan dalam ruangan — biasanya memakai dua cabang terpisah (satu untuk RGB, satu untuk kedalaman) yang digabungkan lewat mekanisme fusi khusus, seperti terlihat pada arsitektur segmentasi RGB-D di bab 171 (SegFormer) dan bab 172 (EMSANet).
 
-## Ringkasan Eksekutif
-Omnivore adalah satu model yang mengklasifikasikan citra, video, dan data RGB-D (single-view 3D) dengan bobot bersama, membuktikan satu Transformer dapat menangani banyak modalitas visual sekaligus.
+Pendekatan per-modalitas ini menimbulkan dua masalah. Pertama, setiap modalitas memerlukan arsitektur, siklus pelatihan, dan penyetelan hiperparameter sendiri, sehingga pengetahuan visual yang dipelajari pada satu modalitas — misalnya bentuk objek dari jutaan citra ImageNet — tidak otomatis tersedia untuk modalitas lain seperti RGB-D yang datanya jauh lebih sedikit. Kedua, sistem yang harus menangani lebih dari satu jenis sensor (contohnya robot dengan kamera RGB dan sensor kedalaman) terpaksa menjalankan beberapa model paralel, menambah beban komputasi dan kompleksitas penerapan. Upaya pra-pelatihan multimodal sebelumnya, seperti MultiMAE, menunjukkan potensi berbagi representasi lintas modalitas, tetapi belum menunjukkan satu model tunggal yang bersaing setara dengan model khusus pada tugas klasifikasi standar di tiga modalitas visual sekaligus.
 
-## Abstrak (Parafrase)
-Penulis melatih satu Vision Transformer untuk memproses gambar 2D, klip video, dan citra RGB-D dengan mengonversi tiap modalitas menjadi embedding patch spatio-temporal yang seragam. Tanpa arsitektur khusus per-modalitas, Omnivore mencapai kinerja kompetitif pada ImageNet, Kinetics, dan SUN RGB-D, serta menunjukkan transfer lintas-modal.
+## Ide Utama
 
-## Latar Belakang & Konteks
-Model visi umumnya dilatih per-modalitas. Omnivore menguji apakah satu model dapat melayani banyak modalitas dan berbagi pengetahuan.
+Gagasan inti Omnivore adalah menyamakan format token di tingkat masukan, bukan menyamakan arsitektur di tingkat tinggi. Setiap modalitas — citra, video, atau RGB-D — dipecah menjadi potongan (*patch*) berdimensi waktu×tinggi×lebar×kanal (t×h×w×3) sebelum masuk ke lapis penyemat (*embedding*) pertama. Video secara alami memiliki t > 1 karena memuat banyak bingkai; citra tunggal dan citra RGB-D hanya memiliki t = 1. Agar satu lapis penyemat yang sama dapat menerima ketiganya, patch bertingkat waktu tunggal diberi nilai nol tambahan (*zero-padding*) pada dimensi waktu sehingga bentuknya menyamai patch video. Dengan trik ini, tidak diperlukan lapis penyemat terpisah untuk citra dan video — hanya satu lapis konvolusi 3D yang sama dipakai untuk keduanya.
 
-## Permasalahan yang Diangkat
-- Model terpisah per-modalitas tidak efisien.
-- Transfer lintas-modal sulit.
-- Menyatukan format masukan beragam.
+Kanal kedalaman pada RGB-D ditangani secara berbeda: patch kedalaman diproyeksikan lewat lapis linear-dan-normalisasi terpisah, lalu hasilnya dijumlahkan (bukan digabung/*concatenate*) dengan penyemat patch RGB pada posisi spasial yang sama. Dengan penjumlahan ini, dimensi token yang masuk ke Transformer tetap identik untuk ketiga modalitas, sehingga sisa jaringan — blok Swin Transformer, lapis normalisasi, mekanisme atensi — tidak perlu tahu dari modalitas mana token itu berasal.
 
-## Tujuan & Pertanyaan Penelitian
-- Satu model untuk banyak modalitas visual.
-- Berbagi representasi lintas-modal.
-- Mendemonstrasikan transfer lintas-modal.
+## Cara Kerja Langkah demi Langkah
 
-## Tinjauan Terdahulu / Posisi Literatur
-Berdialog dengan ViT/Swin dan tren model generalis; berkaitan dengan segmentasi/klasifikasi RGB-D.
+### Tokenisasi Spatio-Temporal Terpadu
 
-Karya/konsep pembanding yang relevan:
+Setiap masukan, apa pun modalitasnya, pertama-tama dipetakan menjadi barisan token berukuran tetap. Untuk video, potongan berdimensi t×h×w diambil langsung dari klip; untuk citra dan RGB-D, potongan tunggal (t=1) diperlakukan sebagai kasus khusus lewat *zero-padding* dimensi waktu seperti dijelaskan di atas. Skema ini membuat masukan berbeda bentuk fisiknya (gambar diam 2D versus klip video 3D) tetap keluar sebagai tensor token berbentuk sama sebelum masuk ke Transformer.
 
-- ViT - Transformer citra.
-- Swin - Transformer hierarkis.
-- MultiMAE - pra-latih multimodal.
-- Model generalis visual.
+```
+Citra (H,W,3)         Video (T,H,W,3)        RGB-D (H,W,3)+(H,W,1)
+   |  t=1, pad             |  t>1                |  t=1, pad
+   v                       v                      v
+patch embed 3D  <---  patch embed 3D  --->  patch embed RGB (3D)
+   |                       |                      |  + patch embed depth
+   |                       |                      |    (linear+LN, dijumlahkan)
+   v                       v                      v
+      token spatio-temporal berdimensi sama --> Swin Transformer
+```
 
-## Metodologi & Arsitektur
-Tiap modalitas dipetakan ke patch embedding spatio-temporal seragam; satu Transformer memprosesnya dengan kepala klasifikasi per-dataset; dilatih bersama lintas modalitas.
+Diagram di atas menunjukkan bahwa ketiga jalur masukan berbeda hanya pada tahap sebelum penyemat; sesudah token terbentuk, jaringan yang dilalui benar-benar identik.
 
-Komponen / langkah metodologis utama:
+### Backbone Swin Transformer untuk Spatio-Temporal
 
-- Embedding patch seragam lintas modalitas.
-- Transformer tunggal berbagi bobot.
-- Kepala klasifikasi per-dataset.
-- Pelatihan gabungan multimodal.
+Token yang telah seragam diproses oleh Swin Transformer yang diperluas untuk video: atensi-diri (*self-attention*) dihitung dalam jendela lokal 3D yang mencakup dimensi waktu, tinggi, dan lebar sekaligus, bukan hanya dimensi spasial seperti Swin Transformer citra pada bab 025. Encoding posisi relatif dipecah menjadi dua komponen terpisah — satu untuk posisi spasial, satu untuk posisi temporal — sehingga jaringan dapat membedakan pergeseran ruang dari pergeseran waktu meski keduanya diproses oleh mekanisme atensi yang sama. Struktur berjenjang (*hierarchical*) Swin Transformer, yang mengecilkan resolusi token bertahap pada tiap tingkat, dipertahankan agar kompleksitas komputasi atensi tidak tumbuh kuadratik terhadap jumlah token.
 
-## Kontribusi Utama
-1. Model tunggal untuk citra/video/RGB-D.
-2. Bukti transfer lintas-modal.
-3. Kinerja kompetitif tiap modalitas.
-4. Kesederhanaan arsitektur.
+### Kepala Klasifikasi dan Pelatihan Bersama
 
-## Rincian Eksperimen
-ImageNet-1K (citra), Kinetics-400 (video), SUN RGB-D (RGB-D) untuk akurasi klasifikasi, plus uji transfer lintas-modal.
+Backbone Transformer sepenuhnya dibagikan antar-modalitas, tetapi setiap dataset memiliki kepala klasifikasi linear sendiri di ujung jaringan, sesuai jumlah kelas masing-masing (1.000 kelas ImageNet, 400 kelas aksi Kinetics-400, dan kelas kategori SUN RGB-D). Pelatihan dilakukan dengan *mini-batch* SGD (*stochastic gradient descent*, optimisasi berbasis gradien pada subset data) secara bersamaan pada ketiga dataset. Penulis menguji dua strategi penyusunan *batch*: menyusun setiap *batch* hanya dari satu dataset secara bergantian, atau mencampur sampel dari ketiga dataset dalam satu *batch*. Kedua strategi menghasilkan akurasi yang sebanding; strategi *batch* per-dataset dipilih karena lebih sederhana diimplementasikan pada infrastruktur pelatihan terdistribusi.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Karena backbone dibagikan, gradien dari data ImageNet yang jumlahnya jauh lebih besar (1,28 juta citra latih) turut membentuk representasi yang dipakai untuk memproses video dan RGB-D, meski dataset SUN RGB-D jauh lebih kecil. Efek inilah yang mendasari klaim transfer lintas-modal: penulis menunjukkan bahwa ruang penyemat (*embedding space*) yang terbentuk memungkinkan pencarian peta kedalaman yang relevan dari kueri citra RGB biasa, meski Omnivore tidak pernah dilatih dengan pasangan citra ImageNet dan peta kedalamannya — kemampuan yang muncul semata dari berbagi bobot, bukan dari pengawasan langsung.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| ImageNet | Top-1 | kompetitif |
-| Kinetics-400 | akurasi | kompetitif |
-| SUN RGB-D | akurasi | kuat sebagai model tunggal |
+## Eksperimen dan Hasil
 
-## Temuan Kunci
-- Satu model bisa melayani banyak modalitas.
-- Berbagi bobot memungkinkan transfer lintas-modal.
-- Format masukan seragam kunci penyatuan.
+Evaluasi utama dilakukan pada tiga tolok ukur klasifikasi standar: ImageNet-1K untuk citra, Kinetics-400 untuk video, dan SUN RGB-D untuk citra RGB-D indoor. Pada konfigurasi terbesar, Omnivore Swin-L mencapai 86,0% akurasi top-1 di ImageNet-1K, 84,1% di Kinetics-400, dan 67,1% di SUN RGB-D; konfigurasi menengah Swin-B mencapai 84,0%, 83,3%, dan 65,4% secara berurutan pada ketiga tolok ukur tersebut. Angka-angka ini dilaporkan sepadan dengan model khusus per modalitas berukuran serupa — artinya Omnivore tidak membayar penalti akurasi yang berarti meski satu set bobot dipakai untuk tiga tugas berbeda, sekaligus menghapus kebutuhan menyimpan dan melatih tiga jaringan terpisah.
 
-## Keunggulan
-- Generalis lintas-modal.
-- Berbagi pengetahuan.
-- Arsitektur sederhana.
+Selain akurasi klasifikasi standar, penulis menunjukkan demonstrasi kualitatif kemampuan lintas-modal: representasi yang dipelajari pada satu modalitas dapat dipakai untuk mengambil (*retrieve*) data pada modalitas lain yang berkaitan secara semantik, misalnya mencari peta kedalaman yang cocok dengan sebuah citra RGB. Kemampuan ini menegaskan bahwa berbagi bobot antar-modalitas bukan sekadar efisiensi rekayasa, melainkan juga menghasilkan representasi visual yang lebih umum.
 
-## Keterbatasan
-- Tugas klasifikasi (bukan dense) fokus utama.
-- Butuh data besar.
-- RGB-D terbatas single-view.
+## Kelebihan dan Keterbatasan
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Kelebihan utama Omnivore adalah kesederhanaan rekayasa: satu jaringan, satu siklus pelatihan, tiga modalitas, dengan akurasi yang tidak kalah dari model khusus. Ini mengurangi biaya penerapan pada sistem yang harus menangani lebih dari satu jenis sensor visual sekaligus, misalnya platform robotika yang memiliki kamera RGB dan sensor kedalaman. Mekanisme tokenisasi terpadunya juga cukup umum untuk diperluas ke modalitas visual lain tanpa mengubah struktur Transformer inti.
 
-## Relevansi terhadap Tema Tinjauan
-Menunjukkan penyatuan modalitas termasuk RGB-D dalam satu backbone, relevan untuk arsitektur persepsi multimodal terpadu.
+Keterbatasan yang secara eksplisit disebutkan penulis adalah cakupan representasi 3D: Omnivore hanya menangani citra RGB-D satu sudut pandang (*single-view*) dan tidak menggeneralisasi ke representasi 3D lain seperti *voxel* atau awan titik (*point cloud*). Penulis juga mencatat bahwa masukan kedalaman tidak invarian terhadap skala, dan modalitas audio belum dimanfaatkan dalam kerangka kerja ini. Dari sisi rekayasa, model ini dirancang untuk tugas klasifikasi tingkat citra/klip, bukan tugas prediksi padat (*dense prediction*) seperti segmentasi semantik piksel-per-piksel yang menjadi fokus bab 171–173 pada klaster ini; adaptasi Omnivore ke segmentasi RGB-D memerlukan kepala dekoder tambahan yang tidak dibahas dalam makalah aslinya. Secara konseptual, keberhasilan pelatihan bersama juga bergantung pada ketersediaan dataset berlabel besar di tiap modalitas — SUN RGB-D yang jauh lebih kecil dari ImageNet dan Kinetics-400 tetap menghasilkan akurasi lebih rendah, mengindikasikan bahwa berbagi bobot tidak sepenuhnya mengatasi kesenjangan skala data antar-modalitas.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Segmentasi RGB-D** yang baik dibaca berdampingan:
+## Kaitan dengan Bab Lain
 
-- [171 - 2021 - SegFormer - Segmentasi RGB-D](./171%20-%202021%20-%20SegFormer%20-%20Segmentasi%20RGB-D.md)
-- [172 - 2022 - EMSANet - Segmentasi RGB-D](./172%20-%202022%20-%20EMSANet%20-%20Segmentasi%20RGB-D.md)
-- [173 - 2024 - GeminiFusion - Segmentasi RGB-D](./173%20-%202024%20-%20GeminiFusion%20-%20Segmentasi%20RGB-D.md)
+Omnivore memakai Swin Transformer (bab 025) sebagai *backbone* dan mewarisi mekanisme atensi jendela hierarkisnya, diperluas ke dimensi temporal untuk menangani video di samping citra. Berbeda dari jalur fusi RGB-D dua cabang yang dipakai SegFormer (bab 171) dan EMSANet (bab 172), yang secara eksplisit menggabungkan fitur RGB dan kedalaman lewat modul fusi pada tingkat tengah jaringan, Omnivore menyatukan kedua kanal itu sedini mungkin — pada tahap penyemat token — sehingga seluruh sisa jaringan tidak membedakan sumber datanya. GeminiFusion (bab 173), yang memakai atensi lintas-modal eksplisit antara cabang RGB dan kedalaman, dan Omnivore, yang menghindari cabang terpisah sama sekali, mewakili dua filosofi berlawanan dalam menangani data RGB-D: fusi eksplisit versus tokenisasi seragam sejak awal. Perbandingan ini relevan bagi pembaca yang mempertimbangkan trade-off antara akurasi tugas dense-prediction (kekuatan pendekatan fusi eksplisit) dan efisiensi model tunggal lintas-modalitas (kekuatan pendekatan Omnivore).
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Segmentasi RGB-D** dalam peta tinjauan (17 klaster, 191 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema Segmentasi RGB-D)
-Istilah penting untuk memahami makalah ini:
-
-- **Segmentasi semantik** — Pelabelan kelas per-piksel.
-- **Scene parsing** — Pemahaman menyeluruh isi scene via segmentasi.
-- **Encoder-decoder** — Arsitektur mengecilkan lalu memulihkan resolusi.
-- **Fusi RGB-D** — Penggabungan cabang warna dan kedalaman.
-- **mIoU** — mean Intersection-over-Union; metrik segmentasi utama.
-- **Gating** — Gerbang penyaring/penimbang fitur sebelum digabung.
-- **Cross-modal** — Antar-modalitas (RGB dan depth/thermal/LiDAR).
-- **NYUv2** — Dataset RGB-D indoor standar.
-- **SUN RGB-D** — Dataset RGB-D indoor berskala.
-- **Pixel accuracy** — Persentase piksel terlabel benar.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Omnivore membuktikan satu model dapat menangani beragam modalitas visual termasuk RGB-D, mendukung arah model generalis.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `girdhar2022omnivore` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 174/191 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `girdhar2022omnivore`. Ringkasan yang aman dikutip: "Omnivore adalah satu model Swin Transformer yang mengklasifikasikan citra, video, dan RGB-D dengan bobot bersama lewat tokenisasi spatio-temporal seragam, mencapai akurasi sepadan model khusus per modalitas pada ImageNet-1K, Kinetics-400, dan SUN RGB-D." Angka 86,0% (ImageNet, Swin-L), 84,1% (Kinetics-400, Swin-L), 67,1% (SUN RGB-D, Swin-L), serta 84,0%/83,3%/65,4% (Swin-B) diperoleh dari pembacaan naskah dan sebaiknya dicocokkan sekali lagi dengan tabel hasil resmi sebelum dikutip dalam karya formal. Rincian jumlah epoch pelatihan dan konfigurasi augmentasi data belum terverifikasi penuh dan perlu dicek ke naskah asli atau kode resmi di `facebookresearch/omnivore` sebelum dijadikan rujukan teknis rinci.
