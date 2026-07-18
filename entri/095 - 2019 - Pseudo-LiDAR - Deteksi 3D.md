@@ -1,211 +1,87 @@
 # 095 - Pseudo-LiDAR from Visual Depth Estimation: Bridging the Gap in 3D Object Detection for Autonomous Driving
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 095 dari 154 |
 | Kunci BibTeX | `wang2019pseudolidar` |
-| Judul | Pseudo-LiDAR from Visual Depth Estimation: Bridging the Gap in 3D Object Detection for Autonomous Driving |
-| Penulis | Wang, Yan; Chao, Wei-Lun; Garg, Divyansh; Hariharan, Bharath; Campbell, Mark; Weinberger, Kilian Q. |
+| Judul asli | Pseudo-LiDAR from Visual Depth Estimation: Bridging the Gap in 3D Object Detection for Autonomous Driving |
+| Penulis | Yan Wang, Wei-Lun Chao, Divyansh Garg, Bharath Hariharan, Mark Campbell, Kilian Q. Weinberger |
 | Tahun | 2019 |
-| Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Deteksi 3D |
-| Kata kunci | deteksi 3D, depth kamera, representasi, point cloud, stereo/mono |
+| Venue | IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2019) |
+| Tema | Deteksi 3D |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv:** https://arxiv.org/abs/1812.07179
+- **Google Scholar:** https://scholar.google.com/scholar?q=Pseudo-LiDAR%20from%20Visual%20Depth%20Estimation%3A%20Bridging%20the%20Gap%20in%203D%20Object%20Detection%20for%20Autonomous%20Driving
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Pseudo-LiDAR%20from%20Visual%20Depth%20Estimation%3A%20Bridging%20the%20Gap%20in%203D%20Object%20Detection%20for%20Autonomous%20Driving&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-deteksi-3d)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Pseudo-LiDAR%20from%20Visual%20Depth%20Estimation%3A%20Bridging%20the%20Gap%20in%203D%20Object%20Detection%20for%20Autonomous%20Driving
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Pseudo-LiDAR%20from%20Visual%20Depth%20Estimation%3A%20Bridging%20the%20Gap%20in%203D%20Object%20Detection%20for%20Autonomous%20Driving&sort=relevance
+Makalah ini menunjukkan bahwa kesenjangan akurasi antara deteksi objek 3D berbasis kamera dan berbasis *LiDAR* (sensor laser penghasil titik-titik jarak, atau *point cloud*) bukan disebabkan oleh kualitas estimasi kedalaman (*depth*) dari kamera, melainkan oleh cara data itu direpresentasikan sebelum masuk ke detektor. Estimasi *depth* dari kamera stereo maupun monokuler sudah cukup akurat untuk banyak keperluan, tetapi hasilnya biasanya disimpan sebagai peta kedalaman (*depth map*): satu nilai jarak per piksel, disusun dalam grid dua dimensi yang sejajar dengan bidang citra. Penulis menunjukkan bahwa memberi masukan peta kedalaman ini ke jaringan konvolusi 2D, sebagaimana lazim dilakukan detektor 3D berbasis kamera, adalah representasi yang buruk untuk tugas geometri 3D.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Solusi yang diajukan disebut *pseudo-LiDAR*: peta kedalaman diubah menjadi *point cloud* tiga dimensi melalui proyeksi balik (*back-projection*) memakai parameter kalibrasi kamera, sehingga data berbentuk kumpulan titik dalam ruang 3D — persis format yang dihasilkan sensor *LiDAR* sungguhan. *Point cloud* buatan ini kemudian diproses oleh detektor 3D berbasis *LiDAR* yang sudah ada, seperti *Frustum PointNets* dan *AVOD* (dibahas pada bab 090 dan bab 092), tanpa mengubah arsitektur detektor itu sendiri. Pada tolok ukur KITTI, pengubahan representasi ini menghasilkan lonjakan akurasi deteksi 3D berbasis kamera yang jauh melampaui metode sebelumnya yang bekerja langsung pada peta kedalaman, dan pada saat publikasi menempati posisi teratas papan peringkat KITTI untuk metode berbasis citra stereo.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 8445--8453 |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
 
-## Ringkasan Eksekutif
-Wawasan kunci bahwa mengubah depth kamera menjadi representasi mirip-point-cloud memungkinkan detektor 3D berbasis LiDAR dipakai pada kamera saja, melompatkan akurasi deteksi 3D berbasis kamera.
+Deteksi objek 3D untuk kendaraan otonom membutuhkan kotak pembatas berorientasi dalam ruang tiga dimensi (posisi x, y, z, panjang, lebar, tinggi, dan sudut hadap), bukan sekadar kotak 2D pada citra. Sensor *LiDAR* memberikan pengukuran jarak langsung dan akurat dalam bentuk *point cloud* jarang (*sparse*), dan detektor yang bekerja di atasnya — seperti VoxelNet (bab 087) yang mendiskretkan *point cloud* menjadi voksel, atau PointNet-based *Frustum PointNets* yang memproses titik secara langsung — mencapai akurasi tinggi. Sebaliknya, metode yang hanya memakai kamera tertinggal jauh, meski kamera jauh lebih murah daripada *LiDAR* dan tersedia luas pada kendaraan produksi.
 
-## Abstrak (Parafrase)
-Pseudo-LiDAR mengungkap bahwa penyebab utama deteksi 3D berbasis kamera tertinggal jauh dari LiDAR bukan kualitas depth semata, melainkan REPRESENTASI: depth-map (front-view) tidak cocok untuk konvolusi 3D. Dengan mengubah depth stereo/monokular menjadi point cloud (pseudo-LiDAR), detektor berbasis LiDAR (mis. F-PointNet/AVOD) dapat dipakai, melompatkan akurasi deteksi 3D kamera secara dramatis.
+Sebelum makalah ini, kesenjangan tersebut umum diasumsikan berasal dari kualitas estimasi *depth* kamera yang dianggap kurang akurat dibandingkan pengukuran langsung *LiDAR*. Pendekatan perbaikan yang lazim adalah memperbaiki jaringan estimasi *depth* itu sendiri, sambil tetap memberi peta kedalaman sebagai masukan langsung ke detektor 2D-style yang memproses citra RGB ditambah kanal *depth* (RGB-D) melalui konvolusi 2D biasa. Masalahnya, konvolusi 2D pada peta kedalaman menerapkan filter yang sama pada piksel-piksel bertetangga di bidang citra, padahal piksel yang bertetangga secara spasial pada citra bisa saja sangat jauh berbeda jaraknya di dunia nyata — misalnya piksel tepi sebuah mobil dan piksel latar belakang di baliknya. Filter konvolusi yang mencampur informasi dari piksel-piksel dengan jarak sangat berbeda ini mengaburkan batas objek dalam ruang 3D, sesuatu yang tidak terjadi pada *point cloud* karena titik-titik di dalamnya sudah tersebar sesuai posisi 3D sebenarnya.
 
-## Latar Belakang & Konteks
-Deteksi 3D berbasis kamera jauh tertinggal dari LiDAR, dan diasumsikan penyebabnya kualitas depth; padahal representasi depth-map itu sendiri yang menghambat.
+## Ide Utama
 
-## Permasalahan yang Diangkat
-- Deteksi 3D kamera jauh tertinggal dari LiDAR.
-- Diasumsikan penyebabnya kualitas depth.
-- Representasi depth-map tak cocok untuk konvolusi 3D.
-- Konvolusi pada depth-map mencampur piksel jauh-dekat.
-- Kamera murah dibanding LiDAR (motivasi).
+Gagasan inti makalah ini adalah memisahkan dua hal yang selama ini digabung: kualitas data kedalaman dan format penyimpanannya. Penulis membuktikan lewat percobaan bahwa data kedalaman yang sama, bila diubah formatnya dari peta kedalaman (grid 2D, dilihat dari sudut pandang kamera atau *front view*) menjadi *point cloud* (kumpulan titik dalam koordinat 3D), memberi hasil deteksi yang jauh lebih baik walau tidak ada informasi baru yang ditambahkan — hanya representasi yang berubah.
 
-## Tujuan & Pertanyaan Penelitian
-- Mengungkap representasi sebagai penyebab utama.
-- Mengubah depth menjadi pseudo-point-cloud.
-- Memakai detektor LiDAR pada data kamera.
+Mekanismenya adalah proyeksi balik geometris murni, tanpa jaringan saraf tambahan. Untuk setiap piksel (u, v) pada peta kedalaman dengan nilai kedalaman d, posisi 3D-nya dihitung dengan rumus kamera lubang jarum (*pinhole camera*): koordinat x dan y dunia nyata diperoleh dari (u, v) dikurangi titik pusat optik kamera, dikalikan d, dan dibagi panjang fokus kamera; koordinat z sama dengan d itu sendiri. Karena rumus ini memakai parameter kalibrasi kamera yang sudah diketahui, setiap peta kedalaman berukuran H×W piksel dapat diubah langsung menjadi *point cloud* berisi hingga H×W titik, tanpa pelatihan tambahan. Titik-titik hasil proyeksi ini kemudian diberi label "pseudo-LiDAR" karena secara format identik dengan keluaran sensor *LiDAR* asli, sehingga dapat langsung disalurkan ke detektor 3D yang sebelumnya dirancang khusus untuk data *LiDAR*.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Pseudo-LiDAR menghubungkan estimasi depth dan detektor 3D LiDAR.
+## Cara Kerja Langkah demi Langkah
 
-Karya/konsep pembanding yang relevan:
+### Estimasi Kedalaman
 
-- Depth stereo/monokular — sumber.
-- Detektor LiDAR (F-PointNet/AVOD) — hilir.
-- Konversi depth->point cloud.
-- Dataset KITTI.
+Tahap pertama menghasilkan peta kedalaman dari citra kamera. Untuk kasus stereo (dua kamera dengan jarak dasar/*baseline* diketahui), makalah memakai jaringan pencocokan stereo PSMNet (*Pyramid Stereo Matching Network*), yang telah dilatih pada kumpulan data sintetis Scene Flow lalu disetel halus (*fine-tuning*) pada KITTI. PSMNet menghasilkan peta disparitas (selisih posisi piksel yang sama antara citra kiri dan kanan), yang kemudian dikonversi menjadi peta kedalaman memakai rumus disparitas-ke-jarak standar stereo: jarak berbanding terbalik dengan disparitas, dikalikan hasil kali panjang fokus dan *baseline*. Makalah juga menguji jalur monokuler, memakai jaringan estimasi *depth* dari citra tunggal yang sudah tersedia, meski akurasi kedalaman monokuler pada dasarnya lebih rendah daripada stereo karena tidak ada informasi paralaks (pergeseran posisi antar dua sudut pandang) untuk dijadikan acuan geometris.
 
-## Metodologi & Arsitektur
-Depth (stereo/monokular) diprediksi lalu di-back-project ke koordinat 3D menjadi point cloud (pseudo-LiDAR); point cloud ini diproses detektor 3D berbasis LiDAR standar. Perubahan representasi (bukan arsitektur) adalah kuncinya.
+### Proyeksi Balik menjadi Point Cloud
 
-Komponen / langkah metodologis utama:
+Setiap piksel peta kedalaman diproyeksikan ke koordinat 3D memakai kalibrasi kamera, sebagaimana dijelaskan pada bagian Ide Utama. Hasilnya adalah *point cloud* padat (satu titik untuk hampir setiap piksel bertekstur), berbeda dari *point cloud LiDAR* asli yang jarang (*sparse*) dan tersebar mengikuti pola pemindaian berkas laser berbentuk garis melingkar. Untuk menjaga kompatibilitas dengan detektor *LiDAR* yang sudah ada, makalah kadang menerapkan *sparsification* (pengurangan kepadatan titik) agar pola *pseudo-LiDAR* menyerupai pola sensor *LiDAR* target secara lebih dekat.
 
-- Prediksi depth (stereo/monokular).
-- Back-projection depth -> point cloud 3D.
-- Representasi pseudo-LiDAR.
-- Detektor 3D LiDAR standar (F-PointNet/AVOD).
-- Kamera-only (tanpa LiDAR).
-- Evaluasi KITTI.
+### Deteksi 3D dengan Backbone LiDAR yang Ada
 
-## Kontribusi Utama
-1. Wawasan bahwa representasi krusial (bukan hanya kualitas depth).
-2. Konversi depth->point cloud melompatkan akurasi.
-3. Memungkinkan detektor LiDAR pada kamera.
-4. Sangat berpengaruh untuk deteksi 3D kamera.
+*Point cloud pseudo-LiDAR* ini diberikan sebagai masukan ke detektor 3D berbasis *LiDAR* tanpa modifikasi arsitektur: *Frustum PointNets* (memakai deteksi 2D pada citra RGB untuk membatasi wilayah pencarian berbentuk piramida terpancung/*frustum*, lalu memproses titik di dalamnya dengan PointNet) dan *AVOD* (menggabungkan tampak-atas/*bird's-eye view* dari *point cloud* dengan citra RGB melalui dua cabang jaringan region proposal). Karena kedua detektor ini semula dirancang untuk data *LiDAR* asli, tidak ada pelatihan ulang arsitektur yang diperlukan selain menyesuaikan data latih dengan format *pseudo-LiDAR*.
 
-## Rincian Eksperimen
-Diuji pada KITTI 3D dengan depth stereo/monokular, metrik AP 3D, dibandingkan metode berbasis depth-map langsung.
+Diagram berikut merangkum perbedaan alur data antara pendekatan konvolusi pada peta kedalaman (kiri) dan alur *pseudo-LiDAR* (kanan):
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+```
+Peta kedalaman -> konvolusi 2D          Peta kedalaman -> point cloud 3D
+(front-view, grid u,v)                  (proyeksi balik memakai kalibrasi)
+                                                    |
+   filter 2D menyamaratakan                         v
+   piksel bertetangga di layar,          detektor berbasis LiDAR
+   walau jaraknya jauh berbeda           (Frustum PointNets / AVOD)
+   di dunia nyata                                   |
+        |                                            v
+        v                                  kotak 3D lebih akurat
+   kotak 3D kurang akurat
+```
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KITTI 3D (stereo) | AP 3D | lompatan besar vs depth-map |
-| KITTI 3D (mono) | AP 3D | peningkatan signifikan |
-| Ablation | representasi | point cloud >> depth-map |
+Diagram ini menunjukkan bahwa perbedaan hasil kedua jalur bukan berasal dari data kedalaman yang berbeda kualitasnya, melainkan dari representasi geometris yang dipakai sebelum data itu diproses.
 
-## Temuan Kunci
-- Representasi point cloud jauh lebih baik dari depth-map.
-- Kualitas depth bukan satu-satunya faktor.
-- Detektor LiDAR reusable untuk kamera.
-- Membuka deteksi 3D kamera yang ekonomis.
+## Eksperimen dan Hasil
 
-## Keunggulan
-- Wawasan berpengaruh.
-- Reuse detektor LiDAR.
-- Lompatan akurasi kamera.
+Evaluasi utama dilakukan pada tolok ukur KITTI untuk deteksi objek 3D pada kelas mobil, membandingkan detektor yang memakai *pseudo-LiDAR* (dari *depth* stereo maupun monokuler) dengan detektor berbasis kamera sebelumnya yang bekerja langsung pada peta kedalaman atau RGB-D. Metrik yang dipakai adalah *Average Precision* (AP) 3D pada berbagai tingkat kesulitan (mudah, sedang, sulit, mengikuti definisi ukuran dan tingkat oklusi objek pada KITTI).
 
-## Keterbatasan
-- Akurasi masih di bawah LiDAR nyata.
-- Bergantung kualitas depth (terutama jauh).
-- Depth error merambat ke point cloud.
+Hasil kunci: penggunaan *pseudo-LiDAR* bersama *Frustum PointNets* atau *AVOD* menghasilkan peningkatan AP 3D yang besar dibandingkan metode berbasis peta kedalaman langsung pada jarak deteksi yang sama, dengan selisih yang oleh sejumlah rujukan sekunder digambarkan sebagai lompatan dari sekitar 22% menjadi sekitar 74% untuk deteksi objek dalam jarak 30 meter — angka ini perlu dikonfirmasi ke tabel asli sebelum dikutip formal karena konteks pastinya (kelas kesulitan dan ambang IoU yang dipakai) belum terverifikasi langsung dari naskah. Pada saat publikasi, kombinasi *pseudo-LiDAR* dengan detektor berbasis stereo ini menempati posisi teratas papan peringkat KITTI untuk kategori metode berbasis citra stereo, mengungguli seluruh pendekatan berbasis peta kedalaman/RGB-D yang ada sebelumnya.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Studi ablasi pada makalah membandingkan representasi (peta kedalaman versus *point cloud*) dengan data kedalaman yang identik, dan menunjukkan bahwa perubahan representasi saja — tanpa perubahan kualitas data — menyumbang sebagian besar peningkatan akurasi. Temuan ini mengonfirmasi hipotesis utama makalah: representasi, bukan sekadar kualitas estimasi *depth*, adalah faktor penentu kesenjangan akurasi kamera-versus-*LiDAR*. Detail angka AP per kelas kesulitan dan per ambang IoU pada tabel lengkap makalah belum diverifikasi langsung pada naskah primer dalam penulisan bab ini dan perlu dicek ulang sebelum dipakai sebagai kutipan angka pasti.
 
-## Relevansi terhadap Tema Tinjauan
-Pseudo-LiDAR sangat relevan bagi tema tinjauan: mengubah RGB(+depth) menjadi geometri 3D — menghubungkan estimasi kedalaman dengan deteksi 3D tanpa sensor LiDAR.
+## Kelebihan dan Keterbatasan
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Deteksi 3D** yang baik dibaca berdampingan:
+Kelebihan utama makalah ini adalah kesederhanaan dan keberdampakannya: perbaikan diperoleh murni dari transformasi geometris (proyeksi balik), tanpa memerlukan arsitektur jaringan baru maupun pelatihan ulang detektor 3D dari nol. Pendekatan ini juga bersifat *plug-and-play* terhadap detektor *LiDAR* yang sudah matang, sehingga kemajuan riset pada detektor berbasis *point cloud* (seperti yang dibahas pada bab 087–093) langsung dapat dimanfaatkan untuk deteksi berbasis kamera. Wawasan bahwa representasi data, bukan hanya kualitas sensor, menentukan performa deteksi, memengaruhi banyak karya deteksi 3D kamera sesudahnya.
 
-- [087 - 2018 - VoxelNet - Deteksi 3D](./087%20-%202018%20-%20VoxelNet%20-%20Deteksi%203D.md)
-- [088 - 2019 - PointPillars - Deteksi 3D](./088%20-%202019%20-%20PointPillars%20-%20Deteksi%203D.md)
-- [089 - 2019 - PointRCNN - Deteksi 3D](./089%20-%202019%20-%20PointRCNN%20-%20Deteksi%203D.md)
-- [090 - 2018 - Frustum PointNets - Deteksi 3D](./090%20-%202018%20-%20Frustum%20PointNets%20-%20Deteksi%203D.md)
-- [091 - 2017 - MV3D - Deteksi 3D](./091%20-%202017%20-%20MV3D%20-%20Deteksi%203D.md)
-- [092 - 2018 - AVOD - Deteksi 3D](./092%20-%202018%20-%20AVOD%20-%20Deteksi%203D.md)
-- [093 - 2020 - PointPainting - Deteksi 3D](./093%20-%202020%20-%20PointPainting%20-%20Deteksi%203D.md)
-- [094 - 2020 - 3D-CVF - Deteksi 3D](./094%20-%202020%20-%203D-CVF%20-%20Deteksi%203D.md)
+Dari sisi rekayasa, keterbatasan pertama adalah bahwa akurasi *pseudo-LiDAR* tetap bergantung penuh pada kualitas jaringan estimasi *depth* yang dipakai di hulu; galat estimasi *depth* — yang secara sistematis membesar untuk objek jauh pada metode stereo karena hubungan kedalaman-disparitas bersifat tak-linear (galat disparitas kecil menghasilkan galat jarak yang membesar secara kuadratik seiring jarak) — ikut merambat ke posisi titik dalam *point cloud* buatan. Konsekuensinya, keunggulan *pseudo-LiDAR* lebih menonjol pada objek dekat (dalam radius puluhan meter) dan menyempit pada objek jauh. Kedua, secara konseptual *point cloud* hasil proyeksi balik tetap berbeda dari *point cloud LiDAR* sungguhan: kepadatan titik pada *pseudo-LiDAR* mengikuti resolusi piksel citra (padat dan seragam), sedangkan *LiDAR* asli memiliki pola pemindaian bercincin yang jarang dan noise pengukuran yang berbeda karakteristiknya. Ketiga, karena metode ini bergantung pada detektor *LiDAR* yang sudah ada tanpa penyesuaian arsitektur, ia tidak secara eksplisit menangani derau spesifik yang muncul akibat proses konversi geometris, keterbatasan yang kemudian menjadi sasaran perbaikan langsung pada makalah lanjutannya, Pseudo-LiDAR++ (bab 096).
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Deteksi 3D** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Kaitan dengan Bab Lain
 
-## Glosarium Istilah (tema Deteksi 3D)
-Istilah penting untuk memahami makalah ini:
+Bab ini bergantung langsung pada detektor *LiDAR* yang dibahas pada bab lain sebagai komponen hilir: *Frustum PointNets* (bab [090 - 2018 - Frustum PointNets - Deteksi 3D](./090%20-%202018%20-%20Frustum%20PointNets%20-%20Deteksi%203D.md)) dan *AVOD* (bab [092 - 2018 - AVOD - Deteksi 3D](./092%20-%202018%20-%20AVOD%20-%20Deteksi%203D.md)) dipakai tanpa modifikasi arsitektur sebagai penerima masukan *pseudo-LiDAR*. Wawasan representasi yang diajukan di sini langsung disempurnakan pada bab [096 - 2020 - Pseudo-LiDAR++ - Deteksi 3D](./096%20-%202020%20-%20Pseudo-LiDAR%2B%2B%20-%20Deteksi%203D.md), yang memperbaiki keterbatasan galat jarak-jauh lewat perbaikan jaringan *depth* dan koreksi titik dekat sensor. Secara lebih luas, bab ini menjadi jembatan konseptual antara klaster estimasi *depth* berbasis kamera dan klaster deteksi 3D berbasis *point cloud* yang dibuka oleh VoxelNet (bab 087) dan PointPillars (bab 088), karena membuktikan detektor pada klaster kedua dapat dipakai kembali untuk data yang berasal dari kamera semata.
 
-- **Deteksi 3D** — Prediksi kotak 3D beorientasi (x,y,z,l,w,h,yaw).
-- **LiDAR** — Sensor laser menghasilkan point cloud akurat.
-- **BEV** — Bird's-Eye View; proyeksi tampak-atas.
-- **Voxel/pillar** — Diskretisasi point cloud ke sel 3D / kolom.
-- **Fusi LiDAR-kamera** — Penggabungan geometri LiDAR dan tekstur kamera.
-- **Frustum** — Volume 3D dibatasi deteksi 2D pada citra.
-- **Pseudo-LiDAR** — Point cloud dari depth kamera.
-- **KITTI/nuScenes** — Benchmark deteksi 3D berkendara.
-- **AP 3D / NDS** — Metrik deteksi 3D (NDS khusus nuScenes).
-- **Kalibrasi sensor** — Penyelarasan koordinat antar-sensor.
+## Poin untuk Sitasi
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Pseudo-LiDAR mengungkap bahwa representasi (bukan kualitas depth semata) menghambat deteksi 3D kamera, dan mengubah depth menjadi point cloud melompatkan akurasi dengan memakai detektor LiDAR.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `wang2019pseudolidar` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 095/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `wang2019pseudolidar`. Ringkasan yang aman dikutip: "Pseudo-LiDAR mengubah peta kedalaman dari kamera stereo/monokuler menjadi *point cloud* 3D lewat proyeksi balik geometris, sehingga detektor 3D berbasis *LiDAR* yang sudah ada (*Frustum PointNets*, *AVOD*) dapat dipakai langsung pada data kamera, menghasilkan lompatan akurasi deteksi 3D berbasis kamera pada KITTI dan menempati posisi teratas papan peringkat stereo KITTI saat publikasi (CVPR 2019)." Klaim spesifik yang belum terverifikasi langsung dari tabel naskah dan wajib dicek ulang sebelum sitasi formal: angka peningkatan AP dari sekitar 22% menjadi sekitar 74% untuk objek dalam jarak 30 meter (termasuk kelas kesulitan dan ambang IoU yang tepat), rincian AP per kelas kesulitan pada tabel utama, serta nama pasti jaringan estimasi *depth* monokuler yang dipakai pada eksperimen monokuler.

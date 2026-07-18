@@ -1,138 +1,100 @@
 # 104 - Multispectral Fusion for Object Detection with Cyclic Fuse-and-Refine Blocks
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 104 dari 154 |
 | Kunci BibTeX | `zhang2020cfr` |
-| Judul | Multispectral Fusion for Object Detection with Cyclic Fuse-and-Refine Blocks |
-| Penulis | Zhang, Heng; Fromont, Elisa; Lefevre, S{\'e |
+| Judul asli | Multispectral Fusion for Object Detection with Cyclic Fuse-and-Refine Blocks |
+| Penulis | Heng Zhang, Elisa Fromont, Sébastien Lefevre, Bruno Avignon |
 | Tahun | 2020 |
-| Venue / Jurnal | Proceedings of the IEEE International Conference on Image Processing (ICIP) |
-| Tema klaster | Pedestrian RGB-T |
-| Kata kunci | RGB-T, cyclic, fuse-and-refine, iteratif, multispektral |
+| Venue | IEEE International Conference on Image Processing (ICIP 2020) |
+| Tema | Pedestrian RGB-T |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **arXiv:** https://arxiv.org/abs/2009.12664
+- **Semantic Scholar:** https://www.semanticscholar.org/search?q=Multispectral%20Fusion%20for%20Object%20Detection%20with%20Cyclic%20Fuse-and-Refine%20Blocks&sort=relevance
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-pedestrian-rgb-t)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Multispectral%20Fusion%20for%20Object%20Detection%20with%20Cyclic%20Fuse-and-Refine%20Blocks
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Multispectral%20Fusion%20for%20Object%20Detection%20with%20Cyclic%20Fuse-and-Refine%20Blocks&sort=relevance
+Makalah ini mengusulkan modul fusi bernama *Cyclic Fuse-and-Refine* (CFR, gabung-dan-saring siklik) untuk deteksi objek pada citra multispektral — pasangan citra yang berasal dari dua pita spektrum berbeda, dalam hal ini citra tampak (RGB) dan citra termal inframerah panjang (*long-wave infrared*, LWIR) yang merekam pancaran panas objek. Alih-alih menggabungkan fitur RGB dan termal satu kali lalu meneruskannya langsung ke kepala deteksi, CFR mengulang proses penggabungan (*fuse*) dan penyempurnaan (*refine*) fitur beberapa kali sebelum fitur akhir dipakai untuk memprediksi kotak objek. Modul ini dirancang sebagai komponen sisipan (*plug-in*) yang dapat ditambahkan pada titik fusi pertengahan jaringan detektor tanpa mengubah arsitektur secara keseluruhan.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+Pada dataset pejalan kaki multispektral KAIST, detektor yang disisipi CFR mencapai *miss rate* (tingkat objek yang gagal terdeteksi, makin kecil makin baik) keseluruhan 6,13% pada set uji tersanitasi, dengan 7,68% pada citra siang dan 3,19% pada citra malam. Pada dataset kedua, FLIR ADAS (citra jalan raya siang-malam untuk kendaraan, sepeda, dan pejalan kaki), penyisipan CFR menaikkan *mean Average Precision* (mAP) dari 71,17% menjadi 72,39% dibandingkan model dasar tanpa modul ini. Bab ini melanjutkan garis fusi RGB-termal untuk deteksi pejalan kaki yang dimulai pada dataset KAIST (bab 100) dan diperluas pada bab 101–103; perbedaan utamanya terletak pada skema iteratif, bukan gerbang pembobotan satu arah seperti pada ketiga bab tersebut.
 
-| Atribut | Nilai |
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+
+Deteksi pejalan kaki berbasis kamera tunggal RGB gagal pada malam hari atau kondisi cahaya rendah, sedangkan kamera termal tetap merekam pancaran panas tubuh manusia terlepas dari pencahayaan, tetapi kehilangan detail tekstur dan warna yang berguna pada siang hari. Karena itu, sistem deteksi pejalan kaki modern menggabungkan kedua modal ini. Metode-metode fusi sebelumnya — termasuk IAF R-CNN (bab 101) yang membobot modal berdasarkan estimasi kondisi pencahayaan, MBNet (bab 102) yang menyeimbangkan kontribusi modal secara adaptif, dan GAFF (bab 103) yang memakai *attention* (mekanisme pembobotan fitur otomatis) berjenjang — semuanya menggabungkan fitur RGB dan termal dalam satu kali lintasan: fitur mentah tiap modal dihitung, digabungkan sekali, lalu hasil gabungan diteruskan searah ke tahap deteksi.
+
+Skema satu-lintasan ini memiliki keterbatasan struktural. Setelah proses fusi selesai, tidak ada jalur bagi hasil gabungan untuk kembali menyaring fitur modal asal sebelum keputusan akhir diambil. Akibatnya, derau pada satu modal — misalnya siluet termal yang kabur pada objek jauh, atau citra RGB yang gelap pada malam hari — ikut terbawa ke representasi gabungan tanpa mekanisme koreksi lanjutan. Makalah ini berangkat dari premis bahwa fitur gabungan, yang sudah memuat informasi dari kedua modal, semestinya dapat dipakai balik untuk menyaring fitur modal asal, dan bahwa proses ini dapat diulang beberapa kali agar kedua modal saling memperbaiki satu sama lain secara bertahap.
+
+## Ide Utama
+
+Gagasan inti CFR adalah mengganti satu langkah fusi dengan satu siklus fusi-dan-penyaringan yang diulang beberapa kali. Setiap siklus terdiri atas dua operasi berurutan. Pertama, operasi *fuse*: peta fitur RGB dan peta fitur termal pada lapis tertentu digabungkan (*concatenate*) lalu diproses oleh satu konvolusi 3×3 dengan normalisasi *batch* (teknik penstabil pelatihan yang menormalkan aktivitas tiap lapis) untuk menghasilkan satu peta fitur gabungan. Kedua, operasi *refine*: peta fitur gabungan ini ditambahkan sebagai koneksi residual (nilai yang dijumlahkan langsung, bukan menggantikan) ke masing-masing peta fitur modal asal, diikuti fungsi aktivasi ReLU, sehingga menghasilkan peta fitur RGB dan termal versi baru yang telah disaring oleh informasi gabungan.
+
+Peta fitur hasil penyaringan pada siklus pertama menjadi masukan bagi siklus kedua, dan seterusnya. Dengan begitu, informasi mengalir dua arah: dari modal ke fusi, dan dari fusi kembali ke modal — berulang beberapa kali sebelum fitur akhir diteruskan ke kepala deteksi. Mekanisme inilah yang membedakan CFR dari fusi satu-lintasan pada bab 101–103, yang hanya menempuh arah modal-ke-fusi satu kali.
+
+## Cara Kerja Langkah demi Langkah
+
+### Arsitektur Dasar
+
+CFR diimplementasikan di atas FSSD (*Feature Fusion Single Shot Detector*), varian detektor satu tahap yang menggabungkan peta fitur dari beberapa kedalaman jaringan sebelum kepala prediksi, dengan tulang punggung (*backbone*, jaringan ekstraksi fitur) VGG16. Jaringan memiliki dua cabang paralel dengan bobot terpisah: satu cabang memproses citra RGB, satu cabang memproses citra termal. Titik penggabungan pertama ditempatkan setelah lapis konvolusi conv4_3, yaitu pertengahan jaringan — pola fusi pertengahan (*halfway fusion*) yang sama juga dipakai pada bab 102 dan 103, berbeda dari fusi dini pada tingkat piksel atau fusi lambat pada tingkat keluaran akhir.
+
+### Blok Fuse dan Blok Refine
+
+Skema satu siklus CFR dapat digambarkan sebagai berikut:
+
+```
+   fitur RGB (F_rgb)          fitur termal (F_th)
+        │                          │
+        └────────concat────────────┘
+                    │
+             konv 3x3 + BatchNorm
+                    │
+              fitur gabungan (F_fuse)
+              │                 │
+          + residual        + residual
+              │                 │
+            ReLU              ReLU
+              │                 │
+        F_rgb baru        F_th baru
+        (masuk siklus       (masuk siklus
+         berikutnya)          berikutnya)
+```
+
+Pada blok *fuse*, F_rgb dan F_th digabungkan sepanjang dimensi kanal, lalu satu konvolusi 3×3 dengan bobot bersama menghasilkan F_fuse — satu peta fitur tunggal yang memuat informasi dari kedua modal. Pada blok *refine*, F_fuse dijumlahkan sebagai residual ke F_rgb dan F_th secara terpisah, kemudian melalui ReLU. Karena F_fuse yang sama disuntikkan ke kedua cabang, kedua modal menerima umpan balik informasi yang identik namun diproses ulang oleh jalur masing-masing pada siklus berikutnya.
+
+### Jumlah Siklus dan Efeknya
+
+Percobaan menguji 0 (dasar tanpa CFR) sampai 4 siklus. Tabel berikut merangkum *miss rate* pada KAIST beserta skor DICE (ukuran kemiripan antara segmentasi turunan dari cabang termal dan cabang RGB pada tiap siklus, menandakan seberapa selaras kedua modal setelah disaring):
+
+| Jumlah siklus | Miss rate keseluruhan |
 |---|---|
-| Halaman | 276--280 |
+| 0 (dasar) | 7,68% |
+| 1 | 6,90% |
+| 2 | 6,40% |
+| 3 | 6,13% |
+| 4 | 7,09% |
 
-## Ringkasan Eksekutif
-Metode deteksi objek multispektral yang memakai blok fuse-and-refine siklik yang saling memperkuat fitur RGB dan thermal secara berulang.
+Miss rate menurun secara konsisten sampai tiga siklus, lalu naik kembali pada siklus keempat. Interpretasinya: penyaringan berulang memperbaiki fitur sampai titik tertentu, tetapi siklus yang berlebihan membuat fitur RGB dan termal menjadi terlalu mirip satu sama lain sehingga informasi yang saling melengkapi antar-modal justru berkurang. Tiga siklus dipilih sebagai konfigurasi akhir pada seluruh percobaan lain di makalah ini.
 
-## Abstrak (Parafrase)
-CFR (Cyclic Fuse-and-Refine) memakai blok yang secara siklik menggabungkan (fuse) fitur RGB dan thermal lalu memurnikan (refine) masing-masing modal berdasarkan hasil fusi, diulang beberapa kali. Umpan-balik siklik ini saling memperkuat kedua modal, meningkatkan deteksi dibanding fusi sekali-jalan pada KAIST.
+### Biaya Komputasi
 
-## Latar Belakang & Konteks
-Fusi sekali-jalan tidak mengeksploitasi umpan-balik: hasil fusi dapat memurnikan fitur modal asal, yang lalu memperbaiki fusi berikutnya.
+Setiap siklus tambahan menyumbang biaya inferensi sekitar 0,4 milidetik, jauh lebih kecil dibandingkan biaya konvolusi utama jaringan. Dengan tiga siklus, total tambahan waktu inferensi berada pada orde milidetik tunggal, sehingga CFR tidak mengubah kelas kecepatan detektor dasarnya secara berarti.
 
-## Permasalahan yang Diangkat
-- Fusi sekali-jalan tak mengeksploitasi umpan-balik.
-- Fitur modal dapat dimurnikan oleh hasil fusi.
-- Penyempurnaan iteratif belum dimanfaatkan.
-- Komplementaritas RGB-thermal kurang maksimal.
-- Deteksi objek multispektral perlu ditingkatkan.
+## Eksperimen dan Hasil
 
-## Tujuan & Pertanyaan Penelitian
-- Menggabungkan lalu memurnikan modal secara siklik.
-- Mengeksploitasi umpan-balik antar-modal.
-- Meningkatkan deteksi multispektral.
+Evaluasi utama dilakukan pada KAIST Multispectral Pedestrian (diperkenalkan pada bab 100), dataset pasangan citra RGB-termal untuk deteksi pejalan kaki yang direkam pada kondisi siang dan malam. Memakai anotasi uji yang telah disanitasi (versi anotasi yang diperbaiki dari kesalahan pelabelan pada rilis awal dataset), model dengan tiga siklus CFR mencapai *miss rate* 6,13% secara keseluruhan, 7,68% pada subset siang, dan 3,19% pada subset malam. Selisih besar antara siang dan malam konsisten dengan sifat termal: pada malam hari, citra RGB kehilangan sebagian besar informasi sedangkan citra termal tetap merekam siluet tubuh manusia dengan jelas, sehingga fusi lebih mudah menghasilkan deteksi akurat. Menurut makalah, hasil ini mengungguli metode fusi sebelumnya yang diuji pada protokol yang sama, termasuk MSDS-RCNN, IAF R-CNN, dan pendekatan berbasis *attention* semacam GAFF.
 
-## Tinjauan Terdahulu / Posisi Literatur
-CFR mengembangkan fusi iteratif siklik untuk RGB-T.
+Evaluasi kedua dilakukan pada FLIR ADAS, dataset citra jalan raya siang-malam untuk tiga kelas objek (sepeda, mobil, pejalan kaki). Karena rilis asli memuat banyak pasangan RGB-termal yang tidak sejajar secara spasial, penulis menyusun subset kurasi berisi 4.129 pasangan latih dan 1.013 pasangan uji yang telah diperiksa kesejajarannya. Pada subset ini, model dasar tanpa CFR mencapai mAP 71,17%, dan penyisipan tiga siklus CFR menaikkannya menjadi 72,39% — kenaikan sekitar 1,2 poin persentase yang konsisten pada seluruh tiga kelas objek. Hasil pada dua dataset dengan karakteristik berbeda (pejalan kaki tunggal pada KAIST, tiga kelas objek jalan raya pada FLIR) menunjukkan bahwa manfaat CFR tidak spesifik untuk satu tugas deteksi saja.
 
-Karya/konsep pembanding yang relevan:
+## Kelebihan dan Keterbatasan
 
-- KAIST — dataset RGB-T.
-- Fuse-and-refine — blok inti.
-- Cyclic/iterative feedback.
-- Deteksi objek multispektral.
+Kelebihan utama CFR adalah kesederhanaan mekanismenya: hanya konvolusi, normalisasi *batch*, penjumlahan residual, dan ReLU, tanpa mekanisme *attention* yang lebih rumit seperti pada GAFF (bab 103). Karena berbentuk modul sisipan, CFR dapat ditambahkan pada titik fusi pertengahan berbagai arsitektur detektor tanpa mengubah struktur keseluruhan, dan biaya komputasi tambahannya kecil. Perbaikan konsisten pada dua dataset dengan jumlah kelas dan karakteristik pencahayaan berbeda menunjukkan modul ini tidak terbatas pada deteksi pejalan kaki saja.
 
-## Metodologi & Arsitektur
-Blok fuse menggabungkan fitur RGB dan thermal; hasil fusi memurnikan (refine) fitur tiap modal; proses diulang secara siklik beberapa kali sehingga modal dan fusi saling memperkuat; deteksi dari fitur akhir.
+Keterbatasan yang tercatat dalam makalah adalah sensitivitas terhadap jumlah siklus: performa memburuk melewati tiga siklus, sehingga jumlah siklus optimal harus ditentukan lewat percobaan pada tiap dataset, bukan nilai baku yang berlaku umum. Dari sisi rekayasa, blok fuse memakai bobot bersama dan operasi simetris terhadap kedua modal, sehingga desain ini secara implisit mengasumsikan kedua modal memiliki keandalan yang setara pada titik fusi — asumsi yang dapat kurang tepat pada kondisi ekstrem ketika satu modal jauh lebih rusak daripada modal lainnya, situasi yang justru menjadi motivasi utama pendekatan berbasis bobot adaptif pada bab 101 dan 102. Secara konseptual, titik fusi CFR tetap pada satu kedalaman jaringan tertap (setelah conv4_3), sehingga modul ini tidak mengeksplorasi fusi pada beberapa kedalaman berbeda secara bersamaan.
 
-Komponen / langkah metodologis utama:
+## Kaitan dengan Bab Lain
 
-- Blok fuse (penggabungan RGB-thermal).
-- Blok refine (penyempurnaan modal dari fusi).
-- Umpan-balik siklik berulang.
-- Saling memperkuat modal & fusi.
-- Deteksi objek multispektral.
-- Evaluasi KAIST.
-
-## Kontribusi Utama
-1. Fuse-and-refine siklik (umpan-balik iteratif).
-2. Modal & fusi saling memperkuat.
-3. Peningkatan atas fusi non-siklik.
-4. Komplementaritas dieksploitasi lebih penuh.
-
-## Rincian Eksperimen
-Diuji pada KAIST dengan metrik miss rate, dibandingkan fusi sekali-jalan dan metode lain.
-
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
-
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| KAIST | miss rate | peningkatan atas fusi non-siklik |
-| Ablation | cyclic refine | siklus menyumbang gain |
-| Iterasi | jumlah siklus | trade-off akurasi-biaya |
-
-## Temuan Kunci
-- Umpan-balik siklik memperkuat fusi.
-- Refine modal dari fusi bermanfaat.
-- Iterasi meningkatkan komplementaritas.
-- Trade-off jumlah siklus vs biaya.
-
-## Keunggulan
-- Umpan-balik siklik.
-- Saling memperkuat modal.
-- Peningkatan konsisten.
-
-## Keterbatasan
-- Siklus menambah komputasi.
-- Bergantung kualitas kedua modal.
-- Fokus domain multispektral.
-
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
-
-## Relevansi terhadap Tema Tinjauan
-CFR menunjukkan penyempurnaan siklik meningkatkan fusi multispektral — prinsip iteratif yang relevan bagi fusi RGB+Depth (bandingkan CIR-Net) dalam tinjauan.
-
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Pedestrian RGB-T** yang baik dibaca berdampingan:
+CFR mewarisi dataset dan definisi tugas dari bab 100 (KAIST Multispectral Pedestrian), sumber data uji utamanya. Dibandingkan dengan tiga bab sebelumnya pada klaster Pedestrian RGB-T — bab 101 (IAF R-CNN, pembobotan modal berdasarkan pencahayaan), bab 102 (MBNet, penyeimbangan modal adaptif), dan bab 103 (GAFF, *attention* berjenjang) — CFR menempuh jalur berbeda dengan mengubah fusi satu-lintasan menjadi proses iteratif bersiklus. Gagasan umpan balik siklik ini relevan bagi bab 105 (CMPD, fusi lintas-modal berbasis ketidakpastian) sebagai pembanding pendekatan iteratif versus pendekatan berbasis estimasi ketidakpastian, dan bagi bab 106 (fusi RGB-D oleh Farahnakian & Heikkonen) sebagai contoh bahwa penyaringan fitur berulang antar-modal juga berpotensi diterapkan di luar pasangan RGB-termal, misalnya pada pasangan RGB-kedalaman.
 
 - [100 - 2015 - KAIST Multispectral Pedestrian - Pedestrian RGB-T](./100%20-%202015%20-%20KAIST%20Multispectral%20Pedestrian%20-%20Pedestrian%20RGB-T.md)
 - [101 - 2019 - IAF R-CNN (Illumination-Aware) - Pedestrian RGB-T](./101%20-%202019%20-%20IAF%20R-CNN%20%28Illumination-Aware%29%20-%20Pedestrian%20RGB-T.md)
@@ -141,69 +103,6 @@ Entri lain pada klaster **Pedestrian RGB-T** yang baik dibaca berdampingan:
 - [105 - 2022 - CMPD (Uncertainty-Guided Cross-Modal) - Pedestrian RGB-T](./105%20-%202022%20-%20CMPD%20%28Uncertainty-Guided%20Cross-Modal%29%20-%20Pedestrian%20RGB-T.md)
 - [106 - 2021 - RGB-D Fusion for Detection (Farahnakian & Heikkonen) - Pedestrian RGB-T](./106%20-%202021%20-%20RGB-D%20Fusion%20for%20Detection%20%28Farahnakian%20%26%20Heikkonen%29%20-%20Pedestrian%20RGB-T.md)
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Pedestrian RGB-T** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+## Poin untuk Sitasi
 
-## Glosarium Istilah (tema Pedestrian RGB-T)
-Istilah penting untuk memahami makalah ini:
-
-- **Multispektral** — Citra beberapa pita (RGB + thermal).
-- **RGB-T** — Pasangan citra warna dan termal.
-- **Thermal/LWIR** — Inframerah panjang; andal saat gelap.
-- **Illumination-aware** — Bobot modal menyesuaikan kondisi cahaya.
-- **Modality imbalance** — Ketimpangan keandalan antar-modal.
-- **Miss rate (MR)** — Metrik deteksi pejalan (makin kecil makin baik).
-- **KAIST** — Dataset pejalan multispektral standar.
-- **CVC-14** — Dataset pejalan siang-malam RGB-thermal.
-- **Feature alignment** — Penyelarasan spasial fitur antar-modal.
-- **Cross-modal attention** — Attention pemandu fusi RGB-thermal.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-CFR memakai blok fuse-and-refine siklik yang saling memperkuat fitur RGB dan thermal secara berulang, meningkatkan deteksi objek multispektral dibanding fusi sekali-jalan.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `zhang2020cfr` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 104/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Kutip dengan kunci `zhang2020cfr`. Ringkasan yang aman dikutip: "CFR mengusulkan modul fusi iteratif yang menggabungkan lalu menyaring fitur RGB dan termal secara siklis di dalam FSSD berbasis VGG16, mencapai *miss rate* 6,13% pada KAIST tersanitasi (7,68% siang, 3,19% malam) dan menaikkan mAP pada FLIR ADAS kurasi dari 71,17% menjadi 72,39% dengan tiga siklus penyaringan." Angka *miss rate* per siklus (7,68% / 6,90% / 6,40% / 6,13% / 7,09%) dan angka mAP FLIR berasal dari pembacaan naskah arXiv dan dianggap cukup andal, tetapi angka perbandingan langsung terhadap metode lain (MSDS-RCNN, IAF R-CNN, IATDNN+IASS) tidak diperoleh secara konsisten dari sumber sekunder yang tersedia dan wajib diverifikasi ke tabel asli makalah sebelum dikutip dalam karya formal.
