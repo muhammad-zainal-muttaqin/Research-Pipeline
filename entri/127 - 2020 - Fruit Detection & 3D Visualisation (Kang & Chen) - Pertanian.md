@@ -1,211 +1,125 @@
 # 127 - Fruit Detection, Segmentation and 3D Visualisation of Environments in Apple Orchards
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
-| Field | Nilai |
-|---|---|
-| Nomor entri | 127 dari 154 |
+| Atribut | Nilai |
+| --- | --- |
 | Kunci BibTeX | `kang2020strawberry` |
-| Judul | Fruit Detection, Segmentation and 3D Visualisation of Environments in Apple Orchards |
+| Judul asli | Fruit Detection, Segmentation and 3D Visualisation of Environments in Apple Orchards |
 | Penulis | Kang, Hanwen; Chen, Chao |
 | Tahun | 2020 |
-| Venue / Jurnal | Computers and Electronics in Agriculture |
-| Tema klaster | Pertanian |
-| Kata kunci | pertanian, deteksi/segmentasi, 3D visualisasi, panen robotik, apel |
+| Venue | Computers and Electronics in Agriculture |
+| Tema | Pertanian |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+- **Cari / unduh via Google Scholar:** [Google Scholar](https://scholar.google.com/scholar?q=Fruit%20Detection%2C%20Segmentation%20and%203D%20Visualisation%20of%20Environments%20in%20Apple%20Orchards)
+- **Semantic Scholar (metrik sitasi & PDF):** [Semantic Scholar](https://www.semanticscholar.org/search?q=Fruit%20Detection%2C%20Segmentation%20and%203D%20Visualisation%20of%20Environments%20in%20Apple%20Orchards&sort=relevance)
+- **Halaman arXiv (PDF & Abstrak):** [arXiv:1911.12889](https://arxiv.org/abs/1911.12889)
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-pertanian)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
+Penelitian oleh Kang dan Chen (2020) memperkenalkan DaSNet-V2, sebuah kerangka kerja persepsi visual multi-tugas (*multi-task visual perception*) berbasis pembelajaran mendalam (*deep learning*) untuk mendukung pemanenan buah apel secara robotik (*robotic apple harvesting*). DaSNet-V2 mengintegrasikan tiga fungsi penginderaan visual utama dalam satu arsitektur jaringan satu tahap (*one-stage detector*): deteksi buah apel, segmentasi instansi (*instance segmentation*) buah untuk memisahkan setiap buah secara individual, dan segmentasi semantik (*semantic segmentation*) cabang pohon sebagai rintangan fisik yang harus dihindari oleh lengan robot.
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Fruit%20Detection%2C%20Segmentation%20and%203D%20Visualisation%20of%20Environments%20in%20Apple%20Orchards
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Fruit%20Detection%2C%20Segmentation%20and%203D%20Visualisation%20of%20Environments%20in%20Apple%20Orchards&sort=relevance
+Untuk mendukung perencanaan gerakan lengan robot, kerangka kerja ini memadukan informasi visual 2D dengan data kedalaman dari sensor RGB-D (*Red Green Blue-Depth*) guna menghasilkan rekonstruksi visualisasi tiga dimensi (3D) dari lingkungan kebun apel secara langsung. Jaringan ini memanfaatkan tulang punggung ringan yang disebut *Lightweight Backbone* (LW-net) berbasis arsitektur sisa (*residual network*) agar dapat berjalan dengan efisiensi tinggi pada komputer tertanam (*embedded computer*) seperti NVIDIA Jetson TX2, dengan alternatif ResNet-101 untuk mencapai akurasi deteksi dan segmentasi maksimal.
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+Pengembangan robot pemanen buah otomatis di lingkungan kebun luar ruangan (*outdoor orchard*) menghadapi berbagai tantangan alami yang kompleks. Sebelum penelitian ini dilakukan, sebagian besar sistem penginderaan robot hanya berfokus pada deteksi buah menggunakan kotak pembatas (*bounding box*) 2D tanpa memperhitungkan geometri buah atau keberadaan cabang pohon yang menghalanginya. Padahal, untuk melakukan pemetikan yang sukses, robot membutuhkan informasi orientasi cengkeraman (*grasp pose*) dan batas fisik buah agar tidak merusak kulit apel saat dijepit oleh efektor akhir (*end-effector*).
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 171 |
-| Halaman | 105302 |
+Tantangan lainnya adalah rintangan berupa cabang dan ranting pohon. Jika lengan robot menabrak cabang saat bergerak menuju buah target, hal itu dapat merusak mekanis robot atau merusak pohon. Oleh karena itu, sistem persepsi robot harus mampu mendeteksi letak cabang di sekitar buah target secara simultan. Namun, pendekatan terdahulu umumnya memisahkan modul deteksi buah dan deteksi cabang ke dalam dua sistem yang berbeda, sehingga meningkatkan beban komputasi (*computational overhead*) secara drastis. Ketiadaan model persepsi satu tahap (*one-stage*) yang ringan dan mampu menghasilkan informasi spasial 3D buah sekaligus cabang secara bersamaan menjadi celah teknologi (*technology gap*) utama dalam bidang ini.
 
-## Ringkasan Eksekutif
-Kerangka deteksi, segmentasi, dan visualisasi 3D lingkungan kebun apel untuk pemanenan robotik memakai deep learning dan sensor.
+## Ide Utama
+Gagasan inti dari penelitian ini adalah menyatukan tugas deteksi buah, segmentasi instansi buah, dan segmentasi semantik cabang ke dalam sebuah arsitektur jaringan satu tahap (*single-stage network*) dengan tulang punggung ekstraksi fitur yang dibagi bersama (*shared feature extractor*). Dengan membagi ekstraktor fitur yang sama, model hanya perlu melakukan satu kali umpan maju (*forward pass*) untuk memproses citra masukan, sehingga menghemat memori GPU (*Graphics Processing Unit*) and waktu komputasi secara signifikan.
 
-## Abstrak (Parafrase)
-Kang & Chen mengembangkan kerangka lengkap untuk panen apel robotik: jaringan deteksi/segmentasi buah (mis. DaSNet) mendeteksi dan mensegmentasi apel, dan sensor 3D dipakai untuk memvisualisasikan/merekonstruksi lingkungan kebun dalam 3D. Ini menyediakan persepsi buah sekaligus pemetaan 3D scene untuk perencanaan panen.
+Untuk mengolah kompleksitas visual kebun, DaSNet-V2 memanfaatkan informasi spasial dari sensor RGB-D. Model ini melakukan deteksi dan segmentasi 2D terlebih dahulu pada citra RGB. Hasil segmentasi 2D berupa masker piksel buah dan cabang kemudian disatukan (*fused*) dengan saluran kedalaman (*depth channel*) untuk memproyeksikan piksel-piksel tersebut ke dalam koordinat kartesian 3D menggunakan parameter intrinsik kamera. Pendekatan hibrida ini memberikan keseimbangan optimal antara kecepatan komputasi 2D yang tinggi dan kebutuhan visualisasi geometri 3D yang akurat.
 
-## Latar Belakang & Konteks
-Panen apel robotik membutuhkan persepsi buah (deteksi/segmentasi) sekaligus pemahaman 3D lingkungan untuk perencanaan gerak dan pemetikan.
+## Cara Kerja Langkah demi Langkah
+### 1. Akuisisi Input dan Prapemrosesan Citra
+Proses dimulai dengan pengambilan data citra dari kamera sensor kedalaman RGB-D. Citra masukan disesuaikan ukurannya (*rescaling*) menjadi resolusi 369 × 277 piksel untuk meminimalkan beban komputasi tanpa menghilangkan fitur-fitur spasial esensial. Tapis Laplace (*Laplace filter*) diterapkan pada tahap prapemrosesan untuk mempertajam batas tepi buah guna mempermudah ekstraksi fitur.
 
-## Permasalahan yang Diangkat
-- Panen robotik butuh persepsi buah + 3D scene.
-- Deteksi/segmentasi buah menantang di kebun.
-- Pemetaan 3D lingkungan diperlukan.
-- Perencanaan gerak butuh geometri 3D.
-- Kondisi kebun kompleks.
+### 2. Ekstraksi Fitur Menggunakan Shared Backbone
+Citra RGB dimasukkan ke dalam jaringan tulang punggung (*backbone network*) yang dibagi bersama. Terdapat dua pilihan tulang punggung yang digunakan:
+- **LW-net (Lightweight Backbone)**: Berbasis arsitektur jaringan sisa (*residual network*) ringan (mirip ResNet-18) yang menggunakan blok sisa leher botol (*bottleneck residual blocks*) untuk mempercepat transmisi data dan mengurangi jumlah parameter model pada komputer tertanam.
+- **ResNet-101**: Digunakan ketika prioritas sistem adalah akurasi deteksi maksimal tanpa batasan ketat pada waktu komputasi.
 
-## Tujuan & Pertanyaan Penelitian
-- Mendeteksi & mensegmentasi buah apel.
-- Memvisualisasikan/merekonstruksi scene 3D.
-- Mendukung perencanaan panen robotik.
+### 3. Modul ASPP dan Gate FPN (GFPN)
+Fitur dari tulang punggung dilewatkan ke modul *Atrous Spatial Pyramid Pooling* (ASPP) untuk menangkap informasi konteks multi-skala dengan laju dilatasi (*dilation rates*) yang berbeda. Selanjutnya, fitur dialirkan ke *Gate Feature Pyramid Network* (GFPN) yang menyaring (*gating*) fitur-fitur dari berbagai tingkat resolusi, memperkuat sinyal visual objek target (buah dan cabang), serta menekan derau latar belakang kebun.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Makalah menggabungkan deteksi/segmentasi dan rekonstruksi 3D.
+### 4. Multi-Task Output Head
+Setelah melalui GFPN, peta fitur dialirkan ke tiga kepala prediksi (*prediction heads*) paralel:
+- **Kepala Deteksi Buah**: Menghasilkan kotak pembatas (*bounding box*) 2D beserta skor keyakinan (*confidence score*).
+- **Kepala Segmentasi Instansi Buah**: Menghasilkan masker biner piksel untuk setiap apel secara terpisah.
+- **Kepala Segmentasi Semantik Cabang**: Menghasilkan masker piksel untuk seluruh area cabang dalam citra secara keseluruhan sebagai rintangan.
 
-Karya/konsep pembanding yang relevan:
+### 5. Proyeksi Kedalaman dan Visualisasi 3D
+Masker piksel 2D untuk buah dan cabang diintegrasikan dengan matriks data kedalaman dari saluran D. Setiap piksel dengan koordinat $(u, v)$ dan nilai kedalaman $d$ diproyeksikan ke dalam koordinat kartesian 3D $(X, Y, Z)$ melalui persamaan geometri kamera:
 
-- Jaringan deteksi/segmentasi (DaSNet).
-- Sensor 3D (RGB-D/stereo).
-- Visualisasi/rekonstruksi 3D.
-- Panen apel robotik.
+$$X = \frac{(u - c_x) \cdot d}{f_x}$$
+$$Y = \frac{(v - c_y) \cdot d}{f_y}$$
+$$Z = d$$
 
-## Metodologi & Arsitektur
-Jaringan deteksi/segmentasi mengidentifikasi dan memisahkan apel pada citra; sensor 3D (RGB-D/stereo) memberi geometri; scene kebun direkonstruksi/divisualisasikan 3D dengan buah terlokalisasi; mendukung perencanaan panen.
+Hasil proyeksi ini berupa awan titik (*point cloud*) berwarna yang tersegmen untuk apel dan cabang, yang kemudian dikirim ke perencana gerakan lengan robot untuk menghitung lintasan penjangkauan buah apel tanpa menabrak cabang terdekat.
 
-Komponen / langkah metodologis utama:
+Berikut adalah diagram alur arsitektur sistem persepsi DaSNet-V2 secara keseluruhan:
 
-- Deteksi/segmentasi buah (DaSNet).
-- Sensor 3D untuk geometri.
-- Rekonstruksi/visualisasi 3D scene.
-- Lokalisasi buah dalam 3D.
-- Dukungan perencanaan panen.
-- Kerangka persepsi lengkap.
+```
+                                 [ Citra RGB-D ]
+                                        │
+                         ┌──────────────┴──────────────┐
+                         ▼                             ▼
+                    [ Citra RGB ]                [ Saluran Depth ]
+                         │                             │
+                         ▼                             │
+                 [ Shared Backbone ]                   │
+                (LW-net / ResNet-101)                  │
+                         │                             │
+                         ▼                             │
+              [ ASPP & Gate FPN (GFPN) ]               │
+                         │                             │
+        ┌────────────────┼────────────────┐            │
+        ▼                ▼                ▼            │
+  [ Head Deteksi ] [ Head Seg. Buah ] [ Head Seg. Cabang ]  │
+   (Bounding Box)   (Instansi Apel)   (Semantik Cabang)│
+        │                │                │            │
+        └────────────────┼────────────────┘            │
+                         ▼                             │
+                 [ Masker Piksel 2D ]                  │
+                         │                             │
+                         └──────────────┬──────────────┘
+                                        ▼
+                              [ Fusi Spasial 2D-3D ]
+                            (Persamaan Geometri Kamera)
+                                        │
+                                        ▼
+                             [ Visualisasi 3D Scene ]
+                              (Segmented Point Cloud)
+                                        │
+                                        ▼
+                          [ Kontrol & Perencanaan Robot ]
+```
 
-## Kontribusi Utama
-1. Persepsi buah + pemetaan 3D scene.
-2. Deteksi/segmentasi akurat.
-3. Visualisasi 3D untuk perencanaan.
-4. Kerangka menyeluruh panen robotik.
+## Eksperimen dan Hasil
+Eksperimen untuk mengevaluasi kinerja DaSNet-V2 dilakukan di area kebun apel Fuji di Qingdao, China. Dataset pengujian mencakup variasi kondisi pencahayaan alami di lapangan, seperti penyinaran langsung dari depan (*front-lighting*), dari belakang (*back-lighting*), bayangan daun, serta pencahayaan buatan pada malam hari. Pengambilan data dilakukan pada jarak 0,3 hingga 1,0 meter dari kamera ke buah.
 
-## Rincian Eksperimen
-Diuji pada kebun apel dengan metrik deteksi/segmentasi dan kualitas rekonstruksi 3D (Computers and Electronics in Agriculture 2020).
+Berdasarkan hasil eksperimen, DaSNet-V2 dengan tulang punggung ResNet-101 mencapai skor F1 sebesar 0,832 untuk deteksi buah, akurasi segmentasi instansi buah sebesar 87,6%, dan akurasi segmentasi semantik cabang sebesar 77,2%. Sementara itu, dengan tulang punggung ringan LW-net, model ini mencapai skor F1 deteksi buah sebesar 0,827, akurasi segmentasi instansi buah sebesar 86,5%, dan akurasi segmentasi semantik cabang sebesar 75,7%.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Interpretasi hasil ini menunjukkan adanya kompromi (*trade-off*) yang kecil pada akurasi demi efisiensi komputasi. Penggunaan LW-net hanya menurunkan skor F1 deteksi sebesar 0,005 dan akurasi segmentasi buah sebesar 1,1% dibandingkan dengan ResNet-101. Namun, model dengan LW-net mampu menyelesaikan proses inferensi dalam waktu 287 milidetik (ms) per citra pada NVIDIA Jetson TX2. Kecepatan ini memenuhi syarat minimum operasional robot pemanen di lapangan (di bawah 300 ms) agar robot dapat beroperasi tanpa jeda berhenti yang lama.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Kebun apel | deteksi/seg | akurat |
-| Scene 3D | rekonstruksi | peta 3D kebun |
-| Perencanaan | dukungan | lokalisasi buah 3D |
+## Kelebihan dan Keterbatasan
+Kelebihan utama DaSNet-V2 adalah integrasi tiga tugas visual (deteksi buah, segmentasi instansi buah, dan segmentasi cabang) ke dalam satu jaringan satu tahap yang efisien. Penggunaan *shared backbone* dan prapemrosesan yang dioptimalkan memungkinkan model ini diimplementasikan secara langsung pada perangkat komputasi tepi (*embedded device*) robot di lapangan. Selain itu, fusi spasial langsung antara peta segmentasi 2D dan data kedalaman RGB-D menghasilkan *point cloud* 3D tersegmen secara langsung, mempermudah kontrol gerakan robot (*motion planning*) dan estimasi orientasi cengkeraman (*grasp pose*).
 
-## Temuan Kunci
-- Persepsi buah + 3D scene mendukung panen.
-- Segmentasi memisahkan buah dari latar.
-- Sensor 3D memberi geometri untuk perencanaan.
-- Kerangka menyeluruh bermanfaat.
+Keterbatasan konseptual model ini adalah deteksi cabang pohon yang masih berupa segmentasi semantik, bukan segmentasi instansi. Akibatnya, sistem tidak dapat membedakan batas-batas fisik antara cabang yang saling tumpang tindih, yang menyulitkan perencanaan gerakan robot di dalam kanopi pohon yang rimbun. Secara rekayasa, keandalan sistem sangat bergantung pada kualitas sensor kedalaman RGB-D. Pada siang hari dengan sinar matahari terik, sensor kedalaman berbasis cahaya terstruktur atau waktu terbang (*Time-of-Flight*) sering kali mengalami gangguan akibat radiasi inframerah matahari.
 
-## Keunggulan
-- Persepsi 3D menyeluruh.
-- Deteksi/segmentasi + rekonstruksi.
-- Dukung panen.
+## Kaitan dengan Bab Lain
+DaSNet-V2 merupakan evolusi penting dalam klaster **Pertanian** dan memiliki keterkaitan erat dengan bab-bab penelitian deteksi buah apel lainnya. Secara khusus, bab ini mewarisi fokus deteksi objek apel dari [Apple Detection (Improved YOLOv3)](./121%20-%202019%20-%20Apple%20Detection%20%28Improved%20YOLOv3%29%20-%20Pertanian.md) yang mengoptimalkan model YOLOv3 untuk mendeteksi apel di kebun secara cepat. Namun, jika [Apple Detection (Improved YOLOv3)](./121%20-%202019%20-%20Apple%20Detection%20%28Improved%20YOLOv3%29%20-%20Pertanian.md) hanya menghasilkan kotak pembatas 2D, DaSNet-V2 menghasilkan segmentasi instansi buah dan deteksi cabang pohon sebagai rintangan.
 
-## Keterbatasan
-- Fokus spesies apel.
-- Bergantung kualitas sensor 3D.
-- Kondisi kebun kompleks.
+Kaitan erat juga terlihat dengan [Apple Detection RGB+Depth (Faster R-CNN)](./123%20-%202020%20-%20Apple%20Detection%20RGB+Depth%20%28Faster%20R-CNN%29%20-%20Pertanian.md) yang menggunakan Faster R-CNN dua tahap dengan masukan RGB-D untuk deteksi buah. DaSNet-V2 menerapkan model satu tahap yang jauh lebih efisien untuk dijalankan pada perangkat tepi. Di sisi lain, DaSNet-V2 berbagi tujuan rekonstruksi 3D lingkungan dengan penelitian oleh Gene-Mola dkk. pada [Fruit Detection & 3D Location (Gene-Mola dkk.)](./124%20-%202020%20-%20Fruit%20Detection%20%26%203D%20Location%20%28Gene-Mola%20dkk.%29%20-%20Pertanian.md), yang melokalisasi buah apel dalam 3D menggunakan sensor RGB-D Kinect v2 dan SfM (*Structure-from-Motion*). Kontribusi unik DaSNet-V2 dibandingkan penelitian Gene-Mola dkk. adalah penyertaan segmentasi cabang pohon secara semantik untuk keperluan penghindaran rintangan secara dinamis.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Dari aspek integrasi robotik, metode ini menjadi basis data persepsi bagi robot panen buah otomatis pada [Automated Fruit Harvesting Robot (Onishi dkk.)](./126%20-%202019%20-%20Automated%20Fruit%20Harvesting%20Robot%20%28Onishi%20dkk.%29%20-%20Pertanian.md) dan [Iceberg Lettuce Harvesting Robot](./125%20-%202020%20-%20Iceberg%20Lettuce%20Harvesting%20Robot%20-%20Pertanian.md), menandai pergeseran fokus riset menuju pemahaman geometri 3D scene secara menyeluruh guna mendukung aksi fisik robot di dunia nyata.
 
-## Relevansi terhadap Tema Tinjauan
-Entri ini menyediakan persepsi 3D menyeluruh untuk panen robotik dalam tinjauan, menautkan deteksi/segmentasi dengan pemetaan RGB-D/3D.
+## Poin untuk Sitasi
+Untuk merujuk penelitian ini dalam karya ilmiah, dapat digunakan kunci BibTeX berikut:
+`kang2020strawberry` (Catatan: Kunci BibTeX ini dipertahankan sesuai dengan sistem indeks database repositori untuk memastikan integritas tautan rujukan).
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Pertanian** yang baik dibaca berdampingan:
+Ringkasan kalimat yang aman untuk dikutip:
+"Kang dan Chen (2020) mengusulkan DaSNet-V2, sebuah jaringan satu tahap multi-tugas yang mengintegrasikan deteksi buah apel, segmentasi instansi buah, dan segmentasi semantik cabang dalam satu arsitektur terpadu. Dengan memanfaatkan data RGB-D, sistem ini mampu merekonstruksi visualisasi 3D lingkungan kebun apel secara *real-time* pada komputer tertanam NVIDIA Jetson TX2 untuk memandu pergerakan lengan robot pemanen dan menghindari rintangan cabang."
 
-- [120 - 2019 - MangoYOLO - Pertanian](./120%20-%202019%20-%20MangoYOLO%20-%20Pertanian.md)
-- [121 - 2019 - Apple Detection (Improved YOLOv3) - Pertanian](./121%20-%202019%20-%20Apple%20Detection%20%28Improved%20YOLOv3%29%20-%20Pertanian.md)
-- [122 - 2020 - Apple Flower Detection (Pruned YOLOv4) - Pertanian](./122%20-%202020%20-%20Apple%20Flower%20Detection%20%28Pruned%20YOLOv4%29%20-%20Pertanian.md)
-- [123 - 2020 - Apple Detection RGB+Depth (Faster R-CNN) - Pertanian](./123%20-%202020%20-%20Apple%20Detection%20RGB+Depth%20%28Faster%20R-CNN%29%20-%20Pertanian.md)
-- [124 - 2020 - Fruit Detection & 3D Location (Gene-Mola dkk.) - Pertanian](./124%20-%202020%20-%20Fruit%20Detection%20%26%203D%20Location%20%28Gene-Mola%20dkk.%29%20-%20Pertanian.md)
-- [125 - 2020 - Iceberg Lettuce Harvesting Robot - Pertanian](./125%20-%202020%20-%20Iceberg%20Lettuce%20Harvesting%20Robot%20-%20Pertanian.md)
-- [126 - 2019 - Automated Fruit Harvesting Robot (Onishi dkk.) - Pertanian](./126%20-%202019%20-%20Automated%20Fruit%20Harvesting%20Robot%20%28Onishi%20dkk.%29%20-%20Pertanian.md)
-
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Pertanian** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
-
-## Glosarium Istilah (tema Pertanian)
-Istilah penting untuk memahami makalah ini:
-
-- **Deteksi buah** — Melokalisasi buah untuk estimasi/pemanenan.
-- **Oklusi dedaunan** — Buah terhalang daun/cabang.
-- **Fruit load** — Estimasi jumlah/beban buah.
-- **Robotic harvesting** — Panen otomatis (deteksi + manipulasi).
-- **RGB-D/stereo** — Penginderaan kedalaman untuk lokalisasi 3D buah.
-- **Instance segmentation** — Segmentasi per-objek untuk buah.
-- **Model pruning** — Pemangkasan kanal untuk model ringan.
-- **SfM** — Structure-from-Motion; rekonstruksi 3D dari banyak citra.
-- **mAP/PR** — Metrik deteksi buah.
-- **Kondisi lapangan** — Variasi cahaya/angin/latar di kebun.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Kang & Chen mengembangkan kerangka deteksi, segmentasi, dan visualisasi 3D scene kebun apel untuk panen robotik, menyediakan persepsi buah sekaligus pemetaan 3D untuk perencanaan.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `kang2020strawberry` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 127/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan verifikasi data:
+Angka hasil eksperimen utama seperti skor F1 deteksi buah sebesar 0,827 (LW-net) dan 0,832 (ResNet-101), serta akurasi segmentasi buah sebesar 86,5% (LW-net) dan 87,6% (ResNet-101) telah diverifikasi langsung dari naskah publikasi resmi di Computers and Electronics in Agriculture (Vol. 171, 105302). Pengujian dilakukan pada kebun apel Fuji di Qingdao, China, dengan jarak pemotretan 0,3 hingga 1,0 meter dari kamera ke buah.

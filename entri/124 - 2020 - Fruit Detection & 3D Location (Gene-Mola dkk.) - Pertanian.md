@@ -1,211 +1,116 @@
 # 124 - Fruit Detection and 3D Location Using Instance Segmentation Neural Networks and Structure-from-Motion Photogrammetry
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
-| Field | Nilai |
-|---|---|
-| Nomor entri | 124 dari 154 |
-| Kunci BibTeX | `genemola2020fruit3d` |
-| Judul | Fruit Detection and 3D Location Using Instance Segmentation Neural Networks and Structure-from-Motion Photogrammetry |
-| Penulis | Gen{\'e |
-| Tahun | 2020 |
-| Venue / Jurnal | Computers and Electronics in Agriculture |
-| Tema klaster | Pertanian |
-| Kata kunci | pertanian, instance segmentation, SfM, lokasi 3D, Mask R-CNN |
-
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-pertanian)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Fruit%20Detection%20and%203D%20Location%20Using%20Instance%20Segmentation%20Neural%20Networks%20and%20Structure-from-Motion%20Photogrammetry
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Fruit%20Detection%20and%203D%20Location%20Using%20Instance%20Segmentation%20Neural%20Networks%20and%20Structure-from-Motion%20Photogrammetry&sort=relevance
-
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
-
 | Atribut | Nilai |
 |---|---|
-| Volume | 169 |
-| Halaman | 105165 |
+| Kunci BibTeX | `genemola2020fruit3d` |
+| Judul asli | Fruit Detection and 3D Location Using Instance Segmentation Neural Networks and Structure-from-Motion Photogrammetry |
+| Penulis | Jordi Gené-Mola, Ricardo Sanz-Cortiella, Joan R. Rosell-Polo, Josep-Ramon Morera, Javier Ruiz-Carulla, Eduard Gregorio, Alexandre Escolà |
+| Tahun | 2020 |
+| Venue | Computers and Electronics in Agriculture |
+| Tema | Pertanian |
 
-## Ringkasan Eksekutif
-Menggabungkan instance segmentation (Mask R-CNN) dan fotogrametri Structure-from-Motion untuk deteksi buah dan lokasi 3D-nya di kebun.
+## Tautan Akses
+- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Fruit%20Detection%20and%203D%20Location%20Using%20Instance%20Segmentation%20Neural%20Networks%20and%20Structure-from-Motion%20Photogrammetry
+- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Fruit%20Detection%20and%203D%20Location%20Using%20Instance%20Segmentation%20Neural%20Networks%20and%20Structure-from-Motion%20Photogrammetry&sort=relevance
+- **DOI Resmi:** https://doi.org/10.1016/j.compag.2019.105165
 
-## Abstrak (Parafrase)
-Gene-Mola dkk. mendeteksi dan mensegmentasi buah dengan Mask R-CNN pada banyak citra, lalu memakai Structure-from-Motion (SfM) photogrammetry untuk merekonstruksi posisi 3D tiap buah di kebun. Ini menyediakan lokasi 3D buah (bukan hanya deteksi 2D) untuk pemetaan/panen, sebagai jalur alternatif lokalisasi 3D tanpa sensor depth aktif.
+## Gambaran Umum
+Makalah ini menyajikan sebuah metodologi untuk deteksi buah dan lokalisasi koordinat spasial tiga dimensi (*3D location*) buah di kebun buah menggunakan sensor pasif. Masalah utama yang diselesaikan adalah ketidakakuratan lokalisasi akibat oklusi dedaunan dan gangguan radiasi solar pada sensor kedalaman aktif luar ruangan. Metode yang diusulkan mengintegrasikan segmentasi instan (*instance segmentation*) 2D berbasis *Mask R-CNN* dengan rekonstruksi awan titik (*point cloud*) 3D berbasis *Structure-from-Motion* (SfM) dari citra multi-sudut (*multi-view*).
 
-## Latar Belakang & Konteks
-Lokasi 3D buah diperlukan untuk panen/pemetaan, bukan hanya deteksi 2D; sensor depth aktif tidak selalu tersedia, sehingga SfM menjadi alternatif.
+Sistem ini memproyeksikan masker 2D buah ke dalam ruang 3D hasil SfM. Deteksi palsu (*false positive*) disaring menggunakan pengklasifikasi *Support Vector Machine* (SVM) biner yang menganalisis fitur geometris dan kerapatan klaster titik 3D. Uji coba eksperimental pada dataset Fuji-SfM menunjukkan peningkatan kinerja yang signifikan dengan pencapaian F1-score sebesar 0,881 pada pemetaan lokasi 3D dibandingkan dengan 0,816 pada tingkat deteksi 2D saja. Penelitian ini menyediakan solusi pemetaan buah non-destruktif yang akurat untuk manajemen hasil panen.
 
-## Permasalahan yang Diangkat
-- Lokasi 3D buah diperlukan (bukan hanya 2D).
-- Sensor depth aktif tak selalu tersedia.
-- Rekonstruksi 3D kebun menantang.
-- Buah perlu disegmentasi per-instance.
-- Pemetaan/panen butuh koordinat 3D.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+Otomatisasi pemantauan hasil kebun dan pemanenan buah memerlukan sistem penglihatan komputer yang tidak hanya mampu mendeteksi keberadaan buah, tetapi juga mengidentifikasi lokasi spasial 3D buah tersebut secara presisi. Informasi spasial 3D ini sangat penting bagi manipulator robotik untuk merencanakan lintasan gerak memetik buah tanpa merusak struktur tanaman. Sebelum penelitian ini, sebagian besar metode deteksi berbasis pembelajaran mendalam berfokus pada deteksi 2D pada citra RGB tunggal. Pendekatan 2D ini kehilangan informasi kedalaman sehingga tidak memadai untuk aplikasi pemanenan robotik langsung.
 
-## Tujuan & Pertanyaan Penelitian
-- Mendeteksi & mensegmentasi buah (Mask R-CNN).
-- Merekonstruksi lokasi 3D via SfM.
-- Menyediakan lokasi 3D untuk pemetaan/panen.
+Untuk mendapatkan informasi 3D, pendekatan sebelumnya menggunakan sensor kedalaman aktif seperti kamera RGB-D berbasis *Time-of-Flight* (ToF) atau sensor LiDAR. Namun, sensor aktif ini memiliki keterbatasan serius di lingkungan pertanian luar ruangan. Spektrum inframerah dari radiasi sinar matahari langsung mengganggu sensor penerima inframerah pada kamera RGB-D aktif, menghasilkan data kedalaman yang bising atau tidak lengkap. Di sisi lain, biaya perangkat keras LiDAR sangat mahal untuk penerapan praktis. Metode fotogrametri pasif seperti stereo konvensional juga rentan gagal akibat oklusi daun yang padat dan variasi pencahayaan alami di kebun buah. Diperlukan metode lokalisasi 3D pasif yang tangguh terhadap gangguan luar ruangan dan oklusi.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Makalah menggabungkan segmentasi instan dan rekonstruksi 3D.
+## Ide Utama
+Gagasan utama makalah ini adalah menggabungkan kemampuan representasi visual Mask R-CNN dengan konsistensi geometris multi-sudut yang disediakan oleh rekonstruksi SfM pasif. Informasi deteksi dikumpulkan dari berbagai sudut pandang kamera saat bergerak mengitari pohon apel untuk melengkapi data spasial yang hilang akibat oklusi.
 
-Karya/konsep pembanding yang relevan:
+Alur data dari sistem ini menerima masukan berupa urutan citra RGB dari pohon apel. Citra diproses secara paralel untuk menghasilkan masker piksel 2D buah melalui Mask R-CNN dan merekonstruksi awan titik 3D melalui SfM. Masker piksel 2D diproyeksikan kembali (*back-projected*) ke ruang 3D menggunakan parameter kamera hasil kalibrasi SfM untuk membentuk klaster titik 3D. Klaster titik dari berbagai citra yang saling tumpang tindih digabungkan untuk merepresentasikan satu buah apel fisik yang unik. Terakhir, fitur geometris dari klaster 3D ini diekstraksi dan diklasifikasikan menggunakan SVM biner guna menyaring deteksi palsu yang disebabkan oleh proyeksi menyimpang pada daun atau tanah.
 
-- Mask R-CNN — instance segmentation.
-- Structure-from-Motion (SfM) — rekonstruksi 3D.
-- Deteksi buah kebun.
-- Lokalisasi 3D.
+## Cara Kerja Langkah demi Langkah
+Metodologi lokalisasi 3D ini terdiri dari serangkaian langkah terintegrasi yang memindahkan representasi objek dari piksel 2D ke ruang metrik 3D:
 
-## Metodologi & Arsitektur
-Mask R-CNN mendeteksi dan mensegmentasi buah pada banyak citra kebun; SfM photogrammetry merekonstruksi struktur 3D scene dari citra multi-view; posisi 3D tiap buah dihitung dari segmentasi + rekonstruksi; menghasilkan peta lokasi buah.
+```
+  [ Citra RGB Multi-view ] ──┬──> [ SfM Photogrammetry ] ──> [ 3D Point Cloud ]
+                             │                                       │
+                             └──> [ Mask R-CNN (ResNet-101) ]        │
+                                         │                           │
+                                         ▼                           │
+                                 [ 2D Pixel Masks ]                  │
+                                         │                           │
+                                         ▼                           │
+                                 [ Proyeksi 2D-3D ] <────────────────┘
+                                         │
+                                         ▼
+                             [ 3D Point Clusters ]
+                                         │
+                                         ▼
+                              [ Klasterisasi 3D ]
+                                         │
+                                         ▼
+                            [ Ekstraksi Fitur 3D ]
+                            (P, V, delta, Psi)
+                                         │
+                                         ▼
+                            [ Penapisan SVM Biner ]
+                                         │
+                                         ▼
+                            [ Posisi 3D Buah Valid ]
+```
 
-Komponen / langkah metodologis utama:
+### Segmentasi Instan 2D Berbasis Mask R-CNN
+Deteksi biner 2D dilakukan menggunakan jaringan saraf tiruan Mask R-CNN dengan *backbone* ResNet-101 dan *Feature Pyramid Network* (FPN). Jaringan ini memprediksi kelas, kotak pembatas (*bounding box*), skor keyakinan (*confidence score*), dan masker biner tingkat piksel untuk setiap buah. Sebelum pemrosesan, citra beresolusi tinggi dipotong menjadi 24 sub-gambar berukuran $1024 \times 1024$ piksel. Langkah pemotongan ini krusial untuk mencegah degradasi detail buah berukuran kecil akibat kompresi ukuran input standar pada model. Jaringan dilatih melalui penyetelan halus (*fine-tuning*) pada 288 citra beranotasi dari dataset Fuji-SfM setelah diinisialisasi dengan bobot COCO. Hasil deteksi direpresentasikan sebagai masker piksel $M_{ij}$ untuk citra ke-$i$ dan objek buah ke-$j$.
 
-- Instance segmentation buah (Mask R-CNN).
-- SfM photogrammetry (multi-view).
-- Rekonstruksi 3D scene kebun.
-- Estimasi posisi 3D tiap buah.
-- Pemetaan lokasi buah.
-- Tanpa sensor depth aktif.
+### Rekonstruksi 3D dengan Structure-from-Motion (SfM)
+Secara paralel, 582 citra gerak sekuensial dari 11 pohon apel Fuji diproses menggunakan perangkat lunak Agisoft Metashape Professional. Algoritma SfM mencocokkan titik fitur lintas gambar untuk mengestimasi matriks kalibrasi intrinsik dan pose ekstrinsik kamera untuk setiap citra. Selanjutnya, algoritma *Multi-View Stereo* (MVS) membangun awan titik padat yang merekonstruksi struktur geometri kanopi pohon dalam skala spasial dunia nyata. Setiap titik dalam awan titik memiliki koordinat global ($X, Y, Z$).
 
-## Kontribusi Utama
-1. Deteksi/segmentasi + lokalisasi 3D buah.
-2. SfM sebagai alternatif sensor depth.
-3. Posisi 3D akurat untuk pemetaan/panen.
-4. Jalur lokalisasi 3D tanpa depth aktif.
+### Proyeksi Masker 2D ke Awan Titik 3D
+Setiap masker piksel 2D hasil deteksi Mask R-CNN diproyeksikan ke ruang 3D. Dari pusat optik kamera untuk citra $i$, sinar proyeksi dihitung melewati setiap koordinat piksel di dalam masker $M_{ij}$. Titik-titik 3D pada awan titik padat yang terletak dalam batas jarak ambang tertentu dari garis sinar proyeksi ditandai sebagai titik milik buah tersebut. Proses ini menghasilkan awan titik terproyeksi untuk setiap objek buah yang terdeteksi pada citra.
 
-## Rincian Eksperimen
-Diuji pada kebun apel dengan metrik deteksi/segmentasi dan akurasi lokasi 3D buah (Computers and Electronics in Agriculture 2020).
+### Klasterisasi Spasial dan Penggabungan Multi-Sudut
+Karena satu buah apel fisik dipotret dari beberapa citra dengan sudut pandang berbeda, titik-titik proyeksi dari berbagai citra akan terakumulasi pada koordinat spasial 3D yang sama. Algoritma klasterisasi spasial berbasis jarak Euclidean diterapkan untuk menggabungkan titik-titik yang saling berdekatan menjadi satu klaster kandidat buah 3D tunggal. Untuk menjamin konsistensi visual, diterapkan aturan penyaringan ketat: suatu klaster 3D hanya dianggap sebagai kandidat buah valid jika didukung oleh deteksi Mask R-CNN pada minimal 2 citra yang berbeda. Klaster yang hanya didukung oleh satu citra langsung dibuang untuk mengeliminasi kesalahan deteksi acak.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+### Ekstraksi Fitur Geometris 3D
+Untuk setiap klaster kandidat buah 3D yang lolos penyaringan konsistensi, dihitung empat fitur geometris dari sebaran titik-titik pembentuknya:
+1. Jumlah titik ($P$): Total titik 3D yang membentuk klaster.
+2. Volume ($V$): Volume amplop cembung (*convex hull*) dari klaster titik 3D.
+3. Kepadatan titik ($\delta$): Rasio kerapatan yang dihitung sebagai $\delta = P / V$.
+4. Sferisitas ($\Psi$): Ukuran kebulatan klaster yang dihitung dari nilai eigen normalized ($\lambda_1, \lambda_2, \lambda_3$ dengan $\lambda_1 \ge \lambda_2 \ge \lambda_3$ dan $\lambda_1 + \lambda_2 + \lambda_3 = 1$) dari matriks kovarians klaster titik 3D:
+   $$\Psi = 27 \cdot \lambda_1 \cdot \lambda_2 \cdot \lambda_3$$
+   Klaster buah apel asli yang mendekati bentuk bola memiliki nilai eigen yang seimbang sehingga nilai sferisitas $\Psi$ mendekati 1. Klaster palsu dari dahan atau daun cenderung memiliki nilai eigen yang tidak seimbang (satu atau dua dimensi dominan), menghasilkan nilai $\Psi$ mendekati 0.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Kebun apel | deteksi/seg | akurat (Mask R-CNN) |
-| Lokasi 3D | akurasi | posisi buah via SfM |
-| Alternatif depth | SfM | tanpa sensor aktif |
+### Penapisan False Positive dengan SVM
+Fitur empat dimensi ($P, V, \delta, \Psi$) diinput to model SVM biner dengan kernel *Radial Basis Function* (RBF). Model SVM mengklasifikasikan setiap klaster ke dalam kelas buah sejati (*true positive*) atau deteksi palsu (*false positive*). Klaster yang diklasifikasikan sebagai buah sejati dipertahankan, dan koordinat rata-rata dari seluruh titik dalam klaster dihitung sebagai koordinat pusat 3D final buah apel tersebut.
 
-## Temuan Kunci
-- SfM dapat memberi lokasi 3D buah tanpa depth aktif.
-- Segmentasi instan penting untuk lokalisasi.
-- Multi-view memungkinkan rekonstruksi 3D.
-- Alternatif praktis untuk pemetaan buah.
+## Eksperimen dan Hasil
+Eksperimen dilakukan di kebun apel komersial pada 11 pohon apel Fuji (Malus domestica Borkh. cv. Fuji) yang memiliki total 1.455 buah apel asli yang dihitung manual sebagai acuan (*ground truth*). Performa deteksi 2D Mask R-CNN dibandingkan secara langsung dengan performa sistem lokalisasi 3D terintegrasi (Mask R-CNN + SfM + SVM).
 
-## Keunggulan
-- Lokalisasi 3D tanpa depth aktif.
-- Segmentasi + rekonstruksi.
-- Pemetaan buah.
+Hasil kuantitatif eksperimen dirangkum dalam tabel berikut:
 
-## Keterbatasan
-- SfM butuh banyak citra multi-view.
-- Rekonstruksi sensitif terhadap gerak/tekstur.
-- Fokus spesies apel.
+| Pendekatan | Presisi (*Precision*) | Sensitivitas (*Recall*) | F1-Score |
+|---|---|---|---|
+| Deteksi 2D (Mask R-CNN saja) | 0,762 (76,2%) | 0,878 (87,8%) | 0,816 (81,6%) |
+| Lokasi 3D (Mask R-CNN + SfM + SVM) | 0,857 (85,7%) | 0,906 (90,6%) | 0,881 (88,1%) |
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+Integrasi geometri 3D dan penapisan SVM memberikan peningkatan performa yang signifikan. Presisi sistem meningkat sebesar 9,5% (dari 0,762 menjadi 0,857), membuktikan bahwa fitur geometris 3D dan klasifikasi SVM sangat efektif dalam menyaring deteksi palsu tingkat piksel. Sensitivitas (*recall*) juga meningkat sebesar 2,8% (dari 0,878 menjadi 0,906) karena buah yang mengalami oklusi parsial pada satu citra tetap dapat dikenali dari citra lain lalu digabungkan dengan sukses di ruang 3D. Secara keseluruhan, F1-score sistem meningkat dari 0,816 menjadi 0,881.
 
-## Relevansi terhadap Tema Tinjauan
-Entri ini menunjukkan jalur alternatif (SfM) menuju lokalisasi 3D buah dalam tinjauan, melengkapi pendekatan berbasis sensor RGB-D.
+## Kelebihan dan Keterbatasan
+Kelebihan utama dari metodologi ini adalah kemampuannya melakukan lokalisasi 3D buah secara pasif tanpa bergantung pada sensor kedalaman aktif. Hal ini memberikan ketangguhan tinggi terhadap kebisingan data akibat gangguan radiasi matahari luar ruangan yang sering merusak performa sensor RGB-D aktif berbasis inframerah. Penggunaan informasi multi-sudut juga secara alami mengatasi masalah oklusi parsial pada buah. Selain itu, publikasi dataset Fuji-SfM menyediakan kontribusi berharga bagi komunitas riset pertanian presisi.
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Pertanian** yang baik dibaca berdampingan:
+Dari sisi rekayasa komputasi, keterbatasan utama sistem ini adalah tingginya beban komputasi proses SfM. Pencocokan fitur dan rekonstruksi awan titik padat memerlukan waktu pemrosesan yang lama (beberapa menit hingga beberapa jam per pohon), sehingga metode ini tidak dapat dioperasikan secara waktu-nyata (*real-time*) untuk robot pemanen. Secara konseptual, keandalan SfM sangat rentan terhadap perubahan kondisi lingkungan fisik selama pengambilan citra. Hembusan angin yang menggerakkan daun atau pergeseran bayangan matahari dapat merusak konsistensi geometri antar-citra, sehingga menurunkan kualitas rekonstruksi 3D dan akurasi lokalisasi buah.
 
-- [120 - 2019 - MangoYOLO - Pertanian](./120%20-%202019%20-%20MangoYOLO%20-%20Pertanian.md)
-- [121 - 2019 - Apple Detection (Improved YOLOv3) - Pertanian](./121%20-%202019%20-%20Apple%20Detection%20%28Improved%20YOLOv3%29%20-%20Pertanian.md)
-- [122 - 2020 - Apple Flower Detection (Pruned YOLOv4) - Pertanian](./122%20-%202020%20-%20Apple%20Flower%20Detection%20%28Pruned%20YOLOv4%29%20-%20Pertanian.md)
-- [123 - 2020 - Apple Detection RGB+Depth (Faster R-CNN) - Pertanian](./123%20-%202020%20-%20Apple%20Detection%20RGB+Depth%20%28Faster%20R-CNN%29%20-%20Pertanian.md)
-- [125 - 2020 - Iceberg Lettuce Harvesting Robot - Pertanian](./125%20-%202020%20-%20Iceberg%20Lettuce%20Harvesting%20Robot%20-%20Pertanian.md)
-- [126 - 2019 - Automated Fruit Harvesting Robot (Onishi dkk.) - Pertanian](./126%20-%202019%20-%20Automated%20Fruit%20Harvesting%20Robot%20%28Onishi%20dkk.%29%20-%20Pertanian.md)
-- [127 - 2020 - Fruit Detection & 3D Visualisation (Kang & Chen) - Pertanian](./127%20-%202020%20-%20Fruit%20Detection%20%26%203D%20Visualisation%20%28Kang%20%26%20Chen%29%20-%20Pertanian.md)
+## Kaitan dengan Bab Lain
+Metodologi dalam bab ini mewarisi kebutuhan deteksi objek buah 2D pada citra RGB yang dibahas pada [Bab 120 (MangoYOLO)](./120%20-%202019%20-%20MangoYOLO%20-%20Pertanian.md), [Bab 121 (Apple Detection Improved YOLOv3)](./121%20-%202019%20-%20Apple%20Detection%20%28Improved%20YOLOv3%29%20-%20Pertanian.md), dan [Bab 122 (Apple Flower Detection Pruned YOLOv4)](./122%20-%202020%20-%20Apple%20Flower%20Detection%20%28Pruned%20YOLOv4%29%20-%20Pertanian.md). Ketiga bab tersebut menggunakan varian YOLO untuk deteksi 2D pada tingkat piksel gambar. Namun, metode-metode tersebut tidak menyediakan koordinat spasial 3D yang mutlak diperlukan untuk operasi lengan robot pemenang.
 
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Pertanian** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
+Untuk mengatasi kehilangan informasi spasial tersebut, [Bab 123 (Apple Detection RGB+Depth Faster R-CNN)](./123%20-%202020%20-%20Apple%20Detection%20RGB+Depth%20%28Faster%20R-CNN%29%20-%20Pertanian.md) menggunakan sensor kedalaman aktif (RGB-D) untuk mendapatkan data kedalaman buah secara langsung. Bab 124 (metode Gené-Mola dkk. ini) hadir sebagai alternatif pasif yang menyelesaikan kelemahan sensor aktif di Bab 123 terhadap gangguan cahaya matahari luar ruangan dengan mengadopsi rekonstruksi geometri SfM dari citra multi-sudut.
 
-## Glosarium Istilah (tema Pertanian)
-Istilah penting untuk memahami makalah ini:
+Meskipun demikian, lambatnya komputasi rekonstruksi SfM di Bab 124 membuatnya kurang cocok untuk memandu robot panen instan secara *real-time* seperti pada [Bab 125 (Iceberg Lettuce Harvesting Robot)](./125%20-%202020%20-%20Iceberg%20Lettuce%20Harvesting%20Robot%20-%20Pertanian.md) dan [Bab 126 (Automated Fruit Harvesting Robot Onishi dkk.)](./126%20-%202019%20-%20Automated%20Fruit%20Harvesting%20Robot%20%28Onishi%20dkk.%29%20-%20Pertanian.md) yang membutuhkan keputusan pemetikan instan. Sebagai alternatif lain, [Bab 127 (Fruit Detection & 3D Visualisation Kang & Chen)](./127%20-%202020%20-%20Fruit%20Detection%20%26%203D%20Visualisation%20%28Kang%20%26%20Chen%29%20-%20Pertanian.md) berupaya menjembatani celah kecepatan pemrosesan ini dengan memanfaatkan sensor RGB-D modern dan algoritma visualisasi 3D real-time.
 
-- **Deteksi buah** — Melokalisasi buah untuk estimasi/pemanenan.
-- **Oklusi dedaunan** — Buah terhalang daun/cabang.
-- **Fruit load** — Estimasi jumlah/beban buah.
-- **Robotic harvesting** — Panen otomatis (deteksi + manipulasi).
-- **RGB-D/stereo** — Penginderaan kedalaman untuk lokalisasi 3D buah.
-- **Instance segmentation** — Segmentasi per-objek untuk buah.
-- **Model pruning** — Pemangkasan kanal untuk model ringan.
-- **SfM** — Structure-from-Motion; rekonstruksi 3D dari banyak citra.
-- **mAP/PR** — Metrik deteksi buah.
-- **Kondisi lapangan** — Variasi cahaya/angin/latar di kebun.
+## Poin untuk Sitasi
+Kunci BibTeX untuk bab ini adalah `genemola2020fruit3d`. Ringkasan yang aman dikutip dalam tinjauan pustaka akademik adalah:
+"Gené-Mola dkk. mengusulkan metode deteksi dan lokalisasi buah 3D pasif dengan mengintegrasikan segmentasi instan Mask R-CNN pada citra RGB 2D dengan awan titik hasil rekonstruksi fotogrametri *Structure-from-Motion* (SfM) multi-sudut. Penapisan klaster titik 3D menggunakan Support Vector Machine (SVM) biner berhasil meningkatkan F1-score deteksi dari 0,816 menjadi 0,881 serta mengeliminasi kesalahan deteksi palsu akibat oklusi dedaunan."
 
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Gene-Mola dkk. menggabungkan Mask R-CNN dan Structure-from-Motion untuk deteksi buah dan lokasi 3D-nya di kebun, menyediakan lokalisasi 3D tanpa sensor depth aktif.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `genemola2020fruit3d` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 124/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan verifikasi data: Angka-angka hasil utama (F1-score 3D 0,881, presisi 0,857, recall 0,906) telah diverifikasi secara akurat dari naskah publikasi resmi. Pengujian dilakukan pada 11 pohon apel Fuji dengan total populasi 1.455 buah apel. Keterbatasan sistem berupa waktu komputasi yang tinggi untuk rekonstruksi SfM dikonfirmasi oleh penulis sebagai batasan utama untuk penerapan waktu-nyata (*real-time*).

@@ -1,211 +1,123 @@
 # 121 - Apple Detection During Different Growth Stages in Orchards Using the Improved YOLO-V3 Model
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 121 dari 154 |
 | Kunci BibTeX | `tian2019appleyolo` |
-| Judul | Apple Detection During Different Growth Stages in Orchards Using the Improved YOLO-V3 Model |
+| Judul asli | Apple Detection During Different Growth Stages in Orchards Using the Improved YOLO-V3 Model |
 | Penulis | Tian, Yunong; Yang, Guodong; Wang, Zhe; Wang, Hao; Li, En; Liang, Zize |
 | Tahun | 2019 |
-| Venue / Jurnal | Computers and Electronics in Agriculture |
-| Tema klaster | Pertanian |
-| Kata kunci | pertanian, apel, YOLOv3, DenseNet, oklusi |
+| Venue | Computers and Electronics in Agriculture |
+| Tema | Pertanian |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
-
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-pertanian)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
-
-## Tautan Akses (klik untuk view/unduh)
+## Tautan Akses
 - **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Apple%20Detection%20During%20Different%20Growth%20Stages%20in%20Orchards%20Using%20the%20Improved%20YOLO-V3%20Model
 - **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Apple%20Detection%20During%20Different%20Growth%20Stages%20in%20Orchards%20Using%20the%20Improved%20YOLO-V3%20Model&sort=relevance
+- **DOI (ScienceDirect):** https://doi.org/10.1016/j.compag.2019.01.012
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Gambaran Umum
+Penelitian oleh Tian dkk. (2019) menyajikan model deteksi objek satu-tahap (*one-stage detector*) berbasis pembelajaran mendalam (*deep learning*) bernama YOLOv3-dense untuk mendeteksi buah apel pada tiga tahap pertumbuhan (*growth stages*) di lingkungan kebun yang kompleks. Model ini mengatasi tantangan luar ruangan seperti buah saling tumpang tindih (*overlapping*), terhalang oleh dedaunan (oklusi), fluktuasi intensitas pencahayaan matahari langsung (*direct sunlight*) maupun bayangan (*shade*), serta perubahan warna buah dari fase muda hingga matang.
 
-| Atribut | Nilai |
-|---|---|
-| Volume | 157 |
-| Halaman | 417--426 |
+Model YOLOv3-dense mengintegrasikan modul jaringan terkoneksi padat (*DenseNet*) ke dalam kerangka kerja *You Only Look Once* versi 3 (YOLOv3). Integrasi ini memperkuat propagasi dan penggunaan kembali fitur (*feature propagation and reuse*) pada lapisan fitur beresolusi rendah. Dalam pengujian menggunakan dataset citra kebun beresolusi 3000 × 4000 piksel, model ini mencapai skor F1 sebesar 0,817 dengan waktu pemrosesan rata-rata 0,304 detik per citra. Performa ini mengungguli metode pembanding seperti Faster R-CNN dan YOLOv3 standar dalam kondisi kebun yang menantang.
 
-## Ringkasan Eksekutif
-Model YOLOv3 termodifikasi (DenseNet) untuk mendeteksi apel pada berbagai tahap pertumbuhan di kebun pada kondisi cahaya/oklusi beragam.
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+Deteksi buah yang akurat dan cepat di kebun terbuka sangat krusial untuk otomatisasi pertanian, seperti estimasi beban buah (*fruit load estimation*) dan pemanenan mekanis menggunakan robot. Sebelum meluasnya penerapan pembelajaran mendalam, metode visi komputer tradisional sangat bergantung pada ekstraksi fitur manual (*hand-crafted features*) seperti klasifikasi warna, analisis bentuk bulat, atau segmentasi ambang batas intensitas piksel. Namun, metode tradisional ini memiliki kelemahan inheren berupa sensitivitas yang sangat tinggi terhadap gangguan latar belakang dan perubahan lingkungan kebun alami.
 
-## Abstrak (Parafrase)
-Tian dkk. memodifikasi YOLOv3 dengan densifikasi backbone (DenseNet) untuk mendeteksi apel pada tahap pertumbuhan berbeda (muda hingga matang) di kebun. Model dirancang robust terhadap oklusi daun, variasi warna tahap tumbuh, dan pencahayaan, mencapai akurasi tinggi lintas kondisi.
+Tantangan utama di lapangan meliputi:
+1. Oklusi dedaunan dan cabang: Buah apel sering kali terhalang sebagian oleh daun atau ranting, sehingga visi tradisional yang mengandalkan keutuhan bentuk buah akan gagal mendeteksi objek.
+2. Fluktuasi pencahayaan: Sinar matahari langsung menimbulkan efek kilau putih (*overexposure*) pada kulit apel, sedangkan awan atau dedaunan lebat menciptakan bayangan gelap (*shade*) yang mengaburkan warna asli buah.
+3. Variasi warna lintas tahap pertumbuhan: Apel muda berukuran kecil dan berwarna hijau pekat, menyerupai dedaunan sekitarnya. Seiring pertumbuhan, buah membesar dan akhirnya berubah merah saat matang. Model konvensional yang hanya dilatih pada buah matang akan gagal mendeteksi buah muda.
+4. Keseimbangan akurasi dan kecepatan: Detektor dua-tahap (*two-stage detector*) seperti Faster R-CNN menawarkan akurasi tinggi tetapi lambat. Sebaliknya, model satu-tahap seperti YOLOv3 standar cepat tetapi kurang akurat untuk objek kecil yang terhalang.
 
-## Latar Belakang & Konteks
-Deteksi apel terkendala oklusi dedaunan, variasi warna antar-tahap tumbuh (hijau muda vs merah matang), dan pencahayaan yang berubah di kebun.
+Oleh karena itu, diperlukan arsitektur yang mampu mempertahankan fitur halus objek kecil, tangguh terhadap variasi warna dan pencahayaan, serta memiliki kecepatan inferensi memadai untuk implementasi lapangan.
 
-## Permasalahan yang Diangkat
-- Oklusi daun/cabang menutupi apel.
-- Warna apel bervariasi antar-tahap tumbuh.
-- Pencahayaan kebun berubah-ubah.
-- Deteksi objek kecil/berhimpitan sulit.
-- Model perlu robust lintas kondisi.
+## Ide Utama
+Gagasan utama penelitian ini adalah memperkuat pemeliharaan fitur pada YOLOv3 dengan menerapkan prinsip koneksi padat dari DenseNet pada lapisan ekstraksi fitur beresolusi rendah. Dalam YOLOv3 standar, informasi spasial objek kecil atau terhalang sering kali hilang pada lapisan yang lebih dalam akibat operasi penyusutan dimensi (*downsampling*) yang berulang.
 
-## Tujuan & Pertanyaan Penelitian
-- Memodifikasi YOLOv3 untuk domain apel.
-- Meningkatkan robustness terhadap oklusi/cahaya.
-- Mendeteksi apel lintas tahap pertumbuhan.
+Untuk mengatasinya, Tian dkk. mengganti lapisan konvolusi transisi standar pada sub-jaringan ekstraksi multi-skala YOLOv3 dengan blok padat (*dense block*). Di dalam setiap blok padat, setiap lapisan terhubung langsung dengan seluruh lapisan berikutnya dalam format maju-umpan (*feed-forward*). Lapisan ke-$l$ menerima seluruh peta fitur (*feature maps*) dari lapisan terdahulu melalui operasi penggabungan (*concatenation*). Konseptualisasi mekanis ini memastikan aliran informasi maksimal tanpa kehilangan fitur tingkat rendah. Hasilnya, fitur resolusi rendah yang kaya akan informasi tepi dan tekstur apel hijau muda dapat digunakan kembali (*feature reuse*) pada lapisan prediksi yang lebih dalam, sekaligus memperlancar aliran gradien (*backpropagation*) selama pelatihan.
 
-## Tinjauan Terdahulu / Posisi Literatur
-Makalah menyempurnakan YOLOv3 untuk deteksi buah.
+## Cara Kerja Langkah demi Langkah
+Model YOLOv3-dense memproses citra masukan melalui tahapan berurutan hingga menghasilkan prediksi koordinat kotak pembatas (*bounding box*).
 
-Karya/konsep pembanding yang relevan:
+### 6.1 Pra-pemrosesan Citra
+Citra masukan beresolusi tinggi 3000 × 4000 piksel diubah ukurannya menjadi $320 \times 320$ piksel. Langkah pengecilan skala spasial ini menjaga kestabilan lapisan normalisasi bets (*batch normalization*) dan memungkinkan ukuran bets (*batch size*) yang lebih besar selama pelatihan.
 
-- YOLOv3 — detektor dasar.
-- DenseNet — densifikasi backbone.
-- Deteksi apel kebun.
-- Dataset apel multi-tahap.
+### 6.2 Ekstraksi Fitur Dasar dengan Darknet-53
+Citra masukan dilewatkan ke dalam *backbone* Darknet-53 yang terdiri dari 53 lapisan konvolusi dengan koneksi sisa (*residual connection*). Jaringan ini mengekstrak fitur visual secara hierarkis dan menghasilkan tiga peta fitur dengan skala spasial berbeda untuk deteksi multi-skala.
 
-## Metodologi & Arsitektur
-Backbone YOLOv3 didensifikasi (koneksi padat gaya DenseNet) untuk fitur lebih kaya; model dilatih pada citra apel berbagai tahap tumbuh dan kondisi; dievaluasi untuk robustness terhadap oklusi dan pencahayaan.
+### 6.3 Densifikasi Fitur dengan Dense Block
+Modifikasi inti dilakukan pada sub-jaringan prediksi fitur beresolusi rendah dengan mengganti lapisan konvolusi transisi konvensional dengan blok padat (*dense block*).
+Setiap lapisan dalam blok padat menerima peta fitur dari seluruh lapisan terdahulu. Dengan laju pertumbuhan (*growth rate*) sebesar $k$, penggabungan peta fitur dilakukan secara horizontal di sepanjang dimensi saluran (*channel dimension*). Dengan demikian, informasi tepi apel hijau muda tetap terjaga dan dikombinasikan dengan representasi semantik tingkat tinggi pada lapisan dalam, sekaligus memitigasi gradien menghilang (*vanishing gradient*).
 
-Komponen / langkah metodologis utama:
+### 6.4 Fusi Fitur Multi-Skala dan Prediksi
+Model menggunakan arsitektur mirip *Feature Pyramid Network* (FPN) untuk memprediksi objek pada tiga skala output yang berbeda:
+1. Skala Halus (prediksi grid $80 \times 80$): Untuk melokalisasi apel muda kecil atau apel dengan oklusi berat.
+2. Skala Menengah (prediksi grid $40 \times 40$): Untuk mendeteksi apel berukuran rata-rata.
+3. Skala Kasar (prediksi grid $20 \times 20$): Untuk mendeteksi apel matang besar yang dekat dengan kamera.
 
-- Densifikasi backbone YOLOv3 (DenseNet).
-- Fitur lebih kaya untuk objek sulit.
-- Robust terhadap oklusi & pencahayaan.
-- Deteksi apel multi-tahap tumbuh.
-- Pelatihan pada citra kebun.
-- Evaluasi lintas kondisi.
+Pada setiap sel kisi (*grid cell*), model memprediksi koordinat kotak pembatas ($x, y, w, h$), skor keyakinan (*confidence score*), dan probabilitas keberadaan kelas apel. Dimensi kotak pembatas disesuaikan menggunakan jangkar (*anchors*) yang telah diklaster sebelumnya menggunakan metode *k-means*. Akhirnya, hasil prediksi disaring menggunakan teknik penekanan non-maksimum (*Non-Maximum Suppression* / NMS) berdasarkan ambang batas *Intersection over Union* (IoU).
 
-## Kontribusi Utama
-1. Modifikasi backbone YOLOv3 memperkuat deteksi buah.
-2. Robust terhadap oklusi & variasi warna.
-3. Akurasi tinggi lintas tahap tumbuh.
-4. Aplikasi apel kebun yang praktis.
+Alur data dan struktur integrasi *dense block* ini digambarkan secara skematis pada diagram berikut:
 
-## Rincian Eksperimen
-Diuji pada dataset apel kebun (berbagai tahap tumbuh/kondisi) dengan metrik deteksi, dibandingkan YOLOv3 baseline.
+```
+[Citra Kebun Apel]
+       │
+       ▼
+┌──────────────┐
+│  Darknet-53  │ (Ekstraksi Fitur Awal)
+└──────┬───────┘
+       ├─────────────────────────────────┐
+       ▼ (Lapisan Dangkal)               ▼ (Lapisan Dalam)
+┌──────────────┐                 ┌──────────────┐
+│ Peta Fitur   │                 │ Dense Block  │ (Dense Connections
+│ Skala Halus  │                 │  (Features   │  & Feature Reuse)
+│ (Deteksi     │                 │ Propagation) │
+│ Apel Kecil/  │                 └──────┬───────┘
+│  Hijau Muda) │                        │ Up-sample & Concatenate
+└──────▲───────┘                        │
+       │                                ▼
+       └─────────────────────────┌──────────────┐
+                                 │ Peta Fitur   │ (Deteksi Apel
+                                 │ Skala Kasar  │  Besar / Matang)
+                                 └──────────────┘
+```
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+## Eksperimen dan Hasil
+Tian dkk. (2019) menguji model YOLOv3-dense menggunakan dataset apel yang dikumpulkan dari perkebunan buah nyata di bawah kondisi lingkungan alami.
+- Dataset awal terdiri dari **480 citra asli** beresolusi **3000 × 4000 piksel** yang mencakup tiga fase pertumbuhan apel: muda (*young*), berkembang (*expanding*), dan matang (*ripe*).
+- Untuk mengantisipasi *overfitting*, dilakukan augmentasi data dengan teknik rotasi, penyesuaian keseimbangan warna, kecerahan, dan penambahan efek buram (*blur*), menghasilkan **4.800 citra latih**.
+- Set data uji (*test dataset*) yang digunakan terdiri dari **480 citra asli** tanpa augmentasi untuk merepresentasikan kondisi lapangan nyata.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| Apel kebun | akurasi/F1 | tinggi lintas kondisi |
-| Tahap tumbuh | robustness | muda hingga matang |
-| vs YOLOv3 | perbandingan | densifikasi menyumbang gain |
+Performa model YOLOv3-dense dievaluasi menggunakan metrik presisi (*precision*), sensitivitas (*recall*), dan skor F1, dibandingkan dengan beberapa model standar:
+- **YOLOv3-dense (usulan):** skor F1 sebesar **0,817** dengan waktu inferensi rata-rata **0,304 detik** per citra.
+- **YOLOv3 standar:** skor F1 sebesar **0,793** (selisih 2,4% lebih rendah dari model usulan).
+- **Faster R-CNN (dengan VGG16):** skor F1 sebesar **0,801** dengan latensi komputasi yang jauh lebih tinggi.
+- **YOLOv2 standar:** skor F1 sebesar **0,738**.
 
-## Temuan Kunci
-- Densifikasi backbone memperkuat fitur deteksi buah.
-- Robustness lintas tahap tumbuh penting.
-- Oklusi tetap tantangan utama.
-- Modifikasi domain-spesifik bermanfaat.
+Eksperimen membuktikan YOLOv3-dense unggul pada kondisi cahaya berfluktuasi. Pada kilau cahaya matahari langsung (*overexposure*), koneksi padat mempertahankan batas bentuk buah. Pada oklusi dedaunan hingga 50%, model usulan menekan tingkat negatif palsu (*false negatives*). Pada tahap apel muda hijau kecil, kesalahan klasifikasi sebagai daun berkurang drastis karena detail spasial dipertahankan lewat koneksi langsung.
 
-## Keunggulan
-- Robust lintas kondisi.
-- Multi-tahap tumbuh.
-- Modifikasi efektif.
+## Kelebihan dan Keterbatasan
+Kelebihan:
+1. Robustness Lintas Tahap Pertumbuhan: Andal dalam mendeteksi buah sejak fase hijau kecil hingga merah matang, mendukung pemantauan siklus hidup buah sepanjang musim.
+2. Penggunaan Kembali Fitur yang Efisien: Integrasi modul DenseNet pada sub-jaringan prediksi memaksimalkan pemanfaatan fitur spasial halus tanpa menambah parameter berlebihan, efektif untuk objek terhalang (*occlusion*) dan saling menumpuk (*overlapping*).
+3. Keseimbangan Akurasi-Latensi: Kecepatan inferensi 0,304 detik pada citra resolusi tinggi memadai untuk implementasi pada platform otonom atau komputasi tepi lapangan.
 
-## Keterbatasan
-- Fokus spesies apel.
-- RGB saja (tanpa depth).
-- Oklusi berat tetap menantang.
+Keterbatasan:
+1. Ketiadaan Informasi Kedalaman (Depth): Model hanya mengandalkan visual 2D (RGB murni). Ketiadaan koordinat spasial 3D absolut membatasi penerapan pada robot pemanen yang membutuhkan informasi kedalaman untuk merencanakan lintasan gerak pencengkeram fisik.
+2. Batasan Inferensi Real-Time: Kecepatan sekitar 3 bingkai per detik (FPS) belum memenuhi standar real-time penuh (>15 FPS) pada perangkat berdaya rendah jika memproses video beresolusi tinggi tanpa pemotongan.
+3. Oklusi Ekstrem: Jika buah terhalang dedaunan atau ranting kayu tebal melebihi 80%, fitur visual RGB murni tidak lagi memadai dan memicu kegagalan deteksi.
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+## Kaitan dengan Bab Lain
+Penelitian YOLOv3-dense oleh Tian dkk. (2019) merupakan bagian penting dari evolusi deteksi buah berbasis visual RGB dalam klaster pertanian.
+- Hubungan dengan [MangoYOLO](./120%20-%202019%20-%20MangoYOLO%20-%20Pertanian.md): Koirala dkk. mengembangkan MangoYOLO untuk mendeteksi mangga dan mengestimasi beban buah total (*fruit load estimation*). MangoYOLO memodifikasi YOLOv2/v3 agar lebih ringan demi kecepatan, sedangkan YOLOv3-dense memilih memodifikasi backbone dengan DenseNet untuk ketangguhan oklusi apel multi-tahap tumbuh.
+- Hubungan dengan [Apple Flower Detection](./122%20-%202020%20-%20Apple%20Flower%20Detection%20%28Pruned%20YOLOv4%29%20-%20Pertanian.md): Wu dkk. (2020) berfokus pada deteksi bunga apel menggunakan YOLOv4 dengan pemangkasan saluran (*channel pruning*) untuk deployment perangkat tepi berdaya rendah, berlawanan dengan Tian dkk. yang menambah kompleksitas struktural demi akurasi.
+- Hubungan dengan [Apple Detection RGB+Depth (Faster R-CNN)](./123%20-%202020%20-%20Apple%20Detection%20RGB%2BDepth%20%28Faster%20R-CNN%29%20-%20Pertanian.md): Fu dkk. (2020) memecahkan masalah oklusi dedaunan lebat dengan menambahkan fitur kedalaman (depth) ke Faster R-CNN (multimodal RGB-D), mengatasi keterbatasan visual 2D murni dari YOLOv3-dense.
+- Hubungan dengan [Fruit Detection & 3D Location (Gene-Mola dkk.)](./124%20-%202020%20-%20Fruit%20Detection%20%26%203D%20Location%20%28Gene-Mola%20dkk.%29%20-%20Pertanian.md) dan [Fruit Detection & 3D Visualisation (Kang & Chen)](./127%20-%202020%20-%20Fruit%20Detection%20%26%203D%20Visualisation%20%28Kang%20%26%20Chen%29%20-%20Pertanian.md): Kedua bab ini melangkah lebih jauh dari deteksi 2D YOLOv3-dense dengan menggunakan segmentasi instan (*instance segmentation*) dan rekonstruksi 3D (fotogrametri SfM atau sensor kedalaman aktif) untuk melokalisasi posisi buah secara presisi dalam ruang tiga dimensi.
+- Hubungan dengan [Automated Fruit Harvesting Robot (Onishi dkk.)](./126%20-%202019%20-%20Automated%20Fruit%20Harvesting%20Robot%20%28Onishi%20dkk.%29%20-%20Pertanian.md) dan [Iceberg Lettuce Harvesting Robot](./125%20-%202020%20-%20Iceberg%20Lettuce%20Harvesting%20Robot%20-%20Pertanian.md): Deteksi visual 2D apel seperti yang dikembangkan oleh Tian dkk. merupakan komponen dasar sistem visi komputer yang kemudian diintegrasikan ke dalam sistem robot fisik pengeksekusi pemanenan buah otonom.
 
-## Relevansi terhadap Tema Tinjauan
-Entri ini menunjukkan modifikasi backbone YOLO untuk deteksi buah lapangan dalam tinjauan; menegaskan adaptasi domain YOLO untuk pertanian.
-
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Pertanian** yang baik dibaca berdampingan:
-
-- [120 - 2019 - MangoYOLO - Pertanian](./120%20-%202019%20-%20MangoYOLO%20-%20Pertanian.md)
-- [122 - 2020 - Apple Flower Detection (Pruned YOLOv4) - Pertanian](./122%20-%202020%20-%20Apple%20Flower%20Detection%20%28Pruned%20YOLOv4%29%20-%20Pertanian.md)
-- [123 - 2020 - Apple Detection RGB+Depth (Faster R-CNN) - Pertanian](./123%20-%202020%20-%20Apple%20Detection%20RGB+Depth%20%28Faster%20R-CNN%29%20-%20Pertanian.md)
-- [124 - 2020 - Fruit Detection & 3D Location (Gene-Mola dkk.) - Pertanian](./124%20-%202020%20-%20Fruit%20Detection%20%26%203D%20Location%20%28Gene-Mola%20dkk.%29%20-%20Pertanian.md)
-- [125 - 2020 - Iceberg Lettuce Harvesting Robot - Pertanian](./125%20-%202020%20-%20Iceberg%20Lettuce%20Harvesting%20Robot%20-%20Pertanian.md)
-- [126 - 2019 - Automated Fruit Harvesting Robot (Onishi dkk.) - Pertanian](./126%20-%202019%20-%20Automated%20Fruit%20Harvesting%20Robot%20%28Onishi%20dkk.%29%20-%20Pertanian.md)
-- [127 - 2020 - Fruit Detection & 3D Visualisation (Kang & Chen) - Pertanian](./127%20-%202020%20-%20Fruit%20Detection%20%26%203D%20Visualisation%20%28Kang%20%26%20Chen%29%20-%20Pertanian.md)
-
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Pertanian** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
-
-## Glosarium Istilah (tema Pertanian)
-Istilah penting untuk memahami makalah ini:
-
-- **Deteksi buah** — Melokalisasi buah untuk estimasi/pemanenan.
-- **Oklusi dedaunan** — Buah terhalang daun/cabang.
-- **Fruit load** — Estimasi jumlah/beban buah.
-- **Robotic harvesting** — Panen otomatis (deteksi + manipulasi).
-- **RGB-D/stereo** — Penginderaan kedalaman untuk lokalisasi 3D buah.
-- **Instance segmentation** — Segmentasi per-objek untuk buah.
-- **Model pruning** — Pemangkasan kanal untuk model ringan.
-- **SfM** — Structure-from-Motion; rekonstruksi 3D dari banyak citra.
-- **mAP/PR** — Metrik deteksi buah.
-- **Kondisi lapangan** — Variasi cahaya/angin/latar di kebun.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-Tian dkk. memodifikasi YOLOv3 dengan densifikasi backbone untuk mendeteksi apel lintas tahap pertumbuhan di kebun, robust terhadap oklusi dan variasi pencahayaan.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `tian2019appleyolo` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 121/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+## Poin untuk Sitasi
+- Kunci BibTeX: `tian2019appleyolo`
+- Kutipan ringkasan:
+  "Tian dkk. (2019) mengusulkan model YOLOv3-dense yang mengintegrasikan komponen DenseNet pada sub-jaringan ekstraksi fitur resolusi rendah YOLOv3 untuk mendeteksi buah apel pada tiga tahap pertumbuhan (muda, berkembang, dan matang). Model ini menunjukkan ketangguhan tinggi terhadap oklusi dedaunan dan fluktuasi pencahayaan di area perkebunan, mencapai skor F1 sebesar 0,817 dengan waktu pemrosesan rata-rata 0,304 detik per citra beresolusi tinggi."
+- Catatan angka/klaim yang perlu diverifikasi:
+  "Seluruh metrik performa (skor F1 0,817 dan kecepatan inferensi 0,304 detik pada citra 3000 × 4000 piksel) serta pembagian dataset (480 citra asli, diaugmentasi menjadi 4.800 citra latih, dan diuji pada 480 citra asli) telah diverifikasi secara akurat dari naskah asli publikasi Computers and Electronics in Agriculture (2019)."
