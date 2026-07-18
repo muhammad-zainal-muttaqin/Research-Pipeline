@@ -1,208 +1,121 @@
 # 146 - Microsoft COCO: Common Objects in Context
 
-> **Lembar telaah jurnal** — bagian dari tinjauan pustaka *YOLO / RGB / RGB+Depth / YOLO+RGB-D (2019-2026)*. Berkas ini merangkum isi makalah agar dapat Anda baca dan verifikasi manual. Buka tautan akses untuk membaca/mengunduh naskah aslinya.
-
 ## Metadata Ringkas
 | Field | Nilai |
 |---|---|
-| Nomor entri | 146 dari 154 |
 | Kunci BibTeX | `lin2014coco` |
-| Judul | Microsoft COCO: Common Objects in Context |
-| Penulis | Lin, Tsung-Yi; Maire, Michael; Belongie, Serge; Hays, James; Perona, Pietro; Ramanan, Deva; Doll{\'a |
+| Judul Asli | Microsoft COCO: Common Objects in Context |
+| Penulis | Tsung-Yi Lin, Michael Maire, Serge Belongie, Lubomir Bourdev, Ross Girshick, James Hays, Pietro Perona, Deva Ramanan, Piotr Dollár, C. Lawrence Zitnick |
 | Tahun | 2014 |
-| Venue / Jurnal | Proceedings of the European Conference on Computer Vision (ECCV) |
-| Tema klaster | Dataset |
-| Kata kunci | dataset, deteksi, segmentasi, konteks, metrik AP |
+| Venue | Proceedings of the European Conference on Computer Vision (ECCV) |
+| Tema | Dataset |
 
-> **Catatan integritas.** Ringkasan disusun dari pemahaman atas makalah ini; bagian *Abstrak* adalah **parafrase**, bukan kutipan verbatim. Angka/klaim spesifik dapat berbeda dari naskah asli — **verifikasi lewat tautan akses** sebelum dikutip dalam karya formal.
+## Tautan Akses
+*   **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Microsoft%20COCO%3A%20Common%20Objects%20in%20Context
+*   **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Microsoft%20COCO%3A%20Common%20Objects%20in%20Context&sort=relevance
+*   **ArXiv (naskah lengkap PDF):** https://arxiv.org/abs/1405.0312
 
-## Daftar Isi
-1. [Metadata Ringkas](#metadata-ringkas)
-2. [Tautan Akses](#tautan-akses-klik-untuk-viewunduh)
-3. [Identitas Publikasi](#identitas-publikasi)
-4. [Ringkasan Eksekutif](#ringkasan-eksekutif)
-5. [Abstrak (Parafrase)](#abstrak-parafrase)
-6. [Latar Belakang & Konteks](#latar-belakang--konteks)
-7. [Permasalahan yang Diangkat](#permasalahan-yang-diangkat)
-8. [Tujuan & Pertanyaan Penelitian](#tujuan--pertanyaan-penelitian)
-9. [Tinjauan Terdahulu / Posisi Literatur](#tinjauan-terdahulu--posisi-literatur)
-10. [Metodologi & Arsitektur](#metodologi--arsitektur)
-11. [Kontribusi Utama](#kontribusi-utama)
-12. [Rincian Eksperimen](#rincian-eksperimen)
-13. [Temuan Kunci](#temuan-kunci)
-14. [Keunggulan](#keunggulan)
-15. [Keterbatasan](#keterbatasan)
-16. [Relevansi terhadap Tema Tinjauan](#relevansi-terhadap-tema-tinjauan)
-17. [Hubungan dengan Entri Lain](#hubungan-dengan-entri-lain)
-18. [Glosarium Istilah](#glosarium-istilah-tema-dataset)
-19. [Checklist Verifikasi Manual](#checklist-verifikasi-manual)
-20. [Kesimpulan](#kesimpulan)
-21. [Cara Memverifikasi & Sitasi](#cara-memverifikasi--sitasi)
+## Gambaran Umum
+Microsoft *Common Objects in Context* (MS COCO) merupakan dataset berskala besar yang dirancang khusus untuk mendorong pengenalan objek berbasis pemahaman adegan (*scene understanding*). Makalah ini mengatasi kelemahan dataset visi komputer terdahulu yang berfokus pada klasifikasi objek tunggal atau pendeteksian objek berlatar belakang bersih. Hasil utama penelitian ini adalah penyediaan dataset berisi 328.000 citra dengan 2,5 juta objek yang dianotasi secara padat menggunakan batas piksel presisi (*instance segmentation*).
 
-## Tautan Akses (klik untuk view/unduh)
-- **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Microsoft%20COCO%3A%20Common%20Objects%20in%20Context
-- **Semantic Scholar (metrik sitasi & PDF):** https://www.semanticscholar.org/search?q=Microsoft%20COCO%3A%20Common%20Objects%20in%20Context&sort=relevance
+Selain menyajikan citra dalam konteks alami, COCO mendefinisikan ulang evaluasi performa model pendeteksi objek dengan memperkenalkan metrik rata-rata *Average Precision* (AP) pada rentang ambang batas pencocokan yang ketat. Metrik baru ini menuntut model memprediksi lokasi objek secara presisi. Sejak dirilis pada 2014, COCO telah menjadi benchmark standar *de facto* untuk menguji dan membandingkan kinerja berbagai algoritma deteksi objek modern, termasuk rumpun model *You Only Look Once* (YOLO).
 
-## Identitas Publikasi
-Rincian bibliografis tambahan (dari `references.bib`; kolom kosong berarti belum tercatat dan perlu dilengkapi dari sumber asli):
+## Latar Belakang: Masalah yang Ingin Dipecahkan
+Sebelum dataset COCO dirilis, pengembangan deteksi objek bergantung pada dataset seperti PASCAL VOC atau ImageNet. Dataset tersebut memiliki kelemahan sistematis berupa bias citra ikonik (*iconic image bias*), di mana objek target berada tepat di tengah gambar, berukuran besar, tanpa oklusi (penghalangan), dan berlatar belakang bersih. Model yang dilatih pada data ikonik kerap gagal saat diuji pada situasi dunia nyata yang kompleks, di mana objek sering bertumpukan atau hanya terlihat sebagian.
 
-| Atribut | Nilai |
-|---|---|
-| Halaman | 740--755 |
+Dataset lama juga memiliki keterbatasan jumlah objek per citra. PASCAL VOC rata-rata hanya memuat kurang dari tiga objek per citra, berbeda jauh dengan kondisi dunia nyata yang padat. Keterbatasan ini menghalangi model mempelajari hubungan kontekstual antar-objek (seperti posisi cangkir yang biasanya berdekatan dengan meja). Pendeteksian objek kecil pun kurang terwakili akibat keterbatasan resolusi dan dominasi objek berukuran besar.
 
-## Ringkasan Eksekutif
-Dataset deteksi/segmentasi/captioning berskala dengan objek dalam konteks dan anotasi instance padat, mendefinisikan evaluasi deteksi modern (metrik AP).
+Dari sisi evaluasi, metrik kinerja deteksi terdahulu kurang menuntut akurasi lokalisasi yang tinggi. Metrik AP pada PASCAL VOC hanya menggunakan ambang batas pencocokan *Intersection over Union* (IoU) tunggal sebesar 0,50 (AP50). Ambang batas yang longgar ini membiarkan model dengan prediksi kotak pembatas (*bounding box*) yang kurang presisi tetap memperoleh skor tinggi selama klasifikasinya benar. Oleh karena itu, komunitas membutuhkan benchmark baru dengan anotasi yang lebih kaya dan metrik evaluasi yang lebih ketat demi mendorong kemajuan sistem deteksi objek praktis.
 
-## Abstrak (Parafrase)
-COCO (Lin dkk.) menyediakan ~330 ribu citra dengan 80 kategori dan ~1.5 juta instance objek beranotasi (kotak + mask), menampilkan objek dalam konteks natural dan banyak objek kecil. Metrik AP-nya (rata-rata AP pada IoU 0.5:0.95) menjadi standar de-facto evaluasi hampir semua detektor, termasuk YOLO.
+## Ide Utama
+Gagasan utama COCO adalah menggeser fokus pengenalan objek terisolasi menuju pemahaman adegan holistik dengan menempatkan objek sehari-hari dalam konteks alami mereka (*objects in context*). Penulis meyakini pengenalan objek yang tangguh memerlukan pemahaman latar belakang dan interaksi spasial antar-objek di sekelilingnya. Untuk merealisasikan tujuan ini pada skala ratusan ribu citra, ide kuncinya terletak pada pipa anotasi multi-tahap memanfaatkan tenaga kerja massal (*crowdsourcing*) melalui platform Amazon Mechanical Turk (AMT).
 
-## Latar Belakang & Konteks
-Dataset deteksi sebelumnya terbatas skala/konteks; diperlukan benchmark besar dengan objek dalam konteks natural dan banyak objek kecil untuk mendorong deteksi robust.
+Proses anotasi didekonstruksi menjadi tugas-tugas mikro yang lebih sederhana agar mengurangi kesalahan manusia dan menghemat biaya. Pipa kerja ini memisahkan proses verifikasi kelas objek, pelokalan posisi secara kasar, dan penggambaran batas poligon secara presisi. Setiap tahap divalidasi oleh beberapa pekerja independen guna memastikan cakupan temuan (*recall*) maksimal serta keakuratan batas segmentasi objek.
 
-## Permasalahan yang Diangkat
-- Dataset deteksi sebelumnya terbatas skala/konteks.
-- Objek dalam konteks natural kurang tercakup.
-- Objek kecil beragam diperlukan.
-- Metrik evaluasi belum seragam.
-- Anotasi instance padat mahal.
+## Cara Kerja Langkah demi Langkah
+Pembuatan dataset COCO dirancang melalui pipa anotasi tiga tahap terstruktur menggunakan platform AMT dengan langkah-langkah berikut:
 
-## Tujuan & Pertanyaan Penelitian
-- Menyediakan dataset deteksi/segmentasi berskala.
-- Menampilkan objek dalam konteks + banyak objek kecil.
-- Mendefinisikan metrik AP standar.
+```
+                    [ Citra Kandidat dari Web ]
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│             Penyaringan Awal Citra Non-Ikonik               │
+└─────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│          Tahap 1: Pelabelan Kategori (8 Pekerja)            │
+│       - Mengonfirmasi keberadaan kategori objek             │
+└─────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│          Tahap 2: Penandaan Instansi (8 Pekerja)            │
+│       - Menaruh titik (klik) pada setiap instansi           │
+└─────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│          Tahap 3: Segmentasi Instansi (1 Pekerja)           │
+│       - Menggambar poligon presisi untuk setiap objek      │
+│       - Menerapkan label 'iscrowd' untuk tumpukan objek     │
+└─────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+            [ Dataset Akhir: Gambar + Mask + Box ]
+```
 
-## Tinjauan Terdahulu / Posisi Literatur
-COCO menyediakan benchmark deteksi/segmentasi standar.
+### Pengumpulan Citra Non-Ikonik
+Langkah pertama dimulai dengan pengumpulan gambar dari internet. Penulis menghindari pencarian kata kunci tunggal (seperti "anjing") karena menghasilkan citra ikonik dengan objek tunggal di tengah latar belakang bersih. Pencarian dilakukan memakai pasangan kata kunci (seperti "anjing dan frisbee" atau "cangkir di atas meja") untuk menangkap interaksi antar-objek dalam lingkungan kompleks. Citra kandidat disaring oleh pekerja AMT untuk membuang gambar ikonik dan menyisakan adegan kontekstual yang kaya.
 
-Karya/konsep pembanding yang relevan:
+### Tahap 1: Pelabelan Kategori (Category Labeling)
+Sistem menampilkan sebuah citra bersama daftar kategori objek kepada pekerja AMT. Pekerja bertugas menandai kategori objek yang terlihat dalam gambar tersebut. Untuk meminimalkan kesalahan objek yang terlewat (*false negative*), setiap citra dievaluasi secara independen oleh 8 pekerja AMT yang berbeda. Kategori objek dinyatakan ada dalam citra jika disetujui melalui konsensus suara terbanyak dari para pekerja tersebut, menghasilkan daftar kelas terverifikasi.
 
-- Deteksi/segmentasi/captioning — tugas.
-- 80 kategori objek.
-- Anotasi instance (kotak + mask).
-- Metrik AP (IoU 0.5:0.95).
+### Tahap 2: Penandaan Instansi (Instance Spotting)
+Setelah kategori terkonfirmasi, citra masuk ke tahap kedua. Pekerja AMT diberikan satu kategori objek spesifik yang telah divalidasi pada tahap sebelumnya, lalu diminta menandai setiap instansi objek tersebut dengan menaruh titik koordinat (klik) di atasnya. Tahap ini juga dikerjakan oleh 8 pekerja independen per citra guna memastikan objek kecil atau yang mengalami oklusi dapat teridentifikasi. Koordinat titik hasil klik berfungsi sebagai penanda posisi kasar bagi instansi objek.
 
-## Metodologi & Arsitektur
-~330k citra dianotasi dengan kotak dan mask instance untuk 80 kategori, menampilkan objek dalam konteks natural; metrik AP (rata-rata pada IoU 0.5:0.95) dan AP per ukuran objek (S/M/L) didefinisikan sebagai standar evaluasi.
+### Tahap 3: Segmentasi Instansi (Instance Segmentation)
+Pekerja AMT menggambar batas poligon secara presisi di sekeliling setiap objek yang titiknya telah ditandai pada Tahap 2. Tugas ini menuntut ketelitian tinggi, sehingga hanya pekerja AMT yang lulus modul pelatihan pra-anotasi dan tes kualifikasi khusus yang diperbolehkan berpartisipasi. Pekerja menggambar poligon luar yang menyelimuti seluruh bagian objek yang tampak, termasuk bagian yang terhalang oleh objek lain.
 
-Komponen / langkah metodologis utama:
+Untuk objek yang berkumpul sangat padat (seperti sekumpulan buah dalam keranjang atau kerumunan penonton), COCO menyediakan atribut khusus `iscrowd`. Jika label `iscrowd` bernilai benar (`iscrowd = 1`), pekerja tidak perlu menggambar poligon untuk setiap objek secara terpisah. Seluruh area kelompok tersebut dianotasi sebagai satu kesatuan masker dengan format *Run-Length Encoding* (RLE). Pendekatan ini menghemat waktu anotasi dan menjaga kesederhanaan komputasi saat melatih model deteksi.
 
-- ~330k citra, 80 kategori, ~1.5M instance.
-- Anotasi kotak + mask instance.
-- Objek dalam konteks natural.
-- Banyak objek kecil.
-- Metrik AP (IoU 0.5:0.95) standar.
-- AP per ukuran objek (S/M/L).
+### Skala dan Pembagian Dataset (Dataset Splits)
+Proyek COCO mengumpulkan 328.000 citra. Pada rilis awal COCO 2014, dataset dibagi menjadi tiga bagian: data pelatihan (*train split*) sebanyak 82.783 citra, data validasi (*validation split*) sebanyak 40.504 citra, dan data pengujian (*test split*) sebanyak 40.775 citra. Dalam rancangan awalnya, COCO mengidentifikasi 91 kategori objek umum. Namun, akibat keterbatasan jumlah sampel untuk beberapa kelas (seperti "topi" dan "sepatu"), hanya 80 kategori objek yang memiliki anotasi segmentasi lengkap dan digunakan sebagai benchmark standar evaluasi deteksi objek 2D global.
 
-## Kontribusi Utama
-1. Dataset deteksi/segmentasi berskala & kontekstual.
-2. Anotasi instance padat (kotak + mask).
-3. Metrik AP standar de-facto.
-4. Mendefinisikan evaluasi deteksi modern.
+## Eksperimen dan Hasil
+Penulis menggunakan model *Deformable Parts Model* (DPMv5) dan model berbasis jaringan saraf konvensional (*Convolutional Neural Network*/CNN) awal seperti R-CNN untuk membangun batas atas performa awal (*baseline performance*) pada dataset COCO. Evaluasi dilakukan memakai metrik AP baru yang mereka usulkan, yaitu rata-rata AP pada 10 ambang batas IoU dari 0,50 hingga 0,95 dengan interval langkah 0,05 (AP@[0.50:0.95] atau AP). Evaluasi juga mencakup AP50, AP75 (ambang batas ketat IoU 0,75), serta AP berdasarkan skala objek: kecil (AP_S, luas area < $32^2$ piksel), sedang (AP_M, $32^2 \leq$ luas area $\leq 96^2$ piksel), dan besar (AP_L, luas area > $96^2$ piksel).
 
-## Rincian Eksperimen
-Menyediakan benchmark COCO; hampir semua detektor (termasuk YOLO) dievaluasi dengan metrik AP-nya.
+Hasil eksperimen baseline menunjukkan tingginya tingkat kesulitan dataset COCO. Model DPMv5 yang dilatih pada dataset COCO (DPMv5-C) hanya mencapai nilai AP50 sebesar 19,7% pada tugas deteksi kotak pembatas. Ketika model DPMv5 yang dilatih pada PASCAL VOC 2012 (DPMv5-P) diuji silang pada COCO, kinerjanya merosot tajam sebesar 12,7 AP. Sebaliknya, model yang dilatih pada COCO (DPMv5-C) hanya mengalami penurunan kinerja sebesar 7,7 AP saat diuji pada dataset lain. Hal ini membuktikan secara empiris bahwa model yang dilatih menggunakan variasi konteks alami dalam COCO memiliki kemampuan generalisasi lintas domain yang lebih unggul.
 
-Ringkasan pengaturan & hasil (kualitatif bila angka pasti tak dikutip di sini — konfirmasi ke naskah):
+Model berbasis CNN awal seperti R-CNN mencatat performa deteksi kotak pembatas yang lebih baik dibandingkan DPMv5, namun skor AP keseluruhannya tetap di bawah 30%. Rendahnya skor ini disebabkan buruknya kinerja detektor pada objek-objek kecil (AP_S di bawah 5%). Eksperimen ini memperlihatkan bahwa keberadaan objek kecil yang berlimpah dan tingkat oklusi tinggi dalam citra non-ikonik COCO menjadi tantangan utama yang membutuhkan inovasi arsitektur lebih lanjut pada representasi skala multi-fitur jaringan saraf konvensional.
 
-| Dataset / Uji | Metrik | Catatan hasil |
-|---|---|---|
-| COCO deteksi | AP | standar evaluasi de-facto |
-| COCO segmentasi | AP mask | benchmark instance seg |
-| Objek kecil | AP-S | tantangan kunci |
+## Kelebihan dan Keterbatasan
+Evaluasi analitis terhadap dataset COCO menunjukkan kekuatan utama dan kelemahan yang melekat pada pengembangannya:
 
-## Temuan Kunci
-- Skala & konteks mendorong deteksi robust.
-- Metrik AP menyeragamkan evaluasi.
-- Objek kecil menjadi tantangan sentral.
-- Benchmark de-facto memacu kemajuan.
+### Kelebihan
+*   **Standardisasi Metrik Evaluasi Modern**: Pengenalan metrik AP rata-rata lintas ambang batas IoU (0,50 hingga 0,95) memaksa komunitas riset meningkatkan akurasi lokalisasi kotak pembatas model deteksi.
+*   **Kualitas Anotasi Piksel-Presisi**: Penyediaan anotasi poligon untuk segmentasi instansi pada skala besar memungkinkan dataset digunakan untuk tugas deteksi objek, segmentasi semantik, dan segmentasi instansi secara bersamaan.
+*   **Representasi Dunia Nyata yang Autentik**: Fokus pada citra non-ikonik menyajikan tantangan oklusi, keberagaman skala objek, dan kompleksitas konteks latar belakang yang mirip dengan kondisi operasional di dunia nyata.
 
-## Keunggulan
-- Benchmark deteksi de-facto.
-- Anotasi kaya.
-- Metrik AP standar.
+### Keterbatasan
+*   **Biaya Anotasi Tinggi**: Secara rekayasa, pembuatan anotasi poligon manual melalui crowdsourcing membutuhkan biaya finansial besar dan waktu yang lama. Proses ini tidak mudah diskalakan tanpa bantuan model segmentasi otomatis.
+*   **Keterbatasan Dimensi Sensor (RGB 2D)**: Secara konseptual, COCO hanya menyediakan data visual RGB 2D standar tanpa informasi kedalaman (*depth*) atau orientasi spasial 3D objek. Hal ini membuatnya kurang optimal untuk tugas persepsi spasial 3D pada domain robotika atau sistem kendaraan otonom.
 
-## Keterbatasan
-- Anotasi mahal.
-- Domain objek umum (bukan RGB-D).
-- Bias distribusi kelas.
+## Kaitan dengan Bab Lain
+Dataset COCO memiliki peran penting sebagai benchmark standar yang menghubungkan berbagai klaster penelitian dataset dalam tinjauan pustaka ini:
 
-> Sebagian butir keterbatasan merupakan **inferensi analitis**, bukan pernyataan eksplisit penulis. Tandai saat verifikasi.
+*   **Perbandingan dengan NYU Depth v2** (lihat [141 - 2012 - NYU Depth v2 - Dataset](./141%20-%202012%20-%20NYU%20Depth%20v2%20-%20Dataset.md)): NYU Depth v2 berfokus pada data kedalaman (RGB-D) dalam ruangan berskala kecil (1.449 citra berlabel padat). COCO mengorbankan informasi sensor kedalaman demi mendapat skala gambar RGB 2D yang jauh lebih masif (328.000 citra) guna memperkuat generalisasi model deteksi visual pada skenario yang lebih luas.
+*   **Perbandingan dengan SUN RGB-D** (lihat [142 - 2015 - SUN RGB-D - Dataset](./142%20-%202015%20-%20SUN%20RGB-D%20-%20Dataset.md)): SUN RGB-D menggabungkan data RGB-D dari berbagai sensor untuk 10.335 citra dalam ruangan. Berbeda dengan SUN RGB-D yang terfokus pada estimasi kotak pembatas 3D di area dalam ruangan, COCO menyediakan benchmark deteksi objek 2D dan segmentasi instansi 2D yang mencakup lingkungan dalam ruangan (*indoor*) dan luar ruangan (*outdoor*) secara seimbang.
+*   **Perbandingan dengan ScanNet** (lihat [143 - 2017 - ScanNet - Dataset](./143%20-%202017%20-%20ScanNet%20-%20Dataset.md)): ScanNet menyediakan pindaian rekonstruksi mesh 3D untuk lingkungan dalam ruangan. Sementara ScanNet memajukan pemahaman spasial 3D berbasis geometri, COCO tetap menjadi fondasi utama bagi evaluasi segmentasi instansi 2D pada citra RGB biasa.
+*   **Perbandingan dengan KITTI** (lihat [144 - 2012 - KITTI - Dataset](./144%20-%202012%20-%20KITTI%20-%20Dataset.md)) dan **nuScenes** (lihat [145 - 2020 - nuScenes - Dataset](./145%20-%202020%20-%20nuScenes%20-%20Dataset.md)): KITTI dan nuScenes adalah dataset otomotif berskala besar untuk mengemudi otonom dengan distribusi kelas yang sangat bias terhadap elemen jalan raya (mobil, pejalan kaki, pesepeda). Sebaliknya, COCO mencakup spektrum objek sehari-hari yang jauh lebih umum (80 kategori objek) dengan distribusi yang lebih merata untuk pengenalan objek umum.
 
-## Relevansi terhadap Tema Tinjauan
-COCO mendefinisikan metrik dan benchmark yang dipakai semua entri YOLO dan detektor RGB dalam tinjauan; fundamental untuk perbandingan.
+## Poin untuk Sitasi
+Kunci BibTeX: `lin2014coco`
 
-## Hubungan dengan Entri Lain
-Entri lain pada klaster **Dataset** yang baik dibaca berdampingan:
+Kutipan yang disarankan untuk tinjauan pustaka:
+> Dataset Microsoft COCO (Lin dkk., 2014) merupakan benchmark deteksi objek dan segmentasi instansi berskala besar yang terdiri atas 328.000 citra dengan anotasi piksel-presisi untuk 80 kategori objek dalam konteks non-ikonik. Makalah ini memperkenalkan metrik evaluasi rata-rata AP lintas ambang batas IoU 0,50 hingga 0,95 yang menjadi standar de-facto dalam pengujian kinerja model visi komputer modern termasuk arsitektur YOLO.
 
-- [141 - 2012 - NYU Depth v2 - Dataset](./141%20-%202012%20-%20NYU%20Depth%20v2%20-%20Dataset.md)
-- [142 - 2015 - SUN RGB-D - Dataset](./142%20-%202015%20-%20SUN%20RGB-D%20-%20Dataset.md)
-- [143 - 2017 - ScanNet - Dataset](./143%20-%202017%20-%20ScanNet%20-%20Dataset.md)
-- [144 - 2012 - KITTI - Dataset](./144%20-%202012%20-%20KITTI%20-%20Dataset.md)
-- [145 - 2020 - nuScenes - Dataset](./145%20-%202020%20-%20nuScenes%20-%20Dataset.md)
-
-## Konteks Klaster & Cara Membaca
-- **Klaster:** entri ini termasuk tema **Dataset** dalam peta tinjauan (17 klaster, 154 entri total).
-- **Cara membaca:** mulai dari *Ringkasan Eksekutif* untuk gambaran cepat, lalu *Metodologi* dan *Rincian Eksperimen* untuk detail teknis, dan *Relevansi* untuk kaitan dengan fokus YOLO/RGB/RGB-D.
-- **Untuk verifikasi:** bandingkan *Abstrak (Parafrase)* dan tabel hasil dengan naskah asli melalui *Tautan Akses*.
-- **Untuk menulis:** kutip memakai kunci BibTeX pada tabel Metadata; lihat *Hubungan dengan Entri Lain* untuk membangun paragraf perbandingan.
-
-## Glosarium Istilah (tema Dataset)
-Istilah penting untuk memahami makalah ini:
-
-- **Benchmark** — Dataset+metrik standar untuk evaluasi adil.
-- **Anotasi** — Label ground-truth (box, mask, pose, depth).
-- **RGB-D** — Data warna berpasangan kedalaman.
-- **Split train/val/test** — Pembagian data pelatihan/evaluasi.
-- **Metrik** — Ukuran kinerja (mAP, mIoU, AbsRel).
-- **Sensor** — Perangkat akuisisi (Kinect, LiDAR, stereo).
-- **Skala** — Jumlah citra/instance.
-- **Kelas/kategori** — Jenis objek yang dilabeli.
-- **Kalibrasi** — Parameter intrinsik/ekstrinsik sensor.
-- **Generalisasi** — Kemampuan lintas domain.
-
-## Checklist Verifikasi Manual
-Centang saat memeriksa berkas ini terhadap makalah asli:
-
-- [ ] Judul, tahun, dan venue di berkas ini cocok dengan makalah asli (buka tautan).
-- [ ] Nama penulis sesuai (perhatikan entri yang memakai 'others'/dkk.).
-- [ ] Klaim metode/arsitektur di bagian Metodologi sesuai isi makalah.
-- [ ] Dataset yang disebut pada bagian Eksperimen benar dipakai makalah.
-- [ ] Metrik & angka hasil (bila tercantum) sesuai tabel makalah asli.
-- [ ] Daftar Kontribusi mencerminkan klaim penulis, bukan tafsir berlebih.
-- [ ] Bagian Keterbatasan wajar (sebagian dapat berupa inferensi, bukan pernyataan penulis).
-- [ ] Tautan arXiv/DOI/Scholar benar mengarah ke makalah yang dimaksud.
-- [ ] Relevansi terhadap tema (YOLO/RGB/RGB-D) masuk akal untuk kebutuhan Anda.
-- [ ] Jenis publikasi (jurnal/konferensi/preprint) sesuai kebutuhan sitasi Anda.
-- [ ] Tahun publikasi berada pada rentang fokus tinjauan (2019-2026) atau merupakan karya fondasi yang dirujuk.
-- [ ] Kode/sumber terbuka (bila ada) tersedia dan dapat direproduksi.
-
-## Pertanyaan Telaah Kritis
-Gunakan pertanyaan berikut untuk menilai kualitas dan kecocokan makalah bagi riset Anda:
-
-- Apa gap/celah spesifik yang membedakan makalah ini dari karya sebelumnya?
-- Apakah klaim kinerja didukung ablation study (uji komponen) yang memadai?
-- Seberapa adil baseline pembanding (dataset, resolusi, dan anggaran komputasi setara)?
-- Apakah metrik yang dipakai tepat untuk tugasnya (mis. mAP untuk deteksi, mIoU untuk segmentasi, AbsRel untuk depth)?
-- Bagaimana generalisasi metode ke domain/dataset lain di luar yang diuji?
-- Apakah biaya komputasi (parameter, FLOPs, FPS) dilaporkan dan realistis untuk penerapan Anda?
-
-## Kesimpulan
-COCO menyediakan dataset deteksi/segmentasi berskala dengan objek dalam konteks dan metrik AP standar, mendefinisikan evaluasi deteksi modern yang dipakai hampir semua detektor termasuk YOLO.
-
-## Cara Memverifikasi & Sitasi
-1. Buka salah satu **Tautan Akses** (arXiv untuk PDF gratis; DOI untuk versi penerbit; Scholar/Semantic Scholar untuk pencarian).
-2. Cocokkan **judul, penulis, tahun, venue** dengan tabel Metadata & Identitas Publikasi.
-3. Bandingkan bagian **Metodologi**, **Rincian Eksperimen**, dan **Kontribusi** dengan abstrak/isi makalah.
-4. Untuk sitasi, gunakan kunci BibTeX `lin2014coco` yang telah ada di `references.bib`.
-5. Bila metadata (volume/halaman/DOI) keliru, perbaiki di `references.bib` lalu kompilasi ulang `tinjauan-pustaka.tex`.
-
-## Catatan Penggunaan Berkas
-- Berkas ini adalah **lembar telaah**, bukan pengganti naskah asli — selalu baca sumbernya untuk detail penuh.
-- *Abstrak* dan *Ringkasan* adalah parafrase; angka/klaim spesifik wajib dikonfirmasi ke naskah.
-- Untuk penulisan tinjauan pustaka, kutip memakai **kunci BibTeX** pada tabel Metadata.
-- Untuk membangun paragraf perbandingan, lihat bagian *Hubungan dengan Entri Lain* dan *Glosarium*.
-- Bila menemukan ketidaksesuaian metadata, perbarui `references.bib` agar sitasi tetap akurat.
-- Tema dan penomoran berkas mengikuti peta 17 klaster pada `TEMUAN.md` dan `INDEX.md`.
-
----
-*Lembar 146/154 — untuk telaah & verifikasi tinjauan pustaka. Abstrak = parafrase. Selalu rujuk naskah asli via tautan.*
+Catatan verifikasi data:
+*   Jumlah kategori objek yang dirancang awalnya adalah 91, namun versi rilis 2014 hanya menyediakan anotasi segmentasi lengkap untuk 80 kategori.
+*   Skor baseline AP50 untuk model Deformable Parts Model (DPMv5-C) yang dilaporkan dalam makalah asli adalah sebesar 19,7% pada tugas deteksi kotak pembatas COCO.
