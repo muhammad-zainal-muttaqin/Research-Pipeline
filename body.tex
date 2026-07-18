@@ -1,0 +1,919 @@
+%=====================================================================
+% body.tex — Isi naskah bersama (class-agnostic)
+% Dipakai oleh main.tex (IEEEtran) DAN main-elsarticle.tex (Elsevier).
+% Setiap driver mendefinisikan \figplace dan \dropstart di preamble-nya,
+% lalu memanggil \input{body}. JANGAN taruh \documentclass, frontmatter,
+% atau \bibliography di sini.
+%=====================================================================
+
+%=====================================================================
+\section{Pendahuluan}
+%=====================================================================
+\dropstart{K}{elapa} sawit merupakan komoditas perkebunan yang mutu serta
+kelancaran rantai produksinya sangat bergantung pada keputusan panen di
+lapangan. Tandan buah segar harus dipanen pada tingkat kematangan yang
+tepat: pemanenan terlalu dini dapat menurunkan rendemen minyak, sedangkan
+panen terlambat berkaitan dengan peningkatan kandungan asam lemak bebas.
+Keputusan tersebut tidak hanya menuntut pengenalan kelas kematangan, tetapi
+juga inventarisasi tandan yang andal agar estimasi hasil, alokasi tenaga
+kerja, dan urutan panen dapat disusun. Dengan demikian, \textit{penghitungan}
+dan \textit{klasifikasi} tandan adalah dua keluaran yang saling terkait dari
+masalah persepsi yang sama: sistem perlu menemukan setiap instansi tandan,
+menetapkan batas lokasinya, lalu memberikan label kematangan tanpa
+menghitung objek yang sama dua kali.
+
+Deteksi objek modern menyediakan kerangka komputasional untuk tugas
+tersebut. Secara historis, bidang ini bergerak dari fitur buatan tangan
+menuju representasi yang dipelajari oleh jaringan saraf, lalu bercabang
+menjadi detektor dua-tahap, satu-tahap, dan pendekatan tanpa \textit{anchor}.
+Detektor dua-tahap memisahkan pembangkitan kandidat wilayah dari klasifikasi
+dan regresi kotak, sehingga dapat menekankan ketelitian lokalisasi. Sebaliknya,
+detektor satu-tahap langsung memetakan citra ke kelas dan kotak pembatas
+dalam satu lintasan \textit{feed-forward}; rancangan ini relevan untuk
+perangkat bergerak karena mengurangi latensi keputusan. Survei dua dekade
+oleh Zou dkk. menempatkan perbedaan tersebut, penanganan objek multi-skala,
+dan akselerasi pada tingkat \textit{pipeline}, \textit{backbone}, serta
+komputasi numerik sebagai benang merah evolusi deteksi \cite{zou2023objectdetectionsurvey}.
+Keluarga \textit{You Only Look Once} (YOLO) berada pada arus satu-tahap ini,
+sehingga menjadi titik awal yang masuk akal bagi penghitungan tandan secara
+real-time, bukan sekadar model dengan akurasi tinggi pada pengujian luring.
+
+Namun, memindahkan keberhasilan detektor RGB ke kebun tidak dapat dipandang
+sebagai penggantian objek sasaran semata. Tandan dapat berukuran sangat
+berbeda akibat jarak kamera dan sudut pandang, sebagian tertutup pelepah,
+atau bertumpuk pada satu pohon. Buah yang masak, buah kurang masak, pelepah,
+dan bayangan juga dapat memiliki petunjuk warna atau tekstur yang ambigu.
+Perubahan iluminasi tajam antara naungan kanopi dan pantulan matahari
+memperbesar ambiguitas itu; kotak pembatas RGB dapat menyatukan dua tandan
+yang berdekatan atau memisahkan bagian dari tandan yang sama. Dalam konteks
+operasi kebun, kesalahan demikian mempunyai dua dampak langsung: jumlah
+panen menjadi bias dan kelas kematangan yang diberikan kepada tandan yang
+tidak tepat lokasinya kehilangan makna operasional.
+
+Tantangan tersebut sejajar dengan alasan pengembangan tolok ukur adegan
+alami, tetapi karakter sawit tetap lebih khusus. \textsc{ms coco} dirancang
+untuk melampaui bias citra ikonik melalui objek dalam konteks, anotasi
+instansi, oklusi, dan variasi skala; ia juga memantapkan evaluasi AP pada
+berbagai ambang \textit{Intersection over Union} (IoU) \cite{lin2014coco}.
+Karena itu, COCO penting sebagai sumber pralatih dan bahasa evaluasi bagi
+banyak detektor modern. Akan tetapi, 80 kategori objek umumnya tidak
+mencakup tandan sawit, dan citra RGB dua dimensinya tidak membawa pengukuran
+geometri. Kinerja yang baik pada objek umum--bahkan pada adegan yang padat--
+tidak dengan sendirinya membuktikan ketahanan terhadap skala tandan, pola
+oklusi pelepah, spektrum pencahayaan kebun, atau perbedaan visual antar
+kelas kematangan. Data sawit berpasangan RGB--D dan protokol anotasi yang
+memisahkan instansi rapat karenanya diperlukan untuk menilai transfer model
+secara sahih.
+
+Kedalaman menawarkan isyarat yang melengkapi, bukan menggantikan, RGB.
+Apabila dua tandan tampak serupa secara warna tetapi terletak pada bidang
+yang berbeda, kedalaman dapat membantu memisahkan instansi; sebaliknya,
+warna dan tekstur tetap diperlukan ketika sensor kedalaman tidak stabil pada
+tepi objek, permukaan reflektif, atau area yang tersinari kuat. Kanal ini
+juga berpotensi mengubah keluaran deteksi dari daftar kotak 2D menjadi
+informasi jarak dan susunan spasial yang berguna bagi kamera pada kendaraan,
+robot, atau petugas panen. Nilai tambah itu harus dinilai bersama ongkosnya:
+sensor, penyelarasan RGB--D, kualitas pengukuran pada cahaya luar ruang,
+komputasi fusi, dan kemungkinan latensi tambahan. Karena itu, pertanyaan
+praktisnya bukan apakah semua fitur kedalaman harus digabungkan sedini
+mungkin, melainkan pada tahap mana kedalaman cukup tepercaya untuk membantu
+YOLO tanpa mengorbankan laju kerja lapangan.
+
+Tinjauan ini memosisikan modifikasi YOLO RGB menjadi RGB--D sebagai masalah
+ko-desain antara arsitektur, sensor, data, dan tugas kebun. Di sisi
+arsitektur, representasi multi-skala penting karena tandan dekat dan jauh
+menempati luasan piksel yang berbeda; pendekatan ringan dan optimasi
+\textit{backbone} penting karena inferensi perlu mengikuti gerak operator
+atau platform. Di sisi fusi, pemisahan cabang RGB dan kedalaman dapat
+mempertahankan karakter masing-masing modalitas, sedangkan fusi pada fitur
+menengah atau keluaran dapat membatasi pengaruh kedalaman yang tidak andal.
+Pilihan tersebut harus dievaluasi terhadap \textit{recall} tandan yang
+tutup sebagian, ketelitian lokalisasi, kesalahan hitung per pohon, konsistensi
+kelas kematangan, dan latensi ujung-ke-ujung; satu skor deteksi saja tidak
+cukup untuk merepresentasikan kegunaan sistem panen.
+
+\textbf{Pertanyaan tinjauan.} (1) Bagaimana lintasan arsitektur deteksi
+objek RGB sampai ke detektor satu-tahap real-time yang relevan sebagai
+\textit{backbone}? (2) Dari mana kanal kedalaman dapat diperoleh secara
+murah, dan seberapa andal? (3) Strategi fusi RGB--D apa yang paling
+efektif, dan mengapa? (4) Bagaimana pola integrasi YOLO+RGB--D yang
+sudah ada, dan sejauh mana teruji pada deteksi buah? (5) Di mana celah
+riset untuk kasus sawit? Pertanyaan-pertanyaan ini disusun berurutan agar
+klaim rancangan akhir tidak melompati keterbatasan data, sensor, atau
+anggaran komputasi yang mendasarinya.
+
+\textbf{Metodologi penelusuran.} Korpus 202 karya dikumpulkan dari
+arsip pracetak dan basis data jurnal, dipilih karena relevansi terhadap
+salah satu dari empat poros: evolusi detektor RGB/YOLO, estimasi
+kedalaman, fusi RGB--D (deteksi salien dan segmentasi), serta integrasi
+YOLO dengan kedalaman. Rentang publikasi menekankan 2019--2026 (165
+entri), dengan 37 karya fondasi pra-2019 yang tetap dirujuk karena
+menjadi akar silsilah. Setiap karya diringkas ke dalam bab telaah
+tersendiri sebelum disintesiskan di sini. Taksonomi korpus dirangkum
+pada Tabel~\ref{tab:taksonomi} dan divisualkan pada
+Gambar~\ref{fig:taksonomi}. Susunan ini memungkinkan perbandingan metode
+berdasarkan kontribusi dan trade-off, alih-alih memperlakukan setiap model
+sebagai daftar varian yang terpisah.
+
+\textbf{Struktur naskah.} Bagian~\ref{sec:rgb} menelusuri fondasi
+deteksi RGB; Bagian~\ref{sec:yolo} mengkhususkan pada evolusi YOLO;
+Bagian~\ref{sec:depth} membahas sumber kedalaman; Bagian~\ref{sec:fusi}
+menyusun taksonomi fusi RGB--D; Bagian~\ref{sec:3d} meninjau persepsi
+tiga dimensi; Bagian~\ref{sec:multimodal} menarik pelajaran dari fusi
+multimodal lain; Bagian~\ref{sec:yolorgbd} membahas inti integrasi
+YOLO+RGB--D; Bagian~\ref{sec:aplikasi} memetakan aplikasi lintas domain
+dan menyempit ke buah; Bagian~\ref{sec:sintesis} merumuskan celah sawit;
+Bagian~\ref{sec:tantangan} dan~\ref{sec:kesimpulan} menutup dengan arah
+lanjutan.
+
+\begin{figure}[t]
+\centering
+\figplace{F01-taksonomi}{Taksonomi empat poros dan klaster tematik korpus 202 karya.}
+\caption{Taksonomi empat poros dan klaster tematik yang menaungi 202 karya
+yang ditinjau, dari fondasi deteksi RGB hingga integrasi YOLO+RGB--D.}
+\label{fig:taksonomi}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Taksonomi Tematik Korpus (poros $\rightarrow$ klaster)}
+\label{tab:taksonomi}
+\begin{tabular}{@{}p{2.4cm}p{4.6cm}c@{}}
+\toprule
+\textbf{Poros} & \textbf{Klaster} & \textbf{$\approx$Entri} \\
+\midrule
+Detektor RGB \& YOLO & YOLO v1--26; survei YOLO; dua-tahap; satu-tahap; anchor-free; DETR/transformer & 12--165 \\
+Kedalaman & Monokular klasik; model fondasi; metrik & 62--72, 175--202 \\
+Fusi RGB--D & RGB-D SOD; segmentasi RGB-D; survei fusi & 35--61, 166--174 \\
+Persepsi 3D & Pose 6D; \textit{grasp}; deteksi 3D; SLAM & 73--111, 180--191 \\
+Multimodal lain & Pedestrian RGB-T; survei multimodal & 100--106, 150--154 \\
+Integrasi \& aplikasi & YOLO+RGB-D; pertanian; medis; industri & 112--140, 195 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%=====================================================================
+
+\section{Fondasi Deteksi Objek RGB}\label{sec:rgb}
+%=====================================================================
+Deteksi tandan pada citra RGB bukan semata persoalan memberi kelas pada satu objek yang terpotong rapi. Sistem harus memutuskan letak, jumlah, dan kelas tandan ketika ukurannya berubah mengikuti jarak kamera, sebagian tertutup pelepah atau tandan lain, serta mengalami bayangan tajam dan pantulan cahaya. Karena itu, fondasi RGB penting dibaca sebagai rangkaian jawaban atas tiga sumber galat: bagaimana kandidat objek dibentuk, bagaimana fitur lintas skala dipelihara, dan bagaimana keluaran ganda diubah menjadi satu deteksi per objek. Silsilahnya dirangkum pada Gambar~\ref{fig:silsilah}; ia juga menyediakan titik integrasi yang wajar sebelum informasi kedalaman dimasukkan pada Bagian~\ref{sec:yolorgbd}.
+
+\subsection{Detektor Dua-Tahap}
+Paradigma dua-tahap memisahkan penemuan wilayah yang mungkin berisi objek dari pengenalan kelas dan penyempurnaan kotaknya. R-CNN memulai pergeseran penting dari fitur rancangan tangan ke fitur CNN yang dipra-latih: sekitar dua ribu wilayah dari \textit{selective search} diproses satu per satu, lalu diklasifikasikan dan diregresikan \cite{girshick2014rcnn}. Langkah tersebut menunjukkan nilai \textit{transfer learning} ketika data beranotasi terbatas, suatu keadaan yang dekat dengan citra sawit berlabel. Akan tetapi, pengulangan ekstraksi CNN pada setiap proposal membuat pendekatan ini tidak layak untuk aliran video lapangan; kualitas penghitungannya pun dibatasi oleh kemampuan pengusul wilayah yang tidak dipelajari bersama detektor.
+
+Fast R-CNN memindahkan konvolusi ke tingkat citra penuh dan mengambil fitur setiap proposal melalui \textit{RoI pooling}, sehingga komputasi yang sebelumnya berulang dapat dibagi \cite{girshick2015fastrcnn}. Faster R-CNN kemudian menyatukan pengusulan dan pengenalan melalui \textit{Region Proposal Network} (RPN) yang berbagi peta fitur dengan kepala deteksi \cite{ren2017fasterrcnn}. RPN mendasarkan prediksi pada \textit{anchor} dengan beberapa skala dan rasio aspek, lalu meregresikannya ke kotak tandan. Rancangan ini memberi proposal yang terlatih dan cukup teliti untuk objek bertumpuk, tetapi memindahkan beban ke pemilihan skala \textit{anchor}, ambang tumpang tindih, dan \textit{non-maximum suppression} (NMS). Pada kebun, distribusi ukuran tandan dapat berubah drastis antara kamera dekat dan jauh; \textit{anchor} yang cocok bagi satu jarak pandang belum tentu mempertahankan \textit{recall} di baris tanaman lain.
+
+Dua perluasan membuat keluarga ini relevan bukan hanya untuk kotak, melainkan juga batas dan skala objek. Mask R-CNN menambahkan cabang masker paralel serta \textit{RoIAlign}, sehingga penjajaran fitur tidak lagi mengalami kuantisasi seperti pada \textit{RoI pooling} \cite{he2017maskrcnn}. Meski segmentasi instans lebih mahal daripada deteksi kotak, batas masker dapat membantu membedakan dua tandan yang beririsan dan mencegah penghitungan ganda. Sementara itu, FPN membangun jalur \textit{top-down} dan koneksi lateral yang memperkaya peta resolusi tinggi dengan semantik dari lapisan dalam \cite{lin2017fpn}. Kebutuhan ini langsung berlaku pada tandan jauh atau hanya tampak sebagian di sela pelepah: detail spasial harus tersedia tanpa kehilangan informasi kelas. \textit{Backbone} residual memungkinkan jaringan yang lebih dalam tetap dioptimalkan melalui koneksi pintas \cite{he2016resnet}, dan menjadi basis praktis bagi FPN serta banyak detektor sesudahnya.
+
+Keluarga dua-tahap juga tidak harus identik dengan puluhan ribu kandidat padat. Sparse R-CNN mengganti \textit{anchor} padat dan NMS dengan sejumlah kecil proposal yang dipelajari \cite{sun2021sparsercnn}. Gagasannya memperlihatkan bahwa kualitas representasi proposal dapat lebih bernilai daripada memperbanyak kandidat. Namun, rantai proposal--RoI--kepala tetap membawa latensi dan kebutuhan memori yang perlu diuji pada perangkat kebun. Oleh sebab itu, ia tepat sebagai acuan akurasi dan analisis oklusi, bukan otomatis sebagai pilihan awal bagi penghitung tandan yang harus merespons video secara langsung.
+
+\subsection{Detektor Satu-Tahap dan Anchor-Free}
+Detektor satu-tahap menghapus pemisahan proposal demi satu lintasan prediksi padat. SSD mendeteksi pada beberapa peta fitur dengan resolusi berbeda \cite{liu2016ssd}; prinsipnya penting karena ukuran tandan pada citra bergerak tidak seragam. Namun, prediksi padat menghasilkan jauh lebih banyak lokasi latar daripada lokasi objek. RetinaNet menunjukkan bahwa kesenjangan akurasi satu-tahap bukan hanya akibat arsitektur: \textit{focal loss} menekan kontribusi negatif yang mudah agar gradien berfokus pada contoh sulit \cite{lin2017focal}. Bagi sawit, contoh sulit itu mencakup tandan berwarna serupa dengan daun tua, tandan kecil jauh, serta bagian tandan yang tertutup. Meski demikian, fungsi rugi tidak menggantikan kebutuhan anotasi yang mewakili variasi cahaya pagi, siang, dan bawah kanopi.
+
+Persoalan berikutnya adalah biaya representasi multi-skala. EfficientDet menggabungkan BiFPN, yakni fusi dua arah dengan bobot masukan yang dipelajari, dan \textit{compound scaling} untuk menyeimbangkan resolusi, lebar, serta kedalaman model \cite{tan2020efficientdet}. Kontribusi ini menegaskan bahwa \textit{backbone}, \textit{neck}, dan kepala tidak seharusnya diperbesar secara terpisah. Untuk prototipe sawit, prinsip tersebut lebih berguna daripada mengejar model terbesar: resolusi tinggi dapat memperjelas tandan kecil, tetapi menambah latensi, memori, dan kebutuhan daya. Titik operasi harus dipilih dari pengukuran pada kamera, GPU atau akselerator, dan kecepatan kendaraan yang benar-benar dipakai, bukan hanya dari FLOPs.
+
+Prediksi berbasis \textit{anchor} tetap menuntut penyetelan rasio, skala, dan aturan pemasangan terhadap anotasi. FCOS menghilangkan kotak acuan tersebut: setiap lokasi positif memprediksi empat jarak ke sisi kotak, FPN membagi rentang ukuran antartingkat, dan cabang \textit{centerness} menurunkan skor lokasi di tepi objek \cite{tian2019fcos}. Penyederhanaan ini menarik untuk tandan dengan proyeksi dan rasio aspek yang berubah akibat sudut kamera. Akan tetapi, pembagian rentang ukuran dan NMS belum hilang; pada oklusi rapat, lokasi yang berada di dalam lebih dari satu kotak masih membutuhkan aturan penugasan. CenterNet mengambil pemodelan lain dengan merepresentasikan objek sebagai titik pusat pada peta panas \cite{zhou2019objects}. Pendekatan pusat berpotensi selaras dengan tugas menghitung karena satu puncak diharapkan mewakili satu tandan, tetapi pusat yang tak tampak akibat pelepah atau bayangan dapat melemahkan sinyalnya. Dengan demikian, jalur \textit{anchor-free} mengurangi beban desain, bukan menghapus masalah oklusi dan multi-skala.
+
+Bagi modifikasi YOLO RGB menjadi RGB--D, pelajaran utamanya bersifat modular. \textit{Backbone} RGB yang ringan dan kepala satu-tahap menawarkan latensi awal yang baik, sedangkan FPN/BiFPN atau prediksi per lokasi menyediakan titik untuk menyuntikkan fitur kedalaman. Kanal kedalaman tidak seharusnya sekadar ditumpuk di masukan: ia perlu diuji apakah menambah pemisahan tandan dari daun pada skala halus, memperbaiki lokalisasi ketika warna tidak informatif, atau justru membawa derau dan latensi yang melampaui manfaatnya.
+
+\subsection{Detektor Berbasis Transformer}
+DETR mengubah rumusan dasar deteksi menjadi prediksi himpunan: \textit{encoder--decoder transformer} mengolah fitur citra dan sejumlah \textit{object query}, sedangkan pencocokan bipartit memastikan satu prediksi dipasangkan dengan satu objek \cite{carion2020detr}. Dengan demikian, \textit{anchor} dan NMS tidak diperlukan. Penalaran global ini bernilai pada rumpun sawit karena konteks antartandan dan pelepah dapat membantu membedakan objek dari tekstur berulang. Sebaliknya, DETR awal lambat berkonvergensi dan lemah pada objek kecil karena memakai fitur beresolusi rendah; dua sifat ini bermakna langsung bagi tandan jauh dan siklus eksperimen yang sumber dayanya terbatas.
+
+Deformable DETR menanggapi kedua hambatan itu dengan atensi jarang pada titik referensi yang dipelajari di beberapa skala fitur \cite{zhu2021deformabledetr}. Atensi tidak lagi membandingkan semua token, sehingga fitur resolusi tinggi lebih terjangkau dan pelatihan lebih cepat. Perbaikan selanjutnya terutama mengarahkan kueri agar optimisasi tidak dimulai dari tebakan yang buruk: Conditional DETR mengondisikan kueri spasial \cite{meng2021conditionaldetr}, DN-DETR melatihnya dengan kueri \textit{denoising} \cite{li2022dndetr}, dan DINO menggabungkan pengondisian, \textit{denoising}, serta strategi kueri yang lebih kuat \cite{zhang2023dino}. Co-DETR menambah pengawasan hibrida untuk memperkuat pembelajaran detektor \cite{zong2023codetr}. Rangkaian ini relevan bila RGB--D diperlakukan sebagai masalah korespondensi lintas-modalitas: kueri dapat diarahkan oleh petunjuk geometri, tetapi kompleksitas pelatihan tidak boleh menutupi manfaat praktisnya.
+
+Pilihan \textit{backbone} menentukan apakah atensi global memperoleh fitur yang kaya dan tetap terukur. Vision Transformer membentuk citra sebagai deret tambalan \cite{dosovitskiy2021vit}; Swin Transformer mengembalikan hierarki melalui jendela bergeser, sedangkan Swin Transformer V2 memperluas rancangan tersebut untuk skala dan resolusi lebih tinggi \cite{liu2021swin,liu2022swinv2}. Pyramid Vision Transformer menawarkan piramida fitur berbasis transformer \cite{wang2021pvt}, sementara ConvNeXt memperlihatkan bahwa konvolusi yang dimodernkan tetap kompetitif \cite{liu2022convnext}. Karena tidak semua lokasi atau kanal RGB dan kedalaman sama andalnya, CBAM menawarkan perhatian kanal--spasial ringan sebagai kandidat modul seleksi \cite{woo2018cbam}. Modul semacam ini harus dievaluasi terhadap citra berbayang dan kedalaman berlubang, bukan diasumsikan selalu membantu.
+
+Arah mutakhir berusaha mempertahankan prediksi himpunan tanpa mengorbankan latensi. RT-DETR memakai \textit{hybrid encoder} dan pemilihan kueri yang lebih baik untuk deteksi waktu nyata tanpa NMS \cite{zhao2024rtdetr}; RF-DETR mengeksplorasi rancangan real-time melalui pencarian arsitektur neural \cite{robinson2025rfdetr}; dan Le-DETR merampingkan \textit{encoder} bagi perangkat terbatas \cite{huang2026ledetr}. Gold-YOLO, walaupun berada dalam keluarga bernama YOLO, menekankan pengumpulan dan distribusi fitur sebagai jembatan antara fusi konvolusional dan atensi \cite{wang2023goldyolo}. Bagi sistem penghitungan tandan, pilihan akhirnya bukan antara ``YOLO cepat'' dan ``transformer akurat'', melainkan antara latensi yang stabil, ketahanan terhadap oklusi--iluminasi, dan ruang komputasi untuk kanal kedalaman. Fondasi RGB ini karena itu menjadi pembanding: RGB--D harus memperbaiki kegagalan RGB yang terukur tanpa merusak kapasitas deteksi dan klasifikasi di lapangan.
+
+\begin{figure*}[t]
+\centering
+\figplace{F03-silsilah-rgb}{Silsilah detektor RGB: dua-tahap, satu-tahap, anchor-free, dan transformer.}
+\caption{Silsilah detektor objek RGB, dari R-CNN sampai keluarga DETR
+real-time, memperlihatkan pewarisan gagasan lintas paradigma.}
+\label{fig:silsilah}
+\end{figure*}
+
+%=====================================================================
+
+\section{Evolusi dan Survei YOLO}\label{sec:yolo}
+%=====================================================================
+Keluarga YOLO penting bagi penghitungan dan klasifikasi tandan buah sawit karena menjadikan deteksi sebagai satu pemetaan dari citra penuh ke kotak, skor objek, dan kelas. Tidak adanya tahap usulan wilayah memendekkan alur inferensi dan memberi konteks global, dua sifat yang bernilai ketika kamera bergerak di blok kebun. Akan tetapi, keuntungan latensi tersebut sejak awal dibayar dengan keterbatasan lokalisasi dan kapasitas prediksi pada objek yang kecil atau berdekatan. YOLOv1 membagi citra ke dalam kisi, menugaskan sel menurut pusat objek, lalu meregresi kotak dan probabilitas kelas dalam satu evaluasi \cite{redmon2016yolo}. Bagi tandan yang sebagian tertutup pelepah, satu tandan yang besar mungkin mudah ditemukan, tetapi beberapa tandan pada kedalaman berbeda atau yang pusatnya jatuh pada wilayah kisi serupa berpotensi saling bersaing. Karena itu, evolusi YOLO lebih tepat dibaca sebagai upaya berulang menambah \textit{recall}, ketelitian geometri, dan ketahanan data tanpa meninggalkan batas latensi perangkat lapangan.
+
+Generasi kedua mengatasi kekakuan prediksi awal melalui \textit{anchor box} berbasis pengelompokan dimensi, prediksi lokasi yang terikat sel, normalisasi \textit{batch}, dan pelatihan multiskala. Dengan demikian, jaringan mempelajari koreksi dari bentuk kotak acuan dan dapat dipakai pada resolusi masukan yang berbeda \cite{redmon2017yolo9000}. Pilihan ini relevan bagi tandan sawit karena ukuran pikselnya berubah tajam menurut jarak kamera, tinggi pohon, dan sudut pengambilan. Namun, \textit{anchor} juga merupakan asumsi bentuk yang harus sesuai dengan distribusi anotasi; perubahan varietas, fase kematangan, atau jarak pemotretan dapat menuntut penyetelan ulang. Pelatihan gabungan deteksi--klasifikasi YOLO9000 memperluas kosakata melalui WordTree, sedangkan arah modernnya adalah memperluas pemahaman kategori tanpa membebani detektor inti. Dalam konteks sawit, ide ini mengisyaratkan bahwa pembeda tandan matang, mentah, dan objek pengganggu perlu dirancang bersama dengan label lokal yang benar-benar tersedia, bukan hanya mengandalkan kosakata umum.
+
+YOLOv3 memindahkan masalah objek kecil dari satu peta fitur ke prediksi tiga skala dan mengganti ekstraktor fiturnya dengan Darknet-53 residual \cite{redmon2018yolov3}. Penggabungan fitur rinci dan semantik ini merupakan prasyarat praktis untuk menangkap tandan jauh yang hanya menempati sedikit piksel, sambil tetap mempertahankan kepala prediksi bagi tandan yang dekat dan besar. Namun, multiskala menaikkan jumlah kandidat dan biaya memori; manfaatnya harus diuji terhadap resolusi kamera dan sasaran laju bingkai aktual. YOLOv4 lalu menunjukkan bahwa kemajuan tidak selalu memerlukan perubahan paradigma: CSPDarknet53, SPP, PAN, Mosaic, dan loss CIoU dirangkai sebagai \textit{bag of freebies} dan \textit{bag of specials} untuk memperbaiki fitur, variasi latih, serta regresi kotak \cite{bochkovskiy2020yolov4}. PP-YOLO menegaskan nilai penyempurnaan resep pelatihan dan implementasi yang cermat \cite{long2020ppyolo}. Bagi kebun, augmentasi harus merepresentasikan perubahan iluminasi akibat kanopi, bayangan, kabut, dan pantulan; augmentasi generik berguna, tetapi tidak menggantikan citra lapangan yang merekam oklusi pelepah dan latar tanah sebenarnya.
+
+Peralihan berikutnya mengurangi ketergantungan pada \textit{anchor}. YOLOX memakai prediksi \textit{anchor-free}, \textit{decoupled head} untuk memisahkan klasifikasi dari regresi, serta SimOTA untuk menetapkan contoh positif secara dinamis \cite{ge2021yolox}. Pemisahan tersebut menarik untuk sawit: kelas kematangan terutama bergantung pada isyarat warna dan tekstur, sedangkan penghitungan membutuhkan kotak yang stabil; kedua tugas tidak harus memaksa fitur yang persis sama. Sebaliknya, penetapan label dinamis dan augmentasi kuat menambah kerumitan pelatihan sehingga kualitas anotasi tandan yang teroklusi tetap menentukan. YOLOv6 menerjemahkan gagasan itu ke kebutuhan industri melalui \textit{backbone} yang dapat direparameterisasi, kepala \textit{anchor-free} yang efisien, pengukuran pada perangkat produksi, serta jalur kuantisasi \cite{li2022yolov6}. Ini menempatkan model kecil, ekspor runtime, dan presisi numerik sebagai keputusan rancangan, bukan tahap akhir setelah akurasi diperoleh.
+
+YOLOv7 melanjutkan pemisahan biaya latih dan biaya inferensi melalui E-ELAN, reparameterisasi terencana, serta kepala bantu yang dibuang setelah pelatihan \cite{wang2023yolov7}. Sementara itu, YOLOv9 menyoroti pelestarian informasi gradien selama pelatihan dan rancangan GELAN yang efisien \cite{wang2024yolov9}. Keduanya memperlihatkan bahwa kapasitas fitur dapat dinaikkan tanpa serta-merta memperberat model terpasang, tetapi keuntungan ini tidak boleh disamakan dengan latensi pada kamera, prosesor, dan runtime kebun yang berbeda. Untuk penghitungan tandan, evaluasi harus memisahkan galat deteksi dari galat hitung: kotak ganda, tandan tersamar, atau tandan yang hanya tampak sebagian dapat memengaruhi total meskipun nilai presisi agregat tampak baik. Karena itu, pemilihan varian sebaiknya didasarkan pada ukuran model, memori, latensi ujung-ke-ujung, dan kestabilan hasil antarbingkai, bukan pada satu angka akurasi tolok ukur.
+
+YOLOv10 menggeser perhatian dari \textit{backbone} menuju alur keputusan akhir. Melalui penugasan ganda yang konsisten, kepala satu-ke-banyak memberi supervisi kaya saat pelatihan, sedangkan kepala satu-ke-satu dipakai saat inferensi sehingga NMS dapat dihapus \cite{wang2024yolov10}. Bebas-NMS berpotensi mengurangi latensi yang bergantung pada banyaknya kandidat dan menghindari ambang penyaringan yang dapat menghapus tandan berdekatan. Trade-off-nya ialah pelatihan lebih rumit dan hilangnya satu pengendali pasca-proses yang kadang berguna untuk menala presisi--\textit{recall} di lokasi tertentu. Ikhtisar YOLOv11 menempatkan perkembangan tersebut dalam kerangka modular \cite{khanam2024yolov11}; YOLO26 meneruskan agenda deteksi \textit{real-time} ujung-ke-ujung \cite{sapkota2025yolo26}. Keduanya menguatkan arah umum: penggabungan modul perlu tetap tunduk pada pembuktian latensi, konsumsi daya, dan keterulangan pada perangkat sasaran.
+
+Ekspansi kemampuan juga tidak hanya berarti menambah kedalaman jaringan. YOLO-World memadukan deteksi dengan panduan teks untuk kosakata terbuka, sehingga kategori dapat diperluas tanpa pelatihan ulang penuh \cite{cheng2024yoloworld}. Untuk sawit, kemampuan ini lebih tepat diposisikan sebagai alat eksplorasi atau pelabelan awal bagi varietas, kondisi kematangan, atau objek pengganggu yang jarang, bukan pengganti validasi kelas operasional. Kelas penghitungan harus konsisten lintas musim dan kebun; prediksi yang tampak semantis belum tentu memadai untuk keputusan panen. Dengan demikian, detektor RGB yang kuat merupakan fondasi, tetapi bukan alasan untuk menunda informasi geometri. Kanal kedalaman dapat dipertimbangkan sebagai isyarat komplementer untuk memisahkan tandan dari pelepah berlatar serupa, menguji konsistensi jarak, dan mengurangi ambiguitas tumpang tindih, sambil memperhatikan sinkronisasi sensor, nilai kedalaman hilang, serta tambahan latensi fusi.
+
+Berbagai survei sepakat mengenai keunggulan relatif YOLO sebagai detektor satu tahap, tetapi menyajikan peringatan metodologis yang sama pentingnya. Tinjauan arsitektur, metrik, dan silsilah versi menggarisbawahi bahwa perbandingan adil harus mengendalikan dataset, resolusi, perangkat keras, dan prosedur inferensi \cite{terven2023yolo,jiang2022yoloreview,ali2024yoloreview,vijayakumar2024yolo,alif2024yoloevolution,diwan2023yolo}. Telaah manufaktur menekankan kebutuhan kompromi antara ketelitian dan waktu respons dalam sistem produksi \cite{hussain2023yolo}, sedangkan ulasan khusus YOLOv8 menunjukkan bahwa sebuah versi populer tetap perlu dinilai menurut tugas dan konfigurasi penerapannya \cite{sohan2024yolov8review}. Yang paling dekat dengan masalah ini, survei pertanian memetakan objek kecil, oklusi, kondisi lingkungan, keterbatasan perangkat keras, dan data yang spesifik komoditas sebagai hambatan berulang \cite{sapkota2024yoloagri}. Maka, titik berangkat yang masuk akal ialah memilih varian YOLO ringkas dengan fitur multiskala dan kepala yang mudah diperluas, mengukur performa pada video kebun nyata, lalu membandingkan fusi RGB--kedalaman terhadap RGB pada protokol hitung dan klasifikasi tandan yang sama.
+
+\begin{figure*}[t]
+\centering
+\figplace{F02-timeline-yolo}{Garis waktu evolusi YOLO v1 hingga YOLO26.}
+\caption{Garis waktu evolusi YOLO dari v1 (2016) hingga YOLO26 (2025),
+menandai peralihan ke desain \textit{anchor-free} dan bebas-NMS.}
+\label{fig:timeline}
+\end{figure*}
+
+\begin{table}[t]
+\centering
+\caption{Ikhtisar Evolusi YOLO (kebaruan utama)}
+\label{tab:yolo}
+\begin{tabular}{@{}llp{4.4cm}@{}}
+\toprule
+\textbf{Versi} & \textbf{Thn} & \textbf{Kebaruan utama} \\
+\midrule
+YOLOv1 & 2016 & Regresi kisi satu-tahap \\
+YOLOv2 & 2017 & Anchor berbasis klaster \\
+YOLOv3 & 2018 & Prediksi multiskala; Darknet-53 \\
+YOLOv4 & 2020 & Konsolidasi trik latih/inferensi \\
+YOLOX & 2021 & Anchor-free; label dinamis \\
+YOLOv6 & 2022 & Efisiensi perangkat keras \\
+YOLOv7 & 2023 & Agregasi lapisan terarah \\
+YOLOv9 & 2024 & Informasi gradien terprogram \\
+YOLOv10 & 2024 & Ujung-ke-ujung tanpa NMS \\
+YOLOv11 & 2024 & Kerangka modular terpadu \\
+YOLO26 & 2025 & Real-time ujung-ke-ujung \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%=====================================================================
+
+\section{Estimasi Kedalaman dan Sumber \textit{Depth}}\label{sec:depth}
+%=====================================================================
+Kanal kedalaman untuk sistem penghitung dan pengklasifikasi tandan sawit dapat diperoleh dari stereo, sensor aktif seperti \textit{time-of-flight} (ToF) atau kamera RGB--D, maupun diprediksi dari satu citra RGB. Sensor fisik menyediakan pengukuran yang secara prinsip metrik setelah kalibrasi, sehingga jarak tandan dapat dipakai untuk penapisan, lokalisasi, atau pemisahan contoh yang berimpit. Akan tetapi, stereo memerlukan tekstur dan korespondensi yang mantap, sedangkan sensor aktif dapat kehilangan atau merusak pengukuran pada cahaya matahari kuat, permukaan basah, serta daerah yang terhalang pelepah. Karena itu, kedalaman monokular layak diperlakukan sebagai sumber \textit{pseudo-depth}: lebih mudah dipasang pada kamera lapangan, tetapi bukan pengganti otomatis bagi jarak fisik.
+
+Garis awal regresi monokular tersupervisi ialah jaringan dua skala Eigen dkk. yang memisahkan konteks global dari perincian lokal dan memakai galat invarian skala \cite{eigen2014depth}. Pemisahan ini relevan untuk sawit: konteks tajuk membantu menafsirkan susunan tandan, sementara batas lokal diperlukan agar tandan yang berhimpitan tidak menyatu dalam peta kedalaman. Namun, model tersupervisi bergantung pada pasangan RGB--kedalaman yang representatif. BTS memperjelas kompromi tersebut: \textit{Local Planar Guidance} menurunkan kedalaman resolusi penuh dari parameter bidang lokal pada beberapa skala, sehingga tepi dan permukaan miring lebih terjaga, tetapi tetap membutuhkan label kedalaman metrik \cite{lee2019bts}. AdaBins mengganti pembagian kedalaman tetap dengan \textit{bin} adaptif, sedangkan NeWCRFs memakai regularisasi medan acak bersyarat untuk memadukan konteks dan prediksi rapat \cite{bhat2021adabins,yuan2022newcrfs}. Keduanya menunjukkan pergeseran dari regresi per piksel menuju pemodelan distribusi dan relasi antarpiksel; manfaatnya bagi tandan kecil atau bertumpuk harus tetap diuji terhadap tepi pelepah yang kompleks, bukan hanya tolok ukur umum.
+
+Jalur swa-awas mengurangi biaya anotasi dengan memanfaatkan pasangan stereo atau urutan video. Monodepth memakai konsistensi kiri--kanan \cite{godard2017monodepth}; Monodepth2 kemudian memilih galat reproyeksi minimum per piksel untuk menghindari sumber yang teroklusi, menerapkan \textit{auto-masking} bagi piksel stasioner, dan menghitung kerugian multiskala pada resolusi penuh \cite{godard2019monodepth2}. Tiga mekanisme terakhir secara teknis menarik bagi pencitraan kebun yang bergerak: oklusi tandan oleh pelepah tidak perlu dihukum dari semua pandangan, tetapi perubahan pencahayaan keras, daun yang bergoyang, dan perubahan bentuk akibat angin tetap melanggar asumsi rekonstruksi fotometrik. PackNet mempertahankan detail spasial melalui operasi \textit{packing} pada kerangka ini \cite{guizilini2020packnet}, sementara MonoIndoor menandaskan bahwa penyesuaian domain dapat diperlukan ketika geometri dan skala adegan berubah \cite{ji2021monoindoor}. Dengan demikian, video kebun dapat memberi sinyal pelatihan murah, tetapi validasi pada kondisi gerak dan iluminasi lapangan tetap menentukan.
+
+Perkembangan berikutnya mengutamakan generalisasi. DPT membawa \textit{transformer} ke prediksi rapat \cite{ranftl2021dpt}. MiDaS melatih satu model pada lima sumber heterogen dengan galat invarian skala--pergeseran, pencocokan gradien multiskala, dan penyeimbangan multiobjektif; hasilnya kuat untuk transfer \textit{zero-shot}, tetapi keluarannya relatif sehingga tidak langsung menyatakan meter \cite{ranftl2022midas}. Depth Anything memperluas pemanfaatan citra tak berlabel \cite{yang2024depthanything}. Pada versi keduanya, guru yang dilatih pada data sintetis berlabel presisi melabeli semu lebih dari 62 juta citra nyata sebelum pengetahuan didistilasikan ke model siswa; rancangan ini ditujukan untuk memperbaiki ketajaman tepi sekaligus menjaga keragaman domain \cite{yang2024depthanythingv2}. Untuk sawit, peta relatif semacam ini dapat menjadi kanal pembeda depan--belakang bagi detektor YOLO, khususnya saat warna tandan dan daun serupa, tetapi skala antarcitra tidak boleh diasumsikan konstan ketika menghitung jumlah atau ukuran fisik.
+
+Apabila keputusan hilir memerlukan jarak, pendekatannya berbeda. ZoeDepth menjembatani prediksi relatif dan metrik \cite{bhat2023zoedepth}; Metric3D menormalkan data ke ruang kamera kanonik agar panjang fokus yang berbeda tidak langsung berubah menjadi galat skala \cite{yin2023metric3d}. Pendekatan terakhir relevan bila intrinsik kamera kebun tersedia, namun ketidakakuratan kalibrasi akan diteruskan ke kedalaman metrik. Marigold memanfaatkan prior model difusi untuk kedalaman \cite{ke2024marigold}, sedangkan Depth Anything V2 menawarkan jalur \textit{feed-forward} yang lebih ringan untuk kebutuhan respons cepat. Survei menempatkan perbedaan antara kedalaman relatif, metrik, terawasi, dan swa-awas sebagai pilihan yang harus disesuaikan dengan data serta penggunaan hilir \cite{ming2021depthsurvey,zhang2025metricdepthsurvey}.
+
+Arah mutakhir memperluas geometri dari pandangan sembarang melalui Depth Anything 3 \cite{lin2025depthanything3}, mengejar inferensi waktu nyata dengan memori spasial pada AsyncMDE \cite{ma2026asyncmde}, dan menargetkan kedalaman metrik lintas kamera pada UniDAC \cite{ganesan2026unidac}; \textit{Focusable Monocular Depth Estimation} menambahkan kemampuan memfokuskan estimasi pada wilayah yang diperlukan \cite{du2026focusabledepth}. Bagi sawit, prioritas praktisnya ialah menguji konsistensi batas tandan, kestabilan urutan kedalaman di bawah oklusi, dan galat jarak pada cahaya langsung. Kedalaman aktual layak menjadi rujukan dan kanal fusi bila perangkat serta kondisi memungkinkan; \textit{pseudo-depth} lebih tepat dipakai sebagai petunjuk geometris tambahan yang ketidakpastiannya dipelihara dalam rancangan sistem.
+
+%=====================================================================
+
+\section{Fusi RGB--Depth: Prinsip dan Strategi}\label{sec:fusi}
+%=====================================================================
+Fusi RGB--D bukan sekadar menambahkan satu kanal jarak ke detektor. RGB
+membawa warna, tekstur, dan tepi yang kaya, sedangkan kedalaman memberi
+isyarat susunan ruang, diskontinuitas permukaan, serta urutan depan--belakang.
+Untuk penghitungan dan klasifikasi tandan buah sawit, pelengkap ini bernilai
+karena tandan yang warnanya serupa dengan pelepah atau tanah dapat memiliki
+jarak berbeda. Namun, sensor aktif dapat gagal pada sinar matahari keras,
+permukaan basah atau reflektif, dan batas kedalaman yang bercampur; kedalaman
+semu dari citra tunggal juga relatif, dapat bergeser skalanya antaradegan, dan
+mudah keliru pada daun tipis. Karena itu, pertanyaan penting bukan hanya
+apakah kedalaman tersedia, melainkan kapan, pada skala mana, dan dengan bobot
+berapa ia boleh memengaruhi representasi visual. Tiga strategi kanonis
+dirangkum pada Tabel~\ref{tab:fusi} dan Gambar~\ref{fig:strategi}: fusi awal
+pada masukan atau fitur dangkal, fusi menengah yang mempertukarkan fitur pada
+beberapa tingkat, dan fusi akhir yang menggabungkan keputusan cabang.
+
+\subsection{Dari Penggabungan Tetap ke Fusi Selektif}
+
+Fusi awal memproses RGB dan kedalaman sebagai tensor yang sudah disatukan.
+Kelebihannya ialah jalur inferensi ringkas serta kesempatan bagi \textit{backbone}
+untuk mempelajari korelasi warna--jarak sejak awal. Contoh yang dekat dengan
+YOLO ialah \textit{Expandable YOLO}: kedalaman dinormalisasi sebagai kanal
+keempat sebelum Darknet-53, sementara konvolusi tiga dimensi diletakkan hanya
+pada ujung jaringan untuk meregresi kotak tiga dimensi \cite{takahashi2020expandableyolo}.
+Pada data dalam ruang yang terbatas, rancangan ini dapat memisahkan dua orang
+berdekatan yang menyatu pada deteksi 2D; tetapi pengurangan skala piramida dan
+satu kanal mentah membuat ketepatan kotak 2D lebih rendah daripada YOLOv3
+baku. Pelajaran untuk sawit adalah bahwa kanal kedalaman mentah patut menjadi
+\textit{baseline}, bukan asumsi bahwa fusi dini selalu kuat: misregistrasi
+antara RGB dan peta jarak akan menjadi pola palsu yang langsung dipelajari
+lapisan pertama.
+
+Bukti segmentasi menguatkan batas tersebut. FuseNet memakai dua \textit{encoder}
+VGG-16, lalu menjumlahkan fitur kedalaman ke fitur RGB sebelum beberapa
+\textit{pooling}; pada SUN RGB-D, varian fusi fitur mengungguli penumpukan
+kanal RGB--D maupun HHA \cite{hazirbas2016fusenet}. RedNet dan RDFNet kemudian
+membawa prinsip dua cabang ini ke jaringan residual dan fusi multitingkat
+\cite{jiang2018rednet,park2017rdfnet}. Keuntungan utamanya ialah statistik
+masing-masing modalitas dapat dibentuk sendiri sebelum bertemu. Sebaliknya,
+penjumlahan atau konkatenasi tetap tidak dapat membedakan piksel daun yang
+peta kedalamannya kosong dari piksel tandan yang kedalamannya dapat dipercaya.
+ACNet mulai mengganti kontribusi seragam dengan perhatian kanal
+\cite{hu2019acnet}, sedangkan ShapeConv memanfaatkan bentuk lokal kedalaman
+melalui operator khusus \cite{cao2021shapeconv}. Kedua arah tersebut masuk akal
+bila batas geometri benar-benar tajam, tetapi kurang aman bila kedalaman semu
+melicinkan tandan dan pelepah menjadi satu bidang.
+
+Fusi menengah menjawab masalah ini dengan mempertahankan cabang RGB dan
+kedalaman hingga fitur sudah memiliki makna, lalu membiarkan modul belajar
+memilih informasi. SA-Gate merupakan formulasi yang jelas: gerbang kanal
+lintas-modal menyaring fitur lebih dahulu, kemudian gerbang spasial berbobot
+\textit{softmax} memilih kontribusi RGB atau HHA pada setiap lokasi, dan hasilnya
+mengalir kembali ke dua cabang di beberapa tahap \cite{chen2020sagate}. Dalam
+uji Cityscapes, rata-rata dua cabang RGB--D justru di bawah RGB saja ketika
+kedalaman stereo berderau, sedangkan penyaringan SA-Gate mengembalikan manfaat
+kedalaman. Hal ini penting bagi kamera kebun: area yang silau dapat lebih
+mengandalkan geometri, tetapi kontur tandan pada batas daun atau area sensor
+tidak valid perlu mengutamakan RGB.
+
+Efisiensi menentukan apakah strategi tersebut dapat dipakai saat kendaraan
+atau pekerja memindai banyak pohon. ESANet menunjukkan kompromi praktis dengan
+dua \textit{encoder} ResNet-34 terfaktorkan, perhatian \textit{squeeze-and-excitation}
+per kanal pada lima skala, dan dekoder ringan; varian utamanya mencapai 50,30
+mIoU pada NYUv2 serta 29,7 FPS pada Jetson AGX Xavier \cite{seichter2021esanet}.
+EMSANet memperluas keluarga ini ke beberapa tugas persepsi bersama
+\cite{seichter2022emsanet}. Artinya, desain sawit tidak perlu menyalin dua
+\textit{backbone} besar dan atensi mahal: fusi pada tingkat piramida yang
+relevan untuk ukuran tandan, disertai gerbang murah, lebih sesuai bila
+keterlambatan inferensi membatasi laju penghitungan.
+
+\subsection{Pelajaran dari SOD: Keandalan Kedalaman dan Oklusi}
+
+Deteksi objek salien RGB--D memberi lingkungan pembanding yang berguna karena
+model harus memisahkan objek dari latar pada batas rapat. Generasi CNN awal
+berfokus pada pengayaan fitur: DMRA memakai penyulingan kedalaman berpandu
+atensi berulang, BBS-Net menyusun aliran dua cabang dari fitur dangkal ke
+dalam, sedangkan JL-DCF memakai cabang bersama yang memperlakukan RGB dan
+kedalaman secara kooperatif \cite{piao2019dmra,fan2020bbsnet,fu2020jldcf}.
+S2MA menggunakan perhatian-diri saling melengkapi, HDFNet memandu dekoder
+dengan fitur hibrida, dan UC-Net memasukkan ketidakpastian laten
+\cite{liu2020s2ma,pang2020hdfnet,zhang2020ucnet}. Secara bersama, karya-karya
+ini menggeser fusi dari "kedalaman ditambahkan" menjadi "kedalaman menjadi
+konteks bagi RGB".
+
+Koreksi terpenting datang dari D3Net. Tiga aliran menghasilkan prediksi RGB,
+RGB--D, dan kedalaman; pada inferensi, \textit{depth depurator unit} memakai
+konsistensi prediksi fusi dan prediksi kedalaman untuk memilih hasil fusi atau
+kembali ke RGB saja \cite{fan2020d3net}. Pada STERE, aliran kedalaman melemah
+ketika banyak peta rusak, tetapi gerbang mempertahankan keluaran akhir yang
+kuat. Mekanisme biner ini tidak langsung dapat dipindahkan menjadi penghitungan
+tandan, sebab mutu peta sebaiknya dinilai per lokasi dan bukan hanya per citra.
+Meski demikian, prinsipnya sangat relevan: kepercayaan kedalaman perlu
+menjadi keluaran yang dapat dipelajari atau diukur, misalnya dari validitas
+sensor, ketidakpastian \textit{pseudo-depth}, keselarasan tepi RGB--D, dan
+konsistensi temporal.
+
+Keluarga berikutnya memperkaya pertukaran tersebut. CoNet dan DCF mempelajari
+kolaborasi serta kalibrasi kedalaman, SPNet memisahkan informasi khusus dan
+bersama, sedangkan DSA2F mencari rancangan fusi secara otomatis
+\cite{ji2020conet,ji2021dcf,zhou2021spnet,sun2021dsa2f}. CIR-Net, C2DFNet,
+CCAFNet, jaringan interaksi hierarkis lintas-modal, dan HiDAnet berturut-turut
+menekankan koneksi timbal balik, atensi kanal terpandu kedalaman, keseimbangan
+kanal--spasial, pertukaran antarhierarki, dan perhatian granularitas terpisah
+\cite{cong2022cirnet,zhang2022c2dfnet,zhou2022ccafnet,chen2023cmhi,wu2023hidanet}.
+CAVER membawa representasi voxel--tampilan, MobileSal mengejar bentuk ringan,
+dan GL-DMNet mempelajari hubungan mutual global--lokal \cite{pang2023caver,wu2022mobilesal,yi2025gldmnet}.
+Survei bidang ini juga menandai bahwa hasil tidak boleh disamakan tanpa
+memeriksa karakter sensor dan protokol data \cite{zhou2021rgbdsurvey}.
+
+Bagi tandan yang saling menutupi, perhatian lintas-modal paling berguna bukan
+untuk menggandakan sinyal, melainkan untuk memutuskan apakah perubahan warna
+adalah tekstur, bayangan, atau batas objek pada kedalaman lain. Fitur dangkal
+menahan tepi duri dan anak tandan; fitur dalam menyediakan konteks bahwa
+beberapa gugus berdekatan mungkin satu tandan atau beberapa tandan. Oleh sebab
+itu, fusi pada beberapa resolusi lebih sesuai daripada satu gerbang hanya di
+ujung \textit{neck} YOLO. Namun, modul harus mempertahankan jalur RGB murni
+agar kesalahan kedalaman tidak menghapus kandidat tandan kecil di balik
+pelepah.
+
+\subsection{Transformer, Token, dan Fusi Akhir}
+
+Transformer memperluas fusi menengah melalui hubungan jarak jauh. VST memakai
+\textit{cross-modality attention} antara token RGB dan kedalaman, kemudian
+memulihkan resolusi dengan \textit{reverse token-to-token}; model ini tetap
+kompetitif pada data SOD yang kedalamannya diestimasi \cite{liu2021vst}.
+SwinNet dan TriTransNet meneruskan pemanfaatan \textit{backbone} transformer
+dan pemurnian bertahap \cite{liu2021swinnet,liu2021tritransnet}. Untuk
+segmentasi, SegFormer menyediakan \textit{backbone} hierarkis yang efisien
+\cite{xie2021segformer}; CMX menambahkan rektifikasi kanal dan spasial dua arah
+serta pertukaran konteks lintas-modal yang efisien, dengan satu rancangan untuk
+RGB--D dan modalitas pelengkap lain \cite{zhang2023cmx}. DFormer menggeser
+integrasi ini ke \textit{backbone} RGB--D yang pralatih, GeminiFusion memfusikan
+fitur per piksel, Omnivore menyatukan pelatihan lintas-modalitas, dan PGDENet
+memakai kedalaman untuk memandu penyuntingan fitur \cite{yin2024dformer,jia2024geminifusion,girdhar2022omnivore,zhou2022pgdenet}.
+DiffPixelFormer menambahkan prior difusi untuk segmentasi ruang-dalam
+\cite{gong2025diffpixelformer}. Kapasitas konteks ini berpotensi membantu
+membedakan tumpang tindih tandan, tetapi dua \textit{encoder} transformer dan
+perhatian global dapat melampaui anggaran perangkat lapangan.
+
+TokenFusion menawarkan kompromi yang lebih terarah: token berkontribusi kecil
+pada satu modalitas diganti token pasangan pada posisi yang sama, sambil
+mempertahankan penyandian posisi \cite{wang2022tokenfusion}. Pada NYUv2, metode
+ini melampaui konkatenasi token dan pembanding CNN, tetapi ia mengandaikan
+registrasi piksel yang baik. Pada rig kamera sawit, kalibrasi intrinsik--ekstrinsik
+dan sinkronisasi gerak wajib diuji; tanpa itu, token kedalaman dari pelepah
+dapat menggantikan token RGB tandan yang salah.
+
+Fusi akhir tetap bernilai bila tujuan utama adalah ketahanan. FusionVision
+menjalankan YOLOv8 untuk kotak RGB, memakai kotak itu sebagai \textit{prompt}
+FastSAM, lalu memproyeksikan hanya masker objek ke awan titik kedalaman
+\cite{elamraoui2024fusionvision}. Strategi ini modular dan membatasi gangguan
+kedalaman pada tahap pengukuran atau rekonstruksi, tetapi \textit{pipeline}
+penuh berkecepatan sekitar 5 FPS pada data kecil tiga kelas, sehingga belum
+cukup menjadi bukti untuk penghitungan kebun bergerak. Untuk sawit, fusi akhir
+cocok sebagai verifikasi jarak, penghilangan duplikasi lintas-tandan, atau
+estimasi volume setelah deteksi RGB; ia tidak menggantikan fusi fitur ketika
+oklusi menyebabkan kotak 2D itu sendiri ambigu.
+
+Validasi juga harus memisahkan sumber kedalaman. NYU Depth v2, SUN RGB-D, dan
+ScanNet menyediakan pasangan RGB--D teranotasi yang berguna bagi segmentasi,
+tetapi terutama menggambarkan ruang dalam \cite{silberman2012nyu,song2015sunrgbd,dai2017scannet}.
+Dataset sawit perlu mencatat sensor atau model \textit{pseudo-depth}, jarak,
+sudut pandang, cahaya keras, hujan, oklusi, dan kesalahan registrasi. Dengan
+protokol demikian, pilihan yang paling dapat dipertanggungjawabkan ialah
+membandingkan RGB saja, fusi awal, dan fusi menengah yang sadar-keandalan pada
+metrik deteksi, klasifikasi kematangan, galat hitung per pohon, serta latensi.
+
+\begin{figure}[t]
+\centering
+\figplace{F04-strategi-fusi}{Tiga strategi fusi RGB-D: awal, menengah, akhir.}
+\caption{Tiga strategi kanonis fusi RGB--D beserta titik penggabungan
+warna dan kedalaman pada pipeline.}
+\label{fig:strategi}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figplace{F06-atensi-lintasmodal}{Skema atensi lintas-modal antara aliran RGB dan Depth.}
+\caption{Skema atensi lintas-modal: fitur satu modalitas menimbang fitur
+modalitas lain sebelum digabung, mengurangi dampak kedalaman bising.}
+\label{fig:atensi}
+\end{figure}
+
+\begin{table*}[t]
+\centering
+\caption{Perbandingan Strategi Fusi RGB--D}
+\label{tab:fusi}
+\begin{tabular}{@{}p{2.1cm}p{4.2cm}p{4.2cm}p{4.6cm}@{}}
+\toprule
+\textbf{Strategi} & \textbf{Mekanisme} & \textbf{Kelebihan / Keterbatasan} & \textbf{Contoh karya} \\
+\midrule
+Fusi awal & Gabung pada masukan atau fitur dangkal (konkatenasi kanal) &
+Sederhana, parameter minim / rentan terhadap kedalaman bising, penyelarasan buruk &
+FuseNet \cite{hazirbas2016fusenet}, Expandable YOLO \cite{takahashi2020expandableyolo} \\
+Fusi menengah & Gabung fitur multilevel dengan atensi lintas-modal &
+Akurasi tertinggi pada adegan padat / biaya komputasi lebih besar &
+SA-Gate \cite{chen2020sagate}, CMX \cite{zhang2023cmx}, CIR-Net \cite{cong2022cirnet} \\
+Fusi akhir & Gabung keluaran dua cabang independen (rata-rata/pilih) &
+Modular, tahan hilang-modalitas / mengabaikan interaksi fitur &
+JL-DCF \cite{fu2020jldcf}, deteksi-lalu-proyeksi \cite{elamraoui2024fusionvision} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+%=====================================================================
+
+\section{Persepsi Tiga Dimensi dan Geometri}\label{sec:3d}
+%=====================================================================
+Penghitungan dan klasifikasi tandan buah segar tidak berhenti pada kotak dua dimensi. Sistem lapangan perlu membedakan tandan yang saling menutupi, mengaitkan pengamatan yang sama sepanjang lintasan kamera, dan bila diperlukan mengubah posisi piksel menjadi lokasi kerja robot. Karena itu, geometri tiga dimensi perlu dipandang sebagai rantai keputusan: kedalaman menentukan titik atau permukaan yang dapat dipercaya, representasi menentukan bagaimana geometri diproses, sedangkan pose, deteksi, dan pemetaan menjaga konsistensi objek antarwaktu. Ketiga tahap tersebut penting pada kebun sawit yang memadukan pencahayaan keras, bayangan pelepah, tandan bertumpuk, serta kedalaman aktual sensor yang dapat berlubang atau kedalaman semu yang skala dan galatnya perlu dikendalikan.
+
+\textbf{Dari pose berbasis objek ke pose yang dapat digeneralisasi.} Estimasi pose 6D menyatakan translasi dan orientasi objek terhadap kamera. Regresi langsung dari RGB, seperti PoseCNN, menyediakan titik awal tetapi tidak memanfaatkan pengukuran kedalaman secara lokal \cite{xiang2018posecnn}. DenseFusion mengubah piksel kedalaman termask menjadi titik 3D, memasangkan setiap titik dengan fitur RGB yang bersesuaian, lalu memprediksi kandidat pose dan kepercayaan per titik \cite{wang2019densefusion}. Strategi ini relevan untuk tandan yang tertutup sebagian: bagian tandan yang tetap terlihat dapat mendominasi kandidat berkepercayaan tinggi, alih-alih seluruh prediksi ditentukan satu representasi global. Namun, ketepatannya bergantung pada segmentasi awal dan pada ketersediaan model objek; tandan sawit tidak selalu memiliki bentuk kanonik yang sama.
+
+Evolusi berikutnya mengganti regresi pose dengan korespondensi geometri yang lebih eksplisit. PVN3D memfungsikan fusi RGB--D sebagai fitur untuk pemungutan suara titik kunci 3D, kemudian memperoleh transformasi melalui pencocokan kuadrat-terkecil \cite{he2020pvn3d}. Pemungutan suara dari titik permukaan yang tersisa lebih sesuai untuk oklusi dan tumpang tindih tandan daripada mengandalkan siluet utuh. FFB6D melanjutkan prinsip ini dengan pertukaran fitur RGB dan titik secara dua arah pada beberapa skala \cite{he2021ffb6d}; G2L-Net menyeimbangkan konteks global dan rincian lokal agar estimasi lebih efisien \cite{chen2020g2lnet}. Keluarga korespondensi padat mencakup GDR-Net yang menegakkan kendala geometri pada prediksinya \cite{wang2021gdrnet}, sedangkan ZebraPose menggunakan pengodean permukaan hierarkis untuk membedakan bagian objek \cite{su2022zebrapose}. Metode-metode ini menunjukkan bahwa kedalaman berguna bukan sebagai kanal tambahan semata, melainkan sebagai pengikat lokasi fitur dengan permukaan fisik.
+
+Asumsi model CAD per objek membatasi penerapan langsung pada tandan yang berubah ukuran, kematangan, dan tampakannya. OnePose melonggarkan asumsi itu dengan membangun korespondensi dari pengamatan referensi, bukan memerlukan CAD \cite{sun2022onepose}. FoundationPose menyatukan setup berbasis CAD dan berbasis citra referensi melalui \textit{render-and-compare}; pada RGB--D ia menghaluskan dan memilih hipotesis pose bagi objek baru tanpa penyetelan halus per objek \cite{wen2024foundationpose}. Bagi sawit, pendekatan ini lebih tepat dibaca sebagai arah konseptual daripada modul siap pakai: koleksi tampak referensi atau model permukaan tandan tetap harus mewakili oklusi pelepah, variasi kultivar, dan kondisi sensor sebenarnya. Peta perkembangan pose 6D dan kaitannya dengan deteksi 3D dirangkum oleh survei Hoque dkk. \cite{hoque2021posesurvey}.
+
+\textbf{Geometri menuju tindakan: cengkeraman dan panen.} Deteksi tandan saja belum menentukan bagaimana end-effector mendekat tanpa membentur pelepah atau tandan tetangga. Perintis pembelajaran \textit{grasp} menunjukkan bahwa kualitas cengkeraman dapat dipelajari dari contoh \cite{lenz2015grasp}; GG-CNN kemudian memprediksi peta kualitas, sudut, dan bukaan secara padat dari kedalaman untuk keputusan cepat \cite{morrison2018ggcnn}. GR-ConvNet dan penyempurnaannya mempertahankan formulasi generatif padat tersebut \cite{kumra2020grconvnet,kumra2022grconvnetv2}. Jalur 2D ini ringan untuk memilih sisi pendekatan pada tampak kamera, tetapi tidak cukup ketika tandan perlu diambil dari orientasi yang tidak sejajar kamera atau ketika ruang bebas di belakang target tidak diketahui.
+
+Untuk cengkeraman 6-DoF, GraspNet-1Billion dan Jacquard menyediakan keragaman objek serta label yang mendorong evaluasi lebih terukur \cite{fang2020graspnet,depierre2018jacquard}. Contact-GraspNet mengurangi ruang pencarian dengan menautkan kandidat pada titik kontak point cloud yang benar-benar teramati; orientasi dan bukaan diprediksi per titik lalu kandidat yang berbenturan disaring \cite{sundermeyer2021contactgraspnet}. Keuntungannya ialah resolusi mengikuti kepadatan titik, tetapi sisi tandan yang tidak terlihat tetap tidak dapat menjadi titik kontak. Sebaliknya, VGN mengintegrasikan beberapa citra kedalaman ke TSDF dan memprediksi kualitas, orientasi, serta bukaan per voxel dalam satu lintasan \cite{breyer2021vgn}. Integrasi multi-tampak dapat menutup oklusi, dengan biaya memori dan resolusi yang ditentukan ukuran voxel. BCMFNet menambahkan fusi bilateral RGB--D agar petunjuk tekstur dan bentuk saling memperbaiki \cite{zhang2023bcmfnet}. Untuk pemanenan sawit, pemilihan antara titik, voxel, dan peta 2D harus mengikuti jangkauan lengan, kepadatan pengamatan, dan kebutuhan pemeriksaan tabrakan, bukan hanya skor \textit{grasp}.
+
+\textbf{Deteksi 3D dan pilihan representasi.} Pada awan titik aktual, VoxelNet membelajarkan fitur voxel dari ujung ke ujung \cite{zhou2018voxelnet}; PointPillars meruntuhkan struktur vertikal menjadi pilar agar pemrosesan BEV lebih cepat \cite{lang2019pointpillars}. PointRCNN mengusulkan objek langsung dari titik \cite{shi2019pointrcnn}, sementara PV-RCNN menggabungkan fitur voxel berskala luas dan fitur titik yang lebih rinci \cite{shi2020pvrcnn}. CenterPoint menyederhanakan prediksi kotak berorientasi menjadi pendeteksian pusat pada BEV, dilanjutkan regresi dimensi, orientasi, dan kecepatan \cite{yin2021centerpoint}. Pada sawit, formulasi pusat dapat membantu asosiasi tandan antarbingkai, tetapi keberhasilannya ditentukan oleh apakah point cloud cukup rapat di sekitar tandan, bukan oleh kemiripan semata dengan pola LiDAR jalan raya.
+
+Fusi kamera--LiDAR memperlihatkan beberapa tingkat penggabungan. Frustum PointNets memakai usulan 2D untuk membatasi titik yang diperiksa \cite{qi2018frustum}; MV3D menggabungkan beberapa tampilan \cite{chen2017mv3d}, dan AVOD memadukan fitur pada tahap usulan \cite{ku2018avod}. PointPainting melekatkan semantik citra ke titik \cite{vora2020pointpainting}, sedangkan 3D-CVF menyelaraskan fitur lintas-tampilan \cite{yoo20203dcvf}. TransFusion menggunakan perhatian untuk mengaitkan kandidat dengan fitur kamera \cite{bai2022transfusion}. BEVFusion memilih ruang BEV bersama bagi kamera dan LiDAR sebelum fusi, sehingga fitur kamera tidak dibatasi hanya pada titik yang kebetulan memiliki pasangan LiDAR \cite{liu2023bevfusion}. Bagi RGB--D sawit, pelajarannya ialah fusi akhir dapat mempertahankan ketahanan modular, tetapi fusi spasial lebih awal dapat membantu ketika warna membedakan kematangan dan kedalaman memisahkan tandan yang bertindihan; keduanya menuntut kalibrasi dan sinkronisasi yang baik.
+
+Bila sensor kedalaman aktif tidak praktis karena biaya, jarak, atau sinar matahari, kedalaman estimasi dapat diangkat melalui proyeksi balik menjadi \textit{pseudo-LiDAR}. Pseudo-LiDAR menunjukkan bahwa perubahan dari peta kedalaman ke point cloud memungkinkan detektor 3D berbasis titik memanfaatkan geometri yang sama secara lebih tepat \cite{wang2019pseudolidar}, lalu Pseudo-LiDAR++ memperbaiki sebagian kelemahan pada rantai estimasi dan representasi \cite{you2020pseudolidarpp}. Alternatif kamera-saja seperti BEVFormer dan DETR3D membangun kotak 3D dari citra multi-kamera \cite{li2022bevformer,wang2022detr3d}; PointNet tetap menjadi dasar penting untuk mengolah himpunan titik tak berurutan \cite{qi2017pointnet}. Namun kedalaman pseudo membawa galat model ke koordinat 3D, terutama pada batas tandan dan daerah bertekstur rendah. Karena itu, penghitungan sawit sebaiknya menyimpan ketidakpastian kedalaman dan tidak menyamakan titik pseudo dengan pengukuran aktual. Survei deteksi 3D serta tolok ukur KITTI dan nuScenes memberi kerangka evaluasi, tetapi geometri jalan raya, sensor, dan kelas objeknya tidak dapat dipindahkan mentah-mentah ke perkebunan \cite{arnold2019survey3d,geiger2012kitti,caesar2020nuscenes}.
+
+\textbf{SLAM RGB--D untuk penghitungan tanpa duplikasi.} Ketika kamera bergerak melewati barisan pohon, peta dan pose kamera diperlukan agar tandan yang muncul kembali tidak dihitung dua kali. ORB-SLAM2 menyediakan basis SLAM RGB--D berbasis fitur, sedangkan ORB-SLAM3 memperluasnya dengan dukungan inersial dan multipeta \cite{murartal2017orbslam2,campos2021orbslam3}. Keduanya hemat dan mudah dipadukan dengan detektor, tetapi dapat melemah pada pelepah berulang, bayangan keras, gerak cepat, atau area tandan yang miskin fitur. DynaSLAM mengeluarkan objek dinamis dari estimasi \cite{bescos2018dynaslam}, DS-SLAM memakai segmentasi semantik \cite{yu2018dsslam}, dan CFP-SLAM menimbang probabilitas fitur gabungan \cite{hu2022cfpslam}; gagasan ini dapat dipakai untuk mencegah tandan atau pekerja yang berubah posisi merusak peta.
+
+DROID-SLAM menggabungkan korespondensi terpelajar dengan \textit{dense bundle adjustment} terdiferensialkan untuk memperbarui pose dan kedalaman secara bersama, serta dapat menerima RGB--D sebagai kendala tambahan \cite{teed2021droidslam}. Ketahanannya terhadap korespondensi yang sukar menarik untuk kebun, tetapi volume korelasi dan optimasi padat meningkatkan beban GPU. Dalam pipeline yang lebih ringan, studi semantik menunjukkan bahwa YOLO dapat menggantikan Mask R-CNN sebagai modul deteksi pada SLAM visual dengan biaya lebih rendah \cite{soares2019visualslam}. Dengan demikian, rancangan yang masuk akal bagi counting sawit adalah deteksi YOLO per bingkai, pengangkatan pusat atau mask ke 3D beserta kepercayaan kedalaman, lalu asosiasi terhadap peta SLAM; cengkeraman atau pose presisi hanya diaktifkan untuk tandan yang telah dipilih sebagai target tindakan.
+
+%=====================================================================
+
+\section{Pelajaran dari Fusi Multimodal Lain}\label{sec:multimodal}
+
+Fusi RGB dengan modalitas selain kedalaman memperjelas bahwa nilai modal kedua tidak terletak pada penambahan kanal secara mekanis, melainkan pada komplementaritas yang berubah menurut kondisi akuisisi. Pada tolok ukur KAIST, kanal termal terutama menutup kegagalan RGB ketika cahaya tampak tidak memadai, sementara RGB menyumbang tekstur dan warna ketika termal kurang diskriminatif; pengaturan sensor yang terdaftar sejak akuisisi juga menjadikan kesepadanan piksel sebagai prasyarat eksperimen, bukan persoalan yang ditunda ke tahap jaringan \cite{hwang2015kaist}. IAF R-CNN menerjemahkan prinsip tersebut menjadi gerbang berbasis iluminasi: bobot cabang RGB dan termal berubah per citra, bukan dipatok sama untuk seluruh kondisi \cite{li2019illumination}. Bagi RGB--D, pelajaran transfernya jelas: peta kedalaman harus diperlakukan sebagai bukti geometri yang kegunaannya bersyarat, bukan sebagai kanal keempat yang selalu dipercaya setara dengan warna.
+
+Namun, sinyal konteks global hanyalah pendekatan awal terhadap keandalan. MBNet memperlihatkan bahwa ketidakseimbangan modalitas dan pergeseran spasial perlu ditangani pada fitur serta wilayah kandidat; informasi pelengkap ditukar antar-cabang, lalu fitur disejajarkan dan dibobot menurut iluminasi \cite{zhou2020mbnet}. GAFF memperhalus gagasan ini melalui urutan \textit{attention} intra-modal untuk menekan derau dalam tiap cabang dan \textit{attention} inter-modal untuk memilih sumbangan relatif secara lokal \cite{zhang2021gaff}. Sementara itu, Cyclic Fuse-and-Refine menggarisbawahi bahwa pertukaran informasi dapat diulang agar representasi satu modal menyempurnakan modal lain, bukan dilebur sekali pada satu lapisan \cite{zhang2020cfr}. Dengan demikian, transfer yang relevan untuk sawit adalah peralihan dari fusi statis menuju fusi bertingkat: pemeriksaan mutu data, penyelarasan, ekstraksi ciri per-modal, dan pembobotan lokal sebelum keputusan deteksi atau klasifikasi tandan.
+
+Ketidakselarasan bukan satu-satunya sumber kegagalan. CMPD memisahkan ketidakpastian wilayah, yang berkaitan dengan kesesuaian pasangan fitur, dari ketidakpastian prediktif, yang berkaitan dengan keandalan keputusan tiap modal; keduanya dipakai untuk mengendalikan fusi dan pemanduan lintas-modal \cite{kim2022cmpd}. Pemisahan ini berguna bagi kebun sawit yang menghadirkan bayangan pelepah, permukaan tandan bertekstur rapat, dan kedalaman yang dapat tidak lengkap atau tidak stabil. Alih-alih menganggap nilai kedalaman rendah sebagai objek dekat secara otomatis, model perlu dapat menurunkan pengaruh kedalaman pada wilayah yang tidak konsisten dengan RGB. CFT memperluas pelajaran tersebut: token dari dua modal dapat dipertukarkan melalui \textit{self-attention} pada beberapa skala, sehingga keterkaitan lokal maupun jauh tidak hanya bergantung pada jendela konvolusi \cite{fang2022cft}. Akan tetapi, arsitektur semacam itu tetap mengandaikan pasangan fitur yang selaras; kapasitas \textit{attention} bukan pengganti kalibrasi sensor.
+
+Untuk integrasi YOLO RGB--D, terdapat tiga pilihan yang saling melengkapi. Pertama, \textit{early fusion} menumpuk RGB dan peta kedalaman terproyeksi pada koordinat citra yang sama, sehingga satu \textit{backbone} mempelajari relasi warna--jarak sejak awal. Kedua, fusi akhir mempertahankan cabang RGB dan kedalaman terpisah sampai fitur tingkat tinggi atau skor deteksi. Ketiga, rancangan dua-cabang dengan pertukaran fitur dan gerbang keandalan menggabungkan manfaat spesialisasi modal dengan keputusan adaptif. Studi perbandingan RGB dan kedalaman hasil estimasi monokuler menunjukkan bahwa gabungan keduanya dapat melampaui cabang tunggal pada deteksi, tetapi juga menegaskan bahwa pilihan titik fusi dan mutu peta kedalaman harus dievaluasi bersama \cite{farahnakian2021fusion}. Secara operasional, proyeksi atau pengubahan skala peta kedalaman ke bidang RGB perlu didahului pemeriksaan kalibrasi, cakupan nilai hilang, dan konsistensi tepi objek; bila pemeriksaan gagal, bobot kedalaman perlu diredam, bukan dipaksakan masuk ke kepala YOLO.
+
+Bukti lintas domain perlu dibaca sebagai prinsip tugas, bukan sebagai klaim bahwa satu konfigurasi dapat dipindahkan tanpa validasi. Pada \textit{remote sensing}, CFT memperlihatkan manfaat fusi token lintas-modal pada citra udara yang memiliki objek kecil dan rapat, suatu analogi yang relevan untuk tandan yang saling bertumpang-tindih \cite{fang2022cft}. Dalam pertanian, pelajaran utamanya adalah bahwa geometri dapat membantu memisahkan tandan dari pelepah atau latar pada kondisi visual ambigu; dalam pencitraan medis, batas antarjaringan mengingatkan pentingnya menilai keandalan kanal per wilayah; dan dalam inspeksi industri, ketidakselarasan serta artefak satu sensor tidak boleh diteruskan sebagai keyakinan detektor. Ketiga analogi itu tidak menyediakan angka performa untuk sawit, melainkan kriteria desain dan pengujian yang harus diuji pada data kebun sendiri. Kerangka ini selaras dengan survei yang menempatkan representasi bersama, korespondensi antar-modal, dan strategi fusi sebagai persoalan inti pembelajaran multimodal \cite{ramachandram2017multimodalreview,feng2021multimodalsurvey}.
+
+Karena itu, rancangan untuk \textit{counting}/klasifikasi tandan sebaiknya mengevaluasi bukan hanya akurasi agregat, melainkan kegagalan menurut pencahayaan, oklusi, jarak, dan validitas kedalaman. Dataset perlu mendokumentasikan pasangan RGB--D, cara registrasi, serta pola data hilang agar pembandingan arsitektur tidak mencampur manfaat fusi dengan perbedaan kualitas sensor; kebutuhan tersebut konsisten dengan penekanan survei dataset RGB--D pada keragaman modalitas, anotasi, dan protokol penggunaan \cite{lopes2022rgbddatasets}. Sistem yang layak lapangan kemudian dapat memakai RGB sebagai jalur utama saat tekstur tandan jelas, menaikkan kontribusi kedalaman untuk pemisahan latar dan oklusi, serta menandai kasus berketidakpastian tinggi untuk verifikasi atau penangkapan ulang. Dengan mekanisme ini, fusi menjadi sarana meningkatkan keterlacakan keputusan panen, bukan sekadar penambahan masukan pada YOLO.
+
+\section{Integrasi YOLO + RGB--D}\label{sec:yolorgbd}
+%=====================================================================
+Integrasi YOLO dan RGB--D untuk penghitungan serta klasifikasi tandan sawit bukan sekadar penambahan kanal keempat. RGB menyediakan warna, tekstur, dan kontur untuk mengenali tandan serta kelas visualnya; kedalaman menyatakan pemisahan ruang, jarak kerja, dan struktur tumpukan yang hilang dalam proyeksi 2D. Kedalaman paling bernilai ketika satu kotak RGB dapat mencakup tandan, pelepah, atau latar pada jarak berbeda. Maka, titik integrasi menentukan bukan hanya ketelitian detektor, melainkan juga apakah keluaran mendukung hitungan tanpa duplikasi, lokasi target, dan kendali mutu. Dua pola utama literatur dirangkum pada Gambar~\ref{fig:yolorgbd}: fusi fitur di dalam detektor dan deteksi RGB yang dilanjutkan proyeksi kedalaman.
+
+\textbf{Fusi antarmodal di dalam detektor.} Fusi awal menumpuk RGB dan kedalaman sebagai masukan agar satu \textit{backbone} belajar petunjuk warna dan geometri bersama-sama. Expandable YOLO memperluas YOLOv3 untuk menerima RGB--D dan menghasilkan kotak tiga dimensi dengan konvolusi 3D pada bagian akhir jaringan \cite{takahashi2020expandableyolo}. Prinsip transfernya penting: kedalaman dapat memisahkan objek yang berdekatan saat warna tidak cukup, tetapi lubang pengukuran, derau, dan ketidakselarasan RGB--D juga memasuki seluruh aliran fitur. Karena itu, fusi awal cocok bila sensor terkalibrasi dan peta kedalaman stabil pada jarak kerja sasaran, bukan karena semua piksel kedalaman selalu informatif.
+
+Eksplorasi dua cabang RGB dan kedalaman pada berbagai titik YOLOv2 menunjukkan bahwa fusi pertengahan hingga akhir lebih konsisten menguntungkan daripada pencampuran masukan mentah \cite{ophoff2019multimodal}. Cabang RGB perlu membentuk petunjuk tekstur, sedangkan cabang kedalaman membentuk batas dan struktur; informasi tersebut lebih dapat saling melengkapi setelah representasinya cukup sebanding. Untuk tandan sawit, temuan itu menyarankan cabang kedalaman yang diproses dan dinormalisasi tersendiri, lalu digabung pada fitur multi-skala sebelum kepala klasifikasi dan regresi. Kedalaman sebaiknya memperkuat pemisahan tandan bertindih atau berbeda jarak, sedangkan keputusan kelas kematangan terutama ditopang RGB. Rancangan dua cabang juga memungkinkan penurunan bobot kedalaman saat kualitas lokalnya rendah.
+
+\textbf{Deteksi dahulu, geometri kemudian.} Pola modular mempertahankan YOLO sebagai detektor RGB, lalu memakai kotaknya sebagai \textit{region of interest} pada peta kedalaman terdaftar. FusionVision menambahkan segmentasi berbasis \textit{prompt} kotak sebelum memproyeksikan piksel bertopeng ke awan titik; hal ini menunjukkan bahwa kotak 2D saja belum cukup bersih untuk rekonstruksi 3D \cite{elamraoui2024fusionvision}. Untuk penghitungan sawit, masker dapat menahan pelepah dan tanah agar tidak menggeser jarak atau ukuran tandan. Jalur lebih ringan memakai prediksi \textit{foreground} kedalaman di dalam kotak, bukan rata-rata seluruh wilayah \cite{chen2023depthyolo}. Kedua pendekatan menjadikan kedalaman instrumen verifikasi lokal: digunakan setelah lokasi kandidat cukup meyakinkan, sehingga biaya komputasi dan pengaruh derau lebih terkendali.
+
+Secara operasional, pola proyeksi memudahkan pemutakhiran model RGB ketika varietas, pencahayaan, atau definisi kelas berubah; modul kedalaman dan transformasi kamera tidak harus dilatih ulang bersama detektor. Piksel \textit{foreground} tandan dapat diangkat ke koordinat 3D untuk mengukur jarak, memilih target yang dapat diamati, serta mengaitkan pengamatan antarcitra. Namun, satu piksel pusat tidak cukup untuk tandan yang teroklusi, berada di tepi bidang pandang, atau bersebelahan dengan pelepah. Pembersihan kedalaman berbasis masker atau sebaran lokal, pemeriksaan nilai hilang, dan pencatatan kualitas pengukuran perlu menjadi bagian \textit{pipeline}. Dengan demikian, sistem membedakan ``tidak terlihat cukup baik untuk diukur'' dari ``tidak ada tandan''.
+
+Pelacakan RGB--D pada wahana bergerak menambah pelajaran bahwa hitungan bukan masalah deteksi pada satu \textit{frame}. Xu dkk. memadukan detektor ringan, petunjuk kedalaman, asosiasi berbasis fitur, dan pelacakan temporal untuk mengurangi kecocokan objek keliru \cite{xu2024onboard}. Untuk kamera tangan, kendaraan, atau drone jarak dekat di kebun, asosiasi berdasarkan tampilan dan koordinat 3D dapat mencegah satu tandan dihitung berulang dalam beberapa bingkai. Studi tersebut berlangsung di dalam ruang sehingga bukan bukti langsung untuk kebun, tetapi prinsip transfernya jelas: keyakinan hitungan harus berasal dari konsistensi lintasan serta geometri, bukan hanya ambang kepercayaan YOLO per bingkai.
+
+Keluaran 3D menjadi lebih bernilai apabila sistem berkembang dari pencatatan menuju tindakan. Tian dkk. menempatkan fusi fitur RGB--D dalam kerangka deteksi \textit{grasp} bergaya YOLO \cite{tian2023grasp}; tanpa mengekstrapolasi rincian yang belum terverifikasi, arah tugas itu menegaskan perlunya menerjemahkan geometri menjadi keputusan fisik. Pada skenario industri bertumpuk, YOLOv8-URE menggunakan deteksi 2D untuk membatasi awan titik sebelum registrasi pose \cite{yang2025yolov8ure}. Analognya untuk sawit adalah memproses geometri hanya pada kandidat tandan, bukan membangun awan titik penuh kebun pada setiap citra. Penyaringan tersebut menghemat sumber daya perangkat lapangan dan mengurangi campuran titik dari objek tetangga sebelum pengukuran atau perencanaan tindakan.
+
+Bukti pertanian terdekat datang dari robot labu: YOLO mendeteksi buah pada RGB, kedalaman mengangkat lokasi ke 3D, dan kalibrasi kamera--lengan menghubungkan persepsi dengan pengambilan fisik di ladang \cite{ito2024pumpkin}. Pelajarannya, deteksi tinggi tidak otomatis menghasilkan operasi tinggi ketika sulur atau kondisi fisik menghalangi akses. Pada sawit, metrik klasifikasi/penghitungan perlu dipisahkan dari kelayakan observasi dan, bila relevan, kelayakan panen. Pelajaran medis dan \textit{remote sensing} harus diposisikan sebagai target validasi, bukan bukti empiris dari delapan studi ini: keduanya menuntut registrasi yang dapat dipercaya, skala bermakna, dan ketahanan terhadap pergeseran domain. Literatur yang tersedia lebih langsung mendukung pertanian dan industri; klaim lintas-domain tidak boleh menggantikan uji pada pencahayaan, varietas, oklusi, dan jarak sensor kebun.
+
+Secara sintesis, fusi pertengahan adalah pilihan kuat bila sasaran utama ialah pemisahan dan klasifikasi tandan pada citra sulit, sedangkan deteksi--lalu--proyeksi tepat untuk modularitas, jarak, hitungan lintas-bingkai, atau integrasi aktuator. Sistem sawit dapat menggabungkan keduanya bertahap: YOLO RGB sebagai dasar, kedalaman lokal untuk menilai kandidat dan menghubungkan objek dalam ruang, lalu fusi fitur pada kasus oklusi yang memerlukannya. Dengan rancangan ini, RGB--D mengurangi ambiguitas keputusan, bukan sekadar menambah sensor tanpa peran terukur.
+
+\begin{figure*}[t]
+\centering
+\figplace{F05-pola-yolorgbd}{Dua pola integrasi YOLO+RGB-D: perluasan kanal vs deteksi-lalu-proyeksi.}
+\caption{Dua pola integrasi YOLO+RGB--D. Kiri: perluasan kanal masukan
+(fusi awal). Kanan: deteksi-lalu-proyeksi (kedalaman dipakai pascadeteksi).}
+\label{fig:yolorgbd}
+\end{figure*}
+
+%=====================================================================
+
+\section{Aplikasi YOLO Lintas Domain}\label{sec:aplikasi}
+%=====================================================================
+Korpus aplikasi pada Gambar~\ref{fig:chart-tahun} dan
+\ref{fig:chart-tema} memperlihatkan bahwa adaptasi YOLO tidak terutama
+berupa pergantian arsitektur, melainkan penataan ulang aliran informasi
+sesuai sumber kesalahan dominan di lapangan. Pada perkebunan, kesalahan
+itu berasal dari oklusi, latar vegetasi, dan perubahan jarak; pada citra
+medis, dari kontras rendah serta perbedaan skala lesi; pada inspeksi,
+dari cacat halus dan batas latensi; sedangkan pada citra udara, dari objek
+mikro, latar padat, serta orientasi. Karena tandan sawit menyatukan sebagian
+besar kondisi tersebut---berukuran bervariasi, bertekstur kompleks,
+terhalang pelepah, dan harus dihitung tanpa duplikasi---lintas-domain ini
+lebih tepat dibaca sebagai sumber prinsip desain daripada daftar aplikasi.
+
+\textbf{Pertanian dan buah: dari hitung 2D ke keputusan spasial.} Studi
+MangoYOLO menempatkan deteksi satu tahap sebagai dasar estimasi beban buah,
+dengan kombinasi representasi multiskala, pemrosesan citra beresolusi tinggi,
+dan pengendalian kondisi akuisisi untuk menghadapi kanopi serta oklusi
+\cite{koirala2019deepfruit}. Adaptasi YOLOv3 untuk apel dan YOLOv4 yang
+dipangkas untuk bunga apel menunjukkan dua respons yang saling melengkapi:
+mempertahankan detail objek pada tahap pertumbuhan berbeda dan menyesuaikan
+beban model dengan tugas lapangan \cite{tian2019appleyolo,wu2020flower}.
+Bagi penghitungan tandan sawit, pelajarannya bukan menyamakan buah apel dan
+tandan, melainkan menjadikan definisi objek, skala masukan, dan aturan
+penggabungan deteksi antar-citra sebagai satu rancangan operasional. Deteksi
+pada satu bingkai dapat menghitung tandan tampak; estimasi produksi yang
+andal tetap harus membedakan tandan yang sama dari beberapa sudut, serta
+mengakui tandan yang tertutup total sebagai batas pengamatan.
+
+Kedalaman memberi jalan untuk memisahkan masalah pengenalan dari masalah
+geometri. Pada kebun apel, Fu dkk. memakai kedalaman untuk menyaring baris
+pohon di luar bidang kerja sebelum citra warna diproses oleh detektor;
+strategi ini memperlihatkan fusi sebagai operasi pengurangan gangguan,
+bukan sekadar penambahan kanal \cite{fu2020apple}. Untuk sistem sawit,
+pilihan pertama ialah memasukkan peta kedalaman terdaftar sebagai kanal
+keempat bersama RGB apabila kualitas dan keselarasan sensornya stabil.
+Pilihan kedua, yang lebih hemat perubahan pada detektor, ialah menjadikan
+kedalaman sebagai \textit{gate}: piksel atau kandidat di luar koridor
+jangkauan kerja dimasker, lalu YOLO menerima RGB latar-depan. Pilihan ketiga
+ialah memproyeksikan pusat atau masker hasil deteksi 2D ke awan titik untuk
+memperoleh posisi tandan. Rute terakhir selaras dengan lokalisasi buah 3D
+melalui segmentasi instan dan fotogrametri \textit{Structure-from-Motion}
+(SfM) multi-sudut \cite{genemola2020fruit3d}, serta visualisasi deteksi
+buah dalam ruang tiga dimensi \cite{kang2020strawberry}. Dengan demikian,
+kedalaman tidak perlu dipaksa memperbaiki kelas secara langsung; ia dapat
+menentukan apakah kandidat berada pada pohon target, lokasi mana yang sama,
+dan apakah hasilnya dapat dijangkau.
+
+Konsekuensi operasionalnya tampak jelas pada robot pemanen. Sistem selada
+menghubungkan lokalisasi, penilaian kelayakan, pemosisian lokal, dan aksi
+mekanis, sehingga keberhasilan persepsi tidak otomatis identik dengan
+keberhasilan panen \cite{birrell2020lettuce}. Robot buah berbasis kamera
+stereo juga menggunakan deteksi 2D sebagai pintu masuk menuju koordinat 3D
+dan perencanaan gerak \cite{onishi2019harvest}. Untuk sawit, prinsip ini
+menggeser sasaran dari sekadar \textit{bounding box} tandan menjadi keluaran
+bertingkat: identitas deteksi untuk penghitungan, kedalaman atau posisi 3D
+untuk penghindaran hitung ganda, dan kelas kematangan yang hanya dipakai
+apabila bukti visualnya memadai. Desain demikian menjaga agar kegagalan
+kedalaman tidak serta-merta menghapus deteksi RGB yang kuat, namun juga tidak
+membiarkan deteksi 2D mengarahkan tindakan fisik tanpa validasi geometri.
+
+\textbf{Medis dan industri: fusi harus mengikuti jenis ketidakpastian.}
+Survei aplikasi medis menunjukkan keluasan penggunaan YOLO pada citra klinis
+\cite{qureshi2024medyolo}; diagnosis COVID-19 berbasis sinar-X,
+deteksi lesi payudara, deteksi tumor payudara, dan deteksi polip masing-masing
+menempatkan lokalisasi serta klasifikasi dalam kondisi kontras dan skala yang
+berbeda \cite{alantari2020covid,baccouche2021breast,mohiyuddin2022breast,wan2023polyp}.
+Secara khusus, fusi tingkat keputusan dari beberapa konfigurasi YOLO pada
+lesi payudara mengajarkan bahwa cabang khusus dapat dipertahankan ketika satu
+model bersama cenderung mendominasi kelas atau skala tertentu
+\cite{baccouche2021breast}. Analognya pada sawit ialah memisahkan cabang atau
+aturan keputusan untuk tandan kecil/jauh dan tandan besar/dekat hanya bila
+analisis galat menunjukkan kompromi nyata; fusi bukan alasan untuk
+memperbanyak model tanpa fungsi koreksi yang terukur.
+
+Dalam inspeksi industri, EFC-YOLO menggabungkan konvolusi parsial, atensi
+koordinat, dan fusi fitur multiskala untuk mempertahankan isyarat cacat
+halus dengan komputasi yang lebih efisien \cite{yang2023efcyolo}. PCB-YOLO,
+tinjauan deteksi cacat, dan deteksi helm keselamatan memperluas pelajaran itu
+ke objek kecil, tekstur serupa-latar, serta kebutuhan inferensi di lingkungan
+kerja \cite{tang2024pcbyolo,jha2023defectreview,zhou2021helmet}. Bagi sistem
+sawit bergerak, prioritasnya adalah mempertahankan peta fitur beresolusi
+cukup tinggi dan mengalokasikan komputasi pada area kandidat tandan, bukan
+hanya memperbesar model. Pengujian juga harus melaporkan latensi dari sensor
+hingga keluaran hitung, sebab pipeline RGB--D dapat gagal secara praktis oleh
+registrasi, nilai kedalaman hilang, atau transfer data meskipun detektornya
+akurat.
+
+\textbf{Penginderaan jauh: skala, cakupan, dan orientasi.} TPH-YOLOv5,
+CNN untuk citra resolusi tinggi, UAV-YOLOv8, dan YOLT menghadapi objek yang
+kecil terhadap keseluruhan citra melalui penguatan fitur, perhatian pada
+resolusi, atau pemrosesan ubin \cite{zhu2021tphyolov5,zhang2019remotesensing,wang2023uavyolo,vanetten2018yolt}.
+UAV-YOLOv8 khususnya menegaskan nilai cabang deteksi resolusi tinggi dan
+fusi multiskala ketika detail objek mudah hilang oleh \textit{downsampling}
+\cite{wang2023uavyolo}. Ini relevan untuk kamera kendaraan kebun yang
+merekam tandan jauh di sela pelepah: ubin atau kepala resolusi tinggi dapat
+dipilih menurut anggaran latensi, lalu hasil antar-ubin harus digabungkan
+secara spasial agar satu tandan tidak dihitung dua kali. RiO-DETR menambahkan
+pelajaran bahwa representasi geometri perlu dipisahkan dari representasi
+penampilan ketika orientasi objek penting \cite{hu2026riodetr}. Walaupun
+tandan sawit tidak selalu memerlukan kotak berorientasi, pemisahan serupa
+berguna untuk menyimpan arah pandang, posisi, dan identitas lintasan sebagai
+atribut geometri terpisah dari kelas serta keyakinan YOLO.
+
+Sintesis lintas domain ini menghasilkan prinsip kerja yang konservatif:
+gunakan RGB untuk deteksi dan klasifikasi tandan, gunakan kedalaman untuk
+menyaring ruang, memproyeksikan kandidat, atau mengaitkan observasi lintas
+bingkai, dan lakukan fusi keputusan hanya pada sumber ketidakpastian yang
+telah teramati. Dengan kerangka tersebut, sistem counting/klasifikasi sawit
+RGB--D dapat diuji sebagai rantai persepsi--geometri--penghitungan, bukan
+sebagai klaim bahwa penambahan sensor selalu meningkatkan seluruh keluaran.
+
+\begin{figure}[t]
+\centering
+\figplace{C01-distribusi-tahun}{Distribusi 202 entri per tahun publikasi (2012--2026).}
+\caption{Distribusi 202 karya menurut tahun publikasi (2012--2026),
+memperlihatkan konsentrasi pada 2019--2026.}
+\label{fig:chart-tahun}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figplace{C02-distribusi-tema}{Distribusi 202 entri per tema.}
+\caption{Distribusi 202 karya menurut tema, dari Fondasi RGB hingga
+integrasi YOLO+RGB--D dan aplikasi.}
+\label{fig:chart-tema}
+\end{figure}
+
+%=====================================================================
+
+\section{Sintesis dan Celah Riset}\label{sec:sintesis}
+%=====================================================================
+Bagian-bagian terdahulu membentuk argumen yang lebih terbatas daripada
+anggapan bahwa penambahan \textit{depth} pasti meningkatkan YOLO. Keluarga
+YOLO menyediakan dasar deteksi satu tahap yang dapat ditata menurut
+\textit{backbone}--\textit{neck}--\textit{head}, metrik AP, IoU, dan
+\textit{non-maximum suppression} \cite{terven2023yolo}; perkembangannya juga
+menunjukkan tersedianya pilihan \textit{real-time} yang makin efisien
+\cite{sapkota2025yolo26}. Pada saat yang sama, estimasi monokular modern
+menyediakan isyarat geometri dari kamera RGB biasa. MiDaS dirancang untuk
+transfer lintas-domain melalui pembelajaran yang invarian terhadap skala dan
+pergeseran \cite{ranftl2022midas}, sedangkan Depth Anything V2 memperbaiki
+ketajaman batas dengan distilasi dari data sintetis dan citra nyata berskala
+besar \cite{yang2024depthanythingv2}. Kedua bukti itu mendukung penggunaan
+\textit{pseudo-depth} sebagai petunjuk urutan depan--belakang, bukan
+penyamaan langsungnya dengan jarak metrik tandan.
+
+Implikasinya, masalah sawit perlu dipisah menjadi empat keluaran: deteksi
+instans per bingkai, kelas kematangan, pengaitan instans antarbingkai, dan
+agregasi jumlah per pohon atau blok. Literatur buah mendukung nilai geometri
+pada tiga keluaran selain kelas warna: MangoYOLO memperlihatkan perlunya
+representasi multiskala dan akuisisi terkendali pada kanopi \cite{koirala2019deepfruit};
+kedalaman dipakai untuk menapis baris pohon pada kebun apel \cite{fu2020apple};
+dan visualisasi atau lokasi buah tiga dimensi dimungkinkan oleh RGB--D maupun
+rekonstruksi multi-sudut \cite{kang2020strawberry,genemola2020fruit3d}. Namun,
+studi-studi tersebut tidak membuktikan bahwa kedalaman sendiri memperbaiki
+penilaian kematangan tandan. Kelas kematangan semestinya terutama diuji sebagai
+keputusan berbasis warna dan tekstur RGB, sementara geometri diuji untuk
+memisahkan objek, menyaring ruang, serta mencegah penghitungan berulang.
+
+\textbf{Celah data dan definisi kebenaran acuan.} Dalam korpus tinjauan ini,
+tidak ditemukan dataset publik RGB--D tandan sawit yang sekaligus menyatukan
+anotasi instans, kelas kematangan, identitas lintas-bingkai, dan rujukan
+jumlah tingkat pohon. Pernyataan itu adalah batas cakupan korpus, bukan bukti
+bahwa data semacam itu tidak ada di luar corpus. Karena morfologi tandan,
+pelepah, dan kanopi berbeda dari apel, mangga, atau stroberi, pemindahan hasil
+buah lain tidak cukup sebagai validasi domain.
+
+Dataset yang dibutuhkan setidaknya merekam RGB yang tersinkron dan terkalibrasi
+dengan kedalaman sensor aktif/stereo, serta \textit{pseudo-depth} dari model
+monokular sebagai sumber pembanding. Setiap contoh perlu memuat kotak atau,
+lebih baik, masker instans tandan; kelas kematangan dengan pedoman visual dan
+prosedur adjudikasi; identitas tandan yang sama pada urutan pandang; nilai
+jarak atau titik 3D rujukan pada sampel terpilih; dan penanda kualitas kedalaman
+seperti piksel tidak valid, umur kalibrasi, serta sumber \textit{depth}.
+Stratifikasi pengambilan harus mencakup varietas, fase panen, jarak, sudut,
+kepadatan kanopi, pagi--siang--sore, bayangan, matahari langsung, hujan atau
+permukaan basah. Pemisahan latih--validasi--uji harus dilakukan menurut pohon,
+blok, dan hari akuisisi, bukan secara acak per citra, agar kebocoran tampilan
+tandan yang sama tidak menaikkan skor secara semu.
+
+\textbf{Kedalaman sebagai modalitas bersyarat.} Bukti fusi tidak melegitimasi
+konkatenasi empat kanal sebagai pilihan baku. Pengujian 28 letak fusi pada
+YOLOv2 menemukan keuntungan yang lebih konsisten pada tahap menengah hingga
+akhir daripada masukan mentah \cite{ophoff2019multimodal}. SA-Gate juga
+menunjukkan bahwa fusi naif dapat kalah dari RGB ketika kedalaman stereo
+berderau, sedangkan penyaringan kanal dan penimbangan spasial dapat memulihkan
+manfaatnya \cite{chen2020sagate}. CMX memperluas prinsip koreksi dua arah dan
+pertukaran konteks, tetapi dua \textit{backbone} penuh tetap mahal
+\cite{zhang2023cmx}. D3Net menambahkan pelajaran metodologis penting: bila
+prediksi yang memakai kedalaman tidak konsisten dengan bukti kedalaman,
+jalur RGB perlu tetap tersedia \cite{fan2020d3net}.
+
+Oleh sebab itu, hipotesis yang dapat diuji untuk sawit ialah fusi menengah
+multiskala dengan gerbang keandalan lokal, bukan klaim keunggulan universal.
+Masukan gerbang dapat mencakup mask nilai kedalaman hilang, dispersi kedalaman
+di dalam kandidat, keselarasan tepi RGB--kedalaman, ketidakpastian
+\textit{pseudo-depth}, dan konsistensi temporal. Pembobotan adaptif yang
+terinspirasi kesadaran iluminasi dan ketidakpastian pada RGB--T
+\cite{li2019illumination,kim2022cmpd} merupakan arah rancangan, bukan bukti
+langsung bagi tandan. Uji ketahanan harus mengontraskan sensor aktif, stereo,
+dan \textit{pseudo-depth} pada strata matahari langsung, bayangan, hujan,
+daun bergerak, dan oklusi; kemudian melaporkan perubahan metrik saat
+kedalaman dihapus, dikorupsi, atau dinyatakan tidak valid. Sensor aktif di
+kebun perlu diperlakukan hati-hati karena radiasi matahari dapat mengganggu
+pengukuran inframerah \cite{genemola2020fruit3d}.
+
+\textbf{Protokol evaluasi dan batas komputasi.} Evaluasi perlu memisahkan
+empat klaim. Pertama, laporkan AP50 dan mAP pada rentang IoU untuk deteksi;
+kedua, laporkan presisi, \textit{recall}, F1 makro, dan matriks kekeliruan
+per kelas kematangan; ketiga, bandingkan jumlah teragregasi dengan hitungan
+manual melalui galat absolut dan galat relatif per pohon/blok, sekaligus
+bias lebih--kurang hitung; keempat, nilai konsistensi identitas lintas-bingkai
+secara terpisah. Semua metrik perlu dipecah menurut oklusi, jarak, kualitas
+kedalaman, dan kondisi cahaya. Dengan demikian, kenaikan mAP tidak dapat
+disalahartikan sebagai perbaikan hitung atau kematangan.
+
+Pembanding minimal ialah YOLO RGB, RGB dengan penapisan ruang pascadeteksi,
+fusi awal, fusi menengah sadar-keandalan, dan fusi akhir. Deteksi--lalu--
+proyeksi dapat menjadi rute hemat untuk lokasi dan penyatuan pengamatan;
+masker objek sebelum proyeksi mengurangi campuran latar pada awan titik
+\cite{elamraoui2024fusionvision}, sedangkan kedalaman \textit{foreground}
+di dalam kotak merupakan alternatif lebih ringan \cite{chen2023depthyolo}.
+Sebaliknya, pemisahan instans yang sudah ambigu pada citra 2D layak menguji
+fusi fitur. Rekonstruksi \textit{pseudo-LiDAR} menunjukkan jalur konseptual
+dari kedalaman gambar menuju representasi 3D \cite{wang2019pseudolidar},
+tetapi ketelitian geometri tandan tidak boleh diasumsikan tanpa rujukan metrik.
+
+Kelayakan lapangan harus diukur dari latensi ujung-ke-ujung, penggunaan memori,
+energi, dan laju bingkai pada perangkat sasaran, bukan FPS detektor saja.
+Pipeline FusionVision memperlihatkan bahwa deteksi--segmentasi dapat jauh lebih
+cepat daripada rekonstruksi 3D lengkap \cite{elamraoui2024fusionvision};
+sehingga geometri mahal sebaiknya hanya dipanggil pada kandidat yang perlu
+disahkan atau dikaitkan. Validasi bertahap yang masuk akal adalah: \textit{baseline}
+RGB pada uji lintas-pohon; ablasi sumber kedalaman dan gerbang pada uji
+lintas-kondisi; uji urutan bergerak untuk duplikasi hitungan; lalu demonstrasi
+lapangan terbatas terhadap hitungan ahli. Integrasi robot labu menunjukkan
+bahwa kalibrasi persepsi--aksi merupakan tahap tersendiri \cite{ito2024pumpkin};
+pada sawit, tahap itu baru layak setelah deteksi, kematangan, dan penghitungan
+terbukti stabil.
+
+\textbf{Posisi riset.} Kontribusi yang terukur bukan sekadar ``YOLO RGB--D
+untuk sawit'', melainkan pembuktian apakah kedalaman yang kualitasnya berubah
+memperbaiki pemisahan instans dan hitungan tanpa merusak klasifikasi kematangan
+berbasis RGB, pada protokol lintas-pohon dan lintas-kondisi. Pipeline konseptual
+pada Gambar~\ref{fig:pipeline}, yang ditempatkan setelah corong bukti pada
+Gambar~\ref{fig:funnel}, karena itu sebaiknya dipahami sebagai hipotesis sistem:
+YOLO menjadi dasar; \textit{pseudo-depth} atau sensor menambah bukti geometri;
+dan gerbang keandalan menentukan kapan bukti itu boleh mengubah keputusan.
+
+\begin{figure}[t]
+\centering
+\figplace{F07-funnel-sawit}{Corong dari survei umum menuju celah riset sawit.}
+\caption{Corong sintesis: dari fondasi deteksi umum, melalui fusi RGB--D
+dan integrasi YOLO+RGB--D, menuju celah spesifik pada buah sawit.}
+\label{fig:funnel}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\figplace{F08-pipeline-sawit}{Pipeline usulan YOLO RGB-D untuk penghitungan dan klasifikasi buah sawit.}
+\caption{Pipeline konseptual usulan: kanal RGB dan \textit{pseudo-depth}
+monokular difusikan pada tingkat menengah dengan atensi lintas-modal,
+diikuti kepala deteksi YOLO untuk penghitungan dan klasifikasi kematangan.}
+\label{fig:pipeline}
+\end{figure*}
+
+%=====================================================================
+
+\section{Tantangan Terbuka dan Arah Masa Depan}\label{sec:tantangan}
+%=====================================================================
+Tantangan utama bukan memilih varian YOLO atau model kedalaman terbaru secara
+terpisah, melainkan membuktikan bahwa informasi tambahan itu memperbaiki
+keputusan operasional: jumlah tandan per pohon dan kelas kematangan yang dapat
+dipertanggungjawabkan. Literatur terdahulu menunjukkan bahwa kedalaman relatif
+berbasis model fondasi dapat menghasilkan tepi yang lebih tajam dan lebih
+beragam domain melalui distilasi data sintetis--nyata \cite{yang2024depthanythingv2},
+sementara kedalaman metrik lintas kamera merupakan sasaran yang berbeda
+\cite{ganesan2026unidac}. Kedua hasil tersebut belum membuktikan akurasi jarak
+pada kanopi sawit. Karena itu, \textit{pseudo-depth} patut diposisikan sebagai
+isyarat urutan depan--belakang hingga diuji terhadap rujukan metrik; ia tidak
+boleh langsung dipakai untuk mengukur ukuran tandan, menghapus deteksi, atau
+menyatukan lintasan hanya berdasarkan ambang jarak tunggal.
+
+Kebutuhan pertama ialah set data RGB--D sawit yang memisahkan fakta observasi
+dari label tugas. Sebagai acuan tata kelola, COCO menstandarkan anotasi objek
+dan evaluasi deteksi pada skala besar \cite{lin2014coco}, sedangkan SUN RGB-D
+memperlihatkan nilai pasangan RGB--D, anotasi semantik, serta keragaman sensor
+\cite{song2015sunrgbd}; keduanya bukan pengganti data kebun. Korpus sawit yang
+layak perlu menyimpan RGB tersinkron, peta kedalaman mentah dan terdaftar,
+intrinsik--ekstrinsik kamera, waktu, jenis sensor atau model pembangkit
+\textit{pseudo-depth}, serta masker validitas dan ketidakpastian kedalaman.
+Anotasi harus mencakup identitas tandan lintas-bingkai atau lintas-sudut,
+\textit{bounding box}/masker tampak, tingkat oklusi, kelas kematangan menurut
+protokol agronomis yang terdokumentasi, dan penanda ``tak dapat dinilai'' bila
+bukti visual tidak cukup. Variasi harus dirancang menurut kebun, varietas,
+tingkat kematangan, jarak, sudut, pagi--siang--sore, bayangan, hujan atau
+permukaan basah, debu, serta pelepah yang bergerak. Dalam corpus tinjauan ini,
+tolok ukur RGB--D sawit beranotasi seperti itu belum teridentifikasi; pernyataan
+ini adalah batas cakupan corpus, bukan bukti bahwa tidak ada di seluruh
+literatur.
+
+Protokol evaluasi perlu memutus hubungan yang sering tercampur antara deteksi,
+klasifikasi, dan penghitungan. Pertama, laporkan AP deteksi per kelas ukuran,
+jarak, oklusi, dan kondisi cahaya, serta matriks galat kematangan hanya pada
+tandan yang cocok dengan rujukan. Kedua, nilai penghitungan pada unit pohon dan
+baris kebun: galat absolut serta galat relatif jumlah, presisi--\textit{recall}
+identitas lintasan, tingkat hitung ganda, dan tingkat tandan terlewat. Satu
+bingkai tidak cukup untuk membuktikan keluaran ini; pemisahan latih--uji harus
+berbasis blok kebun, tanggal, dan perangkat agar citra tandan yang sama tidak
+bocor ke kedua sisi. Ketiga, untuk keluaran geometri laporkan galat jarak pada
+ROI tandan, ketepatan urutan kedalaman antar-tandan yang bertumpuk, persentase
+piksel valid, dan galat registrasi RGB--D. Semua metrik perlu dibandingkan
+antara RGB saja, RGB dengan kedalaman sensor, dan RGB dengan \textit{pseudo-depth},
+dengan anggaran masukan serta pelacakan yang sama.
+
+Ketahanan kedalaman lapangan harus diuji sebagai faktor perlakuan, bukan sebagai
+catatan kegagalan sesudah uji utama. Sensor aktif dan stereo dapat mempunyai
+lubang, derau, atau ketidakselarasan pada cahaya keras, permukaan basah, dan
+tepi daun tipis; peta monokular dapat mempertahankan struktur relatif tetapi
+kehilangan skala metrik dan mewarisi pergeseran domain. Klaim UniDAC mengenai
+satu model untuk geometri kamera beragam memberi hipotesis yang relevan bagi
+rig dengan lensa berbeda, tetapi masih memerlukan verifikasi pada kamera dan
+kanopi sasaran \cite{ganesan2026unidac}. Demikian pula, Depth Anything 3
+memperluas geometri dari pandangan arbitrer \cite{lin2025depthanything3},
+bukan bukti langsung untuk konsistensi tandan pada video kebun. Uji stres harus
+menambahkan kabut air, paparan berlebih, gerak kamera, getaran, oklusi, dan
+pergeseran kalibrasi yang terukur; sistem kemudian wajib mengeluarkan status
+``kedalaman tidak andal'', bukan mengubahnya diam-diam menjadi jarak yakin.
+
+Pilihan fusi sebaiknya mengikuti mutu pengukuran dan sasaran keluaran. Fusi
+awal adalah \textit{baseline} murah hanya bila registrasi stabil. Untuk
+pemisahan tandan bertumpuk, dua cabang dengan gerbang kualitas lokal pada fitur
+multiskala lebih beralasan, tetapi manfaatnya harus diukur terhadap biaya dan
+bukan diasumsikan dari tugas segmentasi atau saliensi. ESANet menunjukkan bahwa
+fusi dua cabang dan penimbangan kanal dapat dijalankan pada perangkat tertanam
+\cite{seichter2021esanet}; MobileSal menunjukkan alternatif memindahkan
+supervisi kedalaman ke pelatihan sehingga inferensi tetap RGB \cite{wu2022mobilesal}.
+Sebaliknya, fusi akhir mempertahankan jalur RGB saat modalitas kedalaman hilang,
+sesuai prinsip cabang kooperatif pada JL-DCF \cite{fu2020jldcf}, tetapi kurang
+mampu menyelesaikan ambiguitas kotak sebelum keputusan. Rute yang aman ialah
+bertahap: deteksi dan kematangan berbasis RGB, kedalaman lokal untuk menapis
+kandidat dan asosiasi lintasan, lalu fusi menengah sadar-keandalan hanya jika
+ablasi menunjukkan penurunan galat hitung atau kematangan.
+
+Batas komputasi harus dilaporkan dari sensor hingga keluaran, termasuk
+akuisisi, registrasi, praproses kedalaman, inferensi, asosiasi, konsumsi memori,
+daya, dan latensi ekor, bukan FPS detektor saja. YOLOv6 memberi jalur model
+ringan dan kuantisasi \cite{li2022yolov6}, sedangkan YOLOv10 mengurangi biaya
+pasca-proses melalui inferensi tanpa NMS \cite{wang2024yolov10}; angka benchmark
+keduanya tidak dapat dipindahkan langsung ke perangkat kebun. Untuk video,
+AsyncMDE menawarkan amortisasi model kedalaman melalui memori spasial, tetapi
+statusnya sebagai pracetak dan penurunan pada gerak ekstrem menuntut uji
+tersendiri \cite{ma2026asyncmde}. Validasi berurutan karena itu dimulai dari
+baseline RGB dan audit data, dilanjutkan ablasi sensor--\textit{pseudo-depth}--fusi
+di kebun yang tidak terlihat, lalu uji lintas-musim dan uji operasional prospektif.
+Deteksi kosakata-terbuka seperti YOLO-World dapat membantu pengusulan atau
+penapisan label \cite{cheng2024yoloworld}, tetapi tidak menggantikan definisi
+kematangan, kalibrasi geometri, dan rujukan lapangan yang diperlukan untuk
+menilai sistem sawit.
+
+%=====================================================================
+
+\section{Kesimpulan}\label{sec:kesimpulan}
+%=====================================================================
+Tinjauan atas 202 karya ini menelusuri jalan dari fondasi deteksi objek
+RGB, melalui evolusi YOLO, estimasi kedalaman monokular, taksonomi fusi
+RGB--D, persepsi tiga dimensi, dan pelajaran multimodal, menuju
+integrasi YOLO+RGB--D. Jawaban ringkas atas pertanyaan tinjauan: keluarga
+YOLO adalah \textit{backbone} paling tepat untuk penerapan lapangan
+real-time; kedalaman dapat diperoleh murah dari model monokular fondasi;
+fusi tingkat menengah dengan atensi lintas-modal adalah strategi paling
+menjanjikan; pola integrasi YOLO+RGB--D sudah ada tetapi jarang menyentuh
+buah perkebunan; dan celah terbesar adalah ketiadaan set data serta
+strategi fusi tahan-degradasi untuk sawit. Dengan demikian, pengembangan
+detektor YOLO RGB--D khusus penghitungan dan klasifikasi buah sawit,
+disertai pembangunan tolok ukur RGB--D-nya, merupakan langkah riset yang
+beralasan dan langsung dibangun di atas temuan tinjauan ini.
