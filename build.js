@@ -533,6 +533,23 @@ html[data-theme="dark"] .meta-btn.ok{color:#8fd9a3; border-color:#3c6b48}
 .section-h .sub{font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3)}
 .section-h .line{flex:1; height:1px; background:var(--line)}
 
+/* pratinjau PDF naskah */
+.pdf-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px}
+.pdf-card{overflow:hidden; border:1px solid var(--line-strong); border-radius:var(--r-card); background:var(--surface)}
+.pdf-card-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:15px 16px 13px; border-bottom:1px solid var(--line)}
+.pdf-card-head h3{font-family:var(--serif); font-size:20px; font-weight:600; letter-spacing:-.012em}
+.pdf-card-head .tag{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap}
+.pdf-preview{display:block; width:100%; height:510px; border:0; background:var(--surface-2)}
+.pdf-card-foot{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px}
+.pdf-card-foot code{font-family:var(--mono); font-size:10.5px; color:var(--ink-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pdf-actions{display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px; margin-left:auto}
+.pdf-card-foot a,.pdf-fullscreen{display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:0 6px; flex-shrink:0; font-size:12.5px; font-weight:600; color:var(--accent-ink)}
+.pdf-card-foot a svg,.pdf-fullscreen svg{width:14px; height:14px}
+.pdf-card-foot a:hover,.pdf-fullscreen:hover{text-decoration:underline; text-underline-offset:3px}
+.pdf-card:fullscreen{width:100vw; height:100vh; display:grid; grid-template-rows:auto minmax(0,1fr) auto; border:0; border-radius:0; background:var(--surface)}
+.pdf-card:fullscreen .pdf-preview{height:100%; min-height:0}
+@media(max-width:760px){.pdf-grid{grid-template-columns:1fr}.pdf-preview{height:460px}.pdf-card-foot{align-items:flex-start; flex-direction:column}.pdf-actions{margin-left:0; flex-wrap:wrap}}
+
 /* strip statistik */
 .stats{display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line-strong); border-bottom:1px solid var(--line-strong)}
 .stat{padding:22px 18px; border-left:1px solid var(--line)}
@@ -796,6 +813,11 @@ function RUNTIME() {
     { name: 'Robotik & Geometri 3D', tag: 'Pose / Grasp / SLAM / 3D', desc: 'Dari estimasi pose 6D dan penggenggaman ke SLAM dinamis dan deteksi 3D untuk aksi robotik.', ids: ['074', '082', '088', '107', '108', '114'] }
   ];
 
+  var PAPERS = [
+    { label: 'IEEEtran', title: 'Naskah IEEEtran', file: 'main.pdf' },
+    { label: 'Elsevier', title: 'Naskah Elsevier', file: 'main-elsarticle.pdf' }
+  ];
+
   var ICON = {
     arrowR: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 12h13M13 6l6 6-6 6"/></svg>',
     arrowL: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M19 12H6M11 6l-6 6 6 6"/></svg>',
@@ -806,7 +828,8 @@ function RUNTIME() {
     clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
     sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7"/></svg>',
     moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 14.2A8 8 0 1 1 9.8 4 6.4 6.4 0 0 0 20 14.2z"/></svg>',
-    spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l1.7 5.1L19 10l-5.3 1.9L12 17l-1.7-5.1L5 10l5.3-1.9z"/></svg>'
+    spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l1.7 5.1L19 10l-5.3 1.9L12 17l-1.7-5.1L5 10l5.3-1.9z"/></svg>',
+    fullscreen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/></svg>'
   };
 
   /* ---- helpers ---- */
@@ -1202,6 +1225,9 @@ function RUNTIME() {
       '<button class="btn btn-ghost" id="exploreBtn" type="button">' + ICON.book + 'Jelajahi katalog ' + META.total + ' entri</button>' +
       '</div>' + resumeHtml() + '</section>';
 
+    h += sectionH('Dokumen naskah', 'pratinjau PDF');
+    h += pdfPreviewHtml();
+
     h += sectionH('Sekilas angka', 'ringkasan korpus');
     h += '<div class="stats rv">' +
       statCell(META.total, 'Entri telaah') +
@@ -1242,6 +1268,10 @@ function RUNTIME() {
     if (exp) exp.addEventListener('click', function () {
       var t = qs('#katalog'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+    main.querySelectorAll('[data-pdf-fullscreen]').forEach(function (btn) {
+      btn.addEventListener('click', function () { togglePdfFullscreen(btn); });
+    });
+    syncPdfFullscreenButtons();
     var cat = qs('.cat');
     if (cat) {
       cat.addEventListener('click', function (ev) {
@@ -1298,6 +1328,39 @@ function RUNTIME() {
   }
   function sectionH(t, sub) {
     return '<div class="section-h rv"><h2>' + esc(t) + '</h2><span class="sub">' + esc(sub) + '</span><span class="line"></span></div>';
+  }
+  function syncPdfFullscreenButtons() {
+    main.querySelectorAll('[data-pdf-fullscreen]').forEach(function (btn) {
+      var card = btn.closest ? btn.closest('.pdf-card') : null;
+      var isFullscreen = doc.fullscreenElement === card;
+      var title = card && card.querySelector('h3') ? card.querySelector('h3').textContent : 'pratinjau PDF';
+      btn.innerHTML = (isFullscreen ? 'Keluar layar penuh' : 'Layar penuh') + ICON.fullscreen;
+      btn.setAttribute('aria-label', isFullscreen
+        ? 'Keluar dari layar penuh ' + title
+        : 'Tampilkan ' + title + ' dalam layar penuh');
+    });
+  }
+  function togglePdfFullscreen(btn) {
+    var card = btn.closest ? btn.closest('.pdf-card') : null;
+    var openPdf = function () { window.location.assign(btn.dataset.pdfFullscreen); };
+    if (!card || !card.requestFullscreen || !doc.fullscreenEnabled) { openPdf(); return; }
+    if (doc.fullscreenElement === card) {
+      doc.exitFullscreen().catch(function () {});
+      return;
+    }
+    card.requestFullscreen().catch(openPdf);
+  }
+  function pdfPreviewHtml() {
+    return '<div class="pdf-grid rv">' + PAPERS.map(function (p) {
+      var src = './' + p.file;
+      return '<article class="pdf-card">' +
+        '<header class="pdf-card-head"><h3>' + esc(p.title) + '</h3><span class="tag">' + esc(p.label) + '</span></header>' +
+        '<iframe class="pdf-preview" src="' + esc(src) + '" title="Pratinjau ' + esc(p.title) + '" loading="lazy"></iframe>' +
+        '<footer class="pdf-card-foot"><code>' + esc(p.file) + '</code><span class="pdf-actions">' +
+        '<button class="pdf-fullscreen" type="button" data-pdf-fullscreen="' + esc(src) + '" aria-label="Tampilkan ' + esc(p.title) + ' dalam layar penuh">Layar penuh' + ICON.fullscreen + '</button>' +
+        '<a href="' + esc(src) + '" target="_blank" rel="noopener">Buka ' + esc(p.title) + ' PDF' + ICON.ext + '</a></span></footer>' +
+        '</article>';
+    }).join('') + '</div>';
   }
   function statCell(n, l) {
     return '<div class="stat"><div class="n">' + esc(String(n)) + '</div><div class="l">' + esc(l) + '</div></div>';
@@ -1496,6 +1559,7 @@ function RUNTIME() {
     var saved; try { saved = localStorage.getItem('rp-theme'); } catch (x) { saved = null; }
     if (!saved) saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
     setTheme(saved);
+    doc.addEventListener('fullscreenchange', syncPdfFullscreenButtons);
     buildChips(); buildYears();
     if (!location.hash) { try { location.replace('#/'); } catch (e) { location.hash = '#/'; } }
     route();
