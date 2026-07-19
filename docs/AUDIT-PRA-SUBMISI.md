@@ -8,16 +8,25 @@ Dokumen ini mencatat pemeriksaan mekanis yang dapat dilakukan pada lingkungan
 lokal saat ini. Dokumen ini bukan pengganti verifikasi ilmiah terhadap makalah
 sumber atau pedoman jurnal tujuan.
 
+> **Pembaruan status (19 Juli 2026):** tiga penghalang mekanis pada audit awal
+> sudah **selesai** — (1) 10 figur final dirender & tertanam di kedua PDF,
+> (2) identitas penulis terisi (Muhammad Zainal Muttaqin + Fatma Indriani,
+> Prodi Ilmu Komputer ULM Banjarbaru), dan (3) kompilasi bersih berhasil lokal
+> via **tectonic** (`tectonic main.tex` / `tectonic main-elsarticle.tex`) tanpa
+> undefined refs/citations. Tabel di bawah sudah disetel ke status terbaru;
+> bagian "penghalang" & "pemeriksaan manual" tetap dipertahankan sebagai rekam
+> jejak dan checklist editorial yang masih terbuka.
+
 ## Ringkasan status
 
 | Area | Status | Bukti / tindak lanjut |
 |---|---|---|
 | Dua driver naskah | Siap ditinjau | `main.tex` (IEEEtran) dan `main-elsarticle.tex` (elsarticle) sama-sama memuat `body.tex`, sehingga isi utama tidak bercabang. |
-| Artefak PDF | Perlu dibuat ulang | `main.pdf` (22 halaman) dan `main-elsarticle.pdf` (71 halaman) ada di root repositori, tetapi masih merender placeholder figur. Metadata pembuatannya juga perlu divalidasi ulang setelah kompilasi bersih. |
+| Artefak PDF | ✅ Direkompilasi | `main.pdf` dan `main-elsarticle.pdf` sudah dibangun ulang via tectonic dengan figur tertanam; tanpa undefined refs/citations. Tinjauan visual per halaman masih dianjurkan. |
 | Pemeriksaan objek Git | Lulus | `git fsck --no-reflogs --no-dangling` selesai tanpa temuan. |
-| Kompilasi lokal | Belum dapat dijalankan | `pdflatex` tidak tersedia pada lingkungan audit ini. Kompilasi bersih perlu dilakukan di Overleaf atau instalasi TeX yang lengkap. |
-| Figur final | Menghalangi submisi | `figures/` hanya memuat 10 brief Markdown; tidak ada `*.pdf`/`*.png` hasil render. Semua 10 panggilan `\figplace` memakai placeholder pada PDF saat ini. |
-| Metadata penulis | Menghalangi submisi | Nama penulis, pembimbing, afiliasi, alamat, kota, dan email pada kedua driver masih berupa placeholder. |
+| Kompilasi lokal | ✅ Berhasil | `pdflatex` memang tak ada, tetapi **tectonic 0.16.9** tersedia dan mengkompilasi kedua driver secara bersih (auto bibtex + rerun). |
+| Figur final | ✅ Selesai | 10 figur final tersedia (4 PDF vektor: F01/F04/F06/F07; 6 raster: C01/C02/F02/F03/F05/F08), dinamai sesuai label, dan `\figplace` kini menerima `.pdf`/`.png`/`.jpg`. Tinjauan visual keterbacaan/ejaan masih perlu. |
+| Metadata penulis | ✅ Selesai | Muhammad Zainal Muttaqin (korespondensi, mz.muttaqin1@gmail.com) + Fatma Indriani, Program Studi Ilmu Komputer, Universitas Lambung Mangkurat, Banjarbaru, Indonesia — terisi di kedua driver. |
 | Sitasi dan BibTeX | Lulus pemeriksaan struktural | 202 kunci sitasi unik di `body.tex` persis cocok dengan 202 entri BibTeX unik: tidak ada kunci hilang, entri tak tersitasi, atau label duplikat. Verifikasi metadata terhadap sumber primer tetap manual. |
 
 ## Temuan yang sudah diperbaiki otomatis

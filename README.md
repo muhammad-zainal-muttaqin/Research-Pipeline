@@ -9,7 +9,9 @@ Repositori tinjauan pustaka untuk riset **deteksi objek berbasis YOLO dan fusi R
 | [`tinjauan-pustaka.tex`](./tinjauan-pustaka.tex) | Draf LaTeX lama/mandiri; tidak dipakai oleh driver artikel saat ini dan perlu ditinjau sebelum digunakan kembali. |
 | [`main.tex`](./main.tex) | Driver naskah artikel gaya IEEEtran; memuat isi bersama dari `body.tex`. |
 | [`main-elsarticle.tex`](./main-elsarticle.tex) | Driver naskah artikel gaya Elsevier/elsarticle; memuat isi bersama dari `body.tex`. |
-| [`AUDIT-PRA-SUBMISI.md`](./AUDIT-PRA-SUBMISI.md) | Hasil pemeriksaan mekanis dan checklist sebelum pengajuan naskah. |
+| [`docs/AUDIT-PRA-SUBMISI.md`](./docs/AUDIT-PRA-SUBMISI.md) | Hasil pemeriksaan mekanis dan checklist sebelum pengajuan naskah. |
+| [`docs/`](./docs) | Dokumen kerja/perencanaan: `PLAN.md`, `PLAN-TINJAUAN-PUSTAKA.md`, `PANDUAN-PENULISAN.md`, `AUDIT-PRA-SUBMISI.md`. |
+| [`figures/`](./figures) | 10 figur final (F01-F08, C01, C02) beserta brief + tema; disisipkan otomatis oleh `\figplace`. |
 | [`references.bib`](./references.bib) | Basis data sitasi BibTeX (semua entri). |
 | [`TEMUAN.md`](./TEMUAN.md) | Catatan temuan / sintesis lintas makalah. |
 | [`entri/INDEX.md`](./entri/INDEX.md) | Indeks lengkap 202 entri terurut nomor. |
