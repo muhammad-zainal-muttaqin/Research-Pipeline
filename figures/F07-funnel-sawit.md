@@ -20,7 +20,7 @@ Ikuti `figures/THEME.md`. Gradien lebar netral tinta→aksen tidak dipakai;
 gunakan lapisan hairline `#E6E3DA` bertingkat, lapisan tersempit (celah +
 posisi) diberi aksen `#A03028`.
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat diagram corong (funnel) vertikal-melebar-ke-sempit (orientasi lanskap
 dengan corong di tengah) untuk jurnal IEEE. Tema WAJIB: latar #FAF9F6;
@@ -32,10 +32,10 @@ unggul"; (4) "YOLO+RGB-D terbukti (objek generik & sebagian buah)"; (5)
 "Celah sawit: tiada dataset RGB-D; fusi tahan-degradasi belum mapan;
 penghitungan tandan tertumpuk" (#A03028); (6) "Posisi riset: detektor YOLO
 RGB-D khusus counting & klasifikasi sawit" (#A03028). Struktur pasti; jangan
-tambah lapisan. Ekspor SVG/PDF vektor.
+tambah lapisan. Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber mermaid (fallback)
+## 5. Struktur mermaid (spesifikasi kebenaran)
 ```mermaid
 graph TD
   L1[Deteksi objek RGB matang: YOLO, transformer] --> L2[Kedalaman murah: monokular fondasi]

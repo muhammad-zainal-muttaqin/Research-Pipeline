@@ -23,7 +23,7 @@ Ikuti `figures/THEME.md`. Empat cabang diberi warna Fondasi RGB `#2B6CB0`
 Baris backbone abu `#4A5568`. Node real-time (RT-/RF-/Le-DETR, YOLO tie-in)
 diberi aksen `#A03028` tipis.
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat diagram silsilah/pohon horizontal lebar (lanskap) untuk jurnal IEEE.
 Tema WAJIB: latar #FAF9F6; garis/teks #1A1D21; aksen #A03028; hairline
@@ -35,10 +35,10 @@ DETR -> Deformable DETR -> Conditional DETR -> DN-DETR -> DINO -> Co-DETR;
 RT-DETR -> RF-DETR -> Le-DETR. Baris dasar "Backbone": ResNet, ViT, Swin ->
 Swin V2, PVT, ConvNeXt, CBAM, memasok panah ke jalur di atas. Warnai jalur
 1-4 dengan #2B6CB0, baris backbone #4A5568, node real-time (RT/RF/Le-DETR)
-outline #A03028. Struktur pasti; jangan tambah node. Ekspor SVG/PDF vektor.
+outline #A03028. Struktur pasti; jangan tambah node. Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber mermaid (fallback)
+## 5. Struktur mermaid (spesifikasi kebenaran)
 ```mermaid
 graph LR
   subgraph Backbone

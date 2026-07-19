@@ -30,7 +30,7 @@ Puncak pada 2021 (36) dan 2020 (30); ekor 2025–2026 (jurnal terbaru).
 Ikuti `figures/THEME.md`. Batang tinta `#1A1D21`; rentang fokus 2019–2026
 diberi aksen `#A03028`; sumbu & kisi hairline `#E6E3DA`.
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat bar chart vertikal (lanskap) untuk jurnal IEEE. Tema WAJIB: latar
 #FAF9F6; batang/teks #1A1D21; aksen #A03028; kisi hairline #E6E3DA; tanpa
@@ -39,10 +39,10 @@ bayangan/gradasi; label sans, angka mono; kontras AA. Sumbu-X tahun
 2015=4, 2016=4, 2017=12, 2018=12, 2019=18, 2020=30, 2021=36, 2022=25,
 2023=23, 2024=21, 2025=7, 2026=5. Warnai batang 2019-2026 dengan aksen
 #A03028, sisanya tinta. Judul sumbu-Y "Jumlah karya". Angka pasti; jangan
-ubah. Ekspor SVG/PDF vektor.
+ubah. Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber (fallback pgfplots — reproducible tanpa Gemini)
+## 5. Data referensi dan alternatif pgfplots
 ```latex
 % \usepackage{pgfplots}\pgfplotsset{compat=1.18}
 \begin{tikzpicture}

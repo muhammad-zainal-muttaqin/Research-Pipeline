@@ -22,7 +22,7 @@ Aliran umum tiap panel: `RGB` dan `Depth` → (encoder) → **titik fusi** →
 Ikuti `figures/THEME.md`. Aliran RGB warna Fondasi RGB `#2B6CB0`; aliran
 Depth warna Kedalaman `#A6740E`; blok fusi menengah diberi aksen `#A03028`.
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat tiga diagram blok sejajar (lanskap) untuk jurnal IEEE. Tema WAJIB: latar
 #FAF9F6; garis/teks #1A1D21; aksen #A03028; hairline #E6E3DA; tanpa
@@ -33,10 +33,10 @@ fusi di masukan (konkatenasi kanal); contoh FuseNet, Expandable YOLO. Panel 2
 "Fusi Menengah": beberapa titik fusi di fitur menengah dengan blok "Atensi
 Lintas-Modal" (outline #A03028); contoh SA-Gate, CMX, CIR-Net. Panel 3 "Fusi
 Akhir": dua cabang penuh terpisah, digabung di keluaran (rata-rata/pilih);
-contoh JL-DCF. Struktur pasti; jangan tambah blok. Ekspor SVG/PDF vektor.
+contoh JL-DCF. Struktur pasti; jangan tambah blok. Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber mermaid (fallback)
+## 5. Struktur mermaid (spesifikasi kebenaran)
 ```mermaid
 graph LR
   subgraph Awal

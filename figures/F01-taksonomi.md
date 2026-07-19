@@ -34,7 +34,7 @@ Ikuti `figures/THEME.md`. Warnai tiap poros dengan satu jewel-tone (Poros 1
 `#0F766E`, Poros 2 `#2B6CB0`, Poros 3 `#8B5CB4`, Poros 4 aksen `#A03028`).
 Klaster inti **YOLO+RGB-D** diberi outline aksen tebal.
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat diagram pohon/mind-map horizontal (lanskap) untuk artikel jurnal IEEE.
 Tema WAJIB: latar #FAF9F6; garis & teks #1A1D21; aksen #A03028; hairline
@@ -49,10 +49,10 @@ LiDAR-Kamera (18), Pedestrian RGB-T (7), RGB-D SLAM (7), Dataset & Tolok
 Ukur (7)]; Poros 4 Integrasi -> [YOLO+RGB-D (7), Aplikasi (22)]. Warnai
 Poros 1 #0F766E, Poros 2 #2B6CB0, Poros 3 #8B5CB4, Poros 4 #A03028. Beri
 outline aksen tebal pada node "YOLO+RGB-D (7)". Tambahkan catatan kaki
-kecil: "Jumlah antarklaster tidak dijumlahkan; satu karya dapat muncul pada lebih dari satu klaster." Struktur pasti; jangan tambah/kurangi node. Ekspor SVG/PDF vektor.
+kecil: "Jumlah antarklaster tidak dijumlahkan; satu karya dapat muncul pada lebih dari satu klaster." Struktur pasti; jangan tambah/kurangi node. Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber mermaid (spesifikasi kebenaran / fallback)
+## 5. Struktur mermaid (spesifikasi kebenaran)
 ```mermaid
 graph LR
   R["Deteksi Objek RGB-D untuk Sawit"]

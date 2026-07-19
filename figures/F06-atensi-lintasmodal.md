@@ -19,7 +19,7 @@ CMX (rektifikasi + pertukaran fitur lintas-modal).
 Ikuti `figures/THEME.md`. `F_rgb` `#2B6CB0`; `F_depth` `#A6740E`; blok atensi
 & `F_fusi` aksen `#A03028`. Panah dua arah untuk timbal balik.
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat diagram blok (lanskap) mekanisme atensi lintas-modal untuk jurnal IEEE.
 Tema WAJIB: latar #FAF9F6; garis/teks #1A1D21; aksen #A03028; hairline
@@ -29,10 +29,10 @@ tiap modalitas keluar "peta bobot" yang menimbang modalitas lain (panah dua
 arah, timbal balik). Hasil bertemu di blok "Atensi Lintas-Modal" (#A03028)
 -> "F_fusi" (#A03028) -> "ke lapisan berikut". Anotasi kecil: "tekan depth
 bising, kuatkan isyarat andal". Contoh penerap tertulis di kaki: SA-Gate,
-CIR-Net, CMX. Struktur pasti; jangan tambah blok. Ekspor SVG/PDF vektor.
+CIR-Net, CMX. Struktur pasti; jangan tambah blok. Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber mermaid (fallback)
+## 5. Struktur mermaid (spesifikasi kebenaran)
 ```mermaid
 graph LR
   Frgb[F_rgb] --> Wd[Bobot dari RGB]

@@ -22,7 +22,7 @@ figur lebar dua kolom). Sumber: entri 112–119.
 Ikuti `figures/THEME.md`. Aliran RGB `#2B6CB0`; Depth `#A6740E`; node YOLO
 dan hasil akhir diberi aksen `#A03028` (klaster inti YOLO+RGB-D).
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat diagram alur dua panel berdampingan (lanskap lebar) untuk jurnal IEEE.
 Tema WAJIB: latar #FAF9F6; garis/teks #1A1D21; aksen #A03028; hairline
@@ -32,10 +32,10 @@ dan "Depth (1 kanal)" (#A6740E) -> "Masukan 4 kanal" -> "Backbone YOLO"
 (#A03028) -> "Kepala Deteksi" -> "Kotak + kelas". Panel kanan "Pola 2:
 Deteksi-lalu-Proyeksi": "RGB" -> "YOLO deteksi 2D" (#A03028) -> "Kotak 2D";
 lalu "Depth" (#A6740E) + "Kotak 2D" -> "Proyeksi/angkat 3D" -> "Lokasi 3D /
-jarak / awan titik". Struktur pasti; jangan tambah node. Ekspor SVG/PDF.
+jarak / awan titik". Struktur pasti; jangan tambah node. Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber mermaid (fallback)
+## 5. Struktur mermaid (spesifikasi kebenaran)
 ```mermaid
 graph LR
   subgraph Pola1["Pola 1: Perluasan Kanal (fusi awal)"]

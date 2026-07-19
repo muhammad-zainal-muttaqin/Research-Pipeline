@@ -36,7 +36,7 @@ pada total 202.
 Ikuti `figures/THEME.md`. Batang tinta `#1A1D21`; tema inti **YOLO+RGB-D**
 dan **Pertanian** diberi aksen `#A03028`; sumbu hairline `#E6E3DA`.
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat bar chart HORIZONTAL (lanskap), batang terurut dari terbanyak ke
 tersedikit, untuk jurnal IEEE. Tema WAJIB: latar #FAF9F6; batang/teks
@@ -47,10 +47,10 @@ Pose 6D=10, Survei YOLO=9, Grasp Robotik=9, YOLO+RGB-D=8, Pertanian=8,
 Pedestrian RGB-T=8, Fusi Multimodal=8, RGB-D SLAM=7, Dataset=6, Remote
 Sensing=5, Medis=5, Industri=4. Beri aksen #A03028 pada batang "YOLO +
 RGB-D" dan "Pertanian", sisanya tinta. Angka pasti; jangan ubah. Ekspor
-SVG/PDF vektor.
+Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber (fallback pgfplots — reproducible tanpa Gemini)
+## 5. Data referensi dan alternatif pgfplots
 ```latex
 % \usepackage{pgfplots}\pgfplotsset{compat=1.18}
 \begin{tikzpicture}

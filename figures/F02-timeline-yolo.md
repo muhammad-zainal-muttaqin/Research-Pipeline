@@ -24,7 +24,7 @@ Ikuti `figures/THEME.md`. Sumbu waktu horizontal hairline `#E6E3DA`; node
 versi tinta `#1A1D21`; dua penanda transisi (anchor-free, bebas-NMS) diberi
 aksen `#A03028`.
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat timeline horizontal (lanskap) untuk jurnal IEEE. Tema WAJIB: latar
 #FAF9F6; garis/teks #1A1D21; aksen #A03028; hairline #E6E3DA; tanpa
@@ -35,10 +35,10 @@ dengan penanda: 2016 YOLOv1 (regresi kisi satu-tahap); 2017 YOLOv2/YOLO9000
 (efisiensi HW); 2023 YOLOv7 (agregasi lapisan); 2024 YOLOv9 + YOLOv10
 (bebas-NMS) + YOLOv11 + YOLO-World; 2025 YOLO26 (real-time end-to-end).
 Tandai dua tonggak dengan aksen: "mulai anchor-free (2021)" dan "mulai
-bebas-NMS (2024)". Struktur pasti; jangan tambah versi. Ekspor SVG/PDF.
+bebas-NMS (2024)". Struktur pasti; jangan tambah versi. Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber mermaid (fallback)
+## 5. Struktur mermaid (spesifikasi kebenaran)
 ```mermaid
 timeline
   title Evolusi YOLO v1 - YOLO26

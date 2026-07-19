@@ -22,7 +22,7 @@ Catatan pada figur: label "konseptual — belum divalidasi eksperimen".
 Ikuti `figures/THEME.md`. Cabang RGB `#2B6CB0`; cabang depth `#A6740E`; blok
 fusi, kepala YOLO, dan dua keluaran diberi aksen `#A03028`.
 
-## 4. Prompt siap-tempel Gemini
+## 4. Kontrak produksi GPT Image 2
 ```
 Buat diagram alur pipeline horizontal lebar (lanskap) untuk jurnal IEEE,
 diberi label kecil "konseptual/usulan". Tema WAJIB: latar #FAF9F6; garis/teks
@@ -34,10 +34,10 @@ Kedua cabang bertemu di "Fusi menengah + atensi lintas-modal + penimbangan
 adaptif" (#A03028) -> "Kepala deteksi YOLO" (#A03028) -> dua keluaran sejajar
 "Penghitungan tandan" dan "Klasifikasi kematangan" (#A03028); cabang opsional
 putus-putus "Proyeksi 3D -> lokasi tandan (panen robotik)". Struktur pasti;
-jangan tambah node. Ekspor SVG/PDF vektor.
+jangan tambah node. Hasilkan PNG GPT Image 2 tanpa judul global, subjudul, nomor, atau caption internal.
 ```
 
-## 5. Sumber mermaid (fallback)
+## 5. Struktur mermaid (spesifikasi kebenaran)
 ```mermaid
 graph LR
   I[Citra RGB kebun] --> A[Encoder RGB]
