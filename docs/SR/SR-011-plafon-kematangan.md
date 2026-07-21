@@ -1,6 +1,21 @@
 # SR-011 — Plafon kematangan ~68%, terukur tiga kali secara bebas
 
-**Ide I-23** · **Eksperimen:** E-016 · **Putusan: DIKONFIRMASI (plafon nyata)** · 2026-07-21
+**Ide I-23** · **Eksperimen:** E-016 · **Putusan: DITARIK — buktinya cacat** · 2026-07-21
+
+> **KOREKSI (E-018).** SR ini semula menyimpulkan plafon ~68% dari "tiga
+> pengukuran bebas". Klaim itu **tidak sah** dan ditarik:
+>
+> 1. Voting multi-sisi memakai **pengklasifikasi potongan yang sama**, jadi ia
+>    bukan pengukuran ketiga yang bebas — hanya turunan dari yang kedua.
+> 2. Head YOLO dilatih dengan `hsv_s=0.7` (saturasi diacak ±70%) sedangkan
+>    pengklasifikasi potongan dilatih **aman-warna**. Pada tugas yang buktinya
+>    adalah warna, itu bukan perbandingan setara — head-nya dilumpuhkan.
+>
+> Angka-angka di bawah tetap benar sebagai **pengukuran**, dan pola ordinalnya
+> (±1 = 100,0% pada head YOLO) tetap berdiri. Yang ditarik adalah kesimpulan
+> bahwa 68% merupakan **batas yang tidak bisa dilampaui**. Jalur paling
+> langsung — detektor 4-kelas resolusi tinggi dengan augmentasi aman-warna —
+> tidak pernah diuji saat SR ini ditulis.
 
 ---
 

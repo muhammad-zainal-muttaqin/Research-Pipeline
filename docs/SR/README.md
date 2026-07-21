@@ -31,7 +31,7 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-008](SR-008-kanal-tekstur.md) | Kanal tekstur sebagai modalitas keempat | E-011 | **DIKONFIRMASI** (tekstur) / **DIPALSUKAN** (penajam kontras) |
 | [SR-009](SR-009-ordinalitas-kelas.md) | Kematangan itu kontinu, bukan empat kotak | E-012 | **DIKONFIRMASI** |
 | [SR-010](SR-010-hambatan-klasifikasi.md) | Hambatan mAP ada di klasifikasi kematangan, bukan deteksi | E-014 | **DIKONFIRMASI** |
-| [SR-011](SR-011-plafon-kematangan.md) | Plafon kematangan ~68%, diukur tiga kali secara bebas | E-016 | **DIKONFIRMASI** |
+| [SR-011](SR-011-plafon-kematangan.md) | Plafon kematangan ~68% | E-016 | **DITARIK** (bukti cacat, lihat E-018) |
 | [SR-012](SR-012-dua-tahap.md) | Detektor dua tahap (deteksi agnostik + kepala kematangan) | E-017 | **DIPALSUKAN** |
 
 ## Apa yang sudah kita pelajari — cerita singkatnya
