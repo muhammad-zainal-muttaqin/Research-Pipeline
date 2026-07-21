@@ -813,3 +813,54 @@ yang mengacak saturasi ±70% pada tugas yang buktinya adalah warna.
 
 **Reproduksi** — `train_agnostic.py`, `build_crops_raw.py`,
 `train_maturity_v2.py --root crops_raw`, `two_stage.py --crop-source raw`
+
+---
+
+## E-018 — Plafon lokalisasi: apakah 0,60/0,30 mungkin secara geometris? (2026-07-21) · Ide I-24
+
+**Konteks** — Pengguna menetapkan sasaran tegas: **mAP50 0,60 dan mAP50-95 0,30
+pada 4 kelas penuh**, tanpa mendefinisikan ulang metrik. Sebelum menghabiskan
+berjam-jam GPU, satu hal harus diketahui: apakah kotak anotasinya sendiri cukup
+ketat untuk memungkinkannya? mAP50-95 merata-ratakan ambang IoU sampai 0,95 —
+kalau kotak GT digambar longgar, tidak ada model yang bisa mencapainya.
+
+**Cara** — `loc_ceiling.py`: untuk tiap kotak GT val, IoU tertinggi dengan
+deteksi mana pun (kelas diabaikan, conf 0,05). Pecahan GT yang tercapai pada
+tiap ambang COCO memberi batas atas mAP bila kelas dan peringkat skornya
+sempurna.
+
+**Hasil** —
+
+| | Baseline 640 | Agnostik 960 (6 epoch) |
+|---|---|---|
+| GT tercapai IoU≥0,50 | 0,8834 | 0,8786 |
+| GT tercapai IoU≥0,75 | 0,4494 | 0,3975 |
+| GT tercapai IoU≥0,90 | **0,0376** | 0,0254 |
+| Median IoU terbaik | 0,7303 | 0,7110 |
+| **Plafon mAP50 (kelas sempurna)** | **0,8834** | 0,8786 |
+| **Plafon mAP50-95 (kelas sempurna)** | **0,4702** | 0,4448 |
+
+**Putusan — SASARAN BERADA DI DALAM PLAFON.** mAP50 0,60 = 68% dari 0,8834;
+mAP50-95 0,30 = 64% dari 0,4702. Posisi saat ini 59% dan 51%. Yang dituntut
+adalah menutup celah klasifikasi dan peringkat skor, **bukan** menembus batas
+ketelitian anotasi.
+
+**Peringatan yang jujur** — hanya 3,76% kotak GT tercapai pada IoU≥0,90 dan
+median IoU 0,73. Batas tandan memang kabur (buah menyatu dengan pelepah), jadi
+mAP50-95 akan selalu jauh lebih berat daripada mAP50 di dataset ini.
+
+**Koreksi terhadap E-016** — klaim "tiga pengukuran bebas" di SR-011 **cacat
+dan ditarik**: voting multi-sisi memakai pengklasifikasi potongan yang sama
+(jadi bukan pengukuran ketiga yang bebas), dan head YOLO dilatih dengan
+`hsv_s=0.7` sedangkan pengklasifikasi potongan dilatih aman-warna — jadi
+perbandingannya tidak setara. Angka 68% tetap dilaporkan apa adanya, tetapi
+**tidak boleh dibaca sebagai plafon**. Jalur langsungnya — detektor 4-kelas
+resolusi tinggi dengan augmentasi aman-warna — belum pernah diuji sampai E-019.
+
+**Dampak** — Membuka **E-015 → dataset master**: `build_master_ds.py` menautkan
+3.000/404/588 citra ke piksel master 3060×4080 (rasio 0,75, identik dengan MVC)
+tanpa anotasi ulang dan tanpa menyalin 16 GB. Pada SawitMVC, `imgsz=1280` sudah
+memakai seluruh piksel yang ada; master memungkinkan `imgsz` 1600–2048 berisi
+detail nyata.
+
+**Reproduksi** — `loc_ceiling.py`, `build_master_ds.py`
