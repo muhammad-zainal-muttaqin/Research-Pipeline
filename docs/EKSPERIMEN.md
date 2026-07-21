@@ -452,3 +452,52 @@ lain: augmentasi sadar-oklusi (I-16) dan analisis terstratifikasi oklusi (I-11),
 bukan sekadar resolusi.
 
 **Reproduksi** — `python box_size_analysis.py`
+
+---
+
+## E-010 — Diagnosis kegagalan B4 (2026-07-21) · Ide I-11 · [SR-007](SR/SR-007-diagnosis-b4.md)
+
+**Hipotesis** — Kegagalan B4 (AP50 0,354) punya penyebab yang dapat diukur
+langsung dari data, tanpa model. Tiga tersangka diuji berdampingan: kontras
+fotometrik rendah, kepadatan/crowding, dan tumpang tindih antar-kotak.
+
+**Cara** — `experiments/why_b4_fails.py` atas 400 citra uji. Kontras diukur di
+ruang CIELAB antara isi kotak dan cincin sekelilingnya (ΔE, ΔLuminans, ΔWarna),
+plus varians Laplacian sebagai ukuran tekstur. Kepadatan = jumlah kotak lain
+yang pusatnya dalam 1,5× diagonal. **Kendali kotak acak** dipakai seperti E-006.
+
+**Hasil** —
+
+| Kelas | ΔE | ΔLuminans | Tekstur | Tetangga | IoU maks | %IoU>0,1 | AP50 DiB |
+|---|---|---|---|---|---|---|---|
+| B1 | **19,15** | 17,75 | 5.015 | 3,23 | 0,042 | 10,3% | 0,739 |
+| B2 | 18,48 | 17,39 | 5.726 | 2,92 | 0,041 | 11,5% | 0,433 |
+| B3 | 13,93 | 12,77 | 6.892 | 2,81 | 0,033 | 7,7% | 0,599 |
+| **B4** | **11,55** | 9,93 | **7.780** | **2,58** | **0,029** | **6,4%** | **0,354** |
+| *acak (kendali)* | *12,92* | *11,71* | *5.441* | — | — | — | — |
+
+**Putusan** — **DIKONFIRMASI untuk kontras; kepadatan DIPALSUKAN.**
+
+1. **B4 tersamar.** Kontrasnya (ΔE 11,55) **di bawah kotak acak** (12,92) —
+   tandan B4 secara harfiah lebih sulit dibedakan dari latarnya daripada
+   tambalan acak pada citra yang sama.
+2. **Kepadatan bukan penyebab.** B4 justru punya tetangga paling sedikit (2,58)
+   dan tumpang tindih paling rendah (IoU 0,029). Hipotesis "B4 gagal karena
+   bertumpuk" dipalsukan.
+3. **B2 gagal karena sebab berbeda.** Kontras latarnya tinggi (18,48) tetapi
+   AP50 rendah — masalahnya bukan melihat tandan, melainkan membedakannya dari
+   B3. Ini pemisahan (A) geometris vs (B) fotometrik yang dirumuskan di awal,
+   kini **terukur**, bukan diasumsikan.
+
+**Dampak** — Menyatukan tiga temuan menjadi satu gambaran yang koheren:
+B4 **tidak** terpisah dalam kedalaman (E-006), **tidak** terpisah dalam warna
+(E-010), dan **tidak** bertumpuk (E-010). Satu-satunya sinyal tersisa adalah
+**tekstur**, dan justru di situ B4 tertinggi (7.780, tertinggi dari semua kelas).
+
+Itu memberi dasar pemikiran **baru dan lebih kuat** untuk I-12: tekstur adalah
+hal pertama yang hancur saat citra diperkecil 2×. Jadi ubin tetap layak diuji,
+tetapi alasannya bukan "objeknya kecil" (E-009 melemahkan itu) melainkan
+"petunjuk yang menentukan adalah frekuensi tinggi". Ekspektasi ini dicatat
+**sebelum** hasil ubin keluar.
+
+**Reproduksi** — `python why_b4_fails.py --images 400`
