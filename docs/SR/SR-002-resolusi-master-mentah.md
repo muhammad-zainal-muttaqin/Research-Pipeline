@@ -1,7 +1,14 @@
 # SR-002 — Master mentah 3024×4032 sebagai jalan keluar untuk B4
 
 **Ide:** kalau resolusi bagian dari bottleneck, latih pada piksel penuh
-**Eksperimen:** E-002 · **Putusan: TIDAK KONKLUSIF (terblokir)** · 2026-07-21
+**Eksperimen:** E-002 · **Putusan: TERBLOKIR → DIBUKA oleh E-015** · 2026-07-21
+
+> **PEMBARUAN (E-015, 2026-07-21).** Blokade di SR ini — nama berkas master
+> mentah tidak unik global sehingga pemetaan raw ↔ anotasi mustahil dari nama —
+> **sudah dibuka.** `match_raw.py` memetakan 3.992/3.992 citra lewat isi
+> (tanda tangan citra ternormalkan), nol ambigu, skor terendah 0,9985. Master
+> 3024×4032 kini dapat dipakai tanpa anotasi ulang; `build_master_ds.py`
+> merakit dataset YOLO yang menunjuk ke piksel master. Lihat E-015 dan E-018.
 
 ---
 

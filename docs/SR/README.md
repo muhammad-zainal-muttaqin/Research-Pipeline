@@ -33,6 +33,7 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-010](SR-010-hambatan-klasifikasi.md) | Hambatan mAP ada di klasifikasi kematangan, bukan deteksi | E-014 | **DIKONFIRMASI** |
 | [SR-011](SR-011-plafon-kematangan.md) | Plafon kematangan ~68% | E-016 | **DITARIK** (bukti cacat, lihat E-018) |
 | [SR-012](SR-012-dua-tahap.md) | Detektor dua tahap (deteksi agnostik + kepala kematangan) | E-017 | **DIPALSUKAN** |
+| [SR-013](SR-013-rtdetr-nms-free.md) | RT-DETR: apakah NMS yang membatasi deteksi? | E-020 | **BERJALAN** |
 
 ## Apa yang sudah kita pelajari — cerita singkatnya
 
@@ -63,17 +64,44 @@ Kesimpulan operasionalnya: **B4 butuh keterlihatan (tekstur), B2 butuh
 diskriminasi ordinal.** Menggabungkan keduanya sebagai "kelas sulit" akan
 menyesatkan arah kerja.
 
+### Lanjutan cerita (SR-010 → SR-013)
+
+6. **Kerugian mAP ada di klasifikasi, bukan deteksi.** Bobot yang sama
+   dievaluasi dua kali: 4-kelas 0,5218 vs kelas-agnostik 0,7191 mAP50 — 38% yang
+   mungkin diraih hilang di penilaian kematangan (SR-010). Ini menutup dasar
+   seluruh antrean ide berbasis deteksi (ubin, fusi, kanal keempat, neck).
+7. **SR-002 dibuka.** Master mentah 3024×4032 dipetakan lewat isi (3.992/3.992,
+   nol ambigu) — resolusi penuh kini tersedia tanpa anotasi ulang (SR-002/E-015).
+8. **Detektor dua tahap dipalsukan, tetapi tahap 1-nya rekor.** Deteksi agnostik
+   pada 960 mencapai 0,7730/0,3320 — mAP50-95 di atas sasaran 0,30 — namun
+   rakitan dua-tahap penuh (0,4787) lebih buruk dari baseline: head YOLO
+   kehilangan konteks & kalibrasi bersama (SR-012).
+9. **Klaim "plafon kematangan" ditarik.** Buktinya cacat (dua pengukuran tak
+   bebas, satu dilumpuhkan augmentasi `hsv_s=0.7`); SR-011 ditarik lewat E-018.
+   Plafon **geometris** anotasi justru menampung sasaran: dengan kelas sempurna,
+   kotak yang ada memungkinkan mAP50 0,8834 / mAP50-95 0,4702 (E-018).
+
+Arah aktif: kejar sasaran **mAP50 0,60 / mAP50-95 0,30 pada 4 kelas** lewat jalur
+yang belum tersentuh — kapasitas (yolo26x), mekanisme deteksi (RT-DETR, SR-013),
+dan piksel master (imgsz 1600–2048). E-019 (1280 aman-warna) hanya menempel
+baseline karena fine-tune dari checkpoint resolusi lain; run berikut mulai bersih.
+
 ## Ide yang belum dikerjakan
 
-| Ide | Isi | Sumber |
+| Ide | Isi | Status |
 |---|---|---|
-| I-3 | Bangkitkan pseudo-depth untuk 3.992 gambar | entri 175/198 — **SELESAI**, aset untuk I-4/I-5 |
-| I-4 | YOLO 4-kanal RGB+D (early fusion) vs baseline RGB | Expandable YOLO, §174 — **berjalan** |
-| I-5 | Fusi middle/late dua cabang | Ophoff dkk., §174 |
-| I-8 | Gerbang mutu depth + fallback RGB | §174, §265 |
-| I-10 | Kaskade deteksi-lalu-proyeksi | §174 |
-| **I-21** | **YOLO 4-kanal RGB+tekstur** | SR-008 — **berjalan**, dasar bukti terkuat |
-| **I-22** | **Loss ordinal / kepala regresi kematangan** | SR-009 |
+| I-5 | Fusi middle/late dua cabang | belum |
+| I-8 | Gerbang mutu depth + fallback RGB | belum (relevan saat data Gemini ada) |
+| I-10 | Kaskade deteksi-lalu-proyeksi | belum |
+| I-13 | Loss berimbang kelas / focal | belum |
+| I-15 | Neck multiskala (BiFPN) | belum |
+| I-22 | Loss ordinal / kepala regresi kematangan | belum (probe dihentikan di E-014) |
+| — | yolo26x kapasitas 3× · 1280 · aman-warna | dihentikan demi RT-DETR; kandidat lanjutan |
+| — | Latih pada piksel master (imgsz 1600–2048) | dataset siap (`build_master_ds.py`), belum |
+
+Catatan status: I-4 (RGBD) dihentikan pada epoch 25 (mAP50 0,5135, datar);
+I-21 (RGBT) dan probe ordinal dihentikan saat E-014 mengalihkan fokus ke
+dekomposisi deteksi/klasifikasi.
 
 ## Ide tambahan dari `docs/deep-research-report.md`
 

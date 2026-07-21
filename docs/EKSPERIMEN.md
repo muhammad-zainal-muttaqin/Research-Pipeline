@@ -52,6 +52,27 @@ di bawah menyebut ide yang diujinya.
 | **I-10** | **Kaskade deteksi-lalu-proyeksi** — deteksi 2D dulu sebagai penyaring kasar, baru proyeksikan ke 3D pada himpunan titik yang sudah diperkecil. Alternatif terhadap fusi di input, dan lebih murah di perangkat lapangan. | FusionVision, YOLOv8-URE, §174 |
 | **I-11** | **Analisis terstratifikasi ukuran/oklusi/iluminasi** — bukan sekadar AP tunggal, tetapi AP per strata, supaya terlihat **di mana** depth benar-benar membayar. Inilah yang memutuskan hipotesis (A) geometris vs (B) fotometrik. | Tabel hierarki metrik, §234–262 |
 
+Ide berikut (I-12…I-24) lahir **dari hasil eksperimen di atas**, bukan dari
+korpus — masing-masing menutup atau membuka arah menurut apa yang terukur. Ini
+yang membedakannya dari daftar awal: bukan agenda pustaka, melainkan konsekuensi
+data.
+
+| Ide | Isi | Lahir dari | Status |
+|---|---|---|---|
+| **I-12** | Pelatihan berbasis ubin (tiling) resolusi tinggi | laporan | ekspektasi diturunkan (E-009); tak dijalankan tuntas |
+| **I-13** | Loss berimbang kelas / focal | laporan | belum |
+| **I-14** | Detektor NMS-free (RT-DETR) | laporan (prioritas 1) | **BERJALAN** (E-020, [SR-013](SR/SR-013-rtdetr-nms-free.md)) |
+| **I-15** | Neck multiskala lebih kuat (BiFPN) | laporan | belum |
+| **I-16** | Copy-paste / augmentasi sintetis | laporan | prioritas turun untuk B4 (SR-007) |
+| **I-17** | Kalibrasi ambang per strata | laporan | belum |
+| **I-18** | Kepala multi-tugas (deteksi + kematangan) | laporan | → menjelma I-22 |
+| **I-19** | Kalibrasi depth metrik (Metric3D/ZoeDepth) | laporan | belum (perlu bila klaim jarak) |
+| **I-20** | Praproses penajam kontras untuk B4 | E-010/SR-007 | **DIPALSUKAN** (E-011) |
+| **I-21** | Kanal keempat berisi tekstur, bukan depth | E-011/SR-008 | dijalankan lalu dihentikan (E-014) |
+| **I-22** | Loss ordinal / kepala regresi kematangan | E-012/SR-009 | belum (probe dihentikan di E-014) |
+| **I-23** | Detektor dua tahap (deteksi agnostik + kepala kematangan) | E-014/SR-010 | **DIPALSUKAN** (E-017, [SR-012](SR/SR-012-dua-tahap.md)) |
+| **I-24** | Detektor 4-kelas resolusi tinggi + augmentasi aman-warna | E-014/E-016 | diuji (E-019); menempel baseline |
+
 ---
 
 ## Baseline acuan (bukan eksperimen)
@@ -864,3 +885,49 @@ memakai seluruh piksel yang ada; master memungkinkan `imgsz` 1600–2048 berisi
 detail nyata.
 
 **Reproduksi** — `loc_ceiling.py`, `build_master_ds.py`
+
+---
+
+## E-019 — Detektor 4-kelas resolusi tinggi + augmentasi aman-warna (2026-07-21) · Ide I-24
+
+**Konteks** — Setelah menarik klaim plafon (E-018), jalur paling langsung untuk
+sasaran 0,60/0,30 diuji: serang tepat di klasifikasi kematangan, dari dalam
+detektor 4-kelas satu tahap. Dua koreksi sekaligus — (a) augmentasi aman-warna
+(`hsv_s` 0,7 → 0,15; kematangan adalah warna), (b) resolusi asli 1280 (dari 640).
+
+**Cara** — `train_4cls_hi.py`, yolo26m diinisialisasi dari baseline yang sudah
+konvergen, 50 epoch, kosinus, `close_mosaic=15`.
+
+**Hasil** — Puncak val **mAP50 0,5263 (epoch 9) · mAP50-95 0,2361 (epoch 7)**.
+Pada epoch yang sama detektor ini unggul dari baseline (ep 10: 0,5062 vs 0,4777),
+tetapi puncaknya hanya menempel baseline (0,5218/0,2407) dan menurun setelahnya —
+fase pasca-mosaic (epoch 35+) tidak memberi lompatan. Dihentikan pada epoch 41.
+
+**Putusan — MENEMPEL BASELINE, tak cukup.** Diagnosis: memulai dari bobot 640
+yang sudah konvergen lalu memaksanya ke 1280 mengganggu model, dan 50 epoch tak
+cukup untuk pulih dari cekungan lokal itu. Bukan bukti augmentasi/resolusi tak
+membantu — bukti bahwa **fine-tuning dari checkpoint resolusi lain adalah strategi
+yang salah**; run berikut (yolo26x, RT-DETR) mulai bersih dari COCO.
+
+**Reproduksi** — `python train_4cls_hi.py --imgsz 1280 --hsv-s 0.15`
+
+---
+
+## E-020 — RT-DETR sebagai detektor NMS-free (2026-07-21) · Ide I-14 · [SR-013](SR/SR-013-rtdetr-nms-free.md)
+
+**Konteks** — Semua yang menempel plateau berasal dari keluarga YOLO, yang
+memakai NMS. `deep-research-report.md` menempatkan NMS-free sebagai prioritas 1:
+NMS greedy dapat menekan kotak benar pada objek rapat/bertumpuk — persis tandan
+di mahkota.
+
+**Hipotesis** — Bila sebagian plafon deteksi berasal dari NMS, RT-DETR (Hungarian
+satu-ke-satu, tanpa NMS) mengangkatnya, khususnya recall pada tandan bertumpuk.
+
+**Cara** — `train_rtdetr.py`, RT-DETR-L (33,0 juta parameter), 1280, aman-warna,
+60 epoch dari bobot COCO. Menguji hipotesis MEKANISME (bukan kapasitas), jadi
+bebas dari jalur yolo26x.
+
+**Status — BERJALAN** (diluncurkan 2026-07-21, ~8–10 jam pada L4). Hasil dan
+putusan diisi di SR-013 saat selesai.
+
+**Reproduksi** — `python train_rtdetr.py --weights rtdetr-l.pt --imgsz 1280`
