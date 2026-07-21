@@ -674,3 +674,52 @@ potongan resolusi asli). Melahirkan pula **I-24**: augmentasi baseline memakai
 `hsv_s=0.7` — mengacak saturasi ±70% pada tugas yang buktinya adalah warna.
 
 **Reproduksi** — `python diag_bottleneck.py`
+
+---
+
+## E-015 — Master mentah 3024×4032 terbuka (2026-07-21) · Ide I-2/I-23 · [SR-002](SR/SR-002-resolusi-master-mentah.md)
+
+**Konteks** — SR-002 berstatus TIDAK KONKLUSIF (terblokir) sejak awal: nama
+berkas master mentah tidak unik secara global (3.992 berkas, hanya 1.352 nama
+unik, 936 nama kembar antar folder `Kelompok N`), sehingga pemetaan raw ↔
+anotasi tidak bisa dilakukan lewat nama. E-014 membuat blokade ini mendadak
+mahal: kalau hambatan mAP ada di penilaian kematangan, dan kematangan dinilai
+dari permukaan buah, maka resolusi permukaan buah adalah sumber daya yang
+paling langsung relevan — dan ia terkunci.
+
+**Hipotesis** — Kedua tingkat adalah citra yang sama pada skala berbeda, jadi
+pencocokan berbasis ISI menyelesaikan pemetaan tanpa tabel dari tim.
+
+**Cara** — `match_raw.py`: tiap citra diperkecil lewat penskalaan DCT JPEG
+(`IMREAD_REDUCED_*_8`), disamakan orientasinya ke potret, diringkas jadi vektor
+abu-abu 32×40 yang dinormalkan (rerata 0, norma 1). Kecocokan = hasil kali titik
+tertinggi, diverifikasi tiga lapis: skor > 0,90, jarak ke peringkat kedua
+> 0,02, dan pemetaan dipaksa satu-ke-satu.
+
+**Hasil** —
+
+| Besaran | Nilai |
+|---|---|
+| Citra MVC | 3.992 |
+| Citra master mentah | 3.992 |
+| **Cocok** | **3.992 (100%)** |
+| Ditolak karena skor lemah | 0 |
+| Ditolak karena ambigu | 0 |
+| Skor kecocokan **terendah** | 0,9985 |
+| Selisih median ke peringkat kedua | 0,353 |
+
+Contoh: `DAMIMAS_A21B_0001_1.jpg` → `Damimas/Kelompok 1/DAMIMAS_A21B_001_1.jpg`
+(perhatikan penomoran 4 digit vs 3 digit yang membuat pencocokan nama gagal).
+
+**Putusan — SR-002 TIDAK LAGI TERBLOKIR.** Skor terendah 0,9985 dengan selisih
+median 0,353 tidak menyisakan ruang keraguan: tidak ada satu pun pasangan yang
+"nyaris cocok". Karena rasio aspek kedua tingkat identik (0,75), koordinat YOLO
+ternormalisasi berlaku persis — **tidak perlu anotasi ulang**.
+
+**Dampak** — Potongan tandan bisa diambil pada 3024×4032, tempat tandan
+bermedian ~220–300 px, bukan ~70–95 px seperti di SawitMVC. Pada MVC, potongan
+masukan 224 px sebenarnya hasil **pembesaran** — tidak ada detail baru, hanya
+interpolasi. Di master, 224 px berisi detail permukaan buah yang sebenarnya.
+Ini menjadi masukan tahap 2 dari I-23.
+
+**Reproduksi** — `python match_raw.py` (CPU, beberapa menit) → `results/raw_map.json`
