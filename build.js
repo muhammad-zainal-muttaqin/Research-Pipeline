@@ -124,9 +124,13 @@ files.forEach(function (file) {
 
   const raw = fs.readFileSync(path.join(ENTRI_DIR, file), 'utf8');
   if (!raw.trim()) { warnings.push('Konten kosong: ' + file); return; }
-  const links = extractLinks(raw);
+  // Pisahkan rangkuman terkurasi dari teks sumber lengkap (penanda <!--SRC-->).
+  const srcIdx = raw.indexOf('<!--SRC-->');
+  const summaryRaw = srcIdx >= 0 ? raw.slice(0, srcIdx) : raw;
+  const srcText = srcIdx >= 0 ? raw.slice(srcIdx + 10).replace(/^\s*\n/, '').replace(/\s+$/, '') : '';
+  const links = extractLinks(summaryRaw);
   // Normalisasi jumlah entri usang (artefak batch: 150 / 154 / 191) menjadi 202.
-  let md = cleanMarkdown(raw, true);
+  let md = cleanMarkdown(summaryRaw, true);
   md = md
     .replace(/\bdari (150|154|191)\b/g, 'dari 202')
     .replace(/(Lembar \d{3})\/(154|191)\b/g, '$1/202')
@@ -138,12 +142,13 @@ files.forEach(function (file) {
     year: meta.year,
     title: meta.title,
     theme: meta.theme,
-    bib: extractBib(raw),
+    bib: extractBib(summaryRaw),
     special: false,
     words: countWords(md),
     scholar: links.scholar,
     semantic: links.semantic,
-    md: md
+    md: md,
+    src: srcText
   });
 });
 
@@ -533,6 +538,14 @@ html[data-theme="dark"] .meta-btn.ok{color:#8fd9a3; border-color:#3c6b48}
 .section-h .sub{font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3)}
 .section-h .line{flex:1; height:1px; background:var(--line)}
 
+/* teks sumber lengkap (ekstraksi PDF) */
+.srcfull{margin:22px 0 8px; border:1px solid var(--line-strong); border-radius:var(--r-card); background:var(--surface); overflow:hidden}
+.srcfull>summary{cursor:pointer; padding:13px 16px; font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); user-select:none; list-style:none}
+.srcfull>summary::-webkit-details-marker{display:none}
+.srcfull>summary:hover{color:var(--ink-1)}
+.srcfull[open]>summary{border-bottom:1px solid var(--line)}
+.srctext{margin:0; padding:18px 20px; max-height:70vh; overflow:auto; white-space:pre-wrap; word-break:break-word; font-family:var(--mono); font-size:12.5px; line-height:1.7; color:var(--ink-2); background:var(--surface-2,transparent)}
+
 /* pratinjau PDF naskah */
 .pdf-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px}
 .pdf-card{overflow:hidden; border:1px solid var(--line-strong); border-radius:var(--r-card); background:var(--surface)}
@@ -859,7 +872,7 @@ function RUNTIME() {
   function ensureHay() {
     DATA.forEach(function (e) {
       if (e._h) return;
-      e._h = { nTitle: norm(e.title), nTheme: norm(e.theme), nMd: norm(e.md) };
+      e._h = { nTitle: norm(e.title), nTheme: norm(e.theme), nMd: norm(e.md + ' ' + (e.src || '')) };
     });
   }
   function scoreEntry(e, terms) {
@@ -1192,6 +1205,15 @@ function RUNTIME() {
   function viewEntry(e) {
     var art = doc.createElement('div'); art.className = 'article';
     art.innerHTML = window.marked.parse(e.md);
+    if (e.src) {
+      var det = doc.createElement('details'); det.className = 'srcfull';
+      var sm = doc.createElement('summary');
+      sm.textContent = 'Buka teks sumber lengkap — ekstraksi PDF, baris per baris';
+      var pre = doc.createElement('pre'); pre.className = 'srctext';
+      pre.textContent = e.src;
+      det.appendChild(sm); det.appendChild(pre);
+      art.appendChild(det);
+    }
     var heads = enhance(art, e);
     main.innerHTML = '<div class="wrap"></div>';
     var wrap = main.querySelector('.wrap');
