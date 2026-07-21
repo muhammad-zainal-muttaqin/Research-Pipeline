@@ -31,15 +31,46 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-008](SR-008-kanal-tekstur.md) | Kanal tekstur sebagai modalitas keempat | E-011 | **DIKONFIRMASI** (tekstur) / **DIPALSUKAN** (penajam kontras) |
 | [SR-009](SR-009-ordinalitas-kelas.md) | Kematangan itu kontinu, bukan empat kotak | E-012 | **DIKONFIRMASI** |
 
+## Apa yang sudah kita pelajari — cerita singkatnya
+
+Sembilan ide diuji; empat dipalsukan, dan justru itu yang mempersempit arah.
+Rantai temuannya:
+
+1. **Bottleneck ada di detektor, bukan penghitung.** E-007 mereproduksi Tabel 4
+   DiB persis, dan menunjukkan koreksi sederhana `k = 1,8905` sudah mencapai
+   95,57% bila diberi deteksi sempurna. Ruang perbaikan di tahap counting tipis.
+2. **Geometri DA3 bekerja — tetapi bukan di tempat yang kita butuhkan.** DA3
+   memulihkan pose 4/8 sisi dengan benar pada 50/50 pohon (SR-004) dan orbit
+   video pada 5/6 video (SR-003). Namun kedalaman **tidak** memisahkan tandan
+   di tingkat piksel (SR-005), dan penautan geometris **kalah** dari koreksi
+   statistik (SR-006).
+3. **B4 gagal karena tersamar, bukan bertumpuk.** Kontrasnya di bawah kotak
+   acak, kedalamannya tidak membedakan, dan ia justru paling renggang dari
+   semua kelas (SR-007). Motivasi asli jalur kedalaman — "tandan bertumpuk" —
+   ternyata salah.
+4. **Satu-satunya sinyal tersisa untuk B4 adalah tekstur.** Kanal Laplacian
+   membalik peringkat: B4 dari kelas paling tidak terpisah menjadi paling
+   terpisah (SR-008). Penajam kontras (CLAHE, unsharp) justru gagal.
+5. **B2 gagal karena sebab yang sama sekali berbeda.** Kematangan itu variabel
+   kontinu yang dipotong empat; kebingungan hanya terjadi antar kelas
+   bersebelahan (SR-009). Metrik DiB sudah mengakui ini lewat `Class ±1 Acc`,
+   tetapi pelatihan detektornya belum.
+
+Kesimpulan operasionalnya: **B4 butuh keterlihatan (tekstur), B2 butuh
+diskriminasi ordinal.** Menggabungkan keduanya sebagai "kelas sulit" akan
+menyesatkan arah kerja.
+
 ## Ide yang belum dikerjakan
 
 | Ide | Isi | Sumber |
 |---|---|---|
 | I-3 | Bangkitkan pseudo-depth untuk 3.992 gambar | entri 175/198 — **SELESAI**, aset untuk I-4/I-5 |
-| I-4 | YOLO 4-kanal (early fusion) vs baseline RGB | Expandable YOLO, §174 |
+| I-4 | YOLO 4-kanal RGB+D (early fusion) vs baseline RGB | Expandable YOLO, §174 — **berjalan** |
 | I-5 | Fusi middle/late dua cabang | Ophoff dkk., §174 |
 | I-8 | Gerbang mutu depth + fallback RGB | §174, §265 |
 | I-10 | Kaskade deteksi-lalu-proyeksi | §174 |
+| **I-21** | **YOLO 4-kanal RGB+tekstur** | SR-008 — **berjalan**, dasar bukti terkuat |
+| **I-22** | **Loss ordinal / kepala regresi kematangan** | SR-009 |
 
 ## Ide tambahan dari `docs/deep-research-report.md`
 
