@@ -8,6 +8,11 @@ merujuk entri lama.
 mencegah jalan buntu yang sama ditempuh dua kali, dan menjawab pertanyaan
 reviewer "apa saja yang sudah dicoba".
 
+**Laporan per-ide ada di [`docs/SR/`](SR/)** — tiap SR merangkum satu ide dari
+masalah → ide → solusi → hasil → putusan. Berkas ini adalah **log kronologis**
+(E-NNN); SR adalah **pandangan per-ide**. Tiap entri E-NNN di bawah menyebut ide
+dan SR yang memuatnya.
+
 Kode eksperimen ada di `/workspace/experiments/` (di luar repo ini; repo ini
 mencatat apa yang dipelajari, bukan menampung artefak besar).
 
@@ -328,3 +333,47 @@ arsitekturnya, dan itu harus diketahui sebelum jam GPU dibakar.
 
 **Reproduksi** — `python da3_sides_test.py --trees 20 --sides 4` dan
 `python da3_sides_test.py --trees 30 --sides 8 --preview 1`.
+
+---
+
+## E-006 — Sinyal kedalaman di tingkat tandan (2026-07-21) · Ide I-9 · [SR-005](SR/SR-005-sinyal-depth-tandan.md)
+
+**Hipotesis** — Tandan yang tertanam/bertumpuk berada pada lapisan kedalaman
+berbeda dari sekitarnya, sehingga kedalaman dapat memisahkan apa yang warna
+tidak bisa (naskah §14). Dipalsukan bila kotak tandan tidak menunjukkan kontras
+kedalaman lebih besar daripada kotak acak berukuran sama.
+
+**Cara** — `experiments/depth_bunch_signal.py`, 40 pohon (780 kotak
+kebenaran-dasar), kedalaman DA3 multi-view per pohon. Untuk tiap kotak:
+bandingkan kedalaman di dalam kotak vs cincin sekelilingnya. **Kendali: 2 kotak
+acak berukuran sama per kotak asli** (1.560 kendali) — perlu karena peta
+kedalaman apa pun punya struktur, sehingga kotak apa pun menunjukkan kontras
+tertentu. AUC lewat statistik-U Mann–Whitney; signifikansi lewat 2.000
+permutasi. Dijalankan pada `process_res` 504 dan 1008.
+
+**Hasil** —
+
+| | kontras (504) | AUC (504) | kontras (1008) | AUC (1008) |
+|---|---|---|---|---|
+| Kotak tandan asli | 0,0089 | 0,6078 | 0,0096 | 0,6079 |
+| Kotak acak kendali | 0,0341 | 0,5998 | 0,0364 | 0,5991 |
+| **Selisih** | **−0,0252 (0,26×)** | +0,0080 | **−0,0268 (0,26×)** | +0,0088 |
+
+p permutasi: 0,0245 (504), 0,0110 (1008). Per kelas pada 1008, **B4 justru
+ber-AUC terendah: 0,6022**.
+
+**Putusan** — **DIPALSUKAN.** Tandan tidak menonjol dalam kedalaman; kontrasnya
+0,26× kotak acak, dan rasio itu **identik** pada dua resolusi sehingga bukan
+artefak resolusi. Tandan tumbuh tertanam di ketiak pelepah, pada jarak praktis
+sama dengan mahkota sekitarnya. Selisih AUC +0,009 signifikan secara statistik
+(n besar) tetapi **ukuran efeknya dapat diabaikan** — jangan disajikan sebagai
+"depth membawa sinyal".
+
+**Dampak** — Versi "kedalaman sebagai pemisah tandan tingkat piksel" gugur, dan
+**I-4 (4-kanal early fusion) diprediksi gagal** — prediksi ini dicatat *sebelum*
+dijalankan agar tidak bisa dirasionalisasi belakangan. Yang **tidak** gugur:
+geometri tingkat-pohon (E-004, E-005) tetap kokoh, sehingga I-6/I-7 justru
+menjadi jalur paling menjanjikan karena memakai pose lintas-pandangan yang
+terbukti, bukan kontras lokal yang baru dipalsukan.
+
+**Reproduksi** — `python depth_bunch_signal.py --trees 40 [--process-res 1008]`
