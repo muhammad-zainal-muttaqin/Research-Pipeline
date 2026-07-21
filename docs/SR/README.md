@@ -29,6 +29,7 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-006](SR-006-penautan-geometris.md) | Penautan tandan lintas-sisi secara geometris | E-007 | **DIPALSUKAN** |
 | [SR-007](SR-007-diagnosis-b4.md) | Diagnosis penyebab kegagalan B4 | E-009, E-010 | **DIKONFIRMASI** (kontras) / **DIPALSUKAN** (kepadatan) |
 | [SR-008](SR-008-kanal-tekstur.md) | Kanal tekstur sebagai modalitas keempat | E-011 | **DIKONFIRMASI** (tekstur) / **DIPALSUKAN** (penajam kontras) |
+| [SR-009](SR-009-ordinalitas-kelas.md) | Kematangan itu kontinu, bukan empat kotak | E-012 | **DIKONFIRMASI** |
 
 ## Ide yang belum dikerjakan
 
