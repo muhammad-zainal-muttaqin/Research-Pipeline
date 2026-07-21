@@ -377,3 +377,39 @@ menjadi jalur paling menjanjikan karena memakai pose lintas-pandangan yang
 terbukti, bukan kontras lokal yang baru dipalsukan.
 
 **Reproduksi** — `python depth_bunch_signal.py --trees 40 [--process-res 1008]`
+
+---
+
+## E-007 — Penautan lintas-sisi geometris (2026-07-21) · Ide I-6/I-7 · [SR-006](SR/SR-006-penautan-geometris.md)
+
+**Hipotesis** — Pose kamera DA3 memungkinkan penautan tandan lintas-sisi secara
+geometris (tandan sama = titik 3D sama), mengalahkan koreksi statistik k=1,8905.
+Dipalsukan bila mode sadar-pose tidak lebih baik daripada penampilan/depth/k.
+
+**Cara** — `experiments/geometric_linking.py`, 141 pohon split uji. Tangga
+ablasi §208: (A) hanya penampilan, (B) depth tanpa pose, (C) sadar-pose 3D,
+(D) koreksi global k. Identitas = komponen terhubung union-find. Ambang disapu
+(9 nilai untuk pose, 7 untuk lainnya).
+
+**Hasil** — Validasi perangkat: jumlah mentah dan koreksi k direproduksi
+**persis** dari DiB Tabel 4 (50,00/6,38/2,142/+2,142 dan 95,57/86,52/0,356/+0,009).
+
+| Mode | Ambang terbaik | Class±1 | Tree±1 | MAE |
+|---|---|---|---|---|
+| A. penampilan | 0,1 | 77,13% | 32,62% | 0,876 |
+| B. depth tanpa pose | 0,01 | 75,00% | 29,08% | 0,966 |
+| C. sadar-pose (3D) | 1,0 | **69,50%** | 22,70% | 1,367 |
+| D. koreksi global k | — | **95,57%** | 86,52% | 0,356 |
+
+**Putusan** — **DIPALSUKAN.** Ketiganya kalah telak dari koreksi k, dan yang
+geometris justru paling buruk. Sapuan ambang menutup kemungkinan salah setelan.
+Batas klaim: kedalaman DA3 **relatif** bukan metrik, sehingga proyeksi balik
+terdistorsi — eksperimen ini memalsukan **implementasi**, dan hanya melemahkan
+idenya. Uji adil menuntut kedalaman metrik terkalibrasi (I-19).
+
+**Dampak** — Koreksi k sangat kuat (95,57%) karena tandan per pohon sedikit
+(median 10) dan duplikasi teratur (1,887). Ruang perbaikan di tahap counting
+tipis. Bersama E-006, arah dipersempit tegas: sisa perbaikan harus dari
+**detektor**. Prioritas berikutnya I-12 (ubin), I-13 (loss berimbang), I-15.
+
+**Reproduksi** — `python geometric_linking.py --split test [--sweep]`
