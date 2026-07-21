@@ -86,11 +86,44 @@ baru? Pertimbangkan menambahkannya ke exclude.
 
 Tinjauan pustaka **sudah selesai ditulis**. Fokus sekarang bergeser ke eksperimen.
 
-**Dataset:** SawitMVC — <https://huggingface.co/datasets/ULM-DS-Lab/SawitMVC>
-(CC BY-NC 4.0). 953 pohon, 3.992 gambar 960×1280, 4–8 sisi per pohon, 18.540 bbox,
-9.823 *unique bunch*, 4 kelas kematangan B1–B4, split pohon 716/96/141.
-Rasio duplikasi lintas-sisi k ≈ 1,89. **Belum ada salinan lokal di workspace ini
-(~2,44 GB).**
+**Dua tingkat dataset, sudah lengkap terunduh di workspace ini:**
+
+| | `/workspace/Sawit/data` (master mentah) | `/workspace/SawitMVC/data` (turunan) |
+|---|---|---|
+| Resolusi | **3024 × 4032** | 960 × 1280 |
+| Rasio aspek | 0,75 | 0,75 — **identik** |
+| JPG | 3.992 (16 GB) | 3.992 (2,3 GB) |
+| Video | **45 MP4**, 1920×1080, ~21 dtk (~618 frame) | — |
+| Anotasi | tidak ada | label YOLO, 953 JSON, split_manifest |
+
+SawitMVC (<https://huggingface.co/datasets/ULM-DS-Lab/SawitMVC>, CC BY-NC 4.0):
+953 pohon, 4–8 sisi, 18.540 bbox, 9.823 *unique bunch*, B1–B4, split pohon
+716/96/141, k ≈ 1,89. Dipakai untuk iterasi cepat.
+
+Sawit = master mentah yang sama, belum dibagi/dianotasi. Dipakai bila resolusi
+terbukti jadi bagian bottleneck. Karena rasio aspeknya identik, **koordinat YOLO
+ternormalisasi dari MVC berlaku persis di raw** — tidak perlu anotasi ulang.
+
+**Penghalang yang sudah terverifikasi (21 Juli 2026): nama berkas raw TIDAK unik
+secara global.** Dari 3.992 berkas hanya 1.352 nama unik; **936 nama kembar**
+antar folder `Kelompok N` (mis. `LONSUM_A21A_044_3.jpg` ada di Kelompok 2 *dan*
+5 = dua pohon berbeda). Ditambah penomoran raw 3 digit vs MVC 4 digit, pemetaan
+raw ↔ anotasi **tidak bisa dari nama berkas**. Perlu pencocokan berbasis isi
+(perceptual hash / downscale-and-compare) yang hasilnya wajib diperiksa — atau
+tabel pemetaan dari tim. Video juga hanya bernama cap waktu
+(`VID_20260205_090556.mp4`), semuanya dari Kelompok 6 saja, tanpa ID pohon.
+
+**Nilai strategis video:** risiko terbesar rencana DA3 multi-view adalah baseline
+~90° antar sisi. Video menghapus risiko itu — ratusan frame mengelilingi satu
+pohon = baseline antar-frame kecil, kondisi ideal untuk geometri multi-view, dan
+DA3 menerima masukan video. **Uji DA3 pada video dulu**, baru transfer ke kasus
+4-sisi.
+
+**Catatan resolusi (bukan tawaran tuning):** melatih `imgsz=1280` pada sumber
+960×1280 tidak sama dengan melatih pada sumber 3024×4032 — yang pertama hanya
+memperbesar piksel yang detailnya sudah hilang saat kompresi. Untuk B4 (bunch
+kecil, tertanam) perbedaan ini berpotensi material. Raw adalah eksperimen yang
+berbeda, bukan sekadar cadangan.
 
 **Baseline yang sudah dipublikasi** — Indriani, Saputro, Muttaqin dkk., *SawitMVC:
 A multi-view oil palm fruit bunch dataset for detection and counting*, Data in Brief
@@ -137,8 +170,21 @@ Fakta lain dari PDF yang berguna:
 - Identitas bunch lintas-sisi diturunkan sebagai **connected component (transitive
   closure)** dari graf `_confirmedLinks`.
 - **`class_mismatch`**: flag otomatis saat kelas yang dianotasi berbeda antar-sisi
-  dalam satu komponen. Ini aset yang belum dipakai — ia mengukur ambiguitas
-  kematangan (B2/B3) langsung dari data, bukan dari asumsi.
+  dalam satu komponen. **SUDAH DIUJI — HASILNYA NOL. Jangan diulang.**
+  `experiments/class_mismatch_stats.py` (21 Juli 2026): 0 ketidaksepakatan dari
+  7.328 bunch multi-sisi, di semua split/varietas/kelas. Parser diverifikasi
+  silang dengan angka publikasi (9.823 bunch, 18.540 kemunculan, sebaran
+  6.264/834/147/71/12) — cocok persis, jadi nol itu nyata, bukan bug.
+  **Tafsirnya:** flag ini pemeriksa integritas data yang bersih, **bukan**
+  pengukur ambiguitas kematangan. Ketidaksepakatan sudah diselesaikan sebelum
+  rilis ("reviewed in full by a single reviewer, who applied corrections before
+  export"). Angka nol ini **tidak** mendukung maupun membantah klaim ambiguitas
+  B2/B3 — jangan pernah mengutipnya sebagai bukti salah satunya.
+  **Pengganti yang masih layak:** pakai graf `_confirmedLinks` sebagai oracle
+  identitas, lalu ukur inkonsistensi *prediksi detektor* pada bunch fisik yang
+  sama antar-sisi. Itu mengukur ambiguitas tanpa bergantung label manusia, dan
+  ukuran yang sama bisa menguji apakah depth menstabilkannya. Butuh detektor
+  terlatih, jadi jalankan bersama eksperimen utama.
 - Limitasi yang diakui penulis: dua perkebunan di Kalimantan, satu periode
   pengambilan (Februari 2026) — tidak menangkap variasi musiman.
 
@@ -146,8 +192,13 @@ Fakta lain dari PDF yang berguna:
 
 1. Bottleneck ada di **detektor**, bukan di tahap counting. Counter sudah nyaris
    sempurna bila diberi deteksi bersih (bukti: jurang 96,81% → 75,35%).
-2. **Tuning sudah habis dijalankan** (batch, imgsz, hyperparameter). Jangan
-   menyarankan tuning lagi. Yang dibutuhkan perubahan arsitektur.
+2. **Tuning sudah habis dijalankan** (batch, hyperparameter, ukuran input, dll.) dan
+   angkanya tetap. Ini pernyataan langsung pengguna, dan **sudah ditegaskan dua
+   kali** setelah asisten sempat mempertanyakannya. Jangan menyarankan tuning lagi,
+   dan **jangan meminta pengguna membuktikan angka plafonnya** — itu sudah
+   dijawab. Yang dibutuhkan perubahan arsitektur, bukan pencarian hyperparameter.
+   (Catatan `imgsz=640` pada baseline DiB di atas tetap relevan sebagai fakta
+   naskah, tetapi bukan alasan untuk menawarkan tuning ulang.)
 3. Kegagalan deteksi terbelah dua, dan pemisahan ini penting:
    - **(A) geometris** — B4 kecil/tertanam/tertutup pelepah, bunch bertumpuk.
      Di sinilah depth relevan.
