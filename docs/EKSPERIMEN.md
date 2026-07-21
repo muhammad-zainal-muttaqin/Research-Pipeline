@@ -772,3 +772,44 @@ itu harus memisahkan dua angka: AP deteksi kelas-agnostik, dan akurasi
 kematangan (dengan ±1) — persis dekomposisi SR-010.
 
 **Reproduksi** — `head_vs_crop.py`, `multiview_vote.py`, `metric_variants.py`
+
+---
+
+## E-017 — Detektor dua tahap (2026-07-21) · Ide I-23 · [SR-012](SR/SR-012-dua-tahap.md)
+
+**Konteks** — SR-010 memisahkan deteksi dari klasifikasi; SR-011 mengukur
+plafon klasifikasi ~68%. I-23 menguji apakah memisahkan keduanya secara
+arsitektural memberi mAP 4-kelas yang lebih baik daripada satu tahap.
+
+**Cara** — Tahap 1: `train_agnostic.py`, yolo26m `single_cls=True`, imgsz 960,
+diinisialisasi dari baseline RGB yang sudah konvergen. Tahap 2: ConvNeXt-Tiny
+pada potongan master 3024×4032 (E-015). Skor gabungan = skor objek × peluang
+kelas, tiap kotak menyumbang ke keempat kelas — cara skor detektor dua-tahap
+klasik, bukan penyetelan angka. Evaluasi memakai pycocotools (bukan
+implementasi sendiri); konsistensi evaluator diverifikasi terhadap ultralytics
+pada baseline (0,5153/0,2384 vs 0,5218/0,2407).
+
+**Integritas** — Split per pohon 716/96/141, irisan train-val, train-test, dan
+val-test semuanya **nol**. Konfigurasi dipilih pada val; test hanya dilaporkan.
+
+**Hasil tahap 1** — Dipotong pada epoch 6 dari 25 karena anggaran waktu; epoch
+6 kebetulan yang terbaik.
+
+| Deteksi kelas-agnostik | mAP50 | mAP50-95 |
+|---|---|---|
+| Baseline 4-kelas dievaluasi agnostik (640) | 0,7191 | 0,3197 |
+| **Tahap 1 khusus agnostik (960, 6 epoch)** | **0,7730** | **0,3320** |
+
+**Hasil tahap 2** — Dua rezim pelatihan, dua mode gagal yang berlawanan:
+
+| Pengklasifikasi | val acc | val seimbang | Catatan |
+|---|---|---|---|
+| v1 (potongan MVC, tanpa penyeimbang) | 0,6910 | 0,6116 | runtuh ke B3 (B2 recall 0,317, B4 0,386) |
+| v2 (potongan master, pencuplikan berimbang) | 0,5350 | 0,6656 | terlalu jauh mengoreksi (B3 recall 0,318) |
+| Head YOLO (acuan) | 0,6871 | 0,6484 | — |
+
+Augmentasi tahap 2 sengaja **aman-warna**: baseline YOLO memakai `hsv_s=0.7`
+yang mengacak saturasi ±70% pada tugas yang buktinya adalah warna.
+
+**Reproduksi** — `train_agnostic.py`, `build_crops_raw.py`,
+`train_maturity_v2.py --root crops_raw`, `two_stage.py --crop-source raw`
