@@ -7,11 +7,12 @@ Repositori tinjauan pustaka untuk riset **deteksi objek berbasis YOLO dan fusi R
 | Berkas | Isi |
 |---|---|
 | [`tinjauan-pustaka.tex`](./tinjauan-pustaka.tex) | Draf LaTeX lama/mandiri; tidak dipakai oleh driver artikel saat ini dan perlu ditinjau sebelum digunakan kembali. |
-| [`main.tex`](./main.tex) | Driver naskah artikel gaya IEEEtran; memuat isi bersama dari `body.tex`. |
-| [`main-elsarticle.tex`](./main-elsarticle.tex) | Driver naskah artikel gaya Elsevier/elsarticle; memuat isi bersama dari `body.tex`. |
+| [`main.tex`](./main.tex) | Driver naskah artikel gaya IEEEtran; memuat isi bersama dari `evidence-body.tex`. |
+| [`main-elsarticle.tex`](./main-elsarticle.tex) | Driver naskah artikel gaya Elsevier/elsarticle; memuat isi bersama dari `evidence-body.tex`. |
+| [`evidence-body.tex`](./evidence-body.tex) | Isi naskah aktif (menggantikan `body.tex`/`verified-body.tex` lama, kini diarsipkan di `docs/archive/`). |
 | [`docs/AUDIT-PRA-SUBMISI.md`](./docs/AUDIT-PRA-SUBMISI.md) | Hasil pemeriksaan mekanis dan checklist sebelum pengajuan naskah. |
-| [`docs/`](./docs) | Dokumen kerja/perencanaan: `PLAN.md`, `PLAN-TINJAUAN-PUSTAKA.md`, `PANDUAN-PENULISAN.md`, `AUDIT-PRA-SUBMISI.md`. |
-| [`figures/`](./figures) | 10 figur final (F01-F08, C01, C02) beserta brief + tema; disisipkan otomatis oleh `\figplace`. |
+| [`docs/`](./docs) | Dokumen kerja/perencanaan: `PLAN.md`, `PLAN-TINJAUAN-PUSTAKA.md`, `PANDUAN-PENULISAN.md`, `AUDIT-PRA-SUBMISI.md`, `docs/archive/` (draf & figur lama). |
+| [`figures/`](./figures) | Figur final (F01-F08 versi Inggris `-en.jpg`, C01, C02) beserta brief + tema; disisipkan lewat `\includegraphics`. |
 | [`references.bib`](./references.bib) | Basis data sitasi BibTeX (semua entri). |
 | [`TEMUAN.md`](./TEMUAN.md) | Catatan temuan / sintesis lintas makalah. |
 | [`entri/INDEX.md`](./entri/INDEX.md) | Indeks lengkap 202 entri terurut nomor. |
@@ -289,7 +290,7 @@ Format nama berkas entri: `NNN - YYYY - Judul singkat - Tema.md`
 | 009 | [YOLOv10](entri/009%20-%202024%20-%20YOLOv10%20-%20Fondasi%20RGB.md) | Fondasi RGB |
 | 010 | [YOLOv11 (Overview)](entri/010%20-%202024%20-%20YOLOv11%20%28Overview%29%20-%20Fondasi%20RGB.md) | Fondasi RGB |
 | 029 | [Review YOLO Pertanian (Sapkota dkk.)](entri/029%20-%202024%20-%20Review%20YOLO%20Pertanian%20%28Sapkota%20dkk.%29%20-%20Survei%20YOLO.md) | Survei YOLO |
-| 030 | [Review Model & Aplikasi YOLO (Ali & Zhang)](entri/030%20-%202024%20-%20Review%20Model%20%26%20Aplikasi%20YOLO%20%28Ali%20%26%20Zhang%29%20-%20Survei%20YOLO.md) | Survei YOLO |
+| 030 | [Tinjauan Dekade YOLO (Sapkota dkk.)](entri/030%20-%202025%20-%20Tinjauan%20Dekade%20YOLO%20%28Sapkota%20dkk.%29%20-%20Survei%20YOLO.md) | Survei YOLO |
 | 031 | [Systematic Review YOLO (Vijayakumar & Vairavasundaram)](entri/031%20-%202024%20-%20Systematic%20Review%20YOLO%20%28Vijayakumar%20%26%20Vairavasundaram%29%20-%20Survei%20YOLO.md) | Survei YOLO |
 | 032 | [YOLO Evolution Benchmark (Alif & Hussain)](entri/032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md) | Survei YOLO |
 | 033 | [Review YOLOv8 (Sohan dkk.)](entri/033%20-%202024%20-%20Review%20YOLOv8%20%28Sohan%20dkk.%29%20-%20Survei%20YOLO.md) | Survei YOLO |

@@ -37,7 +37,7 @@ Format nama berkas: NNN - YYYY - Judul singkat - Tema.md (tahun publikasi langsu
 | 027 | 2023 | [027 - 2023 - Review YOLO Manufaktur (Hussain) - Survei YOLO.md](./027%20-%202023%20-%20Review%20YOLO%20Manufaktur%20%28Hussain%29%20-%20Survei%20YOLO.md) |
 | 028 | 2022 | [028 - 2022 - Review Perkembangan YOLO (Jiang dkk.) - Survei YOLO.md](./028%20-%202022%20-%20Review%20Perkembangan%20YOLO%20%28Jiang%20dkk.%29%20-%20Survei%20YOLO.md) |
 | 029 | 2024 | [029 - 2024 - Review YOLO Pertanian (Sapkota dkk.) - Survei YOLO.md](./029%20-%202024%20-%20Review%20YOLO%20Pertanian%20%28Sapkota%20dkk.%29%20-%20Survei%20YOLO.md) |
-| 030 | 2024 | [030 - 2024 - Review Model & Aplikasi YOLO (Ali & Zhang) - Survei YOLO.md](./030%20-%202024%20-%20Review%20Model%20%26%20Aplikasi%20YOLO%20%28Ali%20%26%20Zhang%29%20-%20Survei%20YOLO.md) |
+| 030 | 2025 | [030 - 2025 - Tinjauan Dekade YOLO (Sapkota dkk.) - Survei YOLO.md](./030%20-%202025%20-%20Tinjauan%20Dekade%20YOLO%20%28Sapkota%20dkk.%29%20-%20Survei%20YOLO.md) |
 | 031 | 2024 | [031 - 2024 - Systematic Review YOLO (Vijayakumar & Vairavasundaram) - Survei YOLO.md](./031%20-%202024%20-%20Systematic%20Review%20YOLO%20%28Vijayakumar%20%26%20Vairavasundaram%29%20-%20Survei%20YOLO.md) |
 | 032 | 2024 | [032 - 2024 - YOLO Evolution Benchmark (Alif & Hussain) - Survei YOLO.md](./032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md) |
 | 033 | 2024 | [033 - 2024 - Review YOLOv8 (Sohan dkk.) - Survei YOLO.md](./033%20-%202024%20-%20Review%20YOLOv8%20%28Sohan%20dkk.%29%20-%20Survei%20YOLO.md) |

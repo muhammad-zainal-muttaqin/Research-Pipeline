@@ -180,7 +180,7 @@ dan tabel taksonomi.
 27. Hussain (2023). *YOLO-v1 to v8 & Industrial Defect Detection*. Machines.
 28. Jiang dkk. (2022). *A Review of YOLO Algorithm Developments*. Procedia CS.
 29. Sapkota dkk. (2024). *YOLOv1–v10 in Agricultural Domain*. arXiv:2406.10139.
-30. Ali & Zhang (2024). *YOLO-Based Object Detection Models: A Review*. MTAP.
+30. Sapkota dkk. (2025). *YOLO Advances to Its Genesis: A Decadal and Comprehensive Review*. Artificial Intelligence Review.
 31. Vijayakumar & Vairavasundaram (2024). *YOLO-Based Object Detection Review*. MTAP.
 32. Alif & Hussain (2024). *YOLO Evolution: YOLOv12, YOLO11 Benchmark*. arXiv:2411.00201.
 33. Sohan dkk. (2024). *A Review on YOLOv8 and Its Advancements*. Springer.
