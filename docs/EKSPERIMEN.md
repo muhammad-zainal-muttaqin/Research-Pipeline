@@ -26,6 +26,29 @@ Status: `DIKONFIRMASI` · `DIPALSUKAN` · `TIDAK KONKLUSIF` · `BERJALAN`
 
 ---
 
+## Peta Ide Solusi
+
+Sebelas ide, semuanya berlabuh pada korpus 182 sumber. I-1…I-6 adalah jalur DA3
+inti; I-7…I-11 diambil dari agenda riset naskah sendiri (`evidence-body.tex`
+§208, §234–262, §265, §174) sebagai cadangan bila jalur inti mentok. Eksperimen
+di bawah menyebut ide yang diujinya.
+
+| Ide | Isi | Sumber |
+|---|---|---|
+| **I-1** | DA3 multi-view pada video orbit | entri 198 |
+| **I-2** | DA3 multi-view pada 4 sisi foto asli | entri 198 |
+| **I-3** | Bangkitkan pseudo-depth untuk 3.992 gambar | entri 175/198 |
+| **I-4** | YOLO 4-kanal (early fusion) vs baseline RGB | Expandable YOLO, §174 |
+| **I-5** | Fusi middle/late dua cabang | Ophoff dkk., §174 |
+| **I-6** | Penautan bunch lintas-sisi secara geometris (ganti k/SVR) | §208 |
+| **I-7** | **Asosiasi sadar-pose berjenjang** — tangga ablasi §208: hanya penampilan → depth tanpa pose → sadar-pose → bergerbang mutu. Melaporkan empat mode gagal counting secara terpisah: terlewat, tergabung, terpecah, terduplikasi. | §208 |
+| **I-8** | **Gerbang mutu depth + fallback RGB** — pakai peta `conf` DA3 sebagai gerbang; bila depth buruk, jatuh ke RGB dan laporkan kondisi terdegradasi. Naskah menyatakan tegas: bila fallback RGB menyamai fusi saat depth buruk, itu **temuan deployment, bukan hasil negatif**. | §174, §265; SA-Gate 055, D3Net 037 |
+| **I-9** | **Sampel depth terkendala instans** — ambil statistik kedalaman di dalam kotak tiap bunch (bukan seluruh citra) sebagai fitur geometris per-instans: ukuran relatif, pemisahan lapisan, jarak ke tetangga. Masuk ke penghitung menggantikan fitur 13-dimensi SVR. | F08; FocusDepth entri 202 |
+| **I-10** | **Kaskade deteksi-lalu-proyeksi** — deteksi 2D dulu sebagai penyaring kasar, baru proyeksikan ke 3D pada himpunan titik yang sudah diperkecil. Alternatif terhadap fusi di input, dan lebih murah di perangkat lapangan. | FusionVision, YOLOv8-URE, §174 |
+| **I-11** | **Analisis terstratifikasi ukuran/oklusi/iluminasi** — bukan sekadar AP tunggal, tetapi AP per strata, supaya terlihat **di mana** depth benar-benar membayar. Inilah yang memutuskan hipotesis (A) geometris vs (B) fotometrik. | Tabel hierarki metrik, §234–262 |
+
+---
+
 ## Baseline acuan (bukan eksperimen)
 
 Angka publikasi dari Data in Brief 67 (2026) 112990, diverifikasi langsung dari
@@ -194,3 +217,57 @@ keberhasilan pada video **belum** membuktikan apa pun untuk baseline ~90°.
   AP50 B4.
 - Video ini rekaman jarak dekat ke mahkota; foto dataset diambil 2–3 m dari
   batang. Transfer antar-geometri **belum diuji**.
+
+---
+
+## E-004 — DA3 pada banyak video, rotasi diperbaiki (2026-07-21) · Ide I-1
+
+**Hipotesis** — Kegagalan sepertiga akhir pada E-003 bukan batas DA3, melainkan
+akibat (i) masukan miring 90° karena `cv2` mengabaikan metadata rotasi, dan/atau
+(ii) sifat khas video tunggal itu. Bila benar, memperbaiki rotasi dan menguji
+banyak video akan menghasilkan orbit mulus pada mayoritas video. Dipalsukan bila
+sebagian besar video tetap gagal, atau kegagalan tersebar merata.
+
+**Cara** — `experiments/da3_video_multi.py`, `depth-anything/da3-large`,
+`process_res=504`, 6 video pertama `Kelompok 6`, 32 frame per video. Ekstraksi
+frame lewat **ffmpeg** (menerapkan display matrix; terkonfirmasi video memuat
+`displaymatrix: rotation of -90.00 degrees`) menggantikan `cv2`. Metrik utama
+`smooth_frac` = pecahan frame di dalam sapuan orbit searah terpanjang (langkah
+searah, besar ≤40°).
+
+**Hasil** —
+
+| Video | smooth_frac | Sapuan mulus | Residual lingkaran | Kerataan |
+|---|---|---|---|---|
+| 090556 | 41% | 149° | 2,4% | 0,098 |
+| 091514 | **100%** | 331° | 3,6% | 0,020 |
+| 092017 | 97% | 335° | 3,3% | 0,049 |
+| 092548 | **100%** | 362° | 4,1% | 0,041 |
+| 093119 | **100%** | 379° | 5,7% | 0,025 |
+| 094046 | **100%** | 385° | 7,0% | 0,034 |
+
+Ringkasan: `smooth_frac` rata-rata **90%**, median **100%**; **5 dari 6** video
+mencapai sapuan ≥270°. Residual lingkaran 2,4–7,0% dari radius, rasio kerataan
+0,020–0,098 — pusat kamera benar-benar terletak pada satu bidang melingkar.
+Rentang dinamis kedalaman 2,70–3,63.
+
+Uji sebab pada frame di luar segmen mulus: **ketajaman justru lebih tinggi**
+(7.725 vs 6.526; rasio 0,84), kecerahan hampir sama (rasio 1,05), gerak hampir
+sama (rasio 0,94). Jadi blur, pencahayaan, dan gerak **bukan** penyebabnya.
+
+**Putusan** — **DIKONFIRMASI.** DA3 merekonstruksi orbit pohon sawit secara andal
+pada 5 dari 6 video, dengan sapuan mendekati lingkaran penuh dan geometri yang
+konsisten. E-003 mengukur satu video yang kebetulan bermasalah, dan `n=1` memang
+tidak layak digeneralisasi — koreksi ini persis alasan keterbatasan itu dicatat.
+
+Sebab kegagalan video 090556 **masih belum diketahui**; tiga kandidat (baseline
+kecil, sampling jarang, blur/pencahayaan/gerak) sudah dipalsukan. Jangan
+mengarang penjelasan untuk sisa 1 video ini.
+
+**Dampak** — Ide I-1 selesai dan positif. Pose kamera dan kedalaman relatif dari
+DA3 cukup andal untuk dijadikan fondasi I-6 (penautan geometris) dan I-7
+(asosiasi sadar-pose). Tetapi keandalannya **tidak universal** (1 dari 6 gagal),
+sehingga gerbang mutu I-8 bukan hiasan melainkan syarat.
+
+**Reproduksi** — `python da3_video_multi.py --videos 6 --frames 32`
+(pembanding tanpa koreksi rotasi: tambahkan `--no-rotate`).
