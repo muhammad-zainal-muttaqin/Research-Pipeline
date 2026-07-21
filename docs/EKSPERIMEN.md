@@ -121,7 +121,7 @@ diubah — DA3 pada video lebih dulu.
 
 ---
 
-## E-003 — DA3 multi-view pada video orbit pohon (2026-07-21, BERJALAN)
+## E-003 — DA3 multi-view pada video orbit pohon (2026-07-21)
 
 **Hipotesis** — Depth Anything 3 (entri 198) dapat merekonstruksi geometri pohon
 yang konsisten dari video orbit, sehingga kedalaman antar-pandangan dapat
@@ -130,8 +130,67 @@ bunch lintas-sisi secara geometris alih-alih statistik (k ≈ 1,89 / SVR).
 Dipalsukan bila rekonstruksi gagal konvergen, pose kamera tidak membentuk orbit
 yang masuk akal, atau peta kedalaman kanopi tidak memisahkan lapisan.
 
-**Cara** — belum dijalankan.
+**Cara** — `experiments/da3_video_test.py`, checkpoint `depth-anything/da3-large`,
+`process_res=504`, GPU L4. Video `VID_20260205_090556.mp4` (1280×720, 1.315
+frame, 43,6 dtk) dari `Sawit/data/Video/Kelompok 6`. Frame diambil berjarak sama,
+dua kerapatan: 16 dan 48 frame. Diagnosa: (b) PCA pusat kamera → kecocokan
+lingkaran pada bidang orbit; (c) rentang dinamis kedalaman + inspeksi visual
+pratinjau RGB|depth|conf.
 
-**Hasil** — belum ada.
+**Hasil** —
 
-**Putusan** — BERJALAN.
+Kecepatan: 16 frame dalam **2,2 dtk** (0,14 dtk/frame). Keluaran `Prediction`
+memuat `depth` (N,H,W), `conf` per piksel, `extrinsics` (N,3,4), `intrinsics`.
+`is_metric` kosong → kedalaman **relatif**, bukan metrik.
+
+(b) Pose kamera, 48 frame:
+
+| Besaran | Nilai |
+|---|---|
+| Cakupan sudut | 319,7° |
+| Residual lingkaran (rata-rata / maks) | 8,2% / 28,0% dari radius |
+| Simpangan dari bidang (RMS) | 9,1% |
+| Rasio kerataan S3/S1 | 0,111 |
+
+Deret langkah sudut menunjukkan pola yang tegas: **indeks 0–30 halus dan searah**
+(−2° s.d. −16° per frame), lalu **indeks 31–47 kacau** (−77°, +54°, −44°, +89°,
+−76°). Pola batas yang sama muncul pada sampling 16 frame (halus f00–f12, kacau
+f13–f15). Perpindahan pusat kamera di bagian kacau mencapai ~96% radius orbit
+per langkah, padahal frame-nya tampak serupa.
+
+(c) Kedalaman: rentang dinamis (p99−p1)/p50 = **1,97**; secara visual pelepah
+terpisah satu per satu dari latar, dan **tandan buah terlihat** (gugusan B1
+merah pada frame 8) dengan kanopi terpisah dari langit/tanah. Peta `conf`
+tinggi tepat pada pohon dan rendah pada langit — sinyal gating mutu yang
+diminta SA-Gate (055) / D3Net (037) tersedia langsung dari model.
+
+**Putusan** — **DIKONFIRMASI SEBAGIAN.** Rekonstruksi berjalan, cepat, dan pada
+~2/3 pertama video menghasilkan orbit mulus searah dengan kedalaman berlapis
+yang jelas. Tetapi keandalan pose **tidak seragam sepanjang video**: sepertiga
+akhir gagal.
+
+Dua sub-hipotesis atas penyebab kegagalan ekor ini diuji dan **keduanya
+dipalsukan**: (i) "operator berhenti/melayang sehingga baseline kecil" — salah,
+perpindahan di ekor justru 2,2× lebih besar dari badan orbit; (ii) "baseline
+antar-frame terlalu lebar akibat sampling jarang" — salah, merapatkan 16→48
+frame tidak menggeser batas kegagalan. Kegagalan terlokalisasi pada **isi video
+di sepertiga akhir**, dan penyebabnya belum diketahui.
+
+**Dampak** — Jalur depth berbasis geometri layak diteruskan, tetapi **wajib
+disertai penyaring keandalan pose**, bukan diasumsikan berlaku untuk seluruh
+masukan. Langkah lanjutan: (1) cari penyebab kegagalan sepertiga akhir dengan
+memeriksa isi frame di sana; (2) uji pada beberapa video lain — n=1 tidak cukup
+untuk generalisasi; (3) uji pada kasus 4-sisi yang sebenarnya, karena
+keberhasilan pada video **belum** membuktikan apa pun untuk baseline ~90°.
+
+**Catatan keterbatasan yang harus dibawa ke entri berikutnya:**
+
+- **n = 1 video.** Belum ada bukti generalisasi.
+- Frame diekstrak `cv2` yang **mengabaikan metadata rotasi**, sehingga masukan
+  miring 90°. DA3 tetap bekerja, tetapi ini variabel tak terkontrol yang harus
+  diperbaiki sebelum angka apa pun dikutip.
+- "Kedalaman berlapis" masih kualitatif plus proksi rentang dinamis; **belum
+  terhubung ke metrik deteksi apa pun**. Belum ada klaim bahwa ini menaikkan
+  AP50 B4.
+- Video ini rekaman jarak dekat ke mahkota; foto dataset diambil 2–3 m dari
+  batang. Transfer antar-geometri **belum diuji**.
