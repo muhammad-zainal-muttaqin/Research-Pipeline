@@ -247,6 +247,39 @@ Risikonya nyata dan harus diuji lebih dulu pada beberapa pohon: sisi berjarak ~9
 pseudo-depth untuk train/test; (2) latih varian YOLO middle-fusion dua cabang vs
 baseline RGB; (3) bandingkan **terstratifikasi menurut oklusi**, khususnya pada B4.
 
+## Log Eksperimen — WAJIB
+
+Kode eksperimen tinggal di **`/workspace/experiments/`** (di luar repo ini; repo
+ini tidak menampung artefak besar, bobot model, atau keluaran gambar). Tetapi
+**setiap hal penting yang dipelajari dari eksperimen wajib dicatat ke repo ini**
+di [`docs/EKSPERIMEN.md`](docs/EKSPERIMEN.md).
+
+Alasannya: tinjauan pustaka ini berdiri di atas klaim yang dapat dilacak ke
+sumber. Eksperimennya harus memenuhi standar yang sama — kalau tidak, ada
+asimetri antara 182 sitasi terverifikasi dan keputusan eksperimen berbasis
+ingatan. Log bertanggal juga menjawab pertanyaan reviewer "apa saja yang sudah
+dicoba".
+
+Aturannya:
+
+- **Append-only.** Jangan mengedit entri lama untuk "memperbaiki" hasil. Kalau
+  kesimpulan berubah, tulis entri baru yang merujuk entri lama.
+- **Hasil negatif wajib dicatat**, dengan bobot yang sama seperti hasil positif.
+  Itu isi paling berharga di log ini — lihat E-001 (`class_mismatch`), sebuah
+  hipotesis yang dipalsukan dan karenanya tidak perlu diulang siapa pun.
+- **Satu entri = satu hipotesis yang falsifiable.** Tulis sejak awal apa yang
+  akan memalsukannya, sebelum melihat hasilnya.
+- **Angka apa adanya.** Kalau gagal, tulis gagal. Kalau tidak konklusif, tulis
+  tidak konklusif — jangan dinaikkan jadi "menjanjikan".
+- Format entri dan daftar status ada di kepala `docs/EKSPERIMEN.md`.
+- Catat juga **nama skrip** di `/workspace/experiments/` yang menghasilkan angka
+  itu, supaya dapat dijalankan ulang.
+- Temuan yang mengubah cara kerja jangka panjang (bukan hasil satu eksperimen)
+  masuk ke CLAUDE.md ini, bukan ke log.
+
+Kapan menulis: **segera setelah eksperimen selesai**, dalam giliran yang sama —
+jangan ditunda ke akhir sesi. Commit log bersama perubahan terkait.
+
 ## Cara Kerja yang Diharapkan
 
 - Laporkan hasil apa adanya. Kalau eksperimen gagal atau angka tidak naik, katakan
