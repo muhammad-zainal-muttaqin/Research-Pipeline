@@ -27,6 +27,7 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-004](SR-004-da3-empat-sisi.md) | DA3 multi-view pada 4/8 sisi foto | E-005 | **DIKONFIRMASI** |
 | [SR-005](SR-005-sinyal-depth-tandan.md) | Kedalaman sebagai pemisah tandan (piksel) | E-006 | **DIPALSUKAN** |
 | [SR-006](SR-006-penautan-geometris.md) | Penautan tandan lintas-sisi secara geometris | E-007 | **DIPALSUKAN** |
+| [SR-007](SR-007-diagnosis-b4.md) | Diagnosis penyebab kegagalan B4 | E-009, E-010 | **DIKONFIRMASI** (kontras) / **DIPALSUKAN** (kepadatan) |
 
 ## Ide yang belum dikerjakan
 
@@ -37,7 +38,6 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | I-5 | Fusi middle/late dua cabang | Ophoff dkk., §174 |
 | I-8 | Gerbang mutu depth + fallback RGB | §174, §265 |
 | I-10 | Kaskade deteksi-lalu-proyeksi | §174 |
-| I-11 | Analisis terstratifikasi ukuran/oklusi/iluminasi | §234–262 |
 
 ## Ide tambahan dari `docs/deep-research-report.md`
 
