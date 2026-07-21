@@ -271,3 +271,60 @@ sehingga gerbang mutu I-8 bukan hiasan melainkan syarat.
 
 **Reproduksi** — `python da3_video_multi.py --videos 6 --frames 32`
 (pembanding tanpa koreksi rotasi: tambahkan `--no-rotate`).
+
+---
+
+## E-005 — DA3 pada 4 dan 8 sisi foto asli (2026-07-21) · Ide I-2
+
+**Hipotesis** — Keberhasilan DA3 pada video (E-004) belum membuktikan apa pun
+untuk foto dataset: 4 posisi berjarak ~90° adalah *baseline* lebar dengan
+tumpang tindih rendah pada objek yang menutupi dirinya sendiri. Diuji apakah DA3
+tetap merekonstruksi geometri yang benar. Dipalsukan bila susunan pusat kamera
+tidak lebih baik daripada tebakan acak, atau urutan sisi salah.
+
+Geometri sebenarnya diketahui (operator memutari pohon pada 4 atau 8 posisi),
+sehingga tersedia kebenaran acuan objektif: langkah sudut antar-sisi berurutan
+seharusnya 90° (4 sisi) atau 45° (8 sisi).
+
+**Cara** — `experiments/da3_sides_test.py`, `depth-anything/da3-large`,
+`process_res=504`. 20 pohon 4-sisi dan 30 pohon 8-sisi, dipilih acak `seed=42`
+dari 908 dan 45 pohon yang tersedia. Metrik: RMSE simpangan langkah sudut
+terhadap nilai harapan, residual kecocokan lingkaran, rasio kerataan PCA, dan
+kebenaran urutan melingkar. Pembanding: 2.000 simulasi sudut acak seragam.
+
+**Hasil** —
+
+| | 4 sisi (20 pohon) | 8 sisi (30 pohon) |
+|---|---|---|
+| Langkah sudut diharapkan | 90° | 45° |
+| **RMSE sudut** (rata2 / median) | **17,3° / 12,6°** | **8,5° / 7,4°** |
+| RMSE pembanding acak | 57,5° | 34,4° |
+| **Urutan sisi benar** | **20/20 (100%)** | **30/30 (100%)** |
+| Residual lingkaran | 4% | 5% |
+| Rasio kerataan | 0,014 | 0,026 |
+| Rentang dinamis kedalaman | 3,74 | 4,95 |
+| Lebih baik dari acak | 100% | 100% |
+
+Galat relatif keduanya konsisten: 17,3/90 = 19% dan 8,5/45 = 19%.
+
+**Putusan** — **DIKONFIRMASI.** Risiko *wide baseline* yang dikhawatirkan tidak
+terwujud. DA3 memulihkan susunan melingkar keempat/kedelapan sisi dengan urutan
+benar pada **seluruh 50 pohon**, jauh di atas pembanding acak, dengan pusat
+kamera yang hampir sebidang (kerataan 0,014–0,026).
+
+**Peringatan dari inspeksi visual — jangan diabaikan:** pada pratinjau
+(`results/e005/preview_*.jpg`), kedalaman memisahkan **pelepah** dari latar
+dengan sangat bersih, tetapi di area mahkota tempat tandan berada peta tampak
+**halus dan menyatu dengan batang**. Jadi geometri tingkat-pohon terbukti,
+sementara pemisahan tingkat-tandan **belum terbukti** — padahal justru itu yang
+menentukan B4. Angka RMSE sudut di atas **tidak boleh** dikutip seolah menjawab
+pertanyaan tandan.
+
+**Dampak** — Ide I-2 selesai dan positif pada tingkat pohon. Fondasi untuk I-6
+dan I-7 tersedia. Namun sebelum melatih apa pun, pertanyaan tandan harus diuji
+kuantitatif (→ E-006, ide I-9): apakah kedalaman di dalam kotak tandan berbeda
+dari sekitarnya? Kalau tidak, fusi depth tidak akan menolong B4 berapa pun
+arsitekturnya, dan itu harus diketahui sebelum jam GPU dibakar.
+
+**Reproduksi** — `python da3_sides_test.py --trees 20 --sides 4` dan
+`python da3_sides_test.py --trees 30 --sides 8 --preview 1`.
