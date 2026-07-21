@@ -28,6 +28,7 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-005](SR-005-sinyal-depth-tandan.md) | Kedalaman sebagai pemisah tandan (piksel) | E-006 | **DIPALSUKAN** |
 | [SR-006](SR-006-penautan-geometris.md) | Penautan tandan lintas-sisi secara geometris | E-007 | **DIPALSUKAN** |
 | [SR-007](SR-007-diagnosis-b4.md) | Diagnosis penyebab kegagalan B4 | E-009, E-010 | **DIKONFIRMASI** (kontras) / **DIPALSUKAN** (kepadatan) |
+| [SR-008](SR-008-kanal-tekstur.md) | Kanal tekstur sebagai modalitas keempat | E-011 | **DIKONFIRMASI** (tekstur) / **DIPALSUKAN** (penajam kontras) |
 
 ## Ide yang belum dikerjakan
 
