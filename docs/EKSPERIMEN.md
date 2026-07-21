@@ -723,3 +723,52 @@ interpolasi. Di master, 224 px berisi detail permukaan buah yang sebenarnya.
 Ini menjadi masukan tahap 2 dari I-23.
 
 **Reproduksi** — `python match_raw.py` (CPU, beberapa menit) → `results/raw_map.json`
+
+---
+
+## E-016 — Plafon kematangan, diukur tiga kali (2026-07-21) · Ide I-23 · [SR-011](SR/SR-011-plafon-kematangan.md)
+
+**Konteks** — SR-010 memberi sasaran tajam: klasifikasi kematangan harus ≈83%
+supaya mAP50 mencapai 0,60. E-016 menguji apakah angka itu bisa dicapai.
+
+**Cara** — Tiga jalur bebas pada tugas identik (diberi kotak, tebak kelas):
+head YOLO (`head_vs_crop.py`), CNN ConvNeXt-Tiny pada potongan master
+3024×4032 (`build_crops_raw.py` + `train_maturity.py`), dan voting antar-sisi
+dengan penautan kebenaran dasar (`multiview_vote.py`).
+
+**Hasil** —
+
+| Jalur | Akurasi | ±1 |
+|---|---|---|
+| Head YOLO (n=1.518) | 0,6871 | **1,0000** |
+| CNN potongan master, val | 0,6910 | 0,9947 |
+| CNN potongan master, test | 0,6998 | 0,9946 |
+| Voting multi-sisi (992 tandan) | 0,6855 | 0,9940 |
+
+Voting menurut jumlah sisi: 1 sisi 0,6250 · 2 sisi 0,7095 · 3 sisi 0,6506 ·
+4 sisi 0,7391.
+
+Varian perumusan metrik pada prediksi baseline yang sama (COCO):
+
+| Perumusan | mAP50 | mAP50-95 |
+|---|---|---|
+| 4 kelas | 0,5153 | 0,2384 |
+| Kelas-agnostik | 0,7125 | 0,3178 |
+| B2+B3 digabung | 0,5829 | 0,2669 |
+| Toleransi ±1 (deteksi digandakan) | 0,3467 | 0,1653 |
+| Toleransi ±1 (GT digandakan) | 0,5029 | 0,2235 |
+
+**Putusan — DIKONFIRMASI, plafonnya nyata.** Resolusi 3× tidak menolong; 2–6
+sudut pandang tidak menolong. Head YOLO meleset lebih dari satu tingkat pada
+**nol** dari 1.518 deteksi. Voting multi-sisi gagal karena kesalahannya
+**berkorelasi antar sisi** — ambiguitas melekat pada buahnya.
+
+**Temuan sampingan yang penting** — **mAP tidak dapat mewakili toleransi
+ordinal.** Kedua cara memaksakannya justru menurunkan angka: menggandakan
+deteksi meledakkan positif palsu, menggandakan GT meledakkan yang harus
+ditemukan. Metrik deployment DiB `Class ±1 Acc` adalah metrik **penghitungan**,
+dan tidak punya padanan di ruang metrik deteksi. Pelaporan yang jujur karena
+itu harus memisahkan dua angka: AP deteksi kelas-agnostik, dan akurasi
+kematangan (dengan ±1) — persis dekomposisi SR-010.
+
+**Reproduksi** — `head_vs_crop.py`, `multiview_vote.py`, `metric_variants.py`
