@@ -97,7 +97,7 @@ Bukan temuan yang berdiri sendiri — ia menutup rantai yang sudah terbentuk:
 
 Konfigurasi baseline memakai augmentasi bawaan ultralytics: `hsv_s=0.7`,
 `hsv_v=0.4` — saturasi diacak sampai ±70% tiap batch. Kematangan sawit **adalah
-warna** (B1 gelap kehijauan → B4 jingga-merah). Resep default itu mengacak
+warna** (B1 **matang** jingga-merah → B4 **mentah** gelap kehijauan). Resep default itu mengacak
 tepat bukti yang harus dipelajari model. Ini bukan hipotesis yang mahal diuji,
 dan diuji terpisah (E-015).
 

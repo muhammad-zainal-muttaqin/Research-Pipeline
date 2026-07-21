@@ -101,6 +101,11 @@ SawitMVC (<https://huggingface.co/datasets/ULM-DS-Lab/SawitMVC>, CC BY-NC 4.0):
 953 pohon, 4–8 sisi, 18.540 bbox, 9.823 *unique bunch*, B1–B4, split pohon
 716/96/141, k ≈ 1,89. Dipakai untuk iterasi cepat.
 
+**Arah kelas — jangan dibalik:** **B1 = MATANG** (jingga-merah), menurun sampai
+**B4 = MENTAH** (gelap kehijauan). Konsekuensinya: B4 yang gelap kehijauan
+adalah kelas yang paling menyatu dengan pelepah, dan itulah penjelasan fisik
+dari kontras rendah yang didiagnosis di SR-007.
+
 Sawit = master mentah yang sama, belum dibagi/dianotasi. Dipakai bila resolusi
 terbukti jadi bagian bottleneck. Karena rasio aspeknya identik, **koordinat YOLO
 ternormalisasi dari MVC berlaku persis di raw** — tidak perlu anotasi ulang.
