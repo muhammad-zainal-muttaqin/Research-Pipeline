@@ -596,3 +596,43 @@ antara objektif pelatihan dan metrik evaluasi — persis "mismatch objective-ke-
 deployment" yang disebut `deep-research-report.md`.
 
 **Reproduksi** — `python class_separability.py --per-class 1500`
+
+---
+
+## E-013 — Pipeline produksi 4-kanal untuk sensor depth (2026-07-21) · `pipeline/`
+
+**Konteks** — Arah baru dari pengguna: kamera lapangan berikutnya adalah
+Orbbec Gemini (depth sensor sungguhan, bukan pseudo-depth). Dibutuhkan
+pipeline matang: latih 4-kanal → bobot → inferensi lapangan yang menerima
+RGB saja ATAU RGB+depth, tanpa mengubah aplikasi yang sudah ada.
+
+**Hipotesis (rekayasa, falsifiable)** — Satu bobot bisa melayani dua mode uji
+bila dilatih dengan *modality dropout* (kanal depth diganti nol dengan peluang
+p saat latih; nol = "tidak ada data" di seluruh pipeline).
+
+**Cara** — Kode di `pipeline/` (repo ini): `fourch.py` (kontrak pengodean
+depth metrik inverse 0,3–8 m; patch pemuat; inflasi conv pertama; kelas
+`Sawit4CH`), `prepare_depth.py`, `train_4ch.py`, `infer_4ch.py`. Uji asap CPU:
+16 citra, 1 epoch, yolo26n — memverifikasi jalur kode, bukan kualitas model.
+
+**Hasil** —
+1. Latih→bobot→inferensi dua mode jalan ujung-ke-ujung. Bobot RGBD epoch-11
+   (pelatihan GPU yang sedang berjalan) menghasilkan deteksi nyata lewat
+   `Sawit4CH` pada kedua mode.
+2. **Temuan yang bisa menggigit siapa pun yang memakai callback ultralytics:**
+   `on_pretrain_routine_end` menyala SETELAH `ModelEMA(self.model)` disalin
+   (`trainer.py` baris 383 vs 394), dan `best.pt` menyimpan EMA — jadi
+   modifikasi bobot lewat callback itu **tidak masuk ke bobot tersimpan**
+   kecuali `trainer.ema.ema` ikut ditambal. Diverifikasi: setelah menambal
+   keduanya, norma kanal depth di `best.pt` = 0,0 persis dan bobot RGB = persis
+   pratlatih (urutan BGR).
+3. Urutan kanal konsisten: pembalikan BGR→RGB ultralytics hanya berlaku untuk
+   3 kanal (`predictor.py:167`, `augment.py:2395`) — model 4-kanal melihat
+   `[B,G,R,D]` di jalur latih maupun prediksi.
+
+**Catatan penting** — `train_fusion.py` (I-4, sedang berjalan di GPU) TIDAK
+memakai inflasi ini — conv pertamanya mulai acak. Bila RGBD/RGBT layak diulang,
+ulangi lewat `pipeline/train_4ch.py` agar mulai dari bobot pratlatih penuh.
+
+**Reproduksi** — lihat `pipeline/README.md`; uji asap: dataset mini 16 citra +
+`train_4ch.py --epochs 1 --imgsz 320 --device cpu`.
