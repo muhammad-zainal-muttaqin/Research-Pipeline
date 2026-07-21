@@ -545,3 +545,54 @@ memalsukan warna dan kepadatan). Mesin 4-kanal dari I-4 dapat dipakai ulang
 dengan menukar isi kanalnya.
 
 **Reproduksi** — `python contrast_boost_test.py --images 250`
+
+---
+
+## E-012 — Plafon diskriminasi kematangan dari penampilan (2026-07-21) · Ide I-18 · [SR-009](SR/SR-009-ordinalitas-kelas.md)
+
+**Hipotesis** — SR-001 gagal mengukur ambiguitas B2/B3 lewat `class_mismatch`.
+SR-007 menunjukkan B2 punya kontras latar tinggi tetapi AP50 rendah, artinya
+masalahnya membedakan kelas, bukan melihat tandan. Diuji langsung: dapatkah
+kematangan dibedakan dari penampilan potongan kebenaran-dasar saja?
+
+**Cara** — `experiments/class_separability.py`. Potongan diambil dari kotak
+kebenaran-dasar sehingga **tahap deteksi dihilangkan sepenuhnya**. Fitur
+sederhana dan dapat ditafsirkan (statistik LAB/HSV, varians Laplacian, besar
+gradien, histogram hue = 37 dimensi). RandomForest 400 pohon, seimbang kelas,
+6.000 potongan latih (1.500/kelas), 1.377 potongan uji.
+
+**Hasil** —
+
+Akurasi keseluruhan **52,87%** (tebak acak 25%).
+
+| Sebenarnya | B1 | B2 | B3 | B4 | Recall |
+|---|---|---|---|---|---|
+| B1 | **177** | 44 | 15 | 16 | 70,2% |
+| B2 | 64 | **159** | 106 | 46 | 42,4% |
+| B3 | 7 | 90 | **156** | 122 | 41,6% |
+| B4 | 8 | 43 | 88 | **236** | 62,9% |
+
+Kebingungan pasangan terbesar: B3→B4 32,5%, B2→B3 28,3%, B3→B2 24,0%,
+B4→B3 23,5%. Sebaliknya B3→B1 hanya **7 dari 375**.
+
+**Putusan** — **DIKONFIRMASI: kebingungannya ORDINAL.** Kesalahan hampir
+seluruhnya terjadi antar kelas bersebelahan pada rantai B1→B2→B3→B4, dan
+nyaris tidak pernah melompat. Ini tanda khas satu **variabel kontinu**
+(tingkat kematangan) yang dipotong menjadi empat kotak; batas kelasnya adalah
+garis buatan pada rangkaian yang mulus.
+
+**Batas klaim — penting.** Angka 52,87% diperoleh dari fitur buatan tangan yang
+sengaja sederhana. Ini **batas BAWAH** keterpisahan, bukan plafon sebenarnya —
+CNN hampir pasti lebih baik. Yang transferable dari eksperimen ini adalah
+**struktur kebingungannya**, bukan angka absolutnya. Jangan mengutip 52,87%
+sebagai "plafon akurasi kematangan".
+
+**Dampak** — Melahirkan **I-22: loss ordinal / kepala regresi kematangan**,
+yang menghukum kesalahan ke kelas tetangga lebih ringan daripada kesalahan
+melompat. Menarik: metrik counting DiB (`Class ±1 Acc`) **sudah** mengakui
+sifat ordinal ini, tetapi pelatihan detektornya memakai klasifikasi kategoris
+biasa yang memperlakukan B2→B3 sama buruknya dengan B1→B4. Ada ketidakcocokan
+antara objektif pelatihan dan metrik evaluasi — persis "mismatch objective-ke-
+deployment" yang disebut `deep-research-report.md`.
+
+**Reproduksi** — `python class_separability.py --per-class 1500`
