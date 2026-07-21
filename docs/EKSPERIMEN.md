@@ -13,8 +13,11 @@ masalah → ide → solusi → hasil → putusan. Berkas ini adalah **log kronol
 (E-NNN); SR adalah **pandangan per-ide**. Tiap entri E-NNN di bawah menyebut ide
 dan SR yang memuatnya.
 
-Kode eksperimen ada di `/workspace/experiments/` (di luar repo ini; repo ini
-mencatat apa yang dipelajari, bukan menampung artefak besar).
+Kode eksperimen dijalankan di `/workspace/experiments/` (di luar repo). Snapshot
+**kode + hasil JSON + split**-nya diarsipkan ke [`../experiments/`](../experiments/)
+di repo ini agar tiap perintah reproduksi tetap punya sumbernya; artefak besar
+(bobot, dataset turunan) tidak diarsipkan karena bisa dibuat ulang dari skrip —
+lihat [`experiments/README.md`](../experiments/README.md).
 
 Format tiap entri:
 

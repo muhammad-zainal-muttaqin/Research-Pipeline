@@ -40,6 +40,7 @@ entri, seluruh berkas tersebut harus ikut diperbarui.
 | `figures/` | Figur final F01–F08 (`-en.jpg`), C01, C02, plus brief `.md`-nya. |
 | `docs/` | Rencana, panduan, audit, matriks bukti. `docs/archive/` = draf usang. |
 | `pipeline/` | **Deliverable produksi**: pipeline YOLO 4-kanal (RGB+depth) untuk kamera Gemini — latih/konversi/inferensi. Kode kecil tanpa bobot model; bukan kode eksperimen sekali pakai. |
+| `experiments/` | **Arsip kode + hasil JSON + split** eksperimen E-001…E-020 (snapshot dari `/workspace/experiments/`, di luar repo). Tanpa bobot/dataset besar — bisa dibuat ulang dari skripnya. Sumber reproduksi tiap SR. Di-exclude dari Jekyll. |
 | `build.js` | Perakit `index.html` (Ruang Baca Riset). |
 | `index.html` | **Hasil build — jangan disunting tangan.** |
 | `tools/build_evidence_matrix.py` | Membangun matriks bukti dari `entri/` + `PDF/`. |
