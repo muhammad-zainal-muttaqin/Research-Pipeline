@@ -810,7 +810,7 @@ function RUNTIME() {
     { name: 'Evolusi YOLO', tag: 'v1 - v11', desc: 'Lintasan inti YOLO: dari deteksi-sebagai-regresi tunggal menuju desain bebas-NMS dan bermodul atensi.', ids: ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010'] },
     { name: 'Fondasi Deteksi & Transformer', tag: 'R-CNN - DETR', desc: 'Tulang punggung deteksi modern: dua-tahap, satu-tahap, anchor-free, hingga transformer (DETR, ViT, Swin, RT-DETR).', ids: ['012', '014', '015', '016', '019', '022', '024', '025', '155'] },
     { name: 'Fusi RGB-D Inti', tag: 'SOD / Segmentasi / Integrasi', desc: 'Jantung tinjauan: saliency, segmentasi semantik, dan integrasi YOLO+Depth dengan atensi lintas-modal.', ids: ['035', '036', '042', '055', '058', '112', '113', '118'] },
-    { name: 'Robotik & Geometri 3D', tag: 'Pose / Grasp / SLAM / 3D', desc: 'Dari estimasi pose 6D dan penggenggaman ke SLAM dinamis dan deteksi 3D untuk aksi robotik.', ids: ['074', '082', '088', '107', '108', '114'] }
+    { name: 'Robotik & Geometri 3D', tag: 'Pose / Grasp / SLAM / 3D', desc: 'Dari estimasi pose 6D dan penggenggaman ke SLAM dinamis dan deteksi 3D untuk aksi robotik.', ids: ['074', '082', '088', '107', '108', '117'] }
   ];
 
   var PAPERS = [
@@ -1414,7 +1414,7 @@ function RUNTIME() {
     return '<footer class="foot rv"><span>' + META.total + ' entri · ' + META.themeCount + ' tema · dibangun ' + esc(META.built) + '</span>' +
       '<span class="fspacer"></span>' +
       '<span>Regenerasi: <code>node build.js</code></span>' +
-      '<a href="tinjauan-pustaka.tex" target="_blank" rel="noopener">tinjauan-pustaka.tex</a>' +
+      '<a href="evidence-body.tex" target="_blank" rel="noopener">evidence-body.tex</a>' +
       '<a href="references.bib" target="_blank" rel="noopener">references.bib</a></footer>';
   }
 

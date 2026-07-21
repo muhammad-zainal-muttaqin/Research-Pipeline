@@ -1,8 +1,9 @@
 # Temuan Riset: YOLO, RGB, RGB+Depth, dan YOLO+RGB-D (2019–2026)
 
 > Dokumen ini merangkum **temuan** dari tinjauan pustaka mendalam. Naskah lengkap
-> dalam format LaTeX ada di [`tinjauan-pustaka.tex`](tinjauan-pustaka.tex) dengan
-> basis data sitasi di [`references.bib`](references.bib).
+> dalam format LaTeX ada di [`evidence-body.tex`](evidence-body.tex), dikompilasi ke
+> [`main.pdf`](main.pdf) (gaya IEEE) dan [`main-elsarticle.pdf`](main-elsarticle.pdf) (gaya
+> Elsevier), dengan basis data sitasi di [`references.bib`](references.bib).
 
 ---
 
@@ -10,15 +11,16 @@
 
 | Item | Nilai |
 |---|---|
-| Total entri referensi dalam basis data (`references.bib`) | **202** |
-| Sitasi unik yang benar-benar dirujuk di naskah LaTeX | **202** |
+| Total entri terkumpul dalam ledger | **202** |
+| Sumber terverifikasi (ada PDF lokal) dan dijadikan korpus | **182** |
+| Sumber unik yang benar-benar dirujuk di naskah | **182** |
 | Target minimum yang diminta | 100 ✅ **terlampaui 2×** |
 | Rentang tahun fokus | 2019–2026 (plus karya fondasi 2014–2018 sebagai konteks) |
 | Poros riset | (1) Evolusi YOLO · (2) Deteksi RGB · (3) Fusi RGB+Depth · (4) YOLO+RGB-D |
 | Jumlah tema/klaster | 14 |
 
 **Status penyelesaian:** Naskah LaTeX + basis data BibTeX telah ditulis; seluruh
-202 sitasi tervalidasi (tidak ada sitasi menggantung). Ambang 100 sitasi
+182 sumber tervalidasi (tidak ada sitasi menggantung; 20 record ledger ditahan karena PDF sumber tak tersedia lokal). Ambang 100 sitasi
 tercapai dan terlampaui. Batch entri 155–202 (penyeimbang ujung rentang, termasuk
 jurnal 2025–2026 yang diverifikasi via arXiv) telah terintegrasi penuh ke naskah
 dan tabel taksonomi.
@@ -86,28 +88,30 @@ dan tabel taksonomi.
 
 ---
 
-## 4. Taksonomi Tematik (14 Klaster)
+## 4. Taksonomi Tematik (17 Klaster, selaras katalog)
 
-| # | Tema | Jumlah karya inti | Contoh kunci |
+| # | Tema | Jumlah | Contoh kunci |
 |---|---|---|---|
-| 1 | Evolusi YOLO | 14 | YOLOv1–v11, YOLOX, PP-YOLO, Gold-YOLO, YOLO-World, YOLO26 |
-| 2 | Survei YOLO | 9 | Terven 2023, Hussain 2023, Sapkota 2024 |
-| 3 | Fondasi RGB & Transformer | 27 | Faster R-CNN, DETR, RT-DETR, DINO, ConvNeXt, Swin V2, RF-DETR, Le-DETR |
-| 4 | Estimasi Kedalaman | 20 | DPT, MiDaS, Depth Anything V2/3, ZoeDepth, Metric3D, Marigold, UniDAC |
-| 5 | RGB-D Salient Object Detection | 23 | BBS-Net, VST, CIR-Net, CoNet, CAVER, MobileSal, GL-DMNet |
-| 6 | Segmentasi Semantik RGB-D | 16 | FuseNet, SA-Gate, CMX, DFormer, SegFormer, GeminiFusion, DiffPixelFormer |
-| 7 | Fusi RGB+Depth (deteksi) | 5 | Ophoff 2019, Farahnakian 2021 |
-| 8 | **YOLO+RGB-D** | 7 | Expandable YOLO, FusionVision, Tian 2023 |
-| 9 | Pose 6D & Grasp Robotik | 19 | DenseFusion, FFB6D, GR-ConvNet, GDR-Net, ZebraPose, Contact-GraspNet, VGN |
-| 10 | Deteksi 3D LiDAR–Kamera | 18 | PointPillars, BEVFusion, CenterPoint, PV-RCNN, BEVFormer, DETR3D |
-| 11 | Pedestrian Multispektral RGB-T | 7 | KAIST, MBNet, GAFF, CFT |
-| 12 | RGB-D SLAM Dinamis | 7 | ORB-SLAM2/3, DynaSLAM, DS-SLAM, CFP-SLAM, DROID-SLAM |
-| 13 | Aplikasi (tani/medis/industri/RS) | 22 | MangoYOLO, PCB-YOLO, TPH-YOLOv5, RiO-DETR |
-| 14 | Dataset & Tolok Ukur | 7 | NYUv2, SUN RGB-D, ScanNet, KITTI, COCO |
+| 1 | Fondasi RGB | 39 | R-CNN, Faster R-CNN, YOLOv1–v11/26, DETR, RT-DETR, ViT, Swin, ConvNeXt |
+| 2 | Estimasi Kedalaman | 21 | DPT, MiDaS, Depth Anything V2/3, ZoeDepth, Metric3D, Marigold, UniDAC |
+| 3 | RGB-D SOD | 19 | DMRA, BBS-Net, D3Net, VST, CIR-Net, CAVER, MobileSal, GL-DMNet |
+| 4 | Deteksi 3D | 17 | VoxelNet, PointPillars, PV-RCNN, CenterPoint, BEVFusion, BEVFormer, DETR3D |
+| 5 | Segmentasi RGB-D | 15 | FuseNet, SA-Gate, CMX, DFormer, SegFormer, GeminiFusion, DiffPixelFormer |
+| 6 | Pose 6D | 10 | PoseCNN, DenseFusion, FFB6D, GDR-Net, ZebraPose, OnePose, FoundationPose |
+| 7 | Grasp Robotik | 9 | GG-CNN, GR-ConvNet v2, GraspNet-1Billion, Contact-GraspNet, VGN |
+| 8 | Survei YOLO | 7 | Terven 2023, Hussain 2023, Sapkota 2024/2025, Jegham 2024 |
+| 9 | RGB-D SLAM | 7 | ORB-SLAM2/3, DynaSLAM, DS-SLAM, CFP-SLAM, DROID-SLAM |
+| 10 | Fusi Multimodal | 7 | ResNet, PointNet, CBAM, Feng 2021, Zou 2023, Zhou 2021, Lopes 2022 |
+| 11 | Pedestrian RGB-T | 6 | KAIST, IAF R-CNN, MBNet, GAFF, CFR, CFT |
+| 12 | Dataset | 6 | NYUv2, SUN RGB-D, ScanNet, KITTI, nuScenes, COCO |
+| 13 | YOLO plus RGB-D | 5 | Expandable YOLO, FusionVision, YOLOv8-URE, Ophoff 2019, Xu 2024 |
+| 14 | Pertanian | 4 | Gené-Mola 2020, Kang & Chen 2020, Birrell 2020, Onishi 2019 |
+| 15 | Remote Sensing | 4 | YOLT, TPH-YOLOv5, UAV-YOLOv8, RiO-DETR |
+| 16 | Medis | 3 | Qureshi 2024, Al-Antari 2021, Baccouche 2021 |
+| 17 | Industri | 3 | EFC-YOLO, PCB-YOLO, Safety Helmet YOLOv5 |
 
-> Total karya inti bertambah dari 153 menjadi **201+** seiring integrasi batch
-> 155–202; sejumlah entri fondasi lintas-tema membuat jumlah baris sedikit
-> melampaui hitung unik 202.
+> Jumlah per tema dihitung langsung dari katalog terverifikasi dan berjumlah **182** total
+> (17 tema), selaras dengan Ruang Baca Riset dan naskah.
 
 ---
 
@@ -143,8 +147,10 @@ dan tabel taksonomi.
 
 ---
 
-## 7. Daftar Referensi (Roster 202 Entri)
+## 7. Daftar Referensi (Roster 182 Entri Terverifikasi)
 
+> Korpus terverifikasi (182 sumber). Nomor mengikuti ID entri katalog, sehingga
+> nomor yang tidak muncul adalah 20 record ledger yang ditahan (tanpa PDF sumber lokal).
 > Dikelompokkan sesuai bagian di `references.bib`. Rentang fokus 2019–2026;
 > karya fondasi disertakan sebagai konteks.
 
@@ -183,8 +189,6 @@ dan tabel taksonomi.
 30. Sapkota dkk. (2025). *YOLO Advances to Its Genesis: A Decadal and Comprehensive Review*. Artificial Intelligence Review.
 31. Vijayakumar & Vairavasundaram (2024). *YOLO-Based Object Detection Review*. MTAP.
 32. Alif & Hussain (2024). *YOLO Evolution: YOLOv12, YOLO11 Benchmark*. arXiv:2411.00201.
-33. Sohan dkk. (2024). *A Review on YOLOv8 and Its Advancements*. Springer.
-34. Diwan dkk. (2023). *Object Detection Using YOLO: Challenges & Applications*. MTAP.
 
 ### C. RGB-D Salient Object Detection
 35. Piao dkk. (2019). *DMRA*. ICCV.
@@ -199,9 +203,6 @@ dan tabel taksonomi.
 44. Liu dkk. (2021). *TriTransNet*. ACM MM.
 45. Sun dkk. (2021). *DSA2F*. CVPR.
 46. Cong dkk. (2022). *CIR-Net*. IEEE TIP.
-47. Zhang dkk. (2023). *C2DFNet*. IEEE TMM.
-48. Zhou dkk. (2022). *CCAFNet*. IEEE TMM.
-49. Bi dkk. (2023). *Cross-Modal Hierarchical Interaction Network*. Pattern Recognition.
 50. Wu dkk. (2023). *HiDAnet*. IEEE TIP.
 
 ### D. Segmentasi Semantik RGB-D
@@ -213,7 +214,6 @@ dan tabel taksonomi.
 56. Seichter dkk. (2021). *ESANet*. ICRA.
 57. Cao dkk. (2021). *ShapeConv*. ICCV.
 58. Zhang dkk. (2023). *CMX*. IEEE T-ITS.
-59. Zhou dkk. (2023). *PGDENet*. IEEE TMM.
 60. Wang dkk. (2022). *Multimodal Token Fusion*. CVPR.
 61. Yin dkk. (2024). *DFormer*. ICLR.
 
@@ -269,8 +269,6 @@ dan tabel taksonomi.
 102. Zhou dkk. (2020). *MBNet (Modality Imbalance)*. ECCV.
 103. Zhang dkk. (2021). *GAFF*. WACV.
 104. Zhang dkk. (2020). *Cyclic Fuse-and-Refine (CFR)*. ICIP.
-105. Kim dkk. (2022). *Uncertainty-Guided Cross-Modal Learning*. IEEE TCSVT.
-106. Farahnakian & Heikkonen (2021). *RGB & Depth Fusion for Object Detection*. Springer.
 
 ### J. RGB-D SLAM Dinamis & Semantik
 107. Mur-Artal & Tardós (2017). *ORB-SLAM2*. IEEE T-RO.
@@ -282,18 +280,11 @@ dan tabel taksonomi.
 ### K. YOLO + RGB-D (Integrasi)
 112. Takahashi dkk. (2020). *Expandable YOLO: 3D Detection from RGB-D*. REM.
 113. El Amraoui dkk. (2024). *FusionVision*. arXiv:2403.00175.
-114. Ito dkk. (2024). *Pumpkin Pick-and-Place Robot (RGB-D + YOLO)*. Comput. Electron. Agric.
 115. Yang dkk. (2025). *YOLOv8-URE 2D Vision + Point Cloud Grasping*. Applied Sciences.
-116. Tian dkk. (2023). *Robot Grasp Detection: YOLO + RGB-D Feature Fusion*. J. Intell. Robot. Syst.
 117. Xu dkk. (2024). *Onboard Dynamic-Object Detection & Tracking (RGB-D)*. IEEE RA-L.
 118. Ophoff dkk. (2019). *Exploring RGB+Depth Fusion for Real-Time Detection*. Sensors.
-119. Chen dkk. (2023). *Indoor Object Distance Measurement: YOLO + Depth*. ARIS.
 
 ### L. Aplikasi YOLO: Pertanian
-120. Koirala dkk. (2019). *MangoYOLO*. Precision Agriculture.
-121. Tian dkk. (2019). *Apple Detection Improved YOLO-V3*. Comput. Electron. Agric.
-122. Wu dkk. (2020). *Pruned YOLOv4 Apple Flower Detection*. Comput. Electron. Agric.
-123. Fu dkk. (2020). *Apple Detection with RGB & Depth (Faster R-CNN)*. Biosystems Eng.
 124. Gené-Mola dkk. (2020). *Fruit 3D Location via Instance Segmentation*. Comput. Electron. Agric.
 125. Kang & Chen (2020). *Fruit Detection & 3D Visualisation in Apple Orchards*. Comput. Electron. Agric.
 126. Birrell dkk. (2020). *Robotic Iceberg Lettuce Harvesting*. J. Field Robotics.
@@ -303,18 +294,14 @@ dan tabel taksonomi.
 128. Qureshi dkk. (2024). *Systematic Review of YOLO for Medical Detection*. IEEE Access.
 129. Al-Antari dkk. (2021). *Fast Deep Learning CAD for COVID-19*. Applied Intelligence.
 130. Baccouche dkk. (2021). *Breast Lesions Detection via YOLO Fusion*. CMC.
-131. Mohiyuddin dkk. (2022). *Breast Tumor Detection Modified YOLOv5*. Comput. Math. Methods Med.
-132. Wan dkk. (2023). *YOLO Models for Real-Time Polyp Detection*. Diagnostics.
 
 ### N. Aplikasi YOLO: Industri / Defect
 133. Yang dkk. (2023). *EFC-YOLO Steel Strip Defects*. Sensors.
 134. Tang dkk. (2024). *PCB-YOLO*. PLOS ONE.
-135. Bhatt dkk. (2021). *Review of Defect Detection in Smart Manufacturing*. J. Intell. Manuf.
 136. Zhou dkk. (2021). *Safety Helmet Detection Improved YOLOv5*. CVIDL.
 
 ### O. Aplikasi YOLO: Remote Sensing / UAV
 137. Zhu dkk. (2021). *TPH-YOLOv5*. ICCVW.
-138. Zhang dkk. (2019). *Hierarchical CNN for VHR Remote Sensing Detection*. IEEE TGRS.
 139. Wang dkk. (2023). *UAV-YOLOv8*. Sensors.
 140. Van Etten (2018). *YOLT: Satellite Imagery Detection*. arXiv:1805.09512.
 
@@ -332,7 +319,6 @@ dan tabel taksonomi.
 149. Woo dkk. (2018). *CBAM*. ECCV.
 150. Feng dkk. (2021). *Deep Multi-Modal Detection & Segmentation Survey*. IEEE T-ITS.
 151. Zou dkk. (2023). *Object Detection in 20 Years: A Survey*. Proc. IEEE.
-152. Ramachandram & Taylor (2017). *Deep Multimodal Learning: A Survey*. IEEE SPM.
 153. Zhou dkk. (2021). *RGB-D Salient Object Detection: A Survey*. Comput. Visual Media.
 154. Lopes dkk. (2022). *A Survey on RGB-D Datasets*. CVIU.
 
@@ -406,14 +392,15 @@ dan tabel taksonomi.
 
 | Berkas | Isi |
 |---|---|
-| [`tinjauan-pustaka.tex`](tinjauan-pustaka.tex) | Naskah tinjauan pustaka lengkap (LaTeX), 16 bagian |
-| [`references.bib`](references.bib) | Basis data BibTeX, 202 entri |
+| [`evidence-body.tex`](evidence-body.tex) | Badan naskah review (LaTeX), disisipkan ke wrapper IEEE & Elsevier |
+| [`main.pdf`](main.pdf) / [`main-elsarticle.pdf`](main-elsarticle.pdf) | Naskah review terkompilasi (IEEE / Elsevier) |
+| [`references.bib`](references.bib) | Basis data BibTeX, 202 entri (182 diverifikasi & dirujuk) |
 | `TEMUAN.md` (berkas ini) | Ringkasan temuan dalam Markdown |
 
 **Kompilasi LaTeX:**
 ```bash
-pdflatex tinjauan-pustaka
-bibtex   tinjauan-pustaka
-pdflatex tinjauan-pustaka
-pdflatex tinjauan-pustaka
+pdflatex main-elsarticle   # atau: tectonic main-elsarticle.tex
+bibtex   main-elsarticle
+pdflatex main-elsarticle
+pdflatex main-elsarticle
 ```
