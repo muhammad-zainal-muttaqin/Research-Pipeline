@@ -39,6 +39,7 @@ entri, seluruh berkas tersebut harus ikut diperbarui.
 | `TEMUAN.md` | Sintesis lintas makalah. |
 | `figures/` | Figur final F01–F08 (`-en.jpg`), C01, C02, plus brief `.md`-nya. |
 | `docs/` | Rencana, panduan, audit, matriks bukti. `docs/archive/` = draf usang. |
+| `pipeline/` | **Deliverable produksi**: pipeline YOLO 4-kanal (RGB+depth) untuk kamera Gemini — latih/konversi/inferensi. Kode kecil tanpa bobot model; bukan kode eksperimen sekali pakai. |
 | `build.js` | Perakit `index.html` (Ruang Baca Riset). |
 | `index.html` | **Hasil build — jangan disunting tangan.** |
 | `tools/build_evidence_matrix.py` | Membangun matriks bukti dari `entri/` + `PDF/`. |
@@ -187,6 +188,17 @@ Fakta lain dari PDF yang berguna:
   terlatih, jadi jalankan bersama eksperimen utama.
 - Limitasi yang diakui penulis: dua perkebunan di Kalimantan, satu periode
   pengambilan (Februari 2026) — tidak menangkap variasi musiman.
+
+**Pernyataan pengguna 21 Juli 2026 (tambahan, sama mengikatnya):** dalam
+beberapa bulan terakhir mereka sudah mengimplementasikan sendiri teknik-teknik
+standar dari literatur/internet — **termasuk SAHI** — dan tidak satu pun
+menaikkan mAP. Kenaikan 2–5% pun dianggap tidak cukup. Konsekuensi kerja:
+(a) jangan mengusulkan ulang teknik siap-pakai dari literatur sebagai solusi
+utama; (b) yang diminta adalah dekomposisi first-principles dan perubahan
+formulasi/arsitektur; (c) arah perangkat keras baru sudah diputuskan — kamera
+**depth sensor (Orbbec Gemini)**, masukan 4 kanal; `pipeline/` adalah
+deliverable untuk itu, dan aplikasi lapangan pengguna sudah ada (tinggal ganti
+model, lihat `pipeline/README.md`).
 
 **Diagnosa yang sudah disepakati dengan pengguna — jangan diulang/ditawar lagi:**
 
