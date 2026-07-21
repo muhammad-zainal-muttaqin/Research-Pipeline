@@ -501,3 +501,47 @@ tetapi alasannya bukan "objeknya kecil" (E-009 melemahkan itu) melainkan
 **sebelum** hasil ubin keluar.
 
 **Reproduksi** — `python why_b4_fails.py --images 400`
+
+---
+
+## E-011 — Praproses mana yang menaikkan keterpisahan B4? (2026-07-21) · Ide I-20 · [SR-008](SR/SR-008-kanal-tekstur.md)
+
+**Hipotesis** — SR-007 menemukan B4 tersamar dalam warna tetapi bertekstur
+tertinggi. Kalau begitu, praproses yang memperkuat kontras lokal atau tekstur
+akan menaikkan keterpisahannya. Dipalsukan bila tidak ada praproses yang
+menaikkan AUC B4 lebih dari 0,02 di atas acuan.
+
+**Cara** — `experiments/contrast_boost_test.py`, 250 citra uji. Lima peta
+skalar diuji (luminans asli, CLAHE, unsharp mask, besar gradien Sobel,
+Laplacian). Metrik: AUC pemisahan piksel isi-kotak vs cincin, per kelas, dengan
+**kendali kotak acak untuk tiap praproses**. Yang dinilai adalah selisih
+terhadap kendali, bukan AUC mentah.
+
+**Hasil** —
+
+| Praproses | B1 | B2 | B3 | B4 | kendali | B4−kendali |
+|---|---|---|---|---|---|---|
+| asli (luminans) | 0,5897 | 0,6003 | 0,5753 | 0,5573 | 0,5659 | **−0,0086** |
+| CLAHE | 0,5680 | 0,5833 | 0,5621 | 0,5534 | 0,5614 | −0,0080 |
+| unsharp | 0,5696 | 0,5772 | 0,5582 | 0,5447 | 0,5513 | −0,0066 |
+| gradien Sobel | 0,5682 | 0,5768 | 0,5909 | 0,6041 | 0,5674 | +0,0367 |
+| **Laplacian** | 0,5673 | 0,5818 | 0,5970 | **0,6153** | 0,5695 | **+0,0458** |
+
+Perbaikan Laplacian atas acuan: **+0,0544 AUC**.
+
+**Putusan** — **DIKONFIRMASI untuk tekstur; DIPALSUKAN untuk penajam kontras.**
+CLAHE dan unsharp — dugaan awal yang paling intuitif — justru sedikit
+memperburuk. Yang berhasil adalah kanal **frekuensi tinggi murni**.
+
+Yang paling menentukan: **urutan kelas berbalik**. Pada luminans asli B4 paling
+tidak terpisah (0,5573, di bawah kendali); pada kanal Laplacian B4 menjadi
+**kelas paling terpisah dari semuanya** (0,6153). B4 tak terlihat dalam
+intensitas, tetapi terlihat dalam tekstur.
+
+**Dampak** — Melahirkan **I-21: kanal keempat berisi tekstur, bukan kedalaman.**
+Ini jauh lebih beralasan daripada RGB+D karena bersandar pada satu-satunya
+sinyal yang terbukti membedakan B4 (E-006 memalsukan kedalaman, E-010
+memalsukan warna dan kepadatan). Mesin 4-kanal dari I-4 dapat dipakai ulang
+dengan menukar isi kanalnya.
+
+**Reproduksi** — `python contrast_boost_test.py --images 250`
