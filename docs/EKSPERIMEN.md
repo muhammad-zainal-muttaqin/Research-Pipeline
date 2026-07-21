@@ -636,3 +636,41 @@ ulangi lewat `pipeline/train_4ch.py` agar mulai dari bobot pratlatih penuh.
 
 **Reproduksi** — lihat `pipeline/README.md`; uji asap: dataset mini 16 citra +
 `train_4ch.py --epochs 1 --imgsz 320 --device cpu`.
+
+---
+
+## E-014 — Deteksi atau klasifikasi? (2026-07-21) · Ide I-23 · [SR-010](SR/SR-010-hambatan-klasifikasi.md)
+
+**Konteks** — Sembilan ide diuji, mAP tidak bergerak. Pengguna melaporkan
+berbulan-bulan mencoba teknik dari pustaka (termasuk SAHI) tanpa hasil. Sebelum
+menjadwalkan ide ke-sepuluh, satu asumsi yang tidak pernah diperiksa harus
+diperiksa: benarkah yang kurang itu kemampuan **menemukan** tandan?
+
+**Hipotesis** — mAP menggabungkan dua kemampuan berbeda. Bila mAP kelas-agnostik
+jauh di atas mAP 4-kelas pada bobot yang sama, maka kerugian ada di klasifikasi
+kematangan, dan seluruh antrean ide berbasis deteksi salah alamat.
+
+**Cara** — `diag_bottleneck.py`: bobot identik (`rgb_e60_i640_s42/best.pt`),
+val identik (404 citra), hanya bendera `single_cls` yang berbeda.
+
+**Hasil** —
+
+| Evaluasi | mAP50 | mAP50-95 | P | R |
+|---|---|---|---|---|
+| 4 kelas | 0,5218 | 0,2407 | 0,5307 | 0,5484 |
+| Kelas-agnostik | **0,7191** | **0,3197** | 0,6950 | 0,6365 |
+
+AP50 per kelas: B1 0,7354 · B2 0,4076 · B3 0,5561 · B4 0,3881.
+
+**Putusan — DIKONFIRMASI.** 38% mAP50 yang mungkin diraih hilang di klasifikasi.
+Efektivitas klasifikasi terukur 0,5218/0,7191 = **72,6%**. mAP50-95 agnostik
+0,3197 sudah melewati sasaran 0,30.
+
+**Dampak** — Antrean lama (ubin I-12, RGBT I-21, ordinal I-22, RGBD I-4)
+dihentikan; I-4 berhenti di epoch 25/60 dengan mAP50 terbaik 0,5135 vs baseline
+0,5214 — kurva datar, tanpa sinyal. Seluruh GPU dialihkan ke **I-23: detektor
+dua tahap** (deteksi agnostik resolusi 960 + pengklasifikasi kematangan pada
+potongan resolusi asli). Melahirkan pula **I-24**: augmentasi baseline memakai
+`hsv_s=0.7` — mengacak saturasi ±70% pada tugas yang buktinya adalah warna.
+
+**Reproduksi** — `python diag_bottleneck.py`
