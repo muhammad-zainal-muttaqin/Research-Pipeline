@@ -413,3 +413,42 @@ tipis. Bersama E-006, arah dipersempit tegas: sisa perbaikan harus dari
 **detektor**. Prioritas berikutnya I-12 (ubin), I-13 (loss berimbang), I-15.
 
 **Reproduksi** — `python geometric_linking.py --split test [--sweep]`
+
+---
+
+## E-009 — Ukuran kotak pada resolusi latih (2026-07-21) · Ide I-11/I-12
+
+**Hipotesis** — B4 gagal (AP50 0,354) sebagian karena resolusi: pada
+`imgsz=640`, citra 960×1280 diperkecil 2×, sehingga tandan kecil kehilangan
+piksel sebelum masuk jaringan. Kalau benar, B4 akan jauh lebih kecil daripada
+kelas lain dan banyak yang jatuh di bawah ambang "kecil" COCO.
+
+**Cara** — `experiments/box_size_analysis.py`. Tanpa model sama sekali; hanya
+mengukur geometri kotak kebenaran-dasar (train+test) setelah diskalakan ke
+`imgsz=640`. Dijalankan **sebelum** hasil pelatihan ubin keluar, supaya
+ekspektasinya tercatat lebih dulu.
+
+**Hasil** —
+
+| Kelas | n | Lebar×tinggi median (px) | Luas median | % kecil | % sedang | % besar |
+|---|---|---|---|---|---|---|
+| B1 | 1.831 | 63 × 69 | 4.361 | 2,6% | 82,6% | 14,8% |
+| B2 | 3.112 | 57 × 64 | 3.626 | 4,4% | 86,0% | 9,6% |
+| B3 | 8.742 | 52 × 56 | 2.886 | 8,8% | 85,1% | 6,1% |
+| **B4** | 2.968 | **46 × 46** | **2.147** | **16,4%** | 81,2% | 2,5% |
+
+**Putusan** — **SEBAGIAN MENDUKUNG, TETAPI MELEMAHKAN I-12.** Benar bahwa B4
+paling kecil: luasnya ~separuh B1 dan 6× lebih sering masuk kategori "kecil"
+COCO. Tetapi **81,2% kotak B4 masih tergolong sedang**, dengan median 46×46 px
+— ukuran yang tidak problematis bagi detektor modern. Hanya 16,4% yang benar-
+benar kecil.
+
+**Dampak** — Ekspektasi terhadap I-12 (pelatihan berbasis ubin) **diturunkan
+sebelum hasilnya keluar**. Ubin 2×2 akan memangkas proporsi "kecil" B4 dari
+16,4% menjadi 0,2%, tetapi kalau resolusi bukan penyebab dominan, perbaikannya
+akan tipis. Penyebab B4 yang lebih mungkin: **oklusi dan kontras rendah** —
+tandan hitam tertanam di ketiak pelepah yang juga gelap. Itu mengarah ke ide
+lain: augmentasi sadar-oklusi (I-16) dan analisis terstratifikasi oklusi (I-11),
+bukan sekadar resolusi.
+
+**Reproduksi** — `python box_size_analysis.py`
