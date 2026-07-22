@@ -110,3 +110,6 @@ Kode di `experiments/` (arsip repo) dan `/workspace/experiments/` (kerja).
 Dataset: `/workspace/SawitMVC/data/` (960×1280) dan `/workspace/Sawit/data/`
 (master 3024×4032). `pip install -r experiments/requirements.txt`, CUDA (L4).
 Split per pohon 716/96/141, **irisan nol** — jaga ini.
+
+Panduan reproduksi langkah demi langkah (skrip→SR→keluaran, versi persis, celah
+jujur): [`../experiments/REPRODUCE.md`](../experiments/REPRODUCE.md).
