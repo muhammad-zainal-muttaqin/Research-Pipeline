@@ -2,6 +2,8 @@
 
 **Terakhir diperbarui:** 2026-07-22 · **Status:** dijeda dengan rapi, siap dilanjutkan.
 
+Metrik lengkap semua run (per-kelas B1–B4, val+test) di [`METRICS.md`](METRICS.md).
+
 Dokumen ini adalah **titik masuk tunggal** saat pekerjaan dilanjutkan. Baca ini
 dulu, lalu `docs/SR/README.md` (cerita per-ide) dan `docs/EKSPERIMEN.md` (log
 kronologis E-001…E-020).

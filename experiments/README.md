@@ -14,8 +14,15 @@ aslinya dihapus.
   `raw_map.json` = peta master E-015, `class_mismatch.json` = E-001).
 - **`splits_rgb/*.txt`** — definisi split train/val/test **persis** yang dipakai
   (per pohon, irisan nol). Ini yang membuat angka dapat direproduksi bit-per-bit.
+- **`runs/<run>/results.csv`** — kurva metrik **per-epoch** (P/R/mAP50/mAP50-95)
+  untuk kelima run detektor, plus `args.yaml` (konfigurasi persis tiap run).
+- **`logs/*.txt`** — keluaran konsol tiap eksperimen, **sudah dibersihkan** dari
+  progress-bar (\r). Rekam mentah yang dicetak ultralytics.
 - **`data_*.yaml`**, **`requirements.txt`**, **`run_queue*.sh`** — konfigurasi
   dataset, lingkungan, dan orkestrasi antrean pelatihan.
+
+Tabel metrik lengkap semua run (per-kelas B1–B4, val+test) dirangkum di
+[`../docs/METRICS.md`](../docs/METRICS.md).
 
 ## Yang TIDAK ada (sengaja — bisa dibuat ulang dari skrip di atas)
 
