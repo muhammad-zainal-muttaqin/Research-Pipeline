@@ -2,6 +2,10 @@
 
 Panduan kerja untuk Claude Code di repositori ini. Baca sebelum mengubah apa pun.
 
+> **Melanjutkan eksperimen?** Baca **[`docs/STATUS.md`](docs/STATUS.md)** dulu —
+> titik berhenti, hasil terbaik (RT-DETR-L test mAP50 0,5794), dan jalur lanjutan
+> yang siap jalan. Dijeda 2026-07-22.
+
 ## Bahasa
 
 **Seluruh isi repo dan seluruh percakapan memakai Bahasa Indonesia.** Istilah teknis
