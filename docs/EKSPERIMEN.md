@@ -64,7 +64,7 @@ data.
 |---|---|---|---|
 | **I-12** | Pelatihan berbasis ubin (tiling) resolusi tinggi | laporan | ekspektasi diturunkan (E-009); tak dijalankan tuntas |
 | **I-13** | Loss berimbang kelas / focal | laporan | belum |
-| **I-14** | Detektor NMS-free (RT-DETR) | laporan (prioritas 1) | **BERJALAN** (E-020, [SR-013](SR/SR-013-rtdetr-nms-free.md)) |
+| **I-14** | Detektor NMS-free (RT-DETR-L) | laporan (prioritas 1) | **DIKONFIRMASI** — detektor terbaik, +0,063 mAP50 test (E-020, [SR-013](SR/SR-013-rtdetr-nms-free.md)) |
 | **I-15** | Neck multiskala lebih kuat (BiFPN) | laporan | belum |
 | **I-16** | Copy-paste / augmentasi sintetis | laporan | prioritas turun untuk B4 (SR-007) |
 | **I-17** | Kalibrasi ambang per strata | laporan | belum |
@@ -930,7 +930,29 @@ satu-ke-satu, tanpa NMS) mengangkatnya, khususnya recall pada tandan bertumpuk.
 60 epoch dari bobot COCO. Menguji hipotesis MEKANISME (bukan kapasitas), jadi
 bebas dari jalur yolo26x.
 
-**Status — BERJALAN** (diluncurkan 2026-07-21, ~8–10 jam pada L4). Hasil dan
-putusan diisi di SR-013 saat selesai.
+**Cara (detail varian)** — RT-DETR-L (ultralytics 8.4.103, `rt-detr-l.yaml`):
+backbone HGNetv2-L, encoder AIFI + RepC3, RTDETRDecoder (tanpa NMS),
+**32.970.476 param**, 103,4 GFLOPs. Dihentikan ep52/60 setelah mosaic-off (ep50)
+tak memberi lonjakan; `best.pt` = epoch fitness-terbaik (ep25).
+
+**Hasil (best.pt, dievaluasi ulang bersih):**
+
+| | mAP50 | mAP50-95 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|
+| VAL baseline | 0,5218 | 0,2407 | 0,7354 | 0,4076 | 0,5561 | 0,3881 |
+| **VAL RT-DETR** | 0,5466 | 0,2543 | 0,7503 | 0,4413 | 0,5808 | 0,4138 |
+| TEST baseline | 0,5161 | 0,2457 | 0,7410 | 0,4016 | 0,5894 | 0,3323 |
+| **TEST RT-DETR** | **0,5794** | **0,2694** | 0,7891 | 0,4685 | 0,6391 | **0,4208** |
+
+**Putusan — DIKONFIRMASI (arah), target belum tercapai.** Detektor 4-kelas
+terbaik sejauh ini: unggul di keempat kelas pada kedua split, **+0,063 mAP50
+test**, dan gain terbesar di **B4 (+0,0885)** — kelas paling padat/tersamar,
+persis tanda tangan hipotesis NMS-free. Test tinggal −0,021 dari sasaran mAP50
+0,60. **Koreksi prediksi:** selama pelatihan saya menduga plateau/DIPALSUKAN —
+keliru, itu membaca last.pt yang overfit; best.pt jauh lebih baik.
+
+**Dampak** — RT-DETR jadi tulang punggung baru menggantikan yolo26m. Lanjutan:
+latih di piksel master (imgsz 1600–2048), dan RT-DETR-X (67,5 juta).
 
 **Reproduksi** — `python train_rtdetr.py --weights rtdetr-l.pt --imgsz 1280`
+lalu `python eval_rtdetr.py`

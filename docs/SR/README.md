@@ -22,7 +22,7 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | SR | Ide | Eksperimen | Putusan |
 |---|---|---|---|
 | [SR-001](SR-001-ambiguitas-kematangan.md) | Ukur plafon ambiguitas B2/B3 dari `class_mismatch` | E-001 | **DIPALSUKAN** |
-| [SR-002](SR-002-resolusi-master-mentah.md) | Pakai master mentah 3024×4032 untuk B4 | E-002 | **TIDAK KONKLUSIF** (terblokir) |
+| [SR-002](SR-002-resolusi-master-mentah.md) | Pakai master mentah 3024×4032 untuk B4 | E-002, E-015 | **TERBLOKIR → DIBUKA** (E-015) |
 | [SR-003](SR-003-da3-video-orbit.md) | DA3 multi-view pada video orbit | E-003, E-004 | **DIKONFIRMASI** |
 | [SR-004](SR-004-da3-empat-sisi.md) | DA3 multi-view pada 4/8 sisi foto | E-005 | **DIKONFIRMASI** |
 | [SR-005](SR-005-sinyal-depth-tandan.md) | Kedalaman sebagai pemisah tandan (piksel) | E-006 | **DIPALSUKAN** |
@@ -33,12 +33,12 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-010](SR-010-hambatan-klasifikasi.md) | Hambatan mAP ada di klasifikasi kematangan, bukan deteksi | E-014 | **DIKONFIRMASI** |
 | [SR-011](SR-011-plafon-kematangan.md) | Plafon kematangan ~68% | E-016 | **DITARIK** (bukti cacat, lihat E-018) |
 | [SR-012](SR-012-dua-tahap.md) | Detektor dua tahap (deteksi agnostik + kepala kematangan) | E-017 | **DIPALSUKAN** |
-| [SR-013](SR-013-rtdetr-nms-free.md) | RT-DETR: apakah NMS yang membatasi deteksi? | E-020 | **BERJALAN** |
+| [SR-013](SR-013-rtdetr-nms-free.md) | RT-DETR-L (NMS-free): detektor 4-kelas terbaik | E-020 | **DIKONFIRMASI** (arah; target belum) |
 
 ## Apa yang sudah kita pelajari — cerita singkatnya
 
-Sembilan ide diuji; empat dipalsukan, dan justru itu yang mempersempit arah.
-Rantai temuannya:
+Tiga belas SR diuji; empat dipalsukan, satu ditarik, dan justru itu yang
+mempersempit arah. Rantai temuannya:
 
 1. **Bottleneck ada di detektor, bukan penghitung.** E-007 mereproduksi Tabel 4
    DiB persis, dan menunjukkan koreksi sederhana `k = 1,8905` sudah mencapai
