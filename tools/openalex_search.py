@@ -106,11 +106,17 @@ QUERIES = {
         'AND ("deep learning" OR "convolutional" OR "object detection" OR "YOLO" '
         'OR "instance segmentation" OR "machine vision")'
     ),
+    # Q6 direvisi 2026-07-23 (PROTOCOL.md D-5). Versi pertama mengembalikan 15.609
+    # record karena klausa kedua memuat istilah agronomi ("yield", "plantation",
+    # "harvesting") yang menjaring literatur agronomi/biologi/ekonomi minyak sawit.
+    # Diganti klausa pencitraan/ML yang wajib -> 1.177. Versi lama disimpan di
+    # PROTOCOL.md D-5, tidak dihapus.
     "Q6": (
-        "seed sawit",
+        "seed sawit (literatur sawit yang melibatkan pencitraan/ML)",
         '("oil palm" OR "elaeis guineensis" OR "fresh fruit bunch") '
-        'AND ("detection" OR "classification" OR "counting" OR "ripeness" '
-        'OR "maturity" OR "yield" OR "grading" OR "harvesting" OR "plantation")'
+        'AND ("deep learning" OR "machine learning" OR "convolutional" '
+        'OR "neural network" OR "computer vision" OR "image processing" '
+        'OR "YOLO" OR "object detection" OR "remote sensing")'
     ),
 }
 

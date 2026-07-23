@@ -368,9 +368,69 @@ Skrip juga diperbaiki agar jalan sebagian (`python tools/openalex_search.py Q7`)
 menghapus rekap query lain: `openalex-counts.csv` dibaca-gabung, dan uji known-item
 membaca DOI dari seluruh ekspor di disk, bukan hanya query yang baru dijalankan.
 
+### D-5 — 2026-07-23 — Q6 dipersempit dari 15.609 → 1.177
+
+**Versi yang gagal (disimpan, tidak dihapus):**
+
+```
+("oil palm" OR "elaeis guineensis" OR "fresh fruit bunch")
+AND ("detection" OR "classification" OR "counting" OR "ripeness" OR "maturity"
+     OR "yield" OR "grading" OR "harvesting" OR "plantation")
+```
+
+Mengembalikan **15.609** record. Penyebabnya klausa kedua: `yield`, `plantation`, dan
+`harvesting` adalah istilah agronomi, sehingga query menjaring literatur agronomi,
+biologi, dan ekonomi minyak sawit yang sebagian besar tidak memakai citra sama sekali.
+
+**Versi yang dipakai:**
+
+```
+("oil palm" OR "elaeis guineensis" OR "fresh fruit bunch")
+AND ("deep learning" OR "machine learning" OR "convolutional" OR "neural network"
+     OR "computer vision" OR "image processing" OR "YOLO" OR "object detection"
+     OR "remote sensing")
+```
+
+**n_raw = 1.177, tidak tersentuh batas.**
+
+Tiga varian diprobe sebelum memilih, dicatat supaya pilihannya transparan:
+
+| Varian | n |
+|---|---|
+| sawit AND klausa-tugas AND klausa-pencitraan | 704 |
+| sawit AND klausa-tugas AND pencitraan tanpa `remote sensing` | 574 |
+| **sawit AND klausa-pencitraan** *(dipakai)* | **1.177** |
+
+Varian tiga-klausa dibuang meski lebih kecil: klausa tugas menambah eksklusi yang sulit
+dipertanggungjawabkan ke reviewer, sementara "sawit AND pencitraan/ML" menyatakan
+maksud Q6 secara langsung. Untuk query yang tugasnya menjaring literatur yang korpus
+lama **sama sekali tidak punya**, recall lebih tinggi lebih berharga daripada biaya
+penyaringan. `remote sensing` dipertahankan karena penghitungan pohon sawit dari
+UAV/satelit adalah rezim observasi udara yang relevan bagi tinjauan ini.
+
+**Validasi butir 7 — Q6 baru menjaring keduanya.** Ini menjawab konfirmasi #4 ke dosen
+sebagian: identitas "Suharjito" dan "Goh" kini punya kandidat konkret.
+
+| Penulis | Karya di Q6 | Contoh yang menonjol |
+|---|---|---|
+| **Suharjito** (BINUS) | 11 | *Oil palm FFB ripeness classification on mobile devices* (2021); *Hyperparameter optimization of YOLOv4-tiny for palm oil FFB* (2023); ***Video based oil palm ripeness detection model using deep learning*** (2023) |
+| **Jin Yu Goh** (UTM) | 8 | ***Fresh Fruit Bunch Ripeness Classification Methods: A Review*** (2024); ***Outdoor RGB and Point Cloud Depth Dataset for Palm Oil FFB*** (2025) |
+
+Dua di antaranya mengubah lanskap dan harus ditangani di naskah, bukan sekadar
+disitasi:
+
+1. **Goh 2024 adalah tinjauan terdahulu persis di topik ini.** Ia wajib masuk Tabel 1
+   positioning (butir 3), dan klaim kebaruan harus diuji terhadapnya lebih dulu.
+2. **Goh 2025 adalah dataset RGB-D FFB sawit yang publik.** Pernyataan di
+   `CLAUDE.md` — "tidak ada satu pun benchmark RGB-D pada FFB sawit di korpus 182" —
+   tetap benar **sebagai pernyataan tentang korpus**, tetapi tidak lagi benar sebagai
+   pernyataan tentang literatur. Setiap kalimat naskah yang menyiratkan yang kedua
+   harus diperbaiki.
+
 | Tanggal | Deviasi | Status |
 |---|---|---|
 | 2026-07-23 | D-1 logika uji known-item | diperbaiki |
 | 2026-07-23 | D-2 celah pandangan-tunggal → Q7 | **tertutup** (lihat D-4) |
-| 2026-07-23 | D-3 Q3 & Q6 tersentuh batas | **terbuka** |
+| 2026-07-23 | D-3 Q3 & Q6 tersentuh batas | **Q6 tertutup** (D-5); **Q3 terbuka** |
 | 2026-07-23 | D-4 Q7 dijalankan, known-item lolos | selesai |
+| 2026-07-23 | D-5 Q6 dipersempit 15.609 → 1.177 | selesai |

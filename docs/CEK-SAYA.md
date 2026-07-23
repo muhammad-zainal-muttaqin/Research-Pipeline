@@ -97,24 +97,49 @@ cat docs/search/openalex-counts.csv
 
 Hasil sebenarnya:
 
-| Query | Isi | n_api | diunduh | Status |
-|---|---|---|---|---|
-| Q1 | inventaris buah multi-view | 1.849 | 1.851 | lengkap |
-| **Q2** | **asosiasi lintas-view** | **1.991** | 1.991 | lengkap — **gerbang R2 lolos** |
-| Q3 | multimodalitas/geometri tanaman | 6.423 | 5.000 | **terpotong** |
-| Q4 | kelas per-instans | 2.757 | 2.757 | lengkap |
-| Q5 | tinjauan terdahulu | 1.143 | 1.143 | lengkap |
-| Q6 | seed sawit | **15.609** | 5.000 | **terpotong, terlalu luas** |
+| Query | Isi | n_raw | Status |
+|---|---|---|---|
+| Q1 | inventaris buah multi-view | 1.849 | lengkap |
+| **Q2** | **asosiasi lintas-view** | **1.991** | lengkap — **gerbang R2 lolos** |
+| Q3 | multimodalitas/geometri tanaman | 6.423 | **terpotong di 5.000** |
+| Q4 | kelas per-instans | 2.757 | lengkap |
+| Q5 | tinjauan terdahulu | 1.143 | lengkap |
+| Q6 | seed sawit *(dipersempit, D-5)* | **1.177** | lengkap |
+| Q7 | penghitungan pandangan-tunggal *(baru, D-2/D-4)* | 1.317 | lengkap |
 
-Dua query menyentuh penjaga runaway 5.000 (`PROTOCOL.md` D-3):
+**Q6 sudah diperbaiki** dari 15.609 → 1.177 (`PROTOCOL.md` D-5). Penyebab lamanya:
+klausa `yield` / `plantation` / `harvesting` menjaring literatur agronomi, biologi, dan
+ekonomi minyak sawit. Diganti klausa pencitraan/ML yang wajib. Versi yang gagal disimpan
+di D-5, tidak dihapus.
 
-- **Q3** (6.423) — selisihnya kecil; cukup naikkan batas.
-- **Q6** (15.609) — **terlalu luas**. Literatur "oil palm" mencakup agronomi, biologi,
-  dan ekonomi minyak sawit yang sebagian besar bukan visi komputer. Butuh klausa keempat
-  yang mensyaratkan istilah pencitraan/pembelajaran mesin.
+**Sisa yang terbuka: hanya Q3** (6.423, terpotong di 5.000). Selisihnya kecil — cukup
+naikkan `BATAS_PER_QUERY` di `tools/openalex_search.py` lalu jalankan `Q3` saja.
+`n_raw` Q3 belum sah untuk corong PRISMA. Enam query lainnya lengkap.
 
-**`n_raw` untuk Q3 dan Q6 belum sah** untuk corong PRISMA sampai ini dibereskan.
-Angka Q1, Q2, Q4, Q5 lengkap dan bisa dipakai.
+### 2.2b Butir 7 tervalidasi — dan dua temuan yang mengubah lanskap
+
+Q6 yang dipersempit menjaring **kedua penulis yang dosen minta**, jadi konfirmasi #4
+ke dosen sekarang punya kandidat konkret, bukan pertanyaan kosong:
+
+| Penulis | Karya di Q6 | Yang menonjol |
+|---|---|---|
+| **Suharjito** (BINUS) | 11 | FFB ripeness di perangkat mobile (2021); YOLOv4-tiny untuk FFB (2023); ***deteksi kematangan sawit berbasis video*** (2023) |
+| **Jin Yu Goh** (UTM) | 8 | ***Fresh Fruit Bunch Ripeness Classification Methods: A Review*** (2024); ***Outdoor RGB and Point Cloud Depth Dataset for Palm Oil FFB*** (2025) |
+
+Dua di antaranya **bukan sekadar sitasi tambahan** — keduanya menyentuh klaim inti:
+
+1. **Goh 2024 adalah tinjauan terdahulu persis di topik ini.** Ia wajib masuk Tabel 1
+   positioning (butir 3), dan klaim kebaruan Anda harus diuji terhadapnya **lebih dulu**,
+   bukan sesudah naskah ditulis.
+2. **Goh 2025 adalah dataset RGB-D FFB sawit yang publik.** Kalimat di `CLAUDE.md` —
+   *"tidak ada satu pun benchmark RGB-D pada FFB sawit di korpus 182"* — tetap benar
+   **sebagai pernyataan tentang korpus**, tapi **tidak lagi benar sebagai pernyataan
+   tentang literatur**. Setiap kalimat naskah yang menyiratkan yang kedua harus
+   diperbaiki. Saya belum menyentuhnya — perlu Anda baca papernya dulu.
+
+> **Yang harus Anda cek:** buka kedua paper Goh. Kalau Goh 2024 ternyata sudah membahas
+> identitas/duplikasi lintas-view sebagai masalah kelas satu, klaim kebaruan butir 3
+> harus dilemahkan — dan lebih baik Anda tahu sekarang daripada setelah 15.000 kata.
 
 ### 2.3 Klaster tema — SAYA KELIRU, ini koreksinya
 
