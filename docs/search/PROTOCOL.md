@@ -295,8 +295,63 @@ studi. Sebagian besar studi tidak menyatakan asumsinya secara eksplisit.
 ## 10. Log deviasi
 
 Setiap perubahan protokol setelah pencarian dimulai dicatat di sini, bertanggal, dengan
-alasannya. Kosong sampai FASE 1.2 berjalan.
+alasannya. **Versi query yang gagal dicatat, tidak dihapus.**
 
-| Tanggal | Deviasi | Alasan |
+### D-1 — 2026-07-23 — bug logika uji known-item *(diperbaiki)*
+
+Versi pertama `tools/openalex_search.py` menilai kelolosan dengan `all()`, sehingga
+menuntut item ditemukan oleh **semua** query yang tercantum. §6 menulis "dan/atau",
+yang berarti **satu** sudah cukup. Akibatnya Gené-Molá 2020 dilaporkan GAGAL padahal
+Q3 menemukannya. Diperbaiki jadi `any()`. Angka pencarian tidak terpengaruh.
+
+### D-2 — 2026-07-23 — celah nyata: penghitungan buah pandangan-tunggal tidak terjaring
+
+Uji known-item menemukan **Koirala 2019 MangoYOLO** (`10.1007/s11119-019-09642-0`)
+tidak dikembalikan oleh Q1 maupun Q4, meski record-nya ada di OpenAlex.
+
+Penyebabnya sah, bukan salah ketik:
+
+- **Q1** mensyaratkan klausa ketiga (`multi-view` OR `video` OR `tracking` OR …).
+  MangoYOLO adalah deteksi citra-tunggal — tidak memuat satu pun istilah itu.
+- **Q4** mensyaratkan klausa atribut kelas (`maturity` OR `grading` OR …). MangoYOLO
+  mengerjakan penghitungan/estimasi muatan, bukan penilaian mutu.
+
+Artinya set query saat ini **tidak menjaring baseline penghitungan buah
+pandangan-tunggal** — padahal literatur itu dibutuhkan dua kali: sebagai kelas
+pembanding M0/M1 di §5, dan untuk memenuhi butir 7 dosen (penghitungan apel/jeruk/anggur).
+
+**Tindakan yang diperlukan (belum dijalankan):** tambahkan **Q7 — penghitungan buah
+pandangan-tunggal / estimasi hasil**, tanpa klausa multi-view:
+
+```
+TITLE-ABS-KEY(
+  ("fruit" OR "apple" OR "citrus" OR "mango" OR "grape" OR "berry" OR "bunch"
+   OR "oil palm" OR "orchard" OR "vineyard")
+  AND
+  ("counting" OR "count" OR "yield estimation" OR "load estimation" OR "fruit load"
+   OR "crop load")
+  AND
+  ("deep learning" OR "convolutional" OR "object detection" OR "YOLO"
+   OR "instance segmentation" OR "machine vision")
+)
+AND PUBYEAR > 2014
+```
+
+Uji known-item Q7 harus mengembalikan Koirala 2019 sebelum dipakai.
+
+### D-3 — 2026-07-23 — dua query menyentuh batas penjaga
+
+`n_dilaporkan_api` melampaui batas unduh 5.000:
+
+| Query | n_api | diunduh | Tindakan |
+|---|---|---|---|
+| Q3 multimodalitas/geometri tanaman | 6.423 | 5.000 | Naikkan batas, atau persempit klausa modalitas. Selisihnya kecil. |
+| Q6 seed sawit | **15.609** | 5.000 | **Terlalu luas.** Literatur "oil palm" mencakup agronomi, biologi, dan ekonomi minyak sawit — sebagian besar bukan visi komputer. Perlu klausa keempat yang mensyaratkan istilah pencitraan/pembelajaran mesin. |
+
+Angka `n_raw` untuk Q3 dan Q6 **belum sah** untuk corong PRISMA sampai ini dibereskan.
+
+| Tanggal | Deviasi | Status |
 |---|---|---|
-| — | — | — |
+| 2026-07-23 | D-1 logika uji known-item | diperbaiki |
+| 2026-07-23 | D-2 celah pandangan-tunggal → Q7 | **terbuka** |
+| 2026-07-23 | D-3 Q3 & Q6 tersentuh batas | **terbuka** |

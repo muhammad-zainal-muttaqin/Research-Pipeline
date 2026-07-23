@@ -187,7 +187,10 @@ def uji_known_item(peta_doi):
         d = ambil("%s?filter=doi:%s&mailto=%s" % (BASE, urllib.parse.quote(doi), MAILTO))
         ada_di_openalex = bool(d.get("results"))
         ditemukan_oleh = sorted(peta_doi.get(doi.lower(), []))
-        lolos = all(q in ditemukan_oleh for q in query_diharapkan)
+        # PROTOCOL.md sec.6 menulis "dan/atau": cukup SATU query yang menemukannya.
+        # Versi pertama skrip ini memakai all() dan melaporkan Gene-Mola GAGAL padahal
+        # Q3 menemukannya. Dicatat di PROTOCOL.md sec.10 (D-1).
+        lolos = any(q in ditemukan_oleh for q in query_diharapkan)
         baris.append({
             "item": nama,
             "doi": doi,

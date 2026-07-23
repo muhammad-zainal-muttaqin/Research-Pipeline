@@ -65,9 +65,26 @@ Tiga item wajib kembali lewat query yang diharapkan:
 | Koirala 2019, MangoYOLO | `10.1007/s11119-019-09642-0` | Q1 dan/atau Q4 |
 | Indriani 2026, SawitMVC | `10.1016/j.dib.2026.112990` | Q1 |
 
-**Kalau ada yang GAGAL, query itu belum layak dipakai** dan angka corongnya tidak boleh
-masuk naskah. Perbaiki query, catat versi yang gagal di `PROTOCOL.md` §10 (jangan
-dihapus), jalankan ulang.
+**Hasil sebenarnya — uji ini menangkap dua masalah nyata:**
+
+| Item | Hasil | Keterangan |
+|---|---|---|
+| Gené-Molá 2020 | ditemukan **Q3** | Sebenarnya LOLOS. Skrip salah menilai karena memakai `all()` padahal §6 menulis "dan/atau". Sudah diperbaiki → `PROTOCOL.md` D-1. |
+| Koirala 2019 MangoYOLO | **tidak ditemukan Q1 maupun Q4** | **Celah nyata.** Lihat di bawah. |
+| Indriani 2026 SawitMVC | ditemukan **Q1, Q2, Q4** | LOLOS. |
+
+**Celah yang ditemukan (`PROTOCOL.md` D-2), dan ini penting.** MangoYOLO lolos dari
+kedua query karena alasan yang sah: Q1 mensyaratkan klausa multi-view/video/tracking,
+sedangkan MangoYOLO adalah deteksi citra-tunggal; Q4 mensyaratkan klausa atribut kelas,
+sedangkan MangoYOLO mengerjakan penghitungan, bukan penilaian mutu.
+
+Artinya **set query saat ini tidak menjaring baseline penghitungan buah
+pandangan-tunggal** — literatur yang dibutuhkan dua kali: sebagai kelas pembanding
+M0/M1 di §5, dan untuk memenuhi butir 7 dosen (penghitungan apel/jeruk/anggur).
+Rancangan **Q7** sudah saya tulis di `PROTOCOL.md` D-2, **belum dijalankan**.
+
+> **Keputusan Anda:** setujui Q7 lalu saya jalankan, atau Anda ingin merumuskan
+> ulang klausanya dulu?
 
 Suharjito dan Goh **belum diuji** — rujukan persisnya masih menunggu konfirmasi dosen
 (lihat `REFRAME-DECISIONS.md`, konfirmasi #4).
@@ -78,10 +95,26 @@ Suharjito dan Goh **belum diuji** — rujukan persisnya masih menunggu konfirmas
 cat docs/search/openalex-counts.csv
 ```
 
-Kolom **`terpotong_oleh_batas`** adalah yang penting. Skrip berhenti di 5.000 record per
-query sebagai penjaga runaway. Query mana pun yang bernilai `YA` **belum lengkap** — ia
-harus dipersempit (query terlalu luas) atau batasnya dinaikkan sebelum angkanya dipakai
-sebagai `n_raw` di corong PRISMA. Ini dicatat, bukan didiamkan.
+Hasil sebenarnya:
+
+| Query | Isi | n_api | diunduh | Status |
+|---|---|---|---|---|
+| Q1 | inventaris buah multi-view | 1.849 | 1.851 | lengkap |
+| **Q2** | **asosiasi lintas-view** | **1.991** | 1.991 | lengkap — **gerbang R2 lolos** |
+| Q3 | multimodalitas/geometri tanaman | 6.423 | 5.000 | **terpotong** |
+| Q4 | kelas per-instans | 2.757 | 2.757 | lengkap |
+| Q5 | tinjauan terdahulu | 1.143 | 1.143 | lengkap |
+| Q6 | seed sawit | **15.609** | 5.000 | **terpotong, terlalu luas** |
+
+Dua query menyentuh penjaga runaway 5.000 (`PROTOCOL.md` D-3):
+
+- **Q3** (6.423) — selisihnya kecil; cukup naikkan batas.
+- **Q6** (15.609) — **terlalu luas**. Literatur "oil palm" mencakup agronomi, biologi,
+  dan ekonomi minyak sawit yang sebagian besar bukan visi komputer. Butuh klausa keempat
+  yang mensyaratkan istilah pencitraan/pembelajaran mesin.
+
+**`n_raw` untuk Q3 dan Q6 belum sah** untuk corong PRISMA sampai ini dibereskan.
+Angka Q1, Q2, Q4, Q5 lengkap dan bisa dipakai.
 
 ### 2.3 Klaster tema — sudah terpecahkan, tinggal diputuskan
 
