@@ -19,6 +19,7 @@ lewat parameter mailto; batasnya 10 permintaan/detik.
 """
 
 import csv
+import glob
 import json
 import os
 import sys
@@ -92,6 +93,19 @@ QUERIES = {
         'AND ("deep learning" OR "computer vision" OR "object detection" '
         'OR "machine vision")'
     ),
+    # Q7 ditambahkan 2026-07-23 setelah uji known-item menemukan Koirala 2019
+    # MangoYOLO tidak terjaring Q1 maupun Q4 (PROTOCOL.md D-2). Sengaja TANPA
+    # klausa multi-view: justru baseline pandangan-tunggal yang dicari, sebagai
+    # kelas pembanding M0/M1 di sec.5 dan untuk butir 7 dosen.
+    "Q7": (
+        "penghitungan buah pandangan-tunggal / estimasi hasil",
+        '("fruit" OR "apple" OR "citrus" OR "mango" OR "grape" OR "berry" OR "bunch" '
+        'OR "oil palm" OR "orchard" OR "vineyard") '
+        'AND ("counting" OR "count" OR "yield estimation" OR "load estimation" '
+        'OR "fruit load" OR "crop load") '
+        'AND ("deep learning" OR "convolutional" OR "object detection" OR "YOLO" '
+        'OR "instance segmentation" OR "machine vision")'
+    ),
     "Q6": (
         "seed sawit",
         '("oil palm" OR "elaeis guineensis" OR "fresh fruit bunch") '
@@ -105,7 +119,7 @@ QUERIES = {
 # jadi di sini diuji lewat pencarian nama penulis, bukan DOI.
 KNOWN_ITEMS = [
     ("Gene-Mola 2020 deteksi buah + SfM", "10.1016/j.compag.2019.105165", ["Q1", "Q3"]),
-    ("Koirala 2019 MangoYOLO", "10.1007/s11119-019-09642-0", ["Q1", "Q4"]),
+    ("Koirala 2019 MangoYOLO", "10.1007/s11119-019-09642-0", ["Q1", "Q4", "Q7"]),
     ("Indriani 2026 SawitMVC", "10.1016/j.dib.2026.112990", ["Q1"]),
 ]
 
@@ -216,6 +230,15 @@ def main():
     kolom = ["query_id", "openalex_id", "doi", "year", "type", "title",
              "venue", "authors", "cited_by_count", "is_oa", "abstract"]
 
+    # Jalan sebagian (mis. hanya Q7) tidak boleh menghapus hasil query lain.
+    # Rekap lama dibaca dulu; baris query yang dijalankan ulang ditimpa, sisanya utuh.
+    path_rekap = os.path.join(AKAR, "docs", "search", "openalex-counts.csv")
+    rekap_lama = {}
+    if os.path.exists(path_rekap):
+        with open(path_rekap, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                rekap_lama[r["query_id"]] = r
+
     rekap = []
     peta_doi = {}
     for qid in pilih:
@@ -240,8 +263,21 @@ def main():
         print("    n_dilaporkan=%s  n_diunduh=%s  terpotong=%s"
               % (n_dilaporkan, len(baris), "YA" if terpotong else "tidak"), flush=True)
 
-    tulis_csv(os.path.join(AKAR, "docs", "search", "openalex-counts.csv"), rekap,
-              list(rekap[0]))
+    for r in rekap:
+        rekap_lama[r["query_id"]] = r
+    gabung = [rekap_lama[q] for q in sorted(rekap_lama)]
+    tulis_csv(path_rekap, gabung, list(rekap[0]))
+
+    # Uji known-item dibaca dari SELURUH ekspor di disk, bukan hanya query yang
+    # baru dijalankan, supaya jalan sebagian tetap memberi verdict yang benar.
+    for p in sorted(glob.glob(os.path.join(DIR_RAW, "openalex_Q*_%s.csv" % TANGGAL))):
+        qid_berkas = os.path.basename(p).split("_")[1]
+        if qid_berkas in pilih:
+            continue
+        with open(p, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r["doi"]:
+                    peta_doi.setdefault(r["doi"].lower(), []).append(qid_berkas)
 
     print("\nUji known-item ...", flush=True)
     ki = uji_known_item(peta_doi)

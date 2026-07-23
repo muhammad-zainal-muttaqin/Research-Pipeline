@@ -116,40 +116,54 @@ Dua query menyentuh penjaga runaway 5.000 (`PROTOCOL.md` D-3):
 **`n_raw` untuk Q3 dan Q6 belum sah** untuk corong PRISMA sampai ini dibereskan.
 Angka Q1, Q2, Q4, Q5 lengkap dan bisa dipakai.
 
-### 2.3 Klaster tema — sudah terpecahkan, tinggal diputuskan
+### 2.3 Klaster tema — SAYA KELIRU, ini koreksinya
 
-Inkonsistensi 14/17/18 yang saya laporkan kemarin **bukan tiga angka yang berbeda —
-hanya satu yang benar**:
+**Laporan saya sebelumnya salah dan saya cabut.** Saya menulis bahwa angka 14 di
+`CLAUDE.md` "salah" dan bahwa 6 entri "kehilangan baris `| Tema |`". Keduanya keliru.
 
-| Sumber | Angka | Status |
+**Yang benar — 14 dan 17 mengukur hal berbeda, dan repo sudah mendokumentasikannya**
+di `docs/PLAN.md` §"Catatan rekonsiliasi sumber" baris 50–53 dan
+`figures/C02-distribusi-tema.md` §2:
+
+| Angka | Artinya | Sumber |
 |---|---|---|
-| Nama berkas `entri/*.md` (segmen terakhir) | **17** | benar, 182/182 berkas terparse |
-| Baris `\| Tema \|` di dalam entri | **17** | sepakat dengan nama berkas |
-| `docs/evidence-matrix-182.csv` | 18 | 17 + kategori palsu "Uncoded" |
-| `CLAUDE.md` | 14 | **salah** |
+| **14** | klaster taksonomi **naskah LaTeX**, menggabungkan beberapa label berkas | `TEMUAN.md`, `CLAUDE.md` |
+| **17** | label tema yang dipakai `build.js` dan situs, dibaca dari **nama berkas** | `entri/*.md` |
 
-Penyebab angka 18: **6 entri tidak punya baris `| Tema |`**, jadi jatuh ke "Uncoded".
-Temanya bisa dipulihkan dari nama berkasnya sendiri:
+`docs/PLAN.md:52` menyatakannya harfiah: *"keduanya tidak bertentangan, aplikasi
+mengikuti label nama berkas."* Audit itu sudah pernah dikerjakan; saya melewatkannya.
+**Jangan menyamakan keduanya.** `CLAUDE.md` sekarang saya beri baris penjelas, angkanya
+tidak diubah.
 
-| Entri | Tema dari nama berkas |
+**Yang benar-benar rusak, dan sudah diperbaiki.** Bukan tema yang hilang — melainkan
+**label kolomnya tidak seragam**. Enam entri memakai `| Tema klaster |` atau
+`| Tema Klaster |` alih-alih `| Tema |`:
+
+| Entri | Label lama |
 |---|---|
-| `126 - 2019 - Automated Fruit Harvesting Robot (Onishi dkk.)` | Pertanian |
-| `149 - 2018 - CBAM` | Fusi Multimodal |
-| `151 - 2023 - Object Detection in 20 Years (Zou dkk.)` | Fusi Multimodal |
-| `153 - 2021 - Survei RGB-D SOD (Zhou dkk.)` | Fusi Multimodal |
-| `156 - 2024 - YOLO-World` | Fondasi RGB |
-| `163 - 2022 - Swin Transformer V2` | Fondasi RGB |
+| `126 - Automated Fruit Harvesting Robot (Onishi dkk.)` | `Tema Klaster` |
+| `149 - CBAM` · `151 - Object Detection in 20 Years` · `153 - Survei RGB-D SOD` | `Tema klaster` |
+| `156 - YOLO-World` · `163 - Swin Transformer V2` | `Tema klaster` |
 
-> **Perbaikannya belum saya kerjakan** — menyentuh 6 berkas entri dan mengharuskan
-> `node build.js` dijalankan ulang. Saya tidak mau menyunting entri tanpa Anda melihat
-> dulu, karena kontrak berkas entri ketat (`docs/PANDUAN-PENULISAN.md` §2).
-> **Keputusan Anda:** setuju tambahkan baris `| Tema |` ke 6 entri itu dan ubah
-> `CLAUDE.md` 14 → 17? Kalau ya, ini pekerjaan 15 menit.
+Akibatnya `tools/build_evidence_matrix.py` — yang membaca baris `| Tema |` — tidak
+menemukannya dan melempar keenamnya ke kategori palsu **"Uncoded"**, sehingga CSV
+melaporkan 18 tema. `build.js` **tidak** terpengaruh: ia membaca tema dari nama berkas
+(`build.js:111`), jadi situs selalu benar.
+
+Sudah dinormalkan ke `| Tema |`. Hasil sesudahnya: **182/182 entri punya baris
+`| Tema |`, 17 tema unik, tidak ada lagi "Uncoded".**
 
 Verifikasi mandiri:
 ```bash
+# 17 label dari nama berkas
 ls entri/*.md | sed 's/.* - //; s/\.md$//' | sort | uniq -c | sort -rn
+# nol varian label yang tersisa
+grep -rl "Tema [Kk]laster" entri/ ; echo "(kosong = bersih)"
 ```
+
+`docs/evidence-matrix-182.csv` **belum diregenerasi** — `build_evidence_matrix.py`
+butuh `PDF/benar/` yang tidak ada di git. CSV lama masih memuat "Uncoded" sampai skrip
+itu dijalankan di mesin yang punya PDF-nya.
 
 ---
 

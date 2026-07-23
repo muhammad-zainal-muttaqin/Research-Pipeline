@@ -350,8 +350,27 @@ Uji known-item Q7 harus mengembalikan Koirala 2019 sebelum dipakai.
 
 Angka `n_raw` untuk Q3 dan Q6 **belum sah** untuk corong PRISMA sampai ini dibereskan.
 
+### D-4 — 2026-07-23 — Q7 dijalankan, celah D-2 tertutup
+
+Q7 ditambahkan ke `tools/openalex_search.py` dan dijalankan. **n_raw = 1.317
+(1.318 diunduh), tidak tersentuh batas.**
+
+Uji known-item diulang dengan logika `any()` yang benar (D-1) dan pembacaan lintas-
+seluruh-ekspor. **Ketiganya LOLOS:**
+
+| Item | Ditemukan oleh |
+|---|---|
+| Gené-Molá 2020 | Q3 |
+| Koirala 2019 MangoYOLO | **Q7** |
+| Indriani 2026 SawitMVC | Q1, Q2, Q4, Q7 |
+
+Skrip juga diperbaiki agar jalan sebagian (`python tools/openalex_search.py Q7`) tidak
+menghapus rekap query lain: `openalex-counts.csv` dibaca-gabung, dan uji known-item
+membaca DOI dari seluruh ekspor di disk, bukan hanya query yang baru dijalankan.
+
 | Tanggal | Deviasi | Status |
 |---|---|---|
 | 2026-07-23 | D-1 logika uji known-item | diperbaiki |
-| 2026-07-23 | D-2 celah pandangan-tunggal → Q7 | **terbuka** |
+| 2026-07-23 | D-2 celah pandangan-tunggal → Q7 | **tertutup** (lihat D-4) |
 | 2026-07-23 | D-3 Q3 & Q6 tersentuh batas | **terbuka** |
+| 2026-07-23 | D-4 Q7 dijalankan, known-item lolos | selesai |

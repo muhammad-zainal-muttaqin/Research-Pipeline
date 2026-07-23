@@ -23,8 +23,15 @@ basis data sitasi, dan aplikasi web statis untuk membaca korpus.
 | Entri di ledger (`references.bib`) | 202 |
 | Entri terverifikasi (ada PDF lokal) = korpus naskah | **182** (`entri/`) |
 | Entri ditahan (PDF sumber tak tersedia) | 20 (`entri-withheld/`) |
-| Klaster tema | 14 |
+| Klaster tema (taksonomi naskah `TEMUAN.md`) | 14 |
+| Label tema (segmen terakhir nama berkas `entri/`) | 17 |
 | Rentang fokus | 2019–2026 (+ fondasi 2012–2018) |
+
+**14 dan 17 bukan kontradiksi** dan sudah direkonsiliasi saat audit
+(`docs/PLAN.md` §"Catatan rekonsiliasi sumber", `figures/C02-distribusi-tema.md` §2):
+14 adalah klaster taksonomi naskah LaTeX, yang menggabungkan beberapa label berkas;
+17 adalah label tema yang dipakai `build.js` dan situs, dibaca dari nama berkas.
+Jangan "memperbaiki" salah satunya jadi sama.
 
 Angka 182 itu **invarian yang dijaga**: naskah, situs, `TEMUAN.md`, dan
 `docs/claim-audit-182.md` semuanya diselaraskan ke angka ini. Jika mengubah jumlah
