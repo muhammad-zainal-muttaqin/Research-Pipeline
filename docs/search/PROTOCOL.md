@@ -427,10 +427,58 @@ disitasi:
    pernyataan tentang literatur. Setiap kalimat naskah yang menyiratkan yang kedua
    harus diperbaiki.
 
+### D-6 — 2026-07-23 — Q3 dijalankan tuntas; duplikat paginasi ditemukan dan dibuang
+
+**Bagian pertama — batas dinaikkan, Q3 selesai.** `BATAS_PER_QUERY` dinaikkan dari
+5.000 ke 12.000 di `tools/openalex_search.py` dan `Q3` dijalankan ulang sendirian.
+Query-nya **tidak diubah** — yang berubah hanya penjaga runaway, jadi ini bukan
+deviasi rancangan pencarian, melainkan pencabutan pemotongan artifisial.
+
+```
+[Q3] multimodalitas dan geometri untuk tanaman ...
+    n_dilaporkan=6423  n_diunduh=6424  terpotong=tidak
+```
+
+**Bagian kedua — temuan yang tidak diduga.** Verifikasi pasca-unduh menunjukkan
+`n_diunduh` (6.424) **melebihi** `n_dilaporkan` API (6.423). Pemeriksaan `openalex_id`
+memastikan sebabnya: **paginasi kursor OpenAlex sesekali mengembalikan record yang
+sama dua kali** bila indeks bergeser saat pengambilan berlangsung. Terjadi di tiga
+query:
+
+| Query | baris terunduh | unik | duplikat |
+|---|---|---|---|
+| Q1 | 1.851 | **1.849** | 2 |
+| Q2 | 1.991 | 1.991 | 0 |
+| **Q3** | 6.424 | **6.422** | 2 |
+| Q4 | 2.757 | 2.757 | 0 |
+| Q5 | 1.143 | 1.143 | 0 |
+| Q6 | 1.177 | 1.177 | 0 |
+| Q7 | 1.318 | **1.317** | 1 |
+
+Bukan galat besar (5 record dari 16.746 = 0,03%), tetapi **materiil secara
+metodologis**: `n_raw` yang masuk corong PRISMA harus jumlah **unik**, bukan jumlah
+baris terunduh. Melaporkan 6.424 lalu kehilangan 2 saat dedup akan tampak seperti
+dedup lintas-sumber padahal duplikatnya berasal dari satu query.
+
+**Tindakan:**
+
+1. `jalankan()` di `tools/openalex_search.py` kini dedup berdasarkan `openalex_id`
+   sebelum menulis, dan mencetak `[dedup-dalam-query]` bila ada yang dibuang.
+2. Ketujuh ekspor yang sudah ada di disk dinormalkan (tanpa unduh ulang); kolom
+   `n_diunduh` di `openalex-counts.csv` kini berarti **jumlah unik**.
+
+Setelah dedup, Q1 (1.849) dan Q7 (1.317) **cocok persis** dengan `n_dilaporkan` API.
+Q3 menyisakan selisih 1 (6.422 unik vs 6.423 dilaporkan) — `meta.count` OpenAlex
+adalah taksiran indeks, jadi selisih satu record pada 6.400 tidak dapat direkonsiliasi
+dari sisi klien. **Dilaporkan apa adanya, tidak dibulatkan.**
+
+**Sisa terbuka lengan OpenAlex: tidak ada.** Ketujuh query lengkap, nol terpotong.
+
 | Tanggal | Deviasi | Status |
 |---|---|---|
 | 2026-07-23 | D-1 logika uji known-item | diperbaiki |
 | 2026-07-23 | D-2 celah pandangan-tunggal → Q7 | **tertutup** (lihat D-4) |
-| 2026-07-23 | D-3 Q3 & Q6 tersentuh batas | **Q6 tertutup** (D-5); **Q3 terbuka** |
+| 2026-07-23 | D-3 Q3 & Q6 tersentuh batas | **tertutup** — Q6 di D-5, Q3 di D-6 |
 | 2026-07-23 | D-4 Q7 dijalankan, known-item lolos | selesai |
 | 2026-07-23 | D-5 Q6 dipersempit 15.609 → 1.177 | selesai |
+| 2026-07-23 | D-6 Q3 tuntas (6.422) + dedup paginasi | selesai |

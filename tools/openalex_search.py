@@ -30,7 +30,9 @@ import urllib.request
 TANGGAL = "2026-07-23"          # tanggal pencarian, dicatat di nama berkas
 MAILTO = "mz.muttaqin1@gmail.com"
 DARI_TANGGAL = "2015-01-01"     # PUBYEAR > 2014
-BATAS_PER_QUERY = 5000          # penjaga runaway; bila tercapai, DICATAT bukan didiamkan
+BATAS_PER_QUERY = 12000         # penjaga runaway; bila tercapai, DICATAT bukan didiamkan
+                                # dinaikkan dari 5000 (D-6): Q3 memerlukan 6.423 dan
+                                # tidak boleh dilaporkan terpotong ke corong PRISMA
 PER_PAGE = 200
 
 BASE = "https://api.openalex.org/works"
@@ -177,7 +179,13 @@ def baris_dari(w, qid):
 
 
 def jalankan(qid, query):
-    """Ambil seluruh halaman untuk satu query. Kembalikan (baris, n_dilaporkan, terpotong)."""
+    """Ambil seluruh halaman untuk satu query. Kembalikan (baris, n_dilaporkan, terpotong).
+
+    Baris di-dedup berdasarkan openalex_id sebelum dikembalikan. Paginasi kursor
+    OpenAlex sesekali mengembalikan record yang sama dua kali bila indeks bergeser
+    saat pengambilan berlangsung (D-6): teramati di Q1, Q3, dan Q7. Yang masuk
+    corong PRISMA sebagai n_raw adalah jumlah UNIK, bukan jumlah baris terunduh.
+    """
     kursor = "*"
     hasil = []
     n_dilaporkan = None
@@ -198,7 +206,17 @@ def jalankan(qid, query):
         if not kursor or not d["results"] or len(hasil) >= BATAS_PER_QUERY:
             break
         time.sleep(0.12)
-    return hasil, n_dilaporkan, len(hasil) >= BATAS_PER_QUERY and n_dilaporkan > len(hasil)
+    terpotong = len(hasil) >= BATAS_PER_QUERY and n_dilaporkan > len(hasil)
+    unik, terlihat = [], set()
+    for b in hasil:
+        if b["openalex_id"] in terlihat:
+            continue
+        terlihat.add(b["openalex_id"])
+        unik.append(b)
+    if len(unik) != len(hasil):
+        print("    [dedup-dalam-query] %d baris -> %d unik (%d duplikat paginasi)"
+              % (len(hasil), len(unik), len(hasil) - len(unik)), flush=True)
+    return unik, n_dilaporkan, terpotong
 
 
 def uji_known_item(peta_doi):

@@ -103,24 +103,44 @@ cat docs/search/openalex-counts.csv
 
 Hasil sebenarnya:
 
-| Query | Isi | n_raw | Status |
+| Query | Isi | n_raw unik | Status |
 |---|---|---|---|
 | Q1 | inventaris buah multi-view | 1.849 | lengkap |
 | **Q2** | **asosiasi lintas-view** | **1.991** | lengkap — **gerbang R2 lolos** |
-| Q3 | multimodalitas/geometri tanaman | 6.423 | **terpotong di 5.000** |
+| Q3 | multimodalitas/geometri tanaman | **6.422** | lengkap *(D-6)* |
 | Q4 | kelas per-instans | 2.757 | lengkap |
 | Q5 | tinjauan terdahulu | 1.143 | lengkap |
 | Q6 | seed sawit *(dipersempit, D-5)* | **1.177** | lengkap |
 | Q7 | penghitungan pandangan-tunggal *(baru, D-2/D-4)* | 1.317 | lengkap |
+| | **Total (sebelum dedup antar-query)** | **16.746** | |
 
-**Q6 sudah diperbaiki** dari 15.609 → 1.177 (`PROTOCOL.md` D-5). Penyebab lamanya:
-klausa `yield` / `plantation` / `harvesting` menjaring literatur agronomi, biologi, dan
-ekonomi minyak sawit. Diganti klausa pencitraan/ML yang wajib. Versi yang gagal disimpan
-di D-5, tidak dihapus.
+**Lengan OpenAlex selesai — nol query terpotong.**
 
-**Sisa yang terbuka: hanya Q3** (6.423, terpotong di 5.000). Selisihnya kecil — cukup
-naikkan `BATAS_PER_QUERY` di `tools/openalex_search.py` lalu jalankan `Q3` saja.
-`n_raw` Q3 belum sah untuk corong PRISMA. Enam query lainnya lengkap.
+**Q6** diperbaiki dari 15.609 → 1.177 (`PROTOCOL.md` D-5): klausa `yield` / `plantation` /
+`harvesting` menjaring literatur agronomi, biologi, dan ekonomi minyak sawit. Diganti
+klausa pencitraan/ML yang wajib. Versi yang gagal disimpan di D-5, tidak dihapus.
+
+**Q3** dituntaskan (D-6) dengan menaikkan `BATAS_PER_QUERY` 5.000 → 12.000. **Query-nya
+tidak diubah** — yang dicabut hanya pemotongan artifisial.
+
+**Temuan sampingan yang materiil (D-6):** verifikasi menunjukkan `n_diunduh` Q3 (6.424)
+**melebihi** jumlah yang dilaporkan API (6.423). Sebabnya paginasi kursor OpenAlex
+sesekali mengembalikan record yang sama dua kali. Terjadi di Q1 (2), Q3 (2), Q7 (1) —
+5 dari 16.746 = 0,03%. Kecil, tapi kalau didiamkan, corong PRISMA akan melaporkan
+duplikat satu-query itu seolah temuan dedup lintas-sumber. Skrip kini dedup sendiri,
+ekspor lama sudah dinormalkan, dan angka di tabel atas adalah **jumlah unik**.
+
+Setelah dedup, Q1 dan Q7 cocok persis dengan hitungan API. Q3 menyisakan selisih 1
+(6.422 vs 6.423) — `meta.count` OpenAlex adalah taksiran indeks, tidak dapat
+direkonsiliasi dari sisi klien. Dilaporkan apa adanya.
+
+> **Yang bisa Anda cek cepat:**
+> ```bash
+> cat docs/search/openalex-counts.csv
+> python -c "import csv,glob,os;[print(os.path.basename(p).split('_')[1], len({r['openalex_id'] for r in csv.DictReader(open(p,encoding='utf-8'))})) for p in sorted(glob.glob('docs/search/raw/openalex_Q*.csv'))]"
+> ```
+> Kolom `terpotong_oleh_batas` harus `tidak` di ketujuh baris, dan jumlah unik harus
+> sama dengan `n_diunduh`.
 
 ### 2.2b Butir 7 tervalidasi — dan dua temuan yang mengubah lanskap
 
@@ -206,7 +226,6 @@ itu dijalankan di mesin yang punya PDF-nya.
 | Membongkar `evidence-body.tex` | R3: naskah setengah-sejarah-setengah-ruang-desain lebih lemah dari kedua kerangka murni. Pembongkaran harus satu tarikan, bersamaan dengan penggantinya. |
 | Query Scopus/WoS | Tidak ada akses dari mesin ini. Lengan berlangganan tetap harus Anda jalankan. |
 | Membaca dua paper Goh | Butuh penilaian Anda — ia menentukan kuat/lemahnya klaim kebaruan butir 3. |
-| Q3 diselesaikan (masih terpotong) | Sepele secara teknis (naikkan `BATAS_PER_QUERY`), tapi 1.400 record tambahan diunduh — saya tahan sampai Anda setuju arah query-nya. |
 | Pengayaan DOI 202 record | Belum sempat; prasyarat FASE 1.5, aman dikerjakan kapan saja. |
 | Perbaikan `tools/build_evidence_matrix.py` | Belum sempat; tidak memblokir apa pun sampai FASE 4. |
 
