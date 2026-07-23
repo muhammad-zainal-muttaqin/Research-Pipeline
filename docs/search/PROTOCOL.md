@@ -455,7 +455,7 @@ query:
 | Q6 | 1.177 | 1.177 | 0 |
 | Q7 | 1.318 | **1.317** | 1 |
 
-Bukan galat besar (5 record dari 16.746 = 0,03%), tetapi **materiil secara
+Bukan galat besar (5 record dari 16.661 baris terunduh = 0,03%), tetapi **materiil secara
 metodologis**: `n_raw` yang masuk corong PRISMA harus jumlah **unik**, bukan jumlah
 baris terunduh. Melaporkan 6.424 lalu kehilangan 2 saat dedup akan tampak seperti
 dedup lintas-sumber padahal duplikatnya berasal dari satu query.

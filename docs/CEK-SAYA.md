@@ -112,7 +112,7 @@ Hasil sebenarnya:
 | Q5 | tinjauan terdahulu | 1.143 | lengkap |
 | Q6 | seed sawit *(dipersempit, D-5)* | **1.177** | lengkap |
 | Q7 | penghitungan pandangan-tunggal *(baru, D-2/D-4)* | 1.317 | lengkap |
-| | **Total (sebelum dedup antar-query)** | **16.746** | |
+| | **Total (sebelum dedup antar-query)** | **16.656** | |
 
 **Lengan OpenAlex selesai — nol query terpotong.**
 
@@ -126,7 +126,7 @@ tidak diubah** — yang dicabut hanya pemotongan artifisial.
 **Temuan sampingan yang materiil (D-6):** verifikasi menunjukkan `n_diunduh` Q3 (6.424)
 **melebihi** jumlah yang dilaporkan API (6.423). Sebabnya paginasi kursor OpenAlex
 sesekali mengembalikan record yang sama dua kali. Terjadi di Q1 (2), Q3 (2), Q7 (1) —
-5 dari 16.746 = 0,03%. Kecil, tapi kalau didiamkan, corong PRISMA akan melaporkan
+5 dari 16.661 baris terunduh = 0,03%. Kecil, tapi kalau didiamkan, corong PRISMA akan melaporkan
 duplikat satu-query itu seolah temuan dedup lintas-sumber. Skrip kini dedup sendiri,
 ekspor lama sudah dinormalkan, dan angka di tabel atas adalah **jumlah unik**.
 
