@@ -514,3 +514,45 @@ dari sisi klien. **Dilaporkan apa adanya, tidak dibulatkan.**
 | 2026-07-23 | D-4 Q7 dijalankan, known-item lolos | selesai |
 | 2026-07-23 | D-5 Q6 dipersempit 15.609 → 1.177 | selesai |
 | 2026-07-23 | D-6 Q3 tuntas (6.422) + dedup paginasi | selesai |
+| 2026-07-23 | D-7 pembatasan `SUBJAREA` di lengan Scopus | berjalan |
+
+### D-7 — 2026-07-23 — pembatasan bidang subjek pada lengan Scopus
+
+**Temuan.** Q1 dijalankan di Scopus tanpa pembatasan: **3.403** record, **792 di
+antaranya Medicine** (23%). Hasil teratas adalah makalah pediatri tentang praktik tidur
+bayi, dan bibliometrik glaukoma — nol hubungan dengan buah.
+
+**Sebabnya kata bermakna ganda**, bukan kesalahan rancangan query:
+
+| Istilah | Tertangkap juga |
+|---|---|
+| `"cluster"` | *cluster randomized trial* |
+| `"inventory"` | *Beck Depression Inventory* |
+| `"berry"` | *berry aneurysm* |
+| `"track*"` | *eye-tracking* |
+| `"count*"` | *blood count*, *cell count* |
+| `"crop"` | *cropped image* |
+
+**Keputusan.** Istilahnya **tidak dibuang** — Q1 sengaja mempertahankan struktur contoh
+dosen (§4). Yang dibatasi bidang subjeknya, ditulis **di dalam query** sebagai
+`SUBJAREA(...)`, bukan lewat centang sidebar. Centang tidak tersimpan di string query
+sehingga tidak dapat direproduksi orang lain — bertentangan dengan butir 1 revisi.
+
+Hasil Q1 setelah dibatasi ke AGRI+COMP+ENGI: **1.853**.
+
+**`MULT` ditambahkan setelah pemeriksaan.** *Data in Brief* terindeks Multidisciplinary,
+dan di situlah SawitMVC (`10.1016/j.dib.2026.112990`) berada. Membatasi hanya ke
+AGRI+COMP+ENGI akan mengeksklusi makalah dataset proyek ini sendiri. `EART`+`ENVI`
+ditambahkan pada Q3 dan Q6 karena penginderaan jauh dan fotogrametri terindeks di sana.
+
+**Kewajiban pelaporan.** Pembatasan subjek adalah eksklusi yang dideklarasikan, jadi
+**dua angka dicatat per query**: `n_tanpa_subjarea` dan `n_final`. Selisihnya harus
+terlihat di corong PRISMA, tidak boleh lenyap.
+
+**Prediksi asisten yang salah, dicatat.** Sebelum lengan Scopus dijalankan, asisten
+memperkirakan angka Scopus akan **lebih kecil** dari OpenAlex karena `TITLE-ABS-KEY`
+mencocokkan frasa persis. Nyatanya lebih besar (3.403 vs 1.849): `TITLE-ABS-KEY` juga
+menyisir *indexed keywords* Scopus, bukan hanya judul+abstrak. Kemiripan angka
+pasca-pembatasan (1.853 vs 1.849) adalah **kebetulan**, bukan validasi silang.
+
+Query final ada di [`scopus-queries.md`](scopus-queries.md).
