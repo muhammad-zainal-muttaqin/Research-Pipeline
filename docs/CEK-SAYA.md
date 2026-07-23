@@ -81,13 +81,19 @@ sedangkan MangoYOLO mengerjakan penghitungan, bukan penilaian mutu.
 Artinya **set query saat ini tidak menjaring baseline penghitungan buah
 pandangan-tunggal** — literatur yang dibutuhkan dua kali: sebagai kelas pembanding
 M0/M1 di §5, dan untuk memenuhi butir 7 dosen (penghitungan apel/jeruk/anggur).
-Rancangan **Q7** sudah saya tulis di `PROTOCOL.md` D-2, **belum dijalankan**.
 
-> **Keputusan Anda:** setujui Q7 lalu saya jalankan, atau Anda ingin merumuskan
-> ulang klausanya dulu?
+**Sudah ditutup.** Atas persetujuan Anda, **Q7** dirancang (`PROTOCOL.md` D-2) dan
+dijalankan (D-4): n_raw 1.317, dan MangoYOLO ditemukan. Ketiga known-item kini LOLOS:
 
-Suharjito dan Goh **belum diuji** — rujukan persisnya masih menunggu konfirmasi dosen
-(lihat `REFRAME-DECISIONS.md`, konfirmasi #4).
+| Item | Ditemukan oleh |
+|---|---|
+| Gené-Molá 2020 | Q3 |
+| Koirala 2019 MangoYOLO | **Q7** |
+| Indriani 2026 SawitMVC | Q1, Q2, Q4, Q6, Q7 |
+
+Suharjito dan Goh sudah tervalidasi lewat Q6 yang dipersempit — lihat §2.2b. Rujukan
+persis yang dosen maksud tetap perlu dikonfirmasi (`REFRAME-DECISIONS.md`, konfirmasi #4),
+tapi sekarang Anda punya kandidat konkret untuk ditanyakan.
 
 ### 2.2 Rekap jumlah + batas yang tersentuh
 
@@ -198,9 +204,9 @@ itu dijalankan di mesin yang punya PDF-nya.
 |---|---|
 | Prosa §3/§5/§6 | Butuh korpus hasil FASE 1 yang baru selesai malam ini. Menulis lebih dulu = mengarang. |
 | Membongkar `evidence-body.tex` | R3: naskah setengah-sejarah-setengah-ruang-desain lebih lemah dari kedua kerangka murni. Pembongkaran harus satu tarikan, bersamaan dengan penggantinya. |
-| Menyunting 6 entri (klaster tema) | Kontrak berkas entri ketat; butuh persetujuan Anda. |
 | Query Scopus/WoS | Tidak ada akses dari mesin ini. Lengan berlangganan tetap harus Anda jalankan. |
-| Uji known-item Suharjito/Goh | Rujukan persisnya belum diketahui — menunggu dosen. |
+| Membaca dua paper Goh | Butuh penilaian Anda — ia menentukan kuat/lemahnya klaim kebaruan butir 3. |
+| Q3 diselesaikan (masih terpotong) | Sepele secara teknis (naikkan `BATAS_PER_QUERY`), tapi 1.400 record tambahan diunduh — saya tahan sampai Anda setuju arah query-nya. |
 | Pengayaan DOI 202 record | Belum sempat; prasyarat FASE 1.5, aman dikerjakan kapan saja. |
 | Perbaikan `tools/build_evidence_matrix.py` | Belum sempat; tidak memblokir apa pun sampai FASE 4. |
 
