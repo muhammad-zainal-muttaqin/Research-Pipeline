@@ -1,0 +1,302 @@
+# PROTOCOL — Protokol Pencarian Literatur
+
+**Status: DRAF, BELUM DIJALANKAN.** Setiap angka corong di `prisma-counts.csv` masih
+kosong. Jangan mengutip apa pun dari berkas ini ke naskah sebelum FASE 1.2–1.5 selesai.
+
+Tinjauan: *Counting Each Fruit Once: A Design-Space Review of Cross-View Identity for
+Class-Wise Fruit Inventories*.
+Keputusan yang melatarbelakangi: [`../REFRAME-DECISIONS.md`](../REFRAME-DECISIONS.md).
+
+---
+
+## 1. Jenis tinjauan dan standar pelaporan
+
+**Structured design-space review** dengan pencarian berbasis basis data yang dilaporkan
+mengikuti alur PRISMA 2020 **untuk tahap pencarian dan seleksi saja**. Ini bukan
+*systematic review* dengan penilaian mutu bukti formal dan bukan meta-analisis: tidak
+ada statistik gabungan yang dihitung, karena studi yang ditinjau memakai objek, sensor,
+dan metrik yang tidak sebanding.
+
+Protokol tidak diregistrasi sebelumnya. Dari 8 review *Computers and Electronics in
+Agriculture* 2026 yang dibedah (`Revisi-23July2026/`), **0/8** meregistrasi protokol,
+**5/8** menyebut PRISMA, tetapi **8/8** menyebut basis data dan **8/8** menyatakan
+kriteria seleksi. Bar venue ada di "transparan dan dapat direproduksi", bukan Cochrane.
+
+## 2. Basis data
+
+| Peran | Sumber | Catatan |
+|---|---|---|
+| Jangkar | **Scopus** *atau* **Web of Science Core Collection** | Mana yang tersedia lewat langganan institusi. Query ditulis dalam dua sintaks. |
+| Pelengkap | **OpenAlex** (REST API, terbuka) | Dipakai juga untuk pengayaan DOI record lama (FASE 1.4). |
+| Pelengkap | **Google Scholar** | Hanya untuk *forward/backward snowballing* dan penemuan literatur abu-abu; **tidak** dipakai sebagai sumber corong utama karena hasilnya tidak dapat diekspor secara stabil. |
+
+**Deviasi yang harus dinyatakan di §2.2 naskah:** hanya satu dari Scopus/WoS yang
+dipakai. Preseden di sampel venue: P2 (paper paling rigor) hanya WoS; P7 hanya Scopus.
+
+**Catatan sintaks yang wajib dilaporkan:** `TS=` pada WoS mencakup *Keywords Plus*
+(istilah yang dihasilkan otomatis dari judul referensi), sedangkan `TITLE-ABS-KEY` pada
+Scopus tidak. Recall WoS karena itu lebih besar untuk query yang sama. Perbedaan ini
+dicatat, bukan dihaluskan.
+
+**Rentang tahun:** 2015–2026 (`PUBYEAR > 2014` / `PY=2015-2026`), mengikuti contoh dosen.
+Karya fondasi sebelum 2015 boleh dikutip sebagai **Register B** (sitasi latar) tetapi
+tidak masuk corong.
+
+**Tanggal pencarian** dicatat per query di `raw/<db>_<qid>_<YYYY-MM-DD>.csv`.
+
+---
+
+## 3. Set query
+
+Enam set, masing-masing menjawab satu bagian ruang desain. Q1 mempertahankan struktur
+contoh dosen agar keterkaitannya terlihat.
+
+### Q1 — Inventaris/penghitungan buah dari banyak observasi *(inti pertanian)*
+
+**Scopus**
+```
+TITLE-ABS-KEY(
+  ("fruit" OR "fresh fruit bunch" OR "FFB" OR "oil palm" OR "apple" OR "citrus"
+   OR "mango" OR "grape" OR "berry" OR "bunch" OR "cluster" OR "crop")
+  AND
+  ("count*" OR "yield estimation" OR "load estimation" OR "fruit load"
+   OR "inventory" OR "enumeration")
+  AND
+  ("multi-view" OR "multiple view*" OR "multi-camera" OR "video" OR "cross-view"
+   OR "structure from motion" OR "SfM" OR "track*" OR "3D reconstruction"
+   OR "image sequence")
+)
+AND PUBYEAR > 2014
+```
+
+**Web of Science** — ganti `TITLE-ABS-KEY(` → `TS=(`, `AND PUBYEAR > 2014` →
+`AND PY=(2015-2026)`. Berlaku untuk Q1–Q6.
+
+### Q2 — Asosiasi lintas-view dan anti-duplikasi *(mekanisme, non-pertanian diizinkan)*
+
+```
+TITLE-ABS-KEY(
+  ("multi-view" OR "cross-view" OR "multi-camera" OR "multiple cameras"
+   OR "overlapping view*" OR "multi-sensor")
+  AND
+  ("re-identification" OR "data association" OR "identity" OR "duplicate*"
+   OR "deduplicat*" OR "double counting" OR "correspondence" OR "instance matching"
+   OR "track*" OR "association")
+  AND
+  ("object detection" OR "instance segmentation" OR "counting" OR "instance"
+   OR "pedestrian" OR "vehicle")
+)
+AND PUBYEAR > 2014
+```
+
+Set inilah yang mengisi §5.2–5.5, tempat korpus lama **nol**. Bila hasilnya kurus,
+lihat gerbang keputusan R2 di plan (ciutkan sumbu asumsi 7 → 3–4 **sebelum** menulis).
+
+### Q3 — Multimodalitas dan geometri untuk tanaman
+
+```
+TITLE-ABS-KEY(
+  ("RGB-D" OR "depth camera" OR "stereo vision" OR "LiDAR" OR "point cloud"
+   OR "monocular depth" OR "photogrammetry" OR "structure from motion")
+  AND
+  ("fruit" OR "orchard" OR "vineyard" OR "canopy" OR "plant" OR "tree crop"
+   OR "plantation" OR "oil palm")
+  AND
+  ("detection" OR "segmentation" OR "localization" OR "counting" OR "phenotyping"
+   OR "harvesting")
+)
+AND PUBYEAR > 2014
+```
+
+### Q4 — Kelas per-instans di luar kematangan *(butir 6)*
+
+```
+TITLE-ABS-KEY(
+  ("fruit" OR "produce" OR "crop" OR "bunch")
+  AND
+  ("maturity" OR "ripeness" OR "grading" OR "grade" OR "quality class*"
+   OR "size class*" OR "defect" OR "disease" OR "cultivar" OR "variety")
+  AND
+  ("instance segmentation" OR "object detection" OR "per-instance" OR "individual fruit"
+   OR "bounding box" OR "per-object")
+)
+AND PUBYEAR > 2014
+```
+
+### Q5 — Tinjauan terdahulu *(positioning, butir 3)*
+
+```
+TITLE(("review" OR "survey" OR "systematic review" OR "scoping review"))
+AND TITLE-ABS-KEY(
+  ("fruit detection" OR "fruit counting" OR "yield estimation" OR "oil palm"
+   OR "orchard" OR "crop monitoring" OR "agricultural robot*" OR "precision agriculture")
+  AND
+  ("deep learning" OR "computer vision" OR "object detection" OR "machine vision")
+)
+AND PUBYEAR > 2014
+```
+
+**Aturan pemakaian hasil Q5.** Tiap review yang masuk dikodekan pada satu pertanyaan:
+*apakah identitas/duplikasi lintas-view diperlakukan sebagai masalah kelas satu?*
+Jawabannya jadi kolom terakhir Tabel 1. Bila ada yang menjawab "ya", klaim kebaruan
+**dilemahkan apa adanya** — jangan disembunyikan.
+
+### Q6 — Seed sawit *(butir 7)*
+
+```
+TITLE-ABS-KEY(
+  ("oil palm" OR "elaeis guineensis" OR "fresh fruit bunch" OR "FFB")
+  AND
+  ("detection" OR "classification" OR "counting" OR "ripeness" OR "maturity"
+   OR "yield" OR "grading" OR "harvest*" OR "plantation")
+)
+AND PUBYEAR > 2014
+```
+
+Ditambah pencarian penulis terpisah, dicatat sebagai jalur tersendiri:
+`AUTHOR-NAME("Suharjito")` dan `AUTHOR-NAME("Goh")` dibatasi ke subjek pertanian /
+ilmu komputer. **Peringatan:** "Goh" adalah nama yang sangat umum, dan satu-satunya
+"Goh" di repo saat ini adalah **Gabriel Goh** (co-author CLIP) — false positive.
+Rujukan persisnya harus dikonfirmasi ke dosen sebelum jalur ini dijalankan.
+
+**Terbuka:** apakah literatur sawit berbahasa Indonesia (Sinta/Garuda) masuk scope.
+Bila ya, itu jalur hand-search terpisah dengan label provenance sendiri.
+
+---
+
+## 4. Kriteria inklusi
+
+| Kode | Kriteria |
+|---|---|
+| **IC1** | Artikel riset yang telah ditinjau sejawat, atau praregistrasi/preprint dengan teks penuh tersedia dan hasil kuantitatif. |
+| **IC2** | Memuat komponen persepsi visual yang menghasilkan keluaran **per-instans** (deteksi, segmentasi instans, pelacakan), **atau** membahas mekanisme asosiasi/identitas lintas-observasi. |
+| **IC3** | Terbit 2015–2026. |
+| **IC4** | Berbahasa Inggris atau Indonesia. |
+| **IC5** | Hasil dapat diverifikasi dari teks penuh: dataset, protokol evaluasi, dan metrik dilaporkan. |
+
+## 5. Kriteria eksklusi
+
+| Kode | Kriteria |
+|---|---|
+| **EC1** | Keluaran bukan per-instans (klasifikasi tingkat-citra, regresi jumlah global) **dan** tidak membahas identitas/duplikasi lintas-observasi. |
+| **EC2** | Tidak ada evaluasi kuantitatif. |
+| **EC3** | Teks penuh tidak dapat diperoleh. *(Aturan repo melarang mengutip dari abstrak saja.)* |
+| **EC4** | Duplikat, atau versi lebih awal dari record yang sudah masuk. |
+| **EC5** | Bukan artikel riset: editorial, abstrak konferensi, poster, paten, buku teks. |
+| **EC6** | Di luar rentang tahun. |
+
+Setiap eksklusi pada tahap teks penuh dicatat dengan **satu kode alasan**. Eksklusi pada
+tahap judul–abstrak dicatat sebagai agregat per kode.
+
+---
+
+## 6. Uji known-item *(FASE 1.2 — WAJIB sebelum ekspor)*
+
+Query dianggap lolos hanya bila mengembalikan keempat item berikut. Kalau tidak, query
+diperbaiki dan **versi yang gagal dicatat beserta alasannya di berkas ini**, bukan dihapus.
+
+| Item | Rujukan | Query yang harus menemukannya |
+|---|---|---|
+| Gené-Molá dkk. 2020, deteksi buah + SfM | *Comput. Electron. Agric.* 169:105165 | Q1 dan/atau Q3 |
+| Koirala dkk. 2019, MangoYOLO | *Precis. Agric.* 20(6):1107–1135 | Q1 dan/atau Q4 |
+| Suharjito **dan** Goh | *(judul/DOI menunggu konfirmasi dosen)* | Q6 |
+| Indriani dkk. 2026, SawitMVC | `10.1016/j.dib.2026.112990` | Q1 |
+
+Alasan uji ini murah tapi menyelamatkan: ia memeriksa bahwa query benar-benar mencakup
+ruang desain sebelum ribuan record disaring, dan ia satu-satunya cara memastikan butir 7
+dosen benar-benar terjaring.
+
+---
+
+## 7. Prosedur penyaringan
+
+1. **Ekspor mentah** per (database × query) → `raw/<db>_<qid>_<YYYY-MM-DD>.csv`, di-commit.
+2. **Deduplikasi dalam-query**, lalu **antar-sumber**: kunci utama **DOI ternormalisasi**
+   (huruf kecil, buang prefiks `https://doi.org/`); untuk record tanpa DOI, kunci
+   cadangan = judul ternormalisasi (huruf kecil, buang tanda baca dan spasi) + tahun.
+   Kecocokan judul di bawah ambang diperiksa manual — **jangan otomatiskan sepenuhnya**.
+3. **Saringan judul–abstrak** (tahap 1) → terapkan EC1, EC5, EC6.
+4. **Saringan teks penuh** (tahap 2) → terapkan IC1–IC5 dan EC2, EC3, EC4.
+5. **Snowballing** maju dan mundur dari studi yang masuk, dilabeli terpisah.
+6. Setiap tahap dicatat sebagai baris di `prisma-counts.csv` (append-only).
+
+Penyaring tunggal. Karena tidak ada penyaring kedua, **tidak ada kappa antar-penilai yang
+dilaporkan** dan itu dinyatakan sebagai keterbatasan di §7.4 — bukan dibiarkan implisit.
+Preseden: P4 di sampel venue menyatakan hal serupa secara terbuka.
+
+### Skema `prisma-counts.csv`
+
+```
+query_id, database, date_run, n_raw, n_dedup_within, n_dedup_across, n_screened,
+n_excl_EC1, n_excl_EC2, n_excl_EC3, n_excl_EC4, n_excl_EC5, n_excl_EC6,
+n_fulltext_sought, n_retrieved, n_included
+```
+
+Diagram alir di naskah **dibangkitkan dari CSV ini**, tidak digambar tangan — mengikuti
+pola `build.js` → `index.html` yang sudah dipakai repo.
+
+---
+
+## 8. Dua register asal-usul
+
+Korpus lama (202 record) **dikumpulkan sebelum protokol ini ada** — commit pertama
+(`4a7661d`, 16 Juli 2026) sudah memuatnya lengkap. Tidak ada yang bisa direkonstruksi;
+hanya bisa diproduksi baru. Karena itu asal-usul dilaporkan dalam dua register terpisah.
+
+| Register | Isi | Perlakuan |
+|---|---|---|
+| **A** | Studi yang **ditinjau** | Masuk corong; punya baris di tabel sintesis dan di `evidence-matrix-v2.csv`. |
+| **B** | Sitasi **latar** (R-CNN, COCO, KITTI, DETR, NYU Depth v2, dst.) | Dikutip untuk konteks; **tidak** masuk corong; tidak punya baris tabel sintesis. |
+
+Tiap dari 202 record lama diberi **satu** label di `provenance-202.csv`:
+`db-search` · `hand-search-snowballing` · `background-citation` · `dropped`.
+
+> **Aturan keras.** Label `hand-search-snowballing` hanya boleh diberikan bila tautan
+> sitasinya dapat **disebut konkret** — record ini disitasi oleh studi included X, atau
+> menyitasi Y — dan diverifikasi ke `docs/extracted/`. Melabeli record lama sebagai
+> "hand-search" tanpa tautan yang bisa ditunjuk adalah rasionalisasi retrospektif, bukan
+> pelaporan.
+
+**Jangan pernah menyetel protokol ini agar jumlah included berujung di 182.** Query yang
+dijalankan sungguhan akan mengembalikan himpunan yang hampir tidak beririsan dengan
+korpus lama (`references.bib` punya **0** judul ber-"counting", "oil palm", "citrus",
+"grape", "re-identification", "yield"). Laporkan angkanya apa adanya.
+
+---
+
+## 9. Form ekstraksi
+
+Satu baris per studi Register A di `docs/evidence-matrix-v2.csv`:
+
+```
+study_id, bibtex_key, authors_year, crop_or_domain, observation_regime,
+modality, identity_mechanism, class_attribute_family, evaluation_context,
+unique_instance_gt, metrics_reported, dedup_handled, evidence_status,
+assumptions_required, violated_conditions
+```
+
+| Kolom | Nilai yang diizinkan |
+|---|---|
+| `observation_regime` | `single-view` · `multi-view-discrete` · `video-continuous` · `multi-camera-rig` · `aerial` |
+| `identity_mechanism` | `M0` intra-view · `M1` statistik · `M2` penampilan/re-ID · `M3` gerak/temporal · `M4` geometris · `M5` multi-view terpelajar |
+| `class_attribute_family` | `maturity` · `size` · `quality-defect` · `disease` · `cultivar` · `none` |
+| `unique_instance_gt` | `y` · `n` — apakah studi punya ground truth instans unik lintas-observasi |
+| `dedup_handled` | `explicit` · `implicit` · `no` · `n-a` |
+| `evidence_status` | `direct` (pertanian/buah) · `transferable` (domain lain, menjawab pertanyaan mekanisme) · `absent` |
+| `assumptions_required` | subset dari A1–A7 |
+| `violated_conditions` | subset dari P1–P5 (kondisi kanopi yang melanggar asumsi domain asal) |
+
+**Wajib dinyatakan sebagai keterbatasan di §7.4:** `assumptions_required` dan
+`violated_conditions` adalah **inferensi peninjau**, bukan ekstraksi harfiah dari teks
+studi. Sebagian besar studi tidak menyatakan asumsinya secara eksplisit.
+
+---
+
+## 10. Log deviasi
+
+Setiap perubahan protokol setelah pencarian dimulai dicatat di sini, bertanggal, dengan
+alasannya. Kosong sampai FASE 1.2 berjalan.
+
+| Tanggal | Deviasi | Alasan |
+|---|---|---|
+| — | — | — |
