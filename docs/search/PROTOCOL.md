@@ -48,8 +48,12 @@ tidak masuk corong.
 
 ## 3. Set query
 
-Enam set, masing-masing menjawab satu bagian ruang desain. Q1 mempertahankan struktur
-contoh dosen agar keterkaitannya terlihat.
+**Tujuh set** (Q1–Q6 asli; **Q7 ditambahkan 2026-07-23**, lihat D-2/D-4), masing-masing
+menjawab satu bagian ruang desain. Q1 mempertahankan struktur contoh dosen agar
+keterkaitannya terlihat.
+
+Versi siap-tempel satu baris untuk kotak Scopus ada di
+[`scopus-queries.md`](scopus-queries.md).
 
 ### Q1 — Inventaris/penghitungan buah dari banyak observasi *(inti pertanian)*
 
@@ -143,12 +147,40 @@ Jawabannya jadi kolom terakhir Tabel 1. Bila ada yang menjawab "ya", klaim kebar
 
 ### Q6 — Seed sawit *(butir 7)*
 
+> **Direvisi 2026-07-23 (D-5).** Klausa kedua yang lama (`yield` / `plantation` /
+> `harvest*`) adalah istilah agronomi dan menjaring literatur agronomi, biologi, dan
+> ekonomi minyak sawit — 15.609 record di OpenAlex. Diganti klausa pencitraan/ML yang
+> **wajib**. Versi lama disimpan verbatim di D-5, tidak dihapus.
+
 ```
 TITLE-ABS-KEY(
   ("oil palm" OR "elaeis guineensis" OR "fresh fruit bunch" OR "FFB")
   AND
-  ("detection" OR "classification" OR "counting" OR "ripeness" OR "maturity"
-   OR "yield" OR "grading" OR "harvest*" OR "plantation")
+  ("deep learning" OR "machine learning" OR "convolutional" OR "neural network"
+   OR "computer vision" OR "image processing" OR "YOLO" OR "object detection"
+   OR "remote sensing")
+)
+AND PUBYEAR > 2014
+```
+
+### Q7 — Penghitungan buah pandangan-tunggal / estimasi hasil *(butir 7)*
+
+> **Ditambahkan 2026-07-23 (D-2, dijalankan di D-4).** Q1 mensyaratkan klausa
+> multi-view dan Q4 mensyaratkan klausa atribut kelas, sehingga keduanya melewatkan
+> baseline penghitungan citra-tunggal (terbukti: Koirala 2019 MangoYOLO lolos dari
+> keduanya). Literatur ini dibutuhkan dua kali — sebagai kelas pembanding M0/M1 di §5,
+> dan untuk memenuhi butir 7 (penghitungan apel/jeruk/anggur).
+
+```
+TITLE-ABS-KEY(
+  ("fruit" OR "apple" OR "citrus" OR "mango" OR "grape" OR "berry" OR "bunch"
+   OR "oil palm" OR "orchard" OR "vineyard")
+  AND
+  ("counting" OR "count" OR "yield estimation" OR "load estimation" OR "fruit load"
+   OR "crop load")
+  AND
+  ("deep learning" OR "convolutional" OR "object detection" OR "YOLO"
+   OR "instance segmentation" OR "machine vision")
 )
 AND PUBYEAR > 2014
 ```
