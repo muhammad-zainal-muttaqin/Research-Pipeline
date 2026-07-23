@@ -20,12 +20,64 @@ const path = require('path');
 
 const ROOT = __dirname;
 const ENTRI_DIR = path.join(ROOT, 'entri');
-const TEMUAN_PATH = path.join(ROOT, 'TEMUAN.md');
 const MARKED_PATH = path.join(ROOT, 'vendor', 'marked.min.js');
 const OUT_PATH = path.join(ROOT, 'index.html');
 const DRY = process.argv.includes('--dry');
 
 const MARKED_VERSION = '12.0.0';
+
+/* ------------------------------------------------------------------ *
+ * Registry dokumen spesial
+ * ------------------------------------------------------------------ *
+ * Dokumen spesial = berkas Markdown di luar korpus `entri/` yang tetap
+ * dapat dibaca di dalam aplikasi. Mereka TIDAK pernah ikut menghitung
+ * invarian korpus (182 entri, 14 tema, rentang tahun, statistik baca):
+ * seluruh angka META dihitung dari `entries` saja.
+ *
+ * Medan:
+ *   id        : rute hash (#/<id>) sekaligus kunci `byId` di runtime
+ *   kind      : jenis dokumen, dipakai runtime untuk header dan penanda
+ *   label     : teks eyebrow di halaman dokumen (huruf besar)
+ *   marker    : penanda kolom "No" di katalog (pengganti nomor entri)
+ *   theme     : label tema (bukan klaster korpus; tak masuk themeCounts)
+ *   file      : lokasi berkas relatif terhadap ROOT (pemisah "/")
+ *   sourceDir : direktori asal, dasar penulisan ulang tautan relatif
+ *   desc      : satu baris untuk baris "Dokumen riset" di beranda
+ */
+const SPECIAL_DOCS = [
+  {
+    id: 'temuan',
+    kind: 'sintesis',
+    label: 'SINTESIS',
+    marker: '§',
+    title: 'Temuan Riset: Sintesis Lintas Makalah',
+    theme: 'Sintesis',
+    file: 'TEMUAN.md',
+    sourceDir: '',
+    desc: 'Sintesis lintas makalah dari korpus tinjauan pustaka.'
+  },
+  {
+    id: 'laporan-eksperimen',
+    kind: 'laporan',
+    label: 'LAPORAN EKSPERIMEN',
+    marker: '¶',
+    title: 'Laporan Eksperimen: Deteksi & Penghitungan Tandan Sawit',
+    theme: 'Eksperimen',
+    file: 'docs/LAPORAN-EKSPERIMEN.md',
+    sourceDir: 'docs',
+    desc: 'Cuplikan terkurasi eksperimen deteksi dan penghitungan tandan sawit.'
+  }
+];
+
+/* Folder yang di-exclude dari build Jekyll (`_config.yml`): berkas di
+ * dalamnya TIDAK tayang di GitHub Pages, jadi tautan ke sana harus
+ * diturunkan menjadi teks biasa alih-alih menjadi tautan mati.
+ * Pengecualian: `entri/`, sebab tautan ke entri korpus ditangani runtime
+ * (`enhance()`) dan diubah menjadi rute internal `#/NNN`. */
+const PAGES_EXCLUDED = [
+  'docs/extracted/', 'docs/archive/', 'tools/', 'experiments/', 'PDF/', 'tmp/'
+];
+const ENTRY_LINK_RE = /(?:^|\/)\d{3}\s-\s.*\.md$/i;
 
 /* ------------------------------------------------------------------ *
  * Validasi awal
@@ -37,7 +89,11 @@ function fail(msg) {
 if (!fs.existsSync(ENTRI_DIR) || !fs.statSync(ENTRI_DIR).isDirectory()) {
   fail('Direktori "entri/" tidak ditemukan di ' + ROOT);
 }
-if (!fs.existsSync(TEMUAN_PATH)) fail('Berkas "TEMUAN.md" tidak ditemukan.');
+SPECIAL_DOCS.forEach(function (d) {
+  if (!fs.existsSync(path.join(ROOT, d.file))) {
+    fail('Dokumen spesial "' + d.file + '" (id: ' + d.id + ') tidak ditemukan.');
+  }
+});
 if (!fs.existsSync(MARKED_PATH)) {
   fail('Berkas "vendor/marked.min.js" tidak ditemukan.\n' +
        '        Unduh dahulu:\n' +
@@ -108,6 +164,68 @@ function countWords(md) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Penulisan ulang tautan relatif dokumen spesial
+ * ------------------------------------------------------------------ *
+ * Isi dokumen disematkan ke `index.html` yang berada di akar repo, jadi
+ * tautan relatif yang ditulis dari sudut pandang `docs/` harus digeser
+ * ke akar: `EKSPERIMEN.md` menjadi `docs/EKSPERIMEN.md`, sedangkan
+ * `../pipeline/README.md` menjadi `pipeline/README.md`.
+ */
+
+// Gabung direktori + jalur relatif ala POSIX, sekaligus meratakan "." dan "..".
+function joinRelative(dir, rel) {
+  const parts = String(dir || '').split('/').filter(function (p) { return p && p !== '.'; });
+  String(rel).split('/').forEach(function (seg) {
+    if (!seg || seg === '.') return;
+    if (seg === '..') parts.pop();
+    else parts.push(seg);
+  });
+  return parts.join('/');
+}
+
+// Tautan yang tidak boleh disentuh: absolut, protokol, jangkar, root-relatif.
+function isAbsoluteTarget(t) {
+  return /^[a-z][a-z0-9+.-]*:/i.test(t) || t.indexOf('//') === 0 || t.charAt(0) === '#' || t.charAt(0) === '/';
+}
+
+function isPagesExcluded(target) {
+  if (ENTRY_LINK_RE.test(target)) return false; // ditangani runtime jadi rute internal
+  return PAGES_EXCLUDED.some(function (p) { return target.indexOf(p) === 0; });
+}
+
+// Terapkan `fn` per baris, tetapi lewati isi blok kode berpagar.
+function mapOutsideFences(md, fn) {
+  let fence = null;
+  return md.split('\n').map(function (line) {
+    const m = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+    if (fence) {
+      if (m && line.trim().indexOf(fence) === 0) fence = null;
+      return line;
+    }
+    if (m) { fence = m[1]; return line; }
+    return fn(line);
+  }).join('\n');
+}
+
+// sourceDir kosong berarti dokumen sudah berada di akar: tautannya tetap,
+// yang tersisa hanya penjagaan terhadap folder yang di-exclude dari Pages.
+function rebaseLinks(md, sourceDir, stats) {
+  return mapOutsideFences(md, function (line) {
+    return line.replace(/(!?)(\[[^\]]*\])\(\s*([^()\s]+)((?:\s+"[^"]*")?)\s*\)/g,
+      function (whole, bang, label, target, title) {
+        if (isAbsoluteTarget(target)) return whole;
+        const rebased = joinRelative(sourceDir, target);
+        if (isPagesExcluded(rebased)) {
+          stats.dropped.push(rebased);
+          return label.slice(1, -1); // turunkan jadi teks biasa, tautan dibuang
+        }
+        if (rebased !== target) stats.rebased.push(target + ' -> ' + rebased);
+        return bang + label + '(' + rebased + title + ')';
+      });
+  });
+}
+
+/* ------------------------------------------------------------------ *
  * Pindai dan rakit data entri
  * ------------------------------------------------------------------ */
 const files = fs.readdirSync(ENTRI_DIR).filter(function (f) { return /\.md$/i.test(f); });
@@ -162,24 +280,34 @@ if (warnings.some(function (w) { return /tidak cocok pola/.test(w); })) {
 
 entries.sort(function (a, b) { return a.num - b.num; });
 
-// TEMUAN sebagai entri spesial (pin di atas).
-const temuanRaw = fs.readFileSync(TEMUAN_PATH, 'utf8');
-const temuanMd = cleanMarkdown(temuanRaw, true);
-const temuan = {
-  num: 0,
-  id: 'temuan',
-  year: null,
-  title: 'Temuan Riset: Sintesis Lintas Makalah',
-  theme: 'Sintesis',
-  bib: null,
-  special: true,
-  words: countWords(temuanMd),
-  scholar: null,
-  semantic: null,
-  md: temuanMd
-};
+// Dokumen spesial (dipin di atas katalog). Nomor `num` dibuat negatif dan
+// berurutan sesuai registry supaya selalu mendahului entri 001..NNN pada
+// pengurutan, tanpa pernah tampil sebagai nomor entri.
+const linkStats = { rebased: [], dropped: [] };
+const specials = SPECIAL_DOCS.map(function (d, i) {
+  const raw = fs.readFileSync(path.join(ROOT, d.file), 'utf8');
+  const md = rebaseLinks(cleanMarkdown(raw, true), d.sourceDir, linkStats);
+  return {
+    num: i - SPECIAL_DOCS.length,
+    id: d.id,
+    year: null,
+    title: d.title,
+    theme: d.theme,
+    bib: null,
+    special: true,
+    kind: d.kind,
+    label: d.label,
+    marker: d.marker,
+    desc: d.desc,
+    source: d.file,
+    words: countWords(md),
+    scholar: null,
+    semantic: null,
+    md: md
+  };
+});
 
-const DATA = [temuan].concat(entries);
+const DATA = specials.concat(entries);
 
 /* ------------------------------------------------------------------ *
  * Statistik dan META
@@ -217,8 +345,9 @@ const META = {
  * Laporan
  * ------------------------------------------------------------------ */
 console.log('\n=== build.js: Ruang Baca Riset ===');
-console.log('Entri reguler   : ' + entries.length);
-console.log('Entri spesial   : TEMUAN (1)');
+console.log('Entri reguler   : ' + entries.length + '  (invarian korpus; dokumen spesial tidak dihitung)');
+console.log('Dokumen spesial : ' + specials.length + '  ' +
+  specials.map(function (s) { return s.id + ' [' + s.kind + ', ' + s.words + ' kata]'; }).join(' · '));
 console.log('Tema            : ' + themes.length);
 console.log('Rentang tahun   : ' + minYear + '-' + maxYear + ' (' + years.length + ' tahun berisi)');
 console.log('Total kata      : ~' + totalWords.toLocaleString('en-US') + '  (kira-kira ' + totalHours + ' jam baca)');
@@ -228,6 +357,12 @@ themes.sort(function (a, b) { return themeCounts[b] - themeCounts[a]; }).forEach
 });
 console.log('\nDistribusi tahun:');
 years.forEach(function (y) { console.log('   ' + y + '  ' + String(yearCounts[y]).padStart(3) + '  ' + '#'.repeat(yearCounts[y])); });
+console.log('\nTautan dokumen spesial:');
+console.log('   ' + linkStats.rebased.length + ' tautan relatif digeser ke akar');
+linkStats.rebased.forEach(function (r) { console.log('     ' + r); });
+console.log('   ' + linkStats.dropped.length + ' tautan ke folder non-Pages diturunkan jadi teks');
+linkStats.dropped.forEach(function (r) { console.log('     ' + r); });
+
 if (warnings.length) {
   console.log('\nPeringatan:');
   warnings.forEach(function (w) { console.log('   ! ' + w); });
@@ -603,6 +738,16 @@ html[data-theme="dark"] .meta-btn.ok{color:#8fd9a3; border-color:#3c6b48}
 .trow-count{font-family:var(--mono); font-size:12px; color:var(--ink-2); width:34px; text-align:right; flex-shrink:0}
 @media(max-width:760px){ .trow-samples,.trow-bar{display:none} .trow-name{width:auto; flex:1; min-width:0} }
 
+/* dokumen riset: baris datar memakai pola .trow yang sama, tanpa kartu */
+.docrows .trow{color:inherit}
+.docrows .trow-kind{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); width:152px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.docrows .trow-name{width:auto; flex:1 1 auto; min-width:0}
+.docrows .trow-samples{flex:1 1 38%}
+.docrows .trow-count{width:auto; min-width:52px}
+.docrows .trow:hover .trow-name{color:var(--accent-ink)}
+@media(max-width:760px){ .docrows .trow-kind{width:auto; flex:0 0 auto; font-size:9.5px} }
+
 /* katalog (tabel indeks) */
 .cat{overflow-x:auto}
 .cat-table{width:100%; border-collapse:collapse}
@@ -661,7 +806,9 @@ tr.special .c-title{font-style:italic}
 .nf{max-width:var(--read-w); margin:70px auto; text-align:center}
 .nf .code{font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--accent)}
 .nf h1{font-family:var(--serif); font-size:36px; letter-spacing:-.02em; margin:14px 0 10px; text-wrap:balance}
-.nf p{color:var(--ink-2); margin-bottom:26px}
+.nf p{color:var(--ink-2); margin-bottom:26px; text-wrap:pretty}
+.nf p a{color:var(--accent-ink); border-bottom:1px solid color-mix(in srgb,var(--accent) 30%,transparent)}
+.nf p a:hover{border-bottom-color:var(--accent)}
 
 /* ---------- reveal / motion ---------- */
 .rv{opacity:0; transform:translateY(12px); transition:opacity .45s var(--ease), transform .45s var(--ease);
@@ -808,6 +955,7 @@ function RUNTIME() {
   var byId = {};
   DATA.forEach(function (e) { byId[e.id] = e; });
   var ENTRIES = DATA.filter(function (e) { return !e.special; });
+  var SPECIALS = DATA.filter(function (e) { return e.special; });
 
   var THEME_COLORS = {
     'Fondasi RGB': '#2B6CB0', 'Survei YOLO': '#2F7D5B', 'YOLO plus RGB-D': '#0E7490',
@@ -815,7 +963,8 @@ function RUNTIME() {
     'Pose 6D': '#7A5AA0', 'Deteksi 3D': '#4F46A5', 'Grasp Robotik': '#B0433F',
     'RGB-D SLAM': '#A04763', 'Pedestrian RGB-T': '#A9611A', 'Pertanian': '#6C8018',
     'Medis': '#128577', 'Industri': '#5C6875', 'Remote Sensing': '#2E86AB',
-    'Fusi Multimodal': '#8B5CB4', 'Dataset': '#7C755E', 'Sintesis': '#A03028'
+    'Fusi Multimodal': '#8B5CB4', 'Dataset': '#7C755E', 'Sintesis': '#A03028',
+    'Eksperimen': '#3F6B8F'
   };
   function tColor(t) { return THEME_COLORS[t] || 'var(--ink-2)'; }
 
@@ -966,7 +1115,14 @@ function RUNTIME() {
     tr.dataset.id = e.id;
     tr.tabIndex = 0;
     if (e.special) tr.className = 'special';
-    var num = doc.createElement('td'); num.className = 'c-num'; num.textContent = e.special ? '§' : e.id;
+    var num = doc.createElement('td'); num.className = 'c-num';
+    // Dokumen spesial tidak punya nomor entri: penanda dari registry, dengan
+    // label lengkap sebagai teks bantu supaya tidak terbaca sebagai entri.
+    num.textContent = e.special ? (e.marker || '·') : e.id;
+    if (e.special) {
+      num.title = e.label || 'Dokumen riset';
+      num.setAttribute('aria-label', (e.label || 'Dokumen riset') + ', bukan entri bernomor');
+    }
     var title = doc.createElement('td'); title.className = 'c-title';
     markInto(title, e.title, terms);
     var theme = doc.createElement('td'); theme.className = 'c-theme';
@@ -1030,8 +1186,11 @@ function RUNTIME() {
     if (searchInput.value !== state.q && doc.activeElement !== searchInput) searchInput.value = state.q;
     searchBox.classList.toggle('has-val', !!state.q);
     var active = state.q || state.thn || Object.keys(state.tema).length;
+    // Hitungan penyaring memakai entri korpus saja: dokumen spesial tidak
+    // pernah menggeser angka 182.
+    var shown = state.ordered.filter(function (e) { return !e.special; }).length;
     sbCount.textContent = active
-      ? (state.ordered.length + ' dari ' + META.total + ' entri')
+      ? (shown + ' dari ' + META.total + ' entri')
       : (META.total + ' entri · ' + META.themeCount + ' tema');
   }
 
@@ -1170,30 +1329,43 @@ function RUNTIME() {
   /* ================= VIEWS ================= */
   function entryHeader(e) {
     var chip = '<span class="t-chip" style="--tc:' + tColor(e.theme) + '"><span class="cd"></span>' + esc(e.theme) + '</span>';
+    // Dokumen spesial memakai label dari registry; hanya entri korpus yang
+    // boleh menyandang nomor "ENTRI NNN / 182".
     var eyebrow = e.special
-      ? '<span>SINTESIS</span><span class="sep">·</span>' + chip
+      ? '<span>' + esc(e.label || 'DOKUMEN') + '</span><span class="sep">·</span>' + chip
       : '<span>ENTRI ' + e.id + ' / ' + META.total + '</span><span class="sep">·</span><span>' + e.year + '</span><span class="sep">·</span>' + chip;
     var meta = '<span class="readtime">' + ICON.clock + readMin(e.words) + ' menit baca</span>';
     if (e.bib) meta += '<button class="meta-btn" data-copy="' + esc(e.bib) + '">' + ICON.copy + '<span>' + esc(e.bib) + '</span></button>';
     meta += '<button class="meta-btn" data-copy-link="' + e.id + '">' + ICON.copy + 'Salin tautan</button>';
+    if (e.source) meta += '<a class="meta-link" href="' + esc(e.source) + '" target="_blank" rel="noopener noreferrer">' + ICON.ext + esc(e.source) + '</a>';
     if (e.scholar) meta += '<a class="meta-link" href="' + esc(e.scholar) + '" target="_blank" rel="noopener noreferrer">' + ICON.ext + 'Scholar</a>';
     if (e.semantic) meta += '<a class="meta-link" href="' + esc(e.semantic) + '" target="_blank" rel="noopener noreferrer">' + ICON.ext + 'Semantic Scholar</a>';
     return '<a class="back-link" href="#/' + hashQuery() + '">' + ICON.arrowL + 'Katalog</a>' +
       '<header class="eh rv in"><div class="eyebrow">' + eyebrow + '</div><h1>' + esc(e.title) + '</h1><div class="eh-meta">' + meta + '</div></header>';
   }
 
-  function prevNext(e) {
+  // Tetangga baca. Dokumen spesial dirantai menurut urutan registry, lalu
+  // menyambung ke entri korpus pertama; entri korpus mengikuti daftar
+  // katalog yang sedang tersaring.
+  function neighbours(e) {
     if (e.special) {
-      var first = ENTRIES[0];
-      return '<nav class="pn"><span class="empty"></span>' + (first ? pnCard('next', first) : '<span class="empty"></span>') + '</nav>';
+      var si = SPECIALS.findIndex(function (x) { return x.id === e.id; });
+      return {
+        prev: si > 0 ? SPECIALS[si - 1] : null,
+        next: SPECIALS[si + 1] || ENTRIES[0] || null
+      };
     }
     var list = state.ordered.filter(function (x) { return !x.special; });
     var idx = list.findIndex(function (x) { return x.id === e.id; });
     if (idx === -1) { list = ENTRIES; idx = list.findIndex(function (x) { return x.id === e.id; }); }
-    var prev = list[idx - 1], next = list[idx + 1];
+    return { prev: list[idx - 1] || null, next: list[idx + 1] || null };
+  }
+
+  function prevNext(e) {
+    var n = neighbours(e);
     return '<nav class="pn">' +
-      (prev ? pnCard('prev', prev) : '<span class="empty"></span>') +
-      (next ? pnCard('next', next) : '<span class="empty"></span>') + '</nav>';
+      (n.prev ? pnCard('prev', n.prev) : '<span class="empty"></span>') +
+      (n.next ? pnCard('next', n.next) : '<span class="empty"></span>') + '</nav>';
   }
   function pnCard(dir, e) {
     var label = dir === 'prev' ? (ICON.arrowL + 'Sebelumnya') : ('Berikutnya' + ICON.arrowR);
@@ -1227,9 +1399,15 @@ function RUNTIME() {
 
   function view404(id) {
     tocEl.innerHTML = '';
-    main.innerHTML = '<div class="wrap"><div class="nf rv in"><div class="code">404 · ENTRI TIDAK DITEMUKAN</div>' +
-      '<h1>Entri "' + esc(id) + '" tidak ada</h1>' +
-      '<p>Nomor entri berkisar 001–' + pad3(META.total) + '. Periksa kembali tautannya, atau telusuri lewat daftar di samping.</p>' +
+    // Rute bisa berupa nomor entri atau id dokumen riset, jadi pesannya tidak
+    // boleh menyebut "entri" saja.
+    var docs = SPECIALS.map(function (d) {
+      return '<a href="#/' + esc(d.id) + '">' + esc(d.title) + '</a>';
+    }).join(', ');
+    main.innerHTML = '<div class="wrap"><div class="nf rv in"><div class="code">404 · HALAMAN TIDAK DITEMUKAN</div>' +
+      '<h1>Alamat "' + esc(id) + '" tidak dikenali</h1>' +
+      '<p>Nomor entri korpus berkisar 001–' + pad3(META.total) + '. Di luar itu tersedia dokumen riset: ' + docs + '. ' +
+      'Periksa kembali tautannya, atau telusuri lewat daftar di samping.</p>' +
       '<a class="btn btn-solid" href="#/">' + ICON.arrowL + 'Kembali ke Beranda</a></div></div>';
     doc.title = 'Tidak ditemukan · Ruang Baca Riset';
   }
@@ -1241,11 +1419,14 @@ function RUNTIME() {
     h += '<section class="hero">' +
       '<div class="eb rv"><span class="dot"></span>Tinjauan Pustaka · ' + META.minYear + '–' + META.maxYear + '</div>' +
       '<h1 class="rv" style="--i:1">Ruang Baca Riset<br><span class="muted">YOLO · RGB · RGB-D</span></h1>' +
-      '<p class="lede rv" style="--i:2">Ruang baca digital untuk ' + META.total + ' telaah makalah deteksi objek dan fusi RGB+Depth (' + META.minYear + '–' + META.maxYear + '), plus satu dokumen sintesis lintas makalah.</p>' +
+      '<p class="lede rv" style="--i:2">Ruang baca digital untuk ' + META.total + ' telaah makalah deteksi objek dan fusi RGB+Depth (' + META.minYear + '–' + META.maxYear + '), plus ' + SPECIALS.length + ' dokumen riset: sintesis lintas makalah dan laporan eksperimen.</p>' +
       '<div class="cta-row rv" style="--i:3">' +
       '<a class="btn btn-solid" href="#/temuan">' + ICON.spark + 'Mulai dari Temuan' + ICON.arrowR + '</a>' +
       '<button class="btn btn-ghost" id="exploreBtn" type="button">' + ICON.book + 'Jelajahi katalog ' + META.total + ' entri</button>' +
       '</div>' + resumeHtml() + '</section>';
+
+    h += sectionH('Dokumen riset', 'research documents · ' + SPECIALS.length + ' dokumen');
+    h += docRowsHtml();
 
     h += sectionH('Dokumen naskah', 'pratinjau PDF');
     h += pdfPreviewHtml();
@@ -1382,6 +1563,21 @@ function RUNTIME() {
         '<button class="pdf-fullscreen" type="button" data-pdf-fullscreen="' + esc(src) + '" aria-label="Tampilkan ' + esc(p.title) + ' dalam layar penuh">Layar penuh' + ICON.fullscreen + '</button>' +
         '<a href="' + esc(src) + '" target="_blank" rel="noopener">Buka ' + esc(p.title) + ' PDF' + ICON.ext + '</a></span></footer>' +
         '</article>';
+    }).join('') + '</div>';
+  }
+  // Baris dokumen riset: daftar datar, satu baris per dokumen, memakai pola
+  // .tlist/.trow yang sudah ada. Tidak ikut menyentuh PATHS maupun statistik.
+  function docRowsHtml() {
+    return '<div class="tlist docrows rv">' + SPECIALS.map(function (d) {
+      var mins = readMin(d.words);
+      var label = d.label || 'Dokumen riset';
+      return '<a class="trow" href="#/' + esc(d.id) + '" style="--tc:' + tColor(d.theme) + '"' +
+        ' aria-label="' + esc(label + ': ' + d.title + ', ' + mins + ' menit baca') + '">' +
+        '<span class="cd" aria-hidden="true"></span>' +
+        '<span class="trow-kind">' + esc(label) + '</span>' +
+        '<span class="trow-name">' + esc(d.title) + '</span>' +
+        '<span class="trow-samples">' + esc(d.desc || '') + '</span>' +
+        '<span class="trow-count">' + mins + ' mnt</span></a>';
     }).join('') + '</div>';
   }
   function statCell(n, l) {
@@ -1565,11 +1761,9 @@ function RUNTIME() {
     if (ev.key === 't' || ev.key === 'T') { toggleTheme(); return; }
     if (ev.key === '?') { openHelp(); return; }
     if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') {
-      var e = byId[state.path]; if (!e || e.special) return;
-      var list = state.ordered.filter(function (x) { return !x.special; });
-      var idx = list.findIndex(function (x) { return x.id === e.id; });
-      if (idx === -1) { list = ENTRIES; idx = list.findIndex(function (x) { return x.id === e.id; }); }
-      var target = ev.key === 'ArrowLeft' ? list[idx - 1] : list[idx + 1];
+      var e = byId[state.path]; if (!e) return;
+      var n = neighbours(e);
+      var target = ev.key === 'ArrowLeft' ? n.prev : n.next;
       if (target) location.hash = '#/' + target.id + hashQuery();
     }
   });
@@ -1599,11 +1793,11 @@ const PAGE = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Ruang baca digital untuk ${META.total} telaah makalah deteksi objek YOLO dan fusi RGB+Depth (${META.minYear}-${META.maxYear}), plus sintesis lintas makalah.">
+<meta name="description" content="Ruang baca digital untuk ${META.total} telaah makalah deteksi objek YOLO dan fusi RGB+Depth (${META.minYear}-${META.maxYear}), plus ${specials.length} dokumen riset: sintesis lintas makalah dan laporan eksperimen.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAF9F6">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171613">
 <meta property="og:title" content="Ruang Baca Riset &middot; YOLO / RGB / RGB-D">
-<meta property="og:description" content="Ruang baca digital untuk telaah makalah deteksi objek dan fusi RGB+Depth, plus sintesis lintas makalah.">
+<meta property="og:description" content="Ruang baca digital untuk ${META.total} telaah makalah deteksi objek YOLO dan fusi RGB+Depth (${META.minYear}-${META.maxYear}), plus ${specials.length} dokumen riset: sintesis lintas makalah dan laporan eksperimen.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="id_ID">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23FAF9F6'/%3E%3Crect x='2' y='2' width='60' height='60' rx='13' fill='none' stroke='%23D4D0C4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='11' fill='%23A03028'/%3E%3C/svg%3E">
