@@ -956,3 +956,65 @@ latih di piksel master (imgsz 1600–2048), dan RT-DETR-X (67,5 juta).
 
 **Reproduksi** — `python train_rtdetr.py --weights rtdetr-l.pt --imgsz 1280`
 lalu `python eval_rtdetr.py`
+
+---
+
+## E-021 — RF-DETR-L: transformer NMS-free DINOv2 vs RT-DETR (2026-07-24) · Ide I-14 · lanjutan [E-020]
+
+**Konteks** — E-020 mengonfirmasi arah NMS-free (RT-DETR-L) mengalahkan keluarga
+YOLO. RF-DETR-L (backbone **DINOv2** pra-latih + kepala LW-DETR hasil NAS) adalah
+transformer NMS-free generasi lebih baru. Pertanyaannya bukan kapasitas melainkan
+apakah pada setelan **identik & adil** ia melampaui RT-DETR-L.
+
+**Hipotesis** — RF-DETR-L layak jadi pembanding bila pada val identik ia
+(a) melampaui yolo26m dan (b) mendekati/melampaui RT-DETR-L pada kedua metrik.
+**DIPALSUKAN** bila run konvergen tertinggal dari RT-DETR-L pada kedua metrik.
+Test hanya dilaporkan setelah checkpoint dipilih dari val.
+
+**Cara** — `train_rfdetr.py` + `build_rfdetr_ds.py` (adaptor dataset YOLO tanpa
+salin citra, split identik E-017 3000/404/588). RFDETRLarge (rfdetr 1.8.3,
+**35,65 juta param**, DINOv2 patch-16 + 2-window), resolusi **1280 tepat**
+(kelipatan 32; sama RT-DETR), dari bobot COCO `rf-detr-large-2026`, batch efektif
+16 (batch 8 × grad-accum 2). Early-stopping patience 8 → berhenti ep17, checkpoint
+terbaik **ep9 (EMA)**.
+
+**Fairness (dijaga ketat)** — (1) Resolusi 1280 identik: default rf-detr
+`multi_scale`+`expanded_scales` diam-diam mengunci ke skala TERBESAR (1440);
+**dimatikan** agar benar-benar 1280. (2) Split, augmentasi aman-warna, effective
+batch sekelas RT-DETR. (3) `.evaluate()` tak ada di rfdetr 1.8.3 → pakai
+`run_test=True`; GPU L4 sempat kelaparan data (num_workers default 2) — dinaikkan
+ke 8; batch16/workers32 meledak `/dev/shm` 26 GB → turun ke 8/8.
+
+**Hasil (checkpoint ep9 EMA; per-kelas AP50 via COCO eval `eval_rfdetr_perkelas.py`):**
+
+| | mAP50 | mAP50-95 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|
+| VAL RT-DETR | 0,5466 | 0,2543 | 0,7503 | 0,4413 | 0,5808 | 0,4138 |
+| **VAL RF-DETR** | **0,5695** | **0,2604** | 0,775 | 0,446 | 0,594 | **0,464** |
+| TEST RT-DETR | 0,5794 | 0,2694 | 0,7891 | 0,4685 | 0,6391 | 0,4208 |
+| **TEST RF-DETR** | **0,6038** | **0,2770** | 0,817 | 0,497 | 0,668 | 0,433 |
+
+Sanity: val pycocotools saya (0,5695) cocok evaluator internal rf-detr (0,5699 EMA)
+→ pipeline tervalidasi. `run_test` bawaan melaporkan test 0,5837/0,2653 memakai
+checkpoint `best_total` (berbeda); angka di atas EMA konsisten val↔test.
+
+**Putusan — DIKONFIRMASI.** RF-DETR-L melampaui RT-DETR-L (dan yolo26m) pada val
+kedua metrik (+0,023 mAP50, +0,006 mAP50-95) dan pada test (+0,024 mAP50,
++0,008 mAP50-95). **Detektor 4-kelas terbaik baru.** Test mAP50 0,604 melewati
+sasaran 0,60. Kelas tersulit tetap B4.
+
+**Caveat kesetaraan (dicatat, sedang ditangani)** — yolo26m (21,9 jt, imgsz 640)
+BUKAN pembanding sekelas RT-DETR-L (33,0 jt) / RF-DETR-L (35,7 jt @1280).
+Pembanding YOLO adil = **YOLO26l (26,3 jt) @1280** config identik RT-DETR —
+**BERJALAN** (`train_yolo26l.py`). Evaluator juga campur (yolo/rtdetr via
+ultralytics `.val()`, rf-detr via pycocotools); unifikasi 1-protokol
+`eval_all_pycoco.py` → `results/perkelas_pycoco.json` **BERJALAN**.
+
+**Dampak** — RF-DETR-L jadi detektor terbaik menggantikan RT-DETR-L (E-020).
+Lanjutan: selesaikan YOLO26l + tabel 1-protokol; pertimbangkan latih di piksel
+master.
+
+**Reproduksi** — `python build_rfdetr_ds.py` → `python train_rfdetr.py --dataset
+rfdetr_ds --epochs 60 --resolution 1280 --batch 8 --grad-accum 2 --workers 8` →
+`python eval_rfdetr_perkelas.py`. Metrik: `results/perkelas_fair.json`,
+`runs/rfdetr_l_e60_i1280/evaluation.json` + `metrics.csv`.

@@ -3,8 +3,9 @@
 Panduan kerja untuk Claude Code di repositori ini. Baca sebelum mengubah apa pun.
 
 > **Melanjutkan eksperimen?** Baca **[`docs/STATUS.md`](docs/STATUS.md)** dulu —
-> titik berhenti, hasil terbaik (RT-DETR-L test mAP50 0,5794), dan jalur lanjutan
-> yang siap jalan. Dijeda 2026-07-22.
+> titik berhenti, hasil terbaik (**RF-DETR-L test mAP50 0,6038**, E-021 —
+> melewati sasaran 0,60; sebelumnya RT-DETR-L 0,5794), dan jalur lanjutan.
+> Aktif per 2026-07-24 (YOLO26l @1280 baseline param-adil berjalan).
 
 ## Bahasa
 

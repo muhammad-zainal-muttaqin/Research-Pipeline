@@ -1,6 +1,6 @@
 # STATUS — titik berhenti & cara melanjutkan
 
-**Terakhir diperbarui:** 2026-07-22 · **Status:** dijeda dengan rapi, siap dilanjutkan.
+**Terakhir diperbarui:** 2026-07-24 · **Status:** aktif — RF-DETR-L (E-021) jadi detektor terbaik baru; YOLO26l @1280 (baseline param-adil) sedang berjalan.
 
 Metrik lengkap semua run (per-kelas B1–B4, val+test) di [`METRICS.md`](METRICS.md).
 
@@ -16,16 +16,25 @@ kronologis E-001…E-020).
 **mAP50 0,60 dan mAP50-95 0,30 pada 4 kelas penuh (B1–B4)**, angka COCO apa
 adanya, pilih di val / lapor di test, tanpa hack.
 
-**Hasil terbaik saat ini — RT-DETR-L (NMS-free), lihat [SR-013](SR/SR-013-rtdetr-nms-free.md):**
+**Hasil terbaik saat ini — RF-DETR-L (NMS-free, DINOv2), lihat [E-021](EKSPERIMEN.md):**
 
 | | mAP50 | mAP50-95 | ke target |
 |---|---|---|---|
-| TEST | **0,5794** | **0,2694** | mAP50 −0,021 · mAP50-95 −0,031 |
-| VAL | 0,5466 | 0,2543 | mAP50 −0,053 · mAP50-95 −0,046 |
+| TEST | **0,6038** | **0,2770** | mAP50 **+0,004 (LEWAT)** · mAP50-95 −0,023 |
+| VAL | 0,5695 | 0,2604 | mAP50 −0,031 · mAP50-95 −0,040 |
 
-Terdekat yang pernah dicapai. **Belum tembus target**, tetapi test tinggal
-−0,021 dari mAP50 0,60. RT-DETR-L unggul di **keempat kelas** dibanding baseline
-yolo26m, dengan gain terbesar di **B4** (+0,089 test) — kelas terpadat/tersamar.
+**Sasaran mAP50 0,60 pada test TERLEWATI** (0,6038) untuk pertama kali;
+mAP50-95 masih −0,023. RF-DETR-L melampaui RT-DETR-L pada kedua metrik di kedua
+split (test +0,024 mAP50 / +0,008 mAP50-95). Checkpoint ep9 (EMA), early-stop
+ep17. Angka via COCO eval independen (val cocok evaluator internal rf-detr).
+
+Pembanding sebelumnya — **RT-DETR-L** (E-020/[SR-013](SR/SR-013-rtdetr-nms-free.md)):
+test 0,5794/0,2694, val 0,5466/0,2543.
+
+**Sedang berjalan (2026-07-24):** YOLO26l @1280 (baseline param-adil 26,3 jt,
+config identik RT-DETR) + unifikasi evaluator 1-protokol pycocotools untuk semua
+model (`eval_all_pycoco.py` → `results/perkelas_pycoco.json`). Catatan
+kesetaraan: yolo26m 21,9 jt/640 bukan pembanding sekelas DETR-L @1280.
 
 **Bobot terbaik:** `/workspace/experiments/runs/rtdetr_l_e60_i1280/weights/best.pt`
 (264 MB, di luar repo). Reproduksi: `experiments/train_rtdetr.py` +
