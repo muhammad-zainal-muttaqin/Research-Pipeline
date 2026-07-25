@@ -8,7 +8,7 @@
 | Penulis | Zou, Zhengxia; Chen, Keyan; Shi, Zhenwei; Guo, Yuhong; Ye, Jieping |
 | Tahun | 2023 |
 | Venue / Jurnal | Proceedings of the IEEE |
-| Tema klaster | Fusi Multimodal |
+| Tema | Fusi Multimodal |
 
 ## Tautan Akses
 - **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Object%20Detection%20in%2020%20Years%3A%20A%20Survey

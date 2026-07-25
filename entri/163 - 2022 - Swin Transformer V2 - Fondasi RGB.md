@@ -9,7 +9,7 @@
 | Penulis | Liu, Ze; Hu, Han; Lin, Yutong; Yao, Zhuliang; Xie, Zhenda; Wei, Yixuan; Ning, Jia; Cao, Yue; Zhang, Zheng; Dong, Li; Wei, Furu; Guo, Baining |
 | Tahun | 2022 |
 | Venue / Jurnal | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
+| Tema | Fondasi RGB |
 
 ## Tautan Akses
 

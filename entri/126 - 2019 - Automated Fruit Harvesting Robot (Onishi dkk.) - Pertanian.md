@@ -8,7 +8,7 @@
 | Penulis | Yuki Onishi, Takeshi Yoshida, Hiroki Kurita, Takanori Fukao, Hiromu Arihara, Ayako Iwai |
 | Tahun | 2019 |
 | Venue | ROBOMECH Journal |
-| Tema Klaster | Pertanian |
+| Tema | Pertanian |
 
 ## Tautan Akses
 - **Google Scholar:** https://scholar.google.com/scholar?q=An%20Automated%20Fruit%20Harvesting%20Robot%20by%20Using%20Deep%20Learning

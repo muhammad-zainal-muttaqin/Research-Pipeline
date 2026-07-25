@@ -9,6 +9,7 @@ bukan menurut waktu penulisan.
 | [`naskah/`](naskah/) | Tinjauan pustaka & naskah LaTeX yang **sudah selesai ditulis** — panduan, rencana, keputusan revisi |
 | [`audit/`](audit/) | Pemeriksaan keterlacakan klaim terhadap 182 sumber terverifikasi |
 | [`referensi/`](referensi/) | Bahan dari luar — makalah baseline, laporan riset, masukan dosen |
+| [`search/`](search/) | Protokol pencarian sistematis + hasil mentah OpenAlex/Scopus |
 | [`extracted/`](extracted/) | Teks lengkap 182 PDF hasil ekstraksi (dipakai audit; di-exclude dari situs) |
 | [`archive/`](archive/) | Draf dan figur yang sudah tidak dipakai |
 
@@ -37,6 +38,18 @@ Kode, JSON mentah, dan log yang menghasilkan angka-angka itu ada di
 | [`PLAN-SITUS.md`](naskah/PLAN-SITUS.md) | Rencana teknis `index.html` (Ruang Baca Riset) — dahulu bernama `PLAN.md` |
 | [`REFRAME-DECISIONS.md`](naskah/REFRAME-DECISIONS.md) | Keputusan atas revisi dosen 23 Juli 2026. **Append-only.** |
 | [`figure-english-labels.md`](naskah/figure-english-labels.md) | Prompt relabel figur F01–F08 ke bahasa Inggris |
+
+## search/ — protokol pencarian sistematis
+
+| Berkas | Isi |
+|---|---|
+| [`PROTOCOL.md`](search/PROTOCOL.md) | Protokol pencarian: 6 set query, kriteria inklusi/eksklusi, dua register asal-usul |
+| [`scopus-queries.md`](search/scopus-queries.md) | Query Scopus final, siap tempel |
+| [`openalex-counts.csv`](search/openalex-counts.csv) | Rekap jumlah hasil per query |
+| [`CEK-SAYA.md`](search/CEK-SAYA.md) | Daftar periksa sesi otonom 23 Juli 2026 — apa yang wajib diverifikasi sendiri |
+| `raw/` | 8 CSV hasil mentah OpenAlex Q1–Q7 + known-item test (29 MB, di-exclude dari situs) |
+
+Skrip pengambilannya: [`tools/openalex_search.py`](../tools/openalex_search.py).
 
 ## audit/ — keterlacakan klaim
 

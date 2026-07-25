@@ -8,7 +8,7 @@
 | Penulis | Cheng, Tianheng; Song, Lin; Ge, Yixiao; Liu, Wenyu; Wang, Xinggang; Shan, Ying |
 | Tahun | 2024 |
 | Venue | Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) |
-| Tema klaster | Fondasi RGB |
+| Tema | Fondasi RGB |
 
 ## Tautan Akses
 - **arXiv (PDF/HTML gratis):** https://arxiv.org/abs/2401.17270

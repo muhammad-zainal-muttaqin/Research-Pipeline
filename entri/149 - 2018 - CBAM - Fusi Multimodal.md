@@ -8,7 +8,7 @@
 | Penulis | Woo, Sanghyun; Park, Jongchan; Lee, Joon-Young; Kweon, In So |
 | Tahun | 2018 |
 | Venue / Jurnal | Proceedings of the European Conference on Computer Vision (ECCV) |
-| Tema klaster | Fusi Multimodal |
+| Tema | Fusi Multimodal |
 
 ## Tautan Akses
 - **Google Scholar:** https://scholar.google.com/scholar?q=CBAM%3A%20Convolutional%20Block%20Attention%20Module

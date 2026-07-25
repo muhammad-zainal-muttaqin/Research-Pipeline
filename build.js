@@ -75,7 +75,8 @@ const SPECIAL_DOCS = [
  * Pengecualian: `entri/`, sebab tautan ke entri korpus ditangani runtime
  * (`enhance()`) dan diubah menjadi rute internal `#/NNN`. */
 const PAGES_EXCLUDED = [
-  'docs/extracted/', 'docs/archive/', 'tools/', 'experiments/', 'PDF/', 'tmp/'
+  'docs/extracted/', 'docs/archive/', 'docs/search/raw/', 'tools/',
+  'experiments/', 'PDF/', 'tmp/'
 ];
 const ENTRY_LINK_RE = /(?:^|\/)\d{3}\s-\s.*\.md$/i;
 

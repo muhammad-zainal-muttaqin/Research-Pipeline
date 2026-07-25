@@ -8,7 +8,7 @@
 | Penulis | Zhou, Tao; Fan, Deng-Ping; Cheng, Ming-Ming; Shen, Jianbing; Shao, Ling |
 | Tahun | 2021 |
 | Venue / Jurnal | Computational Visual Media |
-| Tema klaster | Fusi Multimodal |
+| Tema | Fusi Multimodal |
 
 ## Tautan Akses
 - **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=RGB-D%20Salient%20Object%20Detection%3A%20A%20Survey
