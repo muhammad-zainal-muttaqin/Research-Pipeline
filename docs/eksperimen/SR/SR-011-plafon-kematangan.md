@@ -44,15 +44,15 @@ tempat yang sama, angkanya adalah sifat data, bukan sifat model:
 
 ## 3. Solusi
 
-- `head_vs_crop.py` — perbandingan setara pada tugas identik: diberi kotak,
+- `experiments/analysis/head_vs_crop.py` — perbandingan setara pada tugas identik: diberi kotak,
   tebak kelas. Head YOLO dinilai pada deteksinya yang berpasangan dengan GT
   (IoU ≥ 0,5); CNN potongan dinilai pada kotak GT yang sama.
-- `train_maturity.py` + `build_crops_raw.py` — ConvNeXt-Tiny pada potongan
+- `experiments/train/train_maturity.py` + `experiments/build/build_crops_raw.py` — ConvNeXt-Tiny pada potongan
   3024×4032 (E-015 membuka master; potongan bermedian 320 px vs 171 px di MVC,
   jadi masukan 224 px berisi detail nyata, bukan pembesaran). Augmentasi
   sengaja **aman-warna**: baseline YOLO memakai `hsv_s=0.7`, mengacak saturasi
   ±70% pada tugas yang buktinya adalah warna.
-- `multiview_vote.py` — peluang kelas dirata-ratakan antar sisi memakai
+- `experiments/analysis/multiview_vote.py` — peluang kelas dirata-ratakan antar sisi memakai
   penautan **kebenaran dasar** dari JSON (bukan algoritma penaut), sehingga
   yang terukur adalah plafonnya, bukan mutu penautnya.
 
@@ -118,9 +118,9 @@ Kalau perumusan tugas boleh diubah, itu arah yang belum tersentuh.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python match_raw.py                       # peta master (E-015)
-.venv/bin/python build_crops_raw.py                 # potongan 3024x4032
-.venv/bin/python train_maturity.py                  # CNN kematangan
-.venv/bin/python head_vs_crop.py                    # perbandingan setara
-.venv/bin/python multiview_vote.py --split val      # plafon multi-sisi
+.venv/bin/python experiments/build/match_raw.py                       # peta master (E-015)
+.venv/bin/python experiments/build/build_crops_raw.py                 # potongan 3024x4032
+.venv/bin/python experiments/train/train_maturity.py                  # CNN kematangan
+.venv/bin/python experiments/analysis/head_vs_crop.py                    # perbandingan setara
+.venv/bin/python experiments/analysis/multiview_vote.py --split val      # plafon multi-sisi
 ```

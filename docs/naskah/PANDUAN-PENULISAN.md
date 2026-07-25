@@ -12,7 +12,7 @@ belum mengenal topiknya.
 
 Satu penulis menangani **satu berkas entri** (satu makalah). Urutan kerja wajib:
 
-1. Baca `PANDUAN-PENULISAN.md` ini sampai selesai.
+1. Baca `docs/naskah/PANDUAN-PENULISAN.md` ini sampai selesai.
 2. Baca berkas entri lama yang ditugaskan. Ambil darinya: kunci BibTeX, identitas
    makalah (judul, penulis, tahun, venue), tema klaster, dan tautan akses. **Isi
    pembahasannya jangan dipertahankan** — tulis ulang sepenuhnya.

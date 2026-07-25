@@ -186,7 +186,7 @@ A standalone "Discussion" section, a Nomenclature table, and Elsevier Highlights
 ---
 ## Appendix A — Per-paper feature matrix
 
-The full matrix (67 features × 8 papers) is transposed below for readability (features as rows, papers as columns) and is also provided as a separate, fully machine-readable file, `review_features.csv`, with one row per paper and one column per feature. Numeric approximations (reference counts, recency percentages, section/subsection counts) were obtained by automated parsing of the extracted text as described in the Caveats section, not by exhaustive manual counting of every entry.
+The full matrix (67 features × 8 papers) is transposed below for readability (features as rows, papers as columns) and is also provided as a separate, fully machine-readable file, `docs/referensi/revisi-dosen-2026-07-23/review_features.csv`, with one row per paper and one column per feature. Numeric approximations (reference counts, recency percentages, section/subsection counts) were obtained by automated parsing of the extracted text as described in the Caveats section, not by exhaustive manual counting of every entry.
 
 | Feature | P1 (Wheat disease AI survey) | P2 (Ag navigation path-planning review) | P3 (Insect behavior phenotyping survey) | P4 (Wearable sensors for livestock review) | P5 (Insect management equipment review) | P6 (Climate-smart ag monitoring framework) | P7 (Plant wearables for VOC detection) | P8 (DEM shape modelling review) |
 |---|---|---|---|---|---|---|---|---|
@@ -371,4 +371,4 @@ The full matrix (67 features × 8 papers) is transposed below for readability (f
 
 ---
 
-*Data file: `review_features.csv` (67 columns × 8 rows) contains the complete raw per-paper feature matrix underlying this report.*
+*Data file: `docs/referensi/revisi-dosen-2026-07-23/review_features.csv` (67 columns × 8 rows) contains the complete raw per-paper feature matrix underlying this report.*

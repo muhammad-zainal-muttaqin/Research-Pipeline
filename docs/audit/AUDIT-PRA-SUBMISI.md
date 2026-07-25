@@ -115,7 +115,7 @@ undefined`, `Overfull \\hbox` yang mengganggu, atau kegagalan pemuatan figur.
    jurnal yang dipilih.
 4. Buka PDF final per halaman dan periksa pemenggalan tabel, orientasi figur,
    placeholder, sitasi, serta nomor halaman.
-5. Putuskan status `tinjauan-pustaka.tex`: berkas tersebut adalah draf mandiri
+5. Putuskan status `docs/archive/tinjauan-pustaka.tex`: berkas tersebut adalah draf mandiri
    lama dan tidak diinput oleh `main.tex` maupun `main-elsarticle.tex`. Isinya
    tidak identik dengan `body.tex`, sehingga jangan gunakan sebagai sumber
    pengajuan tanpa rekonsiliasi atau pengarsipan yang disengaja.

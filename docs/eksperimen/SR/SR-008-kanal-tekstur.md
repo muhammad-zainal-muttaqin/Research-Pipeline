@@ -45,7 +45,7 @@ dan E-010 — mengukur dulu, membakar GPU kemudian.
 
 ## 3. Solusi
 
-`experiments/contrast_boost_test.py`, 250 citra uji, lima peta skalar.
+`experiments/analysis/contrast_boost_test.py`, 250 citra uji, lima peta skalar.
 Metrik: AUC pemisahan piksel isi-kotak vs cincin sekeliling, per kelas, dengan
 **kendali kotak acak dihitung ulang untuk tiap praproses** — karena tiap
 transformasi mengubah statistik citra secara keseluruhan, sehingga
@@ -113,11 +113,11 @@ sehingga perbandingan RGB vs RGB+D vs RGB+T berjalan pada kondisi identik:
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python contrast_boost_test.py --images 250
-# keluaran: results/e011/contrast_boost.json
+.venv/bin/python experiments/analysis/contrast_boost_test.py --images 250
+# keluaran: experiments/results/E-011/contrast_boost.json
 
 # pelatihan varian tekstur (E-012)
-.venv/bin/python train_fusion.py --mode rgbt
+.venv/bin/python experiments/train/train_fusion.py --mode rgbt
 ```
 
 E-011 tanpa GPU, beberapa menit.

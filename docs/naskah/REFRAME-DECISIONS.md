@@ -1,7 +1,7 @@
 # REFRAME-DECISIONS — Keputusan Reframe Naskah (23 Juli 2026)
 
-Catatan keputusan atas 8 butir revisi dosen (`Revisi-23July2026/Chat.txt`).
-Berkas ini **append-only** seperti `docs/EKSPERIMEN.md`: kalau keputusan berubah,
+Catatan keputusan atas 8 butir revisi dosen (`docs/referensi/revisi-dosen-2026-07-23/Chat.txt`).
+Berkas ini **append-only** seperti `docs/eksperimen/EKSPERIMEN.md`: kalau keputusan berubah,
 tulis blok baru bertanggal yang merujuk blok lama — jangan sunting blok lama.
 
 Rencana eksekusi penuh (8 fase, kriteria selesai per langkah, tabel risiko) ada di
@@ -70,11 +70,11 @@ campuran memancing pertanyaan "ini tinjauan atau paper eksperimen?".
 | Bahan | Lokasi |
 |---|---|
 | Teks §Pilot | commit `6332dc1`, `evidence-body.tex:282–325` |
-| Laporan eksperimen | `docs/LAPORAN-EKSPERIMEN.md` |
+| Laporan eksperimen | `docs/eksperimen/LAPORAN-EKSPERIMEN.md` |
 | Kode + hasil JSON + split | `experiments/` (E-001…E-020) |
-| Log bertanggal | `docs/EKSPERIMEN.md` |
+| Log bertanggal | `docs/eksperimen/EKSPERIMEN.md` |
 | Prosedur reproduksi | `REPRODUCE.md` |
-| Catatan per-SR | `docs/SR/` |
+| Catatan per-SR | `docs/eksperimen/SR` |
 
 **Efek K2 yang menyelamatkan tesis.** Angka **95,57% Class±1** (koreksi global
 k = 1,8905 pada deteksi ground-truth) berasal dari **Tabel 4 makalah SawitMVC**,
@@ -195,10 +195,10 @@ Ditemukan saat memverifikasi butir 8, dicatat supaya tidak hilang:
 
 - **Inkonsistensi jumlah klaster tema**, sudah ada sebelum revisi ini:
   `CLAUDE.md` menulis **14**, `TEMUAN.md:91` menulis **17**, nama berkas `entri/`
-  menghasilkan **17**, `docs/evidence-matrix-182.csv` menghasilkan **18** (6 entri
+  menghasilkan **17**, `docs/audit/evidence-matrix-182.csv` menghasilkan **18** (6 entri
   tanpa baris `| Tema |` jatuh ke kategori "Uncoded"). Tabel sintesis akan memaparkan
   ini di depan reviewer — harus direkonsiliasi sebelum FASE 4.
-- **`docs/evidence-matrix-182.csv` tidak bisa diekspor apa adanya** ke tabel LaTeX:
+- **`docs/audit/evidence-matrix-182.csv` tidak bisa diekspor apa adanya** ke tabel LaTeX:
   keempat kolom prosa terpotong pada 460 karakter (rata-rata 461, maks 462 — hampir
   semua sel putus di tengah kalimat), isinya Bahasa Indonesia, dan kolom
   `task`/`modality` hasil heuristik kata kunci yang ~24% barisnya jatuh ke kategori

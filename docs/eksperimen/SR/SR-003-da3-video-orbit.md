@@ -34,11 +34,11 @@ masuk akal, atau peta kedalaman kanopi datar.
 
 Dua tahap.
 
-**E-003** (`experiments/da3_video_test.py`) — satu video, 16 dan 48 frame.
+**E-003** (`experiments/analysis/da3_video_test.py`) — satu video, 16 dan 48 frame.
 Diagnosa: PCA pusat kamera → kecocokan lingkaran pada bidang orbit; rentang
 dinamis kedalaman; pratinjau RGB|depth|conf untuk inspeksi mata.
 
-**E-004** (`experiments/da3_video_multi.py`) — menuntaskan tiga keterbatasan
+**E-004** (`experiments/analysis/da3_video_multi.py`) — menuntaskan tiga keterbatasan
 E-003: 6 video (bukan 1), ekstraksi frame lewat **ffmpeg** yang menerapkan
 display matrix (`cv2` mengabaikannya; video terkonfirmasi memuat
 `displaymatrix: rotation of -90.00 degrees`), dan pengukuran **di mana** orbit
@@ -111,10 +111,10 @@ dipalsukan. Tidak dikarang penjelasan untuk sisa satu video ini.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python da3_video_test.py --frames 16          # E-003
-.venv/bin/python da3_video_test.py --frames 48 --out results/e003b
-.venv/bin/python da3_video_multi.py --videos 6 --frames 32              # E-004
-.venv/bin/python da3_video_multi.py --videos 6 --frames 32 --no-rotate  # pembanding
+.venv/bin/python experiments/analysis/da3_video_test.py --frames 16          # E-003
+.venv/bin/python experiments/analysis/da3_video_test.py --frames 48 --out experiments/results/E-003b
+.venv/bin/python experiments/analysis/da3_video_multi.py --videos 6 --frames 32              # E-004
+.venv/bin/python experiments/analysis/da3_video_multi.py --videos 6 --frames 32 --no-rotate  # pembanding
 ```
 
 Lingkungan: GPU NVIDIA L4, `depth-anything/da3-large`, `process_res=504`,

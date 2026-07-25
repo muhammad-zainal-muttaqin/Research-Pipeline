@@ -37,7 +37,7 @@ ketidaksepakatan tidak terkonsentrasi di pasangan B2↔B3.
 
 ## 3. Solusi
 
-`experiments/class_mismatch_stats.py` membaca seluruh **953 JSON**, lalu
+`experiments/analysis/class_mismatch_stats.py` membaca seluruh **953 JSON**, lalu
 menghitung:
 
 - jumlah flag `class_mismatch` yang menyala,
@@ -97,8 +97,8 @@ prediksi. Membutuhkan detektor terlatih, jadi dijalankan bersama I-4/I-5.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python class_mismatch_stats.py
-# keluaran: results/class_mismatch.json
+.venv/bin/python experiments/analysis/class_mismatch_stats.py
+# keluaran: experiments/results/E-001/class_mismatch.json
 ```
 
 Waktu jalan: beberapa detik. Tidak butuh GPU.

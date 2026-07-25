@@ -2,7 +2,7 @@
 
 Panduan kerja untuk Claude Code di repositori ini. Baca sebelum mengubah apa pun.
 
-> **Melanjutkan eksperimen?** Baca **[`docs/STATUS.md`](docs/STATUS.md)** dulu —
+> **Melanjutkan eksperimen?** Baca **[`docs/eksperimen/STATUS.md`](docs/eksperimen/STATUS.md)** dulu —
 > titik berhenti, hasil terbaik (**RF-DETR-L test mAP50 0,6038**, E-021 —
 > melewati sasaran 0,60; sebelumnya RT-DETR-L 0,5794), dan jalur lanjutan.
 > Aktif per 2026-07-24 (YOLO26l @1280 baseline param-adil berjalan).
@@ -11,7 +11,7 @@ Panduan kerja untuk Claude Code di repositori ini. Baca sebelum mengubah apa pun
 
 **Seluruh isi repo dan seluruh percakapan memakai Bahasa Indonesia.** Istilah teknis
 asing ditulis miring dan dijelaskan singkat saat pertama muncul (lihat
-`docs/PANDUAN-PENULISAN.md`). Jangan beralih ke Inggris kecuali diminta.
+`docs/naskah/PANDUAN-PENULISAN.md`). Jangan beralih ke Inggris kecuali diminta.
 
 ## Apa Ini
 
@@ -28,7 +28,7 @@ basis data sitasi, dan aplikasi web statis untuk membaca korpus.
 | Rentang fokus | 2019–2026 (+ fondasi 2012–2018) |
 
 Angka 182 itu **invarian yang dijaga**: naskah, situs, `TEMUAN.md`, dan
-`docs/claim-audit-182.md` semuanya diselaraskan ke angka ini. Jika mengubah jumlah
+`docs/audit/claim-audit-182.md` semuanya diselaraskan ke angka ini. Jika mengubah jumlah
 entri, seluruh berkas tersebut harus ikut diperbarui.
 
 ## Peta Berkas
@@ -37,7 +37,7 @@ entri, seluruh berkas tersebut harus ikut diperbarui.
 |---|---|
 | `evidence-body.tex` | **Isi naskah aktif.** Semua penyuntingan naskah masuk ke sini. |
 | `main.tex` / `main-elsarticle.tex` | Driver IEEEtran / Elsevier; keduanya `\input` `evidence-body.tex`. |
-| `tinjauan-pustaka.tex` | Draf lama mandiri — **tidak dipakai**; jangan disunting tanpa diminta. |
+| `docs/archive/tinjauan-pustaka.tex` | Draf lama mandiri — **tidak dipakai**; jangan disunting tanpa diminta. |
 | `entri/` | 182 berkas ringkasan (satu makalah = satu berkas) + `INDEX.md`. |
 | `entri-withheld/` | 20 entri ditahan; jangan dimasukkan ke naskah. |
 | `references.bib` | 202 record BibTeX. |
@@ -68,7 +68,7 @@ itu perilaku normal, bukan bug.
 
 ## Kontrak Teknis Berkas Entri (melanggar = merusak build web)
 
-Diambil dari `docs/PANDUAN-PENULISAN.md` §2 — baca lengkap sebelum menulis entri.
+Diambil dari `docs/naskah/PANDUAN-PENULISAN.md` §2 — baca lengkap sebelum menulis entri.
 
 - Nama berkas: `NNN - YYYY - Judul singkat - Tema.md`. **Jangan diubah.**
 - Baris pertama = judul `# NNN - Judul`. **Jangan diubah.**
@@ -183,7 +183,7 @@ Fakta lain dari PDF yang berguna:
   closure)** dari graf `_confirmedLinks`.
 - **`class_mismatch`**: flag otomatis saat kelas yang dianotasi berbeda antar-sisi
   dalam satu komponen. **SUDAH DIUJI — HASILNYA NOL. Jangan diulang.**
-  `experiments/class_mismatch_stats.py` (21 Juli 2026): 0 ketidaksepakatan dari
+  `experiments/analysis/class_mismatch_stats.py` (21 Juli 2026): 0 ketidaksepakatan dari
   7.328 bunch multi-sisi, di semua split/varietas/kelas. Parser diverifikasi
   silang dengan angka publikasi (9.823 bunch, 18.540 kemunculan, sebaran
   6.264/834/147/71/12) — cocok persis, jadi nol itu nyata, bukan bug.
@@ -275,7 +275,7 @@ baseline RGB; (3) bandingkan **terstratifikasi menurut oklusi**, khususnya pada 
 Kode eksperimen tinggal di **`/workspace/experiments/`** (di luar repo ini; repo
 ini tidak menampung artefak besar, bobot model, atau keluaran gambar). Tetapi
 **setiap hal penting yang dipelajari dari eksperimen wajib dicatat ke repo ini**
-di [`docs/EKSPERIMEN.md`](docs/EKSPERIMEN.md).
+di [`docs/eksperimen/EKSPERIMEN.md`](docs/eksperimen/EKSPERIMEN.md).
 
 Alasannya: tinjauan pustaka ini berdiri di atas klaim yang dapat dilacak ke
 sumber. Eksperimennya harus memenuhi standar yang sama — kalau tidak, ada
@@ -294,7 +294,7 @@ Aturannya:
   akan memalsukannya, sebelum melihat hasilnya.
 - **Angka apa adanya.** Kalau gagal, tulis gagal. Kalau tidak konklusif, tulis
   tidak konklusif — jangan dinaikkan jadi "menjanjikan".
-- Format entri dan daftar status ada di kepala `docs/EKSPERIMEN.md`.
+- Format entri dan daftar status ada di kepala `docs/eksperimen/EKSPERIMEN.md`.
 - Catat juga **nama skrip** di `/workspace/experiments/` yang menghasilkan angka
   itu, supaya dapat dijalankan ulang.
 - Temuan yang mengubah cara kerja jangka panjang (bukan hasil satu eksperimen)
@@ -310,4 +310,4 @@ jangan ditunda ke akhir sesi. Commit log bersama perubahan terkait.
 - Sitasi ke korpus lokal sebutkan nomor entri dan/atau seksi `evidence-body.tex`
   agar pengguna bisa memverifikasi sendiri.
 - Sebelum mengubah angka agregat (182, 202, 20), periksa dampaknya ke `TEMUAN.md`,
-  `README.md`, `evidence-body.tex`, dan `docs/claim-audit-182.md`.
+  `README.md`, `evidence-body.tex`, dan `docs/audit/claim-audit-182.md`.

@@ -35,7 +35,7 @@ berbasis deteksi memang beralasan.
 
 ## 3. Solusi
 
-`experiments/diag_bottleneck.py`. Bobot yang dievaluasi identik
+`experiments/eval/diag_bottleneck.py`. Bobot yang dievaluasi identik
 (`runs/rgb_e60_i640_s42/weights/best.pt`, yolo26m, imgsz 640, 60 epoch,
 seed 42), split val identik (404 citra, 1.887 kotak). Satu-satunya yang berubah
 adalah bendera `single_cls` pada pemanggilan `val()`.
@@ -117,8 +117,8 @@ keputusan kematangan ke tempat yang punya bukti untuk mengambilnya.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python diag_bottleneck.py
-# keluaran: results/diag_bottleneck.json
+.venv/bin/python experiments/eval/diag_bottleneck.py
+# keluaran: experiments/results/E-014/diag_bottleneck.json
 ```
 
 Butuh GPU, dua menit.

@@ -8,7 +8,7 @@
 > muara, bukan pembatas cakupan.
 >
 > Dokumen ini adalah **rencana**, bukan naskahnya. Naskah (`main.tex` + `figures/`)
-> ditulis pada fase eksekusi (§6). `PLAN.md` (rencana web *reading room* `index.html`)
+> ditulis pada fase eksekusi (§6). `docs/naskah/PLAN-SITUS.md` (rencana web *reading room* `index.html`)
 > berbeda dan tidak disentuh.
 
 ---
@@ -27,7 +27,7 @@
 | Panjang sasaran | ± 9.000–12.000 kata isi + 8 figur konsep + 2 chart + 3 tabel |
 
 **Non-goal:** bukan anotasi 202 entri satu per satu; bukan mengubah `entri/`,
-`references.bib`, `TEMUAN.md`, atau `PLAN.md`.
+`references.bib`, `TEMUAN.md`, atau `docs/naskah/PLAN-SITUS.md`.
 
 ---
 
@@ -73,7 +73,7 @@ tiap driver. Edit isi cukup di `body.tex` sekali → kedua venue ikut.
 \end{document}
 ```
 
-Naskah lama `tinjauan-pustaka.tex` **digantikan** oleh `main.tex`; berkas lama
+Naskah lama `docs/archive/tinjauan-pustaka.tex` **digantikan** oleh `main.tex`; berkas lama
 dibiarkan (arsip), tidak dihapus tanpa konfirmasi.
 
 ---
@@ -92,7 +92,7 @@ dibiarkan (arsip), tidak dihapus tanpa konfirmasi.
 4. **Bahasa.** Indonesia baku PUEBI; istilah asing dicetak miring pada kemunculan
    pertama (*bounding box*, *backbone*, *cross-modal attention*); desimal koma
    (`63,4\%`); nada impersonal. Poles akhir dengan skill `stop-slop-id` (hapus frasa
-   pengisi & hiperbola). Mengadaptasi semangat `PANDUAN-PENULISAN.md` (bukan template
+   pengisi & hiperbola). Mengadaptasi semangat `docs/naskah/PANDUAN-PENULISAN.md` (bukan template
    10-bagiannya, yang khusus untuk bab `entri/`).
 5. **Sumber isi.** Untuk tiap bagian, tarik dari bab `entri/` yang relevan: ambil
    inti dari "Gambaran Umum", klaim aman dari "Poin untuk Sitasi", dan angka dari
@@ -136,9 +136,9 @@ sisipkan ke `main.tex`.
 
 Satu sumber kebenaran gaya yang **dirujuk semua brief**:
 
-- **Palet** (selaras `PLAN.md` §13): aksen merah bata `#A03028`; tinta `#1A1D21`;
+- **Palet** (selaras `docs/naskah/PLAN-SITUS.md` §13): aksen merah bata `#A03028`; tinta `#1A1D21`;
   kertas `#FAF9F6`; hairline `#E6E3DA`; satu *jewel-tone* per tema (17 hue di
-  `PLAN.md` §13, mis. Fondasi RGB `#2B6CB0`, Fusi `#8B5CB4`, Kedalaman `#A6740E`).
+  `docs/naskah/PLAN-SITUS.md` §13, mis. Fondasi RGB `#2B6CB0`, Fusi `#8B5CB4`, Kedalaman `#A6740E`).
 - **Tipografi:** judul figur serif (Newsreader/Georgia); label sans; angka/kode mono.
 - **Kaidah:** garis *hairline* 1–1,5 pt; tanpa bayangan berat/gradasi mencolok; sudut
   membulat halus; latar kertas; orientasi lanskap; rasio, tebal garis, ukuran node,
@@ -238,8 +238,8 @@ Karena `pdflatex` lokal tidak tersedia (GateGuard), verifikasi utama berbasis te
   prompt Gemini; chart C01/C02 punya *fallback* pgfplots); `figures/*.pdf|png` (hasil generate,
   masih perlu digenerate via Gemini).
 - **Dipakai apa adanya (tidak diubah):** `references.bib`, `entri/*`, `TEMUAN.md`,
-  `PLAN.md`, `PANDUAN-PENULISAN.md`.
-- **Diarsipkan:** `tinjauan-pustaka.tex` (digantikan `main.tex`; tidak dihapus tanpa
+  `docs/naskah/PLAN-SITUS.md`, `docs/naskah/PANDUAN-PENULISAN.md`.
+- **Diarsipkan:** `docs/archive/tinjauan-pustaka.tex` (digantikan `main.tex`; tidak dihapus tanpa
   konfirmasi).
 
 ---
@@ -250,7 +250,7 @@ Karena `pdflatex` lokal tidak tersedia (GateGuard), verifikasi utama berbasis te
 - Metadata bibliografi (volume/halaman/DOI) perlu verifikasi akhir sebelum submit formal.
 - Figur Gemini harus dicek terhadap sumber mermaid agar struktur tetap faktual (tidak
   ada node/relasi tambahan yang mengubah makna).
-- `PANDUAN-PENULISAN.md` melarang gambar hanya untuk bab web `entri/`; `main.tex`
+- `docs/naskah/PANDUAN-PENULISAN.md` melarang gambar hanya untuk bab web `entri/`; `main.tex`
   (LaTeX) bebas memuat figur.
 - Bila venue berubah ke Elsevier, ganti preamble ke `elsarticle` dan gaya bib; isi &
   figur tetap.

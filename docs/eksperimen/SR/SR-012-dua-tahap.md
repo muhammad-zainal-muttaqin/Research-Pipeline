@@ -29,9 +29,9 @@ kelas — cara skor detektor dua-tahap klasik dihitung, bukan penyetelan angka.
 
 ## 3. Solusi
 
-`train_agnostic.py` (yolo26m, `single_cls`, imgsz 960, diinisialisasi dari
-baseline RGB yang sudah konvergen) · `build_crops_raw.py` · `train_maturity.py`
-dan `train_maturity_v2.py` · `two_stage.py` (evaluasi pycocotools).
+`experiments/train/train_agnostic.py` (yolo26m, `single_cls`, imgsz 960, diinisialisasi dari
+baseline RGB yang sudah konvergen) · `experiments/build/build_crops_raw.py` · `experiments/train/train_maturity.py`
+dan `experiments/train/train_maturity_v2.py` · `experiments/analysis/two_stage.py` (evaluasi pycocotools).
 
 Augmentasi tahap 2 sengaja **aman-warna**. Baseline YOLO memakai `hsv_s=0.7`,
 yang mengacak saturasi ±70% — pada tugas yang buktinya adalah warna, resep
@@ -110,9 +110,9 @@ komponen yang layak dipasang apa adanya.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python train_agnostic.py
-.venv/bin/python build_crops_raw.py
-.venv/bin/python train_maturity_v2.py --root crops_raw --out runs/maturity_raw
-.venv/bin/python two_stage.py --det runs/agn_e25_i960_s42/weights/best.pt \
+.venv/bin/python experiments/train/train_agnostic.py
+.venv/bin/python experiments/build/build_crops_raw.py
+.venv/bin/python experiments/train/train_maturity_v2.py --root crops_raw --out runs/maturity_raw
+.venv/bin/python experiments/analysis/two_stage.py --det runs/agn_e25_i960_s42/weights/best.pt \
     --cls runs/maturity_raw/best.pt --split val --crop-source raw
 ```

@@ -41,7 +41,7 @@ Yang dicari bukan angka akurasinya, melainkan **bentuk kebingungannya**:
 
 ## 3. Solusi
 
-`experiments/class_separability.py`. Fitur sengaja **sederhana dan dapat
+`experiments/analysis/class_separability.py`. Fitur sengaja **sederhana dan dapat
 ditafsirkan** (37 dimensi: statistik LAB/HSV, varians Laplacian, besar gradien,
 histogram hue) — tujuannya mengukur apakah sinyalnya ada dan bagaimana
 bentuknya, bukan mengalahkan CNN. RandomForest 400 pohon berbobot seimbang,
@@ -111,7 +111,7 @@ ke tetangga sama beratnya dengan lompatan jauh. Model karena itu menghabiskan
 kapasitas untuk memisahkan hal yang metriknya sendiri tidak pedulikan.
 
 Ini persis **"mismatch objective-ke-deployment"** yang disebut
-`docs/deep-research-report.md` sebagai salah satu dari empat sumber plafon.
+`docs/referensi/deep-research-report.md` sebagai salah satu dari empat sumber plafon.
 
 Bentuk konkret yang layak diuji:
 1. Loss dengan bobot jarak ordinal (hukuman ∝ |kelas prediksi − kelas benar|).
@@ -129,8 +129,8 @@ menyesatkan arah kerja.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python class_separability.py --per-class 1500
-# keluaran: results/e012/separability.json
+.venv/bin/python experiments/analysis/class_separability.py --per-class 1500
+# keluaran: experiments/results/E-012/separability.json
 ```
 
 Tanpa GPU. Beberapa menit.

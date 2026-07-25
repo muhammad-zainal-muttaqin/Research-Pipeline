@@ -11,7 +11,7 @@ Satu berkas SR untuk satu **ide solusi**. Tiap SR menjawab rantai yang sama:
 6. Reproduksi   perintah persis untuk mengulang
 ```
 
-`docs/EKSPERIMEN.md` adalah **log kronologis** semua eksperimen (E-NNN); berkas
+`docs/eksperimen/EKSPERIMEN.md` adalah **log kronologis** semua eksperimen (E-NNN); berkas
 SR di sini adalah **pandangan per-ide** yang merangkum satu atau beberapa E-NNN
 menjadi satu cerita utuh dari masalah sampai putusan.
 
@@ -97,13 +97,13 @@ baseline karena fine-tune dari checkpoint resolusi lain; run berikut mulai bersi
 | I-15 | Neck multiskala (BiFPN) | belum |
 | I-22 | Loss ordinal / kepala regresi kematangan | belum (probe dihentikan di E-014) |
 | — | yolo26x kapasitas 3× · 1280 · aman-warna | dihentikan demi RT-DETR; kandidat lanjutan |
-| — | Latih pada piksel master (imgsz 1600–2048) | dataset siap (`build_master_ds.py`), belum |
+| — | Latih pada piksel master (imgsz 1600–2048) | dataset siap (`experiments/build/build_master_ds.py`), belum |
 
 Catatan status: I-4 (RGBD) dihentikan pada epoch 25 (mAP50 0,5135, datar);
 I-21 (RGBT) dan probe ordinal dihentikan saat E-014 mengalihkan fokus ke
 dekomposisi deteksi/klasifikasi.
 
-## Ide tambahan dari `docs/deep-research-report.md`
+## Ide tambahan dari `docs/referensi/deep-research-report.md`
 
 Laporan itu memuat matriks 24 ide dan menempatkan **perombakan inti detektor**
 sebagai prioritas pertama — kesimpulan yang **sejalan dengan temuan eksperimen

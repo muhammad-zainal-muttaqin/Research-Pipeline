@@ -63,8 +63,8 @@ const SPECIAL_DOCS = [
     marker: '¶',
     title: 'Laporan Eksperimen: Deteksi & Penghitungan Tandan Sawit',
     theme: 'Eksperimen',
-    file: 'docs/LAPORAN-EKSPERIMEN.md',
-    sourceDir: 'docs',
+    file: 'docs/eksperimen/LAPORAN-EKSPERIMEN.md',
+    sourceDir: 'docs/eksperimen',
     desc: 'Cuplikan terkurasi eksperimen deteksi dan penghitungan tandan sawit.'
   }
 ];
@@ -167,9 +167,10 @@ function countWords(md) {
  * Penulisan ulang tautan relatif dokumen spesial
  * ------------------------------------------------------------------ *
  * Isi dokumen disematkan ke `index.html` yang berada di akar repo, jadi
- * tautan relatif yang ditulis dari sudut pandang `docs/` harus digeser
- * ke akar: `EKSPERIMEN.md` menjadi `docs/EKSPERIMEN.md`, sedangkan
- * `../pipeline/README.md` menjadi `pipeline/README.md`.
+ * tautan relatif yang ditulis dari sudut pandang `sourceDir` harus digeser
+ * ke akar. Untuk `sourceDir = 'docs/eksperimen'`: `METRICS.md` menjadi
+ * `docs/eksperimen/METRICS.md`, dan `../../pipeline/README.md` menjadi
+ * `pipeline/README.md`.
  */
 
 // Gabung direktori + jalur relatif ala POSIX, sekaligus meratakan "." dan "..".

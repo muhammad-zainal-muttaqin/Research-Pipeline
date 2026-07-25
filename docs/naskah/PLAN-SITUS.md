@@ -32,7 +32,7 @@ dengan fallback sistem yang anggun; situs tetap utuh tanpa internet).
 | `TEMUAN.md` | 1 berkas (24 KB) | Sintesis lintas makalah — diperlakukan sebagai entri spesial "pin di atas" |
 | `README.md` | 1 berkas | Referensi copy pengantar; **tidak disertakan mentah** — Beranda adalah dashboard yang ditulis khusus (§5.1 butir 4) |
 | `entri/INDEX.md` | 1 berkas | **Dilewati** — fungsinya digantikan navigasi aplikasi |
-| `references.bib`, `tinjauan-pustaka.tex` | — | Tidak disertakan di web (tetap di repo) |
+| `references.bib`, `docs/archive/tinjauan-pustaka.tex` | — | Tidak disertakan di web (tetap di repo) |
 
 **Fakta konten yang sudah diverifikasi:**
 - Tidak ada fenced code block (` ``` `) dan tidak ada gambar di semua entri → parser cukup menangani: heading ATX, tabel GFM, blockquote, list (berurut/tidak, bersarang), bold/italic/strikethrough, inline code, tautan, HR.
@@ -108,7 +108,7 @@ Sensing · Segmentasi RGB-D · Survei YOLO · YOLO plus RGB-D.
 
 ```
 Research-Pipeline/
-├── PLAN.md            ← dokumen ini
+├── docs/naskah/PLAN-SITUS.md            ← dokumen ini
 ├── build.js           ← build script (satu-satunya alat yang dibutuhkan)
 ├── index.html         ← HASIL BUILD (jangan diedit manual)
 ├── vendor/
@@ -117,7 +117,7 @@ Research-Pipeline/
 ├── TEMUAN.md          ← sumber konten
 ├── README.md          ← sumber konten beranda
 ├── references.bib     ← tidak disentuh
-└── tinjauan-pustaka.tex
+└── docs/archive/tinjauan-pustaka.tex
 ```
 
 `index.html` boleh di-commit (itulah yang dilayani Pages). `vendor/` dan
@@ -289,7 +289,7 @@ utama Beranda; mode entri memakai kolom tunggal terpusat.
    jalur diberi bobotnya sendiri (jumlah entri + estimasi menit), bukan nomor
    urut — keempatnya sejajar, bukan langkah berurutan.
 7. Footer: hairline, info mono (jumlah entri, tanggal build, cara regenerasi
-   `node build.js`, tautan `tinjauan-pustaka.tex` & `references.bib`).
+   `node build.js`, tautan `docs/archive/tinjauan-pustaka.tex` & `references.bib`).
 
 ### 7.3 Layar Entri (`#/042`)
 
@@ -409,7 +409,7 @@ karena tak ada request lain setelah font); tanpa sinkronisasi antar-perangkat.
 ## 10. Panduan Deploy
 
 **GitHub Pages**
-1. `git add index.html build.js vendor/marked.min.js PLAN.md && git commit -m "Web reading room" && git push`
+1. `git add index.html build.js vendor/marked.min.js docs/naskah/PLAN-SITUS.md && git commit -m "Web reading room" && git push`
 2. Repo → **Settings → Pages → Source: `Deploy from a branch`** → branch `main`, folder `/ (root)` → Save.
 3. Situs tayang di `https://<user>.github.io/Research-Pipeline/` dalam ±1 menit.
 

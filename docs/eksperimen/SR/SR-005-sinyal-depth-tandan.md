@@ -45,7 +45,7 @@ besar daripada kotak acak.
 
 ## 3. Solusi
 
-`experiments/depth_bunch_signal.py` atas **40 pohon** (780 kotak tandan),
+`experiments/analysis/depth_bunch_signal.py` atas **40 pohon** (780 kotak tandan),
 kedalaman dari DA3 multi-view per pohon, dengan **2 kotak kendali per kotak
 asli** (1.560 kendali). AUC dihitung lewat statistik-U Mann–Whitney, dan
 signifikansi selisih AUC diuji dengan **2.000 permutasi**.
@@ -136,9 +136,9 @@ belakangan.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python depth_bunch_signal.py --trees 40                     # res 504
-.venv/bin/python depth_bunch_signal.py --trees 40 --process-res 1008  # res 1008
-# keluaran: results/e006/report_res504.json, report_res1008.json
+.venv/bin/python experiments/analysis/depth_bunch_signal.py --trees 40                     # res 504
+.venv/bin/python experiments/analysis/depth_bunch_signal.py --trees 40 --process-res 1008  # res 1008
+# keluaran: experiments/results/E-006/report_res504.json, experiments/results/E-006/report_res1008.json
 ```
 
 Lingkungan: GPU NVIDIA L4, `depth-anything/da3-large`, `seed=42`.

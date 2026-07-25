@@ -7,9 +7,9 @@ ulang.
 
 **Sumber angka** (JSON di `experiments/results/`, kurva per-epoch di
 `experiments/runs/<run>/results.csv`):
-`baseline_test.json`, `eval_missing.json`, `rtdetr_eval.json`, `diag_bottleneck.json`,
-`perkelas_fair.json` (per-kelas AP50+AP50-95 semua model), dan
-`runs/rfdetr_l_e60_i1280/evaluation.json` + `metrics.csv` (RF-DETR, E-021).
+`experiments/results/lintas-eksperimen/baseline_test.json`, `experiments/results/lintas-eksperimen/eval_missing.json`, `experiments/results/E-020/rtdetr_eval.json`, `experiments/results/E-014/diag_bottleneck.json`,
+`experiments/results/E-021/perkelas_fair.json` (per-kelas AP50+AP50-95 semua model), dan
+`experiments/runs/rfdetr_l_e60_i1280/evaluation.json` + `metrics.csv` (RF-DETR, E-021).
 
 Split per pohon 716/96/141, irisan nol. B1=matang … B4=mentah.
 
@@ -42,7 +42,7 @@ Split per pohon 716/96/141, irisan nol. B1=matang … B4=mentah.
 
 Keempat model dievaluasi lewat **pipeline pycocotools identik** (predict threshold
 rendah → COCOeval, GT sama) sehingga **caveat evaluator campur TERSELESAIKAN**.
-Sumber: `experiments/results/perkelas_pycoco.json` (skrip `eval_all_pycoco.py`).
+Sumber: `experiments/results/E-021/perkelas_pycoco.json` (skrip `experiments/eval/eval_all_pycoco.py`).
 Diurutkan menurut parameter. Ranking monotonik di kedua metrik & kedua split.
 
 **VAL** (mAP50 / mAP50-95 · per-kelas AP50 B1/B2/B3/B4):
@@ -69,9 +69,9 @@ RF-DETR-L) pada semua metrik. YOLO26l — baseline YOLO **param-adil sekelas DET
 RF-DETR/RT-DETR **bukan** sekadar efek kapasitas/resolusi. RF-DETR-L unggul di
 keempat kelas kedua split; test mAP50 0,6038 melewati sasaran 0,60.
 
-## Metrik LENGKAP 4 model (1-protokol) — `results/metrics_full.json`
+## Metrik LENGKAP 4 model (1-protokol) — `experiments/results/E-021/metrics_full.json`
 
-Dump metrik penuh via `eval_all_metrics.py` (pipeline pycocotools + matching IoU0.5
+Dump metrik penuh via `experiments/eval/eval_all_metrics.py` (pipeline pycocotools + matching IoU0.5
 untuk P/R/F1). File JSON berisi, per model × val/test: **12 statistik COCO**
 (AP@[.5:.95], AP50, AP75, AP S/M/L, AR@1/10/100, AR S/M/L), **per-kelas** AP50 +
 AP50-95 + AR, dan **precision/recall/F1** (per-kelas, **macro**, **micro**) pada
@@ -99,15 +99,15 @@ ambang best-F1. Ringkasan metrik tambahan (di luar AP50/AP50-95 yang sudah di at
 split. RF-DETR unggul terutama pada **recall** (micro-R test 0,6505 vs RT-DETR
 0,6440), konsisten dengan hipotesis NMS-free (lebih sedikit kotak benar tertekan).
 Per-kelas P/R/F1 (mis. TEST RF-DETR B4: P 0,471 / R 0,523 / F1 0,496 — kelas
-tersulit) ada di `metrics_full.json`. **Catatan:** "accuracy" & "micro/macro" hanya
+tersulit) ada di `experiments/results/E-021/metrics_full.json`. **Catatan:** "accuracy" & "micro/macro" hanya
 berlaku untuk P/R/F1; deteksi tak punya akurasi klasifikasi (tanpa true-negative).
 mAP sendiri = macro-AP (rata-rata per-kelas).
 
 ## Analisis tambahan E-021 — efisiensi · signifikansi · confusion
 
-Skrip: `eval_efficiency.py`, `eval_extras.py`. Figur di `experiments/figures/`.
+Skrip: `experiments/eval/eval_efficiency.py`, `experiments/eval/eval_extras.py`. Figur di `experiments/figures/`.
 
-### Efisiensi (deployment) — `results/efficiency.json`
+### Efisiensi (deployment) — `experiments/results/E-021/efficiency.json`
 
 Latensi diukur langsung di **NVIDIA L4** (10 warmup + 50 ukur, 1 citra, resolusi
 latihan). GFLOPs RF-DETR = n/a (forward butuh NestedTensor; param & latensi terukur).
@@ -123,7 +123,7 @@ latihan). GFLOPs RF-DETR = n/a (forward butuh NestedTensor; param & latensi teru
 YOLO26m). Untuk lapangan real-time perlu pertimbangan; RF-DETR bisa dioptimalkan
 FP16 (`optimize_for_inference`) — belum diukur.
 
-### Signifikansi statistik — `results/bootstrap_ci.json`
+### Signifikansi statistik — `experiments/results/E-021/bootstrap_ci.json`
 
 Bootstrap 2000× resample gambar test (588), metrik mAP50, seed 42. mAP50 titik
 dari matching IoU0.5 divalidasi cocok pycocotools.
@@ -141,7 +141,7 @@ RT-DETR **signifikan** secara statistik (RF menang di 99,9% resample). (CI margi
 kedua model beririsan, tapi uji berpasangan — gambar sama tiap resample — yang
 tepat, dan hasilnya signifikan.)
 
-### Confusion matrix (TEST, IoU0.5, conf≥0.25) — `results/confusion.json`, `figures/confusion_*.png`
+### Confusion matrix (TEST, IoU0.5, conf≥0.25) — `experiments/results/E-021/confusion.json`, `figures/confusion_*.png`
 
 Mendukung diagnosis SR-007/SR-009 secara kuantitatif:
 
@@ -153,7 +153,7 @@ Mendukung diagnosis SR-007/SR-009 secara kuantitatif:
 - Caveat: pada conf 0.25, DETR menghasilkan banyak FP latar (kalibrasi confidence
   DETR beda; ambang operasional lapangan biasanya lebih tinggi).
 
-### Kurva PR & F1-confidence — `figures/pr_micro_test.png`, `figures/f1_conf_test.png`, `results/pr_curves.json`
+### Kurva PR & F1-confidence — `experiments/figures/pr_micro_test.png`, `experiments/figures/f1_conf_test.png`, `experiments/results/E-021/pr_curves.json`
 
 Kurva PR micro & F1-vs-confidence (TEST) keempat model tersusun rapi sesuai
 ranking; RF-DETR mendominasi. Best-F1 micro (test): RF-DETR 0,619, RT-DETR 0,596,
@@ -185,7 +185,7 @@ mAP50-95 agnostik 0,3320 **melewati** sasaran 0,30 — deteksi bukan hambatannya
   RT-DETR-L di val (+0,023 mAP50 / +0,006 mAP50-95) dan test (+0,024 / +0,008);
   test mAP50 0,604 melewati sasaran 0,60. Checkpoint ep9 (EMA), early-stop ep17.
   **Catatan evaluator:** angka RF-DETR di atas dari COCO eval independen
-  (`eval_rfdetr_perkelas.py`, pycocotools) — val-nya (0,5695) cocok dengan
+  (`experiments/eval/eval_rfdetr_perkelas.py`, pycocotools) — val-nya (0,5695) cocok dengan
   evaluator internal rf-detr (0,5699); model lain via ultralytics `.val()`.
   Perbedaan protokol <0,005 — **kini TERSELESAIKAN** oleh tabel 1-protokol
   pycocotools di atas. **Kesetaraan parameter:** baseline YOLO adil **YOLO26l
@@ -196,8 +196,8 @@ mAP50-95 agnostik 0,3320 **melewati** sasaran 0,30 — deteksi bukan hambatannya
 
 ## Diagnostik (bukan hasil model — jangan dikutip sebagai capaian mAP)
 
-Tersimpan di `experiments/results/`: `class_mismatch.json` (E-001),
-`diag_bottleneck.json` (E-014, agnostik vs 4-kelas), `loc_ceiling.json` (E-018,
-plafon lokalisasi 0,8834/0,4702), `head_vs_crop.json` & `multiview_val.json`
-(E-016), `metric_variants.json` & `metric_pm1.json` (E-016, varian perumusan),
-`two_stage_val_*.json` (E-017), `raw_map.json` (E-015, peta master 3992/3992).
+Tersimpan di `experiments/results/`: `experiments/results/E-001/class_mismatch.json` (E-001),
+`experiments/results/E-014/diag_bottleneck.json` (E-014, agnostik vs 4-kelas), `experiments/results/E-018/loc_ceiling.json` (E-018,
+plafon lokalisasi 0,8834/0,4702), `experiments/results/E-016/head_vs_crop.json` & `experiments/results/E-016/multiview_val.json`
+(E-016), `experiments/results/E-016/metric_variants.json` & `experiments/results/E-016/metric_pm1.json` (E-016, varian perumusan),
+`two_stage_val_*.json` (E-017), `experiments/results/E-015/raw_map.json` (E-015, peta master 3992/3992).

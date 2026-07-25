@@ -6,12 +6,12 @@ Repositori tinjauan pustaka untuk riset **deteksi objek berbasis YOLO dan fusi R
 
 | Berkas | Isi |
 |---|---|
-| [`tinjauan-pustaka.tex`](./tinjauan-pustaka.tex) | Draf LaTeX lama/mandiri; tidak dipakai oleh driver artikel saat ini dan perlu ditinjau sebelum digunakan kembali. |
+| [`docs/archive/tinjauan-pustaka.tex`](docs/archive/tinjauan-pustaka.tex) | Draf LaTeX lama/mandiri; tidak dipakai oleh driver artikel saat ini dan perlu ditinjau sebelum digunakan kembali. |
 | [`main.tex`](./main.tex) | Driver naskah artikel gaya IEEEtran; memuat isi bersama dari `evidence-body.tex`. |
 | [`main-elsarticle.tex`](./main-elsarticle.tex) | Driver naskah artikel gaya Elsevier/elsarticle; memuat isi bersama dari `evidence-body.tex`. |
 | [`evidence-body.tex`](./evidence-body.tex) | Isi naskah aktif (menggantikan `body.tex`/`verified-body.tex` lama, kini diarsipkan di `docs/archive/`). |
-| [`docs/AUDIT-PRA-SUBMISI.md`](./docs/AUDIT-PRA-SUBMISI.md) | Hasil pemeriksaan mekanis dan checklist sebelum pengajuan naskah. |
-| [`docs/`](./docs) | Dokumen kerja/perencanaan: `PLAN.md`, `PLAN-TINJAUAN-PUSTAKA.md`, `PANDUAN-PENULISAN.md`, `AUDIT-PRA-SUBMISI.md`, `docs/archive/` (draf & figur lama). |
+| [`docs/audit/AUDIT-PRA-SUBMISI.md`](docs/audit/AUDIT-PRA-SUBMISI.md) | Hasil pemeriksaan mekanis dan checklist sebelum pengajuan naskah. |
+| [`docs/`](./docs) | Dokumen kerja/perencanaan: `docs/naskah/PLAN-SITUS.md`, `docs/naskah/PLAN-TINJAUAN-PUSTAKA.md`, `docs/naskah/PANDUAN-PENULISAN.md`, `docs/audit/AUDIT-PRA-SUBMISI.md`, `docs/archive/` (draf & figur lama). |
 | [`figures/`](./figures) | Figur final (F01-F08 versi Inggris `-en.jpg`, C01, C02) beserta brief + tema; disisipkan lewat `\includegraphics`. |
 | [`references.bib`](./references.bib) | Basis data sitasi BibTeX (semua entri). |
 | [`TEMUAN.md`](./TEMUAN.md) | Catatan temuan / sintesis lintas makalah. |

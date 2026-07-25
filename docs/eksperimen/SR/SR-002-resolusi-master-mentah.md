@@ -5,9 +5,9 @@
 
 > **PEMBARUAN (E-015, 2026-07-21).** Blokade di SR ini — nama berkas master
 > mentah tidak unik global sehingga pemetaan raw ↔ anotasi mustahil dari nama —
-> **sudah dibuka.** `match_raw.py` memetakan 3.992/3.992 citra lewat isi
+> **sudah dibuka.** `experiments/build/match_raw.py` memetakan 3.992/3.992 citra lewat isi
 > (tanda tangan citra ternormalkan), nol ambigu, skor terendah 0,9985. Master
-> 3024×4032 kini dapat dipakai tanpa anotasi ulang; `build_master_ds.py`
+> 3024×4032 kini dapat dipakai tanpa anotasi ulang; `experiments/build/build_master_ds.py`
 > merakit dataset YOLO yang menunjuk ke piksel master. Lihat E-015 dan E-018.
 
 ---

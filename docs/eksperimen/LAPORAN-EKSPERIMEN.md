@@ -5,11 +5,11 @@ log dan bukan pengganti log. Ia merangkai satu cerita dari basis pustaka sampai
 titik jeda hari ini, lalu menunjuk ke berkas kanonik untuk tiap angkanya.
 
 Sumber kanonik yang dirangkum di sini:
-[`EKSPERIMEN.md`](EKSPERIMEN.md) (log kronologis, *append-only*) ·
-[`SR/README.md`](SR/README.md) (pandangan per-ide) ·
-[`METRICS.md`](METRICS.md) (tabel metrik definitif) ·
-[`STATUS.md`](STATUS.md) (titik jeda & jalur lanjutan) ·
-[`../pipeline/README.md`](../pipeline/README.md) (deliverable produksi).
+[`docs/eksperimen/EKSPERIMEN.md`](EKSPERIMEN.md) (log kronologis, *append-only*) ·
+[`docs/eksperimen/SR/README.md`](SR/README.md) (pandangan per-ide) ·
+[`docs/eksperimen/METRICS.md`](METRICS.md) (tabel metrik definitif) ·
+[`docs/eksperimen/STATUS.md`](STATUS.md) (titik jeda & jalur lanjutan) ·
+[`pipeline/README.md`](../../pipeline/README.md) (deliverable produksi).
 
 ---
 
@@ -51,7 +51,7 @@ Yang diambil dari korpus dan benar-benar diuji:
   `evidence-body.tex` §174) → dasar I-4/I-5.
 - **Gerbang mutu depth** (SA-Gate entri 055; D3Net entri 037: depth buruk merusak
   prediksi) → I-8, masih menunggu GEMINI-PENDING.
-- **Detektor NMS-free** sebagai prioritas 1 (`deep-research-report.md`) → E-020,
+- **Detektor NMS-free** sebagai prioritas 1 (`docs/referensi/deep-research-report.md`) → E-020,
   yang akhirnya menjadi hasil terbaik.
 
 Satu batas yang harus disebut sejak awal: **tidak ada satu pun benchmark RGB-D
@@ -82,7 +82,7 @@ default) — ia titik acuan, bukan plafon.
 
 ## 3. Peta 19 eksperimen
 
-Semua eksperimen yang tercatat di [`EKSPERIMEN.md`](EKSPERIMEN.md), dengan
+Semua eksperimen yang tercatat di [`docs/eksperimen/EKSPERIMEN.md`](EKSPERIMEN.md), dengan
 putusan apa adanya. Empat dipalsukan dan satu ditarik — itu justru bagian yang
 paling mempersempit arah kerja.
 
@@ -99,7 +99,7 @@ paling mempersempit arah kerja.
 | E-010 | Diagnosis penyebab kegagalan B4 | [SR-007](SR/SR-007-diagnosis-b4.md) | DIKONFIRMASI (kontras) / DIPALSUKAN (kepadatan) |
 | E-011 | Praproses mana yang menaikkan keterpisahan B4 | [SR-008](SR/SR-008-kanal-tekstur.md) | DIKONFIRMASI (tekstur) / DIPALSUKAN (penajam kontras) |
 | E-012 | Kematangan dari penampilan potongan GT | [SR-009](SR/SR-009-ordinalitas-kelas.md) | DIKONFIRMASI / CONFIRMED |
-| E-013 | Pipeline produksi 4-kanal untuk sensor depth | [`pipeline/`](../pipeline/README.md) | SIAP PAKAI / DELIVERED |
+| E-013 | Pipeline produksi 4-kanal untuk sensor depth | [`pipeline/`](../../pipeline/README.md) | SIAP PAKAI / DELIVERED |
 | E-014 | Hambatan mAP: deteksi atau klasifikasi? | [SR-010](SR/SR-010-hambatan-klasifikasi.md) | DIKONFIRMASI / CONFIRMED |
 | E-015 | Pemetaan master mentah lewat pencocokan isi | [SR-002](SR/SR-002-resolusi-master-mentah.md) | TERBLOKIR → DIBUKA / UNBLOCKED |
 | E-016 | Plafon kematangan, diukur tiga kali | [SR-011](SR/SR-011-plafon-kematangan.md) | DITARIK / WITHDRAWN (lewat E-018) |
@@ -241,7 +241,7 @@ sebagai plafon.
 
 ### 5.1 Semua run detektor, berdampingan
 
-Angka COCO/ultralytics apa adanya, dari [`METRICS.md`](METRICS.md).
+Angka COCO/ultralytics apa adanya, dari [`docs/eksperimen/METRICS.md`](METRICS.md).
 
 **Val (dasar pemilihan konfigurasi):**
 
@@ -320,7 +320,7 @@ skrip arsip; pengarsipannya ke penyimpanan objek belum dilakukan.
 
 ### 6.1 Yang sudah siap dan tidak hilang
 
-- **[`pipeline/`](../pipeline/README.md)** — pipeline produksi YOLO 4-kanal
+- **[`pipeline/`](../../pipeline/README.md)** — pipeline produksi YOLO 4-kanal
   (RGB + depth) untuk kamera **Orbbec Gemini**. Satu bobot melayani dua mode uji
   lewat *modality dropout*: RGB+depth saat sensor terpasang, RGB saja saat tidak.
   Kontrak kanal keempat sudah dibekukan (PNG uint8, `0` = tidak ada data,
@@ -392,11 +392,11 @@ Dataset: SawitMVC 960×1280 dan master 3024×4032, split per pohon 716/96/141
 dengan irisan nol — invarian yang harus dijaga.
 
 Untuk deliverable produksi, seluruh perintah latih/konversi/inferensi ada di
-[`../pipeline/README.md`](../pipeline/README.md).
+[`pipeline/README.md`](../../pipeline/README.md).
 
 ---
 
 *Cuplikan ini dikurasi 22 Juli 2026. Angka apa adanya, hasil negatif ikut
 dilaporkan. Bila ada selisih antara dokumen ini dan
-[`EKSPERIMEN.md`](EKSPERIMEN.md) / [`METRICS.md`](METRICS.md), yang kanonik
+[`docs/eksperimen/EKSPERIMEN.md`](EKSPERIMEN.md) / [`docs/eksperimen/METRICS.md`](METRICS.md), yang kanonik
 adalah kedua berkas itu.*

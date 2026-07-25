@@ -2,10 +2,10 @@
 
 **Terakhir diperbarui:** 2026-07-24 · **Status:** aktif — RF-DETR-L (E-021) jadi detektor terbaik baru; YOLO26l @1280 (baseline param-adil) sedang berjalan.
 
-Metrik lengkap semua run (per-kelas B1–B4, val+test) di [`METRICS.md`](METRICS.md).
+Metrik lengkap semua run (per-kelas B1–B4, val+test) di [`docs/eksperimen/METRICS.md`](METRICS.md).
 
 Dokumen ini adalah **titik masuk tunggal** saat pekerjaan dilanjutkan. Baca ini
-dulu, lalu `docs/SR/README.md` (cerita per-ide) dan `docs/EKSPERIMEN.md` (log
+dulu, lalu `docs/eksperimen/SR/README.md` (cerita per-ide) dan `docs/eksperimen/EKSPERIMEN.md` (log
 kronologis E-001…E-020).
 
 ---
@@ -33,17 +33,17 @@ test 0,5794/0,2694, val 0,5466/0,2543.
 
 **Perbandingan adil SELESAI (2026-07-25):** YOLO26l @1280 (baseline param-adil
 26,3 jt, config identik RT-DETR) terlatih penuh 60 epoch, dan seluruh 4 model
-dievaluasi lewat **1-protokol pycocotools** (`results/perkelas_pycoco.json`).
+dievaluasi lewat **1-protokol pycocotools** (`experiments/results/E-021/perkelas_pycoco.json`).
 Ranking monotonik menurut parameter: YOLO26m < YOLO26l < RT-DETR-L < RF-DETR-L.
 YOLO26l tetap di bawah kedua DETR → keunggulan RF-DETR bukan efek
-kapasitas/resolusi. Tabel penuh di [`METRICS.md`](METRICS.md) §1-protokol.
+kapasitas/resolusi. Tabel penuh di [`docs/eksperimen/METRICS.md`](METRICS.md) §1-protokol.
 **Semua jebakan teknis + peta berkas + log run ini** terkonsolidasi di
-[`experiments/CATATAN-TEKNIS-E021.md`](../experiments/CATATAN-TEKNIS-E021.md) —
+[`experiments/CATATAN-TEKNIS-E021.md`](../../experiments/CATATAN-TEKNIS-E021.md) —
 baca sebelum menjalankan ulang RF-DETR/RT-DETR/YOLO26.
 
 **Bobot terbaik:** `/workspace/experiments/runs/rtdetr_l_e60_i1280/weights/best.pt`
-(264 MB, di luar repo). Reproduksi: `experiments/train_rtdetr.py` +
-`experiments/eval_rtdetr.py`. **Kandidat untuk diarsipkan ke penyimpanan objek**
+(264 MB, di luar repo). Reproduksi: `experiments/train/train_rtdetr.py` +
+`experiments/eval/eval_rtdetr.py`. **Kandidat untuk diarsipkan ke penyimpanan objek**
 (HuggingFace Hub / Drive / GitHub Release+LFS) — belum dilakukan.
 
 ---
@@ -72,7 +72,7 @@ Dipalsukan / ditutup: SR-001, SR-005, SR-006, SR-012 (dipalsukan); SR-011
 - **`pipeline/`** — pipeline produksi YOLO 4-kanal (RGB+depth) untuk kamera
   Gemini. Modality dropout: satu bobot untuk RGB-saja atau RGB+depth. Siap saat
   data sensor Gemini terkumpul. Belum ada bobot terlatih.
-- **Dataset master 3060×4080** — `experiments/build_master_ds.py` merakit dataset
+- **Dataset master 3060×4080** — `experiments/build/build_master_ds.py` merakit dataset
   YOLO yang menunjuk ke piksel master penuh (dari peta isi E-015, 3.992/3.992).
   Belum dipakai melatih apa pun. Ini kunci jalur lanjutan #1 di bawah.
 - **RT-DETR-L best.pt** — model terbaik (lihat §1).
@@ -89,15 +89,15 @@ Semua GPU-bound, dijeda karena berhenti di sini. Perintah siap jalan.
    sekarang cuma di 1280. **Taruhan terbaik menutup −0,021 terakhir.**
    ```bash
    cd /workspace/experiments
-   .venv/bin/python train_rtdetr.py --weights rtdetr-l.pt \
+   .venv/bin/python experiments/train/train_rtdetr.py --weights rtdetr-l.pt \
        --imgsz 1600 --epochs 60   # arahkan data ke master_ds/data.yaml
    ```
-   Catatan: `train_rtdetr.py` saat ini menunjuk `data_rgb.yaml`; ganti ke
-   `master_ds/data.yaml` (dibuat oleh `build_master_ds.py`).
+   Catatan: `experiments/train/train_rtdetr.py` saat ini menunjuk `experiments/config/data_rgb.yaml`; ganti ke
+   `master_ds/data.yaml` (dibuat oleh `experiments/build/build_master_ds.py`).
 
 2. **RT-DETR-X** (67,5 juta param) — kapasitas di atas mekanisme NMS-free.
    ```bash
-   .venv/bin/python train_rtdetr.py --weights rtdetr-x.pt --imgsz 1280 --batch 3
+   .venv/bin/python experiments/train/train_rtdetr.py --weights rtdetr-x.pt --imgsz 1280 --batch 3
    ```
 
 3. **I-22 loss ordinal** pada RT-DETR — menyerang mismatch objektif ordinal
@@ -126,4 +126,4 @@ Dataset: `/workspace/SawitMVC/data/` (960×1280) dan `/workspace/Sawit/data/`
 Split per pohon 716/96/141, **irisan nol** — jaga ini.
 
 Panduan reproduksi langkah demi langkah (skrip→SR→keluaran, versi persis, celah
-jujur): [`../experiments/REPRODUCE.md`](../experiments/REPRODUCE.md).
+jujur): [`experiments/REPRODUCE.md`](../../experiments/REPRODUCE.md).

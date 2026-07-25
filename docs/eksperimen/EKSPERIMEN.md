@@ -8,16 +8,16 @@ merujuk entri lama.
 mencegah jalan buntu yang sama ditempuh dua kali, dan menjawab pertanyaan
 reviewer "apa saja yang sudah dicoba".
 
-**Laporan per-ide ada di [`docs/SR/`](SR/)** — tiap SR merangkum satu ide dari
+**Laporan per-ide ada di [`docs/eksperimen/SR`](SR/)** — tiap SR merangkum satu ide dari
 masalah → ide → solusi → hasil → putusan. Berkas ini adalah **log kronologis**
 (E-NNN); SR adalah **pandangan per-ide**. Tiap entri E-NNN di bawah menyebut ide
 dan SR yang memuatnya.
 
 Kode eksperimen dijalankan di `/workspace/experiments/` (di luar repo). Snapshot
-**kode + hasil JSON + split**-nya diarsipkan ke [`../experiments/`](../experiments/)
+**kode + hasil JSON + split**-nya diarsipkan ke [`../experiments/`](../../experiments/)
 di repo ini agar tiap perintah reproduksi tetap punya sumbernya; artefak besar
 (bobot, dataset turunan) tidak diarsipkan karena bisa dibuat ulang dari skrip —
-lihat [`experiments/README.md`](../experiments/README.md).
+lihat [`experiments/README.md`](../../experiments/README.md).
 
 Format tiap entri:
 
@@ -102,7 +102,7 @@ menumpuk di B2↔B3 sehingga mendukung klaim "ambiguitas B2/B3 sulit direduksi".
 Dipalsukan bila tingkat ketidaksepakatan mendekati nol atau tidak terkonsentrasi
 di B2/B3.
 
-**Cara** — `experiments/class_mismatch_stats.py` atas seluruh 953 JSON di
+**Cara** — `experiments/analysis/class_mismatch_stats.py` atas seluruh 953 JSON di
 `SawitMVC/data/json/`. Menghitung flag, ketidaksepakatan label per-sisi terhadap
 kelas konsensus bunch, matriks kebingungan, dan pecahan per split/varietas/jumlah
 sisi/kelas.
@@ -182,7 +182,7 @@ bunch lintas-sisi secara geometris alih-alih statistik (k ≈ 1,89 / SVR).
 Dipalsukan bila rekonstruksi gagal konvergen, pose kamera tidak membentuk orbit
 yang masuk akal, atau peta kedalaman kanopi tidak memisahkan lapisan.
 
-**Cara** — `experiments/da3_video_test.py`, checkpoint `depth-anything/da3-large`,
+**Cara** — `experiments/analysis/da3_video_test.py`, checkpoint `depth-anything/da3-large`,
 `process_res=504`, GPU L4. Video `VID_20260205_090556.mp4` (1280×720, 1.315
 frame, 43,6 dtk) dari `Sawit/data/Video/Kelompok 6`. Frame diambil berjarak sama,
 dua kerapatan: 16 dan 48 frame. Diagnosa: (b) PCA pusat kamera → kecocokan
@@ -257,7 +257,7 @@ akibat (i) masukan miring 90° karena `cv2` mengabaikan metadata rotasi, dan/ata
 banyak video akan menghasilkan orbit mulus pada mayoritas video. Dipalsukan bila
 sebagian besar video tetap gagal, atau kegagalan tersebar merata.
 
-**Cara** — `experiments/da3_video_multi.py`, `depth-anything/da3-large`,
+**Cara** — `experiments/analysis/da3_video_multi.py`, `depth-anything/da3-large`,
 `process_res=504`, 6 video pertama `Kelompok 6`, 32 frame per video. Ekstraksi
 frame lewat **ffmpeg** (menerapkan display matrix; terkonfirmasi video memuat
 `displaymatrix: rotation of -90.00 degrees`) menggantikan `cv2`. Metrik utama
@@ -298,7 +298,7 @@ DA3 cukup andal untuk dijadikan fondasi I-6 (penautan geometris) dan I-7
 (asosiasi sadar-pose). Tetapi keandalannya **tidak universal** (1 dari 6 gagal),
 sehingga gerbang mutu I-8 bukan hiasan melainkan syarat.
 
-**Reproduksi** — `python da3_video_multi.py --videos 6 --frames 32`
+**Reproduksi** — `python experiments/analysis/da3_video_multi.py --videos 6 --frames 32`
 (pembanding tanpa koreksi rotasi: tambahkan `--no-rotate`).
 
 ---
@@ -315,7 +315,7 @@ Geometri sebenarnya diketahui (operator memutari pohon pada 4 atau 8 posisi),
 sehingga tersedia kebenaran acuan objektif: langkah sudut antar-sisi berurutan
 seharusnya 90° (4 sisi) atau 45° (8 sisi).
 
-**Cara** — `experiments/da3_sides_test.py`, `depth-anything/da3-large`,
+**Cara** — `experiments/analysis/da3_sides_test.py`, `depth-anything/da3-large`,
 `process_res=504`. 20 pohon 4-sisi dan 30 pohon 8-sisi, dipilih acak `seed=42`
 dari 908 dan 45 pohon yang tersedia. Metrik: RMSE simpangan langkah sudut
 terhadap nilai harapan, residual kecocokan lingkaran, rasio kerataan PCA, dan
@@ -355,8 +355,8 @@ kuantitatif (→ E-006, ide I-9): apakah kedalaman di dalam kotak tandan berbeda
 dari sekitarnya? Kalau tidak, fusi depth tidak akan menolong B4 berapa pun
 arsitekturnya, dan itu harus diketahui sebelum jam GPU dibakar.
 
-**Reproduksi** — `python da3_sides_test.py --trees 20 --sides 4` dan
-`python da3_sides_test.py --trees 30 --sides 8 --preview 1`.
+**Reproduksi** — `python experiments/analysis/da3_sides_test.py --trees 20 --sides 4` dan
+`python experiments/analysis/da3_sides_test.py --trees 30 --sides 8 --preview 1`.
 
 ---
 
@@ -367,7 +367,7 @@ berbeda dari sekitarnya, sehingga kedalaman dapat memisahkan apa yang warna
 tidak bisa (naskah §14). Dipalsukan bila kotak tandan tidak menunjukkan kontras
 kedalaman lebih besar daripada kotak acak berukuran sama.
 
-**Cara** — `experiments/depth_bunch_signal.py`, 40 pohon (780 kotak
+**Cara** — `experiments/analysis/depth_bunch_signal.py`, 40 pohon (780 kotak
 kebenaran-dasar), kedalaman DA3 multi-view per pohon. Untuk tiap kotak:
 bandingkan kedalaman di dalam kotak vs cincin sekelilingnya. **Kendali: 2 kotak
 acak berukuran sama per kotak asli** (1.560 kendali) — perlu karena peta
@@ -400,7 +400,7 @@ geometri tingkat-pohon (E-004, E-005) tetap kokoh, sehingga I-6/I-7 justru
 menjadi jalur paling menjanjikan karena memakai pose lintas-pandangan yang
 terbukti, bukan kontras lokal yang baru dipalsukan.
 
-**Reproduksi** — `python depth_bunch_signal.py --trees 40 [--process-res 1008]`
+**Reproduksi** — `python experiments/analysis/depth_bunch_signal.py --trees 40 [--process-res 1008]`
 
 ---
 
@@ -410,7 +410,7 @@ terbukti, bukan kontras lokal yang baru dipalsukan.
 geometris (tandan sama = titik 3D sama), mengalahkan koreksi statistik k=1,8905.
 Dipalsukan bila mode sadar-pose tidak lebih baik daripada penampilan/depth/k.
 
-**Cara** — `experiments/geometric_linking.py`, 141 pohon split uji. Tangga
+**Cara** — `experiments/analysis/geometric_linking.py`, 141 pohon split uji. Tangga
 ablasi §208: (A) hanya penampilan, (B) depth tanpa pose, (C) sadar-pose 3D,
 (D) koreksi global k. Identitas = komponen terhubung union-find. Ambang disapu
 (9 nilai untuk pose, 7 untuk lainnya).
@@ -436,7 +436,7 @@ idenya. Uji adil menuntut kedalaman metrik terkalibrasi (I-19).
 tipis. Bersama E-006, arah dipersempit tegas: sisa perbaikan harus dari
 **detektor**. Prioritas berikutnya I-12 (ubin), I-13 (loss berimbang), I-15.
 
-**Reproduksi** — `python geometric_linking.py --split test [--sweep]`
+**Reproduksi** — `python experiments/analysis/geometric_linking.py --split test [--sweep]`
 
 ---
 
@@ -447,7 +447,7 @@ tipis. Bersama E-006, arah dipersempit tegas: sisa perbaikan harus dari
 piksel sebelum masuk jaringan. Kalau benar, B4 akan jauh lebih kecil daripada
 kelas lain dan banyak yang jatuh di bawah ambang "kecil" COCO.
 
-**Cara** — `experiments/box_size_analysis.py`. Tanpa model sama sekali; hanya
+**Cara** — `experiments/analysis/box_size_analysis.py`. Tanpa model sama sekali; hanya
 mengukur geometri kotak kebenaran-dasar (train+test) setelah diskalakan ke
 `imgsz=640`. Dijalankan **sebelum** hasil pelatihan ubin keluar, supaya
 ekspektasinya tercatat lebih dulu.
@@ -475,7 +475,7 @@ tandan hitam tertanam di ketiak pelepah yang juga gelap. Itu mengarah ke ide
 lain: augmentasi sadar-oklusi (I-16) dan analisis terstratifikasi oklusi (I-11),
 bukan sekadar resolusi.
 
-**Reproduksi** — `python box_size_analysis.py`
+**Reproduksi** — `python experiments/analysis/box_size_analysis.py`
 
 ---
 
@@ -485,7 +485,7 @@ bukan sekadar resolusi.
 langsung dari data, tanpa model. Tiga tersangka diuji berdampingan: kontras
 fotometrik rendah, kepadatan/crowding, dan tumpang tindih antar-kotak.
 
-**Cara** — `experiments/why_b4_fails.py` atas 400 citra uji. Kontras diukur di
+**Cara** — `experiments/analysis/why_b4_fails.py` atas 400 citra uji. Kontras diukur di
 ruang CIELAB antara isi kotak dan cincin sekelilingnya (ΔE, ΔLuminans, ΔWarna),
 plus varians Laplacian sebagai ukuran tekstur. Kepadatan = jumlah kotak lain
 yang pusatnya dalam 1,5× diagonal. **Kendali kotak acak** dipakai seperti E-006.
@@ -524,7 +524,7 @@ tetapi alasannya bukan "objeknya kecil" (E-009 melemahkan itu) melainkan
 "petunjuk yang menentukan adalah frekuensi tinggi". Ekspektasi ini dicatat
 **sebelum** hasil ubin keluar.
 
-**Reproduksi** — `python why_b4_fails.py --images 400`
+**Reproduksi** — `python experiments/analysis/why_b4_fails.py --images 400`
 
 ---
 
@@ -535,7 +535,7 @@ tertinggi. Kalau begitu, praproses yang memperkuat kontras lokal atau tekstur
 akan menaikkan keterpisahannya. Dipalsukan bila tidak ada praproses yang
 menaikkan AUC B4 lebih dari 0,02 di atas acuan.
 
-**Cara** — `experiments/contrast_boost_test.py`, 250 citra uji. Lima peta
+**Cara** — `experiments/analysis/contrast_boost_test.py`, 250 citra uji. Lima peta
 skalar diuji (luminans asli, CLAHE, unsharp mask, besar gradien Sobel,
 Laplacian). Metrik: AUC pemisahan piksel isi-kotak vs cincin, per kelas, dengan
 **kendali kotak acak untuk tiap praproses**. Yang dinilai adalah selisih
@@ -568,7 +568,7 @@ sinyal yang terbukti membedakan B4 (E-006 memalsukan kedalaman, E-010
 memalsukan warna dan kepadatan). Mesin 4-kanal dari I-4 dapat dipakai ulang
 dengan menukar isi kanalnya.
 
-**Reproduksi** — `python contrast_boost_test.py --images 250`
+**Reproduksi** — `python experiments/analysis/contrast_boost_test.py --images 250`
 
 ---
 
@@ -579,7 +579,7 @@ SR-007 menunjukkan B2 punya kontras latar tinggi tetapi AP50 rendah, artinya
 masalahnya membedakan kelas, bukan melihat tandan. Diuji langsung: dapatkah
 kematangan dibedakan dari penampilan potongan kebenaran-dasar saja?
 
-**Cara** — `experiments/class_separability.py`. Potongan diambil dari kotak
+**Cara** — `experiments/analysis/class_separability.py`. Potongan diambil dari kotak
 kebenaran-dasar sehingga **tahap deteksi dihilangkan sepenuhnya**. Fitur
 sederhana dan dapat ditafsirkan (statistik LAB/HSV, varians Laplacian, besar
 gradien, histogram hue = 37 dimensi). RandomForest 400 pohon, seimbang kelas,
@@ -617,9 +617,9 @@ melompat. Menarik: metrik counting DiB (`Class ±1 Acc`) **sudah** mengakui
 sifat ordinal ini, tetapi pelatihan detektornya memakai klasifikasi kategoris
 biasa yang memperlakukan B2→B3 sama buruknya dengan B1→B4. Ada ketidakcocokan
 antara objektif pelatihan dan metrik evaluasi — persis "mismatch objective-ke-
-deployment" yang disebut `deep-research-report.md`.
+deployment" yang disebut `docs/referensi/deep-research-report.md`.
 
-**Reproduksi** — `python class_separability.py --per-class 1500`
+**Reproduksi** — `python experiments/analysis/class_separability.py --per-class 1500`
 
 ---
 
@@ -654,7 +654,7 @@ depth metrik inverse 0,3–8 m; patch pemuat; inflasi conv pertama; kelas
    3 kanal (`predictor.py:167`, `augment.py:2395`) — model 4-kanal melihat
    `[B,G,R,D]` di jalur latih maupun prediksi.
 
-**Catatan penting** — `train_fusion.py` (I-4, sedang berjalan di GPU) TIDAK
+**Catatan penting** — `experiments/train/train_fusion.py` (I-4, sedang berjalan di GPU) TIDAK
 memakai inflasi ini — conv pertamanya mulai acak. Bila RGBD/RGBT layak diulang,
 ulangi lewat `pipeline/train_4ch.py` agar mulai dari bobot pratlatih penuh.
 
@@ -674,7 +674,7 @@ diperiksa: benarkah yang kurang itu kemampuan **menemukan** tandan?
 jauh di atas mAP 4-kelas pada bobot yang sama, maka kerugian ada di klasifikasi
 kematangan, dan seluruh antrean ide berbasis deteksi salah alamat.
 
-**Cara** — `diag_bottleneck.py`: bobot identik (`rgb_e60_i640_s42/best.pt`),
+**Cara** — `experiments/eval/diag_bottleneck.py`: bobot identik (`rgb_e60_i640_s42/best.pt`),
 val identik (404 citra), hanya bendera `single_cls` yang berbeda.
 
 **Hasil** —
@@ -697,7 +697,7 @@ dua tahap** (deteksi agnostik resolusi 960 + pengklasifikasi kematangan pada
 potongan resolusi asli). Melahirkan pula **I-24**: augmentasi baseline memakai
 `hsv_s=0.7` — mengacak saturasi ±70% pada tugas yang buktinya adalah warna.
 
-**Reproduksi** — `python diag_bottleneck.py`
+**Reproduksi** — `python experiments/eval/diag_bottleneck.py`
 
 ---
 
@@ -714,7 +714,7 @@ paling langsung relevan — dan ia terkunci.
 **Hipotesis** — Kedua tingkat adalah citra yang sama pada skala berbeda, jadi
 pencocokan berbasis ISI menyelesaikan pemetaan tanpa tabel dari tim.
 
-**Cara** — `match_raw.py`: tiap citra diperkecil lewat penskalaan DCT JPEG
+**Cara** — `experiments/build/match_raw.py`: tiap citra diperkecil lewat penskalaan DCT JPEG
 (`IMREAD_REDUCED_*_8`), disamakan orientasinya ke potret, diringkas jadi vektor
 abu-abu 32×40 yang dinormalkan (rerata 0, norma 1). Kecocokan = hasil kali titik
 tertinggi, diverifikasi tiga lapis: skor > 0,90, jarak ke peringkat kedua
@@ -746,7 +746,7 @@ masukan 224 px sebenarnya hasil **pembesaran** — tidak ada detail baru, hanya
 interpolasi. Di master, 224 px berisi detail permukaan buah yang sebenarnya.
 Ini menjadi masukan tahap 2 dari I-23.
 
-**Reproduksi** — `python match_raw.py` (CPU, beberapa menit) → `results/raw_map.json`
+**Reproduksi** — `python experiments/build/match_raw.py` (CPU, beberapa menit) → `experiments/results/E-015/raw_map.json`
 
 ---
 
@@ -756,9 +756,9 @@ Ini menjadi masukan tahap 2 dari I-23.
 supaya mAP50 mencapai 0,60. E-016 menguji apakah angka itu bisa dicapai.
 
 **Cara** — Tiga jalur bebas pada tugas identik (diberi kotak, tebak kelas):
-head YOLO (`head_vs_crop.py`), CNN ConvNeXt-Tiny pada potongan master
-3024×4032 (`build_crops_raw.py` + `train_maturity.py`), dan voting antar-sisi
-dengan penautan kebenaran dasar (`multiview_vote.py`).
+head YOLO (`experiments/analysis/head_vs_crop.py`), CNN ConvNeXt-Tiny pada potongan master
+3024×4032 (`experiments/build/build_crops_raw.py` + `experiments/train/train_maturity.py`), dan voting antar-sisi
+dengan penautan kebenaran dasar (`experiments/analysis/multiview_vote.py`).
 
 **Hasil** —
 
@@ -795,7 +795,7 @@ dan tidak punya padanan di ruang metrik deteksi. Pelaporan yang jujur karena
 itu harus memisahkan dua angka: AP deteksi kelas-agnostik, dan akurasi
 kematangan (dengan ±1) — persis dekomposisi SR-010.
 
-**Reproduksi** — `head_vs_crop.py`, `multiview_vote.py`, `metric_variants.py`
+**Reproduksi** — `experiments/analysis/head_vs_crop.py`, `experiments/analysis/multiview_vote.py`, `experiments/eval/metric_variants.py`
 
 ---
 
@@ -805,7 +805,7 @@ kematangan (dengan ±1) — persis dekomposisi SR-010.
 plafon klasifikasi ~68%. I-23 menguji apakah memisahkan keduanya secara
 arsitektural memberi mAP 4-kelas yang lebih baik daripada satu tahap.
 
-**Cara** — Tahap 1: `train_agnostic.py`, yolo26m `single_cls=True`, imgsz 960,
+**Cara** — Tahap 1: `experiments/train/train_agnostic.py`, yolo26m `single_cls=True`, imgsz 960,
 diinisialisasi dari baseline RGB yang sudah konvergen. Tahap 2: ConvNeXt-Tiny
 pada potongan master 3024×4032 (E-015). Skor gabungan = skor objek × peluang
 kelas, tiap kotak menyumbang ke keempat kelas — cara skor detektor dua-tahap
@@ -835,8 +835,8 @@ val-test semuanya **nol**. Konfigurasi dipilih pada val; test hanya dilaporkan.
 Augmentasi tahap 2 sengaja **aman-warna**: baseline YOLO memakai `hsv_s=0.7`
 yang mengacak saturasi ±70% pada tugas yang buktinya adalah warna.
 
-**Reproduksi** — `train_agnostic.py`, `build_crops_raw.py`,
-`train_maturity_v2.py --root crops_raw`, `two_stage.py --crop-source raw`
+**Reproduksi** — `experiments/train/train_agnostic.py`, `experiments/build/build_crops_raw.py`,
+`experiments/train/train_maturity_v2.py --root crops_raw`, `experiments/analysis/two_stage.py --crop-source raw`
 
 ---
 
@@ -848,7 +848,7 @@ berjam-jam GPU, satu hal harus diketahui: apakah kotak anotasinya sendiri cukup
 ketat untuk memungkinkannya? mAP50-95 merata-ratakan ambang IoU sampai 0,95 —
 kalau kotak GT digambar longgar, tidak ada model yang bisa mencapainya.
 
-**Cara** — `loc_ceiling.py`: untuk tiap kotak GT val, IoU tertinggi dengan
+**Cara** — `experiments/analysis/loc_ceiling.py`: untuk tiap kotak GT val, IoU tertinggi dengan
 deteksi mana pun (kelas diabaikan, conf 0,05). Pecahan GT yang tercapai pada
 tiap ambang COCO memberi batas atas mAP bila kelas dan peringkat skornya
 sempurna.
@@ -881,13 +881,13 @@ perbandingannya tidak setara. Angka 68% tetap dilaporkan apa adanya, tetapi
 **tidak boleh dibaca sebagai plafon**. Jalur langsungnya — detektor 4-kelas
 resolusi tinggi dengan augmentasi aman-warna — belum pernah diuji sampai E-019.
 
-**Dampak** — Membuka **E-015 → dataset master**: `build_master_ds.py` menautkan
+**Dampak** — Membuka **E-015 → dataset master**: `experiments/build/build_master_ds.py` menautkan
 3.000/404/588 citra ke piksel master 3060×4080 (rasio 0,75, identik dengan MVC)
 tanpa anotasi ulang dan tanpa menyalin 16 GB. Pada SawitMVC, `imgsz=1280` sudah
 memakai seluruh piksel yang ada; master memungkinkan `imgsz` 1600–2048 berisi
 detail nyata.
 
-**Reproduksi** — `loc_ceiling.py`, `build_master_ds.py`
+**Reproduksi** — `experiments/analysis/loc_ceiling.py`, `experiments/build/build_master_ds.py`
 
 ---
 
@@ -898,7 +898,7 @@ sasaran 0,60/0,30 diuji: serang tepat di klasifikasi kematangan, dari dalam
 detektor 4-kelas satu tahap. Dua koreksi sekaligus — (a) augmentasi aman-warna
 (`hsv_s` 0,7 → 0,15; kematangan adalah warna), (b) resolusi asli 1280 (dari 640).
 
-**Cara** — `train_4cls_hi.py`, yolo26m diinisialisasi dari baseline yang sudah
+**Cara** — `experiments/train/train_4cls_hi.py`, yolo26m diinisialisasi dari baseline yang sudah
 konvergen, 50 epoch, kosinus, `close_mosaic=15`.
 
 **Hasil** — Puncak val **mAP50 0,5263 (epoch 9) · mAP50-95 0,2361 (epoch 7)**.
@@ -912,21 +912,21 @@ cukup untuk pulih dari cekungan lokal itu. Bukan bukti augmentasi/resolusi tak
 membantu — bukti bahwa **fine-tuning dari checkpoint resolusi lain adalah strategi
 yang salah**; run berikut (yolo26x, RT-DETR) mulai bersih dari COCO.
 
-**Reproduksi** — `python train_4cls_hi.py --imgsz 1280 --hsv-s 0.15`
+**Reproduksi** — `python experiments/train/train_4cls_hi.py --imgsz 1280 --hsv-s 0.15`
 
 ---
 
 ## E-020 — RT-DETR sebagai detektor NMS-free (2026-07-21) · Ide I-14 · [SR-013](SR/SR-013-rtdetr-nms-free.md)
 
 **Konteks** — Semua yang menempel plateau berasal dari keluarga YOLO, yang
-memakai NMS. `deep-research-report.md` menempatkan NMS-free sebagai prioritas 1:
+memakai NMS. `docs/referensi/deep-research-report.md` menempatkan NMS-free sebagai prioritas 1:
 NMS greedy dapat menekan kotak benar pada objek rapat/bertumpuk — persis tandan
 di mahkota.
 
 **Hipotesis** — Bila sebagian plafon deteksi berasal dari NMS, RT-DETR (Hungarian
 satu-ke-satu, tanpa NMS) mengangkatnya, khususnya recall pada tandan bertumpuk.
 
-**Cara** — `train_rtdetr.py`, RT-DETR-L (33,0 juta parameter), 1280, aman-warna,
+**Cara** — `experiments/train/train_rtdetr.py`, RT-DETR-L (33,0 juta parameter), 1280, aman-warna,
 60 epoch dari bobot COCO. Menguji hipotesis MEKANISME (bukan kapasitas), jadi
 bebas dari jalur yolo26x.
 
@@ -954,8 +954,8 @@ keliru, itu membaca last.pt yang overfit; best.pt jauh lebih baik.
 **Dampak** — RT-DETR jadi tulang punggung baru menggantikan yolo26m. Lanjutan:
 latih di piksel master (imgsz 1600–2048), dan RT-DETR-X (67,5 juta).
 
-**Reproduksi** — `python train_rtdetr.py --weights rtdetr-l.pt --imgsz 1280`
-lalu `python eval_rtdetr.py`
+**Reproduksi** — `python experiments/train/train_rtdetr.py --weights rtdetr-l.pt --imgsz 1280`
+lalu `python experiments/eval/eval_rtdetr.py`
 
 ---
 
@@ -971,7 +971,7 @@ apakah pada setelan **identik & adil** ia melampaui RT-DETR-L.
 **DIPALSUKAN** bila run konvergen tertinggal dari RT-DETR-L pada kedua metrik.
 Test hanya dilaporkan setelah checkpoint dipilih dari val.
 
-**Cara** — `train_rfdetr.py` + `build_rfdetr_ds.py` (adaptor dataset YOLO tanpa
+**Cara** — `experiments/train/train_rfdetr.py` + `experiments/build/build_rfdetr_ds.py` (adaptor dataset YOLO tanpa
 salin citra, split identik E-017 3000/404/588). RFDETRLarge (rfdetr 1.8.3,
 **35,65 juta param**, DINOv2 patch-16 + 2-window), resolusi **1280 tepat**
 (kelipatan 32; sama RT-DETR), dari bobot COCO `rf-detr-large-2026`, batch efektif
@@ -985,7 +985,7 @@ batch sekelas RT-DETR. (3) `.evaluate()` tak ada di rfdetr 1.8.3 → pakai
 `run_test=True`; GPU L4 sempat kelaparan data (num_workers default 2) — dinaikkan
 ke 8; batch16/workers32 meledak `/dev/shm` 26 GB → turun ke 8/8.
 
-**Hasil (checkpoint ep9 EMA; per-kelas AP50 via COCO eval `eval_rfdetr_perkelas.py`):**
+**Hasil (checkpoint ep9 EMA; per-kelas AP50 via COCO eval `experiments/eval/eval_rfdetr_perkelas.py`):**
 
 | | mAP50 | mAP50-95 | B1 | B2 | B3 | B4 |
 |---|---|---|---|---|---|---|
@@ -1006,24 +1006,24 @@ sasaran 0,60. Kelas tersulit tetap B4.
 **Caveat kesetaraan (dicatat, sedang ditangani)** — yolo26m (21,9 jt, imgsz 640)
 BUKAN pembanding sekelas RT-DETR-L (33,0 jt) / RF-DETR-L (35,7 jt @1280).
 Pembanding YOLO adil = **YOLO26l (26,3 jt) @1280** config identik RT-DETR —
-**BERJALAN** (`train_yolo26l.py`). Evaluator juga campur (yolo/rtdetr via
+**BERJALAN** (`experiments/train/train_yolo26l.py`). Evaluator juga campur (yolo/rtdetr via
 ultralytics `.val()`, rf-detr via pycocotools); unifikasi 1-protokol
-`eval_all_pycoco.py` → `results/perkelas_pycoco.json` **BERJALAN**.
+`experiments/eval/eval_all_pycoco.py` → `experiments/results/E-021/perkelas_pycoco.json` **BERJALAN**.
 
 **Dampak** — RF-DETR-L jadi detektor terbaik menggantikan RT-DETR-L (E-020).
 Lanjutan: selesaikan YOLO26l + tabel 1-protokol; pertimbangkan latih di piksel
 master.
 
-**Reproduksi** — `python build_rfdetr_ds.py` → `python train_rfdetr.py --dataset
+**Reproduksi** — `python experiments/build/build_rfdetr_ds.py` → `python train_rfdetr.py --dataset
 rfdetr_ds --epochs 60 --resolution 1280 --batch 8 --grad-accum 2 --workers 8` →
-`python eval_rfdetr_perkelas.py`. Metrik: `results/perkelas_fair.json`,
-`runs/rfdetr_l_e60_i1280/evaluation.json` + `metrics.csv`.
+`python experiments/eval/eval_rfdetr_perkelas.py`. Metrik: `experiments/results/E-021/perkelas_fair.json`,
+`experiments/runs/rfdetr_l_e60_i1280/evaluation.json` + `metrics.csv`.
 
 **Lanjutan (2026-07-25) — dua caveat E-021 diselesaikan:** (1) Baseline YOLO
 **param-adil YOLO26l** (26,3 jt, config IDENTIK RT-DETR: 1280/60ep/color-safe/
-seed42/cos_lr/COCO) dilatih penuh — `train_yolo26l.py`, best val ep31. (2) Semua
-4 model dievaluasi lewat **1-protokol pycocotools** (`eval_all_pycoco.py` →
-`results/perkelas_pycoco.json`), menghapus caveat evaluator campur. Hasil
+seed42/cos_lr/COCO) dilatih penuh — `experiments/train/train_yolo26l.py`, best val ep31. (2) Semua
+4 model dievaluasi lewat **1-protokol pycocotools** (`experiments/eval/eval_all_pycoco.py` →
+`experiments/results/E-021/perkelas_pycoco.json`), menghapus caveat evaluator campur. Hasil
 1-protokol (mAP50/mAP50-95):
 
 | Model | Param | VAL | TEST |
@@ -1036,5 +1036,5 @@ seed42/cos_lr/COCO) dilatih penuh — `train_yolo26l.py`, best val ep31. (2) Sem
 Ranking = urutan parameter di semua metrik/split. **YOLO26l (param-adil) tetap di
 bawah kedua DETR** → keunggulan RF-DETR/RT-DETR **bukan efek kapasitas/resolusi**,
 melainkan arsitektur NMS-free. Putusan E-021 makin kuat. Tabel penuh per-kelas:
-[METRICS.md](METRICS.md) §1-protokol. Reproduksi: `python train_yolo26l.py` →
-`python eval_all_pycoco.py`.
+[METRICS.md](METRICS.md) §1-protokol. Reproduksi: `python experiments/train/train_yolo26l.py` →
+`python experiments/eval/eval_all_pycoco.py`.
