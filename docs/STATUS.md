@@ -37,6 +37,9 @@ dievaluasi lewat **1-protokol pycocotools** (`results/perkelas_pycoco.json`).
 Ranking monotonik menurut parameter: YOLO26m < YOLO26l < RT-DETR-L < RF-DETR-L.
 YOLO26l tetap di bawah kedua DETR → keunggulan RF-DETR bukan efek
 kapasitas/resolusi. Tabel penuh di [`METRICS.md`](METRICS.md) §1-protokol.
+**Semua jebakan teknis + peta berkas + log run ini** terkonsolidasi di
+[`experiments/CATATAN-TEKNIS-E021.md`](../experiments/CATATAN-TEKNIS-E021.md) —
+baca sebelum menjalankan ulang RF-DETR/RT-DETR/YOLO26.
 
 **Bobot terbaik:** `/workspace/experiments/runs/rtdetr_l_e60_i1280/weights/best.pt`
 (264 MB, di luar repo). Reproduksi: `experiments/train_rtdetr.py` +
