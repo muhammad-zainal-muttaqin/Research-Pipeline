@@ -103,6 +103,62 @@ tersulit) ada di `metrics_full.json`. **Catatan:** "accuracy" & "micro/macro" ha
 berlaku untuk P/R/F1; deteksi tak punya akurasi klasifikasi (tanpa true-negative).
 mAP sendiri = macro-AP (rata-rata per-kelas).
 
+## Analisis tambahan E-021 — efisiensi · signifikansi · confusion
+
+Skrip: `eval_efficiency.py`, `eval_extras.py`. Figur di `experiments/figures/`.
+
+### Efisiensi (deployment) — `results/efficiency.json`
+
+Latensi diukur langsung di **NVIDIA L4** (10 warmup + 50 ukur, 1 citra, resolusi
+latihan). GFLOPs RF-DETR = n/a (forward butuh NestedTensor; param & latensi terukur).
+
+| Model | Param | GFLOPs | Bobot | Latensi L4 | FPS L4 |
+|---|---|---|---|---|---|
+| YOLO26m | 21,8 jt | 74,7 | 44 MB | 24,8 ms | **40,3** |
+| YOLO26l | 26,2 jt | 372,6 | 53 MB | 43,4 ms | 23,0 |
+| RT-DETR-L | 32,8 jt | 421,7 | 264 MB | 74,2 ms | 13,5 |
+| **RF-DETR-L** | 35,3 jt | n/a | 142 MB | **118,1 ms** | **8,5** |
+
+**Tradeoff:** RF-DETR paling akurat tapi **paling lambat** (~1,6× RT-DETR, ~4,8×
+YOLO26m). Untuk lapangan real-time perlu pertimbangan; RF-DETR bisa dioptimalkan
+FP16 (`optimize_for_inference`) — belum diukur.
+
+### Signifikansi statistik — `results/bootstrap_ci.json`
+
+Bootstrap 2000× resample gambar test (588), metrik mAP50, seed 42. mAP50 titik
+dari matching IoU0.5 divalidasi cocok pycocotools.
+
+| Model | mAP50 | 95% CI |
+|---|---|---|
+| YOLO26m | 0,519 | [0,495 – 0,543] |
+| YOLO26l | 0,532 | [0,508 – 0,555] |
+| RT-DETR-L | 0,581 | [0,554 – 0,605] |
+| **RF-DETR-L** | 0,606 | [0,581 – 0,632] |
+
+**Selisih berpasangan RF-DETR − RT-DETR = +0,0255, 95% CI [0,0104 – 0,0408],
+P(RF>RT) = 0,999.** CI selisih **tidak memuat nol** → keunggulan RF-DETR atas
+RT-DETR **signifikan** secara statistik (RF menang di 99,9% resample). (CI marginal
+kedua model beririsan, tapi uji berpasangan — gambar sama tiap resample — yang
+tepat, dan hasilnya signifikan.)
+
+### Confusion matrix (TEST, IoU0.5, conf≥0.25) — `results/confusion.json`, `figures/confusion_*.png`
+
+Mendukung diagnosis SR-007/SR-009 secara kuantitatif:
+
+- **Ambiguitas kematangan B2↔B3** kuat di semua model — mis. RF-DETR: 184 B2→B3,
+  60 B3→B2; RT-DETR 182/74. Ini pasangan kelas paling sering tertukar (bukan B1/B4).
+- **B4 terlewat (jadi latar):** YOLO26m **245**, YOLO26l **276**, RT-DETR **91**,
+  RF-DETR **108**. **DETR menyelamatkan B4 ~2,5× lebih baik** dari YOLO — konsisten
+  hipotesis NMS-free mengangkat kelas tersamar/bertumpuk (SR-013/E-020/E-021).
+- Caveat: pada conf 0.25, DETR menghasilkan banyak FP latar (kalibrasi confidence
+  DETR beda; ambang operasional lapangan biasanya lebih tinggi).
+
+### Kurva PR & F1-confidence — `figures/pr_micro_test.png`, `figures/f1_conf_test.png`, `results/pr_curves.json`
+
+Kurva PR micro & F1-vs-confidence (TEST) keempat model tersusun rapi sesuai
+ranking; RF-DETR mendominasi. Best-F1 micro (test): RF-DETR 0,619, RT-DETR 0,596,
+YOLO26l 0,545, YOLO26m 0,543.
+
 ## Deteksi kelas-agnostik (tanpa penilaian kematangan)
 
 | Run | Ide/E | imgsz | split | mAP50 | mAP50-95 |
