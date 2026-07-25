@@ -69,6 +69,40 @@ RF-DETR-L) pada semua metrik. YOLO26l — baseline YOLO **param-adil sekelas DET
 RF-DETR/RT-DETR **bukan** sekadar efek kapasitas/resolusi. RF-DETR-L unggul di
 keempat kelas kedua split; test mAP50 0,6038 melewati sasaran 0,60.
 
+## Metrik LENGKAP 4 model (1-protokol) — `results/metrics_full.json`
+
+Dump metrik penuh via `eval_all_metrics.py` (pipeline pycocotools + matching IoU0.5
+untuk P/R/F1). File JSON berisi, per model × val/test: **12 statistik COCO**
+(AP@[.5:.95], AP50, AP75, AP S/M/L, AR@1/10/100, AR S/M/L), **per-kelas** AP50 +
+AP50-95 + AR, dan **precision/recall/F1** (per-kelas, **macro**, **micro**) pada
+ambang best-F1. Ringkasan metrik tambahan (di luar AP50/AP50-95 yang sudah di atas):
+
+**VAL** (AP75 · AR100 · micro-F1 · macro-F1 · micro-P · micro-R):
+
+| Model | AP75 | AR100 | micro-F1 | macro-F1 | micro-P | micro-R |
+|---|---|---|---|---|---|---|
+| YOLO26m | 0,1951 | 0,5386 | 0,5416 | 0,5394 | 0,5251 | 0,5591 |
+| YOLO26l | 0,2129 | 0,5557 | 0,5452 | 0,5447 | 0,5004 | 0,5988 |
+| RT-DETR-L | 0,2100 | 0,5225 | 0,5789 | 0,5840 | 0,5540 | 0,6063 |
+| **RF-DETR-L** | 0,1971 | 0,5348 | **0,5841** | **0,5880** | 0,5604 | 0,6100 |
+
+**TEST**:
+
+| Model | AP75 | AR100 | micro-F1 | macro-F1 | micro-P | micro-R |
+|---|---|---|---|---|---|---|
+| YOLO26m | 0,2022 | 0,5578 | 0,5431 | 0,5314 | 0,5355 | 0,5509 |
+| YOLO26l | 0,2175 | 0,5557 | 0,5449 | 0,5475 | 0,5394 | 0,5505 |
+| RT-DETR-L | 0,2214 | 0,5300 | 0,5960 | 0,5911 | 0,5547 | 0,6440 |
+| **RF-DETR-L** | 0,2160 | 0,5353 | **0,6189** | **0,6086** | 0,5903 | 0,6505 |
+
+**Bacaan:** F1 (micro & macro) mengikuti urutan mAP — RF-DETR-L tertinggi di kedua
+split. RF-DETR unggul terutama pada **recall** (micro-R test 0,6505 vs RT-DETR
+0,6440), konsisten dengan hipotesis NMS-free (lebih sedikit kotak benar tertekan).
+Per-kelas P/R/F1 (mis. TEST RF-DETR B4: P 0,471 / R 0,523 / F1 0,496 — kelas
+tersulit) ada di `metrics_full.json`. **Catatan:** "accuracy" & "micro/macro" hanya
+berlaku untuk P/R/F1; deteksi tak punya akurasi klasifikasi (tanpa true-negative).
+mAP sendiri = macro-AP (rata-rata per-kelas).
+
 ## Deteksi kelas-agnostik (tanpa penilaian kematangan)
 
 | Run | Ide/E | imgsz | split | mAP50 | mAP50-95 |
