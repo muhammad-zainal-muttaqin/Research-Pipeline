@@ -31,10 +31,12 @@ ep17. Angka via COCO eval independen (val cocok evaluator internal rf-detr).
 Pembanding sebelumnya — **RT-DETR-L** (E-020/[SR-013](SR/SR-013-rtdetr-nms-free.md)):
 test 0,5794/0,2694, val 0,5466/0,2543.
 
-**Sedang berjalan (2026-07-24):** YOLO26l @1280 (baseline param-adil 26,3 jt,
-config identik RT-DETR) + unifikasi evaluator 1-protokol pycocotools untuk semua
-model (`eval_all_pycoco.py` → `results/perkelas_pycoco.json`). Catatan
-kesetaraan: yolo26m 21,9 jt/640 bukan pembanding sekelas DETR-L @1280.
+**Perbandingan adil SELESAI (2026-07-25):** YOLO26l @1280 (baseline param-adil
+26,3 jt, config identik RT-DETR) terlatih penuh 60 epoch, dan seluruh 4 model
+dievaluasi lewat **1-protokol pycocotools** (`results/perkelas_pycoco.json`).
+Ranking monotonik menurut parameter: YOLO26m < YOLO26l < RT-DETR-L < RF-DETR-L.
+YOLO26l tetap di bawah kedua DETR → keunggulan RF-DETR bukan efek
+kapasitas/resolusi. Tabel penuh di [`METRICS.md`](METRICS.md) §1-protokol.
 
 **Bobot terbaik:** `/workspace/experiments/runs/rtdetr_l_e60_i1280/weights/best.pt`
 (264 MB, di luar repo). Reproduksi: `experiments/train_rtdetr.py` +

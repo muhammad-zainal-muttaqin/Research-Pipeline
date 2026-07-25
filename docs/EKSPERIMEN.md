@@ -1018,3 +1018,23 @@ master.
 rfdetr_ds --epochs 60 --resolution 1280 --batch 8 --grad-accum 2 --workers 8` →
 `python eval_rfdetr_perkelas.py`. Metrik: `results/perkelas_fair.json`,
 `runs/rfdetr_l_e60_i1280/evaluation.json` + `metrics.csv`.
+
+**Lanjutan (2026-07-25) — dua caveat E-021 diselesaikan:** (1) Baseline YOLO
+**param-adil YOLO26l** (26,3 jt, config IDENTIK RT-DETR: 1280/60ep/color-safe/
+seed42/cos_lr/COCO) dilatih penuh — `train_yolo26l.py`, best val ep31. (2) Semua
+4 model dievaluasi lewat **1-protokol pycocotools** (`eval_all_pycoco.py` →
+`results/perkelas_pycoco.json`), menghapus caveat evaluator campur. Hasil
+1-protokol (mAP50/mAP50-95):
+
+| Model | Param | VAL | TEST |
+|---|---|---|---|
+| YOLO26m | 21,9 jt | 0,5195 / 0,2411 | 0,5165 / 0,2452 |
+| YOLO26l | 26,3 jt | 0,5270 / 0,2526 | 0,5300 / 0,2568 |
+| RT-DETR-L | 33,0 jt | 0,5459 / 0,2555 | 0,5784 / 0,2707 |
+| **RF-DETR-L** | 35,7 jt | **0,5695 / 0,2604** | **0,6038 / 0,2770** |
+
+Ranking = urutan parameter di semua metrik/split. **YOLO26l (param-adil) tetap di
+bawah kedua DETR** → keunggulan RF-DETR/RT-DETR **bukan efek kapasitas/resolusi**,
+melainkan arsitektur NMS-free. Putusan E-021 makin kuat. Tabel penuh per-kelas:
+[METRICS.md](METRICS.md) §1-protokol. Reproduksi: `python train_yolo26l.py` →
+`python eval_all_pycoco.py`.
