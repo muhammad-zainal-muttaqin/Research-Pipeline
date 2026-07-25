@@ -5,7 +5,9 @@ Panduan kerja untuk Claude Code di repositori ini. Baca sebelum mengubah apa pun
 > **Melanjutkan eksperimen?** Baca **[`docs/eksperimen/STATUS.md`](docs/eksperimen/STATUS.md)** dulu —
 > titik berhenti, hasil terbaik (**RF-DETR-L test mAP50 0,6038**, E-021 —
 > melewati sasaran 0,60; sebelumnya RT-DETR-L 0,5794), dan jalur lanjutan.
-> Aktif per 2026-07-24 (YOLO26l @1280 baseline param-adil berjalan).
+> Aktif per 2026-07-25 (YOLO26l @1280 param-adil **selesai**; perbandingan
+> 1-protokol tuntas, lihat [SR-014](docs/eksperimen/SR/SR-014-rfdetr-dinov2.md)).
+> Peta seluruh dokumen: [`docs/README.md`](docs/README.md).
 
 ## Bahasa
 
@@ -38,14 +40,19 @@ entri, seluruh berkas tersebut harus ikut diperbarui.
 | `evidence-body.tex` | **Isi naskah aktif.** Semua penyuntingan naskah masuk ke sini. |
 | `main.tex` / `main-elsarticle.tex` | Driver IEEEtran / Elsevier; keduanya `\input` `evidence-body.tex`. |
 | `docs/archive/tinjauan-pustaka.tex` | Draf lama mandiri — **tidak dipakai**; jangan disunting tanpa diminta. |
-| `entri/` | 182 berkas ringkasan (satu makalah = satu berkas) + `INDEX.md`. |
+| `entri/` | 182 berkas ringkasan (satu makalah = satu berkas) + `INDEX.md` (urut nomor) + `INDEX-TAHUN.md` (per tahun & tema). |
 | `entri-withheld/` | 20 entri ditahan; jangan dimasukkan ke naskah. |
 | `references.bib` | 202 record BibTeX. |
 | `TEMUAN.md` | Sintesis lintas makalah. |
 | `figures/` | Figur final F01–F08 (`-en.jpg`), C01, C02, plus brief `.md`-nya. |
-| `docs/` | Rencana, panduan, audit, matriks bukti. `docs/archive/` = draf usang. |
+| `docs/` | Seluruh dokumen, dipecah per fungsi — **peta di `docs/README.md`**. |
+| `docs/eksperimen/` | `STATUS.md` (baca pertama), `EKSPERIMEN.md` (log append-only), `METRICS.md` (tabel definitif), `LAPORAN-EKSPERIMEN.md` (tayang di situs), `SR/` (laporan per-ide). |
+| `docs/naskah/` | Panduan penulisan, rencana naskah & situs, keputusan reframe, prompt figur. |
+| `docs/audit/` | Audit pra-submisi, claim audit 182, register klaim, matriks bukti. |
+| `docs/referensi/` | Bahan luar: PDF baseline SawitMVC, deep research report, revisi dosen. |
+| `docs/archive/` | Draf & figur usang. |
 | `pipeline/` | **Deliverable produksi**: pipeline YOLO 4-kanal (RGB+depth) untuk kamera Gemini — latih/konversi/inferensi. Kode kecil tanpa bobot model; bukan kode eksperimen sekali pakai. |
-| `experiments/` | **Arsip kode + hasil JSON + split** eksperimen E-001…E-020 (snapshot dari `/workspace/experiments/`, di luar repo). Tanpa bobot/dataset besar — bisa dibuat ulang dari skripnya. Sumber reproduksi tiap SR. Di-exclude dari Jekyll. |
+| `experiments/` | **Arsip kode + hasil JSON + split** eksperimen E-001…E-021 (snapshot dari `/workspace/experiments/`, di luar repo). Skrip dikelompokkan: `train/`, `eval/`, `build/`, `analysis/`, `shell/`, `config/`; hasil di `results/E-0NN/`. Peta: `experiments/PETA-SKRIP.md`. Tanpa bobot/dataset besar — bisa dibuat ulang dari skripnya. Di-exclude dari Jekyll. |
 | `build.js` | Perakit `index.html` (Ruang Baca Riset). |
 | `index.html` | **Hasil build — jangan disunting tangan.** |
 | `tools/build_evidence_matrix.py` | Membangun matriks bukti dari `entri/` + `PDF/`. |

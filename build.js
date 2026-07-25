@@ -235,7 +235,8 @@ const warnings = [];
 const seenIds = Object.create(null);
 
 files.forEach(function (file) {
-  if (file.toUpperCase() === 'INDEX.MD') return; // sengaja dilewati
+  // Berkas indeks navigasi, bukan entri korpus — sengaja dilewati.
+  if (/^INDEX(-[A-Z]+)?\.MD$/.test(file.toUpperCase())) return;
   const meta = parseName(file);
   if (!meta) { warnings.push('Nama berkas tidak cocok pola: ' + file); return; }
   if (seenIds[meta.id]) warnings.push('Nomor entri ganda: ' + meta.id + ' (' + file + ')');
