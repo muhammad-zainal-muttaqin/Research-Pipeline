@@ -6,6 +6,8 @@ Total berkas entri: **202**. Rentang fokus 2019-2026: **165 entri** dalam rentan
 
 Format nama berkas: NNN - YYYY - Judul singkat - Tema.md (tahun publikasi langsung setelah nomor).
 
+Tanda **⊘** menandai 20 entri yang **ditahan** (`entri-withheld/`, PDF sumber tak tersedia) dan **tidak dipakai naskah**. Korpus naskah = 182 entri di folder ini. Navigasi per tahun dan per tema ada di [INDEX-TAHUN.md](./INDEX-TAHUN.md).
+
 | No | Tahun | Berkas (klik) |
 |---|---|---|
 | 001 | 2016 | [001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB.md](./001%20-%202016%20-%20You%20Only%20Look%20Once%20%28YOLOv1%29%20-%20Fondasi%20RGB.md) |
@@ -40,8 +42,8 @@ Format nama berkas: NNN - YYYY - Judul singkat - Tema.md (tahun publikasi langsu
 | 030 | 2025 | [030 - 2025 - Tinjauan Dekade YOLO (Sapkota dkk.) - Survei YOLO.md](./030%20-%202025%20-%20Tinjauan%20Dekade%20YOLO%20%28Sapkota%20dkk.%29%20-%20Survei%20YOLO.md) |
 | 031 | 2024 | [031 - 2024 - Systematic Review YOLO (Vijayakumar & Vairavasundaram) - Survei YOLO.md](./031%20-%202024%20-%20Systematic%20Review%20YOLO%20%28Vijayakumar%20%26%20Vairavasundaram%29%20-%20Survei%20YOLO.md) |
 | 032 | 2024 | [032 - 2024 - YOLO Evolution Benchmark (Alif & Hussain) - Survei YOLO.md](./032%20-%202024%20-%20YOLO%20Evolution%20Benchmark%20%28Alif%20%26%20Hussain%29%20-%20Survei%20YOLO.md) |
-| 033 | 2024 | [033 - 2024 - Review YOLOv8 (Sohan dkk.) - Survei YOLO.md](./033%20-%202024%20-%20Review%20YOLOv8%20%28Sohan%20dkk.%29%20-%20Survei%20YOLO.md) |
-| 034 | 2023 | [034 - 2023 - Object Detection using YOLO (Diwan dkk.) - Survei YOLO.md](./034%20-%202023%20-%20Object%20Detection%20using%20YOLO%20%28Diwan%20dkk.%29%20-%20Survei%20YOLO.md) |
+| 033 | 2024 | [033 - 2024 - Review YOLOv8 (Sohan dkk.) - Survei YOLO.md](../entri-withheld/033%20-%202024%20-%20Review%20YOLOv8%20%28Sohan%20dkk.%29%20-%20Survei%20YOLO.md) ⊘ |
+| 034 | 2023 | [034 - 2023 - Object Detection using YOLO (Diwan dkk.) - Survei YOLO.md](../entri-withheld/034%20-%202023%20-%20Object%20Detection%20using%20YOLO%20%28Diwan%20dkk.%29%20-%20Survei%20YOLO.md) ⊘ |
 | 035 | 2019 | [035 - 2019 - DMRA - RGB-D SOD.md](./035%20-%202019%20-%20DMRA%20-%20RGB-D%20SOD.md) |
 | 036 | 2020 | [036 - 2020 - BBS-Net - RGB-D SOD.md](./036%20-%202020%20-%20BBS-Net%20-%20RGB-D%20SOD.md) |
 | 037 | 2021 | [037 - 2021 - D3Net (Rethinking RGB-D SOD) - RGB-D SOD.md](./037%20-%202021%20-%20D3Net%20%28Rethinking%20RGB-D%20SOD%29%20-%20RGB-D%20SOD.md) |
@@ -54,9 +56,9 @@ Format nama berkas: NNN - YYYY - Judul singkat - Tema.md (tahun publikasi langsu
 | 044 | 2021 | [044 - 2021 - TriTransNet - RGB-D SOD.md](./044%20-%202021%20-%20TriTransNet%20-%20RGB-D%20SOD.md) |
 | 045 | 2021 | [045 - 2021 - DSA2F - RGB-D SOD.md](./045%20-%202021%20-%20DSA2F%20-%20RGB-D%20SOD.md) |
 | 046 | 2022 | [046 - 2022 - CIR-Net - RGB-D SOD.md](./046%20-%202022%20-%20CIR-Net%20-%20RGB-D%20SOD.md) |
-| 047 | 2023 | [047 - 2023 - C2DFNet - RGB-D SOD.md](./047%20-%202023%20-%20C2DFNet%20-%20RGB-D%20SOD.md) |
-| 048 | 2022 | [048 - 2022 - CCAFNet - RGB-D SOD.md](./048%20-%202022%20-%20CCAFNet%20-%20RGB-D%20SOD.md) |
-| 049 | 2023 | [049 - 2023 - Cross-Modal Hierarchical Interaction Network - RGB-D SOD.md](./049%20-%202023%20-%20Cross-Modal%20Hierarchical%20Interaction%20Network%20-%20RGB-D%20SOD.md) |
+| 047 | 2023 | [047 - 2023 - C2DFNet - RGB-D SOD.md](../entri-withheld/047%20-%202023%20-%20C2DFNet%20-%20RGB-D%20SOD.md) ⊘ |
+| 048 | 2022 | [048 - 2022 - CCAFNet - RGB-D SOD.md](../entri-withheld/048%20-%202022%20-%20CCAFNet%20-%20RGB-D%20SOD.md) ⊘ |
+| 049 | 2023 | [049 - 2023 - Cross-Modal Hierarchical Interaction Network - RGB-D SOD.md](../entri-withheld/049%20-%202023%20-%20Cross-Modal%20Hierarchical%20Interaction%20Network%20-%20RGB-D%20SOD.md) ⊘ |
 | 050 | 2023 | [050 - 2023 - HiDAnet - RGB-D SOD.md](./050%20-%202023%20-%20HiDAnet%20-%20RGB-D%20SOD.md) |
 | 051 | 2016 | [051 - 2016 - FuseNet - Segmentasi RGB-D.md](./051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md) |
 | 052 | 2018 | [052 - 2018 - RedNet - Segmentasi RGB-D.md](./052%20-%202018%20-%20RedNet%20-%20Segmentasi%20RGB-D.md) |
@@ -66,7 +68,7 @@ Format nama berkas: NNN - YYYY - Judul singkat - Tema.md (tahun publikasi langsu
 | 056 | 2021 | [056 - 2021 - ESANet - Segmentasi RGB-D.md](./056%20-%202021%20-%20ESANet%20-%20Segmentasi%20RGB-D.md) |
 | 057 | 2021 | [057 - 2021 - ShapeConv - Segmentasi RGB-D.md](./057%20-%202021%20-%20ShapeConv%20-%20Segmentasi%20RGB-D.md) |
 | 058 | 2023 | [058 - 2023 - CMX - Segmentasi RGB-D.md](./058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md) |
-| 059 | 2023 | [059 - 2023 - PGDENet - Segmentasi RGB-D.md](./059%20-%202023%20-%20PGDENet%20-%20Segmentasi%20RGB-D.md) |
+| 059 | 2023 | [059 - 2023 - PGDENet - Segmentasi RGB-D.md](../entri-withheld/059%20-%202023%20-%20PGDENet%20-%20Segmentasi%20RGB-D.md) ⊘ |
 | 060 | 2022 | [060 - 2022 - Multimodal Token Fusion - Segmentasi RGB-D.md](./060%20-%202022%20-%20Multimodal%20Token%20Fusion%20-%20Segmentasi%20RGB-D.md) |
 | 061 | 2024 | [061 - 2024 - DFormer - Segmentasi RGB-D.md](./061%20-%202024%20-%20DFormer%20-%20Segmentasi%20RGB-D.md) |
 | 062 | 2014 | [062 - 2014 - Depth dari Citra Tunggal (Eigen dkk.) - Estimasi Kedalaman.md](./062%20-%202014%20-%20Depth%20dari%20Citra%20Tunggal%20%28Eigen%20dkk.%29%20-%20Estimasi%20Kedalaman.md) |
@@ -112,8 +114,8 @@ Format nama berkas: NNN - YYYY - Judul singkat - Tema.md (tahun publikasi langsu
 | 102 | 2020 | [102 - 2020 - MBNet - Pedestrian RGB-T.md](./102%20-%202020%20-%20MBNet%20-%20Pedestrian%20RGB-T.md) |
 | 103 | 2021 | [103 - 2021 - GAFF - Pedestrian RGB-T.md](./103%20-%202021%20-%20GAFF%20-%20Pedestrian%20RGB-T.md) |
 | 104 | 2020 | [104 - 2020 - Cyclic Fuse-and-Refine (CFR) - Pedestrian RGB-T.md](./104%20-%202020%20-%20Cyclic%20Fuse-and-Refine%20%28CFR%29%20-%20Pedestrian%20RGB-T.md) |
-| 105 | 2022 | [105 - 2022 - CMPD (Uncertainty-Guided Cross-Modal) - Pedestrian RGB-T.md](./105%20-%202022%20-%20CMPD%20%28Uncertainty-Guided%20Cross-Modal%29%20-%20Pedestrian%20RGB-T.md) |
-| 106 | 2021 | [106 - 2021 - RGB-D Fusion for Detection (Farahnakian & Heikkonen) - Pedestrian RGB-T.md](./106%20-%202021%20-%20RGB-D%20Fusion%20for%20Detection%20%28Farahnakian%20%26%20Heikkonen%29%20-%20Pedestrian%20RGB-T.md) |
+| 105 | 2022 | [105 - 2022 - CMPD (Uncertainty-Guided Cross-Modal) - Pedestrian RGB-T.md](../entri-withheld/105%20-%202022%20-%20CMPD%20%28Uncertainty-Guided%20Cross-Modal%29%20-%20Pedestrian%20RGB-T.md) ⊘ |
+| 106 | 2021 | [106 - 2021 - RGB-D Fusion for Detection (Farahnakian & Heikkonen) - Pedestrian RGB-T.md](../entri-withheld/106%20-%202021%20-%20RGB-D%20Fusion%20for%20Detection%20%28Farahnakian%20%26%20Heikkonen%29%20-%20Pedestrian%20RGB-T.md) ⊘ |
 | 107 | 2017 | [107 - 2017 - ORB-SLAM2 - RGB-D SLAM.md](./107%20-%202017%20-%20ORB-SLAM2%20-%20RGB-D%20SLAM.md) |
 | 108 | 2018 | [108 - 2018 - DynaSLAM - RGB-D SLAM.md](./108%20-%202018%20-%20DynaSLAM%20-%20RGB-D%20SLAM.md) |
 | 109 | 2018 | [109 - 2018 - DS-SLAM - RGB-D SLAM.md](./109%20-%202018%20-%20DS-SLAM%20-%20RGB-D%20SLAM.md) |
@@ -121,16 +123,16 @@ Format nama berkas: NNN - YYYY - Judul singkat - Tema.md (tahun publikasi langsu
 | 111 | 2019 | [111 - 2019 - Visual SLAM YOLO vs Mask R-CNN (Soares dkk.) - RGB-D SLAM.md](./111%20-%202019%20-%20Visual%20SLAM%20YOLO%20vs%20Mask%20R-CNN%20%28Soares%20dkk.%29%20-%20RGB-D%20SLAM.md) |
 | 112 | 2020 | [112 - 2020 - Expandable YOLO - YOLO plus RGB-D.md](./112%20-%202020%20-%20Expandable%20YOLO%20-%20YOLO%20plus%20RGB-D.md) |
 | 113 | 2024 | [113 - 2024 - FusionVision - YOLO plus RGB-D.md](./113%20-%202024%20-%20FusionVision%20-%20YOLO%20plus%20RGB-D.md) |
-| 114 | 2024 | [114 - 2024 - Pumpkin Pick-and-Place Robot (Ito dkk.) - YOLO plus RGB-D.md](./114%20-%202024%20-%20Pumpkin%20Pick-and-Place%20Robot%20%28Ito%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md) |
+| 114 | 2024 | [114 - 2024 - Pumpkin Pick-and-Place Robot (Ito dkk.) - YOLO plus RGB-D.md](../entri-withheld/114%20-%202024%20-%20Pumpkin%20Pick-and-Place%20Robot%20%28Ito%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md) ⊘ |
 | 115 | 2025 | [115 - 2025 - YOLOv8-URE 2D+Point Cloud Grasping - YOLO plus RGB-D.md](./115%20-%202025%20-%20YOLOv8-URE%202D+Point%20Cloud%20Grasping%20-%20YOLO%20plus%20RGB-D.md) |
-| 116 | 2023 | [116 - 2023 - Grasp via YOLO + RGB-D Fusion (Tian dkk.) - YOLO plus RGB-D.md](./116%20-%202023%20-%20Grasp%20via%20YOLO%20+%20RGB-D%20Fusion%20%28Tian%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md) |
+| 116 | 2023 | [116 - 2023 - Grasp via YOLO + RGB-D Fusion (Tian dkk.) - YOLO plus RGB-D.md](../entri-withheld/116%20-%202023%20-%20Grasp%20via%20YOLO%20+%20RGB-D%20Fusion%20%28Tian%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md) ⊘ |
 | 117 | 2024 | [117 - 2024 - Onboard Dynamic-Object Detection (Xu dkk.) - YOLO plus RGB-D.md](./117%20-%202024%20-%20Onboard%20Dynamic-Object%20Detection%20%28Xu%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md) |
 | 118 | 2019 | [118 - 2019 - Exploring RGB+Depth Fusion (Ophoff dkk.) - YOLO plus RGB-D.md](./118%20-%202019%20-%20Exploring%20RGB+Depth%20Fusion%20%28Ophoff%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md) |
-| 119 | 2023 | [119 - 2023 - Distance Measurement via YOLO + Depth (Chen dkk.) - YOLO plus RGB-D.md](./119%20-%202023%20-%20Distance%20Measurement%20via%20YOLO%20+%20Depth%20%28Chen%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md) |
-| 120 | 2019 | [120 - 2019 - MangoYOLO - Pertanian.md](./120%20-%202019%20-%20MangoYOLO%20-%20Pertanian.md) |
-| 121 | 2019 | [121 - 2019 - Apple Detection (Improved YOLOv3) - Pertanian.md](./121%20-%202019%20-%20Apple%20Detection%20%28Improved%20YOLOv3%29%20-%20Pertanian.md) |
-| 122 | 2020 | [122 - 2020 - Apple Flower Detection (Pruned YOLOv4) - Pertanian.md](./122%20-%202020%20-%20Apple%20Flower%20Detection%20%28Pruned%20YOLOv4%29%20-%20Pertanian.md) |
-| 123 | 2020 | [123 - 2020 - Apple Detection RGB+Depth (Faster R-CNN) - Pertanian.md](./123%20-%202020%20-%20Apple%20Detection%20RGB+Depth%20%28Faster%20R-CNN%29%20-%20Pertanian.md) |
+| 119 | 2023 | [119 - 2023 - Distance Measurement via YOLO + Depth (Chen dkk.) - YOLO plus RGB-D.md](../entri-withheld/119%20-%202023%20-%20Distance%20Measurement%20via%20YOLO%20+%20Depth%20%28Chen%20dkk.%29%20-%20YOLO%20plus%20RGB-D.md) ⊘ |
+| 120 | 2019 | [120 - 2019 - MangoYOLO - Pertanian.md](../entri-withheld/120%20-%202019%20-%20MangoYOLO%20-%20Pertanian.md) ⊘ |
+| 121 | 2019 | [121 - 2019 - Apple Detection (Improved YOLOv3) - Pertanian.md](../entri-withheld/121%20-%202019%20-%20Apple%20Detection%20%28Improved%20YOLOv3%29%20-%20Pertanian.md) ⊘ |
+| 122 | 2020 | [122 - 2020 - Apple Flower Detection (Pruned YOLOv4) - Pertanian.md](../entri-withheld/122%20-%202020%20-%20Apple%20Flower%20Detection%20%28Pruned%20YOLOv4%29%20-%20Pertanian.md) ⊘ |
+| 123 | 2020 | [123 - 2020 - Apple Detection RGB+Depth (Faster R-CNN) - Pertanian.md](../entri-withheld/123%20-%202020%20-%20Apple%20Detection%20RGB+Depth%20%28Faster%20R-CNN%29%20-%20Pertanian.md) ⊘ |
 | 124 | 2020 | [124 - 2020 - Fruit Detection & 3D Location (Gene-Mola dkk.) - Pertanian.md](./124%20-%202020%20-%20Fruit%20Detection%20%26%203D%20Location%20%28Gene-Mola%20dkk.%29%20-%20Pertanian.md) |
 | 125 | 2020 | [125 - 2020 - Iceberg Lettuce Harvesting Robot - Pertanian.md](./125%20-%202020%20-%20Iceberg%20Lettuce%20Harvesting%20Robot%20-%20Pertanian.md) |
 | 126 | 2019 | [126 - 2019 - Automated Fruit Harvesting Robot (Onishi dkk.) - Pertanian.md](./126%20-%202019%20-%20Automated%20Fruit%20Harvesting%20Robot%20%28Onishi%20dkk.%29%20-%20Pertanian.md) |
@@ -138,14 +140,14 @@ Format nama berkas: NNN - YYYY - Judul singkat - Tema.md (tahun publikasi langsu
 | 128 | 2024 | [128 - 2024 - Systematic Review YOLO Medis (Qureshi dkk.) - Medis.md](./128%20-%202024%20-%20Systematic%20Review%20YOLO%20Medis%20%28Qureshi%20dkk.%29%20-%20Medis.md) |
 | 129 | 2021 | [129 - 2021 - COVID-19 CAD dari X-Ray (Al-Antari dkk.) - Medis.md](./129%20-%202021%20-%20COVID-19%20CAD%20dari%20X-Ray%20%28Al-Antari%20dkk.%29%20-%20Medis.md) |
 | 130 | 2021 | [130 - 2021 - Breast Lesion Detection (YOLO Fusion) - Medis.md](./130%20-%202021%20-%20Breast%20Lesion%20Detection%20%28YOLO%20Fusion%29%20-%20Medis.md) |
-| 131 | 2022 | [131 - 2022 - Breast Tumor Detection (Modified YOLOv5) - Medis.md](./131%20-%202022%20-%20Breast%20Tumor%20Detection%20%28Modified%20YOLOv5%29%20-%20Medis.md) |
-| 132 | 2023 | [132 - 2023 - YOLO untuk Deteksi Polip (Wan dkk.) - Medis.md](./132%20-%202023%20-%20YOLO%20untuk%20Deteksi%20Polip%20%28Wan%20dkk.%29%20-%20Medis.md) |
+| 131 | 2022 | [131 - 2022 - Breast Tumor Detection (Modified YOLOv5) - Medis.md](../entri-withheld/131%20-%202022%20-%20Breast%20Tumor%20Detection%20%28Modified%20YOLOv5%29%20-%20Medis.md) ⊘ |
+| 132 | 2023 | [132 - 2023 - YOLO untuk Deteksi Polip (Wan dkk.) - Medis.md](../entri-withheld/132%20-%202023%20-%20YOLO%20untuk%20Deteksi%20Polip%20%28Wan%20dkk.%29%20-%20Medis.md) ⊘ |
 | 133 | 2023 | [133 - 2023 - EFC-YOLO (Steel Strip Defects) - Industri.md](./133%20-%202023%20-%20EFC-YOLO%20%28Steel%20Strip%20Defects%29%20-%20Industri.md) |
 | 134 | 2024 | [134 - 2024 - PCB-YOLO (PCB Defects) - Industri.md](./134%20-%202024%20-%20PCB-YOLO%20%28PCB%20Defects%29%20-%20Industri.md) |
-| 135 | 2021 | [135 - 2021 - Review Defect Detection (Bhatt dkk.) - Industri.md](./135%20-%202021%20-%20Review%20Defect%20Detection%20%28Bhatt%20dkk.%29%20-%20Industri.md) |
+| 135 | 2021 | [135 - 2021 - Review Defect Detection (Bhatt dkk.) - Industri.md](../entri-withheld/135%20-%202021%20-%20Review%20Defect%20Detection%20%28Bhatt%20dkk.%29%20-%20Industri.md) ⊘ |
 | 136 | 2021 | [136 - 2021 - Safety Helmet Detection (Improved YOLOv5) - Industri.md](./136%20-%202021%20-%20Safety%20Helmet%20Detection%20%28Improved%20YOLOv5%29%20-%20Industri.md) |
 | 137 | 2021 | [137 - 2021 - TPH-YOLOv5 (Drone Detection) - Remote Sensing.md](./137%20-%202021%20-%20TPH-YOLOv5%20%28Drone%20Detection%29%20-%20Remote%20Sensing.md) |
-| 138 | 2019 | [138 - 2019 - Robust CNN High-Res Remote Sensing (Zhang dkk.) - Remote Sensing.md](./138%20-%202019%20-%20Robust%20CNN%20High-Res%20Remote%20Sensing%20%28Zhang%20dkk.%29%20-%20Remote%20Sensing.md) |
+| 138 | 2019 | [138 - 2019 - Robust CNN High-Res Remote Sensing (Zhang dkk.) - Remote Sensing.md](../entri-withheld/138%20-%202019%20-%20Robust%20CNN%20High-Res%20Remote%20Sensing%20%28Zhang%20dkk.%29%20-%20Remote%20Sensing.md) ⊘ |
 | 139 | 2023 | [139 - 2023 - UAV-YOLOv8 (Small Object) - Remote Sensing.md](./139%20-%202023%20-%20UAV-YOLOv8%20%28Small%20Object%29%20-%20Remote%20Sensing.md) |
 | 140 | 2018 | [140 - 2018 - YOLT (Satellite Imagery) - Remote Sensing.md](./140%20-%202018%20-%20YOLT%20%28Satellite%20Imagery%29%20-%20Remote%20Sensing.md) |
 | 141 | 2012 | [141 - 2012 - NYU Depth v2 - Dataset.md](./141%20-%202012%20-%20NYU%20Depth%20v2%20-%20Dataset.md) |
@@ -159,7 +161,7 @@ Format nama berkas: NNN - YYYY - Judul singkat - Tema.md (tahun publikasi langsu
 | 149 | 2018 | [149 - 2018 - CBAM - Fusi Multimodal.md](./149%20-%202018%20-%20CBAM%20-%20Fusi%20Multimodal.md) |
 | 150 | 2021 | [150 - 2021 - Survei Deteksi & Segmentasi Multimodal (Feng dkk.) - Fusi Multimodal.md](./150%20-%202021%20-%20Survei%20Deteksi%20%26%20Segmentasi%20Multimodal%20%28Feng%20dkk.%29%20-%20Fusi%20Multimodal.md) |
 | 151 | 2023 | [151 - 2023 - Object Detection in 20 Years (Zou dkk.) - Fusi Multimodal.md](./151%20-%202023%20-%20Object%20Detection%20in%2020%20Years%20%28Zou%20dkk.%29%20-%20Fusi%20Multimodal.md) |
-| 152 | 2017 | [152 - 2017 - Deep Multimodal Learning A Survey (Ramachandram & Taylor) - Fusi Multimodal.md](./152%20-%202017%20-%20Deep%20Multimodal%20Learning%20A%20Survey%20%28Ramachandram%20%26%20Taylor%29%20-%20Fusi%20Multimodal.md) |
+| 152 | 2017 | [152 - 2017 - Deep Multimodal Learning A Survey (Ramachandram & Taylor) - Fusi Multimodal.md](../entri-withheld/152%20-%202017%20-%20Deep%20Multimodal%20Learning%20A%20Survey%20%28Ramachandram%20%26%20Taylor%29%20-%20Fusi%20Multimodal.md) ⊘ |
 | 153 | 2021 | [153 - 2021 - Survei RGB-D SOD (Zhou dkk.) - Fusi Multimodal.md](./153%20-%202021%20-%20Survei%20RGB-D%20SOD%20%28Zhou%20dkk.%29%20-%20Fusi%20Multimodal.md) |
 | 154 | 2022 | [154 - 2022 - Survei Dataset RGB-D (Lopes dkk.) - Fusi Multimodal.md](./154%20-%202022%20-%20Survei%20Dataset%20RGB-D%20%28Lopes%20dkk.%29%20-%20Fusi%20Multimodal.md) |
 | 155 | 2024 | [155 - 2024 - RT-DETR - Fondasi RGB.md](./155%20-%202024%20-%20RT-DETR%20-%20Fondasi%20RGB.md) |
