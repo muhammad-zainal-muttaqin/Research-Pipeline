@@ -118,9 +118,9 @@ Kalau perumusan tugas boleh diubah, itu arah yang belum tersentuh.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/build/match_raw.py                       # peta master (E-015)
-.venv/bin/python experiments/build/build_crops_raw.py                 # potongan 3024x4032
-.venv/bin/python experiments/train/train_maturity.py                  # CNN kematangan
-.venv/bin/python experiments/analysis/head_vs_crop.py                    # perbandingan setara
-.venv/bin/python experiments/analysis/multiview_vote.py --split val      # plafon multi-sisi
+.venv/bin/python build/match_raw.py                       # peta master (E-015)
+.venv/bin/python build/build_crops_raw.py                 # potongan 3024x4032
+.venv/bin/python train/train_maturity.py                  # CNN kematangan
+.venv/bin/python analysis/head_vs_crop.py                    # perbandingan setara
+.venv/bin/python analysis/multiview_vote.py --split val      # plafon multi-sisi
 ```

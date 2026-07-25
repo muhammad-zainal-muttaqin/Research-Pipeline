@@ -36,10 +36,10 @@ Tabel metrik lengkap semua run (per-kelas B1–B4, val+test) dirangkum di
 | Artefak | Ukuran | Cara membuat ulang |
 |---|---|---|
 | Bobot model (`runs/**/*.pt`) | ~2,2 GB | jalankan skrip `train_*.py` |
-| Potongan tandan (`crops/`, `crops_raw/`) | ~1,3 GB | `experiments/build/build_crops.py`, `experiments/build/build_crops_raw.py` |
-| Dataset master (`master_ds/`) | — | `experiments/build/build_master_ds.py` (butuh `experiments/results/E-015/raw_map.json`) |
-| Pseudo-depth (`depth_da3/`) | ~765 MB | `experiments/build/gen_depth_dataset.py` |
-| Ubin (`data_tiles/`) | ~1,5 GB | `experiments/analysis/tiling.py --build` |
+| Potongan tandan (`crops/`, `crops_raw/`) | ~1,3 GB | `build/build_crops.py`, `build/build_crops_raw.py` |
+| Dataset master (`master_ds/`) | — | `build/build_master_ds.py` (butuh `results/E-015/raw_map.json`) |
+| Pseudo-depth (`depth_da3/`) | ~765 MB | `build/gen_depth_dataset.py` |
+| Ubin (`data_tiles/`) | ~1,5 GB | `analysis/tiling.py --build` |
 | Visualisasi (`results/E-003/`…`results/E-005/`) | ~100 MB | skrip DA3 terkait |
 | Log mentah (`logs-*.txt`) | ~5 MB | keluaran ulang saat menjalankan |
 

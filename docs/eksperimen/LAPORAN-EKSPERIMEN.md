@@ -1,6 +1,6 @@
 # Laporan Eksperimen — Deteksi & Penghitungan Tandan Sawit
 
-**Cuplikan terkurasi (*curated snapshot*) per 22 Juli 2026.** Dokumen ini bukan
+**Cuplikan terkurasi (*curated snapshot*) per 25 Juli 2026.** Dokumen ini bukan
 log dan bukan pengganti log. Ia merangkai satu cerita dari basis pustaka sampai
 titik jeda hari ini, lalu menunjuk ke berkas kanonik untuk tiap angkanya.
 
@@ -80,7 +80,7 @@ default) — ia titik acuan, bukan plafon.
 
 ---
 
-## 3. Peta 19 eksperimen
+## 3. Peta 21 eksperimen
 
 Semua eksperimen yang tercatat di [`docs/eksperimen/EKSPERIMEN.md`](EKSPERIMEN.md), dengan
 putusan apa adanya. Empat dipalsukan dan satu ditarik — itu justru bagian yang
@@ -107,6 +107,7 @@ paling mempersempit arah kerja.
 | E-018 | Selubung lokalisasi empiris: 0,60/0,30 mungkin? | ide I-24 | DIKONFIRMASI / CONFIRMED |
 | E-019 | Detektor 4-kelas 1280 + augmentasi aman-warna | ide I-24 | MENEMPEL BASELINE / NULL RESULT |
 | E-020 | RT-DETR-L, detektor tanpa NMS | [SR-013](SR/SR-013-rtdetr-nms-free.md) | DIKONFIRMASI (arah) / CONFIRMED (direction) |
+| E-021 | RF-DETR-L (DINOv2) vs RT-DETR-L pada setelan identik | [SR-014](SR/SR-014-rfdetr-dinov2.md) | DIKONFIRMASI / CONFIRMED |
 
 ---
 
@@ -237,7 +238,7 @@ sebagai plafon.
 
 ---
 
-## 5. RESULT-RTDETR-RGB — hasil akhir pilot
+## 5. RESULT-RFDETR-RGB — hasil akhir pilot
 
 ### 5.1 Semua run detektor, berdampingan
 
@@ -250,7 +251,9 @@ Angka COCO/ultralytics apa adanya, dari [`docs/eksperimen/METRICS.md`](METRICS.m
 | yolo26m baseline | acuan | 640 | 0,5218 | 0,2407 | 0,7354 | 0,4076 | 0,5561 | 0,3881 |
 | RGBD 4-kanal (*pseudo-depth*) | I-4 | 640 | 0,5041 | 0,2378 | 0,7160 | 0,3821 | 0,5336 | 0,3847 |
 | 4-kelas aman-warna | E-019 | 1280 | 0,5186 | 0,2358 | 0,7011 | 0,4130 | 0,5682 | 0,3922 |
-| **RT-DETR-L** | **I-14** | 1280 | **0,5466** | **0,2543** | 0,7503 | 0,4413 | 0,5808 | 0,4138 |
+| YOLO26l (param-adil) | E-021 | 1280 | 0,5300 | 0,2516 | 0,7431 | 0,4358 | 0,5586 | 0,3825 |
+| RT-DETR-L | I-14 | 1280 | 0,5466 | 0,2543 | 0,7503 | 0,4413 | 0,5808 | 0,4138 |
+| **RF-DETR-L** | **E-021** | 1280 | **0,5695** | **0,2604** | 0,775 | 0,446 | 0,594 | **0,464** |
 
 **Test (dilaporkan; tidak dipakai memilih):**
 
@@ -260,7 +263,9 @@ Angka COCO/ultralytics apa adanya, dari [`docs/eksperimen/METRICS.md`](METRICS.m
 | yolo26m baseline (kami) | acuan | 640 | 0,5161 | 0,2457 | 0,7410 | 0,4016 | 0,5894 | 0,3323 |
 | RGBD 4-kanal (*pseudo-depth*) | I-4 | 640 | 0,5192 | 0,2471 | 0,7509 | 0,4115 | 0,5859 | 0,3283 |
 | 4-kelas aman-warna | E-019 | 1280 | 0,5418 | 0,2493 | 0,7546 | 0,4503 | 0,6037 | 0,3585 |
-| **RT-DETR-L** | **I-14** | 1280 | **0,5794** | **0,2694** | 0,7891 | 0,4685 | 0,6391 | **0,4208** |
+| YOLO26l (param-adil) | E-021 | 1280 | 0,5313 | 0,2553 | 0,7597 | 0,4223 | 0,5900 | 0,3534 |
+| RT-DETR-L | I-14 | 1280 | 0,5794 | 0,2694 | 0,7891 | 0,4685 | 0,6391 | 0,4208 |
+| **RF-DETR-L** | **E-021** | 1280 | **0,6038** | **0,2770** | 0,817 | 0,497 | 0,668 | 0,433 |
 
 **Deteksi kelas-agnostik (tanpa penilaian kematangan):**
 
@@ -301,18 +306,63 @@ gabungan seluruh perubahan tersebut**, bukan efek terukur dari menghapus NMS.
 Menyatakan "NMS adalah penyebabnya" menuntut ablasi yang belum dijalankan —
 misalnya RT-DETR pada 640, atau YOLO dengan pasca-pemrosesan diganti.
 
-### 5.3 Jarak ke sasaran
+### 5.3 RF-DETR-L: sasaran mAP50 terlewati (E-021)
+
+RF-DETR-L (rfdetr 1.8.3, **35.650.000 parameter**, backbone **DINOv2** patch-16
+pra-latih + kepala LW-DETR hasil NAS), resolusi 1280 tepat, dari bobot COCO
+`rf-detr-large-2026`. Checkpoint ep9 (EMA), *early-stop* ep17.
+
+| TEST | mAP50 | mAP50-95 | B1 | B2 | B3 | **B4** |
+|---|---|---|---|---|---|---|
+| RT-DETR-L (E-020) | 0,5794 | 0,2694 | 0,7891 | 0,4685 | 0,6391 | 0,4208 |
+| **RF-DETR-L (E-021)** | **0,6038** | **0,2770** | 0,817 | 0,497 | 0,668 | 0,433 |
+| selisih | **+0,024** | +0,008 | +0,028 | +0,029 | +0,029 | +0,012 |
+
+**Perbandingan adil, satu protokol.** Dua celah pada E-020 sudah ditutup: (1)
+baseline YOLO **param-adil** YOLO26l (26,3 juta, konfigurasi identik RT-DETR)
+dilatih penuh, dan (2) keempat model dievaluasi lewat **pipeline pycocotools yang
+sama**, sehingga tidak ada lagi evaluator campur.
+
+| Model | Param | VAL mAP50 / 50-95 | TEST mAP50 / 50-95 |
+|---|---|---|---|
+| YOLO26m | 21,9 jt | 0,5195 / 0,2411 | 0,5165 / 0,2452 |
+| YOLO26l | 26,3 jt | 0,5270 / 0,2526 | 0,5300 / 0,2568 |
+| RT-DETR-L | 33,0 jt | 0,5459 / 0,2555 | 0,5784 / 0,2707 |
+| **RF-DETR-L** | 35,7 jt | **0,5695 / 0,2604** | **0,6038 / 0,2770** |
+
+Urutan performa = urutan parameter di semua metrik dan kedua split. YOLO26l —
+baseline YOLO sekelas DETR dari sisi kapasitas dan resolusi — **tetap di bawah
+kedua DETR**. Artinya keunggulan RF-DETR/RT-DETR **bukan** efek kapasitas atau
+resolusi.
+
+**Signifikansi.** Bootstrap 2.000× *resample* gambar test (588, seed 42): selisih
+berpasangan RF−RT = **+0,0255, CI 95% [0,0104 – 0,0408]**, P(RF>RT) = 0,999. CI
+selisih tidak memuat nol.
+
+**Harga yang dibayar — jangan dilewat.** RF-DETR paling akurat sekaligus paling
+lambat: **118,1 ms / 8,5 FPS** di NVIDIA L4, versus RT-DETR 74,2 ms (13,5 FPS)
+dan YOLO26m 24,8 ms (40,3 FPS). Untuk penerapan lapangan waktu-nyata ini
+pertimbangan nyata; optimasi FP16 belum diukur.
+
+**Confusion matrix (test, IoU 0,5, conf ≥ 0,25)** menguatkan dua diagnosis lama
+secara kuantitatif: B2↔B3 adalah pasangan yang paling sering tertukar di semua
+model (RF-DETR: 184 B2→B3, 60 B3→B2), dan B4 yang terlewat jadi latar jauh lebih
+sedikit pada DETR (RT-DETR 91, RF-DETR 108) dibanding YOLO (YOLO26m 245,
+YOLO26l 276) — sekitar 2,5× lebih baik.
+
+### 5.4 Jarak ke sasaran
 
 | | mAP50 | ke 0,60 | mAP50-95 | ke 0,30 |
 |---|---|---|---|---|
-| val | 0,5466 | **−0,053** | 0,2543 | **−0,046** |
-| test | **0,5794** | **−0,021** | **0,2694** | **−0,031** |
+| val | 0,5695 | **−0,031** | 0,2604 | **−0,040** |
+| test | **0,6038** | **+0,004 (LEWAT)** | **0,2770** | **−0,023** |
 
-Terdekat yang pernah dicapai, dan **sasaran belum tembus**. Test tinggal −0,021
-dari mAP50 0,60 dan −0,031 dari mAP50-95 0,30.
+**Sasaran mAP50 0,60 pada test terlewati untuk pertama kali.** mAP50-95 masih
+kurang 0,023 — itu yang tersisa.
 
-Bobot terbaik (`best.pt`, 264 MB) berada di luar repo dan dapat direproduksi dari
-skrip arsip; pengarsipannya ke penyimpanan objek belum dilakukan.
+Bobot terbaik berada di luar repo dan dapat direproduksi dari skrip arsip:
+RF-DETR `checkpoint_best_ema.pth` (142 MB), RT-DETR `best.pt` (264 MB), YOLO26l
+`best.pt` (53 MB). Pengarsipannya ke penyimpanan objek belum dilakukan.
 
 ---
 
@@ -331,18 +381,21 @@ skrip arsip; pengarsipannya ke penyimpanan objek belum dilakukan.
   skor terendah 0,9985, nol ambigu), menunjuk ke piksel master penuh tanpa
   anotasi ulang karena rasio aspeknya identik (0,75). Belum dipakai melatih
   apa pun.
-- **RT-DETR-L best.pt** — model terbaik (§5).
+- **RF-DETR-L `checkpoint_best_ema.pth`** — model terbaik (§5.3), 142 MB.
+  RT-DETR-L `best.pt` (264 MB) dan YOLO26l `best.pt` (53 MB) sebagai pembanding.
 
 ### 6.2 Jalur lanjutan, prioritas turun
 
-1. **RT-DETR-L pada piksel master 3024×4032** (imgsz 1600–2048) — menyerang
-   lokalisasi, penentu mAP50-95 yang sasarannya paling jauh. Taruhan terbaik
-   menutup −0,021 terakhir.
-2. **RT-DETR-X** (67,5 juta parameter) — menguji kapasitas di atas mekanisme yang
-   sudah terbukti lebih baik.
-3. **Loss ordinal / kepala regresi kematangan (I-22)** — menyerang ketidakcocokan
+1. **RF-DETR-L pada piksel master 3024×4032** (imgsz 1600–2048) — menyerang
+   lokalisasi, penentu mAP50-95 yang sasarannya kini satu-satunya yang tersisa
+   (−0,023). Taruhan terbaik menutup jarak itu.
+2. **Kapasitas di atas mekanisme yang sudah terbukti** — RF-DETR pada varian
+   lebih besar, atau RT-DETR-X (67,5 juta parameter).
+3. **Optimasi latensi RF-DETR** (FP16 `optimize_for_inference`) — 8,5 FPS
+   terlalu lambat untuk lapangan waktu-nyata; perlu diukur sebelum dipakai.
+4. **Loss ordinal / kepala regresi kematangan (I-22)** — menyerang ketidakcocokan
    objektif-vs-metrik dari §4.4, dan belum pernah diuji di atas detektor terbaik.
-4. **Loss berimbang/focal (I-13), neck BiFPN (I-15)** — prioritas terendah.
+5. **Loss berimbang/focal (I-13), neck BiFPN (I-15)** — prioritas terendah.
 
 ### 6.3 Yang menunggu keputusan pengguna, bukan sekadar teknis
 
@@ -396,7 +449,7 @@ Untuk deliverable produksi, seluruh perintah latih/konversi/inferensi ada di
 
 ---
 
-*Cuplikan ini dikurasi 22 Juli 2026. Angka apa adanya, hasil negatif ikut
+*Cuplikan ini dikurasi 25 Juli 2026. Angka apa adanya, hasil negatif ikut
 dilaporkan. Bila ada selisih antara dokumen ini dan
 [`docs/eksperimen/EKSPERIMEN.md`](EKSPERIMEN.md) / [`docs/eksperimen/METRICS.md`](METRICS.md), yang kanonik
 adalah kedua berkas itu.*

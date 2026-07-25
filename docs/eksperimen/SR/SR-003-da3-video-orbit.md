@@ -111,10 +111,10 @@ dipalsukan. Tidak dikarang penjelasan untuk sisa satu video ini.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/analysis/da3_video_test.py --frames 16          # E-003
-.venv/bin/python experiments/analysis/da3_video_test.py --frames 48 --out experiments/results/E-003b
-.venv/bin/python experiments/analysis/da3_video_multi.py --videos 6 --frames 32              # E-004
-.venv/bin/python experiments/analysis/da3_video_multi.py --videos 6 --frames 32 --no-rotate  # pembanding
+.venv/bin/python analysis/da3_video_test.py --frames 16          # E-003
+.venv/bin/python analysis/da3_video_test.py --frames 48 --out results/E-003b
+.venv/bin/python analysis/da3_video_multi.py --videos 6 --frames 32              # E-004
+.venv/bin/python analysis/da3_video_multi.py --videos 6 --frames 32 --no-rotate  # pembanding
 ```
 
 Lingkungan: GPU NVIDIA L4, `depth-anything/da3-large`, `process_res=504`,

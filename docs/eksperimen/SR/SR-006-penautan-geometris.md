@@ -124,9 +124,9 @@ dari **detektor**, persis kesimpulan DiB sendiri dan prioritas pertama
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/analysis/geometric_linking.py --split test           # tabel utama
-.venv/bin/python experiments/analysis/geometric_linking.py --split test --sweep   # sapuan ambang
-# keluaran: experiments/results/E-007/report_test.json, experiments/results/E-007/sweep.json
+.venv/bin/python analysis/geometric_linking.py --split test           # tabel utama
+.venv/bin/python analysis/geometric_linking.py --split test --sweep   # sapuan ambang
+# keluaran: results/E-007/report_test.json, results/E-007/sweep.json
 ```
 
 Prasyarat: `depth_da3/depth/*.png` dan `depth_da3/cameras_all.json` (dihasilkan

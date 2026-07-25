@@ -97,8 +97,8 @@ prediksi. Membutuhkan detektor terlatih, jadi dijalankan bersama I-4/I-5.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/analysis/class_mismatch_stats.py
-# keluaran: experiments/results/E-001/class_mismatch.json
+.venv/bin/python analysis/class_mismatch_stats.py
+# keluaran: results/E-001/class_mismatch.json
 ```
 
 Waktu jalan: beberapa detik. Tidak butuh GPU.

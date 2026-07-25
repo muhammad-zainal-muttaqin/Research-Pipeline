@@ -14,7 +14,7 @@ di-bersihkan dari spam progress-bar (carriage-return) tetapi isi bermakna utuh.
 | **RF-DETR-L** | 35,7 jt | 1280 | **0,5695 / 0,2604** | **0,6038 / 0,2770** |
 
 Ranking = urutan parameter di semua metrik & split. RF-DETR-L test mAP50 0,6038
-melewati sasaran 0,60. Sumber: `experiments/results/E-021/perkelas_pycoco.json` (per-kelas lengkap
+melewati sasaran 0,60. Sumber: `results/E-021/perkelas_pycoco.json` (per-kelas lengkap
 di `docs/eksperimen/METRICS.md` §1-protokol).
 
 ## Jebakan RF-DETR (rfdetr 1.8.3) — WAJIB tahu sebelum run ulang
@@ -37,7 +37,7 @@ di `docs/eksperimen/METRICS.md` §1-protokol).
    (`val/mAP_50`, `val/mAP_50_95`, `val/AP/Bx`, plus varian `val/ema_*`).
 
 4. **Per-kelas `val/AP/Bx` di metrics.csv & evaluation.json = AP50-95, BUKAN AP50.**
-   Untuk AP50 per-kelas harus COCO-eval terpisah (`experiments/eval/eval_rfdetr_perkelas.py`).
+   Untuk AP50 per-kelas harus COCO-eval terpisah (`eval/eval_rfdetr_perkelas.py`).
 
 5. **Checkpoint: `run_test` memakai `checkpoint_best_total.pth` untuk test**
    (memberi test 0,5837/0,2653), sedangkan checkpoint terbaik-val = EMA
@@ -46,7 +46,7 @@ di `docs/eksperimen/METRICS.md` §1-protokol).
    rf-detr (0,5699) → pipeline tervalidasi. **Pakai EMA konsisten.**
 
 6. **Resume:** `RFDETRLarge(..., resume="runs/.../last.ckpt")` (PTL ckpt_path).
-   `experiments/train/train_rfdetr.py --resume` sudah mendukung.
+   `train/train_rfdetr.py --resume` sudah mendukung.
 
 ## Jebakan performa GPU (NVIDIA L4, 23 GB, TDP 72 W)
 
@@ -71,7 +71,7 @@ di `docs/eksperimen/METRICS.md` §1-protokol).
 - **Resolusi 1280 identik** untuk RT-DETR & RF-DETR & YOLO26l (YOLO26m 640 = acuan
   ringan, bukan pembanding sekelas).
 - **Split identik** 3000/404/588 (E-017), augmentasi aman-warna (hsv kecil, E-019),
-  seed 42, dari bobot COCO. `experiments/build/build_rfdetr_ds.py` = adaptor dataset YOLO→RF-DETR via
+  seed 42, dari bobot COCO. `build/build_rfdetr_ds.py` = adaptor dataset YOLO→RF-DETR via
   symlink (tanpa salin citra).
 - **Effective batch 16** untuk RF-DETR; RT-DETR/YOLO26l pakai batch 4 default
   ultralytics (perbedaan batch antar-framework kurang kritis dibanding resolusi).
@@ -81,15 +81,15 @@ di `docs/eksperimen/METRICS.md` §1-protokol).
 - **Baseline YOLO param-adil = YOLO26l** (26,3 jt, config IDENTIK RT-DETR). Tetap
   di bawah kedua DETR → keunggulan DETR **bukan** efek kapasitas/resolusi.
 - **Evaluator campur diselesaikan:** semua 4 model dievaluasi ulang lewat
-  **1-protokol pycocotools** (`experiments/eval/eval_all_pycoco.py`) — perbedaan protokol vs
+  **1-protokol pycocotools** (`eval/eval_all_pycoco.py`) — perbedaan protokol vs
   ultralytics `.val()` <0,005 (terkonfirmasi silang).
 
 ## Peta berkas run ini (di repo)
 
-- **Skrip:** `experiments/train/train_rfdetr.py`, `experiments/build/build_rfdetr_ds.py`, `experiments/train/train_yolo26l.py`,
-  `experiments/eval/eval_perkelas.py`, `experiments/eval/eval_rfdetr_perkelas.py`, `experiments/eval/eval_all_pycoco.py`
-- **Hasil JSON:** `experiments/results/E-021/perkelas_fair.json` (native), `experiments/results/E-021/perkelas_pycoco.json`
-  (1-protokol), `experiments/results/E-021/yolo26l_eval.json`
+- **Skrip:** `train/train_rfdetr.py`, `build/build_rfdetr_ds.py`, `train/train_yolo26l.py`,
+  `eval/eval_perkelas.py`, `eval/eval_rfdetr_perkelas.py`, `eval/eval_all_pycoco.py`
+- **Hasil JSON:** `results/E-021/perkelas_fair.json` (native), `results/E-021/perkelas_pycoco.json`
+  (1-protokol), `results/E-021/yolo26l_eval.json`
 - **Metadata run:** `runs/rfdetr_l_e60_i1280/{evaluation.json,metrics.csv,training_config.json}`,
   `runs/yolo26l_e60_i1280/{args.yaml,results.csv}` (tanpa bobot — bisa dibuat ulang)
 - **Log konsol:** `logs/logs-rfdetr-e60.txt` (training), `logs/logs-rfdetr-smoke.txt`

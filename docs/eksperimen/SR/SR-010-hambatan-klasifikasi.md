@@ -117,8 +117,8 @@ keputusan kematangan ke tempat yang punya bukti untuk mengambilnya.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/eval/diag_bottleneck.py
-# keluaran: experiments/results/E-014/diag_bottleneck.json
+.venv/bin/python eval/diag_bottleneck.py
+# keluaran: results/E-014/diag_bottleneck.json
 ```
 
 Butuh GPU, dua menit.

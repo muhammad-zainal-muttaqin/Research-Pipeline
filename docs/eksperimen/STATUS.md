@@ -1,8 +1,9 @@
 # STATUS — titik berhenti & cara melanjutkan
 
-**Terakhir diperbarui:** 2026-07-24 · **Status:** aktif — RF-DETR-L (E-021) jadi detektor terbaik baru; YOLO26l @1280 (baseline param-adil) sedang berjalan.
+**Terakhir diperbarui:** 2026-07-25 · **Status:** aktif — RF-DETR-L (E-021) jadi detektor terbaik baru dan **sasaran mAP50 0,60 pada test terlewati** (0,6038); perbandingan param-adil 1-protokol sudah tuntas. Yang tersisa: mAP50-95 (−0,023).
 
-Metrik lengkap semua run (per-kelas B1–B4, val+test) di [`docs/eksperimen/METRICS.md`](METRICS.md).
+Metrik lengkap semua run (per-kelas B1–B4, val+test) di [`METRICS.md`](METRICS.md).
+Peta seluruh dokumen repo di [`docs/README.md`](../README.md).
 
 Dokumen ini adalah **titik masuk tunggal** saat pekerjaan dilanjutkan. Baca ini
 dulu, lalu `docs/eksperimen/SR/README.md` (cerita per-ide) dan `docs/eksperimen/EKSPERIMEN.md` (log
@@ -16,7 +17,7 @@ kronologis E-001…E-020).
 **mAP50 0,60 dan mAP50-95 0,30 pada 4 kelas penuh (B1–B4)**, angka COCO apa
 adanya, pilih di val / lapor di test, tanpa hack.
 
-**Hasil terbaik saat ini — RF-DETR-L (NMS-free, DINOv2), lihat [E-021](EKSPERIMEN.md):**
+**Hasil terbaik saat ini — RF-DETR-L (NMS-free, DINOv2), lihat [E-021](EKSPERIMEN.md) / [SR-014](SR/SR-014-rfdetr-dinov2.md):**
 
 | | mAP50 | mAP50-95 | ke target |
 |---|---|---|---|
@@ -89,7 +90,7 @@ Semua GPU-bound, dijeda karena berhenti di sini. Perintah siap jalan.
    sekarang cuma di 1280. **Taruhan terbaik menutup −0,021 terakhir.**
    ```bash
    cd /workspace/experiments
-   .venv/bin/python experiments/train/train_rtdetr.py --weights rtdetr-l.pt \
+   .venv/bin/python train/train_rtdetr.py --weights rtdetr-l.pt \
        --imgsz 1600 --epochs 60   # arahkan data ke master_ds/data.yaml
    ```
    Catatan: `experiments/train/train_rtdetr.py` saat ini menunjuk `experiments/config/data_rgb.yaml`; ganti ke
@@ -97,7 +98,7 @@ Semua GPU-bound, dijeda karena berhenti di sini. Perintah siap jalan.
 
 2. **RT-DETR-X** (67,5 juta param) — kapasitas di atas mekanisme NMS-free.
    ```bash
-   .venv/bin/python experiments/train/train_rtdetr.py --weights rtdetr-x.pt --imgsz 1280 --batch 3
+   .venv/bin/python train/train_rtdetr.py --weights rtdetr-x.pt --imgsz 1280 --batch 3
    ```
 
 3. **I-22 loss ordinal** pada RT-DETR — menyerang mismatch objektif ordinal

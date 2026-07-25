@@ -136,9 +136,9 @@ belakangan.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/analysis/depth_bunch_signal.py --trees 40                     # res 504
-.venv/bin/python experiments/analysis/depth_bunch_signal.py --trees 40 --process-res 1008  # res 1008
-# keluaran: experiments/results/E-006/report_res504.json, experiments/results/E-006/report_res1008.json
+.venv/bin/python analysis/depth_bunch_signal.py --trees 40                     # res 504
+.venv/bin/python analysis/depth_bunch_signal.py --trees 40 --process-res 1008  # res 1008
+# keluaran: results/E-006/report_res504.json, results/E-006/report_res1008.json
 ```
 
 Lingkungan: GPU NVIDIA L4, `depth-anything/da3-large`, `seed=42`.

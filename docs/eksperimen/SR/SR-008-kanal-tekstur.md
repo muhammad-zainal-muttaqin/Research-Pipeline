@@ -113,11 +113,11 @@ sehingga perbandingan RGB vs RGB+D vs RGB+T berjalan pada kondisi identik:
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/analysis/contrast_boost_test.py --images 250
-# keluaran: experiments/results/E-011/contrast_boost.json
+.venv/bin/python analysis/contrast_boost_test.py --images 250
+# keluaran: results/E-011/contrast_boost.json
 
 # pelatihan varian tekstur (E-012)
-.venv/bin/python experiments/train/train_fusion.py --mode rgbt
+.venv/bin/python train/train_fusion.py --mode rgbt
 ```
 
 E-011 tanpa GPU, beberapa menit.

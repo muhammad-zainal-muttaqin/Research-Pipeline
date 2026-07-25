@@ -129,8 +129,8 @@ menyesatkan arah kerja.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/analysis/class_separability.py --per-class 1500
-# keluaran: experiments/results/E-012/separability.json
+.venv/bin/python analysis/class_separability.py --per-class 1500
+# keluaran: results/E-012/separability.json
 ```
 
 Tanpa GPU. Beberapa menit.

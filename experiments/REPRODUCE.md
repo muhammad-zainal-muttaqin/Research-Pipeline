@@ -42,37 +42,37 @@ per pohon 716/96/141 dengan **irisan nol** — jangan diacak ulang.
 
 | Skrip | Eksperimen | SR | Keluaran |
 |---|---|---|---|
-| `experiments/analysis/class_mismatch_stats.py` | E-001 | SR-001 | `experiments/results/E-001/class_mismatch.json` |
-| `experiments/analysis/da3_video_test.py`, `experiments/analysis/da3_video_multi.py` | E-003, E-004 | SR-003 | `experiments/results/E-003*, experiments/results/E-004` |
-| `experiments/analysis/da3_sides_test.py` | E-005 | SR-004 | `experiments/results/E-005` |
-| `experiments/analysis/depth_bunch_signal.py` | E-006 | SR-005 | `experiments/results/E-006` |
-| `experiments/analysis/geometric_linking.py` | E-007 | SR-006 | `experiments/results/E-007` |
-| `experiments/analysis/box_size_analysis.py` | E-009 | SR-007 | `experiments/results/E-009` |
-| `experiments/analysis/why_b4_fails.py` | E-010 | SR-007 | `experiments/results/E-010` |
-| `experiments/analysis/contrast_boost_test.py` | E-011 | SR-008 | `experiments/results/E-011` |
-| `experiments/analysis/class_separability.py` | E-012 | SR-009 | `experiments/results/E-012` |
-| `experiments/eval/diag_bottleneck.py` | E-014 | SR-010 | `experiments/results/E-014/diag_bottleneck.json` |
-| `experiments/build/match_raw.py` | E-015 | SR-002 | `experiments/results/E-015/raw_map.json` |
-| `experiments/analysis/head_vs_crop.py`, `experiments/analysis/multiview_vote.py`, `experiments/eval/metric_variants.py` | E-016 | SR-011 (ditarik) | `experiments/results/E-016/head_vs_crop.json` dll |
-| `experiments/train/train_agnostic.py`, `experiments/train/train_maturity_v2.py`, `experiments/analysis/two_stage.py` | E-017 | SR-012 | `results/two_stage_val_*.json` |
-| `experiments/analysis/loc_ceiling.py` | E-018 | — | `experiments/results/E-018/loc_ceiling.json` |
-| `experiments/train/train_4cls_hi.py` | E-019 | — | `runs/c4_e50_i1280_warna/` |
-| `experiments/train/train_rtdetr.py`, `experiments/eval/eval_rtdetr.py` | E-020 | SR-013 | `runs/rtdetr_l_e60_i1280/`, `experiments/results/E-020/rtdetr_eval.json` |
-| `experiments/build/build_rfdetr_ds.py`, `experiments/train/train_rfdetr.py` | E-021 | — | `runs/rfdetr_l_e60_i1280/` (evaluation.json, metrics.csv, **training_config.json**) |
-| `experiments/train/train_yolo26l.py` | E-021 | — | `runs/yolo26l_e60_i1280/`, `experiments/results/E-021/yolo26l_eval.json` |
-| `experiments/eval/eval_perkelas.py`, `experiments/eval/eval_rfdetr_perkelas.py` | E-021 | — | `experiments/results/E-021/perkelas_fair.json` |
-| `experiments/eval/eval_all_pycoco.py` | E-021 | — | `experiments/results/E-021/perkelas_pycoco.json` (1-protokol) |
-| `experiments/eval/eval_all_metrics.py` | E-021 | — | `experiments/results/E-021/metrics_full.json` (COCO 12-stat + P/R/F1) |
-| `experiments/eval/eval_extras.py` | E-021 | — | `results/{confusion,bootstrap_ci,pr_curves}.json`, `figures/*.png` |
-| `experiments/eval/eval_efficiency.py` | E-021 | — | `experiments/results/E-021/efficiency.json` |
-| `experiments/train/train_fusion.py` | I-4 (RGBD) | — | `runs/rgbd_e60_i640_s42/` |
-| `experiments/eval/eval_missing.py` | — | — | `experiments/results/lintas-eksperimen/eval_missing.json` (per-kelas RGBD & c4) |
+| `analysis/class_mismatch_stats.py` | E-001 | SR-001 | `results/E-001/class_mismatch.json` |
+| `analysis/da3_video_test.py`, `analysis/da3_video_multi.py` | E-003, E-004 | SR-003 | `results/E-003*, results/E-004` |
+| `analysis/da3_sides_test.py` | E-005 | SR-004 | `results/E-005` |
+| `analysis/depth_bunch_signal.py` | E-006 | SR-005 | `results/E-006` |
+| `analysis/geometric_linking.py` | E-007 | SR-006 | `results/E-007` |
+| `analysis/box_size_analysis.py` | E-009 | SR-007 | `results/E-009` |
+| `analysis/why_b4_fails.py` | E-010 | SR-007 | `results/E-010` |
+| `analysis/contrast_boost_test.py` | E-011 | SR-008 | `results/E-011` |
+| `analysis/class_separability.py` | E-012 | SR-009 | `results/E-012` |
+| `eval/diag_bottleneck.py` | E-014 | SR-010 | `results/E-014/diag_bottleneck.json` |
+| `build/match_raw.py` | E-015 | SR-002 | `results/E-015/raw_map.json` |
+| `analysis/head_vs_crop.py`, `analysis/multiview_vote.py`, `eval/metric_variants.py` | E-016 | SR-011 (ditarik) | `results/E-016/head_vs_crop.json` dll |
+| `train/train_agnostic.py`, `train/train_maturity_v2.py`, `analysis/two_stage.py` | E-017 | SR-012 | `results/two_stage_val_*.json` |
+| `analysis/loc_ceiling.py` | E-018 | — | `results/E-018/loc_ceiling.json` |
+| `train/train_4cls_hi.py` | E-019 | — | `runs/c4_e50_i1280_warna/` |
+| `train/train_rtdetr.py`, `eval/eval_rtdetr.py` | E-020 | SR-013 | `runs/rtdetr_l_e60_i1280/`, `results/E-020/rtdetr_eval.json` |
+| `build/build_rfdetr_ds.py`, `train/train_rfdetr.py` | E-021 | — | `runs/rfdetr_l_e60_i1280/` (evaluation.json, metrics.csv, **training_config.json**) |
+| `train/train_yolo26l.py` | E-021 | — | `runs/yolo26l_e60_i1280/`, `results/E-021/yolo26l_eval.json` |
+| `eval/eval_perkelas.py`, `eval/eval_rfdetr_perkelas.py` | E-021 | — | `results/E-021/perkelas_fair.json` |
+| `eval/eval_all_pycoco.py` | E-021 | — | `results/E-021/perkelas_pycoco.json` (1-protokol) |
+| `eval/eval_all_metrics.py` | E-021 | — | `results/E-021/metrics_full.json` (COCO 12-stat + P/R/F1) |
+| `eval/eval_extras.py` | E-021 | — | `results/{confusion,bootstrap_ci,pr_curves}.json`, `figures/*.png` |
+| `eval/eval_efficiency.py` | E-021 | — | `results/E-021/efficiency.json` |
+| `train/train_fusion.py` | I-4 (RGBD) | — | `runs/rgbd_e60_i640_s42/` |
+| `eval/eval_missing.py` | — | — | `results/lintas-eksperimen/eval_missing.json` (per-kelas RGBD & c4) |
 
 Konfigurasi persis tiap run pelatihan ada di `runs/<run>/args.yaml` (ultralytics)
 atau `runs/<run>/training_config.json` (RF-DETR); kurva per-epoch di
 `runs/<run>/results.csv` / `metrics.csv`; keluaran konsol di `logs/`. Urutan E-021:
-`experiments/build/build_rfdetr_ds.py` → `experiments/train/train_rfdetr.py` → `experiments/train/train_yolo26l.py` → `experiments/eval/eval_all_pycoco.py`
-→ `experiments/eval/eval_all_metrics.py` → `experiments/eval/eval_extras.py` → `experiments/eval/eval_efficiency.py`. Ringkasan jebakan
+`build/build_rfdetr_ds.py` → `train/train_rfdetr.py` → `train/train_yolo26l.py` → `eval/eval_all_pycoco.py`
+→ `eval/eval_all_metrics.py` → `eval/eval_extras.py` → `eval/eval_efficiency.py`. Ringkasan jebakan
 teknis di [`CATATAN-TEKNIS-E021.md`](CATATAN-TEKNIS-E021.md).
 
 ## 4. Yang TIDAK akan bit-per-bit sama (jujur)
@@ -86,7 +86,7 @@ teknis di [`CATATAN-TEKNIS-E021.md`](CATATAN-TEKNIS-E021.md).
    E-021: RF-DETR `checkpoint_best_ema.pth` (142 MB), RT-DETR `best.pt` (264 MB),
    YOLO26l `best.pt` (53 MB).
 3. **Dataset turunan** (crops, master_ds, depth_da3, tiles) dibuat ulang dari
-   skrip build (`experiments/build/build_crops_raw.py`, `experiments/build/build_master_ds.py`, `experiments/build/gen_depth_dataset.py`).
+   skrip build (`build/build_crops_raw.py`, `build/build_master_ds.py`, `build/gen_depth_dataset.py`).
 4. **Jalur DA3 (E-003…E-007)** butuh Depth Anything 3 dipasang terpisah
    (`requirements.txt`). Tanpa DA3, SR-003…SR-006 tak bisa direproduksi; tetapi
    angka + kesimpulannya terekam di SR-nya.

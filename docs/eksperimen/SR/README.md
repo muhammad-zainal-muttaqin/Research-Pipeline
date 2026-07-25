@@ -34,10 +34,11 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-011](SR-011-plafon-kematangan.md) | Plafon kematangan ~68% | E-016 | **DITARIK** (bukti cacat, lihat E-018) |
 | [SR-012](SR-012-dua-tahap.md) | Detektor dua tahap (deteksi agnostik + kepala kematangan) | E-017 | **DIPALSUKAN** |
 | [SR-013](SR-013-rtdetr-nms-free.md) | RT-DETR-L (NMS-free): detektor 4-kelas terbaik | E-020 | **DIKONFIRMASI** (arah; target belum) |
+| [SR-014](SR-014-rfdetr-dinov2.md) | RF-DETR-L (DINOv2) melampaui RT-DETR pada setelan identik | E-021 | **DIKONFIRMASI** (sasaran mAP50 terlewati) |
 
 ## Apa yang sudah kita pelajari — cerita singkatnya
 
-Tiga belas SR diuji; empat dipalsukan, satu ditarik, dan justru itu yang
+Empat belas SR diuji; empat dipalsukan, satu ditarik, dan justru itu yang
 mempersempit arah. Rantai temuannya:
 
 1. **Bottleneck ada di detektor, bukan penghitung.** E-007 mereproduksi Tabel 4
@@ -64,7 +65,7 @@ Kesimpulan operasionalnya: **B4 butuh keterlihatan (tekstur), B2 butuh
 diskriminasi ordinal.** Menggabungkan keduanya sebagai "kelas sulit" akan
 menyesatkan arah kerja.
 
-### Lanjutan cerita (SR-010 → SR-013)
+### Lanjutan cerita (SR-010 → SR-014)
 
 6. **Kerugian mAP ada di klasifikasi, bukan deteksi.** Bobot yang sama
    dievaluasi dua kali: 4-kelas 0,5218 vs kelas-agnostik 0,7191 mAP50 — 38% yang
@@ -81,10 +82,17 @@ menyesatkan arah kerja.
    Plafon **geometris** anotasi justru menampung sasaran: dengan kelas sempurna,
    kotak yang ada memungkinkan mAP50 0,8834 / mAP50-95 0,4702 (E-018).
 
-Arah aktif: kejar sasaran **mAP50 0,60 / mAP50-95 0,30 pada 4 kelas** lewat jalur
-yang belum tersentuh — kapasitas (yolo26x), mekanisme deteksi (RT-DETR, SR-013),
-dan piksel master (imgsz 1600–2048). E-019 (1280 aman-warna) hanya menempel
-baseline karena fine-tune dari checkpoint resolusi lain; run berikut mulai bersih.
+10. **Arsitektur NMS-free menang, dan bukan karena kapasitas.** RF-DETR-L
+    (DINOv2) melampaui RT-DETR-L pada kedua metrik di kedua split, dan
+    **test mAP50 0,6038 melewati sasaran 0,60** (SR-014). Baseline YOLO
+    param-adil YOLO26l (26,3 juta, konfigurasi identik) tetap di bawah kedua
+    DETR, sehingga penjelasan "sekadar kapasitas/resolusi" tertutup. Seluruh
+    perbandingan kini satu protokol pycocotools.
+
+Arah aktif: **mAP50 sudah terlewati; yang tersisa mAP50-95 0,30** (kurang 0,023).
+Jalur yang belum tersentuh: piksel master 3024×4032 (imgsz 1600–2048) untuk
+menyerang lokalisasi, kapasitas di atas RF-DETR, dan loss ordinal untuk B2↔B3.
+Catatan penerapan: RF-DETR paling akurat tetapi paling lambat (8,5 FPS di L4).
 
 ## Ide yang belum dikerjakan
 

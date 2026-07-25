@@ -110,9 +110,9 @@ komponen yang layak dipasang apa adanya.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/train/train_agnostic.py
-.venv/bin/python experiments/build/build_crops_raw.py
-.venv/bin/python experiments/train/train_maturity_v2.py --root crops_raw --out runs/maturity_raw
-.venv/bin/python experiments/analysis/two_stage.py --det runs/agn_e25_i960_s42/weights/best.pt \
+.venv/bin/python train/train_agnostic.py
+.venv/bin/python build/build_crops_raw.py
+.venv/bin/python train/train_maturity_v2.py --root crops_raw --out runs/maturity_raw
+.venv/bin/python analysis/two_stage.py --det runs/agn_e25_i960_s42/weights/best.pt \
     --cls runs/maturity_raw/best.pt --split val --crop-source raw
 ```

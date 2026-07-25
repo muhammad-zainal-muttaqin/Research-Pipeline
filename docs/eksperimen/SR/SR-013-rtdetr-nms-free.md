@@ -129,7 +129,7 @@ dari skrip. Kandidat untuk diarsipkan ke penyimpanan objek.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/train/train_rtdetr.py --weights rtdetr-l.pt --imgsz 1280 --epochs 60
-.venv/bin/python experiments/eval/eval_rtdetr.py     # val + test + per-kelas dari best.pt
-# keluaran: runs/rtdetr_l_e60_i1280/, experiments/results/E-020/rtdetr_eval.json
+.venv/bin/python train/train_rtdetr.py --weights rtdetr-l.pt --imgsz 1280 --epochs 60
+.venv/bin/python eval/eval_rtdetr.py     # val + test + per-kelas dari best.pt
+# keluaran: runs/rtdetr_l_e60_i1280/, results/E-020/rtdetr_eval.json
 ```

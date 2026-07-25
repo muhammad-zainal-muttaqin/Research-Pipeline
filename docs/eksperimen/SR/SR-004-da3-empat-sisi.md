@@ -98,9 +98,9 @@ pertanyaan tandan.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/analysis/da3_sides_test.py --trees 20 --sides 4
-.venv/bin/python experiments/analysis/da3_sides_test.py --trees 30 --sides 8 --preview 1
-# keluaran: experiments/results/E-005/report_4sides.json, experiments/results/E-005/report_8sides.json, preview_*.jpg
+.venv/bin/python analysis/da3_sides_test.py --trees 20 --sides 4
+.venv/bin/python analysis/da3_sides_test.py --trees 30 --sides 8 --preview 1
+# keluaran: results/E-005/report_4sides.json, results/E-005/report_8sides.json, preview_*.jpg
 ```
 
 Lingkungan: GPU NVIDIA L4, `depth-anything/da3-large`, `process_res=504`.

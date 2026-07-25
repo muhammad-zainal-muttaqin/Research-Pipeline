@@ -125,9 +125,9 @@ jarak.
 
 ```bash
 cd /workspace/experiments
-.venv/bin/python experiments/analysis/box_size_analysis.py          # E-009
-.venv/bin/python experiments/analysis/why_b4_fails.py --images 400  # E-010
-# keluaran: experiments/results/E-009/box_sizes.json, experiments/results/E-010/why_b4.json
+.venv/bin/python analysis/box_size_analysis.py          # E-009
+.venv/bin/python analysis/why_b4_fails.py --images 400  # E-010
+# keluaran: results/E-009/box_sizes.json, results/E-010/why_b4.json
 ```
 
 Tanpa GPU, tanpa model. Beberapa menit.
