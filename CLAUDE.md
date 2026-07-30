@@ -5,7 +5,8 @@ Panduan kerja untuk Claude Code di repositori ini. Baca sebelum mengubah apa pun
 > **Melanjutkan eksperimen?** Baca **[`docs/STATUS.md`](docs/STATUS.md)** dulu —
 > titik berhenti, hasil terbaik (**RF-DETR-L test mAP50 0,6038**, E-021 —
 > melewati sasaran 0,60; sebelumnya RT-DETR-L 0,5794), dan jalur lanjutan.
-> Aktif per 2026-07-24 (YOLO26l @1280 baseline param-adil berjalan).
+> Aktif per 2026-07-30 (E-022: depth SENSOR Orbbec diuji di dataset baru
+> `SawitMVC-Depth`; fusi 4-kanal awal dipalsukan, arah lanjutan = fusi menengah).
 
 ## Bahasa
 
@@ -45,7 +46,7 @@ entri, seluruh berkas tersebut harus ikut diperbarui.
 | `figures/` | Figur final F01–F08 (`-en.jpg`), C01, C02, plus brief `.md`-nya. |
 | `docs/` | Rencana, panduan, audit, matriks bukti. `docs/archive/` = draf usang. |
 | `pipeline/` | **Deliverable produksi**: pipeline YOLO 4-kanal (RGB+depth) untuk kamera Gemini — latih/konversi/inferensi. Kode kecil tanpa bobot model; bukan kode eksperimen sekali pakai. |
-| `experiments/` | **Arsip kode + hasil JSON + split** eksperimen E-001…E-020 (snapshot dari `/workspace/experiments/`, di luar repo). Tanpa bobot/dataset besar — bisa dibuat ulang dari skripnya. Sumber reproduksi tiap SR. Di-exclude dari Jekyll. |
+| `experiments/` | **Arsip kode + hasil JSON + split** eksperimen E-001…E-022 (snapshot dari `/workspace/experiments/`, di luar repo). Tanpa bobot/dataset besar — bisa dibuat ulang dari skripnya. Sumber reproduksi tiap SR. Di-exclude dari Jekyll. |
 | `build.js` | Perakit `index.html` (Ruang Baca Riset). |
 | `index.html` | **Hasil build — jangan disunting tangan.** |
 | `tools/build_evidence_matrix.py` | Membangun matriks bukti dari `entri/` + `PDF/`. |
@@ -93,7 +94,27 @@ baru? Pertimbangkan menambahkannya ke exclude.
 
 Tinjauan pustaka **sudah selesai ditulis**. Fokus sekarang bergeser ke eksperimen.
 
-**Dua tingkat dataset, sudah lengkap terunduh di workspace ini:**
+**Dataset ketiga (per 2026-07-29): `/workspace/SawitMVC-Depth/data`** —
+<https://huggingface.co/datasets/ULM-DS-Lab/SawitMVC-Depth>, CC BY-NC 4.0, repo
+**private** (butuh token). 352 pohon, 1.408 citra RGB **1280×800 lanskap**, 2.299
+kotak B1–B4, plus **depth sensor Orbbec** Y16 848×480 uint16 milimeter per citra.
+Inilah dataset yang menutup lubang "depth SENSOR belum pernah diuji" (E-022/SR-014).
+
+**Tiga jebakan dataset itu yang wajib diingat** (semuanya terverifikasi, E-022a):
+
+1. Sidecar `"alignedTo": "color"` **MENYESATKAN** — buffer masih di grid kamera
+   depth. `cv2.resize` naif meleset median 29 px / maks 61 px pada 1280×800.
+   Pakai `experiments/reproject_depth.py`, **jangan** `pipeline/prepare_depth.py`.
+2. Ada **dua unit kamera** dengan kalibrasi berbeda (fx_depth 416,55 vs 414,38);
+   kalibrasi wajib dibaca **per berkas** dari sidecar.
+3. Rentang `fourch.Z_NEAR/Z_FAR` (0,3–8,0 m) tidak cocok untuk sensor ini —
+   0,000% piksel di bawah 0,3 m, 10,07% di atas 8 m. Dipakai **0,8/15,0 m**.
+
+Distribusi kelasnya **terbalik** dari SawitMVC lama (B2 43,5%, B1 36,1%, B3 14,0%,
+B4 hanya 6,4% = 148 kotak) dan kepadatannya 1,63 kotak/citra (lama 4,64). **Angka
+mAP di dataset ini TIDAK sebanding dengan 0,6038 milik E-021.**
+
+**Dua tingkat dataset SawitMVC, sudah lengkap terunduh di workspace ini:**
 
 | | `/workspace/Sawit/data` (master mentah) | `/workspace/SawitMVC/data` (turunan) |
 |---|---|---|

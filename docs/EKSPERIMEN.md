@@ -1038,3 +1038,248 @@ bawah kedua DETR** → keunggulan RF-DETR/RT-DETR **bukan efek kapasitas/resolus
 melainkan arsitektur NMS-free. Putusan E-021 makin kuat. Tabel penuh per-kelas:
 [METRICS.md](METRICS.md) §1-protokol. Reproduksi: `python train_yolo26l.py` →
 `python eval_all_pycoco.py`.
+
+---
+
+## E-022 — Depth SENSOR Orbbec pada SawitMVC-Depth: registrasi + 4-kanal simultan (2026-07-29) · Ide I-4/I-8 · [SR-014](SR/SR-014-depth-sensor-4kanal.md)
+
+**Konteks** — Dataset baru `ULM-DS-Lab/SawitMVC-Depth` (352 pohon, 1.408 citra
+RGB 1280×800, depth sensor Orbbec Y16 848×480 uint16le milimeter, 2.299 kotak
+B1–B4) menyediakan hal yang selama ini kosong di STATUS.md §5: **depth SENSOR
+sungguhan**, bukan pseudo-depth. Sampai E-021 hanya pseudo-depth yang pernah
+diuji (E-006/SR-005, dipalsukan). Integritas 6.336 artefak diverifikasi
+SHA-256 terhadap `manifests/`: 0 hilang, 0 tidak cocok.
+
+**Peringatan pembanding, ditulis di depan** — angka apa pun di entri ini **tidak
+sebanding** dengan test mAP50 0,6038 milik E-021. Dataset berbeda: prior kelas
+terbalik (B3 52,3% → 14,0%; B1 11,0% → 36,1%), kotak ~2× lebih besar relatif,
+orientasi berubah (960×1280 potret → 1280×800 lanskap), anotasi 18.540 → 2.299.
+Satu-satunya klaim sah adalah **selisih RGB-D minus RGB di dalam dataset ini**
+pada protokol identik.
+
+### E-022a — Apakah depth benar-benar sudah tersejajar ke RGB?
+
+**Hipotesis (H-022c)** — Buffer depth 848×480 sudah tersejajar ke bidang color
+sebagaimana klaim sidecar `"alignedTo": "color"`, sehingga `cv2.resize` ke
+1280×800 sudah cukup (asumsi yang dipakai `pipeline/prepare_depth.py`).
+**Dipalsukan bila** geometri kalibrasi atau uji empiris menunjukkan buffer masih
+di grid kamera depth.
+
+**Cara** — `depth_calib.py` (parser kalibrasi per-berkas + reproyeksi),
+`verify_depth_align.py` (uji berbasis kotak anotasi), `verify_depth_mi.py`
+(mutual information agregat + kontrol pergeseran, bootstrap berpasangan 2000×).
+
+**Hasil — DIPALSUKAN, tiga bukti independen:**
+
+1. **Geometri kalibrasi.** Intrinsik depth (fx=fy=416,55, piksel persegi) bukan
+   versi terskala intrinsik color: 610,87·848/1280 = 404,7 pada x tetapi
+   610,87·480/800 = 366,5 pada y — tidak persegi, tidak konsisten.
+2. **Tidak ada pita kosong struktural.** FOV vertikal color 66,4° > depth 59,9°.
+   Bila depth sudah di-resample ke bidang color, ~34 baris atas dan ~28 baris
+   bawah wajib kosong di setiap citra. Terukur: **0 baris dan 0 kolom** yang
+   selalu-invalid.
+3. **Mutual information.** MI(depth; abu-abu RGB) atas 150 citra:
+
+   | Pemetaan | MI (bit) |
+   |---|---|
+   | H1 resize langsung | 0,2546 |
+   | H2 affine-intrinsik | 0,2591 |
+   | **H3 reproyeksi penuh** | **0,2852** |
+   | H3 digeser +24 px (kontrol) | 0,2385 |
+   | H3 digeser −24 px (kontrol) | 0,2320 |
+
+   Selisih berpasangan **H3 − H1 = +0,0306 bit, CI95 [0,0260; 0,0354]** (tidak
+   memuat 0), H3 menang di **84%** dari 150 citra. Kontrol pergeseran buatan
+   menurunkan MI → metrik memang peka terhadap registrasi.
+
+**Putusan — DIPALSUKAN.** Label `alignedTo: "color"` menyesatkan; buffer masih di
+grid kamera depth pabrikan. Resize naif meleset **median 29,3 px, maksimum 61 px**
+pada bidang 1280×800 — seukuran tandan B4 itu sendiri. Memakainya akan
+menghasilkan hasil negatif palsu yang terbaca sebagai "depth tidak menolong",
+persis skenario D3Net (entri 037).
+
+**Dampak** — `pipeline/prepare_depth.py` **tidak boleh dipakai untuk dataset ini**.
+Diganti `reproject_depth.py`: depth → titik 3D (intrinsik depth) → ekstrinsik →
+intrinsik color + distorsi Brown-Conrady K6, forward-warp **ber-z-buffer** (tanpa
+ini latar menimpa objek di tepi oklusi — justru sinyal yang dicari untuk B4),
+tambal lubang **median 3×3** (operator ranking, bukan blur yang menghasilkan
+kedalaman hantu melintasi batas objek).
+
+Dua temuan pendamping yang mengubah konfigurasi:
+
+- **Ada DUA unit kamera**, bukan satu: 660 berkas fx_depth=416,55 dan 748 berkas
+  fx_depth=414,38, rotasi ekstrinsik 0,064° vs 0,562°. Kalibrasi **wajib dibaca
+  per berkas**; hardcode satu set = separuh dataset salah proses, dan biasnya
+  berkorelasi dengan perangkat sehingga bocor ke perbandingan antar-split.
+- **Rentang metrik `fourch.py` (0,3–8,0 m) tidak cocok data ini.** 0,000% piksel
+  valid di bawah 0,3 m (minimum absolut 313 mm) sementara 10,07% melebihi 8 m;
+  entropi kanal hanya 6,19 dari 7,99 bit, level median 21/255. Dipilih ulang dari
+  histogram **split train saja** (anti-kebocoran): **Z_NEAR=0,8 / Z_FAR=15,0**,
+  entropi 7,62 bit, level median 74/255. Nilai >15 m dan 65535 (saturasi uint16)
+  diperlakukan tidak valid. Angka ini dibekukan bersama bobot di
+  `depth_png/depth_meta.json`.
+
+### E-022b — Apakah depth sensor menaikkan mAP?
+
+**Hipotesis (H-022)** — Pada SawitMVC-Depth, dengan split per-pohon identik, seed
+identik, dan seluruh hiperparameter identik kecuali kehadiran kanal kedalaman,
+detektor dengan masukan 4-kanal RGB+D sensor (ter-reproyeksi) mencapai test mAP50
+lebih tinggi daripada baseline RGB-saja dengan **delta > +0,015**, dan CI 95%
+bootstrap berpasangan **per-pohon** atas selisih itu tidak memuat 0.
+
+**Yang memalsukan H-022** (salah satu cukup): (1) delta ≤ +0,015; (2) CI95 memuat
+0; (3) delta lebih kecil daripada varians antar-seed pada lengan RGB sendiri;
+(4) kontrol negatif kanal-4 = derau memberi kenaikan sebanding — maka kenaikan
+berasal dari kapasitas tambahan di stem, bukan dari informasi kedalaman.
+
+Ambang +0,015 dipilih karena reproduksi tidak bit-per-bit deterministik meski
+seed=42 (deviasi wajar ±0,005 menurut `REPRODUCE.md`). Selisih ≤0,005 **tidak
+boleh** dinarasikan sebagai perbaikan maupun penurunan.
+
+**H-022b (sub-hipotesis mekanistik)** — kenaikan terkonsentrasi pada B4 dan citra
+teroklusi, bukan B2/B3. Kegagalan B2/B3 sudah didiagnosis **fotometrik** (SR-007,
+SR-009), jadi hasil naik di B4 tapi datar di B2/B3 adalah **konfirmasi teori**,
+bukan kegagalan. **Peringatan daya uji: B4 hanya punya 148 kotak di SELURUH
+dataset** (38 di test) — AP50 B4 bisa bergeser >0,1 karena beberapa kotak saja;
+H-022b dilaporkan dengan CI dan tidak boleh jadi klaim utama.
+
+**Cara** — Split per-pohon terstratifikasi `(device × unit-kamera) × kelas-dominan`,
+irisan nol: train 245 pohon/980 citra/1.593 kotak · val 35/140/202 · test
+72/288/504 (B4 95/15/38). Skrip: `make_splits_depth.py`, `reproject_depth.py`,
+`train_depth4ch.py`, `eval_e022_pycoco.py`.
+
+Tiga pagar keadilan yang dipasang sengaja, semuanya jebakan senyap:
+
+1. **HSV dimatikan di KEDUA lengan.** `RandomHSV.apply_image` melewati citra
+   non-3-kanal secara diam (`ultralytics/data/augment.py:1461`) — tanpa pagar ini
+   lengan RGB dapat augmentasi yang tidak didapat lengan RGB-D, dan selisihnya
+   salah diatribusikan ke depth.
+2. **Inflasi conv pertama** (`fourch.make_inflate_callback`): kanal 1–3 dari bobot
+   pratlatih urutan BGR, kanal ke-4 = 0, model + EMA sama-sama ditambal. Tanpa ini
+   conv pertama 4-kanal mulai acak dan lengan RGB-D kalah karena inisialisasi.
+   Terverifikasi di log run.
+3. **Modality dropout = 0** untuk lengan hipotesis. Dengan dropout 0,25 lengan
+   RGB-D sebenarnya berlatih 25% tanpa depth; hasil datar lalu ditafsirkan "depth
+   tidak menolong" padahal yang diuji bukan itu.
+
+**Hasil — pasangan 1: YOLO26n (2,57 jt param, imgsz 640, 60 epoch)**
+
+Angka lewat 1-protokol pycocotools, split test 72 pohon / 288 citra / 504 kotak:
+
+| Lengan | mAP50 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|
+| RGB | 0,3249 | 0,6598 | 0,4342 | 0,0889 | 0,1166 |
+| RGB-D 4-kanal | **0,3501** | 0,6102 | 0,4394 | **0,2001** | **0,1506** |
+
+**delta mAP50 = +0,0252 · CI95 bootstrap berpasangan per-pohon [−0,0215; +0,0632] ·
+P(delta>0) = 0,851 · B=2000**
+
+**Putusan pasangan 1 — H-022 DIPALSUKAN.** Kriteria falsifikasi butir (2) yang
+ditulis sebelum melihat hasil berbunyi "CI 95% bootstrap berpasangan per-pohon
+memuat 0". CI memuat 0, jadi meski titik estimasi +0,0252 melewati ambang
++0,015, buktinya belum dapat dibedakan dari nol. Sebabnya bukan misteri: test
+hanya 72 pohon / 504 kotak, dan resample **per pohon** (yang benar secara
+statistik, karena 4 sisi satu pohon tidak independen) memang melebarkan CI
+dibanding resample per citra yang akan menipu.
+
+**Arah per-kelas konsisten dengan H-022b** — kenaikan terkonsentrasi pada kelas
+yang kegagalannya geometris: B3 +0,1112 dan B4 +0,0340, sementara B1 justru
+TURUN 0,0496. B1 adalah kelas jingga-merah paling kontras, yang memang tidak
+membutuhkan isyarat kedalaman. Tetapi B4 hanya punya 38 kotak di test — tidak
+ada klaim yang boleh disandarkan padanya tanpa CI per-kelas tersendiri.
+
+**Catatan metodologis yang penting untuk pasangan berikutnya:** dengan test
+sekecil ini, CI satu pasangan akan selalu lebar. Bukti yang lebih kuat adalah
+**konsistensi lintas arsitektur** — bila RT-DETR-L dan RF-DETR Nano memberi
+delta positif dengan pola per-kelas yang sama (naik di B3/B4, datar atau turun
+di B1), itu jauh lebih sulit dijelaskan oleh kebetulan daripada satu CI lebar.
+Tiga pasangan + kontrol negatif kanal-derau adalah rancangan yang sedang
+dijalankan.
+
+**Hasil — sembilan run, 60 epoch, seed 42, konfigurasi identik per pasangan**
+
+Angka lewat 1-protokol pycocotools (RF-DETR lewat `eval_rfdetr_e022.py` dari
+`checkpoint_best_ema.pth`; kedua lengannya memakai evaluator yang sama sehingga
+selisihnya bersih). Test = 72 pohon / 288 citra / 504 kotak.
+
+| Kanal ke-4 | YOLO26n (2,57 jt) | RT-DETR-L (33,0 jt) | RF-DETR Nano |
+|---|---|---|---|
+| tidak ada (RGB) | 0,3249 | **0,4070** | 0,4196 |
+| depth sensor terregistrasi | 0,3501 | 0,3882 | **0,4635** |
+| derau acak | 0,3686 | 0,3552 | (val EMA 0,5093) |
+| depth pohon LAIN | 0,3721 | — | — |
+
+Selisih berpasangan, bootstrap 2000x resample per **POHON**:
+
+| Perbandingan | delta mAP50 | CI95 | P(>0) |
+|---|---|---|---|
+| YOLO26n depth − RGB | +0,0252 | [−0,0215; +0,0632] | 0,851 |
+| RF-DETR Nano depth − RGB | +0,0439 | [+0,0000; +0,0918] | 0,975 |
+| RT-DETR-L depth − RGB | −0,0177 | [−0,0669; +0,0203] | 0,225 |
+| **YOLO26n DERAU − RGB** | **+0,0437** | **[+0,0051; +0,0875]** | 0,991 |
+| YOLO26n depth − derau | −0,0186 | [−0,0694; +0,0191] | 0,194 |
+| YOLO26n depth − tukar | −0,0220 | [−0,0506; +0,0085] | 0,080 |
+| RT-DETR-L depth − derau | +0,0365 | [−0,0014; +0,0668] | 0,971 |
+
+**Putusan H-022 — DIPALSUKAN, pada dua kriteria independen:**
+
+- Butir (2): CI berpasangan memuat 0 untuk ketiga arsitektur. Delta terbesar
+  (RF-DETR Nano +0,0439) berbatas bawah tepat +0,0000.
+- Butir (4): **kontrol negatif menyamai.** Kanal ke-4 berisi DERAU memberi
+  +0,0437 dengan CI yang **tidak** memuat nol — satu-satunya delta di seluruh
+  E-022 yang signifikan, dan ia berasal dari kanal tanpa informasi apa pun.
+
+**Kontrol registrasi (baru, tidak ada di rencana awal).** Kanal ke-4 diisi peta
+depth ASLI milik pohon LAIN (`train_depth4ch.py --depth-tukar`): statistik dan
+tekstur depth realistis, hanya keselarasan spasialnya dihancurkan. Hasil pada
+YOLO26n: 0,3721 vs depth benar 0,3501, selisih −0,0220 CI [−0,0506; +0,0085].
+**Tafsir yang benar: keduanya TIDAK DAPAT DIBEDAKAN** (CI memuat nol), dan pada
+B1 depth benar justru signifikan lebih buruk (−0,0662 [−0,1089; −0,0199]).
+Konsekuensinya keras: **reproyeksi penuh yang dibuktikan lebih selaras di E-022a
+tidak membeli apa pun pada model kecil.**
+
+**Putusan H-022b — TIDAK KONKLUSIF, tetapi mekanismenya terlihat pada model
+besar.** Pada YOLO26n, kenaikan B4 direproduksi persis oleh depth-tertukar
+(0,1671 vs 0,1506) sehingga tidak bisa disebut manfaat geometris. Namun pada
+RT-DETR-L, depth mengalahkan kontrol deraunya sendiri secara signifikan justru
+di kelas yang diprediksi teori: **B4 +0,1001 [+0,0062; +0,1618]** dan B1 +0,0698
+[+0,0306; +0,1100]. Jadi kandungan informasi depth NYATA pada model besar,
+tetapi tidak cukup menutup kerugian yang ditimbulkan kanal ke-4 itu sendiri.
+
+**Temuan struktural: arah efek kanal ke-4 ditentukan KAPASITAS MODEL, bukan isi
+kanal.** Pada 2,57 jt parameter kanal ke-4 menaikkan (dan isinya tidak penting —
+derau dan depth-tertukar setara atau lebih baik daripada depth benar); pada
+33,0 jt parameter kanal ke-4 menurunkan (dan isinya penting — depth jauh lebih
+baik daripada derau). Tafsir paling hemat: pada model kecil yang undertrained di
+1.593 kotak latih, kanal ke-4 bekerja sebagai regularisasi; pada model besar
+berbobot pratlatih, ia mengganggu stem 3-kanal dan depth hanya memulihkan
+sebagian kerugian itu.
+
+**Dampak — arah lanjutan yang kini didukung bukti sendiri, bukan kutipan.**
+Kegagalan ada pada **cara memasukkan** depth (konkatenasi di kanal masukan), bukan
+pada kandungan depth-nya. Ini persis yang diprediksi korpus (FuseNet 4-kanal
+31,95 IoU di bawah RGB 32,47 sementara fusi fitur 37,29; sapuan 28 titik fusi
+Ophoff, `evidence-body.tex` §174). **E-023 yang diusulkan: fusi MENENGAH dua
+cabang** pada RT-DETR-L/RF-DETR, karena di situlah depth sudah terbukti membawa
+informasi B4. Kontrol derau dan kontrol tukar wajib diulang di sana.
+
+**Keterbatasan yang tidak boleh dihaluskan:**
+
+- **Satu seed, satu split.** Semua selisih di atas ~0,02–0,04 sementara deviasi
+  antar-run wajar ±0,005 dan CI-nya 0,05–0,09 lebar. Varians split belum diukur;
+  3-fold CV yang direncanakan tidak dijalankan.
+- **B4 hanya 148 kotak di SELURUH dataset** (38 di test). Setiap klaim per-kelas
+  B4 bersandar pada puluhan kotak.
+- **Dataset 8x lebih kecil** dari SawitMVC. Daya uji untuk mendeteksi efek kecil
+  memang rendah; "tidak terbukti" di sini bukan "terbukti tidak ada".
+- RF-DETR RGB-D dan derau: run mati saat menulis checkpoint epoch 60 karena kuota
+  disk habis (`checkpoint_59.ckpt` terpotong tepat 256 MB). 60 epoch latih+val
+  tuntas dan `checkpoint_best_ema.pth` selamat, jadi evaluasi test dijalankan dari
+  checkpoint itu lewat `eval_rfdetr_e022.py` — bukan latih ulang.
+
+**Reproduksi** — `depth_calib.py`, `verify_depth_mi.py` (gerbang registrasi),
+`reproject_depth.py` (PNG kanonik + `depth_meta.json`), `make_splits_depth.py`,
+`train_depth4ch.py` (ultralytics; `--depth-acak`, `--depth-tukar`),
+`train_rfdetr_4ch.py` (rfdetr 4-kanal, 4 tambalan), `eval_e022_pycoco.py`,
+`eval_e022_paired.py`, `eval_rfdetr_e022.py`. Hasil: `results/e022_*.json`.
+Split persis: `splits_depth/seed42/`. Tabel lengkap: [METRICS.md](METRICS.md) §E-022.

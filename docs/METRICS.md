@@ -201,3 +201,79 @@ Tersimpan di `experiments/results/`: `class_mismatch.json` (E-001),
 plafon lokalisasi 0,8834/0,4702), `head_vs_crop.json` & `multiview_val.json`
 (E-016), `metric_variants.json` & `metric_pm1.json` (E-016, varian perumusan),
 `two_stage_val_*.json` (E-017), `raw_map.json` (E-015, peta master 3992/3992).
+
+---
+
+## E-022 — SawitMVC-Depth, depth SENSOR Orbbec, 4-kanal simultan (2026-07-29)
+
+**Dataset LAIN, angka TIDAK sebanding dengan tabel di atas.** SawitMVC-Depth:
+352 pohon, 1.408 citra 1280×800, 2.299 kotak (vs SawitMVC 953 pohon / 3.992 citra
+/ 18.540 kotak). Prior kelas terbalik (B3 52,3%→14,0%; B1 11,0%→36,1%), kotak
+~2× lebih besar relatif, orientasi lanskap bukan potret. Split per pohon
+245/35/72 (train/val/test), irisan nol, terstratifikasi (device × unit-kamera ×
+kelas-dominan). Satu-satunya klaim sah = selisih **di dalam** dataset ini.
+
+Semua model dilatih 60 epoch, seed 42, imgsz/resolusi 640, HSV dimatikan di
+**kedua** lengan (`RandomHSV` melewati citra non-3-kanal secara diam,
+`augment.py:1461`), modality dropout 0. Depth: reproyeksi intrinsik+ekstrinsik
+penuh ke bidang color, z-buffer, Z_NEAR 0,8 / Z_FAR 15,0 m.
+
+### Empat isi kanal ke-4, evaluator ultralytics (satu protokol per baris)
+
+| Kanal ke-4 | YOLO26n (2,57 jt) | RT-DETR-L (33,0 jt) |
+|---|---|---|
+| tidak ada (RGB, 3 kanal) | 0,3219 | **0,4070** |
+| depth sensor, terregistrasi | 0,3492 | 0,3882 |
+| derau acak (kontrol negatif) | 0,3523 | 0,3552 |
+| **depth pohon LAIN (kontrol registrasi)** | **0,3771** | — |
+
+Arah efek kanal ke-4 **berbalik menurut kapasitas model**: menaikkan pada 2,57 jt
+parameter, menurunkan pada 33,0 jt — dan pada YOLO26n isi kanal tidak menentukan
+(derau dan depth-tertukar sama-sama mengalahkan depth yang benar).
+
+### Selisih berpasangan RGB-D − RGB, 1-protokol pycocotools
+
+CI bootstrap 2000×, resample per **POHON** (4 sisi satu pohon tidak independen;
+resample per citra membuat CI terlalu sempit).
+
+| Model | RGB | RGB-D | delta | CI95 | P(>0) |
+|---|---|---|---|---|---|
+| YOLO26n | 0,3249 | 0,3501 | +0,0252 | [−0,0215; +0,0632] | 0,851 |
+| RF-DETR Nano | 0,4196 | 0,4635 | +0,0439 | [+0,0000; +0,0918] | 0,975 |
+| RT-DETR-L | 0,4070 | 0,3882 | −0,0177 | [−0,0669; +0,0203] | 0,185 |
+| YOLO26n **derau** | 0,3249 | 0,3686 | **+0,0437** | **[+0,0051; +0,0875]** | 0,991 |
+
+Satu-satunya selisih yang CI-nya **tidak** memuat nol adalah lengan **derau** —
+bukan lengan depth.
+
+### Per-kelas AP50, YOLO26n (1-protokol pycocotools)
+
+| Kanal ke-4 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|
+| RGB | 0,6598 | 0,4342 | 0,0889 | 0,1166 |
+| depth | 0,6102 | 0,4394 | 0,2001 | 0,1506 |
+| derau | 0,6836 | 0,4300 | 0,2215 | 0,1393 |
+
+CI berpasangan depth − RGB: B1 **−0,0495 [−0,0905; −0,0071]** dan
+B3 **+0,1111 [+0,0252; +0,1872]** keduanya tidak memuat nol, arah berlawanan,
+sehingga efek total tenggelam. CI depth − derau: mAP50 −0,0186 [−0,0696; +0,0196]
+(nol), tetapi B1 **−0,0734 [−0,1156; −0,0297]** — depth signifikan LEBIH BURUK
+daripada derau pada kelas paling matang.
+
+### Registrasi depth (E-022a) — mutual information, 150 citra
+
+| Pemetaan | MI (bit) |
+|---|---|
+| H1 resize langsung | 0,2546 |
+| H2 affine-intrinsik | 0,2591 |
+| **H3 reproyeksi penuh** | **0,2852** |
+| H3 digeser +24 px (kontrol) | 0,2385 |
+| H3 digeser −24 px (kontrol) | 0,2320 |
+
+H3 − H1 = **+0,0306 bit, CI95 [+0,0260; +0,0354]**, H3 menang 84% dari 150 citra.
+Sidecar `alignedTo: "color"` **menyesatkan** — buffer masih di grid kamera depth.
+
+**Sumber angka:** `results/e022_mi.json`, `e022_pycoco_yolo26n.json`,
+`e022_paired_yolo26n.json`, `e022_paired_rtdetrl.json`,
+`e022_paired_rfdetrnano.json`, `e022_paired_derau.json`,
+`e022_paired_yolo26n_depth_vs_derau.json`, `runs_e022/*/hasil.json`.

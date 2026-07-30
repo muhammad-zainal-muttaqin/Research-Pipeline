@@ -1,12 +1,16 @@
 # STATUS — titik berhenti & cara melanjutkan
 
-**Terakhir diperbarui:** 2026-07-24 · **Status:** aktif — RF-DETR-L (E-021) jadi detektor terbaik baru; YOLO26l @1280 (baseline param-adil) sedang berjalan.
+**Terakhir diperbarui:** 2026-07-30 · **Status:** aktif — **dataset baru
+`SawitMVC-Depth` (depth SENSOR Orbbec) sudah diuji: E-022 / [SR-014](SR/SR-014-depth-sensor-4kanal.md).**
+Fusi 4-kanal awal **DIPALSUKAN**, tetapi kandungan informasi depth terkonfirmasi
+pada model besar (B4 +0,1001 vs kontrol derau). Detektor terbaik di SawitMVC lama
+tetap RF-DETR-L (E-021, test mAP50 0,6038).
 
 Metrik lengkap semua run (per-kelas B1–B4, val+test) di [`METRICS.md`](METRICS.md).
 
 Dokumen ini adalah **titik masuk tunggal** saat pekerjaan dilanjutkan. Baca ini
 dulu, lalu `docs/SR/README.md` (cerita per-ide) dan `docs/EKSPERIMEN.md` (log
-kronologis E-001…E-020).
+kronologis E-001…E-022).
 
 ---
 
@@ -59,6 +63,9 @@ baca sebelum menjalankan ulang RF-DETR/RT-DETR/YOLO26.
 | **Depth pseudo** tidak memisahkan tandan | fusi RGB-D early tak membantu (depth SENSOR belum diuji) | SR-005, E-014 |
 | **Detektor dua tahap** lebih buruk dari satu tahap | head YOLO sudah kalibrasi bersama + konteks | SR-012 |
 | **NMS sebagian dari plafon** — RT-DETR-L +0,063 mAP50 test | ganti detektor ke NMS-free = jalur produktif | **SR-013** |
+| **Depth SENSOR 4-kanal awal tidak menaikkan mAP** — kanal berisi DERAU justru satu-satunya delta signifikan (+0,0437) | fusi awal ditutup; arah = fusi menengah | **SR-014**, E-022 |
+| **Arah efek kanal ke-4 ditentukan kapasitas model** — menaikkan di 2,6 jt param, menurunkan di 33 jt | jangan menyimpulkan dari model kecil saja | E-022 |
+| **Sidecar depth `alignedTo: "color"` MENYESATKAN** (Orbbec) | wajib reproyeksi intrinsik+ekstrinsik, bukan resize | E-022a |
 | SR-011 "plafon kematangan 68%" **DITARIK** (bukti cacat) | jangan kutip sebagai plafon | E-018 |
 | Plafon **geometris** anotasi = mAP50 0,8834 / mAP50-95 0,4702 | **sasaran ADA di dalam batas fisik** | E-018 |
 
@@ -76,11 +83,27 @@ Dipalsukan / ditutup: SR-001, SR-005, SR-006, SR-012 (dipalsukan); SR-011
   YOLO yang menunjuk ke piksel master penuh (dari peta isi E-015, 3.992/3.992).
   Belum dipakai melatih apa pun. Ini kunci jalur lanjutan #1 di bawah.
 - **RT-DETR-L best.pt** — model terbaik (lihat §1).
-- **`experiments/`** — arsip 35 skrip + 29 JSON hasil + split, seluruh E-001…E-020.
+- **`experiments/`** — arsip skrip + JSON hasil + split, seluruh E-001…E-022.
+- **Jalur 4-kanal untuk TIGA kerangka** (E-022): ultralytics YOLO & RT-DETR lewat
+  `pipeline/fourch.py` + `experiments/train_depth4ch.py`, dan **rfdetr** lewat
+  `experiments/train_rfdetr_4ch.py` (4 tambalan, tanpa fork paket). Termasuk dua
+  kontrol negatif siap pakai: `--depth-acak` (derau) dan `--depth-tukar` (registrasi).
+- **`experiments/reproject_depth.py`** — konverter depth Orbbec → PNG kanonik
+  sejajar RGB (reproyeksi intrinsik+ekstrinsik, z-buffer). Menggantikan
+  `pipeline/prepare_depth.py` untuk data sensor.
 
 ---
 
 ## 4. Jalur lanjutan yang belum tersentuh (prioritas turun)
+
+> **Prioritas baru per 2026-07-30 (dari E-022):** **E-023 — fusi MENENGAH dua
+> cabang RGB+D** pada RT-DETR-L atau RF-DETR. Alasannya bukan kutipan literatur
+> lagi: pada RT-DETR-L, depth mengalahkan kontrol deraunya sendiri secara
+> signifikan di B4 (+0,1001 CI [+0,0062; +0,1618]), jadi informasinya terbukti ada
+> — yang gagal adalah salurannya (konkatenasi di kanal masukan merusak stem
+> pratlatih 3-kanal). Kontrol derau **dan** kontrol depth-tertukar wajib diulang di
+> E-023; tanpa keduanya kenaikan apa pun tidak dapat dibedakan dari efek kapasitas.
+
 
 Semua GPU-bound, dijeda karena berhenti di sini. Perintah siap jalan.
 
@@ -113,8 +136,16 @@ Semua GPU-bound, dijeda karena berhenti di sini. Perintah siap jalan.
 - **Brondolan lepas** sebagai penanda kematangan. Kriteria panen lapangan
   sesungguhnya, tidak terlihat dari kanopi pada jarak foto ini. Mengubah
   **perumusan tugas**, bukan tuning. Belum disentuh; perlu persetujuan.
-- **Depth sensor Gemini** — `pipeline/` menunggu data fisik. Depth SENSOR
-  (metrik, pengukuran independen) belum pernah diuji; hanya pseudo-depth (E-006).
+- ~~**Depth sensor Gemini** — `pipeline/` menunggu data fisik.~~ **SUDAH DIUJI
+  (2026-07-29, E-022/SR-014)** pada dataset `ULM-DS-Lab/SawitMVC-Depth` (352 pohon,
+  1.408 citra RGB-D, sensor Orbbec). Lubang §5 ini tertutup. Yang perlu keputusan
+  sekarang: apakah melanjutkan ke **E-023 fusi menengah** (didukung bukti sendiri —
+  lihat SR-014 §6) atau menambah data B4 lebih dulu.
+- **`pipeline/prepare_depth.py` tidak boleh dipakai untuk data Orbbec.** Ia
+  berasumsi depth sudah tersejajar ke RGB; untuk dataset ini asumsi itu SALAH dan
+  menghasilkan kanal ke-4 yang meleset median 29 px. Pakai
+  `experiments/reproject_depth.py`. Rentang metrik `fourch.Z_NEAR/Z_FAR` (0,3–8,0 m)
+  juga tidak cocok untuk sensor ini — untuk SawitMVC-Depth dipakai 0,8/15,0 m.
 
 ---
 

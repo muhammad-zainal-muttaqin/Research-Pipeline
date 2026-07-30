@@ -34,6 +34,7 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-011](SR-011-plafon-kematangan.md) | Plafon kematangan ~68% | E-016 | **DITARIK** (bukti cacat, lihat E-018) |
 | [SR-012](SR-012-dua-tahap.md) | Detektor dua tahap (deteksi agnostik + kepala kematangan) | E-017 | **DIPALSUKAN** |
 | [SR-013](SR-013-rtdetr-nms-free.md) | RT-DETR-L (NMS-free): detektor 4-kelas terbaik | E-020 | **DIKONFIRMASI** (arah; target belum) |
+| [SR-014](SR-014-depth-sensor-4kanal.md) | Depth SENSOR 4-kanal simultan (dataset SawitMVC-Depth) | E-022 | **DIPALSUKAN** (fusi awal) / mekanisme depth **TERKONFIRMASI** di model besar |
 
 ## Apa yang sudah kita pelajari — cerita singkatnya
 
