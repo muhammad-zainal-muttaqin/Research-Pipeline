@@ -1,0 +1,298 @@
+# METRICS — tabel metrik definitif semua run detektor
+
+Rekam lengkap metrik **setiap** run detektor: mAP50, mAP50-95, dan **per-kelas
+AP50 B1–B4**, pada val dan test. Semua angka COCO/ultralytics apa adanya. Dibuat
+sebelum workspace kerja di-terminate agar tidak ada metrik yang perlu dihitung
+ulang.
+
+**Sumber angka** (JSON di `experiments/results/`, kurva per-epoch di
+`experiments/runs/<run>/results.csv`):
+`experiments/results/lintas-eksperimen/baseline_test.json`, `experiments/results/lintas-eksperimen/eval_missing.json`, `experiments/results/E-020/rtdetr_eval.json`, `experiments/results/E-014/diag_bottleneck.json`,
+`experiments/results/E-021/perkelas_fair.json` (per-kelas AP50+AP50-95 semua model), dan
+`experiments/runs/rfdetr_l_e60_i1280/evaluation.json` + `metrics.csv` (RF-DETR, E-021).
+
+Split per pohon 716/96/141, irisan nol. B1=matang … B4=mentah.
+
+---
+
+## Val (dasar pemilihan konfigurasi)
+
+| Run | Ide/E | imgsz | mAP50 | mAP50-95 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|---|---|
+| yolo26m baseline | acuan | 640 | 0,5218 | 0,2407 | 0,7354 | 0,4076 | 0,5561 | 0,3881 |
+| RGBD 4-kanal | I-4 | 640 | 0,5041 | 0,2378 | 0,7160 | 0,3821 | 0,5336 | 0,3847 |
+| 4-kelas aman-warna | E-019 | 1280 | 0,5186 | 0,2358 | 0,7011 | 0,4130 | 0,5682 | 0,3922 |
+| YOLO26l (param-adil) | E-021 | 1280 | 0,5300 | 0,2516 | 0,7431 | 0,4358 | 0,5586 | 0,3825 |
+| RT-DETR-L | I-14 | 1280 | 0,5466 | 0,2543 | 0,7503 | 0,4413 | 0,5808 | 0,4138 |
+| **RF-DETR-L** | **E-021** | 1280 | **0,5695** | **0,2604** | 0,775 | 0,446 | 0,594 | **0,464** |
+
+## Test (dilaporkan; tidak dipakai memilih)
+
+| Run | Ide/E | imgsz | mAP50 | mAP50-95 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|---|---|
+| DiB publikasi | acuan | 640 | 0,531 | — | 0,739 | 0,433 | 0,599 | 0,354 |
+| yolo26m baseline (kami) | acuan | 640 | 0,5161 | 0,2457 | 0,7410 | 0,4016 | 0,5894 | 0,3323 |
+| RGBD 4-kanal | I-4 | 640 | 0,5192 | 0,2471 | 0,7509 | 0,4115 | 0,5859 | 0,3283 |
+| 4-kelas aman-warna | E-019 | 1280 | 0,5418 | 0,2493 | 0,7546 | 0,4503 | 0,6037 | 0,3585 |
+| YOLO26l (param-adil) | E-021 | 1280 | 0,5313 | 0,2553 | 0,7597 | 0,4223 | 0,5900 | 0,3534 |
+| RT-DETR-L | I-14 | 1280 | 0,5794 | 0,2694 | 0,7891 | 0,4685 | 0,6391 | 0,4208 |
+| **RF-DETR-L** | **E-021** | 1280 | **0,6038** | **0,2770** | 0,817 | 0,497 | 0,668 | 0,433 |
+
+## Tabel 1-protokol (pycocotools) — perbandingan adil E-021
+
+Keempat model dievaluasi lewat **pipeline pycocotools identik** (predict threshold
+rendah → COCOeval, GT sama) sehingga **caveat evaluator campur TERSELESAIKAN**.
+Sumber: `experiments/results/E-021/perkelas_pycoco.json` (skrip `experiments/eval/eval_all_pycoco.py`).
+Diurutkan menurut parameter. Ranking monotonik di kedua metrik & kedua split.
+
+**VAL** (mAP50 / mAP50-95 · per-kelas AP50 B1/B2/B3/B4):
+
+| Model | Param | imgsz | mAP50 | mAP50-95 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|---|---|
+| YOLO26m | 21,9 jt | 640 | 0,5195 | 0,2411 | 0,738 | 0,404 | 0,549 | 0,387 |
+| YOLO26l | 26,3 jt | 1280 | 0,5270 | 0,2526 | 0,739 | 0,435 | 0,554 | 0,380 |
+| RT-DETR-L | 33,0 jt | 1280 | 0,5459 | 0,2555 | 0,748 | 0,442 | 0,579 | 0,415 |
+| **RF-DETR-L** | 35,7 jt | 1280 | **0,5695** | **0,2604** | 0,775 | 0,446 | 0,594 | **0,464** |
+
+**TEST** (dilaporkan; tidak dipakai memilih):
+
+| Model | Param | imgsz | mAP50 | mAP50-95 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|---|---|
+| YOLO26m | 21,9 jt | 640 | 0,5165 | 0,2452 | 0,733 | 0,406 | 0,592 | 0,336 |
+| YOLO26l | 26,3 jt | 1280 | 0,5300 | 0,2568 | 0,756 | 0,421 | 0,590 | 0,353 |
+| RT-DETR-L | 33,0 jt | 1280 | 0,5784 | 0,2707 | 0,786 | 0,469 | 0,637 | 0,421 |
+| **RF-DETR-L** | 35,7 jt | 1280 | **0,6038** | **0,2770** | 0,817 | 0,497 | 0,668 | 0,433 |
+
+**Bacaan:** urutan performa = urutan parameter (YOLO26m < YOLO26l < RT-DETR-L <
+RF-DETR-L) pada semua metrik. YOLO26l — baseline YOLO **param-adil sekelas DETR**
+(26,3 jt, config identik RT-DETR) — tetap **di bawah kedua DETR**, jadi keunggulan
+RF-DETR/RT-DETR **bukan** sekadar efek kapasitas/resolusi. RF-DETR-L unggul di
+keempat kelas kedua split; test mAP50 0,6038 melewati sasaran 0,60.
+
+## Metrik LENGKAP 4 model (1-protokol) — `experiments/results/E-021/metrics_full.json`
+
+Dump metrik penuh via `experiments/eval/eval_all_metrics.py` (pipeline pycocotools + matching IoU0.5
+untuk P/R/F1). File JSON berisi, per model × val/test: **12 statistik COCO**
+(AP@[.5:.95], AP50, AP75, AP S/M/L, AR@1/10/100, AR S/M/L), **per-kelas** AP50 +
+AP50-95 + AR, dan **precision/recall/F1** (per-kelas, **macro**, **micro**) pada
+ambang best-F1. Ringkasan metrik tambahan (di luar AP50/AP50-95 yang sudah di atas):
+
+**VAL** (AP75 · AR100 · micro-F1 · macro-F1 · micro-P · micro-R):
+
+| Model | AP75 | AR100 | micro-F1 | macro-F1 | micro-P | micro-R |
+|---|---|---|---|---|---|---|
+| YOLO26m | 0,1951 | 0,5386 | 0,5416 | 0,5394 | 0,5251 | 0,5591 |
+| YOLO26l | 0,2129 | 0,5557 | 0,5452 | 0,5447 | 0,5004 | 0,5988 |
+| RT-DETR-L | 0,2100 | 0,5225 | 0,5789 | 0,5840 | 0,5540 | 0,6063 |
+| **RF-DETR-L** | 0,1971 | 0,5348 | **0,5841** | **0,5880** | 0,5604 | 0,6100 |
+
+**TEST**:
+
+| Model | AP75 | AR100 | micro-F1 | macro-F1 | micro-P | micro-R |
+|---|---|---|---|---|---|---|
+| YOLO26m | 0,2022 | 0,5578 | 0,5431 | 0,5314 | 0,5355 | 0,5509 |
+| YOLO26l | 0,2175 | 0,5557 | 0,5449 | 0,5475 | 0,5394 | 0,5505 |
+| RT-DETR-L | 0,2214 | 0,5300 | 0,5960 | 0,5911 | 0,5547 | 0,6440 |
+| **RF-DETR-L** | 0,2160 | 0,5353 | **0,6189** | **0,6086** | 0,5903 | 0,6505 |
+
+**Bacaan:** F1 (micro & macro) mengikuti urutan mAP — RF-DETR-L tertinggi di kedua
+split. RF-DETR unggul terutama pada **recall** (micro-R test 0,6505 vs RT-DETR
+0,6440), konsisten dengan hipotesis NMS-free (lebih sedikit kotak benar tertekan).
+Per-kelas P/R/F1 (mis. TEST RF-DETR B4: P 0,471 / R 0,523 / F1 0,496 — kelas
+tersulit) ada di `experiments/results/E-021/metrics_full.json`. **Catatan:** "accuracy" & "micro/macro" hanya
+berlaku untuk P/R/F1; deteksi tak punya akurasi klasifikasi (tanpa true-negative).
+mAP sendiri = macro-AP (rata-rata per-kelas).
+
+## Analisis tambahan E-021 — efisiensi · signifikansi · confusion
+
+Skrip: `experiments/eval/eval_efficiency.py`, `experiments/eval/eval_extras.py`. Figur di `experiments/figures/`.
+
+### Efisiensi (deployment) — `experiments/results/E-021/efficiency.json`
+
+Latensi diukur langsung di **NVIDIA L4** (10 warmup + 50 ukur, 1 citra, resolusi
+latihan). GFLOPs RF-DETR = n/a (forward butuh NestedTensor; param & latensi terukur).
+
+| Model | Param | GFLOPs | Bobot | Latensi L4 | FPS L4 |
+|---|---|---|---|---|---|
+| YOLO26m | 21,8 jt | 74,7 | 44 MB | 24,8 ms | **40,3** |
+| YOLO26l | 26,2 jt | 372,6 | 53 MB | 43,4 ms | 23,0 |
+| RT-DETR-L | 32,8 jt | 421,7 | 264 MB | 74,2 ms | 13,5 |
+| **RF-DETR-L** | 35,3 jt | n/a | 142 MB | **118,1 ms** | **8,5** |
+
+**Tradeoff:** RF-DETR paling akurat tapi **paling lambat** (~1,6× RT-DETR, ~4,8×
+YOLO26m). Untuk lapangan real-time perlu pertimbangan; RF-DETR bisa dioptimalkan
+FP16 (`optimize_for_inference`) — belum diukur.
+
+### Signifikansi statistik — `experiments/results/E-021/bootstrap_ci.json`
+
+Bootstrap 2000× resample gambar test (588), metrik mAP50, seed 42. mAP50 titik
+dari matching IoU0.5 divalidasi cocok pycocotools.
+
+| Model | mAP50 | 95% CI |
+|---|---|---|
+| YOLO26m | 0,519 | [0,495 – 0,543] |
+| YOLO26l | 0,532 | [0,508 – 0,555] |
+| RT-DETR-L | 0,581 | [0,554 – 0,605] |
+| **RF-DETR-L** | 0,606 | [0,581 – 0,632] |
+
+**Selisih berpasangan RF-DETR − RT-DETR = +0,0255, 95% CI [0,0104 – 0,0408],
+P(RF>RT) = 0,999.** CI selisih **tidak memuat nol** → keunggulan RF-DETR atas
+RT-DETR **signifikan** secara statistik (RF menang di 99,9% resample). (CI marginal
+kedua model beririsan, tapi uji berpasangan — gambar sama tiap resample — yang
+tepat, dan hasilnya signifikan.)
+
+### Confusion matrix (TEST, IoU0.5, conf≥0.25) — `experiments/results/E-021/confusion.json`, `figures/confusion_*.png`
+
+Mendukung diagnosis SR-007/SR-009 secara kuantitatif:
+
+- **Ambiguitas kematangan B2↔B3** kuat di semua model — mis. RF-DETR: 184 B2→B3,
+  60 B3→B2; RT-DETR 182/74. Ini pasangan kelas paling sering tertukar (bukan B1/B4).
+- **B4 terlewat (jadi latar):** YOLO26m **245**, YOLO26l **276**, RT-DETR **91**,
+  RF-DETR **108**. **DETR menyelamatkan B4 ~2,5× lebih baik** dari YOLO — konsisten
+  hipotesis NMS-free mengangkat kelas tersamar/bertumpuk (SR-013/E-020/E-021).
+- Caveat: pada conf 0.25, DETR menghasilkan banyak FP latar (kalibrasi confidence
+  DETR beda; ambang operasional lapangan biasanya lebih tinggi).
+
+### Kurva PR & F1-confidence — `experiments/figures/pr_micro_test.png`, `experiments/figures/f1_conf_test.png`, `experiments/results/E-021/pr_curves.json`
+
+Kurva PR micro & F1-vs-confidence (TEST) keempat model tersusun rapi sesuai
+ranking; RF-DETR mendominasi. Best-F1 micro (test): RF-DETR 0,619, RT-DETR 0,596,
+YOLO26l 0,545, YOLO26m 0,543.
+
+## Deteksi kelas-agnostik (tanpa penilaian kematangan)
+
+| Run | Ide/E | imgsz | split | mAP50 | mAP50-95 |
+|---|---|---|---|---|---|
+| baseline dievaluasi agnostik | E-014 | 640 | val | 0,7191 | 0,3197 |
+| **detektor khusus agnostik** | I-23 | 960 | val | **0,7730** | **0,3320** |
+
+Angka agnostik tak punya per-kelas (satu kelas "tandan" menurut definisi).
+mAP50-95 agnostik 0,3320 **melewati** sasaran 0,30 — deteksi bukan hambatannya.
+
+---
+
+## Catatan penting per run
+
+- **RGBD (I-4)** dihentikan pada epoch 25/60 (kurva datar, tak ada sinyal di
+  atas baseline). Pakai pseudo-depth DA3, bukan depth sensor. Depth sensor
+  metrik belum pernah diuji (lihat `pipeline/`).
+- **4-kelas aman-warna (E-019)** dihentikan ep41; menempel baseline karena
+  fine-tune dari checkpoint 640 mengganggu model. Bukan bukti augmentasi/resolusi
+  gagal — strategi inisialisasinya yang salah.
+- **RT-DETR-L** `best.pt` = epoch fitness-terbaik (ep25); dihentikan ep52.
+  Unggul keempat kelas kedua split; lihat [SR-013](SR/SR-013-rtdetr-nms-free.md).
+- **RF-DETR-L (E-021)** — **detektor 4-kelas terbaik saat ini**, melampaui
+  RT-DETR-L di val (+0,023 mAP50 / +0,006 mAP50-95) dan test (+0,024 / +0,008);
+  test mAP50 0,604 melewati sasaran 0,60. Checkpoint ep9 (EMA), early-stop ep17.
+  **Catatan evaluator:** angka RF-DETR di atas dari COCO eval independen
+  (`experiments/eval/eval_rfdetr_perkelas.py`, pycocotools) — val-nya (0,5695) cocok dengan
+  evaluator internal rf-detr (0,5699); model lain via ultralytics `.val()`.
+  Perbedaan protokol <0,005 — **kini TERSELESAIKAN** oleh tabel 1-protokol
+  pycocotools di atas. **Kesetaraan parameter:** baseline YOLO adil **YOLO26l
+  26,3 jt @1280** (E-021) sudah dilatih & dievaluasi; tetap di bawah kedua DETR.
+- **Kurva per-epoch penuh** (P/R/mAP50/mAP50-95 tiap epoch) ada di
+  `experiments/runs/<run>/results.csv` untuk kelima run. Log konsol bersih di
+  `experiments/logs/`.
+
+## Diagnostik (bukan hasil model — jangan dikutip sebagai capaian mAP)
+
+Tersimpan di `experiments/results/`: `experiments/results/E-001/class_mismatch.json` (E-001),
+`experiments/results/E-014/diag_bottleneck.json` (E-014, agnostik vs 4-kelas), `experiments/results/E-018/loc_ceiling.json` (E-018,
+plafon lokalisasi 0,8834/0,4702), `experiments/results/E-016/head_vs_crop.json` & `experiments/results/E-016/multiview_val.json`
+(E-016), `experiments/results/E-016/metric_variants.json` & `experiments/results/E-016/metric_pm1.json` (E-016, varian perumusan),
+`two_stage_val_*.json` (E-017), `experiments/results/E-015/raw_map.json` (E-015, peta master 3992/3992).
+
+---
+
+## E-022 — SawitMVC-Depth, depth SENSOR Orbbec, 4-kanal simultan (2026-07-29)
+
+**Dataset LAIN, angka TIDAK sebanding dengan tabel di atas.** SawitMVC-Depth:
+352 pohon, 1.408 citra 1280×800, 2.299 kotak (vs SawitMVC 953 pohon / 3.992 citra
+/ 18.540 kotak). Prior kelas terbalik (B3 52,3%→14,0%; B1 11,0%→36,1%), kotak
+~2× lebih besar relatif, orientasi lanskap bukan potret. Split per pohon
+245/35/72 (train/val/test), irisan nol, terstratifikasi (device × unit-kamera ×
+kelas-dominan). Satu-satunya klaim sah = selisih **di dalam** dataset ini.
+
+Semua model dilatih 60 epoch, seed 42, imgsz/resolusi 640, HSV dimatikan di
+**kedua** lengan (`RandomHSV` melewati citra non-3-kanal secara diam,
+`augment.py:1461`), modality dropout 0. Depth: reproyeksi intrinsik+ekstrinsik
+penuh ke bidang color, z-buffer, Z_NEAR 0,8 / Z_FAR 15,0 m.
+
+### Empat isi kanal ke-4, evaluator ultralytics (satu protokol per baris)
+
+| Kanal ke-4 | YOLO26n (2,57 jt) | RT-DETR-L (33,0 jt) |
+|---|---|---|
+| tidak ada (RGB, 3 kanal) | 0,3219 | **0,4070** |
+| depth sensor, terregistrasi | 0,3492 | 0,3882 |
+| derau acak (kontrol negatif) | 0,3523 | 0,3552 |
+| **depth pohon LAIN (kontrol registrasi)** | **0,3771** | — |
+
+Arah efek kanal ke-4 **berbalik menurut kapasitas model**: menaikkan pada 2,57 jt
+parameter, menurunkan pada 33,0 jt — dan pada YOLO26n isi kanal tidak menentukan
+(derau dan depth-tertukar sama-sama mengalahkan depth yang benar).
+
+### Selisih berpasangan RGB-D − RGB, 1-protokol pycocotools
+
+CI bootstrap 2000×, resample per **POHON** (4 sisi satu pohon tidak independen;
+resample per citra membuat CI terlalu sempit).
+
+| Model | RGB | RGB-D | delta | CI95 | P(>0) |
+|---|---|---|---|---|---|
+| YOLO26n | 0,3249 | 0,3501 | +0,0252 | [−0,0215; +0,0632] | 0,851 |
+| RF-DETR Nano | 0,4196 | 0,4635 | +0,0439 | [+0,0000; +0,0918] | 0,975 |
+| RT-DETR-L | 0,4070 | 0,3882 | −0,0177 | [−0,0669; +0,0203] | 0,185 |
+| YOLO26n **derau** | 0,3249 | 0,3686 | **+0,0437** | **[+0,0051; +0,0875]** | 0,991 |
+
+Uji yang mengisolasi **kandungan informasi** depth (kedua lengan 4-kanal, jumlah
+parameter dan perlakuan augmentasi identik; hanya isi kanal ke-4 berbeda):
+
+| Model | derau | depth | delta | CI95 | P(>0) |
+|---|---|---|---|---|---|
+| YOLO26n (2,57 jt) | 0,3686 | 0,3501 | −0,0186 | [−0,0694; +0,0191] | 0,194 |
+| RF-DETR Nano (kecil) | 0,4547 | 0,4635 | +0,0087 | [−0,0372; +0,0538] | 0,649 |
+| **RT-DETR-L (33,0 jt)** | 0,3535 | 0,3900 | **+0,0365** | [−0,0014; +0,0668] | 0,971 |
+
+Per kelas, depth − derau: pada kedua model KECIL depth signifikan **lebih buruk**
+di B1 (YOLO26n −0,0734 [−0,1156; −0,0297]; RF-DETR Nano −0,0446 [−0,0876;
+−0,0008]); pada RT-DETR-L depth signifikan **lebih baik** di B1 +0,0698 [+0,0306;
++0,1100] **dan B4 +0,1001 [+0,0062; +0,1618]**. Kandungan informasi depth baru
+terpakai pada kapasitas tinggi.
+
+Kontrol registrasi (YOLO26n, depth benar − depth pohon lain): −0,0220
+[−0,0506; +0,0085] — **tidak dapat dibedakan**; B1 −0,0662 [−0,1089; −0,0199].
+
+Satu-satunya selisih yang CI-nya **tidak** memuat nol adalah lengan **derau** —
+bukan lengan depth.
+
+### Per-kelas AP50, YOLO26n (1-protokol pycocotools)
+
+| Kanal ke-4 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|
+| RGB | 0,6598 | 0,4342 | 0,0889 | 0,1166 |
+| depth | 0,6102 | 0,4394 | 0,2001 | 0,1506 |
+| derau | 0,6836 | 0,4300 | 0,2215 | 0,1393 |
+
+CI berpasangan depth − RGB: B1 **−0,0495 [−0,0905; −0,0071]** dan
+B3 **+0,1111 [+0,0252; +0,1872]** keduanya tidak memuat nol, arah berlawanan,
+sehingga efek total tenggelam. CI depth − derau: mAP50 −0,0186 [−0,0696; +0,0196]
+(nol), tetapi B1 **−0,0734 [−0,1156; −0,0297]** — depth signifikan LEBIH BURUK
+daripada derau pada kelas paling matang.
+
+### Registrasi depth (E-022a) — mutual information, 150 citra
+
+| Pemetaan | MI (bit) |
+|---|---|
+| H1 resize langsung | 0,2546 |
+| H2 affine-intrinsik | 0,2591 |
+| **H3 reproyeksi penuh** | **0,2852** |
+| H3 digeser +24 px (kontrol) | 0,2385 |
+| H3 digeser −24 px (kontrol) | 0,2320 |
+
+H3 − H1 = **+0,0306 bit, CI95 [+0,0260; +0,0354]**, H3 menang 84% dari 150 citra.
+Sidecar `alignedTo: "color"` **menyesatkan** — buffer masih di grid kamera depth.
+
+**Sumber angka:** seluruhnya di `experiments/results/E-022/` — `mi.json`,
+`pycoco_yolo26n.json`, `paired_yolo26n.json`, `paired_rtdetrl.json`,
+`paired_rfdetrnano.json`, `paired_derau.json`, `paired_*_depth_vs_derau.json`,
+`paired_yolo26n_depth_vs_tukar.json`, `depth_meta.json`. Indeks:
+[`../../experiments/results/README.md`](../../experiments/results/README.md).

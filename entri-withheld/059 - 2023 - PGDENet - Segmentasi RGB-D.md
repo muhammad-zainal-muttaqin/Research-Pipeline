@@ -111,10 +111,10 @@ Keterbatasannya, sebagian berupa analisis penulis bab. Dari sisi rekayasa, 100,7
 
 PGDENet meneruskan garis fusi dua cabang yang dibuka FuseNet (bab 051), yang menggabungkan fitur RGB dan kedalaman secara langsung. Gagasan menyaring informasi antarmodalitas sebelum fusi telah muncul pada SA-Gate (bab 055) lewat mekanisme gerbang; PGDENet mengalihkan penyaringan itu satu langkah lebih awal, ke perbaikan fitur kedalaman itu sendiri. Dibandingkan ESANet (bab 056) yang mengutamakan efisiensi, PGDENet memilih akurasi dengan biaya komputasi lebih besar. Pada tahun yang sama, CMX (bab 058) menempuh jalur berbeda dengan fusi berbasis *transformer* dan melampaui akurasi PGDENet pada kedua dataset.
 
-- [051 - 2016 - FuseNet - Segmentasi RGB-D](./051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md)
-- [055 - 2020 - SA-Gate - Segmentasi RGB-D](./055%20-%202020%20-%20SA-Gate%20-%20Segmentasi%20RGB-D.md)
-- [056 - 2021 - ESANet - Segmentasi RGB-D](./056%20-%202021%20-%20ESANet%20-%20Segmentasi%20RGB-D.md)
-- [058 - 2023 - CMX - Segmentasi RGB-D](./058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md)
+- [051 - 2016 - FuseNet - Segmentasi RGB-D](../entri/051%20-%202016%20-%20FuseNet%20-%20Segmentasi%20RGB-D.md)
+- [055 - 2020 - SA-Gate - Segmentasi RGB-D](../entri/055%20-%202020%20-%20SA-Gate%20-%20Segmentasi%20RGB-D.md)
+- [056 - 2021 - ESANet - Segmentasi RGB-D](../entri/056%20-%202021%20-%20ESANet%20-%20Segmentasi%20RGB-D.md)
+- [058 - 2023 - CMX - Segmentasi RGB-D](../entri/058%20-%202023%20-%20CMX%20-%20Segmentasi%20RGB-D.md)
 
 ## Poin untuk Sitasi
 

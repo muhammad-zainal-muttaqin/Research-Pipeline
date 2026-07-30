@@ -63,8 +63,8 @@ const SPECIAL_DOCS = [
     marker: '¶',
     title: 'Laporan Eksperimen: Deteksi & Penghitungan Tandan Sawit',
     theme: 'Eksperimen',
-    file: 'docs/LAPORAN-EKSPERIMEN.md',
-    sourceDir: 'docs',
+    file: 'docs/eksperimen/LAPORAN-EKSPERIMEN.md',
+    sourceDir: 'docs/eksperimen',
     desc: 'Cuplikan terkurasi eksperimen deteksi dan penghitungan tandan sawit.'
   }
 ];
@@ -75,7 +75,8 @@ const SPECIAL_DOCS = [
  * Pengecualian: `entri/`, sebab tautan ke entri korpus ditangani runtime
  * (`enhance()`) dan diubah menjadi rute internal `#/NNN`. */
 const PAGES_EXCLUDED = [
-  'docs/extracted/', 'docs/archive/', 'tools/', 'experiments/', 'PDF/', 'tmp/'
+  'docs/extracted/', 'docs/archive/', 'docs/search/raw/', 'tools/',
+  'experiments/', 'PDF/', 'tmp/'
 ];
 const ENTRY_LINK_RE = /(?:^|\/)\d{3}\s-\s.*\.md$/i;
 
@@ -167,9 +168,10 @@ function countWords(md) {
  * Penulisan ulang tautan relatif dokumen spesial
  * ------------------------------------------------------------------ *
  * Isi dokumen disematkan ke `index.html` yang berada di akar repo, jadi
- * tautan relatif yang ditulis dari sudut pandang `docs/` harus digeser
- * ke akar: `EKSPERIMEN.md` menjadi `docs/EKSPERIMEN.md`, sedangkan
- * `../pipeline/README.md` menjadi `pipeline/README.md`.
+ * tautan relatif yang ditulis dari sudut pandang `sourceDir` harus digeser
+ * ke akar. Untuk `sourceDir = 'docs/eksperimen'`: `METRICS.md` menjadi
+ * `docs/eksperimen/METRICS.md`, dan `../../pipeline/README.md` menjadi
+ * `pipeline/README.md`.
  */
 
 // Gabung direktori + jalur relatif ala POSIX, sekaligus meratakan "." dan "..".
@@ -234,7 +236,8 @@ const warnings = [];
 const seenIds = Object.create(null);
 
 files.forEach(function (file) {
-  if (file.toUpperCase() === 'INDEX.MD') return; // sengaja dilewati
+  // Berkas indeks navigasi, bukan entri korpus — sengaja dilewati.
+  if (/^INDEX(-[A-Z]+)?\.MD$/.test(file.toUpperCase())) return;
   const meta = parseName(file);
   if (!meta) { warnings.push('Nama berkas tidak cocok pola: ' + file); return; }
   if (seenIds[meta.id]) warnings.push('Nomor entri ganda: ' + meta.id + ' (' + file + ')');
@@ -579,6 +582,11 @@ html[data-theme="dark"] .meta-btn.ok{color:#8fd9a3; border-color:#3c6b48}
 .article a.entry-link{color:var(--ink); background:var(--surface-2);
   border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-family:var(--sans); font-size:.84em}
 .article a.entry-link:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line)); color:var(--accent-ink)}
+/* Entri ditahan: bukan bagian korpus 182, jadi tidak punya halaman. Ditampilkan
+   sebagai teks, bukan tautan mati. */
+.article span.entry-withheld{color:var(--muted); background:var(--surface-2);
+  border:1px dashed var(--line); border-radius:5px; padding:1px 6px;
+  font-family:var(--sans); font-size:.84em; cursor:help}
 .article ul,.article ol{margin:0 0 1.1em; padding-left:1.35em}
 .article li{margin:.32em 0}
 .article li::marker{color:var(--ink-3)}
@@ -1274,6 +1282,15 @@ function RUNTIME() {
       if (href.indexOf('#') === 0) return;
       var dec; try { dec = decodeURIComponent(href); } catch (x) { dec = href; }
       var m = dec.match(/(?:^|\/)(\d{3})\s-\s.*\.md$/i);
+      if (m && /entri-withheld\//i.test(dec)) {
+        // Entri ditahan tidak ada di korpus, jadi tidak punya rute #/NNN.
+        var sp = doc.createElement('span');
+        sp.className = 'entry-withheld';
+        sp.title = 'Entri ditahan — PDF sumber tak tersedia; di luar korpus 182';
+        sp.textContent = a.textContent;
+        a.parentNode.replaceChild(sp, a);
+        return;
+      }
       if (m && !/^https?:/i.test(href)) {
         a.setAttribute('href', '#/' + m[1]);
         a.classList.add('entry-link');

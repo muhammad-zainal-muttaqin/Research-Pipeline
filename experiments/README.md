@@ -2,38 +2,45 @@
 
 Snapshot **kode dan angka** dari `/workspace/experiments/` (di luar repo saat
 eksperimen berjalan). Diselamatkan ke sini agar setiap perintah reproduksi di
-`docs/SR/` dan `docs/EKSPERIMEN.md` tetap punya sumbernya meski folder kerja
-aslinya dihapus.
+`docs/eksperimen/SR/` dan `docs/eksperimen/EKSPERIMEN.md` tetap punya sumbernya meski folder
+kerja aslinya dihapus.
 
 ## Yang ADA di sini
 
-- **`*.py`** (33 skrip) — seluruh kode eksperimen E-001…E-020. Tiap SR menyebut
-  skrip yang memproduksinya di bagian "Reproduksi".
-- **`results/*.json`** — angka mentah di balik setiap tabel SR (mis.
-  `diag_bottleneck.json` = E-014, `loc_ceiling.json` = E-018,
-  `raw_map.json` = peta master E-015, `class_mismatch.json` = E-001).
-- **`splits_rgb/*.txt`** — definisi split train/val/test **persis** yang dipakai
-  (per pohon, irisan nol). Ini yang membuat angka dapat direproduksi bit-per-bit.
-- **`runs/<run>/results.csv`** — kurva metrik **per-epoch** (P/R/mAP50/mAP50-95)
-  untuk kelima run detektor, plus `args.yaml` (konfigurasi persis tiap run).
-- **`logs/*.txt`** — keluaran konsol tiap eksperimen, **sudah dibersihkan** dari
-  progress-bar (\r). Rekam mentah yang dicetak ultralytics.
-- **`data_*.yaml`**, **`requirements.txt`**, **`run_queue*.sh`** — konfigurasi
-  dataset, lingkungan, dan orkestrasi antrean pelatihan.
+| Folder | Isi |
+|---|---|
+| `train/` (10) | Skrip pelatihan model |
+| `eval/` (12) | Skrip pengukuran dan diagnosis metrik |
+| `build/` (7) | Penyiapan dataset turunan (potongan, master, pseudo-depth) |
+| `analysis/` (16) | Uji hipotesis dan diagnosis, satu skrip per pertanyaan |
+| `shell/` (8) | Orkestrasi antrean pelatihan |
+| `config/` (2) | `data_rgb.yaml`, `data_rgbd4.yaml` |
+| `results/` | JSON mentah, dikelompokkan per eksperimen — indeks di [`results/README.md`](results/README.md) |
+| `runs/` | `args.yaml` / `training_config.json` + kurva per-epoch (`results.csv`, `metrics.csv`) |
+| `logs/` | Keluaran konsol, sudah dibersihkan dari progress-bar (\r) |
+| `figures/` | Confusion matrix, kurva PR, kurva F1-confidence (E-021) |
+| `splits_rgb/` | Definisi split train/val/test **persis** per pohon, irisan nol — ini yang membuat angka dapat direproduksi |
+
+**Peta lengkap skrip → eksperimen → keluaran ada di
+[`PETA-SKRIP.md`](PETA-SKRIP.md).** Perintah reproduksi dan versi paket persis
+di [`REPRODUCE.md`](REPRODUCE.md).
+
+`requirements.txt` sengaja tetap di akar folder ini supaya
+`pip install -r requirements.txt` berjalan apa adanya.
 
 Tabel metrik lengkap semua run (per-kelas B1–B4, val+test) dirangkum di
-[`../docs/METRICS.md`](../docs/METRICS.md).
+[`docs/eksperimen/METRICS.md`](../docs/eksperimen/METRICS.md).
 
 ## Yang TIDAK ada (sengaja — bisa dibuat ulang dari skrip di atas)
 
 | Artefak | Ukuran | Cara membuat ulang |
 |---|---|---|
 | Bobot model (`runs/**/*.pt`) | ~2,2 GB | jalankan skrip `train_*.py` |
-| Potongan tandan (`crops/`, `crops_raw/`) | ~1,3 GB | `build_crops.py`, `build_crops_raw.py` |
-| Dataset master (`master_ds/`) | — | `build_master_ds.py` (butuh `results/raw_map.json`) |
-| Pseudo-depth (`depth_da3/`) | ~765 MB | `gen_depth_dataset.py` |
-| Ubin (`data_tiles/`) | ~1,5 GB | `tiling.py --build` |
-| Visualisasi (`results/e003–e005/`) | ~100 MB | skrip DA3 terkait |
+| Potongan tandan (`crops/`, `crops_raw/`) | ~1,3 GB | `build/build_crops.py`, `build/build_crops_raw.py` |
+| Dataset master (`master_ds/`) | — | `build/build_master_ds.py` (butuh `results/E-015/raw_map.json`) |
+| Pseudo-depth (`depth_da3/`) | ~765 MB | `build/gen_depth_dataset.py` |
+| Ubin (`data_tiles/`) | ~1,5 GB | `analysis/tiling.py --build` |
+| Visualisasi (`results/E-003/`…`results/E-005/`) | ~100 MB | skrip DA3 terkait |
 | Log mentah (`logs-*.txt`) | ~5 MB | keluaran ulang saat menjalankan |
 
 ## Prasyarat menjalankan

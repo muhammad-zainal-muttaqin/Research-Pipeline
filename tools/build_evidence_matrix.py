@@ -157,7 +157,7 @@ def main() -> None:
         "",
         "## Machine-readable ledger",
         "",
-        "The full row-level ledger is available in `evidence-matrix-182.csv`. It includes the verified file, BibTeX key, entry sheet, task, modality, extracted study summary, limitations, TBS transfer status, and supporting PDF page references.",
+        "The full row-level ledger is available in `docs/audit/evidence-matrix-182.csv`. It includes the verified file, BibTeX key, entry sheet, task, modality, extracted study summary, limitations, TBS transfer status, and supporting PDF page references.",
     ])
     (OUT / "evidence-matrix-182.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Wrote {len(rows)} verified evidence records.")

@@ -8,7 +8,7 @@
 | Penulis | Zou, Zhengxia; Chen, Keyan; Shi, Zhenwei; Guo, Yuhong; Ye, Jieping |
 | Tahun | 2023 |
 | Venue / Jurnal | Proceedings of the IEEE |
-| Tema klaster | Fusi Multimodal |
+| Tema | Fusi Multimodal |
 
 ## Tautan Akses
 - **Cari / unduh via Google Scholar:** https://scholar.google.com/scholar?q=Object%20Detection%20in%2020%20Years%3A%20A%20Survey
@@ -105,7 +105,7 @@ Namun, dari sisi rekayasa dan konseptual, terdapat beberapa keterbatasan dalam s
 ## Kaitan dengan Bab Lain
 Sebagai bagian dari klaster **Fusi Multimodal**, bab ini menempati posisi yang unik karena menyajikan landasan teori deteksi objek visual berbasis kamera RGB tunggal. Seluruh arsitektur fusi multimodal untuk deteksi objek (baik yang menggunakan data kedalaman maupun termal) dibangun di atas struktur detektor RGB dasar yang diulas oleh Zou dkk.
 
-Bab ini mewarisi komponen ekstraksi fitur dari bab fondasi seperti [147 - ResNet](./147%20-%202016%20-%20ResNet%20-%20Fusi%20Multimodal.md), yang dibahas dalam survei ini sebagai tulang punggung (*backbone*) utama bagi sebagian besar detektor era *deep learning*. Selanjutnya, bab ini menjadi jembatan konseptual langsung menuju bab survei yang lebih spesifik seperti [150 - Survei Deteksi & Segmentasi Multimodal (Feng dkk.)](./150%20-%202021%20-%20Survei%20Deteksi%20%26%20Segmentasi%20Multimodal%20%28Feng%20dkk.%29%20-%20Fusi%20Multimodal.md) dan [152 - Deep Multimodal Learning A Survey (Ramachandram & Taylor)](./152%20-%202017%20-%20Deep%20Multimodal%20Learning%20A%20Survey%20%28Ramachandram%20%26%20Taylor%29%20-%20Fusi%20Multimodal.md). Jika Zou dkk. menyajikan taksonomi deteksi dalam domain RGB, Feng dkk. dan Ramachandram & Taylor meluaskan taksonomi tersebut ke tingkat fusi multisensor (seperti kamera, LiDAR, dan radar). 
+Bab ini mewarisi komponen ekstraksi fitur dari bab fondasi seperti [147 - ResNet](./147%20-%202016%20-%20ResNet%20-%20Fusi%20Multimodal.md), yang dibahas dalam survei ini sebagai tulang punggung (*backbone*) utama bagi sebagian besar detektor era *deep learning*. Selanjutnya, bab ini menjadi jembatan konseptual langsung menuju bab survei yang lebih spesifik seperti [150 - Survei Deteksi & Segmentasi Multimodal (Feng dkk.)](./150%20-%202021%20-%20Survei%20Deteksi%20%26%20Segmentasi%20Multimodal%20%28Feng%20dkk.%29%20-%20Fusi%20Multimodal.md) dan [152 - Deep Multimodal Learning A Survey (Ramachandram & Taylor)](../entri-withheld/152%20-%202017%20-%20Deep%20Multimodal%20Learning%20A%20Survey%20%28Ramachandram%20%26%20Taylor%29%20-%20Fusi%20Multimodal.md) ⊘. Jika Zou dkk. menyajikan taksonomi deteksi dalam domain RGB, Feng dkk. dan Ramachandram & Taylor meluaskan taksonomi tersebut ke tingkat fusi multisensor (seperti kamera, LiDAR, dan radar). 
 
 Di sisi lain, pembahasan dataset visual dalam bab ini terhubung erat dengan [154 - Survei Dataset RGB-D (Lopes dkk.)](./154%20-%202022%20-%20Survei%20Dataset%20RGB-D%20%28Lopes%20dkk.%29%20-%20Fusi%20Multimodal.md) dan [153 - Survei RGB-D SOD (Zhou dkk.)](./153%20-%202021%20-%20Survei%20RGB-D%20SOD%20%28Zhou%20dkk.%29%20-%20Fusi%20Multimodal.md), di mana evolusi dataset bergerak dari standardisasi pengujian berbasis citra warna menuju dataset spasial 3D yang lebih kompleks.
 

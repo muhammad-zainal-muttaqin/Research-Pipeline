@@ -2,17 +2,21 @@
 
 Panduan kerja untuk Claude Code di repositori ini. Baca sebelum mengubah apa pun.
 
-> **Melanjutkan eksperimen?** Baca **[`docs/STATUS.md`](docs/STATUS.md)** dulu —
+> **Melanjutkan eksperimen?** Baca **[`docs/eksperimen/STATUS.md`](docs/eksperimen/STATUS.md)** dulu —
 > titik berhenti, hasil terbaik (**RF-DETR-L test mAP50 0,6038**, E-021 —
 > melewati sasaran 0,60; sebelumnya RT-DETR-L 0,5794), dan jalur lanjutan.
-> Aktif per 2026-07-30 (E-022: depth SENSOR Orbbec diuji di dataset baru
-> `SawitMVC-Depth`; fusi 4-kanal awal dipalsukan, arah lanjutan = fusi menengah).
+> Aktif per 2026-07-25 (YOLO26l @1280 param-adil **selesai**; perbandingan
+> 1-protokol tuntas, lihat [SR-014](docs/eksperimen/SR/SR-014-rfdetr-dinov2.md)).
+> Aktif per 2026-07-30: **E-022/SR-015** — depth SENSOR Orbbec diuji pada dataset
+> baru `SawitMVC-Depth`; fusi 4-kanal awal **dipalsukan**, arah lanjutan = fusi
+> menengah (E-023).
+> Peta seluruh dokumen: [`docs/README.md`](docs/README.md).
 
 ## Bahasa
 
 **Seluruh isi repo dan seluruh percakapan memakai Bahasa Indonesia.** Istilah teknis
 asing ditulis miring dan dijelaskan singkat saat pertama muncul (lihat
-`docs/PANDUAN-PENULISAN.md`). Jangan beralih ke Inggris kecuali diminta.
+`docs/naskah/PANDUAN-PENULISAN.md`). Jangan beralih ke Inggris kecuali diminta.
 
 ## Apa Ini
 
@@ -25,11 +29,18 @@ basis data sitasi, dan aplikasi web statis untuk membaca korpus.
 | Entri di ledger (`references.bib`) | 202 |
 | Entri terverifikasi (ada PDF lokal) = korpus naskah | **182** (`entri/`) |
 | Entri ditahan (PDF sumber tak tersedia) | 20 (`entri-withheld/`) |
-| Klaster tema | 14 |
+| Klaster tema (taksonomi naskah `TEMUAN.md`) | 14 |
+| Label tema (segmen terakhir nama berkas `entri/`) | 17 |
 | Rentang fokus | 2019–2026 (+ fondasi 2012–2018) |
 
+**14 dan 17 bukan kontradiksi** dan sudah direkonsiliasi saat audit
+(`docs/naskah/PLAN-SITUS.md` §"Catatan rekonsiliasi sumber", `figures/C02-distribusi-tema.md` §2):
+14 adalah klaster taksonomi naskah LaTeX, yang menggabungkan beberapa label berkas;
+17 adalah label tema yang dipakai `build.js` dan situs, dibaca dari nama berkas.
+Jangan "memperbaiki" salah satunya jadi sama.
+
 Angka 182 itu **invarian yang dijaga**: naskah, situs, `TEMUAN.md`, dan
-`docs/claim-audit-182.md` semuanya diselaraskan ke angka ini. Jika mengubah jumlah
+`docs/audit/claim-audit-182.md` semuanya diselaraskan ke angka ini. Jika mengubah jumlah
 entri, seluruh berkas tersebut harus ikut diperbarui.
 
 ## Peta Berkas
@@ -38,15 +49,20 @@ entri, seluruh berkas tersebut harus ikut diperbarui.
 |---|---|
 | `evidence-body.tex` | **Isi naskah aktif.** Semua penyuntingan naskah masuk ke sini. |
 | `main.tex` / `main-elsarticle.tex` | Driver IEEEtran / Elsevier; keduanya `\input` `evidence-body.tex`. |
-| `tinjauan-pustaka.tex` | Draf lama mandiri — **tidak dipakai**; jangan disunting tanpa diminta. |
-| `entri/` | 182 berkas ringkasan (satu makalah = satu berkas) + `INDEX.md`. |
+| `docs/archive/tinjauan-pustaka.tex` | Draf lama mandiri — **tidak dipakai**; jangan disunting tanpa diminta. |
+| `entri/` | 182 berkas ringkasan (satu makalah = satu berkas) + `INDEX.md` (urut nomor) + `INDEX-TAHUN.md` (per tahun & tema). |
 | `entri-withheld/` | 20 entri ditahan; jangan dimasukkan ke naskah. |
 | `references.bib` | 202 record BibTeX. |
 | `TEMUAN.md` | Sintesis lintas makalah. |
 | `figures/` | Figur final F01–F08 (`-en.jpg`), C01, C02, plus brief `.md`-nya. |
-| `docs/` | Rencana, panduan, audit, matriks bukti. `docs/archive/` = draf usang. |
+| `docs/` | Seluruh dokumen, dipecah per fungsi — **peta di `docs/README.md`**. |
+| `docs/eksperimen/` | `STATUS.md` (baca pertama), `EKSPERIMEN.md` (log append-only), `METRICS.md` (tabel definitif), `LAPORAN-EKSPERIMEN.md` (tayang di situs), `SR/` (laporan per-ide). |
+| `docs/naskah/` | Panduan penulisan, rencana naskah & situs, keputusan reframe, prompt figur. |
+| `docs/audit/` | Audit pra-submisi, claim audit 182, register klaim, matriks bukti. |
+| `docs/referensi/` | Bahan luar: PDF baseline SawitMVC, deep research report, revisi dosen. |
+| `docs/archive/` | Draf & figur usang. |
 | `pipeline/` | **Deliverable produksi**: pipeline YOLO 4-kanal (RGB+depth) untuk kamera Gemini — latih/konversi/inferensi. Kode kecil tanpa bobot model; bukan kode eksperimen sekali pakai. |
-| `experiments/` | **Arsip kode + hasil JSON + split** eksperimen E-001…E-022 (snapshot dari `/workspace/experiments/`, di luar repo). Tanpa bobot/dataset besar — bisa dibuat ulang dari skripnya. Sumber reproduksi tiap SR. Di-exclude dari Jekyll. |
+| `experiments/` | **Arsip kode + hasil JSON + split** eksperimen E-001…E-022 (snapshot dari `/workspace/experiments/`, di luar repo). Skrip dikelompokkan: `train/`, `eval/`, `build/`, `analysis/`, `shell/`, `config/`; hasil di `results/E-0NN/`. Peta: `experiments/PETA-SKRIP.md`. Tanpa bobot/dataset besar — bisa dibuat ulang dari skripnya. Di-exclude dari Jekyll. |
 | `build.js` | Perakit `index.html` (Ruang Baca Riset). |
 | `index.html` | **Hasil build — jangan disunting tangan.** |
 | `tools/build_evidence_matrix.py` | Membangun matriks bukti dari `entri/` + `PDF/`. |
@@ -69,7 +85,7 @@ itu perilaku normal, bukan bug.
 
 ## Kontrak Teknis Berkas Entri (melanggar = merusak build web)
 
-Diambil dari `docs/PANDUAN-PENULISAN.md` §2 — baca lengkap sebelum menulis entri.
+Diambil dari `docs/naskah/PANDUAN-PENULISAN.md` §2 — baca lengkap sebelum menulis entri.
 
 - Nama berkas: `NNN - YYYY - Judul singkat - Tema.md`. **Jangan diubah.**
 - Baris pertama = judul `# NNN - Judul`. **Jangan diubah.**
@@ -98,13 +114,13 @@ Tinjauan pustaka **sudah selesai ditulis**. Fokus sekarang bergeser ke eksperime
 <https://huggingface.co/datasets/ULM-DS-Lab/SawitMVC-Depth>, CC BY-NC 4.0, repo
 **private** (butuh token). 352 pohon, 1.408 citra RGB **1280×800 lanskap**, 2.299
 kotak B1–B4, plus **depth sensor Orbbec** Y16 848×480 uint16 milimeter per citra.
-Inilah dataset yang menutup lubang "depth SENSOR belum pernah diuji" (E-022/SR-014).
+Inilah dataset yang menutup lubang "depth SENSOR belum pernah diuji" (E-022/SR-015).
 
 **Tiga jebakan dataset itu yang wajib diingat** (semuanya terverifikasi, E-022a):
 
 1. Sidecar `"alignedTo": "color"` **MENYESATKAN** — buffer masih di grid kamera
-   depth. `cv2.resize` naif meleset median 29 px / maks 61 px pada 1280×800.
-   Pakai `experiments/reproject_depth.py`, **jangan** `pipeline/prepare_depth.py`.
+   depth. `cv2.resize` naif meleset median 29 px / maks 61 px pada 1280×800. Pakai
+   `experiments/build/reproject_depth.py`, **jangan** `pipeline/prepare_depth.py`.
 2. Ada **dua unit kamera** dengan kalibrasi berbeda (fx_depth 416,55 vs 414,38);
    kalibrasi wajib dibaca **per berkas** dari sidecar.
 3. Rentang `fourch.Z_NEAR/Z_FAR` (0,3–8,0 m) tidak cocok untuk sensor ini —
@@ -204,7 +220,7 @@ Fakta lain dari PDF yang berguna:
   closure)** dari graf `_confirmedLinks`.
 - **`class_mismatch`**: flag otomatis saat kelas yang dianotasi berbeda antar-sisi
   dalam satu komponen. **SUDAH DIUJI — HASILNYA NOL. Jangan diulang.**
-  `experiments/class_mismatch_stats.py` (21 Juli 2026): 0 ketidaksepakatan dari
+  `experiments/analysis/class_mismatch_stats.py` (21 Juli 2026): 0 ketidaksepakatan dari
   7.328 bunch multi-sisi, di semua split/varietas/kelas. Parser diverifikasi
   silang dengan angka publikasi (9.823 bunch, 18.540 kemunculan, sebaran
   6.264/834/147/71/12) — cocok persis, jadi nol itu nyata, bukan bug.
@@ -296,7 +312,7 @@ baseline RGB; (3) bandingkan **terstratifikasi menurut oklusi**, khususnya pada 
 Kode eksperimen tinggal di **`/workspace/experiments/`** (di luar repo ini; repo
 ini tidak menampung artefak besar, bobot model, atau keluaran gambar). Tetapi
 **setiap hal penting yang dipelajari dari eksperimen wajib dicatat ke repo ini**
-di [`docs/EKSPERIMEN.md`](docs/EKSPERIMEN.md).
+di [`docs/eksperimen/EKSPERIMEN.md`](docs/eksperimen/EKSPERIMEN.md).
 
 Alasannya: tinjauan pustaka ini berdiri di atas klaim yang dapat dilacak ke
 sumber. Eksperimennya harus memenuhi standar yang sama — kalau tidak, ada
@@ -315,7 +331,7 @@ Aturannya:
   akan memalsukannya, sebelum melihat hasilnya.
 - **Angka apa adanya.** Kalau gagal, tulis gagal. Kalau tidak konklusif, tulis
   tidak konklusif — jangan dinaikkan jadi "menjanjikan".
-- Format entri dan daftar status ada di kepala `docs/EKSPERIMEN.md`.
+- Format entri dan daftar status ada di kepala `docs/eksperimen/EKSPERIMEN.md`.
 - Catat juga **nama skrip** di `/workspace/experiments/` yang menghasilkan angka
   itu, supaya dapat dijalankan ulang.
 - Temuan yang mengubah cara kerja jangka panjang (bukan hasil satu eksperimen)
@@ -331,4 +347,4 @@ jangan ditunda ke akhir sesi. Commit log bersama perubahan terkait.
 - Sitasi ke korpus lokal sebutkan nomor entri dan/atau seksi `evidence-body.tex`
   agar pengguna bisa memverifikasi sendiri.
 - Sebelum mengubah angka agregat (182, 202, 20), periksa dampaknya ke `TEMUAN.md`,
-  `README.md`, `evidence-body.tex`, dan `docs/claim-audit-182.md`.
+  `README.md`, `evidence-body.tex`, dan `docs/audit/claim-audit-182.md`.
