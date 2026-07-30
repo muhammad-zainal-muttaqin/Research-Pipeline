@@ -218,7 +218,23 @@ Semua model dilatih 60 epoch, seed 42, imgsz/resolusi 640, HSV dimatikan di
 `augment.py:1461`), modality dropout 0. Depth: reproyeksi intrinsik+ekstrinsik
 penuh ke bidang color, z-buffer, Z_NEAR 0,8 / Z_FAR 15,0 m.
 
-### Empat isi kanal ke-4, evaluator ultralytics (satu protokol per baris)
+### Semua run, evaluator ultralytics (test) — mAP50, mAP50-95, per-kelas
+
+| Run | Kanal ke-4 | mAP50 | mAP50-95 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|---|
+| yolo26n_rgb_seed42 | — (RGB) | 0,3219 | 0,1072 | 0,6559 | 0,3851 | 0,1168 | 0,1296 |
+| yolo26n_rgbd_seed42 | depth | 0,3492 | 0,1230 | 0,6245 | 0,4431 | 0,1861 | 0,1429 |
+| yolo26n_derau_seed42 | derau | 0,3523 | 0,1170 | 0,6802 | 0,4180 | 0,2170 | 0,0940 |
+| yolo26n_tukar_seed42 | depth pohon LAIN | **0,3771** | **0,1405** | 0,6704 | 0,4557 | 0,2298 | 0,1526 |
+| rtdetr-l_rgb_seed42 | — (RGB) | **0,4070** | **0,1376** | 0,7383 | 0,4662 | 0,1763 | **0,2472** |
+| rtdetr-l_rgbd_seed42 | depth | 0,3882 | 0,1347 | 0,7647 | 0,4400 | 0,1884 | 0,1595 |
+| rtdetr-l_derau_seed42 | derau | 0,3552 | 0,1142 | 0,6743 | 0,4249 | 0,2323 | 0,0892 |
+
+RF-DETR Nano tidak punya baris ultralytics (paket `rfdetr` terpisah). Val EMA
+terbaik: RGB 0,4555/0,1600 (ep 13) · depth 0,4911/0,1786 (ep 10) · derau
+0,5093/0,1815 (ep 11). Angka test-nya di tabel 1-protokol di bawah.
+
+Ringkasan empat isi kanal (mAP50 test):
 
 | Kanal ke-4 | YOLO26n (2,57 jt) | RT-DETR-L (33,0 jt) |
 |---|---|---|
@@ -264,13 +280,25 @@ Kontrol registrasi (YOLO26n, depth benar − depth pohon lain): −0,0220
 Satu-satunya selisih yang CI-nya **tidak** memuat nol adalah lengan **derau** —
 bukan lengan depth.
 
-### Per-kelas AP50, YOLO26n (1-protokol pycocotools)
+### Per-kelas AP50, 1-protokol pycocotools — ketiga arsitektur
 
-| Kanal ke-4 | B1 | B2 | B3 | B4 |
-|---|---|---|---|---|
-| RGB | 0,6598 | 0,4342 | 0,0889 | 0,1166 |
-| depth | 0,6102 | 0,4394 | 0,2001 | 0,1506 |
-| derau | 0,6836 | 0,4300 | 0,2215 | 0,1393 |
+| Model | Kanal ke-4 | mAP50 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|---|
+| YOLO26n | RGB | 0,3249 | 0,6598 | 0,4342 | 0,0889 | 0,1166 |
+| YOLO26n | depth | 0,3501 | 0,6102 | 0,4394 | 0,2001 | 0,1506 |
+| YOLO26n | derau | 0,3686 | 0,6836 | 0,4300 | 0,2215 | 0,1393 |
+| YOLO26n | depth pohon LAIN | 0,3721 | 0,6765 | 0,4392 | 0,2057 | 0,1671 |
+| RT-DETR-L | RGB | 0,4076 | 0,7360 | 0,4678 | 0,1770 | **0,2497** |
+| RT-DETR-L | depth | 0,3900 | **0,7621** | 0,4456 | 0,1891 | 0,1631 |
+| RT-DETR-L | derau | 0,3535 | 0,6923 | 0,4287 | 0,2300 | 0,0630 |
+| RF-DETR Nano | RGB | 0,4196 | 0,7335 | 0,4504 | 0,2738 | 0,2207 |
+| RF-DETR Nano | depth | **0,4635** | 0,7038 | **0,5569** | **0,3717** | 0,2214 |
+| RF-DETR Nano | derau | 0,4547 | 0,7484 | 0,5425 | 0,3376 | 0,1903 |
+
+Catatan pembacaan: **B4 pada RT-DETR-L** adalah satu-satunya tempat di mana urutan
+depth > derau punya jarak besar (0,1631 vs 0,0630) — dan itu yang membuat selisih
+berpasangan +0,1001 [+0,0062; +0,1618] signifikan. Tetapi RGB-saja masih di atas
+keduanya (0,2497), jadi kanal ke-4 tetap merugikan secara neto pada model ini.
 
 CI berpasangan depth − RGB: B1 **−0,0495 [−0,0905; −0,0071]** dan
 B3 **+0,1111 [+0,0252; +0,1872]** keduanya tidak memuat nol, arah berlawanan,
