@@ -72,11 +72,12 @@ const SPECIAL_DOCS = [
 
 /* Folder yang di-exclude dari build Jekyll (`_config.yml`): berkas di
  * dalamnya TIDAK tayang di GitHub Pages, jadi tautan ke sana harus
- * diturunkan menjadi teks biasa alih-alih menjadi tautan mati.
+ * diturunkan menjadi teks biasa alih-alih menjadi tautan mati. PDF akhir
+ * di `artifacts/papers/` sengaja tetap tayang untuk pratinjau naskah.
  * Pengecualian: `docs/literature/entries/`, sebab tautan ke entri korpus ditangani runtime
  * (`enhance()`) dan diubah menjadi rute internal `#/NNN`. */
 const PAGES_EXCLUDED = [
-  'evidence/', 'reproduce/', 'artifacts/', 'site/'
+  'evidence/', 'reproduce/', 'artifacts/legacy/', 'artifacts/scratch/', 'site/'
 ];
 const ENTRY_LINK_RE = /(?:^|\/)\d{3}\s-\s.*\.md$/i;
 
@@ -983,8 +984,8 @@ function RUNTIME() {
   ];
 
   var PAPERS = [
-    { label: 'IEEEtran', title: 'Naskah IEEEtran', file: 'main.pdf' },
-    { label: 'Elsevier', title: 'Naskah Elsevier', file: 'main-elsarticle.pdf' }
+    { label: 'IEEEtran', title: 'Naskah IEEEtran', file: 'artifacts/papers/main.pdf' },
+    { label: 'Elsevier', title: 'Naskah Elsevier', file: 'artifacts/papers/main-elsarticle.pdf' }
   ];
 
   var ICON = {
@@ -1575,7 +1576,7 @@ function RUNTIME() {
       return '<article class="pdf-card">' +
         '<header class="pdf-card-head"><h3>' + esc(p.title) + '</h3><span class="tag">' + esc(p.label) + '</span></header>' +
         '<iframe class="pdf-preview" src="' + esc(src) + '" title="Pratinjau ' + esc(p.title) + '" loading="lazy"></iframe>' +
-        '<footer class="pdf-card-foot"><code>' + esc(p.file) + '</code><span class="pdf-actions">' +
+        '<footer class="pdf-card-foot"><code>' + esc(p.file.split('/').pop()) + '</code><span class="pdf-actions">' +
         '<button class="pdf-fullscreen" type="button" data-pdf-fullscreen="' + esc(src) + '" aria-label="Tampilkan ' + esc(p.title) + ' dalam layar penuh">Layar penuh' + ICON.fullscreen + '</button>' +
         '<a href="' + esc(src) + '" target="_blank" rel="noopener">Buka ' + esc(p.title) + ' PDF' + ICON.ext + '</a></span></footer>' +
         '</article>';
