@@ -1,75 +1,56 @@
-# Research-Pipeline — Tinjauan Pustaka YOLO / RGB-D + Eksperimen Deteksi Sawit
+# Research-Pipeline
 
-Repositori ini menampung **dua pekerjaan** yang saling menopang: sebuah tinjauan
-pustaka terverifikasi tentang deteksi objek berbasis YOLO dan fusi RGB-D, dan
-eksperimen deteksi tandan buah sawit (SawitMVC) yang dijalankan di atas landasan
-pustaka itu.
+Repositori ini menyatukan dua jalur riset tentang tandan buah segar kelapa sawit:
 
-| Jalur | Status | Mulai dari |
-|---|---|---|
-| **Tinjauan pustaka** | Selesai ditulis | [`evidence-body.tex`](./evidence-body.tex) · [`TEMUAN.md`](./TEMUAN.md) |
-| **Eksperimen deteksi** | Aktif | [`docs/eksperimen/STATUS.md`](./docs/eksperimen/STATUS.md) |
+1. Tinjauan pustaka tentang YOLO, RGB-D, dan deteksi tandan.
+2. Eksperimen deteksi yang menguji keputusan teknis dari tinjauan tersebut.
 
-Hasil terbaik saat ini: **RF-DETR-L, test mAP50 0,6038 / mAP50-95 0,2770** (E-021)
-— melewati sasaran mAP50 0,60. Rinciannya di
-[`docs/eksperimen/METRICS.md`](./docs/eksperimen/METRICS.md).
+## Hasil yang berlaku saat ini
 
-## Angka korpus
+Hasil empat kelas yang boleh dikutip adalah **RF-DETR-L pada E-021**:
+**test mAP50 0,6038** dan **mAP50-95 0,2770**. Semua pembanding E-021
+dievaluasi dengan protokol `pycocotools` yang sama.
 
-| | |
+E-022 menguji depth sensor Orbbec pada dataset berbeda. Pipeline sensor dan
+reproyeksi depth ke RGB telah divalidasi, tetapi **klaim peningkatan deteksi
+belum sah**. Angka seed-42 dipertahankan sebagai rekam historis dan auditnya
+menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
+
+## Saya ingin...
+
+| Tujuan | Buka ini |
 |---|---|
-| Entri di ledger ([`references.bib`](./references.bib)) | 202 |
-| Entri terverifikasi (ada PDF lokal) = korpus naskah | **182** ([`entri/`](./entri)) |
-| Entri ditahan (PDF sumber tak tersedia) | 20 ([`entri-withheld/`](./entri-withheld)) |
-| Klaster tema taksonomi naskah | 14 |
-| Rentang fokus | 2019–2026 (+ fondasi 2012–2018) |
+| Mengutip metrik final | [Metrik E-021](docs/experiments/METRICS.md) |
+| Memeriksa koreksi E-022 | [Audit E-022](docs/experiments/AUDIT-E022.md), lalu [arsip seed-42](docs/experiments/archive/E022-seed42-awal.md) |
+| Memahami seluruh eksperimen | [Pintu masuk eksperimen](docs/experiments/README.md) |
+| Menjalankan ulang E-021 | [Panduan reproduksi](reproduce/experiments/REPRODUCE.md) |
+| Menemukan skrip dan bukti hasil | [Peta skrip](reproduce/experiments/PETA-SKRIP.md) |
+| Membaca sintesis literatur | [Sintesis lintas makalah](docs/literature/synthesis.md) |
+| Menyusun naskah | [Sumber LaTeX](docs/manuscript/source/) dan [panduan naskah](docs/manuscript/guides/) |
 
-## Peta repositori
+## Struktur singkat
 
-| Folder / berkas | Isi |
+| Lokasi | Isi |
 |---|---|
-| [`docs/`](./docs) | Seluruh dokumen, dipecah per fungsi — **peta lengkapnya di [`docs/README.md`](./docs/README.md)** |
-| [`entri/`](./entri) | 182 ringkasan makalah. Indeks: [urut nomor](./entri/INDEX.md) · [per tahun & tema](./entri/INDEX-TAHUN.md) |
-| [`entri-withheld/`](./entri-withheld) | 20 entri ditahan; **tidak dipakai naskah** |
-| [`experiments/`](./experiments) | Kode, JSON hasil, dan log eksperimen — peta: [`PETA-SKRIP.md`](./experiments/PETA-SKRIP.md) |
-| [`pipeline/`](./pipeline) | Deliverable produksi: pipeline YOLO 4 kanal (RGB+depth) untuk kamera Gemini |
-| [`figures/`](./figures) | Figur final F01–F08, C01, C02, beserta brief-nya |
-| [`tools/`](./tools) | Utilitas pembangun matriks bukti |
+| [`docs/`](docs/) | Dokumen yang dibaca manusia: eksperimen, literatur, naskah, dan audit |
+| [`evidence/`](evidence/) | Bukti mentah: hasil eksperimen, split, log, PDF sumber, ekstraksi, dan dataset lokal |
+| [`reproduce/`](reproduce/) | Kode, konfigurasi, dan perintah untuk menghasilkan atau mengaudit bukti |
+| [`artifacts/`](artifacts/) | Keluaran LaTeX, naskah lama, dan berkas kerja yang dipertahankan |
+| [`site/`](site/) | Pembuat Ruang Baca dan pustaka kliennya |
+| [`index.html`](index.html) | Ruang Baca publik hasil build, tetap di akar untuk GitHub Pages |
 
-### Naskah
+`evidence/datasets/` dan `evidence/literature/pdf/` adalah bahan lokal besar
+yang sengaja tidak masuk Git. Struktur ini memisahkan bahan pembaca dari
+bukti, tanpa mengubah isi JSON, split, log, PDF, atau dataset.
 
-| Berkas | Isi |
-|---|---|
-| [`evidence-body.tex`](./evidence-body.tex) | **Isi naskah aktif.** Semua penyuntingan masuk ke sini. |
-| [`main.tex`](./main.tex) · [`main-elsarticle.tex`](./main-elsarticle.tex) | Driver IEEEtran dan Elsevier; keduanya `\input` berkas di atas |
-| [`references.bib`](./references.bib) | Basis data sitasi, 202 record |
-| [`TEMUAN.md`](./TEMUAN.md) | Sintesis lintas makalah |
-
-Draf lama `tinjauan-pustaka.tex` sudah **tidak dipakai** dan diarsipkan ke
-[`docs/archive/`](./docs/archive).
-
-### Situs
-
-[`index.html`](./index.html) adalah Ruang Baca Riset — aplikasi statis mandiri
-berisi seluruh korpus. Berkas itu **hasil build, jangan disunting tangan.**
-
-## Perintah
+## Perintah lokal
 
 ```bash
-node build.js --dry      # laporan saja, tidak menulis
-node build.js            # rakit ulang index.html
-latexmk -pdf main.tex    # kompilasi naskah
+node site/build.js --dry
+node site/build.js
+latexmk -pdf -outdir=artifacts/papers docs/manuscript/source/main.tex
 ```
 
-Jalankan `build.js` setiap kali `entri/*.md`, `TEMUAN.md`, atau
-`docs/eksperimen/LAPORAN-EKSPERIMEN.md` berubah, lalu commit `index.html`
-bersamaan.
-
-## Konvensi
-
-- **Bahasa:** seluruh isi repo memakai Bahasa Indonesia.
-- **Nama berkas entri:** `NNN - YYYY - Judul singkat - Tema.md`. Kontrak yang
-  diparse `build.js` — jangan diubah. Aturan lengkap di
-  [`docs/naskah/PANDUAN-PENULISAN.md`](./docs/naskah/PANDUAN-PENULISAN.md).
-- **Keterlacakan:** setiap klaim numerik harus dapat dilacak ke sumber primer.
-  Itu prinsip yang menopang seluruh nilai repo ini.
+Jalankan pembuat situs setelah mengubah entri literatur, sintesis, atau
+laporan eksperimen. `index.html` adalah keluaran build dan tidak disunting
+langsung.

@@ -1,7 +1,7 @@
 # Audit Pra-Submisi Naskah
 
 **Tanggal audit:** 19 Juli 2026  
-**Cakupan:** `main.tex`, `main-elsarticle.tex`, `body.tex`, `references.bib`,
+**Cakupan:** `docs/manuscript/source/main.tex`, `main-elsarticle.tex`, `body.tex`, `docs/manuscript/source/references.bib`,
 artefak PDF, dan spesifikasi figur pada `figures/`.
 
 Dokumen ini mencatat pemeriksaan mekanis yang dapat dilakukan pada lingkungan
@@ -21,7 +21,7 @@ sumber atau pedoman jurnal tujuan.
 
 | Area | Status | Bukti / tindak lanjut |
 |---|---|---|
-| Dua driver naskah | Siap ditinjau | `main.tex` (IEEEtran) dan `main-elsarticle.tex` (elsarticle) sama-sama memuat `body.tex`, sehingga isi utama tidak bercabang. |
+| Dua driver naskah | Siap ditinjau | `docs/manuscript/source/main.tex` (IEEEtran) dan `main-elsarticle.tex` (elsarticle) sama-sama memuat `body.tex`, sehingga isi utama tidak bercabang. |
 | Artefak PDF | ✅ Direkompilasi | `main.pdf` dan `main-elsarticle.pdf` sudah dibangun ulang via tectonic dengan figur tertanam; tanpa undefined refs/citations. Tinjauan visual per halaman masih dianjurkan. |
 | Pemeriksaan objek Git | Lulus | `git fsck --no-reflogs --no-dangling` selesai tanpa temuan. |
 | Kompilasi lokal | ✅ Berhasil | `pdflatex` memang tak ada, tetapi **tectonic 0.16.9** tersedia dan mengkompilasi kedua driver secara bersih (auto bibtex + rerun). |
@@ -40,14 +40,14 @@ sumber atau pedoman jurnal tujuan.
 ## Validasi struktural naskah
 
 Pemeriksaan statis menemukan 247 kelompok perintah sitasi yang mereferensikan
-202 kunci unik. Semua kunci tersebut ada pada `references.bib`, dan tidak ada
+202 kunci unik. Semua kunci tersebut ada pada `docs/manuscript/source/references.bib`, dan tidak ada
 entri BibTeX yang tidak dipakai oleh isi naskah. Struktur float juga seimbang:
 6 `figure`, 4 `figure*`, 2 `table`, dan 1 `table*`. Dari 24 label unik, seluruh
 22 kunci `\ref` dapat diurai dan tidak ada label ganda.
 
 Kedua driver juga memakai judul dan abstrak identik (abstrak: 1.519 karakter),
 sehingga pilihan template tidak menimbulkan perbedaan isi. Pemeriksaan indeks
-korpus dengan `node build.js --dry` lulus: 202 entri, 17 tema, rentang
+korpus dengan `node site/build.js --dry` lulus: 202 entri, 17 tema, rentang
 2012–2026, dan 14 tahun terisi, tanpa peringatan serta tanpa menulis
 `index.html`.
 
@@ -81,7 +81,7 @@ kesesuaian dengan caption di `body.tex`.
 
 Sebelum pengajuan, ganti setidaknya:
 
-- `Nama Penulis`, `Nama Pembimbing`, program studi, dan email pada `main.tex`;
+- `Nama Penulis`, `Nama Pembimbing`, program studi, dan email pada `docs/manuscript/source/main.tex`;
 - nama, afiliasi, alamat institusi, kota, serta negara pada
   `main-elsarticle.tex`.
 
@@ -115,8 +115,8 @@ undefined`, `Overfull \\hbox` yang mengganggu, atau kegagalan pemuatan figur.
    jurnal yang dipilih.
 4. Buka PDF final per halaman dan periksa pemenggalan tabel, orientasi figur,
    placeholder, sitasi, serta nomor halaman.
-5. Putuskan status `docs/archive/tinjauan-pustaka.tex`: berkas tersebut adalah draf mandiri
-   lama dan tidak diinput oleh `main.tex` maupun `main-elsarticle.tex`. Isinya
+5. Putuskan status `artifacts/legacy/tinjauan-pustaka.tex`: berkas tersebut adalah draf mandiri
+   lama dan tidak diinput oleh `docs/manuscript/source/main.tex` maupun `main-elsarticle.tex`. Isinya
    tidak identik dengan `body.tex`, sehingga jangan gunakan sebagai sumber
    pengajuan tanpa rekonsiliasi atau pengarsipan yang disengaja.
 6. Tinjau ulang kalibrasi klaim abstrak terhadap isi: naskah membatasi ketiadaan
@@ -136,7 +136,7 @@ undefined`, `Overfull \\hbox` yang mengganggu, atau kegagalan pemuatan figur.
    atau rentang nomor entri, bukan jumlah perkiraan; ganti judul kolom menjadi
    nomor/rentang entri atau hitung jumlah sebenarnya secara konsisten.
 10. Seragamkan tahun YOLOv7. Indeks, C01, dan `body.tex` memakai 2023, sementara
-    `TEMUAN.md` serta draf lama memakai 2022. Tetapkan apakah konvensi naskah
+    `docs/literature/synthesis.md` serta draf lama memakai 2022. Tetapkan apakah konvensi naskah
     mengikuti tahun pracetak atau publikasi konferensi, lalu dokumentasikan dan
     terapkan secara konsisten.
 

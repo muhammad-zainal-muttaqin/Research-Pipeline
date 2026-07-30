@@ -2,11 +2,11 @@
 
 Panduan kerja untuk Claude Code di repositori ini. Baca sebelum mengubah apa pun.
 
-> **Melanjutkan eksperimen?** Baca **[`docs/eksperimen/STATUS.md`](docs/eksperimen/STATUS.md)** dulu —
+> **Melanjutkan eksperimen?** Baca **[`docs/experiments/STATUS.md`](docs/experiments/STATUS.md)** dulu —
 > titik berhenti, hasil terbaik (**RF-DETR-L test mAP50 0,6038**, E-021 —
 > melewati sasaran 0,60; sebelumnya RT-DETR-L 0,5794), dan jalur lanjutan.
 > Aktif per 2026-07-25 (YOLO26l @1280 param-adil **selesai**; perbandingan
-> 1-protokol tuntas, lihat [SR-014](docs/eksperimen/SR/SR-014-rfdetr-dinov2.md)).
+> 1-protokol tuntas, lihat [SR-014](docs/experiments/SR/SR-014-rfdetr-dinov2.md)).
 > Aktif per 2026-07-30: **E-022/SR-015** — depth SENSOR Orbbec diuji pada dataset
 > baru `SawitMVC-Depth`; fusi 4-kanal awal **dipalsukan**, arah lanjutan = fusi
 > menengah (E-023).
@@ -16,7 +16,7 @@ Panduan kerja untuk Claude Code di repositori ini. Baca sebelum mengubah apa pun
 
 **Seluruh isi repo dan seluruh percakapan memakai Bahasa Indonesia.** Istilah teknis
 asing ditulis miring dan dijelaskan singkat saat pertama muncul (lihat
-`docs/naskah/PANDUAN-PENULISAN.md`). Jangan beralih ke Inggris kecuali diminta.
+`docs/manuscript/guides/PANDUAN-PENULISAN.md`). Jangan beralih ke Inggris kecuali diminta.
 
 ## Apa Ini
 
@@ -26,20 +26,20 @@ basis data sitasi, dan aplikasi web statis untuk membaca korpus.
 
 | Angka | Nilai |
 |---|---|
-| Entri di ledger (`references.bib`) | 202 |
-| Entri terverifikasi (ada PDF lokal) = korpus naskah | **182** (`entri/`) |
-| Entri ditahan (PDF sumber tak tersedia) | 20 (`entri-withheld/`) |
-| Klaster tema (taksonomi naskah `TEMUAN.md`) | 14 |
-| Label tema (segmen terakhir nama berkas `entri/`) | 17 |
+| Entri di ledger (`docs/manuscript/source/references.bib`) | 202 |
+| Entri terverifikasi (ada PDF lokal) = korpus naskah | **182** (`docs/literature/entries/`) |
+| Entri ditahan (PDF sumber tak tersedia) | 20 (`docs/literature/withheld/`) |
+| Klaster tema (taksonomi naskah `docs/literature/synthesis.md`) | 14 |
+| Label tema (segmen terakhir nama berkas `docs/literature/entries/`) | 17 |
 | Rentang fokus | 2019–2026 (+ fondasi 2012–2018) |
 
 **14 dan 17 bukan kontradiksi** dan sudah direkonsiliasi saat audit
-(`docs/naskah/PLAN-SITUS.md` §"Catatan rekonsiliasi sumber", `figures/C02-distribusi-tema.md` §2):
+(`docs/manuscript/guides/PLAN-SITUS.md` §"Catatan rekonsiliasi sumber", `docs/manuscript/figures/C02-distribusi-tema.md` §2):
 14 adalah klaster taksonomi naskah LaTeX, yang menggabungkan beberapa label berkas;
 17 adalah label tema yang dipakai `build.js` dan situs, dibaca dari nama berkas.
 Jangan "memperbaiki" salah satunya jadi sama.
 
-Angka 182 itu **invarian yang dijaga**: naskah, situs, `TEMUAN.md`, dan
+Angka 182 itu **invarian yang dijaga**: naskah, situs, `docs/literature/synthesis.md`, dan
 `docs/audit/claim-audit-182.md` semuanya diselaraskan ke angka ini. Jika mengubah jumlah
 entri, seluruh berkas tersebut harus ikut diperbarui.
 
@@ -47,45 +47,45 @@ entri, seluruh berkas tersebut harus ikut diperbarui.
 
 | Berkas / folder | Isi |
 |---|---|
-| `evidence-body.tex` | **Isi naskah aktif.** Semua penyuntingan naskah masuk ke sini. |
-| `main.tex` / `main-elsarticle.tex` | Driver IEEEtran / Elsevier; keduanya `\input` `evidence-body.tex`. |
-| `docs/archive/tinjauan-pustaka.tex` | Draf lama mandiri — **tidak dipakai**; jangan disunting tanpa diminta. |
-| `entri/` | 182 berkas ringkasan (satu makalah = satu berkas) + `INDEX.md` (urut nomor) + `INDEX-TAHUN.md` (per tahun & tema). |
-| `entri-withheld/` | 20 entri ditahan; jangan dimasukkan ke naskah. |
-| `references.bib` | 202 record BibTeX. |
-| `TEMUAN.md` | Sintesis lintas makalah. |
-| `figures/` | Figur final F01–F08 (`-en.jpg`), C01, C02, plus brief `.md`-nya. |
+| `docs/manuscript/source/evidence-body.tex` | **Isi naskah aktif.** Semua penyuntingan naskah masuk ke sini. |
+| `docs/manuscript/source/main.tex` / `docs/manuscript/source/main-elsarticle.tex` | Driver IEEEtran / Elsevier; keduanya `\input` `docs/manuscript/source/evidence-body.tex`. |
+| `artifacts/legacy/tinjauan-pustaka.tex` | Draf lama mandiri — **tidak dipakai**; jangan disunting tanpa diminta. |
+| `docs/literature/entries/` | 182 berkas ringkasan (satu makalah = satu berkas) + `INDEX.md` (urut nomor) + `INDEX-TAHUN.md` (per tahun & tema). |
+| `docs/literature/withheld/` | 20 entri ditahan; jangan dimasukkan ke naskah. |
+| `docs/manuscript/source/references.bib` | 202 record BibTeX. |
+| `docs/literature/synthesis.md` | Sintesis lintas makalah. |
+| `docs/manuscript/figures/` | Figur final F01–F08 (`-en.jpg`), C01, C02, plus brief `.md`-nya. |
 | `docs/` | Seluruh dokumen, dipecah per fungsi — **peta di `docs/README.md`**. |
-| `docs/eksperimen/` | `STATUS.md` (baca pertama), `EKSPERIMEN.md` (log append-only), `METRICS.md` (tabel definitif), `LAPORAN-EKSPERIMEN.md` (tayang di situs), `SR/` (laporan per-ide). |
-| `docs/naskah/` | Panduan penulisan, rencana naskah & situs, keputusan reframe, prompt figur. |
+| `docs/experiments/` | `STATUS.md` (baca pertama), `EKSPERIMEN.md` (log append-only), `METRICS.md` (tabel definitif), `LAPORAN-EKSPERIMEN.md` (tayang di situs), `SR/` (laporan per-ide). |
+| `docs/manuscript/guides/` | Panduan penulisan, rencana naskah & situs, keputusan reframe, prompt figur. |
 | `docs/audit/` | Audit pra-submisi, claim audit 182, register klaim, matriks bukti. |
-| `docs/referensi/` | Bahan luar: PDF baseline SawitMVC, deep research report, revisi dosen. |
-| `docs/archive/` | Draf & figur usang. |
-| `pipeline/` | **Deliverable produksi**: pipeline YOLO 4-kanal (RGB+depth) untuk kamera Gemini — latih/konversi/inferensi. Kode kecil tanpa bobot model; bukan kode eksperimen sekali pakai. |
-| `experiments/` | **Arsip kode + hasil JSON + split** eksperimen E-001…E-022 (snapshot dari `/workspace/experiments/`, di luar repo). Skrip dikelompokkan: `train/`, `eval/`, `build/`, `analysis/`, `shell/`, `config/`; hasil di `results/E-0NN/`. Peta: `experiments/PETA-SKRIP.md`. Tanpa bobot/dataset besar — bisa dibuat ulang dari skripnya. Di-exclude dari Jekyll. |
+| `evidence/literature/references/` | Bahan luar: PDF baseline SawitMVC, deep research report, revisi dosen. |
+| `artifacts/legacy/` | Draf & figur usang. |
+| `reproduce/pipeline/` | **Deliverable produksi**: pipeline YOLO 4-kanal (RGB+depth) untuk kamera Gemini — latih/konversi/inferensi. Kode kecil tanpa bobot model; bukan kode eksperimen sekali pakai. |
+| `reproduce/experiments/` | **Arsip kode + hasil JSON + split** eksperimen E-001…E-022 (snapshot dari `reproduce/experiments/`, di luar repo). Skrip dikelompokkan: `train/`, `eval/`, `build/`, `analysis/`, `shell/`, `config/`; hasil di `results/E-0NN/`. Peta: `reproduce/experiments/PETA-SKRIP.md`. Tanpa bobot/dataset besar — bisa dibuat ulang dari skripnya. Di-exclude dari Jekyll. |
 | `build.js` | Perakit `index.html` (Ruang Baca Riset). |
 | `index.html` | **Hasil build — jangan disunting tangan.** |
-| `tools/build_evidence_matrix.py` | Membangun matriks bukti dari `entri/` + `PDF/`. |
+| `reproduce/tools/build_evidence_matrix.py` | Membangun matriks bukti dari `docs/literature/entries/` + `evidence/literature/pdf/`. |
 
 ## Perintah
 
 ```bash
-node build.js --dry      # laporan saja, tidak menulis
-node build.js            # rakit ulang index.html
+node site/build.js --dry      # laporan saja, tidak menulis
+node site/build.js            # rakit ulang index.html
 ```
 
 `build.js` tanpa dependensi (`fs`/`path` saja, marked di-vendor). Jalankan setiap
-kali `entri/*.md` atau `TEMUAN.md` berubah, lalu commit `index.html` bersamaan.
+kali `docs/literature/entries/*.md` atau `docs/literature/synthesis.md` berubah, lalu commit `index.html` bersamaan.
 
-Kompilasi naskah: `latexmk -pdf main.tex` (dan `main-elsarticle.tex`).
+Kompilasi naskah: `latexmk -pdf -outdir=artifacts/papers docs/manuscript/source/main.tex` (dan `docs/manuscript/source/main-elsarticle.tex`).
 
-`tools/build_evidence_matrix.py` butuh `pypdf` dan folder `PDF/benar/` yang
+`reproduce/tools/build_evidence_matrix.py` butuh `pypdf` dan folder `evidence/literature/pdf/benar/` yang
 **tidak ada di git** (di-gitignore, terlalu besar). Skrip akan gagal tanpa itu —
 itu perilaku normal, bukan bug.
 
 ## Kontrak Teknis Berkas Entri (melanggar = merusak build web)
 
-Diambil dari `docs/naskah/PANDUAN-PENULISAN.md` §2 — baca lengkap sebelum menulis entri.
+Diambil dari `docs/manuscript/guides/PANDUAN-PENULISAN.md` §2 — baca lengkap sebelum menulis entri.
 
 - Nama berkas: `NNN - YYYY - Judul singkat - Tema.md`. **Jangan diubah.**
 - Baris pertama = judul `# NNN - Judul`. **Jangan diubah.**
@@ -102,7 +102,7 @@ keterlacakan.
 
 ## `_config.yml` (GitHub Pages)
 
-`entri/`, `tools/`, `docs/extracted/`, `docs/archive/`, `PDF/`, `tmp/` di-exclude dari
+`docs/literature/entries/`, `reproduce/tools/`, `evidence/literature/extracted/`, `artifacts/legacy/`, `evidence/literature/pdf/`, `artifacts/scratch/` di-exclude dari
 build Jekyll. Situs yang tayang = `index.html` hasil `build.js`. Menambah folder besar
 baru? Pertimbangkan menambahkannya ke exclude.
 
@@ -120,7 +120,7 @@ Inilah dataset yang menutup lubang "depth SENSOR belum pernah diuji" (E-022/SR-0
 
 1. Sidecar `"alignedTo": "color"` **MENYESATKAN** — buffer masih di grid kamera
    depth. `cv2.resize` naif meleset median 29 px / maks 61 px pada 1280×800. Pakai
-   `experiments/build/reproject_depth.py`, **jangan** `pipeline/prepare_depth.py`.
+   `reproduce/experiments/build/reproject_depth.py`, **jangan** `reproduce/pipeline/prepare_depth.py`.
 2. Ada **dua unit kamera** dengan kalibrasi berbeda (fx_depth 416,55 vs 414,38);
    kalibrasi wajib dibaca **per berkas** dari sidecar.
 3. Rentang `fourch.Z_NEAR/Z_FAR` (0,3–8,0 m) tidak cocok untuk sensor ini —
@@ -178,7 +178,7 @@ berbeda, bukan sekadar cadangan.
 A multi-view oil palm fruit bunch dataset for detection and counting*, Data in Brief
 67 (2026) 112990, DOI `10.1016/j.dib.2026.112990`, gold OA. **PDF ada di repo:**
 `docs/SawitMVC A multi-view oil palm fruit bunch dataset for detection and counting.pdf`
-(teks terekstrak: `/workspace/experiments/refs/dib-text.txt`). Angka di bawah sudah
+(teks terekstrak: `reproduce/experiments/refs/dib-text.txt`). Angka di bawah sudah
 **diverifikasi langsung dari PDF** (Tabel 3 hal. 12, Tabel 4 hal. 12) — boleh dikutip.
 
 Tabel 3 — deteksi YOLO26m, test split:
@@ -220,7 +220,7 @@ Fakta lain dari PDF yang berguna:
   closure)** dari graf `_confirmedLinks`.
 - **`class_mismatch`**: flag otomatis saat kelas yang dianotasi berbeda antar-sisi
   dalam satu komponen. **SUDAH DIUJI — HASILNYA NOL. Jangan diulang.**
-  `experiments/analysis/class_mismatch_stats.py` (21 Juli 2026): 0 ketidaksepakatan dari
+  `reproduce/experiments/analysis/class_mismatch_stats.py` (21 Juli 2026): 0 ketidaksepakatan dari
   7.328 bunch multi-sisi, di semua split/varietas/kelas. Parser diverifikasi
   silang dengan angka publikasi (9.823 bunch, 18.540 kemunculan, sebaran
   6.264/834/147/71/12) — cocok persis, jadi nol itu nyata, bukan bug.
@@ -244,9 +244,9 @@ menaikkan mAP. Kenaikan 2–5% pun dianggap tidak cukup. Konsekuensi kerja:
 (a) jangan mengusulkan ulang teknik siap-pakai dari literatur sebagai solusi
 utama; (b) yang diminta adalah dekomposisi first-principles dan perubahan
 formulasi/arsitektur; (c) arah perangkat keras baru sudah diputuskan — kamera
-**depth sensor (Orbbec Gemini)**, masukan 4 kanal; `pipeline/` adalah
+**depth sensor (Orbbec Gemini)**, masukan 4 kanal; `reproduce/pipeline/` adalah
 deliverable untuk itu, dan aplikasi lapangan pengguna sudah ada (tinggal ganti
-model, lihat `pipeline/README.md`).
+model, lihat `reproduce/pipeline/README.md`).
 
 **Diagnosa yang sudah disepakati dengan pengguna — jangan diulang/ditawar lagi:**
 
@@ -267,7 +267,7 @@ model, lihat `pipeline/README.md`).
 
 **Hipotesis kerja (bersumber dari korpus sendiri):** tambahkan *pseudo-depth* dari
 RGB smartphone yang sudah ada, difusikan secara **middle/late — bukan early**
-(temuan sapuan 28 titik fusi Ophoff dkk., `evidence-body.tex` §174), dengan
+(temuan sapuan 28 titik fusi Ophoff dkk., `docs/manuscript/source/evidence-body.tex` §174), dengan
 **gating kualitas depth** (*filter-before-fuse* ala SA-Gate entri 055; D3Net entri
 037 menunjukkan depth buruk justru merusak prediksi). Rujukan pendukung lain: CMX
 (058), CIR-Net (046).
@@ -277,7 +277,7 @@ RGB smartphone yang sudah ada, difusikan secara **middle/late — bukan early**
 - **entri 175 — Depth Anything V2** (2024, `yang2024depthanythingv2`). Monokular,
   via `transformers`, Apache-2.0. Baseline paling matang.
 - **entri 198 — Depth Anything 3** (2025, `lin2025depthanything3`, arXiv 2511.10647,
-  ByteDance Seed; disitasi di `evidence-body.tex` §133). Menerima **sembarang jumlah
+  ByteDance Seed; disitasi di `docs/manuscript/source/evidence-body.tex` §133). Menerima **sembarang jumlah
   pandangan** dan menghasilkan geometri **konsisten lintas-pandangan** + pose kamera.
   Bukan lewat `transformers` — perlu paket `depth-anything-3` dari GitHub. Bobot
   CC BY-NC 4.0 (sejalan dengan lisensi SawitMVC).
@@ -296,23 +296,23 @@ Risikonya nyata dan harus diuji lebih dulu pada beberapa pohon: sisi berjarak ~9
 **Caveat yang wajib tetap disampaikan, jangan dihaluskan:**
 
 - Pseudo-depth berasal dari RGB yang sama → *error*-nya berkorelasi. Ia prior
-  struktural, bukan sensor independen (`evidence-body.tex` §133).
+  struktural, bukan sensor independen (`docs/manuscript/source/evidence-body.tex` §133).
 - **Tidak ada satu pun benchmark RGB-D pada FFB sawit di korpus 182.** Jadi "depth
   menaikkan angka" berstatus **hipotesis desain yang falsifiable**, bukan hasil
   terjamin.
 - Hasil naik di B4/*crowded* tapi datar di B2/B3 = **konfirmasi teori**, bukan
   kegagalan eksperimen. Laporkan apa adanya.
 
-**Rencana eksperimen** (resep `evidence-body.tex` §271–275): (1) generate
+**Rencana eksperimen** (resep `docs/manuscript/source/evidence-body.tex` §271–275): (1) generate
 pseudo-depth untuk train/test; (2) latih varian YOLO middle-fusion dua cabang vs
 baseline RGB; (3) bandingkan **terstratifikasi menurut oklusi**, khususnya pada B4.
 
 ## Log Eksperimen — WAJIB
 
-Kode eksperimen tinggal di **`/workspace/experiments/`** (di luar repo ini; repo
+Kode eksperimen tinggal di **`reproduce/experiments/`** (di luar repo ini; repo
 ini tidak menampung artefak besar, bobot model, atau keluaran gambar). Tetapi
 **setiap hal penting yang dipelajari dari eksperimen wajib dicatat ke repo ini**
-di [`docs/eksperimen/EKSPERIMEN.md`](docs/eksperimen/EKSPERIMEN.md).
+di [`docs/experiments/EKSPERIMEN.md`](docs/experiments/EKSPERIMEN.md).
 
 Alasannya: tinjauan pustaka ini berdiri di atas klaim yang dapat dilacak ke
 sumber. Eksperimennya harus memenuhi standar yang sama — kalau tidak, ada
@@ -331,8 +331,8 @@ Aturannya:
   akan memalsukannya, sebelum melihat hasilnya.
 - **Angka apa adanya.** Kalau gagal, tulis gagal. Kalau tidak konklusif, tulis
   tidak konklusif — jangan dinaikkan jadi "menjanjikan".
-- Format entri dan daftar status ada di kepala `docs/eksperimen/EKSPERIMEN.md`.
-- Catat juga **nama skrip** di `/workspace/experiments/` yang menghasilkan angka
+- Format entri dan daftar status ada di kepala `docs/experiments/EKSPERIMEN.md`.
+- Catat juga **nama skrip** di `reproduce/experiments/` yang menghasilkan angka
   itu, supaya dapat dijalankan ulang.
 - Temuan yang mengubah cara kerja jangka panjang (bukan hasil satu eksperimen)
   masuk ke CLAUDE.md ini, bukan ke log.
@@ -344,7 +344,7 @@ jangan ditunda ke akhir sesi. Commit log bersama perubahan terkait.
 
 - Laporkan hasil apa adanya. Kalau eksperimen gagal atau angka tidak naik, katakan
   langsung dengan bukti — jangan dibungkus.
-- Sitasi ke korpus lokal sebutkan nomor entri dan/atau seksi `evidence-body.tex`
+- Sitasi ke korpus lokal sebutkan nomor entri dan/atau seksi `docs/manuscript/source/evidence-body.tex`
   agar pengguna bisa memverifikasi sendiri.
-- Sebelum mengubah angka agregat (182, 202, 20), periksa dampaknya ke `TEMUAN.md`,
-  `README.md`, `evidence-body.tex`, dan `docs/audit/claim-audit-182.md`.
+- Sebelum mengubah angka agregat (182, 202, 20), periksa dampaknya ke `docs/literature/synthesis.md`,
+  `README.md`, `docs/manuscript/source/evidence-body.tex`, dan `docs/audit/claim-audit-182.md`.

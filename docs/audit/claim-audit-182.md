@@ -1,6 +1,6 @@
 # Claim audit across all 182 verified sources — context-verified
 
-Every verified PDF in `PDF/benar/` was extracted to `docs/extracted/<id>-<key>.md`
+Every verified PDF in `evidence/literature/pdf/benar/` was extracted to `evidence/literature/extracted/<id>-<key>.md`
 (182 / 182; none scanned or empty). The manuscript (`evidence-body.tex`) was then
 checked against that extracted text at two levels:
 
@@ -76,6 +76,6 @@ Mask R-CNN→RoIAlign, CenterNet→NMS.
 The manuscript paraphrases; it contains no fabricated verbatim quotations attributed
 to authors. Numbers are the objective backbone of the review and every one has now
 been read in its source context. Prose mechanism descriptions are paraphrases grounded
-in each paper, and the full text of all 182 sources is in `docs/extracted/` for any
+in each paper, and the full text of all 182 sources is in `evidence/literature/extracted/` for any
 further sentence-level check. This audit is therefore not a blind script result: the
 load-bearing numeric claims were verified by hand, in context, in the correct source.

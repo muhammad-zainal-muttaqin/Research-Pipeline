@@ -1,0 +1,61 @@
+# Eksperimen: pintu masuk
+
+Folder ini memisahkan hasil yang boleh dikutip dari riwayat, audit, dan
+pekerjaan yang belum menjadi klaim ilmiah. Baca halaman ini sebelum membuka
+log eksperimen yang panjang.
+
+## Status saat ini
+
+**Final:** E-021 menetapkan RF-DETR-L sebagai hasil deteksi empat kelas terbaik
+saat ini pada SawitMVC: test mAP50 **0,6038** dan mAP50-95 **0,2770** dengan
+protokol `pycocotools` yang sama untuk seluruh pembanding.
+
+**Batas E-022:** parser kalibrasi, reproyeksi depth ke RGB, dan pemeriksaan mutu
+depth sudah divalidasi pada SawitMVC-Depth. Klaim bahwa kanal depth menaikkan
+deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
+[arsip seed-42](archive/E022-seed42-awal.md).
+
+| Label | Arti |
+|---|---|
+| **Final** | Bukti dan metrik dibekukan; boleh dikutip sebagai hasil saat ini. |
+| **Arsip** | Rekam eksperimen terdahulu; gunakan hanya sebagai konteks historis, bukan capaian final. |
+| **Audit** | Bukti koreksi atau pemeriksaan; jangan mengutip skor lama sebagai hasil final. |
+| **Ditangguhkan** | Kode, data, atau arah kerja sudah ada, tetapi belum mendukung klaim performa. |
+
+## Register E-001 sampai E-022
+
+| Eksperimen | Pertanyaan dan data | Putusan | Status kutip | Detail |
+|---|---|---|---|---|
+| E-001 | Apakah `class_mismatch` mengukur ambiguitas kematangan pada SawitMVC? | Dipalsukan | Arsip | [SR-001](SR/SR-001-ambiguitas-kematangan.md) |
+| E-002 | Apakah master mentah Sawit dapat diinventarisasi? | Inventaris selesai | Arsip | [log](EKSPERIMEN.md) |
+| E-003 | Apakah DA3 menjaga geometri video orbit? | Dikonfirmasi untuk pose | Arsip | [SR-003](SR/SR-003-da3-video-orbit.md) |
+| E-004 | Apakah DA3 konsisten pada banyak video orbit? | Dikonfirmasi | Arsip | [SR-003](SR/SR-003-da3-video-orbit.md) |
+| E-005 | Apakah DA3 dapat mengaitkan empat atau delapan sisi foto? | Dikonfirmasi | Arsip | [SR-004](SR/SR-004-da3-empat-sisi.md) |
+| E-006 | Apakah pseudo-depth memisahkan tandan dari latar? | Dipalsukan | Arsip | [SR-005](SR/SR-005-sinyal-depth-tandan.md) |
+| E-007 | Apakah penautan geometri lintas sisi membantu? | Dipalsukan | Arsip | [SR-006](SR/SR-006-penautan-geometris.md) |
+| E-008 | Nomor tidak digunakan | Tidak ada run | - | [log](EKSPERIMEN.md) |
+| E-009 | Apakah ukuran kotak menjelaskan kesulitan B4? | Diagnosis tersedia | Arsip | [SR-007](SR/SR-007-diagnosis-b4.md) |
+| E-010 | Apakah B4 gagal karena kepadatan atau kontras? | Kontras dikonfirmasi, kepadatan dipalsukan | Arsip | [SR-007](SR/SR-007-diagnosis-b4.md) |
+| E-011 | Praproses apa yang membantu B4? | Tekstur dikonfirmasi, penajam kontras dipalsukan | Arsip | [SR-008](SR/SR-008-kanal-tekstur.md) |
+| E-012 | Apakah kelas kematangan bersifat ordinal? | Dikonfirmasi | Arsip | [SR-009](SR/SR-009-ordinalitas-kelas.md) |
+| E-013 | Apakah pipeline produksi 4 kanal siap untuk sensor? | Pipeline tersedia, belum ada bobot sensor | Ditangguhkan | [`reproduce/pipeline/`](../../reproduce/pipeline/) |
+| E-014 | Apakah hambatan mAP ada di deteksi atau klasifikasi? | Klasifikasi kematangan menjadi hambatan | Arsip | [SR-010](SR/SR-010-hambatan-klasifikasi.md) |
+| E-015 | Apakah piksel master mentah bisa dipetakan ke SawitMVC? | 3.992 dari 3.992 terpetakan | Arsip | [SR-002](SR/SR-002-resolusi-master-mentah.md) |
+| E-016 | Apakah plafon kematangan dapat dibuktikan? | Ditarik karena bukti cacat | Audit | [SR-011](SR/SR-011-plafon-kematangan.md) |
+| E-017 | Apakah detektor dua tahap lebih baik? | Dipalsukan | Arsip | [SR-012](SR/SR-012-dua-tahap.md) |
+| E-018 | Apakah sasaran 0,60/0,30 mungkin secara geometris? | Mungkin secara geometri anotasi | Arsip | [log](EKSPERIMEN.md) |
+| E-019 | Apakah resolusi tinggi dan augmentasi aman warna membantu? | Tidak konklusif | Arsip | [log](EKSPERIMEN.md) |
+| E-020 | Apakah RT-DETR NMS-free melampaui baseline? | Dikonfirmasi, kemudian dilampaui E-021 | Arsip | [SR-013](SR/SR-013-rtdetr-nms-free.md) |
+| E-021 | Apakah RF-DETR-L melampaui RT-DETR pada setelan identik? | Dikonfirmasi | **Final** | [METRICS](METRICS.md) dan [SR-014](SR/SR-014-rfdetr-dinov2.md) |
+| E-022 | Apakah depth sensor terregistrasi menaikkan mAP? | Fusi awal tidak didukung; klaim kenaikan belum sah | **Audit** | [audit](AUDIT-E022.md) dan [arsip](archive/E022-seed42-awal.md) |
+
+## Urutan baca menurut kebutuhan
+
+| Pembaca | Urutan |
+|---|---|
+| Pembaca hasil | Halaman ini, [METRICS.md](METRICS.md), lalu [SR-014](SR/SR-014-rfdetr-dinov2.md). |
+| Pemeriksa bukti | Halaman ini, [AUDIT-E022.md](AUDIT-E022.md), [arsip E-022](archive/E022-seed42-awal.md), lalu [EKSPERIMEN.md](EKSPERIMEN.md). |
+| Pelaksana reproduksi | Halaman ini, [PETA-SKRIP.md](../../reproduce/experiments/PETA-SKRIP.md), [catatan E-021](../../reproduce/experiments/CATATAN-TEKNIS-E021.md), lalu [REPRODUCE.md](../../reproduce/experiments/REPRODUCE.md). |
+
+`EKSPERIMEN.md` tetap menjadi catatan kronologis. `SR/` merangkai bukti per ide,
+dan `experiments/` menyimpan skrip serta JSON sumber.
