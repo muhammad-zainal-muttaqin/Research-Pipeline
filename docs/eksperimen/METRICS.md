@@ -206,6 +206,14 @@ plafon lokalisasi 0,8834/0,4702), `experiments/results/E-016/head_vs_crop.json` 
 
 ## E-022 — SawitMVC-Depth, depth SENSOR Orbbec, 4-kanal simultan (2026-07-29)
 
+> **⚠ SEMUA ANGKA DI BAGIAN INI SEED-42 TUNGGAL — DICABUT SEBAGIAN 2026-07-30.**
+> Replikasi 3 seed membatalkan arah-efeknya (YOLO26n Δ = +0,0252 / −0,0063 /
+> −0,0013; CI95 semuanya melewati nol). Angka lengan **derau** dan **depth pohon
+> LAIN** diproduksi dengan kode cacat dan sedang diganti. Detail:
+> [AUDIT-E022.md](AUDIT-E022.md) · pencabutan penuh:
+> [EKSPERIMEN.md](EKSPERIMEN.md) §E-022.
+> Tabel multi-seed protokol beku akan menggantikan bagian ini.
+
 **Dataset LAIN, angka TIDAK sebanding dengan tabel di atas.** SawitMVC-Depth:
 352 pohon, 1.408 citra 1280×800, 2.299 kotak (vs SawitMVC 953 pohon / 3.992 citra
 / 18.540 kotak). Prior kelas terbalik (B3 52,3%→14,0%; B1 11,0%→36,1%), kotak
@@ -256,7 +264,7 @@ resample per citra membuat CI terlalu sempit).
 |---|---|---|---|---|---|
 | YOLO26n | 0,3249 | 0,3501 | +0,0252 | [−0,0215; +0,0632] | 0,851 |
 | RF-DETR Nano | 0,4196 | 0,4635 | +0,0439 | [+0,0000; +0,0918] | 0,975 |
-| RT-DETR-L | 0,4070 | 0,3882 | −0,0177 | [−0,0669; +0,0203] | 0,185 |
+| RT-DETR-L | 0,4076 | 0,3900 | −0,0177 | [−0,0669; +0,0203] | 0,225 |
 | YOLO26n **derau** | 0,3249 | 0,3686 | **+0,0437** | **[+0,0051; +0,0875]** | 0,991 |
 
 Uji yang mengisolasi **kandungan informasi** depth (kedua lengan 4-kanal, jumlah

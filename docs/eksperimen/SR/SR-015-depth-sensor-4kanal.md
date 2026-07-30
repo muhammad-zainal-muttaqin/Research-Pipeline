@@ -1,6 +1,17 @@
 # SR-015 — Depth SENSOR 4-kanal simultan: informasinya ada, cara memasukkannya salah
 
-**Ide I-4/I-8** · **Eksperimen:** E-022 · **Putusan: DIPALSUKAN (fusi awal); mekanisme depth TERKONFIRMASI pada model besar)** · 2026-07-29
+**Ide I-4/I-8** · **Eksperimen:** E-022 · **Putusan: DIPALSUKAN (fusi awal); klausa "mekanisme depth TERKONFIRMASI pada model besar" DICABUT 2026-07-30** · 2026-07-29
+
+> **⚠ PENCABUTAN KLAUSA PUTUSAN — 2026-07-30.** Putusan "fusi awal DIPALSUKAN"
+> **tetap berdiri** dan justru diperkuat replikasi 3 seed. Yang **dicabut**
+> adalah klausa keduanya: "mekanisme depth terkonfirmasi pada model besar".
+> Klausa itu bertumpu pada satu perbandingan seed-42 RT-DETR-L depth − derau
+> (+0,0365, B1 +0,0698, B4 +0,1001) — dan lengan derau pembandingnya dibuat
+> dengan kode cacat. Setelah diperbaiki, derau RT-DETR-L naik 0,3552 → 0,3894,
+> sehingga selisih itu menyusut drastis. Pada seed1337 derau bahkan
+> **mengalahkan** depth (0,4353 vs 0,4125) dengan B4 0,3147 vs 0,1206.
+> B4 hanya punya 95 kotak; sebaran antar-seed-nya melebihi seluruh efek yang
+> diklaim. Detail: [AUDIT-E022.md](../AUDIT-E022.md).
 
 ---
 
@@ -81,9 +92,9 @@ kanal ke-4 lalu mengalikan **seluruh** bobot dengan 0,75.
 
 | Kanal ke-4 | YOLO26n (2,57 jt) | RT-DETR-L (33,0 jt) | RF-DETR Nano |
 |---|---|---|---|
-| tidak ada (RGB) | 0,3249 | **0,4070** | 0,4196 |
-| depth terregistrasi | 0,3501 | 0,3882 | **0,4635** |
-| derau acak | 0,3686 | 0,3552 | — |
+| tidak ada (RGB) | 0,3249 | **0,4076** | 0,4196 |
+| depth terregistrasi | 0,3501 | 0,3900 | **0,4635** |
+| derau acak | 0,3686 | 0,3535 | — |
 | depth pohon LAIN | 0,3721 | — | — |
 
 Selisih berpasangan, bootstrap 2000× per **pohon**:

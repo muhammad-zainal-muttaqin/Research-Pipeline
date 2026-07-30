@@ -33,7 +33,6 @@ import fourch  # noqa: E402
 
 NAMES = ["B1", "B2", "B3", "B4"]
 DEPTH_DIR = Path("/workspace/experiments/depth_png")
-_URUT = None
 
 
 def pohon_dari(nama: str) -> str:
@@ -65,7 +64,7 @@ def bangun_gt(paths: list[Path]) -> tuple[COCO, dict[str, int]]:
 
 
 def prediksi(bobot: str, paths: list[Path], peta: dict[str, int], imgsz: int,
-             modal: str, chunk: int = 8) -> list[dict]:
+             modal: str, chunk: int = 8, seed: int = 42) -> list[dict]:
     from ultralytics import RTDETR, YOLO
     import cv2
 
@@ -83,16 +82,23 @@ def prediksi(bobot: str, paths: list[Path], peta: dict[str, int], imgsz: int,
                     # evaluasi dapat direproduksi
                     # zlib.crc32, bukan hash(): hash() Python diacak per proses
                     # (PYTHONHASHSEED) sehingga deraunya tidak dapat direproduksi
-                    rng = np.random.default_rng(zlib.crc32(p.stem.encode()))
+                    # Harus identik dengan _patch_depth_acak saat training:
+                    # pola tetap per berkas, tetapi berbeda antar-seed.
+                    rng = np.random.default_rng(zlib.crc32(p.stem.encode()) ^ seed)
                     d8 = rng.integers(0, 256, bgr.shape[:2], dtype=np.uint8)
                 elif modal == "tukar":
-                    # kontrol registrasi: depth ASLI milik citra LAIN (pergeseran
-                    # setengah daftar, deterministik — sama seperti saat latih)
-                    global _URUT
-                    if _URUT is None:
-                        _URUT = sorted(q.stem for q in DEPTH_DIR.glob("*.png"))
-                    i2 = _URUT.index(p.stem)
-                    lain = _URUT[(i2 + len(_URUT) // 2) % len(_URUT)]
+                    # Donor hanya dari split evaluasi yang sama dan pohon lain,
+                    # identik dengan _patch_depth_tukar saat training.
+                    urut = sorted(q.stem for q in paths)
+                    i2 = urut.index(p.stem)
+                    geser = max(4, len(urut) // 2)
+                    lain = urut[(i2 + geser) % len(urut)]
+                    for j in range(len(urut)):
+                        if pohon_dari(lain) != pohon_dari(p.stem):
+                            break
+                        lain = urut[(i2 + geser + j + 1) % len(urut)]
+                    if pohon_dari(lain) == pohon_dari(p.stem):
+                        raise RuntimeError(f"donor tukar pohon lain tidak ditemukan untuk {p.stem}")
                     d8 = cv2.imread(str(DEPTH_DIR / f"{lain}.png"), cv2.IMREAD_GRAYSCALE)
                 else:
                     d8 = fourch.load_depth_for(p, DEPTH_DIR)
@@ -189,7 +195,8 @@ def main() -> None:
         modal = meta.get("modal", "rgbd" if "rgbd" in rd.name else "rgb")
         bobot = str(rd / "weights" / "best.pt")
         print(f"\n=== {rd.name} (modal={modal}) ===")
-        dets = prediksi(bobot, paths, peta, args.imgsz, modal)
+        dets = prediksi(bobot, paths, peta, args.imgsz, modal,
+                        seed=int(meta.get("seed", 42)))
         skor = coco_eval(gt, dets, img_ids)
         skor["modal"] = modal
         skor["n_deteksi"] = len(dets)

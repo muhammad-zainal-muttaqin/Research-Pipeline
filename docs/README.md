@@ -23,7 +23,8 @@ Urutan baca: **STATUS → EKSPERIMEN → METRICS → SR**.
 | [`EKSPERIMEN.md`](eksperimen/EKSPERIMEN.md) | Log kronologis E-001…E-021, satu entri = satu hipotesis falsifiable | **Append-only** |
 | [`METRICS.md`](eksperimen/METRICS.md) | Tabel metrik definitif semua run: per-kelas B1–B4, val + test | Sumber angka |
 | [`LAPORAN-EKSPERIMEN.md`](eksperimen/LAPORAN-EKSPERIMEN.md) | Cuplikan terkurasi yang merangkai satu cerita utuh | **Tayang di situs publik** |
-| [`SR/`](eksperimen/SR/) | Satu berkas per ide solusi: masalah → hipotesis → bukti → putusan | SR-001…SR-014 |
+| [`SR/`](eksperimen/SR/) | Satu berkas per ide solusi: masalah → hipotesis → bukti → putusan | SR-001…SR-015 |
+| [`AUDIT-E022.md`](eksperimen/AUDIT-E022.md) | Audit trainer & evaluator E-022: cacat yang ditemukan, mana yang material, mana yang diturunkan lewat pengukuran | **Baca sebelum mengutip angka E-022** |
 
 Kode, JSON mentah, dan log yang menghasilkan angka-angka itu ada di
 [`../experiments/`](../experiments/) — lihat

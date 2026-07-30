@@ -1055,6 +1055,38 @@ melainkan arsitektur NMS-free. Putusan E-021 makin kuat. Tabel penuh per-kelas:
 
 ## E-022 — Depth SENSOR Orbbec pada SawitMVC-Depth: registrasi + 4-kanal simultan (2026-07-29) · Ide I-4/I-8 · [SR-015](SR/SR-015-depth-sensor-4kanal.md)
 
+> ### ⚠ PENCABUTAN SEBAGIAN — 2026-07-30
+>
+> **Seluruh kesimpulan arah-efek di entri ini bertumpu pada SATU seed (42) dan
+> tidak bertahan saat direplikasi.** Replikasi 3 seed pada dua arsitektur
+> (12 run YOLO26n + 9 run RT-DETR-L, 60 epoch, split per-pohon identik)
+> menunjukkan:
+>
+> - **YOLO26n:** Δ(RGB-D − RGB) = +0,0252 / −0,0063 / −0,0013 pada seed
+>   42/1337/2024. Rerata +0,0059, dan CI95 ketiganya melewati nol
+>   (P(>0) = 0,851 / 0,436 / 0,406). Angka +0,0252 yang dilaporkan di bawah
+>   adalah **seed paling menguntungkan dari tiga**, bukan efek yang dapat
+>   dipertahankan. Pernyataan yang benar: **tidak dapat dibedakan dari nol.**
+> - **B4 hanya punya 95 kotak** di dataset ini, dan AP B4 bergerak
+>   0,0945 → 0,3147 hanya karena ganti seed. Seluruh Δ agregat yang
+>   diperdebatkan di entri ini (±0,04) **lebih kecil daripada lantai derau
+>   antar-seed pada satu kelas yang memegang 25% bobot macro-mAP.**
+>
+> **Dua lengan kontrol di bawah dibuat dengan kode cacat** dan angkanya tidak
+> sah (lihat [AUDIT-E022.md](AUDIT-E022.md)):
+> - lengan **depth pohon LAIN** mengambil donor lintas split — 192/980 citra
+>   train memakai depth pohon **test**. Setelah diperbaiki, angkanya turun
+>   0,3771 → 0,3301 (−0,0470). Klaim "registrasi tidak memberi apa pun"
+>   **tidak lagi didukung**.
+> - lengan **derau** memakai satu RNG bersama sehingga kanal ke-4 diacak ulang
+>   tiap epoch — ia diam-diam mendapat augmentasi. Setelah diperbaiki derau
+>   justru **naik** (RT-DETR-L 0,3552 → 0,3894), jadi temuan "derau
+>   mengalahkan depth" bertahan dan bahkan diperkuat.
+>
+> Angka multi-seed protokol beku sedang diproduksi; entri ini akan
+> **direstrukturisasi**, bukan ditambal. Sampai itu selesai, jangan mengutip
+> arah-efek dari entri ini.
+
 **Konteks** — Dataset baru `ULM-DS-Lab/SawitMVC-Depth` (352 pohon, 1.408 citra
 RGB 1280×800, depth sensor Orbbec Y16 848×480 uint16le milimeter, 2.299 kotak
 B1–B4) menyediakan hal yang selama ini kosong di STATUS.md §5: **depth SENSOR
@@ -1216,9 +1248,9 @@ selisihnya bersih). Test = 72 pohon / 288 citra / 504 kotak.
 
 | Kanal ke-4 | YOLO26n (2,57 jt) | RT-DETR-L (33,0 jt) | RF-DETR Nano |
 |---|---|---|---|
-| tidak ada (RGB) | 0,3249 | **0,4070** | 0,4196 |
-| depth sensor terregistrasi | 0,3501 | 0,3882 | **0,4635** |
-| derau acak | 0,3686 | 0,3552 | (val EMA 0,5093) |
+| tidak ada (RGB) | 0,3249 | **0,4076** | 0,4196 |
+| depth sensor terregistrasi | 0,3501 | 0,3900 | **0,4635** |
+| derau acak | 0,3686 | 0,3535 | (val EMA 0,5093) |
 | depth pohon LAIN | 0,3721 | — | — |
 
 Selisih berpasangan, bootstrap 2000x resample per **POHON**:
@@ -1292,10 +1324,16 @@ informasi B4. Kontrol derau dan kontrol tukar wajib diulang di sana.
   B4 bersandar pada puluhan kotak.
 - **Dataset 8x lebih kecil** dari SawitMVC. Daya uji untuk mendeteksi efek kecil
   memang rendah; "tidak terbukti" di sini bukan "terbukti tidak ada".
-- RF-DETR RGB-D dan derau: run mati saat menulis checkpoint epoch 60 karena kuota
-  disk habis (`checkpoint_59.ckpt` terpotong tepat 256 MB). 60 epoch latih+val
-  tuntas dan `checkpoint_best_ema.pth` selamat, jadi evaluasi test dijalankan dari
-  checkpoint itu lewat `eval/eval_rfdetr_e022.py` — bukan latih ulang.
+- RF-DETR RGB-D dan derau: `run_test` bawaan tidak pernah berjalan pada kedua
+  lengan; evaluasi test dijalankan terpisah dari `checkpoint_best_ema.pth` lewat
+  `eval/eval_rfdetr_e022.py` — bukan latih ulang.
+  **Koreksi 2026-07-30:** versi sebelumnya menyatakan penyebabnya kuota disk
+  habis dengan `checkpoint_59.ckpt` terpotong tepat 256 MB pada kedua lengan.
+  **Klaim itu tidak dapat disubstansiasi dan sudah dihapus.** Pemeriksaan disk:
+  `runs_e022/rfdetrnano_rgbd/` tidak memuat `.ckpt` sama sekali, dan
+  `checkpoint_59.ckpt` hanya ada di `runs_e022/rfdetrnano_derau/` dalam ukuran
+  utuh 488.105.861 byte — bukan 268.435.456. Penyebab sebenarnya tidak diketahui
+  dan tidak boleh dinarasikan tanpa bukti.
 
 **Reproduksi** — `build/depth_calib.py`, `analysis/verify_depth_mi.py` (gerbang registrasi),
 `build/reproject_depth.py` (PNG kanonik + `depth_meta.json`), `build/make_splits_depth.py`,

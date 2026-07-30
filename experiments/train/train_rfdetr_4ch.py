@@ -239,6 +239,9 @@ def main() -> int:
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--grad-accum", type=int, default=2)
     ap.add_argument("--workers", type=int, default=8)
+    # CACAT AUDIT 2026-07-30 (diperbaiki): seed dulu di-hardcode 42 di model.train(),
+    # jadi setiap "seed berbeda" pada matriks multi-seed akan memakai RNG identik.
+    ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--output", default=None)
     args = ap.parse_args()
 
@@ -268,7 +271,7 @@ def main() -> int:
     model.train(
         dataset_dir=args.dataset, output_dir=nama, epochs=args.epochs,
         batch_size=args.batch, grad_accum_steps=args.grad_accum,
-        num_workers=args.workers, resolution=args.resolution, device="cuda", seed=42,
+        num_workers=args.workers, resolution=args.resolution, device="cuda", seed=args.seed,
         early_stopping=False,
         # pagar keadilan E-021: default multi_scale+expanded_scales mengunci ke
         # skala TERBESAR (resolusi x 45/40), memberi keunggulan resolusi diam-diam

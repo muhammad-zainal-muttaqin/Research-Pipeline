@@ -64,7 +64,7 @@ def main() -> int:
         if args.depth_acak:
             _patch_depth_acak(args.seed)
         elif args.depth_tukar:
-            _patch_depth_tukar(args.depth_dir)
+            _patch_depth_tukar(args.depth_dir, str(SPLIT / args.split))
         else:
             fourch.patch_loader(args.depth_dir, dropout=args.dropout)
 
@@ -107,7 +107,16 @@ def main() -> int:
     return 0
 
 
-def _patch_depth_tukar(depth_dir: str) -> None:
+def _pohon(stem: str) -> str:
+    """Pohon dari nama berkas: DAMIMAS_A21B_0002_3 -> DAMIMAS_A21B_0002.
+
+    Sama persis dengan pohon_dari() di eval_e022_pycoco.py — unit resample
+    bootstrap dan unit pemisah donor tukar HARUS memakai definisi yang sama.
+    """
+    return stem.rsplit("_", 1)[0]
+
+
+def _patch_depth_tukar(depth_dir: str, split_dir: str) -> None:
     """Kontrol REGISTRASI: kanal ke-4 = peta depth asli, tetapi milik citra LAIN.
 
     Kontrol derau hanya menguji "apakah kanal ke-4 mana pun berpengaruh". Kontrol
@@ -124,9 +133,32 @@ def _patch_depth_tukar(depth_dir: str) -> None:
     import ultralytics.data.base as base
     from ultralytics.data.base import BaseDataset
 
-    semua = sorted(p.stem for p in Path(depth_dir).glob("*.png"))
-    pasangan = {s: semua[(i + len(semua) // 2) % len(semua)] for i, s in enumerate(semua)}
-    print(f"depth-tukar: {len(pasangan)} pasangan (pergeseran setengah daftar, deterministik)")
+    # CACAT AUDIT 2026-07-30 (diperbaiki): versi lama membangun daftar donor dari
+    # SELURUH 1408 PNG lintas split, jadi 192/980 citra TRAIN (19,6%) memakai peta
+    # depth milik pohon TEST dan 92/980 (9,4%) milik pohon VAL saat backprop.
+    # Peta depth uji tidak boleh pernah dilihat saat latih, sekalipun sebagai
+    # kontrol yang sengaja dibuat salah. Sekarang donor dipilih HANYA dari split
+    # yang sama, dan dijamin berasal dari POHON yang berbeda.
+    pasangan: dict[str, str] = {}
+    for split in ("train", "val", "test"):
+        berkas = Path(split_dir) / f"{split}.txt"
+        if not berkas.is_file():
+            continue
+        stem = sorted(Path(x.strip()).stem for x in berkas.read_text().splitlines() if x.strip())
+        n = len(stem)
+        geser = max(4, n // 2)  # >=4 sisi = dijamin lompat ke pohon lain
+        for i, s in enumerate(stem):
+            donor = stem[(i + geser) % n]
+            if _pohon(donor) == _pohon(s):  # pengaman kalau split sangat kecil
+                for j in range(1, n):
+                    donor = stem[(i + geser + j) % n]
+                    if _pohon(donor) != _pohon(s):
+                        break
+            pasangan[s] = donor
+        print(f"depth-tukar[{split}]: {n} citra, donor dari split yang sama")
+    sendiri = sum(1 for s, d in pasangan.items() if _pohon(s) == _pohon(d))
+    assert sendiri == 0, f"{sendiri} pasangan memakai pohon sendiri"
+    print(f"depth-tukar: {len(pasangan)} pasangan, 0 lintas-split, 0 pohon-sendiri")
 
     orig_init = BaseDataset.__init__
 
@@ -160,12 +192,21 @@ def _patch_depth_acak(seed: int) -> None:
     maka kenaikannya berasal dari kapasitas tambahan di stem, bukan dari
     kedalaman — dan klaim 'depth menolong' batal.
     """
+    import zlib
+
     import cv2
     import numpy as np
     import ultralytics.data.base as base
     from ultralytics.data.base import BaseDataset
 
-    rng = np.random.default_rng(seed)
+    # CACAT AUDIT 2026-07-30 (diperbaiki): versi lama membuat SATU rng bersama di
+    # sini lalu memanggilnya di dalam imread. Akibatnya derau berubah tiap epoch
+    # dan tiap pekerja dataloader — jadi lengan derau diam-diam mendapat
+    # AUGMENTASI (kanal ke-4 diacak ulang terus-menerus), sementara lengan depth
+    # mendapat kanal yang TETAP. Itu bukan kontrol yang setara: derau jadi
+    # regularisator. Sekarang seed diturunkan per BERKAS dengan zlib.crc32 —
+    # sama seperti padanan RF-DETR — sehingga tiap citra selalu memperoleh pola
+    # derau yang sama persis, sebagaimana depth-nya tetap.
     orig_init = BaseDataset.__init__
 
     def patched_init(self, *a, **kw):
@@ -182,6 +223,9 @@ def _patch_depth_acak(seed: int) -> None:
         bgr = cv2.imread(str(filename), cv2.IMREAD_COLOR)
         if bgr is None:
             return None
+        # seed per berkas: stabil lintas epoch, lintas pekerja, dan lintas proses
+        # (zlib.crc32 deterministik; hash() diacak PYTHONHASHSEED, jangan dipakai)
+        rng = np.random.default_rng(zlib.crc32(Path(filename).stem.encode()) ^ seed)
         derau = rng.integers(0, 256, bgr.shape[:2], dtype=np.uint8)
         return np.dstack([bgr, derau])
 
