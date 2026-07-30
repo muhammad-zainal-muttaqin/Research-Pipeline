@@ -97,6 +97,7 @@ Selisih berpasangan, bootstrap 2000× per **pohon**:
 | YOLO26n depth − derau | −0,0186 | [−0,0694; +0,0191] |
 | YOLO26n depth − tukar | −0,0220 | [−0,0506; +0,0085] |
 | **RT-DETR-L depth − derau** | **+0,0365** | [−0,0014; +0,0668] |
+| RF-DETR Nano depth − derau | +0,0087 | [−0,0372; +0,0538] |
 
 ## 5. Putusan
 
@@ -114,6 +115,10 @@ yang terbukti lebih selaras di §3 tidak diterjemahkan menjadi mAP.
 mengalahkan kontrol deraunya sendiri secara signifikan justru pada kelas yang
 diprediksi teori: **B4 +0,1001 [+0,0062; +0,1618]** dan B1 +0,0698 [+0,0306;
 +0,1100]. Ini bukan hasil nol — ini hasil "informasinya ada, salurannya salah".
+
+Pola ini konsisten pada **dua** model kecil: depth tidak dapat dibedakan dari
+derau (YOLO26n −0,0186; RF-DETR Nano +0,0087) dan signifikan lebih buruk di B1
+(−0,0734 dan −0,0446). Hanya di 33,0 jt parameter isi kanal menentukan.
 
 **Arah efek kanal ke-4 ditentukan KAPASITAS MODEL, bukan isi kanal.** Pada 2,57 jt
 parameter ia menaikkan dan isinya tidak penting (derau ≥ depth); pada 33,0 jt

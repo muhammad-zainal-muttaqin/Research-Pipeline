@@ -243,6 +243,24 @@ resample per citra membuat CI terlalu sempit).
 | RT-DETR-L | 0,4070 | 0,3882 | −0,0177 | [−0,0669; +0,0203] | 0,185 |
 | YOLO26n **derau** | 0,3249 | 0,3686 | **+0,0437** | **[+0,0051; +0,0875]** | 0,991 |
 
+Uji yang mengisolasi **kandungan informasi** depth (kedua lengan 4-kanal, jumlah
+parameter dan perlakuan augmentasi identik; hanya isi kanal ke-4 berbeda):
+
+| Model | derau | depth | delta | CI95 | P(>0) |
+|---|---|---|---|---|---|
+| YOLO26n (2,57 jt) | 0,3686 | 0,3501 | −0,0186 | [−0,0694; +0,0191] | 0,194 |
+| RF-DETR Nano (kecil) | 0,4547 | 0,4635 | +0,0087 | [−0,0372; +0,0538] | 0,649 |
+| **RT-DETR-L (33,0 jt)** | 0,3535 | 0,3900 | **+0,0365** | [−0,0014; +0,0668] | 0,971 |
+
+Per kelas, depth − derau: pada kedua model KECIL depth signifikan **lebih buruk**
+di B1 (YOLO26n −0,0734 [−0,1156; −0,0297]; RF-DETR Nano −0,0446 [−0,0876;
+−0,0008]); pada RT-DETR-L depth signifikan **lebih baik** di B1 +0,0698 [+0,0306;
++0,1100] **dan B4 +0,1001 [+0,0062; +0,1618]**. Kandungan informasi depth baru
+terpakai pada kapasitas tinggi.
+
+Kontrol registrasi (YOLO26n, depth benar − depth pohon lain): −0,0220
+[−0,0506; +0,0085] — **tidak dapat dibedakan**; B1 −0,0662 [−0,1089; −0,0199].
+
 Satu-satunya selisih yang CI-nya **tidak** memuat nol adalah lengan **derau** —
 bukan lengan depth.
 

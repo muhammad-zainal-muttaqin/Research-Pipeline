@@ -1220,6 +1220,7 @@ Selisih berpasangan, bootstrap 2000x resample per **POHON**:
 | YOLO26n depth − derau | −0,0186 | [−0,0694; +0,0191] | 0,194 |
 | YOLO26n depth − tukar | −0,0220 | [−0,0506; +0,0085] | 0,080 |
 | RT-DETR-L depth − derau | +0,0365 | [−0,0014; +0,0668] | 0,971 |
+| RF-DETR Nano depth − derau | +0,0087 | [−0,0372; +0,0538] | 0,649 |
 
 **Putusan H-022 — DIPALSUKAN, pada dua kriteria independen:**
 
@@ -1245,6 +1246,13 @@ RT-DETR-L, depth mengalahkan kontrol deraunya sendiri secara signifikan justru
 di kelas yang diprediksi teori: **B4 +0,1001 [+0,0062; +0,1618]** dan B1 +0,0698
 [+0,0306; +0,1100]. Jadi kandungan informasi depth NYATA pada model besar,
 tetapi tidak cukup menutup kerugian yang ditimbulkan kanal ke-4 itu sendiri.
+
+Pola depth-vs-derau kini lengkap untuk ketiga arsitektur dan **konsisten**: pada
+**dua** model kecil depth tidak dapat dibedakan dari derau secara keseluruhan
+(YOLO26n −0,0186; RF-DETR Nano +0,0087, keduanya CI memuat nol) dan justru
+signifikan **lebih buruk** di B1 (−0,0734 dan −0,0446). Hanya pada RT-DETR-L
+33,0 jt parameter isi kanal menentukan: B1 +0,0698 dan B4 +0,1001, keduanya CI
+tidak memuat nol. **Kandungan informasi depth baru terpakai pada kapasitas tinggi.**
 
 **Temuan struktural: arah efek kanal ke-4 ditentukan KAPASITAS MODEL, bukan isi
 kanal.** Pada 2,57 jt parameter kanal ke-4 menaikkan (dan isinya tidak penting —

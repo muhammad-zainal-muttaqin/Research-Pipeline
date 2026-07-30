@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import cv2
@@ -19,6 +21,20 @@ import numpy as np
 
 from eval_e022_pycoco import NAMES, bangun_gt, pohon_dari
 from eval_e022_paired import map50_semua
+
+_GT = None
+_DT = None
+
+
+def _satu_bootstrap(ids):
+    """Satu iterasi bootstrap di proses pekerja (GT/DT diwarisi lewat fork)."""
+    try:
+        a = map50_semua(_GT, _DT["rgbd"], ids)
+        b = map50_semua(_GT, _DT["rgb"], ids)
+    except Exception:
+        return None
+    return {m: a[m] - b[m] for m in ["mAP50", *NAMES]
+            if not (np.isnan(a[m]) or np.isnan(b[m]))}
 
 DEPTH_DIR = Path("/workspace/experiments/depth_png")
 
@@ -100,19 +116,26 @@ def main() -> None:
     pohon = sorted({pohon_dari(p.stem) for p in paths})
     per_pohon = {t: [peta[p.stem] for p in paths if pohon_dari(p.stem) == t] for t in pohon}
     rng = np.random.default_rng(42)
-    selisih = {m: [] for m in ["mAP50", *NAMES]}
-    print(f"bootstrap berpasangan {args.B}x pada {len(pohon)} pohon ...")
+    # Bootstrap diparalelkan (mesin 128 core, loop serial hanya memakai ~1).
+    # Indeks resample dibangkitkan lebih dulu dari satu rng ber-seed, jadi
+    # hasilnya identik dengan versi serial dan tidak bergantung urutan selesai.
+    daftar_ids = []
     for _ in range(args.B):
         contoh = rng.choice(len(pohon), len(pohon), replace=True)
-        ids = [i for k in contoh for i in per_pohon[pohon[k]]]
-        try:
-            a = map50_semua(gt, dt["rgbd"], ids)
-            b = map50_semua(gt, dt["rgb"], ids)
-        except Exception:
-            continue
-        for m in selisih:
-            if not (np.isnan(a[m]) or np.isnan(b[m])):
-                selisih[m].append(a[m] - b[m])
+        daftar_ids.append([i for k in contoh for i in per_pohon[pohon[k]]])
+
+    selisih = {m: [] for m in ["mAP50", *NAMES]}
+    n_proc = min(32, max(1, (os.cpu_count() or 8) // 4))
+    print(f"bootstrap berpasangan {args.B}x pada {len(pohon)} pohon, {n_proc} proses ...")
+
+    global _GT, _DT
+    _GT, _DT = gt, dt
+    with ProcessPoolExecutor(max_workers=n_proc) as ex:
+        for r in ex.map(_satu_bootstrap, daftar_ids, chunksize=8):
+            if r is None:
+                continue
+            for m, v in r.items():
+                selisih[m].append(v)
 
     hasil = {"titik": titik, "delta": {}, "n_pohon": len(pohon)}
     for m, v in selisih.items():
