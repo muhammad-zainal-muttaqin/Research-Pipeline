@@ -1349,3 +1349,71 @@ informasi B4. Kontrol derau dan kontrol tukar wajib diulang di sana.
 Split persis: `splits_depth/seed42/`. Tabel seed-42 awal:
 [archive/E022-seed42-awal.md](archive/E022-seed42-awal.md). Audit koreksi:
 [AUDIT-E022.md](AUDIT-E022.md).
+
+---
+
+## E-024 — Inkonsistensi prediksi lintas-sisi sebagai ukuran ambiguitas (2026-07-31) · pengganti E-001
+
+**Hipotesis** — `class_mismatch` dipalsukan di E-001 sebagai ukuran ambiguitas
+kematangan: nol dari 7.328 bunch multi-sisi, yang menjadikannya pemeriksa
+integritas anotasi, bukan pengukur ambiguitas. CLAUDE.md mencatat penggantinya:
+pakai identitas bunch lintas-sisi sebagai **oracle**, lalu ukur inkonsistensi
+**prediksi detektor** pada tandan fisik yang sama. Hipotesisnya: detektor
+memberi kelas kematangan berbeda pada objek fisik yang sama dilihat dari sisi
+berbeda, dan ketidaksepakatan itu menumpuk pada pasangan kelas bertetangga.
+**Dipalsukan bila** laju inkonsisten mendekati nol (artinya penampilan sudah
+menentukan kelas secara stabil) atau tersebar merata tanpa struktur.
+
+**Cara** — `analysis/cross_side_consistency.py`. Oracle tidak dihitung ulang:
+`json/<tree>.json` sudah menyediakan `bunches[].appearances`, yaitu transitive
+closure graf `_confirmedLinks` — satu entri = satu tandan fisik dengan kotak
+piksel per sisi. Prediksi dibuat lewat jalur yang sama dengan evaluator E-022
+(`eval_e022_pycoco.prediksi`) supaya praproses dan komposisi kanal tidak
+berbeda diam-diam. Kemunculan dicocokkan ke prediksi pada IoU >= 0,5, conf
+>= 0,25. Checkpoint: `yolo26n_rgb_seed42` (60 epoch, split test SawitMVC-Depth
+72 pohon).
+
+**Hasil**
+
+| Ukuran | Nilai |
+|---|---:|
+| Tandan fisik di split test | 310 |
+| Tampak dari >= 2 sisi | 182 |
+| Terukur (>= 2 sisi terdeteksi) | 82 |
+| Kemunculan terlewat | 137 / 376 = **36,4%** |
+| **Tidak konsisten** | 16 / 82 = **19,5%** |
+
+Pasangan kelas yang bertabrakan: **B1↔B2 sebanyak 11**, **B2↔B3 sebanyak 6**.
+Tidak ada tabrakan yang melibatkan B4. Sebaran per kelas GT yang terukur:
+B1 50, B2 25, B3 7, **B4 nol** — seluruh tandan B4 multi-sisi gagal terdeteksi
+di >= 2 sisi, sehingga tidak masuk pengukuran sama sekali.
+
+**Putusan — DIKONFIRMASI, dengan daya uji terbatas.** Detektor memberi kelas
+berbeda pada tandan fisik yang sama pada 19,5% kasus, sementara anotator
+manusia tidak pernah (0/7.328 di E-001). Pemisahan itu bersih: ambiguitas
+berada pada klasifikasi berbasis penampilan, bukan pada labelnya. Strukturnya
+juga sesuai prediksi — tabrakan terkonsentrasi pada tetangga ordinal (B1↔B2,
+B2↔B3), konsisten dengan ordinalitas kelas yang dikonfirmasi E-012/SR-009.
+
+**Yang tidak boleh dihaluskan:**
+
+- **n = 82** tandan terukur. Setiap butir persentase bersandar pada kurang dari
+  satu tandan.
+- **Laju terlewat 36,4%** dicatat justru supaya "konsisten" tidak tertukar
+  dengan "tidak terdeteksi". Bunch yang hanya terdeteksi di satu sisi
+  dikeluarkan dari pengukuran, bukan dihitung konsisten.
+- **B4 nol** — kelas yang paling penting bagi pertanyaan riset ini sama sekali
+  tidak terwakili. Untuk B4, ukuran ini belum memberi apa pun.
+- Satu seed, satu arsitektur, satu ambang conf. Ambang 0,25 dipilih sebagai
+  default umum, bukan hasil sapuan; sensitivitasnya belum diuji.
+- Angka ini **bukan** metrik performa dan tidak sebanding dengan mAP mana pun.
+
+**Dampak** — Menyediakan ukuran ambiguitas yang tidak bergantung label manusia,
+dan karena itu dapat dipakai menguji apakah kedalaman **menstabilkan** identitas
+lintas-sisi: jalankan skrip yang sama pada checkpoint RGB-D sepadan dan
+bandingkan laju inkonsistennya. Itu pertanyaan yang tidak terjawab oleh mAP
+agregat, dan kini punya alatnya. Lengan RGB-D menyusul setelah matriks G2
+selesai.
+
+**Reproduksi** — `analysis/cross_side_consistency.py --bobot <run>/weights/best.pt
+--modal rgb`. Hasil: `evidence/experiments/results/E-024/konsistensi_rgb_seed42.json`.
