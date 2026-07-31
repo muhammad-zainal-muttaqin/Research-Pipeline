@@ -1507,3 +1507,73 @@ yang sudah diperbaiki.
 
 **Reproduksi** — `eval/diag_evaluator_gap.py --run <run> --modal <rgb|rgbd>`.
 Hasil: `evidence/experiments/results/E-022/diag_evaluator_gap_{rgb,rgbd}.json`.
+
+---
+
+## E-026 — Apakah depth menstabilkan identitas lintas-sisi? (2026-07-31) · lanjutan [E-024]
+
+**Hipotesis** — [E-024](#) menetapkan ukuran inkonsistensi prediksi lintas-sisi
+yang tidak bergantung label manusia. Pertanyaan yang ia buka: kalau kegagalan
+B2/B3 bersifat **fotometrik** (SR-007, SR-009), kedalaman seharusnya **tidak**
+menolong; tetapi kalau sebagian ketidakstabilan berasal dari geometri —
+tandan yang tampak berbeda karena sudut, oklusi, atau jarak — kanal kedalaman
+seharusnya **menurunkan** laju inkonsisten. **Dipalsukan bila** laju
+inkonsisten lengan RGB-D tidak dapat dibedakan dari lengan RGB.
+
+**Cara** — `analysis/cross_side_consistency.py` pada pasangan checkpoint
+sepadan `yolo26n_rgb_seed42` dan `yolo26n_rgbd_seed42` (60 epoch, seed 42,
+konfigurasi identik kecuali kehadiran kanal kedalaman ter-reproyeksi). Split
+test 72 pohon. Prediksi lewat jalur evaluator E-022 yang sama, conf 0,25,
+IoU pencocokan 0,5. Bootstrap 10.000× atas selisih proporsi.
+
+**Hasil**
+
+| | RGB | RGB-D |
+|---|---:|---:|
+| Tandan terukur (>= 2 sisi terdeteksi) | 82 | 75 |
+| **Laju inkonsisten** | **0,1951** (16/82) | **0,2000** (15/75) |
+| Laju kemunculan terlewat | 0,3644 | 0,3883 |
+| Tabrakan B1↔B2 | 11 | 8 |
+| Tabrakan B2↔B3 | 6 | 6 |
+| Tabrakan B1↔B3 | 0 | 1 |
+
+**selisih (RGB-D − RGB) = +0,0049 · CI95 [−0,1194; +0,1314] · P(<0) = 0,457**
+
+**Putusan — DIPALSUKAN.** Kanal kedalaman tidak menurunkan inkonsistensi
+prediksi lintas-sisi. Titik estimasinya bahkan bergerak ke arah yang salah
+(+0,0049), CI memuat nol dengan lebar, dan peluang depth membantu hanya 0,457 —
+tidak dapat dibedakan dari lemparan koin. Laju terlewatnya juga sedikit lebih
+buruk (0,3883 vs 0,3644), jadi lengan RGB-D tidak membeli apa pun di sini,
+termasuk dalam hal deteksi dasar.
+
+**Konsisten dengan diagnosis yang sudah ada, dan itu penting.** SR-007 dan
+SR-009 mendiagnosis kegagalan B2/B3 sebagai **fotometrik**, dan CLAUDE.md
+mencatat sejak awal bahwa depth **tidak** akan menolong di sana. Tabrakan yang
+terukur di sini memang terkonsentrasi pada tetangga ordinal B1↔B2 dan B2↔B3 —
+persis kelas yang kegagalannya fotometrik. **Hasil negatif ini adalah
+konfirmasi teori, bukan kegagalan eksperimen**, dan harus dilaporkan begitu.
+
+**Yang tidak boleh dihaluskan:**
+
+- **n kecil** (82 dan 75 tandan), sehingga CI selebar ±0,12 memang wajar. Uji
+  ini **tidak berdaya** mendeteksi efek kecil; "tidak terbukti" bukan "terbukti
+  tidak ada".
+- **B4 nol terwakili di kedua lengan.** Kelas yang justru paling geometris —
+  dan karenanya paling mungkin dibantu depth — tidak masuk pengukuran sama
+  sekali karena tidak pernah terdeteksi di >= 2 sisi. **Untuk B4, hipotesis ini
+  belum diuji, bukan dipalsukan.** Ini batas terpenting entri ini.
+- Satu seed, satu arsitektur kecil (2,57 jt param). E-022/SR-015 menemukan
+  kandungan informasi depth baru terpakai pada kapasitas tinggi (RT-DETR-L
+  33,0 jt); ukuran ini belum dijalankan di sana.
+- Ambang conf 0,25 belum disapu; jumlah tandan terukur bergantung padanya.
+
+**Dampak** — Menambah satu bukti independen pada kesimpulan E-022: fusi awal
+4-kanal tidak membeli apa pun pada model kecil, kini juga terlihat pada ukuran
+yang sama sekali berbeda dari mAP. Ukuran ini menjadi **instrumen tambahan
+untuk G4/G6**: bila fusi menengah atau akhir benar-benar bekerja, laju
+inkonsisten harus turun — dan bila tidak turun, kenaikan mAP apa pun di sana
+patut dicurigai sebagai efek kapasitas. Jalankan juga pada RT-DETR-L begitu
+matriks G2 selesai, karena di situlah depth terbukti membawa informasi B4.
+
+**Reproduksi** — `analysis/cross_side_consistency.py --bobot <run>/weights/best.pt
+--modal <rgb|rgbd>`. Hasil: `evidence/experiments/results/E-024/konsistensi_{rgb,rgbd}_seed42.json`.
