@@ -146,7 +146,21 @@ terpotong 108 byte, tidak ada direktori run), `rtdetr-l_tukar_seed2024_fix`
 
 ---
 
-## Selisih evaluator yang belum terjelaskan
+## Selisih evaluator — TERLACAK 2026-07-31, lihat [E-025](EKSPERIMEN.md)
+
+> **Status: selesai.** Celahnya **menskala dengan jumlah deteksi**, bukan
+> berasal dari pemilihan checkpoint, ambang confidence, `max_det`, `maxDets`,
+> maupun perbedaan daftar citra — keempat kandidat di bawah plus satu kandidat
+> tambahan sudah diuji dan digugurkan oleh pengukuran. Lengan RGB-D memancarkan
+> 2,44× lebih banyak deteksi, dan evaluator internal ultralytics menaikkan
+> lengan yang deteksinya jarang (+0,0133) jauh lebih besar daripada yang padat
+> (−0,0023); asimetri 0,0156 itu cukup untuk membalik tanda Δ.
+>
+> **Aturan yang mengikat:** `hasil.json` tidak boleh dipakai membandingkan antar
+> lengan — celahnya bukan offset tetap. pycocotools adalah protokol tunggal.
+> Rincian, angka, dan batas klaimnya ada di [E-025](EKSPERIMEN.md).
+
+Catatan asli saat temuan diajukan, dipertahankan sebagai rekam:
 
 Ditemukan saat memvalidasi ringkasan multi-seed, **belum terlacak**, dan dicatat
 di sini karena ia memengaruhi arah kesimpulan.

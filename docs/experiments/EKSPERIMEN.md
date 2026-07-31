@@ -1417,3 +1417,93 @@ selesai.
 
 **Reproduksi** — `analysis/cross_side_consistency.py --bobot <run>/weights/best.pt
 --modal rgb`. Hasil: `evidence/experiments/results/E-024/konsistensi_rgb_seed42.json`.
+
+---
+
+## E-025 — Selisih evaluator E-022 terlacak: celah menskala dengan jumlah deteksi (2026-07-31) · menutup gerbang G1
+
+**Konteks** — [AUDIT-E022.md](AUDIT-E022.md) §"Selisih evaluator yang belum
+terjelaskan" mencatat celah sampai 0,028 antara `hasil.json` (jalur val internal
+trainer) dan `eval_e022_paired.py` (pycocotools), **tidak simetris antar lengan**,
+sehingga rerata Δ YOLO26n berubah tanda. Selama itu belum terlacak, tidak ada
+angka E-022 yang berstatus final. Empat kandidat didaftar audit: pemilihan
+checkpoint, ambang confidence, `max_det`, dan perbedaan daftar citra.
+
+**Hipotesis** — Celah berasal dari `maxDets`: tidak satu pun skrip menyetel
+`ev.params.maxDets`, jadi COCOeval memakai default `[1, 10, 100]` sementara
+prediksi dibuat dengan `max_det=300`. **Dipalsukan bila** memaksa maxDets=300
+tidak mengubah AP.
+
+**Cara** — `eval/diag_evaluator_gap.py`, satu himpunan deteksi dipakai untuk
+seluruh pengukuran sehingga tiap sumber celah terisolasi. Checkpoint dilatih
+ulang di RTX A4500 (asal: L4), pasangan `yolo26n_rgb_seed42` dan
+`yolo26n_rgbd_seed42`, 60 epoch, split test 72 pohon / 288 citra / 504 kotak.
+
+**Hasil**
+
+| | RGB | RGB-D |
+|---|---:|---:|
+| `hasil.json` mAP50 | 0,36119 | 0,35604 |
+| pycocotools mAP50 | 0,34789 | 0,35830 |
+| **celah (pycoco − hasil)** | **−0,01330** | **+0,00226** |
+| deteksi total | 4.610 | 11.233 |
+| rerata deteksi/citra | 16,0 | 39,0 |
+| citra dengan >100 deteksi | 0 | 25 |
+
+Konsekuensinya pada arah efek:
+
+| Δ(RGB-D − RGB) | nilai |
+|---|---:|
+| menurut `hasil.json` | **−0,00515** |
+| menurut pycocotools | **+0,01041** |
+
+**Putusan — hipotesis maxDets DIPALSUKAN; celahnya terlacak ke jumlah deteksi.**
+
+1. **maxDets bukan penyebabnya.** Memaksa `maxDets=300` menghasilkan mAP50 dan
+   mAP50-95 yang **identik sampai lima desimal** pada kedua lengan. Kandidat ini
+   diajukan di G1 lalu digugurkan oleh pengukuran, bukan oleh argumen.
+2. **Checkpoint bukan penyebabnya** — terverifikasi, kedua jalur memuat
+   `weights/best.pt` yang sama, dan daftar citra identik (satu `test.txt`).
+3. **Celahnya menskala dengan jumlah deteksi.** Lengan RGB-D memancarkan
+   **2,44× lebih banyak** deteksi (11.233 vs 4.610). Lengan yang deteksinya
+   jarang justru **dinaikkan** oleh evaluator internal ultralytics (+0,0133),
+   sedangkan lengan yang padat hampir tidak (−0,0023). Asimetrinya 0,0156 —
+   cukup untuk **membalik tanda** Δ, dan itu persis yang dilaporkan audit.
+
+**Sifat gejalanya tereproduksi, besarannya tidak.** Audit mencatat celah
++0,0184 dan +0,0282 pada lengan RGB-D di seed 1337/2024 (perangkat L4); di sini
++0,0023 pada seed 42 (A4500). Yang tereproduksi adalah **arah asimetri dan
+pembalikan tanda Δ**, bukan angka absolutnya.
+
+**Mekanisme internalnya belum dibuktikan** dan tidak boleh dinarasikan seolah
+sudah: yang terukur adalah korelasi celah dengan kepadatan deteksi. Dugaan
+paling hemat adalah perbedaan interpolasi kurva PR (ultralytics memakai trapz
+atas kurva yang disisipi titik ujung; COCOeval memakai interpolasi 101 titik),
+yang perlakuannya terhadap ekor berkeyakinan-rendah memang berbeda. Itu
+hipotesis, bukan temuan.
+
+**Dampak — aturan protokol yang mengikat seluruh E-022 dan lanjutannya:**
+
+- **`hasil.json` TIDAK BOLEH dipakai untuk membandingkan antar lengan.**
+  Celahnya bukan offset tetap; ia menskala dengan jumlah deteksi, dan jumlah
+  deteksi berbeda secara sistematis antar lengan. Membandingkan lengan lewat
+  `hasil.json` berarti membandingkan dua metrik yang berbeda.
+- **pycocotools adalah protokol tunggal**, sebagaimana sudah berlaku untuk
+  E-021. Seluruh evaluasi G2 memakai `eval/eval_e022_pycoco.py` dan
+  `eval/eval_e022_paired.py`.
+- `hasil.json` tetap berguna sebagai pemantau kemajuan **di dalam satu run**,
+  tetapi bukan sebagai angka yang dilaporkan.
+- Gerbang G1 **dibuka**: matriks multi-seed G2 boleh dilanjutkan, dengan
+  evaluasi terikat protokol di atas.
+
+**Catatan cacat skrip yang ditemukan saat pengerjaan** — versi pertama
+`diag_evaluator_gap.py` membaca `ev.stats`, dan `COCOeval.summarize()`
+menghitung `stats[0]` dengan `maxDets=100` yang di-hardcode lalu mencari indeks
+100 di `params.maxDets`. Begitu maxDets diubah ke `[1,10,300]`, nilai itu tidak
+ada dan pycocotools mengembalikan sentinel **−1.0 tanpa error** — persis jenis
+kegagalan senyap yang mudah lolos sebagai hasil. Diperbaiki dengan menghitung
+langsung dari `ev.eval["precision"]`. Angka di tabel atas berasal dari versi
+yang sudah diperbaiki.
+
+**Reproduksi** — `eval/diag_evaluator_gap.py --run <run> --modal <rgb|rgbd>`.
+Hasil: `evidence/experiments/results/E-022/diag_evaluator_gap_{rgb,rgbd}.json`.

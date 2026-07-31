@@ -53,7 +53,20 @@ from eval.eval_e022_pycoco import bangun_gt, prediksi  # noqa: E402
 
 
 def ap_pycoco(gt, dets: list[dict], img_ids: list[int], max_dets: int) -> dict:
-    """AP lewat pycocotools pada `max_dets` deteksi teratas per citra."""
+    """AP lewat pycocotools pada `max_dets` deteksi teratas per citra.
+
+    Dihitung langsung dari `ev.eval["precision"]`, BUKAN dari `ev.stats`.
+    Alasannya konkret: `COCOeval.summarize()` menghitung `stats[0]` lewat
+    `_summarize(1)` yang memakai `maxDets=100` **hardcoded**, lalu mencari
+    indeks 100 di dalam `params.maxDets`. Begitu maxDets diubah ke [1,10,300],
+    nilai 100 tidak ada dan pycocotools mengembalikan sentinel -1.0 — bukan
+    error, jadi mudah lolos sebagai "hasil". Mengambil dari matriks presisi
+    menghindari jebakan itu sekaligus membuat kedua ambang dapat dibandingkan.
+
+    precision berbentuk [T, R, K, A, M]: T ambang IoU (10), R recall (101),
+    K kelas, A rentang area (0 = 'all'), M slot maxDets (2 = terbesar).
+    """
+    import numpy as np
     from pycocotools.cocoeval import COCOeval
 
     ev = COCOeval(gt, gt.loadRes(dets), "bbox")
@@ -61,8 +74,14 @@ def ap_pycoco(gt, dets: list[dict], img_ids: list[int], max_dets: int) -> dict:
     ev.params.maxDets = [1, 10, max_dets]
     ev.evaluate()
     ev.accumulate()
-    ev.summarize()
-    return {"mAP50": float(ev.stats[1]), "mAP50_95": float(ev.stats[0])}
+
+    p = ev.eval["precision"][:, :, :, 0, 2]      # [T, R, K] pada area 'all'
+    def rerata(bagian):
+        v = bagian[bagian > -1]
+        return float(v.mean()) if v.size else float("nan")
+
+    return {"mAP50": rerata(p[0]),               # iouThrs[0] == 0.50
+            "mAP50_95": rerata(p)}
 
 
 def main() -> int:
