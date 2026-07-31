@@ -29,7 +29,8 @@ masalah → ide → solusi → hasil → putusan. Berkas ini adalah **log kronol
 dan SR yang memuatnya.
 
 Kode eksperimen dijalankan di `/workspace/experiments/` (di luar repo). Snapshot
-**kode + hasil JSON + split**-nya diarsipkan ke [`../experiments/`](../../experiments/)
+**kode + hasil JSON + split**-nya diarsipkan ke [`reproduce/experiments/`](../../reproduce/experiments/)
+(kode) dan [`evidence/experiments/`](../../evidence/experiments/) (hasil, split, log)
 di repo ini agar tiap perintah reproduksi tetap punya sumbernya; artefak besar
 (bobot, dataset turunan) tidak diarsipkan karena bisa dibuat ulang dari skrip —
 lihat [`reproduce/experiments/README.md`](../../reproduce/experiments/README.md).

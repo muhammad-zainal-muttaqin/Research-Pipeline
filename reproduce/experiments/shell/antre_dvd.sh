@@ -15,7 +15,17 @@ for pas in "yolo26n:$R/yolo26n_derau_seed42:$R/yolo26n_rgbd_seed42" \
   echo "[dvd] mulai $nama $(date -Is)"
   $PY -u eval_e022_paired.py --rgb "$a" --modal-a derau --rgbd "$b" --modal-b rgbd \
       --imgsz 640 --B 1000 --keluaran "$out" > logs-e022-dvd-$nama.txt 2>&1
-  echo "[dvd] selesai $nama rc=$? $(date -Is)"
+  rc=$?
+  if [ "$rc" -ne 0 ] || [ ! -s "$out" ]; then
+    echo "[GAGAL] dvd $nama — rc=$rc, keluaran $out tidak ada/kosong  $(date -Is)" >&2
+    gagal=1
+  else
+    echo "[dvd] selesai $nama rc=0 $(date -Is)"
+  fi
 done
+if [ "${gagal:-0}" -ne 0 ]; then
+  echo "[dvd] SELESAI DENGAN KEGAGALAN — jangan pakai angkanya $(date -Is)" >&2
+  exit 1
+fi
 echo "[dvd] SEMUA SELESAI $(date -Is)"
 
