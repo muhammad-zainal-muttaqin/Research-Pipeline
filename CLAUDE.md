@@ -116,11 +116,20 @@ Tinjauan pustaka **sudah selesai ditulis**. Fokus sekarang bergeser ke eksperime
 kotak B1–B4, plus **depth sensor Orbbec** Y16 848×480 uint16 milimeter per citra.
 Inilah dataset yang menutup lubang "depth SENSOR belum pernah diuji" (E-022/SR-015).
 
-**Tiga jebakan dataset itu yang wajib diingat** (semuanya terverifikasi, E-022a):
+**Tiga sifat dataset itu yang wajib diingat** (semuanya terverifikasi di E-022a,
+dan **ketiganya sudah ditangani** — ini keputusan yang berlaku, bukan pekerjaan
+yang tertunda):
 
 1. Sidecar `"alignedTo": "color"` **MENYESATKAN** — buffer masih di grid kamera
-   depth. `cv2.resize` naif meleset median 29 px / maks 61 px pada 1280×800. Pakai
-   `reproduce/experiments/build/reproject_depth.py`, **jangan** `reproduce/pipeline/prepare_depth.py`.
+   depth. Berkas yang sama membantah dirinya sendiri: ia mengirim ekstrinsik
+   `mTrans ≈ −23,7 mm` yang mestinya nol bila buffer benar sudah di bidang color.
+   `cv2.resize` naif karena itu meleset median 29 px / maks 61 px pada 1280×800.
+   **Sudah diselesaikan:** depth dataset ini diproses lewat
+   `reproduce/experiments/build/reproject_depth.py` (reproyeksi penuh), dan seluruh angka E-022
+   memakai jalur itu. `reproduce/pipeline/prepare_depth.py` bukan alternatif yang salah pakai —
+   ia melayani kasus lain (keluaran Gemini yang sudah di-align SDK di lapangan)
+   dan filter ekstensinya (`.png/.tif/.tiff`) membuatnya tidak bisa membaca `.raw`
+   dataset ini sama sekali.
 2. Ada **dua unit kamera** dengan kalibrasi berbeda (fx_depth 416,55 vs 414,38);
    kalibrasi wajib dibaca **per berkas** dari sidecar.
 3. Rentang `fourch.Z_NEAR/Z_FAR` (0,3–8,0 m) tidak cocok untuk sensor ini —

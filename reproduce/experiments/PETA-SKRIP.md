@@ -14,7 +14,7 @@ merujuk laporan solusi di [`../../docs/experiments/SR/`](../../docs/experiments/
 |---|---|---|
 | Menghasilkan metrik E-021 | `build/build_rfdetr_ds.py` → `train/train_rfdetr.py` → `eval/eval_all_pycoco.py` | [`perkelas_pycoco.json`](../../evidence/experiments/results/E-021/perkelas_pycoco.json); baca [METRICS.md](../../docs/experiments/METRICS.md) sebelum melaporkan angka. |
 | Mengaudit E-022 | [AUDIT-E022.md](../../docs/experiments/AUDIT-E022.md) → `analysis/verify_depth_mi.py` → `eval/eval_e022_paired.py` | Angka seed-42 bersifat historis. Bandingkan dengan [arsip E-022](../../docs/experiments/archive/E022-seed42-awal.md). |
-| Menyiapkan depth sensor untuk pipeline produksi | [`../pipeline/prepare_depth.py`](../pipeline/prepare_depth.py) dengan `--mode gemini` | Depth sensor yang sudah disejajarkan ke RGB. Jangan memakai jalur ini untuk SawitMVC-Depth E-022; gunakan reproyeksi di `build/reproject_depth.py`. |
+| Menyiapkan depth sensor untuk pipeline produksi | [`../pipeline/prepare_depth.py`](../pipeline/prepare_depth.py) dengan `--mode gemini` | Untuk depth yang **sudah** disejajarkan ke RGB oleh SDK sensor. Depth SawitMVC-Depth ditangani `build/reproject_depth.py` (lihat catatan dua jalur di bawah). |
 
 ## `train/` — pelatihan model (10)
 
@@ -109,9 +109,13 @@ angkanya tidak sebanding dengan E-001…E-021. Urutan jalan:
 | [`eval/eval_rfdetr_e022.py`](eval/eval_rfdetr_e022.py) | idem untuk RF-DETR dari `checkpoint_best_ema.pth` | `results/E-022/paired_rfdetrnano*.json` |
 | [`shell/`](shell/) | `driver_e022.sh`, `queue_e022*.sh`, `antre_*.sh` — orkestrasi antrean | — |
 
-**Jangan pakai `reproduce/pipeline/prepare_depth.py` untuk data Orbbec** — ia berasumsi
-depth sudah tersejajar ke RGB, dan untuk dataset ini asumsi itu salah (meleset
-median 29 px). Lihat [SR-015](../../docs/experiments/SR/SR-015-depth-sensor-4kanal.md).
+**Dua jalur depth, masing-masing punya kasusnya sendiri.** `build/reproject_depth.py`
+melayani SawitMVC-Depth: buffer `.raw` masih di grid kamera depth, jadi butuh
+reproyeksi penuh (keputusan diambil di E-022a, meleset median 29 px bila hanya
+di-resize). `../pipeline/prepare_depth.py` melayani keluaran Gemini yang sudah
+di-align SDK di lapangan, dan hanya menerima `.png/.tif/.tiff` — ia tidak akan
+memproses `.raw` dataset ini walau dipanggil. Lihat
+[SR-015](../../docs/experiments/SR/SR-015-depth-sensor-4kanal.md).
 
 ## Bukti hasil
 

@@ -13,6 +13,16 @@ kanal depth kosong (bawaan 25%), sehingga model belajar bekerja dengan dan
 tanpa kedalaman. Tidak perlu dua model, tidak perlu logika ganti model di
 aplikasi.
 
+> **Batas pakai `prepare_depth.py`.** Skrip ini mengandaikan depth **sudah**
+> disejajarkan ke RGB oleh SDK sensor, sehingga cukup di-resize. Itu benar untuk
+> keluaran Gemini di lapangan, tetapi **tidak** untuk dataset SawitMVC-Depth:
+> di sana buffer masih di grid kamera depth walau sidecar menyatakan
+> `alignedTo: "color"`, dan reproyeksi penuh dikerjakan
+> [`../experiments/build/reproject_depth.py`](../experiments/build/reproject_depth.py). Kedua jalur ini
+> berdampingan dengan sengaja — pilih menurut asal datanya, bukan menurut mana
+> yang lebih baru. Rinciannya di
+> [SR-015](../../docs/experiments/SR/SR-015-depth-sensor-4kanal.md).
+
 ## Berkas
 
 | Berkas | Fungsi |

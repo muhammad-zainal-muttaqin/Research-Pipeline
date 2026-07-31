@@ -18,6 +18,13 @@ Syarat: peta kedalaman sudah SEJAJAR (registered) ke RGB — pakai fitur
 alignment SDK sensor (depth-to-color). Ukuran boleh beda; pipeline akan
 me-resize nearest-neighbor saat memuat.
 
+Syarat itu TIDAK dipenuhi dataset SawitMVC-Depth: sidecar-nya menyatakan
+`alignedTo: "color"` padahal buffer masih di grid kamera depth (E-022a), dan
+resize saja meleset median 29 px pada 1280x800. Untuk dataset itu pakai
+experiments/build/reproject_depth.py yang melakukan reproyeksi penuh. Skrip ini
+hanya membaca .png/.tif/.tiff, jadi ia tidak akan menyentuh .raw milik dataset
+tersebut walau dipanggil ke foldernya.
+
 Contoh:
   python prepare_depth.py --src depth_mentah/ --dst depth_kanonik/ --mode gemini
 """
