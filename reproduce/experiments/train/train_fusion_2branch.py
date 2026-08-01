@@ -235,6 +235,25 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str) -> dict:
     d["head"] = L[awal_head:]
     d["nc"] = nc
     d["ch"] = 4
+
+    # Skala DIBEKUKAN sebagai satu-satunya entri `scales`, bukan lewat kunci
+    # `scale`. Alasannya cacat nyata di ultralytics, bukan preferensi gaya:
+    # `yaml_model_load` menimpa `d["scale"]` TANPA SYARAT dengan hasil
+    # `guess_model_scale(path)`, yang menebak skala dari NAMA BERKAS lewat regex
+    # `yolo(e-)?[v]?\d+([nslmx])`. Nama berkas turunan kita tidak cocok pola itu,
+    # sehingga tebakannya string kosong dan `parse_model` jatuh ke
+    # `next(iter(scales.keys()))` — kunci PERTAMA — sambil hanya mencetak
+    # peringatan. Akibatnya `--skala l` akan diam-diam membangun model `n`:
+    # 2,5 jt param, bukan 26 jt, tanpa error.
+    #
+    # Dengan menyisakan satu entri saja, jalur fallback itu justru menjadi benar
+    # menurut konstruksi — apa pun yang ditebak dari nama berkas, satu-satunya
+    # skala yang tersedia adalah yang diminta.
+    if "scales" in d:
+        if skala not in d["scales"]:
+            raise SystemExit(f"skala '{skala}' tidak ada di YAML dasar; "
+                             f"tersedia: {sorted(d['scales'])}")
+        d["scales"] = {skala: d["scales"][skala]}
     d["scale"] = skala
     return d
 
