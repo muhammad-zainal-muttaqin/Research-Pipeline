@@ -192,6 +192,33 @@ apa pun tidak dapat dibedakan dari efek kapasitas.
 - Angka di sini **tidak sebanding** dengan test mAP50 0,6038 milik E-021 —
   dataset, resolusi, orientasi, dan sebaran kelasnya berbeda.
 
+## 7b. Pembaruan setelah E-032 — "titik fusi salah" GUGUR sebagai penyebab
+
+SR ini semula hanya menguji fusi di satu titik: konkatenasi 4-kanal di masukan.
+Penjelasan tandingan yang paling jelas adalah bahwa kegagalannya soal TITIK
+fusi, bukan soal depth — depth dipaksa masuk sebelum jaringan membentuk fitur.
+
+E-032 menguji dua alternatif secara sejajar, semua dari nol, 3 seed:
+
+| lengan | rerata Δ mAP50 | rentang antar-seed | putusan |
+|---|---|---|---|
+| awal (masukan) | +0,0032 | 0,0354 | tidak berbeda |
+| mid (P2/4) | +0,0139 | 0,0116 | indikasi saja |
+| late (P3/P4/P5) | +0,0039 | 0,0158 | tidak berbeda |
+| derau (kontrol) | -0,0062 | 0,0155 | tidak berbeda |
+
+Seluruh 12 CI95 memuat nol. Fusi AKHIR menambah parameter paling banyak
+(3,00 jt vs 2,57 jt) dan tetap tidak menolong.
+
+**Konsekuensi bagi SR ini:** klaim "kanal ke-4 tidak menolong pada kapasitas
+kecil" kini berlaku juga ketika fusi dipindah ke P2/4 dan ke P3/P4/P5. Titik
+fusi dicoret dari daftar kandidat penyebab. Yang tersisa: kapasitas (E-030),
+kualitas depth itu sendiri, dan ukuran data.
+
+Batas pembaruan ini: satu skala (n), satu arsitektur, satu split, dan SELURUH
+lengan dari nol. Ia TIDAK menjawab apakah fusi menengah menolong ketika cabang
+RGB memakai bobot pratlatih — konfigurasi yang justru paling mungkin dipakai.
+
 ## 8. Reproduksi
 
 `build/depth_calib.py` → `analysis/verify_depth_mi.py` (gerbang registrasi) →

@@ -31,7 +31,7 @@ Sumber angkanya adalah
 | Detektor dua tahap | Dipalsukan. | [SR-012](SR/SR-012-dua-tahap.md) |
 | Klaim plafon kematangan E-016 | Ditarik karena bukti cacat. | [SR-011](SR/SR-011-plafon-kematangan.md) |
 | Fusi awal E-022 | Tidak diteruskan sebagai bukti peningkatan deteksi. | [AUDIT-E022.md](AUDIT-E022.md) |
-| Fusi menengah atau akhir E-023 | **Prasyarat sudah terpenuhi** (protokol beku E-025, matriks G2 bersih). Ditangguhkan atas keputusan pengguna 1 Agustus: tutup dulu celah sesi sebelumnya. Rancangan lengkap di bawah. | [Rencana E-023](#rencana-e-023--belum-dijalankan) |
+| Fusi menengah atau akhir E-023 | **SELESAI 1 Agustus 2026.** 15 run (5 lengan x 3 seed, 150 epoch, dari nol), 12 kontras berpasangan. Tidak ada lengan yang lolos ambang berbeda; seluruh 12 CI95 memuat nol. `mid` konsisten positif 3/3 seed (rerata +0,0139) tetapi berstatus INDIKASI, bukan temuan. Penjelasan "titik fusi salah" gugur. | [E-032](EKSPERIMEN.md#e-032--titik-fusi-rgb-d-awal-vs-menengah-vs-akhir-semua-dari-nol-2026-08-01--g4-g6) |
 
 ## Lanjutkan sesuai tujuan
 
@@ -43,7 +43,15 @@ Sumber angkanya adalah
 | Menjalankan ulang E-021 | [catatan teknis](../../reproduce/experiments/CATATAN-TEKNIS-E021.md), [reproduksi](../../reproduce/experiments/REPRODUCE.md), dan [peta skrip](../../reproduce/experiments/PETA-SKRIP.md) |
 
 
-## Rencana E-023 — belum dijalankan
+## Rencana E-023 — SUDAH DIJALANKAN, lihat E-032
+
+> Bagian di bawah adalah rancangan sebelum eksekusi, dipertahankan apa adanya
+> sebagai rekam keputusan. Hasilnya di [E-032](EKSPERIMEN.md); yang berubah dari
+> rancangan: opsi 2 (semua dari nol) dipilih, dan driver per-seed diganti
+> penjadwal berbasis anggaran VRAM di tengah jalan karena barrier per-seed
+> meninggalkan GPU menganggur belasan menit tiap pergantian seed.
+
+### Rancangan awal
 
 Arsitektur sudah dibangun dan diverifikasi
 ([`train_fusion_2branch.py`](../../reproduce/experiments/train/train_fusion_2branch.py)):
