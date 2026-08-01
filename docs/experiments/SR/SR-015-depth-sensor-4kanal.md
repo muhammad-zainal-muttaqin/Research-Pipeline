@@ -1,6 +1,6 @@
 # SR-015 — Depth SENSOR 4-kanal simultan: informasinya ada, cara memasukkannya salah
 
-**Ide I-4/I-8** · **Eksperimen:** E-022 · **Putusan: DIPALSUKAN (fusi awal); klausa "mekanisme depth TERKONFIRMASI pada model besar" DICABUT 2026-07-30** · 2026-07-29
+**Ide I-4/I-8** · **Eksperimen:** E-022, direplikasi [E-027]/[E-029] · **Putusan: DIPALSUKAN (fusi awal), diperkuat 3 seed × 2 arsitektur; klausa "mekanisme depth TERKONFIRMASI pada model besar" DICABUT PENUH 2026-08-01** · 2026-07-29
 
 > **⚠ PENCABUTAN KLAUSA PUTUSAN — 2026-07-30.** Putusan "fusi awal DIPALSUKAN"
 > **tetap berdiri** dan justru diperkuat replikasi 3 seed. Yang **dicabut**
@@ -23,6 +23,23 @@
 > dengan dua dari tiga seed signifikan NEGATIF, jadi untuk YOLO26n depth bukan
 > netral melainkan **merugikan**. Tabel di bawah dipertahankan sebagai rekam
 > seed-42; jangan mengutip angka deraunya sebagai temuan.
+
+> **⚠ PENCABUTAN PENUH KLAUSA KAPASITAS — 2026-08-01.** Matriks RT-DETR-L
+> lengkap 3 seed ([E-029](../EKSPERIMEN.md)) mencabut klausa terakhir yang masih
+> berdiri. depth − derau menjadi **+0,0183 / +0,0153 / +0,0035** (rerata
+> +0,0124), **ketiganya CI memuat nol**, dan **B4 +0,1001 yang menjadi tulang
+> punggung klausa itu tidak direproduksi**. Sebagai ukuran skalanya: lengan RGB
+> saja berayun **0,0759** antar seed — enam kali rerata efek yang diklaim.
+> Lebih telak lagi, depth − RGB bertanda **berlawanan** pada dua seed yang
+> sama-sama signifikan (−0,0350 seed42 vs +0,0702 seed2024).
+>
+> Yang **tetap berdiri** adalah putusan utama SR ini: **fusi awal 4-kanal
+> DIPALSUKAN**, kini pada dua arsitektur dan tiga seed, bukan lagi satu seed.
+> Judul SR ("informasinya ada, cara memasukkannya salah") masih dapat
+> dipertahankan, tetapi bagian "informasinya ada" kini bersandar pada
+> pengamatan yang jauh lebih lemah: depth − derau satu-satunya kontras dengan
+> sd kecil (0,0064), dan itu **pengamatan pasca-hoc** yang belum diuji sebagai
+> hipotesis. Lihat [E-029](../EKSPERIMEN.md) §"Satu pola yang bertahan".
 
 ---
 
