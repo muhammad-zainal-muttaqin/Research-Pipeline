@@ -47,7 +47,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
-DATA = Path("/workspace/SawitMVC-Depth/data")
+DATA_BAWAAN = Path("/workspace/SawitMVC-Depth/data")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -73,6 +73,10 @@ def main() -> int:
     ap.add_argument("--modal", default="rgb", choices=["rgb", "rgbd", "derau", "tukar"])
     ap.add_argument("--split", default="test", choices=["val", "test"])
     ap.add_argument("--split-dir", default=str(EVIDENCE_ROOT / "splits_depth" / "seed42"))
+    ap.add_argument("--data-root", default=str(DATA_BAWAAN),
+                    help="akar dataset berisi json/ (SawitMVC-Depth atau SawitMVC). "
+                         "Skema bunches[].appearances kedua dataset IDENTIK, "
+                         "jadi ukuran yang sama berlaku di keduanya.")
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou-cocok", type=float, default=0.5,
@@ -82,6 +86,8 @@ def main() -> int:
     args = ap.parse_args()
 
     from eval.eval_e022_pycoco import prediksi as prediksi_batch
+
+    DATA = Path(args.data_root)
 
     paths = [Path(x.strip()) for x in
              (Path(args.split_dir) / f"{args.split}.txt").read_text().splitlines() if x.strip()]
@@ -146,6 +152,7 @@ def main() -> int:
                             pasangan_salah["↔".join(sorted((terprediksi[i], terprediksi[j])))] += 1
 
     lap = {
+        "data_root": str(DATA),
         "bobot": args.bobot, "modal": args.modal, "split": args.split,
         "conf": args.conf, "iou_cocok": args.iou_cocok,
         "n_pohon": len(pohon), "n_bunch": n_bunch, "n_bunch_multi_sisi": n_multi,
