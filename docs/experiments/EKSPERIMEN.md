@@ -1653,3 +1653,91 @@ menengah/akhir (G4/G6).
 
 **Reproduksi** — `shell/matriks_g2.sh` lalu `shell/eval_g2.sh`. Hasil:
 `evidence/experiments/results/E-022/paired_yolo26n_{depth_vs_rgb,derau_vs_rgb,depth_vs_derau,depth_vs_tukar}_seed{42,1337,2024}.json`.
+
+---
+
+## E-028 — Inkonsistensi lintas-sisi di SawitMVC: daya uji 6× dan B4 akhirnya terwakili (2026-08-01) · lanjutan [E-024]/[E-026] · [SR-016](SR/SR-016-konsistensi-lintas-sisi.md)
+
+**Konteks** — [E-024](EKSPERIMEN.md) mengukur inkonsistensi prediksi lintas-sisi
+sebesar 19,5% pada SawitMVC-Depth, dan [E-026](EKSPERIMEN.md) menemukan depth
+tidak menstabilkannya. Keduanya menandai batas yang sama: hanya **82 tandan
+terukur**, dan **B4 nol terwakili** karena tidak pernah terdeteksi di ≥ 2 sisi.
+B4 adalah kelas yang kegagalannya geometris, jadi justru itu yang paling perlu
+diukur. SawitMVC punya 18.540 kotak vs 2.299 dan 4–8 sisi per pohon.
+
+**Hipotesis** — Ukuran yang sama pada dataset yang jauh lebih besar akan (a)
+memberi CI yang cukup sempit untuk dipecah per kelas, dan (b) menempatkan
+tabrakan pada tetangga ordinal, dengan **B2↔B3 sebagai pasangan dominan** —
+karena SR-007 dan SR-009 mendiagnosis ambiguitas kematangan justru di sana.
+**Dipalsukan bila** tabrakan tersebar tanpa struktur ordinal, atau B2↔B3 bukan
+pasangan terbesar.
+
+**Cara** — `analysis/cross_side_consistency.py --data-root /workspace/SawitMVC/data
+--split-dir evidence/experiments/splits_rgb/sawitmvc`. Detektor `yolo26n` dilatih
+di SawitMVC dengan resep **identik** lengan RGB SawitMVC-Depth (60 epoch, imgsz
+640, batch 16, seed 42, HSV mati) supaya kedua laju sebanding. Split E-021
+terarsip: 716/96/141 pohon, irisan nol. Test = 141 pohon.
+
+**Hasil**
+
+| | SawitMVC-Depth (E-024) | **SawitMVC (E-028)** |
+|---|---:|---:|
+| Tandan fisik | 310 | **1.404** |
+| Tampak ≥ 2 sisi | 182 | **1.022** |
+| Terukur | 82 | **511** (6,2×) |
+| **Laju inkonsisten** | **0,1951** | **0,2329** |
+| Laju terlewat | 0,3644 | 0,3336 |
+
+Selisih +0,0378, CI95 bootstrap [−0,0585; +0,1276] — **kedua dataset tidak dapat
+dibedakan** pada ukuran ini, meski prior kelas, resolusi, dan orientasinya
+berbeda jauh.
+
+Per kelas, dengan CI Wilson — **B4 akhirnya terwakili**:
+
+| Kelas | Laju inkonsisten | CI95 |
+|---|---:|---|
+| B1 | 0,2346 (19/81) | [0,156; 0,338] |
+| **B2** | **0,4340 (46/106)** | [0,344; 0,529] |
+| B3 | 0,1552 (43/277) | [0,117; 0,203] |
+| B4 | 0,2340 (11/47) | [0,136; 0,372] |
+
+Pasangan kelas yang bertabrakan: **B2↔B3 sebanyak 79**, B1↔B2 32, B3↔B4 25,
+B1↔B3 12. **Tidak ada satu pun B1↔B4** — tabrakan yang melompati tiga tingkat
+ordinal.
+
+**Putusan — DIKONFIRMASI.** Struktur ordinalnya jelas dan kuat: tabrakan
+terkonsentrasi pada tetangga langsung, meluruh dengan jarak ordinal
+(79 → 32/25 → 12 → 0), dan **B2↔B3 adalah pasangan dominan** persis seperti
+yang diprediksi SR-007/SR-009. Ini diperoleh **tanpa memakai label kematangan
+sebagai kebenaran**, hanya identitas fisik tandan — jadi ia menguatkan diagnosis
+ambiguitas B2/B3 lewat jalur bukti yang sepenuhnya berbeda dari mAP per kelas.
+
+**B2 adalah kelas paling ambigu, bukan B4.** Laju inkonsisten B2 (0,434) hampir
+tiga kali B3 (0,155) dan CI-nya tidak beririsan. Itu temuan baru: sampai sekarang
+B4 selalu diperlakukan sebagai kelas bermasalah karena AP50-nya terendah, tetapi
+AP rendah mencampur *kegagalan deteksi* dengan *kebingungan kelas*. Ukuran ini
+memisahkan keduanya, dan begitu dipisah, B4 justru **tidak lebih ambigu daripada
+B1** (0,234 vs 0,235) — kesulitan B4 memang soal menemukannya, bukan
+menamainya.
+
+**Yang tidak boleh dihaluskan:**
+
+- **SawitMVC tanpa depth.** E-028 hanya laju BASELINE. Pertanyaan "apakah depth
+  menstabilkan" tetap hanya terjawab di SawitMVC-Depth, dan di sana sudah
+  dipalsukan (E-026).
+- **Laju terlewat 33,4%** — sepertiga kemunculan tidak masuk pengukuran.
+  Detektor yang lebih kuat akan mengubah komposisi tandan terukur, dan arah
+  perubahannya tidak dapat diprediksi dari sini.
+- **B4 n=47**, CI-nya masih lebar [0,136; 0,372]. Cukup untuk menyatakan B4
+  tidak menonjol ambigu, belum cukup untuk memberi angka presisi.
+- Satu seed, satu arsitektur kecil, ambang conf 0,25 belum disapu.
+- Angka ini bukan metrik performa dan tidak sebanding dengan mAP mana pun.
+
+**Dampak** — Menyediakan pembanding baseline berdaya uji layak untuk G4/G6:
+bila fusi menengah/akhir bekerja, laju inkonsisten harus turun dari 0,2329, dan
+penurunannya harus terkonsentrasi di B2↔B3 kalau mekanismenya fotometrik atau
+di B3↔B4 kalau geometris. Ukuran ini kini bisa membedakan keduanya — sesuatu
+yang mAP agregat tidak pernah bisa.
+
+**Reproduksi** — `shell/g8_sawitmvc.sh`. Hasil:
+`evidence/experiments/results/E-028/konsistensi_sawitmvc_rgb_seed42.json`.

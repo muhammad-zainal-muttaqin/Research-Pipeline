@@ -47,6 +47,7 @@ lama tetap dapat ditelusuri lewat pencarian nama.
 | `E-022/` | `diag_evaluator_gap_{rgb,rgbd}.json` | E-025 | Pelacakan celah evaluator: checkpoint, maxDets, jumlah deteksi | [log](../../../docs/experiments/EKSPERIMEN.md) §E-025 |
 | `E-022/` | `paired_yolo26n_*_seed{42,1337,2024}.json` | E-027 | **Matriks multi-seed 12 perbandingan**, protokol beku pycocotools | [log](../../../docs/experiments/EKSPERIMEN.md) §E-027 |
 | `E-024/` | `konsistensi_{rgb,rgbd}_seed42.json` | E-024, E-026 | Laju inkonsistensi prediksi lintas-sisi, RGB vs RGB-D | [SR-016](../../../docs/experiments/SR/SR-016-konsistensi-lintas-sisi.md) |
+| `E-028/` | `konsistensi_sawitmvc_rgb_seed42.json` | E-028 | Laju inkonsistensi lintas-sisi di SawitMVC, 511 tandan, per kelas | [SR-016](../../../docs/experiments/SR/SR-016-konsistensi-lintas-sisi.md) |
 
 ## `lintas-eksperimen/`
 
