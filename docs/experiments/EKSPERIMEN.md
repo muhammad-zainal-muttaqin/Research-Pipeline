@@ -1092,6 +1092,27 @@ melainkan arsitektur NMS-free. Putusan E-021 makin kuat. Tabel penuh per-kelas:
 > Angka multi-seed protokol beku sedang diproduksi; entri ini akan
 > **direstrukturisasi**, bukan ditambal. Sampai itu selesai, jangan mengutip
 > arah-efek dari entri ini.
+>
+> ### ✅ RESTRUKTURISASI SELESAI — 2026-08-01
+>
+> Restrukturisasi yang dijanjikan di atas **sudah dilaksanakan**, dan sesuai
+> aturan append-only ia berbentuk **entri-entri baru**, bukan suntingan pada
+> entri ini. Angka di bawah dipertahankan utuh sebagai rekam seed-42; yang
+> menggantikannya:
+>
+> | Entri | Menggantikan bagian mana |
+> |---|---|
+> | [E-025](EKSPERIMEN.md) | Selisih evaluator yang belum terjelaskan — terlacak: menskala dengan jumlah deteksi. `hasil.json` dilarang untuk perbandingan antar lengan |
+> | [E-027](EKSPERIMEN.md) | Seluruh arah-efek YOLO26n. Matriks 12 run (4 modal × 3 seed): depth − RGB rerata **−0,0230**, dua seed signifikan NEGATIF |
+> | [E-029](EKSPERIMEN.md) | Seluruh arah-efek RT-DETR-L. Matriks 9 run: klausa "depth terpakai pada kapasitas tinggi" **DICABUT PENUH** |
+> | [E-030](EKSPERIMEN.md) | Klaim "kapasitas menentukan arah efek" — dipersempit: benar untuk kanal tanpa informasi, tidak untuk depth-vs-derau |
+> | [E-031](EKSPERIMEN.md) | Keterbatasan "varians split belum diukur" — terukur 0,0488 pada lengan RGB |
+>
+> **Tidak ada angka di entri ini yang boleh dikutip.** Seluruhnya bertumpu pada
+> satu seed, dua lengan kontrol berkode cacat, dan evaluator yang kini terlarang
+> untuk perbandingan antar lengan. Untuk keadaan terkini mulai dari
+> [STATUS.md](STATUS.md); untuk metrik terukur seluruh run lihat
+> [METRIK-LENGKAP.md](METRIK-LENGKAP.md).
 
 **Konteks** — Dataset baru `ULM-DS-Lab/SawitMVC-Depth` (352 pohon, 1.408 citra
 RGB 1280×800, depth sensor Orbbec Y16 848×480 uint16le milimeter, 2.299 kotak
