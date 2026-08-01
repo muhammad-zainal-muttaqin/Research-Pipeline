@@ -1577,3 +1577,79 @@ matriks G2 selesai, karena di situlah depth terbukti membawa informasi B4.
 
 **Reproduksi** — `analysis/cross_side_consistency.py --bobot <run>/weights/best.pt
 --modal <rgb|rgbd>`. Hasil: `evidence/experiments/results/E-024/konsistensi_{rgb,rgbd}_seed42.json`.
+
+---
+
+## E-027 — Matriks multi-seed YOLO26n, protokol beku: depth MERUGIKAN (2026-08-01) · menutup G2 bagian YOLO26n
+
+**Konteks** — [E-022](EKSPERIMEN.md) dicabut karena bertumpu satu seed, dan
+[AUDIT-E022.md](AUDIT-E022.md) menyatakan matriks multi-seed "sedang diproduksi".
+Matriks itu tidak pernah selesai maupun diarsipkan. Entri ini menyelesaikannya
+untuk YOLO26n: 12 run (4 modal × 3 seed), 60 epoch, kode `_fix`, seluruhnya
+dievaluasi lewat pycocotools sesuai aturan mengikat [E-027 pendahulunya, E-025].
+
+**Hipotesis** — H-022 asli: kanal depth sensor ter-reproyeksi menaikkan test
+mAP50 dengan delta > +0,015 dan CI bootstrap berpasangan per-pohon tidak memuat
+nol. Dipalsukan pula bila kontrol derau memberi kenaikan sebanding.
+
+**Cara** — `shell/matriks_g2.sh` (kolam slot paralel, dapat dilanjutkan,
+dijaga `periksa_run`) lalu `shell/eval_g2.sh` (bootstrap 2000× per pohon,
+protokol tunggal pycocotools). Split test 72 pohon / 288 citra / 504 kotak.
+Perangkat RTX A4500; angka asal E-022 diproduksi di L4.
+
+**Hasil — 12 perbandingan berpasangan**
+
+| Perbandingan | seed 42 | seed 1337 | seed 2024 | rerata |
+|---|---:|---:|---:|---:|
+| depth − RGB | +0,0104 | **−0,0414** | **−0,0379** | **−0,0230** |
+| DERAU − RGB | +0,0032 | +0,0011 | **−0,0443** | −0,0133 |
+| depth − derau | +0,0072 | **−0,0425** | +0,0064 | −0,0096 |
+| depth − tukar | +0,0190 | −0,0272 | −0,0042 | −0,0041 |
+
+Angka tebal = CI95 bootstrap tidak memuat nol. mAP50 lengan RGB per seed:
+0,3479 / 0,3428 / 0,3749 — **rentang antar-seed 0,0321 pada satu lengan yang
+konfigurasinya identik.**
+
+**Putusan — H-022 DIPALSUKAN, dan lebih keras daripada sebelumnya.**
+
+1. **Depth merugikan, bukan sekadar netral.** Rerata −0,0230, dan pada DUA dari
+   tiga seed CI-nya tidak memuat nol dengan tanda NEGATIF (seed 1337
+   [−0,073; −0,015], seed 2024 [−0,069; −0,001]). Kesimpulan lama "tidak dapat
+   dibedakan dari nol" terlalu lunak untuk YOLO26n.
+2. **Seed 42 terkonfirmasi sebagai seed paling menguntungkan.** Ia satu-satunya
+   yang positif (+0,0104), persis peringatan yang ditulis saat pencabutan
+   E-022. Melaporkan seed tunggal di sini akan membalik kesimpulan.
+3. **Temuan "derau mengalahkan depth" TIDAK TEREPRODUKSI.** Pada seed-42 lama
+   derau memberi +0,0437 dengan CI tidak memuat nol — satu-satunya delta
+   signifikan di seluruh E-022. Di matriks bersih ini derau justru netral
+   sampai merugikan (+0,0032 / +0,0011 / −0,0443, rerata −0,0133). Klausa
+   SR-015 yang bersandar pada temuan itu kehilangan pijakan.
+4. **Registrasi tetap tidak membeli apa pun.** depth − tukar rerata −0,0041,
+   CI memuat nol di dua dari tiga seed. Reproyeksi penuh yang terbukti lebih
+   selaras di E-022a tetap tidak diterjemahkan menjadi mAP pada model kecil —
+   konsisten dengan putusan lama.
+
+**Yang tidak boleh dihaluskan:**
+
+- **CI lintas-seed sangat lebar.** Dengan n=3, CI-t rerata depth−RGB adalah
+  [−0,0949; +0,0490] — memuat nol meski seluruh titik estimasinya negatif.
+  Yang kuat di sini adalah **arah yang konsisten dan dua CI per-seed yang
+  signifikan**, bukan rerata tiga angkanya.
+- **Lantai derau antar-seed 0,0321** pada lengan RGB saja. Seluruh delta yang
+  diperdebatkan (±0,04) berada pada orde yang sama dengan varians seed. Ini
+  menegaskan kembali peringatan pencabutan E-022, sekarang dengan angkanya.
+- **Perangkat berbeda** dari run asal (A4500 vs L4). Besaran tidak dapat
+  disamakan langsung dengan angka E-022 lama; yang dibandingkan adalah pola.
+- Berlaku untuk **YOLO26n saja** (2,57 jt param). Matriks RT-DETR-L berjalan
+  terpisah, dan G7 menyapu YOLO26m/l untuk memisahkan kapasitas dari
+  arsitektur — klaim struktural SR-015 belum diuji ulang di sini.
+
+**Dampak** — Bagian YOLO26n pada G2 selesai dan buktinya terarsip
+(`paired_yolo26n_*_seed*.json`, 12 berkas), menutup celah keterlacakan yang
+ditinggalkan audit. Untuk model kecil, arah bukti kini melawan fusi awal secara
+lebih tegas: bukan "tidak terbukti membantu" melainkan "terukur merugikan pada
+mayoritas seed". Itu memperkuat, bukan melemahkan, alasan menempuh fusi
+menengah/akhir (G4/G6).
+
+**Reproduksi** — `shell/matriks_g2.sh` lalu `shell/eval_g2.sh`. Hasil:
+`evidence/experiments/results/E-022/paired_yolo26n_{depth_vs_rgb,derau_vs_rgb,depth_vs_derau,depth_vs_tukar}_seed{42,1337,2024}.json`.
