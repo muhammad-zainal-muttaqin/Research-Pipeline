@@ -170,19 +170,24 @@ Protokol literatur Blok 5 juga masih terbuka.
 
 ## Mulai dari nol setelah jeda — apa yang hilang dan urutan membangunnya
 
-Sesi 31 Juli–1 Agustus berjalan di workspace sementara. **8,8 GB state berada di
-luar git dan akan hilang** bila workspace direset; yang tersisa hanyalah 770
+Sesi 31 Juli–1 Agustus berjalan di workspace sementara. **12,1 GB state berada di
+luar git dan akan hilang** bila workspace direset; yang tersisa hanyalah 968
 berkas ter-track. Daftar ini menjawab "apa yang harus dibangun ulang, dalam
 urutan apa" supaya tidak ditemukan ulang satu per satu.
+
+Ukuran di bawah adalah hasil `du -sh` sebenarnya, diukur 1 Agustus sesaat sebelum
+pod di-terminate — bukan taksiran. Angka taksiran sebelumnya meleset pada tiga
+baris (`runs_e022` 2,5 → 4,0 GB, `runs_e023` 1,1 → 0,3 GB, `.venv` 1,2 → 2,8 GB);
+jumlah berkas ter-track juga dikoreksi 770 → 968 (`git ls-files | wc -l`).
 
 | Hilang | Ukuran | Cara mendapatkan kembali |
 |---|---:|---|
 | `/workspace/SawitMVC/data` | 2,3 GB | HuggingFace `ULM-DS-Lab/SawitMVC` |
 | `/workspace/SawitMVC-Depth/data` | 2,6 GB | HuggingFace `ULM-DS-Lab/SawitMVC-Depth` (**private**, butuh token baru) |
 | `evidence/experiments/depth_png/` | 211 MB | `build/reproject_depth.py`, ~10 menit |
-| `runs/detect/runs_e022/` (**35 checkpoint**) | 2,5 GB | latih ulang; tidak ada jalan pintas |
-| `runs/detect/runs_e023/` (**15 checkpoint**) | ~1,1 GB | `shell/e023_fusi.sh` + `shell/e023_seed2024.sh`; ~4 jam pada satu A4500. Kurva latihan, `args.yaml`, dan SHA-256 tiap `best.pt` SUDAH diarsipkan di `evidence/experiments/results/E-023/` — cukup untuk memverifikasi apakah hasil latih-ulang menghasilkan checkpoint yang sama |
-| `reproduce/experiments/.venv` | 1,2 GB | `python -m venv --system-site-packages` |
+| `runs/detect/runs_e022/` (**35 checkpoint**) | 4,0 GB | latih ulang; tidak ada jalan pintas |
+| `runs/detect/runs_e023/` (**15 checkpoint**) | 315 MB | `shell/e023_fusi.sh` + `shell/e023_seed2024.sh`; ~4 jam pada satu A4500. Kurva latihan, `args.yaml`, dan SHA-256 tiap `best.pt` SUDAH diarsipkan di `evidence/experiments/results/E-023/` — cukup untuk memverifikasi apakah hasil latih-ulang menghasilkan checkpoint yang sama |
+| `reproduce/experiments/.venv` | 2,8 GB | `python -m venv --system-site-packages` |
 
 ### Urutan, beserta jebakan yang sudah terverifikasi
 
