@@ -45,6 +45,10 @@ def main() -> int:
     ap.add_argument("--arch", default="yolo26n", help="yolo26n | yolo26s | rtdetr-l | ...")
     ap.add_argument("--modal", choices=["rgb", "rgbd"], required=True)
     ap.add_argument("--split", default="seed42")
+    ap.add_argument("--split-root", default=str(SPLIT),
+                    help="akar folder split; default splits_depth. Dipakai G8 untuk "
+                         "melatih di SawitMVC (splits_rgb/sawitmvc) dengan resep "
+                         "IDENTIK, sehingga laju inkonsistensi kedua dataset sebanding.")
     ap.add_argument("--depth-dir", default=str(EVIDENCE_ROOT / "depth_png"))
     ap.add_argument("--dropout", type=float, default=0.0)
     ap.add_argument("--depth-acak", action="store_true",
@@ -61,14 +65,15 @@ def main() -> int:
     args = ap.parse_args()
 
     nama = args.name or f"{args.arch}_{args.modal}_{args.split}"
-    data = SPLIT / args.split / ("data_rgbd4.yaml" if args.modal == "rgbd" else "data_rgb.yaml")
+    akar_split = Path(args.split_root)
+    data = akar_split / args.split / ("data_rgbd4.yaml" if args.modal == "rgbd" else "data_rgb.yaml")
     bobot = f"{args.arch}.pt"
 
     if args.modal == "rgbd":
         if args.depth_acak:
             _patch_depth_acak(args.seed)
         elif args.depth_tukar:
-            _patch_depth_tukar(args.depth_dir, str(SPLIT / args.split))
+            _patch_depth_tukar(args.depth_dir, str(akar_split / args.split))
         else:
             fourch.patch_loader(args.depth_dir, dropout=args.dropout)
 
