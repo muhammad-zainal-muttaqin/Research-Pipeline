@@ -1,10 +1,10 @@
 # E-023 — fusi awal vs menengah vs akhir, semuanya dari nol
 
-Arsip berjalan. Matriks penuh 15 run (5 lengan x 3 seed, yolo26n skala n,
-150 epoch, split SawitMVC-Depth seed42, tanpa bobot pratlatih). Isi direktori
-ini bertambah seiring run selesai; kondisi saat pembaruan terakhir: **12 dari 15
-lengkap** (seluruh seed42 dan seed1337 kecuali `late_seed42` yang diulang
-setelah bug topeng 4-kanal).
+Matriks penuh 15 run (5 lengan x 3 seed, yolo26n skala n, 150 epoch, split
+SawitMVC-Depth seed42, tanpa bobot pratlatih). **Ke-15 run lengkap 150/150**,
+selesai 2026-08-01 pukul 15:34 UTC. `late_seed42` dan `mid_seed42` sempat
+diulang setelah bug topeng 4-kanal; versi yang diarsipkan di sini adalah hasil
+ulangan yang bersih.
 
 ## Kenapa arsip ini ada
 

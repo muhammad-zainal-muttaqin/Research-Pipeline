@@ -17,6 +17,7 @@ import contextlib
 import io
 import json
 import os
+import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -28,6 +29,30 @@ import numpy as np
 from pycocotools.cocoeval import COCOeval
 
 from eval_e022_pycoco import NAMES, bangun_gt, pohon_dari, prediksi
+
+# --- bobot fusi dua cabang (E-023) ---------------------------------------
+# Checkpoint lengan `mid`/`late` berisi modul kustom AmbilRGB/AmbilDepth. Dua
+# pendaftaran DIPERLUKAN dan keduanya berbeda urusan:
+#
+#   1. ke `ultralytics.nn.tasks` — dipakai `parse_model` saat mengurai YAML;
+#   2. ke `__main__` — dipakai unpickler torch. Pelatihan berjalan sebagai
+#      skrip, jadi kelasnya terekam dengan qualname `__main__.AmbilRGB`.
+#
+# Tanpa nomor 2 pemuatan gagal dengan AttributeError yang menunjuk `__main__`,
+# bukan ke modul kustomnya — jejak yang menyesatkan. Lengan non-fusi tidak
+# terpengaruh; impor ini tidak mengubah apa pun bagi mereka.
+_TRAIN = Path(__file__).resolve().parents[1] / "train"
+if str(_TRAIN) not in sys.path:
+    sys.path.insert(0, str(_TRAIN))
+try:
+    import __main__
+
+    from train_fusion_2branch import AmbilDepth, AmbilRGB, daftarkan_modul
+
+    daftarkan_modul()
+    __main__.AmbilRGB, __main__.AmbilDepth = AmbilRGB, AmbilDepth
+except ImportError:      # skrip fusi tidak ada — lengan non-fusi tetap jalan
+    pass
 
 _GT = None
 _DT = None
