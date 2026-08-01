@@ -1,13 +1,20 @@
 # Laporan Eksperimen — Deteksi & Penghitungan Tandan Sawit
 
-**Cuplikan terkurasi (*curated snapshot*) per 25 Juli 2026.** Dokumen ini bukan
+**Cuplikan terkurasi (*curated snapshot*) per 1 Agustus 2026.** Dokumen ini bukan
 log dan bukan pengganti log. Ia merangkai satu cerita dari basis pustaka sampai
 titik jeda hari ini, lalu menunjuk ke berkas kanonik untuk tiap angkanya.
+
+Mencakup **E-001 sampai E-032**, dua dataset, dan dua fase yang berbeda sifatnya:
+pilot RGB yang berujung pada hasil terbaik (E-021), lalu blok depth sensor yang
+**sepenuhnya berupa hasil negatif** (E-022…E-032). Keduanya diperlakukan sama —
+angka apa adanya.
 
 Sumber kanonik yang dirangkum di sini:
 [`docs/experiments/EKSPERIMEN.md`](EKSPERIMEN.md) (log kronologis, *append-only*) ·
 [`docs/experiments/SR/README.md`](SR/README.md) (pandangan per-ide) ·
-[`docs/experiments/METRICS.md`](METRICS.md) (tabel metrik definitif) ·
+[`docs/experiments/METRICS.md`](METRICS.md) (tabel metrik definitif E-021) ·
+[`docs/experiments/METRIK-LENGKAP.md`](METRIK-LENGKAP.md) (metrik seluruh run blok depth) ·
+[`docs/experiments/AUDIT-E022.md`](AUDIT-E022.md) (koreksi E-022) ·
 [`docs/experiments/STATUS.md`](STATUS.md) (titik jeda & jalur lanjutan) ·
 [`reproduce/pipeline/README.md`](../../reproduce/pipeline/README.md) (deliverable produksi).
 
@@ -20,9 +27,14 @@ Sumber kanonik yang dirangkum di sini:
 | Label | Arti |
 |---|---|
 | **LIT-182** | *Literature base* — 182 entri terverifikasi yang memasok setiap hipotesis |
-| **PILOT-SAWITMVC-RGB** | *Bounded RGB pilot* — seluruh eksperimen di bawah, dikerjakan pada SawitMVC 960×1280 + master 3024×4032, kamera RGB saja |
-| **RESULT-RTDETR-RGB** | *Final RGB result* — detektor 4-kelas terbaik yang dihasilkan pilot ini |
-| **GEMINI-PENDING** | *Pending depth-sensor phase* — menunggu data fisik Orbbec Gemini; belum ada satu angka pun |
+| **PILOT-SAWITMVC-RGB** | *Bounded RGB pilot* — E-001…E-021, dikerjakan pada SawitMVC 960×1280 + master 3024×4032, kamera RGB saja |
+| **RESULT-RFDETR-RGB** | *Final RGB result* — detektor 4-kelas terbaik yang dihasilkan pilot ini (E-021) |
+| **DEPTH-SENSOR-MVCD** | *Physical depth-sensor phase* — E-022…E-032 pada SawitMVC-Depth (Orbbec, 352 pohon). **Sudah dijalankan**, dan hasilnya negatif di seluruh kontras |
+
+Label **GEMINI-PENDING** yang dipakai versi 25 Juli sudah **tidak berlaku**:
+sejak 29 Juli data depth sensor fisik tersedia dan diuji habis. Yang dulu
+"menunggu satu angka pun" kini punya **54 run terarsip** (39 di E-022, 15 di
+E-023) dan **49 kontras berpasangan** (37 + 12), seluruhnya dengan CI bootstrap.
 
 **Label putusan (*verdict labels*)** — dipakai apa adanya dari log:
 
@@ -80,11 +92,17 @@ default) — ia titik acuan, bukan plafon.
 
 ---
 
-## 3. Peta 21 eksperimen
+## 3. Peta 30 eksperimen
 
 Semua eksperimen yang tercatat di [`docs/experiments/EKSPERIMEN.md`](EKSPERIMEN.md), dengan
-putusan apa adanya. Empat dipalsukan dan satu ditarik — itu justru bagian yang
-paling mempersempit arah kerja.
+putusan apa adanya. Sepuluh dipalsukan, satu ditarik, satu dicabut — itu justru
+bagian yang paling mempersempit arah kerja.
+
+Nomor **E-008 tidak pernah dipakai** (tidak ada run), dan **E-023 dieksekusi di
+bawah nomor E-032** karena rancangannya berubah sebelum dijalankan. Jadi 30
+entri untuk rentang E-001…E-032, bukan 32.
+
+### 3.1 Pilot RGB (E-001…E-021)
 
 | E | Yang diuji | SR / ide | Putusan (ID / EN) |
 |---|---|---|---|
@@ -108,6 +126,25 @@ paling mempersempit arah kerja.
 | E-019 | Detektor 4-kelas 1280 + augmentasi aman-warna | ide I-24 | MENEMPEL BASELINE / NULL RESULT |
 | E-020 | RT-DETR-L, detektor tanpa NMS | [SR-013](SR/SR-013-rtdetr-nms-free.md) | DIKONFIRMASI (arah) / CONFIRMED (direction) |
 | E-021 | RF-DETR-L (DINOv2) vs RT-DETR-L pada setelan identik | [SR-014](SR/SR-014-rfdetr-dinov2.md) | DIKONFIRMASI / CONFIRMED |
+
+### 3.2 Blok depth sensor (E-022…E-032)
+
+Dataset berganti ke **SawitMVC-Depth**. Angka di blok ini **tidak sebanding**
+dengan blok pilot — lihat §6.1.
+
+| E | Yang diuji | SR / gerbang | Putusan (ID / EN) |
+|---|---|---|---|
+| E-022a | Apakah depth sensor benar sudah tersejajar ke RGB? | [SR-015](SR/SR-015-depth-sensor-4kanal.md) | DIPALSUKAN / FALSIFIED (label sidecar bohong) |
+| E-022b | Apakah depth sensor 4-kanal menaikkan mAP? | [SR-015](SR/SR-015-depth-sensor-4kanal.md) | DIPALSUKAN / FALSIFIED — **seluruh entri dicabut**, lihat [audit](AUDIT-E022.md) |
+| E-024 | Inkonsistensi prediksi lintas-sisi sebagai ukuran ambiguitas | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) | DIKONFIRMASI / CONFIRMED (daya uji terbatas) |
+| E-025 | Dari mana selisih evaluator E-022 berasal? | gerbang G1 | DIPALSUKAN (maxDets) / celah terlacak ke jumlah deteksi |
+| E-026 | Apakah depth menstabilkan identitas lintas-sisi? | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) | DIPALSUKAN / FALSIFIED |
+| E-027 | Matriks multi-seed YOLO26n | gerbang G2 | DIPALSUKAN / FALSIFIED — depth **merugikan** |
+| E-028 | Ukuran lintas-sisi pada SawitMVC (daya uji 6,2×) | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md), G8 | DIKONFIRMASI / CONFIRMED |
+| E-029 | Matriks multi-seed RT-DETR-L | gerbang G2, G3 | **DICABUT** / RETRACTED (klausa kapasitas SR-015) |
+| E-030 | Sapuan kapasitas YOLO26 n→m→l | gerbang G7 | DIKONFIRMASI SEBAGIAN — klaim dipersempit |
+| E-031 | Varians SPLIT vs varians SEED | gerbang G5 | DIKONFIRMASI / CONFIRMED (varians split nyata) |
+| E-032 | Titik fusi: awal vs menengah vs akhir, semua dari nol | gerbang G4, G6 | TIDAK BERBEDA / NO DIFFERENCE — "titik fusi salah" gugur |
 
 ---
 
@@ -366,9 +403,207 @@ RF-DETR `checkpoint_best_ema.pth` (142 MB), RT-DETR `best.pt` (264 MB), YOLO26l
 
 ---
 
-## 6. GEMINI-PENDING — apa yang menunggu di depan
+## 6. DEPTH-SENSOR-MVCD — blok E-022…E-032
 
-### 6.1 Yang sudah siap dan tidak hilang
+Ini fase yang paling mahal dan **satu-satunya yang tidak menghasilkan perbaikan
+apa pun**. Ia tetap ditulis penuh, karena hasil negatif yang tertutup rapat lebih
+berharga daripada hasil positif yang goyah — dan karena separuh isi blok ini
+adalah koreksi terhadap kesimpulan blok ini sendiri.
+
+### 6.1 Dataset baru, dan mengapa angkanya tidak bisa dibandingkan
+
+`ULM-DS-Lab/SawitMVC-Depth` — 352 pohon, 1.408 citra RGB **1280×800 lanskap**,
+2.299 kotak B1–B4, plus **depth sensor Orbbec** Y16 848×480 uint16 milimeter per
+citra. Integritas 6.336 artefak diverifikasi SHA-256: 0 hilang, 0 tidak cocok.
+
+Inilah yang menutup lubang terbesar pilot: sampai E-021, **satu-satunya "depth"
+yang pernah diuji adalah pseudo-depth monokular**, dan itu sudah dipalsukan
+(§4.2). Depth sensor fisik belum pernah disentuh.
+
+**Peringatan pembanding, mengikat.** Tidak satu pun angka di §6 sebanding dengan
+test mAP50 0,6038 milik E-021:
+
+| | SawitMVC (pilot) | SawitMVC-Depth |
+|---|---|---|
+| Anotasi | 18.540 kotak | 2.299 kotak |
+| Orientasi | 960×1280 potret | 1280×800 lanskap |
+| Prior kelas | B3 52,3% · B1 11,0% | B3 14,0% · B1 36,1% (**terbalik**) |
+| Kepadatan | 4,64 kotak/citra | 1,63 kotak/citra |
+| B4 | 148 kotak | **95 kotak** (38 di test) |
+
+Satu-satunya klaim yang sah adalah **selisih antar lengan di dalam dataset ini
+pada protokol identik**. Angka absolutnya tidak dapat dibawa keluar.
+
+### 6.2 Tiga kegagalan senyap yang ditemukan lebih dulu
+
+Sebelum satu pun klaim performa dibuat, tiga jebakan yang tidak menimbulkan error
+sama sekali harus dibongkar. Ketiganya hanya ketahuan karena ada yang mustahil
+secara definisi — bukan karena ada yang crash.
+
+1. **Sidecar `"alignedTo": "color"` MENYESATKAN.** Buffer masih di grid kamera
+   depth. Berkas yang sama membantah dirinya sendiri: ia mengirim ekstrinsik
+   `mTrans ≈ −23,7 mm` yang mestinya nol bila benar sudah tersejajar. Tiga bukti
+   independen (geometri intrinsik, tidak adanya pita kosong struktural yang
+   diwajibkan selisih FOV, dan *mutual information* H3−H1 = **+0,0306 bit,
+   CI95 [0,0260; 0,0354]**) mematahkan label itu. `cv2.resize` naif meleset
+   **median 29,3 px, maksimum 61 px** — seukuran tandan B4 itu sendiri.
+   Memakainya akan menghasilkan **hasil negatif palsu**, persis skenario D3Net
+   (entri 037).
+2. **Ada DUA unit kamera**, bukan satu (fx_depth 416,55 vs 414,38). Kalibrasi
+   wajib dibaca **per berkas**; hardcode satu set = separuh dataset salah
+   proses, dan biasnya berkorelasi dengan perangkat sehingga **bocor ke
+   perbandingan antar-split**.
+3. **Rentang metrik bawaan salah untuk sensor ini.** `fourch.py` memakai
+   0,3–8,0 m; terukur 0,000% piksel di bawah 0,3 m dan 10,07% di atas 8 m.
+   Dipilih ulang dari histogram **split train saja** (anti-kebocoran):
+   **0,8 / 15,0 m**, entropi kanal naik 6,19 → **7,62 bit**.
+
+Ditambah dua bug yang ditemukan audit *setelah* hasil pertama keluar: lengan
+kontrol "depth pohon lain" mengambil donor **lintas split** (192 dari 980 citra
+train memakai depth pohon **test**), dan lengan derau memakai satu RNG bersama
+sehingga kanal ke-4 diacak ulang tiap epoch — ia diam-diam mendapat augmentasi.
+
+**Pelajaran yang dibawa keluar:** pada blok ini, lima dari lima kesalahan serius
+tidak menimbulkan satu pun pesan error. Itulah alasan E-032 memilih desain yang
+kelemahannya **terlihat** (semua lengan dari nol) di atas desain yang lebih murah
+tetapi gagal senyap.
+
+### 6.3 Hasil pertama bertumpu pada satu seed — dan tidak bertahan
+
+E-022 dilaporkan mula-mula pada seed 42 saja: Δ(RGB-D − RGB) = **+0,0252**,
+melewati ambang +0,015 yang ditulis di depan. Tetapi CI95-nya
+[−0,0215; +0,0632] memuat nol, sehingga H-022 sudah **DIPALSUKAN menurut
+kriterianya sendiri** — kriteria yang ditulis sebelum hasil dibaca.
+
+Replikasi multi-seed kemudian menunjukkan +0,0252 adalah **seed paling
+menguntungkan dari tiga**:
+
+| Kontras (YOLO26n, E-027) | seed 42 | seed 1337 | seed 2024 | rerata |
+|---|---:|---:|---:|---:|
+| depth − RGB | +0,0104 | **−0,0414** | **−0,0379** | **−0,0230** |
+| derau − RGB | +0,0032 | +0,0011 | **−0,0443** | −0,0133 |
+| depth − derau | +0,0072 | **−0,0425** | +0,0064 | −0,0096 |
+
+Tebal = CI95 tidak memuat nol. **Untuk YOLO26n, depth bukan netral melainkan
+merugikan** — dua dari tiga seed signifikan negatif.
+
+Klausa penyelamat yang sempat ditulis SR-015 — *"depth terpakai pada kapasitas
+tinggi"* — diuji terpisah pada RT-DETR-L (E-029) dan **DICABUT**: depth − derau
+menyusut dari +0,0365 menjadi rerata +0,0124 dengan ketiga CI memuat nol, dan
+B4 +0,1001 yang menjadi tulang punggungnya tidak direproduksi.
+
+### 6.4 Yang bertahan justru temuan metodologis, bukan temuan depth
+
+Tiga hasil di blok ini bertahan, dan ketiganya tentang **cara mengukur**, bukan
+tentang kedalaman:
+
+**(a) Protokol evaluasi (E-025).** `hasil.json` trainer dan `pycocotools` berbeda
+hasil, dan celahnya **bukan offset tetap** — ia menskala dengan jumlah deteksi,
+yang berbeda sistematis antar lengan. Hipotesis `maxDets` dipalsukan (identik
+sampai lima desimal). Aturan yang kini mengikat: **`hasil.json` tidak boleh
+dipakai membandingkan antar lengan.**
+
+**(b) Varians split > varians seed (E-031).** Lengan RGB berayun **0,0488**
+antar split — lebih lebar daripada 0,0321 antar seed, dan **hampir 5×** ambang
++0,015 yang dipakai H-022 sebagai kriteria keberhasilan. Konsekuensinya mengikat:
+**tidak ada angka mAP absolut pada dataset ini yang bermakna tanpa menyebut
+split-nya.** Yang berlawanan dengan dugaan wajar: *arah* Δ justru lebih stabil
+terhadap split (3/3 positif) daripada terhadap seed (tanda berlawanan) — pola
+yang konsisten dengan selisih berpasangan saling menghapus kesulitan split tetapi
+tidak menghapus lintasan optimisasi. Itu **hipotesis dari n=3 lawan n=3**, bukan
+temuan.
+
+**(c) Ambiguitas terukur tanpa label manusia (E-024, E-026, E-028).** Memakai
+identitas fisik tandan lintas-sisi sebagai oracle, detektor memberi kelas berbeda
+pada objek yang sama sebesar **0,2329** di SawitMVC (511 tandan) dan 0,1951 di
+SawitMVC-Depth (82 tandan) — sementara anotator manusia tidak pernah (0/7.328).
+Tabrakannya meluruh rapi dengan jarak ordinal (79 → 32/25 → 12 → **0**) dan
+**B2↔B3 dominan**, persis prediksi SR-007/SR-009 — diperoleh tanpa memakai label
+kematangan sebagai kebenaran. Depth **tidak** menstabilkannya (E-026: +0,0049,
+arah salah, P(depth membantu) = 0,457).
+
+### 6.5 Kapasitas: klaimnya harus dipersempit (E-030)
+
+SR-015 sempat menyimpulkan *"arah efek kanal ke-4 ditentukan kapasitas model"*.
+Lompatan yang mendasarinya (YOLO26n 2,57 jt → RT-DETR-L 33,0 jt) mengubah
+kapasitas **dan arsitektur sekaligus**, jadi kata "kapasitas" belum terisolasi.
+Mengisi celahnya di dalam satu keluarga:
+
+| Model | Param | depth − RGB | derau − RGB | depth − derau |
+|---|---:|---:|---:|---:|
+| YOLO26n | 2,57 jt | +0,0104 | +0,0032 | +0,0072 |
+| YOLO26m | 21,9 jt | −0,0086 | +0,0184 | −0,0270 |
+| YOLO26l | 26,3 jt | +0,0054 | **−0,0325** | +0,0379 |
+| RT-DETR-L | 33,0 jt | −0,0350 | **−0,0533** | +0,0183 |
+
+Yang **bertahan**: kolom derau − RGB berubah tanda secara monoton menurut
+kapasitas, dengan titik balik terukur **antara 21,9 dan 26,3 jt parameter**.
+Kanal ke-4 tanpa informasi membantu model kecil dan merugikan model besar.
+
+Yang **tidak** bertahan: kolom depth − derau tidak monoton, dan tidak satu pun
+dari keempatnya signifikan. Rumusan penggantinya:
+
+> Kapasitas menentukan apakah **menambahkan kanal keempat** menolong atau
+> merugikan. Kapasitas **tidak** menentukan apakah **mengisi kanal itu dengan
+> kedalaman** lebih baik daripada mengisinya dengan derau.
+
+### 6.6 Titik fusi: penjelasan terakhir yang tersisa, dan ia gugur (E-032)
+
+Setelah fusi awal dipalsukan pada dua arsitektur dan tiga seed, satu penjelasan
+tandingan masih berdiri: mungkin yang salah adalah **titik** fusinya — depth
+dipaksa masuk sebelum jaringan sempat membentuk fitur. Ini hipotesis dengan dasar
+pustaka yang kuat (sapuan 28 titik fusi Ophoff dkk., §174).
+
+**5 lengan × 3 seed = 15 run, 150 epoch, semuanya dari nol.** Dari nol termasuk
+baseline RGB — bukan penghematan, justru 3× lebih mahal — karena arsitektur dua
+cabang tidak punya checkpoint COCO yang cocok, sehingga membandingkannya dengan
+lengan pratlatih akan mengukur ada-tidaknya pralatihan, bukan titik fusi.
+
+| lengan | seed 42 | seed 1337 | seed 2024 | rerata | rentang | putusan |
+|---|---:|---:|---:|---:|---:|---|
+| awal | −0,0120 | +0,0234 | −0,0017 | +0,0032 | 0,0354 | tidak berbeda |
+| **mid** (P2/4) | +0,0096 | +0,0212 | +0,0110 | **+0,0139** | **0,0116** | **indikasi** |
+| late (P3/P4/P5) | −0,0056 | +0,0070 | +0,0102 | +0,0039 | 0,0158 | tidak berbeda |
+| derau | −0,0130 | +0,0025 | −0,0081 | −0,0062 | 0,0155 | tidak berbeda |
+
+**Seluruh 12 CI95 memuat nol.** Kriterianya ditetapkan sebelum hasil dibaca.
+
+Tiga pembacaan, berurut dari yang paling didukung bukti:
+
+1. **Efek titik fusi lebih kecil daripada derau seed.** Rentang antar-seed pada
+   lengan `awal` (0,0354) melampaui SELURUH selisih antar-titik yang terukur.
+2. **Fusi akhir tidak menolong meski menambah parameter paling banyak** (3,00 jt
+   vs 2,51 jt): dua backbone penuh, ~17% parameter tambahan, nol perbaikan.
+3. **`mid` konsisten positif tetapi belum boleh disebut temuan.** Rentang
+   tersempit, rerata tertinggi, unggul +0,0201 atas kontrol derau — pola yang
+   diharapkan bila ia benar bekerja. Tetapi ketiga CI memuat nol, dan dengan
+   4 lengan diuji, satu lengan bertanda sepakat 3/3 secara kebetulan **bukan
+   kejadian langka**.
+
+**Konsekuensi:** "titik fusi salah" **dicoret** dari daftar kandidat penyebab
+([SR-015 §7b](SR/SR-015-depth-sensor-4kanal.md)). Yang tersisa sebagai kandidat:
+kapasitas, kualitas depth itu sendiri, dan ukuran data.
+
+### 6.7 Ringkasan blok: apa yang sebenarnya dibeli
+
+| Pertanyaan | Jawaban setelah 11 entri |
+|---|---|
+| Apakah depth sensor fisik menaikkan deteksi? | **Tidak**, pada seluruh konfigurasi yang diuji |
+| Apakah kegagalannya karena registrasi? | Tidak — registrasi divalidasi tiga cara |
+| Apakah karena titik fusi? | Tidak (E-032) |
+| Apakah karena kapasitas model? | Sebagian, tetapi hanya untuk *ada-tidaknya* kanal ke-4, bukan untuk *isinya* |
+| Apakah depth menstabilkan identitas lintas-sisi? | Tidak (E-026) |
+| Apa yang tersisa sebagai kandidat penyebab? | Kualitas depth itu sendiri, ukuran data (980 citra latih), kapasitas |
+
+Yang dibeli blok ini bukan perbaikan mAP, melainkan **penutupan jalur secara
+meyakinkan** plus tiga instrumen yang bertahan: protokol evaluasi tunggal,
+ukuran varians split, dan ukuran ambiguitas bebas-label.
+
+---
+
+## 7. Apa yang menunggu di depan
+
+### 7.1 Yang sudah siap dan tidak hilang
 
 - **[`reproduce/pipeline/`](../../reproduce/pipeline/README.md)** — pipeline produksi YOLO 4-kanal
   (RGB + depth) untuk kamera **Orbbec Gemini**. Satu bobot melayani dua mode uji
@@ -376,7 +611,10 @@ RF-DETR `checkpoint_best_ema.pth` (142 MB), RT-DETR `best.pt` (264 MB), YOLO26l
   Kontrak kanal keempat sudah dibekukan (PNG uint8, `0` = tidak ada data,
   `1..255` = *inverse depth* pada rentang metrik tetap 0,3–8 m). Integrasi ke
   aplikasi lapangan yang sudah ada = tiga baris (`Sawit4CH`). **Belum ada bobot
-  terlatih** — pipeline menunggu data fisik.
+  terlatih.** Catatan penting setelah §6: rentang metrik bawaannya (0,3–8 m)
+  **terbukti salah** untuk Orbbec Gemini pada kasus ini — pakai 0,8/15,0 m
+  (§6.2), dan `prepare_depth.py` tidak boleh dipakai untuk data ber-sidecar
+  seperti SawitMVC-Depth.
 - **Dataset master 3024×4032** — dirakit dari peta isi E-015 (3.992/3.992 cocok,
   skor terendah 0,9985, nol ambigu), menunjuk ke piksel master penuh tanpa
   anotasi ulang karena rasio aspeknya identik (0,75). Belum dipakai melatih
@@ -384,39 +622,81 @@ RF-DETR `checkpoint_best_ema.pth` (142 MB), RT-DETR `best.pt` (264 MB), YOLO26l
 - **RF-DETR-L `checkpoint_best_ema.pth`** — model terbaik (§5.3), 142 MB.
   RT-DETR-L `best.pt` (264 MB) dan YOLO26l `best.pt` (53 MB) sebagai pembanding.
 
-### 6.2 Jalur lanjutan, prioritas turun
+### 7.2 Register gerbang G0–G8 — dan satu yang masih terbuka
 
-1. **RF-DETR-L pada piksel master 3024×4032** (imgsz 1600–2048) — menyerang
+Blok depth sensor dikerjakan sebagai sembilan "gerbang" (celah yang harus
+ditutup sebelum kesimpulan boleh dibuat). Daftar ini **belum pernah ditulis di
+repo**; ia direkonstruksi dari judul entri dan pesan commit, dan dicatat di sini
+supaya dapat diverifikasi.
+
+| Gerbang | Isi | Ditutup oleh | Status |
+|---|---|---|---|
+| G0 | Penjaga kelengkapan run + tautan mati | `d58eae9` | Tertutup |
+| G1 | Selisih evaluator `hasil.json` vs pycocotools | E-025 | Tertutup |
+| G2 | Matriks multi-seed, protokol tunggal | E-027 (YOLO26n) + E-029 (RT-DETR-L) | Tertutup |
+| G3 | Restrukturisasi E-022 + penyelarasan putusan SR-015 | `9c5d9dd`, `86f8e65` | Tertutup |
+| G4 | Fusi menengah | E-032 | Tertutup |
+| G5 | Varians split | E-031 | Tertutup |
+| G6 | Fusi akhir | E-032 | Tertutup |
+| G7 | Sapuan kapasitas dalam satu keluarga | E-030 | Tertutup (satu seed) |
+| G8 | Ukuran lintas-sisi pada dataset berdaya uji layak | E-028 | Tertutup |
+| **G7b** | **Monotonisitas kapasitas diuji multi-seed** | — | **TERBUKA** |
+
+**G7b belum selesai dan tidak boleh dilupakan.** Commit `7afd274` membuka 12 run
+tambahan (yolo26m/l × 3 modal × seed 1337, 2024) untuk menguji apakah
+monotonisitas kolom derau − RGB (§6.5) bertahan multi-seed. Yang benar-benar
+terjadi:
+
+- **7 dari 12 run selesai dilatih** dan kurvanya terarsip (seed 1337 lengkap
+  untuk yolo26m dan yolo26l; seed 2024 hanya `yolo26m_rgb`).
+- **0 kontras berpasangan dihitung** — `paired_yolo26{m,l}_*` hanya ada untuk
+  seed 42.
+- **E-030 tidak pernah diperbarui**, sehingga keterbatasan "satu seed" yang
+  ditulis di sana masih berlaku apa adanya.
+
+Konsekuensinya jujur: klaim titik balik kapasitas **antara 21,9 dan 26,3 jt
+parameter** tetap berstatus **pola satu-seed**, bukan temuan. Menyelesaikan G7b
+menuntut 5 run sisa (~1 jam) plus evaluasi berpasangan — murah dibanding
+nilainya, karena klaim inilah yang dipakai memilih arsitektur.
+
+### 7.3 Jalur lanjutan, prioritas turun
+
+1. **Selesaikan G7b** (§7.2) — 5 run + evaluasi. Termurah, dan menaikkan status
+   satu klaim yang sudah dipakai mengambil keputusan.
+2. **RF-DETR-L pada piksel master 3024×4032** (imgsz 1600–2048) — menyerang
    lokalisasi, penentu mAP50-95 yang sasarannya kini satu-satunya yang tersisa
    (−0,023). Taruhan terbaik menutup jarak itu.
-2. **Kapasitas di atas mekanisme yang sudah terbukti** — RF-DETR pada varian
+3. **Kapasitas di atas mekanisme yang sudah terbukti** — RF-DETR pada varian
    lebih besar, atau RT-DETR-X (67,5 juta parameter).
-3. **Optimasi latensi RF-DETR** (FP16 `optimize_for_inference`) — 8,5 FPS
+4. **Optimasi latensi RF-DETR** (FP16 `optimize_for_inference`) — 8,5 FPS
    terlalu lambat untuk lapangan waktu-nyata; perlu diukur sebelum dipakai.
-4. **Loss ordinal / kepala regresi kematangan (I-22)** — menyerang ketidakcocokan
+5. **Loss ordinal / kepala regresi kematangan (I-22)** — menyerang ketidakcocokan
    objektif-vs-metrik dari §4.4, dan belum pernah diuji di atas detektor terbaik.
-5. **Loss berimbang/focal (I-13), neck BiFPN (I-15)** — prioritas terendah.
+6. **`mid` pada yolo26m/l** — satu-satunya arah depth yang masih punya dasar
+   (§6.6 + §6.5), dan **hanya** kalau ada alasan lain melanjutkan jalur depth.
+7. **Loss berimbang/focal (I-13), neck BiFPN (I-15)** — prioritas terendah.
 
-### 6.3 Yang menunggu keputusan pengguna, bukan sekadar teknis
+### 7.4 Yang menunggu keputusan pengguna, bukan sekadar teknis
 
-- **Depth sensor Gemini.** Depth **sensor** — pengukuran fisik yang independen
-  dari RGB — **belum pernah diuji.** Yang dipalsukan di §4.2 adalah pseudo-depth
-  monokular relatif. `reproduce/pipeline/` ada justru supaya pertanyaan ini bisa dijawab
-  begitu datanya terkumpul, dan gerbang mutu depth (I-8) baru relevan pada tahap
-  itu.
+- **Apakah jalur depth diteruskan sama sekali.** Ini kini pertanyaan strategis,
+  bukan teknis. Depth sensor fisik sudah diuji habis (§6) dan tidak membeli apa
+  pun pada konfigurasi mana pun yang dicoba. Melanjutkan berarti bertaruh pada
+  salah satu dari tiga kandidat penyebab yang tersisa — kualitas depth, ukuran
+  data, kapasitas — dan masing-masing eksperimen tersendiri.
 - **Brondolan lepas** sebagai penanda kematangan — kriteria panen lapangan yang
   sesungguhnya, tidak terlihat dari kanopi pada jarak foto ini. Ini mengubah
   **perumusan tugas**, bukan tuning, dan perlu persetujuan sebelum disentuh.
 
 ---
 
-## 7. Batas klaim — yang tidak boleh dibaca berlebihan
+## 8. Batas klaim — yang tidak boleh dibaca berlebihan
 
 Diringkas dari peringatan yang tersebar di log; semuanya mengikat.
 
-1. **Pseudo-depth ≠ depth sensor.** Semua angka depth di pilot ini berasal dari
-   model monokular, bersifat **relatif** (bukan metrik), dan galatnya berkorelasi
-   dengan RGB sumbernya. Tidak satu pun berbicara tentang Orbbec Gemini.
+1. **Pseudo-depth ≠ depth sensor.** Semua angka depth di **pilot** (§4.2) berasal
+   dari model monokular, bersifat **relatif** (bukan metrik), dan galatnya
+   berkorelasi dengan RGB sumbernya. Depth sensor fisik diuji terpisah di §6 —
+   jangan mencampur kesimpulan keduanya.
 2. **Kenaikan RT-DETR bukan bukti kausal tentang NMS.** Lihat §5.2 — banyak hal
    berubah sekaligus.
 3. **0,8834/0,4702 adalah selubung empiris, bukan plafon anotasi absolut.**
@@ -434,9 +714,29 @@ Diringkas dari peringatan yang tersebar di log; semuanya mengikat.
    menurunkan angka; pelaporan yang jujur memisahkan AP deteksi kelas-agnostik
    dari akurasi kematangan.
 
+Tambahan dari blok depth sensor — sama mengikatnya:
+
+9. **Tidak ada angka E-022 yang boleh dikutip.** Seluruh entri bertumpu pada satu
+   seed, dua lengan kontrol berkode cacat, dan evaluator yang kini terlarang
+   untuk perbandingan antar lengan. Pakai E-027/E-029 sebagai gantinya.
+10. **Angka SawitMVC-Depth tidak sebanding dengan SawitMVC.** Dataset, prior
+    kelas, orientasi, dan kepadatan semuanya berbeda (§6.1). Yang sah hanya
+    selisih antar lengan di dalam satu dataset.
+11. **Setiap angka mAP pada SawitMVC-Depth wajib menyebut split.** Rentang
+    antar-split 0,0488 melampaui hampir semua efek yang pernah diperdebatkan
+    (§6.4b).
+12. **`mid` (+0,0139) adalah INDIKASI, bukan temuan.** Ketiga CI memuat nol, dan
+    dengan 4 lengan diuji satu tanda sepakat 3/3 bukan kejadian langka (§6.6).
+13. **Titik balik kapasitas 21,9–26,3 jt masih satu seed.** G7b belum selesai
+    (§7.2); jangan mengutipnya sebagai temuan multi-seed.
+14. **"Depth tidak menolong" berlaku untuk yang diuji, bukan universal.** Yang
+    diuji: fusi awal/menengah/akhir, YOLO26n/m/l + RT-DETR-L, 980 citra latih,
+    satu sensor. Kualitas depth dan ukuran data belum terpisahkan sebagai
+    penyebab.
+
 ---
 
-## 8. Reproduksi
+## 9. Reproduksi
 
 Kode eksperimen dijalankan di luar repo; snapshot kode, hasil JSON, dan split
 diarsipkan di dalam repo bersama panduan reproduksi langkah demi langkah
@@ -444,12 +744,26 @@ diarsipkan di dalam repo bersama panduan reproduksi langkah demi langkah
 Dataset: SawitMVC 960×1280 dan master 3024×4032, split per pohon 716/96/141
 dengan irisan nol — invarian yang harus dijaga.
 
+**Blok depth sensor** (§6) memakai SawitMVC-Depth, split per-pohon
+terstratifikasi `(device × unit-kamera) × kelas-dominan`, 245/35/72 pohon,
+irisan nol. Bukti terarsip: 39 kurva latihan + 37 kontras di
+`evidence/experiments/results/E-022/`, 15 kurva latihan + 12 kontras di
+`evidence/experiments/results/E-023/`. **Bobot tidak diarsipkan** (kebijakan
+repo); sebagai gantinya tiap run menyimpan SHA-256 `best.pt`, sehingga hasil
+latih-ulang dapat diverifikasi identik atau tidak.
+
+Tiga jebakan yang wajib dibaca sebelum membangun ulang lingkungan — layout
+`data/`, pin `opencv-python==4.11.0.86` dan `numpy==1.26.4` setelah ultralytics,
+serta `reproject_depth.py --z-near 0.8 --z-far 15.0` — ada di
+[STATUS.md](STATUS.md) §"Mulai dari nol setelah jeda".
+
 Untuk deliverable produksi, seluruh perintah latih/konversi/inferensi ada di
 [`reproduce/pipeline/README.md`](../../reproduce/pipeline/README.md).
 
 ---
 
-*Cuplikan ini dikurasi 25 Juli 2026. Angka apa adanya, hasil negatif ikut
-dilaporkan. Bila ada selisih antara dokumen ini dan
+*Cuplikan ini dikurasi 25 Juli 2026, diperluas ke E-032 pada 1 Agustus 2026.
+Angka apa adanya, hasil negatif ikut dilaporkan — dan di blok §6, hasil negatif
+adalah keseluruhan isinya. Bila ada selisih antara dokumen ini dan
 [`docs/experiments/EKSPERIMEN.md`](EKSPERIMEN.md) / [`docs/experiments/METRICS.md`](METRICS.md), yang kanonik
 adalah kedua berkas itu.*

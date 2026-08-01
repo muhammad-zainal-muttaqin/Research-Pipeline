@@ -22,7 +22,7 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | **Audit** | Bukti koreksi atau pemeriksaan; jangan mengutip skor lama sebagai hasil final. |
 | **Ditangguhkan** | Kode, data, atau arah kerja sudah ada, tetapi belum mendukung klaim performa. |
 
-## Register E-001 sampai E-031
+## Register E-001 sampai E-032
 
 | Eksperimen | Pertanyaan dan data | Putusan | Status kutip | Detail |
 |---|---|---|---|---|
@@ -48,7 +48,7 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | E-020 | Apakah RT-DETR NMS-free melampaui baseline? | Dikonfirmasi, kemudian dilampaui E-021 | Arsip | [SR-013](SR/SR-013-rtdetr-nms-free.md) |
 | E-021 | Apakah RF-DETR-L melampaui RT-DETR pada setelan identik? | Dikonfirmasi | **Final** | [METRICS](METRICS.md) dan [SR-014](SR/SR-014-rfdetr-dinov2.md) |
 | E-022 | Apakah depth sensor terregistrasi menaikkan mAP? | Fusi awal tidak didukung; klaim kenaikan belum sah | **Audit** | [audit](AUDIT-E022.md) dan [arsip](archive/E022-seed42-awal.md) |
-| E-023 | Fusi menengah/akhir dua cabang | Arsitektur siap, belum dijalankan | Ditangguhkan | [`train_fusion_2branch.py`](../../reproduce/experiments/train/train_fusion_2branch.py) |
+| E-023 | Fusi menengah/akhir dua cabang | **Dijalankan sebagai E-032**; nomor E-023 dipakai untuk direktori bukti | Arsip | [E-032](EKSPERIMEN.md), bukti `evidence/experiments/results/E-023/` |
 | E-024 | Apakah inkonsistensi prediksi lintas-sisi terukur? | Terukur 19,5% | Arsip | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
 | E-025 | Dari mana selisih evaluator E-022 berasal? | Menskala dengan jumlah deteksi | **Audit** | [audit](AUDIT-E022.md) dan [log](EKSPERIMEN.md) |
 | E-026 | Apakah depth menstabilkan identitas lintas-sisi? | Dipalsukan | Arsip | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
@@ -57,6 +57,7 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | E-029 | Apakah klausa "depth terpakai pada kapasitas tinggi" bertahan multi-seed? | Dicabut | **Audit** | [log](EKSPERIMEN.md), [SR-015](SR/SR-015-depth-sensor-4kanal.md) |
 | E-030 | Apakah arah efek kanal ke-4 ditentukan kapasitas? | Dikonfirmasi sebagian; klaim dipersempit | Arsip | [log](EKSPERIMEN.md) |
 | E-031 | Seberapa besar kesimpulan bergantung pada split? | Varians split nyata; arah Δ justru lebih stabil | Arsip | [log](EKSPERIMEN.md) |
+| E-032 | Apakah memindahkan titik fusi (awal/menengah/akhir) menolong? | Tidak berbeda; 12/12 CI memuat nol. `mid` indikasi saja | Arsip | [log](EKSPERIMEN.md), [SR-015 §7b](SR/SR-015-depth-sensor-4kanal.md) |
 
 ## Urutan baca menurut kebutuhan
 

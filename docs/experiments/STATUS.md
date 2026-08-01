@@ -114,7 +114,23 @@ B3↔B4 menunjukkan geometris.
 
 ## Untuk sesi berikutnya — apa yang terbuka setelah 1 Agustus
 
-Seluruh celah G0–G8 tertutup. Yang tersisa, berurut dari yang paling siap:
+Celah G0–G8 tertutup. **Satu gerbang susulan, G7b, TIDAK tertutup** — lihat
+butir 0 di bawah; registernya ada di
+[LAPORAN-EKSPERIMEN.md §7.2](LAPORAN-EKSPERIMEN.md). Sisanya berurut dari yang
+paling siap:
+
+**0. G7b — monotonisitas kapasitas multi-seed. TERBUKA, dan paling murah.**
+Commit `7afd274` membuka 12 run (yolo26m/l × 3 modal × seed 1337, 2024) untuk
+menguji apakah pola derau − RGB di E-030 bertahan multi-seed. Yang terjadi:
+**7 dari 12 run selesai dilatih** (seed 1337 lengkap untuk kedua arsitektur;
+seed 2024 hanya `yolo26m_rgb`), **0 kontras berpasangan dihitung**, dan **E-030
+tidak pernah diperbarui**. Akibatnya klaim titik balik kapasitas **21,9–26,3 jt
+parameter** masih berstatus pola satu-seed — padahal klaim itulah yang dipakai
+sebagai dasar memilih arsitektur. Sisa: 5 run (~1 jam) + `eval_g2.sh`. Kurva
+latihan 7 run yang sudah jadi ada di
+`evidence/experiments/results/E-022/kurva_latihan/`, tetapi **bobotnya ikut
+hilang saat pod di-terminate**, jadi kelima run sisa maupun ketujuh yang sudah
+ada sama-sama harus dilatih ulang.
 
 **1. Penjadwalan run — SUDAH DIPERBAIKI 1 Agustus.** Pustaka
 `reproduce/experiments/shell/jadwal.sh` menutup ketiga bug di bawah; jalankan

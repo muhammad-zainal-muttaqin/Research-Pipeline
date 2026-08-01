@@ -35,13 +35,13 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-012](SR-012-dua-tahap.md) | Detektor dua tahap (deteksi agnostik + kepala kematangan) | E-017 | **DIPALSUKAN** |
 | [SR-013](SR-013-rtdetr-nms-free.md) | RT-DETR-L (NMS-free): detektor 4-kelas terbaik | E-020 | **DIKONFIRMASI** (arah; target belum) |
 | [SR-014](SR-014-rfdetr-dinov2.md) | RF-DETR-L (DINOv2) melampaui RT-DETR pada setelan identik | E-021 | **DIKONFIRMASI** (sasaran mAP50 terlewati) |
-| [SR-015](SR-015-depth-sensor-4kanal.md) | Depth SENSOR 4-kanal simultan (dataset SawitMVC-Depth) | E-022, E-027, E-029 | **DIPALSUKAN** (fusi awal); klaim mekanisme depth pada model besar dicabut |
-| [SR-016](SR-016-konsistensi-lintas-sisi.md) | Konsistensi prediksi lintas-sisi sebagai ukuran ambiguitas | E-024, E-026 | **DIKONFIRMASI** (ukurannya) / **DIPALSUKAN** (depth tidak menstabilkan) |
+| [SR-015](SR-015-depth-sensor-4kanal.md) | Depth SENSOR 4-kanal simultan (dataset SawitMVC-Depth) | E-022, E-025, E-027, E-029, E-030, E-031, E-032 | **DIPALSUKAN** (fusi awal, menengah, DAN akhir); klaim mekanisme depth pada model besar dicabut; "titik fusi salah" dicoret (§7b) |
+| [SR-016](SR-016-konsistensi-lintas-sisi.md) | Konsistensi prediksi lintas-sisi sebagai ukuran ambiguitas | E-024, E-026, E-028 | **DIKONFIRMASI** (ukurannya, 0,2329 pada 511 tandan) / **DIPALSUKAN** (depth tidak menstabilkan) |
 
 ## Apa yang sudah kita pelajari — cerita singkatnya
 
-Lima belas SR diuji; empat dipalsukan, satu ditarik, dan justru itu yang
-mempersempit arah. Rantai temuannya:
+Enam belas SR diuji; lima dipalsukan, satu ditarik, satu klausa dicabut, dan
+justru itu yang mempersempit arah. Rantai temuannya:
 
 1. **Bottleneck ada di detektor, bukan penghitung.** E-007 mereproduksi Tabel 4
    DiB persis, dan menunjukkan koreksi sederhana `k = 1,8905` sudah mencapai
@@ -91,10 +91,46 @@ menyesatkan arah kerja.
     DETR, sehingga penjelasan "sekadar kapasitas/resolusi" tertutup. Seluruh
     perbandingan kini satu protokol pycocotools.
 
-Arah aktif: **mAP50 sudah terlewati; yang tersisa mAP50-95 0,30** (kurang 0,023).
-Jalur yang belum tersentuh: piksel master 3024×4032 (imgsz 1600–2048) untuk
-menyerang lokalisasi, kapasitas di atas RF-DETR, dan loss ordinal untuk B2↔B3.
-Catatan penerapan: RF-DETR paling akurat tetapi paling lambat (8,5 FPS di L4).
+Arah aktif pada titik ini: **mAP50 sudah terlewati; yang tersisa mAP50-95 0,30**
+(kurang 0,023). Catatan penerapan: RF-DETR paling akurat tetapi paling lambat
+(8,5 FPS di L4).
+
+### Babak ketiga (SR-015, SR-016) — depth sensor fisik, dan penutupannya
+
+11. **Depth SENSOR diuji, dan tidak membeli apa pun.** Sampai E-021 satu-satunya
+    "depth" yang pernah diuji adalah pseudo-depth monokular. Dataset
+    SawitMVC-Depth menutup lubang itu — dan jawabannya negatif di seluruh
+    kontras. Fusi awal **merugikan** pada YOLO26n (rerata −0,0230, dua dari tiga
+    seed signifikan negatif), dan klausa penyelamat "depth terpakai pada
+    kapasitas tinggi" **dicabut** setelah diuji multi-seed pada RT-DETR-L
+    (SR-015, E-027/E-029).
+12. **Registrasi bukan penyebabnya.** Label sidecar `alignedTo: "color"` terbukti
+    menyesatkan dan diperbaiki lewat reproyeksi penuh, divalidasi tiga cara
+    (geometri, pita kosong, *mutual information* +0,0306 bit). Jadi hasil negatif
+    di atas **bukan** artefak depth yang salah tempat — jebakan D3Net (entri 037)
+    sudah dihindari sebelum klaim dibuat.
+13. **Titik fusi juga bukan penyebabnya.** 15 run dari nol menguji fusi awal,
+    menengah (P2/4), dan akhir (P3/P4/P5) sejajar: **12 dari 12 CI memuat nol**.
+    Fusi akhir menambah parameter terbanyak dan tetap nol perbaikan. "Titik fusi
+    salah" **dicoret** sebagai kandidat penyebab (SR-015 §7b, E-032). `mid`
+    konsisten positif 3/3 seed (+0,0139) tetapi berstatus **indikasi**, bukan
+    temuan.
+14. **Yang bertahan dari babak ini adalah instrumennya, bukan depth-nya.** Tiga
+    hal berumur panjang: protokol evaluasi tunggal (`hasil.json` dilarang untuk
+    perbandingan antar lengan, E-025), varians split terukur **0,0488** —
+    melebihi varians seed dan hampir 5× ambang keberhasilan yang dipakai
+    (E-031), dan ukuran ambiguitas bebas-label yang mengonfirmasi **B2↔B3
+    sebagai pasangan dominan** pada 511 tandan tanpa memakai label kematangan
+    sebagai kebenaran (SR-016, E-028).
+
+Kesimpulan babak ini: jalur depth **ditutup untuk konfigurasi yang diuji**, dan
+yang tersisa sebagai kandidat penyebab hanya kualitas depth itu sendiri, ukuran
+data (980 citra latih), dan kapasitas. Melanjutkannya adalah keputusan strategis,
+bukan langkah teknis berikutnya yang otomatis.
+
+Jalur non-depth yang belum tersentuh dan berdiri lebih kuat: piksel master
+3024×4032 (imgsz 1600–2048) untuk menyerang lokalisasi, kapasitas di atas
+RF-DETR, dan loss ordinal untuk B2↔B3.
 
 ## Ide yang belum dikerjakan
 
