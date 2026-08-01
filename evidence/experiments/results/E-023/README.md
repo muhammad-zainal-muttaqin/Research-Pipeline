@@ -2,7 +2,7 @@
 
 Arsip berjalan. Matriks penuh 15 run (5 lengan x 3 seed, yolo26n skala n,
 150 epoch, split SawitMVC-Depth seed42, tanpa bobot pratlatih). Isi direktori
-ini bertambah seiring run selesai; kondisi saat pembaruan terakhir: **11 dari 15
+ini bertambah seiring run selesai; kondisi saat pembaruan terakhir: **12 dari 15
 lengkap** (seluruh seed42 dan seed1337 kecuali `late_seed42` yang diulang
 setelah bug topeng 4-kanal).
 
