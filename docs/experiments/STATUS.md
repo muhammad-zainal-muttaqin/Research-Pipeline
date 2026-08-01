@@ -103,3 +103,65 @@ turun** dari 0,2329 (baseline SawitMVC, E-028). Bila mAP naik tetapi laju
 inkonsisten datar, kenaikan itu patut dicurigai sebagai efek kapasitas.
 Penurunan yang terkonsentrasi di B2↔B3 menunjukkan mekanisme fotometrik; di
 B3↔B4 menunjukkan geometris.
+
+## Mulai dari nol setelah jeda — apa yang hilang dan urutan membangunnya
+
+Sesi 31 Juli–1 Agustus berjalan di workspace sementara. **8,8 GB state berada di
+luar git dan akan hilang** bila workspace direset; yang tersisa hanyalah 770
+berkas ter-track. Daftar ini menjawab "apa yang harus dibangun ulang, dalam
+urutan apa" supaya tidak ditemukan ulang satu per satu.
+
+| Hilang | Ukuran | Cara mendapatkan kembali |
+|---|---:|---|
+| `/workspace/SawitMVC/data` | 2,3 GB | HuggingFace `ULM-DS-Lab/SawitMVC` |
+| `/workspace/SawitMVC-Depth/data` | 2,6 GB | HuggingFace `ULM-DS-Lab/SawitMVC-Depth` (**private**, butuh token baru) |
+| `evidence/experiments/depth_png/` | 211 MB | `build/reproject_depth.py`, ~10 menit |
+| `runs/detect/runs_e022/` (**35 checkpoint**) | 2,5 GB | latih ulang; tidak ada jalan pintas |
+| `reproduce/experiments/.venv` | 1,2 GB | `python -m venv --system-site-packages` |
+
+### Urutan, beserta jebakan yang sudah terverifikasi
+
+**1. Dataset — layout wajib `data/`.** Unduhan HuggingFace mendarat dengan
+`images/`, `labels/`, `json/` di **akar**, sedangkan seluruh skrip dan split
+mengharapkan `<root>/data/…`. Pindahkan. Untuk SawitMVC-Depth, `MERGE_MAP.csv`
+dan `MERGE_VERIFICATION.json` juga harus ada **di dalam** `data/`
+(`build/make_splits_depth.py` membacanya dari sana) — sambungkan dengan symlink.
+Verifikasi integritas sebelum dipakai: 6.336 artefak ber-SHA256 terhadap
+`manifests/`.
+
+**2. venv — pin opencv di `requirements.txt` tidak dapat dipasang apa adanya.**
+Tertulis `opencv-python-headless==4.11.0`; versi itu tidak ada di PyPI (opencv
+memakai versi 4 bagian) dan varian *headless* tidak mengekspor `cv2.imshow` yang
+disentuh ultralytics saat impor. Pakai **`opencv-python==4.11.0.86`**. Pasang
+juga `numpy==1.26.4` **setelah** ultralytics, karena ultralytics menariknya ke
+numpy 2.x. torch diwarisi dari image sistem, jangan dipasang lewat pip.
+
+**3. depth_png — rentang metrik dibekukan.** Jalankan
+`build/reproject_depth.py --z-near 0.8 --z-far 15.0`, **bukan** nilai bawaan.
+Pemeriksaan bahwa hasilnya benar: cakupan piksel valid rata-rata harus
+**0,710** (nilai beku di `depth_meta.json` 0,71032). Jangan memakai
+`pipeline/prepare_depth.py` untuk dataset ini.
+
+**4. Split — sudah di git, tetapi path-nya absolut.** `splits_depth/seed{42,1,2}`
+dan `splits_rgb/sawitmvc` memuat path absolut ke `/workspace/…`, baik di
+`*.txt` maupun di `path:` tiap `data_*.yaml`. Bila repo di-clone ke lokasi lain,
+keduanya harus disesuaikan. Path pada `data_*.yaml` **wajib absolut** —
+ultralytics me-resolve entri relatif terhadap `DATASETS_DIR`, bukan terhadap
+lokasi yaml.
+
+**5. Checkpoint — tidak ada jalan pintas.** 35 bobot tidak diarsipkan (kebijakan
+repo). Yang tersedia sebagai gantinya: `metrics_lengkap.json` memuat **SHA-256
+dan ukuran byte** tiap `best.pt`. Setelah latih ulang, bandingkan hash-nya —
+kalau angkanya berbeda, hash membedakan "checkpoint memang lain" dari "resep
+tidak tereproduksi".
+
+**6. Kredensial.** Token HuggingFace dan GitHub yang dipakai sesi ini sudah
+seharusnya dicabut; siapkan yang baru.
+
+### Yang TIDAK perlu dibangun ulang
+
+Seluruh hasil sudah terarsip dan aman di git: 21 JSON berpasangan E-022,
+`metrics_lengkap.json` (25 run, mAP50/mAP50-95/AP per kelas/P/R/F1/provenans),
+hasil E-024/E-026/E-028, split, dan semua entri E-025 sampai E-031. **Membaca
+kesimpulan tidak menuntut satu pun run diulang** — yang menuntut latih ulang
+hanyalah melanjutkan ke E-023.
