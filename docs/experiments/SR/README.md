@@ -36,10 +36,11 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-013](SR-013-rtdetr-nms-free.md) | RT-DETR-L (NMS-free): detektor 4-kelas terbaik | E-020 | **DIKONFIRMASI** (arah; target belum) |
 | [SR-014](SR-014-rfdetr-dinov2.md) | RF-DETR-L (DINOv2) melampaui RT-DETR pada setelan identik | E-021 | **DIKONFIRMASI** (sasaran mAP50 terlewati) |
 | [SR-015](SR-015-depth-sensor-4kanal.md) | Depth SENSOR 4-kanal simultan (dataset SawitMVC-Depth) | E-022 | **DIPALSUKAN** (fusi awal); klaim mekanisme depth pada model besar dicabut |
+| [SR-016](SR-016-konsistensi-lintas-sisi.md) | Konsistensi prediksi lintas-sisi sebagai ukuran ambiguitas | E-024, E-026 | **DIKONFIRMASI** (ukurannya) / **DIPALSUKAN** (depth tidak menstabilkan) |
 
 ## Apa yang sudah kita pelajari — cerita singkatnya
 
-Empat belas SR diuji; empat dipalsukan, satu ditarik, dan justru itu yang
+Lima belas SR diuji; empat dipalsukan, satu ditarik, dan justru itu yang
 mempersempit arah. Rantai temuannya:
 
 1. **Bottleneck ada di detektor, bukan penghitung.** E-007 mereproduksi Tabel 4

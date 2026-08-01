@@ -13,6 +13,17 @@
 > B4 hanya punya 95 kotak; sebaran antar-seed-nya melebihi seluruh efek yang
 > diklaim. Detail: [AUDIT-E022.md](../AUDIT-E022.md).
 
+> **⚠ TAMBAHAN 2026-08-01 — pembanding derau juga tidak bertahan.** Matriks
+> multi-seed YOLO26n protokol beku ([E-027](../EKSPERIMEN.md)) menunjukkan
+> temuan "derau mengalahkan depth" **tidak tereproduksi**. Angka +0,0437 pada
+> seed-42 lama — satu-satunya delta signifikan di seluruh E-022 dan dasar
+> beberapa kalimat di bawah — menjadi +0,0032 / +0,0011 / −0,0443 (rerata
+> −0,0133) setelah dijalankan ulang dengan kode `_fix`. Sebaliknya, putusan
+> utama "fusi awal DIPALSUKAN" **makin kuat**: depth − RGB kini rerata −0,0230
+> dengan dua dari tiga seed signifikan NEGATIF, jadi untuk YOLO26n depth bukan
+> netral melainkan **merugikan**. Tabel di bawah dipertahankan sebagai rekam
+> seed-42; jangan mengutip angka deraunya sebagai temuan.
+
 ---
 
 ## 1. Masalah

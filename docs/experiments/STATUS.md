@@ -11,6 +11,9 @@ Dokumen ini adalah handoff singkat. Untuk peta lengkap, mulai dari
 | Dasar angka E-021 | Keempat model pembanding dinilai dengan satu protokol `pycocotools`; lihat [METRICS.md](METRICS.md). |
 | Sasaran berikutnya | mAP50-95 0,30 masih kurang 0,023. |
 | Data depth sensor E-022 | Parsing kalibrasi dan reproyeksi depth ke RGB tervalidasi. Klaim bahwa depth menaikkan deteksi belum boleh dibuat. |
+| Matriks multi-seed YOLO26n | **Selesai (E-027).** Depth − RGB rerata **−0,0230**, dua dari tiga seed signifikan NEGATIF. Untuk YOLO26n depth **merugikan**, bukan netral. |
+| Protokol evaluasi | **Mengikat (E-025):** `hasil.json` tidak boleh dipakai membandingkan antar lengan; celahnya menskala dengan jumlah deteksi. pycocotools protokol tunggal. |
+| Ambiguitas lintas-sisi | Terukur 19,5% tanpa label manusia (E-024/SR-016). Depth tidak menstabilkannya (E-026). B4 belum terwakili. |
 
 ## Hasil yang boleh dikutip
 
