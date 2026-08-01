@@ -33,7 +33,7 @@ SPLIT_ROOT=/workspace/research-pipeline/evidence/experiments/splits_rgb
 OUT=/workspace/research-pipeline/evidence/experiments/results/E-028
 
 # --- tunggu GPU longgar ---------------------------------------------------
-while pgrep -f "train_depth4ch.py|train_rfdetr_4ch.py" >/dev/null; do
+while pgrep -f "venv/bin/python.*train_(depth4ch|rfdetr_4ch)\.py" >/dev/null; do
   echo "[g8] menunggu antrean latihan lain... $(date -Is)"
   sleep 120
 done

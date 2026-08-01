@@ -39,7 +39,7 @@ TANDA=.g7-tanda
 mkdir -p "$TANDA"
 
 # --- tunggu antrean latihan lain selesai ---------------------------------
-while pgrep -f "train_depth4ch.py|train_rfdetr_4ch.py" >/dev/null; do
+while pgrep -f "venv/bin/python.*train_(depth4ch|rfdetr_4ch)\.py" >/dev/null; do
   echo "[g7] menunggu antrean lain selesai... $(date -Is)"
   sleep 120
 done
