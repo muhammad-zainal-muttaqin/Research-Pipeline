@@ -112,6 +112,40 @@ inkonsisten datar, kenaikan itu patut dicurigai sebagai efek kapasitas.
 Penurunan yang terkonsentrasi di B2↔B3 menunjukkan mekanisme fotometrik; di
 B3↔B4 menunjukkan geometris.
 
+## Untuk sesi berikutnya — apa yang terbuka setelah 1 Agustus
+
+Seluruh celah G0–G8 tertutup. Yang tersisa, berurut dari yang paling siap:
+
+**1. Penjadwalan run — kunci proses, bukan pemeriksaan hasil.** Dua kelas bug
+terverifikasi hari ini, keduanya menghabiskan waktu nyata:
+
+- *Peluncuran ganda.* Penjaga "lewati bila berkas hasil sudah ada" tidak
+  melindungi apa pun selama pekerjaan berjalan, karena hasil baru ditulis di
+  akhir. Driver meluncurkan salinan kedua `awal_seed2024` 20 menit setelah yang
+  pertama mulai. Perbaikan: `flock` pada berkas penanda saat MULAI.
+- *Pekerja yatim.* Membunuh induk tidak membunuh 12 pekerja
+  `ProcessPoolExecutor`-nya; mereka terus berjalan dengan ppid 1. Bunuh per grup
+  proses, bukan per pid.
+- *Ambang VRAM berbasis peluncuran.* Run tumbuh 2,35 → 4,04 GB; ambang yang
+  mengukur pemakaian saat peluncuran menyebabkan dua OOM. Ambang 5500 MiB
+  (puncak + margin) terbukti benar sepanjang 15 run.
+
+**2. Oversubscription CPU pada evaluasi.** `eval_e022_paired.py` memakai
+`min(32, cpu_count // 4)` = 12 proses. Menjalankan 8 kontras serentak berarti 96
+pekerja pada 48 core dan justru MEMPERLAMBAT. Pembagian //4 masuk akal saat
+latihan GPU berbagi mesin; setelah latihan selesai ia hanya menyisakan kapasitas.
+Yang benar: satu penjadwal yang tahu total core, bukan tiap kontras memutuskan
+sendiri.
+
+**3. `mid` pada kapasitas lebih besar.** E-032 menempatkan fusi menengah sebagai
+INDIKASI (3/3 seed positif, rerata +0,0139, semua CI memuat nol) pada yolo26n.
+E-030 menunjukkan isi kanal ke-4 baru penting pada kapasitas besar. Uji `mid`
+pada yolo26m/l adalah satu-satunya arah yang punya dasar dari dua entri sekaligus
+— tetapi hanya kalau ada alasan lain untuk melanjutkan jalur depth.
+
+**4. Backlog tidak memblokir.** Blok 3 sisa (I-13, I-15, I-17, I-19, I-22) dan
+protokol literatur Blok 5.
+
 ## Mulai dari nol setelah jeda — apa yang hilang dan urutan membangunnya
 
 Sesi 31 Juli–1 Agustus berjalan di workspace sementara. **8,8 GB state berada di
@@ -125,6 +159,7 @@ urutan apa" supaya tidak ditemukan ulang satu per satu.
 | `/workspace/SawitMVC-Depth/data` | 2,6 GB | HuggingFace `ULM-DS-Lab/SawitMVC-Depth` (**private**, butuh token baru) |
 | `evidence/experiments/depth_png/` | 211 MB | `build/reproject_depth.py`, ~10 menit |
 | `runs/detect/runs_e022/` (**35 checkpoint**) | 2,5 GB | latih ulang; tidak ada jalan pintas |
+| `runs/detect/runs_e023/` (**15 checkpoint**) | ~1,1 GB | `shell/e023_fusi.sh` + `shell/e023_seed2024.sh`; ~4 jam pada satu A4500. Kurva latihan, `args.yaml`, dan SHA-256 tiap `best.pt` SUDAH diarsipkan di `evidence/experiments/results/E-023/` — cukup untuk memverifikasi apakah hasil latih-ulang menghasilkan checkpoint yang sama |
 | `reproduce/experiments/.venv` | 1,2 GB | `python -m venv --system-site-packages` |
 
 ### Urutan, beserta jebakan yang sudah terverifikasi
