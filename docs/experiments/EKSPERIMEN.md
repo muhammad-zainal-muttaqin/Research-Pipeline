@@ -1741,3 +1741,83 @@ yang mAP agregat tidak pernah bisa.
 
 **Reproduksi** — `shell/g8_sawitmvc.sh`. Hasil:
 `evidence/experiments/results/E-028/konsistensi_sawitmvc_rgb_seed42.json`.
+
+---
+
+## E-029 — Matriks multi-seed RT-DETR-L: klausa "depth terpakai pada kapasitas tinggi" DICABUT (2026-08-01) · melengkapi G2
+
+**Konteks** — [SR-015](SR/SR-015-depth-sensor-4kanal.md) menyisakan satu klausa
+positif setelah pencabutan 30 Juli: *"kandungan informasi depth NYATA pada model
+besar"*, bersandar pada RT-DETR-L seed-42 depth − derau **+0,0365** dengan
+**B4 +0,1001 [+0,0062; +0,1618]** signifikan. Lengan derau pembandingnya dibuat
+dengan kode cacat (RNG bersama, AUDIT-E022 #4). [E-027](EKSPERIMEN.md) sudah
+menunjukkan temuan sejenis gugur pada YOLO26n. Entri ini mengujinya pada
+arsitektur yang melahirkannya.
+
+**Hipotesis** — Bila klausa itu benar, depth − derau pada RT-DETR-L harus tetap
+positif **dan** signifikan setelah kode diperbaiki, dengan kenaikan terkonsentrasi
+di B4. **Dipalsukan bila** CI memuat nol, atau efeknya lebih kecil daripada
+sebaran antar-seed.
+
+**Cara** — 9 run (3 modal × 3 seed), 60 epoch, kode `_fix`, protokol tunggal
+pycocotools ([E-025]), bootstrap 2000× per pohon. Split test 72 pohon / 288
+citra / 504 kotak. Perangkat A4500.
+
+**Hasil**
+
+| Perbandingan | seed 42 | seed 1337 | seed 2024 | rerata | sd |
+|---|---:|---:|---:|---:|---:|
+| depth − RGB | −0,0350 | +0,0091 | **+0,0702** | +0,0148 | 0,0431 |
+| DERAU − RGB | **−0,0533** | −0,0063 | **+0,0667** | +0,0024 | 0,0494 |
+| depth − derau | +0,0183 | +0,0153 | +0,0035 | **+0,0124** | **0,0064** |
+
+Tebal = CI95 bootstrap tidak memuat nol. mAP50 lengan RGB per seed: 0,4282 /
+0,4142 / 0,3523 — **rentang antar-seed 0,0759 pada satu lengan berkonfigurasi
+identik.**
+
+**Putusan — klausa SR-015 DICABUT.**
+
+1. **depth − derau kehilangan signifikansi di ketiga seed.** +0,0183 / +0,0153 /
+   +0,0035, semuanya CI memuat nol. Angka lama +0,0365 menyusut menjadi rerata
+   **+0,0124**, dan B4 +0,1001 yang menjadi tulang punggung klausa itu tidak
+   direproduksi.
+2. **Sebaran antar-seed mengubur efeknya.** Lengan RGB saja berayun 0,0759
+   antar seed — **enam kali** rerata depth − derau. Setiap klaim sebesar ±0,04
+   pada dataset ini tidak dapat dipertahankan tanpa multi-seed.
+3. **Arah depth − RGB tidak stabil**: −0,0350 (seed 42) sampai +0,0702 (seed
+   2024), keduanya dengan CI yang tidak memuat nol tetapi **bertanda
+   berlawanan**. Dua seed yang sama-sama "signifikan" menunjuk arah berbeda —
+   demonstrasi paling telanjang mengapa seed tunggal tidak cukup.
+
+**Satu pola yang bertahan, dan ini yang menarik.** Di antara ketiga kontras,
+hanya **depth − derau** yang punya sd kecil (0,0064 versus 0,0431 dan 0,0494).
+CI-t lintas-seed-nya [−0,0071; +0,0318] — nyaris tidak memuat nol meski n=3.
+Tafsir yang hemat: **isi kanal ke-4 berpengaruh lebih konsisten daripada
+keberadaan kanal itu sendiri.** Menambahkan kanal keempat mengguncang pelatihan
+secara besar dan tak terarah; mengganti isinya dari derau ke depth memberi
+perbaikan kecil tetapi berulang. Itu tidak menyelamatkan fusi awal — +0,0124
+jauh di bawah ambang +0,015 yang ditetapkan H-022 — tetapi ia mendukung premis
+E-023: informasi depth ada, salurannya yang salah.
+
+**Yang tidak boleh dihaluskan:**
+
+- **n = 3 seed.** CI-t depth − derau [−0,0071; +0,0318] tetap memuat nol.
+  "Nyaris signifikan" bukan signifikan, dan tidak boleh dilaporkan sebagai
+  temuan positif.
+- Pola sd-kecil di atas adalah **pengamatan pasca-hoc**, bukan hipotesis yang
+  ditulis sebelum melihat data. Ia layak diuji terpisah di E-023, bukan
+  dijadikan kesimpulan di sini.
+- Perangkat A4500, bukan L4 asal; besaran tidak sebanding langsung dengan angka
+  E-022 lama, yang dibandingkan adalah pola.
+- Berlaku untuk fusi AWAL 4-kanal pada RT-DETR-L. Fusi menengah/akhir belum
+  diuji sama sekali.
+
+**Dampak** — Bersama [E-027](EKSPERIMEN.md), seluruh klaim positif E-022 kini
+tercabut pada kedua arsitektur: tidak ada satu pun kontras yang bertahan
+signifikan lintas tiga seed. G2 selesai, dan basis buktinya bersih untuk
+pertama kalinya. Arah G4/G6 (fusi menengah/akhir) tetap berdiri — bukan karena
+fusi awal menjanjikan, melainkan karena ia sekarang dipalsukan secara meyakinkan
+pada dua arsitektur dan tiga seed.
+
+**Reproduksi** — `shell/matriks_g2.sh` lalu `ARCH=rtdetr-l shell/eval_g2.sh`.
+Hasil: `evidence/experiments/results/E-022/paired_rtdetr-l_*_seed{42,1337,2024}.json`.

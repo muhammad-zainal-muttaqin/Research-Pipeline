@@ -22,7 +22,7 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | **Audit** | Bukti koreksi atau pemeriksaan; jangan mengutip skor lama sebagai hasil final. |
 | **Ditangguhkan** | Kode, data, atau arah kerja sudah ada, tetapi belum mendukung klaim performa. |
 
-## Register E-001 sampai E-028
+## Register E-001 sampai E-029
 
 | Eksperimen | Pertanyaan dan data | Putusan | Status kutip | Detail |
 |---|---|---|---|---|
@@ -54,6 +54,7 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | E-026 | Apakah depth menstabilkan identitas lintas-sisi? | Dipalsukan | Arsip | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
 | E-027 | Apakah kenaikan depth E-022 bertahan multi-seed? | Dipalsukan; depth merugikan pada YOLO26n | Arsip | [log](EKSPERIMEN.md) |
 | E-028 | Apakah ukuran lintas-sisi bertahan pada dataset 6x lebih besar? | Dikonfirmasi; B2 kelas paling ambigu | Arsip | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
+| E-029 | Apakah klausa "depth terpakai pada kapasitas tinggi" bertahan multi-seed? | Dicabut | **Audit** | [log](EKSPERIMEN.md), [SR-015](SR/SR-015-depth-sensor-4kanal.md) |
 
 ## Urutan baca menurut kebutuhan
 

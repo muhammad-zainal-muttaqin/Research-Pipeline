@@ -82,19 +82,49 @@ def metrik(gt, dets, img_ids) -> dict:
         "AP50_95_perkelas": {KELAS[k]: rr(p[:, :, k]) for k in range(p.shape[2])},
     }
 
-    # P/R/F1 mikro pada conf 0,25 — angka operasional, bukan integral kurva.
-    kuat = [d for d in dets if d["score"] >= 0.25]
+    # P/R/F1 mikro pada conf 0,25, dicocokkan sendiri secara serakah.
+    #
+    # TIDAK memakai ev.evalImgs: senarai itu berisi satu entri per
+    # (kelas x rentang-area x citra), sehingga menjumlahkan dtMatches di
+    # seluruhnya menghitung tiap TP sebanyak jumlah rentang area dan
+    # menghasilkan precision > 1 serta recall > 1 — mustahil, tetapi tidak
+    # error, jadi mudah lolos sebagai hasil. Pencocokan sendiri dapat diperiksa.
+    kuat = sorted((d for d in dets if d["score"] >= 0.25), key=lambda d: -d["score"])
+    gt_per: dict = {}
+    for a in gt.dataset["annotations"]:
+        gt_per.setdefault((a["image_id"], a["category_id"]), []).append(a["bbox"])
+    dipakai = {k: [False] * len(v) for k, v in gt_per.items()}
+
+    def iou_xywh(a, b):
+        ax, ay, aw, ah = a; bx, by, bw, bh = b
+        ix1, iy1 = max(ax, bx), max(ay, by)
+        ix2, iy2 = min(ax + aw, bx + bw), min(ay + ah, by + bh)
+        iw, ih = max(0.0, ix2 - ix1), max(0.0, iy2 - iy1)
+        inter = iw * ih
+        u = aw * ah + bw * bh - inter
+        return inter / u if u > 0 else 0.0
+
+    tp = 0
+    for d in kuat:
+        kunci = (d["image_id"], d["category_id"])
+        kand = gt_per.get(kunci, [])
+        terbaik, skor = -1, 0.5
+        for i, g in enumerate(kand):
+            if dipakai[kunci][i]:
+                continue
+            v = iou_xywh(d["bbox"], g)
+            if v >= skor:
+                terbaik, skor = i, v
+        if terbaik >= 0:
+            dipakai[kunci][terbaik] = True
+            tp += 1
+
     n_gt = len(gt.dataset["annotations"])
-    if kuat:
-        ev2 = COCOeval(gt, gt.loadRes(kuat), "bbox")
-        ev2.params.imgIds = img_ids
-        ev2.evaluate(); ev2.accumulate()
-        tp = sum(1 for e in ev2.evalImgs if e for m in e["dtMatches"][0] if m > 0)
-        pr = tp / len(kuat) if kuat else 0.0
-        rc = tp / n_gt if n_gt else 0.0
-        f1 = 2 * pr * rc / (pr + rc) if (pr + rc) else 0.0
-        hasil |= {"precision@0.25": round(pr, 4), "recall@0.25": round(rc, 4),
-                  "F1@0.25": round(f1, 4), "n_deteksi@0.25": len(kuat)}
+    pr = tp / len(kuat) if kuat else 0.0
+    rc = tp / n_gt if n_gt else 0.0
+    f1 = 2 * pr * rc / (pr + rc) if (pr + rc) else 0.0
+    hasil |= {"precision@0.25": round(pr, 4), "recall@0.25": round(rc, 4),
+              "F1@0.25": round(f1, 4), "TP@0.25": tp, "n_deteksi@0.25": len(kuat)}
     hasil["n_deteksi_total"] = len(dets)
     return hasil
 
@@ -127,6 +157,13 @@ def main() -> int:
     for rd in sorted(RUNS.glob(args.pola)):
         bobot = rd / "weights" / "best.pt"
         if not bobot.is_file() or rd.name.endswith("_test"):
+            continue
+        # Run SawitMVC dilatih di dataset LAIN. Mengevaluasinya pada split
+        # SawitMVC-Depth menghasilkan angka yang terlihat wajar (mAP50 0,1452)
+        # tetapi tidak berarti apa pun — jenis kesalahan yang tidak menimbulkan
+        # error dan karena itu mudah lolos ke tabel.
+        if ("sawitmvc" in rd.name) != ("sawitmvc" in args.split_dir):
+            print(f"   lewati {rd.name} — dataset tidak cocok dengan {args.split_dir}")
             continue
         csv = rd / "results.csv"
         n_ep = 0
