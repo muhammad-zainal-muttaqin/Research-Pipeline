@@ -1900,3 +1900,87 @@ menambah baris tabel.
 **Reproduksi** — `shell/sapuan_kapasitas.sh`, lalu `ARCH=yolo26m|yolo26l
 SEEDS=42 shell/eval_g2.sh`. Hasil: `evidence/experiments/results/E-022/paired_yolo26{m,l}_*_seed42.json`,
 metrik lengkap di `metrics_lengkap.json`.
+
+---
+
+## E-031 — Varians SPLIT vs varians SEED (2026-08-01) · G5, menutup SR-015 §7
+
+**Konteks** — [SR-015](SR/SR-015-depth-sensor-4kanal.md) §7 mencatat *"varians
+split belum diukur; 3-fold CV yang direncanakan tidak dijalankan"* — satu-satunya
+keterbatasan E-022 yang belum tersentuh setelah [E-027]/[E-029]/[E-030] menutup
+varians seed.
+
+Dua sumber varians ini sering tertukar, dan pemisahannya menentukan:
+
+| | Yang divariasikan | Yang diukur |
+|---|---|---|
+| E-027 | RNG pelatihan, split tetap | keacakan optimisasi |
+| **E-031** | **split**, RNG tetap 42 | ketergantungan pada pohon mana yang jatuh di test |
+
+**Hipotesis** — Bila kesimpulan E-022 kokoh terhadap pemilihan pohon, Δ(RGB-D −
+RGB) harus stabil lintas split. **Dipalsukan bila** rentang Δ antar-split
+sebanding atau melebihi efek yang diperdebatkan sepanjang E-022 (±0,02–0,04).
+
+**Cara** — Dua split baru (`splits_depth/seed1`, `seed2`) dari
+`build/make_splits_depth.py`, stratifikasi dan rasio identik seed42: 245/35/72
+pohon, irisan nol. YOLO26n rgb + rgbd per split, 60 epoch, **RNG pelatihan tetap
+42**, resep identik. Evaluasi pycocotools, bootstrap 2000× per pohon, tiap model
+dinilai pada test split-nya sendiri.
+
+**Hasil**
+
+| Split | RGB | RGB-D | Δ | CI95 |
+|---|---:|---:|---:|---|
+| seed42 | 0,3479 | 0,3583 | +0,0104 | [−0,0246; +0,0397] |
+| seed1 | 0,3137 | 0,3204 | +0,0067 | [−0,0351; +0,0450] |
+| seed2 | 0,2991 | 0,3384 | **+0,0393** | **[+0,0059; +0,0665]** |
+
+| Sumber varians | Lengan RGB | Δ(RGB-D − RGB) |
+|---|---:|---:|
+| **Split** (E-031, RNG tetap) | rentang **0,0488** · sd 0,0205 | rentang 0,0326 · sd 0,0146 |
+| **Seed** (E-027, split tetap) | rentang 0,0321 | rentang 0,0518 |
+
+**Putusan — varians split NYATA dan lebih besar daripada varians seed pada
+performa absolut.** Lengan RGB berayun **0,0488** antar split — lebih lebar
+daripada 0,0321 antar seed, dan **hampir 5× lipat** ambang +0,015 yang
+ditetapkan H-022 sebagai kriteria keberhasilan depth. Kesimpulan yang mengikat:
+**tidak ada angka mAP absolut pada dataset ini yang bermakna tanpa menyebut
+split-nya.**
+
+**Tetapi arah Δ justru lebih stabil terhadap split daripada terhadap seed.**
+Ketiga split memberi Δ **positif** (+0,0104 / +0,0067 / +0,0393, rerata +0,0188,
+sd 0,0146), sementara ketiga seed memberi tanda **berlawanan** (+0,0104 /
+−0,0414 / −0,0379, sd 0,0289). Rasio sd-nya 1 : 2. Itu berlawanan dengan dugaan
+yang wajar — orang mengira pemilihan pohon lebih mengguncang daripada RNG.
+
+**Tafsir yang hemat, dan batasnya.** Pola ini konsisten dengan gagasan bahwa
+selisih berpasangan **saling menghapus** komponen kesulitan split (kedua lengan
+menghadapi pohon test yang sama) tetapi **tidak** menghapus lintasan optimisasi
+(kedua lengan punya lintasan berbeda meski seed sama, karena arsitekturnya
+berbeda satu kanal). Kalau benar, maka **menambah seed lebih berharga daripada
+menambah split** untuk menguji klaim depth — dan itu justru kebalikan dari yang
+direncanakan sebagai "3-fold CV" di SR-015. **Ini hipotesis dari n=3 lawan n=3;
+belum diuji, dan tidak boleh dipakai sebagai dasar merancang E-023 tanpa
+verifikasi.**
+
+**Yang tidak boleh dihaluskan:**
+
+- **n = 3 split** dan **n = 3 seed**. Membandingkan dua sd dari sampel sekecil
+  itu tidak punya daya uji; rasio 1 : 2 dapat berbalik dengan mudah.
+- Hanya **satu arsitektur** (YOLO26n) dan **satu kontras** (depth vs RGB).
+  Kontrol derau dan tukar tidak dijalankan lintas split.
+- split2 satu-satunya yang CI-nya tidak memuat nol (+0,0393). Dengan tiga split,
+  satu hasil signifikan adalah yang diharapkan muncul secara kebetulan pada
+  α=0,05 kira-kira 14% waktu — **bukan bukti**.
+- Perangkat A4500; fusi AWAL 4-kanal; SawitMVC-Depth.
+
+**Dampak** — Menutup keterbatasan terakhir SR-015 §7. Aturan pelaporan yang kini
+berlaku: **setiap angka mAP pada dataset ini wajib menyebut split**, karena
+rentang antar-split (0,0488) melampaui hampir semua efek yang pernah
+diperdebatkan di E-022. Untuk G4/G6, prioritas replikasi adalah **seed lebih
+dulu, split kemudian** — dengan catatan bahwa dasar prioritas itu sendiri masih
+hipotesis.
+
+**Reproduksi** — `build/make_splits_depth.py --seed 1 --seed 2`, lalu
+`train_depth4ch.py --split seed{1,2}`, lalu `eval_e022_paired.py --split-dir
+splits_depth/seed{1,2}`. Hasil: `evidence/experiments/results/E-022/paired_yolo26n_depth_vs_rgb_split{1,2}.json`.
