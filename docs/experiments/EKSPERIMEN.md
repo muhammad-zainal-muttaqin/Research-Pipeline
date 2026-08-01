@@ -1821,3 +1821,82 @@ pada dua arsitektur dan tiga seed.
 
 **Reproduksi** — `shell/matriks_g2.sh` lalu `ARCH=rtdetr-l shell/eval_g2.sh`.
 Hasil: `evidence/experiments/results/E-022/paired_rtdetr-l_*_seed{42,1337,2024}.json`.
+
+---
+
+## E-030 — Sapuan kapasitas YOLO26 n→m→l: klaim "kapasitas" SR-015 harus dipersempit (2026-08-01) · G7
+
+**Konteks** — SR-015 menyimpulkan *"arah efek kanal ke-4 ditentukan **kapasitas
+model**, bukan isi kanal"*, berdasar lompatan YOLO26n (2,57 jt) → RT-DETR-L
+(33,0 jt). Lompatan itu mengubah **kapasitas dan arsitektur sekaligus**, jadi
+kata "kapasitas" belum terisolasi. Diminta pengguna 1 Agustus; YOLO26m (21,9 jt)
+dan YOLO26l (26,3 jt) mengisi celah **di dalam satu keluarga arsitektur**.
+
+**Hipotesis** — Bila kapasitas yang menentukan, pola depth-vs-derau harus
+berubah secara monoton sepanjang 2,57 → 21,9 → 26,3 → 33,0 jt. **Dipalsukan
+bila** YOLO26m dan YOLO26l berperilaku seperti YOLO26n meski kapasitasnya
+mendekati RT-DETR-L — itu menunjukkan pembedanya arsitektur.
+
+**Cara** — 6 run baru (2 arsitektur × 3 modal), seed 42, 60 epoch, imgsz 640,
+batch 8, resep identik lengan E-022. Evaluasi protokol tunggal pycocotools
+([E-025]), bootstrap 2000× per pohon. `shell/sapuan_kapasitas.sh`.
+
+**Hasil — seluruh keluarga pada seed 42**
+
+| Model | Param | depth − RGB | DERAU − RGB | depth − derau |
+|---|---:|---:|---:|---:|
+| YOLO26n | 2,57 jt | +0,0104 | +0,0032 | +0,0072 |
+| YOLO26m | 21,9 jt | −0,0086 | +0,0184 | −0,0270 |
+| **YOLO26l** | **26,3 jt** | +0,0054 | **−0,0325** | **+0,0379** |
+| RT-DETR-L | 33,0 jt | −0,0350 | **−0,0533** | +0,0183 |
+
+Tebal = CI95 tidak memuat nol. Metrik lengkap YOLO26l (seed 42): lengan rgbd
+**unggul di keempat metrik sekaligus** — mAP50 0,3612 vs rgb 0,3557, mAP50-95
+0,1299 vs 0,1207, precision 0,605 vs 0,569, recall 0,520 vs 0,482 — sementara
+derau terburuk (0,3232, recall anjlok ke 0,385).
+
+**Putusan — DIKONFIRMASI SEBAGIAN; klaim SR-015 harus DIPERSEMPIT.**
+
+Yang bertahan: **kolom DERAU − RGB berubah tanda secara monoton menurut
+kapasitas.** +0,0032 → +0,0184 → **−0,0325** → **−0,0533**, dan dua nilai
+terbesar signifikan. Kanal ke-4 tanpa informasi **membantu** model kecil dan
+**merugikan** model besar, persis mekanisme yang ditafsirkan SR-015 (regularisasi
+pada model undertrained versus gangguan pada stem pratlatih). Titik baliknya kini
+terukur: **antara 21,9 dan 26,3 jt parameter.**
+
+Yang **tidak** bertahan: kolom depth − derau **tidak monoton** (+0,0072 →
+−0,0270 → +0,0379 → +0,0183). YOLO26m menyimpang dari tren, dan tidak satu pun
+dari keempatnya signifikan. Jadi kalimat "arah efek kanal ke-4 ditentukan
+kapasitas" hanya benar untuk **kanal tanpa informasi**; untuk selisih
+depth-versus-derau — bagian yang menyangkut apakah kedalaman membawa informasi —
+kapasitas **tidak** menjelaskannya.
+
+**Rumusan yang didukung bukti, menggantikan yang lama:**
+
+> Kapasitas model menentukan apakah **menambahkan kanal keempat** menolong atau
+> merugikan, dengan titik balik antara 21,9 dan 26,3 jt parameter. Kapasitas
+> **tidak** menentukan apakah **mengisi kanal itu dengan kedalaman** lebih baik
+> daripada mengisinya dengan derau.
+
+**Yang tidak boleh dihaluskan:**
+
+- **Satu seed.** E-027 dan E-029 sudah menunjukkan sebaran antar-seed 0,032–0,076
+  pada dataset ini — lebih besar daripada sebagian besar selisih di tabel atas.
+  Monotonisitas kolom DERAU − RGB **belum diuji multi-seed**, dan sampai itu
+  dilakukan ia adalah pola yang menarik, bukan temuan mapan.
+- Hanya kolom DERAU − RGB yang punya dua nilai signifikan; sembilan sel lainnya
+  CI-nya memuat nol.
+- Keunggulan empat-metrik YOLO26l rgbd bersandar pada satu run tunggal.
+- Perangkat A4500; berlaku untuk fusi AWAL 4-kanal pada SawitMVC-Depth.
+
+**Dampak** — Mengubah dasar pemilihan arsitektur untuk E-023. Alasan memakai
+model besar bukan lagi "di situ depth terbukti membawa informasi" (dicabut
+[E-029]), melainkan yang lebih spesifik: **pada model besar, kerugian menambah
+kanal keempat paling parah** — dan justru itu yang seharusnya dihapus oleh fusi
+menengah/akhir, karena keduanya tidak menyentuh stem 3-kanal berbobot pratlatih.
+G7 dengan demikian mempertajam prediksi yang akan diuji G4/G6, bukan sekadar
+menambah baris tabel.
+
+**Reproduksi** — `shell/sapuan_kapasitas.sh`, lalu `ARCH=yolo26m|yolo26l
+SEEDS=42 shell/eval_g2.sh`. Hasil: `evidence/experiments/results/E-022/paired_yolo26{m,l}_*_seed42.json`,
+metrik lengkap di `metrics_lengkap.json`.
