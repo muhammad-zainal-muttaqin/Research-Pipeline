@@ -2005,3 +2005,100 @@ hipotesis.
 **Reproduksi** — `build/make_splits_depth.py --seed 1 --seed 2`, lalu
 `train_depth4ch.py --split seed{1,2}`, lalu `eval_e022_paired.py --split-dir
 splits_depth/seed{1,2}`. Hasil: `evidence/experiments/results/E-022/paired_yolo26n_depth_vs_rgb_split{1,2}.json`.
+
+---
+
+## E-032 — Titik fusi RGB-D: awal vs menengah vs akhir, semua dari nol (2026-08-01) · G4, G6
+
+**Hipotesis** — E-022 menguji fusi hanya pada satu titik: konkatenasi 4-kanal di
+masukan. Kalau kegagalannya disebabkan TITIK fusi (depth dipaksa masuk sebelum
+jaringan sempat membentuk fitur), memindahkan fusi lebih dalam harus menolong.
+Dua alternatif diuji sejajar: fusi MENENGAH (cabang depth ringan sampai P2/4,
+digabung sebelum P3) dan fusi AKHIR (dua backbone penuh, digabung di P3/P4/P5).
+
+**Metode** — 5 lengan x 3 seed = 15 run, seluruhnya YOLO26 skala n, 150 epoch,
+imgsz 640, batch 16, split SawitMVC-Depth seed42, **tanpa bobot pratlatih**.
+
+Dari nol untuk SEMUA lengan, termasuk baseline RGB. Bukan penghematan — justru
+3x lebih mahal — melainkan karena arsitektur dua cabang lahir dari YAML kustom
+dan tidak punya checkpoint COCO yang cocok. Membandingkan fusi-dari-nol dengan
+lengan pratlatih akan mengukur ada-tidaknya pralatihan, bukan titik fusi.
+
+150 epoch, bukan 60: dari nol dengan 980 citra latih, 60 epoch underfit dan
+hasil rendahnya akan salah dibaca sebagai "fusi gagal".
+
+Lengan `derau` (kanal ke-4 berisi derau) WAJIB per SR-015 §6 — tanpanya kenaikan
+apa pun tidak dapat dipisahkan dari efek menambah kapasitas.
+
+Evaluasi: pycocotools, bootstrap berpasangan 2000x pada tingkat POHON (72 pohon,
+288 citra uji). `hasil.json` trainer tidak dipakai [E-025].
+
+**Kriteria ditetapkan SEBELUM hasil dibaca** (`eval/ringkas_e023.py`):
+berbeda dari baseline = 3/3 seed sepakat tanda DAN tidak ada CI yang memuat nol;
+indikasi = tanda sepakat tetapi ada CI memuat nol; selain itu = tidak berbeda.
+
+**Hasil — Δ mAP50 terhadap baseline RGB seed yang sama**
+
+| lengan | seed 42 | seed 1337 | seed 2024 | rerata | rentang | putusan |
+|---|---|---|---|---|---|---|
+| awal  | -0,0120 | +0,0234 | -0,0017 | +0,0032 | 0,0354 | tidak berbeda |
+| mid   | +0,0096 | +0,0212 | +0,0110 | +0,0139 | 0,0116 | **indikasi** |
+| late  | -0,0056 | +0,0070 | +0,0102 | +0,0039 | 0,0158 | tidak berbeda |
+| derau | -0,0130 | +0,0025 | -0,0081 | -0,0062 | 0,0155 | tidak berbeda |
+
+Seluruh 12 CI95 memuat nol. Tidak ada satu pun lengan yang lolos ambang
+"berbeda"; `mid` satu-satunya yang tandanya sepakat di tiga seed.
+
+**Tiga pembacaan, berurut dari yang paling didukung bukti**
+
+1. **Efek titik fusi lebih kecil daripada derau seed.** Rentang antar-seed
+   `awal` (0,0354) melampaui SELURUH selisih titik yang terukur di tabel ini.
+   Pada 2,57 jt param dengan 980 citra dari nol, memindahkan titik fusi tidak
+   menghasilkan efek yang dapat dipisahkan dari pemilihan seed.
+
+2. **Fusi AKHIR tidak menolong meski menambah parameter paling banyak** (3,00 jt
+   vs 2,51 jt `mid` vs 2,57 jt `awal`). Ini menjawab G6: dua backbone penuh,
+   ~17% parameter tambahan, nol perbaikan yang dapat dibedakan.
+
+3. **`mid` konsisten positif tetapi belum boleh disebut temuan.** Rentangnya
+   paling sempit (0,0116) dan reratanya tertinggi (+0,0139), unggul +0,0201 atas
+   kontrol derau. Itu pola yang diharapkan bila fusi menengah benar-benar
+   bekerja — tetapi ketiga CI-nya memuat nol, dan dengan 4 lengan diuji, satu
+   lengan bertanda sepakat 3/3 secara kebetulan bukan kejadian langka.
+
+**Keterbatasan**
+
+- **Satu skala (n), satu arsitektur (YOLO26), satu split.** E-030 menunjukkan
+  arah efek kanal ke-4 berubah dengan kapasitas; E-031 menunjukkan varians split
+  (0,0488) melampaui hampir semua efek di sini. Kesimpulan ini terikat pada
+  yolo26n/split-seed42 dan TIDAK boleh digeneralkan.
+- **Semua lengan dari nol.** Tidak menjawab apakah fusi menengah menolong ketika
+  cabang RGB dapat memakai bobot pratlatih — konfigurasi yang justru paling
+  mungkin dipakai di praktik.
+- **72 pohon.** CI selebar +-0,03 adalah konsekuensi langsung ukuran uji ini,
+  bukan kelemahan metode.
+- Baseline seed 42 (0,3164) jauh di atas seed 1337 (0,2944) dan 2024 (0,2952).
+  Seluruh lengan tampak "naik" pada dua seed terakhir sebagian karena
+  baselinenya rendah — alasan tambahan untuk tidak membaca kolom per seed
+  sendirian.
+
+**Dampak** — Menutup G4 dan G6. Untuk SR-015: klaim "kanal ke-4 tidak menolong
+pada kapasitas kecil" kini berlaku juga ketika fusi dipindah ke P2/4 dan
+P3/P4/P5, bukan hanya di masukan — jadi penjelasan "titik fusi salah" GUGUR
+sebagai kandidat penyebab. Yang tersisa sebagai kandidat: kapasitas (E-030),
+kualitas depth itu sendiri, dan ukuran data.
+
+Arah yang layak berikutnya, dan hanya jika ada alasan lain untuk melanjutkan:
+`mid` pada yolo26m/l, di mana E-030 menunjukkan isi kanal ke-4 mulai penting.
+
+**Catatan operasional** — Penjaga "lewati bila berkas hasil sudah ada" TIDAK
+mencegah peluncuran ganda: hasil ditulis di akhir, jadi driver meluncurkan
+salinan kedua `awal_seed2024` 20 menit setelah yang pertama mulai. Membunuh
+induknya juga tidak cukup — 12 pekerja ProcessPoolExecutor menjadi yatim dan
+terus berjalan. Yang dibutuhkan kunci berbasis proses (`flock` pada penanda saat
+MULAI), bukan pemeriksaan keberadaan hasil.
+
+**Reproduksi** — `shell/e023_fusi.sh` (seed 42, 1337) dan `shell/e023_seed2024.sh`,
+lalu `shell/eval_e023_par.sh`, lalu `eval/ringkas_e023.py`. Bukti:
+`evidence/experiments/results/E-023/paired_{awal,mid,late,derau}_vs_rgb_seed{42,1337,2024}.json`;
+kurva latihan + hash bobot 15 run di direktori yang sama.
