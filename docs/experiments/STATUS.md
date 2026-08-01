@@ -31,7 +31,7 @@ Sumber angkanya adalah
 | Detektor dua tahap | Dipalsukan. | [SR-012](SR/SR-012-dua-tahap.md) |
 | Klaim plafon kematangan E-016 | Ditarik karena bukti cacat. | [SR-011](SR/SR-011-plafon-kematangan.md) |
 | Fusi awal E-022 | Tidak diteruskan sebagai bukti peningkatan deteksi. | [AUDIT-E022.md](AUDIT-E022.md) |
-| Fusi menengah atau akhir E-023 | Ditangguhkan sampai protokol E-022 bersih dan evaluasi konsisten. | [arsip E-022](archive/E022-seed42-awal.md) |
+| Fusi menengah atau akhir E-023 | **Prasyarat sudah terpenuhi** (protokol beku E-025, matriks G2 bersih). Ditangguhkan atas keputusan pengguna 1 Agustus: tutup dulu celah sesi sebelumnya. Rancangan lengkap di bawah. | [Rencana E-023](#rencana-e-023--belum-dijalankan) |
 
 ## Lanjutkan sesuai tujuan
 
@@ -41,3 +41,65 @@ Sumber angkanya adalah
 | Memeriksa riwayat bertanggal | [EKSPERIMEN.md](EKSPERIMEN.md) |
 | Memeriksa koreksi E-022 | [AUDIT-E022.md](AUDIT-E022.md), lalu [arsip seed-42](archive/E022-seed42-awal.md) |
 | Menjalankan ulang E-021 | [catatan teknis](../../reproduce/experiments/CATATAN-TEKNIS-E021.md), [reproduksi](../../reproduce/experiments/REPRODUCE.md), dan [peta skrip](../../reproduce/experiments/PETA-SKRIP.md) |
+
+
+## Rencana E-023 — belum dijalankan
+
+Arsitektur sudah dibangun dan diverifikasi
+([`train_fusion_2branch.py`](../../reproduce/experiments/train/train_fusion_2branch.py)):
+fusi menengah 2,51 jt param, fusi akhir 3,00 jt param, keduanya terbukti
+tersambung (mengubah HANYA kanal kedalaman mengubah keluaran sebesar 6,8 dan
+8,6 — sebanding dengan mengubah HANYA RGB). Yang belum dijalankan adalah
+eksperimennya.
+
+### Penghalang yang harus diputuskan lebih dulu
+
+YAML dua cabang adalah arsitektur kustom, sehingga **tidak ada bobot COCO
+pratlatih yang cocok dengan grafnya**. Seluruh lengan E-022 berangkat dari bobot
+pratlatih — bahkan dengan callback khusus (`fourch.make_inflate_callback`) agar
+lengan RGB-D tidak kalah karena inisialisasi. Melatih fusi dari nol lalu
+membandingkannya dengan lengan E-022 yang pratlatih **bukan perbandingan sah**:
+selisihnya akan didominasi ada-tidaknya pralatihan, bukan titik fusi.
+
+| | Opsi 1 — muat sebagian | **Opsi 2 — semua dari nol** |
+|---|---|---|
+| Cara | Salin bobot pratlatih ke cabang RGB lewat kecocokan nama/bentuk; cabang depth dan lapisan fusi mulai acak | Latih ulang SELURUH lengan tanpa pralatihan, termasuk baseline RGB dan fusi awal |
+| Biaya | ~4 run baru | ~15 run |
+| Sebanding dengan E-022 | Ya, **bila** pemetaan bobotnya benar | Tidak — matriks terpisah, berdiri sendiri |
+| Mode gagal | **Senyap.** Bobot tersalin sebagian, model tetap terlatih, tidak ada error, angkanya terlihat wajar | **Terlihat.** Angka absolut jatuh dan jelas tidak sebanding dengan E-021/E-022 |
+
+**Opsi 2 dipilih**, dan alasannya bukan biaya — opsi 2 justru 3× lebih mahal.
+Alasannya jenis risikonya. Sesi 31 Juli–1 Agustus menemukan tiga kegagalan senyap
+berturut-turut (`alignedTo: "color"` yang bohong, `--skala` yang diabaikan
+ultralytics, precision > 1 dari `evalImgs`); semuanya tidak menimbulkan error dan
+hanya ketahuan karena ada yang mustahil secara definisi. Opsi 1 menambah satu
+lagi risiko sejenis. Opsi 2 punya kelemahan yang **terlihat**, dan yang diuji
+E-023 memang **selisih antar titik fusi**, bukan angka absolut.
+
+### Konfigurasi yang direncanakan
+
+| Parameter | Nilai | Alasan |
+|---|---|---|
+| Skala | **n** (fusi mid 2,51 jt / late 3,00 jt) | Yang diuji titik fusi, perbandingan internal antar lengan; skala l melipatkan biaya 4× untuk pertanyaan berbeda |
+| Epoch | **150**, bukan 60 | 60 epoch cukup untuk model PRATLATIH. Dari nol dengan hanya 980 citra latih, 60 epoch hampir pasti *underfit* — dan hasil rendah akan salah dibaca sebagai "fusi menengah gagal" |
+| Seed | **3** (42, 1337, 2024) | E-027/E-029/E-031 semuanya menunjukkan satu seed membalik tanda kesimpulan. Satu seed di sini = mengulang kesalahan yang menjatuhkan E-022 |
+| Split | seed42 dulu | Varians split sudah terukur terpisah (E-031); prioritas replikasi = seed dulu, split kemudian |
+| Lengan | RGB, fusi awal, fusi menengah, fusi akhir, derau | Kontrol derau WAJIB — SR-015 §6: tanpa itu kenaikan apa pun tidak dapat dibedakan dari efek kapasitas |
+
+**5 lengan × 3 seed = 15 run, ~4,1 jam** pada RTX A4500 (dasar: laju terukur
+1 Agustus, skala n 6,5 menit per run-ekuivalen pada 60 epoch, 4 paralel).
+
+### Yang akan memalsukan, ditulis sebelum run pertama
+
+- Fusi menengah/akhir **tidak** mengungguli fusi awal pada rerata 3 seed; atau
+- Kenaikannya tidak melampaui kontrol derau pada lengan yang sama; atau
+- Selisihnya lebih kecil daripada sebaran antar-seed pada lengan RGB sendiri.
+
+### Instrumen tambahan yang sudah siap
+
+`analysis/cross_side_consistency.py` memberi pemeriksaan silang yang tidak
+dimiliki mAP: bila fusi benar bekerja, **laju inkonsisten lintas-sisi harus
+turun** dari 0,2329 (baseline SawitMVC, E-028). Bila mAP naik tetapi laju
+inkonsisten datar, kenaikan itu patut dicurigai sebagai efek kapasitas.
+Penurunan yang terkonsentrasi di B2↔B3 menunjukkan mekanisme fotometrik; di
+B3↔B4 menunjukkan geometris.
