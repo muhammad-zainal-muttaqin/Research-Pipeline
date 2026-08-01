@@ -54,6 +54,59 @@ angka yang dikutip**. Yang sudah tervalidasi di sini hanyalah bahwa kedua
 arsitektur terbangun benar dan cabang kedalamannya benar-benar tersambung
 (uji: mengubah HANYA kanal depth mengubah keluaran sebesar 6,8 dan 8,6 pada
 mid dan late).
+
+## Dukungan RT-DETR (`--arch rtdetr-l`)
+
+`bangun_yaml()` sudah diverifikasi juga menurunkan `rtdetr-l.yaml` (satu-satunya
+skala yang tersedia di YAML dasar RT-DETR adalah `l` — panggil dengan
+`--skala l`). Dua hal yang BERBEDA dari yolo26 dan sudah ditangani secara
+eksplisit, bukan lewat konstanta yang dipakai bersama:
+
+1. **Titik fusi berbeda posisi.** Untuk yolo26, akhir stage P2/4 ada di lapisan
+   backbone indeks 2. Untuk rtdetr-l, backbone dimulai `HGStem` (0, sudah
+   P2/4) lalu `HGBlock` stage1 (1, masih P2/4) baru `DWConv` yang turun ke
+   P3/8 (2) — akhir stage P2/4 yang sesungguhnya untuk rtdetr-l adalah indeks
+   1, BUKAN 2. P3/P4/P5 juga di indeks berbeda: (3, 7, 9), bukan (4, 6, 10).
+   Nilai ini sekarang parameter `ARSITEKTUR[...]`, bukan konstanta hardcode.
+
+2. **`HGStem`/`HGBlock` menaruh lebar keluaran (`c2`) di `args[1]`, bukan
+   `args[0]`.** `parse_model` membacanya `c1, cm, c2 = ch[f], args[0], args[1]`
+   — berbeda dari `Conv`/`C3k2`/`DWConv` yang memakai `args[0]` langsung
+   sebagai `c2`. Memakai `args[0]` mentah di titik fusi rtdetr-l akan
+   mengambil kanal TENGAH (`cm`), bukan `c2` — model tetap terbangun dan
+   forward pass tetap sukses TANPA error (dikonfirmasi lewat eksekusi CPU),
+   hanya lebar proyeksi fusinya salah. Inilah persis kegagalan senyap yang
+   jadi alasan desain PETA INDEKS di berkas ini, hanya bersembunyi satu lapis
+   lebih dalam (di lebar kanal `args`, bukan di indeks `from`). Ditangani oleh
+   `lebar_keluar()`/`sunting_lebar()` di bawah, yang membaca TIPE modul di
+   titik potong sebelum menafsirkan `args`.
+
+3. **`YOLO(yaml)` TIDAK otomatis mengalihkan ke RT-DETR untuk YAML custom** —
+   koreksi terhadap dugaan awal bahwa `ultralytics/models/yolo/model.py:80-83`
+   ("`if "RTDETR" in self.model.model[-1]._get_name()`") membuat baris
+   `model = YOLO(...)` bekerja apa adanya untuk RT-DETR. Cek itu berjalan
+   SETELAH model dibangun, tapi pembangunannya sendiri butuh `self.task`
+   sudah terisi lebih dulu, dan `guess_model_task` menebak task dari nama
+   modul head lewat substring `"detect"` — `"rtdetrdecoder"` tidak
+   mengandungnya, jadi task jatuh ke `None` dan `_smart_load` melempar
+   `NotImplementedError` SEBELUM cek RTDETR itu sempat jalan. Dikonfirmasi
+   gagal identik untuk `rtdetr-l.yaml` BAWAAN ultralytics tanpa modifikasi
+   apa pun — bukan cacat khusus YAML turunan berkas ini. Solusinya memakai
+   kelas `ultralytics.RTDETR` langsung (ia mem-pass `task="detect"` eksplisit
+   ke `Model.__init__`, melewati tebakan itu sama sekali) — lihat
+   `ARSITEKTUR["rtdetr-l"]["kelas_model"]` dan pemilihan kelas di `main()`.
+
+`rtdetr-resnet50.yaml`/`resnet101.yaml` TIDAK didukung dan TIDAK akan
+ditambahkan lewat pola yang sama: `ResNetLayer` tidak menurunkan `c1` dari
+`ch[f]` sama sekali (`parse_model` punya cabang khusus untuknya yang tidak
+pernah menimpa `args[0]`) — `c1` di YAML-nya adalah literal hardcode yang
+menyambung manual angka-per-angka ke `c2` lapisan sebelumnya. Premis "modul
+auto-derive lebar dari `ch[f]`" yang mendasari topeng+peta-indeks tidak
+berlaku untuk backbone ini; memakainya butuh menulis ulang penanganan
+channel-args di sepanjang rantai `ResNetLayer`, bukan penyesuaian indeks.
+Dikonfirmasi lewat eksekusi: construct berhasil (nn.Module tidak memeriksa
+kecocokan kanal saat dibangun) tapi forward pass gagal keras dengan
+`RuntimeError: ... expected input[...] to have 16 channels, but got 4`.
 """
 from __future__ import annotations
 
@@ -86,23 +139,32 @@ class _Topeng(nn.Module):
     keluaran dari daftar tipe modul yang dikenalnya, dan modul kustom jatuh ke
     cabang `c2 = ch[f]` — artinya pemotongan kanal TIDAK terlihat oleh parser,
     dan kedua cabang akan dibangun seolah menerima 4 kanal padahal menerima 3
-    dan 1. Itu gagal saat forward, dan memperbaikinya menuntut menambal parser.
+    dan 1. Dengan menutup, pembukuan parser benar apa adanya sementara tiap
+    cabang tetap hanya menerima informasi modalitasnya: bobot pada kanal yang
+    ditutup selalu dikali nol, tidak menerima gradien, tidak menyumbang keluaran.
 
-    Dengan menutup, jumlah kanal tetap 4 sehingga pembukuan parser benar apa
-    adanya, sementara cabang tetap hanya menerima informasi modalitasnya:
-    bobot pada kanal yang ditutup selalu dikalikan nol, jadi tidak menerima
-    gradien dan tidak menyumbang apa pun ke keluaran. Secara matematis setara
-    dengan konvolusi berkanal-sedikit, hanya menyisakan sedikit bobot menganggur.
+    Topeng dihitung DARI BENTUK MASUKAN, bukan dari buffer tetap 4-kanal.
+    Alasannya konkret: `YOLO(yaml)` membangun model sekali dengan `ch=3` untuk
+    menghitung stride sebelum pelatihan menggantinya dengan `ch=4` dari
+    `data.yaml`. Buffer tetap membuat lintasan pertama itu gagal dengan
+    "size of tensor a (3) must match tensor b (4)" — dan gagalnya di dalam
+    konstruktor, sebelum satu epoch pun berjalan.
     """
 
     def __init__(self, c1=None, c2=None):
         super().__init__()
-        m = torch.zeros(1, 4, 1, 1)
-        m[:, self.KANAL] = 1.0
-        self.register_buffer("topeng", m)
 
     def forward(self, x):
-        return x * self.topeng.to(x.dtype)
+        c = x.shape[1]
+        if c <= 3:
+            # Lintasan penghitung stride (3 kanal): tidak ada kanal kedalaman
+            # untuk dipisahkan. Cabang RGB melihat citra apa adanya; cabang
+            # kedalaman melihat nol — bentuknya tetap benar, dan nilai ini
+            # tidak pernah dipakai untuk belajar.
+            return x if self.KANAL.start == 0 else torch.zeros_like(x)
+        topeng = torch.zeros(1, c, 1, 1, dtype=x.dtype, device=x.device)
+        topeng[:, self.KANAL] = 1.0
+        return x * topeng
 
 
 class AmbilRGB(_Topeng):
@@ -137,8 +199,41 @@ def daftarkan_modul() -> None:
         tasks.__dict__[m.__name__] = m
 
 
+# --------------------------------------------------- lebar kanal per-tipe-modul
+# `parse_model` (ultralytics/nn/tasks.py) tidak menaruh c2 di `args[0]` untuk
+# SEMUA modul. `HGStem`/`HGBlock` memakai `c1, cm, c2 = ch[f], args[0], args[1]`
+# — c2 ada di args[1], args[0] adalah kanal TENGAH (cm). Modul lain yang dipakai
+# backbone (`Conv`, `C3k2`, `DWConv`, ...) memakai args[0] langsung sebagai c2.
+# Dua fungsi di bawah membaca TIPE modul di titik potong sebelum menafsirkan
+# args, supaya fusi mid/late pada backbone HGNetv2 (rtdetr-l) tidak diam-diam
+# memproyeksikan ke lebar kanal yang salah (lihat KAVEAT RT-DETR di kepala
+# berkas — bug ini lolos tanpa error di construct maupun forward pass).
+_MODUL_CM_C2 = frozenset({"HGStem", "HGBlock"})
+
+
+def lebar_keluar(modul: str, a: list) -> int:
+    """Kanal keluaran (c2) sebuah lapisan backbone, dari args mentah YAML-nya."""
+    return a[1] if modul in _MODUL_CM_C2 else a[0]
+
+
+def sunting_lebar(modul: str, a2: list, lebar_bagi: int) -> None:
+    """Susutkan lebar kanal `a2` in-place untuk cabang depth yang diringankan.
+
+    Untuk `HGStem`/`HGBlock`, kanal tengah (`cm`, args[0]) DAN keluaran (`c2`,
+    args[1]) sama-sama disusutkan — keduanya lebar riil, bukan hanya c2.
+    Untuk modul lain, hanya args[0] (yaitu c2) yang disusutkan.
+    """
+    if modul in _MODUL_CM_C2:
+        for idx in (0, 1):
+            if idx < len(a2) and isinstance(a2[idx], int):
+                a2[idx] = max(8, a2[idx] // lebar_bagi)
+    elif a2 and isinstance(a2[0], int):
+        a2[0] = max(16, a2[0] // lebar_bagi)
+
+
 # ------------------------------------------------------------- pembangun YAML
-def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str) -> dict:
+def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str,
+                 titik_mid: int, titik_late: tuple[int, ...]) -> dict:
     """Turunkan YAML dua cabang dari YAML dasar ultralytics.
 
     Memakai PETA INDEKS eksplisit (lama -> baru), bukan aritmetika offset.
@@ -183,8 +278,8 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str) -> dict:
             else:
                 f2 = [x if (isinstance(x, int) and x < 0) else lokal[x] for x in f]
             a2 = list(a)
-            if lebar_bagi > 1 and a2 and isinstance(a2[0], int):
-                a2[0] = max(16, a2[0] // lebar_bagi)
+            if lebar_bagi > 1:
+                sunting_lebar(m, a2, lebar_bagi)
             lokal[i] = tambah(f2, r, m, a2)
         return lokal
 
@@ -201,12 +296,13 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str) -> dict:
         return tambah(c, 1, "Conv", [lebar, 1, 1])
 
     if fusi == "mid":
-        TITIK = 2                       # akhir tahap P2/4 pada backbone dasar
+        TITIK = titik_mid               # akhir tahap P2/4 pada backbone dasar
         # Urutan penambahan menentukan urutan EKSEKUSI: cabang depth, lalu
         # cabang RGB sampai titik fusi, lalu fusi, baru sisa cabang RGB.
         dep = salin_cabang(i_dep, lebar_bagi=4, sampai=TITIK)
         rgb = salin_cabang(i_rgb, sampai=TITIK)
-        f_out = fusi_di(rgb[TITIK], dep[TITIK], bb[TITIK][3][0])
+        lebar = lebar_keluar(bb[TITIK][2], bb[TITIK][3])
+        f_out = fusi_di(rgb[TITIK], dep[TITIK], lebar)
         rgb = salin_cabang(f_out, mulai=TITIK + 1, lokal=rgb)
         peta.update(rgb)
 
@@ -214,8 +310,9 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str) -> dict:
         rgb = salin_cabang(i_rgb)
         dep = salin_cabang(i_dep, lebar_bagi=2)
         peta.update(rgb)
-        for p in (4, 6, 10):            # P3, P4, P5 pada backbone dasar
-            peta[p] = fusi_di(rgb[p], dep[p], bb[p][3][0])
+        for p in titik_late:            # P3, P4, P5 pada backbone dasar
+            lebar = lebar_keluar(bb[p][2], bb[p][3])
+            peta[p] = fusi_di(rgb[p], dep[p], lebar)
     else:
         raise SystemExit(f"fusi tidak dikenal: {fusi}")
 
@@ -258,10 +355,49 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str) -> dict:
     return d
 
 
+# -------------------------------------------------------- arsitektur dasar
+# Titik fusi (indeks lapisan backbone) TIDAK bisa dibagi antar arsitektur
+# lewat konstanta tunggal — posisinya bergantung struktur backbone masing-
+# masing YAML dasar. Diverifikasi lewat pembacaan langsung YAML + forward
+# pass CPU (lihat KAVEAT RT-DETR di kepala berkas), bukan diasumsikan simetris
+# dengan yolo26.
+ARSITEKTUR: dict[str, dict] = {
+    "yolo26": {
+        "path": "26/yolo26.yaml",
+        # akhir stage P2/4: bb[2] adalah C3k2 tepat setelah conv turun ke P2/4.
+        "titik_mid": 2,
+        "titik_late": (4, 6, 10),   # P3, P4, P5
+    },
+    "rtdetr-l": {
+        "path": "rt-detr/rtdetr-l.yaml",
+        # akhir stage P2/4: bb[0]=HGStem (sudah P2/4), bb[1]=HGBlock stage1
+        # (masih P2/4) — bb[2] SUDAH DWConv turun ke P3/8. Titik yang benar
+        # untuk fusi P2/4 adalah 1, bukan 2 seperti yolo26.
+        "titik_mid": 1,
+        "titik_late": (3, 7, 9),    # P3, P4, P5 — sama seperti rujukan head
+                                     # rtdetr-l.yaml asli ([[21, 24, 27], ...]
+                                     # dibaca dari backbone indeks 3/7/9)
+        "skala_wajib": "l",         # satu-satunya skala di YAML dasar RT-DETR
+        # `YOLO(yaml)` TIDAK otomatis mengalihkan ke RT-DETR untuk YAML custom
+        # (terverifikasi juga gagal untuk rtdetr-l.yaml BAWAAN tanpa modifikasi
+        # apa pun): `guess_model_task` menebak task dari nama modul head lewat
+        # substring "detect", dan "rtdetrdecoder" tidak mengandungnya -> task
+        # jatuh ke None -> `NotImplementedError`. Kelas `RTDETR` mem-pass
+        # `task="detect"` eksplisit ke `Model.__init__`, menghindari tebakan
+        # itu sama sekali. WAJIB dipakai untuk arsitektur ini.
+        "kelas_model": "RTDETR",
+    },
+}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fusi", required=True, choices=["mid", "late"])
-    ap.add_argument("--dasar", default=None, help="YAML dasar; default yolo26.yaml")
+    ap.add_argument("--arch", default="yolo26", choices=sorted(ARSITEKTUR),
+                    help="arsitektur dasar (menentukan titik fusi & YAML default)")
+    ap.add_argument("--dasar", default=None,
+                    help="path YAML dasar; default diturunkan dari --arch. "
+                         "Titik fusi tetap dari --arch walau path ditimpa.")
     ap.add_argument("--skala", default="n")
     ap.add_argument("--modal", default="rgbd", choices=["rgbd", "derau", "tukar"])
     ap.add_argument("--depth-dir", default=str(EVIDENCE_ROOT / "depth_png"))
@@ -278,25 +414,38 @@ def main() -> int:
                     help="tulis YAML lalu keluar, tanpa melatih")
     args = ap.parse_args()
 
+    arch_cfg = ARSITEKTUR[args.arch]
+    if "skala_wajib" in arch_cfg and args.skala != arch_cfg["skala_wajib"]:
+        raise SystemExit(
+            f"--arch {args.arch} hanya punya skala '{arch_cfg['skala_wajib']}' "
+            f"di YAML dasar; panggil dengan --skala {arch_cfg['skala_wajib']} "
+            f"(dapat: --skala {args.skala})"
+        )
+
     daftarkan_modul()
-    from ultralytics import YOLO
     from ultralytics.utils import ROOT as ULTRA_ROOT
+    if arch_cfg.get("kelas_model") == "RTDETR":
+        from ultralytics import RTDETR as KelasModel
+    else:
+        from ultralytics import YOLO as KelasModel
 
     dasar = Path(args.dasar) if args.dasar else \
-        Path(ULTRA_ROOT) / "cfg" / "models" / "26" / "yolo26.yaml"
-    spec = bangun_yaml(dasar, args.fusi, nc=4, skala=args.skala)
+        Path(ULTRA_ROOT) / "cfg" / "models" / arch_cfg["path"]
+    spec = bangun_yaml(dasar, args.fusi, nc=4, skala=args.skala,
+                       titik_mid=arch_cfg["titik_mid"],
+                       titik_late=arch_cfg["titik_late"])
 
-    keluar = Path(f"cfg_fusi_{args.fusi}_{args.skala}.yaml")
+    keluar = Path(f"cfg_fusi_{args.fusi}_{args.arch}_{args.skala}.yaml")
     keluar.write_text(yaml.safe_dump(spec, sort_keys=False))
     print(f"YAML dua cabang -> {keluar}  ({len(spec['backbone'])} lapisan backbone)")
     if args.hanya_bangun:
         return 0
 
-    nama = args.name or f"fusi{args.fusi}_{args.modal}_seed{args.seed}"
+    nama = args.name or f"fusi{args.fusi}_{args.arch}_{args.modal}_seed{args.seed}"
     data = SPLIT / args.split / "data_rgbd4.yaml"
 
     fourch.patch_loader(args.depth_dir, dropout=args.dropout)
-    model = YOLO(str(keluar))
+    model = KelasModel(str(keluar))
 
     mulai = time.time()
     model.train(
