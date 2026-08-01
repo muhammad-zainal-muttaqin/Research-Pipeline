@@ -116,8 +116,12 @@ B3↔B4 menunjukkan geometris.
 
 Seluruh celah G0–G8 tertutup. Yang tersisa, berurut dari yang paling siap:
 
-**1. Penjadwalan run — kunci proses, bukan pemeriksaan hasil.** Dua kelas bug
-terverifikasi hari ini, keduanya menghabiskan waktu nyata:
+**1. Penjadwalan run — SUDAH DIPERBAIKI 1 Agustus.** Pustaka
+`reproduce/experiments/shell/jadwal.sh` menutup ketiga bug di bawah; jalankan
+`bash shell/jadwal.sh` untuk memverifikasi (empat pemeriksaan mandiri, semuanya
+lulus saat ditulis). Driver lama BELUM dialihkan memakainya — itu pekerjaan
+berikutnya, dan sebaiknya dilakukan sebelum antrean besar berikutnya dijalankan.
+Ketiga bug yang ditutup, masing-masing menghabiskan waktu nyata:
 
 - *Peluncuran ganda.* Penjaga "lewati bila berkas hasil sudah ada" tidak
   melindungi apa pun selama pekerjaan berjalan, karena hasil baru ditulis di
@@ -143,8 +147,26 @@ E-030 menunjukkan isi kanal ke-4 baru penting pada kapasitas besar. Uji `mid`
 pada yolo26m/l adalah satu-satunya arah yang punya dasar dari dua entri sekaligus
 — tetapi hanya kalau ada alasan lain untuk melanjutkan jalur depth.
 
-**4. Backlog tidak memblokir.** Blok 3 sisa (I-13, I-15, I-17, I-19, I-22) dan
-protokol literatur Blok 5.
+**4. Backlog Blok 3 — sudah dipilah menurut biaya, bukan lagi satu blok.**
+Diperiksa 1 Agustus; keempat ide pertama TIDAK dapat diselesaikan sebagai
+perubahan kode, masing-masing adalah eksperimen tersendiri.
+
+| Ide | Butuh latihan? | Perkiraan biaya | Catatan |
+|---|---|---|---|
+| **I-17** kalibrasi ambang per strata | **tidak** | ~20 menit | **Mulai dari sini.** Bekerja pada bobot yang sudah ada; hanya perlu pemilihan ambang pada split val lalu diuji di test. Satu-satunya yang memberi hasil tanpa GPU berjam-jam |
+| I-13 loss berimbang / focal | ya, 3 seed x 150 epoch | ~4 jam | Ketimpangan nyata: B3 51,6% vs B1 9,7% |
+| I-22 loss ordinal | ya, 3 seed | ~4 jam | Probe dihentikan di E-014; perlu dirancang ulang |
+| I-15 neck BiFPN | ya, + arsitektur baru | ~5 jam | Menyasar B4 (objek kecil) |
+| I-19 depth metrik | — | terblokir | Butuh Metric3D/ZoeDepth yang belum ada. Hanya relevan bila klaim jarak dilaporkan; DA3 saat ini menghasilkan depth RELATIF (`is_metric` kosong) |
+
+**Tiga seed adalah syarat, bukan kemewahan.** E-032 mengukur rentang antar-seed
+0,0354 pada lengan `awal` — lebih besar daripada SELURUH selisih antar-lengan
+yang terukur. E-031 mengukur rentang antar-split 0,0488. Menjalankan I-13, I-15,
+atau I-22 dengan satu seed akan menghasilkan angka yang tidak dapat ditafsirkan,
+dan itu persis kesalahan yang menjatuhkan E-022. Perkiraan biaya di atas sudah
+memasukkan 3 seed; memangkasnya berarti membuang seluruh runnya.
+
+Protokol literatur Blok 5 juga masih terbuka.
 
 ## Mulai dari nol setelah jeda — apa yang hilang dan urutan membangunnya
 
