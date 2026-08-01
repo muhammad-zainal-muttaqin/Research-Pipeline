@@ -59,6 +59,11 @@ def main() -> int:
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--dari-nol", action="store_true",
+                    help="latih TANPA bobot pratlatih (bangun dari <arch>.yaml). "
+                         "Dipakai E-023: arsitektur fusi dua cabang tidak punya "
+                         "checkpoint COCO yang cocok, jadi seluruh lengan pembanding "
+                         "harus berangkat dari pijakan yang sama.")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--project", default="runs_e022")
     ap.add_argument("--name", default=None)
@@ -67,7 +72,7 @@ def main() -> int:
     nama = args.name or f"{args.arch}_{args.modal}_{args.split}"
     akar_split = Path(args.split_root)
     data = akar_split / args.split / ("data_rgbd4.yaml" if args.modal == "rgbd" else "data_rgb.yaml")
-    bobot = f"{args.arch}.pt"
+    bobot = f"{args.arch}.yaml" if args.dari_nol else f"{args.arch}.pt"
 
     if args.modal == "rgbd":
         if args.depth_acak:
@@ -80,7 +85,9 @@ def main() -> int:
     from ultralytics import RTDETR, YOLO
     Model = RTDETR if "rtdetr" in args.arch else YOLO
     model = Model(bobot)
-    if args.modal == "rgbd":
+    if args.modal == "rgbd" and not args.dari_nol:
+        # Inflasi hanya bermakna bila ADA bobot pratlatih untuk disalin. Dari nol,
+        # conv pertama memang mulai acak di kedua lengan — dan itu justru setara.
         model.add_callback("on_pretrain_routine_end", fourch.make_inflate_callback(bobot))
 
     mulai = time.time()

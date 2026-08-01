@@ -351,6 +351,21 @@ jangan ditunda ke akhir sesi. Commit log bersama perubahan terkait.
 
 ## Cara Kerja yang Diharapkan
 
+- **"GPU jangan nganggur, CPU jangan nganggur, maksimalkan utilisasi, tapi jangan
+  sampai OOM atau crash" berarti MEMPERCEPAT TODO YANG SUDAH ADA — bukan
+  menambah pekerjaan baru.** Kalau ada slot komputasi kosong, isi dengan butir
+  berikutnya dari daftar todo, jalankan yang bisa paralel, atau naikkan
+  paralelisme. **Jangan mengarang eksperimen tambahan** dengan alasan "mengisi
+  GPU". Menambah cakupan tanpa diminta justru MENUNDA pekerjaan yang benar-benar
+  diminta, dan itu sudah terjadi: 1 Agustus 2026, sapuan multi-seed 12 run
+  dijalankan tanpa diminta dan menahan G4/G6 selama berjam-jam.
+
+- **Paralelisme dibatasi ANGGARAN VRAM, bukan jumlah slot tetap.** Anggaran
+  terukur pada RTX A4500 20,4 GB: yolo26n ~3,0 GB · yolo26m ~5,5 GB ·
+  yolo26l ~6,6 GB · rtdetr-l ~7,7 GB. Menyetel `PAR=3` benar untuk yolo26m dan
+  menyebabkan OOM untuk yolo26l (3 x 6,6 = 19,7 dari 19,7 GiB). Baca
+  `nvidia-smi --query-gpu=memory.free` sebelum menyalakan run berikutnya.
+
 - Laporkan hasil apa adanya. Kalau eksperimen gagal atau angka tidak naik, katakan
   langsung dengan bukti — jangan dibungkus.
 - Sitasi ke korpus lokal sebutkan nomor entri dan/atau seksi `docs/manuscript/source/evidence-body.tex`
