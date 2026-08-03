@@ -22,6 +22,12 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | **Audit** | Bukti koreksi atau pemeriksaan; jangan mengutip skor lama sebagai hasil final. |
 | **Ditangguhkan** | Kode, data, atau arah kerja sudah ada, tetapi belum mendukung klaim performa. |
 
+> **Status audit terbaru (2 Agustus 2026).** Gunakan `reports.tex` dan
+> `REPORT_PLAN.md` untuk putusan yang dibatasi bukti. Tabel ini adalah indeks
+> handoff dan dapat memuat label historis; khususnya E-026 harus dibaca sebagai
+> tidak konklusif karena denominator identitas berbeda, dan E-032 sebagai tidak
+> konklusif dalam rezim diuji, bukan sebagai ekuivalensi.
+
 ## Register E-001 sampai E-032
 
 | Eksperimen | Pertanyaan dan data | Putusan | Status kutip | Detail |
@@ -51,13 +57,13 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | E-023 | Fusi menengah/akhir dua cabang | **Dijalankan sebagai E-032**; nomor E-023 dipakai untuk direktori bukti | Arsip | [E-032](EKSPERIMEN.md), bukti `evidence/experiments/results/E-023/` |
 | E-024 | Apakah inkonsistensi prediksi lintas-sisi terukur? | Terukur 19,5% | Arsip | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
 | E-025 | Dari mana selisih evaluator E-022 berasal? | Menskala dengan jumlah deteksi | **Audit** | [audit](AUDIT-E022.md) dan [log](EKSPERIMEN.md) |
-| E-026 | Apakah depth menstabilkan identitas lintas-sisi? | Dipalsukan | Arsip | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
+| E-026 | Apakah depth menstabilkan identitas lintas-sisi? | Tidak konklusif pada subset terukur; denominator RGB/RGB-D berbeda | Audit | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
 | E-027 | Apakah kenaikan depth E-022 bertahan multi-seed? | Dipalsukan; depth merugikan pada YOLO26n | Arsip | [log](EKSPERIMEN.md) |
 | E-028 | Apakah ukuran lintas-sisi bertahan pada dataset 6x lebih besar? | Dikonfirmasi; B2 kelas paling ambigu | Arsip | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
 | E-029 | Apakah klausa "depth terpakai pada kapasitas tinggi" bertahan multi-seed? | Dicabut | **Audit** | [log](EKSPERIMEN.md), [SR-015](SR/SR-015-depth-sensor-4kanal.md) |
 | E-030 | Apakah arah efek kanal ke-4 ditentukan kapasitas? | Dikonfirmasi sebagian; klaim dipersempit | Arsip | [log](EKSPERIMEN.md) |
 | E-031 | Seberapa besar kesimpulan bergantung pada split? | Varians split nyata; arah Δ justru lebih stabil | Arsip | [log](EKSPERIMEN.md) |
-| E-032 | Apakah memindahkan titik fusi (awal/menengah/akhir) menolong? | Tidak berbeda; 12/12 CI memuat nol. `mid` indikasi saja | Arsip | [log](EKSPERIMEN.md), [SR-015 §7b](SR/SR-015-depth-sensor-4kanal.md) |
+| E-032 | Apakah memindahkan titik fusi (awal/menengah/akhir) menolong? | Tidak konklusif dalam rezim diuji; 12/12 CI memuat nol. `mid` indikasi saja; ekuivalensi belum dibuktikan | Audit | [log](EKSPERIMEN.md), [SR-015 §7b](SR/SR-015-depth-sensor-4kanal.md) |
 
 ## Urutan baca menurut kebutuhan
 

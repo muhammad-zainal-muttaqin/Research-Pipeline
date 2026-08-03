@@ -35,8 +35,8 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-012](SR-012-dua-tahap.md) | Detektor dua tahap (deteksi agnostik + kepala kematangan) | E-017 | **DIPALSUKAN** |
 | [SR-013](SR-013-rtdetr-nms-free.md) | RT-DETR-L (NMS-free): detektor 4-kelas terbaik | E-020 | **DIKONFIRMASI** (arah; target belum) |
 | [SR-014](SR-014-rfdetr-dinov2.md) | RF-DETR-L (DINOv2) melampaui RT-DETR pada setelan identik | E-021 | **DIKONFIRMASI** (sasaran mAP50 terlewati) |
-| [SR-015](SR-015-depth-sensor-4kanal.md) | Depth SENSOR 4-kanal simultan (dataset SawitMVC-Depth) | E-022, E-025, E-027, E-029, E-030, E-031, E-032 | **DIPALSUKAN** (fusi awal, menengah, DAN akhir); klaim mekanisme depth pada model besar dicabut; "titik fusi salah" dicoret (§7b) |
-| [SR-016](SR-016-konsistensi-lintas-sisi.md) | Konsistensi prediksi lintas-sisi sebagai ukuran ambiguitas | E-024, E-026, E-028 | **DIKONFIRMASI** (ukurannya, 0,2329 pada 511 tandan) / **DIPALSUKAN** (depth tidak menstabilkan) |
+| [SR-015](SR-015-depth-sensor-4kanal.md) | Depth SENSOR 4-kanal simultan (dataset SawitMVC-Depth) | E-022, E-025, E-027, E-029, E-030, E-031, E-032 | Klaim manfaat fisik **belum terbukti**; fusi awal tidak bereplikasi, sedangkan matriks E-032 **tidak konklusif** dalam rezim diuji; klausa kapasitas dicabut |
+| [SR-016](SR-016-konsistensi-lintas-sisi.md) | Konsistensi prediksi lintas-sisi sebagai ukuran ambiguitas | E-024, E-026, E-028 | Ukuran ambiguitas dikonfirmasi; E-026 **tidak konklusif** karena denominator identitas RGB/RGB-D berbeda |
 
 ## Apa yang sudah kita pelajari — cerita singkatnya
 

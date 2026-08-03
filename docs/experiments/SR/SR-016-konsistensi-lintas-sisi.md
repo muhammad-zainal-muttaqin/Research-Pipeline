@@ -1,6 +1,6 @@
 # SR-016 — Konsistensi prediksi lintas-sisi: mengukur ambiguitas tanpa label manusia
 
-**Ide:** pengganti `class_mismatch` yang dipalsukan E-001 · **Eksperimen:** E-024, E-026 · **Putusan: DIKONFIRMASI** (ukurannya bekerja) / **DIPALSUKAN** (depth tidak menstabilkannya) · 2026-07-31
+**Ide:** pengganti `class_mismatch` yang dipalsukan E-001 · **Eksperimen:** E-024, E-026 · **Putusan: DIKONFIRMASI** (ukurannya bekerja) / **E-026 TIDAK KONKLUSIF** (denominator identitas berbeda) · 2026-07-31
 
 ---
 
@@ -93,9 +93,10 @@ Pemisahannya bersih dan itu inti nilainya: **anotator manusia tidak pernah tidak
 sepakat (0/7.328), detektor tidak sepakat pada 19,5% tandan fisik yang sama.**
 Ambiguitas berada pada klasifikasi berbasis penampilan, bukan pada label.
 
-**Depth TIDAK menstabilkan identitas lintas-sisi — DIPALSUKAN.** Titik estimasi
-bergerak ke arah yang salah, CI lebar memuat nol, dan peluang depth membantu
-0,457 — tidak dapat dibedakan dari lemparan koin.
+**E-026 tidak konklusif pada subset terukur.** Titik estimasi bergerak ke arah
+yang salah, CI lebar memuat nol, dan peluang depth membantu 0,457, tetapi
+denominator identitas berbeda (82 RGB versus 75 RGB-D) sehingga hasil ini tidak
+boleh dibaca sebagai ekuivalensi atau falsifikasi universal.
 
 Hasil negatif itu **konfirmasi teori, bukan kegagalan eksperimen**: SR-007 dan
 SR-009 mendiagnosis kegagalan B2/B3 sebagai fotometrik, dan `CLAUDE.md` mencatat

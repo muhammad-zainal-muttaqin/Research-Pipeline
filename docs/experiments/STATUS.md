@@ -3,6 +3,12 @@
 Dokumen ini adalah handoff singkat. Untuk peta lengkap, mulai dari
 [README eksperimen](README.md).
 
+> **Catatan status 2 Agustus 2026.** Laporan Elsevier di `reports.tex` dan
+> `docs/experiments/REPORT_PLAN.md` adalah status audit terbaru. Bagian handoff
+> lama di bawah dipertahankan untuk provenance, tetapi klaim yang menyatakan
+> semua gerbang tertutup atau menyatakan E-026/E-032 sebagai hasil ekuivalen
+> telah disupersesi oleh batas bukti terbaru.
+
 ## Fakta aktif
 
 | Topik | Status |
@@ -14,7 +20,7 @@ Dokumen ini adalah handoff singkat. Untuk peta lengkap, mulai dari
 | Varians split | **Terukur (E-031).** Lengan RGB berayun **0,0488** antar split — melampaui varians seed (0,0321) dan hampir 5× ambang H-022. **Setiap angka mAP wajib menyebut split.** |
 | Matriks multi-seed YOLO26n | **Selesai (E-027).** Depth − RGB rerata **−0,0230**, dua dari tiga seed signifikan NEGATIF. Untuk YOLO26n depth **merugikan**, bukan netral. |
 | Protokol evaluasi | **Mengikat (E-025):** `hasil.json` tidak boleh dipakai membandingkan antar lengan; celahnya menskala dengan jumlah deteksi. pycocotools protokol tunggal. |
-| Ambiguitas lintas-sisi | Terukur tanpa label manusia: **0,2329 di SawitMVC** (511 tandan, E-028) dan 0,1951 di SawitMVC-Depth (82 tandan, E-024) — tidak dapat dibedakan. Depth tidak menstabilkannya (E-026). |
+| Ambiguitas lintas-sisi | Terukur tanpa label manusia: **0,2329 di SawitMVC** (511 tandan, E-028) dan 0,1951 di SawitMVC-Depth (82 tandan, E-024). E-026 **tidak konklusif** pada subset terukur karena denominator identitas RGB dan RGB-D tidak sama (82 vs 75); tidak ada klaim ekuivalensi. |
 | Kelas paling ambigu | **B2 (0,434)**, bukan B4 (0,234 ≈ B1 0,235). AP50 rendah B4 adalah kegagalan DETEKSI, bukan kebingungan kelas (E-028). |
 
 ## Hasil yang boleh dikutip
@@ -31,7 +37,7 @@ Sumber angkanya adalah
 | Detektor dua tahap | Dipalsukan. | [SR-012](SR/SR-012-dua-tahap.md) |
 | Klaim plafon kematangan E-016 | Ditarik karena bukti cacat. | [SR-011](SR/SR-011-plafon-kematangan.md) |
 | Fusi awal E-022 | Tidak diteruskan sebagai bukti peningkatan deteksi. | [AUDIT-E022.md](AUDIT-E022.md) |
-| Fusi menengah atau akhir E-023 | **SELESAI 1 Agustus 2026.** 15 run (5 lengan x 3 seed, 150 epoch, dari nol), 12 kontras berpasangan. Tidak ada lengan yang lolos ambang berbeda; seluruh 12 CI95 memuat nol. `mid` konsisten positif 3/3 seed (rerata +0,0139) tetapi berstatus INDIKASI, bukan temuan. Penjelasan "titik fusi salah" gugur. | [E-032](EKSPERIMEN.md#e-032--titik-fusi-rgb-d-awal-vs-menengah-vs-akhir-semua-dari-nol-2026-08-01--g4-g6) |
+| Fusi menengah atau akhir E-023 | **Dijalankan sebagai E-032.** 15 run (5 lengan x 3 seed, 150 epoch, dari nol), 12 kontras berpasangan. Seluruh 12 CI95 memuat nol. `mid` konsisten positif 3/3 seed (rerata +0,0139) tetapi berstatus INDIKASI, bukan temuan; hasil **tidak konklusif dalam rezim diuji** dan G4/G6 belum tertutup secara universal. | [E-032](EKSPERIMEN.md#e-032--titik-fusi-rgb-d-awal-vs-menengah-vs-akhir-semua-dari-nol-2026-08-01--g4-g6) |
 
 ## Lanjutkan sesuai tujuan
 
@@ -114,8 +120,9 @@ B3↔B4 menunjukkan geometris.
 
 ## Untuk sesi berikutnya — apa yang terbuka setelah 1 Agustus
 
-Celah G0–G8 tertutup. **Satu gerbang susulan, G7b, TIDAK tertutup** — lihat
-butir 0 di bawah; registernya ada di
+G0 masih terbuka; G1/G3/G5/G8 sudah diaudit pada ruang lingkupnya, sementara
+G4/G6 tidak konklusif dalam rezim yang diuji dan G7 baru satu seed. **Satu
+gerbang susulan, G7b, TIDAK tertutup** — lihat butir 0 di bawah; registernya ada di
 [LAPORAN-EKSPERIMEN.md §7.2](LAPORAN-EKSPERIMEN.md). Sisanya berurut dari yang
 paling siap:
 

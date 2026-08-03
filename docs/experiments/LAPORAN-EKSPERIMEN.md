@@ -6,7 +6,8 @@ titik jeda hari ini, lalu menunjuk ke berkas kanonik untuk tiap angkanya.
 
 Mencakup **E-001 sampai E-032**, dua dataset, dan dua fase yang berbeda sifatnya:
 pilot RGB yang berujung pada hasil terbaik (E-021), lalu blok depth sensor yang
-**sepenuhnya berupa hasil negatif** (E-022…E-032). Keduanya diperlakukan sama —
+**tidak menghasilkan manfaat terkonfirmasi dalam rezim diuji** (E-022…E-032).
+Keduanya diperlakukan sama —
 angka apa adanya.
 
 Sumber kanonik yang dirangkum di sini:
@@ -17,6 +18,13 @@ Sumber kanonik yang dirangkum di sini:
 [`docs/experiments/AUDIT-E022.md`](AUDIT-E022.md) (koreksi E-022) ·
 [`docs/experiments/STATUS.md`](STATUS.md) (titik jeda & jalur lanjutan) ·
 [`reproduce/pipeline/README.md`](../../reproduce/pipeline/README.md) (deliverable produksi).
+
+> **Pembaruan audit 2 Agustus 2026.** Dokumen ini adalah snapshot kurasi
+> historis. Untuk status klaim terbaru, gunakan `reports.tex` dan
+> `REPORT_PLAN.md`. Khusus E-026, denominator identitas RGB dan RGB-D berbeda
+> sehingga hasilnya tidak konklusif; khusus E-032, 12/12 CI memuat nol tetapi
+> ekuivalensi belum dibuktikan. Status G0 tetap terbuka dan G4/G6 tidak ditutup
+> secara universal.
 
 ---
 
@@ -138,13 +146,13 @@ dengan blok pilot — lihat §6.1.
 | E-022b | Apakah depth sensor 4-kanal menaikkan mAP? | [SR-015](SR/SR-015-depth-sensor-4kanal.md) | DIPALSUKAN / FALSIFIED — **seluruh entri dicabut**, lihat [audit](AUDIT-E022.md) |
 | E-024 | Inkonsistensi prediksi lintas-sisi sebagai ukuran ambiguitas | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) | DIKONFIRMASI / CONFIRMED (daya uji terbatas) |
 | E-025 | Dari mana selisih evaluator E-022 berasal? | gerbang G1 | DIPALSUKAN (maxDets) / celah terlacak ke jumlah deteksi |
-| E-026 | Apakah depth menstabilkan identitas lintas-sisi? | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) | DIPALSUKAN / FALSIFIED |
+| E-026 | Apakah depth menstabilkan identitas lintas-sisi? | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) | TIDAK KONKLUSIF / INCONCLUSIVE — denominator identitas RGB/RGB-D berbeda |
 | E-027 | Matriks multi-seed YOLO26n | gerbang G2 | DIPALSUKAN / FALSIFIED — depth **merugikan** |
 | E-028 | Ukuran lintas-sisi pada SawitMVC (daya uji 6,2×) | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md), G8 | DIKONFIRMASI / CONFIRMED |
 | E-029 | Matriks multi-seed RT-DETR-L | gerbang G2, G3 | **DICABUT** / RETRACTED (klausa kapasitas SR-015) |
 | E-030 | Sapuan kapasitas YOLO26 n→m→l | gerbang G7 | DIKONFIRMASI SEBAGIAN — klaim dipersempit |
 | E-031 | Varians SPLIT vs varians SEED | gerbang G5 | DIKONFIRMASI / CONFIRMED (varians split nyata) |
-| E-032 | Titik fusi: awal vs menengah vs akhir, semua dari nol | gerbang G4, G6 | TIDAK BERBEDA / NO DIFFERENCE — "titik fusi salah" gugur |
+| E-032 | Titik fusi: awal vs menengah vs akhir, semua dari nol | gerbang G4, G6 | TIDAK KONKLUSIF / INCONCLUSIVE dalam rezim diuji — 12/12 CI memuat nol; ekuivalensi belum dibuktikan |
 
 ---
 
@@ -547,7 +555,7 @@ dari keempatnya signifikan. Rumusan penggantinya:
 > merugikan. Kapasitas **tidak** menentukan apakah **mengisi kanal itu dengan
 > kedalaman** lebih baik daripada mengisinya dengan derau.
 
-### 6.6 Titik fusi: penjelasan terakhir yang tersisa, dan ia gugur (E-032)
+### 6.6 Titik fusi: penjelasan terakhir yang diuji, tetapi belum menutup semua hipotesis (E-032)
 
 Setelah fusi awal dipalsukan pada dua arsitektur dan tiga seed, satu penjelasan
 tandingan masih berdiri: mungkin yang salah adalah **titik** fusinya — depth
@@ -580,19 +588,22 @@ Tiga pembacaan, berurut dari yang paling didukung bukti:
    4 lengan diuji, satu lengan bertanda sepakat 3/3 secara kebetulan **bukan
    kejadian langka**.
 
-**Konsekuensi:** "titik fusi salah" **dicoret** dari daftar kandidat penyebab
-([SR-015 §7b](SR/SR-015-depth-sensor-4kanal.md)). Yang tersisa sebagai kandidat:
-kapasitas, kualitas depth itu sendiri, dan ukuran data.
+**Konsekuensi:** pada YOLO26n, satu split, 640 piksel, 150 epoch, dan
+pelatihan dari nol, data tidak menunjukkan perbedaan yang dapat dibedakan
+antar titik fusi. Itu mempersempit hipotesis dalam rezim ini, tetapi tidak
+menutup pretrained middle/late fusion, kapasitas lain, split lain, atau data
+lapangan. Kandidat yang tersisa meliputi kapasitas, kualitas depth itu sendiri,
+dan ukuran data ([SR-015 §7b](SR/SR-015-depth-sensor-4kanal.md)).
 
 ### 6.7 Ringkasan blok: apa yang sebenarnya dibeli
 
 | Pertanyaan | Jawaban setelah 11 entri |
 |---|---|
-| Apakah depth sensor fisik menaikkan deteksi? | **Tidak**, pada seluruh konfigurasi yang diuji |
+| Apakah depth sensor fisik menaikkan deteksi? | **Belum terbukti** pada seluruh konfigurasi yang diuji |
 | Apakah kegagalannya karena registrasi? | Tidak — registrasi divalidasi tiga cara |
-| Apakah karena titik fusi? | Tidak (E-032) |
+| Apakah karena titik fusi? | E-032 tidak konklusif dalam rezim diuji; ekuivalensi belum dibuktikan |
 | Apakah karena kapasitas model? | Sebagian, tetapi hanya untuk *ada-tidaknya* kanal ke-4, bukan untuk *isinya* |
-| Apakah depth menstabilkan identitas lintas-sisi? | Tidak (E-026) |
+| Apakah depth menstabilkan identitas lintas-sisi? | E-026 tidak konklusif karena denominator identitas berbeda |
 | Apa yang tersisa sebagai kandidat penyebab? | Kualitas depth itu sendiri, ukuran data (980 citra latih), kapasitas |
 
 Yang dibeli blok ini bukan perbaikan mAP, melainkan **penutupan jalur secara
@@ -631,15 +642,15 @@ supaya dapat diverifikasi.
 
 | Gerbang | Isi | Ditutup oleh | Status |
 |---|---|---|---|
-| G0 | Penjaga kelengkapan run + tautan mati | `d58eae9` | Tertutup |
-| G1 | Selisih evaluator `hasil.json` vs pycocotools | E-025 | Tertutup |
-| G2 | Matriks multi-seed, protokol tunggal | E-027 (YOLO26n) + E-029 (RT-DETR-L) | Tertutup |
+| G0 | Penjaga kelengkapan run + tautan mati | `d58eae9` | **Terbuka pada snapshot kerja; manifest dan provenance perlu dirilis bersama source/PDF** |
+| G1 | Selisih evaluator `hasil.json` vs pycocotools | E-025 | Asimetri terikat; mekanisme penuh belum terselesaikan |
+| G2 | Matriks multi-seed, protokol tunggal | E-027 (YOLO26n) + E-029 (RT-DETR-L) | Tertutup untuk rezim diuji, bukan universal |
 | G3 | Restrukturisasi E-022 + penyelarasan putusan SR-015 | `9c5d9dd`, `86f8e65` | Tertutup |
-| G4 | Fusi menengah | E-032 | Tertutup |
-| G5 | Varians split | E-031 | Tertutup |
-| G6 | Fusi akhir | E-032 | Tertutup |
-| G7 | Sapuan kapasitas dalam satu keluarga | E-030 | Tertutup (satu seed) |
-| G8 | Ukuran lintas-sisi pada dataset berdaya uji layak | E-028 | Tertutup |
+| G4 | Fusi menengah | E-032 | **Tidak konklusif; CI memuat nol, ekuivalensi belum dibuktikan** |
+| G5 | Varians split | E-031 | Terukur pada tiga split; hukum populasi belum ditetapkan |
+| G6 | Fusi akhir | E-032 | **Tidak konklusif; CI memuat nol, ekuivalensi belum dibuktikan** |
+| G7 | Sapuan kapasitas dalam satu keluarga | E-030 | Eksploratori satu seed; tidak menutup klaim kapasitas |
+| G8 | Ukuran lintas-sisi pada dataset berdaya uji layak | E-028 | Daya uji RGB meningkat; bukan perbandingan depth |
 | **G7b** | **Monotonisitas kapasitas diuji multi-seed** | — | **TERBUKA** |
 
 **G7b belum selesai dan tidak boleh dilupakan.** Commit `7afd274` membuka 12 run
