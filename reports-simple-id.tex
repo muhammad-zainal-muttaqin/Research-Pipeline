@@ -1,0 +1,501 @@
+\documentclass[preprint,12pt]{elsarticle}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[bahasa]{babel}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{longtable}
+\usepackage[hidelinks]{hyperref}
+\usepackage{float}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\E}[1]{E-#1}
+\newcommand{\G}[1]{G#1}
+\newcommand{\mAP}{mAP}
+
+\journal{Computers and Electronics in Agriculture}
+\title{Apakah Kanal Keempat Depth Meningkatkan Deteksi Tandan Buah Segar
+Kelapa Sawit oleh YOLO? Hasil 32 Eksperimen}
+\author{Muhammad Zainal Muttaqin dan Fatma Indriani}
+\date{4 Agustus 2026}
+
+\begin{document}
+\begin{frontmatter}
+\maketitle
+
+\begin{abstract}
+Laporan ini menjawab satu pertanyaan. Detektor YOLO membaca tiga kanal RGB.
+Kami menambahkan depth sebagai kanal keempat. Kami mengukur apakah deteksi
+meningkat, tetap sama, atau justru menurun.
+
+Jawabannya, depth tidak meningkatkan deteksi. Fusi awal merugikan pada dua
+dari tiga seed. Fusi menengah dan fusi akhir menggeser skor lebih kecil
+daripada derau eksperimen itu sendiri. Seluruh dua belas selang kepercayaan
+berpasangan memuat nol. Kanal kendali berisi derau acak menggeser skor pada
+orde besaran yang sama dengan kanal depth sungguhan.
+
+Kami juga mengukur apakah implementasi depth itu sendiri sudah benar. Pada
+mulanya tidak benar. Metadata sensor mengklaim penyelarasan ke kamera warna,
+tetapi buffer tetap berada di grid kamera depth. Kami memperbaiki galat ini
+dengan reproyeksi penuh. Hasil negatif di atas berasal dari pipeline yang sudah
+diperbaiki, bukan dari pipeline yang cacat.
+
+Tiga puluh dua eksperimen bernomor (\E{001} sampai \E{032}) dan sembilan
+gerbang (\G{0} sampai \G{8}) memikul bukti. Laporan ini mendaftar setiap
+eksperimen beserta hasilnya dalam satu baris.
+\end{abstract}
+
+\begin{keyword}
+deteksi tandan buah segar \sep kelapa sawit \sep RGB-D \sep masukan empat kanal
+\sep Orbbec \sep YOLO26 \sep ablasi fusi
+\end{keyword}
+\end{frontmatter}
+
+\section{Pertanyaannya}
+\label{sec:question}
+
+Detektor YOLO membaca citra dengan tiga kanal, yaitu merah, hijau, dan biru.
+Kamera depth dapat memasok kanal keempat. Kanal keempat itu memuat jarak dari
+kamera ke setiap piksel.
+
+Gagasannya sederhana. Dua tandan buah dapat berwarna sama dan dapat bertindih
+di dalam citra. Dua tandan yang sama itu dapat berdiri pada jarak berbeda dari
+kamera. Depth dapat memisahkan keduanya ketika warna tidak dapat.
+
+Laporan ini mengukur satu hal:
+
+\begin{itemize}
+\item Apakah kanal keempat menaikkan akurasi deteksi?
+\item Apakah kanal keempat tidak mengubah apa pun?
+\item Apakah kanal keempat menurunkan akurasi karena menambah derau?
+\end{itemize}
+
+Satu-satunya cara menjawab pertanyaan ini adalah menjalankan eksperimennya dan
+membaca angkanya. Laporan ini memuat angka-angka tersebut.
+
+\section{Jawabannya}
+\label{sec:answer}
+
+\subsection{Jawaban singkat}
+
+Kanal keempat tidak menaikkan akurasi deteksi pada regime yang diuji. Dua dari
+tiga seed fusi awal memburuk. Fusi menengah dan fusi akhir menggeser skor lebih
+kecil daripada ragam antar-seed pada model yang sama.
+
+\begin{table}[H]
+\centering
+\caption{Hasil matriks fusi (\E{032}). Setiap nilai adalah perubahan
+\mAP50 test terhadap model RGB-saja dengan seed yang sama.}
+\label{tab:answer}
+\begin{tabularx}{\columnwidth}{L{0.20\columnwidth}L{0.34\columnwidth}L{0.14\columnwidth}Y}
+\toprule
+\textbf{Titik fusi} & \textbf{Perubahan per seed} & \textbf{Rerata} & \textbf{Hasil}\\
+\midrule
+Awal & $-0.0120$, $+0.0234$, $-0.0017$ & $+0.0032$ & Tanda berubah-ubah. Tidak ada kenaikan.\\
+Menengah & $+0.0096$, $+0.0212$, $+0.0110$ & $+0.0139$ & Positif pada 3 dari 3 seed. Selangnya memuat nol.\\
+Akhir & $-0.0056$, $+0.0070$, $+0.0102$ & $+0.0039$ & Tanda berubah-ubah. Tidak ada kenaikan.\\
+Derau acak & $-0.0130$, $+0.0025$, $-0.0081$ & $-0.0062$ & Lengan kendali. Tidak memuat geometri.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Seluruh dua belas selang kepercayaan berpasangan memuat nol. Fusi menengah
+memiliki rerata terbesar dan bertanda positif pada ketiga seed. Ini indikasi.
+Ini bukan peningkatan yang terkonfirmasi.
+
+\subsection{Mengapa lengan derau penting}
+
+Lengan derau adalah jawaban paling langsung atas pertanyaan ini. Kami mengganti
+kanal depth dengan bilangan acak. Lengan derau kemudian menggeser skor pada
+orde besaran yang sama dengan ketiga lengan depth. Tidak ada satu pun kontras
+yang mengecualikan nol.
+
+Pengukuran ini tidak membuktikan bahwa depth dan derau setara. Kami tidak
+menjalankan uji ekuivalensi. Pengukuran ini menunjukkan bahwa nilai depth tidak
+memperlihatkan informasi yang dapat dimanfaatkan pada regime ini, karena kanal
+tanpa geometri menghasilkan perubahan berukuran sama.
+
+\subsection{Apa yang tidak dikatakan jawaban ini}
+
+Jawaban ini berlaku untuk regime yang diuji. Regime itu adalah YOLO26n, 640
+piksel, 150 epoch, satu split pohon, tiga seed, dan pelatihan dari awal. Kami
+tidak membuktikan bahwa depth dan RGB setara. Kami tidak mengukur model fusi
+menengah yang terlatih awal, karena tidak ada checkpoint COCO yang kompatibel
+untuk topologi dua cabang. Kami tidak mengukur perkebunan yang lebih luas atau
+model kamera kedua.
+
+\section{Apakah implementasi depth sudah benar?}
+\label{sec:implementation}
+
+Hasil negatif hanya berguna apabila implementasinya benar. Kami mengukur
+implementasinya lebih dahulu. Di dalamnya terdapat lima galat. Kami memperbaiki
+kelimanya sebelum membaca angka final. Empat galat pertama adalah milik pipeline
+depth dan berasal dari audit \E{022}. Galat kelima adalah asimetri evaluator,
+yang diukur \E{025} sebagai gerbang tersendiri.
+
+\begin{table}[H]
+\centering
+\caption{Galat yang ditemukan pada pipeline depth beserta perbaikannya
+(\E{022} dan \E{025}).}
+\label{tab:defects}
+\begin{tabularx}{\columnwidth}{L{0.26\columnwidth}Y}
+\toprule
+\textbf{Galat} & \textbf{Perbaikan dan efek terukur}\\
+\midrule
+Registrasi keliru & Sidecar menyatakan \texttt{alignedTo: color}, tetapi buffer
+tetap berada di grid kamera depth. Resize langsung meleset 29,3 piksel pada
+median dan 61 piksel pada maksimum. Reproyeksi penuh menaikkan diagnostik
+mutual information sebesar $+0.0306$ bit, dengan selang 95 persen
+$[0.0260, 0.0354]$. Mutual information adalah diagnostik registrasi. Ia bukan
+bukti penyelarasan geometris, dan bukan bukti manfaat di hilir.\\
+Kalibrasi dipakai bersama & Dua unit kamera memiliki intrinsik berbeda.
+Pipeline kini membaca kalibrasi dari sidecar setiap berkas.\\
+Rentang depth keliru & Rentang bawaan 0,3 sampai 8,0 m tidak cocok untuk sensor
+ini. Audit piksel \E{022} tidak menemukan piksel di bawah 0,3 m, dan menemukan
+10,07 persen piksel di atas 8 m. Rentang terkoreksi dari train saja adalah 0,8
+sampai 15,0 m.\\
+Donor lintas-split dan state acak bersama & Hasil menguntungkan yang pertama
+memakai citra donor dari split lain dan state bilangan acak bersama. Hasil itu
+kami tarik.\\
+Asimetri evaluator & Kedua lengan menghasilkan kerapatan deteksi berbeda 2,44
+kali. Ini menimbulkan offset 0,0156, cukup besar untuk membalik tanda selisih
+depth dikurangi RGB. Seluruh pekerjaan berikutnya memakai satu evaluasi
+berpasangan \texttt{pycocotools}.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Hasil depth yang pertama tampak positif. Hasil itu berasal dari pipeline yang
+cacat. Selang kepercayaannya sendiri sudah memuat nol, yaitu
+$[-0.0215,\allowbreak +0.0632]$. Hasil itu kami tarik.
+Setiap angka pada Bagian~\ref{sec:answer} berasal dari pipeline yang sudah
+diperbaiki.
+
+\subsection{Tiga jenis depth, dan alasan ketiganya diukur}
+
+\begin{table}[H]
+\centering
+\caption{Tiga sumber depth dalam studi ini.}
+\label{tab:depthkinds}
+\begin{tabularx}{\columnwidth}{L{0.22\columnwidth}L{0.24\columnwidth}Y}
+\toprule
+\textbf{Sumber} & \textbf{Sifat} & \textbf{Alasan diukur}\\
+\midrule
+Pseudo-depth & Diprediksi dari citra RGB yang sama. Skala relatif. & Gratis.
+Bila berhasil, kamera tidak diperlukan. Diukur pada \E{003} sampai \E{007}.\\
+Depth fisik & Sensor Orbbec Y16. Milimeter metrik. & Merupakan pengukuran
+independen. Diukur pada \E{022} sampai \E{032}.\\
+Derau acak & Nilai acak pada posisi tensor yang sama. & Menunjukkan biaya kanal
+tambahan itu sendiri. Diukur pada \E{027}, \E{029}, \E{030}, dan \E{032}.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Pseudo-depth gagal pada pengukuran langsung di \E{006}. Kontras kotak tandan
+adalah 0,0089 berbanding 0,0341 untuk kendali acak berukuran sepadan. Selisih
+AUC adalah 0,009. Pseudo-depth berasal dari citra RGB yang sama, sehingga
+galatnya berkorelasi dengan galat RGB. Ia bukan sensor independen.
+
+Depth fisik lolos audit berkas setelah perbaikan pada
+Tabel~\ref{tab:defects}. Setelah itu ia gagal pada pengukuran manfaat.
+
+\section{Bukti: seluruh 32 eksperimen}
+\label{sec:experiments}
+
+Setiap baris memuat satu eksperimen, pertanyaannya, dan hasilnya. Konfigurasi
+lengkap, lokasi artefak, dan nama skrip tersimpan di log repositori
+\texttt{docs/experiments/EKSPERIMEN.md}.
+
+\begin{longtable}{L{0.07\textwidth}L{0.28\textwidth}L{0.55\textwidth}}
+\caption{32 eksperimen bernomor dan hasilnya.}
+\label{tab:allexp}\\
+\toprule
+\textbf{ID} & \textbf{Pertanyaan} & \textbf{Hasil}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Pertanyaan} & \textbf{Hasil}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\E{001} & Apakah statistik \texttt{class\_mismatch} mengukur ambiguitas
+kematangan? & Tidak. 0 dari 7.328 tandan multi-sisi berbeda pendapat, karena
+pipeline yang sama menghasilkan statistik dan tautannya sekaligus. DIPALSUKAN
+sebagai alat ukur.\\
+
+\E{002} & Dapatkah anotasi master mentah dipakai ulang secara langsung? & Tidak.
+3.992 berkas mentah hanya memuat 1.352 basename unik, dan 936 di antaranya
+berulang antar-folder. TIDAK KONKLUSIF, sehingga \E{015} memetakan berbasis
+isi.\\
+
+\E{003} & Dapatkah pseudo-depth menata satu video orbit? & Sebagian. 48 frame
+mencakup 319,7 derajat dengan residu lingkaran 8,2 persen. Satu video tidak
+cukup. PARSIAL.\\
+
+\E{004} & Apakah itu berlaku pada enam video? & Ya untuk geometri pohon. Lima
+dari enam video mencapai 270 derajat atau lebih. Satu video mencapai 41 persen.
+TERKONFIRMASI hanya untuk geometri pohon.\\
+
+\E{005} & Dapatkah pseudo-depth mengurutkan sisi pemotretan? & Ya. Seluruh 20
+pohon empat sisi dan seluruh 30 pohon delapan sisi terurut benar. RMSE sudut
+adalah 17,3 dan 8,5 derajat terhadap baseline acak 57,5 dan 34,4 derajat.
+TERKONFIRMASI.\\
+
+\E{006} & Apakah pseudo-depth memisahkan tandan dari latarnya? & Tidak. Kontras
+0,0089 berbanding 0,0341 untuk kendali. Selisih AUC 0,009. DIPALSUKAN.\\
+
+\E{007} & Dapatkah pseudo-depth menautkan tandan yang sama antar-sisi? & Tidak.
+Koreksi statistik sederhana lebih unggul. Sapuan ambang menyentuh split test,
+sehingga nilainya bersifat eksploratif. DIPALSUKAN untuk implementasi ini.\\
+
+\E{008} & --- & Nomor cadangan. Tidak dijalankan. Slot ini tetap ditampilkan
+agar sebuah rumpang tidak tampak seperti hasil nol.\\
+
+\E{009} & Apakah B4 sulit karena kotaknya kecil? & Tidak semata-mata. 81,2
+persen kotak B4 berada di pita medium COCO. Median kotak adalah 46 kali 46
+piksel. PARSIAL.\\
+
+\E{010} & Apakah B4 sulit karena tandan berdesakan? & Tidak. B4 memiliki jumlah
+tetangga terendah, IoU maksimum terendah, dan kontras rendah. B2 memiliki
+$\Delta E$ tinggi dan AP50 rendah, sehingga B2 adalah masalah yang berbeda.
+Desakan DIPALSUKAN.\\
+
+\E{011} & Dapatkah prapemrosesan kontras atau tekstur memulihkan B4? & Penguatan
+kontras gagal. Filter Laplacian memindahkan B4 dari kelas paling tidak terpisah
+menjadi kelas paling terpisah, pada AUC 0,6153. Ini mendukung kanal tekstur,
+bukan otomatis kanal depth.\\
+
+\E{012} & Apakah kekeliruan kematangan bersifat acak? & Tidak. Akurasi 52,87
+persen terhadap baseline 25 persen, dan galatnya mengikuti rantai
+B1--B2--B3--B4. Galat tak bersebelahan terbesar adalah 1,9 persen. Kematangan
+bersifat ordinal.\\
+
+\E{013} & Bagaimana kontrak empat kanal yang persis? & Urutan kanal
+\([B,G,R,D]\), depth tidak sahih bernilai nol persis, pipeline menyimpan mask
+validitas, dan dropout modalitas menjaga inferensi RGB-saja tetap mungkin.
+Kontrak lengkap. Validasi perangkat masih terbuka.\\
+
+\E{014} & Apakah detektor gagal pada lokalisasi atau pada kematangan? & \mAP50
+adalah 0,7191 tanpa kematangan dan 0,5218 dengan kematangan, rasionya 72,6
+persen. PROVISIONAL, karena kami belum menunjukkan JSON prediksi yang identik
+per bita.\\
+
+\E{015} & Dapatkah piksel master dipetakan dengan aman? & Ya. 3.992 dari 3.992
+citra terpetakan berbasis isi. Himpunan terpetakan itu tidak melatih \E{021}.
+HAMBATAN DIBUKA.\\
+
+\E{016} & Apakah 68 persen merupakan plafon keras kematangan? & Tidak. Ketiga
+jalur pengukuran berbagi satu pengklasifikasi crop dan memakai augmentasi warna
+yang tidak selaras. DITARIK.\\
+
+\E{017} & Apakah detektor dua tahap membantu? & Tidak. Ia lebih buruk daripada
+baseline satu tahap pada setiap kelas dan pada kedua metrik \mAP. DIPALSUKAN
+untuk implementasi ini.\\
+
+\E{018} & Seberapa jauh lokalisasi dapat mencapai pada kondisi terbaik? &
+Keterjangkauan oracle adalah 0,8834 dan 0,4702. Median IoU terbaik adalah
+0,7303, dan hanya 0,0376 kotak yang melewati IoU 0,90. Ini menjelaskan mengapa
+\mAP50-95 tetap sulit. Selubung deskriptif.\\
+
+\E{019} & Apakah menambah piksel menutup jurang? & Tidak. Satu run resolusi
+tinggi yang aman warna berhenti pada epoch 41 dan tidak mencapai sasaran. Kami
+mencoret resolusi semata sebagai langkah berikutnya.\\
+
+\E{020} & Apakah transformer tanpa NMS membantu? & RT-DETR-L memperbaiki keempat
+kelas, dengan kenaikan terbesar pada B4. Banyak faktor berubah bersamaan,
+sehingga ini hasil daftar-pendek.\\
+
+\E{021} & Detektor RGB mana yang menjadi kendali yang adil? & RF-DETR-L. \mAP50
+test adalah 0,6038 dan \mAP50-95 test adalah 0,2770. Selisih berpasangan
+terhadap RT-DETR-L adalah $+0.0255$, dengan selang 95 persen
+$[0.0104, 0.0408]$. Tolok ukur RGB terbaik yang teramati.\\
+
+\E{022} & Apakah berkas depth fisik mengukur apa yang diklaim metadatanya? &
+Tidak. Lihat Tabel~\ref{tab:defects}. Galat registrasi, rentang, donor, dan
+state acak sudah diperbaiki. Delta positif pertama DITARIK.\\
+
+\E{023} & --- & Alias eksekusi. Matriks yang dirancang ulang berjalan satu kali,
+sebagai \E{032}. Ini bukan pengukuran kedua.\\
+
+\E{024} & Dapatkah identitas lintas-sisi diukur tanpa proksi sirkular? & Ya,
+dari graf anotasi. Tumbukan terpusat pada B1--B2 dan B2--B3, tanpa tumbukan
+B1--B3. B4 memiliki nol deteksi dua sisi, sehingga dayanya terbatas.\\
+
+\E{025} & Apakah metrik trainer dan \texttt{pycocotools} sepakat? & Tidak. Kedua
+lengan berbeda kerapatan deteksi 2,44 kali, yang menciptakan offset 0,0156.
+Offset itu cukup besar untuk membalik tanda. Satu evaluator kini mengikat
+seluruh pekerjaan berikutnya.\\
+
+\E{026} & Apakah depth menstabilkan identitas lintas-sisi? & TIDAK KONKLUSIF.
+Penyebutnya 82 tandan RGB dan 75 tandan RGB-D, sehingga perbandingannya tidak
+sepenuhnya berpasangan. Selangnya terlalu lebar.\\
+
+\E{027} & Apakah fusi awal membantu pada tiga seed? & Tidak. Dua dari tiga
+selang bernilai negatif, dan hanya seed 42 yang positif. Kriteria manfaat
+DIPALSUKAN untuk YOLO26n.\\
+
+\E{028} & Apakah dataset yang lebih besar mengubah ukuran identitas? & Ia
+menambah daya, bukan perbedaan. Lajunya 0,2329 berbanding 0,1951, selisih
+$+0.0378$ dengan selang $[-0.0585, +0.1276]$. Tidak ada depth fisik pada dataset
+ini.\\
+
+\E{029} & Apakah model yang lebih besar menyelamatkan depth? & Tidak. Rerata
+depth dikurangi derau adalah $+0.0124$, di bawah ambang terarsip $+0.015$.
+Lengan RGB saja bervariasi 0,0759 antar-seed. Klausa penyelamatan kapasitas
+DICABUT.\\
+
+\E{030} & Apakah efeknya bergantung pada kapasitas model? & Belum jelas. Derau
+dikurangi RGB adalah $+0.0032$, $+0.0184$, $-0.0325$, $-0.0533$. Tandanya
+menyeberang satu kali, antara 21,9 dan 26,3 juta parameter, tetapi besarannya
+tidak monoton. Hanya satu seed. Ini membuka \G{7b}.\\
+
+\E{031} & Apakah efek split lebih besar daripada efek seed? & Ya untuk skor
+absolut. Rentang \mAP absolut adalah 0,0488 antar-split berbanding 0,0321
+antar-seed. Setiap skor absolut wajib menyebutkan split-nya.\\
+
+\E{032} & Apakah titik fusi merupakan penjelasannya? & TIDAK KONKLUSIF. Lima
+lengan, tiga seed, dua belas selang berpasangan, dan kedua belasnya memuat nol.
+Lihat Tabel~\ref{tab:answer}.\\
+\end{longtable}
+
+\subsection{Bagaimana 32 catatan itu menjawab satu pertanyaan tersebut}
+
+Enam catatan memberi jawaban langsung, yaitu \E{022}, \E{027}, \E{029},
+\E{030}, \E{031}, dan \E{032}. Keenamnya melatih detektor dengan dan tanpa
+kanal keempat lalu membandingkan skornya.
+
+Catatan lainnya menyingkirkan penjelasan alternatif atas jawaban itu. Tanpa
+catatan tersebut, pembaca dapat menolak hasil negatif ini karena alasan yang
+sama sekali tidak berkaitan dengan depth:
+
+\begin{itemize}
+\item \E{001}, \E{002}, \E{015}, dan \E{024} memastikan bahwa label dan graf
+identitas tidak sirkular.
+\item \E{025} memastikan bahwa kedua lengan memakai satu evaluator. Sebelum
+catatan ini, evaluator saja dapat membalik tanda.
+\item \E{031} memastikan bahwa split disebutkan. Split menggeser skor absolut
+lebih besar daripada seed.
+\item \E{003} sampai \E{007} menyingkirkan pseudo-depth sebagai pengganti murah
+bagi sensor.
+\item \E{009} sampai \E{012} menjelaskan apa sebenarnya galat RGB itu. B4
+adalah masalah kontras dan B2--B3 adalah masalah kematangan ordinal. Depth
+dapat menolong yang pertama. Depth tidak dapat menolong yang kedua.
+\item \E{013} membekukan kontrak kanal, sehingga run berikutnya tidak dapat
+mengubah urutan kanal secara diam-diam.
+\item \E{017} sampai \E{021} menyediakan kendali RGB yang kuat. Kendali yang
+lemah membuat kanal keempat apa pun tampak berguna.
+\end{itemize}
+
+\section{Register gerbang \G{0} sampai \G{8}}
+\label{sec:gates}
+
+Pekerjaan depth berjalan sebagai sembilan gerbang. Gerbang adalah lubang yang
+harus ditutup sebelum kesimpulan diterima. Satu gerbang lanjutan, \G{7b}, masih
+terbuka.
+
+\begin{table}[H]
+\centering\small
+\caption{Register gerbang. \G{0}, \G{4}, \G{6}, dan \G{7b} belum tertutup.}
+\label{tab:gates}
+\begin{tabularx}{\columnwidth}{L{0.13\columnwidth}L{0.24\columnwidth}L{0.14\columnwidth}Y}
+\toprule
+\textbf{Gerbang} & \textbf{Isi} & \textbf{Ditutup oleh} & \textbf{Status}\\
+\midrule
+\G{0} & Kelengkapan run dan tautan mati & \texttt{d58eae9} & \textbf{Terbuka.}
+Manifes dan provenans wajib dirilis bersama sumber dan PDF.\\
+\G{1} & Perbedaan metrik trainer dan \texttt{pycocotools} & \E{025} & Asimetri
+terbatasi. Mekanisme lengkapnya belum tuntas.\\
+\G{2} & Matriks multi-seed dalam satu protokol & \E{027}, \E{029} & Tertutup
+untuk regime yang diuji. Tidak universal.\\
+\G{3} & Restrukturisasi \E{022} dan penyelarasan SR-015 & \texttt{9c5d9dd},
+\texttt{86f8e65} & Tertutup.\\
+\G{4} & Fusi menengah & \E{032} & \textbf{Tidak konklusif.} Selangnya memuat
+nol. \E{032} tidak membuktikan ekuivalensi.\\
+\G{5} & Ragam antar-split & \E{031} & Diukur pada tiga split. Tidak ada hukum
+populasi.\\
+\G{6} & Fusi akhir & \E{032} & \textbf{Tidak konklusif.} Selangnya memuat nol.
+\E{032} tidak membuktikan ekuivalensi.\\
+\G{7} & Sapuan kapasitas dalam satu keluarga & \E{030} & Eksploratif. Satu
+seed. Klaim kapasitas tetap terbuka.\\
+\G{8} & Ukuran lintas-sisi pada dataset berdaya memadai & \E{028} & Daya RGB
+bertambah. Ini bukan perbandingan depth.\\
+\G{7b} & Monotonisitas kapasitas antar-seed & --- & \textbf{Terbuka.}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Keadaan \G{7b}}
+
+Commit \texttt{7afd274} membuka 12 run tambahan. Run tersebut mencakup yolo26m
+dan yolo26l, tiga modalitas, serta seed 1337 dan 2024. Keadaan sebenarnya
+adalah:
+
+\begin{itemize}
+\item 7 dari 12 run selesai berlatih, dan kurvanya terarsip.
+\item Kami belum menghitung satu pun kontras berpasangan. Berkas berpasangan
+hanya ada untuk seed 42.
+\item Kami belum pernah memperbarui \E{030}, sehingga batasan satu seed masih
+berlaku.
+\end{itemize}
+
+Karena itu, titik balik kapasitas antara 21,9 dan 26,3 juta parameter merupakan
+pola satu seed. Itu bukan temuan. Lima run dan satu evaluasi berpasangan akan
+menutup gerbang ini.
+
+\section{Arti hasil ini bagi sistem lapangan}
+\label{sec:consequence}
+
+\begin{itemize}
+\item Pakai jalur RGB. RF-DETR-L adalah kendali terbaik yang teramati, pada
+\mAP50 test 0,6038. Kecepatannya 8,5 FPS pada GPU L4, terlalu lambat untuk
+pemakaian lapangan waktu nyata tanpa optimasi.
+\item Jangan menambahkan kanal depth dengan tujuan menaikkan akurasi.
+Pengukuran tidak mendukung keputusan itu.
+\item Apabila perangkat keras depth sudah tersedia, simpan hasil tangkapannya
+sebagai cabang data yang dapat diaudit. Terapkan gerbang mutu per berkas dari
+Tabel~\ref{tab:defects}.
+\item Untuk galat kematangan B2--B3, gunakan loss ordinal atau kepala regresi.
+\E{012} menunjuk ke arah itu. Kanal keempat tidak menyentuh batas ordinal.
+\item Sasaran inventarisasi satu hitungan per tandan belum tervalidasi. Tidak
+ada eksperimen dalam laporan ini yang mengukurnya.
+\end{itemize}
+
+\section{Batas jawaban ini}
+\label{sec:limits}
+
+\begin{itemize}
+\item Matriks fusi hanya memakai YOLO26n, pada 640 piksel, selama 150 epoch,
+pada satu split, dan dari awal.
+\item Tidak ada checkpoint terlatih awal untuk topologi dua cabang, sehingga
+transfer learning tidak terukur.
+\item Tiga seed dan tiga split memperlihatkan ragam. Keduanya tidak menaksir
+sebaran populasi.
+\item Dataset depth memuat 352 pohon. Pilot RGB memuat 953 pohon.
+\item Klaim ini berlaku untuk berkas Orbbec Y16 yang diaudit. Klaim ini tidak
+berlaku untuk setiap kamera Orbbec atau setiap penyandian depth.
+\item Kami tidak pernah melatih RF-DETR-L dengan depth fisik.
+\end{itemize}
+
+\section{Simpulan}
+\label{sec:conclusion}
+
+Kami menambahkan kanal keempat berisi depth pada detektor YOLO dan mengukur
+efeknya. Pada regime yang diuji, kanal itu tidak memperbaiki deteksi. Fusi awal
+merugikan pada dua dari tiga seed. Fusi menengah dan fusi akhir menghasilkan
+perubahan yang juga dihasilkan kanal derau acak. Seluruh dua belas selang
+berpasangan memuat nol.
+
+Implementasi depth cacat pada awalnya, dan kami memperbaikinya. Jawaban final
+berasal dari pipeline yang sudah diperbaiki, sehingga hasil negatif ini milik
+sensor dan metodenya, bukan milik galat registrasi.
+
+Jawaban ini bersyarat. Bagian~\ref{sec:limits} mendaftar syarat-syaratnya. Satu
+gerbang, \G{7b}, masih dapat mengubah bagian kapasitas dari jawaban ini.
+Gerbang itu memerlukan lima run dan satu evaluasi berpasangan.
+
+\end{document}

@@ -1,0 +1,484 @@
+\documentclass[preprint,12pt]{elsarticle}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{longtable}
+\usepackage[hidelinks]{hyperref}
+\usepackage{float}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\E}[1]{E-#1}
+\newcommand{\G}[1]{G#1}
+\newcommand{\mAP}{mAP}
+
+\journal{Computers and Electronics in Agriculture}
+\title{Does a Fourth Depth Channel Improve YOLO Detection of Oil Palm
+Fresh Fruit Bunches? Results of 32 Experiments}
+\author{Muhammad Zainal Muttaqin and Fatma Indriani}
+\date{4 August 2026}
+
+\begin{document}
+\begin{frontmatter}
+\maketitle
+
+\begin{abstract}
+This report answers one question. A YOLO detector reads three RGB channels.
+We added depth as a fourth channel. We measured whether detection improves,
+stays the same, or becomes worse.
+
+The answer is that depth did not improve detection. Early fusion was harmful
+in two of three seeds. Middle and late fusion moved the score by less than
+the noise of the experiment. All twelve paired confidence intervals contain
+zero. A random-noise control channel moved the score by the same order of
+magnitude as a real depth channel.
+
+We also measured whether the depth implementation itself was correct. It was
+not correct at the start. The sensor metadata claimed color alignment, but the
+buffer stayed in the depth-camera grid. We corrected this error with full
+reprojection. The negative result above comes from the corrected pipeline, not
+from the defective one.
+
+Thirty-two numbered experiments (\E{001} to \E{032}) and nine gates (\G{0} to
+\G{8}) carry the evidence. This report lists every one of them with its result
+in one line.
+\end{abstract}
+
+\begin{keyword}
+fresh-fruit-bunch detection \sep oil palm \sep RGB-D \sep four-channel input
+\sep Orbbec \sep YOLO26 \sep fusion ablation
+\end{keyword}
+\end{frontmatter}
+
+\section{The question}
+\label{sec:question}
+
+A YOLO detector reads an image with three channels. These are red, green, and
+blue. A depth camera can supply a fourth channel. The fourth channel holds the
+distance from the camera to each pixel.
+
+The idea is simple. Two fruit bunches can have the same color and can overlap
+in the image. The same two bunches can stand at different distances from the
+camera. Depth can separate them when color cannot.
+
+This report measures one thing:
+
+\begin{itemize}
+\item Does the fourth channel increase detection accuracy?
+\item Does it change nothing?
+\item Does it decrease accuracy because it adds noise?
+\end{itemize}
+
+The only way to answer this question is to run the experiment and to read the
+numbers. This report contains those numbers.
+
+\section{The answer}
+\label{sec:answer}
+
+\subsection{Short answer}
+
+The fourth channel did not increase detection accuracy in the tested regime.
+Two of three early-fusion seeds became worse. Middle fusion and late fusion
+moved the score less than the seed-to-seed variation of the same model.
+
+\begin{table}[H]
+\centering
+\caption{Result of the fusion matrix (\E{032}). Each value is the change in
+test \mAP50 against the RGB-only model with the same seed.}
+\label{tab:answer}
+\begin{tabularx}{\columnwidth}{L{0.20\columnwidth}L{0.34\columnwidth}L{0.14\columnwidth}Y}
+\toprule
+\textbf{Fusion point} & \textbf{Change per seed} & \textbf{Mean} & \textbf{Result}\\
+\midrule
+Early & $-0.0120$, $+0.0234$, $-0.0017$ & $+0.0032$ & Sign changes. No gain.\\
+Middle & $+0.0096$, $+0.0212$, $+0.0110$ & $+0.0139$ & Positive in 3 of 3 seeds. Interval contains zero.\\
+Late & $-0.0056$, $+0.0070$, $+0.0102$ & $+0.0039$ & Sign changes. No gain.\\
+Random noise & $-0.0130$, $+0.0025$, $-0.0081$ & $-0.0062$ & Control arm. Carries no geometry.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+All twelve paired confidence intervals contain zero. Middle fusion has the
+largest mean and a positive sign in all three seeds. This is an indication.
+It is not a confirmed improvement.
+
+\subsection{Why the noise arm matters}
+
+The noise arm is the most direct answer to the question. We replaced the depth
+channel with random numbers. The noise arm then moved the score by the same
+order of magnitude as the three depth arms. No contrast excluded zero.
+
+This measurement does not prove that depth and noise are equivalent. We did not
+run an equivalence test. It shows that the depth values demonstrated no usable
+information in this regime, because a channel without geometry produced changes
+of the same size.
+
+\subsection{What the answer does not say}
+
+The answer applies to the tested regime. That regime is YOLO26n, 640 pixels,
+150 epochs, one tree split, three seeds, and training from scratch. We did not
+prove that depth and RGB are equivalent. We did not measure a pretrained
+middle-fusion model, because no compatible COCO checkpoint exists for the
+two-branch topology. We did not measure a larger palm plantation or a second
+camera model.
+
+\section{Was the depth implementation correct?}
+\label{sec:implementation}
+
+A negative result is only useful when the implementation is correct. We
+measured the implementation first. It contained five errors. We corrected all
+five before we read the final numbers. The first four errors belong to the depth
+pipeline and come from the \E{022} audit. The fifth error is the evaluator
+asymmetry, which \E{025} measured as a separate gate.
+
+\begin{table}[H]
+\centering
+\caption{Errors found in the depth pipeline, and their corrections
+(\E{022} and \E{025}).}
+\label{tab:defects}
+\begin{tabularx}{\columnwidth}{L{0.26\columnwidth}Y}
+\toprule
+\textbf{Error} & \textbf{Correction and measured effect}\\
+\midrule
+Wrong registration & The sidecar declared \texttt{alignedTo: color}, but the
+buffer stayed in the depth-camera grid. A direct resize missed the target by
+29.3 pixels at the median and 61 pixels at the maximum. Full reprojection
+increased the mutual-information diagnostic by $+0.0306$ bits, with a 95
+percent interval of $[0.0260, 0.0354]$. Mutual information is a registration
+diagnostic. It is not proof of geometric alignment, and it is not proof of a
+downstream benefit.\\
+Shared calibration & Two camera units have different intrinsics. The pipeline
+now reads the calibration from the sidecar of each file.\\
+Wrong depth range & The default range of 0.3 to 8.0 m did not fit this sensor.
+The \E{022} pixel audit found no pixel below 0.3 m, and 10.07 percent of pixels
+above 8 m. The corrected train-only range is 0.8 to 15.0 m.\\
+Cross-split donor and shared random state & The first favorable result used a
+donor image from another split and a shared random-number state. We withdrew
+that result.\\
+Evaluator asymmetry & The two arms produced 2.44 times different detection
+density. This produced an offset of 0.0156, which is large enough to reverse
+the sign of the depth-minus-RGB difference. All later work uses one
+\texttt{pycocotools} paired evaluation.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The first depth result looked positive. That result came from the defective
+pipeline. Its own confidence interval already contained zero, at
+$[-0.0215,\allowbreak +0.0632]$. We withdrew it.
+Every number in Section~\ref{sec:answer} comes from the corrected pipeline.
+
+\subsection{Three kinds of depth, and why we measured all three}
+
+\begin{table}[H]
+\centering
+\caption{The three depth sources in this study.}
+\label{tab:depthkinds}
+\begin{tabularx}{\columnwidth}{L{0.22\columnwidth}L{0.24\columnwidth}Y}
+\toprule
+\textbf{Source} & \textbf{Property} & \textbf{Why we measured it}\\
+\midrule
+Pseudo-depth & Predicted from the same RGB image. Relative scale. & It is free.
+If it works, no camera is necessary. Measured in \E{003} to \E{007}.\\
+Physical depth & Orbbec Y16 sensor. Metric millimeters. & It is an independent
+measurement. Measured in \E{022} to \E{032}.\\
+Random noise & Random values in the same tensor position. & It shows the cost
+of the extra channel alone. Measured in \E{027}, \E{029}, \E{030}, and
+\E{032}.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Pseudo-depth failed the direct measurement in \E{006}. The contrast of a bunch
+box was 0.0089 against 0.0341 for a size-matched random control. The difference
+in AUC was 0.009. Pseudo-depth comes from the same RGB image, so its error
+correlates with the RGB error. It is not an independent sensor.
+
+Physical depth passed the file audit after the corrections in
+Table~\ref{tab:defects}. It then failed the benefit measurement.
+
+\section{Evidence: all 32 experiments}
+\label{sec:experiments}
+
+Each row gives one experiment, its question, and its result. The full
+configuration, artifact path, and script name stay in the repository log at
+\texttt{docs/experiments/EKSPERIMEN.md}.
+
+\begin{longtable}{L{0.07\textwidth}L{0.28\textwidth}L{0.55\textwidth}}
+\caption{The 32 numbered experiments and their results.}
+\label{tab:allexp}\\
+\toprule
+\textbf{ID} & \textbf{Question} & \textbf{Result}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Question} & \textbf{Result}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\E{001} & Does the \texttt{class\_mismatch} statistic measure maturity
+ambiguity? & No. 0 of 7,328 multi-view bunches disagree, because the same
+pipeline makes both the statistic and the link. FALSIFIED as a measure.\\
+
+\E{002} & Can we reuse the raw master annotations directly? & No. The 3,992 raw
+files hold only 1,352 unique basenames, and 936 of those basenames repeat across
+folders. INCONCLUSIVE, so \E{015} maps by content.\\
+
+\E{003} & Can pseudo-depth organize one orbit video? & Partly. 48 frames cover
+319.7 degrees with a circle residual of 8.2 percent. One video is not enough.
+PARTIAL.\\
+
+\E{004} & Does that hold across six videos? & Yes for tree geometry. Five of six
+videos reach 270 degrees or more. One video reaches 41 percent. CONFIRMED for
+tree geometry only.\\
+
+\E{005} & Can pseudo-depth order the photograph sides? & Yes. All 20 four-side
+trees and all 30 eight-side trees order correctly. Angular RMSE is 17.3 and 8.5
+degrees against random baselines of 57.5 and 34.4 degrees. CONFIRMED.\\
+
+\E{006} & Does pseudo-depth separate a bunch from its background? & No. Contrast
+is 0.0089 against 0.0341 for the control. The AUC difference is 0.009.
+FALSIFIED.\\
+
+\E{007} & Can pseudo-depth link the same bunch across sides? & No. The simple
+statistical correction wins. The threshold sweep touched the test split, so the
+values are exploratory. FALSIFIED for this implementation.\\
+
+\E{008} & --- & Reserved number. No run. The slot stays visible so that a gap
+cannot look like a null result.\\
+
+\E{009} & Is B4 hard because its boxes are small? & Not only. 81.2 percent of B4
+boxes stay in the COCO medium band. The median box is 46 by 46 pixels.
+PARTIAL.\\
+
+\E{010} & Is B4 hard because bunches crowd each other? & No. B4 has the lowest
+neighbor count and the lowest maximum IoU, and low contrast. B2 has high
+$\Delta E$ and low AP50, so B2 is a different problem. Crowding FALSIFIED.\\
+
+\E{011} & Can contrast or texture preprocessing recover B4? & Contrast boost
+fails. A Laplacian filter moves B4 from the least separated class to the most
+separated class, at AUC 0.6153. This supports a texture channel, not
+automatically a depth channel.\\
+
+\E{012} & Is the maturity confusion random? & No. Accuracy is 52.87 percent
+against a 25 percent baseline, and the errors follow the chain B1--B2--B3--B4.
+The largest non-adjacent error is 1.9 percent. Maturity is ordinal.\\
+
+\E{013} & What is the exact four-channel contract? & Channel order
+\([B,G,R,D]\), invalid depth is exact zero, the pipeline keeps a validity mask, and
+modality dropout keeps RGB-only inference possible. Contract complete. Device
+validation open.\\
+
+\E{014} & Does the detector fail at localization or at maturity? & \mAP50 is
+0.7191 without maturity and 0.5218 with maturity, a ratio of 72.6 percent.
+PROVISIONAL, because we do not yet demonstrate byte-identical prediction JSON.\\
+
+\E{015} & Can we map the master pixels safely? & Yes. 3,992 of 3,992 images map
+by content. The mapped set did not train \E{021}. UNBLOCKED.\\
+
+\E{016} & Is 68 percent a hard maturity ceiling? & No. The three measurement
+paths share one crop classifier and use mismatched color augmentation.
+WITHDRAWN.\\
+
+\E{017} & Does a two-stage detector help? & No. It is worse than the one-stage
+baseline on every class and on both \mAP metrics. FALSIFIED for this
+implementation.\\
+
+\E{018} & How far can localization reach at best? & Oracle reachability is
+0.8834 and 0.4702. The median best IoU is 0.7303, and only 0.0376 of boxes pass
+IoU 0.90. This explains why \mAP50-95 stays hard. Descriptive envelope.\\
+
+\E{019} & Do more pixels close the gap? & No. A single color-safe
+high-resolution run stops at epoch 41 and does not reach the target. We remove resolution alone as the
+next step.\\
+
+\E{020} & Does an NMS-free transformer help? & RT-DETR-L improves all four
+classes, with the largest gain on B4. Many factors change together, so this is a
+shortlist result.\\
+
+\E{021} & Which RGB detector is the fair control? & RF-DETR-L. Test \mAP50 is
+0.6038 and test \mAP50-95 is 0.2770. The paired difference against RT-DETR-L is
+$+0.0255$, with a 95 percent interval of $[0.0104, 0.0408]$. Best observed RGB
+benchmark.\\
+
+\E{022} & Do the physical depth files measure what the metadata claims? & No.
+See Table~\ref{tab:defects}. The registration, range, donor, and random-state
+errors are corrected. The first positive delta is WITHDRAWN.\\
+
+\E{023} & --- & Execution alias. The redesigned matrix ran once, as \E{032}. It
+is not a second measurement.\\
+
+\E{024} & Can we measure cross-side identity without a circular proxy? & Yes,
+from the annotation graph. Collisions concentrate in B1--B2 and B2--B3, with no
+B1--B3 collision. B4 has zero two-side detections, so power is limited.\\
+
+\E{025} & Do the trainer metric and \texttt{pycocotools} agree? & No. The two
+arms differ in detection density by 2.44 times, which creates an offset of
+0.0156. That offset is large enough to reverse the sign. One evaluator now binds
+all later work.\\
+
+\E{026} & Does depth stabilize cross-side identity? & INCONCLUSIVE. The
+denominators are 82 RGB bunches and 75 RGB-D bunches, so the comparison is not
+fully paired. The interval is too wide.\\
+
+\E{027} & Does early fusion help across three seeds? & No. Two of three
+intervals are negative, and only seed 42 is positive. The benefit criterion is
+FALSIFIED for YOLO26n.\\
+
+\E{028} & Does a larger dataset change the identity measure? & It adds power,
+not a difference. The rate is 0.2329 against 0.1951, a difference of $+0.0378$
+with an interval of $[-0.0585, +0.1276]$. No physical depth is present in this
+dataset.\\
+
+\E{029} & Does a larger model rescue depth? & No. The depth-minus-noise mean is
+$+0.0124$, below the archived threshold of $+0.015$. The RGB arm alone varies by
+0.0759 across seeds. The capacity-rescue clause is RETRACTED.\\
+
+\E{030} & Does the effect depend on model capacity? & Unclear. Noise-minus-RGB
+is $+0.0032$, $+0.0184$, $-0.0325$, $-0.0533$. The sign crosses once, between
+21.9 and 26.3 million parameters, but the magnitudes are not monotonic. One seed
+only. This opens \G{7b}.\\
+
+\E{031} & Is the split effect larger than the seed effect? & Yes for absolute
+scores. The absolute \mAP spans 0.0488 across splits against 0.0321 across
+seeds. Every absolute score must name its split.\\
+
+\E{032} & Is the fusion point the explanation? & INCONCLUSIVE. Five arms, three
+seeds, twelve paired intervals, and all twelve contain zero. See
+Table~\ref{tab:answer}.\\
+\end{longtable}
+
+\subsection{How the 32 records answer the one question}
+
+Six records give the direct answer. These are \E{022}, \E{027}, \E{029},
+\E{030}, \E{031}, and \E{032}. They train the detector with and without the
+fourth channel and compare the scores.
+
+The other records remove the alternative explanations for that answer. Without
+them, a reader can reject the negative result for a reason that has nothing to
+do with depth:
+
+\begin{itemize}
+\item \E{001}, \E{002}, \E{015}, and \E{024} make sure that the labels and the
+identity graph are not circular.
+\item \E{025} makes sure that both arms use one evaluator. Before this record,
+the evaluator alone can reverse the sign.
+\item \E{031} makes sure that the split is named. The split moves the absolute
+score more than the seed does.
+\item \E{003} to \E{007} remove pseudo-depth as a cheap substitute for the
+sensor.
+\item \E{009} to \E{012} explain what the RGB error actually is. B4 is a
+contrast problem and B2--B3 is an ordinal maturity problem. Depth can help the
+first one. Depth cannot help the second one.
+\item \E{013} freezes the channel contract, so that a later run cannot change
+the channel order in silence.
+\item \E{017} to \E{021} supply a strong RGB control. A weak control makes any
+fourth channel look useful.
+\end{itemize}
+
+\section{Gate register \G{0} to \G{8}}
+\label{sec:gates}
+
+The depth work ran as nine gates. A gate is a hole that must close before we
+accept the conclusion. One later gate, \G{7b}, is still open.
+
+\begin{table}[H]
+\centering\small
+\caption{Gate register. \G{0}, \G{4}, \G{6}, and \G{7b} are not closed.}
+\label{tab:gates}
+\begin{tabularx}{\columnwidth}{L{0.07\columnwidth}L{0.28\columnwidth}L{0.14\columnwidth}Y}
+\toprule
+\textbf{Gate} & \textbf{Content} & \textbf{Closed by} & \textbf{Status}\\
+\midrule
+\G{0} & Run completeness and dead links & \texttt{d58eae9} & \textbf{Open.} We
+must release the manifest and the provenance with the source and the PDF.\\
+\G{1} & Difference between the trainer metric and \texttt{pycocotools} & \E{025}
+& Asymmetry bound. The full mechanism is not resolved.\\
+\G{2} & Multi-seed matrix under one protocol & \E{027}, \E{029} & Closed for the
+tested regime. Not universal.\\
+\G{3} & \E{022} restructure and SR-015 alignment & \texttt{9c5d9dd},
+\texttt{86f8e65} & Closed.\\
+\G{4} & Middle fusion & \E{032} & \textbf{Inconclusive.} The intervals contain
+zero. \E{032} does not prove equivalence.\\
+\G{5} & Split variance & \E{031} & Measured on three splits. No population law.\\
+\G{6} & Late fusion & \E{032} & \textbf{Inconclusive.} The intervals contain
+zero. \E{032} does not prove equivalence.\\
+\G{7} & Capacity sweep in one family & \E{030} & Exploratory. One seed. The
+capacity claim stays open.\\
+\G{8} & Cross-side measure on a dataset with usable power & \E{028} & RGB power
+increased. This is not a depth comparison.\\
+\G{7b} & Capacity monotonicity across seeds & --- & \textbf{Open.}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{The state of \G{7b}}
+
+Commit \texttt{7afd274} opened 12 additional runs. These runs cover yolo26m and
+yolo26l, three modalities, and the seeds 1337 and 2024. The true state is:
+
+\begin{itemize}
+\item 7 of 12 runs finished training, and their curves are archived.
+\item We computed no paired contrasts. The paired files exist only for seed 42.
+\item We never updated \E{030}, so its one-seed limitation still applies.
+\end{itemize}
+
+The capacity turning point between 21.9 and 26.3 million parameters is therefore
+a one-seed pattern. It is not a finding. Five runs and one paired evaluation
+close this gate.
+
+\section{What this means for the field system}
+\label{sec:consequence}
+
+\begin{itemize}
+\item Use the RGB path. RF-DETR-L is the best observed control, at test \mAP50
+0.6038. Its speed is 8.5 FPS on an L4 GPU, which is too slow for real-time field
+use without optimization.
+\item Do not add the depth channel to raise accuracy. The measurement does not
+support that decision.
+\item If depth hardware is already present, keep the capture as an auditable
+data branch. Apply the per-file quality gate from Table~\ref{tab:defects}.
+\item For the B2--B3 maturity error, use an ordinal loss or a regression head.
+\E{012} points there. A fourth channel does not address an ordinal boundary.
+\item The one-count-per-bunch inventory target is not validated. No experiment
+in this report measures it.
+\end{itemize}
+
+\section{Limits of this answer}
+\label{sec:limits}
+
+\begin{itemize}
+\item The fusion matrix used YOLO26n only, at 640 pixels, for 150 epochs, on one
+split, and from scratch.
+\item No pretrained checkpoint exists for the two-branch topology, so transfer
+learning was not measured.
+\item Three seeds and three splits expose variance. They do not estimate a
+population distribution.
+\item The depth dataset holds 352 trees. The RGB pilot holds 953 trees.
+\item The claims apply to the audited Orbbec Y16 files. They do not apply to
+every Orbbec camera or every depth encoding.
+\item We never trained RF-DETR-L with physical depth.
+\end{itemize}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We added a fourth depth channel to a YOLO detector and measured the effect. In
+the tested regime, the channel did not improve detection. Early fusion was
+harmful in two of three seeds. Middle and late fusion produced changes that a
+random-noise channel also produced. All twelve paired intervals contain zero.
+
+The depth implementation was defective at the start, and we corrected it. The
+final answer comes from the corrected pipeline, so the negative result belongs
+to the sensor and the method, not to a registration error.
+
+The answer is conditional. Section~\ref{sec:limits} lists the conditions.
+One gate, \G{7b}, can still change the capacity part
+of the answer. It needs five runs and one paired evaluation.
+
+\end{document}
