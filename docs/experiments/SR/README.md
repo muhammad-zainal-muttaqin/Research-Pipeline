@@ -37,6 +37,7 @@ Kode ada di `/workspace/experiments/` (di luar repo).
 | [SR-014](SR-014-rfdetr-dinov2.md) | RF-DETR-L (DINOv2) melampaui RT-DETR pada setelan identik | E-021 | **DIKONFIRMASI** (sasaran mAP50 terlewati) |
 | [SR-015](SR-015-depth-sensor-4kanal.md) | Depth SENSOR 4-kanal simultan (dataset SawitMVC-Depth) | E-022, E-025, E-027, E-029, E-030, E-031, E-032 | Klaim manfaat fisik **belum terbukti**; fusi awal tidak bereplikasi, sedangkan matriks E-032 **tidak konklusif** dalam rezim diuji; klausa kapasitas dicabut |
 | [SR-016](SR-016-konsistensi-lintas-sisi.md) | Konsistensi prediksi lintas-sisi sebagai ukuran ambiguitas | E-024, E-026, E-028 | Ukuran ambiguitas dikonfirmasi; E-026 **tidak konklusif** karena denominator identitas RGB/RGB-D berbeda |
+| [SR-017](SR-017-sintesis-deep-research.md) | Sintesis deep research: K1 frekuensi, K2 ordinal, K3 lintas-sisi ([seri F](../SERI-F.md)) | F-001…F-009 | **K1 LOLOS** gerbang (F-002 +0,0731 pada B4); **K3 DIPALSUKAN** (F-003 0,2794 < 0,30, dibatalkan); K2 menunggu F-005 |
 
 ## Apa yang sudah kita pelajari — cerita singkatnya
 

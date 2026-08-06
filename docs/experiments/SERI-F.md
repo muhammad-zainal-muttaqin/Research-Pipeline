@@ -1,0 +1,280 @@
+# Seri F — Formulasi
+
+> **Berkas baru, seri baru.** Dibuka 6 Agustus 2026. Ini bukan kelanjutan seri E.
+> Log kronologis tetap [`EKSPERIMEN.md`](EKSPERIMEN.md) (entri `F-0NN` masuk ke
+> sana, append-only). Berkas ini adalah **laporan seri**: alasan keberadaannya,
+> peta komponen, keadaan gerbang, dan catatan teknis yang berlaku untuk seluruh
+> seri.
+
+## 1. Kenapa seri terpisah
+
+Seri E menjawab pertanyaan **diagnostik dan pembanding**: praproses mana yang
+menaikkan keterpisahan (E-011), titik fusi mana yang terbaik (E-032), pada
+kapasitas berapa kanal keempat mulai terpakai (E-030), seberapa besar varians
+seed dan split (E-027, E-031). Seluruhnya menempatkan komponen yang sudah ada
+pada konfigurasi yang berbeda.
+
+Seri F mengubah **formulasi dan arsitekturnya**. Itu satu-satunya arah yang
+tersisa menurut pernyataan pengguna 21 Juli 2026: teknik siap-pakai dari
+literatur (termasuk SAHI) sudah dicoba sendiri dan tidak satu pun menaikkan mAP;
+tuning sudah habis dijalankan dan ditegaskan dua kali. Yang diminta adalah
+dekomposisi *first-principles* dan perubahan formulasi — bukan pencarian
+hyperparameter lain (CLAUDE.md §"Pernyataan pengguna", §"Diagnosa yang sudah
+disepakati").
+
+Penomorannya juga tidak bisa menyambung: `E-033` sudah terpakai dua kali (rentang
+metrik depth, 6 Agustus 2026). Seri F berjalan **paralel**, bukan sesudah.
+
+## 2. Asal usul
+
+Sintesis dua laporan *deep research* atas satu brief, keduanya diterima
+5 Agustus 2026. Irisan keduanya sekitar tiga per empat: cabang frekuensi tinggi
+di samping backbone beku, kepala ordinal kumulatif, loss peringkat berpasangan.
+
+Peringatan mutu sumber yang wajib ikut dibawa:
+
+- Laporan Gemini memuat **tabel hasil yang dikarang** (uji atas 12.500 citra,
+  baseline "Co-DETR 0,6038", hasil akhir 0,7245). Yang diambil dari laporan itu
+  **hanya rumusan loss**, tidak satu angka pun.
+- Kedua laporan **sitasinya belum terverifikasi**. Gemini nol sitasi tersisa;
+  Codex memakai token internal yang tidak dapat di-resolve.
+- **"MF-RF-DETR" bukan algoritma yang ada** — nama karangan laporan Codex untuk
+  usulannya sendiri. Tidak ada makalah, kode, maupun bobot. Jangan pernah ditulis
+  seolah metode mapan.
+
+## 3. Tiga komponen
+
+Trunk tetap RF-DETR-L. Stem DINOv2 3-kanal tidak disentuh. Inferensi tetap satu
+citra, satu tahap, NMS-free.
+
+| Kode | Komponen | Sasaran | Gerbang | Status gerbang |
+|---|---|---|---|---|
+| **K1** | Cabang frekuensi tinggi ber-gate init-nol, disuntik sebelum projector | mekanisme (A) geometris, khususnya B4 | **P2** (F-002) | ✅ **LOLOS** |
+| **K2** | Kepala ordinal kumulatif CORN, residu terpusat ber-clip ±ε | mekanisme (B) fotometrik, B2↔B3 | **P1** (F-005) | ✅ **LOLOS** |
+| **K3** | Konsistensi query lintas-sisi dari graf `_confirmedLinks` | identitas tandan fisik | **P3** (F-003) | ❌ **GUGUR** |
+
+Dua sifat yang wajib dijaga saat implementasi:
+
+1. **γ = 0 saat inisialisasi** membuat K1 identik baseline secara persis. Cabang
+   yang tak berguna mulai sebagai *no-op*, bukan sumber derau — ini yang menjawab
+   keberatan E-030.
+2. **Residu K2 di-clip ke ±ε.** Bila selisih logit > 2ε, urutan pasti terjaga.
+   Hanya pasangan berskor rapat yang dapat ditukar. Inilah yang membedakannya
+   dari LDL/EMD yang dilarang brief.
+
+## 4. Peta eksperimen dan keadaannya
+
+| Kode | Isi | Status | Hasil ringkas |
+|---|---|---|---|
+| **F-001** | Prasyarat + probe VRAM A4500 | ✅ selesai | Resep E-021 muat: puncak 10.331/20.470 MiB; 9,2 mnt/epoch; **paralelisme = 1** |
+| **F-002** | P2 — frekuensi vs pelepah | ✅ **LOLOS** | dwt_hh +0,0731 pada B4 (ambang +0,02); Laplacian +0,0721 praktis seri |
+| **F-003** | P3 — plafon lintas-sisi | ❌ **GUGUR** | 0,2794 < 0,30; 72% galat salah di semua sisi; B4 hanya 0,1038 |
+| **F-004** | Baseline RF-DETR-L 3 seed | 🔄 berjalan | seed 42 **selesai** (val mAP50 0,5708 vs E-021 0,5695; 1j50m); seed 1337 berjalan |
+| **F-005** | P1 — massa selisih logit | ✅ **LOLOS** | 0,7113 (ambang 0,30); massa terbesar di **B3**, bukan B2 |
+| **F-006** | K2 ordinal CORN | 🟡 kode siap, gerbang LOLOS | 2 lengan × 3 seed; menunggu GPU (setelah F-007) |
+| **F-007** | K1a cabang frekuensi | 🟡 kode siap, **uji sambungan LULUS** | 4 lengan × 3 seed; menunggu GPU |
+| ~~F-008~~ | ~~K3 lintas-sisi~~ | ❌ dibatalkan | digugurkan F-003; hemat ~13 jam GPU |
+| **F-009** | Gabungan | ⏳ | syarat: **kedua** komponen tersisa lolos |
+
+## 5. Catatan teknis yang berlaku untuk seluruh seri
+
+Sejajar dengan `reproduce/experiments/CATATAN-TEKNIS-E021.md`. Semuanya
+terverifikasi, bukan dugaan.
+
+### 5.1 Kriteria klasifikasi RF-DETR adalah IA-BCE
+
+Dibaca langsung dari `rfdetr/models/criterion.py:268-296` dan
+`training_config.json` E-021 (`ia_bce_loss: true`):
+
+- Bobot positif `t = σ(z)^α · IoU^(1−α)`, `α = 0,25`, di-`clamp(0,01)`, di-`detach`.
+- **Bukan** softmax CE, bukan focal polos, bukan varifocal.
+- Skor deteksi = `σ(z)` per kelas **independen**; top-k `num_select=300` atas
+  grid **datar Q × C** (`postprocess.py:106`).
+- **Tidak ada simpleks softmax.** Residu K2 karena itu = offset logit aditif
+  ber-mean nol antar 4 kelas.
+- Satu query dapat memancarkan sampai 4 deteksi (satu per kelas).
+
+### 5.2 Kepala mengeluarkan **5** logit, bukan 4 — dan kanal ke-5 mati
+
+Ditemukan saat memvalidasi dump logit, dan hampir menjadi kegagalan senyap.
+`pred_logits` berbentuk `(B, 300, 5)` meski `num_classes: 4`. Kanal indeks 4:
+logit maksimum **−2,424** dan **nol** skor di atas 0,25 pada seluruh 588 citra
+test — kanal mati.
+
+Namun `PostProcess` tetap memancarkannya sebagai label 4, sehingga
+`eval_rfdetr_perkelas.py` (`category_id = class_id + 1`) menghasilkan kategori 5
+yang tidak ada di GT. pycocotools membuangnya diam-diam, jadi **angka E-021 tidak
+terpengaruh** — tetapi kode baru mana pun yang mengasumsikan 4 kanal akan salah
+indeks tanpa error.
+
+**Pemetaan yang berlaku, dibuktikan bukan ditebak:** kanal 0→B1, 1→B2, 2→B3,
+3→B4, 4→mati. Buktinya di §5.3.
+
+### 5.3 Deteksi dapat direkonstruksi PERSIS dari dump logit
+
+`eval/dump_logits_rfdetr.py` menyimpan logit mentah dan kotak seluruh query.
+Dari situ keluaran `PostProcess` direproduksi persis (top-k `sigmoid(z)` atas
+grid datar): pada 4 citra uji, **kotak identik (maxdiff 0,0)** dan skor identik
+sampai pembulatan float16.
+
+Konsekuensinya satu inferensi melayani F-005 **dan** `eval/bootstrap_pohon.py` —
+tidak ada jalur skor kedua yang bisa menyimpang diam-diam.
+
+Uji ujung-ke-ujung: implementasi mandiri di `bootstrap_pohon.py` mereproduksi
+evaluator rf-detr sendiri pada checkpoint probe 1-epoch —
+
+| | evaluator rf-detr | implementasi seri F |
+|---|---|---|
+| test mAP50 | 0,5230 | **0,5223** |
+| test mAP50-95 | 0,2354 | **0,2354** |
+
+dan pola per-kelas (B1 0,7217 > B3 0,6079 > B2 0,4256 > B4 0,3339) mengulang
+tanda tangan E-021 — itulah yang membuktikan pemetaan kanal §5.2.
+
+### 5.4 Paralelisme run = 1, bukan pilihan tuning
+
+VRAM puncak RF-DETR-L @1280 batch 8 = **10.331 MiB** dari 20.470. Dua run
+serentak = 20.662 MiB > kapasitas → OOM. Ini persis jebakan yang dicatat
+CLAUDE.md ("3 × 6,6 = 19,7 dari 19,7 GiB"). **Seluruh run seri F berurutan.**
+Yang boleh diparalelkan hanya pekerjaan CPU (analisis, bootstrap, penulisan).
+
+**Insiden 6 Agustus 2026, dicatat karena hampir merusak F-004.** Menjalankan
+`shell/f007_frekuensi.sh` untuk "sekadar memeriksa prasyarat" langsung
+**menyalakan run latihan sungguhan** di atas F-004 yang sedang berjalan. Run itu
+dibunuh per **grup proses** (bukan per pid — pelajaran pekerja yatim CLAUDE.md)
+sekitar satu menit kemudian; F-004 selamat, tidak ada OOM di lognya, dan
+artefak parsialnya dihapus.
+
+Dua penjaga ditambahkan supaya tidak terulang:
+
+1. **`--periksa`** — memvalidasi prasyarat lalu keluar tanpa melatih apa pun.
+2. **Penjaga proses** — driver MENOLAK start bila sudah ada `train_rfdetr*`
+   berjalan. Anggaran VRAM saja tidak cukup: yang berbahaya adalah run KEDUA,
+   bukan ukuran run pertama, dan itu hanya terlihat dari daftar proses.
+
+Keduanya diuji: `--periksa` keluar 0 tanpa melatih; tanpa `--periksa` driver
+keluar 1 selama F-004 masih hidup.
+
+**Jangan menyunting berkas driver yang sedang dieksekusi.** bash membaca skrip
+secara bertahap, jadi mengubahnya di tengah jalan dapat membuatnya mengeksekusi
+potongan yang salah. `shell/f004_baseline.sh` karena itu **tidak** diberi penjaga
+yang sama sampai runnya selesai.
+
+### 5.5 Uji sambungan wajib — dan apa yang sudah lulus
+
+Sebelum satu run 3-seed pun diantre, tiap komponen harus membuktikan **dua arah**:
+(a) pada inisialisasi keluarannya IDENTIK baseline, dan (b) setelah gate dibuka
+paksa keluarannya BERUBAH. Yang gagal senyap adalah (b): cabang yang tidak
+tersambung tetap melatih tanpa error dan menghasilkan angka yang tampak wajar.
+
+**K1 (F-007), keempat lengan — LULUS**
+
+| | dwt | laplacian | freq_rendah | fase_diacak |
+|---|---|---|---|---|
+| (a) selisih saat γ = 0 | **0,0** | **0,0** | **0,0** | **0,0** |
+| (b) selisih saat γ = 1 | 1,362 | 0,861 | 0,912 | 1,146 |
+| param tambahan | **192.289** | **192.289** | **192.289** | **192.289** |
+
+No-op-nya **eksak, bukan hampiran**. Parameter tambahan **identik di keempat
+lengan** — syarat kontrol berparameter sama (§5.6) kini terbukti, bukan
+diasumsikan. Tambahannya +0,54% atas 35,6 jt parameter.
+
+**K2 (F-006) — LULUS lima pemeriksaan**
+
+| Pemeriksaan | Hasil |
+|---|---|
+| (a) α = 0 → identik baseline | selisih **0,0** |
+| (b) α = 1 → berubah | 0,3 |
+| (c) residu ≤ ε | maks **0,3** = ε persis → penjaga peringkat bekerja |
+| (d) kanal mati (indeks 4) tak tersentuh | **0,0** |
+| (e) **gradien sampai ke kepala ordinal** | `ordinal.weight` norm 35,51 · `alpha` −3,91 · tembus ke backbone |
+
+Pemeriksaan **(e) yang paling penting**. CORAL milik laporan Gemini dibuang
+justru karena di-`stop_gradient` penuh sehingga **tidak dapat** menggerakkan
+mAP50. Uji ini membuktikan K2 tidak mengulang cacat itu — bukan mengasumsikannya.
+
+Suku loss juga diuji terpisah: `corn` 0,0001 pada label sempurna vs 0,7765 pada
+acak; `pasangan` 0,0 saat kelas terpisah jauh (tidak ada pasangan sulit) vs
+0,6685 saat rapat; `brs` 0,0 saat benar vs 0,9501 saat salah. Suku ordinal hanya
+aktif di lapisan decoder terakhir, terverifikasi.
+
+Kepala ordinal hanya menambah **772** parameter.
+
+### 5.6 Gerbang P1 sensitif terhadap skala logit — jangan salah checkpoint
+
+Pita `2ε = 0,6` dinyatakan dalam satuan **logit**, dan skala logit bergantung pada
+kematangan latihan. Model yang belum konvergen punya logit rapat, sehingga
+fraksi "di dalam pita" **bias TINGGI** dan gerbang bisa lolos secara palsu.
+
+Terukur saat memvalidasi skripnya pada checkpoint probe F-001 (1 epoch):
+fraksi dalam pita **0,7666** dengan median |Δ| hanya **0,3086**. Angka itu akan
+"meloloskan" K2 tanpa arti apa pun.
+
+**F-005 hanya sah dijalankan pada checkpoint terbaik-val F-004 yang konvergen.**
+Keluarannya selalu mencatat `ckpt` supaya ini dapat diperiksa ulang.
+
+Yang tetap informatif dari validasi itu: pasangan kelas yang tertukar didominasi
+**kelas bertetangga** — B3→B4 (243), B2→B3 (199), B3→B2 (198), B4→B3 (126) —
+yaitu persis struktur ordinal yang disasar K2. Dari 2.612 kotak GT, hanya 38
+tidak tertangkap query mana pun, jadi analisis ini memang mengukur kesalahan
+KELAS, bukan kegagalan deteksi.
+
+### 5.7 Rezim pengukuran
+
+- **Bootstrap tingkat POHON**, 10.000 replikat, persentil **dan** BCa.
+  `eval_extras.py` me-resample citra dengan 2.000 replikat — unit yang salah,
+  karena 4–8 citra satu pohon memuat tandan fisik yang sama (k ≈ 1,89) sehingga
+  CI-nya terlalu sempit. Pengganti: `eval/bootstrap_pohon.py` (~1 menit per 200
+  replikat, CPU; jalankan berdampingan dengan latihan GPU).
+- **Tiga seed berpasangan**, seed dan urutan data sama antara baseline dan
+  perlakuan.
+- Satu protokol, split test beku (mengikat, E-025).
+- **Setiap angka menyebut split** (`SawitMVC-val` / `SawitMVC-test`).
+- **Kontrol berparameter sama wajib.** K1 harus mengalahkan cabang
+  frekuensi-rendah dan fase-diacak. Tanpa itu, kenaikan signifikan pun tidak
+  membuktikan bahwa *frekuensi* penyebabnya — disiplin lengan `derau`/`tukar`
+  yang sama seperti E-027/E-032.
+- CI yang memuat nol ditulis **TIDAK KONKLUSIF**, bukan dinaikkan jadi INDIKASI.
+
+### 5.8 Ambang +0,05 belum tervalidasi untuk jalur ini
+
+Varians seed 0,0321 (E-027) dan varians split 0,0488 (E-031) diukur pada
+**SawitMVC-Depth dengan YOLO26n**, bukan SawitMVC dengan RF-DETR-L. F-004
+memberi angka yang sebenarnya. Bila varians jalur RGB jauh lebih kecil, ambang
+0,05 terlalu longgar dan harus diturunkan; bila jauh lebih besar, seri ini
+kemungkinan tidak dapat diukur dan harus dihentikan.
+
+## 6. Caveat yang tidak boleh dihaluskan
+
+**Ukuran efek yang diprediksi 3–10× lebih besar daripada bukti eksternal mana pun
+yang dikutip.** Align-DETR +0,6 AP COCO. ViT-Adapter +1,0 AP. Wave-ViT +1,3 box
+AP. Semuanya jauh di bawah ambang +0,05 (= 5 poin). **Prior jujurnya: tiap
+komponen memberi +0,01 sampai +0,03, yaitu di bawah lantai derau.** Gerbang
+F-002/F-003/F-005 ada supaya kemungkinan itu terdeteksi murah — dan F-003 sudah
+membuktikan gerbangnya bekerja.
+
+**Bukti penjaga-peringkat K2 membuktikan keamanan, bukan potensi naik.** Ia
+menjamin urutan tidak rusak; ia tidak menjamin ada cukup kerugian AP yang tinggal
+di pasangan rapat untuk direbut. Itu yang dijawab F-005.
+
+**Keterpisahan piksel bukan AP.** F-002 menutup satu mode gagal; ia tidak
+meramalkan kenaikan mAP.
+
+**Plafon anotasi tetap mengikat.** E-018: plafon **val** mAP50 0,8834 dan
+mAP50-95 0,4702, median IoU terbaik 0,7303, hanya 3,76% kotak GT tercapai pada
+IoU ≥ 0,90. Kenaikan mAP50 besar dapat berdampingan dengan kemajuan mAP50-95
+kecil. **Plafon val tidak boleh diperlakukan sebagai plafon test.**
+
+## 7. Peta skrip seri F
+
+| Skrip | Kode | Keluaran |
+|---|---|---|
+| `build/build_rfdetr_ds.py` | F-001 | `rfdetr_ds/` (3000/404/588 symlink) |
+| `train/train_rfdetr.py` (+`--seed`) | F-001, F-004 | `runs/detect/runs_f004/rfdetrl_rgb_seed*` |
+| `analysis/freq_vs_pelepah.py` | F-002 | `results/F-002/freq_vs_pelepah.json` |
+| `analysis/cross_side_consistency.py` (+`--dump-tandan`) | F-003 | rekam per-kemunculan |
+| `analysis/plafon_lintas_sisi.py` | F-003 | `results/F-003/plafon_lintas_sisi.json` |
+| `shell/f004_baseline.sh` | F-004 | driver 3 seed berurutan |
+| `eval/dump_logits_rfdetr.py` | F-004 | `results/F-004/logits_test_seed*.npz` |
+| `analysis/massa_selisih_logit.py` | F-005 | `results/F-005/massa_selisih_logit.json` |
+| `eval/bootstrap_pohon.py` | rezim | CI pohon persentil + BCa |

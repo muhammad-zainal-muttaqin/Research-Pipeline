@@ -31,12 +31,18 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--resume", default=None,
                     help="Path ckpt PTL (mis. last.ckpt) untuk melanjutkan tanpa mengulang.")
+    # Seri F butuh 3 seed berpasangan (F-004). Bawaannya 42 = seed yang dipakai
+    # E-021, jadi menambah flag ini TIDAK mengubah reproduksi E-021.
+    ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
 
     if args.smoke:
         args.epochs = 1
-        args.output = "runs/rfdetr_l_smoke"
+        # `--output` eksplisit dihormati supaya probe VRAM F-001 bisa menulis ke
+        # runs/ akar repo (yang di-gitignore) alih-alih mengotori snapshot kode.
+        if args.output == ap.get_default("output"):
+            args.output = "runs/rfdetr_l_smoke"
 
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
@@ -51,7 +57,7 @@ def main() -> None:
         resume=args.resume,
         resolution=args.resolution,
         device="cuda",
-        seed=42,
+        seed=args.seed,
         early_stopping=not args.smoke,
         early_stopping_patience=8,
         early_stopping_min_delta=0.001,

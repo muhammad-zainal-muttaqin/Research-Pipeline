@@ -3,6 +3,14 @@
 Dokumen ini adalah handoff singkat. Untuk peta lengkap, mulai dari
 [README eksperimen](README.md).
 
+> **Aktif per 6 Agustus 2026 — [seri F](SERI-F.md).** Seri baru untuk perubahan
+> formulasi/arsitektur di atas RF-DETR-L. Keadaan mutakhir: **F-001** memulihkan
+> prasyarat (bobot RF-DETR-L E-021 **hilang**, dilatih ulang; resep E-021 muat di
+> A4500 dengan puncak 10.331/20.470 MiB, **paralelisme run = 1**); **F-002 LOLOS**
+> (frekuensi tinggi memisahkan tandan dari pelepah, dwt_hh +0,0731 pada B4);
+> **F-003 GUGUR** (plafon lintas-sisi 0,2794 < 0,30 → K3 dibatalkan); **F-004**
+> baseline 3 seed sedang berjalan.
+
 > **Catatan status 2 Agustus 2026.** Laporan Elsevier di `reports.tex` dan
 > `docs/experiments/REPORT_PLAN.md` adalah status audit terbaru. Bagian handoff
 > lama di bawah dipertahankan untuk provenance, tetapi klaim yang menyatakan
@@ -133,11 +141,29 @@ menguji apakah pola derau − RGB di E-030 bertahan multi-seed. Yang terjadi:
 seed 2024 hanya `yolo26m_rgb`), **0 kontras berpasangan dihitung**, dan **E-030
 tidak pernah diperbarui**. Akibatnya klaim titik balik kapasitas **21,9–26,3 jt
 parameter** masih berstatus pola satu-seed — padahal klaim itulah yang dipakai
-sebagai dasar memilih arsitektur. Sisa: 5 run (~1 jam) + `eval_g2.sh`. Kurva
-latihan 7 run yang sudah jadi ada di
-`evidence/experiments/results/E-022/kurva_latihan/`, tetapi **bobotnya ikut
-hilang saat pod di-terminate**, jadi kelima run sisa maupun ketujuh yang sudah
-ada sama-sama harus dilatih ulang.
+sebagai dasar memilih arsitektur. Kurva latihan run yang sudah jadi ada di
+`evidence/experiments/results/E-022/kurva_latihan/`.
+
+> **⚠ KOREKSI 2026-08-06 — dua angka di paragraf atas SALAH, diperiksa langsung
+> di disk.** Paragraf aslinya dipertahankan sebagai rekam; yang berlaku adalah
+> koreksi ini.
+>
+> 1. **Bobotnya TIDAK hilang.** `find runs -name best.pt` menemukan **55
+>    checkpoint** utuh (`runs/detect/runs_e022/` + `runs_e023/`), termasuk
+>    seluruh RT-DETR-L 3-seed dan 15 run E-023. Jangan melatih ulang apa pun
+>    sebelum memeriksa `runs/detect/` lebih dulu.
+> 2. **"7 dari 12 run selesai" terlalu optimistis.** Dihitung dari jumlah baris
+>    `results.csv` dan ada-tidaknya `hasil.json`, yang benar-benar lengkap hanya
+>    **3** run — `yolo26m_{rgb,rgbd,derau}_seed1337` (60 epoch + `hasil.json`).
+>    Empat run lain punya `best.pt` tetapi TERPUTUS: `yolo26m_rgb_seed2024`
+>    (15 epoch), `yolo26l_rgb_seed1337` dan `yolo26l_derau_seed1337` (18 epoch),
+>    `yolo26l_rgbd_seed1337` (**2 epoch**). Lima sisanya tidak ada sama sekali.
+>
+> Konsekuensinya **sisa pekerjaan 9 run, bukan 5**, dan perkiraan "~1 jam"
+> meleset sekitar dua kali lipat. Yang paling penting: `yolo26l` seed 1337
+> **tidak** lengkap, padahal justru yolo26l yang menopang klaim titik balik
+> kapasitas 21,9–26,3 jt parameter. Perlakukan seluruh matriks yolo26l sebagai
+> belum dijalankan.
 
 **1. Penjadwalan run — SUDAH DIPERBAIKI 1 Agustus.** Pustaka
 `reproduce/experiments/shell/jadwal.sh` menutup ketiga bug di bawah; jalankan

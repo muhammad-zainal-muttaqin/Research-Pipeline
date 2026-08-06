@@ -83,6 +83,12 @@ def main() -> int:
                     help="IoU minimum agar prediksi dianggap kemunculan tandan itu")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--keluaran", default=None)
+    # F-003 (P3) butuh rekam PER KEMUNCULAN, bukan laju agregat. E-028 hanya
+    # menyimpan agregat, sehingga plafon lintas-sisi tidak dapat dihitung ulang
+    # tanpa inferensi ulang. Flag ini menutup lubang itu; keluaran agregat di
+    # bawah TIDAK berubah, jadi angka E-028 tetap tereproduksi.
+    ap.add_argument("--dump-tandan", default=None,
+                    help="Tulis rekam per-tandan/per-kemunculan (JSON) untuk F-003.")
     args = ap.parse_args()
 
     from eval.eval_e022_pycoco import prediksi as prediksi_batch
@@ -111,6 +117,7 @@ def main() -> int:
     per_kelas_gt = Counter()
     per_kelas_gt_tidak_konsisten = Counter()
     pasangan_salah = Counter()
+    rekam_tandan: list[dict] = []
 
     for t in pohon:
         jf = DATA / "json" / f"{t}.json"
@@ -124,6 +131,7 @@ def main() -> int:
                 continue
             n_multi += 1
             terprediksi = []
+            kemunculan_rekam = []
             for a in app:
                 n_kemunculan += 1
                 stem = f"{t}_{a['side_index'] + 1}"
@@ -137,6 +145,21 @@ def main() -> int:
                     n_terlewat += 1
                 else:
                     terprediksi.append(terbaik["kelas"])
+                if args.dump_tandan:
+                    kemunculan_rekam.append({
+                        "sisi": a["side_index"] + 1,
+                        "stem": stem,
+                        "prediksi": terbaik["kelas"] if terbaik else None,
+                        "skor": round(terbaik["skor"], 4) if terbaik else None,
+                        "iou": round(skor_iou, 4) if terbaik else None,
+                    })
+            if args.dump_tandan:
+                rekam_tandan.append({
+                    "pohon": t,
+                    "gt": b.get("class", "?"),
+                    "n_sisi": len(app),
+                    "kemunculan": kemunculan_rekam,
+                })
 
             if len(terprediksi) < 2:
                 continue          # tak cukup sisi terdeteksi untuk diuji
@@ -166,6 +189,12 @@ def main() -> int:
         "pasangan_kelas_bertabrakan": dict(pasangan_salah.most_common()),
     }
     print(json.dumps(lap, indent=2, ensure_ascii=False))
+    if args.dump_tandan:
+        d = Path(args.dump_tandan)
+        d.parent.mkdir(parents=True, exist_ok=True)
+        d.write_text(json.dumps({"meta": lap, "tandan": rekam_tandan},
+                                ensure_ascii=False))
+        print(f"-> dump tandan: {d} ({len(rekam_tandan)} tandan multi-sisi)")
     if args.keluaran:
         Path(args.keluaran).parent.mkdir(parents=True, exist_ok=True)
         Path(args.keluaran).write_text(json.dumps(lap, indent=2, ensure_ascii=False))

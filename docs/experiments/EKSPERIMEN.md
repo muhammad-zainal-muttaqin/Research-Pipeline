@@ -35,6 +35,21 @@ di repo ini agar tiap perintah reproduksi tetap punya sumbernya; artefak besar
 (bobot, dataset turunan) tidak diarsipkan karena bisa dibuat ulang dari skrip —
 lihat [`reproduce/experiments/README.md`](../../reproduce/experiments/README.md).
 
+> **Seri F — Formulasi, dibuka 6 Agustus 2026.** Mulai dari `F-001`, log ini
+> memuat dua penomoran. **Seri E** adalah eksperimen diagnostik dan pembanding
+> (praproses, titik fusi, sapuan kapasitas, varians seed/split). **Seri F**
+> adalah perubahan **formulasi dan arsitektur** di atas RF-DETR-L — yaitu satu-
+> satunya arah yang tersisa menurut pernyataan pengguna 21 Juli 2026 setelah
+> teknik siap-pakai dan tuning habis dijalankan (CLAUDE.md §"Pernyataan pengguna").
+> Isinya tiga komponen — K1 cabang frekuensi ber-gate init-nol, K2 kepala ordinal
+> kumulatif berpenjaga-peringkat, K3 konsistensi query lintas-sisi — masing-masing
+> didahului gerbang penyaring yang dapat menggugurkannya tanpa GPU. Aturan
+> append-only, satu entri satu hipotesis falsifiable, dan kewajiban mencatat hasil
+> negatif berlaku sama persis. Rangkuman per-ide: [SR-017](SR/SR-017-sintesis-deep-research.md).
+>
+> Nomor `E-033` sudah terpakai dua kali (rentang metrik depth, 6 Agustus 2026),
+> jadi seri F **bukan** kelanjutan penomoran E — ia berjalan paralel.
+
 Format tiap entri:
 
 ```
@@ -2102,3 +2117,615 @@ MULAI), bukan pemeriksaan keberadaan hasil.
 lalu `shell/eval_e023_par.sh`, lalu `eval/ringkas_e023.py`. Bukti:
 `evidence/experiments/results/E-023/paired_{awal,mid,late,derau}_vs_rgb_seed{42,1337,2024}.json`;
 kurva latihan + hash bobot 15 run di direktori yang sama.
+## E-033 — Rentang metrik kanal depth: 0,3/8,0 (salah) vs 0,8/15,0 (terkalibrasi) (2026-08-06) · SR-015
+
+**Hipotesis** — `fourch.Z_NEAR/Z_FAR` di jalur produksi masih 0,3/8,0, sedangkan
+E-022 memilih 0,8/15,0 dari histogram split train. Rentang yang salah membuang
+sebagian besar jangkauan kanal: pada 60 citra train terukur entropi **6,190 bit
+vs 7,627 bit**, median level **23 vs 72** dari 255, dan **10,22% vs 0,40%**
+piksel mentok di level 1. Kalau kerugian informasi sebesar itu berdampak pada
+deteksi, lengan z08 harus mengalahkan lengan z03 secara konsisten.
+
+Ini menguji satu kandidat penyebab yang MASIH TERBUKA di SR-015 §7b setelah
+titik fusi dicoret: **kualitas kanal depth itu sendiri**.
+
+**Yang akan memalsukan** (ditetapkan sebelum satu angka pun dibaca):
+- **DIPALSUKAN** (rentang tidak berdampak) bila |Δ mAP50| ≤ 0,015 pada ketiga
+  arsitektur, ATAU tanda Δ tidak konsisten antar arsitektur.
+- **DIKONFIRMASI** bila tanda Δ konsisten (z08 > z03) pada ketiga arsitektur
+  DAN sekurang-kurangnya satu CI95 tidak memuat nol.
+- Selain itu = **INDIKASI**.
+
+**Cara** — 3 arsitektur × 2 lengan = 6 run. Seed 42 saja, 30 epoch, **tanpa
+early stopping** (`patience=epochs` untuk ultralytics, `early_stopping=False`
+untuk rfdetr), split SawitMVC-Depth seed42 (980/140/288 citra, 72 pohon uji).
+
+| arsitektur | bobot awal | batch | catatan |
+|---|---|---|---|
+| YOLO26n | `yolo26n.pt` | 16 | ultralytics 8.4.103 |
+| RT-DETR-L | `rtdetr-l.pt` | 8 | batch 8 (bukan 16) agar dua lengan muat serentak; identik di kedua lengan |
+| RF-DETR Nano | pratlatih rfdetr | 8 (grad-accum 2) | normalisasi kanal depth dari train saja |
+
+**Kedua lengan hanya berbeda pada folder PNG depth.** Set z03 dibangkitkan
+dengan `build/reproject_depth.py --z-near 0.3 --z-far 8.0`, yaitu jalur
+reproyeksi yang PERSIS sama dengan set z08 — kontrolnya: cakupan piksel valid
+rata-rata identik **0,71032** di kedua set, jadi geometri, z-buffer, dan tambal
+lubangnya benar-benar sama dan yang berbeda hanya pengodean.
+
+Pagar keadilan (identik di kedua lengan, diverifikasi dari `args.yaml`):
+`hsv_h=hsv_s=hsv_v=0` (RandomHSV melewati citra 4-kanal secara diam), modality
+dropout 0, inflasi conv pertama dari bobot pratlatih (model **dan** EMA),
+`deterministic=True`, seed 42, imgsz/resolution 640.
+
+**Cacat yang ditutup sebelum run** — `DEPTH_DIR` di-hardcode di
+`train/train_rfdetr_4ch.py`, `eval/eval_e022_pycoco.py`,
+`eval/eval_rfdetr_e022.py`, dan diwarisi `eval/eval_e022_paired.py`. Tanpa
+`--depth-dir`, bobot z03 akan dinilai memakai depth z08 — ketidakcocokan
+latih/uji yang senyap dan akan memalsukan efek besar yang sebetulnya artefak.
+Keempat skrip kini menerima folder depth eksplisit per lengan.
+
+Evaluasi: pycocotools protokol tunggal, bootstrap berpasangan 2000× pada tingkat
+POHON. `hasil.json` trainer tidak dipakai untuk membandingkan lengan [E-025].
+
+**Batas yang melekat pada rancangan ini, jangan dihaluskan:**
+- **Satu seed.** E-032 mengukur rentang antar-seed **0,0354** pada lengan `awal`
+  YOLO26n — lebih besar daripada seluruh efek yang pernah terukur di E-022.
+  CI bootstrap di sini mengukur galat pencuplikan SET UJI, **bukan** varians
+  seed. Δ yang "signifikan" di sini karenanya bukti yang lebih lemah daripada
+  Δ signifikan di E-032.
+- **30 epoch**, bukan 60 atau 150. Angka absolutnya tidak sebanding dengan
+  E-022/E-027/E-030/E-032 maupun dengan E-021.
+- **Tanpa lengan RGB.** Yang diuji murni kontras z08 vs z03; eksperimen ini
+  tidak dapat menjawab apakah kanal depth menolong sama sekali.
+- RT-DETR-L memakai batch 8, berbeda dari E-022 yang memakai 16. Sah untuk
+  kontras di dalam arsitektur, tidak sah untuk dibandingkan lintas eksperimen.
+
+**Hasil** — Δ = z08 − z03, pycocotools, bootstrap berpasangan 2000× per pohon
+(72 pohon, 288 citra uji). `*` = CI95 tidak memuat nol.
+
+| metrik | YOLO26n | RT-DETR-L | RF-DETR Nano |
+|---|---|---|---|
+| mAP50 z03 (rentang salah) | 0,3485 | 0,4021 | 0,4351 |
+| mAP50 z08 (terkalibrasi) | 0,3707 | 0,4126 | 0,4539 |
+| **Δ mAP50** | **+0,0222** | **+0,0105** | **+0,0188** |
+| CI95 Δ mAP50 | [−0,0101; +0,0571] | [−0,0285; +0,0546] | [−0,0155; +0,0558] |
+| frac. bootstrap positif | 0,905 | 0,712 | 0,848 |
+| Δ B1 | −0,0029 | **−0,0648** * | +0,0071 |
+| Δ B2 | +0,0067 | −0,0089 | −0,0367 |
+| Δ B3 | **+0,0876** * | +0,0678 | +0,0659 |
+| Δ B4 | −0,0026 | +0,0480 | +0,0390 |
+
+Rerata Δ mAP50 **+0,0172**, rentang antar-arsitektur 0,0117.
+Rerata Δ B3 **+0,0738**, rentang 0,0217.
+
+**Putusan — INDIKASI.** Kriteria yang ditetapkan di muka tidak terpenuhi ke arah
+mana pun:
+
+- **Tidak DIPALSUKAN.** Tanda Δ mAP50 **positif pada ketiga arsitektur**, dan dua
+  dari tiga melebihi ambang 0,015.
+- **Tidak DIKONFIRMASI.** Tidak satu pun CI95 Δ mAP50 mengecualikan nol.
+
+Pola sekunder yang paling tahan: **Δ B3 positif pada ketiganya**
+(+0,0876 / +0,0678 / +0,0659; fraksi bootstrap positif 0,989 / 0,917 / 0,900),
+signifikan pada YOLO26n. Rentang antar-arsitekturnya hanya 0,0217 — sempit untuk
+tiga arsitektur yang mAP50 absolutnya berbeda 0,09.
+
+**Kontra-pola yang tidak boleh disembunyikan:** RT-DETR-L kehilangan B1 secara
+signifikan (−0,0648 [−0,1123; −0,0130], fraksi positif 0,004), sementara dua
+arsitektur lain tidak (−0,0029 dan +0,0071). Jadi rentang yang benar **bukan**
+menang di semua lini pada semua arsitektur; pada RT-DETR-L ia menggeser kinerja
+dari B1 ke B3/B4. B2 juga campur (+0,0067 / −0,0089 / −0,0367).
+
+**Mengapa ini belum boleh disebut temuan:** E-032 mengukur ayunan antar-seed
+**0,0354** pada YOLO26n — **lebih besar daripada rerata Δ mAP50 +0,0172 di sini**.
+Eksperimen ini satu seed, jadi CI bootstrapnya mengukur galat pencuplikan set uji
+saja dan tidak dapat memisahkan efek rentang dari lotere inisialisasi. Yang
+memberi bobot lebih pada Δ B3 bukan besarnya, melainkan **tanda yang sepakat di
+tiga arsitektur berbeda** — replikasi lintas-arsitektur, bukan lintas-seed.
+Perlu diingat pula B3 hanya ~14% kotak dengan AP50 dasar rendah (0,16–0,39),
+jadi ia kelas paling berderau; konsistensi tandanya yang menarik, bukan
+magnitudonya sendirian.
+
+**Dampak**
+
+1. **Untuk SR-015 §7b:** "kualitas kanal depth" tetap kandidat penyebab yang
+   hidup, dan kini punya bukti terarah pertamanya — memperbaiki pengodean
+   menggerakkan angka ke arah yang diprediksi pada tiga arsitektur sekaligus.
+   Belum cukup untuk mengubah putusan SR-015; fusi awal tetap DIPALSUKAN.
+2. **Untuk jalur produksi:** `reproduce/pipeline/fourch.py` masih memakai
+   `Z_NEAR/Z_FAR = 0,3/8,0` sebagai konstanta modul, tanpa flag CLI. Eksperimen
+   ini memberi alasan empiris untuk membongkarnya: rentang wajib parameter
+   eksplisit dan wajib ditulis ke `depth_meta.json` bersama bobot, sebagaimana
+   jalur eksperimen sudah melakukannya.
+3. **Uji lanjutan yang dibenarkan hasil ini:** ulangi kontras z08 vs z03 pada
+   **3 seed** untuk satu arsitektur (YOLO26n, paling murah). Tanpa itu +0,0172
+   tidak dapat dipisahkan dari derau seed, dan klaim apa pun akan mengulang
+   kesalahan yang menjatuhkan E-022.
+
+**Cacat lingkungan yang ditemukan saat menjalankan** (bukan hasil ilmiah, tetapi
+menghabiskan waktu nyata dan akan berulang):
+
+- `nohup … &` dari shell yang time-out ikut terbunuh bersama grup prosesnya —
+  dua run RT-DETR mati senyap setelah mencetak "Starting training". Pakai
+  `setsid`.
+- venv `.venv` tidak lengkap dibangun ulang: `tqdm`, `huggingface_hub`,
+  `pytorch_lightning`, `faster_coco_eval`, `albumentations` semuanya hilang dan
+  masing-masing menggagalkan RF-DETR pada titik yang berbeda. `requirements.txt`
+  tidak menyebut empat yang terakhir (semuanya dependensi tak langsung `rfdetr`).
+- `pip install albumentations` menarik `opencv-python-headless 5.0.0.93` —
+  persis jebakan yang dicatat STATUS.md §2. Dikembalikan ke `4.11.0.86`.
+
+**Reproduksi** — `build/reproject_depth.py --z-near 0.3 --z-far 8.0 --tujuan
+depth_png_z03_8` (set z08 sudah ada), lalu `train/train_depth4ch.py` (yolo26n,
+rtdetr-l) dan `train/train_rfdetr_4ch.py --depth-dir …`, lalu
+`eval/eval_e022_paired.py --depth-dir-a/--depth-dir-b` dan
+`eval/eval_rfdetr_e022.py --depth-dir-a/--depth-dir-b`. Bukti:
+`evidence/experiments/results/E-033/paired_{yolo26n,rtdetrl,rfdetrnano}.json`.
+
+## E-033b — Replikasi 3 seed E-033: efek mAP50 TIDAK bertahan (2026-08-06) · SR-015
+
+**Hipotesis** — E-033 memberi INDIKASI: Δ mAP50 (z08 − z03) positif pada tiga
+arsitektur, rerata +0,0172, tetapi seluruh CI memuat nol dan seluruhnya satu
+seed. E-032 mengukur ayunan antar-seed 0,0354 pada YOLO26n — lebih besar
+daripada efek itu. Kalau efek rentang metrik nyata, tandanya harus bertahan
+ketika seed diganti.
+
+**Yang akan memalsukan** (kriteria E-032 dipakai apa adanya): tanda Δ tidak
+sepakat pada 3 seed.
+
+**Cara** — 4 run baru YOLO26n (seed 1337 dan 2024 × lengan z08/z03), resep
+IDENTIK dengan E-033 seed 42: 30 epoch, tanpa early stopping, hsv=0, dropout=0,
+inflasi conv pertama, split `seed42` (split tidak diubah — yang divariasikan
+hanya seed inisialisasi). Evaluasi sama: pycocotools, bootstrap berpasangan
+2000× per pohon.
+
+**Hasil — Δ mAP50 dan per kelas, YOLO26n**
+
+| metrik | seed 42 | seed 1337 | seed 2024 | rerata | rentang |
+|---|---|---|---|---|---|
+| **mAP50** | **+0,0222** | **−0,0052** | **−0,0012** | **+0,0053** | 0,0274 |
+| mAP50-95 | +0,0050 | −0,0048 | −0,0095 | −0,0031 | 0,0146 |
+| B1 | −0,0029 | **−0,0555** * | −0,0417 | −0,0333 | 0,0526 |
+| B2 | +0,0067 | +0,0162 | −0,0149 | +0,0027 | 0,0310 |
+| B3 | **+0,0876** * | +0,0216 | +0,0566 | +0,0553 | 0,0660 |
+| B4 | −0,0026 | −0,0032 | −0,0049 | −0,0036 | 0,0023 |
+
+`*` = CI95 tidak memuat nol.
+
+mAP50 absolut: z03 = 0,3485 / 0,3213 / 0,3613 (rentang antar-seed **0,0400**);
+z08 = 0,3707 / 0,3161 / 0,3601 (rentang **0,0546**). **Ayunan seed pada satu
+lengan lebih besar daripada seluruh selisih antar-lengan yang pernah terukur.**
+
+**Putusan — DIPALSUKAN untuk mAP50 agregat.** Tanda Δ mAP50 tidak sepakat
+(+ / − / −). Angka +0,0222 pada seed 42 — dasar seluruh INDIKASI di E-033 —
+adalah **pencilan seed**, bukan efek. Rerata turun dari +0,0222 menjadi +0,0053,
+lebih kecil daripada ambang 0,015 yang ditetapkan di muka.
+
+Ini persis mode kegagalan yang menjatuhkan E-022 dan kemudian dikoreksi E-027:
+satu seed yang kebetulan bagus dibaca sebagai temuan. Kali ini tertangkap
+sebelum masuk laporan.
+
+**Yang TETAP berdiri — redistribusi antar kelas.** Dua pola tidak ikut runtuh,
+dan keduanya konsisten lintas seed DAN lintas arsitektur:
+
+| kelas | 3 seed YOLO26n | RT-DETR-L | RF-DETR Nano | rerata 5 pengukuran |
+|---|---|---|---|---|
+| **B3** | +0,0876 * / +0,0216 / +0,0566 | +0,0678 | +0,0659 | **+0,0599**, positif **5/5** |
+| **B1** | −0,0029 / −0,0555 * / −0,0417 | −0,0648 * | +0,0071 | **−0,0316**, negatif **4/5** |
+
+Jadi memperbaiki rentang metrik **memindahkan kinerja dari B1 ke B3**, dan
+kedua efek itu saling meniadakan di agregat. Itu menjelaskan mengapa mAP50
+tampak bergerak positif di E-033 pada tiga arsitektur namun tidak pernah
+signifikan: yang bergerak bukan total, melainkan distribusinya.
+
+Penjelasan yang konsisten dengan fisika pengodean, **belum diuji**: rentang
+0,3/8,0 memampatkan seluruh adegan ke level 1–122 dengan 10,2% piksel mentok di
+level 1, sehingga jarak menengah-jauh kehilangan resolusi. Rentang 0,8/15,0
+memulihkan resolusi di sana tetapi menghabiskan lebih sedikit level untuk objek
+dekat. B1 (matang, cenderung terlihat besar/dekat) dan B3 tidak berada pada
+rentang jarak yang sama. Ini hipotesis pasca-hoc — jangan dikutip sebagai
+temuan tanpa uji terstratifikasi menurut jarak.
+
+**Dampak**
+
+1. **INDIKASI E-033 dicabut untuk mAP50.** Jangan mengutip +0,0172 maupun
+   +0,0222. Yang boleh dikutip: rentang metrik tidak memperbaiki mAP50 agregat
+   pada 3 seed, dan menggeser B1 → B3.
+2. **SR-015 §7b:** "kualitas kanal depth" tetap kandidat penyebab yang hidup,
+   tetapi bukti terarah pertamanya ternyata **bukan** kenaikan agregat. Kalau
+   jalur depth diteruskan, ukuran yang layak dipantau adalah AP per kelas
+   terstratifikasi jarak, bukan mAP50.
+3. **Jalur produksi:** alasan memperbaiki `fourch.Z_NEAR/Z_FAR` sekarang
+   **bukan** "menaikkan mAP" — melainkan bahwa rentang yang salah mengubah
+   perilaku per kelas secara sistematis dan diam-diam. Rentang tetap wajib jadi
+   parameter eksplisit yang tercatat bersama bobot, tetapi jangan dijanjikan
+   memberi kenaikan angka.
+4. **Pelajaran proses:** 4 run YOLO26n paralel berebut `labels.cache` bersama di
+   folder dataset (`/workspace/SawitMVC-Depth/data/labels.cache`); dua run mati
+   dengan `FileNotFoundError`. Anggaran VRAM saja tidak cukup — run serentak
+   juga berbagi berkas cache. Geser waktu peluncuran atau pisahkan cache.
+
+**Reproduksi** — `train/train_depth4ch.py --arch yolo26n --modal rgbd --seed
+{1337,2024} --depth-dir {depth_png,depth_png_z03_8} --epochs 30`, lalu
+`eval/eval_e022_paired.py --depth-dir-a/--depth-dir-b`. Bukti:
+`evidence/experiments/results/E-033/paired_yolo26n_seed{1337,2024}.json`.
+
+## F-002 — (P2) Apakah frekuensi tinggi memisahkan tandan dari PELEPAH? (2026-08-06) · gerbang K1 · [SR-017](SR/SR-017-sintesis-deep-research.md)
+
+**Hipotesis** — K1 (cabang frekuensi samping) bersandar pada anggapan bahwa
+respons frekuensi tinggi menyoroti isi tandan. E-011 sudah mengukur sesuatu yang
+mirip — Laplacian +0,0458 di atas kendali pada B4, mengungguli Sobel +0,0367 —
+tetapi pembandingnya **cincin sekeliling**, yang memuat apa saja: langit, batang,
+tanah, tandan tetangga.
+
+Mode gagal yang dikhawatirkan lebih spesifik: pelepah sawit adalah struktur
+berfrekuensi sangat tinggi (anak daun tipis berulang), dan B4 yang gelap
+kehijauan justru kelas yang paling menyatu dengannya. Bila frekuensi tinggi
+tidak memisahkan tandan dari **pelepah**, cabang K1 akan belajar menyalakan
+pelepah, dan kenaikan apa pun yang muncul bukan dari mekanisme yang diklaim.
+
+**Dipalsukan bila** tidak ada satu pun lengan frekuensi tinggi yang menaikkan
+AUC tandan-vs-pelepah lebih dari **+0,02** di atas kendali kotak acak pada B4
+(ambang diambil dari E-011 supaya kedua uji terbaca pada skala yang sama).
+
+**Cara** — `reproduce/experiments/analysis/freq_vs_pelepah.py`, 250 citra
+`SawitMVC-test`, 1.114 kotak GT terukur (1 kotak sebagian ditolak karena wilayah
+pelepahnya < 200 piksel). Wilayah pembanding didefinisikan ulang:
+
+    pelepah = cincin sekeliling kotak  MINUS  seluruh kotak GT tandan lain
+
+`asli`/`gradmag`/`laplacian` disalin persis dari `contrast_boost_test.py` agar
+sebanding dengan E-011. Sub-band Haar satu tingkat (LH/HL/HH) ditulis langsung
+dengan numpy — `pywt` tidak terpasang. Ketiga sub-band dihaluskan Gaussian
+sigma=2 **identik** dengan perlakuan gradmag/laplacian di E-011; tanpa itu
+perbandingan DWT vs Laplacian tercemar beda penghalusan, bukan beda kandungan
+frekuensi. Kendali kotak acak berukuran sama diperlakukan identik.
+
+**Hasil** — AUC pemisahan piksel isi-kotak vs pelepah:
+
+| Lengan | B1 | B2 | B3 | B4 | kendali | B4−kendali |
+|---|---|---|---|---|---|---|
+| asli (luminans) | 0,6016 | 0,6127 | 0,5889 | 0,5849 | 0,5694 | +0,0155 |
+| gradmag (Sobel) | 0,5790 | 0,5898 | 0,6052 | 0,6289 | 0,5681 | +0,0608 |
+| **laplacian** | 0,5804 | 0,5934 | 0,6133 | 0,6423 | 0,5702 | **+0,0721** |
+| dwt_lh | 0,5779 | 0,5918 | 0,6068 | 0,6325 | 0,5702 | +0,0623 |
+| dwt_hl | 0,5750 | 0,5818 | 0,6018 | 0,6286 | 0,5652 | +0,0634 |
+| **dwt_hh** | 0,5808 | 0,5927 | 0,6134 | 0,6403 | 0,5672 | **+0,0731** |
+| dwt_energi | 0,5818 | 0,5921 | 0,6113 | 0,6403 | 0,5683 | +0,0720 |
+
+**Putusan** — **LOLOS.** Lengan terbaik dwt_hh +0,0731, lebih dari tiga kali
+ambang +0,02. Mode gagal yang dikhawatirkan **tidak terjadi**: pemisahan terhadap
+pelepah justru LEBIH BESAR daripada terhadap cincin generik di E-011 (Laplacian
+0,0721 vs 0,0458).
+
+Dua pembacaan yang lebih penting daripada angka gerbangnya:
+
+1. **Urutan kelas monoton B1 < B2 < B3 < B4 pada SETIAP lengan frekuensi
+   tinggi**, dan terbalik pada luminans (di sana B4 justru paling rendah,
+   0,5849). Arah ini persis yang diramalkan mekanismenya: makin mentah, makin
+   gelap-kehijauan, makin menyatu dengan pelepah dalam intensitas — dan makin
+   terpisah dalam tekstur. Ini mereplikasi pembalikan urutan E-011 pada
+   pembanding yang lebih ketat.
+2. **Laplacian dan DWT-HH praktis seri** (0,0721 vs 0,0731; selisih 0,0010).
+   Pada dataset ini, sub-band DWT **tidak** membeli apa pun di atas Laplacian
+   biasa yang jauh lebih murah. Konsekuensinya untuk F-007: lengan Laplacian
+   bukan formalitas — ia pesaing sesungguhnya, dan **DWT wajib mengalahkannya**
+   untuk membenarkan mesin tambahannya.
+
+**Dampak** — K1 boleh dilanjutkan ke F-007. Lengan `laplacian` dinaikkan
+statusnya dari pembanding menjadi kandidat setara. Uji ini **tidak** membuktikan
+K1 akan menaikkan mAP; ia hanya menutup satu mode gagal yang dapat membatalkannya
+secara murah. Keterpisahan piksel bukan AP.
+
+**Reproduksi** — `python analysis/freq_vs_pelepah.py --images 250`. Bukti:
+`evidence/experiments/results/F-002/freq_vs_pelepah.json`.
+
+## F-003 — (P3) Plafon keras distilasi lintas-sisi (2026-08-06) · gerbang K3 · [SR-017](SR/SR-017-sintesis-deep-research.md)
+
+**Hipotesis** — K3 memindahkan keyakinan dari sisi yang benar ke sisi yang salah
+lewat graf `_confirmedLinks`. Mekanisme itu punya plafon keras yang dapat diukur
+tanpa melatih apa pun: **dari kemunculan tandan yang diprediksi salah kelas,
+berapa fraksi yang punya kemunculan BENAR pada sisi lain tandan fisik yang sama?**
+Bila mayoritas galat salah di semua sisi, tidak ada yang bisa ditransfer.
+
+**Dipalsukan bila** fraksi galat-yang-dapat-diselamatkan < **0,30**.
+
+**Cara** — `analysis/cross_side_consistency.py --dump-tandan` (flag baru; jalur
+agregatnya tidak diubah) lalu `analysis/plafon_lintas_sisi.py`. Bobot
+`runs_e022/yolo26n_sawitmvc_rgb_seed42`, `SawitMVC-test`, conf 0,25, IoU cocok
+0,5. Oracle identitas = `bunches[].appearances` dari `json/<pohon>.json`.
+
+Pemeriksaan kebenaran modifikasi: jalur agregat mereproduksi E-028 **persis** —
+511 tandan terukur, 119 tidak konsisten, laju **0,2329**.
+
+**Kenapa perlu inferensi ulang** — `results/E-028/konsistensi_sawitmvc_rgb_seed42.json`
+diperiksa langsung dan **hanya menyimpan laju agregat**; tidak ada satu pun
+prediksi per-sisi. Ini menjawab §9 butir 3 rencana: P3 tidak dapat dihitung dari
+berkas itu.
+
+**Hasil** — 1.022 tandan multi-sisi, 2.230 kemunculan: 1.078 benar, 408 salah
+kelas, 744 terlewat.
+
+| Plafon | n | fraksi | CI95 |
+|---|---|---|---|
+| **Kelas** (galat kelas punya sisi benar) | 114 / 408 | **0,2794** | [0,2353; 0,3235] |
+| **Kehadiran** (sisi terlewat punya sisi benar) | 368 / 744 | **0,4946** | [0,4583; 0,5309] |
+
+Sebaran sisi benar pada tandan yang bergalat: **194 tandan punya NOL sisi benar**,
+93 punya satu, 10 punya dua, 4 punya tiga. Dari 408 galat kelas, **294 (72%)
+salah di SEMUA sisi**.
+
+Per kelas GT (fraksi dapat diselamatkan): B1 0,5333 (16/30) · B3 0,4257 (43/101)
+· B2 0,2573 (44/171) · **B4 0,1038 (11/106)**.
+
+**Putusan** — **DIPALSUKAN untuk suku kelas, tetapi lemah.** Titik estimasi
+0,2794 di bawah ambang pra-daftar 0,30, jadi aturan yang ditulis sebelum melihat
+data mengikat dan K3 tidak diteruskan. **Tetapi CI95 [0,2353; 0,3235] memuat
+0,30** — data ini tidak dapat memisahkan keduanya. Ini pemalsuan lemah, bukan
+tegas, dan wajib dibaca demikian.
+
+Yang justru tegas adalah dua hal lain:
+
+1. **72% galat kelas salah di semua sisi.** Galat kelas bukan kecelakaan per
+   pandangan; ia sifat tandannya. Itu konsisten dengan E-028 (B2 paling ambigu)
+   dan dengan diagnosis (B) fotometrik di CLAUDE.md — ambiguitas B2↔B3 tidak
+   diselesaikan dengan melihat dari sisi lain.
+2. **B4 adalah kasus terburuk: 0,1038.** Dari 106 galat kelas B4, hanya 11 punya
+   saudara yang benar. Harapan bahwa K3 menolong B4 **tertutup**, dan itu
+   kebetulan kelas yang paling ingin ditolong.
+
+**Temuan sampingan yang TIDAK menyelamatkan gerbang ini** — plafon **kehadiran**
+0,4946, CI95 [0,4583; 0,5309], tegas di atas 0,30. Suku konsistensi kehadiran K3
+(sisi terlewat ditolong sisi yang mendeteksi) punya ruang hampir dua kali lipat
+suku kelas. Itu **mekanisme yang berbeda dengan plafon yang berbeda**, bukan
+penyelamat gerbang yang gagal. Bila mau dikejar, ia harus didaftarkan sebagai
+hipotesis tersendiri dengan ambangnya sendiri — bukan disisipkan ke K3 setelah
+melihat hasil ini.
+
+**KAVEAT PROKSI, wajib ikut dikutip** — bobot yang dipakai **yolo26n**, bukan
+RF-DETR-L (bobot E-021 hilang saat pod di-terminate). Angka ini menjawab
+"apakah ada ruang secara struktural", bukan "berapa besar ruangnya pada model
+final". Detektor lebih kuat menggeser plafon ke dua arah sekaligus: galat
+berkurang (pembilang turun) tetapi sisi terlewat juga berkurang (penyebut naik).
+Arah netonya tidak dapat ditebak dari sini. P3 definitif menunggu F-004.
+
+**Dampak** — **F-008 (K3) tidak dijalankan.** Anggaran seri turun ~13 jam GPU.
+Seri berlanjut dengan K1 (F-002 LOLOS) dan K2 (menunggu F-005). Karena tinggal
+dua komponen, syarat F-009 ("≥ 2 komponen lolos") sekarang menuntut **keduanya**
+lolos.
+
+**Reproduksi** —
+`python analysis/cross_side_consistency.py --bobot ../../runs/detect/runs_e022/yolo26n_sawitmvc_rgb_seed42/weights/best.pt --split-dir ../../evidence/experiments/splits_rgb/sawitmvc --data-root /workspace/SawitMVC/data --dump-tandan <dump>`
+lalu `python analysis/plafon_lintas_sisi.py --dump <dump>`. Bukti:
+`evidence/experiments/results/F-003/{plafon_lintas_sisi,konsistensi_ulang_yolo26n}.json`.
+
+## F-001 — Pemulihan prasyarat seri F + probe VRAM RTX A4500 (2026-08-06) · [SR-017](SR/SR-017-sintesis-deep-research.md)
+
+**Hipotesis** — Seri F seluruhnya berdiri di atas RF-DETR-L. Sebelum satu
+komponen pun dirancang, tiga hal harus dipastikan: dataset RF-DETR dapat
+dibangun ulang, bobot pratlatih dapat diperoleh kembali, dan **resep E-021 muat
+di GPU yang sekarang**. Yang terakhir bukan formalitas: E-021 dilatih di NVIDIA
+L4 23 GB, sedangkan mesin ini RTX A4500 **20,4 GB — 2,6 GB lebih kecil**.
+
+**Dipalsukan bila** resep E-021 (batch 8 / grad-accum 2 @1280) OOM, sehingga
+seluruh seri harus memakai konfigurasi berbeda dari baseline yang dibandingkan.
+
+**Cara** — `build/build_rfdetr_ds.py` untuk dataset; konstruksi `RFDETRLarge()`
+mengunduh bobot pratlatih; lalu `train/train_rfdetr.py --smoke` 1 epoch pada
+resolusi 1280 dengan VRAM disampel tiap 2 detik.
+
+**Temuan keadaan awal (diperiksa langsung di disk, bukan diasumsikan)**
+
+| Hal | Keadaan |
+|---|---|
+| Bobot RF-DETR-L E-021 | **HILANG.** `find / -name "checkpoint*.pth"` menemukan 6 berkas, semuanya `rfdetrnano` milik E-033 |
+| Bobot pratlatih | **HILANG.** Hanya `rf-detr-nano.pth` di `~/.roboflow/models/`; `rf-detr-large-2026.pth` diunduh ulang (130 MB, MD5 tervalidasi) |
+| `rfdetr_ds` | **KOSONG** (0 citra). Dibangun ulang jadi 3000/404/588 symlink |
+| `splits_rgb/sawitmvc` | **UTUH**, path absolutnya masih resolve |
+| Kriteria klasifikasi | **IA-BCE** (`ia_bce_loss: true`), bukan softmax CE — lihat Dampak |
+
+**Hasil** —
+
+| Ukuran | Nilai |
+|---|---|
+| VRAM puncak, batch 8 @1280 | **10.331 MiB** dari 20.470 |
+| Kelonggaran | 10.139 MiB |
+| **Paralelisme maksimum** | **1** — 2 × 10.331 = 20.662 > 20.470 |
+| Menit per epoch (latih + val) | **9,2** |
+| Param model | 35,6 jt (E-021 mencatat 35,7 jt) |
+| `scales: [1440]` di log | **tidak muncul** — jebakan `CATATAN-TEKNIS-E021.md` #2 terhindar |
+| Smoke 1 epoch | val mAP50 0,4941 · test mAP50 0,5230 |
+
+**Putusan** — **DIKONFIRMASI.** Resep E-021 muat apa adanya; tidak perlu turun
+ke batch 4. Konfigurasi dikunci untuk SELURUH lengan seri F supaya perbandingan
+baseline↔perlakuan tidak tercemar beda batch.
+
+Angka smoke 1 epoch **bukan hasil** — ia hanya bukti pipeline hidup. Jangan
+dikutip. E-021 mencapai val 0,5695 pada epoch terbaiknya (epoch 9 dari 19).
+
+**Dampak** —
+
+1. **Paralelisme 1 adalah kendala keras.** Kelonggaran 10,1 GB terlihat lega
+   tetapi tidak cukup untuk run RF-DETR-L kedua. Ini persis jebakan yang dicatat
+   CLAUDE.md ("3 × 6,6 = 19,7 dari 19,7 GiB"). Seluruh run seri F **berurutan**;
+   yang dapat diparalelkan hanya pekerjaan CPU.
+2. **Anggaran dihitung ulang dari angka terukur**, bukan diskalakan dari L4:
+   ~9,2 mnt/epoch × ~19 epoch ≈ **3 jam per seed**, jadi F-004 ≈ **9 jam**.
+3. **Kriteria klasifikasi RF-DETR terbaca langsung dari kode** — menjawab
+   pertanyaan yang membuka seri ini. `criterion.py:268-296`: IA-BCE, bobot
+   positif `t = σ(z)^α · IoU^(1−α)` dengan `α = 0,25`, di-clamp 0,01, di-detach.
+   Skor deteksi = `σ(z)` per kelas **independen**, top-k `num_select=300` atas
+   grid datar Q×C (`postprocess.py:106`). **Tidak ada simpleks softmax.**
+   Konsekuensinya untuk K2: residu ordinal harus berupa offset logit aditif
+   ber-mean nol antar 4 kelas, bukan pergeseran pada simpleks; dan karena mAP
+   COCO dihitung per kelas, yang dapat digerakkan residu itu adalah selisih
+   logit **antar kelas di dalam query yang sama** — itulah yang diukur F-005.
+
+**Reproduksi** — `build/build_rfdetr_ds.py --splits ../../evidence/experiments/splits_rgb/sawitmvc --labels /workspace/SawitMVC/data/labels --output rfdetr_ds`,
+lalu `train/train_rfdetr.py --dataset rfdetr_ds --resolution 1280 --batch 8 --grad-accum 2 --workers 8 --smoke --output <dir>`.
+Bukti: `evidence/experiments/results/F-001/prasyarat.json`.
+
+## F-005 — (P1) Massa selisih logit antar-kelas di dalam query yang sama (2026-08-06) · gerbang K2 · [SR-017](SR/SR-017-sintesis-deep-research.md)
+
+**Hipotesis** — K2 menambahkan residu ordinal ber-mean nol yang **di-clip ke ±ε**.
+Clip itu memberi jaminan penjaga-peringkat: urutan hanya dapat berubah bila
+selisih logit < 2ε. Jaminan itu membuktikan **keamanan, bukan potensi naik** — ia
+tidak menjamin ada cukup kerugian AP yang tinggal di pasangan rapat untuk
+direbut. Gerbang ini mengukur massanya.
+
+Rumusannya diubah dari rencana asli, dan alasannya dibaca dari kode (F-001):
+RF-DETR memakai IA-BCE dengan `sigmoid` per kelas independen dan top-k atas grid
+datar Q×C — tidak ada simpleks softmax — sedangkan mAP COCO dihitung per kelas.
+Maka yang dapat digerakkan residu ber-mean nol adalah selisih logit **antar kelas
+di dalam query yang sama**:
+
+$$\Delta = z_{q,c_\text{benar}} - z_{q,c_\text{teratas salah}}$$
+
+**Dipalsukan bila** fraksi galat kelas dengan $|\Delta| < 2\varepsilon = 0{,}6$
+**< 0,30**.
+
+**Cara** — `analysis/massa_selisih_logit.py` atas
+`results/F-004/logits_test_seed42.npz`, yaitu dump logit mentah seluruh query
+dari **checkpoint konvergen** `runs_f004/rfdetrl_rgb_seed42/checkpoint_best_ema.pth`
+(seed 42, best epoch 5, val mAP50 0,5708). `SawitMVC-test`, pencocokan query↔GT
+pada IoU ≥ 0,5.
+
+**Checkpoint konvergen itu syarat, bukan detail.** Ukuran ini sensitif terhadap
+skala logit: model yang belum konvergen punya logit rapat sehingga fraksinya
+bias TINGGI. Terukur langsung — pada checkpoint probe 1-epoch F-001 fraksinya
+0,7666 dengan median |Δ| 0,3086; pada checkpoint konvergen turun ke 0,7113
+dengan median melebar ke 0,3633. Arahnya persis seperti yang dikhawatirkan, dan
+angka yang dipakai adalah yang konvergen.
+
+**Hasil** — 2.612 kotak GT, hanya **27 (1,0%) tidak tertangkap query mana pun**;
+918 salah kelas, 1.667 benar.
+
+| | nilai |
+|---|---|
+| Galat kelas dalam pita \|Δ\| < 0,6 | **653 / 918 = 0,7113** |
+| Kuantil \|Δ\| galat | p10 0,060 · p25 0,159 · **p50 0,363** · p75 0,662 · p90 1,135 |
+
+Per kelas GT (fraksi dalam pita): **B3 0,8493** (355/418) · B1 0,7551 (74/98) ·
+B4 0,6087 (98/161) · **B2 0,5228** (126/241).
+
+Pasangan tertukar, seluruhnya **kelas bertetangga**: B3→B4 202 · B3→B2 199 ·
+B2→B3 177 · B4→B3 147 · B1→B2 90 · B2→B1 57.
+
+Paparan risiko (dilaporkan, **bukan penggugur**, dan ini didaftarkan sebelum
+melihat data): **769 query yang sudah BENAR juga berada di dalam pita**, jadi
+rasio untung-rugi **0,849** — yang benar-berisiko sedikit LEBIH BANYAK daripada
+yang salah-dapat-diperbaiki.
+
+**Putusan** — **LOLOS.** 0,7113 jauh di atas ambang 0,30. Potensi naik K2 tidak
+tertutup secara matematis.
+
+Tiga pembacaan yang tidak boleh dihaluskan:
+
+1. **Ini bukan ramalan kenaikan mAP.** Gerbang ini hanya menyatakan bahwa
+   ruangnya ada. Apakah kepala ordinal benar-benar mengarahkan residu ke sisi
+   yang benar adalah pertanyaan F-006, bukan pertanyaan ini.
+2. **Rasio untung-rugi 0,849 < 1.** Residu ber-clip menyentuh lebih banyak query
+   benar daripada query salah. Kepala ordinal karena itu harus **informatif**,
+   bukan sekadar aktif; residu yang mendekati acak berekspektasi merugikan. Inilah
+   yang membuat gate α dan clip ±ε bukan hiasan melainkan syarat keselamatan.
+3. **B2 justru yang paling sedikit dapat direbut (0,5228), bukan paling banyak.**
+   Rancangan meramalkan K2 paling menolong B2↔B3. Massa terbesar ternyata di
+   **B3** (0,8493). Galat B2 lebih sering jauh dari batas — yakin tetapi salah —
+   dan itu konsisten dengan E-028 yang menempatkan B2 sebagai kelas paling ambigu
+   (0,434). Bila F-006 memberi kenaikan, kenaikannya **diperkirakan di B3, bukan
+   B2**; kenaikan di B2 justru perlu dijelaskan, bukan dirayakan.
+
+**Dampak** — K2 boleh dilanjutkan ke F-006. Dengan K1 (F-002) dan K2 (F-005)
+sama-sama lolos dan K3 gugur, **kedua komponen tersisa lolos gerbangnya**,
+sehingga syarat F-009 ("≥ 2 komponen lolos") terpenuhi bila keduanya juga lolos
+gerbang hasilnya nanti.
+
+**Reproduksi** — `python analysis/massa_selisih_logit.py --npz ../../evidence/experiments/results/F-004/logits_test_seed42.npz`.
+Bukti: `evidence/experiments/results/F-005/massa_selisih_logit_seed42.json`.
+
+## F-004 — Baseline RF-DETR-L 3 seed: varians seed jalur RGB akhirnya terukur (2026-08-06) · [SR-017](SR/SR-017-sintesis-deep-research.md)
+
+**Hipotesis** — Seluruh seri F membandingkan perlakuan terhadap baseline
+RF-DETR-L. Dua hal harus dipenuhi lebih dulu: (a) resep E-021 masih tereproduksi
+setelah bobotnya hilang dan GPU-nya berganti, dan (b) **varians seed jalur RGB
+harus diukur** — sampai kini nol terukur untuk RF-DETR pada SawitMVC. Ambang
++0,05 yang dipakai seluruh rencana diturunkan dari E-027 (0,0321) dan E-031
+(0,0488), keduanya diukur pada **YOLO26n di SawitMVC-Depth**, bukan jalur ini.
+
+**Dipalsukan bila** ketiga seed menyimpang jauh dari E-021, sehingga tidak ada
+baseline sah untuk dibandingkan.
+
+**Cara** — `shell/f004_baseline.sh`: `train/train_rfdetr.py` seed 42/1337/2024,
+resep dikunci persis ke `training_config.json` E-021 (resolusi 1280, batch 8,
+grad-accum 2, workers 8, epochs 60, early stopping patience 8 min-delta 0,001,
+EMA, `multi_scale=False`, `expanded_scales=False`, `ia_bce_loss=True`).
+Berurutan — dua run RF-DETR-L serentak = 20.662 MiB > 20.470 (F-001).
+Total 5j40m (09:36:57 → 15:17:18), rata-rata 1j53m per seed.
+
+**Hasil** —
+
+| seed | val mAP50 (EMA) | val mAP50-95 | test mAP50 | test mAP50-95 | epoch terbaik | total epoch |
+|---|---|---|---|---|---|---|
+| 42 | 0,5708 | 0,2660 | 0,5997 | 0,2738 | 5 | 14 |
+| 1337 | 0,5708 | 0,2635 | 0,5900 | 0,2700 | 5 | 16 |
+| 2024 | 0,5796 | 0,2699 | 0,5951 | 0,2677 | 5 | 14 |
+| **rerata** | **0,5738** | 0,2665 | **0,5949** | **0,2705** | — | — |
+
+**Varians seed jalur RGB, RF-DETR-L, SawitMVC-test:**
+
+| Metrik | SD | Rentang |
+|---|---|---|
+| test mAP50 | **0,0049** | 0,0097 |
+| test mAP50-95 | 0,0031 | 0,0062 |
+| val mAP50 | 0,0051 | 0,0088 |
+
+Perbandingan reproduksi harus like-for-like: `evaluation.json` E-021 (jalur
+`run_test`, checkpoint `best_total`) mencatat test mAP50 **0,5837**; F-004 lewat
+jalur yang SAMA memberi rerata **0,5949**. Angka **0,6038** yang biasa dikutip
+berasal dari evaluasi EMA-konsisten `eval_all_pycoco.py` yang terpisah, jadi
+tidak sebanding dengan tabel di atas.
+
+**Putusan** — **DIKONFIRMASI.** Resep tereproduksi pada GPU dan checkpoint baru;
+ketiga seed konsisten. Baseline seri F sah.
+
+**Dampak — dan ini yang paling penting dari entri ini.**
+
+**Varians seed jalur RGB 6,5× LEBIH KECIL daripada yang diandaikan rencana**
+(0,0049 vs 0,0321 milik E-027). Konsekuensinya bukan sekadar "ambang diturunkan",
+melainkan bahwa **dua pertanyaan yang selama ini tercampur harus dipisah**:
+
+1. **Keterdeteksian statistik.** Dengan SD 0,0049, efek jauh di bawah 0,05 kini
+   dapat dibedakan dari derau. Ambang +0,05 setara ~10 SD — menuntutnya sebagai
+   syarat *deteksi* berarti membuang efek nyata yang terukur. Untuk F-006/F-007/
+   F-009, syarat deteksi yang sah adalah **CI bootstrap tingkat pohon tidak
+   memuat nol pada 3 seed berpasangan**, bukan +0,05.
+2. **Kebermaknaan praktis.** Ambang +0,05 **tetap berlaku** sebagai bar pengguna,
+   dan asalnya bukan derau melainkan pernyataan 21 Juli 2026: "kenaikan 2–5% pun
+   dianggap tidak cukup" (CLAUDE.md). Itu keputusan pengguna, bukan artefak
+   pengukuran, dan **tidak boleh diturunkan diam-diam** dengan alasan varians
+   ternyata kecil.
+
+Maka tiap kontras seri F wajib melaporkan **keduanya**: apakah efeknya nyata, dan
+apakah efeknya cukup besar. Efek +0,015 yang CI-nya jelas di atas nol adalah
+temuan yang sah dan **wajib dilaporkan apa adanya** — sekaligus wajib dinyatakan
+belum memenuhi bar praktis pengguna.
+
+**Replikasi gerbang F-005 pada ketiga seed** (fraksi galat kelas dalam pita
+\|Δ\| < 0,6):
+
+| seed | fraksi | p50 \|Δ\| | untung-rugi | B3 | B2 |
+|---|---|---|---|---|---|
+| 42 | 0,7113 | 0,3633 | 0,849 | 0,8493 | 0,5228 |
+| 1337 | 0,6384 | 0,4004 | 0,647 | 0,7760 | 0,5290 |
+| 2024 | 0,7147 | 0,3589 | 0,971 | 0,7931 | 0,5375 |
+
+Ketiganya LOLOS jauh di atas ambang 0,30, dan dua pola kualitatifnya bertahan di
+seluruh seed: **B3 selalu punya massa lebih besar daripada B2** (kebalikan dari
+ramalan rancangan bahwa K2 paling menolong B2↔B3), dan **rasio untung-rugi selalu
+< 1** (0,647–0,971), artinya residu ber-clip menyentuh lebih banyak query yang
+sudah benar daripada yang salah. K2 karena itu menuntut kepala ordinal yang
+benar-benar informatif; residu mendekati acak berekspektasi merugikan.
+
+**Reproduksi** — `bash shell/f004_baseline.sh`. Bukti:
+`evidence/experiments/results/F-004/{evaluation,metrics,sha256}_seed*.{json,csv,txt}`,
+`logits_test_seed*.npz`, dan `results/F-005/massa_selisih_logit_seed*.json`.

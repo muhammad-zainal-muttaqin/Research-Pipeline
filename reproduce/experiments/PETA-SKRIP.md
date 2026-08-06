@@ -1,4 +1,4 @@
-# PETA-SKRIP — 55 skrip, dikelompokkan menurut peran
+# PETA-SKRIP — 62 skrip, dikelompokkan menurut peran
 
 Jawaban atas "skrip mana yang menghasilkan angka ini". Setiap baris menyebut
 eksperimen penghasilnya dan tempat angkanya mendarat. Perintah reproduksi persis
@@ -16,7 +16,7 @@ merujuk laporan solusi di [`../../docs/experiments/SR/`](../../docs/experiments/
 | Mengaudit E-022 | [AUDIT-E022.md](../../docs/experiments/AUDIT-E022.md) → `analysis/verify_depth_mi.py` → `eval/eval_e022_paired.py` | Angka seed-42 bersifat historis. Bandingkan dengan [arsip E-022](../../docs/experiments/archive/E022-seed42-awal.md). |
 | Menyiapkan depth sensor untuk pipeline produksi | [`../pipeline/prepare_depth.py`](../pipeline/prepare_depth.py) dengan `--mode gemini` | Untuk depth yang **sudah** disejajarkan ke RGB oleh SDK sensor. Depth SawitMVC-Depth ditangani `build/reproject_depth.py` (lihat catatan dua jalur di bawah). |
 
-## `train/` — pelatihan model (10)
+## `train/` — pelatihan model (12)
 
 | Skrip | Eksperimen | Keluaran |
 |---|---|---|
@@ -28,10 +28,12 @@ merujuk laporan solusi di [`../../docs/experiments/SR/`](../../docs/experiments/
 | `train_4cls_hi.py` | E-019 | `runs/c4_e50_i1280_warna/` — 1280 aman-warna |
 | `train_x.py` | E-013 | uji kapasitas yolo26x |
 | `train_rtdetr.py` | E-020 | `runs/rtdetr_l_e60_i1280/` — RT-DETR-L NMS-free |
-| `train_rfdetr.py` | E-021 | `runs/rfdetr_l_e60_i1280/` — **model terbaik** |
+| `train_rfdetr.py` | E-021, **F-001/F-004** | `runs/rfdetr_l_e60_i1280/`; `runs_f004/rfdetrl_rgb_seed*` (flag `--seed` ditambah untuk seri F; bawaan 42 = E-021, jadi reproduksi E-021 tidak berubah) |
+| `train_rfdetr_freq.py` | **F-007** (K1a) | `runs_f007/{dwt,laplacian,freq_rendah,fase_diacak}_seed*`; `--uji-sambungan` → `results/F-007/uji_sambungan_*.json` |
+| `train_rfdetr_ordinal.py` | **F-006** (K2) | `runs_f006/*`; `--uji-sambungan` → `results/F-006/uji_sambungan.json` |
 | `train_yolo26l.py` | E-021 | `runs/yolo26l_e60_i1280/` — baseline param-adil |
 
-## `eval/` — pengukuran (12)
+## `eval/` — pengukuran (14)
 
 | Skrip | Eksperimen | Keluaran |
 |---|---|---|
@@ -43,7 +45,9 @@ merujuk laporan solusi di [`../../docs/experiments/SR/`](../../docs/experiments/
 | `eval_perkelas.py`, `eval_rfdetr_perkelas.py` | E-021 | `results/E-021/perkelas_fair.json` |
 | `eval_all_pycoco.py` | E-021 | `results/E-021/perkelas_pycoco.json` — **tabel 1-protokol** |
 | `eval_all_metrics.py` | E-021 | `results/E-021/metrics_full.json` — COCO 12-stat + P/R/F1 |
-| `eval_extras.py` | E-021 | `results/E-021/{confusion,bootstrap_ci,pr_curves}.json` + `figures/*.png` |
+| `eval_extras.py` | E-021 | `results/E-021/{confusion,bootstrap_ci,pr_curves}.json` + `figures/*.png`. **Resample CITRA, 2.000 replikat** — unit salah untuk seri F, lihat `bootstrap_pohon.py` |
+| `dump_logits_rfdetr.py` | **F-004** | `results/F-004/logits_test_seed*.npz` — logit MENTAH seluruh query; masukan F-005 dan `bootstrap_pohon.py` |
+| `bootstrap_pohon.py` | **rezim seri F** | CI95 persentil + BCa, resample **POHON**, 10.000 replikat; kontras berpasangan bila dua npz diberi |
 | `eval_efficiency.py` | E-021 | `results/E-021/efficiency.json` — latensi & FPS di L4 |
 | `stratified_eval.py` | — | evaluasi terstratifikasi; keluaran tidak diarsipkan |
 
@@ -57,7 +61,7 @@ merujuk laporan solusi di [`../../docs/experiments/SR/`](../../docs/experiments/
 | `make_depth.py`, `gen_depth_dataset.py` | I-4 | pseudo-depth untuk masukan 4 kanal |
 | `build_rfdetr_ds.py` | E-021 | adaptor dataset YOLO → RF-DETR tanpa salin citra |
 
-## `analysis/` — diagnosis & uji hipotesis (16)
+## `analysis/` — diagnosis & uji hipotesis (19)
 
 | Skrip | Eksperimen | SR | Keluaran |
 |---|---|---|---|
@@ -69,6 +73,9 @@ merujuk laporan solusi di [`../../docs/experiments/SR/`](../../docs/experiments/
 | `box_size_analysis.py` | E-009 | SR-007 | `results/E-009/box_sizes.json` |
 | `why_b4_fails.py` | E-010 | SR-007 | `results/E-010/why_b4.json` |
 | `contrast_boost_test.py` | E-011 | SR-008 | `results/E-011/contrast_boost.json` |
+| `freq_vs_pelepah.py` | **F-002** (P2) | SR-017 | `results/F-002/freq_vs_pelepah.json` — gerbang K1; tandan vs **pelepah**, bukan cincin |
+| `plafon_lintas_sisi.py` | **F-003** (P3) | SR-017 | `results/F-003/plafon_lintas_sisi.json` — gerbang K3 |
+| `massa_selisih_logit.py` | **F-005** (P1) | SR-017 | `results/F-005/massa_selisih_logit.json` — gerbang K2 |
 | `class_separability.py` | E-012 | SR-009 | `results/E-012/separability.json` |
 | `head_vs_crop.py`, `multiview_vote.py` | E-016 | SR-011 (ditarik) | `results/E-016/` |
 | `two_stage.py` | E-017 | SR-012 | `results/E-017/two_stage_val_*.json` |
@@ -76,13 +83,27 @@ merujuk laporan solusi di [`../../docs/experiments/SR/`](../../docs/experiments/
 | `tiling.py` | — | — | ubin citra (SAHI-like); dataset turunan |
 | `conv8.py` | — | — | utilitas konversi |
 
-## `shell/` — orkestrasi (8)
+## `shell/` — orkestrasi (10)
 
 `run_queue.sh`…`run_queue4.sh`, `run_final.sh`, `chain_x.sh` menjalankan antrean
 pelatihan berurutan; `progress_report.sh` mencetak ringkasan berjalan;
 `stop_at_52.sh` menghentikan run RT-DETR pada epoch 52 (lihat E-020).
 Skrip ini bergantung pada tata letak `/workspace/` dan bukan bagian dari jalur
 reproduksi minimal.
+
+Seri F menambah dua driver:
+
+| Skrip | Eksperimen | Isi |
+|---|---|---|
+| `f004_baseline.sh` | F-004 | RF-DETR-L 3 seed berurutan + dump logit + SHA-256 tiap checkpoint |
+| `f007_frekuensi.sh` | F-007 | 4 lengan × 3 seed = 12 run berurutan; `--periksa` = validasi prasyarat tanpa melatih |
+
+**Keduanya BERURUTAN, dan itu bukan pilihan.** VRAM puncak RF-DETR-L @1280
+batch 8 = 10.331 MiB dari 20.470 (F-001); dua run serentak = 20.662 MiB → OOM.
+`f007_frekuensi.sh` karena itu punya **penjaga proses** yang menolak start bila
+sudah ada `train_rfdetr*` berjalan — ditambahkan setelah menjalankan skrip itu
+"sekadar untuk memeriksa" sempat menyalakan run sungguhan di atas F-004
+(insiden 6 Agustus 2026, lihat [SERI-F.md](../../docs/experiments/SERI-F.md) §5.4).
 
 ## `config/` — konfigurasi dataset (2)
 
