@@ -77,6 +77,15 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
 
+# `python train/xxx.py` menaruh `train/` di sys.path[0], BUKAN akar
+# `reproduce/experiments/`, sehingga `from train.train_rfdetr import ...` gagal
+# dengan ModuleNotFoundError. Kegagalan itu terjadi SETELAH latihan selesai
+# (saat mengumpulkan metrik), jadi ia membuang seluruh run tanpa menyentuh
+# bobotnya — terjadi 6 Agustus 2026 pada F-007 dwt seed 42, 1,5 jam GPU.
+# Pola sisipan ini sama dengan `analysis/cross_side_consistency.py:52`.
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

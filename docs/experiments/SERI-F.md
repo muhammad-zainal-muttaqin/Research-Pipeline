@@ -71,10 +71,10 @@ Dua sifat yang wajib dijaga saat implementasi:
 | **F-003** | P3 — plafon lintas-sisi | ❌ **GUGUR** | 0,2794 < 0,30; 72% galat salah di semua sisi; B4 hanya 0,1038 |
 | **F-004** | Baseline RF-DETR-L 3 seed | ✅ selesai | rerata test mAP50 0,5949; **SD seed 0,0049** — 6,5× lebih kecil dari asumsi rencana |
 | **F-005** | P1 — massa selisih logit | ✅ **LOLOS** | 0,7113 (ambang 0,30); massa terbesar di **B3**, bukan B2 |
-| **F-006** | K2 ordinal CORN | 🟡 kode siap, gerbang LOLOS | 2 lengan × 3 seed; menunggu GPU (setelah F-007) |
-| **F-007** | K1a cabang frekuensi | 🔄 berjalan sejak 16:10 | 4 lengan × 3 seed; uji sambungan 4 pemeriksaan LULUS (lihat §5.6) |
+| **F-006** | K2 ordinal CORN | ⏹ **TIDAK DIJALANKAN** | kode siap + uji sambungan LULUS; dihentikan bersama seri |
+| **F-007** | K1a cabang frekuensi | ⏹ **DIHENTIKAN** 2/12 run | **γ akhir ≈ 0** (dwt +0,0003, laplacian −6e-5) → mekanismenya tidak pernah aktif |
 | ~~F-008~~ | ~~K3 lintas-sisi~~ | ❌ dibatalkan | digugurkan F-003; hemat ~13 jam GPU |
-| **F-009** | Gabungan | ⏳ | syarat: **kedua** komponen tersisa lolos |
+| **F-009** | Gabungan | ⏹ **TIDAK DIJALANKAN** | dihentikan bersama seri |
 
 ## 5. Catatan teknis yang berlaku untuk seluruh seri
 
@@ -327,3 +327,85 @@ kecil. **Plafon val tidak boleh diperlakukan sebagai plafon test.**
 | `eval/dump_logits_rfdetr.py` | F-004 | `results/F-004/logits_test_seed*.npz` |
 | `analysis/massa_selisih_logit.py` | F-005 | `results/F-005/massa_selisih_logit.json` |
 | `eval/bootstrap_pohon.py` | rezim | CI pohon persentil + BCa |
+
+---
+
+## 8. Penutupan seri — 6 Agustus 2026
+
+Seri F **dihentikan atas permintaan pengguna** pada 2 dari 12 run F-007, sebelum
+F-006 dan F-009 dijalankan. Alasannya dinyatakan langsung: hanya hasil positif
+yang bernilai, dan tidak ada yang menembus 0,60 pada split test.
+
+### 8.1 Temuan yang berdiri sendiri
+
+| # | Temuan | Angka | Berkas |
+|---|---|---|---|
+| 1 | **Varians seed jalur RGB RF-DETR akhirnya terukur** | SD test mAP50 **0,0049**, rentang 0,0097 | `results/F-004/` |
+| 2 | Frekuensi tinggi memisahkan tandan dari **pelepah**, monoton B1<B2<B3<B4 | dwt_hh **+0,0731** pada B4 | `results/F-002/` |
+| 3 | **Laplacian ≈ DWT** di tingkat piksel — mesin DWT tidak membeli apa pun | 0,0721 vs 0,0731 | `results/F-002/` |
+| 4 | **72% galat kelas salah di SEMUA sisi**; B4 kasus terburuk | 0,2794 keseluruhan, **B4 0,1038** | `results/F-003/` |
+| 5 | 71% galat kelas berada dalam pita 0,6 logit; massanya di **B3**, bukan B2 | 0,7113 / 0,6384 / 0,7147 | `results/F-005/` |
+| 6 | **Gate init-nol adalah PERANGKAP, bukan hanya pengaman** | γ akhir +0,0003 / −6e-5 | `results/F-007/` |
+
+Temuan 6 yang paling mahal dipelajari dan paling berguna ke depan: `γ = 0`
+memberi *no-op* yang sempurna sekaligus **titik mati** yang sempurna — side
+encoder tidak menerima gradien (dikali γ = 0), dan γ sendiri hanya menerima
+derau karena proyeksi sampingnya masih acak. Setiap rancangan "cabang samping
+ber-gate init-nol" di repo ini menabrak masalah yang sama kecuali gate-nya
+diberi warmup, LR terpisah, inisialisasi kecil-taknol, atau tugas pendamping
+untuk side encoder.
+
+### 8.2 Yang tidak terjawab
+
+- Apakah cabang frekuensi menolong **bila gate-nya terbuka** — tidak diuji.
+- Atribusi frekuensi vs kapasitas — kedua lengan kontrol (`freq_rendah`,
+  `fase_diacak`) **tidak pernah dijalankan**.
+- K2 sama sekali — kodenya siap dan lulus lima pemeriksaan termasuk bukti
+  gradien, tetapi **nol run**.
+- Replikasi seed untuk F-007 — hanya seed 42.
+
+### 8.3 Utang teknis yang tercatat
+
+- **Evaluasi pycocotools belum dijalankan untuk seri F.** Seluruh angka mAP di
+  sini berasal dari evaluator internal rf-detr, bukan `eval_all_pycoco.py`.
+  Aturan mengikat E-025 menuntut satu protokol; ini **belum dipenuhi**.
+- Angka 0,6038/0,2770 milik E-021 berasal dari evaluasi EMA-konsisten terpisah
+  dan **belum** dihitung ulang untuk F-004. Pembanding like-for-like yang sah
+  adalah 0,5837 (jalur `run_test`), dan F-004 memberi 0,5949.
+- P3 definitif dengan RF-DETR-L belum dihitung; angka F-003 memakai proksi yolo26n.
+
+### 8.4 Kenapa kontras bootstrap TIDAK dihitung
+
+`eval/bootstrap_pohon.py` sempat dijalankan untuk dwt dan laplacian vs baseline
+seed 42, lalu **dibatalkan sebelum selesai** — dan itu keputusan yang benar,
+bukan pekerjaan yang tertunda.
+
+Dengan γ akhir +0,0003 dan −6e-5, kontribusi cabang samping efektif nol,
+sehingga model perlakuan **adalah** model baseline dengan derau latihan. CI
+10.000 replikat atas selisih itu hanya akan mengukur ulang derau seed pada satu
+seed — sementara penyebabnya sudah terdiagnosis langsung dari γ, jauh lebih
+tajam daripada yang bisa diberikan interval kepercayaan.
+
+Skripnya tetap ada dan tervalidasi (mereproduksi evaluator rf-detr: mAP50-95
+0,2354 identik), siap dipakai bila seri ini dilanjutkan dengan gate yang
+benar-benar terbuka.
+
+### 8.5 Daftar tugas — selesai dan tidak
+
+| # | Tugas | Status | Catatan |
+|---|---|---|---|
+| 1 | F-001 prasyarat + probe VRAM | ✅ SELESAI | dataset, bobot pratlatih, resep terkunci |
+| 2 | F-002 gerbang K1 (P2) | ✅ SELESAI | LOLOS, +0,0731 B4 |
+| 3 | F-003 gerbang K3 (P3) | ✅ SELESAI | GUGUR, 0,2794 < 0,30 |
+| 4 | F-004 baseline 3 seed | ✅ SELESAI | SD seed 0,0049 |
+| 5 | F-005 gerbang K2 (P1) | ✅ SELESAI | LOLOS 3 seed |
+| 6 | Rezim pengukuran (`bootstrap_pohon.py`) | ✅ SELESAI | tervalidasi; adaptor RF-DETR untuk `cross_side_consistency.py` **BELUM** |
+| 7 | F-006 K2 ordinal | ⏹ **TIDAK DIJALANKAN** | kode + uji sambungan lulus; **nol run GPU** |
+| 8 | F-007 K1a frekuensi | ⏹ **DIHENTIKAN 2/12** | γ ≈ 0 → mekanisme tidak aktif |
+| 9 | F-008 K3 lintas-sisi | ⏹ DIBATALKAN | digugurkan gerbang F-003 |
+| 10 | F-009 gabungan | ⏹ **TIDAK DIJALANKAN** | syarat tidak terpenuhi |
+| 11 | SR-017 + dokumen seri | ✅ SELESAI | `SERI-F.md`, `SR-017`, `PETA-SKRIP.md`, `STATUS.md`, `README.md` |
+
+**Belum dikerjakan dan tercatat sebagai utang** (§8.3): evaluasi pycocotools
+untuk seri F, angka EMA-konsisten pembanding 0,6038, P3 definitif dengan
+RF-DETR-L, dan adaptor RF-DETR untuk `cross_side_consistency.py`.

@@ -2729,3 +2729,79 @@ benar-benar informatif; residu mendekati acak berekspektasi merugikan.
 **Reproduksi** — `bash shell/f004_baseline.sh`. Bukti:
 `evidence/experiments/results/F-004/{evaluation,metrics,sha256}_seed*.{json,csv,txt}`,
 `logits_test_seed*.npz`, dan `results/F-005/massa_selisih_logit_seed*.json`.
+
+## F-007 — (K1a) Cabang frekuensi ber-gate: GATE TIDAK PERNAH TERBUKA (2026-08-06, DIHENTIKAN) · [SR-017](SR/SR-017-sintesis-deep-research.md)
+
+**Status: DIHENTIKAN ATAS PERMINTAAN PENGGUNA** pada 2 dari 12 run. Entri ini
+mencatat apa adanya; ia **bukan** hasil lengkap dan tidak boleh dikutip sebagai
+uji K1 yang tuntas.
+
+**Hipotesis** — F-002 menunjukkan respons frekuensi tinggi memisahkan isi tandan
+dari pelepah pada B4 sebesar +0,0731 di atas kendali. Bila keterpisahan piksel
+itu berarti, menyuntikkan fitur frekuensi lewat side encoder sempit sebelum
+projector akan menaikkan mAP.
+
+**Cara** — `train/train_rfdetr_freq.py`, cabang samping ber-gate skalar `gamma`
+berinisialisasi **nol**, disuntik pada keluaran projector. Resep latih identik
+F-004 (1280, batch 8, grad-accum 2, patience 8, EMA, dari `rf-detr-large-2026.pth`).
+Rencana 4 lengan x 3 seed; **yang terlaksana hanya 2 lengan pada seed 42.**
+
+**Hasil — dan yang menentukan bukan mAP-nya, melainkan gamma-nya.**
+
+| lengan | epoch | VAL mAP50 (EMA) | TEST mAP50 | **gamma akhir** |
+|---|---|---|---|---|
+| baseline F-004 seed42 | 14 | 0,5708 | 0,5997 | — |
+| dwt seed42 | 12 | 0,5667 | 0,5956 | **+0,0003** |
+| laplacian seed42 | 10 (dihentikan) | 0,5698 | — | **−0,00006** |
+
+**Putusan — DIPALSUKAN untuk mekanismenya, bukan sekadar nol hasil.**
+
+`gamma` mulai di nol dan **tidak pernah bergerak dari nol**. Injeksinya
+`keluar = fitur + gamma · proyeksi(samping)`; dengan gamma ~ 1e-4 sampai -6e-5,
+kontribusi cabang frekuensi **secara efektif nol**. Model perlakuan pada dasarnya
+**adalah** model baseline, dan selisih mAP yang terlihat (−0,004) adalah derau
+latihan, bukan efek frekuensi.
+
+Ini **bukan** kegagalan implementasi. Uji sambungan membuktikan cabangnya
+tersambung: pada gamma dibuka paksa ke 1, keluaran backbone berubah 0,807–1,089;
+pada gamma = 0 selisihnya tepat 0,0; parameter pratlatih termuat penuh (14 tak
+termuat, semuanya cabang samping). Cabangnya berfungsi — optimizer yang memilih
+tidak memakainya.
+
+**Sebab paling mungkin: inisialisasi nol adalah PERANGKAP, bukan sekadar
+pengaman.** Gradiennya membentuk kebuntuan ayam-telur:
+
+- gradien ke side encoder = `gamma · dL/dkeluar` → **nol persis saat gamma = 0**,
+  jadi side encoder tidak pernah belajar;
+- gradien ke gamma = `dL/dkeluar · proyeksi(samping)`, sedangkan `proyeksi(samping)`
+  masih **acak** pada inisialisasi → sinyalnya derau di sekitar nol, sehingga
+  gamma hanya berjalan acak dan tidak tumbuh.
+
+Rancangan menuntut `gamma = 0` supaya cabang menjadi *no-op* persis dan menjawab
+keberatan E-030 (cabang tak berguna tidak boleh merusak baseline). Syarat itu
+terpenuhi — tetapi **ongkosnya tidak diantisipasi**: no-op yang sempurna juga
+berarti titik mati yang sempurna. Siapa pun yang mengulang gagasan ini harus
+mengubah salah satu dari: inisialisasi gamma kecil-tapi-taknol, warmup gamma,
+LR terpisah untuk gamma, atau melatih side encoder dengan tugas pendamping
+(mis. probe center-heatmap yang ada di rancangan tetapi tidak jadi dipakai).
+
+**Yang TIDAK dapat disimpulkan dari entri ini:**
+
+- Apakah cabang frekuensi akan menolong bila gate-nya benar-benar terbuka —
+  **tidak diuji**, karena gate tidak pernah terbuka.
+- Perbandingan terhadap kontrol `freq_rendah` dan `fase_diacak` — **kedua lengan
+  kontrol tidak pernah dijalankan**, jadi atribusi frekuensi-vs-kapasitas tetap
+  terbuka. (Meski dengan gamma ~ 0, kapasitas tambahannya pun efektif tidak
+  terpakai.)
+- Replikasi seed — hanya seed 42. SD seed baseline 0,0049 (F-004), jadi selisih
+  −0,004 berada **di dalam derau satu seed** dan tidak dapat diklaim ke arah mana pun.
+
+**Dampak** — K1 dalam bentuk ini tidak menghasilkan kenaikan, dan alasannya
+terdiagnosis: mekanismenya tidak aktif. Ini menurunkan prior untuk seluruh
+keluarga "cabang samping ber-gate init-nol" di repo ini, termasuk rancangan
+intra-blok yang ditangguhkan.
+
+**Reproduksi** — `bash shell/f007_frekuensi.sh` (hapus dulu penanda
+`.selesai` + `.DIHENTIKAN-PENGGUNA` di `runs/detect/runs_f007/*_seed{1337,2024}/`).
+Bukti: `evidence/experiments/results/F-007/` — `evaluation_{dwt,laplacian}_seed42.json`,
+`logits_test_{dwt,laplacian}_seed42.npz`, `uji_sambungan_*.json`, `sha256_*.txt`.
