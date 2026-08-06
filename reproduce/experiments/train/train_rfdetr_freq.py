@@ -184,101 +184,79 @@ class SideEncoder(nn.Module):
         return h
 
 
-class FrekuensiBackbone(nn.Module):
-    """Bungkus `Backbone` asli, suntikkan fitur samping SEBELUM transformer.
+def _kelas_frekuensi_backbone():
+    """Bangun kelas `FrekuensiBackbone` sebagai TURUNAN `Backbone`.
 
-    Antarmuka `forward` meniru `Backbone.forward` persis (`(out, cross_attn_out)`),
-    sehingga modul ini menggantikan `Backbone` sebagai elemen pertama `Joiner`
-    tanpa menyentuh `Joiner`, posisi embedding, atau transformer.
+    Dibuat lewat fungsi supaya `rfdetr` hanya diimpor saat dipakai.
 
-    Injeksi: `keluar = fitur + gamma * proyeksi(samping)` dengan `gamma` skalar
-    ber-inisialisasi NOL.
+    ## Kenapa TURUNAN, bukan pembungkus — pelajaran mahal 6 Agustus 2026
 
-    **Kenapa gate SKALAR, bukan per-kanal.** Rancangan menulis "alpha_c = 0",
-    menyiratkan gate per kanal. Gate skalar dipilih karena yang harus dijamin
-    adalah sifat *no-op saat init* dan kemudahan MEMBACA seberapa besar cabang
-    ini akhirnya dipakai: satu angka per titik suntik yang bisa dilaporkan apa
-    adanya setelah latihan, sehingga klaim "cabang frekuensi terpakai" dapat
-    diverifikasi, bukan diasumsikan (disiplin yang sama seperti Conv1x1 fusi di
-    `train_fusion_2branch.py`).
+    Versi pertama MEMBUNGKUS `Backbone` sebagai `self.dasar`. Itu mengubah nama
+    parameter dari `backbone.0.encoder...` menjadi `backbone.0.dasar.encoder...`,
+    sehingga `load_pretrain_weights` **gagal mencocokkan 264 parameter** dan
+    SELURUH backbone DINOv2 berangkat dari inisialisasi ACAK. rfdetr hanya
+    mencetak WARNING, latihan tetap jalan, dan angkanya terlihat "wajar" —
+    sampai dibandingkan: train/loss awal 11,56 vs baseline 9,28, dan val mAP50
+    epoch 0 sebesar 0,1308 vs 0,4714.
+
+    Kalau itu tidak ketahuan, 22 jam GPU akan menghasilkan perbandingan yang
+    TIDAK SAH: lengan perlakuan berbackbone acak melawan baseline pratlatih.
+    Selisihnya akan didominasi ada-tidaknya pralatihan, bukan cabang frekuensi —
+    persis mode gagal yang sudah dicatat `STATUS.md` §"Penghalang" untuk E-023.
+
+    Sebagai turunan, nama parameter warisan TIDAK berubah, bobot pratlatih
+    termuat penuh, dan `get_named_param_lr_pairs` bawaan `Backbone` (yang
+    mematok kunci `backbone.0.encoder`) bekerja apa adanya — sehingga peluruhan
+    LR per lapisan pun tidak perlu ditulis ulang.
     """
+    from rfdetr.models.backbone.backbone import Backbone
 
-    def __init__(self, dasar, out_channels: int, lengan: str, lebar: int = 32):
-        super().__init__()
-        self.dasar = dasar
-        self.lengan = lengan
-        n_skala = len(dasar.projector_scale)
-        self.samping = SideEncoder(out_channels, lebar)
-        self.proyeksi = nn.ModuleList(
-            nn.Conv2d(out_channels, out_channels, 1) for _ in range(n_skala))
-        # gamma = 0 -> cabang samping adalah no-op PERSIS saat inisialisasi.
-        self.gamma = nn.Parameter(torch.zeros(n_skala))
-        for p in self.proyeksi:
-            nn.init.zeros_(p.bias)
+    class FrekuensiBackbone(Backbone):
+        """`Backbone` + cabang frekuensi ber-gate, disuntik SEBELUM transformer.
 
-    def get_named_param_lr_pairs(self, args, prefix: str = "backbone.0"):
-        """Kelompok LR untuk optimizer. WAJIB ADA — dipanggil `get_param_dict`.
+        Injeksi: `keluar = fitur + gamma * proyeksi(samping)` dengan `gamma`
+        skalar ber-inisialisasi NOL.
 
-        Ketiadaan metode ini membuat run mati saat `configure_optimizers`, bukan
-        saat forward; uji sambungan yang hanya menjalankan forward TIDAK
-        menangkapnya (dan memang tidak menangkapnya, 6 Agustus 2026). Kaveat 3
-        `train_rfdetr_fusion_late.py` sudah memperingatkan hal ini.
+        **Kenapa gate SKALAR, bukan per-kanal.** Rancangan menulis `alpha_c`,
+        menyiratkan gate per kanal. Skalar dipilih karena yang harus dijamin
+        adalah sifat *no-op saat init*, dan karena satu angka per titik suntik
+        dapat dilaporkan apa adanya setelah latihan — sehingga klaim "cabang
+        frekuensi terpakai" dapat diverifikasi, bukan diasumsikan.
 
-        Tidak bisa sekadar mendelegasikan ke `self.dasar`: `Backbone` mematok
-        `backbone_key = "backbone.0.encoder"`, sedangkan membungkusnya menyisipkan
-        `dasar.` sehingga nama menjadi `backbone.0.dasar.encoder...`. Delegasi
-        naif akan mengembalikan dict KOSONG, seluruh parameter DINOv2 jatuh ke
-        `other_params` dengan `lr = args.lr` datar, dan peluruhan LR per lapisan
-        (`lr_encoder` x `lr_vit_layer_decay` x `lr_component_decay^2`) hilang
-        DIAM-DIAM. Resepnya lalu berbeda dari baseline F-004 dan kontrasnya tidak
-        sah. Karena itu logikanya disalin dengan kunci yang benar.
-
-        Parser nama rfdetr tidak terganggu sisipan `dasar.`: keduanya hanya
-        memakai `startswith("backbone")` dan substring `embeddings` / `.layer.`
-        (`backbone.py:212-241`), sehingga LR tiap lapisan IDENTIK dengan baseline.
-
-        Parameter cabang samping (`samping`, `proyeksi`, `gamma`) sengaja TIDAK
-        dimasukkan: ia jatuh ke `other_params` dan mendapat `args.lr` penuh —
-        benar untuk modul yang berinisialisasi acak.
+        `get_named_param_lr_pairs` TIDAK ditulis ulang: versi bawaan `Backbone`
+        mematok kunci `backbone.0.encoder`, dan karena kelas ini turunan (bukan
+        pembungkus) nama parameternya tetap cocok. Parameter cabang samping
+        otomatis jatuh ke `other_params` dengan `args.lr` penuh — benar untuk
+        modul berinisialisasi acak.
         """
-        from rfdetr.models.backbone.backbone import (
-            get_dinov2_lr_decay_rate,
-            get_dinov2_weight_decay_rate,
-        )
 
-        num_layers = args.out_feature_indexes[-1] + 1
-        backbone_key = f"{prefix}.dasar.encoder"
-        pasangan = {}
-        for n, p in self.named_parameters():
-            n = prefix + "." + n
-            if backbone_key in n and p.requires_grad:
-                lr = (
-                    args.lr_encoder
-                    * get_dinov2_lr_decay_rate(
-                        n, lr_decay_rate=args.lr_vit_layer_decay, num_layers=num_layers)
-                    * args.lr_component_decay ** 2
-                )
-                pasangan[n] = {
-                    "params": p,
-                    "lr": lr,
-                    "weight_decay": args.weight_decay * get_dinov2_weight_decay_rate(n),
-                }
-        return pasangan
+        def __init__(self, *args, lengan: str = "dwt", lebar: int = 32, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.lengan = lengan
+            out_channels = kwargs["out_channels"]
+            n_skala = len(self.projector_scale)
+            self.samping = SideEncoder(out_channels, lebar)
+            self.proyeksi = nn.ModuleList(
+                nn.Conv2d(out_channels, out_channels, 1) for _ in range(n_skala))
+            # gamma = 0 -> cabang samping adalah no-op PERSIS saat inisialisasi.
+            self.gamma = nn.Parameter(torch.zeros(n_skala))
+            for m in self.proyeksi:
+                nn.init.zeros_(m.bias)
 
-    def forward(self, tensor_list):
-        from rfdetr.utilities.tensors import NestedTensor
+        def forward(self, tensor_list):
+            from rfdetr.utilities.tensors import NestedTensor
 
-        keluar_dasar, cross = self.dasar(tensor_list)
-        x = tensor_list.tensors
-        hf = peta_frekuensi(x[:, :3], self.lengan)
+            keluar_dasar, cross = super().forward(tensor_list)
+            hf = peta_frekuensi(tensor_list.tensors[:, :3], self.lengan)
 
-        out = []
-        for i, feat in enumerate(keluar_dasar):
-            t = feat.tensors
-            s = self.samping(hf.to(t.dtype), t.shape[-2:])
-            t = t + self.gamma[i] * self.proyeksi[i](s)
-            out.append(NestedTensor(t, feat.mask))
-        return out, cross
+            out = []
+            for i, feat in enumerate(keluar_dasar):
+                f = feat.tensors
+                s = self.samping(hf.to(f.dtype), f.shape[-2:])
+                out.append(NestedTensor(f + self.gamma[i] * self.proyeksi[i](s), feat.mask))
+            return out, cross
+
+    return FrekuensiBackbone
 
 
 # ------------------------------------------------------------------- pendaftaran
@@ -294,12 +272,20 @@ def bangun_backbone_freq(
     load_dinov2_weights, patch_size, num_windows, positional_encoding_size,
     dual_projector=False,
 ):
-    """Pengganti `build_backbone`, tanda tangan IDENTIK."""
+    """Pengganti `build_backbone`, tanda tangan IDENTIK.
+
+    Membangun TURUNAN `Backbone`, bukan pembungkus — lihat
+    `_kelas_frekuensi_backbone` untuk alasannya (264 parameter pratlatih gagal
+    termuat pada versi pembungkus).
+    """
     from rfdetr.models.backbone import Joiner
-    from rfdetr.models.backbone.backbone import Backbone
     from rfdetr.models.position_encoding import build_position_encoding
 
-    dasar = Backbone(
+    if dual_projector:
+        raise NotImplementedError("dual_projector belum didukung cabang frekuensi")
+
+    Kelas = _kelas_frekuensi_backbone()
+    bb = Kelas(
         encoder, pretrained_encoder, freeze_encoder=freeze_encoder,
         load_dinov2_weights=load_dinov2_weights,
         window_block_indexes=window_block_indexes, drop_path=drop_path,
@@ -309,9 +295,9 @@ def bangun_backbone_freq(
         backbone_lora=backbone_lora, gradient_checkpointing=gradient_checkpointing,
         patch_size=patch_size, num_windows=num_windows,
         positional_encoding_size=positional_encoding_size,
+        lengan=_LENGAN, lebar=_LEBAR,
     )
-    bungkus = FrekuensiBackbone(dasar, out_channels, _LENGAN, _LEBAR)
-    return Joiner(bungkus, build_position_encoding(hidden_dim, position_embedding))
+    return Joiner(bb, build_position_encoding(hidden_dim, position_embedding))
 
 
 def daftarkan(lengan: str, lebar: int = 32) -> None:
@@ -347,7 +333,8 @@ def uji_sambungan(model, resolusi: int) -> dict:
     # Cari modulnya, jangan menebak jalur atribut: `Joiner` sendiri sebuah
     # `nn.Sequential`, dan rfdetr membungkusnya lagi di beberapa tempat.
     # Menelusuri `.modules()` tahan terhadap perubahan nesting antar versi.
-    bungkus = next((m for m in inti.modules() if isinstance(m, FrekuensiBackbone)), None)
+    Kelas = _kelas_frekuensi_backbone()
+    bungkus = next((m for m in inti.modules() if type(m).__name__ == "FrekuensiBackbone"), None)
     if bungkus is None:
         raise RuntimeError("FrekuensiBackbone tidak ditemukan di model — tambalan tidak terpakai")
 
@@ -356,7 +343,8 @@ def uji_sambungan(model, resolusi: int) -> dict:
     nt = NestedTensor(x, torch.zeros(1, resolusi, resolusi, dtype=torch.bool))
 
     with torch.no_grad():
-        dasar_out, _ = bungkus.dasar(nt)
+        from rfdetr.models.backbone.backbone import Backbone
+        dasar_out, _ = Backbone.forward(bungkus, nt)
         dasar_ref = [t.tensors.clone() for t in dasar_out]
 
         bungkus.gamma.zero_()
@@ -400,6 +388,32 @@ def uji_sambungan(model, resolusi: int) -> dict:
         n_encoder, lr_unik, n_grup, galat_optim = 0, [], 0, f"{type(e).__name__}: {e}"
 
     lulus_c = galat_optim is None and n_encoder > 0 and len(lr_unik) > 1
+
+    # (d) BOBOT PRATLATIH BENAR-BENAR TERMUAT — pemeriksaan yang TIDAK ADA pada
+    # versi pertama, dan justru itulah sebabnya cacat terbesar seri ini lolos.
+    # Versi pembungkus mengubah nama parameter sehingga 264 bobot gagal
+    # dicocokkan; rfdetr hanya mencetak WARNING dan latihan tetap jalan dengan
+    # backbone ACAK. Di sini dihitung langsung: berapa parameter model yang
+    # TIDAK punya pasangan di checkpoint pratlatih.
+    import os
+
+    ckpt_path = os.path.expanduser("~/.roboflow/models/rf-detr-large-2026.pth")
+    tak_termuat, contoh_tak_termuat, galat_ckpt = -1, [], None
+    try:
+        sd = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+        kunci_ckpt = set((sd.get("model") or sd).keys())
+        nama_model = [n for n, _ in inti.named_parameters()]
+        hilang = [n for n in nama_model if n not in kunci_ckpt]
+        tak_termuat = len(hilang)
+        contoh_tak_termuat = hilang[:4]
+    except Exception as e:  # noqa: BLE001
+        galat_ckpt = f"{type(e).__name__}: {e}"
+
+    # Ambang: hanya parameter cabang samping (+ _kp_active_mask milik baseline)
+    # yang boleh tidak termuat. Baseline F-001 mencatat tepat 1.
+    n_baru = (sum(p.numel() > 0 for p in bungkus.samping.parameters())
+              + sum(p.numel() > 0 for p in bungkus.proyeksi.parameters()) + 1)
+    lulus_d = galat_ckpt is None and 0 <= tak_termuat <= n_baru + 1
     return {
         "lengan": bungkus.lengan,
         "resolusi": resolusi,
@@ -412,10 +426,15 @@ def uji_sambungan(model, resolusi: int) -> dict:
         "(c) n_grup_optimizer": n_grup,
         "(c) galat": galat_optim,
         "(c) lulus_jalur_optimizer": lulus_c,
+        "(d) param_tak_termuat_dari_pratlatih": tak_termuat,
+        "(d) ambang_wajar": n_baru + 1,
+        "(d) contoh": contoh_tak_termuat,
+        "(d) galat": galat_ckpt,
+        "(d) lulus_pratlatih_termuat": lulus_d,
         "param_side_encoder": n_samping,
         "param_proyeksi": n_proj,
         "param_tambahan_total": n_samping + n_proj + bungkus.gamma.numel(),
-        "PUTUSAN": "LULUS" if (lulus_a and lulus_b and lulus_c) else "GAGAL",
+        "PUTUSAN": "LULUS" if all([lulus_a, lulus_b, lulus_c, lulus_d]) else "GAGAL",
     }
 
 

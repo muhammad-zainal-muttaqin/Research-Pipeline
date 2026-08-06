@@ -69,10 +69,10 @@ Dua sifat yang wajib dijaga saat implementasi:
 | **F-001** | Prasyarat + probe VRAM A4500 | ✅ selesai | Resep E-021 muat: puncak 10.331/20.470 MiB; 9,2 mnt/epoch; **paralelisme = 1** |
 | **F-002** | P2 — frekuensi vs pelepah | ✅ **LOLOS** | dwt_hh +0,0731 pada B4 (ambang +0,02); Laplacian +0,0721 praktis seri |
 | **F-003** | P3 — plafon lintas-sisi | ❌ **GUGUR** | 0,2794 < 0,30; 72% galat salah di semua sisi; B4 hanya 0,1038 |
-| **F-004** | Baseline RF-DETR-L 3 seed | 🔄 berjalan | seed 42 **selesai** (val mAP50 0,5708 vs E-021 0,5695; 1j50m); seed 1337 berjalan |
+| **F-004** | Baseline RF-DETR-L 3 seed | ✅ selesai | rerata test mAP50 0,5949; **SD seed 0,0049** — 6,5× lebih kecil dari asumsi rencana |
 | **F-005** | P1 — massa selisih logit | ✅ **LOLOS** | 0,7113 (ambang 0,30); massa terbesar di **B3**, bukan B2 |
 | **F-006** | K2 ordinal CORN | 🟡 kode siap, gerbang LOLOS | 2 lengan × 3 seed; menunggu GPU (setelah F-007) |
-| **F-007** | K1a cabang frekuensi | 🟡 kode siap, **uji sambungan LULUS** | 4 lengan × 3 seed; menunggu GPU |
+| **F-007** | K1a cabang frekuensi | 🔄 berjalan sejak 16:10 | 4 lengan × 3 seed; uji sambungan 4 pemeriksaan LULUS (lihat §5.6) |
 | ~~F-008~~ | ~~K3 lintas-sisi~~ | ❌ dibatalkan | digugurkan F-003; hemat ~13 jam GPU |
 | **F-009** | Gabungan | ⏳ | syarat: **kedua** komponen tersisa lolos |
 
@@ -200,7 +200,56 @@ aktif di lapisan decoder terakhir, terverifikasi.
 
 Kepala ordinal hanya menambah **772** parameter.
 
-### 5.6 Gerbang P1 sensitif terhadap skala logit — jangan salah checkpoint
+### 5.6 Membungkus `Backbone` MEMBUANG bobot pratlatih — bungkus jangan, turunkan
+
+Kegagalan senyap terbesar seri ini sejauh ini, ditemukan 6 Agustus 2026 setelah
+F-007 berjalan 12 menit.
+
+Versi pertama `FrekuensiBackbone` **membungkus** `Backbone` sebagai `self.dasar`.
+Itu mengubah nama parameter dari `backbone.0.encoder…` menjadi
+`backbone.0.dasar.encoder…`, sehingga `load_pretrain_weights` gagal mencocokkan
+**264 parameter** dan **seluruh backbone DINOv2 berangkat dari inisialisasi
+acak**. rfdetr hanya mencetak WARNING; latihan tetap berjalan tanpa error.
+
+Yang membuatnya ketahuan hanya perbandingan langsung dengan baseline:
+
+| | baseline F-004 | F-007 versi pembungkus |
+|---|---|---|
+| param tak termuat | **1** | **264** |
+| train/loss awal | 9,28 | **11,56** |
+| val mAP50 epoch 0 | 0,4714 | **0,1308** |
+
+Kalau lolos, 22 jam GPU akan menghasilkan perbandingan yang **tidak sah**: lengan
+perlakuan berbackbone acak melawan baseline pratlatih. Selisihnya akan didominasi
+ada-tidaknya pralatihan, bukan cabang frekuensi — mode gagal yang persis sama
+dengan yang sudah dicatat untuk E-023 (`STATUS.md` §"Penghalang").
+
+**Perbaikan: TURUNKAN, jangan bungkus.** `FrekuensiBackbone(Backbone)` membuat
+nama parameter warisan tidak berubah, bobot pratlatih termuat penuh, dan
+`get_named_param_lr_pairs` bawaan (yang mematok kunci `backbone.0.encoder`)
+bekerja apa adanya sehingga peluruhan LR per lapisan tidak perlu ditulis ulang.
+
+Setelah perbaikan: **14** parameter tak termuat, dan keempat belasnya terverifikasi
+milik cabang samping — **nol** parameter encoder hilang.
+
+**Dua pelajaran untuk uji sambungan**, keduanya sudah dipasang:
+
+1. **Uji forward saja tidak cukup.** Versi pertama juga mati di
+   `configure_optimizers` karena `get_named_param_lr_pairs` tidak ada — uji yang
+   hanya menjalankan forward meloloskannya. Kaveat 3
+   `train_rfdetr_fusion_late.py` sudah memperingatkan ini.
+2. **Perbaikan naif untuk (1) menimbulkan kegagalan senyap kedua.**
+   Mendelegasikan `get_named_param_lr_pairs` ke `self.dasar` mengembalikan dict
+   **kosong tanpa error**, seluruh DINOv2 jatuh ke `other_params` dengan LR
+   datar, dan peluruhan LR per lapisan hilang diam-diam.
+
+Uji sambungan sekarang memeriksa **empat** hal: (a) no-op saat init, (b)
+tersambung saat gate dibuka, (c) jalur optimizer hidup dengan **> 1 nilai LR
+unik**, dan (d) **jumlah parameter tak termuat dari checkpoint pratlatih** berada
+di ambang wajar. Pemeriksaan (c) dan (d) tidak ada pada versi pertama, dan
+justru keduanya yang menangkap kedua cacat itu.
+
+### 5.7 Gerbang P1 sensitif terhadap skala logit — jangan salah checkpoint
 
 Pita `2ε = 0,6` dinyatakan dalam satuan **logit**, dan skala logit bergantung pada
 kematangan latihan. Model yang belum konvergen punya logit rapat, sehingga
@@ -219,7 +268,7 @@ yaitu persis struktur ordinal yang disasar K2. Dari 2.612 kotak GT, hanya 38
 tidak tertangkap query mana pun, jadi analisis ini memang mengukur kesalahan
 KELAS, bukan kegagalan deteksi.
 
-### 5.7 Rezim pengukuran
+### 5.8 Rezim pengukuran
 
 - **Bootstrap tingkat POHON**, 10.000 replikat, persentil **dan** BCa.
   `eval_extras.py` me-resample citra dengan 2.000 replikat — unit yang salah,
@@ -236,7 +285,7 @@ KELAS, bukan kegagalan deteksi.
   yang sama seperti E-027/E-032.
 - CI yang memuat nol ditulis **TIDAK KONKLUSIF**, bukan dinaikkan jadi INDIKASI.
 
-### 5.8 Ambang +0,05 belum tervalidasi untuk jalur ini
+### 5.9 Ambang +0,05 belum tervalidasi untuk jalur ini
 
 Varians seed 0,0321 (E-027) dan varians split 0,0488 (E-031) diukur pada
 **SawitMVC-Depth dengan YOLO26n**, bukan SawitMVC dengan RF-DETR-L. F-004
