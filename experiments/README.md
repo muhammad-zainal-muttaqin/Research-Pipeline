@@ -78,6 +78,8 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | Pembaca hasil | Halaman ini, [METRICS.md](METRICS.md), lalu [SR-014](SR/SR-014-rfdetr-dinov2.md). |
 | Pemeriksa bukti | Halaman ini, [AUDIT-E022.md](AUDIT-E022.md), [arsip E-022](archive/E022-seed42-awal.md), lalu [EKSPERIMEN.md](EKSPERIMEN.md). |
 | Pelaksana reproduksi | Halaman ini, [PETA-SKRIP.md](../../reproduce/experiments/PETA-SKRIP.md), [catatan E-021](../../reproduce/experiments/CATATAN-TEKNIS-E021.md), lalu [REPRODUCE.md](../../reproduce/experiments/REPRODUCE.md). |
+| Pihak luar yang diberi tugas riset | [BRIEF-DEEP-RESEARCH.md](BRIEF-DEEP-RESEARCH.md) — paket pengarahan berbahasa Inggris berisi larangan eksplisit atas jalur yang sudah dipalsukan. Bukan hasil dan tidak boleh dikutip sebagai bukti. |
+| Perencana eksperimen berikutnya | [SINTESIS-DEEP-RESEARCH.md](SINTESIS-DEEP-RESEARCH.md) — rencana E-033…E-037 hasil sintesis dua jawaban deep research, beserta tiga pra-saring tanpa GPU. **Rencana, bukan hasil**; tidak ada run yang mendukungnya. |
 
 `EKSPERIMEN.md` tetap menjadi catatan kronologis. `SR/` merangkai bukti per ide,
 dan `experiments/` menyimpan skrip serta JSON sumber.
