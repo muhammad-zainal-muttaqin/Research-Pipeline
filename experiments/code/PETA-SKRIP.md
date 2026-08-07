@@ -5,15 +5,15 @@ eksperimen penghasilnya dan tempat angkanya mendarat. Perintah reproduksi persis
 beserta versi paket ada di [`REPRODUCE.md`](REPRODUCE.md).
 
 Kolom **Eksperimen** memakai penomoran log di
-[`../../docs/experiments/EKSPERIMEN.md`](../../docs/experiments/EKSPERIMEN.md); **SR**
-merujuk laporan solusi di [`../../docs/experiments/SR/`](../../docs/experiments/SR/).
+[`../EKSPERIMEN.md`](../EKSPERIMEN.md); **SR**
+merujuk laporan solusi di [`../SR/`](../SR/).
 
 ## Rute tugas
 
 | Tugas | Jalur minimum | Hasil atau batas |
 |---|---|---|
-| Menghasilkan metrik E-021 | `build/build_rfdetr_ds.py` → `train/train_rfdetr.py` → `eval/eval_all_pycoco.py` | [`perkelas_pycoco.json`](../../evidence/experiments/results/E-021/perkelas_pycoco.json); baca [METRICS.md](../../docs/experiments/METRICS.md) sebelum melaporkan angka. |
-| Mengaudit E-022 | [AUDIT-E022.md](../../docs/experiments/AUDIT-E022.md) → `analysis/verify_depth_mi.py` → `eval/eval_e022_paired.py` | Angka seed-42 bersifat historis. Bandingkan dengan [arsip E-022](../../docs/experiments/archive/E022-seed42-awal.md). |
+| Menghasilkan metrik E-021 | `build/build_rfdetr_ds.py` → `train/train_rfdetr.py` → `eval/eval_all_pycoco.py` | [`perkelas_pycoco.json`](results/E-021/perkelas_pycoco.json); baca [METRICS.md](../METRICS.md) sebelum melaporkan angka. |
+| Mengaudit E-022 | [AUDIT-E022.md](../AUDIT-E022.md) → `analysis/verify_depth_mi.py` → `eval/eval_e022_paired.py` | Angka seed-42 bersifat historis. Bandingkan dengan [arsip E-022](../archive/E022-seed42-awal.md). |
 | Menyiapkan depth sensor untuk pipeline produksi | [`../pipeline/prepare_depth.py`](../pipeline/prepare_depth.py) dengan `--mode gemini` | Untuk depth yang **sudah** disejajarkan ke RGB oleh SDK sensor. Depth SawitMVC-Depth ditangani `build/reproject_depth.py` (lihat catatan dua jalur di bawah). |
 
 ## `train/` — pelatihan model (12)
@@ -103,7 +103,7 @@ batch 8 = 10.331 MiB dari 20.470 (F-001); dua run serentak = 20.662 MiB → OOM.
 `f007_frekuensi.sh` karena itu punya **penjaga proses** yang menolak start bila
 sudah ada `train_rfdetr*` berjalan — ditambahkan setelah menjalankan skrip itu
 "sekadar untuk memeriksa" sempat menyalakan run sungguhan di atas F-004
-(insiden 6 Agustus 2026, lihat [SERI-F.md](../../docs/experiments/SERI-F.md) §5.4).
+(insiden 6 Agustus 2026, lihat [SERI-F.md](../SERI-F.md) §5.4).
 
 ## `config/` — konfigurasi dataset (2)
 
@@ -136,15 +136,15 @@ reproyeksi penuh (keputusan diambil di E-022a, meleset median 29 px bila hanya
 di-resize). `../pipeline/prepare_depth.py` melayani keluaran Gemini yang sudah
 di-align SDK di lapangan, dan hanya menerima `.png/.tif/.tiff` — ia tidak akan
 memproses `.raw` dataset ini walau dipanggil. Lihat
-[SR-015](../../docs/experiments/SR/SR-015-depth-sensor-4kanal.md).
+[SR-015](../SR/SR-015-depth-sensor-4kanal.md).
 
 ## Bukti hasil
 
 | Folder | Isi |
 |---|---|
-| [`results/`](../../evidence/experiments/results/) | JSON mentah, dikelompokkan per eksperimen |
-| [`runs/`](../../evidence/experiments/runs/) | Konfigurasi + kurva per-epoch tiap run (`args.yaml`, `results.csv`, `metrics.csv`, `training_config.json`) |
-| [`logs/`](../../evidence/experiments/logs/) | Keluaran konsol, sudah dibersihkan dari progress-bar |
-| [`figures/`](../../evidence/experiments/figures/) | Confusion matrix, kurva PR, kurva F1-confidence (E-021) |
-| [`splits_rgb/`](../../evidence/experiments/splits_rgb/) | Definisi split per pohon 716/96/141, irisan nol |
-| [`splits_depth/`](../../evidence/experiments/splits_depth/) | Split per pohon 245/35/72 untuk SawitMVC-Depth (E-022), irisan nol |
+| [`results/`](results/) | JSON mentah, dikelompokkan per eksperimen |
+| [`runs/`](results/runs/) | Konfigurasi + kurva per-epoch tiap run (`args.yaml`, `results.csv`, `metrics.csv`, `training_config.json`) |
+| [`logs/`](logs/) | Keluaran konsol, sudah dibersihkan dari progress-bar |
+| [`figures/`](figures/) | Confusion matrix, kurva PR, kurva F1-confidence (E-021) |
+| [`splits_rgb/`](results/splits_rgb/) | Definisi split per pohon 716/96/141, irisan nol |
+| [`splits_depth/`](results/splits_depth/) | Split per pohon 245/35/72 untuk SawitMVC-Depth (E-022), irisan nol |

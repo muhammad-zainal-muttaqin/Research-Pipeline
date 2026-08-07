@@ -12,7 +12,7 @@ SEMUA sisi, tidak ada yang bisa ditransfer, dan K3 gugur tanpa perlu dilatih.
 
 ## Kenapa ini tidak bisa dihitung dari E-028
 
-`evidence/experiments/results/E-028/konsistensi_sawitmvc_rgb_seed42.json` hanya
+`experiments/results/E-028/konsistensi_sawitmvc_rgb_seed42.json` hanya
 menyimpan laju agregat (`laju_inkonsisten`, `per_kelas_gt_*`,
 `pasangan_kelas_bertabrakan`) — tidak ada satu pun prediksi per-sisi. Diperiksa
 langsung 6 Agustus 2026. Karena itu `cross_side_consistency.py` diberi flag

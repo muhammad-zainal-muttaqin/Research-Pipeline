@@ -3,7 +3,7 @@
 # jadi tahap berikutnya menunggu tahap sebelumnya selesai daripada membiarkan
 # GPU menganggur di antara giliran saya memeriksa.
 set -u
-cd reproduce/experiments
+cd experiments/code
 PY=.venv/bin/python
 
 log() { echo "[$(date +%H:%M:%S)] $*"; }

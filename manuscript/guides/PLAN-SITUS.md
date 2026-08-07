@@ -12,11 +12,11 @@
 | Aspek | Target |
 |---|---|
 | Output | Satu file `index.html` mandiri (single-file app) di root repo |
-| Isi | 202 entri `docs/literature/entries/*.md` + `docs/literature/synthesis.md` sebagai dokumen sintesis khusus |
+| Isi | 202 entri `literature/entries/*.md` + `literature/synthesis.md` sebagai dokumen sintesis khusus |
 | Dependensi runtime | **Nol** — semua CSS, JS, dan parser Markdown di-inline ke dalam file |
 | Ukuran akhir | ± 3–4 MB (konten mentah 2,6 MB + parser + runtime) — masih aman untuk GitHub Pages (limit 100 MB/file, soft limit 1 GB/repo) |
 | Deploy | Cukup push repo → aktifkan Pages; tanpa build step di CI |
-| Regenerasi | `node site/build.js` menghasilkan ulang `index.html` kapan pun konten `docs/literature/entries/` berubah |
+| Regenerasi | `node site/build.js` menghasilkan ulang `index.html` kapan pun konten `literature/entries/` berubah |
 
 **Non-goal:** tidak membangun backend, tidak memakai framework JS (React/Vue),
 tidak memakai CDN untuk fungsionalitas inti (font Google Fonts boleh dipakai
@@ -28,11 +28,11 @@ dengan fallback sistem yang anggun; situs tetap utuh tanpa internet).
 
 | Sumber | Jumlah | Catatan |
 |---|---|---|
-| `docs/literature/entries/NNN - YYYY - Judul - Tema.md` | 202 berkas (± 2,6 MB) | Satu makalah = satu berkas |
-| `docs/literature/synthesis.md` | 1 berkas (24 KB) | Sintesis lintas makalah — diperlakukan sebagai entri spesial "pin di atas" |
+| `literature/entries/NNN - YYYY - Judul - Tema.md` | 202 berkas (± 2,6 MB) | Satu makalah = satu berkas |
+| `literature/synthesis.md` | 1 berkas (24 KB) | Sintesis lintas makalah — diperlakukan sebagai entri spesial "pin di atas" |
 | `README.md` | 1 berkas | Referensi copy pengantar; **tidak disertakan mentah** — Beranda adalah dashboard yang ditulis khusus (§5.1 butir 4) |
-| `docs/literature/entries/INDEX.md` | 1 berkas | **Dilewati** — fungsinya digantikan navigasi aplikasi |
-| `docs/manuscript/source/references.bib`, `artifacts/legacy/tinjauan-pustaka.tex` | — | Tidak disertakan di web (tetap di repo) |
+| `literature/entries/INDEX.md` | 1 berkas | **Dilewati** — fungsinya digantikan navigasi aplikasi |
+| `manuscript/source/references.bib`, `legacy/tinjauan-pustaka.tex` | — | Tidak disertakan di web (tetap di repo) |
 
 **Fakta konten yang sudah diverifikasi:**
 - Tidak ada fenced code block (` ``` `) dan tidak ada gambar di semua entri → parser cukup menangani: heading ATX, tabel GFM, blockquote, list (berurut/tidak, bersarang), bold/italic/strikethrough, inline code, tautan, HR.
@@ -48,7 +48,7 @@ Sensing · Segmentasi RGB-D · Survei YOLO · YOLO plus RGB-D.
 **Rentang tahun:** 2012–2026 (dipakai untuk filter & grafik timeline).
 
 **Catatan rekonsiliasi sumber (terverifikasi saat audit):**
-- Aplikasi memakai **17 label tema dari nama berkas**. Dokumen `docs/literature/synthesis.md`
+- Aplikasi memakai **17 label tema dari nama berkas**. Dokumen `literature/synthesis.md`
   menyebut "14 klaster" — itu taksonomi naskah LaTeX; keduanya tidak
   bertentangan, aplikasi mengikuti label nama berkas.
 - Tahun dengan entri berjumlah **14** (2013 kosong); "rentang 2012–2026"
@@ -108,7 +108,7 @@ Sensing · Segmentasi RGB-D · Survei YOLO · YOLO plus RGB-D.
 
 ```
 Research-Pipeline/
-├── docs/manuscript/guides/PLAN-SITUS.md            ← dokumen ini
+├── manuscript/guides/PLAN-SITUS.md            ← dokumen ini
 ├── build.js           ← build script (satu-satunya alat yang dibutuhkan)
 ├── index.html         ← HASIL BUILD (jangan diedit manual)
 ├── vendor/
@@ -117,7 +117,7 @@ Research-Pipeline/
 ├── TEMUAN.md          ← sumber konten
 ├── README.md          ← sumber konten beranda
 ├── references.bib     ← tidak disentuh
-└── artifacts/legacy/tinjauan-pustaka.tex
+└── legacy/tinjauan-pustaka.tex
 ```
 
 `index.html` boleh di-commit (itulah yang dilayani Pages). `vendor/` dan
@@ -131,9 +131,9 @@ Node.js ≥ 18, **tanpa `npm install`** (hanya `fs`, `path`).
 
 ### 5.1 Alur kerja
 
-1. **Validasi awal:** pastikan `docs/literature/entries/`, `docs/literature/synthesis.md`, `vendor/marked.min.js`
+1. **Validasi awal:** pastikan `literature/entries/`, `literature/synthesis.md`, `vendor/marked.min.js`
    ada; gagal → pesan error jelas.
-2. **Parse entri:** untuk setiap berkas `docs/literature/entries/*.md` (kecuali `INDEX.md`):
+2. **Parse entri:** untuk setiap berkas `literature/entries/*.md` (kecuali `INDEX.md`):
    - Regex nama: `/^(\d{3}) - (\d{4}) - (.+) - ([^-]+)\.md$/`
    - Hasil: `{ num, year, title, theme, file }`
    - Baca isi UTF-8; buang baris pertama (`# NNN - ...`) karena judul sudah
@@ -289,7 +289,7 @@ utama Beranda; mode entri memakai kolom tunggal terpusat.
    jalur diberi bobotnya sendiri (jumlah entri + estimasi menit), bukan nomor
    urut — keempatnya sejajar, bukan langkah berurutan.
 7. Footer: hairline, info mono (jumlah entri, tanggal build, cara regenerasi
-   `node site/build.js`, tautan `artifacts/legacy/tinjauan-pustaka.tex` & `docs/manuscript/source/references.bib`).
+   `node site/build.js`, tautan `legacy/tinjauan-pustaka.tex` & `manuscript/source/references.bib`).
 
 ### 7.3 Layar Entri (`#/042`)
 
@@ -409,7 +409,7 @@ karena tak ada request lain setelah font); tanpa sinkronisasi antar-perangkat.
 ## 10. Panduan Deploy
 
 **GitHub Pages**
-1. `git add index.html build.js vendor/marked.min.js docs/manuscript/guides/PLAN-SITUS.md && git commit -m "Web reading room" && git push`
+1. `git add index.html build.js vendor/marked.min.js manuscript/guides/PLAN-SITUS.md && git commit -m "Web reading room" && git push`
 2. Repo → **Settings → Pages → Source: `Deploy from a branch`** → branch `main`, folder `/ (root)` → Save.
 3. Situs tayang di `https://<user>.github.io/Research-Pipeline/` dalam ±1 menit.
 
@@ -419,7 +419,7 @@ karena tak ada request lain setelah font); tanpa sinkronisasi antar-perangkat.
 3. Setiap push otomatis redeploy; URL `https://research-pipeline.pages.dev`.
 
 > Karena `index.html` sudah final di repo, **tidak perlu build step CI**.
-> Setelah mengubah isi `docs/literature/entries/`, jalankan `node site/build.js` lalu commit hasilnya.
+> Setelah mengubah isi `literature/entries/`, jalankan `node site/build.js` lalu commit hasilnya.
 
 ---
 

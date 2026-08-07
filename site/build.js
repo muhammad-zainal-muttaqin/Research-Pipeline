@@ -4,7 +4,7 @@
 /*
  * build.js: Perakit "Ruang Baca Riset" (index.html mandiri)
  * -----------------------------------------------------------
- * Memindai docs/literature/entries/*.md + docs/literature/synthesis.md,
+ * Memindai literature/entries/*.md + literature/synthesis.md,
  * menyerap metadata, lalu menyuntikkan seluruh konten + parser Markdown
  * (vendor/marked.min.js) + runtime aplikasi
  * ke dalam satu berkas index.html tanpa dependensi eksternal.
@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const ENTRI_DIR = path.join(ROOT, 'docs', 'literature', 'entries');
+const ENTRI_DIR = path.join(ROOT, 'literature', 'entries');
 const MARKED_PATH = path.join(__dirname, 'vendor', 'marked.min.js');
 const OUT_PATH = path.join(ROOT, 'index.html');
 const DRY = process.argv.includes('--dry');
@@ -53,8 +53,8 @@ const SPECIAL_DOCS = [
     marker: '§',
     title: 'Temuan Riset: Sintesis Lintas Makalah',
     theme: 'Sintesis',
-    file: 'docs/literature/synthesis.md',
-    sourceDir: 'docs/literature',
+    file: 'literature/synthesis.md',
+    sourceDir: 'literature',
     desc: 'Sintesis lintas makalah dari korpus tinjauan pustaka.'
   },
   {
@@ -64,8 +64,8 @@ const SPECIAL_DOCS = [
     marker: '¶',
     title: 'Laporan Eksperimen: Deteksi & Penghitungan Tandan Sawit',
     theme: 'Eksperimen',
-    file: 'docs/experiments/LAPORAN-EKSPERIMEN.md',
-    sourceDir: 'docs/experiments',
+    file: 'experiments/LAPORAN-EKSPERIMEN.md',
+    sourceDir: 'experiments',
     desc: 'Cuplikan terkurasi eksperimen deteksi dan penghitungan tandan sawit.'
   }
 ];
@@ -73,11 +73,13 @@ const SPECIAL_DOCS = [
 /* Folder yang di-exclude dari build Jekyll (`_config.yml`): berkas di
  * dalamnya TIDAK tayang di GitHub Pages, jadi tautan ke sana harus
  * diturunkan menjadi teks biasa alih-alih menjadi tautan mati. PDF akhir
- * di `artifacts/papers/` sengaja tetap tayang untuk pratinjau naskah.
- * Pengecualian: `docs/literature/entries/`, sebab tautan ke entri korpus ditangani runtime
+ * di `manuscript/output/papers/` sengaja tetap tayang untuk pratinjau naskah.
+ * Pengecualian: `literature/entries/`, sebab tautan ke entri korpus ditangani runtime
  * (`enhance()`) dan diubah menjadi rute internal `#/NNN`. */
 const PAGES_EXCLUDED = [
-  'evidence/', 'reproduce/', 'artifacts/legacy/', 'artifacts/scratch/', 'site/'
+  'experiments/code/', 'experiments/results/', 'experiments/logs/', 'experiments/runs/',
+  'experiments/splits/', 'experiments/figures/', 'literature/extracted/',
+  'literature/search-data/', 'datasets/', 'legacy/', 'site/', 'tools/', 'pipeline/'
 ];
 const ENTRY_LINK_RE = /(?:^|\/)\d{3}\s-\s.*\.md$/i;
 
@@ -89,7 +91,7 @@ function fail(msg) {
   process.exit(1);
 }
 if (!fs.existsSync(ENTRI_DIR) || !fs.statSync(ENTRI_DIR).isDirectory()) {
-  fail('Direktori "docs/literature/entries/" tidak ditemukan di ' + ROOT);
+  fail('Direktori "literature/entries/" tidak ditemukan di ' + ROOT);
 }
 SPECIAL_DOCS.forEach(function (d) {
   if (!fs.existsSync(path.join(ROOT, d.file))) {
@@ -170,8 +172,8 @@ function countWords(md) {
  * ------------------------------------------------------------------ *
  * Isi dokumen disematkan ke `index.html` yang berada di akar repo, jadi
  * tautan relatif yang ditulis dari sudut pandang `sourceDir` harus digeser
- * ke akar. Untuk `sourceDir = 'docs/experiments'`: `METRICS.md` menjadi
- * `docs/experiments/METRICS.md`.
+ * ke akar. Untuk `sourceDir = 'experiments'`: `METRICS.md` menjadi
+ * `experiments/METRICS.md`.
  */
 
 // Gabung direktori + jalur relatif ala POSIX, sekaligus meratakan "." dan "..".
@@ -984,8 +986,8 @@ function RUNTIME() {
   ];
 
   var PAPERS = [
-    { label: 'IEEEtran', title: 'Naskah IEEEtran', file: 'artifacts/papers/main.pdf' },
-    { label: 'Elsevier', title: 'Naskah Elsevier', file: 'artifacts/papers/main-elsarticle.pdf' }
+    { label: 'IEEEtran', title: 'Naskah IEEEtran', file: 'manuscript/output/papers/main.pdf' },
+    { label: 'Elsevier', title: 'Naskah Elsevier', file: 'manuscript/output/papers/main-elsarticle.pdf' }
   ];
 
   var ICON = {

@@ -27,12 +27,12 @@ utama.
 
 ## Sumber dan reproduksi
 
-- JSON kanonik: [`evidence/experiments/results/E-021/perkelas_pycoco.json`](../../evidence/experiments/results/E-021/perkelas_pycoco.json).
-- Skrip evaluator: [`reproduce/experiments/eval/eval_all_pycoco.py`](../../reproduce/experiments/eval/eval_all_pycoco.py).
+- JSON kanonik: [`experiments/results/E-021/perkelas_pycoco.json`](results/E-021/perkelas_pycoco.json).
+- Skrip evaluator: [`experiments/code/eval/eval_all_pycoco.py`](code/eval/eval_all_pycoco.py).
 - Metrik lengkap per kelas, AP, AR, precision, recall, F1, bootstrap, serta
-  efisiensi: [`evidence/experiments/results/E-021/`](../../evidence/experiments/results/E-021/).
-- Catatan konfigurasi dan jebakan run: [`CATATAN-TEKNIS-E021.md`](../../reproduce/experiments/CATATAN-TEKNIS-E021.md).
-- Perintah lengkap: [`REPRODUCE.md`](../../reproduce/experiments/REPRODUCE.md).
+  efisiensi: [`experiments/results/E-021/`](results/E-021/).
+- Catatan konfigurasi dan jebakan run: [`CATATAN-TEKNIS-E021.md`](code/CATATAN-TEKNIS-E021.md).
+- Perintah lengkap: [`REPRODUCE.md`](code/REPRODUCE.md).
 
 ## Batas penggunaan
 

@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-DIR = Path(__file__).resolve().parents[3] / "evidence/experiments/results/E-023"
+DIR = Path(__file__).resolve().parents[3] / "experiments/results/E-023"
 LENGAN = ["awal", "mid", "late", "derau"]
 SEEDS = [42, 1337, 2024]
 

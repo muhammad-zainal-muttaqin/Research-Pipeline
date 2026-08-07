@@ -21,7 +21,7 @@ aplikasi.
 > [`../experiments/build/reproject_depth.py`](../experiments/build/reproject_depth.py). Kedua jalur ini
 > berdampingan dengan sengaja — pilih menurut asal datanya, bukan menurut mana
 > yang lebih baru. Rinciannya di
-> [SR-015](../../docs/experiments/SR/SR-015-depth-sensor-4kanal.md).
+> [SR-015](../SR/SR-015-depth-sensor-4kanal.md).
 
 ## Berkas
 

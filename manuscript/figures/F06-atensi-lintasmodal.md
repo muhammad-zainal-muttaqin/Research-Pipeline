@@ -2,7 +2,7 @@
 
 ## 1. Tujuan & tempat
 Diagram blok mekanisme atensi lintas-modal (fusi menengah). Dirujuk di
-`\section{Fusi RGB--Depth}` (`docs/manuscript/source/main.tex`, Gambar~\ref{fig:atensi}). Sumber:
+`\section{Fusi RGB--Depth}` (`manuscript/source/main.tex`, Gambar~\ref{fig:atensi}). Sumber:
 entri 55 (SA-Gate), 46 (CIR-Net), 58 (CMX).
 
 ## 2. Konten faktual (aliran)

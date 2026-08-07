@@ -112,9 +112,9 @@ berada pada grid kamera color.
 
 ## Sumber angka
 
-Semua angka berasal dari `evidence/experiments/results/E-022/`: `mi.json`,
+Semua angka berasal dari `experiments/results/E-022/`: `mi.json`,
 `pycoco_yolo26n.json`, `paired_yolo26n.json`, `paired_rtdetrl.json`,
 `paired_rfdetrnano.json`, `paired_derau.json`,
 `paired_*_depth_vs_derau.json`, `paired_yolo26n_depth_vs_tukar.json`, dan
 `depth_meta.json`. Indeks artefaknya ada di
-[`evidence/experiments/results/README.md`](../../../evidence/experiments/results/README.md).
+[`experiments/results/README.md`](../results/README.md).

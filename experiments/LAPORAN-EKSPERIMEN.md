@@ -11,13 +11,13 @@ Keduanya diperlakukan sama —
 angka apa adanya.
 
 Sumber kanonik yang dirangkum di sini:
-[`docs/experiments/EKSPERIMEN.md`](EKSPERIMEN.md) (log kronologis, *append-only*) ·
-[`docs/experiments/SR/README.md`](SR/README.md) (pandangan per-ide) ·
-[`docs/experiments/METRICS.md`](METRICS.md) (tabel metrik definitif E-021) ·
-[`docs/experiments/METRIK-LENGKAP.md`](METRIK-LENGKAP.md) (metrik seluruh run blok depth) ·
-[`docs/experiments/AUDIT-E022.md`](AUDIT-E022.md) (koreksi E-022) ·
-[`docs/experiments/STATUS.md`](STATUS.md) (titik jeda & jalur lanjutan) ·
-[`reproduce/pipeline/README.md`](../../reproduce/pipeline/README.md) (deliverable produksi).
+[`experiments/EKSPERIMEN.md`](EKSPERIMEN.md) (log kronologis, *append-only*) ·
+[`experiments/SR/README.md`](SR/README.md) (pandangan per-ide) ·
+[`experiments/METRICS.md`](METRICS.md) (tabel metrik definitif E-021) ·
+[`experiments/METRIK-LENGKAP.md`](METRIK-LENGKAP.md) (metrik seluruh run blok depth) ·
+[`experiments/AUDIT-E022.md`](AUDIT-E022.md) (koreksi E-022) ·
+[`experiments/STATUS.md`](STATUS.md) (titik jeda & jalur lanjutan) ·
+[`pipeline/README.md`](../pipeline/README.md) (deliverable produksi).
 
 > **Pembaruan audit 2 Agustus 2026.** Dokumen ini adalah snapshot kurasi
 > historis. Untuk status klaim terbaru, gunakan `reports.tex` dan
@@ -71,7 +71,7 @@ Yang diambil dari korpus dan benar-benar diuji:
   `evidence-body.tex` §174) → dasar I-4/I-5.
 - **Gerbang mutu depth** (SA-Gate entri 055; D3Net entri 037: depth buruk merusak
   prediksi) → I-8, masih menunggu GEMINI-PENDING.
-- **Detektor NMS-free** sebagai prioritas 1 (`evidence/literature/references/deep-research-report.md`) → E-020,
+- **Detektor NMS-free** sebagai prioritas 1 (`literature/references/deep-research-report.md`) → E-020,
   yang akhirnya menjadi hasil terbaik.
 
 Satu batas yang harus disebut sejak awal: **tidak ada satu pun benchmark RGB-D
@@ -102,7 +102,7 @@ default) — ia titik acuan, bukan plafon.
 
 ## 3. Peta 30 eksperimen
 
-Semua eksperimen yang tercatat di [`docs/experiments/EKSPERIMEN.md`](EKSPERIMEN.md), dengan
+Semua eksperimen yang tercatat di [`experiments/EKSPERIMEN.md`](EKSPERIMEN.md), dengan
 putusan apa adanya. Sepuluh dipalsukan, satu ditarik, satu dicabut — itu justru
 bagian yang paling mempersempit arah kerja.
 
@@ -125,7 +125,7 @@ entri untuk rentang E-001…E-032, bukan 32.
 | E-010 | Diagnosis penyebab kegagalan B4 | [SR-007](SR/SR-007-diagnosis-b4.md) | DIKONFIRMASI (kontras) / DIPALSUKAN (kepadatan) |
 | E-011 | Praproses mana yang menaikkan keterpisahan B4 | [SR-008](SR/SR-008-kanal-tekstur.md) | DIKONFIRMASI (tekstur) / DIPALSUKAN (penajam kontras) |
 | E-012 | Kematangan dari penampilan potongan GT | [SR-009](SR/SR-009-ordinalitas-kelas.md) | DIKONFIRMASI / CONFIRMED |
-| E-013 | Pipeline produksi 4-kanal untuk sensor depth | [`reproduce/pipeline/`](../../reproduce/pipeline/README.md) | SIAP PAKAI / DELIVERED |
+| E-013 | Pipeline produksi 4-kanal untuk sensor depth | [`pipeline/`](../pipeline/README.md) | SIAP PAKAI / DELIVERED |
 | E-014 | Hambatan mAP: deteksi atau klasifikasi? | [SR-010](SR/SR-010-hambatan-klasifikasi.md) | DIKONFIRMASI / CONFIRMED |
 | E-015 | Pemetaan master mentah lewat pencocokan isi | [SR-002](SR/SR-002-resolusi-master-mentah.md) | TERBLOKIR → DIBUKA / UNBLOCKED |
 | E-016 | Plafon kematangan, diukur tiga kali | [SR-011](SR/SR-011-plafon-kematangan.md) | DITARIK / WITHDRAWN (lewat E-018) |
@@ -287,7 +287,7 @@ sebagai plafon.
 
 ### 5.1 Semua run detektor, berdampingan
 
-Angka COCO/ultralytics apa adanya, dari [`docs/experiments/METRICS.md`](METRICS.md).
+Angka COCO/ultralytics apa adanya, dari [`experiments/METRICS.md`](METRICS.md).
 
 **Val (dasar pemilihan konfigurasi):**
 
@@ -616,7 +616,7 @@ ukuran varians split, dan ukuran ambiguitas bebas-label.
 
 ### 7.1 Yang sudah siap dan tidak hilang
 
-- **[`reproduce/pipeline/`](../../reproduce/pipeline/README.md)** — pipeline produksi YOLO 4-kanal
+- **[`pipeline/`](../pipeline/README.md)** — pipeline produksi YOLO 4-kanal
   (RGB + depth) untuk kamera **Orbbec Gemini**. Satu bobot melayani dua mode uji
   lewat *modality dropout*: RGB+depth saat sensor terpasang, RGB saja saat tidak.
   Kontrak kanal keempat sudah dibekukan (PNG uint8, `0` = tidak ada data,
@@ -758,8 +758,8 @@ dengan irisan nol — invarian yang harus dijaga.
 **Blok depth sensor** (§6) memakai SawitMVC-Depth, split per-pohon
 terstratifikasi `(device × unit-kamera) × kelas-dominan`, 245/35/72 pohon,
 irisan nol. Bukti terarsip: 39 kurva latihan + 37 kontras di
-`evidence/experiments/results/E-022/`, 15 kurva latihan + 12 kontras di
-`evidence/experiments/results/E-023/`. **Bobot tidak diarsipkan** (kebijakan
+`experiments/results/E-022/`, 15 kurva latihan + 12 kontras di
+`experiments/results/E-023/`. **Bobot tidak diarsipkan** (kebijakan
 repo); sebagai gantinya tiap run menyimpan SHA-256 `best.pt`, sehingga hasil
 latih-ulang dapat diverifikasi identik atau tidak.
 
@@ -769,12 +769,12 @@ serta `reproject_depth.py --z-near 0.8 --z-far 15.0` — ada di
 [STATUS.md](STATUS.md) §"Mulai dari nol setelah jeda".
 
 Untuk deliverable produksi, seluruh perintah latih/konversi/inferensi ada di
-[`reproduce/pipeline/README.md`](../../reproduce/pipeline/README.md).
+[`pipeline/README.md`](../pipeline/README.md).
 
 ---
 
 *Cuplikan ini dikurasi 25 Juli 2026, diperluas ke E-032 pada 1 Agustus 2026.
 Angka apa adanya, hasil negatif ikut dilaporkan — dan di blok §6, hasil negatif
 adalah keseluruhan isinya. Bila ada selisih antara dokumen ini dan
-[`docs/experiments/EKSPERIMEN.md`](EKSPERIMEN.md) / [`docs/experiments/METRICS.md`](METRICS.md), yang kanonik
+[`experiments/EKSPERIMEN.md`](EKSPERIMEN.md) / [`experiments/METRICS.md`](METRICS.md), yang kanonik
 adalah kedua berkas itu.*

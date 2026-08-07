@@ -1,7 +1,7 @@
 # Architectural and Loss-Function Innovations to Break the 0.6038 mAP50 Ceiling in Dense Oil Palm FFB Detection
 
 > **Provenans.** Keluaran agen deep research eksternal (Gemini), diterima 5 Agustus
-> 2026 sebagai jawaban atas [`docs/experiments/BRIEF-DEEP-RESEARCH.md`](../docs/experiments/BRIEF-DEEP-RESEARCH.md).
+> 2026 sebagai jawaban atas [`experiments/BRIEF-DEEP-RESEARCH.md`](../experiments/BRIEF-DEEP-RESEARCH.md).
 > Berkas ini adalah **transkripsi yang dirapikan**, bukan hasil eksperimen dan
 > **bukan bukti**. Isi klaimnya tidak diubah; hanya rumus matematika, tabel, dan
 > struktur judul yang dipulihkan dari salinan mentah yang rusak.

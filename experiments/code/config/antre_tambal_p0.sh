@@ -13,7 +13,7 @@
 # atau sesi agen mana pun ditutup (dugaan penyebab tukar_seed1337 mati di
 # epoch 27 — waktunya bertepatan dengan Codex distop).
 set -u
-cd reproduce/experiments
+cd experiments/code
 source .venv/bin/activate
 mkdir -p logs_gap
 

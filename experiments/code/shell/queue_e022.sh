@@ -3,7 +3,7 @@
 # Dijalankan berurutan supaya tidak memperebutkan VRAM L4 23 GB.
 set -uo pipefail
 SKRIP_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-cd reproduce/experiments
+cd experiments/code
 export YOLO_CONFIG_DIR=/tmp/Ultralytics
 PY=./.venv/bin/python
 EPOCHS=60

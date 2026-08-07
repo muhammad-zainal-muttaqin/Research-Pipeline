@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Bangun tabel sintesis LaTeX (satu baris per studi) dari matriks bukti.
 
-Masukan : docs/audit/evidence-matrix-182.csv
-Keluaran: docs/manuscript/source/appendix-synthesis.tex
+Masukan : audit/evidence-matrix-182.csv
+Keluaran: manuscript/source/appendix-synthesis.tex
 
 Tabel ini memenuhi butir 8 revisi dosen (2026-07-23): matriks bukti harus masuk
 ke dalam makalah sebagai tabel sintesis, bukan hanya sebagai berkas CSV terpisah.
@@ -12,7 +12,7 @@ limitations; rerata 460 karakter) tidak dimuat di tabel karena akan menjadi
 puluhan halaman. Kolom-kolom itu tetap tersedia di CSV suplemen.
 
 Jalankan ulang setiap kali matriks berubah:
-    python reproduce/tools/build_synthesis_table.py
+    python tools/build_synthesis_table.py
 """
 
 import csv
@@ -147,8 +147,8 @@ def main():
 
     body = "\n".join(lines)
     OUT.write_text(
-        f"""% DIBANGKITKAN OTOMATIS oleh reproduce/tools/build_synthesis_table.py --- jangan disunting tangan.
-% Sumber: docs/audit/evidence-matrix-182.csv ({len(rows)} baris)
+        f"""% DIBANGKITKAN OTOMATIS oleh tools/build_synthesis_table.py --- jangan disunting tangan.
+% Sumber: audit/evidence-matrix-182.csv ({len(rows)} baris)
 % Tabel ini butuh lebar penuh. Simpan dulu status kolom dokumen agar daftar
 % pustaka setelahnya kembali dua kolom pada IEEEtran, dan tetap satu kolom pada
 % elsarticle.

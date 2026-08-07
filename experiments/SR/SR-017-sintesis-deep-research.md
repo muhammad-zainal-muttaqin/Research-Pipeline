@@ -176,4 +176,4 @@ dihentikan karena tidak dapat diukur.
   [SR-008](SR-008-kanal-tekstur.md) (kanal tekstur),
   [SR-009](SR-009-ordinalitas-kelas.md) (ordinalitas kelas),
   [SR-016](SR-016-konsistensi-lintas-sisi.md) (konsistensi lintas-sisi)
-- Bukti: `evidence/experiments/results/F-001…F-007/`
+- Bukti: `experiments/results/F-001…F-007/`

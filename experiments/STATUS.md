@@ -12,7 +12,7 @@ Dokumen ini adalah handoff singkat. Untuk peta lengkap, mulai dari
 > baseline 3 seed sedang berjalan.
 
 > **Catatan status 2 Agustus 2026.** Laporan Elsevier di `reports.tex` dan
-> `docs/experiments/REPORT_PLAN.md` adalah status audit terbaru. Bagian handoff
+> `experiments/REPORT_PLAN.md` adalah status audit terbaru. Bagian handoff
 > lama di bawah dipertahankan untuk provenance, tetapi klaim yang menyatakan
 > semua gerbang tertutup atau menyatakan E-026/E-032 sebagai hasil ekuivalen
 > telah disupersesi oleh batas bukti terbaru.
@@ -35,7 +35,7 @@ Dokumen ini adalah handoff singkat. Untuk peta lengkap, mulai dari
 
 Gunakan hanya [METRICS.md](METRICS.md) untuk mengutip performa final E-021.
 Sumber angkanya adalah
-[`evidence/experiments/results/E-021/perkelas_pycoco.json`](../../evidence/experiments/results/E-021/perkelas_pycoco.json).
+[`experiments/results/E-021/perkelas_pycoco.json`](results/E-021/perkelas_pycoco.json).
 
 ## Pekerjaan yang dihentikan atau ditangguhkan
 
@@ -54,7 +54,7 @@ Sumber angkanya adalah
 | Memahami status semua eksperimen | [README eksperimen](README.md) |
 | Memeriksa riwayat bertanggal | [EKSPERIMEN.md](EKSPERIMEN.md) |
 | Memeriksa koreksi E-022 | [AUDIT-E022.md](AUDIT-E022.md), lalu [arsip seed-42](archive/E022-seed42-awal.md) |
-| Menjalankan ulang E-021 | [catatan teknis](../../reproduce/experiments/CATATAN-TEKNIS-E021.md), [reproduksi](../../reproduce/experiments/REPRODUCE.md), dan [peta skrip](../../reproduce/experiments/PETA-SKRIP.md) |
+| Menjalankan ulang E-021 | [catatan teknis](code/CATATAN-TEKNIS-E021.md), [reproduksi](code/REPRODUCE.md), dan [peta skrip](code/PETA-SKRIP.md) |
 
 
 ## Rencana E-023 — SUDAH DIJALANKAN, lihat E-032
@@ -68,7 +68,7 @@ Sumber angkanya adalah
 ### Rancangan awal
 
 Arsitektur sudah dibangun dan diverifikasi
-([`train_fusion_2branch.py`](../../reproduce/experiments/train/train_fusion_2branch.py)):
+([`train_fusion_2branch.py`](code/train/train_fusion_2branch.py)):
 fusi menengah 2,51 jt param, fusi akhir 3,00 jt param, keduanya terbukti
 tersambung (mengubah HANYA kanal kedalaman mengubah keluaran sebesar 6,8 dan
 8,6 — sebanding dengan mengubah HANYA RGB). Yang belum dijalankan adalah
@@ -142,7 +142,7 @@ seed 2024 hanya `yolo26m_rgb`), **0 kontras berpasangan dihitung**, dan **E-030
 tidak pernah diperbarui**. Akibatnya klaim titik balik kapasitas **21,9–26,3 jt
 parameter** masih berstatus pola satu-seed — padahal klaim itulah yang dipakai
 sebagai dasar memilih arsitektur. Kurva latihan run yang sudah jadi ada di
-`evidence/experiments/results/E-022/kurva_latihan/`.
+`experiments/results/E-022/kurva_latihan/`.
 
 > **⚠ KOREKSI 2026-08-06 — dua angka di paragraf atas SALAH, diperiksa langsung
 > di disk.** Paragraf aslinya dipertahankan sebagai rekam; yang berlaku adalah
@@ -166,7 +166,7 @@ sebagai dasar memilih arsitektur. Kurva latihan run yang sudah jadi ada di
 > belum dijalankan.
 
 **1. Penjadwalan run — SUDAH DIPERBAIKI 1 Agustus.** Pustaka
-`reproduce/experiments/shell/jadwal.sh` menutup ketiga bug di bawah; jalankan
+`experiments/code/shell/jadwal.sh` menutup ketiga bug di bawah; jalankan
 `bash shell/jadwal.sh` untuk memverifikasi (empat pemeriksaan mandiri, semuanya
 lulus saat ditulis). Driver lama BELUM dialihkan memakainya — itu pekerjaan
 berikutnya, dan sebaiknya dilakukan sebelum antrean besar berikutnya dijalankan.
@@ -233,10 +233,10 @@ jumlah berkas ter-track juga dikoreksi 770 → 968 (`git ls-files | wc -l`).
 |---|---:|---|
 | `/workspace/SawitMVC/data` | 2,3 GB | HuggingFace `ULM-DS-Lab/SawitMVC` |
 | `/workspace/SawitMVC-Depth/data` | 2,6 GB | HuggingFace `ULM-DS-Lab/SawitMVC-Depth` (**private**, butuh token baru) |
-| `evidence/experiments/depth_png/` | 211 MB | `build/reproject_depth.py`, ~10 menit |
+| `experiments/results/depth_png/` | 211 MB | `build/reproject_depth.py`, ~10 menit |
 | `runs/detect/runs_e022/` (**35 checkpoint**) | 4,0 GB | latih ulang; tidak ada jalan pintas |
-| `runs/detect/runs_e023/` (**15 checkpoint**) | 315 MB | `shell/e023_fusi.sh` + `shell/e023_seed2024.sh`; ~4 jam pada satu A4500. Kurva latihan, `args.yaml`, dan SHA-256 tiap `best.pt` SUDAH diarsipkan di `evidence/experiments/results/E-023/` — cukup untuk memverifikasi apakah hasil latih-ulang menghasilkan checkpoint yang sama |
-| `reproduce/experiments/.venv` | 2,8 GB | `python -m venv --system-site-packages` |
+| `runs/detect/runs_e023/` (**15 checkpoint**) | 315 MB | `shell/e023_fusi.sh` + `shell/e023_seed2024.sh`; ~4 jam pada satu A4500. Kurva latihan, `args.yaml`, dan SHA-256 tiap `best.pt` SUDAH diarsipkan di `experiments/results/E-023/` — cukup untuk memverifikasi apakah hasil latih-ulang menghasilkan checkpoint yang sama |
+| `experiments/code/.venv` | 2,8 GB | `python -m venv --system-site-packages` |
 
 ### Urutan, beserta jebakan yang sudah terverifikasi
 

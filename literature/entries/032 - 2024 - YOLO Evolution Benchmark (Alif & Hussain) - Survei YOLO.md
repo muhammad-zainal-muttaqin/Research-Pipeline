@@ -117,7 +117,7 @@ Kutip dengan kunci `alif2024yoloevolution`. Ringkasan yang aman dikutip: "Jegham
 
 Catatan verifikasi sebelum sitasi formal:
 
-- Daftar penulis pada `docs/manuscript/source/references.bib` ("Alif, Md Adnan Faisal; Hussain, Muhammad") **tidak cocok** dengan naskah arXiv:2411.00201, yang mencantumkan Nidhal Jegham, Chan Young Koh, Marwan F. Abdelatti, dan Abdeltawab M. Hendawi; entri BibTeX perlu diperbaiki.
+- Daftar penulis pada `manuscript/source/references.bib` ("Alif, Md Adnan Faisal; Hussain, Muhammad") **tidak cocok** dengan naskah arXiv:2411.00201, yang mencantumkan Nidhal Jegham, Chan Young Koh, Marwan F. Abdelatti, dan Abdeltawab M. Hendawi; entri BibTeX perlu diperbaiki.
 - Versi terbit tercatat pada jurnal *Image and Vision Computing*; volume dan halaman perlu dikonfirmasi.
 - Angka hasil pada bab ini dibaca dari teks HTML arXiv versi 4; tabel peringkat numerik (Tabel 4 naskah) tidak tersedia dalam versi HTML, sehingga urutan peringkat keluarga bersumber dari narasi makalah.
 - Klaim "evaluasi komprehensif pertama" adalah klaim penulis, bukan fakta yang diverifikasi.

@@ -78,7 +78,7 @@ Dua sifat yang wajib dijaga saat implementasi:
 
 ## 5. Catatan teknis yang berlaku untuk seluruh seri
 
-Sejajar dengan `reproduce/experiments/CATATAN-TEKNIS-E021.md`. Semuanya
+Sejajar dengan `experiments/code/CATATAN-TEKNIS-E021.md`. Semuanya
 terverifikasi, bukan dugaan.
 
 ### 5.1 Kriteria klasifikasi RF-DETR adalah IA-BCE

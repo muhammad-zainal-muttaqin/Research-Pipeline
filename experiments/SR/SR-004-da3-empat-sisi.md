@@ -38,7 +38,7 @@ acak, atau urutan melingkar sisi salah.
 
 ## 3. Solusi
 
-`reproduce/experiments/analysis/da3_sides_test.py`. Untuk tiap pohon: jalankan DA3 multi-view atas
+`experiments/code/analysis/da3_sides_test.py`. Untuk tiap pohon: jalankan DA3 multi-view atas
 seluruh sisinya sekaligus, hitung pusat kamera dari `extrinsics`
 (C = −Rᵀt), proyeksikan ke bidang orbit lewat PCA, cocokkan lingkaran, lalu
 ukur:
@@ -97,7 +97,7 @@ pertanyaan tandan.
 ## 7. Reproduksi
 
 ```bash
-cd reproduce/experiments
+cd experiments/code
 .venv/bin/python analysis/da3_sides_test.py --trees 20 --sides 4
 .venv/bin/python analysis/da3_sides_test.py --trees 30 --sides 8 --preview 1
 # keluaran: results/E-005/report_4sides.json, results/E-005/report_8sides.json, preview_*.jpg

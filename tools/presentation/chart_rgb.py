@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Grafik detektor RGB pada dataset SawitMVC lama, satu protokol pycocotools.
 
-Sumber angka: evidence/experiments/results/E-021/perkelas_pycoco.json (split test,
-588 citra). Tabel yang sama ada di docs/experiments/EKSPERIMEN.md baris 1045-1050.
+Sumber angka: experiments/results/E-021/perkelas_pycoco.json (split test,
+588 citra). Tabel yang sama ada di experiments/EKSPERIMEN.md baris 1045-1050.
 """
 import os
 import matplotlib

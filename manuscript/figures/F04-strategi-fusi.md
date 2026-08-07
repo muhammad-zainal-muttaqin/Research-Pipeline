@@ -2,7 +2,7 @@
 
 ## 1. Tujuan & tempat
 Diagram blok tiga titik penggabungan warna dan kedalaman. Dirujuk di
-`\section{Fusi RGB--Depth}` (`docs/manuscript/source/main.tex`, Gambar~\ref{fig:strategi}); selaras
+`\section{Fusi RGB--Depth}` (`manuscript/source/main.tex`, Gambar~\ref{fig:strategi}); selaras
 Tabel~\ref{tab:fusi}. Sumber: taksonomi §5 + T3.
 
 ## 2. Konten faktual (tiga panel sejajar)

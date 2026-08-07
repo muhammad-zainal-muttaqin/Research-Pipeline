@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Laporan progres RT-DETR yang detail. Satu blok per pemanggilan.
-cd reproduce/experiments
+cd experiments/code
 CSV=runs/rtdetr_l_e60_i1280/results.csv
 LOG=logs-rtdetr.txt
 BASE50=0.5218; BASE5095=0.2407; TGT50=0.60; TGT5095=0.30

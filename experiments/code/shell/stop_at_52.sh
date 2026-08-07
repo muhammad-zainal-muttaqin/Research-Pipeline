@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -u
-cd reproduce/experiments
+cd experiments/code
 CSV=runs/rtdetr_l_e60_i1280/weights/../results.csv
 # tunggu sampai epoch >=52 terekam, atau proses mati sendiri
 while :; do

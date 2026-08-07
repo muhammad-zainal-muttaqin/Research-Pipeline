@@ -25,7 +25,7 @@ tereproduksi" dan "checkpoint-nya memang lain" dapat dibedakan.
 Pemakaian:
 
   python eval/metrics_lengkap.py --pola 'yolo26*_seed42'
-  python eval/metrics_lengkap.py --keluaran ../../evidence/experiments/results/E-022/metrics_lengkap.json
+  python eval/metrics_lengkap.py --keluaran results/E-022/metrics_lengkap.json
 """
 from __future__ import annotations
 

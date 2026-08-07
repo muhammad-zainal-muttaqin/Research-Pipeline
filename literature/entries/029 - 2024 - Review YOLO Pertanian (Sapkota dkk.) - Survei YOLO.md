@@ -5,7 +5,7 @@
 |---|---|
 | Kunci BibTeX | `sapkota2024yoloagri` |
 | Judul asli | YOLOv1 to YOLOv10: A Comprehensive Review of YOLO Variants and Their Application in the Agricultural Domain |
-| Penulis | Mujadded Al Rabbani Alif, Muhammad Hussain (sesuai naskah arXiv:2406.10139; entri `docs/manuscript/source/references.bib` mencantumkan nama lain — lihat Poin untuk Sitasi) |
+| Penulis | Mujadded Al Rabbani Alif, Muhammad Hussain (sesuai naskah arXiv:2406.10139; entri `manuscript/source/references.bib` mencantumkan nama lain — lihat Poin untuk Sitasi) |
 | Tahun | 2024 |
 | Venue | arXiv preprint arXiv:2406.10139 |
 | Tema | Survei YOLO |
@@ -132,7 +132,7 @@ Kutip dengan kunci `sapkota2024yoloagri`. Ringkasan yang aman dikutip: "Survei i
 
 Catatan verifikasi wajib sebelum sitasi formal:
 
-- **Atribusi penulis perlu diperbaiki.** Naskah arXiv:2406.10139 berpenulis Mujadded Al Rabbani Alif dan Muhammad Hussain (University of Huddersfield); entri `docs/manuscript/source/references.bib` saat ini mencantumkan Sapkota dkk., yang tidak cocok dengan naskah.
+- **Atribusi penulis perlu diperbaiki.** Naskah arXiv:2406.10139 berpenulis Mujadded Al Rabbani Alif dan Muhammad Hussain (University of Huddersfield); entri `manuscript/source/references.bib` saat ini mencantumkan Sapkota dkk., yang tidak cocok dengan naskah.
 - Angka studi aplikasi (93,81%; 98,68%; 99,44%; 92,39%; 94,73%; 96,68%) adalah hasil studi yang dikutip survei, bukan pengukuran survei sendiri; kutip studi aslinya untuk sitasi hasil tersebut.
 - Angka kinerja versi (63,4% mAP/45 FPS; AP 53,9%) diringkas survei dari makalah versi asli; verifikasi ke makalah versi yang bersangkutan bila akan dikutip.
 

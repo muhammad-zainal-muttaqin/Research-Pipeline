@@ -1,7 +1,7 @@
 # Konsistensi rangkuman entri vs full text (182 entri)
 
-Setiap rangkuman `docs/literature/entries/*.md` diperiksa terhadap teks lengkap paper
-(`evidence/literature/extracted/<id>-<key>.md`, ekstraksi termasuk tabel). Klaim angka
+Setiap rangkuman `literature/entries/*.md` diperiksa terhadap teks lengkap paper
+(`literature/extracted/<id>-<key>.md`, ekstraksi termasuk tabel). Klaim angka
 (desimal metrik, ukuran dataset, dimensi) diekstrak dari rangkuman —
 dengan normalisasi format Indonesia (koma desimal, titik ribuan) ke format
 Inggris — lalu dicocokkan ke sumber. Klaim yang "tidak ketemu" ditinjau

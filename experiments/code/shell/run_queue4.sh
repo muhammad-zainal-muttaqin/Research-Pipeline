@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -u
-cd reproduce/experiments
+cd experiments/code
 PY=.venv/bin/python
 log() { echo "[$(date +%H:%M:%S)] $*"; }
 log "menunggu antrian 3 selesai..."

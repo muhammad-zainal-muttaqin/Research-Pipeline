@@ -20,35 +20,38 @@ menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
 
 | Tujuan | Buka ini |
 |---|---|
-| Mengutip metrik final | [Metrik E-021](docs/experiments/METRICS.md) |
-| Memeriksa koreksi E-022 | [Audit E-022](docs/experiments/AUDIT-E022.md), lalu [arsip seed-42](docs/experiments/archive/E022-seed42-awal.md) |
-| Memahami seluruh eksperimen | [Pintu masuk eksperimen](docs/experiments/README.md) |
-| Menjalankan ulang E-021 | [Panduan reproduksi](reproduce/experiments/REPRODUCE.md) |
-| Menemukan skrip dan bukti hasil | [Peta skrip](reproduce/experiments/PETA-SKRIP.md) |
-| Membaca sintesis literatur | [Sintesis lintas makalah](docs/literature/synthesis.md) |
-| Menyusun naskah | [Sumber LaTeX](docs/manuscript/source/) dan [panduan naskah](docs/manuscript/guides/) |
+| Mengutip metrik final | [Metrik E-021](experiments/METRICS.md) |
+| Memeriksa koreksi E-022 | [Audit E-022](experiments/AUDIT-E022.md), lalu [arsip seed-42](experiments/archive/E022-seed42-awal.md) |
+| Memahami seluruh eksperimen | [Pintu masuk eksperimen](experiments/README.md) |
+| Menjalankan ulang E-021 | [Panduan reproduksi](experiments/code/REPRODUCE.md) |
+| Menemukan skrip dan bukti hasil | [Peta skrip](experiments/code/PETA-SKRIP.md) |
+| Membaca sintesis literatur | [Sintesis lintas makalah](literature/synthesis.md) |
+| Menyusun naskah | [Sumber LaTeX](manuscript/source/) dan [panduan naskah](manuscript/guides/) |
+| Memeriksa keterlacakan klaim | [Audit](audit/) |
 
-## Struktur singkat
+## Struktur
 
 | Lokasi | Isi |
 |---|---|
-| [`docs/`](docs/) | Dokumen yang dibaca manusia: eksperimen, literatur, naskah, dan audit |
-| [`evidence/`](evidence/) | Bukti mentah: hasil eksperimen, split, log, PDF sumber, ekstraksi, dan dataset lokal |
-| [`reproduce/`](reproduce/) | Kode, konfigurasi, dan perintah untuk menghasilkan atau mengaudit bukti |
-| [`artifacts/`](artifacts/) | Keluaran LaTeX, naskah lama, dan berkas kerja yang dipertahankan |
+| [`literature/`](literature/) | Tinjauan pustaka: 182 ringkasan, sintesis, entri ditahan, protokol pencarian, teks terekstrak, dan PDF sumber |
+| [`experiments/`](experiments/) | Eksperimen: status, log, metrik, sub-laporan, skrip (`code/`), hasil (`results/`), log training, dan split |
+| [`manuscript/`](manuscript/) | Naskah: sumber LaTeX, figur, panduan penulisan, laporan, dan keluaran PDF/PPTX |
+| [`pipeline/`](pipeline/) | Deliverable produksi: pipeline YOLO 4-kanal untuk kamera Orbbec Gemini |
+| [`tools/`](tools/) | Skrip utilitas: pembuat matriks bukti, tabel sintesis, dan presentasi |
+| [`audit/`](audit/) | Verifikasi lintas-topik: audit pra-submisi, register klaim, matriks bukti |
+| [`legacy/`](legacy/) | Draf dan figur usang |
 | [`site/`](site/) | Pembuat Ruang Baca dan pustaka kliennya |
 | [`index.html`](index.html) | Ruang Baca publik hasil build, tetap di akar untuk GitHub Pages |
 
-`evidence/datasets/` dan `evidence/literature/pdf/` adalah bahan lokal besar
-yang sengaja tidak masuk Git. Struktur ini memisahkan bahan pembaca dari
-bukti, tanpa mengubah isi JSON, split, log, PDF, atau dataset.
+`literature/pdf/` dan `datasets/` adalah bahan lokal besar yang sengaja
+tidak masuk Git.
 
 ## Perintah lokal
 
 ```bash
 node site/build.js --dry
 node site/build.js
-latexmk -pdf -outdir=artifacts/papers docs/manuscript/source/main.tex
+latexmk -pdf -outdir=manuscript/output/papers manuscript/source/main.tex
 ```
 
 Jalankan pembuat situs setelah mengubah entri literatur, sintesis, atau

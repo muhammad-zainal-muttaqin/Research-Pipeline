@@ -36,7 +36,7 @@ apa pun pada citra kanopi akan menunjukkan kontras tertentu):
 
 ## 3. Solusi
 
-`reproduce/experiments/analysis/box_size_analysis.py` (E-009) dan `reproduce/experiments/analysis/why_b4_fails.py`
+`experiments/code/analysis/box_size_analysis.py` (E-009) dan `experiments/code/analysis/why_b4_fails.py`
 (E-010, 400 citra uji, kendali kotak acak, ruang warna CIELAB, varians
 Laplacian sebagai ukuran tekstur).
 
@@ -124,7 +124,7 @@ jarak.
 ## 7. Reproduksi
 
 ```bash
-cd reproduce/experiments
+cd experiments/code
 .venv/bin/python analysis/box_size_analysis.py          # E-009
 .venv/bin/python analysis/why_b4_fails.py --images 400  # E-010
 # keluaran: results/E-009/box_sizes.json, results/E-010/why_b4.json

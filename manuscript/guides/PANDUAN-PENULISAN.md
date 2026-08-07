@@ -1,7 +1,7 @@
 # PANDUAN PENULISAN BAB — Tinjauan Pustaka YOLO / RGB / RGB-D
 
 Dokumen ini adalah **satu-satunya acuan gaya** untuk menulis ulang setiap berkas di
-`docs/literature/entries/`. Setiap penulis (termasuk subagent) wajib membaca dokumen ini sampai selesai
+`literature/entries/`. Setiap penulis (termasuk subagent) wajib membaca dokumen ini sampai selesai
 sebelum menulis. Tujuan penulisan ulang: mengubah lembar telaah yang telegrafik
 menjadi **bab bergaya buku teks** — runtut, lengkap, dan dapat dipahami pembaca yang
 belum mengenal topiknya.
@@ -12,7 +12,7 @@ belum mengenal topiknya.
 
 Satu penulis menangani **satu berkas entri** (satu makalah). Urutan kerja wajib:
 
-1. Baca `docs/manuscript/guides/PANDUAN-PENULISAN.md` ini sampai selesai.
+1. Baca `manuscript/guides/PANDUAN-PENULISAN.md` ini sampai selesai.
 2. Baca berkas entri lama yang ditugaskan. Ambil darinya: kunci BibTeX, identitas
    makalah (judul, penulis, tahun, venue), tema klaster, dan tautan akses. **Isi
    pembahasannya jangan dipertahankan** — tulis ulang sepenuhnya.
@@ -149,7 +149,7 @@ Sepuluh bagian `##` berikut, dengan judul persis seperti tertulis:
 
 ## 7. Contoh Bab Jadi
 
-Contoh bab yang sudah memenuhi seluruh kaidah: `docs/literature/entries/001 - 2016 - You Only Look
+Contoh bab yang sudah memenuhi seluruh kaidah: `literature/entries/001 - 2016 - You Only Look
 Once (YOLOv1) - Fondasi RGB.md`. Baca berkas tersebut sebagai acuan bentuk akhir —
 perhatikan panjang bagian, cara istilah diperkenalkan, dan cara angka diinterpretasi.
 Tirukan polanya pada bab yang ditugaskan, dengan isi yang sepenuhnya dari makalah

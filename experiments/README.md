@@ -50,7 +50,7 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | E-010 | Apakah B4 gagal karena kepadatan atau kontras? | Kontras dikonfirmasi, kepadatan dipalsukan | Arsip | [SR-007](SR/SR-007-diagnosis-b4.md) |
 | E-011 | Praproses apa yang membantu B4? | Tekstur dikonfirmasi, penajam kontras dipalsukan | Arsip | [SR-008](SR/SR-008-kanal-tekstur.md) |
 | E-012 | Apakah kelas kematangan bersifat ordinal? | Dikonfirmasi | Arsip | [SR-009](SR/SR-009-ordinalitas-kelas.md) |
-| E-013 | Apakah pipeline produksi 4 kanal siap untuk sensor? | Pipeline tersedia, belum ada bobot sensor | Ditangguhkan | [`reproduce/pipeline/`](../../reproduce/pipeline/) |
+| E-013 | Apakah pipeline produksi 4 kanal siap untuk sensor? | Pipeline tersedia, belum ada bobot sensor | Ditangguhkan | [`pipeline/`](../pipeline/) |
 | E-014 | Apakah hambatan mAP ada di deteksi atau klasifikasi? | Klasifikasi kematangan menjadi hambatan | Arsip | [SR-010](SR/SR-010-hambatan-klasifikasi.md) |
 | E-015 | Apakah piksel master mentah bisa dipetakan ke SawitMVC? | 3.992 dari 3.992 terpetakan | Arsip | [SR-002](SR/SR-002-resolusi-master-mentah.md) |
 | E-016 | Apakah plafon kematangan dapat dibuktikan? | Ditarik karena bukti cacat | Audit | [SR-011](SR/SR-011-plafon-kematangan.md) |
@@ -60,7 +60,7 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | E-020 | Apakah RT-DETR NMS-free melampaui baseline? | Dikonfirmasi, kemudian dilampaui E-021 | Arsip | [SR-013](SR/SR-013-rtdetr-nms-free.md) |
 | E-021 | Apakah RF-DETR-L melampaui RT-DETR pada setelan identik? | Dikonfirmasi | **Final** | [METRICS](METRICS.md) dan [SR-014](SR/SR-014-rfdetr-dinov2.md) |
 | E-022 | Apakah depth sensor terregistrasi menaikkan mAP? | Fusi awal tidak didukung; klaim kenaikan belum sah | **Audit** | [audit](AUDIT-E022.md) dan [arsip](archive/E022-seed42-awal.md) |
-| E-023 | Fusi menengah/akhir dua cabang | **Dijalankan sebagai E-032**; nomor E-023 dipakai untuk direktori bukti | Arsip | [E-032](EKSPERIMEN.md), bukti `evidence/experiments/results/E-023/` |
+| E-023 | Fusi menengah/akhir dua cabang | **Dijalankan sebagai E-032**; nomor E-023 dipakai untuk direktori bukti | Arsip | [E-032](EKSPERIMEN.md), bukti `experiments/results/E-023/` |
 | E-024 | Apakah inkonsistensi prediksi lintas-sisi terukur? | Terukur 19,5% | Arsip | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
 | E-025 | Dari mana selisih evaluator E-022 berasal? | Menskala dengan jumlah deteksi | **Audit** | [audit](AUDIT-E022.md) dan [log](EKSPERIMEN.md) |
 | E-026 | Apakah depth menstabilkan identitas lintas-sisi? | Tidak konklusif pada subset terukur; denominator RGB/RGB-D berbeda | Audit | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
@@ -77,7 +77,7 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 |---|---|
 | Pembaca hasil | Halaman ini, [METRICS.md](METRICS.md), lalu [SR-014](SR/SR-014-rfdetr-dinov2.md). |
 | Pemeriksa bukti | Halaman ini, [AUDIT-E022.md](AUDIT-E022.md), [arsip E-022](archive/E022-seed42-awal.md), lalu [EKSPERIMEN.md](EKSPERIMEN.md). |
-| Pelaksana reproduksi | Halaman ini, [PETA-SKRIP.md](../../reproduce/experiments/PETA-SKRIP.md), [catatan E-021](../../reproduce/experiments/CATATAN-TEKNIS-E021.md), lalu [REPRODUCE.md](../../reproduce/experiments/REPRODUCE.md). |
+| Pelaksana reproduksi | Halaman ini, [PETA-SKRIP.md](code/PETA-SKRIP.md), [catatan E-021](code/CATATAN-TEKNIS-E021.md), lalu [REPRODUCE.md](code/REPRODUCE.md). |
 | Pihak luar yang diberi tugas riset | [BRIEF-DEEP-RESEARCH.md](BRIEF-DEEP-RESEARCH.md) — paket pengarahan berbahasa Inggris berisi larangan eksplisit atas jalur yang sudah dipalsukan. Bukan hasil dan tidak boleh dikutip sebagai bukti. |
 | Perencana eksperimen berikutnya | [SINTESIS-DEEP-RESEARCH.md](SINTESIS-DEEP-RESEARCH.md) — rencana E-033…E-037 hasil sintesis dua jawaban deep research, beserta tiga pra-saring tanpa GPU. **Rencana, bukan hasil**; tidak ada run yang mendukungnya. |
 

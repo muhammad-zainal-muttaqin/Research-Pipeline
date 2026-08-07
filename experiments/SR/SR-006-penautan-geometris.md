@@ -41,7 +41,7 @@ Diuji sebagai **tangga ablasi** sesuai resep §208:
 
 ## 3. Solusi
 
-`reproduce/experiments/analysis/geometric_linking.py`, 141 pohon split uji (140 punya pose).
+`experiments/code/analysis/geometric_linking.py`, 141 pohon split uji (140 punya pose).
 Untuk tiap kotak: ambil median kedalaman di sekitar pusatnya, proyeksikan balik
 ke 3D dengan `Xw = Rᵀ(d·K⁻¹[u,v,1] − t)`, lalu tautkan pasangan lintas-sisi yang
 berjarak di bawah ambang. Identitas akhir = komponen terhubung (union-find).
@@ -110,7 +110,7 @@ mengalahkannya.
 **Konsekuensi strategis:** ruang perbaikan di tahap counting sudah tipis.
 Bersama SR-005, ini mempersempit arah secara tegas — sisa perbaikan harus datang
 dari **detektor**, persis kesimpulan DiB sendiri dan prioritas pertama
-`evidence/literature/references/deep-research-report.md`.
+`literature/references/deep-research-report.md`.
 
 ## 6. Dampak
 
@@ -123,11 +123,11 @@ dari **detektor**, persis kesimpulan DiB sendiri dan prioritas pertama
 ## 7. Reproduksi
 
 ```bash
-cd reproduce/experiments
+cd experiments/code
 .venv/bin/python analysis/geometric_linking.py --split test           # tabel utama
 .venv/bin/python analysis/geometric_linking.py --split test --sweep   # sapuan ambang
 # keluaran: results/E-007/report_test.json, results/E-007/sweep.json
 ```
 
 Prasyarat: `depth_da3/depth/*.png` dan `depth_da3/cameras_all.json` (dihasilkan
-`reproduce/experiments/build/gen_depth_dataset.py`). Tanpa GPU; beberapa menit.
+`experiments/code/build/gen_depth_dataset.py`). Tanpa GPU; beberapa menit.

@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Jalankan set query Q1-Q6 (docs/literature/search/PROTOCOL.md) terhadap OpenAlex.
+"""Jalankan set query Q1-Q6 (literature/search/PROTOCOL.md) terhadap OpenAlex.
 
 Lengan OpenAlex dari protokol pencarian. Bukan pengganti Scopus/WoS - lengan
 berlangganan dijalankan terpisah dan angkanya digabung di prisma-counts.csv.
 
 Keluaran:
-  evidence/literature/search/raw/openalex_<qid>_<TANGGAL>.csv   satu berkas per query
-  evidence/literature/search/raw/known-item-test_<TANGGAL>.csv  hasil uji known-item
-  evidence/literature/search/openalex-counts.csv                rekap n_raw per query
+  literature/search/raw/openalex_<qid>_<TANGGAL>.csv   satu berkas per query
+  literature/search/raw/known-item-test_<TANGGAL>.csv  hasil uji known-item
+  literature/search/openalex-counts.csv                rekap n_raw per query
 
 Pemakaian:
-  python reproduce/tools/openalex_search.py            # jalankan semua
-  python reproduce/tools/openalex_search.py Q2 Q5      # jalankan sebagian
+  python tools/openalex_search.py            # jalankan semua
+  python tools/openalex_search.py Q2 Q5      # jalankan sebagian
 
 Tidak ada dependensi eksternal (urllib saja). OpenAlex polite pool dipakai
 lewat parameter mailto; batasnya 10 permintaan/detik.
@@ -40,7 +40,7 @@ AKAR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIR_RAW = os.path.join(AKAR, "docs", "search", "raw")
 
 # ---------------------------------------------------------------------------
-# Set query. Terjemahan dari docs/literature/search/PROTOCOL.md ke sintaks OpenAlex.
+# Set query. Terjemahan dari literature/search/PROTOCOL.md ke sintaks OpenAlex.
 #
 # Deviasi yang WAJIB dilaporkan di naskah:
 #   - OpenAlex tidak mendukung wildcard (count*), jadi varian dieja satu per satu.

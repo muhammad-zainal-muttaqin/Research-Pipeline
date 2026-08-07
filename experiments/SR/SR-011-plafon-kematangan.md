@@ -44,15 +44,15 @@ tempat yang sama, angkanya adalah sifat data, bukan sifat model:
 
 ## 3. Solusi
 
-- `reproduce/experiments/analysis/head_vs_crop.py` — perbandingan setara pada tugas identik: diberi kotak,
+- `experiments/code/analysis/head_vs_crop.py` — perbandingan setara pada tugas identik: diberi kotak,
   tebak kelas. Head YOLO dinilai pada deteksinya yang berpasangan dengan GT
   (IoU ≥ 0,5); CNN potongan dinilai pada kotak GT yang sama.
-- `reproduce/experiments/train/train_maturity.py` + `reproduce/experiments/build/build_crops_raw.py` — ConvNeXt-Tiny pada potongan
+- `experiments/code/train/train_maturity.py` + `experiments/code/build/build_crops_raw.py` — ConvNeXt-Tiny pada potongan
   3024×4032 (E-015 membuka master; potongan bermedian 320 px vs 171 px di MVC,
   jadi masukan 224 px berisi detail nyata, bukan pembesaran). Augmentasi
   sengaja **aman-warna**: baseline YOLO memakai `hsv_s=0.7`, mengacak saturasi
   ±70% pada tugas yang buktinya adalah warna.
-- `reproduce/experiments/analysis/multiview_vote.py` — peluang kelas dirata-ratakan antar sisi memakai
+- `experiments/code/analysis/multiview_vote.py` — peluang kelas dirata-ratakan antar sisi memakai
   penautan **kebenaran dasar** dari JSON (bukan algoritma penaut), sehingga
   yang terukur adalah plafonnya, bukan mutu penautnya.
 
@@ -117,7 +117,7 @@ Kalau perumusan tugas boleh diubah, itu arah yang belum tersentuh.
 ## 6. Reproduksi
 
 ```bash
-cd reproduce/experiments
+cd experiments/code
 .venv/bin/python build/match_raw.py                       # peta master (E-015)
 .venv/bin/python build/build_crops_raw.py                 # potongan 3024x4032
 .venv/bin/python train/train_maturity.py                  # CNN kematangan

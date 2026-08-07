@@ -34,11 +34,11 @@ masuk akal, atau peta kedalaman kanopi datar.
 
 Dua tahap.
 
-**E-003** (`reproduce/experiments/analysis/da3_video_test.py`) — satu video, 16 dan 48 frame.
+**E-003** (`experiments/code/analysis/da3_video_test.py`) — satu video, 16 dan 48 frame.
 Diagnosa: PCA pusat kamera → kecocokan lingkaran pada bidang orbit; rentang
 dinamis kedalaman; pratinjau RGB|depth|conf untuk inspeksi mata.
 
-**E-004** (`reproduce/experiments/analysis/da3_video_multi.py`) — menuntaskan tiga keterbatasan
+**E-004** (`experiments/code/analysis/da3_video_multi.py`) — menuntaskan tiga keterbatasan
 E-003: 6 video (bukan 1), ekstraksi frame lewat **ffmpeg** yang menerapkan
 display matrix (`cv2` mengabaikannya; video terkonfirmasi memuat
 `displaymatrix: rotation of -90.00 degrees`), dan pengukuran **di mana** orbit
@@ -110,7 +110,7 @@ dipalsukan. Tidak dikarang penjelasan untuk sisa satu video ini.
 ## 7. Reproduksi
 
 ```bash
-cd reproduce/experiments
+cd experiments/code
 .venv/bin/python analysis/da3_video_test.py --frames 16          # E-003
 .venv/bin/python analysis/da3_video_test.py --frames 48 --out results/E-003b
 .venv/bin/python analysis/da3_video_multi.py --videos 6 --frames 32              # E-004

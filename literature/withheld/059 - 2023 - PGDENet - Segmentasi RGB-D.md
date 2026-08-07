@@ -122,7 +122,7 @@ Kutip dengan kunci `zhou2022pgdenet`. Ringkasan yang aman dikutip: "PGDENet memp
 
 Catatan verifikasi sebelum sitasi formal:
 
-1. Daftar penulis pada `docs/manuscript/source/references.bib` hanya memuat empat nama (Zhou, Yang, Lei, Yu); DBLP dan Semantic Scholar mencatat lima penulis, termasuk **Jian Wan**. Periksa naskah asli dan lengkapi `docs/manuscript/source/references.bib`.
+1. Daftar penulis pada `manuscript/source/references.bib` hanya memuat empat nama (Zhou, Yang, Lei, Yu); DBLP dan Semantic Scholar mencatat lima penulis, termasuk **Jian Wan**. Periksa naskah asli dan lengkapi `manuscript/source/references.bib`.
 2. Angka 53,7% / 51,0% mIoU, 100,7 juta parameter, dan 178,8 / 229,1 GFLOPs diambil dari tabel perbandingan DFormer (arXiv:2309.09668) dan DFormerv2 (arXiv:2504.04701) yang konsisten satu sama lain; naskah asli tertutup di IEEE, sehingga angka tersebut perlu dikonfirmasi ke tabel naskah.
 3. Nilai *pixel accuracy* dan rincian hasil ablasi (kontribusi DEM dan PCFM secara terpisah) tidak berhasil diperoleh dari sumber terbuka dan sengaja tidak dicantumkan.
 4. Deskripsi internal DEM dan PCFM pada bab ini dibatasi pada pernyataan abstrak (korelasi kanal dan spasial; fusi terpandu dari tingkat tinggi ke rendah); nama submodul dan persamaan rinci tidak diakses.

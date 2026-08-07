@@ -18,7 +18,7 @@ ada statistik gabungan yang dihitung, karena studi yang ditinjau memakai objek, 
 dan metrik yang tidak sebanding.
 
 Protokol tidak diregistrasi sebelumnya. Dari 8 review *Computers and Electronics in
-Agriculture* 2026 yang dibedah (`evidence/literature/references/revisi-dosen-2026-07-23/`), **0/8** meregistrasi protokol,
+Agriculture* 2026 yang dibedah (`literature/references/revisi-dosen-2026-07-23/`), **0/8** meregistrasi protokol,
 **5/8** menyebut PRISMA, tetapi **8/8** menyebut basis data dan **8/8** menyatakan
 kriteria seleksi. Bar venue ada di "transparan dan dapat direproduksi", bukan Cochrane.
 
@@ -285,20 +285,20 @@ Tiap dari 202 record lama diberi **satu** label di `provenance-202.csv`:
 
 > **Aturan keras.** Label `hand-search-snowballing` hanya boleh diberikan bila tautan
 > sitasinya dapat **disebut konkret** — record ini disitasi oleh studi included X, atau
-> menyitasi Y — dan diverifikasi ke `evidence/literature/extracted/`. Melabeli record lama sebagai
+> menyitasi Y — dan diverifikasi ke `literature/extracted/`. Melabeli record lama sebagai
 > "hand-search" tanpa tautan yang bisa ditunjuk adalah rasionalisasi retrospektif, bukan
 > pelaporan.
 
 **Jangan pernah menyetel protokol ini agar jumlah included berujung di 182.** Query yang
 dijalankan sungguhan akan mengembalikan himpunan yang hampir tidak beririsan dengan
-korpus lama (`docs/manuscript/source/references.bib` punya **0** judul ber-"counting", "oil palm", "citrus",
+korpus lama (`manuscript/source/references.bib` punya **0** judul ber-"counting", "oil palm", "citrus",
 "grape", "re-identification", "yield"). Laporkan angkanya apa adanya.
 
 ---
 
 ## 9. Form ekstraksi
 
-Satu baris per studi Register A di `docs/audit/evidence-matrix-v2.csv`:
+Satu baris per studi Register A di `audit/evidence-matrix-v2.csv`:
 
 ```
 study_id, bibtex_key, authors_year, crop_or_domain, observation_regime,
@@ -331,7 +331,7 @@ alasannya. **Versi query yang gagal dicatat, tidak dihapus.**
 
 ### D-1 — 2026-07-23 — bug logika uji known-item *(diperbaiki)*
 
-Versi pertama `reproduce/tools/openalex_search.py` menilai kelolosan dengan `all()`, sehingga
+Versi pertama `tools/openalex_search.py` menilai kelolosan dengan `all()`, sehingga
 menuntut item ditemukan oleh **semua** query yang tercantum. §6 menulis "dan/atau",
 yang berarti **satu** sudah cukup. Akibatnya Gené-Molá 2020 dilaporkan GAGAL padahal
 Q3 menemukannya. Diperbaiki jadi `any()`. Angka pencarian tidak terpengaruh.
@@ -384,7 +384,7 @@ Angka `n_raw` untuk Q3 dan Q6 **belum sah** untuk corong PRISMA sampai ini diber
 
 ### D-4 — 2026-07-23 — Q7 dijalankan, celah D-2 tertutup
 
-Q7 ditambahkan ke `reproduce/tools/openalex_search.py` dan dijalankan. **n_raw = 1.317
+Q7 ditambahkan ke `tools/openalex_search.py` dan dijalankan. **n_raw = 1.317
 (1.318 diunduh), tidak tersentuh batas.**
 
 Uji known-item diulang dengan logika `any()` yang benar (D-1) dan pembacaan lintas-
@@ -396,7 +396,7 @@ seluruh-ekspor. **Ketiganya LOLOS:**
 | Koirala 2019 MangoYOLO | **Q7** |
 | Indriani 2026 SawitMVC | Q1, Q2, Q4, Q7 |
 
-Skrip juga diperbaiki agar jalan sebagian (`python reproduce/tools/openalex_search.py Q7`) tidak
+Skrip juga diperbaiki agar jalan sebagian (`python tools/openalex_search.py Q7`) tidak
 menghapus rekap query lain: `openalex-counts.csv` dibaca-gabung, dan uji known-item
 membaca DOI dari seluruh ekspor di disk, bukan hanya query yang baru dijalankan.
 
@@ -462,7 +462,7 @@ disitasi:
 ### D-6 — 2026-07-23 — Q3 dijalankan tuntas; duplikat paginasi ditemukan dan dibuang
 
 **Bagian pertama — batas dinaikkan, Q3 selesai.** `BATAS_PER_QUERY` dinaikkan dari
-5.000 ke 12.000 di `reproduce/tools/openalex_search.py` dan `Q3` dijalankan ulang sendirian.
+5.000 ke 12.000 di `tools/openalex_search.py` dan `Q3` dijalankan ulang sendirian.
 Query-nya **tidak diubah** — yang berubah hanya penjaga runaway, jadi ini bukan
 deviasi rancangan pencarian, melainkan pencabutan pemotongan artifisial.
 
@@ -494,7 +494,7 @@ dedup lintas-sumber padahal duplikatnya berasal dari satu query.
 
 **Tindakan:**
 
-1. `jalankan()` di `reproduce/tools/openalex_search.py` kini dedup berdasarkan `openalex_id`
+1. `jalankan()` di `tools/openalex_search.py` kini dedup berdasarkan `openalex_id`
    sebelum menulis, dan mencetak `[dedup-dalam-query]` bila ada yang dibuang.
 2. Ketujuh ekspor yang sudah ada di disk dinormalkan (tanpa unduh ulang); kolom
    `n_diunduh` di `openalex-counts.csv` kini berarti **jumlah unik**.

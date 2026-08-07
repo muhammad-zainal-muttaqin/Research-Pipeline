@@ -20,7 +20,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 export YOLO_CONFIG_DIR=/tmp/Ultralytics
 PY=./.venv/bin/python
 R=/workspace/research-pipeline/runs/detect/runs_e022
-OUT=/workspace/research-pipeline/evidence/experiments/results/E-022
+OUT=/workspace/research-pipeline/experiments/results/E-022
 B=${B:-2000}
 ARCH=${ARCH:-yolo26n}
 SEEDS=${SEEDS:-"42 1337 2024"}

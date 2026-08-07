@@ -2,7 +2,7 @@
 
 ## 1. Tujuan & tempat
 Diagram alur dua pola integrasi YOLO dengan kedalaman. Dirujuk di
-`\section{Integrasi YOLO + RGB--D}` (`docs/manuscript/source/main.tex`, Gambar~\ref{fig:yolorgbd};
+`\section{Integrasi YOLO + RGB--D}` (`manuscript/source/main.tex`, Gambar~\ref{fig:yolorgbd};
 figur lebar dua kolom). Sumber: entri 112–119.
 
 ## 2. Konten faktual (dua jalur berdampingan)

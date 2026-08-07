@@ -48,7 +48,7 @@ DINOv2 patch-16 + 2-window, dari bobot COCO `rf-detr-large-2026`.
 **Jebakan yang harus dihindari (terverifikasi):** default rf-detr `multi_scale` +
 `expanded_scales` diam-diam mengunci resolusi ke **skala terbesar 1440**, bukan
 1280. Keduanya **wajib dimatikan** agar perbandingan benar-benar pada 1280.
-Rinciannya di [`reproduce/experiments/CATATAN-TEKNIS-E021.md`](../../../reproduce/experiments/CATATAN-TEKNIS-E021.md).
+Rinciannya di [`experiments/code/CATATAN-TEKNIS-E021.md`](../code/CATATAN-TEKNIS-E021.md).
 
 **Pembanding param-adil:** **YOLO26l** (26,3 juta) dilatih dengan konfigurasi
 identik RT-DETR — 1280, 60 epoch, aman-warna, seed 42, `cos_lr`, bobot COCO.
@@ -110,7 +110,7 @@ tetap **B2↔B3** (184 B2→B3, 60 B3→B2 pada test) — kedua diagnosis lama
 ## 6. Reproduksi
 
 ```bash
-cd reproduce/experiments
+cd experiments/code
 .venv/bin/python build/build_rfdetr_ds.py
 .venv/bin/python train/train_rfdetr.py --dataset rfdetr_ds --epochs 60 \
     --resolution 1280 --batch 8 --grad-accum 2 --workers 8
@@ -122,5 +122,5 @@ cd reproduce/experiments
 # keluaran: results/E-021/, runs/rfdetr_l_e60_i1280/, runs/yolo26l_e60_i1280/
 ```
 
-Metrik lengkap: [`docs/experiments/METRICS.md`](../METRICS.md) §1-protokol.
-Log entri: [`docs/experiments/EKSPERIMEN.md`](../EKSPERIMEN.md) §E-021.
+Metrik lengkap: [`experiments/METRICS.md`](../METRICS.md) §1-protokol.
+Log entri: [`experiments/EKSPERIMEN.md`](../EKSPERIMEN.md) §E-021.

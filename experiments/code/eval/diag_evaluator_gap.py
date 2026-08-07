@@ -32,7 +32,7 @@ Pemakaian (dijalankan di mesin yang punya `runs_e022/`):
 
   python eval/diag_evaluator_gap.py \
       --run runs/detect/runs_e022/yolo26n_rgbd_seed42 --modal rgbd \
-      --keluaran ../../evidence/experiments/results/E-022/diag_evaluator_gap.json
+      --keluaran results/E-022/diag_evaluator_gap.json
 
 Jalankan untuk KEDUA lengan satu pasangan (rgb dan rgbd); asimetrilah yang
 menjadi bukti, bukan angka satu lengan.

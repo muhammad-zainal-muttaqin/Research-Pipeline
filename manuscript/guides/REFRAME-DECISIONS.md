@@ -1,7 +1,7 @@
 # REFRAME-DECISIONS — Keputusan Reframe Naskah (23 Juli 2026)
 
-Catatan keputusan atas 8 butir revisi dosen (`evidence/literature/references/revisi-dosen-2026-07-23/Chat.txt`).
-Berkas ini **append-only** seperti `docs/experiments/EKSPERIMEN.md`: kalau keputusan berubah,
+Catatan keputusan atas 8 butir revisi dosen (`literature/references/revisi-dosen-2026-07-23/Chat.txt`).
+Berkas ini **append-only** seperti `experiments/EKSPERIMEN.md`: kalau keputusan berubah,
 tulis blok baru bertanggal yang merujuk blok lama — jangan sunting blok lama.
 
 Rencana eksekusi penuh (8 fase, kriteria selesai per langkah, tabel risiko) ada di
@@ -26,12 +26,12 @@ Terverifikasi dari repo pada 23 Juli 2026:
 |---|---|
 | Entri bertema Pertanian di korpus | **3 / 182** (1,6%) |
 | Entri menyinggung multi-view / tracking / SfM sama sekali | **9 / 182** — 5 di antaranya deteksi 3D mobil otonom |
-| `docs/manuscript/source/references.bib`: `counting`, `oil palm`, `citrus`, `grape`, `re-identification`, `yield`, `Suharjito`, `Goh` | **0 masing-masing** |
+| `manuscript/source/references.bib`: `counting`, `oil palm`, `citrus`, `grape`, `re-identification`, `yield`, `Suharjito`, `Goh` | **0 masing-masing** |
 | Blok sejarah di `evidence-body.tex` | **8.982 kata = 53,7%** naskah |
 | Seksi yang mengerjakan tugas target (`evidence-body.tex:212–219`) | **699 kata = 4,2%** |
 | Jejak protokol pencarian di repo | **tidak ada** — commit pertama (`4a7661d`, 16 Juli) sudah berisi 202 entri lengkap |
 | Struktur naskah vs konvensi CEA | **16 seksi / 9 subseksi** vs median **7 / 22** |
-| Record `docs/manuscript/source/references.bib` yang punya baris DOI | **2 / 202** |
+| Record `manuscript/source/references.bib` yang punya baris DOI | **2 / 202** |
 
 `evidence-body.tex:16` menyatakan sendiri: *"This review is written as a chronological
 history of the field"* — persis anti-pola yang butir 2 larang.
@@ -70,11 +70,11 @@ campuran memancing pertanyaan "ini tinjauan atau paper eksperimen?".
 | Bahan | Lokasi |
 |---|---|
 | Teks §Pilot | commit `6332dc1`, `evidence-body.tex:282–325` |
-| Laporan eksperimen | `docs/experiments/LAPORAN-EKSPERIMEN.md` |
+| Laporan eksperimen | `experiments/LAPORAN-EKSPERIMEN.md` |
 | Kode + hasil JSON + split | `experiments/` (E-001…E-020) |
-| Log bertanggal | `docs/experiments/EKSPERIMEN.md` |
+| Log bertanggal | `experiments/EKSPERIMEN.md` |
 | Prosedur reproduksi | `REPRODUCE.md` |
-| Catatan per-SR | `docs/experiments/SR` |
+| Catatan per-SR | `experiments/SR` |
 
 **Efek K2 yang menyelamatkan tesis.** Angka **95,57% Class±1** (koreksi global
 k = 1,8905 pada deteksi ground-truth) berasal dari **Tabel 4 makalah SawitMVC**,
@@ -102,7 +102,7 @@ dan justru merupakan pertanyaan yang hanya bisa dijawab sebuah *design-space rev
 ### K4 — Skala: 6–10 minggu, penulisan ulang penuh
 
 6 set query, Register A ~120–160 studi, 8 seksi, Lampiran A1–A4. Plafon
-`docs/manuscript/source/references.bib` **260** (rentang sampel CEA 59–286).
+`manuscript/source/references.bib` **260** (rentang sampel CEA 59–286).
 
 ---
 
@@ -144,7 +144,7 @@ Perception for Class-Wise Fruit Inventories: A Design-Space Review*.
    (masuk corong, punya baris di tabel sintesis). Register B = sitasi latar (R-CNN,
    COCO, KITTI, DETR, NYU Depth v2 — dikutip untuk konteks, tidak masuk corong).
    Label `hand-search-snowballing` **hanya** boleh diberikan bila tautan sitasinya
-   dapat disebut konkret dan diverifikasi ke `evidence/literature/extracted/`.
+   dapat disebut konkret dan diverifikasi ke `literature/extracted/`.
 
 3. **Klaim kebaruan dibatasi ke hasil pencarian.** Tulis *"tidak ditemukan dalam
    pencarian yang dilaporkan di §2"*, bukan *"belum ada tinjauan pustaka yang mengangkat
@@ -194,16 +194,16 @@ Perception for Class-Wise Fruit Inventories: A Design-Space Review*.
 Ditemukan saat memverifikasi butir 8, dicatat supaya tidak hilang:
 
 - **Inkonsistensi jumlah klaster tema**, sudah ada sebelum revisi ini:
-  `CLAUDE.md` menulis **14**, `TEMUAN.md:91` menulis **17**, nama berkas `docs/literature/entries/`
-  menghasilkan **17**, `docs/audit/evidence-matrix-182.csv` menghasilkan **18** (6 entri
+  `CLAUDE.md` menulis **14**, `TEMUAN.md:91` menulis **17**, nama berkas `literature/entries/`
+  menghasilkan **17**, `audit/evidence-matrix-182.csv` menghasilkan **18** (6 entri
   tanpa baris `| Tema |` jatuh ke kategori "Uncoded"). Tabel sintesis akan memaparkan
   ini di depan reviewer — harus direkonsiliasi sebelum FASE 4.
-- **`docs/audit/evidence-matrix-182.csv` tidak bisa diekspor apa adanya** ke tabel LaTeX:
+- **`audit/evidence-matrix-182.csv` tidak bisa diekspor apa adanya** ke tabel LaTeX:
   keempat kolom prosa terpotong pada 460 karakter (rata-rata 461, maks 462 — hampir
   semua sel putus di tengah kalimat), isinya Bahasa Indonesia, dan kolom
   `task`/`modality` hasil heuristik kata kunci yang ~24% barisnya jatuh ke kategori
   sampah (YOLOv1 diklasifikasikan "Computer-vision method or application").
-- **`reproduce/tools/build_evidence_matrix.py`** di-drive dari `evidence/literature/pdf/benar/*.pdf` yang tidak ada
+- **`tools/build_evidence_matrix.py`** di-drive dari `literature/pdf/benar/*.pdf` yang tidak ada
   di git, dan `fields = list(rows[0])` crash bila `rows` kosong.
 - **SawitMVC belum jadi record BibTeX** — dikutip sebagai teks biasa di
   `evidence-body.tex:285`.

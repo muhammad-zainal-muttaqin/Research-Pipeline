@@ -88,7 +88,7 @@ grid kamera depth pabrikan. Tiga bukti independen:
    di 84% citra. Kontrol pergeseran buatan ±24 px menurunkan MI ke ~0,23,
    membuktikan metriknya peka terhadap registrasi.
 
-`cv2.resize` naif — yang diasumsikan `reproduce/pipeline/prepare_depth.py` — meleset
+`cv2.resize` naif — yang diasumsikan `pipeline/prepare_depth.py` — meleset
 **median 29,3 px, maksimum 61 px** pada bidang 1280×800, seukuran tandan B4 itu
 sendiri. Maka dibangun `build/reproject_depth.py`: depth → titik 3D (intrinsik depth) →
 ekstrinsik → intrinsik color + distorsi Brown-Conrady K6, forward-warp
@@ -227,8 +227,8 @@ RGB memakai bobot pratlatih — konfigurasi yang justru paling mungkin dipakai.
 `train/train_rfdetr_4ch.py` (rfdetr 4-kanal) → `eval/eval_e022_pycoco.py`,
 `eval/eval_e022_paired.py`, `eval/eval_rfdetr_e022.py`.
 
-Hasil mentah: `evidence/experiments/results/E-022/*.json`. Split persis:
-`evidence/experiments/splits_depth/seed42/`. Tabel seed-42 awal:
+Hasil mentah: `experiments/results/E-022/*.json`. Split persis:
+`experiments/splits/depth/seed42/`. Tabel seed-42 awal:
 [`../archive/E022-seed42-awal.md`](../archive/E022-seed42-awal.md). Audit:
 [`../AUDIT-E022.md`](../AUDIT-E022.md). Log kronologis:
 [`../EKSPERIMEN.md`](../EKSPERIMEN.md) §E-022.

@@ -2,7 +2,7 @@
 
 ## 1. Tujuan & tempat
 Diagram alur pipeline konseptual usulan. Dirujuk di `\section{Sintesis dan
-Celah Riset}` (`docs/manuscript/source/main.tex`, Gambar~\ref{fig:pipeline}; figur lebar dua kolom).
+Celah Riset}` (`manuscript/source/main.tex`, Gambar~\ref{fig:pipeline}; figur lebar dua kolom).
 Sumber: §10 (konseptual; bukan hasil eksperimen).
 
 ## 2. Konten faktual (alur; tandai "usulan/konseptual")

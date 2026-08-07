@@ -2,8 +2,8 @@
 
 ## 1. Tujuan & tempat
 Bar chart jumlah karya per tahun publikasi. Dirujuk di `\section{Aplikasi
-YOLO Lintas Domain}` (`docs/manuscript/source/main.tex`, Gambar~\ref{fig:chart-tahun}). Sumber:
-`docs/literature/entries/INDEX.md` (dihitung langsung; total 202).
+YOLO Lintas Domain}` (`manuscript/source/main.tex`, Gambar~\ref{fig:chart-tahun}). Sumber:
+`literature/entries/INDEX.md` (dihitung langsung; total 202).
 
 ## 2. Konten faktual (tahun : jumlah — jangan ubah angka)
 | Tahun | Jumlah |

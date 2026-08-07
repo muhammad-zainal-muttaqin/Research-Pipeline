@@ -30,7 +30,7 @@ PERIKSA=0
 cd "$(dirname "$0")/.."
 PY=.venv/bin/python
 RUNS=../../runs/detect/runs_f007
-HASIL=../../evidence/experiments/results/F-007
+HASIL=results/F-007
 mkdir -p "$RUNS" "$HASIL"
 
 # Penjaga GPU: menolak start bila sudah ada latihan lain berjalan. Anggaran

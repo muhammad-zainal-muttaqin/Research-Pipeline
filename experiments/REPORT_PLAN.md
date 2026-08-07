@@ -4,7 +4,7 @@
 
 This plan defines the evidence, narrative order, file set, visual set, and
 verification gates for the complete English results report. The report is
-designed as the results companion to "docs/manuscript/source/main.tex". The
+designed as the results companion to "manuscript/source/main.tex". The
 manuscript maps the literature; this report explains what was actually tried,
 what was measured, why a result moved the research branch, and what remains
 open.
@@ -44,12 +44,12 @@ The finished deliverable must satisfy all of the following:
 The report follows this precedence when sources disagree:
 
 1. Current raw result JSON, metric manifests, and checksum manifests.
-2. "docs/experiments/METRICS.md" for the definitive E-021 comparison.
-3. "docs/experiments/AUDIT-E022.md" for corrections to the first physical-depth
+2. "experiments/METRICS.md" for the definitive E-021 comparison.
+3. "experiments/AUDIT-E022.md" for corrections to the first physical-depth
    result.
-4. "docs/experiments/LAPORAN-EKSPERIMEN.md" for the curated experiment register
+4. "experiments/LAPORAN-EKSPERIMEN.md" for the curated experiment register
    and current verdicts.
-5. "docs/experiments/EKSPERIMEN.md" for the append-only chronology.
+5. "experiments/EKSPERIMEN.md" for the append-only chronology.
 6. SR notes, reproduction READMEs, and scripts for method detail.
 7. Literature and generated figures for motivation or explanation only.
 
@@ -156,7 +156,7 @@ Special provenance rules:
 | E-010 | B4 contrast, texture, density | SR-007 | Contrast confirmed, density falsified |
 | E-011 | Texture preprocessing | SR-008 | Texture confirmed, contrast boost falsified |
 | E-012 | Ordinal maturity confusion | SR-009 | Confirmed |
-| E-013 | Production RGB-D contract | "reproduce/pipeline/README.md" | Delivered contract, no accuracy claim |
+| E-013 | Production RGB-D contract | "pipeline/README.md" | Delivered contract, no accuracy claim |
 | E-014 | Detection versus classification bottleneck | SR-010 and diagnostic JSON | Diagnostic pending JSON identity check |
 | E-015 | Master-image content mapping | SR-002 and mapping manifest | Unblocked |
 | E-016 | Proposed maturity ceiling | SR-011 | Withdrawn as a hard ceiling |
@@ -323,8 +323,8 @@ blank pages.
 When a new experiment or commit is added:
 
 1. Add the raw artifact and source path first.
-2. Update "docs/experiments/EKSPERIMEN.md" and
-   "docs/experiments/LAPORAN-EKSPERIMEN.md".
+2. Update "experiments/EKSPERIMEN.md" and
+   "experiments/LAPORAN-EKSPERIMEN.md".
 3. Update the experiment and gate matrices in this plan.
 4. Add or revise the dedicated experiment section in "reports.tex".
 5. Add exact metric charts only from machine-readable data.

@@ -31,7 +31,7 @@ Pemakaian:
 
   python analysis/cross_side_consistency.py \
       --bobot runs/detect/runs_e022/yolo26n_rgb_seed42/weights/best.pt --modal rgb \
-      --keluaran ../../evidence/experiments/results/E-024/konsistensi_rgb.json
+      --keluaran results/E-024/konsistensi_rgb.json
 
 Jalankan untuk lengan RGB dan RGB-D dengan checkpoint sepadan: selisih laju
 inkonsisten antara keduanya menguji apakah kedalaman MENSTABILKAN identitas

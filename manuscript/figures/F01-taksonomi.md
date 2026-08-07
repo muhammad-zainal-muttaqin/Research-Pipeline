@@ -2,9 +2,9 @@
 
 ## 1. Tujuan & tempat
 Peta konsep korpus: memperlihatkan empat poros riset dan 14 klaster tematik
-yang menaunginya. Dirujuk di `\section{Pendahuluan}` (`docs/manuscript/source/main.tex`,
+yang menaunginya. Dirujuk di `\section{Pendahuluan}` (`manuscript/source/main.tex`,
 Gambar~\ref{fig:taksonomi}) dan Tabel~\ref{tab:taksonomi}. Sumber:
-`docs/literature/synthesis.md` §4.
+`literature/synthesis.md` §4.
 
 ## 2. Konten faktual (node & edge — jangan tambah/kurangi)
 Akar: **Deteksi Objek RGB-D untuk Sawit**. Empat cabang poros; tiap poros

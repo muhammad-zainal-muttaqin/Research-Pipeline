@@ -15,7 +15,7 @@ di-bersihkan dari spam progress-bar (carriage-return) tetapi isi bermakna utuh.
 
 Ranking = urutan parameter di semua metrik & split. RF-DETR-L test mAP50 0,6038
 melewati sasaran 0,60. Sumber: `results/E-021/perkelas_pycoco.json` (per-kelas lengkap
-di `docs/experiments/METRICS.md` §1-protokol).
+di `experiments/METRICS.md` §1-protokol).
 
 ## Jebakan RF-DETR (rfdetr 1.8.3) — WAJIB tahu sebelum run ulang
 
@@ -96,8 +96,8 @@ di `docs/experiments/METRICS.md` §1-protokol).
   (smoke), `logs/logs-rfdetr-install.txt` + `-install2.txt` (instalasi),
   `logs/logs-rfdetr-perkelas.txt` (COCO eval), `logs/logs-yolo26l.txt` (training),
   `logs/logs-pycoco-all.txt` (eval 4-model)
-- **Log naratif:** [`docs/experiments/EKSPERIMEN.md`](../../docs/experiments/EKSPERIMEN.md) E-021,
-  [`docs/experiments/METRICS.md`](../../docs/experiments/METRICS.md), [`docs/experiments/STATUS.md`](../../docs/experiments/STATUS.md)
+- **Log naratif:** [`experiments/EKSPERIMEN.md`](../EKSPERIMEN.md) E-021,
+  [`experiments/METRICS.md`](../METRICS.md), [`experiments/STATUS.md`](../STATUS.md)
 
 Bobot model (.pth/.pt/.ckpt) TIDAK diarsipkan (terlalu besar) — dibuat ulang dari
 skrip di atas.

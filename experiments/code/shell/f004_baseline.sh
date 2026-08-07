@@ -19,7 +19,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 PY=.venv/bin/python
 RUNS=../../runs/detect/runs_f004
-HASIL=../../evidence/experiments/results/F-004
+HASIL=results/F-004
 mkdir -p "$RUNS" "$HASIL"
 
 for SEED in 42 1337 2024; do

@@ -3,7 +3,7 @@
 ## 1. Tujuan & tempat
 Diagram corong yang menyempit dari deteksi umum menuju celah spesifik sawit.
 Dirujuk di `\section{Pendahuluan}` dan `\section{Sintesis dan Celah Riset}`
-(`docs/manuscript/source/main.tex`, Gambar~\ref{fig:funnel}). Sumber: §10.
+(`manuscript/source/main.tex`, Gambar~\ref{fig:funnel}). Sumber: §10.
 
 ## 2. Konten faktual (lapisan corong, lebar → sempit)
 1. Deteksi objek RGB matang (keluarga YOLO, transformer)

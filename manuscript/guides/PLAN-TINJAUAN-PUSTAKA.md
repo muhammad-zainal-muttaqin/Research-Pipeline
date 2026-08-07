@@ -1,14 +1,14 @@
-# PLAN — Penulisan Tinjauan Pustaka (`docs/manuscript/source/main.tex`, IEEEtran)
+# PLAN — Penulisan Tinjauan Pustaka (`manuscript/source/main.tex`, IEEEtran)
 
 > Rencana kerja untuk menulis **ulang total** naskah tinjauan pustaka dari 202 entri
-> di `docs/literature/entries/`, dalam bentuk **artikel jurnal LaTeX** (`docs/manuscript/source/main.tex`, kelas `IEEEtran`),
+> di `literature/entries/`, dalam bentuk **artikel jurnal LaTeX** (`manuscript/source/main.tex`, kelas `IEEEtran`),
 > disusun sebagai **sintesis tematik** yang menyempit (*funnel*) menuju celah riset:
 > **YOLO dengan modifikasi arsitektur RGB → RGB-D untuk *counting* dan klasifikasi
 > buah sawit**. Tinjauan tetap luas atas seluruh 202 literatur; angle sawit menjadi
 > muara, bukan pembatas cakupan.
 >
-> Dokumen ini adalah **rencana**, bukan naskahnya. Naskah (`docs/manuscript/source/main.tex` + `figures/`)
-> ditulis pada fase eksekusi (§6). `docs/manuscript/guides/PLAN-SITUS.md` (rencana web *reading room* `index.html`)
+> Dokumen ini adalah **rencana**, bukan naskahnya. Naskah (`manuscript/source/main.tex` + `figures/`)
+> ditulis pada fase eksekusi (§6). `manuscript/guides/PLAN-SITUS.md` (rencana web *reading room* `index.html`)
 > berbeda dan tidak disentuh.
 
 ---
@@ -17,8 +17,8 @@
 
 | Aspek | Target |
 |---|---|
-| Berkas utama | `docs/manuscript/source/main.tex` (`IEEEtran`) + `main-elsarticle.tex` (Elsevier), keduanya `\input{body}` |
-| Bibliografi | `docs/manuscript/source/references.bib` (202 entri, sudah ada) via `\bibliographystyle{IEEEtran}` |
+| Berkas utama | `manuscript/source/main.tex` (`IEEEtran`) + `main-elsarticle.tex` (Elsevier), keduanya `\input{body}` |
+| Bibliografi | `manuscript/source/references.bib` (202 entri, sudah ada) via `\bibliographystyle{IEEEtran}` |
 | Figur | Folder `figures/` — sumber mermaid + brief siap-Gemini + hasil `*.pdf/png` |
 | Gaya | Sintesis tematik akademik, *funnel* ke gap sawit |
 | Cakupan | **Seluruh 202 entri disitasi** minimal sekali (0 sitasi menggantung, 0 sitasi yatim) |
@@ -26,8 +26,8 @@
 | Kompilasi | Overleaf / *runner* remote — **tanpa `pdflatex` lokal** (GateGuard aktif) |
 | Panjang sasaran | ± 9.000–12.000 kata isi + 8 figur konsep + 2 chart + 3 tabel |
 
-**Non-goal:** bukan anotasi 202 entri satu per satu; bukan mengubah `docs/literature/entries/`,
-`docs/manuscript/source/references.bib`, `docs/literature/synthesis.md`, atau `docs/manuscript/guides/PLAN-SITUS.md`.
+**Non-goal:** bukan anotasi 202 entri satu per satu; bukan mengubah `literature/entries/`,
+`manuscript/source/references.bib`, `literature/synthesis.md`, atau `manuscript/guides/PLAN-SITUS.md`.
 
 ---
 
@@ -35,7 +35,7 @@
 
 **Rekomendasi utama: `IEEEtran` (mode `journal`).** Alasan: format paling lazim untuk
 karya deteksi objek/visi komputer (YOLO, DETR, RGB-D SOD banyak terbit di venue IEEE),
-satu berkas `docs/manuscript/source/main.tex`, dua kolom, integrasi `docs/manuscript/source/references.bib` bersih, dan gaya
+satu berkas `manuscript/source/main.tex`, dua kolom, integrasi `manuscript/source/references.bib` bersih, dan gaya
 artikel-tinjauan cocok untuk IEEE Access.
 
 **Alternatif satu-baris (ganti bila venue berubah):** Elsevier `elsarticle`
@@ -47,7 +47,7 @@ ini tidak berubah; hanya preamble dan gaya bibliografi yang disesuaikan.
 Elsevier tidak pernah menyimpang (kritis untuk integritas 202 sitasi), isi naskah
 diekstrak ke satu berkas bersama `body.tex` (12 `\section`, seluruh `\cite`, tabel,
 figur). Dua *driver* tipis memakainya:
-- `docs/manuscript/source/main.tex` — preamble `IEEEtran` + frontmatter IEEE + `\input{body}` + `\bibliographystyle{IEEEtran}`.
+- `manuscript/source/main.tex` — preamble `IEEEtran` + frontmatter IEEE + `\input{body}` + `\bibliographystyle{IEEEtran}`.
 - `main-elsarticle.tex` — preamble `elsarticle` + `\begin{frontmatter}` Elsevier + `\input{body}` + `\bibliographystyle{elsarticle-num}`.
 
 Agar `body.tex` netral-kelas: baris pembuka bab memakai makro `\dropstart{H}{uruf}`
@@ -55,7 +55,7 @@ Agar `body.tex` netral-kelas: baris pembuka bab memakai makro `\dropstart{H}{uru
 (IEEE → drop cap; Elsevier → cetak biasa). Makro `\figplace` juga didefinisikan di
 tiap driver. Edit isi cukup di `body.tex` sekali → kedua venue ikut.
 
-**Kerangka `docs/manuscript/source/main.tex`:**
+**Kerangka `manuscript/source/main.tex`:**
 
 ```
 \documentclass[journal]{IEEEtran}
@@ -73,7 +73,7 @@ tiap driver. Edit isi cukup di `body.tex` sekali → kedua venue ikut.
 \end{document}
 ```
 
-Naskah lama `artifacts/legacy/tinjauan-pustaka.tex` **digantikan** oleh `docs/manuscript/source/main.tex`; berkas lama
+Naskah lama `legacy/tinjauan-pustaka.tex` **digantikan** oleh `manuscript/source/main.tex`; berkas lama
 dibiarkan (arsip), tidak dihapus tanpa konfirmasi.
 
 ---
@@ -88,13 +88,13 @@ dibiarkan (arsip), tidak dihapus tanpa konfirmasi.
    dalam kalimat pengelompok atau baris tabel — **tetapi semuanya tetap `\cite`**.
 3. **Kejujuran akademik.** Hanya fakta yang terverifikasi di bab sumber. Angka yang
    perlu cek volume/halaman/DOI ditandai di catatan (warisi "Catatan integritas"
-   `docs/literature/synthesis.md`). Tidak mengarang angka/dataset/hasil.
+   `literature/synthesis.md`). Tidak mengarang angka/dataset/hasil.
 4. **Bahasa.** Indonesia baku PUEBI; istilah asing dicetak miring pada kemunculan
    pertama (*bounding box*, *backbone*, *cross-modal attention*); desimal koma
    (`63,4\%`); nada impersonal. Poles akhir dengan skill `stop-slop-id` (hapus frasa
-   pengisi & hiperbola). Mengadaptasi semangat `docs/manuscript/guides/PANDUAN-PENULISAN.md` (bukan template
-   10-bagiannya, yang khusus untuk bab `docs/literature/entries/`).
-5. **Sumber isi.** Untuk tiap bagian, tarik dari bab `docs/literature/entries/` yang relevan: ambil
+   pengisi & hiperbola). Mengadaptasi semangat `manuscript/guides/PANDUAN-PENULISAN.md` (bukan template
+   10-bagiannya, yang khusus untuk bab `literature/entries/`).
+5. **Sumber isi.** Untuk tiap bagian, tarik dari bab `literature/entries/` yang relevan: ambil
    inti dari "Gambaran Umum", klaim aman dari "Poin untuk Sitasi", dan angka dari
    "Eksperimen dan Hasil". Sintesiskan, jangan salin-tempel.
 
@@ -102,7 +102,7 @@ dibiarkan (arsip), tidak dihapus tanpa konfirmasi.
 
 ## 4. Struktur Naskah — 12 Bagian
 
-Kolom "Entri" merujuk nomor berkas di `docs/literature/entries/`; pemetaan lengkap & saling lepas di
+Kolom "Entri" merujuk nomor berkas di `literature/entries/`; pemetaan lengkap & saling lepas di
 Lampiran A. Kolom "Figur" merujuk daftar di §5.
 
 | # | `\section` | Isi inti | Entri | Figur |
@@ -130,15 +130,15 @@ kelebihan, keterbatasan, contoh karya).
 
 Semua figur berbagi **satu tema visual** agar seragam. Alurnya: tulis spesifikasi tema
 sekali → tiap figur punya *brief* + sumber mermaid → kirim ke Gemini → simpan hasil →
-sisipkan ke `docs/manuscript/source/main.tex`.
+sisipkan ke `manuscript/source/main.tex`.
 
 ### 5.1 Berkas tema tunggal — `figures/THEME.md`
 
 Satu sumber kebenaran gaya yang **dirujuk semua brief**:
 
-- **Palet** (selaras `docs/manuscript/guides/PLAN-SITUS.md` §13): aksen merah bata `#A03028`; tinta `#1A1D21`;
+- **Palet** (selaras `manuscript/guides/PLAN-SITUS.md` §13): aksen merah bata `#A03028`; tinta `#1A1D21`;
   kertas `#FAF9F6`; hairline `#E6E3DA`; satu *jewel-tone* per tema (17 hue di
-  `docs/manuscript/guides/PLAN-SITUS.md` §13, mis. Fondasi RGB `#2B6CB0`, Fusi `#8B5CB4`, Kedalaman `#A6740E`).
+  `manuscript/guides/PLAN-SITUS.md` §13, mis. Fondasi RGB `#2B6CB0`, Fusi `#8B5CB4`, Kedalaman `#A6740E`).
 - **Tipografi:** judul figur serif (Newsreader/Georgia); label sans; angka/kode mono.
 - **Kaidah:** garis *hairline* 1–1,5 pt; tanpa bayangan berat/gradasi mencolok; sudut
   membulat halus; latar kertas; orientasi lanskap; rasio, tebal garis, ukuran node,
@@ -151,7 +151,7 @@ Konsep (diagram) dan chart (data). Nomor figur = urutan kemunculan.
 
 | ID | Judul | Jenis | Sumber data/konten |
 |---|---|---|---|
-| F1 | Taksonomi 4 poros / 14 klaster | pohon / *mind-map* | `docs/literature/synthesis.md` §4 |
+| F1 | Taksonomi 4 poros / 14 klaster | pohon / *mind-map* | `literature/synthesis.md` §4 |
 | F2 | Garis waktu evolusi YOLO v1→YOLO26 | *timeline* | entri 1–11, 156, 192 |
 | F3 | Silsilah detektor RGB (dua-tahap→satu-tahap→anchor-free→DETR) | pohon | entri 12–25, 155–165 |
 | F4 | Tiga strategi fusi RGB-D (awal/menengah/akhir) | diagram blok | §5 + T3 |
@@ -159,8 +159,8 @@ Konsep (diagram) dan chart (data). Nomor figur = urutan kemunculan.
 | F6 | Skema atensi lintas-modal | diagram blok | entri 55, 46, 58 |
 | F7 | Funnel: survei umum → gap sawit | *funnel* | §10 |
 | F8 | Pipeline usulan: YOLO RGB-D untuk *counting*/klasifikasi sawit | diagram alur | §10 |
-| C1 | Distribusi entri per tahun (2012–2026) | *bar chart* | `docs/literature/entries/INDEX.md` |
-| C2 | Distribusi entri per tema (17 tema) | *bar chart* | nama berkas `docs/literature/entries/` |
+| C1 | Distribusi entri per tahun (2012–2026) | *bar chart* | `literature/entries/INDEX.md` |
+| C2 | Distribusi entri per tema (17 tema) | *bar chart* | nama berkas `literature/entries/` |
 
 ### 5.3 Brief per figur — `figures/FNN-slug.md`
 
@@ -195,12 +195,12 @@ Chart C1/C2 boleh alternatif native `pgfplots` bila ingin reproducible tanpa Gem
 
 ## 6. Alur Kerja Penulisan (Fase Eksekusi)
 
-1. **Verifikasi pemetaan** entri→bagian (Lampiran A) terhadap `docs/manuscript/source/references.bib`: pastikan
+1. **Verifikasi pemetaan** entri→bagian (Lampiran A) terhadap `manuscript/source/references.bib`: pastikan
    tiap nomor 001–202 punya kunci BibTeX dan masuk tepat satu bagian.
-2. **Preamble `docs/manuscript/source/main.tex`** + judul, penulis, abstrak, `IEEEkeywords`.
+2. **Preamble `manuscript/source/main.tex`** + judul, penulis, abstrak, `IEEEkeywords`.
 3. **Draf per bagian §4** secara berurutan: baca bab sumber → sintesis → sisip
    `\cite{kunci}`. Bagian 8 (YOLO+RGB-D) dan 10 (gap sawit) ditulis paling cermat.
-4. **Tabel T1–T3** disusun dari `docs/literature/synthesis.md` dan bab sumber.
+4. **Tabel T1–T3** disusun dari `literature/synthesis.md` dan bab sumber.
 5. **Figur:** tulis `figures/THEME.md` → tiap `figures/FNN-*.md` (brief + mermaid) →
    generate via Gemini → simpan → `\includegraphics`.
 6. **Bagian 10 sebagai muara:** rangkum temuan lintas-tema → nyatakan gap (belum ada
@@ -216,14 +216,14 @@ Chart C1/C2 boleh alternatif native `pgfplots` bila ingin reproducible tanpa Gem
 Karena `pdflatex` lokal tidak tersedia (GateGuard), verifikasi utama berbasis teks:
 
 - **0 sitasi menggantung:** setiap kunci di `\cite{...}` dalam `body.tex`
-  (yang diinput oleh `docs/manuscript/source/main.tex` dan `main-elsarticle.tex`) ada di `docs/manuscript/source/references.bib`.
-- **0 sitasi yatim:** setiap kunci `@...{key,` di `docs/manuscript/source/references.bib` dirujuk ≥1× di
+  (yang diinput oleh `manuscript/source/main.tex` dan `main-elsarticle.tex`) ada di `manuscript/source/references.bib`.
+- **0 sitasi yatim:** setiap kunci `@...{key,` di `manuscript/source/references.bib` dirujuk ≥1× di
   `body.tex` → menjamin **202 entri terbahas**.
 - **Cek berbasis `grep` (lokal, tanpa kompilasi):** ekstrak kunci `\cite` dari
-  `body.tex` dan kunci `@` dari `docs/manuscript/source/references.bib`, bandingkan dua himpunan (selisih dua
+  `body.tex` dan kunci `@` dari `manuscript/source/references.bib`, bandingkan dua himpunan (selisih dua
   arah harus kosong).
-- **Kompilasi PDF:** dilakukan pengguna via **Overleaf** (unggah `docs/manuscript/source/main.tex` +
-  `docs/manuscript/source/references.bib` + `figures/`) atau *runner* remote. Urutan: `pdflatex` → `bibtex`
+- **Kompilasi PDF:** dilakukan pengguna via **Overleaf** (unggah `manuscript/source/main.tex` +
+  `manuscript/source/references.bib` + `figures/`) atau *runner* remote. Urutan: `pdflatex` → `bibtex`
   → `pdflatex` → `pdflatex`.
 - **Cek figur:** tiap figur di §5.2 punya berkas *brief* + sumber mermaid, dan semua
   *brief* merujuk `figures/THEME.md`.
@@ -233,13 +233,13 @@ Karena `pdflatex` lokal tidak tersedia (GateGuard), verifikasi utama berbasis te
 ## 8. Berkas yang Dibuat/Diubah
 
 - **Dibuat:** `body.tex` (isi bersama, 202 `\cite`, 0 menggantung/0 yatim terverifikasi);
-  `docs/manuscript/source/main.tex` (driver IEEEtran); `main-elsarticle.tex` (driver Elsevier cadangan);
+  `manuscript/source/main.tex` (driver IEEEtran); `main-elsarticle.tex` (driver Elsevier cadangan);
   `figures/THEME.md`; `figures/F01-*.md` … `figures/C02-*.md` (10 *brief* dengan mermaid +
   prompt Gemini; chart C01/C02 punya *fallback* pgfplots); `figures/*.pdf|png` (hasil generate,
   masih perlu digenerate via Gemini).
-- **Dipakai apa adanya (tidak diubah):** `docs/manuscript/source/references.bib`, `docs/literature/entries/*`, `docs/literature/synthesis.md`,
-  `docs/manuscript/guides/PLAN-SITUS.md`, `docs/manuscript/guides/PANDUAN-PENULISAN.md`.
-- **Diarsipkan:** `artifacts/legacy/tinjauan-pustaka.tex` (digantikan `docs/manuscript/source/main.tex`; tidak dihapus tanpa
+- **Dipakai apa adanya (tidak diubah):** `manuscript/source/references.bib`, `literature/entries/*`, `literature/synthesis.md`,
+  `manuscript/guides/PLAN-SITUS.md`, `manuscript/guides/PANDUAN-PENULISAN.md`.
+- **Diarsipkan:** `legacy/tinjauan-pustaka.tex` (digantikan `manuscript/source/main.tex`; tidak dihapus tanpa
   konfirmasi).
 
 ---
@@ -250,7 +250,7 @@ Karena `pdflatex` lokal tidak tersedia (GateGuard), verifikasi utama berbasis te
 - Metadata bibliografi (volume/halaman/DOI) perlu verifikasi akhir sebelum submit formal.
 - Figur Gemini harus dicek terhadap sumber mermaid agar struktur tetap faktual (tidak
   ada node/relasi tambahan yang mengubah makna).
-- `docs/manuscript/guides/PANDUAN-PENULISAN.md` melarang gambar hanya untuk bab web `docs/literature/entries/`; `docs/manuscript/source/main.tex`
+- `manuscript/guides/PANDUAN-PENULISAN.md` melarang gambar hanya untuk bab web `literature/entries/`; `manuscript/source/main.tex`
   (LaTeX) bebas memuat figur.
 - Bila venue berubah ke Elsevier, ganti preamble ke `elsarticle` dan gaya bib; isi &
   figur tetap.

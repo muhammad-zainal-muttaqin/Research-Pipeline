@@ -2,8 +2,8 @@
 
 > Dokumen ini merangkum **temuan** dari tinjauan pustaka mendalam. Naskah lengkap
 > dalam format LaTeX ada di [`evidence-body.tex`](../manuscript/source/evidence-body.tex), dikompilasi ke
-> [`main.pdf`](../../artifacts/papers/main.pdf) (gaya IEEE) dan [`main-elsarticle.pdf`](../../artifacts/papers/main-elsarticle.pdf) (gaya
-> Elsevier), dengan basis data sitasi di [`docs/manuscript/source/references.bib`](../manuscript/source/references.bib).
+> [`main.pdf`](../manuscript/output/papers/main.pdf) (gaya IEEE) dan [`main-elsarticle.pdf`](../manuscript/output/papers/main-elsarticle.pdf) (gaya
+> Elsevier), dengan basis data sitasi di [`manuscript/source/references.bib`](../manuscript/source/references.bib).
 
 ---
 
@@ -39,7 +39,7 @@ dan tabel taksonomi.
    konteks historis yang diperlukan).
 3. **Sintesis** ke dalam 14 klaster tematik dan penulisan tinjauan naratif.
 4. **Verifikasi silang** otomatis memastikan setiap `\cite` di naskah memiliki
-   entri padanan di `docs/manuscript/source/references.bib` (0 sitasi menggantung).
+   entri padanan di `manuscript/source/references.bib` (0 sitasi menggantung).
 
 > **Catatan integritas:** Metadata bibliografi disusun dari hasil penelusuran
 > web dan pengetahuan atas karya-karya kanonik. Untuk publikasi formal,
@@ -151,7 +151,7 @@ dan tabel taksonomi.
 
 > Korpus terverifikasi (182 sumber). Nomor mengikuti ID entri katalog, sehingga
 > nomor yang tidak muncul adalah 20 record ledger yang ditahan (tanpa PDF sumber lokal).
-> Dikelompokkan sesuai bagian di `docs/manuscript/source/references.bib`. Rentang fokus 2019–2026;
+> Dikelompokkan sesuai bagian di `manuscript/source/references.bib`. Rentang fokus 2019–2026;
 > karya fondasi disertakan sebagai konteks.
 
 ### A. Fondasi Deteksi Objek Berbasis RGB
@@ -393,9 +393,9 @@ dan tabel taksonomi.
 | Berkas | Isi |
 |---|---|
 | [`evidence-body.tex`](../manuscript/source/evidence-body.tex) | Badan naskah review (LaTeX), disisipkan ke wrapper IEEE & Elsevier |
-| [`main.pdf`](../../artifacts/papers/main.pdf) / [`main-elsarticle.pdf`](../../artifacts/papers/main-elsarticle.pdf) | Naskah review terkompilasi (IEEE / Elsevier) |
-| [`docs/manuscript/source/references.bib`](../manuscript/source/references.bib) | Basis data BibTeX, 202 entri (182 diverifikasi & dirujuk) |
-| `docs/literature/synthesis.md` (berkas ini) | Ringkasan temuan dalam Markdown |
+| [`main.pdf`](../manuscript/output/papers/main.pdf) / [`main-elsarticle.pdf`](../manuscript/output/papers/main-elsarticle.pdf) | Naskah review terkompilasi (IEEE / Elsevier) |
+| [`manuscript/source/references.bib`](../manuscript/source/references.bib) | Basis data BibTeX, 202 entri (182 diverifikasi & dirujuk) |
+| `literature/synthesis.md` (berkas ini) | Ringkasan temuan dalam Markdown |
 
 **Kompilasi LaTeX:**
 ```bash

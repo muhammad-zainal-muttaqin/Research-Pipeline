@@ -8,7 +8,7 @@
 # 256 MB). Karena itu pembersihan dilakukan segera setelah tiap run, bukan di
 # akhir.
 set -uo pipefail
-cd reproduce/experiments
+cd experiments/code
 export YOLO_CONFIG_DIR=/tmp/Ultralytics
 PY=./.venv/bin/python
 

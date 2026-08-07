@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -u
-cd reproduce/experiments
+cd experiments/code
 # tunggu berdasarkan BERKAS, bukan pgrep — pgrep -f mencocoki baris perintah
 # skrip ini sendiri dan membuatnya menunggu dirinya sendiri selamanya.
 while [ ! -f runs/c4_e50_i1280_warna/hasil_selesai ]; do

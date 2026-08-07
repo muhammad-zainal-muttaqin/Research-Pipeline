@@ -2,8 +2,8 @@
 
 ## 1. Tujuan & tempat
 Bar chart horizontal jumlah karya per tema (dari segmen tema pada nama berkas
-`docs/literature/entries/`). Dirujuk di `\section{Aplikasi YOLO Lintas Domain}` (`docs/manuscript/source/main.tex`,
-Gambar~\ref{fig:chart-tema}). Sumber: `docs/literature/entries/INDEX.md` (dihitung langsung;
+`literature/entries/`). Dirujuk di `\section{Aplikasi YOLO Lintas Domain}` (`manuscript/source/main.tex`,
+Gambar~\ref{fig:chart-tema}). Sumber: `literature/entries/INDEX.md` (dihitung langsung;
 total 202; 17 tema).
 
 ## 2. Konten faktual (tema : jumlah — urut menurun, jangan ubah angka)
@@ -29,7 +29,7 @@ total 202; 17 tema).
 
 Total = 202. Catatan: `YOLO+RGB-D` adalah label tampilan untuk tema berkas
 `YOLO plus RGB-D`. Pengelompokan tema berbasis nama berkas berbeda sedikit dari
-14 klaster `docs/literature/synthesis.md` (yang menggabungkan beberapa tema); keduanya konsisten
+14 klaster `literature/synthesis.md` (yang menggabungkan beberapa tema); keduanya konsisten
 pada total 202.
 
 ## 3. Rujukan tema

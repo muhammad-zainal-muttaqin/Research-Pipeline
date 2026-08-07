@@ -137,11 +137,11 @@ Dua konsekuensi yang sudah masuk rencana kerja:
 ```bash
 python analysis/cross_side_consistency.py \
     --bobot runs/detect/runs_e022/yolo26n_rgb_seed42/weights/best.pt --modal rgb \
-    --keluaran ../../evidence/experiments/results/E-024/konsistensi_rgb_seed42.json
+    --keluaran results/E-024/konsistensi_rgb_seed42.json
 ```
 
 Ganti `--modal rgbd` dan checkpoint sepadan untuk lengan RGB-D. Untuk SawitMVC,
-tambahkan `--data-root /workspace/SawitMVC/data --split-dir ../../evidence/experiments/splits_rgb`.
+tambahkan `--data-root /workspace/SawitMVC/data --split-dir results/splits_rgb`.
 
-Hasil: `evidence/experiments/results/E-024/konsistensi_{rgb,rgbd}_seed42.json`.
+Hasil: `experiments/results/E-024/konsistensi_{rgb,rgbd}_seed42.json`.
 Log kronologis: [EKSPERIMEN.md](../EKSPERIMEN.md) §E-024, §E-026.

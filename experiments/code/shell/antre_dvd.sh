@@ -3,7 +3,7 @@
 # Kedua lengan punya jumlah parameter, statistik masukan, dan perlakuan
 # augmentasi identik; yang berbeda hanya isi kanal ke-4 bermakna atau tidak.
 set -uo pipefail
-cd reproduce/experiments
+cd experiments/code
 PY=./.venv/bin/python
 R=runs/detect/runs_e022
 

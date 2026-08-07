@@ -142,7 +142,7 @@ EFC-YOLO memiliki posisi yang erat dengan beberapa bab penelitian deteksi cacat 
 ## Poin untuk Sitasi
 - **Kunci BibTeX:** `yang2023efcyolo`
 - **Ringkasan untuk Tinjauan Pustaka:** EFC-YOLO merupakan varian YOLOv7 yang dioptimalkan untuk inspeksi cacat permukaan strip baja dengan menggunakan modul Fusion-Faster (berbasis Partial Convolution), mekanisme atensi *Shortcut Coordinate Attention* (SCA), dan struktur leher *de-weighted* BiFPN. Model ini mencapai mAP 85,9% pada dataset NEU-DET dengan memotong kebutuhan komputasi (GFLOPs) sebesar 60% dibandingkan model baseline YOLOv7.
-- **Catatan Verifikasi:** Terdapat ketidaksesuaian nama penulis pada basis data sitasi `docs/manuscript/source/references.bib` (tercatat sebagai *Yang, Yize; Li, Fengyi; Wang, Bao*) dengan naskah publikasi asli MDPI Sensors 2023 (yang ditulis oleh *Yanshun Li, Shuobo Xu, Zimo Zhu, Peng Wang, Kefeng Li, Qiang He, dan Quanfeng Zheng*). Selalu lakukan verifikasi dan sinkronisasi berkas `.bib` sebelum melakukan sitasi formal.
+- **Catatan Verifikasi:** Terdapat ketidaksesuaian nama penulis pada basis data sitasi `manuscript/source/references.bib` (tercatat sebagai *Yang, Yize; Li, Fengyi; Wang, Bao*) dengan naskah publikasi asli MDPI Sensors 2023 (yang ditulis oleh *Yanshun Li, Shuobo Xu, Zimo Zhu, Peng Wang, Kefeng Li, Qiang He, dan Quanfeng Zheng*). Selalu lakukan verifikasi dan sinkronisasi berkas `.bib` sebelum melakukan sitasi formal.
 
 ---
 

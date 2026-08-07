@@ -17,14 +17,14 @@ git checkout main && git reset --hard ea1f277      # kembali ke versi yang dosen
 
 | Berkas | Isi | Risiko |
 |---|---|---|
-| `reproduce/tools/openalex_search.py` | Skrip pencarian Q1–Q6 lewat OpenAlex | Rendah — kode, bisa dijalankan ulang |
-| `evidence/literature/search/raw/openalex_Q*.csv` | Hasil mentah per query | Rendah — data mentah, tidak ditafsirkan |
-| `evidence/literature/search/raw/known-item-test_*.csv` | Hasil uji known-item | **Perlu dicek** — ini gerbang mutu query |
-| `docs/literature/search/openalex-counts.csv` | Rekap n per query | **Perlu dicek** |
-| `docs/literature/search/CEK-SAYA.md` | Berkas ini | — |
+| `tools/openalex_search.py` | Skrip pencarian Q1–Q6 lewat OpenAlex | Rendah — kode, bisa dijalankan ulang |
+| `literature/search/raw/openalex_Q*.csv` | Hasil mentah per query | Rendah — data mentah, tidak ditafsirkan |
+| `literature/search/raw/known-item-test_*.csv` | Hasil uji known-item | **Perlu dicek** — ini gerbang mutu query |
+| `literature/search/openalex-counts.csv` | Rekap n per query | **Perlu dicek** |
+| `literature/search/CEK-SAYA.md` | Berkas ini | — |
 
 **Tidak ada satu kata pun prosa naskah yang saya tulis.** `evidence-body.tex`,
-`docs/manuscript/source/main.tex`, `main-elsarticle.tex`, `docs/manuscript/source/references.bib` **tidak disentuh sama sekali**.
+`manuscript/source/main.tex`, `main-elsarticle.tex`, `manuscript/source/references.bib` **tidak disentuh sama sekali**.
 Alasannya di `REFRAME-DECISIONS.md`: keluaran FASE 1 adalah masukan untuk §5, dan
 gerbang R2 harus dilewati dulu.
 
@@ -41,7 +41,7 @@ diciutkan dari 7 jadi 3–4 dan klaim kontribusi diturunkan — **sebelum** menu
 pesimistis, ini jauh di atas ambang. Ruang desain versi penuh (M0–M5 × A1–A7) layak
 dipertahankan.
 
-> **Yang harus Anda cek:** buka `evidence/literature/search/raw/openalex_Q2_2026-07-23.csv`, baca 20
+> **Yang harus Anda cek:** buka `literature/search/raw/openalex_Q2_2026-07-23.csv`, baca 20
 > judul acak. Pertanyaannya bukan "apakah banyak" tapi **"apakah ini benar tentang
 > memutuskan dua deteksi di dua pandangan adalah objek yang sama"**. Kalau yang muncul
 > ternyata mayoritas *multi-view learning* (metode pembelajaran mesin dengan banyak
@@ -54,7 +54,7 @@ dipertahankan.
 ### 2.1 Uji known-item — gerbang mutu query
 
 ```bash
-cat evidence/literature/search/raw/known-item-test_2026-07-23.csv
+cat literature/search/raw/known-item-test_2026-07-23.csv
 ```
 
 Tiga item wajib kembali lewat query yang diharapkan:
@@ -98,7 +98,7 @@ tapi sekarang Anda punya kandidat konkret untuk ditanyakan.
 ### 2.2 Rekap jumlah + batas yang tersentuh
 
 ```bash
-cat docs/literature/search/openalex-counts.csv
+cat literature/search/openalex-counts.csv
 ```
 
 Hasil sebenarnya:
@@ -136,8 +136,8 @@ direkonsiliasi dari sisi klien. Dilaporkan apa adanya.
 
 > **Yang bisa Anda cek cepat:**
 > ```bash
-> cat docs/literature/search/openalex-counts.csv
-> python -c "import csv,glob,os;[print(os.path.basename(p).split('_')[1], len({r['openalex_id'] for r in csv.DictReader(open(p,encoding='utf-8'))})) for p in sorted(glob.glob('evidence/literature/search/raw/openalex_Q*.csv'))]"
+> cat literature/search/openalex-counts.csv
+> python -c "import csv,glob,os;[print(os.path.basename(p).split('_')[1], len({r['openalex_id'] for r in csv.DictReader(open(p,encoding='utf-8'))})) for p in sorted(glob.glob('literature/search/raw/openalex_Q*.csv'))]"
 > ```
 > Kolom `terpotong_oleh_batas` harus `tidak` di ketujuh baris, dan jumlah unik harus
 > sama dengan `n_diunduh`.
@@ -173,15 +173,15 @@ Dua di antaranya **bukan sekadar sitasi tambahan** — keduanya menyentuh klaim 
 `CLAUDE.md` "salah" dan bahwa 6 entri "kehilangan baris `| Tema |`". Keduanya keliru.
 
 **Yang benar — 14 dan 17 mengukur hal berbeda, dan repo sudah mendokumentasikannya**
-di `docs/manuscript/guides/PLAN-SITUS.md` §"Catatan rekonsiliasi sumber" baris 50–53 dan
+di `manuscript/guides/PLAN-SITUS.md` §"Catatan rekonsiliasi sumber" baris 50–53 dan
 `figures/C02-distribusi-tema.md` §2:
 
 | Angka | Artinya | Sumber |
 |---|---|---|
-| **14** | klaster taksonomi **naskah LaTeX**, menggabungkan beberapa label berkas | `docs/literature/synthesis.md`, `CLAUDE.md` |
-| **17** | label tema yang dipakai `build.js` dan situs, dibaca dari **nama berkas** | `docs/literature/entries/*.md` |
+| **14** | klaster taksonomi **naskah LaTeX**, menggabungkan beberapa label berkas | `literature/synthesis.md`, `CLAUDE.md` |
+| **17** | label tema yang dipakai `build.js` dan situs, dibaca dari **nama berkas** | `literature/entries/*.md` |
 
-`docs/manuscript/guides/PLAN-SITUS.md:52` menyatakannya harfiah: *"keduanya tidak bertentangan, aplikasi
+`manuscript/guides/PLAN-SITUS.md:52` menyatakannya harfiah: *"keduanya tidak bertentangan, aplikasi
 mengikuti label nama berkas."* Audit itu sudah pernah dikerjakan; saya melewatkannya.
 **Jangan menyamakan keduanya.** `CLAUDE.md` sekarang saya beri baris penjelas, angkanya
 tidak diubah.
@@ -196,7 +196,7 @@ tidak diubah.
 | `149 - CBAM` · `151 - Object Detection in 20 Years` · `153 - Survei RGB-D SOD` | `Tema klaster` |
 | `156 - YOLO-World` · `163 - Swin Transformer V2` | `Tema klaster` |
 
-Akibatnya `reproduce/tools/build_evidence_matrix.py` — yang membaca baris `| Tema |` — tidak
+Akibatnya `tools/build_evidence_matrix.py` — yang membaca baris `| Tema |` — tidak
 menemukannya dan melempar keenamnya ke kategori palsu **"Uncoded"**, sehingga CSV
 melaporkan 18 tema. `build.js` **tidak** terpengaruh: ia membaca tema dari nama berkas
 (`build.js:111`), jadi situs selalu benar.
@@ -212,8 +212,8 @@ ls entri/*.md | sed 's/.* - //; s/\.md$//' | sort | uniq -c | sort -rn
 grep -rl "Tema [Kk]laster" entri/ ; echo "(kosong = bersih)"
 ```
 
-`docs/audit/evidence-matrix-182.csv` **belum diregenerasi** — `build_evidence_matrix.py`
-butuh `evidence/literature/pdf/benar/` yang tidak ada di git. CSV lama masih memuat "Uncoded" sampai skrip
+`audit/evidence-matrix-182.csv` **belum diregenerasi** — `build_evidence_matrix.py`
+butuh `literature/pdf/benar/` yang tidak ada di git. CSV lama masih memuat "Uncoded" sampai skrip
 itu dijalankan di mesin yang punya PDF-nya.
 
 ---
@@ -227,7 +227,7 @@ itu dijalankan di mesin yang punya PDF-nya.
 | Query Scopus/WoS | Tidak ada akses dari mesin ini. Lengan berlangganan tetap harus Anda jalankan. |
 | Membaca dua paper Goh | Butuh penilaian Anda — ia menentukan kuat/lemahnya klaim kebaruan butir 3. |
 | Pengayaan DOI 202 record | Belum sempat; prasyarat FASE 1.5, aman dikerjakan kapan saja. |
-| Perbaikan `reproduce/tools/build_evidence_matrix.py` | Belum sempat; tidak memblokir apa pun sampai FASE 4. |
+| Perbaikan `tools/build_evidence_matrix.py` | Belum sempat; tidak memblokir apa pun sampai FASE 4. |
 
 ---
 
@@ -238,7 +238,7 @@ itu dijalankan di mesin yang punya PDF-nya.
 2. **Kirim 4 konfirmasi ke dosen** (`REFRAME-DECISIONS.md` §"Wajib dikonfirmasi") —
    ini punya waktu tunggu terpanjang, kirim lebih dulu.
 3. **Jalankan lengan Scopus/WoS** dengan query yang sama dari `PROTOCOL.md`, ekspor ke
-   `evidence/literature/search/raw/`, lalu dedup antar-sumber.
+   `literature/search/raw/`, lalu dedup antar-sumber.
 4. Baru setelah itu: penyaringan judul–abstrak → `prisma-counts.csv` → FASE 2.
 
 ---

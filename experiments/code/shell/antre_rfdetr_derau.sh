@@ -5,7 +5,7 @@
 # kandungan informasi kedalaman.
 set -uo pipefail
 SKRIP_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-cd reproduce/experiments
+cd experiments/code
 source "$SKRIP_DIR/periksa_run.sh"
 while pgrep -f "train_depth4ch.py --arch yolo26n --modal rgbd --depth-tukar" >/dev/null; do sleep 30; done
 echo "[antre] depth-tukar selesai $(date -Is)"

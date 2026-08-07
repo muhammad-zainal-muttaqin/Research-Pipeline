@@ -15,10 +15,10 @@ build.
 
 ## Batas antarbagian
 
-- `docs/experiments/` menjelaskan status, metrik, audit, riwayat, dan keputusan eksperimen.
-- `docs/literature/` berisi sintesis, ringkasan 182 sumber, entri yang ditahan, dan protokol pencarian.
-- `docs/manuscript/` memisahkan panduan penulisan dari sumber naskah dan figur final.
-- `docs/audit/` memuat pemeriksaan klaim dan matriks bukti.
+- `experiments/` menjelaskan status, metrik, audit, riwayat, dan keputusan eksperimen.
+- `literature/` berisi sintesis, ringkasan 182 sumber, entri yang ditahan, dan protokol pencarian.
+- `manuscript/` memisahkan panduan penulisan dari sumber naskah dan figur final.
+- `audit/` memuat pemeriksaan klaim dan matriks bukti.
 
 Untuk data sumber, PDF, hasil JSON, log, split, dan dataset, buka
 [`../evidence/`](../evidence/). Untuk skrip reproduksi, buka

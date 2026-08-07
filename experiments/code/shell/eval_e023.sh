@@ -17,8 +17,8 @@ export YOLO_CONFIG_DIR=/tmp/Ultralytics
 
 PY=./.venv/bin/python
 R=/workspace/research-pipeline/runs/detect/runs_e023
-OUT=/workspace/research-pipeline/evidence/experiments/results/E-023
-SPLIT_DIR=/workspace/research-pipeline/evidence/experiments/splits_depth/seed42
+OUT=/workspace/research-pipeline/experiments/results/E-023
+SPLIT_DIR=/workspace/research-pipeline/experiments/splits/depth/seed42
 B=${B:-2000}
 mkdir -p "$OUT"
 

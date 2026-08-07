@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -u
-cd reproduce/experiments
+cd experiments/code
 PY=.venv/bin/python
 DET=runs/agn_e25_i960_s42/weights/best.pt
 CLS=runs/maturity_raw/best.pt

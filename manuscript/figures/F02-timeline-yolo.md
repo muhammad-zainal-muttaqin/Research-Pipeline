@@ -2,7 +2,7 @@
 
 ## 1. Tujuan & tempat
 Menata kronologi versi YOLO dan penanda arsitektural utamanya. Dirujuk di
-`\section{Evolusi dan Survei YOLO}` (`docs/manuscript/source/main.tex`, Gambar~\ref{fig:timeline}).
+`\section{Evolusi dan Survei YOLO}` (`manuscript/source/main.tex`, Gambar~\ref{fig:timeline}).
 Sumber: entri 1–11, 156, 192; selaras Tabel~\ref{tab:yolo}.
 
 ## 2. Konten faktual (titik waktu — tahun : versi : penanda)

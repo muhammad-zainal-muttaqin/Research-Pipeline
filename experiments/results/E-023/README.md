@@ -39,7 +39,7 @@ seluruh 15 run sekaligus, dan itulah yang menjadi dasar entri E-032.
 Kebijakan repo tidak menyimpan `*.pt`. `best.pt.sha256` membuat hasil latih
 ulang dapat dibandingkan: kalau hash berbeda, minimal diketahui bahwa
 checkpoint-nya memang lain, bukan sekadar menduga hasilnya tidak tereproduksi.
-Resep latihannya ada di `reproduce/experiments/shell/e023_fusi.sh` (seed 42 dan
+Resep latihannya ada di `experiments/code/shell/e023_fusi.sh` (seed 42 dan
 1337) dan `e023_seed2024.sh` (seed 2024).
 
 ## Catatan penanda `.e023-tanda/`

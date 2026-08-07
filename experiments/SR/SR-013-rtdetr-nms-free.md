@@ -17,7 +17,7 @@ Tandan di mahkota sawit rapat dan saling menutup. Setiap detektor keluarga YOLO
 kotak tumpang tindih melebihi ambang IoU, yang skornya lebih rendah dibuang. Pada
 objek yang memang berdekatan, NMS greedy dapat membuang kotak benar. Ini plafon
 **struktural** — di pasca-pemrosesan, bukan di model — jadi tak bisa dihapus
-dengan data, kapasitas, atau resolusi. `evidence/literature/references/deep-research-report.md` menempatkannya
+dengan data, kapasitas, atau resolusi. `literature/references/deep-research-report.md` menempatkannya
 **prioritas 1**.
 
 ## 2. Ide
@@ -51,13 +51,13 @@ Untuk perbandingan yang adil, kapasitasnya (33,0 juta) sebanding dengan baseline
 yolo26m (21,9 juta) — bukan lompatan kapasitas seperti yolo26x. Yang berbeda
 adalah **mekanisme**: NMS-free vs NMS.
 
-Pelatihan: `reproduce/experiments/train/train_rtdetr.py`, resolusi asli **1280**, augmentasi
+Pelatihan: `experiments/code/train/train_rtdetr.py`, resolusi asli **1280**, augmentasi
 **aman-warna** (`hsv_s=0.15`; kematangan adalah warna, lihat E-019), jadwal
 kosinus, `close_mosaic=10`. Dihentikan pada epoch 52/60 setelah dikonfirmasi
 `best.pt` (epoch fitness-terbaik) tak lagi terlampaui dan fase mosaic-off (ep50)
 tidak memberi lonjakan. Split/seed/data.yaml identik baseline; **irisan pohon
 train/val/test = nol** (E-017). Konfigurasi dipilih pada val; test dilaporkan
-terpisah. Evaluasi: `reproduce/experiments/eval/eval_rtdetr.py` (val() ultralytics bawaan).
+terpisah. Evaluasi: `experiments/code/eval/eval_rtdetr.py` (val() ultralytics bawaan).
 
 ## 4. Hasil
 
@@ -116,19 +116,19 @@ angka secara berarti. Konsekuensinya:
    deteksi. Semua ide berikut dibangun di atasnya.
 2. **Menggabungkan dengan resolusi master** (E-015/E-018): RT-DETR-L dilatih di
    1280; melatihnya pada piksel master 3060×4080 (imgsz 1600–2048, dataset siap
-   di `reproduce/experiments/build/build_master_ds.py`) menyerang lokalisasi — penentu mAP50-95, sasaran yang
+   di `experiments/code/build/build_master_ds.py`) menyerang lokalisasi — penentu mAP50-95, sasaran yang
    lebih jauh.
 3. **RT-DETR-X** (67,5 juta) menguji apakah kapasitas menambah lagi di atas
    mekanisme NMS-free.
 
 `best.pt` (264 MB) adalah model terbaik kita — terlalu besar untuk repo; disimpan
-di `/workspace/evidence/experiments/runs/rtdetr_l_e60_i1280/weights/` dan dapat direproduksi
+di `/workspace/experiments/runs/rtdetr_l_e60_i1280/weights/` dan dapat direproduksi
 dari skrip. Kandidat untuk diarsipkan ke penyimpanan objek.
 
 ## 6. Reproduksi
 
 ```bash
-cd reproduce/experiments
+cd experiments/code
 .venv/bin/python train/train_rtdetr.py --weights rtdetr-l.pt --imgsz 1280 --epochs 60
 .venv/bin/python eval/eval_rtdetr.py     # val + test + per-kelas dari best.pt
 # keluaran: runs/rtdetr_l_e60_i1280/, results/E-020/rtdetr_eval.json

@@ -48,7 +48,7 @@ Kode yang dipakai:
    eksklusi yang dideklarasikan, jadi jumlah yang dibuangnya harus terlihat.
 4. **Export → CSV**, centang minimal *Citation information* + *Bibliographical
    information* + **DOI**. DOI wajib — ia kunci dedup lintas-sumber.
-5. Simpan sebagai `evidence/literature/search/raw/scopus_Q<N>_<YYYY-MM-DD>.csv`.
+5. Simpan sebagai `literature/search/raw/scopus_Q<N>_<YYYY-MM-DD>.csv`.
 
 **Catatan batas.** Ekspor CSV Scopus dibatasi 20.000 record. Bila ada query yang
 melampauinya, **catat apa adanya dan jangan dipotong diam-diam** — itu kesalahan yang

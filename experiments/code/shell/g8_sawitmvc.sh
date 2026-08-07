@@ -29,8 +29,8 @@ IMGSZ=${IMGSZ:-640}
 SEED=${SEED:-42}
 NAMA="yolo26n_sawitmvc_rgb_seed${SEED}"
 R=/workspace/research-pipeline/runs/detect/runs_e022
-SPLIT_ROOT=/workspace/research-pipeline/evidence/experiments/splits_rgb
-OUT=/workspace/research-pipeline/evidence/experiments/results/E-028
+SPLIT_ROOT=/workspace/research-pipeline/experiments/results/splits_rgb
+OUT=/workspace/research-pipeline/experiments/results/E-028
 
 # --- tunggu GPU longgar ---------------------------------------------------
 while pgrep -f "venv/bin/python.*train_(depth4ch|rfdetr_4ch)\.py" >/dev/null; do

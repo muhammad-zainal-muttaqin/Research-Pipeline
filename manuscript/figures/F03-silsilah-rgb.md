@@ -2,7 +2,7 @@
 
 ## 1. Tujuan & tempat
 Pohon silsilah paradigma detektor RGB dan pewarisan gagasannya. Dirujuk di
-`\section{Fondasi Deteksi Objek RGB}` (`docs/manuscript/source/main.tex`, Gambar~\ref{fig:silsilah};
+`\section{Fondasi Deteksi Objek RGB}` (`manuscript/source/main.tex`, Gambar~\ref{fig:silsilah};
 figur lebar dua kolom). Sumber: entri 12–25, 155–165, 193–194.
 
 ## 2. Konten faktual (empat cabang → node)

@@ -1,6 +1,6 @@
 # Evidence Matrix for the Verified YOLO-RGB-D Corpus
 
-This supplement maps every verified local PDF used by the review. Page 1 supports document identity. Numerical claims require a separate full-PDF page check, recorded for manuscript claims in `docs/audit/core-claim-register.md`.
+This supplement maps every verified local PDF used by the review. Page 1 supports document identity. Numerical claims require a separate full-PDF page check, recorded for manuscript claims in `audit/core-claim-register.md`.
 
 Verified source records: **182**.
 
@@ -29,4 +29,4 @@ Verified source records: **182**.
 
 ## Machine-readable ledger
 
-The full row-level ledger is available in `docs/audit/evidence-matrix-182.csv`. It includes the verified file, BibTeX key, entry sheet, task, modality, extracted study summary, limitations, TBS transfer status, and supporting PDF page references.
+The full row-level ledger is available in `audit/evidence-matrix-182.csv`. It includes the verified file, BibTeX key, entry sheet, task, modality, extracted study summary, limitations, TBS transfer status, and supporting PDF page references.

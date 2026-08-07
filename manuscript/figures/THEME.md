@@ -1,6 +1,6 @@
 # THEME — Spesifikasi Visual Figur GPT Image 2
 
-Berkas ini adalah sumber kebenaran gaya untuk seluruh figur di `docs/manuscript/source/main.tex`.
+Berkas ini adalah sumber kebenaran gaya untuk seluruh figur di `manuscript/source/main.tex`.
 Setiap brief di `figures/` tetap menjadi sumber fakta: node, edge, urutan,
 angka, dan label di dalamnya tidak boleh berubah ketika aset dibuat ulang.
 

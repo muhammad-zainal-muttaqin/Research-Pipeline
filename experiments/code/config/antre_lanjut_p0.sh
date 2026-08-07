@@ -11,7 +11,7 @@
 # rc ditangkap SEBELUM substitusi perintah apa pun — lihat catatan bug di
 # antre_tambal_p0.sh.
 set -u
-cd reproduce/experiments
+cd experiments/code
 source .venv/bin/activate
 
 for pid in "$@"; do

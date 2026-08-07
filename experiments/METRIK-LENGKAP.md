@@ -5,9 +5,9 @@ Tabel rujukan untuk **semua** run pada SawitMVC-Depth, split test 72 pohon /
 dibekukan [E-025] setelah terbukti bahwa evaluator internal trainer tidak boleh
 dipakai membandingkan antar lengan.
 
-Sumber: [`evidence/experiments/results/E-022/metrics_lengkap.json`](../../evidence/experiments/results/E-022/metrics_lengkap.json)
+Sumber: [`experiments/results/E-022/metrics_lengkap.json`](results/E-022/metrics_lengkap.json)
 (berisi pula AP per kelas pada kedua ambang dan provenans tiap checkpoint).
-Skrip: [`reproduce/experiments/eval/metrics_lengkap.py`](../../reproduce/experiments/eval/metrics_lengkap.py).
+Skrip: [`experiments/code/eval/metrics_lengkap.py`](code/eval/metrics_lengkap.py).
 
 **Angka di sini bukan hasil final yang boleh dikutip.** Seluruh klaim positif
 E-022 dicabut ([E-027], [E-029]); tabel ini adalah rekam terukur, bukan capaian.

@@ -15,7 +15,7 @@ python verify_deck.py     # periksa geometri: luar kanvas, tumpang tindih, luapa
 
 Seluruh skrip menulis PNG ke direktorinya sendiri, dan `build_deck.py` membaca
 PNG dari direktori yang sama. `fig_hipotesis.png` adalah salinan
-`docs/manuscript/figures/N02-rgbd-hypothesis-gpt-image-2.png`.
+`manuscript/figures/N02-rgbd-hypothesis-gpt-image-2.png`.
 
 ## Ketergantungan data
 
@@ -41,5 +41,5 @@ kanvas, kotak teks yang beririsan, dan teks yang melebihi kotaknya. Jalankan
 juga dengan `AVG_EM = 0.56` sebagai uji ketat.
 
 Angka pada dek bersumber dari `reports-simple-id.tex`,
-`docs/experiments/EKSPERIMEN.md`, dan
-`evidence/experiments/results/E-021/perkelas_pycoco.json`.
+`experiments/EKSPERIMEN.md`, dan
+`experiments/results/E-021/perkelas_pycoco.json`.

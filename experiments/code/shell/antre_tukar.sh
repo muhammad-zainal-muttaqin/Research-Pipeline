@@ -3,7 +3,7 @@
 # Titik estimasi sudah menunjukkan depth-tertukar (0,3771) MENGALAHKAN depth
 # benar (0,3492) di yolo26n — CI menentukan apakah selisih itu nyata.
 set -uo pipefail
-cd reproduce/experiments
+cd experiments/code
 PY=./.venv/bin/python
 R=runs/detect/runs_e022
 while pgrep -f antre_dvd.sh >/dev/null; do sleep 30; done
