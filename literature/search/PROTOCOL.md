@@ -1,7 +1,9 @@
 # PROTOCOL — Protokol Pencarian Literatur
 
-**Status: DRAF, BELUM DIJALANKAN.** Setiap angka corong di `prisma-counts.csv` masih
-kosong. Jangan mengutip apa pun dari berkas ini ke naskah sebelum FASE 1.2–1.5 selesai.
+**Status: 2026-08-10: pencarian, deduplikasi, triage judul-abstrak, dan ranking prioritas kandidat sudah dijalankan; targeted full-text review berjalan pada shortlist.**
+Angka pencarian Scopus dan artefak CSV dicatat di
+[`scopus-counts-2026-08-09.csv`](scopus-counts-2026-08-09.csv). Angka seleksi dan
+corong PRISMA tetap kosong sampai FASE 1.3–1.5 selesai.
 
 Tinjauan: *Counting Each Fruit Once: A Design-Space Review of Cross-View Identity for
 Class-Wise Fruit Inventories*.
@@ -38,7 +40,9 @@ dipakai. Preseden di sampel venue: P2 (paper paling rigor) hanya WoS; P7 hanya S
 Scopus tidak. Recall WoS karena itu lebih besar untuk query yang sama. Perbedaan ini
 dicatat, bukan dihaluskan.
 
-**Rentang tahun:** 2015–2026 (`PUBYEAR > 2014` / `PY=2015-2026`), mengikuti contoh dosen.
+**Rentang tahun:** 2015–2026 (`PUBYEAR > 2014 AND PUBYEAR < 2027` di Scopus /
+`PY=2015-2026` di WoS), mengikuti contoh dosen. Batas atas Scopus ditulis eksplisit
+karena `PUBYEAR > 2014` saja memasukkan rekaman tahun 2027.
 Karya fondasi sebelum 2015 boleh dikutip sebagai **Register B** (sitasi latar) tetapi
 tidak masuk corong.
 
@@ -70,11 +74,11 @@ TITLE-ABS-KEY(
    OR "structure from motion" OR "SfM" OR "track*" OR "3D reconstruction"
    OR "image sequence")
 )
-AND PUBYEAR > 2014
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
 ```
 
-**Web of Science** — ganti `TITLE-ABS-KEY(` → `TS=(`, `AND PUBYEAR > 2014` →
-`AND PY=(2015-2026)`. Berlaku untuk Q1–Q6.
+**Web of Science** — ganti `TITLE-ABS-KEY(` → `TS=(`, `AND PUBYEAR > 2014 AND PUBYEAR < 2027` →
+`AND PY=(2015-2026)`. Berlaku untuk Q1–Q7 bila jalur WoS dipakai.
 
 ### Q2 — Asosiasi lintas-view dan anti-duplikasi *(mekanisme, non-pertanian diizinkan)*
 
@@ -90,7 +94,7 @@ TITLE-ABS-KEY(
   ("object detection" OR "instance segmentation" OR "counting" OR "instance"
    OR "pedestrian" OR "vehicle")
 )
-AND PUBYEAR > 2014
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
 ```
 
 Set inilah yang mengisi §5.2–5.5, tempat korpus lama **nol**. Bila hasilnya kurus,
@@ -109,7 +113,7 @@ TITLE-ABS-KEY(
   ("detection" OR "segmentation" OR "localization" OR "counting" OR "phenotyping"
    OR "harvesting")
 )
-AND PUBYEAR > 2014
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
 ```
 
 ### Q4 — Kelas per-instans di luar kematangan *(butir 6)*
@@ -124,7 +128,7 @@ TITLE-ABS-KEY(
   ("instance segmentation" OR "object detection" OR "per-instance" OR "individual fruit"
    OR "bounding box" OR "per-object")
 )
-AND PUBYEAR > 2014
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
 ```
 
 ### Q5 — Tinjauan terdahulu *(positioning, butir 3)*
@@ -137,7 +141,7 @@ AND TITLE-ABS-KEY(
   AND
   ("deep learning" OR "computer vision" OR "object detection" OR "machine vision")
 )
-AND PUBYEAR > 2014
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
 ```
 
 **Aturan pemakaian hasil Q5.** Tiap review yang masuk dikodekan pada satu pertanyaan:
@@ -160,7 +164,7 @@ TITLE-ABS-KEY(
    OR "computer vision" OR "image processing" OR "YOLO" OR "object detection"
    OR "remote sensing")
 )
-AND PUBYEAR > 2014
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
 ```
 
 ### Q7 — Penghitungan buah pandangan-tunggal / estimasi hasil *(butir 7)*
@@ -182,7 +186,7 @@ TITLE-ABS-KEY(
   ("deep learning" OR "convolutional" OR "object detection" OR "YOLO"
    OR "instance segmentation" OR "machine vision")
 )
-AND PUBYEAR > 2014
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
 ```
 
 Ditambah pencarian penulis terpisah, dicatat sebagai jalur tersendiri:
@@ -261,8 +265,13 @@ Preseden: P4 di sampel venue menyatakan hal serupa secara terbuka.
 ```
 query_id, database, date_run, n_raw, n_dedup_within, n_dedup_across, n_screened,
 n_excl_EC1, n_excl_EC2, n_excl_EC3, n_excl_EC4, n_excl_EC5, n_excl_EC6,
-n_fulltext_sought, n_retrieved, n_included
+n_fulltext_sought, n_retrieved, n_included, notes
 ```
+
+Pada baris per query, `n_dedup_across` adalah jumlah record master yang diwakili
+oleh query tersebut. Angka itu tidak boleh dijumlahkan antar-query karena lengan
+query memang saling tumpang tindih. Baris `ALL` adalah union seluruh query dan
+database. Kolom penyaringan tetap kosong sampai saringan judul-abstrak dijalankan.
 
 Diagram alir di naskah **dibangkitkan dari CSV ini**, tidak digambar tangan — mengikuti
 pola `build.js` → `index.html` yang sudah dipakai repo.
@@ -352,7 +361,7 @@ Artinya set query saat ini **tidak menjaring baseline penghitungan buah
 pandangan-tunggal** — padahal literatur itu dibutuhkan dua kali: sebagai kelas
 pembanding M0/M1 di §5, dan untuk memenuhi butir 7 dosen (penghitungan apel/jeruk/anggur).
 
-**Tindakan yang diperlukan (belum dijalankan):** tambahkan **Q7 — penghitungan buah
+**Catatan historis D-2:** tindakan menambahkan **Q7 — penghitungan buah
 pandangan-tunggal / estimasi hasil**, tanpa klausa multi-view:
 
 ```
@@ -366,7 +375,7 @@ TITLE-ABS-KEY(
   ("deep learning" OR "convolutional" OR "object detection" OR "YOLO"
    OR "instance segmentation" OR "machine vision")
 )
-AND PUBYEAR > 2014
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
 ```
 
 Uji known-item Q7 harus mengembalikan Koirala 2019 sebelum dipakai.
@@ -514,7 +523,7 @@ dari sisi klien. **Dilaporkan apa adanya, tidak dibulatkan.**
 | 2026-07-23 | D-4 Q7 dijalankan, known-item lolos | selesai |
 | 2026-07-23 | D-5 Q6 dipersempit 15.609 → 1.177 | selesai |
 | 2026-07-23 | D-6 Q3 tuntas (6.422) + dedup paginasi | selesai |
-| 2026-07-23 | D-7 pembatasan `SUBJAREA` di lengan Scopus | berjalan |
+| 2026-07-23 | D-7 pembatasan `SUBJAREA` di lengan Scopus | selesai dan diperbarui di D-8 |
 
 ### D-7 — 2026-07-23 — pembatasan bidang subjek pada lengan Scopus
 
@@ -556,3 +565,196 @@ menyisir *indexed keywords* Scopus, bukan hanya judul+abstrak. Kemiripan angka
 pasca-pembatasan (1.853 vs 1.849) adalah **kebetulan**, bukan validasi silang.
 
 Query final ada di [`scopus-queries.md`](scopus-queries.md).
+
+### D-8 — 2026-08-09 — Scopus dijalankan dengan rentang tahun tertutup
+
+Ketujuh query final dijalankan ulang melalui profil Scopus institusi pada **Advanced
+document search**. Karena probe lama dengan `PUBYEAR > 2014` masih memasukkan rekaman
+2027, query final memakai `PUBYEAR > 2014 AND PUBYEAR < 2027`. Angka tanpa subjek dan
+angka final dicatat terpisah, sesuai kewajiban D-7.
+
+| Query | `n_tanpa_subjarea` | `n_final` | `n_subject_filter_excluded` | CSV rows |
+|---|---:|---:|---:|---:|
+| Q1 | 3,433 | 2,001 | 1,432 | 2,001 |
+| Q2 | 2,920 | 2,789 | 131 | 2,789 |
+| Q3 | 5,766 | 5,648 | 118 | 5,648 |
+| Q4 | 2,553 | 2,422 | 131 | 2,422 |
+| Q5 | 729 | 662 | 67 | 662 |
+| Q6 | 1,071 | 995 | 76 | 995 |
+| Q7 | 1,274 | 1,205 | 69 | 1,205 |
+
+Setiap CSV berisi Citation information, Bibliographical information, DOI, dan semua
+record pada rentang hasil, bukan hanya halaman pertama. Dedup dalam query diverifikasi
+terpisah dan dicatat di [`scopus-counts-2026-08-09.csv`](scopus-counts-2026-08-09.csv).
+Known-item pass: SawitMVC di Q1, Gené-Molá 2020 di Q3, dan Koirala 2019 MangoYOLO di Q7.
+Tahap penyaringan judul dan abstrak belum dijalankan.
+
+### D-9 — 2026-08-09 — deduplikasi lintas query dan lintas database
+
+Deduplikasi dijalankan dari seluruh ekspor raw dengan
+[`build_literature_screening_master.py`](../../tools/build_literature_screening_master.py).
+Raw tidak diubah. Kunci utama adalah DOI ternormalisasi; record tanpa DOI memakai
+judul ternormalisasi plus tahun. Konflik ketika judul dan tahun yang sama mengarah ke
+lebih dari satu kunci tidak digabung otomatis dan dicatat untuk review manual.
+
+| Sumber | n raw | unik setelah dedup dalam query | duplikat dalam query | union master per sumber |
+|---|---:|---:|---:|---:|
+| Scopus | 15.722 | 15.589 | 133 | 14.740 |
+| OpenAlex | 16.656 | 16.633 | 23 | 15.744 |
+| Total sebelum union | 32.378 | 32.222 | 156 | - |
+
+Union seluruh sumber pada pass exact-key menghasilkan **22.269 kandidat master**, dengan
+**8.215 record terdapat di kedua database**. Terdapat 1.135 record yang muncul pada
+lebih dari satu query dan 1.051 kelompok konflik yang kemudian diproses pada D-10. Dua
+record OpenAlex Q6 bertahun 2027 dipertahankan dan ditandai `outside_2015_2026`, bukan
+dihapus diam-diam.
+
+Artefak audit ada di [`derived/dedup-audit-2026-08-09.csv`](derived/dedup-audit-2026-08-09.csv),
+review konflik di [`derived/manual-dedup-review-2026-08-09.csv`](derived/manual-dedup-review-2026-08-09.csv),
+dan register kerja di [`derived/master-screening-2026-08-09.csv`](derived/master-screening-2026-08-09.csv).
+Rekap tahap PRISMA ada di [`prisma-counts.csv`](prisma-counts.csv). Semua kolom
+screening masih `pending`; tahap berikutnya adalah saringan judul-abstrak dengan EC1,
+EC5, dan EC6.
+
+### D-10 — 2026-08-09 — resolusi konflik deduplikasi
+
+Konflik exact-key diproses oleh
+[`resolve_literature_dedup.py`](../../tools/resolve_literature_dedup.py). Pasangan
+dengan kecocokan penulis minimal 0,75 dan judul+tahun yang sama digabung. Sebelas
+kelompok metadata variant yang jelas juga digabung berdasarkan bukti DOI, venue, atau
+record repository. Kandidat dengan penulis atau venue berbeda tidak digabung.
+
+Hasilnya adalah **1.030 komponen gabungan** dengan pengurangan **1.203 record**.
+Master kerja turun dari 22.269 menjadi **21.066 record**. Satu kelompok menghasilkan
+partial merge karena hanya sebagian kandidat yang cocok. Sebanyak 21 kelompok berisi
+53 kandidat dipertahankan terpisah dengan keputusan `keep_separate_conservative`.
+
+Kelompok residual ini **bukan blocker**. Sebagian besar berupa record editorial atau
+administratif dan akan tersaring pada tahap judul-abstrak. Review manusia cukup berupa
+spot-check bila diperlukan; screening dapat dilanjutkan dengan keputusan konservatif
+tetap terpisah.
+
+Snapshot sebelum resolusi ada di
+[`derived/master-screening-exact-key-2026-08-09.csv`](derived/master-screening-exact-key-2026-08-09.csv)
+dan [`prisma-counts-exact-key-2026-08-09.csv`](prisma-counts-exact-key-2026-08-09.csv).
+Keputusan lengkap ada di [`derived/dedup-resolution-2026-08-09.csv`](derived/dedup-resolution-2026-08-09.csv),
+sedangkan register screening yang dipakai berikutnya adalah
+[`derived/master-screening-2026-08-09.csv`](derived/master-screening-2026-08-09.csv).
+Register tersebut kemudian diberi kolom triage judul pada D-11; screening abstrak tetap
+belum selesai.
+
+### D-11: 2026-08-09: triage judul berkepercayaan tinggi
+
+Triage judul dijalankan oleh [`build_title_screening.py`](../../tools/build_title_screening.py).
+Aturan ini hanya mengeluarkan judul dengan sinyal kuat EC5 atau EC6. Judul lain tidak
+dipaksa keluar karena EC1 memerlukan abstrak atau teks penuh untuk membedakan keluaran
+per-instans dari klasifikasi atau regresi tingkat-citra.
+
+| Hasil triage judul | Jumlah |
+|---|---:|
+| Master diperiksa | 21.066 |
+| Exclude EC5 dari judul | 242 |
+| Exclude EC6 dari judul | 1 |
+| Diteruskan ke screening abstrak | 20.823 |
+| Judul kosong, perlu metadata/abstrak | 7 |
+
+Ini adalah **triage awal**, bukan penyelesaian tahap judul-abstrak PRISMA. Karena itu
+kolom `n_screened` dan `n_excl_*` pada `prisma-counts.csv` tetap kosong sampai abstrak
+dibaca. Detail per record ada di [`derived/title-screening-2026-08-09.csv`](derived/title-screening-2026-08-09.csv)
+dan rekapnya di [`derived/title-screening-summary-2026-08-09.csv`](derived/title-screening-summary-2026-08-09.csv).
+
+### D-12: 2026-08-10: triage abstrak berkepercayaan tinggi
+
+Triage abstrak dijalankan oleh [`build_abstract_screening.py`](../../tools/build_abstract_screening.py)
+dari snapshot setelah D-11. Aturan versi `abstract-high-confidence-v6` hanya mengeluarkan
+sinyal EC1, EC5, atau EC6 yang jelas. Sinyal mekanisme visual yang kuat dipertahankan
+untuk pemeriksaan teks penuh. Abstrak yang kosong tidak dikeluarkan otomatis.
+
+| Hasil triage abstrak | Jumlah |
+|---|---:|
+| Master | 21.066 |
+| Kandidat setelah triage judul | 20.823 |
+| Abstrak tersedia | 11.954 |
+| Abstrak tidak tersedia | 8.869 |
+| Exclude EC1 dari abstrak | 640 |
+| Exclude EC5 dari abstrak | 148 |
+| Exclude EC6 dari abstrak | 0 |
+| Diteruskan ke pemeriksaan teks penuh | 20.035 |
+| Diteruskan dengan sinyal mekanisme kuat | 8.624 |
+| Diteruskan karena ambigu atau abstrak kosong | 11.411 |
+
+Sebanyak 8.868 record tanpa abstrak diteruskan. Satu record tanpa abstrak tetap
+dikeluarkan karena judulnya jelas merupakan `Author response`. Ini masih triage
+otomatis berkepercayaan tinggi, bukan keputusan final PRISMA; validasi manual tetap
+diperlukan untuk record ambigu sebelum angka screening dimasukkan ke `prisma-counts.csv`.
+
+Detail per record ada di
+[`derived/abstract-screening-2026-08-10.csv`](derived/abstract-screening-2026-08-10.csv),
+rekap ada di
+[`derived/abstract-screening-summary-2026-08-10.csv`](derived/abstract-screening-summary-2026-08-10.csv),
+dan snapshot sebelum pembaruan master ada di
+[`derived/master-screening-pre-abstract-2026-08-10.csv`](derived/master-screening-pre-abstract-2026-08-10.csv).
+Record yang diteruskan berikutnya masuk ke ranking prioritas sebelum pemeriksaan teks
+penuh tertarget dengan IC1-IC5 dan EC2-EC4.
+
+### D-13: 2026-08-10: audit full text lokal
+
+Audit lokal dijalankan oleh [`audit_local_fulltext.py`](../../tools/audit_local_fulltext.py).
+Audit ini membaca PDF langsung dari `literature/pdf/benar/` dan hanya mencocokkannya
+ke master berdasarkan DOI atau judul ternormalisasi. Audit tidak menganggap PDF lokal
+yang tidak cocok sebagai full text dari kandidat pencarian baru.
+
+| Hasil audit lokal | Jumlah |
+|---|---:|
+| PDF terverifikasi lokal | 182 |
+| Lembar entri lokal | 184 |
+| Pasangan PDF dan entri | 182 |
+| Record master yang cocok | 6 |
+| Cocok berdasarkan DOI | 2 |
+| Cocok berdasarkan judul | 4 |
+| Full text yang berhasil diekstrak | 6 |
+| Kandidat dengan bukti mekanisme, evaluasi, dan metrik | 5 |
+| Record review yang perlu verifikasi IC1/EC2/EC5 | 1 |
+| PDF lokal yang tidak cocok dengan master baru | 176 |
+
+Dengan demikian, pemeriksaan full text lokal sudah dilakukan untuk enam kecocokan.
+Audit ini bukan alasan untuk membaca seluruh 20.035 record satu per satu: 20.035
+record adalah pool pencarian yang perlu diprioritaskan terlebih dahulu. Detail audit ada di
+[`derived/local-fulltext-audit-2026-08-10.csv`](derived/local-fulltext-audit-2026-08-10.csv)
+dan rekapnya di
+[`derived/local-fulltext-summary-2026-08-10.csv`](derived/local-fulltext-summary-2026-08-10.csv).
+
+### D-14: 2026-08-10: prioritas targeted full-text review
+
+Atas klarifikasi ruang kerja, 20.035 record setelah triage abstrak diperlakukan sebagai
+**search pool**, bukan target wajib full-text satu per satu. Ranking dijalankan oleh
+[`build_literature_priority_shortlist.py`](../../tools/build_literature_priority_shortlist.py)
+dengan judul dan abstrak sebagai input. Sinyal positif mencakup inventaris unik,
+duplikasi, re-identification, cross-view, tracking, association, SfM/MVS, point cloud,
+RGB-D, depth, buah, FFB, dan sawit. Sinyal penalti mencakup keluaran yield atau biomass
+global, canopy atau remote sensing saja, dan keluaran tingkat-citra.
+
+Ranking lengkap tidak menghapus kandidat. Shortlist dipilih dengan kuota beragam agar
+review tidak didominasi satu arsitektur atau satu domain:
+
+| Artefak | Jumlah |
+|---|---:|
+| Kandidat yang diranking | 20.035 |
+| Shortlist targeted review | 250 |
+| First wave targeted review | 60 |
+| Shortlist sudah direview | 26 |
+| Shortlist pending | 213 |
+| Shortlist perlu retrieval manual | 11 |
+
+Artefak audit tersedia di
+[`derived/priority-ranking-2026-08-10.csv`](derived/priority-ranking-2026-08-10.csv),
+shortlist di
+[`derived/priority-shortlist-2026-08-10.csv`](derived/priority-shortlist-2026-08-10.csv),
+rekap di
+[`derived/priority-selection-summary-2026-08-10.csv`](derived/priority-selection-summary-2026-08-10.csv),
+dan penjelasan metodenya di
+[`derived/priority-selection-method-2026-08-10.md`](derived/priority-selection-method-2026-08-10.md).
+First wave yang belum direview ada di
+[`derived/priority-review-wave1-2026-08-10.csv`](derived/priority-review-wave1-2026-08-10.csv).
+Full-text review berikutnya hanya mengambil studi dari shortlist dan tetap mencatat
+keputusan serta bukti per studi pada ledger.

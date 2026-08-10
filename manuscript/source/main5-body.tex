@@ -1,0 +1,912 @@
+% Shared long-form evidence-mapping review body.
+% Claims are restricted to PDFs represented in audit/evidence-matrix-182.csv.
+% This revision traces the full chronological history of every verified source
+% (2012-2026) so that all 182 records are discussed, not merely a representative subset.
+
+\section{Introduction}
+
+Fresh-fruit-bunch (FFB) counting and maturity classification are often described as separate computer-vision tasks. In field operation they are not. A system must distinguish each visible bunch from fronds, shadows, and neighbouring bunches; assign a maturity label to the correct instance; and avoid counting the same bunch again when a camera or platform moves. A missed bunch biases yield estimation, whereas a duplicate or a maturity label attached to the wrong instance produces a different but equally operationally important error. The practical target is therefore a sequence-level inventory of individual bunches, not merely a high score on independent images.
+
+This target is demanding in an oil-palm canopy. Bunches vary sharply in image scale with camera distance and viewing angle, can be partially hidden by fronds or other bunches, and are observed under a mixture of deep shadow and direct sunlight. RGB appearance is indispensable for colour and texture cues associated with maturity, but it can be ambiguous when foliage, soil, shadow, and fruit share local appearance. Modern object detection supplies a useful starting point, yet success on a generic RGB benchmark does not demonstrate that a detector will separate crowded bunches, preserve an identity over time, or tolerate outdoor sensor failure.
+
+The YOLO family is attractive because it casts object detection as a single image-to-box-and-class mapping. The original paper reported 63.4\% mAP at 45 frames per second on PASCAL VOC 2007, while Fast YOLO reached 155 frames per second at lower accuracy \cite{redmon2016yolo}. These results explain why single-stage detectors are appealing for moving cameras, but they are not a performance claim for FFBs. The relevant question is whether the latency advantage can be retained while resolving the particular failure modes of a plantation scene.
+
+Depth is a plausible complementary cue. When two similarly coloured regions occupy different spatial layers, depth can help separate them; when RGB depth edges are weak, geometry can stabilize localization. Conversely, depth maps may be missing, noisy, misregistered, or non-metric. This is especially important outdoors, where a sensor and an RGB camera must be synchronized and where direct sunlight can change the reliability of active depth sensing. Depth should therefore be treated as evidence with an uncertain quality, not as an automatically beneficial fourth input channel.
+
+This review is written as a chronological history of the field rather than a snapshot of current state-of-the-art. The reason is methodological: a research pipeline that ends in a design decision for oil palm must show \emph{why} the field arrived at its present tools, which earlier ideas were superseded and which persist, and where each mechanism was actually validated. Accordingly, the review traces detector foundations from 2012 to 2026, monocular depth from 2014 to 2026, RGB-D dense prediction, 3D perception, pose and grasping, SLAM, cross-domain multimodal fusion, benchmark datasets, and the small number of direct agricultural systems, before converging on a falsifiable FFB experimental agenda. It asks five linked questions: (i) which RGB detector properties are relevant to real-time FFB perception; (ii) what forms of depth are available and what do they mean geometrically; (iii) where and how should RGB and depth be fused; (iv) which mechanisms connect per-frame detection to a reliable count; and (v) which conclusions are directly supported for agriculture and which remain hypotheses for oil palm? The order is deliberate. It prevents an architecture recommendation from skipping the constraints imposed by sensor quality, data, and the counting objective. Figure~\ref{fig:taksonomi} summarizes this decomposition as a four-axis map of the corpus.
+
+Unlike previous reviews on oil-palm or fruit detection, which organize evidence by sensor, ripeness, or detector family, this review makes the cross-view identity of each physical fruit the central design variable. Its contributions are threefold: (1)~a six-mechanism taxonomy (M0--M5) that classifies how existing systems resolve, or fail to resolve, duplicate observations; (2)~a reproducible search trace covering 21{,}066 records from Scopus and OpenAlex, with 44 verified full-text studies coded against the taxonomy; and (3)~a falsifiable experimental agenda that specifies the dataset, metric hierarchy, and ablation conditions required to evaluate depth-aided, duplicate-aware fruit inventory under realistic field constraints. Table~\ref{tab:position} makes the positioning explicit.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{F01-taksonomi-gpt-image-2-en}
+\caption{Conceptual map of the review. The FFB perception problem is decomposed along four axes: RGB detection, depth, RGB-D fusion, and geometry/association, each supported by a cluster of the reviewed literature. A single work may belong to more than one cluster, so the cluster sizes are not additive.}
+\label{fig:taksonomi}
+\end{figure*}
+
+\section{Review protocol and verified evidence corpus}
+
+\subsection{Structured evidence-mapping approach}
+
+This article is a structured evidence-mapping review, which surveys the breadth of a research area and charts how its methods relate, rather than a formal systematic review computing a pooled statistic under a retrospective PRISMA protocol. It synthesizes 182 primary sources, each read from its full text so that method, reported result, and stated limitation are drawn from the paper itself rather than from a secondary description. The corpus is deliberately broad because the target problem sits at the intersection of several mature fields: real-time object detection, monocular depth estimation, RGB-D fusion, 3D localization, and temporal association, none of which was developed for oil-palm fruit, and the review's contribution is precisely to trace how each field's ideas transfer, or fail to transfer, to fresh-fruit-bunch (FFB) counting and maturity classification.
+
+The literature spans a decade and a half and a wide range of venues. The foundational detection, depth, segmentation, and 3D-perception work is drawn from the principal computer-vision conferences and journals (CVPR, ICCV, ECCV, NeurIPS, and IEEE Transactions on Pattern Analysis and Machine Intelligence), the fast-moving YOLO lineage appears largely as technical reports and open-source releases that the surveys in the corpus consolidate, and the agricultural systems are published in domain venues such as \emph{Computers and Electronics in Agriculture} and the \emph{Journal of Field Robotics}. Figure~\ref{fig:corpus-year} shows the temporal distribution: the corpus reaches back to the 2012 benchmarks that launched deep visual recognition and extends to 2026 preprints, with the bulk falling in 2020--2024, the period in which RGB-D fusion, foundation-model depth, and end-to-end detection matured in parallel. Figure~\ref{fig:corpus-theme} shows the thematic distribution across seventeen coded areas; the concentration in general RGB detection, monocular depth, and RGB-D dense prediction, set against only a handful of direct agricultural systems, is itself a central finding of the review and the reason its conclusion is a research agenda rather than a model recommendation.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig-corpus-year}
+\caption{Temporal distribution of the 182 verified primary sources by publication year (2012--2026). The peak in 2020--2024 coincides with the parallel maturation of RGB-D fusion, foundation-model monocular depth, and end-to-end detection.}
+\label{fig:corpus-year}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig-corpus-theme-gpt-image-2-en}
+\caption{Thematic distribution of the 182 verified sources across the seventeen coded research areas. The concentration in general RGB detection, monocular depth, and RGB-D dense prediction, against only four directly agricultural entries, defines the transfer gap this review addresses.}
+\label{fig:corpus-theme}
+\end{figure}
+
+Each source is represented in the evidence matrix supplied as a machine-readable supplement (one row per source); a focused matrix of 44 studies from the reproducible search is reproduced as Table~\ref{tab:focused} in Appendix~\ref{app:focused}. The matrix records the title, year, thematic domain, task, modality, method summary, evaluation context, reported finding, stated limitations, and transfer boundary for each entry; the appendix table carries the coding fields, and the longer prose fields remain in the supplement. Every source is cited in the main text and placed chronologically within its thematic lineage. This placement lets a reader follow how each idea responds to the limitations of earlier work. The seventeen thematic codes are general RGB detection foundations, monocular depth estimation, RGB-D salient-object detection, 3D detection, RGB-D semantic segmentation, 6D pose, robotic grasping, YOLO surveys and variants, RGB-D SLAM, multimodal fusion, pedestrian RGB-T, benchmark datasets, YOLO with RGB-D, remote sensing, agriculture, medical, and industrial. These codes are not equivalent evidence for FFB performance. They mark where a result was obtained and make its transfer boundary visible. A direct fruit study therefore carries a different evidential weight from indoor RGB-D segmentation, robotic manipulation, or autonomous-driving perception.
+
+\subsection{Interpretation rules}
+\label{sec:rules}
+
+The scope is fixed as follows. The review addresses agricultural fruit perception, and oil-palm fresh fruit bunches are its principal case because that is where the authors' own field constraints and data lie. Mechanisms, however, are drawn without restriction from non-agricultural image processing, including object tracking, person and vehicle re-identification, multi-view and multi-camera detection, structure from motion, and RGB-D fusion. The reason is that the operations a class-wise inventory requires, namely separating crowded instances, holding an instance identity across views, and rejecting a re-observation of an object already recorded, were developed and stress-tested in those fields long before they were applied to fruit. Such work enters the review as transferable evidence under the rules stated next, never as an agricultural result. For the same reason, classification is treated throughout as an instance-dependent class attribute rather than as maturity grading specifically: maturity is the case this review follows, but a per-class count is undefined until the instance carrying the label has been identified, so the instance requirement, not the choice of attribute, is what the evidence has to support.
+
+Three evidence levels are used throughout. \textit{Direct evidence} is drawn from agricultural or fruit studies and can motivate an observation about a related deployment setting, although it is still not a TBS benchmark unless the study actually uses FFB data. \textit{Transferable evidence} comes from other domains but answers a mechanism-level question, such as whether feature fusion can resist missing depth or whether geometry helps preserve an object identity. \textit{Design hypotheses} are proposed TBS experiments. They are not phrased as achieved field results. This distinction is central because the verified corpus does not contain a sufficient direct FFB RGB-D benchmark to establish a best model, a best fusion point, or an expected accuracy.
+
+Measurements produced by the authors themselves are governed by a separate evidence contract, stated in the companion results report, and are never counted as corpus evidence here.
+
+\subsection{Reproducible search strategy}
+
+To extend the 182-source corpus with a systematic search trace, Scopus was used as the subscription index available in the institutional session and OpenAlex as an open complementary index. Web of Science was not available in the recorded run; this deviation is stated rather than hidden. Google Scholar was reserved for possible backward or forward snowballing and was not used as a primary count source because its result export is not stable. The date window was 2015--2026.
+
+Seven query families were used, each combining topic terms with a subject-area filter (Agriculture, Computer Science, Engineering, and Multidisciplinary). Their targets are: Q1, multi-view fruit inventory; Q2, cross-view identity and duplicate rejection; Q3, plant geometry and multimodal sensing; Q4, per-instance class attributes; Q5, previous reviews; Q6, oil-palm vision and machine learning; Q7, single-view fruit counting and yield estimation. The exact search strings are reproduced in Appendix~\ref{app:queries}.
+
+\begin{table}[t]
+\centering
+\caption{Search yields before cross-source deduplication.}
+\label{tab:searchcounts}
+\small
+\begin{tabular}{lrrl}
+\toprule
+Query & Scopus & OpenAlex & Main focus\\
+\midrule
+Q1 & 2{,}001 & 1{,}849 & Multi-view fruit inventory\\
+Q2 & 2{,}789 & 1{,}991 & Identity and duplicates\\
+Q3 & 5{,}648 & 6{,}422 & Plant geometry and sensors\\
+Q4 & 2{,}422 & 2{,}757 & Per-instance attributes\\
+Q5 & 662 & 1{,}143 & Previous reviews\\
+Q6 & 995 & 1{,}177 & Oil-palm vision\\
+Q7 & 1{,}205 & 1{,}317 & Single-view fruit load\\
+\midrule
+Total & 15{,}722 & 16{,}656 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Known-item checks confirmed that the subject-area filter did not remove three anchor studies: SawitMVC in Q1, Gené-Molá et al.\ in Q3, and MangoYOLO in Q7. These checks demonstrate filter safety but not index completeness.
+
+\subsection{Eligibility criteria}
+
+A source was eligible for the focused evidence register when all five inclusion conditions were met:
+
+\begin{description}[leftmargin=*,style=nextline,itemsep=2pt]
+  \item[IC1.] Peer-reviewed research article, conference paper, or openly available preprint with a verifiable full text and a quantitative result.
+  \item[IC2.] Visual output at the per-instance level: object detection, instance segmentation, tracking, localization, or cross-observation association.
+  \item[IC3.] Publication year 2015--2026, except for foundational citations used only for context.
+  \item[IC4.] Written in English or Indonesian.
+  \item[IC5.] Full text identifies a dataset or acquisition protocol and an evaluation metric or quantitative comparison.
+\end{description}
+
+The exclusion criteria were: EC1, output only at image or scene level without per-instance identity; EC2, no quantitative evaluation; EC3, full text unavailable; EC4, duplicate or version of an already retained record; EC5, editorial, abstract-only, poster, patent, or non-research document; EC6, outside the date range.
+
+\subsection{Screening and selection}
+
+The raw exports were kept unchanged. Within each query, exact duplicate identifiers were removed. Across sources, the primary deduplication key was a normalized DOI; records without a DOI used normalized title plus year. A title-year collision was not merged when author or venue evidence conflicted. The seven Scopus exports contained 15,722 rows and the seven OpenAlex exports contained 16,656 rows. Together they produced 32,378 raw rows, 32,222 after within-query deduplication, and 22,269 records after exact-key union. A conservative resolver processed 1,030 merge components and reduced the working master to 21,066 records. The complete deduplication decisions and screening records are available as supplementary material.
+
+Title screening removed 243 records (242~EC5, 1~EC6), leaving 20,823 for abstract screening. Abstract screening removed a further 788 records (640~EC1, 148~EC5), leaving 20,035 candidates. Fig.~\ref{fig:flow} summarizes the selection trace.
+
+\begin{figure}[t]
+\centering
+\small
+\begin{tabular}{c}
+\fbox{\parbox{0.78\columnwidth}{\centering 32{,}378 raw records\\Scopus 15{,}722 + OpenAlex 16{,}656}}\\[2pt]
+$\downarrow$\\[-1pt]
+\fbox{\parbox{0.78\columnwidth}{\centering 22{,}269 exact-key master records}}\\[2pt]
+$\downarrow$\\[-1pt]
+\fbox{\parbox{0.78\columnwidth}{\centering 21{,}066 resolved working-master records}}\\[2pt]
+$\downarrow$\\[-1pt]
+\fbox{\parbox{0.78\columnwidth}{\centering 20{,}035 abstract-screened candidates}}\\[2pt]
+$\downarrow$\\[-1pt]
+\fbox{\parbox{0.78\columnwidth}{\centering 250 shortlisted\quad$\rightarrow$\quad 44 included}}
+\end{tabular}
+\caption{Search and selection trace. The 20,035 candidates were ranked and shortlisted before targeted full-text review; this count represents the search pool, not a promise of individual paper reviews.}
+\label{fig:flow}
+\end{figure}
+
+The 20,035 candidates were not treated as a mandatory reading list. A deterministic title-abstract scoring function ranked signals relevant to identity, inventory, duplicate resolution, re-identification, cross-view association, tracking, SfM, RGB-D, depth, fruit, FFB, and oil palm. Penalties reduced the priority of global yield or biomass outputs, canopy-only remote sensing, non-fruit targets, and image-level outputs. To prevent one model family from dominating, selection used diversified buckets for core identity, direct oil-palm evidence, fruit multi-view or 3D evidence, fruit-instance baselines, transfer mechanisms, and prior reviews. The resulting shortlist contained 250~records with a first targeted wave of 60. By the manuscript cutoff, 44~records had complete full-text evidence and 16 had been excluded after review.
+
+\subsection{Evidence registers and matrix structure}
+
+The manuscript keeps two registers separate. Register~A is the full Scopus and OpenAlex search, including all candidate and screening states. Register~B is the focused evidence register: studies whose full text was retrieved and whose dataset, protocol, quantitative evaluation, and mechanism fields were verified. The ranking and shortlist are selection aids inside Register~A; they are not inclusion decisions. This separation prevents the 20,035 search-pool records from being presented as 20,035 included studies. The focused evidence matrix containing all 44 verified studies is reproduced as Table~\ref{tab:focused} in Appendix~\ref{app:focused}. A full synthesis matrix of all 182 corpus sources is supplied as a machine-readable supplement.
+
+\section{The inventory task as a design space}
+\label{sec:designspace}
+
+\subsection{From detections to inventory}
+
+The task has five distinct operations. First, a detector or segmenter proposes an instance in each observation. Second, a class head attaches an attribute to that instance. Third, observations are associated when they refer to the same physical object. Fourth, duplicate observations are rejected or merged. Fifth, the remaining identities are aggregated into counts per class. The first two operations can be evaluated with precision, recall, average precision, and class confusion. The last three require identity and count metrics.
+
+This decomposition changes the interpretation of a strong detector. A detector with high average precision on independent images may still overcount when a tree is filmed from both sides. A tracker may preserve identity through a short video but fail when the camera returns after a gap. A 3D association method may remove duplicates but become unusable when depth is uncalibrated. The design choice is therefore conditional on the acquisition regime.
+
+\subsection{Six identity mechanisms}
+
+Table~\ref{tab:mechanisms} defines the six mechanisms used in the synthesis.
+
+\begin{table}[t]
+\centering
+\caption{Identity mechanisms and their minimum assumptions.}
+\label{tab:mechanisms}
+\small
+\begin{tabularx}{\columnwidth}{@{}lY Y@{}}
+\toprule
+Code & Mechanism & Main assumption and risk\\
+\midrule
+M0 & Intra-view detection or segmentation & One view is sufficient. Hidden objects and repeated views are not resolved.\\
+M1 & Statistical correction or fixed census & Duplicate structure is stable enough for a correction factor. The correction may not transfer across trees.\\
+M2 & Appearance or re-identification & The instance retains discriminative texture, colour, or shape despite illumination and occlusion.\\
+M3 & Temporal tracking & Consecutive observations overlap in time and motion is sufficiently smooth. Track fragmentation and drift remain possible.\\
+M4 & Geometric or 3D association & Calibration, scale, or reliable reconstruction is available. Sensor failure and SfM cost are risks.\\
+M5 & Learned multi-view association & Linked training data represent view, class, and occlusion variation. The model may overfit one acquisition pattern.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+M0 is the no-association baseline. M1 uses a statistical correction or a fixed counting protocol without assigning a persistent identity. M2 matches local appearance or a learned re-identification embedding. M3 uses temporal continuity, motion, and track management. M4 uses calibrated geometry, depth, SfM, or a 3D map. M5 learns a multi-view association function directly from linked observations. A system can combine mechanisms, but its reported result must identify which mechanism is responsible for duplicate rejection.
+
+\subsection{Acquisition assumptions}
+
+The second design axis is the assumption set. A1~is the amount of overlap and occlusion. A2~is the camera baseline or view separation. A3~is motion smoothness or scene stationarity. A4~is calibration and metric scale. A5~is appearance distinctiveness. A6~is regularity of duplicate exposure, for example a fixed four-side census. A7~is the availability of identity supervision or an oracle association. M1~mainly depends on A6. M2~depends on A5. M3~depends on A3. M4~depends on A2 and A4. M5~depends on A7 and on coverage of the training acquisition pattern.
+
+This two-axis view gives a precise meaning to the phrase ``multi-view deduplication.'' It is not a mandatory module. It is a mechanism whose value should be tested against the assumptions that survive in the field. A fixed four-side protocol may make M1 competitive when duplication is regular and metric depth is unreliable. An unstructured moving camera may require M3 or M4 because the number and order of observations are not fixed.
+
+\subsection{Class attributes beyond maturity}
+
+Maturity classification is common in FFB literature, but the identity dependency is more general. An instance may carry a maturity label, a size class, a defect label, a disease state, a cultivar label, or a harvest-readiness state. The inventory should first establish one identity record and then attach one or more attributes to that record. If the same bunch appears in three views with two maturity predictions, the system must report whether the conflict is resolved by confidence, temporal evidence, geometry, or manual adjudication. Summing per-view class predictions without this step is not a class-wise inventory.
+
+\section{RGB detection foundations: a chronological arc from region proposals to real-time transformers}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{F03-silsilah-rgb-gpt-image-2-en}
+\caption{Genealogy of the RGB detector paradigms and the inheritance of ideas between them: the two-stage line (R-CNN through Sparse R-CNN), the one-stage line (SSD, RetinaNet, EfficientDet), the anchor-free line (FCOS, CenterNet), and the transformer line (DETR through the real-time DETR variants).}
+\label{fig:silsilah}
+\end{figure*}
+
+The history of RGB detection is best read as a sequence of responses to four recurring problems: localization, scale, class imbalance, and computational cost. Zou \textit{et al.}, surveying twenty years of the field, frame this transition from hand-crafted features to deep detectors as the organizing storyline, and their taxonomy of one- and two-stage families is the backbone of the account that follows \cite{zou2023objectdetectionsurvey}. Figure~\ref{fig:silsilah} maps the four detector paradigms and the inheritance of ideas between them that this section traces. Because all of these detectors were validated on generic benchmarks, they enter this review as baseline and mechanism evidence, not as FFB performance claims.
+
+\subsection{The two-stage lineage (2014--2021)}
+
+The deep-detection era opens with R-CNN, whose central move was to separate the localization problem from the recognition problem. Instead of sliding a classifier across every position and scale, R-CNN accepts a few thousand class-agnostic region proposals produced by a bottom-up algorithm and runs a convolutional network only inside each proposal; localization is delegated to the proposal generator, and the network's job is reduced to recognizing the contents of a given region \cite{girshick2014rcnn}. This yielded 53.3\% mAP on PASCAL VOC 2012, a relative improvement of more than 30\% over the best hand-crafted-feature systems of its time, and it established the shared 4{,}096-dimensional feature vector as a compact object representation. Its weakness, however, defines the rest of the lineage: because every one of the thousands of overlapping proposals is cropped and pushed through the network as an independent image, the same convolutional computation is repeated many times, making both training and inference slow and forcing feature caches of hundreds of gigabytes to disk. For an FFB scene, where a single frame may contain dozens of overlapping bunch candidates, this per-proposal cost is exactly the property that a practical detector cannot afford.
+
+Fast R-CNN inherited that redundancy problem and removed it by moving the proposals from pixel space to feature space. The whole image passes through the convolutional layers once; each proposal is then read off the resulting feature map through an RoI-pooling layer, so that overlapping proposals covering the same image region never recompute their shared convolutions \cite{girshick2015fastrcnn}. Just as importantly, it collapsed R-CNN's three-stage training into a single stage in which softmax classification and bounding-box regression are learned jointly and all layers are updated, eliminating the disk feature cache and raising accuracy at the same time. What Fast R-CNN did not solve was the origin of the proposals themselves, which were still produced by an external, un-learned algorithm that had become the pipeline's speed bottleneck.
+
+Faster R-CNN closed that remaining gap with the observation that the feature map the detector already computes is sufficient to generate proposals, so no separate algorithm is needed. A Region Proposal Network is placed as a fully convolutional head on top of the final feature map, predicting at every location both an objectness score and box refinements relative to a set of reference anchors of several scales and aspect ratios \cite{ren2017fasterrcnn}. Proposals thus become nearly free (roughly ten milliseconds of shared computation), their quality improves together with the backbone because they are now learned, and the anchor mechanism handles multi-scale objects from a single image scale. This anchor-based, learned-proposal, end-to-end two-stage design became the reference accuracy architecture against which almost every later detector, including the YOLO family, was measured; for FFB research it remains a valuable occlusion baseline that tests whether a faster model is missing close or partly visible bunches because of its design rather than because of the data.
+
+Two refinements extended the two-stage design in directions that matter directly for bunch counting. Feature Pyramid Networks addressed scale by recognizing that the multi-resolution hierarchy already present inside a convolutional backbone can be turned into a full feature pyramid if each level is enriched with semantics from the level above it. A top-down path upsamples the coarse, semantically strong maps and merges them through lateral connections with the fine, high-resolution maps, producing a set of feature maps that are simultaneously high-resolution and semantically strong, at marginal extra cost and with its largest gains on small objects \cite{lin2017fpn}. Because a bunch may occupy a few pixels at one range and a large part of the frame at another, this scale behaviour is not a convenience but a requirement. Mask R-CNN then added a third, parallel branch to each candidate object that predicts a binary instance mask alongside the existing class and box branches, and replaced the coarse RoI-pooling with the quantization-free RoIAlign layer so that mask and feature are spatially aligned; it reached 37.1 mask AP on COCO test-dev and swept the 2017 instance-segmentation competition \cite{he2017maskrcnn}. The instance mask is significant for counting because, where two bunches overlap, a mask makes the unit of counting explicit in a way that a rectangular box cannot, and it also constrains any later depth sample to the hypothesized object rather than to a bounding rectangle that mixes foreground and background.
+
+Much later, Sparse R-CNN showed that the two-stage idea could itself become end-to-end and NMS-free, absorbing a lesson from the transformer detectors discussed below. It discards the dense proposal machinery (both the RPN and the static anchor grid) and instead maintains a small fixed set of learnable proposal boxes paired with learnable proposal features, refined iteratively and supervised by a set-prediction loss \cite{sun2021sparsercnn}. The result is a minimalist detector with no dense priors and no non-maximum suppression, which simplifies deployment; it is included here because its clean instance-uniqueness formulation is conceptually attractive for a counting task where each bunch should correspond to exactly one committed detection. Read as a whole, this lineage supplies the accuracy-and-occlusion reference family for FFB perception: a multi-scale neck is necessary for range-varying bunches, an instance mask sharpens the unit of counting, and a strong two-stage model is the natural high-capacity comparison against which a compact real-time detector must justify any accuracy it gives up for speed.
+
+\subsection{One-stage and anchor-free detectors (2016--2020)}
+
+The one-stage family removed the explicit proposal stage altogether to gain the speed that two-stage detectors could not offer. SSD replaced a single coarse prediction grid with several feature maps of decreasing resolution and attached a set of fixed-shape default boxes at every location of each map, scoring all of them convolutionally in one forward pass \cite{liu2016ssd}. The mechanical intuition is that deeper layers see larger receptive fields, so predicting from a hierarchy of maps lets one network cover a range of object sizes without processing the image at multiple scales; on PASCAL VOC this matched or exceeded contemporary two-stage detectors at real-time speed. Its recurring weakness, weaker recall on small objects whose evidence lives only in the shallow, semantically weak layers, is the very problem FPN later addressed, and it is the problem a distant bunch presents.
+
+RetinaNet then diagnosed why single-stage accuracy still lagged two-stage accuracy and located the cause not in the architecture but in the loss. A dense detector evaluates tens of thousands of candidate locations per image, of which the overwhelming majority are easy background; summed over so many examples, their individually small losses dominate the gradient and drown out the few hard foreground examples. Rather than heuristically sampling examples, focal loss reshapes cross-entropy with a modulating factor $(1-p_t)^\gamma$ that drives the loss of confidently-correct examples toward zero while leaving hard examples largely untouched \cite{lin2017focal}. The change is small, architecture-agnostic, and portable, and it proved that the single-stage accuracy gap was an optimization artefact rather than a structural limit, a directly relevant lesson for FFB imagery, where background canopy vastly outnumbers bunch pixels and can similarly swamp training. EfficientDet carried the efficiency argument further along two axes at once: it treated multi-scale feature fusion as a learnable weighting problem, giving each input feature a trainable scalar weight inside a repeated bidirectional pyramid (BiFPN), and it replaced per-component tuning with a single compound-scaling rule that jointly scales resolution, depth, and width across the whole detector, yielding a D0--D7 family that dominates its compute class at every point \cite{tan2020efficientdet}. For a plantation system that must run within a fixed latency and power budget, this principled speed-accuracy family is a useful template for choosing an operating point rather than a single model.
+
+Anchor-free detectors simplified the output space by removing the anchor boxes and their hyperparameters entirely. FCOS made the feature-map location itself the training sample: every location falling inside a ground-truth box becomes a positive that predicts the object class and regresses four positive distances (left, top, right, bottom) to the box sides, with a centerness branch that down-weights predictions far from an object's centre \cite{tian2019fcos}. This turns nearly every foreground pixel into a regression sample, removes all anchor-matching heuristics and their memory cost, and reframes detection as dense per-pixel prediction. CenterNet pushed the reduction to its limit by representing an object as a single point, the centre of its box, so that detection becomes standard keypoint estimation on a per-class heatmap, with box size, sub-pixel offset, and even 3D or pose attributes regressed from the feature at each peak, in one anchor-free, NMS-free, end-to-end pass \cite{zhou2019objects}. The centre-point framing is conceptually attractive for counting because in the ideal case one heatmap peak corresponds to exactly one bunch; in practice a centre hidden by a frond or shared by two overlapping bunches can still be missed or merged, so the framing must be tested under the same crowded-scene protocol as any other detector rather than assumed to solve duplicate counting by construction. PP-YOLO belongs to this same period but as an explicit engineering study rather than a new architecture: starting from an intact YOLOv3, it swaps in a well-supported ResNet50-vd-dcn backbone and then adds ten already-published tricks one at a time, accepting each only if it raises accuracy without increasing parameters or FLOPs, reaching 45.2\% AP on COCO test-dev at 72.9 FPS \cite{long2020ppyolo}. Its value here is cautionary: a substantial part of reported detector progress comes from training recipe rather than architectural novelty, which is why an FFB comparison must hold recipe, resolution, and hardware fixed before attributing a gain to a model.
+
+\subsection{The YOLO lineage as a moving engineering frontier (2016--2026)}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{F02-timeline-yolo-gpt-image-2-en}
+\caption{Timeline of the YOLO family and its principal architectural markers, from the single-pass grid regression of YOLOv1 (2016) through anchor-free decoupled heads, re-parameterization, and the NMS-free end-to-end designs of YOLOv10 and YOLO26.}
+\label{fig:timeline}
+\end{figure*}
+
+YOLOv1 introduced the formulation that gives the family its identity: detection as a single regression from the full image to all boxes and classes at once. Because one network sees the whole image in one evaluation, global context is available at prediction time and background false positives are low, and Fast YOLO reached 155 FPS \cite{redmon2016yolo}. The same design choice fixes its weaknesses, and those weaknesses are precisely the FFB failure modes: each grid cell is responsible for only one class and two boxes, so small objects that cluster together in one cell (the plantation analogue is several bunches falling in the same coarse cell) are systematically missed, and localization is coarse. Every subsequent generation is best read as a different attempt to keep the single-pass speed while removing one of these limits, and Figure~\ref{fig:timeline} lays out that chronology with each version's defining architectural marker. YOLOv2/YOLO9000 raised recall and localization precision through an accumulation of individually-ablated changes (dimension-cluster anchors, direct location prediction, higher-resolution and multi-scale training), reaching 76.8--78.6\% mAP on VOC, and its WordTree mechanism jointly trained detection and classification to extend the output vocabulary to thousands of categories \cite{redmon2017yolo9000}. YOLOv3 then attacked the small-object problem structurally by making three-scale prediction, feature-pyramid style, central to the architecture on a deeper Darknet-53 residual backbone with multi-label logistic classification, at some cost in high-IoU localization \cite{redmon2018yolov3}.
+
+The next phase professionalized the training recipe. YOLOv4 organized every available improvement into a ``bag of freebies'' that changes only training (Mosaic augmentation, CIoU loss, self-adversarial training) and a ``bag of specials'' that adds cheap inference-time modules (CSP, SPP, PAN, Mish), and combined them into a 43.5\% AP COCO detector at $\sim$65 FPS that could be trained on a single GPU \cite{bochkovskiy2020yolov4}, a democratization directly relevant to a plantation lab without cluster resources. YOLOX converted the family to an anchor-free design with a decoupled head that separates classification from localization and a SimOTA dynamic label-assignment scheme, reaching 47.3--50.0\% AP \cite{ge2021yolox}. YOLOv6 re-derived each component from ablations for industrial use and allowed a different architecture per model size: a single-path reparameterized backbone for small models where raw speed dominates, a more complex one for large models, with anchor-free heads and task-alignment-learning training \cite{li2022yolov6}. YOLOv7 made the training-versus-inference distinction explicit through its trainable bag-of-freebies: the network may carry extra branches, auxiliary heads, and layered label assignment during training provided everything folds away or is discarded at inference, via E-ELAN blocks and planned re-parameterization \cite{wang2023yolov7}. Gold-YOLO then targeted the neck specifically, replacing the gradual layer-to-layer information flow of FPN/PAN with a centralized Gather-and-Distribute mechanism that collects features from all levels and redistributes them, improving multi-scale fusion \cite{wang2023goldyolo}, again a mechanism aimed at the range-varying-object problem a canopy presents.
+
+The most recent generations converge on end-to-end, NMS-free inference, importing the transformer detectors' set-prediction philosophy into the real-time YOLO body. YOLOv9 addresses information loss in deep networks through Programmable Gradient Information, an auxiliary reversible branch that supplies reliable gradients during training at no inference cost, paired with the lightweight GELAN architecture \cite{wang2024yolov9}. YOLOv10 removes non-maximum suppression from inference through consistent dual assignments: a one-to-many head supplies rich supervision during training while a one-to-one head, sharing the same body, is used at inference, so no post-hoc de-duplication is needed \cite{wang2024yolov10}. YOLOv11 keeps the three-part YOLOv8 frame but swaps its main feature block for C3k2 and inserts a C2PSA spatial-attention module, supporting six vision tasks \cite{khanam2024yolov11}. YOLO26 continues the simplification, removing Distribution Focal Loss and NMS from the inference graph while adding ProgLoss and a small-target assignment scheme (STAL) and a MuSGD optimizer, reaching 40.9--57.5\% mAP on COCO at 1.7--11.8 ms on a T4 GPU \cite{sapkota2025yolo26}. The NMS-free trend matters for counting because non-maximum suppression is itself a source of merge and split errors on crowded, overlapping bunches. Alongside this closed-set lineage, YOLO-World extended the paradigm to open-vocabulary detection through vision-language modelling, allowing categories to be specified at test time by text \cite{cheng2024yoloworld}, a capability worth noting because a maturity taxonomy (unripe, underripe, ripe, overripe, rotten) may be refined without retraining from scratch.
+
+This lineage should therefore be read as a changing set of engineering levers, not a leaderboard to be topped, and a series of surveys in the corpus makes that reading explicit. Jiang \textit{et al.}\ gave an early narrative comparison that treats the whole series as one consistent line of change \cite{jiang2022yoloreview}; Terven \textit{et al.}\ standardized the measurement vocabulary (AP, IoU, NMS defined before use) so that cross-version numbers sit on a common footing, and dissected the anatomy of each version \cite{terven2023yolo}; Hussain read the evolution through a digital-manufacturing lens, tying each architectural change to an application need \cite{hussain2023yolo}; Vijayakumar and Vairavasundaram surveyed metrics, architecture, and applications in one structured reading \cite{vijayakumar2024yolo}; and Sapkota \textit{et al.}\ mapped YOLOv1--YOLOv10 specifically onto five agricultural tasks including fruit detection, tracking, and counting, the single closest survey in the corpus to this review's target and the natural entry point for the FFB literature \cite{sapkota2024yoloagri}. Two later surveys sharpen the methodology: Jegham \textit{et al.}\ replaced citation-based comparison with controlled re-runs of 33 models from seven YOLO versions across three datasets under uniform hyperparameters, isolating architecture from recipe and finding YOLO11 strong on the speed-accuracy trade-off \cite{alif2024yoloevolution}, and a decadal review then traced the whole genealogy in reverse from YOLOv12 back to YOLOv1 to show how the newest design choices recur in older forms \cite{sapkota2025yologenesis}. The consistent lesson for TBS research across these surveys is that a compact YOLO with a multi-scale neck is a sensible first deployment model when latency is constrained, but the specific version must be chosen by a field failure analysis (missed distant bunches, merged neighbours, unstable identities) rather than by a reported generic COCO AP. Table~\ref{tab:baseline} sets out the measurements that turn such a detector comparison into FFB-relevant evidence.
+
+\subsection{Backbones, attention, and the transformer detectors (2016--2026)}
+
+Detector progress rode on backbone progress, and the backbones in the corpus form their own short history. ResNet made very deep networks trainable by having stacked layers learn a residual function $F(x)=H(x)-x$ rather than the target mapping directly, so that a shortcut connection carries the identity and gradients flow to early layers; it is the shared feature extractor beneath much of the two-stage and fusion literature discussed throughout this review \cite{he2016resnet}. CBAM added a lightweight module that recalibrates CNN features by applying channel attention and then spatial attention in sequence, decomposing an expensive 3D attention map into two cheap 1D and 2D operations; it is nearly free to insert and recurs throughout the applied YOLO variants surveyed later \cite{woo2018cbam}. The Vision Transformer then broke the convolutional monopoly on backbones by treating an image as a sentence: a 224$\times$224 image is cut into 196 patches of 16$\times$16 pixels, each embedded as a token, and a standard Transformer processes the sequence, matching convolutional backbones once pretrained at large scale \cite{dosovitskiy2021vit}. Its quadratic attention cost made it impractical for dense, high-resolution prediction, which Swin Transformer fixed by computing self-attention only within non-overlapping local windows, giving linear cost, and shifting the window partition between layers so information still crosses window boundaries, yielding a hierarchical backbone suitable for detection and segmentation \cite{liu2021swin}; Swin V2 then scaled its capacity and input resolution with training-stability fixes \cite{liu2022swinv2}. PVT contributed the first convolution-free progressive pyramid, shrinking spatial resolution stage by stage like a CNN while retaining global attention, so a transformer could serve as a dense-prediction backbone \cite{wang2021pvt}. ConvNeXt supplies the essential control on all of this: a pure CNN, modernized only with macro-design choices borrowed from Swin and no dynamic self-attention, remains competitive, warning against attributing gains to attention per se rather than to training and design \cite{liu2022convnext}, a discipline an FFB study should keep when comparing a transformer detector to a convolutional YOLO.
+
+Transformer detectors form a parallel arc worth tracing in full because their end-to-end, NMS-free reasoning speaks directly to the counting requirement that each bunch map to exactly one detection. DETR reframed detection as direct set prediction: the network always emits a fixed number of predictions (100, far more than the objects in a typical image) and a bipartite Hungarian matching assigns each ground-truth object to exactly one prediction, so anchors and non-maximum suppression disappear entirely \cite{carion2020detr}. This elegance came at two costs: very slow training convergence and weak small-object performance, because global attention must learn from scratch where to look and is expensive at high resolution. Deformable DETR resolved both by replacing global attention with multi-scale deformable attention, in which each query attends only to a few learned sampling points around a reference location, cutting cost and sharpening small-object localization \cite{zhu2021deformabledetr}. The next several detectors each attacked the convergence problem from a different angle: Conditional DETR decoupled the content and spatial parts of the decoder query so cross-attention localizes faster \cite{meng2021conditionaldetr}; DN-DETR added a query-denoising auxiliary task that reconstructs perturbed ground-truth boxes, bypassing the unstable matching that slows early training \cite{li2022dndetr}; DINO combined contrastive denoising, mixed query selection, and a look-forward-twice update to reach state-of-the-art COCO results \cite{zhang2023dino}; and Co-DETR enriched the encoder with several one-to-many auxiliary heads (ATSS, Faster R-CNN style) during training while keeping the one-to-one decoder for NMS-free inference \cite{zong2023codetr}. Finally the real-time branch closed the speed gap with YOLO and is the branch most relevant to field deployment: RT-DETR introduced a hybrid encoder that decouples expensive multi-scale interaction from cheaper intra-scale processing, beating comparable YOLOs at real-time rates \cite{zhao2024rtdetr}; RF-DETR separated weight training from architecture selection via weight-sharing neural architecture search over a DINOv2 backbone, emitting a whole family of real-time detectors from one training run \cite{robinson2025rfdetr}; and Le-DETR replaced the costly backbone and encoder with neighbourhood-attention components (EfficientNAT, NAIFI) for further efficiency, reaching 52.9/54\% AP at real-time speed \cite{huang2026ledetr}. For FFB scenes these detectors are useful comparators for contextual multi-scale reasoning and for their built-in instance-uniqueness, but their training data appetite and deployment cost must be justified by a measured gain over a compact convolutional RGB baseline on the actual plantation data, not by their COCO standing.
+
+\begin{table*}[t]
+\centering\small
+\caption{Questions that turn detector comparison into FFB-relevant evidence.}
+\label{tab:baseline}
+\begin{tabular}{p{0.21\textwidth}p{0.32\textwidth}p{0.36\textwidth}}
+\toprule
+Question & Evidence to measure & Why it matters for TBS counting \\
+\midrule
+Can small and occluded bunches be found? & AP/recall by object size and occlusion stratum & Aggregate AP can conceal loss of distant or frond-covered bunches. \\
+Does the detector separate instances? & Split/merge errors, instance recall, and per-tree count error & A box-level score does not expose a merged pair or a duplicate instance. \\
+Can the system operate on the platform? & End-to-end latency, memory, power, and throughput on target hardware & FLOPs or desktop FPS are not field latency. \\
+Does classification remain attached to the right bunch? & Per-instance maturity accuracy and calibration & Maturity labels are operational only when their associated bunch is correct. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Depth estimation, fusion, and three-dimensional perception}
+
+\subsection{Monocular depth (2014--2026)}
+
+Depth can be supplied by a registered RGB-D sensor, by stereo reconstruction, or by a depth-prediction model operating on RGB alone. These sources must not be collapsed into one variable, and the monocular-depth literature is the clearest record of how the field learned what a predicted depth map does and does not mean. Two surveys anchor the arc: Ming \textit{et al.}\ organized 2014--2020 methods by supervision signal, because that choice determines the dataset, the loss, and whether the output is metric or merely relative \cite{ming2021depthsurvey}; and a more recent survey traces monocular \emph{metric} depth from geometry-based methods to current foundation models, precisely the distinction that matters when an FFB task reports a physical range \cite{zhang2025metricdepthsurvey}.
+
+The supervised branch began with Eigen \textit{et al.}, who were the first to predict a dense depth map from a single RGB image with a deep network and who already identified the problem that shapes the entire field: absolute per-pixel depth from one image is ill-posed, so the network is trained on a scale-invariant error that measures depth \emph{relations} (which pixel is nearer, by what ratio) rather than absolute values. A coarse network reads the whole image to capture global layout, and a fine network refines it locally \cite{eigen2014depth}. This scale-invariance is not a technicality; it is the reason a monocular depth map cannot be treated as a distance measurement without extra calibration, a caveat that propagates directly to any FFB pipeline that would use predicted depth to place a bunch in space. BTS inherited the supervised setting and improved how coarse features become fine depth: instead of blindly upsampling, each feature cell at reduced resolution predicts the four coefficients of a local 3D plane, and depth for every pixel in the corresponding patch is computed from that plane, injecting a geometric prior into the decoder \cite{lee2019bts}. AdaBins reconsidered the output representation itself, arguing that a fixed discretization of the depth range is wasteful: a transformer module reads the whole scene and predicts per-image adaptive bin widths, and the final depth is a bin-centre expectation, so the model spends resolution where the particular image needs it \cite{bhat2021adabins}. DPT then swapped the convolutional encoder for a Vision Transformer and exploited the property that token count never changes through the layers, assembling tokens from several depths into multi-resolution feature maps that give dense prediction a constantly global receptive field \cite{ranftl2021dpt}. NeWCRFs kept the accuracy-through-structure idea but expressed it as optimization, computing a fully-connected conditional random field within each local window via multi-head attention over a Swin backbone, so neighbouring depth predictions are made mutually consistent at tractable cost \cite{yuan2022newcrfs}. Across this branch the trajectory is from raw regression toward ever-stronger geometric and structural priors, but all of it still requires dense ground-truth depth for training, the constraint the next branch removes.
+
+A parallel self-supervised branch removed the need for depth labels by turning depth into a by-product of image reconstruction, attractive for agriculture, where dense ground-truth depth is expensive or impossible to collect in the field. Godard \textit{et al.}\ reasoned that a function able to synthesize the right-hand stereo view from the left must implicitly encode scene geometry; that geometry is expressed as a disparity map, and a left-right consistency constraint enforces that the two predicted disparities agree, so the network learns depth from stereo pairs alone with no depth labels \cite{godard2017monodepth}. Monodepth2 inherited this setup and, rather than enlarging the model, fixed how the reconstruction error is computed: it takes the per-pixel \emph{minimum} reprojection error over multiple source frames (so an object occluded in one frame is not penalized), auto-masks pixels that do not move relative to the camera (removing a common failure on scenes with a moving-with-camera object), and samples the loss at multiple scales \cite{godard2019monodepth2}. These loss-level corrections, not architecture, produced the gains, a reminder that in self-supervised depth the supervision signal is the design surface. PackNet attacked the detail-loss problem of downsampling by replacing lossy pooling with a symmetric 3D packing/unpacking operation that moves spatial detail into the channel dimension and back, learned with 3D convolutions, and trained self-supervised from monocular video \cite{guizilini2020packnet}. MonoIndoor adapted the paradigm to the indoor setting, whose depth range varies wildly between rooms, by factorizing the prediction into a single global scale (one number for the whole image) and a scale-free relative depth map, with the global scale predicted separately \cite{ji2021monoindoor}. That scale/shape factorization is important beyond indoors: it reappears as the organizing idea of the metric-depth foundation models below, and it is exactly the decomposition an FFB system needs if it wants scene structure from cheap monocular depth while treating absolute scale as a separately-calibrated quantity.
+
+The decisive recent shift is toward zero-shot, cross-dataset robustness and, eventually, metric transfer, the property that would let a depth model trained elsewhere be used on a plantation without retraining. MiDaS made the enabling observation that many applications need not absolute metric depth but correct relative structure (which is nearer, by how much); if the training target is only relative depth, then datasets with incompatible scales and offsets can be mixed, so MiDaS trained on five heterogeneous datasets with a scale-and-shift-invariant loss in disparity space and generalized far better across scenes than any single-dataset model \cite{ranftl2022midas}. Metric3D then confronted the reason relative models cannot report metres: the same object at the same distance produces a different pixel size under different focal lengths, so scale is fundamentally ambiguous across cameras. Rather than let the network guess the camera, Metric3D transforms every image into a canonical-camera space with a simple geometric operation before the network sees it, removing focal-length ambiguity and enabling zero-shot \emph{metric} prediction when the intrinsics are known \cite{yin2023metric3d}. ZoeDepth reached metric depth by a two-stage route that revives the MonoIndoor factorization at scale: relative-depth pretraining on twelve datasets learns robust structure, and lightweight metric bins with attractor layers, fine-tuned per domain, attach an absolute scale \cite{bhat2023zoedepth}.
+
+The foundation-model era moved the bottleneck from labels to images. Depth Anything scaled supervision from $\sim$1.5M labelled images to roughly 62M automatically pseudo-labelled unlabelled images, using a teacher model to annotate the cheap and diverse unlabelled data, and became a robust general-purpose relative-depth backbone \cite{yang2024depthanything}. Depth Anything V2 separated the two things the previous model conflated, label accuracy and data diversity, by training a very large ViT-Giant/DINOv2 teacher on 595K precisely-labelled \emph{synthetic} images and using it to pseudo-label a large real corpus, sharpening detail while keeping generalization \cite{yang2024depthanythingv2}. Marigold took an orthogonal route, repurposing the latent U-Net of a pretrained Stable Diffusion image generator into an affine-invariant depth estimator by casting depth as a conditional denoising problem, trained only on synthetic data yet transferring well to real images \cite{ke2024marigold}, evidence that a strong visual prior can substitute for large labelled depth corpora. The current frontier pushes on views, cameras, latency, and controllability, and each axis matters for a field system. Depth Anything 3 shows that a single plain transformer with a depth-ray prediction target can recover geometry consistent across arbitrary views, merely by re-arranging tokens across views \cite{lin2025depthanything3}. UniDAC generalizes metric depth to perspective, fisheye, and other camera models by predicting a scale-free shape branch and a separate scale branch and combining them \cite{ganesan2026unidac}, again the shape/scale split, now made camera-universal. AsyncMDE targets the latency wall a foundation model creates on a moving platform, amortizing a frozen Depth Anything V2 ViT-B (97.5M parameters) through a 3.83M-parameter fast asynchronous path so depth can be produced in real time \cite{ma2026asyncmde}. FocusDepth couples a segmentation prompt (SAM) with a depth foundation model through a fusion module so prediction can be focused on a chosen region \cite{du2026focusabledepth}, conceptually the ability to say ``give me depth for this bunch,'' which is precisely what an instance-constrained depth sample requires. None of these advances, however, converts a predicted relative map into a valid distance measurement by itself, and the correlated-error problem is acute for FFB use: a pseudo-depth map derived from RGB shares its errors with the very image that generated it, so it is a structural prior rather than an independent sensor observation. Any FFB task that reports physical range, bunch position, or inter-frame geometric association must therefore declare which kind of depth it uses, calibrate and evaluate that interpretation explicitly, and down-weight depth wherever it contains holes, boundary artefacts, or a confidence failure under direct sunlight.
+
+\subsection{RGB-D fusion for dense prediction}
+\label{sec:fusion}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{F04-strategi-fusi-gpt-image-2-en}
+\caption{The three fusion locations that structure the RGB-D literature. Early fusion concatenates colour and depth at the input (for example FuseNet, Expandable YOLO); middle/feature fusion learns modality-specific representations before exchanging them at selected scales; late fusion combines predictions and supports an explicit RGB fallback.}
+\label{fig:strategi}
+\end{figure*}
+
+Fusion is where the value of depth is decided. The strategic question is not whether to add a depth channel but \emph{where} in the network to combine modalities and \emph{how} to handle the case in which depth is unreliable. Early fusion concatenates RGB and depth at the input; feature (middle) fusion learns modality-specific representations before exchanging them; late fusion combines predictions (Figure~\ref{fig:strategi}). These are competing experimental conditions, not cosmetic variants, and three sub-literatures in the corpus, RGB-D salient-object detection, RGB-D semantic segmentation, and RGB-D detection, each explored them in depth.
+
+\subsubsection{RGB-D salient-object detection (2019--2025)}
+
+Salient-object detection (SOD) is the sub-literature that confronted depth quality most directly, and it is therefore the most instructive for an FFB system that cannot assume clean depth; the space is surveyed by Zhou \textit{et al.}, whose taxonomy classifies methods by how and where depth is fused \cite{zhou2021rgbdsurvey}. The early methods each proposed a different answer to ``how should a depth map enter the network,'' and reading them in sequence exposes the design space. DMRANet refused to add raw depth to RGB, instead transforming depth at each level into a residual complement so that RGB remains the backbone and depth only supplies the missing cue, combined through multi-scale recurrent attention \cite{piao2019dmra}. BBS-Net treated multi-level features differently by their character rather than fusing them all at once: high-level ``teacher'' features first produce a coarse saliency map that gates the low-level ``student'' features, with a separate depth-enhancement module \cite{fan2020bbsnet}. JL-DCF took the opposite, minimalist stance: treat the depth map as just another image and push both modalities through one shared siamese backbone, so a single set of weights learns to serve both \cite{fu2020jldcf}. S2MA fused not the features but the modalities' non-local attention affinities, adding each modality's self-affinity matrix to the other's so geometry-based and appearance-based notions of ``which positions relate'' reinforce each other \cite{liu2020s2ma}. HDFNet reframed depth's role entirely, using it not as a fused feature but as the generator of input-specific dynamic convolution kernels, so depth decides \emph{how} RGB is filtered \cite{pang2020hdfnet}. UC-Net was the first to model the uncertainty of human annotation itself with a conditional variational autoencoder, predicting a distribution of plausible saliency maps rather than one deterministic answer \cite{zhang2020ucnet}, and CoNet made a choice with direct deployment value: it uses depth only as a training-time collaborative signal (alongside edge and saliency heads sharing an RGB encoder), so that at inference no depth map is required at all \cite{ji2020conet}. For a plantation where depth may be intermittently unavailable, a model that needs depth only during training is an attractive template.
+
+The pivotal source for this review is D3Net, which states the governing principle in one sentence: depth is an optional input that must pass a quality test before it is trusted. It produces three saliency maps (from RGB alone, from the fused pair, and from depth alone), and a gating mechanism down-weights a low-quality depth map, exactly the behaviour an outdoor FFB system needs when active depth fails under sunlight \cite{fan2020d3net}. The transformer wave then rebuilt SOD on attention. VST posed saliency as sequence-to-sequence prediction over patch tokens in one framework unifying RGB and RGB-D, so long-range dependencies across the image are modelled at every layer \cite{liu2021vst}, and TriTransNet strengthened the top three feature levels with three weight-shared transformer encoders where attention is affordable, refining depth features alongside \cite{liu2021tritransnet}. A cluster of methods refined how depth informs RGB: DSA2F splits the raw depth map into regions by its histogram modes and turns each into a spatial attention mask over RGB \cite{sun2021dsa2f}; DCF makes the quality problem explicit by first calibrating raw depth against the RGB image and only then fusing, separating correction from combination \cite{ji2021dcf}; and SPNet preserves RGB-specific, depth-specific, and shared streams in parallel so specificity is not lost in a premature merge \cite{zhou2021spnet}. The most recent methods combine strong backbones with bidirectional fusion: SwinNet drives edge-aware RGB-D and RGB-T SOD with dual Swin backbones and spatial-then-channel cross-modal alignment \cite{liu2021swinnet}, CIR-Net interacts the modalities at both encoder and decoder through a three-stream design \cite{cong2022cirnet}, and MobileSal shows the efficiency ceiling by restoring depth information only during training and reaching 450 FPS at deployment \cite{wu2022mobilesal}, a data point that a quality-aware depth branch need not be expensive at inference. HiDAnet exploits hierarchical depth granularity, discretizing the depth histogram with multi-Otsu into regions that align with the network's own coarse-to-fine hierarchy \cite{wu2023hidanet}; CAVER unifies RGB-D and RGB-T through a view-mixed transformer that treats fusion as a sequence of context updates by shared attention units \cite{pang2023caver}; and GL-DMNet replaces one-way fusion with parallel position-mutual and channel-mutual modules so RGB and depth filter each other bidirectionally \cite{yi2025gldmnet}. The consistent, transferable message across a decade of SOD is that fusion should enable cross-modal correction and reduce dependence on an unreliable depth observation, but every one of these results is on saliency benchmarks with clean indoor depth, not on agricultural boxes under field conditions, so they justify testing quality-aware fusion for FFBs rather than asserting it will help.
+
+\subsubsection{RGB-D semantic segmentation (2016--2025)}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{F06-atensi-lintasmodal-gpt-image-2-en}
+\caption{The cross-modal attention mechanism that recurs across the strongest RGB-D methods (for example SA-Gate, CIR-Net, CMX): each modality generates a weighting map that gates the other before fusion, so a faulty depth measurement can be suppressed rather than allowed to contaminate the joint representation.}
+\label{fig:atensi}
+\end{figure}
+
+Semantic segmentation traced the same fusion-location question but under dense per-pixel supervision, which makes its architectural conclusions unusually clean. FuseNet set the template that most later work varies: give depth its own encoder branch identical to the RGB branch and combine the two at the feature level rather than at the pixel level, summing depth features into the RGB branch at several stages \cite{hazirbas2016fusenet}. RDFNet inherited the two-branch idea and made the fusion learnable and residual, extending RefineNet so colour and HHA-encoded depth are fused through trained residual blocks at four resolutions before multi-resolution refinement \cite{park2017rdfnet}. RedNet showed that a deep RGB-D encoder-decoder trains well if every unit is residual and supervision is applied not only at the output but at intermediate layers \cite{jiang2018rednet}. ACNet separated two questions that earlier work had conflated, how the architecture preserves each modality's feature flow and how the network decides each modality's contribution per location, answering the first with three parallel branches and the second with channel-attention modules that weight RGB against depth pixel by pixel \cite{hu2019acnet}. SA-Gate then crystallized the principle most relevant to unreliable outdoor depth: filter before you fuse. A cross-modal gate, computed from the other modality, suppresses features arising from a faulty depth measurement before they can contaminate the joint representation \cite{chen2020sagate}, the segmentation counterpart of D3Net's quality gate and a strong candidate mechanism for FFB depth that fails intermittently. This bidirectional cross-modal gating, shared by the strongest RGB-D methods, is illustrated in Figure~\ref{fig:atensi}.
+
+The efficiency and transformer branches followed. ESANet demonstrated that two efficient shallow encoders (factored ResNet-34 blocks) with cheap Squeeze-and-Excitation depth fusion can rival much heavier RGB-D methods at deployment-friendly latency, a direct relevance for on-platform inference \cite{seichter2021esanet}, and ShapeConv made convolution itself depth-aware by decomposing each depth patch into a base component (its mean, that is, where it sits relative to the camera) and a shape component (the residual local relief), processing them separately \cite{cao2021shapeconv}. SegFormer contributed a simple, strong RGB backbone-decoder design: a hierarchical MiT encoder without explicit positional encoding plus a lightweight MLP decoder, which many RGB-D methods adopt as their base \cite{xie2021segformer}. TokenFusion addressed multimodal transformers economically by detecting uninformative token slots via a learned score and reusing them for tokens from the paired modality rather than adding tokens \cite{wang2022tokenfusion}. EMSANet solved semantic, instance, and panoptic segmentation plus orientation and scene classification from one shared RGB-D encoder with task-specific heads, showing that a single fused representation can serve several outputs at once, relevant because FFB perception must emit detection, maturity, and geometry together \cite{seichter2022emsanet}. Omnivore pushed modality-generality further, using one Swin model with shared weights to classify images, video, and RGB-D by unifying the token format at the input rather than the architecture at the top \cite{girdhar2022omnivore}. The most recent methods refine cross-modal exchange: CMX generalizes fusion to arbitrary RGB-X pairs (depth, thermal, event, LiDAR) through bidirectional feature rectification before a cross-attention fusion \cite{zhang2023cmx}; DFormer moves RGB-D fusion out of fine-tuning and into pretraining, training the backbone from the start on ImageNet image-depth pairs so cross-modal interaction is baked into every block \cite{yin2024dformer}; GeminiFusion exploits the pixel-aligned nature of registered RGB-D: feature at pixel $i$ in one modality is most relevant to pixel $i$ in the other, for a per-pixel fusion with linear complexity, reaching 56.8\% mIoU on NYU \cite{jia2024geminifusion}; and DiffPixelFormer separates the differential and shared pixel-level components of the two modalities for indoor segmentation \cite{gong2025diffpixelformer}. As a body these are mechanism sources for cross-modal correction and quality-aware fusion, not agricultural validations, and their indoor sensors and clean registration are precisely the conditions an oil-palm canopy violates.
+
+\subsubsection{RGB-D and multimodal object detection (2017--2025)}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{F05-pola-yolorgbd-gpt-image-2-en}
+\caption{The two recurring patterns for integrating YOLO with depth. Pattern one expands the input to four channels and fuses at the input (Expandable YOLO), which Ophoff \textit{et al.}\ find is dominated by intermediate fusion; pattern two detects in 2D and then projects or refines in 3D on a reduced region (FusionVision, YOLOv8-URE).}
+\label{fig:yolorgbd}
+\end{figure*}
+
+Detection-specific fusion is where the corpus speaks most directly to the FFB architecture, and one study in it is the single most important piece of transferable evidence in this review. Ophoff \textit{et al.}\ treated the fusion position not as a fixed design choice but as a free parameter to be swept: they duplicated a 27-layer YOLOv2 into two identical branches (one RGB, one depth) and tested 28 possible fusion locations along the network, finding that middle and late fusion were consistently more competitive than naive early (input-level) fusion on their data \cite{ophoff2019multimodal}. The transferable conclusion is not that a specific layer is optimal for FFBs (datasets and objects differ) but the mechanism-level lesson that separate modality pathways should be preserved long enough for the network to decide which evidence is useful, which is exactly the hypothesis an FFB ablation should test. Expandable YOLO represents the opposite, early-fusion extreme: it appends depth as a fourth input channel to YOLOv3 and adds 3D convolution near the output, keeping the input a single (four-channel) image \cite{takahashi2020expandableyolo}, a cheap baseline worth including precisely because Ophoff predicts it may underperform. More recent systems abandon the single-network assumption and cascade cheap models, a pattern well suited to a resource-constrained plantation platform. FusionVision chains a fast YOLOv8 detector with FastSAM: detection narrows the search to per-object boxes, segmentation refines masks, and the masks are back-projected to 3D from the RGB-D depth, reconstructing and segmenting objects in 3D without running an expensive model over the whole image \cite{elamraoui2024fusionvision}. DODT runs an ensemble of lightweight detectors in parallel and fuses their outputs for onboard dynamic-object detection and tracking from an RGB-D camera on a small quadcopter, trading single-model peak accuracy for robustness and speed on limited hardware \cite{xu2024onboard}. YOLOv8-URE uses 2D detection as a coarse filter that prunes a point cloud to a small object-relevant subset before 3D registration refines the pose for grasping in stacked scenes, the ``detect in 2D, localize in 3D on a reduced set'' pattern that recurs throughout the 3D and pose literature \cite{yang2025yolov8ure}. The broader design space is organized by Feng \textit{et al.}, whose survey classifies multimodal detection and segmentation for autonomous driving along the three axes of what to fuse, when to fuse, and how to fuse \cite{feng2021multimodalsurvey}, and PointNet supplies the permutation-invariant point-set backbone, processing each point by a shared MLP then aggregating with a symmetric function, that underlies much of the 3D branch discussed next \cite{qi2017pointnet}. Taken together, this sub-literature makes a defensible FFB hypothesis concrete: a feature-level or late-fusion detector with an explicit RGB fallback when a depth-quality signal is poor, evaluated against an RGB-only baseline and an early-fusion baseline at matched resolution and hardware, not the untested claim that adding depth necessarily improves detection. The two recurring YOLO+RGB-D integration patterns, input-channel expansion versus detect-then-project, are contrasted in Figure~\ref{fig:yolorgbd}, and Table~\ref{tab:fusion} enumerates the fusion alternatives together with the specific failure mode each must be tested against.
+
+\begin{table}[t]
+\centering\small
+\caption{Fusion alternatives to be evaluated on the same FFB data.}
+\label{tab:fusion}
+\begin{tabular}{p{0.18\linewidth}p{0.35\linewidth}p{0.36\linewidth}}
+\toprule
+Strategy & Potential value & Failure mode to test \\
+\midrule
+Early fusion & Minimal architectural change; may exploit aligned low-level cues & Raw depth noise or scale mismatch can contaminate RGB features. \\
+Feature fusion & Lets each modality form task-specific features before exchange & Fusion scale and alignment become hyperparameters; extra compute must be justified. \\
+Late fusion & Supports a strong RGB fallback and explicit confidence weighting & May miss fine complementary cues needed to separate crowded instances. \\
+Cross-modal attention / gating & Can select or suppress modality evidence by context & Attention is not a guarantee of robustness; missing-depth and sunlight ablations are required. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Three-dimensional perception (2017--2023)}
+
+RGB-D detection is not identical to three-dimensional perception. A box contains foreground, background, and often a mixture of depth layers, so a proposed FFB pipeline should not treat an arbitrary centre-pixel depth as a bunch range; it should use robust statistics over a valid instance region and retain an uncertainty value. The autonomous-driving 3D-detection literature is the richest record of how the field learned to turn depth and geometry into reliable object localization, surveyed by Arnold \textit{et al.}\ along the axis of sensor modality and data representation \cite{arnold2019survey3d}.
+
+The lineage begins with the problem of how to represent an unordered point cloud so a network can process it, and each answer trades accuracy against speed. MV3D projected LiDAR into two structured 2D views, bird's-eye (BEV) and front view, so ordinary convolutions apply, and used BEV as the main proposal source because a top-down view preserves physical object size; it fused these with RGB through region-based deep fusion \cite{chen2017mv3d}. AVOD inherited this framework and moved the BEV-RGB fusion as early as possible, into the region-proposal network itself, so proposals consider both modalities from the start rather than validating them late, using a high-resolution FPN-style extractor \cite{ku2018avod}. VoxelNet removed the hand-designed projection by discretizing space into voxels and learning voxel features end-to-end from raw points with a Voxel Feature Encoding layer \cite{zhou2018voxelnet}, but 3D convolution over voxels is slow; PointPillars fixed this by collapsing the height axis into vertical ``pillars'' so the entire detector runs in efficient 2D convolutions, fast enough for real-time \cite{lang2019pointpillars}. PointRCNN inverted the usual order, first segmenting foreground points and letting each such point propose a box bottom-up rather than guessing box locations from anchors \cite{shi2019pointrcnn}, and PV-RCNN combined the two representations, using efficient sparse-voxel convolution to generate proposals and point-based set abstraction at a small number of keypoints to enrich them before refinement \cite{shi2020pvrcnn}. Frustum PointNets is the most FFB-relevant member of the family because it is the cleanest statement of the ``detect in 2D, localize in 3D'' decomposition a bunch-counting pipeline would use: a 2D detection box on the RGB image is projected into a 3D viewing frustum, and a sequence of PointNets then segments and regresses the object only within that narrowed region \cite{qi2018frustum}. The pseudo-LiDAR line carries an equally important lesson about representation: Wang \textit{et al.}\ showed experimentally that the same depth data yields far better 3D detection when stored as a back-projected point cloud than as a front-view depth map, because 3D convolutions then operate in a physically meaningful space \cite{wang2019pseudolidar}, and Pseudo-LiDAR++ improved the source depth by retraining the stereo network directly on depth error rather than disparity error \cite{you2020pseudolidarpp}. For an FFB system these two results caution that how a depth measurement is represented can matter as much as its raw accuracy.
+
+Camera-LiDAR fusion then matured toward learned, calibrated association. PointPainting decorates each LiDAR point with the semantic-segmentation class scores of the image pixel it projects to, before any 3D detector runs, a simple sequential fusion that lifts several detectors at once \cite{vora2020pointpainting}, and 3D-CVF aligns camera features into the LiDAR BEV space through an auto-calibrated projection and fuses them with location-dependent adaptive gating rather than uniform weights \cite{yoo20203dcvf}. CenterPoint reframed 3D detection, like its 2D cousin CenterNet, as centre-point heatmap prediction on BEV and thereby simplified multi-object tracking to centre association across frames \cite{yin2021centerpoint}, directly relevant to the counting problem, where tracking centres across a traversal is the association task. The transformer wave replaced fixed point-to-pixel correspondence with learned soft association: TransFusion represents each candidate as an object query that attends over both LiDAR and image features in two decoder layers, robust to calibration error \cite{bai2022transfusion}; BEVFormer builds a learnable BEV query grid filled by spatial attention over current-frame cameras and temporal attention over the previous BEV, adding a time dimension \cite{li2022bevformer}; DETR3D lets each learned 3D object query project its own reference point into every camera to gather features, so the query decides which view is relevant \cite{wang2022detr3d}; and BEVFusion encodes each modality independently into a shared BEV space before fusing, so neither is projected onto the other and each survives the other's failure \cite{liu2023bevfusion}. None of these is an FFB solution: they use LiDAR, driving-scale scenes, and calibrated multi-camera rigs absent from a plantation. As a body, though, they establish the coordinate-frame discipline a counting pipeline needs. Geometry's real contribution is not an extra coordinate but the ability to distinguish look-alike regions, to reject a re-observation at a previously mapped location, and to estimate reachability, and every one of these requires explicit intrinsics, registration, and depth-scale handling rather than an unqualified centre-pixel depth read from a box.
+
+\subsection{Object pose and robotic grasping (2015--2024)}
+
+Pose estimation and grasping are transferable as method evidence because both must reason about instance boundaries, geometry, occlusion, and coordinate transforms before a robot acts, and both make the confidence of that reasoning explicit, which is the analogue of deciding whether to commit a new inventory record. Hoque \textit{et al.}\ survey the shared taxonomy of 3D detection and 6D pose across RGB, depth, and RGB-D inputs \cite{hoque2021posesurvey}.
+
+For 6D pose the guiding idea, established by PoseCNN, is to decompose the task by the visual nature of each parameter: translation determines where an object appears and how large it looks, rotation determines its surface appearance, so translation is recovered geometrically from per-pixel centre-direction voting plus a depth estimate while rotation is regressed separately, all in cluttered scenes \cite{xiang2018posecnn}. DenseFusion inherited the RGB-D setting and replaced global fusion with dense local fusion: the depth map becomes a point cloud via the camera intrinsics, each point is paired with its aligned colour feature, one pose is predicted per point, and a learned selection step picks the most reliable, an architecture built around the fact that some points are more trustworthy than others \cite{wang2019densefusion}. PVN3D moved keypoint detection out of the image plane into 3D, training each point to vote an offset toward each target 3D keypoint and solving for pose by least squares, which is more robust to occlusion than 2D keypoints \cite{he2020pvn3d}, and G2L-Net decomposed the problem into a global-to-local sequence: global localization by a 3D sphere, then translation and rotation in the object's own frame, to run in real time \cite{chen2020g2lnet}. FFB6D, whose acronym coincides with fresh-fruit-bunch work but denotes ``full flow bidirectional,'' exchanges RGB and geometry features in both directions at every encoder and decoder layer, so each branch is continuously informed by the other rather than fused once at the end \cite{he2021ffb6d}, the most thorough expression of the bidirectional-fusion principle seen throughout the RGB-D literature. The remaining methods broaden applicability: GDR-Net unifies dense 2D-3D correspondence with end-to-end differentiable direct regression \cite{wang2021gdrnet}; ZebraPose encodes an object's surface as a hierarchical binary code predicted densely per pixel, turning continuous coordinate regression into coarse-to-fine classification \cite{su2022zebrapose}; OnePose reframes pose as visual localization against a structure-from-motion model built from a reference video, needing no CAD model or per-object training \cite{sun2022onepose}; and FoundationPose unifies estimation and tracking of \emph{novel} objects through render-and-compare over a neural implicit representation, a foundation-model approach that removes the per-object assumption entirely \cite{wen2024foundationpose}. The transferable pattern for FFBs is the confidence-aware decomposition these methods share: constrain the geometry to a hypothesized instance, estimate a meaningful state, and quantify how reliable that estimate is.
+
+Grasping supplies the closest analogue in the corpus to committing an action under geometric uncertainty: the decision to add one inventory record, update an existing one, or defer. Lenz \textit{et al.}\ framed grasp detection as binary classification over oriented candidate boxes from RGB-D, the direct transfer of object-detection thinking to manipulation \cite{lenz2015grasp}, and GG-CNN reframed it as per-pixel regression, predicting a grasp quality, angle, and width at every pixel of a depth image in a single tiny 62{,}420-parameter forward pass fast enough to close the control loop \cite{morrison2018ggcnn}. GR-ConvNet kept the per-pixel formulation but strengthened it with a generative residual architecture predicting quality, angle, and width maps from RGB-D \cite{kumra2020grconvnet}, and GR-ConvNet v2 refined the same design with Mish activation, dropout, and the Ranger optimizer to reach roughly 98\% grasp accuracy \cite{kumra2022grconvnetv2}. The 6-DoF branch moved from planar grasps into full clutter: VGN turns grasp detection into dense regression over a truncated signed-distance volume, emitting a quality, orientation, and width per voxel \cite{breyer2021vgn}, and Contact-GraspNet shrinks the search space by anchoring each grasp to an observed point on the object surface, so three of the translation degrees of freedom are fixed by the data \cite{sundermeyer2021contactgraspnet}. BCMFNet adds bilateral cross-modal attention so RGB and depth query each other before fusion, the grasping instance of the bidirectional-fusion idea \cite{zhang2023bcmfnet}. Two datasets underwrote this progress by replacing human labelling with computation: Jacquard generated grasp labels entirely through physics simulation on ShapeNetSem CAD models, yielding over 54k rendered images of 11k objects with more than one million successful grasp annotations \cite{depierre2018jacquard}, and GraspNet-1Billion analytically scored over 1.1 billion grasps across 190 scenes and 97{,}280 RGB-D images from two cameras \cite{fang2020graspnet}, a scale worth noting for an FFB program, since a similar analytic or simulated labelling strategy could reduce the annotation burden of a plantation dataset. The transferable decomposition for counting is thus: identify an instance, estimate a geometrically meaningful state, assess confidence, and commit only when the state is adequate, a conservative policy preferable to adding every high-score box to the total.
+
+\section{From detection to inventory: association, evaluation, and agricultural evidence}
+
+\subsection{SLAM, camera pose, and temporal association (2017--2022)}
+
+A detector operates on one frame; an inventory is defined over a traversal. The missing connection is association: deciding whether an object in a new frame is an already-observed bunch or a new one, and this is the mechanism that converts good per-frame detection into a correct count. Appearance similarity alone is fragile in a plantation where neighbouring bunches look alike, and geometry alone is fragile where depth is incomplete or the camera pose is uncertain, so the count should emerge from the agreement of detection, instance separation, depth or projected position, camera motion, and temporal continuity. SLAM systems are the corpus's evidence on the camera-motion component, because they express successive views in a common coordinate frame. ORB-SLAM2 built a feature-based system on the fast, rotation-robust ORB descriptor that runs on monocular, stereo, and RGB-D cameras with tracking, local mapping, and loop closure, differing across sensors only in how each feature's depth is obtained \cite{murartal2017orbslam2}. ORB-SLAM3 extended this to a unified visual, visual-inertial, and multi-map system, formulating visual-inertial initialization as a maximum-a-posteriori estimation from the start and supporting pinhole and fisheye models \cite{campos2021orbslam3}. DROID-SLAM took the learned route, embedding a differentiable dense bundle-adjustment layer inside a recurrent network that iteratively updates optical flow and pose across monocular, stereo, and RGB-D input \cite{teed2021droidslam}. These provide the common frame in which two detections can be tested for spatial compatibility, but a plantation violates the static-world assumption most SLAM systems make.
+
+The dynamic-scene branch is therefore directly relevant, because a canopy is full of moving fronds, wind-driven motion, and self-similar repetitive texture that corrupt pose estimation. DynaSLAM extends ORB-SLAM2 with two complementary signals, a Mask R-CNN semantic prior that flags a-priori movable classes and multi-view geometric verification that detects actual motion, and discards features on dynamic regions before they are used for pose or mapping \cite{bescos2018dynaslam}. DS-SLAM runs semantic segmentation (SegNet) and epipolar motion-consistency checking as two parallel processes and combines them to decide which objects are truly moving, cutting trajectory error sharply in dynamic scenes \cite{yu2018dsslam}. CFP-SLAM replaces the binary static/dynamic label with a continuous probability computed coarse-to-fine, from the object level (a YOLOv5 detection) down to individual keypoints, using optical-flow and epipolar constraints \cite{hu2022cfpslam}, a graded-confidence approach that mirrors the quality-gating seen in the depth and fusion literature. Soares \textit{et al.}\ contribute the methodological template most useful to this review: they inserted YOLO and Mask R-CNN, in turn, at an identical dynamic-object-filtering position in ORB-SLAM2 while holding every other component fixed, isolating the accuracy-versus-speed trade-off of the detector choice as a single controlled variable \cite{soares2019visualslam}. That is exactly the discipline an FFB study needs when it asks whether a heavier detector earns its cost. None of these systems counts objects, but together they show how camera pose and dynamic-content handling make cross-frame association geometric rather than a naive appearance match, and that the reliability of that association in vegetation is an empirical question, not a free assumption.
+
+There are at least four counting failure modes to report separately: a bunch missed in every frame, two nearby bunches merged into one instance, one bunch split into several, and a bunch correctly detected repeatedly but never linked: a duplicate count. Image-level AP responds mostly to the first three; absolute count error per tree, per row, or per traversal is needed to expose the fourth. A geometry-aware association policy can be expressed as a sequence of gates: check detector confidence and maturity label; check whether the depth observation is valid and compatible with the candidate instance; project the candidate into a common frame using the current pose estimate and compare it to the uncertainty region of existing records; and finally resolve competing matches by appearance and temporal continuity. When the depth or pose gate fails, the system should fall back to RGB tracking as a weaker cue and report the degraded condition rather than treating unavailable geometry as a zero measurement. This yields clean ablations: appearance-only association, depth without pose, pose-aware geometric association, and a quality-gated variant, each reporting count error alongside false merges, false new records, and unresolved observations.
+
+\subsection{Multimodal evidence beyond RGB-D (2015--2026)}
+
+The corpus also contains RGB-thermal pedestrian perception, remote sensing, medical imaging, and industrial inspection. These areas must not be merged with agricultural evidence, but they expose recurring multimodal and small-object questions and repeatedly show that concatenation is an assumption about calibration.
+
+RGB-thermal pedestrian detection is the corpus's cleanest study of confidence-aware fusion under changing illumination, which is the FFB problem of deep shadow versus direct sunlight in a different guise. The KAIST benchmark made the enabling hardware choice, using an optical beam-splitter rig to align RGB and thermal pixel-for-pixel at capture time rather than correcting misalignment afterward \cite{hwang2015kaist}, a reminder that paired-modality registration is a data-collection decision, not only an algorithmic one, and directly relevant to how an FFB RGB-D rig must be built. IAF R-CNN then made the key mechanistic observation that the reliability of each modality depends on illumination: it estimates a scalar illumination value for the image through a small sub-network and uses it to weight the RGB and thermal branches per image, so the model leans on thermal at night and RGB by day \cite{li2019illumination}. MBNet argued that fusing only at the score level is too late and injected a differential modality-aware signal at each convolutional stage, plus alignment, to address the imbalance where one modality dominates \cite{zhou2020mbnet}. CFR replaced a single fusion step with a cycle of fuse-and-refine blocks, iterating the combination several times so the modalities progressively correct each other \cite{zhang2020cfr}, and GAFF staged the fusion into intra-modal attention (highlighting informative regions within each modality) followed by inter-modal attention (weighting one modality against the other) \cite{zhang2021gaff}. CFT posed RGB-thermal fusion as self-attention over a single joint token sequence inside a two-branch YOLOv5, so every RGB token can attend to every thermal token directly \cite{fang2022cft}. A method that exploits thermal contrast at night does not establish that RGB-D helps under tropical sunlight, but this lineage supplies exactly the illumination-conditioned and modality-imbalance ablations an FFB study must run before claiming a depth gain.
+
+Remote sensing is the corpus's small-object and high-resolution laboratory, and a distant bunch under a moving platform is a small object. YOLT tiled huge satellite images spatially and tuned the detector's internal resolution rather than downscaling the image, so tiny objects survive \cite{vanetten2018yolt}. TPH-YOLOv5 added a fourth high-resolution prediction head (P2) and a transformer prediction head to YOLOv5 for drone imagery, precisely to recover the small objects that dominate aerial scenes \cite{zhu2021tphyolov5}. UAV-YOLOv8 combined BiFormer dynamic attention, which suppresses irrelevant background in the backbone, with efficient partial convolution to strengthen micro-object representation \cite{wang2023uavyolo}, and RiO-DETR extended the real-time DETR framework to oriented object detection by decoupling angle handling from position across the query representation, attention, and matching \cite{hu2026riodetr}. These small-object and orientation techniques are candidate modifications for detecting distant, variably-oriented bunches.
+
+Medical and industrial inspection show the same general detector specialized into high-stakes, defect-sensitive domains, demonstrating both how to adapt YOLO and why generic numbers do not transfer. In medicine, a single-stage YOLO predictor performed simultaneous COVID-19 lesion detection and classification directly from full-resolution chest X-rays \cite{alantari2020covid}; a YOLO-based decision-level fusion combined several class-specialized YOLOv3 models to trade off the high sensitivity of single-class models against the flexibility of a multi-class one for breast-lesion detection \cite{baccouche2021breast}, a fusion-of-specialists idea transferable to distinct maturity classes; and a systematic review synthesized 124 medical YOLO studies into a taxonomy of clinical modality, YOLO architecture, and task, quantifying how pervasively the family has been adapted \cite{qureshi2024medyolo}. In industry, a comparative study transfer-learned the YOLOv5 s/m/l/x variants for safety-helmet detection and mapped which variant best fits a real deployment \cite{zhou2021helmet}; EFC-YOLO redesigned YOLOv7's feature processing with a Fusion-Faster module to reduce spatial redundancy while preserving defect-position information on steel strips \cite{yang2023efcyolo}; and PCB-YOLO enhanced YOLOv8n with coordinate attention and multi-scale fusion to catch tiny printed-circuit-board defects while cutting parameters \cite{tang2024pcbyolo}. The recurring lesson across medicine and industry is that a general detector is routinely re-tuned to a domain's specific object scale and failure costs, the exact adaptation an FFB detector requires, which is also exactly why a COCO or VOC number cannot be read as an expected plantation result.
+
+\subsection{Benchmark datasets (2012--2020)}
+
+Benchmark data determine what a model can learn and what a score can mean, and the six datasets in the corpus explain both why the transferable methods above exist and why none of them is a substitute for a plantation benchmark. NYU Depth v2 recorded 1{,}449 densely annotated indoor RGB-D images from 464 scenes with a Kinect, adding not only per-pixel class labels but instance numbers and physical support relations, which made structured indoor understanding learnable for the first time \cite{silberman2012nyu}. SUN RGB-D assembled 10{,}335 RGB-D images from several modern depth sensors and improved the raw, hole-ridden depth maps, providing scene-understanding annotations at scale \cite{song2015sunrgbd}, and ScanNet paired cheap consumer-sensor acquisition with an automated server-side reconstruction pipeline and staged crowdsourced labelling to deliver 1{,}513 richly annotated 3D reconstructions from 2.5M RGB-D frames \cite{dai2017scannet}, a template for scaling annotation that an FFB dataset effort could borrow. The whole RGB-D dataset landscape was itself catalogued by Lopes \textit{et al.}\ through backward-snowballing to trace every public release \cite{lopes2022rgbddatasets}. On the generic-detection side, Microsoft COCO shifted recognition from isolated objects toward objects-in-context with 328{,}000 images and instance masks, and it remains the standard source of detection pretraining weights and the AP vocabulary used throughout this review \cite{lin2014coco}. For outdoor perception under a moving platform (the condition closest to a ground vehicle in a plantation), KITTI was the first calibrated multi-sensor outdoor benchmark, capturing synchronized stereo, LiDAR, and localization from a moving car \cite{geiger2012kitti}, and nuScenes extended this to a 360-degree multimodal suite of six cameras, one LiDAR, and five radars over 1{,}000 driving scenes with no blind spot \cite{caesar2020nuscenes}. Every one of these supports pretraining, depth-registration sanity checks, and controlled ablations, but their indoor geometry or urban-driving context, their sensors, and their object categories differ materially from an oil-palm canopy. None substitutes for a plantation dataset whose visual context, target size, maturity labels, camera trajectory, and sensor failures are themselves part of the scientific question. The corollary for evaluation is strict: splits must separate whole trees, traversal sequences, or collection sessions, and a stronger external test must separate sites, days, sensor settings, and lighting regimes, because randomly mixing frames from one video lets a model memorize background, illumination, or even the same bunch seen from a nearby view.
+
+\subsection{Agricultural transfer and the boundary of current evidence (2016--2026)}
+
+The verified corpus and the focused search together yield a substantially wider agricultural evidence base than was available to the 182-source corpus alone, covering oil-palm detection and classification, multi-view fruit counting, temporal tracking in orchards, and geometric reconstruction pipelines. This section separates oil-palm systems from other tree-fruit systems and positions the review against previous reviews on similar targets.
+
+\subsubsection{Oil-palm detection, classification, and datasets}
+
+The direct oil-palm literature is concentrated on detection, ripeness classification, dataset construction, and yield-related counting. Lai \textit{et al.}\ reviewed FFB ripeness detection methods across sensing families, while Goh \textit{et al.}\ reviewed non-destructive classification methods including computer vision, LiDAR, spectroscopy, thermal sensing, and laser-light backscatter \cite{lai2023palmslr,goh2025palmreview}. These reviews establish that sensor choice and class definition are central problems. Their primary unit is ripeness assessment, not the persistent identity of one bunch across repeated views.
+
+Naftali \textit{et al.}\ compared YOLO and other detectors on an oil-palm plantation dataset and reported a depthwise-separable YOLOv8 variant as a real-time candidate \cite{naftali2024palmcounter}. Lai \textit{et al.}\ achieved mAP 87.9\% for ripe FFB detection at 21 FPS using YOLOv4 with an RGB-D RealSense D435 \cite{lai2022yolov4palm}. Mansour \textit{et al.}\ reported mAP$_{50{:}95}$ 0.842 with YOLOv5m on ground-level FFB imagery \cite{ledger_r_19d96439ecdda18d}. Chen \textit{et al.}\ reported YOLOv4 mAP 98.5\% on a small Kaggle/Google-sourced image set with no field or multi-view validation \cite{chen2022ffbdet}. These are useful evidence for M0 detector selection, but none measures whether a bunch detected in one frame is the same bunch detected in another frame.
+
+Three dataset papers expose the acquisition variables needed for the design space. Goh \textit{et al.}\ released 400 RGB images and 400 registered depth maps from four plantation locations, captured with an Intel RealSense D455f, reporting a mean registration error of 1.8~cm at 3~m and 92.5\% expert inter-rater agreement for binary ripeness labels \cite{goh2025palmdataset}. Suharjito \textit{et al.}\ released plantation imagery captured from multiple angles with five categories: unripe, underripe, ripe, flower, and abnormal \cite{suharjito2025palmdataset}. These datasets address sensor and class variation, but their published descriptions do not make a cross-view identity graph the primary evaluation object.
+
+SawitMVC is directly aligned with the inventory problem. Its source article describes 3{,}992 smartphone images of 953 oil-palm trees from two plantations, captured from four or eight angular positions. The dataset uses four BBC maturity classes and a separate per-tree JSON layer with 9{,}823 unique bunches and cross-view identity links \cite{indriani2026sawitmvc}. This makes a tree-level unique-count metric possible. It also exposes the central confounder: the number of visible bounding boxes is not the number of unique bunches.
+
+Additional oil-palm studies in the evidence matrix include LiDAR-intensity scanning for ripeness \cite{ledger_r_97003608b250cdc5}, UAV SfM for canopy height and per-palm inventories \cite{ledger_m_084cfd5badbb63d3}, fluorescence imaging under controlled conditions \cite{ledger_r_1c81e223679e4bfe}, and several detector comparisons using ground-level images \cite{ledger_r_134385f2faed38a6}. In every case the output is per-image detection or classification; none reports tree-level deduplication.
+
+\subsubsection{Fruit counting, yield estimation, and multi-view pipelines}
+
+The early agricultural perception studies in the 182-source corpus remain relevant as architectural reference points. Onishi \textit{et al.}\ built an automated apple-harvesting robot that integrates a single-stage SSD detector for 2D fruit localization with stereo-parallax depth reconstruction, then commands the arm to the recovered 3D position \cite{onishi2019harvest}, the minimal instance of the detect-then-localize pipeline this review advocates. Gené-Molá \textit{et al.}\ are the closest methodological analogue: they combined Mask R-CNN instance segmentation with passive structure-from-motion photogrammetry, aggregating detections across many camera viewpoints while moving around an apple tree, and reported F1 improving from 0.816 for 2D detection alone to 0.881 for detection plus 3D location \cite{genemola2020fruit3d}. Kang and Chen unified fruit detection, instance segmentation, and branch semantic segmentation in one single-stage network with a shared feature extractor for apple orchards \cite{kang2020strawberry}. The field-tested Vegebot lettuce harvester of Birrell \textit{et al.}\ separated visual sensing from physical manipulation in a two-stage pipeline validated in a real commercial field \cite{birrell2020lettuce}; its value is the demonstration that perception, geometric localization, and action are genuinely distinct stages with distinct failure modes.
+
+The focused search adds considerable depth to the multi-view and temporal dimension. Koirala \textit{et al.}\ compared six architectures and developed MangoYOLO for mango detection, achieving F1 0.968 and AP 0.983, while orchard load estimates still required a correction factor against hand-harvest counts \cite{koirala2019deepfruit}, a clear M1 mechanism. Stein \textit{et al.}\ combined multi-view tracking with epipolar geometry to yield near-unity calibration slope and 1.36\% over-count on 16 mango trees \cite{ledger_r_408d13511cac4177}. H\"ani \textit{et al.}\ reached 95.6--97.8\% of harvest ground truth through merged CNN counting on apple image sequences \cite{ledger_r_1358c0868a62c84a}. Zhang \textit{et al.}\ combined detection with a counting-region strategy for citrus, achieving MAE 0.081 compared with 0.45 for conventional SORT \cite{ledger_r_ee550a3e3a6fb318}. Gené-Molá \textit{et al.}\ applied ByteTrack to apple video, reporting HOTA 0.689 and yield-mapping MAPE 7.47\%, while noting that appearance-based re-identification did not improve tracking for visually similar apples \cite{ledger_r_2d972b94554c6cd1}. Multi-view 3D reconstruction using Semantic NeRF \cite{ledger_m_1210e3ea00486b68} and RGB-D SLAM \cite{ledger_r_b2e0e9aabad17a97} provide complementary geometric routes to consolidate repeated observations before counting. A pear study combining LiDAR--camera fusion with FAST-LIO2 SLAM reported 96.2\% counting accuracy while retaining 53~double-counts linked to association threshold and SLAM drift \cite{ledger_r_d4270ea8ab11f268}. Rapado-Rincón \textit{et al.}\ demonstrated that total count error alone can hide ID switches and false positives in multi-view tomato perception \cite{ledger_r_700d34dae0f20d78}. Fu \textit{et al.}\ used RGB and depth features with Faster R-CNN for apple detection in dense foliage, supporting the role of depth as an occlusion and localization cue \cite{fu2020apple}. Park \textit{et al.}\ described a real-time orchard approach that incrementally builds 3D crop instances and uses 3D generalized intersection-over-union for association \cite{park2026cropassociation}.
+
+The consistent finding across this agricultural evidence is that per-image detection and multi-view inventory answer different questions, and that the gap between them is precisely the identity-mechanism gap that Table~\ref{tab:mechanisms} formalizes.
+
+\subsubsection{Positioning against previous reviews}
+
+The reviews found by the Q5 search are adjacent rather than identical to this review. Table~\ref{tab:position} records the scope visible in the accessible article record and identifies whether cross-view identity is treated as the primary unit. The wording is deliberately bounded: ``not explicit'' means that the accessible scope and abstract do not make identity and duplicate rejection the central organizing question.
+
+\begin{table}[t]
+\centering
+\caption{Positioning against previous reviews.}
+\label{tab:position}
+\scriptsize
+\begin{tabularx}{\columnwidth}{@{}p{0.24\columnwidth}p{0.22\columnwidth}p{0.14\columnwidth}Y@{}}
+\toprule
+Review & Primary scope & Cross-view identity? & Position\\
+\midrule
+Lai et al.~\cite{lai2023palmslr} & FFB ripeness detection & Not explicit & Sensor context; does not organize counting mechanisms.\\
+Goh et al.~\cite{goh2025palmreview} & FFB classification, non-destructive sensors & Not explicit & Modality limits; this review adds identity evaluation.\\
+Naftali et al.~\cite{naftali2024palmcounter} & FFB detector comparison & Not explicit & Detector context; this review separates detection from inventory.\\
+Naghipour et al.~\cite{naghipour2024fruitreview} & AI for fruit detection & Not explicit & Broad coverage; this review makes association a design axis.\\
+Sapkota et al.~\cite{sapkota2024yoloagri} & YOLO in agriculture & Not explicit & Architecture taxonomy; this review is task-first.\\
+Nordin and Misro~\cite{nordin2026palmslr} & Palm-oil maturity, deep learning & Not explicit & Maturity comparator; this review generalizes the class attribute.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The bounded conclusion is not ``no previous review exists.'' It is that the accessible review set is organized mainly by sensor, ripeness, detector family, or agricultural application. The cross-view identity of each physical fruit as the prerequisite for a class-wise inventory is not the primary comparison unit in that set. This is the gap addressed here.
+
+\section{Synthesis, challenges, and research directions}
+
+\subsection{Evidence-map synthesis}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{F07-funnel-sawit-gpt-image-2-en}
+\caption{The evidence funnel that motivates the research agenda. Mature general RGB detection, cheap foundation-model depth, and RGB-D fusion narrow, layer by layer, toward the specific and largely unfilled requirement: a calibrated paired RGB-D benchmark for oil-palm bunch counting and maturity classification.}
+\label{fig:funnel}
+\end{figure*}
+
+Read as a whole, the 182-source history shows a field that has repeatedly solved the sub-problems an FFB pipeline needs (real-time detection, instance separation, monocular and sensor depth, quality-aware fusion, 3D localization, camera-pose estimation, and temporal association), but almost always on objects, sensors, and metrics other than oil-palm bunches. The strongest concentrations lie in general RGB detection (39 sources), monocular depth (21), and RGB-D dense prediction (34 across SOD and segmentation), rather than in paired FFB field trials (zero). Figure~\ref{fig:funnel} depicts this narrowing, from the broad base of mature general vision down to the specific and still-unfilled oil-palm requirement. This is valuable because it supplies a rich catalogue of alternative designs and, more importantly, of documented failure modes; it is limiting because different domains use different objects, cameras, metrics, and levels of interaction with the world. The review therefore treats the corpus as a map from mechanisms to testable hypotheses, not as a statistical pool from which to compute a pooled accuracy. The matrix is not a substitute for reading a source in full: before any numerical result is quoted in a manuscript revision, the verified PDF must be checked in its reported experimental context, because resolution, hardware, split, and post-processing can change the apparent conclusion, especially across YOLO generations, depth models, and fusion architectures.
+
+\begin{table*}[t]
+\centering\small
+\caption{Metric hierarchy for a class-wise fruit-inventory study. Each level answers a different question and cannot be replaced by a single AP score.}
+\label{tab:metrics}
+\begin{tabular}{p{0.20\textwidth}p{0.32\textwidth}p{0.37\textwidth}}
+\toprule
+Evaluation level & Required measurements & Scientific interpretation \\
+\midrule
+Detection & AP, precision, recall, size/occlusion/illumination strata & Determines whether instances are visible to the pipeline. \\
+Class attribute (maturity as the case here) & Per-instance class metrics, calibration, confusion matrix & Tests whether the right label is attached to the right instance; a per-class count is defined only once that instance is identified. \\
+Geometry & Declared coordinate frame, range or position error, valid-depth rate & Establishes what spatial claims are justified. \\
+Association and count & Count error, bias, duplicate rate, false merges, association precision/recall & Tests the inventory rather than an isolated frame. \\
+Deployment & Latency, throughput, memory, hardware, depth availability & Establishes whether the result is feasible in field operation. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{A falsifiable research agenda for RGB-D TBS perception}
+\label{sec:agenda}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{F08-pipeline-sawit-gpt-image-2-en}
+\caption{Conceptual pipeline implied by the evidence map: a plantation RGB image feeds an RGB encoder and, in parallel, a depth branch whose source (monocular prediction or calibrated sensor) must be declared; quality-aware fusion feeds a real-time detector; per-instance maturity, an instance-constrained depth sample, and pose-based temporal association then produce a de-duplicated bunch inventory. Every stage is a hypothesis corresponding to one ablation in the agenda below, not a validated component.}
+\label{fig:pipeline}
+\end{figure*}
+
+The immediate contribution of the evidence map is a testable program rather than a claimed final architecture; the conceptual pipeline it points to, with each stage corresponding to one ablation below, is sketched in Figure~\ref{fig:pipeline}. The agenda is stated here in the form in which it was written, before any of it had been run, so that its wording is not fitted to any later outcome. First, construct a paired RGB-D FFB dataset with calibration metadata and annotations for bunch instances, maturity, occlusion, apparent size, illumination, depth validity, and where possible cross-frame identity. Reference counts must be collected at an operational unit such as a tree, short row, or traversal, because frames alone cannot validate a counting system, and splits must separate trees, sequences, and sessions to prevent optimistic transfer.
+
+Second, establish an RGB-only YOLO baseline and one high-capacity comparison such as a two-stage, instance-segmentation, or transformer detector. Third, compare early fusion, at least one feature-fusion configuration, late fusion, and a depth-quality-gated RGB fallback, all under the same split, resolution, annotation policy, and target hardware. The core comparison is causal: does the added depth branch improve a stated failure mode enough to justify its sensor and latency cost?
+
+Fourth, evaluate at the four levels of Table~\ref{tab:metrics}: detection stratified by size and occlusion; per-instance maturity with calibration reported by illumination; geometry that names whether a prediction is relative depth, calibrated range, or 3D position; and counting with absolute and signed error, duplicate rate, and association quality per sequence. Report latency, memory, and depth status with every accuracy table. Finally, perform failure-oriented ablations: remove depth deliberately, introduce missing or noisy depth, vary RGB-D alignment, compare shaded and sunlit frames, and test both stationary and moving camera sequences. If an RGB fallback matches or exceeds a fusion configuration whenever depth quality is poor, that is a meaningful deployment finding, not a negative result.
+
+Parts of this agenda have since been executed by the authors on public oil-palm data and are reported, with their audit trail, gate register, and negative results, in the companion evidence-audited results report. That report is a separate document with a separate evidence contract; its measurements are not literature and are deliberately kept out of the evidence map so that no internal number can be read as corpus evidence.
+
+\subsection{Discussion}
+
+The verified corpus supports three bounded conclusions. First, a multi-scale, real-time RGB detector is an appropriate baseline family for an FFB system, but model selection must be based on field latency and error modes rather than generic leaderboard rank. Second, depth can contribute separation and geometry when its reliability and interpretation are explicitly controlled. Third, feature-level, late, and quality-aware fusion are justified experimental alternatives because they preserve a modality-specific representation and can support an RGB fallback. The corpus does not establish that a particular YOLO generation, depth model, or fusion point is best for oil palm, nor a numerical FFB gain from RGB-D. These are precisely the questions that a paired field dataset and controlled ablations should answer; treating transfer evidence as direct proof would make the review sound stronger while making the proposed research less credible.
+
+The sharpest disagreement inside the corpus is about where depth should enter. Ophoff \textit{et al.}\ sweep 28 fusion positions along a two-branch YOLOv2 and find input-level fusion dominated by middle and late fusion \cite{ophoff2019multimodal}, whereas Expandable YOLO commits to the opposite extreme, appending depth as a fourth input channel to a single backbone \cite{takahashi2020expandableyolo}. D3Net and SA-Gate argue that the question is not position at all but admission: D3Net shows that a low-quality depth map degrades prediction unless a depurator discards it \cite{fan2020d3net}, and SA-Gate states the same principle as filter before you fuse, gating each modality with information computed from the other \cite{chen2020sagate}. No study in the corpus adjudicates these positions on agricultural data, where depth quality fails in ways indoor benchmarks never exercise. That unresolved disagreement, rather than any single reported number, is what defines the gap this review hands to experiment.
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+The search is reproducible from the captured raw exports and scoring scripts, all of which are provided as supplementary material. However, the full-text stage is intentionally targeted rather than exhaustive. Scopus was available and Web of Science was not, so database coverage is not equivalent to a two-subscription search. OpenAlex metadata and abstracts are useful for discovery but do not replace article full text. Targeted retrieval produced 44 complete evidence records from a 250-record shortlist. Consequently, the 20,035 records remain a ranked search pool, not an included-study count.
+
+The focused evidence matrix mixes direct agricultural studies, fruit studies, transferable mechanism papers, and reviews. This is deliberate for a design-space review, but the evidence classes are not interchangeable. A result from an autonomous-driving benchmark does not establish oil-palm performance. A review that discusses ripeness does not establish cross-view identity. A dataset descriptor establishes the availability of labels and sensors, not the superiority of a model.
+
+The review does not estimate a pooled accuracy, rank all detectors, or claim that explicit deduplication is always beneficial. Its bounded claim is that cross-view identity is a necessary design variable for the stated inventory task and that the value of each identity mechanism should be evaluated under its acquisition assumptions.
+
+\section{Conclusion}
+
+Reliable fruit-inventory perception should be framed as detection, class assignment, geometry, cross-view association, and final counting in one pipeline. Traced across a decade of history, YOLO is a well-motivated real-time RGB baseline; monocular and sensor depth is a conditional geometric cue whose meaning must be declared; and RGB-D fusion is a hypothesis to be evaluated under realistic sensor and illumination failures. The 182-source verified evidence map makes these boundaries inspectable and shows both how the field reached its current tools and where its evidence stops.
+
+The central research implication is unchanged: progress requires a calibrated paired RGB-D FFB benchmark and an evaluation protocol that measures detection, class assignment, geometry, duplicate suppression, count error, and latency together. The search protocol produced 21,066 resolved records; 20,035 advanced after abstract screening; 250 were shortlisted for targeted review; and 44 full-text studies supplied the current focused evidence matrix. The direct evidence includes oil-palm detector and dataset studies, multi-angle and RGB-depth systems, fruit SfM and NeRF reconstruction, LiDAR--camera fusion, and orchard video counting. Together they support the six-mechanism design space spanning intra-view counting, statistical correction, appearance matching, temporal tracking, geometric association, and learned multi-view association. The authors' own attempts against that protocol, including their negative and withdrawn results, are reported in the companion results document.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Focused evidence matrix}
+\label{app:focused}
+
+Table~\ref{tab:focused} contains one row per study included after targeted full-text review from the reproducible search. The ``Mech.'' column uses the codes from Table~\ref{tab:mechanisms}. ``Attr.'' indicates whether the study evaluates a class attribute (e.g., maturity, size) at the instance level. ``Dedup'' indicates whether the study explicitly evaluates or performs cross-view duplicate rejection. The complete machine-readable matrix with additional fields is available as supplementary material.
+
+\makeatletter
+\@ifclassloaded{IEEEtran}{\onecolumn}{}
+\makeatother
+
+\footnotesize
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{0pt}
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.17\textwidth}>{\raggedright\arraybackslash}p{0.13\textwidth}>{\raggedright\arraybackslash}p{0.07\textwidth}>{\raggedright\arraybackslash}p{0.04\textwidth}>{\raggedright\arraybackslash}p{0.04\textwidth}>{\raggedright\arraybackslash}p{0.37\textwidth}>{\raggedright\arraybackslash}p{0.06\textwidth}@{}}
+\caption{Focused evidence matrix. Mechanism codes follow Table~\ref{tab:mechanisms}. Attr.\ = class attribute evaluated; Dedup = duplicate rejection evaluated or performed.}\label{tab:focused}\\
+\toprule
+Study & Target, sensor & Mech. & Attr. & Dup. & Key finding and limitation & Type\\
+\midrule
+\endfirsthead
+\multicolumn{7}{c}{\tablename\ \thetable{} continued}\\
+\toprule
+Study & Target, sensor & Mech. & Attr. & Dup. & Key finding and limitation & Type\\
+\midrule
+\endhead
+\midrule
+\multicolumn{7}{r}{Continued on next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
+
+Von Hirschhausen et al.\ (2025) \cite{ledger_m_3f8f02033fe9db3a}
+& Apple, calibrated stereo RGB
+& M4 & -- & No
+& Stereo dataset supports detection and 3D reconstruction but does not evaluate cross-view unique identity.
+& Direct\\
+
+Fusaro et al.\ (2026) \cite{ledger_r_0eda6374aaf85fae}
+& Strawberry, LiDAR point cloud
+& M2--4 & -- & Yes
+& Learned descriptors and attention-based matching improve temporal fruit re-identification; limited to strawberry annotations.
+& Direct\\
+
+Bargoti and Underwood (2016) \cite{ledger_r_143d70deec8d2b1d}
+& Apple, monocular RGB UGV
+& M0 & -- & No
+& CNN segmentation achieves detection F1 0.858 and row-yield $R^2$ 0.826; no persistent identity across views.
+& Direct\\
+
+Stein et al.\ (2016) \cite{ledger_r_408d13511cac4177}
+& Mango, RGB + GPS/INS + LiDAR
+& M3/M4 & -- & Yes
+& Multi-view tracking with epipolar geometry yields near-unity calibration slope and 1.36\% over-count on 16 trees.
+& Direct\\
+
+Liu et al.\ (2018) \cite{ledger_m_9966d81433d61ed3}
+& Orange/apple, monocular video + SfM
+& M3/M4 & -- & Yes
+& 3D reconstruction correction substantially reduces duplicate and outlier tracks; depends on illumination and camera stability.
+& Direct\\
+
+Hashim et al.\ (2018) \cite{ledger_r_97003608b250cdc5}
+& Oil palm, LiDAR 905\,nm intensity
+& M0 & Mat. & No
+& LiDAR intensity separates three FFB ripeness levels; no classification accuracy or cross-view metric.
+& Direct\\
+
+Fawcett et al.\ (2019) \cite{ledger_m_084cfd5badbb63d3}
+& Oil palm, UAV RGB SfM
+& M4 & Size & Yes
+& UAV canopy-height models support per-palm inventories; tree-canopy study, not fruit-level identity.
+& Direct\\
+
+Liu et al.\ (2019) \cite{ledger_r_00f82e0f404d691b}
+& Mango, monocular RGB video
+& M3/M4 & -- & Yes
+& Monocular tracking + semantic SfM + depth filtering achieve tree-level counts; undercounting increases with occlusion.
+& Direct\\
+
+H\"ani et al.\ (2020) \cite{ledger_r_1358c0868a62c84a}
+& Apple, RGB image sequences
+& M3/M4 & -- & Yes
+& Merged CNN counting reaches 95.6--97.8\% of harvest ground truth; inventory quality depends on detection + tracking + geometric merging composition.
+& Direct\\
+
+Alfatni et al.\ (2020) \cite{ledger_r_2f7d604b1d3fa5e4}
+& Oil palm, controlled RGB CCD
+& M0 & Mat. & No
+& ANN histogram achieves 94\% maturity grading on conveyor; controlled setting, no multi-view inventory.
+& Direct\\
+
+Husin et al.\ (2021) \cite{ledger_r_3e45c6dc2566f46b}
+& Oil palm, LiDAR point cloud
+& M4 & Mat. & No
+& LiDAR maps link FFB to spatial coordinates; no cross-view association or accuracy metric.
+& Direct\\
+
+Lai et al.\ (2022) \cite{lai2022yolov4palm}
+& Oil palm, RGB-D RealSense D435
+& M0 & Mat. & No
+& YOLOv4 achieves mAP 87.9\% for ripe FFB detection at 21 FPS; no cross-frame identity.
+& Direct\\
+
+Mansour et al.\ (2022) \cite{ledger_r_19d96439ecdda18d}
+& Oil palm, RGB ground images
+& M0 & Mat. & No
+& YOLOv5m achieves mAP$_{50{:}95}$ 0.842 on ground FFB; COVID-restricted dataset, no multi-view evaluation.
+& Direct\\
+
+Sun et al.\ (2022) \cite{ledger_r_1a70fa2aeed54ea3}
+& Apple, RGB nighttime
+& M0 & -- & No
+& Nighttime detection AP 85.2\%; no tracking, no cross-view identity.
+& Direct\\
+
+Lu et al.\ (2022) \cite{ledger_r_2828a3937318ca86}
+& Citrus, RGB handheld
+& M0 & -- & No
+& Improved Mask R-CNN AP$_{50}$ 95.4\% for green-fruit detection; no temporal or cross-view evaluation.
+& Direct\\
+
+Wan Nurazwin et al.\ (2022) \cite{ledger_r_3f230a23a2a956c8}
+& Pineapple, UAV top-view RGB
+& M0 & -- & No
+& ANN counting achieves 94.4\% on 20 sample images; no cross-view deduplication.
+& Direct\\
+
+Yang et al.\ (2022) \cite{ledger_r_4b3d8d423dbd5d0e}
+& Vehicle, RGB multi-camera
+& M2 & -- & N/A
+& Weakly supervised cross-view embeddings reduce viewpoint variation; transferable mechanism, not agricultural data.
+& Transfer\\
+
+Zhang et al.\ (2022a) \cite{ledger_r_c79d61a639a09929}
+& Apple, UAV + ground SfM
+& M4 & -- & No
+& Complementary UAV and ground point clouds improve coverage; no persistent fruit identity or deduplication.
+& Direct\\
+
+Zhang et al.\ (2022b) \cite{ledger_r_ee550a3e3a6fb318}
+& Citrus, RGB video rover
+& M3 & -- & Yes
+& Counting-region strategy with tracking achieves MAE 0.081; track IDs are local to each sequence.
+& Direct\\
+
+Chen et al.\ (2022) \cite{chen2022ffbdet}
+& Oil palm, RGB online images
+& M0 & -- & No
+& YOLOv4 mAP 98.5\% on small dataset; Kaggle/Google-sourced images, no field or multi-view validation.
+& Direct\\
+
+Phimpisan and Chungchoo (2023) \cite{ledger_r_1c81e223679e4bfe}
+& Oil palm, UV fluorescence
+& M0 & Mat. & No
+& Fluorescence classifies FFB ripeness rapidly; controlled dark-chamber setup, no field multi-view use.
+& Direct\\
+
+Gené-Molá et al.\ (2023) \cite{ledger_r_2d972b94554c6cd1}
+& Apple, Kinect Azure RGB-D / video
+& M3 & -- & Yes
+& ByteTrack HOTA 0.689, yield MAPE 7.47\%; appearance ReID did not help visually similar apples.
+& Direct\\
+
+Shiddiq et al.\ (2023) \cite{shiddiq2023palmcount}
+& Oil palm, RGB video conveyor
+& M3 & -- & No
+& Conveyor counting mean accuracy 79.4\%; postharvest setup, sensitive to illumination and orientation.
+& Direct\\
+
+Rapado-Rincón et al.\ (2023) \cite{ledger_r_700d34dae0f20d78}
+& Tomato, RGB + LiDAR robot arm
+& M3/M4 & -- & Yes
+& Multi-view perception recovers occluded fruit; HOTA up to 71.5\%, MAPE 12.2\%. Count error alone hides ID switches.
+& Direct\\
+
+Abeyrathna et al.\ (2023) \cite{ledger_r_9e1316b934e66409}
+& Apple, RGB-D RealSense + tractor
+& M3 & -- & Yes
+& Deep SORT with depth prevents repeated counting; artificial orchard with 30 apples on 10 trees.
+& Direct\\
+
+Hu et al.\ (2023) \cite{ledger_r_d594d85dc382f9ff}
+& Apple, RGB video
+& M3 & -- & Yes
+& SURF + Kalman cascade tracking reduces repeated counts vs SORT; three test videos, no full identity metric.
+& Direct\\
+
+Lai et al.\ (2023) \cite{lai2023palmslr}
+& Oil palm, multi-sensor review
+& M0 & Mat. & N/A
+& Review covers ripeness and detection; does not formulate cross-view identity or unique inventory as a problem.
+& Direct\\
+
+James et al.\ (2023) \cite{ledger_r_fd5751e2ca2f7496}
+& Citrus, RGB ground images
+& M0 & -- & No
+& Public citrus benchmark with 44,233 boxes; front/back aggregation does not establish unique fruit identity.
+& Direct\\
+
+Lin et al.\ (2024) \cite{ledger_r_1c69e46dac45d45d}
+& Citrus, RGB ground images
+& M0 & -- & No
+& AG-YOLO mAP$_{50}$ 83.2\% under severe occlusion; single-view benchmark, no cross-view identity.
+& Direct\\
+
+Ambrus et al.\ (2024) \cite{ledger_r_3e129b7285059b95}
+& Tomato, DSLR + robot RGB + 3D scan
+& M0/M4 & Mat. & No
+& Robot/DSLR + 3D shape supports count and weight estimation; one-sided views cause missed fruit.
+& Direct\\
+
+V\'elez et al.\ (2024) \cite{ledger_r_659a7da54b8a43e6}
+& Grape, smartphone + UAV + RTK
+& M4 & -- & N/A
+& Geospatial anchors align multi-source data at plant level; no individual fruit identity.
+& Transfer\\
+
+Wu et al.\ (2024) \cite{ledger_r_92ac7cb4b797197d}
+& Apple, RGB orchard + synthetic fog
+& M0 & -- & No
+& Lightweight detector mAP$_{50}$ 94.3\% across weather conditions; no tracking or cross-view identity.
+& Direct\\
+
+Vidhya and Priya (2024) \cite{ledger_r_e8d88a31640ee300}
+& Mango, RGB mobile camera
+& M0 & -- & No
+& YOLOv7 mAP$_{50}$ 99.5\% reported on training/validation; no separate test or cross-view metrics.
+& Direct\\
+
+Hobart et al.\ (2025) \cite{ledger_m_66042c905cc191de}
+& Apple, UAV RGB SfM + RTK
+& M4 & -- & No
+& SfM recovers ripe-apple 3D positions for yield-mass mapping; no persistent fruit identity.
+& Direct\\
+
+Montalb\'an Faet et al.\ (2025) \cite{ledger_m_949f38a7336860d8}
+& Citrus, UAV RGB + multispectral
+& M4 & -- & No
+& Cross-spectral annotations with date-based split; data article without detector benchmark.
+& Direct\\
+
+Dutta et al.\ (2025) \cite{ledger_m_dcfc5d3cb912146d}
+& Apple, UAV + ESP32-CAM edge
+& M0 & -- & No
+& Low-cost edge pipeline for detection; temporal consistency identified as future work.
+& Direct\\
+
+Sabillah et al.\ (2025) \cite{ledger_r_134385f2faed38a6}
+& Oil palm, RGB smartphone + UAV
+& M0 & -- & No
+& YOLOv8 mAP 99.0\%; small dataset, no independent test split or multi-view evaluation.
+& Direct\\
+
+Goh et al.\ (2025) \cite{goh2025palmdataset}
+& Oil palm, RGB-D RealSense + point cloud
+& M4 & Mat. & No
+& 400 RGB-depth-point-cloud scenes with calibration; data article, no detector benchmark or cross-session identity.
+& Direct\\
+
+Timprae et al.\ (2025) \cite{ledger_r_4d09eb83eea41b2f}
+& Tomato, RGB handheld + SfM/NeRF
+& M4 & Mat. & No
+& Instance segmentation + SfM + DBSCAN + ellipsoid fitting for phenotyping; manual intervention still required.
+& Direct\\
+
+Hamid et al.\ (2025) \cite{ledger_r_504a1d386928344f}
+& Oil palm, multi-sensor review
+& M0 & Mat. & N/A
+& Mini-review on ripeness; narrative format, no reproducible search or cross-view analysis.
+& Direct\\
+
+Shiddiq et al.\ (2025) \cite{ledger_r_722bfce242f37ecb}
+& Oil palm, RGB CMOS conveyor
+& M0 & Mat. & No
+& Front/back ImageJ counts are lower than manual due to overlapping fruitlets; no cross-view registration.
+& Direct\\
+
+Lee et al.\ (2026) \cite{ledger_r_d4270ea8ab11f268}
+& Pear, RGB + LiDAR + SLAM
+& M3/M4 & -- & Yes
+& 96.2\% counting accuracy with LiDAR--camera fusion; 53 double-counts remain from threshold and SLAM drift.
+& Direct\\
+
+Meyer et al.\ (2024) \cite{ledger_m_1210e3ea00486b68}
+& Fruit (synthetic + apple), RGB multiview NeRF
+& M4 & -- & Yes
+& Semantic NeRF clusters fruit in 3D, addressing duplicate counting; sensitive to sparse views and hyperparameters.
+& Direct\\
+
+Wang et al.\ (2025) \cite{ledger_r_b2e0e9aabad17a97}
+& Tomato, RGB-D + ORB-SLAM3
+& M4 & Size & No
+& RGB-D SLAM projects segmentation into 3D for per-plant count and volume; leaf occlusion and depth errors cause missed fruit.
+& Direct\\
+
+\end{longtable}
+
+\makeatletter
+\@ifclassloaded{IEEEtran}{\twocolumn}{}
+\makeatother
+
+
+\section{Exact search strings}
+\label{app:queries}
+
+The following blocks reproduce the final Scopus strings. All seven use \texttt{PUBYEAR > 2014 AND PUBYEAR < 2027} and a subject-area clause covering Agriculture, Computer Science, Engineering, and Multidisciplinary (Earth Sciences and Environmental Science are added in Q3 and Q6). The line breaks are for typesetting only.
+
+\subsection*{Q1: Multi-view fruit inventory}
+\begin{verbatim}
+TITLE-ABS-KEY(("fruit" OR "fresh fruit
+bunch" OR "FFB" OR "oil palm" OR "apple"
+OR "citrus" OR "mango" OR "grape" OR
+"berry" OR "bunch" OR "cluster" OR "crop")
+AND ("count*" OR "yield estimation" OR
+"load estimation" OR "fruit load" OR
+"inventory" OR "enumeration")
+AND ("multi-view" OR "multiple view*" OR
+"multi-camera" OR "video" OR "cross-view"
+OR "structure from motion" OR "SfM" OR
+"track*" OR "3D reconstruction" OR
+"image sequence"))
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
+AND (SUBJAREA(AGRI) OR SUBJAREA(COMP)
+OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
+\end{verbatim}
+
+\subsection*{Q2: Cross-view identity and duplicates}
+\begin{verbatim}
+TITLE-ABS-KEY(("multi-view" OR "cross-view"
+OR "multi-camera" OR "multiple cameras" OR
+"overlapping view*" OR "multi-sensor")
+AND ("re-identification" OR
+"data association" OR "identity" OR
+"duplicate*" OR "deduplicat*" OR
+"double counting" OR "correspondence" OR
+"instance matching" OR "track*" OR
+"association")
+AND ("object detection" OR
+"instance segmentation" OR "counting" OR
+"instance" OR "pedestrian" OR "vehicle"))
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
+AND (SUBJAREA(COMP) OR SUBJAREA(ENGI)
+OR SUBJAREA(AGRI) OR SUBJAREA(MULT))
+\end{verbatim}
+
+\subsection*{Q3: Plant geometry and multimodal sensing}
+\begin{verbatim}
+TITLE-ABS-KEY(("RGB-D" OR "depth camera"
+OR "stereo vision" OR "LiDAR" OR
+"point cloud" OR "monocular depth" OR
+"photogrammetry" OR
+"structure from motion")
+AND ("fruit" OR "orchard" OR "vineyard"
+OR "canopy" OR "plant" OR "tree crop" OR
+"plantation" OR "oil palm")
+AND ("detection" OR "segmentation" OR
+"localization" OR "counting" OR
+"phenotyping" OR "harvesting"))
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
+AND (SUBJAREA(AGRI) OR SUBJAREA(COMP)
+OR SUBJAREA(ENGI) OR SUBJAREA(EART)
+OR SUBJAREA(ENVI) OR SUBJAREA(MULT))
+\end{verbatim}
+
+\subsection*{Q4: Per-instance attributes}
+\begin{verbatim}
+TITLE-ABS-KEY(("fruit" OR "produce" OR
+"crop" OR "bunch")
+AND ("maturity" OR "ripeness" OR "grading"
+OR "grade" OR "quality class*" OR
+"size class*" OR "defect" OR "disease" OR
+"cultivar" OR "variety")
+AND ("instance segmentation" OR
+"object detection" OR "per-instance" OR
+"individual fruit" OR "bounding box" OR
+"per-object"))
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
+AND (SUBJAREA(AGRI) OR SUBJAREA(COMP)
+OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
+\end{verbatim}
+
+\subsection*{Q5: Previous reviews}
+\begin{verbatim}
+TITLE(("review" OR "survey" OR
+"systematic review" OR "scoping review"))
+AND TITLE-ABS-KEY(("fruit detection" OR
+"fruit counting" OR "yield estimation" OR
+"oil palm" OR "orchard" OR
+"crop monitoring" OR
+"agricultural robot*" OR
+"precision agriculture")
+AND ("deep learning" OR "computer vision"
+OR "object detection" OR
+"machine vision"))
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
+AND (SUBJAREA(AGRI) OR SUBJAREA(COMP)
+OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
+\end{verbatim}
+
+\subsection*{Q6: Oil-palm vision and machine learning}
+\begin{verbatim}
+TITLE-ABS-KEY(("oil palm" OR
+"elaeis guineensis" OR
+"fresh fruit bunch" OR "FFB")
+AND ("deep learning" OR "machine learning"
+OR "convolutional" OR "neural network" OR
+"computer vision" OR "image processing" OR
+"YOLO" OR "object detection" OR
+"remote sensing"))
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
+AND (SUBJAREA(AGRI) OR SUBJAREA(COMP)
+OR SUBJAREA(ENGI) OR SUBJAREA(EART)
+OR SUBJAREA(ENVI) OR SUBJAREA(MULT))
+\end{verbatim}
+
+\subsection*{Q7: Single-view fruit load}
+\begin{verbatim}
+TITLE-ABS-KEY(("fruit" OR "apple" OR
+"citrus" OR "mango" OR "grape" OR "berry"
+OR "bunch" OR "oil palm" OR "orchard" OR
+"vineyard")
+AND ("counting" OR "count" OR
+"yield estimation" OR "load estimation" OR
+"fruit load" OR "crop load")
+AND ("deep learning" OR "convolutional" OR
+"object detection" OR "YOLO" OR
+"instance segmentation" OR
+"machine vision"))
+AND PUBYEAR > 2014 AND PUBYEAR < 2027
+AND (SUBJAREA(AGRI) OR SUBJAREA(COMP)
+OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
+\end{verbatim}

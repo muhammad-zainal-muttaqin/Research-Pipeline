@@ -66,6 +66,38 @@ entri, seluruh berkas tersebut harus ikut diperbarui.
 | `site/build.js` | Perakit `index.html` (Ruang Baca Riset). |
 | `index.html` | **Hasil build — jangan disunting tangan.** |
 | `tools/build_evidence_matrix.py` | Membangun matriks bukti dari `literature/entries/` + `literature/pdf/`. |
+| **Revisi naskah (per Agustus 2026)** | |
+| `manuscript/source/main5v2.tex` | **Driver kandidat aktif** (IEEEtran). Review ruang desain yang menempatkan sintesis bukti lintas pandangan sebagai isi utama, dengan detail pencarian di lampiran. Memakai `references3.bib`. |
+| `manuscript/source/main5v2-body.tex` | **Isi kandidat aktif.** Delapan seksi utama, taksonomi M0-M5, sintesis mekanisme, dan tiga lampiran: matriks 44 studi, tujuh query, serta dokumentasi pencarian. |
+| `manuscript/source/main5.tex` | **Baseline revisi sebelumnya.** Dipertahankan utuh untuk perbandingan dan pemulihan bila diperlukan. |
+| `manuscript/source/main5-body.tex` | **Isi baseline revisi sebelumnya.** Jangan diubah saat merevisi kandidat v2. |
+| `manuscript/source/references3.bib` | **Superset** dari `references.bib` — berisi 202 kunci lama + kunci baru dari pencarian (`ledger_r_*`, `ledger_m_*`) + kunci tambahan (Goh, Naftali, Suharjito, dll.). Total 258 kunci. |
+| `manuscript/output/papers/main5v2.pdf` | **Keluaran kandidat aktif** hasil kompilasi `main5v2.tex` via Tectonic. |
+| `manuscript/output/papers/main5.pdf` | Keluaran baseline `main5.tex`. |
+| **Catatan revisi dosen** | |
+| `literature/references/revisi-dosen-2026-07-23/Chat.txt` | 8 poin revisi dari dosen. |
+| `literature/references/revisi-dosen-2026-07-23/CEA_review_conventions_report.md` | Analisis konvensi 8 artikel review CEA 2026 (67 fitur × 8 makalah). Patokan utama struktur naskah. |
+| `literature/references/revisi-dosen-2026-07-23/review_features.csv` | Matriks mentah 67 kolom × 8 baris — data dasar laporan CEA di atas. |
+| **Infrastruktur pencarian reprodusibel** | |
+| `literature/search/PROTOCOL.md` | Protokol pencarian: database, query, eligibility, deduplikasi. |
+| `literature/search/scopus-queries.md` | 7 query family Q1–Q7 (format Scopus). |
+| `literature/search/raw/` | Ekspor mentah Scopus + OpenAlex (CSV). |
+| `literature/search/derived/` | Hasil deduplikasi, scoring, shortlist, screening. |
+| `literature/search/fulltext/` | PDF full-text yang berhasil diambil. |
+| `literature/search/prisma-counts.csv` | Angka PRISMA per tahap. |
+| `literature/search/scopus-counts-2026-08-09.csv` | Jumlah hasil per query di Scopus. |
+| `audit/evidence-matrix-v2.csv` | Matriks bukti 44 studi terverifikasi (baris per studi, kolom: mekanisme, atribut, deduplikasi, temuan). |
+| **Skrip pendukung pencarian** | |
+| `tools/build_literature_screening_master.py` | Bangun master screening dari ekspor mentah. |
+| `tools/build_literature_priority_shortlist.py` | Scoring + shortlisting deterministik. |
+| `tools/retrieve_fulltext_candidate.py` | Pengambilan full-text otomatis. |
+| `tools/build_abstract_screening.py` | Skrining abstrak. |
+| `tools/build_title_screening.py` | Skrining judul. |
+| `tools/resolve_literature_dedup.py` | Resolusi deduplikasi DOI/judul-tahun. |
+| `tools/build_dedup_review_report.py` | Laporan deduplikasi. |
+| `tools/audit_local_fulltext.py` | Audit ketersediaan PDF lokal. |
+| `tools/initialize_fulltext_review_ledger.py` | Inisialisasi ledger review full-text. |
+| `tools/update_fulltext_review.py` | Pembaruan ledger review. |
 
 ## Perintah
 
@@ -77,7 +109,15 @@ node site/build.js            # rakit ulang index.html
 `build.js` tanpa dependensi (`fs`/`path` saja, marked di-vendor). Jalankan setiap
 kali `literature/entries/*.md` atau `literature/synthesis.md` berubah, lalu commit `index.html` bersamaan.
 
-Kompilasi naskah: `latexmk -pdf -outdir=manuscript/output/papers manuscript/source/main.tex` (dan `manuscript/source/main-elsarticle.tex`).
+Kompilasi naskah (Tectonic tersedia, latexmk tidak):
+```bash
+cd manuscript/source
+tectonic main5v2.tex          # kandidat aktif → main5v2.pdf
+tectonic main5.tex            # baseline revisi sebelumnya → main5.pdf
+tectonic main.tex             # naskah asli 182 sumber
+tectonic main-elsarticle.tex  # varian Elsevier
+```
+Pindahkan PDF ke `manuscript/output/papers/` setelah kompilasi.
 
 `tools/build_evidence_matrix.py` butuh `pypdf` dan folder `literature/pdf/benar/` yang
 **tidak ada di git** (di-gitignore, terlalu besar). Skrip akan gagal tanpa itu —
@@ -105,6 +145,65 @@ keterlacakan.
 `literature/entries/`, `tools/`, `literature/extracted/`, `legacy/`, `literature/pdf/`, `pipeline/`, `datasets/` di-exclude dari
 build Jekyll. Situs yang tayang = `index.html` hasil `build.js`. Menambah folder besar
 baru? Pertimbangkan menambahkannya ke exclude.
+
+## Revisi Naskah (per Agustus 2026)
+
+### Tujuan
+
+Menggabungkan dua aliran konten menjadi satu artikel review siap-submit:
+
+- **Aliran A** (`evidence-body.tex`): analisis mendalam 182 sumber — RGB detection,
+  depth estimation, RGB-D fusion, 3D perception, pose/grasping, SLAM, multimodal,
+  benchmarks, dan agricultural transfer. Ini 80-90% bobot artikel.
+- **Aliran B** (pencarian reprodusibel Agustus 2026): 7 query family Scopus+OpenAlex,
+  21.066 rekaman → 20.035 kandidat → 250 shortlist → 44 studi full-text terverifikasi.
+  Metodologi ~10-15% artikel, ditambah lampiran.
+
+Kandidat aktif = `main5v2.tex` / `main5v2-body.tex`; `main5.tex` / `main5-body.tex` adalah baseline revisi sebelumnya.
+
+### 8 Poin Revisi Dosen
+
+Sumber: `literature/references/revisi-dosen-2026-07-23/Chat.txt`.
+
+1. Search methodology harus reproducible (database, query, kriteria, deduplikasi).
+2. Ubah kerangka menjadi tinjauan ruang desain (*design-space review*).
+3. Deduplikasi multiview sebagai kontribusi utama + positioning terhadap review lain.
+4. Scope pertanian, sawit sebagai kasus utama, mekanisme diambil bebas dari luar pertanian.
+5. Judul baru (tanpa "YOLO" atau "RGB-D" atau "kelapa sawit" di judul).
+6. Generalisasi klasifikasi di luar kematangan (tetap *instance-dependent*).
+7. Tambahkan literatur yang terlewat (Suharjito, Goh, Naftali, dll.).
+8. Evidence matrix sebagai tabel di dalam makalah (bukan CSV terpisah).
+
+**Kandidat v2 menangani seluruh 8 poin di `main5v2-body.tex`** (per 10 Agustus 2026).
+
+### Konvensi CEA
+
+Patokan struktur = `CEA_review_conventions_report.md` (analisis 8 review CEA 2026).
+Norma kunci yang dipatuhi `main5`:
+
+| Norma | Nilai target | Status main5 |
+|---|---|---|
+| Seksi top-level | 6-8 (median 7) | 8 ✓ |
+| Abstrak | 1 paragraf, 185-290 kata | 269 kata ✓ |
+| Urutan akhir | Challenges → Future → Conclusion | ✓ |
+| Taksonomi/framework | wajib | M0-M5 ✓ |
+| Tabel sintesis besar | wajib (7/8) | longtable 44 studi ✓ |
+| Tanpa numbered equations | 8/8 | ✓ |
+| Kontribusi eksplisit | 6/8 | paragraf 3-poin ✓ |
+
+### Versi naskah
+
+| Berkas | Isi | Status |
+|---|---|---|
+| `main.tex` + `evidence-body.tex` | Naskah asli 182 sumber, IEEEtran | Selesai, stabil |
+| `main-elsarticle.tex` + `evidence-body.tex` | Varian Elsevier dari naskah asli | Selesai, stabil |
+| `main2.tex` / `main2-body.tex` | Percobaan gabungan pertama | **Gagal** — hanya aliran B |
+| `main3.tex` / `main3-body.tex` | Percobaan gabungan kedua | **Gagal** — hanya aliran B |
+| `main4.tex` / `main4-body.tex` | Percobaan gabungan ketiga | **Gagal** — hanya aliran B |
+| **`main5v2.tex` / `main5v2-body.tex`** | **Review ruang desain berpusat pada sintesis bukti** | **Kandidat aktif**, terkompilasi |
+| `main5.tex` / `main5-body.tex` | Gabungan A+B revisi sebelumnya | Baseline, dipertahankan utuh |
+
+`main2`–`main4` tidak perlu disunting lagi — simpan sebagai catatan iterasi.
 
 ## Konteks Riset Berjalan (per Juli 2026)
 

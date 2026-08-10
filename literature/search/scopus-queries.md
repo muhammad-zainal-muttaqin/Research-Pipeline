@@ -4,19 +4,23 @@ Versi satu baris dari `PROTOCOL.md` §4, untuk ditempel ke **Advanced document s
 Scopus. Jangan mengubah kata kunci di sini tanpa mengubah `PROTOCOL.md` juga; kalau
 berubah, catat sebagai deviasi baru.
 
+> **Rentang tahun yang dijalankan (2026-08-09).** Semua query memakai batas eksplisit
+> `PUBYEAR > 2014 AND PUBYEAR < 2027`, yaitu tahun 2015-2026. Batas atas wajib ditulis
+> di dalam string query karena `PUBYEAR > 2014` saja dapat memasukkan rekaman 2027.
+
 > **Direvisi 2026-07-23 (D-7).** Ditambahkan pembatasan `SUBJAREA(...)`. Alasan dan
 > buktinya di bagian berikut.
 
 ## Kenapa ada `SUBJAREA(...)`
 
-Q1 tanpa pembatasan mengembalikan **3.403** record, dan **792 di antaranya Medicine**.
+Pada probe 2026-07-23, Q1 tanpa pembatasan mengembalikan **3.403** record, dan **792 di antaranya Medicine**.
 Sebabnya kata bermakna ganda di query: `"cluster"` menangkap *cluster randomized
 trial*, `"inventory"` menangkap *Beck Depression Inventory*, `"berry"` menangkap *berry
 aneurysm*, `"track*"` menangkap *eye-tracking*, `"count*"` menangkap *blood count*.
 Hasil teratas Q1 sebelum dibatasi adalah makalah pediatri tentang tidur bayi.
 
 Istilahnya **tidak dibuang** — Q1 sengaja mempertahankan struktur contoh dosen. Yang
-dibatasi bidang subjeknya. Setelah dibatasi ke AGRI+COMP+ENGI: **1.853** record.
+dibatasi bidang subjeknya. Pada probe tersebut, setelah dibatasi ke AGRI+COMP+ENGI: **1.853** record.
 
 Pembatasan ini ditulis **di dalam query**, bukan lewat centang sidebar. Centang tidak
 ikut tersimpan di string query, sehingga tidak dapat direproduksi orang lain — padahal
@@ -65,13 +69,13 @@ validasi; kedua arm tetap dilaporkan terpisah.
 ## Q1 — Inventaris/penghitungan buah dari banyak observasi
 
 ```
-TITLE-ABS-KEY(("fruit" OR "fresh fruit bunch" OR "FFB" OR "oil palm" OR "apple" OR "citrus" OR "mango" OR "grape" OR "berry" OR "bunch" OR "cluster" OR "crop") AND ("count*" OR "yield estimation" OR "load estimation" OR "fruit load" OR "inventory" OR "enumeration") AND ("multi-view" OR "multiple view*" OR "multi-camera" OR "video" OR "cross-view" OR "structure from motion" OR "SfM" OR "track*" OR "3D reconstruction" OR "image sequence")) AND PUBYEAR > 2014 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
+TITLE-ABS-KEY(("fruit" OR "fresh fruit bunch" OR "FFB" OR "oil palm" OR "apple" OR "citrus" OR "mango" OR "grape" OR "berry" OR "bunch" OR "cluster" OR "crop") AND ("count*" OR "yield estimation" OR "load estimation" OR "fruit load" OR "inventory" OR "enumeration") AND ("multi-view" OR "multiple view*" OR "multi-camera" OR "video" OR "cross-view" OR "structure from motion" OR "SfM" OR "track*" OR "3D reconstruction" OR "image sequence")) AND PUBYEAR > 2014 AND PUBYEAR < 2027 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
 ```
 
 ## Q2 — Asosiasi lintas-view dan anti-duplikasi *(non-pertanian diizinkan)*
 
 ```
-TITLE-ABS-KEY(("multi-view" OR "cross-view" OR "multi-camera" OR "multiple cameras" OR "overlapping view*" OR "multi-sensor") AND ("re-identification" OR "data association" OR "identity" OR "duplicate*" OR "deduplicat*" OR "double counting" OR "correspondence" OR "instance matching" OR "track*" OR "association") AND ("object detection" OR "instance segmentation" OR "counting" OR "instance" OR "pedestrian" OR "vehicle")) AND PUBYEAR > 2014 AND (SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(AGRI) OR SUBJAREA(MULT))
+TITLE-ABS-KEY(("multi-view" OR "cross-view" OR "multi-camera" OR "multiple cameras" OR "overlapping view*" OR "multi-sensor") AND ("re-identification" OR "data association" OR "identity" OR "duplicate*" OR "deduplicat*" OR "double counting" OR "correspondence" OR "instance matching" OR "track*" OR "association") AND ("object detection" OR "instance segmentation" OR "counting" OR "instance" OR "pedestrian" OR "vehicle")) AND PUBYEAR > 2014 AND PUBYEAR < 2027 AND (SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(AGRI) OR SUBJAREA(MULT))
 ```
 
 Set inilah yang mengisi §5.2–5.5, tempat korpus lama **nol**. Sengaja mengizinkan
@@ -80,19 +84,19 @@ literatur non-pertanian (pejalan kaki, kendaraan) — itu bukan kebocoran, itu m
 ## Q3 — Multimodalitas dan geometri untuk tanaman
 
 ```
-TITLE-ABS-KEY(("RGB-D" OR "depth camera" OR "stereo vision" OR "LiDAR" OR "point cloud" OR "monocular depth" OR "photogrammetry" OR "structure from motion") AND ("fruit" OR "orchard" OR "vineyard" OR "canopy" OR "plant" OR "tree crop" OR "plantation" OR "oil palm") AND ("detection" OR "segmentation" OR "localization" OR "counting" OR "phenotyping" OR "harvesting")) AND PUBYEAR > 2014 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(EART) OR SUBJAREA(ENVI) OR SUBJAREA(MULT))
+TITLE-ABS-KEY(("RGB-D" OR "depth camera" OR "stereo vision" OR "LiDAR" OR "point cloud" OR "monocular depth" OR "photogrammetry" OR "structure from motion") AND ("fruit" OR "orchard" OR "vineyard" OR "canopy" OR "plant" OR "tree crop" OR "plantation" OR "oil palm") AND ("detection" OR "segmentation" OR "localization" OR "counting" OR "phenotyping" OR "harvesting")) AND PUBYEAR > 2014 AND PUBYEAR < 2027 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(EART) OR SUBJAREA(ENVI) OR SUBJAREA(MULT))
 ```
 
 ## Q4 — Kelas per-instans di luar kematangan
 
 ```
-TITLE-ABS-KEY(("fruit" OR "produce" OR "crop" OR "bunch") AND ("maturity" OR "ripeness" OR "grading" OR "grade" OR "quality class*" OR "size class*" OR "defect" OR "disease" OR "cultivar" OR "variety") AND ("instance segmentation" OR "object detection" OR "per-instance" OR "individual fruit" OR "bounding box" OR "per-object")) AND PUBYEAR > 2014 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
+TITLE-ABS-KEY(("fruit" OR "produce" OR "crop" OR "bunch") AND ("maturity" OR "ripeness" OR "grading" OR "grade" OR "quality class*" OR "size class*" OR "defect" OR "disease" OR "cultivar" OR "variety") AND ("instance segmentation" OR "object detection" OR "per-instance" OR "individual fruit" OR "bounding box" OR "per-object")) AND PUBYEAR > 2014 AND PUBYEAR < 2027 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
 ```
 
 ## Q5 — Tinjauan terdahulu *(positioning, butir 3)*
 
 ```
-TITLE(("review" OR "survey" OR "systematic review" OR "scoping review")) AND TITLE-ABS-KEY(("fruit detection" OR "fruit counting" OR "yield estimation" OR "oil palm" OR "orchard" OR "crop monitoring" OR "agricultural robot*" OR "precision agriculture") AND ("deep learning" OR "computer vision" OR "object detection" OR "machine vision")) AND PUBYEAR > 2014 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
+TITLE(("review" OR "survey" OR "systematic review" OR "scoping review")) AND TITLE-ABS-KEY(("fruit detection" OR "fruit counting" OR "yield estimation" OR "oil palm" OR "orchard" OR "crop monitoring" OR "agricultural robot*" OR "precision agriculture") AND ("deep learning" OR "computer vision" OR "object detection" OR "machine vision")) AND PUBYEAR > 2014 AND PUBYEAR < 2027 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
 ```
 
 **Query paling penting untuk butir 3.** Tiap review yang masuk dikodekan pada satu
@@ -103,13 +107,13 @@ kebaruan **dilemahkan apa adanya**.
 ## Q6 — Seed sawit *(butir 7; versi dipersempit D-5)*
 
 ```
-TITLE-ABS-KEY(("oil palm" OR "elaeis guineensis" OR "fresh fruit bunch" OR "FFB") AND ("deep learning" OR "machine learning" OR "convolutional" OR "neural network" OR "computer vision" OR "image processing" OR "YOLO" OR "object detection" OR "remote sensing")) AND PUBYEAR > 2014 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(EART) OR SUBJAREA(ENVI) OR SUBJAREA(MULT))
+TITLE-ABS-KEY(("oil palm" OR "elaeis guineensis" OR "fresh fruit bunch" OR "FFB") AND ("deep learning" OR "machine learning" OR "convolutional" OR "neural network" OR "computer vision" OR "image processing" OR "YOLO" OR "object detection" OR "remote sensing")) AND PUBYEAR > 2014 AND PUBYEAR < 2027 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(EART) OR SUBJAREA(ENVI) OR SUBJAREA(MULT))
 ```
 
 ## Q7 — Penghitungan buah pandangan-tunggal *(butir 7; ditambahkan D-2/D-4)*
 
 ```
-TITLE-ABS-KEY(("fruit" OR "apple" OR "citrus" OR "mango" OR "grape" OR "berry" OR "bunch" OR "oil palm" OR "orchard" OR "vineyard") AND ("counting" OR "count" OR "yield estimation" OR "load estimation" OR "fruit load" OR "crop load") AND ("deep learning" OR "convolutional" OR "object detection" OR "YOLO" OR "instance segmentation" OR "machine vision")) AND PUBYEAR > 2014 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
+TITLE-ABS-KEY(("fruit" OR "apple" OR "citrus" OR "mango" OR "grape" OR "berry" OR "bunch" OR "oil palm" OR "orchard" OR "vineyard") AND ("counting" OR "count" OR "yield estimation" OR "load estimation" OR "fruit load" OR "crop load") AND ("deep learning" OR "convolutional" OR "object detection" OR "YOLO" OR "instance segmentation" OR "machine vision")) AND PUBYEAR > 2014 AND PUBYEAR < 2027 AND (SUBJAREA(AGRI) OR SUBJAREA(COMP) OR SUBJAREA(ENGI) OR SUBJAREA(MULT))
 ```
 
 ---
@@ -159,3 +163,29 @@ Sisa noise setelah pembatasan **normal dan tidak perlu diperketat lagi**. Tahap
 pencarian pada tinjauan sistematis memang dirancang recall-tinggi presisi-rendah;
 penyaringan judul–abstrak yang membuang sisanya, tercatat sebagai `n_excl_EC*`.
 Memperketat query sekarang justru membuang makalah sah tanpa jejak.
+
+---
+
+## Log run Scopus 2026-08-09
+
+Semua query final dijalankan di **Advanced document search** pada profil institusi
+Universitas Indonesia yang sedang masuk. Setiap ekspor memakai CSV, Citation
+information, Bibliographical information, dan DOI. Artefak mentah ada di
+[`raw/`](raw/), sedangkan rekap lengkap dan sidik jari SHA-256 ada di
+[`scopus-counts-2026-08-09.csv`](scopus-counts-2026-08-09.csv).
+
+| Query | Tanpa `SUBJAREA` | Final | Dibuang oleh `SUBJAREA` | CSV rows |
+|---|---:|---:|---:|---:|
+| Q1 | 3,433 | 2,001 | 1,432 | 2,001 |
+| Q2 | 2,920 | 2,789 | 131 | 2,789 |
+| Q3 | 5,766 | 5,648 | 118 | 5,648 |
+| Q4 | 2,553 | 2,422 | 131 | 2,422 |
+| Q5 | 729 | 662 | 67 | 662 |
+| Q6 | 1,071 | 995 | 76 | 995 |
+| Q7 | 1,274 | 1,205 | 69 | 1,205 |
+
+The known-item checks passed: SawitMVC was found in Q1, Gené-Molá 2020 was found in
+Q3, and Koirala 2019 MangoYOLO was found in Q7. A preliminary run of the old
+unbounded Q1 string returned 3,436 without `SUBJAREA` and 2,004 with it, and showed
+2027 records. It is retained only as an audit observation; the final run uses the
+explicit upper bound and is the one represented by the CSV above.
