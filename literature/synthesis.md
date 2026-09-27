@@ -99,7 +99,7 @@ dan tabel taksonomi.
 | 5 | Segmentasi RGB-D | 15 | FuseNet, SA-Gate, CMX, DFormer, SegFormer, GeminiFusion, DiffPixelFormer |
 | 6 | Pose 6D | 10 | PoseCNN, DenseFusion, FFB6D, GDR-Net, ZebraPose, OnePose, FoundationPose |
 | 7 | Grasp Robotik | 9 | GG-CNN, GR-ConvNet v2, GraspNet-1Billion, Contact-GraspNet, VGN |
-| 8 | Survei YOLO | 7 | Terven 2023, Hussain 2023, Sapkota 2024/2025, Jegham 2024 |
+| 8 | Survei YOLO | 7 | Terven 2023, Hussain 2023, Alif & Hussain 2024, Sapkota 2025, Jegham 2024 |
 | 9 | RGB-D SLAM | 7 | ORB-SLAM2/3, DynaSLAM, DS-SLAM, CFP-SLAM, DROID-SLAM |
 | 10 | Fusi Multimodal | 7 | ResNet, PointNet, CBAM, Feng 2021, Zou 2023, Zhou 2021, Lopes 2022 |
 | 11 | Pedestrian RGB-T | 6 | KAIST, IAF R-CNN, MBNet, GAFF, CFR, CFT |
@@ -185,10 +185,10 @@ dan tabel taksonomi.
 26. Terven dkk. (2023). *Comprehensive Review of YOLO (v1–v8, YOLO-NAS)*. MAKE.
 27. Hussain (2023). *YOLO-v1 to v8 & Industrial Defect Detection*. Machines.
 28. Jiang dkk. (2022). *A Review of YOLO Algorithm Developments*. Procedia CS.
-29. Sapkota dkk. (2024). *YOLOv1–v10 in Agricultural Domain*. arXiv:2406.10139.
+29. Alif & Hussain (2024). *YOLOv1–v10 in Agricultural Domain*. arXiv:2406.10139.
 30. Sapkota dkk. (2025). *YOLO Advances to Its Genesis: A Decadal and Comprehensive Review*. Artificial Intelligence Review.
 31. Vijayakumar & Vairavasundaram (2024). *YOLO-Based Object Detection Review*. MTAP.
-32. Alif & Hussain (2024). *YOLO Evolution: YOLOv12, YOLO11 Benchmark*. arXiv:2411.00201.
+32. Jegham dkk. (2024). *YOLO Evolution: YOLOv12, YOLO11 Benchmark*. arXiv:2411.00201.
 
 ### C. RGB-D Salient Object Detection
 35. Piao dkk. (2019). *DMRA*. ICCV.

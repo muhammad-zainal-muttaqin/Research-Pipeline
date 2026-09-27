@@ -3,13 +3,13 @@
 Dokumen ini adalah handoff singkat. Untuk peta lengkap, mulai dari
 [README eksperimen](README.md).
 
-> **Aktif per 6 Agustus 2026 — [seri F](SERI-F.md).** Seri baru untuk perubahan
-> formulasi/arsitektur di atas RF-DETR-L. Keadaan mutakhir: **F-001** memulihkan
-> prasyarat (bobot RF-DETR-L E-021 **hilang**, dilatih ulang; resep E-021 muat di
-> A4500 dengan puncak 10.331/20.470 MiB, **paralelisme run = 1**); **F-002 LOLOS**
-> (frekuensi tinggi memisahkan tandan dari pelepah, dwt_hh +0,0731 pada B4);
-> **F-003 GUGUR** (plafon lintas-sisi 0,2794 < 0,30 → K3 dibatalkan); **F-004**
-> baseline 3 seed sedang berjalan.
+> **Keadaan per 27 September 2026: tidak ada eksperimen yang berjalan.**
+> [Seri F](SERI-F.md) ditutup 6 Agustus 2026. **F-001** memulihkan prasyarat
+> (bobot RF-DETR-L E-021 hilang dan dilatih ulang; puncak 10.331/20.470 MiB,
+> **paralelisme run = 1**); **F-002** dan **F-005** lolos gerbang; **F-003**
+> gugur sehingga K3 dibatalkan; **F-004** selesai (rerata test mAP50 0,5949,
+> SD seed 0,0049); **F-007** dihentikan karena gate γ tidak pernah terbuka;
+> **F-006** dan **F-009** tidak dijalankan.
 
 > **Catatan status 2 Agustus 2026.** Laporan Elsevier di `reports.tex` dan
 > `experiments/REPORT_PLAN.md` adalah status audit terbaru. Bagian handoff

@@ -1,8 +1,7 @@
 # AGENTS.md — Panduan Kerja Agen
 
 Berlaku untuk semua agen (Claude Code, Codex, dan lainnya). Baca sampai habis
-sebelum mengubah apa pun. Kondisi di bawah per **27 September 2026**; commit
-terakhir 10 Agustus 2026 (`4aa9ad6`).
+sebelum mengubah apa pun. Kondisi di bawah per **27 September 2026**.
 
 ## 1. Bahasa
 
@@ -24,7 +23,7 @@ Repo ini menyatukan dua jalur riset tentang tandan buah segar (TBS) kelapa sawit
 
 | Jalur | Status |
 |---|---|
-| Naskah | Kandidat aktif **`main5v2`** — *Multi-View and Multimodal Perception for Class-Wise Fruit Inventories: A Design-Space Review*. 29 halaman, 235 referensi, 8 seksi + 3 lampiran; menangani 8 poin revisi dosen. Ringkasan: `manuscript/source/RINGKASAN-MAIN5V2.md`. |
+| Naskah | Kandidat aktif **`main5v3`** — *Multi-View and Multimodal Perception for Class-Wise Fruit Inventories: A Design-Space Review*. 32 halaman, 8 seksi + 3 lampiran; menangani 8 poin revisi dosen. Revisi 27 September 2026 menulis ulang alur per kasus studi: tiap bagian dibuka dari kegagalan terukur (SawitMVC, studi kebun buah 2016–2026) dan menyerahkan sisa masalahnya ke bagian berikut. `main5v2` dipertahankan sebagai pembanding. |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC, protokol `pycocotools` tunggal). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed **0,0049**. |
 | Depth sensor (E-022…E-033b) | Pipeline reproyeksi tervalidasi, tetapi **tidak ada klaim peningkatan deteksi yang sah**. YOLO26n: depth merugikan (E-027). Titik fusi (E-032): tidak konklusif, `mid` hanya indikasi. |
@@ -42,10 +41,11 @@ Titik masuk: `experiments/STATUS.md` (eksperimen), `README.md` (peta repo).
 | `literature/synthesis.md` | Sintesis lintas makalah (14 klaster tema) |
 | `literature/search/` | Pencarian reprodusibel: `PROTOCOL.md`, query Q1–Q7, ekspor mentah, hasil deduplikasi/screening, angka PRISMA |
 | `literature/references/` | Bahan luar: PDF baseline SawitMVC (DiB 2026), revisi dosen `revisi-dosen-2026-07-23/` |
-| `manuscript/source/main5v2.tex` + `main5v2-body.tex` | **Naskah kandidat aktif** (IEEEtran, `references3.bib`) |
+| `manuscript/source/main5v3.tex` + `main5v3-body.tex` | **Naskah kandidat aktif** (IEEEtran, `references3.bib`) |
+| `manuscript/source/main5v2.tex` + `main5v2-body.tex` | Versi sebelum revisi alur; pembanding (ringkasan `RINGKASAN-MAIN5V2.md`) |
 | `manuscript/source/main5.tex` + `main5-body.tex` | Baseline revisi sebelumnya; jangan diubah |
 | `manuscript/source/main.tex` / `main-elsarticle.tex` + `evidence-body.tex` | Naskah asli 182 sumber; stabil |
-| `manuscript/source/main2`–`main4` | Iterasi gagal; arsip, jangan disunting |
+| `manuscript/source/main2`–`main4`, `main-elsarticle3.tex` | Iterasi gagal; arsip, jangan disunting |
 | `manuscript/source/references.bib` / `references3.bib` | 219 / 235 record |
 | `manuscript/output/papers/` | PDF hasil kompilasi |
 | `manuscript/figures/`, `manuscript/guides/` | Figur final + brief; panduan penulisan dan rencana |
@@ -71,7 +71,7 @@ node site/build.js --dry        # laporan saja
 node site/build.js              # rakit ulang index.html (tanpa dependensi)
 
 cd manuscript/source
-tectonic main5v2.tex            # kandidat aktif; latexmk/pdflatex tidak tersedia
+tectonic main5v3.tex            # kandidat aktif; latexmk/pdflatex tidak tersedia
 ```
 
 - Jalankan `build.js` setiap kali `literature/entries/*.md`, `literature/synthesis.md`,
@@ -90,6 +90,10 @@ tectonic main5v2.tex            # kandidat aktif; latexmk/pdflatex tidak tersedi
 - Tautan antar-entri relatif, spasi di-encode `%20`.
 - **Jangan mengarang angka.** Setiap klaim numerik terlacak ke sumber primer
   (arXiv/DOI/repo resmi).
+- Kunci BibTeX `sapkota2024yoloagri` (penulis sebenarnya Alif & Hussain) dan
+  `alif2024yoloevolution` (penulis sebenarnya Jegham dkk.) sengaja tidak diganti
+  namanya agar sitasi lama tidak rusak; field penulisnya sudah benar. Di teks
+  naskah, sebut nama penulis sebenarnya.
 
 ## 7. Log Eksperimen — Wajib
 

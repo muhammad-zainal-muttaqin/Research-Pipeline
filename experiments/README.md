@@ -4,11 +4,12 @@ Folder ini memisahkan hasil yang boleh dikutip dari riwayat, audit, dan
 pekerjaan yang belum menjadi klaim ilmiah. Baca halaman ini sebelum membuka
 log eksperimen yang panjang.
 
-> **Seri F dibuka 6 Agustus 2026 — [SERI-F.md](SERI-F.md).** Seri terpisah untuk
-> perubahan **formulasi dan arsitektur** (K1 cabang frekuensi, K2 kepala ordinal,
-> K3 lintas-sisi), dengan gerbang penyaring tanpa GPU di depan tiap komponen.
-> Berjalan paralel dengan seri E, bukan menggantikannya. Entri kronologisnya
-> tetap di [EKSPERIMEN.md](EKSPERIMEN.md) dengan kode `F-0NN`.
+> **Seri F dibuka dan ditutup 6 Agustus 2026 — [SERI-F.md](SERI-F.md).** Seri
+> terpisah untuk perubahan **formulasi dan arsitektur** (K1 cabang frekuensi, K2
+> kepala ordinal, K3 lintas-sisi), dengan gerbang penyaring tanpa GPU di depan
+> tiap komponen. Hasilnya: F-002 dan F-005 lolos gerbang, F-003 gugur, F-007
+> dihentikan (gate γ ≈ 0), F-006 dan F-009 tidak dijalankan. Entri kronologisnya
+> di [EKSPERIMEN.md](EKSPERIMEN.md) dengan kode `F-0NN`.
 
 ## Status saat ini
 

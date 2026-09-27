@@ -26,7 +26,8 @@ menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
 | Menjalankan ulang E-021 | [Panduan reproduksi](experiments/code/REPRODUCE.md) |
 | Menemukan skrip dan bukti hasil | [Peta skrip](experiments/code/PETA-SKRIP.md) |
 | Membaca sintesis literatur | [Sintesis lintas makalah](literature/synthesis.md) |
-| Menyusun naskah | [Sumber LaTeX](manuscript/source/) dan [panduan naskah](manuscript/guides/) |
+| Membaca naskah *review* terkini | [`main5v3.pdf`](manuscript/output/papers/main5v3.pdf), sumber [`main5v3-body.tex`](manuscript/source/main5v3-body.tex) |
+| Menyusun naskah | [README naskah](manuscript/README.md) dan [panduan naskah](manuscript/guides/) |
 | Memeriksa keterlacakan klaim | [Audit](audit/) |
 
 ## Struktur
@@ -51,7 +52,7 @@ tidak masuk Git.
 ```bash
 node site/build.js --dry
 node site/build.js
-latexmk -pdf -outdir=manuscript/output/papers manuscript/source/main.tex
+cd manuscript/source && tectonic main5v3.tex   # latexmk tidak tersedia
 ```
 
 Jalankan pembuat situs setelah mengubah entri literatur, sintesis, atau
