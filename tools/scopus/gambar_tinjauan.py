@@ -139,10 +139,10 @@ def gambar_prisma():
                 fontweight="bold", color="#444444")
 
     kotak(8, 82, 44, 13,
-          f"Records retrieved from Scopus\n13 query runs (Q1–Q9), 28 Sep 2026\n"
+          f"Records identified from Scopus\n"
           f"n = {diambil:,}")
     kotak(60, 82, 36, 13,
-          f"Duplicates removed\n(same Scopus EID across queries)\nn = {diambil - unik:,}",
+          f"Duplicates removed\nn = {diambil - unik:,}",
           warna="#F2F2F2")
     panah(52, 88.5, 60, 88.5)
     kotak(8, 62, 44, 12, f"Unique records\nn = {unik:,}")
