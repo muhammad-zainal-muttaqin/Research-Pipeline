@@ -8,6 +8,7 @@ dek presentasi.
 
 | Tujuan | Buka ini |
 |---|---|
+| Menjalankan ulang korpus dan artefak naskah `main6` | [`scopus/`](scopus/) — perintah lengkap di [`literature/scopus-2026-09/README.md`](../literature/scopus-2026-09/README.md) |
 | Membangun matriks bukti | [`build_evidence_matrix.py`](build_evidence_matrix.py) — butuh `pypdf` dan folder `literature/pdf/benar/` |
 | Membangun tabel sintesis | [`build_synthesis_table.py`](build_synthesis_table.py) |
 | Mencari pustaka lewat OpenAlex | [`openalex_search.py`](openalex_search.py) |
@@ -23,6 +24,7 @@ dek presentasi.
 
 | Berkas / folder | Isi |
 |---|---|
+| `scopus/` | Pipeline `main6`: `scopus_search.py` (Scopus Search API), `enrich_records.py` (abstrak dan tautan OA), `fetch_pdfs.py` + `kompres_pdf.py` (PDF akses terbuka), `kode_bukti.py` (matriks bukti), `gambar_tinjauan.py` (gambar F01–F07), `tabel_lampiran.py` (Lampiran A), `lampiran_kueri.py` (Lampiran B), `buat_bib.py` + `latex_teks.py` (`references6.bib`) |
 | `build_evidence_matrix.py` | Membangun matriks bukti dari `literature/entries/` dan PDF sumber |
 | `build_synthesis_table.py` | Membangun tabel sintesis dari data korpus |
 | `openalex_search.py` | Pencarian dan pengunduhan metadata pustaka lewat API OpenAlex |

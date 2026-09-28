@@ -1,7 +1,7 @@
 # AGENTS.md — Panduan Kerja Agen
 
 Berlaku untuk semua agen (Claude Code, Codex, dan lainnya). Baca sampai habis
-sebelum mengubah apa pun. Kondisi di bawah per **27 September 2026**.
+sebelum mengubah apa pun. Kondisi di bawah per **29 September 2026**.
 
 ## 1. Bahasa
 
@@ -15,45 +15,54 @@ Inggris.
 
 Repo ini menyatukan dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 
-1. **Tinjauan pustaka** deteksi objek (YOLO/DETR) dan fusi RGB-D, beserta naskah
-   *review* untuk jurnal.
+1. **Tinjauan pustaka** untuk jurnal terindeks Scopus. Naskah aktif `main6`
+   adalah tinjauan sistematis tentang identitas lintas pandang (*cross-view
+   identity*) dalam pencacahan buah berbasis citra, dibangun dari korpus Scopus
+   September 2026. Korpus lama 182 entri (deteksi YOLO/DETR dan fusi RGB-D)
+   tetap ada sebagai bahan latar dan dasar naskah `main`–`main5v3`.
 2. **Eksperimen deteksi** yang menguji keputusan teknis dari tinjauan itu.
 
 ## 3. Kondisi Terkini
 
 | Jalur | Status |
 |---|---|
-| Naskah | Kandidat aktif **`main5v3`** — *Multi-View and Multimodal Perception for Class-Wise Fruit Inventories: A Design-Space Review*. 32 halaman, 8 seksi + 3 lampiran; menangani 8 poin revisi dosen. Revisi 27 September 2026 menulis ulang alur per kasus studi: tiap bagian dibuka dari kegagalan terukur (SawitMVC, studi kebun buah 2016–2026) dan menyerahkan sisa masalahnya ke bagian berikut. `main5v2` dipertahankan sebagai pembanding. |
+| Naskah | Kandidat aktif **`main6`** — *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories* (Muttaqin & Indriani; IEEEtran). 22 halaman, 12 seksi + 2 lampiran (A: matriks bukti 187 kajian C1, B: string kueri Scopus), 7 gambar, 4 tabel isi. Ditulis ulang dari awal pada 28 September 2026 mengikuti `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md`. `main5v3` (*design-space review* berbasis kasus, 27 September 2026) berstatus **usang** (*deprecated*) dan diarsipkan; jangan disunting maupun dirujuk. Hanya `main6` yang aktif. |
+| Korpus `main6` | Scopus Search API, 28 September 2026 (UTC), 13 eksekusi kueri (Q1–Q7, Q8a–Q8e, Q9): 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.124 dinilai kelayakannya → **971 masuk peta** (2012–2026). Kode: C1 187 · C2 231 · C3 170 · C4 49 · C5 129 · R 119 · T 86. Mekanisme asosiasi M0–M5. PDF akses terbuka 331 dari 971. `references6.bib` 1.031 rekord, 271 dikutip. Protokol: `literature/scopus-2026-09/PROTOKOL.md`. |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC, protokol `pycocotools` tunggal). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed **0,0049**. |
 | Depth sensor (E-022…E-033b) | Pipeline reproyeksi tervalidasi, tetapi **tidak ada klaim peningkatan deteksi yang sah**. YOLO26n: depth merugikan (E-027). Titik fusi (E-032): tidak konklusif, `mid` hanya indikasi. |
 | Seri F (formulasi di atas RF-DETR-L) | **Ditutup 6 Agustus 2026.** F-002 dan F-005 lolos gerbang; F-003 gugur (K3 dibatalkan); F-007 dihentikan karena gate γ tidak pernah terbuka; F-006 dan F-009 tidak dijalankan. Rincian: `experiments/SERI-F.md`. |
 | Sasaran terbuka | mAP50-95 0,30 (kurang ±0,023). |
 
-Titik masuk: `experiments/STATUS.md` (eksperimen), `README.md` (peta repo).
+Titik masuk: `manuscript/source/main6-body.tex` (naskah), `literature/scopus-2026-09/README.md`
+(korpus naskah), `experiments/STATUS.md` (eksperimen), `README.md` (peta repo).
 
 ## 4. Peta Berkas
 
 | Lokasi | Isi |
 |---|---|
-| `literature/entries/` | **182** ringkasan makalah terverifikasi (korpus naskah) + `INDEX.md`, `INDEX-TAHUN.md` |
+| `literature/scopus-2026-09/` | **Korpus `main6`**: `QUERY.md`, `PROTOKOL.md`, `topik/` (kueri, rekaman, penyaringan, `bukti/matriks_bukti.csv`, kode manual `mekanisme_C1.txt` dan `kode_C3.txt`), `metodologi/` (60 artikel panduan review), `pdf/` + `teks/` (331 PDF akses terbuka), `unduhan/pdf_belum_ada.csv` |
+| `literature/entries/` | **182** ringkasan makalah terverifikasi (korpus lama, dasar naskah `main`–`main5v3` dan Ruang Baca) + `INDEX.md`, `INDEX-TAHUN.md` |
 | `literature/withheld/` | 20 entri ditahan (PDF tak tersedia); jangan masuk naskah |
 | `literature/synthesis.md` | Sintesis lintas makalah (14 klaster tema) |
 | `literature/search/` | Pencarian reprodusibel: `PROTOCOL.md`, query Q1–Q7, ekspor mentah, hasil deduplikasi/screening, angka PRISMA |
 | `literature/references/` | Bahan luar: PDF baseline SawitMVC (DiB 2026), revisi dosen `revisi-dosen-2026-07-23/` |
-| `manuscript/source/main5v3.tex` + `main5v3-body.tex` | **Naskah kandidat aktif** (IEEEtran, `references3.bib`) |
-| `manuscript/source/main5v2.tex` + `main5v2-body.tex` | Versi sebelum revisi alur; pembanding (ringkasan `RINGKASAN-MAIN5V2.md`) |
-| `manuscript/source/main5.tex` + `main5-body.tex` | Baseline revisi sebelumnya; jangan diubah |
+| `manuscript/source/main6.tex` + `main6-body.tex` | **Naskah kandidat aktif** (IEEEtran, `references6.bib`); lampiran `main6-appendix-c1.tex` dan `main6-appendix-queries.tex` dibuat skrip |
+| `manuscript/figures/main6/` | Gambar F01–F07 `main6` (PDF vektor + PNG) dari `tools/scopus/gambar_tinjauan.py`; `interaktif/simulator-sensus-tandan.html` |
+| `manuscript/source/main5v3.tex` + `main5v3-body.tex` | **Usang** (*deprecated*; `references3.bib`); arsip, jangan disunting |
+| `manuscript/source/main5v2.tex` + `main5v2-body.tex` | Usang; arsip (ringkasan `RINGKASAN-MAIN5V2.md`), jangan disunting |
+| `manuscript/source/main5.tex` + `main5-body.tex` | Usang; arsip baseline revisi sebelumnya, jangan diubah |
 | `manuscript/source/main.tex` / `main-elsarticle.tex` + `evidence-body.tex` | Naskah asli 182 sumber; stabil |
 | `manuscript/source/main2`–`main4`, `main-elsarticle3.tex` | Iterasi gagal; arsip, jangan disunting |
-| `manuscript/source/references.bib` / `references3.bib` | 219 / 235 record |
+| `manuscript/source/references.bib` / `references3.bib` / `references6.bib` | 219 / 235 / 1.031 record |
 | `manuscript/output/papers/` | PDF hasil kompilasi |
-| `manuscript/figures/`, `manuscript/guides/` | Figur final + brief; panduan penulisan dan rencana |
+| `manuscript/figures/`, `manuscript/guides/` | Figur final + brief; panduan penulisan, rencana, dan `POLA-TINJAUAN-PUSTAKA.md` (pola review yang dipakai `main6`) |
 | `experiments/` | `STATUS.md`, `EKSPERIMEN.md` (log append-only), `METRICS.md`, `SERI-F.md`, `SR/` (laporan per ide), `results/`, `splits/` |
 | `experiments/code/` | Skrip eksperimen: `train/`, `eval/`, `build/`, `analysis/`, `shell/`, `config/`. Peta: `PETA-SKRIP.md` |
 | `pipeline/` | Deliverable produksi: YOLO 4-kanal untuk kamera Orbbec Gemini |
 | `audit/` | Audit pra-submisi, register klaim, `evidence-matrix-v2.csv` (44 studi) |
-| `tools/` | Skrip pencarian/screening literatur dan pembuat matriks bukti |
+| `tools/scopus/` | Pipeline korpus `main6`: pencarian Scopus, pengayaan abstrak, unduh/kompres PDF, pengodean bukti, gambar, tabel lampiran, lampiran kueri, BibTeX |
+| `tools/` | Skrip pencarian/screening literatur lama dan pembuat matriks bukti 182 |
 | `site/build.js` → `index.html` | Ruang Baca Riset; `index.html` hasil build, **jangan disunting tangan** |
 | `datasets/`, `literature/pdf/` | Bahan lokal besar, tidak masuk Git |
 | `legacy/`, `temp/`, `tmp/` | Usang / sementara; abaikan kecuali diminta |
@@ -63,6 +72,8 @@ tema dari nama berkas yang dipakai `build.js`. Jangan disamakan.
 
 **Invarian 182:** bila jumlah entri berubah, perbarui juga `literature/synthesis.md`,
 `README.md`, `manuscript/source/evidence-body.tex`, dan `audit/claim-audit-182.md`.
+Invarian ini **tidak** berlaku untuk `main6`; angka `main6` bersumber dari
+`literature/scopus-2026-09/` (bagian 7).
 
 ## 5. Perintah
 
@@ -71,8 +82,17 @@ node site/build.js --dry        # laporan saja
 node site/build.js              # rakit ulang index.html (tanpa dependensi)
 
 cd manuscript/source
-tectonic main5v3.tex            # kandidat aktif; latexmk/pdflatex tidak tersedia
+tectonic main6.tex              # kandidat aktif; latexmk/pdflatex tidak tersedia
+
+python3 tools/scopus/kode_bukti.py       # matriks bukti dari keputusan + kode manual
+python3 tools/scopus/gambar_tinjauan.py  # gambar F01–F07 main6
+python3 tools/scopus/tabel_lampiran.py   # Lampiran A (matriks C1)
+python3 tools/scopus/lampiran_kueri.py   # Lampiran B (string kueri)
 ```
+
+Perintah lengkap (pencarian ulang, pengayaan, BibTeX) ada di
+`literature/scopus-2026-09/README.md`. Kunci API Elsevier dibaca dari
+`ELSEVIER_API_KEY` / `ELSEVIER_API_KEY_FILE` dan tidak pernah disimpan di repo.
 
 - Jalankan `build.js` setiap kali `literature/entries/*.md`, `literature/synthesis.md`,
   atau laporan eksperimen berubah; commit `index.html` bersamaan.
@@ -95,7 +115,24 @@ tectonic main5v3.tex            # kandidat aktif; latexmk/pdflatex tidak tersedi
   namanya agar sitasi lama tidak rusak; field penulisnya sudah benar. Di teks
   naskah, sebut nama penulis sebenarnya.
 
-## 7. Log Eksperimen — Wajib
+## 7. Kontrak Naskah `main6`
+
+- Setiap angka korpus di naskah (jumlah rekaman, kode C1–C5/R/T, mekanisme M0–M5,
+  PDF) harus dapat dihitung ulang dari `literature/scopus-2026-09/` dengan skrip
+  `tools/scopus/`. Bila data atau kode manual berubah, jalankan ulang skrip lalu
+  perbarui teks naskah, `PROTOKOL.md`, dan bagian 3 berkas ini.
+- `main6-appendix-c1.tex`, `main6-appendix-queries.tex`, `references6.bib`, dan
+  `manuscript/figures/main6/F0*` adalah keluaran skrip; **jangan disunting tangan**.
+- Kode mekanisme C1 dan kode C3 disunting di `topik/bukti/mekanisme_C1.txt` dan
+  `kode_C3.txt`; berkas itu menimpa kode otomatis `kode_bukti.py`.
+- Naskah tidak memuat jalur folder atau kode internal repo; sebut nama kelompok
+  deskriptif.
+- Penyaringan dilakukan satu peninjau dengan bantuan model bahasa besar; nyatakan
+  apa adanya di naskah, jangan diklaim sebagai dua peninjau independen.
+- Hasil eksperimen SawitMVC (E-/F-) bukan bagian korpus `main6`; bila dikutip,
+  angka tetap dari `experiments/METRICS.md`.
+
+## 8. Log Eksperimen — Wajib
 
 Setiap temuan eksperimen dicatat ke `experiments/EKSPERIMEN.md` **dalam giliran
 yang sama** dengan selesainya eksperimen, lalu di-commit.
@@ -111,7 +148,7 @@ yang sama** dengan selesainya eksperimen, lalu di-commit.
   ultralytics tidak boleh dipakai membandingkan antar lengan (E-025).
 - Penomoran: seri E sampai E-033b, seri F sampai F-009. Seri baru memakai prefiks baru.
 
-## 8. Keputusan yang Mengikat — Jangan Ditawar Ulang
+## 9. Keputusan yang Mengikat — Jangan Ditawar Ulang
 
 Pernyataan pengguna (21 Juli 2026, ditegaskan dua kali):
 
@@ -141,7 +178,7 @@ mendasar): pseudo-depth sebagai pemisah tandan (SR-005), detektor dua tahap
 E-016 (ditarik), K3 lintas-sisi (F-003), gate init-nol F-007 (γ tidak pernah
 bergerak; perlu init taknol, warmup, atau LR terpisah bila diulang).
 
-## 9. Fakta Dataset
+## 10. Fakta Dataset
 
 **Arah kelas:** **B1 = MATANG** (jingga-merah) → **B4 = MENTAH** (gelap
 kehijauan). Jangan dibalik.
@@ -166,7 +203,7 @@ DOI `10.1016/j.dib.2026.112990`, PDF di `literature/references/SawitMVC-DiB-2026
 YOLO26m test AP50 0,531 (B4 0,354). Baseline itu **sengaja tidak di-tuning**
 (`imgsz=640`, SVR default); ia titik acuan, bukan plafon.
 
-## 10. Cara Kerja
+## 11. Cara Kerja
 
 - **Komputasi:** "GPU/CPU jangan menganggur" berarti mempercepat todo yang sudah
   ada, **bukan** menambah eksperimen baru tanpa diminta (insiden 1 Agustus 2026:
