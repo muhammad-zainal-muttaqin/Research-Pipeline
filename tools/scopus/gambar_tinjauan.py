@@ -44,13 +44,13 @@ plt.rcParams.update({
 })
 
 KATEGORI = {
-    "C1": "Multi-observation counting (C1)",
-    "C2": "Single-view counting and yield (C2)",
-    "C3": "Oil-palm FFB imaging (C3)",
-    "C4": "Class attribute with counting (C4)",
-    "C5": "Depth, 3D, and non-RGB fruit sensing (C5)",
-    "R": "Earlier reviews (R)",
-    "T": "Transferable non-agricultural methods (T)",
+    "C1": "Multi-observation counting",
+    "C2": "Single-view counting and yield",
+    "C3": "Oil-palm bunch imaging",
+    "C4": "Counting by class in single images",
+    "C5": "Depth, 3D, and non-RGB fruit sensing",
+    "R": "Earlier reviews",
+    "T": "Methods from outside agriculture",
 }
 WARNA_KAT = {"C1": C["biru"], "C2": C["biru_muda"], "C3": C["merah"],
              "C4": C["oranye"], "C5": C["hijau"], "R": C["ungu"], "T": C["abu"]}
@@ -157,22 +157,23 @@ def gambar_prisma():
     panah(52, 50, 60, 50)
     kotak(8, 26, 44, 12,
           f"Records assessed for eligibility\nn = {kand:,}\n"
-          f"abstract available {kand - judul_saja}; title and source only {judul_saja}")
+          f"with abstract {kand - judul_saja}; title and source only {judul_saja}")
     panah(30, 44, 30, 38)
     alasan = (f"Excluded, n = {sum(xa.values())}\n"
-              f"E1 not fruit on the plant: {xa['E1']}\n"
-              f"E2 postharvest or laboratory only: {xa['E2']}\n"
-              f"E3 yield model without fruit-level detection: {xa['E3']}\n"
-              f"E4 picking or manipulation only: {xa['E4']}\n"
-              f"E5 detection without counting or evaluation: {xa['E5']}\n"
-              f"E6 non-imaging sensor: {xa['E6']}   E7 language: {xa['E7']}")
+              f"Not fruit on the plant: {xa['E1']}\n"
+              f"Postharvest or laboratory only: {xa['E2']}\n"
+              f"Yield model without fruit-level detection: {xa['E3']}\n"
+              f"Picking or manipulation only: {xa['E4']}\n"
+              f"Detection without counting or evaluation: {xa['E5']}\n"
+              f"Non-imaging sensor: {xa['E6']}; not in English: {xa['E7']}")
     kotak(56, 21, 42, 20, alasan, warna="#F2F2F2")
     panah(52, 32, 56, 32)
-    rinci = "   ".join(f"{k} {inc[k]}" for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"])
-    kotak(8, 2, 90, 14,
-          f"Studies included in the map, n = {n_inc}\n{rinci}\n"
-          "C1 coded in full (mechanism, acquisition, class output, result); others coded by rule and spot-checked",
-          warna="#EAF2FA", tebal=False)
+    nama = {"C1": "multi-observation", "C2": "single-view counting", "C3": "oil palm",
+            "C4": "class counting", "C5": "depth and 3D", "R": "reviews", "T": "outside agriculture"}
+    b1 = ", ".join(f"{nama[k]} {inc[k]}" for k in ["C1", "C2", "C3", "C4"])
+    b2 = ", ".join(f"{nama[k]} {inc[k]}" for k in ["C5", "R", "T"])
+    rinci = b1 + "\n" + b2
+    kotak(8, 2, 90, 14, f"Studies included, n = {n_inc}\n{rinci}", warna="#EAF2FA", tebal=False)
     panah(30, 26, 30, 16)
     simpan(fig, "F01_prisma")
     return {"diambil": diambil, "unik": unik, "x0": x0, "xj": xj, "kand": kand,
@@ -287,7 +288,7 @@ def gambar_mekanisme(mat):
                 label=NAMA_MEK[m])
     ax1.set_xticks(range(len(periode)))
     ax1.set_xticklabels([f"{l}\n(n = {n_per[p]})" for l, p in zip(lab, periode)])
-    ax1.set_ylabel("Share of C1 studies using the mechanism (%)")
+    ax1.set_ylabel("Share of studies using the mechanism (%)")
     ax1.set_ylim(0, 100)
     ax1.legend(frameon=False, fontsize=6.2, ncol=2, loc="upper left")
     ax1.set_title("(a) Identity mechanisms by period", loc="left")
@@ -300,7 +301,7 @@ def gambar_mekanisme(mat):
              color=C["biru"], height=0.6)
     for i, k in enumerate(urut[::-1]):
         ax2.text(akuisisi[k] + 2, i, str(akuisisi[k]), va="center", fontsize=6.5)
-    ax2.set_xlabel("C1 studies")
+    ax2.set_xlabel("Studies")
     ax2.set_xlim(0, max(akuisisi.values()) * 1.18)
     ax2.set_title("(b) Acquisition design", loc="left")
     fig.tight_layout(w_pad=2)
@@ -428,7 +429,7 @@ def gambar_metrik(mat):
     ax.set_yticks(range(len(urut))[::-1])
     ax.set_yticklabels(urut, fontsize=6.4)
     ax.set_xlim(0, 100)
-    ax.set_xlabel(f"C1 studies with an abstract (n = {len(ada_abs)}); several metric types per study allowed")
+    ax.set_xlabel(f"Multi-observation studies with an abstract (n = {len(ada_abs)}); several metric types per study allowed")
     simpan(fig, "F07_metrik")
     return hit, len(ada_abs), kelas
 

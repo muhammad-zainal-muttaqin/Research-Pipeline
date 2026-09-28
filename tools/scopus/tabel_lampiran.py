@@ -49,7 +49,7 @@ def main():
 \begin{footnotesize}
 \setlength{\tabcolsep}{4pt}
 \begin{longtable}{@{}p{3.8cm}lp{2.2cm}p{2.0cm}lp{2.6cm}lp{3.2cm}@{}}
-\caption{Evidence matrix for the %d multi-observation (C1) studies. Acq.: V video along a path, D discrete views, S 3D scan, T revisits over time, 1 single view. Platform: GV ground vehicle or robot, UAV, HH handheld or smartphone, LB laboratory or conveyor, FX fixed camera (-- not stated in the abstract). Mechanisms M0--M5 as in Section~\ref{sec:framework}. Class: counts reported per class. Metrics: types reported in the abstract (count agreement, tracking or identity, detection quality); n.a. means no abstract was available.}\label{tab:c1matrix}\\
+\caption{Evidence matrix for the %d multi-observation studies. Acq.: V video along a path, D discrete views, S 3D scan, T revisits over time, 1 single view. Platform: GV ground vehicle or robot, UAV, HH handheld or smartphone, LB laboratory or conveyor, FX fixed camera (-- not stated in the abstract). Mechanisms M0--M5 as in Section~\ref{sec:framework}. Class: counts reported per class. Metrics: types reported in the abstract (count agreement, tracking or identity, detection quality); n.a., no abstract available.}\label{tab:c1matrix}\\
 \toprule
 Study & Year & Crop & Platform & Acq. & Mechanism & Class & Metrics\\
 \midrule
