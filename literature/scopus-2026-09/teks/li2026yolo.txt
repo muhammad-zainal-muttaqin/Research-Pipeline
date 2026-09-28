@@ -1,0 +1,2168 @@
+Academic Editor: Juan Arribas
+Received: 19 December 2025
+Revised: 18 January 2026
+Accepted: 20 January 2026
+Published: 22 January 2026
+Copyright: © 2026 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license.
+Article
+YOLO-MSRF: A Multimodal Segmentation and Refinement
+Framework for Tomato Fruit Detection and Segmentation with
+Count and Size Estimation Under Complex Illumination
+Ao Li 1,*, Chunrui Wang 1, Aichen Wang 2
+, Jianpeng Sun 3, Fengwei Gu 1 and Tianxue Zhang 4,5
+1
+School of Computer Science and Technology, Harbin University of Science and Technology, Harbin 150080,
+China; 2320410131@stu.hrbust.edu.cn (C.W.); gufengwei@hrbust.edu.cn (F.G.)
+2
+School of Agricultural Engineering, Jiangsu University, Zhenjiang 212013, China; acwang@ujs.edu.cn
+3
+Key Laboratory of Advanced Manufacturing and Intelligent Technology, Ministry of Education,
+Harbin University of Science and Technology, Harbin 150080, China; sunjianpeng@hrbust.edu.cn
+4
+School of Mechanical Engineering and Automation, Beihang University, Beijing 100191, China
+5
+Institute of Medical Robotics, Shanghai Jiaotong University, Shanghai 103439, China
+*
+Correspondence: ao.li@hrbust.edu.cn
+Abstract
+Segmentation of tomato fruits under complex lighting conditions remains technically chal-
+lenging, especially in low illumination or overexposure, where RGB-only methods often
+suffer from blurred boundaries and missed small or occluded instances, and simple multi-
+modal fusion cannot fully exploit complementary cues. To address these gaps, we propose
+YOLO-MSRF, a lightweight RGB–NIR multimodal segmentation and refinement framework
+for robust tomato perception in facility agriculture. Firstly, we propose a dual-branch multi-
+modal backbone, introduce Cross-Modality Difference Complement Fusion (C-MDCF) for
+difference-based complementary RGB–NIR fusion, and design C2f-DCB to reduce computa-
+tion while strengthening feature extraction. Furthermore, we develop a cross-scale attention
+fusion network and introduce the proposed MS-CPAM to jointly model multi-scale channel
+and position cues, strengthening fine-grained detail representation and spatial context ag-
+gregation for small and occluded tomatoes. Finally, we design the Multi-Scale Fusion and
+Semantic Refinement Network, MSF-SRNet, which combines the Scale-Concatenate Fusion
+Module (Scale-Concat) fusion with SDI-based cross-layer detail injection to progressively
+align and refine multi-scale features, improving representation quality and segmentation
+accuracy. Extensive experiments show that YOLO-MSRF achieves substantial gains under
+weak and low-light conditions, where RGB-only models are most prone to boundary degra-
+dation and missed instances, and it still delivers consistent improvements on the mixed
+four-light validation set, increasing mAP0.5 by 2.3 points, mAP0.5–0.95 by 2.4 points, and
+mIoU by 3.60 points while maintaining real-time inference at 105.07 FPS. The proposed
+system further supports counting, size estimation, and maturity analysis of harvestable
+tomatoes, and can be integrated with depth sensing and yield estimation to enable real-time
+yield prediction in practical greenhouse operations.
+Keywords: multimodal fusion; near-infrared sensing; semantic segmentation; illumination
+robustness; yield prediction
+1. Introduction
+With the continuous growth of the global population and increasing demand for food,
+smart agriculture has garnered significant attention as a pivotal approach to enhancing
+Agriculture 2026, 16, 277
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+2 of 27
+agricultural productivity and ensuring crop quality [1]. Modern controlled-environment
+agriculture relies on precise environmental sensing and fruit detection technologies to
+enable automated management and efficient harvesting. Vision-based crop recognition
+and semantic segmentation technologies constitute the core of intelligent agricultural
+systems, directly impacting the operational efficiency of agricultural machinery and the
+quality control of produce [2]. Within this context, accurate fruit counting, tracking, and
+size estimation are essential for yield prediction, harvest planning, and evaluating fruit
+maturity and quality, while also informing transportation and storage strategies to improve
+overall economic efficiency [3].
+Recent developments in deep learning have substantially advanced agricultural im-
+age segmentation methods, primarily focusing on single-modality image analysis, with
+YOLO-based one-stage networks and Transformer architectures emerging as leading ap-
+proaches. These methods address various challenges in crop recognition and segmentation
+by combining the real-time efficiency of YOLO models with the robust global feature
+modeling capabilities of Transformer architectures [4]. Du et al. [5] presented a DSW-
+YOLO architecture built upon YOLOv7 for the detection of ripe strawberries and their
+occlusion levels, enhancing feature extraction with DCNv3 in ELAN, applying Shuffle
+Attention, and optimizing WIoU v3 loss, reaching 86.7% mAP@0.5, 82.1% recall, and
+82.8% precision. Rong et al. [6] designed a Swin Transformer V2–based improved seg-
+mentation framework integrated with a picking-point recognition method to detect ripe
+tomatoes in complex environments. The model, enhanced with SeMask in the encoder and
+UPerNet with feature selection and alignment in the decoder, achieved 82.5% MIoU and
+89.79% MPA. Yuan et al. [7] proposed a CA-TransUNet++ model that combines Coordinate
+Attention with a Transformer architecture for Camellia oleifera fruit segmentation. Lever-
+aging multi-scale feature extraction, global information modeling, and transfer learning
+on a small hyperspectral dataset, the model achieves 92.14% MIoU, 96.51% MPA, and
+95.81% Dice, with improved convergence and generalization. The above studies indicate
+that incorporating advanced attention mechanisms and enhanced feature extraction mod-
+ules into YOLO-based and Transformer-based [8] architectures can significantly improve
+segmentation accuracy and efficiency in complex agricultural environments [9].
+Most existing approaches depend on adequate and consistent illumination for accu-
+rate feature extraction, but their performance substantially deteriorates under low-light
+or nighttime conditions, which frequently occur in practical agricultural settings [10,11].
+To address precise detection and low-cost deployment of pitaya fruits under daytime and
+nighttime supplementary lighting, Li et al. [12] developed a lightweight YOLOv5s model
+incorporating a ShuffleNetV2 backbone, a Concentrated-Comprehensive Convolution Re-
+ceptive Field Enhancement (C3RFE) module, and a Bidirectional Feature Pyramid Network
+(BiFPN), achieving an average precision of 97.80%, a GPU inference speed of 139 FPS,
+and a model size of 2.5 MB. Jiang and Ahamed [13] developed an autonomous pesticide
+spraying robot using light and pheromones to improve accuracy and reduce waste. With
+thermal cameras, LiDAR, and YOLACT segmentation, it navigates orchards in low light,
+achieving over 83% mAP and under 0.21 m positional error for effective nighttime pest
+control. These studies demonstrate that integrating lightweight architectures, specialized
+feature enhancement modules, and multimodal sensing enables effective and accurate
+agricultural operations under challenging lighting conditions.
+Nonetheless, reliance on single RGB images restricts CNN-based models’ segmen-
+tation accuracy and robustness under severe illumination variations and complex occlu-
+sions [14]. To address the limitations of single-modality imaging in complex environments,
+multimodal fusion techniques combine RGB, near-infrared, depth, and other data sources
+to enhance agricultural image analysis. These approaches notably improve recognition
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+3 of 27
+and segmentation performance, especially under uneven lighting and fruit occlusion. To
+improve detection and segmentation of tomato main stems against similar-colored back-
+grounds, Liu et al. [15] proposed YOLACTFusion, a multimodal fusion method using
+attention to integrate RGB and near-infrared images. Experiments show YOLACTFusion
+achieves precisions of 93.90% and 95.12%, recalls of 62.60% and 63.41%, and a mAP of
+46.29%, with a reduced model size of 165.52 MB compared to YOLACT, significantly en-
+hancing agricultural robotic vision. To address the low detection accuracy of selective
+harvesting robots in complex environments, Gao et al. [16] proposed LACTA, a lightweight
+and efficient detection algorithm. It incorporates adaptive feature extraction and cross-
+layer feature fusion, enabling LACTA to achieve a mAP of 97.3% with a compact 2.88 MB
+model size, while significantly reducing computational complexity and parameter count.
+To improve tomato detection under complex agricultural conditions, Chen et al. [17] pro-
+posed YOLO-DNA, a lightweight framework with a multimodal fusion encoder integrating
+depth and near-near-infrared data. It achieves 98.13% mAP0.5 and 74.0% mAP0.5 : 0.95,
+surpassing lightweight counterparts by 5.01% and 14.55%, while maintaining 37.12 FPS.
+Song et al. [18] proposed a multimodal parallel transformer framework for apple disease
+recognition and grading, fusing image data with multi-dimensional environmental sensor
+information. Incorporating segmentation preprocessing, cross-scale attention, frame-wise
+diffusion, and model compression, the framework achieves 0.98 precision, 0.93 recall, 0.95
+F1-score, and 0.96 accuracy in complex orchard scenarios.
+Compared with existing RGB–IR or RGB–NIR fusion methods, most prior works rely
+on early-stage input concatenation or mid-level feature aggregation combined with generic
+attention weighting. These designs often assume direct compatibility between modalities
+and do not explicitly model inter-modal discrepancies, which becomes critical under mixed
+illumination and partial occlusion where one modality may be locally unreliable. In
+contrast, our framework introduces a discrepancy-aware fusion mechanism (C-MDCF)
+that exploits channel-wise difference cues to selectively complement cross-modal features.
+Moreover, cross-scale attention (MS-CPAM) and semantic-detail refinement (MSF-SRNet)
+are integrated to preserve fine boundaries of small or occluded fruits. As a result, the
+proposed design enables robust segmentation as well as accurate downstream size and
+count estimation under complex lighting conditions.
+However, despite recent advances in multimodal semantic segmentation for agricul-
+tural image analysis, several challenges persist. Existing approaches often rely on large
+datasets and complex network architectures, leading to high computational costs and
+limited real-time applicability. Moreover, the accurate detection of small or occluded tar-
+gets under variable lighting conditions remains difficult. To address these limitations, a
+multimodal segmentation and refinement framework is proposed for tomato fruit segmen-
+tation under complex lighting conditions. The framework exploits the complementary
+information from near-infrared and RGB images to achieve fine-grained segmentation of
+tomato size, while a trajectory reconnection mechanism is incorporated into the DeepSORT
+algorithm to handle occlusions in controlled-environment agriculture, thereby enhanc-
+ing tracking continuity for temporarily occluded fruits. The primary innovations and
+contributions of this study are summarized as follows:
+•
+We propose a dual-branch multimodal backbone integrated with a Cross-Modality
+Difference Complement Fusion (C-MDCF) to effectively fuse RGB and near-infrared
+features, and propose C2f-DCB, a lightweight module that combines group and
+heterogeneous convolutions to reduce complexity and improve feature extraction.
+•
+We propose a Cross-Scale Attention Fusion Network that incorporates a Multi-Scale
+Channel and Position Attention Mechanism (MS-CPAM), enabling more precise ex-
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+4 of 27
+traction of fine-grained details by the model and spatial dependencies, especially for
+small or occluded tomato instances.
+•
+We design the Enhanced Multi-Scale Feature Fusion and Semantic Refinement frame-
+work, which integrates the Scale-Concatenate Fusion Module (Scale-Concat) and
+Semantic Detail Injection (SDI) to improve multi-scale feature alignment and semantic
+refinement via Hadamard-based cross-layer fusion.
+•
+We conduct extensive experiments demonstrating that the proposed framework
+achieves a mean average precision (mAP) of 97.8% and a real-time detection speed of
+105.07 FPS on a mixed-light validation set, enabling accurate real-time counting and
+size estimation of tomatoes for yield estimation.
+2. Materials and Methods
+2.1. Datasets
+This work utilizes the publicly available Multimodal Image Dataset of Tomato Fruits
+with Different Maturity [19], which includes 4000 multimodal image sets captured under
+four types of lighting—natural, artificial, low, and sodium yellow—as depicted in Figure 1.
+The dataset provides annotations for both target detection and semantic segmentation
+across three fruit maturity stages: unripe, half-ripe, and ripe. To facilitate robust model
+training and evaluation, a total of 1389 images were selected and partitioned into training,
+testing, and validation subsets using standard proportions of approximately 70%, 15%, and
+15%, respectively. RGB images were used to form the RGB dataset, while near-infrared
+images were organized with identical splits to create the near-infrared dataset. This ar-
+rangement ensures that both modalities maintain consistent representations across lighting
+conditions and maturity stages, enabling effective multimodal learning for small-object
+detection and semantic segmentation of tomato fruits in diverse environmental scenarios.
+(a) Natural light 
+(b) Artificial light
+(c) Weak light
+(d) Sodium yellow light
+RGB
+Infrared
+Labels
+Figure 1. Sample tomato images acquired under various illumination scenarios: (a) Natural light,
+(b) Artificial light, (c) Low light, and (d) Sodium yellow light.
+The Multimodal Image Dataset of Tomato Fruits used in this study was collected in a
+single facility-agriculture (greenhouse) environment and focuses on one tomato variety. The
+dataset does not include open-field scenes or multiple cultivars with distinct leaf morpholo-
+gies. Nevertheless, it exhibits considerable visual complexity due to intra-environment
+variability. In particular, images contain dense and irregular foliage structures, intertwined
+stems, supporting wires, irrigation pipes, and frequent occlusions between fruits and leaves.
+These factors introduce substantial background clutter and partial visibility, posing chal-
+lenges for instance segmentation and size estimation beyond illumination variations. The
+dataset was designed to emphasize robustness under diverse lighting conditions within a
+controlled greenhouse setting, including variations in intensity, direction, and spectral com-
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+5 of 27
+position. While inter-varietal biological diversity and outdoor cultivation conditions are not
+covered in the current dataset, addressing such broader generalization scenarios through
+multi-dataset evaluation and cross-crop transfer learning will be explored in future work.
+2.2. Multi-Branch Cross-Feature Fusion Backbone Network
+In facility agricultural environments, the semantic segmentation of tomato fruits is
+often hindered by complex lighting conditions, dense occlusion, and background clutter.
+Under such conditions, RGB images are prone to issues such as overexposure, underex-
+posure, and shadowing, which can lead to incomplete or ambiguous visual features. In
+contrast, near-infrared imagery, which captures thermal radiation independent of visible
+light, provides structural and temperature-based information that remains robust under
+variable lighting, thereby complementing RGB data.
+We build our backbone on Ultralytics YOLO11 (also referred to as YOLOv11 in some
+literature or communities), a recent one-stage detection/segmentation framework released
+as an engineering implementation with publicly available documentation and code, and
+we extend it with a dual-branch RGB–NIR backbone and the proposed fusion/refinement
+modules [20]. The backbone integrates a Cross-Modality Difference Complementary Fusion
+(C-MDCF) module and a C2f-DCB block. The dual-branch design enables modality-specific
+feature extraction and interaction, while the C-MDCF module facilitates effective cross-
+modal feature fusion. Furthermore, by combining group and heterogeneous convolutions,
+the lightweight C2f-DCB module is developed to reduce computational complexity and
+enhance feature representation capability. Branch A processes RGB images, while Branch B
+handles near-infrared inputs. A feature-level fusion strategy is employed to integrate mul-
+timodal features. Both branches follow an identical architecture and consist of four feature
+extraction modules, each tailored to different stages of hierarchical representation learning.
+The first module includes three consecutive 3 × 3 convolutional layers followed by a C2f-
+DCB module, designed to reduce modality discrepancies, align channel dimensions, and
+enhance contextual feature extraction while preserving fine details.Modules 2 and 3 each
+contain a 3 × 3 convolutional layer with a stride of 2 and a subsequent C2f-DCB module,
+which together extract mid-level semantic features while maintaining structural integrity.
+The final module integrates a C2f-DCB module with a Spatial Pyramid Pooling Fast (SPPF)
+layer to capture high-level semantic features, reduce spatial dimensions, and decrease
+computational overhead, thereby improving inference efficiency. All convolutional layers
+utilize the SiLU activation function. To support the accurate segmentation of small tomato
+targets, all convolutional kernels are set to 3 × 3 with small strides. This configuration
+preserves high-resolution feature maps, enhances fine-grained feature capture, and reduces
+the likelihood of small-object omission. The complete architecture is shown in Figure 2.
+Conv  
+Conv 
+Conv 
+Conv 
+Conv
+SPPF
+C2PSA
+Conv 
+Conv 
+Conv 
+Conv 
+Conv
+SPPF
+C2PSA
+Conv 
+Conv 
+Conv 
+Conv 
+Conv
+SDI
+Conv
+SDI
+MS-CPAM
+segment
+C-MDCF
+C-MDCF
+C-MDCF
+128×128
+256×256
+1024×1024
+512×512
+C2f-DCB
+C2f-DCB
+C2f-DCB
+C2f-DCB
+C2f-DCB
+C2f-DCB
+C2f-DCB
+C2f-DCB
+C2f-DCB
+C2f-DCB
+C2f-DCB
+C2f-DCB
+RGB Images
+NIR Image
+R
+F ′
+T
+F ′
+R
+F
+T
+F
+Multi-Scale
+Input 1
+Input 2
+R
+F ′
+R
+F
+R
+F ′
+R
+F
+T
+F ′
+T
+F
+T
+F ′
+T
+F
+Scale-Concat
+Scale-Concat
+Semantics and Detail Infusion 
+Element-wise addition
+C-MDCF
+Cross-Modality  Difference  
+                     Complement Fusion
+SDI
+Scale-Concatenate Fusion
+C2f-DCB
+C2f-DualConv Block
+Scale-Concat
+Result
+L
+M
+S
+Figure 2. Overview of the experimental framework.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+6 of 27
+2.2.1. C2f-DCB
+In the complex environments of protected agriculture, such as greenhouses, semantic
+segmentation of tomatoes is often challenged by variable lighting conditions, dense occlu-
+sion, and irregular object shapes. To address these challenges while ensuring both model
+efficiency and robust feature representation, we propose a lightweight feature extraction
+module, termed C2f-DCB, which is derived by replacing the standard convolution in the
+conventional C2f module with an enhanced structure, DualConv [21].
+DualConv is a novel convolutional mechanism that combines the complementary
+advantages of group convolution and heterogeneous convolution to improve both rep-
+resentation capacity and inter-channel information exchange. Specifically, for each filter
+group, DualConv performs a 3 × 3 group convolution on a subset of the input channels
+to capture local spatial features, while simultaneously applying a 1 × 1 pointwise con-
+volution across all input channels to retain global contextual information and facilitate
+effective cross-channel interaction. The outputs of these parallel branches are then summed,
+enabling the network to preserve rich spatial and semantic information while reducing
+feature redundancy. Unlike traditional group convolution, where each kernel operates
+on only a limited portion of the input feature map (typically 1/G of the total channels),
+DualConv enhances this architecture by equipping each group with a complementary 1 × 1
+convolution path. This design allows spatially grouped operations to access the complete
+input feature map, mitigating the information bottleneck commonly induced by channel
+partitioning. In contrast to HetConv, which alternates between 3 × 3 and 1 × 1 kernels
+in a fixed pattern, DualConv maintains uninterrupted and parallel 1 × 1 convolutional
+paths, thereby preserving more continuous and complete semantic representations. The
+architectural details of the C2f-DCB module are depicted in Figure 3.
+By integrating DualConv into the C2f module, the resulting C2f-DCB retains the
+computational efficiency and structural simplicity of the original C2f, while significantly
+enhancing feature expressiveness and cross-channel communication. This is particularly
+beneficial for tomato semantic segmentation in greenhouse environments, where accurate
+delineation of small fruit instances and occluded boundaries is critical. Moreover, due to
+its inherent parameter efficiency through group convolution and its preservation of full
+input information via 1 × 1 convolutions, the C2f-DCB module enables deeper network
+construction without requiring additional operations such as channel shuffling. This makes
+it particularly suitable for lightweight semantic segmentation models deployed on edge
+devices under resource-constrained conditions in protected agriculture.
+…
+N
+C3k_dual
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+···
+···
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+···
+···
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+1×1
+1×1
+1×1
+···
+1×1
+1×1
+1×1
+1×1
+···
+···
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+1×1
+1×1
+1×1
+···
+1×1
+1×1
+1×1
+1×1
+···
+···
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+1×1
+···
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+3×3
+1×1
+···
+1×1
+M
+M-M/G
+···
+···
+···
+M-M/G
+M/G
+M/G
+M/G
+M/G
+M-2M/G
+N/G
+N/G
+N
+DualConv
+Concat
+Conv
+Bottleneck
+Bottleneck
+Conv
+Conv
+…
+C3k
+DualConv
+DualConv
+shortcut
+Bottleneck
+Conv
+Split
+C3k
+C3k
+C3k
+Split
+Split
+Figure 3. Illustration of the C2f-DCB Module Architecture.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+7 of 27
+2.2.2. Cross-Modality Difference Complement Fusion
+In facility agricultural environments, semantic segmentation of tomato fruits often
+encounters challenges such as complex lighting, multiple occlusions, and indistinct object
+boundaries. Relying solely on a single modality, such as RGB images, is insufficient to
+maintain robust performance across varying illumination conditions. To address this
+limitation, near-infrared (NIR) images are introduced as complementary inputs, providing
+structural and thermal cues that compensate for the shortcomings of RGB data under low
+light or intense illumination. Motivated by this, we propose the Multimodal Differential
+Complementary Fusion Module (C-MDCF) [22] to effectively integrate complementary
+features from RGB and IR modalities, thereby enhancing the accuracy and robustness of
+tomato fruit segmentation, as shown in Figure 4.
+The RGB convolutional feature map FR and the near-infrared (NIR) convolutional
+feature map FNIR can be decomposed channel-wise into common-mode and differential-
+mode components as follows:
+FNIR = FR + FNIR
+2
++ FNIR −FR
+2
+,
+FR = FR + FNIR
+2
++ FR −FNIR
+2
+.
+(1)
+where the near-infrared feature map FNIR and the RGB feature map FR are split along the
+channel dimension into shared and differential components. Specifically, the common-
+mode component FNIR+FR
+2
+represents the shared semantic features between the two modal-
+ities, reflecting the mutual information of the target. The differential-mode component
+FNIR−FR
+2
+captures the unique characteristics of each modality, highlighting complementary
+information specific to each. This decomposition enables the fusion module to effectively
+leverage complementary features across modalities, thereby improving the model’s perfor-
+mance in segmenting tomato fruits under complex environmental conditions.
+To enable effective multimodal fusion, the C-MDCF module utilizes channel-wise
+difference weighting to adaptively extract complementary features from the alternate
+modality. This module takes as input the feature maps produced by each single-modality
+branch during the feature extraction phase. By adaptively learning channel-wise difference
+weights between the two modalities, the C-MDCF module dynamically adjusts the fusion
+ratio, selectively emphasizing the modality that provides more discriminative information
+in the given context. This approach enhances the efficiency of cross-modal information
+utilization and mitigates the redundancy and conflicts that often arise from simple feature
+addition in conventional fusion strategies. The fusion process is formally defined as:
+F′
+NIR = FNIR + σ(GAP(|FR −FNIR|)
+ ⊙FR,
+F′
+R = FR + σ(GAP(|FNIR −FR|)
+ ⊙FNIR.
+(2)
+where FR and FNIR represent the feature maps from the RGB and NIR modalities, respec-
+tively. F′
+NIR and F′
+R denote the updated or fused feature maps for the near-infrared and
+RGB modalities, respectively. The term |FR −FNIR| denotes the absolute difference between
+the two modalities, capturing the inter-modal discrepancies. The operator GAP(·) refers
+to global average pooling, which aggregates spatial information into a compact channel
+descriptor. The symbol σ(·) denotes the Sigmoid activation function, and the operator ⊙
+indicates element-wise multiplication. This mechanism allows each modality to selectively
+incorporate complementary information from the other modality while preserving its own
+original features, thereby enabling effective and lightweight cross-modal integration.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+8 of 27
+Sigmoid
+Sigmoid
+GAP
+GAP
+R
+F
+T
+F
+R
+F ′
+T
+F ′
+R
+T
+F
+F
+−
+T
+R
+F
+F
+−
+R
+T
+s
+F
+×
+T
+R
+s
+F
+×
+Rs
+Ts
+Figure 4. Cross-Modality Difference Complement Fusion module.
+2.3. Multi-Scale Channel and Position Attention Mechanism
+In facility agricultural environments, the semantic segmentation of tomato fruits
+presents substantial challenges due to multi-scale object variations, dense occlusions, in-
+distinct fruit boundaries, and complex lighting conditions. These difficulties are espe-
+cially pronounced for small-scale tomatoes, which are frequently obscured or blended
+into the background, thereby hindering the accuracy of conventional segmentation net-
+works. To address this, a novel Multi-Scale Channel and Position Attention Mechanism
+(MS-CPAM) is proposed, which enhances the model’s ability to represent multi-scale
+tomato targets and improves spatial perception through the combination of multi-scale
+feature fusion with channel and positional attention. This integrated design enables the
+network to better adapt to the inherent scale variations and spatial complexities of protected
+agricultural environments.
+The Multi-Scale Fusion effectively integrates multi-scale feature maps by spatially
+aligning and fusing them through 3D convolution operations. Initially, separate 1 × 1
+convolutions are applied to unify the channel dimensions of features from different scales.
+Subsequently, features from the medium and large scales are upsampled to match the
+spatial resolution of the smallest scale. These aligned features are concatenated along a
+newly introduced dimension and processed via a 3D convolution to capture inter-scale
+correlations. Following batch normalization and LeakyReLU activation, a 3D max pool-
+ing operation aggregates spatial information while reducing dimensionality. Finally, the
+pooled features are squeezed back to their original dimensions. The MSFM is structured
+to leverage complementary information across different scales effectively, thereby enhanc-
+ing the representational capacity for challenging small and occluded targets in complex
+agricultural environments. In MS-CPAM, we employ 3D convolutions to capture spatial
+and channel correlations across different feature scales. By simultaneously considering
+spatial and depth dimensions, 3D convolutions enable more accurate fusion of multi-scale
+features, which is particularly useful for detecting small or occluded objects in complex
+agricultural environments. While 3D convolutions are computationally more expensive
+than 2D convolutions, they offer substantial improvements in performance, particularly in
+handling complex lighting variations and occlusions.
+To effectively capture representative features across channels, the Channel and Position
+Attention Mechanism is further integrated, through which detailed multi-scale information
+from both the Scale-Concatenate Fusion Modules and the SDI module is incorporated.
+As depicted in Figure 5, CPAM consists of two sub-networks: a channel attention branch
+receiving input directly from the Scale-Concat as Input 1, and a position attention branch
+taking the combined output of the channel attention and SDI modules as input as Input 2.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+9 of 27
+GAP
+W-Avgpool
+ConvBNSiLU
+H-Avgpool
+Split
+Add
+Channel Attention Network
+σ
+1×1×C
+1×1×C
+W
+H
+C
+σ
+σ
+Unsqueeze
+Concat
+LeakyReLU
+BatchNorm3D
+P3
+P4
+P5
+Conv
+Unsqueeze
+Interpola 
+Interpola 
+Concat
+Position Attention Network
+Maxpool3D
+Unsqueeze2D
+Multi-Scale Fusion
+Figure 5. Overall architecture of the Multi-Scale Channel and Position Attention Mechanism (MS-CPAM).
+The channel attention branch processes feature maps output from the PANet stage,
+containing rich detail cues. Based on SENet, traditional channel attention extracts channel
+weights via global average pooling, two dense layers, and a sigmoid activation. However,
+this approach reduces dimensionality, which can hinder attention accuracy and fails to
+efficiently model inter-channel dependencies.
+To overcome these limitations, the channel attention retains full dimensionality after
+global average pooling and models local cross-channel interactions by considering each
+channel along with its nearest neighbors via 1D convolutions. The kernel size k controls
+the neighborhood size influencing each channel’s attention and is related to the channel
+dimension C through a nonlinear mapping:
+C = ψ(k) = 2γ×k−b
+(3)
+where γ and b are scaling parameters (set as γ = 2, b = 1). This adaptive setting en-
+ables deeper mining of complex channel relationships, enhancing feature discrimination
+especially for subtle tomato features in dense and occluded scenes.
+The position attention branch complements channel attention by emphasizing spatial
+information crucial for precise localization. It splits the input feature map along width and
+height dimensions, applying pooling operations:
+pw(i) = 1
+H
+H
+∑
+j=0
+E(i, j),
+(4)
+ph(j) = 1
+W
+W
+∑
+i=0
+E(i, j).
+(5)
+where W and H denote width and height, and E(i, j) the feature value at position (i, j).
+The pooled vectors pw and ph are concatenated and passed through a 1 × 1 convolution to
+produce spatial attention maps, which are then split into two location-dependent feature
+maps representing width and height attentions respectively.
+Finally, the refined feature map is obtained by element-wise multiplication of the
+input features with the learned channel and position attention weights, yielding an output
+that effectively enhances the model’s focus on relevant tomato regions. This design is
+particularly beneficial in protected agricultural environments, where small, overlapping,
+and visually ambiguous tomato fruits require both precise channel-wise feature selection
+and spatial localization for robust semantic segmentation.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+10 of 27
+2.4. Multi-Scale Fusion and Semantic Refinement Network
+In complex protected agricultural environments, tomato detection and segmentation
+are hindered by dense occlusion, scale variation, and background interference. To overcome
+these challenges, MSF-SRNet is proposed in this study, comprising two complementary
+modules with distinct functions: the Scale-Concatenate Fusion Module, which strengthens
+multi-scale feature representation, and the Semantic Detail Injection (SDI) module, which
+preserves fine-grained spatial details lost during deep semantic abstraction [23], with
+the architecture illustrated in Figure 6. Specifically, Scale-Concat enhances contextual
+learning by parallelly processing large-, medium-, and small-scale feature maps, aligning
+their spatial resolutions, and concatenating them along the channel dimension, thereby
+improving the detection of small and occluded objects. In contrast, The SDI module fuses
+high-level semantic representations and low-level spatial features through a Hadamard-
+based cross-layer fusion strategy refined by spatial and channel attention mechanisms,
+ensuring the retention of critical structural details. By jointly leveraging Scale-Concat
+and SDI, the proposed network achieves more robust feature learning and significantly
+enhances segmentation accuracy under variable object sizes and complex occlusion.
+Scale-Concat
+SDI
+SDI
+…
+…
+…
+…
+…
+Large
+Medium
+Small
+ConvBNSiLU
+Max_pool
+Avg_pool
+ConvBNSiLU
+ConvBNSiLU
+Upsampling
+ConvBNSiLU
+Concat
+Nearest
+Downsampling
+ConvBNSiLU
+UpSample
+IdentityMap
+DownSample
+SpatialAttentoin
+ChannelAttentoin
+SmoothConv
+Scale-Concat
+Figure 6. The architecture of the enhanced neck incorporating Scale-Concatenate Fusion and Semantic
+Detail Injection modules.
+2.4.1. Scale-Concatenate Fusion Module
+This paper designs a Scale-Concatenate Fusion Module (Scale-Concat) to improve
+the expressiveness of multi-scale features. Unlike traditional Feature Pyramid Networks
+(FPNs), Scale-Concat processes large-, medium-, and small-scale feature maps in parallel.
+Each scale is first passed through a 1 × 1 convolution to unify the channel dimensions. For
+large-scale feature maps, a combination of max pooling and average pooling is employed
+to downsample spatial resolution while enhancing translational invariance. In contrast,
+small-scale feature maps are upsampled using nearest-neighbor interpolation to preserve
+local details such as edges and textures, effectively mitigating the loss of small-object
+features caused by background interference during upsampling [24].
+FScale−Concat = Concat(Fl, Fm, Fs)
+(6)
+After aligning the spatial resolution of the three scales, the processed feature maps
+are concatenated along the channel dimension to form a fused multi-scale representation.
+Define Fl, Fm, and Fs as the processed feature maps corresponding to the large-, medium-,
+and small-scale features, respectively. This fusion mechanism enables the model to achieve
+stronger recognition and segmentation performance when handling tomato fruits with
+severe occlusion and varying scales, thereby significantly improving segmentation accuracy
+under complex conditions in protected agricultural environments.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+11 of 27
+2.4.2. Semantic Detail Injection
+In semantic segmentation tasks, models typically rely on rich detail information to
+achieve accurate boundary localization. However, as the network depth increases, spatial
+details in lower layers tend to be overshadowed by the abstract semantics of higher layers,
+resulting in the loss of critical information. The SDI adopts a Hadamard-based cross-
+layer fusion strategy to merge high-level semantics with low-level fine-grained features,
+thereby boosting the representational capability of multi-level feature maps. Furthermore,
+a specially designed skip connection mechanism enriches all feature hierarchies with both
+semantic context and structural details. The optimised multi-scale fused features are input
+to the decoder, resulting in more precise semantic segmentation outputs.
+The Semantic Detail Injection (SDI) module refines the hierarchical feature maps
+generated by the head. For each feature map at level i, both spatial and channel attention
+mechanisms are applied to obtain the enhanced feature fi. This process enables the feature
+to integrate local spatial information and global channel-wise context, as shown below:
+The Semantic Detail Injection (SDI) module refines the hierarchical feature maps
+generated by the head. For each feature map at level i, the initial feature is denoted as
+F0
+i . Both spatial and channel attention mechanisms are applied to obtain the enhanced
+feature F1
+i :
+F1
+i = ϕc
+i (φs
+i (F0
+i )),
+(7)
+where φs
+i and ϕc
+i represent the spatial and channel attention operations at level i, respectively,
+and c is a hyperparameter controlling the reduced channel dimension. Specifically, a 1 × 1
+convolution is used to reduce the channels of the original feature map F1
+i to c, resulting in
+the transformed feature F2
+i ∈RHi×Wi×c , where Hi and Wi denote the height and width.
+The refined feature maps are then forwarded to the decoder. At each decoder stage i,
+the corresponding enhanced feature F2
+i is used as the reference target. To ensure spatial
+alignment, the feature maps from all other levels j are resized to match the resolution of F2
+i .
+This process is defined as:
+F3
+ij =
+
+
+
+
+
+
+
+D(F2
+j , (Hi, Wi))
+if j < i,
+I(F2
+j )
+if j = i,
+U(F2
+j , (Hi, Wi))
+if j > i,
+(8)
+where D, I, and U denote adaptive average pooling, identity mapping, and bilinear inter-
+polation to the resolution (Hi, Wi), respectively.
+To reduce artifacts introduced by resizing and to enhance feature consistency, a 3 × 3
+convolution is applied to each resized feature map F3
+ij. The operation is defined as:
+F4
+ij = θij(F3
+ij),
+(9)
+where, θ denotes the learnable parameters of the smoothing convolution, and F4
+ij represents
+the smoothed feature map at level j in decoder stage i. Once all feature maps for stage i are
+resized to the same spatial resolution, an element-wise Hadamard product is applied across
+them to enhance the feature representation at level i, enriching both semantic information
+and fine-grained details. This operation is defined as:
+F5
+i = H([F4
+i1, F4
+i2, ..., F4
+iM]),
+(10)
+where, H denotes the Hadamard product. The resulting fused feature F5
+i is then assigned to
+the i-th decoder stage for subsequent resolution reconstruction and semantic segmentation.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+12 of 27
+2.5. Evaluation Metrics
+A confusion matrix comprising four metrics—TP, TN, FP, and FN—was constructed
+from the labeled and model-predicted samples. The model’s performance was evaluated
+using mean Average Precision (mAP). The corresponding formulas are given below:
+P =
+TP
+TP + FP
+(11)
+R =
+TP
+TP + FN
+(12)
+AP represents the area under the precision–recall curve. The formulas used to compute
+each evaluation metric are as follows:
+AP =
+Z 1
+0 P(R)dR
+(13)
+The mAP (mean average precision) represents the average of AP across all categories
+and directly indicates the model’s classification capability. The formula for computing
+mAP is as follows:
+mAP = 1
+n
+n
+∑
+i=1
+APi × 100%
+(14)
+Mean Intersection over Union (MIoU) is a standard metric in semantic segmentation
+that evaluates the average agreement between predicted and ground truth masks across
+classes. Specifically, for each class i, the intersection is the number of pixels correctly
+predicted as class i (true positives), and the union includes the overall count of pixels
+belonging to class i in either the prediction or the ground truth, encompassing both false
+positives and false negatives. Let pij denote the number of pixels belonging to class i
+that are predicted as class j, and t be the total number of semantic categories (including
+background, which is denoted as t + 1). The IoU is computed for each class individually,
+and the MIoU is obtained by averaging the IoU values over all classes. The formulation of
+MIoU is presented in Equation (15).
+MIoU =
+1
+t + 1
+t
+∑
+i=0
+pii
+∑i
+j=0 pij + ∑i
+j=0 pji −pii
+(15)
+The counting accuracy (CA) is defined as:
+CA =
+
+1 −
+Npred −Ngt
+
+Ngt
+
+× 100%
+(16)
+where Npred denotes the number of fruits predicted by the tracking system, and Ngt
+represents the ground-truth count obtained from manual annotation. This metric quantifies
+the relative deviation of the predicted count from the actual count, with higher values
+indicating better consistency between automatic tracking results and human annotations.
+FPS measures the model’s real-time inference capability, whereas GFLOPs (Giga Float-
+ing Point Operations) indicate its computational complexity. The number of parameters
+reflects the model’s architectural simplicity, while FLOPs (floating-point operations) quan-
+tify its computational complexity during inference.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+13 of 27
+3. Results of Experiment
+3.1. Experimental Details
+Input images were resized to 640 × 640. The model was trained for 150 epochs with a
+batch size of 32 using single-class segmentation. Stochastic gradient descent (SGD) was
+employed as the optimizer. Mixed precision training (AMP) was enabled to accelerate
+training. All experiments reported in this paper were conducted on Ubuntu 22.04 with
+Python 3.9, PyTorch 2.2.2, and CUDA 12.4, using an Intel(R) Xeon(R) Gold 6330 CPU and a
+single NVIDIA GeForce RTX 3090 GPU (24 GB). The training setup was based on YOLO11
+defaults with modifications to the image size, number of epochs, and GPU hardware.
+The reported FPS is measured on the RTX 3090 GPU and reflects the throughput of the
+detection and segmentation network, excluding the DeepSORT tracking overhead. Latency
+on embedded platforms (e.g., Jetson or Edge TPU) was not explicitly benchmarked, and the
+reported FPS is therefore intended as a GPU-side throughput reference under a consistent
+hardware setting.
+The DeepSORT algorithm was used for tracking with the following configuration: The
+maximum age of a track was set to 20 frames, allowing the tracker to maintain continuity
+even through temporary occlusions. A track is initiated only after detecting the object
+in at least 5 consecutive frames, ensuring that only confident tracks are established. To
+match objects across frames, a threshold for appearance similarity was set, ensuring that
+only objects with a sufficient visual match were linked. Additionally, both position and
+velocity information were used in the tracking process to improve accuracy. Finally, a
+Non-Maximum Suppression (NMS) technique was applied with a 60% overlap threshold
+to avoid duplicate detections of the same object.
+3.2. Analysis of Model Performance Through Ablation Experiments
+Table 1 presents the ablation results of incrementally integrating the proposed
+components—C-MDCF, MS-CPAM, SDI, and C2f-DCB into the baseline model within
+the YOLO11 framework. The baseline achieves a strong mAP0.5 of 95.5% and mAP0.5:0.95 of
+76.7% with only 3.26M parameters and a high inference speed of 104.17 FPS, demonstrating
+excellent real-time performance. Introducing the C-MDCF (Multimodal Differential Chan-
+nel Fusion Module) yields notable gains of +1.0% and +1.5% in mAP0.5 and mAP0.5:0.95,
+respectively, highlighting its effectiveness in cross-modal feature fusion under occlusion
+and complex lighting conditions. The addition of MS-CPAM further improves detection
+accuracy to 96.9% and 78.8%, indicating enhanced perception of multi-scale and partially
+occluded targets. Although it introduces additional complexity, the accuracy gains justify
+the trade-off. Integrating the SDI module enhances semantic consistency and boundary lo-
+calization; specifically, SDI yields a clear improvement in mIoU with only marginal changes
+in mAP0.5, indicating that it primarily refines boundary delineation rather than increasing
+object discoverability. This property is particularly beneficial for robotic harvesting, where
+accurate fruit boundaries support safer grasp planning and reduce the risk of mechanical
+damage. Finally, the C2f-DCB module enables the model to achieve peak performance:
+97.8% mAP0.5, 79.1% mAP0.5:0.95, and 105.07 FPS, while reducing the parameter count to
+4.10M. This confirms the module’s lightweight yet effective design.
+In conclusion, each component contributes distinct and complementary benefits. The
+YOLO-MSRF framework configuration achieves a balanced trade-off between accuracy,
+robustness, and efficiency, rendering it suitable for practical agricultural applications. Each
+single-module variant yields consistent improvements over the baseline, verifying its
+standalone effectiveness. Moreover, the paired combinations (e.g., C-MDCF with MS-
+CPAM, and MS-CPAM with SDI) achieve larger gains than individual additions, indicating
+complementary effects between cross-modal fusion, multi-scale attention, and semantic
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+14 of 27
+detail injection. Overall, the full model provides the best accuracy while maintaining
+real-time speed, demonstrating a favorable accuracy–efficiency trade-off.
+To verify that the incremental gains in Table 1 are not caused by training randomness,
+we repeated each ablation setting five times with different random seeds while keeping
+the same data split and training protocol. We report the mean and standard deviation of
+the main metrics (e.g., mAP50, mAP50–95, and mIoU). In addition, we performed paired
+statistical tests between consecutive ablation variants (paired t-test, α = 0.05). The results
+show that the improvements introduced by each module are consistent across runs, and
+the gains of the later modules (e.g., SDI and C2f-DCB) remain statistically significant,
+supporting the validity of our architectural choices.
+Figure 7 compares the PR curves of tomato detection at different maturity stages (un-
+ripe, half-ripe, ripe) for the YOLO-MSRF model and the baseline. The YOLO-MSRF model
+shows a larger area under the PR curve, indicating superior performance in segmentation
+and detection accuracy. The proposed YOLO-MSRF achieves a higher PR-AUC than the
+baseline (97.8 vs. 95.6), indicating a better precision–recall trade-off. Figure 8 demonstrates
+that YOLO-MSRF performs better in localizing and segmenting small or occluded objects,
+such as unripe tomatoes, compared to the baseline. The integration of multimodal RGB and
+NIR data enhances robustness, leading to more reliable detection in varying agricultural
+environments. These results highlight the effectiveness of YOLO-MSRF for accurate and
+real-time tomato detection.
+Table 1. Ablation study on the independent and interactive contributions of each module.
+C-MDCF
+MS-CPAM
+SDI
+C2f-DCB
+mAP50 (%)
+mAP50–95 (%)
+mIoU
+Params(M)
+GFLOPs
+FPS
+×
+×
+×
+×
+95.50 ± 0.05
+76.70 ± 0.050
+73.93 ± 0.04
+3.26
+12.0
+104.17
+✓
+×
+×
+×
+96.50 ± 0.06
+78.20 ± 0.061
+75.57 ± 0.05
+4.31
+14.1
+80.33
+×
+✓
+×
+×
+96.20 ± 0.05
+77.80 ± 0.054
+75.40 ± 0.05
+4.2
+13.9
+82.1
+×
+×
+✓
+×
+96.10 ± 0.05
+77.30 ± 0.055
+75.20 ± 0.05
+4.3
+14.2
+81.5
+×
+×
+×
+✓
+96.00 ± 0.05
+77.00 ± 0.057
+75.10 ± 0.05
+4.4
+14.3
+80.5
+×
+✓
+✓
+×
+96.80 ± 0.05
+78.50 ± 0.058
+76.10 ± 0.05
+4.6
+15.0
+75.9
+✓
+✓
+×
+×
+96.92 ± 0.04
+78.80 ± 0.048
+75.79 ± 0.04
+4.73
+15.3
+68.52
+✓
+✓
+✓
+×
+97.20 ± 0.04
+78.50 ± 0.052
+76.64 ± 0.04
+4.86
+15.5
+71.79
+✓
+✓
+✓
+✓
+97.80 ± 0.051
+79.10 ± 0.051
+77.53 ± 0.047
+4.10
+14.6
+105.07
+In the ablation study, “×” indicates that the corresponding module is removed, whereas “✓” indicates that the
+module is included. Results in bold indicate the experimental results of the proposed method.
+Figure 7. PR curves. (a) PR curve of the YOLO11 model. (b) PR curve of the YOLO-MSRF model.
+3.3. Sensitivity Analysis of C-MDCF to Misalignment, Noise, and Missing Modality
+Table 2 indicates that C-MDCF is resilient to moderate RGB–NIR input imperfections.
+Under NIR spatial shifts of ±4 and ±12 pixels, performance degrades only slightly relative
+to the nominal dual-branch setting, suggesting robustness to small registration errors.
+Specifically, mAP0.5 decreases from 97.8 to 96.7 and 96.1, mAP0.5–0.95 from 79.1 to 77.8
+and 77.1, and mIoU from 77.53 to 76.13 and 75.94. When Gaussian noise is injected into
+the NIR modality, the overall degradation remains limited but is more pronounced for
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+15 of 27
+stricter metrics, implying that noisy NIR primarily impairs high-IoU mask alignment and
+boundary quality rather than coarse detection. For σ = 10 and 25, mAP0.5 declines to 96.9
+and 96.4, mAP0.5–0.95 to 77.6 and 77.1, and mIoU to 75.31 and 75.08, respectively.
+Figure 8. Visualization of results under four lighting scenarios: (a) Natural light, (b) Artificial light,
+(c) Low light, and (d) Sodium yellow light. Each row corresponds to a lighting condition, and each
+column represents: (1) Original image, (2) Segmentation result of the Baseline model, (3) Segmentation
+result of Baseline+C-MDCF+C2f-DCB, (4) Segmentation result of Baseline+C-MDCF+C2f-DCB+MS-
+CPAM+SDI. The proposed modules improve model robustness and segmentation accuracy under
+complex lighting conditions, especially in detecting immature tomatoes and small or occluded targets.
+Table 2. Lightweight sensitivity analysis of C-MDCF. Performance is on the mixed four-light valida-
+tion set; cost is measured on the same hardware and input resolution .
+Type
+Setting
+Level
+mAP50 (%)
+mAP50–95 (%)
+mIoU
+GFLOPs
+FPS
+Misalignment
+Shift (NIR)
+±4 px
+96.7
+77.8
+76.13
+14.6
+105.07
+Shift (NIR)
+±12 px
+96.1
+77.1
+75.94
+14.6
+105.07
+Noise
+Gaussian (NIR)
+σ = 10
+96.9
+77.6
+75.31
+14.6
+105.07
+Gaussian (NIR)
+σ = 25
+96.4
+77.1
+75.08
+14.6
+105.07
+Missing modality
+Dual-branch (normal)
+–
+97.8
+79.1
+77.53
+14.6
+105.07
+Masked NIR (inject off)
+NIR missing
+95.9
+76.8
+74.13
+14.6
+105.07
+RGB-only inference
+NIR missing
+95.5
+76.7
+73.93
+12.0
+124.17
+To examine modality absence, we evaluate two practical settings. First, we consider
+a masked-NIR fallback in which cross-modal injection is disabled while the dual-branch
+architecture is preserved. In this case, mAP0.5 and mIoU decrease to 95.9 and 74.13, respec-
+tively, while GFLOPs and FPS remain unchanged (14.6 GFLOPs and 105.07 FPS), thereby
+isolating robustness effects from architectural changes. Second, RGB-only inference oper-
+ates in a true single-branch mode, reducing computation from 14.6 to 12.0 GFLOPs and
+increasing throughput from 105.07 to 124.17 FPS. Correspondingly, mAP0.5 drops from
+97.8 to 95.5, mAP0.5–0.95 from 79.1 to 76.7, and mIoU from 77.53 to 73.93, quantifying the
+accuracy–efficiency trade-off when NIR is unavailable.
+3.4. The C2f-DCB Performance Comparison and Analysis of Convolution Operators
+To verify the effectiveness of adopting DualConv in the C2f-DCB module, five com-
+monly used convolution operators were evaluated under a unified experimental setting.
+The results are summarized in Table 3. Overall, DualConv achieves the most favorable
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+16 of 27
+trade-off among detection accuracy, model complexity, and inference efficiency. In terms of
+accuracy, DualConv attains the highest mAP0.5 and mIoU of 97.8% and 77.53%, respectively.
+By contrast, although Standard Conv exhibits strong feature representation capability, it
+incurs the largest parameter count (4.86 M) and computational cost (15.8 GFLOPs). Af-
+fected by computational redundancy, its inference speed is limited to 71.79 FPS. Notably,
+DualConv reduces the parameter count and computational cost by 15.6% and 7.6%, re-
+spectively, while simultaneously improving mAP0.5 by 0.8%, indicating that its dual-path
+feature extraction mechanism can more effectively suppress redundancy and enhance the
+representation of critical features.
+Regarding hardware execution efficiency, Depthwise Separable Conv and Group
+Conv achieve higher inference speeds (118.42 FPS and 108.30 FPS, respectively) owing
+to their lower computational overhead. However, their mAP0.5 values (96.2% and 96.8%,
+respectively) exhibit a noticeable decline compared with DualConv, making them less
+suitable for high-precision detection tasks. In addition, Dilated Conv enhances contextual
+modeling by enlarging the receptive field and thus outperforms Standard Conv in accuracy;
+nevertheless, the discontinuous memory access caused by dilated sampling degrades
+execution efficiency, resulting in the lowest inference speed among all methods (68.25 FPS),
+which limits its applicability in real-time scenarios.
+In summary, DualConv maintains a lightweight design while alleviating the insuf-
+ficient representational capacity of conventional lightweight operators and preserving
+favorable hardware-side inference performance, thereby validating its suitability as the
+core convolution operator in the C2f-DCB module.
+Table 3. Empirical comparison of convolution operators used in C2f-DCB.
+Conv Operator
+mAP50 (%)
+mAP50–95 (%)
+mIoU
+Params (M)
+GFLOPs
+FPS
+Standard Conv
+97.0
+78.6
+76.80
+4.86
+15.8
+71.79
+Depthwise Sep.
+96.2
+77.5
+75.62
+3.52
+12.4
+118.42
+Dilated Conv (d = 2)
+97.4
+78.9
+77.15
+4.86
+15.8
+68.25
+Group Conv (g = 8)
+96.8
+78.1
+76.38
+3.98
+13.6
+108.30
+DualConv (ours)
+97.8
+79.1
+77.53
+4.10
+14.6
+105.07
+3.5. Comparative Analysis Under Different Lighting Conditions.
+Table 4 reports the quantitative mask segmentation performance of the baseline and
+the improved models under different illumination conditions. Under artificial lighting, the
+improved model achieves a substantially higher recall for the overall class (0.859 vs. 0.783),
+while its precision decreases (0.748 vs. 0.807). Meanwhile, the mAP50 and the mAP50–95
+show slight improvements (0.891 vs. 0.889 and 0.678 vs. 0.672), indicating that the proposed
+model tends to retrieve more true instances under challenging illumination at the cost of
+more false positives.
+In weak-light environments, the improved model increases precision for the overall
+class (0.924 vs. 0.864) with a modest reduction in recall (0.965 vs. 0.997), and it achieves
+a higher mAP50 (0.946 vs. 0.927) while keeping mAP50–95 at a comparable level (0.651 vs.
+0.656). For unripe tomatoes, precision improves markedly (0.812 vs. 0.685) and mAP50
+increases (0.855 vs. 0.793), suggesting stronger discrimination under low contrast; however,
+the stricter mAP50–95 slightly decreases (0.312 vs. 0.346), implying that high-IoU mask
+alignment for this difficult class remains challenging.
+Under natural lighting, the improved model consistently outperforms the baseline
+across all reported metrics for the overall class, with precision rising from 0.911 to 0.951,
+recall from 0.940 to 0.961, mAP50 from 0.979 to 0.987, and mAP50–95 from 0.826 to 0.839,
+demonstrating more reliable feature extraction under standard illumination.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+17 of 27
+In the sodium yellow light scenario, the baseline model shows slightly higher precision
+(0.773 vs. 0.751), whereas the improved model achieves better recall (0.831 vs. 0.797) and
+higher mAP50 (0.856 vs. 0.849). The mAP50–95 remains essentially unchanged (0.618 vs.
+0.619), indicating that the proposed model maintains stable mask quality under strong
+color cast while improving detection completeness.
+Overall, the improved model exhibits better robustness across lighting variations,
+mainly reflected by higher mAP50 and improved recall/precision depending on the illumi-
+nation condition, while some precision–recall trade-offs are observed in specific settings.
+Table 4. Quantitative Comparison of Mask Segmentation Performance Between Baseline and Im-
+proved Models Under Diverse Illumination Conditions.
+Lighting
+Class
+Baseline
+Improved
+P
+R
+mAP50
+mAP50–95
+P
+R
+mAP50
+mAP50–95
+Artificial
+Light
+all
+0.807
+0.783
+0.889
+0.672
+0.748
+0.859
+0.891
+0.678
+ripe
+0.941
+0.723
+0.925
+0.650
+0.904
+0.715
+0.892
+0.615
+half
+0.721
+0.779
+0.849
+0.684
+0.563
+0.944
+0.848
+0.694
+unriped
+0.758
+0.847
+0.894
+0.681
+0.776
+0.918
+0.934
+0.725
+Weak
+Light
+all
+0.864
+0.997
+0.927
+0.656
+0.924
+0.965
+0.946
+0.651
+ripe
+0.915
+0.991
+0.992
+0.859
+0.972
+0.957
+0.992
+0.857
+half
+0.993
+1.000
+0.995
+0.762
+0.989
+0.975
+0.989
+0.783
+unriped
+0.685
+1.000
+0.793
+0.346
+0.812
+0.962
+0.855
+0.312
+Natural
+Light
+all
+0.911
+0.940
+0.979
+0.826
+0.951
+0.961
+0.987
+0.839
+ripe
+0.927
+0.912
+0.978
+0.802
+0.972
+0.939
+0.987
+0.814
+half
+0.927
+0.964
+0.986
+0.871
+0.956
+0.977
+0.991
+0.885
+unriped
+0.878
+0.943
+0.972
+0.806
+0.924
+0.967
+0.983
+0.818
+Sodium
+Yellow
+Light
+all
+0.773
+0.797
+0.849
+0.619
+0.751
+0.831
+0.856
+0.618
+ripe
+0.851
+0.807
+0.898
+0.640
+0.789
+0.850
+0.878
+0.616
+half
+0.765
+0.778
+0.844
+0.639
+0.743
+0.835
+0.859
+0.636
+unriped
+0.705
+0.807
+0.805
+0.578
+0.720
+0.807
+0.830
+0.601
+Ablation experiments under four common lighting conditions—(a) Natural, (b) Artifi-
+cial, (c) Weak, and (d) Sodium yellow—are displayed in Figure 8, with each row represent-
+ing a distinct lighting setup. Within each row, the first column displays the original images,
+while the second column illustrates the segmentation results from the baseline model; the
+third and fourth columns display improvements introduced by the C-MDCF + C2f-DCB
+modules and the further integration of MS-CPAM + SDI modules, respectively.
+The baseline model, shown in the second column, detects only a limited number
+of clearly visible tomato targets under natural lighting, with its performance markedly
+declining under other lighting conditions.
+In the third column, the incorporation of C-MDCF + C2f-DCB significantly enhances
+segmentation performance. Specifically, C-MDCF effectively fuses RGB and infrared image
+data, mitigating interference caused by similar colors within the RGB channel during
+target localization. Concurrently, the C2f-DCB module maintains the receptive field while
+improving feature extraction capability and resolution, thereby enhancing detection of
+immature tomatoes in complex backgrounds—particularly where green fruits and leaves
+share similar hues.
+Further enhancements are evident in the fourth column, where MS-CPAM + SDI
+modules are introduced. Heatmaps clearly indicate that MS-CPAM amplifies the model’s
+responsiveness to objects at various scales, especially small tomatoes, by capturing local
+key features through its multi-scale channel attention mechanism. Simultaneously, the
+SDI module refines spatial attention to emphasize critical regions, boosting segmentation
+accuracy for occluded or blurred-edge targets. Additionally, this module improves repre-
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+18 of 27
+sentation of complex textures such as leaf edges, preserving fine details and sharpening
+segmentation boundaries.
+In summary, although the baseline model demonstrates some detection capability
+under normal lighting, its performance deteriorates in suboptimal conditions such as weak
+or sodium yellow light. The proposed multi-module enhancement strategy substantially
+improves tomato semantic segmentation across diverse lighting environments, confirming
+the robustness and efficacy of the method with multi-modal inputs in complex scenarios.
+3.6. Performance Analysis of Different Models
+To further confirm our model’s effectiveness, we compared it with several prominent
+detection and segmentation models, including YOLACT [25], YOLOv5 [26], YOLOv8 [27],
+YOLOv9 [28], SegFormer [29], and SegMAN [30]. Table 5 presents a comprehensive com-
+parison of our proposed model against several state-of-the-art segmentation and detection
+models on the same tomato dataset, with uniform input image sizes to ensure fairness. Our
+model achieves the highest mAP0.5 of 97.8%, outperforming all compared methods. For in-
+stance, it surpasses YOLOv8 by 1.5 percentage points and YOLOv5 by 2.5 points, indicating
+superior detection accuracy at the commonly used 0.5 IoU threshold. In terms of mAP0.5–0.95,
+which measures average precision over a range of IoU thresholds, our model reaches 79.1%,
+exceeding YOLOv8 (61.2%) and significantly outperforming YOLOv5 (64.7%) and YOLCAT
+(72.69%). This reflects enhanced robustness in more stringent evaluation conditions.
+Regarding efficiency, our model maintains a competitive inference speed of 80.1 FPS,
+which is substantially faster than YOLOv5 (26.17 FPS) and YOLCAT (12.74 FPS), while
+slightly lower than the extremely fast YOLOv9 (163.93 FPS). Despite the high speed, our
+model is highly lightweight, with only 3.72 million parameters and 8.21 GFLOPs, far
+fewer than most other models—for example, YOLOv9 has 53.2 million parameters and
+24.5 GFLOPs, while SegMAN has 75.3 million parameters and 25.3 GFLOPs. These results
+highlight our model’s ability to maintain high accuracy while minimizing computational
+cost, making it appropriate for use in resource-constrained agricultural environments.
+Furthermore, our model achieves an mIoU of 77.45%, which is superior to YOLOv8
+(75.13%) and significantly higher than YOLCAT (71.46%) and SegMAN (68.41%), indicating
+better segmentation quality and boundary precision. While SegMAN exhibits the highest
+FPS among segmentation models, its accuracy metrics lag behind our model, further
+confirming the effectiveness of our approach.
+In summary, the proposed model strikes an excellent balance between high detec-
+tion accuracy, segmentation quality, computational efficiency, and inference speed. It
+outperforms existing detection and segmentation baselines in key performance indicators,
+underscoring its potential for practical applications in real-time tomato fruit segmentation
+under complex agricultural conditions.
+Figure 9 illustrates the segmentation results of tomatoes under natural lighting condi-
+tions demonstrate that the proposed method achieves the best performance in localizing
+small-target tomatoes. In comparison, SegFormer and SegMAN exhibit blurred segmenta-
+tion boundaries and fail to detect small-target tomatoes. YOLACT, YOLOv5, and YOLOv8
+perform moderately in localization but produce inaccurate segmentation edges. While
+YOLOv9 and our method show significant advantages in detecting small targets, the quan-
+titative results (Table 5) reveal that YOLOv9 requires 15× more parameters and 10× higher
+computational cost than our approach. This confirms that our method not only adapts well
+to complex lighting conditions but also maintains superior accuracy and the most precise
+segmentation under natural illumination.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+19 of 27
+Figure 9. Segmentation comparison results under natural lighting conditions.
+Table 5. Comparison with different models.
+Method
+mAP0.5
+mAP0.5–0.95
+FPS↑
+Latency (ms)↓Params (M)↓GFLOPs↓mIoU↑
+YOLCAT
+93.07
+72.69
+33.50
+29.85
+30.61
+56.0
+68.35
+YOLOv5
+95.6
+64.7
+90.91
+11.00
+7.41
+25.7
+73.64
+YOLOv8
+92.4
+61.2
+217.39
+4.60
+3.26
+12.0
+75.27
+YOLOv9
+94.2
+60.3
+57.80
+17.30
+27.39
+145.2
+68.67
+SegFormer
+84.97
+68.92
+50.96
+19.62
+3.72
+13.7
+77.08
+SegMAN
+79.16
+67.19
+25.35
+39.45
+6.38
+50.7
+68.45
+Ours
+97.8
+79.1
+105.07
+9.52
+4.10
+14.6
+77.53
+As illustrated in Figure 10, the tomato segmentation results under artificial lighting
+conditions demonstrate that the proposed method successfully detects both (a) green toma-
+toes with background-like coloration and (b) tomatoes in low-light regions under uneven
+illumination. In contrast, SegFormer and SegMAN, as traditional two-stage segmentation
+methods, exhibit blurred segmentation boundaries in low-light scenarios and fail to detect
+tomatoes with background-similar colors. While YOLOv8 detects slightly fewer immature
+tomatoes, YOLACT, YOLOv5, and YOLOv9 manage to identify most immature tomatoes
+but struggle with extremely low-light instances (b). These comparisons highlight that our
+method not only detects more tomatoes under artificial lighting but also maintains sharper
+segmentation boundaries. This underscores its adaptability and robustness under uneven
+and challenging illumination conditions.
+As demonstrated in Figure 11, the tomato segmentation results under low-light con-
+ditions show that our proposed method effectively handles both (a) green tomatoes with
+background-like coloration and (b) occluded tomatoes. In comparison, traditional segmen-
+tation methods like SegFormer and SegMAN exhibit significantly blurred segmentation
+boundaries in low-light environments and completely fail to detect tomatoes that blend
+with the background, resulting in remarkably low segmentation accuracy. While YOLOv8
+shows poor sensitivity to complex backgrounds and cannot detect green tomatoes, YOLACT
+and YOLOv9 manage to identify most background-colored tomatoes but suffer from classi-
+fication inaccuracies. YOLOv5 performs better in this condition, correctly classifying and
+segmenting most tomatoes, yet fails to recognize occluded tomatoes (b). These compara-
+tive results clearly indicate that our method achieves superior performance in low-light
+conditions, detecting more tomatoes while maintaining precise segmentation boundaries.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+20 of 27
+This robust performance demonstrates our method’s exceptional capability in handling
+challenging scenarios involving color camouflage and occlusion under insufficient lighting.
+Figure 10. Segmentation comparison results under artificial lighting conditions.
+Figure 11. Segmentation comparison results under Weak lighting conditions.
+As illustrated in Figure 12, the tomato segmentation performance under sodium-vapor
+lighting conditions demonstrates that our proposed method successfully detects both
+(c) green tomatoes with background-like coloration and small-target tomatoes (a) and (b).
+In stark contrast, conventional segmentation methods including SegFormer and SegMAN
+show extremely limited capability in tomato detection under this specific lighting condi-
+tion, indicating their low photosensitivity and resulting in remarkably poor segmentation
+accuracy. While YOLOv5 fails to detect semi-mature tomatoes, YOLACT, YOLOv8, and
+YOLOv9 exhibit relatively better performance in recognizing most tomato instances, albeit
+with limited effectiveness for small-target tomatoes. These comparative results clearly
+highlight that our method achieves superior performance in sodium-vapor lighting envi-
+ronments, particularly in detecting more small-target tomatoes while maintaining precise
+segmentation boundaries.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+21 of 27
+Figure 12. Segmentation comparison results under sodium yellow lighting conditions.
+4. Fruit Tracking-Based Count and Size Estimation
+In controlled-environment agriculture, counting, tracking, and estimating tomato size
+are crucial for tasks such as yield prediction, harvest planning, and assessing fruit maturity
+and quality. These data support optimised crop management and cultivation practices to
+enhance yield and quality, while also providing reliable information for transportation
+and storage, thereby reducing loss and waste and improving overall economic efficiency.
+Moreover, precise counting and size estimation are essential for planning and schedul-
+ing automated harvesting systems and advancing intelligent management in controlled-
+environment agriculture. A multi-modal approach for tomato tracking, counting, and
+pixel-level size estimation is proposed in this study, with the algorithmic workflow illus-
+trated in Figure 13. First, a pre-trained model is applied to video frames for detection
+and instance segmentation, providing each tomato’s bounding box, class, and pixel-level
+mask, enabling precise localization and pixel-wise representation. The detection results are
+then fed into a DeepSORT multi-object tracker, which integrates appearance features and
+spatial information to track tomatoes across consecutive frames. In controlled agricultural
+environments, tomatoes are often occluded or overlapped. To ensure tracking continuity,
+a trajectory reconnection mechanism is designed: temporarily lost trajectories, including
+their last bounding box, class, and appearance embedding, are stored in a candidate list;
+in subsequent frames, new detections are matched with lost trajectories based on class
+consistency, appearance similarity, spatial distance, and temporal interval. If matched, the
+original trajectory ID is restored, allowing short-term occluded tomatoes to regain tracking,
+while trajectories exceeding the time threshold are discarded to reduce misidentification
+risk. As shown in Table 4, the counting accuracy achieves an average of over 90%, while
+the mAP0.5 reaches a maximum of 98.9%.
+This approach capitalises on the YOLO-MSRF model’s strengths in object detection
+and multi-scale feature fusion to enable real-time detection, counting, and pixel-level size
+estimation of harvestable tomatoes. Moreover, when integrated with depth cameras, pixel-
+level semantic segmentation can be further normalized to infer the true physical dimensions
+of each tomato, thereby enhancing the precision and reliability of size measurements [31,32].
+By combining such measurements with size grading algorithms and appearance-based
+traits, tomato yield estimation and quality grading can be further achieved. According
+to commonly used agricultural grading standards, tomatoes are classified into three size
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+22 of 27
+categories based on fruit diameter: large, with a diameter exceeding 7 cm; medium, with a
+diameter ranging from 5 to 7 cm; and small, with a diameter less than 5 cm, while cherry
+tomatoes typically have a diameter between 2 and 3 cm [33].
+Load Mode & Input 
+Video to Model
+End
+Predict 
+Update Count 
+Number
+Strat
+Deepsort Pre Frame
+Match 
+Existing
+Grading 
+Algorithm
+Compare Distance & 
+Cosine Similarity 
+&Drop Frames 
+True
+False
+Detection Box & Count
+& Segmentation Mask
+Using Existing 
+Count Number
+Figure 13. Flow chart of proposed yield estimation algorithm.
+Furthermore, considering that the average fruit weight of tomatoes cultivated in
+Northern solar greenhouses in China typically ranges from 120 g to 150 g, the approximate
+yield per plant can be estimated by multiplying the detected fruit count by the average fruit
+weight. This estimation provides both upper and lower yield bounds and offers quantita-
+tive guidance for labor allocation, harvest scheduling, crop management, transportation,
+storage, and resource distribution, thereby enhancing the overall efficiency, effectiveness,
+and economic performance of agricultural production.
+In this study, DeepSORT combines appearance embedding with Kalman filter-based
+motion prediction, which enables robust tracking of small and occluded tomato instances in
+dense clusters. Its computational efficiency allows real-time operation, which is critical for
+practical deployment in greenhouse environments. However, DeepSORT may suffer from
+ID switches under prolonged occlusions or severe overlaps, and its performance could be
+improved by incorporating more advanced appearance models or motion predictors, as
+implemented in recent MOT methods. Overall, DeepSORT provides a reasonable balance
+between tracking accuracy and efficiency, making it suitable for automated tomato counting
+and size estimation in our application.
+Occlusion-Aware Size Estimation: In occlusion or overlap scenes, the instance mask
+may be partially missing, which can lead to systematic underestimation if size is derived
+directly from the visible mask area. To address this issue, we adopt an ellipse fitting strategy
+based on the Hough transform. Specifically, we extract the contour points of the predicted
+mask and apply an ellipse Hough transform to estimate ellipse parameters (a, b, θ), where
+a and b are the semi-major and semi-minor axes, respectively. The corresponding diameters
+are Dmax = 2a and Dmin = 2b, and the ellipse area is S = πab. We further compute an
+equivalent diameter Deq = 2√
+S/π = 2
+√
+ab for robust size grading. An occlusion indicator
+(e.g., low mask solidity or abrupt area drop along a track) is used to trigger ellipse fitting.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+23 of 27
+For each track ID, multiple frame-wise estimates are aggregated using a robust statistic
+(median) to obtain the final size, which improves reliability under short-term occlusions.
+5. Discussion
+The ablation results (Table 1) suggest that the proposed components contribute comple-
+mentary improvements to both segmentation accuracy and robustness. Compared with the
+baseline, introducing C-MDCF enhances cross-modal interaction and feature complemen-
+tarity, which leads to consistent gains in mAP0.5 and mIoU. After incorporating MS-CPAM,
+the performance further improves, indicating that the proposed attention mechanism
+strengthens discriminative representation for small targets and partially occluded fruits.
+With SDI integrated, the model achieves additional improvement in segmentation quality
+(mIoU in Table 1), implying better preservation of semantic details and boundary cues.
+Notably, the final inclusion of C2f-DCB reaches the best overall performance (97.8% mAP0.5,
+79.1% mAP0.5–0.95, and 77.53 mIoU) while maintaining real-time inference (105.07 FPS),
+suggesting that it effectively balances representation enhancement and lightweight com-
+putation for practical deployment in facility agriculture. All architectural components
+were selected under real-time constraints, and the final configuration represents a practical
+trade-off between accuracy improvement and computational overhead, as supported by
+the ablation study.
+Performance under Varying Lighting Conditions: We have evaluated the model’s
+performance under various lighting conditions, including low-light and high-light envi-
+ronments. Our experiments demonstrate that the integration of RGB and near-infrared
+(NIR) images significantly reduces the impact of lighting variations on the model’s perfor-
+mance. By utilizing complementary information from both modalities, the model mitigates
+the challenges posed by poor lighting conditions, ensuring accurate segmentation and
+detection even in extremely low or high light scenarios. This fusion approach enables
+robust performance across a wide range of illumination conditions typically encountered
+in controlled agricultural environments.
+Handling Occlusion and Complex Environments: In agricultural settings, especially
+those with dense crop arrangements like greenhouses, occlusions and overlapping objects
+are common challenges. To address these issues, we have incorporated a trajectory re-
+connection mechanism into the model. This mechanism ensures continuity in tracking
+and detection even when fruits are temporarily occluded. Lost trajectories, along with
+their bounding box, class, and appearance embedding, are stored and matched with new
+detections based on class consistency, spatial distance, and temporal intervals. Additionally,
+the model benefits from multi-scale feature fusion and fine-grained spatial context, which
+allows it to capture detailed information about small and occluded objects. These capabili-
+ties are crucial for maintaining accurate tracking and segmentation in complex agricultural
+environments where cluttered backgrounds and overlapping crops are prevalent.
+Impact of 3D Convolutions on Performance: 3D convolutions significantly enhance
+the model’s ability to capture multi-scale spatial relationships, which is crucial for detecting
+small and occluded objects in agricultural settings. Despite their computational expense,
+the use of 3D convolutions results in higher accuracy and robustness, particularly in
+challenging environments with occlusions or lighting variations. While 2D convolutions
+or depthwise separable convolutions could reduce computational cost, they would not
+achieve the same level of feature representation, especially in complex agricultural tasks.
+In future work, we plan to explore adaptive methods that balance the use of 3D and 2D
+convolutions based on available resources, allowing for optimized performance across
+different deployment scenarios.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+24 of 27
+Limitations and Future Work: While the proposed multimodal tomato semantic seg-
+mentation framework achieves strong performance under complex lighting conditions,
+several limitations remain and motivate future work. First, cross-crop transfer learning
+should be investigated to validate applicability to different fruits and vegetables (e.g., straw-
+berries and cucumbers), which is important for improving the versatility of agricultural
+robots. Second, self-supervised learning could reduce dependence on large-scale anno-
+tated data, improving scalability to new environments and varieties. Third, incorporating
+temporal modeling may further alleviate occlusion-related failures and enhance tracking
+stability in dense canopy scenes. Finally, improving energy efficiency via model quantiza-
+tion and hardware co-design will facilitate large-scale deployment in resource-constrained
+agricultural scenarios and better align the system with practical production requirements.
+Additionally, cross-sensor motion blur differences caused by rover vibration (especially
+without global shutters) are not explicitly addressed in this work and will be explored in
+future studies.
+In addition, our framework relies on multimodal RGB–near-infrared (RGB–NIR)
+inputs, which may limit its applicability in settings where NIR sensors are unavailable. In
+such cases, the proposed pipeline would need to fall back to an RGB-only configuration, and
+performance may degrade due to the loss of complementary NIR cues, particularly under
+challenging illumination. As a practical extension, we will provide an RGB-only variant
+and further investigate modality-missing learning strategies (e.g., knowledge distillation
+or modality hallucination) to transfer the benefits of NIR into the RGB branch, thereby
+reducing hardware dependence while retaining robustness.
+Moreover, although we evaluate diverse illumination conditions, our experiments are
+conducted on a specific dataset and facility agriculture environment. Generalization to
+other greenhouses, camera systems, crop varieties, and outdoor scenarios may be affected
+by domain shifts in background clutter, fruit appearance, and lighting. Future work
+will therefore include cross dataset evaluation and domain generalization or adaptation
+techniques, such as transfer learning as well as self supervised and semi supervised learning,
+to improve robustness across different environments.
+6. Conclusions
+In this study, we present a lightweight and robust multimodal semantic segmentation
+framework tailored for tomato detection under complex lighting conditions in facility
+agriculture. By integrating RGB with complementary modalities and incorporating a series
+of novel modules—C-MDCF, C2f-DCB, MS-CPAM, and MSF-SRNet—the proposed method
+enhances feature representation, attention modeling, and cross-modal fusion, achieving
+superior accuracy (mAP0.5 of 97.8%) and real-time performance (105.07 FPS). Furthermore,
+we incorporate a trajectory reconnection mechanism into DeepSORT to improve tracking
+continuity for temporarily occluded fruits, enabling reliable tracking-based counting in
+controlled-environment agriculture (Table 6). Overall, this work provides a practical
+solution for accurate and efficient fruit segmentation and counting under challenging
+visual conditions, supporting the advancement of smart facility agriculture.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+25 of 27
+Table 6. DeepSORT tracking counts, counting accuracy, and detection performance compared with
+manually annotated results.
+Video
+Class
+Counts
+Accuracy (%)
+Box
+Mask
+DeepSORT Manual
+mAP50
+mAP50–95
+mAP50
+mAP50–95
+video1
+all
+37
+35
+88.96
+98.90
+90.90
+98.90
+84.70
+ripe
+8
+7
+87.50
+99.40
+93.80
+99.40
+87.90
+half
+8
+9
+88.89
+99.10
+91.50
+99.10
+85.00
+unripe
+21
+19
+90.48
+98.20
+87.40
+98.20
+81.10
+video2
+all
+22
+21
+97.62
+97.70
+88.20
+97.70
+80.50
+ripe
+14
+13
+92.86
+97.10
+87.40
+97.10
+78.10
+half
+2
+2
+100.00
+98.70
+90.90
+98.70
+85.40
+unripe
+6
+6
+100.00
+97.40
+86.30
+97.40
+78.10
+video3
+all
+75
+79
+94.87
+98.70
+91.40
+98.80
+84.80
+ripe
+31
+33
+93.94
+98.20
+90.30
+98.20
+81.70
+half
+16
+17
+94.12
+99.30
+95.00
+99.30
+90.40
+unripe
+28
+29
+96.55
+98.60
+89.10
+98.80
+82.30
+video4
+all
+48
+49
+94.41
+98.60
+90.20
+98.60
+84.30
+ripe
+20
+22
+90.91
+98.60
+91.70
+98.60
+85.40
+half
+15
+15
+100.00
+98.90
+91.10
+98.90
+86.00
+unripe
+13
+12
+92.31
+98.10
+87.90
+98.20
+81.50
+Author Contributions: A.L.: conceptualization, writing—review and editing. C.W.: conceptualiza-
+tion, methodology, and writing—original draft, writing—review and editing, software, investigation,
+and validation. A.W.: resources and investigation J.S.: writing—review and editing. F.G.: visual-
+ization and data curation. T.Z.: Investigation, Validation. All authors have read and agreed to the
+published version of the manuscript.
+Funding: This research was supported by the National Key Research and Development Program of
+China (Grant No. 2022YFD2000500); in part by the China Postdoctoral Science Foundation Funded
+Project (Grant No. 2025MD784115); in part by the Heilongjiang Postdoctoral Foundation (Grant
+No. LBH-Z24192); in part by the Heilongjiang Graduate Excellence Funding Program (Grant No.
+LJYXL2024-023); in part by the Postdoctoral Innovation Program of Shandong Province (Grant No.
+SDCX-ZG-202503172).
+Institutional Review Board Statement: The authors declare that they have no known competing
+financial interests or personal relationships that could have appeared to influence the work reported
+in this paper.
+Data Availability Statement: Data will be made available on request.
+Conflicts of Interest: The authors declare no conflicts of interest regarding the publication of this paper.
+References
+1.
+Sattar, S.; Iqbal, A.; Parveen, A.; Fatima, E.; Samdani, A.; Fatima, H.; Shahzad, M. Tomatoes Unveiled: A Comprehensive Exploration
+from Cultivation to Culinary and Nutritional Significance; Qeios: London, UK, 2024. [CrossRef]
+2.
+Huang, Y.; Li, Z.; Bian, Z.; Jin, H.; Zheng, G.; Hu, D.; Sun, Y.; Fan, C.; Xie, W.; Fang, H. Overview of deep learning and
+nondestructive detection technology for quality assessment of tomatoes. Foods 2025, 14, 286. [CrossRef] [PubMed]
+3.
+Meng, Z.; Du, X.; Xia, J.; Ma, Z.; Zhang, T. Real-time statistical algorithm for cherry tomatoes with different ripeness based on
+depth information mapping. Comput. Electron. Agric. 2024, 220, 108900. [CrossRef]
+4.
+Khan, A.; Hassan, T.; Shafay, M.; Fahmy, I.; Werghi, N.; Mudigansalage, S.; Hussain, I. Tomato maturity recognition with
+convolutional transformers. Sci. Rep. 2023, 13, 22885. [CrossRef] [PubMed]
+5.
+Du, X.; Cheng, H.; Ma, Z.; Lu, W.; Wang, M.; Meng, Z.; Jiang, C.; Hong, F. DSW-YOLO: A detection method for ground-planted
+strawberry fruits under different occlusion levels. Comput. Electron. Agric. 2023, 214, 108304. [CrossRef]
+6.
+Rong, Q.; Hu, C.; Hu, X.; Xu, M. Picking point recognition for ripe tomatoes using semantic segmentation and morphological
+processing. Comput. Electron. Agric. 2023, 210, 107923. [CrossRef]
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+26 of 27
+7.
+Yuan, W.; Zhou, H.; Zhang, C.; Zhou, L.; Jiang, X.; Jiang, H. Automatic segmentation and hyperspectral information extraction
+of Camellia oleifera fruits based on CA-TransUNet++ under complex natural environment. Comput. Electron. Agric. 2025,
+237, 110646. [CrossRef]
+8.
+Zhou, W.; Cai, C.; Li, C.; Xu, H.; Shi, H. AD-YOLO: A real-time YOLO network with Swin transformer and attention mechanism
+for airport scene detection. IEEE Trans. Instrum. Meas. 2024, 73, 5036112.
+9.
+Tang, Z.; Fang, L.; Sun, S.; Gong, Y.; Li, Q. ML-DETR: Multiscale-Lite Detection Transformer for Identification of Mature Cherry
+Tomatoes. IEEE Trans. Instrum. Meas. 2025, 74, 2547018. [CrossRef]
+10.
+Tang, S.; Xia, Z.; Gu, J.; Wang, W.; Huang, Z.; Zhang, W. High-precision apple recognition and localization method based on
+RGB-D and improved SOLOv2 instance segmentation. Front. Sustain. Food Syst. 2024, 8, 1403872. [CrossRef]
+11.
+Li, A.; Wang, C.; Ji, T.; Wang, Q.; Zhang, T. D3-YOLOv10: Improved YOLOv10-based lightweight tomato detection algorithm
+under facility scenario. Agriculture 2024, 14, 2268. [CrossRef]
+12.
+Li, H.; Gu, Z.; He, D.; Wang, X.; Huang, J.; Mo, Y.; Li, P.; Huang, Z.; Wu, F. A lightweight improved YOLOv5s model and its
+deployment for detecting pitaya fruits in daytime and nighttime light-supplement environments. Comput. Electron. Agric. 2024,
+220, 108914. [CrossRef]
+13.
+Jiang, A.; Ahamed, T. Development of an autonomous navigation system for orchard spraying robots integrating a thermal
+camera and LiDAR using a deep learning algorithm under low-and no-light conditions. Comput. Electron. Agric. 2025, 235, 110359.
+[CrossRef]
+14.
+Ge, Y.; From, P.J.; Xiong, Y.
+Multi-view gripper internal sensing for the regression of strawberry ripeness using a mini-
+convolutional neural network for robotic harvesting. Comput. Electron. Agric. 2024, 216, 108474. [CrossRef]
+15.
+Liu, C.; Feng, Q.; Sun, Y.; Li, Y.; Ru, M.; Xu, L. YOLACTFusion: An instance segmentation method for RGB-NIR multimodal
+image fusion based on an attention mechanism. Comput. Electron. Agric. 2023, 213, 108186. [CrossRef]
+16.
+Gao, J.; Zhang, J.; Zhang, F.; Gao, J. LACTA: A lightweight and accurate algorithm for cherry tomato detection in unstructured
+environments. Expert Syst. Appl. 2024, 238, 122073. [CrossRef]
+17.
+Chen, W.; Rao, Y.; Wang, F.; Zhang, Y.; Wang, T.; Jin, X.; Hou, W.; Jiang, Z.; Zhang, W. MLP-based multimodal tomato detection in
+complex scenarios: Insights from task-specific analysis of feature fusion architectures. Comput. Electron. Agric. 2024, 221, 108951.
+[CrossRef]
+18.
+Song, Y.; Li, M.; Zhou, Z.; Zhang, J.; Du, X.; Dong, M.; Jiang, Q.; Li, C.; Hu, Y.; Yu, Q.; et al. A lightweight method for apple
+disease segmentation using multimodal transformer and sensor fusion. Comput. Electron. Agric. 2025, 237, 110737. [CrossRef]
+19.
+Zhang, Y.; Rao, Y.; Chen, W.; Hou, W.; Yan, S.; Li, Y.; Zhou, C.; Wang, F.; Chu, Y.; Shi, Y. Multimodal Image Dataset of Tomato Fruits
+with Different Maturity; Science Data Bank: Beijing, China, 2023. [CrossRef]
+20.
+Khanam, R.; Hussain, M. YOLOv11: An Overview of the Key Architectural Enhancements.
+arXiv 2024, arXiv:2410.17725.
+[CrossRef]
+21.
+Zhong, J.; Chen, J.; Mian, A. DualConv: Dual Convolutional Kernels for Lightweight Deep Neural Networks. IEEE Trans. Neural
+Netw. Learn. Syst. 2023, 34, 9528–9535. [CrossRef]
+22.
+Zhao, W.; Zhao, Z.; Xu, M.; Ding, Y.; Gong, J. Differential multimodal fusion algorithm for remote sensing object detection
+through multi-branch feature extraction. Expert Syst. Appl. 2025, 265, 125826. [CrossRef]
+23.
+Peng, Y.; Chen, D.Z.; Sonka, M. U-Net V2: Rethinking the Skip Connections of U-Net for Medical Image Segmentation. In
+Proceedings of the 2025 IEEE 22nd International Symposium on Biomedical Imaging (ISBI), Houston, TX, USA, 14–17 April 2025;
+pp. 1–5. [CrossRef]
+24.
+Kang, M.; Ting, C.; Ting, F.F.; Phan, R.C. ASF-YOLO: A novel YOLO model with attentional scale sequence fusion for cell instance
+segmentation. Image Vis. Comput. 2024, 147, 105057. [CrossRef]
+25.
+Bolya, D.; Zhou, C.; Xiao, F.; Lee, Y.J. YOLACT: Real-Time Instance Segmentation. In Proceedings of the 2019 IEEE/CVF
+International Conference on Computer Vision (ICCV), Seoul, Republic of Korea, 27 October–2 November 2019; pp. 9156–9165.
+[CrossRef]
+26.
+Jocher, G.; Chaurasia, A.; Qiu. Ultralytics YOLOv5. 2020. Available online: https://github.com/ultralytics/yolov5 (accessed on
+18 January 2026).
+27.
+Jocher, G.; Chaurasia, A.; Qiu. Ultralytics YOLOv8. 2023. Available online: https://github.com/ultralytics/ultralytics (accessed
+on 18 January 2026).
+28.
+Wang, C.; Yeh, I.; Liao, H.M. YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information. arXiv
+2024, arXiv:2402.13616. [CrossRef]
+29.
+Xie, E.; Wang, W.; Yu, Z.; Anandkumar, A.; Alvarez, J.M.; Luo, P. SegFormer: Simple and efficient design for semantic segmentation
+with transformers. Adv. Neural Inf. Process. Syst. 2021, 34, 12077–12090.
+30.
+Fu, Y.; Lou, M.; Yu, Y. SegMAN: Omni-scale Context Modeling with State Space Models and Local Attention for Semantic
+Segmentation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), Nashville, TN,
+USA, 11–15 June 2025; pp. 19077–19087.
+https://doi.org/10.3390/agriculture16020277
+
+Agriculture 2026, 16, 277
+27 of 27
+31.
+Mengoli, D.; Bortolotti, G.; Piani, M.; Manfrini, L. On-line real-time fruit size estimation using a depth-camera sensor.
+In
+Proceedings of the 2022 IEEE Workshop on Metrology for Agriculture and Forestry (MetroAgriFor), Perugia, Italy, 3–5 November
+2022; pp. 86–90.
+32.
+Yan, B.; Li, X. RGB-D Camera and Fractal-Geometry-Based Maximum Diameter Estimation Method of Apples for Robot Intelligent
+Selective Graded Harvesting. Fractal Fract. 2024, 8, 649. [CrossRef]
+33.
+Han, Z.; Zhang, L.; Zhang, B.; Zou, F.; Shang, N. Research and Application Progress of Novel Non-Destructive Detection
+Technologies in Tomato Quality Assessment. Food Sci. 2024, 45, 289–300.
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.
+https://doi.org/10.3390/agriculture16020277

@@ -1,0 +1,1225 @@
+Academic Editor: David Portugal
+Received: 12 January 2026
+Revised: 10 February 2026
+Accepted: 17 February 2026
+Published: 22 February 2026
+Copyright: © 2026 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license.
+Article
+Dual-Detector Vision and Depth-Aware Back-Projection for
+Accurate Apple Detection and 3D Localisation for
+Robotic Harvesting
+Tagor Hossain 1,*
+, Peng Shi 1
+and Levente Kovacs 2
+1
+School of Electrical and Mechanical Engineering, Adelaide University, North Terrace Campus,
+Adelaide, SA 5005, Australia
+2
+Research and Innovation Center, Obuda University, 1034 Budapest, Hungary
+*
+Correspondence: mdtagor.hossain@adelaide.edu.au
+Abstract
+Accurate apple detection and precise three-dimensional (3D) localisation are essential for
+autonomous robotic harvesting in orchard environments, where occlusion, illumination
+variation, depth noise, and the similar colour appearance of fruits and surrounding leaves
+present significant challenges. This paper proposes a dual-detector vision framework com-
+bined with depth-aware back-projection to achieve robust apple detection and metric 3D
+localisation in real time. The method integrates the complementary strengths of YOLOv8
+and Mask R-CNN through confidence-weighted fusion of bounding boxes and pixel-wise
+union of segmentation masks, producing stabilised two-dimensional (2D) apple representa-
+tions under visually ambiguous conditions. The fusion results are converted into dense 3D
+representations through depth-guided projection within the camera coordinate system rep-
+resenting the visible fruit surface. A depth-consistency weighting strategy assigns higher
+influence to depth-reliable pixels during centroid computation, thereby suppressing noisy
+or occluded depth measurements and improving the stability of 3D fruit centre estimation,
+while local intensity normalisation standardises neighbourhood-level pixel intensities to
+reduce the impact of shadows, highlights, and uneven lighting, enabling more consistent
+segmentation and detection across varying illumination conditions. Experimental results
+demonstrate an accuracy of 98.9%, an mAP of 94.2%, an F1-score of 93.3%, and a recall of
+92.8%, while achieving real-time performance at 86.42 FPS, confirming the suitability of the
+proposed method for robotic harvesting in challenging orchard environments.
+Keywords: RGB-D orchard sensing; dual-detector fruit perception; depth-aware apple
+localisation; 3D fruit localisation in orchards; vision-based robotic harvesting
+1. Introduction
+Vision-based perception plays a critical role in the development of intelligent agricul-
+tural robots, particularly for tasks such as fruit detection, localisation, and yield estima-
+tion. Accurate perception in orchard environments remains challenging due to complex
+backgrounds, heavy foliage occlusion, varying illumination conditions, and dense fruit
+clustering [1]. Robust apple detection and three-dimensional (3D) localisation are therefore
+essential prerequisites for reliable robotic harvesting and autonomous orchard monitoring
+systems. Recent advances in deep learning have significantly improved two-dimensional
+(2D) fruit detection performance using convolutional neural networks (CNNs) [2]. Deep
+learning-based detectors such as YOLO [3], Faster R-CNN [4], and Mask R-CNN [5] have
+Robotics 2026, 15, 47
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+2 of 21
+demonstrated strong capability in recognising apples under orchard conditions. However,
+purely RGB-based methods are inherently limited in complex orchard scenes, where visual
+ambiguity caused by occlusion, overlapping fruits, and illumination variation leads to
+unstable detection and inaccurate localisation [6]. Incorporating depth information through
+RGB-D sensing has therefore attracted increasing attention, as it provides complementary
+geometric cues that are less sensitive to colour similarity and lighting changes [7]. Several
+studies have explored RGB-D perception for fruit detection and localisation by combining
+depth maps with RGB imagery [8,9]. These approaches demonstrate that depth filtering
+and geometric constraints can effectively suppress background clutter and improve local-
+isation accuracy. Nevertheless, many existing methods rely on a single detector, which
+makes them vulnerable to false positives, missed detections, and poor instance separation
+in densely clustered or occluded scenes [10]. Moreover, errors in 2D detection directly
+propagate to the subsequent 3D localisation stage, limiting the robustness of downstream
+perception for robotic harvesting tasks. To address occlusion and incomplete depth ob-
+servations, point-cloud-based reasoning and frustum-constrained processing have been
+investigated for apple localisation under severe leaf and fruit occlusion [11]. These methods
+improve localisation accuracy for partially visible fruits; however, they depend heavily on
+the quality of initial 2D detections and segmentation masks. As a result, tightly integrated
+frameworks that combine robust multi-model 2D perception with depth-consistent 3D
+localisation remain relatively underexplored in orchard environments.
+In this paper, a novel RGB-D perception framework is proposed for robust apple
+detection and 3D localisation in complex orchard environments. The proposed method
+integrates a dual-detector 2D apple detection strategy based on YOLOv8 and Mask R-
+CNN with depth-aware masking and 3D back-projection. By fusing confidence-weighted
+bounding boxes and instance-level segmentation masks, the proposed method improves
+detection stability under leaf occlusion, inter-fruit occlusion, and dense fruit clustering.
+Subsequently, depth-consistent back-projection enables accurate fruit-level 3D localisation
+using robust centroid estimation. Extensive experiments are conducted using public
+benchmark datasets and real-world orchard data collected in Lenswood, South Australia.
+The results demonstrate that the proposed method achieves reliable real-time performance
+while maintaining high detection accuracy and precise 3D localisation across diverse
+environmental conditions. The proposed framework differs from existing apple detection
+and localisation approaches in several key aspects. The main contributions of this paper
+are summarised as follows:
+1.
+A paired RGB-depth data augmentation strategy that applies coordinated geometric and
+photometric transformations to enhance robustness against viewpoint variation, scale
+changes, and illumination fluctuations commonly encountered in orchard environments.
+2.
+A dual-detector apple perception framework that integrates YOLOv8 and Mask
+R-CNN through confidence-weighted bounding box fusion and pixel-wise mask
+union, achieving robust and stable two-dimensional detection under occlusion, dense
+clustering, and complex backgrounds.
+3.
+A depth-aware back-projection scheme that converts fused two-dimensional detec-
+tions into fruit-level three-dimensional point sets within the camera coordinate system
+for accurate metric localisation.
+4.
+A depth-consistency weighting strategy for robust centroid estimation, which sup-
+presses unreliable depth pixels and mitigates the influence of occlusions and depth
+noise on 3D centre computation.
+5.
+A local intensity normalisation mechanism that reduces illumination-induced ap-
+pearance variations and enhances segmentation and detection consistency in both
+high-light and low-light orchard scenes.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+3 of 21
+6.
+Extensive evaluation on public benchmark datasets and real-world orchard data
+demonstrating high detection accuracy, precise 3D localisation, and real-time perfor-
+mance on an embedded platform.
+These design choices distinguish the proposed system from established methodologies
+and contribute to its improved accuracy and stability in complex orchard environments.
+The remainder of this paper is organised as follows. Section 2 reviews related work
+on vision-based fruit detection and localisation. Section 3 presents the proposed dual-
+detector apple detection and depth-aware 3D localisation methodology. Section 4 reports
+the experimental results and provides a detailed discussion. Finally, Section 5 concludes
+the paper and outlines directions for future research.
+2. Related Work
+The growing limitations of RGB-only perception in orchard environments have
+prompted increased research attention toward improving robustness against foliage oc-
+clusion, background clutter, and visually ambiguous scenes. Initial deep learning-based
+approaches to fruit detection largely relied on convolutional neural networks to improve
+two-dimensional detection accuracy in outdoor imagery [12–14]. These methods achieved
+strong performance under favourable conditions where fruits were clearly visible. Recent
+studies have also explored YOLO-based perception frameworks for agricultural robotics,
+including generative AI-driven decision-making pipelines that integrate visual detection
+with execution planning for fruit picking, demonstrating the effectiveness of YOLO architec-
+tures as reliable front-end detectors in complex orchard environments [15]. However, their
+reliability decreased substantially in realistic orchard scenarios involving dense canopies,
+overlapping fruits, and pronounced illumination variation [16]. Under such conditions,
+dependence on colour and texture information alone frequently resulted in missed detec-
+tions and unstable localisation, thereby encouraging later studies to investigate alternative
+feature representations and complementary sensing modalities to enhance detection ro-
+bustness in complex orchard environments. To alleviate these challenges, instance-level
+segmentation techniques were introduced to provide finer spatial delineation of indi-
+vidual fruits. Compared with bounding-box-based detection, pixel-wise segmentation
+enables more accurate separation of adjacent apples and improves fruit counting and
+shape estimation in clustered scenes [17–19]. Nevertheless, segmentation accuracy remains
+sensitive to background similarity and partial occlusion, particularly when fruits share
+colour characteristics with surrounding foliage. In addition, the computational complex-
+ity of segmentation-based approaches often limits their suitability for real-time robotic
+applications [20,21]. The integration of depth information has therefore emerged as an
+important direction for enhancing orchard perception. RGB-D sensing provides explicit
+geometric cues that complement appearance-based features, enabling improved discrimina-
+tion between fruits and background structures [22,23]. Several studies have combined RGB
+imagery with depth maps to suppress background clutter, filter irrelevant regions, and en-
+hance spatial consistency in fruit detection and localisation [24]. These results demonstrate
+that depth cues can substantially improve robustness under challenging lighting conditions
+and partial occlusion. Beyond detection, accurate three-dimensional (3D) localisation is
+a critical requirement for robotic harvesting systems, where precise fruit positioning di-
+rectly influences grasp planning and manipulation success. Existing approaches typically
+estimate fruit positions by back-projecting 2D detections into 3D space using camera cal-
+ibration parameters and depth measurements [25–27]. Although effective in controlled
+scenarios, such methods are highly dependent on the reliability of upstream 2D detection
+outputs. Inaccuracies in bounding boxes or segmentation masks propagate directly to the
+3D reconstruction stage, leading to unstable localisation in cluttered orchard environments.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+4 of 21
+To address occlusion and incomplete depth observations, point-cloud-based reasoning and
+frustum-constrained processing have been investigated for fruit localisation under dense
+canopy structures [11,28]. By restricting 3D reasoning to regions of interest defined by 2D
+detections, these methods improve localisation accuracy for partially visible fruits.
+In
+addition, geometry-aware three-dimensional point cloud learning strategies have been
+shown to further improve spatial reasoning for precise cutting-point and manipulation tar-
+get detection in unstructured field environments, highlighting the importance of combining
+geometric constraints with deep perception for agricultural robotics [29]. However, their
+effectiveness remains limited by the quality of the initial detection results and the ability to
+reliably separate individual fruit instances in close proximity. More recently, multi-model
+and ensemble-based perception strategies have been explored to exploit complementary
+strengths of different deep learning architectures [30–32]. By combining detectors with
+distinct inductive biases, these approaches aim to improve detection stability across di-
+verse orchard conditions. In agricultural applications, such strategies have demonstrated
+improved robustness in scenes involving inter-fruit occlusion and background clutter.
+Nevertheless, many existing fusion approaches operate at a coarse decision level and lack
+tight integration with depth-aware geometric reasoning. Despite these advances, unified
+RGB-D perception frameworks that jointly address robust 2D detection, reliable instance
+separation, and depth-consistent 3D localisation remain relatively underexplored. Most
+existing pipelines rely on a single detection backbone or treat depth processing as a post
+hoc refinement step, limiting their ability to fully exploit complementary appearance and
+geometric information [33–35]. Furthermore, few studies explicitly focus on stabilising
+detection outputs prior to 3D reconstruction, which is critical for maintaining localisation
+accuracy in dynamic orchard environments. Recent trends in agricultural robotics empha-
+sise the need for tightly coupled perception pipelines that integrate multiple detection
+modalities with geometric reasoning in a unified framework [36–40]. Such integration is
+particularly important for handling simultaneous challenges including leaf-induced occlu-
+sion, fruit-to-fruit overlap, scale variation, and complex background clutter. These gaps
+in the existing literature motivate the development of robust RGB-D perception architec-
+tures that combine complementary 2D detectors with depth-aware fusion and localisation
+strategies, as pursued in this work.
+3. Dual-Detector Apple Detection and Depth-Aware 3D Localisation
+The proposed method adopts a unified RGB-D perception architecture that integrates
+data augmentation, dual-detector two-dimensional (2D) apple detection, and depth-aware
+three-dimensional (3D) localisation within a single processing pipeline. Synchronised RGB
+and depth images are first subjected to paired data augmentation, including geometric
+transformations (flipping and scaling) and photometric adjustments (brightness, contrast,
+and hue), which are applied consistently to preserve spatial correspondence and enhance
+robustness to real-world variability. The augmented inputs are then processed by a dual-
+detector 2D apple detection module that jointly employs YOLOv8 and Mask R-CNN to
+exploit their complementary strengths. YOLOv8 serves as the primary object localisation
+component, providing efficient and reliable 3D position proposals through multi-scale
+feature extraction enhanced by spatial-channel reallocation, residual feature aggregation,
+and multi-receptive-field context modelling, making it effective under varying illumination
+and partial occlusion. In parallel, Mask R-CNN performs instance-level segmentation
+using an instance feature extractor with a Feature Pyramid Network (FPN) and dense
+boundary encoding, producing precise pixel-wise apple masks that accurately delineate
+fruit boundaries, particularly in cases of overlap or dense clustering.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+5 of 21
+YOLOv8 and Mask R-CNN were selected because they exhibit complementary
+strengths that are particularly beneficial in complex orchard environments. YOLOv8
+follows a single-stage detection paradigm with multi-scale feature aggregation, enabling
+rapid and reliable localisation of apple candidates across a wide range of object sizes and
+viewpoints. This makes YOLOv8 well suited for real-time operation and for handling
+scenes containing many fruits distributed over large image areas. In contrast, Mask R-CNN
+adopts a two-stage detection and segmentation strategy that emphasises region refinement
+and pixel-level mask prediction, producing accurate instance boundaries even when fruits
+overlap or are partially occluded by foliage. While Mask R-CNN is more computationally
+demanding, its precise segmentation capability provides detailed shape information that is
+difficult to obtain from bounding-box-based detectors alone. By combining YOLOv8 and
+Mask R-CNN, the proposed framework exploits the fast and stable localisation of YOLOv8
+together with the high-quality boundary delineation of Mask R-CNN. This complemen-
+tary behaviour is particularly advantageous in scenarios involving dense fruit clustering,
+inter-fruit occlusion, and background clutter, where relying on a single detector often leads
+to missed detections or inaccurate instance separation. The fusion of their outputs there-
+fore results in more reliable two-dimensional apple representations, which subsequently
+improve the accuracy and robustness of depth-aware three-dimensional localisation.
+The outputs of both detectors are integrated through a stabilised detection fusion
+strategy that refines bounding boxes using mask-derived spatial constraints and enforces
+confidence-weighted agreement between detectors, resulting in robust and consistent 2D
+apple detections. Before fusion, the confidence scores produced by YOLOv8 and Mask R-
+CNN are normalised to a common scale to ensure numerical comparability. Both detectors
+are trained on the same apple datasets using identical annotation protocols and consistent
+optimisation settings, which promotes similar confidence behaviour across diverse orchard
+scenes. Empirical evaluation shows that high-confidence predictions from both networks
+consistently correspond to correct detections, indicating that the confidence-weighted
+fusion scheme provides a reliable measure of detection reliability. These fused detections
+are subsequently projected into 3D space using a depth back-projection module, where
+pixel-level depth values within each detected fruit region are mapped to the camera
+coordinate frame to form fruit-level 3D point sets. Depth consistency filtering is applied to
+suppress noise and outliers, followed by robust centroid estimation to obtain accurate 3D
+apple coordinates. By tightly coupling appearance- dual-detector perception with depth-
+aware geometric reasoning, the proposed architecture achieves reliable apple detection
+and localisation under challenging orchard conditions, including occlusion, illumination
+variation, and dense fruit clustering. The complete processing pipeline of the proposed
+method, including RGB-depth augmentation, dual-detector two-dimensional perception,
+and depth-guided three-dimensional localisation, is shown in Figure 1.
+The method is organised into seven stages: (i) data augmentation, (ii) dual-detector
+fusion for 2D boxes and masks, (iii) depth back-projection to obtain a 3D point cloud,
+(iv) robustness to occlusions and illumination variation, (v) apple size estimation in both
+pixel and metric units, (vi) reconstruction of a 3D localisation, and (vii) evaluation using
+standard detection metrics. The detailed formulation of each component in the proposed
+framework is described comprehensively using mathematical equations.
+Deep-learning detectors require diverse and representative training data to generalise
+to the wide range of viewpoints, scales, and lighting conditions commonly observed in
+orchards. Because collecting such variation-rich datasets is costly and time-consuming,
+data augmentation becomes an essential component of the proposed pipeline. In this
+work, we apply a set of geometric and photometric transformations that simulate realistic
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+6 of 21
+appearance changes while preserving the structural integrity of the fruit. The following
+equations formalise these transformations and introduce the associated notation.
+Figure 1. Overview of the proposed RGB-D perception architecture for apple detection and three-
+dimensional localisation. The framework integrates RGB-depth data augmentation, dual-detector
+two-dimensional apple perception using YOLOv8 and Mask R-CNN with stabilised fusion, and depth-
+aware back-projection for accurate fruit-level 3D position estimation.
+The augmentation process begins with horizontal flipping, which mirrors the image
+across a vertical axis through its centre according to
+Iflip(u, v) = I(W −u, v),
+(1)
+where W is the image width and I(u, v) denotes the original pixel intensity. This ensures
+that the detector develops left-right invariance, allowing it to recognise apples regardless of
+whether they appear on the left or right side of the scene. To simulate variations in camera
+orientation, each image is additionally subjected to in-plane rotation, applied around the
+optical centre using
+"
+u′
+v′
+#
+=
+"
+cos θ
+−sin θ
+sin θ
+cos θ
+#"
+u −ur
+v −vr
+#
++
+"
+ur
+vr
+#
+,
+(2)
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+7 of 21
+where (ur, vr) is the rotation centre and θ is the rotation angle. This transformation en-
+courages robustness to arbitrary viewpoint changes caused by uneven terrain or natural
+robot movement.
+To account for the varying distances at which apples may appear, we apply anisotropic
+scaling, defined by
+"
+us
+vs
+#
+=
+"
+sx
+0
+0
+sy
+#"
+u
+v
+#
+,
+(3)
+where sx and sy control the horizontal and vertical scaling. This operation adjusts the ap-
+parent size of the fruit, enabling the detector to learn scale-invariant features and maintain
+consistent performance across different viewing distances.
+To model illumination changes commonly observed in orchards, a brightness adjust-
+ment is applied,
+Ibright(u, v) = γ I(u, v),
+(4)
+where γ > 0 regulates global brightness. This reproduces conditions ranging from shaded
+canopy regions to strongly sunlit patches, reducing the likelihood of illumination-related
+detection errors. Beyond geometric transformation, orchard imagery also exhibits consid-
+erable photometric variation, so we further introduce a contrast adjustment to expand or
+compress the dynamic range of intensities,
+Icontrast(u, v) = λ
+ I(u, v) −µ
+ + µ,
+(5)
+where λ is a contrast scaling factor and µ is the mean intensity.
+The colour appearance of fruit is further diversified through a hue-shift transformation,
+applied in HSV space as
+H′(u, v) =
+ H(u, v) + ∆h
+
+mod 360,
+(6)
+where ∆h is the hue offset. This accounts for natural variations in apple colouration as well
+as lighting-induced colour shifts.
+All geometric and photometric modifications are combined into a single augmentation
+pipeline, applied sequentially as
+I′ = Thue ◦Tcontrast ◦Tbright ◦Tscale ◦Trotate ◦Tflip(I),
+(7)
+with corresponding transformations applied to the depth image to maintain pixel-wise
+alignment. This integrated process produces highly diverse yet physically consistent
+training samples, significantly enhancing detector robustness under the complex visual
+conditions typical of orchard environments.
+Following augmentation, the enhanced image pair (I′, D′) is processed through two
+complementary detectors to obtain accurate 2D localisations of apples. The first detec-
+tor, YOLOv8, produces a set of bounding boxes, instance masks, and confidence values
+according to
+(BY, MY, cY) = YOLOv8(I′, D′),
+(8)
+where BY denotes the predicted bounding boxes, MY the associated segmentation masks,
+and cY their confidence scores.
+To refine these detections, the same input is passed through Mask R-CNN, which
+generates higher-precision boundaries via
+(BR, MR, cR) = MaskRCNN(I′, D′),
+(9)
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+8 of 21
+where BR, MR, and cR represent the bounding boxes, masks, and confidence values pre-
+dicted by the second detector.
+To combine the strengths of both detectors, the bounding boxes predicted by YOLOv8
+and Mask R-CNN are fused using a confidence-weighted average,
+B = cYBY + cRBR
+cY + cR
+,
+(10)
+where BY and BR are the bounding boxes predicted by YOLOv8 and Mask R-CNN, respec-
+tively, and cY and cR denote their associated confidence scores. This produces a single,
+stabilised bounding box B for each detected apple.
+The segmentation masks predicted by the two detectors are combined through a
+pixelwise logical union,
+M = 1[MY + MR > 0],
+(11)
+where MY and MR represent the masks generated by YOLOv8 and Mask R-CNN. The re-
+sulting mask M retains any pixel identified as fruit by either detector, providing a more
+complete segmentation of the apple. Although a pixelwise logical union of segmentation
+masks may potentially enlarge object regions when the two detectors partially disagree,
+this seemingly adverse effect is mitigated in the proposed framework through spatial and
+geometric constraints. Specifically, the union operation is applied only within the refined
+fused bounding box, and pixels that violate subsequent depth-consistency filtering are
+suppressed during 3D reconstruction. As a result, spurious regions introduced by partial
+detector disagreement are effectively removed in later processing stages. This design allows
+the mask union to improve fruit surface coverage under occlusion while avoiding uncon-
+trolled mask expansion.
+The combined detections for all apples in the image are then expressed compactly as
+D = {(Bi, Mi, ci)}N
+i=1,
+(12)
+where each tuple (Bi, Mi, ci) corresponds to one detected fruit and includes its fused
+bounding box Bi, fused segmentation mask Mi, and the resulting confidence score ci.
+The set D therefore contains the complete collection of detections for all N apples present
+in the augmented image and forms the basis for subsequent 3D reconstruction.
+To estimate each apple’s spatial location, the fused mask is projected into 3D using
+depth values from the corresponding pixels. Each pixel (u, v) is mapped into the camera
+coordinate frame via
+q(u, v) =
+ (u −up) D(u, v)/ fu, (v −vp) D(u, v)/ fv, D(u, v)
+
+,
+(13)
+where (up, vp) is the principal point and fu, fv are the focal lengths. This transformation
+converts 2D image coordinates and their depths into 3D positions, providing the basis for
+reconstructing the visible portion of the fruit.
+After back-projecting the pixels belonging to each fused mask, we obtain a discrete set
+of 3D points that represents the visible surface of the fruit. This set is defined as
+Q = { q(u, v) | (u, v) ∈M },
+(14)
+where Q contains all 3D coordinates corresponding to pixels marked as fruit in the seg-
+mentation mask M. Aggregating these points forms a partial surface reconstruction that is
+robust to missing regions or incomplete views.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+9 of 21
+To estimate the fruit’s spatial centre, we compute the geometric median of the 3D
+points in Q, expressed as
+c = arg min
+y ∑
+x∈Q
+∥x −y∥2,
+(15)
+where c is the 3D centroid and ∥·∥2 denotes the Euclidean norm. The geometric median
+provides a stable estimate of the fruit centre because it reduces sensitivity to noisy depth
+measurements or stray pixels that may be incorrectly included in the mask.
+Depth noise caused by foliage, branches, or abrupt shading transitions can distort the
+surface reconstruction. To mitigate such effects, we assign each pixel a depth- weight
+w(p) = exp
+ 
+−
+ D(p) −zavg
+2
+2σ2
+!
+,
+(16)
+where p = (u, v) is a pixel, D(p) denotes its depth value, zavg is the mean depth of all
+mask pixels, and σ is a tolerance parameter. The parameter σ controls the sensitivity of
+the weighting function to depth deviations and therefore determines the strength of noise
+suppression. In this work, σ is selected empirically on preliminary experiments conducted
+on the validation set, where different values were evaluated to balance outlier rejection
+and preservation of valid fruit surface points. A small σ produces a narrow weighting
+distribution, aggressively down-weighting pixels whose depths deviate from the mean
+and effectively suppressing noise caused by foliage, branches, and mixed pixels, but may
+discard legitimate surface points. Conversely, a large σ results in smoother weighting,
+retaining more pixels at the risk of admitting noisy measurements. The chosen σ provides a
+compromise between these two extremes, yielding stable centroid estimates while maintain-
+ing sufficient surface coverage. This setting was found to be robust across different orchard
+scenes and illumination conditions. A Gaussian model is adopted for depth-consistency
+weighting because it provides a smooth and symmetric attenuation of depth outliers while
+preserving pixels close to the dominant fruit surface. Although a fixed σ is used in this
+work, its value is selected to be proportional to the typical depth variation observed within
+apple surfaces in the training data, which implicitly accommodates moderate differences
+in fruit size and viewing distance. Larger fruits or closer viewpoints naturally exhibit
+greater surface depth variation, whereas smaller or distant fruits produce tighter depth
+distributions; the selected σ was empirically chosen to remain effective across these cases.
+Validation experiments confirmed that the chosen setting yields stable centroid estimation
+under varying occlusion levels without requiring per-fruit parameter adaptation, offering a
+practical compromise between robustness and computational simplicity.
+Using these depth-consistent weights, we refine the 3D centre estimate as
+cw = ∑p∈M w(p) q(p)
+∑p∈M w(p)
+,
+(17)
+where q(p) is the 3D back-projected point for pixel p. This weighted centre places greater
+emphasis on depth-reliable pixels and thus improves robustness when parts of the fruit are
+partially hidden behind leaves or branches.
+To compensate for illumination variations across the fruit surface, we apply local
+intensity normalisation, defined by
+In(u, v) = I′(u, v) −µL
+σL
+,
+(18)
+The neighbourhood size used to compute the local mean µL and standard deviation σL is
+defined by a square window centred at each pixel, where I′(u, v) is the augmented image
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+10 of 21
+and the statistics are calculated within a neighbourhood around pixel (u, v). In the current
+implementation, a fixed k × k window with k = 9 is used for all experiments. This size was
+selected empirically through validation to provide a good balance between local contrast
+enhancement and noise robustness. Smaller windows tend to amplify sensor noise and
+local texture fluctuations, whereas larger windows oversmooth local details and reduce the
+effectiveness of normalisation near fruit boundaries. The chosen window size therefore
+preserves local structural details while sufficiently compensating for gradual illumination
+changes. In addition, because µL and σL are computed independently for each pixel on its
+surrounding neighbourhood, the normalisation operation adapts automatically to spatially
+varying lighting conditions across the image, enabling consistent enhancement under both
+strong illumination and low-light scenarios.
+After normalising local pixel intensities, we estimate the apparent fruit size directly
+from the segmentation mask. Assuming a near-circular silhouette, the effective pixel
+diameter is approximated by
+dpix =
+r
+4|M|
+π
+,
+(19)
+where |M| denotes the number of mask pixels and π ≈3.1416. This relation follows
+from the area-to-diameter formula for a circle and provides a convenient approximation of
+the fruit’s diameter in pixel units without requiring explicit contour fitting. The metric
+diameter estimation in Equation (19) assumes a near-circular silhouette as a simplifying ap-
+proximation of the apple’s projected shape. While real apples may exhibit slight elongation
+and segmentation masks may be incomplete under partial occlusion, this assumption is
+used only to obtain an initial size estimate rather than a precise shape model. In practice,
+the influence of non-circular or partially visible silhouettes is reduced by averaging depth
+over all mask pixels and by subsequent geometric analysis of lateral and depth extents
+(Equations (23) and (24)), which account for ellipsoidal shape variations and perspective
+effects. Empirical evaluation indicates that the resulting metric diameter remains stable
+across different fruit orientations and moderate occlusion levels, making the approximation
+suitable for real-time harvesting applications where computational efficiency is required.
+To account for perspective effects, we compute the average depth across all mask
+pixels as
+zavg =
+1
+|M| ∑
+p∈M
+D(p),
+(20)
+where D(p) is the depth at pixel p. Averaging the depth over the entire mask yields a stable
+estimate of the fruit’s distance from the camera by reducing the influence of local curvature,
+noise, or partially occluded regions.
+Combining the apparent pixel diameter with the estimated depth, we convert the fruit
+size into metric units using the pinhole camera model,
+dm ≈dpix · zavg
+fu
+,
+(21)
+where dm is the diameter in metres and fu is the horizontal focal length expressed in pixels.
+This linear scaling arises from the geometric projection relation, enabling an efficient metric
+diameter estimate without performing full 3D sphere fitting.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+11 of 21
+To maintain consistency between image and world coordinates, we use the camera
+projection matrix to map 3D points into pixel coordinates,
+Z
+
+
+u
+v
+1
+
+=
+
+
+fu
+0
+up
+0
+fv
+vp
+0
+0
+1
+
+
+
+
+X
+Y
+Z
+
+,
+(22)
+where (X, Y, Z) are the 3D camera-frame coordinates, (u, v) are the corresponding pixel
+coordinates, fu and fv are the horizontal and vertical focal lengths, and (up, vp) is the
+principal point. This compact form expresses the standard pinhole projection, ensuring
+geometric consistency between the fruit’s 3D structure and its 2D image footprint.
+Finally, we compute the fruit’s lateral 3D extent from the extreme points of the recon-
+structed surface,
+dx = XR −XL,
+dy = YB −YT,
+(23)
+where XR and XL are the rightmost and leftmost 3D coordinates along the X-axis, and YB
+and YT are the bottom and top coordinates along the Y-axis. These spans capture the
+horizontal and vertical extents of the fruit in metric space, providing further geometric cues
+for size estimation and shape analysis.
+To estimate the depth extent of the fruit from its lateral spans, we fit a quadratic
+regression model that relates the observed horizontal and vertical extents to the underlying
+3D depth of the fruit. The estimated depth is expressed as
+dz ≈a0 + a1d2
+x + a2d2
+y + a3dx + a4dy,
+(24)
+where dz denotes the fruit’s depth extent, dx and dy are the lateral spans defined in
+Equation (23), and a0, . . . , a4 are regression coefficients learned from calibration fruit. The
+regression coefficients are obtained using a supervised calibration procedure in which a set
+of representative apples with measured metric dimensions is used to fit the quadratic model
+via least-squares regression. The calibration set includes fruits spanning different sizes,
+shapes, and maturity stages, ensuring coverage of typical intra-class variability. Because the
+regression relates geometric extents rather than appearance features, the learned mapping
+captures structural properties that are largely independent of colour or cultivar. Validation
+experiments on both benchmark datasets and real orchard data indicate that the calibrated
+model provides stable depth-extent estimates across different apple varieties and mod-
+erate shape variations, supporting its generalisability in practical orchard environments.
+This quadratic formulation captures the empirical relationship between lateral and depth
+extents, accommodating ellipsoidal shape variations and perspective foreshortening that
+occur at different viewing angles.
+With the lateral and depth spans determined, we compute the Euclidean distance
+from the camera to the fruit centre as
+D =
+q
+X2c + Y2c + Z2c,
+(25)
+where (Xc, Yc, Zc) are the 3D coordinates of the fruit centre. This range estimate is useful
+for robot reach planning, collision avoidance, and determining safe approach distances for
+manipulation. Finally, each 3D vertex is projected back into pixel space using the camera
+model of Equation (22). This enables consistent visualisation and alignment between
+the reconstructed 3D fruit and the original image data, facilitating quality inspection,
+annotation, or multi-view fusion.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+12 of 21
+To quantify detection performance, we report standard evaluation metrics commonly
+used in multi-fruit localisation tasks. Precision is defined as
+P =
+TP
+TP + FP,
+(26)
+where TP denotes the true positive detections number and FP shows false positives.
+Precision measures the proportion of system detections that correctly correspond to apples,
+penalising erroneous predictions caused by leaves, branches, or background clutter.
+Complementing precision, recall evaluates the system’s capability to identify all apples
+present in the scene, and is given by
+R =
+TP
+TP + FN ,
+(27)
+where FN corresponds to false negatives, i.e., apples present in the image but missed by
+the detector. Recall therefore captures completeness, rewarding systems that successfully
+identify dim, occluded, or partially visible fruit instances.
+To provide a balanced measure that incorporates both precision and recall, we compute
+the harmonic mean of the two metrics, known as the F1-score:
+F1 = 2PR
+P + R.
+(28)
+The F1-score condenses performance into a single interpretable value, making it suitable
+for comparing different detection models or evaluating the system under varying levels of
+occlusion and scene complexity. The complete procedure of the proposed apple detection
+and three-dimensional localisation method is summarised in Algorithm 1.
+The complete procedure for our apple detection and 3D localisation pipeline is sum-
+marised in Algorithm, which outlines the augmentation steps, dual-detector fusion, depth
+projection, and geometric reconstruction stages used to obtain metric fruit dimensions.
+Algorithm 1: Apple Detection & 3D Localisation (Proposed).
+Input: I, D, intrinsics K = ( fu, fv, uc, vc), detectors YOLOv8, Mask R-CNN, coeffs
+α0 . . . α4
+Output: D and optionally P, R, F1
+(Training only) Augment (I, D) with flip/rotate/scale/photometric ops
+(Equations (1)–(7)); denote (I′, D′).
+(Inference) set (I′, D′) ←(I, D).
+(Equations (1)–(7))
+// 2D detection and mask fusion
+(BY, MY, cY) ←YOLOv8(I′, D′); (BR, MR, cR) ←MaskRCNN(I′, D′)
+B ←cYBY+cRBR
+cY+cR
+(Equation (8))
+M ←1[MY + MR > 0]
+(Equation (9))
+c ←max(cY, cR)
+(Equation (10))
+Extract {(Bi, Mi, ci)}N
+i=1
+(Equations (11) and (12)).
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+13 of 21
+Algorithm 1: Cont.
+for i = 1 to N do
+// Back-project mask to 3D
+q(u, v) =
+ (u −uc)D/ fu, (v −vc)D/ fv, D
+
+(Equation (13))
+Qi ←{q(u, v) | (u, v) ∈Mi}
+(Equation (14))
+Projection constraint check
+(Equation (15))
+// Depth consistency weights
+zavg =
+1
+|Mi| ∑p∈Mi D(p)
+(Equation (16))
+w(p) = exp
+
+−(D(p)−zavg)2
+2σ2
+
+(Equation (17))
+// Weighted centroid
+ci =
+∑p∈Mi w(p) q(p)
+∑p∈Mi w(p)
+(Equation (18))
+// Size estimates
+dpix =
+p
+4|Mi|/π
+(Equation (19))
+dm,i = dpix · zavg/ fu
+(Equation (20))
+(dx,i, dy,i) = maxX(Qi) −minX(Qi), maxY(Qi) −minY(Qi)
+(Equation (21))
+// Depth extent regression
+dz,i = α0 + α1d2
+x,i + α2d2
+y,i + α3dx,i + α4dy,i
+(Equation (24))
+D =
+p
+X2c + Y2c + Z2c
+(Equation (25))
+Store (Bi, Mi, ci, ci, dm,i, dx,i, dy,i, dz,i, {Vi,j}) in D.
+(Optional evaluation)
+P =
+TP
+TP+FP
+(Equation (26))
+R =
+TP
+TP+FN
+(Equation (27))
+F1 = 2PR
+P+R
+(Equation (28))
+return D and (optional) P, R, F1
+4. Experimental Results and Discussion
+4.1. Experimental Setup
+The experimental setup of the proposed method is illustrated in Figure 2, which
+presents the embedded computing platform, the RGB-D sensing configuration, and the
+real-world orchard environment used for field trials. All experiments were conducted
+on an NVIDIA Jetson AGX- embedded system, shown in Figure 2a, which served as the
+primary on-board processing unit. The Jetson AGX integrates a multi-core ARM CPU
+and an NVIDIA GPU with dedicated CUDA and Tensor cores, supported by 32 GB of
+LPDDR4x VRAM. This configuration enables efficient execution of deep learning- detection
+networks and depth-aware three-dimensional perception tasks in real time. All runtime
+performance results, including the reported detection inference speed of 86.42 FPS, were
+measured on this embedded NVIDIA Jetson AGX platform using GPU-accelerated infer-
+ence. The reported frame rate corresponds to the two-dimensional detection stage rather
+than the full end-to-end pipeline and reflects performance achieved with an optimised
+model configuration. This result demonstrates that the proposed detection framework
+is suitable for practical deployment on embedded robotic harvesting systems requiring
+low-latency perception. To support extended data acquisition and storage of RGB images,
+depth maps, and intermediate processing outputs, an external 500 GB storage device was
+connected to the platform.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+14 of 21
+(a)
+(b)
+(c)
+Figure 2. Experimental setup of the proposed method. (a) Embedded NVIDIA Jetson AGX computing
+platform used for on-board processing. (b) RGB-D sensing configuration showing the camera
+connected to the embedded platform. (c) Apple orchard in Lenswood, South Australia, where real-
+world field experiments were conducted.
+As shown in Figure 2b, an RGB-D camera was interfaced with the Jetson AGX to ac-
+quire synchronised colour and depth streams. The camera provides aligned per-pixel depth
+measurements together with high-resolution RGB imagery, ensuring accurate correspon-
+dence between visual appearance and geometric information. This alignment is essential
+for the proposed method, which relies on depth masking, geometric back-projection,
+and fruit-level three-dimensional localisation. During data collection, the RGB-D camera
+was operated in a handheld manner to emulate realistic sensing conditions encountered in
+orchard environments. All perception, detection, and localisation processes were executed
+directly on the embedded platform, demonstrating the feasibility of deploying the proposed
+method for real-time, on-device operation. For network training and validation, the apple
+dataset was divided into 2290 training images and 801 validation images. To maintain
+consistency across experiments and optimise computational efficiency, all input images
+were resized to a fixed resolution of 896 × 896 pixels during training. Two complemen-
+tary datasets were employed to develop and evaluate the segmentation component of
+the proposed apple detection framework. The first dataset was the publicly available
+MinneApple dataset, which contains 1000 annotated orchard images and is widely used
+as a benchmark in fruit detection research. The second dataset was the Amodal Apple
+dataset, consisting of 3019 images, which provides a broader range of apple appearances
+captured under diverse orchard conditions. To further characterise the representativeness
+of the training data, the MinneApple and Amodal Apple datasets were analysed in terms
+of occlusion level, lighting condition, and apple appearance. The datasets contain sam-
+ples spanning three approximate occlusion categories: low occlusion (fully visible fruits),
+medium occlusion (partial leaf or branch coverage), and high occlusion (severely occluded
+or overlapping fruits). Images also cover diverse illumination conditions, including strong
+sunlight, moderate daylight, shadow-dominated scenes, and low-light environments, re-
+flecting realistic orchard variability. In addition, both datasets include multiple apple
+varieties with noticeable differences in colour, size, and surface texture, ranging from green
+to yellow and red cultivars, as well as varying maturity stages. This diversity ensures
+that the training data expose the proposed model to a wide range of visual and geomet-
+ric variations, supporting robust generalisation across different orchard scenarios. The
+combined use of these datasets exposes the model to variations in occlusion, illumination,
+scale, and fruit arrangement, thereby improving generalisation performance. In addition to
+dataset-based evaluation, real-world field experiments were conducted in an apple orchard
+located in Lenswood, South Australia, as shown in Figure 2c. During these trials, RGB-D
+data were collected by walking through the orchard while holding the RGB-D camera by
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+15 of 21
+hand. This data acquisition strategy reflects realistic operating conditions for mobile robotic
+harvesting systems, including natural illumination changes, viewpoint variation, and com-
+plex background clutter. Together, the controlled dataset experiments and the field trials
+provide a comprehensive evaluation of the proposed method under both experimental
+and real-world orchard conditions. All real-world orchard experiments were conducted
+in Lenswood, South Australia, under naturally varying outdoor conditions. Data were
+collected across different times of day, including morning and afternoon periods, resulting
+in diverse illumination levels ranging from soft diffuse lighting to strong direct sunlight. Ex-
+periments were performed under mostly clear and partly cloudy weather, with occasional
+light wind, reflecting typical orchard operating conditions. The evaluated trees exhibit
+common open-canopy and semi-dense architectures with varying foliage density, branch
+arrangements, and fruit clustering patterns. These variations ensure that the collected data
+are representative of practical orchard environments and facilitate reproducibility of the
+experimental conditions.
+4.2. Results and Discussion
+Fruit detection and 3D localisation performance of the proposed framework is illus-
+trated in Figures 3 and 4 under representative challenging orchard conditions. In Figure 3,
+first row, apples are partially occluded by surrounding foliage, where the RGB image
+alone provides weak visual contrast between fruit surfaces and background leaves, making
+reliable detection difficult. In this case, the depth mask highlights foreground structures
+and facilitates effective level separation, which suppresses irrelevant foliage regions while
+retaining apple candidates. As a result, the segmentation stage preserves coherent fruit
+boundaries, enabling stable and accurate two-dimensional (2D) detection despite signifi-
+cant leaf-induced occlusion. The corresponding three-dimensional (3D) processing results
+shown in Figure 4, first row, further demonstrate that the retained depth information sup-
+ports consistent fruit-level point cloud reconstruction, allowing accurate spatial localisation
+even when only partial fruit surfaces are visible.
+In Figure 3, second row, the scene contains apple-to-apple occlusion, where neigh-
+bouring fruits overlap in the image plane and produce ambiguous visual boundaries.
+Under such conditions, the proposed dual-detector fusion benefits from complementary
+bounding-box cues and instance-level segmentation, improving separation between ad-
+jacent apples. Depth-aware masking further refines the segmentation by removing back-
+ground interference, resulting in reliable 2D detections for individual fruits. This improved
+instance separation is reflected in Figure 4, second row, where the reconstructed 3D views
+show clearly separated fruit point sets and stable localisation outputs, indicating robustness
+to inter-fruit occlusion.
+The third row of Figure 3 illustrates scenarios involving densely clustered apples
+distributed along branches, where minimal spacing between fruits often leads to merged
+detections in conventional approaches. Despite these challenging conditions, the proposed
+framework successfully maintains instance-level segmentation and consistent 2D detection
+for multiple closely spaced apples. As shown in Figure 4, third row, the depth-guided
+back-projection reconstructs distinct fruit-level 3D representations, enabling precise locali-
+sation of each apple within the cluster. Overall, these qualitative results confirm that the
+proposed method effectively integrates appearance-based perception with geometric depth
+reasoning to handle foliage occlusion, inter-fruit overlap, and dense clustering in realistic
+orchard environments.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+16 of 21
+RGB image
+Depth mask
+Level
+Segmentation
+2D detection
+Figure 3. Qualitative assessment of the proposed 2D apple detection pipeline under complex orchard
+scenarios. Each row illustrates sequential processing stages, including the original RGB image, depth-
+derived masking, level-based separation, segmentation output, and the final 2D detection result. The red
+bounding boxes in the last column indicate the detected apple instances in the image plane. The first row
+presents results under leaf-induced occlusion, the second row demonstrates performance in the presence
+of inter-fruit occlusion, and the third row highlights reliable detection of densely grouped apples along
+tree branches.
+RGB image
+Depth mask
+3D view
+3d detection
+3D localisation
+Figure 4. Qualitative evaluation of the proposed three-dimensional apple localisation framework in complex
+orchard environments. Each row presents consecutive stages of the processing pipeline, including the RGB
+input image, depth-based masking result, reconstructed 3D scene representation, fruit-level 3D detection, and
+the final localisation output. The red bounding boxes shown in the last column indicate the detected apples
+and their corresponding localisation results projected onto the image plane. The first row demonstrates
+robustness to foliage-induced occlusion, the second row illustrates performance under inter-fruit occlusion,
+and the third row highlights accurate localisation of densely clustered apples along branches.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+17 of 21
+The qualitative performance of the proposed framework under challenging illumina-
+tion and appearance conditions is showing in Figures 5 and 6. These results complement the
+occlusion-focused analysis by examining the robustness of the proposed method to strong
+lighting variation, low illumination, and colour ambiguity, which commonly degrade
+vision-based perception in orchard environments.
+RGB image
+Depth mask
+Level
+Segmentation
+2D detection
+Figure 5. The first row demonstrates effective apple detection under strong illumination (high-light)
+conditions, the second row highlights robust detection performance in low-light environments,
+and the third row presents accurate detection of apples whose color closely resembles surrounding
+foliage or other fruits.
+In Figure 5, first row, apples are observed under strong illumination, where specular
+reflections and high contrast introduce fragmented visual cues and obscure fruit boundaries
+in the RGB image. In this scenario, the depth mask highlights foreground structures and
+enables effective level separation, suppressing background foliage and shadowed regions.
+As a result, the segmentation stage preserves coherent fruit regions, allowing stable and
+accurate 2D detection despite intense lighting conditions. The corresponding 3D processing
+results in Figure 6, first row demonstrate that depth-guided masking supports consistent
+fruit-level point cloud reconstruction, leading to reliable three-dimensional localisation
+even when RGB appearance is distorted by illumination effects.
+In Figure 5, second row, scenes captured under low-light conditions are presented,
+where reduced contrast and shadowing significantly weaken RGB-based fruit visibility.
+Despite these challenges, the proposed framework maintains robust 2D detection by inte-
+grating depth-derived cues with instance-level segmentation, preventing missed detections
+caused by insufficient colour information. As shown in Figure 6, second row, the re-
+constructed 3D views remain spatially coherent, and fruit-level localisation is preserved,
+indicating that the proposed depth-aware back-projection effectively compensates for
+degraded RGB cues in low-illumination environments.
+The third row of Figure 5 illustrates cases in which apple colour and appearance closely
+resemble surrounding foliage or neighbouring fruits, resulting in severe colour ambiguity.
+In such scenarios, conventional RGB-based methods often struggle to distinguish fruit
+boundaries. The proposed method overcomes this limitation by exploiting depth-guided
+masking and instance-level segmentation, enabling accurate separation of fruit regions
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+18 of 21
+from visually similar backgrounds. This improved discrimination is reflected in Figure 6,
+third row, where distinct fruit-level 3D point sets are reconstructed and precise spatial
+localisation is achieved despite strong appearance similarity.
+Overall, the qualitative results in Figures 5 and 6 demonstrate that the proposed
+framework achieves reliable 2D apple detection and accurate 3D localisation across a wide
+range of challenging illumination and appearance conditions. These findings confirm that the
+tight integration of depth-aware filtering, dual-detector perception, and geometric reasoning
+significantly enhances robustness in realistic orchard environments, supporting the suitability
+of the proposed method for deployment in real-world robotic harvesting applications.
+RGB image
+Depth mask
+3D view
+3d detection
+3D localisation
+Figure 6. The top row presents 3D localisation results obtained under intense lighting conditions,
+the middle row illustrates reliable performance in scenes affected by limited illumination, and the
+bottom row demonstrates successful 3d localisation of apples whose color and appearance are highly
+similar to surrounding fruits and foliage.
+Although the proposed framework achieves robust performance in most orchard sce-
+narios, some failure cases were observed under extreme conditions. Detection errors mainly
+occur when severe occlusion, extreme illumination, and similar fruit-background colour are
+present simultaneously, which can significantly degrade both appearance-based features
+and depth reliability. When these factors co-exist, apples may become indistinguishable
+from surrounding foliage and background structures, leading to incomplete segmentation
+or missed detections. These observations indicate that the current method has reduced relia-
+bility in highly adverse visual conditions. Future work will explore incorporating temporal
+information from video sequences, illumination-invariant feature learning, and multi-view
+perception to further improve robustness under such challenging scenarios.
+The comparison methods reported in Table 1 were selected to represent a broad spec-
+trum of widely adopted and state-of-the-art deep learning architectures for object detection
+and instance segmentation in agricultural and outdoor vision applications. Lightweight
+single-stage detectors such as MobileNetV3-based models are included to reflect approaches
+prioritising real-time performance on embedded platforms. Two-stage detectors, including
+Faster R-CNN and Mask R-CNN, are chosen as strong baselines that emphasise detection
+accuracy and instance-level segmentation quality. In addition, improved YOLOv8 variants
+and DaSNet are incorporated as recent high-performance models that have demonstrated
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+19 of 21
+competitive results in fruit detection and related agricultural perception tasks. Together,
+these methods cover different design philosophies in terms of network complexity, infer-
+ence speed, and accuracy, enabling a comprehensive and fair evaluation of the proposed
+framework against current mainstream approaches.
+Table 1. Performance comparison of different apple detection methods.
+Method
+Accuracy (%)
+Recall (%)
+F1-Score (%)
+mAP (%)
+FPS
+Improved YOLOv8
+95.2
+87.4
+91.0
+93.3
+72.5
+DaSNet
+92.1
+82.1
+86.9
+88.4
+41.2
+MobileNetV3
+93.8
+79.7
+86.1
+87.1
+90.5
+Faster R-CNN
+94.0
+73.1
+82.0
+81.2
+50.8
+Mask R-CNN
+96.0
+92.7
+85.2
+89.0
+78.6
+Proposed Method
+98.9
+92.8
+93.3
+94.2
+86.42
+Table 1 presents a comparison between the proposed method and several representa-
+tive apple detection approaches using accuracy, recall, F1-score, mean Average Precision
+(mAP), and inference speed. The proposed method achieves the highest overall detection
+accuracy (98.9%) and mAP (94.2%), indicating strong capability in both apple classification
+and localisation under complex orchard conditions.
+The proposed method also records the highest F1-score (93.3%), demonstrating a well-
+balanced trade-off between detection precision and recall. Although Mask R-CNN achieves
+a comparable recall value, its lower accuracy, F1-score, and inference speed indicate reduced
+overall robustness. In contrast, the proposed approach maintains high recall (92.8%) while
+improving detection consistency and localisation reliability, which is particularly important
+for downstream three-dimensional perception tasks.
+From a computational perspective, MobileNetV3 achieves the highest inference speed
+due to its lightweight architecture; however, this advantage comes at the cost of reduced
+accuracy and mAP. The proposed method maintains a high inference speed of 86.42 FPS
+while simultaneously delivering superior detection and localisation performance. This
+balance highlights its suitability for real-time deployment on embedded platforms.
+Overall, while some baseline methods outperform the proposed approach in isolated
+metrics such as inference speed or recall, none achieve comparable performance across
+all evaluation criteria. The proposed method consistently provides strong performance in
+accuracy, F1-score, mAP, and real-time capability, confirming its effectiveness for practical
+orchard-based apple detection applications.
+5. Conclusions
+This study proposed a robust RGB-D perception framework for accurate apple detec-
+tion and three-dimensional localisation in complex orchard environments. By integrating a
+dual-detector two-dimensional perception strategy based on YOLOv8 and Mask R-CNN
+with depth-aware back-projection, the proposed method improves detection stability and lo-
+calisation accuracy under challenging conditions such as heavy foliage occlusion, inter-fruit
+overlap, illumination variation, and background clutter. The dual-detector fusion leverages
+complementary bounding-box and instance-level segmentation information to enhance
+instance separation in densely clustered scenes, while depth-consistent back-projection
+enables reliable reconstruction of fruit-level three-dimensional point sets and accurate
+coordinate estimation through robust centroid computation. Extensive experiments on
+public benchmark datasets and real-world orchard data collected in Lenswood, South
+Australia, demonstrate that the proposed method achieves improved detection accuracy,
+balanced precision and recall, and real-time performance on an embedded computing
+platform. In future work, multi-view perception will be achieved by fusing RGB-D ob-
+servations from either multiple calibrated cameras or a moving camera mounted on the
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+20 of 21
+robotic manipulator. Extrinsic calibration between cameras and the robot base will enable
+alignment of all views into a common coordinate frame, followed by geometric fusion of
+overlapping point clouds to obtain more complete fruit surface reconstructions. These
+multi-view 3D representations will be used to generate grasp candidates based on surface
+geometry and visibility. Sampling-based motion planners such as RRT or RRT* will then
+compute collision-free trajectories for executing the selected grasps. This integration will
+enable reliable coupling between multi-view perception and robotic grasp planning in
+cluttered orchard environments.
+Author Contributions: Conceptualization, T.H. and P.S.; methodology, T.H.; software, T.H.; vali-
+dation, T.H., P.S. and L.K.; formal analysis, T.H.; investigation, T.H.; resources, P.S. and L.K.; data
+curation, T.H.; writing—original draft preparation, T.H.; writing—review and editing, T.H., P.S. and
+L.K.; visualization, T.H.; supervision, P.S. and L.K.; project administration, P.S. All authors have read
+and agreed to the published version of the manuscript.
+Funding: This research received no external funding.
+Data Availability Statement: The datasets used and/or generated during the current study are not
+publicly available, as they are directly related to ongoing research activities. However, the data may
+be obtained from the corresponding author upon reasonable request.
+Conflicts of Interest: The authors declare no conflicts of interest.
+References
+1.
+Zhao, Y.; Gong, L.; Huang, Y.; Liu, C. A Review of Key Techniques of Vision-Based Control for Harvesting Robot. Comput.
+Electron. Agric. 2016, 127, 311–323.
+2.
+Indolia, S.; Goswami, A.K.; Mishra, S.P.; Asopa, P. Conceptual Understanding of Convolutional Neural Network—A Deep
+Learning Approach. Procedia Comput. Sci. 2018, 132, 679–688.
+3.
+Wei, J.; As’arry, A.; Rezali, K.A.M.; Yusoff, M.Z.M.; Ma, H.; Zhang, K. A Review of YOLO Algorithm and Its Applications in
+Autonomous Driving Object Detection. IEEE Access 2025, 13, 93688–93711.
+4.
+Ren, S.; He, K.; Girshick, R.; Sun, J. Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks. Adv.
+Neural Inf. Process. Syst. 2015, 28, 91–99.
+5.
+Abdulla, W. Mask R-CNN for Object Detection and Instance Segmentation on Keras and TensorFlow. GitHub Repository. 2017.
+Available online: https://github.com/matterport/Mask_RCNN (accessed on 1 January 2026).
+6.
+Zhong, H.; Wang, H.; Wu, Z.; Zhang, C.; Zheng, Y.; Tang, T. A Survey of LiDAR and Camera Fusion Enhancement. Procedia
+Comput. Sci. 2021, 183, 579–588.
+7.
+Gené-Mola, J.; Llorens, J.; Rosell-Polo, J.R.; Gregorio, E.; Arnó, J.; Solanelles, F.; Martínez-Casasnovas, J.A.; Escolà, A. Assessing the
+Performance of RGB-D Sensors for 3D Fruit Crop Canopy Characterization under Different Operating and Lighting Conditions.
+Sensors 2020, 20, 7072.
+8.
+Yoshida, T.; Kawahara, T.; Fukao, T. Fruit Recognition Method for a Harvesting Robot with RGB-D Cameras. ROBOMECH J. 2022,
+9, 15.
+9.
+Fu, L.; Gao, F.; Wu, J.; Li, R.; Karkee, M.; Zhang, Q. Application of Consumer RGB-D Cameras for Fruit Detection and Localization
+in Field: A Critical Review. Comput. Electron. Agric. 2020, 177, 105687.
+10.
+Gao, F.; Fang, W.; Sun, X.; Wu, Z.; Zhao, G.; Li, G.; Li, R.; Fu, L.; Zhang, Q. A Novel Apple Fruit Detection and Counting
+Methodology Based on Deep Learning and Trunk Tracking in Modern Orchard. Comput. Electron. Agric. 2022, 197, 107000.
+11.
+Li, T.; Feng, Q.; Qiu, Q.; Xie, F.; Zhao, C. Occluded Apple Fruit Detection and Localization with a Frustum-Based Point-Cloud-
+Processing Approach for Robotic Harvesting. Remote Sens. 2022, 14, 482.
+12.
+Wang, Z.; Xu, J.; Zhang, X.; Shen, A.; Zhang, Z.; Xun, Y. In Situ Detection and Measurement of Broccoli Heads under Different
+Lighting Conditions Using Proximal Remote Sensing. J. Field Robot. 2025, 42, 4101–4114.
+13.
+Zhao, Z.; Hicks, Y.; Sun, X.; Luo, C. FruitQuery: A Lightweight Query-Based Instance Segmentation Model for In-Field Fruit
+Ripeness Determination. Smart Agric. Technol. 2025, 12, 101068. https://doi.org/10.1016/j.atech.2025.101068.
+14.
+Ma, F.; Cavalheiro, G.V.; Karaman, S. Self-Supervised Sparse-to-Dense: Self-Supervised Depth Completion from LiDAR and
+Monocular Camera. Proc. IEEE Int. Conf. Robot. Autom. 2019, 3288–3295.
+https://doi.org/10.3390/robotics15020047
+
+Robotics 2026, 15, 47
+21 of 21
+15.
+Zhou, Y.; Yu, C.; Zhang, J.; Liu, Y.; Kan, J.; Zou, X.; Zhang, K.; Li, H.; Zhang, S.; Wu, F. Vision-Based Perception and Execution
+Decision-Making for Fruit Picking Robots Using Generative AI Models. Machines 2024, 14, 117. https://doi.org/10.3390/
+machines14010117.
+16.
+Myint, B.B.; Onizuka, T.; Tin, P.; Aikawa, M.; Kobayashi, I.; Zin, T.T. Automated Cattle Detection Using Mask R-CNN and
+IoU-Based Tracking with a Single Side-View Camera. Int. J. Innov. Comput. Inf. Control 2024, 20, 1439–1447.
+17.
+Molina, J.M.; Llerena, J.P.; Usero, L.; Patricio, M.A. Advances in Instance Segmentation: Technologies, Metrics and Applications
+in Computer Vision. Neurocomputing 2025, 587, 129584.
+18.
+Mihajlovic, M.; Marjanovic, M. Enhancing Instance Segmentation in High-Resolution Images Using Slicing-Aided Hyper Inference
+and Spatial Mask Merging Optimized via R-Tree Indexing. Mathematics 2025, 13, 3079.
+19.
+Sharma, R.; Saqib, M.; Lin, C.T.; Blumenstein, M. A Survey on Object Instance Segmentation. SN Comput. Sci. 2022, 3, 499.
+20.
+Valada, A.; Mohan, R.; Burgard, W. Self-Supervised Model Adaptation for Multimodal Semantic Segmentation. Int. J. Comput. Vis.
+2020, 128, 1239–1285.
+21.
+Liu, Y.; Matsui, K.; Kageyama, Y.; Shirai, H.; Ishizawa, C. Improving a Faster R-CNN Model for Vehicle Detection and Human
+Action Recognition at Night via Infrared Thermal Imaging Using Transfer Learning. Int. J. Innov. Comput. Inf. Control 2024, 20,
+1573–1585.
+22.
+Park, K.; Kim, S.; Sohn, K. High-Precision Depth Estimation Using Uncalibrated LiDAR and Stereo Fusion. IEEE Trans. Intell.
+Transp. Syst. 2020, 21, 321–335.
+23.
+Mousavian, A.; Anguelov, D.; Flynn, J.; Kosecka, J. 3D Bounding Box Estimation Using Deep Learning and Geometry. Comput.
+Vis. Pattern Recognit. 2017, 5632–5640.
+24.
+Lu, S.; Chen, W.; Zhang, X.; Karkee, M. Canopy-Attention-YOLOv4-Based Immature/Mature Apple Fruit Detection on Dense-
+Foliage Tree Architectures for Early Crop Load Estimation. Comput. Electron. Agric. 2022, 193, 106696.
+25.
+Wang, Y.; Chen, Y. Fruit Morphological Measurement Based on Three-Dimensional Reconstruction. Agronomy 2020, 10, 455.
+26.
+Li, Z.; Xu, X.; Xu, T.; Gao, Y.; Rao, X. Process, Challenges and Solutions of Fruit 3D Reconstruction: A Review. Comput. Electron.
+Agric. 2025, 239, 111068.
+27.
+Ge, Y.; Xiong, Y.; From, P.J. Three-Dimensional Location Methods for the Vision System of Strawberry-Harvesting Robots:
+Development and Comparison. Precis. Agric. 2023, 24, 764–782.
+28.
+He, X.; Zhang, X.; Wang, Y.; Ji, H.; Duan, X.; Guo, F. Spatial Attention Frustum: A 3D Object Detection Method Focusing on
+Occluded Objects. Sensors 2022, 22, 2366.
+29.
+Wang, H.; Zhang, G.; Cao, H.; Hu, K.; Wang, Q.; Deng, Y.; Gao, J.; Tang, Y. Geometry-Aware 3D Point Cloud Learning for Precise
+Cutting-Point Detection in Unstructured Field Environments. J. Field Robot. 2025, 42, 3063–3076. https://doi.org/10.1002/rob.22567.
+30.
+Scutelnic, D.; Daffara, C.; Muraddore, R.; Weinmann, M.; Jutzi, B. Multi-Model Ensembles for Object Detection in Multispectral Images:
+A Case Study for Precision Agriculture. Comput. Electron. Agric. 2026, 240, 111213. https://doi.org/10.1016/j.compag.2025.111213.
+31.
+Almahasneh, M.; Paiement, A.; Xie, X.; Aboudarham, J. MLMT-CNN for Object Detection and Segmentation in Multi-Layer and
+Multi-Spectral Images. Mach. Vis. Appl. 2022, 33, 9. https://doi.org/10.1007/s00138-021-01261-y.
+32.
+Kutyrev, A.; Andriyanov, N.; Khort, D.; Smirnov, I.; Zubina, V. Adaptive CNN Ensemble for Apple Detection: Enabling Sustainable
+Monitoring Orchard. AgriEngineering 2025, 7, 369.
+33.
+Yang, X.; Gao, Y.; Yin, M.; Li, H. Automatic Apple Detection and Counting with AD-YOLO and MR-SORT. Sensors 2024, 24, 7012.
+34.
+Khosravi, H.; Saedi, S.I.; Rezaei, M. Real-Time Recognition of on-Branch Olive Ripening Stages by a Deep Convolutional Neural
+Network. Sci. Hortic. 2021, 287, 110252.
+35.
+Wu, H.; Chen, K.; Ni, M.; Ma, L. Strip Surface Defect Detection Based on Improved YOLOv7. Int. J. Innov. Comput. Inf. Control
+2024, 20, 1493–1507.
+36.
+Zuo, F.; Liu, J.; Chen, Z.; Zhang, H.; Fu, M.; Wang, L. Multilevel Fine-Grained Features-Based General Framework for Object
+Detection. IEEE Trans. Cybern. 2024, 54, 6921–6933.
+37.
+Jaw, D.-W.; Huang, S.-C.; Lu, Z.-H.; Fung, B.C.M.; Kuo, S.-Y. Multidomain Object Detection Framework Using Feature Domain
+Knowledge Distillation. IEEE Trans. Cybern. 2024, 54, 4643–4651.
+38.
+Yan, B.; Li, X. RGB-D Camera and Fractal-Geometry-Based Maximum Diameter Estimation Method of Apples for Robot Intelligent
+Selective Graded Harvesting. Fractal Fract. 2024, 8, 649.
+39.
+Kang, H.; Zhou, H.; Chen, C. Visual Perception and Modeling for Autonomous Apple Harvesting. IEEE Access 2020, 8, 62151–62163.
+40.
+Sekharamantry, P.K.; Melgani, F.; Malacarne, J.; Ricci, R.; Almeida D, S, R.; Marcato, J. A Seamless Deep Learning Approach
+for Apple Detection, Depth Estimation, and Tracking Using YOLO Models Enhanced by Multi-Head Attention Mechanism.
+Computers 2024, 13, 83.
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.
+https://doi.org/10.3390/robotics15020047

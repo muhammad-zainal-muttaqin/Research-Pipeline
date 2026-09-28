@@ -1,0 +1,1072 @@
+Counting of Grapevine Berries in Images via Semantic Segmentation using Convolutional
+Neural Networks
+Laura Zabawaa, Anna Kichererc, Lasse Klingbeila, Reinhard T¨opferc, Heiner Kuhlmanna, Ribana Roscherb
+aBonn University, Department of Geodesy, Institute for Geodesy and Geoinformation
+bBonn University, Remote Sensing Group, Institute for Geodesy and Geoinformation
+cJulius K¨uhn-Institut, Federal Research Centre of Cultivated Plants, Institute for Grapevine Breeding Geilweilerhof
+Abstract
+The extraction of phenotypic traits is often very time and labour intensive. Especially the investigation in viticulture is restricted
+to an on-site analysis due to the perennial nature of grapevine. Traditionally skilled experts examine small samples and extrapolate
+the results to a whole plot. Thereby diﬀerent grapevine varieties and training systems, e.g. vertical shoot positioning (VSP) and
+semi minimal pruned hedges (SMPH) pose diﬀerent challenges.
+In this paper we present an objective framework based on automatic image analysis which works on two diﬀerent training
+systems. The images are collected semi automatic by a camera system which is installed in a modiﬁed grape harvester. The system
+produces overlapping images from the sides of the plants. Our framework uses a convolutional neural network to detect single
+berries in images by performing a semantic segmentation. Each berry is then counted with a connected component algorithm. We
+compare our results with the Mask-RCNN, a state-of-the-art network for instance segmentation and with a regression approach
+for counting. The experiments presented in this paper show that we are able to detect green berries in images despite of diﬀerent
+training systems. We achieve an accuracy for the berry detection of 94.0% in the VSP and 85.6% in the SMPH.
+Keywords: Deep Learning, Semantic Segmentation, Geoinformation, High-throughput Analysis, Plant Phenotyping, Vitis
+1. Introduction
+Grapevine is an important crop, historically and economi-
+cally. In contrast to many other crops, the recent development
+in breeding is not faced towards yield enhancement, the goal
+is to breed robust varieties which satisfy the same quality stan-
+dards as the traditional ones [1]. To improve wine quality it
+is not desirable to grow as many grapes as possible, because a
+higher yield leads to a decrease in quality. Therefore thinning
+procedures are applied to produce high quality grapes.
+Grapevine is a perennial crop which means that the moni-
+toring of the vines needs to be carried out in the ﬁeld. Tradi-
+tional phenotyping is performed by skilled experts who apply
+labour intensive and subjective methods (OIV[2], BBCH[3]).
+The methods range from visual screening to counting manually
+or weighting. The experts only sample small regions of large
+grapevine plots and extrapolate the results for the whole ﬁeld
+which leads to an error prone estimation.
+The development of high-throughput phenotyping, the acqui-
+sition of large amounts of phenotypic data and the automatic
+analysis and extraction of phenotypic traits, was driven by the
+development of sensors and new image analysis techniques.
+RGB-, RGBD- or multi-spectral cameras can be used as well
+as laser scanners. Gongal et al. [4] did a review about diﬀerent
+sensors and algorithms which were used to detect and local-
+ize fruits with a robotic background. Other authors use high-
+throughput phenotyping for crop breeding [5], precision agri-
+culture [6], the detection of diseases (e.g. [7], [8]) or anomalies
+Figure 1: Prediction after application of the neural network. The image shows a
+Riesling plant in the semi minimal pruned hedges training system. The resulting
+berry mask is put over the original image to give a visual impression of the
+result.
+[9] or the classiﬁcation between diﬀerent plant types to identify
+weeds (e.g., [10], [11]). Some of the main advantages of auto-
+matic procedures are objectivity, repeatability and high quality
+results.
+Early approaches for high-throughput phenotyping for
+grapevine aimed at detecting grapes in images which were
+taken by handheld consumer cameras. The main focus lay in
+the recognition of geometrical structures. This gives informa-
+tion about the spatial arrangement of the objects and in some
+Preprint submitted to Journal of Photogrammetry and Remote Sensing
+March 30, 2020
+arXiv:2004.14010v1  [cs.CV]  29 Apr 2020
+
+cases even about the object size. For example, the approaches
+used in [12] and [13] deﬁne berries as circular objects and use
+Hough transform or radial symmetry transform to detect them.
+In [14], convex surfaces are identiﬁed and used for fruit recog-
+nition.
+Later Nuske et al. [15] presented a large scale experiment
+for berry detection with a moving platform and semi automatic
+image acquisition with illumination in a realistic environment.
+They apply a circular Hough transform to detect berry can-
+didates and classify them with texture, colour and shape fea-
+tures. Afterwards they cluster neighbouring berries into clus-
+ters. Other approaches investigate the 3D structure of berries.
+Rose et al. [16] used a stereo camera system to reconstruct point
+clouds from image sequences. They used colour and shape fea-
+tures to distinguish between canopy and berries. [17] used a
+handheld laser scanner to produce high resolutions scans from
+bunches under laboratory conditions. They extract several pa-
+rameters regarding single bunches.
+Since 2012, with the work of Krizhevsky et al. [18], neural
+networks (NN) became state-of-the-art for image classiﬁcation
+tasks. Moreover, by introducing convolutions to capture the
+spatial characteristics of objects in images and extending NN to
+convolutional neural networks (CNNs) [19], applications such
+as pixel-wise semantic segmentation were advancing. How-
+ever, solving the task as semantic segmentation does not allow
+for a distinction of single instances in image regions, which
+is most obvious for neighbored image objects of the same se-
+mantic class. A distinction between single objects is realized
+extending a semantic segmentation task to instance segmenta-
+tion, which outputs bounding boxes and several segmentation
+masks for single objects. One of the most famous approaches
+is called Mask-RCNN [20] where a major disadvantage is that
+the algorithms needs a predeﬁned number of object proposals.
+In contrast to the detection approaches, several other ideas
+how to count objects in images exist.
+One possibility is to
+count in an image without detecting their exact location. This
+is realized, for example, by regression methods as presented in
+[21] and [22]. The areas of application are diverse, from count-
+ing penguins in colonies [23], cells in microscopy images (e.g.,
+[24], [25]), buildings in high-resolution over head images [26]
+or nearly class agnostic approaches [27]. These works focus on
+avoiding explicit detection to count objects in images. Instead
+they output either a single number for each image or in some
+cases oﬀer the possibility to retrieve spatial information while
+counting with the estimation of density maps.
+In the ﬁeld of remote sensing with images the automatic de-
+tection of buildings is often realized with the classical detection
+approach. Yang et al. [28] proposed the combination of SegNet
+with signed-distance labels to improve the detection of building
+from images. Marmanis et al. [29] on the other hand reﬁne their
+buildings by adding information from an edge detector network.
+An overview about the usage of neural networks and deep
+learning in agricultural applications was done by Kamilaris et
+al. [30]. Similar techniques were used by several researcher re-
+garding the problem of yield estimation of grapevine. Aquino
+et al.
+ﬁrst proposed a smartphone application where single
+bunches had to be surrounded by a black background [31].They
+detected circular light reﬂection and classiﬁed the results with
+a neural network. Later they disregarded the need for a back-
+ground box [32]. Another approach aimed at detecting regions
+containing grapevine inﬂorescences in images with neural net-
+works [33] and applying a circular Hough transform in a second
+step. An adaptive network for semantic segmentation which
+was evaluated on diﬀerent growth stages and data sets was pro-
+posed by [34]. They either detect regions containing berries or
+dotwise berry positions. An example for instance segmentation
+via Mask-RCNN for grapevine was done by [35]. They applied
+the Mask-RCNN to images which were simultaneously used for
+a 3D reconstruction.
+We present a novel and objective approach to determine the
+number of berries as a decision base for thinning methods by
+providing berry numbers for whole rows. The data collection
+is performed with a modiﬁed grapevine harvester called Pheno-
+liner [36]. The harvesting equipment is replaced by a camera
+system which continuously records images laterally from the
+canopy while the harvester drives along the rows.
+To avoid a computationally intensive instance segmentation
+we reformulate a semantic segmentation task in a way that
+results in single object instances without object proposals. We
+deﬁne three classes, ’berry’, ’edge’ and ’background’ so that
+every single berry is separated from neighbouring berries by
+an edge and can therefore be identiﬁed as a single instance.
+There is no need to explicitly perform an instance segmentation.
+The contributions of this paper are the following:
+• we present a novel, accurate and eﬃcient way of counting
+by reformulating an instance segmentation into a semantic
+segmentation by introducing an additional class ’edge’
+• we evaluate our algorithm thoroughly for two diﬀerent
+pruning systems and show that our algorithm handles both
+convincingly
+• we compare our algorithm with two diﬀerent methods.
+First a state-of-the-art instance segmentation with Mask-
+RCNN. Secondly regression of a density map with U-Net.
+2. Materials and Methods
+2.1. Data
+Our data set is part of a big campaign which was carried out
+in 2018 in an experimental vineyard at the JKI Geilweilerhof
+located in Siebeldingen, Germany. Data were acquired on three
+diﬀerent dates in 2018. The ﬁrst images were taken before the
+application of a thinning procedure, the second set of images
+was taken shortly after the thinning. Further images were taken
+shortly before harvest.
+We observed two diﬀerent training systems, the vertical
+shoot positioned (VSP) and the semi minimal pruned hedges
+(SMPH). The two training systems feature diverse diﬃculties.
+The VSP is the traditional training system (see Fig. 3). It
+features one main branch with several thinner shoots branching
+oﬀ(see Fig. 3a). Small branches and leafs are drastically re-
+duced at the end of each season. Grape bunches mainly occur
+2
+
+(a) Phenoliner
+(b) Camera System
+Figure 2: 2a shows the phenotyping platform ”Phenoliner”, which was ﬁrst introduced by Kicherer et al. [36]. It is based on a grapevine harvester
+where the harvesting equipment is replaced by a camera system. The system can be seen in 2b and consist of 5 cameras which deliver overlapping
+images of the canopy. The vertical cameras are positioned with 35 cm between each camera resulting in a maximum distance between the outer
+two cameras of approximately 70 cm. 1.2 m of the canopy are covered vertically.
+in the bottom part of the canopy, are seldom covered by leafs
+and feature a compact and homogeneous berry structure.
+The SMPH has a thick canopy which occludes many bunches
+(see Fig. 3b) . Due to the minimal pruning more than one
+main branch exists. The grape bunches are spread through the
+whole canopy although they mainly occur in the upper part of
+the plant. The bunches itself have a loose structure and the
+berries have inhomogeneous sizes.
+In each training system three diﬀerent wine varieties were
+observed, namely Riesling, Felicia and Regent. The ﬁrst two
+are white varieties while Regent is a red one. All varieties are
+part of the training set but for the evaluation we focus on the
+variety Riesling (see Fig. 1).
+2.2. Sensor System
+We acquired images of grapevine with a ﬁeld phenotyping
+platform called Phenoliner [36] which is shown in Fig. 2a. The
+Phenoliner is a modiﬁed grapevine harvester. The harvesting
+equipment is removed and replaced by a camera and illumi-
+nation system. The system consists of 5 cameras which can
+be seen in Fig. 2b. 3 RGB cameras are vertically aligned to
+cover the canopy of each vine. 2 Additional cameras are in-
+stalled in alignment with the bottom camera, building an L-
+Shape. A near-infrared camera is positioned in the middle of the
+horizontal cameras while the surrounding ones are RGB cam-
+eras. The vertical cameras allow a 3D reconstruction, but this is
+not in the scope of this paper. Further equipment of the Phe-
+noliner consists of a real-time-kinematic (RTK)-GPS system
+which enables the geo-referencing of each image. The cam-
+eras are triggered simultaneously since they are synchronized
+with the GPS clock. The geo-reference allows the identiﬁca-
+tion objects which occur more than once in overlapping images,
+though this is out of scope for this paper.
+The cameras have a distance of approximately 75 cm to the
+canopy which results in a coverage of 1.2 m of the canopy in
+vertical direction. Each image has dimensions of 2592 × 2048
+pixels and has a spatial resolution in the real world of 0.3 mm.
+For further information about the camera system we refer the
+reader to [36].
+We observed 10 plants in both training systems with the three
+vertical cameras, each plant was covered with 3 overlapping
+images. Each image is processed individually. Images featuring
+the VSP show on average 329 and a maximum of 890 berries
+per image. The number of berries per image is higher for the
+SMPH with 556 berries on average and a maximum of more
+than 1100 per image.
+2.3. Algorithms
+The main contribution of this paper is the reformulation
+of an instance segmentation.
+More speciﬁcally we tackle a
+counting task with a semantic segmentation.
+We evade the
+detection and segmentation of every berry instance in an image
+by turning it into a pixel-wise classiﬁcation with the classes
+’berry’, ’edge’ and ’background’. Fig. 4 shows an inferred
+mask on the right side.
+The cameras mounted on the Phenoliner record images in
+DSLR-quality. They have a high resolution which makes them
+expensive to work with in terms of memory consumption. Two
+ways exist to handle high resolution images with convolutional
+neural networks (CNNs), namely down sampling or cutting the
+image into patches. Due to the ﬁne structure and small size
+of the berries, down sampling leads to performance losses re-
+sulting in missing berries or wrong classiﬁcations. Therefore
+we crop each image into overlapping patches. The overlap is
+3
+
+(a) Vertical Shoot Positioned
+(VSP)
+(b) Semi Minimal Pruned Hedge
+(SMPH)
+Figure 3: Depiction of the two diﬀerent training systems. Fig. 3a shows an example for the vertical shoot positioned (VSP) system. It features one
+main branch which grows over multiple years while the others are removed annually. The grape bunches mainly grow in the bottom part of the
+canopy and feature a compact and homogeneous structure. In contrast Fig. 3b shows the semi minimal pruned hedges (SMPH). More branches
+are allowed to grow and the canopy is thicker. The grape bunches are positioned all over the canopy but often grow in the top part. The bunches
+itself are smaller, looser in structure and the berry size is inhomogeneous.
+important to minimize edge artifacts. We use a majority vote
+over each overlapping image region. The result is a full seg-
+mentation mask with the same size and resolution as the orig-
+inal image without hurting the performance. This means we
+have to run the CNN multiple times per image which calls for
+a lightweight yet powerful network architecture to eﬃciently
+process each patch.
+2.3.1. Network Structure
+We use a traditional U-shaped decoder-encoder architecture
+for pixel-wise semantic segmentation. The encoder backbone
+is a MobileNetV2 [37] which introduced the inverted resid-
+ual concept.
+The network has mobile applications in mind
+and poses an eﬃcient and lightweight feature extraction that
+produces close to state-of-the-art results for tasks like classiﬁ-
+cation, detection, and segmentation. The decoder used is the
+DeepLabV3+ [38]. It reﬁnes the segmentation results with spe-
+cial focus on object boundaries. The combination of encoder
+and decoder results in a fully convolutional semantic segmen-
+tation network. The framework is based on an open source im-
+plementation by Milioto et al. [39]. We did not change the ar-
+chitecture of the model, but made adaptations to the data input,
+because we wanted to achieve the detection of single object in-
+stances with a semantic segmentation network. Our dataset def-
+inition is the focus of this work. The network segments berries,
+edges and background accurately and performs fast on a mov-
+ing platform. Keeping in mind that our application includes
+large amounts of data, we decide on a lightweight architecture
+which allows fast processing and decision processes.
+2.3.2. Loss Function
+As a loss function we use an Intersection over Union (IoU)
+loss as proposed by Yu et al. [40]. The IoU depicts the similar-
+ity between the prediction and the reference labels and can be
+deﬁned as followed:
+IoU = |A ∩B|
+|A ∪B| =
+TP
+FP + TP + FN
+(1)
+A ∩B denotes the intersection and A ∪B the union of two
+data sets, in our case the prediction and the reference masks.
+The second formulation is an intuitive representation with clas-
+sical image analysis measures. TP means true positive, FP false
+positive and FN false negative.
+We formulate the IoU as a loss as followed:
+LIoU = −ln |A ∩B|
+|A ∪B|
+(2)
+2.3.3. Image Annotation
+We have two diﬀerent sets of annotated data. On the one
+hand we have a set of pixel wise annotated images which are
+used to train and evaluate the CNN. On the other hand we have
+a second set of dot annotated images to evaluate the counting
+of berries in a more extended fashion.
+Pixel wise Annotation
+The detection of single berries in images is formulated as a
+semantic segmentation task with three classes: ’berry’, edge’
+and ’background’. The labeling procedure consisted of colour-
+ing every berry in an image individually. Adjacent berries are
+labeled in diﬀerent colours. From each berry component we
+compute the outer edge and label an edge with a ﬁxed width
+(in our case 2 or 3 pixels). The edge width is a crucial parame-
+ter to distinguish between single elements. We use a ﬁxed size
+due to simplicity reasons. In a single image scenario we don’t
+have access to the depth information and can therefore not use
+4
+
+Figure 4: Berry Segmentation Framework. For computational reasons each image is cut into overlapping image patches. Each image patch is classiﬁed by an
+encoder-decoder network. The encoder backbone consists of an MobilenetV2 [37] and the decoder head of a DeepLabV3+ [38]. The patches are reconstructed into
+an image mask. Due to the overlap we avoid border fragmentation by applying a majority vote on regions containing more than one patch.
+an edge thickness which is depending on the distance to the
+camera. Furthermore the variation of berry sizes in diﬀerent
+training systems has a higher impact than the size variation due
+to the distance from the camera. The remaining inner parts of
+each berry are uniformly labeled into the class ’berry’. Every-
+thing else is denoted with the class ’background’. An example
+of the labeling and how the resulting mask with the berry edge
+formulation looks can be seen in Fig. 5c and 5d.
+We manually labeled 38 images showing diﬀerent grapevine
+varieties and training systems to ensure a robust algorithm.
+The labeled data set features 61 % images showing the SMPH
+and 30 % show the VSP. This choice was done because the
+SMPH features more variety in the berry size and distribution.
+The occurrence of the diﬀerent varieties is as followed: 55 %
+Riesling, 23 % Felicia and 23 % Regent. The included images
+are from the two ﬁrst recording times to show a variety of
+diﬀerent grape sizes. The images show the plants before the
+veraison which means that all berries are green.
+Dot wise Annotation
+For evaluation purposes regarding the counting we created
+a set of dot wise annotated images. Each berry is manually
+marked with a dot. We annotated the images of 20 Riesling
+vines, 10 in the VSP and 10 in the SMPH. Each plant is
+covered by 3 overlapping images which leads to a total number
+of 60 dot annotated images. In Fig. 5b we can see an example
+for the dot annotations. In contrast to the pixel wise annotation
+for training this is a time eﬃcient procedure and allows an
+extended evaluation of the counting.
+2.3.4. Post Processing
+To reduce the number of misclassiﬁcations we utilize prior
+knowledge about the geometry of berries. The main geomet-
+ric property of berries is roundness although we investigate the
+quality of the prediction as well. We explore two possibilities
+to remove components which do not satisfy the deﬁnition of
+roundness.
+The initial steps of our post processing investigates the geo-
+metric properties via the minor and major axis of every compo-
+nent. This poses an intuitive deﬁnition of roundness. First we
+discard components which have a relation between minor axis
+amin and major axis ama j of less than 0.3. This leads to a reduc-
+tion of arbitrary shaped objects. This post processing stage is
+later called ”Axis”:
+amin
+ama j
+> 0.3
+(3)
+The second step focuses on the area of each component. We
+determine the radius of each component ¯r by computing the
+mean between the minor and major axis. This radius is used
+to compute the theoretical area A of a circle and compare it
+with the actual area Acomp of the component. If the actual area
+Acomp is more than 30 % smaller than the computed circle area
+we discard the component. This leads to a reduction of leaf
+edges which are wrongly classiﬁed as berries, because of their
+crescent shape. This stage is later referred to as ”Area”:
+A < 0.3 · Acomp = 0.3 · ¯r2 · π = 0.3 ·
+amin + ama j
+2
+2
+· π (4)
+5
+
+(a) Original image
+(b) Dot wise annotation
+(c) Original annotation
+(d) Berry-edge-format
+Figure 5: Diﬀerent stages of the annotation process. The ﬁrst picture shows the original image without annotations. Fig. 5b shows an example of
+the dot annotated berries while Fig. 5c demonstrates how the berries are originally marked with diﬀerent colours. Later for each component an
+edge is computed (pixel width of edge is adjustable).
+A further visual investigation of the predictions shows, that
+correctly identiﬁed berries are often well surrounded by an
+edge. Misclassiﬁcations on the other hand are often insuﬃ-
+ciently enclosed. Therefore we remove components which are
+surrounded by less than 40 % and call the stage ”Edge”.
+All parameters in the post processing step are chosen man-
+ually after performing several experiment with diﬀerent val-
+ues. We tried to achieve a suitable trade-oﬀbetween remov-
+ing misclassiﬁcations and not removing too many correct ones.
+Nonetheless all parameters allow an intuitive understanding of
+the eﬀects.
+3. Results
+We thoroughly investigate our framework regarding diﬀerent
+criteria and perform the following experiments:
+• analysis of intersection over union (IoU) as a classical er-
+ror analysis for a semantic segmentation
+• variation of edge thickness and its inﬂuence on the detec-
+tion of berries
+• analysis of post-processing steps and their inﬂuence on the
+detection of berries
+• investigation of berry counting with R2-plots
+• comparison of the berry count with a classical instance
+segmentation approach, the Mask-RCNN
+• comparison with U-Net which produces a density map.
+• Qualitative evaluation of inference under diﬀerent condi-
+tions
+3.1. Experimental Setup
+The network is trained on overlapping image patches. The
+patches are extracted from the 38 pixel wise annotated images
+(see ﬁrst part of section 2.3.3). Each patch has 432 × 256 pixels
+and a 50 % overlap in vertical and horizontal dimension. We
+6
+
+chose an overlap of 50 % to cover each image region at least
+twice (at the edges of the image) and otherwise up to 4 times.
+This reduces the edge eﬀects of the inferred masks. A higher
+overlap would be possible but results in a higher inference time
+due to the higher number of image pixels. This results in a
+drastic reduction of training time in comparison to training on
+the full resolution of the images (2592 × 2048 pixels).
+The data set contains 38 images, 90% are used in the training
+set while 10% are used for testing. This means that 4 images
+are chosen for testing, before we extract patches. Furthermore
+we augment our whole data set to enhance the robustness of
+our network. We perform three diﬀerent kinds of augmenta-
+tions: ﬂipping, blurring and gamma shifting. We ﬂip the im-
+ages only horizontally to preserve the characteristic that grape
+bunches get smaller in the lower part. The blurring is applied
+with random kernel sizes between 3 and 7 and the gamma shift
+is randomly chosen in between 0.8 and 1.2. Including data aug-
+mentations we end up with 5700 patches from 38 images.
+We retrained a network which was pretrained on the ima-
+genet dataset [41]. The learning rate of the network is 0.001
+and the momentum is 0.9. The learning rate is decreased by
+0.99 after 5 epochs.
+3.2. Intersection over Union (IoU)
+Furthermore we investigate the intersection over union (IoU)
+for every class. The IoU, also referred to as the Jaccard coeﬃ-
+cient, is a similarity measure between two sample sets A and B.
+The deﬁnition is the same as for our loss. In our case one set
+is the reference mask and the other one is the prediction mask
+which is produced by the network. The evaluation is done for
+each class separately. It is the most common measure to evalu-
+ate a semantic segmentation.
+Tab. 1 shows that we achieve an IoU for the class ’berry’ of
+more than 75 % for both training systems. For the class ’edge’
+the IoU is more than 10 % worse for 2 pixel edges compared
+to 3 pixels. The result is still reasonable because a thin edge is
+very hard to reproduce.
+Edge [3 pix]
+Edge [2 pix]
+Average IoU [%]
+76.0
+73.0
+IoU Background [%]
+99.0
+99.1
+IoU Berry [%]
+75.3
+76.8
+IoU Egde [%]
+53.7
+42.0
+Table 1: Investigation of the intersection over union (IoU). The IoU is better
+for berry than edge which can be explained with the nature of the classes. The
+overlay of thin edges is unlikely.
+To further validate our model we also performed a cross val-
+idation on 30 images with an edge thickness of 2 pixels. For
+each batch we selected 3 images as validation images and the
+other 27 images as training images. We chose 30 images to
+evenly split our data. We chose the 30 images to be still rep-
+resentative for the whole network. The average IoU is slightly
+worse than the above mentioned results with 69.96 ± 1.19 %.
+The IoU for the background is 98.72 ± 0.45 %, for the class
+’berry’ 72.03 ± 2.23 % and for the class ’edge’ 39.17 ± 2.41 %.
+These values match the results from the fully trained network
+and indicate that our model ﬁts well.
+3.3. Inﬂuence of Edge Thickness and Training System
+The class ’edge’ has a major impact on the correct detec-
+tion of single berries. The whole evaluation is done without
+the application of post processing steps. We aim for an explicit
+diﬀerentiation between berries and examine two diﬀerent edge
+thicknesses with this criterion in mind. We apply two diﬀerent
+edge thicknesses, 2 and 3 pixels, on the two diﬀerent training
+systems namely VSP and SMPH and evaluate the results in re-
+lation to the dot annotated images. The precision P describes
+the ratio between correctly predicted berries and all predicted
+berries. Correctly predicted means that a predicted berry region
+contains at least one manually annotated berry. The overall pre-
+dicted berries contain the incorrectly detected berries as well,
+where no manual annotation lies within a component.
+P =
+TP
+TP + FP
+(5)
+The recall R describes the ratio between correctly predicted
+berries and all manually annotated berries. We have to keep
+in mind that one berry region can contain more than one man-
+ually annotated berry. The F1-Score is a measure for the test
+accuracy and contains the precision and the recall.
+R =
+TP
+TP + FN
+(6)
+Tab. 2 shows that we recognize more berries in the VSP than
+in the SMPH. The improvement over diﬀerent edge thicknesses
+can mainly be seen in the increased number of correct detec-
+tions for the SMPH and in the decrease of the wrong classiﬁca-
+tions for both training systems. This means that the inﬂuence
+of the edge thickness on the number of correct classiﬁcations is
+smaller for the VSP than for the SMPH.
+The SMPH is characterized by an inhomogeneous berry size
+with a higher number of small berries compared to the VSP. Al-
+though we trained with an edge thicknesses of 2 or 3 pixels, the
+predictions feature thicker edges than the ground truth images.
+Due to the small berry size some of the smaller berries only
+consist of edge pixels if the thickness is too high. Our proposed
+method is then not able to recognize these small berries with a
+radius below 2 - 3 pixels.
+3.4. Inﬂuence of Post Processing
+The three post processing steps are applied to reduce the
+number of misclassiﬁcations, regions where a berry is detected,
+but no manually annotated berry is present. Fig. 6 shows an
+example of possible misclassiﬁcations and how the post pro-
+cessing steps reduces them.
+Fig. 6a shows the original prediction of the classes ’berry’
+and ’edge’ overlayed with the original image. Artifacts at leaf
+edges can be seen as well as two berries which are fused into
+one component. The initial post processing step reduces com-
+ponents which have a major-minor-axis relation of less than 30
+7
+
+Training
+System
+Edge [pix]
+Precision [%]
+Recall [%]
+F1-Score
+VSP
+2
+85.41
+93.90
+89.46
+VSP
+3
+81.21
+92.59
+86.53
+SMPH
+2
+80.54
+89.00
+84.56
+SMPH
+3
+78.65
+85.26
+81.82
+Table 2: Comparison of various edge thickness values on diﬀerent training systems. We show Precision, Recall and F1-score.
+(a) Original
+(b) Axis
+(c) Area
+(d) Edge
+Figure 6: Results of the diﬀerent ﬁlter stages. First we check the relation between major an minor axis. This removes objects which are not round.
+The second stage checks the relation between actual pixel area and the computed area of a circle with the diameter of the mean from the main
+axes. This stage removes objects which are round according to their main axes, but are not ﬁlled in. The last stage removes all components which
+are not suﬃciently surrounded by an edge. We perform this computational intensive step as the last stage because we want to ﬁlter out as many
+objects as possible.
+%. The component which is removed is a small fragment in the
+left lower edge. On the right side a component remains which
+has a correct axis relation but is not ﬁlled in. In Fig. 6c this
+component is removed because its actual area is smaller than
+the computed area of a circle with a radius computed from the
+mean of the main axis. The last and computational most inten-
+sive step is the removal of all components which are not suﬃ-
+ciently surrounded by an edge. Fig. 6d shows that the lowest
+component is removed due to this criteria.
+In table 3 we can see that for every ﬁlter stage the precision
+is increased while the recall decreases. Our ﬁlter removes a lot
+of misclassiﬁed berries but in some cases correctly classiﬁed
+berries are removed as well. Since the increase of the preci-
+sion is stronger than the decrease of the recall, we remove more
+misclassiﬁed berries than correctly classiﬁed berries.
+3.5. Evaluation of Berry Counting
+The proposed processing chain has the goal to count berries
+in the ﬁeld. We therefore evaluate the complete chain by com-
+paring its output, the predicted berry masks with the ground
+truth, our manually dot annotated berries. Especially in the
+agricultural science community this is often done by correla-
+tion plots. The evaluation of the berry count is done on the dot
+annotated data set. It contains images of 10 plants in the VSP
+and 10 plants in the SMPH. Each plant is covered by 3 images
+which results in a total of 60 dot annotated images. We inves-
+tigate the counting of berries by computing the coeﬃcient of
+determination (R2). Fig. 7 shows the correlation plots for the
+VSP and the SMPH. The x-axis shows the number of manually
+counted berries while the y-axis shows the number of detected
+berries. Each point of the plots depicts the numbers for one non
+overlapping image patch cut from the images. The lines show
+the correlation between the number of reference and detected
+berries. The dashed line depicts a perfect correlation if we’d
+always detected the correct number of berries for each image.
+The continuous line is the actual correlation. We tend to under-
+estimate the number of berries. The VSP shows with a R2 of
+98.79 % a slightly better correlation than the SMPH with R2 of
+97.15 %.
+3.6. Comparison with other approaches
+The task of object counting can be tackled with many diﬀer-
+ent approaches. We want to show a comprehensive evaluation
+that compares our approach to both an instance segmentation
+and a regression approach where all approaches can be used to
+solve the same problem. We compare our method against two
+well established methods. The ﬁrst one is an instance segmen-
+tation network called Mask-RCNN. The second one is a den-
+sity map estimation with a U-Net. Each network has a diﬀerent
+structure, number of parameters and inference time (see Tab.
+4). Since our approach is very ﬂexible in the sense that other
+segmentation networks can be used, for example U-Net, we still
+wanted to show that our method can be used successfully with a
+lightweight network architecture like the one proposed in Bon-
+net [39].
+8
+
+Training
+System
+Axis
+Area
+Edge
+Precision [%]
+Recall [%]
+F1-Score
+VSP
+-
+-
+-
+85.41
+93.90
+89.46
+VSP
+0.3
+-
+-
+88.32
+93.67
+90.92
+VSP
+0.3
+0.3
+-
+88.92
+93.65
+91.22
+VSP
+0.3
+0.3
+0.4
+91.63
+92.46
+92.04
+SMPH
+-
+-
+-
+80.54
+89.00
+84.56
+SMPH
+0.3
+-
+-
+82.80
+88.88
+85.73
+SMPH
+0.3
+0.3
+-
+83.49
+88.81
+86.07
+SMPH
+0.3
+0.3
+0.4
+87.79
+86.90
+87.34
+Table 3: Comparison of diﬀerent ﬁlter strategies. Axis means that the relation between the minor and major axis of each component is not allowed to be smaller
+than 0.3. For the computation of a circle area we compute the radius of each component as the mean of the minor and major axis. We then compare the computed
+area with the actual area of each component. The actual area is not allowed to be smaller than 0.3 times the circle area. Edge means that every component needs to
+be surrounded by at least 40% of edge.
+(a) R2-Plot for VSP (R2 = 98.79%)
+(b) R2-Plot for SMPH (R2 = 97.15%)
+Figure 7: R2-Plots for the two diﬀerent training systems VSP and SMPH. The red circles depict the berry count for an image patch. The x-axis
+shows the manual reference count, the y-axis the result of the connected component analysis of the predicted mask. The dashed line represents the
+optimal mapping between ground truth and prediction (R2 = 100%). The continuous line is the estimated mapping, showing a good correlation in
+both cases.
+The two networks are trained and tested on the same data as
+our approach.
+3.6.1. Comparison with Mask-R CNN
+One of the most well known approaches for instance seg-
+mentation is the Mask-RCNN which was presented by He et al.
+[20]. Mask-RCNN is an extension of Faster-RCNN [42] which
+adds a third branch to the two already existing ones which pro-
+vide a class label and a bounding box oﬀset. The new branch
+outputs an object mask. The Mask-RCNN is therefore able to
+detect single objects in images by providing a mask for each
+one.
+For training purposes we customize our already annotated
+data set in which every berry is individually coloured. In con-
+trast to our ’edge’ and ’berry’ annotation we now consider each
+berry as a whole. Each berry object presented by an own mask
+layer. In this layer only the classes ’berry’ and ’background’
+exist. This means if we have 50 berries in an image we have 50
+masks, one for each berry. These masks are stacked together to
+build a label matrix with the depth corresponding to the number
+of objects.
+We use the Mask-RCNN implementation which is provided
+by Abdulla et al. [43]. We train the network on image patches
+with the dimensions 320 × 256 pixels. The maximum number
+of objects is 80. Due to the small object sizes we use anchors
+of the sizes 8, 16, 32, 64 and 128 pixels with anchor ratios of
+0.5, 1 and 2.
+To ensure a fair comparison between our algorithm and the
+Mask-RCNN we don’t apply our post processing steps to the
+network outputs. Furthermore we train the network with the
+same patch size and number of images as the Mask-RCNN.
+Fig. 8 shows a visual comparison between our algorithm and
+the results of the Mask-RCNN. For both training systems, the
+Mask-RCNN tends to overestimate the number of objects.
+We further investigate and compare the counting of berries
+in images with the coeﬃcient of determination R2 for our al-
+gorithm and the Mask-RCNN for both training systems. Fig.
+9d and Fig. 9a show the R2-plots for the Mask-RCNN. In both
+9
+
+Network
+Parameters Mio
+Inference time
+Spatial
+Size
+Mask-RCNN
+64.159
+high
+√
+√
+U-Net
+7.769
+low
+√
+×
+Ours
+3.188
+low
+√
+√
+Table 4: Comparison of diﬀerent counting approaches. Mask-RCNN is a classical deep learning instance segmentation approach. It’s a complex network with a
+high number of parameters and is able to detect object locations and the spatial extend of single objects. The U-Net is used to estimate density maps which give a
+count after integration. The spatial position of objects can be extracted but no information regarding their size. Our architecture with a MobileNetV2 encoder and a
+DeepLab3V+ decoder has the smallest number of parameter but is able to extract the spatial position and extend of single berries.
+(a) Manual Count
+(b) Own
+(c) Mask-RCNN
+(d) Manual Count
+(e) Own
+(f) Mask-RCNN
+Figure 8: Visual comparison of our own algorithm and the Mask-RCNN for an exemplary image patch for plant types SMPH (upper row) and VSP
+(lower row). In the ﬁrst picture we can see the manual annotation for the counting reference. In the middle picture the mask which is outputed
+by our proposed algorithm is shown, while the last picture shows the result of the Mask-RCNN. The Mask-RCNN features more falsely detected
+berries in image regions where no berries should be detected.
+cases the data points are very scattered. For our algorithm the
+data points are closer together and are approximated well by
+a straight line. The Mask-RCNN achieves R2 between 74 and
+81 % while our implementation shows a better correlation be-
+tween the manually counted berries and the detected ones with
+R2 > 95 %.
+There are several reasons which could be responsible for the
+bad performance of the Mask-RCNN. We only have a limited
+data set. We train our network on 5700 patches with a maxi-
+mum number of 80 objects per patch or less. Since the Mask-
+RCNN has to train more than 64 Mio. parameters this might be
+not suﬃcient.
+Another important aspect is the inference time. While we can
+infer our network on nearly 2000 images in roughly a minute, it
+takes the Mask-RCNN nearly an hour to process the same im-
+ages. This diﬀers by a factor of 60. Although we are mainly in-
+terested in the absolute inference time we have to keep in mind
+that the network architectures are highly disparate. The number
+of network parameters diﬀers by a factor of 20, the number of
+parameters for the Mask-RCNN is approx. 64 Mio. while our
+network only has 3 Mio. The inference time decreases more
+than the parameter number increases.
+3.6.2. Comparison with U-Net density map estimation
+Besides the detection of objects, the problem of counting can
+be addressed by regression approaches as well. The idea is to
+estimate a density map from an input image and to integrate
+over the map to retrieve the maxima in the density map. The
+goal of the procedure is to provide a count of the objects present
+in the image. We use a U-Net [44], an image segmentation
+network which is often applied for biomedical data.
+The annotation process for regression networks is simpler
+than for detection network.
+Instead of pixel wise masks or
+bounding boxes a dot wise annotation is suﬃcient. We mod-
+ify our data set of pixel wise annotated berries by providing the
+centers of each component as the dot annotation for each object.
+Around each dot a Gaussian Kernel with a deviation of one in
+both directions is applied. We train the network1 on the same
+image patches as the Mask-RCNN and our own network. The
+patch dimensions are again 320×256 with a maximum number
+of 80 objects in each image.
+The regression with the U-Net performs slightly worse than
+our approach. The R2 for the VSP is 97.19% compared to R2 =
+1https://github.com/NeuroSYS-pl/objects counting dmap
+10
+
+(a) Mask-RCNN
+(b) Regression
+(c) Own
+(d) Mask-RCNN
+(e) Regression
+(f) Own
+Figure 9: Comparison of the berry count between Mask-RCNN, regression with U-Net and our approach. The Mask-RCNN overestimates the
+number of berries drastically for the SMPH as can be seen in Fig. 9d. The R2 is with 74.33 % signiﬁcantly worse than for our algorithms. The
+same is applicable for the VSP. The regression approach is only slightly worse than our approach.
+97.74% from our approach. For the SMPH the diﬀerence is
+slightly larger with R2 = 92.20% from the U-Net and R2 =
+95.84% from our approach. The inference time is similar to our
+approach and U-Net has only two times as many parameters as
+our network (7.7 Mio).
+The main advantage of our masks is the extraction of further
+phenotypic traits like the berry size. The regression approach
+yields density maps which could be used to extract the spatial
+positions of the single objects but not their whole extent.
+4. Qualitative investigation for diﬃcult conditions
+As an outlook, we show the ability of our network to adapt to
+diﬀerent conditions with two qualitative examples. First we in-
+fer an image which was taken with the Phenoliner in 2017 (see
+Fig. 10a). The illumination system and the background diﬀer
+considerably from the setup in 2018. Furthermore the image
+shows a red variety after the veraison and features dark berries.
+The network is able to correctly detect most of the berries al-
+though it never saw dark berries during training (see Fig. 10b).
+As a second experiment we infer an image taken by a hand-
+held SLR camera under natural sun light (see Fig. 10c). The
+distance between camera and canopy is diﬀerent from the oth-
+erwise nearly constant 0.75 m which are recorded by the Phe-
+noliner. The observed variety shows green berries similar to the
+berries from the training set. The network is able to correctly
+detect most of the berries as well (see Fig. 10d).
+Both examples show that our network has the potential to be
+used in diﬀerent surroundings.
+5. Conclusion and Outlook
+In this paper, we presented a novel berry counting approach.
+We are able to detect and mask single berry objects with a se-
+mantic segmentation network by using a class ’edge’ to sep-
+arate single objects from each other.
+This enables the eva-
+sion of the time and computationally intensive use of an in-
+stance segmentation network like the Mask-RCNN. Although
+we trained only one network we are able to handle two train-
+ing systems with diﬀerent characteristics and challenges. We
+achieve R2 = 98.79 % for the VSP and 97.15 % for the chal-
+lenging SMPH.
+We compared our approach with a state-of-the-art instance
+segmentation approach, the Mask-RCNN. We achieve visually
+as well as quantitative better results (R2 = 81.52 % for the VSP
+and R2 = 74.33 % for the SMPH). Furthermore we outper-
+form the inference time of the Mask-RCNN, which takes nearly
+an hour while our approach can be inferred in minutes. The
+comparison with a classical regression approach yields results
+which are just slightly worse than our approach (R2 = 97.19 %
+for the VSP and R2 = 92.20 % for the SMPH). But the ad-
+vantage of our method is the potential extraction of additional
+phenotypic traits like the berry size.
+Despite these encouraging results, there is further space for
+improvements. For example, we want to investigate in detail the
+11
+
+(a) Phenoliner Image
+(b) Prediction
+(c) SLR Image
+(d) Prediction
+Figure 10: Inference of our network on unrelated data. Fig. 10a and 10b show images which were taken in 2017 with the Phenoliner. The
+illumination system and the background are diﬀerent from the current setup. Furthermore the images show Regent, a red variety. Although the
+network never saw red wine berries it is able to detect them correctly. Fig. 10c and Fig. 10d show a picture which was taken with a handheld
+camera under natural illumination. The network is nonetheless able to identify most of the berries.
+application to other grapevine varieties. Furthermore, we want
+to tackle the problem of counting berries in overlapping images
+multiple times. The goal is to oﬀer the joint investigation of a
+whole row of plants.
+There is still a gap between counting berries and estimation
+of yield such as correcting for counts in overlapping images, es-
+timation of the number of ’invisible berries’ and a proper eval-
+uation of these steps. These steps are part of current research
+and beyond the scope of the paper.
+Acknowledgment
+This work was funded by German Federal Ministry of Edu-
+cation and Research (BMBF, Bonn, Germany) in the framework
+of the project novisys (FKZ 031A349) and partially funded
+by the Deutsche Forschungsgemeinschaft (DFG, German Re-
+search Foundation) under Germanys Excellence Strategy - EXC
+2070 - 390732324.
+References
+References
+[1] R. T¨opfer, L. Hausmann, M. Harst, E. Maul, E. Zyprian, R. Eibach, New
+Horizons for Grapvine Breeding, Global Science Books, pp. 79–100.
+[2] A. Alercia, R. Becher, J.-M. Boursiquot, R. Carara, P. C. amd
+A. Costacurta, et al., 2nd edition of the oiv descriptor list for grape va-
+rieties and vitis species, 2009.
+[3] D. Lorenz, L. Eichhorn, H. Bleiholder, R. Klose, U. Meier, E. Weber,
+Growth stages of the grapevine: Phenological growth stages of grapevine
+(vitis vinifera l. ssp. vinifera) - codes and descriptions according to the
+extended bbch scale, Australian Journal of Grape and Wine Research 1
+(1995) 133–103.
+12
+
+[4] A. Gongal, A. Amatya, M. Karkee, Q. Zhang, K. Lewis, Sensors and
+systems for fruit detection and localization: A review, Computers and
+Electronics in Agriculture 116 (2015) 8–19.
+[5] J. L. Araus, J. E. Cairns, Field high-throughput phenotyping: the new
+crop breeding frontier, Trends in Plant Science 19 (2014) 52 – 61.
+[6] S. Kipp, B. Mistele, P. Baresel, U. Schmidhalter, High-throughput pheno-
+typing early plant vigour of winter wheat, European Journal of Agronomy
+52 (2014) 271 – 278.
+[7] J. Behmann, A.-K. Mahlein, T. Rumpf, C. R¨omer, L. Pl¨umer, A review
+of advanced machine learning methods for the detection of biotic stress
+in precision crop protection, Precision Agriculture 16 (2015) 239–260.
+[8] A. Foerster, J. Behley, J. Behmann, R. Roscher, Hyperspectral plant dis-
+ease forecasting using generative adversarial networks, in: International
+Geoscience and Remote Sensing Symposium.
+[9] L. Strothmann, U. Rascher, R. Roscher,
+Detection of anomalous
+grapevine berries using all-convolutional autoencoders, in: International
+Geoscience and Remote Sensing Symposium.
+[10] A. Milioto, P. Lottes, C. Stachniss, Real-time semantic segmentation of
+crop and weed for precision agriculture robots leveraging background
+knowledge in cnns, Proceedings of the IEEE Int. Conf. on Robotics &
+Automation (ICRA) (2018).
+[11] P. Lottes, J. Behley, N. Chebrolu, A. Milioto, C. Stachniss, Robust joint
+stem detection and cropweed classiﬁcation using image sequences for
+plantspeciﬁc treatment in precision farming, Journal of Field Robotics
+(2019).
+[12] R. Roscher, K. Herzog, A. Kunkel, A. Kicherer, R. T¨opfer, W. F¨orstner,
+Automated image analysis framework for high throughput determination
+of grapevine berry size using conditional random ﬁelds, Computers and
+Electronics in Agriculture 100 (2014) 148–158.
+[13] S. Nuske, S. Achar, T. Bates, S. Narasimhan, S. Singh, Yield estimation in
+vineyards by visual grape detection, IEEE/RSJ International Conference
+on Intelligent Robots and Systems (2011) 2352–2358.
+[14] E. K. Nyarko, I. Vidovi´c, K. Rado˘caj, R. Cupec, A nearest neighbor ap-
+proach for fruit recognition in rgb-d images based on detection of convex
+surfaces, Expert Systems with Applications 114 (2018) 454–466.
+[15] S. Nuske, K. Wilshusen, S. Achar, L. Yoder, S. Narasimhan, S. Singh,
+Automated visual yield estimation in vineyards, Journal of Field Robotics
+31 (2014) 837 – 860.
+[16] J. Rose, A. Kicherer, M. Wieland, L. Klingbeil, R. T¨opfer, H. Kuhlmann,
+Towards automated large-scale 3d phenotyping of vineyards under ﬁeld
+conditions, Sensors 16 (2016).
+[17] F. Rist, K. Herzog, J. Mack, R. Richter, V. Steinhage, R. T¨opfer, High-
+precision phenotyping of grape bunch architecture using fast 3d sensor
+and automation, Sensors 18 (2018) 763.
+[18] A. Krizhevsky, I. Sutskever, G. E. Hinton, Imagenet classiﬁcation with
+deep convolutional neural networks, Advances in neural information pro-
+cessing systems (2012) 1097 – 1105.
+[19] J. Long, E. Shelhamer, T.Darell, Fully convolutional networks for se-
+mantic segmentation, Proceedings in the IEEE Conference on Computer
+Vision and Pattern Recognition (2015) 3431 – 3440.
+[20] K. He, G. Gkioxari, P. Doll´ar, R. B. Girshick, Mask r-cnn, 2017 IEEE
+International Conference on Computer Vision (ICCV) (2017) 2980–2988.
+[21] V. Lempitsky, A. Zisserman, Learning to count objects in images., NIPS
+(2010) 1324–1332.
+[22] J. P. Cohen, G. Boucher, C. A. Glastonbury, H. Z. Lo, Y. Bengio, Count-
+ception: Counting by fully convolutional redundant counting,
+CoRR
+abs/1703.08710 (2017).
+[23] C. Arteta, V. Lempitsky, A. Zisserman, Counting in the wild, in: Euro-
+pean Conference on Computer Vision.
+[24] W. Xie, J. A. Noble, A. Zisserman, Microscopy cell counting with fully
+convolutional regression networks,
+MICCAI 1st Workshop on Deepl
+Learning in Medical Image Analysis (2015).
+[25] Y. Guo, J. Stein, G. Wu, A. Krishnamurthy, Sau-net: A universal deep
+network for cell counting, in: Proceedings of the 10th ACM International
+Conference on Bioinformatics, Computational Biology and Health Infor-
+matics, BCB ’19, pp. 299–306.
+[26] S. Lobry, D. Tuia,
+Deep learning models to count buildings in high-
+resolution overhead images, in: 2019 Joint Urban Remote Sensing Event
+(JURSE), pp. 1–4.
+[27] E. Lu, W. Xie, A. Zisserman,
+Class-agnostic counting,
+CoRR
+abs/1811.00472 (2018).
+[28] H. L. Yang, J. Yuan, D. Lunga, M. Laverdiere, A. Rose, B. Bhaduri,
+Building extraction at scale using convolutional neural network: Map-
+ping of the united states, IEEE Journal of Selected Topics in Applied
+Earth Observations and Remote Sensing 11 (2018) 2600–2614.
+[29] D. Marmanis, K. Schindler, J. Wegner, S. Galliani, M. Datcu, U. Stilla,
+Classiﬁcation with an edge: Improving semantic image segmentation
+with boundary detection, ISPRS Journal of Photogrammetry and Remote
+Sensing 135 (2018) 158 – 172.
+[30] A. Kamilaris, F. X. Prenafeta-Boldu,
+Deep learning in agriculture: A
+survey, Computers and Electronics in Agriculture 147 (2018) 70–90.
+[31] A. Aquino, M. P. Diago, B. Millan, J. Tardaguila, A new methodology for
+estimating the grapevine-berry number per cluster using image analysis,
+Biosystem Engineering 159 (2016) 80 – 95.
+[32] A. Aquino, B. Millan, M.-P. Diago, J. Tardaguila, Automated early yield
+prediction in vineyards from on-the-go image acquisition, Computers and
+Electronics in Agriculture 144 (2018) 26 – 36.
+[33] R. Rudolph, K. Herzog, R. T¨opfer, V. Steinhage, Eﬃcient identiﬁcation,
+localization and quantiﬁcation of grapevine inﬂorescences in unprepared
+ﬁeld images using fully convolutional networks, CoRR (2018).
+[34] J. Grimm, K. Herzog, F. Rist, A. Kicherer, R. T¨opfer, V. Steinhage, An
+adaptable approach to automated visual detection of plant organs with
+applications in grapevine breeding, Biosystems Engineering 183 (2019)
+170 – 183.
+[35] A. K. Nellithimaru, G. A. Kantor, Rols : Robust object-level slam for
+grape counting, in: The IEEE Conference on Computer Vision and Pat-
+tern Recognition (CVPR) Workshops.
+[36] A. Kicherer,
+K. Herzog,
+N. Bendel,
+H.-C. Klck,
+A. Backhaus,
+M. Wieland, J. C. Rose, L. Klingbeil, T. L¨abe, C. Hohl, W. Petry,
+H. Kuhlmann, U. Seiﬀert, R. T¨opfer, Phenoliner: A new ﬁeld pheno-
+typing platform for grapevine research, Sensors (2017).
+[37] M. Sandler, A. G. Howard, M. Zhu, A. Zhmoginov, L. Chen, Inverted
+residuals and linear bottlenecks: Mobile networks for classiﬁcation, de-
+tection and segmentation, CoRR abs/1801.04381 (2018).
+[38] L. Chen, Y. Zhu, G. Papandreou, F. Schroﬀ, H. Adam,
+Encoder-
+decoder with atrous separable convolution for semantic image segmen-
+tation, CoRR abs/1802.02611 (2018).
+[39] A. Milioto, C. Stachniss, Bonnet: An open-source training and deploy-
+ment framework for semantic segmentation in robotics using cnns, CoRR
+(2018).
+[40] J. Yu, Y. Jiang, Z. Wang, Z. Cao, T. Huang,
+Unitbox: An advanced
+object detection network, in: MM 2016 - Proceedings of the 2016 ACM
+Multimedia Conference, volume 10072, pp. 516–520.
+[41] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, L. Fei-Fei, ImageNet: A
+Large-Scale Hierarchical Image Database, in: CVPR09.
+[42] S. Ren, K. He, R. Girshick, J. Sun, Faster r-cnn: Towards real-time object
+detection with region proposal networks, NIPS (2015).
+[43] W. Abdulla, Mask r-cnn for object detection and instance segmentation
+on keras and tensorﬂow, https://github.com/matterport/Mask_
+RCNN, 2017.
+[44] O. Ronneberger, P. Fischer, T. Brox,
+U-net: Convolutional networks
+for biomedical image segmentation,
+Medical Image Computing and
+Computer-Assisted Intervention (MICCAI) 9351 (2015) 234–241.
+13

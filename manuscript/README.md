@@ -8,6 +8,7 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 | Tujuan | Buka ini |
 |---|---|
 | Menyunting naskah kandidat aktif | [`source/main5v3-body.tex`](source/main5v3-body.tex) (driver `main5v3.tex`) |
+| Membaca tinjauan sistematis yang ditulis ulang dari awal | [`source/main6-body.tex`](source/main6-body.tex) (driver `main6.tex`, PDF [`output/papers/main6.pdf`](output/papers/main6.pdf)) |
 | Mengompilasi naskah | `cd manuscript/source && tectonic main5v3.tex`, lalu pindahkan PDF ke `output/papers/` |
 | Mengunduh PDF jadi | [`output/papers/main5v3.pdf`](output/papers/main5v3.pdf) |
 | Melihat figur final | [`figures/`](figures/) — F01–F08 (`.jpg`), C01–C02, seri H/N/R (`.png`) |
@@ -18,6 +19,7 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 
 | Berkas | Isi | Status |
 |---|---|---|
+| `main6.tex` + `main6-body.tex` | Tinjauan sistematis yang ditulis ulang dari awal: 971 kajian Scopus, mekanisme identitas M0–M5, gambar dari data (`figures/main6/`) | Kandidat baru |
 | `main5v3.tex` + `main5v3-body.tex` | *Design-space review* dengan alur per kasus studi | **Kandidat aktif** |
 | `main5v2.tex` + `main5v2-body.tex` | Versi sebelum revisi alur; ringkasan di `RINGKASAN-MAIN5V2.md` | Pembanding |
 | `main5.tex` + `main5-body.tex` | Gabungan pertama aliran A+B | Baseline, jangan diubah |
@@ -25,7 +27,8 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 | `main2`–`main4`, `main-elsarticle3.tex` | Iterasi gabungan yang gagal | Arsip, jangan disunting |
 
 `main5*` memakai `references3.bib` (235 rekord); naskah asli memakai
-`references.bib` (219 rekord).
+`references.bib` (219 rekord). `main6` memakai `references6.bib`, dibuat oleh
+`tools/scopus/buat_bib.py` dari rekaman Scopus dan metadata Crossref.
 
 ## Isi folder
 

@@ -1,0 +1,1173 @@
+Academic Editor: Francesco Marinello
+Received: 28 October 2025
+Revised: 23 December 2025
+Accepted: 13 January 2026
+Published: 19 January 2026
+Copyright: © 2026 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license.
+Article
+Research on Greenhouse Eggplant Fruit Detection
+and Tracking-Based Counting Using an Improved
+YOLOv5s-DeepSORT
+Jianfei Zhu 1, Long Bai 1,*
+, Caishan Liu 2, Chengxu Nian 3, Keke Zhang 1 and Sibo Yang 1
+1
+School of Mechanical and Electrical Engineering, Beijing Information Science and Technology University,
+Beijing 100192, China; 2023020080@bistu.edu.cn (J.Z.)
+2
+School of Engineering, Peking University, Beijing 100871, China
+3
+School of Mechanical and Electrical Engineering, China University of Mining and Technology,
+Beijing 100083, China
+*
+Correspondence: bailong0316jn@126.com
+Abstract
+Accurate fruit counting is essential for yield evaluation and automated management in
+greenhouse eggplant production. This study presents a lightweight detection and counting
+method based on an improved YOLOv5s–DeepSORT framework. To reduce computational
+cost while preserving accuracy, we replace the YOLOv5s backbone with MobileNetV3,
+insert an Efficient Channel Attention (ECA) module to enhance discriminative fruit fea-
+tures, and substitute the neck C3 block with C2f to strengthen multi-scale feature fusion.
+Compared with the original YOLOv5s, our improved YOLOv5s increases precision by 2.3%
+while reducing the number of parameters and FLOPs by 37.0% and 50.9%, respectively.
+For counting, we integrate DeepSORT with a counting-zone strategy that increments the
+count once per target when the bounding-box center first enters the counting zone, thereby
+mitigating identity switches (ID switches) and suppressing duplicate counts. Experimental
+results demonstrate that the proposed method enables accurate and real-time eggplant
+fruit counting in complex greenhouse scenes, providing practical support for automated
+yield assessment on inspection robots.
+Keywords: YOLOv5s; DeepSORT; greenhouse; eggplant
+1. Introduction
+As the core component of modern agriculture, facility agriculture overcomes the re-
+liance of traditional farming on natural conditions by artificially regulating environmental
+factors such as light, temperature, and humidity. It has become a critical industry for
+ensuring global food security and enhancing the efficiency of agricultural product sup-
+ply [1]. Greenhouse cultivation, one of the most widely adopted forms of facility agriculture,
+has become a primary platform for off-season vegetable production in northern China
+during winter, owing to its relatively low construction cost, ease of standardized manage-
+ment, and strong environmental adaptability. Among greenhouse crops, round eggplant
+is an important commercial vegetable; its firm flesh, good storability and transportability,
+and competitive price have made it a leading product in northern markets, contributing
+substantially to farmers’ income and the regional agricultural economy [2,3].
+Yield assessment is a core component of greenhouse eggplant production manage-
+ment, and the accuracy of fruit counting directly affects planting strategy optimization,
+Agriculture 2026, 16, 253
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+2 of 22
+water and fertilizer allocation, supply-chain planning, and the reliability of economic ben-
+efit forecasting [4–6]. Traditional eggplant counting has relied mainly on manual field
+inspection, where workers tally fruits to estimate total yield. This process is subjective
+and labor-intensive, and its accuracy is easily degraded by fruit occlusion and inconsistent
+counting efficiency, making it inadequate for real-time monitoring in large-scale produc-
+tion. As a result, conventional manual approaches can no longer meet the requirements
+of precision agriculture for real-time, non-destructive, and accurate data, highlighting the
+urgent need for automated and high-precision counting methods.
+Computer vision–based detection provides an effective way to address these chal-
+lenges. Early studies mainly relied on traditional image processing techniques, such as
+exploiting color [7,8], shape [9,10], and texture [11] features for fruit segmentation and
+recognition. These methods can achieve acceptable performance under relatively sim-
+ple backgrounds and uniform illumination. However, greenhouse scenes are inherently
+complex, with frequent leaf and stem occlusion, strong specular reflections, background
+interference from structures, and severe overlap among fruits. These factors limit the
+generalization and robustness of conventional image processing approaches, making them
+difficult to apply reliably in practical production.
+Recent advances in deep learning provide an effective solution to these chal-
+lenges [12]. Compared with LiDAR [13,14], near-infrared spectroscopy [15], and thermal
+imaging [16,17], deep learning–based vision methods are typically lower in cost, easier
+to deploy, and able to extract rich information from images, showing strong potential for
+agricultural vision tasks. These methods have been applied to fruit detection [18–20], crop
+disease and pest identification [21,22], fruit maturity grading [23,24], and weed manage-
+ment [25,26]. Pan et al. [27] proposed an improved Faster R-CNN (Faster Region-based
+Convolutional Neural Network) based detection model that enhanced seedling feature
+extraction and provided more accurate data support for cultivation management. Islam
+et al. (2024) improved Mask R-CNN (Mask Region-based Convolutional Neural Network)
+to achieve accurate detection and segmentation of lettuce seedlings in tray images, reaching
+an F1-score of 93% and producing leaf-area estimates that were highly consistent with
+manual measurements [28]. El Akrouchi et al. (2025) improved Mask R-CNN for accurate
+detection and segmentation of dense quinoa panicles by replacing the backbone with
+EfficientNet-B7 and adopting the Mish activation function, thereby enhancing representa-
+tion and segmentation performance in crowded scenes and providing useful insights for
+smart agriculture research [29].
+YOLO (You Only Look Once) uses a one-stage detection framework for object detection,
+achieving a good trade-off between inference speed and detection accuracy, and is therefore
+suitable for agricultural scenarios with strict real-time requirements. Su et al. [30] developed
+an SE-YOLOv3-MobileNetV1 model for greenhouse tomatoes by integrating depthwise
+separable convolutions with a squeeze-and-excitation (SE) attention mechanism, achieving
+a mean average precision (mAP) of 97.5% for classifying four maturity stages. Omer
+et al. [31] redesigned YOLOv5l for cucumber leaf disease identification by incorporating
+Bottleneck CSP modules, reducing the model size to 13.6 MB. Zhu et al. [32], focusing on
+camellia fruits in complex orchard settings, developed an SDF-YOLO model by integrating
+Selective Kernel Convolution (SKConv), a decoupled head, and Focal EIoU loss. The model
+achieved a comprehensive mAP of 96.65% and exhibited strong adaptability to occlusion
+and lighting variations. Chen [33] aimed to address the challenge of detecting ripe wolfberry
+fruits in natural environments by proposing an improved YOLOv8-based lightweight and
+efficient detection model. This model reliably achieves real-time recognition of wolfberry
+fruits under complex conditions, providing valuable references for non-destructive maturity
+detection in other agricultural products. In the field of jujube fruit recognition, Wang et al.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+3 of 22
+(2025) [34] introduced the Jujube-YOLO model, which incorporates targeted enhancements
+to the latest YOLOv11 architecture. By integrating a multi-branch channel attention module,
+their method surpasses several image detections models in accuracy for identifying jujube
+fruits and their split states in complex environments, demonstrating the significant potential
+of object detection models in addressing specific agricultural challenges. This study aims
+to detect and count eggplants under complex greenhouse conditions using per-row video
+acquisition. Such a data-collection protocol poses significant challenges, such as severe
+occlusions, illumination variations, background clutter, motion blur, and duplicate counts
+caused by repeated appearances of the same fruit in adjacent frames.
+However, relying solely on static image detection is insufficient for achieving precise
+yield estimation and counting. In video sequences, factors such as fruit occlusion, camera
+motion, and viewpoint variations can lead to repeated counting or missed detections of the
+same fruit, significantly compromising the accuracy of statistical results. To address this
+issue, multi-object tracking (MOT) has been introduced into yield estimation systems. This
+approach aims to assign a unique and persistent ID to each detected target in the video,
+enabling continuous tracking of fruit trajectories and accurate counting.
+DeepSORT (Deep Simple Online and Realtime Tracking) extends SORT (Simple Online
+and Realtime Tracking) by incorporating appearance features for more reliable association,
+while using a Kalman filter for motion prediction and the Hungarian algorithm for data
+association [35,36].
+Currently, studies have explored the integration of YOLO with DeepSORT for agri-
+cultural applications, such as the counting of passion fruit [37], apples [38], and cherry
+tomatoes [39]. However, the detection and tracking of eggplants in greenhouse environ-
+ments still face unique challenges. These include occlusion by stems and leaves, structural
+interference, and the similarity in shape between eggplants and overlapping foliage. In
+addition, uneven greenhouse lighting creates intense highlights and deep shadows that
+significantly degrade detector performance. In practical scenarios, the high density and
+severe mutual occlusion of eggplant fruits often lead to frequent ID switches for the same
+target, resulting in repeated counts and placing higher demands on the discriminative
+capability of tracking algorithms. The main contributions are as follows:
+(1) An integrated detection-and-counting framework for eggplant fruits in complex
+greenhouse environments is proposed by combining an improved YOLOv5s and DeepSORT
+algorithms, enabling robust video-based detection and counting.
+(2) To improve deployment efficiency under greenhouse interference and resource
+constraints, YOLOv5s is redesigned by replacing the backbone with MobileNetV3, inserting
+an ECA module, and replacing the neck C3 block with C2f, achieving a better trade-off
+between detection accuracy and computational cost.
+(3) To address duplicate counting caused by frequent ID switches during tracking, a
+counting-zone strategy is proposed. It replaces traditional ID-accumulation counting with
+a rule that increments the count when the bounding-box center enters the counting zone,
+thereby reducing duplicate counts and improving counting accuracy.
+2. Materials and Methods
+An improved YOLOv5s–DeepSORT-based framework is developed for eggplant de-
+tection and counting in greenhouse environments. The workflow is illustrated in Figure 1.
+First, greenhouse inspection videos are collected and used to construct an eggplant fruit
+detection dataset through frame extraction, data augmentation, and manual annotation. Sec-
+ond, the improved YOLOv5s detector is trained to generate fruit bounding boxes for each
+frame. Third, the detections are associated across frames using DeepSORT to maintain target
+identity continuity. Finally, a counting-zone strategy is applied: the count is incremented only
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+4 of 22
+once per target when the bounding-box center enters the predefined counting zone, which
+reduces duplicate counting caused by short-term occlusion and identity switches. Detection
+performance and counting performance are evaluated using standard metrics.
+ 
+Figure 1. Workflow Diagram.
+2.1. Data Acquisition
+The video data for this study were collected from a greenhouse vegetable facility
+located in Jijialishuang Village, Heguan Town, Qingzhou City, Shandong Province (coor-
+dinates: 36◦51′2.890′′ N, 118◦37′35.516′′ E). The target crop was Tianjin round eggplant.
+The planting system in the test area employed flat land cultivation, with a row spacing of
+1.5 m and alley lengths ranging from 12 to 15 m. The eggplant fruits are mainly distributed
+between 0.5 and 1.2 m in height. This planting structure and fruit distribution are suitable
+for the field operations of harvesting and inspection robots, as shown in Figure 2.
+In this study, an Intel RealSense D435i depth camera (Intel Corporation, Santa Clara,
+CA, USA) was used for data collection, mounted on a mobile platform. The camera offers
+six degrees of freedom, with an accelerometer range of ±4 g and sample rates of 62.5 Hz
+and 250 Hz, and a gyroscope range of ±1000 deg/s at 200 Hz and 400 Hz. It also provides
+a timestamp accuracy of 50 microseconds. This configuration ensures high precision in
+capturing eggplant movement and positioning during inspection, essential for accurate
+detection and tracking in the greenhouse.
+The camera lens was positioned 0.8 m above the ground with a pitch angle of ap-
+proximately −10◦, simulating the perspective of an inspection robot. This setup enabled
+effective monitoring of the eggplants within the dynamic and complex environment of the
+greenhouse. Data was collected on 12 November 2024, under variable lighting conditions,
+with challenges such as building interference, leaf occlusion, and inconsistent illumination.
+The platform was manually towed at a constant speed of 0.1 m/s along the eggplant rows,
+simulating the motion of an inspection robot. A total of 10 valid video sequences (2–3 min
+each) were recorded at 960 × 544 resolution and 30 fps, saved in MP4 format.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+5 of 22
+(a) 
+(b) 
+Figure 2. Greenhouse image: (a) outdoor scene; (b) indoor scene.
+2.2. Dataset Construction
+In complex greenhouse environments, factors such as fluctuating lighting, structural
+interference, occlusion among stems, leaves, and fruits, and motion blur from uneven platform
+movement pose significant challenges to accurate model recognition. Frames were extracted
+every 15 frames from the 7 randomly selected videos. The remaining 3 videos were reserved
+for the subsequent validation of the DeepSORT tracking and counting algorithm.
+For dataset construction, frames were extracted from the 7 training videos at fixed
+15-frame intervals to reduce redundancy from adjacent frames. Additionally, to enhance
+model robustness and prevent overfitting from limited samples, several data augmentation
+techniques were applied using OpenCV (version 4.8.0.76), including flipping, cropping,
+brightness adjustment, Gaussian noise, blur, and vignette processing.
+After augmentation and careful selection, a final dataset of 4601 images was obtained.
+Figure 3 illustrates a sample collection of eggplant fruit images from the augmented green-
+house dataset. The dataset was divided into training, validation, and test sets in a ratio of
+8:1:1, comprising 3681 images for training, and 460 images each for the validation and test
+sets. All eggplant instances were annotated using the LabelMe tool (version 5.5.0), where
+rectangular bounding boxes were drawn along the contour of each fruit. The category was
+labeled as “eggplant,” and the annotation results were saved in the TXT format required for
+YOLO training. Each annotation file contains object category and location information.
+(a) 
+(b) 
+(c) 
+(d) 
+(e) 
+(f) 
+Figure 3. Sample Collection of the Eggplant Fruit Dataset after Data Augmentation, including the
+(a) Images of Normal Eggplant; (b) Brightness Adjustment; (c) Gaussian Noise; (d) Blur Processing;
+(e) Vignetting Processing; (f) Flip and Crop.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+6 of 22
+2.3. The Improved YOLOv5 Detection Model
+2.3.1. Network Architecture of the YOLOv5s Model
+In recent years, the YOLO family has been widely adopted for real-time object detec-
+tion due to its end-to-end, one-stage design. Several versions, including YOLOv5, YOLOv8,
+YOLOv9, and YOLOv11, have been developed through continuous iteration. For this study,
+YOLOv5s was selected as the base model for improvement due to its well-established and
+efficient architecture. Although newer versions of YOLO demonstrate superior perfor-
+mance on general datasets, their effectiveness diminishes in specific environments, such
+as complex greenhouse settings. In such conditions, targets are often densely packed,
+severely occluded by stems and branches, and affected by structural interference and
+fluctuating lighting. These factors not only intensify the limitations of detection but also
+place higher demands on model robustness. Additionally, the pursuit of higher accuracy
+often leads to increased computational complexity, which challenges practical deployment
+in resource-limited environments.
+The network architecture of the improved YOLOv5s is shown in Figure 4. The main
+modifications are summarized as follows:
+(1)
+The backbone is replaced with MobileNetV3 to reduce parameters and FLOPs while
+maintaining feature extraction capability.
+(2)
+An Efficient Channel Attention (ECA) module is inserted to enhance discriminative
+channel responses under occlusion and clutter.
+(3)
+The neck C3 blocks are replaced with C2f blocks to strengthen multi-scale feature
+fusion and improve gradient flow for small and dense targets.
+ 
+Figure 4. Architecture of the improved YOLOv5 model.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+7 of 22
+2.3.2. MobileNetV3 Network
+In this work, the original YOLOv5s backbone (CSPDarknet53) is replaced with Mo-
+bileNetV3 to reduce computation. CSPDarknet53 is accurate but relatively heavy, which
+limits real-time performance on edge devices. MobileNetV3 is a lightweight CNN designed
+for mobile deployment. It combines depthwise separable convolutions, NAS-optimized
+architecture, and the h-swish activation to improve efficiency. As a result, the network can
+extract useful features with lower FLOPs and latency, making it more suitable for real-time
+object detection on resource-constrained hardware.
+The core idea of depthwise separable convolution is to factorise a standard convolution
+into two lightweight operations: depthwise convolution followed by pointwise (1 × 1)
+convolution, which substantially reduces computational cost and parameter count.
+In contrast to standard convolutions in the YOLOv5s backbone, depthwise separable
+convolution performs spatial feature extraction via depthwise convolution and channel fusion
+via a 1 × 1 pointwise convolution, substantially reducing computation and parameters.
+For a convolutional layer with an input feature map of size DF × DF × M and an
+output feature map of size DF × DF × N, where M and N denote the numbers of input and
+output channels, respectively, and the kernel size is DK × DK, the computational cost of
+standard convolution Cstd can be expressed as:
+Cstd = DK · DK · M · N · DF · DF
+(1)
+The depthwise convolution performs spatial filtering separately for each input channel,
+and its computational cost CD is given by:
+CD = DK · DK · M · DF · DF
+(2)
+The pointwise convolution employs 1 × 1 kernels to fuse the M channels output by
+the depthwise convolution, thereby constructing N new output channels. Its computational
+cost Cp is expressed as:
+Cp = M · N · DF · DF
+(3)
+The total computational cost Cdsc of the depthwise separable convolution is the sum
+of the two components:
+Cdsc = DK · DK · M · DF · DF + M · N · DF · DF
+(4)
+Compared to standard convolution, the reduction in computational load achieved by
+using depthwise separable convolution can be calculated as follows:
+R = Cdst
+Cstd
+= 1
+N + 1
+D2
+K
+(5)
+With a 3 × 3 kernel (DK = 3) and a large number of output channels (N), the computa-
+tional ratio converges to 1/9. This decomposition therefore reduces the FLOPs of standard
+convolution by about ninefold, while maintaining comparable feature extraction capacity.
+As shown in Figure 5, the MobileNetV3 block starts with a 1 × 1 convolution to expand
+channel dimensions and improve feature representation. A 3 × 3 depthwise separable
+convolution then captures spatial information. Next, a lightweight Squeeze-and-Excitation
+(SE) module recalibrates channel responses to emphasize informative features. A final
+1 × 1 convolution projects the features back to the original channel dimension, forming a
+bottleneck. A residual connection links the input and output, improving gradient flow and
+enabling feature reuse.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+8 of 22
+ 
+Figure 5. MobileNetV3 Architecture.
+2.3.3. ECA Attention
+To improve robustness under occlusion and background clutter in greenhouse scenes,
+an ECA module is integrated into YOLOv5s to enhance channel-wise feature discrimination
+with minimal computational overhead. This integration strengthens feature discrimination
+and improves eggplant fruit detection in challenging scenes.
+The ECA module is illustrated in Figure 6. Given an input feature map χ, global
+average pooling over the spatial dimensions H × W produces a channel descriptor Z.
+Unlike the Squeeze-and-Excitation (SE) module, ECA removes fully connected layers and
+uses a lightweight 1D convolution to model cross-channel interactions. The convolution
+kernel size K is adaptively determined by a nonlinear function K = ψ(C), where C is the
+number of channels. The descriptor is then passed through the 1D convolution and a
+Sigmoid function to obtain channel attention weights A ∈[0, 1]. Finally, A is reshaped to
+[B, C,1,1] and multiplied with χ to generate the recalibrated output feature map.
+Figure 6. ECA Attention Mechanism.
+2.3.4. C2f Module
+To strengthen multi-scale feature fusion, the YOLOv5s neck is modified by replacing
+C3 blocks with C2f blocks, which strengthens feature integration across the feature pyramid.
+In the original YOLOv5s, the C3 module follows the CSPNet design to reduce computation
+by splitting feature maps and using partial cross-stage connections. However, this split
+can weaken feature propagation and reduce information retention, especially in complex
+scenes and small-object detection. The C2f block introduces multiple bottleneck branches
+and concatenates their outputs for subsequent fusion, which improves feature reuse and
+gradient flow.
+As shown in Figure 7a, the C3 module splits the input feature map into two branches:
+one is processed by a sequence of Bottleneck blocks, while the other is forwarded through a
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+9 of 22
+shortcut. The two branches are then concatenated. In contrast, the C2f module in Figure 7b
+preserves the full feature flow, applies multiple parallel Bottleneck blocks for multi-scale
+feature extraction, concatenates all Bottleneck outputs with the original input, and finally
+fuses them using a convolutional layer.
+(a) 
+(b) 
+Figure 7. Comparison of module architectures. (a) Structure of the C3 Module; (b) Structure of the
+C2f Module.
+2.4. Methods for Counting Greenhouse Eggplants
+2.4.1. Designated Counting-Area Method
+The overall pipeline consists of three stages: object detection, inter-frame tracking, and
+region-triggered counting.
+Accurate yield estimation in greenhouse videos requires not only reliable per-frame
+detection but also consistent target identities across frames. Therefore, we combine the
+improved YOLOv5s detector with the DeepSORT tracker and a counting-zone strategy to
+achieve robust online eggplant counting. Figure 8 illustrates the DeepSORT architecture
+adopted in this study.
+ 
+Figure 8. Architecture of the DeepSORT algorithm.
+First, the improved YOLOv5s detector is applied to each video frame. Frames are
+resized to 640 × 640 using a letterbox strategy, normalized, and fed into the network. The
+raw predictions are filtered by non-maximum suppression (confidence threshold = 0.6, IoU
+threshold = 0.5), and only detections of the eggplant class are retained.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+10 of 22
+Second, detections are associated across frames using DeepSORT to maintain target
+identity continuity. DeepSORT predicts the state of each track using a Kalman filter and
+extracts an appearance embedding for each detection using a lightweight ReID network.
+Association is performed by a matching cascade: confirmed tracks are first matched to
+current detections by minimizing the cosine distance between embeddings, with Mahalanobis-
+distance gating based on the Kalman prediction; remaining and unconfirmed tracks are then
+matched using IoU. In the IoU matching stage, an IoU threshold of 0.3 is used. Tracks are
+kept for up to max_age (max_life) frames without a match to bridge short-term occlusions.
+Unmatched detections initialize new tracks, and tracks that exceed max_age are removed.
+As shown in Figure 9, targets near the image boundaries are prone to partial occlusion,
+unstable detections, or incomplete bounding boxes when they first enter the field of view.
+Therefore, a counting zone is defined along the horizontal axis of the frame: the left
+boundary is set at one-fifth of the image width, and the right boundary is set at four-fifths
+of the image width, forming the valid counting region in between. For each tracked target,
+the center coordinate of its bounding box is computed. When the target enters the counting
+region and its ID has not been counted, the system triggers a single counting event and
+adds the ID to the counted-ID set. The workflow of the proposed counting method is
+shown in Figure 10.
+Figure 9. Visualization of Eggplant Counting.
+Counting is triggered when the following conditions are satisfied:
+(1)
+The target is successfully matched to an existing track in the current frame. (IoU > 0.3)
+(2)
+The bounding-box center enters the predefined counting zone.
+(3)
+The target ID is not in the counted-ID set.
+Only when all the above conditions are satisfied simultaneously does the system
+increment the total count by 1 and insert the corresponding ID into the set. The key
+motivation is that, once a target enters the counting zone, it typically remains within the
+zone for multiple consecutive frames. Without a de-duplication constraint, the same target
+would be repeatedly accumulated across frames, leading to overestimation of the final
+count. By maintaining a counted-ID set, each track ID is counted at most once throughout
+the entire video, thereby suppressing duplicate counting.
+The proposed region-triggered counting scheme with de-duplication reduces repeated
+accumulation of the same target across consecutive frames within the counting zone. In
+addition, the IoU matching threshold and short-term track retention (max_life) can partially
+reduce the probability of ID switches, further improving counting stability. Finally, the
+system outputs the cumulative count and generates a visualization video with bounding
+boxes, IDs, and counting-zone annotations.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+11 of 22
+ 
+Figure 10. Workflow of greenhouse eggplant counting methods.
+2.4.2. Model Training Configuration
+The experimental study was conducted using a software environment based on Win-
+dows 11 Professional, Python 3.8.20, CUDA 11.3, and PyTorch 1.9.0 for image data process-
+ing and model development. The hardware setup consisted of a 12th Gen Core i5-12400F
+CPU and an NVIDIA GeForce RTX 4060 Ti GPU with 32 GB of RAM.
+The network was configured with an input image size of 640 × 640 pixels and a batch
+size of 16. Model optimization was performed using stochastic gradient descent with an
+initial learning rate of 0.01 and weight decay of 0.0005. To prevent overfitting, training
+was conducted for 100 epochs, with Mosaic data augmentation disabled during the final
+10 epochs.
+2.4.3. Evaluation Metrics
+To comprehensively evaluate the detection performance of eggplant fruits in com-
+plex greenhouse environments, this study employs Precision (P), Recall (R), and Mean
+Average Precision (mAP) as metrics to assess the improved YOLOv5s model. The relevant
+calculation formulas are as follows:
+P =
+TP
+TP + FP
+(6)
+R =
+TP
+TP + FN
+(7)
+AP =
+Z 1
+0 P(R)·d(R);
+(8)
+mAP = 1
+c
+c
+∑
+i=1
+APi
+(9)
+This study adopts Precision (P), Recall (R), and mAP@0.5 to evaluate detection perfor-
+mance. Here, TP denotes eggplant fruits correctly detected by the model, whereas FP refers
+to background regions or non-target objects mistakenly classified as eggplant fruits, which
+may lead to overestimation in counting. Therefore, Precision measures the proportion of
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+12 of 22
+predicted fruits that are true fruits. FN indicates missed detections of real eggplant fruits,
+resulting in yield underestimation; thus, Recall reflects the model’s capability to detect real
+fruits. Higher P and R values indicate better detection performance. In addition, mAP@0.5
+is a standard comprehensive metric in object detection, defined as the mean of the average
+precision across classes; a higher value corresponds to superior performance. In this work,
+an IoU threshold of 0.5 is used because yield counting primarily requires correct fruit
+detection rather than extremely precise bounding-box localization; a reasonable overlap
+between predicted and ground-truth boxes is sufficient for subsequent counting.
+For multi-object tracking performance, the Counting Accuracy serves as a core metric
+for evaluating the system’s overall yield estimation capability. It is calculated as follows:
+Counting Accuracy =
+
+1 −|NP −NG|
+NG
+
+× 100%
+(10)
+NP represents the number of eggplant fruits identified in the video, while NG denotes
+the number of eggplant fruits obtained through manual counting. This metric directly
+reflects the model’s accuracy in yield estimation and counting. When maintaining a positive
+value, a result closer to 100% indicates more ideal counting performance by the model.
+Relative Error serves as a supplementary metric for evaluating the degree of counting
+deviation. This indicator intuitively reflects the overall deviation percentage of the counting
+results, with lower values indicating higher counting accuracy of the system. Its calculation
+formula is as follows:
+Relative Error = |NP −NG|
+NG
+× 100%
+(11)
+3. Results and Analysis
+3.1. Lightweight Backbone Module Evaluation
+To identify the optimal lightweight backbone network for eggplant detection in com-
+plex greenhouse environments, this study conducted comprehensive comparative ex-
+periments under identical conditions with several advanced lightweight networks. As
+summarized in Table 1, based on the original YOLOv5s model, the backbone was replaced
+with GhostNet, ShuffleNetV2, EfficientNetV2, and MobileNetV3.
+Table 1. Comparison of different lightweight modules.
+Model
+Parameters
+Precision (%)
+mAP@0.5 (%)
+Model Size (MB)
+GFLOPs
+YOLOv5s
+7,063,542
+95.5
+97
+14.4
+16.5
+GhostNet
+4,870,410
+94.7
+98.7
+10.1
+7.9
+ShuffleNetV2
+3,792,950
+93.4
+96.3
+7.9
+8
+EfficientNetv2
+5,404,158
+94.4
+98
+11.1
+5.6
+MobileNetV3
+3,359,308
+94.6
+98.7
+7
+6
+The results show that replacing the backbone significantly reduces the parameter
+count, computational cost, and model size compared with the original YOLOv5s. Among
+all variants, the MobileNetV3-based model delivers the best overall efficiency, reducing
+parameters, FLOPs, and model size by 52.4%, 63.6%, and 51.4%, respectively. GhostNet
+achieves comparable accuracy but requires 45.0% more parameters and 31.7% higher FLOPs
+than MobileNetV3. ShuffleNetV2 is the most lightweight, but slightly reduces detection
+precision. EfficientNetV2 is computationally efficient, yet its accuracy remains marginally
+lower than MobileNetV3. Overall, MobileNetV3 offers the best trade-off between accuracy
+and complexity, making it a suitable backbone for subsequent improvements.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+13 of 22
+3.2. Ablation Study
+To assess the effect of adding the ECA attention module and C2f blocks after
+lightweighting, we conduct a series of ablation experiments comparing different mod-
+ule combinations. The results are summarized in Table 2.
+Table 2. Ablation study results.
+MobileNetV3
+ECA
+C2f
+Precision (P)/%
+Recall (R)/%
+mAP@0.5/%
+Parameters
+GFLOPs
+×
+×
+×
+95.5
+98.8
+97
+7,063,542
+16.5
+√
+×
+×
+94.6
+98.4
+98.7
+3,359,308
+6
+×
+√
+×
+98.3
+99.6
+99.6
+7,162,105
+16.6
+×
+×
+√
+98.3
+99.5
+99.6
+8,087,542
+18.6
+×
+√
+√
+98.7
+99.4
+99.7
+8,153,337
+18.6
+√
+×
+√
+96.8
+98.6
+99.2
+4,384,332
+8.1
+√
+√
+×
+95.7
+96.6
+98.9
+3,457,871
+6.1
+√
+√
+√
+97.8
+97.5
+99.2
+4,450,127
+8.1
+As shown in Table 2, replacing the backbone with MobileNetV3 reduces parameters
+from 7.06 M to 3.36 M and FLOPs from 16.5 GFLOPs to 6.0 GFLOPs, achieving a sub-
+stantially lighter model. These results demonstrate that MobileNetV3 effectively reduces
+model complexity.
+Adding ECA to the original YOLOv5s improves detection accuracy: Precision in-
+creases from 95.5% to 98.3%, and mAP@0.5 rises from 97.0% to 99.6%. This indicates that
+ECA strengthens channel-wise feature discrimination and helps the model focus on small
+eggplant targets. Replacing C3 with C2f also yields clear gains, reaching 98.3% Precision,
+99.5% Recall, and 99.6% mAP@0.5. However, this modification increases model complexity,
+with parameters and FLOPs rising to 8.09 M and 18.6 GFLOPs, respectively, exceeding
+the baseline YOLOv5s. The results suggest that C2f improves multi-scale feature fusion
+through richer shortcut paths and multi-branch bottlenecks, which benefits detection in
+dense fruit distributions.
+When both C2f and ECA are added to the original YOLOv5s, Precision, Recall, and
+mAP@0.5 increase to 98.7%, 99.4%, and 99.7%, respectively, suggesting a synergistic im-
+provement. ECA enhances attention to small targets, while C2f strengthens multi-scale
+feature fusion via multi-branch bottlenecks and denser shortcut connections. However,
+this configuration substantially increases parameters and FLOPs, limiting its suitability for
+lightweight deployment.
+In this work, we integrate ECA and C2f into a MobileNetV3-based lightweight model.
+Although Precision and Recall decrease slightly, mAP@0.5 remains high at 99.2%. Mean-
+while, parameters and FLOPs are limited to 4.45 M and 8.1 GFLOPs, respectively, which are
+substantially lower than the original YOLOv5s. These results confirm that MobileNetV3
+provides an efficient backbone for lightweight feature extraction, allowing ECA and C2f to
+improve feature representation without excessive computational overhead.
+Overall, the ablation study shows that MobileNetV3 is the primary contributor to
+model lightweighting, while ECA and C2f provide complementary gains in feature dis-
+crimination and multi-scale fusion, particularly for dense and small eggplant targets. Since
+the counting module uses detected bounding boxes as counting instances, maintaining
+high detection accuracy is essential for reliable counting. The final design achieves a good
+trade-off between accuracy and efficiency, supporting deployment in resource-constrained
+environments.
+As shown in Figure 11a, the improved YOLOv5s achieves higher precision than
+the baseline shortly after training begins and converges to a higher, more stable level.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+14 of 22
+Figure 11b shows that the improved model maintains consistently higher mAP@0.5
+throughout training and converges faster.
+These results indicate that the proposed
+YOLOv5s not only improves detection accuracy but also provides a more stable input
+for subsequent DeepSORT tracking, supporting reliable counting in video.
+ 
+(a) 
+(b) 
+Figure 11. Comparison between the improved YOLOv5s and the original YOLOv5s model. (a) Preci-
+sion comparison; (b) mAP@0.5 comparison.
+3.3. Comparative Experiments of Different Models
+To evaluate overall performance, we compare the proposed model with several re-
+cent detectors, including YOLOv5m, YOLOv8s, YOLOv9s, YOLOv10n, and YOLOv11n.
+As shown in Table 3, the improved YOLOv5s achieves 97.8% precision, outperforming
+YOLOv5m, YOLOv8s, YOLOv9s, YOLOv10n, YOLOv11n, and the original YOLOv5s by
+1.7%, 0.9%, 0.8%, 2.2%, 1.8%, and 2.3%. In addition, the improved YOLOv5s is highly
+efficient. Compared with YOLOv5m, YOLOv8s, and YOLOv9s, it reduces parameters by
+78.9%, 59.9%, and 38.2%, and lowers FLOPs by 84.0%, 70.3%, and 69.9%, respectively. Its
+mAP@0.5 is comparable to YOLOv8s and 0.2% higher than YOLOv9s, while requiring
+substantially fewer resources. Compared with YOLOv10n and YOLOv11n, it uses slightly
+more parameters and FLOPs, but achieves higher precision, making it better suited for
+greenhouse fruit detection where accuracy is critical.
+Table 3. Comparative experimental results of different models.
+Model
+P/%
+R/%
+mAP@0.5/%
+mAP@0.5–0.95/%
+Parameters
+GFLOPs
+Model
+Size (MB)
+YOLOv5m
+96.1
+96.2
+98.9
+86.3
+21,056,406
+50.6
+42.5
+YOLOv8s
+96.9
+97.7
+99.2
+91.4
+11,108,531
+27.3
+22.5
+YOLOv9s
+97
+97.9
+99
+92.2
+7,195,635
+26.9
+14.7
+YOLOv10n
+95.2
+97.1
+98.6
+88.1
+2,707,430
+8.4
+5.7
+YOLOv11n
+96
+97.6
+99.2
+90.6
+2,590,035
+6.4
+5.4
+YOLOv5s
+95.5
+98.8
+97
+85.4
+7,063,542
+16.5
+14.4
+Improved YOLOv5s
+97.8
+97.5
+99.2
+89.5
+4,450,127
+8.1
+9.2
+3.4. Qualitative Analysis
+In the visualization experiments, all models were tested under the same settings,
+with the confidence threshold fixed at 0.1. To evaluate robustness in real greenhouse
+scenes, we selected five representative images for qualitative comparison, covering five
+typical conditions: Sunny, Dark, motion blur, Small Object, and Branch and Leaf Occlusion.
+The selected images include small, medium, and large fruits, enabling a comprehensive
+assessment under complex visual disturbances.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+15 of 22
+As shown in Figure 12, in the Sunny scenario, the ground-truth number of eggplant
+fruits in the image is three. The improved YOLOv5s detects all three fruits with higher
+confidence. In the Dark scene, the ground-truth number of fruits is five. The other models
+miss targets to varying degrees, whereas the improved YOLOv5s detects all five fruits,
+demonstrating stronger robustness under low-light conditions.
+Sunny 
+(a1) 
+(b1) 
+(c1) 
+(d1) 
+(e1) 
+(f1) 
+(g1) 
+(h1) 
+Dark 
+(a2) 
+(b2) 
+(c2) 
+(d2) 
+(e2) 
+(f2) 
+(g2) 
+(h2) 
+Motion Blur 
+(a3) 
+(b3) 
+(c3) 
+(d3) 
+Figure 12. Cont.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+16 of 22
+(e3) 
+(f3) 
+(g3) 
+(h3) 
+Small Object 
+(a4) 
+(b4) 
+(c4) 
+(d4) 
+(e4) 
+(f4) 
+(g4) 
+(h4) 
+Branch and Leaf Occlusion 
+(a5) 
+(b5) 
+(c5) 
+(d5) 
+(e5) 
+(f5) 
+(g5) 
+(h5) 
+Figure 12. Comparison of object detection models. (a) original image; (b) YOLOv5m detection results;
+(c) YOLOv8s detection results; (d) YOLOv9s detection results; (e) YOLOv10n detection results; (f)
+YOLOv11n detection results; (g) YOLOv5s detection results; (h) Improved YOLOv5s detection results.
+In the Motion Blur scenario, blur is introduced to simulate non-uniform movement
+of the inspection platform. Except for the improved YOLOv5s, all models exhibit missed
+detections. In the Small Object scenario, the baseline models struggle to detect small-scale
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+17 of 22
+fruits, whereas the improved YOLOv5s achieves more complete detections with higher
+confidence, benefiting from the ECA attention mechanism.
+In the Branch and Leaf Occlusion scenario, severe occlusion and background clut-
+ter increase confusion between fruits and non-target regions. YOLOv10n, YOLOv11n,
+and YOLOv5s produce false positives, and YOLOv9s misses targets, while YOLOv5m,
+YOLOv8s, and the improved YOLOv5s correctly detect all fruits. Overall, results across
+the five scenarios show that the improved YOLOv5s provides stronger robustness and
+generalization in complex greenhouse environments, confirming the effectiveness of the
+proposed improvements.
+3.5. Comparative Analysis of Multi-Object Tracking Algorithms for Eggplant Fruits
+To evaluate the proposed counting-zone strategy method, we selected three inde-
+pendent test videos, V01–V03, for counting experiments. Each video lasts approximately
+2–3 min and includes different lighting conditions, occlusion levels, and fruit densities.
+As shown in Table 4, we compare the proposed tracking-based counting method
+with SORT, the original DeepSORT, and ByteTrack to evaluate its robustness in complex
+greenhouse environments. For a fair comparison, all methods use the same detections
+produced by the improved YOLOv5s as input. The final count for each video is defined
+as the ID of the last tracked eggplant fruit and is displayed in the upper left corner of the
+frame. For V01, V02, and V03, the proposed method produces counts of 50, 56, and 55,
+which are the closest to the ground truth values among all methods. This indicates that the
+proposed approach maintains more stable trajectories and reduces frequent ID switches in
+challenging greenhouse scenes.
+Table 4. Comparative results of tracking algorithms.
+Video File
+Manual Count
+Results
+Multiple Object
+Tracking
+Counting
+Results
+Counting
+Accuracy (%)
+Relative Error
+(%)
+V01
+60
+SORT
+113
+11.6
+88.3
+DeepSORT
+132
+−20
+120
+ByteTrack
+211
+−151.6
+251.6
+Our Method
+50
+83.3
+16.7
+V02
+68
+SORT
+113
+33.8
+66.18
+DeepSORT
+145
+−13.2
+113.2
+ByteTrack
+223
+−127.9
+227.9
+Our Method
+56
+82.4
+17.6
+V03
+58
+SORT
+124
+−13.8
+113.8
+DeepSORT
+134
+−31
+131
+ByteTrack
+215
+−170.7
+270.7
+Our Method
+55
+94.8
+5.2
+In contrast, SORT, DeepSORT, and ByteTrack generate many redundant IDs. As shown
+in Figure 13, in V01, the proposed method counts 50 fruits, whereas SORT, DeepSORT, and
+ByteTrack output 113, 132, and 211, respectively. The proposed method is closest to the
+ground truth and yields the lowest relative error of 16.7%. In V02, ByteTrack produces
+223 IDs, which is 3.3 times the true number of fruits. DeepSORT and SORT output 145
+and 113 IDs, corresponding to 2.1 times and 1.7 times overcounting. In V03, the proposed
+method counts 55 fruits and achieves 94.8% counting accuracy, substantially outperforming
+the three. These results indicate that conventional trackers struggle to preserve identities
+under leaf occlusion and highly similar fruit appearances, leading to severe ID inflation in
+complex greenhouse scenes.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+18 of 22
+V01 
+V02 
+V03 
+ 
+SORT 
+DeepSORT 
+ByteTrack 
+Our Method 
+Figure 13. Comparative results of multi-object tracking algorithms.
+4. Discussion
+4.1. Counting Performance Summary
+In this study, we collected ten eggplant fruit videos in a greenhouse to systematically
+evaluate the proposed improved YOLOv5s and DeepSORT-based detection and counting
+framework. Figures 14 and 15 summarize the counting results, showing that the proposed
+method provides reliable fruit detection and yield estimation. The predicted counts are highly
+correlated with the ground truth, achieving a coefficient of determination of R2 = 0.9677. The
+method reaches a maximum counting accuracy of 94.83% and an average accuracy of 86.82%,
+which meets the accuracy requirements for agricultural yield estimation [38].
+Figure 14. Fitting results.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+19 of 22
+ 
+Figure 15. Count comparison chart.
+4.2. Comparison with Related Methodology
+Existing fruit counting strategies vary widely. Gao et al. combined fruit detection with
+trunk tracking and inferred counts from trunk motion trajectories, reducing the need to track
+each fruit individually [40]. Nevertheless, this method requires accurate trunk segmentation
+and association, and trunk fruit mismatches may occur under severe foliage occlusion or
+interlaced plants. In contrast, our approach directly detects and tracks individual eggplant
+fruits without relying on additional structural cues and uses a counting zone to improve
+robustness in greenhouse scenes with intertwined stems and dense fruit clusters.
+Chen et al. used UAV high-resolution image mosaicking with Faster R-CNN for
+strawberry yield estimation, enabling large area coverage [41]. However, mosaicking
+can introduce target overlap, and the workflow is largely offline, which limits real-time
+counting on continuous video. Our system performs frame-by-frame detection and online
+tracking and counting directly on video streams captured by a ground mobile platform,
+without reconstruction or mosaicking, making it more suitable for real-time deployment on
+wheeled inspection robots.
+4.3. Limitations and Future Work
+Compared with manual visual counting along crop rows in traditional greenhouse
+production, this process is labor-intensive, subjective, and difficult to repeat frequently
+over large planting areas. The proposed system can be deployed on a mobile inspection
+platform to enable online eggplant detection and counting, reducing manual labor for
+yield estimation.
+However, the proposed method still has limitations. We built a dataset of 4601 images
+extracted from video frames, including 3681 training images, 460 validation images, and
+460 test images. Although data augmentation was applied, the dataset may not fully
+capture variations in cultivation practices, cultivars, seasons, or extreme lighting, which
+can limit generalization in real deployments. In addition, counting performance depends
+on detection and tracking quality. Under dense foliage, severe fruit overlap, or viewpoint
+changes, previously counted fruits may reappear after occlusion and be assigned new
+identities, causing duplicate counts. Therefore, the size and placement of the counting zone
+in the video frame require further optimization.
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+20 of 22
+Future work will expand the dataset across multiple greenhouses, cultivars, and time
+periods, optimize the counting zone parameters, and investigate model compression and
+quantization for embedded deployment with long term field validation. We also plan to
+grade fruit maturity using geometric size cues to improve practical value. Finally, the
+proposed approach can be extended to other greenhouse crops such as tomato, pepper, and
+cucumber by collecting the corresponding data and retraining the model.
+5. Conclusions
+To support accurate eggplant yield estimation in complex greenhouse environments,
+this study proposes a detection and counting framework based on an improved YOLOv5s
+and DeepSORT pipeline. The YOLOv5s detector is enhanced with a lightweight Mo-
+bileNetV3 backbone, an Efficient Channel Attention module, and C2f blocks. The improved
+model achieves 99.2% mAP@0.5, exceeding the baseline YOLOv5s by 2.2 percentage points
+while reducing parameters and FLOPs by 37.0% and 50.9%, respectively. These improve-
+ments deliver robust detection on our self-built dataset and enable real-time deployment on
+inspection robots. For counting, the proposed counting zone strategy attains a maximum
+accuracy of 94.83% and a mean accuracy of 86.82%, outperforming SORT, DeepSORT,
+and ByteTrack and demonstrating its effectiveness for yield estimation in challenging
+greenhouse scenes.
+However, the counting stage treats detected bounding boxes as counting instances and
+may still produce duplicate counts when previously counted fruits reappear after occlusion.
+Performance may also be influenced by robot speed and video frame rate. Future work
+will further examine duplicate counting under severe occlusion and viewpoint changes,
+incorporate videos captured at multiple frame rates, and integrate depth cameras to support
+automatic maturity grading based on eggplant geometric characteristics in addition to
+detection and counting.
+Author Contributions: Conceptualization, J.Z., L.B., C.L., C.N., K.Z. and S.Y.; methodology, J.Z.
+and L.B.; software, J.Z. and L.B.; validation, J.Z., L.B. and C.N.; formal analysis, J.Z., L.B. and K.Z.;
+investigation, J.Z., L.B. and K.Z.; resources, L.B.; data curation, J.Z. and L.B.; writing—original draft
+preparation, J.Z. and L.B.; writing—review and editing, L.B.; visualization, K.Z. and S.Y.; supervision,
+L.B.; project administration, C.L.; funding acquisition, C.L. All authors have read and agreed to the
+published version of the manuscript.
+Funding: This research was funded by Shandong Provincial Key Research and Development Program
+(Major Scientific and Technological Innovation Projects & Technology Demonstration Projects), (No.
+2022CXGC020701—Research and Development of Motion Planning and Intelligent Drive Technology
+for Agricultural Manipulators).
+Institutional Review Board Statement: Not applicable.
+Data Availability Statement: The data that support the findings of this study are available from the
+corresponding author upon reasonable request. The data are not publicly available as they are being
+used for the author’s ongoing master’s thesis research and other scholarly projects.
+Conflicts of Interest: The authors declare no conflicts of interest.
+References
+1.
+Jiang, L.; Wu, S.; Li, Y. Analysis of Agricultural Internet of Things Technology and Its Application Scenario Development. Acad. J.
+Eng. Technol. Sci. 2025, 8, 74–78. [CrossRef]
+2.
+Zhang, D.; Luo, S.; Zhang, J. Multispectral and Chlorophyll Fluorescence Imaging Fusion Using 2D-CNN and Transfer Learning
+for Cross-Cultivar Early Detection of Verticillium Wilt in Eggplants. Agronomy 2025, 15, 1799. [CrossRef]
+3.
+Yi, P.; Liu, H.; Liu, S. Assessment for aerodynamic and canopy resistances in simulating latent heat flux of Venlo-type greenhouse
+tomato. Agric. Water Manag. 2024, 297, 108825. [CrossRef]
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+21 of 22
+4.
+Emmanuel, L.; Athanasios, Z.; Alexios, P. Evaluation of Different Modelling Techniques with Fusion of Satellite, Soil and
+Agro-Meteorological Data for the Assessment of Durum Wheat Yield under a Large Scale Application. Agriculture 2022, 12, 1635.
+[CrossRef]
+5.
+Bai, H.; Xiao, D.; Tang, J. Evaluation of wheat yield in North China Plain under extreme climate by coupling crop model with
+machine learning. Comput. Electron. Agric. 2024, 217, 108651. [CrossRef]
+6.
+Li, W.; Zhuang, M.; Feng, L. Carbon and reactive nitrogen footprint of greenhouse versus open-field vegetable production in
+China. Resour. Conserv. Recycl. 2025, 221, 108400. [CrossRef]
+7.
+Bhargava, A.; Bansal, A. Fruits and vegetables quality evaluation using computer vision: A review. J. King Saud Univ. Comput. Inf.
+Sci. 2018, 33, 243–257. [CrossRef]
+8.
+Feng, X.; Haibin, W.; Yaoxiang, L. Object Detection and Recognition Techniques Based on Digital Image Processing and Traditional
+Machine Learning for Fruit and Vegetable Harvesting Robots: An Overview and Review. Agronomy 2023, 13, 639. [CrossRef]
+9.
+Gu, Z.; Ma, X.; Guan, H. Tomato fruit detection and phenotype calculation method based on the improved RTDETR model.
+Comput. Electron. Agric. 2024, 227, 109524. [CrossRef]
+10.
+Lin, G.; Tang, Y.; Zou, X. Color-, depth-, and shape-based 3D fruit detection. Precis. Agric. Int. J. Adv. Precis. Agric. 2020, 21, 1–17.
+[CrossRef]
+11.
+Zhang, J.; Chen, L.; Shi, R. Detection of bruised apples using structured light stripe combination image and stem/calyx feature
+enhancement strategy coupled with deep learning models. Agric. Commun. 2025, 3, 100074. [CrossRef]
+12.
+Saikia, P.; Sahu, B.; Prasad, G. Smart Infrastructure Systems: A Review of IoT-Enabled Monitoring and Automation in Civil and
+Agricultural Engineering. Asian J. Res. Comput. Sci. 2025, 18, 24–44. [CrossRef]
+13.
+Shi, Y.; Shen, X.; Hu, M. An advanced approach for multiscale aboveground biomass estimation by integrating UAV, backpack
+LiDAR and high-resolution imageries: A case study in Liriodendron sino-americanum mixed forests. Comput. Electron. Agric.
+2025, 239, 110898. [CrossRef]
+14.
+Hu, X.; Zhang, X.; Chen, X. Research on Corn Leaf and Stalk Recognition and Ranging Technology Based on LiDAR and Camera
+Fusion. Sensors 2024, 24, 5422. [CrossRef]
+15.
+Guzmán, Q.J.A.; Laakso, K.; López-Rodríguez, C.J. Using visible-near-infrared spectroscopy to classify lichens at a Neotropical
+Dry Forest. Ecol. Indic. 2020, 111, 105999. [CrossRef]
+16.
+Chuquizuta, T.; Castro, W.; Giraldez, C.M. Thermodynamic model and infrared thermography monitoring system for convective
+drying of goldenberry (Physalis peruviana). J. Food Eng. 2026, 404, 112773. [CrossRef]
+17.
+Popova, Y.A.; Zolin, A.Y.; Sukhov, S.V. The Effect of a Combination of Local Moderate Heating and Illumination on the Indicators
+of Water Metabolism of Intact Parts of Wheat Measured by Thermal Imaging. Biophysics 2024, 69, 522–532. [CrossRef]
+18.
+You, H.; Wang, H.; Wei, Z. VBP-YOLO-prune: Robust apple detection under variable weather via feature-adaptive fusion and
+efficient YOLO pruning. Alex. Eng. J. 2025, 128, 992–1014. [CrossRef]
+19.
+Loarca, J.; Hanks, W.T.; Moreno, L.H. Correction: BerryPortraits: Phenotyping of ripening traits in cranberry (Vaccinium
+macrocarpon Ait.) with YOLOv8. Plant Methods 2025, 21, 3. [CrossRef] [PubMed]
+20.
+Maheswaran, S.; Sathish, S.; Priyadarshini, P.; Vivek, B. Identification of artificially ripened fruits using smart phones. In
+Proceedings of the 2017 International Conference on Intelligent Computing and Control (I2C2), Coimbatore, India, 23–24 June
+2017; pp. 1–6. [CrossRef]
+21.
+Wang, K.; Chen, Y.; Sun, H. ACCDW-YOLO: An effective detection method for small-sized pests and diseases in navel oranges.
+Int. J. Digit. Earth 2025, 18, 2544918. [CrossRef]
+22.
+Zhang, X.; Li, L.; Bian, Z. RDL-YOLO: A Method for the Detection of Leaf Pests and Diseases in Cotton Based on YOLOv11.
+Agronomy 2025, 15, 1989. [CrossRef]
+23.
+Luan, F.; Fan, K.; Xu, X. Cherry-YOLO: Enhanced real-time detection of Cherry ripeness and defects with optimised YOLOv8.
+Computing 2025, 107, 198. [CrossRef]
+24.
+Gao, X.; Ding, J.; Bie, M. YOLOv8n-FDE: An Efficient and Lightweight Model for Tomato Maturity Detection. Agronomy 2025,
+15, 1899. [CrossRef]
+25.
+Lu, Z.; Chengao, Z.; Lu, L. Star-YOLO: A lightweight and efficient model for weed detection in cotton fields using advanced
+YOLOv8 improvements. Comput. Electron. Agric. 2025, 235, 110306. [CrossRef]
+26.
+Ma, C.; Chi, G.; Ju, X. YOLO-CWD: A novel model for crop and weed detection based on improved YOLOv8. Crop Prot. 2025,
+192, 107169. [CrossRef]
+27.
+Yuyun, P.; Nengzhi, Z.; Lu, D. Identification and Counting of Sugarcane Seedlings in the Field Using Improved Faster R-CNN.
+Remote Sens. 2022, 14, 5846. [CrossRef]
+28.
+Islam, S.; Reza, N.M.; Chowdhury, M. Detection and segmentation of lettuce seedlings from seedling-growing tray imagery using
+an improved mask R-CNN method. Smart Agric. Technol. 2024, 8, 100455. [CrossRef]
+29.
+Akrouchi, E.M.; Mhada, M.; Gracia, R.D. Optimizing Mask R-CNN for enhanced quinoa panicle detection and segmentation in
+precision agriculture. Front. Plant Sci. 2025, 16, 1472688. [CrossRef]
+https://doi.org/10.3390/agriculture16020253
+
+Agriculture 2026, 16, 253
+22 of 22
+30.
+Fei, S.; Yanping, Z.; Guanghui, W. Tomato Maturity Classification Based on SE-YOLOv3-MobileNetV1 Network under Nature
+Greenhouse Environment. Agronomy 2022, 12, 1638. [CrossRef]
+31.
+Omer, S.M.; Ghafoor, K.Z.; Askar, S.K. Lightweight improved yolov5 model for cucumber leaf disease and pest detection based
+on deep learning. Signal Image Video Process. 2023, 18, 1329–1342. [CrossRef]
+32.
+Zhu, X.; Chen, F.; Zheng, Y. An efficient method for detecting Camellia oleifera fruit under complex orchard environment. Sci.
+Hortic. 2024, 330, 113091. [CrossRef]
+33.
+Chen, Y.; Liu, Q.; Jiang, X. FEW-YOLO: A lightweight ripe fruit detection algorithm in wolfberry based on improved YOLOv8. J.
+Food Meas. Charact. 2025, 19, 4783–4795. [CrossRef]
+34.
+Wang, L.; Wang, S.; Wang, B. Jujube-YOLO: A precise jujube fruit recognition model in unstructured environments. Expert Syst.
+Appl. 2025, 291, 128530. [CrossRef]
+35.
+Zhou, Y.; Wu, X.; Li, Y. Algorithm for surface flow velocity measurement in trunk canal based on improved YOLOv8 and
+DeepSORT. Eng. Appl. Artif. Intell. 2025, 148, 110344. [CrossRef]
+36.
+Wang, P.; Kim, S.; Han, X. Development of an automatic beehive transporting system based on YOLO and DeepSORT algorithms.
+Comput. Electron. Agric. 2025, 229, 109749. [CrossRef]
+37.
+Shuqin, T.; Yufei, H.; Yun, L. A passion fruit counting method based on the lightweight YOLOv5s and improved DeepSORT.
+Precis. Agric. 2024, 25, 1731–1750. [CrossRef]
+38.
+Yan, Z.; Wu, Y.; Zhao, W. Research on an Apple Recognition and Yield Estimation Model Based on the Fusion of Improved
+YOLOv11 and DeepSORT. Agriculture 2025, 15, 765. [CrossRef]
+39.
+Meng, Z.; Du, X.; Xia, J. Real-time statistical algorithm for cherry tomatoes with different ripeness based on depth information
+mapping. Comput. Electron. Agric. 2024, 220, 108900. [CrossRef]
+40.
+Fangfang, G.; Wentai, F.; Xiaoming, S. A novel apple fruit detection and counting methodology based on deep learning and trunk
+tracking in modern orchard. Comput. Electron. Agric. 2022, 197, 107000. [CrossRef]
+41.
+Chen, Y.; Lee, S.W.; Gan, H. Strawberry Yield Prediction Based on a Deep Neural Network Using High-Resolution Aerial
+Orthoimages. Remote Sens. 2019, 11, 1584. [CrossRef]
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.
+https://doi.org/10.3390/agriculture16020253

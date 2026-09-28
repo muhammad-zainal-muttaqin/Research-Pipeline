@@ -1,0 +1,2805 @@
+Academic Editor: José Miguel
+Molina Martínez
+Received: 7 July 2026
+Revised: 21 July 2026
+Accepted: 24 July 2026
+Published: 28 July 2026
+Copyright: © 2026 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license.
+Article
+Unified Multi-Level Grape Counting Framework with Low
+Annotation Cost for Natural Orchard Scenes
+Xiaofeng Xie
+, Jingying Yang
+and Zhaoli Shen *
+College of Science, Sichuan Agricultural University, Ya’an 625014, China; xfxiesicau@163.com (X.X.);
+jyyang51@163.com (J.Y.)
+* Correspondence: szlxiaoyao@163.com
+Abstract
+Accurate multi-level grape counting in natural orchard images provides useful visual infor-
+mation for image-based crop-load characterization and vineyard management. However,
+cluster overlap, occlusion, boundary adhesion, and illumination variation complicate berry
+localization and cluster-wise counting. Existing detection- and density-regression-based
+methods remain susceptible to missed detections, false positives, and cross-cluster mis-
+assignment, whereas approaches relying on pixel- or instance-level supervision typically
+require costly annotations. To address these challenges, this paper proposes UniGC, a
+unified framework for multi-level grape counting. At the berry level, UniGC employs CSD-
+P2PNet, a P2PNet-based point-regression branch equipped with a Condition-Structure
+Decoupled Frequency Enhancement Block (CSD-Block), to improve the localization and
+counting of image-visible berries under complex illumination and occlusion using only
+berry point annotations. At the cluster level, a You Only Look Once (YOLO) detector pre-
+dicts grape-cluster bounding boxes, which are used as prompts for the Segment Anything
+Model (SAM) to generate cluster instance masks. We further propose Boundary-Depth
+Guided Mask-Point Assignment (BDMPA), which assigns each predicted berry point to at
+most one grape-cluster instance and thereby produces cluster-wise berry counts. Selected
+key experiments on the mixed dataset organized from WGISD and GBISC were repeated
+using three random seeds. CSD-P2PNet achieved an MAE of 23.4407 ± 0.1577, an RMSE of
+32.8898 ± 1.2682, and a point-localization F1 score of 0.8374 ± 0.0097. YOLO12-S achieved
+an F1 score of 0.8433 ± 0.0056 and an AP50 of 0.8789 ± 0.0080 for grape-cluster detection.
+For BpGC counting, UniGC obtained a matched-cluster MRD of 0.1288 ± 0.0043, a 1 −FVU
+of 0.8589 ± 0.0098, and an all-cluster penalized mean relative deviation (ACP-MRD) of
+0.5062 ± 0.0124. These results demonstrate that UniGC achieves competitive multi-level
+grape counting performance while requiring only point and bounding-box annotations
+for training.
+Keywords: orchard intelligent counting; grape cluster detection; point regression; SAM
+segmentation; UniGC framework; condition-structure decoupling; mask-point assignment
+1. Introduction
+In natural orchard images, grape cluster-level detection and counting, image-visible
+berry-level counting, and berries-per-grape-cluster (BpGC) counting provide complemen-
+tary visual information for image-based crop-load characterization, cultivation manage-
+ment, and precision operations. Previous studies have applied computer vision techniques
+Appl. Sci. 2026, 16, 7500
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+2 of 33
+to grape yield estimation, harvesting localization, cluster-level recognition, and berry phe-
+notypic analysis, providing a feasible way to reduce reliance on manual counting and
+improve field management efficiency [1–8]. Compared with whole-image or cluster-level
+counting alone, multi-level counting provides more structured information, including the
+spatial distribution of grape clusters, the number of image-visible berries, and the visible
+berry load within individual clusters. Such information is therefore more consistent with
+practical needs in fruit thinning, crop-load regulation, and precision management [9–12].
+Automatically obtaining these multi-level visual measurements using computer vision
+has therefore become an important research direction in intelligent grape perception and
+precision management.
+Existing studies on grape detection and counting can be broadly divided into three cat-
+egories according to task level and technical approach. The first category focuses on grape
+cluster detection or segmentation, usually using object detection, semantic segmentation,
+or instance segmentation models to obtain cluster-level geometric information for tasks
+such as cluster counting, harvesting localization, or yield estimation [13–24]. The second
+category focuses on berry-level detection, segmentation, or counting, including instance
+segmentation and small-object detection methods, as well as point-supervised, density-
+map-based, or semi-supervised counting methods, to support quantitative assessment in
+densely distributed berry scenarios [7,11,12,25–29]. The third category further attempts to
+model grape cluster detection, grape berry counting, and BpGC counting as interrelated
+subtasks [9–12,30]. Overall, existing studies have laid an important foundation for multi-
+level visual analysis of grapes, but most methods still focus on single-level tasks or do not
+sufficiently address consistent associations among results at different levels. Therefore, es-
+tablishing a reliable and efficient unified framework for multi-level grape counting requires
+further investigation.
+Specifically, in natural orchard images, grape-cluster overlap, severe occlusion, bound-
+ary adhesion, and complex illumination variations jointly affect cluster-level detection,
+image-visible berry-level counting, and BpGC counting [31]. First, complex illumination
+variations can alter local berry texture, edge responses, and contrast distributions, making
+it difficult for detection- or density-regression-based methods to distinguish berry-related
+structures from background disturbances and thereby increasing missed and false berry
+detections. Second, severe occlusion, inter-cluster overlap, and boundary adhesion can
+weaken the separability of grape-cluster regions, making it difficult for cluster-level detec-
+tion or segmentation results to provide a reliable geometric basis for subsequent counting
+and assignment. Furthermore, when berry-point localization results are assigned to spe-
+cific grape clusters, localization errors and regional boundary uncertainties can propagate
+through the task pipeline, increasing the risk of cross-cluster misassignment. If pixel-level
+segmentation or more fine-grained instance-level supervision is used to alleviate these
+problems, the annotation burden can increase substantially, limiting the scalable application
+of such methods in real agricultural scenarios.
+To address the above problems, this paper proposes UniGC, a unified framework for
+multi-level grape counting. UniGC follows a unified pipeline that combines berry-level
+point-regression counting, cluster-level detection and mask generation, and berry point-
+to-cluster assignment-based counting. It jointly performs image-visible berry-level count-
+ing, grape cluster-level detection and counting, and BpGC counting, while the trainable
+branches require only berry point annotations and grape-cluster bounding-box annota-
+tions. By using predicted grape-cluster bounding boxes as prompts for mask generation,
+UniGC maintains a unified multi-level inference process without requiring grape-cluster
+instance-mask annotations for task-specific training.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+3 of 33
+In the berry-level branch, P2PNet is used as the point-regression counting basis [32],
+and the Condition-Structure Decoupled Frequency Enhancement Block (CSD-Block) is
+introduced. This module models intermediate features from a frequency-inspired per-
+spective. Through learnable low-pass filtering and residual decomposition, the module
+promotes the spatial-domain disentanglement of slowly varying condition-related compo-
+nents from residual structure-sensitive components. It then performs condition-decoupled
+enhancement and controlled recoupling on the residual structural features, thereby improv-
+ing the robustness of image-visible berry-point localization under complex illumination
+and occlusion.
+In the cluster-level branch, You Only Look Once (YOLO) is used to predict grape-
+cluster bounding boxes, which serve as prompts for the Segment Anything Model (SAM)
+to generate the corresponding cluster-level instance masks and provide geometric priors
+for subsequent assignment inference [33]. On this basis, the Boundary-Depth Guided
+Mask-Point Assignment (BDMPA) is further proposed to establish a unique point-to-cluster
+assignment for each predicted berry point. In addition, at the data level, the Wine Grape
+Instance Segmentation Dataset (WGISD) and the Sichuan Grape Berry Instance Segmen-
+tation and Counting Dataset (GBISC) [13,27] are uniformly organized and integrated to
+construct a data organization scheme suitable for multi-level grape detection and counting
+tasks. Experimental results show that, under the evaluated mixed-dataset setting, UniGC
+achieves competitive performance in image-visible berry counting, grape-cluster detection,
+and BpGC counting, while its trainable branches use only berry point annotations and
+grape-cluster bounding-box annotations.
+The main contributions of this paper are as follows:
+1.
+We propose UniGC, a unified framework for multi-level grape counting that supports
+grape berry-level counting, grape cluster-level detection and counting, and berries-
+per-grape-cluster (BpGC) counting.
+2.
+We propose the Condition-Structure Decoupled Frequency Enhancement Block (CSD-
+Block), which improves fine-grained structural representation related to berry point
+localization under complex imaging conditions through learnable low-pass decompo-
+sition, structural component enhancement, and controlled recoupling.
+3.
+We propose the Boundary-Depth Guided Mask-Point Assignment (BDMPA), which
+provides stable per-point assignment of berry points to grape clusters without intro-
+ducing additional trainable parameters.
+4.
+Extensive experiments verify the effectiveness of the proposed UniGC in multi-
+level grape counting.
+The results show that the framework achieves competi-
+tive performance in berry-level counting, cluster-level detection and counting, and
+BpGC counting.
+2. Related Work
+2.1. Grape Cluster-Level Detection and Segmentation
+Grape cluster-level detection and segmentation aim to obtain the locations, counts,
+and spatial regions of grape clusters, providing key visual information for yield esti-
+mation, harvesting localization, and field management. Santos et al. [13] proposed the
+WGISD dataset and used deep neural networks for grape cluster detection, segmentation,
+and tracking, providing an important data resource for grape cluster-level visual research.
+Subsequently, the YOLO series of detectors has been widely used for grape cluster recogni-
+tion in natural scenes [17–24]. Zhang et al. [14] achieved real-time grape cluster detection
+in complex natural scenes using YOLOv5s, whereas Zhang et al. [2] proposed YOLOv5-
+GAP for grape cluster recognition and picking-point localization under rachis occlusion.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+4 of 33
+In addition to detection methods, Huang et al. [16] achieved grape cluster detection and
+instance segmentation in orchard environments based on an improved Mask R-CNN.
+The above studies provide grape-cluster candidate regions and cluster-level spatial
+priors, but their outputs are mainly limited to the cluster level, making it difficult to directly
+perform BpGC counting or describe berry assignment relationships among adjacent clusters.
+For BpGC counting, cluster-level detection boxes or instance masks need to be further
+associated with berry-level localization results. Especially under grape cluster overlap,
+boundary adhesion, and local occlusion, relying solely on cluster-level region information
+makes it difficult to obtain stable intra-cluster counting results.
+2.2. Grape Berry-Level Detection, Segmentation, and Counting
+Grape berries are characterized by small size, large numbers, dense distributions,
+and frequent mutual occlusion. Therefore, berry-level studies usually adopt approaches
+such as instance segmentation, semantic segmentation, density-map regression, point-
+supervised counting, and semi-supervised learning [4–6,11,12,29]. Coviello et al. [34]
+transferred the idea of density estimation from crowd counting to field grape berry counting
+and proposed GBCNet for yield estimation. Zabawa et al. [35] used semantic segmentation
+and connected-component analysis to achieve grape berry detection and counting. Du
+and Liu [25] proposed AS-SwinT, which performs instance segmentation and counting
+of berries in individual grape clusters before thinning through Swin Transformer, feature
+fusion, and Soft-NMS. Li et al. [26] proposed CDMENet, introducing a density mutual-
+exclusion auxiliary task to alleviate dense occlusion and annotation-cost problems under
+semi-supervised conditions. Yang et al. [27] proposed Mask-GK, which uses mask Gaussian
+kernels to generate probability maps and combines them with watershed post-processing to
+achieve field grape berry segmentation and counting, while also releasing the GBISC dataset.
+Parr et al. [1] used smartphone RGB-D data for grape yield estimation, demonstrating
+the application potential of low-cost acquisition devices in berry analysis. Hao et al. [36]
+proposed WGMG-Net for postharvest grape quality assessment, preserving edge details
+under dense occlusion through discrete wavelet transform and simultaneously performing
+berry instance segmentation, counting, and compactness grading.
+These methods improve berry-level visual analysis from different perspectives,
+but most studies mainly output berry counts for whole images, local regions, or single-
+cluster images. For multi-level grape counting, the berry-level branch must provide not
+only counts but also stable coordinates for intra-cluster assignment. Point-based counting
+frameworks such as P2PNet show that directly predicting object locations and counts
+based on point supervision can avoid intermediate errors introduced by density maps or
+pseudo-box construction, providing a useful reference for low-cost berry localization [32].
+However, complex illumination, shadows, highlights, and occlusions in natural orchards
+can interfere with berry edges and local peak responses; therefore, point-based localization
+still requires stronger fine-grained structural representation.
+2.3. BpGC Counting and Multi-Level Grape Counting
+BpGC counting requires the simultaneous acquisition of grape-cluster regions, berry
+locations, and their correspondence, making it more complex than grape cluster detection
+or berry-level counting alone [4,11,12,30]. Yang et al. [9] proposed PMGDC, defining grape
+cluster detection, grape berry counting, and BpGC counting as three related subtasks. It
+predicts grape-cluster and berry probability maps using a neural network and applies
+multi-stage post-processing for joint inference. Du et al. [10] proposed MVDNet, which
+adopts a dual-branch network to perform berry density-map regression and grape cluster
+segmentation simultaneously and combines post-processing algorithms for intra-cluster
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+5 of 33
+berry counting. Related studies indicate that multi-level grape counting requires the
+integration of cluster-level and berry-level information and the establishment of stable
+associations between them.
+Existing multi-level methods still face two key problems. First, probability-map-based
+and density-map-based methods usually require post-processing to obtain object locations,
+cluster-level regions, or intra-cluster counts, and they are susceptible to response drift
+and regional boundary errors under occlusion, overlap, and boundary adhesion. Second,
+intra-cluster counting based on segmented regions usually assumes reliable geometric
+containment between berry points and grape-cluster regions. However, natural orchard
+images often contain locally undersized masks, boundary jitter, multiple overlapping
+masks, and berry points outside mask boundaries; therefore, simple in-box or in-mask rules
+can easily cause cross-cluster misassignment. General-purpose segmentation foundation
+models such as SAM provide a new technical basis for prompt-based instance mask gener-
+ation [33], and their applications in grape cluster structure and berry trait analysis have
+also shown potential [3]. Therefore, stable assignment of berry point localization results to
+cluster-level instance masks remains a key problem in BpGC counting in natural orchards.
+3. Materials and Methods
+3.1. Overall Framework
+UniGC is designed for three interrelated subtasks with distinct outputs: berry-level
+counting, grape cluster-level detection and counting, and BpGC counting. As shown in
+Figure 1, given an input RGB image I ∈RHI×WI×3, the overall pipeline consists of three
+connected modules. First, the berry-level branch adopts CSD-P2PNet, a P2PNet-based
+point-supervised counting branch enhanced with the CSD-Block, to predict berry points
+for berry localization and whole-image berry counting. Second, the cluster-level branch
+uses a YOLO detector to predict grape-cluster detection boxes, which are then fed into
+SAM as box prompts to generate the corresponding grape-cluster instance masks. Finally,
+the BDMPA establishes assignments according to the spatial relationships between berry
+points and grape cluster instance masks, thereby outputting BpGC counting results.
+The overall output is defined as:
+O(I) = {P, ˆNb, B, M, ˆNc, ˆn}.
+(1)
+where P = {pi}N
+i=1 denotes the predicted berry point set, and pi = (xi, yi) represents the
+image coordinates of the i-th berry point; ˆNb denotes the whole-image berry-level counting
+result; B = {bk}K
+k=1 denotes the set of grape cluster detection boxes; M = {Mk}K
+k=1 denotes
+the set of grape cluster instance masks, with Mk ⊂Ω, where Ωrepresents the image
+pixel domain; ˆNc denotes the grape cluster-level counting result; and ˆn = ( ˆn1, ˆn2, . . . , ˆnK)
+represents the BpGC counting result vector.
+With this design, UniGC decouples berry point prediction, grape-cluster instance
+region generation, and cross-level assignment, and performs berry-level counting, grape
+cluster-level detection and counting, and BpGC counting using berry point annotations
+and grape-cluster bounding-box annotations.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+6 of 33
+YOLO
+Detector
+Input image
+Output
+Berry-Level Counting Branch
+CSD-P2PNet
+Cluster-Level Counting Branch
+Detected Cluster Bboxes
+Cluster-Level Counting Output
+Cluster Instance Masks
+Berry-Level Counting Output
+CSD-Block
+Low-Pass 
+Decoupling
+Structural 
+Enhancement
+Controlled 
+Recoupling
+Bboxes as 
+Prompts
+Predicted Berry Points
+Boundary-Depth Guided Mask–Point Assignment (BDMPA)
+Berries-per-Grape-
+Cluster Output
+Encoder
+Decoder
+Internal Boundary-Depth 
+Disambiguation
+Disambiguation via Scale-
+Normalized Boundary Depth
+Unique Point-to-
+Cluster Assignment
+SAM
+External Relative-
+Distance Adsorption
+Near-Boundary Attachment 
+under Relative-Distance Gating
+Unique Point-to-Mask 
+Assignment
+Figure 1. The proposed Unified Multi-Level Grape Counting (UniGC) framework.
+3.2. CSD-P2PNet-Based Berry-Level Counting Branch
+In natural orchard scenes, grape berry counting is highly sensitive to fine-grained
+structural cues such as local edges, texture changes, peak responses, and occlusion con-
+tours. However, disturbances such as strong illumination, shadows, uneven exposure,
+and highlight reflections can introduce slowly varying feature biases or local response shifts,
+which may interfere with the representation of berry-related geometric structures. If these
+condition-related variations are mixed with structure-sensitive responses in intermediate
+features, the model may become less stable in distinguishing true berry structures from
+background or illumination-induced disturbances.
+To alleviate this problem, we introduce the CSD-Block into an intermediate feature
+layer of P2PNet, as shown in Figure 2. This module models intermediate features from a
+frequency-inspired perspective without applying an explicit Fourier transform. Instead,
+through learnable low-pass filtering and residual decomposition, it encourages the ex-
+traction of slowly varying condition-related components and residual structure-sensitive
+components in the spatial domain. The module then applies de-conditioned enhancement
+to the residual structural features and uses a condition-guided controlled recoupling mech-
+anism to reintegrate structural information, thereby improving the robustness of berry
+point localization under complex illumination and occlusion.
+ 
+Channel-wise
+Learnable LPF
+Condition
+Structure Residual
+Input Feature
+X
+Linear
+SiLU
+Linear
+GAP
+A
+!"#
+γ
+!"#
+β
+(
+)
+!
+"#$%
+!"#
+$γ
+γ
+γ
+= +
+(
+)
+!"#$
+!"#
+$β
+β
+β
+=
+Spatial Gate G
+InstanceNorm
+DWConv
+3×3，d=1
+DWConv
+3×3，d=2
+ω
+Weighted Sum
+SiLU
+Structure
+Feature S
+η
+!!
+!
+γ
+β
+=
++
+!
+!!
+!
+!
+"
+!
+=
+!
+PWConv
+η
+learnable
++
++
+(
+)
+!
+"
+"
+η
+=
++ ∆
+Output
+Skip Connection
+Conv 1×1
+sigmoid
+B
+MLP
+(
+)
+!
+∆
+Figure 2.
+Architecture of the Condition-Structure Decoupled Frequency Enhancement Block
+(CSD-Block).
+3.2.1. Explicit Decoupling of Condition and Structural Components
+Let the input feature map be X ∈RB×C×H×W, where B, C, H, and W denote the
+batch size, number of channels, feature map height, and feature map width, respectively.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+7 of 33
+The output of CSD-Block has the same tensor shape as its input; therefore, the block can
+serve as a plug-and-play enhancement unit in the intermediate layers of P2PNet.
+The module first uses a channel-wise learnable low-pass operator to extract a condition-
+related component as Ccond = L(X). Because the operator is constrained to perform
+spatial smoothing, Ccond is encouraged to capture slowly varying feature patterns that
+are associated with imaging conditions, such as illumination changes, exposure varia-
+tions, and smooth background responses. The residual component is then obtained as
+S0 = X −Ccond. Compared with the smoothed component, S0 is expected to retain more
+structure-sensitive responses related to berry localization, including local contrast changes,
+edge-like responses, texture variations, and occlusion contours.
+The low-pass operator adopts depthwise convolution. Let the low-pass kernel size be
+k × k. For each channel, the convolution kernel weights are obtained by applying softmax
+normalization to the kernel parameters θc, namely Wc = Softmax(θc) for c = 1, 2, . . . , C.
+Thus, any position (u, v) within the kernel satisfies Wc(u, v) ≥0 and ∑u,v Wc(u, v) = 1.
+This parameterization makes the convolution kernel naturally satisfy the constraints of
+non-negativity and unit-sum weights, thereby providing stable smoothing properties and
+helping extract slowly varying imaging-condition information from intermediate features.
+3.2.2. De-Conditioned Structural Enhancement
+Although S0 separates high-frequency structures to some extent, shadows and local
+uneven exposure may still affect the amplitude of structural responses. To reduce this
+condition-induced influence, CSD-Block applies Instance Normalization (IN) without
+affine parameters to S0, yielding the de-conditioned structural feature ˆS. This operation
+can reduce mean drift and variance fluctuation caused by imaging-condition variations,
+allowing subsequent convolutions to focus more on the geometric structure itself.
+On this basis, the module uses multi-dilation depthwise convolutions to extract struc-
+tural details. Let the set of dilation rates be D = {d1, d2, . . . , dM}; then the structural
+enhancement result is denoted as
+S = φ
+ 
+M
+∑
+m=1
+αm DWConv(dm)
+3×3 ( ˆS)
+!
+,
+(2)
+where DWConv(dm)
+3×3 (·) denotes the depthwise convolution (DWConv) with dilation rate dm,
+φ(·) is a nonlinear activation function, and αm =
+exp(ωm)
+∑M
+j=1 exp(ωj) is the branch fusion weight
+obtained by softmax normalization. In our implementation, we set D = {1, 2}.
+This structure can extract structural information such as local edges, texture changes,
+and occlusion contours from different receptive-field scales while maintaining relatively
+low computational complexity, thereby improving the stability of point responses in dense
+berry regions.
+3.2.3. Condition-Guided Controlled Recoupling and Residual Write-Back
+CSD-Block does not directly discard the condition component; instead, it allows
+imaging conditions to participate in structural enhancement in a limited and stable
+manner through a controlled recoupling mechanism.
+First, global average pooling
+(GAP) is applied to the condition component to obtain the condition descriptor vector
+z = GAP(Ccond) ∈RB×C. Subsequently, a two-layer multi-layer perceptron (MLP) predicts
+the channel-level scaling and bias terms [γraw, βraw] = MLP(z).
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+8 of 33
+To limit the disturbance of condition modulation to the structural enhancement
+process, the hyperbolic tangent function and scale factors are used to constrain the
+modulation amplitude:
+γ = 1 + sγ tanh(γraw),
+β = sβ tanh(βraw),
+(3)
+where sγ and sβ are modulation-amplitude coefficients. The channel-modulated structural
+feature is S′ = γ ⊙S + β, where ⊙denotes element-wise multiplication, and γ and β are
+broadcast to the corresponding channels along the spatial dimensions.
+Further, the module generates a single-channel spatial gating map from the condition
+component, G = σ(Conv1×1(Ccond)), where σ(·) is the sigmoid function. The structural
+enhancement intensity is then constrained through spatial gating as S′′ = G ⊙S′.
+This gating is intended to adaptively regulate the spatial strength of structural en-
+hancement, especially in regions where condition-related variations such as highlights,
+shadow transitions, or local exposure changes may disturb berry-related responses. Fi-
+nally, the module generates the enhancement residual using a 1 × 1 pointwise convolution
+(PWConv), ∆(X) = PWConv1×1(S′′) and adds it to the original features in residual form
+as Y = X + η ∆(X), where η is a learnable scalar that controls the injection strength of
+the enhancement residual. Through the above process, CSD-Block selectively enhances
+structural information related to berry point localization while preserving the original
+feature representation.
+3.2.4. Berry Point Prediction and Counting Output
+The features enhanced by CSD-Block are then fed into the point-regression head of
+P2PNet to obtain the berry point set P = {pi}N
+i=1, with pi = (xi, yi). The berry-level count
+of the whole image is directly given by the number of predicted points, ˆNb = |P| = N.
+This branch is trained using only berry point annotations and does not require berry-
+level pixel masks. Here, P is used for subsequent point-mask assignment, and ˆNb is used
+for whole-image berry-level counting evaluation.
+3.3. Grape Cluster-Level Detection and Instance Mask Generation Branch
+3.3.1. Grape Cluster Detection Box Prediction
+The grape cluster-level branch is used to obtain candidate regions of grape clusters
+in an image and provide box prompts for instance mask generation. Given an input
+image I, the branch adopts a YOLO detector to predict the grape cluster detection-box
+set B = gθd(I) = {bk}K
+k=1, where bk = (x1k, y1k, x2k, y2k), gθd(·) denotes the grape cluster
+detector, and K denotes the number of retained grape cluster instances.
+3.3.2. Instance Mask Generation Under Detection-Box Prompts
+Detection boxes alone cannot reliably characterize grape-cluster boundaries or provide
+sufficient geometric precision for subsequent point-to-cluster assignment. In particular,
+when the background inside a box is complex, adjacent grape clusters overlap, or boundary
+adhesion occurs, point-to-cluster assignment based on rectangular regions can easily lead
+to erroneous assignments. Therefore, UniGC feeds each grape cluster detection box bk
+into SAM as a box prompt to generate the corresponding grape cluster instance mask
+Mk = hθs(I, bk) for k = 1, 2, . . . , K, where hθs(·) denotes the mask generator and Mk ⊂Ω
+represents the instance region of the k-th grape cluster in the image pixel domain. The cor-
+responding binary indicator function is defined as:
+1Mk(u, v) =
+
+
+
+1,
+(u, v) ∈Mk,
+0,
+(u, v) /∈Mk,
+(u, v) ∈Ω.
+(4)
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+9 of 33
+All grape cluster instance masks form the set M = {Mk}K
+k=1.
+In this process, YOLO provides grape cluster location candidates, and SAM then
+converts the detection-box prompts into instance-level regions, thereby providing finer
+geometric boundaries for subsequent BDMPA.
+3.3.3. Grape Cluster Counting and Geometric Prior Output
+After detection box prediction and instance mask generation, the grape cluster-level
+count is given by the number of retained instances, ˆNc = |B| = |M| = K. The grape
+cluster-level branch finally outputs the grape cluster detection box set B, the instance
+mask set M, and the grape cluster-level counting result ˆNc. Here, B and M serve as
+geometric priors for subsequent assignment modeling and are not used to directly perform
+intra-cluster berry counting.
+3.4. Boundary-Depth Guided Mask-Point Assignment and BpGC Counting
+3.4.1. Assignment Modeling Between Berry Points and Grape Cluster Masks
+After obtaining the predicted berry point set P and the grape-cluster instance mask set
+M, UniGC uses BDMPA to assign each predicted berry point to at most one grape cluster in-
+stance. These assignments define a many-to-one point-to-cluster mapping. BDMPA follows
+the design principle of mandatory internal assignment and cautious external adsorption:
+for points located inside masks, unique disambiguation is preferentially completed among
+internal candidate instances; for points not covered by any mask, adsorption-based assign-
+ment is allowed only when they are located within the relative boundary neighborhood
+of an instance. This design alleviates point-to-cluster misassignment caused by adjacent
+grape-cluster overlap, boundary adhesion, locally undersized masks, and boundary jitter.
+Let the predicted point set be P = {pi}N
+i=1, with pi = (xi, yi), and let the instance mask
+set be M = {Mk}K
+k=1, with Mk ⊂Ω. Here, Ωdenotes the image pixel domain, and N and
+K denote the number of predicted berry points and the number of grape cluster instances,
+respectively. The objective of BDMPA is to output an assignment label ai ∈{−1, 1, 2, . . . , K}
+for each predicted point, where ai = k indicates that point pi is assigned to the k-th grape
+cluster instance, and ai = −1 indicates that the point is unassigned.
+This assignment problem is difficult for two main reasons. On the one hand, adjacent
+grape clusters in natural orchard scenes often exhibit occlusion, adhesion, and local overlap,
+making it difficult to resolve assignment ambiguity in regions covered by multiple masks
+based solely on whether a point falls inside a mask. On the other hand, instance masks
+may exhibit boundary jitter, local holes, or undersized regions, causing some true berry
+points to fall outside all masks. Therefore, BDMPA performs point-to-cluster assignment
+using two complementary rules: internal boundary-depth disambiguation and external
+relative-distance adsorption.
+To reduce the influence of image resolution and grape cluster scale differences on
+geometric assignment, a scale term is defined for the k-th mask as σk =
+p
+|Mk|, where |Mk|
+denotes the foreground pixel area of mask Mk. Let the minimum foreground bounding
+box of the k-th mask be BM
+k = (xM
+1k, yM
+1k, xM
+2k, yM
+2k). The expanded boundary width is defined
+according to the relative adsorption threshold ρ as δk = ⌈ρσk + 2⌉, and the expanded local
+region of interest (ROI) is obtained as Rk = expand(BM
+k , δk).
+To reduce computational overhead, BDMPA does not compute a global distance field
+for each mask over the entire image; instead, it computes the Euclidean distance transform
+within the local ROI corresponding to each mask. To avoid truncation effects on the
+internal boundary depth caused by the cropped boundary of the local ROI, a one-pixel
+ring of background pixels is padded outside the local binary mask before computing the
+distance field.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+10 of 33
+Let the internal boundary-depth field and the external distance field be denoted by
+Din
+k and Dout
+k
+, respectively. For any pixel position x, they are defined as
+Din
+k (x) =
+
+
+
+d(x, ∂Mk),
+x ∈Mk,
+0,
+x /∈Mk,
+(5)
+Dout
+k
+(x) =
+
+
+
+0,
+x ∈Mk,
+d(x, Mk),
+x /∈Mk,
+(6)
+where d(·, ·) denotes the Euclidean distance, and ∂Mk denotes the mask boundary. Scale-
+normalized distances are further constructed as
+eDin
+k (x) = Din
+k (x)
+σk + ε ,
+eDout
+k
+(x) = Dout
+k
+(x)
+σk + ε ,
+(7)
+where ε is a numerical stability term. The above scale normalization makes the inter-
+nal boundary depth and external distance of grape cluster instances with different sizes
+comparable in a relative scale space.
+3.4.2. Boundary-Depth Disambiguation for Internal Points
+For a predicted point pi = (xi, yi), its continuous coordinates are first mapped to the
+nearest discrete pixel position as ˆxi = round(xi) and ˆyi = round(yi); thus, ˆpi = ( ˆxi, ˆyi).
+If ˆpi lies outside the image boundary, ai = −1 is directly assigned. For valid points,
+the internal candidate set is constructed as Cin
+i
+= {k | ˆpi ∈Mk}.
+If Cin
+i̸
+= ∅, the point is located inside one or more masks. In this case, BDMPA adopts
+the boundary-depth maximization principle and assigns the point to the mask with the
+largest normalized internal boundary depth:
+ai = arg max
+k∈Cin
+i
+eDin
+k ( ˆpi).
+(8)
+The rationale for this rule is as follows: if a point is located inside a mask and closer
+to its central region, its distance to the mask boundary is usually larger; if a point falls
+within another mask only because of a small overlap caused by adjacent-instance overlap
+or boundary errors, its internal boundary depth is usually smaller. Therefore, the normal-
+ized internal boundary depth can serve as a geometrically interpretable basis for unique
+assignment in overlapping regions. Once a point is assigned within the internal candidate
+set, it does not enter the external association stage, thereby avoiding duplicate assignment.
+3.4.3. Relative-Distance Adsorption for External Points
+If Cin
+i
+= ∅, point pi is not covered by any grape cluster mask. Directly discarding such
+points may lead to undercounting of berries near mask edges; therefore, BDMPA further
+performs external relative-distance adsorption. This process only considers masks whose
+expanded ROI covers the point and whose normalized external distance does not exceed
+the threshold. The external candidate set is defined as
+Cout
+i
+=
+n
+k
+ ˆpi ∈Rk, eDout
+k
+( ˆpi) ≤ρ
+o
+.
+(9)
+If Cout
+i̸
+= ∅, the point is assigned to the mask with the smallest normalized
+external distance:
+ai = arg min
+k∈Cout
+i
+eDout
+k
+( ˆpi).
+(10)
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+11 of 33
+Otherwise, ai = −1, indicating that the point is not assigned to any grape-cluster
+instance. The parameter ρ controls the allowable relative distance range for adsorption: a
+smaller ρ helps reduce long-distance erroneous adsorption but may retain more unassigned
+points, whereas a larger ρ can adsorb more points outside boundaries but increases the
+risk of incorrect assignment. Since the external distance has been scale-normalized by
+σk, ρ represents the adsorption range relative to the instance scale rather than a fixed
+pixel distance.
+3.4.4. Unified Decision Rule and BpGC Output
+Considering both internal disambiguation and external adsorption, the final decision
+rule of BDMPA can be written as
+ai =
+
+
+
+
+
+
+
+
+
+
+
+arg max
+k∈Cin
+i
+eDin
+k ( ˆpi),
+Cin
+i̸
+= ∅,
+arg min
+k∈Cout
+i
+eDout
+k
+( ˆpi),
+Cin
+i
+= ∅, Cout
+i̸
+= ∅,
+−1,
+otherwise.
+(11)
+After point-mask assignment is completed, the berry count of the k-th grape cluster
+is defined as ˆnk = ∑N
+i=1 1(ai = k) for k = 1, 2, . . . , K, where 1(·) is the indicator function.
+Finally, the BpGC counting result vector is ˆn = ( ˆn1, ˆn2, . . . , ˆnK).
+Through this process, BDMPA integrates the point-level prediction results P and
+cluster-level instance masks M within the same geometric assignment space, completing
+BpGC counting without introducing additional trainable parameters.
+3.5. Dataset and Annotation Organization
+The experiments in this study use a mixed grape dataset constructed from WGISD
+and GBISC. WGISD was collected from the vineyard of Guaspari Winery in São Paulo
+State, Brazil, with images acquired in April 2017 and April 2018, and covers five wine
+grape cultivars: Chardonnay, Cabernet Franc, Cabernet Sauvignon, Sauvignon Blanc,
+and Syrah [13]. GBISC was collected in July 2023 from vineyards in Longquanyi District
+and Shuangliu District, Chengdu, Sichuan Province, China, and covers three grape cultivars:
+Kyoho, Shine Muscat, and Summer Black [27]. After annotation unification and validity
+filtering, the organized dataset contains 450 RGB images, 6152 grape-cluster bounding
+boxes, and 237,696 berry center points.
+The dataset was randomly divided at the image level into 360 training images and
+90 validation images. The training split contains 240 WGISD images and 120 GBISC images,
+while the validation split contains 60 WGISD images and 30 GBISC images. For model
+training, the organized dataset provides berry center-point annotations for berry-level
+counting and grape-cluster bounding-box annotations for cluster-level detection.
+For BpGC evaluation, point-to-cluster correspondence labels were additionally anno-
+tated for the validation split, indicating which grape cluster each annotated berry point
+belongs to. These correspondence labels cover 1258 ground-truth grape clusters and
+46,292 berry center points in the validation split and are used only for BpGC evaluation.
+The detailed statistics of the training and validation splits are summarized in Table 1.
+Table 1. Statistics of the final organized grape dataset used in the experiments.
+Split
+Source
+Images
+Cluster Boxes
+Berry Center Points
+Train
+WGISD
+240
+3563
+150,469
+GBISC
+120
+1331
+40,935
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+12 of 33
+Table 1. Cont.
+Split
+Source
+Images
+Cluster Boxes
+Berry Center Points
+Val
+WGISD
+60
+951
+36,837
+GBISC
+30
+307
+9455
+Total
+–
+450
+6152
+237,696
+To quantify the annotation effort associated with the supervision formats used in this
+study, three annotators participated in a timed annotation study. Each annotator labeled
+15 randomly selected WGISD images and 15 GBISC images, resulting in 90 annotated
+images in total. The mean operation times were approximately 0.8 s per berry center
+point, 1.4 s per grape-cluster bounding box, 2.6 s per berry instance mask, and 10.6 s per
+grape-cluster instance mask. Based on the numbers of berries and clusters in the complete
+450-image dataset, the average annotation time was estimated to be 7.36 min per image
+for berry center points and grape-cluster bounding boxes, compared with 25.30 min per
+image for dual instance masks. Thus, dual instance-mask annotation required approxi-
+mately 3.44 times as much time as point-and-box annotation. These estimates quantify
+annotation time rather than monetary cost, and the point-to-cluster correspondence labels
+used for BpGC evaluation were not included in the training supervision. In addition to
+the measured time difference, UniGC requires simpler supervision formats: its trainable
+branches rely only on berry center points and grape-cluster bounding boxes, without pixel-
+level instance masks. In regions with overlapping clusters, touching berries, or occlusion,
+initial masks generated using interactive segmentation tools generally require repeated
+inspection, boundary correction, separation of touching instances, and removal of mask
+overlaps. In comparison, center points and bounding boxes are more direct to create,
+inspect, and revise, facilitating the organization of large-scale grape image datasets.
+4. Experiments and Results
+4.1. Experimental Setup
+All experiments in this study were conducted on the same server. The hardware
+platform was configured with an Intel(R) Xeon(R) Platinum 8481C CPU and an NVIDIA
+GeForce RTX 4090D GPU with 24 GB of memory. During UniGC training, the cluster-level
+detection branch used YOLO12-S [37] by default and was trained for 200 epochs with a
+batch size of 8, an input image size of 1024 × 1024 pixels, SGD as the optimizer, an initial
+learning rate of 0.01, a momentum of 0.937, and a weight decay of 0.0005. The SAM-based
+mask generation module was used only as a prompt-driven inference module: the detection
+boxes predicted by YOLO are fed into the pretrained SAM to generate grape-cluster
+instance masks, and no SAM training or fine-tuning is performed. The berry-level counting
+branch uses the proposed CSD-P2PNet, which follows the training protocol of P2PNet [32].
+Specifically, CSD-Block is inserted into the intermediate feature layer of P2PNet, while the
+original point-regression training objective and prediction head are retained. This branch
+was trained for 500 epochs, with a batch size of 4, Adam as the optimizer, and a learning
+rate of 1.0 × 10−4. To improve training robustness, YOLO12-S was trained using the
+official settings and data augmentation strategies, including HSV perturbation, translation,
+scaling, horizontal flipping, Mosaic, RandAugment, and random erasing. CSD-P2PNet
+followed the data augmentation settings of P2PNet, including random scaling, random
+cropping, and random horizontal flipping. During inference and evaluation, the YOLO
+confidence threshold is set to 0.25, and the relative adsorption threshold of BDMPA is set to
+ρ = 0.03; in BpGC evaluation, intersection over union (IoU) is set to 0.6 as the matching
+threshold between ground-truth (GT) grape clusters and predicted grape clusters. To assess
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+13 of 33
+the robustness of the reported results to stochastic variation, selected key experiments
+were repeated using three distinct random seeds, while all remaining experiments were
+conducted using a fixed random seed.
+4.2. Evaluation Metrics
+4.2.1. Grape Berry Counting
+To evaluate whole-image grape berry counting performance, this study uses mean
+absolute error (MAE) and root mean square error (RMSE). They are calculated as follows:
+MAE =
+1
+Nimg
+Nimg
+∑
+i=1
+Ci −CGT
+i
+,
+(12)
+RMSE =
+v
+u
+u
+t
+1
+Nimg
+Nimg
+∑
+i=1
+ Ci −CGT
+i
+2,
+(13)
+where Nimg denotes the number of evaluation images, and Ci and CGT
+i
+denote the predicted
+and ground-truth berry counts in the i-th image, respectively. Lower MAE and RMSE
+indicate smaller whole-image berry-level counting errors.
+4.2.2. Grape Cluster Detection and Berry Point Localization
+To evaluate grape cluster detection performance, this study uses precision, recall, F1,
+mAP@0.5, and mAP@0.5:0.95. Berry point localization is additionally evaluated using pre-
+cision, recall, F1, mean pixel localization error, and normalized localization error. Precision
+measures the accuracy of predicted boxes, recall measures the completeness with which
+ground-truth grape clusters are detected, and F1 summarizes the balance between them:
+F1 = 2 × P × R
+P + R
+,
+(14)
+where P and R denote precision and recall, respectively. mAP@0.5 denotes the mean
+average precision at IoU = 0.5, whereas mAP@0.5:0.95 denotes the mean average precision
+over IoU thresholds from 0.50 to 0.95 with a step size of 0.05. Higher values of the above
+detection metrics indicate better grape cluster detection performance.
+For berry point localization, let P = {pi}
+Np
+i=1 and G = {gj}
+Ng
+j=1 denote the predicted
+and ground-truth berry centers in an image, respectively. The Euclidean distance between
+predicted point pi and ground-truth point gj is defined as
+dij =
+pi −gj
+
+2.
+(15)
+To account for spatial-density variation, each ground-truth point gj is assigned a local
+scale sj, defined as the mean distance from gj to its kj = min(3, Ng −1) nearest other
+ground-truth points. The matching cost is then normalized as
+edij =
+dij
+sj + 10−12 .
+(16)
+A global one-to-one assignment between predicted and ground-truth points is ob-
+tained using the Hungarian algorithm by minimizing the total normalized matching cost.
+An assigned pair is accepted as a successful match when edij ≤0.5. Accepted pairs are
+counted as true positives (TP), whereas unmatched predicted points and unmatched
+ground-truth points are counted as false positives (FP) and false negatives (FN), respec-
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+14 of 33
+tively. Point-level precision, recall, and F1 are then calculated using the same definitions
+given above.
+Let A denote the set of accepted point pairs. The mean pixel localization error and
+normalized localization error are calculated only over the accepted pairs as
+Epixel =
+1
+|A| ∑
+(i,j)∈A
+dij,
+Enorm =
+1
+|A| ∑
+(i,j)∈A
+edij.
+(17)
+At the dataset level, TP, FP, and FN are accumulated over all evaluation images before
+calculating precision, recall, and F1, whereas Epixel and Enorm are averaged over all accepted
+point pairs. Higher precision, recall, and F1 values, together with lower localization errors,
+indicate better berry point localization performance. Subsequent BpGC evaluation used
+IoU = 0.6 as the ground-truth-prediction matching threshold.
+4.2.3. BpGC Counting
+BpGC counting is evaluated from both matched-cluster and all-cluster perspectives.
+Following the matched-cluster protocol used in PMGDC [9], a GT grape cluster is con-
+sidered successfully matched if there exists at least one predicted grape cluster whose
+intersection over union (IoU) with it exceeds 0.6. When multiple predicted grape clus-
+ters satisfy this condition for the same GT grape cluster, the predicted cluster with the
+largest IoU is used to provide the corresponding predicted BpGC count. Let the number of
+matched GT grape clusters be Nmatch, and let the total number of GT grape clusters be NGT.
+The matching rate is defined as Rmatch = Nmatch
+NGT . For the j-th matched GT grape cluster,
+let gj and ˆgj denote the ground-truth and predicted berry counts, respectively. Following
+the parts-per-object counting metrics used in agricultural phenotyping studies [38], this
+study uses mean relative deviation (MRD) and one minus the fraction of variance unex-
+plained (1 −FVU) to evaluate BpGC counting performance on the matched grape clusters,
+characterizing relative counting deviation and the degree to which true intra-cluster count
+variation is explained, respectively:
+MRD =
+1
+Nmatch
+Nmatch
+∑
+j=1
+ ˆgj −gj
+
+gj
+,
+(18)
+1 −FVU = 1 −
+∑Nmatch
+j=1
+ gj −ˆgj
+2
+∑Nmatch
+j=1
+ gj −¯g
+2 ,
+(19)
+where ¯g denotes the mean ground-truth berry count of the matched grape clusters. A
+higher Rmatch indicates greater grape-cluster matching coverage. A lower MRD indicates a
+smaller relative counting deviation on matched grape clusters, whereas a higher 1 −FVU
+indicates that the predicted BpGC counts explain a larger fraction of the true intra-cluster
+count variation.
+Because the matched-cluster metrics exclude ground-truth clusters that are not as-
+sociated with any prediction, we additionally introduce the all-cluster penalized mean
+relative deviation (ACP-MRD) to evaluate overall BpGC performance across matched
+and unmatched clusters. Let Npred denote the total number of predicted grape clusters
+after post-processing, and let Nused denote the number of unique predictions appearing
+in the matched pairs. The numbers of missed ground-truth clusters, unused predictions,
+and prediction reuse events are respectively defined as
+Nmiss = NGT −Nmatch,
+(20)
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+15 of 33
+Nextra = Npred −Nused,
+(21)
+and
+Nreuse = Nmatch −Nused.
+(22)
+The accumulated relative counting error over the matched pairs is
+Ematch =
+Nmatch
+∑
+j=1
+| ˆgj −gj|
+gj
+= NmatchMRD.
+(23)
+ACP-MRD is then defined as
+ACP-MRD = Ematch + Nmiss + Nextra + Nreuse
+NGT
+.
+(24)
+A lower ACP-MRD indicates better overall BpGC performance after jointly accounting
+for matched-cluster counting errors, missed ground-truth clusters, unused predictions,
+and prediction reuse.
+4.2.4. Grape-Cluster Mask Quality
+To directly assess the quality of grape-cluster masks generated from box prompts, we
+use mean intersection over union (mIoU), boundary F1, area log error, and mask failure
+rate. For N evaluated mask pairs, let Mi and Gi denote the predicted and ground-truth
+masks of the i-th instance, respectively. The instance-level IoU and mIoU are defined as
+IoUi = |Mi ∩Gi|
+|Mi ∪Gi|,
+mIoU = 1
+N
+N
+∑
+i=1
+IoUi.
+(25)
+Boundary F1 is the harmonic mean of boundary precision and boundary recall, calcu-
+lated using the same boundary-matching tolerance for all evaluated models:
+Fboundary
+1
+=
+2PboundaryRboundary
+Pboundary + Rboundary
+.
+(26)
+The area log error and mask failure rate are defined as
+Earea = 1
+N
+N
+∑
+i=1
+log |Mi| + ϵ
+|Gi| + ϵ
+,
+Rfail = 1
+N
+N
+∑
+i=1
+I(IoUi < 0.5),
+(27)
+where ϵ is a small constant used for numerical stability and I(·) is the indicator function.
+The area log error measures the multiplicative discrepancy between predicted and ground-
+truth mask areas, whereas the failure rate quantifies the proportion of masks with an IoU
+below 0.5. Higher mIoU and boundary F1, together with lower area log error and failure
+rate, indicate better mask quality.
+Mask quality is evaluated under two prompt settings: ground-truth grape-cluster
+boxes and fixed YOLO12-S predicted boxes matched to ground-truth clusters. The ground-
+truth-box setting isolates the mask generator from detector localization errors, whereas
+the predicted-box setting reflects mask quality under the box prompts used in the
+UniGC pipeline.
+4.3. Comparison with Existing Methods
+This section compares UniGC with representative existing methods on the mixed
+dataset from two perspectives: (i) whole-image berry counting and berry point localization,
+and (ii) multi-level grape detection and BpGC counting.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+16 of 33
+4.3.1. Comparison of Whole-Image Berry Counting and Berry Point Localization
+For whole-image berry counting, CSD-P2PNet achieved the lowest MAE and RMSE
+among the compared methods, with values of 23.3 and 33.2, respectively. Table 2 presents
+the quantitative comparison, and Figure 3 shows representative predictions. Relative to the
+second-best result for each metric, CSD-P2PNet reduced MAE by 14.0% compared with
+APGCC [39] and reduced RMSE by 11.9% compared with P2PNet [32].
+Table 2. Comparison of whole-image berry-level counting results.
+Year
+Method
+MAE
+RMSE
+2021
+P2PNet [32]
+27.7
+37.7
+2021
+GL [40]
+38.6
+53.5
+2022
+CLTR [41]
+32.5
+41.6
+2023
+PET-main [42]
+34.0
+59.9
+2024
+PMGDC [9]
+35.1
+48.5
+2024
+APGCC [39]
+27.1
+38.9
+2024
+WSCC_TAF [43]
+31.6
+49.5
+2025
+DSGC-Net [44]
+31.3
+40.4
+2026
+SoftHGNN [45]
+27.5
+38.3
+2026
+CSD-P2PNet (Ours)
+23.3
+33.2
+Image
+GT
+CSD-P2PNet (Ours)
+SoftHGNN
+PMGDC
+P2PNet
+887
+887
+853
+829
+868
+639
+564
+532
+559
+713
+692
+675
+630
+691
+353
+340
+333
+324
+337
+682
+713
+887
+887
+853
+829
+Figure 3. Visualization of grape berry-level counting results using different methods.
+To further assess robustness and point-localization quality, PMGDC [9], P2PNet [32],
+and CSD-P2PNet were evaluated over three runs using different random seeds. Table 3
+reports the results as mean ± standard deviation (SD).
+Across the three runs, CSD-P2PNet achieved an MAE of 23.4407 ± 0.1577 and an
+RMSE of 32.8898 ± 1.2682. Relative to PMGDC [9] and P2PNet [32], it reduced MAE by
+36.58% and 14.33%, and RMSE by 32.54% and 9.15%, respectively. For point localization,
+CSD-P2PNet achieved the highest mean precision and F1 score, together with the lowest
+pixel and normalized localization errors. PMGDC [9] achieved the highest mean recall,
+while CSD-P2PNet remained close to PMGDC [9] and exceeded P2PNet [32]. Relative to
+PMGDC [9] and P2PNet [32], CSD-P2PNet reduced the pixel localization error by 29.80%
+and 25.26%, and the normalized localization error by 30.28% and 27.96%, respectively.
+4.3.2. Comparison of Multi-Level Detection and Counting
+UniGC was compared with PMGDC [9] for grape-cluster detection and BpGC counting.
+Table 4 reports the representative single-run results. UniGC achieved a precision of 0.879,
+a recall of 0.809, and an F1 score of 0.843. Relative to PMGDC [9], UniGC increased
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+17 of 33
+mAP@0.5 from 0.747 to 0.880 and mAP@0.5:0.95 from 0.402 to 0.656, corresponding to
+relative improvements of 17.8% and 63.2%, respectively. These gains provide more reliable
+grape-cluster locations for subsequent mask generation and point-to-cluster assignment.
+For BpGC counting, UniGC matched 996 grape clusters, compared with 989 for
+PMGDC [9]. It reduced the matched-cluster MRD from 0.1584 to 0.1336 and increased
+1 −FVU from 0.8193 to 0.8557, corresponding to relative improvements of 15.7% and 4.4%,
+respectively. Figure 4 presents the corresponding qualitative comparison.
+UniGC (Ours)
+PMGDC
+Detailed Comparison of BpGC
+UniGC
+UniGC
+PMGDC
+PMGDC
+UniGC
+PMGDC
+PMGDC
+PMGDC
+UniGC
+UniGC
+Figure 4. Visualization of multi-level detection and BpGC results using PMGDC and our pro-
+posed UniGC.
+To assess robustness to stochastic variation, PMGDC [9] and UniGC were further
+evaluated over three runs using different random seeds. Table 5 reports the results as
+mean ± standard deviation (SD).
+Across the three runs, UniGC achieved a precision of 0.8948 ± 0.0157, a recall of
+0.7975 ± 0.0107, and an F1 score of 0.8433 ± 0.0056. Relative to PMGDC [9], these metrics
+increased by 9.50%, 1.64%, and 5.35%, respectively. UniGC also improved mAP@0.5
+and mAP@0.5:0.95 by 18.34% and 69.27%, respectively. For BpGC counting, relative to
+PMGDC [9], UniGC reduced the matched-cluster MRD by 20.15%, increased 1 −FVU
+by 3.91%, and reduced ACP-MRD by 2.43%. The repeated-run results therefore support
+the robustness of the improvements in grape-cluster detection, matched-cluster counting,
+and all-cluster penalized evaluation.
+4.3.3. Source-Stratified Evaluation on WGISD and GBISC
+To examine whether the comparative trends were consistent across the two data
+sources, the 90-image evaluation set was stratified into the WGISD and GBISC subsets.
+PMGDC [9] and UniGC were evaluated over three runs using the same random-seed
+settings, and the results are reported as mean ± standard deviation in Table 6. Because both
+subsets are drawn from the existing evaluation set, this analysis characterizes source-
+specific performance variation rather than independent cross-dataset generalization.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+18 of 33
+Table 3. Three-run comparison of representative methods for berry counting and point localization.
+Method
+Whole-Image Counting
+Point Localization
+MAE
+RMSE
+Prec.
+Rec.
+F1
+Pix. Err.
+Norm. Err.
+PMGDC [9]
+36.9630 ± 1.8003
+48.7579 ± 0.3782
+0.8315 ± 0.0080
+0.8419 ± 0.0294
+0.8366 ± 0.0184
+5.5102 ± 0.2859
+0.1866 ± 0.0096
+P2PNet [32]
+27.3630 ± 0.9470
+36.2017 ± 1.4463
+0.8111 ± 0.0222
+0.8150 ± 0.0137
+0.8130 ± 0.0175
+5.1758 ± 0.0519
+0.1806 ± 0.0039
+CSD-P2PNet (Ours)
+23.4407 ± 0.1577
+32.8898 ± 1.2682
+0.8370 ± 0.0095
+0.8378 ± 0.0107
+0.8374 ± 0.0097
+3.8682 ± 0.0432
+0.1301 ± 0.0012
+Table 4. Comparison of multi-level detection and BpGC counting performance between UniGC and PMGDC.
+Method
+Prec.
+Rec.
+F1
+mAP
+@0.5
+mAP
+@0.5:0.95
+Nmatch
+Rmatch
+MRD
+1 −FVU
+PMGDC [9]
+0.817
+0.785
+0.801
+0.747
+0.402
+989
+0.786
+0.1584
+0.8193
+UniGC (Ours)
+0.879
+0.809
+0.843
+0.880
+0.656
+996
+0.792
+0.1336
+0.8557
+Table 5. Three-run comparison of PMGDC and UniGC for grape-cluster detection and BpGC counting.
+Method
+Grape-Cluster Detection
+BpGC Counting
+Prec.
+Rec.
+F1
+mAP@0.5
+mAP@0.5:0.95
+MRD
+1 −FVU
+ACP-MRD
+PMGDC [9]
+0.8172 ± 0.0115
+0.7846 ± 0.0036
+0.8005 ± 0.0037
+0.7427 ± 0.0051
+0.3889 ± 0.0130
+0.1613 ± 0.0034
+0.8266 ± 0.0089
+0.5188 ± 0.0105
+UniGC (Ours)
+0.8948 ± 0.0157
+0.7975 ± 0.0107
+0.8433 ± 0.0056
+0.8789 ± 0.0080
+0.6583 ± 0.0024
+0.1288 ± 0.0043
+0.8589 ± 0.0098
+0.5062 ± 0.0124
+Table 6. Source-stratified three-run comparison of PMGDC and UniGC on the WGISD and GBISC subsets of the 90-image evaluation set.
+Panel A. Whole-Image Berry Counting and Point Localization
+Source
+Method
+Images
+MAE
+RMSE
+Prec.
+Rec.
+F1
+Pix. Err.
+Norm. Err.
+WGISD
+PMGDC [9]
+60
+40.9111 ± 4.7567
+52.9941 ± 5.6892
+0.8142 ± 0.0102
+0.8454 ± 0.0282
+0.8294 ± 0.0189
+4.6415 ± 0.3027
+0.2021 ± 0.0117
+WGISD
+UniGC (Ours)
+60
+28.6833 ± 1.7765
+38.5428 ± 3.1496
+0.8352 ± 0.0055
+0.8392 ± 0.0094
+0.8372 ± 0.0071
+3.2461 ± 0.0260
+0.1403 ± 0.0012
+GBISC
+PMGDC [9]
+30
+29.0667 ± 14.5909
+35.9964 ± 16.2773
+0.8439 ± 0.0270
+0.8322 ± 0.0223
+0.8380 ± 0.0245
+8.9283 ± 0.3820
+0.1259 ± 0.0049
+GBISC
+UniGC (Ours)
+30
+11.9667 ± 1.5762
+15.8404 ± 1.8730
+0.9087 ± 0.0095
+0.8282 ± 0.0352
+0.8662 ± 0.0161
+6.3441 ± 0.2400
+0.0895 ± 0.0020
+Panel B. Grape-Cluster Detection and BpGC Counting
+Source
+Method
+Images
+Prec.
+Rec.
+F1
+AP50
+AP50:95
+MRD
+1 −FVU
+ACP-MRD
+WGISD
+PMGDC [9]
+60
+0.8173 ± 0.0087
+0.7834 ± 0.0074
+0.7999 ± 0.0048
+0.7449 ± 0.0117
+0.4161 ± 0.0051
+0.1716 ± 0.0041
+0.8143 ± 0.0132
+0.5497 ± 0.0126
+WGISD
+UniGC (Ours)
+60
+0.8718 ± 0.0148
+0.7788 ± 0.0209
+0.8224 ± 0.0052
+0.8502 ± 0.0090
+0.6190 ± 0.0050
+0.1245 ± 0.0025
+0.8509 ± 0.0208
+0.5265 ± 0.0129
+GBISC
+PMGDC [9]
+30
+0.8149 ± 0.0305
+0.7861 ± 0.0167
+0.8001 ± 0.0218
+0.7619 ± 0.0209
+0.3667 ± 0.0334
+0.1438 ± 0.0089
+0.8411 ± 0.0180
+0.4947 ± 0.0465
+GBISC
+UniGC (Ours)
+30
+0.9237 ± 0.0229
+0.8919 ± 0.0132
+0.9074 ± 0.0089
+0.9375 ± 0.0033
+0.8197 ± 0.0060
+0.1295 ± 0.0262
+0.8749 ± 0.0409
+0.4038 ± 0.0144
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+19 of 33
+For whole-image berry counting, UniGC reduced MAE and RMSE relative to
+PMGDC [9] by 29.89% and 27.27% on WGISD and by 58.83% and 55.99% on GBISC,
+respectively. Its berry-point branch also achieved higher precision and F1 scores and lower
+pixel and normalized localization errors on both subsets. The pixel localization error was
+reduced by 30.06% on WGISD and 28.94% on GBISC, while the normalized error was
+reduced by 30.58% and 28.91%, respectively. PMGDC retained slightly higher point recall
+on both subsets.
+For grape-cluster detection and BpGC counting, UniGC achieved higher F1, AP50,
+and AP50:95 values and lower MRD and ACP-MRD on both subsets than PMGDC [9].
+On WGISD, UniGC reduced MRD and ACP-MRD by 27.45% and 4.22%, respectively; on
+GBISC, the corresponding reductions were 9.94% and 18.37%. PMGDC achieved slightly
+higher detection recall on WGISD, whereas UniGC achieved higher detection precision,
+F1, and AP values. On GBISC, UniGC achieved higher values for all reported detection
+metrics. Overall, the source-stratified results show consistent improvements in most
+metrics, although the magnitude of the gains varies between the two data sources.
+4.4. Ablation Experiments
+This section presents ablation experiments and sensitivity analyses for the key modules
+and the main reported configuration of UniGC, sequentially examining the effects of CSD-
+Block, YOLO detectors, SAM mask generation models, and the BDMPA relative adsorption
+threshold ρ on the experimental results.
+4.4.1. Component Ablation of CSD-Block and Gains for the Berry-Level Backbone
+To validate the contribution of CSD-Block to the berry-level counting branch and
+analyze the roles of its internal components, this study uses P2PNet [32] as the baseline
+and inserts CSD-Block or its ablated variants after the Feature Pyramid Network (FPN)
+output features and before the regression and classification heads. In addition to the
+original P2PNet, this study defines five controlled variants: Plain DWConv Block retains
+only standard depthwise convolution enhancement to exclude the effect introduced by
+additional convolution modules; CSD without Decoupling removes the explicit decoupling
+between the low-frequency condition component and the structural residual component;
+CSD without Instance Normalization (IN) removes Instance Normalization on the structural
+component; CSD without Multi-Dilation retains only a single dilation-rate branch; and
+CSD without Condition Re-coupling removes Feature-wise Linear Modulation (FiLM)
+and spatial-gate-based condition recoupling. All variants are compared under the same
+training settings.
+As shown in Table 7, the full CSD-Block achieved the lowest MAE and RMSE among
+all evaluated variants. Relative to the original P2PNet [32], it reduced MAE from 27.7
+to 23.3 and RMSE from 37.7 to 33.2, corresponding to absolute reductions of 4.4 and 4.5,
+respectively. By comparison, the Plain DWConv Block achieved an MAE of 27.0 and an
+RMSE of 37.6, remaining close to the original P2PNet. This comparison indicates that the
+improvement cannot be attributed solely to the addition of convolutional enhancement.
+The component ablations further clarify the contribution of each design element.
+Removing condition–structure decoupling increased MAE and RMSE to 25.2 and 35.7,
+respectively, supporting the role of explicit component separation in reducing interference
+from smooth background responses and broader contextual variations. Removing Instance
+Normalization resulted in an MAE of 25.2 and an RMSE of 34.0, indicating that normaliza-
+tion of the structural residual contributes to stable feature enhancement. Retaining only a
+single dilation branch increased the errors to 24.2 and 33.4, demonstrating the benefit of
+aggregating structural information across multiple receptive fields. Removing condition
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+20 of 33
+recoupling increased the errors to 24.6 and 34.4, suggesting that channel modulation and
+spatial gating facilitate the reintegration of enhanced structural information into the original
+feature representation.
+Table 7. Component ablation results of the Condition-Structure Decoupled Frequency Enhancement
+Block (CSD-Block). Lower MAE and RMSE are better.
+Backbone Model or Variant
+MAE
+RMSE
+P2PNet [32]
+27.7
+37.7
+Plain DWConv Block
+27.0
+37.6
+CSD without Decoupling
+25.2
+35.7
+CSD without Multi-Dilation
+24.2
+33.4
+CSD without Instance Normalization
+25.2
+34.0
+CSD without Condition Re-coupling
+24.6
+34.4
+Full CSD-Block
+23.3
+33.2
+Although these ablations quantify the contribution of the individual components,
+they do not directly show how the learned decomposition is reflected in the intermediate
+representations. Representative CSD-P2PNet features are therefore visualized in Figure 5.
+Image
+Figure 5. Visualization of representative intermediate CSD-Block representations. From left to
+right: the input image, input feature X, learned low-pass condition component Ccond, and structural
+residual S0 = X −Ccond.
+Compared with the input feature X, Ccond exhibits smoother spatial responses and
+attenuated fine-scale variations, whereas S0 preserves sharper local contrast, berry con-
+tours, and responses in densely distributed berry regions. This complementary behavior
+is observed across representative scenes containing different grape varieties and back-
+grounds. The intermediate representations are therefore consistent with the intended
+frequency-inspired decomposition: Ccond predominantly retains low-frequency contextual
+information, while S0 emphasizes structure-sensitive residual information.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+21 of 33
+Taken together, the component-ablation results and intermediate-feature visualizations
+provide complementary quantitative and qualitative evidence for the CSD-Block design.
+The observed improvement is supported by the combined effects of low-frequency con-
+textual decomposition, residual structural enhancement, multi-scale feature aggregation,
+and condition-guided feature recoupling.
+4.4.2. Effect of Detector Selection on BpGC Counting
+Under fixed settings of ρ = 0.03, SAM3 [46], and IoU = 0.6, Table 8 compares different
+YOLO detectors in terms of grape-cluster detection, point-to-cluster matching, BpGC
+counting, and computational efficiency. The rankings of the detector-level and downstream
+BpGC metrics were not fully aligned. YOLO12-L [37] achieved the highest recall, mAP@0.5,
+and mAP@0.5:0.95, and tied with YOLO11-S [47] for the highest Nmatch and Rmatch, but did
+not yield the lowest BpGC counting errors. YOLO8-L [48] obtained the lowest matched-
+cluster MRD, whereas YOLO26-M [49] achieved the highest precision, F1, and 1 −FVU;
+however, neither detector achieved the lowest ACP-MRD.
+YOLO12-S [37] achieved the lowest ACP-MRD of 0.4977 while maintaining a precision
+of 0.879, a recall of 0.809, an F1 score of 0.843, 996 matched grape clusters, and a matching
+rate of 0.792. Its matched-cluster MRD and 1 −FVU were 0.1336 and 0.8557, respectively.
+In terms of computational efficiency, YOLO12-S contained 9.254 million parameters, re-
+quired 55.10 GFLOPs at an input resolution of 1024 × 1024, and achieved 83.60 FPS in
+detector-only inference. Although it did not achieve the best result for every individual met-
+ric, YOLO12-S provided a favorable balance among detection accuracy, matching coverage,
+overall BpGC error, and computational cost. It was therefore selected as the grape-cluster
+detector in the main UniGC configuration.
+Table 8. Comparison of grape-cluster detection, BpGC counting, and computational efficiency across
+different YOLO detectors.
+Detector
+Grape-Cluster Detection
+Matching
+BpGC Counting
+Computational Efficiency
+Prec.
+Rec.
+F1
+mAP
+@0.5
+mAP
+@0.5:0.95
+Nmatch
+Rmatch
+MRD
+1 −FVU
+ACP-
+MRD
+Params
+(M)
+GFLOPs
+FPS
+YOLO8-N [48]
+0.877
+0.780
+0.826
+0.863
+0.623
+960
+0.763
+0.1452
+0.8355
+0.5846
+3.011
+20.98
+86.60
+YOLO8-S [48]
+0.895
+0.786
+0.837
+0.872
+0.639
+971
+0.772
+0.1310
+0.8406
+0.5256
+11.136
+73.34
+151.53
+YOLO8-M [48]
+0.888
+0.776
+0.828
+0.872
+0.648
+963
+0.766
+0.1398
+0.7903
+0.5458
+25.857
+202.41
+74.48
+YOLO8-L [48]
+0.891
+0.783
+0.833
+0.874
+0.666
+959
+0.762
+0.1279
+0.8586
+0.5315
+43.631
+423.43
+50.88
+YOLO11-N [47]
+0.884
+0.796
+0.838
+0.883
+0.626
+991
+0.788
+0.1546
+0.8104
+0.5757
+2.590
+16.49
+85.04
+YOLO11-S [47]
+0.869
+0.815
+0.841
+0.896
+0.657
+1020
+0.811
+0.1585
+0.7927
+0.5601
+9.428
+55.16
+105.25
+YOLO11-M [47]
+0.874
+0.804
+0.837
+0.882
+0.671
+996
+0.792
+0.1404
+0.8421
+0.5229
+20.054
+174.56
+68.37
+YOLO11-L [47]
+0.882
+0.804
+0.841
+0.880
+0.670
+976
+0.776
+0.1397
+0.8481
+0.5233
+25.311
+223.42
+60.53
+YOLO12-N [37]
+0.876
+0.801
+0.837
+0.875
+0.627
+990
+0.787
+0.1492
+0.8003
+0.5880
+2.568
+16.59
+114.71
+YOLO12-S [37]
+0.879
+0.809
+0.843
+0.880
+0.656
+996
+0.792
+0.1336
+0.8557
+0.4977
+9.254
+55.10
+83.60
+YOLO12-M [37]
+0.842
+0.820
+0.831
+0.889
+0.653
+1006
+0.800
+0.1481
+0.7995
+0.5596
+20.138
+173.41
+54.04
+YOLO12-L [37]
+0.866
+0.823
+0.844
+0.897
+0.677
+1020
+0.811
+0.1497
+0.8096
+0.5466
+26.390
+228.89
+37.96
+YOLO26-N [49]
+0.855
+0.793
+0.823
+0.851
+0.622
+938
+0.746
+0.1437
+0.8035
+0.5380
+2.504
+14.78
+134.54
+YOLO26-S [49]
+0.882
+0.792
+0.835
+0.872
+0.655
+960
+0.763
+0.1348
+0.8406
+0.5194
+9.949
+57.60
+83.89
+YOLO26-M [49]
+0.901
+0.795
+0.845
+0.875
+0.666
+966
+0.768
+0.1329
+0.8665
+0.4996
+21.774
+191.28
+73.05
+YOLO26-L [49]
+0.882
+0.793
+0.835
+0.869
+0.670
+953
+0.758
+0.1283
+0.8534
+0.5053
+26.178
+238.38
+64.87
+4.4.3. Effect of Mask Generation Model Selection on BpGC Counting
+Under fixed settings of YOLO12-S [37], ρ = 0.03, and IoU = 0.6, Table 9 compares
+the downstream BpGC performance and computational efficiency of different SAM-family
+mask generators. SAM3 [46] achieved the lowest MRD and ACP-MRD, with values of
+0.1336 and 0.4977, respectively, whereas SAM2.1-B [50] achieved the highest 1 −FVU
+of 0.8645. MobileSAM [51] provided the lowest computational cost, with 10.130 million
+parameters, 126.93 GFLOPs per image, and 10.750 FPS.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+22 of 33
+Table 9. Comparison of BpGC counting and computational efficiency across SAM-family mask generators.
+SAM Model
+BpGC Counting
+Computational Efficiency
+MRD
+1 −FVU
+ACP-MRD
+Params (M)
+GFLOPs/Image
+FPS
+SAM3 [46]
+0.1336
+0.8557
+0.4977
+473.585
+7149.94
+3.388
+SAM2-B [50]
+0.1350
+0.8609
+0.4987
+80.834
+696.59
+2.789
+SAM2.1-B [50]
+0.1353
+0.8645
+0.4988
+80.850
+696.59
+3.388
+SAM2.1-L [50]
+0.1397
+0.8588
+0.5027
+224.447
+1872.66
+2.708
+SAM-L [33]
+0.1423
+0.8446
+0.5047
+312.343
+3035.07
+5.056
+SAM2-L [50]
+0.1434
+0.8550
+0.5054
+224.430
+1872.66
+3.020
+SAM2.1-T [50]
+0.1463
+0.8274
+0.5079
+38.962
+342.24
+2.940
+SAM2-T [50]
+0.1490
+0.8273
+0.5095
+38.946
+342.24
+2.758
+SAM2.1-S [50]
+0.1497
+0.8222
+0.5095
+46.060
+409.91
+3.078
+SAM2-S [50]
+0.1497
+0.8303
+0.5101
+46.044
+409.91
+2.756
+SAM-B [33]
+0.1525
+0.8109
+0.5121
+93.735
+1021.47
+7.523
+MobileSAM [51]
+0.1591
+0.8070
+0.5180
+10.130
+126.93
+10.750
+To directly assess the generated grape-cluster masks, Table 10 reports mask quality
+under ground-truth-box prompts and fixed YOLO12-S predicted-box prompts matched to
+ground-truth clusters.
+Table 10. Direct mask quality of SAM-family mask generators under ground-truth and predicted
+box prompts.
+SAM Model
+Ground-Truth-Box Prompt
+Predicted-Box Prompt
+mIoU
+Boundary F1
+mIoU
+Boundary F1
+Area Log Error
+Failure Rate
+SAM3 [46]
+0.8274
+0.8523
+0.8445
+0.8540
+0.1003
+0.0161
+SAM2-B [50]
+0.8208
+0.8507
+0.8355
+0.8494
+0.1019
+0.0181
+SAM2.1-B [50]
+0.8278
+0.8520
+0.8437
+0.8492
+0.0989
+0.0171
+SAM2.1-L [50]
+0.8247
+0.8505
+0.8419
+0.8499
+0.1022
+0.0171
+SAM-L [33]
+0.8120
+0.8415
+0.8351
+0.8464
+0.1111
+0.0241
+SAM2-L [50]
+0.8232
+0.8463
+0.8389
+0.8465
+0.1043
+0.0211
+SAM2.1-T [50]
+0.8009
+0.8160
+0.8150
+0.8111
+0.1251
+0.0361
+SAM2-T [50]
+0.8004
+0.8187
+0.8166
+0.8162
+0.1274
+0.0321
+SAM2.1-S [50]
+0.7985
+0.8233
+0.8203
+0.8249
+0.1284
+0.0321
+SAM2-S [50]
+0.7980
+0.8230
+0.8202
+0.8247
+0.1274
+0.0271
+SAM-B [33]
+0.7984
+0.8278
+0.8201
+0.8288
+0.1253
+0.0422
+MobileSAM [51]
+0.7670
+0.7832
+0.7955
+0.7973
+0.1347
+0.0442
+Under ground-truth-box prompts, SAM2.1-B [50] achieved the highest mIoU of 0.8278,
+while SAM3 [46] achieved the highest boundary F1 of 0.8523. Under predicted-box prompts,
+SAM3 achieved the highest mIoU and boundary F1, with values of 0.8445 and 0.8540,
+respectively, and the lowest failure rate of 0.0161. SAM2.1-B obtained the lowest area log
+error of 0.0989.
+These results show that SAM3 combines favorable mask quality under the box prompts
+used in the UniGC pipeline with the lowest downstream MRD and ACP-MRD. It was
+therefore retained as the accuracy-oriented mask generator in the main configuration.
+However, its substantially higher computational cost indicates a clear accuracy–efficiency
+trade-off, and the observed downstream differences may also reflect interactions between
+the generated masks and BDMPA.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+23 of 33
+4.4.4. Sensitivity Analysis of the BDMPA Relative Adsorption Threshold ρ
+Under fixed settings of YOLO12-S, SAM3, and IoU = 0.6, Table 11 evaluates the sensi-
+tivity of BpGC counting to the relative adsorption threshold ρ. Increasing ρ from 0 to 0.03
+reduced MRD from 0.1424 to 0.1336 and ACP-MRD from 0.5046 to 0.4977, while increasing
+1 −FVU from 0.8420 to 0.8557. This trend indicates that limited external adsorption can
+recover near-boundary berry points that are not covered by locally incomplete masks.
+When ρ exceeded 0.03, MRD and ACP-MRD no longer improved, whereas 1 −FVU varied
+only marginally and reached its maximum of 0.8558 at ρ = 0.05. Therefore, ρ = 0.03 was
+selected because it jointly minimized MRD and ACP-MRD while maintaining 1 −FVU
+close to its maximum.
+Table 11. BpGC counting results under different ρ settings.
+ρ
+MRD
+1 −FVU
+ACP-MRD
+0.00
+0.1424
+0.8420
+0.5046
+0.01
+0.1387
+0.8487
+0.5017
+0.02
+0.1361
+0.8527
+0.4996
+0.03
+0.1336
+0.8557
+0.4977
+0.04
+0.1346
+0.8556
+0.4984
+0.05
+0.1345
+0.8558
+0.4984
+0.06
+0.1349
+0.8554
+0.4987
+0.07
+0.1353
+0.8552
+0.4990
+0.08
+0.1362
+0.8544
+0.4997
+0.09
+0.1362
+0.8541
+0.4997
+0.10
+0.1365
+0.8546
+0.5000
+0.15
+0.1386
+0.8521
+0.5016
+0.20
+0.1400
+0.8489
+0.5027
+4.4.5. Ablation Analysis of BDMPA Point-Cluster Assignment Strategies
+To validate the roles of internal boundary-depth disambiguation and external ad-
+sorption in BDMPA, this study compares six point-cluster assignment strategies under
+fixed settings of YOLO12-S [37], SAM3 [46], and IoU = 0.6. All strategies use the same
+predicted berry points, grape-cluster detection boxes, and SAM-generated masks; therefore,
+the comparison focuses on the effect of the assignment strategy itself on BpGC counting.
+The compared strategies are defined as follows. Box-only assigns a point to a YOLO
+detection box if the point falls inside the box; when multiple boxes contain the same point,
+the box with the highest detection confidence is selected, and points outside all boxes are
+discarded. Mask-only assigns a point to a SAM mask if the point falls inside the mask; when
+multiple masks contain the same point, the mask associated with the highest-confidence
+detection box is selected, and uncovered points are discarded. Nearest-mask assigns each
+point to the nearest SAM mask according to the Euclidean distance to the mask boundary,
+without using the ρ constraint. Mask + centroid tie-break assigns only mask-covered
+points and resolves overlapping-mask ambiguity by selecting the mask whose centroid
+is closest to the point. BDMPA without external adsorption uses normalized internal
+boundary-depth disambiguation for mask-covered points, while points outside all masks
+are discarded. Full BDMPA further introduces ρ-constrained external adsorption after
+internal boundary-depth disambiguation.
+As shown in Table 12, Full BDMPA achieved the lowest MRD and ACP-MRD, with val-
+ues of 0.1336 and 0.4977, respectively, together with the highest 1 −FVU of 0.8557. Box-only
+provided useful coarse spatial constraints but remained limited by rectangular boundaries,
+whereas Mask-only and Nearest-mask produced larger MRD and ACP-MRD values, indicat-
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+24 of 33
+ing that mask containment alone or unconstrained nearest-mask assignment is insufficient
+for reliable point-to-cluster association.
+Replacing centroid-based ambiguity resolution with normalized internal boundary
+depth reduced MRD from 0.1451 to 0.1424 and ACP-MRD from 0.5068 to 0.5046. Introduc-
+ing ρ-constrained external adsorption further reduced MRD and ACP-MRD to 0.1336 and
+0.4977, respectively, while increasing 1 −FVU from 0.8420 to 0.8557. Relative to BDMPA
+without external adsorption, Full BDMPA reduced MRD by 6.18% and ACP-MRD by 1.37%.
+These results support the complementary roles of internal boundary-depth disambiguation
+and constrained external adsorption in improving both matched-cluster counting and
+overall BpGC performance.
+Table 12. Ablation results of different point-to-cluster assignment strategies for BpGC counting.
+Assignment Strategy
+MRD
+1 −FVU
+ACP-MRD
+Box-only
+0.1448
+0.8432
+0.5065
+Mask-only
+0.1642
+0.7807
+0.5219
+Nearest-mask
+0.1735
+0.7517
+0.5293
+Mask + centroid tie-break
+0.1451
+0.8364
+0.5068
+BDMPA without external adsorption
+0.1424
+0.8420
+0.5046
+Full BDMPA
+0.1336
+0.8557
+0.4977
+4.4.6. Pipeline-Level Ablation of Berry-Point Prediction and Point-to-Cluster Assignment
+To disentangle the contributions of the berry-point branch and the point-to-cluster
+assignment strategy, four controlled pipeline configurations were evaluated over three runs
+with different random seeds. All configurations used the same YOLO12-S detector [37]
+and SAM3 mask generator [46], while varying only the berry-point branch and assignment
+strategy. Table 13 summarizes the results.
+Table 13. Three-run pipeline-level ablation of the berry-point branch and assignment strategy for
+BpGC counting.
+Pipeline Configuration
+MRD
+1 −FVU
+ACP-MRD
+P2PNet [32] + Mask-Only Assignment
+0.1637 ± 0.0034
+0.7876 ± 0.0258
+0.5334 ± 0.0149
+CSD-P2PNet + Mask-Only Assignment
+0.1572 ± 0.0064
+0.7929 ± 0.0262
+0.5283 ± 0.0119
+P2PNet [32] + Full BDMPA
+0.1391 ± 0.0057
+0.8494 ± 0.0159
+0.5213 ± 0.0120
+UniGC (Ours)
+0.1288 ± 0.0043
+0.8589 ± 0.0098
+0.5062 ± 0.0124
+With mask-only assignment, replacing P2PNet [32] with CSD-P2PNet reduced the
+matched-cluster MRD from 0.1637 ± 0.0034 to 0.1572 ± 0.0064 and ACP-MRD from
+0.5334 ± 0.0149 to 0.5283 ± 0.0119. With Full BDMPA, the same replacement further re-
+duced the matched-cluster MRD from 0.1391 ± 0.0057 to 0.1288 ± 0.0043 and ACP-MRD
+from 0.5213 ± 0.0120 to 0.5062 ± 0.0124. Conversely, replacing mask-only assignment with
+Full BDMPA improved all three BpGC metrics for both berry-point branches.
+The full UniGC pipeline achieved the lowest matched-cluster MRD and ACP-MRD
+and the highest 1 −FVU. Relative to the P2PNet [32] with mask-only assignment config-
+uration, UniGC reduced the matched-cluster MRD and ACP-MRD by 21.32% and 5.10%,
+respectively, while increasing 1 −FVU by 9.05%. These controlled comparisons suggest
+that CSD-P2PNet and Full BDMPA provide complementary benefits for BpGC counting.
+4.4.7. Oracle-Based Stage-Wise Error Decomposition
+To quantify stage-wise error propagation in UniGC, three single-stage oracle diag-
+nostics were evaluated by replacing the berry-point localization, grape-cluster detection
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+25 of 33
+and prompt geometry, or cluster-mask output with its corresponding oracle output while
+retaining the remaining predicted stages. Table 14 summarizes the results over three runs,
+and ∆ACP-MRD denotes the absolute reduction in mean ACP-MRD relative to the Full
+UniGC baseline. Because MRD and 1 −FVU are calculated on the configuration-specific
+matched sets, ACP-MRD is used as the principal metric for cross-configuration comparison.
+Table 14. Oracle-based decomposition of stage-wise errors in the UniGC pipeline over three runs.
+Configuration
+MRD
+1 −FVU
+ACP-MRD
+∆ACP-MRD
+Full UniGC
+0.1288 ± 0.0043
+0.8589 ± 0.0098
+0.5062 ± 0.0124
+—
+Oracle Berry-Point Localization
+0.0839 ± 0.0023
+0.8875 ± 0.0106
+0.4783 ± 0.0099
+0.0279
+Oracle Detection and Prompt Geometry
+0.1289 ± 0.0021
+0.9375 ± 0.0022
+0.1289 ± 0.0021
+0.3773
+Oracle Cluster Masks
+0.0935 ± 0.0047
+0.9263 ± 0.0136
+0.4858 ± 0.0059
+0.0204
+Among the three stage replacements, oracle detection and prompt geometry produced
+the largest reduction in ACP-MRD, decreasing it from 0.5062 ± 0.0124 to 0.1289 ± 0.0021,
+with an absolute mean reduction of 0.3773. Oracle berry-point localization and oracle
+cluster masks reduced ACP-MRD to 0.4783 ± 0.0099 and 0.4858 ± 0.0059, corresponding to
+smaller absolute reductions of 0.0279 and 0.0204, respectively. Under the evaluated oracle
+settings, grape-cluster detection availability and the resulting prompt geometry therefore
+contributed most strongly to the all-cluster penalized error.
+The oracle results also show that berry-point localization and mask generation remain
+measurable sources of downstream error, although their effects on ACP-MRD were smaller
+than that of detection and prompt geometry. These findings indicate that improving the
+completeness and geometric accuracy of upstream grape-cluster detection is likely to
+provide the largest improvement in the current pipeline, while further refinement of berry
+localization and cluster masks may provide additional gains.
+4.5. Qualitative Visualization
+To complement the quantitative ablation of point-to-cluster assignment strategies,
+Figure 6 visualizes the UniGC inference process from multi-level prediction to final point-
+to-cluster assignment. From left to right, the figure shows the input image, berry-point
+predictions generated by CSD-P2PNet, grape-cluster bounding boxes detected by YOLO12-
+S, cluster instance masks generated by SAM3 under box prompts, and the final assignment
+results produced by BDMPA. This visualization illustrates how berry-point predictions and
+cluster-level geometric priors are integrated to produce cluster-wise berry counts.
+As shown in Figure 6, the berry-point branch provides dense point-level localization
+results, whereas the detection and mask-generation stages provide coarse-to-fine cluster-
+level spatial priors. After applying BDMPA, berry points are assigned to corresponding
+grape cluster instances in a per-point manner. The visualization also shows typical cases
+near cluster boundaries, where simple in-box or in-mask assignment may be affected by
+overlapping clusters, locally incomplete masks, or boundary jitter. By combining internal
+boundary-depth disambiguation with ρ-constrained external adsorption, BDMPA produces
+more coherent point-to-cluster assignment results, which is consistent with the quantitative
+gains reported in Table 12.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+26 of 33
+(1) Input Image
+(2) Berry Point Prediction
+(3) Bounding-Box Prediction
+(4) Mask Prediction
+(5) BDMPA Result 
+Figure 6. Qualitative visualization of the UniGC inference process. From left to right: input image,
+berry-point predictions, grape-cluster bounding-box predictions, SAM-generated cluster masks,
+and final BDMPA point-to-cluster assignment results.
+4.6. Computational Efficiency of the Complete UniGC Pipeline
+The computational complexity and runtime efficiency of the complete UniGC pipeline
+were evaluated on the hardware described in Section 4.1 using a batch size of 1. Pure-
+computation latency includes the CSD-P2PNet, YOLO12-S, SAM3, and BDMPA stages,
+whereas application-level wall-clock time additionally includes the surrounding data-
+handling overhead. Because BDMPA is a non-neural geometric procedure, a unified
+GFLOPs estimate is not reported for the complete pipeline. Stage-wise latency was mea-
+sured within the complete pipeline and is therefore not directly comparable with the
+standalone throughput results reported for individual YOLO and SAM variants. The re-
+sults are summarized in Table 15.
+Table 15. Computational complexity and runtime efficiency of the complete UniGC pipeline.
+Panel A. Parameter and Computational Complexity
+Component
+Total Parameters
+Optimized Parameters
+GFLOPs
+CSD-P2PNet
+22,432,404
+22,432,404
+881.8190
+YOLO12-S
+9,253,523
+9,253,507
+55.0965
+SAM3
+473,585,282
+0
+7149.9378/image
+BDMPA
+0
+0
+N/A
+Complete UniGC
+505,271,209
+31,685,911
+N/A
+Panel B. Stage-Wise Pure-Computational Latency
+Stage
+Mean Latency (ms)
+Percentage of Total
+CSD-P2PNet
+149.304
+17.2%
+YOLO12-S
+43.017
+4.9%
+SAM3 Image Encoder
+243.389
+28.0%
+SAM3 Prompt/Mask Decoder
+96.735
+11.1%
+BDMPA
+337.027
+38.8%
+Total
+869.472
+100.0%
+Panel C. Complete-Pipeline Runtime and Memory
+Timing Scope
+Mean ± SD (ms/Image)
+Median (ms)
+P95 (ms)
+FPS
+Peak Allocated/Reserved Memory (MiB)
+Pure Computation
+869.472 ± 411.277
+687.619
+1729.733
+1.150
+8533.2/17,554.0
+Application-Level Wall Clock
+1009.629 ± 511.687
+760.807
+2048.668
+0.990
+—
+The complete pipeline comprises 505.27 million parameters, of which 31.69 million
+are optimized during training. SAM3 is used without fine-tuning, and BDMPA intro-
+duces no trainable parameters. Pure-computation time averaged 869.472 ± 411.277 ms
+per image, corresponding to 1.150 FPS, whereas the application-level wall-clock time was
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+27 of 33
+1009.629 ± 511.687 ms per image, corresponding to 0.990 FPS. The peak allocated and
+reserved GPU memory reached 8533.2 MiB and 17,554.0 MiB, respectively.
+BDMPA accounted for 38.8% of the pure-computation latency. The SAM3 image en-
+coder and prompt/mask decoder jointly accounted for a further 39.1%, while CSD-P2PNet
+and YOLO12-S contributed 17.2% and 4.9%, respectively. The current implementation is
+therefore more suitable for offline or server-side analysis than for real-time inference on
+resource-constrained onboard hardware. Future efficiency optimization should primarily
+target lightweight mask generation and parallel or vectorized point-to-cluster assignment.
+5. Discussion
+This study proposes UniGC, a unified framework that integrates whole-image count-
+ing of image-visible berries, grape-cluster detection and counting, and BpGC counting
+within a common inference pipeline. The framework combines a point-based berry branch
+derived from P2PNet [32], a YOLO12-S grape-cluster detector [37], box-prompted cluster-
+mask generation with SAM3 [46], and BDMPA-based point-to-cluster assignment. Unlike
+single-task approaches that provide only image-level counts or cluster locations, UniGC
+explicitly links image-visible berry-point localization, grape-cluster instance geometry,
+and cluster-wise berry counting. Its trainable branches require berry center-point anno-
+tations and grape-cluster bounding-box annotations. By producing associated outputs at
+the berry, cluster, and within-cluster levels, UniGC provides structured information on
+image-visible berry load. Compared with isolated image-level counts, these outputs may
+provide a more informative basis for crop-load characterization, identification of clusters
+with atypical visible berry loads, and cluster-specific thinning or management decisions.
+Existing studies on grape cluster detection or instance segmentation can provide
+cluster-level geometric priors [13], but they usually cannot directly provide cluster-wise
+counts of image-visible berries; although berry-level density-map, probability-map, or seg-
+mentation methods can improve local counting accuracy, they still require additional
+post-processing to convert responses into instances or intra-cluster counts [26,27,35].
+Yang et al. [9] proposed PMGDC, which models grape clusters, berries, and BpGC as
+related tasks and provides an important basis for unified counting; however, probability
+maps and multi-stage post-processing may still lead to misassignment under adjacent-
+cluster overlap, boundary adhesion, and response drift. Du et al. [10] proposed MVDNet,
+which jointly estimates intra-cluster berry counts through density-map regression and
+cluster-level segmentation, and also shows strong potential; however, its segmentation
+branch relies on polygon- or pixel-level mask supervision, which is more fine-grained than
+the point-and-box supervision adopted in this study, and its main evaluation metrics differ
+from the MRD and 1 −FVU used in this study, making a fully equivalent direct comparison
+difficult. Within the UniGC framework, berry predictions are explicitly represented as
+coordinate points, while the SAM framework proposed by Kirillov et al. [33] generates
+cluster-level masks from box prompts to provide instance-level geometric boundaries.
+BDMPA subsequently establishes point-to-cluster assignments by integrating these two
+forms of information. In this way, UniGC explicitly links berry-point localization and
+cluster membership estimation within the unified multi-level counting framework.
+The repeated-run results support the principal design choices. CSD-P2PNet, built on
+P2PNet [32], achieved an MAE of 23.4407 ± 0.1577, an RMSE of 32.8898 ± 1.2682, and an F1
+score of 0.8374 ± 0.0097 for image-visible berry-point localization. YOLO12-S [37] achieved
+an F1 score of 0.8433 ± 0.0056 and an AP50 of 0.8789 ± 0.0080 for grape-cluster detec-
+tion. For BpGC counting, UniGC obtained a matched-cluster MRD of 0.1288 ± 0.0043,
+a matched-cluster 1 −FVU of 0.8589 ± 0.0098, and an all-cluster penalized ACP-MRD
+of 0.5062 ± 0.0124. Relative to PMGDC [9], UniGC reduced the matched-cluster MRD
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+28 of 33
+and ACP-MRD by 20.15% and 2.43%, respectively, while increasing the matched-cluster
+1 −FVU by 3.91%. These results support the complementary contributions of image-visible
+berry-point localization, grape-cluster geometry, and point-to-cluster assignment to BpGC
+performance within the evaluated unified framework. From an agronomic perspective,
+the combined outputs of whole-image visible berry load, cluster locations, and per-cluster
+visible berry counts provide a more informative image-based basis for crop-load characteri-
+zation than any single output alone. Although these image-derived outputs do not directly
+estimate severely occluded or invisible berries, cluster mass, or field-scale yield, they pro-
+vide a feasible visual-information basis for subsequent integration with complementary
+phenotypic traits, multi-view or depth information, and calibration models toward more
+comprehensive crop-load and yield estimation.
+The contribution of BDMPA is mainly reflected in its handling of boundary uncertainty.
+Simple in-box or in-mask rules assume reliable geometric boundaries, but natural orchard
+images often contain undersized masks, boundary jitter, multiple overlapping masks,
+and berry points located outside boundaries. BDMPA adopts the rule of “mandatory
+internal assignment and cautious external adsorption”: points covered by multiple masks
+are disambiguated using normalized internal boundary depth, whereas external points
+are adsorbed only within the relative distance threshold. The sensitivity analysis shows
+that when ρ increases from 0 to 0.03, MRD decreases from 0.1424 to 0.1336, ACP-MRD
+decreases from 0.5046 to 0.4977, and 1 −FVU increases from 0.8420 to 0.8557. When ρ
+exceeds 0.03, MRD and ACP-MRD no longer improve consistently, while 1 −FVU changes
+only marginally. This indicates that limited outside-boundary adsorption can recover near-
+boundary berry points that are excluded by locally incomplete masks, whereas an overly
+wide adsorption range relaxes the geometric constraint and may increase the possibility of
+incorrect assignment.
+Although UniGC achieves competitive results, several limitations remain. First,
+the unified modular formulation remains sensitive to inter-stage error propagation.
+The single-stage oracle diagnostics in Table 14 show that replacing grape-cluster detection
+and prompt geometry produced the largest reduction in ACP-MRD (0.3773), whereas
+replacing berry-point localization or cluster masks yielded smaller reductions of 0.0279 and
+0.0204, respectively. These results identify grape-cluster detection completeness and prompt
+geometry as the principal bottleneck of the current pipeline, indicating that upstream lo-
+calization and geometric accuracy should be prioritized. Second, the source-stratified
+evaluation showed broadly consistent comparative trends across WGISD and GBISC, al-
+though the magnitude of the gains varied between the two sources. Because both sources
+contributed to the training and evaluation splits, these results do not constitute an inde-
+pendent cross-domain evaluation. Furthermore, we did not identify an additional publicly
+available grape dataset that simultaneously provides the berry-point annotations, grape-
+cluster annotations, and point-to-cluster correspondence labels required by the current
+training and BpGC evaluation protocol. Therefore, independent external BpGC evaluation
+under a directly compatible protocol remains unavailable. Environmental variations may
+affect different stages of the unified framework in distinct but related ways. Changes in
+cultivar appearance, berry size and color, cluster compactness, growth stage, canopy struc-
+ture, and background composition may alter local berry textures and cluster boundaries.
+Variations in acquisition distance, viewing angle, image resolution, sensor characteristics,
+season, and region may further affect berry-point localization, detection-box complete-
+ness, and prompt geometry. Illumination changes, including shadows, highlights, strong
+backlighting, and nighttime artificial illumination, may introduce local contrast shifts and
+boundary ambiguities, thereby influencing point prediction, mask generation, and subse-
+quent point-to-cluster assignment. These errors can propagate through the unified pipeline
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+29 of 33
+and affect the final BpGC results. Related cross-site visual inspection research has simi-
+larly shown that model performance may degrade under unseen acquisition conditions
+and that domain adaptation can mitigate such distribution shifts [52]. Third, the current
+model mainly counts image-visible berry points and does not directly estimate severely
+occluded or invisible berries or jointly model yield-related traits such as berry size, berry
+mass, cluster compactness, and cluster weight. Nevertheless, its whole-image visible
+berry counts, cluster locations, and per-cluster visible berry counts provide a structured
+basis for subsequent integration with multi-view imagery, depth information, physical
+measurements, and calibration models. The study by Parr et al. [1] further demonstrates
+the potential of combining low-cost RGB-D acquisition with complementary phenotypic
+information for crop-load and yield estimation. Fourth, the complete UniGC pipeline
+remains computationally intensive. On the evaluated RTX 4090D server, the application-
+level runtime was 1009.629 ms per image, corresponding to 0.990 FPS, while the peak
+allocated and reserved GPU memory reached 8533.2 MiB and 17,554.0 MiB, respectively.
+The current configuration is therefore more suitable for offline or server-side analysis than
+for real-time onboard inference. Device-level deployment experiments were not conducted
+because representative mobile-robot, unmanned-aerial-vehicle, and edge-computing plat-
+forms and the corresponding system-integration conditions were unavailable in the present
+experimental environment.
+Our future work will proceed in the following four directions. First, end-to-end or
+weakly coupled multi-task networks will be explored under comparable point-and-box
+supervision to promote representation sharing among grape-cluster detection, berry-point
+localization, mask generation, and point-to-cluster assignment and thereby reduce inter-
+stage error propagation. Second, we will further construct and annotate a large-scale,
+multi-scene BpGC dataset containing berry points, grape-cluster annotations, and point-to-
+cluster correspondence labels. The dataset will progressively cover additional vineyards,
+cultivars, growth stages, cluster structures, acquisition distances, viewing angles, illumi-
+nation conditions, and imaging devices. This dataset will enable independent external
+evaluation and vineyard-, cultivar-, and acquisition-separated testing, while also support-
+ing further investigation of domain adaptation and few-shot learning for unseen vineyard
+environments. Third, multi-view imagery, RGB-D sensing, physical berry and cluster
+measurements, and calibration models will be incorporated to extend UniGC from image-
+visible counting toward hidden-berry estimation and complementary yield-trait analysis.
+The cluster locations, visible berry load, and BpGC outputs will also be connected to
+fruit-thinning decisions, picking-point prediction, and yield-estimation workflows. Fourth,
+lightweight mask generators, reusable image embeddings, and parallel or vectorized im-
+plementations of BDMPA will be investigated to reduce computational overhead. When
+suitable mobile-robot, unmanned-aerial-vehicle, or edge-computing platforms and the
+required system-integration conditions become available, device-level experiments will be
+conducted to evaluate inference latency, memory consumption, energy efficiency, and oper-
+ational stability in practical vineyard environments.
+6. Conclusions
+This paper proposes UniGC, a unified framework for multi-level grape counting in
+natural orchard images. The framework integrates grape-cluster detection and counting,
+image-visible berry localization and counting, and BpGC counting into a unified pipeline.
+First, CSD-P2PNet incorporating CSD-Block is used to perform berry-point localization and
+whole-image visible-berry counting. Second, YOLO predicts grape-cluster bounding boxes,
+which are used as prompts for SAM to generate the corresponding cluster instance masks
+as geometric priors. Finally, BDMPA, which requires no additional trainable parameters,
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+30 of 33
+assigns each predicted berry point to at most one grape-cluster instance and produces
+per-cluster visible berry counts.
+The experimental results show that UniGC achieves stable and competitive multi-level
+counting performance on the mixed dataset organized from WGISD and GBISC, while
+its trainable branches use only berry-point annotations and grape-cluster bounding-box
+annotations. For whole-image berry counting and point localization, CSD-P2PNet achieves
+favorable performance compared with the evaluated methods. For grape-cluster detection
+and BpGC counting, UniGC demonstrates clear and consistent overall improvements over
+the representative baseline PMGDC in most evaluated metrics, particularly in grape-cluster
+localization quality and intra-cluster counting accuracy. Overall, UniGC provides a method-
+ological reference for multi-level grape counting under point-and-box supervision and may
+inform the development of related fruit-counting and visual phenotyping methods. Future
+work will focus on developing end-to-end modules for multi-level counting, constructing
+large-scale multi-scene BpGC datasets, conducting independent cross-domain evaluation,
+integrating complementary phenotypic information, and improving computational effi-
+ciency to support practical applications.
+Author Contributions: Conceptualization, X.X., J.Y. and Z.S.; methodology, X.X. and J.Y.; software,
+X.X.; validation, X.X. and J.Y.; formal analysis, X.X.; investigation, X.X.; resources, J.Y. and Z.S.;
+data curation, X.X.; writing—original draft preparation, X.X.; writing—review and editing, X.X.,
+J.Y. and Z.S.; visualization, X.X.; supervision, J.Y. and Z.S.; project administration, J.Y. and Z.S.;
+funding acquisition, X.X., J.Y. and Z.S. All authors have read and agreed to the published version of
+the manuscript.
+Funding: This research was funded by the Special Project of the Double Support Plan for Discipline
+Construction of Sichuan Agricultural University, grant number 2025ZYTS024; and the National
+Undergraduate Training Program on Innovation and Entrepreneurship, grant number 202510626011.
+Institutional Review Board Statement: Not applicable.
+Informed Consent Statement: Not applicable.
+Data Availability Statement: The datasets and source code supporting the findings of this study
+are publicly available at https://github.com/xiaofengxie-dl/UniGC (accessed on 23 July 2026).
+The source WGISD and GBISC datasets are available from their original publications or repositories.
+Conflicts of Interest: The authors declare no conflict of interest.
+Abbreviations
+The following abbreviations are used in this manuscript:
+UniGC
+Unified Multi-Level Grape Counting framework
+BpGC
+Berries-per-Grape-Cluster
+CSD-Block
+Condition-Structure Decoupled Frequency Enhancement Block
+BDMPA
+Boundary-Depth Guided Mask-Point Assignment
+YOLO
+You Only Look Once
+SAM
+Segment Anything Model
+WGISD
+Wine Grape Instance Segmentation Dataset
+GBISC
+Sichuan Grape Berry Instance Segmentation and Counting Dataset
+FPN
+Feature Pyramid Network
+FiLM
+Feature-wise Linear Modulation
+MLP
+Multi-layer perceptron
+IN
+Instance Normalization
+LPF
+Low-Pass Filter
+SiLU
+Sigmoid linear unit
+DWConv
+Depthwise convolution
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+31 of 33
+PWConv
+Pointwise convolution
+GAP
+Global average pooling
+ROI
+Region of interest
+IoU
+Intersection over union
+GT
+Ground truth
+MAE
+Mean absolute error
+RMSE
+Root mean square error
+mAP
+Mean average precision
+MRD
+Mean relative deviation
+FVU
+Fraction of variance unexplained
+CSD-P2PNet
+Condition-Structure Decoupled P2PNet
+ACP-MRD
+All-Cluster Penalized Mean Relative Deviation
+mIoU
+Mean intersection over union
+SD
+Standard deviation
+FPS
+Frames per second
+GFLOPs
+Giga floating-point operations
+References
+1.
+Parr, B.; Legg, M.; Alam, F. Grape yield estimation with a smartphone’s colour and depth cameras using machine learning and
+computer vision techniques. Comput. Electron. Agric. 2023, 213, 108174. [CrossRef]
+2.
+Zhang, T.; Wu, F.; Wang, M.; Chen, Z.; Li, L.; Zou, X. Grape-bunch identification and location of picking points on occluded fruit
+axis based on YOLOv5-GAP. Horticulturae 2023, 9, 498. [CrossRef]
+3.
+Torres-Lomas, E.; Lado-Bega, J.; Garcia-Zamora, G.; Diaz-Garcia, L. Segment anything for comprehensive analysis of grapevine
+cluster architecture and berry properties. Plant Phenomics 2024, 6, 0202. [CrossRef] [PubMed]
+4.
+Aquino, A.; Diago, M.P.; Millán, B.; Tardáguila, J. A new methodology for estimating the grapevine-berry number per cluster
+using image analysis. Biosyst. Eng. 2017, 156, 80–95. [CrossRef]
+5.
+Aquino, A.; Barrio, I.; Diago, M.P.; Millan, B.; Tardaguila, J. vitisBerry: An Android-smartphone application to early evaluate the
+number of grapevine berries by means of image analysis. Comput. Electron. Agric. 2018, 148, 19–28. [CrossRef]
+6.
+Liu, S.; Zeng, X.; Whitty, M. A vision-based robust grape berry counting algorithm for fast calibration-free bunch weight
+estimation in the field. Comput. Electron. Agric. 2020, 173, 105360. [CrossRef]
+7.
+Lanza, B.; Botturi, D.; Gnutti, A.; Lancini, M.; Nuzzi, C.; Pasinetti, S. A Stride Toward Wine Yield Estimation from Images:
+Metrological Validation of Grape Berry Number, Radius, and Volume Estimation. Sensors 2024, 24, 7305. [CrossRef] [PubMed]
+8.
+Shi, X.; Wang, S.; Zhang, B.; Ding, X.; Qi, P.; Qu, H.; Li, N.; Wu, J.; Yang, H. Advances in object detection and localization
+techniques for fruit harvesting robots. Agronomy 2025, 15, 145. [CrossRef]
+9.
+Yang, C.; Geng, T.; Peng, J.; Song, Z. Probability map-based grape detection and counting. Comput. Electron. Agric. 2024,
+224, 109175. [CrossRef]
+10.
+Du, W.; Qin, W.; Cui, X.; Zhu, Y.; Jia, Y.; Wang, R.; Du, Y. A precise berry counting method for in-cluster grapes to guide berry
+thinning. Front. Plant Sci. 2026, 16, 1739688. [CrossRef] [PubMed]
+11.
+Buayai, P.; Yok-In, K.; Inoue, D.; Nishizaki, H.; Makino, K.; Mao, X. Supporting table grape berry thinning with deep neural
+network and augmented reality technologies. Comput. Electron. Agric. 2023, 213, 108194. [CrossRef]
+12.
+San Woo, Y.; Buayai, P.; Nishizaki, H.; Makino, K.; Kamarudin, L.M.; Mao, X. End-to-end lightweight berry number prediction for
+supporting table grape cultivation. Comput. Electron. Agric. 2023, 213, 108203. [CrossRef]
+13.
+Santos, T.T.; De Souza, L.L.; Dos Santos, A.A.; Avila, S. Grape detection, segmentation, and tracking using deep neural networks
+and three-dimensional association. Comput. Electron. Agric. 2020, 170, 105247. [CrossRef]
+14.
+Zhang, C.; Ding, H.; Shi, Q.; Wang, Y. Grape cluster real-time detection in complex natural scenes based on YOLOv5s deep
+learning network. Agriculture 2022, 12, 1242. [CrossRef]
+15.
+Su, S.; Chen, R.; Fang, X.; Zhu, Y.; Zhang, T.; Xu, Z. A novel lightweight grape detection method. Agriculture 2022, 12, 1364.
+[CrossRef]
+16.
+Huang, X.; Peng, D.; Qi, H.; Zhou, L.; Zhang, C. Detection and instance segmentation of grape clusters in orchard environments
+using an improved mask R-CNN model. Agriculture 2024, 14, 918. [CrossRef]
+17.
+Sozzi, M.; Cantalamessa, S.; Cogato, A.; Kayad, A.; Marinello, F. Automatic bunch detection in white grape varieties using
+YOLOv3, YOLOv4, and YOLOv5 deep learning algorithms. Agronomy 2022, 12, 319. [CrossRef]
+18.
+Wang, W.; Shi, Y.; Liu, W.; Che, Z. An unstructured orchard grape detection method utilizing YOLOv5s. Agriculture 2024, 14, 262.
+[CrossRef]
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+32 of 33
+19.
+Zhao, J.; Yao, X.; Wang, Y.; Yi, Z.; Xie, Y.; Zhou, X. Lightweight-improved YOLOv5s model for grape fruit and stem recognition.
+Agriculture 2024, 14, 774. [CrossRef]
+20.
+Jiang, T.; Li, Y.; Feng, H.; Wu, J.; Sun, W.; Ruan, Y. Research on a trellis grape stem recognition method based on YOLOv8n-GP.
+Agriculture 2024, 14, 1449. [CrossRef]
+21.
+Chen, J.; Ma, A.; Huang, L.; Su, Y.; Li, W.; Zhang, H.; Wang, Z. GA-YOLO: A lightweight YOLO model for dense and occluded
+grape target detection. Horticulturae 2023, 9, 443. [CrossRef]
+22.
+Li, C.; Zhang, S.; Ma, Z. RF-YOLOv7: A Model for the Detection of Poor-Quality Grapes in Natural Environments. Agriculture
+2025, 15, 387. [CrossRef]
+23.
+Lu, J.; Cao, Z.; Wang, J.; Wang, Z.; Zhao, J.; Zhang, M. A picking point localization method for table grapes based on PGSS-
+YOLOv11s and morphological strategies. Agriculture 2025, 15, 1622. [CrossRef]
+24.
+Vicino, F.; Popeo, G.; Santoro, F.; Pascuzzi, S.; Paciolla, F. Farmer-Friendly Approach for Table Grape Bunch Detection Using the
+Roboflow Platform. Agriculture 2026, 16, 218. [CrossRef]
+25.
+Du, W.; Liu, P. Instance segmentation and berry counting of table grape before thinning based on AS-SwinT. Plant Phenomics
+2023, 5, 0085. [CrossRef] [PubMed]
+26.
+Li, Y.; Tang, Y.; Liu, Y.; Zheng, D. Semi-supervised counting of grape berries in the field based on density mutual exclusion. Plant
+Phenomics 2023, 5, 0115. [CrossRef] [PubMed]
+27.
+Yang, C.; Geng, T.; Peng, J.; Xu, C.; Song, Z. Mask-GK: An efficient method based on mask Gaussian kernel for segmentation and
+counting of grape berries in field. Comput. Electron. Agric. 2025, 234, 110286. [CrossRef]
+28.
+Luo, L.; Liu, W.; Lu, Q.; Wang, J.; Wen, W.; Yan, D.; Tang, Y. Grape berry detection and size measurement based on edge image
+processing and geometric morphology. Machines 2021, 9, 233. [CrossRef]
+29.
+Buayai, P.; Saikaew, K.R.; Mao, X. End-to-end automatic berry counting for table grape thinning. IEEE Access 2020, 9, 4829–4842.
+30.
+Zhao, R.; Zhu, Y.; Li, Y. An end-to-end lightweight model for grape and picking point simultaneous detection. Biosyst. Eng. 2022,
+223, 174–188. [CrossRef]
+31.
+Wang, Y.; Xiao, S.; Meng, X. Incoherent Region-Aware Occlusion Instance Synthesis for Grape Amodal Detection. Sensors 2025,
+25, 1546. [CrossRef] [PubMed]
+32.
+Song, Q.; Wang, C.; Jiang, Z.; Wang, Y.; Tai, Y.; Wang, C.; Li, J.; Huang, F.; Wu, Y. Rethinking Counting and Localization in
+Crowds: A Purely Point-Based Framework. In Proceedings of the IEEE/CVF International Conference on Computer Vision
+(ICCV), Virtual, 11–17 October 2021; pp. 3365–3374.
+33.
+Kirillov, A.; Mintun, E.; Ravi, N.; Mao, H.; Rolland, C.; Gustafson, L.; Xiao, T.; Whitehead, S.; Berg, A.C.; Lo, W.Y.; et al. Segment
+Anything. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV), Paris, France, 1–6 October
+2023; pp. 4015–4026.
+34.
+Coviello, L.; Cristoforetti, M.; Jurman, G.; Furlanello, C. GBCNet: In-field grape berries counting for yield estimation by dilated
+CNNs. Appl. Sci. 2020, 10, 4870. [CrossRef]
+35.
+Zabawa, L.; Kicherer, A.; Klingbeil, L.; Töpfer, R.; Kuhlmann, H.; Roscher, R. Counting of grapevine berries in images via semantic
+segmentation using convolutional neural networks. ISPRS J. Photogramm. Remote Sens. 2020, 164, 73–83. [CrossRef]
+36.
+Hao, H.; Zhuang, L.; Yang, Y.; Yu, C.; Yang, X.; Li, J. WGMG-Net: A Wavelet-Guided Real-Time Instance Segmentation Framework
+for Automated Post-Harvest Grape Quality Assessment. Agriculture 2026, 16, 121. [CrossRef]
+37.
+Tian, Y.; Ye, Q.; Doermann, D. YOLOv12: Attention-Centric Real-Time Object Detectors. In Proceedings of the Advances in Neural
+Information Processing Systems; Belgrave, D., Zhang, C., Lin, H., Pascanu, R., Koniusz, P., Ghassemi, M., Chen, N., Eds.; Curran
+Associates, Inc.: Red Hook, NY, USA, 2025; Volume 38, pp. 78433–78457.
+38.
+Khoroshevsky, F.; Khoroshevsky, S.; Bar-Hillel, A. Parts-per-object count in agricultural images: Solving phenotyping problems
+via a single deep neural network. Remote Sens. 2021, 13, 2496. [CrossRef]
+39.
+Chen, I.H.; Chen, W.T.; Liu, Y.W.; Yang, M.H.; Kuo, S.Y. Improving point-based crowd counting and localization based on
+auxiliary point guidance. In Proceedings of the European Conference on Computer Vision; Springer: Berlin/Heidelberg, Germany,
+2024; pp. 428–444.
+40.
+Wan, J.; Liu, Z.; Chan, A.B. A Generalized Loss Function for Crowd Counting and Localization. In Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition (CVPR), Nashville, TN, USA, 20–25 June 2021; pp. 1974–1983.
+41.
+Liang, D.; Xu, W.; Bai, X. An end-to-end transformer model for crowd localization. In Proceedings of the European Conference on
+Computer Vision; Springer: Berlin/Heidelberg, Germany, 2022; pp. 38–54.
+42.
+Liu, C.; Lu, H.; Cao, Z.; Liu, T. Point-Query Quadtree for Crowd Counting, Localization, and More. In Proceedings of the
+IEEE/CVF International Conference on Computer Vision (ICCV), Paris, France, 1–6 October 2023; pp. 1676–1685.
+43.
+Wang, Y.; Hu, Q.; Chau, L.P. Weakly-supervised crowd counting with token attention and fusion: A simple and effective baseline.
+In Proceedings of the ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP); IEEE: New
+York, NY, USA, 2024; pp. 13456–13460.
+https://doi.org/10.3390/app16157500
+
+Appl. Sci. 2026, 16, 7500
+33 of 33
+44.
+Wu, Y.; Wei, J.; Zhao, X.; Li, Y.; Du, S.; Ren, B.; Sebe, N. DSGC-Net: A Dual-Stream Graph Convolutional Network for Crowd
+Counting via Feature Correlation Mining. In Proceedings of the Chinese Conference on Pattern Recognition and Computer Vision
+(PRCV); Springer: Berlin/Heidelberg, Germany, 2025; pp. 400–413.
+45.
+Lei, M.; Wu, Y.; Li, S.; Zheng, X.; Wang, J.; Du, S.; Gao, Y. SoftHGNN: Soft Hypergraph Neural Networks for General Visual
+Recognition. Int. J. Comput. Vis. 2026, 134, 244. [CrossRef]
+46.
+Carion, N.; Gustafson, L.; Hu, Y.T.; Debnath, S.; Hu, R.; Suris, D.; Ryali, C.; Alwala, K.V.; Khedr, H.; Huang, A.; et al. SAM 3:
+Segment Anything with Concepts. arXiv 2025, arXiv:2511.16719.
+47.
+Jocher, G.; Qiu, J. Ultralytics YOLO11, version 11.0.0; AGPL-3.0 license; Ultralytics: London, UK , 2024.
+48.
+Jocher, G.; Chaurasia, A.; Qiu, J. Ultralytics YOLOv8, version 8.0.0; AGPL-3.0 license; Ultralytics: London, UK, 2023.
+49.
+Jocher, G.; Qiu, J.; Liu, M.; Lyu, S.; Akyon, F.C.; Kalfaoglu, M.E. Ultralytics YOLO26: Unified Real-Time End-to-End Vision
+Models. arXiv 2026, arXiv:2606.03748.
+50.
+Ravi, N.; Gabeur, V.; Hu, Y.T.; Hu, R.; Ryali, C.; Ma, T.; Khedr, H.; Rädle, R.; Rolland, C.; Gustafson, L.; et al. SAM 2: Segment
+Anything in Images and Videos. In Proceedings of the International Conference on Learning Representations (ICLR), Singapore,
+24–28 April 2025.
+51.
+Zhang, C.; Han, D.; Qiao, Y.; Kim, J.U.; Bae, S.H.; Lee, S.; Hong, C.S. Faster segment anything: Towards lightweight sam for
+mobile applications. arXiv 2023, arXiv:2306.14289.
+52.
+Fallahy, S.; Rezazadeh, N. MARBLE-DA: Masonry analysis with robust, batch-normalised, label-free, explainable domain
+adaptation for crack detection. J. Build. Eng. 2025, 116 , 114673. [CrossRef]
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.
+https://doi.org/10.3390/app16157500

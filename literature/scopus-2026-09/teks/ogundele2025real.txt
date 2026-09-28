@@ -1,0 +1,1484 @@
+Academic Editor: Aichen Wang
+Received: 4 August 2025
+Revised: 30 August 2025
+Accepted: 2 September 2025
+Published: 9 September 2025
+Citation: Ogundele, O.M.; Tamrakar,
+N.; Kook, J.-H.; Kim, S.-M.; Choi, J.-I.;
+Karki, S.; Akpenpuun, T.D.; Kim, H.T.
+Real-Time Strawberry Ripeness
+Classification and Counting: An
+Optimized YOLOv8s Framework with
+Class-Aware Multi-Object Tracking.
+Agriculture 2025, 15, 1906. https://
+doi.org/10.3390/agriculture15181906
+Copyright: © 2025 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license
+(https://creativecommons.org/
+licenses/by/4.0/).
+Article
+Real-Time Strawberry Ripeness Classification and Counting:
+An Optimized YOLOv8s Framework with Class-Aware
+Multi-Object Tracking
+Oluwasegun Moses Ogundele 1
+, Niraj Tamrakar 1
+, Jung-Hoo Kook 2
+, Sang-Min Kim 2, Jeong-In Choi 2,
+Sijan Karki 1, Timothy Denen Akpenpuun 3
+and Hyeon Tae Kim 1,*
+1
+Department of Bio-Systems Engineering, Gyeongsang National University, (Institute of Smart Space
+Agriculture (ISSA)), Jinju 52828, Republic of Korea
+2
+Department of Smart Farm, Gyeongsang National University, (Institute of Smart Space Agriculture (ISSA)),
+Jinju 52828, Republic of Korea
+3
+Department of Agricultural and Biosystems Engineering, University of Ilorin, PMB 1515,
+Ilorin 240103, Nigeria
+*
+Correspondence: bioani@gnu.ac.kr; Tel.: +82-55-772-1896
+Abstract
+Accurate fruit counting is crucial for data-driven decision-making in modern precision
+agriculture. In strawberry cultivation, a labor-intensive sector, automated, scalable yield
+estimation is especially critical. However, dense foliage, variable lighting, visual ambiguity
+of ripeness stages, and fruit clustering pose significant challenges. To overcome these,
+we developed a real-time multi-stage framework for strawberry detection and counting
+by optimizing a YOLOv8s detector and integrating a class-aware tracking system. The
+detector was enhanced with a lightweight C3x module, an additional detection head for
+small objects, and the Wise-IOU (WIoU) loss function, thereby improving performance
+against occlusion. Our final model achieved a 92.5% mAP@0.5, outperforming the baseline
+while reducing the number of parameters by 27.9%. This detector was integrated with
+the ByteTrack multiple object tracking (MOT) algorithm. Our system enabled accurate,
+automated fruit counting in complex greenhouse environments. When validated on video
+data, results showed a strong correlation with ground-truth counts (R2 = 0.914) and a low
+mean absolute percentage error (MAPE) of 9.52%. Counting accuracy was highest for
+ripe strawberries (R2 = 0.950), confirming the value for harvest-ready estimation. This
+work delivers an efficient, accurate, and resource-conscious solution for automated yield
+monitoring in commercial strawberry production.
+Keywords: multi-object tracking; occlusion; strawberry detection; YOLOv8s; yield estimation
+1. Introduction
+The strawberry (Fragaria × ananassa), a globally consumed fruit recognized for its
+nutritional value, distinct flavor profile [1], and visual appeal [2,3], plays an essential
+economic role in many nations, including South Korea. In 2022, South Korea had a straw-
+berry cultivation area of 5745 hectares, with a production volume of 158,807 tons [4]. It
+contributed USD 932 million to the domestic economy, which represents 14.7% of the
+nation’s total vegetable production value [5]. However, this vital agricultural sector faces
+challenges as an aging farming workforce and the steady migration of young people to
+urban areas have created labor shortages and rising operational costs. These demographic
+Agriculture 2025, 15, 1906
+https://doi.org/10.3390/agriculture15181906
+
+Agriculture 2025, 15, 1906
+2 of 28
+and financial pressures emphasize an urgent need for technological solutions that can
+reduce dependency on manual labor. Among these, accurate and timely yield estimation
+has become a crucial component that allows for better resource allocation optimization
+throughout the supply chain, including labor planning, transportation logistics, storage
+utilization, and marketing strategies. The highly perishable nature of strawberries further
+increases the need for precise forecasting, since errors can lead to post-harvest losses due to
+spoilage and mismatches between supply and demand. Automated systems offer a more
+reliable and efficient alternative to traditional methods, which often rely on rough empirical
+estimations or lengthy manual sampling, thereby providing more explicit guidance for
+planning harvest schedules and cultivation strategies.
+In recent years, advances in computer vision and artificial intelligence have changed
+agricultural practices [6,7]. These technologies serve as the foundation for the automation of
+agronomic activities traditionally dependent on manual labor, with robotic fruit harvesting
+emerging as a key focus area [8,9]. Central to these autonomous systems is the machine
+vision module, responsible for fruit identification and localization. Earlier efforts in this
+area relied on traditional image processing techniques, using hand-crafted features such as
+color, shape, and texture to detect fruit under controlled conditions. For example, Zhang
+et al. [10] introduced an automated method to assess fruit ripeness and quality based on
+color variations. Their method involves generating a two-dimensional color histogram
+for each ripeness grade, then mapping the input fruit color onto a defined color index.
+In Wang et al. [11], a pixel thresholding method was applied to classify lychee fruits into
+predefined categories, while a geometric center-based matching technique was used to
+detect and distinguish between clustered fruits. Similarly, Karki et al. [12] employed
+different machine learning models to categorize strawberry ripeness stages using multiple
+color spaces (RGB, HLS, CIELAB, and YCbCr) alongside biometric features. Among the
+tested models, a feed-forward artificial neural network (ANN) utilizing the CIELAB color
+space had the highest classification accuracy. While these traditional approaches offer
+valuable foundations, computer vision algorithms that depend on feature extraction face
+significant limitations when dealing with complex, large-scale data [13]. Variations in
+lighting conditions, different growth orientations, and occlusions from leaves or nearby
+fruits present significant barriers to accurate detection. Strawberry ripeness classification is
+complicated due to simultaneous changes in color, shape, size, and texture across growth
+stages, attributes that conventional methods struggle to capture and analyze effectively.
+The rapid advancement of deep learning, particularly Convolutional Neural Net-
+works (CNNs), has shown remarkable potential in addressing these challenges. CNNs can
+autonomously extract hierarchical and discriminative features directly from image data,
+resulting in models with superior detection accuracy and better adaptability to in-field vari-
+ations. Furthermore, the availability of flexible and well-documented training frameworks
+has eased their implementation, making them more practical for complex agricultural tasks.
+Within this paradigm, CNN-based Object detection models are broadly categorized into
+one-stage and two-stage networks. One-stage detectors, such as the You Only Look Once
+(YOLO) algorithm introduced by Redmon et al. [14] process the image in a single forward
+pass, making them faster than their two-stage detector counterparts, such as Faster Regional
+Convolutional Network (Faster R-CNN) [15], which generate candidate object regions first
+before refining the detection in a second stage. While two-stage detectors are known for
+higher accuracy, their computational complexity often limits their use in real-time field
+scenarios. Furthermore, continuous updates and iterations of the YOLO series have steadily
+improved the detection accuracy of one-stage networks [16], establishing the YOLO model
+series as a fundamental tool for real-time agricultural applications.
+
+Agriculture 2025, 15, 1906
+3 of 28
+Many studies have utilized YOLO networks for strawberry detection [9,17,18]. How-
+ever, despite this progress, two main challenges continue to hinder the transition from
+simple detection to reliable, automated yield estimation: accurately classifying fruit matu-
+rity and robustly handling occlusions. Throughout the growing season, strawberry plants
+simultaneously bear fruits at various stages of development, from unripe to ripe. For
+yield estimation to be accurate, it must consider ripeness. Simply counting visible fruits
+is insufficient; growers must distinguish between immediate, harvest-ready yield (ripe
+fruit) and potential future yield (unripe and semi-ripe fruit) to make informed management
+decisions. However, accurately classifying these ripeness stages under complex conditions,
+often complicated by severe occlusions, shadows, and inconsistent lighting, remains a sig-
+nificant research challenge. In facility agriculture, such as greenhouses, these complications
+are even more severe due to the varying sizes and cluttered, non-uniform distribution
+of strawberries that further hinders reliable detection and classification [19]. Therefore,
+improving the detection accuracy and performance of the base model is a crucial first step.
+This optimization must also ensure the architecture is streamlined with reduced complexity,
+making it suitable for deployment on resource-constrained edge devices. However, this is
+only part of the solution for a comprehensive yield analysis.
+To perform an effective in-field count, this enhanced detection should serve as the
+foundation for a dynamic tracking and counting system capable of operating across video
+sequences to ensure each fruit is counted only once. Dynamic fruit counting in video
+sequences typically involves combining an object detector with an MOT algorithm. MOT
+algorithms leverage information from preceding and succeeding frames to establish object
+correspondence and predict a target’s state, facilitating robust cross-frame association [20].
+Traditional tracking-by-detection methods, such as SORT [21] and DeepSORT [22] utilize
+a Kalman filter for motion prediction and the Hungarian algorithm for data association,
+with DeepSORT adding a re-identification (Re-ID) model. More recently, Bytetrack [23] has
+demonstrated an excellent balance of speed and accuracy by retaining low-confidence de-
+tection boxes to effectively re-associate occluded targets without relying on computationally
+costly appearance features.
+Although MOT research is thorough, it has mainly focused on domains like pedestrian
+tracking, intelligent driving, military aerospace, and security surveillance, where the targets
+are generally large with obvious characteristics [24–26]. The adaptation of these methods
+to agriculture presents unique obstacles related to visual similarities between fruits and
+occlusions. Nevertheless, MOT frameworks have been adapted for various yield estimation
+tasks in agriculture. For example, researchers have integrated YOLO with Kalman filters
+to count apples and camellia flowers [27,28] or combined it with DeepSORT for counting
+peanuts from UAV imagery [29]. However, these use cases mainly focus on crops that ripen
+uniformly. This approach is incompatible with strawberries, which exhibit continuous
+flowering and fruiting patterns, meaning multiple fruit stages can be present at the same
+time. In addition, in practical scenarios involving continuous camera motion relative to the
+strawberry fruit, as is common in greenhouse row-based data collection, counting all fruits
+detected throughout a video can lead to errors. Virtual line-crossing methods, proven in
+areas such as traffic counting, hold significant potential to improve fruit counting accuracy
+by providing a clear trigger for counting each fruit once as its trajectory intersects a defined
+boundary.
+
+Agriculture 2025, 15, 1906
+4 of 28
+Table 1. Comparative analysis of recent studies on strawberry detection and counting.
+Study
+Detector Model
+Tracker
+Main Focus
+Research Gap
+Li et al. [30]
+Improved Faster R-CNN
+N/A (image-based)
+High-accuracy
+detection and counting
+of ripe strawberries
+using a
+two-stage detector
+Not suitable for
+real-time performance
+and focuses only on
+ripe fruits.
+Zhou et al. [31]
+YOLOv5s
+Custom (MultiMap)
+Designed an algorithm
+to handle severe
+occlusion in
+fruit clusters
+Focuses only on
+occlusion and total
+strawberry counts.
+Wang et al. [32]
+DSE-YOLO
+N/A (Detection only)
+Enhanced detection
+using YOLO for
+improved detection of
+multi-stage strawberries
+Focuses only on
+detection, not
+integrated for
+video-based
+strawberry counting.
+Tamrakar et al. [33]
+YOLOv5s-CGhostnet
+N/A (Detection only)
+Developed a
+lightweight detector for
+the strawberry ripeness
+level and counting
+Lacks tracking and
+validation. The detector
+was not integrated into
+the end-to-end pipeline.
+Despite the aforementioned advances, a detailed literature review reveals that most
+methods either focus on the optimization of the detection model in still images or address
+challenges such as occlusion without presenting a complete framework for counting that
+considers ripeness within video frames. Table 1 presents a comparative analysis of recent
+research works highlighting their main innovations and existing research gaps. As the
+comparison shows, significant gaps persist between high accuracy detection and the devel-
+opment of practical systems for strawberry counting. Studies like Li et al. [30] achieved
+high precision using an improved Faster RCNN, but the computational requirement makes
+it unsuitable for real-time analysis. While several other studies, such as those by Wang et al.
+and Tamrakar et al. [33] utilized the one-stage YOLO algorithm; however, the integration
+within a tracking and counting framework was not implemented, and the validation against
+manual ground truths was not conducted. Advanced tracking-focused works, such as
+those in Zhou et al. [31] concentrated on solving occlusion for total fruit count and did not
+consider the different ripeness levels critical for commercial harvesting decisions.
+In response to these challenges, this study proposes an integrated, end-to-end frame-
+work specifically for strawberry ripeness classification and greenhouse in-field counting,
+which is built upon three key contributions. First, we present an optimized YOLOv8s
+detector that integrates a lightweight C3x module, an additional detection head tailored
+to improve strawberry detection due to their small size, and the Wise-IoU (WIoU) loss
+function to improve both efficiency and robustness against occlusion. Second, we detail the
+integration of the improved detector with the ByteTrack algorithm by implementing modi-
+fications to its Kalman filter, which enables accurate distinction between ripeness stages,
+a vital requirement for actionable yield data. Third, we incorporate these components
+into a robust counting methodology using a virtual line-crossing method with a precisely
+defined ROI to improve counting accuracy as the camera moves along the greenhouse
+cultivation rows. Finally, the performance of this complete framework is validated using a
+comprehensive custom dataset from a greenhouse environment. The proposed framework
+aims to provide theoretical support and a practical solution for automated yield estimation,
+facilitating timely and informed decision-making for strawberry growers.
+
+Agriculture 2025, 15, 1906
+5 of 28
+2. Materials and Methods
+2.1. Methodology
+The methodology for this study uses a structured multi-stage framework to achieve
+improved strawberry ripeness classification for greenhouse-based fruit counting applica-
+tions. The first step involved the collection of two datasets: an image dataset for training
+and testing strawberry detection models, and a video dataset for developing the counting
+algorithm. We developed an improved YOLOv8s specifically for strawberry detection
+and classification tasks. After achieving good performance compared to other algorithms,
+we incorporated the improved model as the main detector within an automated counting
+system. This system processes video streams and uses the ByteTrack MOT algorithm to
+accurately identify, track, and count individual strawberries according to the ripeness class
+across frames. We validated the counting performance through regression analysis. The
+complete methodology flowchart is shown in Figure 1.
+Figure 1. Flowchart of the study.
+2.2. Strawberry Dataset
+This study utilized a custom strawberry dataset collected from a greenhouse facility
+managed by the Smart Space Sensing Laboratory (SSSL), Gyeongsang National University,
+located in Jinju, Gyeongsangnam-do (South Gyeongsang Province), South Korea, at latitude
+35.09◦N and longitude 128.05◦E. The dataset included images and videos of three popular
+Korean strawberry cultivars: Seolhyang, Keumsil, and Honghee. All these varieties belong to
+the hybrid species Fragaria × ananassa. These cultivars were grown on five raised cultivation
+beds from September to February for three consecutive growing seasons: 2022/2023,
+2023/2024, and 2024/2025. Data acquisition was conducted during the principal harvesting
+periods, December and February of each season, to account for the phenotypic variability
+associated with strawberry maturity.
+RGB images and videos of strawberries were captured using two devices: the Sony
+Cyber-shot DSC-RX100 VII (specifications provided in Table 2) for still images, and a high-
+resolution mobile camera (Apple iPhone 13 Pro Max) for video acquisition. To maintain
+consistency and reproducibility during the collection process, the devices were mounted
+on a mobile platform at a height of 0.8 m, capturing fruits with distances ranging from
+30 to 80 cm. It was collected under varying natural lighting conditions and at different
+periods during the day: morning (around 9 a.m.), afternoon (around noon), and evening
+(around 5 p.m.), as depicted in Figure 2. This temporal and lighting variability was
+intentionally introduced to enhance the generalizability and robustness of the deep learning
+model, as model performance typically improves with diversity of training data.
+
+Agriculture 2025, 15, 1906
+6 of 28
+Table 2. Specification of Sony Cyber-shot DSC-RX100 VII.
+Specifications
+Details
+Manufacturer and model
+Sony Cyber-shot DSC-RX100 VII
+Image sensor
+1.0-type stacked (13.2 mm × 8.8 mm) CMOS
+Effective resolution
+Approximately 20.1 megapixels
+Color stream format
+RGB8
+White balance and exposure
+Automatic
+Figure 2. Examples of strawberry images captured under varying natural lighting conditions and at
+different times of the day.
+The ripeness level of the strawberry images was divided into three distinct categories:
+Category I (unripe), Category II (semi-ripe), and Category III (ripe). The classification was
+based on the amount of surface redness and used a protocol similar to that of our previ-
+ous study [34]. The ripeness levels are summarized in Table 3. Additionally, the dataset
+included strawberries from all three ripeness levels (Category I, II, III) with varying sizes
+taken in naturally complex greenhouse conditions, as illustrated in Figure 3. These condi-
+tions included dense clusters of fruits, as well as partial occlusion by leaves, overlapping
+fruits, and slight changes in camera angles and fruit orientation. Capturing the different,
+challenging instances was essential for improving the model’s robustness and preventing
+overfitting. This approach enabled the detection system to learn under conditions that
+closely resemble real-world agricultural environments.
+Table 3. Classification of strawberry ripeness levels based on external appearance.
+S/No.
+Category
+Appearance
+1
+I
+Predominantly greenish/whitish
+2
+II
+Approximately 75% or less of the surface is red
+3
+III
+Fully red surface
+Figure 3. Sample of strawberries under varied field conditions: (a) Category III with clear visibility;
+(b) Category II under soft occlusion; (c) Dense fruit cluster with mixed categories; (d) Partial leaf
+occlusion affecting two categories; (e) Category I with strong visibility; (f) Category II under moderate
+blur; (g) Side-angled Category II; (h) Overlapping Category I and III.
+
+Agriculture 2025, 15, 1906
+7 of 28
+2.3. Dataset Construction and Preprocessing
+A total of 2190 strawberry images and 37 videos were collected from the greenhouse
+environment. The image dataset for training and evaluating the detection model was
+processed first. The Label studio (version 1.16.0) annotation software was used to manually
+label all 2190 images, with bounding boxes drawn around each strawberry according to
+the ripeness categories (see Figure 4 for interface details). The dataset had 13,228 annotated
+instances, with an average of approximately 6 fruits per image. The distribution included
+Category I, II, and III, which had 6133, 1675, and 5420 instances, respectively.
+Figure 4. Label studio software used for annotation: (a) Labeling window; (b) Current selection
+details; (c) List of classes annotated; (d) Total class list.
+For the subsequent task of validating the counting algorithm, we selected a subset of
+20 videos from the 37 initially collected. The selection criteria prioritized videos exhibiting
+more stable camera motion to ensure a reliable basis for ground-truth. For this validation
+set, the ground truth was established by two independent operators manually counting
+all strawberry fruits of each ripeness level in every row after data collection. While minor
+discrepancies seldom occurred in highly occluded scenes or under low-light conditions,
+the inter-operator error margin was minimal at an average of approximately 2 fruits per
+video, indicating the reliability of the manual counts for validation purposes.
+To improve the diversity of the training dataset, three augmentation techniques,
+namely rotation, Gaussian blur, and random brightness and contrast, were used. Rotation
+involved small-angle shifts to simulate natural variation in fruit orientation. Gaussian blur
+was introduced using a low-kernel filter to mimic motion or focus imperfections. Random
+brightness and contrast adjustments were then applied to make the model more robust to
+the diverse lighting conditions encountered in the field, such as variations due to time of
+day, cloud cover, and shadows from foliage.
+The final dataset contained 4250 images, and the annotations were exported in the
+YOLO format, with each file containing bounding box information that details the class
+label and normalized coordinates. This dataset was partitioned into training, validation,
+and testing sets with a ratio of 8:1:1 for model development and evaluation. The complete
+data and preprocessing workflow is shown in Figure 5.
+2.4. YOLOv8 Architecture
+The YOLOv8 model, developed by Ultralytics in 2023, marks a significant evolution in
+the You Only Look Once (YOLO) family of real-time object detection models. It has become
+increasingly popular in the domain of agricultural computer vision applications [35–37].
+The YOLOv8 enhances the capabilities of earlier versions by combining object detection,
+
+Agriculture 2025, 15, 1906
+8 of 28
+classification, and segmentation into a single unified framework optimized for real-time
+performance. Unlike earlier models that relied on anchor boxes, YOLOv8 adopts an anchor-
+free detection approach, making predictions directly at the center of objects. This eliminates
+manual anchor tuning and accelerates Non-Maximum Suppression (NMS), which improves
+accuracy, particularly for small object detection. It also uses mosaic augmentation that
+composites four training images into synthetic mosaics to improve model robustness to
+occlusion and variations in scale. Together, these features improve YOLOv8’s precision,
+speed, and flexibility, allowing for high-performance inference even on devices with limited
+resources [38].
+Figure 5. Data collection and preprocessing workflow.
+The YOLOv8 architecture, shown in Figure 6, has four main components: input,
+backbone, neck, and head. The input module manages image normalization and pre-
+processing. The backbone, based on the CSPDarknet structure [39], includes three key
+modules: the Conv, C2f, and SPPF (Spatial Pyramid Pooling Fast) layers. The Conv blocks
+extract essential features and utilize the SiLU activation function and batch normalization
+to normalize feature representations. The C2f module improves feature representation
+through cross-layer fusion. The SPPF layer gathers multi-scale spatial features, thereby
+enhancing robustness in detecting objects of different sizes. These features are passed to
+the neck, which employs a PANet-FPN architecture for multi-scale feature fusion [40]. The
+neck contains the Upsample, Concat, and C2f modules. The Upsample layer increases
+low-resolution feature maps to match high-resolution ones. In contrast, the Concat layer
+combines features from various levels, enabling the model to detect large, medium, and
+small objects simultaneously. The C2f module further integrates multi-scale information to
+ensure feature maps carry rich contextual data, ultimately increasing detection performance.
+The head has a decoupled structure that separates classification and bounding box regres-
+sion tasks into parallel branches. This design resolves the inherent conflict between the
+‘what’ (classification) and ‘where (regression) objectives, resulting in improved convergence
+and higher accuracy. It comprises a series of C2f and convolutional layers that process the
+multi-scale feature maps produced by the neck. These processed features are then sent to
+the final Detect layer, which generates prediction vectors containing class probabilities and
+bounding box coordinates for all potential objects.
+While computer vision algorithms like YOLO are foundational for agricultural automa-
+tion, from robotic harvesting to yield estimation, their generalization capabilities, though
+well-established on general-purpose datasets like COCO [41], have not been extensively
+verified on specialized agricultural datasets for tasks such as strawberry detection. This
+limitation arises from the unstructured nature associated with the strawberry growing
+environment, characterized by highly variable lighting conditions, severe occlusion from
+
+Agriculture 2025, 15, 1906
+9 of 28
+leaves and stems, and morphological variations among fruit cultivars. This study focuses
+on improving YOLOv8 for real-time in-field strawberry detection and counting. There-
+fore, it is essential to select a model variant that strikes an optimal balance between high
+detection accuracy and low inference time. This is essential for potential deployment in
+resource-constrained environments such as greenhouses.
+ 
+Figure 6. YOLOv8 network architecture. The image illustrates the four main sections (input, backbone,
+neck, and head).
+The YOLOv8 model comes in five variants: nano (YOLOv8n), small (YOLOv8s),
+medium (YOLOv8m), large (YOLOv8l), and extra-large (YOLOv8x). These variants differ
+in model depth, width, and maximum number of channels, which collectively affect de-
+tection accuracy, inference speed, and model size. YOLOv8s represents a well-balanced
+compromise between speed and performance, as reported in similar recent research stud-
+ies [42,43]. Therefore, the YOLOv8s model was chosen as the baseline for this study.
+2.5. Improved YOLOv8 Architecture
+2.5.1. Module and Head
+The small size of strawberries, their visual similarities, and complex growing envi-
+ronment, which includes overlaps and occlusions, necessitate target optimization of the
+original YOLOv8 framework for this application. Since the classification task in this study
+involves only three classes: Category I (unripe), Category II (semi-ripe), and Category III
+(ripe). The standard YOLOv8 framework, which is optimized for the diverse and multi-
+class COCO dataset, has a higher complexity than required for the targeted three-class
+detection task. Our primary modifications, therefore, target the C2f modules within the
+model’s backbone and the detection head, which are major contributors to the model’s
+parameter count and detection accuracy.
+As a result, we made two adjustments. Firstly, we replaced the standard C2f modules,
+shown in Figure 7a, with the more computationally efficient C3x modules, shown in
+
+Agriculture 2025, 15, 1906
+10 of 28
+Figure 7b. Its key features include: (i) it is based on the proven C3 module from YOLOv5
+but incorporates a more efficient cross-convolution mechanism. (ii) The module splits the
+input feature map into two parallel branches. The channel count is halved in each branch
+using a Conv operation before the resulting feature maps are concatenated, effectively
+merging information. (iii) The core innovation lies in its bottleneck design, which employs
+sequential 1 × 3 and 3 × 1 convolutional layers. This asymmetric structure significantly
+reduces the parameter count and computational load compared to the standard square
+kernels used in C2f, while still effectively capturing spatial features and merging channel
+information. A comparison between the two modules on our strawberry dataset is shown
+in Table 4.
+ 
+Figure 7. Module architecture (a) C2f module; (b) C3x module.
+Table 4. Comparison between the two modules (C2f and C3x).
+Module
+Parameter Size
+Kernel Size
+C2f
+11126745
+[3 3] [3 3]
+C3x
+8607705
+[3 1] [1 3]
+Secondly, for enhancing detection accuracy, particularly for the small fruit characteris-
+tic of ripeness Category I (unripe) and II (semi-ripe), a second modification was made. The
+standard YOLOv8 architecture can struggle with such targets due to the loss of fine-grained
+spatial information during successive down-sampling. To solve this, the detection head
+was enhanced by introducing an additional small target detection layer. This new layer is
+specifically designed to operate on a higher-resolution feature map (160 × 160) provided by
+the neck network. By processing features at this finer scale, the model effectively retains the
+detailed spatial information necessary for localizing small objects that are often indistinct
+or lost in the standard, lower-resolution detection heads, thereby significantly improving
+performance on the most challenging targets within the canopy. The improved model
+architecture is presented in Figure 8.
+2.5.2. Loss Function
+The intersection-over-union (IoU) loss function is an essential criterion for assessing
+the performance of object detection models [44]. IoU compares the predicted labels with
+the ground truth labels. It plays a vital role in determining both negative and positive
+labels, as well as measuring the proximity between predicted and true labels. In Figure 9,
+
+Agriculture 2025, 15, 1906
+11 of 28
+the blue rectangle represents the ground truth box, and the yellow rectangle represents the
+anchor box.
+ 
+Figure 8. Improved YOLOv8 architecture, including C3x module and detection head.
+Figure 9. Schematic diagram of the anchor box and ground truth box.
+In YOLOv8, the complete intersection-over-union (CIoU) loss function (Equation
+(4)) [45] is employed, which considers the overlapping area, center point, and aspect ratio
+of the bounding box regression. Equations (1)–(3) are used to determine the Complete
+IoU regularization term (RCIOU), aspect ratio weighting coefficient (α), and aspect ratio
+consistency term (υ).
+RCIOU = ρ2 b, bgt
+c2
++ αv
+(1)
+α =
+v
+(1 −IoU) + v
+(2)
+
+Agriculture 2025, 15, 1906
+12 of 28
+v = 4
+π2 −((arctan wgt
+hgt ) −arctanw
+h )
+2
+(3)
+LCIoU = 1 −LIoU + RCIOU
+(4)
+where b and bgt represent the centroids of the predicted anchor box and the ground truth
+box, respectively; ρ(b,bgt) refers to the Euclidean distance between these centroids. c denotes
+the diagonal length of the smallest bounding box that contains both the anchor and ground
+truth boxes. α is a balancing coefficient, and v quantifies the consistency between the aspect
+ratios of the two boxes. wgt and hgt indicate the width and height of the ground truth box,
+while w and h correspond to the width and height of the predicted anchor box.
+While the CIoU loss function improves upon standard IoU by incorporating overlap
+area, centroid distance, and aspect ratio, CIoU still has inherent limitations. In challeng-
+ing detection scenarios such as our strawberry dataset involving small, low-quality, or
+poorly positioned objects, CIoU tends to harshly penalize low-quality anchor boxes due
+to its sensitivity to spatial resolution and object aspect ratio. This can result in degraded
+generalization performance, unstable gradients during training, slower convergence, and
+suboptimal localization.
+To address these shortcomings and accelerate convergence, this study adopts the Wise
+IoU (WIoU) loss function as proposed by Tong et al. [46]. Unlike CIoU, WIoU introduces
+the concept of “outlier degree” to dynamically assess anchor quality, enabling a balanced
+gradient distribution. By reducing the influence of low-quality samples while focusing on
+informative high-quality anchors, WIoU enhances the model’s robustness and localization
+precision. This dynamic non-monotonic adjustment helps the network better differentiate
+between difficult, complex, and easy samples, making WIoU a more suitable loss function
+for complex, small-object detection tasks like strawberry detection. There are three versions
+of the WIoU loss function: WIoU v1 (Equation (5)), v2, and v3 (Equation (8)). We have
+selected WIoU v3, which was constructed from WIoU v1 (See Equations (5)–(10)). It extends
+the capabilities of WIoU v1 by introducing a non-monotonic focusing factor r (Equation (9)).
+This dynamically optimizes the weights in the loss function, reduces harmful gradients
+from low-quality samples, and allows for hyperparameters α to be tuned to suit different
+models. This dynamically optimizes the weights in the loss function, reduces harmful
+gradients from low-quality samples, and allows for hyperparameters α to be tuned to suit
+different models.
+LWIoUv1 = RWIoULIoU
+(5)
+RWIoU = exp((x −xgt)2 + (y −ygt)2
+(W2g + H2g)
+)
+(6)
+LIoU = 1 −IoU
+(7)
+LWIoUv3 = rLWIoUv1
+(8)
+r =
+β
+δαβ−α
+(9)
+β = L∗IoU
+LIoU
+∈[0, +∞)
+(10)
+where Wg and Hg represent the width and height of the smallest outer rectangle of the
+anchor box and the ground truth box, (x, y), and
+ xgt, ygt
+
+denote the center coordinates
+of the anchor box and the ground truth box, respectively. L∗
+IoU is the monotonic focusing
+factor, while β is the outlier degree of the anchor box.
+
+Agriculture 2025, 15, 1906
+13 of 28
+2.6. ByteTrack Algorithm
+The transition from single-image detection to dynamic, in-field yield estimation
+through fruit counting was achieved by developing a counting system based on an
+MOT framework. The core of this system integrates our previously described, improved
+YOLOv8s model with the ByteTrack algorithm, as shown in Figure 10 [47].
+Figure 10. ByteTrack algorithm.
+To address the significant challenges in tracking dense, small objects like strawberries
+within a greenhouse, such as frequent occlusions by leaves, overlapping fruits, and potential
+ID-switching because of camera motion, we selected ByteTrack. Unlike traditional MOT
+methods that often discard detection boxes with low confidence scores, ByteTrack employs
+an innovative data association strategy called BYTE. The core principle of BYTE is to
+retain nearly all detection boxes, separating them into two categories: high-confidence and
+low-confidence. The tracking process happens in two stages:
+(i) high-confidence detections are first matched with existing tracklets using a Kalman
+filter to predict their new locations. (ii) low-confidence detections are then used to match
+with the remaining unmatched tracklets. This step is key for recovering objects that are
+temporarily occluded, as their detection confidence may briefly drop.
+To tailor this framework specifically for strawberry ripeness counting, we introduced
+a critical enhancement for multi-class state estimation. To maintain distinct counts for each
+ripeness category, we integrated class information directly into the tracking state. The
+standard Kalman filter state vector was augmented to include a class variable, class, as
+shown below:
+x =
+
+u, v, s, r,
+.u,
+.v,
+.s, class
+T
+(11)
+where (u, v) denotes the center coordinates of the bounding box, s is the aspect ratio, r is
+the height, and (
+.u,
+.v,
+.s) are their respective velocities.
+By including the class variable, the matching process between predicted and detected
+objects is performed on a per-class basis, preventing a Category III (ripe) strawberry from
+being mismatched with a Category I (unripe) one.
+Finally, to convert the continuous tracking data into a discrete count, a virtual line
+counting methodology was used, anchored by a precisely defined Region of Interest (ROI)
+within the 1920 × 1080-pixel video frame (Figure 11). This ROI was configured as a
+vertically oriented counting zone, at 500 × 1080 pixels, and was horizontally centered.
+The primary trigger for counting was the entry of a tracked strawberry’s bounding box
+centroid into this ROI. To ensure each fruit was counted only once, the system performed
+
+Agriculture 2025, 15, 1906
+14 of 28
+a uniqueness check upon entry of the ROI. The track-ID of the entering fruit was cross-
+referenced against a registration set of all previously counted IDs. If the ID was new, it was
+added to the set, and the count for its specific ripeness class was incremented. If the ID was
+already registered, it was ignored, thereby preventing recounting due to occlusion or erratic
+movement. This robust method guarantees high-fidelity enumeration by transforming
+continuous tracking data into a reliable, discrete count.
+Figure 11. The virtual ROI for strawberry counting.
+2.7. Experimental Platform and Related Settings
+The test platform (hardware and software) for training and evaluating the deep
+learning models is presented in Table 5.
+Table 5. Experimental testing platform.
+Hardware/Software
+Environment
+Parameter
+Version
+CPU
+Intel(R) Core(TM) i7-10700
+Frequency: 2.90 GHz
+GPU
+NVIDIA GeForce RTX 2060
+Video Memory: 6 GB
+Computer system
+Windows 10 Pro
+RAM: 16 GB
+Deep learning framework
+Pytorch
+2.4.1
+Computer platform
+CUDA
+12.1
+Programming language
+Python
+3.8.2
+2.8. Evaluation Metrics
+2.8.1. Object Detection Model
+This study utilizes precision, recall, F1 score, and mean average precision at
+0.5 intersection over union (mAP@0.5) to quantitatively assess the performance of the
+proposed strawberry detection and classification models. The evaluation process is predi-
+cated on the Intersection Over Union (IoU), which measures the geometric overlap between
+a model’s predicted bounding box and the ground truth. For this study, a detection was
+considered a True Positive (TP) if the IOU was 0.5 or greater and the predicted class label
+was correct. The evaluated metrics were calculated as:
+Precision (P), also known as positive predictive value, measures the accuracy of the
+model’s optimistic predictions. It is defined as the ratio of correctly identified strawberries
+
+Agriculture 2025, 15, 1906
+15 of 28
+(TP) to the total number of predicted instances (both true positives and false positives, FP).
+A high precision indicates a low false positive rate.
+P =
+TP
+TP + FP
+(12)
+Recall (R), also known as sensitivity, measures the model’s ability to identify all actual
+strawberries present in the images. It is the ratio of correctly identified strawberries (TP)
+to the total number of actual ground-truth instances (the sum of true positives and false
+negatives, FN). A high recall indicates a low false negative rate.
+R =
+TP
+TP + FN
+(13)
+F1-Score is used to provide a single, balanced measure of a model’s performance. It
+is calculated as the harmonic mean of Precision and Recall, which is more robust than a
+simple average, especially in cases of class imbalance.
+F1 score = 2 × P × R
+P + R
+(14)
+Average Precision (AP) and mean Average Precision (mAP): To evaluate performance
+across different confidence thresholds, the Precision-Recall (PR) curve is generated for each
+class. The AP for a single class is the area under its PR curve, providing a clear summary of
+the model’s performance for that class. The primary evaluation metric for this study is the
+mAP, which is the mean of the AP values calculated across all ripeness categories (n = 3 in
+our case). We report mAP@0.5, which indicates that the mAP is computed using the IoU
+threshold of 0.5.
+AP =
+Z 1
+0 P(R) dR
+(15)
+mAP@0.5 = 1
+N
+N
+∑
+i=1
+AP@0.5
+i
+(16)
+where P(R) is the precision-recall curve, N is the total number of classes, and AP@0.5
+i
+is the
+average precision for class i computed with an IoU threshold of 0.5.
+2.8.2. Counting Algorithm
+The accuracy of the automated counting algorithm was validated against manual
+ground-truth counts collected in the greenhouse. A linear regression analysis was used to
+evaluate the relationship between the algorithm’s predicted counts and the actual counts.
+As part of the evaluation, the coefficient of determination (R2) was calculated to measure
+the goodness of fit between the predicted and actual values, indicating how effectively the
+model explains the observed variation in the data.
+In addition to R2, three standard error metrics were employed to quantify the magni-
+tude of the counting errors: Root Mean Square Error (RMSE), Mean Absolute Error (MAE),
+and Mean Absolute Percentage Error (MAPE). These metrics offer insights into prediction
+accuracy by capturing both absolute and relative error magnitudes. The equations used are
+as follows:
+R2 = 1 −∑n
+i = 1(yi −ˆyi)2
+∑n
+i = 1(yi −y )2
+(17)
+RMSE =
+s
+1
+n
+n
+∑
+i=1
+(ˆyi −yi)2
+(18)
+
+Agriculture 2025, 15, 1906
+16 of 28
+MAE = 1
+n∑
+n
+i=1 |ˆyi −yi
+
+(19)
+MAPE = 100
+n ∑
+n
+i=1
+
+ˆyi −yi
+yi
+
+(20)
+where ˆyi is the predicted count, yi denotes the ground-truth count, y is the mean of the
+ground-truth counts, and n is the total number of samples.
+3. Results and Discussion
+3.1. Comparative Performance of Detection Models
+The evaluation of our improved YOLOv8s model (C3x module + Head + WIoU)
+was performed through a comprehensive benchmark against other mainstream YOLO
+algorithms, including YOLOv3-tiny, YOLOv5s-p6, YOLOv6s, YOLOv8n, YOLOv8s, and
+YOLOv8m. Before presenting the comparative benchmarks, we visualized the standalone
+performance of our improved model. As illustrated in Figure 12, the model effectively
+detects and classifies strawberries across all three ripeness stages, under the inherent
+complexities of the greenhouse environment. For example, the model successfully identifies
+multiple, overlapping Category III (ripe) fruits within dense clusters in Figure 12c,f. In
+Figure 12a,b,d and e, it correctly distinguishes between adjacent and clustered Category
+I (unripe), Category II (semi-ripe), and Category III (ripe) strawberries. It also maintains
+high accuracy on small, unripe fruits that are partially occluded by foliage in Figure 12d,
+highlighting the effectiveness of the architectural improvements.
+Figure 12. Visualization of the proposed model’s detection performance under diverse and challeng-
+ing in-field conditions. The sub-panels (a–f) illustrate successful localization and classification across
+all three ripeness stages, including limitations marked in red circles.
+However, despite this high overall performance, the complex canopy environment still
+leads to some detection errors. For instance, in Figure 12d, the model correctly identifies a
+small unripe strawberry but misses another tiny, unripe fruit (marked by the red circle),
+highly occluded by a leaf, an example of a false negative caused by severe occlusion.
+Furthermore, another observable limitation appeared with strawberries positioned at the
+image edge. As shown by the red circle in Figure 12b, a ripe strawberry at the far-left
+edge of the frame was detected with a low detection certainty. In addition, the predicted
+bounding box for this instance was poorly localized. This phenomenon is characteristic of
+challenges posed by edge-of-frame objects, since the convolutional filters can only process
+partial information from these targets, resulting in weaker feature representation.
+A detailed quantitative analysis, with results compiled in Table 6, confirms the supe-
+riority of our proposed model. The primary indicator of overall model performance,
+
+Agriculture 2025, 15, 1906
+17 of 28
+mAP@0.5, was 92.5%.
+This represents a consistent improvement over YOLOv3-tiny,
+YOLOv5-p6, YOLOv6s, YOLOv8n and YOLOv8s with performance gains of 2.4%, 1.5%,
+2.0%, 2.0% and 0.4%, respectively. The larger YOLOv8m achieved the highest detection
+accuracy of 92.6% mAP, a marginal 0.1% improvement. However, as will be explained
+in Section 3.4, this minor gain in performance comes at a significant computational cost,
+making it less suitable for our target application. Our model achieved a recall of 89.6%, a
+substantial increase of 3.4% over the baseline YOLOv8s and other models. This significant
+increase in recall shows an improved ability to identify all true strawberries in a frame. It
+reduces the missed detections. This balance between precision and recall is captured by the
+F1-score, which depicts a more comprehensive measure of a model’s performance. Our
+model achieved the highest F1-score of 88.3%, outperforming the baseline YOLOv8s of
+86.5% and demonstrating a more reliable and well-rounded detection ability.
+Table 6. Comparative summary of the results of the different algorithms.
+Algorithm
+P (%)
+R (%)
+F1 Score
+mAP@50 (%)
+YOLOv3 tiny
+84.4
+86.2
+85.3
+90.1
+YOLOv5s-p6
+84.6
+86.9
+85.7
+91.0
+YOLOv6s
+85.0
+87.2
+86.1
+90.5
+YOLOv8n
+81.7
+88.7
+85.1
+90.5
+YOLOv8s
+86.7
+86.2
+86.5
+92.1
+YOLOv8m
+86.4
+89.3
+87.8
+92.6
+Ours
+87.0
+89.6
+88.3
+92.5
+To better interpret these metrics, a visual comparison of our model against YOLOv3-
+tiny, YOLOv5-p6, YOLOv6s, and YOLOv8s is presented in Figure 13. This assessment
+serves to corroborate the quantitative data. Our improved model showed strong detection
+capabilities with high accuracy across all three ripeness categories. Meanwhile, other
+models showed notable limitations. As shown by the red for missed detections and
+yellow circles for misclassifications, YOLOv3-tiny and YOLOv5-p6 were particularly prone
+to false negatives and misclassifications. This directly relates to their lower recall and
+precision scores. While the performance of the baseline YOLOv8s and YOLOv6s performed
+well, both showed a significant drop in performance when detecting partially occluded
+strawberries. This visual analysis confirms that the improvements made to our model
+provide benefits in the most difficult detection scenarios, validating the practical impact of
+our optimization strategy.
+3.2. Analysis of Per-Class Detection Accuracy
+The primary objective of the detection and classification algorithm is to identify the
+location and class of strawberries for in-field counting. While a high overall mAP is essential.
+A more detailed, per-class evaluation is crucial to understand the model’s strengths and
+limitations and to diagnose potential sources of error in the counting pipeline. Therefore,
+the performance of our improved YOLOv8s model was evaluated for each of the three
+ripeness classes. The per-class precision, recall, and AP@0.5, detailed in Table 7, revealed
+a nuanced performance profile that is directly linked to the visual characteristics of each
+growth stage.
+Table 7. Class-wise performance of our improved model.
+Ripeness Category
+P (%)
+R (%)
+AP@0.5 (%)
+Category I (unripe)
+84.2
+90.7
+93.0
+Category II (semi-ripe)
+79.1
+82.6
+86.3
+Category III (ripe)
+93.4
+95.6
+98.0
+Overall (mAP@0.5)
+87.0
+89.6
+92.5
+
+Agriculture 2025, 15, 1906
+18 of 28
+ 
+Figure 13. Qualitative comparison of detection results from different models on challenging green-
+house images. Test images represent common scenarios: (a) Dense clustering; (b) occlusions, and
+(c) Low light. Detection errors are explicitly marked: red circles indicate missed detections (false
+negatives), while yellow circles highlight misclassifications, and green circles denote instances where
+our demonstrated superior performance on occluded strawberries.
+The model demonstrated excellent ability in identifying Category (III) ripe strawber-
+ries, achieving the highest AP of 98.0%. This result is likely due to the highly distinct
+and consistent visual features of this class. Ripe strawberries typically exhibit a uniform,
+deep-red coloration and a distinct shape that creates a strong chromatic and morphological
+contrast against the green foliage and black plastic mulch of the greenhouse background.
+This high degree of feature separation enables the model’s convolutional layers to learn a
+robust and unambiguous representation, resulting in very few false positives or negatives.
+From a practical view, this high accuracy is critically important, as the correct identification
+of ripe fruit is the most valuable output for guiding immediate harvesting decisions and
+estimating market-ready yield.
+The performance on Category I (unripe) fruits was also highly robust, with an AP of
+93.0%. This indicates the model’s strong effectiveness in distinguishing small green and
+white strawberries from the surrounding plant canopy. This task is non-trivial, as it in-
+volves overcoming the classic “green-on-green” detection problem common in agricultural
+computer vision [48,49]. In this case, the model likely learned to rely less on color contrast
+and more on morphological and textural cues, such as the characteristic shape and the
+pattern of achenes, for the downstream task of in-field fruit counting.
+The most significant analytical result comes from the performance on Category II
+(semi-ripe), which was identified as the most challenging class for detection, with a lower
+AP of 86.3%. While this is still a strong result, the performance drop relative to the other
+
+Agriculture 2025, 15, 1906
+19 of 28
+classes is noteworthy. This difficulty is attributable to two primary factors. The first is
+the inherent visual ambiguity of this transitional stage. Category II (semi-ripe) fruits
+lack a consistent look; they present a mottled appearance with a variable mixture of red,
+white, and green patches. This inconsistency makes it hard for the model to learn a single,
+coherent feature representation, leading to a higher chance of misclassification as either
+ripe or unripe. The second factor is the class imbalance within the training dataset. With
+significantly fewer annotated instances compared to the other two classes, the model had
+less data from which to learn the full range of variations within this category. This situation
+makes it more prone to error. This finding is consistent with the broader literature, where
+studies such as [17,32,33] have also reported similar results.
+3.3. Ablation Study of Model Improvements
+An ablation study was conducted to systematically isolate and measure the individual
+contributions of our three primary modifications: the replacement of the C2f module with
+the lightweight C3x module, the additional detection head, and the adoption of the WIoU
+loss function over the standard CIoU. To ensure a fair comparison, all model configurations
+were trained and evaluated under identical conditions using our custom dataset. The
+detailed outcomes of these empirical analyses are presented in Table 8.
+Table 8. Results of the ablation study.
+Model
+C3x Module
+Head
+WIoU
+AP (%)
+mAP@50 (%)
+Parameters (M)
+I
+II
+III
+Baseline
+YOLOv8s (A)
+×
+×
+×
+92.5
+86.1
+97.9
+92.1
+11.1
+B
+√
+×
+×
+92.1
+85.3
+96.7
+91.4
+8.6
+C
+√
+√
+×
+92.5
+86.6
+97.8
+92.3
+8.05
+D
+√
+√
+√
+93.0
+86.3
+98.0
+92.5
+8.0
+The YOLOv8s model (Model A) served as the baseline, achieving a mAP@0.5 of 92.1%
+and a considerable parameter count of 11.1 million (M). The first modification involved
+integrating the lightweight C3x module in place of the standard backbone (Model B). This
+change produced a significant and immediate benefit in terms of computational efficiency.
+The parameter count was reduced by 22.5% to 8.6 M. Meanwhile, this improvement in
+efficiency was followed by a slight reduction in overall performance, with the mAP@0.5
+decreasing by 0.7% to 91.4%. A closer examination of the per-class results reveals that this
+performance drop was consistent across all ripeness categories. This initial result confirms
+that while the C3x module is highly effective at reducing model complexity, its more
+generalized feature extraction capabilities come at a minor cost to specialized detection
+accuracy when implemented in isolation.
+The next stage of the study introduced the additional detection head combined with
+the C3x module (Model C). This combination proved to be highly synergistic and was
+critical to the success of our model. Comparing Model C to Model B, the mAP@0.5
+increased from 91.4% to 92.3%, not only recovering the performance lost from the backbone
+modification but surpassing the original baseline by 0.2%, all while further reducing the
+model’s parameter count to 8.05 M. The per-class metrics provide a clear explanation for
+this improvement. The AP for the most challenging Category II (semi-ripe) strawberries
+rose significantly from 85.3% to 86.6%. This demonstrates that the new head, specifically
+designed to process higher-resolution features for small and ambiguous targets, effectively
+compensated for the architectural simplification of the backbone. It provided the specialized
+
+Agriculture 2025, 15, 1906
+20 of 28
+capability needed to accurately detect small objects, compensating for any trade-offs in
+feature representation.
+Our optimization strategy is represented by our final proposed model (Model D),
+which incorporates all three modifications. The final step involved replacing the standard
+loss function with WIoU. Comparing Model D with Model C, the addition of WIoU
+provided the final refinement, elevating the overall mAP@0.5 from 92.3% to its peak value
+of 92.5% and reducing the parameter count to 8 M. This enhancement was primarily driven
+by improved performance on the more visually distinct classes, with the AP for Category
+I (unripe) increasing from 92.5% to 93.0% and for Category III (ripe) increasing from
+97.8% to 98.0%. This suggests that the WIoU loss function’s dynamic weighting strategy
+was particularly effective at improving the model’s localization accuracy for well-defined
+targets, enabling more precise bounding box regression.
+These results validate that both the architectural and loss function improvements con-
+tributed positively to the model’s final balance of high accuracy and computational efficiency.
+3.4. Model Efficiency and Computational Cost
+Beyond detection accuracy, the practical feasibility of deploying deep learning models
+in agricultural environments, especially on mobile or embedded systems, is strongly de-
+pendent on computational efficiency. A model that achieves high accuracy at the cost of
+excessive resource usage may be impractical for field deployment. To assess this trade-off,
+we conducted a comprehensive evaluation of our proposed model against the bench-
+mark detectors, comparing metrics including parameter count, computational complexity
+(GFLOPs), model size, and inference speed. The results, summarized in Table 9, show
+that our model not only achieves high detection performance but also delivers substantial
+efficiency improvements.
+Table 9. Comparative analysis of model efficiency and computational cost.
+Model
+Parameters (M)
+GFLOPS
+Model Size (MB)
+Inference
+Time (ms)
+YOLOv3 tiny
+12.1
+18.9
+23.2
+5.6
+YOLOv5s-p6
+15.3
+24.2
+29.4
+10.6
+YOLOv6s
+16.3
+44.0
+31.3
+11.0
+YOLOv8s
+11.1
+28.4
+21.4
+8.9
+YOLOv8m
+25.8
+78.7
+49.6
+17.2
+YOLOv8n
+3.0
+10.1
+9.94
+6.8
+Ours
+8.0
+27.1
+15.7
+9.7
+The most notable strength of our model lies in its compact architecture. With only
+8.0 M parameters, it is lightweight with 27.9% fewer parameters than YOLOv8s, nearly
+half that of YOLOv5s-p6 and YOLOv6s, and over three times smaller than the YOLOv8m.
+Conversely, while YOLOv8n is smaller (3.0 M parameters), our model achieves a substantial
+2.0% absolute increase in mAP, a necessary trade-off for reliable performance in complex
+scenes. With a model size of only 15.7 MB, our model is suitable for deployment on devices
+with limited storage capacity, such as embedded systems or edge computing platforms.
+In terms of computational complexity, our model runs at 27.1 GFLOPs. This is close
+to YOLOv8s (28.4 GFLOPs) while it is much more efficient than YOLOv6s (44.0 GFLOPs).
+This moderate complexity ensures lower energy consumption and processing load. Despite
+its reduced size and complexity, our model maintains a competitive inference speed of
+9.7 ms per image, equivalent to approximately 103 FPS, which supports real-time video
+processing. While YOLOv3-tiny and YOLOv8n demonstrate faster speeds of 5.6 ms and
+6.8 ms, it is at the expense of accuracy and architectural depth. Our model’s speed also
+
+Agriculture 2025, 15, 1906
+21 of 28
+outpaces YOLOv5s-p6 (10.6 ms) and YOLOv6s (11.0 ms), and is only slightly slower than
+YOLOv8s (8.9 ms), all while maintaining a more compact and efficient design.
+Importantly, these efficiency increments do not come at the cost of performance. Com-
+pared to the benchmark models, our model achieved a high detection accuracy on the
+strawberry dataset (detailed in Section 3.1), demonstrating that our architectural improve-
+ments preserve and enhance detection quality. These results show that our optimization
+strategy has successfully produced a model that achieves an optimal balance of accuracy,
+size, and speed.
+3.5. Counting Algorithm Evaluation
+The practical efficiency of the complete framework, an automated counting system,
+integrating our improved YOLOv8s detector with the ByteTrack algorithm, was evalu-
+ated using the dedicated video dataset comprising 20 distinct streams captured under
+greenhouse conditions (as described in Section 2.3). The system’s automated counts are
+compared against ground-truth counts. An overview of the system’s counting workflow
+is provided in Figure 14, illustrating how unique track-IDs are assigned to individual
+strawberries as they cross the virtual counting line (ROI), with the total counts increasing
+as the frames progress.
+Figure 14. Sample Instances of the strawberry tracking and counting algorithm. The sequences show
+the successful assignment of track-IDs and the incrementing of class-specific counts as fruits pass the
+ROI, validating the core logic of the counting system.
+The overall performance of the counting algorithm is quantitatively assessed using
+linear regression analysis, as shown in Figure 15. The scatter plot, Figure 15a, compares
+the total number of strawberries predicted by the system against the total ground-truth
+count for each video sequence. The analysis reveals a strong positive correlation. The
+system achieved a high coefficient of determination (R2) of 0.914, indicating that 91.4%
+of the variance in the ground-truth counts is predictable from the model’s output. This
+confirms a high degree of system-level consistency and reliability in yield estimation.
+Further statistical evaluation was conducted to measure the absolute deviation be-
+tween predicted and true counts. The system achieved a Mean Absolute Error (MAE)
+of 8.55 fruits, a Root Mean Squared Error (RMSE) of 9.63 fruits, and a Mean Absolute
+
+Agriculture 2025, 15, 1906
+22 of 28
+Percentage Error (MAPE) of 9.52%. These values suggest that the system maintains an
+average prediction error of less than 10%, supporting its robustness for in-field conditions.
+In addition to the aggregate analysis, a more detailed class evaluation was conducted
+on the system’s capabilities for each ripeness class. The individual regression plots for
+each category are presented in Figure 15b–d, with their corresponding metrics summarized
+in Table 10. The system demonstrated its highest performance for Category III (ripe)
+strawberries, achieving an R2 of 0.950 and the lowest MAE of 2.65 fruits. This result
+correlation represents the system’s reliability for the most commercial task of estimating
+harvest-ready yield. Similarly, detection of unripe fruits was robust, with an R2 of 0.910 and
+a MAPE of 9.62%, supporting the system’s suitability for monitoring future yield potential.
+Figure 15. Strawberry fruit count results showing scatter plot of system’s predicted vs. ground truth
+counts for (a) Total; (b) Ripe; (c) Semi-ripe; and (d) Unripe.
+Table 10. Performance metrics for the automated counting system by ripeness category.
+Ripeness Category
+R2
+MAE
+RMSE
+MAPE
+Category III (ripe)
+0.950
+2.65
+3.37
+11.63
+Category II (semi-ripe)
+0.752
+2.70
+3.16
+16.25
+Category I (unripe)
+0.910
+4.20
+5.07
+9.62
+Total (overall)
+0.914
+8.55
+9.63
+9.52
+Conversely, the semi-ripe category exhibited comparatively lower accuracy with an R2
+of 0.752 and the highest MAPE of 16.25%. This drop in performance aligns with detection-
+stage observations and is primarily attributed to the inherent visual ambiguity of this
+transitional ripeness stage. Misclassification errors, where semi-ripe fruits are occasionally
+confused with unripe or ripe ones, propagate into the tracking and counting pipeline,
+impacting class-specific tallies even when the total fruit count remains relatively stable.
+To display the practical variability of the system’s performance, the bar chart in
+Figure 16 provides a video analysis, illustrating the deviation between predicted and
+ground-truth counts for each of the twenty video streams. This visualization highlights
+instances of both slight under-counting (video 19, with an accuracy of 84.5%) and over-
+counting (video 4, with an accuracy of 89.4%). The individual video counting accuracies
+
+Agriculture 2025, 15, 1906
+23 of 28
+ranged from a low of 84.51% to a high of 95.24%. These variations are directly linked to
+the different complexities within each video file, such as the density of fruit clusters, the
+severity of leaf occlusion, and fluctuations in ambient lighting, demonstrating the system’s
+response to real-world challenges. Collectively, the quantitative and qualitative evaluations
+provide a comprehensive validation of our integrated counting system. The high overall
+R2 value confirms its reliability for total yield estimation. At the same time, the detailed
+per-class analysis demonstrates its effectiveness as a tool for successfully identifying and
+classifying different strawberry classes.
+Figure 16. Comparison of predicted and ground-truth counts for each of the 20 videos, with individual
+counting accuracies shown.
+3.6. Comparison with Other Counting Algorithms
+A direct numerical comparison of counting results across different studies is inherently
+challenging due to differences in datasets, camera quality, and environmental conditions;
+however, a thorough discussion of our framework in the context of both the broader
+state-of-the-art research and a controlled internal benchmark is essential for validating
+our methodological choices. This section first positions our work relative to other recent,
+notable strawberry counting systems and then presents an empirical validation of our
+selected tracking component.
+Our approach is best understood in comparison with other similar research work.
+For instance, the study by Li et al. [30] focused on maximizing detection accuracy by
+enhancing the two-stage Faster R-CNN architecture, achieving a high mAP of 87.3% and
+a counting accuracy of 99.1% on ripe fruit. The primary difference lies in our deliberate
+choice of a one-stage YOLOv8s architecture, which was aimed at achieving a superior
+balance between high accuracy and the real-time inference speeds crucial for video-based
+tracking. In the study by Zhou et al. [31], the critical challenge of occlusion was targeted
+by integrating YOLOv5s with a multiple mapping algorithm, achieving a low relative
+counting error of 6.7%. This highlights the importance of occlusion resilience, a problem
+we addressed through enhancing the detector’s intrinsic localization capabilities with the
+WIoU loss function and leveraging ByteTrack’s proven robustness to temporary object
+disappearances.
+To empirically validate our choice of ByteTrack as the tracking algorithm, we con-
+ducted a controlled internal comparison. To achieve this, we tested the performance of
+our complete framework against systems using the same optimized YOLOv8s detector
+but replacing ByteTrack with four other widely used MOT algorithms: SORT, DeepSORT,
+
+Agriculture 2025, 15, 1906
+24 of 28
+Norfair [50], and MOTPY [51]. This methodology ensures that any observed differences in
+counting accuracy are directly attributable to the tracking component itself.
+The comprehensive results of this investigation are shown in Figure 17. The data
+demonstrates the superior performance of our proposed system, which pairs our detector
+with ByteTrack. This configuration achieved the highest coefficient of determination and
+the lowest errors, substantiating its robustness and reliability in the target environment.
+Figure 17. Comparative performance of different MOTs paired with the improved YOLOv8s detector.
+In contrast, the alternative tracking algorithms struggled significantly to adapt to the
+specific challenges of the in-field strawberry environment. The DeepSORT algorithm, while
+powerful for tracking objects with distinct appearances such as pedestrians, proved not
+ideal for strawberries. The core issue lies in its reliance on a Re-ID module for appearance
+matching. The subtle visual similarity between individual fruits, compounded by slight
+changes in appearance due to lighting variations, led to frequent feature-matching errors,
+resulting in numerous misidentifications. This manifested as significant over-counting and
+a consequently lower R2 of 0.842.
+The trackers that rely more heavily on motion prediction, SORT, Norfair, and MOTPY,
+exhibited even greater performance degradation. These algorithms were particularly sus-
+ceptible to tracking failures during occlusions. In the dense strawberry canopy, when a leaf
+temporarily hides a fruit, these methods often failed to re-establish the track upon reappear-
+ance, leading to fragmented trajectories and a high number of undercounts. The irregular,
+non-linear motion of the manually guided data collection platform further compounded
+these issues, as the simple Kalman filter motion predictions were often insufficient to bridge
+the gap during periods of occlusion.
+3.7. Limitations and Future Studies
+While the proposed framework demonstrates strong performance and practical utility,
+several limitations define its current scope and highlight directions for future research.
+Firstly, the dataset, though diverse in lighting conditions and growth stage, was collected
+from a single experimental greenhouse populated with three Korean strawberry cultivars
+(Seolhyang, Keumsil and Hongee). Given that strawberry morphology and environmental
+factors vary across cultivars and cultivation systems (open-field vs. greenhouse), the
+model’s generalizability may be limited without further training and validation on broader
+datasets and different conditions. To address this and enhance the practical value of our
+framework, future work will focus on creating a comprehensive, multi-source dataset
+from different geographical locations and with a wider range of cultivars with distinct
+morphological traits, and varied cultivation systems, including open-field farms.
+
+Agriculture 2025, 15, 1906
+25 of 28
+Secondly, the ripeness classification in this study was based on a three-stage discrete
+scale (unripe, semi-ripe, and ripe), which simplifies the continuous process of fruit matura-
+tion. While this framework offered practicality, this abstraction introduced classification
+challenges, particularly for the visually ambiguous semi-ripe category. This limitation
+suggests that representing a gradual biological process through only three classes reduces
+precision and model robustness. Future research should therefore consider more sophisti-
+cated ripeness evaluation methods, such as adopting a more granular classification scheme
+with additional intermediate stages or developing a maturity evaluation model based on
+continuous features (such as color histograms, spectral indices, or physiological indicators).
+Thirdly, although the current framework provides an accurate count of fruit instances,
+it does not estimate yield in terms of biomass (weight). In practice, fruit size can vary
+considerably, meaning that a direct fruit count serves as an effective but indirect proxy
+for the actual harvestable weight, which is a more critical metric for commercial growers.
+Future work should aim to extend this framework to a comprehensive yield estimation
+system by integrating fruit size estimation to estimate yield in kilograms, this could be
+achieved by leveraging pixel dimensions of predicted bounding boxes and incorporating
+depth-sensing technologies.
+4. Conclusions
+This research presented a comprehensive, end-to-end framework for accurate and effi-
+cient ripeness-aware strawberry counting in complex greenhouse environments. Through
+the optimization of the YOLOv8s detector and integrating it with a robust multi-object
+tracking algorithm, this study successfully addressed key challenges related to small object
+detection, occlusion, and real-time computational performance.
+The developed strawberry detection model, enhanced with a lightweight C3x module,
+an additional detection head, and the WIoU loss function, achieved an mAP@0.5 of 92.5%,
+outperforming the baseline YOLOv8s and other common variants while being 27.9% more
+lightweight. The complete counting system, which combined this optimized detector
+with the ByteTrack algorithm, demonstrated a high correlation with manual ground-truth
+counts, achieving an R2 value of 0.914 and a low MAPE of 9.52%. The comparative
+analysis of trackers validated the selection of ByteTrack, which proved more resilient to the
+frequent, short-term occlusions in dense canopies than appearance-based DeepSORT or
+simpler motion-based SORT and Norfair trackers. Furthermore, the model’s lightweight
+nature (8 M parameters) and model size (15.7 MB) confirms its suitability for real-time
+deployment on resource-constrained hardware, providing a robust foundation for the
+video-based counting pipeline.
+In conclusion, this work successfully presents a practical and effective solution for
+automated yield estimation. The proposed framework strikes a balance between high
+accuracy and computational efficiency, providing a valuable tool for precision agriculture
+that facilitates more timely and informed management decisions.
+Author Contributions: Conceptualization, Methodology, Formal analysis, Writing—Original Draft,
+Investigation, Data curation, Software, O.M.O.; Investigation, Resources, Writing—Review & Editing,
+S.K. and N.T.; Data curation, Validation, J.-H.K. and J.-I.C.; Investigation, Software, S.-M.K. and T.D.A.;
+Resources, Writing—Review & Editing, Supervision, Project administration, Funding acquisition,
+H.T.K. All authors have read and agreed to the published version of the manuscript.
+Funding: This work was funded by Korea Institute of Planning and Evaluation for Technology
+in Food, Agriculture, Forestry and Fisheries (IPET) through Agriculture, Food and Rural Affairs
+Convergence Technologies Program for Educating Creative Global Leader, funded by Ministry of
+Agriculture, Food and Rural Affairs (MAFRA) (717001-7). This work was supported by SMART
+FARM Research Center in Gyeongsang National University (GNU), funded by Sacheon-si.
+
+Agriculture 2025, 15, 1906
+26 of 28
+Data Availability Statement: The datasets generated during and/or analyzed during the current
+study are available from the corresponding author upon reasonable request.
+Acknowledgments: This work was funded by Korea Institute of Planning and Evaluation for
+Technology in Food, Agriculture, Forestry and Fisheries (IPET) through Agriculture, Food and Rural
+Affairs Convergence Technologies Program for Educating Creative Global Leader, funded by Ministry
+of Agriculture, Food and Rural Affairs (MAFRA) (717001-7). This work was supported by SMART
+FARM Research Center in Gyeongsang National University (GNU), funded by Sacheon-si.
+Conflicts of Interest: The authors declare no conflicts of interest.
+References
+1.
+Shin, S.H.; Deb, N.C.; Arulmozhi, E.; Tamrakar, N.; Ogundele, O.M.; Kook, J.; Kim, D.H.; Kim, H.T. Prediction of Carbon Dioxide
+Concentrations in Strawberry Greenhouse by Using Time Series Models. Agriculture 2024, 14, 1895. [CrossRef]
+2.
+Shi, Y.; Shen, Y.; Bai, J.; Ahmad, B.; Rahman, M.U.; Chen, Q.; Wen, Z. Detached Leaf Assay-Based Screening of Anthracnose
+Resistant Wild Strawberry Genotypes. Trop. Plant Pathol. 2024, 49, 876–885. [CrossRef]
+3.
+Ullah, I.; Demirsoy, H.; Soysal, D.; Lizalo, A.; Do˘gan, D.E.; Demirsoy, L. Evaluation of Strawberry Cultivars Based on Growth-
+Related Attributes. Appl. Fruit Sci. 2024, 66, 431–439. [CrossRef]
+4.
+Statistics Korea. Production Area and Volume of Vegetable in South Korea in 2022. Available online: https://kostat.go.kr/anse/
+(accessed on 19 July 2025).
+5.
+Han, H.; Jang, Y.J.; Han, K.; Park, H.-N.; Kim, D.-S.; Lee, S.; Oh, Y. Chromosome-Level Genome Assembly of Cultivated Strawberry
+‘Seolhyang’ (Fragaria × ananassa). Sci. Data 2025, 12, 1002. [CrossRef]
+6.
+Chai, J.; Zeng, H.; Li, A.; Ngai, E.W.T. Deep Learning in Computer Vision: A Critical Review of Emerging Techniques and
+Application Scenarios. Mach. Learn. Appl. 2021, 6, 100134. [CrossRef]
+7.
+Wang, A.; Qian, W.; Li, A.; Xu, Y.; Hu, J.; Xie, Y.; Zhang, L. NVW-YOLOv8s: An Improved YOLOv8s Network for Real-Time
+Detection and Segmentation of Tomato Fruits at Different Ripeness Stages. Comput. Electron. Agric. 2024, 219, 108833. [CrossRef]
+8.
+Xiong, Y.; Ge, Y.; Grimstad, L.; From, P.J. An Autonomous Strawberry-harvesting Robot: Design, Development, Integration, and
+Field Evaluation. J. Field Robot. 2020, 37, 202–224. [CrossRef]
+9.
+Hu, H.; Kaizu, Y.; Zhang, H.; Xu, Y.; Imou, K.; Li, M.; Huang, J.; Dai, S. Recognition and Localization of Strawberries from 3D
+Binocular Cameras for a Strawberry Picking Robot Using Coupled YOLO/Mask R-CNN. Int. J. Agric. Biol. Eng. 2022, 15, 175–179.
+[CrossRef]
+10.
+Zhang, D.; Lee, D.-J.; Tippetts, B.J.; Lillywhite, K.D. Date Maturity and Quality Evaluation Using Color Distribution Analysis and
+Back Projection. J. Food Eng. 2014, 131, 161–169. [CrossRef]
+11.
+Wang, C.; Tang, Y.; Zou, X.; Luo, L.; Chen, X. Recognition and Matching of Clustered Mature Litchi Fruits Using Binocular
+Charge-Coupled Device (CCD) Color Cameras. Sensors 2017, 17, 2564. [CrossRef]
+12.
+Karki, S.; Basak, J.K.; Paudel, B.; Deb, N.C.; Kim, N.-E.; Kook, J.; Kang, M.Y.; Kim, H.T. Classification of Strawberry Ripeness
+Stages Using Machine Learning Algorithms and Colour Spaces. Hortic. Environ. Biotechnol. 2024, 65, 337–354. [CrossRef]
+13.
+Karki, S.; Tamrakar, N.; Kook, J.H.; Ogundele, O.M.; Basak, J.K.; Kang, M.Y.; Kim, H.T. On-Field Grading of Strawberries in a
+Greenhouse Environment with Deep Learning-Based Occlusion Handling. Hortic. Environ. Biotechnol. 2025, 43, 1–17. [CrossRef]
+14.
+Redmon, J.; Divvala, S.; Girshick, R.; Farhadi, A. You Only Look Once: Unified, Real-Time Object Detection. In Proceedings of the
+IEEE Conference on Computer Vision and Pattern Recognition, Las Vegas, NV, USA, 27–30 June 2016; pp. 779–788.
+15.
+Ren, S.; He, K.; Girshick, R.; Sun, J. Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks. Adv.
+Neural Inf. Process Syst. 2015, 28, 91–99. [CrossRef] [PubMed]
+16.
+Sirisha, U.; Praveen, S.P.; Srinivasu, P.N.; Barsocchi, P.; Bhoi, A.K. Statistical Analysis of Design Aspects of Various YOLO-Based
+Deep Learning Models for Object Detection. Int. J. Comput. Intell. Syst. 2023, 16, 126. [CrossRef]
+17.
+An, Q.; Wang, K.; Li, Z.; Song, C.; Tang, X.; Song, J. Real-Time Monitoring Method of Strawberry Fruit Growth State Based on
+YOLO Improved Model. IEEE Access 2022, 10, 124363–124372. [CrossRef]
+18.
+He, Z.; Karkee, M.; Upadhayay, P. Detection of Strawberries with Varying Maturity Levels for Robotic Harvesting Using
+YOLOv4. In Proceedings of the 2021 ASABE Annual International Virtual Meeting, Online, 12–16 July 2021; American Society of
+Agricultural and Biological Engineers: St. Joseph, MI, USA, 2021; p. 1.
+19.
+Wang, D.; Wang, X.; Chen, Y.; Wu, Y.; Zhang, X. Strawberry Ripeness Classification Method in Facility Environment Based on Red
+Color Ratio of Fruit Rind. Comput. Electron. Agric. 2023, 214, 108313. [CrossRef]
+20.
+Zhang, Y.; Liang, Y.; Leng, J.; Wang, Z. SCGTracker: Spatio-Temporal Correlation and Graph Neural Networks for Multiple Object
+Tracking. Pattern Recognit. 2024, 149, 110249. [CrossRef]
+21.
+Bewley, A.; Ge, Z.; Ott, L.; Ramos, F.; Upcroft, B. Simple Online and Realtime Tracking. In Proceedings of the 2016 IEEE
+International Conference on Image Processing (ICIP), Phoenix, AZ, USA, 25–28 September 2016; pp. 3464–3468.
+
+Agriculture 2025, 15, 1906
+27 of 28
+22.
+Wojke, N.; Bewley, A.; Paulus, D. Simple Online and Realtime Tracking with a Deep Association Metric. In Proceedings of the
+2017 IEEE International Conference on Image Processing (ICIP), Beijing, China, 17–20 September 2017; pp. 3645–3649.
+23.
+Zhang, Y.; Sun, P.; Jiang, Y.; Yu, D.; Weng, F.; Yuan, Z.; Luo, P.; Liu, W.; Wang, X. Bytetrack: Multi-Object Tracking by Associating
+Every Detection Box. In Proceedings of the European Conference on Computer Vision, Tel Aviv, Israel, 23–27 October 2022;
+Springer: Cham, Switzerland, 2022; pp. 1–21.
+24.
+Wen, L.; Du, D.; Cai, Z.; Lei, Z.; Chang, M.-C.; Qi, H.; Lim, J.; Yang, M.-H.; Lyu, S. UA-DETRAC: A New Benchmark and Protocol
+for Multi-Object Detection and Tracking. Comput. Vision. Image Underst. 2020, 193, 102907. [CrossRef]
+25.
+Razzok, M.; Badri, A.; El Mourabit, I.; Ruichek, Y.; Sahel, A. Pedestrian Detection and Tracking System Based on Deep-SORT,
+YOLOv5, and New Data Association Metrics. Information 2023, 14, 218. [CrossRef]
+26.
+Niu, L.; Fan, Y.; Liu, T.; Han, Q. Momt: A Maritime Real-Time Visual Multi-Object Tracking Algorithm Based on Unmanned
+Surface Vehicles. IEEE Sens. J. 2024, 12, 35429–35447. [CrossRef]
+27.
+Gao, F.; Fang, W.; Sun, X.; Wu, Z.; Zhao, G.; Li, G.; Li, R.; Fu, L.; Zhang, Q. A Novel Apple Fruit Detection and Counting
+Methodology Based on Deep Learning and Trunk Tracking in Modern Orchard. Comput. Electron. Agric. 2022, 197, 107000.
+[CrossRef]
+28.
+He, L.; Wu, F.; Du, X.; Zhang, G. Cascade-SORT: A Robust Fruit Counting Approach Using Multiple Features Cascade Matching.
+Comput. Electron. Agric. 2022, 200, 107223. [CrossRef]
+29.
+Lin, Y.; Chen, T.; Liu, S.; Cai, Y.; Shi, H.; Zheng, D.; Lan, Y.; Yue, X.; Zhang, L. Quick and Accurate Monitoring Peanut Seedlings
+Emergence Rate through UAV Video and Deep Learning. Comput. Electron. Agric. 2022, 197, 106938. [CrossRef]
+30.
+Li, J.; Zhu, Z.; Liu, H.; Su, Y.; Deng, L. Strawberry R-CNN: Recognition and Counting Model of Strawberry Based on Improved
+Faster R-CNN. Ecol. Inform. 2023, 77, 102210. [CrossRef]
+31.
+Zhou, X.; Zhang, Y.; Jiang, X.; Riaz, K.; Rosenbaum, P.; Lefsrud, M.; Sun, S. Advancing Tracking-by-Detection with MultiMap:
+Towards Occlusion-Resilient Online Multiclass Strawberry Counting. Expert. Syst. Appl. 2024, 255, 124587. [CrossRef]
+32.
+Wang, Y.; Yan, G.; Meng, Q.; Yao, T.; Han, J.; Zhang, B. DSE-YOLO: Detail Semantics Enhancement YOLO for Multi-Stage
+Strawberry Detection. Comput. Electron. Agric. 2022, 198, 107057. [CrossRef]
+33.
+Tamrakar, N.; Karki, S.; Kang, M.Y.; Deb, N.C.; Arulmozhi, E.; Kang, D.Y.; Kook, J.; Kim, H.T. Lightweight Improved YOLOv5s-
+CGhostnet for Detection of Strawberry Maturity Levels and Counting. AgriEngineering 2024, 6, 962–978. [CrossRef]
+34.
+Tamrakar, N.; Paudel, B.; Karki, S.; Deb, N.C.; Arulmozhi, E.; Kook, J.H.; Kang, M.Y.; Kang, D.Y.; Ogundele, O.M.; Nakarmi, B.;
+et al. Peduncle Detection of Ripe Strawberry to Localize Picking Point Using DF-Mask R-CNN and Monocular Depth. IEEE
+Access 2025, 13, 73889–73902. [CrossRef]
+35.
+Yang, G.; Wang, J.; Nie, Z.; Yang, H.; Yu, S. A Lightweight YOLOv8 Tomato Detection Algorithm Combining Feature Enhancement
+and Attention. Agronomy 2023, 13, 1824. [CrossRef]
+36.
+Khan, Z.; Liu, H.; Shen, Y.; Zeng, X. Deep Learning Improved YOLOv8 Algorithm: Real-Time Precise Instance Segmentation of
+Crown Region Orchard Canopies in Natural Environment. Comput. Electron. Agric. 2024, 224, 109168. [CrossRef]
+37.
+Wang, T.; Ren, S.; Zhang, H. Nighttime Wildlife Object Detection Based on YOLOv8-night. Electron. Lett. 2024, 60, e13305.
+[CrossRef]
+38.
+Wu, T.; Dong, Y. YOLO-SE: Improved YOLOv8 for Remote Sensing Object Detection and Recognition. Appl. Sci. 2023, 13, 12977.
+[CrossRef]
+39.
+Bochkovskiy, A.; Wang, C.-Y.; Liao, H.-Y.M. Yolov4: Optimal Speed and Accuracy of Object Detection. arXiv 2020, arXiv:2004.10934.
+[CrossRef]
+40.
+Liu, S.; Qi, L.; Qin, H.; Shi, J.; Jia, J. Path Aggregation Network for Instance Segmentation. In Proceedings of the IEEE Conference
+on Computer Vision and Pattern Recognition, Salt Lake City, UT, USA, 18–23 June 2018; pp. 8759–8768.
+41.
+Lin, T.-Y.; Maire, M.; Belongie, S.; Hays, J.; Perona, P.; Ramanan, D.; Dollár, P.; Zitnick, C.L. Microsoft Coco: Common Objects in
+Context. In Proceedings of the Computer Vision–ECCV 2014: 13th European conference, Zurich, Switzerland, 6–12 September
+2014; Proceedings, Part v 13; Springer: Cham, Switzerland, 2014; pp. 740–755.
+42.
+Cheng, Y.; Feng, G.; Zhang, C. An Efficient and Lightweight Yolov8s Strawberry Maturity Detection Model. J. Agric. Sci. Technol.
+A 2024, 14, 46–66. [CrossRef]
+43.
+Gao, S.; Cui, G.; Wang, Q. WCS-YOLOv8s: Improved YOLOv8s Model for Target Identification and Localisation throughout the
+Strawberry Growth Process. Front. Plant Sci. 2025, 16, 1579335. [CrossRef]
+44.
+Li, J.; Li, J.; Zhao, X.; Su, X.; Wu, W. Lightweight Detection Networks for Tea Bud on Complex Agricultural Environment via
+Improved YOLO V4. Comput. Electron. Agric. 2023, 211, 107955. [CrossRef]
+45.
+Zheng, Z.; Wang, P.; Ren, D.; Liu, W.; Ye, R.; Hu, Q.; Zuo, W. Enhancing Geometric Factors in Model Learning and Inference for
+Object Detection and Instance Segmentation. IEEE Trans. Cybern. 2021, 52, 8574–8586. [CrossRef]
+46.
+Tong, Z.; Chen, Y.; Xu, Z.; Yu, R. Wise-IoU: Bounding Box Regression Loss with Dynamic Focusing Mechanism. arXiv 2023,
+arXiv:2301.10051.
+
+Agriculture 2025, 15, 1906
+28 of 28
+47.
+Prajwal, G.K.; Sanjaya, D.S.; Wandkar, S.M.; Basawaraj. Real-Time Multi-Object Detection and Tracking on Zynq UltraScale+
+MPSoc. In Proceedings of the International Conference on Information and Communication Technology for Intelligent Systems,
+Las Vegas, LA, USA, 24 May 2022; Springer: Singapore, 2024; pp. 71–81.
+48.
+Fu, X.; Zhao, S.; Wang, C.; Tang, X.; Tao, D.; Li, G.; Jiao, L.; Dong, D. Green Fruit Detection with a Small Dataset under a Similar
+Color Background Based on the Improved YOLOv5-AT. Foods 2024, 13, 1060. [CrossRef]
+49.
+Wang, J.; Shang, Y.; Zheng, X.; Zhou, P.; Li, S.; Wang, H. Green Fruit Detector: Lightweight Green Fruit Detector in Orchard
+Environment. PLoS ONE 2024, 19, e0312164. [CrossRef]
+50.
+Alori, J.; Descoins, A.; Javier; Lezama, F.; Yuhara, K.; Fernández, D.; Castro, A.; Fatih, D.; David; Cruz Linares, R.; et al.
+Tryolabs/Norfair, V2.2.0; Zenodo: Geneva, Switzerland, 2023. [CrossRef]
+51.
+Wiktor, M. Motpy—Simple Multi Object Tracking Library, Version 0.0.10; GitHub: San Francisco, CA, USA, 2021. Available online:
+https://github.com/wmuron/motpy (accessed on 20 July 2025).
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.

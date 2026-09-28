@@ -1,0 +1,1720 @@
+ 
+ 
+ 
+Agriculture 2026, 16, 1884 
+https://doi.org/10.3390/agriculture16171884 
+Article 
+CIAFNet: An RGB-D Cross-Modal Interaction and Adaptive 
+Fusion Network for Camellia oleifera Fruit Detection 
+Yan Chen 1,*, Chengxin Yang 1, Chao Yuan 1, Yiming Lu 1, Dandan Fu 1, Yinghui Fang 2, Shuman Liu 2 and Hui Ai 2,* 
+1 School of Mechanical Engineering, Wuhan Polytechnic University, Wuhan 430070, China; 
+ycx1045739450@163.com (C.Y.); 17282389205@163.com (C.Y.); 18051055773@163.com (Y.L.); 
+15527058156@163.com (D.F.) 
+2 School of Life Sciences, Central China Normal University, Wuhan 430079, China; fangyh24@163.com (Y.F.); 
+13696253777@163.com (S.L.) 
+* Correspondence: chenchen@whpu.edu.cn (Y.C.); aihui@mail.ccnu.edu.cn (H.A.) 
+Abstract 
+To better address the accuracy bottleneck of RGB-only Camellia oleifera C.Abel fruit detec-
+tion in complex orchard environments, this paper proposes CIAFNet—a dual-stream 
+RGB-D fusion detection network—and evaluates its potential as a visual front end for rel-
+ative 3D localization using sensor-measured depth and camera back projection under con-
+trolled conditions. With RGB images and depth maps as parallel dual-branch inputs, the 
+network integrates the C3k2_PartialNetBlock for efficient intra-modal feature extraction 
+with reduced computational redundancy, devises the cross-modal interaction and differ-
+ence-aware adaptive fusion (CIDAF) module for adaptive cross-modal feature fusion, and 
+adopts an SC-EUCB-augmented BiFPN in the neck to optimize multiscale feature aggre-
+gation and detail restoration during upsampling. Pseudo-depth maps generated from nat-
+ural orchard RGB images via Depth Anything V2 were paired with RGB counterparts to 
+build an RGB–pseudo-depth dataset. Synchronized RGB-D data collected by an Intel Re-
+alSense D435i under controlled conditions were used to quantify pseudo-to-sensor depth 
+discrepancies and evaluate input adaptability. On the natural orchard test set, CIAFNet 
+achieved 93.33% mAP@0.5 with only 10.49 GFLOPs and 3.80 M parameters. Second-stage 
+fine-tuning improved CIAFNet’s adaptation to D435i-measured depth under controlled 
+conditions. In the subsequent relative displacement consistency experiment, the mean ab-
+solute consistency errors along the X, Y, and Z axes were 3.10, 3.15, and 3.27 mm, respec-
+tively, and the mean 3D Euclidean consistency error was 5.60 mm. These results demon-
+strate that CIAFNet improves Camellia oleifera fruit detection using natural orchard RGB–
+pseudo-depth data and has potential as a visual front end for relative 3D localization un-
+der controlled conditions. 
+Keywords: Camellia oleifera fruit; CIAFNet; RGB-D object detection; cross-modal fusion; 
+depth domain adaptation; 3D localization 
+ 
+1. Introduction 
+Camellia oleifera C.Abel is an economically important woody oil crop whose seeds are 
+processed into tea oil of considerable nutritional and commercial value [1]. As plantation 
+areas expand and seasonal labor costs rise, manual harvesting increasingly fails to meet 
+the demands of large-scale production for efficiency, labor intensity and operational 
+Academic Editor: Abhilash Singh 
+Received: 18 July 2026 
+Revised: 19 August 2026 
+Accepted: 26 August 2026 
+Published: 30 August 2026 
+Copyright: © 2026 by the authors. 
+Licensee MDPI, Basel, Switzerland. 
+This article is an open access article 
+distributed under the terms and 
+conditions of the Creative Commons 
+Attribution (CC BY) license. 
+
+Agriculture 2026, 16, 1884 
+2 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+stability. Selective harvesting robots offer a route towards mechanized and intelligent har-
+vesting of high-value crops, for which target recognition, spatial localization, path plan-
+ning and end-effector operation are tightly coupled. In natural orchards, variation in illu-
+mination, foliage occlusion, target overlap and restricted working spaces jointly compro-
+mise visual perception. Previous studies show that detection must be coupled with relia-
+ble spatial estimates to facilitate manipulator planning and end-effector grasping [2], 
+whereas occlusion, overlapping targets, and localization errors can reduce grasping suc-
+cess [3]. A harvesting-oriented vision system must therefore identify fruit accurately and 
+provide stable target regions for subsequent spatial perception. 
+Deep learning-based object detection is widely used for agricultural target recogni-
+tion, fruit counting, phenotyping and robotic harvesting [4]. Advances in feature repre-
+sentation, multiscale modeling, and real-time inference have established a strong algorith-
+mic basis for target recognition in complex agricultural scenes [5]. Real-time detectors in 
+the YOLO family are particularly suitable for agricultural deployment because they bal-
+ance speed and accuracy [6], and lightweight architectures and attention mechanisms can 
+further improve detection under occlusion, small target, and cluttered background condi-
+tions [7]. Nevertheless, small target size, mutual occlusion, and background clutter remain 
+major sources of false positives and missed detections in RGB-only fruit detection in nat-
+ural orchards [8]. These limitations are especially pronounced for Camellia oleifera fruit. 
+Severe foliage occlusion, marked scale variation, and complex background structures 
+make it difficult for RGB appearance features alone to distinguish these fruits from foliage, 
+background regions, and adjacent fruit [9,10]. Multiscale feature fusion can improve the 
+representation of objects at different scales [11], and related agricultural detectors have 
+employed feature pyramids and lightweight feature-processing modules to preserve 
+small target details [12]. However, these methods primarily reorganize appearance fea-
+tures and may remain limited when RGB information alone cannot distinguish fruit from 
+foliage, background regions, or adjacent targets [13]. 
+RGB-D vision provides a complementary perception pathway for object detection 
+and spatial localization. RGB images primarily encode color, texture, and semantic ap-
+pearance, whereas depth maps can provide relative structural information, front–back or-
+dering, and target boundary cues. Synchronized RGB-D data can also support spatial es-
+timation for robotic operation [14]. The complementarity between RGB and depth may 
+help reduce appearance ambiguity caused by partial occlusion, adjacent fruit overlap, and 
+similarity between fruit and foliage. Noise-tolerant RGB-D fusion has consequently been 
+investigated for outdoor fruit detection, with particular attention to the influence of unre-
+liable depth measurements [15]. RGB-D feature fusion has also been applied to the detec-
+tion of overlapping tomato clusters in complex agricultural scenes [16]. In addition, mul-
+timodal image information has been explored for recognizing Camellia oleifera fruits in 
+natural environments [17]. These studies suggest that structural information can comple-
+ment RGB appearance in agricultural perception, although the resulting performance de-
+pends on how heterogeneous features are represented and fused. 
+From the perspective of multimodal learning, simply introducing an additional mo-
+dality does not necessarily yield a more discriminative representation. RGB and depth 
+encode different types of information, and their reliability may vary across spatial loca-
+tions. Early RGB-D detection research demonstrated the importance of learning modality-
+specific and shared feature representations rather than directly treating the two modalities 
+as homogeneous inputs [18]. More recent RGB-D representation-learning studies have 
+further emphasized the need to coordinate modality-specific feature extraction with cross-
+modal interaction [19]. In agricultural scenes, task-specific fusion architectures have been 
+investigated to coordinate complementary appearance and structural information [20]. At 
+a broader methodological level, token-level cross-modal exchange provides a mechanism 
+
+Agriculture 2026, 16, 1884 
+3 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+for selectively replacing less informative features with information from another modality 
+[21]. Cross-modal feature rectification and fusion have also been introduced to reduce the 
+influence of uncertain auxiliary modality responses before multimodal aggregation [22]. 
+Existing RGB-D fusion methods generally employ feature concatenation, element-
+wise addition, attention-based weighting, or explicit cross-modal interaction [23]. Concat-
+enation stacks RGB and depth features along the channel dimension and relies on subse-
+quent convolutions to learn their joint representation, whereas element-wise addition di-
+rectly superimposes spatially aligned responses. Attention-based methods reweight chan-
+nels, spatial locations, or modalities, while interaction-based methods exchange or rectify 
+information between modality-specific branches before aggregation. The limitations of 
+these approaches arise from the spatially nonuniform reliability of RGB and depth infor-
+mation. Direct concatenation and addition cannot distinguish useful geometric cues from 
+background interference [24]. Attention-based weighting improves fusion selectivity [25]; 
+however, when the weights are estimated mainly from individual modalities or coarse 
+global statistics, local agreement and conflict between spatially aligned RGB and depth 
+features may remain insufficiently represented [26]. Overall, some existing RGB-D fusion 
+strategies remain limited in explicitly modeling local agreement and discrepancy between 
+RGB and depth features and using these relationships to guide fusion decisions. Conse-
+quently, they may have difficulty preserving complementary structural information while 
+effectively suppressing unreliable depth responses. 
+Monocular depth estimation provides another means of introducing structural infor-
+mation when synchronized sensor depth is unavailable. Relative and metric depth esti-
+mation methods can infer spatial relationships from individual RGB images [27]. Depth 
+Anything and Depth Anything V2 further improve the generalization of monocular depth 
+estimation through large-scale training [28,29]. Recent surveys have summarized the de-
+velopment and remaining limitations of monocular depth estimation [30]. Other studies 
+have investigated universal metric-depth estimation and monocular geometric founda-
+tion models [31,32], while diffusion-based depth prediction provides an additional esti-
+mation framework [33]. Nevertheless, DA-V2 pseudo-depth should not be regarded as 
+sensor-measured metric depth. In this study, it is used as a relative structural prior for 
+natural orchard RGB images that were acquired without synchronized depth measure-
+ments. Moreover, pseudo-depth and D435i-measured depth differ in representation, edge 
+continuity, missing value patterns, and noise characteristics. Sensor-measured depth can 
+itself contain holes and incomplete boundary information, as also discussed in depth com-
+pletion research [34]. Camellia oleifera fruit perception therefore presents two related chal-
+lenges: effective fusion of RGB and pseudo-depth during detection, and reduction of the 
+input mismatch between pseudo-depth-based training and deployment with measured 
+depth. 
+To address these challenges, this study developed CIAFNet, an RGB-D dual-stream 
+detector integrating the C3k2_PartialNetBlock for lightweight intra-modal feature extrac-
+tion, CIDAF for cross-modal interaction and adaptive fusion, and an SC-EUCB-enhanced 
+BiFPN for multiscale feature aggregation. 
+The specific objectives of this study were as follows: (1) to investigate whether DA-
+V2 pseudo-depth can provide complementary structural information for Camellia oleifera 
+fruit detection using natural orchard RGB images; (2) to assess the detection performance 
+of CIAFNet using RGB–pseudo-depth data and its adaptation from DA-V2 pseudo-depth 
+to D435i-measured depth under controlled conditions; and (3) to evaluate the potential of 
+CIAFNet detections as a visual front end for relative 3D localization under controlled con-
+ditions. The overall study design and experimental workflow are summarized in Figure 
+1. 
+
+Agriculture 2026, 16, 1884 
+4 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+ 
+Figure 1. Graphical overview of the study design and experimental workflow. 
+2. Materials and Methods 
+2.1. Dataset Acquisition and Construction 
+Two complementary datasets were constructed. The natural orchard RGB–pseudo-
+depth dataset comprised RGB images acquired with an iPhone 13 (Apple Inc., Cupertino, 
+
+Agriculture 2026, 16, 1884 
+5 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+CA, USA) in real orchard environments and corresponding pseudo-depth maps gener-
+ated by Depth Anything V2. It was used for CIAFNet training, model comparison, abla-
+tion studies, and pseudo-depth-assisted detection evaluation. The measured RGB-D da-
+taset was acquired with an Intel RealSense D435i (Intel Corporation, Santa Clara, CA, 
+USA) under controlled conditions and was used for second-stage fine-tuning and con-
+trolled domain evaluation of adaptation from DA-V2 pseudo-depth to sensor-measured 
+depth. 
+Natural orchard data were collected during the 2024 Camellia oleifera fruit harvesting 
+season at a plantation in Xian’an District, Xianning, Hubei Province, China. Images were 
+acquired with an iPhone 13 in unstructured orchard environments without artificial con-
+trol of illumination, background, or fruit pose. The dataset encompassed front lighting, 
+backlighting, foliage occlusion, fruit overlap, and variable imaging distances. In total, 1758 
+RGB images containing 12,496 target instances were obtained. All instances were anno-
+tated as Camellia oleifera fruit. Bounding boxes were manually annotated using T-Rex La-
+bel (https://trexlabel.com; accessed on 9 April 2026) and stored in YOLO format. The da-
+taset was divided into mutually exclusive training, validation, and test subsets at approx-
+imately 70%, 15%, and 15%, comprising 1231, 264, and 263 images, respectively. 
+The natural orchard dataset was originally collected as an RGB image dataset using 
+an iPhone 13, without the synchronous deployment of a D435i or any other depth sensor 
+during field acquisition. Consequently, no sensor-measured depth data were spatially and 
+temporally aligned with the existing RGB frames, and such data cannot be retrospectively 
+obtained for the same acquisition scenes. To enable these natural orchard RGB images to 
+be used for dual-stream training, a pseudo-depth map was generated offline for each RGB 
+image using the official Depth Anything V2 implementation with the ViT-L encoder 
+(https://github.com/DepthAnything/Depth-Anything-V2; accessed on 15 April 2026). The 
+target inference size was set to 1024 pixels, with the original aspect ratio preserved and 
+the resized dimensions adjusted to multiples of 14. The predicted relative depth map was 
+restored to the original RGB image resolution using bilinear interpolation. For each depth 
+map, values outside the 1st–99th percentile range were clipped, followed by min–max 
+normalization to map the values to [0, 1]. The normalized depth maps were stored and 
+loaded as 8-bit single-channel grayscale images, and each pseudo-depth map was paired 
+one-to-one with its corresponding RGB image. The resulting maps encode relative depth 
+relationships and spatial structure rather than physical depth on an absolute metric scale. 
+Accordingly, pseudo-depth is treated as a DA-V2-derived relative structural prior that 
+helps distinguish structural differences among Camellia oleifera fruit, foliage, background 
+regions, and adjacent fruit; it is not interpreted as a direct measurement of absolute dis-
+tance. Because each pseudo-depth map is deterministically inferred from its paired RGB 
+image, RGB and pseudo-depth should be understood as two representations of the same 
+visual observation rather than two statistically independent sensing modalities. There-
+fore, while the depth branch extracts scene-related relative structural information, its 
+learned representation may also be influenced by characteristics of the DA-V2 outputs, 
+including their relative value distributions, spatial smoothness, and boundary continuity 
+patterns. 
+An additional controlled scene RGB-D dataset was acquired with the D435i. The ex-
+perimental targets consisted of artificial Camellia oleifera fruit models and cut Camellia oleif-
+era branches rather than live plants in a natural orchard. These materials were arranged 
+to simulate fruit targets and foliage structures under controlled conditions. The dataset 
+contained 352 synchronized RGB-D image pairs, which were divided into approximately 
+60%, 20%, and 20% for training, validation, and test subsets of 211, 70, and 71 pairs, re-
+spectively. After this split, offline augmentation was applied only to the training subset 
+and comprised random cropping, horizontal flipping, and random brightness 
+
+Agriculture 2026, 16, 1884 
+6 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+enhancement. Geometric transformations were applied synchronously to the RGB im-
+ages, depth maps, and corresponding annotations, whereas brightness enhancement was 
+applied only to the RGB images. Each original training pair was retained and supple-
+mented with three augmented variants, yielding 844 image pairs for iterative training. 
+Only the original images were retained in the validation and test subsets for model selec-
+tion and independent evaluation. The D435i depth maps retained realistic sensor charac-
+teristics, including noise, holes, and edge discontinuities. This dataset does not represent 
+RGB-D data from real Camellia oleifera orchards; instead, it provides measured-depth data 
+under controlled conditions for input-mismatch analysis and adaptation verification. Nat-
+ural orchard detection performance was evaluated primarily using the iPhone 13 images 
+and their DA-V2 pseudo-depth maps. Examples of both datasets are shown in Figure 2. 
+ 
+Figure 2. Examples of the two datasets used in this study: (a) an RGB image acquired in a natural 
+orchard; (b) the corresponding pseudo-depth map generated by Depth Anything V2; (c) an RGB 
+image acquired with the Intel RealSense D435i under controlled conditions; and (d) the correspond-
+ing sensor-measured depth map. 
+2.2. CIAFNet Architecture 
+2.2.1. Overall Architecture 
+CIAFNet is an RGB-D dual-stream network for Camellia oleifera fruit detection in nat-
+ural orchards. The network comprises an RGB branch, a depth branch, a CIDAF cross-
+modal interaction and fusion module, an SC-EUCB-enhanced BiFPN neck, and a detection 
+head. The RGB branch captures appearance cues, including color, texture, and edges, 
+whereas the depth branch captures relative spatial structure among targets, foliage, back-
+ground regions, and adjacent fruit. The two modalities are not simply stacked; instead, 
+they are selectively fused by CIDAF according to their local complementarity, thereby 
+imposing structural constraints on target representations under occlusion, fruit overlap, 
+and background interference. The overall architecture is shown in Figure 3. 
+
+Agriculture 2026, 16, 1884 
+7 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+ 
+Figure 3. Architecture of the CIAFNet object-detection network. 
+During dual-branch feature extraction, C3k2_PartialNetBlock is inserted at the high-
+level stages to reduce redundant channel computation and strengthen intra-modal repre-
+sentations. Each branch produces features at three scales: P3, P4, and P5. P3 and P4 are 
+passed through CIDAF to couple mid- and low-level detail with local spatial structure. P5 
+features are concatenated along the channel dimension and then processed by C3k2 and 
+C2PSA to preserve high-level semantic representations. This hierarchical design treats 
+mid- and low-level features that require fine geometric constraints differently from high-
+level features that require stable semantic abstraction. The dual-backbone RGB-D feature 
+extraction architecture is shown in Figure 4. 
+CIDAF provides the principal mechanism for RGB-D interaction in CIAFNet. Chan-
+nel alignment, discrepancy awareness, consistency modeling, and adaptive gating are 
+used to fuse complementary information selectively and to allow depth structure to con-
+tribute directly to target representation during detection. The fused multiscale features 
+are then supplied to a BiFPN-based neck augmented with SC-EUCB. BiFPN performs bi-
+directional weighted cross-scale fusion, whereas SC-EUCB improves preservation of local 
+detail and transfer of spatial information during upsampling, thereby strengthening rep-
+resentations of Camellia oleifera fruit boundaries, small targets, and occluded regions. The 
+detection head finally outputs class labels, confidence scores, and bounding boxes. 
+
+Agriculture 2026, 16, 1884 
+8 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+ 
+Figure 4. Schematic of the dual RGB and depth backbone feature extraction architecture. 
+2.2.2. RGB-D Dual-Backbone Feature Extraction 
+Natural orchard images of Camellia oleifera fruit frequently contain foliage occlusion, 
+overlapping fruit, weakly textured targets, and complex background interference. Alt-
+hough dual RGB-D backbones introduce complementary structural information, they also 
+increase computational cost. To balance representational capacity and efficiency, 
+C3k2_PartialNetBlock is inserted into the high-level feature extraction stages of both the 
+RGB and depth branches. The module follows the partial channel processing strategy of 
+PartialNetBlockV1 in the Partial Channel Network [35] and is integrated with the C3k2 
+structure to reduce redundant spatial computation while retaining compact intra-modal 
+representations before CIDAF fusion. 
+PartialNetBlockV1 exploits redundancy among feature channels by partitioning the 
+input along the channel dimension and processing the resulting branches with different 
+operations. For an input with Cin channels and a partial channel ratio rp, approximately Cin 
+× rp channels are assigned to the spatial convolution branch, whereas the remaining Cin × 
+(1 − rp) channels retain channel context and undergo response modulation. The spatial 
+branch applies a 3 × 3 convolution to extract local information, including fruit edges, tex-
+ture, occlusion boundaries, and depth contours. The complementary branch retains a 
+larger proportion of the channel context and uses global statistics-based response modu-
+lation to strengthen inter-channel representation. Unlike lightweight schemes that con-
+volve only a subset of channels and leave the remainder unchanged, PartialNetBlockV1 
+preserves informative statistics in unconvolved channels. This reduces redundant dense 
+convolution computation while maintaining a balance between computational efficiency 
+and feature representation. 
+The partial channel ratio rp controls the proportion of channels assigned to spatial 
+convolution and therefore affects the balance between local feature extraction and com-
+putational efficiency. To examine its influence on C3k2_PartialNetBlock, rp values of 1/8, 
+1/4, and 1/2 were evaluated under the same training configuration. Based on the 
+
+Agriculture 2026, 16, 1884 
+9 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+comparative results presented in Section 3.3, rp = 1/4 was retained as the selected accuracy–
+efficiency trade-off among the evaluated settings rather than as the setting that maximized 
+every detection metric. 
+In C3k2_PartialNetBlock, partial channel processing is embedded within the C3k2 
+module. Input features first pass through the standard C3k2 transformation path to model 
+local structure and cross-channel relationships. A subset of channels then enters the spa-
+tial convolution branch to strengthen local detail, whereas the complementary branch re-
+tains and modulates channel context. The branch features are subsequently concatenated 
+and reorganized using a 1 × 1 convolution to promote information exchange. This design 
+preserves the feature extraction capacity of C3k2 while reducing redundancy through se-
+lective spatial computation. The module is illustrated in Figure 5. 
+ 
+Figure 5. Architecture of C3k2_PartialNetBlock. 
+In CIAFNet, C3k2_PartialNetBlock is applied to the high-level feature extraction 
+stages of both the RGB and depth backbones. In the RGB branch, it improves discrimina-
+tion based on color, texture, and edge cues. In the depth branch, it emphasizes structural 
+differences among fruit, foliage, background regions, and adjacent fruit. The resulting 
+compact multiscale features provide more discriminative inputs for CIDAF to determine 
+which depth information should be retained. 
+2.2.3. CIDAF Cross-Modal Interaction and Adaptive Fusion 
+CIDAF is designed to promote effective interaction and complementary information 
+exchange between RGB and depth features. In natural orchards, RGB features may be af-
+fected by similarly colored foliage, shadows, and backlighting, whereas depth features 
+may vary in their local reliability and discriminative value, particularly around target 
+boundaries, occluded regions, and complex backgrounds. Conventional concatenation 
+and element-wise addition directly aggregate the two feature streams without explicitly 
+assessing their local relationships. Attention-based fusion can improve selectivity; how-
+ever, some methods based primarily on independently estimated, global, or modality-
+level weights may not explicitly distinguish local cross-modal agreement from conflict. In 
+contrast, CIDAF first aligns the RGB and depth features and explicitly constructs discrep-
+ancy and consistency representations from the paired features. These representations 
+jointly generate spatially adaptive gates for the RGB and depth streams, after which a 
+complementary residual branch restores information that may be weakened during gated 
+fusion. Therefore, the principal design distinction of CIDAF lies in using explicitly 
+
+Agriculture 2026, 16, 1884 
+10 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+modeled local cross-modal relationships to guide adaptive fusion rather than relying only 
+on direct aggregation or modality reweighting. 
+The CIDAF architecture is shown in Figure 6. The input RGB and depth features are 
+denoted XRGB and XDepth and contain C1 and C2 channels, respectively. CIDAF first aligns 
+the channel dimensions to obtain the RGB feature R and the depth feature D. A modal 
+discrepancy feature Fdis and a modal consistency feature Fcon, corresponding to the “Dis-
+crepancy” and “Consistency” branches in Figure 6, respectively, are then constructed as 
+follows: 
+𝐹𝑑𝑖𝑠= |𝑅−𝐷|, 𝐹𝑐𝑜𝑛= 𝑅⊙𝐷 
+(1) 
+Here, Fdis highlights locations at which the two modalities respond differently, in-
+cluding fruit boundaries, occlusion edges, and abrupt changes in depth structure; Fcon re-
+inforces candidate fruit regions supported by both modalities; and the symbol ⊙ denotes 
+element-wise multiplication. This discrepancy–consistency formulation treats cross-
+modal disagreement as local evidence to be evaluated selectively rather than amplified 
+indiscriminately. Disagreement at a true geometric boundary can provide complementary 
+information, whereas disagreement caused by depth noise can be suppressed by the gates. 
+The depth branch therefore functions not merely as an additional input but as a source of 
+structural cues that can be exploited selectively. 
+ 
+Figure 6. Architecture of the CIDAF cross-modal interaction and adaptive fusion module. 
+During fusion, CIDAF generates adaptive gating weights WRGB and WDepth from the 
+discrepancy and consistency features. These gates adjust the contribution of each modal-
+ity according to local content. When depth helps distinguish fruit, foliage, and back-
+ground regions, its structural contribution is strengthened. When the depth map contains 
+local holes, noise, or edge discontinuities, reliable structural information is retained while 
+propagation of anomalous responses is attenuated. A complementary residual module 
+also generates a residual feature P to restore boundary detail and local spatial structure 
+that may be lost after gated weighting. The fused feature and the final CIDAF output are 
+calculated as follows: 
+
+Agriculture 2026, 16, 1884 
+11 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+𝐹𝑓= 𝑊𝑅𝐺𝐵⊙𝑅+ 𝑊𝐷𝑒𝑝𝑡ℎ⊙𝐷+ 𝛼𝑃, 𝑌= Conv1×1(𝐹𝑓) 
+(2) 
+Here, P denotes the output of the complementary residual module, and α in Equation 
+(2) is a learnable residual scaling coefficient initialized to 0.1. At each fusion scale, Ff, Y ∈ 
+RB×C×H×W, where B, C, H, and W denote the batch size, number of output channels, feature 
+map height, and feature map width, respectively. The 1 × 1 convolution preserves the 
+spatial dimensions H × W and maps Ff to the CIDAF output Y with C channels. The CIDAF 
+outputs Y at the P3 and P4 scales are subsequently fed into the corresponding input paths 
+of the SC-EUCB-enhanced BiFPN neck. By jointly modeling RGB appearance, depth struc-
+ture, and cross-modal relationships, CIDAF strengthens representations of fruit bounda-
+ries, small targets, and occluded regions while avoiding indiscriminate injection of low-
+confidence depth responses into the fused features. 
+2.2.4. Multiscale Feature-Fusion Neck 
+Natural orchard images can contain distant small targets, nearby overlapping fruit, 
+and foliage-occluded targets within the same frame, producing substantial variation in 
+target scale and local boundary quality. The neck must therefore fuse cross-scale semantic 
+and localization information while preserving fruit boundaries, occlusion gaps, and local 
+structure during upsampling. BiFPN is adopted for multiscale fusion, and its upsampling 
+pathway is augmented with SC-EUCB to form an SC-EUCB-enhanced BiFPN neck. BiFPN 
+propagates P3, P4, and P5 features through top-down and bottom-up pathways and uses 
+learnable weights to regulate the contribution of each scale, thereby linking high-level se-
+mantics with low-level localization detail. Weighted fusion is calculated as follows: 
+𝐹𝑜𝑢𝑡= ∑
+𝑤𝑘
+𝐾
+𝑘=1
+𝐹𝑘
+𝜀+ ∑
+𝑤𝑘
+𝐾
+𝑘=1
+, 𝑤𝑘≥0 
+(3) 
+In this expression, Fk denotes the kth input feature, wk is the corresponding learnable 
+fusion weight, and ε is a stabilizing term that prevents division by zero. The SC-EUCB 
+architecture is shown in Figure 7. It extends the efficient up-convolution block (EUCB) by 
+incorporating ShiftChannelMix and improves conventional BiFPN upsampling. The input 
+feature is first upsampled by a factor of two to restore spatial resolution, after which a 3 × 
+3 depthwise convolution is applied for local enhancement. This operation recovers edge 
+and texture detail that is difficult to reconstruct by interpolation alone while maintaining 
+low computational cost. Channel shuffling and ShiftChannelMix are then applied. The 
+channels are divided into four groups, shifted cyclically in the positive and negative di-
+rections along the height and width dimensions, and concatenated. This parameter-free 
+operation promotes transfer of detailed responses between neighboring spatial locations 
+and strengthens spatial information exchange among channel groups. 
+For Camellia oleifera fruit detection, SC-EUCB contributes at two levels. First, depth-
+wise convolution after upsampling reinforces local structure and helps recover fine-
+grained responses along small target boundaries and within occluded regions. Second, 
+ShiftChannelMix expands local information exchange through lightweight shift-based 
+mixing, thereby preserving boundary differences between densely distributed fruit and 
+spatial gaps between fruit and foliage during cross-scale fusion. The combination of SC-
+EUCB and BiFPN therefore balances global scale selection with local detail recovery and 
+supplies the detection head with more stable and discriminative multiscale features. 
+
+Agriculture 2026, 16, 1884 
+12 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+ 
+Figure 7. Architecture of the SC-EUCB module. 
+2.3. Circular-ROI Three-Dimensional Localization 
+2.3.1. Circular-ROI Coordinate Estimation 
+To determine whether CIAFNet detections could enable 3D localization, the coordi-
+nate-estimation pipeline used synchronized RGB and depth images acquired with the 
+D435i, object detection, and depth back-projection (Figure 8). The D435i depth map was 
+aligned with the RGB coordinate system, after which each RGB-D frame was supplied to 
+CIAFNet for detection. For target i, the bounding box is denoted Bi = (xi1, yi1, xi2, yi2), where 
+(xi1, yi1) and (xi2, yi2) are the upper-left and lower-right coordinates, respectively. The box 
+width wi, height hi, and center pixel (ui, vi) were calculated, and the center was used as the 
+pixel reference for depth sampling and back-projection. To focus the sampling region on 
+the fruit body, a circular region of interest (ROI) centered on the bounding box center was 
+defined using the shorter side of the box. The ROI center and radius for target i are calcu-
+lated as follows: 
+𝑢𝑖= (𝑥𝑖1 + 𝑥𝑖2)
+2
+, 𝑣𝑖= (𝑦𝑖1 + 𝑦𝑖2)
+2
+, 𝑟𝑖= 𝛼𝑚𝑖𝑛(𝑤𝑖, ℎ𝑖)
+2
+ 
+(4) 
+
+Agriculture 2026, 16, 1884 
+13 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+ 
+Figure 8. Circular-ROI-based 3D coordinate estimation pipeline for Camellia oleifera C.Abel fruit. 
+Here, α in Equation (4) is a scaling coefficient used to determine the radius of the 
+circular ROI. In all experiments, α was initialized to 0.6 and heuristically adjusted within 
+the empirical range of 0.5–0.8 according to the proportion of valid depth pixels and the 
+stability of the depth values within the ROI. The initial value and adjustment range were 
+selected to balance two competing sampling requirements: retaining sufficient valid depth 
+pixels for robust median estimation and reducing contamination from background pixels 
+and depth discontinuities near the bounding box boundary. The lower bound of 0.5 was 
+intended to avoid an excessively small sampling region, whereas the upper bound of 0.8 
+was intended to limit expansion of the ROI towards the bounding box boundary. These 
+values were task-specific empirical choices and are not claimed to be universally optimal. 
+This adjustment retained a sufficient number of valid depth pixels while keeping the sam-
+pling region concentrated on the fruit body. For the current depth frame, the valid positive 
+depth values within the circular ROI and the robust depth Zi of target i, estimated using 
+their median, are determined as follows: 
+Ω𝑖= {(𝑥, 𝑦)|(𝑥−𝑢𝑖)2 + (𝑦−𝑣𝑖)2 ≤𝑟𝑖
+2} 
+(5) 
+Z𝑖= 𝑚𝑒𝑑𝑖𝑎𝑛{𝐷(𝑥, 𝑦)|(𝑥, 𝑦) ∈Ω𝑖, 𝐷(𝑥, 𝑦) > 0} 
+(6) 
+Once the center pixel (ui, vi) and robust depth Zi were obtained, the target was back-
+projected into the camera coordinate system using the camera intrinsic parameters. The 
+
+Agriculture 2026, 16, 1884 
+14 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+camera coordinate system follows the standard pinhole camera convention: the positive 
+X-axis points to the right in the image plane, the positive Y-axis points downward, and 
+the positive Z-axis points forward along the optical axis. Here, cx and cy denote the princi-
+pal point coordinates, whereas fx and fy denote the focal lengths in the horizontal and ver-
+tical directions, respectively. According to the pinhole camera model, the 3D coordinates 
+of the Camellia oleifera fruit target in the RGB-D camera coordinate system are calculated 
+as follows: 
+𝑋𝑖=
+(𝑢𝑖−𝑐𝑥)𝑍𝑖
+𝑓𝑥
+, 𝑌𝑖=
+(𝑣𝑖−𝑐𝑦)𝑍𝑖
+𝑓𝑦
+, 𝑃𝑖= (𝑋𝑖, 𝑌𝑖, 𝑍𝑖) 
+(7) 
+In this pipeline, the center of the bounding box output by CIAFNet is first mapped 
+to a two-dimensional pixel reference. Valid depth values within the circular ROI provide 
+the target distance in the current frame, and back-projection using the camera intrinsics 
+yields camera coordinates Pi = (Xi, Yi, Zi). Linking the detection output to robust depth 
+statistics reduces coordinate fluctuations caused by background contamination within the 
+bounding box, local occlusion, and depth discontinuities at target boundaries. The evalu-
+ation addresses the consistency of relative coordinate changes under controlled conditions 
+rather than absolute localization accuracy in natural orchards. 
+2.3.2. Relative Displacement Consistency Test 
+A relative displacement consistency test was performed to evaluate the stability and 
+spatial consistency of 3D coordinates derived from CIAFNet detections. Because the true 
+absolute 3D coordinates of Camellia oleifera fruit relative to the camera are difficult to meas-
+ure directly in natural orchards or simulated scenes, a single coordinate output cannot 
+establish reliability. Coordinate changes were therefore compared with a known camera 
+translation. During each experimental group, five model Camellia oleifera fruit targets ar-
+ranged on a simulated branch remained stationary, whereas only the D435i camera mount 
+was moved. The camera coordinates of the same target were recorded before and after 
+movement. Because coordinates are expressed in the camera coordinate system, the ex-
+pected change in target coordinates is equal in magnitude and opposite in direction to the 
+prescribed camera translation. The difference between the observed and expected target 
+coordinate changes was defined as the relative displacement consistency error, which 
+quantifies the stability and spatial consistency of the visual front end rather than absolute 
+positional accuracy. 
+The test was performed as follows. The Camellia oleifera fruit model or branch was 
+first fixed. The D435i pose was then adjusted until the target was within the field of view 
+and could be detected and localized stably in 3D by CIAFNet. The 3D coordinates of each 
+target before camera movement were recorded as the initial coordinates. While the target 
+remained stationary, the camera mount was translated along a predefined combined di-
+rection, with prescribed displacement components of 100 mm along the horizontal, verti-
+cal, and depth axes. A second RGB-D image was then acquired, and the coordinates of the 
+same target were recorded. The observed coordinate changes along each axis were com-
+pared with the corresponding expected target coordinate changes induced by the camera 
+translation to obtain the relative displacement consistency error. Ten experimental groups 
+were conducted under controlled conditions. In each group, the coordinates of five model 
+fruit targets were recorded before and after the prescribed camera translation, yielding 50 
+target-level relative displacement measurements in total. Group-wise errors and pooled 
+descriptive results across all target observations were calculated. This experiment evalu-
+ated the consistency of coordinate changes under prescribed camera translation rather 
+than the absolute positioning accuracy of individual targets. 
+
+Agriculture 2026, 16, 1884 
+15 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+2.4. Experimental Environment and Training Settings 
+All models were trained and tested in the same hardware and software environment 
+to ensure comparability and reproducibility. An identical base configuration, including 
+input resolution, number of training epochs, batch size, optimizer, and initial learning 
+rate, was used for model comparisons, ablation experiments, and analyses of RGB-D mo-
+dality effectiveness. The experimental environment and training settings are listed in Ta-
+ble 1. 
+A two-stage training procedure was used to separate the learning of natural orchard 
+appearance and DA-V2-derived relative structural priors from adaptation to D435i-meas-
+ured depth. Throughout this study, CIAFNet denotes the unchanged network architec-
+ture. In the first stage, CIAFNet was trained using natural orchard RGB images and their 
+DA-V2 pseudo-depth maps to establish the RGB–pseudo-depth detection representation; 
+the resulting model state is referred to as CIAFNet (Stage 1). In the second stage, the best 
+CIAFNet (Stage 1) weights were loaded and fine-tuned using RGB-D data acquired with 
+the D435i under controlled conditions; the resulting measured depth-adapted model state 
+is referred to as CIAFNet (Stage 2). Thus, CIAFNet (Stage 1) and CIAFNet (Stage 2) rep-
+resent two sequential training states of the same architecture rather than two different 
+network structures. This sequential configuration was adopted according to the different 
+data sources and depth input domains and is not claimed to be a globally optimal training 
+schedule. In the second stage, the initial learning rate was reduced from 0.01 to 0.001 to 
+allow conservative parameter updates while retaining the representations learned during 
+the first stage. The maximum number of training epochs was kept at 150, consistent with 
+Stage 1, to maintain a comparable training budget across the two stages. Only the RGB 
+backbone was frozen during the second stage; the depth branch was not frozen. Freezing 
+the RGB backbone was intended to preserve the appearance representations learned from 
+the larger natural orchard dataset and to reduce the risk of overfitting to the smaller con-
+trolled scene D435i dataset or excessively modifying the previously learned appearance 
+representation. The depth branch, CIDAF fusion module, SC-EUCB-enhanced BiFPN 
+neck, and detection head remained trainable so that the depth-related representations and 
+fusion weights could adapt to the statistical characteristics of D435i-measured depth, in-
+cluding sensor noise, missing values, and edge discontinuities. The remaining training 
+settings were kept unchanged. Only the RGB images and their synchronized D435i-meas-
+ured depth maps were used in the second stage; DA-V2 pseudo-depth and measured 
+depth were not introduced simultaneously as additional channels. 
+The network-only inference efficiency of CIAFNet was evaluated on the workstation 
+listed in Table 1. Before inference, the convolution and batch normalization layers were 
+fused. All measurements were conducted using FP16 precision with a batch size of 1. Each 
+input consisted of paired RGB and depth images resized to 640 × 640 pixels, forming a six-
+channel RGB–depth input. To minimize initialization and GPU warm-up effects, 100 pre-
+liminary forward passes were performed before timing. The latency was then measured 
+over 1000 forward passes, with CUDA synchronization applied during timing to ensure 
+accurate GPU latency measurement. 
+Table 1. Experimental environment and training parameters. 
+Item 
+Specification 
+Operating system 
+Microsoft Windows 11 Pro 64-bit 
+CPU 
+Intel Core i5-13600KF 
+(Intel Corporation, Santa Clara, CA, USA) 
+GPU 
+NVIDIA GeForce RTX 4070 SUPER 12 GB 
+(NVIDIA Corporation, Santa Clara, CA, USA) 
+Deep learning framework 
+PyTorch 2.5.1 + CUDA 12.1 
+
+Agriculture 2026, 16, 1884 
+16 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+Input resolution 
+640 × 640 
+Epochs 
+150 
+Batch size 
+16 
+Optimizer 
+SGD 
+Initial learning rate (first stage) 
+0.01 
+Initial learning rate (second stage) 
+0.001 
+3. Results and Analysis 
+3.1. Evaluation Metrics 
+CIAFNet was evaluated at three levels: detection performance, separability of fused 
+features, and relative displacement consistency. The first two assessed the reliability of 
+detection and the discriminability of fused representations, respectively, whereas the 
+third determined whether the detections provided stable inputs for relative 3D coordinate 
+output under controlled conditions. 
+Detection performance for Camellia oleifera fruit was quantified using precision (P), 
+recall (R), mean average precision at an intersection-over-union threshold of 0.5 
+(mAP@0.5), and mAP averaged over thresholds from 0.5 to 0.95 (mAP@0.5:0.95). Model 
+complexity was quantified using the number of parameters (Params) and the number of 
+floating point operations in billions (GFLOPs). The specific calculation formulas for these 
+evaluation metrics are as follows: 
+𝑃=
+𝑇𝑃
+𝑇𝑃+ 𝐹𝑃 
+(8) 
+𝑅=
+𝑇𝑃
+𝑇𝑃+ 𝐹𝑁 
+(9) 
+𝑚𝐴𝑃@50 = 1
+𝑛∑𝐴𝑃𝑖
+𝑛
+𝑖=1
+ 
+(10) 
+𝑃𝑎𝑟𝑎𝑚𝑠= (𝐾ℎ× 𝐾𝑤× 𝐶𝑖𝑛+ 1) × 𝐶𝑜𝑢𝑡 
+(11) 
+𝐺𝐹𝐿𝑂𝑃𝑠= 2 × 𝐻𝑜𝑢𝑡× 𝑊𝑜𝑢𝑡× 𝐾ℎ× 𝐾𝑤× 𝐶𝑖𝑛× 𝐶𝑜𝑢𝑡
+109
+ 
+(12) 
+Here, TP is the number of correctly detected Camellia oleifera fruit targets, FP is the 
+number of false detections, FN is the number of missed detections, and APi is the average 
+precision for class i. Kh and Kw are the convolution kernel height and width, respectively; 
+Cin and Cout are the numbers of input and output channels; and Hout and Wout are the height 
+and width of the output feature map. 
+To quantify the statistical uncertainty of the detection results, an image-level paired 
+nonparametric bootstrap analysis was performed on the natural orchard test set contain-
+ing 263 images. The trained model weights were fixed, and no model retraining was per-
+formed. In each bootstrap iteration, 263 images were sampled with replacement, and the 
+same resampled image indices were applied to RGB-only, Baseline, and CIAFNet to pre-
+serve the paired comparison structure. The mAP@0.5 and mAP@0.5:0.95 metrics were re-
+calculated for each resampled test set. For bootstrap iteration b, the paired difference was 
+calculated as: 
+Δ𝑏= 𝑀𝐶𝐼𝐴𝐹𝑁𝑒𝑡,𝑏−𝑀𝑟𝑒𝑓𝑒𝑟𝑒𝑛𝑐𝑒,𝑏 
+(13) 
+where M represents mAP@0.5 or mAP@0.5:0.95, and the reference model represents RGB-
+only or Baseline. This procedure was repeated 5000 times. The bootstrap mean and stand-
+ard deviation (SD) were calculated for each model. The mean paired difference and its 
+
+Agriculture 2026, 16, 1884 
+17 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+two-sided percentile-based 95% confidence interval (CI) were calculated from the paired 
+difference distribution, with the CI defined by its 2.5th and 97.5th percentiles. A difference 
+was considered statistically significant at the two-sided α = 0.05 level when its 95% CI did 
+not include zero. The bootstrap SD represents test set sampling uncertainty conditional 
+on the fixed trained model checkpoints rather than variability across repeated training 
+runs. 
+Feature separability was quantified using the silhouette coefficient (Sil) and the Da-
+vies–Bouldin index (DBI). A larger Sil indicates tighter within-class clustering and greater 
+between-class separation, whereas a smaller DBI indicates better separation among fea-
+ture clusters. The corresponding calculation formulas are as follows: 
+𝑆𝑖𝑙= 1
+𝑛∑
+𝑏𝑖−𝑎𝑖
+max(𝑎𝑖, 𝑏𝑖)
+𝑛
+𝑖=1
+ 
+(14) 
+𝐷𝐵𝐼= 1
+𝐾∑𝑚𝑎𝑥𝑗≠𝑖(𝑆𝑖+ 𝑆𝑗
+𝑀𝑖𝑗
+)
+𝐾
+𝑖=1
+ 
+(15) 
+Here, n is the number of samples; ai is the mean distance from sample i to samples of 
+the same class; bi is the mean distance from sample i to samples in the nearest different 
+cluster; K is the number of classes; Si and Sj are the mean within-cluster distances; and Mij 
+is the distance between the centers of clusters i and j. 
+Consistency of the 3D coordinate output was quantified using the axis-wise absolute 
+errors, the mean axis-wise absolute errors, and the mean 3D Euclidean error. The relative 
+displacement consistency error measures the agreement between the observed change in 
+the 3D coordinates of the same Camellia oleifera fruit target before and after a known cam-
+era translation and the expected target coordinate change induced by that translation. For 
+target i, the errors along the three axes are denoted ex,i, ey,i, and ez,i. Averaging over all 
+targets yields the mean absolute errors 𝐸𝑥, 𝐸𝑦, and 𝐸𝑧 along the X, Y, and Z axes, respec-
+tively. The mean 3D Euclidean error 𝐸3𝐷 is calculated as the average Euclidean norm of 
+the per-target error vectors, as follows: 
+𝑒𝑥,𝑖= |(𝑋𝑖
+1 −𝑋𝑖
+0) −∆𝑋|, 𝑒𝑦,𝑖= |(𝑌𝑖
+1 −𝑌𝑖
+0) −∆𝑌|, 𝑒𝑧,𝑖= |(𝑍𝑖
+1 −𝑍𝑖
+0) −∆𝑍| 
+(16) 
+𝐸𝑥=
+1
+𝑁∑𝑒𝑥,𝑖
+𝑁
+𝑖=1
+, 𝐸𝑦=
+1
+𝑁∑𝑒𝑦,𝑖
+𝑁
+𝑖=1
+, 𝐸𝑧=
+1
+𝑁∑𝑒𝑧,𝑖
+𝑁
+𝑖=1
+ 
+(17) 
+𝐸3𝐷=
+1
+𝑁∑√𝑒𝑥,𝑖
+2 + 𝑒𝑦,𝑖
+2 + 𝑒𝑧,𝑖
+2
+𝑁
+𝑖=1
+ 
+(18) 
+Here, (𝑋𝑖
+0 , 𝑌𝑖
+0 , 𝑍𝑖
+0 ) and (𝑋𝑖
+1 , 𝑌𝑖
+1 , 𝑍𝑖
+1 ) are the 3D coordinates of Camellia oleifera fruit 
+target i before and after camera movement, respectively; ΔX, ΔY, and ΔZ denote the ex-
+pected coordinate changes of the stationary target in the camera coordinate system in-
+duced by the prescribed camera translation; and N is the number of targets included in 
+the analysis. Under the coordinate convention used here, the expected target coordinate 
+change was (−100, +100, −100) mm. Smaller errors indicate greater consistency between 
+the model-derived 3D coordinates and the expected coordinate change. 
+3.2. Comparison with Other Detection Models 
+Eight representative detectors were selected for comparison with CIAFNet on Camel-
+lia oleifera fruit detection in complex natural orchard backgrounds. YOLOv5n, YOLOv8n, 
+YOLO11n, YOLOv13-N, YOLO26n, and RT-DETR-R18 were included as RGB-only 
+
+Agriculture 2026, 16, 1884 
+18 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+baselines, whereas YOLO-RGBDtea [36] and DEYOLOn [37] were included as multimodal 
+baselines. For the modality-matched comparison, YOLO-RGBDtea, DEYOLOn, and 
+CIAFNet (Stage 1) received the same RGB images and corresponding DA-V2 pseudo-
+depth maps. All models were evaluated using the same data split, input resolution, train-
+ing settings, and evaluation metrics. The quantitative results are summarized in Table 2, 
+and representative detection results are presented in Figures 9–11. 
+The RGB-only baselines provide conventional detection references, whereas the com-
+parison among YOLO-RGBDtea, DEYOLOn, and CIAFNet (Stage 1) provides a modality-
+matched assessment under the same RGB–pseudo-depth input. CIAFNet (Stage 1) 
+achieved a precision of 94.54%, a recall of 84.92%, an mAP@0.5 of 93.33%, and an 
+mAP@0.5:0.95 of 73.67% (Table 2). Among the RGB–pseudo-depth models, CIAFNet 
+(Stage 1) achieved the highest values for all four metrics. Compared with YOLO-RGBDtea, 
+CIAFNet (Stage 1) improved precision, recall, mAP@0.5, and mAP@0.5:0.95 by 0.26, 0.29, 
+0.47, and 2.78 percentage points, respectively. Compared with DEYOLOn, CIAFNet 
+(Stage 1) improved precision, recall, mAP@0.5, and mAP@0.5:0.95 by 4.55, 2.02, 3.28, and 
+7.67 percentage points, respectively. In this experiment, the three multimodal models 
+shared identical inputs, using the same RGB images and pseudo-depth maps generated 
+by DA-V2. The results under this matched input condition indicate that the performance 
+advantage of CIAFNet cannot be attributed solely to the introduction of pseudo-depth 
+information, which indirectly lends support to the merits of its model design. 
+Table 2. Comparison of Camellia oleifera C.Abel fruit detection performance across models.  
+Model 
+Input Modality 
+P/% 
+R/% 
+mAP@0.5/% 
+mAP@0.5:0.95/% 
+YOLOv5n 
+RGB 
+87.79 
+78.03 
+88.13 
+64.34 
+YOLOv8n 
+RGB 
+91.49 
+80.21 
+90.29 
+64.99 
+YOLO11n 
+RGB 
+92.05 
+82.33 
+91.11 
+68.32 
+YOLOv13-N 
+RGB 
+88.59 
+79.39 
+89.72 
+66.43 
+YOLO26n 
+RGB 
+92.31 
+81.19 
+90.64 
+67.84 
+RT-DETR-R18 
+RGB 
+89.42 
+80.67 
+89.44 
+65.49 
+YOLO-RGBDtea RGB + DA-V2 Pseudo Depth 
+94.28 
+84.63 
+92.86 
+70.89 
+DEYOLOn 
+RGB + DA-V2 Pseudo Depth 
+89.99 
+82.90 
+90.05 
+66.00 
+CIAFNet 
+RGB + DA-V2 Pseudo Depth 
+94.54 
+84.92 
+93.33 
+73.67 
+Note. In the table, CIAFNet denotes the model state obtained after first-stage training on the natural 
+orchard RGB–pseudo-depth dataset. 
+Figures 9–11 show model performance under close-range mild occlusion, distant 
+complex backgrounds, and backlighting with dense foliage occlusion. Blue boxes denote 
+model-predicted bounding boxes, red boxes denote missed detections, and red circles de-
+note false detections. In the close-range scene, CIAFNet preserved more complete fruit 
+boundaries. In the distant scene, fewer small fruit targets were missed. Under backlight-
+ing, shadows, and dense foliage occlusion, several Camellia oleifera fruit targets in shad-
+owed regions were still detected, with fewer false detections than were produced by the 
+comparison models. Collectively, these findings indicate that CIAFNet improves oc-
+cluded target recall, small target recognition, and boundary localization stability. The vis-
+ualizations provide qualitative evidence consistent with the proposed mechanism but do 
+not independently establish the effectiveness of cross-modal fusion. 
+
+Agriculture 2026, 16, 1884 
+19 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+ 
+Figure 9. Comparison of detection results in a close-range scene with mild occlusion. 
+
+Agriculture 2026, 16, 1884 
+20 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+ 
+Figure 10. Comparison of detection results in a distant scene with a complex background. 
+
+Agriculture 2026, 16, 1884 
+21 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+ 
+Figure 11. Comparison of detection results under backlighting, shadows, and dense foliage occlu-
+sion. 
+3.3. Ablation Studies of CIAFNet 
+Progressive ablation experiments were performed to quantify the contribution of 
+each design component. The baseline was the basic dual-stream detector without the pro-
+posed modules. Model 1 added C3k2_PartialNetBlock to Baseline; Model 2 further added 
+CIDAF; Model 3 additionally incorporated BiFPN for multiscale feature fusion; and the 
+complete CIAFNet augmented BiFPN upsampling with SC-EUCB. In addition, rp = 1/8, 
+1/4, and 1/2 were evaluated in Model 1 to examine the influence of the partial channel 
+ratio on detection performance and computational efficiency. Table 3 presents the rp sen-
+sitivity analysis, whereas Table 4 presents the progressive model ablation results. Based 
+on the accuracy–efficiency comparison in Table 3, rp = 1/4 was used in the subsequent 
+model configurations. 
+Table 3. Sensitivity analysis of the channel-partition ratio in Model 1. 
+Model 
+rp 
+P/% 
+R/% 
+mAP@0.5/% 
+mAP@0.5:0.95/% 
+GFLOPs 
+Baseline 
+- 
+92.01 
+84.09 
+91.90 
+71.25 
+12.20 
+Model 1 
+1/8 
+91.42 
+83.62 
+91.83 
+70.53 
+10.94 
+Model 1 
+1/4 † 
+91.78 
+84.05 
+92.15 
+70.66 
+11.07 
+
+Agriculture 2026, 16, 1884 
+22 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+Model 1 
+1/2 
+91.88 
+84.12 
+92.23 
+70.78 
+11.55 
+Note. † indicates the setting retained in the subsequent model configurations. 
+Table 4. Progressive ablation results for CIAFNet.  
+Model 
+Added Module(s) 
+P/% 
+R/% 
+mAP@0.5/% 
+mAP@0.5:0.95/% 
+GFLOPs 
+Baseline 
+- 
+92.01 
+84.09 
+91.90 
+71.25 
+12.20 
+Model 1 
++ C3k2_PartialNetBlock 
+(rp = 1/4) 
+91.78 
+84.05 
+92.15 
+70.66 
+11.07 
+Model 2 
++ CIDAF 
+93.88 
+84.82 
+92.88 
+72.65 
+11.93 
+Model 3 
++ BiFPN 
+93.92 
+84.74 
+93.05 
+73.11 
+10.35 
+CIAFNet  
++ SC-EUCB 
+94.54 
+84.92 
+93.33 
+73.67 
+10.49 
+Note. In the table, CIAFNet denotes the model state obtained after first-stage training on the natural 
+orchard RGB–pseudo-depth dataset. 
+The sensitivity analysis in Table 3 shows that increasing rp from 1/8 to 1/2 progres-
+sively improved the detection metrics but also increased computational complexity and 
+the number of parameters. Among the evaluated ratios, rp = 1/2 achieved the highest de-
+tection metrics, whereas rp =1/8 yielded the lowest computational cost. Compared with rp 
+= 1/2, rp = 1/4 reduced GFLOPs from 11.55 to 11.07 and the parameter count from 4.46 M 
+to 4.14 M, while P, R, mAP@0.5, and mAP@0.5:0.95 decreased by only 0.10, 0.07, 0.08, and 
+0.12 percentage points, respectively. Therefore, rp = 1/4 was retained as the selected accu-
+racy–efficiency trade-off for the subsequent experiments. Compared with Baseline, Model 
+1 with rp = 1/4 reduced GFLOPs and the parameter count by 9.26% and 18.34%, respec-
+tively. Its effect on detection accuracy was mixed: mAP@0.5 increased by 0.25 percentage 
+points, whereas P, R, and mAP@0.5:0.95 decreased by 0.23, 0.04, and 0.59 percentage 
+points, respectively. Accordingly, C3k2_PartialNetBlock was interpreted primarily as an 
+efficiency-oriented component that reduces computational redundancy while retaining 
+broadly comparable detection performance, rather than as an independently accuracy-
+enhancing module. 
+As shown in Table 4, incorporating CIDAF into Model 1 increased P, R, mAP@0.5, 
+and mAP@0.5:0.95 by 2.10, 0.77, 0.73, and 1.99 percentage points, respectively, indicating 
+improved selective interaction and adaptive fusion between RGB appearance cues and 
+pseudo-depth-derived structural information. The subsequent incorporation of BiFPN 
+further increased P, mAP@0.5, and mAP@0.5:0.95 by 0.04, 0.17, and 0.46 percentage points, 
+respectively, while reducing GFLOPs and parameter count by 13.24% and 16.89%. After 
+SC-EUCB was introduced, the complete CIAFNet further improved the four detection 
+metrics by 0.62, 0.18, 0.28, and 0.56 percentage points over Model 3, respectively, with 
+only marginal increases in computational complexity. Compared with Baseline, CIAFNet 
+improved P, R, mAP@0.5, and mAP@0.5:0.95 by 2.53, 0.83, 1.43, and 2.42 percentage 
+points, respectively, while reducing GFLOPs and parameter count by 14.02% and 25.05%. 
+Overall, C3k2_PartialNetBlock provides a lightweight feature extraction basis, while 
+CIDAF, BiFPN, and SC-EUCB progressively improve cross-modal fusion, multiscale ag-
+gregation, and detail recovery, enabling CIAFNet to achieve a favorable accuracy–effi-
+ciency balance. 
+The paired bootstrap analysis in Table 5 further showed that CIAFNet improved 
+mAP@0.5 and mAP@0.5:0.95 over Baseline by mean values of 1.34 and 2.64 percentage 
+points, respectively. The corresponding 95% CIs were [0.71, 1.97] and [1.88, 3.40] percent-
+age points. Because both confidence intervals were entirely above zero, the improvements 
+over Baseline were statistically significant under the paired bootstrap criterion. 
+ 
+ 
+
+Agriculture 2026, 16, 1884 
+23 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+Table 5. Paired bootstrap comparison between Baseline and CIAFNet.  
+Metric 
+Baseline, Mean ± SD/% 
+CIAFNet, Mean ± SD/% 
+Mean Δ/pp 
+95% CI of Δ/pp 
+mAP@0.5 
+91.97 ± 0.45 
+93.31 ± 0.41 
+1.34 
+[0.71, 1.97] 
+mAP@0.5:0.95 
+71.14 ± 0.54 
+73.78 ± 0.50 
+2.64 
+[1.88, 3.40] 
+Note. CIAFNet denotes the model state obtained after first-stage training on the natural orchard 
+RGB–pseudo-depth dataset. Δ denotes CIAFNet minus Baseline; pp denotes percentage points. 
+On the tested workstation, CIAFNet achieved a mean network-only inference latency 
+of 10.716 ms per input, corresponding to approximately 93.32 FPS. In addition to theoret-
+ical complexity metrics such as GFLOPs and parameter count, this result provides an em-
+pirical reference for the forward pass efficiency of CIAFNet. It should be noted that the 
+timing included only the network forward computation on the specified workstation and 
+therefore does not directly represent end-to-end processing speed. Moreover, because em-
+bedded robotic platforms differ from the current workstation in computational resources, 
+power constraints, and deployment environments, the actual inference performance on 
+such platforms may vary and requires further evaluation through dedicated deployment 
+tests. 
+Feature response heatmaps for the ablation models are shown in Figure 12. As 
+C3k2_PartialNetBlock, CIDAF, BiFPN, and SC-EUCB were progressively introduced, 
+high-response regions shifted from foliage and background areas towards the Camellia 
+oleifera fruit bodies. Relative to Baseline, the enhanced models produced more concen-
+trated responses around occlusion boundaries and adjacent fruit, clearer target bounda-
+ries, and weaker activation in non-target regions. This pattern is consistent with the quan-
+titative improvements and qualitatively supports the capacity of the proposed modules 
+to improve discriminative fruit region representations and spatial focus. 
+ 
+Figure 12. Heatmap visualizations for different module combinations in the ablation study. 
+3.4. Effectiveness of Pseudo-Depth Assistance 
+To examine the value of pseudo-depth as a structural prior and the effectiveness of 
+CIDAF-based fusion, five configurations were compared: RGB only, pseudo-depth only, 
+RGB plus pseudo-depth with feature concatenation, RGB plus pseudo-depth with feature 
+addition, and CIAFNet with adaptive fusion. 
+To compare feature separability among fusion strategies, ROI features were extracted 
+from intermediate feature maps after fusion and before the detection head and were vis-
+ualized using t-SNE. The fused feature map with the highest spatial resolution was se-
+lected to balance post-fusion semantic representation with spatial localization information 
+for small Camellia oleifera fruit targets. For each test image, bounding box regions 
+
+Agriculture 2026, 16, 1884 
+24 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+containing Camellia oleifera fruit and randomly sampled non-target background regions 
+were mapped to the corresponding feature map. Average pooling within each ROI pro-
+duced feature vectors for target and background regions. For each model, 260 fruit target 
+ROI features and 295 background ROI features were extracted for t-SNE visualization and 
+calculation of Sil and DBI. Detection performance is summarized in Table 6, and the cor-
+responding target and background feature distributions are shown in Figure 13. 
+Table 6. Comparison of detection performance among pseudo-depth-assisted fusion methods.  
+Method 
+Input Modality 
+Fusion Strategy 
+P/% 
+R/% 
+mAP@0.5/% 
+mAP@0.5:0.95/% 
+RGB only 
+RGB 
+None 
+91.78 
+81.36 
+91.52 
+68.94 
+Depth only 
+Depth 
+None 
+84.86 
+61.20 
+71.24 
+53.91 
+RGB-D Concat 
+RGB + Depth 
+Feature concatenation 
+93.64 
+83.62 
+92.58 
+72.36 
+RGB-D Add 
+RGB + Depth 
+Feature addition 
+93.17 
+82.95 
+92.23 
+71.08 
+CIAFNet 
+RGB + Depth 
+CIDAF adaptive fusion 
+94.54 
+84.92 
+93.33 
+73.67 
+Note. In the table, CIAFNet denotes the model state obtained after first-stage training on the natural 
+orchard RGB–pseudo-depth dataset. 
+Table 6 shows that the pseudo-depth-only configuration yielded P, R, mAP@0.5, and 
+mAP@0.5:0.95 values of 84.86%, 61.20%, 71.24%, and 53.91%, respectively, all substantially 
+lower than those obtained with the RGB-only configuration. Pseudo-depth therefore can-
+not independently replace appearance cues such as color, texture, and edges. When RGB 
+and pseudo-depth were used jointly, RGB-D Concat and RGB-D Add increased 
+mAP@0.5:0.95 to 72.36% and 71.08%, respectively, indicating that relative structural priors 
+helped distinguish targets from foliage, background regions, and adjacent fruits. Com-
+pared with simple concatenation and element-wise addition, CIAFNet with CIDAF-based 
+adaptive fusion achieved P, R, mAP@0.5, and mAP@0.5:0.95 values of 94.54%, 84.92%, 
+93.33%, and 73.67%, respectively. These values represented improvements of 2.76, 3.56, 
+1.81, and 4.73 percentage points over the RGB-only configuration. 
+The paired bootstrap results in Table 7 showed mean improvements of 1.86 percent-
+age points in mAP@0.5 and 4.72 percentage points in mAP@0.5:0.95 relative to RGB-only. 
+The corresponding 95% CIs were [1.21, 2.51] and [3.94, 5.50] percentage points, respec-
+tively. Neither confidence interval included zero, indicating that both improvements were 
+statistically significant under the paired bootstrap criterion. 
+Table 7. Paired bootstrap comparison between RGB-only and CIAFNet.  
+Metric 
+RGB-Only, Mean ± SD/% 
+CIAFNet, Mean ± SD/% 
+Mean Δ/pp 
+95% CI of Δ/pp 
+mAP@0.5 
+91.45 ± 0.47 
+93.31 ± 0.41 
+1.86 
+[1.21, 2.51] 
+mAP@0.5:0.95 
+69.06 ± 0.57 
+73.78 ± 0.50 
+4.72 
+[3.94, 5.50] 
+Note. CIAFNet denotes the model state obtained after first-stage training on the natural orchard 
+RGB–pseudo-depth dataset. Δ denotes CIAFNet minus RGB-only; pp denotes percentage points. 
+Figure 13 presents the t-SNE distributions of target and background features under 
+the different fusion strategies, together with the Sil and DBI separability metrics. The RGB-
+only configuration yielded a Sil of 0.16 and a DBI of 2.23, whereas the pseudo-depth-only 
+configuration yielded values of 0.09 and 3.02, respectively, indicating less stable inter-class 
+boundaries when pseudo-depth was used alone. After pseudo-depth was introduced, Sil 
+increased to 0.20 for RGB-D Concat and 0.18 for RGB-D Add, while DBI decreased to 1.96 
+and 1.99, respectively. CIAFNet achieved the highest Sil value of 0.24 and the lowest DBI 
+value of 1.64, indicating more compact within-class representations and clearer between-
+class separation. These metrics provide feature space evidence supporting the selective-
+
+Agriculture 2026, 16, 1884 
+25 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+fusion effect of CIDAF. t-SNE was used only to visualize the feature distributions and was 
+not treated as independent validation of the internal mechanism. 
+ 
+Figure 13. Feature-distribution visualizations for different pseudo-depth-assisted fusion methods. 
+3.5. Depth Input Discrepancy and Second-Stage Training Under Controlled Conditions 
+To quantify the effects of depth input source and second-stage adaptation under con-
+trolled conditions, four evaluation settings were constructed using the same D435i test set. 
+First, the RGB-only baseline was evaluated using only the D435i RGB images. Second, 
+CIAFNet (Stage 1), trained on the natural orchard RGB–pseudo-depth dataset, was eval-
+uated using the D435i RGB images paired with DA-V2 pseudo-depth maps generated 
+from the same images. Third, the same CIAFNet (Stage 1) model was evaluated by replac-
+ing the pseudo-depth maps with synchronized D435i-measured depth, without addi-
+tional fine-tuning. Finally, CIAFNet (Stage 2), obtained by further fine-tuning CIAFNet 
+(Stage 1) on the controlled scene D435i RGB-D dataset, was evaluated using D435i RGB 
+images and measured depth. Because the second and third settings used identical model 
+weights and RGB images, their comparison directly reflects the effect of replacing DA-V2 
+pseudo-depth with D435i-measured depth. Similarly, because the third and fourth set-
+tings used the same RGB and measured depth inputs, their comparison reflects the effect 
+of second-stage measured depth adaptation. The results are presented in Table 8 and Fig-
+ure 14. 
+Table 8. Detection performance with different depth inputs and second-stage training under con-
+trolled conditions.  
+Model Setting 
+Test Input Modality 
+P/% 
+R/% 
+mAP@0.5/% 
+mAP@0.5:0.95/% 
+RGB-only 
+RGB 
+95.12 
+89.36 
+95.31 
+77.68 
+CIAFNet (Stage 1) 
+RGB + Pseudo Depth 
+96.35 
+91.12 
+96.83 
+79.73 
+CIAFNet (Stage 1) 
+RGB + Measured Depth 
+94.33 
+88.21 
+94.17 
+75.92 
+CIAFNet (Stage 2) 
+RGB + Measured Depth 
+96.07 
+90.74 
+96.40 
+79.36 
+
+Agriculture 2026, 16, 1884 
+26 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+Note. CIAFNet (Stage 1) and CIAFNet (Stage 2) share the same network architecture and differ only 
+in training state. 
+ 
+Figure 14. Comparison of detection performance with different depth inputs and second-stage train-
+ing under controlled conditions. 
+When the D435i test set RGB images were paired with DA-V2 pseudo-depth maps, 
+CIAFNet (Stage 1) achieved P, R, mAP@0.5, and mAP@0.5:0.95 values of 96.35%, 91.12%, 
+96.83%, and 79.73%, respectively (Table 8 and Figure 14). Compared with the RGB-only 
+baseline, its mAP@0.5 and mAP@0.5:0.95 increased by 1.52 and 2.05 percentage points, 
+respectively, indicating that the addition of pseudo-depth remained beneficial in the con-
+trolled scene test set. When the same CIAFNet (Stage 1) weights and RGB images were 
+retained, but the DA-V2 pseudo-depth maps were replaced with synchronized D435i-
+measured depth, P, R, mAP@0.5, and mAP@0.5:0.95 decreased to 94.33%, 88.21%, 94.17%, 
+and 75.92%, respectively. These values were 2.02, 2.91, 2.66, and 3.81 percentage points 
+lower than those obtained with pseudo-depth input. Because the model weights and RGB 
+images were unchanged, this degradation reflects the input domain discrepancy between 
+DA-V2 pseudo-depth and D435i-measured depth, including differences in scale response, 
+edge continuity, noise, and missing value patterns. After further fine-tuning on the con-
+trolled scene D435i RGB-D dataset, CIAFNet (Stage 2) achieved P, R, mAP@0.5, and 
+mAP@0.5:0.95 values of 96.07%, 90.74%, 96.40%, and 79.36%, respectively. Compared with 
+CIAFNet (Stage 1) evaluated directly with measured depth input, these values increased 
+by 1.74, 2.53, 2.23, and 3.44 percentage points, respectively. This recovery indicates that 
+second-stage fine-tuning adapted the feature representations and fusion weights to the 
+statistical characteristics of D435i-measured depth, thereby mitigating the pseudo-depth-
+to-measured-depth input mismatch within the controlled data domain. 
+ 
+ 
+
+Agriculture 2026, 16, 1884 
+27 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+3.6. Relative Three-Dimensional Localization Consistency Under Controlled Conditions 
+Following validation of the detection performance, CIAFNet (Stage 2), obtained by 
+fine-tuning on controlled scene D435i RGB-D data, was used to evaluate the relative dis-
+placement consistency of the 3D coordinates produced by the visual front end. Ten groups 
+of relative displacement experiments were conducted under controlled conditions. In each 
+group, five model Camellia oleifera fruit targets arranged on a simulated branch remained 
+stationary, while the D435i camera was translated along the prescribed three-axis direc-
+tion. The coordinates of the five targets were recorded before and after camera translation, 
+yielding 50 target-level coordinate comparisons. The observed coordinate changes were 
+compared with the expected changes induced by the prescribed camera translation. The 
+experimental setup and an example of the coordinate output are shown in Figure 15, and 
+the relative displacement consistency errors under controlled conditions are reported in 
+Table 9. 
+ 
+Figure 15. Experimental setup and 3D coordinate outputs before and after combined camera trans-
+lation: (a) setup; (b) coordinates before translation; and (c) coordinates after simultaneous 100 mm 
+rightward, forward, and upward translations. 
+Across the 10 experimental groups, comprising 50 target-level measurements, the 
+pooled mean absolute errors along the X, Y, and Z axes were 3.10, 3.15, and 3.27 mm, 
+respectively. The average of the three axis-wise mean absolute errors was 3.17 mm. These 
+results indicate that, under controlled conditions involving model Camellia oleifera fruit 
+targets and simulated branch structures, the CIAFNet-based visual front end produced 
+relatively consistent coordinate changes under prescribed camera translations. Potential 
+
+Agriculture 2026, 16, 1884 
+28 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+sources of error included bias in the bounding box center, local depth holes within the 
+ROI, depth discontinuities at target boundaries, and small pose perturbations during cam-
+era movement. 
+The mean 3D relative displacement consistency error across the 10 experimental 
+groups was 5.60 mm, with the group-level mean values ranging from 4.94 to 6.20 mm, as 
+shown in Figure 16. Although some variation among the tests was observed, the errors 
+remained within a relatively narrow range. These findings support the feasibility and sta-
+bility of using CIAFNet as a visual front end for relative 3D coordinate estimation under 
+controlled conditions; however, they do not establish absolute localization accuracy in 
+natural orchards. 
+Table 9. Relative displacement consistency results for Camellia oleifera fruit targets under controlled 
+conditions. 
+Experimental 
+Group 
+Number of 
+Observations 
+MAE in X/mm 
+MAE in Y/mm 
+MAE in Z/mm 
+Mean 3D Consistency 
+Error/mm 
+1 
+5 
+3.13 
+3.27 
+3.48 
+5.76 
+2 
+5 
+3.38 
+3.47 
+3.42 
+5.95 
+3 
+5 
+2.35 
+3.42 
+3.12 
+5.20 
+4 
+5 
+3.72 
+2.58 
+3.40 
+5.76 
+5 
+5 
+2.68 
+3.12 
+3.83 
+5.68 
+6 
+5 
+3.51 
+3.66 
+2.66 
+5.88 
+7 
+5 
+2.49 
+2.73 
+3.51 
+5.11 
+8 
+5 
+3.84 
+3.05 
+3.69 
+6.20 
+9 
+5 
+2.76 
+3.71 
+2.76 
+5.52 
+10 
+5 
+3.14 
+2.49 
+2.83 
+4.94 
+Overall 
+50 
+3.10 
+3.15 
+3.27 
+5.60 
+ 
+Figure 16. Statistics of relative 3D localization errors under controlled conditions. 
+4. Discussion 
+The central finding is that pseudo-depth improves Camellia oleifera fruit detection in 
+natural orchards not by replacing RGB information but by providing relative structural 
+cues that can be exploited selectively when appearance cues are ambiguous. CIAFNet em-
+beds this prior within the detector rather than using it only after detection for coordinate 
+calculation. Under the modality-matched RGB–pseudo-depth setting, CIAFNet (Stage 1) 
+improved mAP@0.5:0.95 by 2.78 percentage points compared with YOLO-RGBDtea, the 
+strongest multimodal baseline in Table 2. Separately, the within-framework comparison 
+in Table 6 showed that CIAFNet (Stage 1) improved mAP@0.5:0.95 by 4.73 percentage 
+
+Agriculture 2026, 16, 1884 
+29 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+points over the RGB-only configuration. Pseudo-depth performed poorly when used 
+alone but improved performance when combined with RGB; the gain is therefore more 
+plausibly attributed to complementarity between appearance and structural cues than to 
+replacement by either modality. Through discrepancy awareness, consistency modeling, 
+and gated allocation, CIDAF enables selective use of depth structure around fruit bound-
+aries, occlusion edges, and adjacent targets while suppressing unreliable responses 
+caused by noise or holes. The ablation results, feature separability metrics, and visualiza-
+tions collectively support this interpretation, although none independently proves every 
+internal mechanism. 
+The experiments also revealed a substantial input mismatch between training with 
+pseudo-depth and deployment with measured depth. DA-V2 pseudo-depth encodes rel-
+ative structural relationships and can therefore support training on natural orchard im-
+ages acquired without synchronized depth. Because these pseudo-depth maps are deter-
+ministically predicted from the corresponding RGB images rather than obtained through 
+independent geometric measurements, their relative value distributions, boundary conti-
+nuity, and noise characteristics may differ substantially from those of D435i-measured 
+depth. The current results also cannot fully exclude the possibility that the depth branch 
+partly relies on statistical patterns specific to DA-V2 outputs. Consistent with this inter-
+pretation, directly replacing DA-V2 pseudo-depth with D435i-measured depth reduced 
+the detection performance of CIAFNet (Stage 1), indicating that the model is sensitive to 
+the source and statistical characteristics of the depth input. After second-stage fine-tuning 
+with synchronized D435i RGB-D data collected under controlled conditions, the perfor-
+mance with measured depth input improved substantially, indicating that CIAFNet 
+(Stage 2) can adapt to D435i-measured depth without modification of the principal net-
+work architecture. However, the D435i dataset was collected using artificial fruit models 
+and cut branches in a controlled scene and therefore does not encompass the full range of 
+illumination, foliage occlusion, sensing distances, fruit surface properties, background 
+structures, and depth quality conditions encountered in real orchards. For an active infra-
+red sensor such as the D435i, the infrared reflectance of artificial fruit surfaces and leaves 
+on cut branches may differ from that of living fruit and leaves. These material-dependent 
+differences may affect the infrared pattern received by the sensor, thereby influencing 
+missing depth patterns, target boundary quality, and depth stability. Accordingly, the sec-
+ond-stage results demonstrate adaptation to D435i-measured depth only within the cur-
+rent controlled data domain; they do not establish that CIAFNet (Stage 1) learned a rep-
+resentation invariant to the depth input source or that the measured depth performance 
+will generalize to real orchards. These findings indicate that the source and statistical char-
+acteristics of the depth input should be treated as integral components of multimodal 
+model design and deployment. 
+The localization experiment conducted under controlled conditions further suggests 
+that stable detection regions can serve as a visual front end for relative 3D coordinate es-
+timation. The controlled experiment comprised 10 groups and yielded 50 target-level rel-
+ative displacement measurements. The mean 3D consistency error was 5.60 mm, with 
+group-level mean values ranging from 4.94 to 6.20 mm. These results indicate only that 
+the coordinate changes produced by the visual front end were relatively consistent under 
+the prescribed camera translation within the current controlled scene. Nevertheless, all 
+target measurements were obtained using artificial Camellia oleifera fruit models and cut 
+branches under controlled conditions. Moreover, the evaluation compared the observed 
+coordinate changes with those expected from the prescribed camera translation rather 
+than comparing the estimated absolute target coordinates with independently measured 
+ground truth positions. Therefore, the experiment evaluates relative displacement 
+
+Agriculture 2026, 16, 1884 
+30 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+consistency under controlled conditions and does not establish absolute positioning accu-
+racy, localization performance on real fruits, or harvesting reliability in natural orchards. 
+The circular-ROI scaling coefficient and its adjustment range, as well as the learning 
+rate, training budget, and parameter-freezing configuration used in the second stage, were 
+empirically selected according to the requirements of the current task and the character-
+istics of the available datasets. Because exhaustive sensitivity analyses and systematic 
+comparisons of alternative freezing strategies were not conducted, these settings should 
+be regarded as task-specific design choices rather than universally optimal configurations. 
+In future work, we will conduct dedicated studies on the 3D localization of Camellia 
+oleifera fruit by systematically evaluating the sensitivity of localization performance to the 
+circular ROI scaling coefficient and investigating the stability of depth-based 3D coordi-
+nate estimation under different levels of target visibility and occlusion. Large-scale syn-
+chronized RGB-D data will also be collected from fruit on living Camellia oleifera trees in 
+natural orchards, and absolute 3D positioning errors will be evaluated using an independ-
+ent high-precision reference system under diverse illumination, occlusion, sensing dis-
+tance, and depth quality conditions. End-to-end manipulator positioning and harvesting 
+experiments will further be conducted to assess practical harvesting reliability. 
+5. Conclusions 
+This study proposed CIAFNet, a lightweight RGB-D dual-stream network for Camel-
+lia oleifera fruit detection in natural orchards. The principal methodological novelty of 
+CIAFNet lies in its discrepancy- and consistency-aware cross-modal fusion mechanism. 
+Unlike fixed feature concatenation or element-wise addition, this mechanism explicitly 
+models local consistency and discrepancy between RGB and depth features to guide the 
+selective fusion of RGB appearance information and DA-V2-derived relative structural 
+priors. Specifically, C3k2_PartialNetBlock reduces redundant spatial computation 
+through partial channel processing; CIDAF generates content-adaptive fusion weights to 
+enhance complementary structural information and attenuate the influence of unreliable 
+depth responses; and the SC-EUCB-enhanced BiFPN improves the recovery of fine-
+grained features across different scales. Together, these modules form a dual-stream de-
+tection framework that balances detection performance and computational complexity. 
+On the natural orchard RGB–pseudo-depth test set, CIAFNet (Stage 1) achieved a 
+precision of 94.54%, a recall of 84.92%, an mAP@0.5 of 93.33%, and an mAP@0.5:0.95 of 
+73.67%, with 10.49 GFLOPs and 3.80 M parameters. The modality comparison and abla-
+tion experiments validated the effectiveness of pseudo-depth-assisted detection and the 
+proposed network components. The image-level paired bootstrap analysis further 
+showed that the performance improvements of CIAFNet over the RGB-only and Baseline 
+configurations were statistically significant on the current test set. After second-stage fine-
+tuning using sensor-acquired D435i RGB-D data collected under controlled conditions, 
+CIAFNet (Stage 2) showed improved adaptation to sensor-measured depth within the 
+controlled data domain. In addition, the relative displacement consistency experiment 
+conducted under controlled conditions yielded a mean 3D consistency error of 5.60 mm, 
+indicating that CIAFNet detections could serve as a visual front end to support relative 
+3D coordinate estimation in controlled environments. However, the current conclusions 
+apply only to pseudo-depth-assisted detection in natural orchards and to measured depth 
+adaptation and relative localization under controlled conditions. Future work will use 
+synchronized sensor-acquired RGB-D data collected in real orchards and continuous ro-
+botic harvesting experiments to further evaluate the end-to-end processing speed, robust-
+ness, absolute localization accuracy, and cross-environment generalization of CIAFNet. 
+
+Agriculture 2026, 16, 1884 
+31 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+Author Contributions: Conceptualization, Y.C. and H.A.; methodology, C.Y. (Chengxin Yang), Y.C. 
+and H.A.; software, C.Y. (Chengxin Yang); validation, C.Y. (Chengxin Yang) and C.Y. (Chao Yuan); 
+formal analysis, C.Y. (Chengxin Yang) and Y.C.; investigation, C.Y. (Chengxin Yang) and Y.F.; re-
+sources, H.A.; data curation, Y.L. and S.L.; writing—original draft preparation, C.Y. (Chengxin 
+Yang); writing—review and editing, Y.C., C.Y. (Chao Yuan), Y.L., Y.F., S.L., H.A. and D.F.; visuali-
+zation, C.Y. (Chengxin Yang); supervision, Y.C.; project administration, Y.C. and H.A.; funding ac-
+quisition, Y.C. and H.A. All authors have read and agreed to the published version of the manu-
+script. 
+Funding: This research was funded by the National Natural Science Foundation of China, grant 
+number 51905387, and the Scientific Research Project of the Hubei Provincial Department of Educa-
+tion, grant number B2022316. 
+Institutional Review Board Statement: Not applicable. 
+Data Availability Statement: The datasets presented in this article are not readily available because 
+they form part of an ongoing study. Requests to access the datasets should be directed to the corre-
+sponding authors. 
+Acknowledgments: During the preparation of this manuscript, the authors used ChatGPT (GPT-
+5.5; OpenAI, San Francisco, CA, USA) for Chinese–English translation, language polishing, and sty-
+listic revision. The authors reviewed and edited all outputs and take full responsibility for the con-
+tent of this publication. ChatGPT was not used for study design, data generation, data analysis, 
+result interpretation, or figure creation. 
+Conflicts of Interest: The authors declare no conflicts of interest. 
+References 
+1. 
+Yang, C.; Liu, X.; Chen, Z.; Lin, Y.; Wang, S. Comparison of oil content and fatty acid profile of ten new Camellia oleifera cultivars. 
+J. Lipids 2016, 2016, 3982486. https://doi.org/10.1155/2016/3982486. 
+2. 
+Rajendran, S.V.; Debnath, B.; Mghames, S.; Mandil, W.; Parsa, S.; Parsons, S.; Ghalamzan-E, A. Towards autonomous selective 
+harvesting: A review of robot perception, robot design, motion planning and control. arXiv 2023, arXiv:2304.09617. 
+https://doi.org/10.48550/arXiv.2304.09617. 
+3. 
+Zhou, H.; Wang, X.; Au, W.; Kang, H.; Chen, C. Intelligent robots for fruit harvesting: Recent developments and future chal-
+lenges. Precis. Agric. 2022, 23, 1856–1907. https://doi.org/10.1007/s11119-022-09913-3. 
+4. 
+Yan, B.; Fan, P.; Lei, X.; Liu, Z.; Yang, F. A Real-Time Apple Targets Detection Method for Picking Robot Based on Improved 
+YOLOv5. Remote Sens. 2021, 13, 1619. https://doi.org/10.3390/rs13091619. 
+5. 
+Zou, Z.; Chen, K.; Shi, Z.; Guo, Y.; Ye, J. Object detection in 20 years: A survey. Proc. IEEE 2023, 111, 257–276. 
+https://doi.org/10.1109/JPROC.2023.3238524. 
+6. 
+Terven, J.; Cordova-Esparza, D.M.; Romero-Gonzalez, J.A. A comprehensive review of YOLO architectures in computer vision: 
+From YOLOv1 to YOLOv8 and YOLO-NAS. Mach. Learn. Knowl. Extr. 2023, 5, 1680–1716. https://doi.org/10.3390/make5040083. 
+7. 
+Li, J.; Tang, Y.; Zou, X.; Lin, G.; Wang, H. Detection of Fruit-Bearing Branches and Localization of Litchi Clusters for Vision-
+Based Harvesting Robots. IEEE Access 2020, 8, 117746–117758. https://doi.org/10.1109/ACCESS.2020.3005386. 
+8. 
+Zhang, B.; Zhang, F.; An, S.; Ding, F.; Liang, Y.; Lyu, Q. SCORE-DETR: An efficient Transformer-based network for small and 
+occluded citrus detection. Comput. Electron. Agric. 2025, 238, 110843. https://doi.org/10.1016/j.compag.2025.110843. 
+9. 
+Tang, Y.; Chen, M.; Wang, C.; Luo, L.; Li, J.; Lian, G. Recognition and Localization Methods for Vision-Based Fruit Picking 
+Robots: A Review. Front. Plant Sci. 2020, 11, 510. https://doi.org/10.3389/fpls.2020.00510. 
+10. 
+Zhang, C.; Kang, F.; Wang, Y. An Improved Apple Object Detection Method Based on Lightweight YOLOv4 in Complex Back-
+grounds. Remote Sens. 2022, 14, 4150. https://doi.org/10.3390/rs14174150. 
+11. 
+Tan, M.; Pang, R.; Le, Q.V. EfficientDet: Scalable and Efficient Object Detection. In Proceedings of the IEEE/CVF Conference on 
+Computer 
+Vision 
+and 
+Pattern 
+Recognition, 
+Seattle, 
+WA, 
+USA, 
+13–19 
+June 
+2020; 
+pp. 
+10778–10787. 
+https://doi.org/10.1109/CVPR42600.2020.01079. 
+
+Agriculture 2026, 16, 1884 
+32 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+12. 
+Yu, C.; Shi, X.; Luo, W.; Feng, J.; Zheng, Z.; Yorozu, A. MLG-YOLO: A Model for Real-Time Accurate Detection and Localization 
+of 
+Winter 
+Jujube 
+in 
+Complex 
+Structured 
+Orchard 
+Environments. 
+Plant 
+Phenomics 
+2024, 
+6, 
+0258. 
+https://doi.org/10.34133/plantphenomics.0258. 
+13. 
+Koirala, A.; Walsh, K.B.; Wang, Z.; McCarthy, C. Deep learning—Method overview and review of use for fruit detection and 
+yield estimation. Comput. Electron. Agric. 2019, 162, 219–234. https://doi.org/10.1016/j.compag.2019.04.017. 
+14. 
+Yoshida, T.; Kawahara, T.; Fukao, T. Fruit Recognition Method for a Harvesting Robot with RGB-D Cameras. Res. Sq. 2022, 1–9 
+https://doi.org/10.21203/rs.3.rs-1260587/v1. 
+15. 
+Sun, Q.; Chai, X.; Zeng, Z.; Zhou, G.; Sun, T. Noise-tolerant RGB-D feature fusion network for outdoor fruit detection. Comput. 
+Electron. Agric. 2022, 198, 107034. https://doi.org/10.1016/j.compag.2022.107034. 
+16. 
+Rong, J.; Zhou, H.; Zhang, F.; Yuan, T.; Wang, P. Tomato cluster detection and counting using improved YOLOv5 based on 
+RGB-D fusion. Comput. Electron. Agric. 2023, 207, 107741. https://doi.org/10.1016/j.compag.2023.107741. 
+17. 
+Zhou, H.; Jin, S.; Zhou, L.; Guo, Z.; Sun, M. Recognition of Camellia oleifera fruits in natural environment using multi-modal 
+images. Trans. Chin. Soc. Agric. Eng. 2023, 39, 175–182. https://doi.org/10.11975/j.issn.1002-6819.202303054. 
+18. 
+Xu, X.; Li, Y.; Wu, G.; Luo, J. Multi-modal deep feature learning for RGB-D object detection. Pattern Recognit. 2017, 72, 300–313. 
+https://doi.org/10.1016/j.patcog.2017.07.026. 
+19. 
+Yin, B.; Zhang, X.; Li, Z.; Liu, L.; Cheng, M.M.; Hou, Q. DFormer: Rethinking RGBD representation learning for semantic seg-
+mentation. In Proceedings of the International Conference on Learning Representations, Vienna, Austria, 7–11 May 2024. Avail-
+able online: https://openreview.net/forum?id=h1sFUGlI09 (accessed on 16 June 2026). 
+20. 
+Chen, W.; Rao, Y.; Wang, F.; Zhang, Y.; Wang, T.; Jin, X.; Hou, W.; Jiang, Z.; Zhang, W. MLP-based multimodal tomato detection 
+in complex scenarios: Insights from task-specific analysis of feature fusion architectures. Comput. Electron. Agric. 2024, 221, 
+108951. https://doi.org/10.1016/j.compag.2024.108951. 
+21. 
+Wang, Y.; Chen, X.; Cao, L.; Huang, W.; Sun, F.; Wang, Y. Multimodal Token Fusion for Vision Transformers. In Proceedings 
+of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, New Orleans, LA, USA, 18–24 June 2022; pp. 12176–
+12185. https://doi.org/10.1109/CVPR52688.2022.01187. 
+22. 
+Zhang, J.; Liu, H.; Yang, K.; Hu, X.; Liu, R.; Stiefelhagen, R. CMX: Cross-Modal Fusion for RGB-X Semantic Segmentation with 
+Transformers. IEEE Trans. Intell. Transp. Syst. 2023, 24, 14679–14694. https://doi.org/10.1109/TITS.2023.3300537. 
+23. 
+Chen, A.; Li, X.; He, T.; Zhou, J.; Chen, D. Advancing in RGB-D salient object detection: A survey. Appl. Sci. 2024, 14, 8078. 
+https://doi.org/10.3390/app14178078. 
+24. 
+Chen, T.; Xiao, J.; Hu, X.; Zhang, G.; Wang, S. Adaptive fusion network for RGB-D salient object detection. Neurocomputing 2023, 
+522, 152–164. https://doi.org/10.1016/j.neucom.2022.12.004. 
+25. 
+Zhong, L.; Guo, C.; Zhan, J.; Deng, J. Attention-based fusion network for RGB-D semantic segmentation. Neurocomputing 2024, 
+608, 128371. https://doi.org/10.1016/j.neucom.2024.128371. 
+26. 
+Yu, M.; Liu, J.; Liu, Y.; Yan, G. Feature interaction and two-stage cross-modal fusion for RGB-D salient object detection. J. Intell. 
+Fuzzy Syst. 2024, 46, 4543–4556. https://doi.org/10.3233/JIFS-233225. 
+27. 
+Bhat, S.F.; Birkl, R.; Wofk, D.; Wonka, P.; Muller, M. ZoeDepth: Zero-shot Transfer by Combining Relative and Metric Depth. 
+arXiv 2023, arXiv:2302.12288. https://doi.org/10.48550/arXiv.2302.12288. 
+28. 
+Yang, L.; Kang, B.; Huang, Z.; Xu, X.; Feng, J.; Zhao, H. Depth Anything: Unleashing the Power of Large-Scale Unlabeled Data. 
+In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, Seattle, WA, USA, 16–22 June 2024; 
+pp. 10371–10381. https://doi.org/10.1109/CVPR52733.2024.00987. 
+29. 
+Yang, L.; Kang, B.; Huang, Z.; Zhao, Z.; Xu, X.; Feng, J.; Zhao, H. Depth Anything V2. In Advances in Neural Information Processing 
+Systems; NeurIPS: San Diego, CA, USA, 2024; Volume 37, pp. 21875–21911. https://doi.org/10.52202/079017-0688. 
+30. 
+Rajapaksha, U.; Sohel, F.; Laga, H.; Diepeveen, D.; Bennamoun, M. Deep Learning-based Depth Estimation Methods from Mo-
+nocular Image and Videos: A Comprehensive Survey. ACM Comput. Surv. 2024, 56, 1–51. https://doi.org/10.1145/3677327. 
+31. 
+Piccinelli, L.; Yang, Y.H.; Sakaridis, C.; Segu, M.; Li, S.; Van Gool, L.; Yu, F. UniDepth: Universal Monocular Metric Depth 
+Estimation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, Seattle, WA, USA, 16–
+22 June 2024; pp. 10106–10116. https://doi.org/10.1109/CVPR52733.2024.00963. 
+32. 
+Hu, M.; Yin, W.; Zhang, C.; Cai, Z.; Long, X.; Chen, H.; Wang, K.; Yu, G.; Shen, C.; Shen, S. Metric3D v2: A Versatile Monocular 
+Geometric Foundation Model for Zero-Shot Metric Depth and Surface Normal Estimation. IEEE Trans. Pattern Anal. Mach. Intell. 
+2024, 46, 10579–10596. https://doi.org/10.1109/TPAMI.2024.3444912. 
+
+Agriculture 2026, 16, 1884 
+33 of 33 
+ 
+https://doi.org/10.3390/agriculture16171884 
+33. 
+Ke, B.; Obukhov, A.; Huang, S.; Metzger, N.; Daudt, R.C.; Schindler, K. Repurposing Diffusion-Based Image Generators for 
+Monocular Depth Estimation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, Seattle, 
+WA, USA, 16–22 June 2024; pp. 9492–9502. https://doi.org/10.1109/CVPR52733.2024.00907. 
+34. 
+Xie, Z.; Yu, X.; Gao, X.; Li, K.; Shen, S. Recent Advances in Conventional and Deep Learning-Based Depth Completion: A Survey. 
+IEEE Trans. Neural Netw. Learn. Syst. 2024, 35, 3395–3415. https://doi.org/10.1109/TNNLS.2022.3201534. 
+35. 
+Huang, H.; Xia, T.; Zhao, W.; Ren, P. Partial channel network: Compute fewer, perform better. arXiv 2025, arXiv:2502.01303. 
+https://doi.org/10.48550/arXiv.2502.01303. 
+36. 
+Wu, Y.; Chen, J.; Wu, S.; Li, H.; He, L.; Zhao, R.; Wu, C. An improved YOLOv7 network using RGB-D multi-modal feature 
+fusion for tea shoots detection. Comput. Electron. Agric. 2024, 216, 108541. https://doi.org/10.1016/j.compag.2023.108541. 
+37. 
+Chen, Y.; Wang, B.; Guo, X.; Zhu, W.; He, J.; Liu, X.; Yuan, J. DEYOLO: Dual-Feature-Enhancement YOLO for Cross-Modality 
+Object Detection. In Pattern Recognition. ICPR 2024; Antonacopoulos, A., Chaudhuri, S., Chellappa, R., Liu, C.-L., Bhattacharya, 
+S., Pal, U., Eds.; Lecture Notes in Computer Science; Springer: Cham, Switzerland, 2025; Volume 15317, pp. 236–252. 
+https://doi.org/10.1007/978-3-031-78447-7_16. 
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual au-
+thor(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to 
+people or property resulting from any ideas, methods, instructions or products referred to in the content. 

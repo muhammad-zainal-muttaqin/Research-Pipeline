@@ -1,0 +1,2183 @@
+1
+StrongSORT: Make DeepSORT Great Again
+Yunhao Du, Zhicheng Zhao, Yang Song, Yanyun Zhao, Fei Su, Tao Gong, Hongying Meng
+Abstract—Multi-Object Tracking (MOT) has gained lots atten-
+tion from researchers and achieved remarkable progress in recent
+years. However, recent studies on MOT tend to use different basic
+models (e.g, detector and embedding model), training data and
+training/inference tricks, which makes it difﬁcult to construct
+a fair comparison between their progress. In this paper, we
+revisit the classic tracker DeepSORT, and upgrades it from
+aspects of detection, embedding, and association. The proposed
+tracker, named StrongSORT, achieves great improvements over
+DeepSORT, and can serve as a strong and fair baseline for
+other methods. We also present two lightweight and plug-
+and-play algorithms to solve two ”missing” problems in MOT.
+Firstly, to solve the missing association problem, some works
+associate short tracklets into complete trajectories with compu-
+tationally expensive models. Instead, we propose the appearance-
+free link model (AFLink) to perform global association without
+appearance information, which achieves a better trade-off be-
+tween speed and accuracy. Secondly, for the missing detection
+problem, we propose Gaussian-smoothed interpolation (GSI),
+which improves the linear interpolation algorithm with Gaussian
+process regression. Moreover, AFLink and GSI can be plugged
+into various trackers with a negligible extra computational
+cost (1.7 ms and 7.1 ms per image, respectively, on MOT17).
+By integrating StrongSORT with the two algorithms, the ﬁnal
+tracker StrongSORT++ achieves SOTA results on multiple bench-
+marks, i.e., MOT17, MOT20, DanceTrack and KITTI. Codes
+are available at https://github.com/dyhBUPT/StrongSORT and
+https://github.com/open-mmlab/mmtracking.
+Index Terms—Multi-Object Tracking, Baseline, AFLink, GSI.
+I. INTRODUCTION
+M
+ULTI-OBJECT TRACKING (MOT) aims to detect and
+track all speciﬁc classes of objects frame by frame,
+which plays an essential role in video understanding. In the
+past few years, the MOT task is dominated by the tracking-by-
+detection (TBD) paradigm [90, 3, 81, 4, 49], which performs
+detection per frame and formulates the MOT problem as a data
+association task. The TBD methods tend to extract appearance
+and/or motion embeddings ﬁrst, then perform a bipartite graph
+matching. Beneﬁting from high-performing object detection
+models, TBD methods have gained favor due to their excellent
+performance.
+As MOT is a downstream task corresponding to object
+detection and object re-identiﬁcation (ReID), recent works
+tend to use various detectors and ReID models to increase
+MOT performances [57, 59, 8], which makes it difﬁcult to
+construct a fair comparison between them. Another problem
+for a fair comparison is the usage of various external datasets
+for training, e.g., ETHZ [18], CityPerson [93], CalTech [15],
+CUHK-SYSU [84], PRW [97]. Moreover, some training and
+inference tricks are also used to improve the tracking perfor-
+mance.
+To solve the above problems, this paper presents a simple
+but effective MOT baseline called StrongSORT. We revisit
+the classic TBD tracker DeepSORT [81], which is among the
+earliest methods that apply deep learning model to the MOT
+task. We choose DeepSORT because of its simplicity, expan-
+sibility and effectiveness. It’s claimed that DeepSORT under-
+performs compared with state-of-the-art methods because of
+its outdated techniques, rather than its tracking paradigm. To
+be speciﬁc, we ﬁrst equip DeepSORT with strong detector
+[25] following [94] and embedding model [47]. Then, we
+collect some inference tricks from recent works to further
+improve the performance. It’s shown that by simply equipping
+DeepSORT with these advanced components, resulting in the
+proposed StrongSORT, it can achieve SOTA results on popular
+benchmarks MOT17 [48] and MOT20 [14].
+The motivations of StrongSORT can be summarized as
+follows:
+• It can serve as a baseline for fair comparison between
+different tracking methods, especially for tracking-by-
+detection trackers.
+• Compared with the poor baseline, a stronger one can
+better demonstrate the effectiveness of methods.
+• The elaborately collected inference tricks can be applied
+on other trackers without the need to retrain the model.
+This can beneﬁt some works in academia and industry.
+Furthermore, there exist two ”missing” problems in MOT
+task, i.e., missing association and missing detection. Missing
+association means the same object is spread in more than
+one tracklets. This problem is particularly common in online
+trackers, because they lack global information in association.
+Missing detection, also known as false negatives, refers to
+recognizing the object as background, which is usually caused
+by occlusion and low resolutions.
+Firstly, for the missing association problem, several methods
+propose to associate short tracklets into trajectories by using
+a global link model [17, 71, 74, 53, 88]. They usually ﬁrst
+generate accurate but incomplete tracklets, then associate them
+with global information in an ofﬂine manner. Although these
+methods improve tracking performance signiﬁcantly, they rely
+on computation-intensive models, especially appearance em-
+beddings. By contrast, we propose an appearance-free link
+model (AFLink), which only utilizes spatio-temporal informa-
+tion to predict whether the two input tracklets belong to the
+same ID. Without the appearance model, AFLink achieves a
+better trade-off between speed and accuracy.
+Secondly, linear interpolation is widely used to compensate
+for missing detections [54, 32, 50, 55, 94, 17]. However,
+it ignores motion information during interpolation, which
+limits the accuracy of the interpolated positions. To solve
+this problem, we propose the Gaussian-smoothed interpolation
+algorithm (GSI), which ﬁxes the interpolated bounding boxes
+by using the Gaussian process regression algorithm [80]. GSI
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+Copyright © 2023 Institute of Electrical and Electronics Engineers (IEEE). Personal use of this material is permitted. Permission from IEEE must be 
+obtained for all other uses, in any current or future media, including reprinting/republishing this material for advertising or promotional purposes, 
+creating new collective works, for resale or redistribution to servers or lists, or reuse of any copyrighted component of this work in other works by 
+sending a request to pubs-permissions@ieee.org. See: https://www.ieee.org/publications/rights/rights-policies.html
+
+2
+Fig. 1: IDF1-MOTA-HOTA comparisons of state-of-the-art trackers with our proposed StrongSORT and StrongSORT++ on
+MOT17 and MOT20 test sets. The horizontal axis is MOTA, the vertival axis is IDF1, and the radius of the circle is HOTA. ”*”
+represents our reproduced version. Our StrongSORT++ achieves the best IDF1 and HOTA and comparable MOTA performance.
+is also a kind of detection noise ﬁlter, which can produce more
+accurate and stable localizations.
+AFLink and GSI are both lightweight, plug-and-play,
+model-independent and appearance-free models, which are
+beneﬁcial and suitable for this study. Extensive experiments
+demonstrate that they can achieve notable improvements on
+StrongSORT and other state-of-the-art trackers, e.g., Center-
+Track [99], TransTrack [66] and FairMOT [95], with a running
+speed of 1.7 ms and 7.1 ms per image, respectively, on
+MOT17. Particularly, by applying AFLink and GSI to Strong-
+SORT, we obtain a stronger tracker called StrongSORT++. It
+achieves SOTA results on various benchmarks, i.e., MOT17,
+MOT20, DanceTrack [65] and KITTI [26]. Figure 1 presents
+the IDF1-MOTA-HOTA comparisons of state-of-the-art track-
+ers with our proposed StrongSORT and StrongSORT++ on
+MOT17 and MOT20 test sets.
+The contributions of our work are summarized as follows:
+• We propose StrongSORT, which equips DeepSORT with
+advanced modules (i.e., detector and embedding model)
+and some inference tricks. It can serve as a strong and
+fair baseline other MOT methods, which is valuable to
+both academia and industry.
+• We propose two novel and lightweight algorithms,
+AFLink and GSI, which can be plugged into various
+trackers to improve their performance with a negligible
+computational cost.
+• Extended experiments are designed to demonstrate the
+effectiveness of the proposed methods. Furthermore,
+the proposed StrongSORT and StrongSORT++ achieve
+SOTA results on multiple benchmarks, including MOT17,
+MOT20, DanceTrack and KITTI.
+II. RELATED WORK
+A. Separate and Joint Trackers
+MOT methods can be classiﬁed into separate and joint track-
+ers. Separate trackers [90, 3, 81, 4, 49, 9, 10, 20, 30] follow the
+tracking-by-detection paradigm, which localizes targets ﬁrst,
+then associates them with information on appearance, motion,
+etc. Beneﬁting from the rapid development of object detection
+[59, 58, 69, 100, 68, 25], separate trackers have been widely
+applied in MOT task. Recently, several joint tracking methods
+[86, 45, 89, 52, 43, 75, 77] have been proposed to jointly train
+detection and other components such as motion, embedding
+and association models. The main advantages of these trackers
+are the low computational cost and comparable performance.
+Meanwhile, several recent studies [63, 64, 94, 7] have
+abandoned appearance information, and relied only on high-
+performance detectors and motion information, which achieve
+high running speed and state-of-the-art performance on
+MOTChallenge benchmarks [48, 14]. However, abandoning
+appearance features would lead to poor robustness in more
+complex scenes. In this paper, we adopt the DeepSORT-like
+[81] paradigm and equip it with advanced techniques from
+various aspects to conﬁrm the effectiveness of this classic
+framework.
+B. Global Link in MOT
+Missing association is an essential problem in MOT task.
+To exploit rich global information, several methods reﬁne the
+tracking results with a global link model [17, 71, 74, 53, 88].
+They ﬁrst generate accurate but incomplete tracklets by using
+spatio-temporal and/or appearance information. Then, these
+tracklets are linked by exploring global information in an
+ofﬂine manner. TNT [74] designs a multi-scale TrackletNet
+to measure the connectivity between two tracklets. It encodes
+motion and appearance information in a uniﬁed network by
+using multi-scale convolution kernels. TPM [53] presents a
+tracklet-plane matching process to push easily confusable
+tracklets into different tracklet-planes, which helps reduce the
+confusion in the tracklet matching step. ReMOT [88] is im-
+proved from ReMOTS [87], which splits imperfect trajectories
+into tracklets, then merges them with appearance features.
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+3
+GIAOTracker [17] proposes a complex global link algorithm 
+that encodes tracklet appearance features by using an improved 
+ResNet50-TP model [23] and associates tracklets together 
+with spatial and temporal costs. Although these methods 
+yield notable improvements, they rely on appearance features, 
+which bring high computational cost. Differently, the proposed 
+AFLink model only exploits motion information to predict 
+the link confidence between two tracklets. By designing an 
+appropriate model framework and training process, AFLink 
+benefits various state-of-the-art trackers with a negligible extra 
+cost.
+AFLink shares similar motivations with LGMTracker [72], 
+which also associate tracklets with motion information. How-
+ever, they differ in three aspects. First, LGMTracker designs 
+an interesting but complex reconstruct-to-embed strategy to 
+perform tracklets association based on GCN and TGC module, 
+which aims to solve the problem of latent space dissimi-
+larity. However, AFLink shows that by carefully designing 
+the framework and training strategy, a much simpler and 
+more lightweight module can still work well. Particularly, 
+AFlink just takes 10+ seconds for training, 10 seconds for 
+testing on MOT17. Second, we show that AFLink can bring 
+obvious improvements on various SOTA trackers. Moreover, 
+LGMTracker is designed for vehicle tracking, but AFLink is 
+applied mainly for pedestrian tracking, which contains more 
+motion noise.
+C. Interpolation in MOT
+Linear interpolation is widely used to ﬁll the gaps of recov-
+ered trajectories for missing detections [54, 32, 50, 55, 94, 17].
+Despite its simplicity and effectiveness, linear interpolation
+ignores motion information, which limits the accuracy of
+the restored bounding boxes. To solve this problem, several
+strategies have been proposed to utilize spatio-temporal in-
+formation effectively. V-IOUTracker [5] extends IOUTracker
+[4] by falling back to single-object tracking [31, 37] while
+missing detection occurs. MAT [29] smooths the linearly in-
+terpolated trajectories nonlinearly by adopting a cyclic pseudo-
+observation trajectory ﬁlling strategy. An extra camera motion
+compensation (CMC) model [19] and Kalman ﬁlter [38] are
+needed to predict missing positions. MAATrack [64] simpliﬁes
+it by applying only the CMC model. All these methods apply
+extra models, i.e., single-object tracker, CMC, Kalman ﬁlter,
+in exchange for performance gains. Instead, we propose to
+model nonlinear motion on the basis of the Gaussian process
+regression (GPR) algorithm [80]. Without additional time-
+consuming components, our proposed GSI algorithm achieves
+a good trade-off between accuracy and efﬁciency.
+The most similar work with our GSI is [101], which uses
+the GPR algorithm to smooth the uninterpolated tracklets for
+accurate velocity predictions. However, it works for the event
+detection task in surveillance videos. Differently, we study
+on the MOT task and adopt GPR to reﬁne the interpolated
+localizations. Moreover, we present an adaptive smoothness
+factor, instead of presetting a hyperparameter like [101].
+III. STRONGSORT
+In this section, we present various approaches to upgrade
+DeepSORT [81] to StrongSORT. Speciﬁcally, we review Deep-
+SORT in Section A and introduce StrongSORT in Section
+B. Notably, we do not claim any algorithmic novelty in this
+section. Instead, our contributions here lie in giving a clear
+understanding of DeepSORT and equipping it with various
+advanced techniques to present a strong MOT baseline.
+A. Review of DeepSORT
+We brieﬂy summarize DeepSORT as a two-branch frame-
+work, that is, appearance branch and motion branch, as shown
+in the top half of Figure 2.
+In the appearance branch, given detections in each frame,
+the deep appearance descriptor (a simple CNN), which is
+pretrained on the person re-identiﬁcation dataset MARS [96],
+is applied to extract their appearance features. It utilizes a
+feature bank mechanism to store the features of the last 100
+frames for each tracklet. As new detections come, the smallest
+cosine distance between the feature bank Bi of the i-th tracklet
+and the feature fj of the j-th detection is computed as
+d(i, j) = min{1 −f T
+j f (i)
+k
+| f (i)
+k
+∈Bi}.
+(1)
+The distance is used as the matching cost during the associa-
+tion procedure.
+In the motion branch, the Kalman ﬁlter algorithm [38]
+accounts for predicting the positions of tracklets in the current
+frame. It works by a two-phase process, i.e., state estimation
+and state update. In the state estimation step, it predicts the
+current state as:
+ˆx′
+k = Fkˆxk−1,
+(2)
+P ′
+k = FkPk−1F T
+k + Qk,
+(3)
+where ˆxk−1 and Pk−1 are the mean and covariance of the
+state at time step k −1, ˆx′
+k and P ′
+k are the estimated state
+at time step k, Fk is the state transition model, and Qk is
+the covariance of the process noise. In the state update step,
+the Kalman gain is calculated based on the covariance of the
+estimated state P ′
+k and the observation noise Rk as:
+K = P ′
+kHT
+k (HkP ′
+kHT
+k + Rk)−1,
+(4)
+where HT
+k is the observation model, which maps the state from
+estimation space to observation space. Then, the Kalman gain
+K is used to update the ﬁnal state:
+xk = ˆx′
+k + K(zk −Hkˆx′
+k),
+(5)
+Pk = (I −KHk)P ′
+k,
+(6)
+where zk is the measurement at time step k. Given the motion
+state of tracklets and new-coming detections, Mahalanobis
+distance is used to measure the spatio-temporal dissimilarity
+between them. DeepSORT takes this motion distance as a gate
+to ﬁlter out unlikely associations.
+Afterwards, the matching cascade algorithm is proposed to
+solve the association task as a series of subproblems instead
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+4
+Fig. 2: Framework and performance comparison between DeepSORT and StrongSORT. Performance is evaluated on the MOT17
+validation set based on detections predicted by YOLOX [25].
+of a global assignment problem. The core idea is to give
+greater matching priority to more frequently seen objects.
+Each association subproblem is solved using the Hungarian
+algorithm [42].
+B. Strong Baseline
+Our improvements over DeepSORT include advanced mod-
+ules and some inference tricks, as shown in the bottom half 
+of Figure 2.
+Advanced modules. DeepSORT uses the optimized Faster R-
+CNN [59] presented in [90] as the detector, and train a simple 
+CNN as the embedding model. Instead, we replace the detector 
+with YOLOX-X [25] following [94], which holds excellent 
+trade-off performance between accuracy and speed (This is not 
+presented in Figure 2 for simplicity). In addition, a stronger 
+appearance feature extractor, BoT [47], is applied to replace 
+the original simple CNN. By taking ResNeSt50 [92] as the 
+backbone and being pretrained on the DukeMTMC-reID [60] 
+dataset, it can extract much more discriminative features. 
+EMA. Though the feature bank mechanism in DeepSORT can 
+preserve the long-term information, it is sensitive to detection 
+noises [17]. To solve this problem, we replace the feature bank 
+mechanism with the feature updating strategy proposed in [78],
+which updates appearance state ei
+t for the i-th tracklet at frame 
+t in an exponential moving average (EMA) manner as follows:
+et
+i = αet−1
+i
++ (1 −α)f t
+i ,
+(7)
+where f t
+i is the appearance embedding of the current matched
+detection and α = 0.9 is a momentum term. The EMA
+updating strategy leverages the information of inter-frame
+feature changes and can depress detection noises. Experiments
+show that it not only enhances the matching quality, but also
+reduces the time consumption.
+ECC. There exist camera movements in multiple benchmarks
+[48, 65, 26]. Similar to [29, 64, 39, 30], we adopt the Enhanced
+Correlation Coefﬁcient Maximization (ECC) [19] model for
+camera motion compensation. It is a technique for parametric
+image alignment, which can estimate the global rotation and
+translation between adjacent frames. To be speciﬁc, it’s based
+on the following criterion to quatify the performance of the
+warping transformation
+EECC(p) =
+
+ir
+ir
+ −
+iw(p)
+iw(p)
+
+
+2
+,
+(8)
+where ∥· ∥denotes the euclidean norm, p is the warping
+parameters, and ir and iw(p) are the zero-mean versions of
+the reference (template) image ir and warped image iw(p).
+Then, the image alignment problem is solved by minimiz-
+ing EECC(p), with the proposed forward additive iterative
+algorithm or iverse compositional iterative algorithm. Due
+to its efﬁciency and effectiveness, ECC is widely used to
+compensate for the motion noise caused by camera movement
+in MOT tasks.
+NSA Kalman. The vanilla Kalman ﬁlter is vulnerable w.r.t.
+low-quality detections [64] and ignores the information on
+scales of detection noise [17]. To solve this problem, we
+borrow the NSA Kalman algorithm from GIAOTracker [17],
+which proposes a formula to adaptively calculate the noise
+covariance eRk:
+eRk = (1 −ck)Rk,
+(9)
+where Rk is the preset constant measurement noise covariance 
+and ck is the detection confidence score at state k. Intuitively, 
+the detection has a higher score ck when it has less noise, 
+which results in a high Rek. According to the formula 4-6, a 
+higher Rek means the detection will have a higher weight in 
+the state update step, and vice versa. Though its simplicity, it 
+can help improve the accuracy of updated states.
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+5
+Fig. 3: Framework of the AFLink model. It adopts the spatio-temporal information of two tracklets as the input and then
+predicts their connectivity.
+Motion Cost. DeepSORT only employs the appearance feature
+distance as matching cost during the ﬁrst association stage, in
+which the motion distance is only used as the gate. Instead,
+we solve the assignment problem with both appearance and
+motion information, similar to [78]. Cost matrix C is a
+weighted sum of appearance cost Aa and motion cost Am
+as follows:
+C = λAa + (1 −λ)Am,
+(10)
+where weight factor λ is set to 0.98.
+Vanilla Matching. An interesting ﬁnding is that although the
+matching cascade algorithm is not trivial in DeepSORT, it
+limits the performance as the tracker becomes more powerful.
+The reason is that as the tracker becomes stronger, it becomes
+more robust to confusing associations. Therefore, additional
+prior constraints would limit the matching accuracy. We solve
+this problem by simply replacing matching cascade with
+vanilla global linear assignment.
+IV. STRONGSORT++
+We present a strong baseline in Section III. In this sec-
+tion, we introduce two lightweight, plug-and-play, model-
+independent, appearance-free algorithms, namely AFLink and
+GSI, to further solve the problems of missing association and
+missing detection. We call the ﬁnal method StrongSORT++,
+which integrates StrongSORT with the two algorithms.
+A. AFLink
+The global link for tracklets is used in several works to pur-
+sue highly accurate associations. However, they generally rely
+on computationally expensive components and have numerous
+hyperparameters to ﬁne-tune. For example, the link algorithm
+in GIAOTracker [17] utilizes an improved ResNet50-TP [23]
+to extract tracklets 3D features and performs association with
+additional spatial and temporal distances. This means 6 hyper-
+parameters (3 thresholds and 3 weight factors) are to be ﬁne-
+tuned, which incurs additional tuning experiments and poor
+robustness. Moreover, over-reliance on appearance features
+can be vulnerable to noise. Motivated by this, we design an
+appearance-free model, AFLink, to predict the connectivity
+between two tracklets by relying only on spatio-temporal
+information.
+Figure 3 shows the two-branch framework of the AFLink
+model. It adopts two tracklets Ti and Tj as the input,
+where T∗= {fk, xk, yk}N
+k=1 consists of the frames id fk
+and positions (xk, yk) of the recent N = 30 frames. Zero
+padding is used for those shorter than 30 frames. A temporal
+module is applied to extract features by convolving along the
+temporal dimension with 7×1 kernels. Then, a fusion module
+performs 1 × 3 convolutions to integrate the information from
+different feature dimensions, namely f, x and y. The two
+resulting feature maps are pooled and squeezed to feature
+vectors respectively, and then concatenated, which includes
+rich spatio-temporal information. Finally, an MLP is used
+to predict a conﬁdence score for association. Note that the
+temporal module and fusion module of the two branches are
+not tied.
+During training, the association procedure is formulated as a
+binary classiﬁcation task. Then it is optimized with the binary
+cross entropy loss as follows:
+LBCE
+n
+= −(ynlog(
+exn
+exn + e1−xn )+
+(1 −yn)log(1 −
+e1−xn
+exn + e1−xn )),
+(11)
+where xn ∈[0, 1] is the predicted probability of association
+for sample pair n, and yn ∈{0, 1} is the ground truth.
+During association, we ﬁlter out unreasonable tracklet pairs
+with spatio-temporal constraints. Then, the global link is
+solved as a linear assignment task [42] with the predicted
+connectivity score.
+B. GSI
+Interpolation is widely used to ﬁll the gaps in trajectories
+caused by missing detections. Linear interpolation is highly
+popular due to its simplicity. However, its accuracy is lim-
+ited because it does not use motion information. Although
+several strategies have been proposed to solve this problem,
+they generally introduce additional time-consuming modules,
+e.g., single-object tracker, Kalman ﬁlter, ECC. Differently,
+we present a lightweight interpolation algorithm that employs
+Gaussian process regression [80] to model nonlinear motion.
+We formulate the GSI model for the i-th trajectory as
+follows:
+pt = f (i)(t) + ϵ,
+(12)
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+6
+Fig. 4: Illustration of the difference between linear interpo-
+lation (LI) and the proposed Gaussian-smoothed interpolation
+(GSI).
+where t ∈F is the frame id, pt ∈P is the position
+coordinate variate at frame t (i.e., x, y, w, h) and ϵ ∼N(0, σ2)
+is Gaussian noise. Given tracked and linearly interpolated
+trajectories S(i) = {t(i), p(i)
+t }L
+t=1 with length L, the task of
+nonlinear motion modeling is solved by ﬁtting the function
+f (i). We assume that it obeys a Gaussian process:
+f (i) ∈GP(0, k(·, ·)),
+(13)
+where k(x, x′) = exp(−||x−x′||2
+2λ2
+) is a radial basis function
+kernel. On the basis of the properties of the Gaussian process,
+given new frame set F ∗, its smoothed positions P ∗is predicted
+by
+P ∗= K(F ∗, F)(K(F, F) + σ2I)−1P,
+(14)
+where K(·, ·) is a covariance function based on k(·, ·).
+Moreover, hyperparameter λ controls the smoothness of the
+trajectory, which should be related with its length. We simply
+design it as a function adaptive to length l as follows:
+λ = τ ∗log(τ 3/l),
+(15)
+where τ is set to 10.
+Figure 4 illustrates an example of the difference between 
+GSI and linear interpolation (LI). The raw tracked results (in 
+orange) generally include noisy jitter, and LI (in blue) ignores 
+motion information. Our GSI (in red) solves both problems 
+simultaneously by smoothing the entire trajectory with an 
+adaptive smoothness factor.
+V. EXPERIMENTS
+A. Setting
+Datasets. We conduct experiments on MOT17 [48] and 
+MOT20 [14] datasets under the ”private detection” protocol. 
+MOT17 is a popular dataset for MOT, which consists of 
+7 sequences, 5,316 frames for training and 7 sequences, 
+5919 frames for testing. MOT20 is set for highly crowded 
+challenging scenes, with 4 sequences, 8,931 frames for training 
+and 4 sequences, 4,479 frames for testing. For ablation studies, 
+we take the first half of each sequence in the MOT17 training 
+set for training and the last half for validation following
+[99, 94]. We use DukeMTMC [60] to pretrain our appearance
+feature extractor. We train the detector on the CrowdHuman
+dataset [62] and MOT17 half training set for ablation following
+[99, 94, 66, 82, 91]. We add Cityperson [93] and ETHZ [18]
+for testing as in [94, 78, 95, 43].
+We also test StrongSORT++ on KITTI [26] and DacneTrack
+[65]. KITTI is a popular dataset related to autonomous driving
+tasks. It can be used for pedestrian and car tracking, which
+consists of 21 training sequences and 29 test sequences with a
+relatively low frame rate of 10 FPS. DanceTrack is a recently
+proposed dataset for multi-human tracking, which encorages
+more MOT algorithms that rely less on visual discrimination
+and depend more on motion analysis. It consists of 100 group
+dancing videos, where humans have similar appearance but
+diverse motion features.
+Metrics. We use the metrics MOTA, IDs, IDF1, HOTA, AssA,
+DetA and FPS to evaluate tracking performance [2, 60, 46].
+MOTA is computed based on FP, FN and IDs, and focuses
+more on detection performance. By comparison, IDF1 better
+measures the consistency of ID matching [35]. HOTA is an
+explicit combination of detection score DetA and association
+score AssA, which balances the effects of performing accurate
+detection and association into a single uniﬁed metric. More-
+over, it evaluates at a number of different distinct detection
+similarity values (0.05 to 0.95 in 0.05 intervals) between pre-
+dicted and GT bounding boxes, instead of setting a single value
+(i.e., 0.5) like MOTA and IDF1, and better takes localization
+accuracy into account.
+Implementation Details. We present the default implementa-
+tion details in this section. For detection, we adopt YOLOX-
+X [25] pretrained on COCO [44] as our detector for an
+improved time-accuracy trade-off. The training schedule is
+similar to that in [94]. In inference, a threshold of 0.8 is
+set for non-maximum suppression (NMS) and a threshold of
+0.6 for detection conﬁdence. For StrongSORT, the matching
+distance threshold is 0.45, the warp mode for ECC is MOTION
+EUCLIDEAN, the momentum term α in EMA is 0.9 and the
+weight factor for appearance cost λ is 0.98. For GSI, the
+maximum gap allowed for interpolation is 20 frames, and
+hyperparameter τ is 10.
+For AFLink, the temporal module consists of four convo-
+lution layers with 7 × 1 kernels and {32, 64, 128, 256} output
+channels. Each convolution is followed by a BN layer [36]
+and a ReLU activation layer [27]. The fusion module includes
+a 1 × 3 convolution, a BN and a ReLU. It doesn’t change the
+number of channels. The classiﬁer is an MLP with two fully
+connected layers and a ReLU layer inserted in between. The
+training data are generated by cutting annotated trajectories
+into tracklets with random spatio-temporal noise at a 1:3
+ratio of positive and negative samples. We use Adam as the
+optimizer [41], cross-entropy loss as the objective function
+and train it for 20 epochs with a cosine annealing learning
+rate schedule. The overall training process takes just over
+10 seconds. In inference, a temporal distance threshold of
+30 frames and a spatial distance threshold of 75 pixels are
+used to ﬁlter out unreasonable association pairs. Finally, the
+association is considered if its prediction score is larger than
+0.95.
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+7
+TABLE I: Ablation study on the MOT17 validation set for basic strategies, i.e., stronger feature extractor (BoT), camera motion
+compensation (ECC), NSA Kalman ﬁlter (NSA), EMA feature updating mechanism (EMA), matching with motion cost (MC)
+and abandoning matching cascade (woC). (best in bold)
+Method
+BoT
+ECC
+NSA
+EMA
+MC
+woC
+IDF1(↑)
+MOTA(↑)
+HOTA(↑)
+FPS(↑)
+Baseline
+-
+-
+-
+-
+-
+-
+77.3
+76.7
+66.3
+13.8
+StrongSORTv1
+✓
+79.5
+76.8
+67.8
+8.3
+StrongSORTv2
+✓
+✓
+79.7
+77.1
+67.9
+6.3
+StrongSORTv3
+✓
+✓
+✓
+79.7
+77.1
+68.3
+6.2
+StrongSORTv4
+✓
+✓
+✓
+✓
+80.1
+77.0
+68.2
+7.4
+StrongSORTv5
+✓
+✓
+✓
+✓
+✓
+80.9
+77.0
+68.9
+7.4
+StrongSORTv6
+✓
+✓
+✓
+✓
+✓
+✓
+82.3
+77.1
+69.6
+7.5
+TABLE II: Results of applying AFLink and GSI to various MOT methods. All experiments are performed on the MOT17
+validation set. (best in bold)
+Method
+AFLink
+GSI
+IDF1(↑)
+MOTA(↑)
+HOTA(↑)
+StrongSORTv1
+-
+-
+79.5
+76.8
+67.8
+✓
+80.0
+76.8
+68.1
+✓
+✓
+80.4(+0.9)
+78.2(+1.4)
+68.9(+1.1)
+StrongSORTv3
+-
+-
+79.7
+77.1
+68.3
+✓
+80.5
+77.1
+68.6
+✓
+✓
+80.9(+1.2)
+78.7(+1.6)
+69.5(+1.2)
+StrongSORTv6
+-
+-
+82.3
+77.1
+69.6
+✓
+82.5
+77.1
+69.6
+✓
+✓
+83.3(+1.0)
+78.7(+1.6)
+70.8(+1.2)
+CenterTrack [99]
+-
+-
+64.6
+66.8
+55.3
+✓
+68.3
+66.9
+57.2
+✓
+✓
+68.4(+3.8)
+66.9(+0.1)
+57.6(+2.3)
+TransTrack [66]
+-
+-
+68.6
+67.7
+58.1
+✓
+69.1
+67.7
+58.3
+✓
+✓
+69.9(+1.3)
+69.6(1.9)
+59.4(+1.3)
+FairMOT [95]
+-
+-
+72.7
+69.1
+57.3
+✓
+73.2
+69.2
+57.6
+✓
+✓
+74.2(+1.5)
+71.1(+2.0)
+59.0(+1.7)
+All experiments are conducted on a server machine with a 
+single V100.
+B. Ablation Studies
+Ablation study for StrongSORT. Table I summarizes the path 
+from DeepSORT to StrongSORT:
+1) BoT: Replacing the original feature extractor with BoT
+leads to a significant improvement for IDF1 (+2.2), indicating 
+that association quality benefits from more discriminative 
+appearance features.
+2) ECC: The CMC model results in a slight increase in
+IDF1 (+0.2) and MOTA (+0.3), implying that it helps extract 
+more precise motion information.
+3) NSA: The NSA Kalman filter improves HOTA (+0.4)
+but not MOTA and IDF1. This means it enhances positioning 
+accuracy.
+4) EMA: The EMA feature updating mechanism brings not
+only superior association (+0.4 IDF1), but also faster speed 
+(+1.2 FPS).
+5) MC: Matching with both appearance and motion cost
+aids association (+0.8 IDF1).
+6) woC: For the stronger tracker, the matching cascade
+algorithm with redundant prior information limits the tracking
+accuracy. By simply employing a vanilla matching method, 
+IDF1 is improved by a large margin (+1.4).
+Ablation study for AFLink and GSI. We apply AFLink and 
+GSI on six different trackers, i.e., three versions of Strong-
+SORT and three state-of-the-art trackers (CenterTrack [99], 
+TransTrack [66] and FairMOT [95]). Their results are shown 
+in Table II. The first line of the results for each tracker is the 
+original performance. The application of AFLink (the second 
+line) brings different levels of improvement for the different 
+trackers. Specifically, poorer trackers tend to benefit more from 
+AFLink due to more missing associations. Particularly, the 
+IDF1 of CenterTrack is improved by 3.7. The third line of 
+the results for each tracker proves the effectiveness of GSI for 
+both detection and association. Different from AFLink, GSI 
+works better on stronger trackers. It would be confused by the 
+large amount of false association in poor trackers. Ablation 
+study for Vanilla Matching. We present the com-parison 
+between the matching cascade algorithm and vanilla 
+matching on different baselines in Table III. It is shown that the 
+matching cascade algorithm benefits DeepSORT greatly. How-
+ever, with the gradual enhancement of the baseline tracker, it 
+has smaller and smaller advantages, and be even harmful to 
+tracking accuracy. Specifically, for StrongSORTv5, it can bring
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+8
+Fig. 5: Comparison of normalized velocity between the trajectories after applying linear interpolation (LI, in red) and Gaussian-
+smoothed interpolation (GSI, in blue). The x-coordinate represents the frame id, and the y-coordinate is the normalized velocity.
+a gain of 1.4 on IDF1 by replacing matching cascade with
+vanilla matching. This leads us to the following interesting
+conclusion: Though the priori assumption in matching cas-
+cade can reduce confusing associations in poor trackers, this
+additional constraint will limit the performance of stronger
+trackers instead.
+Additional analysis of GSI. Speed estimation is essential for
+some downstream tasks, e.g., action analysis [16] and beneﬁts
+constructing Intelligent Transportation System (ITS) [21]. To
+measure the performance of different interpolation algorithms
+on the speed estimation task, we compare the normalized
+velocity between trajectories after applying linear interpolation
+(LI) and Gaussian-smoothed interpolation (GSI) in Figure
+5. Speciﬁcally, six trajectories from DeepSORT on MOT17
+validation set are sampled. The x-coordinate and y-coordinate
+represent frame id and normalized velocity respectively. It is
+shown that the velocity of trajectories with LI jitters wildly (in
+red), mainly caused by detection noise. Instead, trajectories
+with GSI have more stable velocity (in blue). This gives
+us another perspective to understand GSI: GSI is a kind of
+detection noise ﬁlter, which can produce more accurate and
+stable localizations. This feature makes it beneﬁcial to speed
+estimation and other related tasks.
+C. Main Results
+We compare StrongSORT, StrongSORT+ (StrongSORT +
+AFLink) and StrongSORT++ (StrongSORT + AFLink + GSI) 
+with state-of-the-art trackers on the test sets of MOT17, 
+MOT20, DanceTrack and KITTI, as shown in Tables IV, V, VI 
+and VII, respectively. Notably, comparing FPS with absolute 
+fairness is difficult, because the speed claimed by each method 
+depends on the devices where they are implemented, and the
+TABLE III: Ablation study on the MOT17 validation set for
+the matching cascade algorithm and vanilla matching.
+Method
+Matching
+IDF1(↑)
+MOTA(↑)
+DeepSORT
+Cascade
+77.3
+76.7
+Vanilla
+76.2 (-1.1)
+76.7 (-0.0)
+StrongSORTv1
+Cascade
+79.5
+76.8
+Vanilla
+79.6 (+0.1)
+76.7 (-0.1)
+StrongSORTv2
+Cascade
+79.7
+77.1
+Vanilla
+79.7 (+0.0)
+77.1 (+0.0)
+StrongSORTv3
+Cascade
+79.7
+77.1
+Vanilla
+79.9 (+0.2)
+77.1 (+0.0)
+StrongSORTv4
+Cascade
+80.1
+77.0
+Vanilla
+81.9 (+1.8)
+76.9 (-0.1)
+StrongSORTv5
+Cascade
+80.9
+77.0
+Vanilla
+82.3 (+1.4)
+77.1 (+0.1)
+time spent on detections is generally excluded for tracking-
+by-detection trackers.
+MOT17. StrongSORT++ ranks ﬁrst on MOT17 for metrics
+HOTA, IDF1, AssA, DetA, and ranks second for MOTA, IDs.
+In particular, it yields an accurate association and outperforms
+the second-performance tracker by a large margin (i.e., +2.2
+IDF1 and +2.4 AssA). We use the same hyperparameters as
+in the ablation study and do not carefully tune them for each
+sequence like in [94]. The steady improvements on the test set
+prove the robustness of our methods. It is worth noting that,
+our reproduced version of DeepSORT (with a stronger detector
+YOLOX and several tuned hyperparameters) also performs
+well on the benchmark, which demonstrates the effectiveness
+of the DeepSORT-like tracking paradigm.
+MOT20. MOT20 is from more crowded scenarios. High
+occlusion means a high risk of missing detections and associa-
+tions. StrongSORT++ still ranks ﬁrst for metrics HOTA, IDF1
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+9
+TABLE IV: Comparison with state-of-the-art MOT methods on the MOT17 test set. ”*” represents our reproduced version.
+The two best results for each metric are bolded and highlighted in red and blue.
+Method
+Ref.
+HOTA(↑)
+IDF1(↑)
+MOTA(↑)
+AssA(↑)
+DetA(↑)
+IDs(↓)
+FPS(↑)
+SORT [3]
+ICIP2016
+34.0
+39.8
+43.1
+31.8
+37.0
+4,852
+143.3
+MTDF [22]
+TMM2019
+37.7
+45.2
+49.6
+34.5
+42.0
+5,567
+1.2
+DAN [67]
+TPAMI2019
+39.3
+49.5
+52.4
+36.3
+43.1
+8,431
+6.3
+TPM [53]
+PR2020
+41.5
+52.6
+54.2
+40.9
+42.5
+1,824
+0.8
+DeepMOT [86]
+CVPR2020
+42.4
+53.8
+53.7
+42.7
+42.5
+1,947
+4.9
+ISEHDADH [12]
+TMM2019
+-
+-
+54.5
+-
+-
+3,010
+3.6
+Tracktor++ [1]
+ICCV2019
+44.8
+55.1
+56.3
+45.1
+44.9
+1,987
+1.5
+TubeTK [50]
+CVPR2020
+48.0
+58.6
+63.0
+45.1
+51.4
+4,137
+3.0
+ArTIST [61]
+CVPR2021
+48.9
+59.7
+62.3
+48.3
+50.0
+2,062
+4.5
+CRF-MOT [24]
+TMM2022
+-
+60.4
+58.9
+-
+-
+2,544
+-
+MPNTrack [6]
+CVPR2020
+49.0
+61.7
+58.8
+51.1
+47.3
+1,185
+6.5
+TBooster [73]
+TMM2022
+50.5
+63.3
+61.5
+52.0
+49.2
+2,478
+6.9
+CenterTrack [99]
+ECCV2020
+52.2
+64.7
+67.8
+51.0
+53.8
+3,039
+3.8
+TransTrack [66]
+arxiv2021
+54.1
+63.5
+75.2
+47.9
+61.6
+3,603
+59.2
+TransCenter [85]
+arxiv2021
+54.5
+62.2
+73.2
+49.7
+60.1
+4,614
+1.0
+GSDT [77]
+ICRA2021
+55.5
+68.7
+66.2
+54.8
+56.4
+3,318
+4.9
+PermaTrack [70]
+ICCV2021
+55.5
+68.9
+73.8
+53.1
+58.5
+3,699
+11.9
+MAT [29]
+NC2022
+56.0
+69.2
+67.1
+57.2
+55.1
+1,279
+11.5
+CSTrack [43]
+TIP2022
+59.3
+72.6
+74.9
+57.9
+61.1
+3,567
+15.8
+FairMOT [95]
+IJCV2021
+59.3
+72.3
+73.7
+58.0
+60.9
+3,303
+25.9
+ReMOT [88]
+IVC2021
+59.7
+72.0
+77.0
+57.1
+62.8
+2,853
+1.8
+CrowdTrack [63]
+AVSS2021
+60.3
+73.6
+75.6
+59.3
+61.5
+2,544
+140.8
+CorrTracker [75]
+CVPR2021
+60.7
+73.6
+76.5
+58.9
+62.9
+3,369
+15.6
+RelationTrack [89]
+TMM2022
+61.0
+74.7
+73.8
+61.5
+60.6
+1,374
+8.5
+TransMOT [11]
+arxiv2021
+61.7
+75.1
+76.7
+59.9
+63.7
+2,346
+1.1
+GRTU [76]
+ICCV2021
+62.0
+75.0
+74.9
+62.1
+62.1
+1,812
+3.6
+MAATrack [64]
+WACVw2022
+62.0
+75.9
+79.4
+60.2
+64.2
+1,452
+189.1
+ByteTrack [94]
+ECCV2022
+63.1
+77.3
+80.3
+62.0
+64.5
+2,196
+29.6
+DeepSORT* [81]
+ICIP2017
+61.2
+74.5
+78.0
+59.7
+63.1
+1,821
+13.8
+StrongSORT
+ours
+63.5
+78.5
+78.3
+63.7
+63.6
+1,446
+7.5
+StrongSORT+
+ours
+63.7
+79.0
+78.3
+64.1
+63.6
+1,401
+7.4
+StrongSORT++
+ours
+64.4
+79.5
+79.6
+64.4
+64.6
+1,194
+7.1
+TABLE V: Comparison with state-of-the-art MOT methods on the MOT20 test set. ”*” represents our reproduced version. The
+two best results for each metric are bolded and highlighted in red and blue.
+Method
+Ref.
+HOTA(↑)
+IDF1(↑)
+MOTA(↑)
+AssA(↑)
+DetA(↑)
+IDs(↓)
+FPS(↑)
+SORT [3]
+ICIP2016
+36.1
+45.1
+42.7
+35.9
+36.7
+4,470
+57.3
+ArTIST [61]
+CVPR2021
+41.6
+51.0
+53.6
+40.2
+43.3
+1,531
+1.0
+Tracktor++ [1]
+ICCV2019
+42.1
+52.7
+52.6
+42.0
+42.3
+1,648
+1.2
+TBooster [73]
+TMM2022
+42.5
+53.4
+54.6
+41.4
+43.8
+1,674
+0.1
+TransCenter [85]
+arxiv2021
+43.6
+49.9
+59.1
+37.0
+51.8
+4,597
+1.0
+ApLift [33]
+ICCV2021
+46.6
+56.5
+58.9
+45.2
+48.2
+2,241
+0.4
+MPNTrack [6]
+CVPR2020
+46.8
+59.1
+57.6
+47.3
+46.6
+1,210
+6.5
+LPC [13]
+CVPR2021
+49.0
+62.5
+56.3
+52.4
+45.8
+1,562
+0.7
+GSDT [77]
+ICRA2021
+53.6
+67.5
+67.1
+52.7
+54.7
+3,131
+0.9
+CSTrack [43]
+TIP2022
+54.0
+68.6
+66.6
+54.0
+54.2
+3,196
+4.5
+FairMOT [95]
+IJCV2021
+54.6
+67.3
+61.8
+54.7
+54.7
+5,243
+13.2
+CrowdTrack [63]
+AVSS2021
+55.0
+68.2
+70.7
+52.6
+57.7
+3,198
+9.5
+RelationTrack [89]
+TMM2022
+56.5
+70.5
+67.2
+56.4
+56.8
+4,243
+4.3
+MAATrack [64]
+WACVw2022
+57.3
+71.2
+73.9
+55.1
+59.7
+1,331
+14.7
+SOTMOT [98]
+CVPR2021
+57.4
+71.4
+68.6
+57.3
+57.7
+4,209
+224.0
+ReMOT [88]
+IVC2021
+61.2
+73.1
+77.4
+58.7
+63.9
+1,789
+0.4
+ByteTrack [94]
+ECCV2022
+61.3
+75.2
+77.8
+59.6
+63.4
+1,223
+17.5
+DeepSORT* [81]
+ICIP2017
+57.1
+69.6
+71.8
+55.5
+59.0
+1,418
+3.2
+StrongSORT
+ours
+61.5
+75.9
+72.2
+63.2
+59.9
+1,066
+1.5
+StrongSORT+
+ours
+61.6
+76.3
+72.2
+63.6
+59.9
+1,045
+1.5
+StrongSORT++
+ours
+62.6
+77.0
+73.8
+64.0
+61.3
+770
+1.4
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+10
+Fig. 6: Sample tracking results visualization of StrongSORT++ on the test sets of MOT17, MOT20, DanceTrack and KITTI.
+The same box color represents the same ID.
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+11
+TABLE VI: Comparison with state-of-the-art MOT methods on the DanceTrack test set. The two best results for each metric
+are bolded and highlighted in red and blue.
+Method
+Ref.
+HOTA(↑)
+IDF1(↑)
+MOTA(↑)
+AssA(↑)
+DetA(↑)
+CenterTrack [99]
+ECCV2020
+41.8
+35.7
+86.8
+22.6
+78.1
+FairMOT [95]
+IJCV2021
+39.7
+40.8
+82.2
+23.8
+66.7
+QDTrack [51]
+CVPR2021
+45.7
+44.8
+83.0
+29.2
+72.1
+TransTrack [66]
+arxiv2021
+45.5
+45.2
+88.4
+27.5
+75.9
+TraDes [82]
+CVPR2021
+43.3
+41.2
+86.2
+25.4
+74.5
+MOTR [91]
+arxiv2021
+48.4
+46.1
+79.2
+32.7
+71.8
+ByteTrack [94]
+ECCV2022
+47.7
+53.9
+89.6
+32.1
+71.0
+StrongSORT++
+ours
+55.6
+55.2
+91.1
+38.6
+80.7
+TABLE VII: Comparison with state-of-the-art MOT methods on the KITTI test set. The two best results for each metric are
+bolded and highlighted in red and blue.
+Car
+Pedestrian
+Method
+Ref.
+HOTA(↑)
+MOTA(↑)
+AssA(↑)
+IDs(↓)
+HOTA(↑)
+MOTA(↑)
+AssA(↑)
+IDs(↓)
+IMMDP [83]
+ICCV2015
+68.66
+82.75
+69.76
+211
+-
+-
+-
+-
+AB3D [79]
+IROS2020
+69.99
+83.61
+69.33
+113
+37.81
+38.13
+44.33
+181
+SMAT [28]
+ICIAR2020
+71.88
+83.64
+72.13
+198
+-
+-
+-
+-
+TrackMPNN [56]
+arxiv2021
+72.30
+87.33
+70.63
+481
+39.40
+52.10
+35.45
+626
+MPNTrack [6]
+CVPR2020
+-
+-
+-
+-
+45.26
+46.23
+47.28
+397
+CenterTrack [99]
+ECCV2020
+73.02
+88.83
+71.20
+254
+40.35
+53.84
+36.93
+425
+QD-3DT [34]
+TPAMI2022
+72.77
+85.94
+72.19
+206
+41.08
+51.77
+38.82
+717
+QDTrack [51]
+CVPR2021
+68.45
+84.93
+65.49
+313
+41.12
+55.55
+38.10
+487
+LGMTracker [72]
+ICCV2021
+73.14
+87.60
+72.31
+448
+-
+-
+-
+-
+Eager [40]
+ICRA2021
+74.39
+87.82
+74.16
+239
+39.38
+49.82
+38.72
+496
+PermaTrack [70]
+ICCV2021
+77.42
+90.85
+77.66
+275
+47.43
+65.05
+43.66
+483
+StrongSORT++
+ours
+77.75
+90.35
+78.20
+440
+54.48
+67.38
+57.31
+178
+and AssA. It achieves signiﬁcantly less IDs than the other
+trackers. Note that we use exactly the same hyperparameters
+as in MOT17, which implies the generalization capability of
+our method. Its detection performance (MOTA and DetA) is
+slightly poor compared with that of several trackers. We think
+this is beacuse we use the same detection score threshold
+as in MOT17, which results in many missing detections.
+Speciﬁcally, the metric FN (number of false negatives) of our
+StrongSORT++ is 117,920, whereas that of ByteTrack [94] is
+only 87,594.
+DanceTrack. Our StrongSORT++ also achieves the best re-
+sults on DanceTrack benchmark for all metrics. Because this
+dataset encorages less attention on appearance features, we
+abandon the appearance-related optimizations here, i.e., BoT
+and EMA. The NMS threshold is set as 0.7, the matching
+distance is 0.3, the AFLink prediction threshold is 0.9, and the
+GSI interpolation threshold is 5 frames. For fair comparison,
+we use the same detections with ByteTrack [94] and achieve
+much better results, which demonstrates the superiority of our
+method.
+KITTI. On the KITTI dataset, we use the same detection
+reuslts as PermaTrack [70] for fair comparison. Results show
+that StrongSORT++ achieves comparable results for car and
+superior performance for pedestrian compared with Perma-
+Track. For simplicity, we only apply two tricks (i.e., ECC and
+NSA Kalman) and two proposed algorithms (i.e., AFLink and
+GSI) here.
+Qualitative Results. Figure 6 visualizes several tracking re-
+sults of StrongSORT++ on the test sets of MOT17, MOT20,
+DanceTrack and KITTI. The results of MOT17-01 show the
+effectiveness of our method in normal scenarios. From the
+results of MOT17-08, we can see correct associations after
+occlusion. The results of MOT17-14 show that our method can
+work well while the camera is moving. Moreover, the results of
+MOT20-04 show the excellent performance of StrongSORT++
+in scenarios with severe occlusion. The results of DanceTrack
+and KITTI demonstrate the effectiveness of StrongSORT++
+while facing the problems of complex motion patterns and
+low frame rates.
+D. Limitations
+StrongSORT and StrongSORT++ still have several limita-
+tions. One concern is their relatively low running speed com-
+pared with joint trackers and several appearance-free seperate
+trackers. This problem is mainly caused by the DeepSORT-
+like paradigm, and the proposed AFLink and GSI are both
+lightweight algorithms. Moreover, although our method ranks
+ﬁrst in metrics IDF1 and HOTA, it has a slightly lower MOTA
+on MOT17 and MOT20, which is mainly caused by many
+missing detections due to the high threshold of detection
+score. We believe an elaborate threshold strategy or association
+algorithm would help. As for AFLink, although it performs
+well in restoring missing associations, it is helpless against
+false association problems. Speciﬁcally, AFLink cannot split
+ID mixed-up trajectories into accurate tracklets. Future work
+is needed to develop stronger and more ﬂexible global link
+strategies.
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+12
+VI. CONCLUSION
+In this paper, we revisit the classic tracker DeepSORT and 
+upgrade it with new modules and several inference tricks. The 
+resulting new tracker, StrongSORT, can serve as a new strong 
+baseline for MOT task and benefit both academia and industry.
+We also propose two lightweight and appearance-free algo-
+rithms, AFLink and GSI, to solve the missing association and 
+missing detection problems. Experiments show that they can 
+be applied to and benefit various state-of-the-art trackers with 
+a negligible extra computational cost.
+By integrating StrongSORT with AFLink and GSI, the re-
+sulting tracker StrongSORT++ achieves state-of-the-art results 
+on multiple benchmarks, i.e., MOT17, MOT20, DanceTrack 
+and KITTI.
+ACKNOWLEDGMENTS
+This work is supported by Chinese National Natural Science 
+Foundation under Grants (62076033, U1931202) and MoE-
+CMCC ”Artifical Intelligence” Project No.MCM20190701.
+REFERENCES
+[1] Bergmann, P., Meinhardt, T., Leal-Taixe, L.: Tracking
+without bells and whistles. In: Proceedings of the
+IEEE/CVF International Conference on Computer Vi-
+sion. pp. 941–951 (2019)
+[2] Bernardin, K., Stiefelhagen, R.: Evaluating multiple
+object tracking performance: the clear mot metrics.
+EURASIP Journal on Image and Video Processing
+2008, 1–10 (2008)
+[3] Bewley, A., Ge, Z., Ott, L., Ramos, F., Upcroft, B.:
+Simple online and realtime tracking. In: 2016 IEEE
+international conference on image processing (ICIP).
+pp. 3464–3468. IEEE (2016)
+[4] Bochinski, E., Eiselein, V., Sikora, T.: High-speed
+tracking-by-detection without using image information.
+In: 2017 14th IEEE international conference on ad-
+vanced video and signal based surveillance (AVSS).
+pp. 1–6. IEEE (2017)
+[5] Bochinski, E., Senst, T., Sikora, T.: Extending iou based
+multi-object tracking by visual information. In: 2018
+15th IEEE International Conference on Advanced Video
+and Signal Based Surveillance (AVSS). pp. 1–6. IEEE
+(2018)
+[6] Bras´o, G., Leal-Taix´e, L.: Learning a neural solver
+for multiple object tracking. In: Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern
+Recognition. pp. 6247–6257 (2020)
+[7] Cao, J., Weng, X., Khirodkar, R., Pang, J., Kitani,
+K.: Observation-centric sort: Rethinking sort for robust
+multi-object tracking. arXiv preprint arXiv:2203.14360
+(2022)
+[8] Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kir-
+illov, A., Zagoruyko, S.: End-to-end object detection
+with transformers. In: European conference on com-
+puter vision. pp. 213–229. Springer (2020)
+[9] Chen, L., Ai, H., Zhuang, Z., Shang, C.: Real-time
+multiple people tracking with deeply learned candidate
+selection and person re-identiﬁcation. In: 2018 IEEE in-
+ternational conference on multimedia and expo (ICME).
+pp. 1–6. IEEE (2018)
+[10] Chu, P., Ling, H.: Famnet: Joint learning of fea-
+ture, afﬁnity and multi-dimensional assignment for on-
+line multiple object tracking. In: Proceedings of the
+IEEE/CVF International Conference on Computer Vi-
+sion. pp. 6172–6181 (2019)
+[11] Chu, P., Wang, J., You, Q., Ling, H., Liu, Z.: Transmot:
+Spatial-temporal graph transformer for multiple object
+tracking. arXiv preprint arXiv:2104.00194 (2021)
+[12] Dai, P., Wang, X., Zhang, W., Chen, J.: Instance seg-
+mentation enabled hybrid data association and discrim-
+inative hashing for online multi-object tracking. IEEE
+Transactions on Multimedia 21(7), 1709–1723 (2018)
+[13] Dai, P., Weng, R., Choi, W., Zhang, C., He, Z., Ding,
+W.: Learning a proposal classiﬁer for multiple object
+tracking. In: Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition. pp. 2443–
+2452 (2021)
+[14] Dendorfer, P., Rezatoﬁghi, H., Milan, A., Shi, J., Cre-
+mers, D., Reid, I., Roth, S., Schindler, K., Leal-Taix´e,
+L.: Mot20: A benchmark for multi object tracking
+in crowded scenes. arXiv preprint arXiv:2003.09003
+(2020)
+[15] Doll´ar, P., Wojek, C., Schiele, B., Perona, P.: Pedestrian
+detection: A benchmark. In: 2009 IEEE conference on
+computer vision and pattern recognition. pp. 304–311.
+IEEE (2009)
+[16] Du, Y., Tong, Z., Wan, J., Zhang, B., Zhao, Y.: Pami-ad:
+An activity detector exploiting part-attention and mo-
+tion information in surveillance videos. arXiv preprint
+arXiv:2203.03796 (2022)
+[17] Du, Y., Wan, J., Zhao, Y., Zhang, B., Tong, Z., Dong,
+J.: Giaotracker: A comprehensive framework for mcmot
+with global information and optimizing strategies in
+visdrone 2021. In: Proceedings of the IEEE/CVF In-
+ternational Conference on Computer Vision. pp. 2809–
+2819 (2021)
+[18] Ess, A., Leibe, B., Schindler, K., Van Gool, L.: A
+mobile vision system for robust multi-person tracking.
+In: 2008 IEEE Conference on Computer Vision and
+Pattern Recognition. pp. 1–8. IEEE (2008)
+[19] Evangelidis, G.D., Psarakis, E.Z.: Parametric image
+alignment using enhanced correlation coefﬁcient max-
+imization. IEEE transactions on pattern analysis and
+machine intelligence 30(10), 1858–1865 (2008)
+[20] Feng, W., Hu, Z., Wu, W., Yan, J., Ouyang, W.: Multi-
+object tracking with multiple cues and switcher-aware
+classiﬁcation. arXiv preprint arXiv:1901.06129 (2019)
+[21] Fern´andez
+Llorca,
+D.,
+Hern´andez
+Mart´ınez,
+A.,
+Garc´ıa Daza, I.: Vision-based vehicle speed estimation:
+A survey. IET Intelligent Transport Systems 15(8), 987–
+1005 (2021)
+[22] Fu, Z., Angelini, F., Chambers, J., Naqvi, S.M.: Multi-
+level cooperative fusion of gm-phd ﬁlters for online
+multiple human tracking. IEEE Transactions on Mul-
+timedia 21(9), 2277–2291 (2019)
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+13
+[23] Gao, J., Nevatia, R.: Revisiting temporal model-
+ing
+for
+video-based
+person
+reid.
+arXiv
+preprint
+arXiv:1805.02104 (2018)
+[24] Gao, T., Pan, H., Wang, Z., Gao, H.: A crf-based
+framework for tracklet inactivation in online multi-
+object tracking. IEEE Transactions on Multimedia 24,
+995–1007 (2021)
+[25] Ge, Z., Liu, S., Wang, F., Li, Z., Sun, J.: Yolox:
+Exceeding
+yolo
+series
+in
+2021.
+arXiv
+preprint
+arXiv:2107.08430 (2021)
+[26] Geiger, A., Lenz, P., Stiller, C., Urtasun, R.: Vision
+meets robotics: The kitti dataset. The International
+Journal of Robotics Research 32(11), 1231–1237 (2013)
+[27] Glorot, X., Bordes, A., Bengio, Y.: Deep sparse recti-
+ﬁer neural networks. In: Proceedings of the fourteenth
+international conference on artiﬁcial intelligence and
+statistics. pp. 315–323. JMLR Workshop and Confer-
+ence Proceedings (2011)
+[28] Gonzalez, N.F., Ospina, A., Calvez, P.: Smat: Smart
+multiple afﬁnity metrics for multiple object tracking.
+In: International Conference on Image Analysis and
+Recognition. pp. 48–62. Springer (2020)
+[29] Han, S., Huang, P., Wang, H., Yu, E., Liu, D., Pan,
+X.: Mat: Motion-aware multi-object tracking. Neuro-
+computing (2022)
+[30] He, J., Huang, Z., Wang, N., Zhang, Z.: Learnable
+graph matching: Incorporating graph partitioning with
+deep feature learning for multiple object tracking. In:
+Proceedings of the IEEE/CVF conference on computer
+vision and pattern recognition. pp. 5299–5309 (2021)
+[31] Henriques, J.F., Caseiro, R., Martins, P., Batista, J.:
+High-speed tracking with kernelized correlation ﬁlters.
+IEEE transactions on pattern analysis and machine
+intelligence 37(3), 583–596 (2014)
+[32] Hofmann, M., Haag, M., Rigoll, G.: Uniﬁed hierarchical
+multi-object tracking using global data association. In:
+2013 IEEE International Workshop on Performance
+Evaluation of Tracking and Surveillance (PETS). pp.
+22–28. IEEE (2013)
+[33] Hornakova, A., Kaiser, T., Swoboda, P., Rolinek, M.,
+Rosenhahn, B., Henschel, R.: Making higher order
+mot scalable: An efﬁcient approximate solver for lifted
+disjoint paths. In: Proceedings of the IEEE/CVF In-
+ternational Conference on Computer Vision. pp. 6330–
+6340 (2021)
+[34] Hu, H.N., Yang, Y.H., Fischer, T., Darrell, T., Yu, F.,
+Sun, M.: Monocular quasi-dense 3d object tracking.
+IEEE Transactions on Pattern Analysis and Machine
+Intelligence (2022)
+[35] Huang, Y., Zhu, F., Zeng, Z., Qiu, X., Shen, Y., Wu,
+J.: Sqe: a self quality evaluation metric for parameters
+optimization in multi-object tracking. In: Proceedings
+of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition. pp. 8306–8314 (2020)
+[36] Ioffe, S., Szegedy, C.: Batch normalization: Accelerat-
+ing deep network training by reducing internal covariate
+shift. In: International conference on machine learning.
+pp. 448–456. PMLR (2015)
+[37] Kalal,
+Z.,
+Mikolajczyk,
+K.,
+Matas,
+J.:
+Forward-
+backward error: Automatic detection of tracking fail-
+ures. In: 2010 20th international conference on pattern
+recognition. pp. 2756–2759. IEEE (2010)
+[38] Kalman, R.E.: A new approach to linear ﬁltering and
+prediction problems. Journal of Basic Engineering 82D,
+35–45 (1960)
+[39] Khurana, T., Dave, A., Ramanan, D.: Detecting invisible
+people. In: Proceedings of the IEEE/CVF International
+Conference on Computer Vision. pp. 3174–3184 (2021)
+[40] Kim, A., Oˇsep, A., Leal-Taix´e, L.: Eagermot: 3d multi-
+object tracking via sensor fusion. In: 2021 IEEE Interna-
+tional Conference on Robotics and Automation (ICRA).
+pp. 11315–11321. IEEE (2021)
+[41] Kingma, D.P., Ba, J.: Adam: A method for stochastic
+optimization. arXiv preprint arXiv:1412.6980 (2014)
+[42] Kuhn, H.W.: The hungarian method for the assignment
+problem. Naval research logistics quarterly 2(1-2), 83–
+97 (1955)
+[43] Liang, C., Zhang, Z., Zhou, X., Li, B., Zhu, S., Hu, W.:
+Rethinking the competition between detection and reid
+in multiobject tracking. IEEE Transactions on Image
+Processing 31, 3182–3196 (2022)
+[44] Lin, T.Y., Maire, M., Belongie, S., Hays, J., Perona, P.,
+Ramanan, D., Doll´ar, P., Zitnick, C.L.: Microsoft coco:
+Common objects in context. In: European conference
+on computer vision. pp. 740–755. Springer (2014)
+[45] Lu, Z., Rathod, V., Votel, R., Huang, J.: Retinatrack:
+Online single stage joint detection and tracking. In:
+Proceedings of the IEEE/CVF conference on computer
+vision and pattern recognition. pp. 14668–14678 (2020)
+[46] Luiten, J., Osep, A., Dendorfer, P., Torr, P., Geiger,
+A., Leal-Taix´e, L., Leibe, B.: Hota: A higher order
+metric for evaluating multi-object tracking. International
+journal of computer vision 129(2), 548–578 (2021)
+[47] Luo, H., Jiang, W., Gu, Y., Liu, F., Liao, X., Lai, S.,
+Gu, J.: A strong baseline and batch normalization neck
+for deep person re-identiﬁcation. IEEE Transactions on
+Multimedia 22(10), 2597–2609 (2019)
+[48] Milan, A., Leal-Taix´e, L., Reid, I., Roth, S., Schindler,
+K.: Mot16: A benchmark for multi-object tracking.
+arXiv preprint arXiv:1603.00831 (2016)
+[49] Naiel, M.A., Ahmad, M.O., Swamy, M., Lim, J., Yang,
+M.H.: Online multi-object tracking via robust collab-
+orative model and sample selection. Computer Vision
+and Image Understanding 154, 94–107 (2017)
+[50] Pang, B., Li, Y., Zhang, Y., Li, M., Lu, C.: Tubetk:
+Adopting tubes to track multi-object in a one-step train-
+ing model. In: Proceedings of the IEEE/CVF conference
+on computer vision and pattern recognition. pp. 6308–
+6318 (2020)
+[51] Pang, J., Qiu, L., Li, X., Chen, H., Li, Q., Darrell, T., Yu,
+F.: Quasi-dense similarity learning for multiple object
+tracking. In: Proceedings of the IEEE/CVF conference
+on computer vision and pattern recognition. pp. 164–
+173 (2021)
+[52] Peng, J., Wang, C., Wan, F., Wu, Y., Wang, Y., Tai, Y.,
+Wang, C., Li, J., Huang, F., Fu, Y.: Chained-tracker:
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+14
+Chaining paired attentive regression results for end-
+to-end joint multiple-object detection and tracking. In:
+European conference on computer vision. pp. 145–161.
+Springer (2020)
+[53] Peng, J., Wang, T., Lin, W., Wang, J., See, J.,
+Wen, S., Ding, E.: Tpm: Multiple object tracking
+with tracklet-plane matching. Pattern Recognition 107,
+107480 (2020)
+[54] Perera, A.A., Srinivas, C., Hoogs, A., Brooksby, G., Hu,
+W.: Multi-object tracking through simultaneous long
+occlusions and split-merge conditions. In: 2006 IEEE
+Computer Society Conference on Computer Vision and
+Pattern Recognition (CVPR’06). vol. 1, pp. 666–673.
+IEEE (2006)
+[55] Possegger, H., Mauthner, T., Roth, P.M., Bischof, H.:
+Occlusion geodesics for online multi-object tracking.
+In: proceedings of the IEEE Conference on Computer
+Vision and Pattern Recognition. pp. 1306–1313 (2014)
+[56] Rangesh, A., Maheshwari, P., Gebre, M., Mhatre, S.,
+Ramezani, V., Trivedi, M.M.: Trackmpnn: A message
+passing graph neural architecture for multi-object track-
+ing. arXiv preprint arXiv:2101.04206 (2021)
+[57] Redmon, J., Divvala, S., Girshick, R., Farhadi, A.: You
+only look once: Uniﬁed, real-time object detection. In:
+Proceedings of the IEEE conference on computer vision
+and pattern recognition. pp. 779–788 (2016)
+[58] Redmon, J., Farhadi, A.: Yolov3: An incremental im-
+provement. arXiv preprint arXiv:1804.02767 (2018)
+[59] Ren, S., He, K., Girshick, R., Sun, J.: Faster r-cnn:
+Towards real-time object detection with region proposal
+networks. Advances in neural information processing
+systems 28 (2015)
+[60] Ristani, E., Solera, F., Zou, R., Cucchiara, R., Tomasi,
+C.: Performance measures and a data set for multi-
+target, multi-camera tracking. In: European conference
+on computer vision. pp. 17–35. Springer (2016)
+[61] Saleh, F., Aliakbarian, S., Rezatoﬁghi, H., Salzmann,
+M., Gould, S.: Probabilistic tracklet scoring and inpaint-
+ing for multiple object tracking. In: Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern
+Recognition. pp. 14329–14339 (2021)
+[62] Shao, S., Zhao, Z., Li, B., Xiao, T., Yu, G., Zhang,
+X., Sun, J.: Crowdhuman: A benchmark for detecting
+human in a crowd. arXiv preprint arXiv:1805.00123
+(2018)
+[63] Stadler, D., Beyerer, J.: On the performance of crowd-
+speciﬁc detectors in multi-pedestrian tracking. In: 2021
+17th IEEE International Conference on Advanced Video
+and Signal Based Surveillance (AVSS). pp. 1–12. IEEE
+(2021)
+[64] Stadler, D., Beyerer, J.: Modelling ambiguous assign-
+ments for multi-person tracking in crowds. In: Proceed-
+ings of the IEEE/CVF Winter Conference on Applica-
+tions of Computer Vision. pp. 133–142 (2022)
+[65] Sun, P., Cao, J., Jiang, Y., Yuan, Z., Bai, S., Kitani, K.,
+Luo, P.: Dancetrack: Multi-object tracking in uniform
+appearance and diverse motion. In: Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern
+Recognition. pp. 20993–21002 (2022)
+[66] Sun, P., Cao, J., Jiang, Y., Zhang, R., Xie, E., Yuan, Z.,
+Wang, C., Luo, P.: Transtrack: Multiple object track-
+ing with transformer. arXiv preprint arXiv:2012.15460
+(2020)
+[67] Sun, S., Akhtar, N., Song, H., Mian, A., Shah, M.:
+Deep afﬁnity network for multiple object tracking. IEEE
+transactions on pattern analysis and machine intelli-
+gence 43(1), 104–119 (2019)
+[68] Tan, M., Pang, R., Le, Q.V.: Efﬁcientdet: Scalable
+and efﬁcient object detection. In: Proceedings of the
+IEEE/CVF conference on computer vision and pattern
+recognition. pp. 10781–10790 (2020)
+[69] Tian, Z., Shen, C., Chen, H., He, T.: Fcos: Fully con-
+volutional one-stage object detection. In: Proceedings
+of the IEEE/CVF international conference on computer
+vision. pp. 9627–9636 (2019)
+[70] Tokmakov, P., Li, J., Burgard, W., Gaidon, A.: Learning
+to track with object permanence. In: Proceedings of
+the IEEE/CVF International Conference on Computer
+Vision. pp. 10860–10869 (2021)
+[71] Wang, B., Wang, G., Chan, K.L., Wang, L.: Tracklet
+association by online target-speciﬁc metric learning and
+coherent dynamics estimation. IEEE transactions on
+pattern analysis and machine intelligence 39(3), 589–
+602 (2016)
+[72] Wang, G., Gu, R., Liu, Z., Hu, W., Song, M., Hwang,
+J.N.: Track without appearance: Learn box and tracklet
+embedding with local and global motion patterns for
+vehicle tracking. In: Proceedings of the IEEE/CVF In-
+ternational Conference on Computer Vision. pp. 9876–
+9886 (2021)
+[73] Wang, G., Wang, Y., Gu, R., Hu, W., Hwang, J.N.:
+Split and connect: A universal tracklet booster for
+multi-object tracking. IEEE Transactions on Multimedia
+(2022)
+[74] Wang, G., Wang, Y., Zhang, H., Gu, R., Hwang, J.N.:
+Exploit the connectivity: Multi-object tracking with
+trackletnet. In: Proceedings of the 27th ACM Interna-
+tional Conference on Multimedia. pp. 482–490 (2019)
+[75] Wang, Q., Zheng, Y., Pan, P., Xu, Y.: Multiple object
+tracking with correlation learning. In: Proceedings of
+the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition. pp. 3876–3886 (2021)
+[76] Wang, S., Sheng, H., Zhang, Y., Wu, Y., Xiong, Z.: A
+general recurrent tracking framework without real data.
+In: Proceedings of the IEEE/CVF International Confer-
+ence on Computer Vision. pp. 13219–13228 (2021)
+[77] Wang, Y., Kitani, K., Weng, X.: Joint object detec-
+tion and multi-object tracking with graph neural net-
+works. In: 2021 IEEE International Conference on
+Robotics and Automation (ICRA). pp. 13708–13715.
+IEEE (2021)
+[78] Wang, Z., Zheng, L., Liu, Y., Li, Y., Wang, S.: Towards
+real-time multi-object tracking. In: European Confer-
+ence on Computer Vision. pp. 107–122. Springer (2020)
+[79] Weng, X., Wang, J., Held, D., Kitani, K.: 3d multi-
+object tracking: A baseline and new evaluation metrics.
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
+
+15
+In: 2020 IEEE/RSJ International Conference on Intel-
+ligent Robots and Systems (IROS). pp. 10359–10366.
+IEEE (2020)
+[80] Williams, C., Rasmussen, C.: Gaussian processes for
+regression. Advances in neural information processing
+systems 8 (1995)
+[81] Wojke, N., Bewley, A., Paulus, D.: Simple online and
+realtime tracking with a deep association metric. In:
+2017 IEEE international conference on image process-
+ing (ICIP). pp. 3645–3649. IEEE (2017)
+[82] Wu, J., Cao, J., Song, L., Wang, Y., Yang, M., Yuan,
+J.: Track to detect and segment: An online multi-object
+tracker. In: Proceedings of the IEEE/CVF conference
+on computer vision and pattern recognition. pp. 12352–
+12361 (2021)
+[83] Xiang, Y., Alahi, A., Savarese, S.: Learning to track:
+Online multi-object tracking by decision making. In:
+Proceedings of the IEEE international conference on
+computer vision. pp. 4705–4713 (2015)
+[84] Xiao, T., Li, S., Wang, B., Lin, L., Wang, X.: Joint
+detection and identiﬁcation feature learning for person
+search. In: Proceedings of the IEEE conference on
+computer vision and pattern recognition. pp. 3415–3424
+(2017)
+[85] Xu, Y., Ban, Y., Delorme, G., Gan, C., Rus, D.,
+Alameda-Pineda, X.: Transcenter: Transformers with
+dense
+queries
+for
+multiple-object
+tracking.
+arXiv
+preprint arXiv:2103.15145 (2021)
+[86] Xu, Y., Osep, A., Ban, Y., Horaud, R., Leal-Taix´e, L.,
+Alameda-Pineda, X.: How to train your deep multi-
+object tracker. In: Proceedings of the IEEE/CVF Con-
+ference on Computer Vision and Pattern Recognition.
+pp. 6787–6796 (2020)
+[87] Yang, F., Chang, X., Dang, C., Zheng, Z., Sakti, S.,
+Nakamura, S., Wu, Y.: Remots: Self-supervised reﬁning
+multi-object tracking and segmentation. arXiv preprint
+arXiv:2007.03200 (2020)
+[88] Yang, F., Chang, X., Sakti, S., Wu, Y., Nakamura, S.:
+Remot: A model-agnostic reﬁnement for multiple object
+tracking. Image and Vision Computing 106, 104091
+(2021)
+[89] Yu, E., Li, Z., Han, S., Wang, H.: Relationtrack:
+Relation-aware multiple object tracking with decou-
+pled representation. IEEE Transactions on Multimedia
+(2022)
+[90] Yu, F., Li, W., Li, Q., Liu, Y., Shi, X., Yan, J.: Poi:
+Multiple object tracking with high performance detec-
+tion and appearance feature. In: European Conference
+on Computer Vision. pp. 36–42. Springer (2016)
+[91] Zeng, F., Dong, B., Wang, T., Zhang, X., Wei, Y.: Motr:
+End-to-end multiple-object tracking with transformer.
+arXiv preprint arXiv:2105.03247 (2021)
+[92] Zhang, H., Wu, C., Zhang, Z., Zhu, Y., Lin, H.,
+Zhang, Z., Sun, Y., He, T., Mueller, J., Manmatha, R.,
+et al.: Resnest: Split-attention networks. arXiv preprint
+arXiv:2004.08955 (2020)
+[93] Zhang, S., Benenson, R., Schiele, B.: Citypersons: A
+diverse dataset for pedestrian detection. In: Proceedings
+of the IEEE conference on computer vision and pattern
+recognition. pp. 3213–3221 (2017)
+[94] Zhang, Y., Sun, P., Jiang, Y., Yu, D., Yuan, Z., Luo,
+P., Liu, W., Wang, X.: Bytetrack: Multi-object track-
+ing by associating every detection box. arXiv preprint
+arXiv:2110.06864 (2021)
+[95] Zhang, Y., Wang, C., Wang, X., Zeng, W., Liu, W.: Fair-
+mot: On the fairness of detection and re-identiﬁcation
+in multiple object tracking. International Journal of
+Computer Vision 129(11), 3069–3087 (2021)
+[96] Zheng, L., Bie, Z., Sun, Y., Wang, J., Su, C., Wang,
+S., Tian, Q.: Mars: A video benchmark for large-scale
+person re-identiﬁcation. In: European conference on
+computer vision. pp. 868–884. Springer (2016)
+[97] Zheng, L., Zhang, H., Sun, S., Chandraker, M., Yang,
+Y., Tian, Q.: Person re-identiﬁcation in the wild. In:
+Proceedings of the IEEE conference on computer vision
+and pattern recognition. pp. 1367–1376 (2017)
+[98] Zheng, L., Tang, M., Chen, Y., Zhu, G., Wang, J.,
+Lu, H.: Improving multiple object tracking with single
+object tracking. In: Proceedings of the IEEE/CVF Con-
+ference on Computer Vision and Pattern Recognition.
+pp. 2453–2462 (2021)
+[99] Zhou, X., Koltun, V., Kr¨ahenb¨uhl, P.: Tracking objects
+as points. In: European Conference on Computer Vi-
+sion. pp. 474–490. Springer (2020)
+[100] Zhou, X., Wang, D., Kr¨ahenb¨uhl, P.: Objects as points.
+arXiv preprint arXiv:1904.07850 (2019)
+[101] Zhu, Y., Zhou, K., Wang, M., Zhao, Y., Zhao, Z.: A
+comprehensive solution for detecting events in complex
+surveillance videos. Multimedia Tools and Applications
+78(1), 817–838 (2019)
+ This article has been accepted for publication in a future issue of this journal, but has not been fully edited. Content may change prior to final 
+publication. Citation information: DOI10.1109/TMM.2023.3240881 Transactions on Multimedia 
