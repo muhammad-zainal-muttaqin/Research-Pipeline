@@ -234,16 +234,23 @@ Pola P6 menentukan gaya. Setiap paragraf sintesis berisi: klaim, bukti operasion
 
 ## 6. Kerangka yang diterapkan pada naskah `main6`
 
-| Bagian naskah | Pola yang diterapkan |
-|---|---|
-| 1. Pendahuluan: masalah terukur, pertanyaan tinjauan, pesan utama, kontribusi | P2, P9, P10 |
-| 2. Metode: tipe tinjauan, sumber dan tanggal, query lengkap, kriteria, seleksi, ekstraksi, penilaian mutu | P1, P3, P4, P7 |
-| 3. Kerangka: operasi dari deteksi ke inventaris, mekanisme identitas, asumsi akuisisi | P10 |
-| 4–6. Sintesis per mekanisme dan per atribut, bukti ditulis operasional | P5, P6, P7 |
-| 7. Pemosisian terhadap review terdahulu (tabel) | P9 |
-| 8. Tantangan dan agenda pengukuran | P11 |
-| 9. Keterbatasan tinjauan dan kesimpulan | P11 |
-| Lampiran: matriks bukti satu baris per studi, query, alur PRISMA | P4, P8 |
+Naskah `manuscript/source/main6.tex` + `main6-body.tex` menerapkan pola di atas
+sebagai berikut.
+
+| Bagian naskah `main6` | Isi | Pola |
+|---|---|---|
+| 1. Introduction | Masalah terukur (27–58% buah terlihat pada satu atau dua citra; 9,9% hitung ganda), kasus sensus sawit, empat pertanyaan tinjauan, tiga kontribusi | P2, P9, P10 |
+| 2. Review method | Tipe tinjauan, sumber dan tanggal, tabel 13 eksekusi kueri, kriteria E1–E7, penyaringan, pengodean, penilaian bukti, alur PRISMA (Gambar 1) | P1, P3, P4, P7 |
+| 3. Design space | Lima tahap dari akuisisi ke inventaris, tiga sumber hitung ganda, enam mekanisme M0–M5 beserta asumsinya (Gambar 3–5) | P10 |
+| 4. Acquisition | Tabel II: delapan kajian yang membandingkan desain akuisisi pada pohon yang sama | P5, P6, P8 |
+| 5. Evidence by mechanism | Tabel III: 13 perbandingan mekanisme pada data yang sama; bukti M1–M5; cara bukti diukur (Gambar 7) | P5, P6, P7, P8 |
+| 6. Class attributes | Hitungan per kelas pada buah unik (19 kajian C1, 49 kajian C4) | P5, P6 |
+| 7. Depth and other modalities | Peran depth pada deteksi, ukuran, dan asosiasi | P5, P6 |
+| 8. Oil palm | 170 kajian menurut tugas dan lokasi (Gambar 6); celah pencacahan lintas pandang | P5, P9 |
+| 9. Position | Tabel IV: sepuluh tinjauan terdahulu | P9 |
+| 10. Gaps and agenda | G1–G5, masing-masing dengan ukuran yang harus dilaporkan | P11 |
+| 11. Limitations | Sumber tunggal, abstrak dari layanan terbuka, satu peninjau dengan bantuan model bahasa | P11 |
+| Lampiran A | Matriks bukti 187 kajian C1 | P4, P8 |
 
 ## 7. Daftar periksa sebelum naskah dikirim
 
