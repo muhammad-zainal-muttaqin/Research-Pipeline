@@ -1,0 +1,2154 @@
+Semantic Mapping for Orchard Environments by
+Merging Two-Sides Reconstructions of Tree Rows
+Wenbo Dong
+dongx358@umn.edu
+Pravakar Roy
+royxx268@umn.edu
+Volkan Isler∗
+isler@umn.edu
+Abstract
+Measuring semantic traits for phenotyping is an essential but labor-intensive activity in
+horticulture. Researchers often rely on manual measurements which may not be accurate
+for tasks such as measuring tree volume. To improve the accuracy of such measurements and
+to automate the process, we consider the problem of building coherent three dimensional
+(3D) reconstructions of orchard rows. Even though 3D reconstructions of side views can
+be obtained using standard mapping techniques, merging the two side-views is diﬃcult due
+to the lack of overlap between the two partial reconstructions. Our ﬁrst main contribution
+in this paper is a novel method that utilizes global features and semantic information to
+obtain an initial solution aligning the two sides. Our mapping approach then reﬁnes the
+3D model of the entire tree row by integrating semantic information common to both sides,
+and extracted using our novel robust detection and ﬁtting algorithms. Next, we present a
+vision system to measure semantic traits from the optimized 3D model that is built from the
+RGB or RGB-D data captured by only a camera. Speciﬁcally, we show how canopy volume,
+trunk diameter, tree height and fruit count can be automatically obtained in real orchard
+environments. The experiment results from multiple datasets quantitatively demonstrate
+the high accuracy and robustness of our method.
+1
+Introduction
+The problem of building accurate 3D reconstructions of orchard rows arises in a number of agricultural
+automation tasks. The estimation of morphological parameters of fruit trees (such as tree height, canopy
+volume and trunk diameter) is important in horticultural science, and has become an important topic in
+precision agriculture (Rosell and Sanz, 2012; Tabb and Medeiros, 2017). Accurate morphology estimation
+can help horticulturists study to what extent these parameters impact crop yield, health and development.
+For example, growers try diﬀerent rootstocks to ﬁgure out which one produces a better yield per volume for
+a speciﬁc geographical area. They also measure parameters such as tree height or trunk diameter to model
+fruit production. This measurement process is labor-intensive and not necessarily accurate. However, these
+geometric traits used for phenotyping can be accurately extracted from reconstructed 3D models. 3D models
+can be further used for automated pruning of trees, and are also important for yield mapping: although
+image-based methods can be used to count fruits in individual images, 3D models can be used for tracking
+them across images and to avoid double counting fruits visible from both sides of the row. For example, in
+the case of the tree shown in Fig. 1b, most of the apples are visible from both sides and can be counted twice
+in independent single-side scans.
+∗W. Dong, P. Roy, and V. Isler are with the Department of Computer Science and Engineering, University of Minnesota,
+Twin Cities, MN 55455.
+arXiv:1809.00075v4  [cs.RO]  29 Jan 2020
+
+(a) Data collection
+(b) Side-view imaging
+(c) Imaging device
+Figure 1: Overview of data capturing scenario. (a): A single-side data collection along a tree row. (b):
+The front view of an apple tree. Many apples in this tree are visible from both sides. If we add counts
+from individual sides, these apples will be counted twice. (c): The imaging device (Intel RealSense R200)
+capturing RGB or RGB-D data. The camera is mounted on a stick to capture data from either horizontal
+view or titled top-down view.
+There are many techniques such as Structure from Motion (SfM) or RGB-D Simultaneous Localization
+and Mapping (SLAM) (Sturm et al., 2012; Roy and Isler, 2016a) which can generate reconstructions of
+individual sides of the rows. However, existing methods can not merge these two reconstructions: even with
+the manual selection of correspondences, Iterative Closest Point (ICP) techniques fail (see Fig. 7). Large-
+scale SfM techniques can produce consistent reconstructions with the presence of overlapping side views or
+with loop closure. Obtaining such views in orchard settings is hard because the rows can be extremely long
+(sometimes spanning a thousand meters or more). The use of very precise Real-Time Kinematic (RTK) GPS
+can be used to solve the registration problem, but it is costly and not always available.
+The goal of our work is to use RGB or RGB-D videos to reconstruct a complete 3D model of tree rows from
+images of both sides and to perform semantic mapping (measuring tree morphology and estimating yield).
+In this paper, we present a novel method to merge reconstructions from both sides of a row without the
+need for overlapping views or GPS coordinates (see Fig. 2). We utilize a key observation: “The orthographic
+projection of the occlusion boundary of the trees in a row in the fronto-parallel plane from opposite sides of
+the row are symmetric.” Coupling this fact with the assumption of the existence of a common ground plane,
+we solve the problem of merging the reconstructions from both sides ﬁrst by solving the problem of ﬁnding a
+rigid body transformation between the occlusion boundaries of a fronto-parallel view. Next, we address the
+problem of estimating a single overlapping depth distance. We solve this problem using existing 2D shape
+matching methods and semantic constraints (e.g., the tree trunks are well approximated by cylinders, their
+projections in the side view and the front view have the same width). Our method relies on establishing
+semantic relationships between each of the two-sides and integrating tree morphology into the reconstruction
+system, which in turn outputs optimized morphological parameters.
+Fig. 1 illustrates an overview of our data collection. To the best of our knowledge, it is the ﬁrst vision
+system for accurate estimation of tree morphology and fruit yield in orchards by using only an RGB or
+RGB-D camera (depth information is used only for measuring tree traits in the absolute scale). In summary,
+our work has the following key contributions:
+• We present a novel mapping approach on RGB or RGB-D videos that can separately reconstruct
+
+3D models of fruit trees from both sides and accurately merge them based on semantics, i.e., tree
+trunks and local ground patches.
+• We introduce robust detection and ﬁtting algorithms to estimate the initial trunk size and local
+planar ground for each tree, and integrate tree-trunk diameters into semantic SfM to further localize
+trunks and local ground patches.
+• We measure tree height, canopy volume and trunk diameter through automated segmentation for
+each tree, and count fruits based on optimized information of 3D merged tree rows.
+This paper is structured as follows. In the next section, we discuss the relevant literature. After discussing
+technical challenges, we introduce our proposed semantic mapping, followed by experimental results and a
+conclusion.
+2
+Related Work
+2D or 3D LIDAR scanning has proven to be a viable option for generating 3D models of trees (Underwood
+et al., 2015; Bargoti et al., 2015). Usually, LIDAR sensors are mounted on a vehicle moving along the alleys
+of the fruit orchard to vertically scan the side of the tree rows (M´endez et al., 2014; Underwood et al., 2016).
+To obtain the 3D point cloud by adding subsequent 2D transects of laser scanning, the vehicle has to move
+with a steady velocity and along a linear track parallel to the tree row. However, these systems do not merge
+two scanned sides of trees. Morphological parameters are thus inaccurately computed by only scanning one
+side and multiplying by two or by adding the volumes of the two sides without merging them. Generated
+two-sides point clouds can also be manually matched through CAD software (Rosell et al., 2009). However,
+tree models are partially misaligned from two sides due to accumulated errors of sensor poses during the
+movement. Even if position accuracy has been improved by combining Global Navigation Satellite System
+(GNSS) with LIDAR (del Moral-Mart´ınez et al., 2015), the issue of accumulated orientation error still exists,
+especially for large scale scanning. Furthermore, the combination of these two sensors (e.g., GR3 RTK GNSS
+and LMS500) is expensive and may not be aﬀordable.
+Cameras are low-cost, lightweight compared to LIDAR sensors.
+Vision-based 3D dense reconstruction,
+with the ability to provide quantitative information of every geometric detail of an object, is a promising
+alternative for accurate morphology measurement. Although time-of-ﬂight (van der Heijden et al., 2012),
+stereo-vision systems (Bac et al., 2014) and depth sensors (Wang and Li, 2014) have been used to estimate
+parameters of low-height plants, these approaches have been limited to indoor environments with controlled
+conditions, such as constant background and artiﬁcial illumination. We focus on the outdoor case in natural
+orchard environments.
+There has been a lot of recent work on yield estimation for specialty crops (Wang et al., 2013; Das et al.,
+2015; Roy and Isler, 2016a; Roy and Isler, 2016b; Bargoti and Underwood, 2017; Roy and Isler, 2017; H¨ani
+et al., 2018a; H¨ani et al., 2018b). Most of the existing systems rely on external sensors to register the fruits
+from a single side or both sides of the row. Wang et al. (Wang et al., 2013) use stereo cameras coupled with
+GPS and odometry sensors to avoid double counting. They align the apples globally in 3D space and remove
+the ones which are within 0.05 meter of a previously registered apple. Hung et al. (Hung et al., 2015) and
+Bargoti et al. (Bargoti and Underwood, 2017) use sampling at certain intervals to remove overlap between
+images. Das et al. (Das et al., 2015) use optical ﬂow and navigational sensors to avoid duplicate apples. In
+our previous work (Roy and Isler, 2016a), we present a method for registering apples from the single side of
+a row based on aﬃne tracking and incremental SfM. None of these previous methods build a consistent 3D
+model of the entire row. In contrast, we focus on aligning SfM reconstructions from both sides of a row to
+create a single consistent model.
+Recent studies present methods for merging visually disconnected SfM models (Cohen et al., 2016) for urban
+environments. These methods estimate the scale and relative height for all sub-models based on the Man-
+
+Figure 2: Given two up-to-scale reconstructions of two sides of a row, our goal is to merge the two recon-
+structions into a single coherent model.
+hattan world assumption and ﬁnd possible connection points between the reconstructions utilizing semantic
+information (facade edges, windows, doors, etc). Afterward, they generate all possible fully connected mod-
+els and ﬁnd the most likely model according to loop closure and symmetry alignment. Modern map merging
+approaches (Yu et al., 2015; Zhou et al., 2016; Bonanni et al., 2017) register multiple partially overlapping
+3D maps by non-rigid alignment. In contrast, there is no overlap between partial reconstructions in our
+scenario. For aligning SfM reconstructions from both sides of a tree row, we utilize the symmetry of their
+occlusion boundaries from a fronto-parallel view. Afterward, we adjust the overlap in depth direction using
+semantic information.
+For a modern high-density orchard setting, it is not possible to perform mapping around each tree individ-
+ually. Instead, two sides of tree rows are captured separately by a moving camera or in a loop trajectory.
+Obtaining accurate 3D models of fruit trees requires accurate camera poses, but estimating them reliably for
+long range RGB videos is a diﬃcult problem. Especially in orchard environments, good features cannot be
+stably tracked through long subsequent frames because of motion due to the wind in the scene (Dong and
+Isler, 2017). Accumulated errors in camera poses will cause misalignment of tree models from both sides.
+As we show in Sec. 3, state-of-the-art methods for volumetric fusion (Newcombe et al., 2011), SfM (Wu,
+2013) and SLAM (Mur-Artal and Tard´os, 2017) are not reliable enough for tree volume and trunk diameter
+estimation. Since there is nearly no overlap of canopy surface between two sides of tree rows, misalignment
+of tree models cannot be addressed by ICP-based methods (Medeiros et al., 2017) or semantic tracking in
+loop closure (Bowman et al., 2017).
+3
+Technical Background
+This section provides the problem formulation of semantic mapping for orchards with an overview of our
+system, and two main challenges of 3D reconstruction in orchard environments.
+3.1
+Problem Formulation
+Consider a row of trees in an orchard, where an imaging device moves along one side of the row (arbitrarily
+called the “front” side) and captures images of static landmarks (3D points and 3D objects, such as trunks
+and local grounds), then it moves to the “back” side and captures the second set of images. The images can
+be standard RGB images or they may also include depth information (RGB-D data). The images in each
+set are used to obtain two independent reconstructions represented as point clouds. The main problem we
+address is to merge and optimize these two reconstructions (see Fig. 2), which is formalized as follows.
+
+3D Mapping
+3D Mapping
+Object
+Extraction
+Trunk Detection
+Model
+Fitting
+Semantic
+Reﬁnement
+Trunk
+Diameter
+Tree
+Height
+Semantic Bundle
+Adjustment
+Imaging
+Data
+Initial
+Transformation
+Canopy
+Volume
+Apple
+Counting
+GlobaI
+Alignment
+Imaging
+Data
+Figure 3: Overview of the proposed system for semantic mapping in orchards. The trunk detection (dashed
+line) in object extraction can be replace by object detection (Salas-Moreno et al., 2013) if there is no need
+for trunk diameter estimation. The four colored blocks represent the four steps of our method.
+Given a set of imaging measurements ¯
+Xk extracted from two sets of images that capture the front and back
+sides of a row {F, B}, and object types Ij, the task is to ﬁnd a similarity transformation F
+B T that merges
+the back-side reconstruction with the front, and further estimate the object poses SI
+j with their sizes DI
+j ,
+along with the 3D point positions Xi and camera poses Ck:
+argmin
+SI
+j ,DI
+j ,Xi,Ck
+X
+j
+X
+k
+X
+i∈V(j,k)
+ES( ¯
+Xk, F
+B T , SI
+j , DI
+j , Xi, Ck) +
+X
+k
+X
+i∈V(k)
+EX ( ¯
+Xk, F
+B T , Xi, Ck),
+(1)
+where F
+B T as one of the inputs is ﬁrst calculated by minimizing the distance cost ET for registering two-sides
+point clouds:
+argmin
+F
+B T
+ET
+ [
+k
+¯
+Xk,
+[
+i∈F
+Xi,
+[
+i∈B
+Xi, F
+B T
+!
+,
+(2)
+ES is the cost between a measured point and the object it belongs to, and EX is the cost between a 3D
+point visible from a camera frame and its measurement.
+The proposed vision system for semantic mapping is illustrated in Fig. 3. The estimation procedure is divided
+into four steps explained in Sec. 4. We note that even though our approach starts with two independent
+reconstructions of the two sides, it reﬁnes them based on semantic information.
+3.2
+Technical Challenges
+In modern orchards, fruit trees are highly packed in each row and connected by supporting wires (see
+Fig. 1). Without enough separation space, it is not possible to individually perform surrounding imaging
+data collection around each tree. Instead, we collect side-view data of tree rows by moving the camera along
+the path between tree rows. The rows can be hundreds of meters long. But the speciﬁc region of interest for
+a particular study can be only a subset of the row. If we measure only this region from the two sides, the
+images across the sides may have no overlap. Alternatively, the entire row can be covered by following a loop
+around the row. In this section, we detail the technical challenges associated with these two approaches.
+First, ORB-SLAM2 (Mur-Artal and Tard´os, 2017) is tested on our RGB-D data captured in a loop around
+a tree row to create the 3D model. Unlike indoor cases, image features in orchard environments are unstable
+due to wind eﬀect and thus hard to track across multiple frames, which causes the SLAM algorithm to
+frequently get lost. On the other hand, loop detection is not reliable because of the high similarity between
+fruit trees of the same type (see Fig. 4). With correct loop closure, the 3D dense reconstruction of the tree
+row from both sides is generated by converting depth maps into point clouds based on the optimized camera
+trajectory from the SLAM output. From Fig. 5, we observe that although the loop is correctly closed the
+3D model of the tree row is not satisfactory. The 3D dense reconstruction has separate trunks since there is
+
+Frames 4700 and 90: 117 matches
+Frame ID
+1000
+2000
+3000
+4000
+Frame ID
+1000
+2000
+3000
+4000
+Figure 4: The score matrix between all image frames generated by using a BoW model. (a): High similarities
+are marked by colored boxes. The correct loop detection is marked by the red box. (b): Feature matching
+between a pair of frames detected by loop closure.
+Figure 5: Even with loop closure, the 3D reconstruction of tree rows is not satisfactory: 3D models of tree
+trunks from two sides are misaligned. (a): The RGB image. (b): The depth image. (c): Misaligned trunks
+from both sides. (d): The 3D reconstruction is improved by integrating trunk information.
+no data overlap between two sides of the tree row. Measuring tree morphology based on inaccurate models
+is problematic, especially canopy volume and trunk diameter estimation.
+For the data separately captured from both sides, simple alignment of two-sides 3D models can be performed
+by estimating the rigid transformation based on the trunks information.
+However, due to accumulated
+errors of camera poses, some trees are well-aligned from both sides (with parallel camera trajectories) while
+the rest are misaligned (see Fig. 6c). Fig. 5d implies that two-sides 3D reconstruction should be further
+optimized based on semantic information to correct camera trajectories.
+It is notable that, even with
+perfect reconstructions and manually provided correspondences, ICP-based methods fail to merge these two
+reconstructions (see Fig. 7). Standard SfM algorithm (Wu, 2013) often fails to close loops when dealing with
+view-invariant feature matching, and may converge to a local minimum. Hence, we adjust the single-side 3D
+reconstruction by integrating essential elements from SLAM and SfM algorithms.
+3.3
+Single-Side Reconstruction
+In this section, we present the proposed approach for initially reconstructing each side independently using
+established techniques. For each pair of consecutive frames (in RGB or RGB-D data), the relative rigid
+transformation is calculated by applying a RANSAC-based three-point-algorithm (Forsyth and Ponce, 2011)
+on the SIFT matches (Lowe, 2004) with valid depth values if available. Pairwise Bundle Adjustment (BA) is
+performed to optimize the relative transformation and 3D locations of matches by minimizing 2D reprojection
+errors. For loop detection, we build a Bag of Words (BoW) model (Sivic and Zisserman, 2009) to characterize
+each frame with a feature vector, which is calculated based on diﬀerent frequencies of visual words. The score
+matrix is obtained by computing the dot products between all pairs of feature vectors (see Fig. 4). Possible
+
+30
+20
+Simple Alignment
+x (m)
+10
+0
+-8
+-6
+-4
+10
+0
+-2
+0
+z(m)
+y (m)
+y (m)
+-10
+-5
+0
+30
+Before Loop Closure
+20
+x (m)
+10
+0
+20
+10
+0
+z (m)
+y (m)
+-10
+-5
+0
+After Loop Closure
+20
+x (m)
+10
+0
+0
+20
+15
+10
+5
+z (m)
+Figure 6: Estimated camera trajectories by SLAM algorithm. (a): Camera trajectory before loop closure.
+(b): Camera trajectory after loop closure. (c): Simple alignment of two-sides 3D models is not feasible:
+camera trajectories from both sides diverge as marked by the red box.
+Figure 7: Comparison results using synthetic data. (a): Input reconstructions of two sides. (b): Applying
+the ICP algorithm fails to merge tree trunks. (c): Merging from the proposed initial alignment. (d): Further
+reﬁnement using semantic information.
+loop pairs are ﬁrst selected by a high score threshold and then tested by RANSAC-based pose estimation
+which determines whether a reasonable number of good matches are obtained (e.g., 100 feature matches).
+Loop pairs are thus accurately detected and linked with pairs of consecutive frames by a covisibility graph.
+Loop detection allows us to capture every single tree back and forth from diﬀerent views on a single side.
+For each frame in consecutive pairs, we ﬁrst perform local BA to optimize its local frames which have
+common features.
+To eﬀectively close the loop, pose graph optimization (Strasdat et al., 2010) is then
+performed followed by global BA to ﬁnally optimize all camera poses and 3D points. Given the fact that
+depth maps in outdoor cases are generated by infrared stereo cameras, we integrate 3D error information
+into the objective function of bundle adjustment as follows:
+argmin
+sc,Rc,tc,Xp
+J =
+X
+c
+X
+p∈V(c)
+ρ (Eo(c, p)) + η · ρ (Ei(c, p))
+Eo(c, p) = ∥c¯xp −Kosc[Rc|tc]Xp∥2
+Ei(c, p) = ∥Ki[Ri|ti]c ¯Xp −Ki[Ri|ti][Rc|tc]Xp∥2
+,
+(3)
+where η = 0 for RGB data, while for RGB-D data η = 1 and sc = 1. ρ is the robust Huber cost func-
+tion (Huber, 1992), Ko and Ki are the intrinsics matrices of the RGB camera and the left infared camera,
+[Ri|ti] is the relative transformation between these two cameras, sc[Rc|tc] is the RGB camera pose, Xp is
+the 3D location of a point visible from the camera frame c, and c¯xp and c ¯Xp are the observed 2D feature
+and 3D location in the RGB camera frame, respectively.
+4
+Methodology
+In this section, we present our main technical contribution: merging and reﬁning the reconstructions of the
+two sides using semantic information. The proposed semantic mapping consists of four steps (see Fig. 3).
+
+Figure 8: The silhouettes of an apple tree from two sides. As the silhouettes are from the orthographic front
+and back view of the tree, they should align.
+The cost functions ET , ES and EX (described in Sec. 3.1) are speciﬁed and explained in Sec. 4.1, and
+Sec. 4.3, respectively.
+4.1
+Initial Alignment using Global Features
+Given two reconstructions from the front and back sides of a row, we aim to align these two sets of 3D point
+clouds into a single coherent model by ﬁnding an initial transformation F
+B Tin = sin[F
+B Rin|F
+B tin] (i.e., scale,
+rotation and translation). The front and back side reconstructions FP, BP generally do not share any local
+feature matches (point correspondences). To constrain the system, we propose to use global features based
+on the following observations: (1) the occlusion boundary of an object from the front and back orthographic
+views are the same (see Fig. 8); (2) tree trunk segments at the same height from two sides can be treated
+approximately as cylinders. When projected to the ground plane, they share the same center of the elliptical
+shape. If we align the median plane of the detected trunks, the maximum depth alignment error is bounded
+by the trunk widths.
+We use the following geometric concepts to formulate the optimization problem. An orthographic front view
+is the parallel projection of all the points in the XY -plane. The occlusion boundaries of this view can be
+approximated by the well-known concept of alpha shapes (Edelsbrunner and M¨ucke, 1994). An alpha hull is
+the generalized version of the convex hull. The boundaries of an alpha hull Bα are point pairs that can be
+touched by an empty disc of radius alpha. In most orchard settings, there are no leaves or branches attached
+to the trunks near the ground plane, and the number of 3D points in this region is very sparse. We can detect
+and cluster the 3D points belonging to tree trunks (see Sec. 4.2.1 for trunk detection). Let FPt, BPt denote
+the detected trunk points close to the median trunk plane. PXY and PZX denote the orthogonal projection
+matrix to the front and top plane.
+With this we can deﬁne our problem as the following minimization
+problem:
+argmin
+sin,F
+B Rin,F
+B tin
+Ds
+ Bα
+ PXY · FP
+
+, Bα
+ PXY · F
+B Tin · BP
+
++ Ds
+ PZX · FPt, PZX · F
+B Tin · BPt
+
+,
+(4)
+where Bα computes the alpha shape boundary points. To ﬁnd similarity between two point sets P, Q in IRd,
+we use the following metric:
+Ds (P, Q) =
+X
+∀p∈P
+min
+∀q∈Q (p −q)2.
+(5)
+We can solve Eq. (4) using trusted region methods such as the Levenberg-Marquardt (LM) algorithm (Lev-
+
+Front-side Input
+Back-side Input
+Misalignment
+Figure 9: Input and PCA standardization. The left image shows the input to our algorithm. The right
+image shows the reconstructions after PCA-based alignment, ground plane alignment, and scale and height
+adjustment. In the input, we have only six trees but in the right image, we see more than six trees. This
+shows that, even though most of the rotational diﬀerences are gone, the alignment is wrong in terms of
+translation in the X-direction.
+enberg, 1944; Marquardt, 1963) for which we need to ﬁnd a good initial solution. Trivial initial values such
+as I3×3 and zero translation 03×1 do not work. In this paper, we develop a method to ﬁnd a good initial
+solution. Essentially, we solve the two parts on the right-hand side of Eq. (4) sequentially along with some
+preliminary steps. We perform the following steps:
+1. We detect the ground plane from both F, B, and perform a Principal Component Analysis (PCA)
+on both reconstructions. Utilizing the ground plane normal and camera poses, we ﬁnd the depth and
+up direction of the PCA components and align the point clouds roughly. To eliminate the rotational
+component left after PCA, we perform alignment of the ground plane normals. We ﬁx the scale
+of the reconstructions using median scene height and ﬁx the height of the ground plane using the
+median height of the ground plane inliers.
+2. Now, we only have to compute the translations. We use alpha volume analysis to compute the
+occlusion boundary and 2D shape matching techniques (Myronenko and Song, 2010) to compute
+the translation in the XY -plane.
+3. Next, we align the trunk points close to the median trunk plane.
+After these steps, the point clouds are roughly aligned and the trivial initial solution sin = 1, F
+B Rin = I3×3,
+F
+B tin = 03×1 leads to convergence. This method does not compute the trunk overlap distance precisely.
+However, it provides the correspondence between the trunks from both sides for trunk modeling (see Sec. 4.2).
+Each of these steps is explained in detail as follows.
+4.1.1
+Ground Plane Estimation and Alignment using PCA
+The main goal of this step is to eliminate most of the rotational diﬀerence required to align the two recon-
+structions. As is well known, this is normally solved by PCA. We assume that the length of the portion
+of the row covered by the input reconstruction is always longer than the height of the trees and the depth
+captured. Therefore, the ﬁrst principal component always denotes the length of the row covered. The other
+two principal components vary from reconstruction to reconstruction. Therefore, while aligning the principal
+components, we need to be aware of which component denotes scene depth and which one denotes height.
+To automatically ﬁgure out the scene “up” and “depth” directions, we estimate the ground plane.
+We
+perform a simple three-point RANSAC method (Fischler and Bolles, 1981) for plane estimation.
+Then,
+we align the corresponding principal components. If necessary, we ﬂip the depth direction of one of the
+reconstructions to ensure that the frontal depth planes are opposing each other. Subsequently, we align
+
+Misalignment
+Trunks aligned
+Figure 10: Alignment based on occlusion boundary and trunks. The left image shows how we align the
+occlusion boundaries of the reconstructions. The reconstructions after this step are shown in the middle
+image which demonstrates some alignment error in the depth direction (trunks and poles do not merge).
+The right image shows the ﬁnal merged reconstruction using trunk information which does not have any
+duplicated trunks or poles.
+the ground plane normals and rotate the point clouds to a canonical frame of reference {X, Y, Z} where
+X = [1, 0, 0]⊤, Y = [0, 1, 0]⊤(up direction) and Z = [0, 0, 1]⊤(depth direction). Next, we ﬁx the scale of the
+reconstructions using the median height of the trees (We assume that the two reconstructions correspond to
+roughly the same section of the row. Otherwise, the median can be oﬀ.), and ﬁx the height of the ground
+plane using inliers. The reconstructions are now roughly aligned in terms of rotation and translation in the
+Y -direction. Fig. 9 shows the result after these steps in a sample input reconstruction.
+4.1.2
+Alignment of Orthographic Projection Boundaries
+In the last section, we roughly aligned the two reconstructions in terms of rotation, scale, and translation with
+respect to the ground plane. Now we have to estimate translation in the canonical directions X = [1, 0, 0]⊤
+and Z = [0, 0, 1]⊤. We start with solving for the translation in the X-direction. In practice, reconstructions
+are not perfect, and the ground plane is not perfectly planar. Consequently, our estimation in the previous
+step contains some error in terms of rotation, scale, and translation in X- and Y -directions. We use a method
+that computes this residual rotation, translation, and scaling along with the translation in the X-direction.
+As outlined in Sec. 4.1, to solve this we utilize the occlusion boundary of the reconstructions from ortho-
+graphic front views. We use alpha volume analysis to compute the occlusion boundaries. The alpha hull
+boundaries are basically a set of 2D points. Thus, essentially we are solving a 2D point set registration prob-
+lem. This problem is very well studied and many solutions exist in the literature. As our alpha boundaries
+are noisy we use a well-known shape alignment method, Coherent Point Drift (CPD) algorithm (Myronenko
+and Song, 2010). Myronenko et al. (Myronenko and Song, 2010) cast the point set registration problem as
+a probability density estimation problem. They represent one of the input point set as the centroids of a
+Gaussian Mixture Model (GMM) and the other input as data. For the rigid transformation case, they repa-
+rameterize the GMM centroids in terms of rotation and scale transformation. They estimate the parameters
+by minimizing the negative log likelihood using the Expectation-Maximization algorithm. Additionally, they
+add an extra component in the GMM to account for noise and outliers. At the optimum value of the param-
+eters, two point sets are aligned. We apply the transformation computed by CPD to the entire point cloud
+to align them in the XY -directions. The left ﬁgure in Fig. 10 shows the alignment of occlusion boundaries.
+4.1.3
+Alignment in Depth Direction using Trunk Information
+The principal ambiguity left is the relative depth distance between the two reconstructions. In an orchard
+row, trees are generally planted in straight lines and tree trunks are perpendicular to the ground. Therefore,
+we can imagine the existence of a central trunk plane bisecting the trunks. For each individual reconstruction,
+this bisector plane can be approximated by the median depth-plane of the detected trunks (see Sec. 4.2.1)
+and we can align the reconstructions roughly by aligning the points close to this median plane. We perform
+a simple median ﬁltering of the segmented trunk points FPt, BPt. Then, like in the previous section, we can
+align them using the CPD method. The right ﬁgure in Fig. 10 shows the merged reconstruction.
+
+Figure 11: Trunk detection results on test orchards. Images are separated by ﬁve color boxes that correspond
+to ﬁve test orchards.
+4.2
+Trunk Modeling and Local Ground Estimation
+Accurate geometry estimation relies on good depth maps. Raw depth maps are usually noisy, especially in
+orchard environments. The large uncertainty of depth values around frequent occlusions between trees and
+leaves causes generated 3D points ﬂoating in the air (Sotoodeh, 2006). For RGB data, the depth map of each
+frame is generated from a single-side dense reconstruction using the commercial software Agisoft (Agisoft
+and St Petersburg, 2017). For RGB-D data, we ﬁrst improve the depth map using the Truncated Signed
+Distance Function (TSDF) (Curless and Levoy, 1996) to accumulate depth values from nearby frames (e.g.,
+10 closest frames) with the camera poses obtained in Sec. 3.3. The pixel value of the raw depth is ignored
+if it is largely diﬀerent from the corresponding value in the fused depth obtained by ray casting. A ﬂoating
+pixel removal ﬁlter (Sotoodeh, 2006) is further applied to eliminate any pixel of the raw depth that has no
+nearby 3D points within a certain distance threshold.
+4.2.1
+Trunk Detection
+In orchard settings, one of the challenges in establishing visual correspondences is identifying good features
+to track. Traditional geometric features, such as corners and lines, are highly ambiguous and rarely visible
+from two sides of a tree row. Instead, tree trunks are easily captured from both sides, and provide robust
+features to establish correspondences (Roy et al., 2018a). Detecting tree trunks is also beneﬁcial because
+horticulture scientists use trunk diameter as a phenotypic trait (Dong and Isler, 2018b). To detect and
+extract trunk information (see Fig. 11), we perform segmentation using Mask R-CNN (He et al., 2017).
+Mask R-CNN is the state-of-the-art algorithm for instance segmentation. Its model decouples class prediction
+
+(a) Front side
+(b) Back side
+Figure 12: Zoom-in view of trunk detection for the same tree from two sides. Trunk boundaries along the
+trunk direction are clearly segmented.
+and mask generation, and has three outputs for each object instance: a class label, a bounding box and a
+mask extracting a ﬁne spatial layout. The whole image as the input is taken by the Region Proposal Network
+(RPN) which outputs bounding box proposals. Each proposal is supposed to be an object. Based on the
+bounding box, the Fully Convolutional Network (FCN) performs an object segmentation. The Mask R-
+CNN model we used is based on an open-source implementation by Matterport1, built on Feature Pyramid
+Network (FPN) and ResNet-101 (He et al., 2016) as the backbone.
+Datasets: 1000 images (around 2000 instances annotated using the VGG Image Annotator2) are selected
+from ﬁve orchards that have diﬀerent environment settings. We split all images into ﬁve diﬀerent datasets
+(including training and evaluation) based on the test orchard ID. For example, to test the trunk detector
+on orchard 1, we build the training data using 90% of images from orchards 2 to 5 and 50% of images from
+orchard 1. Therefore, in the whole training data, the percentage of the data from orchard 1 is only around
+10%∼20%. We leave the rest as the data for evaluation. Each dataset simulates the case that when the
+orchard environment is changed, we need to tune the trunk detector by adding only a small portion of new
+images to the training pool.
+Fig. 11 presents qualitative segmentation results of ﬁve orchards. The trunk detector outputs clear boundaries
+along the trunk direction (see Fig. 12), which is crucial to the next step (see Sec. 4.2.2). The training strategy
+and model evaluation details are explained in Sec. 5.2.1.
+4.2.2
+Trunk Cylinder Modeling
+3D dense models of a tree from two sides (front and back sides) are obtained using the volumetric fusion
+of depth maps from all nearby frames (see Fig. 13). The dense point cloud of the trunk is ﬁrst segmented
+by taking the union of trunk detection masks from all frames. The split-and-merge approach (Medeiros
+et al., 2017) is implemented to divide the trunk point cloud into approximately cylindrical segments. Given
+the ground plane as the reference (see Sec. 4.2.3 for local ground estimation), the trunk segments within a
+height interval from two sides share the same cylinder model (see Sec. 4.1.3 for two-sides trunks association).
+We select the segment that is most-detected by nearby frames (see Fig. 14). For each frame c with trunk
+detection, the cylindrical segment is projected onto the image to select valid depth pixels within the trunk
+mask. We aim to ﬁt the 3D depth points to a cylinder d parameterized by its axis cnd, center (origin) cOd
+and radius crd. The height chd of the cylinder is determined by the bounding box of the 3D points along
+cnd.
+An accurate cylinder model should not only ﬁt the most 3D depth points but also obtain a reasonable size
+1https://github.com/matterport/Mask_RCNN
+2http://www.robots.ox.ac.uk/~vgg/software/via
+
+(a) 3D tree model
+(b) Trunk segmentation
+(c) Local ground segmentation
+Figure 13: Front-side (top) and back-side (bottom) volumetric fusion using nearby frames. The whole trunk
+is segmented by clear boundaries from trunk detection to remove outliers from the 3D model. The local
+ground is segmented using the prior knowledge of the trunk cylinder.
+and pose from the image. To robustly model the cylinder, we integrate 2D constraints into a RANSAC
+scheme (Fischler and Bolles, 1981) with the nine-point algorithm (Beder and F¨orstner, 2006). Speciﬁcally,
+surface points obtained by projecting 3D depth points onto the cylinder should have small 2D reprojection
+error with corresponding depth pixels on the image (see Fig. 15). The trunk cylinder in frame c is further
+optimized by minimizing the cost function
+argmin
+cnd,cOd,crd
+X
+p
+ρ
+ e2
+d(cXp, d)
+
++ λ
+X
+p
+ρ
+ ∥cxp −d xp∥2
+dxp = pr(cXp, c, d)
+,
+(6)
+where ed is the distance function of a 3D point cXp to the cylinder, and cxp is the 2D depth pixel corre-
+sponding to cXp. The function pr projects cXp onto the cylinder surface, and further projects the surface
+point on the image frame c to obtain dxp. The Huber loss ρ (Huber, 1992) is applied to the quadratic errors
+for robustness. The trunk in frame c is thus described by the cylinder axis cnd and the origin cOd.
+4.2.3
+Local Ground Plane
+Without loss of generality, the local ground of a tree is assumed as a plane deﬁned by its normal cnp and
+center (origin) cOp in frame c. Unlike trunk detection, only frame number is recorded for plane estimation.
+However, it is not always the case that the majority of 3D points are from the ground, which highly depends
+on the scene and the camera view. The standard RANSAC-based method fails to detect the ground plane
+(see Fig. 15b). We modify the degenerate condition of the RANSAC by using the prior information of the
+trunk axis cnd transformed from the closest frame with trunk detection: cnp should roughly align with cnd,
+and the estimated plane should be on the boundary of all 3D points along cnp within the distance threshold
+ts. The local ground in frame c is thus deﬁned by the plane normal cnp and the origin cOp. Local ground
+estimation from two sides can further help cylindrical trunk segmentation (see Fig. 14).
+
+320
+340
+360
+380
+400
+420
+230
+240
+250
+260
+270
+280
+290
+300
+250
+270
+290
+310
+330
+350
+250
+260
+270
+280
+290
+300
+310
+320
+Figure 14: Cylindrical trunk segments that are most-detected by nearby frames from two sides. The height
+of trunk segments (yellow line) is determined by estimating ground planes from two sides. The depth pixels
+(red points) are selected by projecting the cylindrical segment onto the image.
+4.3
+Merging Two-Sides 3D Reconstruction
+For a tree row, the front-side and back-side reconstructions are expressed in their own frames F and B,
+respectively. The goal is to ﬁrst align two-sides reconstructions by estimating the initial rigid transformation
+[F
+B R|F
+B t], and further optimize the 3D reconstruction based on semantic information.
+4.3.1
+Initial Transformation
+From a geometric view, to align the 3D models of a tree row from both sides, at least two detected trunks
+and one estimated local ground are required. 3D models are ﬁrst constrained on the local ground plane. The
+translation and rotation along the ground plane are further constrained by two trunk-cylinders. Multiple
+trunks and local grounds can provide us a robust solution. In Sec. 4.2, an i-th detected trunk from two-sides
+detection views is described by its cylinder axes Fni
+d and Bni
+d with a unit length, and its origins FOi
+d and
+BOi
+d. Similarly, a j-th estimated local ground is described by its plane normals Fnj
+p and Bnj
+p, and its origins
+FOj
+p and BOj
+p.
+First, cylinder axes and plane normals in B after the relative transformation must be equal to their corre-
+sponding ones in F. Then, the ﬁrst two constraints have the form
+(
+F
+B R ·B ni
+d =F ni
+d
+F
+B R ·B nj
+p =F nj
+p
+.
+(7)
+Second, the origins of cylinders in B transformed to F should lie on the same axis-line. Then, the cross
+product between the cylinder axis and the diﬀerence of two-sides origins should be a zero vector
+Fni
+d ×
+ F
+B R ·B Oi
+d +F
+B t −F Oi
+d
+
+= 0.
+(8)
+
+280
+290
+300
+310
+320
+x (px)
+260
+265
+270
+275
+280
+285
+290
+295
+300
+305
+310
+y (px)
+2D Constraints of Fitted Cylinder
+(a) Trunk cylinder modeling
+2
+x (m)
+0
+0
+0.5
+1
+1.5
+y (m)
+2
+2.5
+1
+z (m)
+3
+-2
+3.5
+0
+4
+-1
+4.5
+(b) Local ground plane estimation
+Figure 15: Trunk cylinder modeling and local ground plane estimation in a single frame. (a): 3D depth
+(red) and surface points (blue) are projected on the image (the points are subsampled and best viewed
+in color). The yellow line characterizes the reprojection error. (b): Without trunk information, standard
+plane estimation outputs a wrong plane (red), while the true ground (green) is estimated using the proposed
+algorithm.
+At last, the origins of local planes in B after the transformation to F must lie on the same plane. Thus, the
+dot product between the plane normal and the diﬀerence of two-sides origins should be zero
+Fnj
+p ·
+ F
+B R ·B Oj
+p +F
+B t −F Oj
+p
+
+= 0.
+(9)
+Following the order of the constraints above, Eqs. (7)-(9) can be rearranged into a system Ax = b by treating
+each element of [F
+B R|F
+B t] as unknowns, where Bni
+d = [nd
+1, nd
+2, nd
+3]⊤, Fni
+d = [n′d
+1, n′d
+2, n′d
+3]⊤, Bnj
+p = [np
+1, np
+2, np
+3]⊤,
+and Fnj
+p = [n′p
+1, n′p
+2, n′p
+3]⊤for the axes, and the elements of the origins have a similar form. Here, the matrix
+A and vector b are
+
+
+nd
+1
+0
+0
+nd
+2
+0
+0
+nd
+3
+0
+0
+0
+0
+0
+0
+nd
+1
+0
+0
+nd
+2
+0
+0
+nd
+3
+0
+0
+0
+0
+0
+0
+nd
+1
+0
+0
+nd
+2
+0
+0
+nd
+3
+0
+0
+0
+np
+1
+0
+0
+np
+2
+0
+0
+np
+3
+0
+0
+0
+0
+0
+0
+np
+1
+0
+0
+np
+2
+0
+0
+np
+3
+0
+0
+0
+0
+0
+0
+np
+1
+0
+0
+np
+2
+0
+0
+np
+3
+0
+0
+0
+0
+−n′d
+3od
+1
+n′d
+2od
+1
+0
+−n′d
+3od
+2
+n′d
+2od
+2
+0
+−n′d
+3od
+3
+n′d
+2od
+3
+0
+−n′d
+3
+n′d
+2
+n′d
+3od
+1
+0
+−n′d
+1od
+1
+n′d
+3od
+2
+0
+−n′d
+1od
+2
+n′d
+3od
+3
+0
+−n′d
+1od
+3
+n′d
+3
+0
+−n′d
+1
+−n′d
+2od
+1
+n′d
+1od
+1
+0
+−n′d
+2od
+2
+n′d
+1od
+2
+0
+−n′d
+2od
+3
+n′d
+1od
+3
+0
+−n′d
+2
+n′d
+1
+0
+n′p
+1op
+1
+n′p
+2op
+1
+n′p
+3op
+1
+n′p
+1op
+2
+n′p
+2op
+2
+n′p
+3op
+2
+n′p
+1op
+3
+n′p
+2op
+3
+n′p
+3op
+3
+n′p
+1
+n′p
+2
+n′p
+3
+
+
+h
+n′d
+1
+n′d
+2
+n′d
+3
+n′p
+1
+n′p
+2
+n′p
+3
+n′d
+2o′d
+3 −n′d
+3o′d
+2
+n′d
+3o′d
+1 −n′d
+1o′d
+3
+n′d
+1o′d
+2 −n′d
+2o′d
+1
+n′p
+1o′p
+1 + n′p
+2o′p
+2 + n′p
+3o′p
+3
+i⊤
+,
+(10)
+respectively, and x = [r⊤
+1 , r⊤
+2 , r⊤
+3 ,F
+B t⊤]⊤with r1, r2 and r3 being the three columns of F
+B R.
+We solve the system with multiple cylinders and planes for the least squares solution. The solution of F
+B R
+may not meet the properties of an orthonormal matrix, but can be computed to approximate a rotation
+matrix by minimizing the Frobenius norm of their diﬀerence (Golub and Van Loan, 2012). An accurate
+
+Figure 16: Scheme of semantic bundle adjustment. With semantic constraints, 3D points belonging to the
+same object are adjusted to ﬁt onto the shape together with the camera poses corrected simultaneously.
+initial value can be obtained from an analytical solution by using the resultant of polynomials (Dong and
+Isler, 2018a). With multiple pairs of cylinders and planes from both sides, we formulate an optimization
+problem (with the robust Huber loss ρ (Huber, 1992) applied to the quadratic residuals)
+argmin
+F
+B R,F
+B t
+X
+i
+ ρ
+ ∥e1(i)∥2
++ ρ
+ ∥e3(i)∥2
++
+X
+j
+ ρ
+ ∥e2(j)∥2
++ ρ
+ e2
+4(j)
+
+,
+(11)
+where e1, e2, e3 and e4 are residuals of Eqs. (7)-(9). The solution is further reﬁned using the LM method
+with the rotation represented by the Rodrigues’ formula (Rodrigues, 1840).
+4.3.2
+Semantic Bundle Adjustment
+To address the issue of accumulated errors of camera poses in Fig. 6c, the two-sides 3D reconstructions
+after initial alignment need to be further optimized. Intuitively, semantic information (i.e., trunks and local
+grounds) integrated in bundle adjustment will tune camera poses and 3D feature points until reasonable
+semantic conditions are reached. Speciﬁcally, two halves of a trunk from both sides should be well-aligned,
+and two-sides local grounds of a tree should refer to the same one (see Fig. 16).
+Technically, a semantic object with index s is characterized by its unique pose [Rs|ts] in the world frame and
+its 3D shape bs. For a cylinder object, the shape is represented by its x-axis (as the cylinder axis), origin
+and a radius rs. For a plane object, the shape is described by its z-axis (as the plane normal), origin and a
+threshold ts for bounding an interval along the plane normal. The cylinder radius rs and the plane-interval
+threshold ts are automatically determined by the ﬁtting algorithms in Sec. 4.4.1 and Sec. 4.2.3, respectively.
+As a 3D feature point, the orientation Rs and the position ts of an object are unknown and need to be
+estimated by semantic bundle adjustment.
+Given the correspondences of objects between two sides, the objective function of semantic bundle adjustment
+is as follows
+argmin
+Rc,tc,Rs,ts,Xp
+J′ = J +
+X
+s
+X
+c
+X
+p∈V(s,c)
+ρ (λsEb(s, c, p))
+Eb(s, c, p) = φl
+ [Rs|ts][Rc|tc]−1c ¯Xp, bs
+2
+,
+(12)
+where φ0 (l = 0) is the loss function for a plane object φ0(X, bs) = ∥max (x3 −ts, 0, −x3 −ts) ∥, and φ1
+(l = 1) is the loss function for a cylinder object φ1(X, bs) = ∥
+p
+x2
+2 + x2
+3 −rs∥, with an input 3D point
+X = [x1, x2, x3]⊤. The geometric meaning is that after transformation to the object frame, we penalize a
+3D point belonging to a cylinder if it is far away from the cylinder surface. Similarly, a 3D point belonging
+
+0
+-5
+-10
+-15
+-20
+-25
+-30
+-35
+0
+5
+10
+0
+-2
+-4
+y (m)
+x (m)
+z (m)
+Figure 17: Merging 3D reconstruction of fruit trees for canopy volume estimation. (a) and (b): The 3D model
+viewed from both sides. (c): Some trunks are still misaligned after initial transformation. (d): Misalignments
+are eliminated by semantic BA. (e): 3D features from both sides are shown with camera poses and semantic
+information (captured by stereo infrared cameras).
+to a plane is penalized if it is out of the boundary of the plane. The weight λs balances between the cost
+J of feature points and the cost of semantic object points. In theory, we treat equally both a 3D feature
+point and an object. As the rotation is deﬁned by its angle-axis, semantic BA is performed by using the LM
+method with automatic diﬀerentiation in the Ceres Solver (Agarwal et al., 2012).
+4.4
+Measuring Tree Morphology and Yield Mapping
+A coherent geometric representation of both sides of a tree row is a precursor to accurately estimating various
+semantic traits, such as trunk diameter, canopy volume, tree height and fruit count. Following the steps
+described in Sec. 4.1∼4.3, we obtain a merged reconstruction from both sides. In this section, we utilize this
+reconstruction to measure diﬀerent desired semantic traits.
+4.4.1
+Trunk Diameter
+3D dense models of a tree from both sides F and B are obtained using volumetric fusion of depth maps from
+all nearby frames (see Fig. 13). We ﬁrst estimate the ground plane as discussed in Sec. 4.2.3. The 3D points
+of the trunk for each detection frame c are extracted based on 3D meshes of the most-detected cylindrical
+trunk segment from two sides (see Sec. 4.2.2). The trunk diameter is thus robustly estimated from both
+
+(a) Merged 3D model of a tree row
+(b) Segmented tree
+y (m)
+x (m)
+z (m)
+(c) Tree volume and height
+Figure 18: Scheme of estimating canopy volume and tree height. (a): Front-side points are colored white
+while back-side points are black. (b): The second tree is segmented by the proposed tree segmentation
+algorithm (see Sec. 4.4.2). (c): Generated alpha shape with a bounding box on the local ground.
+sides by minimizing the cost (with the robust Huber loss ρ applied)
+argmin
+Fnd,Bnd,FOd,BOd,rd
+X
+p∈{F,B}
+ρ
+ e2
+d(Xp, d)
+
++ λ
+X
+c
+X
+p∈V(c)
+ρ
+ E2
+r(p, c, d)
+
+Er(p, c, d) = ∥cxp −pr(Xp, c, d)∥
+,
+(13)
+where Xp is a 3D trunk point either from F or B, and Er is the 2D cost function that measures the distance
+between the depth pixel cxp of Xp visible from c-th frame and its corresponding surface point on the image.
+The second term of the cost helps constrain the size, position and orientation of the cylinder from multiple
+image frames of two sides. The trunk diameter is eventually 2rd, which serves as an input in Sec. 4.3.2.
+4.4.2
+Canopy Volume
+With a good view of canopies of fruit trees, two-sides 3D reconstructions are ﬁrst merged in Fig. 17. Local
+grounds are removed (see Fig. 18a) given reﬁned semantic information [Rs|ts]. Trunks information indicates
+the track of the tree row.
+Shrink-and-expand Segmentation: Tree segmentation is a critical component of canopy volume esti-
+mation, as it enables measurements to be associated with each individual tree. In modern orchards, there
+is often contact between adjacent trees. Points-distribution-based approaches (such as hidden semi-Markov
+model (Bargoti et al., 2015) and k-means clustering (Arthur and Vassilvitskii, 2007)) always lead to misclas-
+siﬁed tree segmentation (see Fig. 19a). To address this misclassiﬁcation, we propose a shrink-and-expand
+approach to well separate trees from each other (see Fig. 19b). The tree segmentation is performed as follows.
+(a) A pair of adjacent 3D tree models are extracted using the points-distribution-based method. We
+build an alpha shape enclosing all 3D points of two trees (see Fig. 20a). The alpha radius is the
+smallest producing the alpha shape that has only one region (Edelsbrunner and M¨ucke, 1994).
+(b) We ﬁll the alpha shape with grid points in the 3D space. For each point of the tree model, its closest
+neighbor point is retrieved and their distance is calculated. The grid resolution is determined by
+the median value of the closest distances for all 3D points. We keep all surface points of the alpha
+shape and all grid points (see Fig. 20b).
+(c) At the shrink stage, for each iteration i, we remove a layer of points Li whose distances from the
+surface points are less than the grid resolution, and rebuild an alpha shape to enclose the remaining
+points. Isolated points vi are also removed if the volume of their alpha-shape region is less than a
+threshold (e.g., 10%) of the principal region. We keep removing points layer by layer until there are
+
+(a) Tree segmentation based on points distribution
+(b) Proposed tree segmentation
+Figure 19: Comparison results of tree segmentation. (a): 3D points enclosed by red dashed boxes are from
+a single tree but misclassiﬁed into diﬀerent trees. (b): Surface points obtained from the alpha shape of the
+merged 3D tree model are well segmented using the shrink-and-expand algorithm.
+only two principal regions left, which are close to their corresponding trunk lines perpendicular to
+local grounds (see Fig. 20c).
+(d) We generate a graph where all grid points of principal regions are connected to their nearby grid
+points, and trunk points are connected to their closest grid points. A grid point, for example, is
+classiﬁed as tree 1 if it has the shortest path to trunk 1, otherwise as tree 2 (see Fig. 20d).
+(e) At the expand stage, we retrieve points layer by layer following the decreased-iteration order. A
+graph is rebuild for retrieved points, where each point is connected to its closest tree point. For a
+point of layer Li, it is classiﬁed as tree 1 if it has the shortest path to tree 1. For a point of isolated
+region vi, it is classiﬁed as tree 2 if it has the shortest path to tree 2 (see Fig. 20e).
+(f) The segmentation output is obtained after all removed points are retrieved. Now the alpha shape
+built in (a) is separated for both trees. We thus obtain the segmented 3D depth points of each
+tree that are enclosed by the corresponding separated alpha shape (see Fig. 20f). The graph-based
+shrink-and-expand algorithm conserves contacted tree structure, such as a branch stretching out
+towards other trees.
+Two pairs of trees (e.g., trees 1 & 2 and trees 1 & 3) are segmented using the shrink-and-expand algorithm.
+For each tree pair, we cut the common tree (i.e. tree 1) using a plane through its trunk line, and obtain
+the whole segmented tree by taking the union of two half-cut models (see Fig. 19b). We build an alpha
+shape (Edelsbrunner et al., 1983) enclosing all 3D points of each segmented tree (see Fig. 18c). The choice of
+alpha radius depends on diﬀerent horticultural applications. The canopy volume is automatically calculated
+by the alpha-shape algorithm (Edelsbrunner and M¨ucke, 1994).
+4.4.3
+Tree Height
+Semantic bundle adjustment outputs optimized information of trunks and local grounds. Based on the trunk
+location, the pole in the middle of a tree is ﬁrst segmented out for modern orchards. A bounding box for
+each tree is then created to enclose its alpha shape from the local ground plane to the top (see Fig. 18c).
+The tree height is thus obtained as the height of the bounding box.
+
+(a) Input alpha shape
+(b) Surface and grid points
+(c) Shrink stage
+(d) Generated graph
+(e) Expand stage
+(f) Output segmentation
+Figure 20: Tree segmentation process of the shrink-and-expand algorithm.
+4.4.4
+Yield Mapping
+As we show in Sec. 5.3, the number of visible fruits from a single side can vary signiﬁcantly, resulting in
+erroneous estimates. For precise mapping, in addition to tracking the fruits from a single side, we need to
+register them from both sides of the tree row. Our merged reconstruction enables us to accomplish this
+task for both RGB and RGB-D data. First, we detect the fruits in the input images using our previously
+developed segmentation method (Roy et al., 2018b). We utilize the detected apples in images to segment
+the apples in the 3D reconstruction. This segmentation step is diﬀerent for RGB and RGB-D data:
+• For RGB-D reconstructions, we have a one-to-one correspondence between the detected apple pixels
+and the 3D points. Therefore, the 3D segmentation is trivial.
+• For RGB data, we obtain semi-dense reconstructions based on the SfM output. Here, the point cloud
+does not have a one-to-one correspondence with the pixels. To establish the correspondence, we ﬁrst
+project the reconstructed point cloud to the camera frames. Concurrently, we create a binary mask
+from the detected apples. Afterward, we compute the intersection between the reprojected image
+and the binary mask to identify the 3D points belonging to the detected apples. Subsequently, we
+perform a connected component analysis. Fig. 21 shows an example of this process.
+We project the individual clusters back to the images by utilizing the estimated camera motion. Intersecting
+this reprojected cluster image with the binary masks produced by the segmentation method, we obtain
+segmented images for each 3D clusters from multiple views.
+We count the fruits from these segmented
+images using our counting method developed in (Roy and Isler, 2016b).
+A 3D cluster may appear in several frames (see Fig. 22). We choose three frames with the highest amount
+of detected apple pixels and report the median count of these three frames as the fruit count for the cluster.
+
+Original Image
+Segmented Image
+Reprojected Image
+3D Reconstruction
+Segmented Point Cloud
+3D Connected Components
+Intersection
+Figure 21: Segmenting apples in 3D. We segment the original images using our segmentation method (Roy
+et al., 2018b). Concurrently, we project the 3D points to the camera frames to create reprojected images. By
+intersecting these two images, we obtain the 3D points belonging to apples. Finally, we perform a connected
+component analysis on these 3D points.
+Figure 22: Tracking an apple cluster over multiple frames.
+It is notable that we remove the apples on the ground for all the single-side counts by using the computed
+ground planes. We perform these steps for both sides of the row.
+To merge counts from both sides, we compute the intersection of the connected components from both sides
+(see Fig. 23). Then, we compute the total counts by using the inclusion-exclusion principle (Andreescu and
+Feng, 2004). Essentially, we sum the counts from all the connected components, compute the intersection
+area among them (among 1, 2, ..., the total number of intersecting clusters) and add/subtract the weighted
+parts accordingly. This process is validated in Sec. 5.3.
+5
+Experiments
+In this section, we conduct real experiments to evaluate our proposed system for merging 3D mapping of
+fruit trees from two sides and measuring their semantic traits.
+5.1
+Datasets
+The proposed system is tested using three RGB-D and three RGB datasets of apple-tree rows in diﬀerent
+orchards separately captured from two sides (see Fig. 26 and Fig. 27). Our merging algorithm is performed
+on each dataset to output complete 3D models of tree rows, in which we measure tree morphology for the
+RGB-D datasets and estimate fruit yield for the RGB datasets. The description of each dataset is as follows:
+RGB-D Datasets Dataset-I (968 images at 30 fps, 1920×1080) contains an apple-tree row of 21 trees
+with a lot of wild weed captured in a horizontal view. Dataset-II (2394 images at 60 fps, 640×480)
+contains 27 trees captured in a tilted view with a focus on tree trunks. Dataset-III (2020 images at
+60 fps, 640×480) of 30 trees is collected by a camera attached to a stick in a tilted-top view of the
+tree canopies.
+
+Figure 23: Merging apple counts from both sides. The left ﬁgure shows the detected apples in 3D from the
+front side. Figure in the middle shows the computed connected components on the same side. Figure in the
+right shows how the connected components from the back are intersecting with the front ones. Apple counts
+from the intersecting clusters are merged using the inclusion-exclusion principle (Andreescu and Feng, 2004).
+RGB Datasets Dataset-IV (873 images at 30 fps, 1920×1080) contains six trees that are mostly planar.
+Most of the apples on these trees (with 270 apples in total) are fully red and visible from two sides.
+Dataset-V (1065 images at 30 fps, 1920×1080) contains ten trees that have non-planar geometry.
+Apples (274 in total) in these trees are mostly red. Dataset-VI (831 images at 30 fps, 1920×1080)
+contains six trees that have non-planar geometry. Fruits (414 apples in total) in these trees are a
+mixture of red and green apples.
+5.2
+Morphology Measurements and Yield Estimation Results
+5.2.1
+Trunk Detection
+Training: For the weight initialization, we transfer the learning results from the pre-trained weights of the
+COCO dataset (Lin et al., 2014) to exploit low-level features from lower layers. Since the COCO dataset has
+81 classes and ours has only 2 classes (trunk and background), we ﬁrst train the heads of the network (RPN,
+FCN and mask branch) for 30 epochs with the learning rate at 10−3. All the layers are then ﬁne tuned for
+30 epochs with the learning rate at 10−4. The training is performed on a 12GB GPU(AWS GPU p2.xlarge)
+with the batch size set to 2. The model rescales input images as 1024px×1024px with zero padding, and
+performs image augmentation (ﬂipping images left/right 50% of the time).
+Table 1: Evaluation results of trunk detection on ﬁve test orchards.
+Test Orchard ID
+Average Precision (AP)
+AP
+AP50
+AP75
+Orchard-1
+63.9
+94.0
+72.8
+Orchard-2
+51.2
+98.3
+57.7
+Orchard-3
+59.4
+97.9
+67.8
+Orchard-4
+50.8
+93.3
+55.4
+Orchard-5
+53.9
+94.4
+59.4
+As stated in Sec. 4.2.1, the Mask R-CNN model is ﬁrst trained on each set of training orchards and evaluated
+on its corresponding test orchard. In Table 1, we report the standard COCO metrics (Lin et al., 2014)
+including AP (averaged over IoU thresholds), AP50, and AP75, where AP is evaluated using mask IoU
+(Intersection over Union). The high accuracy in AP50 demonstrates the correctness of trunk prediction (see
+Fig. 11). Even though AP and AP75 have relatively low accuracy, the model outputs clear boundaries along
+the trunk direction, which provides qualitative segmentation results for modeling trunk cylinder and merging
+
+Ground truth
+Prediction
+Figure 24: A trunk prediction instance (right) and its ground truth (left). The upper part of this trunk is
+occluded by a small branch, so the detector provides a weak prediction around its upper end but still outputs
+correct trunk boundaries along the trunk direction.
+0
+5
+10
+15
+20
+25
+30
+# Epoch
+0.4
+0.6
+0.8
+1
+1.2
+1.4
+1.6
+1.8
+2
+Total Loss
+train-heads
+val-heads
+train-all
+val-all
+Figure 25: Total loss of train and validation data for each training procedure (training head layers and
+training all layers) versus the number of epochs.
+steps (see Sec. 4.2.2∼4.4). For example, Fig. 24 shows a correct prediction with the IoU of instance mask
+around 90%. The predicted trunk area is longer than the ground truth but still maintains correct boundaries.
+The diﬃcult case is when the trunk is occluded by leaves or branches, so the detector has weak predictions
+around two trunk ends. The model is ﬁnally trained using all the training images from ﬁve datasets based
+on the above-mentioned training strategy. The train loss and evaluation loss for two training procedures
+(training heads ﬁrst and then training all layers) are shown in Fig. 25, which indicates that the model is not
+overﬁtted.
+5.2.2
+Merging Two-Sides 3D Reconstructions
+To validate the proposed merging algorithm, we ﬁrst visually check if the misalignment of landmarks (e.g.,
+poles and tree trunks) is eliminated. The objective is to maintain a globally reasonable model of tree rows
+(from both sides) for measuring geometric traits from this 3D information. The accuracy of the merging and
+estimation algorithms are further tested by comparison with manual measurements of trunk diameter and
+tree height (see Sec. 5.2.3).
+As shown in Fig. 26 and Fig. 27, the proposed method is able to build well-aligned global 3D models of tree
+rows even without trunk detection for each tree. Speciﬁcally, duplicated poles and trunks are all merged.
+In practice, the merging algorithm only requires two-sides object correspondences around two ends and the
+middle of each tree row. When there is no need for estimating trunks diameter (e.g., counting fruits only),
+
+Figure 26: Merged 3D reconstructions from two sides of tree rows for Dataset-I, Dataset-II and Dataset-III.
+Rows 1 and 2: Front-side and back-side 3D reconstructions with scene images. Row 3: Misalignments (yellow
+boxes) of some landmarks after initial transformation. Row 4: Good 3D models are obtained by eliminating
+misalignments from semantic BA.
+we can roughly ﬁt a long section of a detected trunk as a cylinder, or even detect other landmarks, such
+as supporting poles and stakes. We make a general assumption that the local ground for each tree rather
+than the whole orchard ground is modeled as a plane, which makes our method applicable to any orchard
+environments without concern about the terrain.
+5.2.3
+Measuring Tree Morphology
+Due to the interference of wild weed in Dataset-I, only three trunks and three local grounds are used as
+semantic information for the merging algorithm. For Dataset-II, 27 trunks are all detected with totally 3∼4
+frames per each from two sides in order to estimate trunks diameter. We use a caliper to measure the actual
+trunks diameter as the Ground Truth (GT). In Dataset-II, we select 14 trees among 27 to demonstrate
+in detail the accuracy of our algorithm for trunks diameter estimation.
+Without 2D constraints, trunk
+diameters are always estimated larger than GT due to unreliable depth values around scene boundaries.
+Table 2 shows that with 2D constraints the average error of our diameter estimation is around 5 mm. Due to
+the integration of information from two sides, merged 3D tree models have more consistent diameter outputs
+(with lower mean error) compared with single-side estimations. For small trunks, the estimated results are
+still larger than GT, since the camera is relatively far from the trunks. Large pixel errors of trunk detection
+(low resolution for trunk boundaries) thus cause the diameter overﬁtting. This implies that the camera
+should closely capture trees with small trunks.
+In Dataset-III, a subsample of six trees from 30 are chosen for merging assessment. Since the focus of this
+dataset is estimating canopy volume and measuring tree height, only tree trunks and their local grounds
+(the middle and two ends) are marked for merging. The GT of trees height and their canopies diameter
+is obtained by using a measuring stick and a tape, respectively. For Dataset-III, we perform tree height
+estimation of 14 trees chosen among 30. Table 3 shows that the average error of our tree height estimation
+
+Figure 27: Merged 3D reconstructions from two sides of tree rows for Dataset-IV, Dataset-V and Dataset-VI.
+Rows 1: Input front-side and back-side 3D reconstructions. Rows 2: Output merged 3D models from both
+sides. Row 3: 3D models are well merged without misalignments from a zoom-in view.
+Table 2: Estimation errors of trunk diameter in Dataset-II.
+Tree ID
+T-2
+T-4
+T-6
+T-8
+T-9
+T-11
+T-13
+T-15
+T-18
+T-19
+T-22
+T-24
+T-26
+T-27
+Mean
+Ground Truth
+5.39
+4.12
+4.77
+8.22
+6.68
+6.82
+5.08
+5.23
+4.37
+5.00
+5.70
+5.63
+5.24
+4.61
+−
+Two-sides Est.
+5.24
+5.10
+5.48
+8.04
+6.56
+6.50
+5.51
+5.87
+5.29
+5.70
+5.99
+5.49
+5.77
+5.37
+−
+Error (cm)
+0.15
+0.98
+0.74
+0.18
+0.12
+0.32
+0.43
+0.64
+0.92
+0.70
+0.29
+0.14
+0.53
+0.76
+0.49
+Front-side Est.
+5.59
+5.25
+5.44
+8.49
+6.51
+7.27
+4.67
+6.05
+5.24
+5.86
+6.07
+5.40
+5.75
+5.26
+−
+F. Error (cm)
+0.20
+1.13
+0.67
+0.27
+0.17
+0.45
+0.41
+0.82
+0.87
+0.86
+0.37
+0.23
+0.51
+0.65
+0.54
+Back-side Est.
+5.13
+5.04
+5.67
+7.93
+6.95
+6.40
+5.65
+5.84
+5.48
+5.68
+5.31
+5.93
+5.88
+5.45
+−
+B. Error (cm)
+0.26
+0.92
+0.90
+0.29
+0.27
+0.42
+0.57
+0.61
+1.11
+0.68
+0.39
+0.30
+0.64
+0.84
+0.59
+is around 4 cm. We observe that for some trees (such as trees H-4 and H-23), there are inconsistent height
+estimations between two single sides. The reason is that the highest branch is not fully observed from one
+side but well captured from the other side. The estimation results for trunk diameter (Dataset-II) and tree
+height (Dataset-III) thus demonstrate the high accuracy of the proposed vision system.
+Table 3: Estimation errors of tree height in Dataset-III.
+Tree ID
+H-1
+H-2
+H-3
+H-4
+H-5
+H-6
+H-7
+H-16
+H-18
+H-19
+H-20
+H-21
+H-22
+H-23
+Mean
+Ground Truth
+2.159
+2.032
+2.362
+2.515
+2.083
+1.981
+2.108
+2.438
+2.413
+2.337
+2.032
+2.057
+2.489
+2.413
+−
+Two-sides Est.
+2.145
+2.050
+2.453
+2.463
+2.131
+1.997
+2.087
+2.357
+2.456
+2.311
+1.990
+2.084
+2.496
+2.361
+−
+Error (m)
+0.014
+0.018
+0.091
+0.052
+0.048
+0.016
+0.021
+0.081
+0.043
+0.026
+0.042
+0.027
+0.007
+0.052
+0.038
+Front-side Est.
+2.149
+2.061
+2.467
+2.368
+2.139
+1.894
+2.096
+2.301
+2.464
+2.318
+1.974
+2.092
+2.510
+2.352
+−
+Error (m)
+0.010
+0.029
+0.105
+0.147
+0.056
+0.087
+0.012
+0.137
+0.051
+0.019
+0.058
+0.035
+0.021
+0.061
+0.059
+Back-side Est.
+2.092
+1.961
+2.445
+2.474
+2.128
+1.990
+2.031
+2.343
+2.447
+2.295
+1.999
+2.072
+2.475
+2.306
+−
+Error (m)
+0.067
+0.071
+0.083
+0.041
+0.045
+0.009
+0.077
+0.095
+0.034
+0.042
+0.033
+0.015
+0.014
+0.107
+0.052
+To demonstrate canopy volume estimation, we ﬁrst segment out six sample trees in Dataset-III and generate
+enclosing alpha shapes (see Fig. 28) to represent their canopies.
+However, the alpha radius should be
+appropriately chosen. The alpha shape with a small radius value will produce holes inside the canopy, which
+is not desirable from the view of horticultural study. Fig. 29 shows that the canopy volume increases and
+
+Figure 28: Six sample trees in Dataset-III are segmented and enclosed by alpha shapes. Column 1: Each
+tree is diﬀerentiated from front-side and back-side reconstructions. Column 2: Six trees are segmented out
+from both sides. Colume 3: Alpha shapes of six trees are generated using two diﬀerent alpha radiuses from
+two-side views.
+Alpha Radius (m)
+0
+0.5
+1
+1.5
+2
+2.5
+3
+3.5
+4
+4.5
+Inf
+Canopy Volume (m3)
+0
+0.5
+1
+1.5
+2
+2.5
+Tree 1
+Tree 2
+Tree 3
+Tree 4
+Tree 5
+Tree 6
+Figure 29: Canopy volumes estimated by alpha shape versus the alpha radius.
+converges to a constant value as the alpha radius increases to inﬁnity, which produces a convex hull. The
+best value of alpha radius should represent a canopy model without holes and produce the smallest volume.
+Here, we set the radius as 0.8 m within the turning area (See Fig. 29 and Fig. 28). The alpha radius can be
+varied and selected based on diﬀerent purposes of horticultural applications.
+Table 4: Mean canopy volume of six tree sections using diﬀerent models.
+Model
+Section ID of Mean Canopy Volume (m3)
+V-1
+V-2
+V-3
+V-4
+V-5
+V-6
+Alpha Shape
+1.585
+1.873
+1.351
+1.227
+1.777
+1.912
+Convex Hull (Merged Two Sides)
+1.805
+2.177
+1.460
+1.322
+2.064
+2.202
+Convex Hull (Summed Single Sides)
+3.126
+3.328
+2.419
+2.265
+3.465
+3.353
+Cylinder Assumption
+2.957
+3.105
+2.503
+2.185
+3.155
+3.307
+One of the common methods used in horticultural science for modeling canopies is to treat a tree as a cylinder.
+Simply summing up the tree volumes from two single-side reconstructions (i.e., the front side and the back
+side) is also performed. To show the diﬀerence among diﬀerent models of canopies, we divide 18 trees from
+Dataset-III into six sections based on their relatively similar sizes, and report the mean canopy volume of each
+section in Table 4. It should be notable that simple cylinder model overestimates the canopy volume. The
+volumes added together from two single sides are even larger than the results using the cylinder model, since
+there is a substantial overlap between two-sides reconstructions in modern orchards (white front-side points
+and black back-side points are both visible from a single side, as shown in Fig. 18). Thus, it is reasonable to
+consider that the proposed method for canopy volume estimation is more suitable to generalize the geometry
+
+0
+10
+20
+30
+40
+50
+60
+70
+80
+Percentage of visible fruits compared to harvested ground truth yield
+Dataset-IV (Front)
+Dataset-IV (Back)
+Dataset-V (Front)
+Dataset-V (Back)
+Dataset-VI (Front)
+Dataset-VI (Back)
+(a) Percentage of visible apples from a single side com-
+pared to the yield of GT.
+Dataset-IV
+Dataset-V
+Dataset-VI
+0
+50
+100
+150
+200
+250
+300
+350
+400
+450
+Apple Counts
+Ground truth apple counts from both sides
+Computed yield from both sides
+Summed apple counts from both sides
+(b) Summed apple counts from both sides compared to
+obtained GT.
+Figure 30: Our fruit counts and actual yield.
+(a): The percentage of visible apples from a single side
+compared to ground truth (GT) (40.85% ∼79.83%). (b): Fruit counts of both sides (91.98% ∼94.81%) and
+summed fruit counts from individual sides compared to the fruit counts of GT (101.93% ∼150%). Except
+for Dataset-VI, our computed counts from both sides are closer to GT.
+of tree structures, which is promising to build the ground truth of tree canopies for horticulturists using our
+vision system.
+5.3
+Yield Mapping
+In this section, we evaluate our yield mapping technique described in Sec. 4.4. Essentially, we quantify
+how the yield map from the merged reconstruction is more accurate than single-side estimates. Three RGB
+datasets (Dataset-IV, Dataset-V and Dataset-VI) are used for this purpose.
+Before evaluating the performance of our yield mapping method, we ﬁnd out how many fruits we can see
+from the single side of a row. Toward this goal, as described in Sec. 5.2 in (Roy et al., 2018b), we annotate the
+apples in the images by hand and track them using estimated camera motion. We treat this hand-annotated
+fruit count as the total number of visible apples from a single side. From Fig. 30a, it is evident that the
+number of visible apples from a single side varies greatly across diﬀerent datasets (54.59% ∼79.83%). This
+is expected in orchards where the trees are not well trimmed, and the size and shape of the trees vary
+signiﬁcantly. Our data collection site (University of Minnesota Horticultural Research Center) resides in this
+category.
+Table 5: Summary of yield results in terms of fruit counts (FCs).
+Datasets
+Harvested FCs
+Merged FCs from both sides
+Sum of FCs from single sides
+Dataset-IV
+270
+256 (94.81%)
+348 (128.89%)
+Dataset-V
+274
+252 (91.98%)
+411 (150%)
+Dataset-VI
+414
+392 (94.68%)
+422 (101.93%)
+Now, as we ﬁnd that it is hard to correlate the number of visible fruits from a single side to the total yield, we
+investigate the next simple solution. We simply add the apple counts from both sides and ﬁnd how close we
+are to the actual yield. As shown in Fig. 30b and Table 5, the summed yields vary considerably across datasets
+(101.93% ∼150%). Finally, we ﬁnd the yield using our method in Sec. 4.4.4, which (91.98% ∼94.81%) is
+much more consistent compared to the summed yield (see Fig. 30b and Table 5).
+
+Trunk detection
+Two-sides inputs
+Alignment before semantic BA
+After semantic BA
+3D trunk
+3D local plane
+Apple cluster tracking
+Apple cluster
+Figure 31: Trunk detection and yield estimation on a subset of Dataset-I. To complete the whole merging
+process, 3D trunk and local plane modeling, input reconstructions from two sides, and alignments before
+and after semantic BA of this subset are also presented.
+5.4
+System Evaluation
+In this section, we ﬁrst conduct a system evaluation to qualitatively illustrate the performance of each
+component on a single dataset (Dataset-I), and in the next section we further discuss the limitations of our
+current vision system and practical considerations for applicability in robotics systems.
+Table 6: Processing time of the proposed vision system on Dataset-I.
+System
+Component
+Single-Side
+Reconstruction
+Trunk Detection
+(per frame)
+Trunk Modeling
+(per trunk)
+Ground Fitting
+(per tree)
+Processing Time
+∼15 min
+∼300 ms
+∼3 s
+∼3 s
+System
+Component
+Initial Alignment
+(before semantic BA)
+Semantic BA
+(in total)
+Tree Segmentation
+(per tree)
+Yield Estimation
+(in total)
+Processing Time
+∼3 min
+∼8 min
+∼2 min
+∼6 min
+For Dataset-I, we already evaluate and show the 3D reconstructions from two sides (1st column in Fig. 26),
+3D trunk and local ground modeling (Fig. 17e), alignments before and after semantic bundle adjustment
+(Fig. 26), tree height estimation (Fig. 18), and tree canopy segmentation (Fig. 19), respectively. The remain-
+ing components of our system are presented in Fig. 31 on a subset of Dataset-I: trunk detection, and yield
+estimation. Dataset-I contains around 1000 RGB-D images collected by a camera moving at a fast speed of
+about 1 m/s. As stated in Sec. 5.2.3, we detect three trunks and estimate their corresponding local grounds
+from two sides. The processing time of the whole vision system is shown in Table 6. Since after merging
+two-sides tree reconstructions and performing tree segmentation, trunk diameter and tree height estimations
+
+can be directly inferred from optimized trunk cylinder and local ground plane models, respectively. We
+thus omit the processing time for these two components. Although the most time-consuming part is the
+single-side reconstruction using the SfM algorithm, the processing time can be largely reduced by exploiting
+the 3D inputs from the real-time SLAM system.
+5.5
+Discussion
+During the ﬁeld experiment, the camera moves back and forth facing toward the tree rows to capture trunks
+and canopies. For estimating tree height and volume, the camera is lifted up and slightly tilted down to
+observe the entire tree from a good viewpoint. Facing up toward the sky should be avoided since the camera
+would suﬀer from image saturation due to the sunlight. For good reconstruction quality, the camera should
+be moved without signiﬁcant orientation changes between consecutive frames to guarantee suﬃcient image
+overlap. Depth images are recorded and utilized only for measuring trunk diameter, tree height and canopy
+volume, since the absolute scale of the real word should be inferred from 3D reconstructions with the depth
+information.
+To make a general training data for the trunk detector, we incorporate multiple datasets collected from
+diﬀerent orchards (H¨ani et al., 2018b). Several aspects are taken into account during the data collection,
+such as diﬀerent camera viewing angles, the existence of wrappers on trunks, and the existence of leaves
+on branches. In the extreme case, we tested the trunk detection on a speciﬁc orchard when the detector is
+trained only on other orchards. The performance is satisfactory as long as there is no large diﬀerence in tree
+appearance of the test data from the training data. For example, the failure case is when the test dataset
+only contains dormant trees (the yellow box in Fig. 11) collected during the winter. Without any leaves on
+trees, the trunk detector (trained only on the data with leaves) cannot output trunk segmentations with
+high conﬁdence scores. However, as stated in Sec. 4.2.1, adding a small portion of the new dataset solves
+this problem.
+The key idea behind the alignment of orthographic projection boundaries is that 3D reconstructions from
+two sides vary considerably in terms of geometry (i.e., they are diﬀerent in scale, and might have diﬀerent
+missing parts in the models). This is precisely the reason for applying the CPD method to align them at
+ﬁrst. This iterative method enables us to treat the small changes in geometry as noise and outliers, and
+to achieve approximately correct alignments. However, the failure case is that the input reconstructions
+from two sides are not accurate enough or have no mutual information. For example, we aim to merge 3D
+reconstructions of a row of ten trees. The 3D model from the front side only reconstructs four trees, while
+the reconstruction from the back side builds the six trees that are not covered (or less than two trees are
+covered) from the front side. In this case, the alignment of orthographic projection boundaries will fail.
+The proposed tree segmentation approach (shrink-and-expand segmentation) is designed based on the as-
+sumption of spatial settings common in modern orchards, where fruit trees are densely planted but with
+separate space in between. In such a scenario, our tree segmentation method compared to existing methods
+has better performance for handling contact between adjacent trees. Without the assumption above, the
+degenerate case is that two tree trunks are grown extremely close to each other (which rarely happens in
+modern orchards). In this case, our segmentation method has a similar result as the points-distribution-based
+approaches: the 3D model of such two trees is separated right in the middle as cut by a plane perpendicular
+to the ground. Without detailed information about the branch structures inside the overlapped area, these
+two trees are hardly separated.
+6
+Conclusion and Future Work
+In the modern high-density orchard setting, fruit trees have complex structures. Each individual tree can
+overlap substantially with its neighboring trees. Furthermore, due to the wind, image features detected by
+
+the camera are not stable and cannot be processed and tracked through long consecutive frames by directly
+applying classic mapping algorithms.
+In this work, we presented a vision system that merges reconstructions from two sides of tree rows, and
+uses this 3D information to measure semantic traits for phenotyping (i.e., fruit count, canopy volume, trunk
+diameter, and tree height). 3D models of fruit trees from two sides are generated separately and merged
+into a coherent model by exploiting global features (i.e., occlusion boundaries from orthographic views) and
+semantic information (i.e., detected trunks and local grounds). It was shown that the process of merging
+the 3D models highly improves the accuracy of yield estimation of two sides. Canopy volume can be readily
+computed based on the segmentation of each tree. We also estimate trunk diameter and tree height using
+our robust detection and ﬁtting algorithms. Our system is evaluated using multiple diﬀerent types of tree
+datasets collected in orchards. This is the ﬁrst vision system that can measure the semantic parameters
+of trees in fruit orchards by using only an imaging device. Although the moving platform of our proposed
+vision system is based on a handheld stick, the whole system can be mounted on Unmanned Aerial Vehicles
+(UAVs) (Stefas et al., 2016) and Unmanned Ground Vehicles (UGVs) (Peng et al., 2016) which have been
+demonstrated to navigate through modern orchard environments.
+In our ongoing work, we are testing our merging technique on other species of fruit trees (such as orange
+and peach trees) which have diﬀerent tree characteristics. Our method also generalizes to these types of
+trees, since the essential components (i.e., trunk detection, local ground estimation, initial global alignment,
+and tree segmentation) generalize to these settings. Further, we would like to extend our existing counting
+method (Roy and Isler, 2016b) so that it utilizes 3D information for fruit counting. Additionally, we aim to
+localize individual apples in the 3D space and build a complete map, which a picker robot can use for path
+planning.
+Acknowledgments
+We thank Professors James Luby, Cindy Tong, and Emily Hoover from the Department of Horticultural
+Science, University of Minnesota, for their expertise and help with the experiments. We also thank our
+colleagues Joshua Anderson, Cheng Peng, and Nicolai H¨ani from the University of Minnesota, for providing
+valuable feedback throughout this research. Finally, we thank the anonymous reviewers for their careful
+reading of our manuscript and their insightful comments and suggestions. This work is supported in part by
+USDA NIFA MIN-98-G02, and a subgrant from NSF #1722310.
+References
+Agarwal, S., Mierle, K., et al. (2012). Ceres solver.
+Agisoft, L. and St Petersburg, R. (2017). Agisoft photoscan. Professional Edition.
+Andreescu, T. and Feng, Z. (2004). Inclusion-exclusion principle. In A Path to Combinatorics for Under-
+graduates, pages 117–141. Springer.
+Arthur, D. and Vassilvitskii, S. (2007). k-means++: The advantages of careful seeding. In Proceedings
+of the eighteenth annual ACM-SIAM symposium on Discrete algorithms, pages 1027–1035. Society for
+Industrial and Applied Mathematics.
+Bac, C., Hemming, J., and Van Henten, E. (2014). Stem localization of sweet-pepper plants using the support
+wire as a visual cue. Computers and electronics in agriculture, 105:111–120.
+Bargoti, S. and Underwood, J. P. (2017). Image segmentation for fruit detection and yield estimation in
+apple orchards. Journal of Field Robotics, 34(6):1039–1060.
+Bargoti, S., Underwood, J. P., Nieto, J. I., and Sukkarieh, S. (2015). A pipeline for trunk detection in trellis
+structured apple orchards. Journal of Field Robotics, 32(8):1075–1094.
+
+Beder, C. and F¨orstner, W. (2006). Direct solutions for computing cylinders from minimal sets of 3d points.
+Computer Vision–ECCV 2006, pages 135–146.
+Bonanni, T. M., Della Corte, B., and Grisetti, G. (2017). 3-d map merging on pose graphs. IEEE Robotics
+and Automation Letters, 2(2):1031–1038.
+Bowman, S. L., Atanasov, N., Daniilidis, K., and Pappas, G. J. (2017). Probabilistic data association for
+semantic slam. In Robotics and Automation (ICRA), 2017 IEEE International Conference on, pages
+1722–1729. IEEE.
+Cohen, A., Sch¨onberger, J. L., Speciale, P., Sattler, T., Frahm, J.-M., and Pollefeys, M. (2016). Indoor-
+outdoor 3d reconstruction alignment. In European Conference on Computer Vision, pages 285–300.
+Springer.
+Curless, B. and Levoy, M. (1996). A volumetric method for building complex models from range images.
+In Proceedings of the 23rd annual conference on Computer graphics and interactive techniques, pages
+303–312. ACM.
+Das, J., Cross, G., Qu, C., Makineni, A., Tokekar, P., Mulgaonkar, Y., and Kumar, V. (2015). Devices,
+systems, and methods for automated monitoring enabling precision agriculture. In Proceedings of IEEE
+Conference on Automation Science and Engineering.
+del Moral-Mart´ınez, I., Arn´o, J., Sanz, R., Masip-Vilalta, J., Rosell-Polo, J. R., et al. (2015). Georeferenced
+scanning system to estimate the leaf wall area in tree crops. Sensors, 15(4):8382–8405.
+Dong, W. and Isler, V. (2017). Linear velocity from commotion motion. In Intelligent Robots and Systems
+(IROS), 2017 IEEE/RSJ International Conference on, pages 3467–3472. IEEE.
+Dong, W. and Isler, V. (2018a). A novel method for the extrinsic calibration of a 2d laser rangeﬁnder and a
+camera. IEEE Sensors Journal, 18(10):4200–4211.
+Dong, W. and Isler, V. (2018b). Tree morphology for phenotyping from semantics-based mapping in orchard
+environments. arXiv preprint arXiv:1804.05905.
+Edelsbrunner, H., Kirkpatrick, D., and Seidel, R. (1983). On the shape of a set of points in the plane. IEEE
+Transactions on information theory, 29(4):551–559.
+Edelsbrunner, H. and M¨ucke, E. P. (1994). Three-dimensional alpha shapes. ACM Transactions on Graphics
+(TOG), 13(1):43–72.
+Fischler, M. A. and Bolles, R. C. (1981). Random sample consensus: a paradigm for model ﬁtting with
+applications to image analysis and automated cartography. Communications of the ACM, 24(6):381–
+395.
+Forsyth, D. and Ponce, J. (2011). Computer vision: a modern approach. Upper Saddle River, NJ; London:
+Prentice Hall.
+Golub, G. H. and Van Loan, C. F. (2012). Matrix computations, volume 3. JHU Press.
+H¨ani, N., Roy, P., and Isler, V. (2018a). Apple counting using convolutional neural networks. In Intelligent
+Robots and Systems (IROS), 2018 IEEE/RSJ International Conference on. IEEE.
+H¨ani, N., Roy, P., and Isler, V. (2018b). A comparative study of fruit detection and counting methods for
+yield mapping in apple orchards. arXiv preprint arXiv:1810.09499.
+He, K., Gkioxari, G., Dollar, P., and Girshick, R. (2017). Mask r-cnn. In 2017 IEEE International Conference
+on Computer Vision (ICCV), pages 2980–2988. IEEE.
+He, K., Zhang, X., Ren, S., and Sun, J. (2016). Deep residual learning for image recognition. In Proceedings
+of the IEEE conference on computer vision and pattern recognition, pages 770–778.
+
+Huber, P. J. (1992). Robust estimation of a location parameter. In Breakthroughs in statistics, pages 492–518.
+Springer.
+Hung, C., Underwood, J., Nieto, J., and Sukkarieh, S. (2015).
+A feature learning based approach for
+automated fruit yield estimation. In Field and Service Robotics, pages 485–498. Springer.
+Levenberg, K. (1944). A method for the solution of certain non-linear problems in least squares. Quarterly
+of applied mathematics, 2(2):164–168.
+Lin, T.-Y., Maire, M., Belongie, S., Hays, J., Perona, P., Ramanan, D., Doll´ar, P., and Zitnick, C. L. (2014).
+Microsoft coco: Common objects in context. In European conference on computer vision, pages 740–755.
+Springer.
+Lowe, D. G. (2004).
+Distinctive image features from scale-invariant keypoints.
+International journal of
+computer vision, 60(2):91–110.
+Marquardt, D. W. (1963). An algorithm for least-squares estimation of nonlinear parameters. Journal of
+the society for Industrial and Applied Mathematics, 11(2):431–441.
+Medeiros, H., Kim, D., Sun, J., Seshadri, H., Akbar, S. A., Elﬁky, N. M., and Park, J. (2017). Modeling
+dormant fruit trees for agricultural automation. Journal of Field Robotics, 34(7):1203–1224.
+M´endez, V., Rosell-Polo, J. R., Sanz, R., Escol`a, A., and Catal´an, H. (2014). Deciduous tree reconstruction
+algorithm based on cylinder ﬁtting from mobile terrestrial laser scanned point clouds.
+Biosystems
+Engineering, 124:78–88.
+Mur-Artal, R. and Tard´os, J. D. (2017). Orb-slam2: An open-source slam system for monocular, stereo, and
+rgb-d cameras. IEEE Transactions on Robotics, 33(5):1255–1262.
+Myronenko, A. and Song, X. (2010). Point set registration: Coherent point drift. IEEE transactions on
+pattern analysis and machine intelligence, 32(12):2262–2275.
+Newcombe, R. A., Izadi, S., Hilliges, O., Molyneaux, D., Kim, D., Davison, A. J., Kohi, P., Shotton, J.,
+Hodges, S., and Fitzgibbon, A. (2011). Kinectfusion: Real-time dense surface mapping and tracking. In
+Mixed and augmented reality (ISMAR), 2011 10th IEEE international symposium on, pages 127–136.
+IEEE.
+Peng, C., Roy, P., Luby, J., and Isler, V. (2016). Semantic mapping of orchards. IFAC-PapersOnLine,
+49(16):85–89.
+Rodrigues, O. (1840). Des lois g´eom´etriques qui r´egissent les d´eplacements d’un syst`eme solide dans l’espace:
+et de la variation des cordonn´ees provenant de ces d´eplacements consid´er´es ind´ependamment des causes
+qui peuvent les produire.
+Rosell, J. and Sanz, R. (2012). A review of methods and applications of the geometric characterization of
+tree crops in agricultural activities. Computers and Electronics in Agriculture, 81:124–141.
+Rosell, J. R., Llorens, J., Sanz, R., Arno, J., Ribes-Dasi, M., Masip, J., Escol`a, A., Camp, F., Solanelles,
+F., Gr`acia, F., et al. (2009). Obtaining the three-dimensional structure of tree orchards from remote 2d
+terrestrial lidar scanning. Agricultural and Forest Meteorology, 149(9):1505–1515.
+Roy, P., Dong, W., and Isler, V. (2018a). Registering reconstructions of the two sides of fruit tree rows. In
+Intelligent Robots and Systems (IROS), 2018 IEEE/RSJ International Conference on. IEEE.
+Roy, P. and Isler, V. (2016a). Surveying apple orchards with a monocular vision system. In Automation
+Science and Engineering (CASE), 2016 IEEE International Conference on, pages 916–921. IEEE.
+Roy, P. and Isler, V. (2016b). Vision-based apple counting and yield estimation. In Experimental Robotics.
+Springer.
+
+Roy, P. and Isler, V. (2017). Active view planning for counting apples in orchards. In Intelligent Robots and
+Systems (IROS), 2017 IEEE/RSJ International Conference on, pages 6027–6032. IEEE.
+Roy, P., Kislay, A., Plonski, P. A., Luby, J., and Isler, V. (2018b). Vision-based preharvest yield mapping
+for apple orchards. arXiv preprint arXiv:1808.04336.
+Salas-Moreno, R. F., Newcombe, R. A., Strasdat, H., Kelly, P. H., and Davison, A. J. (2013). Slam++:
+Simultaneous localisation and mapping at the level of objects. In Computer Vision and Pattern Recog-
+nition (CVPR), 2013 IEEE Conference on, pages 1352–1359. IEEE.
+Sivic, J. and Zisserman, A. (2009). Eﬃcient visual search of videos cast as text retrieval. IEEE transactions
+on pattern analysis and machine intelligence, 31(4):591–606.
+Sotoodeh, S. (2006). Outlier detection in laser scanner point clouds. International Archives of Photogram-
+metry, Remote Sensing and Spatial Information Sciences, 36(5):297–302.
+Stefas, N., Bayram, H., and Isler, V. (2016). Vision-based uav navigation in orchards. IFAC-PapersOnLine,
+49(16):10–15.
+Strasdat, H., Montiel, J., and Davison, A. J. (2010). Scale drift-aware large scale monocular slam. Robotics:
+Science and Systems VI, 2.
+Sturm, J., Engelhard, N., Endres, F., Burgard, W., and Cremers, D. (2012). A benchmark for the evalua-
+tion of rgb-d slam systems. In Intelligent Robots and Systems (IROS), 2012 IEEE/RSJ International
+Conference on, pages 573–580. IEEE.
+Tabb, A. and Medeiros, H. (2017). A robotic vision system to measure tree traits. In Intelligent Robots and
+Systems (IROS), 2017 IEEE/RSJ International Conference on, pages 6005–6012. IEEE.
+Underwood, J. P., Hung, C., Whelan, B., and Sukkarieh, S. (2016). Mapping almond orchard canopy volume,
+ﬂowers, fruit and yield using lidar and vision sensors. Computers and Electronics in Agriculture, 130:83–
+96.
+Underwood, J. P., Jagbrant, G., Nieto, J. I., and Sukkarieh, S. (2015). Lidar-based tree recognition and
+platform localization in orchards. Journal of Field Robotics, 32(8):1056–1074.
+van der Heijden, G., Song, Y., Horgan, G., Polder, G., Dieleman, A., Bink, M., Palloix, A., van Eeuwijk, F.,
+and Glasbey, C. (2012). Spicy: towards automated phenotyping of large pepper plants in the greenhouse.
+Functional Plant Biology, 39(11):870–877.
+Wang, Q., Nuske, S., Bergerman, M., and Singh, S. (2013). Automated crop yield estimation for apple
+orchards.
+In Desai, J. P., Dudek, G., Khatib, O., and Kumar, V., editors, Experimental Robotics,
+volume 88 of Springer Tracts in Advanced Robotics, pages 745–758. Springer International Publishing.
+Wang, W. and Li, C. (2014). Size estimation of sweet onions using consumer-grade rgb-depth sensor. Journal
+of Food Engineering, 142:153–162.
+Wu, C. (2013). Towards linear-time incremental structure from motion. In 3DTV-Conference, 2013 Inter-
+national Conference on, pages 127–134. IEEE.
+Yu, F., Xiao, J., and Funkhouser, T. (2015). Semantic alignment of lidar data at city scale. In Proceedings
+of the IEEE Conference on Computer Vision and Pattern Recognition, pages 1722–1731.
+Zhou, Q.-Y., Park, J., and Koltun, V. (2016). Fast global registration. In European Conference on Computer
+Vision, pages 766–782. Springer.

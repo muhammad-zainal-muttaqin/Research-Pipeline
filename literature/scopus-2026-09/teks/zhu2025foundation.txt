@@ -1,0 +1,922 @@
+Foundation Model-Based Apple Ripeness and Size Estimation for
+Selective Harvesting
+Keyi Zhua, Jiajia Lib, Kaixiang Zhanga, Chaaran Arunachalamb, Siddhartha Bhattacharyac,
+Renfu Lud and Zhaojian Li*a
+aDepartment of Mechanical Engineering, Michigan State University, East Lansing, MI, USA
+bDepartment of Electrical and Computer Engineering, Michigan State University, East Lansing, MI, USA
+cDepartment of Computer Science and Engineering, Michigan State University, East Lansing, MI, USA
+dUnited States Department of Agriculture Agricultural Research Service, East Lansing, MI, USA
+* Zhaojian Li is the corresponding author
+A R T I C L E I N F O
+Keywords:
+Selective fruit harvesting
+Computer vision
+Foundation models
+Fruit ripeness classification
+Size estimation
+A B S T R A C T
+Harvesting is a critical task in the tree fruit industry, demanding extensive manual labor and
+substantial costs, and exposing workers to potential hazards. Recent advances in automated
+harvesting offer a promising solution by enabling efficient, cost-effective, and ergonomic fruit
+picking within tight harvesting windows. However, existing harvesting technologies often
+indiscriminately harvest all visible and accessible fruits, including those that are unripe or
+undersized. This study introduces a novel foundation model-based framework for efficient
+apple ripeness and size estimation. Specifically, we curated two public RGBD-based Fuji apple
+image datasets, integrating expanded annotations for ripeness ("Ripe" vs. "Unripe") based on
+fruit color and image capture dates. The resulting comprehensive dataset, Fuji-Ripeness-Size
+Dataset, includes 4,027 images and 16,257 annotated apples with ripeness and size labels.
+Using Grounding-DINO, a language-model-based object detector, we achieved robust apple
+detection and ripeness classification, outperforming other state-of-the-art models. Additionally,
+we developed and evaluated six size estimation algorithms, selecting the one with the lowest error
+and variation for optimal performance. The Fuji-Ripeness-Size Dataset and the apple detection
+and size estimation algorithms are made publicly available, which provides valuable benchmarks
+for future studies in automated and selective harvesting.
+1. Introduction
+Apple harvesting is a labor-intensive and costly operation. With rising shortages and increasing costs of labor, the
+development of automated harvesting robots has attracted significant research interest in recent years (Au et al., 2023;
+Jia et al., 2020; Li et al., 2023; Yu et al., 2021). Our group, for instance, has also been developing a vacuum-based
+apple harvesting robot in the past 5 years (Lu et al., 2022a; Zhang et al., 2021, 2022b, 2023a), as shown in Fig. 1.
+These robots typically employ sensors such as RGB-D cameras alongside computer vision algorithms to detect and
+localize target fruits in the scene. Planning and control algorithms enable robotic arms to approach and harvest apples
+sequentially within the workspace. The integration of automated harvesting systems promises a transformative step
+forward in modern agriculture, addressing longstanding challenges in fruit production.
+Fruit quality plays a crucial role in determining the value of harvested produce. Ripe fruits with appropriate size
+and shape are suitable for the fresh market, while unripe or misshapen fruits are relegated to processing, resulting in
+The code and dataset is available at https://github.com/zhukeyi-stan/Fuji_Ripeness_And_Size_Estimation
+zhukeyi1@msu.edu (K. Zhu); lijiajia@msu.edu (J. Li); zhangk64@msu.edu (K. Zhang); arunach6@msu.edu (C. Arunachalam);
+bhatta70@msu.edu (S. Bhattacharya); renfu.lu@usda.gov (R. Lu); lizhaoj1@egr.msu.edu (Z. Li*)
+ORCID(s):
+Zhu et al.: Preprint submitted to Elsevier
+Page 1 of 20
+arXiv:2502.01850v1  [cs.CV]  3 Feb 2025
+
+Foundation Model-Based Selective Harvesting
+Figure 1: A photographic view of our apple harvesting robot. The system mainly consists of two 4 Degrees Of Freedom
+(DOF) robotic arms and a time-of-flight camera which is attached to the robot frame to localize the apples for picking.
+significantly lower market value. Experienced human pickers can efficiently assess ripeness and size during harvesting;
+however, the ability of automated systems to selectively harvest ripe and appropriately sized fruits has received
+limited attention. This capability is particularly critical for premium apple varieties, such as Honeycrisp, where higher
+profit margins justify multiple rounds of harvesting to maximize marketable yield. Achieving this requires an in-field
+assessment of apple “harvestability”—evaluating whether an apple is ready for harvesting. Ideally, harvesting robots
+should incorporate algorithms capable of performing real-time “harvestability” evaluations. This paper reports our
+effort on developing robust computer vision algorithms to assess apple harvestability based on two key factors: ripeness
+and size.
+Ripeness and size estimations typically begin with an object detection algorithm to identify target fruits using 2D
+bounding boxes. To achieve this, various deep learning algorithms have been developed for robust object detection.
+Two-stage approaches, such as the R-CNN series (Girshick, 2015; He et al., 2017; Ren et al., 2015), can achieve high
+precision by refining region proposals, while one-stage models like YOLO (Wang et al., 2024), RetinaNet (Lin et al.,
+2017), and SSD (Liu et al., 2016) provide faster inference. Transformer-based architectures, particularly Detection
+Transformers (DETR) (Carion et al., 2020) and its enhancements (Zhang et al., 2022a; Zhu et al., 2020), have introduced
+self-attention mechanisms for global feature modeling, eliminating the need for post-processing. Grounding-DINO (Liu
+et al., 2023) further extends detection capabilities to open-set scenarios, integrating language prompts for tasks such
+as detecting “red apples with smooth surfaces” under challenging conditions like occlusions and varying lighting.
+These advancements hold immense potential for agricultural robotics, enabling accurate fruit detection, ripeness
+classification, and size estimation.
+Zhu et al.: Preprint submitted to Elsevier
+Page 2 of 20
+
+Foundation Model-Based Selective Harvesting
+In-field ripeness estimation has received comparatively less attention than fruit detection. Traditional approaches
+often rely on image-based techniques, such as color-based fuzzy classification (Hamza and Chtourou, 2020) and SVM-
+based segmentation in various color spaces (Goel and Sehgal, 2015; Pardede et al., 2019). While these methods perform
+well in controlled environments, their generalizability is limited under complex orchard conditions. The advent of deep
+learning has enabled the development of more adaptive models for ripeness estimation. For instance, convolutional
+neural networks (CNNs) have been applied to classify ripeness from fruit images (Gunawan and Lie, 2021; Saranya
+et al., 2022), while transformer-based models (Zhang et al., 2023b) have achieved higher accuracies by leveraging
+attention mechanisms. However, most existing studies focus on simple backgrounds and isolated targets, which restrict
+their applicability in real-world orchards where fruits are often occluded by foliage and branches. To address these
+challenges, advanced models such as Mask R-CNN (Ni et al., 2020) and DETR (Hamza and Chtourou, 2021; Xiao et al.,
+2021, 2024) have been adapted to improve performance in complex scenarios. Additionally, model variants have been
+explored. For example, (Halstead et al., 2018) added dual heads to Faster-RCNN for simultaneous fruit detection and
+ripeness prediction, while (Lu et al., 2022b) integrated a lightweight Transformer into YOLOv4, enhancing detection
+and ripeness classification.
+Size estimation, on the other hand, has traditionally relied on manual tools like calipers, which are labor-intensive
+and impractical for large-scale operations. Reference object-based methods have also been explored (Apolo-Apolo
+et al., 2020; Nenavath and Perumal, 2024), but they suffer from low computation efficiency, making them unsuitable for
+large-scale orchards. A more common approach involves first estimating the size of the target fruit in 2D images using
+various techniques (Blok et al., 2021; Freeman and Kantor, 2023; Mirbod et al., 2023; Neupane et al., 2022), followed
+by transforming the pixel-based measurements into 3D dimensions. Recent advancements in fruit size estimation
+leverage 3D point clouds for improved accuracy, where depth cameras are used to capture 3D representations of
+fruit (Gené-Mola et al., 2021; Miranda et al., 2023; Sapkota et al., 2024). However, the quality of depth data from
+off-the-shelf cameras often poses challenges, particularly in low-light conditions or when dealing with occluded
+fruits. To address these issues, deep learning methods have been developed. These include models that estimate both
+the visible and occluded portions of the fruit (Gené-Mola et al., 2023), and end-to-end approaches for direct size
+estimation (Ferrer-Ferrer et al., 2023), which enhance both robustness and accuracy in size estimation.
+Despite these advancements, significant challenges remain in achieving robust apple ripeness and size estimation.
+In outdoor settings, ripeness estimation relies heavily on color sensitivity, and varying lighting conditions introduce
+noise, complicating the analysis. Moreover, the inability to observe the entire surface of the apple, as compared to
+controlled rotation in sorting machines in the packinghouse, which further limits accuracy. Similarly, size estimation
+with RGB-D cameras faces challenges from noisy depth data and occlusions, particularly in dense canopies. Effective
+algorithms must account for these limitations while providing scalable solutions for large orchards. In addition, the
+Zhu et al.: Preprint submitted to Elsevier
+Page 3 of 20
+
+Foundation Model-Based Selective Harvesting
+lack of publicly available dataset on fruit ripeness and size estimation also hinders the advancement of this research
+area.
+Pre-
+Processing
+Image
+Input
+Detection with 
+FM
+Size 
+Estimation
+Segmentation 
+with FM
+Harvest Decision
+For Each Apple
+Language Tokens
+“Ripe Apples”/
+“Unripe Apples”
+“Apples”
+Figure 2: The procedure for in-field harvesting with evaluation of the "harvest-ability".
+To address the aforementioned challenges, in this article, we present a novel framework for accurate apple ripeness
+and size estimation, designed to enable automated selective harvesting. As shown in Fig. 2, our framework seamlessly
+integrates apple detection, ripeness classification, and size estimation of apples. Specifically, we curated and augmented
+two publicly available Fuji apple datasets to include ripeness estimates based on visual appearance and the time of
+the season. These datasets comprise RGB-D images and corresponding size information of each apple. To achieve
+robust performance, we applied Grounding-DINO, a foundation-model-based detection framework, to detect apples
+and classify their ripeness. This approach efficiently leverages dataset information and demonstrates strong adaptability
+to complex outdoor scenarios. Additionally, we proposed and evaluated six size estimation algorithms, with the best one
+achieving state-of-the-art performances. By combining ripeness classification and size estimation, our robotic system
+is equipped to make informed harvesting decisions for each apple. The key contributions of this paper are summarized
+as follows:
+1. Dataset Augmentation: We reprocessed two publicly available Fuji apple datasets containing RGB-D images
+and size information, to include ripeness annotations based on apple appearance. To our knowledge, this
+represents the first publicly available dataset with both ripeness and size annotations.
+2. Model Development: We employed Grounding-DINO, a foundation model-based network, to identify apples
+and classify their ripeness. This approach achieved higher mean average precision (mAP) compared to baseline
+detection models.
+3. Size Estimation: We developed six size estimation algorithms: three leveraging 2D image information and the
+other three utilizing 3D spatial data. A thorough comparison was conducted to evaluate their performance with
+box plots.
+Zhu et al.: Preprint submitted to Elsevier
+Page 4 of 20
+
+Foundation Model-Based Selective Harvesting
+2. Materials and Methods
+In this section, we firstly introduce our dataset, detailing how we curated and augmented existing datasets. Next,
+we describe our apple detection and ripeness classification model. Then, we propose six size estimation algorithms.
+2.1. Fuji-Ripeness-Size Dataset
+Although some works have studied fruit ripeness classification, their apple ripeness dataset were not made publicly
+available (Lu et al., 2022b; Sabzi et al., 2019, 2022; Zhang et al., 2023b). Two main factors make it difficult to create a
+comprehensive dataset for apple ripeness: (1) there is no universally accepted non-destructive standard for determining
+apple ripeness, and (2) ripening characteristics vary greatly among different apple varieties. Nonetheless, using surface
+color and image capture date within a single variety offers a practical approach to generating an apple ripeness
+dataset. Thus, in this study, we address the lack of public apple ripeness datasets by curating two existing Fuji apple
+datasets, described below. While these datasets were originally designed for apple detection and size measurement, we
+augmented them with ripeness labels.
+OpenAcces_RGBD_Apple_Dataset (Bortolotti et al., 2024) was gathered in 2022 at the University of Bologna,
+Italy, in a three-year-old orchard with Fuji apples trained as “planar cordons”. This training style helps reduce occlusions
+(see Fig. 3a for a sample image). The researchers tracked 24 apples on two trees, measuring their maximum equatorial
+diameters with a digital caliper at several stages. They then captured images from multiple viewpoints (top, bottom,
+and full canopy) and at two distances from the camera (1.0 m and 1.5 m). An Intel RealSense D435i camera was
+used throughout, with settings fixed to achieve optimal depth precision (848×480) and RGB resolution (1920×1080).
+Internal camera functions handled alignment between depth and RGB images. In total, this dataset includes 102 RGB-D
+images under various lighting conditions, containing 922 apples with diameters ranging from 40 mm to 95 mm. Each
+apple was annotated with a bounding box.
+AmodalAppleSize_RGB-D Dataset (Gené-Mola et al., 2024) was collected in a Fuji apple orchard in Agramunt,
+Catalonia, Spain, where trees were trained in a tall spindle system. The researchers photographed the canopy using
+a Canon EOS 60 DSLR camera (18 MP CMOS APS-C sensor, EFS 24,mm f/2.8 STM lens) from multiple angles,
+ensuring more than 75% overlap among consecutive images (see Fig. 3b for a sample image). They then applied
+Structure-from-Motion (SfM) and Multi-View Stereo (MVS) in Agisoft Professional Metashape software to build a
+3D point cloud of the canopy. Apples were tagged, and their sizes were recorded using a Vernier caliper. Data were
+collected on two dates—October 3, 2018, when most apples were ripe (BBCH85), and July 16, 2020, when most apples
+were unripe (BBCH77). The researchers cropped raw images to 1300×1300 pixels and generated depth maps aligned
+with each RGB image. They provided two segmentation masks for each apple: a modal mask (visible pixels) and an
+Zhu et al.: Preprint submitted to Elsevier
+Page 5 of 20
+
+Foundation Model-Based Selective Harvesting
+amodal mask (visible plus occluded pixels). Altogether, this dataset contains 3925 RGB-D images and 15335 labeled
+apples.
+Diameter: 91mm
+Ripeness: Ripe
+(a)
+Diameter: 68.3mm
+Ripeness: “Unripe”
+(b)
+Figure 3: The sample images for each dataset after re-annotation: (a) OpenAcces_RGBD_Apple_Dataset; and (b)
+AmodalAppleSize_RGB-D Dataset.
+Fuji-Ripeness-Size Dataset was then curated by augmenting the two datasets above. Note that the OpenAc-
+cess_RGBD_Apple dataset and the AmodalAppleSize_RGB-D dataset differ in several key aspects. The OpenAc-
+cess_RGBD_Apple dataset includes only bounding-box annotations, whereas the AmodalAppleSize_RGB-D dataset
+provides both modal and amodal annotations. Additionally, the OpenAccess_RGBD_Apple dataset features canopy-
+wide images containing many apples, while the AmodalAppleSize_RGB-D dataset crops its images, resulting in
+fewer apples per frame. Apples in the OpenAccess_RGBD_Apple dataset experience less occlusion due to the
+orchard’s training system, whereas those in the AmodalAppleSize_RGB-D dataset are more frequently obscured
+by branches and leaves. The AmodalAppleSize_RGB-D dataset also provides higher-precision depth maps than the
+OpenAccess_RGBD_Apple dataset, reflecting differences in depth capture and processing methods. Furthermore, the
+OpenAccess_RGBD_Apple dataset exhibits greater variability, having been collected over ten different days, while the
+AmodalAppleSize_RGB-D dataset was gathered on only two collection dates.
+Despite these differences, both datasets include Fuji apples at multiple ripening stages as well as size measurements
+for some apples. To enable network training for simultaneous ripeness and size estimation, we augmented the above
+two datasets by assigning a ripeness label to each labeled apple based on its color and capture date, designating
+apples that appeared mostly red as ”Ripe” and those that appeared mostly green as ”Unripe”; see Fig. 4 for a few
+samples. We annotated these apples using the open-source VIA tool (Dutta and Zisserman, 2019). Because the
+AmodalAppleSize_RGB-D dataset provides pixel-wise segmentation masks whereas the OpenAcces_RGBD_Apple
+dataset includes only bounding boxes, we converted the pixel-wise annotations in the former to bounding boxes for
+Zhu et al.: Preprint submitted to Elsevier
+Page 6 of 20
+
+Foundation Model-Based Selective Harvesting
+consistency. This process yielded a Fuji apple dataset with both ripeness labels and size data, which we then used to
+train and evaluate our ripeness model and to develop our size estimation algorithm.
+“Ripe”
+“Unripe”
+“Unripe”
+“Ripe”
+“Unripe”
+“Ripe”
+“Unripe”
+(a)
+“Ripe”
+“Unripe”
+“Unripe”
+“Ripe”
+“Unripe”
+“Unripe”
+“Ripe”
+“Ripe”
+“Ripe”
+(b)
+Figure 4: Examples of ripeness labeling. The image collection date served as a preliminary reference; for instance, images
+captured in July were assumed to predominantly contain unripe apples. Subsequently, the ripeness of each apple was
+determined based on the percentage of its surface area covered by red regions.
+2.2. Apple Detection and Ripeness Classification with Grounding-DINO
+Recent advances in deep learning have led to significant breakthroughs in object detection. Models such as Faster-
+RCNN (Ren et al., 2015) and the YOLO series (Wang et al., 2024) can be trained on images and corresponding labels,
+which include both the position of target objects and their class information. Compared with traditional algorithms
+based on hand-crafted features, these deep-learning-based methods offer superior adaptability and generalization. They
+have been widely adopted for fruit detection and have shown promising results (Bargoti and Underwood, 2017; Chu
+et al., 2021, 2023; Fu et al., 2020).
+However, most of these methods are closed-set detectors: they assume that all target classes are fully known during
+both training and inference, which limits their ability to handle previously unseen classes. With the rapid progress
+of natural language processing (NLP), researchers have integrated Transformers (Vaswani et al., 2017), or attention-
+based mechanisms, into object detection architectures. This integration has given rise to open-set detectors, which use
+language processing components to go beyond fixed, predefined class sets. These open-set detectors not only excel at
+recognizing classes learned during training but can also detect new classes with the help of language models.
+In this work, we employ Grounding-DINO (Liu et al., 2023)—one of the most advanced open-set detectors—to
+perform apple detection and ripeness classification. Grounding-DINO is a vision foundation model that combines
+DINO (Zhang et al., 2022a), a Transformer-based closed-set detector, with Grounded Language-Image Pre-training
+(GLIP) (Li et al., 2022b). It can be trained on standard image datasets (with bounding boxes) while leveraging class
+Zhu et al.: Preprint submitted to Elsevier
+Page 7 of 20
+
+Foundation Model-Based Selective Harvesting
+names to boost its object recognition ability through language modeling. Unlike common datasets such as VOC or
+COCO (Everingham et al., 2010; Lin et al., 2014), which contain objects that differ markedly from one another, our
+task involves distinguishing only two very similar classes—“ripe apples” and “unripe apples”. Integrating language
+features helps the model better capture subtle differences between these two classes.
+Text
+Features
+Image
+Features
+Cross
+Modality
+Queries
+Image
+Backbone
+Text
+Backbone
+Text Input
+Image Input
+(Raw Image)
+Enhanced Text Features
+Enhanced Image Features
+Language-Guided
+Query Selection
+Cross-Modality 
+Decoder
+Model Outputs
+“ripe,
+unripe”
+Feature
+Enhancer
+Figure 5: The network structure for the Grounding-DINO, where text prompt is also included as an input. The image and
+the text are joint inputs to the model at the same time, after feature extraction and cross feature enhancement, the model
+is able to infer from the cross-modality information and detect the target region specified by the text.
+Figure 5 outlines the Grounding-DINO architecture. The model receives a text prompt and an image as input
+and outputs the bounding box of the target object described by the text. Two separate backbones process the text
+and the image, extracting preliminary features from each. These features are refined through a feature enhancer layer
+consisting of self-attention and cross-attention mechanisms, which produce enhanced text and image features. The
+system then performs language-guided query selection and cross-modality decoding. Here, queries are essentially
+encoded predictions on the enhanced image features, guided by the enhanced text features; a cross-modality decoder
+uses cross-attention to refine these queries further.
+During training, Grounding-DINO employs L-1 and Generalized Intersection over Union (GIoU) losses to refine
+bounding-box coordinates. Following GLIP (Li et al., 2022b), it also adopts a contrastive loss between predicted objects
+and language tokens for classification. The overall loss function can be written as: = 1 + 𝐺𝐼𝑂𝑈+ 𝐶𝑜𝑛𝑡, where
+1, 𝐺𝐼𝑂𝑈, and 𝐶𝑜𝑛𝑡are the L1 loss, GIoU loss, and contrastive loss, respectively.
+To speed up training and improve performance, we use transfer learning, a common practice in deep-learning
+research. Specifically, we begin with a Grounding-DINO model pretrained on large-scale object detection datasets
+(e.g., COCO, O365, OpenImage, ODinW-35, RefCOCO (Kazemzadeh et al., 2014; Kuznetsova et al., 2020; Li et al.,
+2022a; Lin et al., 2014; Shao et al., 2019)), then fine-tune it on our apple ripeness dataset. This approach harnesses the
+broad visual knowledge the model gains from extensive pre-training, enabling more accurate ripeness classification
+and detection in our specific application.
+Zhu et al.: Preprint submitted to Elsevier
+Page 8 of 20
+
+Foundation Model-Based Selective Harvesting
+2.3. Size Estimation
+Existing studies on fruit size estimation can be broadly grouped according to the type of data used. The first category
+relies on 2D images (Freeman and Kantor, 2023; Mirbod et al., 2023; Nenavath and Perumal, 2024), where some
+methods compare detected fruits against a known reference object in the scene, while others estimate fruit size by
+some image processing algorithms. The estimated size in pixel units is then converted into real-world measurements
+(e.g., centimeters) via target-object distance and camera parameters. The second category uses 3D point clouds (Gené-
+Mola et al., 2021; Tsoulias et al., 2023), typically generated by sensors such as LiDAR or RGB-D cameras. Various
+computational methods are then applied to these 3D data to estimate fruit size.
+In this article, we first segment apple pixels within the detected bounding boxes. After outlier removal, a filtering
+algorithm to get rid of noises in depth images, we implement several size estimation algorithms and compare their
+results to determine which method provides the most accurate size measurements.
+2.3.1. Mask Generation
+To remove irrelevant information from the bounding boxes, we apply a segmentation algorithm to isolate only apple
+pixels. Specifically, we use the Segment-Anything Model (SAM) (Kirillov et al., 2023), which is trained on a large-
+scale, web-based dataset of diverse objects. Rather than fine-tuning the model on our limited dataset, we directly prompt
+the model with the word ”apple” to generate the segmentation masks. Because the apples were already localized and
+classified by ripeness in the previous step, using the general prompt ”apple” (as opposed to ”ripe apple” or ”red apple”)
+achieves good segmentation performance. Once pixel-wise segmentation masks are generated for each bounding box,
+these masks are used in subsequent steps to estimate the size of each detected apple.
+0.260.240.220.200.180.160.140.12
+3.04
+3.06
+3.08
+3.10
+3.12
+3.14
+3.16
+3.18
+3.20
+0.06
+0.08
+0.10
+0.12
+0.14
+0.16
+0.18
+0.20
+Outliers
+(a)
+0.260.240.220.200.180.160.140.12
+3.04
+3.06
+3.08
+3.10
+3.12
+3.14
+3.16
+3.18
+3.20
+0.06
+0.08
+0.10
+0.12
+0.14
+0.16
+0.18
+0.20
+(b)
+Figure 6: Illustration of outlier removal in point cloud of an apple: (a) before and (b) after outlier removal. Although the
+outliers are usually very few compared to the inliers, they sometimes would bring significant error to the size estimation.
+Thus, the removal of outliers is very important in outdoor fruit sizing.
+Zhu et al.: Preprint submitted to Elsevier
+Page 9 of 20
+
+Foundation Model-Based Selective Harvesting
+2.3.2. Outlier Removal
+Depth images often contain noisy measurements, so we remove outliers before proceeding with size estimation.
+Specifically, for each apple mask, we sort the corresponding depth pixels by their depth values. We then keep only
+those pixels falling within a certain percentile range (e.g., 10% to 90%). Figure 6 shows an example where the range
+is set to 20%–80%. This process effectively discards aberrant depth points while preserving the overall shape of the
+apple, thereby reducing errors during size estimation.
+2.3.3. 2D-Based Estimation
+In 2D-based algorithms, the size of the apple is first estimated in pixel units before being converted to millimeters.
+Let 𝑑𝑝be the pixel-level measurement, and 𝑑𝑟be the real-world (e.g., millimeter) measurement. The conversion is
+given by 𝑑𝑟=
+𝑑𝑝
+𝑓𝑧, (Fig. 7) where 𝑓is the camera’s focal length, and 𝑧is the average distance between the camera and
+the apple (obtained by averaging all depth values within the mask, after outlier removal as described in Section 2.3.2).
+Since these methods rely on 2D image measurements, outlier removal is only applied when calculating 𝑧, in order to
+retain as many useful RGB pixels as possible.
+In this article, we consider three 2D-based size estimation algorithms:
+1. The size of the Bounding Box (2D-BBox, Fig. 8a): Let ℎbe the height of the bounding box, 𝑤be the width of
+the bounding box, the pixel-wise diameter of the apple is estimated as 𝑑𝑝= 𝑚𝑎𝑥(ℎ, 𝑤).
+2. Largest Segment within the mask (2D-LSeg, Fig. 8b): Denote the mask as M = {𝑚𝑖}, where 𝑚𝑖= (𝑢𝑖, 𝑣𝑖)
+is the individual pixel within the mask. In this algorithm, the diameter of the apple is estimated as 𝑑𝑝=
+max
+𝑖,𝑗||𝑚𝑖−𝑚𝑗||2.
+3. Hough Transform (2D-HT, Fig. 8c): The Hough Transform is a well-known feature extraction method used here
+for circle fitting. We apply the transform to each apple mask to estimate its pixel-level diameter, 𝑑𝑝= 𝐻𝑇(𝑚𝑎𝑠𝑘).
+2.3.4. 3D-Based Estimation
+In 3D-based algorithms, the apple pixels are first converted into point-cloud data. Since the RGB and depth images
+in our datasets are pre-registered to the same resolution, each pixel (𝑢, 𝑣) in the RGB image corresponds to a pixel in
+the depth image. Suppose 𝑧is the depth value at (𝑢, 𝑣), and 𝑓is the camera’s focal length. The transformation to 3D
+coordinates is given by: 𝑥= 𝑢
+𝑓𝑧, 𝑦= 𝑣
+𝑓𝑧. Following this mapping (illustrated in Fig. 7), each pixel in the segmentation
+mask becomes a 3D point, yielding a point cloud of the apple.
+We compare the following three 3D-based size estimation algorithms:
+1. Largest Segment (3D-LSeg, Fig. 8d): Let P = {𝑝𝑖} denote the apple point cloud, where 𝑝𝑖= (𝑥𝑖, 𝑦𝑖, 𝑧𝑖). The
+apple’s diameter is estimated by 𝑑𝑟= max
+𝑖,𝑗||𝑝𝑖−𝑝𝑗||2, which is the length of the largest segment within the point
+cloud.
+Zhu et al.: Preprint submitted to Elsevier
+Page 10 of 20
+
+Foundation Model-Based Selective Harvesting
+2. Least Square Fitting (3D-LSq, Fig. 8e): Here, we fit a sphere to the point cloud by minimizing the spherical cost
+function, 𝐽(𝜃) = ∑
+𝑖
+[(𝑥𝑖−𝑥𝑐)2 + (𝑦𝑖−𝑦𝑐)2 + (𝑧𝑖−𝑧𝑐)2 −𝑟2]2, where (𝑥𝑖, 𝑦𝑖, 𝑧𝑖) is the i-th point from the input
+point cloud, and 𝜃= (𝑥𝑐, 𝑦𝑐, 𝑧𝑐, 𝑟) represents the center and radius of the sphere. After solving this optimization
+problem, the diameter is given by 𝑑𝑟= 2𝑟
+3. RANdom SAmple Consensus (3D-RANSAC, Fig. 8f): We randomly sample four points at a time to define a
+sphere 𝑓(𝑥𝑐, 𝑦𝑐, 𝑧𝑐, 𝑟). We then count how many points in the cloud (inliers) satisfy −𝛿< ||𝑝𝑖−𝑝𝑐||2 −𝑟< 𝛿,
+where 𝑝𝑖= (𝑥𝑖, 𝑦𝑖, 𝑧𝑖) is the i-th point in the input point cloud, 𝑝𝑐= (𝑥𝑐, 𝑦𝑐, 𝑧𝑐) is the estimated apple center
+position. If the inlier ratio exceeds a certain threshold, the process terminates early; otherwise, it continues for 𝑛
+iterations. As with least-squares fitting, 𝑑𝑟= 2𝑟.
+𝑣
+𝑓
+𝑧
+𝑦
+U
+V
+𝑢
+𝑣
+𝑃
+Figure 7: The conversion example from 2D image to 3D coordinate. Consider a point 𝑃on the left image with pixel
+coordinate (𝑢, 𝑣) and according to the triangular geometry in the right image, 𝑣can be converted to 𝑦with the depth
+value 𝑧of point 𝑃from the depth channel and the camera’s focal length 𝑓. The transformation from 𝑢to 𝑥can be done
+analogously. Then (𝑥, 𝑦, 𝑧) is determined as the 3D position of the point 𝑃.
+3. Experiment Results
+This section presents three main experiments. First, we compare the performance of Grounding-DINO against
+other state-of-the-art fruit detection models. Second, we evaluate various size estimation algorithms on the entire
+dataset using ground-truth bounding boxes as input. Finally, we test how well these size estimation algorithms perform
+when the inputs come from our detection model, thereby analyzing whether detection accuracy influences the size
+estimation results.
+All detection models were trained on a server running Ubuntu 20.04, equipped with an AMD Ryzen Threadripper
+3990X 64-Core CPU, two Quadro RTX 8000 GPUs, and 256 GiB of RAM. The detection and size estimation tests were
+Zhu et al.: Preprint submitted to Elsevier
+Page 11 of 20
+
+Foundation Model-Based Selective Harvesting
+(a) 2D-BBox
+(b) 2D-LSeg
+(c) 2D-HT
+0.08
+0.10
+0.12
+0.14
+0.16
+0.18
+X
+0.22
+0.20
+0.18
+0.16
+0.14
+Y
+3.06
+3.08
+3.10
+3.12
+3.14
+3.16
+Z
+(d) 3D-LSeg.
+0.08
+0.10
+0.12
+0.14
+0.16
+0.18
+X
+0.22
+0.20
+0.18
+0.16
+0.14
+Y
+3.06
+3.08
+3.10
+3.12
+3.14
+3.16
+Z
+(e) 3D-LSq
+0.08
+0.10
+0.12
+0.14
+0.16
+0.18
+X
+0.22
+0.20
+0.18
+0.16
+0.14
+Y
+3.06
+3.08
+3.10
+3.12
+3.14
+3.16
+Z
+(f) 3D-RANSAC
+Figure 8: The schematics for size estimation algorithms. In (a)-(c) the size estimation is based on the features on the 2D
+images whereas (d)-(f) are based on the 3D point-cloud of each apple.
+conducted on an Alienware laptop running Ubuntu 22.04, featuring an Intel® CoreTM i9-13900HX CPU, an NVIDIA
+GeForce RTX 4090 GPU, and 64 GiB of RAM.
+3.1. Detection Model Evaluation
+We evaluated the performance of Grounding-DINO on our Fuji ripeness dataset and compared it against other
+leading detection models, including Faster-RCNN, YOLOv8, Deformable DETR, and DINO. To measure detection
+performance, we used mean average precision (mAP) and mean average recall (mAR). We also measured the frame
+rate (FPS) to assess runtime speed.
+All models were trained using approximately 75% of the dataset (the training subset) and then validated on the
+remaining 25% (the validation subset). Table 1 shows that Grounding-DINO with a Swin-B-Transformer backbone
+achieves the highest mAP and mAR, indicating superior ability to detect ripe and unripe apples. By incorporating
+text information during training, Grounding-DINO effectively learns both the similarities and differences between ripe
+and unripe apples, surpassing models that rely only on visual features. Note that Grounding-DINO with the Swin-B-
+Transformer backbone also achieves an FPS of about 68.3, making it suitable for real-time operations.
+Zhu et al.: Preprint submitted to Elsevier
+Page 12 of 20
+
+Foundation Model-Based Selective Harvesting
+Model
+mAP50
+mAP75
+mAP50:95
+mAR
+FPS
+Faster-RCNN (ResNet18)
+78.2
+68.8
+59.7
+74.1
+70.5
+Faster-RCNN (ResNet50)
+77.9
+68.9
+59.1
+74.4
+70.8
+Faster-RCNN (ResNet101)
+77.5
+71.7
+62.9
+76.7
+70.1
+YOLOv8s
+75.9
+68.7
+61.6
+82.6
+119.3
+YOLOv8m
+78.1
+72.3
+64.8
+85.1
+69.7
+YOLOv8l
+78.6
+72.9
+65.1
+85.0
+95.4
+VitDet
+82.3
+74.6
+64.7
+78.7
+69.8
+Deformable-DETR
+73.5
+65.2
+59.1
+79.0
+69.6
+DINO
+79.3
+72.4
+65.8
+87.7
+71.0
+Grounding-DINO (ResNet)
+72.3
+65.4
+59.2
+85.1
+68.1
+Grounding-DINO (Swin-B)
+85.9
+80.6
+72.8
+89.6
+68.3
+Table 1
+Evaluation on Detection Models, the Grounding-DINO with Swin-B as backbone achieves the highest mean average
+precision as well as mean average recall among all the models. As for the FPS, the Grounding DINO is running at a speed
+comparable to most of the other models.
+2D-BBox
+2D-LSeg.
+2D-HT
+3D-LSeg.
+3D-LSq.
+3D-RANS AC
+Algorithms
+−40
+−20
+0
+20
+40
+60
+Error (mm)
+Retention Percentile
+0—100
+5—95
+10—90
+20—80
+30—70
+40—60
+Figure 9: The size estimation results with ground-truth bounding boxes. For each box plot, the upper edge of the box
+represents 75% percentile of the data (denote as 𝑄3), while the lower edge represents 25% (𝑄1). The black line (𝑄2) in
+the middle of the box is the 50% percentile (median) of the data. The upper whisker 𝑄4 = 𝑄3 + 1.5(𝑄3 −𝑄1), while the
+lower whisker 𝑄0 = 𝑄1 −1.5(𝑄3 −𝑄1). Data points outside 𝑄0 and 𝑄4 are considered outliers, which are omitted in the
+plot. The 2D-based algorithms have less error than 3D, and they are also more robust to the change of outlier removal
+rates, indicating that they are more capable of tolerating the noise in depth measurement.
+3.2. Size Estimation with Ground-Truth Bounding Boxes
+We first evaluated each size estimation algorithm (from Section 2.3) on the entire dataset, using ground-truth
+bounding boxes as input. The results, shown in Fig. 9, are presented as box plots grouped by the size estimation
+algorithms. Within each group, we tested different outlier-removal percentiles, ranging from 0%–100% to 40%–60%
+Zhu et al.: Preprint submitted to Elsevier
+Page 13 of 20
+
+Foundation Model-Based Selective Harvesting
+retention rate. The y-axis in each plot shows the estimation error, defined as 𝑑𝑒𝑠𝑡−𝑑𝑔𝑡, where 𝑑𝑒𝑠𝑡is the estimated
+diameter of the apple, and 𝑑𝑔𝑡is the ground-truth diameter.
+Fig. 9 shows the box plots for each algorithms under different retention percentiles. From the figure, we see that
+2D-LSeg exhibits the smallest error, with a median value closest to zero. Its interquartile range is also relatively narrow,
+indicating consistent performance throughout the dataset. Additionally, 2D-LSeg is less sensitive to changes in outlier-
+removal percentiles, as it only depends on the average depth of apple pixels for size estimation. In contrast, the fitting-
+based algorithms (3D-LSq, 3D-RANSAC, and 2D-Hough) produce larger errors overall. A key factor is that apples
+are not perfectly spherical; occlusions and irregular shapes can lead to smaller sphere fits, reducing accuracy.
+We also observe that 3D-based algorithms tend to have larger errors and greater sensitivity to outlier-removal
+settings. Differences in how the retention percentile is chosen can significantly influence the distribution of errors.
+Besides the issues of occlusion and irregular fruit shapes, depth measurements can be noisier than RGB channels,
+which further affects the accuracy of 3D-based estimations.
+3.3. Size Estimation After Detection
+We next tested size estimation algorithms on apples detected by our trained model, to assess whether detection
+accuracy affects size estimation. Specifically, we ran the detection model on images in the test set and matched each
+detected bounding box to a ground-truth bounding box if their Intersection over Union (IOU) exceeded 70%. The
+diameter in the corresponding ground-truth bounding box then served as the ground-truth size.
+Figure 10 shows the results, which closely resemble those in Fig. 9. These similarities suggest that detection quality
+does not significantly alter the accuracy of size estimation, indicating robust performance by our proposed approach.
+4. Discussions
+Compared to fruit detection, determining fruit ripeness is more challenging and has received relatively little
+attention. Two main difficulties hinder progress: (1) collecting appropriate datasets is arduous, and (2) variations in
+ripeness appear much more subtle than the differences between different object classes.
+Traditional feature-engineering methods can classify fruit ripeness but often rely on specific parameter choices
+that reduce their ability to generalize. By contrast, deep-learning approaches learn directly from labeled data,
+eliminating the need for manual feature selection and often yielding better results. However, typical deep neural
+networks—especially those based on convolutional architectures—usually require large datasets to perform well.
+Through the integration of Transformers and language models, our approach offers stronger capability to handle minor
+visual differences between ripeness classes and to learn from datasets more efficiently. Nevertheless, several limitations
+remain, which we outline below. We also propose potential future solutions.
+Zhu et al.: Preprint submitted to Elsevier
+Page 14 of 20
+
+Foundation Model-Based Selective Harvesting
+2D-BBox
+2D-LSeg.
+2D-HT
+3D-LSeg.
+3D-LSq.
+3D-RANS AC
+Algorithms
+−40
+−20
+0
+20
+40
+60
+Error (mm)
+Retention Percentile
+0—100
+5—95
+10—90
+20—80
+30—70
+40—60
+Figure 10: The size estimation results with detected bounding boxes. The result is similar to the result on ground-truth
+bounding-boxes.
+4.1. Real-Time Inference
+Inference time for ripeness detection and size estimation is a critical concern in automated harvesting. During
+each picking cycle, a robot must identify the apple’s location, plan a trajectory, and execute the pick. Given limited
+computing resources and communication bandwidth, every stage of the process needs to be as fast as possible.
+Grounding-DINO demonstrates excellent frame rates on our workstation, but its performance on lower-cost or
+embedded hardware remains a concern. Additionally, the Segment-Anything Model used for size estimation also has
+considerable computational overhead.
+A promising solution is to apply model reduction techniques (Choudhary et al., 2020; Gou et al., 2021; Zhu et al.,
+2024), which can decrease the number of parameters without sacrificing much performance. Examples include pruning
+and knowledge distillation. By compressing the underlying networks, we can achieve faster estimation of fruit ripeness
+and size with lower memory and processing demands.
+4.2. Ripeness Labeling
+Labeling fruit ripeness presents many challenges, especially for apples in an “intermediate” stage. Expert
+knowledge is usually required to accurately classify these cases and develop a high-quality dataset. By contrast,
+identifying apples that are distinctly unripe or clearly ripe is relatively straightforward.
+A valuable strategy involves label-efficient learning (a form of semi-supervised learning). Consider a dataset where
+(1) fully unripe and fully ripe apples are labeled, and (2) only a few intermediate cases are annotated. A model trained
+Zhu et al.: Preprint submitted to Elsevier
+Page 15 of 20
+
+Foundation Model-Based Selective Harvesting
+via label-efficient methods can then infer labels for the remaining intermediate apples, refining its parameters in the
+process.
+Further improvements may come from integrating language models. If we carefully design label names, a language-
+infused, label-efficient approach could facilitate both high-accuracy ripeness detection and further annotation of
+partially labeled datasets.
+4.3. Sizing Under Canopy Occlusion
+Although our experiments show that the maximum distance measured in the 2D mask (2D-LSeg) yields the
+smallest error and variance, it can fail under heavy occlusion. Some studies propose generating an amodal mask that
+includes both visible and occluded regions (Gené-Mola et al., 2024), but the limited availability of high-quality amodal
+annotations for apples remains a barrier. Recent computer vision methods could potentially use existing amodal datasets
+(even if they are not apple-specific) to train a more general amodal segmentation model. With better estimations of
+occluded regions, the 2D-max-distance algorithm could become more robust.
+Another promising path is to develop an end-to-end framework for size estimation. Rather than splitting the pipeline
+into multiple stages (e.g., segmentation, mask generation, point cloud generation), a single network could directly learn
+the relationship between apple images and the corresponding size labels, much like how Faster-RCNN streamlined
+object detection into a single framework.
+5. Conclusions
+This paper focused on evaluating the “harvestability” of Fuji apples based on two key factors: ripeness and size,
+which is essential to determine when a fruit is ready to be picked. By selectively harvesting only those fruits that meet
+certain criteria, growers can maximize revenue. Specifically, for ripeness estimation, we re-labeled two existing Fuji
+apple datasets to include ripeness annotations. We then trained and tested Grounding-DINO, a cutting-edge object
+detector that leverages language inputs, to classify Fuji apples as ripe or unripe based on appearance. Our experiments
+showed that Grounding-DINO outperformed popular detection models by a clear margin. For size estimation, we
+leveraged ground-truth size measurements in our labeled Fuji datasets and compared six different algorithms. The 2D-
+max-distance method showed its robustness to the noise in the depth images, and delivers the smallest error, making
+it the most robust choice among the tested techniques. Both the re-labeled dataset and all relevant source code are
+publicly available for the research community. This contribution will spur further development of automated selective
+harvesting systems and encourage future research into more advanced ripeness assessment and size estimation methods.
+Despite these advancements, some limitations remain, pointing to potential areas for future research. First,
+developing an in-field dataset specifically for apple ripeness, with a more rigorous yet efficient annotation process,
+Zhu et al.: Preprint submitted to Elsevier
+Page 16 of 20
+
+Foundation Model-Based Selective Harvesting
+could enhance ripeness estimation. Second, designing a lightweight yet powerful detection/segmentation model would
+improve both onboard implementation and subsequent size estimation. Third, making the size estimation algorithm
+more robust to occlusion—common in harvesting scenarios—would increase its practical applicability.
+Acknowledgment
+This project was funded by the USDA-SCRI project "AIMS for Apple Harvest and In-Field Sorting" (Project No.
+2023-51181-41244) and the NSF project "NRI: INT: SMART: Soft Multi-Arm RoboT for Synergistic Collaboration
+with Humans" (Project No. NSF ECCS-2024649).
+References
+O. E. Apolo-Apolo, J. Martínez-Guanter, G. Egea, P. Raja, and M. Pérez-Ruiz. Deep learning techniques for estimation of the yield and size of
+citrus fruits using a uav. European Journal of Agronomy, 115:126030, 2020.
+W. Au, H. Zhou, T. Liu, E. Kok, X. Wang, M. Wang, and C. Chen. The monash apple retrieving system: a review on system intelligence and apple
+harvesting performance. Computers and Electronics in Agriculture, 213:108164, 2023.
+S. Bargoti and J. Underwood. Deep fruit detection in orchards. In 2017 IEEE international conference on robotics and automation (ICRA), pages
+3626–3633. IEEE, 2017.
+P. M. Blok, E. J. van Henten, F. K. van Evert, and G. Kootstra. Image-based size estimation of broccoli heads under varying degrees of occlusion.
+Biosystems Engineering, 208:213–233, 2021.
+G. Bortolotti, M. Piani, M. Gullino, C. Franceschini, D. Mengoli, L. Manfrini, et al. Openacces_rgbd_apple_dataset. 2024.
+N. Carion, F. Massa, G. Synnaeve, N. Usunier, A. Kirillov, and S. Zagoruyko. End-to-end object detection with transformers. In European conference
+on computer vision, pages 213–229. Springer, 2020.
+T. Choudhary, V. Mishra, A. Goswami, and J. Sarangapani. A comprehensive survey on model compression and acceleration. Artificial Intelligence
+Review, 53:5113–5155, 2020.
+P. Chu, Z. Li, K. Lammers, R. Lu, and X. Liu. Deep learning-based apple detection using a suppression mask R-CNN. Pattern Recognition Letters,
+147:206–211, 2021. doi: 10.1016/j.patrec.2021.04.022.
+P. Chu, Z. Li, K. Zhang, D. Chen, K. Lammers, and R. Lu. O2RNet: Occluder-occludee relational network for robust apple detection in clustered
+orchard environments. Smart Agricultural Technology, 5:100284, 2023. doi: 10.1016/j.atech.2023.100284.
+A. Dutta and A. Zisserman. The VIA annotation software for images, audio and video. In Proceedings of the 27th ACM International Conference
+on Multimedia, MM ’19, New York, NY, USA, 2019. ACM.
+ISBN 978-1-4503-6889-6/19/10.
+doi: 10.1145/3343031.3350535.
+URL
+https://doi.org/10.1145/3343031.3350535.
+M. Everingham, L. Van Gool, C. K. Williams, J. Winn, and A. Zisserman. The pascal visual object classes (voc) challenge. International journal
+of computer vision, 88:303–338, 2010.
+M. Ferrer-Ferrer, J. Ruiz-Hidalgo, E. Gregorio, V. Vilaplana, J.-R. Morros, and J. Gené-Mola. Simultaneous fruit detection and size estimation
+using multitask deep neural networks. Biosystems Engineering, 233:63–75, 2023.
+H. Freeman and G. Kantor. Autonomous apple fruitlet sizing with next best view planning. arXiv preprint arXiv:2309.13669, 2023.
+Zhu et al.: Preprint submitted to Elsevier
+Page 17 of 20
+
+Foundation Model-Based Selective Harvesting
+L. Fu, F. Gao, J. Wu, R. Li, M. Karkee, and Q. Zhang. Application of consumer RGB-D cameras for fruit detection and localization in field: A
+critical review. Computers and Electronics in Agriculture, 177:105687, 2020. doi: 10.1016/j.compag.2020.105687.
+J. Gené-Mola, R. Sanz-Cortiella, J. R. Rosell-Polo, A. Escola, and E. Gregorio. In-field apple size estimation using photogrammetry-derived 3d
+point clouds: Comparison of 4 different methods considering fruit occlusions. Computers and electronics in agriculture, 188:106343, 2021.
+J. Gené-Mola, M. Ferrer-Ferrer, E. Gregorio, P. M. Blok, J. Hemming, J.-R. Morros, J. R. Rosell-Polo, V. Vilaplana, and J. Ruiz-Hidalgo. Looking
+behind occlusions: A study on amodal segmentation for robust on-tree apple fruit size estimation. Computers and Electronics in Agriculture,
+209:107854, 2023.
+J. Gené-Mola, M. Ferrer-Ferrer, J. Hemming, P. van Dalfsen, D. de Hoog, R. Sanz-Cortiella, J. R. Rosell-Polo, J.-R. Morros, V. Vilaplana, J. Ruiz-
+Hidalgo, et al. Amodalapplesize_rgb-d dataset: Rgb-d images of apple trees annotated with modal and amodal segmentation masks for fruit
+detection, visibility and size estimation. Data in brief, 52:110000, 2024.
+R. Girshick. Fast r-cnn. In Proceedings of the IEEE international conference on computer vision, pages 1440–1448, 2015.
+N. Goel and P. Sehgal. Fuzzy classification of pre-harvest tomatoes for ripeness estimation–an approach based on automatic rule learning using
+decision tree. Applied Soft Computing, 36:45–56, 2015.
+J. Gou, B. Yu, S. J. Maybank, and D. Tao. Knowledge distillation: A survey. International Journal of Computer Vision, 129(6):1789–1819, 2021.
+K. C. Gunawan and Z. S. Lie. Apple ripeness level detection based on skin color features with convolutional neural network classification method.
+In 2021 7th International Conference on Electrical, Electronics and Information Engineering (ICEEIE), pages 1–6. IEEE, 2021.
+M. Halstead, C. McCool, S. Denman, T. Perez, and C. Fookes. Fruit quantity and ripeness estimation using a robotic vision system. IEEE robotics
+and automation LETTERS, 3(4):2995–3002, 2018.
+R. Hamza and M. Chtourou. Design of fuzzy inference system for apple ripeness estimation using gradient method. IET Image Processing, 14(3):
+561–569, 2020.
+R. Hamza and M. Chtourou. Comparative study on deep learning methods for apple ripeness estimation on tree. In International Conference on
+Intelligent Systems Design and Applications, pages 1325–1340. Springer, 2021.
+K. He, G. Gkioxari, P. Dollár, and R. Girshick. Mask r-cnn. In Proceedings of the IEEE international conference on computer vision, pages
+2961–2969, 2017.
+W. Jia, Y. Zhang, J. Lian, Y. Zheng, D. Zhao, and C. Li. Apple harvesting robot under information technology: A review. International Journal of
+Advanced Robotic Systems, 17(3):1729881420925310, 2020.
+S. Kazemzadeh, V. Ordonez, M. Matten, and T. Berg. Referitgame: Referring to objects in photographs of natural scenes. In Proceedings of the
+2014 conference on empirical methods in natural language processing (EMNLP), pages 787–798, 2014.
+A. Kirillov, E. Mintun, N. Ravi, H. Mao, C. Rolland, L. Gustafson, T. Xiao, S. Whitehead, A. C. Berg, W.-Y. Lo, P. Dollár, and R. Girshick. Segment
+anything. arXiv:2304.02643, 2023.
+A. Kuznetsova, H. Rom, N. Alldrin, J. Uijlings, I. Krasin, J. Pont-Tuset, S. Kamali, S. Popov, M. Malloci, A. Kolesnikov, et al. The open images
+dataset v4: Unified image classification, object detection, and visual relationship detection at scale. International journal of computer vision,
+128(7):1956–1981, 2020.
+C. Li, H. Liu, L. Li, P. Zhang, J. Aneja, J. Yang, P. Jin, H. Hu, Z. Liu, Y. J. Lee, et al. Elevater: A benchmark and toolkit for evaluating language-
+augmented visual models. Advances in Neural Information Processing Systems, 35:9287–9301, 2022a.
+L. H. Li, P. Zhang, H. Zhang, J. Yang, C. Li, Y. Zhong, L. Wang, L. Yuan, L. Zhang, J.-N. Hwang, et al. Grounded language-image pre-training. In
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pages 10965–10975, 2022b.
+Zhu et al.: Preprint submitted to Elsevier
+Page 18 of 20
+
+Foundation Model-Based Selective Harvesting
+T. Li, F. Xie, Z. Zhao, H. Zhao, X. Guo, and Q. Feng. A multi-arm robot system for efficient apple harvesting: Perception, task plan and control.
+Computers and Electronics in Agriculture, 211:107979, 2023.
+T.-Y. Lin, M. Maire, S. Belongie, J. Hays, P. Perona, D. Ramanan, P. Dollár, and C. L. Zitnick. Microsoft coco: Common objects in context. In
+Computer Vision–ECCV 2014: 13th European Conference, Zurich, Switzerland, September 6-12, 2014, Proceedings, Part V 13, pages 740–755.
+Springer, 2014.
+T.-Y. Lin, P. Goyal, R. Girshick, K. He, and P. Dollár. Focal loss for dense object detection. In Proceedings of the IEEE international conference
+on computer vision, pages 2980–2988, 2017.
+S. Liu, Z. Zeng, T. Ren, F. Li, H. Zhang, J. Yang, C. Li, J. Yang, H. Su, J. Zhu, et al. Grounding dino: Marrying dino with grounded pre-training for
+open-set object detection. arXiv preprint arXiv:2303.05499, 2023.
+W. Liu, D. Anguelov, D. Erhan, C. Szegedy, S. Reed, C.-Y. Fu, and A. C. Berg. Ssd: Single shot multibox detector. In Computer Vision–ECCV
+2016: 14th European Conference, Amsterdam, The Netherlands, October 11–14, 2016, Proceedings, Part I 14, pages 21–37. Springer, 2016.
+R. Lu, N. Dickinson, K. Lammers, K. Zhang, P. Chu, and Z. Li. Design and evaluation of end effectors for a vacuum-based robotic apple harvester.
+Journal of the ASABE, 65(5):963–974, 2022a. doi: 10.13031/ja.14970.
+S. Lu, W. Chen, X. Zhang, and M. Karkee. Canopy-attention-yolov4-based immature/mature apple fruit detection on dense-foliage tree architectures
+for early crop load estimation. Computers and Electronics in Agriculture, 193:106696, 2022b.
+J. C. Miranda, J. Arnó, J. Gené-Mola, J. Lordan, L. Asín, and E. Gregorio. Assessing automatic data processing algorithms for rgb-d cameras to
+predict fruit size and weight in apples. Computers and Electronics in Agriculture, 214:108302, 2023.
+O. Mirbod, D. Choi, P. H. Heinemann, R. P. Marini, and L. He. On-tree apple fruit size estimation using stereo vision with deep learning-based
+occlusion handling. Biosystems Engineering, 226:27–42, 2023.
+D. N. Nenavath and B. Perumal. Artificial marker to predict (banganapalle) mango fruit size at multi-targets of an image using semantic segmentation.
+IEEE Access, 2024.
+C. Neupane, A. Koirala, and K. B. Walsh. In-orchard sizing of mango fruit: 1. comparison of machine vision based methods for on-the-go estimation.
+Horticulturae, 8(12):1223, 2022.
+X. Ni, C. Li, H. Jiang, and F. Takeda. Deep learning image segmentation and extraction of blueberry fruit traits associated with harvestability and
+yield. Horticulture research, 7, 2020.
+J. Pardede, M. G. Husada, A. N. Hermana, and S. A. Rumapea. Fruit ripeness based on rgb, hsv, hsl, l* a* b* color feature using svm. In 2019
+International Conference of Computer Science and Information Technology (ICoSNIKOM), pages 1–5. IEEE, 2019.
+S. Ren, K. He, R. Girshick, and J. Sun. Faster r-cnn: Towards real-time object detection with region proposal networks. Advances in neural
+information processing systems, 28, 2015.
+S. Sabzi, Y. Abbaspour-Gilandeh, G. García-Mateos, A. Ruiz-Canales, J. M. Molina-Martínez, and J. I. Arribas. An automatic non-destructive
+method for the classification of the ripeness stage of red delicious apples in orchards using aerial video. Agronomy, 9(2):84, 2019.
+S. Sabzi, M. Nadimi, Y. Abbaspour-Gilandeh, and J. Paliwal. Non-destructive estimation of physicochemical properties and detection of ripeness
+level of apples using machine vision. International Journal of Fruit Science, 22(1):628–645, 2022.
+R. Sapkota, D. Ahmed, M. Churuvija, and M. Karkee. Immature green apple detection and sizing in commercial orchards using yolov8 and shape
+fitting techniques. IEEE Access, 12:43436–43452, 2024.
+N. Saranya, K. Srinivasan, and S. P. Kumar. Banana ripeness stage identification: a deep learning approach. Journal of Ambient Intelligence and
+Humanized Computing, 13(8):4033–4039, 2022.
+Zhu et al.: Preprint submitted to Elsevier
+Page 19 of 20
+
+Foundation Model-Based Selective Harvesting
+S. Shao, Z. Li, T. Zhang, C. Peng, G. Yu, X. Zhang, J. Li, and J. Sun. Objects365: A large-scale, high-quality dataset for object detection. In
+Proceedings of the IEEE/CVF international conference on computer vision, pages 8430–8439, 2019.
+N. Tsoulias, K. K. Saha, and M. Zude-Sasse. In-situ fruit analysis by means of lidar 3d point cloud of normalized difference vegetation index (ndvi).
+Computers and Electronics in Agriculture, 205:107611, 2023.
+A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin. Attention is all you need. Advances in neural
+information processing systems, 30, 2017.
+C.-Y. Wang, I.-H. Yeh, and H.-Y. M. Liao. Yolov9: Learning what you want to learn using programmable gradient information. arXiv preprint
+arXiv:2402.13616, 2024.
+B. Xiao, M. Nguyen, and W. Q. Yan. Apple ripeness identification using deep learning. In Geometry and Vision: First International Symposium,
+ISGV 2021, Auckland, New Zealand, January 28-29, 2021, Revised Selected Papers 1, pages 53–67. Springer, 2021.
+B. Xiao, M. Nguyen, and W. Q. Yan. Apple ripeness identification from digital images using transformers. Multimedia Tools and Applications, 83
+(3):7811–7825, 2024.
+X. Yu, Z. Fan, X. Wang, H. Wan, P. Wang, X. Zeng, and F. Jia. A lab-customized autonomous humanoid apple harvesting robot. Computers &
+Electrical Engineering, 96:107459, 2021.
+H. Zhang, F. Li, S. Liu, L. Zhang, H. Su, J. Zhu, L. M. Ni, and H.-Y. Shum. Dino: Detr with improved denoising anchor boxes for end-to-end object
+detection. arXiv preprint arXiv:2203.03605, 2022a.
+K. Zhang, K. Lammers, P. Chu, Z. Li, and R. Lu. System design and control of an apple harvesting robot. Mechatronics, 79:102644, 2021. doi:
+10.1016/j.mechatronics.2021.102644.
+K. Zhang, K. Lammers, P. Chu, N. Dickinson, Z. Li, and R. Lu. Algorithm design and integration for a robotic apple harvesting system. In IEEE/RSJ
+International Conference on Intelligent Robots and Systems, pages 9217–9224, 2022b. doi: 10.1109/IROS47612.2022.9981417.
+K. Zhang, P. Chu, K. Lammers, Z. Li, and R. Lu. Active laser-camera scanning for high-precision fruit localization in robotic harvesting: System
+design and calibration. Computers and Electronics in Agriculture, under review, 2023a.
+L. Zhang, Q. Hao, and J. Cao. Attention-based fine-grained lightweight architecture for fuji apple maturity classification in an open-world orchard
+environment. Agriculture, 13(2):228, 2023b.
+X. Zhu, W. Su, L. Lu, B. Li, X. Wang, and J. Dai. Deformable detr: Deformable transformers for end-to-end object detection. arXiv preprint
+arXiv:2010.04159, 2020.
+X. Zhu, J. Li, Y. Liu, C. Ma, and W. Wang. A survey on model compression for large language models. Transactions of the Association for
+Computational Linguistics, 12:1556–1577, 2024.
+Zhu et al.: Preprint submitted to Elsevier
+Page 20 of 20

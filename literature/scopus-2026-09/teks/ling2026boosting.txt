@@ -1,0 +1,1697 @@
+Academic Editor: Vittorio Rossi
+Received: 15 April 2026
+Revised: 5 June 2026
+Accepted: 5 June 2026
+Published: 15 June 2026
+Copyright: © 2026 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license.
+Article
+Boosting RGB-D Pear Detection via Depth-Constraint Enhanced
+Gaussian Prior
+Feng Ling 1,2
+, Yunfeng Lin 1,2, Weijie Mao 3,*, Weizhong Xu 1,4 and Wenzheng Xiao 1
+1
+College of Engineering, Lishui University, Lishui 323000, China; lsxylf@lsu.edu.cn (F.L.);
+lslyf@lsu.edu.cn (Y.L.); wzxls@lsu.edu.cn (W.X.); wenzhengxiao@lsu.edu.cn (W.X.)
+2
+Zhejiang Key Laboratory of Aviation Metal Pipe Bending Technology and Equipment, Lishui 323000, China
+3
+State Key Laboratory of Industrial Control Technology, Zhejiang University, Hangzhou 310027, China
+4
+Lishui Academy of Agricultural Sciences, Lishui 323000, China
+*
+Correspondence: wjmao@zju.edu.cn
+Abstract
+Accurate pear detection in complex orchard environments is essential for automated har-
+vesting, yet it remains challenging due to frequent occlusion, overlapping fruits, cluttered
+backgrounds, and highly variable illumination. Although RGB-D sensing provides comple-
+mentary geometric information beyond RGB imagery, existing methods often fail to fully
+exploit depth cues and rarely account for the inherently elliptical shape of pears. To address
+these issues, we propose a multimodal pear detection framework that jointly models RGB
+and depth information using a Siamese convolutional backbone and a unified Transformer-
+based fusion architecture. The proposed method contains three key components. First,
+Gaussian Prior Boxes are introduced to represent pear instances with Gaussian-shaped
+priors, enabling better alignment with pear contours and more precise localization than
+conventional rectangular boxes. Second, a Depth-Aware Constraint is designed to enforce
+depth consistency within the predicted regions, which improves robustness in cluttered
+orchard scenes. Third, a Robust Cross-Modal Token Exchange strategy is incorporated
+during training to strengthen feature interaction between RGB and depth modalities and
+reduce over-reliance on any single modality. Extensive experiments on pear detection
+demonstrate that the proposed method achieves an AP50 of 0.961, a precision of 0.941, a
+recall of 0.951, and an F1-score of 0.942. Compared with a strong recent YOLOv8-l RGB
+baseline (AP50 = 0.918) and a YOLOv8-l RGB-D variant (AP50 = 0.932) trained on the same
+dataset, our framework yields a notable improvement of +4.3 and +2.9 AP50, respectively.
+We further validate generalization on the publicly available KFuji RGB-DS apple dataset,
+where MMGFormer attains AP50 = 0.927, exceeding the previously reported state-of-the-art
+(AP50 = 0.901). In addition, the model runs at 41.2 FPS, indicating a favorable balance
+between detection accuracy and real-time performance. These results show the potential of
+the proposed framework for practical deployment in automated pear harvesting systems.
+Keywords: RGB-D detection; pear detection; Gaussian prior box; depth-aware constraint;
+cross-modal fusion; multimodal Transformer
+1. Introduction
+Pear (Pyrus spp.) is among the most economically important temperate fruit crops,
+with global production exceeding 26 million tonnes annually [1,3,4]. Despite this scale,
+harvesting remains a major bottleneck: it is labor-intensive, and the smooth, often green-
+yellow skin of pears, together with dense canopy structures, complicates automation.
+Plants 2026, 15, 1852
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+2 of 25
+Although smooth, green-skinned fruit characteristics are not unique to pears (similar
+challenges arise for green apples, kiwifruit, and certain mangoes), the morphological
+diversity within Pyrus (pyriform to round, 170–400 g) and the dense spur-cluster fruiting
+habit make pears a particularly challenging case for vision-based detection [5,6]. Manual
+harvesting is increasingly unsustainable due to rising labor costs [7], motivating intelligent
+automation [8] as a means to improve productivity, reduce labor dependency, and minimize
+fruit damage.
+Machine vision [9] forms the backbone of automated harvesting. Recent deep-learning
+advances have substantially improved fruit detection across crops [10,11]. While early
+methods relied on RGB imagery alone, recent works show that RGB-D sensing yields
+meaningful gains for orchard fruit detection. For example, Sun et al. [12] and Kaukab et al.
+[13] report 3–6% AP improvements for green-apple detection by fusing RGB with depth,
+and Yang et al. [14] report similar gains for peaches in occluded scenes; Yoshida et al. [15]
+further demonstrate more reliable harvesting-robot localization with RGB-D over RGB-only
+baselines. Depth cues are especially valuable for pears, where layered canopy structures
+place fruit at multiple depth planes [16], and where depth helps separate adjacent fruits in
+spur clusters, supporting collision-free path planning.
+Deep learning has substantially advanced fruit detection and agricultural automation.
+Foundation models such as Grounding-DINO [17], which achieves 85.9% mAP50 at 68.3 FPS
+with a Swin-B backbone, and the Segment-Anything Model [18], which provides zero-shot
+generalization under complex illumination and occlusion conditions, have been effectively
+adapted to agricultural scenarios. Novel 3D approaches, such as FruitNeRF [19], further
+address occlusion and fruit-clustering via NeRF-based semantic reconstruction. Mean-
+while, YOLO-family detectors have been extensively optimized for on-device deployment:
+YOLOv8 achieves instance segmentation of strawberry development stages at 12.0 GFLOPs
+(∼24.2 ms per image) [20], and YOLOv5m with mosaic augmentation enables precise apple
+detection in dense orchards [21]; automated architecture search further compresses models
+for edge hardware [22,23]. Integrating multimodal data—in particular, combining RGB
+with depth—has proven beneficial for robust fruit detection and 3D reconstruction in com-
+plex orchard environments [24,25], and the establishment of public benchmark datasets is
+driving systematic progress across diverse agricultural detection tasks [26].
+More broadly, multimodal object detection has evolved from shallow fusion (pixel-
+/voxel-level concatenation) through intermediate backbone-level fusion to deep fusion with
+explicit geometric–semantic alignment [27,28]. In autonomous driving, recent methods
+project RGB features into pseudo-point clouds for unified 3D cross-attention fusion [29],
+perform multi-stage latent-space alignment of image and LiDAR features [30], and combine
+uncertainty-aware pseudo-labels with geometry-aware BEV fusion under semi-supervised
+settings [31]; complementary approaches build robust 3D queries from 2D detections plus
+depth distributions [32]. Under adverse visibility, frequency-domain decomposition [33]
+and information-entropy-based dynamic fusion weighting [34] improve cross-modal robust-
+ness, while attention-contrastive alignment alleviates deep semantic drift [35]. Lightweight
+architectures are also emerging: cross-Mamba interaction with offset-guided aggrega-
+tion achieves 80 FPS real-time performance [36], and channel-redundancy removal yields
++3.6 mAP with only 13% extra computation [37]. Most recently, LLM-guided progres-
+sive alignment [38] and confidence-based pseudo-labeling for annotation-scarce aerial
+imagery [39] point toward even more holistic multimodal integration.
+Despite these advances, existing RGB-D detection frameworks still face several lim-
+itations, especially in dealing with the shape variability of irregular fruits such as pears,
+and in avoiding over-reliance on a single modality under adverse conditions like strong
+illumination changes or partial occlusions. Traditional rectangular bounding boxes often
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+3 of 25
+fail to capture the naturally curved and elliptical contours of pears, a geometric prop-
+erty that is well documented across pear cultivars, where the length-to-width ratio varies
+from approximately 1.0 (round cultivars such as Hosui) to 1.5 (pyriform cultivars such as
+Bosc) [5]. This mismatch leads to inaccurate localization and increased background noise.
+To mitigate this, recent works have explored more shape-aware models [40], including
+keypoint-based [41] and region-based strategies [42]. However, these methods still lack a
+unified framework that explicitly aligns with the elliptical properties of pears while fully
+leveraging RGB-D data.
+To address these issues, we propose a Multimodal Gaussian Former (MMG) frame-
+work tailored for RGB-D-based pear detection. Our method incorporates several innova-
+tions: (i) a Siamese CNN backbone enhanced with Pear-Oriented Multimodal Pinwheel
+Convolution (PMPConv) to exploit the elliptical priors of pear shapes—whose contour
+eccentricity naturally aligns with two-dimensional Gaussian distributions—while adap-
+tively fusing cross-modal features; (ii) a Gaussian Prior Box formulation that models pears
+using two-dimensional Gaussian distributions to better align with their cultivar-specific
+elliptical geometry; (iii) a Depth-Aware Constraint Loss that enforces consistency of depth
+information within each predicted bounding box, ensuring accurate localization even in
+the presence of occlusion and clutter, which is particularly relevant for distinguishing pear
+surfaces from leaves and branches at similar depth planes; and (iv) a Robust Cross-Modal
+Token Exchange mechanism in the Transformer encoder, which randomly swaps a portion
+of tokens between RGB and depth modalities to strengthen inter-modal fusion and prevent
+overfitting to a single modality. Together, these components form a unified framework that
+robustly addresses the challenges of shape variability, occlusion, and multimodal fusion
+for precise and efficient pear detection in real-world orchard environments.
+Our specific contributions are summarized as follows:
+1.
+Construction of an RGB-D multimodal pear detection dataset, which includes diverse
+lighting conditions, occlusions, and overlapping pears, serving as a challenging
+benchmark for detection tasks.
+2.
+Gaussian Prior Boxes that flexibly adapt to pear shapes via elliptical Gaussian model-
+ing, improving detection accuracy while reducing background interference.
+3.
+Depth-Aware Constraint Loss, which prioritizes depth-consistent regions within
+predicted bounding boxes, promoting better localization robustness under complex
+orchard conditions.
+4.
+Robust Cross-Modal Token Exchange in the Transformer encoder, which enhances
+feature fusion and strengthens resilience against occlusion, lighting variation, and
+modality imbalance.
+2. Experiment
+This section describes the experimental implementation and evaluation metrics, and
+analyzes the research results.
+2.1. Experimental Settings and Implementation Details
+All experiments were run on a workstation with Ubuntu 22.04, 4 NVIDIA RTX 4090
+GPUs (24 GB each), an Intel Xeon Gold 6248R CPU, 256 GB of RAM, and CUDA 12.1,
+using PyTorch 1.12.1. To match the deployment-oriented evaluation in Section 2.4, FPS
+measurements are additionally reported on a single Tesla P100 GPU, which is closer to the
+compute available on a typical orchard-side server.
+For all convolutional neural network experiments, the batch size is set to 32, and the
+optimizer used is Adam with a learning rate of 1 × 10−3. The optimizer settings include
+a weight decay of 5 × 10−4 and momentum of 0.9. Models are trained for 100 epochs,
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+4 of 25
+with learning rate schedules as follows: an initial learning rate of 1 × 10−3, decaying to
+1 × 10−4 at the 10-th iteration, and further to 1 × 10−5 at the 40-th iteration. The parameters
+are randomly initialized using the “Xavier” method. During training, data augmentation
+techniques such as color distortion, random cropping, scale transformation, and flipping
+are applied.
+For the single-modal feature extractor, the input image is resized from 1280 × 720 to
+1024 × 1024 after data augmentation. The weight ratio of localization loss to confidence
+loss is set to 2:1.
+In the inference process for a single image, the image is resized while maintaining
+the original aspect ratio, with its width set to 1024. The resized image is then fed into the
+proposed MMGFormer to generate candidate bounding boxes. Finally, non-maximum
+suppression (NMS) is applied to remove duplicate detection boxes where the intersection-
+over-union (IoU) is greater than 0.3 or the confidence score is lower than 0.05.
+2.2. Evaluation Metrics
+We evaluate detection performance using standard metrics. Average precision at IoU
+threshold 0.5 (AP50) summarizes the precision–recall trade-off by computing the area under
+the precision–recall curve. Precision measures the proportion of correct detections among
+all predictions, while recall measures the proportion of detected objects among all ground
+truth instances. The F1-Score is the harmonic mean of precision and recall, providing a
+balanced assessment of detection quality. The confidence threshold is set to 0.2 and the IoU
+threshold to 0.5. Model inference speed is reported as frames per second (FPS), measured
+on a Tesla P100 GPU with 1280 × 720 input resolution.
+2.3. Comparison of State-of-the-Art Methods
+The performance of the proposed MMGFormer model for pear detection was com-
+prehensively evaluated through a comparative analysis with several classical and state-of-
+the-art object detection methods, using the same RGB-D dataset and testing environment.
+As shown in Table 1, MMGFormer demonstrates significant advantages in both detection
+accuracy and speed.
+Table 1. Comparison results for the different feature-layer fusion methods. The speed is computed
+using a Tesla P100 GPU for 1280 × 720 inputs.
+#
+Method
+AP50
+Precision
+Recall
+F1-Score
+FPS
+(a)
+RD3D+ [43]
+0.874
+0.708
+0.879
+0.785
+30.5
+(b)
+CATNet [44]
+0.851
+0.692
+0.859
+0.738
+26.2
+(c)
+GroupTransNet [45]
+0.941
+0.899
+0.921
+0.912
+41.6
+(d)
+TANet [46]
+0.923
+0.901
+0.912
+0.908
+42.5
+(e)
+TPCL [47]
+0.931
+0.897
+0.912
+0.903
+41.6
+(f)
+SwinNet [48]
+0.931
+0.895
+0.911
+0.903
+42.3
+(g)
+MMGFormer (ours)
+0.961
+0.941
+0.951
+0.942
+41.2
+MMGFormer (ours) outperforms the other methods across most metrics, achieving the
+highest AP50 of 0.961, followed by GroupTransNet (0.941) and TANet (0.923). It also leads
+in precision (0.941) and recall (0.951), resulting in the highest F1-Score of 0.942. On the
+other hand, RD3D+ demonstrates the lowest values in all metrics. In terms of processing
+speed, TANet leads with the highest FPS of 42.5, while CATNet has the lowest FPS at 26.2.
+Overall, MMGFormer offers the best performance in terms of accuracy, though it is slightly
+less efficient than TANet in terms of speed.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+5 of 25
+2.4. Benchmark on a Public RGB-D Fruit Dataset
+To address the concern that the proposed method should also be evaluated “in the
+wild” on a publicly available benchmark, we additionally evaluated MMGFormer on
+the publicly released KFuji RGB-DS apple detection dataset, which provides RGB, depth,
+and infrared range channels for “Fuji” apples in commercial orchards under uncontrolled
+illumination. Apples on Fuji trees share two key visual properties with pears—a smooth
+cuticular surface and frequent leaf/branch occlusion at multiple depth planes—making
+this dataset a natural cross-fruit testbed. We trained MMGFormer using only the RGB and
+depth channels (the infrared channel was discarded) under the same training schedule as
+our pear experiments, and compared against the previously reported state-of-the-art on this
+dataset (Faster R-CNN with multi-modal early fusion as reported by the dataset authors),
+as well as a strong recent YOLOv8-l baseline that we trained ourselves on RGB-only and
+on stacked RGB-D inputs.
+As reported in Table 2, MMGFormer surpasses all baselines on the public KFuji RGB-
+DS dataset, improving over the published Faster R-CNN baseline by +2.6 AP50 and over
+a strong YOLOv8-l RGB-D baseline trained under matched conditions by +1.9 AP50. We
+further trained the same YOLOv8-l RGB and RGB-D baselines on our pear dataset for
+direct comparison: YOLOv8-l (RGB) reaches AP50 = 0.918, and YOLOv8-l (RGB + D)
+reaches AP50 = 0.932, both clearly below MMGFormer’s 0.961. These cross-dataset results
+indicate that the gains of MMGFormer come from its design (Gaussian prior, Depth-Aware
+Constraint, Cross-Modal Token Exchange) rather than from dataset-specific tuning, and
+that the framework generalizes well from pears to a different smooth-skinned fruit.
+Table 2. Generalization to a public RGB-D fruit dataset. Results on the KFuji RGB-DS apple dataset
+using only the RGB and depth channels. YOLOv8-l (RGB) and YOLOv8-l (RGB-D) are trained from
+scratch with the same schedule for fair comparison; the Faster R-CNN multi-modal number is taken
+from the dataset’s published baseline.
+Method
+Modality
+AP50
+Precision
+F1
+Faster R-CNN (original baseline)
+RGB + D
+0.901
+0.880
+0.875
+YOLOv8-l (ours)
+RGB
+0.892
+0.871
+0.868
+YOLOv8-l (ours)
+RGB + D
+0.908
+0.886
+0.881
+MMGFormer (ours)
+RGB + D
+0.927
+0.901
+0.898
+Bold values indicate the best results.
+2.5. Ablation Studies
+In our ablation studies, we investigated the impact of three key components of our
+pear detection model: Gaussian Prior Boxes, Depth-Aware Constraint Loss, and Robust
+Cross-Modal Token Exchange.
+2.5.1. Impact of Gaussian Prior Boxes
+The ablation study on the impact of Gaussian Prior Boxes is presented in Table 3.
+We conducted a sensitivity analysis for the covariance scale factor s of the Gaussian prior
+(which multiplies the predicted (σx, σy) when forming the prior box). The results indicate
+that the model achieves the best performance at s = 1.0, with an AP50 of 0.966, a precision
+of 0.914, a recall of 0.899, and an F1-Score of 0.906; very small (s = 0.5) or large (s = 4.0)
+scales degrade matching quality and reduce all metrics.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+6 of 25
+Table 3. Sensitivity analysis for the Gaussian-prior covariance scale s. The scale factor s multiplies
+the predicted standard deviations (σx, σy) when constructing the Gaussian prior box. The “Rectangle”
+column corresponds to a standard rectangular prior baseline.
+Rectangle
+s = 0.5
+s = 1.0
+s = 2.0
+s = 4.0
+AP50
+0.940
+0.950
+0.966
+0.960
+0.910
+Precision
+0.895
+0.905
+0.914
+0.910
+0.880
+Recall
+0.880
+0.890
+0.899
+0.894
+0.860
+F1-Score
+0.887
+0.897
+0.906
+0.901
+0.870
+2.5.2. Effectiveness of Depth-Aware Constraint Loss
+The effectiveness of the Depth-Aware Constraint Loss is demonstrated in the ablation
+table. The results show that the model with the Depth-Aware Constraint Loss (DC) achieves
+an AP50 of 0.945, a precision of 0.921, a recall of 0.884, and an F1-Score of 0.934. This
+indicates that the Depth-Aware Constraint Loss significantly improves the localization
+accuracy by maintaining consistent depth information within the predicted bounding
+boxes.
+2.5.3. Robust Cross-Modal Token Exchange Analysis
+The impact of the Robust Cross-Modal Token Exchange mechanism is also presented
+in the ablation results. The model with the Cross-Modal Token Exchange (CM) achieves
+an AP50 of 0.966, precision of 0.914, recall of 0.899, and F1-Score of 0.945. The Random
+Cross-Modal Token Exchange mechanism prevents over-reliance on a single modality by
+randomly swapping tokens between RGB and depth modalities during training.
+2.5.4. Effect of Depth-Aware Constraint Formulation
+To further verify that the gain brought by the Depth-Aware Constraint (DC) does not
+simply come from adding an additional loss term, we conduct a detailed ablation on its
+formulation. We compare three design choices: removing the Depth-Aware Constraint
+entirely, introducing a simpler rectangular depth regularization, and adopting the Gaussian-
+based formulation with different settings. As shown in Table 4, directly introducing a simple
+rectangular depth regularization already improves detection accuracy over the baseline.
+Replacing the rectangular region with a Gaussian-aligned mask yields further gains, and the
+soft Gaussian mask consistently outperforms the hard-mask version. The best performance
+is achieved at k = 3.
+Table 4. Effect of Depth-Aware Constraint (DC) settings. The constraint type and region scale are
+varied while keeping the other modules unchanged.
+(a)
+(b)
+(c)
+(d)
+(e)
+DC
+✓
+✓
+✓
+✓
+Constraint type
+None
+Rectangular
+Gaussian
+Gaussian
+Gaussian
+Region scale k
+–
+–
+2
+3
+4
+AP50
+0.937
+0.941
+0.943
+0.945
+0.944
+Precision
+0.899
+0.906
+0.914
+0.921
+0.917
+Recall
+0.914
+0.910
+0.911
+0.913
+0.912
+F1-Score
+0.906
+0.908
+0.912
+0.917
+0.914
+2.5.5. Component Analysis of PMPConv
+To further verify the effectiveness of PMPConv, an ablation study on its internal
+components is conducted. Asymmetric kernels, cross-modal gating and elliptical mask
+prior are added step by step. The results are shown in Table 5.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+7 of 25
+Table 5. Component analysis of PMPConv. Asymmetric kernels, cross-modal gating, and the
+elliptical mask prior are gradually added to verify the effectiveness of each component in PMPConv.
+(a)
+(b)
+(c)
+(d)
+Asymmetric kernels
+✓
+✓
+✓
+Cross-modal gating
+✓
+✓
+Elliptical mask prior
+✓
+AP50
+0.895
+0.907
+0.916
+0.923
+Precision
+0.888
+0.894
+0.899
+0.902
+Recall
+0.892
+0.901
+0.905
+0.907
+F1-Score
+0.890
+0.897
+0.902
+0.904
+As shown in Table 5, replacing the standard convolution with asymmetric kernels can
+improve the detection performance. After adding cross-modal gating, the performance
+is further improved. When an elliptical mask prior is added, the model achieves the best
+result.
+2.5.6. Effect of Depth-Aware Constraint Settings
+To further verify the effectiveness of DC, an ablation study on different depth con-
+straint settings is conducted. The results are shown in Table 4.
+As shown in Table 4, adding DC can improve the detection performance. Compared
+with the simple rectangular depth constraint, the Gaussian-based depth constraint achieves
+better results. The best result is obtained when the scale is 3.
+2.5.7. Effect of Cross-Modal Token Exchange Ratio
+To further verify the effectiveness of CM, we conduct an ablation study on the exchange
+ratio. The results are shown in Table 6.
+Table 6. Effect of exchange ratio in Robust Cross-Modal Token Exchange (CM). We vary the
+exchange ratio while keeping the other modules unchanged.
+(a)
+(b)
+(c)
+(d)
+(e)
+(f)
+CM
+✓
+✓
+✓
+✓
+✓
+Exchange ratio r
+0
+0.05
+0.10
+0.20
+0.30
+0.50
+AP50
+0.945
+0.954
+0.961
+0.966
+0.960
+0.951
+Precision
+0.921
+0.923
+0.925
+0.927
+0.920
+0.912
+Recall
+0.884
+0.892
+0.901
+0.909
+0.902
+0.893
+F1-Score
+0.902
+0.907
+0.913
+0.918
+0.911
+0.902
+As shown in Table 6, adding CM can improve the detection performance. The best
+result is obtained when the exchange ratio is 0.2. When the ratio is too large, too many
+tokens are exchanged, which affects the original modality-specific feature representation
+and leads to a drop in performance.
+2.6. Visualization
+To investigate the feasibility of our method in practical detection tasks, we visualized
+the detection results of the model, as shown in Figure 1.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+8 of 25
+(a)
+(b)
+(c)
+(1)
+(2)
+(3)
+0.96
+0.97
+0.93
+0.95
+0.98
+0.99
+0.96
+0.94
+0.98
+0.95
+0.93
+0.93
+Figure 1. Visualization of Object Detection Results: (a) The row shows the original images, (b) the
+row displays the corresponding rectangular boxes converted from the Gaussian prior boxes with
+confidence scores, and (c) the row presents the detection results in the depth map.
+Figure 1 presents the visualization of object detection results applied to pear fruit
+images. Row (a) shows the original images as input for the object detection model. Row
+(b) illustrates the corresponding rectangular boxes with confidence scores. Row (c) de-
+picts the detection results in the depth map, which provides an additional layer of infor-
+mation by showing the pears’ locations in a 3D space. Although Figure 1 mainly con-
+tains spherical/oblate pears (P. pyrifolia-type), the framework also handles pyriform (truly
+“pear-shaped”) fruit: on the field test set, the elongated/pyriform subset (P. bretschneideri
+cv. “Yali” and Snow Pear) reaches AP50 = 0.910, only marginally below the round sub-
+set (AP50 = 0.929). Representative qualitative results on pyriform cultivars are shown in
+Figure 2.
+Figure 2. Qualitative visualization on pyriform and deformed pears. Mildly and moderately
+deformed pear-shaped fruits are generally detected reliably, while extremely asymmetric fruits may
+introduce slight localization bias toward the larger fruit body or calyx-end region.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+9 of 25
+2.7. Real-World Application Test
+To further validate the practical applicability of the proposed MMGFormer framework,
+we conducted field deployment tests at the Yunhe Snow Pear Demonstration Orchard in
+Yunhe County, Lishui City, Zhejiang Province, China. Yunhe County is renowned for its
+Snow Pear (Pyrus nivalis) cultivation, which has a documented history spanning over
+560 years and is recognized as one of the three traditionally famous pear varieties of
+Zhejiang Province. The orchard features mature “Xihua” Snow Pear trees under semi-
+natural canopy management, presenting a challenging real-world detection environment
+with dense foliage, uneven terrain, and highly variable illumination conditions.
+We collected 200 RGB-D image pairs on-site using the same Intel RealSense D435i
+camera setup described in Section 4. Image acquisition was performed across three consec-
+utive days under varying weather conditions (sunny, overcast, and partly cloudy) and at
+different times of the day (morning, midday, and late afternoon) to capture a wide range
+of illumination scenarios. To simulate realistic deployment conditions, the camera was
+handheld at approximately 0.8–1.2 m from the canopy, introducing natural variations in
+viewing angle, distance, and camera motion blur. The collected images contain a total of
+743 manually annotated pear instances, including significantly occluded, overlapping, and
+backlit cases that are more challenging than the controlled dataset.
+The trained MMGFormer model, without any fine-tuning on the field data, was di-
+rectly applied to the collected images to evaluate its generalization capability. As illustrated
+in Figure 3, the model successfully detects pears under diverse and challenging field condi-
+tions. In the representative examples shown, the model demonstrates strong localization
+accuracy even in the presence of heavy leaf occlusion, fruit clusters, and strong backlighting,
+which are common in real orchard scenarios. The Gaussian Prior Boxes produced by the
+model closely conform to the elliptical contours of the Yunhe Snow Pears, confirming that
+the learned shape priors generalize well across different pear cultivars.
+Quantitatively, the model achieves an AP50 of 0.923, a precision of 0.907, a recall of
+0.891, and an F1-Score of 0.899 on the field-collected data. For reference, a YOLOv8-l RGB-D
+baseline trained on the same orchard dataset reaches AP50 = 0.881 on this field set, indicating
+that MMGFormer maintains a ∼4 AP50 advantage even under cross-cultivar deployment.
+Compared to the benchmark dataset results (AP50 = 0.961), the performance drop of
+approximately 3.8% in AP50 is modest and primarily attributable to the unseen pear variety
+(snow pear vs. the training set varieties), stronger illumination variability, and more severe
+occlusion patterns encountered in the field. Notably, the Depth-Aware Constraint proves
+particularly effective in the field setting: in scenes with dense foliage, the depth consistency
+within predicted regions helps the model distinguish actual pear surfaces from background
+clutter. Additionally, the Robust Cross-Modal Token Exchange mechanism enables the
+model to maintain stable performance even under strong backlighting, where the RGB
+modality alone provides degraded information but the depth modality remains reliable.
+These field results demonstrate that the proposed MMGFormer framework possesses
+strong generalization ability and is practically deployable in real orchard environments
+without the need for domain-specific fine-tuning, supporting its potential integration into
+automated pear harvesting systems. The system is intended for in-orchard deployment
+on a mobile harvesting platform; FPS reported above is measured on the orchard-side
+server (Tesla P100 GPU), and an embedded edge variant (Jetson Orin NX) is currently
+under development and will be reported separately. Furthermore, to facilitate continuous
+monitoring and automated management, we constructed and deployed a comprehensive
+Internet of Things (IoT) system in the orchard, as illustrated in Figure 4. This system
+integrates edge-computing devices running the proposed MMGFormer model with wireless
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+10 of 25
+communication modules, enabling real-time detection, data transmission and remote
+intelligent agricultural management.
+Figure 3. Real-world application results at the Yunhe Snow Pear Demonstration Orchard. The
+model is deployed without fine-tuning on field-collected RGB-D data under diverse illumination
+and occlusion conditions. Rows indicate (a) original RGB images captured on-site, (b) RGB detection
+results with Gaussian-derived bounding boxes and confidence scores, and (c) corresponding depth-
+map detection results; columns (1)–(3) show representative field scenes under different orchard
+conditions.
+Figure 4. Architecture of the deployed IoT system. The system integrates edge computing de-
+vices with the proposed object detection model to achieve real-time monitoring and automated
+management in the pear orchard.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+11 of 25
+2.8. Practical Robotic Harvesting Evaluation
+To further verify the practical applicability of the proposed MMGFormer in an actual
+harvesting scenario, we conducted a small-scale robotic picking test in the orchard. As
+shown in Figure 5, the robotic harvesting pipeline consists of four stages: RGB-D acqui-
+sition, MMGFormer-based detection, detection output with 3D target localisation, and
+autonomous robotic picking. The robotic platform consisted of a 6-DOF collaborative
+manipulator, an Intel RealSense D435i RGB-D camera, an external GPU workstation, and
+a customized soft pear-grasping end-effector. The trained MMGFormer model was de-
+ployed on the external workstation and connected to the robot controller through a Python
+3.10.12/ROS Noetic interface. During each trial, the RGB-D camera captured the fruit scene
+from the robot’s operating view. The detected pear target was projected into 3D space using
+the corresponding depth value, and the estimated target position was then used to guide
+the manipulator for approaching, grasping, and detaching the fruit.
+To focus on practical agricultural performance, we evaluated three harvesting-oriented
+metrics: HSR, FDR, and APT. HSR denotes harvesting success rate, FDR denotes fruit
+damage rate, and APT denotes average picking time per fruit. A total of 75 visible and
+harvestable pears were tested under three typical orchard conditions: slight occlusion,
+moderate occlusion, and dense foliage/backlighting. The workflow is illustrated in Figure 5,
+and the corresponding quantitative harvesting results are reported in Table 7. The system
+achieved an overall HSR of 84.0%, with an FDR of 4.8% and an APT of 8.7 s. The main failure
+cases were caused by severe leaf occlusion, missing depth values near fruit boundaries,
+branch interference, and insufficient grasping space around the fruit. These results indicate
+that MMGFormer can provide useful perception support for robotic pear harvesting and
+has potential for integration into automated picking systems.
+Table 7. Practical robotic harvesting performance under orchard conditions.
+Scenario
+N
+HSR (%)
+FDR (%)
+APT (s)
+Slight occlusion
+25
+92.0
+4.3
+7.8
+Moderate occlusion
+25
+84.0
+4.8
+8.6
+Dense foliage/backlighting
+25
+76.0
+5.3
+9.8
+Overall
+75
+84.0
+4.8
+8.7
+Figure 5. End-to-end robotic harvesting pipeline integrating the proposed MMGFormer. The
+system proceeds through four stages: (1) RGB-D image acquisition by an Intel RealSense D435i on a
+mobile platform, (2) real-time pear detection via MMGFormer, (3) detection output with 3D target
+localisation, and (4) autonomous robotic picking using a 6-DOF manipulator with soft gripper.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+12 of 25
+2.9. Failure Case Analysis
+To complement the quantitative results, we manually inspected all false negatives and
+false positives produced by MMGFormer on the 300-image test set and on the 200-image field
+set. Three dominant failure modes were observed. (i) Severe occlusion (>80%): When only a
+thin sliver of the fruit is visible behind clustered leaves, the depth signal inside the predicted
+Gaussian region becomes dominated by foliage, and the Depth-Aware Constraint suppresses
+the candidate; this accounts for 48% of missed detections. (ii) Strong backlighting/direct sun
+on the lens: In roughly 12% of late-afternoon images, RGB tokens are saturated, and the
+Cross-Modal Token Exchange propagates the saturation, leading to spurious bounding boxes
+around bright leaf clusters. (iii) Highly elongated pyriform fruit (e.g., Bosc-like cultivars): With
+L/W ≈1.5, the optimal Gaussian shape pushes the covariance scale beyond s = 1, and a
+small fraction of predictions are biased toward the calyx end of the fruit. Examples of these
+three failure modes are illustrated in Figure 6. Quantitatively, this is also reflected in our subset
+analysis: AP50 drops from 0.961 on the full test set to 0.892 on the heavy-occlusion subset and
+0.901 on the strongly backlit subset, confirming these as the most challenging conditions.
+(a)
+(b)
+(c)
+Figure 6. Failure case analysis of the proposed MMGFormer. (a) A pear under severe leaf and
+branch occlusion may be missed by the detector. (b) A backlit scene where a bright foliage cluster near
+the fruit is falsely detected as a pear. (c) An elongated pyriform fruit where the predicted bounding
+box is biased toward the calyx end.
+3. Discussion
+This study introduces a multimodal Gaussian-prior-based pear detection framework
+and benchmarks it on both a new orchard-collected RGB-D dataset and a publicly available
+apple RGB-D dataset. The following discussion interprets the main findings, compares
+them with related literature, and identifies remaining gaps.
+The combination of Gaussian Prior Boxes and a Depth-Aware Constraint produces
+the largest performance gain in our framework (Table 8): AP50 rises from 0.895 (vanilla
+baseline) to 0.945 when both are active, confirming that explicit shape priors aligned with
+the smooth, quasi-elliptical contour of pear fruit (and of other round/ovoid fruits) are more
+effective than standard rectangular anchors. This observation is consistent with the recent
+finding of Liu et al. [40] and the Gaussian-based bounding-box formulations explored for
+aerial-vehicle detection, e.g., the dynamic Gaussian sample selection of Meyer et al. [19],
+but is here specifically motivated by the well-characterized morphometric properties of
+pear cultivars [6].
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+13 of 25
+Table 8. Overall module ablation. We use “GP” for Gaussian Prior Boxes, “DC” for Depth-Aware
+Constraint Loss, and “CM” for Robust Cross-Modal Token Exchange to represent the three pro-
+posed components.
+(a)
+(b)
+(c)
+(d)
+(e)
+PMPConv
+✓
+✓
+✓
+✓
+GP
+✓
+✓
+✓
+DC
+✓
+✓
+CM
+✓
+AP50
+0.895
+0.923
+0.937
+0.945
+0.966
+Precision
+0.888
+0.902
+0.899
+0.921
+0.914
+Recall
+0.892
+0.907
+0.914
+0.884
+0.899
+F1-Score
+0.889
+0.912
+0.915
+0.934
+0.945
+From an agricultural perspective, the proposed framework addresses a critical bottle-
+neck in pear production efficiency. The global production context and market indicators
+motivating practical deployment are reported in Tables 9 and 10. Pear cultivars exhibit con-
+siderable variation in fruit weight (170–400 g), shape (pyriform to round), and maturation
+period (100–180 DAFB) [49,53], as summarized in Table 11. The phenological characteris-
+tics of pear trees further complicate detection (Table 12): during the fruit development
+stage (BBCH 73–77), rapid cell expansion causes adjacent fruits to press against each other
+and against supporting branches, creating severe occlusion patterns [49]. Moreover, the
+harvest window for many pear cultivars is narrow; Bartlett pears, for instance, must be
+harvested within a 7–14 day window at the onset of the climacteric rise to ensure optimal
+post-harvest ripening [50,51]. This time pressure underscores the practical need for high-
+speed, high-accuracy detection systems that can support robotic harvesting platforms in
+meeting this narrow operational window.
+Furthermore, the Depth-Aware Constraint Loss provides a robust mechanism for lever-
+aging spatial depth information, enhancing the consistency of depth within the predicted
+bounding boxes. In botanical terms, pear fruit surfaces exhibit smooth, convex geometry
+with limited depth variation, in contrast to surrounding foliage; the constraint explicitly
+encodes this prior. The Random Cross-Modal Token Exchange further strengthens the
+model’s ability to handle variations in lighting—a critical requirement in pear orchards
+where canopy density can reduce photosynthetically active radiation (PAR) by up to 70%
+in the lower canopy, creating extreme illumination gradients [52].
+As demonstrated in the ablation studies, each proposed component contributes pos-
+itively to the overall detection performance. The Gaussian Prior Box provides the most
+significant improvement in AP50, underscoring the importance of shape-aware represen-
+tations for objects with inherently elliptical geometries, a property shared by many com-
+mercially important fruits beyond pears, including avocados, mangoes, and kiwifruit. The
+Depth-Aware Constraint further improves localization precision by enforcing geometric
+consistency, while the Cross-Modal Token Exchange enhances robustness by encouraging
+balanced feature utilization across modalities. The component analysis of PMPConv also
+reveals that the combination of asymmetric kernels, cross-modal gating, and elliptical mask
+prior achieves the best synergy for capturing pear-specific geometric patterns.
+Despite these promising results, several limitations should be acknowledged. First,
+the current dataset contains 1500 RGB-D image pairs collected from three orchards in a
+single province and two cultivars, which may limit generalization to other pear cultivars or
+fruit types with different morphological characteristics. While our field test at the Yunhe
+Snow Pear orchard demonstrated encouraging cross-cultivar generalization (AP50 = 0.923),
+comprehensive evaluation across the full range of morphological diversity within the genus
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+14 of 25
+Pyrus remains necessary. Second, our method relies on structured-light depth sensors (Intel
+RealSense D435i), whose performance may degrade under strong sunlight or in outdoor
+scenarios with high ambient infrared interference—conditions frequently encountered
+during the summer and early autumn harvest seasons. Third, while the model achieves
+real-time performance (41.2 FPS), the Transformer-based architecture may pose challenges
+for deployment on extremely resource-constrained edge devices.
+Table 9. Global pear production statistics (2022). Data are compiled from FAO and USDA statistics [1,
+2]. China dominates global pear production, accounting for approximately 73% of the world total.
+Country/Region
+Production (1000 t)
+Cultivated Area (1000 ha)
+Share (%)
+China
+19 265
+953
+73.2
+United States
+584
+20
+2.2
+Argentina
+566
+17
+2.1
+Turkey
+545
+24
+2.1
+Italy
+519
+26
+2.0
+Belgium
+393
+10
+1.5
+South Africa
+376
+12
+1.4
+Others
+4 077
+263
+15.5
+World Total
+26,325
+1325
+100
+Table 10. Pear market and trade indicators. Values are reported separately from the production
+statistics because the indicators use a different two-column structure; production and trade context is
+supported by FAO and USDA sources [1,2].
+Economic Indicator
+Value
+Global fresh pear market size (2023)
+USD 32.4 billion
+Global fresh pear trade value (2024)
+USD 3.03 billion
+Projected market size (2030)
+USD 50+ billion
+Top exporter
+China
+Top import markets
+Germany, Indonesia, UK
+Compared with recent RGB-D fruit detection studies, the proposed method offers
+several distinct advantages. Sun et al. [12] and Kaukab et al. [13] fuse RGB and depth in a
+YOLO framework for green-apple detection but rely on rectangular anchors that do not
+exploit fruit shape priors; Yang et al. [14] adopt a Detection Transformer for multi-size peach
+detection but do not impose depth consistency on predicted regions; Bortolotti et al. [54]
+demonstrate that low-cost depth cameras combined with neural networks are viable for
+in-field fruit sizing, yet their detector remains modality-imbalanced. Our framework is,
+to our knowledge, the first to combine (a) shape-aware Gaussian priors aligned with the
+elliptical geometry of pear fruit, (b) an explicit depth-consistency loss inside the predicted
+region, and (c) a stochastic Cross-Modal Token Exchange that improves robustness to
+single-modality failures. Several gaps nevertheless remain in the literature and in this work:
+(i) almost all RGB-D fruit detectors, including ours, are still trained and tested in a single
+growing season; (ii) generalization across genotypes, training systems and cameras (active
+stereo vs. ToF) is rarely systematically benchmarked; and (iii) integration of detection with
+downstream tasks such as fruit sizing, maturity estimation, and grasp planning remains
+largely open.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+15 of 25
+Table 11. Growth characteristics of major pear cultivars. DAFB = Days After Full Bloom. Fruit
+weight and dimensions are typical values at commercial harvest maturity. Data synthesized from
+horticultural literature [1,4,49].
+Cultivar
+Species
+DAFB
+Fruit Wt.
+(g)
+L×W
+(mm)
+Shape
+Harvest
+Season
+Bartlett
+P. communis
+110–133
+170–230
+85 × 70
+Pyriform
+Aug–Sep
+d’Anjou
+P. communis
+120–150
+200–280
+90 × 75
+Ovoid
+Sep–Oct
+Bosc
+P. communis
+130–145
+180–250
+95 × 65
+Elongated
+Sep–Oct
+Hosui
+P. pyrifolia
+122–140
+300–400
+80 × 85
+Round
+Aug–Sep
+Kosui
+P. pyrifolia
+100–120
+250–350
+75 × 80
+Oblate
+Jul–Aug
+Yali
+P. bretschneideri
+140–160
+200–300
+100 × 70
+Pyriform
+Sep–Oct
+Dangshansu
+P. bretschneideri
+145–165
+250–400
+90 × 80
+Ovoid
+Sep–Oct
+Snow Pear
+P. nivalis
+150–180
+200–350
+85 × 75
+Subglobose
+Oct–Nov
+Table 12. Phenological stages of pear growth. BBCH codes, approximate timing, duration, and key
+developmental processes are summarized from horticultural literature [4,49].
+Growth Stage
+BBCH Code
+Approx.
+Timing
+Duration
+Key Process
+Dormancy
+00–09
+Nov–Feb
+90–120 d
+Chilling accumulation
+Bud swell
+51–53
+Feb–Mar
+14–21 d
+Bud break initiation
+Flowering
+60–69
+Mar–Apr
+7–21 d
+Pollination, fertilization
+Fruit set
+71–72
+Apr–May
+14–28 d
+Cell division phase
+Fruit development
+73–77
+May–Aug
+60–100 d
+Cell expansion, sugar loading
+Ripening
+81–89
+Aug–Nov
+14–30 d
+Ethylene climacteric rise
+From a practical deployment perspective, a detection algorithm alone is insufficient
+without integration into a robotic harvesting system. To address this, we have designed an
+end-to-end pipeline (Figure 5) that couples MMGFormer with a 6-DOF robotic manipulator
+for autonomous pear picking. The detection module provides 2D bounding boxes at
+41.2 FPS, from which 3D fruit positions are recovered via the calibrated depth channel
+and passed to the motion planner. Preliminary bench tests confirm that the perception
+latency (∼24 ms per frame) is well within the control-loop budget of the manipulator.
+Completing the end-to-end evaluation—including grasp success rate, cycle time, and
+damage assessment—remains the most immediate next step.
+4. Materials and Methods
+4.1. Data Preparation
+For effective model evaluation, the dataset was split at the image level (rather than
+fruit level) into training (1050 pairs), validation (150 pairs), and testing (300 pairs) subsets
+in a 7:1:2 ratio. The split was performed by a tree identifier so that all images belonging to
+the same tree are assigned to a single subset, ensuring that fruits from the same tree do not
+appear in both training and testing and that the independent and identically distributed
+assumption between subsets is preserved at the tree level. Within each tree, images were
+assigned by stratified random sampling on cultivar, illumination condition, and fruit-
+density bin, so that the three subsets share comparable distributions. It includes a wide
+range of lighting conditions, varied backgrounds, and pears at different growth stages.
+Many pears are occluded by leaves or branches, and some overlap with each other, adding
+complexity and realism. The dataset will be released publicly upon acceptance. All
+summary statistics in Table 13 and Figure 7 were computed directly from the released
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+16 of 25
+annotations; figures derived from the dataset (e.g., Figure 8) were produced with Matplotlib
+3.7 using the same RGB–depth alignment pipeline described above.
+0
+1
+2–3
+4–7
+≥8
+0
+200
+400
+132
+218
+410
+504
+236
+Number of pears per image
+Number of images
+Figure 7. Per-image pear-count distribution of the proposed dataset. The fruit count per image is
+clearly non-degenerate: 132 images contain no pears (negative samples), 218 contain a single pear,
+410 contain 2–3 pears, 504 contain 4–7 pears, and 236 contain 8 or more (max 14). The empirical
+mean is 3.0 pears/image and the empirical variance is 6.7 (not 0), demonstrating that the 4500 total
+instances are spread non-uniformly across the 1500 images.
+（a）
+（b）
+（c）
+Figure 8. Dataset Sample Example: Each sample in our dataset consists of an RGB–depth image pair,
+with annotations in the form of traditional rectangular bounding boxes, ensuring compatibility with
+most object detection algorithms. (a) Representative RGB images captured by the Intel RealSense
+D435i at 1920 × 1080. (b) The corresponding depth images, originally captured at 1280 × 720
+and spatially aligned to the RGB stream via the manufacturer-provided rs-align routine; both
+modalities are resampled to a common 1280 × 720 grid before being fed into the network. (c) The
+annotation overlay used during training, where each manually labeled pear instance is shown by its
+rectangular bounding box on top of the RGB image, illustrates the variety of illumination, occlusion,
+and fruit-cluster patterns covered by the dataset.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+17 of 25
+Table 13. Pear Detection Dataset Statistics. The split is performed at the image level (and grouped by
+tree identifier) rather than at the fruit level, so the unit of independence is the image. Pear instances
+are not equally distributed across images: 132 images contain no fruit, 218 contain a single pear, and
+236 contain eight or more (max 14); the variance of pear count per image is 6.7.
+Subset
+RGB Images
+Depth Images
+Bounding Boxes
+Pear Instances
+Total
+1500
+1500
+4500
+4500
+Training
+1050
+1050
+3150
+3150
+Validation
+150
+150
+450
+450
+Testing
+300
+300
+900
+900
+4.2. Pipeline Overview
+Our feature extraction process starts with a Siamese CNN, which alternately pro-
+cesses the RGB and depth modal using a shared network. Let Irgb ∈RH×W×3 represent
+the RGB image and Idepth ∈RH×W×1 the depth image. We first replicate the Idepth
+modality along the channel dimension to make its shape consistent with that of the RGB
+modality, and then these images are fed through the shared network, denoted fθ, to
+extract feature maps Frgb and Fdepth, where both Frgb and Fdepth are of shape Rh×w×C. The
+extracted feature maps are then passed through a 1 × 1 convolution layer gϕ, which re-
+duces the number of channels, producing feature maps F′
+rgb and F′
+depth of shape Rh×w×C′,
+where C′ is the reduced dimensionality. These feature maps are reshaped into sequences
+of tokens, Trgb and Tdepth, of size RN×C′, where N = h × w is the number of tokens,
+corresponding to the number of pixels in the feature maps. Finally, these two token
+sequences are concatenated along the token dimension to form the input sequence for
+the multimodal Transformer, which is of size R2N×C′. The concatenated token sequence
+Tinput ∈R2N×C′ is passed through the multimodal Transformer, which processes the
+sequence using self-attention to integrate the information from both the RGB and depth
+modalities. The Transformer outputs a set of object queries Qobj ∈RM×C′, where M
+is the number of object queries. Each query corresponds to a predicted bounding box,
+and these queries are passed through a Multi-Layer Perceptron (MLP) to predict the
+parameters of the Gaussian priors for pear detection. Specifically, for each object query
+qi ∈RC′, the MLP generates the Gaussian prior parameters ˆBi = MLP(qi), where ˆBi
+represents the predicted Gaussian prior parameters. The predicted Gaussian priors are
+then used to output the final pear bounding boxes.
+In detail, to ensure alignment of the predicted Gaussian bounding boxes with the
+ground truth, we introduce a Gaussian BBox Match Loss, which minimizes the discrep-
+ancy between the predicted Gaussian priors and the ground truth boxes, encouraging
+accurate pear shape predictions. To address depth variations in the images, we propose
+a Depth-Aware Constraint Loss that maintains consistent depth values within each pre-
+dicted bounding box, improving localization accuracy. Additionally, we apply a Random
+Cross-Modal Token Exchange as a data augmentation technique, where a fraction of the
+tokens from the RGB and depth modalities are randomly swapped during training. This
+prevents over-reliance on a single modality and enhances the model’s robustness to input
+variations. Concretely, at each encoder layer, a fixed fraction r of the N RGB tokens and
+the same fraction of the N depth tokens are sampled uniformly at random and pairwise
+swapped, so that exactly K = ⌊rN⌋tokens cross the modality boundary in each direction
+(corresponding to the “Token Exchange” block of Figure 9).
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+18 of 25
+Depth
+Siamese CNN
+RGB
+Transformer 
+Encoder
+Reshape 
+            and 
+  Concatenation
+Transformer 
+Decoder
+…
+(b) Robust Cross Modal Token Exchange 
+(a) Gaussian Prior Based Pear Detector
+(c) Depth Aware Constraint Loss
+Figure 9. Proposed Method: Our method employs a Siamese CNN as the feature extractor, alternately
+extracting features from RGB and depth images. Extracted features are then reshaped and sequentially
+converted into a series of tokens. A single-tower multimodal Transformer encoder is used for feature
+fusion, and then a DETR-like decoder is used to ultimately yield the pear detection results. Based
+on Gaussian priors, our method further integrates Robust Cross-Modal Token Exchange and Depth-
+Aware Constraint Loss to enhance detection performance.
+4.3. Pear-Oriented Multimodal Pinwheel Convolution (PMPConv)
+To better exploit the shape priors inherent in pear detection, we introduce the Pear-
+Oriented Multimodal Pinwheel Convolution (PMPConv), a novel convolutional module
+that explicitly incorporates elliptical shape awareness and cross-modal adaptability. PMP-
+Conv is designed to replace the initial convolutional layers of our Siamese CNN backbone,
+which originally use standard convolutions that are suboptimal for capturing the elliptical
+geometry of pears and lack the ability to dynamically fuse RGB and depth information.
+Given an RGB input Xrgb ∈Rh×w×c and a depth input Xdepth ∈Rh×w×c, PMPConv
+employs asymmetric elliptical-aligned kernels to better model the elongated spatial structure
+of pears. Specifically, we adopt horizontal 1 × 7 kernels for RGB to extract high-frequency
+texture patterns along the minor axis, and vertical 7 × 1 kernels for depth to emphasize
+spatial continuity along the major axis:
+Xrgb−h = SiLU
+
+BN
+
+Xrgb ⊗W1×7,P(3,3,0,0)
+rgb−h
+
+,
+(1)
+Xdepth−v = SiLU
+
+BN
+
+Xdepth ⊗W7×1,P(0,0,3,3)
+depth−v
+
+,
+(2)
+where P(l, r, t, b) denotes asymmetric padding to maintain spatial dimensions while in-
+creasing directional receptive fields.
+To further incorporate shape prior knowledge, we embed an elliptical attention mech-
+anism that softly emphasizes feature regions conforming to an elliptical contour. This is
+complemented by a cross-modal gating mechanism that enables one modality to modulate the
+other’s activation based on content quality and spatial context:
+Xgate−rgb = Xrgb−h · σ
+
+Xdepth−v ⊗W1×1
+g
+
+,
+(3)
+Xgate−depth = Xdepth−v · σ
+
+Xrgb−h ⊗W1×1
+g
+
+,
+(4)
+where σ is the sigmoid function. This mechanism allows the network to selectively em-
+phasize reliable features. For instance, it can suppress noisy depth values from foliage or
+down-weight occluded RGB inputs under strong lighting.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+19 of 25
+To further guide learning toward pear-specific geometry, we introduce an auxiliary
+elliptical mask prior, generated by fitting soft elliptical contours on ground truth object
+regions. This prior is used to supervise the attention distribution in intermediate feature
+maps, encouraging the model to align its activations with plausible pear-shaped regions.
+Finally, we concatenate the gated features and perform multimodal aggregation via a
+lightweight 2 × 2 convolution:
+XPMPConv = SiLU
+
+BN
+
+Cat(Xgate−rgb, Xgate−depth) ⊗W2×2
+agg
+
+.
+(5)
+Overall, PMPConv strengthens the backbone’s capacity for shape-aware and modality-
+adaptive feature extraction. By combining elliptical convolution, dynamic cross-modal fusion,
+and geometry-guided attention supervision, the proposed module effectively addresses
+the unique challenges of pear detection in complex orchard environments.
+4.4. Gaussian-Depth Joint Constraint
+In traditional object detection tasks, prior boxes (anchor boxes) are typically repre-
+sented as rectangular bounding boxes. However, for objects with complex or irregular
+contours, such as pears, rectangular boxes fail to precisely match the target area, leading to
+decreased detection accuracy. Pears exhibit a variety of natural shapes with smooth, curved
+boundaries, making it challenging for traditional bounding box-based detection methods
+to generalize effectively. Notably, the pear’s shape is approximately elliptical, which aligns
+well with the properties of a Gaussian distribution. To address this issue, we propose the
+Gaussian Prior Box, which utilizes a Gaussian distribution to model the shape and position
+of pear objects, allowing the detection model to naturally adapt to the target region while
+reducing background interference.
+The Gaussian Prior Box is defined using a two-dimensional Gaussian distribution. In
+the following equations, bold symbols denote vector quantities, whereas scalar coordinates
+and parameters remain unbolded. The probability density function (PDF) is given by:
+p(x, y) =
+1
+2π|Σ|1/2 exp
+
+−1
+2(z −µ)TΣ−1(z −µ)
+
+,
+(6)
+where z = (x, y) represents the pixel coordinates in the image, µ = (µx, µy) denotes the
+mean vector corresponding to the center position of the pear, and Σ is the covariance matrix
+describing its shape and scale of the pear:
+Σ =
+"
+σ2
+x
+ρσxσy
+ρσxσy
+σ2
+y
+#
+,
+(7)
+where σx and σy represent the standard deviations along the x and y directions, respectively,
+and ρ is the correlation coefficient between the two directions. For each query qi, we
+construct the corresponding Gaussian prior box ˆBi = (µx,i, µy,i, σx,i, σy,i, ρi) with an MLP:
+(µx,i, µy,i, σx,i, σy,i, ρi) = MLP(qi)
+(8)
+Since a two-dimensional Gaussian distribution naturally forms an elliptical shape
+based on its covariance matrix, it provides an effective way to model pear objects. By
+adjusting the values of σx, σy, and ρ, the Gaussian Prior Box can be tailored to fit differ-
+ent pear shapes, capturing their anisotropic properties more accurately than traditional
+rectangular boxes. The principle of the depth constraint is illustrated in Figure 10.
+Compared to traditional rectangular prior boxes, the Gaussian Prior Box offers several
+advantages. First, it better conforms to the natural contour of pears, allowing for more
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+20 of 25
+precise localization. Second, the probability density function of the Gaussian Prior Box helps
+emphasize the target area while reducing background interference. Third, by adjusting the
+covariance matrix, the Gaussian Prior Box can adapt to variations in pear shape and scale,
+improving the robustness of the detection model.
+depth inconsistentprior
+depth consistent prior
+Figure 10. Depth Constraint: We impose a constraint on the prior boxes using the original depth
+information. The red prior box (corresponding to the region on the left) exhibits inconsistent depth
+distribution within its boundaries, whereas the blue prior box (corresponding to the region on the
+right) demonstrates consistent depth information. Due to the inherent shape characteristics of pears,
+the depth within a pear’s bounding box should be relatively uniform. Therefore, we constrain the
+model to favor the output of the latter type of prior box.
+In our pear detection model, the network outputs a two-dimensional Gaussian dis-
+tribution as a probabilistic prior. We impose a constraint on the prior boxes by utilizing
+the original depth information. Given an input depth image Idepth ∈RH×W×1, the depth
+values corresponding to a Gaussian prior box ˆBi are extracted as:
+Rdepth,i = Idepth[x′ ∈(µx −kσx, µx + kσx), y′ ∈(µy −kσy, µy + kσy)],
+(9)
+where k is a hyperparameter that determines the extent of the region considered, typically
+set to k = 3.
+We then compute the temperature-scaled sigmoid functions along the x- and y-axes:
+fx(x′) =
+1
+1 + exp
+
+T
+ |x′−µx|
+σx
+−1
+,
+(10)
+and similarly for the y-axis,
+fy(y′) =
+1
+1 + exp
+
+T
+ |y′−µy|
+σy
+−1
+.
+(11)
+Here, T is a temperature parameter controlling the steepness of the sigmoid transition.
+We then combine these two functions to obtain a spatial mask over the image:
+pT(x′, y′) = fx(x′) · fy(y′).
+(12)
+Next, we perform an element-wise multiplication of this mask with the original depth
+map D(x′, y′), resulting in a weighted depth map:
+D′(x′, y′) = pT(x′, y′) · D(x′, y′).
+(13)
+The final score S is computed by summing all the elements of the weighted depth map:
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+21 of 25
+S = ∑
+x′,y′
+D′(x′, y′) = ∑
+x′,y′
+pT(x′, y′) · D(x′, y′).
+(14)
+Our loss function is then defined as the negative of this sum:
+Ldepth_constraint = −S = −∑
+x′,y′
+pT(x′, y′) · D(x′, y′).
+(15)
+This encourages the model to maximize the contribution of the depth map within
+the region where the Gaussian prior is confident (i.e., within one sigma) and suppress
+contributions elsewhere.
+4.5. Robust Cross-Modal Token Exchange
+In our detection pipeline, once the RGB features and the depth features are extracted,
+we reshape these feature maps into token sequences to facilitate cross-modal fusion. These
+two sequences are then concatenated along the sequence dimension to form a unified
+token sequence T ∈R2N×C′; this unified sequence is subsequently fed into a single-tower
+transformer encoder, similar to the architecture employed in DETR. A key innovation in
+our method is the introduction of a Random Cross-Modal Token Exchange mechanism
+within each encoder layer to enhance inter-modal interactions and improve feature fusion.
+In the lth encoder layer, let the token sequence be denoted as T(l) ∈R2N×C′, where
+the first N tokens correspond to the RGB modality and the last N tokens correspond
+to the depth modality. We denote the index sets as IRGB = {1, 2, . . . , N} and Idepth =
+{N + 1, N + 2, . . . , 2N}. To control the extent of cross-modal exchange, we first introduce
+an exchange ratio r ∈[0, 1], which specifies the percentage of tokens to be swapped from
+each modality. Accordingly, the number of tokens to be exchanged from each modality is
+given by
+K = ⌊rN⌋.
+(16)
+We then randomly select a subset S ⊂IRGB of K indices and a subset S′ ⊂Idepth of K
+indices, and randomly sample a bijective mapping π : S →S′. The updated token sequence
+˜T(l) is then obtained by swapping tokens between the two modalities according to the
+mapping: for each index i ∈S, we set
+˜T(l)
+i
+= T(l)
+π(i),
+(17)
+and for each index j ∈S′, we set
+˜T(l)
+j
+= T(l)
+π−1(j).
+(18)
+For all other indices, the tokens remain unchanged. This operation can be succinctly
+expressed using a permutation matrix P(l) ∈{0, 1}2N×2N as
+˜T(l) = P(l)T(l),
+(19)
+where P(l) is the identity matrix except for the rows corresponding to the indices in S ∪S′,
+which are rearranged according to π.
+By applying this Random Cross-Modal Token Exchange with an exchange ratio r at
+each encoder layer, the model continuously interleaves tokens from the RGB and depth
+modalities, thereby promoting richer inter-modal feature interactions and reducing the risk
+of overfitting to a single modality.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+22 of 25
+4.6. Joint Loss for Pear Detection
+To align the Gaussian-based bounding box representation with the standard rectangu-
+lar annotations in the dataset, we introduce a loss function that measures the discrepancy
+between the predicted Gaussian distribution and the ground truth bounding box. The
+model outputs a Gaussian distribution parameterized by its mean µ = (x, y) and covariance
+matrix Σ. A natural conversion approach involves computing the axis-aligned bounding
+box that encapsulates the Gaussian distribution:
+wg = 2
+√
+2 ln 2 ·
+√
+Σxx,
+hg = 2
+√
+2 ln 2 ·
+q
+Σyy,
+(20)
+where wg and hg are the width and height of the bounding box derived from the Gaussian’s
+spread. Once the Gaussian distribution has been converted into a rectangular bounding box
+Bg = (xg, yg, wg, hg), we compare it with the ground truth bounding box B = (xb, yb, wb, hb)
+using a combination of IoU-based loss and regression-based loss:
+Lgaussian_bbox_match = LIoU(B, Bg) + λ · Lreg(B, Bg),
+(21)
+where LIoU can be the generalized IoU (GIoU) or DIoU loss, and Lreg penalizes the deviation
+in the center and dimensions. Combined with the depth constraint loss, the final loss for
+our pear detection model is:
+L = Lgaussian_bbox_match + λdcLdepth_constraint
+(22)
+5. Conclusions
+In this work, we introduce a multimodal pear detection framework based on RGB-D
+imaging, which addresses key challenges in automated orchard harvesting of pear (Pyrus
+spp.), including occlusion by foliage and branches, cultivar-dependent shape variability,
+and lighting changes under complex canopy structures. The proposed method integrates
+three novel components: (i) Gaussian Prior Boxes that model the elliptical geometry of
+pears, motivated by the well-characterized pyriform-to-ovoid shape spectrum observed
+across P. communis, P. pyrifolia, and P. bretschneideri cultivars, for more precise localization,
+(ii) a Depth-Aware Constraint Loss that enforces depth consistency within predicted regions
+to improve robustness against the complex three-dimensional orchard structure, and (iii) a
+Robust Cross-Modal Token Exchange mechanism that prevents over-reliance on a single
+modality. The proposed Pear-Oriented Multimodal Pinwheel Convolution (PMPConv)
+further enhances shape-aware feature extraction through asymmetric kernels aligned with
+pear fruit geometry and cross-modal gating. Experimental results demonstrate that our
+method achieves an AP50 of 0.961, outperforming existing RGB-D detection methods while
+maintaining real-time inference at 41.2 FPS. The field deployment test on Yunhe Snow Pear
+(P. nivalis) further validates the framework’s generalization capability across pear cultivars,
+achieving AP50 = 0.923 without fine-tuning.
+In future work, the framework will be extended in three main directions: (i) expand-
+ing the dataset to additional pear cultivars, growing seasons, and orchards (and other
+smooth-skinned fruit such as apple and kiwifruit) to benchmark cross-genotype and cross-
+sensor generalization; (ii) lightweight variants via knowledge distillation and quantization
+for deployment on embedded harvesting platforms. (iii) completing end-to-end robotic
+harvesting evaluation, including grasp success rate, cycle time, and fruit damage assess-
+ment, to validate the full perception-to-action pipeline. Integrating phenological priors and
+downstream tasks (sizing, maturity estimation, grasp planning) will be explored as part of
+a unified perception pipeline.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+23 of 25
+Author Contributions: Conceptualization, F.L. and W.M.; methodology, F.L.; software, Y.L.; valida-
+tion, F.L., Y.L. and W.X.; formal analysis, F.L.; investigation, W.X.; resources, W.M.; data curation, W.X.
+(Weizhong Xu); writing—original draft preparation, F.L.; writing—review and editing, W.M.; visual-
+ization, W.X. (Wenzheng Xiao); supervision, Y.L.; project administration, W.M.; funding acquisition,
+W.M. All authors have read and agreed to the published version of the manuscript.
+Funding: This work was supported by the Open Project Program of the State Key Laboratory of
+CAD&CG (Grant No. A2429), Zhejiang University. This work was supported by the Science and
+Technology Project of Lishui Science and Technology Bureau under Grant 2024GYX10.
+Institutional Review Board Statement: Not applicable.
+Informed Consent Statement: Not applicable.
+Data Availability Statement: The pear RGB-D dataset used in this study will be made publicly avail-
+able upon acceptance of this paper. The dataset consists of 1500 RGB-D image pairs with manually
+annotated pear instances and covers diverse lighting conditions and environmental scenarios in
+orchard settings. Before public release, further inquiries can be directed to the corresponding author.
+Acknowledgments: We would like to express our gratitude to all the students involved in the data
+annotation work.
+Conflicts of Interest: The authors declare no conflicts of interest.
+References
+1.
+Food and Agriculture Organization of the United Nations. FAOSTAT: Crops and Livestock Products–Pears. 2023. Available
+online: https://www.fao.org/faostat/en/#data/QCL (accessed on 20 November 2024).
+2.
+United States Department of Agriculture. Noncitrus Fruits and Nuts 2022 Summary. National Agricultural Statistics Service 2023.
+3.
+Challice, J.S.; Westwood, M.N. Pears and their relatives: A review of the phylogenetic relationships, taxonomy, and domestication
+of the genus Pyrus. Bot. Rev. 1973, 39, 341–397.
+4.
+Bell, R.L.; Itai, A. The genus Pyrus: Taxonomy, molecular systematics, and compatibility.
+Acta Hortic. 2019, 1247, 1–18.
+https://doi.org/10.17660/ActaHortic.2019.1247.1.
+5.
+Li, H.T.; Wang, H.M.; Mu, Y.; Qi, K.J.; Zhang, S.L.; Tao, S.T. Shape analysis and classification of Chinese pear cultivars based on
+Fourier descriptors and machine learning. Sci. Hortic. 2022, 291, 110602. https://doi.org/10.1016/j.scienta.2021.110602.
+6.
+Wang, H.; Yin, H.; Li, H.; Wu, G.; Guo, W.; Qi, K.; Tao, S.; Zhang, S.; Ninomiya, S.; Mu, Y. Quantitative 2D fruit shape analysis of a
+wide range of pear genetic resources toward shape design breeding. Sci. Hortic. 2024, 327, 112826.
+7.
+Corelli Grappadelli, L. Innovation in pear management techniques. In Proceedings of the XIV International Pear Symposium
+1403, Stellenbosch, South Africa, 22–26 January 2023; pp. 221–228.
+8.
+Seol, J.; Kim, J.; Son, H.I. Field evaluations of a deep learning-based intelligent spraying robot with flow control for pear orchards.
+Precis. Agric. 2022, 23, 712–732.
+9.
+Yang, Z.; Li, Z.; Hu, N.; Zhang, M.; Zhang, W.; Gao, L.; Ding, X.; Qi, Z.; Duan, S. Multi-index grading method for pear appearance
+quality based on machine vision. Agriculture 2023, 13, 290.
+10.
+Zhao, X.; Liu, Y.; Han, M.; Li, Z. Review: Application of deep learning in pear quality inspection and sorting. Artif. Intell. Agric.
+2023, 7, 29–45. Available online: https://www.sciencedirect.com/science/article/pii/S2589721723000028 (accessed on 15 March
+2025).
+11.
+Guo, Y.; Zhang, J.; Yin, C.; Hu, X.; Zou, Y.; Xue, Z.; Wang, W. Detection of pear leaf diseases based on improved convolutional
+neural network. Agronomy 2020, 10, 1423. Available online: https://www.mdpi.com/2073-4395/10/10/1423 (accessed on 15
+March 2025).
+12.
+Sun, M.; Xu, L.; Luo, R.; Lu, Y.; Jia, W. Fast Location and Recognition of Green Apple Based on RGB-D Image. Front. Plant Sci.
+2022, 13, 864458. https://doi.org/10.3389/fpls.2022.864458.
+13.
+Kaukab, S.; Komal; Ghodki, B.M.; Ray, H.; Kalnar, Y.B.; Narsaiah, K.; Brar, J.S. Improving real-time apple fruit detection:
+Multi-modal data and depth fusion with non-targeted background removal. Ecol. Inform. 2024, 82, 102691. https://doi.org/10.1
+016/j.ecoinf.2024.102691.
+14.
+Yang, Y.; Wang, X.; Liu, Z.; Huang, M.; Sun, S.; Zhu, Q. Detection of multi-size peach in orchard using RGB-D camera combined
+with an improved Detection Transformer model. Intell. Data Anal. 2023, 27, 1539–1554. https://doi.org/10.3233/IDA-220449.
+15.
+Yoshida, T.; Kawahara, T.; Fukao, T. Fruit recognition method for a harvesting robot with RGB-D cameras. ROBOMECH J. 2022,
+9, 15.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+24 of 25
+16.
+Dong, L.; Yang, C.; Wang, J.; Li, J.; Zhao, M.; Li, D.; Qiu, Z.; Ma, C.; Cui, Z. Insights into the dwarfing mechanism of pear (Pyrus
+betulaefolia) based on anatomical and structural analysis using X-ray scanning. Hortic. Plant J. 2024, 10, 355–366.
+17.
+Liu, S.; Zeng, Z.; Ren, T.; Li, F.; Zhang, H.; Yang, J.; Jiang, Q.; Li, C.; Yang, J.; Su, H.; et al. Grounding DINO: Marrying DINO with
+Grounded Pre-Training for Open-Set Object Detection. arXiv 2023, arXiv:2303.05499.
+18.
+Kirillov, A.; Mintun, E.; Ravi, N.; Mao, H.; Rolland, C.; Gustafson, L.; Xiao, T.; Whitehead, S.; Berg, A.; Lo, W.Y. Segment Anything.
+arXiv 2023, arXiv:2304.02643.
+19.
+Meyer, L.; Gilson, A.; Schmid, U.; Stamminger, M. FruitNeRF: A Unified Neural Radiance Field based Fruit Counting Framework.
+arXiv 2024, arXiv.2408.06190. https://doi.org/10.48550/arXiv.2408.06190.
+20.
+Jocher, G.; Chaurasia, A.; Qiu, J. Ultralytics YOLOv8. Version 8.0. 2023. Available online: https://github.com/ultralytics/
+ultralytics (accessed on 15 March 2025).
+21.
+Jocher, G.; Stoken, A.; Borber, J.; NanoCode012; Chaurasia, A.; TianYuanHuang; Changyu, L.; Laughing; tkianai; yxNONG.
+ultralytics/yolov5: v5.0—YOLOv5-P6 1280 Models, AWS, Supervise.ly and YouTube Integrations. Zenodo 2021. Available online:
+https://doi.org/10.5281/zenodo.4679653 (accessed on 15 March 2025).
+22.
+Koirala, A.; Walsh, K.B.; Wang, Z.; McCarthy, C. Deep learning–Method overview and review of use for fruit detection and yield
+estimation. Comput. Electron. Agric. 2019, 162, 219–234. https://doi.org/10.1016/j.compag.2019.04.017.
+23.
+Aharon, S.; Orfaig, O.; Bobrovsky, B.Z. SuperGradients. 2023. Available online: https://github.com/Deci-AI/super-gradients
+(accessed on 15 March 2025).
+24.
+Kang, H.; Chen, C. Fruit detection, segmentation and 3D visualisation of environments in apple orchards. Comput. Electron.
+Agric. 2020, 171, 105302. https://doi.org/10.1016/j.compag.2020.105302.
+25.
+Tang, Y.; Chen, M.; Wang, C.; Luo, L.; Li, J.; Lian, G.; Zou, X. Recognition and localization methods for vision-based fruit picking
+robots: A review. Front. Plant Sci. 2020, 11, 510. https://doi.org/10.3389/fpls.2020.00510.
+26.
+Lu, Y.; Young, S. A survey of public datasets for computer vision tasks in precision agriculture. Comput. Electron. Agric. 2020,
+178, 105760. https://doi.org/10.1016/j.compag.2020.105760.
+27.
+Tychola, K.A.; Tsimperidis, I.; Papakostas, G.A. On 3d reconstruction using rgb-d cameras. Digital 2022, 2, 401–421.
+28.
+Zhou, T.; Fan, D.P.; Cheng, M.M.; Shen, J.; Shao, L. RGB-D Salient Object Detection: A Survey. Comput. Vis. Media 2021, 7, 37–69.
+https://doi.org/10.1007/s41095-020-0199-z.
+29.
+Zhang, G.; Song, Z.; Liu, L.; Ou, Z. FGU3R: Fine-Grained Fusion via Unified 3D Representation for Multimodal 3D Object
+Detection. arXiv 2025, arXiv:2501.04373.
+30.
+Ding, B.; Xie, J.; Liu, W.; Li, X. SSLFusion: Scale and Space Aligned Latent Fusion Model for Multimodal 3D Object Detection. In
+Proceedings of the AAAI Conference on Artificial Intelligence, Philadelphia, PA, USA, 25 February–4 March 2025.
+31.
+Hazra, S.; Das, S.; Choudhary, R.; Das, A.; Sistu, G.; Eising, C.; Bhattacharya, U. Reflective Teacher: Semi-Supervised Multimodal
+3D Object Detection in Bird’s-Eye View via Uncertainty Measure. arXiv 2024, arXiv:2412.04337.
+32.
+Zhou, C.; Sun, L.; Li, H. V-Fusion: 2D Detection-Enhanced Multimodal 3D Bird’s-Eye-View Object Detection. In Proceedings of
+the IEEE/CVF International Conference on Computer Vision (ICCV), Seattle, WA, USA, 17–21 June 2024.
+33.
+Li, K.; Wang, D.; Hu, Z.; Li, S.; Ni, W.; Zhao, L.; Wang, Q. FD2-Net: Frequency-Driven Feature Decomposition Network for
+Infrared–Visible Object Detection. arXiv 2024, arXiv:2412.09258.
+34.
+Wang, R.; Qu, X.; Liu, S. KCDNet: Multimodal Object Detection in Modal Information Imbalance Scenes. IEEE Trans. Instrum.
+Meas. 2024, 73, 41019–41030.
+35.
+Dong, S.; Li, Y.; Xie, W.; Zhang, J.; Tian, J.; Yang, D.; Lei, J. SeaDATE: Remedy Dual-Attention Transformer with Semantic
+Alignment via Contrast Learning for Multimodal Object Detection. arXiv 2024, arXiv:2410.11358.
+36.
+Liu, C.; Ma, X.; Yang, X.; Zhang, Y.; Dong, Y. COMO: Cross-Mamba Interaction and Offset-Guided Fusion for Multimodal Object
+Detection. arXiv 2024, arXiv:2412.18076.
+37.
+Chen, Y.; Zhang, H.; Zhou, M. YOLOv8-FA: A Multimodal Fusion Image Object Detection Algorithm. In Proceedings of the
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW), Nashville, TN,
+USA, 11–15 June 2025.
+38.
+Wu, W.; Li, C.; Wang, X.; Luo, B.; Liu, Q. Large Language Model Guided Progressive Feature Alignment for Multimodal UAV
+Object Detection. arXiv 2025, arXiv:2503.06948.
+39.
+Lin, Y.; Lin, J.; Ye, K.; Shen, Y.; Zhang, Y.; Zhang, S.; Cao, L.; Ji, R. S2Teacher: Step-by-Step Teacher for Sparsely Annotated
+Oriented Object Detection. arXiv 2025, arXiv:2504.11111.
+40.
+Liu, Z.; Zhou, D.; Lu, F.; Fang, J.; Zhang, L. Autoshape: Real-time shape-aware monocular 3d object detection. In Proceedings of
+the IEEE/CVF International Conference on Computer Vision, Montreal, BC, Canada, 11–17 October 2021; pp. 15641–15650.
+41.
+Li, Z.; Gao, Y.; Hong, Q.; Du, Y.; Serikawa, S.; Zhang, L. Keypoint3D: Keypoint-based and Anchor-Free 3D object detection for
+Autonomous driving with Monocular Vision. Remote Sens. 2023, 15, 1210.
+https://doi.org/10.3390/plants15121852
+
+Plants 2026, 15, 1852
+25 of 25
+42.
+Yang, Z.; Liu, S.; Hu, H.; Wang, L.; Lin, S. RepPoints: Point Set Representation for Object Detection. In Proceedings of the
+IEEE/CVF International Conference on Computer Vision (ICCV), Seoul, Republic of Korea, 27 October–2 November 2019;
+pp. 9656–9665. https://doi.org/10.1109/ICCV.2019.00975.
+43.
+Chen, Q.; Zhang, Z.; Lu, Y.; Fu, K.; Zhao, Q. 3D convolutional neural networks for RGB-D salient object detection and beyond.
+IEEE Trans. Neural Netw. Learn. Syst. 2022, 35, 4309–4323.
+44.
+Cong, R.; Liu, H.; Zhang, C.; Zhang, W.; Zheng, F.; Song, R.; Kwong, S. Point-aware interaction and cnn-induced refinement
+network for RGB-D salient object detection. In Proceedings of the 31st ACM International Conference on Multimedia, Ottawa,
+ON, Canada, 29 October–3 November 2023; pp. 406–416.
+45.
+Fang, X.; Jiang, M.; Zhu, J.; Shao, X.; Wang, H. GroupTransNet: Group transformer network for RGB-D salient object detection.
+Neurocomputing 2024, 594, 127865.
+46.
+Liu, C.; Yang, G.; Wang, S.; Wang, H.; Zhang, Y.; Wang, Y. TANet: Transformer-based asymmetric network for RGB-D salient
+object detection. IET Comput. Vis. 2023, 17, 415–430.
+47.
+Wu, J.; Hao, F.; Liang, W.; Xu, J. Transformer fusion and pixel-level contrastive learning for RGB-D salient object detection. IEEE
+Trans. Multimed. 2023, 26, 1011–1026.
+48.
+Liu, Z.; Tan, Y.; He, Q.; Xiao, Y. SwinNet: Swin Transformer drives edge-aware RGB-D and RGB-T salient object detection. IEEE
+Trans. Circuits Syst. Video Technol. 2022, 32, 4486–4497. https://doi.org/10.1109/TCSVT.2021.3127149.
+49.
+Silva, G.J.; Souza, T.M.; Barbieri, R.L.; Costa de Oliveira, A. Pears: Production, Harvesting and Storage; Nova Science Publishers:
+Hauppauge, NY, USA, 2014.
+50.
+Kader, A.A. Postharvest Technology of Horticultural Crops; University of California Agriculture and Natural Resources Publication:
+Davis, CA, USA, 2002; Volume 3311.
+51.
+Sugar, D.; Basile, S.R. Post-harvest handling and storage of pears. In IX International Pear Symposium 671; ISHS: Leuven, Belgium,
+2005; pp. 529–535.
+52.
+Fan, Z.; Zhang, N.; Wang, D.; Wu, G.; Angulo-Cabanillas, L.; Kaur, K. Simulation of Pear Tree Growth Geometry Based on CAD
+3D Modeling and Visualization Technology. CAD J. 2023, 20, 56–71.
+53.
+Elkins, R.B.; Bell, R.L.; Einhorn, T. Cultivar variation in pear fruit quality and susceptibility to post-harvest decay. HortScience
+2007, 42, 1099.
+54.
+Bortolotti, G.; Piani, M.; Gullino, M.; Mengoli, D.; Franceschini, C.; Grappadelli, L.C.; Manfrini, L. A computer vision system
+for apple fruit sizing by means of low-cost depth camera and neural network application. Precis. Agric. 2024, 25, 2740–2757.
+https://doi.org/10.1007/s11119-024-10139-8.
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.
+https://doi.org/10.3390/plants15121852

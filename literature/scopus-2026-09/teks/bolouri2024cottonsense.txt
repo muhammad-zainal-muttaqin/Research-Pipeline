@@ -1,0 +1,1411 @@
+ 
+ 
+CottonSense: A High-Throughput Field Phenotyping System For Cotton Fruit Segmentation And 
+Enumeration On Edge Devices 
+ 
+ 
+by 
+ 
+Farshad Bolouri, B.S. 
+ 
+A Thesis 
+ 
+In 
+ 
+Electrical Engineering 
+ 
+ 
+Submitted to the Graduate Faculty 
+of Texas Tech University in 
+Partial Fulfillment of 
+the Requirements for 
+the Degree of 
+ 
+MASTER OF SCIENCE  
+ 
+ 
+Approved 
+ 
+Hamed Sari-Sarraf, Ph.D. 
+Chair of the Committee 
+ 
+Glen Ritchie, Ph.D. 
+ 
+Ayrton Bernussi, Ph.D. 
+ 
+ 
+Mark Sheridan, Ph.D. 
+Dean of the Graduate School 
+ 
+ 
+August 2023 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Copyright 2023, Farshad Bolouri 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+ 
+ii 
+ 
+ACKNOWLEDGMENTS 
+First and foremost, I am immensely grateful to Professor Hamed Sari-Sarraf and Professor 
+Glen Ritchie for their invaluable contributions. They were instrumental in conceiving the original 
+idea and provided continuous support and guidance throughout the research process. Their 
+expertise and critical feedback significantly shaped both the direction of the study and the final 
+manuscript. 
+I would like to express my sincere appreciation to Yildirim Kocoglu for his exceptional 
+contributions to software development and meticulous execution of the experiments, which played 
+a vital role in ensuring the accuracy and reliability of our findings. Gratitude is also extended to 
+Irish Pabuayon for his dedicated efforts in data collection and analysis, greatly enhancing the 
+robustness of our research outcomes. Additionally, I am grateful to BASF for their invaluable 
+financial support, without which this research would not have been possible. 
+Acknowledgement is also due to the University of Georgia cotton team, led by Dr. John L 
+Snider, for their invaluable participation in the model evaluation survey and provision of insightful 
+feedback that significantly contributed to the research. I would also like to recognize Ethan Elliott, 
+Long Duong, and Alyson Willis for their dedicated contributions to the data annotation process, 
+ensuring the accuracy and quality of the annotated data. 
+Furthermore, I extend my heartfelt appreciation to my friends and family members for their 
+unwavering support and encouragement throughout this journey. It is their collective efforts and 
+the support of these individuals and organizations that have made this dissertation possible. Once 
+again, thank you all for your invaluable contributions. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+iii 
+ 
+TABLE OF CONTENTS 
+ACKNOWLEDGMENTS ...................................................................................................... ii 
+ABSTRACT ............................................................................................................................ iv 
+LIST OF TABLES ................................................................................................................. vi 
+LIST OF FIGURES .............................................................................................................. vii 
+INTRODUCTION................................................................................................................... 1 
+MATERIALS AND METHODS ........................................................................................... 6 
+Experimental Field Setup and Data Collection ..................................................................... 6 
+Dataset Generation for Model Development ...................................................................... 10 
+Instance Segmentation Model ............................................................................................. 16 
+Model Evaluation ................................................................................................................ 19 
+Fruit Enumeration by Tracking ........................................................................................... 19 
+Network Optimization in TensorRT ................................................................................... 23 
+Three-Dimensional Segmentation by Projection ................................................................ 25 
+RESULTS AND DISCUSSION ........................................................................................... 29 
+Instance Segmentation Model ............................................................................................. 29 
+Fruit Enumeration by Tracking ........................................................................................... 33 
+CONCLUSION ..................................................................................................................... 35 
+BIBLIOGRAPHY ................................................................................................................. 37 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+iv 
+ 
+ 
+ABSTRACT 
+High-throughput phenotyping (HTP) has become a powerful tool for gaining insights into the 
+genetic and environmental factors that affect cotton (Gossypium spp.)  growth and yield. With the 
+recent advances in the field of computer vision, namely the integration of deep learning algorithms, 
+the accuracy and efficiency of HTP systems have improved dramatically, enabling them to 
+automatically quantify such fundamental phenotypic traits as fruit identification and enumeration. 
+However, there is currently no HTP system available for counting cotton fruits that can be 
+deployed in agronomic field conditions throughout the growing season. This study presents 
+CottonSense, an advanced HTP system that overcomes the challenges of deployment across 
+multiple growth periods by effectively segmenting and enumerating cotton fruits at four stages of 
+growth, including square, flower, closed boll, and open boll. Consequently, CottonSense enhances 
+agronomic management through increased opportunities for data collection and analysis. Using 
+RGB-D cameras, it captures and processes both two and three-dimensional data, facilitating a 
+wider range of phenotypic trait extractions such as crop biomass and plant architecture. To segment 
+the cotton fruits, a Mask-RCNN model is trained and optimized for faster inference using 
+TensorRT. The model yields an average AP score of 79% in segmentation across the four fruit 
+categories. Moreover, the model's accuracy in estimating total fruit count per image is validated 
+by a strong agreement with the counts given by ten domain experts, as reflected by an R2 value of 
+0.94. Furthermore, to accurately count the segmented fruits over large populations of plants, an 
+enumeration algorithm based on a tracking strategy is developed that achieves an R2 value of 0.93 
+when compared to hand-counted fruits in the field. The proposed HTP system, which is 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+v 
+ 
+implemented entirely on an edge computing device, is cost-effective and power-efficient, making 
+it an effective tool for high-yield cotton breeding and crop improvement.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+vi 
+ 
+LIST OF TABLES 
+I.1     Summary of State-of-the-Art HTP Systems. ................................................................... 4 
+1.1     Summary of Constructed Dataset. ................................................................................ 15 
+2.1     AP Scores Across Fruit Categories in Both Detection and Segmentation. ................... 29 
+2.2     Relative Difference Among Survey Participants .......................................................... 31 
+2.3     Evaluation of the Enumeration by Tracking Algorithm Based on R2 .......................... 33 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+vii 
+ 
+LIST OF FIGURES 
+1.1     Imaging Conditions. ........................................................................................................ 7 
+1.2     Data Collection Platform. ............................................................................................... 7 
+1.3     RTAB-Map ..................................................................................................................... 9 
+1.4     Example of Two Consecutive RGB Image Frames Used for The 
+          Point Cloud Generation Process ..................................................................................... 9 
+1.5     Example of Point Clouds Generated And Stitched From The 2 Cameras .................... 10 
+1.6     Four Fruit Categories .................................................................................................... 11 
+1.7     Relative Difference Among Survey Participants .......................................................... 14 
+1.8     Illustration of Established Protocols for The Annotation of Images ............................ 15 
+1.9     Seasonal Development of Cotton in the Mid-South Showing The 
+          Production Pattern of Squares, Bolls, Open Bolls ........................................................ 16 
+    1.10     Examples of the Model's Performance on Crowded Scenes from the Test Set ............ 18 
+    1.11     Examples of Predictions for Obstructed and Intensity-saturated Fruits. ...................... 18 
+    1.12     A Flowchart of the Enumeration by Tracking Algorithm for a Detected Fruit. ........... 22 
+    1.13     Example Scenarios of the Algorithm’s Behavior. ........................................................ 23 
+    1.14     Snapshots of Videos Taken for Evaluation of the Enumeration Algorithm. ................ 23 
+    1.15     A Comparison Between the Segmentation Results Obtained by the 
+          Original Model with FP32 Precision and the New Model with FP16 .......................... 25 
+    1.16     Segmentations Being Projected from 2D and 3D. ........................................................ 27 
+    1.17     Projected Segmentations of the Developed Model. ...................................................... 28 
+2.1     Uncertainty Surrounding False Predictions. ................................................................. 32 
+2.2     R2 Measurement Between the Model's and Expert's counts. ........................................ 33 
+2.3     Evaluation of the Enumeration Algorithm. ................................................................... 34 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+ 
+1 
+ 
+INTRODUCTION 
+Cotton (Gossypium spp.) accounts for nearly 80% of the global natural fiber production, with 
+China, India, the United States, and Pakistan being the top producers [1]. Cotton yield is a function 
+of several physiological factors, with the number and size of individual fruits on the plant being 
+the fundamental determinants. Therefore, the number of fruits is a key indicator of the potential 
+yield of a field and is also useful in understanding the growth conditions of the crop. This 
+information can be used by cotton growers to both make management decisions and determine the 
+impact of environmental conditions, pressure from weeds and insects, and management on crop 
+yield [2], [3]. However, counting cotton fruits by hand in the field is a laborious task that is usually 
+limited to a few plants within a field or field plot [4]. Traditional methods of yield prediction based 
+on manual sampling [5] or visual inspection and experience [6] are prone to errors and are not 
+practical for evaluating large numbers of plots commonly encountered in plant breeding programs.  
+To address these issues, researchers have developed non-invasive, high-throughput 
+phenotyping (HTP) techniques that automate plant trait measurements and thereby reduce time 
+and labor requirements [7], [8]. Such techniques include computer vision-based systems combined 
+with agricultural robots [9] and unmanned aerial vehicles [10] that aim to automate fruit 
+enumeration and yield prediction, increase efficiency, and reduce human error [11]–[13]. 
+However, additional advancements are required for these methods to be effective in indeterminate 
+crops such as cotton which produce fruit over long periods of time and have several fruits at 
+differing stages at the same time. These advancements include the ability of sensing systems to 
+collect measurements in agronomic field situations and the capability of the systems to 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+2 
+ 
+economically and accurately identify and discriminate among fruit of several stages 
+simultaneously over large areas of land [2], [14].  
+This paper presents CottonSense, an HTP system for cotton plants that bridges the gaps 
+inherent to traditional methods and advances the state-of-the-art established through recent 
+automations by making four novel and significant contributions: 
+I. 
+Data collection in standard agronomic field conditions: Yields in cotton and other crops 
+are dependent on management strategies, making it essential to test cultivars in agronomic 
+fields with similar management to that employed in commercial production. CottonSense 
+is capable of collecting measurements in agronomic cotton fields under the same conditions 
+(e.g., plant density and spacing) as those used in commercial settings. 
+II. 
+Two and three-dimensional fruit identification in four stages of development: It is 
+important for an HTP system to capture the fruiting dynamics throughout the growing 
+season, as it allows for more opportunities for agronomic management [15]. This can be 
+achieved by using two-dimensional (2D) computer vision systems to detect different 
+growth stages of the fruits. Additionally, by utilizing three-dimensional (3D) remote 
+sensing and computer vision, a wider range of phenotypic traits can be extracted, including 
+crop biomass estimation, plant architectural trait analysis, and digital elevation model 
+generation [16], [17]. CottonSense is capable of identifying and discriminating cotton fruits 
+in the square, flower (bloom), closed boll (green/unopened boll), and open boll stages in 
+both 2D and 3D. This involves not only identifying the presence and location of the fruits 
+(fruit detection) but also all the pixels that compose them, from which one can get the 
+fruits’ boundaries and separate them from the stems and leaves (fruit segmentation). 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+3 
+ 
+III. 
+Enumeration of identified fruits over a large population of plants: Effective crop 
+monitoring and yield estimation dictates that the counting capability of existing HTP 
+systems be extended to a larger population of plants [4]. This study demonstrates an 
+enumeration technique that utilizes a fruit-tracking strategy across consecutive video 
+frames to cover a sufficiently large plant population.  
+IV. 
+Cost and power efficiency: Unlike any of the existing HTP approaches, CottonSense 
+utilizes an edge computing device [18], the NVIDIA Jetson AGX Xavier [19], for data 
+acquisition and local processing, resulting in a cost-effective and power-efficient solution. 
+Additionally, the identification subsystem employs TensorRT [20], a deep learning 
+inference library, that optimizes the computations of neural networks and brings the 
+processing speed closer to that of workstation GPUs. 
+Recently, several studies have explored the use of cotton plant HTP for fruit enumeration 
+(Table I.1). For instance, Sun et al. [13]  proposed novel image processing algorithms for 2D open 
+boll segmentation using their color and spatial features and then estimating their count using 
+geometric-feature-based methods. The same group proposed an alternative approach using 3D 
+photogrammetric mapping of the cotton rows, followed by point cloud segmentation and clustering 
+techniques to individualize and count the open bolls [21]. Although these systems showcase 
+similar characteristics as (II) and (III), the enumeration of open bolls that contrast with vegetation 
+does not require specific computer decision-making and limits measurement opportunities to the 
+end of the growth cycle, thereby constraining agronomic management options. Additionally, the 
+data collection systems in these studies, have not shown to be operational in agronomic field 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+4 
+ 
+conditions (I), as they were only tested in research fields with wider than normal row spacings, 
+which range from 0.9 to 1.0 m width in most systems throughout the US cotton growing region. 
+HTP researchers have also harnessed the recent transformative advances in deep learning to 
+address the automatic 2D detection of cotton fruits at different stages of growth. Faster-RCNN 
+[22] was used to identify emerging blooms [23], custom object detection networks were proposed 
+for closed boll localization [24], [25], and weakly supervised models were explored to count open 
+bolls [3]. Despite these noteworthy advances, as seen in Table I.1, none of these studies offer a 
+comprehensive solution (II and III), that covers all four growth stages for a large plant population.  
+In summary, this study introduces a system for cotton fruit identification and enumeration that 
+addresses the limitations of previous systems. CottonSense is capable of collecting measurements 
+and identifying the cotton fruits in four stages of their growth cycle in 2D and 3D under agronomic 
+field conditions. Additionally, it stands out as the only system that addresses cost and power 
+efficiency (IV) by running entirely on an edge computing device. 
+Table I.1 Summary of state-of-the-art cotton plant HTP studies and their comparison to the 
+proposed system. 
+ 
+Tested in Agronomic 
+2D Fruit Detection 
+2D Fruit Segmentation 
+ 
+Field Conditions 
+Open Boll 
+Closed Boll 
+Flower 
+Square 
+Open Boll 
+Closed Boll 
+Flower 
+Square 
+Adke et al. (2022) 
+ 
+✓ 
+  
+  
+  
+ 
+  
+  
+  
+Sun et al. (2022) 
+✓ 
+  
+✓ 
+  
+  
+  
+  
+  
+  
+Zhang et al. (2022) 
+✓ 
+  
+✓ 
+  
+  
+  
+  
+  
+  
+Jiang et al. (2020) 
+ 
+  
+  
+✓ 
+  
+  
+  
+  
+  
+Sun et al. (2020) 
+ 
+  
+  
+  
+  
+  
+  
+  
+  
+Sun et al. (2019) 
+✓ 
+✓ 
+  
+  
+  
+✓ 
+  
+  
+  
+CottonSense 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+5 
+ 
+ 
+Table I.1 (continued) 
+    
+Large-Scale Fruit Enumeration 
+3D  
+3D Fruit Segmentation 
+  
+Open Boll 
+Closed Boll 
+Flower 
+Square 
+Data Collection 
+Open Boll 
+Closed Boll 
+Flower 
+Square 
+Adke et al. (2022) 
+  
+  
+  
+  
+  
+ 
+  
+ 
+  
+Sun et al. (2022) 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Zhang et al. (2022) 
+  
+  
+  
+  
+  
+ 
+  
+ 
+  
+Jiang et al. (2020) 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Sun et al. (2020) 
+✓ 
+  
+  
+  
+✓ 
+✓ 
+ 
+  
+  
+Sun et al. (2019) 
+✓ 
+  
+  
+  
+  
+ 
+  
+  
+  
+CottonSense 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+✓ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+6 
+ 
+MATERIALS AND METHODS 
+Experimental Field Setup and Data Collection 
+The experimental field was located at BASF Agricultural Solutions Breeding & Trait 
+Development Station in Lubbock, TX, USA (33° 35' 01.0" N, 101° 46' 35.6" W). The field 
+included 128 rows by 29 columns, with the length and spacing of the rows being 7.62 m and 1.0 
+m, respectively. Data were collected from July 2021 to November 2021 using two Intel RealSense 
+D435i depth cameras mounted on a tractor platform. The limited spacing between the rows often 
+required the use of two cameras in order to capture the entire height of the plants. As seen in Figure 
+1.1, the cameras were positioned on one side of the plants perpendicular to the ground and directly 
+facing the plants. Controlling the cameras and storing and processing the data was accomplished 
+using an NVIDIA Jetson AGX Xavier [19], which was mounted inside the tractor cabin. 
+The data collected from the cameras included RGB-D images (registered RGB and depth 
+images) and inertial measurement unit (IMU) information during the tractor’s movement. The 
+experiments were conducted both in daylight and at night using two LED light bars positioned on 
+either side of the cameras to provide uniform illumination. In later versions of the acquisition 
+system (Figure 1.2), a mounting was built that used a shroud to minimize wind effects, color 
+saturation from direct sunlight, and interference from plants in the adjacent rows. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+7 
+ 
+B 
+C 
+B 
+         
+         
+ 
+Figure 1.1 Imaging Conditions:  A) Cameras’ position (in the red box) with respect to the plants 
+– B)  Imaging in the daylight – C)  Imaging at Night. 
+              
+           
+Figure 1.2 Data Collection Platform: The red box in (B) indicates the position of the cameras on 
+the platform. 
+During the imaging of a row, a 3D point cloud was also constructed using the RTAB-Map 
+library (Figure 1.3). RTAB-Map [26] is an open-source library that provides the necessary tools 
+and algorithms for utilizing measurements from various sensors such as RGB-D cameras and Lidar 
+sensors to map the environment in 3D space. To produce a single point cloud of the row, RTAB-
+Map was configured to use the following process for each camera: 
+I. 
+Identifying visual features in RGB image frames using the default feature detection and 
+descriptor algorithms; namely, GFTT [27] and Rotated BRIEF [28], respectively.  
+A 
+A 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+8 
+ 
+II. 
+Computing affine transformation matrices for aligning and stitching the consecutive image 
+frames by finding their corresponding detected features from (I) using the feature matching 
+algorithm, FLANN [29]; see Figure 1.4. 
+III. 
+Creating a 3D point cloud from each RGB-D image by associating a depth value to each 
+pixel in the 2D RGB image, resulting in a set of points with both 3D position and color 
+information. 
+IV. 
+Integrating the calculated transformation matrices from (II) with the IMU data obtained by 
+the cameras to align and stitch corresponding point clouds of each image (III), resulting in 
+a unified point cloud of the entire row. The IMU data enhances the point cloud stitching 
+process by providing supplementary information about the camera’s orientation and 
+motion. 
+Lastly, to obtain a single point cloud of the row that captures the full height of the plants, it is 
+necessary to stitch together the point clouds generated from each camera. To that end, a variant of 
+the popular Iterative Closest Point (ICP) algorithm [30], called the Colored Point Cloud 
+Registration [31], was employed. The authors demonstrate that this method offers higher accuracy 
+and robustness than ICP for colored point clouds. The example in Figure 1.5 demonstrates the 
+effectiveness of the Colored Point Cloud Registration algorithm in stitching the two point clouds. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+9 
+ 
+ 
+Figure 1.3 RTAB-Map: This figure depicts the mapping being done in real-time for point cloud 
+generation of a row. Top-left panel shows the RGB images, bottom-left panel shows the depth 
+images, and right panel shows the point cloud of the row being constructed. 
+ 
+Figure 1.4 Example of two consecutive RGB image frames used for the point cloud generation 
+process: Green circles and lines depict the matched features detected and matched by the GFTT 
+and FLANN algorithms, respectively. The red circles indicate detected features that did not match 
+with a corresponding feature after the feature-matching process. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+10 
+ 
+ 
+Figure 1.5 Example of point clouds generated and stitched from the 2 cameras: A) Point cloud 
+generated from the bottom camera. – B) Point cloud generated from the top camera. –  C) Aligned 
+and stitched point clouds using the Colored Point Cloud Registration algorithm. 
+Dataset Generation for Model Development 
+A multi-instance semantic segmentation architecture, details of which are discussed in the next 
+section, was trained in a supervised mode to identify the cotton plant fruit in four developmental 
+stages. It is well established in the machine learning community that regardless of the specific 
+model choice, the training phase is impacted the most by the integrity and representativeness of 
+the training data. In keeping with this, a considerable amount of resources and planning went into 
+insuring that the generated training dataset is accurate, consistent, and complete. To prepare the 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+11 
+ 
+collected dataset for the development of the model, a 4-class labeling strategy was implemented. 
+The classes, namely Square, Flower, ClosedBoll, and OpenBoll is presented in Figure 1.6. 
+ 
+Figure 1.6 Four fruit categories: From top row to bottom, Square, Flower, ClosedBoll, and 
+OpenBoll. 
+A team of 5 annotators contributed to the labeling process using MATLAB’s Image Labeler 
+tool, with each annotator assigned a unique set of images to label. The annotators identified the 
+boundary of each fruit using polygon annotations provided by the tool. To ensure consistency and 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+12 
+ 
+accuracy across all annotations, the following protocol was established and followed throughout 
+the labeling process: 
+I. 
+When a fruit was found to be in a transitional stage (e.g., from Square to Flower), it was 
+annotated and labeled as the more advanced of the two stages; see Figure 1.7A.  
+II. 
+If a fruit was obstructed by other organs, a single polygon that enclosed all the fruit’s visible 
+parts was drawn instead of creating a separate polygon for each visible part; see Figure 
+1.7B. 
+III. 
+In scenes with overcrowding of fruits and leaves, only the fruits with clearly identifiable 
+boundaries were annotated, and the rest were left unannotated; see Figure 1.7C. 
+IV. 
+Dropped fruits that are visible on the ground were not annotated as they no longer 
+contribute to the plants' yield; see Figure 1.7D. 
+ 
+After completing annotations for 184 images, a preliminary segmentation model (further 
+elaborated in the next section) was trained to aid in both the model development process and the 
+annotation of more images.  The model was employed to generate initial annotations for the 
+remaining images in the dataset. This expedited the annotation process as annotators only needed 
+to make minor adjustments to the automatically generated annotations, such as modifying labels 
+or refining polygons. Additionally, in crowded scenes mentioned in (III), the model helped to 
+identify the boundaries of certain fruits that were previously difficult to discern. As a result, the 
+preliminary model not only saved time and effort for the annotators but also improved the quality 
+and consistency of the final annotated dataset.  
+
+Texas Tech University, Farshad Bolouri, August 2023 
+13 
+ 
+To ensure a balanced representation of the four categories for model development, 344 images 
+were sampled temporally from the final annotated dataset. These images were then split into 
+training and test sets with a ratio of 7:3 for each category; detailed in Table 1.1. As depicted in 
+Figures 1.8A and 1.8B, a lower number of images were sampled in the late-season than early to 
+mid-season to avoid an overrepresentation of OpenBolls. This is due to the defoliation of plants 
+before harvesting, which causes the cameras' field of view to no longer be obscured by dense 
+foliage, allowing for the capture of more fruits. Figure 1.8C confirms this, where the number of 
+OpenBolls per image is notably higher than other categories during this period. 
+The distribution of the data used for model development is validated by its coherence with the 
+established literature on cotton fruit development and accumulation throughout the growing season 
+(Figure 1.9). As shown in Figure 1.8D, it illustrates a consistent progression, where Squares 
+dominate early on, followed by ClosedBolls in line with the flowering cycle, and then ClosedBolls 
+are replaced with OpenBolls starting around 115-125 days after planting. Additionally, the dataset 
+confirms that no further Flowers are observed after this point, and any Squares observed are 
+guaranteed to be ClosedBolls. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+14 
+ 
+ 
+Figure 1.7 Illustration of established protocols for the annotation of images: A) Fruit transitional 
+stages, examples include Flower to ClosedBoll and Square to Flower. – B) Obstructed Fruits  – C) 
+Overcrowded Scenes – D) Dropped fruits on the ground. 
+ 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+15 
+ 
+Table 1.1 A summary of constructed dataset. 
+ 
+Number of Images 
+Number of Instances 
+ 
+Day 
+Night 
+Total 
+OpenBoll 
+ClosedBoll 
+Flower 
+Square 
+Training Set 
+134 
+147 
+281 
+1748 
+1508 
+636 
+1401 
+Test Set 
+23 
+40 
+63 
+484 
+644 
+278 
+595 
+Total 
+157 
+187 
+344 
+2232 
+2152 
+914 
+1996 
+ 
+ 
+Figure 1.8 Distribution of data in the final dataset: A) The distribution of the images in the training 
+and test set with respect to days after planting (DAP). – B) The distribution of the instances (cotton 
+fruits) in the dataset with respect to DAP. – C) The proportion of each category’s count per image 
+relative to DAP. – D) The proportion of each category’s count relative to the total number of fruits. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+16 
+ 
+ 
+ 
+Figure 1.9 Seasonal development of cotton in the Mid-South showing the production pattern of 
+squares, bolls and open bolls (with permission from ACSESS) [32]. 
+Instance Segmentation Model 
+Instance segmentation techniques aim at pixel-level classification (semantic segmentation) of 
+multiple instances of various objects in an image [33]. In addition to detecting and enumerating 
+cotton fruits in 2D, these techniques can also be used to localize the fruits in 3D point clouds of 
+the rows, as explained in Three-Dimensional Segmentation by Projection. Consequently, state-of-
+the-art instance segmentation models such as Mask R-CNN [34] and YOLACT [35] were 
+considered for this study. 
+Mask R-CNN is a highly effective technique for instance segmentation, with a proven track 
+record across a variety of applications [33]. Mask R-CNN extends Faster R-CNN by adding a mask 
+predictor head to its architecture. The model first employs the Faster R-CNN architecture to predict 
+a class label and bounding box for an object based on regions proposed by the region proposal 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+17 
+ 
+network [22]. Then, a fully convolutional network [36] generates a mask for the predicted 
+bounding box, resulting in instance-level semantic segmentation. Despite not being the fastest 
+instance segmentation model, Mask R-CNN has shown to perform better on benchmark datasets 
+than other state-of-the-art network architectures such as YOLACT [35]. 
+While the accuracy and speed of model inference were both of high importance for this study, 
+the former was given more precedence for two reasons. First, the accuracy in enumerating the 
+fruits clearly depended on the accuracy (not the speed) of segmentation and second, it was 
+determined that the speed consideration could be satisfied in the network inference optimization 
+phase of the project (further discussed in Network Optimization in TensorRT). Therefore, Mask R-
+CNN was selected as the more suitable architecture for this study. Additionally, the proven 
+performance of Mask R-CNN in segmenting OpenBolls [3] and Faster R-CNN in detecting 
+Flowers [23] further justify our choice of this model. It is worth noting that Mask R-CNN’s ability 
+to identify Squares and ClosedBolls or detect fruits in multiple growth-stages simultaneously had 
+remained untested prior to this study.  
+To implement Mask R-CNN, the ResNet+FPN [37] architecture was used as the model’s 
+backbone network for feature extraction instead of the ResNet-C4 architecture proposed in the 
+original Faster R-CNN implementation [22]. ResNet+FPN has been shown to perform with higher 
+accuracy in object detection and segmentation benchmarks [34], [37]. The lighter 50-layer ResNet 
+was selected over the 101-layer ResNet due to the limited computational capabilities of the Xavier 
+AGX on which the model was to be deployed. Additionally, to speed up training and leverage 
+transfer learning from a larger dataset, the weights for the network were initialized with weights 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+18 
+ 
+from a pre-trained model on the MS COCO dataset [38]. Examples of the model’s performance 
+are shown in Figures 1.10 and 1.11.  
+ 
+Figure 1.10 Examples of the model's performance on crowded scenes from the test set. 
+    
+    
+    
+    
+ 
+Figure 1.11 Examples of predictions for obstructed and intensity-saturated fruits. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+19 
+ 
+Model Evaluation 
+A fruit's prediction by the model was considered a True Positive (TP) if it met two conditions. 
+First, it belonged to the same category as the fruit's corresponding ground truth; and second, the 
+prediction and ground truth's segmentations had an Intersection Over Union (IOU) of 0.5 or higher, 
+which is the standard threshold. If either of these conditions was not met, the prediction was 
+considered a False Positive (FP). Additionally, if no corresponding ground truth was found for the 
+prediction, it was also considered a FP. A prediction was considered a False Negative (FN) if there 
+was a ground truth in the image that did not have a corresponding prediction. Average Precision 
+(AP) [39], which is a standard evaluation metric for object detection and segmentation networks, 
+was employed to assess the model’s performance. AP is calculated as the area under the precision-
+recall curve, as shown in Equations (1.1-1.3). 
+𝑃𝑟𝑒𝑐𝑖𝑠𝑖𝑜𝑛 (𝑃) = 
+𝑇𝑃
+𝑇𝑃 + 𝐹𝑃                                                        (1.1) 
+𝑅𝑒𝑐𝑎𝑙𝑙 (𝑅) = 
+𝑇𝑃
+𝑇𝑃 + 𝐹𝑁                                                         (1.2) 
+  𝐴𝑃 = ∫𝑃(𝑅) 𝑑𝑅
+1
+0
+                                                            (1.3) 
+ 
+Fruit Enumeration by Tracking 
+A significant highlight of this work is its ability to track a segmented fruit throughout the image 
+frames in which that fruit appears. This ability accomplishes two critical objectives. First, it avoids 
+counting the same fruit multiple times. Second, it increases the classification accuracy by labeling 
+the fruit in each frame, as its pose with respect to the camera changes. In the end, the fruit is 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+20 
+ 
+assigned the label that was most frequently encountered in the ensemble of frames. Owing to its 
+efficiency, ease of implementation, and robustness in the presence of occlusions, the commonly 
+used tracking method, SORT [40], was used as a baseline for the system’s enumeration by tracking 
+algorithm.  
+While the original implementation of the SORT algorithm is effective in enumerating objects 
+within a single category based on the number of tracked objects in a video, it becomes impractical 
+when input detections belong to different categories. This is because SORT only takes into account 
+the position of the detections within the frames and not their labels. Therefore, modifications were 
+made to address this limitation, allowing it to effectively enumerate the four categories of fruits. 
+The proposed algorithm is capable of online processing all the predicted fruits in parallel; however, 
+for better clarity, the three stages of the algorithm are demonstrated below for a single fruit (Figure 
+1.12): 
+I. 
+Initialization Stage: When the fruit is detected by the model for the first time, a tracker 
+that stores the fruit’s predicted label and position (in the form of a bounding box) is 
+initialized. The tracker will continue to preserve the predicted labels of the fruit in 
+subsequent frames where it is detected. The tracker also includes an estimation model that 
+predicts the position of the fruit in upcoming frames by extrapolating its motion using a 
+Kalman Filter [41], as originally proposed in SORT. 
+II. 
+Observation Stage: In the following frames, an IOU matching algorithm (as implemented 
+in SORT) attempts to match the prediction of the tracker with one of the model's 
+predictions. If a match is identified, the tracker's position is updated with the matched 
+model prediction and then used to predict the fruit’s position for the next frame. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+21 
+ 
+Meanwhile, the variables Ncnt  and Nobs  keep a record of the number of consecutive frames 
+with and without a match, respectively. If Nobs  reaches the user-defined threshold Tobs , it 
+is assumed that the fruit can no longer be detected and the algorithm will proceed to its 
+final stage.  
+III. 
+Enumeration Stage: For a fruit to be counted, the highest value of Ncnt , which represents 
+the maximum number of consecutive frames with a match (Nenu ), should meet a second 
+user-defined threshold Tenu. If this condition is met, then the fruit category with the highest 
+occurrence in the recorded labels will be counted (Figure 1.13B). Finally, the tracker will 
+be terminated for memory management.   
+The success of the proposed algorithm relies on setting appropriate values for Tenu  and Tobs , 
+which are determined by the speed at which the camera is moving and its frame rate. The moving 
+speed will determine the number of frames, N, in which each fruit can appear. To optimize the 
+algorithm's performance, empirical analysis of videos captured at different moving speeds 
+suggested that the values for Tenu  and Tobs  should be roughly set to N/3 and N, respectively. In 
+the data collection phase, it was observed that each fruit was visible to the camera for 
+approximately 10 seconds at a tractor speed of 0.1 - 0.15 m/s. Therefore, based on a frame rate of 
+30 FPS, Tenu  and Tobs , were set to 100 and 300 frames, respectively. 
+Tenu is particularly essential in avoiding the premature enumeration of fruits in the event of FP 
+predictions. Non-fruit objects, such as leaves, are rarely predicted for long sequences of 
+consecutive frames. Therefore, they would not be counted as a fruit since Tenu  is not met in these 
+scenarios (Figure 1.13A). Similarly, Tobs  is crucial in preventing the premature termination of 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+22 
+ 
+trackers. For instance, when a fruit that is already being tracked gets temporarily obstructed from 
+camera’s field of view and the model fails to detect it, the tracker will continue to predict the fruit’s 
+position in the next frames until the fruit is detected again (Figure 1.13C).  
+To accurately evaluate the enumeration by tracking algorithm, it is necessary to manually count 
+the cotton fruits in the rows where data was collected. However, due to time constraints, crowded 
+plant conditions, and copious number of fruits in the experimental field, it was not feasible to hand-
+count them for evaluation purposes. Therefore, additional data was collected from September 9th 
+to October 12th of 2022. A total of 16 videos were collected from rows in dryland conditions with 
+lower populations of leaves and fruits, allowing for a precise manual counting; see Figure 1.14. 
+ 
+Figure 1.12 A flowchart of the enumeration by tracking algorithm for a detected fruit. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+23 
+ 
+B 
+C 
+ 
+Figure 1.13 Example scenarios of the algorithm’s behavior: when facing a A) FP prediction that 
+appear and disappears quickly – B) a fruit that is consecutively detected but with different category 
+classifications – C) a fruit that was incorrectly not detected (FN) at Fi+2. Tenu  and Tobs  are set to 2 
+and 3, respectively. 
+      
+      
+ 
+Figure 1.14 Snapshots of videos taken for evaluation of the enumeration by tracking algorithm: 
+Videos were taken both in daylight (the two images on the left and middle) and at night with 
+artificial lighting (the image on the right). 
+Network Optimization in TensorRT 
+The computing power of a compact edge device, such as AGX Xavier, is significantly more 
+limited than that of a workstation GPU typically used for neural network training. As a result, the 
+complexity of the model that can be deployed on these devices is limited, and their latency is much 
+higher. However, Xavier GPU architectures are equipped with computing cores that support half-
+A 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+24 
+ 
+precision floating-point (FP16) and 8-bit integer (INT8) formats, which can be leveraged to 
+optimize the network in TensorRT for faster inference speed and reduced memory usage. 
+TensorRT is a deep learning inference optimizer and runtime library, developed by NVIDIA, that 
+is designed to accelerate the performance of neural networks on NVIDIA GPUs. It provides a high-
+performance inference engine that optimizes and deploys trained neural networks for use in 
+production environments. 
+Quantizing the model weights from single-precision floating-point (FP32) to lower precisions, 
+such as FP16 or INT8, can significantly accelerate inference. It has been shown that networks 
+optimized with FP16 precision can achieve approximately the same accuracies to those with FP32 
+precision, while INT8 precision can result in slightly lower accuracies due to its more limited range 
+of precision [42]. Therefore, to prioritize accuracy as discussed in Instance Segmentation Model, 
+the developed Mask-RCNN model was optimized with FP16 precision.  
+The TensorRT model with FP16 precision was evaluated for fruit segmentation using the same 
+dataset and metrics demonstrated in Model Evaluation. The results showed that the new model 
+achieved an identical AP score while offering a significant improvement in inference speed. 
+Specifically, the TensorRT model was approximately 2.4 times faster in inference than the original 
+Mask R-CNN model (Figure 1.15). 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+25 
+ 
+ 
+Figure 1.15 A comparison between the segmentation results obtained by the original model with 
+FP32 precision and the new model with FP16: It can be observed that the generated masks from 
+the FP32 model often appear marginally more refined than those of the FP16 model. 
+Three-Dimensional Segmentation by Projection 
+Pixel-level classification of the RGB images obtained from the developed model can be further 
+utilized to segment fruits in the generated 3D point clouds (Experimental Field Setup and Data 
+Collection). By leveraging the depth information associated with each pixel in the RGB-D images, 
+the segmented regions can be mapped onto their corresponding 3D points. To achieve this, it is 
+necessary to obtain D435i’s camera matrix, 𝐾, which was stored from RTAB-Map during the data 
+collection phase. As shown in Equation (1.4), 𝐾 provides information about the internal parameters 
+of the camera, including the focal length (𝑓𝑥 and 𝑓𝑦) and principal point (𝑐𝑥 and 𝑐𝑦). The focal 
+length represents the distance between the camera's pinhole and the image plane, determining 
+object magnification in the image, while the principal point indicates the location where the optical 
+axis of the camera intersects with the image plane.  
+
+Texas Tech University, Farshad Bolouri, August 2023 
+26 
+ 
+𝐾 = [
+𝑓𝑥
+0
+𝑐𝑥
+0
+𝑓𝑦
+𝑐𝑦
+0
+0
+1
+]                                                         (1.4) 
+To map a classified pixel, 𝑝(𝑢, 𝑣), in the RGB-D image onto its corresponding 3D point, 
+𝑝(𝑥, 𝑦, 𝑧), Equations (1.5-1.8) can be used, where 𝑑(𝑢, 𝑣) denotes value of the 𝑝(𝑢, 𝑣) in the depth 
+image [43].  
+𝑧  =  𝑑 (𝑢, 𝑣)                                                          (1.5) 
+[
+𝑢
+𝑣
+1
+] = 
+1
+𝑧 [
+𝑓𝑥
+0
+𝑐𝑥
+0
+𝑓𝑦
+𝑐𝑦
+0
+0
+1
+] [
+𝑥
+𝑦
+𝑧
+]                                                  (1.6) 
+⟹[
+𝑢
+𝑣
+1
+] = 
+[
+ 
+ 
+ 
+𝑥 ∙ 𝑓𝑥 +  𝑧 ∙ 𝑐𝑥
+𝑧
+𝑦 ∙ 𝑓𝑦 +  𝑧 ∙ 𝑐𝑦
+𝑧
+1
+]
+ 
+ 
+ 
+                                                        (1.7) 
+⟹{
+𝑥= 
+(𝑢 − 𝑐𝑥) ∙ 𝑧
+𝑓𝑥
+𝑦= 
+(𝑣 − 𝑐𝑦) ∙ 𝑧
+𝑓𝑦
+   
+𝑧  =  𝑑 (𝑢,𝑣)
+→         {
+𝑥= 
+(𝑢 − 𝑐𝑥) ∙ 𝑑 (𝑢,𝑣)
+𝑓𝑥
+𝑦= 
+(𝑣 − 𝑐𝑦) ∙ 𝑑 (𝑢,𝑣)
+𝑓𝑦
+                                  (1.8) 
+To illustrate this process, Figures 1.16 and 1.17 provide examples of segmentations being 
+projected from 2D to 3D. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+27 
+ 
+ 
+Figure 1.16 Process of segmentations being projected from 2D and 3D by leveraging depth 
+information from RGB-D image. The rows demonstrate this process for an OpenBoll, 
+ClosedBoll, and a Square from top to bottom. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+28 
+ 
+ 
+Figure 1.17 Projected segmentations of the developed model from 2D to the 3D point cloud shown 
+in Figure 1.5B. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+29 
+ 
+RESULTS AND DISCUSSION 
+Instance Segmentation Model 
+The model achieves an AP score of 79% for both segmentation and detection tasks (detailed 
+in Table 2.1), which is on par with the leading scores reported on the MS COCO dataset. In 
+comparison to other deep learning models mentioned in Table I.1, the model outperforms the 
+Flower detection model proposed by Jiang et al. [23] by 5%. Sun et al. [24] and Zhang et al. [25] 
+report higher AP scores for ClosedBoll detection; however, it should be emphasized that their 
+scores are not directly comparable to those in this study. Notably, Sun et al. [24] used single points 
+in their custom model to localize the ClosedBolls instead of bounding boxes, resulting in 
+alternative definitions for TP, FP, FNs, and thus, the AP score. Additionally, the authors developed 
+a Faster-RCNN model for comparison and reported an AP score of 38.5%, which is significantly 
+lower than the detection score of ClosedBolls reported in Table 2.1. Similarly, Zhang et al. [25] 
+used a nonstandard definition of AP by dividing the sum of precision values for each image by the 
+total number of images. As for Adke et al. [3], the authors did not report an evaluation based on 
+the AP score. Instead, they quantified the performance of their detection model based solely on its 
+enumeration results.  
+Table 2.1 AP scores across fruit categories in both detection and segmentation.  
+ 
+2D Detection 
+2D Segmentation 
+ 
+OpenBoll 
+ClosedBoll 
+Flower 
+Square 
+Average 
+OpenBoll 
+ClosedBoll 
+Flower 
+Square 
+Average 
+AP 
+85.4% 
+79.5% 
+76.9% 
+74.0% 
+78.9% 
+82.9% 
+78.7% 
+78.2% 
+75.0% 
+78.7% 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+30 
+ 
+Regarding the performance of the developed model in this study, two additional points should 
+be emphasized. First, it is important to reiterate that no other studies have undertaken detection 
+and segmentation of cotton fruits across multiple stages of growth. Second, the model’s results 
+could be objectively improved were it not for the uncertainty surrounding the validity of false 
+predictions in the following scenarios: 
+I. 
+Occasionally, flowers can remain attached to a developing boll after the growth cycle 
+which is referred to as a bloom tag [44]. Depending on the scene, domain experts may have 
+varying interpretations of whether the Flower has fully transitioned to a ClosedBoll, which 
+could result in a FP classification; see Figure 2.1A. 
+II. 
+Developing bolls that are obscured by their bracts may result in both Square and 
+ClosedBoll predictions. In such cases, it may be difficult to determine whether the target 
+fruit is in the ClosedBoll or Square stage, resulting in one of the predictions being classified 
+as a FP; see Figure 2.1B. 
+III. 
+As mentioned in the previous section, there exist crowded scenes in which only fruits with 
+identifiable boundaries were annotated. Due to the complexity of these scenes, model 
+predictions may not align with the given ground truth, but it could still be argued that the 
+predictions correctly detected and classified the target fruits while complying with the 
+established annotation protocol; see Figure 2.1C. 
+Therefore, to further evaluate the model’s predictions, a survey was conducted among 10 
+experts in the cotton physiology field, which included 80 unannotated images sampled temporally 
+from the collected dataset (these images were not used in the model development process). Each 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+31 
+ 
+expert was asked to count the number of fruits for each category. To highlight the disparity in 
+scene interpretation among the experts referred to in (I), the normalized values of the participants' 
+counts were compared using the Relative Difference equation [45], as shown in Eq. (2.1). 
+𝑅𝑒𝑙𝑎𝑡𝑖𝑣𝑒 𝐷𝑖𝑓𝑓𝑒𝑟𝑒𝑛𝑐𝑒 (%) = | 
+𝑥−𝑦
+max ( |𝑥| ,|𝑦| ) | ∙100                            (2.1) 
+In Table 2.2, it can be observed that in the same image, the average relative difference among 
+participants' counts is 27% with the Square class exhibiting the largest discrepancy. 
+Table 2.2 This table shows the average Relative Difference in fruit count for each image among 
+the participants in the survey.  
+OpenBoll 
+ClosedBoll 
+Flower 
+Square 
+Average 
+Relative Difference 
+8% 
+28% 
+28% 
+43% 
+27% 
+  
+The experts' counts for each image were then compared to the model's counts using the 
+Coefficient of Determination (R2) as an evaluation metric. The results, depicted in Figure 2.2, show 
+that the model achieves a notable R2 value of 0.97 at counting the total number of fruits in each 
+image and an average of 0.85 for each category. Figure 2.2 also demonstrates that the model's 
+predictions align more closely with the experts' counts for the OpenBolls and ClosedBolls 
+categories, while exhibiting larger discrepancies for the Flower and Square categories. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+32 
+ 
+ 
+Figure 2.1 Uncertainty surrounding false predictions: A) FP classification for the Flower 
+prediction. – B) FP classification for Square prediction. – C) One FP and two FN classifications 
+for the OpenBoll prediction. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+33 
+ 
+  
+Figure 2.2 The figure depicts the R2 measurement between the model's and expert's count for each 
+category across all the images.  
+Fruit Enumeration by Tracking 
+The enumeration algorithm's performance was evaluated using the R2 metric, comparing the 
+results to the hand-counted ground truth; see Table 2.3 and Figure 2.3. The algorithm achieves a 
+strong average R2 value of 0.93. For comparison, while the highest reported R2 measurement for 
+OpenBoll enumeration by Sun et al. [21] is 0.91, the proposed algorithm achieves an R2 value of 
+0.97. 
+Table 2.3 Evaluation of the enumeration by tracking algorithm based on R2. 
+OpenBoll 
+ClosedBoll 
+Flower 
+Square 
+Average 
+R2 
+0.97 
+0.95 
+0.93 
+0.88 
+0.93 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+34 
+ 
+ 
+Figure 2.3 Comparison of the counts by the enumeration algorithm and the hand-counted ground-
+truth in the collected 16 videos. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+35 
+ 
+CONCLUSION 
+This paper presented CottonSense, a cost-effective and power-efficient HTP system for cotton 
+plants that operates entirely on an NVIDIA Jetson AGX Xavier, for both data collection and 
+processing. CottonSense offers an: 
+I. 
+Effective framework for collecting phenotypic measurements under agronomic field 
+conditions using RGB-D cameras in the daylight and at night. During data collection, the 
+system produces a 3D point cloud of each row in real-time by using a custom configuration 
+for the RTAB-Map library. 
+II. 
+Approach for 2D and 3D segmentation of cotton fruits using a Mask-RCNN model at four 
+different growth stages including square, flower, closed boll, and open boll. The model is 
+optimized with TensorRT to process images 2.4 times faster during deployment, and it 
+yields a strong agreement with the per image counts of ten field experts, as indicated by an 
+average R2 value of 0.94. 
+III. 
+Efficient and accurate algorithm for enumeration of segmented fruits over large population 
+of plants across consecutive video frames. The algorithm is developed upon SORT’s 
+tracking strategy and achieves an R2 value of 0.93 when compared to hand-counted fruits 
+in the field.  
+The ability to enumerate and discriminate cotton fruit could have significant value for both 
+breeders and producers. Cotton breeding is designed around not only yield, but also acclimation 
+to environment, which is described by fruiting pattern. CottonSense enables improved capture of 
+crop development and ontogeny, providing breeders with valuable insights into the growth patterns 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+36 
+ 
+and stages of cotton crops. By harnessing the capabilities of CottonSense, breeders can develop 
+robust yield models based on precise fruit timing and development, thereby optimizing crop 
+productivity. To further enhance the accuracy of crop assessment and evaluation, future efforts 
+will be directed towards expanding the system's capabilities through the integration of additional 
+phenotypic parameters, including leaf counting and node counting. Ongoing research and 
+development of CottonSense aim to refine its functionalities to better serve breeders and producers, 
+ultimately maximizing cotton yields. This includes the development of more resilient cotton 
+varieties capable of withstanding challenging conditions such as water limitation. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+37 
+ 
+BIBLIOGRAPHY 
+[1] 
+R. Fangueiro and S. Rana, Natural Fibres: Towards Industrial and Technology Advances 
+in Science Applications, vol. 12. 2016. 
+[2] 
+I. L. B. Pabuayon, B. R. Kelly, D. Mitchell-McCallister, C. L. Coldren, and G. L. Ritchie, 
+“Cotton boll distribution: A review,” Agron. J., vol. 113, no. 2, pp. 956–970, 2021, doi: 
+10.1002/agj2.20516. 
+[3] 
+S. Adke, C. Li, K. M. Rasheed, and F. W. Maier, “Supervised and Weakly Supervised 
+Deep Learning for Segmentation and Counting of Cotton Bolls Using Proximal Imagery,” 
+Sensors, vol. 22, no. 10, 2022, doi: 10.3390/s22103688. 
+[4] 
+G. L. Ritchie, J. R. Whitaker, and G. D. Collins, “Effect of sample size on cotton plant 
+mapping analysis and results,” J. Cotton Sci., vol. 16, no. 4, pp. 224–232, 2012. 
+[5] 
+Y. Huang, H. J. Brand, R. Sui, S. J. Thomson, T. Furukawa, and M. W. Ebelhar, “Cotton 
+yield estimation using very high-resolution digital images acquired with a low-cost small 
+unmanned aerial vehicle,” Trans. ASABE, vol. 59, no. 6, pp. 1563–1574, 2016, doi: 
+10.13031/trans.59.11831. 
+[6] 
+A. Feng, M. Zhang, K. A. Sudduth, E. D. Vories, and J. Zhou, “Cotton yield estimation 
+from UAV-based plant height,” Trans. ASABE, vol. 62, no. 2, pp. 393–404, 2019, doi: 
+10.13031/trans.13067. 
+[7] 
+J. Normanly, High-Throughput Phenotyping in Plants, vol. 918. 2012. 
+[8] 
+I. L. B. Pabuayon, Y. Sun, W. Guo, and G. L. Ritchie, “High-throughput phenotyping in 
+cotton: a review,” J. Cott. Res., vol. 2, no. 1, pp. 1–9, 2019, doi: 10.1186/s42397-019-
+0035-0. 
+[9] 
+R. Oberti and A. Shapiro, “Advances in robotic agriculture for crops,” Biosyst. Eng., vol. 
+146, pp. 1–2, 2016, doi: 10.1016/j.biosystemseng.2016.05.010. 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+38 
+ 
+[10] M. Zaman-Allah et al., “Unmanned aerial platform-based multi-spectral imaging for field 
+phenotyping of maize,” Plant Methods, vol. 11, no. 1, pp. 1–10, 2015, doi: 
+10.1186/s13007-015-0078-2. 
+[11] W. S. Qureshi, A. Payne, K. B. Walsh, R. Linker, O. Cohen, and M. N. Dailey, “Machine 
+vision for counting fruit on mango tree canopies,” Precis. Agric., vol. 18, no. 2, pp. 224–
+244, 2017, doi: 10.1007/s11119-016-9458-5. 
+[12] M. Rahnemoonfar and C. Sheppard, “Deep count: Fruit counting based on deep simulated 
+learning,” Sensors (Switzerland), vol. 17, no. 4, pp. 1–12, 2017, doi: 10.3390/s17040905. 
+[13] S. Sun, C. Li, A. H. Paterson, P. W. Chee, and J. S. Robertson, “Image processing 
+algorithms for infield single cotton boll counting and yield prediction,” Comput. Electron. 
+Agric., vol. 166, no. April, p. 104976, 2019, doi: 10.1016/j.compag.2019.104976. 
+[14] C. Snowden, G. Ritchie, J. Cave, W. Keeling, and N. Rajan, “Multiple irrigation levels 
+affect boll distribution, yield, and fiber micronaire in cotton,” Agron. J., vol. 105, no. 6, 
+pp. 1536–1544, 2013, doi: 10.2134/agronj2013.0084. 
+[15] G. A. Constable and M. P. Bange, “The yield potential of cotton (Gossypium hirsutum 
+L.),” F. Crop. Res., vol. 182, pp. 98–106, 2015, doi: 10.1016/j.fcr.2015.07.017. 
+[16] L. Wallace, S. Hillman, K. Reinke, and B. Hally, “Non-destructive estimation of above-
+ground surface and near-surface biomass using 3D terrestrial remote sensing techniques,” 
+Methods Ecol. Evol., vol. 8, no. 11, pp. 1607–1616, 2017, doi: 10.1111/2041-210X.12759. 
+[17] L. Wang, X. Zhou, X. Zhu, Z. Dong, and W. Guo, “Estimation of biomass in wheat using 
+random forest regression algorithm and remote sensing data,” Crop J., vol. 4, no. 3, pp. 
+212–219, 2016, doi: 10.1016/j.cj.2016.01.008. 
+[18] W. Shi, J. Cao, Q. Zhang, Y. Li, and L. Xu, “Edge Computing: Vision and Challenges,” 
+IEEE Internet Things J., vol. 3, no. 5, pp. 637–646, 2016, doi: 
+10.1109/JIOT.2016.2579198. 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+39 
+ 
+[19] NVIDIA, “NVIDIA Jetson AGX Xavier,” 2019, [Online]. Available: 
+https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-agx-
+xavier/. 
+[20] NVIDIA, “Efficient inference with tensorrt,” pp. 1–24, 2016, [Online]. Available: 
+developer.nvidia.com/tensorrt. 
+[21] S. Sun et al., “Three-dimensional photogrammetric mapping of cotton bolls in situ based 
+on point cloud segmentation and clustering,” ISPRS J. Photogramm. Remote Sens., vol. 
+160, no. May 2019, pp. 195–207, 2020, doi: 10.1016/j.isprsjprs.2019.12.011. 
+[22] S. Ren, K. He, R. Girshick, and J. Sun, “Faster R-CNN: Towards Real-Time Object 
+Detection with Region Proposal Networks,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 
+39, no. 6, pp. 1137–1149, 2017, doi: 10.1109/TPAMI.2016.2577031. 
+[23] Y. Jiang, C. Li, R. Xu, S. Sun, J. S. Robertson, and A. H. Paterson, “DeepFlower: a deep 
+learning-based approach to characterize flowering patterns of cotton plants in the field,” 
+Plant Methods, vol. 16, no. 1, pp. 1–17, 2020, doi: 10.1186/s13007-020-00698-y. 
+[24] M. Sun, Y. Li, Y. Qi, H. Zhou, and L. X. Tian, “Cotton boll localization method based on 
+point annotation and multi-scale fusion,” Front. Plant Sci., vol. 13, 2022, doi: 
+10.3389/fpls.2022.960592. 
+[25] Y. Zhang, G. Yang, Y. Liu, C. Wang, and Y. Yin, “An improved YOLO network for 
+unopened cotton boll detection in the field,” J. Intell. Fuzzy Syst., vol. 42, no. 3, pp. 2193–
+2206, 2022, doi: 10.3233/JIFS-211514. 
+[26] M. Labbé and F. Michaud, “RTAB-Map as an open-source lidar and visual simultaneous 
+localization and mapping library for large-scale and long-term online operation,” J. F. 
+Robot., vol. 36, no. 2, pp. 416–446, 2019, doi: 10.1002/rob.21831. 
+[27] J. Shi and C. Tomasi, “Good Features to Track,” Image (Rochester, N.Y.), pp. 593–600, 
+1994. 
+ 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+40 
+ 
+[28] E. Rublee, V. Rabaud, K. Konolige, and G. Bradski, “ORB: An efficient alternative to 
+SIFT or SURF,” Proc. IEEE Int. Conf. Comput. Vis., pp. 2564–2571, 2011, doi: 
+10.1109/ICCV.2011.6126544. 
+[29] M. Muja and D. G. Lowe, “Fast approximate nearest neighbors with automatic algorithm 
+configuration,” VISAPP 2009 - Proc. 4th Int. Conf. Comput. Vis. Theory Appl., vol. 1, pp. 
+331–340, 2009, doi: 10.5220/0001787803310340. 
+[30] P. J. Besl and N. D. McKay, “A Method for Registration of 3-D Shapes,” IEEE Trans. 
+Pattern Anal. Mach. Intell., vol. 14, pp. 239–256, 1992. 
+[31] J. Park, Q.-Y. Zhou, and V. Koltun, “Colored Point Cloud Registration Revisited,” Iccv, 
+2017. 
+[32] D. M. Oosterhuis, “Growth and Development of a Cotton Plant,” Nitrogen Nutr. Cott. 
+Pract. Issue, pp. 1–24, 1990, doi: 
+https://doi.org/10.2134/1990.nitrogennutritionofcotton.c1. 
+[33] A. Mueed Hafiz and G. Mohiuddin Bhat, “A Survey on Instance Segmentation,” Int. J. 
+Multimed. Inf. Retr., vol. 9, pp. 171–189, 2020. 
+[34] K. He, G. Gkioxari, P. Dollár, and R. Girshick, “Mask R-CNN,” IEEE Trans. Pattern 
+Anal. Mach. Intell., vol. 42, no. 2, pp. 386–397, 2020, doi: 
+10.1109/TPAMI.2018.2844175. 
+[35] D. Bolya, C. Zhou, F. Xiao, and Y. J. Lee, “YOLACT Better Real-Time Instance 
+Segmentation,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 44, no. 2, pp. 1108–1121, 
+2019, doi: 10.1109/TPAMI.2020.3014297. 
+[36] E. Shelhamer, J. Long, and T. Darrell, “Fully Convolutional Networks for Semantic 
+Segmentation,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 39, no. 4, pp. 640–651, 
+2017, doi: 10.1109/TPAMI.2016.2572683. 
+[37] T. Y. Lin, P. Dollár, R. Girshick, K. He, B. Hariharan, and S. Belongie, “Feature Pyramid 
+Networks for Object Detection,” CVPR, 2017, doi: 10.1109/ICVRIS.2019.00110. 
+
+Texas Tech University, Farshad Bolouri, August 2023 
+41 
+ 
+[38] T. Y. Lin et al., “Microsoft COCO: Common objects in context,” Lect. Notes Comput. Sci. 
+(including Subser. Lect. Notes Artif. Intell. Lect. Notes Bioinformatics), vol. 8693 LNCS, 
+no. PART 5, pp. 740–755, 2014, doi: 10.1007/978-3-319-10602-1_48. 
+[39] M. Everingham, S. M. A. Eslami, L. Van Gool, C. K. I. Williams, J. Winn, and A. 
+Zisserman, “The Pascal Visual Object Classes Challenge: A Retrospective,” Int. J. 
+Comput. Vis., vol. 111, no. 1, pp. 98–136, Jan. 2015, doi: 10.1007/s11263-014-0733-5. 
+[40] A. Bewley, Z. Ge, L. Ott, F. Ramos, and B. Upcroft, “Simple online and realtime 
+tracking,” Proc. - Int. Conf. Image Process. ICIP, vol. 2016-Augus, pp. 3464–3468, 2016, 
+doi: 10.1109/ICIP.2016.7533003. 
+[41] R. E. Kalman, “A new approach to linear filtering and prediction problems,” J. Fluids 
+Eng. Trans. ASME, vol. 82, no. 1, pp. 35–45, 1960, doi: 10.1115/1.3662552. 
+[42] P. Gysel, M. Motamedi, and S. Ghiasi, “Hardware-oriented Approximation of 
+Convolutional Neural Networks,” pp. 1–8, 2016, doi: 10.48550/arXiv.1605.06402. 
+[43] R. Hartley and A. Zisserman, Multiple View Geometry in Computer Vision, 2nd ed. 2004. 
+[44] G. L. Ritchie, C. W. Bednarz, P. H. Jost, and S. M. Brown, “Cotton Growth and 
+Development,” 2007, doi: 10.32473/edis-ag235-2005. 
+[45] L. Törnqvist, P. Vartia, and Y. O. Vartia, “How should relative changes be measured?,” 
+Am. Stat., vol. 39, no. 1, pp. 43–46, 1985, doi: 10.1080/00031305.1985.10479385. 
+ 

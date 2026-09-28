@@ -1,0 +1,2463 @@
+TrackFormer: Multi-Object Tracking with Transformers
+Tim Meinhardt1 *
+Alexander Kirillov2
+Laura Leal-Taix´e1
+Christoph Feichtenhofer2
+1Technical University of Munich
+2Facebook AI Research (FAIR)
+Abstract
+The challenging task of multi-object tracking (MOT) re-
+quires simultaneous reasoning about track initialization,
+identity, and spatio-temporal trajectories.
+We formulate
+this task as a frame-to-frame set prediction problem and
+introduce TrackFormer, an end-to-end trainable MOT ap-
+proach based on an encoder-decoder Transformer architec-
+ture. Our model achieves data association between frames
+via attention by evolving a set of track predictions through
+a video sequence. The Transformer decoder initializes new
+tracks from static object queries and autoregressively fol-
+lows existing tracks in space and time with the concep-
+tually new and identity preserving track queries.
+Both
+query types benefit from self- and encoder-decoder atten-
+tion on global frame-level features, thereby omitting any ad-
+ditional graph optimization or modeling of motion and/or
+appearance. TrackFormer introduces a new tracking-by-
+attention paradigm and while simple in its design is able to
+achieve state-of-the-art performance on the task of multi-
+object tracking (MOT17 and MOT20) and segmentation
+(MOTS20). The code is available at https://github.
+com/timmeinhardt/trackformer.
+1. Introduction
+Humans need to focus their attention to track objects in
+space and time, for example, when playing a game of ten-
+nis, golf, or pong. This challenge is only increased when
+tracking not one, but multiple objects, in crowded and real
+world scenarios. Following this analogy, we demonstrate
+the effectiveness of Transformer [51] attention for the task
+of multi-object tracking (MOT) in videos.
+The goal in MOT is to follow the trajectories of a set of
+objects, e.g., pedestrians, while keeping their identities dis-
+criminated as they are moving throughout a video sequence.
+Due to the advances in image-level object detection [7,39],
+most approaches follow the two-step tracking-by-detection
+paradigm: (i) detecting objects in individual video frames,
+*Work done during an internship at Facebook AI Research.
+Correspondence to: tim.meinhardt@tum.de
+Figure 1.
+TrackFormer jointly performs object detection and
+tracking-by-attention with Transformers. Object and autoregres-
+sive track queries reason about track initialization, identity, and
+spatiotemporal trajectories.
+and (ii) associating sets of detections between frames and
+thereby creating individual object tracks over time. Tra-
+ditional tracking-by-detection methods associate detections
+via temporally sparse [23, 26] or dense [19, 22] graph opti-
+mization, or apply convolutional neural networks to predict
+matching scores between detections [8,24].
+Recent works [4,6,29,69] suggest a variation of the tradi-
+tional paradigm, coined tracking-by-regression [12]. In this
+approach, the object detector not only provides frame-wise
+detections, but replaces the data association step with a con-
+tinuous regression of each track to the changing position of
+its object. These approaches achieve track association im-
+plicitly, but provide top performance only by relying either
+on additional graph optimization [6, 29] or motion and ap-
+pearance models [4]. This is largely due to the isolated and
+local bounding box regression which lacks any notion of
+object identity or global communication between tracks.
+In this work, we introduce the tracking-by-attention
+paradigm which not only applies attention for data associ-
+ation [11, 70] but jointly performs tracking and detection.
+As shown in Figure 1, this is achieved by evolving a set of
+
+tracks from frame to frame forming trajectories over time.
+We present a first straightforward instantiation of
+tracking-by-attention, TrackFormer, an end-to-end train-
+able Transformer [51] encoder-decoder architecture.
+It
+encodes frame-level features from a convolutional neural
+network (CNN) [18] and decodes queries into bounding
+boxes associated with identities. The data association is
+performed through the novel and simple concept of track
+queries. Each query represents an object and follows it in
+space and time over the course of a video sequence in an
+autoregressive fashion. New objects entering the scene are
+detected by static object queries as in [7, 71] and subse-
+quently transform to future track queries. At each frame,
+the encoder-decoder computes attention between the input
+image features and the track as well as object queries, and
+outputs bounding boxes with assigned identities. Thereby,
+TrackFormer performs tracking-by-attention and achieves
+detection and data association jointly without relying on
+any additional track matching, graph optimization, or ex-
+plicit modeling of motion and/or appearance. In contrast
+to tracking-by-detection/regression, our approach detects
+and associates tracks simultaneously in a single step via at-
+tention (and not regression). TrackFormer extends the re-
+cently proposed set prediction objective for object detec-
+tion [7,48,71] to multi-object tracking.
+We evaluate TrackFormer on the MOT17 [30] and
+MOT20 [13] benchmarks where it achieves state-of-the-art
+performance for public and private detections. Furthermore,
+we demonstrate the extension with a mask prediction head
+and show state-of-the-art results on the Multi-Object Track-
+ing and Segmentation (MOTS20) challenge [52]. We hope
+this simple yet powerful baseline will inspire researchers to
+explore the potential of the tracking-by-attention paradigm.
+In summary, we make the following contributions:
+• An end-to-end trainable multi-object tracking ap-
+proach which achieves detection and data association
+in a new tracking-by-attention paradigm.
+• The concept of autoregressive track queries which em-
+bed an object’s spatial position and identity, thereby
+tracking it in space and time.
+• New state-of-the-art results on three challenging multi-
+object tracking (MOT17 and MOT20) and segmenta-
+tion (MOTS20) benchmarks.
+2. Related work
+In light of the recent trend in MOT to look beyond
+tracking-by-detection, we categorize and review methods
+according to their respective tracking paradigm.
+Tracking-by-detection
+approaches form trajectories by
+associating a given set of detections over time.
+Graphs have been used for track association and long-
+term re-identification by formulating the problem as a max-
+imum flow (minimum cost) optimization [3] with distance
+based [21, 37, 64] or learned costs [25].
+Other methods
+use association graphs [46], learned models [23], and mo-
+tion information [22], general-purpose solvers [63], multi-
+cuts [49], weighted graph labeling [19], edge lifting [20],
+or trainable graph neural networks [6,55]. However, graph-
+based approaches suffer from expensive optimization rou-
+tines, limiting their practical application for online tracking.
+Appearance driven methods capitalize on increasingly
+powerful image recognition backbones to track objects by
+relying on similarity measures given by twin neural net-
+works [24], learned reID features [33,42], detection candi-
+date selection [8] or affinity estimation [10]. Similar to re-
+identification, appearance models struggle in crowded sce-
+narios with many object-object-occlusions.
+Motion can be modelled for trajectory prediction [1, 26,
+43] using a constant velocity assumption (CVA) [2, 9] or
+the social force model [26, 35, 44, 59]. Learning a motion
+model from data [25] accomplishes track association be-
+tween frames [65]. However, the projection of non-linear
+3D motion [50] into the 2D image domain still poses a chal-
+lenging problem for many models.
+Tracking-by-regression
+refrains from associating detec-
+tions between frames but instead accomplishes tracking by
+regressing past object locations to their new positions in the
+current frame. Previous efforts [4,15] use regression heads
+on region-pooled object features. In [69], objects are rep-
+resented as center points which allow for an association by
+a distance-based greedy matching algorithm. To overcome
+their lacking notion of object identity and global track rea-
+soning, additional re-identification and motion models [4],
+as well as traditional [29] and learned [6] graph methods
+have been necessary to achieve top performance.
+Tracking-by-segmentation
+not
+only
+predicts
+object
+masks but leverages the pixel-level information to mitigate
+issues with crowdedness and ambiguous backgrounds.
+Prior attempts used category-agnostic image segmenta-
+tion [31], applied Mask R-CNN [17] with 3D convolu-
+tions [52], mask pooling layers [38], or represented objects
+as unordered point clouds [58] and cost volumes [57].
+However, the scarcity of annotated MOT segmentation data
+makes modern approaches still rely on bounding boxes.
+Attention for image recognition
+correlates each element
+of the input with respect to the others and is used in Trans-
+formers [51] for image generation [34] and object detec-
+tion [7, 71]. For MOT, attention has only been used to as-
+sociate a given set of object detections [11,70], not tackling
+the detection and tracking problem jointly.
+
+In contrast, TrackFormer casts the entire tracking objec-
+tive into a single set prediction problem, applying attention
+not only for the association step. It jointly reasons about
+track initialization, identity, and spatio-temporal trajecto-
+ries. We only rely on feature-level attention and avoid addi-
+tional graph optimization and appearance/motion models.
+3. TrackFormer
+We present TrackFormer, an end-to-end trainable multi-
+object tracking (MOT) approach based on an encoder-
+decoder Transformer [51] architecture.
+This section de-
+scribes how we cast MOT as a set prediction problem and
+introduce the new tracking-by-attention paradigm. Further-
+more, we explain the concept of track queries and their ap-
+plication for frame-to-frame data association.
+3.1. MOT as a set prediction problem
+Given a video sequence with K individual object iden-
+tities, MOT describes the task of generating ordered tracks
+Tk = (bk
+t1, bk
+t2, . . . ) with bounding boxes bt and track iden-
+tities k. The subset (t1, t2, . . . ) of total frames T indicates
+the time span between an object entering and leaving the
+the scene. These include all frames for which an object is
+occluded by either the background or other objects.
+In order to cast MOT as a set prediction problem, we
+leverage an encoder-decoder Transformer architecture. Our
+model performs online tracking and yields per-frame object
+bounding boxes and class predictions associated with iden-
+tities in four consecutive steps:
+(i) Frame-level feature extraction with a common CNN
+backbone, e.g., ResNet-50 [18].
+(ii) Encoding of frame features with self-attention in a
+Transformer encoder [51].
+(iii) Decoding of queries with self- and encoder-decoder at-
+tention in a Transformer decoder [51].
+(iv) Mapping of queries to box and class predictions using
+multilayer perceptrons (MLP).
+Objects are implicitly represented in the decoder queries,
+which are embeddings used by the decoder to output bound-
+ing box coordinates and class predictions. The decoder al-
+ternates between two types of attention: (i) self-attention
+over all queries, which allows for joint reasoning about
+the objects in a scene and (ii) encoder-decoder attention,
+which gives queries global access to the visual information
+of the encoded features. The output embeddings accumu-
+late bounding box and class information over multiple de-
+coding layers. The permutation invariance of Transformers
+requires additive feature and object encodings for the frame
+features and decoder queries, respectively.
+3.2. Tracking-by-attention with queries
+The total set of output embeddings is initialized with two
+types of query encodings: (i) static object queries, which
+allow the model to initialize tracks at any frame of the video,
+and (ii) autoregressive track queries, which are responsible
+for tracking objects across frames.
+The simultaneous decoding of object and track queries
+allows our model to perform detection and tracking in a uni-
+fied way, thereby introducing a new tracking-by-attention
+paradigm. Different tracking-by-X approaches are defined
+by their key component responsible for track generation.
+For tracking-by-detection, the tracking is performed by
+computing/modelling distances between frame-wise object
+detections. The tracking-by-regression paradigm also per-
+forms object detection, but tracks are generated by regress-
+ing each object box to its new position in the current frame.
+Technically, our TrackFormer also performs regression in
+the mapping of object embeddings with MLPs. However,
+the actual track association happens earlier via attention in
+the Transformer decoder. A detailed architecture overview
+which illustrates the integration of track and object queries
+into the Transformer decoder is shown in the appendix.
+Track initialization.
+New objects appearing in the scene
+are detected by a fixed number of Nobject output embeddings
+each initialized with a static and learned object encoding
+referred to as object queries [7]. Intuitively, each object
+query learns to predict objects with certain spatial proper-
+ties, such as bounding box size and position. The decoder
+self-attention relies on the object encoding to avoid dupli-
+cate detections and to reason about spatial and categorical
+relations of objects. The number of object queries is ought
+to exceed the maximum number of objects per frame.
+Track queries.
+In order to achieve frame-to-frame track
+generation, we introduce the concept of track queries to the
+decoder. Track queries follow objects through a video se-
+quence carrying over their identity information while adapt-
+ing to their changing position in an autoregressive manner.
+For this purpose, each new object detection initializes
+a track query with the corresponding output embedding of
+the previous frame. The Transformer encoder-decoder per-
+forms attention on frame features and decoder queries con-
+tinuously updating the instance-specific representation of an
+object‘s identity and location in each track query embed-
+ding. Self-attention over the joint set of both query types al-
+lows for the detection of new objects while simultaneously
+avoiding re-detection of already tracked objects.
+In Figure 2, we provide a visual illustration of the track
+query concept.
+The initial detections in frame t = 0
+spawn new track queries following their corresponding ob-
+jects to frame t and beyond.
+To this end, Nobject ob-
+
+X
+X X
+X
+X
+X
+X
+X
+X
+CNN
+bWcAvIskIFH6M/q7BF2uy7w4o=">AB6nicbVBN
+S8NAEJ34WetX1aOXxSJ4KklB9FjoxVOpaD+gDWz3bR
+LN5uwOxFK6E/w4kERr/4ib/4bt20O2vpg4PHeDPzgk
+QKg67Wxsbm3v7Bb2ivsHh0fHpZPTtolTzXiLxTLW
+3YAaLoXiLRQoeTfRnEaB5J1gUp/7nSeujYjVI04T7kd
+0pEQoGEUrPdQbjUGp7FbcBcg68XJShzNQemrP4xZG
+nGFTFJjep6boJ9RjYJPiv2U8MTyiZ0xHuWKhpx42eL
+U2fk0ipDEsbalkKyUH9PZDQyZhoFtjOiODar3lz8z+
+ulGN76mVBJilyx5aIwlQRjMv+bDIXmDOXUEsq0sLcSN
+qaMrTpFG0I3urL6RdrXjXFfe+Wq65eRwFOIcLuAIP
+bqAGd9CEFjAYwTO8wpsjnRfn3flYtm4+cwZ/IHz+Q
+PISo1n</latexit>CNN
+uy7w4o=">AB6nicbVBNS8NAEJ34WetX1aOXxSJ4KklB9FjoxVOpaD+gDWz3bRLN5uwOxFK6E/w4kERr/4i
+b/4bt20O2vpg4PHeDPzgkQKg67Wxsbm3v7Bb2ivsHh0fHpZPTtolTzXiLxTLW3YAaLoXiLRQoeTfRnEaB5
+J1gUp/7nSeujYjVI04T7kd0pEQoGEUrPdQbjUGp7FbcBcg68XJShzNQemrP4xZGnGFTFJjep6boJ9RjYJPiv
+2U8MTyiZ0xHuWKhpx42eLU2fk0ipDEsbalkKyUH9PZDQyZhoFtjOiODar3lz8z+ulGN76mVBJilyx5aIwlQRj
+Mv+bDIXmDOXUEsq0sLcSNqaMrTpFG0I3urL6RdrXjXFfe+Wq65eRwFOIcLuAIPbqAGd9CEFjAYwTO8wpsjn
+Rfn3flYtm4+cwZ/IHz+QPISo1n</latexit>CNN
+Transformer
+Encoder
+Transformer
+Encoder
+Transformer
+Encoder
+Transformer
+Decoder
+S4BZ58=">ACFnicbVDLSsNAFJ34rPUVdekmWAQ3lqQguizowmWFvqANZTK5aYfOTMLMRCihX+HGX3HjQhG3
+4s6/cdJmUVsPDBzOuXfuvSdIGFXadX+stfWNza3t0k5d2/4NA+Om6rOJUEWiRmsewGWAGjAlqagbdRALmA
+YNOML7N/c4jSEVj0dSTBHyOh4JGlGBtpIF92ScgNMi8P2tKLFQUSw5yWl407oDEoREHdsWtujM4q8QrSAUVaAz
+s734Yk5SbrwjDSvU8N9F+hqWmhIEZkipIMBnjIfQMFZiD8rPZWVPn3CihY/YxT2hnpi52ZJgrNeGBqeRYj9Sy
+l4v/eb1URzd+RkWSahBkPihKmaNjJ8/ICakEotnEwkNbs6ZIQlJiYPVTYheMsnr5J2repdVd2HWqXuFnGU0
+Ck6QxfIQ9eoju5RA7UQU/oBb2hd+vZerU+rM956ZpV9JygP7C+fgFXJ6Cq</latexit>Transformer
+Decoder
+Transformer
+Decoder
+Figure 2. TrackFormer casts multi-object tracking as a set prediction problem performing joint detection and tracking-by-attention. The
+architecture consists of a CNN for image feature extraction, a Transformer [51] encoder for image feature encoding and a Transformer
+decoder which applies self- and encoder-decoder attention to produce output embeddings with bounding box and class information. At
+frame t = 0, the decoder transforms Nobject object queries (white) to output embeddings either initializing new autoregressive track queries
+or predicting the background class (crossed). On subsequent frames, the decoder processes the joint set of Nobject + Ntrack queries to follow
+or remove (blue) existing tracks as well as initialize new tracks (purple).
+ject queries (white) are decoded to output embeddings for
+potential track initializations.
+Each valid object detec-
+tion {b0
+0, b1
+0, . . . } with a classification score above σobject,
+i.e., output embedding not predicting the background class
+(crossed), initializes a new track query embedding. Since
+not all objects in a sequence appear on the first frame, the
+track identities Kt=0 = {0, 1, . . . } only represent a sub-
+set of all K. For the decoding step at any frame t > 0,
+track queries initialize additional output embeddings asso-
+ciated with different identities (colored). The joint set of
+Nobject+Ntrack output embeddings is initialized by (learned)
+object and (temporally adapted) track queries, respectively.
+The Transformer decoder transforms the entire set of
+output embeddings at once and provides the input for the
+subsequent MLPs to predict bounding boxes and classes for
+frame t. The number of track queries Ntrack changes be-
+tween frames as new objects are detected or tracks removed.
+Tracks and their corresponding query can be removed ei-
+ther if their classification score drops below σtrack or by
+non-maximum suppression (NMS) with an IoU threshold of
+σNMS. A comparatively high σNMS only removes strongly
+overlapping duplicate bounding boxes which we found to
+not be resolvable by the decoder self-attention.
+Track query re-identification.
+The ability to decode an
+arbitrary number of track queries allows for an attention-
+based short-term re-identification process. We keep decod-
+ing previously removed track queries for a maximum num-
+ber of Ttrack-reid frames. During this patience window, track
+queries are considered to be inactive and do not contribute
+to the trajectory until a classification score higher than
+σtrack-reid triggers a re-identification. The spatial information
+embedded into each track query prevents their application
+for long-term occlusions with large object movement, but,
+nevertheless, allows for a short-term recovery from track
+loss. This is possible without any dedicated re-identification
+training; and furthermore, cements TrackFormer’s holistic
+approach by relying on the same attention mechanism as
+for track initialization, identity preservation and trajectory
+forming even through short-term occlusions.
+3.3. TrackFormer training
+For track queries to work in interaction with object
+queries and follow objects to the next frame, TrackFormer
+requires dedicated frame-to-frame tracking training. As in-
+dicated in Figure 2, we train on two adjacent frames and
+optimize the entire MOT objective at once. The loss for
+frame t measures the set prediction of all output embed-
+dings N = Nobject + Ntrack with respect to the ground truth
+objects in terms of class and bounding box prediction.
+The set prediction loss is computed in two steps:
+(i) Object detection on frame t −1 with Nobject object
+queries (see t = 0 in Figure 2).
+(ii) Tracking of objects from (i) and detection of new ob-
+jects on frame t with all N queries.
+The number of track queries Ntrack depends on the number
+of successfully detected objects in frame t−1. During train-
+ing, the MLP predictions ˆy = {ˆyj}N
+j=1 of the output embed-
+dings from step (iv) are each assigned to one of the ground
+truth objects y or the background class. Each yi represents
+a bounding box bi, object class ci and identity ki.
+Bipartite matching.
+The mapping j = π(i) from ground
+truth objects yi to the joint set of object and track query pre-
+dictions ˆyj is determined either via track identity or costs
+based on bounding box similarity and object class. For the
+
+former, we denote the subset of ground truth track identi-
+ties at frame t with Kt ⊂K. Each detection from step (i)
+is assigned to its respective ground truth track identity k
+from the set Kt−1 ⊂K. The corresponding output embed-
+dings, i.e., track queries, inherently carry over the identity
+information to the next frame. The two ground truth track
+identity sets describe a hard assignment of the Ntrack track
+query outputs to the ground truth objects in frame t:
+Kt ∩Kt−1: Match by track identity k.
+Kt−1 \ Kt: Match with background class.
+Kt \ Kt−1: Match by minimum cost mapping.
+The second set of ground truth track identities Kt−1 \ Kt
+includes tracks which either have been occluded or left the
+scene at frame t. The last set Kobject = Kt \ Kt−1 of pre-
+viously not yet tracked ground truth objects remains to be
+matched with the Nobject object queries. To achieve this, we
+follow [7] and search for the injective minimum cost map-
+ping ˆσ in the following assignment problem,
+ \ hat {\
+s
+i
+gma } = \a
+rgmin _{\s igma } \sum _{k_i \in K_\text {object}} {\cal C}_{match}(y_i, \hat {y}_{\sigma (i)}), \label {eq:matching_loss} 
+(1)
+with index σ(i) and pair-wise costs Cmatch between ground
+truth yi and prediction ˆyi. The problem is solved with a
+combinatorial optimization algorithm as in [48]. Given the
+ground truth class labels ci and predicted class probabilities
+ˆpi(ci) for output embeddings i, the matching cost Cmatch
+with class weighting λcls is defined as
+  {\ca l C}_\text {matc h } = - \lambda _{\rm cls} \hat {p}_{\sigma (i)}(c_i) + {\cal C}_{\rm box}(b_{i}, \hat {b}_{\sigma (i)}). \label {eq:matching_cost} 
+(2)
+The authors of [7] report better performance without loga-
+rithmic class probabilities. The Cbox term penalizes bound-
+ing box differences by a combination of ℓ1 distance and
+generalized intersection over union (IoU) [40] cost Ciou,
+  {\ c al C}_{ \ rm box} = \lambda _{\rm \ell _1}||b_i - \hat {b}_{\sigma (i)}||_1 + \lambda _{\rm iou}{\cal C}_{\rm iou}(b_{i}, \hat {b}_{\sigma (i)}), \label {eq:box_cost} 
+(3)
+with weighting parameters λℓ1, λiou, ∈ℜ. In contrast to ℓ1,
+the scale-invariant IoU term provides similar relative errors
+for different box sizes. The optimal cost mapping ˆσ deter-
+mines the corresponding assignments in π(i).
+Set prediction loss.
+The final MOT set prediction loss is
+computed over all N = Nobject + Ntrack output predictions:
+  {\cal L} _\ t
+e
+x
+t {
+MOT}(y, \ hat {y}, \pi ) = \sum _{i=1}^{N} {\cal L}_{\rm query}(y, \hat {y}_i, \pi ). \label {eq:set_loss} 
+(4)
+The output embeddings which were not matched via track
+identity or ˆσ are not part of the mapping π and will be as-
+signed to the background class ci = 0. We indicate the
+ground truth object matched with prediction i by yπ=i and
+define the loss per query
+  {\ca l
+ 
+L}_{\ rm query} = \ begin {cases} -
+ \ l a m
+bda _ {\r m cls} 
+\l o g \hat {p}_{i}(c_{\pi = i}) + {\cal L}_{\rm box}(b_{\pi = i}, \hat {b}_{i}), & \text {if } i \in \pi \\ - \lambda _{\rm cls} \log \hat {p}_{i}(0), & \text {if } i \notin \pi . \\ \end {cases} 
+The bounding box loss Lbox is computed in the same fash-
+ion as (3), but we differentiate its notation as the cost term
+Cbox is generally not required to be differentiable.
+Track augmentations.
+The two-step loss computation,
+see (i) and (ii), for training track queries represents only
+a limited range of possible tracking scenarios. Therefore,
+we propose the following augmentations to enrich the set
+of potential track queries during training. These augmen-
+tations will be verified in our experiments. We use three
+types of augmentations similar to [69] which lead to pertur-
+bations of object location and motion, missing detections,
+and simulated occlusions.
+1. The frame t −1 for step (i) is sampled from a range of
+frames around frame t, thereby generating challeng-
+ing frame pairs where the objects have moved substan-
+tially from their previous position. Such a sampling
+allows for the simulation of camera motion and low
+frame rates from usually benevolent sequences.
+2. We sample false negatives with a probability of pFN
+by removing track queries before proceeding with
+step (ii). The corresponding ground truth objects in
+frame t will be matched with object queries and trig-
+ger a new object detection. Keeping the ratio of false
+positives sufficiently high is vital for a joined training
+of both query types.
+3. To improve the removal of tracks, i.e., by background
+class assignment, in occlusion scenarios, we comple-
+ment the set of track queries with additional false pos-
+itives. These queries are sampled from output embed-
+dings of frame t−1 that were classified as background.
+Each of the original track queries has a chance of pFP
+to spawn an additional false positive query. We chose
+these with a large likelihood of occluding with the re-
+spective spawning track query.
+Another common augmentation for improved robust-
+ness, is to applying spatial jittering to previous frame
+bounding boxes or center points [69]. The nature of track
+queries, which encode object information implicitly, does
+not allow for such an explicit perturbation in the spatial do-
+main. We believe our randomization of the temporal range
+provides a more natural augmentation from video data.
+
+4. Experiments
+In
+this
+section,
+we
+present
+tracking
+results
+for
+TrackFormer on two MOTChallenge benchmarks, namely,
+MOT17 [30] and MOTS20 [52]. Furthermore, we verify
+individual contributions in an ablation study.
+4.1. MOT benchmarks and metrics
+Benchmarks.
+MOT17 [30] consists of a train and test set,
+each with 7 sequences and persons annotated with full-body
+bounding boxes. To evaluate only tracking, the public de-
+tection setting provides DPM [16], Faster R-CNN [39] and
+SDP [61] detections varying in quality.
+The MOT20 [13] benchmark follows MOT17 but pro-
+vides 4 train and 4 test sequences with crowded scenarios.
+MOTS20 [52] provides mask annotations for 4 train and
+test sequences of MOT17 but without annotations for small
+objects. The corresponding bounding boxes are not full-
+body, but based on the visible segmentation masks.
+Metrics.
+Different aspects of MOT are evaluated by a
+number of individual metrics [5]. The community focuses
+on Multiple Object Tracking Accuracy (MOTA) and Iden-
+tity F1 Score (IDF1) [41]. While the former focuses on ob-
+ject coverage, the identity preservation is measured by the
+latter. For MOTS, we report MOTSA which evaluates pre-
+dictions with a ground truth matching based on mask IoU.
+Public detections.
+The MOT17 [30] benchmark is eval-
+uated in a private and public detection setting. The latter
+allows for a comparison of tracking methods independent
+of the underlying object detection performance. MOT17
+provides three sets of public detections with varying qual-
+ity. In contrast to classic tracking-by-detection methods,
+TrackFormer is not able to directly produce tracking out-
+puts from detection inputs. Therefore, we report the results
+of TrackFormer and CenterTrack [69] in Table 1 by filter-
+ing the initialization of tracks with a minimum IoU require-
+ment. For more implementation details and a discussion on
+the fairness of such a filtering, we refer to the appendix.
+4.2. Implementation details
+TrackFormer follows the ResNet50 [18] CNN feature ex-
+traction and Transformer encoder-decoder architecture pre-
+sented in Deformable DETR [71]. For track queries, the de-
+formable reference points for the current frame are dynam-
+ically adjusted to the previous frame bounding box centers.
+Furthermore, for the decoder we stack the feature maps of
+the previous and current frame and compute cross-attention
+with queries over both frames. Queries are able to discrim-
+inate between features from the two frames by applying a
+temporal feature encoding as in [56]. For more detailed hy-
+perparameters, we refer to the appendix.
+Decoder Queries.
+By design, TrackFormer can only de-
+tect a maximum of Nobject objects. To detect the maximum
+number of 52 objects per frame in MOT17 [30], we train
+TrackFormer with Nobject = 500 learned object queries. For
+optimal performance, the total number of queries must ex-
+ceed the number of ground truth objects per frame by a large
+margin. The number of possible track queries is adaptive
+and only practically limited by the abilities of the decoder.
+Simulate MOT from single images.
+The encoder-
+decoder multi-level attention mechanism requires substan-
+tial amounts of training data. Hence, we follow a similar ap-
+proach as in [69] and simulate MOT data from the Crowd-
+Human [45] person detection dataset. The adjacent training
+frames t−1 and t are generated by applying random spatial
+augmentations to a single image. To generate challenging
+tracking scenarios, we randomly resize and crop of up to
+20% with respect to the original image size.
+Training procedure.
+All trainings follow [71] and ap-
+ply a batch size of 2 with initial learning rates of 0.0002
+and 0.00002 for the encoder-decoder and backbone, respec-
+tively. For public detections, we initialize with the model
+weights from [71] pretrained on COCO [28] and then fine-
+tune on MOT17 for 50 epochs with a learning rate drop af-
+ter 10 epochs. The private detections model is trained from
+scratch for 85 epochs on CrowdHuman [45] with simulated
+adjacent frames and we drop the initial learning rates after
+50 epochs. To avoid overfitting to the small MOT17 dataset,
+we then fine-tune for additional 40 epochs on the combined
+CrowdHuman and MOT17 datasets. The fine-tuning starts
+with the initial learning rates which are dropped after 10
+epochs. By the nature of track queries each sample has a
+different number of total queries N = Nobject + Ntrack. In
+order to stack samples to a batch, we pad the samples with
+additional false positive queries. The training of the private
+detections model takes around 2 days on 7 × 32GB GPUs.
+Mask training.
+TrackFormer predicts instance-level ob-
+ject masks with a segmentation head as in [7] by gener-
+ating spatial attention maps from the encoded image fea-
+tures and decoder output embeddings. Subsequent upscal-
+ing and convolution operations yield mask predictions for
+all output embeddings. We adopt the private detection train-
+ing pipeline from MOT17 but retrain TrackFormer with the
+original DETR [7] attention. This is due to the reduced
+memory consumption for single scale feature maps and in-
+ferior segmentation masks from sparse deformable atten-
+tion maps. Furthermore, the benefits of deformable atten-
+tion vanish on MOTS20 as it excludes small objects. After
+training on MOT17, we freeze the model and only train the
+segmentation head on all COCO images containing persons.
+Finally, we fine-tune the entire model on MOTS20.
+
+Method
+Data
+FPS ↑MOTA ↑IDF1 ↑MT ↑ML ↓
+FP ↓
+FN ↓ID Sw. ↓
+MOT17 [30] - Public
+Offline
+jCC [22]
+–
+–
+51.2
+54.5
+493
+872
+25937 247822
+1802
+FWT [19]
+–
+–
+51.3
+47.6
+505
+830
+24101 247921
+2648
+eHAF [46]
+–
+–
+51.8
+54.7
+551
+893
+33212 236772
+1834
+TT [65]
+–
+–
+54.9
+63.1
+575
+897
+20236 233295
+1088
+MPNTrack [6]
+M+C
+–
+58.8
+61.7
+679
+788
+17413 213594
+1185
+Lif T [20]
+M+C
+–
+60.5
+65.6
+637
+791
+14966 206619
+1189
+Online
+FAMNet [10]
+–
+–
+52.0
+48.7
+450
+787
+14138 253616
+3072
+Tracktor++ [4]
+M+C
+1.3
+56.3
+55.1
+498
+831
+8866
+235449
+1987
+GSM [29]
+M+C
+–
+56.4
+57.8
+523
+813
+14379 230174
+1485
+CenterTrack [69]
+–
+17.7
+60.5
+55.7
+580
+777
+11599 208577
+2540
+TMOH [47]
+–
+–
+62.1
+62.8
+633
+739
+10951 201195
+1897
+TrackFormer
+–
+7.4
+62.3
+57.6
+688
+638
+16591 192123
+4018
+MOT17 [30] - Private
+Online
+TubeTK [32]
+JTA
+–
+63.0
+58.6
+735
+468
+27060 177483
+4137
+GSDT [55]
+6M
+–
+73.2
+66.5
+981
+411
+26397 120666
+3891
+FairMOT [66]
+CH+6M
+–
+73.7
+72.3
+1017
+408
+27507 117477
+3303
+PermaTrack [50] CH+PD
+–
+73.8
+68.9
+1032
+405
+28998 115104
+3699
+GRTU [54]
+CH+6M
+–
+75.5
+76.9
+1158
+495
+27813 108690
+1572
+TLR [53]
+CH+6M
+–
+76.5
+73.6
+1122
+300
+29808
+99510
+3369
+CTracker [36]
+–
+–
+66.6
+57.4
+759
+570
+22284 160491
+5529
+CenterTrack [69]
+CH
+17.7
+67.8
+64.7
+816
+579
+18498 160332
+3039
+QuasiDense [33]
+–
+–
+68.7
+66.3
+957
+516
+26589 146643
+3378
+TraDeS [57]
+CH
+–
+69.1
+63.9
+858
+507
+20892 150060
+3555
+TrackFormer
+CH
+7.4
+74.1
+68.0
+1113
+246
+34602 108777
+2829
+MOT20 [13] - Private
+FairMOT [66]
+CH+6M
+–
+61.8
+67.3
+855
+94
+103440 88901
+5243
+GSDT [55]
+6M
+–
+67.1
+67.5
+660
+164
+31913 135409
+3131
+SOTMOT [68]
+CH+6M
+–
+68.6
+71.4
+806
+120
+57064 101154
+4209
+ReMOT [60]
+CH+6M
+–
+77.4
+73.1
+846
+123
+28351
+86659
+1789
+TrackFormer
+CH
+7.4
+68.6
+65.7
+666
+181
+20348 140373
+1532
+Table 1.
+Comparison of multi-object tracking methods on
+the MOT17 [30] and
+MOT20 [13] test sets.
+We report pri-
+vate as well as public detection results and separate between
+online and offline approaches.
+Both TrackFormer and Center-
+Track filter tracks by requiring a minimum IoU with public de-
+tections. For a detailed discussion on the fairness of such a fil-
+tering, we refer to the appendix. We indicated additional training
+Data: CH=CrowdHuman [45], PD=Parallel Domain [50], 6M=6
+tracking datasets as in [66], JTA [14], M=Market1501 [67] and
+C=CUHK03 [27]. Runtimes (FPS) are self-measured.
+4.3. Benchmark results
+MOT17.
+Following the training procedure described
+in
+Section
+4.2,
+we
+evaluate
+TrackFormer
+on
+the
+MOT17 [30] test set and report results in Table 1.
+First of all, we isolate the tracking performance and
+compare results in a public detection setting by applying
+a track initialization filtering similar to [69]. However to
+improve fairness, we filter not by bounding box center dis-
+tance as in [69] but a minimum IoU as detailed in the ap-
+pendix. TrackFormer performs on-par with state-of-the-art
+results in terms of MOTA without pretraining on Crowd-
+Human [45]. Our identity preservation performance is only
+surpassed by [47] and offline methods which benefit from
+the processing of entire sequences at once.
+On private detections, we achieve a new state-of-the-art
+both in terms of MOTA (+5.0) and IDF1 (1.7) for methods
+only trained on CrowdHuman [45]. Only [50,53,54] which
+follow [66] and pretrain on 6 additional tracking datasets
+(6M) surpass our performance. In contrast to our public
+detection model not only the detection but tracking perfor-
+mance are greatly improved. This is due to the additional
+tracking data required by Transformers and provided via ad-
+jacent frame simulation on CrowdHuman.
+MOT20.
+On MOT20 [13], we introduce the first method
+only pretrained on CrowdHuman [45] (CH). However,
+we surpass or perform on-par with several modern meth-
+ods [55,66,68] that were trained on significantly more data,
+i.e., 6 additional tracking datasets (6M).
+Our tracking-by-attention approach achieves top perfor-
+mance via global attention without relying on additional
+motion [4, 10] or appearance models [4, 8, 10]. Further-
+more, the frame association with track queries avoids post-
+processing with heuristic greedy matching procedures [69]
+or additional graph optimization [29].
+Our proposed
+TrackFormer represents the first application of Transform-
+ers to the MOT problem and could work as a blueprint for
+future research. In particular, we expect great potential for
+methods going beyond our two-frame training/inference.
+MOTS20.
+In addition to detection and tracking, Track-
+Former is able to predict instance-level segmentation
+masks. As reported in Table 2, we achieve state-of-the-art
+object coverage (MOTSA) and identity preservation (IDF1)
+results for MOTS. All methods are evaluated in a private
+setting. A MOTS20 [52] test set submission is only recently
+possible, hence we also provide the 4-fold cross-validation
+evaluation established in [52] reporting the mean best epoch
+results. TrackFormer surpasses all previous methods with-
+out relying on a dedicated mask tracking formulation as
+in [58]. In Figure 3, we qualitatively compare TrackFormer
+and Track R-CNN [52] on two test sequences.
+4.4. Ablation study
+The ablation study on the MOT17 and MOTS20 training
+sequences are evaluated in a private detection setting with a
+50-50 frame and 4-fold cross-validation split, respectively.
+TrackFormer components.
+We ablate the impact of dif-
+ferent TrackFormer components on the tracking perfor-
+mance in Table 3. Our full pipeline including pretraining
+on the CrowdHuman dataset provides a MOTA and IDF1
+of 71.3 and 73.4, respectively. The baseline without (w\o)
+pretraining reduces this by -2.0 and -1.6 points, an effect
+expected to even more severe for the generalization to test.
+The attention-based track query re-identification has a neg-
+ligible effect on MOTA but improves IDF1 by 1.4 points.
+The ablation of false positive (FP) and frame range track
+augmentations yields another drop of -5.2 MOTA and -11.2
+
+Figure 3. We compare TrackFormer segmentation results with the popular Track R-CNN [52] on selected MOTS20 [52] test sequences.
+The superiority of TrackFormer in terms of MOTSA in Table 2 can be clearly observed by the difference in pixel mask accuracy.
+Method
+TbD sMOTSA ↑IDF1 ↑FP ↓FN ↓ID Sw. ↓
+Train set (4-fold cross-validation)
+MHT DAM [23]
+×
+48.0
+–
+–
+–
+–
+FWT [19]
+×
+49.3
+–
+–
+–
+–
+MOTDT [8]
+×
+47.8
+–
+–
+–
+–
+jCC [22]
+×
+48.3
+–
+–
+–
+–
+TrackRCNN [52]
+52.7
+–
+–
+–
+–
+MOTSNet [38]
+56.8
+–
+–
+–
+–
+PointTrack [58]
+58.1
+–
+–
+–
+–
+TrackFormer
+58.7
+–
+–
+–
+–
+Test set
+Track R-CNN [52]
+40.6
+42.4
+1261 12641
+567
+TrackFormer
+54.9
+63.6
+2233 7195
+278
+Table 2. Comparison of multi-object tracking and segmentation
+methods evaluated on the MOTS20 [52] train and test sets. We
+indicate methods which first perform tracking-by-detection (TbD)
+on SDP [62] detections and then apply a Mask R-CNN [17].
+Method
+MOTA ↑∆IDF1 ↑
+∆
+TrackFormer
+71.3
+73.4
+————— w\o ————— ———————————–
+Pretraining on CrowdHuman
+69.3
+-2.0
+71.8
+-1.6
+Track query re-identification
+69.2
+-0.1
+70.4
+-1.4
+Track augmentations (FP)
+68.4
+-0.8
+70.0
+-0.4
+Track augmentations (Range)
+64.0
+-4.4
+59.2
+-10.8
+Track queries
+61.0
+-3.0
+45.1
+-14.1
+Table 3. Ablation study on TrackFormer components. We report
+MOT17 [30] training set private results on a 50-50 frame split. The
+last row without (w\o) all components is only trained for object
+detection and associates tracks via greedy matching as in [69].
+IDF1 points. Both augment the training with rich tracking
+scenarios preventing an early overfitting. The false negative
+augmentations are indispensable for a joint training of ob-
+ject and track queries, hence we refrain from ablating these.
+The last row also removes track queries and is only
+trained for object detection.
+Tracks are associated via
+Method
+Mask training MOTA ↑IDF1 ↑
+TrackFormer
+×
+61.9
+56.0
+61.9
+54.8
+Table 4. We demonstrate the effect of jointly training for track-
+ing and segmentation on a 4-fold split on the MOTS20 [52] train
+set.
+We evaluate with regular MOT metrics, i.e., matching to
+ground truth with bounding boxes instead of masks.
+greedy center distance matching as in [69] resulting in a
+huge drop of -3.0 MOTA and -14.1 IDF1. This version rep-
+resents previous heuristic matching methods and demon-
+strates the benefit of jointly addressing track initialization
+and association in a unified TrackFormer formulation.
+Mask information improves tracking.
+This ablation
+studies the synergies between segmentation and tracking
+training.
+Table 4 only evaluates bounding box tracking
+performance and shows a +1.2 IDF1 improvement when
+trained jointly with mask prediction. The additional mask
+information does not improve track coverage (MOTA) but
+resolves ambiguous occlusion scenarios during training.
+5. Conclusion
+We have presented a unified tracking-by-attention
+paradigm for detection and multi-object tracking with
+Transformers. As an example of said paradigm, our end-
+to-end trainable TrackFormer architecture applies autore-
+gressive track query embeddings to follow objects over a
+sequence. We jointly tackle track initialization, identity and
+trajectory forming with a Transformer encoder-decoder ar-
+chitecture and not relying on additional matching, graph op-
+timization or motion/appearance modeling. Our approach
+achieves state-of-the-art results for multi-object tracking as
+well as segmentation. We hope that this paradigm will fos-
+ter future work in Transformers for multi-object tracking.
+
+Acknowledgements:
+We are grateful for discussions with
+Jitendra Malik, Karttikeya Mangalam, and David Novotny.
+Appendix
+This section provides additional material for the main pa-
+per: §A contains further implementation details for Track-
+Former (§A.1), a visualization of the Transformer encoder-
+decoder architecture (§A.3), and parameters for multi-
+object tracking (§A.4). §B contains a discussion related
+to public detection evaluation (§B.1), and detailed per-
+sequence results for MOT17 and MOTS20 (§B.2).
+A. Implementation details
+A.1. Backbone and training
+We
+provide
+additional
+hyperparameters
+for
+TrackFormer.
+This supports our implementation de-
+tails reported in Section 4.2 of the main paper.
+The
+Deformable DETR [71] encoder and decoder both apply 6
+individual layers with multi-headed self-attention [51] with
+8 attention heads. We do not use the “DC5” (dilated conv5)
+version of the backbone as this will incur a large memory
+requirement related to the larger resolution of the last
+residual stage. We expect that using “DC5” or any other
+heavier, or higher-resolution, backbone to provide better
+accuracy and leave this for future work. Furthermore, we
+also apply the refinement of deformable reference point
+coined as bounding box refinement in [71].
+Our
+training
+hyperparameters
+follow
+deformable
+DETR [71]. The weighting parameters of the cost and their
+corresponding loss terms are set to λcls = 2, λℓ1 = 5 and
+λiou = 2. The probabilities for the track augmentation at
+training time are pFN = 0.4 and pFP = 0.1 Furthermore,
+every MOT17 [30] frame is jittered by 1% with respect
+to the original image size similar to the adjacent frame
+simulation.
+A.2. Dataset splits
+All experiments evaluated on dataset splits (ablation
+studies and MOTS20 training set in Table 2 ) apply the
+same private training pipeline presented in Section 4.2 to
+each split. For our ablation on the MOT17 [30] training
+set, we separate the 7 sequences into 2 splits and report re-
+sults from training on the first 50% and evaluating on the
+last 50% of frames. For MOTS20 we average validation
+metrics over all splits and report the results from a single
+epoch (which yields the best mean MOTA / MOTSA) over
+all splits, i.e., we do not take the best epoch for each individ-
+ual split. Before training each of the 4 MOTS20 [52] splits,
+we pre-train the model on all MOT17 sequences excluding
+the corresponding split of the validation sequence.
+A.3. Transformer encoder-decoder architecture
+To foster the understanding of TrackFormer’s integration
+of track queries within the decoder self-attention block, we
+provide a simplified visualization of the encoder-decoder
+architecture in Figure A.1. In comparison to the original
+illustration in [7], we indicate track identities instead of spa-
+tial encoding with color-coded queries. The frame features
+(indicated in grey) are the final output of the CNN feature
+extractor and have the same number of channels as both
+query types. The entire Transformer architecture applies
+N = 6 and M = 6 independently supervised encoder and
+decoder layers, with feature and object encoding as in [7].
+To improve, tracking consistency we stack the feature maps
+of the previous and current frame and apply a spatial posi-
+tional and temporal encoding as in [56] Track queries are
+fed autoregressively from the previous frame output em-
+beddings of the last decoding layer (before the final feed-
+forward class and bounding box networks (FFN)). The ob-
+ject encoding is achieved by adding the initial object queries
+to the key (K) and query (Q) of the corresponding embed-
+dings at each decoder layer.
+A.4. Multi-object tracking parameters
+In Section 3.2 , we explain the process of track initial-
+ization and removal over a sequence. The corresponding
+hyperparameters were optimized by a grid search on the
+MOT17 validation split. The grid search yielded track ini-
+tialization and removal thresholds of σdetection = 0.4 and
+σtrack = 0.4, respectively.
+TrackFormer benefits from an
+NMS operation for the removal of strong occlusion cases
+with an intersection over union larger than σNMS = 0.9.
+For the track query re-identification, our search proposed
+an optimal inactive patience and score of Ttrack-reid = 5 and
+σtrack-reid = 0.4, respectively.
+B. Experiments
+B.1. Public detections and track filtering
+TrackFormer implements a new tracking-by-attention
+paradigm which requires track initializations to be filtered
+for an evaluation with public detections. Here, we provide a
+discussion on the comparability of TrackFormer with earlier
+methods and different filtering schemes.
+Common tracking-by-detection methods directly pro-
+cess the MOT17 public detections and report their mean
+tracking performance over all three sets. This is only possi-
+ble for methods that perform data association on a bounding
+box level. However, TrackFormer and point-based methods
+such as CenterTrack [69] require a procedure for filtering
+track initializations by public detections in a comparable
+manner. Unfortunately, MOT17 does not provide a stan-
+dardized protocol for such a filtering. The authors of Cen-
+terTrack [69] filter detections based on bounding box center
+
+Add & Norm
+FFN
+Add & Norm
+Multi-Head Self-Attention
++
++
+K
+Q
+V
+N×
+Frame features
+Encoder
+Multi-Head Self-Attention
+Add & Norm
+Multi-Head Attention
+Add & Norm
+FFN
+Add & Norm
++
++
+K
+Q
+V
++
++
+K
+Q
+M×
+Decoder
+V
+Spatial
+positional
+encoding
+Object queries
+Track queries
+[HW, C]
+⊕
+[Nobject + Ntrack, C]
+FFN
+FFN
+Class
+Bounding Box
+Figure A.1. The TrackFormer encoder-decoder architecture. We indicate the tensor dimensions in squared brackets.
+distances (CD). Each public detection can possibly initialize
+a single track but only if its center point falls in the bound-
+ing box area of the corresponding track.
+In Table A.1, we revisit our MOT17 test set results but
+with this public detections center distance (CD) filtering,
+while also inspecting the CenterTrack per-sequence results
+in Table A.6. We observe that this filtering does not reflect
+the quality differences in each set of public detections, i.e.,
+DPM [16] and SDP [61] results are expected to be the worst
+and best, respectively, but their difference is small.
+We hypothesize that a center distance filtering is not in
+accordance with the common public detection setting and
+propose a filtering based on Intersection over Union (IoU).
+For IoU filtering, public detections only initialize a track if
+they have an IoU larger than 0.5. The results in Table A.1
+show that for TrackFormer and CenterTrack IoU filtering
+performs worse compared to the CD filtering which is ex-
+pected as this is a more challenging evaluation protocol. We
+believe IoU-based filtering (instead of CD-based) provides
+a fairer comparison to previous MOT methods which di-
+rectly process public detections as inputs (IN). This is val-
+idated by the per-sequence results in Table A.3, where IoU
+filtering shows differences across detectors that are more
+meaningfully correlated with detector performance, com-
+pared to the relatively uniform performance across detec-
+tions with the CD based method in Table A.6 (where DPM,
+FRCNN and SDP show very similar performance).
+Consequently, we follow the IoU-based filtering protocol
+to compare with CenterTrack in our main paper. While our
+gain over CenterTrack seems similar across the two filtering
+techniques for MOTA (see Table A.1), the gain in IDF1 is
+significantly larger under the more challenging IoU-based
+protocol, which suggests that CenterTrack benefits from the
+less challenging CD-based filtering protocol, while Track-
+Former does not rely on the filtering for achieving its high
+IDF1 tracking accuracy.
+
+Method
+IN
+IoU
+CD
+MOTA ↑
+IDF1 ↑
+Offline
+MHT DAM [23]
+×
+50.7
+47.2
+jCC [22]
+×
+51.2
+54.5
+FWT [19]
+×
+51.3
+47.6
+eHAF [46]
+×
+51.8
+54.7
+TT [65]
+×
+54.9
+63.1
+MPNTrack [6]
+×
+58.8
+61.7
+Lif T [20]
+×
+60.5
+65.6
+Online
+MOTDT [8]
+×
+50.9
+52.7
+FAMNet [10]
+×
+52.0
+48.7
+Tracktor++ [4]
+×
+56.3
+55.1
+GSM Tracktor [29]
+×
+56.4
+57.8
+TMOH [47]
+×
+62.1
+62.8
+CenterTrack [69]
+×
+60.5
+55.7
+TrackFormer
+×
+62.3
+57.6
+CenterTrack [69]
+×
+61.5
+59.6
+TrackFormer
+×
+63.4
+60.0
+Table A.1. Comparison of modern multi-object tracking methods
+evaluated on the MOT17 [30] test set for different public detec-
+tion processing. Public detections are either directly processed as
+input (IN) or applied for filtering of track initializations by center
+distance (CD) or intersection over union (IoU). We report mean
+results over the three sets of public detections provided by [30]
+and separate between online and offline approaches. The arrows
+indicate low or high optimal metric values.
+B.2. MOT17, MOT20 and MOTS20 results
+In Table A.2 and and Table A.3, we provide per-sequence
+MOT17 [30] test set results for private and public detection
+filtering via Intersection over Union (IoU), respectively.
+For per-sequence results on MOT20 , we refer to Ta-
+ble A.4.
+Furthermore, we present per-sequence Track-
+Former results on the MOTS20 [52] test set in Table A.5.
+Evaluation metrics
+In Section 4.1 we explained two
+compound metrics for the evaluation of MOT results,
+namely, Multi-Object Tracking Accuracy (MOTA) and
+Identity F1 score (IDF1).
+However, the MOTChallenge
+benchmark implements all CLEAR MOT [5] evaluation
+metrics. In addition to MOTA and IDF1, we report the fol-
+lowing CLEAR MOT metrics:
+MT:
+Ground truth tracks covered for at least 80%.
+ML:
+Ground truth tracks covered for at most 20%.
+FP:
+False positive bounding boxes not corre-
+sponding to any ground truth.
+FN:
+False negative ground truth boxes not cov-
+ered by any bounding box.
+ID Sw.:
+Bounding boxes switching the correspond-
+ing ground truth identity.
+sMOTSA:
+Mask-based Multi-Object Tracking Accu-
+racy (MOTA) which counts true positives in-
+stead of only masks with IoU larger than 0.5.
+
+Sequence
+Public detection
+MOTA ↑
+IDF1 ↑
+MT ↑
+ML ↓
+FP ↓
+FN ↓
+ID Sw. ↓
+MOT17-01
+DPM [16]
+57.9
+49.7
+11
+4
+477
+2191
+45
+MOT17-03
+DPM
+88.6
+79.6
+124
+3
+2469
+9365
+122
+MOT17-06
+DPM
+59.8
+60.8
+104
+27
+1791
+2775
+173
+MOT17-07
+DPM
+65.5
+49.5
+24
+5
+1030
+4671
+118
+MOT17-08
+DPM
+54.5
+42.5
+24
+9
+1461
+7861
+279
+MOT17-12
+DPM
+51.8
+63.0
+43
+14
+1880
+2258
+42
+MOT17-14
+DPM
+47.4
+54.9
+41
+20
+2426
+7138
+164
+MOT17-01
+FRCNN [39]
+57.9
+49.7
+11
+4
+477
+2191
+45
+MOT17-03
+FRCNN
+88.6
+79.6
+124
+3
+2469
+9365
+122
+MOT17-06
+FRCNN
+59.8
+60.8
+104
+27
+1791
+2775
+173
+MOT17-07
+FRCNN
+65.5
+49.5
+24
+5
+1030
+4671
+118
+MOT17-08
+FRCNN
+54.5
+42.5
+24
+9
+1461
+7861
+279
+MOT17-12
+FRCNN
+51.8
+63.0
+43
+14
+1880
+2258
+42
+MOT17-14
+FRCNN
+47.4
+54.9
+41
+20
+2426
+7138
+164
+MOT17-01
+SDP [61]
+57.9
+49.7
+11
+4
+477
+2191
+45
+MOT17-03
+SDP
+88.6
+79.6
+124
+3
+2469
+9365
+122
+MOT17-06
+SDP
+59.8
+60.8
+104
+27
+1791
+2775
+173
+MOT17-07
+SDP
+65.5
+49.5
+24
+5
+1030
+4671
+118
+MOT17-08
+SDP
+54.5
+42.5
+24
+9
+1461
+7861
+279
+MOT17-12
+SDP
+51.8
+63.0
+43
+14
+1880
+2258
+42
+MOT17-14
+SDP
+47.4
+54.9
+41
+20
+2426
+7138
+164
+All
+All
+74.1
+68.0
+1113
+246
+34602
+108777
+2829
+Table A.2. We report private TrackFormer results on each individual sequence evaluated on the MOT17 [30] test set. To follow the
+official MOT17 format, we display the same results per public detection set. The arrows indicate low or high optimal metric values.
+Sequence
+Public detection
+MOTA ↑
+IDF1 ↑
+MT ↑
+ML ↓
+FP ↓
+FN ↓
+ID Sw. ↓
+MOT17-01
+DPM [16]
+49.9
+43.0
+5
+8
+258
+2932
+40
+MOT17-03
+DPM
+74.0
+66.5
+85
+18
+1389
+25396
+374
+MOT17-06
+DPM
+53.6
+51.8
+63
+75
+711
+4575
+180
+MOT17-07
+DPM
+52.6
+48.1
+12
+16
+258
+7663
+88
+MOT17-08
+DPM
+32.5
+31.9
+10
+32
+288
+13838
+128
+MOT17-12
+DPM
+51.3
+57.7
+21
+31
+606
+3565
+53
+MOT17-14
+DPM
+38.1
+42.0
+15
+63
+627
+10505
+314
+MOT17-01
+FRCNN [39]
+50.9
+42.3
+8
+6
+308
+2813
+48
+MOT17-03
+FRCNN
+75.3
+67.0
+84
+16
+1434
+24040
+335
+MOT17-06
+FRCNN
+57.2
+54.8
+73
+48
+960
+3856
+226
+MOT17-07
+FRCNN
+52.4
+47.9
+12
+11
+499
+7437
+106
+MOT17-08
+FRCNN
+31.1
+31.7
+10
+36
+285
+14166
+102
+MOT17-12
+FRCNN
+47.7
+56.7
+19
+32
+702
+3785
+45
+MOT17-14
+FRCNN
+37.8
+41.8
+17
+56
+1300
+9795
+406
+MOT17-01
+SDP [61]
+53.7
+45.3
+10
+5
+556
+2386
+47
+MOT17-03
+SDP
+79.6
+65.8
+95
+13
+2134
+18632
+545
+MOT17-06
+SDP
+56.4
+54.0
+82
+57
+1017
+3889
+228
+MOT17-07
+SDP
+54.6
+47.8
+16
+11
+590
+6965
+121
+MOT17-08
+SDP
+35.0
+33.0
+12
+27
+443
+13152
+144
+MOT17-12
+SDP
+48.9
+57.5
+22
+28
+850
+3527
+54
+MOT17-14
+SDP
+40.4
+42.4
+17
+49
+1376
+9206
+434
+ALL
+ALL
+62.3
+57.6
+688
+638
+16591
+192123
+4018
+Table A.3. We report TrackFormer results on each individual sequence and set of public detections evaluated on the MOT17 [30] test set.
+We apply our minimum Intersection over Union (IoU) public detection filtering. The arrows indicate low or high optimal metric values.
+
+Sequence
+MOTA ↑
+IDF1 ↑
+MT ↑
+ML ↓
+FP ↓
+FN ↓
+ID Sw. ↓
+MOT20-04
+82.7
+75.6
+490
+28
+9639
+37165
+566
+MOT20-06
+55.9
+53.5
+96
+72
+5582
+52440
+545
+MOT20-07
+56.2
+59.0
+41
+20
+547
+13856
+92
+MOT20-08
+46.0
+48.3
+39
+61
+4580
+36912
+329
+ALL
+68.6
+65.7
+666
+181
+20348
+140373
+1532
+Table A.4. We report private TrackFormer results on each individual sequence evaluated on the MOT20 [13] test set. The arrows indicate
+low or high optimal metric values.
+Sequence
+sMOTSA ↑IDF1 ↑MOTSA ↑FP ↓FN ↓ID Sw. ↓
+MOTS20-01
+59.8
+68.0
+79.6
+255
+364
+16
+MOTS20-06
+63.9
+65.1
+78.7
+595 1335
+158
+MOTS20-07
+43.2
+53.6
+58.5
+834 4433
+75
+MOTS20-12
+62.0
+76.8
+74.6
+549 1063
+29
+ALL
+54.9
+63.6
+69.9
+2233 7195
+278
+Table A.5. We present TrackFormer tracking and segmentation results on each individual sequence of the MOTS20 [52] test set. MOTS20
+is evaluated in a private detections setting. The arrows indicate low or high optimal metric values.
+Sequence
+Public detection
+MOTA ↑
+IDF1 ↑
+MT ↑
+ML ↓
+FP ↓
+FN ↓
+ID Sw. ↓
+MOT17-01
+DPM [16]
+41.6
+44.2
+5
+8
+496
+3252
+22
+MOT17-03
+DPM
+79.3
+71.6
+94
+8
+1142
+20297
+191
+MOT17-06
+DPM
+54.8
+42.0
+54
+63
+314
+4839
+175
+MOT17-07
+DPM
+44.8
+42.0
+11
+16
+1322
+7851
+147
+MOT17-08
+DPM
+26.5
+32.2
+11
+37
+378
+15066
+88
+MOT17-12
+DPM
+46.1
+53.1
+16
+45
+207
+4434
+30
+MOT17-14
+DPM
+31.6
+36.6
+13
+78
+636
+11812
+196
+MOT17-01
+FRCNN [39]
+41.0
+42.1
+6
+9
+571
+3207
+25
+MOT17-03
+FRCNN
+79.6
+72.7
+93
+7
+1234
+19945
+180
+MOT17-06
+FRCNN
+55.6
+42.9
+57
+59
+363
+4676
+190
+MOT17-07
+FRCNN
+45.5
+41.5
+13
+15
+1263
+7785
+156
+MOT17-08
+FRCNN
+26.5
+31.9
+11
+36
+332
+15113
+89
+MOT17-12
+FRCNN
+46.1
+52.6
+15
+45
+197
+4443
+30
+MOT17-14
+FRCNN
+31.6
+37.6
+13
+77
+780
+11653
+202
+MOT17-01
+SDP [61]
+41.8
+44.3
+7
+8
+612
+3112
+27
+MOT17-03
+SDP
+80.0
+72.0
+93
+8
+1223
+19530
+181
+MOT17-06
+SDP
+55.5
+43.8
+56
+61
+354
+4712
+181
+MOT17-07
+SDP
+45.2
+42.4
+13
+15
+1332
+7775
+147
+MOT17-08
+SDP
+26.6
+32.3
+11
+36
+350
+15067
+91
+MOT17-12
+SDP
+46.0
+53.0
+16
+45
+221
+4426
+30
+MOT17-14
+SDP
+31.7
+37.1
+13
+76
+749
+11677
+205
+All
+All
+61.5
+59.6
+621
+752
+14076
+200672
+2583
+Table A.6. We report the original per-sequence CenterTrack [69] MOT17 [30] test set results with Center Distance (CD) public detection
+filtering. The results do not reflect the varying object detection performance of DPM, FRCNN and SDP, respectively. The arrows indicate
+low or high optimal metric values.
+
+References
+[1] Alexandre Alahi, Kratarth Goel, Vignesh Ramanathan,
+Alexandre Robicquet, Li Fei-Fei, and Silvio Savarese. So-
+cial lstm: Human trajectory prediction in crowded spaces.
+IEEE Conf. Comput. Vis. Pattern Recog., 2016. 2
+[2] Anton Andriyenko and Konrad Schindler. Multi-target track-
+ing by continuous energy minimization. IEEE Conf. Comput.
+Vis. Pattern Recog., 2011. 2
+[3] Jerome Berclaz, Francois Fleuret, Engin Turetken, and Pas-
+cal Fua. Multiple object tracking using k-shortest paths op-
+timization. IEEE Trans. Pattern Anal. Mach. Intell., 2011.
+2
+[4] Philipp Bergmann, Tim Meinhardt, and Laura Leal-Taix´e.
+Tracking without bells and whistles. In Int. Conf. Comput.
+Vis., 2019. 1, 2, 7, 11
+[5] Keni Bernardin and Rainer Stiefelhagen. Evaluating mul-
+tiple object tracking performance: the clear mot metrics.
+EURASIP Journal on Image and Video Processing, 2008,
+2008. 6, 11
+[6] Guillem Bras´o and Laura Leal-Taix´e.
+Learning a neural
+solver for multiple object tracking. In IEEE Conf. Comput.
+Vis. Pattern Recog., 2020. 1, 2, 7, 11
+[7] Nicolas Carion, F. Massa, Gabriel Synnaeve, Nicolas
+Usunier, Alexander Kirillov, and Sergey Zagoruyko. End-to-
+end object detection with transformers. Eur. Conf. Comput.
+Vis., 2020. 1, 2, 3, 5, 6, 9
+[8] Long Chen, Haizhou Ai, Zijie Zhuang, and Chong Shang.
+Real-time multiple people tracking with deeply learned can-
+didate selection and person re-identification. In Int. Conf.
+Multimedia and Expo, 2018. 1, 2, 7, 8, 11
+[9] Wongun Choi and Silvio Savarese. Multiple target tracking
+in world coordinate with single, minimally calibrated cam-
+era. Eur. Conf. Comput. Vis., 2010. 2
+[10] Peng Chu and Haibin Ling. Famnet: Joint learning of fea-
+ture, affinity and multi-dimensional assignment for online
+multiple object tracking. In Int. Conf. Comput. Vis., 2019.
+2, 7, 11
+[11] Qi Chu, Wanli Ouyang, Hongsheng Li, Xiaogang Wang, Bin
+Liu, and Nenghai Yu.
+Online multi-object tracking using
+cnn-based single object tracker with spatial-temporal atten-
+tion mechanism. In Proceedings of the IEEE International
+Conference on Computer Vision, pages 4836–4845, 2017. 1,
+2
+[12] Patrick Dendorfer, Aljosa Osep, Anton Milan, Daniel Cre-
+mers, Ian Reid, Stefan Roth, and Laura Leal-Taix´e. Motchal-
+lenge: A benchmark for single-camera multiple target track-
+ing. Int. J. Comput. Vis., 2020. 1
+[13] Patrick Dendorfer, Hamid Rezatofighi, Anton Milan, Javen
+Shi, Daniel Cremers, Ian D. Reid, Stefan Roth, Konrad
+Schindler, and Laura Leal-Taix´e. MOT20: A benchmark for
+multi object tracking in crowded scenes. CoRR, 2020. 2, 6,
+7, 13
+[14] Matteo Fabbri, Fabio Lanzi, Simone Calderara, Andrea
+Palazzi, Roberto Vezzani, and Rita Cucchiara. Learning to
+detect and track visible and occluded body joints in a vir-
+tual world.
+In European Conference on Computer Vision
+(ECCV), 2018. 7
+[15] Christoph Feichtenhofer, Axel Pinz, and Andrew Zisserman.
+Detect to track and track to detect. In ICCV, 2017. 2
+[16] Pedro F. Felzenszwalb,
+Ross B. Girshick,
+David A.
+McAllester, and Deva Ramanan. Object detection with dis-
+criminatively trained part based models. IEEE Trans. Pattern
+Anal. Mach. Intell., 2009. 6, 10, 12, 13
+[17] Kaiming He, Georgia Gkioxari, Piotr Doll´ar, and Ross Gir-
+shick.
+Mask r-cnn.
+In IEEE Conf. Comput. Vis. Pattern
+Recog., 2017. 2, 8
+[18] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
+Deep residual learning for image recognition. In IEEE Conf.
+Comput. Vis. Pattern Recog., 2016. 2, 3, 6
+[19] Roberto Henschel, Laura Leal-Taix´e, Daniel Cremers, and
+Bodo Rosenhahn. Improvements to frank-wolfe optimiza-
+tion for multi-detector multi-object tracking. In IEEE Conf.
+Comput. Vis. Pattern Recog., 2017. 1, 2, 7, 8, 11
+[20] Andrea Hornakova, Roberto Henschel, Bodo Rosenhahn,
+and Paul Swoboda. Lifted disjoint paths with application in
+multiple object tracking. In Int. Conf. Mach. Learn., 2020.
+2, 7, 11
+[21] Hao Jiang, Sidney S. Fels, and James J. Little. A linear pro-
+gramming approach for multiple object tracking. IEEE Conf.
+Comput. Vis. Pattern Recog., 2007. 2
+[22] Margret Keuper, Siyu Tang, Bjoern Andres, Thomas Brox,
+and Bernt Schiele. Motion segmentation & multiple object
+tracking by correlation co-clustering. In IEEE Trans. Pattern
+Anal. Mach. Intell., 2018. 1, 2, 7, 8, 11
+[23] Chanho Kim, Fuxin Li, Arridhana Ciptadi, and James M.
+Rehg. Multiple hypothesis tracking revisited. In Int. Conf.
+Comput. Vis., 2015. 1, 2, 8, 11
+[24] Laura Leal-Taix´e,
+Cristian Canton-Ferrer,
+and Konrad
+Schindler.
+Learning by tracking: siamese cnn for robust
+target association. IEEE Conf. Comput. Vis. Pattern Recog.
+Worksh., 2016. 1, 2
+[25] Laura Leal-Taix´e, Michele Fenzi, Alina Kuznetsova, Bodo
+Rosenhahn, and Silvio Savarese. Learning an image-based
+motion context for multiple people tracking.
+IEEE Conf.
+Comput. Vis. Pattern Recog., 2014. 2
+[26] Laura Leal-Taix´e, Gerard Pons-Moll, and Bodo Rosenhahn.
+Everybody needs somebody: Modeling social and grouping
+behavior on a linear programming multiple people tracker.
+Int. Conf. Comput. Vis. Workshops, 2011. 1, 2
+[27] Wei Li, Rui Zhao, Tong Xiao, and Xiaogang Wang. Deep-
+reid:
+Deep filter pairing neural network for person re-
+identification. In IEEE Conf. Comput. Vis. Pattern Recog.,
+2014. 7
+[28] Tsung-Yi Lin, Michael Maire, Serge Belongie, Lubomir
+Bourdev, Ross Girshick, James Hays, Pietro Perona, Deva
+Ramanan, C. Lawrence Zitnick, and Piotr Doll´ar. Microsoft
+coco: Common objects in context. arXiv:1405.0312, 2014.
+6
+[29] Qiankun Liu, Qi Chu, Bin Liu, and Nenghai Yu. Gsm: Graph
+similarity model for multi-object tracking. In Int. Joint Conf.
+Art. Int., 2020. 1, 2, 7, 11
+[30] Anton Milan, Laura Leal-Taix´e, Ian D. Reid, Stefan Roth,
+and Konrad Schindler. Mot16: A benchmark for multi-object
+tracking. arXiv:1603.00831, 2016. 2, 6, 7, 8, 9, 11, 12, 13
+
+[31] Aljoˇsa Oˇsep, Wolfgang Mehner, Paul Voigtlaender, and Bas-
+tian Leibe. Track, then decide: Category-agnostic vision-
+based multi-object tracking. IEEE Int. Conf. Rob. Aut., 2018.
+2
+[32] Bo Pang, Yizhuo Li, Yifan Zhang, Muchen Li, and Cewu Lu.
+Tubetk: Adopting tubes to track multi-object in a one-step
+training model. In Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition (CVPR), June
+2020. 7
+[33] Jiangmiao Pang, Linlu Qiu, Xia Li, Haofeng Chen, Qi Li,
+Trevor Darrell, and Fisher Yu. Quasi-dense similarity learn-
+ing for multiple object tracking. In IEEE/CVF Conference
+on Computer Vision and Pattern Recognition, June 2021. 2,
+7
+[34] Niki Parmar, Ashish Vaswani, Jakob Uszkoreit, Łukasz
+Kaiser, Noam Shazeer, Alexander Ku, and Dustin Tran. Im-
+age transformer. arXiv preprint arXiv:1802.05751, 2018. 2
+[35] Stefano Pellegrini, Andreas Ess, Konrad Schindler, and
+Luc Van Gool. You’ll never walk alone: modeling social
+behavior for multi-target tracking. Int. Conf. Comput. Vis.,
+2009. 2
+[36] Jinlong Peng, Changan Wang, Fangbin Wan, Yang Wu,
+Yabiao Wang, Ying Tai, Chengjie Wang, Jilin Li, Feiyue
+Huang, and Yanwei Fu. Chained-tracker: Chaining paired at-
+tentive regression results for end-to-end joint multiple-object
+detection and tracking. In Proceedings of the European Con-
+ference on Computer Vision, 2020. 7
+[37] Hamed Pirsiavash, Deva Ramanan, and Charless C. Fowlkes.
+Globally-optimal greedy algorithms for tracking a variable
+number of objects. IEEE Conf. Comput. Vis. Pattern Recog.,
+2011. 2
+[38] Lorenzo Porzi, Markus Hofinger, Idoia Ruiz, Joan Serrat,
+Samuel Rota Bulo, and Peter Kontschieder. Learning multi-
+object tracking and segmentation from automatic annota-
+tions. In IEEE Conf. Comput. Vis. Pattern Recog., 2020. 2,
+8
+[39] Shaoqing Ren, Kaiming He, Ross Girshick, and Jian Sun.
+Faster r-cnn: Towards real-time object detection with region
+proposal networks. Adv. Neural Inform. Process. Syst., 2015.
+1, 6, 12, 13
+[40] Hamid Rezatofighi, Nathan Tsoi, JunYoung Gwak, Amir
+Sadeghian, Ian Reid, and Silvio Savarese. Generalized in-
+tersection over union: A metric and a loss for bounding box
+regression. In IEEE Conf. Comput. Vis. Pattern Recog., 2019.
+5
+[41] Ergys Ristani, Francesco Solera, Roger S. Zou, Rita Cuc-
+chiara, and Carlo Tomasi. Performance measures and a data
+set for multi-target, multi-camera tracking.
+In Eur. Conf.
+Comput. Vis. Workshops, 2016. 6
+[42] Ergys Ristani and Carlo Tomasi. Features for multi-target
+multi-camera tracking and re-identification.
+IEEE Conf.
+Comput. Vis. Pattern Recog., 2018. 2
+[43] Alexandre Robicquet, Amir Sadeghian, Alexandre Alahi,
+and Silvio Savarese. Learning social etiquette: Human tra-
+jectory prediction. Eur. Conf. Comput. Vis., 2016. 2
+[44] Paul Scovanner and Marshall F. Tappen. Learning pedestrian
+dynamics from the real world. Int. Conf. Comput. Vis., 2009.
+2
+[45] Shuai Shao, Zijian Zhao, Boxun Li, Tete Xiao, Gang Yu,
+Xiangyu Zhang, and Jian Sun. Crowdhuman: A benchmark
+for detecting human in a crowd. arXiv:1805.00123, 2018. 6,
+7
+[46] H. Sheng, Y. Zhang, J. Chen, Z. Xiong, and J. Zhang. Het-
+erogeneous association graph fusion for target association in
+multiple object tracking. IEEE Transactions on Circuits and
+Systems for Video Technology, 2019. 2, 7, 11
+[47] Daniel Stadler and Jurgen Beyerer.
+Improving multiple
+pedestrian tracking by track management and occlusion han-
+dling. In Proceedings of the IEEE/CVF Conference on Com-
+puter Vision and Pattern Recognition (CVPR), pages 10958–
+10967, June 2021. 7, 11
+[48] Russell Stewart, Mykhaylo Andriluka, and Andrew Y Ng.
+End-to-end people detection in crowded scenes. In Proceed-
+ings of the IEEE conference on computer vision and pattern
+recognition, pages 2325–2333, 2016. 2, 5
+[49] Siyu Tang, Mykhaylo Andriluka, Bjoern Andres, and Bernt
+Schiele. Multiple people tracking by lifted multicut and per-
+son re-identification.
+In IEEE Conf. Comput. Vis. Pattern
+Recog., 2017. 2
+[50] Pavel Tokmakov, Jie Li, Wolfram Burgard, and Adrien
+Gaidon. Learning to track with object permanence. In Int.
+Conf. Comput. Vis., 2021. 2, 7
+[51] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszko-
+reit, Llion Jones, Aidan N Gomez, Ł ukasz Kaiser, and Illia
+Polosukhin. Attention is all you need. In Adv. Neural Inform.
+Process. Syst., 2017. 1, 2, 3, 4, 9
+[52] Paul Voigtlaender, Michael Krause, Aljosa Osep, Jonathon
+Luiten, Berin Balachandar Gnana Sekar, Andreas Geiger,
+and Bastian Leibe. Mots: Multi-object tracking and segmen-
+tation. In IEEE Conf. Comput. Vis. Pattern Recog., 2019. 2,
+6, 7, 8, 9, 11, 13
+[53] Qiang Wang, Yun Zheng, Pan Pan, and Yinghui Xu. Multi-
+ple object tracking with correlation learning. In IEEE Conf.
+Comput. Vis. Pattern Recog., 2021. 7
+[54] Shuai Wang, Hao Sheng, Yang Zhang, Yubin Wu, and Zhang
+Xiong. A general recurrent tracking framework without real
+data. In Int. Conf. Comput. Vis., 2021. 7
+[55] Yongxin Wang, Kris Kitani, and Xinshuo Weng. Joint object
+detection and multi-object tracking with graph neural net-
+works. In IEEE Int. Conf. Rob. Aut., May 2021. 2, 7
+[56] Yuqing Wang, Zhaoliang Xu, Xinlong Wang, Chunhua
+Shen, Baoshan Cheng, Hao Shen, and Huaxia Xia.
+End-
+to-end video instance segmentation with transformers.
+In
+Proc. IEEE Conf. Computer Vision and Pattern Recognition
+(CVPR), 2021. 6, 9
+[57] Jialian Wu, Jiale Cao, Liangchen Song, Yu Wang, Ming
+Yang, and Junsong Yuan. Track to detect and segment: An
+online multi-object tracker. In Proceedings of the IEEE Con-
+ference on Computer Vision and Pattern Recognition, 2021.
+2, 7
+[58] Zhenbo Xu, Wei Zhang, Xiao Tan, Wei Yang, Huan Huang,
+Shilei Wen, Errui Ding, and Liusheng Huang. Segment as
+points for efficient online multi-object tracking and segmen-
+tation. In Eur. Conf. Comput. Vis., 2020. 2, 7, 8
+
+[59] Kota Yamaguchi, Alexander C. Berg, Luis E. Ortiz, and
+Tamara L. Berg. Who are you with and where are you going?
+IEEE Conf. Comput. Vis. Pattern Recog., 2011. 2
+[60] Fan Yang, Xin Chang, Sakriani Sakti, Yang Wu, and
+Satoshi Nakamura.
+Remot: A model-agnostic refinement
+for multiple object tracking. Image and Vision Computing,
+106:104091, 2021. 7
+[61] Fan Yang, Wongun Choi, and Yuanqing Lin.
+Exploit all
+the layers: Fast and accurate cnn object detector with scale
+dependent pooling and cascaded rejection classifiers. IEEE
+Conf. Comput. Vis. Pattern Recog., 2016. 6, 10, 12, 13
+[62] Fan Yang, Wongun Choi, and Yuanqing Lin.
+Exploit all
+the layers: Fast and accurate cnn object detector with scale
+dependent pooling and cascaded rejection classifiers. IEEE
+Conf. Comput. Vis. Pattern Recog., pages 2129–2137, 2016.
+8
+[63] Qian Yu, Gerard Medioni, and Isaac Cohen. Multiple tar-
+get tracking using spatio-temporal markov chain monte carlo
+data association. IEEE Conf. Comput. Vis. Pattern Recog.,
+2007. 2
+[64] Li Zhang, Yuan Li, and Ramakant Nevatia.
+Global data
+association for multi-object tracking using network flows.
+IEEE Conference on Computer Vision and Pattern Recog-
+nition (CVPR), 2008. 2
+[65] Y. Zhang, H. Sheng, Y. Wu, S. Wang, W. Lyu, W. Ke, and Z.
+Xiong. Long-term tracking with deep tracklet association.
+IEEE Trans. Image Process., 2020. 2, 7, 11
+[66] Yifu Zhang, Chunyu Wang, Xinggang Wang, Wenjun Zeng,
+and Wenyu Liu. Fairmot: On the fairness of detection and
+re-identification in multiple object tracking.
+International
+Journal of Computer Vision, pages 1–19, 2021. 7
+[67] Liang Zheng, Liyue Shen, Lu Tian, Shengjin Wang, Jing-
+dong Wang, and Qi Tian. Scalable person re-identification:
+A benchmark. In Int. Conf. Comput. Vis., 2015. 7
+[68] Linyu Zheng, Ming Tang, Yingying Chen, Guibo Zhu, Jin-
+qiao Wang, and Hanqing Lu.
+Improving multiple object
+tracking with single object tracking. In IEEE Conf. Comput.
+Vis. Pattern Recog., pages 2453–2462, 2021. 7
+[69] Xingyi Zhou, Vladlen Koltun, and Philipp Kr¨ahenb¨uhl.
+Tracking objects as points. ECCV, 2020. 1, 2, 5, 6, 7, 8,
+9, 11, 13
+[70] Ji Zhu, Hua Yang, Nian Liu, Minyoung Kim, Wenjun Zhang,
+and Ming-Hsuan Yang. Online multi-object tracking with
+dual matching attention networks.
+In Eur. Conf. Comput.
+Vis., 2018. 1, 2
+[71] Xizhou Zhu, Weijie Su, Lewei Lu, Bin Li, Xiaogang Wang,
+and Jifeng Dai. Deformable detr: Deformable transformers
+for end-to-end object detection. Int. Conf. Learn. Represent.,
+2021. 2, 6, 9

@@ -1,0 +1,2100 @@
+Please cite this paper as:
+D. Fusaro, F. Magistri, J. Behley, A. Pretto, C. Stachniss, ”Horticultural temporal fruit monitoring via 3D instance segmentation and re-identification using
+colored point clouds,” in Computers and Electronics in Agriculture, Volume 247, 2026, https://doi.org/10.1016/j.compag.2026.111723
+Horticultural Temporal Fruit Monitoring via 3D Instance Segmentation and
+Re-Identification using Colored Point Clouds
+Daniel Fusaro
+Federico Magistri
+Jens Behley
+Alberto Pretto
+Cyrill Stachniss
+Abstract— Accurate and consistent fruit monitoring over
+time is a key step toward automated agricultural production
+systems. However, this task is inherently difficult due to varia-
+tions in fruit size, shape, occlusion, orientation, and the dynamic
+nature of orchards where fruits may appear or disappear
+between observations. In this article, we propose a novel method
+for fruit instance segmentation and re-identification on 3D
+terrestrial point clouds collected over time. Our approach
+directly operates on dense colored point clouds, capturing
+fine-grained 3D spatial detail. We segment individual fruits
+using a learning-based instance segmentation method applied
+directly to the point cloud. For each segmented fruit, we extract
+a compact and discriminative descriptor using a 3D sparse
+convolutional neural network. To track fruits across different
+times, we introduce an attention-based matching network that
+associates fruits with their counterparts from previous sessions.
+Matching is performed using a probabilistic assignment scheme,
+selecting the most likely associations across time. We evaluate
+our approach on real-world datasets of strawberries and
+apples, demonstrating that it outperforms existing methods
+in both instance segmentation and temporal re-identification,
+enabling robust and precise fruit monitoring across complex
+and dynamic orchard environments.
+Keywords = Agricultural Robotics, 3D Fruit Tracking, In-
+stance Segmentation, Deep Learning , Point Clouds, Sparse
+Convolutional Networks, Temporal Monitoring
+I. INTRODUCTION
+The challenge of meeting the growing demand for food
+requires advances in agricultural practices with a focus
+on efficiency and sustainability. Autonomous robots offer
+new possibilities to automate labor-intensive tasks such as
+crop monitoring and management. Such systems have the
+potential to improve agricultural production systems and can
+enable continuous and large-scale monitoring [1], [2]. In
+particular, these technologies support phenotyping, the pro-
+cess of evaluating plant characteristics by providing precise,
+high-throughput assessments and surpassing the limitations
+of traditional manual methods [3], [4]. This shift towards
+automated phenotyping represents a critical step forward in
+optimizing crop selection and improving crop yield. Tempo-
+ral matching, or fruit re-identification, combined with accu-
+rate instance segmentation, enables tracking the development
+of single fruits over time, supporting the analysis of growth
+patterns and estimation of maturation rates. To enable such
+monitoring, the perception system is essential to ensure a
+reliable visual association over time.
+D. Fusaro and A. Pretto are with the University of Padua, Italy.
+F. Magistri, J. Behley, and C. Stachniss are with the Center for Robotics,
+University of Bonn, Germany. () C. Stachniss is additionally with the
+Department of Engineering Science at the University of Oxford, UK, and
+with the Lamarr Institute for Machine Learning and Artificial Intelligence,
+Germany.
+time
+week 1
+week 3
+week 2
+harvested
+fruits
+dropped
+fruits
+Fig. 1: Fruit re-identification on three point clouds acquired at
+three different points in time. Fruit instances are first segmented
+using an instance segmentation method, then they are temporally
+matched with fruit instances of a previous data collection (e.g.,
+matching fruits recorded in week t with fruits from week t + 1).
+Blue bounding boxes ( ) indicate matched fruit instances, while
+red bounding boxes ( ) indicate unmatched fruits (e.g., harvested,
+dropped or newly appeared).
+In this article, we aim to recognize and track object
+instances, specifically fruits, using real, colored point clouds
+acquired by a high-resolution LiDAR scanner. The goal is
+to identify, segment, and temporally match individual fruits
+at different points in time within the 3D space. 2D image-
+based approaches [5], [6], [7], [8], [9] lack the 3D structural,
+depth, and spatial information offered by the point clouds. In
+contrast, point clouds lack a regular grid structure, making
+it difficult to apply traditional image processing techniques.
+The challenge is to process these sparse and irregular data
+to detect and associate individual fruits, which may vary in
+size, shape, orientation, and occlusion levels and may be
+harvested or newly grown.
+Once fruit instances have been segmented, the temporal
+re-identification task involves recognizing and matching the
+same fruit instances across different point clouds captured
+at different points in time or from different viewpoints.
+This task shares challenges with object re-identification
+and temporal association in dynamic 3D scenes, and is
+conceptually related to loop closures in SLAM [10] and
+visual place recognition [11] systems, which typically rely
+on uniquely identifiable landmarks. In the context of fruit
+re-identification, there are no unique traits that make fruits
+easily distinguishable. As depicted in Fig. 1, fruits can be
+very similar, tightly packed, and their pose can change
+significantly over time, causing trivial solutions based on
+This paper has been accepted for publication in Computers and Electronics in Agriculture
+https://doi.org/10.1016/j.compag.2026.111723
+arXiv:2411.07799v3  [cs.CV]  8 Apr 2026
+
+relative position to fail.
+The main contribution of this article is a novel method
+for accurately performing fruit instance segmentation and
+re-identification on terrestrial point clouds captured at dif-
+ferent points in time, based on a learned descriptor en-
+coder and an attentive matcher. We exploit dense high-
+precision point clouds recorded with a high-precision Faro
+laser scanner, which enables fine-grained spatial detail in
+3D object representation. Although these sensors are not
+commonly employed in robotic applications, their capability
+to scan detailed environments has recently garnered attention,
+leading to their integration into robotic systems [12]. We
+segment fruits using a learning-based instance segmentation,
+which infers fruit instances directly from the point cloud.
+Each fruit is then processed by a 3D sparse convolutional
+neural network to extract a compact, discriminative descrip-
+tor. Then, we match each fruit with its corresponding instance
+from a previous data collection by using their descriptors
+and an attention-based matching module. To handle the
+possibility of a no-match scenario, where a query fruit is
+identified as a new instance, we represent it using a specific
+descriptor. We then predict a probability distribution over the
+candidate fruits from a previous data collection, explicitly
+including a no-match class. Each query fruit is subsequently
+matched with the previous instance that has the highest
+predicted probability, using a greedy assignment to determine
+associations.
+In sum, we make two key claims: (i) our approach is
+able to identify fruits in point clouds using an instance
+segmentation method; (ii) it outperforms baseline approaches
+on the instance segmentation and re-identification tasks using
+real-world 3D data. These claims are supported by the
+paper and our experimental evaluation. Using 3D data and
+sparse convolution neural networks, our method significantly
+enhances the effectiveness and scalability of object-level
+segmentation and temporal association in sparse point clouds.
+It outperforms baseline approaches and offers new capabili-
+ties for automated monitoring in dynamic 3D environments,
+contributing to the broader field of 3D pattern recognition.
+The implementation of our fruit matching method is
+publicly available at https://github.com/PRBonn/IRIS3D.
+II. RELATED WORKS
+Our work intersects several research areas: instance seg-
+mentation, plant phenotyping, and temporal object matching.
+We begin by reviewing 2D and 3D instance segmentation
+methods, including both general-purpose approaches and
+those specifically designed for agricultural applications. We
+then discuss image-based and 3D plant phenotyping tech-
+niques focused on extracting structural traits from crops.
+Finally, we review temporal matching techniques for tracking
+objects over time, a critical task in agricultural 3D data
+analysis.
+Instance segmentation on 2D images: General instance
+segmentation, the task of segmenting individual objects
+within a scene, has been extensively studied in the context
+of 2D images. In this domain, the Mask R-CNN [13] archi-
+tecture has emerged as one of the most popular methods.
+It is a deep learning architecture that extends the object
+detection process by adding a parallel branch that predicts
+segmentation masks, allowing precise localization of object
+boundaries. It has been applied to several fruit instance
+segmentation tasks on images [5], [6], [7], [8]. Unlike the
+standard Mask R-CNN, Weikuan et al. [9] implement an
+anchor-free inference pipeline intended to make the model
+more stable and easily applicable to other green fruits without
+hyper-parameter tuning.
+Instance segmentation on RGB-D images:
+While 2D
+image-based instance segmentation methods have shown
+promising results, they often struggle with occlusions and
+overlapping objects, which are common in agricultural en-
+vironments. To address these challenges, some approaches
+have incorporated depth information from RGB-D images.
+Ge et al. [14] adopts Mask R-CNN [13] to segment and
+localize fruits in RGB-D images. Kang et al. [15] propose
+DaSNet-v2, a multi-task network that jointly performs de-
+tection and instance segmentation on fruits, and semantic
+segmentation on branches, in RGB-D images collected in ap-
+ple orchards. It applies feature pyramid networks and atrous
+spatial pyramid pooling to effectively capture multi-scale
+features and context information. Tang et al. [16] propose a
+high-precision apple instance segmentation method based on
+an improved SOLOv2 [17] and EfficientNet [18] backbone
+using RGB-D images. In scenarios involving overlapping or
+occluded apples, authors apply a lightweight spatial atten-
+tion module to improve segmentation accuracy. Magistri et
+al. [19] exploit shape completion and differentiable rendering
+techniques to estimate the 3D shape of a target fruit together
+with its pose even under strong occlusions from a single
+RGB-D image. RGB-D images provide additional spatial in-
+formation that can help disambiguate overlapping objects and
+improve segmentation accuracy in complex scenes, but they
+still lack the full 3D structural detail that point clouds can
+offer. The point clouds generated from RGB-D images are
+typically sparse and noisy, which can limit the effectiveness
+of 3D instance segmentation methods.
+Instance segmentation on 3D point clouds: The task of
+instance segmentation becomes significantly more challeng-
+ing when applied to 3D data such as point clouds obtained
+using LiDAR sensors. Most methods are based on deep
+learning and rely on the use of 3D convolutional neural
+networks (CNNs) to learn features from the point cloud data.
+Although they can be trained end-to-end, they often require
+a large amount of labeled data to achieve good performance.
+Data-augmentation techniques [20] can be used to artificially
+increase the size of the training dataset, but the lack of
+large-scale datasets for 3D instance segmentation, especially
+for agricultural robotics, remains a challenge. Most neural
+network-based approaches for instance segmentation on point
+clouds [21], [22], [23], [24], [25], [26], [27], [28], [29],
+[30] voxelize the 3D point cloud to preserve topological
+relations and use sparse convolutions [31] to reduce the
+memory consumption. Schult et al. [23] proposed Mask3D.
+
+Based on transformer decoders [32], it leverages learned
+instance queries together with point-wise features to directly
+predict semantic instance masks, eliminating the need for
+handcrafted voting schemes or grouping heuristics. A multi-
+scale, sparse convolution-based backbone, along with a query
+refinement mechanism, contributed to its state-of-the-art per-
+formance on several benchmarks at the time of its intro-
+duction. Marcuzzi et al. [24] proposed MaskPLS, tailored
+for autonomous driving scenarios. Similarly to Mask3D,
+their approach incorporates a multi-scale sparse convolu-
+tional backbone, a query refinement strategy, and transformer
+decoders. The inclusion of intermediate losses and other
+architectural choices further enhanced the effectiveness of
+the method. Superpoint transformer, introduced by Robert et
+al. [25], is a fast and light-weight state-of-the-art approach
+for indoor and outdoor point clouds. It is based on a
+pre-processing step using handcrafted features, multi-scale
+superpoints generation, and graph-attention convolutional
+networks. Spherical Mask, suggested by Shin et al. [26], is
+also built on a 3D backbone that utilizes sparse convolutions.
+A voting module is used to generate instance queries, after
+which a 3D polygon, represented by points and rays, is
+estimated for each query. To enable fine-grained clustering,
+the method predicts point-wise offsets that adjust the spatial
+distribution of points around each proposal. Despite these
+advances, to the best of our knowledge, there is no work
+that has specifically addressed 3D fruit instance segmentation
+directly on 3D point clouds. Closely related, Kang et al. [33]
+fuse point clouds and images to perform fruit localization
+using a single-stage instance segmentation network.
+Image and 3D plant phenotyping: Image-based phenotyp-
+ing for automated plant monitoring has become increasingly
+important in numerous agricultural settings. Computer vi-
+sion, aided by deep learning techniques, has been applied
+to different phenotyping-oriented agricultural contexts [34],
+[35], [36], [37], [38], [39], [40], [41], [42], [43]. Although
+image-based phenotyping has garnered considerable atten-
+tion, there are relatively few studies that proposed methods
+for plant phenotyping using 3D data. Hao et al. [44] analyzes
+and evaluates the degree of wilting of cotton varieties in
+point clouds. Boogaard et al. [45] investigates the problem of
+measurement of internode length in cucumbers by comparing
+estimates from 3D point clouds with estimates from images.
+A key factor contributing to the gap between 2D and 3D
+analysis lies in the limitations of the sensor. For example,
+conventional sensors used on robots, such as 3D LiDARs
+and RGB-D cameras, typically offer a 3D spatial resolution
+that is insufficiently detailed for agricultural environments.
+One potential solution is to utilize high-precision laser scan-
+ners to generate dense, colored, and highly accurate point
+clouds. Such data have also been used in the past. For
+example, Rodriguez-Sanchez et al. [46] demonstrate the use
+of a ground robot to automate the acquisition of data from
+terrestrial laser scanners in a breeding field.
+Temporal matching: There are also a limited number
+of studies that focus on temporal fruit matching, i.e.,
+the problem of finding fruit correspondences over time.
+Chebrolu et al. [47] exploit a skeletal structure of the
+complete
+plant
+to
+compute
+correspondences
+between
+the same plant over two weeks to estimate leaf growth
+parameters. Riccardi et al. [48] propose a histogram
+descriptor
+that
+uses
+Euclidean
+distance
+measurements
+between neighboring fruits. For a given target fruit, their
+method divides the surrounding 3D space into angular
+sectors and counts the number of fruits within each sector to
+build a descriptor that can be used for temporal matching.
+Lobefaro et al. [49] investigate the problem of 4D data
+association of growing pepper plants in a greenhouse by
+combining 3D RGB-D SLAM to build local plant models
+and visual place recognition to create correspondences over
+time. The same authors, in a follow-up work [50], employ
+deep-learning-based
+feature
+descriptors
+and
+geometric
+information to obtain matches between 3D points and track
+the evolution of plant traits’ over time.
+In contrast to previous work, we rely on MinkPanoptic (a
+core component module of MaskPLS [24]) for our instance
+segmentation method. Based on such a segmentation, we
+can address different downstream tasks, such as plant and
+fruit phenotyping. We use a learned descriptor, based on
+3D sparse convolution, to automatically learn and extract
+relevant features from raw data through training, allowing it
+to adapt to complex patterns and variations in the data. Also,
+our learned descriptor can adapt to new and unseen data
+without requiring explicit re-engineering of feature extraction
+methods. We perform descriptor matching leveraging an
+attention-based network that predicts a probability distribu-
+tion over the pool of candidate matchings, also considering
+the no-match case.
+III. OUR APPROACH
+We aim to track fruits using real 3D data acquired by a
+high-resolution LiDAR scanner. We present a novel method
+for accurately performing fruit instance segmentation and re-
+identification on point clouds captured at different points in
+time.
+A. Fruit Instance Segmentation Module
+Consider a colored point cloud P in which each point is
+given by its 3D position pi ∈R3 and its RGB color ki. We
+want to segment P into a set F =
+{Fi}K
+i=1 of
+K fruit
+instances and a set B of background points. Each Fi ⊆P
+can be described by the pair (ci, ri), where ci ∈R3 is the
+center of the fruit, given by:
+ci =
+1
+|Fi|
+X
+pj∈Fi
+pj,
+(1)
+and ri is the radius of the smallest sphere, centered at ci,
+containing all the points of the fruit. Note that ci does not
+necessarily correspond to a point in the point cloud.
+We use MinkPanoptic [24], a learning-based instance
+segmentation method, to obtain fruit instances in a point
+cloud. We selected this method empirically, as it consistently
+outperformed others in our experiments, particularly in the
+
+add
+query fruit desc.
+Transformer Encoder
+positional
+encoding
+repeat
+N times
+concat.
+Linear
+Linear
+matching
+probability
+relative 3D position
+btw query fruit and
+database fruits
+Matching Module
+1
+0
+fruit descriptor of
+the fruit 
+Global Avg
+Pooling
+Batch Norm
+ReLU
+Fruit Descriptor
+Extraction
+Voxelization
+voxel size 
+Softmax
+Threshold
+append
+no match
+descriptor
+ no match desc.
+add
+Batch Norm
+LeakyReLU
+ fruit's support
+point cloud ( 
+ )
+Leaky ReLU
+MinkConv
+MinkConv
+add
+repeat
+convolution
+(stride 2)
+feature
+expansion
+convolution with
+residual
+connection
+initial
+feature
+extraction
+MinkPanoptic
+point cloud
+pred. fruit instances
+and background points
+Fruit Instance Segmentation
+MinkConv
+MinkConv
+MinkConv
+MinkConv
+MinkConv
+MinkConv
+matching
+candidate
+Fig. 2: Pipeline of our approach. Fruit instance segmentation provides
+K fruit instance masks F =
+{Fi}K
+i=1 using a colored point
+cloud P. The fruit descriptor extraction module processes a fruit’s support point cloud, F′
+i, and computes the fruit descriptor, di. It
+initially voxelizes the input point cloud, then a MinkowskiNet [21] encoder processes the voxelized point cloud by leveraging sparse 3D
+convolutions. A final global average pooling aggregates the features of all voxels to compute the descriptor. The matching module matches
+a query descriptor di with a set of descriptors Dt−1 of fruits that belong to a different point in time.
+context of the task presented in this article, where training
+data are limited (see Sec. IV).
+Let Pf ⊆P be the subset of P that was labeled as
+fruit. Then, for each point in Pf, the method predicts a
+3D vector representing the offset of the point from the
+center of the fruit instance to which it belongs. We add
+the predicted offsets to Pf to obtain the point cloud
+Po.
+We determine fruit instances F by clustering Po using the
+mean shift [51] algorithm. Clustering-based methods gen-
+erally achieve better performance than end-to-end instance
+segmentation approaches [30].
+B. Fruit Descriptor Extraction Module
+The fruit descriptor extraction module processes fruit
+instances obtained with the instance segmentation method
+described in Sec. III-A and computes their descriptors. Given
+a fruit Fi and its center ci, we define with Si ⊆P the support
+of Fi with fixed radius s:
+Si = {(p, k) ∈P | ∥p −ci∥2 ≤s}.
+(2)
+The usage of Si instead of Fi enables the extraction of the
+descriptor to also account for the surroundings of the fruit Fi.
+We want the descriptor to be as discriminative as possible
+between different fruits, but as similar as possible for the
+point clouds of the same fruit taken at different points in
+time. In addition, the descriptor should be robust to rotation,
+shape, and color variation. Fruits often change their orienta-
+tion during growth, but their shape also changes substantially.
+The color changes both due to the growth of the fruit and
+due to the greenhouse’s internal light change (position of the
+sensor, weather conditions, humidity, artificial light, etc.).
+On top of Fig. 2, the architecture of the fruit descriptor
+extraction module is depicted. First, the fruit support point
+cloud Si is voxelized using a fixed voxel size v. Then, a
+MinkowskiNet [21] encoder processes the voxelized point
+cloud by leveraging sparse 3D convolutions, capturing multi-
+scale features through a deep hierarchical structure.
+The encoder is composed of multiple stages that pro-
+gressively downsample the input spatial dimensions while
+increasing the number of feature channels. It begins with
+two sparse 3D convolutional layers, each followed by batch
+normalization (BN) [52] and a ReLU, responsible for the
+initial feature extraction from the input sparse tensor. Then,
+L identical blocks sequentially process the sparse tensor.
+Each block consists of three parts. The first part performs
+downsampling (through a convolution with a stride of 2),
+reducing spatial resolution while expanding the receptive
+field. The second part comprises a main convolutional path
+that applies two sequential 3D sparse convolutions with
+a 3 × 3 kernel, BN, and ReLU activation, expanding the
+feature channels, and a secondary path consisting of a single
+convolution with 1 × 1 kernel that matches the dimensions
+of the input to the output, followed by BN. The third part
+is very similar to the second one, except that the secondary
+path consists of a simple residual connection.
+After the L identical blocks, we apply a global average
+pooling, which aggregates the features across all the voxels,
+obtaining the fruit’s descriptor di ∈Rz.
+By computing the descriptors of all fruits F, we build a
+set of descriptors D = {d1, . . . , d|F|} where di represents
+the descriptor of fruit Fi.
+C. Fruit Descriptors Matching Module
+The fruit descriptors matching module operates on sets
+of descriptors of fruits that belong to different time steps.
+Let Dt be the set of descriptors of all fruits segmented
+at time t, i.e., Ft = {Ft
+1, . . . , Ft
+A}, and Dt−1 the set
+
+of descriptors of all fruits segmented at time t −1, i.e.,
+Ft−1 = {Ft−1
+1
+, . . . , Ft−1
+B
+}.
+We want to match the descriptors in Dt with the corre-
+sponding descriptors in Dt−1. Moreover, we also want to
+label new or simply not visible fruits descriptors with a no-
+match label, ∅. Formally, we want to compute the association
+vector y = [y1, . . . , yA]⊤with yi ∈{∅, 1, . . . , B}.
+Let Ft
+q ∈Ft be a query fruit point cloud at time t
+and dt
+q ∈Dt be its descriptor. To infer yq, the matching mod-
+ule computes the probability distribution p(y | Dt, Dt−1).
+The matching module processes the descriptor dt
+q and the
+sets of descriptors Dt and Dt−1. It also exploits the relative
+position T ∈RB×3 between the query fruit and the fruits
+in Ft−1.
+Fig. 2 below depicts the architecture of the matching
+module. First, dt
+q is concatenated to each descriptor in Dt−1,
+obtaining the matrix G ∈RB×2z To focus the module on
+the neighbors of the query fruit, we add a fixed positional
+encoding PE to G obtaining Ge:
+Ge = G + PE(T).
+(3)
+We compute PE : R3 7→Rz as a function of the relative
+position matrix T applied to each row as in Mildenhall et
+al. [53], i.e., we apply it to each individual coordinate.
+To let the matching module account for the no-match case,
+we artificially create a new row in Ge representing the no-
+match case. The new element is a descriptor with all zero
+elements and is appended to Ge as the last row, obtaining
+the matrix Gp ∈R(B+1)×2z.
+A linear layer, followed by BN and leaky ReLU, maps Gp
+to Gl ∈R(B+1)×l, and a transformer encoder layer [32],
+followed by BN and leaky ReLU, processes Gl to ob-
+tain G′l ∈R(B+1)×l. A final linear layer maps G′l to
+the prediction logits vector pl ∈RB+1, which are then
+normalized to a probability distribution pn by applying a
+softmax. To impose the assumption that fruits do not move,
+between scans, more than h ∈R meters, we mask pn by
+setting the probability of fruits whose center is at a distance
+greater than h to 0, obtaining p.
+The predicted matching fruit’s index yq is given by:
+yq =
+(
+i,
+if i < B + 1
+∅
+if i = B + 1 , with i = argmax
+i
+(p).
+(4)
+Using the prediction yi for each fruit in Ft
+i , we can
+associate each fruit in Ft
+i with fruits in Ft−1
+i
+with the
+vector y.
+D. Batch Matching
+When
+matching
+more
+than
+one
+fruit,
+we
+post-
+process y using a greedy matching algorithm. Specifically,
+let H∗
+∈
+RA×(B+1) be the matrix representing all
+the probability distributions predicted with the matching
+module, associating all the fruits in Ft with those in Ft−1.
+The element H∗ij in the row i and column j ≤B represents
+the probability that the fruit Ft
+i matches with Ft−1
+j
+. The
+last column of H∗encodes the no-match probability of each
+fruit in Ft. In addition, each row i of H∗corresponds to
+the vector p computed for Ft
+i .
+We compute the vector of associations y using a greedy
+approach, starting by matching the most probable fruits first
+and removing them from the pool of candidates. This process
+continues until all fruits in Ft have been matched or labeled
+as unmatched.
+E. Loss Function
+We trained the fruit instance segmentation method follow-
+ing Marcuzzi et al. [24], using a loss function Lins composed
+of two terms:
+Lins = Lsem + λoffLoff.
+(5)
+The first term, Lsem, accounts for the semantic segmen-
+tation of fruits and is a weighted sum of a cross-entropy
+loss Lce and a Lov´asz-Softmax loss [54] LLov´asz:
+Lsem = λceLce + λLovLLov´asz.
+(6)
+The second term, Loff, measures the discrepancy between
+the predicted and ground truth offsets. It is given by:
+Loff =
+1
+|Pf|
+|Pf |
+X
+j=1
+∥oj −ˆoj∥1,
+(7)
+where oj ∈R3 is the j-th predicted offset and ˆoj ∈R3 is
+the corresponding ground truth offset.
+We train our descriptor extraction and re-identification
+method end-to-end by batch matching with a weighted loss
+function, Lm, composed of two terms:
+Lm = Lce + λinjLinj.
+(8)
+The first, Lce, computes the cross-entropy loss between
+the ground truth matrix ˆH and the predicted matrix H∗:
+Lce =
+A
+X
+i=1
+B+1
+X
+j=1
+−ˆHij log(H∗
+ij).
+(9)
+The second, Linj, forces the network to learn a bijective
+function. In other words, the network should map distinct
+fruits of Ft to distinct fruits of Ft−1 and vice versa, avoiding
+assigning multiple fruits from a particular set to the same
+fruit in the other set. The loss Linj ignores the fruit without
+match and is weighted by λinj in the final loss computation
+Lm. In particular, we compute Linj as follows:
+Linj = λinj(Lrow + Lcol),
+(10)
+where
+Lrow =
+A
+X
+i=1
+
+(
+B
+X
+j=1
+H∗ij) −1
+
+(11)
+and
+Lcol =
+B
+X
+j=1
+(
+A
+X
+i=1
+H∗ij) −1
+.
+(12)
+
+IV. EXPERIMENTAL EVALUATION
+The main focus of this work is a novel method for fruit
+monitoring based on fruit instance segmentation and re-
+identification on point clouds recorded at different moments.
+We present our experiments to show the capabilities of
+our method, focusing on high-precision point clouds of fruits
+such as strawberries and apples. We recorded the strawberry
+point clouds with a terrestrial laser scanner in a greenhouse,
+while apple point clouds were obtained from RGB images
+using photogrammetric reconstruction. The results of our
+experiments support our claims: (i) our approach is able to
+identify fruits in point clouds using an instance segmenta-
+tion method; (ii) it outperforms baseline approaches on the
+instance segmentation and re-identification tasks using real-
+world data.
+A. Dataset
+To evaluate the performance of our instance segmentation
+method, we conduct experiments on two datasets. The dataset
+presented by Riccardi et al. [48], hereafter referred to as the
+”strawberry dataset”, which serves as the primary benchmark
+and is also used for the downstream re-identification task.
+We include the PFuji-Size dataset [55] only for instance
+segmentation comparative analysis against baseline methods.
+These datasets vary in complexity and content (the first with
+strawberries, the second with apples), allowing us to assess
+both the robustness and generalizability of the proposed
+approach.
+Notably, the colored point clouds in both datasets are
+largely free of occlusions. This is achieved through multi-
+view integration: in the strawberry dataset, point clouds
+are obtained by aligning multiple point clouds acquired
+from different perspectives, while in the PFuji-Size dataset,
+point clouds are obtained using multi-view stereo algorithms
+applied to RGB images acquired from different viewpoints.
+For more details about the datasets acquisition, please refer
+to their original works (Gen´e-Mola et al. [55], Riccardi et
+al. [48]).
+For the re-identification experiments, we focus exclusively
+on the strawberry dataset, as it provides the necessary an-
+notations required for this task, i.e., instance segmentation
+coherence in time. This dataset consists of point clouds
+collected with a high-precision Faro Focus3D-X130 laser
+scanner in a commercial greenhouse, containing the same
+row of strawberries at 3 different points in time, each
+separated by approximately one week. Let us call them P1,
+P2, and P3. Each point cloud is associated with a set of
+ground truth fruit annotations (respectively,
+ˆ
+F1,
+ˆ
+F2, and
+ˆ
+F3, containing 616, 556 and 159 strawberries). Then, the
+fruits in
+ˆ
+F2 are associated with the fruit in
+ˆ
+F1. Let ˆy2,1
+be the ground truth vector of associations. Similarly, fruits
+in
+ˆ
+F3 are associated with fruits in
+ˆ
+F2 with the vector of
+associations ˆy3,2. In ˆy2,1, 56 strawberries from ˆ
+F2 are not
+matched to those in ˆ
+F1. In ˆy3,2, 5 strawberries from ˆ
+F3 are
+not matched to ˆ
+F2. See details in Tab. I.
+PFuji-Size [55] is a publicly available dataset designed
+for the detection and sizing of fruits in agricultural settings.
+Timepoint
+Point
+Annot.
+# Annot.
+Matched
+# Unmatched
+Cloud
+With
+t = 1
+P1
+ˆ
+F1
+616
+–
+–
+t = 2
+P2
+ˆ
+F2
+556
+ˆ
+F1
+56
+t = 3
+P3
+ˆ
+F3
+159
+ˆ
+F2
+5
+TABLE I: Overview of the strawberry dataset. Each point cloud
+Pt corresponds to a different acquisition time. Ground truth fruit
+annotations are denoted as ˆF t.
+It comprises high-resolution RGB images and 3D point
+clouds derived from photogrammetry of Fuji apple trees,
+captured under field conditions. Each scene is annotated
+with ground truth fruit instance descriptions (center and
+radius). It is divided into two main acquisitions, the first
+captured in 2018 and the second captured in 2020, both
+featuring three Fuji trees. We used the 2018 acquisition for
+training and validation, and the 2020 acquisition for testing.
+While manually inspecting the annotations of the dataset,
+we noticed that some fruits were missing from the first two
+trees of the 2020 collection. For this reason, we only used
+the third tree’s fruit annotations for testing.
+B. Metrics
+To evaluate the instance segmentation capabilities we
+use as metrics panoptic quality (PQ) [56], consisting of
+segmentation quality (SQ) and recognition quality (RQ), and
+intersection over union (IoU). IoU is defined by
+IoU =
+1
+|TP|
+X
+(p,g)∈T P
+|p ∩g|
+|p ∪g|,
+(13)
+where p is the set of points belonging to a predicted instance,
+g is the set of points belonging to a ground truth instance,
+and TP is the set of pairs of predicted and ground truth
+instances matched (with |p∩g|
+|p∪g| ≥0.5 as commonly done).
+The metrics PQ, SQ, and RQ are defined as
+PQ =
+P
+(p,g)∈T Pseg IoU(p, g)
+|TPseg|
+|
+{z
+}
+segmentation quality (SQ)
+·
+|TPseg|
+|TPseg| + 1
+2|FPseg| + 1
+2|FNseg|
+|
+{z
+}
+recognition quality (RQ)
+,
+(14)
+where true positives (TPseg), false positives (FPseg), and
+false negatives (FNseg) represent matched pairs of segments,
+unmatched predicted segments, and unmatched ground truth
+segments, respectively [57].
+To evaluate matching performance, we first compute the
+following metrics: correct matching (CM, correctly matching
+two strawberries), mismatching (MM, correctly detecting a
+strawberry as a matching one but relating it with the wrong
+corresponding strawberry), false matching (FM, incorrectly
+labeling a no-matching strawberry with a strawberry), true
+negative (TN, correctly labeling a strawberry with the no-
+match label), and false negative (FN, incorrectly labeling
+a matching strawberry with the no-match label). Based on
+these, we calculate the following scores:
+F1p =
+2CM
+2CM + MM + FM + FN,
+(15)
+
+F1n =
+2TN
+2TN + FM + FN,
+(16)
+mF1 = F1p + F1n
+2
+,
+(17)
+The standard F1 score measures the goodness of the pre-
+dictive capacity of a model, but focuses only on the positive
+class. By averaging the F1p and F1n scores in Eq. (17), we
+get an indicator for both, mF1.
+In our experiments, we trained the re-identification module
+to maximize the mF1 score in the validation set, in order to
+balance performance between correct matching and correct
+no-match predictions.
+C. Implementation Details
+We trained the two tasks, i.e., instance segmentation and
+re-identification, separately, and in particular, we trained for
+the re-identification task only using the strawberry ground
+truth fruit annotations. This procedure enables a clear separa-
+tion between the two modules, allowing for easy integration
+and replacement of the segmentation component with alter-
+native solutions. This flexibility makes our method highly
+adaptable and appealing for various applications.
+We trained from scratch both instance segmentation meth-
+ods, MinkPanoptic (ours) and Superpoint Transformer, and
+on both datasets.
+In the strawberry dataset, we trained MinkPanoptic using
+an initial learning rate of 0.01 linearly decreased, at each
+epoch, with a decay coefficient of 0.97. In the apple dataset,
+we used an initial learning rate of 0.03 linearly decreased, at
+each epoch, with a decay coefficient of 0.97. In both datasets,
+we trained Superpoint Transformer using the default learning
+rate parameters, i.e., an initial value of 0.01 with a cosine
+annealing scheduler with warmup.
+We used the same, standard data augmentation techniques
+for both methods, such as applying a random yaw rotation,
+X or Y axis flip, X or Y scale change (with a uniformly
+random scaling factor in the range [0.97, 1.03] for strawberry
+and [0.95, 1.05] for apples), and point jittering (adding per-
+point noise with a normal distribution centered at zero and
+with variance 0.03 m for strawberry and 0.1 m for apples).
+For MinkPanoptic, we optimized the bandwidth values
+using the validation set, finding the best value to be
+of 0.01125 m for the strawberry dataset and 0.035 m for the
+apple dataset (see Sec. VI-A).
+Also our descriptor extraction and matching module
+is trained from scratch. In the loss function, we used
+as weights λce = 2, λLov = 10, λoff = 10 and λinj = 0.08.
+We set the support radius s = 0.2 m and the voxel size
+v = 5 · 10−4 m for the fruit descriptor extraction module and
+the maximum matching distance h = 0.05 m for the fruit de-
+scriptor matching module based on empirical evaluation. We
+used L = 4 layers using hidden dimensions 8, 8, 16, 16, and
+64 (8 is the number of channels produced by the convolution
+of the initial feature extraction, while the subsequent are the
+produced number of channels for each layer). We set the
+input channel dimension of the matching module transformer
+dataset
+method
+class
+IoU
+RQ
+SQ
+PQ
+strawberry
+superpoint
+transformer
+background
+97.1
+100
+97.1
+97.1
+strawberry
+48.3
+48.8
+79.2
+38.7
+average
+72.7
+74.4
+88.1
+67.9
+MinkPanoptic
+(ours)
+background
+98.9
+100
+98.9
+98.9
+strawberry
+80.9
+75.8
+84.3
+63.8
+average
+89.9
+87.9
+91.6
+81.4
+PFuji-Size
+superpoint
+transformer
+background
+92.5
+100
+92.2
+92.2
+apple
+39.4
+49.2
+71.0
+34.9
+average
+65.9
+74.6
+81.6
+63.6
+MinkPanoptic
+(ours)
+background
+94.6
+100
+96.6
+96.6
+apple
+50.1
+52.1
+78.3
+40.7
+average
+72.3
+76.0
+87.4
+68.7
+average
+superpoint
+transformer
+background
+94.8
+100
+94.7
+94.7
+fruit
+43.9
+49
+75.1
+36.8
+average
+69.3
+74.5
+84.9
+65.8
+MinkPanoptic
+(ours)
+background
+96.8
+100
+97.8
+97.8
+fruit
+65.5
+64.0
+81.3
+52.3
+average
+81.1
+82.0
+89.5
+75.1
+TABLE II: Comparison of Superpoint Transformer [25] and our
+MinkPanoptic on the instance segmentation task. All values are
+in %.
+layer l to 512, the feedforward dimension to 1024, and the
+number of heads to 8.
+We trained the descriptor extraction and matching module
+with a fixed learning rate of 3 · 10−4. We augmented the
+dataset by applying to each input fruit point cloud a random
+rotation in the range [-30°, 30°] on each of the three axes,
+a point jittering added per point drawn from a normal
+distribution centered at zero and with variance 7 · 10−4 m,
+and a color jittering, modifying each RGB channel with
+a random gaussian noise drawn from a normal distribution
+centered at zero and with variance 0.05.
+To train the fruit descriptor extraction and re-identification
+model, we manually divided the training set
+  ˆ
+F1,
+ˆ
+F2,
+and ˆy2,1
+
+into two non-overlapping sets, grouping corre-
+sponding fruits based on their 3D position. We used the first
+group as a training set, containing approximately 80 % of
+strawberries, and the second as a validation set.
+D. Instance Segmentation Results
+We
+compared
+our
+instance
+segmentation
+method,
+MinkPanoptic, with multiple baselines and on two fruit
+point cloud datasets. Surprisingly, current state-of-the-art
+instance segmentation methods struggle when trained with
+small or very small data, providing poor results in a
+seemingly simple task (see Sec. IV-E). Only Superpoint
+Transformer [25] was able to accurately segment strawberry
+or apple instances, and for this reason, we only report the
+comparison with this baseline.
+In the strawberry dataset, we trained on the first two point
+clouds, i.e., P1 as the actual training set and P2 as the
+validation set, and tested on the third point cloud, i.e., P3.
+Due to the pre-processing requirements of the Superpoint
+Transformer, we constructed a dataset by extracting 800
+annotated point clouds for training and 200 for validation
+from the three original point clouds. Each sample was
+generated by cropping around a randomly selected seed point
+
+within the strawberry row, resulting in segments 0.15 m wide,
+with a voxel size of 0.001 m. In contrast, MinkPanoptic was
+trained using the same number of point clouds, but with a
+larger crop width of 0.3 m and a finer voxel size of 0.0005 m,
+made possible by its lower memory usage, particularly during
+training.
+The results are summarized in Tab. II. Across all datasets,
+MinkPanoptic consistently achieves the highest performance
+among the compared instance segmentation methods. The
+improvement is particularly evident in the strawberry dataset,
+especially for the strawberry class, where the gains are
+substantial. This may be attributed to the spherical nature of
+the fruit, which aligns well with MinkPanoptic’s architectural
+strengths, specifically, its offset prediction mechanism and
+mean shift clustering, both of which are well-suited to delin-
+eating compact, rounded instances. MinkPanoptic also shows
+superior performance in the apple dataset, further confirming
+its robustness across different fruit types. In particular, all
+methods achieve a recognition quality of 100.0 % for the
+background class, indicating that all ground truth background
+points were correctly predicted as background points in
+these regions. In general, substantial improvements in panop-
+tic quality and intersection over union for the fruit class
+highlight how MinkPanoptic’s design and training strategy
+make it particularly effective for high-precision segmentation
+in agricultural scenarios. We show qualitative examples of
+the segmentation masks predicted by MinkPanoptic on the
+strawberry dataset in Fig. 3 and on the Pfuji-Size dataset
+in Fig. 4.
+E. Discussion: Instance Segmentation state-of-the-art per-
+formance
+Surprisingly, current state-of-the-art instance segmenta-
+tion methods (i.e., [23], [24], [26], [27], [28]) struggle
+when trained with small or very small data, providing
+poor results in a seemingly simple task, such as straw-
+berry or apple segmentation. There are many reasons why.
+Most methods are best suited for LiDAR point clouds,
+e.g. P3Former [27], exploiting their cylindrical space dis-
+tribution. Methods like Mask3D [23], MaskPLS [24], One-
+Former3D [28], and Spherical Mask [26] suffer in this
+task due to their reliance on voxelization, which can lead
+to the loss of small object details during downsampling.
+Using small voxels to preserve these details dramatically
+increases computational costs, making it impractical for
+our application, while increasing the voxel size to lower
+the computational complexity results in missing the small
+objects. Moreover, the multi-resolution technique of these
+methods, usually helpful, deteriorates the performance on
+dense, small-scale datasets like strawberries, and the learned
+queries might collapse to similar representations, failing to
+differentiate between individual fruits. We made every effort
+to include these state-of-the-art methods in our comparison;
+however, due to the severe limitations described above, their
+performance was so poor that they failed to produce even
+basic, usable segmentation results on our datasets.
+predicted instances
+false positive
+false negative
+ground truth instances
+Fig. 3: Three qualitative examples of instance segmentation. On
+top is the ground truth, while below is the predicted segmentation.
+Identical instance color between the two rows indicates correct
+detections with at least 50 % IoU overlap. False positives (high-
+lighted with fuchsia circles) are fruits that were not present in
+the ground truth dataset (being too noisy to be clearly labeled) or
+leaves that were incorrectly classified as fruits, while false negatives
+(highlighted with yellow circles) are missed detections of fruits.
+On the left and center, two situations in which false positives are
+predominant. On the right, false negatives are predominant.
+predicted instances
+false negative
+false positive
+ground truth instances
+original point cloud
+Fig. 4: Instance segmentation results on the PFuji-Size apple
+dataset. Although apparent occlusions are visible from this single
+viewpoint, the 3D point cloud is obtained via multi-view RGB
+fusion, which substantially reduces the single-view occlusions in the
+reconstructed data. Identical instance color between the two rows
+indicates correct detections with at least 50 % IoU overlap. False
+positives are highlighted with fuchsia circles and false negatives
+with yellow circles. On the left is the original point cloud, on
+the center the ground truth instance segmentation, on the right the
+predicted segmentation.
+
+F. Re-identification Results
+In this experiment, we evaluate the performance of our
+approach in the re-identification task. It supports the claim
+that our method can identify fruits in point clouds using
+an instance segmentation method and outperforms baseline
+approaches on the re-identification task using real-world data
+collected in a greenhouse. We will only use the strawberry
+dataset, as it provides the necessary annotations required for
+this task. We match the fruit instance segmentation predicted
+on P3 at the previous step with the ground fruit annotation
+of P2. For comparison, we will also evaluate on ground truth
+fruit annotations. To analyze robustness under varying IoU
+conditions, we evaluate matching performance at multiple
+thresholds ranging from 5 % to 30 %, with 5 % step, reflect-
+ing increasingly strict requirements for spatial consistency
+in 3D point clouds. Higher IoU thresholds select only the
+predicted instances that are more similar to the ground
+truth annotation, introducing many negative instances (false
+positives from the instance segmentator), while lower IoU
+thresholds also associate low-quality instance prediction with
+ground truth annotation, reducing the number of negatives.
+Using more than 30% IoU threshold would result in very few
+matching instances, making the evaluation less meaningful.
+Each ground truth instance is assigned the ID of the predicted
+fruit instance with the highest IoU, provided that it exceeds
+the considered threshold. All not matching predicted fruit
+instances are assigned a new ID and thus labeled as negatives.
+We consider as baseline methods a nearest neighbor ap-
+proach fine-tuned with Optuna [58] as well as Riccardi et
+al. [48]. We compare only with these two baselines because,
+to the best of our knowledge, Riccardi et al. is the only
+publicly available work addressing fruit re-identification in
+point clouds, while the nearest neighbor approach is a simple
+yet effective baseline. Also, Riccardi et al. demonstrated
+superior capabilities compared to other traditional descriptor-
+based matchings.
+The first is purely based on the relative position between
+the sets of fruits and matches them by linking a fruit Ft
+i ∈Ft
+with the fruit Ft−1
+∗,NN ∈Ft−1 having the minimum Euclidean
+distance from Ft
+i . Formally:
+Ft−1
+∗,NN = argmin
+j
+∥ct
+i −ct−1
+j
+∥2,
+(18)
+where ct
+i, ct−1
+j
+are the center of the strawberries Ft
+i , Ft−1
+j
+.
+The fruits in Ft−1 can match only one fruit in Ft, and
+vice versa. This method can match fruits, but cannot detect
+the no-match case. For this reason, we used Optuna, an
+open-source optimization framework, to find the optimal
+threshold ϵ ∈R for which two fruits at a distance greater
+than ϵ should be considered unmatchable. A fruit with no
+matchable counterpart is then considered unmatched. In our
+experiment, we maximized the mF1 score in the training
+set and found the optimal value ϵ∗= 0.033 m. Riccardi et
+al. [48] proposed a histogram descriptor based on the Eu-
+clidean distance between neighboring fruits. Considering a
+target fruit, they divide the 3D space around it into angular
+sectors and count how many fruits fall in each sector. In our
+experiments, we use the parameter setting suggested in the
+original implementation.
+We compare our re-identification approach with base-
+lines using both the instance segmentation prediction of
+MinkPanoptic and Superpoint Transformer. The results are
+reported in Tab. III while in Fig. 7 a visualization of the
+numerical results makes the comparison clearer. With the in-
+stance segmentation provided by MinkPanoptic, our method
+consistently achieves the highest performance across all
+metrics in the test set using predicted instances, except when
+using ground truth annotations. Our approach obtains an
+average score mF1 of 65.1 %, outperforming the second-best
+method by 9.8 %. The nearest neighbor approach generally
+surpasses Riccardi et al. With the instance segmentation pro-
+vided by Superpoint Transformer, our method consistently
+achieves the highest performance across key metrics such as
+F1n and mF1. In particular, it attains an average mF1 score
+of 51.7 %, outperforming the second-best method by 5.9 %.
+While the nearest neighbor baseline achieves the highest F1p,
+it is generally more effective at correctly identifying positive
+matches, likely due to its reliance on spatial proximity, an
+advantage when instances remain near each other across
+time steps. In contrast, our method excels in distinguish-
+ing negative matches, a critical advantage given the large
+number of negative pairs introduced by the relatively coarse
+instance segmentation from Superpoint Transformer. This
+balanced performance across both positive and negative
+samples makes our approach particularly robust, yielding the
+best overall results on this dataset.
+In Fig. 5 and Fig. 6, we show qualitative results of
+our re-identification method using the instance segmentation
+predicted by MinkPanoptic. In Fig. 5, the re-identification is
+almost perfect, with only two FMs and one FN. In Fig. 6,
+the re-identification is less accurate, with several FMs, MMs,
+and one FN. This is mainly due to the instance segmentation
+errors, such as merged fruits (leading to the FNs on bottom
+right) or false detections (leading to the FNs on bottom left).
+Nonetheless, most detection faults are correctly handled by
+our re-identification method with several TNs. Fig. 7 quanti-
+tatively highlights the superior performance of our approach.
+The radar plot of our method has always a greater area
+with respect to the baselines when using MinkPanoptic’s
+predictions. With SPT’s, the area is slightly smaller only on
+the F1p radar plot, while the area is sharply larger on the
+F1n and mF1 radar plots.
+For a broader discussion of the results, the method’s
+limitations and future directions, refer to Sec. VI-C.
+V. COMPUTATIONAL EFFICIENCY AND RUNTIME
+ANALYSIS
+While the primary focus of this work is accuracy and
+robustness, computational efficiency is an important prac-
+tical consideration for agricultural monitoring systems. All
+experiments were conducted on a workstation equipped with
+an NVIDIA TITAN RTX GPU (24 GB memory) and an Intel
+Core i9-10920X CPU @ 3.50 GHz.
+
+predicted instances
+ground truth instances
+CM
+FM
+MM
+TN
+FN
+Fig. 5: Fruit instance segmentation and re-identification using our method, in a good performance scenario. On the top are point clouds
+from P3 that we match with the ground truth fruit annotations on P2 depicted below. From left to right: the original, colored point
+clouds; the instance segmentation (ground truth for P2, predicted using MinkPanoptic for P3); the re-identification results. Green lines
+indicate correct matches (CMs), red lines indicate false matches (FMs), orange lines indicate mismatches (MMs), green circles indicate
+true no-matches (TNs) and red circles indicate false no-matches (FNs). Most matches are correct, with only two FMs and one FN. Best
+viewed in color.
+
+CM
+FM
+MM
+TN
+FN
+ground truth instances
+predicted instances
+Fig. 6: Fruit instance segmentation and re-identification using our method, in a difficult scenario. On the top are point clouds from P3
+that we match with the ground truth fruit annotations on P2 depicted below. From left to right: the original, colored point clouds; the
+instance segmentation (ground truth for P2, predicted using MinkPanoptic for P3); the re-identification results. Green lines indicate
+correct matches (CMs), red lines indicate false matches (FMs), orange lines indicate mismatches (MMs), green circles indicate true no-
+matches (TNs) and red circles indicate false no-matches (*FNs). Many matches are correct, but there are also several FMs, MMs and one
+FN. Best viewed in color.
+
+IoU
+level
+using MinkPanoptic prediction
+using SPT prediction
+NN
+Riccardi et al.
+Ours
+NN
+Riccardi et al.
+Ours
+F1p
+F1n
+mF1
+F1p
+F1n
+mF1
+F1p
+F1n
+mF1
+F1p
+F1n
+mF1
+F1p
+F1n
+mF1
+F1p
+F1n
+mF1
+GT
+84.7
+75.0
+79.9
+92.6
+0.0
+46.3
+76.4
+51.4
+63.9
+84.7
+75.0
+79.9
+92.6
+0.0
+46.3
+76.4
+51.4
+63.9
+@5%
+76.3
+38.9
+57.6
+73.5
+38.3
+55.9
+81.5
+63.9
+72.7
+80.8
+21.4
+51.1
+65.8
+9.1
+37.5
+80.6
+50.0
+65.3
+@10%
+74.9
+35.4
+55.1
+71.5
+35.6
+53.6
+80.0
+59.6
+69.8
+78.0
+15.4
+46.7
+69.9
+6.1
+38.0
+76.2
+39.2
+57.7
+@15%
+73.3
+33.3
+53.3
+70.1
+35.8
+53.0
+78.1
+56.9
+67.5
+74.1
+11.5
+42.8
+60.5
+7.0
+33.8
+71.2
+34.4
+52.8
+@20%
+71.8
+30.4
+51.1
+68.8
+36.8
+52.8
+75.7
+53.0
+64.4
+67.2
+8.7
+38.0
+55.0
+8.1
+31.6
+64.9
+27.2
+46.0
+@25%
+69.0
+28.0
+48.5
+66.2
+34.4
+50.3
+73.5
+51.2
+62.4
+59.6
+7.1
+33.4
+49.8
+9.0
+29.4
+57.8
+22.9
+40.4
+@30%
+61.1
+22.8
+41.9
+60.6
+34.5
+47.5
+65.7
+44.6
+55.2
+51.6
+5.9
+28.8
+38.1
+7.5
+22.8
+50.3
+21.2
+35.7
+avg
+73.0
+37.7
+55.3
+71.9
+30.8
+51.3
+75.8
+54.4
+65.1
+70.9
+20.7
+45.8
+61.7
+6.7
+34.2
+68.2
+35.2
+51.7
+TABLE III: Re-identification performance across various IoU thresholds using different instance segmentation methods (MinkPanop-
+tic (ours) and Superpoint Transformer [25]) and matching baselines (Nearest Neighbor (NN), Riccardi et al. [48] and ours).
+20
+40
+60
+80
+GT
+@5%
+@10%
+@15%
+@20%
+@25%
+@30%
+avg
+20
+40
+60
+80
+GT
+@5%
+@10%
+@15%
+@20%
+@25%
+@30%
+avg
+20
+40
+60
+80
+GT
+@5%
+@10%
+@15%
+@20%
+@25%
+@30%
+avg
+20
+40
+60
+80
+GT
+@5%
+@10%
+@15%
+@20%
+@25%
+@30%
+avg
+20
+40
+60
+80
+GT
+@5%
+@10%
+@15%
+@20%
+@25%
+@30%
+avg
+20
+40
+60
+80
+GT
+@5%
+@10%
+@15%
+@20%
+@25%
+@30%
+avg
+F1p
+F1n
+mF1
+using MinkPanoptic predictions
+using SPT predictions
+F1p
+F1n
+mF1
+NN
+Riccardi et al.
+Ours
+Fig. 7: Radar plots comparing re-identification performance, detailed in Tab. III, at varying IoU thresholds using instance segmentations
+from our method (MinkPanoptic) and SuperPoint. Best viewed in color.
+Training the instance segmentation module requires ap-
+proximately 2 hours on average for both the strawberry and
+PFuji-Size apple datasets. At inference time, the instance
+segmentation has a runtime of 100 ms / 100k points.
+Training the descriptor extraction and matching modules
+takes less than 1 hour. At inference time, processing and
+matching 200 strawberries spanning approximately 2 m of
+crop row requires about 1.2 s. This runtime includes fruit
+support point cloud extraction and descriptor encoding of
+both point clouds (previous and current), and inference of
+the attention-based matching module.
+Overall, the computational cost of the pipeline is dom-
+inated by the instance segmentation stage, while the re-
+identification component scales approximately linearly with
+
+strawberry
+PFuji-Size
+bw (m)
+RQ
+SQ
+PQ
+bw (m)
+RQ
+SQ
+PQ
+0.0094†
+80.2
+86.2
+71.5
+0.02
+80.2
+85.3
+70.4
+0.0100
+80.5
+86.2
+71.7
+0.03
+85.3
+85.2
+74.1
+0.0105
+80.8
+86.1
+71.9
+0.0325
+85.6
+85.2
+74.4
+0.0110
+80.8
+86.1
+71.9
+0.035
+85.8
+85.2
+74.5
+0.01125
+81.0
+86.0
+72.0
+0.0375
+85.7
+85.1
+74.3
+0.0115
+80.7
+86.1
+71.8
+0.04
+85.7
+85.1
+74.3
+0.01175
+80.8
+86.1
+71.9
+0.0425
+86.0
+85.0
+74.4
+0.1200
+80.8
+86.1
+71.9
+0.07†
+81.9
+84.6
+71.2
+0.1300
+80.3
+86.1
+71.5
+0.09
+74.6
+84.5
+65.7
+TABLE IV: Effect of mean shift bandwidth fine-tuning on the
+instance segmentation performance on the strawberry and PFuji-
+Size datasets. Metrics are on the valid set in %. † symbol indicates
+the average radius size of the strawberries and apples in the valid
+set.
+the number of detected fruits and remains lightweight in
+comparison. The reported runtimes are well suited for offline
+and online phenotyping pipelines commonly adopted in
+agricultural monitoring and crop analysis applications.
+VI. ABLATION STUDY
+A. Instance Segmentation
+Our instance segmentation method, MinkPanoptic, is an
+end-to-end learned approach except for the fine-tuning of the
+bandwidth parameter of the mean shift algorithm, necessary
+for clustering the fruit instances. We carefully investigated,
+using the validation set, the impact of different bandwidth
+values on performance. The bandwidth optimization process
+is a hyperparameter that is not involved in the training
+process of MinkPanoptic, since the loss only cares for binary
+semantic segmentation and offset prediction. Thus, we were
+able to adjust it after the training by running multiple
+instance segmentations and analyzing the performance. By
+doing so in a grid-search approach, we could identify the
+optimal bandwidth value that maximizes the PQ on the
+validation set.
+The results on the strawberry and PFuji-Size datasets are
+reported in Tab. IV. The PQ values followed a near-parabolic
+trend, allowing a clear selection of optimal values, which
+we used to evaluate our method, MinkPanoptic, in the test
+set. Interestingly, for strawberry data, the bandwidth value
+0.094 m, which corresponds to the average radius size of
+the strawberries in the validation set, does not provide the
+best performance. The same happens for the apple data. The
+0.07 m bandwidth, which corresponds to the average radius
+size of the apples in the validation set, does not provide the
+best performance.
+B. Re-identification
+We conducted experiments to evaluate the impact of
+various design choices of fruit descriptor extractors on our
+method. For each experiment, we performed a 5-fold cross-
+validation on the training set
+  ˆ
+F1,
+ˆ
+F2, and ˆy2,1
+
+which
+we manually divided into five subsets based on the 3D
+position of strawberries. We tested different configurations of
+our fruit descriptor extraction and re-identification method,
+repeating each experiment four times with different seeds and
+averaging the results to minimize the effect of randomness.
+The results are in Fig. 9.
+Initially, we validated our re-identification method using
+a fixed matching module configuration, examining various
+hidden dimensions for the fruit encoder. The configuration
+with hidden dimensions [8, 8, 16, 16, 64] achieved the
+highest performance, with the best mF1 score of 61.2 %,
+F1p of 75.5 % and F1n of 47.0 %.
+Next, we examined the effect of augmenting the trans-
+former encoder layer’s feedforward dimension from 512 to
+1024 to determine if a more complex network could obtain
+better performance. The matcher with hidden dimensions [8,
+16, 32, 32, 32] yielded the best in subset mF1 score of
+60.2 %, although this was still lower than the previous results.
+Finally, we explore the importance of incorporating neigh-
+boring fruits in the descriptor computation. We modified the
+descriptor extraction module to include a graph-based neural
+network that computes the neighboring fruits’ descriptor and
+concatenates this to the original fruit descriptor. The archi-
+tecture is depicted in Fig. 8. We tested 2 graph convolutional
+operators: GCNConv [59] and EdgeConv [60]. We kept fixed
+descriptor extractor hidden dimensions [8, 8, 16, 16, 64] and
+tried different matcher feedforward dimensions, i.e., 512 and
+1024.
+The method employing the GCNConv convolution opera-
+tor, with feedforward dimension 512, obtained the best mF1
+score of 61.0 % among methods using a graph convolutional
+operator (0.2 % less than the original, graph-free method) and
+the overall best F1n of 47.1 %. In contrast, EdgeConv with
+the feedforward dimension 1024 obtains the overall best F1p
+of 76.9 %. Although being best only in one metric, they do
+not balance the performance between negative and positive
+predictions, obtaining a lower mF1 score than the graph-free
+method.
+In summary, our evaluation suggests that our graph-free
+method, composed of an encoder with hidden dimensions [8,
+8, 16, 16, 64] and a matching module with a transformer’s
+feedforward dimension 512, demonstrated to be the best
+performing in cross-validation, well balancing negative and
+positive predictions, and obtaining the best mF1.
+C. Discussion of the Results, Limitations and Future Works
+Our findings demonstrate the potential of leveraging
+high-resolution
+3D
+point
+clouds
+for
+fruit
+monitoring,
+particularly in agricultural environments. The proposed
+method effectively combines instance segmentation and re-
+identification, achieving state-of-the-art performance on chal-
+lenging datasets. However, several aspects need further dis-
+cussion.
+First, the results highlight the importance of accurate
+instance segmentation as a precursor to successful re-
+identification. While our method outperformed baselines, its
+performance is inherently tied to the quality of the instance
+segmentation. Errors such as merged fruits or false detections
+can propagate to the re-identification stage, reducing overall
+accuracy. This highlights the need for robust segmentation
+
+compute the
+graph of the
+neighborhood of
+fruit 
+Graph
+Convolution
+Graph
+Convolution
+concat.
+Global Avg
+Pooling
+Graph-
+based
+Descriptor
+Enhancer
+relative 3D
+position btw
+fruits in 
+expanded fruit
+descriptor
+Fig. 8: We investigated the significance of neighboring fruits in the descriptor computation. The module builds the graph of the neighborhood
+of fruit F t
+i . Two graph convolutions process the graph and a final global average pooling computes the neighborhood descriptor dt
+i,g,
+which is concatenated to the original Fi fruit descriptor dt
+i.
+methods tailored to agricultural datasets, which often feature
+dense, occluded, and visually similar objects, unlike indoor
+or urban datasets.
+Second, the experiments reveal the adaptability of our
+approach to different fruit types and datasets. The use of
+MinkPanoptic for instance segmentation proved effective
+across both strawberry and apple datasets, suggesting its
+generalizability. However, the re-identification module was
+only evaluated on the strawberry dataset due to the lack of
+publicly available temporally consistent instance-annotated
+datasets for other fruits. Expanding the evaluation to diverse
+datasets and fruit types would provide a more comprehensive
+understanding of the method’s robustness and limitations.
+Third, the ablation study highlights the significance of
+design choices in the descriptor extraction and matching
+modules. While incorporating graph-based features showed
+potential, the simpler graph-free approach achieved the best
+balance between positive and negative predictions. This sug-
+gests that the added complexity of graph-based methods may
+not always translate to improved performance, particularly in
+scenarios with limited training data.
+Finally, the broader implications of this work extend
+beyond fruit monitoring. The proposed method can be
+adapted to other domains requiring instance segmentation
+and temporal matching in 3D point clouds, such as forestry,
+construction, and urban planning. However, the reliance on
+high-resolution LiDAR data may limit its applicability in
+resource-constrained settings. Future work could explore the
+use of lower-cost sensors or hybrid approaches combining
+2D and 3D data to enhance accessibility.
+VII. CONCLUSION
+In this article, we presented a novel approach for temporal
+object instance analysis based on fruit instance segmentation
+and re-identification on colored point clouds acquired by a
+high-resolution LiDAR scanner at different points in time.
+Our method first segments fruits using a learning-based
+instance segmentation approach, and then each segmented
+fruit is processed by a 3D sparse convolutional neural
+network to compute a compact descriptor. Each fruit is
+matched with its corresponding instance from a previous
+data collection using its descriptors and an attention-based
+matching network designed for robust temporal association.
+We implemented and evaluated our approach on real-world
+3D datasets and provided comparisons with other existing
+techniques. The experiments supported all claims made in
+this article and demonstrated that our method achieves su-
+perior performance in both instance segmentation and re-
+identification, even when trained on ground truth annotations
+but tested on predicted instance segmentation. This flexibility
+makes our method highly adaptable to different scenarios,
+highlighting its potential for broader applications in 3D
+pattern recognition tasks where segmentation and temporal
+consistency are critical, allowing for easy integration and
+replacement of the segmentation component with alternative
+solutions.
+REFERENCES
+[1] T. Duckett, S. Pearson, S. Blackmore, B. Grieve, W. Chen, G. Cielniak,
+J. Cleaversmith, J. Dai, S. Davis, C. Fox, P. From, I. Georgilas, R. Gill,
+I. Gould, M. Hanheide, A. Hunter, F. Iida, L. Mihalyova, S. Nefti-
+Meziani, G. Neumann, P. Paoletti, T. Pridmore, D. Ross, M. Smith,
+M. Stoelen, M. Swainson, S. Wane, P. Wilson, I. Wright, and G. Yang,
+“Agricultural Robotics: The Future of Robotic Agriculture,” arXiv
+preprint, vol. arXiv:1806.06762, 2018.
+[2] A. Walter, R. Finger, R. Huber, and N. Buchmann, “Opinion: Smart
+farming is key to developing sustainable agriculture,” Proceedings of
+the National Academy of Sciences, vol. 114, no. 24, pp. 6148–6150,
+2017.
+[3] F. Fiorani and U. Schurr, “Future scenarios for plant phenotyping,”
+Annual Review of Plant Biology, vol. 64, pp. 267–291, 2013.
+[4] M. Watt, F. Fiorani, B. Usadel, U. Rascher, O. Muller, and U. Schurr,
+“Phenotyping: New windows into the plant for breeders,” Annual
+Review of Plant Biology, vol. 71, no. 1, 2020.
+[5] I. P´erez-Borrero, D. Mar´ın-Santos, M. E. Geg´undez-Arias, and
+E. Cort´es-Ancos, “A fast and accurate deep learning method for
+strawberry instance segmentation,” Computers and Electronics in
+Agriculture, vol. 178, p. 105736, 2020.
+[6] P. Ganesh, K. Volle, T. Burks, and S. Mehta, “Deep orange: Mask
+R-CNN based orange detection and segmentation,” IFAC Proceedings
+Volumes, vol. 52, no. 30, pp. 70–75, 2019.
+[7] S. Gonzalez, C. Arellano, and J. E. Tapia, “Deepblueberry: Quantifi-
+cation of blueberries in the wild using instance segmentation,” IEEE
+Access, vol. 7, 2019.
+[8] J. Gen´e-Mola, R. Sanz-Cortiella, J. R. Rosell-Polo, J.-R. Morros,
+J. Ruiz-Hidalgo, V. Vilaplana, and E. Gregorio, “Fruit detection
+and 3d location using instance segmentation neural networks and
+structure-from-motion photogrammetry,” Computers and Electronics
+in Agriculture, vol. 169, p. 105165, 2020.
+[9] W. Jia, Z. Zhang, W. Shao, S. Hou, Z. Ji, G. Liu, and X. Yin,
+“Foveamask: A fast and accurate deep learning model for green fruit
+instance segmentation,” Computers and Electronics in Agriculture, vol.
+191, p. 106488, 2021.
+[10] C. Stachniss, J. Leonard, and S. Thrun, Springer Handbook of
+Robotics, 2nd edition.
+Springer Verlag, 2016, ch. Chapt. 46: Si-
+multaneous Localization and Mapping, pp. 1153–1176.
+
+Fig. 9: Ablation study to evaluate the impact of various design
+choices on our method. All values are in %. The horizontal lines
+depict the standard deviation of mF1. The first four bars colored in
+refer to the graph-free method with different fruit descriptor encoder
+hidden dimensions. The following four bars colored in
+refer
+to the graph-free method with different transformer feedforward
+dimensions. The last four bars colored in
+refer to the graph-
+based method with different graph convolutional operators and
+transformer feedforward dimensions. The best performing method
+for each of the F1n, F1p and mF1 metrics is highlighted in bold.
+The mF1 metric is the most important, as it balances positive
+and negative predictions, and is used to determine the overall best
+performing method.
+[11] O. Vysotska and C. Stachniss, “Effective Visual Place Recognition
+Using Multi-Sequence Maps,” IEEE Robotics and Automation Letters
+(RA-L), vol. 4, no. 2, pp. 1730–1736, 2019.
+[12] J. Rodriguez-Sanchez, J. L. Snider, K. Johnsen, and C. Li, “Cotton
+morphological traits tracking through spatiotemporal registration of
+terrestrial laser scanning time-series data,” Frontiers in Plant Science,
+vol. 15, 2024.
+[13] K. He, G. Gkioxari, P. Doll´ar, and R. Girshick, “Mask R-CNN,” in
+Proc. of the IEEE Intl. Conf. on Computer Vision (ICCV), 2017, pp.
+2961–2969.
+[14] Y. Ge, Y. Xiong, and P. J. From, “Instance segmentation and localiza-
+tion of strawberries in farm conditions for automatic fruit harvesting,”
+IFAC-PapersOnLine, vol. 52, no. 30, pp. 294–299, 2019.
+[15] H. Kang and C. Chen, “Fruit detection, segmentation and 3D visuali-
+sation of environments in apple orchards,” Computers and Electronics
+in Agriculture, vol. 171, p. 105302, 2020.
+[16] S. Tang, Z. Xia, J. Gu, W. Wang, Z. Huang, and W. Zhang, “High-
+precision apple recognition and localization method based on RGB-D
+and improved SOLOv2 instance segmentation,” Frontiers in Sustain-
+able Food Systems, vol. 8, 2024.
+[17] X. Wang, R. Zhang, T. Kong, L. Li, and C. Shen, “SOLOv2: Dynamic
+and fast instance segmentation,” Advances in Neural Information
+Processing Systems, 2020.
+[18] M. Tan and Q. Le, “EfficientNet: Rethinking model scaling for con-
+volutional neural networks,” in International conference on machine
+learning, 2019, pp. 6105–6114.
+[19] F. Magistri, Y. Pan, J. Bartels, J. Behley, C. Stachniss, and C. Lehnert,
+“Improving Robotic Fruit Harvesting Within Cluttered Environments
+Through 3D Shape Completion,” IEEE Robotics and Automation
+Letters (RA-L), vol. 9, no. 8, pp. 7357–7364, 2024.
+[20] Q. Zhu, L. Fan, and N. Weng, “Advancements in point cloud data
+augmentation for deep learning: A survey,” Pattern Recognition, vol.
+153, p. 110532, 2024.
+[21] C. Choy, J. Gwak, and S. Savarese, “4D Spatio-Temporal Con-
+vNets: Minkowski Convolutional Neural Networks,” in Proc. of
+the IEEE/CVF Conf. on Computer Vision and Pattern Recognition
+(CVPR), 2019, pp. 3075–3084.
+[22] X. Zhu, H. Zhou, T. Wang, F. Hong, W. Li, Y. Ma, H. Li, R. Yang, and
+D. Lin, “Cylindrical and asymmetrical 3d convolution networks for
+lidar-based perception,” IEEE Trans. on Pattern Analysis and Machine
+Intelligence (TPAMI), vol. 44, no. 10, pp. 6807–6822, 2022.
+[23] J. Schult, F. Engelmann, A. Hermans, O. Litany, S. Tang, and B. Leibe,
+“Mask3D: Mask Transformer for 3D Semantic Instance Segmenta-
+tion,” Proc. of the IEEE Intl. Conf. on Robotics & Automation (ICRA),
+2023.
+[24] R. Marcuzzi, L. Nunes, L. Wiesmann, J. Behley, and C. Stachniss,
+“Mask-Based Panoptic LiDAR Segmentation for Autonomous Driv-
+ing,” IEEE Robotics and Automation Letters (RA-L), vol. 8, no. 2, pp.
+1141–1148, 2023.
+[25] D. Robert, H. Raguet, and L. Landrieu, “Scalable 3d panoptic seg-
+mentation as superpoint graph clustering,” Proc. of the Intl. Conf. on
+3D Vision (3DV), 2024.
+[26] S. Shin, K. Zhou, M. Vankadari, A. Markham, and N. Trigoni,
+“Spherical mask: Coarse-to-fine 3d point cloud instance segmentation
+with spherical representation,” in Proc. of the IEEE/CVF Conf. on
+Computer Vision and Pattern Recognition (CVPR), 2024, pp. 4060–
+4069.
+[27] Z. Xiao, W. Zhang, T. Wang, C. C. Loy, D. Lin, and J. Pang, “Position-
+guided point cloud panoptic segmentation transformer,” Intl. Journal of
+Computer Vision (IJCV), vol. 133, no. 1, pp. 275–290, 2025.
+[28] M. Kolodiazhnyi, A. Vorontsova, A. Konushin, and D. Rukhovich,
+“Oneformer3d: One transformer for unified point cloud segmentation,”
+in Proc. of the IEEE/CVF Conf. on Computer Vision and Pattern
+Recognition (CVPR), 2024, pp. 20 943–20 953.
+[29] F. Hong, H. Zhou, X. Zhu, H. Li, and Z. Liu, “Lidar-based panoptic
+segmentation via dynamic shifting network,” in Proc. of the IEEE/CVF
+Conf. on Computer Vision and Pattern Recognition (CVPR), 2021, pp.
+13 090–13 099.
+[30] B. Xiang, Y. Yue, T. Peters, and K. Schindler, “A review of panoptic
+segmentation for mobile mapping point clouds,” ISPRS Journal of
+Photogrammetry and Remote Sensing (JPRS), vol. 203, pp. 373–391,
+2023.
+[31] B. Graham, M. Engelcke, and L. van der Maaten, “3D Semantic
+Segmentation with Submanifold Sparse Convolutional Networks,” in
+Proc. of the IEEE Conf. on Computer Vision and Pattern Recognition
+(CVPR), 2018, pp. 9224–9232.
+[32] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N.
+Gomez, Ł. Kaiser, and I. Polosukhin, “Attention Is All You Need,”
+Advances in Neural Information Processing Systems, 2017.
+[33] H. Kang, X. Wang, and C. Chen, “Accurate fruit localisation using high
+resolution lidar-camera fusion and instance segmentation,” Computers
+and Electronics in Agriculture, vol. 203, p. 107450, 2022.
+[34] J. P. Rodr´ıguez, D. C. Corrales, J.-N. Aubertot, and J. C. Corrales, “A
+computer vision system for automatic cherry beans detection on coffee
+trees,” Pattern Recognition Letters, vol. 136, pp. 142–153, 2020.
+[35] L. Liu, G. Li, Y. Du, X. Li, X. Wu, Z. Qiao, and T. Wang, “Cs-
+net: Conv-simpleformer network for agricultural image segmentation,”
+Pattern Recognition, vol. 147, p. 110140, 2024.
+[36] P. Chu, Z. Li, K. Lammers, R. Lu, and X. Liu, “Deep learning-based
+apple detection using a suppression mask r-cnn,” Pattern Recognition
+Letters, vol. 147, pp. 206–211, 2021.
+[37] A. Cardellicchio, F. Solimani, G. Dimauro, S. Summerer, and V. Ren`o,
+“Patch-based probabilistic identification of plant roots using convo-
+lutional neural networks,” Pattern Recognition Letters, vol. 183, pp.
+125–132, 2024.
+
+[38] J. Kierdorf, I. Weber, A. Kicherer, L. Zabawa, L. Drees, and
+R. Roscher, “Behind the leaves: Estimation of occluded grapevine
+berries with conditional generative adversarial networks,” Frontiers in
+Artificial Intelligence, vol. 5, 2022.
+[39] S. Nuske, S. Achar, T. Bates, S. Narasimhan, and S. Singh, “Yield
+Estimation in Vineyards by Visual Grape Detection,” in Proc. of the
+IEEE/RSJ Intl. Conf. on Intelligent Robots and Systems (IROS), 2011,
+pp. 2352–2358.
+[40] M. Halstead, C. McCool, S. Denman, T. Perez, and C. Fookes, “Fruit
+quantity and ripeness estimation using a robotic vision system,” IEEE
+Robotics and Automation Letters (RA-L), vol. 3, no. 4, pp. 2995–3002,
+2018.
+[41] C. Smitt, M. Halstead, T. Zaenker, M. Bennewitz, and C. McCool,
+“PATHoBot: A robot for glasshouse crop phenotyping and interven-
+tion,” in Proc. of the IEEE Intl. Conf. on Robotics & Automation
+(ICRA), 2021, pp. 2324–2330.
+[42] P. M. Blok, E. J. van Henten, F. K. van Evert, and G. Kootstra,
+“Image-based size estimation of broccoli heads under varying degrees
+of occlusion,” Biosystems Engineering, vol. 208, pp. 213–233, 2021.
+[43] A. S. Gomez, E. Aptoula, S. Parsons, and P. Bosilj, “Deep regression
+versus detection for counting in robotic phenotyping,” IEEE Robotics
+and Automation Letters (RA-L), vol. 6, no. 2, pp. 2902–2907, 2021.
+[44] H. Hao, S. Wu, Y. Li, W. Wen, jiangchuan Fan, Y. Zhang, L. Zhuang,
+L. Xu, H. Li, X. Guo, and S. Liu, “Automatic acquisition, analysis and
+wilting measurement of cotton 3d phenotype based on point cloud,”
+Biosystems Engineering, vol. 239, pp. 173–189, 2024.
+[45] F. P. Boogaard, E. J. van Henten, and G. Kootstra, “The added value
+of 3d point clouds for digital plant phenotyping – a case study on
+internode length measurements in cucumber,” Biosystems Engineering,
+vol. 234, pp. 1–12, 2023.
+[46] J. Rodriguez-Sanchez, K. Johnsen, and C. Li, “A ground mobile robot
+for autonomous terrestrial laser scanning-based field phenotyping,”
+arXiv preprint arXiv:2404.04404, 2024.
+[47] N. Chebrolu, F. Magistri, T. L¨abe, and C. Stachniss, “Registration of
+Spatio-Temporal Point Clouds of Plants for Phenotyping,” PLOS ONE,
+vol. 16, no. 2, 2021.
+[48] A. Riccardi, S. Kelly, E. Marks, F. Magistri, T. Guadagnino, J. Behley,
+M. Bennewitz, and C. Stachniss, “Fruit Tracking Over Time Using
+High-Precision Point Clouds,” in Proc. of the IEEE Intl. Conf. on
+Robotics & Automation (ICRA), 2023, pp. 9630–9636.
+[49] L. Lobefaro, M. Malladi, O. Vysotska, T. Guadagnino, and C. Stach-
+niss, “Estimating 4D Data Associations Towards Spatial-Temporal
+Mapping of Growing Plants for Agricultural Robots,” in Proc. of the
+IEEE/RSJ Intl. Conf. on Intelligent Robots and Systems (IROS), 2023,
+pp. 4212–4218.
+[50] L. Lobefaro, M. Malladi, T. Guadagnino, and C. Stachniss, “Spatio-
+Temporal Consistent Mapping of Growing Plants for Agricultural
+Robots in the Wild,” in Proc. of the IEEE/RSJ Intl. Conf. on Intelligent
+Robots and Systems (IROS), 2024, pp. 6375–6382.
+[51] D. Comaniciu and P. Meer, “Mean Shift: A Robust Approach Toward
+Feature Space Analysis,” IEEE Trans. on Pattern Analysis and Ma-
+chine Intelligence (TPAMI), vol. 24, no. 5, pp. 603–619, 2002.
+[52] S. Ioffe and C. Szegedy, “Batch Normalization: Accelerating Deep
+Network Training by Reducing Internal Covariate Shift,” in Proc. of
+the Intl. Conf. on Machine Learning (ICML), 2015, pp. 448–456.
+[53] B. Mildenhall, P. Srinivasan, M. Tancik, J. Barron, R. Ramamoorthi,
+and R. Ng, “NeRF: Representing Scenes as Neural Radiance Fields
+for View Synthesis,” in Proc. of the Europ. Conf. on Computer Vision
+(ECCV), 2020, pp. 99–106.
+[54] M. Berman, A. R. Triki, and M. B. Blaschko, “The lov´asz-softmax
+loss: A tractable surrogate for the optimization of the intersection-
+over-union measure in neural networks,” in Proc. of the IEEE/CVF
+Conf. on Computer Vision and Pattern Recognition (CVPR), 2018,
+pp. 4413–4421.
+[55] J. Gen´e-Mola, R. Sanz-Cortiella, J. R. Rosell-Polo, A. Escol`a,
+and E. Gregorio, “Pfuji-size dataset: A collection of images and
+photogrammetry-derived 3d point clouds with ground truth annotations
+for fuji apple detection and size estimation in field conditions,” Data
+in Brief, vol. 39, p. 107629, 2021.
+[56] A. Kirillov, K. He, R. Girshick, C. Rother, and P. Doll´ar, “Panoptic
+Segmentation,” in Proc. of the IEEE/CVF Conf. on Computer Vision
+and Pattern Recognition (CVPR), 2019, pp. 9404–9413.
+[57] A. Kirillov, R. Girshick, K. He, and P. Dollar, “Panoptic Feature
+Pyramid Networks,” in Proc. of the IEEE/CVF Conf. on Computer
+Vision and Pattern Recognition (CVPR), 2019, pp. 6399–6408.
+[58] T. Akiba, S. Sano, T. Yanase, T. Ohta, and M. Koyama, “Optuna: A
+next-generation hyperparameter optimization framework,” in Proc. of
+the Intl. Conf. on Knowledge Discovery and Data Mining, 2019, pp.
+2623–2631.
+[59] T. Kipf, “Semi-supervised classification with graph convolutional
+networks,” arXiv preprint arXiv:1609.02907, 2016.
+[60] Y. Wang, Y. Sun, Z. Liu, S. E. Sarma, M. M. Bronstein, and J. M.
+Solomon, “Dynamic graph CNN for learning on point clouds,” ACM
+Trans. on Graphics (TOG), vol. 38, no. 5, 2019.

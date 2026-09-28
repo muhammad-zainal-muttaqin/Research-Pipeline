@@ -45,17 +45,19 @@ MDPI_JOURNALS = {
     "insects": "insects", "processes": "processes", "photonics": "photonics",
     "micromachines": "micromachines", "smartcities": "smartcities",
     "vision": "vision", "jsan": "jsan", "iot": "iot", "digital": "digital",
-    "applbiosci": "applbiosci", "geomatics": "geomatics",
+    "applbiosci": "applbiosci", "geomatics": "geomatics", "data": "data",
 }
 
 
 def mdpi_cdn(doi):
-    m = re.match(r"10\.3390/([a-z]+)(\d{2})(\d{2})(\d{4})$", doi)
+    """DOI MDPI = kode jurnal + volume + nomor (2 digit) + artikel (4-5 digit)."""
+    m = re.match(r"10\.3390/([a-z]+)(\d{7,9})$", doi)
     if not m or m.group(1) not in MDPI_JOURNALS:
         return None
+    d = m.group(2)
+    vol, art = {7: (d[:1], d[3:]), 8: (d[:2], d[4:]), 9: (d[:2], d[4:])}[len(d)]
     j = MDPI_JOURNALS[m.group(1)]
-    vol, art = m.group(2), int(m.group(4))
-    stem = f"{j}-{vol}-{art:05d}"
+    stem = f"{j}-{int(vol):02d}-{int(art):05d}"
     return f"https://mdpi-res.com/d_attachment/{j}/{stem}/article_deploy/{stem}.pdf"
 
 

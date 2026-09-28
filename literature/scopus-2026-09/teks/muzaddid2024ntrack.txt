@@ -1,0 +1,1487 @@
+IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING
+1
+NTrack: A Multiple-Object Tracker and Dataset for
+Infield Cotton Boll Counting
+Md Ahmed Al Muzaddid
+and William J. Beksi , Member, IEEE
+©2023 IEEE. Personal use of this material is permitted. Permission from IEEE must be obtained for all other uses, in any current or future media, including
+reprinting/republishing this material for advertising or promotional purposes, creating new collective works, for resale or redistribution to servers or lists, or
+reuse of any copyrighted component of this work in other works.
+Abstract—In agriculture, automating the accurate tracking of
+fruits, vegetables, and fiber is a very tough problem. The issue
+becomes extremely challenging in dynamic field environments.
+Yet, this information is critical for making day-to-day agricultural
+decisions, assisting breeding programs, and much more. To tackle
+this dilemma, we introduce NTrack, a novel multiple object
+tracking framework based on the linear relationship between the
+locations of neighboring tracks. NTrack computes dense optical
+flow and utilizes particle filtering to guide each tracker. Corre-
+spondences between detections and tracks are found through data
+association via direct observations and indirect cues, which are
+then combined to obtain an updated observation. Our modular
+multiple object tracking system is independent of the underlying
+detection method, thus allowing for the interchangeable use of
+any off-the-shelf object detector. We show the efficacy of our
+approach on the task of tracking and counting infield cotton bolls.
+Experimental results show that our system exceeds contemporary
+tracking and cotton boll-based counting methods by a large
+margin. Furthermore, we publicly release the first annotated
+cotton boll video dataset to the research community.
+Note to Practitioners—This work is motivated by the need to
+provide highly-accurate estimates of the total number of cotton
+bolls across an entire farm. We provide a multiple object tracking
+framework for automating the counting process using a dynamic
+motion model that can reidentify severely occluded objects. This
+information is immensely beneficial to agronomists and breeders.
+For example, it can allow them to accelerate the selection of
+genotypes and identify cotton cultivars that exhibit tolerance to
+adverse environmental conditions (e.g., drought, poor soil quality,
+etc.) via yield prediction. Since the performance of our tracker
+is tied to the accuracy of the object detector, the ability to swap
+detectors is important for enhancing the usability of the system.
+Our dataset structure was modeled after similar multiple object
+tracking datasets for the purpose of increasing adoption among
+practitioners. To implement our system, it is assumed that the
+image/video capture device is of high resolution and data is
+acquired under ideal lighting conditions. The framework can be
+run on any commercial-off-the-shelf platform (e.g., ground-based
+robots, unmanned aerial vehicles, etc.), with sufficient computing
+and memory resources, using a vision-based sensor.
+Index Terms—Agricultural automation, computer vision for
+automation, visual tracking.
+Manuscript received 20 September 2023; accepted 30 November 2023. This
+article was recommended for publication by Associate Editor K. Zhu and Ed-
+itor G. Fortino upon evaluation of the reviewers’ comments. (Corresponding
+author: William J. Beksi).
+The authors are with the Department of Computer Science and Engineering,
+The University of Texas at Arlington, Arlington, TX 76019, USA. (e-mail:
+mdahmedal.muzaddid@mavs.uta.edu, william.beksi@uta.edu).
+Color versions of one or more figures in this article are available at
+https://doi.org/10.1109/TASE.2023.3342791.
+Digital Object Identifier 10.1109/TASE.2023.3342791
+MULTIMEDIA MATERIAL
+The source code, dataset, and documentation associated
+with this project can be found at https://robotic-vision-
+lab.github.io/ntrack.
+I. INTRODUCTION
+C
+OTTON (Gossypium hirsutum L.) is a vital source of
+natural fiber. It accounts for nearly 25% of total world
+textile fiber use [1]. Not only is cotton one of the most
+important textile fibers in the world, but it has also become a
+substantial source of food and feed for humans and livestock
+by providing cottonseed oil and hulls [2]. Improving the
+production of cotton is essential to fulfilling the fiber, food, and
+feed requirements of the Earth’s increasing population [3]. In
+addition, cotton is a high-valued crop that requires a significant
+number of inputs such as preparing seed beds, planting, reduc-
+ing competition from insects and weeds, applying harvest aids,
+and harvesting. Therefore, among stakeholders, the high return
+value and cost of cotton production provides incentives for
+embracing technologies to improve profitability by reducing
+expenses and boosting yields [4].
+A. Significance of Counting Cotton Bolls
+Infield cotton boll counting is key to predicting fiber yield as
+well as providing a better understanding of the physiological
+and genetic mechanisms of the crop’s growth and develop-
+ment. Repeated counting can contribute to the calculation of
+the growth rate in the flowering and boll maturity stages, and
+allow for selecting genotypes that more effectively utilize their
+energy to form cotton products. The standard approach to
+obtain yield information is by manual field sampling, which is
+tedious, labor intensive, and expensive. Constrained by these
+limitations, sampling is done over a few separate crops and the
+measurements are extrapolated over an entire farm. However,
+inherent human bias and sparsity in the measurements can
+result in inaccurate yield estimation. Improving yield is a pri-
+mary objective in cotton management projects. Physiological
+factors and environmental variables all have an effect on flower
+and boll retention. Understanding these processes is crucial
+not only to enhancing cotton yield, but also to advancing the
+study of plant phenotyping, i.e., the process of measuring and
+analyzing observable plant characteristics.
+B. Object Detection and Tracking in Agriculture
+The last few decades have seen remarkable advances in
+vision-based object tracking.
+This research has mainly been
+arXiv:2312.10922v1  [cs.CV]  18 Dec 2023
+
+Detector
+Tracker
+Count
+a
+b
+e
+d
+c
+f
+Fig. 1: An overview of NTrack, a multiple object tracking system for
+infield cotton boll counting. The steps from data collection to cotton
+boll count estimation are the following: a - capture video, b - extract
+video frames, c - detect cotton bolls, d - input cotton boll detections
+to the tracker, e - input video to the tracker, f - output the number
+of cotton bolls.
+applied to tracking pedestrians [5]–[7] and vehicles [8], [9],
+with benefits to many other important applications such as
+surveillance, traffic safety, autonomous driving, and more.
+Nevertheless, vision-based tracking has not evolved propor-
+tionally for the agricultural domain. There is a dire need
+for tracking algorithms and datasets to support operations in
+agriculture. For instance, plant detection and tracking may
+be utilized to optimize the usage of water, fertilizer, or
+other chemicals through variable-rate applications. Accurately
+counting the number of leaves, flowers, fruits, etc., is vital for
+yield prediction and plant phenotyping. Non-destructive, high-
+throughput data acquisition platforms (e.g., unmanned aerial
+vehicles, ground-based robots, etc.) are enabling experts to
+analyze more of this data for optimization.
+C. Challenges in Detecting and Tracking Cotton Bolls
+Detecting cotton bolls is a hard problem and tracking cannot
+be done if the object detector fails. Bolls are often clustered
+together and they may be split into two or more disjoint
+regions by branches, foliage, or other occlusions. In contrast
+to fruits with rigid shapes (e.g., apples, oranges, etc.), cotton
+bolls have complex structures and varied sizes [10]. Hence,
+the ability to detect and provide a highly-accurate count of
+the total number of cotton bolls in a given field is an open
+problem that we address with our framework, Fig. 1.
+The lack of high-quality datasets is a significant roadblock
+for meaningful progress in precision plant phenotyping. Anno-
+tated video datasets for cotton crops are nonexistent. With the
+aim of establishing a robust system for tracking and counting
+cotton bolls, we created TexCot22 [11], an infield cotton
+boll video dataset. Each tracking sequence was collected from
+unique rows of an outdoor cotton crop research plot located
+in the High Plains region of Texas, Fig. 2. The research
+plot is comprised of multiple varieties of cotton. Specifically,
+each row contains the same cultivar of cotton while different
+rows have unrelated cultivars. This results in a diverse variety
+of cotton boll shapes and sizes. Additionally, we captured
+video sequences from rows treated with contrasting levels of
+irrigation, which has a direct impact on the size and the shape
+of bolls.
+Fig. 2: The cotton crop research field used for data collection.
+In summary, our contributions are the following.
+• We propose a new tracking system that infers an occluded
+object’s location based on the visibility of its neighbors,
+and allows the tracker to maintain identity even under the
+existence of heavy occlusions.
+• We
+identify
+limitations
+in
+appearance-based
+re-
+identification techniques by outperforming the state of
+the art in many metrics.
+• We present the first publicly available infield cotton
+boll video dataset for advancing vision-based research in
+precision plant phenotyping.
+The remainder of the paper is structured as follows. We
+explain the object detection and tracking problem, and summa-
+rize related research in Section II. In Section III, our detection
+and tracking system is presented. The details of our infield
+cotton boll video dataset are provided in Section IV. Section V
+outlines and discusses the results of our experimental evalu-
+ation. We conclude in Section VI and provide directions for
+future work.
+II. RELATED WORK
+Detecting and tracking objects is one of the most fundamen-
+tal tasks in computer vision. Object detection is the process
+of identifying a target object in an image or a single video
+frame. Specifically, it is the task of detecting instances of
+objects that belong to a certain class. Object tracking seeks
+to predict the positions, and other pertinent information, of
+moving objects in a video. Single-object tracking involves
+the following steps: (i) detect the location of the object, (ii)
+assign a unique identification to the object, and (iii) track the
+object as it moves through the video sequence while storing
+the relevant information. In multiple object tracking (MOT)
+[12], given an input video the task is partitioned into locating
+multiple objects, maintaining their identities, and yielding their
+individual trajectories. The overall process is shown in Fig. 3.
+A. Multiple Object Tracking
+MOT approaches can be categorized into online and offline
+(batch) tracking. While offline tracking optimizes output based
+on past and future observations, online tracking only has ac-
+cess to information up until the current frame. Offline methods
+formalize tracking as an association problem and are solved by
+using global optimization techniques. For example, early work
+by Zhang et al. [13] used a probabilistic model to associate
+detections with tracks by solving an augmented min-cost flow
+problem. A hierarchical association framework that allows for
+2
+
+(a) Detection
+(b) Tracking
+Fig. 3: Multiple object tracking involves (a) detecting the location of objects and placing bounding boxes around them; and (b) associating
+a unique identification to each object, which is then used to track the trajectories of the objects as they pass through the video sequence.
+the integration of affinity measures or optimization methods
+was put forth by Huang et al. [14]. Yang et al. [15] attempted
+to find the best global associations and transformed the task
+of finding these associations into an energy minimization
+problem.
+With limited information, online methods tend to be im-
+plemented in a greedy fashion. Currently, the dominant ap-
+proach for online tracking follows a tracking-by-detection
+paradigm (e.g., [6], [16]–[18]). When performing tracking-
+by-detection, an object detector first localizes all objects of
+interest via a set of bounding boxes. Then, the tracking system
+associates bounding boxes with preexisting tracks based on
+motion, appearance, spatial, or other affinities. As a result,
+object detection accuracy plays a decisive role in the final
+tracking performance. However, many methods only consider
+detection boxes whose scores are higher than a set threshold.
+Objects with low detection scores (e.g., due to occlusions) are
+discarded, which results in sub-optimal results. Trackers such
+as ByteTrack [19] try to solve this problem by considering
+nearly every detection in their association method.
+B. Motion Models
+Various motion models have been used to estimate spatial
+affinity including the bounding box intersection over union
+and Euclidean distance metrics. For instance, to estimate a
+pedestrian’s velocity, Leal-Taix´e et al. [20] introduced an
+interaction feature encoded from image features based on the
+pedestrian’s environment. Bewley et al. [21] used a Kalman
+filter-based motion model to predict track positions while
+detections are associated via the Hungarian algorithm [22].
+To overcome the linearity and Gaussian restriction of the
+Kalman filter, Okuma et al. [23] utilized a particle filter for
+tracking. Li et al. [24] used a cascade particle filter, which
+consists of multiple stages of importance sampling to track
+objects in low frame rate videos. Optical flow was exploited by
+Choi [25] to encode the relative motion pattern for estimating
+the likelihood of matching detections. Yoon et al. [26] consid-
+ered time-varying multiple relative motion models to represent
+motion context and facilitate data association. Although these
+approaches exploit relative motion, their constant velocity
+motion model is not applicable for many scenarios including
+ours.
+Mauri et al. [27] discussed the use of depth, predicted
+from monocular images using self-supervised depth estimation
+[28], to estimate vehicular motion. Unfortunately, coarse depth
+estimation based on such techniques cannot be used in our
+situation. These models are not able to distinguish between
+two cotton bolls at slightly different depths. In our approach,
+we use an optical flow-based dynamic motion model along
+with a relative location estimator to update object locations.
+C. Appearance Models
+Similar to motion models, appearance models are ex-
+tensively used in MOT. An appearance model extracts re-
+identification features from image regions corresponding to
+each bounding box. Appearance-based affinity metrics have
+proven to be very informative in the presence of long-
+occlusion intervals. Examples include POI [5], DeepSORT
+[6], and Tracktor [16], which extract appearance features
+using deep convolutional neural networks (CNNs). Recent
+transformer-based approaches (e.g., TrackFormer [29]) also
+use implicit appearance cues to reidentify objects. More
+traditional methods have been used too. For instance, re-
+gion covariance matrices [30], color histograms [31], and
+gradient-based representations [32], may be leveraged to find
+appearance-based similarity. In contrast to these works, we
+propose a relative location-based re-identification technique
+that can handle significant changes in appearance due to long-
+spanning occlusions.
+D. Multiple Object Tracking in Agriculture
+Precisely detecting and tracking objects is imperative for
+automated fruit/vegetable/fiber counting. In work by Hung et
+al. [33], apple trees were sampled every 0.5 meters to estimate
+yield by counting the apples in each non-overlapping image.
+Chen et al. [34] implemented a two-stage method to count
+apples and oranges from images. An incremental structure
+from motion technique was proposed by Roy and Isler [35]
+to register and localize apples in 3D, which is later used for
+extracting the count. H¨ani et al. [36] first identified apple
+clusters in images based on color, and then used a CNN to
+classify the clusters where each class represents the number of
+apples in the cluster. Afonso et al. [37] provided a detection-
+based approach to enumerate tomatoes in images captured
+3
+
+Fl−1
+Fl
+Optical
+Flow
+Predict
+Detector
+Association
+Update
+Update
+Initialize
+Refiner
+T
+Dfl
+Ta
+Td
+Du
+R
+L
+A
+Fig. 4: The NTrack pipeline. The Association module finds correspondences between the predicted state of T tracks (top, green squares). Dfl
+is the set of detection bounding boxes (bottom, green squares) detected in frame Fl. The dormant (unmatched) tracks Td (orange squares)
+are analyzed by the Relative Location Analyzer (RLA) and updated accordingly. In the RLA module, the dormant tracks’ locations (orange
+circles) are estimated based on the location of their nearest neighbors (green circles). Unmatched detections Du (bottom, light-green squares)
+are passed through the Initialize module as candidates for a new track.
+from a greenhouse environment. A DeepSORT inspired track-
+ing method to count fruit in a controlled setting was used by
+Kirk et al. [38]. All of the aforementioned techniques tally
+fruits composed of rigid shapes, which are simpler to separate
+into clusters thus making the counting task easier. On the other
+hand, counting irregular-shaped cotton bolls under dynamic
+field conditions is far more challenging.
+E. Cotton Boll Counting
+To acquire information for yield prediction, recent research
+has developed algorithms to segment and count cotton bolls.
+Sun et al. [39] introduced a counting method based on the
+geometric features of cotton bolls. This was done by ap-
+plying color and spatial features to segment bolls from the
+background, followed by geometric feature-based algorithms
+to estimate the boll count. Tedesco-Oliveira et al. [40] used
+different deep learning-based object detection models on a
+cotton crop dataset consisting of 948 images for training,
+236 images for validation, and 205 images for testing. By
+comparison, our dataset is significantly larger (see Section IV)
+and we employ a model that is capable of detecting objects of
+various sizes. Sun et al. [41] take a 3D approach to counting
+cotton bolls by using point clouds reconstructed from multi-
+view images via structure from motion under field conditions.
+All of the preceding methods investigate the counting of
+cotton bolls from images. Image-based counting requires au-
+tomated or manual sampling. For example, Tedesco-Oliveira
+et al. [40] selected 25 dissimilar images so that there were no
+overlapping images in each video sequence. Such sampling-
+based methods demand additional pre-processing and post-
+processing steps. Conversely, our approach not only eliminates
+this overhead without sacrificing accuracy, but it also achieves
+better accuracy than previous works. Moreover, we argue that
+counting from videos has the potential to locate additional
+cotton bolls since the counting sequence enables an automated
+system to find bolls that may otherwise be occluded in a single
+image. To the best of our knowledge, our work is the first to
+engage in the cotton boll counting task directly from infield
+video sequences.
+III. APPROACH
+The architectural overview of NTrack is depicted in Fig. 4.
+Similar to other tracking-by-detection systems, the perfor-
+mance of NTrack highly depends upon the detection accuracy.
+We assume that the detection bounding boxes in every frame
+are estimated prior to tracking. The tracking procedure is
+independent of the underlying detection algorithm, which
+allows NTrack’s Detector module to use any state-of-the-art
+object detection method to identify cotton bolls.
+Multiple tracks, each linked to a unique cotton boll and
+steered/guided by a particle filter, are responsible for esti-
+mating the location of an associated boll. The job of the
+Association module is to find the correspondences between
+detections and tracks based on a matching criteria. Given a
+track’s past trajectory along with its neighbors’ trajectories,
+the Relative Location Analyzer (RLA) module can estimate
+the current location of the track. A track is suppressed by the
+Refiner module if the track’s location goes out of the frame
+border or it cannot be matched against a detection in recent
+frames.
+We denote a set of detections by D = {ri}, where ri is the
+detection response represented as the tuple (xi, yi, si, wi, fi).
+Within the tuple, (xi, yi) is the center, si is the size, and wi
+is the width of the detected bounding box. The frame/time at
+which an object is detected is defined by fi. Note that we use
+fi to denote both the frame and time interchangeably. Dfl ⊂D
+is the set of bounding boxes detected in frame fl. We define a
+track τk ∈T over multiples frames by a set of bounding boxes
+associated with a particular object, where T represents the set
+of all tracks in the system. Ideally, each object is associated
+with a single track. In reality, maintaining a perfect one-to-
+one mapping between an object and a track is impossible
+due to occlusions, misdetections, and ambiguous associations.
+Therefore, a track is active in a given frame if the system can
+successfully associate the track’s predicted bounding box with
+a detected bounding box, otherwise it is dormant.
+For each new frame Fl, dense optical flow is computed
+by the Optical Flow module with respect to the previous
+4
+
+frame Fl−1 based on the Gunnar-Farneback algorithm [42].
+Optical flow vectors are outputted for each pixel of the
+frame. Next, informed by these flow vectors, all tracks predict
+their new location in frame Fl via the Predict module. Each
+track employs a particle filter for the prediction and update
+step. The particle filters track the bounding box locations
+(centers). Nonetheless, since the camera motion and movement
+of the objects are irregular, neither a constant velocity nor
+constant acceleration model-based state estimation performs
+as expected. Hence, we apply a dynamic flow velocity model
+for the bounding box location estimation. Unlike location, the
+scale and width of the bounding box changes gradually and is
+therefore tracked by a Kalman filter using a constant velocity
+model.
+With the detection bounding boxes provided by the tracks,
+the Association module attempts to make a unique correspon-
+dence between two sets of bounding boxes. It produces the
+following outputs: (i) a set of active tracks Ta successfully
+matched against detections Dm, (ii) a set of dormant tracks
+Td
+=
+T \ Ta, and (iii) a set of unmatched detections
+Du = Dfl \ Dm. The particle filters associated with the
+active tracks Ta update their state using the information from
+matched detections Dm through the Association module’s
+Update module. The dormant track Td’s states are analyzed
+by the RLA and updated via its Update module. If any of
+the remaining unmatched detections Du exceeded a detection
+confidence threshold, then they are initialized as new tracks
+(Initialize module). Lastly, the Refiner module removes any
+track that was dormant for the last 100 frames.
+A. Object Location Prediction
+Instead of using well-known motion models to predict
+the next state (xi, yi, si, wi) of the object, we use optical
+flow-based motion estimation. Due to outdoor environmental
+conditions (e.g., wind), the branches of a cotton plant can
+sway back and forth. Moreover, the camera movement over
+the terrain is erratic, which causes irregular motion dynamics.
+Even under these adverse conditions, we are still able to find
+reliable locations of the tracked objects in image coordinates
+through optical flow. In the prediction step, the particles of
+the particle filter are moved according to the estimated flow
+velocities. Since we have multiple targets per frame, we opt
+for a robust to noise dense optical flow algorithm instead of
+sparse flow, which would require estimating flow separately
+for each object.
+B. Object Location Update
+During the update phase, a track could be in an active or
+dormant state based on the association outputs. Thus, we use
+one of two different routines to update a track. If the track is
+active in frame fl, then we update the weight of the particles
+based on direct observation (i.e., the detected object bounding
+box from the detector). Otherwise, we use the relative locations
+with respect to the neighboring tracks as indirect observations
+to update the dormant track. More specifically, the relative
+locations are used to calculate the bounding box center, which
+is then used as a proxy for the direct observation in order to
+update the particle filter.
+C. Relative Object Location
+Cotton plants in the field may move unpredictably, which
+makes the tracking task much more difficult. However, the
+locations of the cotton bolls are not totally independent of each
+other. In fact, they are highly correlated with neighboring bolls,
+Fig. 5. More formally, we denote the location (x, y) of a track
+τi in the image coordinate at time fl as ρfl
+τi ∈R2. The locations
+along the image width (x) and height (y) are independent, and
+the estimated location based on the neighbor track τj is defined
+as ρfl
+τi,τj ∈R2. Similarly, we define dfl
+τi,τj ∈R2 as the relative
+distance of track τi, with respect to neighbor τj, recorded at
+time fl. For simplicity, in the following derivation we assume
+ρfl
+τi, ρfl
+τi,τj, etc., are scalars and that they represent only the x
+component of the location. Based on the observed correlation
+(Fig. 5), we assume that the relative distance between two
+neighboring tracks changes linearly with the track’s location.
+Concretely, let dfl
+τi,τj
+= c1 · ρfl
+τj + c0 where c1 and c0
+are constants. We derive the linear relationship between the
+locations of two neighboring tracks as
+dfl
+τi,τj = c1 · ρfl
+τj + c0,
+dfl
+τi,τj + ρfl
+τj = c1 · ρfl
+τj + c0 + ρfl
+τj,
+(1)
+ρfl
+τi,τj = (c1 + 1) · ρfl
+τj + c0,
+which suggests that the location of neighboring tracks can be
+a good estimator of a dormant track’s location.
+Based on this insight, we calculate track τi’s location at time
+fl based on a particular neighbor τj as follows. Let ρfl
+τj and
+ρfl
+τi,τj be continuous random variables. The linear relationship
+between a neighboring track’s location implies that we can
+assume the mean E[ρfl
+τi,τj] is linear in ρfl
+τj. At the same time,
+assuming the variance var[ρfl
+τi,τj] is constant over fl, we can
+model ρfl
+τi,τj as a Gaussian random variable
+ρfl
+τi,τj ∼N(µfl
+τi,τj, σ2
+τi,τj),
+(2)
+where
+
+
+
+
+
+ρf1
+τi,τj
+ρf2
+τi,τj
+...
+ρfm
+τi,τj
+
+
+
+
+=
+
+
+
+
+
+1
+ρf1
+τj
+1
+ρf2
+τj
+...
+...
+1
+ρfm
+τj
+
+
+
+
+
+c0
+c1
+
++
+
+
+
+
+
+e1
+e2
+...
+em
+
+
+
+
+,
+(3)
+µfl
+τi,τj = E[ρfl
+τi,τj] = [1 ρfl
+τj] · [c0 c1]⊤,
+(4)
+σ2
+τi,τj = var[ρfl
+τi,τj] =
+P
+i e2
+i
+m
+.
+(5)
+We assume that there are m frames prior to frame fl in which
+tracks τi and τj were active simultaneously and the relative
+distances between them were recorded. c0 and c1 are the
+least-squares solutions to (3). Finally, the estimated locations
+ρfl
+τi,τj | τj ∈kn(τi) based on k neighbors are combined as
+follows (for simplicity we drop the superscript fl):
+ρτi ∼
+Y
+τj ∈kn(τi)
+N(µτi,τj, σ2
+τi,τj),
+(6)
+∼βN(µτi, σ2
+τi),
+(7)
+5
+
+Fig. 5: The relative distance between neighboring cotton bolls changes gradually due to the shift in perspective. At frame 1142, the distance
+between b46 and b44 is large (top left). At frame 1203, the distance between the bolls reduces (top right). At frame 1212, both bolls overlap,
+i.e., the distance is zero (bottom left). The plot shows the relative distances between pairs of cotton bolls versus their locations (bottom
+right). The distance and location are measured in image coordinates along x (width) direction. Each dotted line shows the distance between
+a pair of cotton bolls. The straight lines are linear fits, for reference, to the respective dotted lines.
+where β is a scaling factor and
+στi =
+
+
+X
+τj∈kn(τi)
+σ−2
+τi,τj
+
+
+−1/2
+,
+(8)
+µτi = σ2
+τi
+X
+τj∈kn(τi)
+σ−2
+τi,τjµτi,τj.
+(9)
+In (6), kn(τi) is the set of τi’s neighbors with cardinality k,
+which is inspired by the Kalman filter’s approach to combine
+the prior with an observation for an improved estimate. The
+simplification from (6) to (7) is due to [43].
+The neighbors kn(·) are selected based on the k-nearest
+neighbors algorithm. We measure the distances between the
+bounding box centers using their Euclidean norm. For a
+particular track τi, we can end up with more than k neigh-
+bor locations in total, even if we record just k neighboring
+locations in each frame. In addition, we want to prioritize a
+neighbor that was simultaneously active with τi in more frames
+in the recent past. Therefore, to choose k neighbors among all
+the recorded neighbors we rank each neighbor,
+Rfl
+τi(τj) =
+X
+fm∈A
+fl
+τi,τj
+fm,
+(10)
+where Afl
+τi,τj is the set of timestamps prior to fl in which
+tracks τi and τj were active simultaneously. For example,
+suppose tracks τi and τn1 are simultaneously active at times
+2, 3, and 5. Then, Afl
+τi,τn1 = {2, 3, 5} and similarly Afl
+τi,τn2 =
+{5, 6}. In this case, we prioritize the neighbor n2 according to
+the rank, which is higher than n1 since Rfl
+τi(τn2) = 5 + 6 >
+Rfl
+τi(τn1) = 2 + 3 + 5.
+IV. COTTON BOLL DATASET
+A. Video Acquisition Details
+To construct the TexCot22 [11] dataset we captured multi-
+ple video sequences for training and testing. Similar to other
+tracking datasets, each tracking sequence is 10 to 20 seconds
+in length. The dataset consists of a total of 30 sequences of
+which 17 are for training and the remaining 13 are for testing.
+The video sequences were captured at 4K resolution and at
+distinct frame rates (e.g., 10, 15, 30). There are typically 2 to
+10 cotton bolls per cluster. The average width and height of
+an annotated bounding box is approximately 230×210 pixels.
+To make the dataset robust to environmental conditions, we
+recorded the field videos at separate times of day to account for
+varying lighting conditions. In total, there are roughly 30×300
+6
+
+(a)
+(b)
+(c)
+(d)
+(e)
+(f)
+(g)
+(h)
+Fig. 6: Examples (a-h) of annotated cotton boll field images with complex backgrounds from the TexCot22 [11] dataset.
+Rule
+What
+Any open cotton bolls on plants excluding bolls that
+have fallen to the ground.
+When
+Start when the enclosing bounding box enters the
+frame. Remove as soon as the bounding box goes
+beyond the frame border.
+How
+Annotations are not pixel perfect. The majority of
+pixels belonging to a cotton boll should be contained
+by the bounding box.
+Occlusion
+Annotate a cotton boll as long as it is partially visible
+and distinguishable from the neighboring bolls. In
+the case of a long occlusion interval, the same ID
+is assigned to the occluded boll as long as it is
+identifiable.
+TABLE I: The annotation rules used for constructing the TexCot22
+[11] dataset.
+frames with 150,000 labeled instances. On average there are
+70 unique cotton bolls in each sequence.
+The directory structure of the dataset is similar to MOT17
+[44]. The ground truth and the detection files are also available
+in MOT17 format. Hence, any tracking method that runs on
+MOT17 can readily utilize TexCot22 without any additional
+modifications. Example ground-truth images from the dataset
+are displayed in Fig. 6.
+B. Annotation Rules
+We followed a set of rules to exhaustively annotate all cotton
+bolls in each sequence with bounding boxes. The bounding
+boxes around the cotton bolls are very tight, however there
+may exist some pixels outside of the bounding box that are part
+of the boll. A compiled a set of annotation rules is provided
+in Table I.
+V. EXPERIMENTS
+A. Implementation Details
+To make a fair comparison among existing tracking meth-
+ods, we generated the same set of detection bounding boxes
+utilizing a Cascade R-CNN [45] model with a ResNet-50
+backbone. Using the TexCot22 training data, the model was
+trained for 100 epochs. The training took place on a CentOS
+7.6.1810 machine using an Intel Xeon E5-2620 2.10 GHz
+CPU, 132 GB of memory, and an NVIDIA GeForce GTX
+1080 Ti GPU. The detection accuracy of the trained model
+was 97% on the test data. We also tried the detector provided
+by the official Tracktor [16] GitHub repository. However, our
+detector achieved the best results among all the trackers.
+For calculating dense optical flow, we made use of the
+OpenCV [46] implementation of the Gunnar-Farneback al-
+gorithm. The estimated flow velocity of a bounding box is
+computed by averaging the velocities of the center pixels (e.g.,
+a 3 × 3 window at the bounding box center). The problem
+of assigning the set of detected bounding boxes to the set
+of predicted bounding boxes is solved via ByteTrack’s [19]
+association procedure.
+To estimate the relative location based on the k-nearest
+neighbors, we empirically opted for a neighbor size of three.
+If we considered too many neighbors, then the RLA module
+gave a coarse relative location. Conversely, a single neighbor
+often provided a noisy estimation. The relative locations
+along the x (width) and y (height) directions were calculated
+independently using (7).
+B. Cotton Boll Tracking Evaluation
+We evaluated multiple MOT metrics including higher order
+tracking accuracy (HOTA) [47], identity-aware [48], and those
+defined by CLEAR MOT [49]. Association and localization
+are two major criteria for deciding tracking performance.
+While measures such as MOTA (accuracy) and MOTP (pre-
+cision) emphasize localization, the IDP (identification pre-
+cision), IDR (identification recall), IDF1 (identification F1
+score), and IDsw (identity switches) put more weight on
+maintaining true identity. The Frag (fragmentation) metric is
+the number of times an object is lost, but then redetected
+7
+
+Method
+IDP↑
+IDR↑
+IDF1↑
+HOTA↑
+MOTA↑
+MOTP↑
+IDsw↓
+Frag↓
+DeepSORT
+82.50%
+81.97%
+82.24%
+66.47%
+84.80%
+80.07%
+1751
+633
+Tracktor
+82.47%
+81.01%
+81.74%
+66.28%
+86.56%
+79.03%
+2070
+787
+ByteTrack
+90.88%
+88.76%
+89.80%
+71.19%
+88.60%
+80.32%
+1193
+564
+TrackFormer
+89.94%
+70.40%
+78.98%
+54.90%
+69.58%
+70.86%
+652
+311
+NTrack (ours)
+93.28%
+91.70%
+92.49%
+73.56%
+89.25%
+81.49%
+1062
+508
+TABLE II: A comparison of NTrack against DeepSORT [6], Tracktor [16], ByteTrack [19], and TrackFormer [29]. The arrow directions
+indicate the optimal metric values.
+Method
+MAPE↓
+RMSE↓
+Deep learning [40]
+9.00%
+9.00 (best case)
+Geometric-feature-based [39]
+15.04%
+7.40
+3D point cloud-based [41]
+10.00%
+16.87
+NTrack (ours)
+4.00%
+4.73
+TABLE III: Cotton boll counting error.
+in a future frame thus fragmenting the track. The evaluation
+was performed against the following state-of-the-art tracking
+methods: DeepSORT [6], Tracktor [16], ByteTrack [19], and
+Trackformer [29]. As shown in Table II, NTrack outperforms
+these systems by a significant margin in the majority of the
+metrics.
+Our primary goal was to design a tracking system that
+can count cotton bolls with high accuracy. Thus, by design
+NTrack should perform better in ID preserving performance
+metrics. Nevertheless, our tracker outperforms other methods
+in localization measures as well. In addition, NTrack demon-
+strates its overall superiority by exceeding others in the HOTA
+measure, which explicitly balances the effect of performing
+accurate detection, association, and localization into a single
+unified metric. To avoid data labeling inconsistencies near the
+frame border, we considered the ground truth and hypothesis
+bounding boxes that do not overlap with the frame margin.
+More specifically, we consider 200 pixels on both sides of a
+frame as the margin.
+C. Cotton Boll Counting Evaluation
+Determining the number of unique cotton bolls in a given
+video sequence was a prime requirement in designing NTrack.
+Therefore, when creating the tracker we focused on main-
+taining the true identity of the bolls. As shown in Table III,
+the counting results show that NTrack performs exceptionally
+well at the counting task when compared to other cotton
+boll counting methods. These results are based on the mean
+absolute percentage error (MAPE) and root mean square error
+(RMSE), which are defined as
+MAPE = 1
+n
+n
+X
+i=1
+|Cgt −Ch|
+Cgt
+,
+(11)
+RMSE =
+v
+u
+u
+t 1
+n
+n
+X
+i=1
+(Cgt −Ch)2.
+(12)
+In (11) and (12), Cgt and Ch are the number of unique cotton
+bolls detected manually (i.e., the ground truth) and by NTrack
+in the ith video sequence, respectively, and n is the number of
+video sequences. The results reported for the other methods
+in Table III are taken from their respective papers since the
+datasets and source code are not publicly available.
+Table IV shows the performance of NTrack against state-
+of-the-art tracking techniques. The results in Table IV were
+obtained from experiments done with the same test dataset
+(TexCot22) and protocol. NTrack outperformed all of the
+other methods. It is interesting to note that TrackFormer,
+which is based on a transformer architecture, was able to
+track cotton bolls more consistently than NTrack in terms
+of ID switching and fragmentation (Table II). Nevertheless,
+TrackFormer’s counting error (8%) is twice that of NTrack
+(4%).
+To demonstrate that the difference in counting performance
+reported in Table IV is statistically significant, we conducted
+hypothesis testing. Specifically, we performed one-sided paired
+t-tests against the other tracking techniques. The null hypoth-
+esis of the test is the assumption that the mean counting error
+of NTrack is greater than or equal to other methods, i.e.,
+H0 : µn ≥µx.
+(13)
+Conversely, the alternative hypothesis is the assumption that
+the mean counting error of NTrack is less than the other
+methods, i.e.,
+Ha : µn < µx.
+(14)
+In (13) and (14), µn and µx are the mean counting errors of
+NTrack and the other techniques (e.g., DeepSORT, Tracktor,
+ByteTrack, and TrackFormer), respectively. The test results
+(p-values) in Table V demonstrate that we can reject the null
+hypothesis at a significance level of α = 0.05 in favor of the
+alternative hypothesis. In other words, with 95% confidence
+we can conclude that the test data provides sufficient evidence
+to support the observation that NTrack’s mean counting error
+is lower than the other methods.
+D. Qualitative Evaluation
+We conducted a qualitative analysis of NTrack against the
+trackers in the evaluation set. The first two rows, from the
+top of Fig. 7, show the tracking outcomes of NTrack and
+DeepSORT on a test video sequence. In row 2, the arrow
+highlights the track of a specific cotton boll with an ID of
+83. DeepSORT fails to track this boll between frame 122
+and frame 177 as indicated by the red arrow. At frame
+177, DeepSORT cannot reidentify the previously seen cotton
+boll (ID 83) and it erroneously assigns a new ID (ID 142).
+Similarly, Tracktor (row 3, ID 57), and ByteTrack (row 4, ID
+60) also fail to track the same cotton boll. TrackFormer (row
+5) does not even detect the cotton boll in frames 80 and 122.
+However, NTrack (row 1) successfully tracks this boll (ID 33)
+and assigns the same ID in frame 177.
+8
+
+Sequence
+GT
+NTrack (ours)
+DeepSORT
+Tracktor
+ByteTrack
+TrackFormer
+Count
+Error %
+Count
+Error %
+Count
+Error %
+Count
+Error %
+Count
+Error %
+vid09 01
+66
+66
+0
+115
+74
+220
+233
+77
+17
+58
+12
+vid09 02
+72
+80
+11
+146
+103
+234
+225
+90
+25
+74
+3
+vid09 03
+72
+67
+4
+105
+46
+208
+189
+78
+8
+62
+14
+vid14 01
+95
+102
+7
+233
+145
+396
+317
+123
+29
+103
+8
+vid23 01
+60
+56
+7
+136
+127
+187
+212
+93
+55
+57
+5
+vid23 02
+50
+46
+8
+64
+28
+136
+172
+52
+4
+49
+2
+vid23 03
+96
+95
+1
+140
+46
+223
+132
+101
+5
+88
+8
+vid25 01
+68
+67
+1
+80
+18
+119
+75
+72
+5
+64
+6
+vid25 02
+73
+72
+1
+103
+41
+184
+152
+88
+21
+57
+22
+vid25 03
+61
+60
+2
+69
+10
+111
+10
+62
+2
+62
+2
+vid26 01
+51
+51
+0
+86
+69
+134
+163
+60
+18
+53
+4
+vid26 02
+66
+67
+1
+79
+20
+120
+82
+69
+5
+59
+11
+vid26 03
+66
+69
+5
+82
+24
+126
+91
+71
+8
+71
+8
+Mean Error
+4
+55
+163
+15
+8
+TABLE IV: The accuracy of NTrack against DeepSORT [6], Tracktor [16], ByteTrack [19], and TrackFormer [29] is shown by comparing
+the ground truth (GT) cotton boll counts with the estimated counts.
+ByteTrack
+DeepSORT
+Tracktor
+TrackFormer
+NTrack
+0.003945
+0.001769
+0.000027
+0.033470
+TABLE V: The hypothesis testing results on the mean cotton boll
+counting error. For each column, we report the test result between
+NTrack and the competing method in terms of the p-value.
+Fig. 8 shows additional qualitative tracking results in a
+more challenging scenario involving wind. In this scene, a
+cotton boll (ID 4 in rows 1, 2, 4, ID 7 in row 3, ID 17 in
+row 5) is occluded for an extended period after frame 54.
+When the cotton boll reappears in frame 113, it is successfully
+reidentified by NTrack (row 1). In contrast, DeepSORT and
+ByteTrack assign a new ID (ID 123 and ID 69 in rows 2 and 4,
+respectively) to the boll. Tracktor and TrackFormer are unable
+to detect the cotton boll (rows 3 and 5, respecitively). These
+observations demonstrate the effectiveness of our tracking
+system in reidentifying cotton bolls, especially in the field
+under harsh environmental conditions.
+We also qualitatively evaluated NTrack by way of vi-
+sual appearance-based re-identification of cotton bolls across
+a video sequence. Examples where appearance-based re-
+identification fails are shown in Fig. 9. The similarity scores
+in Fig. 9 are calculated using the cosine similarity between a
+pair of appearance descriptors (ri, rj) [6]. Concretely,
+cosine similarity(ri, rj) =
+r⊤
+i rj
+||ri|| · ||rj||,
+(15)
+where ||ri|| = ||rj|| = 1. (15) outputs a real number in the
+range [0, 1]. Identical cotton bolls have a cosine similarity
+score of 1, while distinct bolls have a score of 0.
+In the TexCot22 dataset, we hypothesize that all tracking
+methods that depend on visual appearance to reidentify objects
+after reappearing will fail to maintain true identity. This
+is based on the observation that re-identification techniques
+exploited by many popular tracking methods (e.g., [50]) tend
+to differentiate objects using color and shape as distinctive
+features. However, individual cotton bolls have a homogeneous
+color and shape distribution. Furthermore, the appearance of a
+cotton boll changes drastically due to the shift in perspective
+after being occluded for a few frames. Even for an experienced
+Method
+Linear
+motion
+Dynamic
+motion
+RLA
+IDF1↑
+MOTA↑
+IDsw↓
+Baseline
+✓
+90.3
+88.9
+3682
+NTrack motion
+✓
+92.2
+89.3
+264
+NTrack N1
+✓
+✓
+92.5
+89.5
+101
+NTrack N3
+✓
+✓
+92.8
+89.5
+85
+NTrack N5
+✓
+✓
+92.8
+89.4
+85
+TABLE VI: A comparison of the impact of integrating different
+modules into NTrack against a ByteTrack [19] baseline. NTrack N1,
+NTrack N3, NTrack N5 model use 1, 3, and 5 neighbors respectively,
+in the RLA module.
+human, it is challenging to reidentify these reappearing cotton
+bolls. Nevertheless, NTrack can successfully reidentify the
+bolls (i.e., assign the same ID).
+E. Ablation Study
+To analyze our system design choices, we decoupled and
+validated the performance impact of each of NTrack’s mod-
+ules. Table VI shows the contributions of the various modules
+when compared against a ByteTrack [19] baseline. The overall
+performance of NTrack gradually improved upon integrat-
+ing each module. The baseline system uses a Kalman filter
+for motion prediction and an effective association method
+to reidentify objects. When compared to the baseline, our
+dynamic motion model improved the IDF1 score by 2%. The
+combined model, NTrack motion (baseline + dynamic motion
+model), also reduced the counting error by a large amount.
+This supports the hypothesis that for small objects (e.g., fruits,
+flowers, etc.) that move irregularly in the wild, a dynamic
+motion model is preferable for tracking.
+We designed the RLA module specifically for identifying
+occluded cotton bolls. Our experiments show that the RLA
+module serves its purpose very well. In particular, NTrack
+achieved the highest scores on the IDF1, MOTA, and IDsw
+metrics when the RLA module was combined with the dy-
+namic motion model. Although there was only a 0.6% gain in
+the IDF1 score due to the addition of the RLA module, the
+improvement is significant since there are few occluded bolls
+in a video sequence when compared to the total number of
+bolls. The number of neighbors (e.g, 1, 3, or 5) in the RLA
+module was empirically selected for these experiments.
+9
+
+Fig. 7: The first scenario qualitative comparison between NTrack and the competing methods on the TexCot22 [11] dataset. From top to
+bottom, each row (NTrack, DeepSORT [6], Tracktor [16], ByteTrack [19], and Trackformer [29]) shows the tracking performance of the
+different techniques on the same video sequence. The numbers (80, 122, 177) at the top-left corner of each image portray the frame number
+in the corresponding video sequence. Correct and incorrect associations between cotton bolls are illustrated by the green and red arrows,
+respectively. The numbers at the top-left corner of each bounding box report the identity of the associated cotton boll assigned by the tracker.
+10
+
+Fig. 8: The second scenario qualitative comparison between NTrack and the competing methods on the TexCot22 [11] dataset. From top
+to bottom, each row (NTrack, DeepSORT [6], Tracktor [16], ByteTrack [19], and Trackformer [29]) shows the tracking performance of the
+different techniques on the same video sequence. The numbers (10, 54, 133) at the top-left corner of each image portray the frame number
+in the corresponding video sequence. Correct and incorrect associations between cotton bolls are illustrated by the green and red arrows,
+respectively. The numbers at the top-left corner of each bounding box report the identity of the associated cotton boll assigned by the tracker.
+11
+
+(a) Similarity score: 0.015
+(b) Similarity score: 0.016
+(c) Similarity score: 0.011
+(d) Similarity score: 0.021
+Fig. 9: NTrack re-identification results. Each column shows the same set of cotton bolls. The bottom row shows the bolls after being occluded
+for several frames. The bounding box colors represent the true identity of the objects and the IDs (e.g., b25, b49, etc.) at the bottom left
+corner of the bounding boxes are assigned by NTtrack. To highlight the poor performance of visual similarity, each column is accompanied
+with a cosine similarity score calculated between the green bounding boxes. The correspondences between the bounding box colors and IDs
+illustrates that NTrack can successfully reidentify cotton bolls without visual similarity.
+VI. CONCLUSION
+In this paper we described NTrack, a relative location-based
+MOT system that enables accurate tracking of cotton bolls
+in outdoor field environments. NTrack is able to robustly
+maintain object identity and it can reidentify objects after
+long periods of occlusion, which is a common scenario in
+agricultural applications. What’s more, we introduced Tex-
+Cot22, the first infield cotton boll video dataset. Using this
+dataset, NTrack was evaluated against other contemporary
+MOT techniques and shown to significantly outperform all of
+them in identity preserving metrics. In future work, we will
+extend our framework to incorporate multiple view tracking
+data in order to further improve the automated counting of
+infield cotton bolls.
+ACKNOWLEDGMENTS
+The data collected for the research results reported within
+this paper was done in collaboration with Texas Tech Uni-
+versity and the Texas A&M AgriLife Research and Extension
+Center’s Halfway Station. The authors acknowledge the Texas
+Advanced Computing Center (TACC) at The University of
+Texas at Austin for providing software, computational, and
+storage resources that have contributed to these results.
+REFERENCES
+[1] USDA-ERS-1, “Cotton & wool overview,” 2023, available Online: https:
+//www.ers.usda.gov/topics/crops/cotton-wool/.
+[2] National Cottonseed Products Association, 2023, available Online: https:
+//www.cottonseed.com/.
+[3] M. Reynolds and P. Langridge, “Physiological breeding,” Current Opin-
+ion in Plant Biology, vol. 31, pp. 162–171, 2016.
+[4] X. Zhou, B. English, C. Boyer, R. Roberts, J. Larson, D. Lambert,
+M. Velandia, L. Falconer, S. Martin, K. Larkin, K. Paudel, A. Mishra,
+R. Rejesus, C. Wang, S. E, and J. Reeves, “Precision farming by cotton
+producers in fourteen southern states: Results from the 2013 southern
+cotton farm survey,” Research Series, pp. 15–001, 2015.
+[5] F. Yu, W. Li, Q. Li, Y. Liu, X. Shi, and J. Yan, “Poi: Multiple object
+tracking with high performance detection and appearance feature,” in
+Proceedings of the European Conference on Computer Vision. Springer,
+2016, pp. 36–42.
+[6] N. Wojke, A. Bewley, and D. Paulus, “Simple online and realtime
+tracking with a deep association metric,” in Proceedings of the IEEE
+International Conference on Image Processing, 2017, pp. 3645–3649.
+[7] Z. Wang, L. Zheng, Y. Liu, Y. Li, and S. Wang, “Towards real-time
+multi-object tracking,” in Proceedings of the European Conference on
+Computer Vision.
+Springer, 2020, pp. 107–122.
+[8] D. Koller, J. Weber, and J. Malik, “Robust multiple car tracking with
+occlusion reasoning,” in Proceedings of the European Conference on
+Computer Vision.
+Springer, 1994, pp. 189–196.
+[9] M. Betke, E. Haritaoglu, and L. S. Davis, “Real-time multiple vehicle
+detection and tracking from a moving vehicle,” Machine Vision and
+Applications, vol. 12, no. 2, pp. 69–83, 2000.
+[10] J. R. Mauney, “Vegetative growth and development of fruiting sites,”
+Cotton Physiology, pp. 11–28, 1986.
+[11] M. A. Al Muzaddid and W. J. Beksi, “Texcot22,” 2023. [Online].
+Available: https://doi.org/10.18738/T8/5M9NCI
+[12] W. Luo, J. Xing, A. Milan, X. Zhang, W. Liu, and T.-K. Kim, “Multiple
+object tracking: A literature review,” Artificial Intelligence, vol. 293, p.
+103448, 2021.
+[13] L. Zhang, Y. Li, and R. Nevatia, “Global data association for multi-
+object tracking using network flows,” in Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition, 2008, pp. 1–8.
+[14] C. Huang, B. Wu, and R. Nevatia, “Robust object tracking by hierarchi-
+cal association of detection responses,” in Proceedings of the European
+Conference on Computer Vision.
+Springer, 2008, pp. 788–801.
+[15] B. Yang, C. Huang, and R. Nevatia, “Learning affinities and dependen-
+cies for multi-target tracking using a crf model,” in Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+2011, pp. 1233–1240.
+[16] P. Bergmann, T. Meinhardt, and L. Leal-Taix´e, “Tracking without bells
+and whistles,” in Proceedings of the IEEE/CVF International Conference
+on Computer Vision, 2019, pp. 941–951.
+[17] G. Bras´o and L. Leal-Taix´e, “Learning a neural solver for multiple object
+tracking,” in Proceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition, 2020, pp. 6247–6257.
+[18] Y. Zhang, C. Wang, X. Wang, W. Zeng, and W. Liu, “Fairmot: On the
+fairness of detection and re-identification in multiple object tracking,”
+International Journal of Computer Vision, vol. 129, no. 11, pp. 3069–
+3087, 2021.
+[19] Y. Zhang, P. Sun, Y. Jiang, D. Yu, F. Weng, Z. Yuan, P. Luo, W. Liu,
+and X. Wang, “Bytetrack: Multi-object tracking by associating every
+detection box,” in Proceedings of the European Conference on Computer
+Vision.
+Springer, 2022, pp. 1–21.
+[20] L. Leal-Taix´e, M. Fenzi, A. Kuznetsova, B. Rosenhahn, and S. Savarese,
+“Learning an image-based motion context for multiple people tracking,”
+in Proceedings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition, 2014, pp. 3542–3549.
+[21] A. Bewley, Z. Ge, L. Ott, F. Ramos, and B. Upcroft, “Simple online and
+realtime tracking,” in Proceedings of the IEEE International Conference
+on Image Processing, 2016, pp. 3464–3468.
+[22] H. W. Kuhn, “The hungarian method for the assignment problem,” Naval
+Research Logistics Quarterly, vol. 2, no. 1-2, pp. 83–97, 1955.
+[23] K. Okuma, A. Taleghani, N. d. Freitas, J. J. Little, and D. G. Lowe, “A
+boosted particle filter: Multitarget detection and tracking,” in Proceed-
+12
+
+ings of the European Conference on Computer Vision.
+Springer, 2004,
+pp. 28–39.
+[24] Y. Li, H. Ai, T. Yamashita, S. Lao, and M. Kawade, “Tracking in low
+frame rate video: A cascade particle filter with discriminative observers
+of different life spans,” IEEE Transactions on Pattern Analysis and
+Machine Intelligence, vol. 30, no. 10, pp. 1728–1740, 2008.
+[25] W. Choi, “Near-online multi-target tracking with aggregated local flow
+descriptor,” in Proceedings of the IEEE/CVF International Conference
+on Computer Vision, 2015, pp. 3029–3037.
+[26] J. H. Yoon, M.-H. Yang, J. Lim, and K.-J. Yoon, “Bayesian multi-object
+tracking using motion context from multiple objects,” in Proceedings of
+the IEEE/CVF Winter Conference on Applications of Computer Vision,
+2015, pp. 33–40.
+[27] A. Mauri, R. Khemmar, B. Decoux, N. Ragot, R. Rossi, R. Trabelsi,
+R. Boutteau, J.-Y. Ertaud, and X. Savatier, “Deep learning for real-
+time 3d multi-object detection, localisation, and tracking: Application
+to smart mobility,” Sensors, vol. 20, no. 2, p. 532, 2020.
+[28] C. Godard, O. Mac Aodha, M. Firman, and G. J. Brostow, “Digging
+into self-supervised monocular depth estimation,” in Proceedings of
+the IEEE/CVF International Conference on Computer Vision, 2019, pp.
+3828–3838.
+[29] T. Meinhardt, A. Kirillov, L. Leal-Taix´e, and C. Feichtenhofer, “Track-
+former: Multi-object tracking with transformers,” in Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+2022, pp. 8844–8854.
+[30] F. Porikli, O. Tuzel, and P. Meer, “Covariance tracking using model up-
+date based on lie algebra,” in Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition, vol. 1, 2006, pp. 728–735.
+[31] D. Mitzel and B. Leibe, “Real-time multi-person tracking with detector
+assisted structure propagation,” in Proceedings of the IEEE/CVF Inter-
+national Conference on Computer Vision Workshops, 2011, pp. 974–981.
+[32] W. Choi and S. Savarese, “A unified framework for multi-target tracking
+and collective activity recognition,” in Proceedings of the European
+Conference on Computer Vision.
+Springer, 2012, pp. 215–230.
+[33] C. Hung, J. Underwood, J. Nieto, and S. Sukkarieh, “A feature learning
+based approach for automated fruit yield estimation,” in Field and
+Service Robotics.
+Springer, 2015, pp. 485–498.
+[34] S. W. Chen, S. S. Shivakumar, S. Dcunha, J. Das, E. Okon, C. Qu, C. J.
+Taylor, and V. Kumar, “Counting apples and oranges with deep learning:
+A data-driven approach,” IEEE Robotics and Automation Letters, vol. 2,
+no. 2, pp. 781–788, 2017.
+[35] P. Roy and V. Isler, “Surveying apple orchards with a monocular
+vision system,” in Proceedings of the IEEE International Conference
+on Automation Science and Engineering, 2016, pp. 916–921.
+[36] N. H¨ani, P. Roy, and V. Isler, “Apple counting using convolutional neural
+networks,” in Proceedings of the IEEE/RSJ International Conference on
+Intelligent Robots and Systems, 2018, pp. 2559–2565.
+[37] M. Afonso, H. Fonteijn, F. S. Fiorentin, D. Lensink, M. Mooij, N. Faber,
+G. Polder, and R. Wehrens, “Tomato fruit detection and counting in
+greenhouses using deep learning,” Frontiers in Plant Science, p. 1759,
+2020.
+[38] R. Kirk, M. Mangan, and G. Cielniak, “Robust counting of soft
+fruit through occlusions with re-identification,” in Proceedings of the
+International Conference on Computer Vision Systems.
+Springer, 2021,
+pp. 211–222.
+[39] S. Sun, C. Li, A. H. Paterson, P. W. Chee, and J. S. Robertson, “Image
+processing algorithms for infield single cotton boll counting and yield
+prediction,” Computers and Electronics in Agriculture, vol. 166, p.
+104976, 2019.
+[40] D. Tedesco-Oliveira, R. P. da Silva, W. Maldonado Jr, and C. Zerbato,
+“Convolutional neural networks in predicting cotton yield from images
+of commercial fields,” Computers and Electronics in Agriculture, vol.
+171, p. 105307, 2020.
+[41] S. Sun, C. Li, P. W. Chee, A. H. Paterson, Y. Jiang, R. Xu, J. S. Robert-
+son, J. Adhikari, and T. Shehzad, “Three-dimensional photogrammetric
+mapping of cotton bolls in situ based on point cloud segmentation and
+clustering,” ISPRS Journal of Photogrammetry and Remote Sensing, vol.
+160, pp. 195–207, 2020.
+[42] G. Farneb¨ack, “Two-frame motion estimation based on polynomial
+expansion,” in Proceedings of the Scandinavian Conference on Image
+Analysis.
+Springer, 2003, pp. 363–370.
+[43] P. Bromiley, “Products and convolutions of gaussian probability density
+functions,” Tina-Vision Memo, vol. 3, no. 4, p. 1, 2003.
+[44] A. Milan, L. Leal-Taix´e, I. Reid, S. Roth, and K. Schindler, “Mot16: A
+benchmark for multi-object tracking,” arXiv preprint arXiv:1603.00831,
+2016.
+[45] Z. Cai and N. Vasconcelos, “Cascade r-cnn: Delving into high quality
+object detection,” in Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition, 2018, pp. 6154–6162.
+[46] G. Bradski, “The opencv library.” Dr. Dobb’s Journal: Software Tools
+for the Professional Programmer, vol. 25, no. 11, pp. 120–123, 2000.
+[47] J. Luiten, A. Osep, P. Dendorfer, P. Torr, A. Geiger, L. Leal-Taix´e,
+and B. Leibe, “Hota: A higher order metric for evaluating multi-object
+tracking,” International Journal of Computer Vision, vol. 129, no. 2, pp.
+548–578, 2021.
+[48] E. Ristani, F. Solera, R. Zou, R. Cucchiara, and C. Tomasi, “Performance
+measures and a data set for multi-target, multi-camera tracking,” in
+Proceedings of the European Conference on Computer Vision. Springer,
+2016, pp. 17–35.
+[49] K. Bernardin and R. Stiefelhagen, “Evaluating multiple object tracking
+performance: the clear mot metrics,” EURASIP Journal on Image and
+Video Processing, vol. 2008, pp. 1–10, 2008.
+[50] N. Wojke and A. Bewley, “Deep cosine metric learning for person re-
+identification,” in Proceedings of the IEEE/CVF Winter Conference on
+Applications of Computer Vision, 2018, pp. 748–756.
+Md Ahmed Al Muzaddid received the B.S. de-
+gree in computer science and engineering from the
+Bangladesh University of Engineering and Tech-
+nology. He is currently pursing the Ph.D. degree
+with the Department of Computer Science and En-
+gineering, The University of Arlington at Texas. His
+research interests include computer vision, machine
+learning, and agricultural automation.
+William J. Beksi (Member, IEEE) received the
+B.S. degree in mathematics and computer science
+from Stevens Institute of Technology in 2002, and
+the M.S. and Ph.D. degrees from the University of
+Minnesota in 2016 and 2018, respectively. He is
+currently an Assistant Professor in the Department
+of Computer Science and Engineering at The Uni-
+versity of Arlington at Texas, where he also leads
+the Robotic Vision Laboratory. His research interests
+include robot perception, human-robot interaction,
+and autonomous systems.
+13

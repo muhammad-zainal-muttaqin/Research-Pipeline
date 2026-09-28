@@ -1,0 +1,2320 @@
+Academic Editor: Paul Kwan
+Received: 22 December 2025
+Revised: 13 January 2026
+Accepted: 31 January 2026
+Published: 2 February 2026
+Copyright: © 2026 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license.
+Review
+Transferability and Robustness in Proximal and UAV
+Crop Imaging
+Jayme Garcia Arnal Barbedo
+Embrapa Digital Agriculture, Av. Dr. André Tosello, 209, Campinas 13083-886, Brazil;
+jayme.barbedo@embrapa.br; Tel.: +55-19-3211-5880
+Abstract
+AI-driven imaging is becoming central to crop monitoring, with proximal and unmanned
+aerial vehicle (UAV) platforms now routinely used for disease and stress detection, yield
+estimation, canopy structure, and fruit counting. Yet, as these models move from plots to
+farms, the main bottleneck is no longer raw accuracy but robustness under distribution
+shift. Systems trained in one field, season, cultivar, or sensor often fail when the scene,
+sensor, protocol, or timing changes in realistic ways. This review synthesizes recent
+advances on robustness and transferability in proximal and UAV imaging, drawing on
+a corpus of 42 core studies across field crops, orchards, greenhouse environments, and
+multi-platform phenotyping. Shift types are organized into four axes, namely scene,
+sensor, protocol, and time. The article also maps the empirical evidence on when RGB
+imaging alone is sufficient and when multispectral, hyperspectral, or thermal modalities
+can potentially improve robustness. This serves as a basis to synthesize acquisition and
+evaluation practices that often matter more than architectural tweaks, which include
+phenology-aware flight planning, radiometric standardization, metadata logging, and
+leave-one-field/season-out splits. Adaptation options are consolidated into a practical
+symptom/remedy roadmap, ranging from lightweight normalization and small target-set
+fine-tuning to feature alignment, unsupervised domain adaptation, style translation, and
+test-time updates. Finally, a benchmark and dataset agenda are outlined with emphasis on
+object-oriented splits, cross-sensor and cross-scale collections, and longitudinal datasets
+where the same fields are followed across seasons under different management regimes.
+The goal is to outline practices and evaluation protocols that support progress toward
+deployable and auditable systems, noting that such claims require standardized out-of-
+distribution testing and transparent reporting as emphasized in the benchmark specification
+and experiment suite proposed here.
+Keywords: machine learning; deep learning; digital agriculture; datasets; domain shift
+1. Introduction
+Artificial intelligence (AI) and computer vision (CV) are increasingly expected to
+guide decisions over the agricultural season, from seedling emergence and weed control
+to nutrient diagnostics, yield forecasting, canopy health, and fruit detection. Fulfilling
+this promise requires large, high-quality datasets that reflect real operational variability
+(seasons, sites, cultivars, management, and sensors). This is hard to achieve in agricul-
+ture, as uncontrolled and unstructured conditions introduce substantial variation into any
+measurement. In practice, data distributions can shift sharply across locations, sensors,
+dates, management regimes, and growth stages. As a result, the central obstacle to reliable
+Agronomy 2026, 16, 364
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+2 of 32
+deployment is achieving robustness under distribution shift [1–3]. In practice, models
+trained in one field, season, cultivar, sensor, or management regime often fail under new
+illumination, phenology, background structure, or scale [4–8]. Recent studies have begun
+to quantify these gaps and demonstrate practical solutions across crops, traits, and imaging
+setups [9–12]. Accordingly, the practical question is not whether proximal/UAV models
+can reach high accuracy in-domain but how reliably they carry that performance across the
+routine changes that occur between plots, farms, sensors, and seasons.
+This article focuses on in-field data acquisition with proximal and unmanned aerial
+vehicle (UAV) imaging, including red–green–blue (RGB), multispectral (MS), hyperspec-
+tral (HS), and thermal modalities. In practice, robustness is often won or lost upstream,
+before any model is trained. These platforms directly expose models to the operational
+variability that most often breaks transferability (site, cultivar, management, illumination,
+and phenology) and therefore provide the most informative setting for studying robustness
+under distribution shift. Throughout, satellite imagery is not treated as a primary sens-
+ing modality but rather is discussed only when it is explicitly coupled to proximal/UAV
+data in cross-scale transfer scenarios (e.g., UAV-to-satellite mapping) or when it provides
+methodological context.
+In this review, we use the following terms consistently: generalization refers to per-
+formance on new samples drawn from the same data-generating process as training (in-
+distribution); robustness under distribution shift refers to maintaining acceptable performance
+when the test distribution differs from training due to realistic changes in scene, sensor,
+protocol, or time (out-of-distribution robustness) and is the primary deployment objective
+here; transfer learning (TL) denotes reusing knowledge from a source dataset or task to
+improve a target crop-imaging task, typically with at least some target labels; and domain
+adaptation (DA) is a TL setting where the task is unchanged but the input domain shifts,
+with supervised or unsupervised (UDA) variants depending on target-label availability.
+Throughout, we use transferability to mean the empirical degree to which a trained model
+maintains performance across domains with zero or minimal updating.
+On the model side, transfer learning (TL) and physics-guided pretraining form a
+second pillar of robustness. A practical strategy is to start from a broadly trained reference,
+such as an ImageNet-style or self-supervised RGB model that captures generic texture and
+structure cues, and then to fine-tune on a smaller dataset of field images to adapt to local
+crops and conditions [10,13,14]. When spectral or physiological traits are central, using
+physics to simulate how crops would reflect light under different leaf area index (LAI),
+chlorophyll, water content, soil backgrounds, and sun/sensor angles, thus generating better
+pretraining signals, can further prepare the network before field fine-tuning [15–18]. To
+bridge site and sensor gaps in practice, input data can be stabilized with color constancy
+and exposure/white-balance control for RGB or via band selection and reweighting that
+emphasize invariant spectral cues for MS and HS data [9,19–21]. Representations can also
+be aligned so that features from different cameras and systems become comparable, for
+example, using spectral standardization paired with latent-space or transfer component
+analysis (TCA [22]) alignment for hyperspectral data [23,24]. Finally, fusing complementary
+geometry or thermal cues helps regularize predictions under changing illumination or
+canopy structure, improving transfer to new fields and seasons for water-related and stress
+traits [25]. These ideas reappear in Section 6 as part of the adaptation roadmap from
+low-cost updates to more involved alignment and updating strategies.
+In deployment, conditions often shift faster than labels can be collected, so a practi-
+cal sequence is to start with a small, spatially diverse target set and perform fine-tuning
+with roughly 10 to 30% of target samples. This is often enough to adapt the model to
+the new region, cultivar, or management regime without retraining from scratch [4,10,20].
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+3 of 32
+Such simplified fine-tuning has been effective for head and bunch detection, stress and
+yield mapping, and nitrogen-related trait detection across cereals, orchards, and soybean
+breeding trials [7,10,14]. When labels are scarce or unavailable, domain adaptation (DA)
+and unsupervised domain adaptation (UDA) provide additional options. First, shallow
+feature alignment methods (e.g., TCA or spectral-response-aware band transforms) align
+feature distributions and band spaces across sites and sensors, stabilizing classifiers with
+minimal supervision [23,24,26]. Next, teacher–student consistency schemes and related
+UDA strategies can be applied so a source-trained teacher guides a student on unlabeled
+target imagery, a pattern explored for multisensor nitrogen and disease mapping [27,28].
+Finally, appearance differences can be addressed directly with pixel-level style transla-
+tion that makes source images “look like” the target domain (e.g., CycleGAN [29] and
+CUT-style transforms [30,31]) while preserving geometric content for detection and seg-
+mentation [32–34]. These techniques can be paired with classic cross-sensor band correction
+and multisensor fusion, which reduce input drift and emphasize the most informative
+traits [20,26].
+Crucially, none of these remedies is meaningful unless evaluation protocols actually
+match the intended deployment gap. Evaluation design dictates whether reported accuracy
+reflects deployable performance. Studies that compare random splits with spatial or leave-
+one-field-out validation show that naive pixel- or plant-level splits artificially improve
+accuracy by leaking near-identical backgrounds and illumination into both training and test
+sets, thus overestimating transferability [6,7]. In practice, spatially aware protocols tend to
+yield more conservative and realistic results, especially when test parcels differ in soil, man-
+agement, or phenology from the training set [10,35]. Open benchmarks make these gaps
+visible at scale. For example, the Global Wheat Head Detection (GWHD) dataset frames
+cross-site wheat head detection with standardized train/test farms for out-of-domain gen-
+eralization [8], and MinneApple emphasizes fruit detection under heterogeneous orchards,
+cultivars, and lighting to probe robustness beyond random splits [7]. Targeted domain-
+shift evaluation sets go further by isolating specific factors. Grape-bunch datasets with
+controlled temporal, viewpoint, and variety changes reveal how performance decays with
+camera pose or cultivar shifts and which adaptations recover it [14]. Weed, disease, and
+weather-driven benchmarks quantify how illumination, management, and season interact
+in segmentation and grading tasks [12,27]. Cross-site root and soil imaging benchmarks
+separate lab/field and location effects to test whether models truly travel across acquisition
+setups [36,37]. Together, these designs help identify failure modes early and guide the
+choice of adaptation tactics that work for real deployments [6,35].
+The remainder of the paper proceeds from defining shift types and how to test them, to
+summarizing empirical evidence by modality, and then to providing acquisition/evaluation
+guidance and an adaptation roadmap that links common failure modes to practical reme-
+dies. This review synthesizes robust evidence for proximal and UAV imaging across
+agriculture, including field crops, orchards, and protected environments. Considering the
+four axes of scene, sensor, protocol, and time, the contributions are as follows:
+•
+Practical definition of robustness under distribution shift for agricultural imaging and
+a field-focused taxonomy of shift types (scene, sensor, protocol, and time) tailored to
+proximal and UAV data (Section 3);
+•
+Mapping of empirical evidence across RGB, MS, HS, and thermal sensors for field
+crops, orchards, and protected environments, highlighting when additional modalities
+consistently improve robustness (Section 4);
+•
+Acquisition and standardization checklist covering flight timing, exposure and white
+balance, ground-sampling consistency, radiometric handling, and spatially aware
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+4 of 32
+sampling, plus an evaluation protocol template centered on leave-one-field-out and
+independent-site tests (Section 5);
+•
+Consolidation of adaptation options (lightweight normalization and augmentation,
+small target-set fine-tuning, feature alignment, UDA, style translation, test-time up-
+dates, and uncertainty calibration) into a practical decision support that links common
+shift effects to low-cost solutions (Section 6);
+•
+Short guide to the most useful public and emerging benchmarks (e.g., GWHD for
+wheat heads, MinneApple for fruit, etc.), pinpointing where empirical evidence on
+cross-domain robustness is thin and outlining a focused roadmap for future datasets
+and experiments (Section 7).
+Taken together, these contributions aim to move robustness under distribution shift
+from a loosely stated aspiration to a set of concrete acquisition, evaluation, and adaptation
+practices that can be adopted in real-world agricultural imaging pipelines.
+This article focuses on robustness under domain and distribution shift for proximal
+and UAV crop imaging pipelines. We do not attempt exhaustive coverage of purely satellite-
+based remote sensing, non-imaging sensor streams (e.g., point spectroscopy/IoT without a
+CV component), or non-crop domains such as livestock and forestry. Our emphasis is on
+practices and methods supported by field-relevant evidence under shift-aware evaluation.
+In this review, UAV imaging refers to aerial acquisition from drone platforms (typically
+nadir or oblique mosaics), while proximal imaging refers to ground-based close-range
+sensing (handheld, rig, and phenotyping platforms). When recommendations are platform-
+specific, they are labeled explicitly as UAV- or proximal-oriented.
+2. Literature Search and Article Selection
+To ensure transparency and reproducibility, this review followed a structured proce-
+dure to identify, screen, and characterize the literature on robustness under domain and
+distribution shift in proximal and UAV imaging for crop monitoring. The methodology
+comprised three main steps: a systematic search across major academic databases, screening
+and application of explicit inclusion and exclusion criteria, and structured characterization
+of the final corpus of studies. The searches were executed on 8 October 2025 and covered
+records indexed from database inception through the search date, with no publication-year
+filter applied.
+The search strategy was designed to identify work at the intersection of domain or
+distribution shift, transfer learning, and related robustness concepts, and proximal or
+UAV imaging for major field crops and orchards using RGB and multisensor data. The
+database query was constructed in two layers. First, the “title” field was required to
+contain at least one term directly related to robustness and transfer, namely “domain
+shift”, “distribution shift”, “domain adaptation”, “transfer learning”, “model transfer”,
+“calibration transfer”, “transferability”, “OOD”, or “out of distribution”. Second, the
+“title–abstract–keywords” fields were required to jointly mention at least one target crop
+(wheat, rice, maize/corn, soybean, apple, citrus, mango, tomato, grape, or pear), at least
+one imaging or vision-related term (image, computer vision, remote sensing, hyperspectral,
+multispectral, RGB, RGB-D, LiDAR, or thermal), and at least one proximal or near-field
+platform term (UAV/UAS/drone, gantry or rail system, proximal or handheld imaging,
+ground robot/UGV, tractor or sprayer, or greenhouse/in-field phenotyping). Only records
+satisfying both layers were retrieved.
+This query restricts the “title” field to core robustness terms (e.g., domain adaptation,
+transfer learning, calibration transfer, transferability, and out of distribution) so that domain
+or distribution shift is central to the article, while the “title–abstract–keywords” fields
+constrain crop types, sensing modalities, and platforms. An equivalent query, with the
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+5 of 32
+same logical structure, was implemented in Web of Science (WoS). The Scopus query
+returned 98 records. The WoS query returned 62 records, of which 54 overlapped with the
+Scopus results. After aggregating and deduplicating the results from both databases, an
+initial pool of 106 unique articles was obtained.
+The 106 records were then screened using explicit eligibility criteria based on title, ab-
+stract, and, when necessary, full text. Inclusion criteria were as follows: (i) written in English;
+(ii) focused explicitly on domain or distribution shift (or closely related transfer/robustness
+concepts) in the context of crop imaging; and (iii) used proximal or UAV imaging for the
+targeted crop types and sensing modalities defined by the query. Works were excluded
+when robustness or transferability was only mentioned tangentially, when the imaging
+component was not proximal or UAV (such as purely satellite-based studies or non-imaging
+sensors without a CV component), or when the main emphasis was unrelated to distribu-
+tion shift (e.g., generic yield mapping without cross-site or cross-sensor evaluation). After
+applying these criteria, 42 articles remained and were retained as the core corpus for the
+review. All synthesis in Sections 3–7 is grounded primarily in these 42 studies.
+To reduce the risk of missing relevant work, the reference lists of all 42 core articles
+were examined (backward snowballing). Each cited paper was checked against the same
+inclusion criteria. Because the database query constrains crops and imaging modalities,
+the resulting core set is treated as a focused corpus (major field crops and orchards under
+proximal/UAV imaging) rather than an exhaustive census of all agricultural sensing stud-
+ies. No additional article satisfied these criteria beyond the initial 42. It is worth pointing
+out that, throughout the thematic sections, additional references are cited when they
+provide relevant context or methodological detail (for example, agronomic background,
+related modeling strategies, or sensor-specific discussions). These context papers are
+not counted as part of the core set and are not used in quantitative tallies of robustness
+evidence, but they help situate the core findings within the broader agricultural AI and
+phenotyping literature.
+Each of the 42 core articles was coded using a structured template capturing the
+following: crop or domain, primary trait or task, sensor configuration, acquisition platform,
+and the main shift axes and methods addressed. These variables are summarized in Table 1,
+which provides a compact overview of the corpus and supports cross-study comparisons.
+The characterization is descriptive rather than statistical, reflecting the heterogeneity of
+crops, sensors, and tasks represented, but it provides a quantitative backbone for the
+thematic synthesis. It underpins, for example, the breakdown of robustness evidence
+across RGB and multisensor imaging (Section 4), the mapping between shift axes and
+acquisition or evaluation choices (Section 5), and the organization of adaptation strategies
+into a practical decision aid (Section 6).
+Because the query targets specific major crops and explicitly filters for imaging and in-
+field or near-field platforms, the resulting corpus is naturally richer in cereals and orchards.
+Studies on related domains, such as root and soil imaging or greenhouse phenotyping,
+were retained in the core set when they satisfied the search criteria and contributed directly
+to the analysis of domain or distribution shift (for example, calibration transfer between
+hyperspectral platforms or cross-environment disease recognition). By contrast, works
+outside this scope are used only when they offer methodological insights and are explicitly
+treated as contextual rather than core evidence. This distinction between the 42-paper
+core corpus and additional contextual references ensures clarity about the evidential basis
+for the robustness claims synthesized in Sections 3–7 while still allowing methodological
+advances from the broader agricultural machine learning (ML) literature to inform the
+proposed taxonomy, protocols, and experimental agenda.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+6 of 32
+Table 1. Paper-level coding of the 42-study core corpus: crop/domain, task, sensing modal-
+ity/platform, and the main shift axes and adaptation approaches emphasized in each study. Table 2
+aggregates these codes into cross-study takeaways and actionable guidance.
+Reference Crop/Domain
+Trait/Task
+Sensors
+Shift Axes & Adaptation Highlights
+[36]
+Root/soil imaging
+(minirhizotron; field
+and greenhouse)
+Root segmentation under
+dataset shift
+Minirhizotron root/soil
+imaging (proximal)
+Cross-site + growth-stage (temporal) shifts;
+background/soil appearance and
+contrast/illumination differ across domains;
+segmentation degrades under shift.
+[16]
+Cereals (corn; UAV
+campaigns)
+Leaf chlorophyll content
+(LCC) and average leaf
+angle (ALA) via
+PROSAIL-Net
+UAV hyperspectral +
+PROSAIL simulations;
+solar-sensor
+geometry/multiangular
+views
+Physics-guided sim→real transfer (PROSAIL
+pretraining + limited-label fine-tuning); domain gaps
+from geometry/illumination and protocol
+differences; multi-angular flights improve
+robustness.
+[38]
+Maize (field
+experiment)
+Leaf chlorophyll content
+(LCC) with enhanced
+2D-COS band selection +
+DNN/TL
+UAV hyperspectral
+(field) + simulated
+hyperspectral
+(PROSAIL-like)
+Within-season (growth stage/date) and
+treatment/cultivar variability; sim→field transfer
+learning with limited labels; sensitivity to acquisition
+timing motivates protocol-aware evaluation.
+[14]
+Grapevine orchards
+Grape bunch
+detection/segmentation
+under domain shift
+RGB
+(proximal/UAV-like
+viewpoints)
+Scene (variety, canopy, background), viewpoint, and
+seasonal shifts; explicit domain-shift suite
+(leave-view/season/variety-out); fine-tuning and
+DA baselines.
+[31]
+Tomato (green-
+house/protected)
+Leaf disease recognition
+under heterogeneous
+domain shift
+RGB
+(controlled/greenhouse
+imaging)
+Cross-domain disease classification; CycleGAN-like
+image translation and UDA; appearance shifts
+(lighting, background) and partial label space
+changes.
+[8]
+Wheat
+(multi-country field
+trials)
+Head detection and
+counting (GWHD
+benchmark)
+UAV RGB; proximal
+RGB
+Large multi-site benchmark; scene and management
+shifts; explicit cross-site splits for OOD evaluation;
+protocol variations (GSD, altitude).
+[39]
+Apple orchards
+Tree crown health-state
+detection (formed vs.
+unformed crowns) with
+YOLOv5; task-specific
+transfer learning
+UAV RGB
+Data-scarce, class-imbalanced setting; synthetic
+pretraining via object-based augmentation (OBA)
+using task objects/backgrounds improves over
+COCO initialization.
+[21]
+Field crops (soil
+moisture context)
+Soil moisture estimation
+(OPTRAM + Deep Learning
+(DL))
+UAV multispec-
+tral/hyperspectral (with
+OPTRAM indices)
+Temporal and cross-field shifts in moisture;
+physics-informed indices + TL to stabilize
+water-related traits; protocol and soil-condition
+variability.
+[11]
+Potato (field trials)
+Plant nitrogen content
+(PNC) using vegetation
+indices + hierarchical linear
+modeling (HLM)
+Proximal hyperspectral
+reflectance (field
+spectrometer) +
+environmental variables
+Cross-year and cross-region transfer; VI–PNC
+relationships vary with environment; hierarchical
+modeling with environmental covariates improves
+transferability over fixed/global fits.
+[28]
+Greenhouse crops
+(e.g., tomato,
+pepper)
+Plant disease recognition
+with open-set domain
+adaptation
+RGB (controlled
+imaging)
+Cross-dataset and cross-environment shifts;
+closed-set vs. open-set UDA; pseudo-labeling and
+confidence filtering to handle unseen classes.
+[12]
+Row crops/weeds
+(e.g., soybean fields)
+Weed/vegetation
+segmentation and mapping
+UAV RGB/multi-
+spectral/thermal
+(depending on setup)
+Cross-field and weather shifts (illumination,
+moisture); cross-platform or cross-altitude
+robustness; TL and protocol standardization;
+test-time normalization and calibration for
+management.
+[5]
+Winter wheat
+Plant nitrogen content
+modeling; effect of spatial
+resolution on accuracy and
+cross-resolution
+transferability
+UAV multispectral
+(native + resampled
+GSD; reflectance + VIs +
+texture)
+GSD (scale) shift sensitivity; models degrade when
+applied across resolutions; CARS-selected features +
+RF to improve robustness across growth stages
+(2021–2022).
+[6]
+Soybean (yield
+prediction)
+Yield prediction with spatial
+CV and ML optimization
+(RFE; RF/XGBoost/LASSO;
+stacked ensemble)
+UAV multispectral VIs
+(+weather covariates)
+Random vs. spatial-cluster vs. leave-one-field-out
+CV; independent field test for cross-field/year
+transferability.
+[37]
+Soil/biopore
+imaging across sites
+Biopore detection and
+soil-structure
+characterization (DL seg-
+mentation/quantification)
+Proximal RGB
+photography (excavated
+soil surfaces/soil-core
+cross-sections)
+Multi-site, soil-type, tillage, and vegetation-history
+shifts; multi-site DL improves cross-site performance
+and robustness under varying soil appearance and
+noise.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+7 of 32
+Table 1. Cont.
+Reference Crop/Domain
+Trait/Task
+Sensors
+Shift Axes & Adaptation Highlights
+[7]
+Apple orchards
+(MinneApple)
+Fruit detection, instance
+segmentation, and counting
+(benchmark)
+Ground-based RGB
+imagery (smartphone
+video frames; annotated
+instances)
+Occlusion and illumination variability; train/test
+separated by different tree rows and different years
+to reduce leakage and better test generalization.
+[40]
+Rice (bacterial
+blight; disease
+severity)
+Disease severity prediction
+with transfer learning
+(LSTM; transfer-ratio
+guidance; optional AT
+covariate)
+Low-altitude UAV
+multispectral
+Cross-condition and cross-sensor shifts
+(spectral/band differences); robustness under
+environment/instrument variation;
+few-target-sample transfer.
+[32]
+Sorghum (panicles)
+and wheat (heads)
+Head/organ detection with
+CUT-based style-transfer
+domain adaptation (plus
+label refinement)
+UAV/field RGB
+(unlabeled target
+domains for translation)
+CUT image-to-image translation to bridge genotype,
+field condition, and lighting shifts; translated labels
+are corrected to handle missing/added small organs;
+improves cross-domain detection robustness.
+[41]
+Wheat
+Above-ground biomass
+(AGB) estimation across
+growth stages (CBA-Wheat)
+Proximal hyperspectral
++ UAV hyperspectral
+(VI-based)
+Phenology-/thermal-time corrected VI→AGB model;
+cross-site and cross-season transfer; handheld→UAV
+evaluation to reduce bias under site/protocol
+differences.
+[19]
+Winter wheat and
+summer maize
+Fuel moisture content
+(FMC)/canopy moisture
+status estimation (spectral
+indices + TL)
+UAV multispectral +
+hyperspectral
+Cross-crop transfer (maize ↔wheat) with
+phenology/season variability; transfer learning to
+improve generalization; sensitivity to
+background/management differences.
+[20]
+Winter wheat
+Plant N content estimation
+with multimodal fusion
+(RGB/MS/HS) and
+unequal-weight TL
+UAV RGB,
+multispectral,
+hyperspectral
+Cross-region and cross-sensor shifts; feature-level
+fusion with unequal weighting; TL across
+management regimes and sensors.
+[42]
+Citrus orchards
+Chlorophyll estimation at
+multi-scale (leaf, canopy,
+UAV)
+Proximal + UAV
+spectral sensing (multi-
+spectral/hyperspectral)
+Scale shift (leaf↔canopy↔UAV); transfer learning
+across scales to mitigate data scarcity and improve
+cross-scale generalization.
+[13]
+Wheat
+Ear counting
+(EarDensityNet) with
+ground→UAV transfer
+Proximal RGB →UAV
+RGB
+Cross-platform scale shift (altitude/GSD) and
+viewpoint differences; transfer learning from
+high-resolution ground images improves UAV
+counting robustness.
+[35]
+Wheat (breeding
+trials)
+Grain yield prediction from
+UAV multispectral indices
+(NDRE1) with PLS; transfer
+across years and trial
+locations
+UAV multispectral
+(red-edge/NIR)
+Across-year and across-location generalization;
+strong dependence on measurement dates (growth
+stage timing); multi-date (date fusion) models often
+improve transferability.
+[23]
+Greenhouse HTPP
+facilities (maize)
+Calibration transfer for trait
+prediction (RWC and
+nitrogen) across
+hyperspectral phenotyping
+systems
+VNIR hyperspectral
+(multiple
+facilities/instruments)
+Inter-/intra-facility spectral shifts under differing
+imaging conditions; spectral space adjustment via
+DS/PDS/DPDS/SST using transfer samples to reuse
+a master PLSR model without full recalibration.
+[24]
+Greenhouse
+HTPP/phenotyping
+systems
+Common latent-space
+methods (TCA; di-PLSR) for
+hyperspectral calibration
+transfer
+Hyperspectral
+(cross-system)
+Latent-space harmonization across sensors/systems
+to reuse models under system-level acquisition
+differences; compares TCA-based alignment and
+domain-invariant PLSR variants.
+[43]
+Apple orchards
+(robotic harvesting)
+Fruit semantic segmentation
+(sim→real)
+Robot-mounted RGB-D
+(RealSense D435);
+synthetic orchard scenes
+(Gazebo)
+Occlusion, lighting, and background variability in
+orchard scenes; synthetic data and domain
+adaptation to improve segmentation robustness
+under varied conditions.
+[10]
+Soybean (breeding
+trials; US ↔
+Argentina)
+Yield prediction from UAV
+multispectral imagery
+(transfer
+learning/fine-tuning)
+UAV multispectral
+(cross-region)
+Cross-site and cross-region generalization; transfer
+learning with limited target labels; sensitivity to
+temporal sampling (imaging schedule) in field trials.
+[44]
+Rice
+Seedling detection in
+paddies
+UAV RGB
+Early-stage detection under varying water levels and
+background, cross-field GSD, and protocol shifts.
+[4]
+Rice (field plots;
+multi-year)
+Grain-yield prediction with
+multi-temporal feature
+fusion + model updating
+UAV RGB +
+multispectral
+(multi-date time series)
+Growth-stage and cross-year drift (2017→2018);
+model updating with limited new-year labels; fusion
+of VIs with canopy structure to reduce
+background/senescence effects.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+8 of 32
+Table 1. Cont.
+Reference Crop/Domain
+Trait/Task
+Sensors
+Shift Axes & Adaptation Highlights
+[25]
+Maize (regional
+suitability; soil
+constraints)
+Soil water/salt content
+(SWC/SSC) inversion +
+water-salinity suitability
+mapping with ML + TL
+(TCA; UAV→satellite)
+UAV multispectral +
+satellite multispectral
+Cross-scale (UAV→satellite) transfer and regional
+variability; feature-space alignment via TCA;
+robustness to soil moisture/salinity domain shift.
+[34]
+Soybean (weed
+segmentation)
+Weed semantic
+segmentation under
+weather/illumination shifts
+UAV RGB
+Weather-driven domain adaptation with
+CycleGAN-based translation; robustness across
+sunny vs. overcast conditions and
+across-year/mission appearance changes.
+[45]
+Soybean seeds
+(lab/controlled)
+High-throughput seed
+phenotyping with synthetic
+data and Mask R-CNN
+RGB (controlled
+imaging; synthetic +
+real)
+Domain randomization/synthetic data for
+generalization across backgrounds and lighting;
+sim→real transfer; small-object detection robustness.
+[17]
+Soybean
+Leaf chlorophyll content
+(LCC) estimation with HIT
+representation + transfer
+learning (Soybean-LCCNet)
+Proximal canopy
+hyperspectral
+reflectance
+RTM/PROSAIL-guided pretraining + HIT to
+stabilize hyperspectral inputs; robustness across
+growth stages and acquisition variability; TL
+improves LCC prediction over spectral-feature
+baselines.
+[15]
+Winter wheat
+Leaf chlorophyll content
+(LCC) via PROSAIL-guided
+wavelength selection +
+transfer learning
+Hyperspectral (ground
+and UAV)
+Physics-guided sim→real: pretrain on PROSAIL
+simulations, then fine-tune on measured data;
+reduced wavelength set improves generalization and
+supports ground↔UAV transfer for LCC estimation.
+[33]
+Apple orchards
+Large-scale orchard
+mapping with cross-sensor
+adaptation
+(UAV→Sentinel-2;
+Trans_GAN + TL)
+UAV imagery +
+Sentinel-2 multispectral
+Appearance and resolution gaps across platforms;
+image-to-image translation plus transfer learning to
+adapt segmentation from UAV labels to Sentinel-2
+with limited target annotations.
+[46]
+Winter wheat
+LAI/leaf chlorophyll
+content (LCC) and canopy
+chlorophyll content (CCC)
+via physics-informed
+transfer learning (PITL)
+UAV multispectral +
+RTM/PROSAIL
+simulations
+Physics-guided sim→real: RTM-informed
+pretraining/constraints to stabilize biochemical trait
+retrieval; evaluated across seasons (2022–2023) under
+field management/condition variability.
+[47]
+Winter wheat
+Vertical (within-canopy) leaf
+chlorophyll content (LCC)
+profiling with RTM-guided
+deep transfer learning
+(LeafTNet)
+Proximal multispectral
+leaf imaging
+PROSPECT/RTM-sim pretraining →field
+fine-tuning; robustness across leaf layers and growth
+stages under varying N treatments over two seasons.
+[26]
+Winter wheat
+Nitrogen nutrition index
+(NNI) estimation with
+multisensor UAV data and
+transferability analysis
+UAV multispectral +
+RGB + thermal (TIR)
+Cross-location and cross-cultivar transferability;
+feature selection/fusion and latent-space alignment
+(TCA) to reduce domain shift in N-status mapping.
+[27]
+Winter wheat (rust,
+scab, yellow dwarf)
+UAV disease-area semantic
+segmentation with UDA
+(teacher–student +
+transformer)
+UAV multispectral (RGB
++ 5 bands; DJI P4
+Multispectral)
+Cross-site and cross-year (2022–2023) shifts;
+site-held-out CV; robustness via pseudo-label UDA
+across locations/diseases.
+[48]
+Winter wheat
+Plant nitrogen content
+(PNC) estimation;
+cross-management
+transferability
+UAV multispectral
+(spectral + texture
+features)
+8-year field experiment; transfer FP↔EI
+(management regime shift); fused spectral–textural
+features improve robustness across years/stages.
+[18]
+Maize
+Above-ground biomass
+(AGB) via stem–leaf
+separation + 3D RTM + TL
+UAV multispectral (with
+LESS/RTM)
+3D vs. 1D RTM; cross-year and cross-field robustness;
+physics-guided architecture and TL; protocol and
+temporal shifts.
+[9]
+Rice
+Grain-yield prediction with
+cross-sensor generalization
+(band-correction)
+UAV multispectral
+(multisensor)
+Cross-year and cross-cultivar transfer; explicit
+cross-sensor tests and band/spectral-response
+correction to reduce sensor-induced shift; robustness
+under stage/timing variability.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+9 of 32
+Table 2. Cross-study synthesis and empirical anchors for the four-axis shift taxonomy (scene, sensor,
+protocol, time): what typically changes, what breaks, what evaluation reveals it, and what practices
+most consistently help in proximal and UAV crop imaging.
+Axis
+What Changes in Practice
+Common Failure Modes
+Evaluation That
+Exposes the Gap
+Robustness Levers (with
+Examples)
+Scene
+Cultivar/management,
+canopy structure,
+soil/background context,
+plot layout, geographic site
+Spurious background
+cues; brittle texture/color
+heuristics; poor transfer
+to new farms
+Leave-one-
+field/farm/site-out
+splits; cross-region
+validation (not
+random tiles)
+Increase scene diversity;
+standardize framing; report per-site
+results; small target-set fine-tuning
+often recovers large fractions of lost
+accuracy (e.g., [8,14,31]).
+Sensor
+Camera replacement,
+bandset/spectral response,
+radiometry, optics,
+compression/pipeline
+differences
+Spectral mismatch;
+calibration drift; domain
+gap, even with the same
+crop/field
+Cross-sensor test on
+matched plots when
+possible; otherwise
+“sensor-out” within
+comparable protocols
+Radiometric standardization;
+calibration transfer; feature
+alignment; explicit band sensitivity
+ablations (e.g., [5,9,23,24]).
+Protocol
+Altitude/GSD, view angle,
+time-of-day window,
+exposure/WB, panel usage,
+mosaicking, and
+preprocessing choices
+Scale/viewpoint
+mismatch; illumination
+artifacts; inconsistent
+reflectance/color; hidden
+leakage from
+near-duplicates
+Protocol ablations
+(GSD/window/view);
+protocol hold-out;
+ensure splits prevent
+correlated leakage
+Lock exposure/WB where feasible;
+use panels/reflectance conversion;
+metadata logging; augmentation
+that matches protocol variation
+(e.g., [8,13,16,44]).
+Time
+Phenology/growth stage,
+inter-annual climate,
+rotations/management
+changes, disease progression
+Seasonal drift;
+appearance evolution;
+label shift (class balance
+changes across season)
+Season/year hold-out
+over the same field
+polygons;
+longitudinal splits
+Phenology-aware planning;
+periodic recalibration; evaluate drift
+explicitly and report update
+frequency (e.g., [11,21,36]).
+3. Robustness Under Distribution Shift: Definition and a Field-
+Focused Taxonomy
+In proximal and UAV agricultural imaging, robustness under distribution shift means
+that a model’s accuracy and error structure remain within a small, predictable margin when
+conditions change in realistic ways. Four real-world factors are particularly relevant in
+this context (Figure 1): the scene, which includes canopy geometry, variety, netting, and
+background clutter; the sensor, which includes spectral response, optics, radiometry, and
+resolution; the acquisition protocol, which includes UAV flight altitude and timing, expo-
+sure and white balance, and sampling layout; and time, which includes phenology, season
+or year, and weather. To ground this taxonomy empirically, Table 2 summarizes recurring
+patterns observed across the 42-study core corpus, pairing each axis with representative fail-
+ure modes, evaluation designs, and robustness levers (with concrete examples). In practice,
+robustness is assessed by testing models on independent fields, orchards, or seasons that
+differ along one or more of these axes, checking whether performance degrades smoothly
+rather than collapsing, and whether acceptable accuracy can be maintained without ex-
+haustive relabeling or full retraining [7,8,10,35,36]. In plant pathology, continual-learning
+formulations provide a practical way to update models as new domains and categories
+arrive, while explicitly mitigating catastrophic forgetting [49]. This sets a clear deployment
+target in which models should hold up across farms and years, not only across random
+splits within a single field.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+10 of 32
+Figure 1. Representative sources of domain shift in agricultural RGB imaging (UAV and proximal).
+The Scene shift set (top-left, four examples) illustrates changes in the surrounding background and
+environmental cues (e.g., soil/ground texture, sky/vegetation backdrop, and the presence of an
+operator’s hand). The Sensor shift pair (top-right) shows the effect of different imaging setups and
+effective resolution (different GSD or viewpoint) on the appearance of the same type of target. The
+Protocol shift pair (bottom-left) contrasts acquisition conditions under different lighting (near-noon vs.
+late-afternoon), affecting brightness, shadows, and color balance. The Temporal shift pair (bottom-right)
+shows crop appearance changes across growth stages, highlighting phenology-driven differences
+that can degrade model transfer if not accounted for. Together, these examples motivate treating
+robustness as axis-specific: some gaps can be mitigated by acquisition control (protocol), some by
+calibration/standardization (sensor), and some require explicit hold-outs and periodic updating
+(scene/time).
+Conventional random cross-validation often mixes pixels or plants from the same
+rows and illumination pockets across the training and test sets, inflating transfer capability
+claims by leaking micro-context. This concern is especially well-documented in plant
+disease recognition, where limited dataset representativeness and capture-condition bias
+are repeatedly identified as primary barriers to field-ready deep learning systems [50,51].
+This leakage is repeatedly documented in UAV yield-prediction and phenotyping studies,
+where random cross-validation overestimates transfer relative to spatial or field-level
+splits [6,35]. When evaluations instead hold out entire fields, orchards, or seasons, accuracy
+typically drops and error modes shift toward missed detections under occlusion, canopy
+shadows, or altered color and texture [8,35]. Fruit and ear-counting datasets corroborate
+this, as tests with independent orchards, varieties, or fields reveal failures that are missed
+under random splits, underscoring that independence between training and test sets
+in agriculture must be defined spatially and temporally, not only at the pixel or patch
+level [7,13,14].
+Scene changes alter the distribution of geometries and textures. Leaf angles and
+densities, row spacing, under-canopy darkness, reflective soil or mulch, and the presence of
+nets or bags are all relevant factors in this context. For example, grape-bunch segmentation
+across varieties and viewpoints shows that models trained in one vineyard can become
+ineffective when bunch size, leaf glare, and occlusions change, even if the camera and
+protocol are fixed [14]. In apples, MinneApple and robotic-harvesting studies emphasize
+similar sensitivity to canopy structure, occlusion, and background clutter [7,43]. Category-
+level UAV benchmarks in cereals and weeds likewise report accuracy degradation when
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+11 of 32
+management practices, canopy architecture, and field structure differ between training and
+evaluation sites, highlighting scene shift as a major source of error in counting, localization,
+and segmentation [8,12,13].
+Changing cameras or lenses alters pixel statistics and feature salience, with factors like
+band placement, dynamic range, bit depth, lens distortion, and effective ground sampling
+distance (GSD) playing a crucial role. Hyperspectral calibration-transfer work has shown
+that even similar plant-phenotyping systems can require explicit spectral-space or latent-
+space mappings to maintain performance across instruments [23,24]. UAV nitrogen and
+yield studies further document that changes in sensor spectral response, dynamic range, or
+effective GSD cause systematic shifts in vegetation indices and texture features, affecting
+model transferability across devices and platforms [5,9]. These results underscore that
+sensor metadata and calibration are essential to reproducibility and to any credible claim
+of robustness, even when a similar RGB or multispectral setup is used.
+UAV flight altitude and airspeed affect motion blur and effective GSD, while sun angle
+and cloud cover reshape shadows and color. In addition, sampling layouts (random tiles,
+row-following, and stratified designs) change the mix of backgrounds and phenological
+states. Empirical studies comparing different flight altitudes, overlaps, and acquisition
+timings show that holding GSD, sun elevation, and observation dates near phenologi-
+cal peaks often stabilizes performance across sites more than adding model complexity
+alone [5,35]. Field detection and segmentation studies also note that stabilizing motion,
+using sufficient overlap, and avoiding extreme insolation angles reduce false negatives in
+shaded or partially occluded targets, especially for small objects [12,13].
+Phenology, season, and year introduce systematic appearance changes and alter clutter
+(weeds, residues, and soil moisture). Cross-season yield-prediction and nitrogen-content
+models in wheat, rice, and potato consistently report larger OOD gaps than within-season
+splits, so leave-one-season-out and independent-year tests provide the most unbiased
+estimate of deployable performance [4,6,9,11,35]. Similar temporal gaps are also observed in
+UAV disease mapping when models are evaluated on truly independent acquisition periods;
+for example, multi-site wheat disease segmentation datasets collected across consecutive
+seasons/years (e.g., 2022–2023) require explicit cross-site folds and highlight the difficulty
+of transferring across time and location [27]. Temporal shift further interacts with scene
+and protocol; the same altitude and exposure that work at heading may underperform
+at senescence due to color/contrast changes and increased occlusion from lodging and
+senescent leaves [4,35].
+It is worth pointing out that shifts rarely occur in isolation. A farm adopting different
+trellising (scene) may mount a different camera (sensor) and fly at a new altitude (protocol)
+at a later phenological stage (time). Fruit datasets that take into account variety and
+viewpoint show that the angle of image capture can amplify occlusion under dense canopies
+and interact with pruning regime and canopy density [7,14]. Root phenotyping and soil
+structure imaging, as well as weed segmentation studies, similarly show that temporal shifts
+occur with cross-site differences in background and illumination, compounding domain
+shift for segmentation models [34,36,37]. Wheat head and ear counting studies reveal
+that small resolution drifts and changes in observation distance worsen head separation
+precisely when phenology changes head shape and contrast [5,8,13]. Treating the four
+axes explicitly helps plan acquisitions (which combinations to cover) and decide which
+adaptation strategies to prioritize first in each deployment.
+To make robustness claims comparable, evaluations should include at least one
+independent field or independent season test aligned with the intended deployment
+gap [4,6,9,35]. They should specify sensor details (bands, bit depth, lens, nominal GSD, and
+radiometric treatment) and protocol settings (altitude, overlap, exposure and white-balance
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+12 of 32
+rules, and solar elevation range) and disclose the sampling layout and spatial decorrelation
+strategy used during training and validation [5]. Fruit and orchard studies benefit from
+reporting canopy structure, netting, and pruning regime, as these consistently affect failure
+rates under transfer [7,14]. UAV weed and disease benchmarks additionally recommend
+enumerating farm-level factors (soil background, inter-row cover, irrigation, and manage-
+ment regimes) that introduce variability, both to avoid spurious shortcuts and to correctly
+interpret cross-site gaps [12,27]. Global wheat head datasets similarly document field-level
+factors such as cultivar, management, and trial site [8].
+A practical view is to define robustness thresholds across the four axes, that is, how
+much GSD drift, exposure variance, variety change, or phenological gap the model can toler-
+ate before recalibration or fine-tuning is needed. Independent field and season experiments
+make this explicit by plotting accuracy or error against controlled deviations in altitude,
+year, or viewpoint, or against different cross-validation schemes [5,6,12,35,36]. Simple
+sanity checks and illumination diagnostics, per-field resolution checks, basic spectral cali-
+bration comparisons, and occlusion profiling help distinguish sensor and protocol issues
+from scene and time effects before resorting to more complex adaptation or retraining [23].
+The taxonomy thus guides both evidence synthesis and method selection. In crops
+and orchards, scene and time shifts dominate counting and detection errors, so evaluation
+should employ leave-one-field-out and independent season tests, as done in wheat head,
+ear counting, fruit, and weed benchmarks [7,8,12,14,27]. In addition, sensor and protocol
+standardization or explicit calibration-transfer procedures should be reported alongside
+accuracy to clarify whether performance is more related to the model architecture or to the
+acquisition and preprocessing pipeline [5,9,23]. The following sections address which adap-
+tations (normalization and augmentation, small target-set fine-tuning, feature alignment, or
+style translation) are the most effective for each type of shift, with benchmark datasets that
+stage variety, viewpoint, site, sensor, and season changes providing appropriate reference
+points to compare remedies across tasks [10,12,27,36].
+4. Empirical Evidence Across RGB and Multisensor Imaging
+Robustness under distribution shift depends as much on what is measured as on
+how and where it is measured. Across the reviewed studies, RGB emerges as the practical
+baseline for in-field sensing because of its ubiquity, cost, and relative ease of standardiza-
+tion. When acquisition protocols are controlled, and evaluation is spatially aware, RGB
+models already transfer better than expected in several tasks, particularly object-level
+detection (heads, fruit, organs) and canopy-level counting or segmentation in daylight
+conditions [7,12,13,32]. In orchards, detectors trained on RGB imagery with block-wise
+or row-wise splits generalize across rows and blocks more reliably than models trained
+and evaluated with random patch splits, which tend to inflate accuracy and mask sensitiv-
+ity to background, cultivar, and illumination changes [7,43]. For field crops, RGB works
+well when flight height, ground sampling distance (GSD), and view geometry are held
+consistent, as shown in wheat head, ear counting, and weed segmentation studies that
+emphasize careful protocol design and spatially structured validation [8,13]. However, per-
+formance degrades under oblique views, long shadows, high residue, or different sowing
+densities, unless the training set or augmentation strategy explicitly covers these shifts,
+as documented in cereal head and seedling detection and synthetic data soybean seed
+phenotyping [12,44].
+The empirical evidence favors multispectral, hyperspectral, and thermal modalities in
+regimes where RGB-only cues are less stable under shift—namely when the target signal is
+genuinely spectral or physiological (for example, stress, nutrient status, chlorophyll content,
+leaf water content, or canopy temperature) or when lighting and background are unstable
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+13 of 32
+and spectral features provide information that RGB lacks. In the subset of studies that
+report explicit modality ablations or paired baselines, adding red-edge/NIR (and, where
+available, thermal) consistently reduced cross-date and cross-field degradation for vigor-,
+chlorophyll-, and nitrogen-related traits compared with RGB-only baselines, especially
+when soil brightness, residue, and illumination differ across sites and seasons [5,9,10,19].
+In field crops, red-edge and near-infrared (NIR) bands systematically serve as nutrient
+and vigor proxies across dates and sun angles, improving transfer to new parcels and
+years with different soil brightness, residue levels, or management practices, for both
+handcrafted indices and learned representations [4,5,9,10,19]. Hyperspectral and multi-
+spectral approaches that couple radiative transfer models with deep networks or recurrent
+architectures demonstrate that narrowband cues can maintain chlorophyll, nitrogen, and
+biomass estimation accuracy under significant changes in acquisition date, geometry, and
+site for wheat, soybean, maize, and rice [15–18]. In dense canopies, paddies, and pro-
+tected environments, such narrowband or physics-guided cues mitigate saturation and
+mixed-pixel issues that challenge RGB classifiers, especially for early stress detection and
+subtle disease symptoms where color and texture changes are weak [23]. Thermal and
+water-content-oriented imagery adds robustness for water-related traits under midday
+illumination changes by anchoring canopy temperature or moisture indices relative to air
+and soil conditions, although models still benefit from co-registered RGB or multispectral
+imagery to provide structure and context for segmentation and detection [17,27].
+At the same time, extra bands do not automatically improve robustness. Several
+studies show that simply adding multispectral, hyperspectral, or thermal channels can
+degrade transfer if radiometric handling, band selection, or cross-sensor alignment is
+weak. Under domain shift, noise and sensor-specific artifacts quickly propagate through
+deep models, and redundant or unstable bands make models more sensitive to hardware
+and protocol changes [5,9,23,24]. As a result, a smaller set of more informative bands
+often outperforms the full spectral set, especially when combined with band selection,
+spectral compression, or physics-guided feature construction [15,46]. Practical gains arise
+when pipelines compress or regularize spectra to reduce sensor-specific idiosyncrasies,
+harmonize exposure, white balance, and irradiance across acquisition sessions, and fuse
+modalities at the feature level with explicit normalization rather than raw concatenation
+of channels [9,23,24]. In orchards, multispectral and hyperspectral data are most helpful
+for maturity, quality estimation, and subtle disease or health signals, whereas counting
+and detection tasks usually employ RGB images unless illumination is highly variable
+or fruit color closely matches the background [7,39]. In those cases, adding a red-edge
+band or simple vegetation indices can improve model transfer without major architectural
+changes [9,20].
+Across tasks and crop types, consistent patterns emerge. For counting and detection
+problems, RGB with strong acquisition control and spatially aware evaluation is typically
+the most efficient choice. Multisensor gains appear mainly when canopy texture and target
+color overlap (for example, green fruit against foliage), when severe specular reflections
+and shadows are recurrent across sites, or when class boundaries are subtly spectral rather
+than purely geometric [7,12]. For stress, nutrient, and disease grading, multispectral, hy-
+perspectral, and thermal modalities more consistently improve robustness, provided band
+handling and calibration are explicit and stable over time [5,26,46]. Disease and stress stud-
+ies under greenhouse or semi-controlled environments also show that spectral cues tend to
+be disproportionately useful because artificial lighting and engineered backgrounds create
+shifts that spectral normalization and calibration-transfer methods can dampen [23,24].
+Even in these settings, however, geometry control (camera distance and angle) remains
+critical for transfer, as reflection effects and occlusion patterns still cause errors [32]. Models
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+14 of 32
+usually generalize better across seasons when they exploit multi-date context or temporal
+smoothing, since aggregating predictions over several acquisition sessions makes them less
+sensitive to sporadic lighting or management anomalies [4,10,35].
+Cross-platform and cross-sensor experiments further characterize the role of additional
+modalities. For UAV-to-UAV transfer (different cameras or lenses), models trained with
+explicit radiometric standardization and sensor alignment perform better than those relying
+on raw reflectance estimates alone. Even simple per-band scaling based on reference panels
+or pseudo-invariant features reduces drop-off on new hardware and between different
+multispectral cameras [5,9,23]. For UAV-to-proximal and proximal-to-UAV transfer, domain
+gaps in view geometry and reflectance-distribution effects dominate. Studies on wheat
+yield, biomass, and nitrogen status show that combining shallow structure cues from RGB
+with a few stable spectral features often outperforms either modality alone, particularly
+when UAV flight altitudes vary across sites or when canopy architecture differs between
+ground and aerial views [4,26]. Thermal transfer improves when canopy temperature
+is normalized by ambient conditions, wind, and reference surfaces, not just absolute
+temperatures, highlighting that protocol metadata (such as air temperature and wind speed)
+are relevant and must be logged to ensure reproducible robustness [12,26]. Physics-guided
+sim-to-real strategies that pretrain on radiative-transfer simulations and then adapt to real
+data also help bridge sensor and platform gaps for chlorophyll and biomass traits [15–18].
+In summary, the empirical evidence suggests four practical guidelines for choosing
+modalities under a distribution shift. First, start from a robust RGB baseline evaluated un-
+der spatially aware splits, thus establishing a realistic reference for transferability [7,8,13,35].
+Second, add red-edge or NIR when the trait of interest is physiological or when illumi-
+nation and soil/background conditions vary substantially over time or across fields, and
+consider hyperspectral or physics-guided spectral features when chlorophyll and nitrogen
+are primary targets [5,9,15,17,46]. Third, consider thermal for water stress assessment,
+irrigation timing, and heat-related risks, but normalize canopy temperature by ambient
+conditions and wind, and combine it with cues extracted from RGB or multispectral
+images [12,26]. Fourth, prioritize band handling, alignment, and protocol standardization
+before increasing spectral depth, because under domain shift, how data from different
+flight missions and sensors are made comparable often matters more than how many bands
+are available [5,9,23,24]. These patterns hold across field crops, orchards, and controlled
+environments in the reviewed studies, and they connect directly to the acquisition and
+evaluation choices discussed in the following sections.
+5. Acquisition, Standardization, and Evaluation Under Distribution Shift
+Robustness in proximal and UAV imaging starts with how data are acquired and
+standardized. Many of the gaps observed in cross-field and cross-season tests can be
+traced to choices made before any model is trained [35]. This section consolidates practical
+guidance from the reviewed studies into a coherent workflow, from flight planning and
+camera configuration to radiometric handling and evaluation design.
+As a guiding framework, Figure 2 summarizes how shifts along the four axes (scene,
+sensor, protocol, time) translate into observable effects in model behavior and how these
+symptoms can be addressed through a graduated set of remedies, from low-cost normaliza-
+tion and augmentation to more involved domain-adaptation and test-time strategies.
+Acquisition should be planned around agronomic phases that maximize target visibil-
+ity while minimizing confounders. Good moments for acquisition include when heads are
+visible and not yet lodged for cereals, when bunches and fruits are not yet subject to heavy
+occlusion or bagging in orchards, and when canopies are dry and reasonably stable under
+wind [7,8]. Many studies recommend constraining flights to a solar window (for example,
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+15 of 32
+late morning to early afternoon) or, when this is not possible, deliberately sampling multi-
+ple times of the day and documenting them, because sun elevation and cloud cover have
+a strong influence on shadows, specular reflections, and apparent color [4]. Relatedly, in
+multi-temporal UAV campaigns, logging sky conditions (haze, aerosol, variable overcast)
+and filtering acquisitions that violate illumination constraints helps stabilize sequential
+inputs across dates [52]. Maintaining a roughly constant ground sampling distance (GSD)
+across fields and dates also emerges as a simple but powerful control. When this is not
+feasible, acquiring at two nearby altitudes and reporting model sensitivity to different
+GSDs (such as 1–2 cm versus 3–5 cm) helps quantify how resolution interacts with domain
+shift [12]. Recording cloud cover, wind, and leaf wetness is equally important, since wind
+increases motion blur and parallax errors, while wet foliage changes reflectance and tem-
+perature patterns, and soil moisture and salinity strongly modulate spectral and thermal
+responses in water-limited environments [12,21].
+Scene
+canopy, background,
+management
+Sensor
+bands, GSD,
+noise, optics
+Protocol
+altitude, sun angle,
+exposure, overlap
+Time
+phenology, season,
+year, weather
+Observed symptoms
+e.g., accuracy collapse at new sites/dates,
+failures under specific illumination/cultivars/sensors,
+overconfident wrong predictions
+S1: Normal-
+ization &
+augmentation
+S2: Small
+target-set
+fine-tuning
+S3: Feature
+alignment &
+calibration
+transfer
+S4: UDA &
+style translation
+S5: Test-time
+updates &
+uncertainty
+Fewer labels /
+lower cost
+More labels /
+higher cost
+Figure 2. Roadmap from shift diagnosis to deployable remedies in proximal and UAV crop imag-
+ing.
+Top: the four shift axes (scene, sensor, protocol, and time) organize the space of failure
+causes. Middle: observable symptoms (e.g., site-to-site collapse, seasonal drift, protocol sensi-
+tivity) help diagnose which axis dominates. Bottom: a staged response from low-cost measures
+(normalization/augmentation) to more involved updates (small target-set fine-tuning, calibration
+transfer/feature alignment, UDA/style translation, and test-time updates). The intent is not to
+prescribe a single method but to match interventions to the dominant gap under field constraints
+(labels, compute, and acquisition control).
+For RGB imaging, locking exposure, ISO, and white balance and, where possible,
+recording RAW images reduces variability due to in-camera tone mapping and automatic
+gain control [35]. Calibrating lens distortion and vignetting and checking focus at the
+operating altitude are basic but often ignored steps. For multispectral and hyperspectral
+sensors, good practice includes capturing dark frames, sensor temperature, and spectral
+response metadata. For thermal cameras, this involves recording emissivity settings,
+ambient air temperature, and wind information, ideally with at least one reference object
+of known emissivity when materials differ in the scene [26]. View geometry should be
+kept consistent (for example, predominantly nadir flights with limited roll and pitch),
+or, if off-nadir views are intentional, they should be sampled in a controlled way, and
+performance according to view angle should be reported [44].
+Several works show that radiometric treatment is central to transferability. Panel-
+based normalization, or the use of pseudo-invariant features (PIFs), reduces cross-date and
+cross-camera drift [53,54] more reliably than histogram matching alone [5]. For multispec-
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+16 of 32
+tral and hyperspectral sensors, conversion to reflectance using an incident light sensor is
+preferred when available. Otherwise, panel-based scaling should be applied and residual
+variability documented [16]. When transferring between cameras, aligning bands by their
+spectral response functions and, in some cases, learning a compact band space, such as
+Principal Component Analysis (PCA) or latent-space representation, helps reduce sensi-
+tivity to sensor-specific characteristics [23,24]. Recent multisensor nitrogen and Nitrogen
+Nutrition Index (NNI) studies further illustrate how such calibration-transfer and latent-
+space harmonization steps improve cross-camera robustness [26]. For thermal imaging,
+normalizing canopy temperature by ambient air temperature and wind (for example, using
+∆T = Tc −Ta or similar indices) improves stability across microclimates and seasons and
+is a recurring recommendation in irrigation and stress-monitoring studies [26].
+Geometric alignment matters both for mosaics and for multimodal fusion. High
+forward and side overlap (on the order of 70–90 % in each direction), combined with
+RTK/PPK or well-distributed ground control points, reduces between-mosaic warping
+that can otherwise cause label noise and degrade performance when tiles from the same
+field are split across folds [9,16]. For proximal imaging, fixing standoff distance and view
+angle with physical objects limits BRDF-related variation and makes repeated scans more
+comparable [16]. When fusing RGB with multispectral, hyperspectral, or thermal data,
+extrinsic calibration and per-band alignment should be verified along salient edges before
+feature-level fusion is attempted. Several studies report that misregistration, rather than
+model choice, dominates errors in naïve multimodal pipelines [26].
+The reviewed evidence favors simple, auditable preprocessing controls that generalize,
+including locking white balance and exposure where feasible, applying panel- or PIF-based
+linear scaling, using light dehazing or color-constancy corrections only when acquisition
+conditions justify them, and adopting band selection guided by agronomic priors or physics-
+based simulations rather than unconstrained channel concatenation [5,9,16]. Any transform
+that could entangle training and test domains (e.g., tiling strategy, CLAHE, denoising)
+should be documented and kept identical across splits [6]. Finally, core metadata should be
+logged, since even lightweight models using a small set of metadata cues can generalize
+better across sites and seasons than more complex models that ignore these factors [10,35].
+Acquisition and standardization alone are not sufficient, and evaluation must be
+structured so that robustness claims truly reflect shifted distribution behavior. A recurrent
+recommendation is to treat the field block, management unit, or farm as the fundamental
+independence unit and never tile a single mosaic into both training and test folds [7,8,35].
+For detection and segmentation, image footprints should not cross split boundaries, and
+all dates from a given field or block should stay within the same split to avoid temporal
+leakage. Most studies that explicitly target robustness report three families of splits: an
+in-domain (ID) random-by-unit split within a site as a sanity baseline; a spatially structured
+cross-validation (for example, block-wise or leave-one-field-out) to quantify within-region
+transfer; and at least one leave-one-site, leave-one-season, or leave-one-sensor-out con-
+figuration that matches the intended deployment gap and serves as the main robustness
+indicator (Figure 3) [6,9,35].
+To make these trends more concrete, how often each out-of-distribution (OOD) eval-
+uation type appears in the 42-study core corpus (as coded in Table 1) is summarized as
+follows: at least 16/42 studies include an explicit cross-field/site split; 10/42 include a
+cross-season/year hold-out; 4/42 include a cross-sensor test; and 8/42 report protocol stress
+tests (e.g., altitude/GSD, view angle, acquisition window, or exposure policy). These tallies
+are conservative because many papers describe the shift qualitatively or mix several axes
+without releasing split files or reporting matched in-domain (ID) and OOD scores. Where
+paired ID and OOD metrics are available, it is recommended that both the absolute OOD
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+17 of 32
+score and the drop under shift (e.g., ∆macro-F1, ∆mIoU, or ∆mAP in percentage points)
+are reported because the drop communicates shift severity more directly than the ID score
+alone and enables clearer cross-paper comparisons even when tasks and metrics differ.
+For detection and instance segmentation tasks, mAP@[0.5:0.95] and class-wise AP are
+standard; for semantic segmentation, mean IoU and boundary-aware scores; for classifi-
+cation, macro-F1 and per-class recall; and for regression, MAE, RMSE, and R2. Robust
+studies complement these with 95 % confidence intervals via block- or field-level boot-
+strapping or non-parametric paired tests across units, emphasizing effect sizes rather than
+only p-values [6]. Calibration metrics such as expected calibration error or Brier score [55]
+are recommended when outputs feed thresholded actions like spraying or irrigation, and
+some works additionally stress reporting error distributions by management unit rather
+than only global averages [12,26]. Breaking results down by shift axes helps reveal where
+performance collapses and guides targeted augmentation or adjustments in acquisition
+protocols [7].
+Figure 3. Illustrative training, validation, and test splitting strategies for crop imagery (blue = training,
+red = validation, yellow = test). Top-left (random split): samples from a single field are assigned
+across all subsets, which can introduce spatially correlated leakage and over-optimistic performance.
+Bottom-left (field-wise split): entire road-bounded fields are assigned to a single subset, reducing
+within-field dependence between splits. Right (season/year hold-out): training/validation uses one
+year (top: 2024) while testing uses another (bottom: 2025) over the same field polygons, approximating
+deployment under temporal (seasonal/inter-annual) shift. As a reporting minimum for robustness,
+we recommend including at least one field-wise (or farm-wise) split and one season/year hold-out
+split; random splits can be reported only as an in-distribution reference because they are prone to
+spatial/temporal leakage.
+Finally, several articles highlight the importance of ablation studies that explicitly test
+robustness levers. Acquisition ablations vary solar window, GSD, and view angle to show
+the benefit of standardized protocols [12]. Preprocessing ablations compare pipelines with
+and without panel-based normalization, or full spectral stacks versus compressed band
+sets and calibration-transfer transformations [5,23,24]. Modality ablations contrast RGB
+baselines with incremental additions of red-edge/NIR and thermal channels and feature-
+level versus early fusion [5,26]. Adaptation ablations compare no update, small target-set
+fine-tuning, feature alignment, and unsupervised domain adaptation or style translation
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+18 of 32
+on the same out-of-distribution split [27,28]. A well-documented study reports ID, spatial
+cross-validation, and at least one out-of-distribution result, demonstrates that acquisition
+and standardization choices reduce generalization gaps, quantifies uncertainty at the unit
+level, and releases, where licensing permits, sensor specifications, flight parameters, panel
+descriptions, preprocessing code with fixed seeds, and exact split strategies so that shift-
+aware findings can be reproduced and extended [5,6,35].
+6. Adaptation and Updating Under Distribution Shift: A Practical
+Decision Aid
+Robustness in real deployments rarely comes from a single technique. Instead, it
+depends on matching specific shift symptoms to lightweight solutions that respect field
+constraints such as limited labels, tight compute, and changing illumination and canopy
+structure. This section consolidates adaptation options, from simple normalizations to
+unsupervised domain adaptation, into deployability-oriented guidelines for proximal and
+UAV imaging across RGB, multispectral, hyperspectral, and thermal data. Many first-order
+robustness gains come from the acquisition and preprocessing controls summarized in
+Section 5 (e.g., exposure/WB policy, radiometric scaling, and protocol standardization).
+Here, the focus is on model-side updating strategies that remain after those controls are in
+place, organized by label availability and by the dominant shift axis.
+When a modest fraction of the target site can be labeled, typically on the order of
+10–30 %, small target-set fine-tuning becomes a powerful next step. In practice, this often
+means retraining the task head while freezing most of the backbone, followed by cautious
+fine-tuning of upper layers with discriminative learning rates so that early features remain
+generic rather than adapted to local quirks. Class-balanced and difficulty-aware sampling,
+deliberately including occluded, overexposed, or otherwise challenging examples, allows
+the small labeled set to “teach” the critical gaps. Early stopping on a spatially independent
+validation block, instead of random tiles, prevents excessive optimism caused by leakage
+and preserves a realistic view of transferability [7,35]. This strategy is effective for RGB
+baselines in disease, fruit, and head detection [7,8,14], as well as for multispectral and
+hyperspectral trait mapping when spectral shifts are moderate [15,17,26]. Several multi-
+year yield and nitrogen studies show that such targeted fine-tuning on a few representative
+fields can close a large fraction of the cross-season gap [4,6,35].
+When labels in the target domain are scarce or unavailable, feature-alignment tech-
+niques based on shallow statistics offer label-free or label-light options. Classical color
+and histogram matching, applied per field and after panel-based scaling, can bring RGB
+mosaics from different missions into closer correspondence, provided that overcorrection is
+avoided [35]. In feature space, alignment approaches such as transfer component analysis
+(TCA) equalize means and covariances of feature distributions between source and target
+domains and can be inserted as lightweight modules or offline transforms. They pair well
+with small target label sets and provide quick robustness gains [20,23,24]. For multispectral
+and hyperspectral data, band transforms that map sensors into a common latent basis
+help decouple model behavior from the particularities of individual cameras [9]. These
+methods are computationally inexpensive, auditable, and suitable for on-farm updates
+where resources are limited.
+For larger domain gaps under zero or very limited labeling capabilities, unsuper-
+vised domain adaptation (UDA) becomes attractive. Mean-teacher or exponential-moving-
+average consistency schemes enforce prediction stability under realistic augmentations
+on target images, with a teacher network smoothing updates and reducing overfitting.
+Related consistency and domain-adaptation strategies have been applied to multisensor
+chlorophyll and nitrogen mapping across seasons and sites [27]. Adversarial feature align-
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+19 of 32
+ment, where a domain discriminator pushes features toward domain invariance [56], can
+further reduce appearance-related discrepancies, although care must be taken to avoid
+class-conditional misalignment (for example, confusing leaves with background under
+new lighting conditions). Pseudo-labeling with confidence filtering, sometimes combined
+with spatial priors such as row geometry, can progressively label easy target examples and
+increase effective supervision. Open-set and closed-set UDA variants for plant disease
+recognition in greenhouses illustrate this progression [28,31]. Overall, UDA is most useful
+when acquisition differences dominate the gap (lighting, soil background, sky conditions,
+sensor characteristics) and class taxonomies are the same across domains [27,28].
+When inter-sensor or weather effects dominate pixel statistics, style or appearance
+translation can be used to bring source images closer to the target “look”. CycleGAN, CUT,
+and related frameworks translate source imagery into the target style (illumination, color,
+texture) without target labels, after which standard training or fine-tuning is performed
+on these translated pairs [31–34]. Content-preserving constraints that emphasize edges
+and structure are critical in yield-relevant applications so that objects such as panicles,
+bunches, and fruits are not hallucinated or distorted [32]. Style translation is particularly
+useful when color and contrast shifts are the main failure mode (for example, weather-
+induced appearance changes or cross-camera color differences). It is less appropriate when
+structural differences, such as canopy architecture or trellis type, are the dominant source
+of variation [12,36].
+Several techniques operate directly at test time to provide plug-in robustness during
+deployment. Batch-normalization recalibration, where statistics are updated per field or per
+mission, can adapt feature distributions without labels. This can be combined with entropy
+minimization on target inputs to sharpen predictions [57,58]. Normalization schemes that
+explicitly condition on metadata such as solar elevation, GSD, or temperature (for example,
+through conditional batch normalization or metadata-conditioned heads) further reduce
+shift by tailoring affine parameters or decision thresholds to acquisition conditions [26].
+These methods are fast and label-free but must be monitored for drift, with a clean rollback
+path to a stable baseline model.
+Because labels are costly in the field, active learning and data selection strategies
+can make each annotation count [59]. Query strategies that target spatial novelty and
+failure sources (regions of low confidence, high entropy, or uncommon backgrounds) help
+select the most informative patches for labeling. Selecting entire blocks or representative
+tiles across field heterogeneity, rather than random tiles, improves coverage of key condi-
+tions with fewer labels [6,35]. Some studies implicitly follow this logic when constructing
+multi-year training sets or when adding targeted labels on crops, cultivars, or management
+regimes that initially show the largest generalization gaps [10]. While formal data-valuation
+methods remain rare in proximal and UAV phenotyping, their underlying principle, identi-
+fying redundant imagery and highlighting rare, high-leverage situations, aligns well with
+these practices.
+Uncertainty estimation and calibration add another layer of robustness. Shallow
+ensembles, using just two or three independently trained seeds or backbones, often deliver
+observable cross-site gains with modest computational overhead and provide dispersion
+estimates that highlight failure modes [6]. Simple post-hoc calibration, such as temperature
+scaling on a spatially independent validation block, improves the reliability of confidence
+scores and thus the thresholds used for actions like spraying or harvesting, especially when
+shifts alter the distribution of output scores. In irrigation, stress mapping, and nitrogen
+management contexts, calibration is particularly important because small changes in score
+distributions can translate into discrete management decisions and costly interventions [55].
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+20 of 32
+In practical deployments, it is useful to think in terms of a symptom–remedy cor-
+respondence rather than a fixed recipe. If a model performs well in controlled tests but
+fails under harsh sun or overcast conditions, the first line of response is to strengthen
+illumination and color augmentation, enforce panel or PIF normalization, and consider
+batch-normalization recalibration or entropy-based test time adaptation. If color statistics
+remain the main issue, style translation may be justified [12,32]. When moving to a new
+site with different soil, residue, or background, shallow feature alignment (e.g., TCA)
+combined with small target-set fine-tuning, and possibly geometry-aware priors, tends
+to provide quick improvements [23,26]. For sensor changes, such as a new UAV camera
+with a different spectral response, spectrally aware band mapping, or compact band spaces,
+combined with minimal fine-tuning, can mitigate mismatch. If thermal imaging is involved,
+normalizing canopy–air temperature differences by ambient conditions and wind is essen-
+tial [26]. Seasonal and phenological drift often requires curated target sets that consider
+key stages, augmented by teacher–student UDA for unlabeled data and geometry-aware
+augmentations or modest ensembling [35]. When the deployment shift is driven by evolv-
+ing class sets (e.g., new varieties/market categories), adaptive class-incremental updating
+combined with domain adaptation can reduce the need for full retraining while controlling
+forgetting [60]. When dealing with sparse, rare classes (early disease symptoms, small
+fruit), active learning focused on uncertain or rare patches and class-balanced fine-tuning
+are generally preferable to heavy UDA, which can dilute minority signals [59].
+A recurring caveat across these adaptation families is that robustness gains are not
+monotonic. Negative transfer can occur when class priors change, when the target domain
+contains unseen sub-classes, or when alignment enforces invariances that erase discrimina-
+tive cues [28,31,56]. Pseudo-labeling and teacher–student UDA are particularly sensitive
+to confirmation bias under phenological mismatch and under sensor noise or radiomet-
+ric instability, which can cause drift if updates are not constrained and monitored [6,35].
+Likewise, style translation can inadvertently “fix” a domain gap by altering agronomically
+meaningful structure (geometry/texture), so content-preservation checks and conservative
+use are essential [32]. Finally, test-time adaptation can silently degrade without safeguards,
+so this should be treated as a monitored, reversible component (with stable baselines, cali-
+bration checks, and truly held-out field/season tests) rather than a substitute for shift-aware
+evaluation [6,26,58].
+In practical deployments, it is useful to think in terms of a symptom–remedy cor-
+respondence rather than a fixed recipe. When performance drops are dominated by
+appearance/protocol changes, prioritize augmentation and lightweight updates (e.g., nor-
+malization or test-time adaptation) before heavier pipelines [6,26]. When the dominant
+gap is a scene or site change, small target-set fine-tuning and shallow alignment are often
+the fastest reliable options. When sensor mismatch is primary, spectrally aware band
+mapping (and, if needed, limited fine-tuning) should be used before introducing complex
+UDA [31,56]. For seasonal drift, measures include curating small target sets spanning key
+stages and comparing lightweight updating against UDA under the same OOD split [61].
+Table 3 summarizes these trade-offs (label needs, auditability, and negative-transfer risks)
+as a deployment-oriented decision aid.
+Cost, risk, and governance considerations are relevant across all these options. Many
+gains come from normalization, augmentation, and a few labeled blocks. Heavier UDA
+and style translation should be reserved for clearly documented appearance gaps. To
+avoid “silent” target leakage, independent fields must be preserved for final testing, and
+no hyperparameter should be tuned on the held-out site [8,35]. Adaptation steps should be
+documented explicitly, including which layers were fine-tuned, how batch-normalization
+statistics were updated, and which alignment or translation transforms were applied,
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+21 of 32
+along with the data used. Maintaining a stable baseline model for rollback and auditing is
+essential in operational settings [6,26].
+While the literature surveyed here is heterogeneous in terms of crops, tasks, and
+protocols, a few comparative patterns recur across proximal and UAV settings. First, label
+requirement is the main practical divider: small, diverse target sets enable fast recovery via
+fine-tuning, whereas UDA/translation approaches target zero- or low-label settings but
+introduce additional failure modes. Second, auditability and governance differ markedly:
+lightweight updates (normalization, small-set fine-tuning, shallow alignment) are typically
+easier to document and roll back than heavier UDA or image-to-image translation pipelines.
+Third, methods vary in negative-transfer risk: alignment or UDA can harm performance
+when class priors shift, rare classes matter, or class-conditional structure changes, whereas
+calibration and ensembling mainly affect decision reliability and do not correct systematic
+bias. Finally, appearance translation can be effective for large pixel-statistics gaps, but it
+must preserve geometry and agronomically meaningful structure to avoid “fixing” the
+domain gap by distorting the signal of interest. Table 3 summarizes these trade-offs as a
+decision aid that complements the staged roadmap in Figure 2.
+Table 3. Comparative critique of common robustness/transferability method families in proximal and
+UAV crop imaging. The goal is not to prescribe a single best approach but to make trade-offs explicit
+(labels, complexity, auditability, and failure modes) so results can be interpreted and compared under
+realistic OOD splits.
+Method Family
+Target
+Labels
+Best-Matched
+Axes
+What It Typically Improves (When
+It Works)
+Main Failure Modes/Cautions (Critical)
+Small-set fine-tuning
+Low (few
+blocks)
+Scene, time
+(moderate
+protocol) Fast
+recovery on new
+sites/seasons by
+re-anchoring
+higher-level
+features when the
+labeled target
+blocks span key
+backgrounds/
+phenol-
+ogy [4,6,14,35].
+Overfitting when target labels are
+narrow/spatially correlated can yield
+optimistic estimates if tuning is performed on
+the deployment domain without a truly
+held-out field/season.
+Shallow feature alignment
+(e.g., TCA-style; calibration
+transfer)
+None–low
+Sensor, scene
+(some protocol)
+Stabilizes representations across
+devices/platforms as an auditable, lightweight
+module or offline transform; useful when
+sensor mismatch dominates [9,23,24].
+May misalign class-conditional structure
+(hurting rare classes) and underperform when
+the main gap is phenology/time drift rather
+than sensor statistics.
+Adversarial alignment
+(DANN-style)
+None–low
+Protocol/
+appearance-heavy
+gaps
+Reduces global domain discrepancy without
+target labels when acquisition differences
+dominate [56].
+Higher negative-transfer risk under label shift
+or class-conditional mismatch; may “wash out”
+discriminative cues if invariance is
+over-enforced.
+Teacher–student/
+consistency UDA
+(pseudo-labeling)
+None (or
+very low)
+Scene, protocol,
+time (with
+streams)
+Can improve robustness using unlabeled target
+data under controlled
+augmentation/consistency when the label
+space is shared across domains [27,28,31].
+Confirmation bias/pseudo-label drift; sensitive
+to unseen classes or evolving distributions;
+requires conservative thresholds and
+monitoring.
+Style/appearance
+translation
+(CycleGAN/CUT-like)
+None
+Protocol
+(illumination),
+sensor appearance
+Bridges large pixel-statistics gaps by making
+source imagery target-like prior to training or
+fine-tuning, when content is preserved [31–34].
+Risk of geometry/structure distortion and
+hallucination; can “fix” the domain gap by
+altering agronomic signal—needs content
+preservation constraints and sanity checks.
+Test-time adaptation +
+entropy minimization;
+calibration/ensembles
+None
+Protocol (mild
+sensor/scene)
+Fast, label-free plug-in robustness at
+deployment; calibration/ensembles improve
+decision reliability and highlight failure
+modes [6,26,57,58].
+TTA can drift without safeguards;
+calibration/ensembles do not correct
+systematic bias—use for
+thresholds/monitoring, not as a substitute for
+shift-aware evaluation.
+Overall, a robust pipeline aligns the robustness taxonomy in Section 3 with the ac-
+quisition and sensing choices in Sections 4 and 5, and layers on a graduated adaptation
+plan: normalize and augment first, add a small and diverse target set for fine-tuning, align
+features or use teacher–student or related UDA when labels are unavailable, resort to style
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+22 of 32
+translation for large appearance gaps, and stabilize decisions via uncertainty estimation
+and calibration.
+7. Benchmarks and Targeted Gaps: A Practical Agenda for Datasets
+and Experiments
+Robustness under distribution shift is only as credible as the evaluation settings used
+to measure it. In practice, this depends on which public benchmarks and domain-shift
+suites are being used, how they are split and analyzed to produce spatially and temporally
+realistic estimates of performance, and whether newer datasets are designed explicitly for
+out-of-distribution (OOD) evaluation rather than only for in-distribution accuracy.
+Two public benchmarks are particularly relevant in the context of this work. The
+Global Wheat Head Detection (GWHD) dataset provides diverse, multi-country UAV and
+ground imagery for wheat head detection and includes explicit cross-site splits, making
+it suitable to study scene and time shifts in cereal canopies [8,35]. MinneApple offers
+orchard imagery for fruit detection and counting with substantial variability in illumination,
+occlusion, and background, which is useful to probe appearance and protocol shifts in
+tree crops [7]. Related apple datasets for robotic harvesting extend this setting to semantic
+segmentation and domain adaptation under changing canopy structure and lighting [43].
+In addition, several works curate targeted domain-shift benchmarks, such as grape-bunch
+datasets organized by season, viewpoint, and variety, or cross-site root and soil imaging
+where texture and moisture vary markedly, as well as multi-site weed and disease datasets
+that vary in weather and management regimes across fields [14,27,36]. These emphasize
+combinations of sensor, protocol, scene, and time shifts beyond the random splits used in
+many earlier studies. Together, these resources support more than in-distribution testing;
+they allow leave-one-field, leave-one-site, or leave-one-season-out evaluation that reveals
+transfer gaps, which random tile or patch splits systematically hide [6,7].
+To obtain realistic robustness estimates from these datasets, spatially aware partitions
+or explicit leave-one-site/season-out protocols should be preferred over random splits.
+Reporting both in-site and OOD scores makes it possible to separate memorization from
+true transferability [7,8,35]. When metadata permit, results should be reported separately
+by altitude or GSD and by sun geometry to quantify protocol sensitivity and accompanied
+by simple calibration checks (such as temperature scaling or binned reliability plots) so
+that action thresholds remain trustworthy across sites and years [6,26]. For adaptation
+studies, it is important to fix a reference source model and compare lightweight updates
+(normalization, small target-set fine-tuning, feature alignment, teacher–student UDA, or
+style translation) under the same OOD split. This isolates the contribution of the adaptation
+method from artifacts caused by different split definitions [28,31]. Benchmarks such as
+GWHD, MinneApple, grape-bunch benchmarks, and multi-site disease datasets already
+support this design, but many published adaptation papers still rely only on in-domain
+random splits.
+Despite recent progress, several gaps remain and are particularly valuable to fill. First,
+grain crops beyond wheat are underrepresented in publicly released UAV and proximal
+RGB datasets with explicit cross-farm and cross-season partitions. Maize, soybean, rice,
+barley, and sorghum remain especially scarce compared with orchards and wheat, even
+though several closed or partially released datasets exist for yield, biomass, nitrogen, and
+suitability estimation [4,9,10,25,38]. Second, there is a lack of cross-sensor benchmarks
+acquired over the same fields with RGB, multispectral, hyperspectral, and thermal cameras,
+with measured spectral response functions and radiometric references. Such datasets are
+needed to study sensor replacement, fusion, and band-compression strategies without
+confounding changes in the scene, building on calibration-transfer studies that currently
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+23 of 32
+rely on smaller or proprietary collections [23,24]. Third, longitudinal sequences (multi-
+mission, multi-season) with consistent protocols are still rare, even though they are crucial
+to quantify temporal drift and to compare small periodic updates against heavier UDA
+pipelines [5,6,10,35]. Finally, many existing datasets omit practical evaluation add-ons
+such as standardized panel or PIF frames, exposure and white-balance logs, and wind
+and temperature notes for thermal missions, even though these details often dominate
+generalization behavior in the field and are central in recent robustness and calibration-
+transfer work [9,16].
+The reviewed work suggests a compact “benchmark spec” that would make new
+datasets immediately useful for robustness studies:
+1.
+Design for OOD: Include at least three distinct farms or sites and at least one held-
+out season, and publish recommended leave-one-site/season-out splits alongside
+conventional random splits [7,8,27].
+2.
+Protocol cards: Document UAV flight altitudes and GSD targets, shutter speed, ISO,
+white balance, panel use, sun conditions, and ground truth procedures; release both
+raw and standardized imagery together with the exact preprocessing steps, including
+panel- or PIF-based scaling and any band-compression transforms [5,9,16].
+3.
+Compact annotations matched to actions: Provide box or point masks for counting tasks,
+plot-level labels for management decisions, and inter-annotator agreement samples to
+bound label noise and support label-efficiency experiments [6,10,12].
+4.
+Sensor notes and cross-sensor pairs (optional but impactful): For multispectral, hyper-
+spectral, and thermal data, include band centers and FWHM, emissivity assumptions,
+and co-registered RGB (and, where feasible, multisensor pairs over the same plots) to
+enable alignment, calibration-transfer, and band-compression studies [23,24,26].
+5.
+Reporting template: Encourage or require spatially aware metrics, explicit OOD scores,
+calibration plots, and a short description of any adaptation steps so that results remain
+comparable across studies and across adaptation methods [6,12,35].
+Figure 4 summarizes this specification as a reusable benchmark card and links it to a
+minimal, reproducible experiment suite.
+Given current resources, a minimal experiment suite can already make the benchmark
+agenda more specific and reproducible. (E0) Report an in-distribution (random) split
+only as a reference. (E1–E2) Run a “baseline honesty” pass that trains a single model
+and reports both in-site performance and OOD performance under leave-one-site and/or
+leave-one-season-out evaluation using GWHD, MinneApple, or similar domain-shift splits;
+optionally add a small ensemble and temperature scaling to assess whether confidence is
+sufficiently calibrated for decision-making [6–8]. (E4) Add acquisition sensitivity sweeps
+that systematically vary panel use, exposure locking, and altitude/GSD groupings to
+quantify protocol sensitivity before introducing more complex architectures [5,9,12]. (E5)
+Include label-efficiency curves (e.g., 0, 5, 10, and 20 % target labels) that compare no update,
+small fine-tuning, shallow feature alignment, teacher–student UDA, and style translation
+under the same OOD split [31]. (E3) Finally, perform cross-sensor stress tests: evaluate
+RGB-trained models on MS-to-RGB projections (and vice versa) with and without spectral
+response-aware band transforms, and test whether thermal indices should be normalized
+or left raw; this isolates sensor mismatch effects and supports concrete comparisons of
+alignment and calibration strategies [5,23,24,26].
+In summary, today’s best public resources—GWHD, MinneApple, and emerging
+domain-shift suites in grapes, roots, weeds, and diseases—already support realistic, spa-
+tially aware evaluation and side-by-side comparisons of adaptation strategies. The most
+valuable additions are balanced grain-crop datasets (RGB-first, UAV, and proximal) with
+explicit cross-farm and cross-season splits, longitudinal multi-season collections, and cross-
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+24 of 32
+sensor pairings with full protocol cards. Adopting a minimal benchmark specification of
+the type outlined above would make robustness claims more comparable and reproducible
+across sites, seasons, sensors, and management regimes [6–9,14,23,36].
+Table 4 distills these requirements into a minimal, reusable specification intended to
+make robustness claims comparable across crops, sites, sensors, and seasons.
+Benchmark card (dataset/spec template)
+Scene card (OOD by design)
+• Farms/sites ≥3; management/cultivar
+diversity
+• Seasons/phenology stages annotated
+(when possible)
+• Explicit field/site IDs to enable site hold-
+outs
+Sensor card (cross-sensor ready)
+• Modality (RGB/MS/HS/thermal), camera
+model
+• Bands/spectral response (or cen-
+ters+FWHM)
+• Radiometry pipeline + compres-
+sion/preprocessing notes
+Protocol card (repeatable acquisition)
+• Altitude/GSD targets; overlap; view ge-
+ometry
+• Time window; exposure/WB policy
+(locked vs. auto)
+• Panels/targets used (if any) +
+weather/illumination notes
+Evaluation card (robustness claims)
+• Provide split files/seeds; prevent near-
+duplicate leakage
+• Require at least 1 OOD split (field/farm
+or season)
+• Report per-site/per-season + a calibra-
+tion/uncertainty summary
+Minimal robustness experiment suite (E0–E5)
+E0 (ID)
+Random split only as reference; do not claim deployment robustness.
+E1 (Scene)
+Leave-one-field/farm/site-out split; report per-site breakdown.
+E2 (Time)
+Leave-one-season/year-out split; quantify drift and update frequency.
+E3 (Sensor)
+Sensor-out/matched cross-sensor test (paired flights if available).
+E4 (Protocol)
+Protocol sweep (altitude/GSD tiers, illumination window, panel/WB
+policy).
+E5 (Labels)
+Label-efficiency curve (e.g., 1%, 5%, 10%, 30% target labels) for adapta-
+tion.
+Figure 4. Benchmark agenda made operational. Top: a compact “benchmark card” template specify-
+ing the minimum metadata and design choices needed to support shift-aware evaluation in proximal
+and UAV crop imaging. Bottom: a minimal experiment suite (E0–E5) that connects the four-axis
+taxonomy to concrete, reproducible, and robustness tests and reporting.
+Table 4. Minimal benchmark and reporting specification for shift-aware evaluation in proximal and
+UAV crop imaging. This checklist turns the “benchmark gaps” discussion into a concrete, reusable
+template for dataset releases and experimental reports.
+Component
+What to Report (Minimum)
+Data/scene card
+Crop, cultivar(s), management regime(s), site description (at least region-level),
+season(s), phenology stage(s), and known confounders (soil/background, residue,
+weeds).
+Sensor card
+Camera model, modality (RGB/MS/HS/thermal), bands/spectral response (or band
+centers + FWHM), radiometric workflow (DN→reflectance), lens/focal length, and any
+compression/pipeline steps.
+Protocol card
+Altitude/GSD, overlap, view geometry, acquisition time window, exposure/WB policy
+(locked vs. auto), calibration targets/panels (if any), and weather/illumination notes.
+Ground truth
+Measurement/annotation protocol, sampling design, temporal alignment (image vs.
+measurement), and uncertainty sources (inter-rater, instrument, timing).
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+25 of 32
+Table 4. Cont.
+Component
+What to Report (Minimum)
+Splits
+Exact file lists (or seeds + deterministic code) for (i) an in-distribution reference split and
+(ii) at least one OOD split (field/farm hold-out and/or season hold-out). If claiming
+sensor robustness, include a sensor-out split on matched plots when feasible.
+Metrics
+Task metrics plus at least one robustness-oriented summary: per-site/per-season
+breakdowns, calibration (e.g., ECE/reliability curves), and uncertainty reporting when
+decisions depend on thresholds.
+Baselines
+A simple baseline (e.g., RGB or single-sensor) evaluated on the same OOD splits, plus at
+least one ablation (protocol/radiometry/bandset/adaptation) to support causal claims.
+Release (when licensing
+permits)
+Protocol metadata, preprocessing code with fixed seeds, and evaluation scripts;
+anonymize sensitive location details if needed while preserving split logic.
+8. Conclusions
+The key conclusions of this work can be summarized as follows:
+•
+Robustness failures in proximal and UAV crop imaging can be interpreted along four
+shift axes (scene, sensor, protocol, and time), making failure modes diagnosable rather
+than generic.
+•
+Acquisition and standardization choices (solar windows, timing, exposure/white
+balance, radiometry, GSD/overlap, and metadata) often dominate apparent gains
+from model changes.
+•
+Credible robustness claims require spatially and temporally aware evaluation (e.g.,
+field/farm/site and season/year hold-outs); random splits are mainly in-distribution
+references.
+•
+Adaptation is most effective when staged and symptom-driven, ranging from
+lightweight normalization/augmentation to fine-tuning and alignment matched to
+the dominant gap.
+Robustness under distribution shift is emerging as a central obstacle to deploying
+proximal and UAV imaging models in real agricultural settings. Across the 42 core studies
+reviewed here, a consistent picture emerges in which models do not fail “in general”, but
+in specific, diagnosable ways along four axes: scene, sensor, protocol, and time. Scene
+changes alter canopy geometry, background clutter, and management regimes; sensor
+changes bring different spectral response functions, resolutions, and noise properties;
+protocol differences reshape view geometry, illumination, and radiometry; and temporal
+drift across phenological stages, seasons, and years compounds these effects. Treating these
+axes explicitly turns robustness from a vague objective into a concrete design space for
+acquisition, evaluation, and adaptation.
+This review also complements and extends existing surveys on UAV and proximal
+phenotyping, crop monitoring, and agricultural machine learning. Prior reviews have
+mainly organized the literature by trait (for example, disease detection [62], yield pre-
+diction [63], or nitrogen status [64]), by sensor or platform (e.g., broad proximal/remote
+phenomics overviews [65], UAV [66] versus proximal systems [50]), or by model family
+(such as convolutional networks [67] or transformers [68] for crop imaging) and have
+typically evaluated methods under in-distribution settings. Complementary perspective
+papers in plant pathology argue that many reported gains do not translate to deployment
+because training datasets are often not representative of real field variability (backgrounds,
+devices, cultivars, growth stages and lighting), which inflates apparent performance and
+obscures generalization limits [50,51]. Likewise, generic surveys on domain adaptation or
+transfer learning in remote sensing seldom focus on field-scale crop monitoring or on the
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+26 of 32
+concrete acquisition and evaluation constraints faced in agronomic experiments. Related
+system-level reviews in precision weeding and directed-energy robotics emphasize that
+real-world performance depends on an end-to-end perception–decision–actuation stack
+(not just model accuracy), with practical constraints such as field capacity, automated navi-
+gation, energy efficiency, affordability, and safety standards shaping what is deployable.
+We cite these deployment-oriented lessons as complementary context for why our bench-
+mark agenda stresses protocol disclosure, shift-aware splits, and reproducible reporting
+for proximal and UAV crop imaging [69]. By contrast, the present review takes robustness
+under distribution shift as its primary organizing principle and proposes a field-focused
+taxonomy along four axes (scene, sensor, protocol, and time). It then uses a systematically
+defined corpus of 42 studies to link this taxonomy to acquisition protocols, evaluation
+designs, adaptation and updating strategies, and benchmark specifications. The goal is not
+to catalog every phenotyping pipeline but to provide a coherent framework and a practical
+decision aid for researchers and practitioners who need models that continue to work as
+farms, sensors, and seasons change.
+The empirical evidence summarized in Sections 3 and 4 shows that a well-designed
+RGB baseline, acquired and evaluated carefully, already generalizes more broadly than
+many practitioners expect. When ground sampling distance, view geometry, and illu-
+mination are controlled, RGB models for head, fruit, and stress detection can maintain
+performance across fields and seasons. Multispectral, hyperspectral, and thermal modali-
+ties add robustness primarily when the trait of interest is explicitly physiological (nitrogen
+status, chlorophyll, fuel moisture, water stress) or when lighting and background are
+unstable in ways that RGB alone cannot compensate. In those settings, red-edge and
+NIR bands, physics-guided spectral features, and canopy temperature relative to ambient
+conditions dampen appearance shifts and stabilize trait estimation across sites, sensors,
+and years. However, additional bands only improve robustness when radiometry, band
+handling, and cross-sensor alignment are explicit; otherwise, they simply add new avenues
+for domain shift.
+Sections 5 and 6 highlight that robustness is often won or lost before the first model
+is trained. Acquisition and standardization choices (solar windows, phenological timing,
+exposure and white-balance control, panel or pseudo-invariant-feature use, GSD and over-
+lap targets, metadata logging) frequently deliver larger gains than changing architectures.
+Evaluation design is equally fundamental, as random splits at pixel or patch level systemat-
+ically overestimate transferability by leaking micro-context across folds, whereas spatially
+aware and leave-one-field/season/site/sensor-out protocols reveal the real generalization
+gap and provide a realistic baseline for adaptation. On the model side, an incremental
+adaptation plan, summarized in the roadmap of Figure 2, is more effective than any single
+technique. Lightweight normalization and augmentation are low-cost first steps that can be
+deployed even without target labels. When a modest fraction of a new site can be labeled,
+small, spatially diverse target sets combined with careful fine-tuning of upper layers re-
+anchor models to new cultivars, backgrounds, or management regimes without retraining
+from scratch. Shallow feature alignment and calibration-transfer methods stabilize repre-
+sentations across sensors and phenotyping platforms, while teacher–student consistency
+schemes and related UDA strategies [61] provide label-free improvements when acqui-
+sition differences dominate the gap. Style translation can bridge pure appearance shifts,
+provided content is preserved, and test-time normalization, simple ensembles, and explicit
+calibration further stabilize predictions and make confidence scores more trustworthy for
+decision thresholds. Crucially, these techniques are most effective when they are matched
+to observable symptoms rather than applied as generic recipes.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+27 of 32
+Section 7 shows that public benchmarks already offer many of the ingredients needed
+for shift-aware evaluation. GWHD and MinneApple, together with emerging domain-shift
+benchmarks in grapes, weeds, diseases, and root/soil imaging, support leave-one-site and
+leave-one-season protocols and explicit cross-sensor or cross-platform tests. At the same
+time, important gaps remain: grain crops beyond wheat are underrepresented in UAV
+and proximal datasets with explicit cross-farm and cross-season partitions; cross-sensor
+suites acquired over the same plots with RGB, multispectral, hyperspectral, and thermal
+cameras are rare; and longitudinal multi-season datasets with consistent protocols are still
+the exception rather than the rule. The minimal benchmark specification proposed here
+is intended as a compact checklist for future dataset releases so that robustness claims
+become more comparable and reproducible across crops, sites, sensors, and management
+regimes. The terms “deployability” and “auditability” are framed here as operational
+goals. The purpose of this specification is to make such claims testable and comparable
+via shared OOD splits, protocol disclosure, and paired ID/OOD reporting rather than
+anecdotal demonstrations.
+This review has several limitations that should be acknowledged. First, the core corpus
+is restricted to proximal and UAV imaging studies retrieved by a specific query over a
+defined set of crops (wheat, rice, maize, soybean, apple, citrus, mango, tomato, grape, and
+pear) and sensing terms, and only articles written in English were considered. Relevant
+work in other languages, crops outside this list, or studies indexed under different termi-
+nology may therefore have been missed. Second, the focus on title-level robustness terms
+(e.g., “domain adaptation”, “transfer learning”, “calibration transfer”, “out of distribu-
+tion”) deliberately concentrates on studies where distribution shift is central but necessarily
+excludes many otherwise high-quality sensing or modeling articles that do not explicitly
+highlight these concepts. Third, the included studies are methodologically heterogeneous
+in tasks, sensors, and evaluation protocols, which precludes any formal meta-analysis of
+effect sizes. The synthesis here is descriptive and conceptual rather than statistical. Fourth,
+purely satellite-based works, non-imaging sensor networks, and broader digital-agriculture
+systems are only touched upon when they inform proximal/UAV pipelines, and thus
+the conclusions should not be directly extrapolated to those domains. Finally, while the
+search and coding protocol aimed to be systematic and consistent, it was implemented by a
+limited number of raters and inevitably reflects judgment calls in borderline cases. These
+limitations do not undermine the main messages of the review, but they highlight that the
+taxonomy and recommendations proposed here should be refined and extended as the
+empirical base on robustness under distribution shift in agricultural imaging continues
+to grow.
+In summary, robustness under distribution shift in proximal and UAV agricultural
+imaging is less about discovering a single “universal” architecture and more about design-
+ing sensing, evaluation, and adaptation pipelines that acknowledge how and why data
+change across farms and seasons. By making shift axes explicit, standardizing acquisition
+and evaluation, and matching adaptation tools to observable symptoms, the community
+can move from ad hoc fixes toward more deployable and auditable pipelines, provided that
+robustness claims are supported by standardized OOD splits and reporting (as summarized
+by the benchmark specification and minimal experiment suite).
+9. Future Research Directions
+Looking ahead, several lines of work appear promising. First, future datasets would
+benefit from being designed explicitly for out-of-distribution evaluation, with built-in
+leave-one-out splits, multiple farms or management units, and at least one held-out season,
+accompanied by protocol data documenting flight timing, radiometry, sensor settings,
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+28 of 32
+and ground-truth procedures (including released split files or deterministic seeds, plus
+baseline evaluation scripts for direct comparability). Second, cross-sensor and cross-scale
+benchmarks, where the same plots are imaged with multiple cameras (RGB, MS, HS,
+thermal) and at multiple scales (proximal, UAV, satellite), would enable systematic studies
+of sensor replacement, fusion, and band compression without confounding scene changes
+(ideally with band centers/FWHM or spectral response information and a consistent
+radiometric workflow). Third, longitudinal and multi-management datasets spanning
+rotations, management changes, and climate anomalies are needed to compare lightweight
+periodic updates, heavier UDA pipelines, and purely physics-guided approaches, and to
+quantify how often models need to be recalibrated or fine-tuned in practice (including
+explicit update schedules, e.g., per season or per management change, so “how often
+to update” becomes measurable). Fourth, systematic label-efficiency curves and active-
+learning strategies under shared OOD splits would help practitioners plan labeling and
+flight campaigns with clear trade-offs (using standardized target-label budgets such as
+0/5/10/20% under the same OOD split). Finally, embedding decision-aware robustness
+metrics, including calibration, uncertainty, and cost- or risk-based summaries that reflect
+management actions, would better align technical progress with agronomic and economic
+value (including simple decision-threshold reporting with recommended operating points
+when models trigger management actions).
+Funding: This research was funded by Fapesp, process numbers 2022/09319-9 and 2024/01308-3.
+Data Availability Statement: No new data were created or analyzed in this study. Data sharing is
+not applicable to this article.
+Conflicts of Interest: The authors declare no conflicts of interest.
+References
+1.
+Quiñonero-Candela, J.; Sugiyama, M.; Schwaighofer, A.; Lawrence, N.D. (Eds.) Dataset Shift in Machine Learning; The MIT Press:
+Cambridge, MA, USA, 2009.
+2.
+Sugiyama, M.; Kawanabe, M. Machine Learning in Non-Stationary Environments: Introduction to Covariate Shift Adaptation; Adaptive
+Computation and Machine Learning; The MIT Press: Cambridge, MA, USA, 2012.
+3.
+Koh, P.W.; Sagawa, S.; Marklund, H.; Xie, S.M.; Zhang, M.; Balsubramani, A.; Hu, W.; Yasunaga, M.; Yu, R.; Guo, H.; et al. WILDS:
+A Benchmark of in-the-Wild Distribution Shifts. In Proceedings of the 38th International Conference on Machine Learning; Meila, M.;
+Zhang, T., Eds.; Proceedings of Machine Learning Research; PMLR: Cambridge, MA, USA, 2021; Volume 139, pp. 5637–5664.
+4.
+Wan, L.; Cen, H.; Zhu, J.; Zhang, J.; Zhu, Y.; Sun, D.; Du, X.; Zhai, L.; Weng, H.; Li, Y.; et al. Grain yield prediction of rice using
+multi-temporal UAV-based RGB and multispectral images and model transfer—A case study of small farmlands in the South of
+China. Agric. For. Meteorol. 2020, 291, 108096. https://doi.org/10.1016/j.agrformet.2020.108096.
+5.
+Guo, Y.; He, J.; Huang, J.; Jing, Y.; Xu, S.; Wang, L.; Li, S.; Zheng, G. Effects of the Spatial Resolution of UAV Images on the
+Prediction and Transferability of Nitrogen Content Model for Winter Wheat. Drones 2022, 6, 299. https://doi.org/10.3390/
+drones6100299.
+6.
+Habibi, L.N.; Matsui, T.; Tanaka, T.S.T. Critical evaluation of the effects of a cross-validation strategy and machine learning
+optimization on the prediction accuracy and transferability of a soybean yield prediction model using UAV-based remote sensing.
+J. Agric. Food Res. 2024, 16, 101096. https://doi.org/10.1016/j.jafr.2024.101096.
+7.
+Häni, N.; Roy, P.; Isler, V. MinneApple: A Benchmark Dataset for Apple Detection and Segmentation. IEEE Robot. Autom. Lett.
+2020, 5, 852–858. https://doi.org/10.1109/LRA.2020.2965061.
+8.
+David, E.; Madec, S.; Sadeghi-Tehran, P.; Aasen, H.; Zheng, B.; Liu, S.; Kirchgessner, N.; Ishikawa, G.; Nagasawa, K.; Badhon, M.;
+et al. Global Wheat Head Detection (GWHD) Dataset: A Large and Diverse Dataset of High-Resolution RGB-Labelled Images to
+Develop and Benchmark Wheat Head Detection Methods. Plant Phenomics 2020, 2020, 3521852. https://doi.org/10.34133/2020/
+3521852.
+9.
+Zheng, H.; Ji, W.; Wang, W.; Lu, J.; Li, D.; Guo, C.; Yao, X.; Tian, Y.; Cao, W.; Zhu, Y.; et al. Transferability of Models for Predicting
+Rice Grain Yield from Unmanned Aerial Vehicle (UAV) Multispectral Imagery across Years, Cultivars and Sensors. Drones 2022,
+6, 423. https://doi.org/10.3390/drones6120423.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+29 of 32
+10.
+Skobalski, J.; Sagan, V.; Alifu, H.; Al Akkad, O.; Lopes, F.A.; Grignola, F. Bridging the gap between crop breeding and GeoAI:
+Soybean yield prediction from multispectral UAV images with transfer learning. ISPRS J. Photogramm. Remote Sens. 2024,
+210, 260–281. https://doi.org/10.1016/j.isprsjprs.2024.03.015.
+11.
+Fan, Y.; Feng, H.; Liu, Y.; Feng, H.; Yue, J.; Jin, X.; Chen, R.; Bian, M.; Ma, Y.; Yang, G. Transferability of models for predicting
+potato plant nitrogen content from remote sensing data and environmental variables across years and regions. Eur. J. Agron. 2024,
+161, 127388. https://doi.org/10.1016/j.eja.2024.127388.
+12.
+Gao, J.; Liao, W.; Nuyttens, D.; Lootens, P.; Xue, W.; Alexandersson, E.; Pieters, J. Cross-domain transfer learning for weed
+segmentation and mapping in precision farming using ground and UAV images.
+Expert Syst. Appl. 2024, 246, 122980.
+https://doi.org/10.1016/j.eswa.2023.122980.
+13.
+Ma, J.; Li, Y.; Liu, H.; Wu, Y.; Zhang, L. Towards improved accuracy of UAV-based wheat ears counting: A transfer learning
+method of the ground-based fully convolutional network. Expert Syst. Appl. 2022, 191, 116226. https://doi.org/10.1016/j.eswa.
+2021.116226.
+14.
+Chiatti, A.; Bertoglio, R.; Catalano, N.; Gatti, M.; Matteucci, M. Surgical Fine-Tuning for Grape Bunch Segmentation Under Visual
+Domain Shifts. In Proceedings of the 2023 European Conference on Mobile Robots (ECMR), Coimbra, Portugal, 4–7 September
+2023; pp. 1–8. https://doi.org/10.1109/ECMR59166.2023.10256348.
+15.
+Zhang, Y.; Hui, J.; Qin, Q.; Sun, Y.; Zhang, T.; Sun, H.; Li, M. Transfer-learning-based approach for leaf chlorophyll content
+estimation of winter wheat from hyperspectral data. Remote Sens. Environ. 2021, 267, 112724. https://doi.org/10.1016/j.rse.2021
+.112724.
+16.
+Bhadra, S.; Sagan, V.; Sarkar, S.; Braud, M.; Mockler, T.C.; Eveland, A.L. PROSAIL-Net: A transfer learning-based dual stream
+neural network to estimate leaf chlorophyll and leaf angle of crops from UAV hyperspectral images. ISPRS J. Photogramm. Remote
+Sens. 2024, 210, 1–24. https://doi.org/10.1016/j.isprsjprs.2024.02.020.
+17.
+Yue, J.; Yang, H.; Feng, H.; Han, S.; Zhou, C.; Fu, Y.; Guo, W.; Ma, X.; Qiao, H.; Yang, G. Hyperspectral-to-image transform and
+CNN transfer learning enhancing soybean LCC estimation. Comput. Electron. Agric. 2023, 211, 108011. https://doi.org/10.1016/j.
+compag.2023.108011.
+18.
+Zhao, D.; Yang, H.; Yang, G.; Yu, F.; Zhang, C.; Chen, R.; Tang, A.; Zhang, W.; Yang, C.; Xu, T. Estimation of Maize Biomass at
+Multi-Growing Stage Using Stem and Leaf Separation Strategies with 3D Radiative Transfer Model and CNN Transfer Learning.
+Remote Sens. 2024, 16, 3000. https://doi.org/10.3390/rs16163000.
+19.
+Li, Z.; Cheng, Q.; Chen, L.; Zhai, W.; Zhang, B.; Mao, B.; Li, Y.; Ding, F.; Zhou, X.; Chen, Z. Novel spectral indices and transfer
+learning model in estimating moisture status across winter wheat and summer maize. Comput. Electron. Agric. 2025, 229, 109762.
+https://doi.org/10.1016/j.compag.2024.109762.
+20.
+Li, Z.; Cheng, Q.; Chen, L.; Yang, J.; Zhai, W.; Mao, B.; Li, Y.; Zhou, X.; Chen, Z. Enhancing winter wheat plant nitrogen content
+prediction across different regions: Integration of UAV spectral data and transfer learning strategies. Comput. Electron. Agric.
+2025, 234, 110322. https://doi.org/10.1016/j.compag.2025.110322.
+21.
+Du, R.; Xiang, Y.; Zhang, F.; Chen, J.; Shi, H.; Liu, H.; Yang, X.; Yang, N.; Yang, X.; Wang, T.; et al. Combing Transfer Learning
+with the OPtical TRApezoid Model (OPTRAM) to Diagnose Small-Scale Field Soil Moisture from Hyperspectral Data. Agric.
+Water Manag. 2024, 298, 108856. https://doi.org/10.1016/j.agwat.2024.108856.
+22.
+Pan, S.J.; Tsang, I.W.; Kwok, J.T.; Yang, Q. Domain Adaptation via Transfer Component Analysis. IEEE Trans. Neural Netw. 2011,
+22, 199–210. https://doi.org/10.1109/TNN.2010.2091281.
+23.
+Rehman, T.U.; Zhang, L.; Ma, D.; Wang, L.; Jin, J. Calibration transfer across multiple hyperspectral imaging-based plant
+phenotyping systems: I—Spectral space adjustment. Comput. Electron. Agric. 2020, 176, 105685. https://doi.org/10.1016/j.
+compag.2020.105685.
+24.
+Rehman, T.U.; Zhang, L.; Ma, D.; Jin, J. Common Latent Space Exploration for Calibration Transfer across Hyperspectral
+Imaging-Based Phenotyping Systems. Remote Sens. 2022, 14, 319. https://doi.org/10.3390/rs14020319.
+25.
+Wang, S.; Li, Y.; Li, T.; Lu, W.; Qi, X.; Xie, X.; Sa, R.; Guo, T.; Pulatov, A.; Ishchanov, J.; et al. Regional maize suitability based on
+soil water and salt content inversion by integrating machine and transfer learnings in Xinjiang. Soil Tillage Res. 2025, 254, 106740.
+https://doi.org/10.1016/j.still.2025.106740.
+26.
+Zhang, S.; Duan, J.; Qi, X.; Gao, Y.; He, L.; Liu, L.; Guo, T.; Feng, W. Combining Spectrum, Thermal, and Texture Features Using
+Machine Learning Algorithms for Wheat Nitrogen Nutrient Index Estimation and Model Transferability Analysis. Comput.
+Electron. Agric. 2024, 222, 109022. https://doi.org/10.1016/j.compag.2024.109022.
+27.
+Zhang, Y.; Hao, X.; Li, F.; Wang, Z.; Li, D.; Li, M.; Mao, R. Unsupervised domain adaptation semantic segmentation method for
+wheat disease detection based on UAV multispectral images. Comput. Electron. Agric. 2025, 236, 110473. https://doi.org/10.101
+6/j.compag.2025.110473.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+30 of 32
+28.
+Fuentes, A.; Yoon, S.; Lee, J.; Kim, T.; Park, D.S. Deep learning-based open set domain adaptation for plant disease recognition
+across multiple greenhouse scenarios. In Proceedings of the XXXI IHC—Proc. III International Symposium on Mechanization,
+Precision Horticulture, and Robotics: Precision and Digital Horticulture in Field Environments, Angers, France, 14-20 August
+2022; Volume 1360, pp. 61–68. https://doi.org/10.17660/ActaHortic.2023.1360.8.
+29.
+Zhu, J.Y.; Park, T.; Isola, P.; Efros, A.A. Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks. In
+Proceedings of the IEEE International Conference on Computer Vision (ICCV), Venice, Italy, 22–29 October 2017; pp. 2223–2232.
+https://doi.org/10.1109/ICCV.2017.244.
+30.
+Park, T.; Efros, A.A.; Zhang, R.; Zhu, J.Y.
+Contrastive Learning for Unpaired Image-to-Image Translation.
+In Proceed-
+ings of the Computer Vision—ECCV 2020, Glasgow, UK, 23–28 August 2020; Lecture Notes in Computer Science; Springer:
+Berlin/Heidelberg, Germany, 2020. https://doi.org/10.1007/978-3-030-58545-7_19
+31.
+Cho, S.B.; Jeong, S.H.; Yu, J.W.; Choi, J.B.; Kim, M.K. Heterogeneous domain adaptation method for tomato leaf disease
+classification base on CycleGAN. J. Intell. Fuzzy Syst. 2023, 45, 8859–8870. https://doi.org/10.3233/JIFS-230561.
+32.
+James, C.; Gu, Y.; Chapman, S.; Guo, W.; David, E.; Madec, S.; Potgieter, A.; Eriksson, A. Domain Adaptation for Plant Organ
+Detection with Style Transfer. In Proceedings of the 2021 Digital Image Computing: Techniques and Applications (DICTA), Gold
+Coast, Australia, 29 November–1 December 2021; pp. 1–8. https://doi.org/10.1109/DICTA52665.2021.9647293.
+33.
+Zhang, T.; Hu, D.; Wu, C.; Liu, Y.; Yang, J.; Tang, K. Large-scale apple orchard mapping from multi-source data using the
+semantic segmentation model with image-to-image translation and transfer learning. Comput. Electron. Agric. 2023, 213, 108204.
+https://doi.org/10.1016/j.compag.2023.108204.
+34.
+Xu, B.; Werle, R.; Chudzik, G.; Zhang, Z. Enhancing weed detection using UAV imagery and deep learning with weather-driven
+domain adaptation. Comput. Electron. Agric. 2025, 237, 110673. https://doi.org/10.1016/j.compag.2025.110673.
+35.
+Prey, L.; Ramgraber, L.; Seidl-Schulz, J.; Hanemann, A.; Noack, P.O. The Transferability of Spectral Grain Yield Prediction in
+Wheat Breeding across Years and Trial Locations. Sensors 2023, 23, 4177. https://doi.org/10.3390/s23084177.
+36.
+Banet, T.; Smith, A.G.; McGrail, R.; McNear, D.H.; Poffenbarger, H. Toward improved image-based root phenotyping: Handling
+temporal and cross-site domain shifts in crop root segmentation models. Plant Phenome J. 2024, 7, e20094. https://doi.org/10.100
+2/ppj2.20094.
+37.
+Han, E.; Kirkegaard, J.A.; White, R.; Smith, A.G.; Thorup-Kristensen, K.; Kautz, T.; Athmann, M. Deep learning with multisite
+data reveals the lasting effects of soil type, tillage and vegetation history on biopore genesis.
+Geoderma 2022, 425, 116072.
+https://doi.org/10.1016/j.geoderma.2022.116072.
+38.
+Chen, R.; Ren, L.; Yang, G.; Cheng, Z.; Zhao, D.; Zhang, C.; Feng, H.; Hu, H.; Yang, H. Estimation of Leaf Chlorophyll Content of
+Maize from Hyperspectral Data Using E2D-COS Feature Selection, Deep Neural Network, and Transfer Learning. Agriculture
+2025, 15, 1072. https://doi.org/10.3390/agriculture15101072.
+39.
+Dolgaia, L.; Illarionova, S.; Nesteruk, S.; Krivolapov, I.; Baldycheva, A.; Somov, A.; Shadrin, D. Apple Tree Health Recognition
+Through the Application of Transfer Learning for UAV Imagery. In Proceedings of the 2023 28th IEEE International Conference
+on Emerging Technologies and Factory Automation (ETFA), Sinaia, Romania, 12–15 September 2023; pp. 1–8. https://doi.org/10
+.1109/ETFA54631.2023.10275369.
+40.
+Huang, Z.; Bai, X.; Gouda, M.; Hu, H.; Yang, N.; He, Y.; Feng, X. Transfer learning for plant disease detection model based on
+low-altitude UAV remote sensing. Precis. Agric. 2025, 26, 15. https://doi.org/10.1007/s11119-024-10217-x.
+41.
+Li, Z.; Zhao, Y.; Taylor, J.; Gaulton, R.; Jin, X.; Song, X.; Li, Z.; Meng, Y.; Chen, P.; Feng, H.; et al. Comparison and transferability of
+thermal, temporal and phenological-based in-season predictions of above-ground biomass in wheat crops from proximal crop
+reflectance data. Remote Sens. Environ. 2022, 273, 112967. https://doi.org/10.1016/j.rse.2022.112967.
+42.
+Liao, C.; Dou, S.; He, H.; Zhang, X. Multi-Scale Citrus Chlorophyll Transfer Learning Based on Convolutional Neural Network.
+In Proceedings of the 2025 6th International Conference on Computer Engineering and Application (ICCEA), Hangzhou, China,
+25–27 April 2025; pp. 2168–2172. https://doi.org/10.1109/ICCEA65460.2025.11103398.
+43.
+Selvaraj, G.; Farzan, S. Semantic Segmentation for Robotic Apple Harvesting: A Deep Learning Approach Leveraging U-Net,
+Synthetic Data, and Domain Adaptation. In Proceedings of the 2024 21st International Conference on Ubiquitous Robots (UR),
+New York, NY, USA, 24–27 June 2024; pp. 611–618. https://doi.org/10.1109/UR61395.2024.10597519.
+44.
+Tseng, H.H.; Yang, M.D.; Saminathan, R.; Hsu, Y.C.; Yang, C.Y.; Wu, D.H. Rice Seedling Detection in UAV Images Using Transfer
+Learning and Machine Learning. Remote Sens. 2022, 14, 2837. https://doi.org/10.3390/rs14122837.
+45.
+Yang, S.; Zheng, L.; He, P.; Wu, T.; Sun, S.; Wang, M. High-throughput soybean seeds phenotyping with convolutional neural
+networks and transfer learning. Plant Methods 2021, 17, 50. https://doi.org/10.1186/s13007-021-00749-y.
+46.
+Zhang, C.; Yi, Y.; Wang, L.; Chen, S.; Li, P.; Zhang, S.; Xue, Y. Efficient physics-informed transfer learning to quantify biochemical
+traits of winter wheat from UAV multispectral imagery. Smart Agric. Technol. 2024, 9, 100581. https://doi.org/10.1016/j.atech.20
+24.100581.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+31 of 32
+47.
+Zhang, C.; Yi, Y.; Zhang, S.; Li, P. Quantitative Analysis of Vertical and Temporal Variations in the Chlorophyll Content of
+Winter Wheat Leaves via Proximal Multispectral Remote Sensing and Deep Transfer Learning.
+Agriculture 2024, 14, 1685.
+https://doi.org/10.3390/agriculture14101685.
+48.
+Zhang, J.; Cheng, G.; Huang, S.; Yang, J.; Yang, Y.; Xing, S.; Wang, J.; Yang, H.; Nie, H.; Yang, W.; et al.
+Winter Wheat
+Nitrogen Content Prediction and Transferability of Models Based on UAV Image Features. Agriculture 2025, 15, 1373. https:
+//doi.org/10.3390/agriculture15131373.
+49.
+Zhao, Y.; Jiang, C.; Wang, D.; Liu, X.; Song, W.; Hu, J. Identification of Plant Disease Based on Multi-Task Continual Learning.
+Agronomy 2023, 13, 2863. https://doi.org/10.3390/agronomy13122863.
+50.
+Barbedo, J.G.A. Deep learning applied to plant pathology: The problem of data representativeness. Trop. Plant Pathol. 2022,
+47, 85–94. https://doi.org/10.1007/s40858-021-00459-9.
+51.
+Barbedo, J.G.A. Factors influencing the use of deep learning for plant disease recognition.
+Biosyst. Eng. 2018, 172, 84–91.
+https://doi.org/10.1016/j.biosystemseng.2018.05.013.
+52.
+He, J.; Zeng, W.; Ao, C.; Xing, W.; Gaiser, T.; Srivastava, A.K. Cross-Regional Crop Classification Based on Sentinel-2. Agronomy
+2024, 14, 1084. https://doi.org/10.3390/agronomy14051084.
+53.
+Hall, F.G.; Strebel, D.E.; Nickeson, J.E.; Goetz, S.J. Radiometric Rectification: Toward a Common Radiometric Response Among
+Multidate, Multisensor Images. Remote Sens. Environ. 1991, 35, 11–27. https://doi.org/10.1016/0034-4257(91)90062-B.
+54.
+Canty, M.J.; Nielsen, A.A. Automatic radiometric normalization of multitemporal satellite imagery. Remote Sens. Environ. 2008,
+112, 1025–1036. https://doi.org/10.1016/j.rse.2007.07.013.
+55.
+Guo, C.; Pleiss, G.; Sun, Y.; Weinberger, K.Q. On Calibration of Modern Neural Networks. In Proceedings of the 34th International
+Conference on Machine Learning; Precup, D.; Teh, Y.W., Eds.; Proceedings of Machine Learning Research; PMLR: Cambridge, MA,
+USA, 2017; Volume 70, pp. 1321–1330.
+56.
+Ganin, Y.; Ustinova, E.; Ajakan, H.; Germain, P.; Larochelle, H.; Laviolette, F.; Marchand, M.; Lempitsky, V. Domain-Adversarial
+Training of Neural Networks. J. Mach. Learn. Res. 2016, 17, 1–35.
+57.
+Grandvalet, Y.; Bengio, Y. Semi-supervised Learning by Entropy Minimization. In Proceedings of the Advances in Neural Information
+Processing Systems; MIT Press: Cambridge, MA, USA, 2005; Volume 18, pp. 529–536.
+58.
+Wang, D.; Shelhamer, E.; Liu, S.; Olshausen, B.; Darrell, T. Tent: Fully Test-Time Adaptation by Entropy Minimization. In
+Proceedings of the International Conference on Learning Representations (ICLR), Virtual, 3–7 May 2021. https://doi.org/10.485
+50/arXiv.2006.10726
+59.
+Settles, B. Active Learning Literature Survey; Technical Report 1648; University of Wisconsin–Madison, Computer Sciences
+Department: Madison, WI, USA, 2009.
+60.
+Guo, K.; Chen, H.; Zheng, Y.; Liu, Q.; Ren, S.; Hu, H.; Liang, J. Efficient Adaptive Incremental Learning for Fruit and Vegetable
+Classification. Agronomy 2024, 14, 1275. https://doi.org/10.3390/agronomy14061275.
+61.
+Tarvainen, A.; Valpola, H. Mean Teachers are Better Role Models: Weight-Averaged Consistency Targets Improve Semi-Supervised
+Deep Learning Results. In Proceedings of the Advances in Neural Information Processing Systems; Curran Associates, Inc.: Red Hook,
+NY, USA, 2017; Volume 30, pp. 1195–1204.
+62.
+Upadhyay, A.; Chandel, N.S.; Singh, K.P.; Chakraborty, S.K.; Nandede, B.M.; Kumar, M.; Subeesh, A.; Upendar, K.; Salem, A.;
+Elbeltagi, A. Deep learning and computer vision in plant disease detection: A comprehensive review of techniques, models, and
+trends in precision agriculture. Artif. Intell. Rev. 2025, 58, 92. https://doi.org/10.1007/s10462-024-11100-x.
+63.
+Oikonomidis, A.; Catal, C.; Kassahun, A. Deep learning for crop yield prediction: A systematic literature review. New Zealand J.
+Crop Hortic. Sci. 2023, 51, 1–26. https://doi.org/10.1080/01140671.2022.2032213.
+64.
+Yu, K.; Belwalkar, A.; Wang, W.; Hu, Y.; Hunegnaw, A.; Nurunnabi, A.; Ruf, T.; Li, F.; Jia, L.; Kooistra, L.; et al. UAV hyperspectral
+remote sensing for crop nitrogen monitoring: progress, challenges, and perspectives. Smart Agric. Technol. 2025, 12, 101507.
+https://doi.org/https://doi.org/10.1016/j.atech.2025.101507.
+65.
+Tao, H.; Xu, S.; Tian, Y.; Li, Z.; Ge, Y.; Zhang, J.; Wang, Y.; Zhou, G.; Deng, X.; Zhang, Z.; et al.
+Proximal and remote
+sensing in plant phenomics: 20 years of progress, challenges, and perspectives.
+Plant Commun. 2022, 3, 100344.
+https:
+//doi.org/10.1016/j.xplc.2022.100344.
+66.
+Toscano, F.; Fiorentino, C.; Capece, N.; Erra, U.; Travascia, D.; Scopa, A.; Drosos, M.; D’Antonio, P. Unmanned Aerial Vehicle for
+Precision Agriculture: A Review. IEEE Access 2024, 12, 69188–69205. https://doi.org/10.1109/ACCESS.2024.3401018.
+67.
+El Sakka, M.; Ivanovici, M.; Chaari, L.; Mothe, J. A Review of CNN Applications in Smart Agriculture Using Multimodal Data.
+Sensors 2025, 25, 472. https://doi.org/10.3390/s25020472.
+https://doi.org/10.3390/agronomy16030364
+
+Agronomy 2026, 16, 364
+32 of 32
+68.
+Wang, R.; Ma, L.; He, G.; Johnson, B.A.; Yan, Z.; Chang, M.; Liang, Y. Transformers for Remote Sensing: A Systematic Review and
+Analysis. Sensors 2024, 24, 3495. https://doi.org/10.3390/s24113495.
+69.
+Yaseen, M.U.; Long, J.M. Laser Weeding Technology in Cropping Systems: A Comprehensive Review. Agronomy 2024, 14, 2253.
+https://doi.org/10.3390/agronomy14102253.
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.
+https://doi.org/10.3390/agronomy16030364

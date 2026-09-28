@@ -1,0 +1,1422 @@
+Ground based hyperspectral imaging for extensive mango yield estimation
+Salvador Guti´erreza,∗, Alexander Wendelb, James Underwoodb
+aInstituto de Ciencias de la Vid y del Vino (University of La Rioja, CSIC, Gobierno de La Rioja), Finca La Grajera, Ctra.
+Burgos Km. 6, 26007 Logro˜no, Spain
+bAustralian Centre for Field Robotics, The Rose Street Building J04, The University of Sydney, NSW 2006, Australia
+Abstract
+Fruit yield estimation in orchard blocks is an important objective in the context of precision agriculture, as
+it makes it easier for the farmer to plan ahead and efficiently use resources. Nevertheless, its implementation
+is labour-intensive and involves the manual counting of the fruit present in the trees. While colour (RGB)
+has been widely shown to be successful and arguably sufficient for yield estimation in orchards, hyperspec-
+tral imaging (HSI) shows promise for more nuanced tasks such as disease detection, cultivar classification
+and fruit maturity estimation. Therefore, it is important to ask how appropriate is HSI for the task of
+yield estimation, with a view to performing all of these tasks with just one sensor. This paper presents
+a novel mango yield estimation pipeline using ground based line-scan HSI acquired from an unmanned
+ground vehicle. Hyperspectral images were collected on a commercial mango orchard block in December
+2017 and pre-processed for illumination compensation. After tree delimitation and mango pixel identifi-
+cation, an optimisation process was carried out to obtain the best models for fruit counting, using mango
+counts obtained by manually counting the fruit on-tree, and using state-of-the-art RGB techniques for yield
+estimation. Models were validated and tested on hundreds of trees, and subsequently mapped. In testing,
+determination coefficients reached values of up to 0.75 against field counts (predicting 18 trees) and 0.83
+against RGB mango counts (predicting 216 trees). These results suggest that line-scan HSI can be used to
+accurately estimate yield in orchards, especially in scenarios in which this technology is already chosen for
+the determination of other traits.
+Keywords:
+fruit counting, field robotics, computer vision, lidar, hyperspectral
+1. Introduction
+Fruit yield estimation is a sought key objective for the precise management in orchard blocks, and it would
+also be more useful if performed several times within the growing season. Nonetheless, its current practice—
+involving labour-intensive tree sampling, manual counting and extrapolation—becomes virtually infeasible
+to be considered as an efficient tool in the decision making process (Payne et al., 2013). Furthermore, even
+5
+if performed, the accuracy of manual counting is greatly decreased by the fact that yield variability can
+be very high between trees, so the correct spatial representation of fruit yield distribution is difficult to
+∗Corresponding author
+Email addresses: salvador.gutierrez@unirioja.es (Salvador Guti´errez), a.wendel@acfr.usyd.edu.au (Alexander
+Wendel), j.underwood@acfr.usyd.edu.au (James Underwood)
+
+measure (Anderson et al., 2018). The use of different types of sensors for fruit detection can be found in
+several studies (Gongal et al., 2015), and computer vision has emerged as the most popular choice (Payne
+and Walsh, 2014). In the case of mango orchards, standard cameras have been used by Payne et al. (2013);
+10
+Qureshi et al. (2017) for fruit counting, and Wang et al. (2017) made use of three different depth cameras
+for the estimation of mango size. Additionally, Stein et al. (2016) demonstrated the possibility of applying
+multiple view geometry to identify and track every piece of fruit in mango orchards. The accuracy of RGB
+cameras has thus been extensively demonstrated for in-field mango counting and yield estimation, and is
+arguably sufficient for this application.
+15
+Beyond yield estimation, it is also desirable to measure traits such as disease and stress, maturity and
+nutritional status, for which sensors other than RGB show promise.
+Hyperspectral imaging (HSI), due
+to its great potential and capability of characterise multiple objective traits, has been extensively studied
+and used for many food and agricultural applications (Sun, 2010; Park and Lu, 2015). This technology
+takes advantage of both spectral and spatial spaces, combining the powerful and demonstrated prediction
+20
+effectiveness of spectroscopy analysis and the high amount of information that two-dimensional images cover.
+Uses of HSI have been reported for the monitoring of fruit in apples (Tian et al., 2018; Ma et al., 2018);
+mangoes (Pu and Sun, 2015; Rungpichayapichet et al., 2017); or grapes (Diago et al., 2016; Gomes et al.,
+2017), and in plants for disease control (Lu et al., 2017; Thomas et al., 2018); nutritional status assessment
+(Wang et al., 2018; Zhou et al., 2018); and varietal classification (Diago et al., 2013; Guo et al., 2017). All
+25
+these works exemplify how HSI can be considered as a promising and useful technology to take over the
+tasks that are usually assigned to many other destructive, time-consuming procedures.
+While many HSI studies were performed under controlled indoor laboratory conditions, it has been
+demonstrated in recent years that HSI can be performed in field conditions also. Some examples are found
+in studies using HSI from satellites or aerial platforms (Yang et al., 2004; Oldeland et al., 2010; Zhang
+30
+et al., 2013), and more recently mounting hyperspectral cameras on unmanned aerial vehicles (UAVs) for
+a closer range monitoring (Uto et al., 2013; Yue et al., 2017; Ishida et al., 2018).
+Although UAVs can
+rapidly cover large areas, they usually offer low resolution when measuring all relevant elements from the
+target. For this reason, ground based HSI arises as an useful alternative to provide high resolution data
+while still retaining the ability of extensive, rapid monitoring. Some studies have recently displayed the
+35
+deployment of hyperspectral cameras on mobile ground-vehicle platforms under field conditions. Deery et al.
+(2014) reported the use of HSI among other sensors on man-driven buggies, while Guti´errez et al. (2018)
+demonstrated the suitability of on-the-go HSI for varietal classification. Moreover, fully autonomous robots
+equipped with multiple sensors (including a hyperspectral camera) have been successfully developed by
+Wendel and Underwood (2016) or Underwood et al. (2017), while the authors have also refined the reliability
+40
+of outdoor hyperspectral data, subjected to changing illumination conditions (Wendel and Underwood,
+2017b), and for accurate mapping (Wendel and Underwood, 2017a). Therefore, ground based HSI and its
+wide range of applications becomes a powerful tool to be applied in precision agriculture.
+Considering the practical deployment of an orchard mapping system with minimal sensors, it is therefore
+important to ask how appropriate is HSI alone for the task of yield estimation, as an alternative to RGB
+45
+cameras. RGB is arguably good enough, but HSI offers advantages for estimating additional nuanced traits.
+If the latter are required in addition to yield estimation, a simpler system would aim to do both tasks with
+2
+
+the one sensor. Because, to the best of our knowledge, no prior work exists on yield estimation using ground
+based HSI, we therefore wish to answer the question, what is the performance of line-scan HSI for yield
+estimation compared to a state-of-the-art RGB approach? The full spectral information in HSI data should
+50
+be better per-pixel than RGB for detecting fruit, as there is significantly more information in each pixel,
+though modern RGB fruit detection methods (e.g., neural networks) also rely on contextual information
+which may be more important than pixel colour. Though superior information is available in each pixel, line-
+scan HSI sensors commonly make significant sacrifices in the spatial dimension compared to RGB cameras,
+with lower resolution and/or limited fields of view, which would make them less suitable. This is particularly
+55
+problematic considering the success of modern approaches based on convolutional neural networks, which
+explicitly consider spatial structure within the data (Bargoti et al., 2015; Bargoti and Underwood, 2017)
+and the use of multiple view geometry to mitigate occlusion of hidden fruit (Stein et al., 2016).
+The objective of this paper was to evaluate the performance of line scan, ground based HSI for the task of
+mango yield estimation, as this technology has not yet been used for this task, to the best of our knowledge.
+60
+This work breaks new ground both by developing a pipeline that is appropriate for the end-to-end task
+where none previously existed, and comprehensively evaluating the performance compared to state of the
+art RGB techniques at whole-orchard scale. We therefore present new knowledge to orchard mapping system
+designers in two forms: first, how well does HSI imaging work compared to state of art RGB approaches,
+to answer whether the trade-off is acceptable; and second, a validated implementation for the processing
+65
+pipeline.
+2. Materials and methods
+The sequential steps in the proposed method form a pipeline as shown in Fig. 1. In summary: in-
+field HSI of mango trees was performed in an commercial orchard block by an unmanned ground vehicle
+platform; spectral pre-processing was applied for illumination compensation; trees were delimited using a
+70
+complimentary LIDAR segmentation method; mango pixels were identified by classifying the spectra and
+clusters of connected fruit pixels were segmented to individual fruit using morphological operations; an
+optimisation procedure was designed to obtain the best the parameters for fruit counting; results were
+validated with field counts and fruit counts from an RGB baseline approach and they were finally mapped.
+Mango yield ground truth values (i.e., the number of mangoes present in each tree) were required in the
+75
+optimisation and validation steps. These were provided from two different procedures: manual mango field
+counts (a person in the orchard counting fruit in the tree) and state-of-the-art RGB machine vision mango
+counts (from Stein et al. (2016)). The processing pipeline for mango yield estimation using HSI remained
+the same regardless of the ground truth values used.
+2.1. Data collection
+80
+Data were collected during the 6th and 7th December 2017 in a mango (Mangifera indica L.) commercial
+orchard block (cultivar B74) from Simpson Farms, located in Bundaberg, Queensland, Australia. Ten tree
+rows were measured, with lengths ranging from 58 m to 260 m, comprising a total of 494 trees. The full
+dataset was split into five different subsets, described in Table 1. The specific tree assignments are displayed
+in Fig. 2. Field count data were collected by manually counting on-tree mangoes.
+85
+3
+
+Figure 1: Workflow of the methodology applied in this paper. Hyperspectral imaging was collected by an unmanned ground
+vehicle; followed by spectral pre-processing; tree delimitation; mango detection and fruit counting; optimisation and validation;
+and finally mapping.
+Table 1: Subset used in the study described in this paper.
+Dataset name
+Number of trees
+Purpose
+Field count train
+27
+Optimisation with field count data
+Field count test
+18
+Testing against independent field count data
+RGB train
+18
+Optimisation with RGB fruit counts
+RGB validation
+215
+Validation of the optimisation results
+RGB test
+216
+Testing against external RGB fruit count data
+The data were subdivided into five subsets. The reader is also referred to Fig. 2. The total number of
+trees in the orchard is 494. RGB fruit counts were obtained following the procedure by Stein et al. (2016).
+Field count data were obtained by manually counting the visible mangoes still on the tree.
+The spectral data were acquired using an unmanned ground vehicle (UGV) developed at the Australian
+Centre for Field Robotics, called Shrimp. The platform was equipped with a Resonon Pika II Vis-NIR
+hyperspectral line-scan camera (Resonon, Inc., Bozeman, USA), a Velodyne HDL64E 3D light detection and
+ranging (LIDAR) (Velodyne LiDAR Inc., San Jos´e, USA) and a Novatel SPAN-CPT real time kinematic
+GPS and inertial navigation system with RTK correction (NovAtel Inc., Calgary, Canada). The camera
+90
+acquires a single line of 648 spatial pixels, each one of them containing a spectra of 244 datapoints with
+a bit depth of 12, covering the range from approximately 390 to 890 nm (spectral resolution of 2 nm). It
+was mounted to the platform to cast a vertical measurement line for a push-broom hyperspectral image
+composition (by the platform’s motion) at 133 frames per seconds. A 6 mm objective lens (43.5º of field
+of view–FOV) was installed to the camera and manually focused with a checker board at a measurement
+95
+distance of 2 m. On average, this distance was maintained during continuous data acquisition. With the
+described FOV and distance, the vertical line covered a height of approximately 1.6 m upon the trees. The
+LIDAR sensor was mounted sideways for a complete tree height measurement, and set for a 10 Hz spin rate,
+taking 1.3 million points per second.
+The spectral data was taken from both the east and west side of the mango tree rows, traversing the lanes
+100
+with a continuous data acquisition at 5 km/h. The UGV was configured to make a complete measurement
+4
+
+Field count train
+Field count test
+RGB train
+RGB validation
+RGB test
+Figure 2: Orchard block used in data collection, comprising a total of 494 trees. The complete tree dataset was split into
+five subsets comprising 27, 18, 18, 215 and 216 trees, respectively. The reader is also referred to Table 1. Orthoimagery was
+collected from Google Maps.
+run of the whole orchard in a single run, without stopping, other than to turn at the headland. Each row side
+was measured assuring that the sun was directly lighting the trees from behind the camera. Therefore, the
+east side acquisitions were performed in the morning, and west side in the afternoon. Illumination reference
+panels (QPcard 102) were mounted on tripods and placed at several sunlit and shaded points in the field to
+105
+cover a wide range of reference illumination conditions. Likewise, dark current measurements were taken in a
+regular basis, by covering the sensor lens and acquiring data for 10 s. Concurrently to HSI acquisition, RGB
+images were also acquired at 5 Hz using a Prosilica GT3300C camera (Allied Vision Technologies GmbH,
+Stadtroda, Germany) synchronised to four Excelitas MVS-5002 strobe lights (Excelitas Technologies Corp.,
+Waltham, USA). Full details about RGB acquisition can be found in Stein et al. (2016)
+110
+2.2. Spectral preprocessing
+The data acquired by the hyperspectral camera are stored in raw digital numbers, and need to be
+corrected by measuring several reference values without changing the camera’s parameters. As suggested by
+5
+
+Suomalainen et al. (2014), in order to reduce the effects of non-uniform lens transmittance and to account for
+sensor quantum efficiency, the digital number (DN) at each wavelength (λ) should be converted to at-sensor
+115
+radiance (LSample),
+LSample(λ) = DNSample(λ) −DNSampleDarkCurrent(λ)
+DNFlatField(λ) −DNFFDarkCurrent(λ) LFlatField(λ)
+(1)
+where DNSample and DNSampleDarkCurrent are digital number measurements from the sample and nearest
+(in time) dark current, respectively; and DNFlatField and DNFFDarkCurrent, the digital numbers from flat
+field and corresponding dark current measurements. An integration sphere with a light level about 95% of
+saturation was used to provide flat field measurements, also providing internal radiance values (LFlatField).
+120
+Additionally, to obtain accurate sample reflectance measurements, illumination compensation was per-
+formed following the ”LOGSEP” method described by Drew and Finlayson (2007); Wendel and Underwood
+(2017b). This compensation procedure makes use of in-field illumination radiance and surface reflectance
+values for training, and these were taken from the illumination reference panels’ mid-grey strip.
+2.3. Tree delimitation, mango detection and fruit counting
+125
+To accurately obtain all the mango information for each one of the tree sides, an automatic procedure
+for tree delimitation, mango pixel detection and individual fruit counting was used.
+Tree delimitation
+was carried out according to Underwood et al. (2015) and Stein et al. (2016). All trees where segmented
+within the LIDAR data, which was in turn projected into the camera frames using the methodology from
+Underwood et al. (2007). In this way, the tree segmentation is transferred to the imagery, to automatically
+130
+identify which tree is visible in every hyperspectral frame. Fig. 3(a) shows an example of two hyperspectral
+images of different mango trees in true colour RGB, as segmented automatically by this method. The two
+images in Fig 3(a) are colour images for human readability, but the full underlying spectra were used in
+data processing.
+A convolutional neural network (CNN) was used as the mango pixel classification model. Classification
+135
+was performed independently per pixel using the complete spectrum at all available wavelengths, and con-
+volution occurred only along the spectrum and not between adjacent pixels. This differs from typical recent
+CNN approaches with RGB cameras, where convolutions are performed spatially across regions of adjacent
+pixels, with just one or three broad spectral bands per pixel. The architecture used for the CNN was based
+on the two convolutional layer plus two fully connected layers (Fig. 4) model examined by Windrim et al.
+140
+(2016). For full details of CNN architecture and usage, the reader is encouraged to read Wendel et al. (2018).
+For each hyperspectral image, each pixel (spectrum) were classified as mango or non-mango by the CNN
+(Fig. 3(b)), forming binary images with mango pixel detected (Fig. 3(c)).
+Finally, from the binary images with mango pixels detected, fruit segmentation was performed, in order
+to cluster mango pixels and count the number of different mangoes visible in the canopy. Taking as input
+145
+each binary image (with 0 as non-mango class and 1 as mango pixel), the procedure involved the following
+sequential steps:
+1. Morphological dilation followed by erosion. The structuring element for each operation was parametrised
+by the choice of either a full rectangle or ellipse, and the corresponding width and height (Fig 3(d)).
+6
+
+(a)
+(c)
+(e)
+(b)
+Non-mango
+Mango
+Non-mango
+Mango
+CNN
+classification
+(d)
+Dilation
+Erosion
+Segmentation
+Figure 3: Example of image processing in two different hyperspectral images. These are shown in true colour RGB (a), with
+the trees delimited and identified in each case. Each hyperspectral pixel (spectrum) is classified as mango or non-mango by a
+CNN (b), to form a binary image (c). From the binary images, mango pixels are dilated, eroded and segmented (d). From the
+segmentation, the total number of mangoes in the hyperspectral image can be identified and counted (e). The two images in
+(a) are colour images for human readability, whereas the full underlying spectra were used in data processing.
+2. From this output, the distance transform is computed (the distance from a pixel marked as 1 to its
+150
+nearest 0) using the Euclidean distance (Paglieroni, 1992).
+3. The local maxima were identified, considering local square regions parametrised by width and height
+values 1
+4. The number of local maxima was used as fruit counting output (Fig. 3(e)).
+All the adjustable parameters involved in the described fruit counting steps were selected after an opti-
+155
+misation procedure detailed in the next section.
+1Steps 2 and 3 are usually carried out immediately before applying marked-based watershed algorithm Roerdink and Meijster
+(2000), that uses the inverse of the distance transform as input and the local maxima as markers (Bargoti et al., 2015; Stein
+et al., 2016; Bargoti and Underwood, 2017).
+7
+
+Non-mango confidence
+Mango confidence
+Individual spectrum
+1st conv layer
+Filter size: 30
+No. filters: 30
+2nd conv layer
+Filter size: 10
+No. filters: 10
+1st FC layer
+Size: 20
+2nd FC layer
+Size: 20
+Activation function for all layers: ReLU
+Softmax
+400 nm
+900 nm
+Figure 4: CNN architecture used in this study. The architecture is the two convolutional layer plus two fully connected layer
+model presented by Windrim et al. (2016). No padding was used for the convolutions. The network provides two outputs
+representing the softmax “confidence” of mango and non-mango classes.
+2.4. Parameter optimisation
+Fruit counting makes use of different adjustable parameters that needs to be tuned, as their values
+influence the final output (the number of mangoes counted). Specifically, these parameters are:
+• Dilation structure width (Dw), height (Dh), D ∈Z>0.
+160
+• Erosion structure width (Ew), height (Eh), E ∈Z>0.
+• Structuring elements’ shape for both morphological operators (S), S ∈{rectangle, ellipse}.
+• Local square region width (Lw) and height (Lh), in local maxima computation, L ∈Z>0.
+Therefore, an optimisation process was designed for the parameters set P = {Dw, Dh, Ew, Eh, S, Lw, Lh}.
+The performance was evaluated by applying the morphological operations for fruit counting defined in
+165
+Section 2.3 to the “field count train” or “RGB train” subsets (described at the beginning of Section 2.1),
+and finally computing the correlation metrics. As ground truth, each one of these datasets used, respectively,
+manual mango field counts and RGB counts following the procedure by Stein et al. (2016). Therefore, the
+optimisation problem was defined as:
+arg max
+P
+f(data, Dw, Dh, Ew, Eh, S, Lw, Lh)
+(2)
+where f is an objective function returning R2 between mango counts and hyperspectral counts given data
+170
+∈{field count train, RGB train} and a parameter set.
+Because f is a non-continuous, non-differentiable function, it is not possible to use optimisation methods
+based on derivatives or gradients. Therefore, evolutionary algorithms were used as metaheuristic to solve
+the optimisation problem, as they can also work with bounded and constrained parameters, as the ones
+in P.
+A genetic algorithm based on CHC (Eshelman, 1991) was developed in Python 2.7.12, adapted
+175
+8
+
+for this problem. CHC algorithm (C standing for cross-generational elitist selection; H for heterogeneous
+recombination; and the last C for cataclysmic mutation) provides a good trade-off between exploitation
+(getting as close as possible to a found maxima by incest prevention and elitist selection) and exploration
+(providing new genetic material when the population has converged too much to explore other maximum).
+The algorithm starts with a random population of N individuals and a convergence value δ set to |P |
+4
+180
+that is crossed by randomly picking two parents without replacement, but only allowing the mating if there
+is enough difference in the parents’ genes (avoiding inbreeding). Afterwards, the N best individuals are
+selected among the union of the original parents and the offspring, and they become the new population. If
+no offspring was generated (implying that there was low genetic variability in the population), δ is decreased
+by one, and if it falls bellow zero, a cataclysmic mutation is carried out. This mutation consists on keeping
+185
+the best individual in the population, adding N −1 random individuals, resetting δ to |P |
+4 and starting over.
+Parameters {Dw, Ew} were coded as genes constrained to positive integers and bounded between 1 and
+80, while {Dh, Eh, Lh} were positive integers between 1 and 40. On the one hand, the value 80 was selected
+to prevent excessive mango deformation, and it is two times the average mango height of 40 pixels. On the
+other hand, the heights were limited to half the maximum width because visible mangoes in hyperspectral
+190
+images appeared stretched in the vertical dimension due to the relation between the UGV’s speed and the
+camera’s frame rate. Local maxima region’s width and height, {Lw, Lh}, were bounded between 1 and 80, in
+order to avoid considering regions beyond two times the average mango height. Following common practices
+in genetic programming of deriving hyperparameters from problem’s constants, the population size was set
+to 70, ten times the number of genes, and the number of CHC iterations to 280, four times the population
+195
+size.
+2.5. Validation and mapping
+From each parameter optimisation performed with “field count train” and “RGB train”, the best unique
+20 parameter sets from all the iterations, in terms of R2 values, were selected and considered as models for
+mango counting using HSI. The unique selection was performed redefining the equality condition between
+200
+two models. Two models were considered different if, for any of their parameters (excluding the structure
+shape), their absolute difference surpasses a certain small threshold. This was done because a very small
+alteration (e.g., one or two units) on any of the width or height parameters—although making the models
+strictly different—results in a very similar performance.
+The performance of mango counting optimised using both field and RGB counts was assessed. For field
+205
+counts, the 20 best models trained with the “field count train” subset were used to predict the fruit count
+from the 18 “field count test” trees, computing the determination coefficient (R2). For RGB counts, the 20
+best models trained with the “RGB train” subset were applied to the 215 trees in the “RGB validation”
+subset, computing the R2 values for single-, dual- and multi-view. From these results, the model with the
+highest R2 (averaged from the three) was selected and applied to the 216 “RGB test” trees. Additionally,
+210
+these predictions were mapped to illustrate their spatial distribution.
+Finally, the hyperspectral images of the “RGB train” subset from the 7th December measurements were
+processed as described in Sections 2.2 and 2.3, using the best model, to obtain the mango counting in that
+9
+
+date. The outcomes were compared with the results from the 6th December dataset to test the repeatability
+of the described techniques.
+215
+3. Results
+3.1. Field count optimised models
+The best models from the parameter optimisation using the “field count train” subset are summarised
+in Table 2, along with their performance when they were applied on the “field count test” subset. Upon
+optimisation, the R2opt values reached up to 0.79 (RMSEopt = 34.475 mangoes) in the two first models,
+220
+that had similar dilation and erosion heights but very different erosion widths.
+All the values of Dw lied between 53 and 78, while Dh, Lw and Lh exhibited a larger variability in their
+values. On the other hand, the erosion’s height and width were found to have a highly ranged and balanced
+distribution between the minimum and maximum values, 5 and 62 for Ew and 1 and 35 for Eh, respectively.
+For the structuring element’s shape for erosion and dilation, both ellipse and square values were equally
+225
+distributed among the 20 best models. The performance of the parameter sets on the “field count test”
+subset was very similar to that from optimisation, with R2test values ranging from 0.71 (model number 19)
+up to 0.79 (model number 5). Only models 7 and 10, with R2test of 0.59 and 0.60, respectively, returned
+discordant statistics (also reflected by the higher RMSEtest values, above 50).
+The correlation plots for the optimally trained model (first row in Table 2) are presented in Fig. 5. The
+230
+result from the optimisation, using the “field count train” subset, is shown in Fig. 5(a), while Fig. 5(b) shows
+the same model applied to the “field count test” subset, yield estimated using the slope intercept equation
+in 5(a). The train plot displayed a regression line highly tilted toward the horizontal axis, meaning that the
+hyperspectral counts were well correlated but consistently lower than the actual field counts. Nevertheless, a
+good fit was present along the regression line, and for this reason, and after correcting with the slope intercept
+235
+equation, RMSE values resulted in 34.475 and 36.478 mangoes, for train and test subsets respectively.
+3.2. RGB count optimised models
+After the parameter optimisation was carried out using the 18 trees in the “RGB train” dataset, the
+results from the 20 best unique models are summarised in Table 3. Determination coefficients were also
+computed from RGB single-, dual- and multi-view mango count against hyperspectral count. From the
+240
+optimisation process, R2opt values ranged from 0.75 to 0.82.
+Within the 20 models, all the optimised parameters took a wide range of different values. Dw and Lh
+obtained mostly high values, up to 75 in both cases. Nevertheless, when compared with results in Table 2,
+the remaining parameters received values lying in the first half of their domains, with special attention to
+Dh, that took values below 10, except in four of the models. Again, for the structuring element’s shape,
+245
+both ellipse and square options were almost equally selected. Attending to the statistics from the “RGB
+validation” subset, R2 values did not present the same trend of decreasing scores that was observed at
+optimisation. The model with the highest validation performance in this subset was found not within the
+first rows in the ranking of Table 3, but in row 13, with scores of 0.77, 0.83 and 0.74 against single-, dual-
+and multi-view RGB counts, respectively. In almost all the cases, dual-view counts were better predicted
+250
+10
+
+Table 2: Best models from the parameter optimisation using on-tree mango counts, “field count train” subset, and applied to
+the “field count test” subset.
+Rank
+R2opt
+RMSEopt Dw
+Dh
+Ew
+Eh
+S
+Lw
+Lh
+R2test
+RMSEtest
+1
+0.79
+34.475
+61
+35
+5
+4
+square
+34
+18
+0.75
+37.435
+2
+0.79
+35.118
+75
+38
+48
+3
+ellipse
+47
+24
+0.78
+35.094
+3
+0.78
+36.197
+66
+40
+62
+1
+ellipse
+48
+22
+0.75
+38.027
+4
+0.77
+37.203
+67
+34
+15
+16
+square
+42
+20
+0.77
+35.971
+5
+0.75
+38.825
+71
+34
+60
+26
+square
+79
+19
+0.79
+33.633
+6
+0.74
+39.687
+71
+35
+47
+32
+ellipse
+29
+32
+0.78
+34.459
+7
+0.74
+39.735
+78
+39
+21
+35
+ellipse
+70
+48
+0.59
+54.758
+8
+0.74
+40.033
+59
+19
+9
+10
+square
+40
+53
+0.73
+39.925
+9
+0.73
+40.831
+75
+35
+62
+12
+square
+49
+15
+0.79
+34.262
+10
+0.73
+40.921
+56
+38
+10
+22
+ellipse
+56
+79
+0.60
+53.853
+11
+0.73
+41.120
+73
+32
+37
+3
+square
+28
+49
+0.75
+37.608
+12
+0.73
+41.534
+63
+28
+45
+3
+ellipse
+56
+57
+0.72
+41.154
+13
+0.73
+41.634
+57
+32
+13
+4
+square
+69
+68
+0.72
+40.974
+14
+0.73
+41.689
+57
+31
+10
+16
+ellipse
+23
+12
+0.76
+36.829
+15
+0.73
+41.745
+53
+38
+52
+35
+square
+36
+52
+0.73
+39.710
+16
+0.72
+42.083
+78
+28
+62
+25
+ellipse
+46
+21
+0.74
+38.382
+17
+0.72
+42.122
+69
+37
+22
+16
+square
+21
+47
+0.71
+42.246
+18
+0.72
+42.539
+59
+22
+42
+14
+square
+56
+37
+0.74
+38.623
+19
+0.72
+42.627
+57
+32
+17
+11
+ellipse
+49
+44
+0.71
+41.506
+20
+0.72
+42.671
+75
+33
+65
+29
+ellipse
+33
+25
+0.75
+38.146
+R2opt: determination coefficient in optimisation (in the “field count train” subset). RMSEopt:
+root-mean-square error in optimisation (in the “field count train” subset). Dw, Dh: Dilation struct width
+and height. Ew, Eh: Erosion struct width and height. S: Structuring element’s shape. Lw, Lh: Local region
+square’s width and height, in local maxima computation. R2test: determination coefficient when predicting
+the “field count test” subset. RMSEtest: root-mean-square error when predicting the “field count test”
+after applying the slope intercept equation.
+than single-view counts, and in turn, these ones were better predicted than the multi-view counts. Only
+models number 11, 14, 16 and 17 did not follow this behaviour.
+3.3. Validation and mapping
+The correlation results of model number 13 (Table 3) applied to the “RGB validation” (215 trees) and
+“RGB test” (216 trees) subsets are plotted in Fig. 6. The plots show correlations against RGB single-
+255
+view (a, b), dual-view (c, d) and multi-view (e, f). Hyperspectral estimated counts in test plots (b, d,
+f) were obtained after applying their respective slope intercept equations. The results exhibited virtually
+identical determination coefficients between each subset, for each RGB view mode. While the determination
+11
+
+0
+100
+200
+300
+Field count
+0
+100
+200
+300
+Hyperspectral count
+R2 = 0.79
+RMSE = 34.475
+y = 0.24x + 9.58
+(a)
+100
+200
+300
+Field count
+100
+200
+300
+Hyperspectral estimated count
+R2 = 0.75
+RMSE = 36.478
+y = 0.97x + 9.19
+(b)
+Figure 5: Correlation between field count values (on-tree mango counts) and hyperspectral mango counts in “field count train”
+(a) and “field count test” (b), using the model number 1 from Table 2. RMSE: root-mean-square error after applying the slope
+intercept equation.
+coefficients were similar for dual- and multi-views, they only differed by one unit in the last figure (0.77 and
+0.76) for single-view. As expected by the R2 scores, RMSE values were also similar between both subsets.
+260
+As in the results seen in Fig. 5, the regression lines in multi-view train plot (Fig. 6(e)) presented a clear
+lower gradient, tilting towards the horizontal axis.
+As the 216 trees in the “RGB test” subset were not used in any training or validation process, their
+predictions can be considered as external to the development of the optimised models. These predictions
+(dual-view counts) were mapped and are presented in Fig.
+7.
+The map showed a high variability in
+265
+mango yield within the orchard, consistent with the field and RGB observations. Assuming tree rows with
+Northwest-Southeast orientation, the two central ones presented very different yield predictions on their
+trees, with high values of 156 mangoes in the left central row and yield below 39 in some trees in the right
+central row. The two yield basins located at the Southwest and Northeast corners of the orchard could
+correspond to low values in the surrounding trees reinforced by the fact that few trees were assigned to the
+270
+“RGB test” subset in those corners, as can be confirmed from Fig. 2.
+To test the capability of yield estimation by HSI using models optimised only against RGB data, the
+parameter set number 13 in 3 was applied to the “field count test” dataset. The scatter plot in Fig. 8 shows
+the correlation between on-tree mango and hyperspectral counts. A moderately good fit along the regression
+line is observed (yielding a R2 of 0.72 and RMSE of 45 mangoes), presenting a low gradient, as field count
+275
+values were underestimated by HSI.
+The repeatability of the whole pipeline for mango yield estimation using HSI was tested by comparing
+the outcomes from two subsets, “field count train” and “RGB train”, in two different dates, 6th and 7th
+December 2017 (Fig. 9). The parameter sets used were taken from model number 1 (Table 2) and model
+12
+
+Table 3: Best models from the parameter optimisation using RGB single-view counts, “RGB train” subset, and applied to the
+“RGB validation” subset.
+Rank
+R2opt
+Dw
+Dh
+Ew
+Eh
+S
+Lw
+Lh
+R2Single
+R2Dual
+R2Multi
+1
+0.82
+57
+3
+34
+16
+ellipse
+27
+58
+0.68
+0.78
+0.68
+2
+0.80
+34
+9
+20
+20
+square
+10
+9
+0.74
+0.80
+0.69
+3
+0.79
+70
+4
+26
+21
+square
+9
+25
+0.71
+0.77
+0.67
+4
+0.79
+31
+1
+2
+14
+square
+47
+6
+0.72
+0.78
+0.68
+5
+0.78
+70
+2
+6
+9
+ellipse
+8
+7
+0.72
+0.79
+0.70
+6
+0.78
+26
+9
+12
+18
+square
+12
+53
+0.70
+0.77
+0.69
+7
+0.77
+33
+5
+14
+16
+ellipse
+51
+15
+0.73
+0.79
+0.72
+8
+0.77
+42
+6
+35
+19
+ellipse
+31
+11
+0.72
+0.80
+0.68
+9
+0.77
+20
+11
+7
+24
+square
+13
+56
+0.71
+0.79
+0.70
+10
+0.77
+70
+4
+9
+21
+square
+48
+34
+0.67
+0.74
+0.63
+11
+0.77
+46
+9
+29
+31
+square
+51
+49
+0.64
+0.73
+0.66
+12
+0.76
+17
+24
+10
+31
+square
+30
+34
+0.73
+0.80
+0.72
+13
+0.76
+46
+1
+5
+7
+ellipse
+50
+16
+0.77
+0.83
+0.74
+14
+0.76
+51
+1
+4
+10
+ellipse
+6
+75
+0.69
+0.77
+0.73
+15
+0.76
+75
+1
+43
+16
+square
+6
+32
+0.69
+0.76
+0.68
+16
+0.76
+41
+4
+1
+27
+ellipse
+64
+35
+0.68
+0.75
+0.70
+17
+0.75
+49
+4
+44
+19
+ellipse
+73
+47
+0.65
+0.74
+0.68
+18
+0.75
+43
+9
+22
+3
+square
+51
+2
+0.70
+0.76
+0.69
+19
+0.75
+59
+10
+78
+9
+ellipse
+80
+16
+0.65
+0.72
+0.61
+20
+0.75
+30
+21
+23
+30
+square
+16
+10
+0.73
+0.81
+0.68
+R2opt: determination coefficient in optimisation (in the “RGB train” subset). Dw, Dh: Dilation struct
+width and height. Ew, Eh: Erosion struct width and height. S: Structuring element’s shape. Lw, Lh: Local
+region square’s width and height, in local maxima computation. The last three columns refer to the
+determination coefficient obtained when applying the model to the “RGB validation” subset, compared
+with single-, dual- and multi-view counts.
+number 13 (Table 3) respectively. Very close correlations were found in both cases, with R2 values of 0.88
+280
+in field count and 0.91 in RGB subsets. For day 6th and 7th respectively, hyperspectral total counts were
+929 and 903 (error of 2.8%, field count) and 15,798 and 15,587 (error of 1.3%, RGB counts).
+4. Discussion
+This paper presented promising results for extensive in-field prediction of mango yield using an unmanned
+ground vehicle and hyperspectral imaging. The outcomes from the optimisation of the models provided high
+285
+precision in the estimation of on-tree mango count, supporting that line-scan HSI can be employed for yield
+estimation in orchards, and also reliable and accurate predictions when compared with estimations from
+13
+
+0
+30
+60
+90
+Single-View RGB count
+0
+30
+60
+90
+Hyperspectral count
+(a)
+R2 = 0.77
+RMSE = 10.649
+Validation
+subset
+0
+30
+60
+90
+Single-View RGB count
+0
+30
+60
+90
+Hyperspectral estimated count
+(b)
+R2 = 0.76
+RMSE = 11.388
+Test
+subset
+0
+50
+100
+150
+Dual-View RGB count
+0
+50
+100
+150
+Hyperspectral count
+(c)
+R2 = 0.83
+RMSE = 15.115
+0
+50
+100
+150
+200
+Dual-View RGB count
+0
+50
+100
+150
+200
+Hyperspectral estimated count
+(d)
+R2 = 0.83
+RMSE = 15.690
+0
+100
+200
+300
+400
+Multi-View RGB count
+0
+100
+200
+300
+400
+Hyperspectral count
+(e)
+R2 = 0.74
+RMSE = 40.441
+0
+100 200 300 400
+Multi-View RGB count
+0
+100
+200
+300
+400
+Hyperspectral estimated count
+(f)
+R2 = 0.74
+RMSE = 45.152
+Figure 6: Correlation plots from the orchard block monitoring, comparing RGB counts from single-view (a and b), dual-view
+(c and d) and multi-view (e and f) with hyperspectral counts from the validation subset (a, c and e) and test subset (b, d, f).
+Hyperspectral counts where obtained after applying the parameters of the model number 13 in Table 3. RMSE values were
+obtained after applying the slope intercept equations from the regression line.
+RGB techniques that were validated in prior work (Stein et al., 2016).
+Moreover, the results from the
+validation on more than two hundred trees, and the testing of the whole pipeline on a further set of two
+hundred other trees, indicate that the approach is viable in commercial scale orchard blocks.
+290
+The determination coefficients in Table 2 showed consistency between the optimisation (R2opt) and test
+(R2test) scores, as they maintained similar determination coefficients, and R2test also maintained a general
+descending trend down the ranking. The validation on independent data confirms the appropriateness of
+the optimised models for yield estimation. Apart from the parameters that specified the width and height
+of the dilation structuring element (that took values in a relatively close range), no specific pattern could
+295
+be found in the remaining parameters, that acquired very different options, indicating that the results were
+not sensitive to the parameter values. This insensitivity to parameter values could imply that the models
+are more likely to be robust and generalisable, as good outcomes were observed in optimisation (and later
+confirmed in an independent tree dataset) from very different values.
+14
+
+N
+Mango yield
+Fruit count
+156
+39
+78
+117
+0
+Figure 7: Yield map of the orchard block, coloured by the number of fruit per tree. The map was generated by predicting
+the RGB dual-view mango counts in all the trees from the orchard block and correcting the predicted values using the slope
+intercept equation from model number 13 in Table 3. Orthoimagery was collected from Google Maps.
+The main trait that is observed from Figs. 5 and 8, the low gradient present in the regression lines
+300
+of the scatter plots, is explained by the fact that the amount of fruit that is visible in the canopy from
+a lateral point of view is almost always lower than the actual fruit that is present. Particularly in fruit
+trees, occlusion caused by leaves, branches and other fruit lead to this consequence, as reported by prior
+work (Bargoti et al., 2015; Bargoti and Underwood, 2016, 2017). This is evident in the graphs presented
+in Fig. 6, as the HSI results have a slope much closer to unity when compared to the RGB single- or dual-
+305
+view counts. In other words, single viewpoints from RGB or from a swept line-scan camera unsurprisingly
+result in a similar degree of undercounting compared to field counts. Yet in both cases the undercounting
+is consistent and can be compensated by calibration (i.e., correction by the slope-intercept equation). This
+good fit may be explained by making the assumption that fruit occlusion is present at a constant ratio, and
+approximately 20 samples in the calibration or training could be sufficient to determine the factor between
+310
+visible and actual fruit for estimation. Although spectroscopy is able to acquire spectral information from
+a significantly wider range than RGB cameras, HSI (that ultimately compose a bi-dimensional image) is
+affected by occlusion in the same way as a regular RGB camera (Stein et al., 2016).
+The already developed methodology for mango yield estimation reported by Stein et al. (2016) opened
+the possibility of computing performance statistics in hundreds of trees from a whole orchard comparing
+315
+15
+
+0
+50
+100
+150
+200
+250
+300
+350
+Field count
+0
+50
+100
+150
+200
+250
+300
+350
+Hyperspectral count
+R2 = 0.72
+RMSE = 41
+Figure 8: Correlation plot comparing field count values (on-tree mango counts) with hyperspectral counts from the “field count
+test” subset. Hyperspectral counts where obtained after applying the parameters of the model number 13 in Table 3. RMSE
+values were obtained after applying the slope intercept equations from the regression line.
+HSI to RGB imaging, allowing large independent training, validation and test sets to be used. As exposed
+in Fig. 6, the very similar R2 values between validation and test subsets confirmed that the model number
+13 (Table 3) was able to build a very consistent generalisation capability, with R2 scores of 0.77, 0.83 and
+0.74 for single-, dual- and multi-view.
+The different value ranges that the models’ parameters took among the 20 best ones (Table 3) also confirm
+320
+that results were not sensitive to the parameter values, as in the optimisation against on-tree mango count
+(the field count subsets). Attending to the determination coefficients obtained from the correlations of the
+three different RGB fruit count methodologies, the trend described at the end of Section 3.2—correlations
+with dual-view RGB counts always higher than the ones with single-view—is explained by data aggregation.
+Dual-view counts (both hyperspectral and RGB) are but the sum of single-view ones from both side of the
+325
+same tree. This aggregation (like averaging) reduces the magnitude in total of individual errors on either
+tree side, hence the higher R2Dual values in Table 3.
+The correlation values from the comparison of hyperspectral counts against RGB single-, dual- and
+multi-view counts indicates that it is not possible to completely reach the same level of accuracy as from
+RGB cameras and computer vision techniques, especially when R2Multi is considered. In fact, this was an
+330
+expected result due to the lower optical features (i.e., lower resolution or limited field of view) commonly
+offered by hyperspectral cameras. The restriction of line-scan cameras to only one spatial dimension makes
+it impossible to implement multi-view techniques, which have been shown in prior work to improve accuracy
+(Moonrinta et al., 2010; Song et al., 2014; Das et al., 2015; Stein et al., 2016). However, the performance
+16
+
+20
+40
+60
+80
+Hyperspectral count
+from 6th December
+20
+40
+60
+80
+Hyperspectral count
+from 7th December
+R2 = 0.88
+Ground truth test subset
+(a)
+0
+40
+80
+120
+Hyperspectral count
+from 6th December
+0
+40
+80
+120
+Hyperspectral count
+from 7th December
+R2 = 0.91
+RGB test subset
+(b)
+Figure 9: Repeatability of hyperspectral counts on 6th December and 7th December 2017, using model number 1 from Table
+2 on the “field count test” subset (a); and model number 13 from Table 3 on the “RGB test” dataset (b). Each dot represent
+the sum of the mangoes counted in both sides of the same tree (dual view). If single views are independently considered, R2
+values are 0.79 in (a) and 0.85 in (b).
+statistics obtained in this paper raises HSI as a feasible alternative for extensive mango yield estimation,
+335
+particularly in applications where HSI is already (and maybe solely) chosen to detect some other trait.
+The methodology followed in this study also allows for the possibility of predicting field count values
+with a moderately high precision, as shown in Fig. 8 (R2 of 0.72). This is also reinforced by the similarity
+to the correlations from the optimisation directly with field counts (5) that, although higher, lied not very
+far from Fig. 8. It can therefore be implied that the results from automatic monitoring with an UGV and
+340
+a line-scan hyperspectral camera, exemplified by the yield map in Fig. 7, are reasonably precise for on-tree
+mango estimation (trained with field counts or RGB data, Tables 2 and 3), accurate for hundreds of trees
+(Fig. 6) and reliable at different times (Fig. 9).
+5. Conclusions
+This paper presented a new pipeline for the estimation of mango yield using line-scan hyperspectral
+345
+imaging acquired from an unmanned ground vehicle in large orchards.
+The detailed pipeline produced
+good results (R2 ≥0.75) using two different ground truth values, and comparable to state-of-the-art RGB
+techniques. Several steps were followed, from data acquisition, through image processing to model optimi-
+sation, and results were tested for both field count values and validated for hundreds of trees compared to
+state-of-the-art RGB methodologies. Although RGB cameras can be argued as sufficient for automatic fruit
+350
+counting in orchards, the outcomes from this paper demonstrate that, in scenarios in where HSI is already
+deployed for the prediction of other nuanced traits, line scan hyperspectral cameras can also deliver accurate
+estimations of yield, and therefore be extensively used in commercial orchards.
+17
+
+Acknowledgements
+Salvador Guti´errez would like to acknowledge the research funding FPI grant 299/2016 by Universidad
+355
+de La Rioja, Gobierno de La Rioja. This work is supported by the Australian Centre for Field Robotics
+(ACFR) at The University of Sydney. Thanks to Simpson Farms for supporting the field work.
+References
+References
+Anderson, N., Underwood, J., Rahman, M., Robson, A., Walsh, K., 2018. Estimation of fruit load in mango orchards: tree
+360
+sampling considerations and use of machine vision and satellite imagery. Precision Agriculture , 1–17.
+Bargoti, S., Underwood, J., 2016. Image classification with orchard metadata, in: Robotics and Automation (ICRA), 2016
+IEEE International Conference on, IEEE. pp. 5164–5170.
+Bargoti, S., Underwood, J.P., 2017. Image segmentation for fruit detection and yield estimation in apple orchards. Journal of
+Field Robotics 34, 1039–1060.
+365
+Bargoti, S., Underwood, J.P., Nieto, J.I., Sukkarieh, S., 2015. A pipeline for trunk detection in trellis structured apple orchards.
+Journal of Field Robotics 32, 1075–1094.
+Das, J., Cross, G., Qu, C., Makineni, A., Tokekar, P., Mulgaonkar, Y., Kumar, V., 2015. Devices, systems, and methods
+for automated monitoring enabling precision agriculture, in: Automation Science and Engineering (CASE), 2015 IEEE
+International Conference on, IEEE. pp. 462–469.
+370
+Deery, D., Jimenez-Berni, J., Jones, H., Sirault, X., Furbank, R., 2014.
+Proximal remote sensing buggies and potential
+applications for field-based phenotyping. Agronomy 4, 349–379.
+Diago, M.P., Fernandes, A.M., Millan, B., Tardaguila, J., Melo-Pinto, P., 2013. Identification of grapevine varieties using leaf
+spectroscopy and partial least squares. Computers and electronics in agriculture 99, 7–13.
+Diago, M.P., Fern´andez-Novales, J., Fernandes, A.M., Melo-Pinto, P., Tardaguila, J., 2016.
+Use of visible and short-wave
+375
+near-infrared hyperspectral imaging to fingerprint anthocyanins in intact grape berries. Journal of agricultural and food
+chemistry 64, 7658–7666.
+Drew, M.S., Finlayson, G.D., 2007. Analytic solution for separating spectra into illumination and surface reflectance compo-
+nents. JOSA A 24, 294–303.
+Eshelman, L.J., 1991. The chc adaptive search algorithm: How to have safe search when engaging in nontraditional genetic
+380
+recombination, in: Foundations of genetic algorithms. Elsevier. volume 1, pp. 265–283.
+Gomes, V.M., Fernandes, A.M., Faia, A., Melo-Pinto, P., 2017.
+Comparison of different approaches for the prediction of
+sugar content in new vintages of whole port wine grape berries using hyperspectral imaging. Computers and Electronics in
+Agriculture 140, 244–254.
+Gongal, A., Amatya, S., Karkee, M., Zhang, Q., Lewis, K., 2015. Sensors and systems for fruit detection and localization: A
+385
+review. Computers and Electronics in Agriculture 116, 8–19.
+Guo, D., Zhu, Q., Huang, M., Guo, Y., Qin, J., 2017. Model updating for the classification of different varieties of maize seeds
+from different years by hyperspectral imaging coupled with a pre-labeling method. Computers and Electronics in Agriculture
+142, 1–8.
+Guti´errez, S., Fern´andez-Novales, J., Diago, M.P., Tardaguila, J., 2018. On-the-go hyperspectral imaging under field conditions
+390
+and machine learning for the classification of grapevine varieties. Frontiers in Plant Science 9, 1102.
+Ishida, T., Kurihara, J., Viray, F.A., Namuco, S.B., Paringit, E.C., Perez, G.J., Takahashi, Y., Marciano, J.J., 2018. A novel
+approach for vegetation classification using uav-based hyperspectral imaging. Computers and Electronics in Agriculture 144,
+80–85.
+Lu, J., Zhou, M., Gao, Y., Jiang, H., 2017. Using hyperspectral imaging to discriminate yellow leaf curl disease in tomato
+395
+leaves. Precision Agriculture , 1–16.
+Ma, T., Li, X., Inagaki, T., Yang, H., Tsuchikawa, S., 2018. Noncontact evaluation of soluble solids content in apples by
+near-infrared hyperspectral imaging. Journal of Food Engineering 224, 53–61.
+18
+
+Moonrinta, J., Chaivivatrakul, S., Dailey, M.N., Ekpanyapong, M., 2010. Fruit detection, tracking, and 3d reconstruction
+for crop mapping and yield estimation, in: Control Automation Robotics & Vision (ICARCV), 2010 11th International
+400
+Conference on, IEEE. pp. 1181–1186.
+Oldeland, J., Dorigo, W., Lieckfeld, L., Lucieer, A., J¨urgens, N., 2010. Combining vegetation indices, constrained ordination and
+fuzzy classification for mapping semi-natural vegetation units from hyperspectral imagery. Remote Sensing of Environment
+114, 1155–1166.
+Paglieroni, D.W., 1992. Distance transforms: Properties and machine vision applications. CVGIP: Graphical models and image
+405
+processing 54, 56–74.
+Park, B., Lu, R., 2015. Hyperspectral imaging technology in food and agriculture. Springer.
+Payne, A., Walsh, K., 2014.
+Machine vision in estimation of fruit crop yield.
+Plant Image Analysis: Fundamentals and
+Applications; CRC Press: Boca Raton, FL, USA , 329–374.
+Payne, A.B., Walsh, K.B., Subedi, P., Jarvis, D., 2013. Estimation of mango crop yield using image analysis–segmentation
+410
+method. Computers and electronics in agriculture 91, 57–64.
+Pu, Y.Y., Sun, D.W., 2015. Vis–nir hyperspectral imaging in visualizing moisture distribution of mango slices during microwave-
+vacuum drying. Food chemistry 188, 271–278.
+Qureshi, W., Payne, A., Walsh, K., Linker, R., Cohen, O., Dailey, M., 2017. Machine vision for counting fruit on mango tree
+canopies. Precision Agriculture 18, 224–244.
+415
+Roerdink, J.B., Meijster, A., 2000. The watershed transform: Definitions, algorithms and parallelization strategies. Fundamenta
+informaticae 41, 187–228.
+Rungpichayapichet, P., Nagle, M., Yuwanbun, P., Khuwijitjaru, P., Mahayothee, B., M¨uller, J., 2017. Prediction mapping of
+physicochemical properties in mango by hyperspectral imaging. Biosystems Engineering 159, 109–120.
+Song, Y., Glasbey, C., Horgan, G., Polder, G., Dieleman, J., Van der Heijden, G., 2014. Automatic fruit recognition and
+420
+counting from multiple images. Biosystems Engineering 118, 203–215.
+Stein, M., Bargoti, S., Underwood, J., 2016. Image based mango fruit detection, localisation and yield estimation using multiple
+view geometry. Sensors 16, 1915.
+Sun, D.W., 2010. Hyperspectral imaging for food quality analysis and control. Elsevier.
+Suomalainen, J., Anders, N., Iqbal, S., Roerink, G., Franke, J., Wenting, P., H¨unniger, D., Bartholomeus, H., Becker, R.,
+425
+Kooistra, L., 2014. A lightweight hyperspectral mapping system and photogrammetric processing chain for unmanned aerial
+vehicles. Remote Sensing 6, 11013–11030.
+Thomas, S., Behmann, J., Steier, A., Kraska, T., Muller, O., Rascher, U., Mahlein, A.K., 2018. Quantitative assessment of
+disease severity and rating of barley cultivars based on hyperspectral imaging in a non-invasive, automated phenotyping
+platform. Plant methods 14, 45.
+430
+Tian, X., Li, J., Wang, Q., Fan, S., Huang, W., 2018. A bi-layer model for nondestructive prediction of soluble solids content
+in apple based on reflectance spectra and peel pigments. Food chemistry 239, 1055–1063.
+Underwood, J., Scheding, S., Ramos, F., 2007. Real-time map building with uncertainty using colour camera and scanning
+laser, in: Proceedings of the 2007 Australasian Conference on Robotics and Automation, Citeseer. pp. 1330–1334.
+Underwood, J., Wendel, A., Schofield, B., McMurray, L., Kimber, R., 2017. Efficient in-field plant phenomics for row-crops
+435
+with an autonomous ground vehicle. Journal of Field Robotics 34, 1061–1083.
+Underwood, J.P., Jagbrant, G., Nieto, J.I., Sukkarieh, S., 2015.
+Lidar-based tree recognition and platform localization in
+orchards. Journal of Field Robotics 32, 1056–1074.
+Uto, K., Seki, H., Saito, G., Kosugi, Y., 2013. Characterization of rice paddies by a uav-mounted miniature hyperspectral
+sensor system. IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing 6, 851–860.
+440
+Wang, Y., Hu, X., Hou, Z., Ning, J., Zhang, Z., 2018. Discrimination of nitrogen fertilizer levels of tea plant (camellia sinensis)
+based on hyperspectral imaging. Journal of the Science of Food and Agriculture .
+Wang, Z., Walsh, K.B., Verma, B., 2017. On-tree mango fruit size estimation using RGB-D images. Sensors 17, 2738.
+Wendel, A., Underwood, J., 2016. Self-supervised weed detection in vegetable crops using ground based hyperspectral imaging,
+in: Robotics and Automation (ICRA), 2016 IEEE International Conference on, IEEE. pp. 5128–5135.
+445
+Wendel, A., Underwood, J., 2017a. Extrinsic parameter calibration for line scanning cameras on ground vehicles with navigation
+systems using a calibration pattern. Sensors 17, 2491.
+Wendel, A., Underwood, J., 2017b. Illumination compensation in ground based hyperspectral imaging. ISPRS Journal of
+19
+
+Photogrammetry and Remote Sensing 129, 162–178.
+Wendel, A., Underwood, J., Walsh, K., 2018. Maturity estimation of mangoes using hyperspectral imaging from a ground
+450
+based mobile platform. Computers and Electronics in Agriculture 155, 298–313.
+Windrim, L., Ramakrishnan, R., Melkumyan, A., Murphy, R., 2016. Hyperspectral CNN classification with limited training
+samples. arXiv preprint arXiv:1611.09007 .
+Yang, C., Everitt, J.H., Bradford, J.M., Murden, D., 2004. Airborne hyperspectral imagery and yield monitor data for mapping
+cotton yield variability. Precision Agriculture 5, 445–461.
+455
+Yue, J., Yang, G., Li, C., Li, Z., Wang, Y., Feng, H., Xu, B., 2017. Estimation of winter wheat above-ground biomass using
+unmanned aerial vehicle-based snapshot hyperspectral sensor and crop height improved models. Remote Sensing 9, 708.
+Zhang, X., Liao, C., Li, J., Sun, Q., 2013. Fractional vegetation cover estimation in arid and semi-arid environments using hj-1
+satellite hyperspectral data. International Journal of Applied Earth Observation and Geoinformation 21, 506–512.
+Zhou, K., Cheng, T., Zhu, Y., Cao, W., Ustin, S.L., Zheng, H., Yao, X., Tian, Y., 2018. Assessing the impact of spatial
+460
+resolution on the estimation of leaf nitrogen concentration over the full season of paddy rice using near-surface imaging
+spectroscopy data. Frontiers in plant science 9.
+20

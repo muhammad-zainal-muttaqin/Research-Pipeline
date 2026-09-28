@@ -1,0 +1,1306 @@
+Academic Editor: Alessandro Di
+Nuovo
+Received: 10 May 2026
+Revised: 2 June 2026
+Accepted: 9 June 2026
+Published: 20 June 2026
+Copyright: © 2026 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license.
+Article
+Monocular Estimation of Grape Berry Size (Caliber)
+Distributions Using Geometry-Aware Representations and
+Structured Prediction
+Matias Soto 1
+, Pablo Ormeño-Arriagada 2,3, *
+and Jorge Vasquez 1
+1
+Facultad de Ingeniería y Ciencias, Universidad Adolfo Ibáñez, Peñalolén, Santiago 7941169, Chile;
+matias.soto@edu.uai.cl (M.S.); jorge.vasquez.a@uai.cl (J.V.)
+2
+Facultad de Ingeniería, Negocios y Ciencias Agroambientales, Universidad de Viña del Mar,
+Viña del Mar 2580022, Chile
+3
+Instituto de Tecnología para la Innovación en Salud y Bienestar, Universidad Andres Bello,
+Viña del Mar 2530958, Chile
+*
+Correspondence: pablo.ormeno@uvm.cl
+Abstract
+Grape caliber distributions are critical for packing, grading, yield estimation, and post-
+harvest logistics. However, estimating reliable caliber histograms from single images
+remains challenging due to occlusion and dense bunch structure. This work presents
+a two-stage monocular pipeline that integrates instance segmentation, geometry-aware
+representations, residual quantity correction, and structured histogram prediction. In the
+first stage, a YOLO-based model detects grape instances and a calibration object, enabling
+the construction of geometry-aware auxiliary channels and a segmentation-derived count-
+ing prior. In the second stage, these representations are used to estimate total grape count
+and caliber distributions. Results show that RGBDT consistently outperforms RGB, indicat-
+ing that geometry-aware cues improve both histogram fidelity and counting accuracy. The
+framework achieves stable performance under realistic conditions while maintaining low
+runtime, supporting practical deployment in agricultural environments.
+Keywords:
+grape caliber estimation; grape caliber histogram prediction; instance
+segmentation; monocular vision; distance transform; residual count estimation; lightweight
+deep learning; ONNX deployment
+1. Introduction
+1.1. Problem Context and Motivation
+Grape caliber, defined as the diameter of individual grape berries, plays a critical role
+in viticulture and post-harvest operations, as berry-size distributions directly influence
+packing, grading, yield estimation, and logistics planning [1]. However, in real-world envi-
+ronments, grape bunches are captured under variable illumination, cluttered backgrounds,
+viewpoint changes, and self-occlusion, which significantly complicates accurate estimation
+from a single image. Consequently, relying solely on scalar descriptors such as mean
+berry size is insufficient for many agricultural applications. Instead, distribution-level
+representations, particularly caliber histograms, provide richer information by captur-
+ing variability, skewness, and concentration across discrete size classes [2]. Therefore,
+this study focuses on predicting the complete caliber distribution, reflecting a deliberate
+effort to align computational modeling with practical decision-making requirements in
+viticultural workflows.
+Appl. Sci. 2026, 16, 6225
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+2 of 25
+1.2. Limitations of Existing Approaches
+Existing vision-based solutions for grape measurement typically rely on controlled
+acquisition setups, depth sensors, stereo rigs, or multi-view systems, which can deliver
+accurate metric estimations [3]. However, these approaches introduce significant practical
+constraints, including increased hardware cost, complex calibration procedures, synchro-
+nization requirements, and reduced portability. As a result, their applicability in real-
+world agricultural environments remains limited [4]. In contrast, field conditions demand
+solutions that are robust to variability, simple to deploy, and computationally efficient.
+The reliance on specialized acquisition systems restricts scalability and hinders widespread
+adoption, motivating the exploration of lightweight, monocular alternatives better aligned
+with operational constraints in viticulture.
+1.3. Challenges of Monocular Estimation
+Monocular RGB imagery provides a practical and scalable alternative for grape analy-
+sis; however, it introduces significant challenges related to scene complexity and limited
+visual information [5]. In particular, dense bunch structures produce frequent self-occlusion,
+which hinders reliable counting and diameter estimation. Moreover, a single viewpoint
+offers only partial evidence of the true caliber distribution, while neighboring berries in
+clustered regions often appear visually ambiguous. Thus, these factors complicate the
+inference of both total grape count and the full histogram of calibers from RGB appearance
+alone. Therefore, addressing these limitations requires approaches that can compensate for
+missing information and ambiguity inherent in monocular observations [6].
+1.4. Opportunity: Learning-Based Monocular Pipeline
+Recent advances in lightweight instance segmentation and deployable deep learning
+models offer new opportunities to address monocular grape analysis more effectively [7].
+Reliable detection of grape instances and a calibration object can support segmentation
+outputs to serve not only for localization but also as structured intermediate representations.
+Consequently, these representations may encode spatial relationships and approximate
+geometric cues that are otherwise implicit in RGB data [8]. Therefore, a two-stage design
+is motivated, where segmentation-derived features provide geometry-aware inputs and
+an initial count prior, which are subsequently refined by dedicated models for total-count
+correction and histogram estimation. This approach reflects a deliberate effort to decouple
+perception from structured prediction while maintaining efficiency and deployability.
+1.5. Proposed Approach
+This work proposes a two-stage monocular pipeline for grape caliber analysis from
+single images, combining instance segmentation with structured prediction to address
+limitations of RGB-only inference [5]. In the first stage, a YOLO-based model detects
+grape instances and a calibration object, enabling the construction of geometry-informed
+feature channels via distance transforms and a segmentation-derived counting prior [9].
+Subsequently, these representations are processed by a residual quantity model and a
+histogram model to estimate total count and normalized caliber distribution, which are
+combined to reconstruct the final histogram [10]. Furthermore, RGB and RGBDT modalities
+are compared across multiple histogram-modeling families to assess representational and
+parametric effects. Importantly, the two-stage design reflects a deliberate effort to decouple
+geometric reasoning from distribution inference, improving robustness, interpretability,
+and alignment with practical workflows requiring full distribution estimation.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+3 of 25
+1.6. Hypotheses
+This study investigates whether monocular grape caliber estimation can be improved
+by incorporating geometry-aware representations derived from segmentation outputs
+rather than relying solely on RGB appearance. In particular, the proposed framework
+evaluates the role of structured intermediate representations and modeling choices in
+enhancing both distributional and counting accuracy.
+Hypothesis 1. Augmenting RGB input with segmentation-derived geometric cues, specifically
+grape and ping-pong distance-transform channels, improves both caliber histogram prediction and
+total-count estimation compared to RGB-only representations.
+Hypothesis 2. Leveraging a segmentation-derived counting prior with residual correction, com-
+bined with flexible histogram formulations such as direct-bin prediction, provides more accurate
+and robust estimation of grape count and caliber distributions than direct regression or strongly
+constrained parametric models.
+For completeness, the corresponding null hypotheses are defined as follows: (i) the
+inclusion of geometry-aware channels does not produce measurable differences in his-
+togram or count estimation compared to RGB-only input, (ii) residual correction does not
+improve total-count estimation relative to direct prediction approaches, and (iii) different
+histogram-modeling strategies do not produce statistically distinguishable performance
+under the evaluated protocol.
+1.7. Research Questions
+The proposed framework introduces a geometry-informed, two-stage framework for
+monocular grape caliber estimation, combining segmentation-derived representations with
+structured prediction models. To systematically evaluate its effectiveness and practical rele-
+vance, the study is guided by a set of research questions that address performance, represen-
+tation design, and modeling strategies. In particular, the following questions aim to assess
+the capability of the pipeline under realistic conditions, the contribution of geometry inputs
+and residual learning, and the suitability of different histogram-modeling approaches for
+capturing complex caliber distributions while maintaining deployment feasibility.
+RQ1: To what extent can a two-stage monocular pipeline estimate grape caliber
+histograms and total grape count from single images under realistic acquisition conditions?
+RQ2: Does the incorporation of segmentation-derived geometric representations,
+together with residual correction of a counting prior, improve performance compared to
+RGB-only input and direct estimation approaches?
+RQ3: Which histogram-modeling strategy provides the best trade-off between flexibility,
+distributional fidelity, count consistency, and deployment efficiency in practical settings?
+1.8. Novelty
+This work addresses the limited availability of practical monocular methods for esti-
+mating grape caliber distributions from single images under lightweight deployment con-
+straints. Specifically, the proposed approach integrates instance segmentation, geometry-
+aware channels derived from distance transforms [11], residual quantity correction, and his-
+togram prediction within a unified two-stage framework. Rather than relying solely on
+RGB appearance, the method leverages segmentation-derived representations and a count-
+ing prior to enhance both distributional fidelity and total-count estimation. Furthermore,
+systematic evaluation across RGB and RGBDT inputs and multiple histogram-modeling
+families may improve a structured analysis of how representation and parameterization
+affect performance and deployability. From a conceptual standpoint, the formulation re-
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+4 of 25
+frames monocular perception as structured inference under partial observability, where
+intermediate geometric representations act as latent variables that regularize the mapping
+between visual input and distributional outputs, improving robustness and generalization
+across dense object arrangements.
+1.9. Contributions
+The contributions of this work are fourfold. First, a two-stage monocular pipeline
+is proposed, integrating instance segmentation, geometry-informed feature construction,
+residual quantity estimation, and histogram prediction for grape caliber analysis. In this
+context, “caliber” denotes berry diameter expressed in millimeters and used to define size
+classes in grading and distribution analysis. Second, an RGBDT representation is intro-
+duced and evaluated, extending RGB input with grape-instance and ping-pong distance-
+transform channels derived from segmentation outputs to enhance geometric awareness.
+Third, multiple histogram-modeling families are systematically compared under a unified
+experimental setting, enabling a structured evaluation of both constrained and flexible
+output parameterizations for caliber distribution prediction. Finally, the proposed frame-
+work is analyzed from both accuracy and deployment perspectives, including total-count
+estimation, ONNX export fidelity, and end-to-end runtime, reflecting a deliberate effort to
+support practical, lightweight, and scalable grape bunch analysis in real-world conditions.
+1.10. Paper Organization
+The remainder of this paper is organized as follows. Section 2 reviews prior work on
+vision-based fruit sizing, instance segmentation for agricultural measurement, reference-
+based scale recovery, and structured histogram prediction. Section 3 describes the proposed
+two-stage framework, including the segmentation stage, the construction of geometry-
+aware representations, and the histogram and total-count prediction models. Section 4
+presents the experimental evaluation, including segmentation performance, comparison
+across input modalities and histogram-modeling families, and deployment-oriented anal-
+yses. Section 5 discusses the main findings, limitations, and practical implications of the
+proposed approach. Finally, Section 6 summarizes the contributions and outlines directions
+for future work.
+2. Related Work
+This section reviews prior work related to vision-based fruit sizing, instance segmen-
+tation for agricultural measurement, reference-based scale recovery, and structured output
+prediction. The discussion highlights the limitations of existing approaches under real-
+world conditions and motivates the need for geometry-aware, monocular pipelines capable
+of reliable distribution-level inference and efficient deployment.
+2.1. Vision-Based Fruit and Grape Sizing
+Classical approaches to fruit sizing rely on geometric measurements derived from
+controlled RGB imaging, often assuming uniform backgrounds, fixed camera distances,
+and minimal occlusion. More recent methods incorporate depth sensors or stereo vision
+to recover metric scale and improve diameter estimation accuracy [12]. Learning-based
+approaches using convolutional neural networks have further improved detection and
+segmentation performance; however, many still depend on structured acquisition setups or
+multiple viewpoints [13]. In the context of grape analysis, dense clustering and frequent
+occlusions pose additional challenges, making it difficult to generalize these methods to
+field conditions where lighting, viewpoint, and scene complexity vary significantly.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+5 of 25
+2.2. Instance Segmentation for Agricultural Measurement
+Instance segmentation has emerged as a powerful tool for agricultural measure-
+ment tasks, enabling precise localization and delineation of individual objects such as
+fruits, leaves, and clusters. Architectures such as Mask R-CNN and YOLO-based seg-
+mentation models have been successfully applied to crop monitoring, yield estimation,
+and phenotyping [14]. These models provide pixel-level masks that can be used to derive
+geometric features, including size and shape descriptors. However, segmentation accuracy
+may degrade under occlusion, overlapping instances, and complex backgrounds, which
+are common in grape bunches [15]. Moreover, while segmentation facilitates object de-
+tection, it does not directly solve the problem of inferring complete distributions from
+partial observations.
+2.3. Physical References for Metric Scale Recovery
+Recovering real-world scale from monocular images is a long-standing challenge in
+computer vision. One practical solution involves the use of physical reference objects with
+known dimensions, such as calibration markers or standardized objects placed within the
+scene [16]. These references allow the estimation of scale factors and geometric transfor-
+mations that map image measurements to real-world units. In agricultural applications,
+reference-based methods have been used for fruit sizing and plant measurement under
+field conditions [17]. Nevertheless, their effectiveness depends on consistent visibility, accu-
+rate detection, and proper geometric modeling, and they often do not address distortions
+caused by perspective or non-planar arrangements.
+2.4. Histogram and Structured Output Prediction
+Predicting structured outputs such as histograms has gained relevance in tasks where
+aggregate properties are more informative than individual predictions [18]. In particular,
+methods based on direct bin regression, parametric distributions, and constraint-aware
+learning have demonstrated effectiveness in controlled environments. However, under par-
+tial observability, including occlusion and incomplete views, models must infer missing
+information while preserving global consistency [19]. Consequently, techniques such as
+distribution matching and auxiliary supervision have been explored, yet their application
+to dense agricultural scenes remains limited due to variability and scarce annotations.
+Despite these advances, existing approaches either emphasize geometric estimation or de-
+tection and counting, rarely addressing full histogram prediction under realistic monocular
+conditions [20]. Therefore, this gap motivates the development of a modular, geometry-
+aware pipeline that bridges perception and distributional inference.
+2.5. Limitations for Edge Deployment
+Despite significant advances in vision-based measurement and deep learning, many
+existing solutions are not optimized for edge deployment. High computational require-
+ments, large model sizes, and reliance on specialized hardware limit their applicability in
+real-time and resource-constrained environments [21]. Additionally, robustness to envi-
+ronmental variability, including lighting changes and occlusions, is often insufficient for
+field deployment. Lightweight architectures and model compression techniques, such as
+quantization and pruning, have been proposed to address these issues [22], yet achieving
+a balance between accuracy, efficiency, and scalability remains an open challenge. These
+limitations motivate the development of approaches specifically designed for low-power,
+real-time agricultural applications.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+6 of 25
+2.6. Research Gap and Contribution
+Despite prior advances, a fundamental gap remains at the intersection of monocular
+perception, structured distribution prediction, and deployable system design. Specifically,
+existing approaches often address geometric estimation, detection and counting, or ef-
+ficiency in isolation, while the joint problem of inferring complete caliber distributions
+under realistic conditions remains insufficiently explored [23]. To address this, a modular
+two-stage framework is introduced, integrating instance segmentation, geometry-aware
+representation learning, and structured histogram prediction. Rather than focusing on
+object-level outputs, the approach leverages segmentation-derived representations as inter-
+mediate variables to support distribution-level inference [24]. This enables estimation of
+full-caliber histograms while jointly modeling count scale and distribution shape through
+residual correction. Furthermore, systematic evaluation across input modalities and model-
+ing strategies, combined with deployment-oriented validation, positions the contribution
+as a coherent and practical framework for monocular grape caliber analysis.
+3. Materials and Methods
+This section presents a framework for grape caliber histogram prediction and total-
+count estimation from monocular imagery. Specifically, the approach is organized into
+four components: the system pipeline for model construction, the inference pipeline defin-
+ing operational behavior, the modeling formulation, and the design rationale guiding archi-
+tectural choices. In addition, the dataset consists of monocular RGB images acquired under
+realistic vineyard conditions, capturing variability in illumination, viewpoint, and occlu-
+sion. Each sample includes a grape bunch and a ping-pong reference object for calibration.
+The dataset covers multiple grape varieties and colors, with several hundred annotated
+images and thousands of grape instances, exhibiting class imbalance toward individual
+grapes. All samples were manually annotated using an instance segmentation protocol,
+enabling both geometry-aware representation learning and structured histogram prediction
+under practical conditions.
+3.1. System Pipeline
+The system pipeline describes the process used to construct, train, and deploy the
+models involved in the proposed framework. This includes dataset annotation, segmenta-
+tion model training, generation of intermediate representations, and subsequent training of
+prediction models. The overall system pipeline, including data preparation, model training,
+and deployment stages, is illustrated in Figure 1.
+Figure 1. Training and deployment workflow of the proposed methodology. The pipeline is divided
+into two stages: segmentation and histogram prediction. In the first stage, annotated images are used to
+train a segmentation model, which is then exported and applied at runtime to generate cached masks
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+7 of 25
+and derived representations. In the second stage, these representations are used to train residual
+quantity and histogram prediction models, which are subsequently exported and evaluated in ONNX
+format for efficient deployment.
+This workflow separates perception from structured prediction by generating fixed
+segmentation-derived inputs that are reused across experiments. Such decoupling ensures
+consistent feature extraction, improves reproducibility, and enables controlled comparison
+between histogram-modeling strategies.
+3.2. Inference Pipeline
+The inference pipeline defines how the proposed method operates on a single input
+image at test time. The overall process is illustrated in Figure 2.
+Figure 2. Overview of the proposed monocular pipeline for grape caliber histogram prediction.
+A single RGB image is processed through three sequential stages: (1) perception, where prepro-
+cessing, instance segmentation, and postprocessing extract grape instances and a reference object;
+(2) geometric encoding, where segmentation outputs are transformed into geometry-aware repre-
+sentations, including RGB and distance-transform channels; and (3) prediction, where a histogram
+model and a residual quantity module jointly estimate the caliber distribution and total grape count.
+The design emphasizes a single-input, feature-transformation pipeline suitable for robust estimation
+under partial visibility and real-world conditions.
+Given a single image of a grape bunch, the objective is to estimate both the total number
+of berries and the full-caliber histogram over the range from 7 to 32 mm. First, a segmentation
+model detects grape instances and the ping-pong calibration object. Second, the segmentation
+output is converted into geometry-aware auxiliary maps, specifically a grape-instance distance
+transform and a ping-pong distance transform. Third, these representations are used as input
+to two prediction branches operating in parallel: a histogram prediction model that estimates
+the normalized caliber distribution, and a residual quantity model that refines the total count
+by correcting the segmentation-derived prior. The final predicted count per caliber bin is
+obtained by combining both outputs.
+3.3. Modeling Formulation
+From a modeling perspective, the proposed method can be interpreted as a structured
+decomposition of the inverse problem associated with monocular perception. The first stage
+approximates a latent geometric representation of the scene through instance segmentation
+and distance-transform encoding, effectively lifting the input from raw RGB appearance to
+a spatially structured domain. The second stage operates on this representation to infer
+global properties, namely the caliber distribution and total count, which are not directly
+observable from the input.
+This formulation enables the use of intermediate supervision and reduces the com-
+plexity of the mapping between input and output spaces. By operating on structured
+representations rather than raw images alone, the model benefits from improved stability
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+8 of 25
+and enhanced interpretability, particularly in scenarios with occlusion and dense object ar-
+rangements. The comparative evaluation focuses on variations of the proposed framework
+under controlled conditions. While the design enables consistent comparison across input
+modalities and histogram-modeling strategies, it does not include a direct baseline perform-
+ing count estimation solely from raw image features. Therefore, the reported comparisons
+should be interpreted within the scope of the defined experimental framework.
+3.4. Design Rationale
+The adoption of a two-stage formulation is motivated by the inherent difficulty
+of jointly learning geometric structure and distributional outputs from raw image data.
+In dense and occluded scenes, such as grape bunches, end-to-end approaches must im-
+plicitly learn both instance separation and global aggregation within a single mapping,
+increasing model complexity and sensitivity to noise.
+By decoupling perception from structured prediction, the proposed design allows
+segmentation to specialize in spatial delineation while the prediction stage focuses on
+distribution-level inference. This separation improves learning efficiency, facilitates error
+analysis, and enables modular experimentation. Furthermore, it supports practical deploy-
+ment by allowing lightweight segmentation and prediction models to be independently
+optimized and exported for edge inference.
+3.5. Stage 1: Instance Segmentation
+3.5.1. Instance Segmentation Dataset
+An instance segmentation dataset was curated to support reliable grape localiza-
+tion and physical reference detection under realistic acquisition conditions. Each image
+contains one grape bunch and one ping-pong ball acting as a metric reference. The an-
+notation scheme follows a multi-class instance format including pingpong , bunch_black,
+bunch_green, bunch_red, grape_black, grape_green, and grape_red. The annotation dis-
+tribution is strongly imbalanced, with grape instances dominating the label mass and
+comparatively fewer bunch-level annotations. The class distribution of the annotated
+dataset is summarized in Figure 3.
+0
+500
+1000
+1500
+2000
+2500
+3000
+3500
+grape_red
+grape_green
+grape_black
+pingpong
+bunch_red
+bunch_green
+bunch_black
+3376
+2973
+1488
+275
+65
+64
+26
+Number of annotations
+Figure 3. Distribution of instance annotations across classes in the segmentation dataset. Grape-level
+categories dominate the dataset, reflecting the dense object structure of grape bunches, while bunch-
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+9 of 25
+level annotations are comparatively scarce. This imbalance highlights the need for robust instance-
+level detection under highly skewed label distributions and motivates the use of geometry-aware
+representations to support downstream tasks such as counting and histogram estimation.
+3.5.2. Instance Segmentation Model and Training
+Instance segmentation was performed using a YOLO-based segmentation model
+operating at 512 × 512 input resolution. The model predicts masks for grape instances,
+bunch regions, and the ping-pong reference. These masks constitute the first stage of the
+proposed pipeline and provide the geometric information required by the downstream
+histogram and quantity models.
+The segmentation model was trained on the curated multi-class instance dataset
+described above. During optimization, training progress was monitored through the
+evolution of the segmentation losses and the corresponding box- and mask-based metrics
+across epochs. After training, the segmentation model was exported for deployment,
+preserving the mask-level predictions required by the complete inference pipeline.
+3.5.3. Segmentation-Derived Inputs and Base Counting Prior
+Before training the histogram and quantity models, each image is first processed by
+the segmentation model. The predicted masks for grape_green, grape_red, and grape_black
+are used to build the grape distance-transform channel, whereas the predicted pingpong
+mask is used to generate the calibration-object distance-transform channel. In parallel,
+the number of detected grape instances is computed and stored as the segmentation-derived
+base count, denoted by seg_count_base.
+To avoid recomputing segmentation at every training epoch, the segmentation outputs
+and derived representations are cached in .npz format. Each cache stores the resized RGB
+image, the grape distance transform, the ping-pong distance transform, and metadata such
+as the number of grape detections, the number of ping-pong detections, the original image
+size, and letterbox information.
+3.6. Representation and Dataset Construction
+3.6.1. Histogram Dataset and Ground-Truth Targets
+The histogram dataset is organized as a structured table in which each row corresponds
+to a single-image capture containing one bunch and one ping-pong reference. The schema
+stores image identifiers; grape attributes such as variety, color, form, and size; total grape
+count; minimum and maximum caliber; and per-bin caliber counts. For the histogram
+prediction experiments, adjacent half-millimeter caliber annotations are aggregated into
+integer-millimeter bins, producing the discrete target histogram used for supervision.
+In parallel, the histogram-derived mean caliber is used as an additional supervisory signal
+for the histogram models, while the total grape count is used to supervise the residual
+quantity model. A representative example of the dataset, including the image capture and
+associated annotation context, is shown in Figure 4.
+It is important to note that, although the dataset captures variability in grape variety,
+color, and bunch structure, it may still reflect biases associated with specific acquisition
+conditions and sampling strategies. In particular, the distribution of calibers and total
+counts is not uniform, with a concentration of samples in intermediate ranges, as observed
+in the exploratory analysis. This imbalance may influence model training by favoring more
+frequently observed configurations. Therefore, the reported results should be interpreted
+within the context of the dataset characteristics, and future work should consider broader
+data collection to improve generalization across diverse vineyard conditions.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+10 of 25
+3.6.2. Dataset Partitioning and Experimental Protocol
+The dataset used in the deep learning experiments was partitioned at the bunch level
+using grape_id as the grouping key, ensuring that images from the same bunch were
+never shared across training and validation. The resulting experimental setup comprised
+7503 training samples and 1883 validation samples. Variety names were normalized,
+yielding 12 distinct varieties encoded as categorical indices. For model comparison, a fixed
+validation subset was additionally constructed by selecting one sampled view per bunch,
+resulting in 944 validation examples.
+Figure 4. Example of a dataset sample used for histogram prediction. Each capture contains a single
+grape bunch and a ping-pong ball serving as a physical reference for scale recovery. The associated
+annotations enable the derivation of per-bin caliber distributions, total grape count, and auxiliary
+attributes, forming the basis for supervised learning of both histogram prediction and quantity
+estimation under realistic acquisition conditions.
+3.6.3. Dataset Exploration
+An exploratory data analysis (EDA) was conducted to characterize the main statistical
+properties of the dataset before model training. This analysis considered the partition
+sizes, the number of unique bunches per split, the variety distribution, the aggregate
+caliber distribution, the total grape count distribution, the mean caliber distribution and the
+relationship between total count and mean caliber.
+Figure 5 shows that the dataset is imbalanced across grape varieties, that caliber mass
+is concentrated in intermediate bins, and that total grape count exhibits broad variability.
+These observations provide important context for the prediction task.
+3.6.4. Input Representation
+Two input modalities were considered to evaluate the impact of geometry-aware
+representations on model performance.
+RGB
+The rgb modality uses only the three original color channels, providing a baseline
+representation based solely on appearance information.
+RGBDT
+The rgbdt modality extends the RGB input by incorporating two additional geometry-
+aware channels derived from segmentation outputs: the grape-instance distance transform
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+11 of 25
+and the ping-pong distance transform. These channels encode spatial structure and prox-
+imity information, complementing the visual features present in the RGB image.
+Accordingly, the model input is defined as
+x ∈R3×H×W
+for the RGB modality, and
+x ∈R5×H×W
+for the RGBDT modality, with channel ordering given by
+{R, G, B, DTgrape, DTpp}.
+Figure 5. Exploratory analysis of the curated dataset used in this study. The figure summarizes
+the train and validation partitions, variety distribution, aggregate caliber distribution, total grape
+count distribution, mean caliber distribution, and the relationship between total grape count and
+mean caliber.
+3.7. Stage 2: Histogram and Total-Count Prediction
+The input representations defined above serve as the foundation for the second stage
+of the pipeline, where the objective shifts from geometric encoding to structured prediction.
+In particular, the RGB and RGBDT modalities provide complementary information that is
+exploited by the downstream models to infer both the global grape count and the caliber
+distribution. The following section describes how these representations are processed
+through a shared backbone and task-specific prediction modules. To ensure a consistent
+comparison across input modalities and prediction tasks, all models share a common
+feature extraction stage. This design isolates the effect of the input representation while
+maintaining a unified visual encoding, allowing differences in performance to be attributed
+to representation and modeling choices rather than architectural variability.
+3.7.1. Shared Visual Backbone Architecture
+All model families use the same visual backbone architecture, implemented through
+an ImageVarietyBackbone. The image branch is based on a pretrained MobileNetV3-Small.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+12 of 25
+The first convolution is adapted to accept either three or five channels, depending on the
+chosen modality. For the RGBDT configuration, the additional channels are initialized from
+the mean of the pretrained RGB filters.
+In parallel, grape variety is encoded through a learned embedding. The visual descrip-
+tor and variety embedding are concatenated to produce a fused representation that is used
+by both the histogram and quantity models.
+3.7.2. Residual Quantity Model
+Total-count estimation is performed using a residual quantity model. Instead of pre-
+dicting the total count directly from the image, the model receives the visual representation,
+the variety embedding, and the segmentation-derived base count. In addition to the raw
+count prior, the logarithm of the prior is also provided:
+s = seg_count_base,
+log(1 + s).
+The model predicts a residual correction,
+r = f (x, v, s),
+and reconstructs the final total-count estimate as
+ˆN = max(s + r, 0).
+3.7.3. Histogram Prediction Models
+Six histogram-modeling families were evaluated, each trained under both RGB and
+RGBDT inputs: unimodal, bimodal, direct-bins, multitask-peak, CDF, and CDF-direct hybrid.
+3.7.4. Output Reconstruction
+Let ˆh denote the predicted normalized caliber histogram and ˆN denote the predicted
+total grape count. The final predicted count per bin is computed as
+ˆy = ˆN ˆh.
+Once the model architectures are defined, the learning process is formulated through
+task-specific objectives that reflect both distributional accuracy and counting precision.
+The following section describes the loss functions used to supervise the histogram and
+quantity models, as well as their role in guiding the optimization process.
+3.8. Training Objective
+The quantity model is supervised using both the total-count target and the
+residual target:
+rgt = Ngt −s.
+The histogram models are trained using a composite objective combining L1 loss
+on histogram probabilities, KL divergence, 1D Wasserstein distance, and L1 loss on the
+histogram-derived mean caliber. For the multitask-peak model, an additional cross-entropy
+term on the true peak bin is included.
+3.8.1. Experimental Setup
+All experiments were conducted on CUDA using an NVIDIA GeForce RTX 5080
+GPU with 15.45 GB of VRAM. Training used a resolution of 512 × 512, batch size 8, eight
+workers, and automatic mixed precision. In total, the benchmark included two residual
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+13 of 25
+quantity models, one per input modality, and twelve histogram models corresponding
+to six modeling families evaluated under both RGB and RGBDT inputs. To ensure repro-
+ducibility, a fixed experimental protocol was adopted, including consistent data partition-
+ing, identical backbone architectures, and controlled hyperparameters. The use of cached
+segmentation outputs ensures identical input representations across models, enabling fair
+comparison of modeling strategies. Furthermore, preliminary repeated runs indicated
+consistent trends across random initializations, suggesting stability of the reported results.
+While full statistical characterization was not included, these observations support the
+reliability of performance differences under the defined protocol.
+The deployment experiments were conducted on a workstation equipped with an
+NVIDIA GPU using ONNX Runtime for inference. The exported models were evaluated
+without post-training optimizations, such as quantization or pruning, to preserve numerical
+fidelity with respect to the original PyTorch (version 2.1.0) implementation. The reported
+runtime reflects end-to-end inference, including preprocessing, segmentation, geometric
+encoding, and prediction stages. From a practical perspective, the compact model size and
+low latency suggest that the pipeline can operate in resource-constrained environments,
+such as edge or mobile platforms, provided that hardware acceleration is available. How-
+ever, deployment remains subject to constraints related to memory, energy consumption,
+and robustness under variable acquisition conditions.
+3.8.2. Evaluation Metrics
+Histogram prediction quality was measured using histogram probability MAE,
+Wasserstein-1 distance, histogram count-space MAE, and mean caliber MAE derived
+from the histogram.
+Peak localization was measured using exact peak accuracy,
+peak ±1 accuracy, peak ±2 accuracy, and peak MAE in bins. Counting performance was
+evaluated through total-count MAE, total-count RMSE, residual MAE, and residual RMSE.
+3.9. Ethics and Reproducibility
+The proposed methodology was developed using image data collected under stan-
+dard agricultural conditions, without involving human subjects or sensitive information,
+and therefore no ethical approval was required. The dataset consists exclusively of grape
+bunch images and associated annotations, without privacy concerns. To ensure repro-
+ducibility, all experiments followed a controlled protocol, including fixed data partitions,
+identical backbone architectures, and standardized training hyperparameters. Cached seg-
+mentation outputs and derived representations were reused across experiments, ensuring
+consistent inputs and enabling fair comparison across model variants. Furthermore, the
+implementation, including training scripts, configurations, and evaluation procedures,
+will be publicly released in a GitHub repository (https://github.com/ScaleAI-cl/paper_
+grapes_histogram_prediction, accessed on 1 June 2026) upon acceptance. This will facilitate
+independent verification and extension of the proposed framework. Additional documenta-
+tion of experimental parameters and pretrained models will further support reproducibility
+and transparency.
+4. Results
+This section reports the performance of the two-stage pipeline. First, the results
+of the instance segmentation stage are presented, since this module provides both the
+geometry-aware inputs and the segmentation-derived counting prior used downstream.
+Second, the results of the histogram and total-count prediction stage are reported, in-
+cluding the comparison across RGB and RGBDT input modalities, the best-performing
+model, deployment-oriented analyses, and runtime measurements. All reported metrics
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+14 of 25
+correspond to a single fixed experimental protocol; however, preliminary repeated runs
+indicated consistent trends across random initializations, suggesting stability under the
+defined protocol. However, statistical variability measures, such as standard deviation
+or confidence intervals, were not formally quantified and therefore remain part of future
+evaluation. In this context, the reported results should be interpreted as indicative of
+stable behavior rather than statistically validated performance differences. This reflects
+a cautious approach to ensure that conclusions remain aligned with the available evi-
+dence while acknowledging the need for more comprehensive statistical characterization
+in subsequent analyses.
+4.1. Stage 1: Instance Segmentation Results
+4.1.1. Training Dynamics and Error Patterns
+Figure 6 shows the training dynamics of the instance segmentation model, including
+optimization losses and box- and mask-based metrics across epochs. Overall, the model
+exhibited stable convergence without major optimization instabilities.
+Figure 6. Instance segmentation training curves, including optimization losses and key box- and
+mask-based metrics across epochs.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+15 of 25
+Figure 7 presents the confusion matrix on the evaluation split. Most of the probability
+mass is concentrated along the diagonal, especially for pingpong and grape subclasses,
+while the dominant failure modes correspond to missed grapes predicted as background
+and background fragments incorrectly classified as grapes.
+Figure 7. Confusion matrix for the instance segmentation classes.
+4.1.2. Quantitative Segmentation Performance
+Table 1 summarizes the performance of the YOLO-based segmentation model at an
+input resolution of 512 × 512. Overall, the model achieves strong global performance,
+with box-level mAP@50 of 0.976 and mask-level mAP@50 of 0.935, indicating that detec-
+tion and segmentation performance remains consistent under the evaluated conditions,
+including variability in illumination, viewpoint, and occlusion within the dataset. Notably,
+performance on the pingpong class is particularly high, reaching mAP@50 of 0.995 for both
+boxes and masks, with mask mAP@50–95 of 0.918. This is especially relevant, as accu-
+rate ping-pong segmentation directly supports the construction of the calibration-aware
+distance-transform channel. Furthermore, grape subclasses also exhibit strong mask-level
+performance, with mAP@50 values of 0.938, 0.959, and 0.946 for grape_black, grape_green,
+and grape_red, respectively. In this context, these results confirm that the segmentation
+stage is sufficiently reliable to support downstream geometric representation learning and
+residual count correction.
+The high segmentation performance suggests that the extracted representations are
+of sufficient quality for downstream processing within the proposed pipeline; however,
+a direct causal relationship between segmentation metrics and histogram prediction perfor-
+mance is not explicitly established in this study.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+16 of 25
+Table 1. Instance segmentation performance of the YOLO-based model with input resolution
+512 × 512. Metrics are reported separately for bounding boxes and masks.
+Class
+Images
+Inst.
+P
+R
+mAP@50
+mAP@50–95
+Pm
+Rm
+mAPm@50
+mAPm@50–95
+all
+35
+1644
+0.971
+0.943
+0.976
+0.888
+0.926
+0.895
+0.935
+0.537
+bunch_black
+5
+5
+0.944
+1.000
+0.995
+0.972
+0.756
+0.800
+0.802
+0.267
+bunch_green
+17
+17
+0.983
+1.000
+0.995
+0.983
+0.867
+0.882
+0.910
+0.255
+bunch_red
+12
+12
+0.977
+1.000
+0.995
+0.973
+0.977
+1.000
+0.995
+0.278
+grape_black
+5
+221
+0.968
+0.825
+0.947
+0.745
+0.963
+0.816
+0.938
+0.655
+grape_green
+17
+716
+0.962
+0.891
+0.956
+0.791
+0.962
+0.889
+0.959
+0.705
+grape_red
+12
+636
+0.969
+0.883
+0.948
+0.770
+0.964
+0.878
+0.946
+0.679
+pingpong
+35
+37
+0.992
+1.000
+0.995
+0.982
+0.992
+1.000
+0.995
+0.918
+4.2. Stage 2: Histogram and Total-Count Prediction Results
+4.2.1. Overall Comparison Across Histogram Families
+Table 2 presents the ranking of the 12 histogram experiments obtained by combining
+six histogram-modeling families with two input modalities, RGB and RGBDT, evaluated on
+the fixed validation subset. A clear trend emerges: the top four positions are all occupied
+by RGBDT variants. This indicates that the geometry-aware distance-transform channels
+consistently improve downstream prediction relative to RGB-only input.
+Table 2. Overall ranking of the histogram prediction experiments on the fixed validation sub-
+set. Lower “↓” is better for val_hist_w1 and val_count_total_mae, while higher “↑” is better for
+val_peak_exact.
+Rank
+Experiment
+Input
+val_hist_w1 ↓
+val_peak_exact ↑
+val_count_total_mae ↓
+1
+rgbdt_direct_bins
+rgbdt
+0.7563
+0.3506
+5.6659
+2
+rgbdt_cdf_model
+rgbdt
+0.7719
+0.3665
+5.6659
+3
+rgbdt_cdf_direct_hybrid
+rgbdt
+0.7752
+0.3506
+5.6659
+4
+rgbdt_multitask_peak
+rgbdt
+0.7762
+0.3761
+5.6659
+5
+rgb_cdf_direct_hybrid
+rgb
+0.7935
+0.3581
+5.9777
+6
+rgb_multitask_peak
+rgb
+0.7992
+0.3676
+5.9777
+7
+rgb_cdf_model
+rgb
+0.8031
+0.3369
+5.9777
+8
+rgb_direct_bins
+rgb
+0.8124
+0.3570
+5.9777
+9
+rgbdt_bimodal
+rgbdt
+0.8284
+0.3347
+5.6659
+10
+rgbdt_unimodal
+rgbdt
+0.8521
+0.3242
+5.6659
+11
+rgb_bimodal
+rgb
+0.8708
+0.3189
+5.9777
+12
+rgb_unimodal
+rgb
+0.9706
+0.3008
+5.9777
+These results show that the best-performing configuration was the flexible direct-bin
+model combined with RGBDT input, rather than a more strongly constrained output pa-
+rameterization. It is also worth noting that val_count_total_mae is shared across histogram
+families within each modality because a single residual quantity model is trained per input
+modality and then combined with all histogram variants of that modality.
+Although the performance differences between RGB and RGBDT configurations are
+consistent, it is important to interpret these results beyond absolute metric values. The ob-
+served improvements suggest that the additional channels contribute information that is
+complementary rather than redundant, particularly in scenarios with occlusion or ambigu-
+ous boundaries. This indicates that the performance gain is not merely due to increased
+input dimensionality but to the explicit encoding of spatial structure derived from segmen-
+tation outputs. Such behavior reinforces the hypothesis that geometry-aware representa-
+tions play a critical role in stabilizing distributional prediction under partial observability.
+The observed improvements associated with RGBDT inputs may arise from the inclusion
+of geometry-aware information; however, the current experimental design does not isolate
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+17 of 25
+the effect of additional channels from potential dimensionality-related factors. A controlled
+ablation study would be required to disentangle these contributions.
+4.2.2. Best-Performing Configuration
+The best experiment in the current benchmark was rgbdt_direct_bins. Table 3 sum-
+marizes its validation performance. This model achieved the lowest Wasserstein distance
+among all evaluated configurations while maintaining low count-space histogram error
+and competitive peak-localization performance.
+Table 3. Validation performance of the best histogram experiment, rgbdt_direct_bins, combined with
+the shared qty_rgbdt residual count model.
+Metric
+Value
+val_hist_prob_mae
+0.019158
+val_hist_w1
+0.756297
+val_mean_from_hist_mae
+0.682955
+val_hist_counts_mae
+1.136485
+val_peak_exact
+0.350636
+val_peak_pm1
+0.807203
+val_peak_pm2
+0.961864
+val_peak_mae_bins
+0.894068
+val_count_total_mae
+5.665889
+val_count_total_rmse
+8.691757
+underprediction_rate
+0.523305
+Although rgbdt_multitask_peak achieved the highest exact peak accuracy, its Wasser-
+stein distance was slightly worse than that of rgbdt_direct_bins. Therefore, the direct-bin
+RGBDT model provided the best balance between global histogram fidelity and count con-
+sistency. Preliminary repeated runs under the same experimental configuration indicated
+consistent trends across random initializations, with limited variability in key performance
+metrics. While full statistical characterization was not included in the current study, these
+observations suggest that the reported results are stable under the defined protocol.
+4.2.3. Effect of Input Modality
+A consistent advantage of RGBDT over RGB was observed across nearly all histogram
+families. For example, the direct-bin model shows consistently better performance under
+the evaluated protocol from val_hist_w1 = 0.8124 in RGB to 0.7563 in RGBDT, while the
+bimodal model shows consistently better performance under the evaluated protocol from
+0.8708 to 0.8284. This indicates that the segmentation-derived distance-transform channels
+encode geometric information that is useful beyond raw appearance alone, especially for
+separating touching berries and stabilizing histogram prediction.
+The observed improvement associated with RGBDT input can be further interpreted
+in terms of representational enrichment rather than mere dimensional augmentation.
+The distance-transform channels provide explicit encoding of spatial proximity and object
+boundaries, which are otherwise implicitly inferred from RGB appearance. This additional
+structure is particularly beneficial in regions of high density and occlusion, where visual
+cues alone may be ambiguous. As a result, the model operates on a representation that
+more closely approximates the underlying geometric configuration of the scene, leading to
+consistently better performance under the evaluated protocol and improved stability in
+both histogram prediction and count estimation.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+18 of 25
+4.2.4. Effect of Histogram Parameterization
+The comparison between histogram-modeling families showed that highly constrained
+output parameterizations were not optimal in this dataset. The unimodal and bimodal
+models ranked below the direct-bin, CDF, and hybrid variants, even under RGBDT input.
+This suggests that empirical grape caliber distributions are sufficiently flexible that direct
+or weakly constrained formulations provide a better fit than strongly imposed shape priors.
+At the same time, structured models were not uniformly poor. The CDF and CDF-direct
+hybrid variants ranked immediately below the best direct-bin model, suggesting that shape-
+aware formulations remain useful when they do not overconstrain the output distribution.
+4.2.5. Residual Total-Count Estimation
+The residual quantity model also benefited from RGBDT input. The best total-count
+performance reached val_count_total_mae = 5.6659 and val_count_total_rmse = 8.6918,
+compared with 5.9777 under RGB-only configurations. These results support the use of
+segmentation-derived counting priors followed by residual correction, rather than direct
+cardinality estimation from image features alone. The evaluation focuses on residual cor-
+rection relative to a segmentation-derived counting prior. A direct comparison against a
+baseline model performing count estimation solely from image features was not included,
+and therefore conclusions should be interpreted within the scope of the proposed frame-
+work.
+4.2.6. Qualitative Prediction Examples
+Figure 8 presents six representative qualitative examples from the best-performing
+model, rgbdt_direct_bins. The selected cases cover three performance regimes: two best-
+case predictions, two intermediate cases, and two failure cases. This selection provides a
+more complete view of model behavior than best-case examples alone.
+In the best cases, the model accurately captures the dominant caliber modes and
+preserves the overall distribution shape. In the intermediate cases, the predicted histogram
+generally follows the target trend, although some mass is redistributed across neighboring
+bins. In the worst cases, the main discrepancies are associated with peak displacement,
+local over- or underestimation, and reduced fidelity in the tails of the distribution.
+4.2.7. Model Size and ONNX Fidelity
+Despite the two-stage design, the deployed models remained compact. The qty_rgb
+and qty_rgbdt models contained approximately 1.11 million parameters, while the best
+histogram model, rgbdt_direct_bins, contained approximately 1.15 million parameters.
+The exported ONNX files remained below 0.5 MB, which is favorable for lightweight de-
+ployment.
+ONNX Runtime validation also showed strong agreement with the original PyTorch
+models. For the RGBDT quantity model, the ONNX version produced a mean absolute
+difference of 0.023678 relative to PyTorch. For the best histogram model, the difference
+was negligible, with MAE = 1.88 × 10−5 and maximum absolute difference = 2.227 × 10−4.
+The small numerical differences observed between ONNX and PyTorch outputs do not pro-
+duce noticeable deviations in downstream histogram or count metrics under the evaluated
+conditions, supporting the practical equivalence of both implementations for deploy-
+ment purposes.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+19 of 25
+(a)
+(b)
+(c)
+(d)
+(e)
+(f)
+Figure 8. Qualitative prediction examples from the best-performing model (rgbdt_direct_bins).
+(a) Best case 1; (b) Best case 2; (c) Intermediate case 1; (d) Intermediate case 2; (e) Failure case 1;
+(f) Failure case 2.
+4.2.8. End-to-End Runtime
+The complete validation-time pipeline, including image loading, segmentation infer-
+ence, channel construction, quantity inference, and histogram inference, achieved a mean
+runtime of 0.1240 s per image. Segmentation was the dominant cost, with a mean infer-
+ence time of 0.0780 s per image, followed by channel construction at 0.0423 s. In contrast,
+the quantity and histogram models were lightweight, requiring on average 0.0022 s and
+0.0015 s, respectively. Therefore, the learned predictors add little computational overhead
+relative to the segmentation stage.
+5. Discussion
+The results support four main conclusions. First, the instance segmentation stage is
+sufficiently reliable to support the downstream pipeline, both as a source of geometry-aware
+inputs and as the origin of the segmentation-derived counting prior. Second, geometry-
+aware channels derived from segmentation consistently improve histogram prediction and
+total-count estimation. Third, flexible histogram parameterizations outperform strongly
+constrained ones in this dataset. Fourth, residual count correction is an effective strategy
+for exploiting segmentation outputs without forcing the model to reconstruct cardinality
+from scratch.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+20 of 25
+5.1. Segmentation as an Enabling Stage
+The proposed framework depends on segmentation not only for object localization
+but also for the construction of the grape and ping-pong distance-transform channels and
+for the computation of the base counting prior. In this context, the segmentation results
+are important because they validate the feasibility of the two-stage design. The high mask-
+level performance, especially on the pingpong class and grape subclasses, indicates that
+the downstream models receive sufficiently reliable geometric cues to support histogram
+and count prediction. At the same time, the segmentation results also clarify the main
+sources of downstream error. The confusion patterns suggest that the most relevant
+segmentation failures are missed grapes and background fragments confused as grapes [25].
+These failure modes are not isolated: they can propagate to the RGBDT channels and to
+seg_count_base, thereby affecting both the histogram branch and the residual quantity
+model. Thus, segmentation should be interpreted as an enabling stage whose quality
+directly conditions the performance ceiling of the full pipeline.
+5.2. Influence of Geometry-Aware Input Channels
+The most consistent trend across the experiments was the superiority of RGBDT over
+RGB. All top four-ranked histogram models used RGBDT inputs, and each histogram
+family improved when the distance-transform channels were included. This indicates that
+the geometric structure encoded by the grape and ping-pong distance transforms provides
+information that is not recoverable from RGB appearance alone.
+A likely explanation is that these channels make local object extent, separation between
+touching berries, and calibration-reference structure more explicit. This is particularly
+useful in dense bunches, where appearance alone may be insufficient to distinguish adjacent
+berries or to preserve shape-related cues relevant for caliber prediction. Importantly, these
+gains were obtained without introducing large downstream models, since the additional
+channels are lightweight once segmentation has been computed.
+5.3. Why Direct-Bin Prediction Performed Best
+A second important finding is that the best overall model was rgbdt_direct_bins, rather
+than a unimodal or bimodal alternative. This suggests that the empirical caliber histograms
+in the dataset are not adequately described by overly restrictive shape assumptions. Real
+bunches may exhibit asymmetric, broad, skewed, or mildly multimodal distributions that
+benefit from direct prediction of bin probabilities.
+The competitive performance of the CDF and CDF-direct hybrid variants further
+supports this interpretation. Some amount of output structuring appears helpful, especially
+because caliber bins are ordered, but excessive parametric restriction reduces fidelity. In this
+sense, the direct-bin RGBDT model offers the best compromise between flexibility and
+stability, preserving the ability to represent irregular histogram shapes while still learning
+from geometry-aware input cues.
+5.4. Value of Residual Count Learning
+The residual quantity model also proved to be a strong design choice. Rather than
+replacing segmentation-based counting, the model uses the number of detected grapes as a
+prior and learns to correct its systematic bias. This is advantageous because segmentation
+already captures a large amount of counting information but tends to undercount when
+berries are occluded, merged, truncated, or fragmented.
+By learning only the missing correction, the quantity branch solves a simpler prob-
+lem and reaches a lower total-count error than a direct cardinality estimator would likely
+achieve under the same conditions. This strategy also integrates naturally with the his-
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+21 of 25
+togram branch, since the final count-per-bin prediction depends directly on a reliable
+estimate of total bunch cardinality. This formulation aligns with established residual-
+learning approaches in regression and counting tasks, where coarse predictions are refined
+through learned corrections to improve robustness and stability under noisy or incomplete
+observations [26].
+5.5. Insights from Qualitative Examples
+The qualitative examples shown in Figure 8 complement the aggregate metrics by
+illustrating model behavior across varying difficulty levels. In the best cases, the model
+captures dominant caliber modes, preserves distribution spread, and closely matches total
+count, indicating that reliable segmentation-derived inputs support accurate reconstruction
+of both shape and scale. In intermediate cases, the global trend is maintained, although mass
+is redistributed across neighboring bins, suggesting that residual errors arise from local
+ambiguity rather than misinterpretation. From an application perspective, such deviations
+are less critical than large count errors or distribution shifts. In contrast, failure cases
+exhibit peak displacement, over-smoothing, and count misestimation. In some instances,
+qualitative inspection suggests mismatches between visible structure and annotations,
+likely reflecting labeling challenges under occlusion rather than systematic errors. Overall,
+performance degrades under occlusion, high density, and segmentation uncertainty.
+5.6. Analysis of Hypotheses and Research Questions
+The experimental results provide consistent evidence to analyze the proposed hypothe-
+ses and research questions from both performance and modeling perspectives. With respect
+to RQ1, the two-stage monocular pipeline enables stable estimation of total grape count
+and caliber histograms under realistic conditions, suggesting that separating perception
+and inference helps address partial observability. Regarding RQ2, the comparison between
+RGB and RGBDT indicates that geometry-aware channels improve both histogram fidelity
+and count estimation, likely by encoding spatial cues not captured by RGB alone. For RQ3,
+residual correction enhances robustness by compensating systematic biases in segmentation-
+derived priors. From a modeling perspective, flexible approaches better capture irregular
+distributions. Furthermore, residual learning aligns with established correction-based
+frameworks in regression and counting tasks [27] that refine coarse predictions to improve
+stability under uncertainty [28]. Overall, the results highlight a robust yet constrained
+framework, with remaining challenges linked to occlusion and segmentation uncertainty.
+5.7. Practical Implications for Deployment
+From a deployment perspective, the reported runtime results are encouraging.
+The learned histogram and quantity models are lightweight, compact, and faithfully ex-
+portable to ONNX. The dominant computational cost lies in the segmentation stage, not
+in the downstream predictors. Therefore, future optimization efforts for real-time or em-
+bedded deployment should focus primarily on accelerating the segmentation network
+or reducing the cost of channel construction. This is a practically favorable outcome.
+Since the histogram and quantity models contribute only a small fraction of the total run-
+time, the method remains deployable even when multiple histogram parameterizations
+are explored during development. The compact ONNX footprint also supports use in
+phenotyping and quality-control settings where lightweight inference is desirable [29].
+From an application perspective, the proposed framework can be integrated into existing
+viticultural workflows through mobile or edge-based acquisition systems. For instance,
+the lightweight ONNX models and low runtime suggest feasibility for deployment on
+handheld devices or field robots, enabling near real-time estimation during harvesting
+or inspection [30]. Such integration would require minimal user interaction, relying on
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+22 of 25
+single-image capture and automated inference, thereby aligning with practical constraints
+in agricultural environments.
+5.8. Limitations
+Despite favorable results, several limitations remain. First, the effectiveness of the
+residual count prior depends on segmentation quality, where occlusion, mask fragmen-
+tation, or domain shift may degrade both auxiliary representations and base counts.
+Second, histogram targets rely on annotation quality, and limited label noise may in-
+fluence training and evaluation. Third, the evaluation is conducted on a single dataset
+under bounded conditions and therefore does not explicitly assess cross-domain general-
+ization across vineyards, seasons, or acquisition setups. Furthermore, although RGBDT
+consistently outperforms RGB, its benefits depend on the robustness of the segmentation
+stage, and errors may propagate through geometric encoding. From a methodological
+perspective, the reuse of a shared quantity model ensures that histogram comparisons
+isolate parameterization effects while maintaining consistent count estimation. Overall,
+these findings highlight the need for improved robustness, interpretability, and cross-
+domain validation in future work.
+5.9. Future Work
+Future work should explore several directions. First, improving segmentation robust-
+ness may enhance both total-count estimation and histogram accuracy. Second, uncertainty-
+aware histogram prediction could provide confidence estimates in ambiguous or low-
+support regions. Third, multi-view fusion may improve robustness by mitigating self-
+occlusion and partial visibility in dense bunches. Furthermore, evaluating the framework
+across diverse acquisition conditions and domains is necessary to better characterize gen-
+eralization. Overall, the results indicate that combining segmentation-derived geometric
+cues, residual quantity correction, and flexible histogram modeling provides an effective
+and deployable strategy for grape caliber analysis. From a practical perspective, future
+work will also explore quantization and hardware-specific optimizations to further reduce
+latency and energy consumption for embedded deployment.
+6. Conclusions
+This study introduced a two-stage monocular pipeline for grape caliber analysis from
+single images. The proposed approach combines instance segmentation, segmentation-
+derived geometric channels, residual quantity correction, and histogram prediction within
+a lightweight and deployable framework.
+The results show that the segmentation stage provides a sufficiently reliable basis for
+downstream prediction, both for geometry-aware feature construction and for the initial-
+ization of the counting prior. They also show that RGBDT inputs consistently improve
+performance over RGB alone and that the best-performing model is rgbdt_direct_bins,
+indicating that flexible direct-bin histogram prediction is better suited to the observed grape
+caliber distributions than more constrained unimodal or bimodal formulations. In addition,
+residual learning over a segmentation-derived count prior proved effective for total-count
+estimation, improving the final reconstruction of count-level histograms. The effectiveness
+of residual correction is demonstrated relative to a segmentation-derived counting prior;
+however, a direct comparison against a baseline model performing count regression solely
+from image features was not included in the current study. Therefore, the reported improve-
+ments should be interpreted as evidence of consistency within the proposed framework
+rather than as a definitive comparison against all possible counting strategies.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+23 of 25
+From a deployment perspective, the exported ONNX models preserved numeri-
+cal fidelity, and the complete pipeline achieved lightweight runtime, with segmentation
+remaining the dominant computational cost. Although the method still depends on seg-
+mentation quality and some difficult samples may include substantial prediction errors
+or possible annotation discrepancies, the overall results support the proposed design
+as a practical strategy for monocular grape caliber estimation. Some discrepancies ob-
+served in qualitative examples may reflect inherent challenges in defining precise ground-
+truth distributions under dense and partially occluded conditions, rather than systematic
+annotation errors.
+Future work should address segmentation robustness, uncertainty-aware prediction,
+multi-view extensions, and broader cross-domain evaluation. Importantly, these directions
+are presented as prospective developments rather than conclusions directly supported
+by the current evidence, reflecting a deliberate effort to guide further investigation. Be-
+yond this scope, the proposed framework illustrates a broader paradigm for structured
+prediction from monocular imagery, combining perception, geometry-aware representa-
+tions, and distribution-level inference within a lightweight architecture. This design enables
+both local object understanding and global aggregate estimation under partial observability.
+Furthermore, the integration of efficient perception models with structured prediction
+highlights a scalable approach for deployable agricultural systems, where robustness, com-
+putational efficiency, and adaptability are essential. Overall, this perspective suggests a
+transferable design principle for similar tasks involving dense object arrangements and
+constrained operational environments.
+Author Contributions: P.O.-A.: writing—original draft, review and editing, M.S.: conceptualization,
+writing—review and editing, J.V.: writing—review and editing, project administration, funding
+acquisition. All authors have read and agreed to the published version of the manuscript.
+Funding: This research received no external funding.
+Institutional Review Board Statement: Not applicable.
+Informed Consent Statement: Not applicable.
+Data Availability Statement: All datasets and preprocessing scripts supporting the conclusions of
+this article will be made publicly available in an open-access repository upon acceptance, ensur-
+ing reproducibility of the segmentation-based grape caliber estimation pipeline, including dataset
+preprocessing, geometry-aware representation construction, and structured prediction models.
+Acknowledgments: Large language models were used to assist in language polishing and formatting.
+The authors are fully responsible for the content and interpretation of all results.
+Conflicts of Interest: The authors declare no conflicts of interest.
+Abbreviations
+The following abbreviations are used in this manuscript:
+RGB
+Red, Green, Blue image representation
+RGBDT
+RGB with Distance Transform channels
+DT
+Distance Transform
+ONNX
+Open Neural Network Exchange
+References
+1.
+Ahmedt-Aristizabal, D.; Smith, D.; Khokher, M.R.; Li, X.; Smith, A.L.; Petersson, L.; Rolland, V.; Edwards, E.J. An in-field dynamic
+vision-based analysis for vineyard yield estimation. IEEE Access 2024, 12, 102146–102166.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+24 of 25
+2.
+Guo, R.; Shang, L. Visual Perception-Driven Control Strategies for Agricultural Machinery Automation. IEEE Access 2025,
+13, 216626–216645.
+3.
+Rudenko, M.; Kazak, A.; Oleinikov, N.; Mayorova, A.; Dorofeeva, A.; Nekhaychuk, D.; Shutova, O. Intelligent monitoring system
+to assess plant development state based on computer vision in viticulture. Computation 2023, 11, 171.
+4.
+Lins, R.G.; Santos, R.E.d.; Gaspar, R. Vision-based measurement for quality control inspection in the context of Industry 4.0: A
+comprehensive review and design challenges. J. Braz. Soc. Mech. Sci. Eng. 2023, 45, 229.
+5.
+Coll-Ribes, G.; Torres-Rodríguez, I.J.; Grau, A.; Guerra, E.; Sanfeliu, A. Accurate detection and depth estimation of table grapes
+and peduncles for robot harvesting, combining monocular depth estimation and CNN methods. Comput. Electron. Agric. 2023,
+215, 108362.
+6.
+Guo, Y.; Gao, T.; Dong, A.; Jiang, X.; Zhu, Z.; Wang, F. A survey of the state of the art in monocular 3D human pose estimation:
+Methods, benchmarks, and challenges. Sensors 2025, 25, 2409.
+7.
+Guo, C.; Tan, F. SWRD–YOLO: A Lightweight Instance Segmentation Model for Estimating Rice Lodging Degree in UAV Remote
+Sensing Images with Real-Time Edge Deployment. Agriculture 2025, 15, 1570.
+8.
+Su, S.; Wu, J. GeometryFormer: Semi-convolutional transformer integrated with geometric perception for depth completion in
+autonomous driving scenes. Sensors 2024, 24, 8066.
+9.
+Liu, H.; Xiong, W.; Zhang, Y. Yolo-core: Contour regression for efficient instance segmentation. Mach. Intell. Res. 2023, 20, 716–728.
+10.
+Peebles, W.; Xie, S. Scalable diffusion models with transformers. In Proceedings of the IEEE/CVF International Conference on
+Computer Vision, Paris, France, 1–6 October 2023; pp. 4195–4205.
+11.
+Wang, K.; Lu, Y.; Liu, J.; Zhang, X. GAML: Geometry-aware mutual learning for polyp segmentation. Biomed. Signal Process.
+Control 2025, 108, 107965.
+12.
+Shi, X.; Wang, S.; Zhang, B.; Ding, X.; Qi, P.; Qu, H.; Li, N.; Wu, J.; Yang, H. Advances in object detection and localization
+techniques for fruit harvesting robots. Agronomy 2025, 15, 145.
+13.
+Mimma, N.E.A.; Ahmed, S.; Rahman, T.; Khan, R. Fruits classification and detection application using deep learning. Sci. Program.
+2022, 2022, 4194874.
+14.
+Ramos, L.T.; Sappa, A.D. A decade of you only look once (yolo) for object detection: A review. IEEE Access 2025, 13, 192747–192794.
+15.
+Gao, F.; Fang, W.; Sun, X.; Wu, Z.; Zhao, G.; Li, G.; Li, R.; Fu, L.; Zhang, Q. A novel apple fruit detection and counting methodology
+based on deep learning and trunk tracking in modern orchard. Comput. Electron. Agric. 2022, 197, 107000.
+16.
+Wan, J.; Zhang, X.; Yang, W.; Zhang, C.; Lei, M.; Dong, Z. A flexible camera calibration method for pose vision measurement
+system of roadheader. Measurement 2025, 242, 115950.
+17.
+Vinci, A.; Brigante, R.; Traini, C.; Farinelli, D. Geometrical characterization of hazelnut trees in an intensive orchard by an
+unmanned aerial vehicle (UAV) for precision agriculture applications. Remote Sens. 2023, 15, 541.
+18.
+Peeples, J.; Al Kharsa, S.; Saleh, L.; Zare, A. Histogram Layers for Neural “Engineered” Features. In IEEE Transactions on Artificial
+Intelligence; IEEE: Piscataway, NJ, USA, 2025.
+19.
+Farjon, G.; Huijun, L.; Edan, Y. Deep-learning-based counting methods, datasets, and applications in agriculture: A review. Precis.
+Agric. 2023, 24, 1683–1711.
+20.
+Wang, X.; Kang, H.; Zhou, H.; Au, W.; Chen, C. Geometry-aware fruit grasping estimation for robotic harvesting in apple
+orchards. Comput. Electron. Agric. 2022, 193, 106716.
+21.
+Hasan, M.M.; Rahman, T.; Uddin, A.S.; Galib, S.M.; Akhond, M.R.; Uddin, M.J.; Hossain, M.A. Enhancing rice crop management:
+Disease classification using convolutional neural networks and mobile application integration. Agriculture 2023, 13, 1549.
+22.
+Kolhe, P.B.; Shelke Ramesh, D.; Agarwal, N. EnhanceNet: Rethinking model scaling for convolutional neural network. In
+Proceedings of the World Conference on Information Systems for Business Management; Springer: Singapore, 2024; pp. 1–15.
+23.
+Neupane, C.; Pereira, M.; Koirala, A.; Walsh, K.B. Fruit sizing in orchard: A review from caliper to machine vision with deep
+learning. Sensors 2023, 23, 3868.
+24.
+Santos, T.T.; De Souza, L.L.; Dos Santos, A.A.; Avila, S. Grape detection, segmentation, and tracking using deep neural networks
+and three-dimensional association. Comput. Electron. Agric. 2020, 170, 105247.
+25.
+Liang, J.; Huang, K.; Lei, H.; Zhong, Z.; Cai, Y.; Jiao, Z. Occlusion-aware fruit segmentation in complex natural environments
+under shape prior. Comput. Electron. Agric. 2024, 217, 108620.
+26.
+Guo, H.; Du, B.; Zhang, L.; Su, X. A coarse-to-fine boundary refinement network for building footprint extraction from remote
+sensing imagery. ISPRS J. Photogramm. Remote Sens. 2022, 183, 240–252.
+27.
+Huang, Y.; Qian, Y.; Wei, H.; Lu, Y.; Ling, B.; Qin, Y. A survey of deep learning-based object detection methods in crop counting.
+Comput. Electron. Agric. 2023, 215, 108425.
+28.
+Levi, D.; Gispan, L.; Giladi, N.; Fetaya, E. Evaluating and calibrating uncertainty prediction in regression tasks. Sensors 2022,
+22, 5540.
+https://doi.org/10.3390/app16126225
+
+Appl. Sci. 2026, 16, 6225
+25 of 25
+29.
+Khan, A.T.; Jensen, S.M.; Khan, A.R.; Li, S. Plant disease detection model for edge computing devices. Front. Plant Sci. 2023,
+14, 1308528.
+30.
+Vélez, S.; Ariza-Sentís, M.; Triviño, M.; Cob-Parro, A.C.; Mila, M.; Valente, J. Framework for smartphone-based grape detection
+and vineyard management using UAV-trained AI. Heliyon 2025, 11, e42525.
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.
+https://doi.org/10.3390/app16126225

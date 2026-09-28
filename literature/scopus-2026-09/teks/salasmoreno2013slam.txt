@@ -1,0 +1,722 @@
+SLAM++: Simultaneous Localisation and Mapping at the Level of Objects
+Renato F. Salas-Moreno1
+Richard A. Newcombe2
+Hauke Strasdat1
+Paul H. J. Kelly1
+Andrew J. Davison1
+1Imperial College London
+2University of Washington
+Abstract
+We present the major advantages of a new ‘object ori-
+ented’ 3D SLAM paradigm, which takes full advantage
+in the loop of prior knowledge that many scenes consist
+of repeated, domain-speciﬁc objects and structures. As a
+hand-held depth camera browses a cluttered scene, real-
+time 3D object recognition and tracking provides 6DoF
+camera-object constraints which feed into an explicit graph
+of objects, continually reﬁned by efﬁcient pose-graph opti-
+misation. This offers the descriptive and predictive power
+of SLAM systems which perform dense surface reconstruc-
+tion, but with a huge representation compression. The ob-
+ject graph enables predictions for accurate ICP-based cam-
+era to model tracking at each live frame, and efﬁcient ac-
+tive search for new objects in currently undescribed image
+regions. We demonstrate real-time incremental SLAM in
+large, cluttered environments, including loop closure, relo-
+calisation and the detection of moved objects, and of course
+the generation of an object level scene description with the
+potential to enable interaction.
+1. Introduction
+Most current real-time SLAM systems operate at the
+level of low-level primitives (points, lines, patches or non-
+parametric surface representations such as depth maps),
+which must be robustly matched, geometrically transformed
+and optimised over in order that maps represent the intrica-
+cies of the real world. Modern processing hardware permits
+ever-improving levels of detail and scale, and much inter-
+est is now turning to semantic labelling of this geometry
+in terms of the objects and regions that are known to exist
+in the scene. However, some thought about this process re-
+veals a huge amount of wasted computational effort; and the
+potential for a much better way of taking account of domain
+knowledge in the loop of SLAM operation itself.
+We propose a paradigm for real-time localisation and
+mapping which harnesses 3D object recognition to jump
+over low level geometry processing and produce incremen-
+Figure 1. (top) In SLAM++, a cluttered 3D scene is efﬁciently
+tracked and mapped in real-time directly at the object level. (left)
+A live view at the current camera pose and the synthetic rendered
+objects. (right) We contrast a raw depth camera normal map with
+the corresponding high quality prediction from our object graph,
+used both for camera tracking and for masking object search.
+tally built maps directly at the ‘object oriented’ level. As
+a hand-held depth camera browses a cluttered scene, prior
+knowledge of the objects likely to be repetitively present
+enables real-time 3D recognition and the creation of a sim-
+ple pose graph map of relative object locations. This graph
+is continuously optimised as new measurements arrive, and
+enables always up-to-date, dense and precise prediction of
+the next camera measurement. These predictions are used
+for robust camera tracking and the generation of active
+search regions for further object detection.
+Our approach is enabled by efﬁcient GPGPU parallel im-
+1
+
+plementation of recent advances in real-time 3D object de-
+tection and 6DoF (Degree of Freedom) ICP-based pose re-
+ﬁnement. We show that alongside the obvious beneﬁt of
+an object-level scene description, this paradigm enables a
+vast compression of map storage compared to a dense re-
+construction system with similar predictive power; and that
+it easily enables large scale loop closure, relocalisation and
+great potential for the use of domain-speciﬁc priors.
+2. Real-Time SLAM with Hand-Held Sensors
+In SLAM (Simultaneous Localisation and Mapping),
+building an internally consistent map in real-time from a
+moving sensor enables drift-free localisation during arbi-
+trarily long periods of motion. We have still not seen truly
+‘pick up and play’ SLAM systems which can be embed-
+ded in low-cost devices and used without concern or un-
+derstanding by non-expert users, but there has been much
+recent progress. Until recently, the best systems used ei-
+ther monocular or stereo passive cameras. Sparse feature
+ﬁltering methods like [5] were improved on by ‘keyframe
+SLAM’ systems like PTAM [8] which used bundle adjust-
+ment in parallel with tracking to enable high feature counts
+and more accurate tracking.
+Most recently, a breakthrough has been provided by
+‘dense SLAM’ systems, which take advantage of GPGPU
+processing hardware to reconstruct and track full surface
+models, represented non-parametrically as meshes or im-
+plicit surfaces. While this approach is possible with an RGB
+camera [12], commodity depth cameras have now come to
+the fore in high performance, robust indoor 3D mapping,
+in particular via the KinectFusion algorithm [11]. New de-
+velopments such as [18] have tackled scaling the method
+via a sliding volume, sub-blocking or octrees; but a a truly
+scalable, multi-resolution, loop closure capable dense non-
+parametric surface representation remains elusive, and will
+always be wasteful in environments with symmetry.
+From sparse feature-based SLAM, where the world is
+modelled as an unconnected point cloud, to dense SLAM
+which assumes that scenes contain continuous surfaces, we
+have seen an increase in the prior scene knowledge brought
+to bear. In SLAM++ we step up to the even stronger as-
+sumption that the world has intrinsic symmetry in the form
+of repetitive objects. While we currently pre-deﬁne the ob-
+jects expected in a scene, we intend that the paradigm per-
+mits the objects in a scene to be identiﬁed and segmented
+automatically as salient, repeated elements.
+Object SLAM has many characteristics of a return
+to feature-based SLAM methods.
+Unlike dense non-
+parametric approaches, the relatively few discrete entities
+in the map makes it highly feasible to jointly optimise over
+all object positions to make globally consistent maps. The
+fact that the map entities are now objects rather than point
+features, however, puts us in a stronger position than ever
+before; tracking one object in 6DoF is enough to localise
+a camera, and reliable relocalisation of a lost camera or
+loop closure detection can be performed on the basis of
+just a small number of object measurements due to their
+high saliency.
+Further, and crucially, instant recognition
+of objects provides great efﬁciency and robustness beneﬁts
+via the active approaches it permits to tracking and object
+detection, guided entirely by the dense predictions we can
+make of the positions of known objects.
+SLAM++ relates strongly to the growing interest in se-
+mantically labelling scene reconstructions and maps, in
+both the computer vision and robotics communities, though
+we stress the big difference between post-hoc labelling
+of geometry and the closed loop, real-time algorithm we
+present. Some of the most sophisticated recent work was
+by Kim et al. [7]. A depth camera is ﬁrst used to scan a
+scene, similar in scale and object content to the results we
+demonstrate later, and all data is fused into a single large
+point cloud. Off-line, learned object models, with a degree
+of variation to cope with a range of real object types, are
+then matched into the joint scan, optimising both similarity
+and object conﬁguration constraints. The results are impres-
+sive, though the emphasis is on labelling rather than aiding
+mapping and we can see problems with missing data which
+cannot be ﬁxed with non-interactive capture. Other good
+work on labelling using RDB-D data was by Silberman [16]
+as well as Ren et al. [14] who used kernel descriptors for
+appearance and shape to label single depth camera images
+with object and region identity.
+Several published approaches use object detection, like
+we do, with the aim of not just labelling but actually im-
+proving reconstruction and tracking; but none of these have
+taken the idea nearly as far as we have with the combina-
+tion of real-time processing, full 3D operation, dense pre-
+diction and a modern graph optimisation back-end. To give
+a ﬂavour of this work, Castle et al. [4] incorporated pla-
+nar object detection into sparse feature-based monocular
+SLAM [5]. These objects, once recognized via SIFT de-
+scriptors, improved the quality of SLAM due to their known
+size and shape, though the objects were simple highly tex-
+tured posters and the scene scale small. Also in an EKF
+SLAM paradigm, Ramos et al. [13] demonstrated a 2D
+laser/camera system which used object recognition to gen-
+erate discrete entities to map (tree trunks) rather than using
+raw measurements. Finally, the same idea that object recog-
+nition aids reconstruction has been used in off-line structure
+from motion. Bao et al. [3] represented a scene as a set of
+points, objects and regions in two-view SfM, solving ex-
+pensively and jointly in a graph optimisation for a labelling
+and reconstruction solution taking account of interactions
+between all scene entities.
+
+Figure 2. Outline of the SLAM++ pipeline. Given a live depth map Dl, we ﬁrst compute a surface measurement in the form of a vertex and
+normal map Nl providing input to the sequentially computed camera tracking and object detection pipelines. (1) We track the live camera
+pose Twl with an iterative closest point approach using the dense multi-object scene prediction captured in the current SLAM graph G. (2)
+Next we attempt to detect objects, previously stored in a database, that are present in the live frame, generating detection candidates with an
+estimated pose in the scene. Candidates are ﬁrst reﬁned or rejected using a second ICP estimation initialised with the detected pose. (3) We
+add successfully detected objects g into the SLAM graph in the form of a object-pose vertex connected to the live estimated camera-pose
+vertex via a measurement edge. (4) Rendering objects from the SLAM graph produce a predicted depth Dr and normal map Nr into the
+live estimated frame, enabling us to actively search only those pixels not described by current objects in the graph. We run an individual
+ICP between each object and the live image resulting in the addition of a new camera-object constraint into the SLAM graph.
+3. Method
+SLAM++ is overviewed in Figure 2, and detailed below.
+3.1. Creating an Object Database
+Before live operation in a certain scene, we rapidly make
+high quality 3D models of repeatedly occurring objects via
+interactive scanning using KinectFusion [11] in a controlled
+setting where the object can easily be circled without occlu-
+sion. A mesh for the object is extracted from the truncated
+signed distance volume obtained from KinectFusion using
+marching cubes [10]. A small amount of manual editing
+in a mesh tool is performed to separate the object from the
+ground plane, and mark it up with a coordinate frame such
+that domain-speciﬁc object constraints can be applied. The
+reconstructed objects are then stored in a simple database.
+3.2. SLAM Map Representation
+Our representation of the world is a graph, where each
+node stores either the estimated SE(3) pose (rotation and
+translation relative to a ﬁxed world frame) Twoj of object
+j, or Twi of the historical pose of the camera at timestep
+i (see Figure 5).
+Each object node is annotated with a
+type from the object database. Each SE(3) measurement
+of the pose of an object Zi,oj from the camera is stored in
+the graph as a factor (constraint) which links one camera
+pose and one object pose. Additional factors can option-
+ally be added to the graph; between camera poses to rep-
+resent camera-camera motion estimates (e.g. from ICP), or
+domain-speciﬁc structural priors, e.g. that certain types of
+objects must be grounded on the same plane. Details on
+graph optimisation are given in Section 3.5.
+3.3. Real-Time Object Recognition
+We follow the approach of Drost et al. [6] for recognis-
+ing the 6DoF pose of 3D objects, represented by meshes, in
+a depth image. We give details of our parallel implemen-
+tation, which achieves the real-time detection of multiple
+instances of multiple objects we need by fully exploiting
+the ﬁne-grained parallelism of GPUs.
+As in the Generalised Hough Transform [2], in Drost et
+al.’s method an object is detected and simultaneously lo-
+calised via the accumulation of votes in a parameter space.
+The basis of voting is the correspondence between Point-
+Pair Features (PPFs); four-dimensional descriptors of the
+relative position and normals of pairs of oriented points on
+the surface of an object.
+Points, with normal estimates,
+are randomly sampled on a bilateral-ﬁltered image from the
+depth camera. These samples are paired up in all possible
+combinations to generate PPFs which vote for 6DoF model
+conﬁgurations containing a similar PPF.
+A global description for each object mesh is quickly gen-
+erated on the GPU by discretising PPFs with similar values
+and storing them in search data structures built using par-
+allel primitive operations such as reduction, scan and sort
+(see Algorithm 1), provided by modern GPU template li-
+braries such as Bolt [1]. Similar structures are also built
+from each live frame. This process typically takes <5ms
+for 160K PPFs and could also be used in the future to de-
+scribe new object classes on the ﬂy as they are automatically
+segmented.
+Matching similar features of the scene against the model
+can be efﬁciently performed in parallel via a vectorised bi-
+nary search, producing a vote for each match. Accumula-
+tion of votes into a shared buffer can be prohibitively expen-
+sive on the GPU, where many threads would require atomic
+operations when incrementing a common memory location
+
+Figure 3. Object recognition with active search. (top-left) Mea-
+sured normal map from sensor. (top-right) Predicted view from
+graph. (bottom-left) Undescribed regions to be searched are in
+white. (bottom-right) Masked normal map used for recognition.
+Algorithm 1: Build global description from PPFs
+input : A set of N point-pair features (PPF)
+output: Set of search data structures
+1 // Encode the PPF index and hash key
+2 codes ←new array;
+3 foreach i ←0 to N - 1 in parallel do
+4
+Compute the hash key hk from PPF i;
+5
+codes[i] = hk ≪32 + i;
+6 codes ←Sort(codes);
+7 // Decode PPF index and hash key
+8 key2ppfMap ←new array;
+9 hashKeys ←new array;
+10 foreach i ←0 to N - 1 in parallel do
+11
+key2ppfMap[i] = ∼(1 ≪32) & code[i];
+12
+hashKeys[i] = code[i] ≫32;
+13 // Count PPF per hash key and remove
+duplicate keys
+14 hashKeys, ppfCount ←Reduce(hashKeys,
+sumOp);
+15 // Find the first PPF index of a block
+of PPFs in key2ppfMap having equal
+hash key
+16 firstPPFIndex ←ExclScan(ppfCount);
+17 return hashKeys, ppfCount, firstPPFIndex,
+key2ppfMap;
+to avoid race conditions. To overcome this, each vote is rep-
+resented as a 64-bit integer code (Figure 4), which can then
+be efﬁciently sorted and reduced in parallel.
+Figure 4. Packed 64-bit integer vote code. The ﬁrst 6 bits encode
+the alignment angle, followed by 26 bits for the model point and
+32 bits for the scene reference point.
+Sorting puts corresponding model points, scene refer-
+ence points and alignment angles contiguously in memory.
+This is followed by a parallel reduction with a sum opera-
+tion to accumulate equal vote codes (Algorithm 2). After
+peak ﬁnding, pose estimates for each scene reference point
+are clustered on the CPU according to translation and rota-
+tion thresholds as in [6].
+Algorithm 2: Accumulate Votes
+input : A set of M vote codes
+output: Vote count per unique vote code
+1 // Sort voteCodes in parallel
+2 voteCodes ←Sort(voteCodes);
+3 // Count votes with equal voteCode
+4 voteCodes, voteCount ←Reduce(voteCodes,
+sumOp);
+5 return voteCodes, voteCount;
+3.3.1
+Active Object Search
+Standard application of Drost et al.’s recognition algo-
+rithm [6] in room scenes is highly successful when objects
+occupy most of the camera’s ﬁeld of view, but poor for ob-
+jects which are distant or partly occluded by other objects,
+due to poor sample point coverage. It is here that we re-
+alise one of the major beneﬁts of our in-the-loop SLAM++
+approach. The view prediction capabilities of the system
+mean that we can generate a mask in image space for depth
+pixels which are not already described by projected known
+objects. The measured depth images from the camera are
+cropped using these masks and samples are only spread in
+the undescribed regions (see Figure 3).
+The result of object detection is often multiple cluster
+peaks, and quantised localisation results. These must be
+passed to ICP reﬁnement as explained in the next section.
+3.4. Camera Tracking and Accurate Object Pose
+Estimation using ICP
+Camera-Model Tracking: In KinectFusion [11], the
+up-to-date volumetric map is leveraged to compute a view
+prediction into the previously estimated camera pose, en-
+abling estimation of the live camera using a fast dense itera-
+tive closest point (ICP) algorithm [15]. In SLAM++, in con-
+trast to the relatively incomplete models available at early
+stages of mapping with KinectFusion, we track against a
+complete high quality multi-object model prediction. Fol-
+lowing [11], we compute a reference view prediction of
+the current scene geometry consisting of a depth map Dr
+and normal map Nr rendered into the previously estimated
+frames pose Twr representing the 6DoF rigid body trans-
+form deﬁned as a member of the special Euclidean group
+
+SE(3).
+We update the live camera to world transform
+Twl by estimating a sequence of m incremental updates
+{ ˜
+T n
+rl}m
+n=1 parametrised with a vector x ∈R6 deﬁning a
+twist in SE(3), with ˜T n=0
+rl
+as the identity. We iteratively
+minimise the whole depth image point-plane metric over all
+available valid pixels u ∈Ωin the live depth map:
+Ec(x) =
+X
+u∈Ω
+ψ (e(u, x)) ,
+(1)
+e(u, x) = Nr(u′)⊤(exp(x)ˆvl(u) −vr(u′)) .
+(2)
+Here vr(u′) and Nr(u′) are the projectively data associated
+predicted vertex and normal estimated at a pixel correspon-
+dence u′ = π(Kˆvl(u)), computed by projecting the vertex
+vl(u) at pixel u from the live depth map into the reference
+frame with camera intrinsic matrix K and standard pin-hole
+projection function π. The current live vertex is transformed
+into the reference frame using the current incremental trans-
+form ˜T n
+rl:
+ˆvl(u) = ˜T n
+rlvl(u) ,
+(3)
+vl(u) = K−1 ˙uDl(u) ,
+(4)
+vr(u′) = K−1 ˙u′Dr(u′) .
+(5)
+We chose ψ as a robust Huber penalty function in place of
+the explicit point compatibility check used in [11] which
+enables a soft outlier down weighting. A Gauss-Newton
+based gradient descent on Equation (1) results in solution
+of the normal equations:
+X
+u∈Ω
+J(u)⊤J(u)x =
+X
+u∈Ω
+ψ
+′(e)J(u) ,
+(6)
+where J(u) =
+∂e(x,u)
+∂x
+is the Jacobian, and ψ′ computes
+the robust penalty function derivative given the currently
+estimated error. We solve the 6 × 6 linear system using
+Cholesky decomposition. Taking the solution vector x to
+an element in SE(3) via the exponential map, we compose
+the computed incremental transform at iteration n + 1 onto
+the previous estimated transform ˜T n
+rl:
+˜T n+1
+rl
+←exp(x) ˜T n
+rl .
+(7)
+The estimated live camera pose Twl therefore results by
+composing the ﬁnal incremental transform ˜T m
+rl onto the pre-
+vious frame pose:
+Twl ←Twr ˜T m
+rl .
+(8)
+Tracking Convergence: We use a maximum of m = 10 it-
+erations and check for poor convergence of the optimisation
+process using two simple criteria. First, we do not attempt
+to track against the predicted model if its pixel coverage is
+less than 1
+8 of a full image. Second, after an optimisation
+iteration has completed we compute the ratio of pixels in
+the live image which have been correctly matched with the
+predicted model ascertained by discounting pixels which in-
+duce a point-plane error greater than a speciﬁed magnitude
+ϵpp.
+Tracking for Model Initialisation: We utilise the dense
+ICP pose estimation and convergence check for two further
+key components in SLAM++. First, we note that the real-
+world objects we use as features are often ambiguous, and
+not well discriminated given a single view. Therefore, given
+a candidate object and detected pose, we run camera-model
+ICP estimation on the detected object pose, and check for
+convergence using the previously described criteria.
+We
+ﬁnd that for correctly detected objects, the pose estimates
+from the detector are erroneous within ±30◦rotation, and
+±50cm translation. This allows a more conservatively set
+threshold ϵoi and early rejection of incorrect objects.
+Camera-Object Pose Constraints: Given the active set
+of objects that have been detected in SLAM++, we further
+estimate relative camera-object pose parameters which are
+used to induce constraints in the scene pose graph. To that
+end, we run the dense ICP estimate between the live frame
+and each model object currently visible in the frame. The
+ability to compute an individual relative pose estimate in-
+troduces the possibility to prune poorly initialised or incor-
+rectly tracked objects from the pose graph at a later date. By
+analysing the statistics of the camera-object pose estimate’s
+convergence we can keep an inlier-outlier style count on the
+inserted objects, and cull poorly performing ones.
+3.5. Graph Optimisation
+Figure 5. Example graph illustrating the pose of the moving cam-
+era over four time steps Twi (red) as well as the poses of three
+static objects in the world Twoj (blue). Observations of the object
+oj at time i are shown as binary camera-object constraints Zi,oj
+(yellow) while the relative ICP constraints between two cameras
+are shown as Zi,i+1 (orange). We also apply unary structural con-
+straints Po2,f, Po3,f encoding prior information.
+We formulate the problem of estimating the historical
+poses of the depth camera Twi at time i and the poses of
+the static objects Twoj as graph optimisation. Zi,oj denotes
+the 6DoF measurement of object j in frame i and Σ−1
+i,oj its
+inverse measurement covariance which can be estimated us-
+ing the approximated Hessian Σ−1
+i,oj = J⊤J (with J be-
+
+ing the Jacobian from the ﬁnal iteration of the object ICP).
+Zi,i+1 is the relative ICP constraint between camera i and
+i+1, with Σ−1
+i,i+1 the corresponding inverse covariance. The
+absolute poses Twi and Twoj are variables which are mod-
+iﬁed during the optimisation, while Zi,oj and Zi,i+1 are
+measurements and therefore constants. All variables and
+measurements have 6DoF and are represented as members
+of SE(3). An example graph is shown in Figure 5.
+We minimize the sum over all measurement constraints:
+Em
+=
+X
+Zi,oj
+|| log(Z−1
+i,oj · T −1
+wi · Twoj)||Σi,oj
++
+X
+Zi,i+1
+|| log(Z−1
+i,i+1 · T −1
+wi · Twi+1)||Σi,i+1(9)
+with ||x||Σ := x⊤Σ−1x the Mahalanobis distance and
+log(·) the logarithmic map of SE(3). This generalised least
+squares problem is solved using Levenberg-Marquardt; the
+underlying normal equation’s sparsity is exploited using
+a sparse Cholesky solver [9]. The pose Jacobians are of
+the form ± ∂
+∂ϵi log(A · exp(ϵ) · B)|ϵ=0, approximated using
+higher order Baker-Campell-Haussdorf expansions [17].
+3.5.1
+Including Structural Priors
+Additional information can be incorporated in the graph in
+order to improve the robustness and accuracy of the optimi-
+sation problem. In our current implementation we apply a
+structural planar prior that the objects are located on a com-
+mon ground plane. The world reference frame w is deﬁned
+in such that the x and z-axes lie within the ground plane
+with the y-axis perpendicular into it. The ground plane is
+implicitly detected from the initial observation Z1,o1 of the
+ﬁrst object; its pose Twf remains ﬁxed during optimisation.
+To penalize divergence of the objects from the ground plane,
+we augment the energy,
+Em&p = Em +
+X
+Poj ,f
+|| log(P −1
+oj,f · T −1
+woj · Twf)||Σoj ,f , (10)
+using a set of unary constraints Poj,f = exp((υ⊤, θ⊤)⊤)
+with υ, θ ∈R3 (see Figure 5). In particular, we set the
+translation along the y-axis, υ2 = 0, as well as the rotational
+components about the x and z-axis to zero, θ1 = 0 and
+θ3 = 0. We use the following inverse prior covariances:
+Σ−1
+oj,f = diag(0, wtrans, 0, wrot, 0, wrot) ,
+(11)
+with positive weights wtrans and wrot. Since the objects can
+be located anywhere within the x−z plane and are not con-
+strained in their rotation about the y-axis, the corresponding
+weights are set to zero; the prior components υ1, υ3, θ2 do
+not affect the energy and can be set to arbitrary values.
+3.6. Other Priors
+The ground plane constraint can have value beyond the
+pose graph. We could guide point-pair feature sampling and
+make votes for poses only in the unconstrained degrees of
+freedom of objects. In the ICP method, again a prior could
+be used as part of the energy minimisation procedure to pull
+it always towards scene-consistent poses. While this is not
+yet implemented we at least cull hypotheses of object posi-
+tions far from the ground plane.
+3.7. Relocalisation
+When camera tracking is lost the system enters a relocal-
+isation mode. Here a new local graph is created and tracked
+from, and when it contains at least 3 objects it is matched
+against the previously tracked long-term graph (see Figure
+6). Graph matching is achieved by considering both the
+local and long-term graphs as sets of oriented points in a
+mesh that are fed into the same recognition procedure de-
+scribed in Section 3.3. We use the position of the objects
+as vertices and their x-axes as normals. The matched vertex
+with highest vote in the long-term graph is used instead of
+the currently observed vertex in the local graph and camera
+tracking is resumed from it, discarding the local map.
+Figure 6. Relocalisation procedure. When tracking is lost a lo-
+cal graph (blue) is created and matched against a long-term graph
+(red). (top) Scene with objects and camera frustum when tracking
+is resumed a few frames after relocalisation. (bottom) Oriented
+points extracted for matching. The connectivity depicts the detec-
+tion sequence and is not used by the recognition procedure.
+
+4. Results
+The in-the-loop operation of our system is more effec-
+tively demonstrated in our submitted video than on paper,
+where the advantages of our method over off-line scene
+labelling may not be immediately obvious.
+We present
+demonstrations of a new level of real-time localisation and
+mapping performance, surpassing previous SLAM systems
+in the quality and density of geometry description obtained
+given the very small footprint of our representation; and ri-
+valling off-line multi-view scene labelling systems in terms
+of object identiﬁcation and conﬁguration description.
+4.1. Loop Closure
+Loop closure in SLAM occurs when a location is re-
+visited after a period of neglect, and the arising drift cor-
+rected. In SLAM++, small loops are regularly closed using
+the standard ICP tracking mechanism. Larger loop closures
+(see Figure 7), where the drift is too much to enable match-
+ing via predictive ICP, are detected using a module on based
+matching fragments within the main long-term graph in the
+same manner as in relocalisation (Section 3.7).
+4.2. Large Scale Mapping
+We have run SLAM++ in environments including the
+large common room shown in Figure 1 (size 15×10×3m),
+with two types of chair and two types of round table, all con-
+strained to a common ground plane. The real-time process
+lasted around 10 minutes, including various loop closures,
+relocalisations due to lost tracking. 34 objects were mapped
+across the room. Figure 1 gives a good idea of mapping per-
+formance. Note that there are no priors in the system con-
+cerning the regular positioning of tables and chairs, only
+that they sit on the ground plane.
+4.3. Moved Object Detection
+We demonstrate the ability to detect the movement of ob-
+jects, which fail ICP gating due to inconsistency (Figure 8).
+Figure 8. When a mapped object is largely inconsistent with good
+measurements (green) it is marked as invalid (red) and observa-
+tions from it are stopped to avoid corrupting the rest of the graph.
+4.4. Augmented Reality with Objects
+Finally, the ability to semantically predict complete sur-
+face geometry from partial views allows novel context-
+aware AR capabilities such as path ﬁnding, to gracefully
+avoid obstacles while reaching target objects. We apply this
+to command virtual characters to navigate the scene and ﬁnd
+places to sit as soon as the system is started (without the
+need to scan a whole room). (Figure 9).
+Figure 9. Context-aware augmented reality: virtual characters nav-
+igate the mapped scene and automatically ﬁnd sitting places.
+4.5. System statistics
+We present system settings for mapping the room in Fig-
+ure 7 (10×6×3m) using a gaming laptop. We compare the
+memory footprint of SLAM++ with KinectFusion [11] for
+the same volume (assuming 4 Bytes/voxel, 128 voxels/m).
+Framerate
+20 fps
+Camera Count
+132
+Object Count
+35
+Object Class Count
+5
+Edge Count
+338
+Graph Memory
+350 KB
+Database Memory
+20 MB
+KinectFusion Memory
+1.4 GB
+Approx. Compression Ratio
+1/70
+5. Conclusions and Future Work
+In this paper we have shown that using high performance
+3D object recognition in the loop permits a new approach to
+real-time SLAM with large advantages in terms of efﬁcient
+and semantic scene description. In particular we demon-
+strate how the tight interaction of recognition, mapping and
+tracking elements is mutually beneﬁcial to all. Currently
+our approach is well suited to locations like the interiors
+of public buildings with many repeated, identical elements,
+but we believe is the ﬁrst step on a path to more generic
+SLAM methods which take advantage of objects with low-
+dimensional shape variability or in the long term which can
+segment and deﬁne their own object classes.
+
+Figure 7. Loop closure. (left) Open loop drift during exploration of a room; the two sets of objects shown in red were identiﬁed as
+corresponding. The full SLAM++ graph is displayed with yellow lines for camera-object constraints and orange lines for camera-camera
+constraints. (middle) Imposing the new correspondences and re-optimising the graph closes the loop and yields a more metric map. (right)
+For visualisation purposes only (since raw scans are not normally saved in SLAM++), we show a coloured point cloud after loop closure.
+Acknowledgements
+Renato Salas-Moreno’s research was supported by a PhD
+scholarship from AMD. We are grateful to Lee Howes for
+useful discussions.
+We also acknowledge support from
+ERC Starting Grant 210346.
+References
+[1] Advanced Micro Devices Inc. Bolt C++ Template Library.
+2012. 3
+[2] D. H. Ballard. Generalizing the Hough Transform to De-
+tect Arbitrary Shapes. Pattern Recognition, 12(2):111–122,
+1981. 3
+[3] S. Y. Bao, M. Bagra, Y.-W. Chao, and S. Savarese. Semantic
+Structure From Motion with Points, Regions, and Objects.
+In Proceedings of the IEEE Conference on Computer Vision
+and Pattern Recognition (CVPR), 2012. 2
+[4] R. O. Castle, D. J. Gawley, G. Klein, and D. W. Murray.
+Towards simultaneous recognition, localization and mapping
+for hand-held and wearable cameras. In Proceedings of the
+IEEE International Conference on Robotics and Automation
+(ICRA), 2007. 2
+[5] A. J. Davison.
+Real-Time Simultaneous Localisation and
+Mapping with a Single Camera. In Proceedings of the In-
+ternational Conference on Computer Vision (ICCV), 2003.
+2
+[6] B. Drost, M. Ulrich, N. Navab, and S. Ilic. Model globally,
+match locally: Efﬁcient and robust 3D object recognition.
+In Proceedings of the IEEE Conference on Computer Vision
+and Pattern Recognition (CVPR), 2010. 3, 4
+[7] Y. M. Kim, N. J. Mitra, D.-M. Yan, and L. Guibas. Acquiring
+3D Indoor Environments with Variability and Repetition. In
+SIGGRAPH Asia, 2012. 2
+[8] G. Klein and D. W. Murray.
+Parallel Tracking and Map-
+ping for Small AR Workspaces. In Proceedings of the Inter-
+national Symposium on Mixed and Augmented Reality (IS-
+MAR), 2007. 2
+[9] R. K¨ummerle, G. Grisetti, H. Strasdat, K. Konolige, and
+W. Burgard. g2o: A General Framework for Graph Opti-
+mization. In Proceedings of the IEEE International Confer-
+ence on Robotics and Automation (ICRA), 2011. 6
+[10] W. E. Lorensen and H. E. Cline. Marching Cubes: A high
+resolution 3D surface construction algorithm. In Proceed-
+ings of SIGGRAPH, 1987. 3
+[11] R. A. Newcombe, S. Izadi, O. Hilliges, D. Molyneaux,
+D. Kim, A. J. Davison, P. Kohli, J. Shotton, S. Hodges,
+and A. Fitzgibbon.
+KinectFusion: Real-Time Dense Sur-
+face Mapping and Tracking.
+In Proceedings of the Inter-
+national Symposium on Mixed and Augmented Reality (IS-
+MAR), 2011. 2, 3, 4, 5, 7
+[12] R. A. Newcombe, S. Lovegrove, and A. J. Davison. DTAM:
+Dense Tracking and Mapping in Real-Time. In Proceedings
+of the International Conference on Computer Vision (ICCV),
+2011. 2
+[13] F. T. Ramos, J. I. Nieto, and H. F. Durrant-Whyte. Combin-
+ing object recognition and SLAM for extended map repre-
+sentations. In Experimental Robotics, volume 39 of Springer
+Tracts in Advanced Robotics, pages 55–64. Springer, 2008.
+2
+[14] X. Ren, L. Bo, and D. Fox. Indoor Scene Labeling using
+RGB-D Data. In Workshop on RGB-D: Advanced Reasoning
+with Depth Cameras, in conjunction with Robotics: Science
+and Systems, 2012. 2
+[15] S. Rusinkiewicz and M. Levoy. Efﬁcient Variants of the ICP
+Algorithm. In Proceedings of the IEEE International Work-
+shop on 3D Digital Imaging and Modeling (3DIM), 2001.
+4
+[16] N. Silberman and R. Fergus.
+Indoor Scene Segmentation
+using a Structured Light Sensor. In Workshop on 3D Repre-
+sentation and Recognition, in conjunction with International
+Conference on Computer Vision, 2011. 2
+[17] H. Strasdat. Local Accuracy and Global Consistency for Ef-
+ﬁcient Visual SLAM. PhD thesis, Imperial College London,
+2012. 6
+[18] T. Whelan, J. McDonald, M. Kaess, M. Fallon, H. Johanns-
+son, and J. J. Leonard.
+Kintinuous: Spatially Extended
+KinectFusion. In Workshop on RGB-D: Advanced Reasoning
+with Depth Cameras, in conjunction with Robotics: Science
+and Systems, 2012. 2

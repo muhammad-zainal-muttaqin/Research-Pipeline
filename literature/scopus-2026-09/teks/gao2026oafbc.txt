@@ -1,0 +1,2443 @@
+Academic Editor: Jayme Garcia
+Arnal Barbedo
+Received: 26 May 2026
+Revised: 4 July 2026
+Accepted: 8 July 2026
+Published: 10 July 2026
+Copyright: © 2026 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license.
+Article
+OAFBC-Net: A Lightweight RGB-Depth Fusion Network for
+Occlusion-Aware Apple Detection in Complex Orchard Canopies
+Long Gao
+, Pengfei Wang, Lixing Liu, Hongjie Liu, Jianping Li
+and Xin Yang *
+College of Mechanical and Electrical Engineering, Hebei Agricultural University, Baoding 071000, China;
+gaolonghebau@pgs.hebau.edu.cn (L.G.); jdwpf@hebau.edu.cn (P.W.); llxing@hebau.edu.cn (L.L.);
+liuhj@hebau.edu.cn (H.L.); ljpnd527@hebau.edu.cn (J.L.)
+* Correspondence: yangxin@hebau.edu.cn; Tel.: +86-159-3345-9619
+Abstract
+Accurate perception of occluded apples in tree canopies is important for precision orchard
+management and robotic harvesting, but RGB-only vision is sensitive to leaf occlusion, fruit
+overlap, and unstable illumination. This study presents OAFBC-Net, a lightweight RGB-
+depth network for joint localization and occlusion-level recognition of apples classified as
+non-occluded (NO), soft-occluded (SO), or hard-occluded (HO). OAFBC-Net integrates
+three components: a Fourier amplitude-phase enhancement fusion module (FAPEF) for
+cross-modal frequency-domain fusion, a weighted bidirectional feature pyramid (BiFPN)
+for multi-scale interaction, and a Triple Context Guided Block (TCG) for local-to-global
+semantic compensation. Using an orchard RGB-depth dataset with 3000 image pairs and
+134,999 annotated instances acquired with an Intel RealSense D455 camera, OAFBC-Net
+achieves AP50 values of 72.1%, 87.3%, and 57.9% for SO, NO, and HO, respectively. Under
+the same split, it outperforms the self-implemented RGB-depth baselines. With FAPEF,
+BiFPN, and TCG enabled, the macro-average mAP50 and mAP50–95 reach 72.4% and
+55.2%, respectively. The model has 3.6 M parameters. On a single image, the total latency
+is 11.3 ms, corresponding to an inference speed of 88.5 FPS. Three random seeds and
+five-fold cross-validation with a fixed independent test set show consistent gains over the
+dual-modal baseline. These findings support OAFBC-Net as a promising visual perception
+method for occluded-fruit detection in orchards, while cross-site and field-robot validation
+remain necessary for deployment-oriented claims.
+Keywords: occluded apple detection; RGB-depth fusion; orchard canopy; frequency-domain
+fusion; context modeling; precision horticulture; robotic harvesting
+1. Introduction
+Apples play an important role in the global fresh-fruit supply chain and orchard
+economy [1]. As large-scale cultivation and intensive management continue to advance,
+higher requirements are imposed on fruit quality, yield, and harvesting efficiency [2]. Field
+operations still rely heavily on manual labor [3], while rising labor costs and structural labor
+shortages constrain the long-term competitiveness and sustainable operation of the apple
+industry [4]. At the same time, the increasing maturity of sensing technology, machine
+vision, machine learning, and robot control in complex environments greatly accelerates the
+transition of orchard robots and intelligent operation systems from experimental prototypes
+to field validation and demonstration applications [5,6].
+Agronomy 2026, 16, 1318
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+2 of 37
+In applications such as mechanized harvesting, grading equipment, and picking robots,
+stable and accurate perception of apples on trees is a key prerequisite for path planning
+and operational decision-making [7]. Canopy occlusion and fruit overlap restrict the visible
+regions of fruits and lead to incomplete boundaries, which reduces localization reliability.
+These factors further affect the approach trajectory planning, grasping posture selection,
+and obstacle-avoidance safety of end effectors, and they also weaken the consistency of fruit
+counting and yield estimation [8]. However, in real orchard scenes, drastic illumination
+changes and overlapping branches and leaves make the background highly complex.
+In addition, the similarity between fruits and leaves in color and texture makes robust
+detection and stable localization under occlusion still highly challenging [9].
+Object detection simultaneously performs localization and category discrimination,
+and it is a fundamental step in orchard fruit perception and robotic operation. Existing
+methods can be divided into two-stage frameworks, which first generate candidate regions
+and then perform classification and regression, and one-stage frameworks, which directly
+conduct end-to-end regression. The latter offers higher inference efficiency and easier
+deployment, with the YOLO series being a representative example [10,11]. Many studies
+on agricultural fruit detection build datasets and models based on visible-light RGB images,
+and they continuously optimize one-stage detection frameworks for complex orchard back-
+grounds, scale variations, and edge deployment constraints. Qiu et al. [12] use YOLOv11n
+as the baseline for orchard maturity recognition. While maintaining efficient end-to-end
+inference, they introduce BiFPN to strengthen multi-scale feature fusion, adopt GhostConv
+and pruning to compress the model size, and combine an improved IoU-based loss to en-
+hance regression accuracy, thereby achieving lightweight deployment for apple localization
+and binary maturity classification. Based on YOLOv8, Z. Liu et al. [13] propose Faster-
+YOLO-AP for single-class apple detection. They address redundancy by constructing a
+smaller-scale backbone and designing an efficient convolution module, PDWConv, together
+with a replacement regression loss. Their method achieves a favorable accuracy-efficiency
+balance in canopy scenes with low parameter and computational costs, confirming the
+adaptability of lightweight one-stage models to orchard edge devices. To alleviate missed
+detections caused by occlusion and overlap, Fu et al. [14] introduce a new feature scale and
+a structural enhancement module into the YOLOv10 framework. By combining attention
+mechanisms and localization loss improvement, they significantly improve the detection
+performance for occluded apples while maintaining real-time inference on embedded
+platforms. H. Yang et al. [15] focus on the difficulties of occlusion, overlap, and small-object
+detection in high-density orchards. They systematically improve YOLOv7 from data pre-
+processing, lightweight backbone design, and neck fusion structure to the detection head
+and loss function, which significantly improves recognition performance under complex
+illumination and occlusion conditions. Wang and He [16] address young fruit detection
+before thinning by introducing channel pruning and transfer learning into YOLOv5s. Their
+method greatly reduces model size and parameter count while maintaining high accuracy,
+confirming the potential of RGB-based one-stage models for fast deployment on portable
+terminals. Ma et al. [17] study apple detection across multiple growth stages and combine
+YOLOv8n with ShuffleNetv2, Ghost modules, SE attention, and an improved regression
+loss. Their method jointly improves accuracy, speed, and lightweight performance, and
+it shows good real-time capability on edge devices. Han et al. [18] further integrate CNN
+and GCN within the YOLOv8n framework. By jointly modeling local textures and global
+relationships, they enhance robustness in severe weather and occlusion-overlap scenes
+while preserving inference efficiency. Overall, existing studies show that RGB-based one-
+stage detection frameworks represented by YOLO have high practical value for apple
+target recognition. They also form a clear optimization path, namely improving detec-
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+3 of 37
+tion accuracy and edge deployment efficiency in complex orchard environments through
+multi-scale feature enhancement, lightweight structural reconstruction, attention or relation
+modeling, and regression loss improvement. Nevertheless, in real scenes where canopy
+occlusion, fruit overlap, and strong illumination fluctuations coexist, RGB perception still
+mainly relies on appearance information. It is easily disturbed by shadows, highlights, and
+fruit-leaf similarity, which leads to missed detections, false detections, and localization jitter.
+Its limited ability to represent depth order and three-dimensional geometric relationships
+also further affects the stability of end-effector approach, grasping, and obstacle-avoidance
+decisions in picking robots [19]. Therefore, relying only on RGB is insufficient to continu-
+ously satisfy the need for highly robust perception under complex canopy conditions, and
+it is necessary to introduce multimodal schemes that can supplement spatial geometric
+information [20].
+To improve perception robustness in complex orchard environments, agricultural
+vision research gradually shifts from single-sensor schemes to multi-sensor collaboration.
+Existing studies show that multimodal information fusion can improve image representa-
+tion quality, feature extraction capability, and detection accuracy to some extent. RGB-depth
+can provide geometric structure cues by capturing distance and surface undulation infor-
+mation. Tang et al. [21] construct a recognition-localization framework based on RGB-D
+and improved SOLOv2. They use RGB images to extract semantic appearance features,
+use depth to constrain spatial structure, and combine camera intrinsic parameters to solve
+three-dimensional coordinates. Their method outperforms the original baseline in both
+segmentation and localization metrics. Liu and Hao [22] propose YOLOfuse based on
+YOLOv5s. Through dual-branch feature extraction, weighted fusion, coordinate attention,
+and Soft-NMS, their method improves detection performance in dense overlapping scenes
+and outperforms single-RGB input while maintaining real-time speed. Beyond RGB-D,
+RGB-T enhances the separability between targets and backgrounds through temperature
+differences. Cao et al. [23] combine RGB, depth, and thermal imaging information in
+mango detection, improving target separation under illumination fluctuation and occlusion.
+Lin et al. [24] adopt cold-stimulation thermal imaging for apple bruise detection, which
+creates an observable temperature difference between bruised regions and healthy tissues
+and significantly improves recall and detection accuracy. RGB-NIR and spectral fusion
+supplement visible-light representation through narrow-band reflectance information.
+Ünal et al. [25] find that NIR provides more stable representation of subcutaneous damage
+under low-light and low-contrast conditions. Luo et al. [26] fuse RGB and NIR information
+for citrus defect detection and achieve higher detection accuracy and recall in complex back-
+grounds, with more evident improvement for small targets. In general, different modalities
+have their own advantages and constraints in acquisition cost, environmental sensitivity,
+and information complementarity. Thermal infrared and near-infrared or spectral modali-
+ties are valuable in low-illumination or low-contrast tasks, but their performance is strongly
+affected by imaging conditions and task scenarios. In contrast, the depth modality directly
+provides spatial structure and relative distance information, making it more suitable for
+alleviating geometric ambiguity under canopy occlusion, fruit overlap, and appearance
+similarity.
+Multimodal fusion is commonly divided into early, mid-level, and late fusion [27,28].
+Early fusion completes cross-modal alignment and concatenation at the input layer, which
+helps preserve fine-grained appearance and geometric details. However, it is more sensitive
+to registration errors and sensor noise, and it may increase computational and bandwidth
+costs [29]. Mid-level fusion conducts cross-modal feature interaction in the backbone or
+neck network and is more likely to form joint representations for multimodal recognition
+tasks [30]. It is therefore widely adopted in multimodal learning tasks, but its actual
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+4 of 37
+effect depends heavily on feature alignment and the design of interaction modules [31].
+Wang et al. [32] systematically compare pixel-level, feature-level, and decision-level strate-
+gies for visible-infrared object recognition. They point out that feature-level fusion can
+retain classification-related discriminative information while controlling computational
+cost. They further use deep mutual learning to enable cross-modal feature interaction
+and combine it with weighted decision-level fusion to produce final outputs.
+Their
+experiments show that this strategy improves recognition performance under visible-
+light and infrared conditions. For honey origin traceability and component prediction,
+Z. Liu et al. [33] compare data-level and feature-level fusion. Their results show that,
+based on spectral preprocessing and task-oriented feature extraction such as partial least
+squares, feature-level fusion achieves better classification and regression performance.
+These studies jointly indicate that the benefits of mid-level fusion depend not only on
+the fusion position, but also on cross-modal alignment, task-oriented feature extraction
+and interaction mechanisms, and the matching between subsequent classifiers or fusion
+strategies. If alignment is inconsistent or the interaction design is insufficient to describe
+the complementarity of heterogeneous modalities, the fusion advantage becomes clearly
+limited. Late fusion integrates the outputs after independent inference from different
+modal branches. It is flexible in engineering implementation and has a low cost for module
+replacement, but it is difficult to exploit fine-grained complementary information from
+intermediate layers. Yang et al. [34] adopt a CNN-LSTM-MLP structure for harvest-stage
+prediction of greenhouse melons. They separately model the RGB image branch, which
+is based on YOLOv8n detection and morphological estimation, and the environmental or
+irrigation time-series branch, and then complete fused prediction through an MLP after
+high-level feature concatenation. The CPROS method proposed by Li et al. [35] trains and
+infers visible-light and infrared branches separately, and fuses class probabilities and detec-
+tion boxes at the output layer. This design reduces dependence on strict pixel alignment,
+feature alignment, and large-scale paired data, and it facilitates combination across different
+detection backbones. The authors also note that, in some small-sample cases or scenarios
+with high requirements for fine-grained localization, its performance may be inferior to
+methods that rely on intermediate feature interaction. In summary, for orchard scenes
+with severe occlusion and illumination changes, the fusion strategy must balance accuracy,
+robustness, and real-time performance to satisfy the requirement of robotic operations for
+stable perception [36].
+Building on the above discussion, this study targets robust joint localization and
+harvesting-oriented occlusion-level recognition of apples (NO, SO, and HO) in complex
+orchard canopies through mid-level RGB-depth fusion.
+The aim of this research is to develop a lightweight RGB-depth detector, OAFBC-
+Net, that improves occlusion-aware apple perception for orchard monitoring and robotic
+harvesting while maintaining practical real-time inference.
+To achieve this aim, the specific objectives are as follows: (1) To develop a lightweight
+RGB-depth detection framework for joint apple localization and harvesting-oriented
+occlusion-level classification in natural orchard scenes. (2) To investigate mid-level cross-
+modal fusion and context-aware multi-scale representation strategies that improve per-
+ception of partially occluded apples. (3) To validate the proposed approach on an orchard
+RGB-depth dataset through comparisons with unimodal and dual-modal baselines, abla-
+tion and cross-validation analyses, and supplementary assessments of runtime efficiency
+and depth-sensor effects under varying illumination.
+Based on these objectives, the main contributions are as follows: (1) OAFBC-Net, an
+integrated RGB-depth detection framework for joint localization and NO/SO/HO classifi-
+cation in complex orchard canopies. (2) FAPEF, a Fourier amplitude-phase enhancement
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+5 of 37
+fusion module deployed at P4/P5 for adaptive frequency-domain fusion of RGB and depth
+features under occlusion. (3) A context- and multi-scale enhancement design combining
+BiFPN with TCG, together with extensive experiments showing consistent improvements
+over a dual-modal concatenation baseline.
+The remainder of this article is organized as follows: Section 2 describes OAFBC-Net
+and the dataset; Section 3 reports the experimental results; Section 4 discusses the findings
+and limitations; and Section 5 concludes the study.
+2. Materials and Methods
+2.1. Overall Framework
+To improve occlusion-aware apple detection in complex orchard scenes, this study pro-
+poses OAFBC-Net (Figure 1). The network detects apple instances and assigns each detection
+to one of three harvesting-oriented occlusion levels: non-occluded (NO), soft-occluded (SO),
+or hard-occluded (HO). Frequency-domain fusion (FAPEF), contextual modeling (TCG), and
+weighted multi-scale fusion (BiFPN) are integrated to improve robustness under branch and
+leaf occlusion, fruit overlap, weak boundaries, and illumination variation.
+ 
+Figure 1. Overview of OAFBC-Net.
+First, the network introduces the Fourier amplitude-phase enhancement fusion
+(FAPEF) module at the P4 and P5 feature maps. Each modal stream is first enhanced
+and spatially stabilized by DyT; FAPEF then re-transforms the stabilized features into the
+frequency domain, adaptively fuses the amplitude and principal-value phase spectra of
+RGB and depth, reconstructs the complex spectrum, and maps the fused representation
+back to the spatial domain through an orthonormal inverse frequency transform followed
+by DyT.
+Second, the Triple Context Guided Block (TCG Block) is applied to the FAPEF out-
+puts at P4 and P5 to strengthen the semantic association between local visible regions
+and surrounding contextual information. In occlusion scenes, visible apple regions are
+often incomplete; the TCG Block supplements missing semantic cues by modeling spatial
+relationships among apples, branches, leaves, adjacent fruits, and background regions,
+thereby improving discrimination among NO, SO, and HO categories.
+Third, the network adopts a weighted bidirectional multi-scale fusion structure, BiFPN,
+in the neck to integrate P3, P4, and P5 features from different levels. BiFPN measures the
+importance of features at different scales through learnable weights and builds both top-
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+6 of 37
+down and bottom-up information transfer paths, enabling sufficient fusion between shallow
+detail features and deep semantic features.
+Overall, OAFBC-Net integrates FAPEF, the TCG Block, and BiFPN into a unified
+framework, enabling joint optimization of frequency-domain fusion, contextual semantic
+modeling, and multi-scale feature interaction. The network finally outputs the spatial
+location and occlusion level of each apple, providing a visual perception basis for target
+selection, approach-direction planning, and picking-strategy formulation in picking robots.
+Figure 2 presents the detailed backbone structure and key modules.
+Figure 2. Detailed diagram of the backbone network structure of OAFBC-Net.
+2.2. Fourier Amplitude-Phase Enhancement Fusion Module (FAPEF)
+To strengthen cross-modal representation of occluded apples, the Fourier amplitude-
+phase enhancement fusion module (FAPEF) is embedded in a lightweight dual-branch RGB-
+depth detector inspired by UMIS-style frequency fusion [37]. Network implementation
+details, training settings, and the dual-modal baseline are given in Sections 3.2 and 3.4.
+To fuse RGB and depth features more effectively, this paper designs the FAPEF module,
+which performs frequency-domain enhancement and cross-modal fusion at the high-level
+semantic stages of the backbone network. As shown in Figure 3, let Xs
+RGB and Xs
+Depth
+denote the real-valued feature tensors output by the RGB branch and the depth branch,
+respectively, at scale s. These tensors are defined in Equation (1) as
+Xs
+RGB, Xs
+Depth ∈RB×Cs×Hs×Ws
+(1)
+where R denotes the set of real numbers; Xs
+RGB is the RGB-branch feature tensor at scale
+s; Xs
+Depth is the depth-branch feature tensor at scale s; s ∈{4, 5} denotes the P4 and P5
+feature layers where FAPEF is deployed; B denotes the batch size; and Cs, Hs, and Ws
+denote the number of channels, height, and width of the feature map at scale s, respec-
+tively. Considering that the P3 layer has a higher resolution and larger computational cost,
+FAPEF is introduced only at P4 and P5, which contain richer semantic information and
+smaller spatial sizes. For P3, RGB-depth fusion is completed through lightweight feature
+concatenation and convolutional compression.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+7 of 37
+ 
+Figure 3. Structure of FAPEF.
+Stage 1: Single-modal frequency enhancement. FAPEF first maps each modal feature
+into the frequency domain using an orthonormal two-dimensional (2-D) real fast Fourier
+transform (FFT; FFTortho, implemented as rfft2 with norm = ‘ortho’) and reconstructs the
+enhanced feature through the corresponding inverse fast Fourier transform (IFFT; IFFTortho).
+The single-modal enhancement process is given by Equations (2)–(4):
+Fs
+m = FFTortho(Xs
+m)
+(2)
+∼
+F
+s
+m = Fs
+m ⊙Ws
+m
+(3)
+∼
+X
+s
+m = Re
+
+IFFTortho
+∼
+F
+s
+m
+
++ Xs
+m
+(4)
+where m ∈{RGB, Depth}, Ws
+m is the learnable complex weight of modality m at scale s, ⊙
+denotes the Hadamard product, and FFTortho(·) and IFFTortho(·) denote the orthonormal
+FFT and IFFT operators, respectively. Through Equations (2) and (3), the model adaptively
+modulates the frequency response of each channel; Equation (4) reconstructs the spatial
+feature with a residual connection to preserve original modal information.
+To stabilize the intermediate spatial activations, FAPEF employs Dynamic Tanh
+(DyT) [38]. Given an input feature tensor x, DyT first applies a learnable input scaling
+factor α to modulate the activation magnitude, then passes the scaled feature through the
+hyperbolic tangent function tanh(·) to obtain a bounded nonlinear response, and finally
+applies channel-wise learnable scaling and bias through γ and β. The operator is defined
+in Equation (5) as
+DyT(x) = γ·tanh(αx) + β
+(5)
+where x denotes the input spatial feature tensor; α is a learnable scalar that controls
+the input sensitivity before the tanh nonlinearity; tanh(αx) maps the scaled activation
+into the bounded interval (−1, 1) and suppresses extreme values; γ is a channel-wise
+learnable scale vector that adjusts the amplitude of the bounded response; β is a channel-
+wise learnable bias vector that shifts the output activation; and the symbol · denotes
+element-wise multiplication when γ is applied across channels. Therefore, Equation (5)
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+8 of 37
+can be interpreted as a bounded nonlinear remapping followed by channel-wise affine
+transformation. The enhanced feature is obtained by applying DyT in Equation (6):
+ˆXs
+m = DyT
+∼
+X
+s
+m
+
+(6)
+where
+∼
+X
+s
+m is the input feature to DyT at scale s. Since |tanh(·)| ≤1, Equation (6) bounds
+the dynamic range of single-modal features before cross-modal fusion.
+Stage 2: Cross-modal amplitude–phase fusion. After single-modal enhancement,
+FAPEF applies a second orthonormal FFT to the stabilized features in Equation (7):
+Fs
+m = FFTortho
+  ˆXs
+m
+
+(7)
+The amplitude spectrum and principal-value phase spectrum are extracted in
+Equations (8) and (9), respectively:
+As
+m(u, v) = |Fs
+m(u, v)|
+(8)
+Ps
+m(u, v) = atan2(Im(Fs
+m(u, v)), Re(Fs
+m(u, v)))
+(9)
+where (u, v) denote frequency indices and Ps
+m(u, v) ∈(−π, π] is the principal-value phase.
+Equation (8) reflects the energy of different frequency components; whereas, Equation (9)
+encodes spatial layout and structural position.
+Cross-modal fusion is performed in Equations (10) and (11). Here, As
+f d and Ps
+f d denote
+the fused amplitude spectrum and the fused principal-value phase spectrum, respectively,
+at scale s in the frequency domain, where the subscript fd indicates frequency-domain
+fusion:
+As
+f d = αs
+RGB ⊙As
+RGB + αs
+Depth ⊙As
+Depth
+(10)
+Ps
+f d = βs
+RGB ⊙Ps
+RGB + βs
+Depth ⊙Ps
+Depth
+(11)
+where As
+RGB and As
+Depth are the amplitude spectra of the RGB and depth branches obtained
+from Equation (8); Ps
+RGB and Ps
+Depth are the corresponding principal-value phase spectra
+obtained from Equation (9); As
+f d is the cross-modally fused amplitude spectrum; Ps
+f d is the
+cross-modally fused phase spectrum; and αs
+RGB, αs
+Depth, βs
+RGB, and βs
+Depth are channel-wise
+learnable fusion weights. Equations (10) and (11) allow FAPEF to adaptively balance RGB
+appearance and depth geometry at both amplitude and phase levels.
+Numerical considerations in phase fusion. When amplitude and phase are fused
+separately, three numerical issues may arise in FAPEF at P4 and P5: (i) ill-conditioned
+phase extraction in Equation (9) when the amplitude in Equation (8) satisfies |Fs
+m(u, v)| ≈0;
+(ii) unbounded linear phase mixing in Equation (11), which may amplify high-frequency
+energy after inverse fast Fourier transform (IFFT) because exp(jθ) is 2π-periodic; and
+(iii) magnitude scale drift across repeated fast Fourier transform (FFT)–inverse fast Fourier
+transform (IFFT) operations in depth.
+Normalization and stabilization. In our implementation, the “normalization con-
+straint” refers to orthonormal spectral transforms, principal-value phase parameterization,
+and bounded spatial remapping, rather than batch normalization on phase tensors. First,
+orthonormal fast Fourier transform (FFT)/inverse fast Fourier transform (IFFT) is used
+throughout FAPEF, satisfying Equation (12):
+IFFTortho(FFTortho(X)) = X
+(12)
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+9 of 37
+Equation (12) preserves energy and limits transform-induced magnitude drift. Second,
+the principal-value phase in Equation (9) provides a consistent angular representation
+before fusion. Third, after Equations (10) and (11), the fused complex spectrum Fs
+f d is
+reconstructed from the fused amplitude and phase spectra in Equation (13):
+Fs
+f d = As
+f d ⊙exp
+
+jPs
+f d
+
+(13)
+and mapped back to the spatial domain in Equation (14):
+Xs
+f d = Re
+n
+IFFTortho
+
+Fs
+f d
+o
+(14)
+where Fs
+f d denotes the fused complex spectrum in the frequency domain at scale s, and
+j is the imaginary unit. Finally, a second DyT module stabilizes the fused output in
+Equation (15):
+Xs
+f d = DyT
+
+Xs
+f d
+
+= γs ⊙tanh
+
+αsXs
+f d
+
++ βs, s ∈{4, 5}
+(15)
+Since |tanh(·)| ≤1, Equation (15) bounds the fused spatial activations before they
+enter the TCG Block and BiFPN, thereby suppressing extreme values induced by phase
+mixing and inverse fast Fourier transform (IFFT) ringing. The same DyT operator defined in
+Equation (5) is used in both Equation (6) for single-modal enhancement and Equation (15)
+for fused-output stabilization.
+Here, Xs
+f d ∈RB×Cs×Hs×Ws denotes the final RGB-depth fused feature at scale s given
+by Equation (15). In the proposed model, X4
+f d and X5
+f d are produced at the P4 and P5 FAPEF
+layers and serve as inputs to the subsequent TCG Block. After context enhancement, the
+P4 and P5 features are combined with the P3 features and then fed into BiFPN for further
+cross-scale weighted bidirectional feature fusion. In this way, FAPEF models frequency-
+domain complementarity between RGB and depth within the same scale, the TCG Block
+enhances local and contextual information, and BiFPN integrates multi-level features across
+scales. Together, these components provide a stable and discriminative multimodal feature
+representation for occluded apple detection in complex orchard environments.
+2.3. BiFPN
+To enhance the multi-scale detection ability for occluded apples in complex orchards,
+this paper adopts the Bidirectional feature pyramid network, BiFPN, in the Neck of OAFBC-
+Net [39]. BiFPN takes the RGB-depth fused P3, P4, and P5 features as inputs, where
+P3 represents shallow fused features, P4 represents middle-level fused features, and P5
+represents high-level fused features. The structural comparison is shown in Figure 4.
+Compared with the traditional FPN-PAN network, which transfers information layer by
+layer along adjacent pyramid levels and usually adopts simple addition or concatenation
+for feature fusion, BiFPN introduces a bidirectional multi-path fusion mechanism. This
+mechanism supports cross-layer skip connections and repeated stacking, allowing low-level
+detail features and high-level semantic features to interact over multiple rounds. At the
+same time, BiFPN adopts learnable weighted feature fusion, which automatically adjusts
+the importance of features from different levels according to the task. This design makes
+fuller use of multi-scale information and significantly improves the model’s perception
+ability for small apples, overlapping apples, and apples with different occlusion levels.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+10 of 37
+Figure 4. Comparison of FPN-PAN and BiFPN structures.
+In the top-down feature transfer path, the high-level P5 feature first passes through a
+convolution layer to unify the number of channels to 256. It is then upsampled to the P4
+resolution and fused with the P4 feature through weighted fusion. The fusion weights are
+learnable parameters, and normalization is used to ensure that the contributions of different
+scale features to the output are adaptively adjusted. The fused P4 feature is processed by
+the C3k2 module and then upsampled to the P3 resolution, where it is fused with the P3
+feature to form an enhanced shallow feature representation. The fusion process is defined
+as follows:
+Ptd
+4 = Conv
+
+
+ω1·Pin
+4 + ω2·Upsample(P in
+5
+
+ω1 + ω2 + ϵ
+
+, Ptd
+3 = Conv
+
+
+ω3·Pin
+3 + ω4·Upsample(P in
+4
+
+ω3 + ω4 + ϵ
+
+
+(16)
+where Upsample(·) denotes the upsampling operation, Conv(·) denotes the convolution
+operation, ϵ is a small constant used to prevent numerical instability, and ωi denotes
+learnable weights.
+In the bottom-up path, the enhanced shallow P3 feature is first downsampled to the
+P4 resolution and combined with the previously fused P4 feature. The fused feature then
+passes through TCG modules to strengthen the middle-level representation. Next, the
+middle-level feature is downsampled to the P5 resolution, fused with the high-level P5
+feature, and processed by TCG modules to generate the final P5 output feature. This process
+is defined as follows:
+Pout
+4
+= Conv
+
+
+ω′
+1·Pin
+4 + ω′
+2·Ptd
+4 + ω′
+3·Downsample(P td
+3
+
+ω′
+1 + ω′
+2 + ω′
+3 + ϵ
+
+
+(17)
+Pout
+5
+= Conv
+
+
+ω′
+4·Pin
+5 + ω′
+5·Ptd
+5 + ω′
+6·Downsample(P in
+4
+
+ω′
+4 + ω′
+5 + ω′
+6 + ϵ
+
+
+(18)
+where Downsample(·) denotes the downsampling operation. During bidirectional fusion,
+the contribution of each input feature is dynamically adjusted by the learnable weight ωi.
+The fusion formulation is defined as follows:
+O = ∑
+i
+ωi
+ϵ + ∑j ωj
+·Ii, ωi ≥0
+(19)
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+11 of 37
+where Ii denotes the input feature, O denotes the fused output feature, and ϵ is a small con-
+stant used to prevent division by zero. Through repeated bidirectional cyclic fusion, BiFPN
+enables the P3, P4, and P5 features to contain both shallow texture and edge information
+and deep semantic information, thereby significantly improving the model’s discrimination
+ability for apples with different occlusion levels. The final fused features are sent to the
+detection head to predict the category and spatial location of apple targets. Combined with
+the FAPEF frequency-domain enhancement module and the TCG triple context guided
+module, the multi-scale weighted fusion of BiFPN provides strong feature support for
+robust occluded apple recognition by OAFBC-Net in complex orchard environments.
+2.4. Triple Context Guided Block (TCG Block)
+In multimodal object detection, targets are often difficult to distinguish from their
+surrounding environment because of scale variation, occlusion, and background texture
+interference. Standard convolution with only a local receptive field is insufficient to capture
+both fine-grained details and scene-level semantics. To address this issue, this paper
+proposes the Triple Context Guided Block (TCG Block), inspired by CGNet [40]. The
+core idea is to explicitly fuse three complementary types of context within the same basic
+operator, namely local context, surrounding context captured by dilated convolution, and
+global context captured by channel attention. These contextual cues are further integrated
+into the CSP structure through a global residual form, so that the block preserves efficient
+gradient flow in the backbone while capturing fine-grained edge information, spatially
+related environmental cues, and channel-level semantic recalibration.
+Specifically, as shown in Figure 5, the TCG Block serves as the core operator for
+three-level context modeling. Given an input feature X ∈RB×C×H×W, a 1 × 1 convolution
+is first used to compress the channel dimension and obtain X′. Two parallel depthwise
+separable convolution branches are then applied to the compressed feature. The local
+context branch floc(·) uses a standard 3 × 3 depthwise convolution to capture fine-grained
+details within each pixel’s 3 × 3 neighborhood (the central pixel and its eight adjacent
+pixels). The surrounding context branch fsur(·) uses a 3 × 3 depthwise dilated convolution
+with dilation rate rd = 2, which expands the equivalent receptive field to 5 × 5 and models
+a larger neighborhood spatially related to the target. The outputs of the two branches are
+concatenated along the channel dimension and then fused by BatchNorm and the activation
+function σ(·), which denotes the Sigmoid activation function, to obtain the joint feature, as
+defined in Equation (20).
+Fjoi = σ
+ BN
+ Concat
+ floc
+ X′
+, fsur
+ X′
+(20)
+After obtaining Fjoi, which contains fused spatial context, the TCG Block applies the
+global context extractor FGlo to perform channel-level recalibration. This design makes
+spatial feature learning and channel feature enhancement complementary and relatively
+independent. Specifically, global average pooling is first used to form a channel descriptor.
+The descriptor is then passed through a two-layer MLP with a reduction ratio of r = 16,
+followed by a Sigmoid function, to obtain the channel attention vector. Finally, the channel-
+weighted feature is added to the original input through global residual learning to form
+the output of the core operator.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+12 of 37
+ 
+Figure 5. Structure of TCG Block.
+At the network level, the TCG Block uses the CSP topology of C3k2 as its outer
+framework. The input feature map is first projected by a 1 × 1 convolution and split into
+two branches along the channel dimension. One branch sequentially passes through n three-
+context core operators described above. All original and intermediate outputs are then
+concatenated along the channel dimension and fused by another 1 × 1 convolution, which
+balances parameter efficiency and cross-layer gradient flow. Considering that shallow
+features mainly contain fine-grained textures and have weaker demand for large receptive
+fields and channel attention, while deep features have higher semantic abstraction and
+require broader context to distinguish occluded targets or targets similar to the background,
+this paper keeps the original C3k2 unit at the shallow P3 level and replaces it with the
+TCG Block only at the deeper P4 and P5 levels, where C3k-style nesting is enabled. In this
+way, the network fully aggregates local, surrounding, and global contexts at deeper layers
+with lower resolution and larger channel dimensions, thereby strengthening pixel-level
+discrimination in complex scenes while avoiding the extra computational cost caused by
+redundant dilated convolution at shallow layers.
+2.5. Loss Function
+During training, to ensure the fairness and comparability of experimental results across
+different models, the proposed OAFBC-Net and all comparison models are trained with
+the standard object detection loss function built into YOLOv11. This setting is used in all
+experiments in this paper, including performance comparisons among different algorithms,
+comparisons under RGB and depth input conditions, and ablation experiments on FAPEF,
+BiFPN, and TCG. The standard YOLOv11 detection loss mainly consists of three terms:
+distribution focal loss (dfl), object classification loss (cls), and bounding box localization
+loss (box). The total loss is defined as follows:
+Ltotal = λ1Ld f l + λ2Lcls + λ3Lbox
+(21)
+where Ld f l denotes the distribution focal loss, Lcls denotes the object classification loss,
+and Lbox denotes the bounding box localization loss. λ1, λ2, and λ3 denote the weight
+coefficients of the three loss terms, respectively. This paper adopts the default YOLOv11
+weight setting. In actual training, these weights can also be adjusted according to specific
+detection tasks.
+The distribution focal loss Ld f l is used to optimize the fine-grained regression of
+predicted box boundaries. Unlike direct regression of bounding box coordinates, DFL
+models the four coordinate offsets of a bounding box as discrete probability distributions.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+13 of 37
+This design enables the network to focus more on the discrete values near the ground-
+truth position and increase their predicted probabilities, thereby improving bounding box
+localization accuracy. Its calculation is defined as follows:
+Ld f l =
+K×K
+∑
+i=0
+3
+∑
+p=0
+Iobj
+ij ·DFL(si, si+1)
+(22)
+DFL(si, si+1) = −[(yi+1 −y)log(si) + (y −yi)log(si+1)]
+(23)
+where K × K denotes the number of grids on feature maps at different scales. When the
+input image size is 640 × 640, YOLOv11 usually performs prediction at three scales, namely
+80 × 80, 40 × 40, and 20 × 20. p denotes the four boundary coordinates of the predicted
+box, and Iobj
+ij
+indicates whether the j-th predicted target in the i-th grid is a positive sample.
+The distribution focal loss (DFL), which models each coordinate offset of a bounding
+box as a discrete probability distribution rather than as a direct continuous regression
+target, requires the hyperparameter regmax to be set in advance. Here, reg_max denotes the
+number of discrete bins used to represent each coordinate offset in the distribution-based
+regression branch, and its default value is 16. Accordingly, the output channel number
+of the bounding box regression branch is 4 × regmax, because four box coordinates (left,
+top, right, and bottom) are regressed independently. For a real continuous position y, its
+left and right adjacent integer positions are yi and yi+1, and the corresponding predicted
+probabilities are si and si+1. Through this probability distribution regression strategy, the
+model learns apple target boundaries more precisely, which is especially beneficial for
+improving the localization accuracy of softly occluded and heavily occluded apples.
+The object classification loss Lcls adopts binary cross-entropy loss to measure the
+difference between predicted class probabilities and ground-truth class labels. The detection
+task in this paper contains three target categories, namely non-occluded apples (NO), softly
+occluded apples (SO), and heavily occluded apples (HO). Therefore, the classification
+branch needs to learn the feature differences among apples with different occlusion levels.
+The calculation is defined as follows:
+Lcls = −
+K×K
+∑
+i=0
+Iobj
+ij ∑
+c∈cls
+h
+Pj
+i (c) log ˆPj
+i (c) +
+
+1 −Pj
+i (c)
+
+log
+
+1 −ˆPj
+i (c)
+i
+(24)
+where c denotes the target category, Pj
+i (c) denotes the ground-truth class label, and ˆPj
+i (c)
+denotes the predicted probability that the target belongs to category c. Through this loss
+function, the model learns the differences among NO, SO, and HO apples in visible region
+size, occlusion degree, boundary completeness, and spatial structural features, thereby
+achieving occlusion-level classification and detection.
+The bounding box localization loss Lbox adopts the complete intersection over union
+(CIoU) loss function to measure the positional deviation between the predicted box and the
+ground-truth box. Compared with the ordinary intersection over union (IoU) loss, CIoU
+considers not only the overlap area between the predicted box and the ground-truth box,
+but also the center-point distance and aspect-ratio consistency constraints, which makes
+the bounding box regression process more stable. The calculation is defined as follows:
+Lbox = LCIoU = 1 −
+Bgt ∩Bpred
+Bgt ∪Bpred
++
+ρ2
+Bgt, Bpred
+
+w2c + h2c
++ αν
+(25)
+α =
+ν
+(1 −IoU) + ν
+(26)
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+14 of 37
+ν = 4
+π2 (arctanwgt
+hgt
+−arctan
+wpred
+hpred
+)2
+(27)
+where Bgt denotes the ground-truth box, and Bpred denotes the predicted box.
+Bgt∩Bpred
+Bgt∪Bpred
+denotes the intersection over union (IoU) between the predicted box and the ground-
+truth box, as used in Equation (26). ρ2
+Bgt, Bpred
+
+denotes the squared Euclidean distance
+between the center points of the ground-truth box and the predicted box. wc and hc denote
+the width and height of the smallest enclosing rectangle that can simultaneously cover
+the ground-truth box and the predicted box. wgt, hgt, wpred, and hpred denote the widths
+and heights of the ground-truth box and the predicted box, respectively. α is a balance
+coefficient, and v is used to measure the aspect-ratio consistency between the predicted box
+and the ground-truth box. Figure 6 shows the main geometric parameters involved in the
+CIoU loss, including the ground-truth box, the predicted box, the intersection and union
+regions, the center-point distance, and the smallest enclosing rectangle.
+Figure 6. Geometric relationship of the CIoU loss function.
+In summary, this paper jointly optimizes Ld f l, Lcls, and Lbox to impose simultaneous
+constraints on apple target boundary positions, occlusion categories, and spatial localization
+accuracy. DFL improves the fine-grained regression ability of bounding box coordinates,
+BCE classification loss enhances the category discrimination ability for NO, SO, and HO
+apples, and CIoU localization loss improves the spatial matching degree between predicted
+boxes and ground-truth boxes. This standard loss function provides effective constraints
+for the stable training of OAFBC-Net and enables the model to achieve more accurate
+occluded apple detection in complex orchard environments.
+3. Results
+3.1. Dataset
+The Apple dataset is an orchard RGB-depth image dataset collected at the First Station
+of the Taihang Mountain Road of Hebei Agricultural University in Shunping County,
+Baoding City, Hebei Province, China. Images are acquired using an Intel RealSense D455
+camera (Intel Corporation, Santa Clara, CA, USA), which captures paired RGB images and
+depth maps at a resolution of 1280 × 720 pixels. Figure 7 shows representative visible-light
+and depth images from the dataset.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+15 of 37
+Figure 7. Some sample images from the Apple dataset.
+This study follows the three-level occlusion classification standard for apple targets
+used in previous research, which is designed for harvesting passability and grasping feasi-
+bility. Apple targets are divided into three categories: No Occlusion (NO), Soft Occlusion
+(SO), and Hard Occlusion (HO) [41]. As shown in Figure 8, NO indicates that the apple
+target has a clear contour and a complete visible region, with little or no occlusion from
+branches, leaves, or adjacent fruits. Such targets can usually be directly used for visual
+localization and harvesting decisions. SO indicates that the apple is occluded by leaves,
+but its main body remains relatively distinguishable, and the end effector still has a high
+probability of successful picking after a slight push. HO indicates that the apple is severely
+occluded by branches, orchard structures, or adjacent fruits, which increases the difficulty
+of target localization and grasping decisions. Unlike conventional detection tasks that focus
+only on fruit localization, this classification standard further extends detection to a pass-
+ability assessment task for motion planning and grasping decisions in harvesting robots.
+Therefore, the proposed model outputs not only the position coordinates of apple targets,
+but also their corresponding occlusion and rigidity-related category information, namely
+NO, SO, and HO, providing more task-oriented visual input for subsequent manipulator
+path planning, grasp pose selection, and obstacle avoidance decisions. The annotated
+instance categories are shown in Table 1.
+ 
+Figure 8. The three-tier apple occlusion classification taxonomy adopted in this study: No Occlusion
+(NO), Soft Occlusion (SO), and Hard Occlusion (HO).
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+16 of 37
+Table 1. Number of apples with different occlusion types in the training, validation, and test sets of
+the Apple dataset.
+Occlusion Type
+Train
+Val
+Test
+Sum
+Soft Occlusion
+40,849
+5932
+10,504
+57,285
+No Occlusion
+22,148
+3138
+5720
+31,006
+Hard Occlusion
+34,004
+4563
+8141
+46,708
+The dataset contains 3000 apple images, including 57,285 soft-occluded apples,
+31,006 non-occluded apples, and 46,708 hard-occluded apples, for a total of 134,999 an-
+notated apple instances. The images cover different illumination conditions, including
+front lighting, backlighting, and side lighting. The apples also vary in size and include
+small fruits, dense fruit-cluster occlusion, and visually similar instances, making automatic
+detection and recognition challenging.
+Because the depth maps contain noise and missing regions, the original depth maps are
+filtered and optimized before model training. The processing operations include bilateral
+filtering, hole filling, and median filtering, which improve spatial continuity in the depth
+data. For the main comparison and ablation experiments, the Apple dataset is divided
+into training, validation, and test sets at a ratio of 7:1:2. To avoid data leakage, the split is
+conducted based on acquisition batches, tree IDs, and image groups rather than random
+splitting at the single-image level. This strategy prevents images from the same acquisition
+location or continuous shooting sequence from appearing simultaneously in the training,
+validation, and test sets.
+To further evaluate stability under different data splits, five-fold cross-validation is
+conducted based on the fixed-split experiments. The original test set remains unchanged
+throughout cross-validation to preserve its independence. The original training and vali-
+dation sets are merged into a development dataset and then divided into five folds using
+the same leakage-prevention principle as the main experiments. In each round, four folds
+are used for training and one fold is used for validation. After training each fold, the best-
+performing weights on the current validation set are evaluated on the same independent
+test set. The detailed results are presented in Section 3.6.
+To analyze the spatial distribution and scale characteristics of the Apple dataset,
+this study conducts a quantitative statistical analysis of the annotated bounding boxes.
+As shown in Figure 9a, the normalized center coordinates of apple targets cover most
+regions of the image, with higher density near the image center. This distribution does
+not show an extreme spatial bias, although apple targets appear more frequently within
+the main field of view because of orchard row structure, camera viewpoint, and shooting
+distance. Figure 9b shows the normalized distribution of bounding box width and height.
+Most targets are concentrated within a small-scale range, with both width and height
+mainly below 0.10 of the image size. A positive correlation is observed between width
+and height, indicating that most annotated apple boxes maintain relatively stable object
+proportions. These characteristics show that small-scale and occluded targets account for a
+large proportion of the dataset, increasing the difficulty of localization and occlusion-level
+classification. Therefore, the dataset distribution supports the use of RGB-depth fusion and
+feature enhancement modules from the data perspective.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+17 of 37
+Figure 9. Visualization and statistical analysis of dataset characteristics. Darker blue regions indicate
+higher distribution density, and lighter blue regions indicate lower distribution density. (a) Spatial
+distribution of bounding box center coordinates. (b) Scale distribution of normalized bounding box
+width and height.
+3.2. Experimental Platform and Parameters
+To evaluate OAFBC-Net for apple occlusion classification and detection, this study
+conducts comparative and ablation experiments on the Apple dataset. Tables 2 and 3 list
+the hardware, software, and training parameters, which support the reproducibility and
+comparability of the experiments.
+Table 2. Experimental environment configuration.
+Environment
+Parameters
+GPU
+NVIDIA GeForce RTX 4070 Laptop GPU
+(NVIDIA Corporation, Santa Clara, CA, USA)
+CPU
+Intel(R) Core(TM) i9-14900HX (2.20 GHz)
+(Intel Corporation, Santa Clara, CA, USA)
+GPU memory
+8 GB
+Operating system
+Windows 11
+Language
+Python 3.10.19
+Framework
+PyTorch 2.8.0
+CUDA version
+CUDA 12.6
+Table 3. Training parameter settings.
+Parameters
+Setup
+Epochs
+300
+Input image size (pixels)
+640
+Batch size
+8
+Workers
+8
+Learning rate
+0.01
+Momentum
+0.937
+Weight decay
+0.0005
+Optimizer
+SGD
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+18 of 37
+To support experimental reproducibility, the random seed is fixed during model
+training. Specifically, the random seeds of Python random, NumPy (version 2.2.6), and
+PyTorch are fixed, and all models use the same data split. Unless otherwise specified, the
+main comparative and ablation experiments use seed = 0. To verify that the performance
+improvement is not tied to a specific initialization, additional experiments are repeated
+with seed = 42 and seed = 2026.
+3.3. Evaluation Metrics
+Detection accuracy is evaluated using Precision (P), Recall (R), class-wise average
+Precision at IoU = 0.50 (AP50), and macro-averaged mAP50 and mAP50-95 over the three
+occlusion classes. Class-wise metrics are reported for Soft Occlusion (SO), No Occlusion
+(NO), and Hard Occlusion (HO). Each AP50 value is the area under the Precision-Recall
+curve for a given class, with a prediction counted as correct when IoU ≥0.50. Macro
+mAP50 is the arithmetic mean of the three class-wise AP50 values, and macro mAP50-95
+denotes the mean under the default validation protocol of the detection framework. Model
+complexity is reported as parameter count and giga floating-point operations (GFLOPs)
+at an input resolution of 640 × 640 pixels. Inference efficiency is additionally evaluated
+using per-image preprocessing time, inference time, postprocessing time, total latency, and
+frames per second (FPS), as reported in Section 3.7.
+During evaluation, predicted boxes and ground-truth boxes of the same class were
+matched in a one-to-one manner. A matched prediction was counted as a True Positive (TP)
+when IoU ≥0.50. An unmatched prediction was counted as a False Positive (FP), and an
+unmatched ground-truth box was counted as a False Negative (FN). Precision, Recall, and
+class-wise AP50 were computed as follows:
+P =
+TP
+TP + FP
+(28)
+R =
+TP
+TP + FN
+(29)
+mAP50 = 1
+N
+N
+∑
+i=1
+(P(R)dR)i
+(30)
+where P(R) denotes the Precision–Recall curve of class c, and N = 3 is the number of
+occlusion classes (NO, SO, and HO). For comparative experiments in Table 4, AP50SO,
+AP50NO, and AP50HO are reported separately to reflect detection performance under
+different occlusion levels. For ablation experiments in Table 5, overall mAP50 and mAP50-
+95 are reported together with class-wise AP50 values. For multi-seed and cross-validation
+experiments in Tables 6 and 7, Precision, Recall, mAP50, and mAP50-95 are reported. All
+models were trained and tested under the same experimental settings, input resolution,
+and data split, so that accuracy, GFLOPs, and parameter counts are directly comparable.
+Table 4. Performance comparison between OAFBC-Net and different algorithms.
+Method
+Modality
+AP50 (%)
+FLOPs (G)
+Params (M)
+SO
+NO
+HO
+YOLOv5
+RGB-only
+63.4
+81.1
+44.3
+5.8
+2.2
+YOLOv8
+RGB-only
+63.4
+80.8
+44.9
+6.8
+2.7
+YOLOv10
+RGB-only
+63.6
+81.1
+45.7
+6.5
+2.3
+YOLOv11
+RGB-only
+63.7
+81.3
+46.6
+6.3
+2.6
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+19 of 37
+Table 4. Cont.
+Method
+Modality
+AP50 (%)
+FLOPs (G)
+Params (M)
+SO
+NO
+HO
+SSD
+RGB-only
+59.6
+77.0
+43.9
+30.5
+24.0
+Faster R-CNN
+RGB-only
+67.3
+82.9
+47.8
+208.0
+41.4
+RetinaNet
+RGB-only
+57.8
+80.8
+41.0
+156.0
+19.8
+YOLOv5
+depth-only
+35.4
+74.9
+22.9
+5.8
+2.2
+YOLOv8
+depth-only
+31.4
+71.7
+20.2
+6.8
+2.7
+YOLOv10
+depth-only
+32.2
+74.1
+21.2
+6.5
+2.3
+YOLOv11
+depth-only
+34.3
+74.3
+20.5
+6.3
+2.6
+SSD
+depth-only
+26.1
+67.1
+14.9
+30.5
+24.0
+Faster R-CNN
+depth-only
+41.8
+78.0
+28.6
+208.0
+41.4
+RetinaNet
+depth-only
+27.4
+69.2
+14.2
+156.0
+19.8
+YOLOv5-RGBD
+RGB + depth
+65.2
+82.3
+45.5
+8.3
+4.4
+YOLOv8-RGBD
+RGB + depth
+65.2
+82.4
+45.7
+13.2
+5.3
+YOLOv10-RGBD
+RGB + depth
+65.4
+82.2
+45.9
+11.8
+4.7
+YOLOv11-RGBD
+RGB + depth
+65.0
+82.4
+46.9
+11.5
+5.0
+OAFBC-Net
+RGB + depth
+72.1
+87.3
+57.9
+10.2
+3.6
+Note: FLOPs (G) denotes giga floating-point operations; Params (M) denotes model parameters in millions
+(640 × 640 input). Bold values indicate the best result in each column across the entire table: the highest AP50 for
+SO, NO, and HO, and the lowest FLOPs and Params.
+Table 5. Ablation experiment results.
+Model
+FAPEF
+BiFPN
+TCG
+mAP50
+(%)
+mAP50-
+95 (%)
+AP50 (%)
+FLOPs
+(G)
+Params
+(M)
+SO
+NO
+HO
+1
+64.8
+47.9
+65.0
+82.4
+46.9
+11.5
+5.0
+2
+✓
+70.5
+53.1
+70.3
+86.6
+54.7
+10.6
+4.7
+3
+✓
+66.4
+48.7
+67.0
+84.5
+47.8
+11.5
+4.3
+4
+✓
+66.0
+49.3
+65.7
+83.1
+49.3
+10.4
+4.2
+5
+✓
+✓
+71.7
+54.0
+71.8
+87.1
+56.4
+11.3
+4.2
+6
+✓
+✓
+71.2
+53.8
+71.9
+87.1
+54.6
+10.2
+4.1
+7
+✓
+✓
+70.4
+52.8
+70.5
+86.4
+54.4
+10.4
+3.7
+8
+✓
+✓
+✓
+72.4
+55.2
+72.1
+87.3
+57.9
+10.2
+3.6
+Note: Model 1 is the dual-modal baseline without FAPEF, BiFPN, or TCG; ✓indicates that the corresponding
+module is included in the model; Models 2–4 add one module each; Models 5–7 add pairwise combinations;
+Model 8 is the complete OAFBC-Net. mAP50 and mAP50-95 are overall metrics computed using the default
+YOLOv11 validation protocol; AP50 columns report class-wise results at IoU = 0.50.
+Table 6. Multi-seed experimental results.
+Model
+Seed
+Precision
+(%)
+Recall
+(%)
+mAP50
+(%)
+mAP50-95
+(%)
+YOLOv11-RGBD
+0
+59.2
+68.6
+65.8
+47.9
+42
+58.1
+68.7
+64.7
+48.1
+2026
+57.7
+69.7
+66
+48.1
+mean ± std
+58.3 ± 0.8
+69.0 ± 0.6
+65.5 ± 0.6
+48.0 ± 0.1
+OAFBC-Net
+0
+64.8
+71.7
+72.4
+55.2
+42
+65.5
+70.4
+72.4
+55.1
+2026
+64.2
+70.5
+71.5
+54.6
+mean ± std
+64.8 ± 0.5
+70.9 ± 0.7
+72.1 ± 0.5
+55.0 ± 0.3
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+20 of 37
+Table 7. Five-fold cross-validation experimental results.
+Model
+Fold
+Precision
+(%)
+Recall
+(%)
+mAP50
+(%)
+mAP50-95
+(%)
+YOLOv11-RGBD
+Fold 1
+57.7
+66.8
+64.4
+47.5
+Fold 2
+61.5
+68.5
+68.7
+49.7
+Fold 3
+58.3
+69.3
+67.6
+49.0
+Fold 4
+55.9
+68.2
+64.4
+46.5
+Fold 5
+57.5
+67.8
+65.0
+47.3
+mean ± std
+58.2 ± 2.1
+68.1 ± 0.9
+66.0 ± 2.0
+48.0 ± 1.3
+OAFBC-Net
+Fold 1
+64.1
+70.0
+71.6
+54.0
+Fold 2
+64.9
+70.1
+72.6
+54.0
+Fold 3
+63.0
+70.0
+70.7
+52.5
+Fold 4
+62.6
+69.7
+70.9
+53.0
+Fold 5
+63.8
+69.7
+71.1
+52.7
+mean ± std
+63.7 ± 0.9
+69.9 ± 0.2
+71.4 ± 0.8
+53.2 ± 0.7
+3.4. Comparison Experiment
+The comparison models are grouped into three categories. The first category includes
+lightweight YOLO-series detectors, namely YOLOv5, YOLOv8, YOLOv10, and YOLOv11.
+The second category includes classical detectors, including SSD, RetinaNet, and Faster
+R-CNN. The third category includes multimodal YOLO-based baselines. To ensure fair
+comparison under dual-modal input conditions, this study constructs RGB-depth fusion
+versions of YOLOv5, YOLOv8, YOLOv10, and YOLOv11, denoted as YOLOv5-RGBD,
+YOLOv8-RGBD, YOLOv10-RGBD, and YOLOv11-RGBD, respectively. These models are
+self-implemented RGB-depth baselines based on the corresponding YOLO architectures,
+not official YOLO variants. OAFBC-Net is evaluated as the proposed RGB-depth detection
+method. Experiments are conducted under three input settings: RGB-only, depth-only, and
+RGB + depth fusion. All models are compared under the same experimental conditions.
+As shown in Table 4, the detection performance of different models varies clearly across
+input modalities. For single-modal detection methods, the Only-RGB models consistently
+outperformed the depth-only models. This is mainly because RGB images contain rich color,
+texture, and edge information, which more effectively represents the appearance of apple
+targets. In contrast, depth images provide spatial structural cues, but their texture details
+and semantic representation are relatively limited when used alone, leading to a clear
+decline in detection performance. Under the Only-RGB setting, Faster R-CNN achieved
+67.3%, 82.9%, and 47.8% on SO, NO, and HO, respectively, showing strong detection
+accuracy. However, its computational cost and parameter size reach 208.0 G and 41.4 M,
+respectively, which indicates high model complexity and limits practical deployment. By
+comparison, the YOLO-series models have lower FLOPs and fewer parameters, but their
+detection accuracy still has room for improvement.
+A further comparison under the depth-only setting shows that all models suffer
+different degrees of performance degradation. For example, YOLOv10 achieved 63.6%,
+81.1%, and 45.7% on SO, NO, and HO under the Only-RGB setting, but the corresponding
+values decrease to 32.2%, 74.1%, and 21.2% under the depth-only setting. This result
+indicates that depth information alone cannot fully describe the appearance features of
+apple targets. In complex scenes or cases with unclear object boundaries, the discriminative
+ability of the model is therefore limited. Thus, relying on a single modality makes it difficult
+to obtain stable and robust detection performance.
+Compared with single-modal methods, RGB + depth multimodal fusion methods
+achieved better overall performance. YOLOv5-RGBD, YOLOv8-RGBD, YOLOv10-RGBD,
+and YOLOv11-RGBD all improve over their corresponding RGB-only models on SO, NO,
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+21 of 37
+and HO, which indicates that the texture information from RGB images and the spatial
+structural information from depth images are strongly complementary. By fusing features
+from the two modalities, the models obtain a more complete target representation and thus
+improve detection performance.
+Among RGB-depth methods under identical training settings, OAFBC-Net achieved
+the highest class-wise AP50 on SO, NO, and HO (72.1%, 87.3%, and 57.9%, respectively).
+Relative to the strongest dual-modal baseline (YOLOv11-RGBD, with AP50 values of 65.0%,
+82.4%, and 46.9% for SO, NO, and HO), OAFBC-Net improved AP50HO by 11.0 percentage
+points while reducing parameters from 5.0 M to 3.6 M. Faster R-CNN (RGB-only) is reported
+only as a single-modal reference because its input setting and architecture differ from the
+proposed RGB-depth framework.
+In addition, among the multimodal detection models, OAFBC-Net has only 3.6 M
+parameters, fewer than YOLOv5-RGBD, YOLOv8-RGBD, YOLOv10-RGBD, and YOLOv11-
+RGBD. This shows that the proposed method improves detection accuracy while maintain-
+ing a lightweight model structure. Although its FLOPs are slightly higher than those of
+YOLOv5-RGBD, its detection accuracy improves substantially. In particular, OAFBC-Net
+improves AP50HO by 12.4% over YOLOv5-RGBD, which indicates that it fuses RGB and
+depth information more effectively and strengthens the recognition ability for challeng-
+ing targets.
+Overall, the proposed OAFBC-Net fully exploits the texture details of RGB images
+and the spatial structural information of depth images, achieving the best performance
+across all detection categories. At the same time, the method keeps both parameter size
+and computational complexity at a low level, balancing detection accuracy and model
+lightweightness. These results demonstrate its strong robustness and practical value for
+occluded apple detection in complex orchard environments.
+3.5. Ablation Experiment
+To comprehensively evaluate the effectiveness and necessity of the proposed com-
+ponents, we conduct extensive ablation experiments on FAPEF, BiFPN, and TCG under
+identical training settings. The eight ablation configurations and their results are summa-
+rized in Table 5, which reports overall mAP50 and mAP50-95, class-wise AP50 values for
+Soft Occlusion (SO), No Occlusion (NO), and Hard Occlusion (HO), as well as FLOPs and
+parameter counts.
+As shown in Table 5, the baseline model (Model 1) achieves the lowest overall and
+class-wise performance among all ablation configurations, with mAP50 of 65.8%, mAP50-95
+of 47.9%, and AP50 values of 65.0%, 82.4%, and 46.9% for SO, NO, and HO, respectively.
+Compared with Model 1, introducing FAPEF alone (Model 2) improves mAP50 from 65.8%
+to 70.5% and mAP50-95 from 47.9% to 53.1%, while AP50 increases to 70.3%, 86.6%, and
+54.7% for SO, NO, and HO, respectively. The parameter count decreases from 5.0 M to
+4.7 M. This indicates that replacing the original concatenation-based fusion at the P4 and
+P5 stages with frequency-domain RGB-depth fusion enables the model to integrate cross-
+modal information more effectively and yields the largest single-module gain, particularly
+for HO detection (+7.8 percentage points in AP50_HO).
+After introducing BiFPN alone (Model 3), mAP50 and mAP50-95 increase to 66.4%
+and 48.7%, respectively, while AP50 values become 67.0%, 84.5%, and 47.8% for SO, NO,
+and HO. The parameter count further decreases to 4.3 M. These results show that the
+bidirectional multi-scale fusion structure improves multi-scale feature representation and
+maintains computational efficiency, although its standalone contribution to overall accuracy
+is more moderate than that of FAPEF. After introducing TCG alone (Model 4), mAP50 and
+mAP50-95 reach 66.0% and 49.3%, respectively, with AP50 values of 65.7%, 83.1%, and
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+22 of 37
+49.3% for SO, NO, and HO, while the parameter count decreases to 4.2 M. This suggests
+that TCG enhances contextual modeling and semantic compensation under occlusion, with
+a relatively more evident benefit on HO cases (+2.4 percentage points in AP50_HO over
+Model 1), even though its overall gain when used alone remains limited.
+Furthermore, pairwise combinations of the proposed modules (Models 5–7) demon-
+strate clear synergistic effects. Model 5 (FAPEF + BiFPN) achieves mAP50 of 71.7% and
+mAP50-95 of 54.0%, with AP50 values of 71.8%, 87.1%, and 56.4% for SO, NO, and HO.
+Model 6 (FAPEF + TCG) reaches mAP50 of 71.2% and mAP50-95 of 53.8%, with AP50
+values of 71.9%, 87.1%, and 54.6% for SO, NO, and HO. Model 7 (BiFPN + TCG) obtains
+mAP50 of 70.4% and mAP50-95 of 52.8%, with AP50 values of 70.5%, 86.4%, and 54.4% for
+SO, NO, and HO. All three pairwise variants outperform the corresponding single-module
+configurations, confirming that the proposed components provide complementary rather
+than redundant benefits. The complete model (Model 8) achieves the best performance
+across all reported metrics, with mAP50 of 72.4%, mAP50-95 of 55.2%, and AP50 values
+of 72.1%, 87.3%, and 57.9% for SO, NO, and HO, respectively, while using the lowest
+parameter count (3.6 M) and 10.2 GFLOPs among all eight configurations.
+These results demonstrate that each component contributes not only independently
+but also complementarily to the final performance improvement. Relative to Model 1, the
+full model improves mAP50 and mAP50-95 by 6.6 and 7.3 percentage points, respectively,
+and increases AP50_HO by 11.0 percentage points. FAPEF enhances cross-modal frequency-
+domain fusion, BiFPN strengthens multi-scale feature interaction, and TCG improves
+contextual reasoning under occlusion. Importantly, the consistent performance drop across
+SO, NO, and HO categories when any module is removed validates the necessity of all
+three components for robust occlusion-aware detection.
+To further substantiate the necessity of each proposed module, we compare the full
+model (Model 8) with its ablated variants in Table 5. When FAPEF is removed (Model 7),
+mAP50 decreases from 72.4% to 70.4% and mAP50-95 from 55.2% to 52.8%, with AP50_HO
+decreasing from 57.9% to 54.4%, indicating the importance of frequency-domain cross-
+modal fusion. When BiFPN is removed (Model 6), mAP50 decreases to 71.2% and mAP50-
+95 to 53.8%, showing that BiFPN contributes to multi-scale feature representation and
+overall localization quality. When TCG is removed (Model 5), mAP50 decreases to 71.7%
+and mAP50-95 to 54.0%, while AP50_HO decreases from 57.9% to 56.4%, indicating that
+TCG further strengthens contextual reasoning under severe occlusion. This degradation
+is consistently observed across SO, NO, and HO categories rather than being limited to
+a single occlusion subset. Therefore, the ablation results validate the importance of all
+proposed components and demonstrate their complementary roles in improving overall
+detection performance.
+In addition, Figure 10 presents the normalized visualization of the ablation results.
+All data in the figure are normalized to the range of 0 to 1. For detection performance
+metrics, including P, R, mAP50, and mAP50-95, a value closer to 1 indicates better model
+performance. For the Params metric, a value closer to 0 indicates fewer model parameters.
+Model 1 to Model 8 in the figure correspond to the eight ablation configurations listed in
+Table 5. Model 8 shows the largest coverage in the accuracy-related dimensions, including
+P, R, mAP50, and mAP50-95, while maintaining the smallest parameter scale. This indicates
+that the final model achieves the most balanced performance among all ablation settings.
+Therefore, the combination of FAPEF, BiFPN, and TCG effectively improves detection
+accuracy and contributes to the construction of a lightweight detection model.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+23 of 37
+Figure 10. Normalization and performance analysis of ablation experiment indicators. (a) Histogram
+of normalized indicators. (b) Performance comparison of ablation variants.
+3.6. Reproducibility and Cross-Validation Analysis
+Although the preceding comparative experiments and ablation experiments are con-
+ducted under fixed data splits and a fixed random seed, the training results of deep learning
+detection models may still be affected by random initialization, the randomness of data
+augmentation, and the partitioning strategy for the training and validation sets. To further
+verify the reliability of the performance improvement achieved by the proposed model,
+this paper supplements the main comparative experiments and ablation experiments
+with multi-seed repeated experiments and five-fold cross-validation experiments. The
+multi-seed experiments are used to analyze the effect of different random initializations
+on model performance under unchanged data splits, while the five-fold cross-validation
+experiments are used to analyze the effect of different training and validation splits on
+model performance under a fixed random seed.
+Considering that repeated training of all models would significantly increase the
+experimental cost, this paper selects two representative models for stability validation,
+namely YOLOv11-RGBD and OAFBC-Net. YOLOv11-RGBD is the RGB-D dual-modal
+fusion baseline model constructed in this paper based on the YOLOv11 architecture, and
+OAFBC-Net is the proposed occluded apple detection model. Through repeated exper-
+iments on these two models, the influence of RGB-D dual-modal information and the
+proposed feature enhancement modules on the stability of detection performance can be
+further analyzed.
+To verify whether the performance improvement of OAFBC-Net is caused by the
+accidental effect of a specific random seed, this paper uses multiple random seeds to
+conduct repeated model training. In this experiment, the training, validation, and test
+splits remain unchanged, and only the random seed in the training process is changed.
+Specifically, three independent training runs are conducted with seed = 0, seed = 42, and
+seed = 2026.
+During each training run, the random seeds of Python random, NumPy, and PyTorch
+are set to the same value. The experimental conditions, including input image size, number
+of training epochs, optimizer, learning rate strategy, batch size, data augmentation method,
+and evaluation metrics, are kept consistent. In this way, the differences among experimental
+results can be attributed mainly to random initialization and training randomness, rather
+than differences in experimental configurations.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+24 of 37
+This paper records the Precision, Recall, mAP50, and mAP50-95 of the two models
+under different random seeds, and further calculates the mean and standard deviation of
+the results obtained from the three random seeds. The mean reflects the overall detection
+performance of the model under different random initialization conditions, while the
+standard deviation measures the fluctuation of the training results. If a model maintains
+high detection accuracy with a small standard deviation under multiple random seeds, its
+performance improvement can be considered reproducible rather than an accidental result
+caused by a specific random seed.
+As shown in Table 6, OAFBC-Net exhibits good stability in Precision, Recall, mAP50,
+and mAP50-95 under three different random seeds, with average values of 64.8 ± 0.5%,
+70.9 ± 0.7%, 72.1 ± 0.5%, and 55.0 ± 0.3%, respectively. Compared with YOLOv11-RGBD,
+OAFBC-Net improves the average Precision, Recall, mAP50, and mAP50-95, among which
+mAP50 and mAP50-95 increase by 6.6 and 7.0 percentage points, respectively. This indicates
+that the proposed method achieves better detection performance under different random
+initialization conditions. In terms of standard deviation, all metrics of OAFBC-Net show
+small fluctuations. In particular, the standard deviations of mAP50 and mAP50-95 are 0.5%
+and 0.3%, respectively, indicating that the model has good consistency in overall detection
+accuracy and localization performance under multiple IoU thresholds. By contrast, the
+mAP50 and mAP50-95 of YOLOv11-RGBD are 65.5 ± 0.6% and 48.0 ± 0.1%, respectively,
+suggesting that although YOLOv11-RGBD also shows a certain degree of stability, its overall
+detection performance is clearly lower than that of OAFBC-Net. Notably, while improving
+detection accuracy, OAFBC-Net still maintains low standard deviations in Precision, Recall,
+and mAP50, which indicates that the proposed RGB-D feature fusion and occlusion feature
+enhancement strategies do not increase the sensitivity of the model to random initialization.
+Overall, the multi-seed experimental results show that the performance improvement of
+OAFBC-Net is not accidental, but is stable, reproducible, and consistently advantageous
+under different random seeds.
+Considering that the test set should remain as independent as possible, this paper
+keeps the original independent test set unchanged during five-fold cross-validation and
+only repartitions the development dataset formed by the original training and validation
+sets. Specifically, the original training set and validation set are first merged to form
+the development dataset, which is then divided into five non-overlapping subsets. In
+each experimental round, four subsets are selected as the training set, and the remaining
+subset is used as the validation set. After model training is completed, the model weights
+with the best performance on the current validation set are selected and evaluated on the
+independent test set, which remains unchanged throughout the process. This procedure is
+repeated five times until each subset is used once as the validation set.
+To analyze the influence of data partitioning on model performance as independently
+as possible, seed = 0 is uniformly adopted in the five-fold cross-validation experiments. In
+addition, the input image size, number of training epochs, optimizer, learning rate strategy,
+batch size, data augmentation method, and evaluation metrics are kept consistent with
+those in the main comparative experiments for all folds.
+As shown in Table 7, OAFBC-Net outperforms YOLOv11-RGBD in Precision, Recall,
+mAP50, and mAP50-95 in the five-fold cross-validation experiments. The average gains
+are 5.5, 1.8, 5.4, and 5.2 percentage points, respectively. OAFBC-Net also shows smaller
+standard deviations than YOLOv11-RGBD across all metrics. In particular, the standard
+deviations of Recall, mAP50, and mAP50-95 are 0.2%, 0.8%, and 0.7%, respectively, which
+are lower than the corresponding values of 0.9%, 2.0%, and 1.3% for YOLOv11-RGBD.
+These results indicate lower sensitivity to data partitioning and better reproducibility
+within the tested dataset and protocol.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+25 of 37
+3.7. Inference Efficiency Analysis
+Parameter count and GFLOPs alone cannot fully support operational viability claims
+for OAFBC-Net, because FAPEF performs multiple two-dimensional fast Fourier transform
+(FFT) and inverse fast Fourier transform (IFFT) operations inside deep feature tensor channels.
+Depending on the deployment platform, such frequency-domain operations may introduce
+computational bottlenecks or memory-transfer latency. To address this concern, this section
+reports measured inference efficiency for all eight ablation configurations in Table 5 under an
+identical runtime protocol. The goal is to verify whether FAPEF prevents real-time inference
+and to provide empirical support for the lightweight design of OAFBC-Net.
+All latency tests were conducted on the experimental platform described in Section 3.2
+and Table 2, using an NVIDIA GeForce RTX 4070 Laptop GPU (8 GB), Intel Core i9-
+14900HX CPU, Windows 11, Python 3.10.19, PyTorch 2.8.0, and CUDA 12.6. At present,
+edge hardware such as NVIDIA Jetson devices are not available in this study. Therefore,
+the reported results should be interpreted as desktop/laptop GPU measurements rather
+than as direct evidence of embedded orchard deployment. Validation on edge platforms,
+including Jetson-based field perception systems, will be conducted in future work.
+The eight ablation models in Table 5 were selected because they share the same RGB-
+depth input setting, training protocol, and overall detector framework, which enables
+controlled analysis of the runtime impact of FAPEF, BiFPN, and the TCG Block. Model 1
+serves as the dual-modal baseline without any proposed module. Models 2–4 introduce
+FAPEF, BiFPN, and the TCG Block individually. Models 5–7 represent pairwise combi-
+nations, and Model 8 is the complete OAFBC-Net. This design allows direct comparison
+between Model 8 and Model 7 to isolate the runtime effect of FAPEF, while Model 1 and
+Model 2 further quantify the overhead of frequency-domain fusion alone.
+For each model, inference efficiency was measured with paired RGB-depth inputs
+at a resolution of 640 × 640 pixels and batch size = 1. Each model was warmed up for
+50 iterations and then evaluated over 1000 consecutive runs. The reported preprocessing
+time, inference time, and postprocessing time denote the mean per-image latency. Total
+latency was computed as the sum of these three terms, and FPS was calculated as 1000/Total
+latency. All tests used the same trained weights as in the ablation experiments in Section 3.5.
+Table 8 summarizes the measured runtime results. Although FAPEF introduces FFT/IFFT
+operations at the P4 and P5 stages, these transforms are applied only to lower-resolution se-
+mantic feature maps rather than to the highest-resolution P3 layer, which limits the additional
+computational and memory-transfer cost of the frequency-domain branch.
+Table 8. Inference efficiency of the eight ablation models on the NVIDIA GeForce RTX 4070 Laptop GPU.
+Model
+FAPEF
+BiFPN
+TCG
+Params
+(M)
+GFLOPs
+Pre
+(ms)
+Inf
+(ms)
+Post
+(ms)
+Total
+(ms)
+FPS
+1
+5.0
+11.5
+1.2
+10.6
+1.6
+13.4
+74.6
+2
+✓
+4.7
+10.6
+1.0
+9.7
+1.7
+12.4
+80.6
+3
+✓
+4.3
+11.5
+0.9
+10.2
+1.7
+12.8
+78.1
+4
+✓
+4.2
+10.4
+0.8
+9.2
+1.4
+11.4
+87.7
+5
+✓
+✓
+4.2
+11.3
+0.9
+11.3
+1.3
+13.5
+74.1
+6
+✓
+✓
+4.1
+10.2
+0.9
+9.6
+1.3
+11.8
+84.8
+7
+✓
+✓
+3.7
+10.4
+1.0
+9.9
+1.1
+12.0
+83.3
+8
+✓
+✓
+✓
+3.6
+10.2
+0.9
+9.2
+1.2
+11.3
+88.5
+Note: All models were evaluated with RGB + depth inputs, batch size = 1, input size 640 × 640 pixels, and FP32
+precision. ✓indicates that the corresponding module is included in the model; Total latency = Pre + Inf + Post;
+FPS = 1000/Total latency. Mean values were obtained over 1000 runs after 50 warmup iterations.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+26 of 37
+As shown in Table 8, the complete OAFBC-Net, Model 8, achieves the highest inference
+efficiency among all ablation configurations on the RTX 4070 Laptop GPU. Its total latency
+is 11.3 ms per image, corresponding to 88.5 FPS. Model 8 also uses the fewest parameters,
+3.6 M, and the lowest computational cost, 10.2 GFLOPs, among the eight variants. By
+comparison, the baseline Model 1 requires 13.4 ms per image and reaches 74.6 FPS, while
+using 5.0 M parameters and 11.5 GFLOPs. Relative to Model 1, the full model reduces
+total latency by 15.7% and increases throughput by 18.6%, while simultaneously improving
+detection accuracy across all occlusion levels reported in Table 5. These results indicate
+that the proposed modules do not prevent real-time inference on the tested desktop GPU.
+Instead, the final architecture achieves a better balance among detection accuracy, model
+size, and runtime performance than the baseline dual-modal detector.
+The results also directly address the concern that FFT/IFFT operations in FAPEF
+may become a computational bottleneck. When FAPEF is introduced alone, Model 2
+reduces total latency from 13.4 ms for Model 1 to 12.4 ms, and increases throughput from
+74.6 FPS to 80.6 FPS, despite the addition of frequency-domain fusion. More importantly,
+Model 8 and Model 7 share BiFPN and the TCG Block and differ only in the presence of
+FAPEF. Under the tested setting, the full model with FAPEF requires 11.3 ms per image
+and achieves 88.5 FPS; whereas, the variant without FAPEF requires 12.0 ms per image
+and achieves 83.3 FPS. Therefore, the FFT/IFFT operations in FAPEF do not dominate
+end-to-end latency and do not create a measurable runtime bottleneck relative to the closest
+ablated counterpart. This finding is consistent with the efficiency-oriented placement of
+FAPEF at the lower-resolution P4 and P5 stages described in Section 2.2.
+The ablation results further reveal module-specific runtime behaviors. When the TCG
+Block is introduced alone, Model 4 achieves a total latency of 11.4 ms per image and a
+throughput of 87.7 FPS, which is the highest among the single-module variants. When
+FAPEF is combined with the TCG Block, Model 6 maintains a competitive total latency of
+11.8 ms per image and a throughput of 84.8 FPS. By contrast, BiFPN increases inference cost
+more noticeably when combined with FAPEF. Model 5, which integrates FAPEF and BiFPN
+without the TCG Block, requires 13.5 ms per image and reaches 74.1 FPS, making it the
+slowest configuration in Table 8. However, when BiFPN is integrated together with FAPEF
+and the TCG Block in the complete OAFBC-Net, Model 8 reduces total latency to 11.3 ms
+per image and achieves 88.5 FPS. This suggests that the three modules are jointly optimized
+in OAFBC-Net and that runtime performance should be evaluated at the complete-system
+level rather than from an isolated FAPEF implementation alone.
+In summary, the inference efficiency experiments support the operational viability
+of OAFBC-Net on the current RTX 4070 Laptop GPU platform. The complete model
+achieves 88.5 FPS with 3.6 M parameters and 10.2 GFLOPs, and the measured latencies
+do not indicate that FAPEF-related FFT/IFFT operations become the dominant runtime
+bottleneck in the tested dual-branch topology. Nevertheless, these conclusions are limited
+to the desktop/laptop GPU used in this study. Because edge devices such as NVIDIA
+Jetson platforms were not available during this revision, future work will extend the same
+inference protocol to embedded hardware and further evaluate TensorRT or quantization-
+based deployment for orchard edge perception.
+3.8. Visualization Experiments
+To further examine the detection behavior of OAFBC-Net, visual comparison experi-
+ments are conducted under different input modalities, including RGB, depth, and RGB +
+depth. The results are shown in Figure 11. YOLOv5, YOLOv8, YOLOv10, YOLOv11, and
+OAFBC-Net are selected for qualitative comparison.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+27 of 37
+Figure 11. Comparison of detection results produced by YOLOv5, YOLOv8, YOLOv10, YOLOv11,
+and OAFBC-Net on the Apple dataset using RGB-only, depth-only, and multimodal fusion inputs.
+As shown in Figure 11, for non-occluded targets, each detection model generally per-
+forms well because the fruit contours are complete and color and texture features are clear.
+With RGB-only input, the models identify most non-occluded fruits because RGB images
+contain rich color, texture, and edge information. However, in complex backgrounds or
+densely distributed fruit regions, some single-modal models still show inaccurate localiza-
+tion or insufficient separation of adjacent targets. By fusing RGB and depth information,
+OAFBC-Net uses additional spatial-structure cues and improves localization stability for
+non-occluded targets.
+For soft-occluded targets, the fruits are partially occluded by leaves or branches but
+still retain color, texture, and shape cues. With RGB-only input, the models can detect some
+soft-occluded fruits, but missed detections and localization deviations occur when leaf
+colors are similar to the fruit background or when fruit boundaries are partly occluded. With
+depth-only input, discriminative ability decreases because fine-grained texture and color
+information are absent. RGB + depth input combines appearance and spatial-structure
+information, improving the representation of soft-occluded targets. The visual results
+show that OAFBC-Net reduces some missed detections and improves the match between
+detection boxes and target regions.
+For hard-occluded targets, the visible fruit region is small, the boundary is blurred,
+and the feature information is incomplete. Detection is therefore more difficult than for
+non-occluded and soft-occluded targets. Single-modal methods are more vulnerable to leaf
+occlusion, branch interference, and complex backgrounds, leading to missed detections,
+false detections, or inaccurate localization. This problem is especially clear with depth-only
+input. If the depth difference between fruits and surrounding branches or leaves is small,
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+28 of 37
+the model cannot obtain sufficient discriminative features. By fusing RGB texture cues with
+depth-based spatial-structure cues, OAFBC-Net alleviates this problem to some extent and
+detects more valid targets in hard-occluded regions.
+Overall, RGB + depth multimodal input performs better than a single RGB or depth
+modality. RGB images provide appearance information, including color, texture, and
+edges, while depth images provide spatial relationships between targets and backgrounds.
+Their fusion enhances the model representation for fruits under different occlusion levels,
+especially in Soft Occlusion and Hard Occlusion scenes where background interference
+and partial visibility are major challenges.
+Among all compared methods, OAFBC-Net shows better visual detection results
+for soft-occluded, hard-occluded, and non-occluded targets. Compared with YOLOv5,
+YOLOv8, YOLOv10, and YOLOv11, it produces more complete detections, more accurate
+bounding boxes, and fewer missed and false detections in the displayed examples. This
+supports the quantitative results and suggests that multimodal complementary information
+improves adaptability in complex orchard scenes.
+The visualization results further support the effectiveness of OAFBC-Net. For non-
+occluded targets, the model achieves accurate localization. For soft-occluded targets, it
+improves detection stability under partial occlusion. For hard-occluded targets, it still
+detects more valid targets when visible information is limited. A small number of missed
+and false detections may still occur under extreme occlusion or highly similar backgrounds.
+Overall, the visualization results are consistent with the quantitative results in Table 4.
+To examine the role of FAPEF in multimodal feature fusion, this study visualizes
+feature responses. As shown in Figure 12, the depth image provides spatial structure
+differences between fruits and branches or leaves, but its independent representation still
+suffers from blurred boundaries and background interference. Simple feature concatenation
+introduces depth information but does not sufficiently filter effective features, resulting
+in relatively scattered feature responses and limited distinction between target regions
+and complex backgrounds. In contrast, FAPEF highlights apple regions more clearly and
+suppresses background noise, such as branches, leaves, and shadows. It also produces
+clearer responses to fruit edges and local contour details. These results suggest that FAPEF
+adaptively uses complementary information from RGB and depth features rather than
+simply stacking them.
+Figure 12. Effect of FAPEF on feature extraction. Brighter colors indicate higher model attention to
+the corresponding regions.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+29 of 37
+Figure 13 compares the intermediate features of Base and TCG under the same dual-
+modal input, including P4 fused features, P5 fused features, and final P5 detection features.
+TCG produces stronger and more concentrated spatial responses at all three depths, which
+is consistent with the design goal of the triple TCG Block.
+ 
+Figure 13. Comparison of intermediate features between Base and TCG on representative samples.
+At the P4 fused feature stage, the strong-response channels of the baseline model
+are relatively sparse, and high-activation regions are mostly scattered. In contrast, TCG
+presents fuller bright regions with clearer boundaries at the same layer. This indicates
+that, after RGB and depth information is fused at the P4 scale, features refined by TCG
+have higher spatial selectivity. At the P5 fused feature stage, the difference becomes more
+obvious. Base still mainly presents diffuse and block-like high responses; whereas, TCG
+shows a denser and more structured activation pattern. In the detection features, the
+strong-response channels of Base are weaker and sparser, while TCG maintains rich and
+concentrated high-activation regions. This suggests that pre-detection semantic features
+are better preserved for subsequent bounding box regression and classification.
+Each channel is displayed using independent min-max normalization. From the
+response patterns, TCG maintains more structured feature encoding from the fusion layers
+to the detection layer. This qualitatively agrees with the improvement observed for the
+Hard Occlusion category on the validation set. In summary, this visualization suggests
+that TCG forms stronger and more focused multimodal feature expressions during middle
+fusion and pre-detection stages.
+To further evaluate classification and detection ability under different input modalities
+and occlusion levels, normalized confusion matrices are plotted in Figure 14. The diagonal
+values represent the proportion of correctly classified samples in each category; higher
+values indicate better classification performance. The off-diagonal values represent misclas-
+sification proportions among categories and help analyze category confusion under similar
+occlusion types or complex background conditions.“--” denotes that the corresponding
+value is not applicable and is excluded from the calculation.
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+30 of 37
+Figure 14. Normalized confusion matrices: (a) YOLOv11n with visible images; (b) YOLOv11n with
+depth images; (c) OAFBC-Net.
+As shown in Figure 14, the visible-light single-modal YOLOv11n has good recognition
+ability for the No Occlusion category, with a correct classification ratio of 0.75. However,
+the correct classification ratios for Soft Occlusion and Hard Occlusion are 0.61 and 0.47, re-
+spectively, indicating that RGB-only input remains sensitive to leaf occlusion, fruit overlap,
+and background similarity. The depth-only YOLOv11n obtains correct classification ratios
+of 0.26, 0.71, and 0.14 for the three apple categories, respectively, showing weaker overall
+performance. This suggests that depth noise, holes, and boundary discontinuity make it
+difficult to distinguish occlusion levels when depth images are used alone. In contrast,
+OAFBC-Net achieves correct classification ratios of 0.69, 0.77, and 0.57 for Soft Occlusion,
+No Occlusion, and Hard Occlusion, respectively. For Soft Occlusion and Hard Occlusion,
+OAFBC-Net improves over the visible-light model by 0.08 and 0.10, respectively, indicating
+that RGB-depth fusion improves occlusion-level discrimination.
+Overall, the confusion matrices in Figure 14 show that OAFBC-Net achieves higher
+classification accuracy and lower category confusion for non-occluded, soft-occluded, and
+hard-occluded apples. The advantage is most evident for Hard Occlusion. These results
+suggest that the multimodal fusion strategy and feature enhancement modules improve
+robustness in complex occlusion scenes and may provide useful visual perception results for
+target localization, occlusion assessment, and grasping decisions in orchard picking robots.
+3.9. Analysis of Depth Sensor Effects Under Direct Natural Illumination
+The Intel RealSense D455 utilized in this study is an active stereo depth camera that
+estimates depth through infrared pattern projection and stereo matching. This category
+of sensors is highly sensitive to two factors in outdoor orchard environments, which are
+sunlight degradation, where direct sunlight saturates the infrared receiver and invalidates
+projected patterns to reduce the valid pixel ratio in depth maps, and organic leaf structural
+voids, where thin organic structures such as leaves often manifest as fragmented, miss-
+ing, and discontinuous boundaries rather than intact continuous surfaces due to surface
+reflection, translucency, and complex microstructures. Since OAFBC-Net relies on the
+cross-modal fusion of RGB and depth data, such hardware-level depth invalidation can
+directly affect the detection performance of the Hard Occlusion category.
+On the full test set, OAFBC-Net achieves AP50 scores of 87.3%, 72.1%, and 57.9% for
+the No Occlusion, Soft Occlusion, and Hard Occlusion categories, respectively, as presented
+in Table 4. Evidently, the performance for the Hard Occlusion category is substantially
+lower than that for the other two categories, revealing a significant performance gap. It is
+necessary to further differentiate the extent to which this gap stems from insufficient model
+learning of severely occluded targets versus depth observation failure of the D455 under
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+31 of 37
+direct light and organic leaf structural voids. To address this, this section selects 300 Direct
+Sunlight images and 300 Non-direct or Diffuse images from the independent test set of the
+complete dataset based on illumination conditions to construct an illumination-stratified
+subset. Statistical analysis is then conducted at both the depth quality and detection
+performance levels to quantify the contribution of sensor limitations to the Hard Occlusion
+performance gap.
+Depth quality metrics are computed on the raw depth maps to reflect the hardware
+observation failure of the RealSense D455. The image-level Valid Depth Ratio, denoted as
+VDR, is defined as the proportion of valid pixels in the raw depth map relative to the full
+image. The bounding-box Invalid Depth Ratio, denoted as IDR, is defined as the proportion
+of invalid pixels within each ground-truth bounding box relative to the total box pixels,
+with mean values calculated separately for the No Occlusion, Soft Occlusion, and Hard
+Occlusion categories. Invalid pixels are identified as those with a depth value of 0 in the
+depth map.
+Table 9 presents the depth quality statistics for the two groups. The mean VDR of the
+Direct Sunlight group is 47.86%, which is lower than the 52.12% of the Non-direct or Diffuse
+group, indicating a decline in full-image depth validity under direct light conditions. At the
+target level, the mean IDR within Hard Occlusion bounding boxes increases from 39.41%
+under Non-direct or Diffuse conditions to 54.73% under Direct Sunlight, representing
+an increase of 15.32 percentage points. The increases in IDR within Soft Occlusion and
+No Occlusion bounding boxes are 6.78 and 4.86 percentage points, respectively. Both
+groups satisfy the condition IDRNO < IDRSO < IDRHO, which demonstrates that depth
+invalidation is most severe in Hard Occlusion target regions and that this effect is further
+amplified under Direct Sunlight conditions. This implies that the sensitivity of the D455
+to sunlight degradation and organic leaf structural voids is most pronounced in the Hard
+Occlusion category.
+Table 9. Depth quality statistics under different illumination conditions.
+Illumination Group
+Test Images
+Mean VDR (%)
+IDR NO (%)
+IDR SO (%)
+IDR HO (%)
+Direct Sunlight (DS)
+300
+47.86
+36.51
+45.77
+54.73
+Non-direct/Diffuse (ND)
+300
+52.12
+31.65
+38.99
+39.41
+Note: VDR denotes the image-level Valid Depth Ratio. IDR denotes the Invalid Depth Ratio inside ground-truth
+bounding boxes. All statistics in Table 9 were computed on raw depth maps before hole filling. Detection results
+in Table 10 used the same preprocessed depth maps as in the main experiments.
+Table 10. Occlusion-aware detection performance under different illumination conditions.
+Illumination Group
+Model
+AP50(%)
+HO–NO Gap
+(pp)
+SO
+NO
+HO
+Direct Sunlight (DS)
+RGB-only YOLOv11
+64.1
+81.8
+46.2
+35.6
+Non-direct/Diffuse (ND)
+RGB-only YOLOv11
+66.5
+83.5
+48.1
+35.4
+Direct Sunlight (DS)
+OAFBC-Net
+70.3
+86.2
+54.5
+31.7
+Non-direct/Diffuse (ND)
+OAFBC-Net
+74.6
+88.7
+61.8
+26.9
+Note: HO–NO gap = AP50_NO−AP50_HO. All results were obtained on the same 600-image independent test
+set used in Tables 4 and 5, partitioned into 300 DS and 300 ND images.
+The AP50 scores of the three occlusion categories for RGB-only YOLOv11 and OAFBC-
+Net are further evaluated on the same Direct Sunlight and Non-direct or Diffuse subsets as
+presented in Table 10. Since the RGB-only model operates independently of depth informa-
+tion, its Hard Occlusion AP50 decreases marginally from 48.1% under Non-direct or Diffuse
+conditions to 46.2% under Direct Sunlight conditions. This minimal drop of 1.9 percentage
+points indicates an insensitivity to illumination variations. Conversely, OAFBC-Net relies
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+32 of 37
+on RGB-depth fusion. Its Hard Occlusion AP50 experiences a more substantial decline
+of 7.3 percentage points from 61.8% under Non-direct or Diffuse lighting to 54.5% under
+Direct Sunlight. The corresponding performance drops for the Soft Occlusion and No
+Occlusion categories are 4.3 and 2.5 percentage points, respectively. The observation that
+the Hard Occlusion category exhibits the highest sensitivity to illumination changes aligns
+well with the maximal increase in the Invalid Depth Ratio within Hard Occlusion bounding
+boxes reported in Table 9.
+Analyzing the performance gap between the Hard Occlusion and No Occlusion
+categories reveals that the gap for the RGB-only model remains relatively constant at
+approximately 35.6 and 35.4 percentage points under Direct Sunlight and Non-direct or
+Diffuse conditions, respectively. For OAFBC-Net, this gap measures 31.7 percentage points
+under Direct Sunlight but narrows to 26.9 percentage points under Non-direct or Diffuse
+conditions. This reduction demonstrates that multi-modal fusion effectively bridges the
+performance divide between heavily occluded and unoccluded targets when depth quality
+is favorable. In addition, compared to the RGB-only baseline, OAFBC-Net achieves a Hard
+Occlusion performance gain of 8.3 percentage points under Direct Sunlight and a larger
+gain of 13.7 percentage points under Non-direct or Diffuse conditions. This indicates that
+the model derives greater benefits from cross-modal fusion as depth quality improves.
+By synthesizing the data from Tables 9 and 10, the underperformance of the Hard
+Occlusion category relative to the No Occlusion and Soft Occlusion categories can be
+attributed to three interconnected factors. The first factor is the intrinsic difficulty of the
+task. Even under favorable Non-direct or Diffuse conditions, the Hard Occlusion AP50
+of OAFBC-Net remains at 61.8%, which is considerably lower than the 88.7% achieved
+for the No Occlusion category. This suggests that severe occlusion inherently constitutes
+a detection bottleneck that is not exclusively caused by sensor or model limitations. The
+second factor involves the hardware constraints of the RealSense D455 camera. Under
+Direct Sunlight, the Valid Depth Ratio decreases and the Invalid Depth Ratio within Hard
+Occlusion bounding boxes increases significantly, which corresponds to a 7.3 percentage
+point drop in the Hard Occlusion AP50 for OAFBC-Net. In contrast, the RGB-only model
+remains largely unaffected. This contrast proves that a substantial portion of the Hard
+Occlusion performance gap is related to depth invalidation caused by direct light and
+organic leaf structural voids rather than purely inadequate network design. The third
+factor is the fusion capability of the model. OAFBC-Net consistently outperforms the
+RGB-only model in Hard Occlusion detection under both illumination conditions, with
+a more pronounced fusion gain under Non-direct or Diffuse lighting. This confirms that
+modules such as FAPEF can successfully extract useful geometric information when depth
+data is partially valid. However, the model cannot completely compensate for hardware
+observation deficits when the depth information within a bounding box is extensively
+invalid. Consequently, the overall Hard Occlusion AP50 of 57.9% on the complete test set,
+which is significantly lower than that of the other two categories, should be interpreted
+as the combined result of intrinsic occlusion difficulty, outdoor depth observation failures
+of the D455 camera, and the upper bounds of network fusion capabilities. It should
+not be attributed solely to insufficient model capacity. The statistical results obtained
+from the illumination-stratified subsets provide a firm quantitative foundation for this
+comprehensive attribution.
+4. Discussion
+OAFBC-Net is developed for occlusion-aware apple detection in semi-structured
+orchard canopies, where RGB-only methods often miss or mislocalize partially hidden
+fruit. On the single-site RGB-depth dataset, integrating FAPEF, BiFPN, and TCG improves
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+33 of 37
+AP50 for hard-occluded apples compared with concatenation-based RGB-depth baselines,
+suggesting that frequency-domain cross-modal fusion and context modeling help disam-
+biguate canopy clutter. These conclusions are limited to the reported orchard location,
+imaging setup, and annotation protocol. Cross-orchard, cross-cultivar, and field-robot trials
+are still required before operational readiness for autonomous harvesting can be claimed.
+Compared with other object detection algorithms, OAFBC-Net achieves better overall
+performance in the occluded apple detection task. In the comparative experiments among
+RGB-only, depth-only, and RGB + depth detection methods, OAFBC-Net achieves AP50 val-
+ues of 72.1%, 87.3%, and 57.9% for soft-occluded, non-occluded, and hard-occluded apples,
+respectively. In particular, for hard-occluded apple detection, OAFBC-Net shows a clear
+advantage over the self-implemented multimodal YOLO baselines. These results indicate
+that frequency-domain enhancement, context modeling, and multi-scale fusion improve the
+ability of the model to recognize occluded targets in this dataset. Meanwhile, OAFBC-Net
+has only 3.6 M parameters, indicating a lightweight structure with competitive accuracy.
+Model stability is further examined through multi-seed experiments and five-fold
+cross-validation. The multi-seed experiments show that OAFBC-Net maintains stable
+detection performance under different random initialization conditions, indicating that
+its performance gain is not tied to a single random seed. The five-fold cross-validation
+results show consistent performance under different training and validation splits. These
+results provide additional evidence for reproducibility and robustness to data partitioning,
+while remaining limited to the collected dataset and fixed test set. They also indicate
+that FAPEF, BiFPN, and TCG improve detection accuracy without obvious increases in
+training-result instability.
+Although the proposed method performs well on the apple RGB-depth multimodal
+occlusion detection dataset, it still has several limitations. First, the data are mainly collected
+from specific orchard environments. Although the dataset contains different illumination
+conditions, occlusion types, and complex backgrounds, the generalization ability of the
+model across different regions, apple varieties, tree structures, and growth stages still
+requires validation. Second, depth images are affected by sensor noise, holes, strong light
+interference, and acquisition-distance changes. When the spatial depth difference between
+fruits and branches or leaves is small, the model may still produce missed or false detections.
+Section 3.9 further shows that direct sunlight increases Invalid Depth Ratios in Hard
+Occlusion bounding boxes and corresponds to a measurable Hard Occlusion AP50 drop of
+7.3 percentage points for OAFBC-Net, indicating that part of the HO performance gap is
+associated with RealSense D455 depth invalidation under outdoor active stereo sensing
+rather than with network design alone. In addition, although OAFBC-Net is lightweight
+in parameter size, Section 3.7 shows that the complete model achieves a total latency of
+11.3 ms per image and 88.5 FPS on the NVIDIA GeForce RTX 4070 Laptop GPU under batch
+size = 1 and input size 640 × 640 pixels. These results support real-time inference on the
+tested desktop GPU platform. However, deployment efficiency and stability on low-power
+embedded platforms, mobile terminals, and real picking robot systems, including NVIDIA
+Jetson devices, still require further validation. In more complex natural environments, such
+as rain, fog, strong backlight, nighttime operation, severe branch and leaf occlusion, and
+dense fruit clusters, model robustness still needs improvement.
+Future work will explore pruning, knowledge distillation, model quantization, and
+inference acceleration to reduce the computational complexity and storage cost of OAFBC-
+Net and improve its real-time detection ability on embedded devices and orchard picking
+robot platforms. To improve generalization in complex orchard environments, the RGB-
+depth apple occlusion detection dataset will be expanded with samples from different
+orchards, varieties, weather conditions, illumination conditions, and growth stages. Future
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+34 of 37
+research will also consider additional modalities, such as near-infrared, thermal infrared,
+or multispectral information, fused with RGB and depth data to improve target detection
+under low illumination, severe occlusion, and complex backgrounds. Finally, OAFBC-
+Net will be integrated with 3D localization, picking-point estimation, robotic-arm path
+planning, and obstacle-avoidance control to evaluate its practical value in autonomous
+orchard picking tasks.
+5. Conclusions
+This paper proposes OAFBC-Net, an RGB-depth multimodal detection network for
+occluded apple detection and occlusion-level recognition in complex orchard environments.
+The method aims to improve the detection accuracy and robustness of non-occluded,
+soft-occluded, and hard-occluded apple targets in natural orchards. To address missed
+detections, false detections, and unstable localization that commonly occur in RGB-only
+detection under illumination variation, branch and leaf occlusion, fruit overlap, and back-
+ground similarity, this paper introduces depth images as a supplement to spatial geometric
+information and enhances the perception of occluded apples through cross-modal fea-
+ture fusion.
+In the feature fusion stage, this paper designs the FAPEF Fourier amplitude-phase
+enhancement fusion module. FAPEF maps RGB and depth features into the frequency
+domain and uses amplitude and phase information to enhance fruit edge, texture, con-
+tour, and spatial-structure representations. In the multi-scale feature fusion stage, BiFPN
+achieves adaptive fusion among features at different scales through learnable weights
+and strengthens the interaction between shallow detail information and deep semantic
+information. TCG jointly models local, surrounding, and global contexts to supplement
+missing semantic cues under occlusion and improve the discrimination of soft-occluded
+and hard-occluded apples.
+The experimental results show that OAFBC-Net achieves strong performance on the
+apple RGB-depth occlusion detection dataset. Compared with the YOLO series, SSD,
+RetinaNet, Faster R-CNN, and several multimodal YOLO baselines under the tested set-
+tings, OAFBC-Net achieves AP50 values of 72.1%, 87.3%, and 57.9% for soft-occluded,
+non-occluded, and hard-occluded apples, respectively. Ablation experiments show that
+FAPEF, BiFPN, and TCG each contribute to model performance. When the three modules
+are used together, Precision, Recall, mAP50, and mAP50-95 reach 64.8%, 71.7%, 72.4%,
+and 55.2%, respectively, while the parameter count is reduced to 3.6 M compared with
+the baseline. The visualization results also show that OAFBC-Net focuses more accurately
+on apple target regions and reduces some missed and false detections under complex
+occlusion conditions.
+The multi-seed experiments and five-fold cross-validation results show that OAFBC-
+Net maintains stable performance under different random initialization and data partition-
+ing conditions. This indicates that the performance improvement has good reproducibility
+within the tested dataset and protocol. The inference efficiency experiments in Section 3.7
+further show that the complete model achieves 88.5 FPS with 3.6 M parameters on the
+RTX 4070 Laptop GPU, indicating that FAPEF-related FFT/IFFT operations do not prevent
+real-time inference on the tested desktop platform. The illumination-stratified analysis in
+Section 3.9 further indicates that Hard Occlusion performance degradation is associated
+with D455 depth invalidation under direct sunlight, in addition to task difficulty and fusion
+limitations. These results further support the effectiveness of RGB-depth cross-modal
+fusion and occlusion feature enhancement in complex orchard scenes.
+In summary, OAFBC-Net provides an effective RGB-depth fusion method for occluded
+apple detection in complex orchard environments and offers a technical reference for high-
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+35 of 37
+precision visual perception in orchard picking robots. The method improves occluded-
+target detection while considering lightweight model design, and the stability, runtime, and
+illumination-stratified attribution experiments in Sections 3.7 and 3.9 support its application
+potential on the tested desktop GPU and clarify the respective roles of task difficulty, D455
+depth invalidation, and network fusion in Hard Occlusion detection. Future work should
+extend the same inference protocol to embedded hardware such as NVIDIA Jetson platforms,
+and combine the method with model compression, multimodal expansion, and robotic closed-
+loop control to support more stable and efficient automated orchard picking.
+Author Contributions: Conceptualization, L.G. and X.Y.; methodology, L.G. and P.W.; software, L.G.;
+formal analysis, L.G. and L.L.; investigation, L.G., P.W. and J.L.; resources, H.L. and X.Y.; data curation,
+P.W. and L.L.; writing—original draft preparation, L.G.; writing—review and editing, L.L., H.L., J.L.
+and X.Y.; visualization, L.L.; supervision, X.Y.; project administration, J.L.; funding acquisition, X.Y.
+All authors have read and agreed to the published version of the manuscript.
+Funding: This research was funded by the earmarked fund for CARS (CARS-27), and supported
+by the Earmarked Fund for Hebei Apple Innovation Team of Modern Agro-industry Technology
+Research System (HBCT2024150202).
+Data Availability Statement: The data presented in this study are available on request from the
+corresponding author.
+Conflicts of Interest: The authors declare no conflicts of interest.
+Abbreviations
+The following abbreviations are used in this manuscript:
+AP50
+Average precision at intersection over union (IoU) = 0.50
+BiFPN
+Bidirectional feature pyramid network
+CIoU
+Complete intersection over union
+DyT
+Dynamic Tanh
+FAPEF
+Fourier amplitude-phase enhancement fusion
+FFT
+Fast Fourier transform
+FPS
+Frames per second
+GFLOPs
+Giga floating-point operations
+HO
+Hard Occlusion/hard-occluded
+IDR
+Invalid Depth Ratio
+IFFT
+Inverse fast Fourier transform
+IoU
+Intersection over union
+mAP50
+Mean average precision at IoU = 0.50
+mAP50-95
+Mean average precision averaged over IoU thresholds from 0.50 to 0.95
+NO
+No Occlusion/non-occluded
+OAFBC-Net
+Occlusion-aware RGB-depth fusion network proposed in this study
+RGB
+Red, green, and blue
+RGB-D
+Red, green, blue, and depth
+RGB-depth
+Red, green, blue, and depth
+SO
+Soft Occlusion/soft-occluded
+TCG
+Triple context guided
+TP
+True Positive
+FP
+False Positive
+FN
+False Negative
+VDR
+Valid Depth Ratio
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+36 of 37
+References
+1.
+Mhamed, M.; Zhang, Z.; Hua, W.; Yang, L.; Huang, M.; Li, X.; Bai, T.; Li, H.; Zhang, M. Apple Varieties and Growth Prediction
+with Time Series Classification Based on Deep Learning to Impact the Harvesting Decisions. Comput. Ind. 2025, 164, 104191.
+[CrossRef]
+2.
+Hua, W.; Zhang, Z.; Zhang, W.; Liu, X.; Hu, C.; He, Y.; Mhamed, M.; Li, X.; Dong, H.; Saha, C.K.; et al. Key Technologies in Apple
+Harvesting Robot for Standardized Orchards: A Comprehensive Review of Innovations, Challenges, and Future Directions.
+Comput. Electron. Agric. 2025, 235, 110343. [CrossRef]
+3.
+Yu, J.; Zhang, Z.; Li, Y.; Hua, W.; Wei, X.; Igathinathane, C.; Mhamed, M.; Zhang, W.; Jiao, X.; Yang, L.; et al. In-Field Grading and
+Sorting Technology of Apples: A State-of-the-Art Review. Comput. Electron. Agric. 2024, 226, 109383. [CrossRef]
+4.
+Zheng, W.; Xie, Y.; Zhang, B.; Zhou, J.; Zhang, J. Dexterous Robotic Grasping of Delicate Fruits Aided with a Multi-Sensory
+e-Glove and Manual Grasping Analysis for Damage-Free Manipulation. Comput. Electron. Agric. 2021, 190, 106472. [CrossRef]
+5.
+Mhamed, M.; Zhang, Z.; Yu, J.; Li, Y.; Zhang, M. Advances in Apple’s Automated Orchard Equipment: A Comprehensive
+Research. Comput. Electron. Agric. 2024, 221, 108926. [CrossRef]
+6.
+Tianjing, Y.; Mhamed, M. Developments in Automated Harvesting Equipment for the Apple in the Orchard: Review. Smart Agric.
+Technol. 2024, 9, 100491. [CrossRef]
+7.
+Zhang, Y.; Li, N.; Zhang, L.; Lin, J.; Gao, X.; Chen, G. A Review on the Recent Developments in Vision-Based Apple-Harvesting
+Robots for Recognizing Fruit and Picking Pose. Comput. Electron. Agric. 2025, 231, 109968. [CrossRef]
+8.
+Xu, Y.; Qiao, X.; Ding, L.; Li, X.; Chen, Z.; Yue, X. Enhanced YOLOv5 with ECA Module for Vision-Based Apple Harvesting Using
+a 6-DOF Robotic Arm in Occluded Environments. Agriculture 2025, 15, 1850. [CrossRef]
+9.
+Pan, Y.; Chen, Y.; Tong, X.; Liu, M.; Huang, A.; Zhou, M.; Hu, Y. YOLO-CSB: A Model for Real-Time and Accurate Detection and
+Localization of Occluded Apples in Complex Orchard Environments. Agronomy 2026, 16, 390. [CrossRef]
+10.
+Liu, S.; Xue, J.; Zhang, T.; Lv, P.; Qin, H.; Zhao, T. Research Progress and Prospect of Key Technologies of Fruit Target Recognition
+for Robotic Fruit Picking. Front. Plant Sci. 2024, 15, 1423338. [CrossRef] [PubMed]
+11.
+Yang, Y.; Han, Y.; Li, S.; Yang, Y.; Zhang, M.; Li, H. Vision Based Fruit Recognition and Positioning Technology for Harvesting
+Robots. Comput. Electron. Agric. 2023, 213, 108258. [CrossRef]
+12.
+Qiu, Z.; Ou, W.; Mo, D.; Sun, Y.; Ma, X.; Chen, X.; Tian, X. BGWL-YOLO: A Lightweight and Efficient Object Detection Model for
+Apple Maturity Classification Based on the YOLOv11n Improvement. Horticulturae 2025, 11, 1068. [CrossRef]
+13.
+Liu, Z.; Rasika, D.; Abeyrathna, R.M.; Mulya Sampurno, R.; Massaki Nakaguchi, V.; Ahamed, T. Faster-YOLO-AP: A Lightweight
+Apple Detection Algorithm Based on Improved YOLOv8 with a New Efficient PDWConv in Orchard. Comput. Electron. Agric.
+2024, 223, 109118. [CrossRef]
+14.
+Fu, H.; Guo, Z.; Feng, Q.; Xie, F.; Zuo, Y.; Li, T. MSOAR-YOLOv10: Multi-Scale Occluded Apple Detection for Enhanced Harvest
+Robotics. Horticulturae 2024, 10, 1246. [CrossRef]
+15.
+Yang, H.; Liu, Y.; Wang, S.; Qu, H.; Li, N.; Wu, J.; Yan, Y.; Zhang, H.; Wang, J.; Qiu, J. Improved Apple Fruit Target Recognition
+Method Based on YOLOv7 Model. Agriculture 2023, 13, 1278. [CrossRef]
+16.
+Wang, D.; He, D. Channel Pruned YOLO V5s-Based Deep Learning Approach for Rapid and Accurate Apple Fruitlet Detection
+before Fruit Thinning. Biosyst. Eng. 2021, 210, 271–281. [CrossRef]
+17.
+Ma, B.; Hua, Z.; Wen, Y.; Deng, H.; Zhao, Y.; Pu, L.; Song, H. Using an Improved Lightweight YOLOv8 Model for Real-Time
+Detection of Multi-Stage Apple Fruit in Complex Orchard Environments. Artif. Intell. Agric. 2024, 11, 70–82. [CrossRef]
+18.
+Han, B.; Lu, Z.; Zhang, J.; Almodfer, R.; Wang, Z.; Sun, W.; Dong, L. Rep-ViG-Apple: A CNN-GCN Hybrid Model for Apple
+Detection in Complex Orchard Environments. Agronomy 2024, 14, 1733. [CrossRef]
+19.
+Li, H.; Guo, W.; Lu, G.; Shi, Y. Augmentation Method for High Intra-Class Variation Data in Apple Detection. Sensors 2022,
+22, 6325. [CrossRef] [PubMed]
+20.
+Liu, X.; Hu, C.; Huang, X.; Sun, C.; Zhu, R.; Wang, C.; Zhang, Y.; Shen, Q.; Zhou, H.; Ruan, C. The apple detection method based
+on multimodal features. PLoS ONE 2025, 20, e0334911. [CrossRef] [PubMed]
+21.
+Tang, S.; Xia, Z.; Gu, J.; Wang, W.; Huang, Z.; Zhang, W. High-Precision Apple Recognition and Localization Method Based on
+RGB-D and Improved SOLOv2 Instance Segmentation. Front. Sustain. Food Syst. 2024, 8, 1403872. [CrossRef]
+22.
+Liu, L.; Hao, P. RGB-D Heterogeneous Image Feature Fusion for YOLOfuse Apple Detection Model. Agronomy 2023, 13, 3080.
+[CrossRef]
+23.
+Cao, W.; Zhang, Z.; Wang, Z.; Wei, A.; Chen, Q.; Igathinathane, C.; Zhang, F.; Abdelhamid, M.A.; Ye, D.; Ampatzidis, Y.
+GLS-YOLOv8n: A Lightweight ‘Guiqi’ Mango Detection Model via RGB-Depth-Thermal Image Fusion. Comput. Electron. Agric.
+2026, 242, 111355. [CrossRef]
+24.
+Lin, P.; Yang, H.; Cheng, S.; Guo, F.; Wang, L.; Lin, Y. An Improved YOLOv5s Method Based Bruises Detection on Apples Using
+Cold Excitation Thermal Images. Postharvest Biol. Technol. 2023, 199, 112280. [CrossRef]
+25.
+Ünal, Z.; Kızıldeniz, T.; Özden, M.; Akta¸s, H.; Karagöz, Ö. Detection of Bruises on Red Apples Using Deep Learning Models. Sci.
+Hortic. 2024, 329, 113021. [CrossRef]
+https://doi.org/10.3390/agronomy16141318
+
+Agronomy 2026, 16, 1318
+37 of 37
+26.
+Luo, J.; Yang, Z.; Cao, Y.; Wen, T.; Li, D. RT-DETR-MCDAF: Multimodal Fusion of Visible Light and near-Infrared Images for
+Citrus Surface Defect Detection in the Compound Domain. Agriculture 2025, 15, 630. [CrossRef]
+27.
+Boulahia, S.Y.; Amamra, A.; Madi, M.R.; Daikh, S. Early, Intermediate and Late Fusion Strategies for Robust Deep Learning-Based
+Multimodal Action Recognition. Mach. Vis. Appl. 2021, 32, 121. [CrossRef]
+28.
+Teoh, J.R.; Dong, J.; Zuo, X.; Lai, K.W.; Hasikin, K.; Wu, X. Advancing Healthcare through Multimodal Data Fusion: A
+Comprehensive Review of Techniques and Applications. PeerJ Comput. Sci. 2024, 10, e2298. [CrossRef] [PubMed]
+29.
+Li, S.; Kang, X.; Fang, L.; Hu, J.; Yin, H. Pixel-Level Image Fusion: A Survey of the State of the Art. Inf. Fusion 2017, 33, 100–112.
+[CrossRef]
+30.
+Hu, J.-F.; Zheng, W.-S.; Pan, J.; Lai, J.; Zhang, J. Deep Bilinear Learning for RGB-D Action Recognition; Ferrari, V., Hebert, M.,
+Sminchisescu, C., Weiss, Y., Eds.; Springer International Publishing: Cham, Switzerland, 2018; pp. 346–362.
+31.
+Perez-Rua, J.-M.; Vielzeuf, V.; Pateux, S.; Baccouche, M.; Jurie, F. MFAS: Multimodal Fusion Architecture Search. In Proceedings of
+the 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR); IEEE: New York, NY, USA, 2019; pp. 6959–6968.
+32.
+Wang, S.; Yang, Y.; Liu, Z.; Pan, Q. Target Recognition with Fusion of Visible and Infrared Images Based on Mutual Learning. Soft
+Comput. 2023, 27, 7879–7894. [CrossRef]
+33.
+Liu, Z.; Li, H.; Liu, N.; Liu, C.; Sun, X.; Chen, L. A Machine Learning Approach Fusing Multisource Spectral Data for Prediction
+of Floral Origins and Taste Components of Apis cerana Honey. Food Res. Int. 2025, 208, 116102. [CrossRef] [PubMed]
+34.
+Yang, K.; Jung, S.; Lee, J.; Jung, U.; Lee, M. Prediction of Optimal Harvest Timing for Melons through Integration of RGB
+Images and Greenhouse Environmental Data: A Practical Approach Including Marker Effect Analysis. Agriculture 2026, 16, 169.
+[CrossRef]
+35.
+Li, C.; Zuo, Z.; Tong, X.; Huang, H.; Yuan, S.; Dang, Z. CPROS: A Multimodal Decision-Level Fusion Detection Method Based on
+Category Probability Sets. Remote Sens. 2024, 16, 2745. [CrossRef]
+36.
+Acharjee, S.; Ganguly, S.; Ali, A.; Frnda, J. Comprehensive Performance Analysis of Object Detection Algorithms across Diverse
+Sensor Modalities. IEEE Sens. Rev. 2025, 2, 304–322. [CrossRef]
+37.
+Yang, Y.; Feng, X.; Li, M.; Hu, X.; Qin, J.; Gruen, A.; Li, D.; Gong, J. UMIS-YOLO: Underwater Multimodal Images Instance
+Segmentation with YOLO. IEEE Trans. Geosci. Remote Sens. 2025, 63, 4212414. [CrossRef]
+38.
+Zhu, J.; Chen, X.; He, K.; LeCun, Y.; Liu, Z. Transformers without Normalization. In Proceedings of the 2025 IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR); IEEE: New York, NY, USA, 2025; pp. 14901–14911.
+39.
+Tan, M.; Pang, R.; Le, Q.V. EfficientDet: Scalable and Efficient Object Detection. In Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition, Seattle, WA, USA, 14–19 June 2020.
+40.
+Wu, T.; Tang, S.; Zhang, R.; Cao, J.; Zhang, Y. CGNet: A Light-Weight Context Guided Network for Semantic Segmentation. IEEE
+Trans. Image Process. 2021, 30, 1169–1179. [CrossRef] [PubMed]
+41.
+Gao, L.; Wang, P.; Liu, L.; Liu, H.; Li, J.; Yang, X. Frequency-Domain Decoupling and Multi-Dimensional Spatial Feature Reconstruction
+for Occlusion-Aware Apple Detection in Complex Semi-Structured Orchard Environments. Agronomy 2026, 16, 790. [CrossRef]
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.
+https://doi.org/10.3390/agronomy16141318
