@@ -6,6 +6,15 @@ identitas untuk kajian C1 diperiksa ulang secara manual dan disimpan di
 bukti/mekanisme_C1.txt; berkas itu menimpa kode otomatis.
 
 Keluaran: bukti/matriks_bukti.csv (satu baris per kajian yang lolos).
+
+Kolom verifikasi teks lengkap (Pemeriksaan 5, lihat
+literature/scopus-2026-09/verifikasi/KODE-ULANG.md): mekanisme_C1.txt boleh
+memuat enam kolom TAB tambahan yang opsional sesudah hasil_ringkas, yaitu
+sumber_kode, halaman, referensi_hitung, tingkat_metrik, cara_kelas, berubah.
+Keenam kolom itu ditambahkan di ujung kanan matriks_bukti.csv hanya bila
+sedikitnya satu baris mekanisme_C1.txt mengisinya (atau bila diminta dengan
+--kolom-verifikasi); tanpa isian, matriks_bukti.csv identik byte demi byte
+dengan keluaran versi sebelumnya. Sel kosong berarti belum diverifikasi.
 """
 import argparse
 import csv
@@ -127,23 +136,37 @@ def muat_keputusan(folder):
     return dec, catatan
 
 
-def muat_manual(path):
-    """Baris: idx, mekanisme, akuisisi, per_kelas, hasil (dipisah TAB).
-    Mekanisme gabungan ditulis dengan '+', misalnya M3+M4."""
+# Kolom opsional hasil verifikasi teks lengkap (kolom ke-6 s.d. ke-11 berkas
+# mekanisme_C1.txt), dalam urutan tetap.
+KOLOM_VERIFIKASI = ["sumber_kode", "halaman", "referensi_hitung",
+                    "tingkat_metrik", "cara_kelas", "berubah"]
+
+
+def muat_manual(path, lengkap=False):
+    """Baris: idx, mekanisme, akuisisi, per_kelas, hasil (dipisah TAB),
+    lalu enam kolom verifikasi opsional (KOLOM_VERIFIKASI).
+    Mekanisme gabungan ditulis dengan '+', misalnya M3+M4.
+
+    lengkap=False mengembalikan tuple 4 kolom lama (perilaku semula);
+    lengkap=True mengembalikan tuple 4 + len(KOLOM_VERIFIKASI) kolom."""
+    n = 4 + (len(KOLOM_VERIFIKASI) if lengkap else 0)
     out = {}
     if path.exists():
-        for line in open(path):
+        for line in open(path, encoding="utf-8"):
             if line.startswith("#") or not line.strip():
                 continue
-            parts = line.rstrip("\n").split("\t")
-            parts += [""] * (5 - len(parts))
-            out[int(parts[0])] = tuple(parts[1:5])
+            parts = line.rstrip("\r\n").split("\t")
+            parts += [""] * (1 + n - len(parts))
+            out[int(parts[0])] = tuple(p.strip() if j >= 4 else p
+                                       for j, p in enumerate(parts[1:1 + n]))
     return out
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--topik", default="literature/scopus-2026-09/topik")
+    ap.add_argument("--kolom-verifikasi", action="store_true",
+                    help="selalu tulis enam kolom verifikasi walau belum ada isian")
     args = ap.parse_args()
     topik = Path(args.topik)
     pen = topik / "penyaringan"
@@ -151,7 +174,8 @@ def main():
     bukti.mkdir(exist_ok=True)
 
     dec, sumber_kep = muat_keputusan(pen)
-    manual = muat_manual(bukti / "mekanisme_C1.txt")
+    manual = muat_manual(bukti / "mekanisme_C1.txt", lengkap=True)
+    ada_verif = args.kolom_verifikasi or any(any(v[4:]) for v in manual.values())
     rec = {r["eid"]: r for r in csv.DictReader(open(topik / "records_all.csv"))}
     enr = {}
     for line in open(topik / "enrich.jsonl"):
@@ -164,6 +188,8 @@ def main():
              "mekanisme", "akuisisi_manual", "per_kelas", "hasil_ringkas",
              "atribut_kelas", "metrik",
              "ada_abstrak"]
+    if ada_verif:
+        kolom += KOLOM_VERIFIKASI
     baris = []
     for r in csv.DictReader(open(pen / "kandidat_abstrak.csv")):
         i = int(r["idx"])
@@ -175,8 +201,9 @@ def main():
         teks = f"{r['title']} {abstrak}"
         mod = cocok(MODALITAS, teks) or ["RGB"]
         mek_auto = cocok(MEKANISME, teks) if kode == "C1" else []
-        mek, akm, kelas, hasil = manual.get(i, ("", "", "", ""))
-        baris.append({
+        kode_manual = manual.get(i, ("",) * (4 + len(KOLOM_VERIFIKASI)))
+        mek, akm, kelas, hasil = kode_manual[:4]
+        b = {
             "idx": i, "key": r["key"], "eid": r["eid"], "doi": r["doi"],
             "year": r["year"], "first_author": r["first_author"],
             "title": r["title"], "source": r["source"],
@@ -192,13 +219,18 @@ def main():
             "atribut_kelas": ";".join(cocok(ATRIBUT, teks)),
             "metrik": ";".join(cocok(METRIK, teks)),
             "ada_abstrak": "ya" if abstrak else "tidak",
-        })
+        }
+        if ada_verif:
+            b.update(zip(KOLOM_VERIFIKASI, kode_manual[4:]))
+        baris.append(b)
     baris.sort(key=lambda b: (b["kode"], -int(b["year"]), b["key"]))
-    with open(bukti / "matriks_bukti.csv", "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=kolom)
+    with open(bukti / "matriks_bukti.csv", "w", newline="", encoding="utf-8") as f:
+        # Akhir baris LF, sesuai .gitattributes (eol=lf) dan berkas di Git.
+        w = csv.DictWriter(f, fieldnames=kolom, lineterminator="\n")
         w.writeheader()
         w.writerows(baris)
-    print(len(baris), "baris ->", bukti / "matriks_bukti.csv")
+    print(len(baris), "baris ->", bukti / "matriks_bukti.csv",
+          "(dengan kolom verifikasi)" if ada_verif else "")
 
 
 if __name__ == "__main__":
