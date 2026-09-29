@@ -5,6 +5,19 @@ peninjau dengan bantuan model bahasa besar (`../PROTOKOL.md` §6). Berkas ini
 menjelaskan **Cek 1: sampel buta penyaringan**. Cek 2 (pemeriksaan tangan
 semua C1, C3, dan eksklusi) dijelaskan di [`CEK-TANGAN.md`](CEK-TANGAN.md).
 
+Rencana induknya, *Literature Review Verification Plan* dari Bu Fatma
+(29 September 2026), disalin di [`rencana/index.html`](rencana/index.html).
+
+| Cek | Panduan | Lembar kerja |
+|---|---|---|
+| 1 Sampel buta | berkas ini | `sampel_judul`, `sampel_abstrak`, `kesepakatan.md` (keluaran skrip) |
+| 2 Cek tangan | [`CEK-TANGAN.md`](CEK-TANGAN.md) | `cek_C1`, `cek_C3`, `cek_eksklusi` |
+| 3 Makalah dikenal | [`cek_makalah_dikenal.md`](cek_makalah_dikenal.md) | `kandidat_snowballing.csv` |
+| 4 Teks lengkap | [`PERMINTAAN-PDF.md`](PERMINTAAN-PDF.md) | `teks_lengkap.csv` |
+| 5 Kode ulang C1 | [`KODE-ULANG.md`](KODE-ULANG.md) | `kode_ulang_C1.csv`, `sampel_fatma_C1.csv` |
+| 6 Cek fakta | [`CEK-FAKTA.md`](CEK-FAKTA.md) | `cek_fakta.csv` |
+| Semua | [`PERTANYAAN-UNTUK-FATMA.md`](PERTANYAAN-UNTUK-FATMA.md) | `log_perubahan.csv` |
+
 ## 1. Tujuan dan urutan kerja
 
 Cek 1 mengukur kesepakatan antara peninjau manusia dan penyaring AI

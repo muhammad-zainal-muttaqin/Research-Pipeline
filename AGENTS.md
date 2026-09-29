@@ -26,7 +26,7 @@ Repo ini menyatukan dua jalur riset tentang tandan buah segar (TBS) kelapa sawit
 
 | Jalur | Status |
 |---|---|
-| Naskah | Kandidat aktif **`main6`** — *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories* (Muttaqin & Indriani; IEEEtran). 22 halaman, 12 seksi + 2 lampiran (A: matriks bukti 187 kajian C1, B: string kueri Scopus), 7 gambar, 4 tabel isi. Ditulis ulang dari awal pada 28 September 2026 mengikuti `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md`. `main5v3` (*design-space review* berbasis kasus, 27 September 2026) berstatus **usang** (*deprecated*) dan diarsipkan; jangan disunting maupun dirujuk. Hanya `main6` yang aktif. |
+| Naskah | Kandidat aktif **`main6`** — *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories* (Muttaqin & Indriani; IEEEtran). 22 halaman, 12 seksi + 2 lampiran (A: matriks bukti 187 kajian C1, B: string kueri Scopus), 7 gambar, 5 tabel isi. Ditulis ulang dari awal pada 28 September 2026 mengikuti `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md`. `main5v3` (*design-space review* berbasis kasus, 27 September 2026) berstatus **usang** (*deprecated*) dan diarsipkan; jangan disunting maupun dirujuk. Hanya `main6` yang aktif. |
 | Korpus `main6` | Scopus Search API, 28 September 2026 (UTC), 13 eksekusi kueri (Q1–Q7, Q8a–Q8e, Q9): 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.124 dinilai kelayakannya → **971 masuk peta** (2012–2026). Kode: C1 187 · C2 231 · C3 170 · C4 49 · C5 129 · R 119 · T 86. Mekanisme asosiasi M0–M5. PDF akses terbuka 331 dari 971. `references6.bib` 1.031 rekord, 271 dikutip. Protokol: `literature/scopus-2026-09/PROTOKOL.md`. |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC, protokol `pycocotools` tunggal). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed **0,0049**. |
@@ -41,7 +41,7 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah), `literature/scopus-202
 
 | Lokasi | Isi |
 |---|---|
-| `literature/scopus-2026-09/` | **Korpus `main6`**: `QUERY.md`, `PROTOKOL.md`, `topik/` (kueri, rekaman, penyaringan, `bukti/matriks_bukti.csv`, kode manual `mekanisme_C1.txt` dan `kode_C3.txt`), `metodologi/` (60 artikel panduan review), `pdf/` + `teks/` (331 PDF akses terbuka), `unduhan/pdf_belum_ada.csv` |
+| `literature/scopus-2026-09/` | **Korpus `main6`**: `QUERY.md`, `PROTOKOL.md`, `topik/` (kueri, rekaman, penyaringan, `bukti/matriks_bukti.csv`, kode manual `mekanisme_C1.txt` dan `kode_C3.txt`), `metodologi/` (60 artikel panduan review), `verifikasi/` (Cek 1–6 rencana verifikasi Bu Fatma 29 September 2026; salinan rencana di `verifikasi/rencana/index.html`), `pdf/` + `teks/` (331 PDF akses terbuka), `unduhan/pdf_belum_ada.csv` |
 | `literature/entries/` | **182** ringkasan makalah terverifikasi (korpus lama, dasar naskah `main`–`main5v3` dan Ruang Baca) + `INDEX.md`, `INDEX-TAHUN.md` |
 | `literature/withheld/` | 20 entri ditahan (PDF tak tersedia); jangan masuk naskah |
 | `literature/synthesis.md` | Sintesis lintas makalah (14 klaster tema) |
