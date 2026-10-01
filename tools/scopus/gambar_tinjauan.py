@@ -5,19 +5,24 @@ Semua angka pada gambar dihitung ulang dari berkas di literature/scopus-2026-09,
 sehingga gambar selalu sesuai dengan data. Keluaran: PDF (vektor, untuk LaTeX)
 dan PNG (pratinjau) di manuscript/figures/main6/.
 
-  python3 tools/scopus/gambar_tinjauan.py
+  python3 tools/scopus/gambar_tinjauan.py            # semua gambar
+  python3 tools/scopus/gambar_tinjauan.py F08 F09    # gambar tertentu saja
 """
 import csv
 import glob
+import json
 import re
+import sys
 from collections import Counter, defaultdict
+from itertools import combinations
 from pathlib import Path
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, PathPatch
+from matplotlib.path import Path as MPath
 
 ROOT = Path(__file__).resolve().parents[2]
 TOPIK = ROOT / "literature/scopus-2026-09/topik"
@@ -30,40 +35,67 @@ C = {"hitam": "#000000", "oranye": "#E69F00", "biru_muda": "#56B4E9",
      "merah": "#D55E00", "ungu": "#CC79A7", "abu": "#8C8C8C", "abu_muda": "#D9D9D9"}
 
 plt.rcParams.update({
-    "font.family": "Liberation Sans",
+    # Huruf serif setara Times agar sama dengan teks naskah; sumbu berbingkai penuh.
+    "font.family": "serif",
+    "font.serif": ["Times New Roman", "Liberation Serif", "Nimbus Roman", "DejaVu Serif"],
+    "mathtext.fontset": "stix",
     "font.size": 8,
     "axes.titlesize": 8.5,
     "axes.labelsize": 8,
     "xtick.labelsize": 7,
     "ytick.labelsize": 7,
     "legend.fontsize": 7,
-    "axes.spines.top": False,
-    "axes.spines.right": False,
     "axes.linewidth": 0.6,
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "xtick.major.width": 0.5,
+    "ytick.major.width": 0.5,
+    "legend.edgecolor": "#888888",
+    "legend.fancybox": False,
     "pdf.fonttype": 42,
 })
 
 KATEGORI = {
-    "C1": "Multi-observation counting",
-    "C2": "Single-view counting and yield",
-    "C3": "Oil-palm bunch imaging",
-    "C4": "Counting by class in single images",
-    "C5": "Depth, 3D, and non-RGB fruit sensing",
+    "C1": "Multi-observation studies",
+    "C2": "Single-view counting studies",
+    "C3": "Oil-palm studies",
+    "C4": "Single-image class-wise counting studies",
+    "C5": "Depth and 3D sensing studies",
     "R": "Earlier reviews",
-    "T": "Methods from outside agriculture",
+    "T": "Methods papers from outside agriculture",
 }
 WARNA_KAT = {"C1": C["biru"], "C2": C["biru_muda"], "C3": C["merah"],
              "C4": C["oranye"], "C5": C["hijau"], "R": C["ungu"], "T": C["abu"]}
 
 MEK = ["M0", "M1", "M2", "M3", "M4", "M5"]
+# Kode M0-M5 hanya kunci internal berkas data; naskah, tabel, dan gambar memakai nama.
 NAMA_MEK = {
-    "M0": "M0 No association",
-    "M1": "M1 Statistical correction",
-    "M2": "M2 Appearance matching",
-    "M3": "M3 Temporal tracking",
-    "M4": "M4 Geometric / 3D association",
-    "M5": "M5 Learned association",
+    "M0": "No association",
+    "M1": "Statistical correction",
+    "M2": "Appearance matching",
+    "M3": "Temporal tracking",
+    "M4": "Geometric or 3D association",
+    "M5": "Learned association",
 }
+NAMA_PENDEK = {"M0": "no association", "M1": "statistical", "M2": "appearance", "M3": "tracking",
+               "M4": "geometric", "M5": "learned"}
+
+
+def nama_gabungan(kode):
+    """'M3+M2' -> 'Appearance + tracking'; satu mekanisme -> nama lengkap; urutan tetap M0..M5."""
+    bagian = sorted(set(kode.split("+")))
+    if len(bagian) == 1:
+        return NAMA_MEK.get(bagian[0], kode)
+    t = " + ".join(NAMA_PENDEK[b] for b in bagian)
+    return t[0].upper() + t[1:]
+
+
+def muat_tambahan():
+    """Rekaman yang diidentifikasi dengan metode lain (bukan pencarian Scopus)."""
+    path = TOPIK / "tambahan_metode_lain.csv"
+    if not path.exists():
+        return []
+    return list(csv.DictReader(open(path, encoding="utf-8-sig")))
 WARNA_MEK = {"M0": C["abu_muda"], "M1": C["kuning"], "M2": C["ungu"],
              "M3": C["biru"], "M4": C["hijau"], "M5": C["merah"]}
 
@@ -118,8 +150,11 @@ def gambar_prisma():
             if re.match(r"^\d+\s", line) and ("T00" in fn or "(judul)" in line):
                 judul_saja += 1
 
-    fig, ax = plt.subplots(figsize=(7.0, 5.6))
-    ax.set_xlim(0, 100)
+    lain = muat_tambahan()
+    n_lain = len(lain)
+    kanan = 128 if n_lain else 100
+    fig, ax = plt.subplots(figsize=(7.0 * kanan / 100, 5.6))
+    ax.set_xlim(0, kanan)
     ax.set_ylim(0, 100)
     ax.axis("off")
 
@@ -169,15 +204,29 @@ def gambar_prisma():
     kotak(56, 21, 42, 20, alasan, warna="#F2F2F2")
     panah(52, 32, 56, 32)
     nama = {"C1": "multi-observation", "C2": "single-view counting", "C3": "oil palm",
-            "C4": "class counting", "C5": "depth and 3D", "R": "reviews", "T": "outside agriculture"}
+            "C4": "single-image class-wise counting", "C5": "depth and 3D sensing",
+            "R": "earlier reviews", "T": "methods outside agriculture"}
     b1 = ", ".join(f"{nama[k]} {inc[k]}" for k in ["C1", "C2", "C3", "C4"])
     b2 = ", ".join(f"{nama[k]} {inc[k]}" for k in ["C5", "R", "T"])
     rinci = b1 + "\n" + b2
-    kotak(8, 2, 90, 14, f"Studies included, n = {n_inc}\n{rinci}", warna="#EAF2FA", tebal=False)
+    if n_lain:
+        kl = Counter(r["kode"] for r in lain)
+        b3 = ", ".join(f"{nama[k]} {kl[k]}" for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"] if kl[k])
+        ax.text(30, 98.5, "Identification of studies via Scopus", ha="center", fontsize=7.2, style="italic")
+        ax.text(114.5, 98.5, "Identification via other methods", ha="center", fontsize=7.2, style="italic")
+        kotak(103, 82, 23, 13, f"Records identified from\na check of known papers\nn = {n_lain}")
+        kotak(103, 26, 23, 12, f"Reports assessed\nfor eligibility\nn = {n_lain}")
+        panah(114.5, 82, 114.5, 38)
+        panah(114.5, 26, 114.5, 16)
+        kotak(8, 2, 118, 14, f"Studies included, n = {n_inc + n_lain} "
+              f"({n_inc} from Scopus: {b1},\n{b2}; {n_lain} from other methods: {b3})",
+              warna="#EAF2FA", tebal=False)
+    else:
+        kotak(8, 2, 90, 14, f"Studies included, n = {n_inc}\n{rinci}", warna="#EAF2FA", tebal=False)
     panah(30, 26, 30, 16)
     simpan(fig, "F01_prisma")
     return {"diambil": diambil, "unik": unik, "x0": x0, "xj": xj, "kand": kand,
-            "judul_saja": judul_saja, "xa": xa, "inc": inc}
+            "judul_saja": judul_saja, "xa": xa, "inc": inc, "metode_lain": n_lain}
 
 
 # ---------------------------------------------------- F2 corpus per tahun
@@ -227,15 +276,15 @@ def gambar_kerangka():
             ax.text((x1 + x2) / 2, (y1 + y2) / 2 + 1.4, teks, ha="center", fontsize=6,
                     color="#444444")
 
-    kotak(1, 33, 17, 25, "1  Acquisition", "views per plant\nordering (video or\ndiscrete views)\npose, depth,\nbaseline, sides", "#F7F7F7")
-    kotak(21, 33, 17, 25, "2  Observations", "detections or\nmasks in each\nimage; one\nfruit may yield\nseveral boxes", "#F7F7F7")
-    kotak(41, 33, 20, 25, "3  Association", "decide which\nobservations belong\nto the same fruit\n(mechanisms\nM0–M5 below)", "#EAF2FA")
-    kotak(64, 33, 16, 25, "4  Attributes", "class label, size,\nmass assigned to\nthe unique\ninstance, not to\neach box", "#FFF4E0")
-    kotak(83, 33, 16, 25, "5  Inventory", "one record per\nphysical fruit,\naggregated by\nclass, tree, row,\nor block", "#EAF7F1")
-    panah(18, 45.5, 21, 45.5)
-    panah(38, 45.5, 41, 45.5)
-    panah(61, 45.5, 64, 45.5)
-    panah(80, 45.5, 83, 45.5)
+    kotak(1, 33, 16, 25, "1  Acquisition", "views per plant\nordering (video or\ndiscrete views)\npose, depth,\nbaseline, sides", "#F7F7F7")
+    kotak(20, 33, 16, 25, "2  Observation", "detections or\nmasks in each\nimage; one\nfruit may yield\nseveral boxes", "#F7F7F7")
+    kotak(39, 33, 19, 25, "3  Association", "decide which\nobservations belong\nto the same fruit\n(six mechanisms\nbelow)", "#EAF2FA")
+    kotak(61, 33, 20, 25, "4  Attribute assignment", "class label, size,\nmass assigned to\nthe unique\ninstance, not to\neach box", "#FFF4E0")
+    kotak(84, 33, 15, 25, "5  Inventory", "one record per\nphysical fruit,\naggregated by\nclass, tree, row,\nor block", "#EAF7F1")
+    panah(17, 45.5, 20, 45.5)
+    panah(36, 45.5, 39, 45.5)
+    panah(58, 45.5, 61, 45.5)
+    panah(81, 45.5, 84, 45.5)
 
     y0 = 2
     lebar = 15.6
@@ -251,16 +300,16 @@ def gambar_kerangka():
         }[m]
         ax.add_patch(FancyBboxPatch((x, y0), lebar, 23, boxstyle="round,pad=0.25,rounding_size=0.8",
                                     linewidth=0.6, edgecolor="#333333", facecolor=WARNA_MEK[m], alpha=0.35))
-        judul2 = {"M0": "M0\nNo association", "M1": "M1\nStatistical\ncorrection",
-                  "M2": "M2\nAppearance\nmatching", "M3": "M3\nTemporal\ntracking",
-                  "M4": "M4\nGeometric or 3D\nassociation", "M5": "M5\nLearned\nassociation"}[m]
+        judul2 = {"M0": "No\nassociation", "M1": "Statistical\ncorrection",
+                  "M2": "Appearance\nmatching", "M3": "Temporal\ntracking",
+                  "M4": "Geometric or 3D\nassociation", "M5": "Learned\nassociation"}[m]
         ax.text(x + lebar / 2, y0 + 21.5, judul2, ha="center",
                 va="top", fontsize=6.5, fontweight="bold", linespacing=1.15)
         ax.text(x + lebar / 2, y0 + 11.2, "Assumes:", ha="center", va="top", fontsize=6.0,
                 style="italic", color="#333333")
         ax.text(x + lebar / 2, y0 + 8.4, asumsi, ha="center", va="top", fontsize=5.9,
                 linespacing=1.25)
-    ax.add_patch(FancyArrowPatch((51, 33), (51, 26.2), arrowstyle="-|>", mutation_scale=9,
+    ax.add_patch(FancyArrowPatch((48.5, 33), (48.5, 26.2), arrowstyle="-|>", mutation_scale=9,
                                  linewidth=0.8, color="#333333"))
     simpan(fig, "F03_kerangka")
 
@@ -291,10 +340,10 @@ def gambar_mekanisme(mat):
     ax1.set_ylabel("Share of studies using the mechanism (%)")
     ax1.set_ylim(0, 100)
     ax1.legend(frameon=False, fontsize=6.2, ncol=2, loc="upper left")
-    ax1.set_title("(a) Identity mechanisms by period", loc="left")
+    ax1.set_title("(a) Association mechanisms by period", loc="left")
 
     akuisisi = Counter(r["akuisisi_manual"] for r in c1)
-    nama_ak = {"V": "Video along a path", "D": "Discrete views", "S": "3D scan or point cloud",
+    nama_ak = {"V": "Video along a path", "D": "Discrete views", "S": "3D scan",
                "T": "Revisits over time", "1": "Single view"}
     urut = ["V", "D", "S", "T", "1"]
     ax2.barh([nama_ak[k] for k in urut][::-1], [akuisisi[k] for k in urut][::-1],
@@ -332,9 +381,10 @@ def gambar_peta_tanaman(mat):
             if v:
                 ax.scatter(j, i, s=18 + 380 * v / maks, color=WARNA_MEK[m], edgecolor="#333333",
                            linewidth=0.4, alpha=0.9, zorder=3)
-                ax.text(j, i, str(v), ha="center", va="center", fontsize=5.8, zorder=4)
+                ax.text(j, i, str(v), ha="center", va="center", fontsize=6.6, zorder=4)
     ax.set_xticks(range(len(MEK)))
-    ax.set_xticklabels([m for m in MEK])
+    ax.set_xticklabels([NAMA_MEK[m].replace(" ", "\n", 1).replace("or 3D\n", "or 3D ").replace("Geometric\nor 3D association", "Geometric or 3D\nassociation")
+                        for m in MEK], fontsize=6.2)
     ax.set_yticks(range(len(baris)))
     lab = []
     for t in baris:
@@ -344,7 +394,7 @@ def gambar_peta_tanaman(mat):
     ax.invert_yaxis()
     ax.set_xlim(-0.6, len(MEK) - 0.4)
     ax.grid(color="#EEEEEE", linewidth=0.5, zorder=0)
-    ax.set_xlabel("Identity mechanism (a study may use several)")
+    ax.set_xlabel("Association mechanism (a study may use several)")
     simpan(fig, "F05_tanaman_mekanisme")
 
 
@@ -420,32 +470,317 @@ def gambar_metrik(mat):
         if not ms:
             hit["No quantitative metric in the abstract"] += 1
     kelas = sum(1 for r in c1 if r["per_kelas"] == "Y")
-    fig, ax = plt.subplots(figsize=(4.8, 2.0))
+    fig, ax = plt.subplots(figsize=(4.6, 2.3))
     urut = list(kel) + ["No quantitative metric in the abstract"]
     vals = [100 * hit[k] / len(ada_abs) for k in urut]
     ax.barh(range(len(urut))[::-1], vals, color=[C["biru"], C["hijau"], C["abu"], C["abu_muda"]], height=0.6)
     for i, (k, v) in enumerate(zip(urut, vals)):
-        ax.text(v + 1, len(urut) - 1 - i, f"{hit[k]} ({v:.0f}%)", va="center", fontsize=6.4)
+        ax.text(v + 1, len(urut) - 1 - i, f"{hit[k]} ({v:.0f}%)", va="center", fontsize=7.5)
     ax.set_yticks(range(len(urut))[::-1])
-    ax.set_yticklabels(urut, fontsize=6.4)
+    ax.set_yticklabels([k.replace(" (", "\n(") for k in urut], fontsize=7.5)
     ax.set_xlim(0, 100)
-    ax.set_xlabel(f"Multi-observation studies with an abstract (n = {len(ada_abs)}); several metric types per study allowed")
+    ax.set_xlabel(f"Share of the {len(ada_abs)} multi-observation studies with an abstract (%)\n"
+                  "(a study may report several metric types)")
     simpan(fig, "F07_metrik")
     return hit, len(ada_abs), kelas
 
 
+# ------------------------------------------- F8 jaringan istilah
+# Kosakata tetap: (label, pola regex pada judul + abstrak, huruf kecil).
+ISTILAH = [
+    ("detection", r"\bdetect"), ("segmentation", r"\bsegment"), ("counting", r"\bcount"),
+    ("yield estimation", r"yield (estimat|predict|forecast)"), ("tracking", r"\btrack"),
+    ("video", r"\bvideo"), ("multi-view", r"multi-?view|multiple views"),
+    ("re-identification", r"re-?identif"), ("data association", r"data association|\bassociation\b"),
+    ("double counting", r"double.count|duplicat|repeated count"),
+    ("structure from motion", r"structure.from.motion|\bsfm\b"),
+    ("3D reconstruction", r"3d reconstruct|three-dimensional reconstruct|\bnerf\b|gaussian splatting"),
+    ("point cloud", r"point cloud"), ("LiDAR", r"\blidar\b"), ("RGB-D", r"rgb-?d\b|depth camera"),
+    ("stereo vision", r"\bstereo|binocular"), ("depth", r"\bdepth\b"),
+    ("occlusion", r"occlu"), ("UAV", r"\buav\b|\bdrone|unmanned aerial"),
+    ("robot", r"\brobot"), ("smartphone", r"smartphone|mobile phone|handheld"),
+    ("YOLO", r"\byolo"), ("Mask R-CNN", r"mask r-?cnn"), ("Faster R-CNN", r"faster r-?cnn"),
+    ("transformer", r"transformer|\bdetr\b"), ("deep learning", r"deep learning|convolutional neural"),
+    ("SORT-family tracker", r"deepsort|deep sort|bytetrack|bot-sort|\bsort\b|oc-sort"),
+    ("Kalman filter", r"kalman"), ("ripeness / maturity", r"ripe|maturity|ripening"),
+    ("classification", r"classif"), ("grading", r"\bgrad(e|ing)\b"),
+    ("fruit size", r"fruit size|size estimat|diameter"), ("localization", r"locali[sz]"),
+    ("orchard", r"orchard"), ("greenhouse", r"greenhouse"),
+    ("apple", r"\bapple"), ("citrus", r"citrus|\borange"), ("grape", r"grape|vineyard"),
+    ("tomato", r"tomato"), ("mango", r"mango"), ("strawberry", r"strawberr"),
+    ("oil palm", r"oil palm|fresh fruit bunch|elaeis"), ("hyperspectral", r"hyperspectral|multispectral"),
+    ("review", r"\breview|\bsurvey"),
+]
+
+
+def gambar_istilah(mat):
+    import networkx as nx
+    from networkx.algorithms.community import greedy_modularity_communities
+
+    abstrak = {}
+    for line in open(TOPIK / "enrich.jsonl", encoding="utf-8"):
+        d = json.loads(line)
+        abstrak[d["eid"]] = d.get("abstract") or ""
+    frek = Counter()
+    pasangan = Counter()
+    for r in mat:
+        teks = (r["title"] + " " + abstrak.get(r["eid"], "")).lower()
+        ada = sorted(lab for lab, pola in ISTILAH if re.search(pola, teks))
+        frek.update(ada)
+        pasangan.update(combinations(ada, 2))
+    MIN_NODE, MIN_EDGE = 20, 12
+    G = nx.Graph()
+    for lab, _ in ISTILAH:
+        if frek[lab] >= MIN_NODE:
+            G.add_node(lab, n=frek[lab])
+    for (a, b), w in sorted(pasangan.items()):
+        if w >= MIN_EDGE and a in G and b in G:
+            # kekuatan asosiasi (van Eck dan Waltman): c_ij / (c_i * c_j)
+            G.add_edge(a, b, w=w, s=w / (frek[a] * frek[b]))
+    kom = [sorted(c) for c in greedy_modularity_communities(G, weight="s")]
+    kom.sort(key=lambda c: (-len(c), c[0]))
+    warna_kom = [C["biru"], C["merah"], C["hijau"], C["oranye"], C["ungu"], C["biru_muda"], C["abu"]]
+    warna = {n: warna_kom[min(i, len(warna_kom) - 1)] for i, c in enumerate(kom) for n in c}
+    # Tata letak Kamada-Kawai (deterministik): jarak sasaran mengecil bila asosiasi kuat.
+    smaks = max(d["s"] for _, _, d in G.edges(data=True))
+    jarak = {a: {b: 3.4 for b in G} for a in G}
+    for a, b, d in G.edges(data=True):
+        jarak[a][b] = jarak[b][a] = 1.0 + 2.0 * (1 - (d["s"] / smaks) ** 0.5)
+    for a in G:
+        jarak[a][a] = 0.0
+    pos = nx.kamada_kawai_layout(G, dist=jarak)
+    fig, ax = plt.subplots(figsize=(7.0, 5.0))
+    wmaks = max(d["w"] for _, _, d in G.edges(data=True))
+    for a, b, d in sorted(G.edges(data=True), key=lambda e: e[2]["w"]):
+        sama = warna[a] == warna[b]
+        ax.plot([pos[a][0], pos[b][0]], [pos[a][1], pos[b][1]], color=warna[a] if sama else "#BBBBBB",
+                linewidth=0.25 + 2.6 * d["w"] / wmaks, alpha=0.30 if sama else 0.22, zorder=1,
+                solid_capstyle="round")
+    nmaks = max(frek[n] for n in G)
+    ukuran = {n: 20 + 420 * frek[n] / nmaks for n in G}
+    for n in G:
+        ax.scatter(*pos[n], s=ukuran[n], color=warna[n], edgecolor="white",
+                   linewidth=0.6, alpha=0.92, zorder=3)
+    ax.axis("off")
+    ax.margins(0.08)
+    # Label ditaruh di sisi simpul yang tidak menimpa simpul atau label lain.
+    fig.canvas.draw()
+    rnd = fig.canvas.get_renderer()
+    px = fig.dpi / 72
+    terisi = []
+    for n in G:
+        cx, cy = ax.transData.transform(pos[n])
+        r = (ukuran[n] ** 0.5) / 2 * px
+        terisi.append((cx - r, cy - r, cx + r, cy + r))
+
+    def tumpang(b):
+        return sum(1 for t in terisi if b[0] < t[2] and t[0] < b[2] and b[1] < t[3] and t[1] < b[3])
+
+    for n in sorted(G, key=lambda n: -frek[n]):
+        j = (ukuran[n] ** 0.5) / 2 + 1.5
+        terbaik = None
+        for dx, dy, ha, va in [(0, -j, "center", "top"), (0, j, "center", "bottom"),
+                               (j, 0, "left", "center"), (-j, 0, "right", "center")]:
+            t = ax.annotate(n, pos[n], xytext=(dx, dy), textcoords="offset points", ha=ha, va=va,
+                            zorder=4, fontsize=6.0 + 2.2 * (frek[n] / nmaks) ** 0.5)
+            e = t.get_window_extent(rnd)
+            b = (e.x0, e.y0, e.x1, e.y1)
+            k = tumpang(b)
+            if terbaik is None or k < terbaik[0]:
+                if terbaik:
+                    terbaik[1].remove()
+                terbaik = (k, t, b)
+            else:
+                t.remove()
+            if k == 0:
+                break
+        terisi.append(terbaik[2])
+    simpan(fig, "F08_istilah")
+    return {"node": G.number_of_nodes(), "sisi": G.number_of_edges(), "klaster": kom,
+            "frekuensi": frek.most_common(), "n_studi": len(mat),
+            "dengan_abstrak": sum(1 for r in mat if abstrak.get(r["eid"]))}
+
+
+# ------------------------------------------- F9 alur akuisisi-mekanisme-platform-tanaman
+def kat_mekanisme(r):
+    m = "+".join(sorted(set(r["mekanisme"].split("+"))))
+    return m if m in ("M0", "M1", "M2", "M3", "M4", "M5", "M2+M3", "M3+M4") else "Other combinations"
+
+
+def kat_platform(r):
+    p = [x for x in r["platform"].split(";") if x]
+    if not p:
+        return "Not stated"
+    if len(p) > 1:
+        return "Several platforms"
+    return {"ground vehicle/robot": "Ground vehicle or robot", "UAV": "UAV",
+            "handheld/smartphone": "Handheld or smartphone", "conveyor/lab": "Laboratory or conveyor",
+            "fixed camera": "Fixed camera"}[p[0]]
+
+
+def kat_tanaman(r, utama):
+    t = r["tanaman"].split(";")[0] if r["tanaman"] else "crop not named"
+    return t if t in utama or t == "crop not named" else "other crops"
+
+
+def gambar_alur(mat):
+    c1 = [r for r in mat if r["kode"] == "C1" and r["mekanisme"] != "DATA"]
+    tan = Counter(r["tanaman"].split(";")[0] for r in c1 if r["tanaman"])
+    utama = [t for t, _ in tan.most_common(7)]
+    nama_ak = {"V": "Video along a path", "D": "Discrete views", "S": "3D scan",
+               "T": "Revisits over time", "1": "Single view"}
+    urut = [
+        [nama_ak[k] for k in ["V", "D", "S", "T", "1"]],
+        ["M0", "M1", "M2", "M2+M3", "M3", "M3+M4", "M4", "M5", "Other combinations"],
+        ["Ground vehicle or robot", "UAV", "Handheld or smartphone", "Laboratory or conveyor",
+         "Fixed camera", "Several platforms", "Not stated"],
+        utama + ["other crops", "crop not named"],
+    ]
+    judul = ["Acquisition", "Association mechanism", "Platform", "Crop"]
+    warna_m = dict(WARNA_MEK)
+    warna_m.update({"M0": C["abu"], "M2+M3": C["biru_muda"], "M3+M4": C["oranye"],
+                    "Other combinations": "#555555"})
+    jalur = [(nama_ak[r["akuisisi_manual"]], kat_mekanisme(r), kat_platform(r), kat_tanaman(r, utama))
+             for r in c1]
+    n = len(jalur)
+    urut = [[k for k in kol if any(j[i] == k for j in jalur)] for i, kol in enumerate(urut)]
+    fig, ax = plt.subplots(figsize=(7.0, 4.6))
+    xs = [0, 1, 2, 3]
+    lebar = 0.035
+    celah = 0.05
+    posisi = []
+    for i, kol in enumerate(urut):
+        tot = Counter(j[i] for j in jalur)
+        skala = (1 - celah * (len(kol) - 1)) / n
+        y = 1.0
+        d = {}
+        for k in kol:
+            h = tot[k] * skala
+            d[k] = (y - h, y, skala)
+            ax.add_patch(plt.Rectangle((xs[i] - lebar, y - h), 2 * lebar, h, color="#3A3A3A", linewidth=0))
+            lab = nama_gabungan(k) if i == 1 and k != "Other combinations" else k
+            if 0 < i < 3:
+                ax.text(xs[i], y + 0.003, f"{lab} ({tot[k]})", ha="center", va="bottom", fontsize=5.6, zorder=5,
+                        bbox=dict(boxstyle="round,pad=0.1", facecolor="white", edgecolor="none", alpha=0.75))
+            else:
+                ha, dx = ("right", -lebar - 0.02) if i == 0 else ("left", lebar + 0.02)
+                ax.text(xs[i] + dx, y - h / 2, f"{k} ({tot[k]})", ha=ha, va="center", fontsize=6.0)
+            y -= h + celah
+        posisi.append(d)
+        ax.text(xs[i], 1.075, judul[i], ha="center", va="bottom", fontsize=7.4, fontweight="bold")
+    for i in range(3):
+        alir = Counter((j[i], j[i + 1], j[1]) for j in jalur)
+        kiri = {k: posisi[i][k][1] for k in urut[i]}
+        kanan = {k: posisi[i + 1][k][1] for k in urut[i + 1]}
+        y_kiri = {}
+        for f in sorted(alir, key=lambda f: (urut[i].index(f[0]), urut[i + 1].index(f[1]), urut[1].index(f[2]))):
+            h = alir[f] * posisi[i][f[0]][2]
+            y_kiri[f] = (kiri[f[0]] - h, kiri[f[0]])
+            kiri[f[0]] -= h
+        for f in sorted(alir, key=lambda f: (urut[i + 1].index(f[1]), urut[i].index(f[0]), urut[1].index(f[2]))):
+            h = alir[f] * posisi[i + 1][f[1]][2]
+            b0, b1 = kanan[f[1]] - h, kanan[f[1]]
+            kanan[f[1]] -= h
+            a0, a1 = y_kiri[f]
+            x0, x1 = xs[i] + lebar, xs[i + 1] - lebar
+            xm = (x0 + x1) / 2
+            verts = [(x0, a1), (xm, a1), (xm, b1), (x1, b1), (x1, b0), (xm, b0), (xm, a0), (x0, a0), (x0, a1)]
+            codes = [MPath.MOVETO, MPath.CURVE4, MPath.CURVE4, MPath.CURVE4, MPath.LINETO,
+                     MPath.CURVE4, MPath.CURVE4, MPath.CURVE4, MPath.CLOSEPOLY]
+            ax.add_patch(PathPatch(MPath(verts, codes), facecolor=warna_m[f[2]], edgecolor="none", alpha=0.55))
+    pegangan = [plt.Rectangle((0, 0), 1, 1, color=warna_m[m], alpha=0.7) for m in urut[1]]
+    ax.legend(pegangan, [nama_gabungan(k) if k != "Other combinations" else k for k in urut[1]],
+              ncol=5, frameon=False, fontsize=6.0, loc="upper center",
+              bbox_to_anchor=(0.5, 0.0), handlelength=1.2, columnspacing=1.0, handletextpad=0.4)
+    ax.set_xlim(-0.55, 3.45)
+    ax.set_ylim(-0.02, 1.13)
+    ax.axis("off")
+    simpan(fig, "F09_alur")
+    return {i: Counter(j[i] for j in jalur) for i in range(4)}
+
+
+# ------------------------------------------- F10 sensor dan platform per tanaman
+def gambar_sensor(mat):
+    c1 = [r for r in mat if r["kode"] == "C1" and r["mekanisme"] != "DATA"]
+    tan = Counter(r["tanaman"].split(";")[0] for r in c1 if r["tanaman"])
+    utama = [t for t, _ in tan.most_common(9)]
+    baris = utama + ["other crops", "crop not named"]
+    kol_mod = ["RGB", "RGB-D", "stereo", "LiDAR", "multispectral", "monocular depth"]
+    kol_plat = ["ground vehicle/robot", "UAV", "handheld/smartphone", "conveyor/lab", "fixed camera", ""]
+    nama = {"RGB": "RGB camera", "RGB-D": "RGB-D camera", "stereo": "Stereo camera", "LiDAR": "LiDAR",
+            "multispectral": "Multispectral", "monocular depth": "Estimated depth",
+            "ground vehicle/robot": "Ground vehicle\nor robot", "UAV": "UAV",
+            "handheld/smartphone": "Handheld or\nsmartphone", "conveyor/lab": "Laboratory\nor conveyor",
+            "fixed camera": "Fixed camera", "": "Not stated"}
+    sel = defaultdict(Counter)
+    nb = Counter()
+    for r in c1:
+        t = kat_tanaman(r, utama)
+        nb[t] += 1
+        for m in r["modalitas"].split(";"):
+            sel[t][m] += 1
+        for p in (r["platform"].split(";") if r["platform"] else [""]):
+            sel[t][p] += 1
+    baris = [t for t in baris if nb[t]]
+    kol_mod = [k for k in kol_mod if any(sel[t][k] for t in baris)]
+    kol_plat = [k for k in kol_plat if any(sel[t][k] for t in baris)]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.0, 3.3), sharey=True, layout="constrained",
+                                   gridspec_kw={"width_ratios": [len(kol_mod), len(kol_plat)]})
+    maks = max(sel[t][k] for t in baris for k in kol_mod + kol_plat)
+    for ax, kol, judul in [(ax1, kol_mod, "(a) Sensing modality"), (ax2, kol_plat, "(b) Platform")]:
+        data = [[sel[t][k] for k in kol] for t in baris]
+        # pcolormesh menghasilkan sel vektor (tidak diraster seperti imshow).
+        im = ax.pcolormesh(data, cmap="Blues", vmin=0, vmax=maks, edgecolors="white", linewidth=0.6)
+        for i, t in enumerate(baris):
+            for j, k in enumerate(kol):
+                v = sel[t][k]
+                if v:
+                    ax.text(j + 0.5, i + 0.5, str(v), ha="center", va="center", fontsize=6.8,
+                            color="white" if v / maks > 0.55 else "black")
+        ax.set_xticks([j + 0.5 for j in range(len(kol))])
+        ax.set_xticklabels([nama[k] for k in kol], fontsize=6.6, rotation=35, ha="right", rotation_mode="anchor")
+        ax.set_title(judul, loc="left")
+        ax.tick_params(length=0)
+    ax1.set_yticks([i + 0.5 for i in range(len(baris))])
+    ax1.set_yticklabels([f"{t} ({nb[t]})" for t in baris])
+    ax1.invert_yaxis()
+    cb = fig.colorbar(im, ax=[ax1, ax2], fraction=0.025, pad=0.015)
+    cb.set_label("Number of studies", fontsize=6.5)
+    cb.solids.set_rasterized(False)
+    cb.outline.set_linewidth(0.5)
+    simpan(fig, "F10_sensor")
+    return {t: dict(sel[t]) for t in baris}
+
+
 def main():
+    pilih = {a.upper() for a in sys.argv[1:]}
+
+    def mau(kode):
+        return not pilih or kode in pilih
+
     mat = muat_matriks()
-    p = gambar_prisma()
-    gambar_tahun(mat)
-    gambar_kerangka()
-    per, n_per, ak = gambar_mekanisme(mat)
-    gambar_peta_tanaman(mat)
-    gambar_sawit(mat)
-    hit, n_abs, kelas = gambar_metrik(mat)
-    print("PRISMA", p)
-    print("akuisisi", ak)
-    print("metrik", hit, n_abs, "per-kelas", kelas)
+    if mau("F01"):
+        print("PRISMA", gambar_prisma())
+    if mau("F02"):
+        gambar_tahun(mat)
+    if mau("F03"):
+        gambar_kerangka()
+    if mau("F04"):
+        per, n_per, ak = gambar_mekanisme(mat)
+        print("akuisisi", ak)
+    if mau("F05"):
+        gambar_peta_tanaman(mat)
+    if mau("F06"):
+        gambar_sawit(mat)
+    if mau("F07"):
+        hit, n_abs, kelas = gambar_metrik(mat)
+        print("metrik", hit, n_abs, "per-kelas", kelas)
+    if mau("F08"):
+        print("istilah", gambar_istilah(mat))
+    if mau("F09"):
+        print("alur", gambar_alur(mat))
+    if mau("F10"):
+        print("sensor", gambar_sensor(mat))
 
 
 if __name__ == "__main__":

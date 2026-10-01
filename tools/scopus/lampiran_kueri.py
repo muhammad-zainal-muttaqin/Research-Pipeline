@@ -15,6 +15,24 @@ def esc(s):
     return "".join(ESC.get(c, c) for c in s)
 
 
+# Nama deskriptif tiap kueri; kunci Q hanya penghubung antara tabel kueri di naskah dan lampiran ini.
+NAMA = {
+    "Q1": "Multi-observation counting",
+    "Q2": "Counting in titles",
+    "Q3": "Oil-palm imaging",
+    "Q4": "Class attributes with counting",
+    "Q5": "Depth and 3D sensing",
+    "Q6": "Reviews of association methods",
+    "Q7": "Reviews of fruit detection and yield",
+    "Q8a": "Methods outside agriculture: multi-object tracking",
+    "Q8b": "Methods outside agriculture: multi-view detection and association",
+    "Q8c": "Methods outside agriculture: structure from motion and SLAM",
+    "Q8d": "Methods outside agriculture: object counting",
+    "Q8e": "Methods outside agriculture: re-identification",
+    "Q9": "Named foundational methods",
+}
+
+
 def main():
     q = json.load(open(TOPIK / "queries.json"))
     n = {r["qid"]: r for r in csv.DictReader(open(TOPIK / "counts.csv"))}
@@ -24,9 +42,10 @@ def main():
         kept = int(c["retrieved"])
         tot = int(c["total_results"])
         catatan = f"{tot:,} records" + ("" if kept == tot else f"; the {kept} most cited were retained")
-        out.append(r"\paragraph*{%s (%s)}" % (r["qid"], catatan))
-        out.append(r"{\footnotesize\ttfamily\raggedright " + esc(r["query"]) + r"\par}")
-    OUT.write_text("\n".join(out) + "\n")
+        out.append(r"\par\medskip\noindent\textbf{%s. %s} (%s)\par\nobreak\smallskip"
+                   % (r["qid"], NAMA[r["qid"]], catatan))
+        out.append(r"{\noindent\scriptsize\ttfamily\raggedright " + esc(r["query"]) + r"\par}")
+    OUT.write_text("\n".join(out) + "\n", newline="\n")
     print(len(q), "kueri ->", OUT)
 
 

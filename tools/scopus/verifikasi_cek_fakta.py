@@ -50,7 +50,7 @@ URUT_PRIORITAS = {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "S": 6, "lama": 7}
 
 
 def cites(teks):
-    return [k.strip() for m in re.findall(r"\\cite\{([^}]*)\}", teks)
+    return [k.strip() for m in re.findall(r"\\cite[tp]?\{([^}]*)\}", teks)
             for k in m.split(",") if k.strip()]
 
 
@@ -84,8 +84,8 @@ AKSEN = {r"{\'{\i}}": "í", r"{\'{e}}": "é", r"{\'{a}}": "á", r"{\'{o}}": "ó"
 def bersih(t):
     for a, b in AKSEN.items():
         t = t.replace(a, b)
-    t = re.sub(r"\\cite\{([^}]*)\}", lambda m: "[" + m.group(1).replace(",", ", ") + "]", t)
-    t = re.sub(r"(?:Section|Figure|Table|Appendix)~\\ref\{[^}]*\}", lambda m: m.group(0).split("~")[0] + " (ref)", t)
+    t = re.sub(r"\\cite[tp]?\{([^}]*)\}", lambda m: "[" + m.group(1).replace(",", ", ") + "]", t)
+    t = re.sub(r"(?:Sections?|Figures?|Figs?\.|Tables?|Appendix)~\\ref\{[^}]*\}", lambda m: m.group(0).split("~")[0] + " (ref)", t)
     t = re.sub(r"\\(?:textit|textbf|emph|mathrm|text)\{([^}]*)\}", r"\1", t)
     t = t.replace("\\%", "%").replace("{,}", ",").replace("~", " ").replace("\\ ", " ")
     t = t.replace("\\dots", "...").replace("--", "–").replace("$", "")
@@ -100,7 +100,7 @@ def kalimat_dari(paragraf):
 
 
 def ada_angka(t):
-    t = re.sub(r"\\(?:cite|ref|label)\{[^}]*\}", "", t)
+    t = re.sub(r"\\(?:cite[tp]?|ref|label)\{[^}]*\}", "", t)
     t = re.sub(r"\b(?:RQ|M|Q|G|C|E)\d\b|\bQ\d[a-e]?\b|\b(?:YOLO|v)\S*\d\S*", "", t)
     return bool(re.search(r"\d", t))
 

@@ -61,10 +61,36 @@ def judul_terlindung(teks):
     return re.sub(r"\b([A-Za-z]*[A-Z][A-Za-z]*[A-Z0-9][A-Za-z0-9-]*)\b", r"{\1}", bersihkan(teks))
 
 
+# Singkatan yang dipulihkan setelah judul berhuruf kapital semua diturunkan.
+SINGKATAN = [(r"\bfaster r-cnn\b", "Faster R-CNN"), (r"\byolov(\d+)\b", r"YOLOv\1"), (r"\bcnn\b", "CNN"),
+             (r"\bcmle-yolo\b", "CMLE-YOLO"), (r"\befficientdet-lite\b", "EfficientDet-Lite"),
+             (r"^Sam 2: segment", "SAM 2: Segment")]
+
+
+def huruf_wajar(teks):
+    """Nama atau judul yang seluruhnya kapital diubah ke kapital awal kata."""
+    if teks and teks == teks.upper() and re.search(r"[A-Z]{3}", teks):
+        return " ".join(w.capitalize() if len(w) > 2 else w for w in teks.split(" "))
+    return teks
+
+
+def rapikan_nama(fam, giv):
+    """Perbaiki nama dari Crossref: kapital semua, titik tersisa, inisial di kolom marga."""
+    fam, giv = huruf_wajar(fam.strip()), huruf_wajar((giv or "").strip())
+    if re.fullmatch(r"[A-Z]{2}", fam):  # marga dua huruf (XU, LV), bukan inisial
+        fam = fam.capitalize()
+    giv = re.sub(r"(?<=[a-z]{2})\.$", "", giv)
+    if giv and re.fullmatch(r"[A-Z](?:[. ]+[A-Z])*\.?", fam) and re.fullmatch(r"[A-Z][a-z]{2,}", giv):
+        fam, giv = giv, fam
+    return fam, giv
+
+
 def penulis_crossref(msg):
     out = []
     for a in msg.get("author", []) or []:
         fam, giv = a.get("family"), a.get("given")
+        if fam:
+            fam, giv = rapikan_nama(fam, giv)
         if fam and giv:
             out.append(f"{bersihkan(fam)}, {bersihkan(giv)}")
         elif fam:
@@ -85,6 +111,10 @@ def entri(rec, msg):
     jenis = "inproceedings" if konf else ("incollection" if buku else "article")
     f = {}
     judul = ((msg or {}).get("title") or [rec["title"]])[0]
+    if judul == judul.upper() and re.search(r"[A-Z]{3}", judul):
+        judul = judul.capitalize()
+        for pola, ganti in SINGKATAN:
+            judul = re.sub(pola, ganti, judul)
     f["title"] = judul_terlindung(judul)
     aut = penulis_crossref(msg or {})
     if not aut:
@@ -152,7 +182,7 @@ def main():
                                             "volume", "issue", "page")}
             cache[doi] = keep
             fc.write(json.dumps({"doi": doi, "msg": keep}) + "\n")
-    with open(args.keluar, "w") as f:
+    with open(args.keluar, "w", newline="\n") as f:
         f.write("% Dibuat oleh tools/scopus/buat_bib.py dari rekaman Scopus dan metadata Crossref.\n\n")
         for key in sorted(pilih):
             d = pilih[key]
