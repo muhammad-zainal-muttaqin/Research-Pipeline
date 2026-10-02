@@ -116,10 +116,10 @@ def populasi_judul():
     return pop
 
 
-def keputusan_abstrak():
+def keputusan_abstrak(folder=None):
     """idx -> (kode, alasan, berkas, dasar). Urut nama berkas, baris terakhir berlaku."""
     dec, riwayat = {}, {}
-    for fn in sorted(glob.glob(str(PEN / "abstrak_*.txt"))):
+    for fn in sorted(glob.glob(str((folder or PEN) / "abstrak_*.txt"))):
         nama = Path(fn).name
         with open(fn, encoding="utf-8") as f:
             for line in f:
@@ -166,6 +166,37 @@ def populasi_abstrak():
     if lebih:
         print(f"PERINGATAN: {len(lebih)} idx di abstrak_*.txt bukan kandidat_abstrak.csv")
     return pop, ganda
+
+
+def abstrak_bersarang():
+    """Sampel abstrak yang diambil dari sampel judul: semua rekaman sampel judul yang oleh AI
+    putaran 1 dinyatakan lanjut ke abstrak (kunci_judul.csv), dengan keputusan abstrak AI
+    putaran 1 (salinan ai2/putaran_1). Urutan mengikuti sampel judul."""
+    sampel = [int(r["idx"]) for r in baca_csv(VER / "sampel_judul.csv")]
+    lanjut = {int(r["idx"]) for r in baca_csv(KUNCI / "kunci_judul.csv") if r["keputusan_ai"] == "L"}
+    pilih = [i for i in sampel if i in lanjut]
+    kand = {int(r["idx"]): r for r in baca_csv(PEN / "kandidat_abstrak.csv")}
+    enr = {}
+    with open(TOPIK / "enrich.jsonl", encoding="utf-8") as f:
+        for line in f:
+            e = json.loads(line)
+            enr[e["eid"]] = e
+    dec, _ = keputusan_abstrak(VER / "ai2" / "putaran_1")
+    pop = {}
+    for i in pilih:
+        if i not in kand or i not in dec:
+            sys.exit(f"idx {i} lanjut di putaran 1 tetapi tidak ada di kandidat_abstrak.csv atau keputusan putaran 1")
+        r = kand[i]
+        kode, alasan, berkas, dasar = dec[i]
+        abstrak = (enr.get(r["eid"], {}).get("abstract") or "").strip()
+        pop[i] = {
+            "idx": r["idx"], "eid": r["eid"], "key": r["key"], "judul": r["title"],
+            "tahun": r["year"], "sumber": r["source"], "abstrak": abstrak or TANPA_ABSTRAK,
+            "kode_ai_mentah": f"{kode} {alasan}".strip(),
+            "keputusan_ai": f"X-{alasan}" if kode == "X" else kode,
+            "berkas_sumber": berkas, "dasar_ai": dasar,
+        }
+    return pop, pilih
 
 
 # --------------------------------------------------------------------- xlsx
@@ -273,11 +304,14 @@ def ada_isian(path):
         return False
     if path.suffix == ".xlsx":
         from openpyxl import load_workbook
-        ws = load_workbook(path, read_only=True)["sampel"]
-        it = ws.iter_rows(values_only=True)
-        kolom = list(next(it))
-        j = [kolom.index(k) for k in ("keputusan_manusia", "catatan", "keputusan_final_fatma")]
-        return any(r and any(r[x] not in (None, "") for x in j) for r in it)
+        wb = load_workbook(path, read_only=True)
+        try:
+            it = wb["sampel"].iter_rows(values_only=True)
+            kolom = list(next(it))
+            j = [kolom.index(k) for k in ("keputusan_manusia", "catatan", "keputusan_final_fatma")]
+            return any(r and any(r[x] not in (None, "") for x in j) for r in it)
+        finally:
+            wb.close()          # Windows mengunci berkas selama masih terbuka
     return any((r.get("keputusan_manusia") or "").strip() or (r.get("catatan") or "").strip() or
                (r.get("keputusan_final_fatma") or "").strip() for r in baca_csv(path))
 
@@ -319,9 +353,29 @@ def main():
                     help="tarik N rekaman tambahan, tanpa idx yang sudah pernah disampel")
     ap.add_argument("--tahap", choices=["judul", "abstrak"], default="judul",
                     help="tahap untuk --tambah (bawaan judul)")
+    ap.add_argument("--abstrak-dari-judul", action="store_true",
+                    help="ganti sampel abstrak (yang BELUM diisi) dengan semua rekaman sampel judul "
+                         "yang lolos ke abstrak menurut AI putaran 1")
     ap.add_argument("--timpa", action="store_true",
                     help="izinkan menimpa sampel awal yang BELUM diisi")
     a = ap.parse_args()
+
+    if a.abstrak_dari_judul:
+        akhir = [VER / f"sampel_abstrak.{e}" for e in ("csv", "xlsx")]
+        if any(ada_isian(x) for x in akhir if x.exists()):
+            sys.exit("sampel_abstrak sudah berisi keputusan manusia; tidak akan ditimpa.")
+        cad = VER / "cadangan_sampel_abstrak_terpisah"
+        cad.mkdir(exist_ok=True)
+        for x in akhir + [KUNCI / "kunci_abstrak.csv"]:
+            if x.exists():
+                x.replace(cad / x.name)
+        pop, pilih = abstrak_bersarang()
+        benih = BENIH_BAWAAN if a.benih is None else a.benih
+        nama, xl = buat("abstrak", pop, pilih, "", benih)
+        catat_riwayat("abstrak", nama + ".csv (dari sampel judul)", benih, len(pilih), len(pilih), 0)
+        print(f"Sampel abstrak bersarang: {len(pilih)} rekaman dari 300 judul -> {nama}.csv"
+              + (" + .xlsx" if xl else "") + f"; sampel terpisah lama dipindah ke {cad.name}/")
+        return
 
     pj = populasi_judul()
     pa, ganda = populasi_abstrak()

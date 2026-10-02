@@ -16,13 +16,12 @@ Rincian pendukung ada di `cek_makalah_dikenal.md` dan `kandidat_snowballing.csv`
    *Alasan:* kelompok kecil (C4 49, T 86) bisa hanya muncul beberapa kali,
    sehingga kappa per kelompok tidak stabil; stratifikasi menurut keputusan AI
    (lolos/eksklusi) atau menurut kelompok memperbaikinya.
-   **2a. Apakah 100 abstrak diambil dari seluruh tahap abstrak atau dari 300 judul?**
-   Rencana menulis "300 records from the title stage; 100 records from the
-   abstract stage". Kami menafsirkannya sebagai dua sampel terpisah: 300 dari
-   5.723 judul dan 100 dari 1.124 rekaman tahap abstrak.
-   *Alasan:* hanya sekitar 20% judul lolos ke abstrak, sehingga 300 judul
-   menghasilkan sekitar 59 abstrak, kurang dari 100. Mohon konfirmasi sebelum
-   lembar abstrak diisi.
+   **2a. Sampel abstrak Cek 1 kini diambil dari 300 judul, sehingga hanya 62, bukan 100.**
+   Sesuai arahan, abstrak yang dinilai adalah rekaman di dalam sampel 300 judul
+   yang lolos ke abstrak menurut AI (62 dari 300). Apakah 62 cukup, atau perlu
+   ditambah judul baru sampai 100 abstrak tercapai (sekitar 190 judul lagi)?
+   *Alasan:* rencana menyebut 100 abstrak, tetapi hanya sekitar 21% judul lolos
+   ke tahap abstrak; selang kepercayaan kappa pada n = 62 lebih lebar.
 3. **Kappa dihitung pada keputusan apa, dan berapa batas lulusnya?**
    Dua kelas (lolos/eksklusi), atau tujuh kode kelompok? Bila di bawah batas
    (misalnya κ < 0,6), apa tindak lanjutnya?

@@ -44,7 +44,7 @@ Selama mengisi, **jangan membuka** berkas yang memuat keputusan AI:
 | Berkas | Isi |
 |---|---|
 | `sampel_judul.xlsx` / `.csv` | 300 rekaman acak dari populasi tahap judul (5.723) |
-| `sampel_abstrak.xlsx` / `.csv` | 100 rekaman acak dari populasi tahap kelayakan (1.124) |
+| `sampel_abstrak.xlsx` / `.csv` | 62 rekaman: semua rekaman sampel judul yang lolos ke abstrak menurut AI putaran 1 (bersarang di dalam 300 judul; rencana menyebut 100, tetapi 300 judul hanya menghasilkan 62). Sampel terpisah awal (100 dari 1.124) ada di `cadangan_sampel_abstrak_terpisah/` |
 | `.kunci/kunci_judul.csv`, `.kunci/kunci_abstrak.csv` | Keputusan AI per `idx` (jangan dibuka sebelum selesai) |
 | `.kunci/riwayat_sampel.csv` | Catatan setiap penarikan sampel: waktu, benih, n, populasi |
 | `kesepakatan.md` | Hasil `verifikasi_kappa.py`: n, kesepakatan, kappa, matriks, status lulus |
