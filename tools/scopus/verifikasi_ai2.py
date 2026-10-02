@@ -180,7 +180,7 @@ def siapkan():
 
 
 def status():
-    for awalan in ("s", "j", "a", "f", "adj", "vf", "t"):
+    for awalan in ("s", "j", "a", "f", "adj", "vf", "t", "u", "ru"):
         ber = sorted(BERKAS.glob(f"{awalan}_[0-9]*.json"))
         ada, rusak = 0, []
         for b in ber:
@@ -252,7 +252,7 @@ def periksa_isi(nama, isi, paket):
                 g.append(f"{t}: alasan_ajudikasi kosong")
             if x.get("perlu_manusia") not in (True, False):
                 g.append(f"{t}: perlu_manusia harus true/false")
-        if awalan in ("s", "adj", "t"):
+        if awalan in ("s", "adj", "t", "u"):
             if x.get("dasar_bukti") not in DASAR:
                 g.append(f"{t}: dasar_bukti harus salah satu {sorted(DASAR)}")
             if x.get("kode") not in GRUP:

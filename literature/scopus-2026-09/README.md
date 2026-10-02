@@ -40,7 +40,7 @@ export ELSEVIER_API_KEY_FILE=/path/ke/kunci.txt   # kunci tidak disimpan di repo
 python3 tools/scopus/scopus_search.py --queries literature/scopus-2026-09/topik/queries.json --out literature/scopus-2026-09/topik
 python3 tools/scopus/enrich_records.py --records literature/scopus-2026-09/topik/records_all.csv --cache literature/scopus-2026-09/topik/enrich.jsonl
 python3 tools/scopus/kode_bukti.py          # matriks bukti dari keputusan dan kode manual
-python3 tools/scopus/gambar_tinjauan.py     # gambar F01–F07 di manuscript/figures/main6
+python3 tools/scopus/gambar_tinjauan.py     # gambar F01–F10 di manuscript/figures/main6
 python3 tools/scopus/tabel_lampiran.py      # tabel lampiran C1
 python3 tools/scopus/buat_bib.py --rekaman literature/scopus-2026-09/topik/records_all.csv \
   literature/scopus-2026-09/metodologi/records_MA*.csv \

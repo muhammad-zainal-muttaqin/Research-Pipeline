@@ -1,6 +1,6 @@
 # Angka Naskah `main6`
 
-Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Setiap angka korpus di naskah harus cocok dengan berkas ini.
+Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah memakai angka ini melalui makro di `manuscript/source/main6-angka.tex`.
 
 ## Seksi 2: alur rekaman
 
@@ -14,6 +14,7 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Setiap angka kor
 - Kajian per tahun: 2012: 8, 2013: 14, 2014: 13, 2015: 15, 2016: 21, 2017: 25, 2018: 28, 2019: 36, 2020: 66, 2021: 70, 2022: 89, 2023: 115, 2024: 160, 2025: 191, 2026: 130
 - Multi-pengamatan per tahun: 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 2, 2018: 1, 2019: 5, 2020: 10, 2021: 13, 2022: 12, 2023: 25, 2024: 36, 2025: 45, 2026: 30
 - Dengan abstrak 759 dari 981; teks lengkap lokal 330
+- Peta istilah: 43 istilah, 306 tautan; istilah identitas 24-37 kajian; detection 604; counting 414
 
 ## Seksi 3: kajian multi-pengamatan
 
@@ -31,13 +32,14 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Setiap angka kor
 - Tanaman: apple 52, (tanaman tidak disebut) 23, citrus 20, grape 20, tomato 16, strawberry 11, mango 7, sweet pepper 6, cotton 4, pear 4, passion fruit 3, kiwifruit 3
 - Melaporkan hitungan per kelas: 17 dari 185
 - Akuisisi x kategori mekanisme: V: M3 48, M2+M3 41, M4 20, M3+M4 19, M1+M4 3; D: M4 21, M1 8, M4+M5 3, M0 2; S: M4 3, M1+M4 1; T: M2+M4+M5 1, M4 1, M2+M4 1; 1: M4 1
+- Pandangan diskret: dengan asosiasi geometris 24, dengan koreksi statistik 8
 - Platform (satu kategori per kajian): tidak disebut 112, ground vehicle/robot 38, lebih dari satu 18, UAV 10, handheld/smartphone 6, conveyor/lab 1
 - Modalitas (kemunculan): RGB 153, RGB-D 15, LiDAR 6, stereo 6, multispectral 4, monocular depth 1
 - Pencocokan penampilan: satu-satunya mekanisme pada 0, digabung pada 47
 - Kajian no association: ahmad2024enabling, nenavath2024tree, tureckova2022slicing, villacres2024assessing
 - Kajian learned association: fusaro2026horticultural, isobe2025mandarin, meyer2025fruitnerf, santos2026multi, xia2022culling, zhao2026adapting, zheng2023object
 - Makalah dataset: arizasentis2023dataset, arizasentis2024grapemots, genemola2020fuji, genemola2020lfuji
-- Dasar pengodean (sumber_kode): abstrak 110, teks lengkap 68, judul 7, (kosong) 4
+- Dasar pengodean kajian multi-pengamatan: abstrak 111, teks lengkap 68, judul 10
 - Referensi hitung (kemunculan): anotasi 96, pohon 42, tidak ada 37, panen 23, packhouse 1
 - Tingkat metrik menurut pengodean kajian (kemunculan): hitung 144, deteksi 87, identitas 49, tidak ada 11
 - Cara pemberian kelas pada kajian per kelas: tidak dinyatakan 9, saat pelacakan 5, voting antarpandang 1, sesudah pelacakan 1, (kosong) 1
@@ -69,3 +71,12 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Setiap angka kor
 ## Seksi 9: tinjauan terdahulu dan metode luar pertanian
 
 - Tinjauan terdahulu 120 (+ 1 metode lain); metode luar pertanian 86
+
+## Verifikasi putaran kedua (model bahasa besar; bukan peninjau manusia)
+
+- Rekaman kunci dinilai ulang 510; kelompok sama atau juga cocok 436 dari 510 (85%); ada perbedaan kode apa pun 232
+- Status akhir (511 rekaman termasuk tambahan): tetap 470, kelompok berubah 16, perlu manusia 10, alasan berubah 8, sengketa 7
+- Sampel judul 300: sama 256 dari 300 (85%); putaran 1 eksklusi tetapi putaran 2 lanjut 44
+- Sampel kelayakan 100: kelompok sama 83 dari 100 (83%)
+- Dari 44 judul sampel yang dilanjutkan putaran 2, layak menurut abstrak: 11 ({'C1': 1, 'C5': 4, 'C3': 1, 'R': 1, 'T': 4})
+- Cek fakta: 213 pasangan klaim-kajian; Y 171, SEBAGIAN 29, N 2, tak terperiksa 11; verifikasi kedua atas 31: {'SEBAGIAN': 26, 'Y': 3, 'N': 2}
