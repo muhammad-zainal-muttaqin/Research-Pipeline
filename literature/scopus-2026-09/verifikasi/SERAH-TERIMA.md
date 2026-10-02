@@ -39,8 +39,7 @@ Jangan menyunting tangan: `main6-angka.tex`, `main6-appendix-*.tex`, `references
    **Yang masih perlu dikerjakan:** eksklusi tahap judul dari kueri lain (Q2, Q4-Q9; sekitar 3.300 rekaman) belum diperiksa ulang;
    gunakan skrip yang sama dengan mengubah `KUERI_INTI` bila ingin diperluas. Angka naskah terkini: korpus Scopus 1.000
    (C1 195, C2 238, C3 176, C4 49, C5 134, R 120, T 88) + 1 metode lain; sebagian teks naskah yang menyebut angka tetap
-   (bukan makro) perlu dicek ulang terhadap `ANGKA-NASKAH.md`: "14 comparisons" pada tabel assoc, "five of the eleven" reviews,
-   daftar kajian per aliran di Seksi geometri, "ten candidates examined", kalimat tentang apel, stroberi, dan paprika pada depth.
+   (bukan makro) sudah dicocokkan dengan data pada 2 Oktober 2026 (14 perbandingan, 5 dari 11 tinjauan, 8 studi akuisisi: benar).
 2. **Penulisan ulang gaya** mengikuti `manuscript/guides/CATATAN-GAYA-TULIS-CONTOH.md`: sudah diterapkan pada seluruh
    bagian; yang belum: pembagian paragraf panjang lain, tabel perbandingan memisahkan kolom hasil, ringkasan oil-palm per
    subseksi. Aturan: jangan memperpanjang kalimat; satu kajian per kalimat; kutip dengan `\citet`.
@@ -52,7 +51,7 @@ Jangan menyunting tangan: `main6-angka.tex`, `main6-appendix-*.tex`, `references
 5. **Keputusan penulis**: isi CRediT, Funding, Declaration of competing interest, Acknowledgment (tidak boleh dikarang);
    tahun sitasi `liu2026shaping` (2026 atau 2027); batas kata abstrak jurnal; kebijakan AI jurnal;
    ejaan Oxford -ize dipertahankan; `PERTANYAAN-UNTUK-FATMA.md`.
-6. Perbarui `AGENTS.md` bagian 3 dan `PROTOKOL.md` dengan angka baru (lihat `ANGKA-NASKAH.md`): korpus Scopus
+6. (SELESAI 2 Oktober 2026) `AGENTS.md` bagian 3, `PROTOKOL.md`, dan `CATATAN-FORMAT-CONTOH.md` sudah diperbarui; yang lama: dengan angka baru (lihat `ANGKA-NASKAH.md`): korpus Scopus
    1.000 (bukan 971), C1 195, C2 238, C3 176, C4 49, C5 134, R 120, T 88, ditambah 1 rekaman metode lain; `references6.bib`
    1.061 rekord.
 

@@ -52,7 +52,7 @@ Padanan gambar:
   metode dan jumlah rekaman, cara pengodean, temuan, kontribusi. `main6` sudah
   mengikuti urutan ini.
 - Pendahuluan ditutup dengan daftar bernomor (contoh: keterbatasan tinjauan
-  terdahulu dan kontribusi; `main6`: RQ1–RQ4 dan kontribusi).
+  terdahulu dan kontribusi; `main6`: pertanyaan (1)–(4), kontribusi, dan peta jalan seksi).
 - Bagian metode dipecah menjadi subbagian pendek: sumber data, strategi
   pencarian, kriteria, seleksi, ekstraksi, kerangka analisis, sintesis.
 - Setiap gambar dan tabel dirujuk di teks lalu ditafsirkan dengan angka; judul
@@ -61,7 +61,7 @@ Padanan gambar:
   inklusi. Kalimat yang sama dipakai untuk F08.
 - Angka KPI antarkajian dinyatakan sebagai rentang representatif, bukan
   pembanding terkendali.
-- Diskusi menutup dengan celah riset dan agenda bernomor (`main6`: G1–G5).
+- Diskusi menutup dengan celah riset dan agenda bernomor (`main6`: celah (i)–(v), jawaban empat pertanyaan, dan set pelaporan minimum).
 
 ## 4. Yang belum diterapkan dan memerlukan keputusan penulis
 
@@ -69,3 +69,11 @@ Contoh memuat bagian penutup berikut yang isinya hanya dapat diisi penulis:
 *CRediT authorship contribution statement*, *Funding*, *Declaration of competing
 interest*, dan *Acknowledgment*. `main6` baru memuat *Data availability* dan
 *Declaration of generative AI use*.
+
+## Pembaruan 2 Oktober 2026
+
+Spesifikasi penulisan ulang dari telaah gaya (`CATATAN-GAYA-TULIS-CONTOH.md`) sudah diterapkan pada `main6`: kode M0–M5, RQ, G, dan Q
+tidak lagi muncul di teks (kunci Q tersisa hanya sebagai penghubung tabel kueri dan Lampiran B); setiap seksi dibuka dan
+ditutup dengan kalimat penunjuk; kutipan memakai `\citet` dan `\citep`; tabel memuat catatan dan singkatan; Lampiran
+bernomor A1; angka korpus berupa makro (`main6-angka.tex`). Belum diterapkan: pemisahan kolom hasil pada tabel
+perbandingan menjadi kolom metrik, dan tabel silang akuisisi x mekanisme.

@@ -36,29 +36,30 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Rekaman unik | 5.889 |
 | Dikeluarkan menurut tipe dokumen (front matter prosiding, erratum, catatan, editorial, surat, ditarik) | 166 |
 | Judul disaring | 5.723 |
-| Dikeluarkan pada tahap judul | 4.599 |
-| Dinilai kelayakannya | 1.124 |
-| — dengan abstrak | 870 |
+| Dikeluarkan pada tahap judul | 4.580 |
+| Dinilai kelayakannya | 1.143 |
+| — dengan abstrak | 889 |
 | — hanya judul, sumber, dan ringkasan TLDR | 254 |
-| Dikeluarkan pada tahap kelayakan | 153 |
-| Masuk peta | 971 |
+| Dikeluarkan pada tahap kelayakan | 143 |
+| Masuk peta (Scopus) | 1.000 |
+| Rekaman metode lain (Liu dan Ampatzidis 2026) | 1 |
 
-Alasan eksklusi tahap kelayakan: E1 bukan buah pada tanaman (21), E2 hanya
-pascapanen atau laboratorium (20), E3 model hasil tanpa deteksi tingkat buah (26),
-E4 hanya pemetikan atau manipulasi (11), E5 deteksi tanpa pencacahan atau evaluasi
-lain (71), E6 sensor non-citra (3), E7 bahasa selain Inggris (1).
+Alasan eksklusi tahap kelayakan: E1 bukan buah pada tanaman (20), E2 hanya
+pascapanen atau laboratorium (18), E3 model hasil tanpa deteksi tingkat buah (27),
+E4 hanya pemetikan atau manipulasi (9), E5 deteksi tanpa pencacahan atau evaluasi
+lain (65), E6 sensor non-citra (3), E7 bahasa selain Inggris (1).
 
 ## 4. Kode inklusi
 
 | Kode | Arti | Jumlah |
 |---|---|---:|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 187 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 231 |
-| C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 170 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 195 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 238 |
+| C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 176 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 49 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 129 |
-| R | Tinjauan terdahulu | 119 |
-| T | Metode yang dapat dipindahkan dari luar pertanian | 86 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 134 |
+| R | Tinjauan terdahulu | 120 |
+| T | Metode yang dapat dipindahkan dari luar pertanian | 88 |
 
 ## 5. Pengodean
 
@@ -84,6 +85,14 @@ lain (71), E6 sensor non-citra (3), E7 bahasa selain Inggris (1).
 - Penyaringan dan pengodean dilakukan satu peninjau dengan bantuan model bahasa
   besar, tanpa peninjau kedua yang independen. Berkas keputusan dirilis agar dapat
   diaudit.
+- Putaran kedua (1–2 Oktober 2026) dikerjakan model bahasa besar yang sama dalam sesi
+  terpisah tanpa melihat putaran pertama: 510 rekaman kunci (C1, C3, eksklusi tahap
+  kelayakan), sampel buta 300 judul dan 100 abstrak, ajudikasi rekaman yang berbeda,
+  uji sanggah untuk setiap perubahan kelompok, dan pembacaan ulang 1.325 eksklusi
+  tahap judul dari kueri Q1 dan Q3 (19 dimasukkan kembali). Ini mengukur konsistensi
+  prosedur, bukan penilaian independen oleh orang kedua. Rincian: `verifikasi/ai2/`,
+  `verifikasi/log_perubahan.csv`, `verifikasi/SERAH-TERIMA.md`. Eksklusi judul dari
+  kueri selain Q1 dan Q3 belum dibaca ulang.
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
-- PDF akses terbuka diperoleh untuk 331 dari 971 kajian; sisanya tercantum di
+- PDF akses terbuka diperoleh untuk 330 dari 1.000 kajian; sisanya tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.
