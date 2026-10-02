@@ -26,8 +26,8 @@ Repo ini menyatukan dua jalur riset tentang tandan buah segar (TBS) kelapa sawit
 
 | Jalur | Status |
 |---|---|
-| Naskah | Kandidat aktif **`main6`** — *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories* (Muttaqin & Indriani; IEEEtran). 22 halaman, 12 seksi + 2 lampiran (A: matriks bukti 187 kajian C1, B: string kueri Scopus), 7 gambar, 5 tabel isi. Ditulis ulang dari awal pada 28 September 2026 mengikuti `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md`. `main5v3` (*design-space review* berbasis kasus, 27 September 2026) berstatus **usang** (*deprecated*) dan diarsipkan; jangan disunting maupun dirujuk. Hanya `main6` yang aktif. |
-| Korpus `main6` | Scopus Search API, 28 September 2026 (UTC), 13 eksekusi kueri (Q1–Q7, Q8a–Q8e, Q9): 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.124 dinilai kelayakannya → **971 masuk peta** (2012–2026). Kode: C1 187 · C2 231 · C3 170 · C4 49 · C5 129 · R 119 · T 86. Mekanisme asosiasi M0–M5. PDF akses terbuka 331 dari 971. `references6.bib` 1.031 rekord, 271 dikutip. Protokol: `literature/scopus-2026-09/PROTOKOL.md`. |
+| Naskah | Kandidat aktif **`main6`** — *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories* (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun). 27 halaman, 12 seksi + 2 lampiran (A: matriks bukti 187 kajian C1, B: string kueri Scopus), 10 gambar, 5 tabel isi. Ditulis ulang dari awal pada 28 September 2026 mengikuti `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md`; format diubah dari IEEEtran ke tata letak artikel Elsevier pada 1 Oktober 2026 mengikuti `literature/example/autonomousnavigation.pdf` (catatan: `manuscript/guides/CATATAN-FORMAT-CONTOH.md`). `main5v3` (*design-space review* berbasis kasus, 27 September 2026) berstatus **usang** (*deprecated*) dan diarsipkan; jangan disunting maupun dirujuk. Hanya `main6` yang aktif. |
+| Korpus `main6` | Scopus Search API, 28 September 2026 (UTC), 13 eksekusi kueri (Q1–Q7, Q8a–Q8e, Q9): 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.124 dinilai kelayakannya → **981 masuk peta** (2012–2026) setelah putaran kedua penyaringan oleh model (1 Oktober 2026; belum diperiksa manusia), ditambah 1 rekaman metode lain (Liu dan Ampatzidis). Kode: C1 189 · C2 234 · C3 170 · C4 49 · C5 133 · R 120 · T 86. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md` (dihitung `tools/scopus/angka_naskah.py`; naskah memakainya lewat makro `main6-angka.tex`). **Status verifikasi dan sisa pekerjaan: `literature/scopus-2026-09/verifikasi/SERAH-TERIMA.md` (baca dahulu).** Protokol: `literature/scopus-2026-09/PROTOKOL.md`. |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC, protokol `pycocotools` tunggal). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed **0,0049**. |
 | Depth sensor (E-022…E-033b) | Pipeline reproyeksi tervalidasi, tetapi **tidak ada klaim peningkatan deteksi yang sah**. YOLO26n: depth merugikan (E-027). Titik fusi (E-032): tidak konklusif, `mid` hanya indikasi. |
@@ -47,8 +47,8 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah), `literature/scopus-202
 | `literature/synthesis.md` | Sintesis lintas makalah (14 klaster tema) |
 | `literature/search/` | Pencarian reprodusibel: `PROTOCOL.md`, query Q1–Q7, ekspor mentah, hasil deduplikasi/screening, angka PRISMA |
 | `literature/references/` | Bahan luar: PDF baseline SawitMVC (DiB 2026), revisi dosen `revisi-dosen-2026-07-23/` |
-| `manuscript/source/main6.tex` + `main6-body.tex` | **Naskah kandidat aktif** (IEEEtran, `references6.bib`); lampiran `main6-appendix-c1.tex` dan `main6-appendix-queries.tex` dibuat skrip |
-| `manuscript/figures/main6/` | Gambar F01–F07 `main6` (PDF vektor + PNG) dari `tools/scopus/gambar_tinjauan.py`; `interaktif/simulator-sensus-tandan.html` |
+| `manuscript/source/main6.tex` + `main6-body.tex` | **Naskah kandidat aktif** (`cas-dc` Elsevier, `references6.bib`); lampiran `main6-appendix-c1.tex` dan `main6-appendix-queries.tex` dibuat skrip |
+| `manuscript/figures/main6/` | Gambar F01–F10 `main6` (PDF vektor + PNG) dari `tools/scopus/gambar_tinjauan.py`; `interaktif/simulator-sensus-tandan.html` |
 | `manuscript/source/main5v3.tex` + `main5v3-body.tex` | **Usang** (*deprecated*; `references3.bib`); arsip, jangan disunting |
 | `manuscript/source/main5v2.tex` + `main5v2-body.tex` | Usang; arsip (ringkasan `RINGKASAN-MAIN5V2.md`), jangan disunting |
 | `manuscript/source/main5.tex` + `main5-body.tex` | Usang; arsip baseline revisi sebelumnya, jangan diubah |
@@ -85,7 +85,7 @@ cd manuscript/source
 tectonic main6.tex              # kandidat aktif; latexmk/pdflatex tidak tersedia
 
 python3 tools/scopus/kode_bukti.py       # matriks bukti dari keputusan + kode manual
-python3 tools/scopus/gambar_tinjauan.py  # gambar F01–F07 main6
+python3 tools/scopus/gambar_tinjauan.py  # gambar F01–F10 main6
 python3 tools/scopus/tabel_lampiran.py   # Lampiran A (matriks C1)
 python3 tools/scopus/lampiran_kueri.py   # Lampiran B (string kueri)
 ```
