@@ -94,12 +94,12 @@ salah satu kode inklusi (bagian 3.3)? Bila ragu, pilih lanjut.
 
 | Nilai | Arti |
 |---|---|
-| `L` | Lanjut ke abstrak |
-| `L-C1` | Lanjut, dan judul menunjukkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) |
-| `L-C3` | Lanjut, dan judul menyangkut pencitraan TBS kelapa sawit |
-| `X` | Eksklusi pada tahap judul |
+| `Yes` (atau `L`) | Lanjut ke abstrak |
+| `Yes-C1` (atau `L-C1`) | Lanjut, dan judul menunjukkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) |
+| `Yes-C3` (atau `L-C3`) | Lanjut, dan judul menyangkut pencitraan TBS kelapa sawit |
+| `No` (atau `X`) | Eksklusi pada tahap judul |
 
-`L-C1` dan `L-C3` dihitung sebagai "lanjut" dalam kappa. Keduanya dipakai
+`Yes-C1` dan `Yes-C3` dihitung sebagai "lanjut" dalam kappa. Keduanya dipakai
 untuk aturan lulus (bagian 5), jadi tandai bila judul jelas mengarah ke C1 atau C3.
 
 ### 3.2 Tahap kelayakan (`sampel_abstrak`)

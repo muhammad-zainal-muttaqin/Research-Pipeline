@@ -115,7 +115,8 @@ def pilih_sumber(csv_path, sumber):
 # ------------------------------------------------------------- normalisasi
 def norm_judul(v):
     v = re.sub(r"[\s_]+", "-", (v or "").strip().upper())
-    v = {"LANJUT": "L", "I": "L", "EKSKLUSI": "X", "E": "X"}.get(v, v)
+    v = {"LANJUT": "L", "I": "L", "EKSKLUSI": "X", "E": "X", "YES": "L", "Y": "L", "YA": "L",
+         "NO": "X", "N": "X", "TIDAK": "X", "YES-C1": "L-C1", "YES-C3": "L-C3"}.get(v, v)
     v = re.sub(r"^L-?(C[13])$", r"L-\1", v)
     return v
 

@@ -56,7 +56,7 @@ POP_ABSTRAK_DIHARAPKAN = 1124
 KODE = re.compile(r"^(\d+)\s+(C[1-5]|T|R|M|X)(?:\s+(E\d))?(.*)$")
 LANJUT_JUDUL = {"I", "M", "R", "T"}          # I, M (ragu), R, T -> lanjut ke abstrak
 
-PILIHAN_JUDUL = ["L", "L-C1", "L-C3", "X"]
+PILIHAN_JUDUL = ["Yes", "Yes-C1", "Yes-C3", "No"]
 PILIHAN_ABSTRAK = ["C1", "C2", "C3", "C4", "C5", "T", "R",
                    "X-E1", "X-E2", "X-E3", "X-E4", "X-E5", "X-E6", "X-E7"]
 
@@ -216,10 +216,10 @@ def tulis_xlsx(path, kolom, baris, pilihan, tahap, benih):
     p.append(["Cek 1", f"Sampel buta tahap {tahap}, benih {benih}. Kolom keputusan_ai "
                         "sengaja kosong. Lihat verifikasi/README.md."])
     if tahap == "judul":
-        teks = [("L", "Lanjut ke abstrak (judul mungkin relevan)"),
-                ("L-C1", "Lanjut; judul menunjukkan beberapa pengamatan buah yang sama (video, multipandang, pindai ulang)"),
-                ("L-C3", "Lanjut; judul menyangkut pencitraan TBS kelapa sawit"),
-                ("X", "Eksklusi pada tahap judul")]
+        teks = [("Yes", "Lanjut ke abstrak (judul mungkin relevan; bila ragu, pilih Yes)"),
+                ("Yes-C1", "Lanjut; judul menunjukkan beberapa pengamatan buah yang sama (video, multipandang, pindai ulang)"),
+                ("Yes-C3", "Lanjut; judul menyangkut pencitraan TBS kelapa sawit"),
+                ("No", "Eksklusi pada tahap judul")]
     else:
         teks = [("C1", "Menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang)"),
                 ("C2", "Pencacahan atau estimasi hasil dari satu pandang"),
