@@ -32,12 +32,15 @@ Jangan menyunting tangan: `main6-angka.tex`, `main6-appendix-*.tex`, `references
 
 ## 2. Sisa pekerjaan, berurutan menurut prioritas
 
-1. **Pemeriksaan ulang eksklusi tahap judul Q1 dan Q3 (1.325 rekaman).** Sampel buta menemukan 1 kajian C1 dan 1 C3 yang
-   dikeluarkan dari judul; rencana mensyaratkan pemeriksaan ulang semua yang sejenis. Abstrak sudah diambil
-   (`ai2/enrich_ulang_judul.jsonl`). Langkah (`tools/scopus/verifikasi_ai2_judul.py`, petunjuk di kepala berkas):
-   `siapkan` -> agen menulis `ai2/hasil/u_NNN.json` (format sama dengan paket `t_`) -> `sanggah` -> agen menulis
-   `ai2/hasil/ref_ru_NNN.json` -> `terapkan` -> jalankan perintah bangun ulang -> perbarui angka di naskah (otomatis lewat makro;
-   periksa kalimat bagian Screening dan Limitations yang menyebut hasil pemeriksaan ulang) -> commit.
+1. **Pemeriksaan ulang eksklusi tahap judul Q1 dan Q3: SELESAI dan diterapkan** (1.325 rekaman, 19 dimasukkan kembali setelah uji sanggah:
+   C1 6, C2 4, C3 6, C5 1, T 2; 12 usul disanggah). Laporan: `ai2/ULANG-JUDUL.md`. **Urutan penerapan harus tetap:**
+   `verifikasi_ai2_terapkan.py` lebih dulu, lalu `verifikasi_ai2_judul.py terapkan` (yang pertama membangun ulang berkas kode dari salinan
+   putaran 1 sehingga yang kedua harus menyusul; keduanya idempoten).
+   **Yang masih perlu dikerjakan:** eksklusi tahap judul dari kueri lain (Q2, Q4-Q9; sekitar 3.300 rekaman) belum diperiksa ulang;
+   gunakan skrip yang sama dengan mengubah `KUERI_INTI` bila ingin diperluas. Angka naskah terkini: korpus Scopus 1.000
+   (C1 195, C2 238, C3 176, C4 49, C5 134, R 120, T 88) + 1 metode lain; sebagian teks naskah yang menyebut angka tetap
+   (bukan makro) perlu dicek ulang terhadap `ANGKA-NASKAH.md`: "14 comparisons" pada tabel assoc, "five of the eleven" reviews,
+   daftar kajian per aliran di Seksi geometri, "ten candidates examined", kalimat tentang apel, stroberi, dan paprika pada depth.
 2. **Penulisan ulang gaya** mengikuti `manuscript/guides/CATATAN-GAYA-TULIS-CONTOH.md`: sudah diterapkan pada seluruh
    bagian; yang belum: pembagian paragraf panjang lain, tabel perbandingan memisahkan kolom hasil, ringkasan oil-palm per
    subseksi. Aturan: jangan memperpanjang kalimat; satu kajian per kalimat; kutip dengan `\citet`.
@@ -50,8 +53,8 @@ Jangan menyunting tangan: `main6-angka.tex`, `main6-appendix-*.tex`, `references
    tahun sitasi `liu2026shaping` (2026 atau 2027); batas kata abstrak jurnal; kebijakan AI jurnal;
    ejaan Oxford -ize dipertahankan; `PERTANYAAN-UNTUK-FATMA.md`.
 6. Perbarui `AGENTS.md` bagian 3 dan `PROTOKOL.md` dengan angka baru (lihat `ANGKA-NASKAH.md`): korpus Scopus
-   981 (bukan 971), C1 189, C2 234, C3 170, C4 49, C5 133, R 120, T 86, ditambah 1 rekaman metode lain; `references6.bib`
-   1.042 rekord.
+   1.000 (bukan 971), C1 195, C2 238, C3 176, C4 49, C5 134, R 120, T 88, ditambah 1 rekaman metode lain; `references6.bib`
+   1.061 rekord.
 
 ## 3. Aturan agar tidak merusak data
 
