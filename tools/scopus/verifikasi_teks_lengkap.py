@@ -128,7 +128,7 @@ JALUR_PENULIS = "penulis"
 
 
 def cites(teks):
-    return [k.strip() for m in re.findall(r"\\cite\{([^}]*)\}", teks)
+    return [k.strip() for m in re.findall(r"\\cite[a-zA-Z]*\*?(?:\[[^\]]*\])*\{([^}]*)\}", teks)
             for k in m.split(",") if k.strip()]
 
 
