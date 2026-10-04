@@ -6,7 +6,7 @@ meminta pemeriksaan manusia. Skrip ini menyiapkan dan menggabungkan pemeriksaan
 putaran kedua yang dikerjakan model bahasa besar atas permintaan penulis pertama
 (1 Oktober 2026), supaya penulis kemudian memeriksa hasilnya. Hasil AI-2 TIDAK
 PERNAH ditulis ke kolom manusia (`keputusan_manusia`, `konfirmasi_*`, `final_*`,
-`benar`, `oleh`) di lembar Cek 1-6; semuanya disimpan di verifikasi/ai2/.
+`benar`, `oleh`) di lembar Cek 1-6; semuanya disimpan di verifikasi/hasil-kerja-ai/.
 
   python tools/scopus/verifikasi_ai2.py siapkan     # paket rekaman buta di ai2/berkas/
   python tools/scopus/verifikasi_ai2.py periksa s_000.json   # validasi satu berkas hasil
@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parents[2]
 KORPUS = ROOT / "literature/scopus-2026-09"
 TOPIK = KORPUS / "topik"
 VER = KORPUS / "verifikasi"
-AI2 = VER / "ai2"
+AI2 = VER / "hasil-kerja-ai"
 BERKAS = AI2 / "berkas"
 HASIL = AI2 / "hasil"
 BENIH = 20261001
@@ -130,12 +130,12 @@ def siapkan():
     print(f"paket s: {len(rekaman)} rekaman dalam {len(paket)} paket; dasar bukti {dict(c)}")
 
     # --- paket j dan a: sampel buta Cek 1
-    sj = baca_csv(VER / "sampel_judul.csv")
+    sj = baca_csv(VER / "cek-1-sampel-buta" / "sampel_judul.csv")
     for i in range(0, len(sj), 50):
         tulis_json(BERKAS / f"j_{i // 50:02d}.json",
                    [{"idx": int(r["idx"]), "judul": r["judul"], "tahun": r["tahun"], "sumber": r["sumber"]}
                     for r in sj[i:i + 50]])
-    sa = baca_csv(VER / "sampel_abstrak.csv")
+    sa = baca_csv(VER / "cek-1-sampel-buta" / "sampel_abstrak.csv")
     for i in range(0, len(sa), 20):
         tulis_json(BERKAS / f"a_{i // 20:02d}.json",
                    [{"idx": int(r["idx"]), "judul": r["judul"], "tahun": r["tahun"], "sumber": r["sumber"],
@@ -152,7 +152,7 @@ def siapkan():
         for r in baca_csv(p_met):
             met[r.get("key", "")] = r
     klaim = defaultdict(list)
-    for r in baca_csv(VER / "cek_fakta.csv"):
+    for r in baca_csv(VER / "cek-6-cek-fakta" / "cek_fakta.csv"):
         if r["key"] and r["prioritas"] not in ("S", "lama"):
             klaim[r["key"]].append({"id": r["id"], "bagian": r["bagian"], "jenis": r["jenis"],
                                     "kalimat": r["kalimat"]})

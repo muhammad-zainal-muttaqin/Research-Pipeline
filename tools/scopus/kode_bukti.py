@@ -8,7 +8,7 @@ bukti/mekanisme_C1.txt; berkas itu menimpa kode otomatis.
 Keluaran: bukti/matriks_bukti.csv (satu baris per kajian yang lolos).
 
 Kolom verifikasi teks lengkap (Pemeriksaan 5, lihat
-literature/scopus-2026-09/verifikasi/KODE-ULANG.md): mekanisme_C1.txt boleh
+literature/scopus-2026-09/verifikasi/cek-5-kode-ulang/KODE-ULANG.md): mekanisme_C1.txt boleh
 memuat enam kolom TAB tambahan yang opsional sesudah hasil_ringkas, yaitu
 sumber_kode, halaman, referensi_hitung, tingkat_metrik, cara_kelas, berubah.
 Keenam kolom itu ditambahkan di ujung kanan matriks_bukti.csv hanya bila

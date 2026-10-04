@@ -2,8 +2,8 @@
 """Cek 5: pengodean ulang kajian inti C1 dari teks lengkap.
 
 Membuat dan memelihara lembar kerja peninjau
-literature/scopus-2026-09/verifikasi/kode_ulang_C1.csv. Prosedur lengkap ada di
-literature/scopus-2026-09/verifikasi/KODE-ULANG.md.
+literature/scopus-2026-09/verifikasi/cek-5-kode-ulang/kode_ulang_C1.csv. Prosedur lengkap ada di
+literature/scopus-2026-09/verifikasi/cek-5-kode-ulang/KODE-ULANG.md.
 
 Mode:
   (tanpa opsi)        buat atau segarkan lembar. Kolom final_* dan
@@ -20,7 +20,7 @@ Mode:
                       berubah di verifikasi/log_perubahan.csv. --kering hanya
                       menampilkan rencana perubahan.
   --sampel-fatma      tarik 20 kajian C1 acak (benih tetap) ke
-                      verifikasi/sampel_fatma_C1.csv tanpa kode peninjau/model.
+                      verifikasi/cek-5-kode-ulang/sampel_fatma_C1.csv tanpa kode peninjau/model.
   --banding-fatma     bandingkan isian Fatma dengan final_* peninjau.
 
   python3 tools/scopus/verifikasi_kode_ulang.py
@@ -41,9 +41,9 @@ MAT = KORPUS / "topik/bukti/matriks_bukti.csv"
 MANUAL = KORPUS / "topik/bukti/mekanisme_C1.txt"
 BODY = ROOT / "manuscript/source/main6-body.tex"
 VER = KORPUS / "verifikasi"
-LEMBAR = VER / "kode_ulang_C1.csv"
+LEMBAR = VER / "cek-5-kode-ulang" / "kode_ulang_C1.csv"
 LOG = VER / "log_perubahan.csv"
-SAMPEL = VER / "sampel_fatma_C1.csv"
+SAMPEL = VER / "cek-5-kode-ulang" / "sampel_fatma_C1.csv"
 LOG_KEPALA = ["tanggal", "berkas", "idx_atau_key", "kolom", "nilai_lama",
               "nilai_baru", "alasan", "oleh"]
 

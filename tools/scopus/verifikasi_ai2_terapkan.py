@@ -17,8 +17,8 @@ Aturan penerapan:
      (model bahasa besar, putaran kedua; belum diperiksa manusia).
 
 Berkas yang ditulis: topik/penyaringan/abstrak_*.txt, topik/bukti/mekanisme_C1.txt,
-topik/bukti/kode_C3.txt, verifikasi/log_perubahan.csv, verifikasi/ai2/PERUBAHAN-AI2.md,
-verifikasi/ai2/keputusan_final.csv. Skrip idempoten: menjalankannya dua kali tidak menulis
+topik/bukti/kode_C3.txt, verifikasi/log_perubahan.csv, verifikasi/hasil-kerja-ai/PERUBAHAN-AI2.md,
+verifikasi/hasil-kerja-ai/keputusan_final.csv. Skrip idempoten: menjalankannya dua kali tidak menulis
 perubahan untuk kedua kalinya.
 """
 import csv

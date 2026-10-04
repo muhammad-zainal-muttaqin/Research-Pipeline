@@ -36,7 +36,7 @@ MAIN = SRC / "main6.tex"
 BIB = SRC / "references6.bib"
 PDF_DIR = KORPUS / "pdf"
 TEKS_DIR = KORPUS / "teks"
-OUT = KORPUS / "verifikasi" / "cek_fakta.csv"
+OUT = KORPUS / "verifikasi" / "cek-6-cek-fakta" / "cek_fakta.csv"
 
 KOLOM = ["id", "prioritas", "bagian", "jenis", "kalimat", "key", "kajian",
          "pdf_ada", "teks_lokal", "halaman", "benar", "perbaikan", "catatan",

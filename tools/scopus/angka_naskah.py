@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 KORPUS = ROOT / "literature/scopus-2026-09"
 TOPIK = KORPUS / "topik"
-AI2 = KORPUS / "verifikasi/ai2"
+AI2 = KORPUS / "verifikasi/hasil-kerja-ai"
 TEX = ROOT / "manuscript/source/main6-angka.tex"
 MEK = ["M0", "M1", "M2", "M3", "M4", "M5"]
 NAMA = {"M0": "no association", "M1": "statistical correction", "M2": "appearance matching",

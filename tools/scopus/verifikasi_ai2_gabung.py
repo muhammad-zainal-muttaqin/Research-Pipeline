@@ -3,7 +3,7 @@
 
   python tools/scopus/verifikasi_ai2_gabung.py
 
-Keluaran di literature/scopus-2026-09/verifikasi/ai2/:
+Keluaran di literature/scopus-2026-09/verifikasi/hasil-kerja-ai/:
   banding_kelayakan.csv   510 rekaman C1/C3/X: keputusan dan kode kedua putaran, tanda beda
   banding_sampel.csv      sampel buta Cek 1 (tahap judul dan tahap kelayakan)
   cek_fakta_ai2.csv       penilaian klaim naskah terhadap sumbernya
@@ -241,7 +241,7 @@ def banding_sampel(md):
     md.append("## 2. Sampel buta Cek 1 (putaran kedua oleh model, bukan manusia)\n")
     md.append("Angka di bawah adalah kesepakatan antara dua putaran model. Angka ini **bukan** "
               "kesepakatan manusia-model yang diminta Cek 1 dan tidak boleh ditulis di `kesepakatan.md`.\n")
-    kj = {int(r["idx"]): r for r in baca_csv(VER / ".kunci/kunci_judul.csv")}
+    kj = {int(r["idx"]): r for r in baca_csv(VER / "cek-1-sampel-buta/.kunci/kunci_judul.csv")}
     hj = {x["idx"]: x for x in muat_hasil("j")}
     ps = []
     for idx, h in sorted(hj.items()):
@@ -257,7 +257,7 @@ def banding_sampel(md):
               f"AI-1 lanjut tetapi AI-2 eksklusi: {sum(1 for a, c in ps if a == 'L' and c == 'X')}; "
               f"kritis (AI-1 eksklusi, AI-2 menandai C1 atau C3): "
               f"**{sum(1 for b in baris if b['tahap'] == 'judul' and b['kritis'])}**.\n")
-    ka = {int(r["idx"]): r for r in baca_csv(VER / ".kunci/kunci_abstrak.csv")}
+    ka = {int(r["idx"]): r for r in baca_csv(VER / "cek-1-sampel-buta/.kunci/kunci_abstrak.csv")}
     ha = {x["idx"]: x for x in muat_hasil("a")}
     pf, p8, pb = [], [], []
     for idx, h in sorted(ha.items()):
@@ -286,7 +286,7 @@ def gabung_fakta(md):
     for b in sorted(BERKAS.glob("f_*.json")):
         for x in json.loads(b.read_text(encoding="utf-8")):
             asal[x["key"]] = x
-    lembar = {r["id"]: r for r in baca_csv(VER / "cek_fakta.csv")}
+    lembar = {r["id"]: r for r in baca_csv(VER / "cek-6-cek-fakta" / "cek_fakta.csv")}
     baris, vf = [], defaultdict(list)
     for h in muat_hasil("f"):
         for k in h.get("klaim", []):

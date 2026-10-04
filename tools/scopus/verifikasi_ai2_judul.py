@@ -13,8 +13,8 @@ multi-pengamatan (Q1) atau kueri kelapa sawit (Q3).
   python tools/scopus/verifikasi_ai2_judul.py terapkan [--kering]
 
 Abstrak diambil dengan:
-  python tools/scopus/enrich_records.py --records literature/scopus-2026-09/verifikasi/ai2/ulang_judul.csv \
-      --cache literature/scopus-2026-09/verifikasi/ai2/enrich_ulang_judul.jsonl
+  python tools/scopus/enrich_records.py --records literature/scopus-2026-09/verifikasi/hasil-kerja-ai/ulang_judul.csv \
+      --cache literature/scopus-2026-09/verifikasi/hasil-kerja-ai/enrich_ulang_judul.jsonl
 
 `terapkan` memasukkan rekaman yang usul masuknya bertahan terhadap penyanggah:
 tahap_judul.csv (X -> I), kandidat_abstrak.csv, enrich.jsonl, penyaringan/abstrak_U00.txt,

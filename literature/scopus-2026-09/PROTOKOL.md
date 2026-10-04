@@ -90,7 +90,7 @@ lain (65), E6 sensor non-citra (3), E7 bahasa selain Inggris (1).
   kelayakan), sampel buta 300 judul dan 100 abstrak, ajudikasi rekaman yang berbeda,
   uji sanggah untuk setiap perubahan kelompok, dan pembacaan ulang 1.325 eksklusi
   tahap judul dari kueri Q1 dan Q3 (19 dimasukkan kembali). Ini mengukur konsistensi
-  prosedur, bukan penilaian independen oleh orang kedua. Rincian: `verifikasi/ai2/`,
+  prosedur, bukan penilaian independen oleh orang kedua. Rincian: `verifikasi/hasil-kerja-ai/`,
   `verifikasi/log_perubahan.csv`, `verifikasi/SERAH-TERIMA.md`. Eksklusi judul dari
   kueri selain Q1 dan Q3 belum dibaca ulang.
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.

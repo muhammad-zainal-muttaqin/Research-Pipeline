@@ -18,8 +18,8 @@ model untuk mempercepat pencarian di PDF; jangan disalin tanpa membuka PDF.
 
 | Berkas | Isi | Siapa yang mengisi |
 |---|---|---|
-| `verifikasi/kode_ulang_C1.csv` | Lembar kerja, satu baris per kajian C1 | skrip (kolom identitas, `kode_ai_*`, `draf_ai_*`, `catatan_skrip`) dan peninjau (`final_*`, `catatan_peninjau`) |
-| `verifikasi/sampel_fatma_C1.csv` | 20 kajian C1 acak untuk cek buta Fatma | skrip (identitas) dan Fatma (`fatma_*`, `catatan_fatma`) |
+| `verifikasi/cek-5-kode-ulang/kode_ulang_C1.csv` | Lembar kerja, satu baris per kajian C1 | skrip (kolom identitas, `kode_ai_*`, `draf_ai_*`, `catatan_skrip`) dan peninjau (`final_*`, `catatan_peninjau`) |
+| `verifikasi/cek-5-kode-ulang/sampel_fatma_C1.csv` | 20 kajian C1 acak untuk cek buta Fatma | skrip (identitas) dan Fatma (`fatma_*`, `catatan_fatma`) |
 | `verifikasi/log_perubahan.csv` | Log setiap sel yang berubah (dipakai bersama Cek 2) | skrip `--terapkan` |
 | `tools/scopus/verifikasi_kode_ulang.py` | Pembuat lembar, pemindah nilai final, penarik sampel | — |
 | `topik/bukti/mekanisme_C1.txt` | Sumber kode C1 (4 kolom lama + 6 kolom verifikasi opsional) | hanya lewat `--terapkan` |
@@ -176,7 +176,7 @@ seluruh 187 baris.
 
 ## Cek buta Fatma
 
-`verifikasi/sampel_fatma_C1.csv` berisi 20 kajian C1 yang ditarik acak dengan
+`verifikasi/cek-5-kode-ulang/sampel_fatma_C1.csv` berisi 20 kajian C1 yang ditarik acak dengan
 benih tetap 20261106 dari seluruh 187 C1, **tanpa** kode model maupun kode
 peninjau. Sampel sudah ditarik sekarang agar tidak dipengaruhi urutan kerja;
 jangan ditarik ulang (`--timpa` menghapus isian Fatma).

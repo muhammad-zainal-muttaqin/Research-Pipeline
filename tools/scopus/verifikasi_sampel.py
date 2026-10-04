@@ -9,10 +9,10 @@ Sampel ditarik dengan benih (*seed*) tetap sehingga dapat diulang persis:
   ``kandidat_abstrak.csv``).
 
 Lembar isian bersifat buta: kolom ``keputusan_ai`` sengaja dikosongkan.
-Keputusan AI disimpan terpisah di ``verifikasi/.kunci/`` dan baru digabung oleh
+Keputusan AI disimpan terpisah di ``verifikasi/cek-1-sampel-buta/.kunci/`` dan baru digabung oleh
 ``verifikasi_kappa.py`` setelah peninjau manusia selesai mengisi.
 
-Keluaran (folder ``literature/scopus-2026-09/verifikasi/``):
+Keluaran (folder ``literature/scopus-2026-09/verifikasi/cek-1-sampel-buta/``):
     sampel_judul.csv, sampel_abstrak.csv       lembar isian buta (CSV, UTF-8 BOM)
     sampel_judul.xlsx, sampel_abstrak.xlsx     versi Excel dengan daftar pilihan
     .kunci/kunci_judul.csv, .kunci/kunci_abstrak.csv   keputusan AI per idx
@@ -44,7 +44,8 @@ ROOT = Path(__file__).resolve().parents[2]
 KORPUS = ROOT / "literature/scopus-2026-09"
 TOPIK = KORPUS / "topik"
 PEN = TOPIK / "penyaringan"
-VER = KORPUS / "verifikasi"
+VER = KORPUS / "verifikasi" / "cek-1-sampel-buta"
+PUTARAN_1 = KORPUS / "verifikasi" / "hasil-kerja-ai" / "putaran_1"
 KUNCI = VER / ".kunci"
 
 BENIH_BAWAAN = 20260929
@@ -181,7 +182,7 @@ def abstrak_bersarang():
         for line in f:
             e = json.loads(line)
             enr[e["eid"]] = e
-    dec, _ = keputusan_abstrak(VER / "ai2" / "putaran_1")
+    dec, _ = keputusan_abstrak(PUTARAN_1)
     pop = {}
     for i in pilih:
         if i not in kand or i not in dec:
@@ -245,7 +246,7 @@ def tulis_xlsx(path, kolom, baris, pilihan, tahap, benih):
     p.column_dimensions["A"].width = 14
     p.column_dimensions["B"].width = 100
     p.append(["Cek 1", f"Sampel buta tahap {tahap}, benih {benih}. Kolom keputusan_ai "
-                        "sengaja kosong. Lihat verifikasi/README.md."])
+                        "sengaja kosong. Lihat verifikasi/cek-1-sampel-buta/PANDUAN.md."])
     if tahap == "judul":
         teks = [("Yes", "Lanjut ke abstrak (judul mungkin relevan; bila ragu, pilih Yes)"),
                 ("Yes-C1", "Lanjut; judul menunjukkan beberapa pengamatan buah yang sama (video, multipandang, pindai ulang)"),

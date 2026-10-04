@@ -54,7 +54,7 @@ KORPUS = ROOT / "literature/scopus-2026-09"
 TOPIK = KORPUS / "topik"
 PEN = TOPIK / "penyaringan"
 BUKTI = TOPIK / "bukti"
-OUT = KORPUS / "verifikasi"
+OUT = KORPUS / "verifikasi" / "cek-2-cek-tangan"
 
 KODE = re.compile(r"^(\d+)\s+(C[1-5]|T|R|M|X)(?:\s+(E\d))?(.*)$")
 RENCANA = {"C1": 187, "C3": 170, "X": 153, "C1_judul": 42, "C3_judul": 35}
@@ -590,7 +590,7 @@ def main():
             print(f"Gagal menulis {nama}: {e}. Tutup berkas di Excel lalu jalankan ulang.", file=sys.stderr)
             sys.exit(1)
 
-    log = OUT / "log_perubahan.csv"
+    log = OUT.parent / "log_perubahan.csv"
     try:
         with open(log, "x", newline="", encoding="utf-8") as f:
             f.write("tanggal,berkas,idx_atau_key,kolom,nilai_lama,nilai_baru,alasan,oleh\n")
