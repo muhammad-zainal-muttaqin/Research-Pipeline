@@ -10,9 +10,10 @@ verifikasi teks lengkap, lalu menurunkan daftar permintaan PDF darinya.
   4  kajian sawit C3 yang dibahas rinci: pencacahan (tugas HIT) dan
      multipandang (kolom multipandang = Y) di topik/bukti/kode_C3.txt
 
-Keluaran (literature/scopus-2026-09/verifikasi/ dan unduhan/):
-  verifikasi/teks_lengkap.csv       daftar kerja (dibaca dan ditulis ulang)
-  verifikasi/PERMINTAAN-PDF.md      daftar permintaan + templat surel
+Keluaran (literature/scopus-2026-09/verifikasi/cek-4-teks-lengkap/ dan unduhan/):
+  verifikasi/cek-4-teks-lengkap/teks_lengkap.csv       daftar kerja (dibaca dan ditulis ulang)
+  verifikasi/cek-4-teks-lengkap/PERMINTAAN-PDF.md      daftar kajian tanpa PDF
+  verifikasi/cek-4-teks-lengkap/PERMINTAAN-PDF-BU-FATMA.xlsx  daftar yang sama (Excel)
   unduhan/PRIORITAS-UNDUH-MANUAL.md daftar centang unduh manual
 
 Aman dijalankan ulang: kolom pdf_ada dihitung ulang dari folder pdf/,
@@ -46,8 +47,9 @@ ENRICH = KORPUS / "topik" / "enrich.jsonl"
 LOG_UNDUH = KORPUS / "unduhan" / "log_unduh.csv"
 PDF_DIR = KORPUS / "pdf"
 BODY = ROOT / "manuscript" / "source" / "main6-body.tex"
-OUT_CSV = KORPUS / "verifikasi" / "teks_lengkap.csv"
-OUT_MINTA = KORPUS / "verifikasi" / "PERMINTAAN-PDF.md"
+OUT_CSV = KORPUS / "verifikasi" / "cek-4-teks-lengkap" / "teks_lengkap.csv"
+OUT_MINTA = KORPUS / "verifikasi" / "cek-4-teks-lengkap" / "PERMINTAAN-PDF.md"
+OUT_XLSX = KORPUS / "verifikasi" / "cek-4-teks-lengkap" / "PERMINTAAN-PDF-BU-FATMA.xlsx"
 OUT_PRIOR = KORPUS / "unduhan" / "PRIORITAS-UNDUH-MANUAL.md"
 
 KOLOM = ["prioritas", "kelompok", "key", "kode", "tahun", "penulis_pertama",
@@ -59,9 +61,6 @@ KOLOM_TANGAN = ["email_penulis_korespondensi", "status", "tanggal_minta",
 
 # Angka rencana supervisor (total, dengan PDF). Selisih dilaporkan, tidak dipaksa.
 RENCANA = {1: (21, 4), 2: (42, 1), 3: (124, 52), 4: (18, 6)}
-
-TENGGAT_MINTA = "6 Oktober 2026"
-TENGGAT_FATMA = "23 Oktober 2026"
 
 # Salinan akses terbuka legal yang tidak tercatat di enrich.jsonl,
 # ditemukan lewat penelusuran web 29 September 2026. Hanya arXiv, CVF Open
@@ -81,7 +80,12 @@ OA_MANUAL = {
                           "Matos_Tracking_and_Counting_Apples_in_Orchards_Under_Intermittent_Occlusions_and_CVPRW_2024_paper.pdf"),
     "nuske2014automated": "https://www.ri.cmu.edu/pub_files/2014/9/rob21541.pdf",
     "prasetyo2020automatic": "https://gigvvy.com/journals/ijase/articles/ijase-202005-17-2-121",
+    # Ditemukan pada pemeriksaan ulang 4 Oktober 2026 (OpenAlex menurut judul).
+    "tan2025appleyolo": "https://doi.org/10.2139/ssrn.4861527",
 }
+# Tautan OA yang dicoba di peramban pada 4 Oktober 2026 dan tidak memberi PDF;
+# kajian ini kembali ke jalur permintaan biasa.
+OA_GAGAL = {"zheng2023object", "song2014automatic", "xieli2025pinesort", "si2026citrus"}
 # Catatan versi untuk OA_MANUAL yang bukan versi terbit.
 OA_CATATAN = {
     "liu2018robust": "OA = pracetak arXiv; periksa selisih dengan versi IROS",
@@ -95,6 +99,7 @@ OA_CATATAN = {
     "nellithimaru2019rols": "OA = versi CVF Open Access (setara versi terbit)",
     "matos2024tracking": "OA = versi CVF Open Access (setara versi terbit)",
     "nuske2014automated": "OA = salinan di situs Robotics Institute CMU",
+    "tan2025appleyolo": "OA = pracetak SSRN; periksa selisih dengan versi Expert Systems with Applications",
 }
 
 PENERBIT = {
@@ -112,6 +117,11 @@ PENERBIT = {
     "10.34133": "AAAS (Science Partner Journals)", "10.3920": "Wageningen Academic",
     "10.6703": "IJASE (Chaoyang Univ.)",
 }
+# DOI yang kosong di rekaman Scopus, ditemukan lewat penelusuran web 5 Oktober 2026.
+DOI_MANUAL = {"gongal2014identification": "10.13031/aim.20141888882"}
+# Jurnal yang tidak menerbitkan DOI.
+PENERBIT_TANPA_DOI = {"Iaeng International Journal of Computer Science": "IAENG",
+                      "Journal of Food Agriculture and Environment": "WFL Publisher"}
 # Jurnal akses terbuka penuh: halaman DOI penerbit lebih andal daripada repositori.
 JURNAL_OA = {"IEEE Access", "Data in Brief", "Heliyon", "Smart Agricultural Technology",
              "Plant Phenomics", "OSA Continuum", "Information Processing in Agriculture",
@@ -149,6 +159,8 @@ def baca_c3():
 
 def url_oa(key, rec, en, log):
     """Pilih satu tautan OA terbaik, atau '' bila tidak ada."""
+    if key in OA_GAGAL:
+        return ""
     if key in OA_MANUAL:
         return OA_MANUAL[key]
     kand = list(en.get("pdf_urls") or []) + list(en.get("oa_landing") or [])
@@ -192,7 +204,9 @@ def url_oa(key, rec, en, log):
 
 def penerbit_dari(doi, sumber):
     if not doi:
-        return "ASABE" if "Agricultural and Biological Engineers" in sumber else "?"
+        if "Agricultural and Biological Engineers" in sumber:
+            return "ASABE"
+        return PENERBIT_TANPA_DOI.get(sumber, "?")
     return PENERBIT.get(doi.split("/")[0], sumber or "?")
 
 
@@ -269,8 +283,8 @@ def susun():
         r = {
             "prioritas": str(pr), "kelompok": kel, "key": key, "kode": m["kode"],
             "tahun": m["year"], "penulis_pertama": m["first_author"], "judul": m["title"],
-            "sumber": m["source"], "doi": m["doi"],
-            "penerbit": penerbit_dari(m["doi"], m["source"]),
+            "sumber": m["source"], "doi": m["doi"] or DOI_MANUAL.get(key, ""),
+            "penerbit": penerbit_dari(m["doi"] or DOI_MANUAL.get(key, ""), m["source"]),
             "pdf_ada": "Y" if key in pdfs else "N",
             "_doc_type": m["doc_type"],
         }
@@ -281,6 +295,8 @@ def susun():
         if r["pdf_ada"] == "N" and oa.startswith("https://doi.org/"):
             catatan.append("OA menurut OpenAlex/Unpaywall; bila halaman terkunci, "
                            "pakai perpustakaan ULM")
+        if key in OA_GAGAL:
+            catatan.append("tautan OA dicoba di peramban 4 Oktober 2026, tidak memberi PDF")
         if m["dasar_keputusan"] == "judul":
             catatan.append("dikode dari judul")
         r["catatan"] = "; ".join(catatan)
@@ -334,143 +350,76 @@ def rekap(keluar):
 NAMA_P = {1: "Tabel 2 dan 3 naskah", 2: "C1 dikode dari judul", 3: "C1 lainnya",
           4: "C3 sawit: pencacahan dan multipandang"}
 
-EMAIL_EN = """Subject: Request for a copy of your paper "[TITLE]" for a systematic review
-
-Dear Dr. [SURNAME],
-
-I am conducting a systematic review of image-based fruit counting, focusing on how
-studies avoid double counting the same fruit across several images (tracking,
-3D association, and related methods). Your paper
-
-  [AUTHORS] ([YEAR]). [TITLE]. [SOURCE]. https://doi.org/[DOI]
-
-is one of the studies included in the review, and I would like to read the full
-text to code its methods and results accurately. Our institution does not have
-access to it. Would you be willing to send me a copy (the accepted manuscript is
-fine) for private research use?
-
-Thank you very much for your time. I will cite the paper in the review.
-
-Kind regards,
-
-Muhammad Zainal Muttaqin
-Universitas Lambung Mangkurat
-[Department/Faculty]
-[email address]
-"""
-
-RG_TEXT = """Dear Dr. [SURNAME], I am preparing a systematic review of image-based fruit
-counting (how studies avoid counting the same fruit twice across images), and your
-paper "[TITLE]" is one of the included studies. Could you kindly share the full text
-for private research use? I will cite it in the review. Thank you very much.
-Muhammad Zainal Muttaqin, Universitas Lambung Mangkurat"""
+def urut_minta(keluar):
+    """Kajian tanpa PDF, diurutkan menurut prioritas, penerbit, lalu key."""
+    return sorted((r for r in keluar if r["pdf_ada"] == "N"),
+                  key=lambda r: (int(r["prioritas"]), r["penerbit"], r["key"]))
 
 
 def tulis_permintaan(keluar):
-    belum = [r for r in keluar if r["pdf_ada"] == "N"]
-    oa = [r for r in belum if r["jalur_disarankan"].startswith("OA")]
-    lib = [r for r in belum if r["jalur_disarankan"] == JALUR_LIB]
-    fat = [r for r in belum if r["jalur_disarankan"] == JALUR_FATMA]
-    pen = [r for r in belum if r["jalur_disarankan"] == JALUR_PENULIS]
-    paralel = [r for r in belum if r["prioritas"] == "1"
-               and r["jalur_disarankan"] in (JALUR_LIB, JALUR_FATMA)]
+    belum = urut_minta(keluar)
     rk = rekap(keluar)
     L = []
     a = L.append
-    a("# Permintaan PDF teks lengkap (Pemeriksaan 4, bagian 1)")
+    a("# Cek 4: Daftar Permintaan PDF Teks Lengkap")
     a("")
-    a("Berkas ini dibuat oleh `tools/scopus/verifikasi_teks_lengkap.py` dari "
-      "`verifikasi/teks_lengkap.csv`. Jangan disunting tangan; ubah CSV-nya "
-      "(kolom `status`, `tanggal_minta`, `sumber_pdf`, `catatan`) lalu jalankan ulang skrip.")
+    a(f"Daftar ini memuat {len(belum)} kajian yang belum memiliki PDF. Isinya sama dengan "
+      f"`{OUT_XLSX.name}`. Kedua berkas dihasilkan `tools/scopus/verifikasi_teks_lengkap.py` dari "
+      "`teks_lengkap.csv`, sehingga tidak disunting dengan tangan. PDF yang diterima disimpan di "
+      "`literature/scopus-2026-09/pdf/` dengan nama pada kolom terakhir.")
     a("")
-    a("## Tenggat")
-    a("")
-    a(f"- Semua permintaan (perpustakaan, Bu Fatma, penulis) **terkirim sebelum {TENGGAT_MINTA}**.")
-    a(f"- Daftar kajian C1 yang masih belum ber-PDF diserahkan ke Bu Fatma **paling lambat {TENGGAT_FATMA}**.")
-    a("- Setiap PDF yang diterima disimpan sebagai `literature/scopus-2026-09/pdf/<key>.pdf`; "
-      "isi `status`, `tanggal_minta`, dan `sumber_pdf` di CSV, lalu jalankan ulang skrip.")
-    a("")
-    a("## Ringkasan")
-    a("")
-    a("| Prioritas | Kelompok | Kajian | PDF ada | Belum | OA ditemukan |")
-    a("|---|---|---|---|---|---|")
-    for p in (1, 2, 3, 4):
-        t, y, o = rk[p]
-        a(f"| {p} | {NAMA_P[p]} | {t} | {y} | {t - y} | {o} |")
-    a("")
-    a(f"Belum ber-PDF: {len(belum)} kajian. Jalur: OA {len(oa)} · perpustakaan ULM {len(lib)} · "
-      f"Bu Fatma {len(fat)} · penulis {len(pen)} (+{len(paralel)} permintaan paralel ke penulis "
-      "untuk prioritas 1).")
-    a("")
-    a("Aturan jalur: salinan OA legal (arXiv, CVF, PMC, repositori institusi, jurnal akses "
-      "terbuka) diunduh sendiri; artikel jurnal penerbit besar (Elsevier, IEEE, Springer, "
-      "Wiley, ACM, AIP, IOP, OUP) ke perpustakaan ULM; prosiding, bab buku, dan jurnal "
-      "Tiongkok ke Bu Fatma; prosiding sawit (penulis Indonesia/Malaysia) dan jurnal "
-      "penerbit kecil langsung ke penulis.")
-    a("")
-    a("## 0. Unduh sendiri: salinan akses terbuka legal")
-    a("")
-    a("Buka tautan di peramban, unduh PDF, simpan dengan nama `<key>.pdf`. "
-      "Bila tautannya pracetak (arXiv), catat di kolom `sumber_pdf`.")
-    a("")
-    a("| Prioritas | Key | Tahun | Judul | Tautan OA |")
+    a("| Prioritas | Kelompok | Jumlah kajian | Sudah memiliki PDF | Belum memiliki PDF |")
     a("|---|---|---|---|---|")
-    for r in oa:
-        u = r["jalur_disarankan"][4:]
-        a(f"| {r['prioritas']} | `{r['key']}` | {r['tahun']} | {md_sel(r['judul'])} | <{u}> |")
+    for p in (1, 2, 3, 4):
+        t, y, _ = rk[p]
+        a(f"| {p} | {NAMA_P[p]} | {t} | {y} | {t - y} |")
+    a(f"| | **Jumlah** | {len(keluar)} | {len(keluar) - len(belum)} | {len(belum)} |")
     a("")
-    a("## (a) Untuk perpustakaan ULM (dikelompokkan per penerbit)")
-    a("")
-    per = OrderedDict()
-    for r in sorted(lib, key=lambda r: (r["penerbit"], int(r["prioritas"]), r["key"])):
-        per.setdefault(r["penerbit"], []).append(r)
-    for pen_nama, g in per.items():
-        a(f"### {pen_nama} ({len(g)})")
-        a("")
-        a("| Prioritas | Key | Tahun | Penulis pertama | Judul | Sumber | DOI |")
-        a("|---|---|---|---|---|---|---|")
-        for r in g:
-            a(f"| {r['prioritas']} | `{r['key']}` | {r['tahun']} | {md_sel(r['penulis_pertama'])} | "
-              f"{md_sel(r['judul'])} | {md_sel(r['sumber'])} | {doi_link(r['doi'])} |")
-        a("")
-    a("## (b) Untuk Bu Fatma (kemungkinan tidak ada di perpustakaan)")
-    a("")
-    a("Prosiding konferensi, bab buku, dan jurnal Tiongkok.")
-    a("")
-    a("| Prioritas | Key | Tahun | Penulis pertama | Judul | Sumber | Penerbit | DOI |")
-    a("|---|---|---|---|---|---|---|---|")
-    for r in sorted(fat, key=lambda r: (int(r["prioritas"]), r["penerbit"], r["key"])):
-        a(f"| {r['prioritas']} | `{r['key']}` | {r['tahun']} | {md_sel(r['penulis_pertama'])} | "
-          f"{md_sel(r['judul'])} | {md_sel(r['sumber'])} | {r['penerbit']} | {doi_link(r['doi'])} |")
-    a("")
-    a("## (c) Diminta ke penulis")
-    a("")
-    a("Jalur utama `penulis`, ditambah kajian prioritas 1 yang jalur utamanya perpustakaan atau "
-      "Bu Fatma (permintaan paralel, karena kajian ini menopang Tabel 2 dan 3). Kirim lewat "
-      "surel penulis korespondensi bila tercantum; bila tidak, lewat tombol *Request full-text* "
-      "di ResearchGate. Surel diisi di kolom `email_penulis_korespondensi` hanya bila ditemukan "
-      "terbuka di halaman makalah atau ORCID.")
-    a("")
-    a("| Prioritas | Key | Tahun | Penulis pertama | Judul | DOI | Surel | Keterangan |")
-    a("|---|---|---|---|---|---|---|---|")
-    for r in sorted(pen + paralel, key=lambda r: (int(r["prioritas"]), r["key"])):
-        ket = "paralel" if r in paralel else "utama"
-        a(f"| {r['prioritas']} | `{r['key']}` | {r['tahun']} | {md_sel(r['penulis_pertama'])} | "
-          f"{md_sel(r['judul'])} | {doi_link(r['doi'])} | {r['email_penulis_korespondensi']} | {ket} |")
-    a("")
-    a("## Templat surel ke penulis (bahasa Inggris)")
-    a("")
-    a("```text")
-    a(EMAIL_EN.rstrip())
-    a("```")
-    a("")
-    a("## Templat permintaan ResearchGate")
-    a("")
-    a("```text")
-    a(RG_TEXT)
-    a("```")
+    a("| No. | Prioritas | Kode | Tahun | Penulis pertama | Judul | Sumber | Penerbit | DOI | Nama berkas PDF |")
+    a("|---|---|---|---|---|---|---|---|---|---|")
+    for i, r in enumerate(belum, 1):
+        a(f"| {i} | {r['prioritas']} | {r['kode']} | {r['tahun']} | {md_sel(r['penulis_pertama'])} | "
+          f"{md_sel(r['judul'])} | {md_sel(r['sumber'])} | {r['penerbit']} | {doi_link(r['doi'])} | "
+          f"`{r['key']}.pdf` |")
     a("")
     OUT_MINTA.write_text("\n".join(L), encoding="utf-8")
+
+
+def tulis_xlsx(keluar):
+    """Daftar yang sama dengan PERMINTAAN-PDF.md dalam satu lembar Excel."""
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    except ImportError:
+        print(f"openpyxl tidak tersedia; {OUT_XLSX.name} tidak ditulis", file=sys.stderr)
+        return
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Permintaan PDF"
+    ws.append(["No.", "Prioritas", "Kelompok", "Kode", "Tahun", "Penulis pertama", "Judul", "Sumber",
+               "Penerbit", "DOI", "Nama berkas PDF", "Status"])
+    for i, r in enumerate(urut_minta(keluar), 1):
+        kelompok = re.sub(r"\s*\(tab:[^)]*\)", " naskah", r["kelompok"])
+        ws.append([i, int(r["prioritas"]), kelompok, r["kode"], int(r["tahun"]), r["penulis_pertama"],
+                   r["judul"], r["sumber"], r["penerbit"], r["doi"], r["key"] + ".pdf", ""])
+        if r["doi"]:
+            c = ws.cell(row=i + 1, column=10)
+            c.hyperlink = "https://doi.org/" + r["doi"]
+            c.font = Font(color="0563C1", underline="single")
+    tepi = Side(style="thin", color="BFBFBF")
+    for baris in ws.iter_rows():
+        for c in baris:
+            c.border = Border(left=tepi, right=tepi, top=tepi, bottom=tepi)
+            c.alignment = Alignment(vertical="top", wrap_text=True)
+    for c in ws[1]:
+        c.font = Font(bold=True)
+        c.fill = PatternFill("solid", fgColor="D9E1F2")
+        c.alignment = Alignment(vertical="center", wrap_text=True)
+    for kol, lebar in zip("ABCDEFGHIJKL", [5, 9, 22, 6, 7, 18, 60, 38, 14, 30, 30, 16]):
+        ws.column_dimensions[kol].width = lebar
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    wb.save(OUT_XLSX)
 
 
 def tulis_prioritas(keluar):
@@ -481,7 +430,7 @@ def tulis_prioritas(keluar):
     a("# Prioritas unduh manual PDF `main6`")
     a("")
     a("Dibuat oleh `tools/scopus/verifikasi_teks_lengkap.py` dari "
-      "`literature/scopus-2026-09/verifikasi/teks_lengkap.csv`; jalankan ulang skrip setelah "
+      "`literature/scopus-2026-09/verifikasi/cek-4-teks-lengkap/teks_lengkap.csv`; jalankan ulang skrip setelah "
       "menambah PDF (baris yang PDF-nya sudah ada akan hilang dari tabel).")
     a("")
     a("Urutan mengikuti rencana verifikasi teks lengkap: (1) kajian Tabel 2 dan 3 naskah, "
@@ -490,8 +439,8 @@ def tulis_prioritas(keluar):
       "Bu Fatma, penulis; tahun terbaru dulu.")
     a("")
     a("Simpan setiap PDF sebagai `literature/scopus-2026-09/pdf/<key>.pdf` (nama persis kolom "
-      "*key*). Centang kotak setelah selesai. Daftar permintaan dan templat surel: "
-      "`literature/scopus-2026-09/verifikasi/PERMINTAAN-PDF.md`.")
+      "*key*). Centang kotak setelah selesai. Daftar permintaan: "
+      "`literature/scopus-2026-09/verifikasi/cek-4-teks-lengkap/PERMINTAAN-PDF.md`.")
     a("")
     a("| Prioritas | Kelompok | Kajian | PDF ada | Belum | OA ditemukan |")
     a("|---|---|---|---|---|---|")
@@ -515,6 +464,7 @@ def main():
     keluar, peringatan = susun()
     tulis_csv(keluar)
     tulis_permintaan(keluar)
+    tulis_xlsx(keluar)
     tulis_prioritas(keluar)
     rk = rekap(keluar)
     print(f"{OUT_CSV.relative_to(ROOT)}: {len(keluar)} baris")
