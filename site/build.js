@@ -67,6 +67,17 @@ const SPECIAL_DOCS = [
     file: 'experiments/LAPORAN-EKSPERIMEN.md',
     sourceDir: 'experiments',
     desc: 'Cuplikan terkurasi eksperimen deteksi dan penghitungan tandan sawit.'
+  },
+  {
+    id: 'korpus-main6',
+    kind: 'katalog',
+    label: 'KORPUS MAIN6',
+    marker: '#',
+    title: 'Katalog PDF Korpus main6',
+    theme: 'Korpus main6',
+    file: 'literature/scopus-2026-09/KATALOG-PDF.md',
+    sourceDir: 'literature/scopus-2026-09',
+    desc: 'Daftar kajian korpus main6 beserta tautan PDF, menurut kode penyaringan.'
   }
 ];
 
@@ -974,7 +985,7 @@ function RUNTIME() {
     'RGB-D SLAM': '#A04763', 'Pedestrian RGB-T': '#A9611A', 'Pertanian': '#6C8018',
     'Medis': '#128577', 'Industri': '#5C6875', 'Remote Sensing': '#2E86AB',
     'Fusi Multimodal': '#8B5CB4', 'Dataset': '#7C755E', 'Sintesis': '#A03028',
-    'Eksperimen': '#3F6B8F'
+    'Eksperimen': '#3F6B8F', 'Korpus main6': '#8A5A2B'
   };
   function tColor(t) { return THEME_COLORS[t] || 'var(--ink-2)'; }
 
@@ -1438,7 +1449,7 @@ function RUNTIME() {
     h += '<section class="hero">' +
       '<div class="eb rv"><span class="dot"></span>Tinjauan Pustaka · ' + META.minYear + '–' + META.maxYear + '</div>' +
       '<h1 class="rv" style="--i:1">Ruang Baca Riset<br><span class="muted">YOLO · RGB · RGB-D</span></h1>' +
-      '<p class="lede rv" style="--i:2">Ruang baca digital untuk ' + META.total + ' telaah makalah deteksi objek dan fusi RGB+Depth (' + META.minYear + '–' + META.maxYear + '), plus ' + SPECIALS.length + ' dokumen riset: sintesis lintas makalah dan laporan eksperimen.</p>' +
+      '<p class="lede rv" style="--i:2">Ruang baca digital untuk ' + META.total + ' telaah makalah deteksi objek dan fusi RGB+Depth (' + META.minYear + '–' + META.maxYear + '), plus ' + SPECIALS.length + ' dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.</p>' +
       '<div class="cta-row rv" style="--i:3">' +
       '<a class="btn btn-solid" href="#/temuan">' + ICON.spark + 'Mulai dari Temuan' + ICON.arrowR + '</a>' +
       '<button class="btn btn-ghost" id="exploreBtn" type="button">' + ICON.book + 'Jelajahi katalog ' + META.total + ' entri</button>' +
@@ -1812,11 +1823,11 @@ const PAGE = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Ruang baca digital untuk ${META.total} telaah makalah deteksi objek YOLO dan fusi RGB+Depth (${META.minYear}-${META.maxYear}), plus ${specials.length} dokumen riset: sintesis lintas makalah dan laporan eksperimen.">
+<meta name="description" content="Ruang baca digital untuk ${META.total} telaah makalah deteksi objek YOLO dan fusi RGB+Depth (${META.minYear}-${META.maxYear}), plus ${specials.length} dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAF9F6">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171613">
 <meta property="og:title" content="Ruang Baca Riset &middot; YOLO / RGB / RGB-D">
-<meta property="og:description" content="Ruang baca digital untuk ${META.total} telaah makalah deteksi objek YOLO dan fusi RGB+Depth (${META.minYear}-${META.maxYear}), plus ${specials.length} dokumen riset: sintesis lintas makalah dan laporan eksperimen.">
+<meta property="og:description" content="Ruang baca digital untuk ${META.total} telaah makalah deteksi objek YOLO dan fusi RGB+Depth (${META.minYear}-${META.maxYear}), plus ${specials.length} dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="id_ID">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23FAF9F6'/%3E%3Crect x='2' y='2' width='60' height='60' rx='13' fill='none' stroke='%23D4D0C4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='11' fill='%23A03028'/%3E%3C/svg%3E">
