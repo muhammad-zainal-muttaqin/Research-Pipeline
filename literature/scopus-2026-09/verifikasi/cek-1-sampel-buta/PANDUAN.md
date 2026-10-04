@@ -1,22 +1,22 @@
-# Verifikasi Penyaringan Korpus `main6`
+# Cek 1: Sampel Buta Penyaringan Korpus `main6`
 
 Folder ini memuat bahan untuk memeriksa penyaringan yang dilakukan satu
-peninjau dengan bantuan model bahasa besar (`../PROTOKOL.md` §6). Berkas ini
+peninjau dengan bantuan model bahasa besar (`../../PROTOKOL.md` §6). Berkas ini
 menjelaskan **Cek 1: sampel buta penyaringan**. Cek 2 (pemeriksaan tangan
-semua C1, C3, dan eksklusi) dijelaskan di [`CEK-TANGAN.md`](CEK-TANGAN.md).
+semua C1, C3, dan eksklusi) dijelaskan di [`CEK-TANGAN.md`](../cek-2-cek-tangan/CEK-TANGAN.md).
 
 Rencana induknya, *Literature Review Verification Plan* dari Bu Fatma
-(29 September 2026), disalin di [`rencana/index.html`](rencana/index.html).
+(29 September 2026), disalin di [`rencana/index.html`](../rencana/index.html).
 
 | Cek | Panduan | Lembar kerja |
 |---|---|---|
 | 1 Sampel buta | berkas ini | `sampel_judul`, `sampel_abstrak`, `kesepakatan.md` (keluaran skrip) |
-| 2 Cek tangan | [`CEK-TANGAN.md`](CEK-TANGAN.md) | `cek_C1`, `cek_C3`, `cek_eksklusi` |
-| 3 Makalah dikenal | [`cek_makalah_dikenal.md`](cek_makalah_dikenal.md) | `kandidat_snowballing.csv` |
-| 4 Teks lengkap | [`PERMINTAAN-PDF.md`](PERMINTAAN-PDF.md) | `teks_lengkap.csv` |
-| 5 Kode ulang C1 | [`KODE-ULANG.md`](KODE-ULANG.md) | `kode_ulang_C1.csv`, `sampel_fatma_C1.csv` |
-| 6 Cek fakta | [`CEK-FAKTA.md`](CEK-FAKTA.md) | `cek_fakta.csv` |
-| Semua | [`PERTANYAAN-UNTUK-FATMA.md`](PERTANYAAN-UNTUK-FATMA.md) | `log_perubahan.csv` |
+| 2 Cek tangan | [`CEK-TANGAN.md`](../cek-2-cek-tangan/CEK-TANGAN.md) | `cek_C1`, `cek_C3`, `cek_eksklusi` |
+| 3 Makalah dikenal | [`cek_makalah_dikenal.md`](../cek-3-makalah-dikenal/cek_makalah_dikenal.md) | `kandidat_snowballing.csv` |
+| 4 Teks lengkap | [`PERMINTAAN-PDF.md`](../cek-4-teks-lengkap/PERMINTAAN-PDF.md) | `teks_lengkap.csv` |
+| 5 Kode ulang C1 | [`KODE-ULANG.md`](../cek-5-kode-ulang/KODE-ULANG.md) | `kode_ulang_C1.csv`, `sampel_fatma_C1.csv` |
+| 6 Cek fakta | [`CEK-FAKTA.md`](../cek-6-cek-fakta/CEK-FAKTA.md) | `cek_fakta.csv` |
+| Semua | - | `../log_perubahan.csv` |
 
 ## 1. Tujuan dan urutan kerja
 
@@ -34,9 +34,9 @@ pernah mengisinya dan tidak boleh ada yang menebak isinya.
 > peninjau yang belum melihatnya.
 
 Selama mengisi, **jangan membuka** berkas yang memuat keputusan AI:
-`.kunci/`, `terbuka/`, `../topik/penyaringan/` (`tahap_judul.csv`,
+`.kunci/`, `terbuka/`, `../../topik/penyaringan/` (`tahap_judul.csv`,
 `kandidat_abstrak.csv`, `abstrak_*.txt`, `judul_*.txt`),
-`../topik/bukti/matriks_bukti.csv`, lembar `cek_*`, dan lampiran naskah
+`../../topik/bukti/matriks_bukti.csv`, lembar `cek_*`, dan lampiran naskah
 `main6`. Folder `.kunci` tidak otomatis tersembunyi di Windows.
 
 ## 2. Berkas
@@ -44,13 +44,14 @@ Selama mengisi, **jangan membuka** berkas yang memuat keputusan AI:
 | Berkas | Isi |
 |---|---|
 | `sampel_judul.xlsx` / `.csv` | 300 rekaman acak dari populasi tahap judul (5.723) |
-| `sampel_abstrak.xlsx` / `.csv` | 62 rekaman: semua rekaman sampel judul yang lolos ke abstrak menurut AI putaran 1 (bersarang di dalam 300 judul; rencana menyebut 100, tetapi 300 judul hanya menghasilkan 62). Sampel terpisah awal (100 dari 1.124) ada di `cadangan_sampel_abstrak_terpisah/` |
+| `sampel_abstrak.csv` | 165 rekaman tahap abstrak yang dinilai peninjau, dari sampel acak 300 atas 1.143 rekaman (benih acak 20261004), beserta keputusan AI. Dua sampel yang tidak dipakai disimpan di `cadangan_sampel_abstrak_bersarang/` (62 rekaman yang bersarang di dalam 300 judul) dan `cadangan_sampel_abstrak_terpisah/` (100 dari 1.124) |
+| `sampel_judul_manusia.xlsx` | Lembar isian asli peninjau untuk tahap judul; isinya sudah disalin ke `sampel_judul.csv` |
 | `.kunci/kunci_judul.csv`, `.kunci/kunci_abstrak.csv` | Keputusan AI per `idx` (jangan dibuka sebelum selesai) |
 | `.kunci/riwayat_sampel.csv` | Catatan setiap penarikan sampel: waktu, benih, n, populasi |
-| `kesepakatan.md` | Hasil `verifikasi_kappa.py`: n, kesepakatan, kappa, matriks, status lulus |
+| `kesepakatan.md` | Kesepakatan, kappa, matriks, dan status lulus, dihitung 4 Oktober 2026. Keluaran `verifikasi_kappa.py --tulis`, yang membaca `sampel_judul.csv` dan `sampel_abstrak.csv` |
 | `ketidaksepakatan.csv` | Semua rekaman yang berbeda keputusan, untuk diputuskan Fatma |
 | `terbuka/` | Salinan lembar dengan kolom `keputusan_ai` terisi (dibuat skrip kappa) |
-| `log_perubahan.csv` | Log setiap perubahan pada berkas keputusan sumber |
+| `../log_perubahan.csv` | Log setiap perubahan pada berkas keputusan sumber |
 
 Sampel ditarik oleh `tools/scopus/verifikasi_sampel.py` dengan **benih
 20260929**: satu generator `random.Random(20260929)` menarik 300 judul lebih
