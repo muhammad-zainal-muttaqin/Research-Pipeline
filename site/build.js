@@ -323,7 +323,51 @@ const specials = SPECIAL_DOCS.map(function (d, i) {
   };
 });
 
-const DATA = specials.concat(entries);
+/* ------------------------------------------------------------------ *
+ * Entri korpus main6
+ * ------------------------------------------------------------------ *
+ * Satu berkas per kajian di literature/scopus-2026-09/entri/<kunci>.md.
+ * Entri ini TIDAK ikut invarian korpus 182 dan isinya TIDAK disematkan:
+ * index.html hanya memuat metadata dan paragraf "Gambaran Umum" (untuk
+ * pencarian); isi lengkap diambil runtime dari berkas .md saat entri dibuka.
+ */
+const M6_DIR = path.join(ROOT, 'literature', 'scopus-2026-09', 'entri');
+const M6_URL = 'literature/scopus-2026-09/entri/';
+const m6 = [];
+if (fs.existsSync(M6_DIR)) {
+  fs.readdirSync(M6_DIR).filter(function (f) { return /\.md$/i.test(f); }).sort().forEach(function (file) {
+    const raw = fs.readFileSync(path.join(M6_DIR, file), 'utf8').replace(/\r\n/g, '\n');
+    const key = file.replace(/\.md$/i, '');
+    const h1 = raw.match(/^#\s+(.+)$/m);
+    const yr = raw.match(/^\|\s*Tahun\s*\|\s*(\d{4})\s*\|/m);
+    const kd = raw.match(/^\|\s*Kode\s*\|\s*([A-Z0-9]+)\b/m);
+    if (!h1 || !yr || !kd || extractBib(raw) !== key) {
+      warnings.push('Entri main6 tanpa kepala sah (jalankan tools/scopus/entri_main6.py): ' + file);
+      return;
+    }
+    const ov = raw.match(/^##\s+Gambaran Umum\s*\n([\s\S]*?)(?=^##\s)/m);
+    m6.push({
+      num: 1000 + m6.length,
+      id: key,
+      year: parseInt(yr[1], 10),
+      title: h1[1].trim(),
+      theme: 'main6 ' + kd[1],
+      bib: key,
+      special: false,
+      m6: true,
+      words: countWords(raw),
+      scholar: null,
+      semantic: null,
+      md: '',
+      ov: ov ? ov[1].trim() : '',
+      lazy: M6_URL + file
+    });
+  });
+}
+const m6Counts = {};
+m6.forEach(function (e) { m6Counts[e.theme] = (m6Counts[e.theme] || 0) + 1; });
+
+const DATA = specials.concat(entries, m6);
 
 /* ------------------------------------------------------------------ *
  * Statistik dan META
@@ -353,6 +397,8 @@ const META = {
   totalWords: totalWords,
   totalMin: totalMin,
   totalHours: totalHours,
+  m6Total: m6.length,
+  m6Counts: m6Counts,
   built: new Date().toISOString().slice(0, 10),
   markedVersion: MARKED_VERSION
 };
@@ -362,6 +408,7 @@ const META = {
  * ------------------------------------------------------------------ */
 console.log('\n=== build.js: Ruang Baca Riset ===');
 console.log('Entri reguler   : ' + entries.length + '  (invarian korpus; dokumen spesial tidak dihitung)');
+console.log('Entri main6     : ' + m6.length + '  (isi dimuat runtime; di luar invarian korpus)');
 console.log('Dokumen spesial : ' + specials.length + '  ' +
   specials.map(function (s) { return s.id + ' [' + s.kind + ', ' + s.words + ' kata]'; }).join(' · '));
 console.log('Tema            : ' + themes.length);
@@ -720,7 +767,7 @@ html[data-theme="dark"] .meta-btn.ok{color:#8fd9a3; border-color:#3c6b48}
 @media(max-width:760px){.pdf-grid{grid-template-columns:1fr}.pdf-preview{height:460px}.pdf-card-foot{align-items:flex-start; flex-direction:column}.pdf-actions{margin-left:0; flex-wrap:wrap}}
 
 /* strip statistik */
-.stats{display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--line-strong); border-bottom:1px solid var(--line-strong)}
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); border-top:1px solid var(--line-strong); border-bottom:1px solid var(--line-strong)}
 .stat{padding:22px 18px; border-left:1px solid var(--line)}
 .stat:first-child{border-left:none}
 .stat .n{font-family:var(--serif); font-size:clamp(30px,3.8vw,42px); font-weight:600; letter-spacing:-.02em; line-height:1}
@@ -975,7 +1022,9 @@ function RUNTIME() {
   /* ---- data index ---- */
   var byId = {};
   DATA.forEach(function (e) { byId[e.id] = e; });
-  var ENTRIES = DATA.filter(function (e) { return !e.special; });
+  // ENTRIES = korpus 182 saja; entri main6 (e.m6) punya daftar sendiri.
+  var ENTRIES = DATA.filter(function (e) { return !e.special && !e.m6; });
+  var M6_BASE = 'literature/scopus-2026-09/';
   var SPECIALS = DATA.filter(function (e) { return e.special; });
 
   var THEME_COLORS = {
@@ -985,7 +1034,9 @@ function RUNTIME() {
     'RGB-D SLAM': '#A04763', 'Pedestrian RGB-T': '#A9611A', 'Pertanian': '#6C8018',
     'Medis': '#128577', 'Industri': '#5C6875', 'Remote Sensing': '#2E86AB',
     'Fusi Multimodal': '#8B5CB4', 'Dataset': '#7C755E', 'Sintesis': '#A03028',
-    'Eksperimen': '#3F6B8F', 'Korpus main6': '#8A5A2B'
+    'Eksperimen': '#3F6B8F', 'Korpus main6': '#8A5A2B',
+    'main6 C1': '#8A5A2B', 'main6 C2': '#9A6B3A', 'main6 C3': '#6B4A1F', 'main6 C4': '#A77B4C',
+    'main6 C5': '#7A6548', 'main6 R': '#8F7A5C', 'main6 T': '#5F5340'
   };
   function tColor(t) { return THEME_COLORS[t] || 'var(--ink-2)'; }
 
@@ -1042,7 +1093,7 @@ function RUNTIME() {
   function ensureHay() {
     DATA.forEach(function (e) {
       if (e._h) return;
-      e._h = { nTitle: norm(e.title), nTheme: norm(e.theme), nMd: norm(e.md + ' ' + (e.src || '')) };
+      e._h = { nTitle: norm(e.title), nTheme: norm(e.theme), nMd: norm(e.md + ' ' + (e.src || '') + ' ' + (e.ov || '') + ' ' + (e.m6 ? e.id : '')) };
     });
   }
   function scoreEntry(e, terms) {
@@ -1139,7 +1190,8 @@ function RUNTIME() {
     var num = doc.createElement('td'); num.className = 'c-num';
     // Dokumen spesial tidak punya nomor entri: penanda dari registry, dengan
     // label lengkap sebagai teks bantu supaya tidak terbaca sebagai entri.
-    num.textContent = e.special ? (e.marker || '·') : e.id;
+    num.textContent = e.special ? (e.marker || '·') : (e.m6 ? 'M6' : e.id);
+    if (e.m6) num.title = 'Entri korpus main6 · ' + e.id;
     if (e.special) {
       num.title = e.label || 'Dokumen riset';
       num.setAttribute('aria-label', (e.label || 'Dokumen riset') + ', bukan entri bernomor');
@@ -1170,12 +1222,13 @@ function RUNTIME() {
   function buildChips() {
     var themes = Object.keys(META.themeCounts).sort(function (a, b) { return META.themeCounts[b] - META.themeCounts[a]; });
     chipsEl.innerHTML = '';
-    themes.forEach(function (t) {
+    var m6Themes = Object.keys(META.m6Counts || {}).sort();
+    themes.concat(m6Themes).forEach(function (t) {
       var c = doc.createElement('button');
       c.className = 'chip'; c.type = 'button'; c.dataset.tema = t;
       c.setAttribute('aria-pressed', 'false');
       c.style.setProperty('--tc', tColor(t));
-      c.innerHTML = '<span class="cd"></span>' + esc(t) + ' <span style="color:var(--ink-3);font-family:var(--mono);font-size:10px">' + META.themeCounts[t] + '</span>';
+      c.innerHTML = '<span class="cd"></span>' + esc(t) + ' <span style="color:var(--ink-3);font-family:var(--mono);font-size:10px">' + (META.themeCounts[t] || META.m6Counts[t]) + '</span>';
       c.addEventListener('click', function () {
         if (state.tema[t]) delete state.tema[t]; else state.tema[t] = 1;
         pushFilter(); renderList();
@@ -1192,9 +1245,12 @@ function RUNTIME() {
     });
   }
   function buildYears() {
-    var ys = Object.keys(META.yearCounts).map(Number).sort(function (a, b) { return a - b; });
+    // Pilihan tahun mencakup korpus 182 dan entri main6.
+    var yc = {};
+    DATA.forEach(function (e) { if (!e.special) yc[e.year] = (yc[e.year] || 0) + 1; });
+    var ys = Object.keys(yc).map(Number).sort(function (a, b) { return a - b; });
     var opts = '<option value="">Semua tahun</option>';
-    ys.forEach(function (y) { opts += '<option value="' + y + '">' + y + ' (' + META.yearCounts[y] + ')</option>'; });
+    ys.forEach(function (y) { opts += '<option value="' + y + '">' + y + ' (' + yc[y] + ')</option>'; });
     yearSel.innerHTML = opts;
     yearSel.addEventListener('change', function () { state.thn = yearSel.value; pushFilter(); renderList(); });
   }
@@ -1210,9 +1266,10 @@ function RUNTIME() {
     // Hitungan penyaring memakai entri korpus saja: dokumen spesial tidak
     // pernah menggeser angka 182.
     var shown = state.ordered.filter(function (e) { return !e.special; }).length;
+    var all = META.total + (META.m6Total || 0);
     sbCount.textContent = active
-      ? (shown + ' dari ' + META.total + ' entri')
-      : (META.total + ' entri · ' + META.themeCount + ' tema');
+      ? (shown + ' dari ' + all + ' entri')
+      : (META.m6Total ? (META.total + ' entri · ' + META.m6Total + ' entri main6') : (META.total + ' entri · ' + META.themeCount + ' tema'));
   }
 
   /* ================= HASH / ROUTER ================= */
@@ -1363,7 +1420,7 @@ function RUNTIME() {
     // boleh menyandang nomor "ENTRI NNN / 182".
     var eyebrow = e.special
       ? '<span>' + esc(e.label || 'DOKUMEN') + '</span><span class="sep">·</span>' + chip
-      : '<span>ENTRI ' + e.id + ' / ' + META.total + '</span><span class="sep">·</span><span>' + e.year + '</span><span class="sep">·</span>' + chip;
+      : '<span>' + (e.m6 ? 'KORPUS MAIN6' : 'ENTRI ' + e.id + ' / ' + META.total) + '</span><span class="sep">·</span><span>' + e.year + '</span><span class="sep">·</span>' + chip;
     var meta = '<span class="readtime">' + ICON.clock + readMin(e.words) + ' menit baca</span>';
     if (e.bib) meta += '<button class="meta-btn" data-copy="' + esc(e.bib) + '">' + ICON.copy + '<span>' + esc(e.bib) + '</span></button>';
     meta += '<button class="meta-btn" data-copy-link="' + e.id + '">' + ICON.copy + 'Salin tautan</button>';
@@ -1387,7 +1444,7 @@ function RUNTIME() {
     }
     var list = state.ordered.filter(function (x) { return !x.special; });
     var idx = list.findIndex(function (x) { return x.id === e.id; });
-    if (idx === -1) { list = ENTRIES; idx = list.findIndex(function (x) { return x.id === e.id; }); }
+    if (idx === -1) { list = e.m6 ? DATA.filter(function (x) { return x.m6; }) : ENTRIES; idx = list.findIndex(function (x) { return x.id === e.id; }); }
     return { prev: list[idx - 1] || null, next: list[idx + 1] || null };
   }
 
@@ -1404,7 +1461,31 @@ function RUNTIME() {
       '<span class="pn-title">' + esc(e.title) + '</span></a>';
   }
 
+  // Isi entri main6 tidak disematkan; diambil dari berkas .md saat dibuka.
+  function lazyMd(raw) {
+    return raw.replace(/\r\n/g, '\n').replace(/^\s*#\s+.*\n/, '')
+      .replace(/\]\(\.\.\/pdf\//g, '](' + M6_BASE + 'pdf/');
+  }
   function viewEntry(e) {
+    if (e.lazy && !e.md) {
+      main.innerHTML = '<div class="wrap">' + entryHeader(e) + '<div class="article"><p>Memuat ringkasan…</p></div></div>';
+      tocEl.innerHTML = '';
+      doc.title = e.title + ' · Ruang Baca Riset';
+      var failed = false;
+      fetch(e.lazy).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+        .then(function (t) { e.md = lazyMd(t); })
+        .catch(function () {
+          failed = true;
+          e.md = (e.ov ? '## Gambaran Umum\n' + e.ov + '\n\n' : '') +
+            '> Ringkasan lengkap tidak dapat dimuat. Halaman ini memerlukan sambungan ke situs; ' +
+            'berkas sumbernya ada di `' + e.lazy + '`.\n\n[Buka PDF](' + M6_BASE + 'pdf/' + e.id + '.pdf)\n';
+        })
+        .then(function () {
+          if (state.path === e.id) { viewEntry(e); if (state.heading) scrollToHeading(state.heading); }
+          if (failed) e.md = '';
+        });
+      return;
+    }
     var art = doc.createElement('div'); art.className = 'article';
     art.innerHTML = window.marked.parse(e.md);
     if (e.src) {
@@ -1449,10 +1530,10 @@ function RUNTIME() {
     h += '<section class="hero">' +
       '<div class="eb rv"><span class="dot"></span>Tinjauan Pustaka · ' + META.minYear + '–' + META.maxYear + '</div>' +
       '<h1 class="rv" style="--i:1">Ruang Baca Riset<br><span class="muted">YOLO · RGB · RGB-D</span></h1>' +
-      '<p class="lede rv" style="--i:2">Ruang baca digital untuk ' + META.total + ' telaah makalah deteksi objek dan fusi RGB+Depth (' + META.minYear + '–' + META.maxYear + '), plus ' + SPECIALS.length + ' dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.</p>' +
+      '<p class="lede rv" style="--i:2">Ruang baca digital untuk ' + META.total + ' telaah makalah deteksi objek dan fusi RGB+Depth (' + META.minYear + '–' + META.maxYear + '), ' + (META.m6Total ? META.m6Total + ' ringkasan kajian korpus main6, ' : '') + 'plus ' + SPECIALS.length + ' dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.</p>' +
       '<div class="cta-row rv" style="--i:3">' +
       '<a class="btn btn-solid" href="#/temuan">' + ICON.spark + 'Mulai dari Temuan' + ICON.arrowR + '</a>' +
-      '<button class="btn btn-ghost" id="exploreBtn" type="button">' + ICON.book + 'Jelajahi katalog ' + META.total + ' entri</button>' +
+      '<button class="btn btn-ghost" id="exploreBtn" type="button">' + ICON.book + 'Jelajahi katalog ' + (META.total + (META.m6Total || 0)) + ' entri</button>' +
       '</div>' + resumeHtml() + '</section>';
 
     h += sectionH('Dokumen riset', 'research documents · ' + SPECIALS.length + ' dokumen');
@@ -1464,6 +1545,7 @@ function RUNTIME() {
     h += sectionH('Sekilas angka', 'ringkasan korpus');
     h += '<div class="stats rv">' +
       statCell(META.total, 'Entri telaah') +
+      (META.m6Total ? statCell(META.m6Total, 'Entri korpus main6') : '') +
       statCell(META.themeCount, 'Tema klaster') +
       statCell(Object.keys(META.yearCounts).length, 'Tahun ' + META.minYear + '–' + META.maxYear) +
       statCell('±' + META.totalHours, 'Jam total baca') + '</div>';
