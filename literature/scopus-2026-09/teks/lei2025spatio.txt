@@ -1,0 +1,900 @@
+Spatio-Temporal Metric-Semantic Mapping for Persistent Orchard
+Monitoring: Method and Dataset
+Jiuzhou Lei, Ankit Prabhu, Xu Liu, Fernando Cladera, Mehrad Mortazavi,
+Reza Ehsani, Pratik Chaudhari, Vijay Kumar
+Abstract— Monitoring orchards at the individual tree or
+fruit level throughout the growth season is crucial for plant
+phenotyping and horticultural resource optimization, such as
+chemical use and yield estimation. We present a 4D spatio-
+temporal metric-semantic mapping system that integrates
+multi-session measurements to track fruit growth over time.
+Our approach combines a LiDAR-RGB fusion module for 3D
+fruit localization with a 4D fruit association method leveraging
+positional, visual, and topology information for improved data
+association precision. Evaluated on real orchard data, our
+method achieves a 96.9% fruit counting accuracy for 1,790
+apples across 60 trees, a mean fruit size estimation error of
+1.1 cm, and a 23.7% improvement in 4D data association
+precision over baselines. We publicly release a multimodal
+dataset covering five fruit species across their growth seasons.
+https://4d-metric-semantic-mapping.org/
+I. INTRODUCTION
+Persistent orchard monitoring is vital for farmers to op-
+timize cultivation and maximize yield. By monitoring fruit
+growth, farmers can make informed decisions, such as apply-
+ing chemical thinning based on fruit size, adjusting irrigation
+according to growth rates, and optimizing labor for harvest
+through yield estimation. Spatio-temporal (4D) mapping of
+an orchard can also help enhance plant phenotyping [2],
+[3] by monitoring important traits of plants and providing
+insights into how they change over the entire growth season.
+Hence, this motivates the problem of 4D orchard mapping,
+which in this context is defined as 3D orchard mapping with
+temporal information. The actionable information obtained
+from 4D orchard mapping is that each fruit is associated
+with a timestamp, and its state is monitored across its
+growth season. In our 4D metric-semantic map, the semantics
+involve detecting the presence of fruits, while metrics such
+as fruits’ counts, sizes, and positions can be obtained.
+We gratefully acknowledge the support of the IoT4Ag Engineering
+Research Center funded by the National Science Foundation (NSF) under
+NSF Cooperative Agreement Number EEC-1941529, ARL DCIST CRA
+W911NF-17-2-0181, NSF Grant CCR-2112665, NIFA grant 2022-67021-
+36856, and NVIDIA. We thank Prof. Drew Wilkerson, and the owners of
+Hands on Earth and Shaw Orchards for their support in data collection.
+J. Lei, A. Prabhu, F. Cladera, P. Chaudhari, and V. Kumar are
+with the GRASP Laboratory, University of Pennsylvania, Philadelphia,
+PA, 19104, USA {jiuzl, praankit, fclad, pratikac,
+kumar}@seas.upenn.edu. X. Liu is with the Department of
+Aeronautics and Astronautics, Stanford University, Stanford, CA 94305,
+USA
+(e-mail: xuliu@stanford.edu).
+M.
+Mortazavi
+and
+R.
+Ehsani
+are
+with
+the
+Department
+of
+Mechanical
+Engineering,
+Uni-
+versity of California, Merced, CA, 95343, USA {smortazavi3,
+rehsani}@ucmerced.edu.
+This work has been submitted to the IEEE for possible publication.
+Copyright may be transferred without notice, after which this version may
+no longer be accessible.
+Fig. 1: A 4D metric-semantic map of an apple orchard from April to
+August. Each row represents a time session. The first panel shows
+the metric-semantic map. The middle panel zooms in on the 6th tree,
+while the right panel presents its raw RGB image. Tree skeleton
+meshes [1] are for visualization only.
+While previous works, like [4], [5], [6], have demonstrated
+impressive accuracy in fruit localization for a single time
+session, they fall short in monitoring fruit growth over time.
+Extending 3D fruit tracking to a 4D monitoring framework
+requires data association of fruits across time, which remains
+a challenge due to their positional changes and variations in
+appearance. Existing methods, such as point cloud registra-
+tion [7], feature-based image registration [8], [9], and hybrid
+2D-3D approaches [10], have shown success in tracking plant
+growth but lack the granularity needed for individual fruit
+instances.
+To address the challenges in 4D metric-semantic mapping
+in orchards, we developed a 3D fruit localization module
+taking LiDAR points and RGB images for fruit localization
+and absolute size estimation. A two-stage data association
+algorithm leveraging positional, visual, and topological in-
+formation is proposed to associate fruits from different time
+sessions under temporal changes. In addition, a dataset is
+collected from real-world, natural orchards and made avail-
+able for public access during our experiments. The dataset,
+containing high-resolution RGB images and LiDAR point
+clouds, could facilitate other branches of agricultural research
+in small fruit detection[11], flower counting[12], tree branch
+modeling[13]. Unlike most existing datasets such as [14],
+arXiv:2409.19786v3  [cs.RO]  6 May 2025
+
+[15], [16], [17], [18], which typically capture only a single
+growth stage, our dataset spans the entire growth cycle, from
+the bud stage through to harvest.
+Our contributions can be summarized as follows:
+1) We develop a mapping framework that takes in mea-
+surements across multiple time sessions and constructs
+a 4D metric-semantic map, along with the estimation of
+the count and size of fruits, bridging the gap between
+3D fruit localization and 4D fruit growth monitoring.
+2) We introduce a 4D fruit association algorithm for track-
+ing fruits throughout their growth season, achieving per-
+formance that significantly surpasses baseline methods.
+3) We publicly release a multimodal dataset capturing
+LiDAR point clouds, RGB images, GPS, and IMU
+measurements across an entire growth season for five
+different fruits, complementing existing datasets with
+extended temporal coverage.
+II. RELATED WORK
+3D Fruit Localization and Counting. To enable 4D
+spatio-temporal data association of fruits, an accurate mea-
+surement of fruits from a single time session is crucial. In
+[4], [5], deep learning algorithms were used to directly count
+fruits from images and obtain a yield estimate. In [6], fruits
+were tracked frame by frame robustly using a combination of
+the Hungarian Assignment algorithm, Kalman Filter, optical
+flow [21], and Structure for Motion (SfM) algorithm for data
+association and outlier rejection. To count fruits from both
+sides of a row of trees and accelerate computation, Liu et
+al. [22] used the fruit instances as features to replace SIFT
+[23] features, which directly constructed a map of fruits and
+estimated the camera trajectory. Meyer et al. [24] modeled an
+orchard using NeRF, taking into consideration fruit instance
+information, from which the fruits can be counted directly
+in 3D space and localized. Although these works focus on
+fruit localization and counting during a single time session
+and demonstrate impressive fruit-counting accuracy, they fall
+short of monitoring fruits across multiple time sessions. Our
+work aims to bridge the gap between 3D fruit localization
+and 4D fruit monitoring.
+Spatial-Temporal Mapping for Agriculture. The key
+component extending 3D mapping to 4D mapping is the
+temporal (4D) data association. In [7], Carlone et al. regis-
+tered the point clouds of crops via expectation-maximization.
+Dong et al. in [8] and Nived et al. in [9] both proposed to
+extract 2D image features that are robust to seasonal variation
+for image registration. [10] combined both 2D and 3D visual
+features to find temporal correspondences. In more recent
+works, [25] and [26] proposed to match the skeletons or key
+points extracted from high-precision point clouds of plants
+for growth tracking and phenotyping. While these approaches
+successfully monitor changes in a plot of crops or individual
+plants, they lack the granularity needed in tracking fruit
+instances that are subject to occlusions from canopy and
+changes in position, size, and appearance.
+As for applications in fruits, Riccardi et al. in [27] used
+terrestrial laser scanners to obtain colored and precise fruit
+point clouds. For each fruit instance, a descriptor encoding
+both positions and neighboring fruit layouts was designed
+for fruit matching. Fusaro et al. in [28] took colored and
+high-resolution point clouds as input for fruit instance seg-
+mentation. For each fruit instance, the point clouds within
+a range of the fruit instance were used to extract descrip-
+tors with Minkowski convolutional neural networks [29].
+The extracted descriptors were then used as input to an
+attention-based matching network for temporal fruit associa-
+tion. However, fruit segmentation on point clouds is subject
+to extensive labeling. Additionally, acquiring high-precision
+point clouds can be slow compared to sensors such as RGB
+cameras and lower-density LiDARs. Freeman and Kantor
+[30] proposed a transformer-based model for associating
+apple fruitlets over time using stereo images. Given two
+stereo images of the same fruitlet cluster at different times,
+shape and positional descriptors are extracted from each
+fruitlet’s point cloud using a encoder-decoder architecture
+based on MinkowskiEngine [29]. A transformer encoder
+then refines these features, enabling fruitlet association based
+on feature scores and matchability. However, this approach
+assumes prior knowledge of fruitlet-cluster assignments and
+focuses solely on temporal association.
+When integrating 3D fruit localization with 4D fruit as-
+sociation, challenges arise, including duplicated fruit counts,
+missed detections, occlusion of previously seen fruits, and
+the emergence of new fruits between time sessions. Our
+work aims to achieve temporal fruit association under those
+outlier conditions. Unlike learning-based methods for 4D
+fruit association, our approach leverages pre-trained models
+and heuristically derived features, eliminating the need for
+neural network training.
+III. PROPOSED APPROACH
+The objective is to monitor the growth of fruits over time,
+given the point cloud and images collected during the ego-
+motion of a robot or sensor platform. The objective is divided
+into solving two sub-problems: fruit localization in 3D space
+and temporal tracking across multiple time sessions, which
+range from weeks to months. We use time sessions to refer
+to different times from June to August when the data were
+collected.
+In this section, we describe each module of our framework
+for 4D metric-semantic mapping. A visualization of the
+framework is shown in Fig. 2.
+A. Spatial (3D) Localization
+3D localization of fruits aims to associate fruit detections
+between image frames and estimate their 3D positions in
+each time session. We take the following steps:
+1) Fruit Instance Point Cloud Extraction: To obtain point
+clouds belonging to each fruit instance, we use LiDAR
+for depth estimation and RGB images for fruit instance
+segmentation. A fine-tuned YOLOv8 [20] is used for in-
+stance segmentation to obtain the instance mask of each
+fruit. Faster-LIO [31] is used to estimate the pose of the
+sensor. Our LiDAR and RGB camera are time synchronized,
+
+Fig. 2: System Diagram. Module 1 (green box): Our system takes in sensor data from the LiDAR, RGB camera, and Inertial Measurement
+Unit (IMU). Module 2 (blue box): Object detection and odometry. First, we use Faster-LIO [19], a LiDAR-inertial odometry (LIO)
+algorithm for pose estimation and point cloud motion undistortion. Meanwhile, YOLO-v8, an instance segmentation model [20], is used
+on the RGB images to detect and segment fruits. Module 3 (orange box): LiDAR-RGB fusion for fruit localization. The point cloud is
+back-projected into the segmentation mask to estimate the depth of a fruit. Fruit detections from different image frames are tracked using
+the Hungarian assignment algorithm with mask IoU as the cost. Then, we minimize the reprojection error of fruit centroids to optimize the
+fruit positions. Module 4 (purple box): 4D Data Association takes optimized 3D fruit landmarks and images as input. Fruits are associated
+across sessions using our two-stage matching algorithm, with a cost function based on position, visual, and topology information. Module
+5 (cyan box): 4D metric-semantic map generation. Using the 4D data association, we can construct a 4D metric-semantic map, acquiring
+actionable information such as fruit counts, sizes, and positions throughout the entire growth season.
+and their extrinsic (rigid body transformation) and intrinsic
+parameters are calibrated before the experiments. Based on
+such information, each image’s corresponding camera pose
+is obtained. We then project the point clouds onto the image
+plane to obtain each fruit instance’s point cloud. However,
+the point cloud from a single scan is sparse. To remedy
+this, we accumulate point clouds for 1.5 seconds in our
+implementation. The position of each fruit is then simply the
+centroid of the point cloud projected inside the segmentation
+mask.
+2) Tracking across Image Frames: Let fruits from two
+consecutive image frames be Il = {oi, i = 1, 2, ..., m}
+and Il+1 = {oj, j = 1, 2, ..., n}. To match fruits across
+consecutive image frames, we seek to find an injective
+mapping between the two sets of fruits that minimizes the
+matching cost C(Il, Il+1). This matching problem can be
+solved using the Hungarian assignment algorithm. Given the
+availability of each fruit’s depth in the camera frame and the
+corresponding camera poses, we compute the matching cost
+using the mask Intersection over Union (IoU) as follows:
+maski,l+1 = proj(T l+1
+l
+, pi,l)
+(1)
+c(oi,l, oj,l+1) = 1 −IoU(maski,l+1, maskj,l+1)
+(2)
+pi,l refers to the point cloud of fruit i detected at frame l,
+T l+1
+l
+is the relative transformation from frame l to frame
+l+1, maski,l+1 is the image coordinates of maski at frame
+l + 1, and proj() projects 3D points into image frames. c()
+calculates the assignment cost between each association pair.
+To take into account the fact that not all fruits masks at
+frame l can be assigned to a fruit mask at the next frame
+(example in the event of a false-negative detection), the cost
+matrix consists of two parts: CIoU ∈Rm×n with CIoU,ij =
+c(oi,l, oj,l+1) and Cu ∈Rm×m in which all element equals
+to 1 −u. u is the minimal IoU threshold to consider two
+masks matched as one. Cu allows a fruit not to be matched
+with any fruit detected in the next frame.
+C(Il, Il+1) = [CIoU
+Cu]
+(3)
+From this step, we obtain a set of tracks. For clarity, a
+“track” refers to a sequence of associated fruit detections
+across multiple image frames. To avoid overcounting due to
+potential false positive detections, we only count the fruits
+that have been observed in more than three consecutive
+frames.
+3) Re-projection Error Minimization: There are multiple
+sources of errors in the aforementioned steps. The fruit
+instance point clouds may include noisy points that do
+not belong to the fruit, and different parts of the fruit are
+observed from multiple views, leading to small variations
+in position estimation. Hence, we minimize the reprojection
+error of fruit positions across all image frames to improve
+depth estimation. Given n camera poses and m fruit posi-
+tions, we solve the following nonlinear least squares problem
+to obtain optimized fruit positions and camera poses.
+
+Date
+4.4
+6.3
+8.2
+10.1
+6/23
+7/7
+7/21
+8/4
+Fruit 1
+Fruit 2
+Fruit 3
+Fruit 4
+Fruit 5
+Fruit 6
+Fruit 7
+Fruit 8
+Fruit 9
+Fruit 10
+Fruit 11
+Fruit 12
+Fruit 13
+Fruit 14
+Fruit 15
+Fruit 16
+Fruit 17
+Mean
+Fruit size (cm)
+Fig. 3: Precise monitoring of fruit growth. The left panel shows examples of our 4D spatio-temporal fruit tracking results. The right panel
+quantitatively shows how these fruits grow over time. The X-axis shows the date, and the Y-axis shows fruit sizes in cm. Different colors
+represent different fruits. Fruit sizes increase over time, with varying but generally similar growth rates reflected by the slope of their
+trendlines. The average fruit sizes are shown in a black dashed line with triangle markers. Our method automatically generates fruit tracks
+across multiple seasons, providing users with detailed information on each fruit, such as size, color, shape, and position over time.
+min
+X,R,t
+n
+X
+i=1
+m
+X
+j=1
+aij(xij −proj(Ri, ti, Xj))2
+s.t.
+Xj,0 −d ≤Xj ≤Xj,0 + d
+(4)
+where xij is the jth fruit’s pixel coordinates in the ith image
+frame, Xj is the jth fruit position, Ri and ti represents the
+rotational and translational components of the ith camera
+pose respectively. The binary variable aij indicates whether
+fruit j is present in frame i. We also constrain the problem
+such that Xj is within a certain distance d from its initial
+value Xj,0 to avoid optimized positions being too far away
+from the initial position due to outliers.
+Because of canopy occlusions and missing detections
+from the instance segmentation model, some fruits may be
+initially tracked, lost, and then re-tracked again in later
+frames, resulting in double counts of the same fruit. It is
+thus necessary to re-identify such previously tracked fruits.
+Therefore, for each track and its nearby tracks within a
+certain distance threshold, we project their 3D point cloud
+into the same image plane. Two conditions must then be
+met to re-associate the two tracks as one: (1) IoU between
+the two masks is higher than a predefined threshold. (2) The
+detections in each track must occur in distinct image frames.
+More formally, for any two tracks, Tracki and Trackj,
+representing sequences of image frame indices where the
+same fruit is detected, Tracki ∩Trackj = ∅, for i̸ = j.
+The 3D localization module will output the fruit counts
+and their positions with each fruit assigned a unique index.
+B. Spatio-temporal (4D) Tracking
+4D tracking aims to find fruit correspondences between
+two consecutive time sessions. Given the output of the 3D
+localization and the images from two time sessions, we
+match fruits from different times in two stages. In the first
+stage, for each image Ia from time session A, we find
+an image Ib from time session B with the most similar
+view. Then Hungarian assignment algorithm with a cost
+function Cost = Cvisual +Cposition considering both visual
+similarities and Euclidean distance is applied to associate
+fruits detected in Ia and Ib. Each fruit instance fi from
+time session A could be associated with one or multiple
+fruit instances appearing in different image frames from
+time session B. We denote the association results using
+M(fi) = {fj,b}, where fi is the fruit index in time session
+A, and fj,b is the fruit fj’s index in time session B and
+it appears in image Ib. (eg. M(fi = 2) = {fj=0,b=0 =
+0, fj=0,b=1 = 0, fj=1,b=1 = 1}). Fruits with the same
+subscript j mean they are the same fruit instance, but we add
+subscript b to indicate that they are associated with fi when
+fj is detected in image Ib. A fruit instance in time session
+A may be associated with different fruits in different image
+frames in time session B due to missing detections (caused
+by canopy occlusion or the instance segmentation model
+failing to detect fruits), duplicated fruit counts (resulting
+from unsuccessful re-tracking in 3D tracking), and temporal
+position changes.
+The purpose of the first stage of matching is to extract
+a subset of fruits from both time sessions to serve as
+reference points in the images, which will be used to quan-
+tify topological similarities for the next stage of matching.
+These reference points must be reliably and consistently
+matched across different images, analogous to how SIFT
+image features are used for feature registration between two
+images. We select reliable reference fruits by thresholding
+the entropy H(M(fi)) for each fruit instance in time session
+A. Lower entropy means one fruit tends to be associated
+with another fruit consistently across different views. In the
+implementation, we set the threshold to be 0.8.
+In the second stage, the matching process is repeated
+except for the cost function which also takes into account
+the topology information, Cost = Cvisual + Cposition +
+Ctopology. The cost between matched reference fruits will
+be 0. For each fruit instance fi in time session A, a majority
+vote is taken on M(fi) to determine its final matched fruit
+in time session B. Refer to Algorithm 1 for the matching
+process described above.
+Different sources of information are leveraged in the
+above-mentioned cost function, and this is done as follows:
+Position cost: The position cost is the Euclidean distance
+between two fruits. However, the fruits positions from dif-
+ferent time sessions may not be expressed in the same coor-
+dinate frames. We obtain the precise relative transformation
+between the coordinate frames by aligning the point clouds
+from two successive temporal sessions using Iterative Closest
+Point (ICP) algorithm [32]. Fruit positions are transformed
+into the same reference frame before computing the position
+cost.
+Visual cost: For each fruit detected in image ia, we crop
+a sub-image surrounding the detected fruit with it in the
+
+Algorithm 1 Two-Stage 4D Data Association
+Require: Images IA, IB and counted fruits {fi}, {fj} from
+two time sessions A and B.
+1: Initialize M(fi) as an empty dictionary.
+2: for each image Ia in session A do
+3:
+Ib ←arg minb∈B ||Dino(Ia)−Dino(IB)||2, to find
+the image Ib of the most similar view in time session B.
+4:
+Apply Hungarian assignment between the fruits
+{fi,a} and {fj,b} detected in Ia and Ib using Cost =
+Cvisual + Cposition. Add fi as the key and fj,b as the
+value into M.
+5: Select reliable matches {(fi, most common(M(fi)))}
+where entropy H(M(fi)) < θthres.
+6: Repeat step 1 to 4 using Cost = Cvisual + Cposition +
+Ctopology
+7: return Set of matches {(fi, most common(M(fi)))}.
+center. The backbone of DINOv2 [33] is used to extract
+visual features from the sub-image. The visual feature is a
+h × w × n matrix. The visual cost between fruits fi and fj
+would be
+Cvisual(fi, fj) = ∥Dino(fi) −Dino(fj)∥2
+(5)
+Topology cost: Topology information, which refers to
+the spatial relationship between fruits in the same image
+frame, also remains consistent under temporal changes. As
+presented in [27], [34], this information is encoded by dis-
+cretizing the space around a target and counting the number
+of surrounding objects within each discretized cell to con-
+struct a histogram descriptor. However, the effectiveness of
+these features depends on the resolution of the discretization.
+A resolution that is too coarse may reduce descriptiveness,
+while an overly fine resolution can introduce noise due to
+occlusions and temporal fruit position changes. Instead of
+discretization, we use detected fruits as the feature points
+in an image. The topology descriptor comprises n vectors
+pointing from the target fruit to reference fruits in the image
+coordinate frame. For two fruits with their corresponding
+topology descriptors⃗ak,⃗bk, k = 0, 1, 2, ..., n −1,
+Ctopology(fi, fj) =
+
+n
+(⃗ak,⃗bk),
+cos−1
+ ⃗
+ak ·⃗bk
+∥⃗ak∥∥⃗bk∥
+!
+> θthres
+o
+(6)
+The cost is the number of pairs of vectors between which
+the angle is larger than a threshold. In the implementation,
+the angle threshold is set to be 10◦.
+For the topology cost and visual cost to be effective, the
+two images used in the cost computation must be captured
+from a similar viewpoint. To ensure this, we compare their
+DinoV2 latent features to identify viewpoint similarity. Ad-
+ditionally, we normalize the position cost and visual cost to
+bring them to the same scale, while keeping the topology
+cost unchanged. This allows the topology cost to function as
+a penalty term, rejecting false matches that violate topology
+consistency.
+IV. 4D MULTI-MODAL DATASETS IN ORCHARDS
+This section gives more details on the collected data. The
+data was collected by scanning the sides of a row of fruit
+trees as shown in the object detection and odometry module
+of Fig. 2. It includes LiDAR point clouds, RGB images,
+RGB-D data, IMU, and GPS measurements collected from
+April to August 2024 across 284 trees: 120 apple trees, 63
+pear trees, 50 peach trees, 34 cherry trees, and 17 pistachio
+trees.
+Sensor Suite Our sensor suite is shown in the leftmost
+(inputs) panel of Fig. 2. It consists of an Ouster OS0-128
+LiDAR along with a FLIR Chameleon global-shutter RGB
+camera and an Intel RealSense D435i RGB-Depth (RGB-D)
+camera. It also consists of a high-quality VectorNav VN-
+100 IMU and UBlox ZED-F9P for GPS measurements. We
+compute the extrinsic calibration between the LiDAR and
+the global shutter RGB camera by using an initial estimate
+from the sensor tower’s CAD model. We further refine the
+calibration by manually aligning the projected point cloud
+with an RGB image using a calibration board. Such sensors
+can be deployed on a quadrotor as shown in Fig. 2
+Orchard Overview Data was collected every two or three
+weeks from the start of the growing season (early April) until
+late August.
+The types of orchards from which we collected datasets
+include apple, peach, pear, cherry, and pistachio orchards.
+The sites where we collected apple and pear datasets are
+located at the Hands on Earth Orchard, Lititz, Pennsylvania,
+USA. The apple, peach, and cherry datasets were collected
+from the Shaw Orchards, Harford, Maryland, USA. Finally,
+the pistachio dataset was collected at Merced, California,
+USA.
+V. RESULTS AND ANALYSIS
+This section presents our results and analysis. We evaluate
+our approach in terms of 3D fruit counting error, 4D fruit as-
+sociation precision, and the accuracy of fruit size estimation
+for downstream tasks, such as estimating fruit growth rate. In
+each subsection, we first describe how the ground truth data
+is obtained, followed by an explanation of the evaluation
+metrics, and conclude with an analysis of the quantitative
+results.
+A. 3D Fruit Counting
+Accurately obtaining ground truth by counting fruits in
+an orchard is challenging due to the possibility of double-
+counting. To address this, fruits are manually counted from
+images extracted from video streams, aided by digital mark-
+ers to track counted fruits. However, double-counting may
+still occur when the same tree appears in multiple frames.
+While image stitching can create panoramas for counting,
+it may introduce artifacts that blur fruits. Instead, images,
+where each tree is fully visible and centered, are selected
+
+25
+50
+75
+100
+125
+1, 2
+3,4,5
+6, 7
+8, 9
+10, 11
+12, 13
+14, 15
+16, 17, 18
+19, 20, 21
+22, 23, 24
+25, 26, 27
+28, 29, 30
+31, 32, 33
+34, 35, 36
+37, 38, 39
+40, 41, 42
+43, 44, 45
+46, 47, 48
+49, 50, 51
+52, 53, 54
+55, 56, 57
+58, 59, 60
+Ground Truth Fruit Count
+Estimated Fruit Count
+Per-Tree-Batch Counts
+Fig. 4: Fruit count ground truth vs. estimated (Y-axis) per tree batch (X-axis). The X-axis represents the IDs of trees included in each
+batch, with batches containing 2 to 3 trees. For each batch, the estimated counts closely align with the human-labeled ground truth,
+demonstrating the accuracy of our system. Detailed statistics are provided in Table I.
+Stats. (Total Count)
+Results
+Estimated / Ground Truth
+1846 / 1790
+Absolute (Abs.) Error (Err.)
+56 / 3.1%
+Stats. (Per Tree Batch Counts)
+Results
+Mean of Abs. Err.
+6.0 / 8.0%
+Std Dev of Abs. Err.
+5.0 / 6.4%
+TABLE I: Total count and per-tree-batch count statistics. Our
+method can accurately estimate the yield, as indicated by the 3.1%
+error on the total count over 1790 fruits. The mean and standard
+deviation of per-tree-batch counts are calculated from all 22 batches.
+with careful marking and boundary tracking to prevent
+duplication.
+The 3D localization is evaluated using the counting error.
+Our 3D fruit counting results are detailed in Table I. For
+a total of 60 apple trees, the 3D tracking method gives
+a 3.1% total count error. We estimate 1846 apples from
+our algorithm, and when compared to the ground truth of
+1790 apples, it gives us an absolute total count error of
+56 apples. Compared to ground truth, our method tends to
+overestimate counts, primarily due to (1) double counting
+some fruits due to noisy fruit instance point clouds and (2)
+counting fruits fallen on the ground, which are excluded
+when we generate the ground truth. In particular, noisy fruit
+instance point clouds are obtained because some small and
+partially occluded fruits cannot accurately be fused from the
+RGB detections and the point clouds. Hence, they contain
+noisy background point clouds, which induce errors in their
+estimated 3D positions.
+Fig. 4 shows a per tree-batch count estimation compared to
+the corresponding ground truth. A total of 22 batches, each
+with two or three trees, was created from 60 apple trees,
+and their per-batch fruit count was compared with the per-
+batch ground truth. Trees were separated into these batches
+based on how easily human annotators can distinguish tree
+boundaries to generate accurate ground truth counts. We
+decided to use tree batches for method evaluation instead of
+individual trees because, when trees are very close together,
+it is challenging to accurately assign fruits to one or the other.
+As seen from Fig. 4, our method consistently estimates fruit
+counts for trees despite the varying fruit densities. Similarly,
+the low standard deviation of absolute count error (5 apples)
+and the small mean of absolute count error (6 apples) shown
+in Table I demonstrates the counting accuracy of our method.
+B. 4D Fruit Association
+To get the 4D fruit association ground truth, we manually
+match the fruits from five trees using images for each of the
+Fruit index
+4.0
+6.0
+8.0
+10.0
+12.0
+2
+4
+6
+8
+10
+12
+14
+16
+18
+Estimated Sizes
+Ground Truth Sizes
+Fruit size (cm)
+Fig. 5: Fruit size ground truth vs. estimated. The mean and standard
+deviation of absolute errors in fruit size estimates are 1.10 cm (0.43
+inch) and 0.45 cm (0.18 inch).
+Fig. 6: 4D Fruit Association Evaluation in terms of Precision and
+F1 Score. From left to right, the first two bars are the results from
+baselines; the remaining bars represent ablation study results.
+Fig. 7: Effect of removing data on the F1 scores for 4D fruit
+association.
+three consecutive time sessions—June 12th to July 4th, July
+4th to July 19th, and July 19th to August 13th. We exclude
+a minority (less than 5 percent) of fruits that are ambiguous
+to match for humans. The 4D data association is evaluated
+based on two metrics: precision and F1 score. Higher pre-
+cision means fewer incorrect fruit matches, while higher
+recall indicates that fewer correct matches were missed.
+However, F1 score is reported instead of recall for more
+meaningful evaluation because of two reasons: 1) Recall
+in our experiment is also affected by the matching range
+
+Fig. 8: 4D Fruit Matching. The left panel illustrates the fruit matching between June 12th and July 4th, the middle panel between July
+4th and July 19th, and the right panel between July 19th and August 13th. Red dots are fruits detected in the image frame from one time
+session. Blue dots are the fruits detected in the image frame from another time session. Matched fruits are linked with a line.
+(eg. fruits from different time sessions that are 0.3 m away
+are not considered for matching.) A larger matching range
+tends to give a higher recall. 2) Failure to match fruits that
+should be matched usually has minimal effect on fruit growth
+monitoring. We usually have enough samples/matches to
+estimate the fruit growth rate, while falsely matching two
+fruits would lead to errors. Precision and F1 scores are
+calculated from the number of true positives (TP), false
+positives (FP), and false negatives (FN). We define TP to
+be correctly matched fruits, FP to be incorrectly matched
+fruits, FN to be the fruits that should be matched but are
+predicted to have no available fruits to match with.
+Refer to Fig. 6 for the results on our approaches against
+the two baselines. The first baseline is to match fruits based
+on 3D positions only and associate them using the Hungarian
+assignment algorithm. The second baseline is a modified
+version of the algorithm proposed by Riccardi et al. in
+[27], where a histogram descriptor is designed to perform
+Hungarian assignment. Since the code of [27] is not open-
+sourced, we re-implemented the algorithm and made the
+following modifications: 1) normalized the position cost and
+the cost based on histogram descriptors for them to be on
+the same scale which gives better performance than without
+normalization; 2) we excluded the use of fruit radius in the
+cost function as radius estimation of occluded fruits is not
+reliable in our case. Similarly, we used Optuna[35] on a
+subset of the fruits to tune the hyperparameters required by
+the baseline method. The average precision of our approach
+over the 4 time sessions is 93.5%. The average F1 score is
+92.1%. Our approach improves the 4D fruit association by
+23.7% in precision and 11.9% in F1 score in comparison
+with the second baseline.
+We conduct an ablation study to assess the contribution
+of different costs to 4D fruit association. Refer to Fig. 6 for
+quantitative results. Combining position and visual informa-
+tion achieves comparable results to baselines. The inclusion
+of topology information further enhances matching precision
+by reducing false positives. However, the topology cost could
+mistakenly reject fruits that should be matched. We analyze
+the handling of FP by the topology cost to demonstrate
+the effectiveness: 43.2% of the reduced FP are correctly
+rejected, 28.4% are corrected to be TP, but 28.4% of the
+reduced FP are incorrectly rejected when they should be
+TP. Furthermore, we compare the F1 scores of our methods
+against two baseline approaches by simulating real-world
+challenges such as occlusion, missed detections, and the
+emergence of new fruits, achieved by removing a percentage
+of fruits from the input to the 4D association method. As
+shown in Fig. 7, the proposed 4D fruit association method
+consistently outperforms baseline methods, even when up
+to 50% of the fruits are removed, highlighting its superior
+reliability to occlusion and missing data.
+C. Fruit Change Tracking and Size Estimation
+In Fig. 5, we show that we can accurately estimate the
+size (diameter) of fruits up to a mean absolute error of
+1.1 cm. For this experiment, we created a physical, real-
+world simulation of an apple tree in an orchard by manually
+attaching 19 apples to a similar tree. This was done since
+hand measuring and obtaining ground truth sizes of fruits in
+orchards is challenging due to difficulties in establishing a
+one-to-one association between ground truth and estimates.
+The fruits were hand-measured using a Vernier caliper to
+obtain their size ground truths. As seen from Fig. 5, the size
+estimates closely follow the ground truth measurements. The
+errors induced in the size measurements are mainly due to
+the presence of background points such as leaves and stems
+in the segmentation mask of the fruits, which in turn inflates
+the extracted 3D fruit point clouds, leading to slightly larger
+size estimates compared to the ground truth. Further, we also
+show results on using our method to track the changes in the
+growth of fruits in uncontrolled orchards over multiple time
+sessions, as shown in the right panel of Fig. 3.
+A visualization of our 4D tracking results on one example
+tree is shown in Fig. 8. Spatio-temporal tracking of fruits
+allows for close monitoring of fruit size and appearance
+changes. An example of this can be seen in the left panel of
+Fig. 3 where each individual fruit is tracked and visualized
+across its growth progress. The resulting 4D metric-semantic
+map of the orchard, shown in Fig. 1, illustrates how fruit
+sizes, canopy structure, and the overall appearance of both
+fruits and trees change over time.
+VI. CONCLUSION AND FUTURE WORK
+This paper presents methods and datasets for 4D metric-
+semantic mapping of orchards. Real-world experiments
+demonstrate the effectiveness of the proposed approach,
+achieving a 3.1% counting error in 3D fruit tracking and
+localization, a mean size estimation error of 1.10 cm for
+metric mapping, and a 23.7% improvement in tracking
+precision over baseline methods. However, the proposed
+
+method also has some limitations. LiDAR sparsity limits
+the localization and size estimation of small fruits. In 4D
+fruit association, reliable reference point selection is enforced
+by a strict threshold, but outliers can still be chosen when
+computing topology cost.
+Furthermore, we aim to enable autonomous robots like
+UAVs for agricultural robotics. While a hand-carried sensor
+stack is currently used to map orchards, it can readily be
+mounted on robots, allowing them for autonomous data
+collection and orchard monitoring.
+REFERENCES
+[1] S.
+Du,
+R.
+Lindenbergh,
+H.
+Ledoux,
+J.
+Stoter,
+and
+L.
+Nan,
+“Adtree: Accurate, detailed, and automatic modelling of laser-scanned
+trees,” Remote Sensing, vol. 11, no. 18, 2019. [Online]. Available:
+https://www.mdpi.com/2072-4292/11/18/2074
+[2] F. Fiorani and U. Schurr, “Future scenarios for plant phenotyping,”
+Annual review of plant biology, vol. 64, no. 1, pp. 267–291, 2013.
+[3] M. Watt, F. Fiorani, B. Usadel, U. Rascher, O. Muller, and U. Schurr,
+“Phenotyping: new windows into the plant for breeders,” Annual
+review of plant biology, vol. 71, no. 1, pp. 689–712, 2020.
+[4] S. W. Chen, S. S. Shivakumar, S. Dcunha, J. Das, E. Okon, C. Qu,
+C. J. Taylor, and V. Kumar, “Counting apples and oranges with deep
+learning: A data-driven approach,” IEEE Robotics and Automation
+Letters, vol. 2, no. 2, pp. 781–788, 2017.
+[5] S. Bargoti and J. P. Underwood, “Image segmentation for fruit
+detection and yield estimation in apple orchards,” Journal of Field
+Robotics, vol. 34, no. 6, pp. 1039–1060, 2017.
+[6] X. Liu, S. W. Chen, S. Aditya, N. Sivakumar, S. Dcunha, C. Qu,
+C. J. Taylor, J. Das, and V. Kumar, “Robust fruit counting: Combining
+deep learning, tracking, and structure from motion,” in 2018 IEEE/RSJ
+international Conference on intelligent robots and systems (IROS).
+IEEE, 2018, pp. 1045–1052.
+[7] L. Carlone, J. Dong, S. Fenu, G. Rains, and F. Dellaert, “Towards
+4d crop analysis in precision agriculture: Estimating plant height
+and crown radius over time via expectation-maximization,” in ICRA
+Workshop on Robotics in Agriculture, 2015, pp. 1–8.
+[8] J. Dong, J. G. Burnham, B. Boots, G. Rains, and F. Dellaert, “4d crop
+monitoring: Spatio-temporal reconstruction for agriculture,” in 2017
+IEEE International Conference on Robotics and Automation (ICRA).
+IEEE, 2017, pp. 3878–3885.
+[9] N. Chebrolu, T. L¨abe, and C. Stachniss, “Robust long-term registration
+of uav images of crop fields for precision agriculture,” IEEE Robotics
+and Automation Letters, vol. 3, no. 4, pp. 3097–3104, 2018.
+[10] L. Lobefaro, M. V. R. Malladi, O. Vysotska, T. Guadagnino,
+and C. Stachniss, “Estimating 4d data associations towards spatial-
+temporal mapping of growing plants for agricultural robots,” in 2023
+IEEE/RSJ International Conference on Intelligent Robots and Systems
+(IROS), 2023, pp. 4212–4218.
+[11] X. Mai, H. Zhang, and M. Q.-H. Meng, “Faster r-cnn with classifier
+fusion for small fruit detection,” in 2018 IEEE International Confer-
+ence on Robotics and Automation (ICRA), 2018, pp. 7166–7172.
+[12] G. Farjon, O. Krikeb, A. B. Hillel, and V. Alchanatis, “Detection
+and counting of flowers on apple trees for better chemical thinning
+decisions,” Precision Agriculture, vol. 21, pp. 503–521, 2020.
+[13] C. Zhang, G. Yang, Y. Jiang, B. Xu, X. Li, Y. Zhu, L. Lei, R. Chen,
+Z. Dong, and H. Yang, “Apple tree branch information extraction from
+terrestrial laser scanning and backpack-lidar,” Remote Sensing, vol. 12,
+no. 21, p. 3592, 2020.
+[14] J. Gen´e-Mola, E. Gregorio Lopez, F. Auat Cheein, D. J. Guevara,
+J. Llorens Calveras, R. Sanz, A. Escol`a, and J. Rosell-Polo, “Lfuji-air
+dataset: Annotated 3d lidar point clouds of fuji apple trees for fruit
+detection scanned under different forced air flow conditions,” Data in
+Brief, vol. 29, p. 105248, 02 2020.
+[15] J. Gen´e-Mola, R. Sanz-Cortiella, J. R. Rosell-Polo, J.-R. Morros,
+J. Ruiz-Hidalgo, V. Vilaplana, and E. Gregorio, “Fuji-sfm dataset:
+A collection of annotated images and point clouds for fuji apple
+detection and location using structure-from-motion photogrammetry,”
+Data in Brief, vol. 30, p. 105591, 2020. [Online]. Available: https:
+//www.sciencedirect.com/science/article/pii/S2352340920304856
+[16] S. Bargoti and J. Underwood, “Deep fruit detection in orchards,”
+in 2017 IEEE international conference on robotics and automation
+(ICRA).
+IEEE, 2017, pp. 3626–3633.
+[17] N. H¨ani, P. Roy, and V. Isler, “Minneapple: A benchmark dataset for
+apple detection and segmentation,” IEEE Robotics and Automation
+Letters, vol. 5, no. 2, pp. 852–858, 2020.
+[18] Y. Lu and S. Young, “A survey of public datasets for computer
+vision tasks in precision agriculture,” Computers and Electronics in
+Agriculture, vol. 178, p. 105760, 2020. [Online]. Available: https:
+//www.sciencedirect.com/science/article/pii/S0168169920312709
+[19] C. Bai, T. Xiao, Y. Chen, H. Wang, F. Zhang, and X. Gao, “Faster-
+lio: Lightweight tightly coupled lidar-inertial odometry using parallel
+sparse incremental voxels,” IEEE Robotics and Automation Letters,
+vol. 7, no. 2, pp. 4861–4868, 2022.
+[20] G. Jocher, A. Chaurasia, and J. Qiu, “YOLO by Ultralytics,” Jan.
+2023. [Online]. Available: https://github.com/ultralytics/ultralytics
+[21] B. D. Lucas and T. Kanade, “An iterative image registration technique
+with an application to stereo vision,” in Proceedings of the 7th
+International Joint Conference on Artificial Intelligence - Volume
+2, ser. IJCAI’81.
+San Francisco, CA, USA: Morgan Kaufmann
+Publishers Inc., 1981, pp. 674–679.
+[22] X. Liu, S. W. Chen, C. Liu, S. S. Shivakumar, J. Das, C. J. Taylor,
+J. Underwood, and V. Kumar, “Monocular camera based fruit counting
+and mapping with semantic data association,” IEEE Robotics and
+Automation Letters, vol. 4, no. 3, pp. 2296–2303, 2019.
+[23] D. G. Lowe, “Distinctive image features from scale-invariant key-
+points,” International journal of computer vision, vol. 60, pp. 91–110,
+2004.
+[24] L. Meyer, A. Gilson, U. Schmid, and M. Stamminger, “Fruitnerf: A
+unified neural radiance field based fruit counting framework,” 2024.
+[Online]. Available: https://arxiv.org/abs/2408.06190
+[25] F. Magistri, N. Chebrolu, and C. Stachniss, “Segmentation-based 4d
+registration of plants point clouds for phenotyping,” in 2020 IEEE/RSJ
+International Conference on Intelligent Robots and Systems (IROS),
+2020, pp. 2433–2439.
+[26] N. Chebrolu, T. L¨abe, and C. Stachniss, “Spatio-temporal non-rigid
+registration of 3d point clouds of plants,” in 2020 IEEE International
+Conference on Robotics and Automation (ICRA), 2020, pp. 3112–
+3118.
+[27] A. Riccardi, S. Kelly, E. Marks, F. Magistri, T. Guadagnino, J. Behley,
+M. Bennewitz, and C. Stachniss, “Fruit tracking over time using high-
+precision point clouds,” in 2023 IEEE International Conference on
+Robotics and Automation (ICRA), 2023, pp. 9630–9636.
+[28] D. Fusaro, F. Magistri, J. Behley, A. Pretto, and C. Stachniss, “Hor-
+ticultural temporal fruit monitoring via 3d instance segmentation and
+re-identification using point clouds,” arXiv preprint arXiv:2411.07799,
+2024.
+[29] C. Choy, J. Gwak, and S. Savarese, “4d spatio-temporal convnets:
+Minkowski convolutional neural networks,” in Proceedings of the
+IEEE/CVF conference on computer vision and pattern recognition,
+2019, pp. 3075–3084.
+[30] H. Freeman and G. Kantor, “Transformer-based spatio-temporal
+association of apple fruitlets,” 2025. [Online]. Available: https:
+//arxiv.org/abs/2503.03200
+[31] C. Bai, T. Xiao, Y. Chen, H. Wang, F. Zhang, and X. Gao, “Faster-
+lio: Lightweight tightly coupled lidar-inertial odometry using parallel
+sparse incremental voxels,” IEEE Robotics and Automation Letters,
+vol. 7, no. 2, pp. 4861–4868, 2022.
+[32] S. Rusinkiewicz and M. Levoy, “Efficient variants of the icp algo-
+rithm,” in Proceedings Third International Conference on 3-D Digital
+Imaging and Modeling, 2001, pp. 145–152.
+[33] M. Oquab, T. Darcet, T. Moutakanni, H. Vo, M. Szafraniec,
+V. Khalidov, P. Fernandez, D. Haziza, F. Massa, A. El-Nouby,
+M. Assran, N. Ballas, W. Galuba, R. Howes, P.-Y. Huang, S.-W. Li,
+I. Misra, M. Rabbat, V. Sharma, G. Synnaeve, H. Xu, H. Jegou,
+J. Mairal, P. Labatut, A. Joulin, and P. Bojanowski, “Dinov2:
+Learning robust visual features without supervision,” 2024. [Online].
+Available: https://arxiv.org/abs/2304.07193
+[34] A. Sadeghian, A. Alahi, and S. Savarese, “Tracking the untrackable:
+Learning to track multiple cues with long-term dependencies,” 2017.
+[Online]. Available: https://arxiv.org/abs/1701.01909
+[35] T. Akiba, S. Sano, T. Yanase, T. Ohta, and M. Koyama, “Optuna:
+A next-generation hyperparameter optimization framework,” in Pro-
+ceedings of the 25th ACM SIGKDD International Conference on
+Knowledge Discovery and Data Mining, 2019.

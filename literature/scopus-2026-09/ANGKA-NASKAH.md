@@ -13,7 +13,7 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Total kajian masuk 1002
 - Kajian per tahun: 2012: 9, 2013: 14, 2014: 13, 2015: 17, 2016: 22, 2017: 25, 2018: 29, 2019: 37, 2020: 67, 2021: 72, 2022: 91, 2023: 116, 2024: 164, 2025: 193, 2026: 132
 - Multi-pengamatan per tahun: 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 2, 2018: 1, 2019: 5, 2020: 10, 2021: 13, 2022: 13, 2023: 25, 2024: 38, 2025: 47, 2026: 31
-- Dengan abstrak 776 dari 1001; teks lengkap lokal 330
+- Dengan abstrak 776 dari 1001; PDF teks lengkap 479 (teks terekstrak 475); multi-pengamatan dengan PDF 194 dari 195
 - Peta istilah: 43 istilah, 311 tautan; istilah identitas 24-37 kajian; detection 611; counting 424
 
 ## Seksi 3: kajian multi-pengamatan

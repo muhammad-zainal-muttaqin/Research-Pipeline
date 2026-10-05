@@ -1,0 +1,731 @@
+Seeing the Fruit for the Leaves: Robotically Mapping Apple Fruitlets in
+a Commercial Orchard
+Ans Qureshi1∗, David Smith1, Trevor Gee1, Mahla Nejati1, Jalil Shahabi1, JongYoon Lim1, Ho Seok Ahn1,
+Ben McGuinness2, Catherine Downes2, Rahul Jangali2, Kale Black2, Hin Lim2, Mike Duke2,
+Bruce MacDonald1, Henry Williams1∗∗
+Abstract— Aotearoa New Zealand has a strong and growing
+apple industry but struggles to access workers to complete
+skilled, seasonal tasks such as thinning. To ensure effective
+thinning and make informed decisions on a per-tree basis, it is
+crucial to accurately measure the crop load of individual apple
+trees. However, this task poses challenges due to the dense
+foliage that hides the fruitlets within the tree structure. In this
+paper, we introduce the vision system of an automated apple
+fruitlet thinning robot, developed to tackle the labor shortage
+issue. This paper presents the initial design, implementation,
+and evaluation specifics of the system. The platform straddles
+the 3.4 m tall 2D apple canopy structures to create an accurate
+map of the fruitlets on each tree. We show that this platform
+can measure the fruitlet load on an apple tree by scanning
+through both sides of the branch. The requirement of an
+overarching platform was justified since two-sided scans had
+a higher counting accuracy of 81.17 % than one-sided scans
+at 73.7 %. The system was also demonstrated to produce size
+estimates within 5.9% RMSE of their true size.
+I. INTRODUCTION
+The apple and pear industry in Aotearoa New Zealand is
+a significant contributor to the country’s economy, with a
+current export value of $917m, projected to reach $2 billion
+by 2030 [1]. The lack of skilled labor is becoming a critical
+issue for the expanding industry, mirroring a global trend.
+Ensuring proficient human operators with expertise in fruitlet
+thinning decisions is essential. These decisions are vital for
+apple growers to optimize crop load and enhance the quality
+of the apples produced.
+The current thinning method involves manual counting
+of fruitlets on selected trees to estimate the load. These
+estimates guide thinning workers, but they may lead to incon-
+sistent results. To optimize yield and quality, individual tree
+loads should be accurately determined and specific thinning
+rules applied. Our horticultural collaborators anticipate a
+10%-30% increase in quality with this approach.
+To address these issues, this study proposes a computer
+vision-based system that can accurately estimate the fruit-
+let count on each tree to provide individualised thinning
+recommendations. The proposed system utilises 2D images
+captured by cameras mounted on a mobile robot platform to
+1The authors are with the Centre for Automation and Robotic Engineering
+Science, The University of Auckland, New Zealand.
+2The authors are with the School of Engineering, University of Waikato,
+Hamilton, New Zealand.
+Corresponding
+authors:
+aqur476@aucklanduni.ac.nz∗,
+henry.williams@auckland.ac.nz∗∗
+create a 3D map of the tree structure. The fruitlets are then
+detected using deep neural networks, and their size and loca-
+tion are estimated using point cloud processing techniques.
+Finally, the estimated fruitlet count provides individualised
+thinning recommendations for each tree, maximising the
+yield and quality of the apples produced.
+Our prior work [2] presented an initial attempt at mapping
+fruitlet load. We showed that this single-sided platform could
+measure the visible fruitlet load on the apple tree with 84%
+accuracy in a real-world commercial apple orchard while
+being 87% precise. However, this prototype platform only
+scanned one side of the tree and was only evaluated based on
+the fruitlets the system could visibly see in the scan and not
+the true count on the tree (i.e. did not count fruitlets on the
+other side of the branch). The work presented in this paper
+continues onto the full overarching platform scanning both
+sides of the tree and evaluating against the true load count.
+This work also presents the results of estimating the size of
+the fruitlets. Fig. 1 presents a photo of the proposed robotic
+platform prototype Archie Snr and the video demonstrating
+the scanning process and fruitlet mapping approach can be
+found here1
+Fig. 1.
+The Robotic platform Archie Snr used to scan the apple trees
+branch by branch in a commercial orchard.
+II. RELATED WORK
+Over the past two decades, substantial efforts have been
+dedicated to developing reliable methods for predicting or
+measuring crop yield [3], [4]. This work can be classified into
+two primary categories: seasonal model-based predictions [5]
+and direct fruit counting on the canopy [4].
+1https://cares.blogs.auckland.ac.nz/research/robots-in-
+agriculture/robotically-mapping-apple-fruitlets-in-a-commercial-orchard/
+arXiv:2308.07512v1  [cs.RO]  15 Aug 2023
+
+The prevailing approach for crop yield estimation com-
+monly relies on leveraging big data to build growth models
+that forecast the output of specific crops [3]. These methods
+primarily target large-scale farming practices involving crops
+like rice, soybeans, and corn. By gathering data on agricul-
+tural soils, climate conditions, weather forecasts, soil quality,
+and historical crop yields, models are constructed to predict
+the yield of a particular crop for the upcoming year [5]. For
+instance, in [6], a model was developed to predict soybean
+yields across Iowa, United States, achieving an R2 value of
+0.86.
+In recent years, machine learning techniques have gained
+prominence in building these prediction models, facilitated
+by the availability of remote sensing and satellite data that
+offer a wealth of information [7], [8]. While these approaches
+suit large-scale farming operations, they lack the precision
+required for accurate yield predictions at the individual
+vineyard or farm level.
+Recent advancements in machine learning for computer
+vision have sparked extensive research on predicting crop
+yield through fruit counting in orchards [4]. Machine vision
+techniques have been widely applied to estimate fruit quanti-
+ties per tree (referred to as ’load’), enable in-field fruit sizing,
+and automate harvesting processes. By combining estimates
+of fruit size and quantity, it becomes possible to calculate the
+overall fruit weight (referred to as ’yield’) per orchard. This
+approach has been successfully implemented across various
+crops, including apples [9], [10], oranges [11], mangoes [12],
+and kiwifruit [13], [14].
+In a study by [10], the average size of mangoes was
+measured using a single snapshot captured by an RGBD
+camera. Their machine vision system, supported by machine
+learning, achieved a remarkable accuracy, with a root mean
+square error (RMSE) of 4.9 mm and 4.3 mm for fruit length
+and width, respectively. Since mangoes tend to grow uni-
+formly, fruit visibility on the outer edge of the tree serves
+as a representative sample of the obscured fruit within the
+tree. Thus, the method doesn’t require detecting each fruit
+to estimate overall size. Instead, it assesses the total number
+of fruits per tree, not just visible ones in an image.
+One approach to estimate fruit count per tree involves
+increasing viewpoints to visualize obstructed fruits. However,
+this multiple-view strategy is computationally complex and
+requires accurate object-tracking algorithms due to fruit
+visual similarity. Studies have found that using images from
+multiple canopy sides yields better correlation with human
+fruit counts. However, this method may lead to overestima-
+tion due to multiple counting of the same fruit at different
+angles [12]. To address this issue, subsequent studies aimed
+to incorporate 3D spatial information to register fruits be-
+tween frames [9], [15], [16].
+The work by [16] is notable among these approaches. They
+used a multiple-view approach, capturing 37 images around a
+mango tree from a moving platform. Fruit tracking was done
+with an epipolar projection method, aided by LIDAR for tree
+tracking. Their evaluation achieved a 1.36% error rate across
+16 trees compared to the harvested count. However, it’s
+important to note that potential double counting was offset
+by non-detection of hidden fruit, and mango identification
+accuracy was not measured.
+Previous approaches face limitations in accurately visual-
+izing all fruits due to leaf obstructions, relying on overall
+estimations. In contrast, our work aims to precisely count
+fruitlets and identify their locations along tree branches in
+automated thinning.
+III. ROBOTIC PLATFORM
+Archie Snr (see Fig. 1) is an experimental research plat-
+form designed to automatically thin apple trees. The platform
+straddles the 3.4 m tall canopy structure. A UR5 robotic
+arm with stereo cameras is mounted to linear rails on either
+side of the platform. The linear rails enable the platform to
+position the robotic arms for scanning each level of the 2D
+tree structure.
+The decision to straddle the apple tree was made for three
+reasons. First, to remove extreme lighting conditions, specif-
+ically when the sun is low in the sky and pointing directly
+into the camera systems on one side. The sun is facing
+directly into the camera, which causes glare, significantly
+degrading the detection and stereo-matching performance.
+Additionally, straddling enables the system to operate at
+night with internal lighting. Second, to remove the impact
+of wind. The wind shakes the canopy and disrupts the
+alignment of the fruitlet mapping process by introducing a
+complex registration problem, which was also observed in
+[17]. Finally, similar to the approach in [17], not all fruitlets
+are physically accessible or visible from a single side of the
+canopy.
+UR5s equipped with stereo cameras (Fig. 2) are mounted
+on either side of Archie Snr. which scan the tree from
+multiple viewpoints. Basler acA2440-35uc USB 3.0 cameras
+were selected due to their high dynamic range, which makes
+them well-suited for capturing images in dynamic outdoor
+lighting conditions. These cameras offer a resolution of
+2056x2464 pixels, enabling precise theoretical measurements
+with a setup that achieves millimeter-level accuracy. To
+achieve the desired working distance of 300 mm to 600 mm
+for scanning the cane’s width and guiding the thinning tool,
+Kowa lenses (Kowa F1.8, 2/3” format, focal length of 5
+mm) were employed. The cameras were positioned with
+a baseline of 100 mm to minimize stereo errors, ensuring
+accurate depth resolution while maintaining the required field
+of view. Our calculations show this gives a depth resolution
+of 1.10 mm per pixel of matching error at a distance of
+0.4 m (at this distance with a disparity of 362 pixels). Camera
+synchronisation is required for accurate stereo matching, for
+this purpose, a hardware trigger operating at 20 Hz was used.
+IV. VISION SYSTEM - FRUITLET MAPPING
+To achieve accurate thinning decisions, the vision system
+needs to generate precise 3D maps of fruitlets along each
+apple tree branch. However, this task is challenging due to
+dense foliage that often obscures fruitlets, either partially
+or completely, from a single viewpoint. Moreover, fruitlets
+
+Fig. 2.
+Internal view of one of the UR5 robotic arms mounted on the
+linear rail system used to scan the apple trees. Also shown is the Charuco
+board used to align the scans on either side of the platform.
+tend to grow in clusters, further obstructing visibility. In this
+section, we present our innovative method for creating an
+accurate fruitlet map within the 2D structure of the apple
+tree.
+Our fruitlet mapping process involves coordinating UR5
+robotic arms to capture stereo-data of the tree from strategic
+pre-planned poses. The stereo data is precisely aligned
+through hand-eye calibration, utilizing OpenCV and a
+Charuco board for camera calibration and the ViSP library
+for UR5-stereo pair calibration 2 [18]. The stereo-data be-
+tween each side of the platform is aligned geometrically
+using a Charuco board placed at the bottom of the tree,
+shown in Fig. 2, to provide a common reference point for
+each side at the start of each scan. This approach proved
+effective at geometrically aligning the scans from each side.
+The cameras are place at 300 mm to 400 mm from the branch
+center, and the arm scans each branch accurately, in an arc
+trajectory at 10 equally distanced points. The arm does four
+arc scans spaced 15 mm apart along the branch width. A
+whole branch scan has 40 viewpoints on each side along
+900 mm of the branch.
+The mapping process identifies the individual fruitlet at
+each scan point and then registers them into a 3D map as
+the arm scans the branch. Fig. 3 illustrates the high-level
+scanning process. The first stage of the process extracts the
+fruitlet information in the immediate scan (a). The instance
+segmentation from section IV-A is used to detect the fruitlets
+within the RGB image (b). The mask is then used to extract
+the point cloud information for each fruitlet from the depth
+information generated using the stereo inference in Section
+IV-B (c). Finally, the size and shape of the fruitlets are
+measured and associated with the fruitlets in the overall map
+as in Section IV-C (e and f).
+A. Fruitlet Detection
+As deep neural networks have become the de facto ap-
+proach for detection, we employ them for reliable detection
+of fruitlets under real-world lighting conditions. Specifically,
+we utilize Detectron23[19] framework to apply instance
+2https://visp.inria.fr
+3https://github.com/facebookresearch/detectron2
+segmentation to detect fruitlets in 2D images.
+Images were captured from several orchards throughout a
+variety of lighting conditions. Supervisely’s tool was used to
+manually label 638 fruitlet instances from 38 images. Fig.
+4 shows an example of these labelled features. The final
+training performance was done using Mask R-CNN using
+the ResNeXT-101 backbone which gave a mean Average
+Precision (mAP) of 0.5. It was made sure during the labelling
+process that the fruit boundaries were properly encapsulated
+and no part of the background or leaf was a part of the mask.
+If the masks included parts of the non-fruit, then it would
+cause improper 3D detection [2].
+B. Stereo Inference
+By examining the tabulated results of stereo-matching
+benchmarks compiled on the Middlebury Stereo Evaluation
+v34, we investigated potential approaches capable of gen-
+erating high-resolution depth maps with low error rates.
+Due to the absence of ground truth depth data for our
+real-world fruitlet images, training machine learning-based
+networks specifically for our use case was not feasible.
+Among the evaluated approaches, HSMnet [20] was selected
+due to its usability on fruitlet images, exhibiting the lowest
+Mean Absolute Error in pixels (avgerr) for high-resolution
+images as of mid-2021, at 2.07. We utilized the provided
+pre-trained model, which yielded satisfactory depth data for
+the apple tree. The only modification made to the HSMnet
+approach was the utilization of a truncated window around
+local maxima during the weighted depth regression, resulting
+in reduced noise near discontinuities. Fig. 3d illustrates an
+example of the HSMnet output on a real-world stereo image
+pair.
+C. Fruitlet Extraction
+The fruitlet instances segmented from the RGB images can
+be aligned with corresponding 3D depth values (Fig. 3d) to
+extract the 3D instances. The fruitlet requires a geometrical
+figure with accurate position and size to be represented in
+3D space. For this, a sphere fitting technique is used with
+the help of Random Sample Consensus (RANSAC) [21].
+RANSAC is applied in two stages. First the centroid is
+calculated by averaging the coordinates of all the points in
+the point cloud, and the diameter is calculated using the
+average point distance approach. The centroid and diameter
+value is used as an initial value for RANSAC. Points having
+a distance to the sphere that is greater than its radius
+(i.e., they are outside the sphere) are not considered inliers.
+Additionally, points with a depth (i.e., z-coordinate) less than
+the minimum depth in the point cloud are also excluded
+from being considered inliers. Before RANSAC, the fruitlet
+instances are thresholded to a finite number of points for
+better sphere estimation (Fig. 3e).
+It is essential to ensure that the geometric position of a
+fruitlet is not affected by the point cloud generated from the
+following image of the same fruitlet. In some cases of impure
+4https://vision.middlebury.edu/stereo/eval3/
+
+Fig. 3.
+Visualisation of the Fruitlet Mapping Process stage by stage.
+Fig. 4.
+Example of images labelled for Instance Segmentation showing
+detection of the fruitlets.
+depth information, the global fruitlet position would be far
+from its original position and create a duplicate. Each fruitlet
+is assigned a count id (Fig. 3f) and would merge with the
+fruitlet generated in the next iteration to avoid duplication.
+Each time a fruitlet is merged, its position and size are
+updated by taking the average of both values.
+V. EXPERIMENTAL SETUP
+The performance evaluation of the thinning platform’s
+vision system was conducted in a real-world commercial
+apple orchard located in Hastings, New Zealand, during the
+2022 thinning season. The evaluation encompassed a com-
+prehensive and realistic field trial, comparing the system’s
+performance metrics to ground truth measurements. The
+orchard featured mature trees utilizing a 2D growing system
+that restricts the tree to a relatively flat structure, as depicted
+in Fig. 5. The trees remained untrimmed, unaltered, and were
+not subjected to any modifications typically performed by the
+robot. Data collection took place over a two-week period,
+with the robot, Archie Snr, operating during daylight hours
+under varying lighting conditions.
+Data capturing was conducted by manually driving the
+platform in front of a branch segment, placing the scanning
+arms centred along the branch as shown in this video.
+The approach described in section IV is applied to each
+scan to produce a map of the fruitlets on each branch. One of
+the advantages of the multiview approach is that if a fruitlet
+is not detected from one viewpoint, it is detected in the next.
+Fig. 5.
+Example of a five-year-old apple tree grown on a 2D structure.
+Featured in the image are two branches tied down horizontally off the main
+trunk of the tree, thus forming the 2D structure.
+Fig. 6 shows a visual representation of this mapping. Once
+completed, the robot was driven forward to the next tree in
+the row, repeating this process as often as possible.
+Fig. 6.
+Example of the output of the mapping process where each fruitlet
+is assigned a count and diameter measurement (in cm).
+In total, 10 individual branches were scanned and ground-
+truthed on both sides by the Archie Snr platform. Each
+fruitlet growing on a branch was manually counted, and the
+diameter of the fruitlet was measured at the widest point
+using a vernier caliper.
+VI. RESULTS
+The evaluation was done by comparing the results of the
+count and size estimates of the vision system to the ground
+truth measured by hand. The vision system produces three
+
+TABLE I
+LOAD ESTIMATES OF THE SINGLE-SIDED AND TWO-SIDED SCANS COMPARED AGAINST THE GROUND TRUTH COUNTS.
+Scan
+Number
+Side
+Ground
+Truth
+Calculated
+(One-side)
+Accuracy
+Precision
+Recall
+F1-score
+Calculated
+(both-sides)
+Accuracy
+Precision
+Recall
+F1-score
+1
+A
+52
+29
+55.76
+0.966
+0.875
+0.918
+63
+78.84
+0.762
+0.923
+0.835
+B
+35
+67.3
+0.914
+1
+0.955
+2
+A
+53
+28
+52.83
+0.964
+0.871
+0.915
+60
+86.79
+0.817
+0.925
+0.868
+B
+39
+73.58
+0.846
+0.971
+0.904
+3
+A
+61
+45
+73.77
+0.867
+1
+0.929
+59
+96.72
+0.915
+0.885
+0.9
+B
+30
+49.18
+0.967
+0.935
+0.951
+4
+A
+69
+58
+84.05
+0.914
+0.964
+0.938
+71
+97.1
+0.93
+0.957
+0.943
+B
+36
+52.17
+1
+0.923
+0.96
+5
+A
+46
+42
+91.3
+0.857
+0.9
+0.878
+59
+71.73
+0.695
+0.911
+0.788
+B
+45
+97.82
+0.956
+0.977
+0.966
+6
+A
+59
+44
+74.57
+0.932
+0.976
+0.953
+78
+67.79
+0.744
+0.983
+0.847
+B
+56
+94.91
+0.929
+0.963
+0.946
+7
+A
+48
+37
+77.08
+0.919
+0.895
+0.907
+47
+97.91
+0.872
+0.854
+0.863
+B
+28
+58.33
+0.857
+0.774
+0.813
+8
+A
+37
+31
+83.78
+0.903
+0.933
+0.918
+36
+97.29
+0.972
+0.946
+0.959
+B
+28
+75.67
+0.964
+0.818
+0.885
+9
+A
+40
+29
+72.5
+0.862
+0.893
+0.877
+57
+57.5
+0.684
+0.975
+0.804
+B
+31
+77.5
+0.839
+1
+0.912
+10
+A
+50
+37
+74
+0.865
+0.865
+0.865
+70
+60
+0.643
+0.9
+0.75
+B
+44
+88
+0.818
+0.947
+0.878
+Average:
+73.7
+0.907
+0.924
+0.913
+81.167
+0.803
+0.926
+0.856
+counts, one from each side of the platform and a final count
+with both sides of the scans aligned. These results can be
+viewed in Table I, where the fruit counts from each side
+of the platform are shown in the ’Calculated’ columns. The
+true positive, false positive, and false negative count was
+measured for all the scans to evaluate the mapping system.
+Precision highlights the error caused by overcounting and
+recall shows undercounting. The absolute percentage differ-
+ence was computed to assess the error magnitude in fruitlet
+counting across different sphere fitting techniques. This was
+calculated to give an overall accuracy using the formula
+
+1 −|calculated−ground truth|
+ground truth
+
+×100. For size estimation, the
+calculated diameter of 100 fruitlets was compared with the
+ground truth and an RMSE value of 5.9% was calculated.
+Fig. 7 shows a scatter plot of the actual size vs the calculated
+size.
+Fig. 7.
+Measured fruitlet sizes compared against the ground truth size of
+the fruitlet.
+VII. DISCUSSION
+A few bad apples can spoil the count. The high recall of
+the single-sided scans (92.4%) demonstrates the effectiveness
+of the multi-view scanning approach to mapping the fruitlets
+along the branch. Presuming the 2D and 3D information
+is associated and matched correctly between frames, the
+fruitlets hidden from one view are detected in another. Sphere
+size-based thresholding and other fruitlet matching methods
+were effective in mitigating over-counting, but they also
+introduced the issue of under-counting. However, ultimately
+the accuracy against the true count on the branch was poor
+at 73.7%. The error was primarily caused by under-counting
+since the single-sided scans are unable to see all the fruit for
+the leaves.
+Merging the single-sided scans improved the accuracy
+of the total count from 73.7% to 81.17%. However, the
+precision was reduced from 90.7% to 80.3% due to the
+introduction of further false positives (non-existent fruitlets)
+from the other side. Aligning the single-sided scans relies
+on the position estimate of the Charuco board that has been
+placed between the scanning arms. This simple approach
+has been demonstrated to be effective but requires further
+improvements to refine the alignment of the fruitlets between
+the single scans. A slight improvement in the recall values
+was seen, indicating that the fruitlets left undetected on one
+side were detected from the other side.
+During size estimation, the average point distance ap-
+proach using RANSAC was observed to be biased towards
+larger fruitlets, which were in the majority, as seen in Fig.
+7.
+VIII. CONCLUSIONS
+In conclusion, we designed an automated apple fruitlet
+thinning system’s vision system. Unlike previous systems
+estimating overall load, we focused on mapping fruitlets
+along individual branches of 2D tree structures.
+Under real-world conditions, we evaluated the vision
+system on 10 two-sided scans of apple tree branches in a
+commercial orchard. The system was demonstrated to have
+an overall accuracy of 81.17% with a precision of 80.3% and
+
+a recall of 92.6% when scanning the branches from each
+side. The overarching platform is required to see all the
+fruitlets around the canopy obstructions. This is seen with
+the single-sided scans producing a lower overall accuracy
+at 73.7% with a precision of 92.4% and recall of 92.4%.
+The system was also demonstrated to produce size estimates
+within 5.9% RMSE of the true size. However, the sphere
+fitting is biased towards the larger-sized fruitlets. Future work
+will seek to reduce the over-counting through improvements
+to the alignment of each side’s scan and to reduce the bias
+in size estimation.
+ACKNOWLEDGMENT
+This research was supported by the New Zealand Min-
+istry for Business, Innovation and Employment (MBIE) on
+contract UOAX1810.
+REFERENCES
+[1] N. Z. Apples and P. Inc, “Preliminary findings and recommendations:
+Immigration
+policy
+settings,”
+https://www.productivity.
+govt.nz/assets/Submission-Documents/immigration-settings/
+DR-172-New-Zealand-Apples-and-Pears-Inc.pdf,
+2022,
+accessed:
+2022-09-01.
+[2] A. Q. et al, “Seeing the fruit for the leaves: Towards automated
+apple fruitlet thinning,” in Proceedings of the 2022 Conference
+on Australasian Conference on Robotics and Automation.
+ACRA,
+2022. [Online]. Available: https://ssl.linklings.net/conferences/acra/
+acra2022 proceedings/views/includes/files/pap121s2.pdf
+[3] B. Sagar and N. Cauvery, “Agriculture data analytics in crop yield
+estimation: a critical review,” Indonesian Journal of Electrical Engi-
+neering and Computer Science, vol. 12, no. 3, pp. 1087–1093, 2018.
+[4] A. Koirala, K. B. Walsh, Z. Wang, and C. McCarthy, “Deep learning–
+method overview and review of use for fruit detection and yield
+estimation,” Computers and electronics in agriculture, vol. 162, pp.
+219–234, 2019.
+[5] B. Basso and L. Liu, “Seasonal crop yield forecast: Methods, applica-
+tions, and accuracies,” advances in agronomy, vol. 154, pp. 201–255,
+2019.
+[6] A. K. Prasad, L. Chai, R. P. Singh, and M. Kafatos, “Crop yield
+estimation model for iowa using remote sensing and surface pa-
+rameters,” International Journal of Applied earth observation and
+geoinformation, vol. 8, no. 1, pp. 26–33, 2006.
+[7] C. Ferencz, P. Bognar, J. Lichtenberger, D. Hamar, G. Tarcsai,
+G. Tim´ar, G. Moln´ar, S. P´asztor, P. Steinbach, B. Sz´ekely, et al., “Crop
+yield estimation by satellite remote sensing,” International Journal of
+Remote Sensing, vol. 25, no. 20, pp. 4113–4149, 2004.
+[8] M. M. Awad, “Toward precision in crop yield estimation using remote
+sensing and optimization techniques,” Agriculture, vol. 9, no. 3, p. 54,
+2019.
+[9] Q. Wang, S. Nuske, M. Bergerman, and S. Singh, “Automated
+crop yield estimation for apple orchards,” in Experimental robotics.
+Springer, 2013, pp. 745–758.
+[10] Z. Wang, K. B. Walsh, and B. Verma, “On-tree mango fruit size
+estimation using rgb-d images,” Sensors, vol. 17, no. 12, p. 2738,
+2017.
+[11] S. W. Chen, S. S. Shivakumar, S. Dcunha, J. Das, E. Okon, C. Qu,
+C. J. Taylor, and V. Kumar, “Counting apples and oranges with deep
+learning: A data-driven approach,” IEEE Robotics and Automation
+Letters, vol. 2, no. 2, pp. 781–788, 2017.
+[12] A. B. Payne, K. B. Walsh, P. Subedi, and D. Jarvis, “Estimation
+of mango crop yield using image analysis–segmentation method,”
+Computers and electronics in agriculture, vol. 91, pp. 57–64, 2013.
+[13] J. Massah, K. A. Vakilian, M. Shabanian, and S. M. Shariatmadari,
+“Design, development, and performance evaluation of a robot for yield
+estimation of kiwifruit,” Computers and Electronics in Agriculture,
+vol. 185, p. 106132, 2021.
+[14] M. L. Mekhalfi, C. Nicol`o, I. Ianniello, F. Calamita, R. Goller,
+M. Barazzuol, and F. Melgani, “Vision system for automatic on-tree
+kiwifruit counting and yield estimation,” Sensors, vol. 20, no. 15, p.
+4214, 2020.
+[15] Y. Song, C. Glasbey, G. Horgan, G. Polder, J. Dieleman, and
+G. Van der Heijden, “Automatic fruit recognition and counting from
+multiple images,” Biosystems Engineering, vol. 118, pp. 203–215,
+2014.
+[16] M. Stein, S. Bargoti, and J. Underwood, “Image based mango fruit
+detection, localisation and yield estimation using multiple view geom-
+etry,” Sensors, vol. 16, no. 11, p. 1915, 2016.
+[17] A. Silwal, F. Yandun, A. Nellithimaru, T. Bates, and G. Kantor,
+“Bumblebee: A path towards fully autonomous robotic vine pruning,”
+arXiv preprint arXiv:2112.00291, 2021.
+[18] M. Antonello, A. Gobbi, S. Michieletto, S. Ghidoni, and E. Menegatti,
+“A fully automatic hand-eye calibration system,” in 2017 European
+conference on mobile robots (ECMR).
+IEEE, 2017, pp. 1–6.
+[19] Y. Wu, A. Kirillov, F. Massa, W.-Y. Lo, and R. Girshick, “Detectron2,”
+https://github.com/facebookresearch/detectron2, 2019.
+[20] G. Yang, J. Manela, M. Happold, and D. Ramanan, “Hierarchical deep
+stereo matching on high-resolution images,” in Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+2019, pp. 5515–5524.
+[21] H. Cantzler, “Random sample consensus (ransac),” Institute for Per-
+ception, Action and Behaviour, Division of Informatics, University of
+Edinburgh, vol. 3, 1981.

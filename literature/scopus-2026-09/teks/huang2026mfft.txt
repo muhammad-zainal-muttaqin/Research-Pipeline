@@ -1,0 +1,2330 @@
+MFFT: an improved method for stable ID tracking and counting of 
+multi-class mango segmentation with multi-feature fusion in complex 
+occlusion scenarios
+Wentao Huang a, Yingsheng Li a,b, Beike Tan a, Marija Brki´c Bakari´c c,d, Zhiqiang Zhu e,  
+Xiaoshuan Zhang a,f,*
+a College of Engineering, China Agricultural University, Beijing 100083, China
+b School of Instrument Science and Technology, Xi ’an Jiaotong University, Xi ’an 710049, China
+c Faculty of Informatics and Digital Technologies, University of Rijeka, Rijeka 51000, Croatia
+d Centre for Artificial Intelligence and Cybersecurity, University of Rijeka, Rijeka 51000, Croatia
+e National Engineering and Technology Research Center for Preservation of Agricultural Products, Tianjin Academy of Agriculture Sciences, Tianjin 300384, China
+f Sanya Institute, China Agricultural University, Sanya 572000, China
+A R T I C L E I N F O
+Keywords:
+Fruit counting
+Computer vision
+Feature fusion
+Multi-class tracking
+Biomass estimation
+A B S T R A C T
+Accurate mango segmentation, counting, and biomass estimation are critical for orchard yield prediction. To 
+address the challenges of low fruit segmentation accuracy, frequent ID switches, and large tracking and counting 
+errors under complex occlusion scenarios, this paper proposes a multi-feature fusion tracking method termed 
+MFFT. The method is built on the Swin-T backbone and a customized Transformer decoder, integrated with 
+shallow feature enhancement, boundary attention, and background gating modules. For mango segmentation, 
+the proposed approach achieves 0.71 mIoU and 40.32 FPS for both on-tree and fallen mangoes. In the tracking 
+stage, IOU, HSV, shape, and diagonal features are fused, together with an improved Kalman filter and ID lifecycle 
+management, resulting in a MOTA of 0.6513 and a significant reduction in ID switches. The system innovatively 
+introduces diagonal length as a computational metric, achieving a counting relative error of only 4.30% and a 
+biomass estimation error of 4.49%. It outperforms mainstream algorithms such as Mask R-CNN, YOLOv8, DTER, 
+and ByteTrack across multiple metrics. The proposed method exhibits strong application potential in orchards 
+and provides more precise data support and a decision-making foundation for digital agricultural production 
+management. The code and dataset for this study have been made open source on Google Drive: https://drive. 
+google.com/file/d/1UzvgiqlXn-C2aJZsHmcLAWSYaVYA0bnH/view?usp=sharing.
+1. Introduction
+Mango, a high-value cash crop widely cultivated in tropical and 
+subtropical regions worldwide (Lei et al., 2025), benefits from yield 
+prediction and precise biomass estimation, which are directly linked to 
+the optimization of orchard irrigation and fertilization management, 
+harvesting schedule planning, and market supply–demand regulation. 
+These aspects form the core driver for advancing the mango industry 
+towards large-scale and intelligent transformation (Xie et al., 2024). 
+With the rapid development of digital agricultural technologies, com­
+puter vision, owing to its advantages of non-contact, real-time, and high- 
+precision operation (Zhou, et al., 2025a,2025b), has gradually replaced 
+traditional manual counting and sampling estimation methods, 
+emerging as a core technological pathway for monitoring crop growth 
+status and evaluating yield in orchards (Karabanov et al., 2025). 
+Currently, computer vision is applied in disease differentiation, fruit 
+segmentation, yield prediction, and other areas, providing growers with 
+comprehensive dynamic growth data of fruits throughout the entire 
+growth cycle (Lv et al., 2025). This offers robust data support for agri­
+cultural management decision-making, holding significant practical 
+relevance.
+In recent years, extensive research on visual detection technologies 
+for orchard crops has been conducted by scholars globally, with fruit 
+segmentation 
+serving 
+as 
+a 
+critical 
+preprocessing 
+step. 
+The 
+* Corresponding author at: College of Engineering, China Agricultural University, Beijing 100083, China..
+E-mail addresses: wentao2024@cau.edu.cn (W. Huang), 2022307150317@cau.edu.cn (Y. Li), 2022307150101@cau.edu.cn (B. Tan), mbrkic@uniri.hr
+(M.B. Bakari´c), zhzq111@163.com (Z. Zhu), zhxshuan@cau.edu.cn (X. Zhang). 
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+https://doi.org/10.1016/j.compag.2026.112149
+Received 26 February 2026; Received in revised form 25 June 2026; Accepted 2 July 2026  
+Computers and Electronics in Agriculture 253 (2026) 112149 
+Available online 8 July 2026 
+0168-1699/© 2026 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+
+methodological evolution in this domain has crystallized into two 
+principal technical pathways: traditional machine vision and deep 
+learning. Traditional approaches rely on manually designed color 
+thresholds, texture features, and morphological operations to achieve 
+object segmentation (Rojas Santelices et al., 2025). For example, such 
+methods have been applied to citrus shape detection, offering simplicity 
+and low cost. However, their applicability is confined to specific 
+experimental conditions, lacking the robustness required for complex 
+real-world orchard environments, which has led to their gradual 
+displacement by deep learning techniques in numerous application 
+scenarios (Yang et al., 2025). Among deep learning based segmentation 
+methods, instance segmentation (Xu et al., 2025) and semantic seg­
+mentation (Xu et al., 2025) currently represent the mainstream frame­
+works. Nevertheless, both exhibit significant adaptation limitations 
+when confronted with the complexities of mango orchard environments 
+and scenarios characterized by limited sample sizes, thereby failing to 
+meet the demands of practical deployment.
+Instance segmentation stands as a primary technique for precise 
+extraction of individual fruits, widely applied in orchard crop detection. 
+Traditional instance segmentation models, represented by Mask R–CNN, 
+enable end–to–end training for detection and mask generation. To 
+address fruit segmentation under dense canopy occlusion, Liao 
+improved the mask head of Mask R–CNN, achieving a peak accuracy of 
+0.941; under heavier occlusion, the model attained a best recall of 0.846 
+(Liao et al., 2025). Crespo employed Mask R–CNN with a ResNet–FPN 
+backbone from Detectron2 for strawberry instance segmentation, 
+obtaining an mAP of 0.8345 (Crespo et al., 2025). Moreover, Zu and Lee 
+respectively integrated ResNet50 (Zu et al., 2021) and ResNet101 (Lee 
+et al., 2020) with Mask R–CNN, both reaching high accuracy on their 
+respective datasets. However, these models are complex and generally 
+exhibit slow inference speeds. In subsequent developments, YOLO has 
+proven to be a highly efficient detection–segmentation architecture, 
+widely adopted for fruit segmentation tasks. Zhou applied an improved 
+YOLO v8 for instance segmentation and localization of multi–colored 
+apples, achieving mAP above 0.95 for each color variant (Zhou, et al., 
+2025a,2025b). For grape–peduncle segmentation, Shen designed MSA­
+–YOLO based on YOLOv8, attaining a segmentation mAP@50 of 0.995 
+(Shen et al., 2025). To adapt to complex environments, Wei refined 
+YOLOv8, improving segmentation mask mAP50 and mAP50–95 by 5.8% 
+and 8.5% respectively over the original version (Wei et al., 2025). 
+Among recent advanced models, DETR, with its Transformer–based 
+global feature capture capability, provides more precise boundary 
+delineation and is gaining increasing attention. Zhu utilized a custom 
+transformer to enhance segmentation AP (Zhu et al., 2025a). Zhu 
+employed an improved mask2former for watermelon–scion leaf seg­
+mentation, achieving an mIOU of 0.9744 (Zhu et al., 2025b). In contrast 
+to instance segmentation, semantic segmentation networks adopt 
+lightweight encoder–decoder structures, offering efficient inference and 
+strong hardware compatibility. They enable rapid pixel–wise separation 
+of fruit from background, effectively handling complex background 
+interference. Ibarra evaluated UNet for segmenting tomato fruits and 
+leaves, reporting a peak performance of 0.89078 (Guerra Ibarra et al., 
+2025). Mondal used MobileNet–v2 as the backbone with UNet as the 
+image segmentation model, obtaining IoU and Dice scores of 95.69% 
+and 97.89% respectively (Mondal et al., 2025). Liu designed a fish 
+segmentation model that reached an mIOU of 0.9273 (Liu et al., 2024a). 
+However, in mango orchard scenarios characterized by complex view­
+ing–angle and illumination variations, extensive bagging, dense clus­
+tering and adhesion of fruits, and severe occlusion among leaves and 
+mangoes, prior research remains limited. In Swin–S and SegFormer 
+achieved the best IoU (67.35% and 66.44%, respectively) for clustered 
+mango–flower segmentation, yet their mAP for isolated mangoes was 
+inferior to that of YOLO (Ven et al., 2025).
+Following fruit segmentation, the subsequent step is tracking and 
+counting, with the core methodology being multi-object tracking 
+(MOT). Existing MOT algorithms, such as SORT and DeepSORT, 
+predominantly operate in an online manner, relying on segmentation or 
+detection results and achieving identity association through feature 
+matching. Zhang employed YOLOv8 and DeepSORT for pedestrian 
+detection and tracking, with improvements yielding a 9.7% increase in 
+MOTA (Zhang, et al., 2025a,2025b). Sim applied StrongSORT to multi- 
+cow tracking, achieving HOTA, MOTA, and IDF1 scores of 78.64%, 
+90.29%, and 91.41%, respectively (Sim and Cho, 2025). Harefa inte­
+grated the efficient IoU-based matching of ByteTrack with the 
+appearance-driven association of DeepSORT, resulting in significant 
+improvements in MOTA and IDF1 compared to using either method 
+independently (Harefa and Wijaya, 2025). Some researchers have 
+extracted core concepts and developed customized trackers by fusing 
+different features for identity matching, tailored to specific practical 
+conditions. Zhou developed a MultiMap component combined with 
+existing advanced tracking algorithms to achieve real-time tracking of 
+multiple fruits, with the lowest counting error rate reaching only 6.7% 
+(Zhou et al., 2024). Liu addressed occlusion and deformation in fish 
+movement by leveraging appearance information and motion models, 
+enabling multi-fish tracking with a HOTA score of 71.4% (Liu et al., 
+2024b). Yao designed an end-to-end real-time fish tracking model, 
+FMRFT, achieving an IDF1 of 90.3% and a MOTA accuracy of 94.3% 
+(Yao et al., 2025). However, in the context of mango orchards, few 
+studies have investigated tracking and counting methods under such 
+complex conditions. Pichhika proposed a centroid-tracking algorithm 
+for precise counting (Pichhika et al., 2025), but it is unsuitable for 
+scenarios with severe mutual occlusion among mangoes. Previous 
+tracker designs that fuse different features for specific scenarios provide 
+valuable insights for subsequent development.
+The final stage is biomass estimation, which calculates the theoret­
+ical fruit yield in an orchard, reduces labor input, and provides direct 
+support for orchard production. Some studies have already employed 
+detection and counting methods for biomass estimation. For example, 
+the passion fruit yield was estimated using the YOLOv8n + OC–SORT +
+CRCM algorithm, achieving an average counting accuracy of 87.0% and 
+effectively addressing issues such as false positives, missed detections of 
+small fruits, and duplicate counting (Tu et al., 2025). However, this 
+approach lacks correlation with actual yield. Another study, YOLO–F­
+CAP, enhanced the detection capability of YOLO for citrus in complex 
+environments but did not incorporate continuous counting (Zeng et al., 
+2025). These examples illustrate that current research on biomass esti­
+mation has not yet effectively integrated segmentation results with 
+counting outcomes.
+Inspired by the above, this study formulates integrated methods for 
+segmentation, tracking–counting, and biomass estimation to address the 
+current challenges in mango orchard segmentation, tracking, and 
+biomass assessment. The main contributions of this work are as follows: 
+(1) A segmentation method adapted to small–sample complex sce­
+narios is constructed. To overcome the shortcomings of existing 
+segmentation approaches, a pixel–wise camouflaged instance 
+network is designed, integrating a Swin–T backbone with a 
+custom Transformer decoder and multiple specialized modules. 
+This network alleviates the problem of dense fruit adhesion, en­
+ables segmentation of both on–tree and on–ground mangoes, and 
+improves segmentation accuracy under small–sample training 
+with complex data.
+(2) A tracking–counting method based on multi–feature fusion and 
+ID lifecycle management is proposed. Features including IoU, Hu 
+moments, HSV color, and mango diagonal length are fused to 
+enhance cross–frame association stability. This is combined with 
+an ID lifecycle management mechanism to reduce issues of 
+duplicate counting, target loss, and ID switches.
+(3) A complete pipeline from segmentation to tracking to biomass 
+estimation is established. By using the mango diagonal length 
+extracted from segmentation as a core feature and integrating it 
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+2 
+
+with tracking–counting results, the correlation between biomass 
+assessment and actual yield is strengthened.
+2. Materials and methods
+2.1. Data collection
+The dataset for this study was collected from a 0.3-hectare com­
+mercial Jinhuang mango plantation in Baoting County, Hainan Province 
+(18◦23′–18◦53′N, 109◦21′–109◦48′E). Specific counting regions were 
+predefined based on the orchard layout, taking single rows as basic units 
+to delineate Regions of Interest (ROIs), each assigned a unique identifier 
+for precise association of subsequent counting results with target trees or 
+rows. Since the photographs included a large number of blurry mangoes, 
+to facilitate statistical analysis, the count was limited to clearly identi­
+fiable mangoes—both those hanging on trees in the foreground of the 
+frame and those that had fallen to the ground. Mangoes that were too far 
+in the background or too high in the tree canopy to be clearly identified 
+were excluded from this count, thereby enhancing the validity and 
+reliability of the results in this study. Data acquisition was conducted 
+during the ripening and harvesting periods (March 2025) using a 
+smartphone (50MP main camera with 24 mm focal length, 48MP ultra- 
+wide-angle camera with 13 mm focal length), set to 720 × 1280 pixel 
+resolution, auto-adjusted ISO (100–800) and white balance, and 1/ 
+60–1/1000 s shutter speed to avoid motion blur. Multiple viewing an­
+gles were systematically employed, including ground-level view and 
+inter-row side view, comprehensively capturing the visual characteris­
+tics of both hanging mangoes (with/without occlusion, clustered 
+stacking) and fallen mangoes on the ground (isolated/stacked) against 
+complex backgrounds (soil, weeds, branches, leaves). The acquisition 
+covered various lighting conditions (sunny, cloudy, weak light, dusk) 
+and different times of day (morning, afternoon, evening) to ensure scene 
+diversity (Fig. 1).
+Annotations were performed at the pixel level using the LabelMe 
+tool, with two defined categories: on-tree mangoes and on-ground 
+mangoes. By simultaneously monitoring both tree-ripened and 
+ground-fallen mangoes, this approach enables a comprehensive assess­
+ment of growth status, fruit drop and loss, and disease risk, providing 
+data to support precision management of orchards and yield forecasting. 
+Due to continuous variations in camera angle, distance, and fruit pose 
+during video recording (30 FPS), key frames were extracted at 2 FPS, 
+and valid images were screened to exclude motion-blurred or over/ 
+underexposed ones, ensuring each image contained at least 10 mango 
+instances. Polygons were used to outline mangoes, prioritizing clearly 
+visible and fully shaped fruits to avoid mutual interference. A total of 
+552 valid images were annotated, with a random 8:2 split resulting in 
+439 training images and 113 validation images—both sets maintaining 
+consistent distributions of regions, environments, angles, and mango 
+densities. Separate JSON-format annotation files for the two sets were 
+generated by LabelMe, containing category, image size, bounding boxes, 
+and masks. To meet segmentation network input requirements and 
+optimize training efficiency, all images were uniformly resized to 256 ×
+256 pixels, and ImageNet-standard normalization (mean [0.485, 0.456, 
+0.406], standard deviation [0.229, 0.224, 0.225]) was applied to stan­
+dardize pixel value distributions, enhancing training stability and 
+convergence speed.
+It is worth noting that bagging cultivation is widely adopted in major 
+mango production areas. This practice improves fruit appearance 
+quality and reduces pest and disease damage. This study focuses on 
+bagged mangoes as the research subject. This setting is highly consistent 
+with actual production standards. The remaining challenges include 
+branch and leaf occlusion, fruit stacking, and uneven illumination. 
+These factors impose realistic demands on the robustness of orchard 
+vision algorithms. The research outcomes can directly support auto­
+mated management in mainstream production scenarios. All samples in 
+this study were collected from naturally bagged mangoes that met 
+standard orchard practices. The bagging operations followed local 
+cultivation regulations. No bags were removed prior to data collection. 
+This ensures that the dataset maintains consistency with real operational 
+environments.
+2.2. Segmented network architecture design
+The proposed mango segmentation model is constructed on a Swin 
+Transformer-Tiny (Swin-T) backbone and a custom Transformer 
+decoder. To address challenges such as small-size mango targets, dense 
+clustering and adhesion, and complex backgrounds, multiple dedicated 
+modules are introduced. The overall architecture is illustrated in Fig. 2. 
+The input mango image is processed by the Swin-T backbone to extract 
+hierarchical features and semantic information. Subsequently, the fea­
+tures are fed into a Shallow-Feature Enhancement (SFE) module to 
+achieve effective fusion of shallow detail and deep semantic features. 
+Within the decoder, the features first pass through a feature projection 
+layer and a coordinate attention block, followed by multi-scale feature 
+fusion. The fused features then sequentially flow through three 
+enhancement modules: Spatial-Orientation Attention (SOA), Boundary- 
+Aware Module (BAM), and Background-Global Modulation (BGM). 
+Mask aggregation is subsequently performed. Finally, the features are 
+processed by a Mask Head for dimension adjustment and upsampled to 
+match the input resolution, followed by a mask-refinement module to 
+output the refined mango segmentation mask. The details of these 
+modules are described in the following sections.
+Fig. 1. The mango data collection environment includes: (a) Normal lighting (b) Strong light (c) Weak light (d) Dusk (extremely weak light) (e) Dense shading (f) 
+Complex backgrounds.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+3 
+
+2.2.1. Stem feature extraction network (Swin-T)
+Swin Transformer (Swin-T) is built upon the Transformer-based 
+vision paradigm, employing a local window self-attention mechanism 
+to efficiently process multi-scale features. Compared to traditional 
+CNNs, its self-attention mechanism effectively captures long-range de­
+pendencies and exhibits strong generalization capabilities, making it 
+suitable for large-scale image tasks. In this study, a pre-trained Swin-T 
+model is adopted as the backbone network to achieve multi-scale feature 
+representation of mango targets. The feature extraction process is as 
+follows: a 256 × 256 input image is divided into 4 × 4 patches via the 
+Patch Embedding module and linearly projected into a feature map of 
+96 × 64 × 64. It then passes through four stages of Swin Transformer 
+Blocks and Patch Merging operations, progressively downsampling 
+while increasing the channel dimensions: Stage 1 outputs 96 × 64 × 64, 
+Stage 2 outputs 192 × 32 × 32, Stage 3 outputs 384 × 16 × 16, and Stage 
+4 outputs 768 × 8 × 8. To adapt to transfer learning and prevent 
+overfitting, a staged unfreezing strategy is applied: initially, Stages 1–2 
+are frozen while only Stages 3–4 and the decoder are trained; Stage 2 is 
+unfrozen at epoch 15, and Stage 1 is unfrozen at epoch 25. This approach 
+balances the transfer of pre-trained features with scene adaptation, 
+thereby enhancing training stability and feature representation 
+accuracy.
+2.2.2. Custom transformer decoder
+Mask2Former, a high-performance segmentation model, integrates 
+the core advantages of Mask Transformer and convolutional neural 
+networks to achieve precise object segmentation. Its key innovation lies 
+in transforming pixel-wise segmentation into a sequence modeling task, 
+leveraging the Transformer architecture for feature aggregation and 
+mask prediction. This design combines multi-scale information pro­
+cessing capability with the robustness and accuracy improvements 
+provided by the self-attention mechanism. In the present model, the 
+framework and structure of Mask2Former’s decoder are adapted to 
+design a custom Transformer decoder. The decoder is deeply coupled 
+with the backbone, preserving benefits such as multi-scale feature fusion 
+and self-attention, while integrating multiple attention and enhance­
+ment modules to improve the accuracy of mango mask predictions, 
+thereby enhancing segmentation performance in complex mango or­
+chard environments.
+Shallow feature enhancement
+To mitigate the inherent trade-off in deep convolutional 
+networks—namely, insufficient semantic information in shallow fea­
+tures and loss of spatial detail in deep features—this paper designs the 
+Shallow Feature Enhancement (SFE) module, as illustrated in Fig. 3. The 
+module adopts a cross-scale fusion strategy: deep features are up- 
+sampled and aligned with shallow features, and both are then pro­
+jected and concatenated along the channel dimension. A subsequent 3 ×
+3 convolution performs local association modeling, yielding enhanced 
+features that preserve both fine detail and rich semantics. This design 
+effectively improves feature representation for small targets.
+Feature projection layer and coordinate attention
+To unify multi-scale feature dimensions and enhance spatial locali­
+Fig. 2. Overall Architecture of the Mango Segmentation Network.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+4 
+
+zation capability, this study integrates a feature projection layer with a 
+coordinate attention mechanism. The module first reduces the dimen­
+sionality of multi-scale inputs via 1 × 1 convolutions, then incorporates 
+coordinate attention to capture spatial distribution information of the 
+target, thereby compensating for the limitation of traditional projection 
+that focuses solely on channel-wise features. The projected features 
+undergo bidirectional coordinate encoding, feature concatenation, and 
+weight generation, achieving joint spatial-channel modulation and 
+thereby improving feature representation capability (Eqs. 1-6). 
+Xproj = BN(Conv1×1(X))
+(1) 
+Xh = AdaptiveAvgPool2d(Xproj, (H, 1)), Xw
+= AdaptiveAvgPool2d(Xproj, (1, W))
+(2) 
+Xcat = ReLU(BN(Conv1×1([Xh; XT
+w])))
+(3) 
+Xhʹ, Xwʹ = Split(Xcat)
+(4) 
+Ah = Sigmoid(Conv1×1(Xhʹ)),
+Aw = Sigmoid(Conv1×1(Xwʹ))
+(5) 
+Xout = Xproj ⊙Ah ⊙Aw
+(6) 
+where, X denotes the input feature map, Xproj represents the feature after 
+the projection layer, Xh corresponds to the vertical-direction informa­
+tion of the projected features, Xw indicates the horizontal-direction in­
+formation of the projected features, Xcat refers to the concatenated and 
+transformed features, Xh' stands for the split vertical-direction infor­
+mation, Xw' signifies the split horizontal-direction information, Ah is the 
+vertical attention weight, Aw is the horizontal attention weight, and Xout 
+denotes the output feature map.
+Multi-scale feature fusion
+The multi-scale feature fusion module aligns feature maps from 
+different scales (Stage 2-4) to a unified spatial resolution via bilinear up- 
+sampling, then concatenates them with the Stage 1 feature map along 
+the channel dimension. A subsequent 3 × 3 convolution reduces the 
+concatenated features to 256 channels, preserving semantic information 
+and fine detail from each scale. This design enables the model to extract 
+rich, multi-scale representations, enhancing its ability to recognize 
+mango targets of varying sizes and levels of detail, and proving partic­
+ularly effective in handling both large and small objects.
+SOA small objective attention module (SOA)
+To enhance the detection performance for small-sized mango targets 
+(such as young or occluded fruits), a small-target attention module 
+(Fig. 4) is designed. The module adopts a dual-branch architecture: the 
+spatial detail branch employs 1 × 1 convolutions to extract local features 
+and integrates dilated convolutions (dilation rate = 2) to expand the 
+receptive field for contextual information incorporation; the channel 
+enhancement branch generates channel weights via adaptive pooling 
+and scaling operations to reinforce small-target relevant features and 
+suppress background interference. The two-stream features are 
+normalized via Batch Normalization (BN) and then fused, effectively 
+mitigating the issue of small-target feature suppression (Eqs. 7-9). 
+Xfused = BN(Conv1×1(X) + Conv3×3(d=2)(X))
+(7) 
+A = Sigmoid(Conv1×1(ReLU(Conv1×1(AdaptiveAvgPool2d(Xfused)))))
+(8) 
+Xout = Xfused ⊙A + X
+(9) 
+where Xfused represents the fused feature map, A corresponds to the 
+attention weight map, and Xoutput indicates the output enhanced feature 
+map.
+BAM boundary attention module (BAM)
+To address the challenge of blurred boundaries in overlapping 
+mango regions that complicates segmentation, this paper designs a 
+Boundary Attention Module (Fig. 5), which enhances boundary 
+perception through multi-scale edge feature fusion. The module employs 
+three parallel convolutional layers with dilation rates of 1, 2, and 4 to 
+extract fine, medium, and coarse-grained edge features, respectively. 
+After batch normalization and ReLU activation, the features are 
+concatenated. A 1 × 1 convolution followed by a sigmoid function then 
+generates an edge mask to highlight boundary regions. Simultaneously, 
+a channel attention mechanism is incorporated to adaptively enhance 
+Fig. 3. Structure of the SFE Module.
+Fig. 4. Structure of the Small Target Attention Module.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+5 
+
+the response weights of boundary-relevant feature channels. This design 
+effectively captures fine boundary details in adherent regions, signifi­
+cantly improving segmentation accuracy (Eqs. 10-14). 
+E1 = ReLU(BN(Conv3×3(d=1)(X)))
+E2 = ReLU(BN(Conv3×3(d=2)(X)))
+E3 = ReLU(BN(Conv3×3(d=4)(X)))
+(10) 
+Medge = Sigmoid(Conv3×3([E1; E2; E3]))
+(11) 
+Xedge = X ⊙Medge,
+A = ChannelAttention(Xedge)
+(12) 
+Xatt = Xedge ⊙A
+(13) 
+Xout = Xatt + X
+(14) 
+Where, E1,E2,E3 represents the edge feature maps obtained via three 
+different dilation rates; Medge corresponds to the edge attention 
+weights; Xedge indicates the edge-enhanced feature map; A signifies the 
+channel-wise attention weights; Xatt refers to the feature map incorpo­
+rating both spatial edge enhancement and channel importance weight­
+ing; and Xout denotes the output feature map.
+Background suppression module
+The background gating module employs a 1 × 1 convolution, batch 
+normalization (BN), ReLU activation, and a sigmoid function to generate 
+a gating weight (Fig. 6). This weight is multiplied with the feature map, 
+effectively suppressing background features while enhancing the sa­
+liency of foreground targets (mangoes). By increasing the contrast be­
+tween targets and background and reducing the impact of background 
+noise, the module enables the network to focus more precisely on mango 
+regions, thereby improving segmentation accuracy.
+Masked aggregation module
+The module aims to address the feature confusion caused by densely 
+clustered and adhering mangoes by using segmentation masks to guide 
+feature weighting and aggregation, thereby enhancing the feature in­
+dependence of individual mango masks. A 1 × 1 convolution (Conv1 ×
+1 + BN + ReLU) is applied to reduce dimensionality and normalize the 
+input features. Adaptive average pooling and max pooling are then used 
+to extract instance-core features, followed by another 1 × 1 convolution 
+to fuse the dual-pooling outputs. Simultaneously, a mask dimension- 
+extension and interpolation strategy is designed to align the mask size 
+with the feature map dimensions (Eqs. 15-20). 
+Xproj = ReLU(BN(Conv1×1(X)))
+(15) 
+Mʹ = Interpolate(M, size = Xproj.shape[2 :])
+(16) 
+Xmasked = Xproj ⊙Mʹ
+(17) 
+Xavg = AdaptiveAvgPool2d(Xmasked),
+Xmax
+= AdaptiveMaxPool2d(Xmasked)
+(18) 
+Xfused = Conv1×1([Xavg; Xmax])
+(19) 
+Xagg = Xproj + Expand(Xfused, size = Xproj.shape)
+(20) 
+where M corresponds to the externally input mask, M' indicates the 
+spatially aligned mask, Xmasked refers to the mask-weighted feature map, 
+Xavg signifies the result of global average pooling, Xmax denotes the result 
+of global max pooling, Xfused represents the fused global feature map, 
+and Xagg indicates the final aggregated feature map.
+Mask prediction header and refinement module
+The mask prediction head outputs the final mango segmentation 
+mask by integrating the core semantics and boundary information of the 
+target, extracting predictions based on pixel connectivity. Acting as a 
+post-processing unit, the mask refinement module employs a feature 
+enhancement, weight modulation, and residual connection architecture. 
+Two 3 × 3 convolutional layers are used to enhance feature represen­
+tation, supported by batch normalization and ReLU activation for 
+training stability, with a sigmoid function generating per-pixel refine­
+ment weights at the output. A 1 × 1 convolutional residual branch is 
+incorporated to preserve original features during refinement, 
+Fig. 5. Structure of the Boundary Attention Module.
+Fig. 6. Structure of the Background Suppression Module.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+6 
+
+significantly improving mask edge sharpness and detail retention (Eqs. 
+21-22). 
+W = Sigmoid(BN(Conv3×3(ReLU(BN(Conv3×3(X))))))
+(21) 
+(Conv3×3(X))))))Xout = X ⊙W + Conv1×1(X)
+(22) 
+Where, X represents the input feature map, W denotes the spatial 
+attention weights, and Xout signifies the output feature map.
+Diagonal reasoning
+The calculation of the mango diagonal length is based on the refined 
+instance segmentation mask. First, all non-zero pixel coordinates are 
+extracted from the binarized mask to form a point set. Principal 
+component analysis (PCA) is applied to this set to determine the first 
+principal component direction, which corresponds to the major axis of 
+the mango. All pixels are then projected onto this axis, and the two pixels 
+with the maximum and minimum projection values are selected as the 
+endpoints of the diagonal. The diagonal length is finally computed as the 
+Euclidean distance between these endpoints. The workflow for extract­
+ing this morphological feature is illustrated in Fig. 7 (Eqs. 23-28). 
+P =
+⎡
+⎢⎢⎣
+x1
+y1
+x2
+y2
+⋮
+⋮
+xN
+yN
+⎤
+⎥⎥⎦,
+i = 1, 2, ..., N
+(23) 
+v→
+1 = PCA1(P) = [v1x, v1y]T
+(24) 
+proji = p→
+i⋅v→
+1 = xi⋅v1x + yi⋅v1y
+(25) 
+idxmin = argmini(proji),
+idxmax = argmaxi(proji)
+(26) 
+p1 = (xidxmin, yidxmin),
+p2 = (xidxmax, yidxmax)
+(27) 
+L =̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+(xidxmax −xidxmin)2 + (yidxmax −yidxmin)2
+√
+(28) 
+Among these, P represents the set of non-zero valid pixel coordinates for 
+a single mango mask. v→
+1 denotes the principal direction of the point set 
+distribution, with v1x and v1 y being its components along the x and y 
+axes, respectively. p→
+i = (xi, yi) is the coordinate vector of point i within 
+the set, and proji is the projection of this coordinate vector onto the 
+principal direction. idxmin represents the i-value of the point with the 
+smallest projection value, while idxmax denotes the point with the largest 
+projection value. p1, p2 signifies the maximum length of the diagonal 
+endpoint L along the principal direction, the diagonal length.
+It is worth noting that during the research process, we also attempted 
+to annotate the diagonal length of each mango simultaneously in 
+Labelme, aiming to train a model for inferring this parameter. However, 
+due to the difficulty in establishing a unified annotation rule for the 
+diagonal and the lack of precise correspondence between mango in­
+stances and their diagonals in the annotations, the model learning per­
+formance was significantly poor. Consequently, this approach was 
+ultimately abandoned.
+2.2.3. Dynamic weighted hybrid loss function
+To address key challenges in mango segmentation, including class 
+imbalance, instance adhesion, and boundary blur, this study designs a 
+dynamic segmentation loss function comprising six loss components. A 
+focal cross-entropy loss with online hard example mining (weight 0.3) 
+mitigates pixel-level class imbalance. A focal Dice loss (weight 0.3) en­
+hances sensitivity to small targets and fine edges. The Lov´asz-Softmax 
+loss (weight 0.2) directly optimizes the IoU metric. An instance- 
+repulsion loss (weight 0.1) reduces merging of adjacent instances. A 
+class-contrast loss (weight 0.05) strengthens inter-class feature 
+discrimination, and a polygon-boundary loss (weight 0.05) refines mask 
+edge accuracy. The joint optimization of these losses significantly im­
+proves segmentation performance in complex scenarios.
+2.3. Tracking network design
+The segmentation network outputs mango masks and diagonal fea­
+tures that provide fundamental target information for subsequent 
+tracking and counting. However, in orchard environments, challenges 
+such as dense fruit adhesion, dynamic occlusion by branches and leaves 
+often lead to blurred mask boundaries and temporary target disap­
+pearance. Directly inputting these segmentation results into conven­
+tional tracking algorithms can easily cause ID switches, duplicate 
+counts, or target loss. To address these issues, this study designs a tracker 
+based on multi-feature fusion and ID lifecycle management. It integrates 
+geometric, shape, and appearance features from the segmentation 
+output, and establishes a feature matching priority mechanism. This 
+approach enables efficient bridging between segmentation results and 
+the tracking task, effectively handling the tracking challenges in com­
+plex orchard scenarios. The overall architecture of the tracking network 
+is illustrated in Fig. 8.
+2.3.1. Instance extraction and multi-feature computation
+Based on the class mask output from semantic segmentation, mango 
+instances are separated through morphological processing and contour 
+analysis. The specific steps are as follows: 1) Perform erosion–dilation 
+morphological operations on the class mask to remove salt–and–pepper 
+noise; 2) Apply a contour detection algorithm to extract object contours, 
+filtering out small regions with an area below 30 pixels to eliminate 
+background noise interference; 3) Calculate the minimum bounding 
+rectangle of each contour to obtain the object bounding box, and refine 
+contour concavities using convex hull optimization to improve the 
+alignment between the bounding box and the actual shape of the mango. 
+To enhance the reliability of object association and avoid the limitations 
+of single–feature matching, four complementary core features are 
+extracted, as detailed below: 
+(1) Position features: Include bounding–box coordinates (x1, y1, x2, 
+y2) and center coordinates (cx, cγ), which directly represent the 
+spatial location of the target in the image and provide positional 
+cues for initial matching.
+(2) Shape features: Based on Hu moments, a 6–dimensional shape 
+descriptor is generated through logarithmic transformation and 
+Fig. 7. Diagonal Morphological Feature Calculation Flowchart.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+7 
+
+sign normalization. Hu moments possess rotation, scale, and 
+translation invariance, effectively characterizing the intrinsic 
+shape of mangoes and reducing the impact of pose variations on 
+matching. The shape feature vector is denoted as [η1, η2, …, η6], 
+where ηi is the normalized ith order Hu moment.
+(3) Color features: Extract the histogram of the target mask region 
+in HSV color space, using an 18 × 8 × 8 binning strategy to 
+produce a 288–dimensional color descriptor, which is normalized 
+to serve as the color feature. The HSV color space offers greater 
+robustness to illumination changes compared to RGB space, 
+effectively mitigating the influence of natural–scene lighting 
+fluctuations on feature representation.
+(4) Diagonal morphological feature: Tailored to the morphological 
+characteristics of mangoes, a diagonal calculation method based 
+on principal–direction analysis of the convex hull contour is 
+designed, as illustrated in Fig. 7. The principal direction of the 
+convex hull contour is computed via covariance analysis. This 
+direction is then adapted according to the mango category (ver­
+tical direction is prioritized for on–tree mangoes, horizontal di­
+rection for on–ground mangoes) to ensure the diagonal 
+accurately represents the target shape. The contour is projected 
+along the adapted principal direction to locate the extreme points 
+(p1, p2) as the diagonal endpoints, and the diagonal length L is 
+computed. This feature exhibits strong representational capacity 
+for variations in mango size and shape, serving as a core 
+morphological feature for improving matching reliability.
+The tracker, which integrates multi–feature fusion and ID lifecycle 
+management, merges the geometric, shape, and appearance features 
+output by the segmentation module, establishes a feature–matching 
+priority mechanism, and achieves efficient coupling between segmen­
+tation results and the tracking task to address the tracking challenges in 
+complex orchard environments.
+2.3.2. Improved kalman filter prediction module
+Traditional Kalman filtering constructs the state vector solely based 
+on the bounding box (x, y, w, h) and does not account for morphological 
+stability of mangoes, making it susceptible to prediction errors in sce­
+narios involving occlusion or subtle shape changes. This paper proposes 
+an Enhanced Kalman Filter (EKT) that incorporates diagonal length into 
+the state vector, optimizes the motion model and noise parameters, and 
+enables joint prediction of target position and morphology, thereby 
+improving prediction accuracy.
+State vector and model matrix design
+By integrating the motion and morphological characteristics of 
+mangoes, the Kalman filter is extended in terms of its state vector, 
+measurement vector, and associated matrices, as detailed below: 
+(1) State vector: An 8–dimensional vector X = [x, y, w, h, L, dx, dy, 
+dL]T is adopted, where (x, y) are the target center coordinates, (w, 
+h) the bounding–box width and height, L the diagonal length, and 
+(dx, dy, dL) their respective velocities. Compared to the con­
+ventional 4–dimensional state vector, the newly added diagonal 
+length and velocity terms provide a more comprehensive repre­
+sentation of the target’s morphological and motion state, 
+enhancing prediction robustness under varying shape conditions.
+(2) Measurement vector: A 5–dimensional vector X = [x, y, w, h, 
+L]T is used, corresponding to the measured position and 
+morphology values output by the instance extraction module, 
+enabling effective observation of the state vector.
+(3) Transition matrix: Accounting for the cumulative effect of ve­
+locity terms, the transition matrix Φ is designed as follows, 
+ensuring that the motion characteristics of the diagonal length 
+are properly modeled and that position and morphology are 
+predicted jointly.
+ϕ =
+⎡
+⎢⎢⎢⎢⎢⎢⎢⎢⎢⎢⎣
+1
+0
+0
+0
+0
+1
+0
+0
+0
+1
+0
+0
+0
+0
+1
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+0
+1
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+1
+⎤
+⎥⎥⎥⎥⎥⎥⎥⎥⎥⎥⎦
+(29) 
+(4) Observation matrix: A 5 × 8 matrix H is employed, which retains 
+only the dimensions corresponding to the measurement vector while 
+Fig. 8. Multi-Feature Fusion and ID Lifecycle Management Tracker Architecture.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+8 
+
+setting all other dimensions to zero, thereby achieving precise 
+mapping from the state vector to the measurement vector.
+H =
+⎡
+⎢⎢⎢⎢⎣
+1
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+⎤
+⎥⎥⎥⎥⎦
+(30) 
+(5) Noise matrices: Noise parameters are optimized based on the mo­
+tion characteristics of mangoes, balancing prediction smoothness 
+and response speed. The process noise covariance is set to Q = I8 ×
+0.003 (where I8 denotes the 8 × 8 identity matrix), and the mea­
+surement noise covariance is set to R = I5 × 0.03, reducing the 
+impact of measurement errors on the filtering results.
+Forecasting and update process
+The core workflow of the Enhanced Kalman Filter comprises two 
+stages, prediction and update, forming an inter–frame dynamic correc­
+tion mechanism. (1) Prediction stage: Based on the historical tracking 
+state and the transition matrix, the state prediction equations compute 
+the prior state estimate X ˆ(k|k–1) and prior error covariance P(k|k–1) for 
+the current frame, yielding the predicted bounding box, diagonal length, 
+and corresponding motion velocities. (2) Update stage: When a match­
+ing target is detected in the current frame, the Kalman gain Kk is 
+calculated using the measurement vector Zk, and the state update 
+equations correct the prior estimate to obtain the posterior state esti­
+mate X ˆ(k|k) and posterior error covariance Pk|k. This dynamic correction 
+of prediction errors enhances the accuracy of subsequent matching.
+2.3.3. Multi-Feature Fusion Matching Module
+Target association matching is the core component of the tracker, 
+directly determining tracking accuracy. To address the failure of single 
+IoU matching in scenarios involving occlusion and shape variations, a 
+multi-feature fusion matching mechanism is designed. This mechanism 
+constructs a comprehensive similarity matrix by weighting and fusing 
+four types of feature similarities, and applies the Hungarian algorithm to 
+achieve globally optimal matching between predicted targets and cur­
+rent instances.
+Feature similarity calculation
+For the four extracted features—position, shape, color, and diagonal 
+length—corresponding similarity calculation methods are designed to 
+leverage their complementary advantages, as detailed below: 
+(1) IoU Similarity (SIoU): Measures the spatial overlap between the 
+predicted bounding box and the current detection bounding box, 
+with a value range of [0,1]. A higher value indicates greater posi­
+tional proximity. The calculation formula is:
+where Bpred is the predicted bounding box, Bdet is the current 
+detection bounding box, and Area(⋅) denotes the bounding box area. 
+SIOU = Area(Bpred ∩Bdet)
+Area(Bpred ∪Bdet)
+(31) 
+(2) Shape Similarity (Sshape): Computed based on the cosine distance 
+of Hu moment vectors. The cosine distance is scale-insensitive, 
+enhancing the robustness of shape matching. The formula is:
+Sshape = 1 −
+Hpred⋅Hdet⃦⃦
+Hpred⃦⃦⋅‖Hdet‖
+(32) 
+where Hpred and Hdet are the Hu moment vectors of the predicted target 
+and the current instance, respectively. ⋅denotes the dot product, ||⋅|| 
+denotes the L2 norm. Sshape ranges from [0,1], with a higher value 
+indicating greater shape similarity. 
+(3) Color Similarity (Scolor): Calculated using the Bhattacharyya dis­
+tance between HSV histograms. This distance effectively measures 
+the similarity between two probability distributions, making it 
+suitable for color histogram matching and robust to illumination 
+variations. The formula is:
+Scolor = 1 −̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+1 −
+1̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+μpredμdet
+√
+⋅N
+∑
+N
+i=1̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+hpred(i)⋅hdet(i)
+√
+√
+√
+√
+√
+(33) 
+where μpred and μdet represent the means of the two histograms, 
+respectively. hpred(i) and hdet(i) are the frequencies of the i-th bin in the 
+respective histograms, and N is the total number of bins. Scolor ranges 
+from [0,1], with a higher value indicating closer color similarity. 
+(4) Diagonal Similarity (S_diag): Combines category consistency and 
+the ratio of diagonal lengths to ensure cross-category matching is 
+invalid while leveraging the stability of diagonal length for reliable 
+matching. The formula is:
+Sdiag = min(Lpred, Ldet)
+max(Lpred, Ldet) × δ(cpred, cdet)
+(34) 
+where Lpred and LDet are the diagonal lengths of the predicted target and 
+current instance, respectively, and δ(⋅) is an indicator function that takes 
+the value 1 when the categories are consistent, and 0 otherwise.
+Weighted fusion and optimal matching
+To emphasize the strong representational power of diagonal 
+morphological features, the weighting strategy for four feature categories 
+was optimized through extensive comparative experiments:WIOU = 0.25,
+Wshape = 0.25,Wcolor = 0.2,Wdiag = 0.3. The formula for calculating the 
+composite similarity a is: 
+Stotal = WIOU⋅SIOU + Wshape⋅Sshape + Wcolor⋅Scolor + Wdiag⋅Sdiag
+(35) 
+Based on the comprehensive similarity scores, an M × N similarity 
+matrix is constructed, where M is the number of predicted targets and N 
+is the number of current instances. The matching problem is then 
+formulated as a linear assignment problem. The Hungarian algorithm is 
+employed to solve for the globally optimal matching, ensuring that the 
+total matching cost between predicted targets and current instances is 
+minimized. A similarity threshold of 0.5 is set; matches falling below this 
+threshold are considered invalid, thereby avoiding tracking errors 
+caused by incorrect associations.
+2.3.4. ID Lifecycle management and stabilization module
+ID switching is a core bottleneck that constrains the continuity of 
+target tracking, particularly in complex scenarios such as temporary 
+occlusion and missed detections between frames. To effectively mitigate 
+this issue, this study designs an ID lifecycle management strategy, 
+establishing a coordinated mechanism of caching, smoothing, destruc­
+tion, and reuse. This approach enables dynamic control and stable 
+output of ID states. Its core logic is illustrated in Fig. 9.
+To balance tracking continuity and computational resource effi­
+ciency, this study, through empirical testing and iterative optimization, 
+has defined four core control parameters. ID_CACHE_FRAMES = 8 sets 
+the threshold for caching tentative IDs, providing an observation win­
+dow for newly assigned or reused IDs to avoid erroneous deletion due to 
+transient detection misses; this value can be adjusted in deployment 
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+9 
+
+based on the frequency of missed detections. ID_SMOOTH_FRAMES = 4 
+governs the transition from tentative to confirmed state, requiring an ID 
+to be stably present for four consecutive frames before upgrading, 
+thereby effectively filtering transient noise and accommodating sce­
+narios with intense illumination changes. ID_DESTROY_FRAMES = 10 
+defines the destruction threshold, where IDs unmatched for ten 
+consecutive frames are marked as expired and moved to an expired pool, 
+preventing inactive IDs from consuming computational resources; this 
+threshold can be dynamically tuned according to hardware capabilities. 
+ID_REUSE_THRESH = 0.85 serves as the similarity criterion for reusing 
+expired IDs; the threshold can be raised to reduce false reuse when fruit 
+shapes are highly similar, or slightly lowered to increase reuse rates 
+when shape variability is greater. Three ID states are defined: tentative, 
+confirmed, and expired. The confirmed state enables continuous 
+tracking and state updates, while the expired state follows rules for 
+either reuse or permanent removal, forming a complete lifecycle.
+Building on this parameter framework, the management process 
+concurrently performs stabilization and adapts to different matching 
+scenarios. When a match is successful, the historical ID is directly 
+reused, and the Kalman filter state along with target features are 
+updated to maintain tracking in the confirmed state. If the reused ID 
+remains tentative, the smooth frame count is accumulated, and the ID is 
+automatically upgraded once the threshold is met. In cases of no match, 
+new instances are assigned a new ID and set to tentative, initiating a 
+cache validation process. For historical tracking targets, the unmatched 
+frame count is accumulated; if the destruction threshold is not reached, 
+the ID is retained and its position is continuously predicted via the 
+Kalman filter to ensure quick reconnection after occlusion, otherwise it 
+is marked as expired. The process incorporates a dual stabilization 
+mechanism. First, a smoothing strategy retrospectively examines the 
+tracking records of the previous four frames, prioritizing the historical 
+ID that appears most frequently at the same spatial location and meets a 
+similarity threshold, thereby suppressing transient ID switches; this 
+similarity threshold can be flexibly adjusted based on fruit density. 
+Second, the preset reuse threshold is used to traverse the expired pool, 
+selecting high–similarity IDs for reuse. Reused IDs are reset to tentative 
+for re–validation, which reduces new ID allocations at the source and 
+enhances tracking continuity and stability. 
+Algorithm 1.
+Illustrates the ID matching process, which takes mango 
+masks and previous ID sequences as inputs and outputs the current ID 
+sequence. First, valid mango instances are extracted from the input 
+segmentation mask. For each instance, four core features, namely IoU, 
+shape, color, and diagonal length, are computed. A similarity matrix S is 
+then constructed between the current instances and the previous frame’s 
+ID set. Matrix elements corresponding to instances of different cate­
+gories are set to zero, while for instances of the same category, the four 
+features are fused with assigned weights. Based on the cost matrix, the 
+Hungarian algorithm is used to obtain the optimal matching pairs be­
+tween current instances and historical IDs. Matching pairs with a simi­
+larity greater than 0.5 are directly assigned the corresponding historical 
+ID, while unmatched instances are temporarily assigned ID=None. For 
+instances without an ID, priority is given to reusing IDs from the expired 
+ID pool that exhibit high similarity. If no suitable ID is available for 
+reuse, a new ID is allocated. Simultaneously, the expired ID pool is 
+updated by including IDs that failed to match in the previous frame, 
+completing the closed–loop ID lifecycle management. Finally, the Kal­
+man filter state is updated for instances that retain an existing ID, and a 
+new Kalman filter is initialized for newly assigned IDs. The IDs of all 
+instances are then organized and output as the current frame’s ID 
+Fig. 9. ID Lifecycle Management Process Diagram.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+10 
+
+sequence, achieving continuous target tracking and stable ID 
+assignment.
+Algorithm 1 Multi-Feature Fusion and ID Lifecycle Management for Tracking and 
+Counting (MFFT) Input: Maskseg, IDsprev, IDsexpired Output: IDscurr
+1: Instscurr = ExtractInstances(Maskseg)
+2: for Inst in Instscurr do
+3: Inst.feat = [IOU,Shape,Color,Diag]
+4: end for
+5: S = zeros(|Instscurr|, | IDsprev|)
+6: for i ← 1 to |Instscurr| do
+7: for j ← 1 to |IDsprev| do
+8: S[i,j] = 0 if Instscurr[i].cls ∕=IDsprev[j].cls else w1⋅IOU + w2⋅Shape + w3⋅Color +
+w4⋅Diag
+9: end for
+10: end for
+11: matched = Hungarian (1 - S)
+12: for (i,j) in matched do
+13: Instscurr[i].id = IDsprev[j].id if S[i,j] > 0.5 else None
+14: end for
+15: for Inst in Instscurr where Inst.id is None do
+16: Inst.id = ReuseID(IDsexpired, Inst.feat) or NewID()
+17: end for
+18: IDsexpired = IDsprev \ [Inst.id for Inst in Instscurr]
+19: for Inst in Instscurr do
+20: UpdateKalman(Inst) if Inst.id exists else InitKalman(Inst)
+21: end for
+22: IDscurr = [Inst.id for Inst in Instscurr]
+Following the construction of the tracker, our method was deployed in 
+mango orchards across Hainan Province. As illustrated in Fig. 10, a 
+representative example is provided by extracting frames at intervals of 
+two from a randomly selected tracking video. Five sequential images are 
+presented to demonstrate the segmentation and tracking process. 
+Mangoes on trees are delineated with blue contours and red diagonal 
+lines. Corresponding blue text boxes positioned above these mangoes 
+sequentially display the ID, mango variety, and diagonal pixel length. 
+Conversely, mangoes on the ground are outlined with green contours 
+and red diagonal lines, with green text boxes indicating their respective 
+ID, variety, and diagonal pixel length. To explicitly visualize the ID 
+evolution, light blue bounding boxes denote the continuous tracking of 
+an individual mango with a persistent ID. Red bounding boxes signify 
+the detection of a new mango instance, which is assigned a novel ID. 
+Finally, black bounding boxes indicate the disappearance of a mango 
+from the frame, resulting in the termination of segmentation and the 
+expiration of its ID.
+Our method effectively accomplishes tracking 
+and ID assignment tasks. The designed ID lifecycle mechanism facilitates 
+the extension of tracking longevity for individual mango instances while 
+maintaining rapid responsiveness to new and existing entities. However, 
+tracking-by-counting still faces a significant challenge regarding ID 
+switches. In mango orchards characterized by variable shooting angles 
+and severe occlusion, the disruption of motion trajectories and the 
+impact of angle-dependent illumination on target appearance render ID 
+switches inevitable.
+To visualize this issue, a video was randomly selected and processed 
+(Fig. 17). The ByteTrack tracker was applied to the same video, and 
+corresponding frames were extracted for comparison. The total counts of 
+two mango categories were analyzed. As illustrated in the enlarged 
+cropped images, ID switching is a prevalent issue. Variations in seg­
+mentation performance across different experimental runs are consid­
+ered normal occurrences. Through comparison, our method assigned 
+only 24 distinct IDs within the same timeframe, whereas ByteTrack 
+generated 28 distinct IDs. This demonstrates the effectiveness and 
+feasibility of our approach in mitigating the ID switch problem.
+2.4. Experimental Setup and Evaluation Metrics
+2.4.1. Hardware and software
+All experiments in this study were conducted on a Windows 11 ter­
+minal equipped with an AMD Ryzen 7 5800H processor and an NVIDIA 
+GeForce RTX 3060 Laptop GPU (6 GB VRAM). Model training, inference, 
+and computations were performed on the GPU, supported by the NVIDIA 
+CUDA 11.8 toolkit. The software environment was built on Python 
+3.10.19, with deep-learning model construction, training, and inference 
+implemented using the PyTorch 2.7.1 framework and the TorchVision 
+0.22.1 library. Image preprocessing and feature extraction relied on 
+OpenCV 4.13.0, while numerical computation and data preprocessing 
+were supported by NumPy 2.2.6 and Scikit-learn 1.7.2.
+2.4.2. Training hyperparameters
+During the training phase of the mango segmentation model, a 
+suitable training configuration was established through experimental 
+validation. To accommodate the 6 GB VRAM of the laptop GPU, the 
+input image size was uniformly set to 256 × 256, and the batch size was 
+fixed at 1. An 8–step gradient accumulation strategy was employed, 
+resulting in an effective batch size of 8, which ensured stable gradient 
+updates while avoiding VRAM overflow. A hierarchical learning–rate 
+strategy was adopted: the global initial learning rate was set to 0.0001, 
+with lower rates assigned to the backbone (0.000005 for Stage 1–2, 
+0.00002 for Stage 3–4) to preserve pre–trained features, and the decoder 
+kept at 0.0001 to accelerate adaptation to mango–specific characteris­
+tics. The model was trained for 100 epochs using the AdamW optimizer 
+(weight decay 0.0001, β1 = 0.9, β2 = 0.999) to mitigate overfitting and 
+smooth gradient updates for the imbalanced sample distribution. Given 
+the small training set, a combined warm–up and cosine–annealing 
+learning–rate schedule was applied to prevent overfitting. A 3–epoch 
+linear warm–up (start_factor = 0.01) was followed by cosine annealing 
+over the remaining 97 epochs (T_max = 97, eta_min = 1e–7), allowing 
+fine–tuning in later stages. Mixed–precision training (AMP) was enabled 
+to improve efficiency and reduce memory consumption, and an 
+Fig. 10. Randomly selected output video as an example of segmentation tracking results.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+11 
+
+early–stopping rule terminated training if validation metrics did not 
+improve for 20 consecutive epochs, balancing convergence with 
+computational efficiency.
+2.4.3. Evaluation indicators
+The following metrics are employed to evaluate network perfor­
+mance. The assessment encompasses two categories: segmentation ac­
+curacy and model efficiency. For segmentation accuracy, precision and 
+recall measure the probabilities of false positives and false negatives, 
+respectively: 
+Precison =
+TP
+TP + FP
+(36) 
+Recall =
+TP
+TP + FN
+(37) 
+where TP is true positives (correctly classified mango samples). FP is 
+false positives (background or other classes misclassified as mango). FN 
+is false negatives (mango samples misclassified as background or other 
+classes).
+Mean Intersection over Union (mIoU) serves as a core metric 
+reflecting the overlap between predicted and ground–truth masks; 
+MIoU =
+1
+k + 1
+∑
+k
+i=0
+TPi
+TPi + FPi + FNi
+(38) 
+where k is the number of classes (k = 1 in this study, distinguishing 
+mango and background). TPi, FPi, and FNi represent the number of true 
+positives, false positives, and false negatives in class i, respectively.
+The F1–score balances the trade–off between precision and recall; 
+F1 −score = 2 × Precison × Recall
+Precison + Recall
+(39) 
+Mask average precision and its derivatives (mAP50, mAP50–95) 
+provide a comprehensive evaluation of both localization and 
+mask–generation accuracy in instance segmentation. 
+mAP = 1
+N
+∑
+N
+i=1
+AP(i)
+(40) 
+where N is the number of object classes; AP is the average precision of 
+class i.
+Regarding model efficiency, the number of parameters reflects model 
+complexity and memory consumption, floating–point operations 
+(FLOPs) quantify computational overhead, and inference frames per 
+second (FPS) along with average inference time directly indicate real­
+–time processing capability, ensuring suitability for mobile orchard 
+deployment.
+For the mango tracking task, four core metrics are selected for per­
+formance assessment. The IDF1 score balances the accuracy and 
+completeness of target–ID matching, suppressing ID switches: 
+IDF1 = 2 ×
+IDTP
+IDTP + IDFP + IDFN
+(41) 
+where, IDTP is correctly matched IDS, IDFP is mismatched IDS, IDFN 
+is unmatched GT IDS.
+multiple object tracking accuracy (MOTA) integrates false–positive, 
+false–negative, and ID–switch errors, serving as a key indicator of 
+overall tracking performance: 
+MOTA = 1 −FP + FN + IDS
+GT
+(42) 
+where IDS is ID switches, GT is total ground-truth objects.
+Multiple object tracking precision (MOTP), based on bounding–box 
+overlap, quantifies the accuracy of location prediction; 
+MOTP =
+1
+TPtotal
+∑
+t,i
+IoU(t, i)
+(43) 
+where TPtotal is total true positives across all frames, IOU(t,i) is IoU 
+between detection and ground truth in frame t for object i.
+Tracking inference time evaluates the real–time performance of the 
+tracking module, ensuring efficient operation of the full pipeline.
+3. Results and discussions
+3.1. Segmentation results
+3.1.1. Model performance
+To validate model performance, comparisons with mainstream state- 
+of-the-art methods are essential. Experiments were conducted on the 
+same dataset utilizing Mask R-CNN, Mask2Former, DETR, and YOLOv8 
+s, all of which are widely adopted advanced methods for crop segmen­
+tation and recognition. The experimental results for various metrics are 
+presented in Table 1. Our method demonstrates outstanding compre­
+hensive performance. It achieves the highest Precision of 0.82 among all 
+models, indicating a lower false detection rate, while also attaining an 
+excellent Recall of 0.78, which validates its capability to effectively 
+identify the vast majority of mango targets. Our mAP50 and mAP50_95 
+scores are 0.67 and 0.33, respectively. These values are close to the 
+scores of 0.69 and 0.36 achieved by Mask R-CNN, suggesting perfor­
+mance approaching that of mature instance segmentation models. 
+Furthermore, our method comprehensively surpasses Mask2Former in 
+mIoU and F1 score, reaching 0.71 and 0.73 respectively, which reflects 
+high pixel-level accuracy. Although DETR and YOLOv8 s exhibit higher 
+mAP metrics, with mAP50 scores of 0.78 and 0.84 respectively, and 
+superior recall rates—attesting to their robust instance segmentation 
+capabilities—our method offers greater practical value by balancing 
+segmentation accuracy with inference speed. With an inference time of 
+25.67 milliseconds, our approach is significantly faster than mainstream 
+models such as YOLOv8 s and DETR. Notably, this model prioritizes 
+pixel-level segmentation accuracy in complex occluded orchard sce­
+narios, focusing on boundary and small-object feature extraction rather 
+than maximizing detection mAP. Thus, its mAP50 and mAP50_95 are 
+lower than YOLOv8 s and DETR. To ensure segmentation robustness, we 
+use the Swin-T backbone and multi-attention modules, resulting in 
+slightly higher parameters and computation, leading to inferior perfor­
+mance in some localization metrics. Therefore, enhancing segmentation 
+performance remains the primary focus of our future research Table 2.
+We analyze the mechanisms behind the metric differences. YOLOv8 
+and DETR achieve higher detection mAP. However, our method obtains 
+better mIoU and F1 scores. The root cause is that our BAM effectively 
+enhances edge responses in adhesive regions. The background gating 
+module suppresses the weights of interfering features such as soil and 
+weeds. YOLO-style models focus on bounding box classification. They 
+lack sufficient modeling of boundary pixels for adhesive mangoes. This 
+leads to missed detections of small occluded fruits. DETR tends to over- 
+predict and generate redundant masks. The pixel-level segmentation 
+defects of both model types directly cause counting errors. Our model 
+achieves faster inference speed than Mask R-CNN and DETR. This ben­
+efits from the hierarchical feature extraction efficiency of the Swin-T 
+backbone and the lightweight design of our custom decoder. These 
+features ensure accuracy while avoiding redundant computations.
+To evaluate the performance of the segmentation network, valida­
+tion visualization images were generated at each epoch during the 
+model verification phase. Representative images from diverse environ­
+ments are presented here. Mangoes on trees are overlaid with blue 
+masks, and corresponding blue text boxes positioned above display the 
+ID, mango variety, and diagonal pixel length. Conversely, mangoes on 
+the ground are overlaid with green masks, with green text boxes indi­
+cating their ID and variety. Red lines delineate the diagonal of each 
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+12 
+
+mango, and the pixel length is annotated above these lines. Note that the 
+IDs are assigned per image. The top-right corner of each image sum­
+marizes the count of mangoes per category and the total count. Selected 
+representative environmental scenarios from the validation set are 
+visualized in Fig. 11 to demonstrate the classification and segmentation 
+efficacy. From left to right, the scenarios include close-range sparse 
+Table 1 
+Comparison of segmentation results based on different advanced methods.
+Model
+Precision
+Recall
+mIoU
+F1
+mAP50
+mAP50_95
+Param
+FLOPs
+FPS
+Infer_time(ms)
+MaskRCNN
+0.78
+0.80
+-
+-
+0.69
+0.36
+43.93
+401.74
+6.28
+159.34
+Mask2former
+0.72
+0.77
+0.64
+0.67
+0.63
+0.30
+54.54
+20.58
+10.36
+96.50
+DETR
+0.75
+0.85
+-
+-
+0.78
+0.40
+36.96
+9.53
+21.77
+45.94
+YOLOv8s
+0.79
+0.81
+-
+-
+0.84
+0.47
+11.8211
+20.172
+24.88
+41.40
+Ours
+0.82
+0.78
+0.71
+0.73
+0.67
+0.33
+33.77
+41.86
+40.32
+25.67
+Table 2 
+Ablation experiment results based on attention modules.
+MIoU
+F1
+mAP50
+mAP50_95
+Param (M)
+FLOPs (G)
+FPS
+Infer_time(ms)
+No Attention
+0.64
+0.65
+0.55
+0.23
+31.04
+28.98
+41.43
+23.88
+Attention-Deficit Module
+0.69
+0.71
+0.61
+0.29
+32.01
+27.62
+40.33
+24.80
+Attention CBAM
+0.67
+0.68
+0.57
+0.25
+31.32
+43.37
+48.36
+22.40
+Attention SE
+0.64
+0.67
+0.59
+0.27
+33.76
+41.83
+44.51
+22.50
+Ours
+0.71
+0.73
+0.67
+0.33
+33.77
+41.86
+40.32
+25.67
+Fig. 11. Visualization Results of the Segmentation Network.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+13 
+
+distribution, close-range dense distribution, long-range sparse distribu­
+tion, long-range dense distribution, and low-light conditions during 
+dusk. These visualizations collectively demonstrate that our network 
+achieves superior segmentation performance across various environ­
+mental conditions.
+To provide a more intuitive reflection of the regions of interest 
+within the images processed by the neural network, the Grad-CAM 
+method was employed for analysis. In the Grad-CAM visualizations, 
+red regions indicate the highest level of network attention, followed by 
+green, while blue denotes areas of low attention. Superior recognition 
+performance is indicated if the red regions accurately overlay the mango 
+targets. As illustrated in Fig. 12, our method demonstrates precise focus 
+on the mangoes, with red activations concentrated within the target 
+regions and minimal interference from the background. Among the 
+comparative methods, DETR also exhibits accurate attention allocation 
+but demonstrates insufficient focus on certain ground mangoes. 
+YOLOv8s displays relatively limited attention regions. In contrast, Mask 
+R-CNN and Mask2Former are susceptible to background interference, 
+characterized by extensive green activation areas.
+3.1.2. Ablation experiment
+To validate the efficacy of the proposed attention module, ablation 
+studies were conducted by modifying the attention mechanism. Four 
+network configurations were trained and evaluated: a baseline network 
+Fig. 12. Grad-CAM Visualization Results for Different Advanced Methods.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+14 
+
+without any attention mechanisms, a network with the SOA, BAM, and 
+BG modules removed (located between feature fusion and mask pre­
+diction), and networks where the attention module was replaced with 
+the popular CBAM and SE modules.
+The results demonstrate that the network incorporating our designed 
+attention module achieves the highest mIoU and mAP50 scores of 0.71 
+and 0.73, respectively. Despite the increased computational complexity, 
+this configuration yields the most superior segmentation performance. 
+The network with reduced modules follows, achieving an mIoU of 0.69 
+and an mAP50 of 0.61, while the network without attention performs 
+the poorest. Although the SE and CBAM modules are not specifically 
+tailored to our scenario, they still yield performance improvements. The 
+SE method achieves an mAP50 of 0.59, and the CBAM method achieves 
+an mIoU of 0.67, reflecting their general applicability.
+The Grad-CAM method was similarly employed to visualize the 
+ablation experiments of the attention module. As illustrated in the 
+Fig. 13, the network without attention mechanisms suffers from severe 
+background interference, focusing extensively on background regions. 
+Fig. 13. Grad-CAM Visualization Results for Different Attention Modules.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+15 
+
+The network with only the SOA, BAM, and BG modules removed suc­
+cessfully focuses on mango regions but remains susceptible to interfer­
+ence from ground areas. The network utilizing the SE attention module 
+also focuses on a significant number of leaves. While the network uti­
+lizing the CBAM attention module demonstrates good focus, the red 
+activation areas within the mango regions are sparse, indicating lower 
+attention compared to our method. These results collectively demon­
+strate that the attention module designed in our method plays a signif­
+icant role in enhancing recognition capabilities.
+The selection of the backbone network is crucial for model perfor­
+mance. To validate the correctness of choosing the Swin Transformer 
+Tiny (Swin-T) backbone, we conducted comparative experiments by 
+replacing the backbone. We selected the high-performance and widely 
+used CNN backbones EfficientNet-B0, EfficientNetV2-S, Mobile­
+Net_v3_large, and ConvNeXt_T for substitution. A total of four networks 
+were trained and evaluated. The results, as presented in Table 3, 
+demonstrate that our method achieves the highest segmentation met­
+rics, including MIoU and mAP50, indicating superior segmentation 
+performance. Other networks with alternative backbones exhibit ad­
+vantages in terms of efficiency. Specifically, EfficientNet-B0 achieves an 
+inference time of only 6.14 milliseconds. Additionally, ConvNeXt_T 
+demonstrates favorable performance with an mAP50 of 0.61 and an 
+inference time of 10.98 milliseconds. However, a significant gap re­
+mains between the segmentation metrics of these alternatives and our 
+proposed method.
+The Grad-CAM method was utilized to visualize the backbone abla­
+tion experiments. As illustrated in Fig. 14, the EfficientNet-B0 network 
+exhibits high attention to mango regions but suffers from significant 
+interference from soil and foliage. The EfficientNetV2-S network dem­
+onstrates concentrated activations on mangoes and reduces interference 
+from distant backgrounds, yet interference in close-range scenes is 
+exacerbated. Although MobileNet_v3_large and ConvNeXt_T achieve 
+substantial coverage of mango regions with high attention, they still 
+manifest considerable background activation and erroneous attention 
+allocation. In contrast, our method effectively suppresses interference, 
+maintaining focus primarily on the mango targets. These results sub­
+stantiate that the integration of the Swin-T backbone within our method 
+constitutes the optimal architectural choice.
+Ablation experiments were subsequently conducted on the decoder, 
+mask head, and boundary refinement module. As the decoder and mask 
+head serve as essential basic components for segmentation and cannot 
+be directly removed, we performed comparisons by replacing them with 
+same-level alternative structures. For the decoder, the baseline adopted 
+a simple upsampling decoder that only uses deconvolution for feature 
+reconstruction, which is structurally simple and lacks multi-scale feature 
+interaction and fusion capabilities. For the mask head, the baseline used 
+a lightweight original mask head that only performs mask prediction 
+through basic convolutions, lacking boundary constraints and scene 
+adaptability. The boundary refinement module was validated by a 
+controlled variable strategy (direct embedding or removal) to verify its 
+refinement effect on blurry boundaries between fruits, branches, leaves, 
+and weeds. The ablation results are presented in Table S1.
+It can be observed that segmentation performance improves steadily 
+as the decoder, mask head, and refinement module are gradually 
+incorporated. The baseline model with a simple pixel decoder, basic 
+mask head, and no refinement module achieves an MIoU of 0.67, F1 of 
+0.69, mAP50 of 0.63, with 32.17 M parameters and 41.22 FPS. After 
+replacing it with the custom Transformer decoder, all metrics are 
+significantly improved. Adding the improved mask head further en­
+hances precision. The final model, equipped with the custom decoder, 
+dedicated mask head, and boundary refinement module, achieves the 
+best segmentation performance with an MIoU of 0.71, F1 of 0.73, and 
+mAP50 of 0.67. Although the number of parameters increases to 33.77 
+M, the inference speed remains 40.32 FPS with only a slight drop, 
+achieving a favorable balance between accuracy and efficiency. The 
+results validate the synergistic benefits of the proposed modules.
+To facilitate a deeper understanding of the network operational 
+principles and enhance the interpretability of the deep learning mech­
+anism, feature maps from various layers of the model were selectively 
+visualized. These feature maps are presented as heatmaps to provide an 
+intuitive representation of which regions are prioritized during propa­
+gation and to observe the efficacy of each module. As illustrated in 
+Fig. 15, the visualization includes the original input image, the Grad- 
+CAM output, and feature maps from different stages. Feature maps 
+from layers 0 through 7 of the Swin-T backbone were selected to 
+comprehensively demonstrate the feature evolution throughout the 
+backbone, encompassing processes such as convolution, normalization, 
+transformation, and patch merging. Subsequent visualization of the 
+coordinate attention within the SFE and feature projection modules, 
+along with the feature fusion heatmaps, reveals a progressive refinement 
+of the captured features.
+The SOA heatmap illustrates the prioritized capture of small target 
+features. The BAM heatmap exhibits distinct mango contours, demon­
+strating robust boundary feature extraction capabilities. The Mask Head 
+layer successfully extracts complete mango features, while the 
+MaskRefineModule layer further refines these features to achieve a 
+complete separation between the mango targets and the background.
+Notably, perspective and shooting distance change continuously 
+during orchard video collection, leading to significant appearance var­
+iations of the same mango across consecutive frames. To objectively 
+evaluate the accuracy of the PCA–based diagonal calculation, this study 
+randomly selected 240 valid and independent mango samples from test 
+videos, covering diverse growth postures. Samples were divided into 
+four groups according to occlusion levels: no occlusion, slight occlusion, 
+moderate occlusion, and severe occlusion, so as to quantitatively 
+analyze the effects of posture, perspective, and occlusion on measure­
+ment accuracy. Taking manually annotated diagonals as ground truth, 
+the average relative error of each group was calculated, and the results 
+are presented in Table S2.
+It is evident that, after eliminating the interference of fruit contour 
+adhesion, perspective switching, shooting distance, and posture deflec­
+tion have little influence on PCA principal direction fitting, with only a 
+limited increase in error. The main source of error is contour incom­
+pleteness caused by branch and leaf occlusion, which induces small 
+deviations in the external diagonal. Overall, the proposed PCA–based 
+diagonal method can adapt to dynamic orchard environments and 
+maintains stable accuracy under regular conditions, providing reliable 
+geometric features for fruit size statistics and yield estimation.
+3.2. Tracking Count Results
+To evaluate the efficacy of our approach, this study conducted a 
+Table 3 
+Ablation experiment results based on different backbone networks.
+MIoU
+F1
+mAP50
+mAP50_95
+Param (M)
+FLOPs (G)
+FPS
+Infer_time(ms)
+EfficientNet-B0
+0.68
+0.69
+0.60
+0.29
+8.34
+28.32
+162.77
+6.14
+EfficientNetV2-S
+0.67
+0.68
+0.59
+0.26
+24.88
+113.29
+37.83
+26.44
+Mobilenet_v3_large
+0.65
+0.66
+0.57
+0.25
+8.89
+109.12
+65.41
+15.29
+ConvNeXt_T
+0.68
+0.69
+0.61
+0.28
+8.34
+28.32
+91.05
+10.98
+Ours
+0.71
+0.73
+0.67
+0.33
+33.77
+41.86
+40.32
+25.67
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+16 
+
+systematic performance comparison and assessment of the proposed 
+Multi-Feature Fusion Tracking algorithm against three current main­
+stream tracking algorithms, namely ByteTrack, DeepSORT, and 
+StrongSORT, on the tasks of mango counting and biomass estimation in 
+orchards. Our comparison is based on video data from forty data points. 
+The results are presented in the form of scatter plots and comprehensive 
+performance quantification tables as follows.
+In the counting task, the regression equation of the MFFT algorithm 
+exhibits a slope of 1.04, which is the closest to the ideal y equals x 
+baseline. Combined with a goodness of fit of R squared equals 0.98, this 
+indicates a high degree of agreement between the counting results and 
+the ground truth values. In contrast, the regression slopes of ByteTrack, 
+DeepSORT, and StrongSORT are 0.65, 0.55, and 0.50 respectively, 
+deviating significantly from 1 and exhibiting large intercept terms. This 
+reflects a systematic bias of underestimation prevalent in these algo­
+rithms. In terms of error metrics, the RMSE, MAE, and MRE of MFFT are 
+12.95, 8.75, and 4.30 percent respectively, all of which are substantially 
+lower than those of other algorithms. Notably, the MRE of StrongSORT 
+is as high as 74.39 percent, further highlighting the superiority of MFFT 
+in counting accuracy. The scatter distribution in Fig. 16 intuitively 
+shows that MFFT consistently adheres closely to the y equals x diagonal, 
+whereas other algorithms gradually deviate from the baseline as the true 
+Fig. 14. Grad-CAM Visualization Results for Different Attention Modules.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+17 
+
+values increase, validating the analytical conclusions.
+In the biomass estimation task, Fig. 19 and Table 4 present the results 
+of biomass prediction based on diagonal length. MFFT demonstrates 
+optimal performance with a regression equation of y equals 8.28x minus 
+3.24. A goodness of fit of R squared equals 0.99 and an MRE of only 4.49 
+percent indicate extremely high reliability in predicting mango biomass. 
+Compared to other algorithms, the regression slopes of ByteTrack, 
+DeepSORT, and StrongSORT are 4.53, 3.62, and 3.02 respectively. These 
+slopes are not only much lower than that of MFFT but also accompanied 
+by larger intercept terms, leading to overall lower biomass estimates. 
+The visualization results in Fig. 19 further corroborate this point. The 
+fitting line of MFFT maintains the closest linear relationship with the 
+true values, whereas the fitting lines of other algorithms gradually move 
+away from the baseline as the diagonal length increases, showing a 
+distinct error accumulation effect. Furthermore, the RMSE and MAE of 
+MFFT in biomass estimation are 6.09 and 4.79 respectively, significantly 
+Fig. 15. Visualization results of feature maps from different modules in the network.
+Fig. 16. A visual comparison of our method's counting results with those of three other popular tracking algorithms.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+18 
+
+outperforming other algorithms. This demonstrates that the proposed 
+algorithm possesses superior robustness when handling biomass pre­
+diction in complex scenarios. Videos S1–S4 present actual tracking re­
+sults comparing our method (MFFT) with three other tracking methods 
+(https://drive.google.com/file/d/1rq3JMPvyGqToX7­
+yekm7z_zgyh8k7LVc3/view?usp = sharing). It is clear that our method 
+achieves the best tracking performance. The MFFT counting error is only 
+4.30 percent. This is much lower than other baselines such as ByteTrack. 
+The significantly lower counting error can be attributed to two factors. 
+First, the diagonal feature provides stable characterization of mango 
+morphology. This effectively alleviates matching deviations caused by 
+viewpoint changes. Second, the ID lifecycle management mechanism 
+filters out miscounts caused by transient missed detections through 
+caching and smoothing strategies. These two mechanisms jointly 
+improve the accuracy of cross-frame association.
+For the task of classifying and counting mangoes on trees versus 
+those on the ground, the comparative analysis in Table 5 and Fig. 18
+reveals discrepancies in scenario adaptability among different algo­
+rithms. Based on video data comprising thirty data points, MFFT ach­
+ieves regression equations of y equals 1.13x minus 10.75 with an R 
+Fig. 17. Comparison of Our Method with ByteTrack's Visualization Results.
+Fig. 18. Visualization of data points in Table 5 (a) MFFT (our method) (b) ByteTrack.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+19 
+
+squared value of 0.98 for tree mangoes, and y equals 1.01x plus 1.01 
+with an R squared value of 0.99 for ground mangoes. The slopes of both 
+equations are close to 1, and error metrics, such as an MRE of only 3.36 
+percent for ground mangoes, indicate that the algorithm maintains high 
+precision across both scenarios. In contrast, the ByteTrack algorithm 
+yields a regression slope of only 0.47 and an MRE as high as 24.36 
+percent for ground mangoes, reflecting poor adaptability to ground 
+scenarios characterized by occlusion and complex backgrounds. The 
+scatter plot comparison in Fig. 18 demonstrates that MFFT adheres 
+closely to the y equals x baseline in both scenarios, whereas ByteTrack 
+results for ground mangoes deviate significantly from the diagonal, 
+further validating the generalization capability of MFFT in complex 
+environments.
+In summary, the series of comparative experiments comprehensively 
+validate the superiority of the proposed MFFT algorithm across multiple 
+dimensions, including global counting accuracy, biomass estimation 
+precision, and adaptability to specific scenarios. MFFT not only 
+Table 4 
+Comparison of our method with count/biomass estimates from three other popular tracking algorithms.
+Method
+Regression equation
+FPS
+R2
+RMSE
+MAE
+MRE (%)
+Ours (MFFT)
+Counting
+y = 1.04x -4.08
+13.26
+0.98
+12.95
+8.75
+4.30
+Biomass estimation
+y = 8.28x -3.24
+0.99
+6.09
+4.79
+4.49
+ByteTrack
+Counting
+y = 0.65x + 36.88
+31.90
+-
+113.49
+93.78
+29.19
+Biomass estimation
+y = 4.53x + 15.30
+0.97
+8.99
+7.74
+8.35
+DeepSORT
+Counting
+y = 0.55x + 50.65
+20.02
+-
+165.51
+134.95
+41.31
+Biomass estimation
+y = 3.62x + 27.34
+0.96
+9.88
+8.42
+10.39
+StrongSORT
+Counting
+y = 0.50x + 28.20
+16.93
+-
+248.57
+219.70
+74.39
+Biomass estimation
+y = 3.02x + 27.74
+0.96
+8.47
+7.31
+10.86
+Fig. 19. Comparison of biomass estimates from our method versus three other popular tracking algorithms.
+Table 5 
+Analysis of Results Evaluating Mango Quantities on Trees and on the Ground 
+Using ByteTrack and MFFT Algorithms
+Method
+Category
+Regression 
+equation
+R2
+RMSE
+MAE
+MRE 
+(%)
+Ours 
+(MFFT)
+On the tree
+y = 1.13x - 
+10.75
+0.98
+8.92
+7.29
+6.37
+On the 
+ground
+y = 1.01x +
+1.01
+0.99
+1.10
+0.94
+3.36
+ByteTrack
+On the tree
+y = 0.66x - 
+1.15
+0.92
+13.27
+10.81
+10.78
+On the 
+ground
+y = 0.47x +
+11.14
+0.94
+4.89
+4.07
+24.36
+Table 6 
+Results of MOT Methods in test videos.
+MOTA
+MOTP
+IDF1
+Inference Time (ms)
+MFFT(Ours)
+0.6513
+0.6366
+0.7075
+75.36
+ByteTrack
+0.6117
+0.6308
+0.6684
+29.82
+DeepSORT
+0.5501
+0.6260
+0.6373
+47.02
+StrongSORT
+0.4995
+0.5963
+0.5225
+58.91
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+20 
+
+significantly outperforms mainstream comparative algorithms across all 
+core quantitative metrics but also provides a reliable and efficient so­
+lution for precise fruit monitoring and yield assessment in complex or­
+chard environments through stable ID management and accurate feature 
+fusion mechanisms.
+To compare tracker performance, we evaluated multiple MOT 
+methods on our captured video dataset. We selected ByteTrack, Deep­
+SORT, and StrongSORT as alternative trackers, integrating them with 
+our segmentation network to perform tracking and counting tasks. The 
+experimental results are presented in Table 6. Our method demonstrates 
+superior adaptability and efficacy in tracking and counting mangoes 
+within the complex and dynamic environment of orchards, achieving an 
+MOTA of 0.6513, an MOTP of 0.6366, and an IDF1 of 0.7075. Strong­
+SORT exhibits suboptimal performance with an MOTA of only 0.4995. 
+While ByteTrack demonstrates inferior overall performance compared 
+to MFFT, its inference time of merely 29.82 milliseconds validates its 
+high computational efficiency. Among all methods, our approach incurs 
+the longest inference time, which represents a primary direction for 
+future optimization.
+To facilitate superior visualization of the segmentation, tracking, and 
+counting results generated by MFFT, frames were extracted at intervals 
+of ten from a randomly selected output tracking video. A sequence of 
+eight images is presented, commencing at frame t and concluding at 
+frame t + 70. As illustrated in Fig. 20, the comprehensive tracking 
+process of our method is demonstrated, fully showcasing mango classi­
+fication and segmentation, diagonal length calculation, and tracking- 
+based counting. The visualization confirms that our segmentation 
+approach achieves high fidelity on target mangoes, providing a robust 
+foundation for tracking and counting within complex and dynamic en­
+vironments. Furthermore, the tracker maintains stable and continuous 
+tracking of target mangoes while responding effectively to the appear­
+ance of new instances and the disappearance of existing ones. However, 
+it is noteworthy that within such complex environments, our method 
+exhibits instances of incomplete segmentation and ID switching. These 
+aspects represent critical areas requiring further enhancement in future 
+research.
+To verify the improvement of morphological constraints on Kalman 
+filtering, we kept other components and association strategies un­
+changed under the unified tracking framework, and only compared the 
+traditional Kalman filter with the improved Kalman filter proposed in 
+this study. Tracking performance was evaluated using MOTA, MOTP, 
+and IDF1, and the average single-frame inference time was recorded to 
+quantify the robustness and efficiency of the two filtering methods. The 
+results are shown in Table S3.
+As can be seen from Table S3, under the same front-end segmentation 
+and matching strategy, the traditional Kalman filter achieves lower 
+tracking metrics. It relies only on position and scale information, making 
+it difficult to adapt to morphological fluctuations caused by perspective 
+changes, mango posture variations, and occlusions in orchards. This 
+easily leads to prediction deviation, matching errors, and ID switches, 
+resulting in lower MOTA and IDF1. In contrast, the improved Kalman 
+filter integrates diagonal morphological features, which significantly 
+enhances tracking accuracy and ID stability. It only introduces a slight 
+increase in computational cost without compromising real-time 
+Fig. 20. Visualization results of mango counting in the test video.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+21 
+
+performance, thus meeting the requirements of real-time mango 
+tracking in orchards.
+3.3. Compared with other studies
+Compared with other studies on fruit visual detection in orchards, 
+the MFFT method proposed in this work exhibits superior adaptability to 
+complex scenarios and more comprehensive functional integration 
+(Table 7). Most existing research targets crops like strawberries, apples, 
+passion fruits and kiwifruits, adopting methods such as Mask R-CNN and 
+YOLO to realize single or partial functions including instance segmen­
+tation, detection-tracking-counting and segmentation-3D localization, 
+with mAP ranging from 0.82 to 0.95. However, these methods are only 
+suitable for sparse or moderately occluded orchard environments and 
+lack the key function of biomass estimation. For mango detection, the 
+existing YOLO combined with centroid tracking merely achieves simple 
+detection and tracking under mild occlusion, with limited 0.76 MOTA. 
+In contrast, MFFT is specially designed for on-tree and on-ground 
+mangoes in extremely occluded scenarios, integrating segmentation, 
+tracking, counting and biomass estimation into a complete pipeline. It 
+achieves a segmentation mIoU of 0.71 with an inference speed of 40.32 
+FPS, and controls the global counting relative error at 4.30% and 
+biomass estimation error at only 4.49%, breaking the limitations of 
+existing studies in scenario adaptability and functional completeness.
+3.4. Discussion
+3.4.1. Advantages
+This study presents a comprehensive integrated framework for seg­
+mentation, tracking, counting, and biomass estimation tailored to 
+mango orchard environments. Extensive experiments demonstrate that 
+our method yields promising results. The dataset in this study features 
+typical field complexity, including dense mangoes with heavy occlusion 
+and strong interference from bare soil, weeds, branches, leaves, and 
+uneven illumination. All data are collected from real orchards. 
+Accordingly, the proposed method is specially optimized for complex 
+scenes via background gating, boundary attention, and multi-scale 
+feature fusion to suppress noise and reduce false detection. Quantita­
+tive results confirm that complex backgrounds significantly affect seg­
+mentation and tracking performance, demonstrating the necessity of our 
+dataset and algorithm design.
+In the segmentation component, this study employs a custom- 
+designed architecture combining pixel-level semantic segmentation 
+with connected component pseudo-instance extraction. This approach 
+precisely fulfills the core requirements of mango counting and biomass 
+estimation in orchards. The model balances pixel-level and instance- 
+level performance, achieving outstanding metrics such as MIoU and 
+F1 scores in semantic segmentation. By extracting pseudo-instances via 
+connected component analysis, the model achieves a mask mAP 
+approaching that of mainstream instance segmentation models like 
+Mask R-CNN, providing a sufficient foundation for precise counting 
+tasks.
+In the tracking and counting component, the designed tracker ex­
+hibits superior stability and accuracy compared to mainstream models 
+like ByteTrack within the complex scenarios of mango orchards. 
+Addressing typical orchard tasks, the tracker distinguishes between on- 
+tree and ground mangoes based on segmentation results, enabling 
+continuous tracking and independent counting for different categories. 
+By fusing multi-dimensional features including position, shape, color, 
+and diagonal morphology, the model maintains stable tracking of indi­
+vidual mango features. Combined with an ID lifecycle management 
+mechanism, this effectively suppresses ID switches and duplicate 
+counting. Furthermore, the tracker supports accuracy analysis based on 
+mango density distribution within single images, allowing for error 
+calibration in high-density clustered regions and low-density isolated 
+regions. This compensates for potential errors in the segmentation 
+module during occlusion, further enhancing overall counting precision 
+to better suit practical operational needs.
+In the biomass estimation component, the module is logically highly 
+aligned with core task requirements. Compared to traditional detection 
+box-based counting, this system utilizes diagonal features extracted 
+from segmentation results to construct the estimation model, offering 
+greater practicality and accuracy. Selecting diagonal length over mask 
+area effectively reduces the impact of minor mask fluctuations on 
+biomass estimation and facilitates standard unit calibration. The system 
+explicitly distinguishes between tree-hanging and ground mangoes. 
+Considering that ground mangoes do not directly contribute to yield 
+prediction, separately counting the quantity and biomass of these two 
+categories provides more targeted data support for yield assessment, 
+harvesting scheduling, and management decisions. Additionally, this 
+estimation scheme requires no additional size annotation, integrating 
+seamlessly with segmentation and tracking to realize a unified workflow 
+from segmentation and tracking to biomass estimation, efficiently 
+outputting data required for orchard yield prediction.
+Notably, in preliminary experiments, we evaluated mainstream 
+instance segmentation models such as YOLOv8s and DETR but identified 
+inherent limitations that are difficult to circumvent. Visualization of 
+segmentation results on randomly selected images, as shown in Fig. 21, 
+compares our method with DETR and YOLOv8s under identical input 
+conditions, illustrating their respective limitations. Red boxes indicate 
+missed detections, orange boxes indicate over-prediction, and light blue 
+boxes indicate adhesion. Results show that while the YOLOv8 model is 
+efficient and accurate in clear scenarios, it adopts a conservative pre­
+diction strategy for mangoes with blurred features, partial occlusion, or 
+uneven lighting, directly discarding such targets and leading to missed 
+detections (Fig. 21b). When paired with a tracker for video processing, 
+YOLOv8 suffers from rough mask shapes and significant latency be­
+tween mask changes and dynamic video frame variations, compromising 
+tracking coherence. Conversely, DETR exhibits a tendency for over- 
+inference, forcing complete fruit contours based on minimal visible 
+Table 7 
+Compared with other studies.
+Object
+Network
+Performance
+Scene complexity
+Function
+Ref.
+Strawberry
+Mask R-CNN/ 
+TensorRT
+0.83mAP, 25.46 FPS
+Sparse planting in the 
+greenhouse
+Instance Segmentation
+(Crespo et al., 2025)
+Apple
+MCA-YOLO
+0.95 mAP, 0.76 mm error
+Moderate shading
+Segmentation, 3D positioning
+(Zhou, et al., 
+2025a,2025b)
+Mango
+YOLO
+0.93mAP, 0.76MOTA
+Light shading
+Testing, tracking
+(Pichhika et al., 
+2025)
+Passion fruit
+YOLOv8n +
+OCSORT + CRCM
+0.83mAP, 87% accuracy in counting
+Moderate shading
+Detection, Tracking, Counting
+(Tu et al., 2025)
+Kiwi fruit
+TCA-YOLOv5s
+0.87 mAP, 94% accuracy in counting
+Light shading
+Detection, Tracking, Counting
+(Zhang, et al., 
+2025a,2025b)
+Apple
+YOLOv8n
+0.89 mAP,0.85R2
+Moderate shading
+Detection, Tracking, Counting
+(Zhai et al., 2025)
+Mango (tree and 
+ground)
+MFFT
+mIoU = 0.71; 40.32 FPS; Counting error 
+4.30%; Biomass estimation error 4.49%;
+Extremely shading
+Segmentation, Tracking, 
+Counting, Biomass Estimation
+This work
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+22 
+
+Fig. 21. Visual Comparison Analysis of Our Method with DETR and YOLOv8s.
+Fig. 22. Schematic Diagram of Undetected Leaks and Incomplete Segmentation in Light-Shaded Areas.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+23 
+
+corners of occluded mangoes (Fig. 21c). This often results in masks being 
+drawn over adjacent mangoes or foliage, causing artificially inflated 
+fruit counts. These defects directly undermine counting accuracy. In 
+contrast, our model effectively circumvents these issues through precise 
+pixel-level segmentation capabilities, providing a reliable basis for 
+counting (Fig. 21a). Compared to the systematic estimation biases 
+caused by YOLOs missed detections or DETRs over-predictions, our 
+model leverages the complete pixel coverage of the segmentation 
+module. Even if diagonal measurements for individual mangoes contain 
+errors due to adhesion, the model can balance these deviations through 
+population characteristics, resulting in estimation results of higher 
+reference value.
+3.4.2. Limitations and Potential Improvements
+This study acknowledges the following limitations. First, the seg­
+mentation component suffers from inherent limitations of semantic 
+segmentation, particularly in high-density scenarios. In conditions of 
+dense mango aggregation and severe mutual occlusion, connected 
+component analysis tends to merge multiple fruits into a single instance. 
+This leads to blurred instance boundaries and an inability to achieve 
+precise individual delineation, thereby compromising the accuracy of 
+diagonal measurements, the reliability of tracking feature matching, and 
+counting precision. As illustrated in Fig. 22, our method is prone to 
+misidentifying clustered mangoes as a single entity and exhibits issues 
+with missed detections and incomplete segmentation under poor light­
+ing conditions. Future improvements should prioritize segmentation 
+accuracy. Potential strategies include adopting a hybrid architecture 
+combining semantic segmentation with a lightweight instance branch, 
+such as integrating CenterNet to assist connected component analysis. 
+Additionally, expanding the dataset to include high-density and extreme 
+lighting scenarios is necessary to enhance generalization. Alternatively, 
+transitioning to a pure instance segmentation model utilizing advanced 
+Transformer architectures with query mechanisms, or improving upon 
+existing methods to mitigate YOLO missed detections or DETR over- 
+predictions, could further reduce errors.
+Second, the tracker’s performance is heavily reliant on segmentation 
+results, leading to insufficient stability in extreme scenarios. Segmen­
+tation errors indirectly cause ID switches and misassignments. 
+Furthermore, relying solely on basic visual features can result in re- 
+identification failures during rapid mango movement or instantaneous 
+full occlusion, leading to decreased tracking precision. Minor latency in 
+module coordination also affects video stream synchronization. To 
+address this, future work should capture richer mango appearance fea­
+tures and integrate advanced ReID methods. Moreover, transforming the 
+separate segmentation and tracking processes into a joint framework 
+with bidirectional feedback mechanisms—where tracking precision in­
+forms 
+the 
+segmentation 
+model—could 
+significantly 
+improve 
+performance.
+Third, biomass estimation is constrained by the limitations of 2D 
+vision, introducing multiple systematic errors. Relying solely on diago­
+nal length requires establishing a simplified and incomplete corre­
+spondence with biomass. Without access to 3D dimensions or spatial 
+poses, measurement biases arise from varying shooting angles and 
+irregular fruit morphologies, resulting in lower accuracy compared to 
+3D methods. Additionally, diagonal measurement precision is directly 
+affected by mask quality, with edge offsets, flickering, or adhesion 
+causing calculation errors. While the 2D approach could be refined by 
+incorporating more reference features, a more advanced solution in­
+volves introducing lightweight binocular camera modules to acquire 3D 
+point cloud data. Combining multi-dimensional 2D features with 3D 
+data would compensate for precision defects, enabling single-tree 
+identification and tree-to-ground ratio statistics to support refined 
+yield estimation.
+In summary, the proposed segmentation tracking biomass estimation 
+model holds promising application prospects. All experimental samples 
+in this study were naturally bagged mangoes compliant with orchard 
+standards. Although bagging alters fruit boundary features, the dataset 
+retains key challenges such as leaf occlusion, fruit overlapping, and 
+uneven illumination, making it highly consistent with real production 
+scenarios and of great engineering application value. We also will add 
+non-bagged data to further improve the generalization ability of the 
+algorithm. Future research should strengthen the integration of its 
+components, conduct experiments across diverse orchard environments, 
+and collect data throughout the entire mango growth cycle to provide 
+precise support for yield prediction and field management. We will also 
+incorporate cross-validation methods and an external validation dataset 
+to improve the model's robustness. In addition, the modular architecture 
+of our method provides a foundation for cross-crop transfer. The 
+attention mechanism in the segmentation module can adapt to the 
+appearance features of different crops. The multi-feature fusion frame­
+work in the tracking module can be replaced with crop-specific 
+morphological indicators such as fruit diameter and fruit shape index. 
+We will conduct multi-crop validation experiments in future work to 
+further verify its generalization capability.
+4. Conclusion
+This study proposes a Multi-Feature Fusion Tracking (MFFT) 
+framework for multi-class mango segmentation, stable ID tracking, and 
+biomass estimation in complex occluded orchard scenarios, addressing 
+the key challenges of low segmentation accuracy, frequent ID switches, 
+and inefficient biomass assessment in existing methods. The MFFT in­
+tegrates a Swin-T backbone with a custom Transformer decoder and 
+dedicated modules (SFE, SOA, BAM), achieving 0.71 mIoU and 0.73 F1- 
+Score at 40.32 FPS for pixel-level segmentation of on-tree and on-ground 
+mangoes, outperforming mainstream models. For tracking, a multi- 
+feature fusion strategy (IoU, HSV, Hu moments, diagonal length) com­
+bined with an enhanced Kalman filter and ID lifecycle management 
+effectively suppresses ID switches, yielding a 4.30% MRE for global 
+counting and superior MOTA (0.6513) and IDF1 (0.7075) compared to 
+ByteTrack and so on. By fusing segmentation-derived diagonal features 
+with tracking results, the framework realizes precise biomass estimation 
+with an MRE of only 4.49% (R2 = 0.99). While MFFT demonstrates 
+robust performance in variable lighting and occlusion, it faces limita­
+tions in high-density mango segmentation and 2D-based biomass 
+estimation.
+Future work will focus on optimizing the segmentation network for 
+cluster-shaped targets. We will construct a joint segmentation and 
+tracking feedback framework. Binocular vision technology will be in­
+tegrated to enable three-dimensional biomass assessment. In addition, 
+the modular architecture of our method provides a foundation for cross- 
+crop transfer. The attention mechanism in the segmentation module can 
+adapt to the appearance features of different crops. The multi-feature 
+fusion framework in the tracking module can be replaced with crop- 
+specific morphological indicators such as fruit diameter and fruit 
+shape index. We will conduct multi-crop validation experiments in 
+subsequent studies to further verify its generalization capability. 
+Declaration of Generative AI in Scientific Writing
+During the preparation of this work, the authors used ChatGPT in 
+order to improve the language and readability. After using this tool/ 
+service, the authors reviewed and edited the content as needed and takes 
+full responsibility for the content of the publication.
+CRediT authorship contribution statement
+Wentao Huang: Writing – original draft, Visualization, Data cura­
+tion, Conceptualization. Yingsheng Li: Writing – original draft, Visu­
+alization, Methodology, Conceptualization. Beike Tan: Writing – 
+original draft, Visualization. Marija Brki´c Bakari´c: Writing – original 
+draft, Visualization. Zhiqiang Zhu: Writing – original draft, 
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+24 
+
+Visualization. Xiaoshuan Zhang: Writing – original draft, Supervision, 
+Funding acquisition.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Acknowledgements
+The authors gratefully acknowledge the China-Montenegro Science 
+and Technology Cooperation Committee Exchange Project (grant num­
+ber: 4-7).
+Appendix A. Supplementary data
+Supplementary data to this article can be found online at https://doi. 
+org/10.1016/j.compag.2026.112149.
+Data availability
+Data will be made available on request.
+References
+Crespo, A., Moncada, C., Crespo, F., Morocho-Cayamcela, M.E., 2025. An efficient 
+strawberry segmentation model based on Mask R-CNN and TensorRT. Artif. Intell. 
+Agric. 15 (2), 327–337. https://doi.org/10.1016/j.aiia.2025.01.008.
+Guerra Ibarra, J.P., Cuevas de la Rosa, F.J., Hernandez Vidales, J.R., 2025. Evaluation of 
+the Effectiveness of the UNet Model with Different Backbones in the Semantic 
+Segmentation of Tomato Leaves and Fruits. Horticulturae 11 (5), 514. https://doi. 
+org/10.3390/horticulturae11050514.
+Harefa, M.T., Wijaya, D.R., 2025. In: A Real-Time Multi-Object Tracker Based on Hybrid 
+Integration of ByteTrack and DeepSORT Using YOLOv8. IEEE, pp. 244–250. https:// 
+doi.org/10.1109/ICoAILO66760.2025.11155979.
+Karabanov, G., Oke, O. R., & Krakhmalev, A. (2025). AI-driven orchard management: 
+Advancing sustainable apple production through convolutional neural network 
+recognition. In E3S Web of Conferences (Vol. 614, pp. 03018): EDP Sciences. doi: 
+10.1109/ICCSP64183.2025.11089454.
+Lee, J., Nazki, H., Baek, J., Hong, Y., Lee, M., 2020. Artificial intelligence approach for 
+tomato detection and mass estimation in precision agriculture. Sustainability 12 
+(21), 9138. https://doi.org/10.3390/su12219138.
+Lei, Y., Zhou, X., Cheng, H., 2025. Assessment of emergy, environmental and economic 
+sustainability of the mango orchard production system in Hainan. China. 
+Sustainability 17 (15), 7030. https://doi.org/10.3390/su17157030.
+Liao, T., Villacr´es, J., Vougioukas, S.G., 2025. Improved Amodal Fruit Segmentation via 
+Data Augmentation and Mask RCNN Head Modification. IFAC-PapersOnLine 59 
+(23), 413–418. https://doi.org/10.1016/j.ifacol.2025.11.823.
+Liu, S., Zhao, S., Wang, Y., Xin, J., Li, D., 2024a. An enhanced underwater fish 
+segmentation method in complex scenes using Swin transformer with cross-scale 
+feature fusion. Vis. Comput. 1–15. https://doi.org/10.1007/s00371-024-03715-6.
+Liu, Y., Li, B., Zhou, X., Li, D., Duan, Q., 2024b. FishTrack: Multi-object tracking method 
+for fish using spatiotemporal information fusion. Expert Syst. Appl. 238, 122194. 
+https://doi.org/10.1016/j.eswa.2023.122194.
+Lv, M., Xu, Y.-X., Miao, Y.-H., Su, W.-H., 2025. A Comprehensive Review of Deep 
+Learning in Computer Vision for Monitoring Apple Tree Growth and Fruit 
+Production. Sensors 25 (8), 2433. https://doi.org/10.3390/s25082433.
+Mondal, S., Sur, T., Sengupta, D., Chaudhuri, C., 2025. In: MobileNet Based Fruit 
+Classification Using UNet Generated Segmented Images: GRAD-CAM Visualization. 
+Springer, pp. 237–249. https://doi.org/10.1007/978-3-031-84543-7_19.
+Pichhika, H.C., Subudhi, P., Prasad Yerra, R.V., 2025. Enhanced YOLO-Based Mango 
+Detection and Centroid Tracking for Precise Yield Estimation. Applied Fruit Science 
+67 (3), 164. https://doi.org/10.1007/s10341-025-01385-9.
+Rojas Santelices, I., Cano, S., Moreira, F., Pe˜na Fritz, ´A., 2025. Artificial vision systems 
+for fruit inspection and classification: systematic literature review. Sensors 25 (5), 
+1524. https://doi.org/10.3390/s25051524.
+Shen, Q., Zhang, X., Shen, M., Xu, D., 2025. Multi-scale adaptive YOLO for instance 
+segmentation of grape pedicels. Comput. Electron. Agric. 229, 109712. https://doi. 
+org/10.1016/j.compag.2024.109712.
+Sim, H.-S., Cho, H.-C., 2025. Enhanced deepsort and strongsort for multicattle tracking 
+with optimized detection and re-identification. IEEE Access. https://doi.org/ 
+10.1109/ACCESS.2025.3535092.
+Tu, S., Huang, Y., Huang, Q., Liu, H., Cai, Y., Lei, H., 2025. Estimation of passion fruit 
+yield based on YOLOv8n+ OC-SORT+ CRCM algorithm. Comput. Electron. Agric. 
+229, 109727. https://doi.org/10.1016/j.compag.2024.109727.
+Ven, J., Sharma, C., Syed, A., 2025. MangoSense: A time-series vision sensing dataset for 
+mango tree segmentation and detection toward yield prediction. Comput. Electron. 
+Agric. 237, 110524. https://doi.org/10.1016/j.compag.2025.110524.
+Wei, J., Sun, Y., Luo, L., Ni, L., Chen, M., You, M., Mu, Y., Gong, H., 2025. Tomato 
+ripeness detection and fruit segmentation based on instance segmentation. Front. 
+Plant Sci. 16, 1503256. https://doi.org/10.3389/fpls.2025.1503256.
+Xie, C., Gao, Y., Zhong, Y., Zhao, Z., 2024. Impact of digital agro-technology services on 
+technical efficiency and income of small-scale farmers: Empirical study from mango 
+production in China. Agriculture 14 (12), 2143. https://doi.org/10.3390/ 
+agriculture14122143.
+Xu, C., Li, C.-T., Hu, Y., Lim, C.P., Creighton, D., 2025. Deep learning techniques for 
+Video Instance Segmentation: A survey. Pattern Recogn. 111763. https://doi.org/ 
+10.1016/j.patcog.2025.111763.
+Yang, C., Guo, Z., Fernandes Barbin, D., Dai, Z., Watson, N., Povey, M., Zou, X., 2025. 
+Hyperspectral Imaging and Deep Learning for Quality and Safety Inspection of Fruits 
+and Vegetables: A Review. J. Agric. Food Chem. 73 (17), 10019–10035. https://doi. 
+org/10.1016/10.1021/acs.jafc.4c11492.
+Yao, M., Huo, Y., Tian, Q., Zhao, J., Liu, X., Wang, R., Xue, L., Wang, H., 2025. FMRFT: 
+Fusion mamba and DETR for query time sequence intersection fish tracking. 
+Comput. Electron. Agric. 237, 110742. https://doi.org/10.1016/j. 
+compag.2025.110742.
+Zeng, T., Tong, J., Sun, X., Liu, J., He, X., Guan, Z., Liu, L., Jiang, N., 2025. YOLO-FCAP: 
+An improved lightweight object detection model based on YOLOv8n for citrus yield 
+prediction in complex environments. Smart Agric. Technol. 101590. https://doi.org/ 
+10.1016/j.atech.2025.101590.
+Zhai, Y., Zhang, L., Hu, X., Yang, F., Huang, Y., 2025. A Dynamic Kalman Filtering 
+Method for Multi-Object Fruit Tracking and Counting in Complex Orchards. Sensors 
+25 (13), 4138. https://doi.org/10.3390/s25134138.
+Zhang, J., Jiang, L., He, L., Wu, Z., Li, R., Chen, J., Sun, X., Xue, Y., Grecheneva, A., 
+Fountas, S., 2025a. Row-based kiwifruit counting pipeline for smartphone-captured 
+videos using fruit tracking and detection region adaptation guided by support-post. 
+Comput. Electron. Agric. 237, 110476. https://doi.org/10.1016/j. 
+compag.2025.110476.
+Zhang, R., Ou, H., Shi, P., Tang, P., Xu, Y., Wang, R., 2025b. A lightweight dense 
+pedestrian detection and tracking algorithm based on improved YOLOv8 and deep 
+sort. SIViP 19 (6), 508. https://doi.org/10.1007/s11760-025-04101-y.
+Zhou, C., Ampatzidis, Y., Guan, H., Liu, S., Liu, W., de Oliveira Costa Neto, A., Kunwar, 
+S., & Batuman, O. (2025). Agrosense: Accelerating precision orchard management 
+through an AI-enabled monitoring system. Precision Agriculture, 26(4), 73. doi: 
+10.1007/s11119-025-10268-8.
+Zhou, J., Chen, M., Zhang, M., Zhang, Z., Zhang, Y., Wang, M., 2025b. Improved YOLOv8 
+for multi-colored apple fruit instance segmentation and 3D localization. Artif. Intell. 
+Agric. https://doi.org/10.1016/j.aiia.2025.10.013.
+Zhou, X., Zhang, Y., Jiang, X., Riaz, K., Rosenbaum, P., Lefsrud, M., Sun, S., 2024. 
+Advancing tracking-by-detection with multimap: Towards occlusion-resilient online 
+multiclass strawberry counting. Expert Syst. Appl. 255, 124587. https://doi.org/ 
+10.1016/j.eswa.2024.124587.
+Zhu, X., Dong, X., Yu, W., Liang, H., Kong, B., 2025a. Refactored Maskformer: Refactor 
+localization and classification for improved universal image segmentation. Displays 
+102981. https://doi.org/10.1016/j.displa.2025.102981.
+Zhu, Y., Yu, Q., Xu, Z., 2025b. Optimized watermelon scion leaf segmentation model 
+based on Hungarian algorithm and information theory. Electronics 14 (3), 620. 
+https://doi.org/10.3390/electronics14030620.
+Zu, L., Zhao, Y., Liu, J., Su, F., Zhang, Y., Liu, P., 2021. Detection and segmentation of 
+mature green tomatoes based on mask R-CNN with automatic image acquisition 
+approach. Sensors 21 (23), 7842. https://doi.org/10.3390/s21237842.
+W. Huang et al.                                                                                                                                                                                                                                 
+Computers and Electronics in Agriculture 253 (2026) 112149 
+25 

@@ -1,0 +1,633 @@
+Robust Counting of Soft Fruit through
+Occlusions with Re-identiﬁcation
+Raymond Kirk1, Michael Mangan2, and Grzegorz Cielniak1
+1 Lincoln Centre for Autonomous Systems, University of Lincoln, UK
+{rkirk,gcielniak}@lincoln.ac.uk
+2 Dept of Computer Science, University of Sheﬃeld, UK
+m.mangan@sheffield.ac.uk
+Abstract. Fruit counting and tracking is a crucial component of fruit
+harvesting and yield forecasting applications within horticulture. We
+present a novel multi-object, multi-class fruit tracking system to count
+fruit from image sequences. We ﬁrst train a recurrent neural network
+(RNN) comprised of a feature extractor stem and two heads for re-
+identiﬁcation and maturity classiﬁcation. We apply the network to de-
+tected fruits in image sequences and utilise the output of both network
+heads to maintain track consistency and reduce intra-class false positives
+between maturity stages. The counting-by-tracking system is evaluated
+by comparing with a popular detect-to-track architecture and against
+manually labelled tracks (counts). Our proposed system achieves a mean
+average percentage error (MAPE) of 3% (L1 loss=7) improving on the
+baseline multi-object tracking approach which obtained an MAPE of
+21% (L1 loss=41). Validating this approach for use in horticulture.
+Keywords: Computer Vision · Multi-Object Tracking · Mobile Robotics
+1
+Introduction
+Fruit counting is a critical process in eﬀective management of a fruit crop. It in-
+forms decisions on harvesting, labour management and yield estimates. Labour
+constitutes for 65% of the total fruit harvesting cost and yield estimates typically
+have high uncertainty, motivating the need for accurate counting systems. With
+the advent of mobile agricultural robots and the success of convolutional neu-
+ral network (CNN) based detectors, traditionally laborious tasks such as ﬂower
+counting (a strong indicator of future yield) can now be automated.
+Insight into the capabilities of a vision-based tracking system on a mobile
+robot is yet to be evaluated for fruit counting. Multi-object trackers in the detect-
+to-track paradigm have shown promise applied to people tracking, and some of
+these approaches have been successfully applied to fruit counting [1,13,18].
+Tracking fruit, for the purpose of counting, faces many challenges due to
+the nature and complexity of farm environments. A tracking algorithm must be
+able to disambiguate near identical instances of fruit, handle changing appear-
+ances, manage varying factors such as illumination or altering-viewpoint, and
+
+2
+R. Kirk et al.
+Fig. 1. Mobile robot tracking platform in the Katrina-1 Strawberry row (left). Fruit
+counting-by-tracking (Ripe, Unripe and Flower) visualisation (right). The circles show
+the tracked fruit identities over time and tracks generated from our proposed method.
+Strawberry maturity classes are omitted for visualisation purposes, individual instances
+are in the format TrackID ClassID where 1, 2, 3 are ripe, ﬂower and unripe respectively.
+re-identify after disappearances due to other issues such as occlusion. Examples
+are depicted in Fig. 1. Recently proposed solutions [4,8] leverage deep learning
+to accurately detect fruit in varying conditions, with newer models subsequently
+adding detect-to-track based approaches as the counting method [11,12]. These
+approaches generally deal with a single class for each fruit: we investigate the
+utilisation of fruit maturity stage and a mobile robot to enable more eﬀective
+tracking.
+A comparison of SOTA trackers [9] in the MOT challenge attribute the re-
+cent rise in tracker performance to the inclusion of stronger aﬃnity and appear-
+ance models in tracking architectures. Enabling tracks to be maintained over
+more complex sequences. We explore this insight in this paper extending an ap-
+pearance model-based tracking framework for improved counting of objects in
+horticultural environments.
+The main contributions of our paper are: (1) a novel ﬁrst re-identiﬁcation
+and label probability based tracking framework applied on mobile robots for the
+purpose of counting fruits (2) extension of a popular re-identiﬁcation tracking
+framework to embed contextual, shape and class information into association
+cost (3) four sequences of hand labelled Strawberry data for tracking in complex
+environments shared for bench-marking with the community and (4) validation
+of the counting accuracy for the purpose of yield estimation. A video of the
+tracking system and the code to run, train and reproduce the experiments can
+be found at the fruit tracking repository.
+2
+Related Work
+Recent object tracking frameworks follow the detect-to-track paradigm [2,3,15,
+19] following the success of deep object detectors. Regional-based convolutional
+
+Robust Counting of Soft-fruit through Re-identiﬁcation
+3
+Fig. 2. The proposed fruit counting pipeline. The pipeline consists of three main stages,
+starting with the input of detections in the format of bounding boxes and the corre-
+sponding images, generation of re-identiﬁcation feature vectors and class descriptors
+and then ﬁnally a matching cascade prioritising newer tracks with IoU matching.
+neural networks (R-CNN) were introduced in 2013 [5] which used convolutional
+networks to extract features from region proposals instead of relying on hand-
+crafted low-level features such as edges, gradients and corners to detect objects.
+Several improvements were made over the next two years with the introduc-
+tion of Faster R-CNN [17] which focused on improving the accuracy and speed
+of R-CNN. More recently, approaches have moved from two-stage architectures
+(CNN + RPN) to single-stage architectures (CNN) such as RetinaNet [10] and
+YOLOv3 [16] to improve the speed of the network while maintaining similar
+architectures. Due to the advent of these accurate and fast object detectors,
+tracking objects through detection has become a well instated method for track-
+ing and counting fruit. Most approaches are generally formulated by combining
+object detectors, motion models, appearance models and data association algo-
+rithms.
+Separation of target objects from distractors such as false positives is a chal-
+lenging part of the association problem in the detect-to-track paradigm. At the
+time of publication, previous work focusing on simple tracking architectures have
+achieved state-of-the-art results. IoU Tracker [3] uses simple intersection over
+union matching as the cost for matching objects across frames, however it re-
+quires an extremely high frame rate detector. SORT [2] used the Hungarian data
+association algorithm with a Kalman ﬁlter cost to model the motion of defections
+and was at the time the best in class online tracking method. DeepSORT [19]
+improved on SORT by adding a cosine similarity cost between appearance vec-
+tors from a re-identiﬁcation deep network used in the data association metric,
+while still running in real time.
+This paradigm is applied to Mangos in [11] where a Faster R-CNN model
+detects regions of interest and a combination of Kanade-Lucas-Tomasi (KLT)
+optical ﬂow estimator, Kalman Filters, and the Hungarian Assignment algorithm
+are used to associate detections to tracks, ﬁnally a structure from motion (SfM)
+algorithm is applied to reduce the eﬀect of double-counting achieving an overall
+mean error of 27.8. Oranges and apples are counted per frame in [4] utilising
+
+4
+R. Kirk et al.
+a neural network to produce detections and to regress the ﬁnal image count,
+resulting in an overall L2 error (least square errors) of 13.7 and 10.5 for oranges
+and apples. The authors in [12] extend this work from counting fruit in single
+images to sequences of images. The proposed pipeline integrates deep neural
+network detections with SfM algorithms to count fruit from a single camera,
+achieving a L1 error (least absolute deviations) of 203 for oranges and 322 for
+apples.
+3
+Methods
+This section describes our solution to counting rows of fruit in table-top farm
+environments autonomously from a mobile robotic platform with a mounted
+colour camera. We’re interested in obtaining the total fruit count (ﬂower, un-
+ripe, ripe) per row for the purpose of informing farmers decisions on yield and
+labour. To count fruit, our solution aims to associate bounding boxes between
+cameras frames where the total number of unique associated detection IDs pro-
+vides the total count. The basis of our approach is inspired by DeepSort [19] a
+tracking framework from the Multi-Object Tracking (MOT) challenge [14], that
+has outperformed much more complex architectures on the MOT benchmark.
+We introduce a set of novel components to bolster the tracking accuracy, (1) we
+update the CNN architecture (2) we add a novel classiﬁcation branch to deal
+with multi-class data and force more distinct embeddings in the appearance fea-
+ture space (3) we integrate robot odometry data (position along row) into the
+Kalman ﬁlter state space and (4) we augment the input data with contextual
+and aspect preserving qualities. The proposed pipeline is shown in Fig. 2. We
+detail the various changes in the following section, at its core the problem for-
+mulation as in [12] is for a set of images I = (Ik)n
+k=1 containing n consecutive
+frames collected from a moving robotic platform and c ∈N fruit we are looking
+to ﬁnd the mapping between the true fruit count c and estimated count ˆc.
+3.1
+Tracking
+Our formulation for track handling and Kalman ﬁltering is similar to SORT [2]
+and other MOT benchmarks. We assume no ego-motion information is available,
+but odometry information relating to robot position along a fruit row is provided.
+Note that the camera is not calibrated. We only utilise standard Kalman ﬁlters
+with a constant velocity motion model. The Kalman ﬁlter state space is deﬁned
+as the 10 dimensional vector (u, v, γ, h, r, ˙u, ˙v, ˙γ, ˙h, ˙r) where (u, v) are the bound-
+ing box co-ordinates, (γ, h) are the aspect ratio and height and ﬁnally (r) is the
+row position of the robot. Row position r is a unit length from the start of robot
+operation at the start of the row. Co-ordinates (u, v, γ, h, r) are the respective
+object state and the following are respective velocities in image coordinates.
+To accurately solve assignment between newly arrived detections and ex-
+isting tracks, we formulate our approach into an assignment problem solvable
+
+Robust Counting of Soft-fruit through Re-identiﬁcation
+5
+by the Hungarian algorithm. We use multiple models to represent motion, ap-
+pearance and class description. Motion is incorporated in the model as squared
+Mahalanobis distance between predicted Kalman states dictated by d(1) in Eq. 1,
+where the i-th track distribution projection is denoted in measurement space as
+(yi, Si) and the j-th new observation dj. Using this metric with a 10-dimensional
+measurement state space allows us to easily ﬁlter highly improbably associations
+with the 95% quartile of the Chi-square distribution t(1) = 11.07 with 10 de-
+grees of freedom, metrics are admissible if they are within this threshold by the
+indicator from Eq. 2 where x = 1.
+d(1)(i, j) = (dj −yi)T S−1
+i (dj −yi)
+(1)
+z(x)
+i,j = 1[d(x)(i, j) ≤t(x)]
+(2)
+Mahalanobis distance for multi-object data association might fail in situations
+while tracking on a mobile robot, such as when small angular/Cartesian move-
+ments of the camera are introduced. This can result in large shift in position
+in image space. Due to this, we incorporate two more models for improving the
+assignment problem. From the baseline implementation in [19] we keep the ap-
+pearance descriptor shown in Eq. 3 and extended in Eq. 4 where the smallest
+cosine distance between i-th tracks and j-th bounding boxes is measured. For the
+appearance descriptor, rj we keep a gallery Rk = {r(i)
+k }Ok
+k
+of the last Ok = 100
+observations for each track k. We extend the model by adding a new class de-
+scription metric that considers the probability of diﬀerent maturity stages. For
+a given observation with constant motion, occlusion can alter the intra-class
+appearance (i.e. covering the red part of a Strawberry may make it appear as
+unripe instead of ripe), to ensure consistent re-identiﬁcation we compute a class
+description of all previous class observations.
+d(2)(i, j) = min{1 −rT
+j ri
+k | ri
+k ∈Ri}
+(3)
+We compute the class description metric wj from the map of label probabil-
+ities of the classiﬁcation head projected onto the unit hyper-sphere of previous
+class observations where ||wj|| = 1, similarly to computing the appearance met-
+ric, we utilise a gallery Wk = {w(i)
+k }Ok
+k
+of previous observations of each track k,
+trivially inconsistent tracks before weighting with similar appearance but diﬀer-
+ing classes the total metric will be wj + rj ≤rj + 1. Eq. 4 denotes the cosine
+distance between label probabilities and previous label probability observations.
+d(3)(i, j) = min{1 −wT
+j wi
+k | wi
+k ∈Wi}
+(4)
+Combining the metrics ensures the association is more robust, taking into
+account motion, appearance and class description. As with squared Mahalanobis
+distance a binary variable is introduced to discount improbable associations for
+both appearance t(2) and class description t(3) in Eq. 2. The association problem
+cost matrix m is the combination of all the metrics with a weight parameter λ
+
+6
+R. Kirk et al.
+where x = 3 and the association is admissible if it is within the gating region in
+Eq. 6.
+mi,j = λd(1)(x −1) +
+x
+X
+p=2
+(1 −λ)d(p)(i, j)
+(5)
+zi,j =
+3
+Y
+p=1
+b(p)
+(6)
+Suitable thresholds t(x) for each gating function z(x)
+i,j can be found. For the
+motion metric chi-square distribution threshold will remove unlikely associations,
+for the appearance metric values of cosine similarity of similar bounding boxes
+from training data can be computed to ﬁnd a suitable threshold and ﬁnally for
+the class description metric values t(3) ≤1 is a suitable value where closer to
+zero forces more consistent label probability history. The weight variable λ can
+be optimised depending on the domain, small values will prioritise appearance
+and class description over motion and higher values close to 1 will use mostly
+motion information to calculate the association and gating cost. We use the
+same matching cascade as in [19] extended with the new cost matrix m deﬁned
+in Eq. 5.
+3.2
+Re-Identiﬁcation and Class Description Network
+To discriminate between diﬀerent identities, we train a recurrent neural network
+to generate feature vectors rj and wj that minimise the cosine similarity between
+j-th bounding boxes of the same instance. The feature extraction stem architec-
+ture is described in Fig. 3. To train the network, we add two classiﬁcation heads.
+The re-identiﬁcation classiﬁcation head attempts to map the identities vector rj
+to the ground truth instance ID. The objective loss is Cosine Soft Max (Cross
+Entropy Loss). The label classiﬁcation head maps rj to label probabilities wj,
+Cross Entropy Loss is used to minimise the most probable class to the ground
+truth maturity stage (ﬂower, unripe, ripe). The training procedure attempts to
+minimise both losses. For a batch size of 128 one forward pass of the network
+takes 412µs per bounding box on a modern GPU (Nvidia GeForce GTX 3090)
+making the method suitable for online tracking, with a max capability of > 2400
+bounding boxes per second.
+To deal with multi-class tracking as well as multi-object, we added the label
+classiﬁcation head in order to coerce more separable features depending on fruit
+maturity stage. Fig. 4 visualises the Principal Component Analysis of learned
+feature vectors from a trained network with (bottom) and with (top) this ex-
+tra label classiﬁcation step. We visualise 128 dimension feature vectors as two
+principal components and colour the x, y components with the label class. It
+can be seen adding the extra network head creates much more separable fea-
+tures. To visualise the component space we plot a grid of 100 points around the
+extrema regions of principal components then take the PCA inverse transform
+
+Robust Counting of Soft-fruit through Re-identiﬁcation
+7
+ Classification Head
+128
+N Classes
+128
+64
+64
+3
+32
+64
+64
+32
+64
+64
+Conv1
+(3x3)/1
+Conv2
+(3x3)/1
+MaxPool
+(3x3)/2
+32
+32
+32
+Residual4-5
+(3x3)/1
+32
+32
+32
+Residual6-7
+(3x3)/2
+64
+16
+16
+Residual8-9
+(3x3)/2
+128
+8
+8
+AdaptivePool
+(8x8)/1
+Embeddings
+128
+Re-Indentifcation Head
+128
+N Re-ID Tracklets
+128
+Fig. 3. Recurrent Neural Network Re-ID feature extractor. Input is a 64x64 patch of
+a bounding box detection and output is a 128 length feature vector projected onto the
+unit hyper sphere (for use with cosine similarity metric d(2)). Each convolutional block
+(1, 2) is a 2D convolution followed by 2D batch normalisation and ReLU activation
+function. Each residual block (4, 5, 6, 7, 8, 9) is a basic ResNet block [7]. There are two
+heads to coerce more separable feature embeddings while training, a re-identiﬁcation
+head and maturity classiﬁer head. Total trainable parameters are 825,152.
+of u, v components to get a representative feature vector. Once we have the
+representative features, we build a k-d tree of the original feature vectors and
+take the smallest cosine distance to the representative feature vectors to visualise
+an example bounding box (shown on the right) from the low dimensional u, v
+components. Much tighter and logical groupings are observed and the weight of
+diﬀerent labels is more uniform, creating a more stable cosine distance between
+classes.
+(a)
+(b)
+Fig. 4. Principal Component Analysis (left) and inverse mapping of 10 by 10 grid
+points (right, denoted by black crosses). Best viewed online. Analysis performed on
+the re-identiﬁcation network feature vector of (a) baseline network and (b) improved
+network with classiﬁcation head. The PCA (left) shows us the classiﬁcation network
+(b) has better separation between classes (green=ﬂower, blue=unripe, red=ripe) when
+the inverse of the PCA function is applied to the X and Y positions of each grid point.
+3.3
+Tracking Sequences
+Image sequences of commercial strawberry plants were collected at the Univer-
+sity of Lincoln’s research farm at Riseholme, UK from a RGBD camera (Intel
+
+8
+R. Kirk et al.
+RealSense D435i) mounted on the agricultural robot Thorvald [6] (see Fig. 1).
+The robot was deployed in two 8x24m poly-tunnels containing 5 table-top rows
+separated by a distance of 1.5m. The central row of each tunnel was used to
+capture the Driscoll’s Amesti and Driscoll’s Katrina data sequences. Sequences
+were collected one day apart late in the season (September) with the camera’s
+height aligned to the strawberry soil bags. The data was acquired at 7Hz with
+the robot traversing the rows at 0.1ms (Amesti-1, Katrina-1, Katrina-2) and
+0.2ms (Amesti-2) at a resolution of 1920 × 1080. Data was annotated manu-
+ally with expert knowledge into 3 distinct classes: Ripe (> 85% red coverage),
+Flower (white petals with no calyx shown) and Unripe (small to large immature
+green calyx visible). Each of the sequences capture was stopped at 500 frames.
+These images were captured and aligned using the RaymondKirk/topic store
+and IntelRealSense/realsense-ros packages hosted on GitHub.
+Four sequences were collected to validate our approach, containing two sides
+of table-top poly tunnel grown Strawberries of Amesti and Katrina variety. We
+will refer to the sequences in the format of Variety-Side where 1 and 2 are
+left and right sides of each row respectively. Amesti1-2 and Katrina 1-2 contain
+12219, 4895, 15850 and 14507 bounding box annotations with 233, 172, 299
+and 326 tracklets (count) respectively. To evaluate our proposed method, we
+deﬁne a training and testing split of a 75% to 25% ratio, to ensure no bias in
+evaluation of the system and promote generalisation when tracking. The training
+split consists of the images from Katerina-1, Katerina-2 and Amesti-2 sequences,
+whereas the testing split consists of Amesti-1 image sequences. The training set
+was then split again by 75% and 25% to serve as training and validation data
+for optimising the re-identiﬁcation model. The splits were chosen this way to
+ensure no bias in the ﬁnal testing set used for evaluation. Some experiments
+contain data augmentation, we apply two diﬀerent types which we deem square
+and padding, these transformations given in Eq. 7 and 8 of the raw bounding
+boxes are to preserve aspect ratio of textual features and embed surrounding
+environment context respectively. We share the data to support bench-marking
+in the community, since we found no other sequences openly available.
+s(x, y, w, h) = { ( x, (y + h
+2 ) −w
+2 , w, w)w > h((x + w
+2 ) −h
+2 , y, h, h)w ≤h
+(7)
+pad(x, y, w, h, p) = (x −p, y −p, w + 2p, h + 2p)
+(8)
+3.4
+Evaluation Metrics
+Let f : I(j) →c ∈N for a sequence {I(j)}500
+j=1 we evaluate our proposed methods
+as the Least Absolute Deviation (L1 loss) of c(j) and ˆc(j).
+500
+X
+j=1
+|f(I(j)) −ˆc(j)|
+(9)
+
+Robust Counting of Soft-fruit through Re-identiﬁcation
+9
+For speciﬁc classes, we consider only c, ˆc fruit belonging to the speciﬁc class
+and ignore others. We use this loss in model selection and to validate the pro-
+posed system. Speciﬁcally Eq. 9 concerns the testing set Amesti-1 for evaluation.
+4
+Results
+In this section, we now evaluate our counting-by-tracking pipeline. We ﬁrst detail
+the training regime for each experiment. We then compare the baseline system to
+seven other experiments with the following modiﬁcations: (1) addition of a label
+probability cosine cost d(3) and label classiﬁcation head to the re-identiﬁcation
+network (2) detection augmentations square in Eq. 7 and pad in Eq. 8 and (3) a
+combined improvements network consisting of the all modiﬁcations that resulted
+in an improved score shown in Fig. 5. We apply all evaluations in this section
+to the hand labelled Amesti-1 data sequence which was hidden during network
+training against the predicted count data per-frame and total per-sequence.
+0
+50
+100
+150
+200
+250
+300
+350
+400
+450
+0
+10
+20
+30
+40
+50
+0
+50
+100
+150
+200
+Proposed
+Actual
+Baseline
+Proposed Total
+Actual Total
+Baseline Total
+Frame
+Count
+Total Count
+Fig. 5. Counting-by-tracking performance of the baseline approach and our proposed
+combined method, detailed in Table 1. Total counts over time are given, and also frame
+by frame counting results for all classes combined (class agnostic tracking). It can be
+seen our proposed system (dark blue, purple) performs much better and achieves almost
+perfect frame-by-frame counting. Whereas the baseline system (light blue, green) has
+a much lower overall count accuracy.
+To train the models we input a batch of 128 bounding boxes per iteration
+and train for a total of 6400 iterations, reducing the base LR of 0.1 by a factor
+of 10 at 80% and 90% of total iterations. To ensure consistent results, we apply
+the data augmentation to the data directly before training and output the re-
+identiﬁcation accuracy and label classiﬁcation accuracy (relevant only for the
+Sub-Net experiment) every 400 iterations. The re-identiﬁcation accuracy during
+training for the baseline model and Sub-Net model were 97% and for all other
+experiments the accuracy was >99% when rounded to two signiﬁcant ﬁgures.
+Table 1 describes the results of the experiments, we present the results per-
+class and class agnostic since intrinsically the baseline tracking system is class
+
+10
+R. Kirk et al.
+agnostic. The results show a strong improvement over the baseline experiment
+across all experiments. Bold values of L1 loss indicate the best experiment for
+each evaluation metric.
+Table 1. L1 Loss of Berry Count on Amesti-1
+Class
+Experiment
+Agnostic
+Flower
+Ripe
+Unripe
+Baseline
+41 (192/233) 1 (23/24) 19 (69/50) 59 (100/159)
+Maintaining Aspect Ratio
+Square
+57 (176/233) 2 (26/24)
+3 (53/50)
+62 (97/159)
+Classiﬁcation Network Cost Matrix
+Sub-Net
+31 (202/233) 1 (25/24) 3 (53/50) 35 (124/159)
+Embedding Context in Detection
+Pad-8
+33 (266/233) 14 (38/24) 29 (79/50) 10 (149/159)
+Pad-16
+86 (319/233) 13 (37/24) 36 (86/50) 37 (196/159)
+Pad-32
+25 (258/233) 3 (27/24) 12 (62/50) 10 (169/159)
+Pad-64
+8 (241/233)
+3 (27/24)
+4 (54/50) 1 (160/159)
+Combined Improvements
+Combined
+7 (240/233) 2 (26/24) 2 (52/50) 3 (162/159)
+5
+Conclusion
+We have presented a framework for accurately tracking and counting fruit in a
+complex scene from bounding boxes, extending on current tracking architecture.
+Our system utilises re-identiﬁcation features and label probability vectors with
+cosine similarity as well as robot odometry formatted as row position and data
+augmentation methods to maintain track consistency through occlusions and to
+maintain tracks in densely clustered detection regions.
+The results demonstrate that our system is capable of reliably tracking and
+counting multiple classes in clusters from multiple view points. We use an oﬀ
+the shelf cheap computer vision camera and modern GPUs so that our system
+can be applied easily. Our results indicate an improvement of L1 loss from 41,
+1, 19 and 59 (all classes, ﬂower, ripe, unripe) to 7, 2, 2, 3 error in counting 500
+frames of the Amesti-1 sequence not used in training. On a modern GPU we are
+able to process >2400 bounding box detections per-second in a single forward
+pass of the network, enabling online tracking applications.
+Future work will include further evaluation of the proposed system and fur-
+ther ablation studies into tracking by using additional cues, utilising diﬀerent
+feature extraction networks, class embeddings and extending to full 3D space
+with approaches such as depth data integration or recent structure from motion
+approaches. We applied our counting system to soft-fruit, however the generic
+nature of the proposed solution makes it applicable to a wide range of object
+
+Robust Counting of Soft-fruit through Re-identiﬁcation
+11
+counting applications beyond the soft-fruit scenario where a mobile robot can
+operate.
+Acknowledgement: This work was partially funded by the RASberry project
+at the University of Lincoln in aﬃliation with the Collaborative Training Part-
+nership for Fruit Crop Research.
+References
+1. Bellocchio,
+E.,
+Ciarfuglia,
+T.A.,
+Costante,
+G.,
+Valigi,
+P.:
+Weakly
+su-
+pervised
+fruit
+counting
+for
+yield
+estimation
+using
+spatial
+consis-
+tency.
+IEEE
+Robotics
+and
+Automation
+Letters
+4(3),
+2348–2355
+(2019).
+https://doi.org/10.1109/LRA.2019.2903260
+2. Bewley, A., Ge, Z., Ott, L., Ramos, F., Upcroft, B.: Simple online and realtime
+tracking. CoRR abs/1602.00763 (2016), http://arxiv.org/abs/1602.00763
+3. Bochinski, E., Eiselein, V., Sikora, T.: High-speed tracking-by-detection with-
+out using image information. In: International Workshop on Traﬃc and Street
+Surveillance for Safety and Security at IEEE AVSS 2017. Lecce, Italy (Aug 2017),
+http://elvera.nue.tu-berlin.de/files/1517Bochinski2017.pdf
+4. Chen, S.W., Shivakumar, S.S., Dcunha, S., Das, J., Okon, E., Qu, C., Tay-
+lor, C.J., Kumar, V.: Counting apples and oranges with deep learning: A data-
+driven approach. IEEE Robotics and Automation Letters 2(2), 781–788 (2017).
+https://doi.org/10.1109/LRA.2017.2651944
+5. Girshick, R.B., Donahue, J., Darrell, T., Malik, J.: Rich feature hierarchies for ac-
+curate object detection and semantic segmentation. CoRR abs/1311.2524 (2013),
+http://arxiv.org/abs/1311.2524
+6. Grimstad, L., From, P.J.: The thorvald ii agricultural robotic system. Robotics
+6(4) (2017). https://doi.org/10.3390/robotics6040024, https://www.mdpi.com/
+2218-6581/6/4/24
+7. He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image recognition.
+CoRR abs/1512.03385 (2015), http://arxiv.org/abs/1512.03385
+8. Kirk, R., Cielniak, G., Mangan, M.: L*a*b*fruits: A rapid and robust outdoor
+fruit detection system combining bio-inspired features with one-stage deep learning
+networks. Sensors 20(1) (2020). https://doi.org/10.3390/s20010275, https://www.
+mdpi.com/1424-8220/20/1/275
+9. Leal-Taix´e, L., Milan, A., Schindler, K., Cremers, D., Reid, I.D., Roth, S.: Tracking
+the trackers: An analysis of the state of the art in multiple object tracking. CoRR
+abs/1704.02781 (2017), http://arxiv.org/abs/1704.02781
+10. Lin, T., Goyal, P., Girshick, R.B., He, K., Doll´ar, P.: Focal loss for dense object
+detection. CoRR abs/1708.02002 (2017), http://arxiv.org/abs/1708.02002
+11. Liu, X., Chen, S.W., Liu, C., Shivakumar, S.S., Das, J., Taylor, C.J., Underwood,
+J., Kumar, V.: Monocular camera based fruit counting and mapping with semantic
+data association. IEEE Robotics and Automation Letters 4(3), 2296–2303 (2019).
+https://doi.org/10.1109/LRA.2019.2901987
+12. Liu, X., Chen, S.W., Aditya, S., Sivakumar, N., Dcunha, S., Qu, C., Taylor, C.J.,
+Das, J., Kumar, V.: Robust fruit counting: Combining deep learning, tracking, and
+structure from motion. CoRR abs/1804.00307 (2018), http://arxiv.org/abs/
+1804.00307
+
+12
+R. Kirk et al.
+13. Mekhalﬁ, M.L., Nicol`o, C., Ianniello, I., Calamita, F., Goller, R., Barazzuol, M.,
+Melgani, F.: Vision system for automatic on-tree kiwifruit counting and yield esti-
+mation. Sensors 20(15) (2020). https://doi.org/10.3390/s20154214, https://www.
+mdpi.com/1424-8220/20/15/4214
+14. Milan, A., Leal-Taix´e, L., Reid, I., Roth, S., Schindler, K.: MOT16: A benchmark
+for multi-object tracking. arXiv:1603.00831 [cs] (Mar 2016), http://arxiv.org/
+abs/1603.00831, arXiv: 1603.00831
+15. Ning, G., Zhang, Z., Huang, C., He, Z., Ren, X., Wang, H.: Spatially super-
+vised recurrent convolutional neural networks for visual object tracking. CoRR
+abs/1607.05781 (2016), http://arxiv.org/abs/1607.05781
+16. Redmon,
+J.,
+Farhadi,
+A.:
+Yolov3:
+An
+incremental
+improvement.
+CoRR
+abs/1804.02767 (2018), http://arxiv.org/abs/1804.02767
+17. Ren, S., He, K., Girshick, R.B., Sun, J.: Faster R-CNN: towards real-time object
+detection with region proposal networks. CoRR abs/1506.01497 (2015), http:
+//arxiv.org/abs/1506.01497
+18. Santos, T.T., de Souza, L.L., dos Santos, A.A., Avila, S.: Grape detec-
+tion,
+segmentation,
+and
+tracking
+using
+deep
+neural
+networks
+and
+three-
+dimensional association. Computers and Electronics in Agriculture 170, 105247
+(2020). https://doi.org/https://doi.org/10.1016/j.compag.2020.105247, https://
+www.sciencedirect.com/science/article/pii/S0168169919315765
+19. Wojke, N., Bewley, A., Paulus, D.: Simple online and realtime tracking with a
+deep association metric. CoRR abs/1703.07402 (2017), http://arxiv.org/abs/
+1703.07402

@@ -1,0 +1,701 @@
+Enabling Consumer UAVs for Precision Agriculture
+Applications: A Case Study of Yield Estimation
+Jamil Ahmad∗, Wail Gueaieb†∗, Abdulmotaleb El Saddik†∗, Giulia De Masi‡, and Fakhri Karray§
+∗Mohamed Bin Zayed University of Artificial Intelligence, Abu Dhabi, UAE
+Email: jamil.ahmad@mbzuai.ac.ae
+†School of Electrical Engineering and Computer Science, University of Ottawa, Ottawa, ON, Canada
+Email: {wgueaieb, elsaddik}@uottawa.ca
+‡Technology Innovation Institute, Abu Dhabi, UAE
+Email: giulia.demasi@tii.ae
+§School of Electrical and Computer Engineering, University of Waterloo, Waterloo, ON, Canada
+Email: karray@uwaterloo.ca
+Abstract—Unmanned aerial vehicles (UAVs) equipped with
+various
+sensors
+and
+onboard
+processing
+capabilities
+have
+emerged as a promising means to acquire field data for precision
+agriculture applications. However, such UAVs are costly, restrict-
+ing their deployment in small-to-medium-sized fields, particularly
+in developing countries. In contrast, consumer-grade UAVs have
+high-resolution RGB cameras and video streaming abilities at
+affordable prices. This paper presents an efficient processing
+pipeline to analyze video streams from consumer-grade UAVs on
+smartphones. The processing pipeline consists of preprocessing,
+object detection, and yield estimation. The object detector, being
+the most computationally expensive module, is invoked every
+nth frame due to video redundancy and the target platform’s
+limited resources. The yield estimation task on a smartphone
+requires efficient and accurate fruit detection, which a modified
+YOLOv8n model achieved. We evaluate our pipeline on datasets
+of apple and peach trees and demonstrate that it can process UAV-
+captured images to collect yield-related statistics. We also discuss
+the lessons learned and outline future directions for consumer-
+grade UAV-based precision agriculture applications.
+Index Terms—consumer UAV, precision agriculture, inference
+servers, mobile applications, fruit detection
+I. INTRODUCTION
+The role of agriculture in a country’s economy is paramount,
+and agricultural sustainability requires better practices. Pre-
+cision agriculture is a modern farming practice that aims
+to optimize crop production and improve yield quality us-
+ing data-driven techniques [1]. One of the critical aspects
+of precision agriculture is to acquire accurate and timely
+information about crop status, such as expected yield, health,
+and growth [2]. This information can be beneficial for making
+informed decisions about irrigation, fertilization, pest control,
+and harvesting. Using UAVs to monitor crops offers excellent
+possibilities to enhance farming practices by cost-effectively
+acquiring field data compared to previous methods [3]. In this
+regard, affordable consumer-grade UAVs have great potential
+This work is part of the collaborative project “Intelligent object detection,
+dynamic scene and activity recognition for real-time UAV applications”
+between Technology Innovation Institute (TII) and Mohamed bin Zayed
+University of Artificial Intelligence (MBZUAI).
+to acquire field data as they can fly over large land areas
+quickly and capture high-resolution images of crops [4]. These
+images can then be processed and analyzed to extract useful
+crop information, such as tree count, canopy area, biomass,
+chlorophyll content, water stress, disease/pest infestation, and
+fruit yield estimation. Deep learning methods have become
+significantly robust in handling tasks like classification [5], de-
+tection, segmentation [6], and recommendation, making them
+the obvious choice for processing agricultural imagery. These
+techniques have been widely applied for various applications
+such as disease detection [7]–[9], leaf stress detection, weed
+detection [10], pesticide/herbicide recommendation, and yield
+estimation [11], [12].
+However, deploying consumer-grade UAVs in precision
+agriculture faces challenges, such as limited battery life and
+a lack of onboard processing support for compute-intensive
+tasks. Off-the-shelf UAV-based precision agriculture solutions
+like DJI SmartFarm Web [13] rely on expensive and special-
+ized hardware and software components, such as high-end
+cameras, GPS modules, ground control stations, and cloud
+servers. These components increase the cost and complexity
+of the UAV system and limit its accessibility and scalability
+for small-scale farmers.
+This paper presents an efficient method to enable smart-
+phones to serve as portable computing platforms, allowing
+consumer-grade UAVs to estimate yield and monitor fruits.
+We evaluate our pipeline on datasets of apple and peach trees
+collected from different orchards. We also discuss the lessons
+learned and the future directions for using smartphones for
+UAV-based precision agriculture applications.
+II. RELATED WORK
+Images and other data captured by UAVs enable remote
+monitoring, disease/pest infestation detection [14], and yield
+estimation [15]. It can help farmers to plan harvesting, mar-
+keting, and storage strategies. Hyperspectral image processing
+has been employed to estimate yield from UAV-captured
+images. For instance, Wittstruck et al. [11] estimated Hokkaido
+2024 IEEE International Conference on Consumer Electronics (ICCE) | 979-8-3503-2413-6/24/$31.00 ©2024 IEEE | DOI: 10.1109/ICCE59016.2024.10444191
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+pumpkin (Cucurbita max.) yield using image processing and
+linear regression, achieving average detection accuracy of
+95%, and a Pearson correlation coefficient of 0.84 for weight
+estimation. Similarly, Li et al. [16] estimated potato yield using
+UAV-based RGB and hyperspectral images acquired at low
+altitudes. They used image processing to segment the green
+canopy regions. A random forest regression model was then
+used to estimate the above-ground biomass of the potato plants
+based on several hyperspectral features. They achieved a 0.81
+correlation coefficient for yield estimation.
+Most recent works use object detectors to detect visible
+fruits and extrapolation techniques to estimate actual fruit
+count. These approaches require accurate detection and count-
+ing of fruits in aerial images, which can be affected by
+illumination variation, occlusion, and external environmental
+factors. Compute-intensive deep learning-based methods are
+often employed to address these challenges. Zheng et al. [17]
+proposed an efficient online citrus counting system for large-
+scale unstructured orchards based on the UAV. They trained
+a Citrus-YOLO model to detect and count the citrus fruits
+in the RGB images, followed by the DeepSort algorithm to
+assign specific IDs to citrus fruits. Finally, they used a non-
+uniform distributed counter to correct the fruit count during
+the tracking process to reduce the counting errors caused by
+tracking failure. Their method achieved an F1 score of 89.07%
+and MAPE of 12.74%. Besides individual fruits and crops, tree
+health assessment has also been explored. For instance, Jemaa
+et al. [18] proposed a UAV-based computer vision system for
+orchard apple tree detection and health assessment. They used
+a hard negative mining strategy to detect trees. Tree health
+is then assessed using features extracted from 12 vegetation
+indices. Their system reported an F1 score of 86.24% for tree
+detection and an average classification accuracy of 97.52%
+for health assessment. Shah et al. [19] developed an Android
+application for drone surveillance and advanced agriculture
+monitoring using an EfficientNetB3 model [20]. They used a
+drone to capture RGB images of different crops at different
+growth stages. They also developed an Android application
+to process and analyze images using an optimized model on
+the smartphone device. However, they used a phone camera
+instead of a drone to capture the image. Egi et al. [21]
+proposed a drone-computer communication-based tomato gen-
+erative organ counting model using YOLOv5 with the deep-
+sort tracker. UAV captured RGB images of tomato plants at
+different flowering and fruiting stages within the greenhouse.
+Detection, tracking, and counting were performed on a PC
+where YOLOv5 and deepsort were used to analyze drone
+images. They evaluated their model on a dataset collected from
+a greenhouse and achieved an average F1 score of 0.63.
+UAV-based precision agriculture is a promising field that
+can provide various benefits for crop management. However,
+the outstanding challenges related to robustness and efficiency
+require novel solutions.
+III. PROPOSED METHOD
+Smartphones have become incredibly powerful in terms of
+computing capabilities. Their portability and inbuilt communi-
+cation abilities make them an ideal platform along with UAVs
+for precision agriculture applications, particularly in develop-
+ing countries. The proposed framework Figure 1 presents the
+architecture of a mobile application to analyze drone video
+feeds and extract useful field-related data. Most consumer-
+grade drones can stream camera feed via a communication
+channel to a smartphone, sometimes connected to a designated
+remote controller Table I. The camera stream is displayed on
+the smartphone screen in real-time as it takes flight. The video
+stream can be recorded on the device and later processed
+on the smartphone for gathering data offline. For real-time
+data collection, the video feed can also be received by a
+mobile application utilizing the UAV manufacturers’ software
+development kit (SDK). Once the image or video feed is
+received, the processing pipeline implemented on-device can
+be invoked. However, video data processing through deep
+learning models is very compute-intensive, and highly efficient
+pipelines are needed for the smartphone application to work
+effectively. We propose a quantized version of a modified
+YOLO-Nano, a lightweight and fast object detection model
+with optimized hyperparameters to balance performance and
+efficiency. The specifics of each component are provided in
+the subsequent sections.
+A. Preprocessing
+Preprocessing is a crucial component in any vision-based
+system. In our framework, it is responsible for intensity
+normalization before the inference. Fruits appear very small
+in drone images, making it challenging for object detectors to
+detect them at varying scales. To cope with this problem, we
+augmented the labeled images by extracting smaller patches
+from the input image such that the bounding box annotations
+are relatively adjusted. This allows us to introduce many vari-
+ations in object scale and orientation, essential for obtaining
+a scale-aware and robust detector.
+B. Fruit Detection
+Fruit detection using a deep learning model is our frame-
+work’s most computationally expensive task. Though the cho-
+sen model is quite efficient, running on a video stream requires
+considerable computation power. To train a robust detection
+model that can compensate for the scale variations introduced
+by a drone’s camera, we developed a data augmentation
+pipeline to introduce possible detection scenarios for the field
+operation of the UAV. To achieve this, overlapping patches
+were extracted from the labeled images using bounding box-
+aware transformations. The patches were again augmented
+using rotation, horizontal and vertical flips, and motion blur.
+Object detection can be performed using a variety of ef-
+ficient architectures such as Faster RCNN [26], Single shot
+detector (SSD) [27], You Only Look Once (YOLO) [28] and
+their variants. However, a lightweight single-stage detector,
+2
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+Fig. 1. Mobile application architecture for analyzing UAV images using on-board processing
+TABLE I
+CONSUMER-GRADE DRONES WITH VIDEO STREAMING TO PHONE CAPABILITIES
+Model
+Released
+Price (USD)
+Camera
+Stabilization
+GPS
+Video Range
+DJI Mini 4 Pro [22]
+2023
+$759
+4K/30fps, 12MP
+✓
+✓
+10 km
+DJI Mini 3 Pro [22]
+2022
+$469
+4K/30fps, 12MP
+✓
+✓
+6 km
+Autel Evo Nano+ [23]
+2022
+$679
+4K/30fps, 12MP
+✓
+✓
+9 km
+DJI Air 2S [22]
+2021
+$949
+5.4K/30fps, 20MP
+✓
+✓
+12 km
+DJI Mini 2 SE [22]
+2020
+$339
+4K/30fps, 12MP
+✓
+✓
+10 km
+Ryze Tello [24]
+2018
+$99
+HD/30fps, 5MP
+EIS
+✗
+100 m
+Hubsan Zino Pro+ [25]
+2019
+$499
+4K/30fps, 8MP
+✓
+✓
+8 km
+Holy Stone HS175D
+2020
+$159
+QHD/30fps
+✓
+✓
+-
+Potensic T25 GPS
+2018
+$250
+FHD/25fps
+✓
+✓
+300 m
+YOLO, has been widely adopted for deployment on resource-
+limited hardware [29]. The YOLO version 8 family has
+several different architectures ranging from the most efficient
+YOLOv8 nano to the most potent YOLOv8x (xtra large)
+Table II. The YOLOv8 family of models uses a backbone
+similar to YOLOv5. However, the cross-stage partial bottle-
+neck with two convolutions (C2f module) is introduced instead
+of the CSPLayer [30]. It combines high-level features and
+contextual information to perform accurate detection. It also
+uses an anchor-free model with separate heads for detection
+and classification tasks. In this way, every branch focuses on its
+specific task, resulting in a highly optimized feature extraction
+pipeline. The use of complete intersection over union (CIoU)
+(1) along with distribution focal loss (DFL) (2) enables these
+models to yield superior performance with the detection of
+smaller objects (such as fruits). The two metrics are defined
+by
+LCIoU = 1 −IoU + d2
+C2 + αv
+(1)
+LDF L = −
+N
+X
+i=1
+Nc
+X
+j=1
+yij(1 −pij)γ log(pij)
+(2)
+where IoU is the intersection over union of the predicted
+and ground truth bounding boxes, d is the Euclidean distance
+between the center points of the boxes, C is the diagonal
+length of the smallest enclosing box covering the two boxes,
+v is a penalty term for aspect ratio consistency, and α is
+a trade-off parameter. This loss function considers important
+geometrical factors relevant to the fruit detection use case, such
+as overlap area, normalized central point distance, and aspect
+ratio. N is the number of samples, Nc is the number of classes,
+yij is the target probability of class j for sample i, and pij is
+the predicted probability of class j for sample i. The parameter
+3
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+Fig. 2. Model training and optimization for deployment on smartphone device
+TABLE II
+YOLOV8 VARIANTS WITH THEIR COMPUTATION LOAD
+Model
+Input (Pixels)
+Params (M)
+FLOPS
+YOLOv8-Nano
+640
+3.2
+8.7
+YOLOv8-Small
+640
+11.2
+28.6
+YOLOv8-Medium
+640
+25.9
+78.9
+YOLOv8-Large
+640
+43.7
+165.2
+YOLOv8-Nano-M
+640
+2.8
+7.6
+γ controls the degree of focus on hard examples. The loss
+function of LDF L aims to align the predicted probabilities with
+the target probabilities, which reflects the actual distribution
+of the classes in the dataset. These losses enable YOLOv8
+models to achieve superior detection performance at various
+scales.
+The YOLOv8n variant consists of 7 Convolution layers
+along with 8 C2f modules and a spatial pyramid pooling
+fast (SPPF) module. We modified the width and depth of the
+model to obtain a lighter version YOLOv8-Nano-M and then
+applied post-training quantization to obtain an 8-bit fixed-point
+representation. It reduces the precision of the weights and acti-
+vations of YOLOv8n from FP32 to INT8 to benefit from faster
+integer calculations of ARM SoC. It also reduces memory and
+power consumption by four times without sacrificing accuracy.
+After quantization, the model was converted to the PyTorch
+Lite format, which allows it to run on mobile devices. The
+quantized model was then deployed on the Android applica-
+tion. Android platforms offer several features to speed up the
+inference of deep learning models on Qualcomm Snapdragon
+and other ARM-based SoCs. The Android OS provides a
+neural network application programming interface (API) to the
+Android neural network runtime, which provides accelerated
+inference on consumer hardware. The hardware acceleration
+is achieved using advanced features of the mobile CPU and
+GPU along with a dedicated digital signal processor (DSP)
+or a neural processing unit (NPU), commonly found in recent
+flagship smartphone devices Figure 2.
+C. Yield Estimation
+Fruit detection is usually followed by estimating the total
+number of fruits on a tree, including those not visible from one
+side [31]. This estimation often considers additional informa-
+tion like canopy size, fruit density, tree height, and variety [12].
+Considering the limited computing resources, we estimated
+the total number of fruits by summating detected fruits on
+individual trees and the average fruit density, and then, based
+on these statistics, we derived a formula to extrapolate the total
+fruit count NF using
+NF =
+Nt
+X
+n=1
+F n
+d Cf
+(3)
+where Nt is the total number of trees, F n
+d is the number of
+detected fruits in the ith tree and Cf is the correction factor
+to compensate for the invisible fruits or the ones that were
+not detected by the detector. This factor can be set adaptively
+based on tree height, canopy size, and average fruit density.
+D. Prototype Application Development
+The prototype application for Android smartphones was
+developed using the pytorch-android-lite and pytorch-android-
+torchvision-lite libraries, enabling loading and inference on
+mobile devices. The overall architecture of the application is
+provided in Figure 1 and was built using Java for Android
+devices. The optimized model was transferred to a smartphone
+as an asset and loaded into the memory. The drone feed from
+its camera is streamed to the remote control connected to the
+smartphone. Selected frames obtained from the drone were
+then input to the processing pipeline Figure 3. Firstly, the input
+image is scaled down to the required resolution, normalized,
+and converted into a tensor. The model then performs inference
+on the input tensor and produces the output tensor containing
+class probabilities and bounding boxes. The post-processing
+module consisting of non-maximum suppression (NMS) and
+bounding box rescaling is applied to the output tensor to
+generate bounding box coordinates for the input image, which
+can then be overlayed on the input image for visualization. The
+NMS, and rescaling functions were implemented in Java. The
+most recently acquired frames are processed, and fruit count
+is collected for each tree. Some frames are dropped in the pro-
+cess, which is expected as video data is often highly redundant,
+and dropping frames won’t cause significant information loss.
+[The app code, data, and models will be made available at:
+https://github.com/jamilahmadicp/UAV-Companion-App]
+IV. EXPERIMENTS AND RESULTS
+A. Experimental Setup
+The models were trained using PyTorch deep learning
+framework in Python on a 10-core Xeon Server equipped with
+128 GB RAM and Nvidia RTX A6000 GPU with 48 GB
+VRAM. The prototype Android application was installed and
+tested on two different Android devices: POXO X3 NFC, a
+mid-range device with a Snapdragon 732G CPU and Adreno
+618 GPU, and Xiaomi Pad 6 with a high-end Snapdragon 870
+4
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+Fig. 3. Processing pipeline of the Android application for yield estimation
+TABLE III
+PERFORMANCE COMPARISON OF VARIOUS MODELS ON FRUIT DETECTION
+Model
+Precision
+Recall
+mAP50
+YOLOv8-Nano
+0.751
+0.701
+0.752
+YOLOv8-Small
+0.748
+0.659
+0.753
+YOLOv8-Medium
+0.738
+0.718
+0.751
+YOLOv8-Large
+0.757
+0.717
+0.775
+YOLOv8-Nano-M
+0.752
+0.699
+0.750
+CPU and Adreno 640 GPU. The performance metrics used
+to evaluate performance are precision, recall, and mAP50,
+commonly used to evaluate object detection models. Preci-
+sion measures the fraction of correctly detected fruits among
+all detected fruits, recall measures the fraction of correctly
+detected fruits among all ground truth fruits, and mAP50
+measures the mean average precision at an intersection over
+union (IoU) threshold of 0.5, which is a combined measure
+of precision and recall across different classes of fruits. The
+Peach dataset consisted of 2,000 images, whereas the Apple
+dataset contained 1,000 images split into an 80/20 ratio for
+training and testing.
+B. Fruit Detection and Yield Estimation
+The results presented in Table III show the performance of
+four different variants of the YOLOv8 family and the modified
+one. The variants differ in size and architectural complexity,
+with Nano being the smallest and fastest and Large (along with
+xtra large) being the most potent but the slowest. YOLOv8-
+Large achieved the highest mAP50 of 0.775 due to its more
+complex and capable architecture, with a larger receptive field
+and a higher resolution output. In contrast, YOLOv8-Nano
+achieved an mAP score of 0.752 with its smaller receptive
+field and a lower resolution output. The proposed YOLOv8-
+Nano-M achieved very competitive performance at a fraction
+of the compute cost.
+With the proposed model and yield estimation method,
+we achieved a Pearson correlation coefficient of 0.89 for
+Peach fruits and 0.83 for Apples in the test datasets. These
+results show the approach’s effectiveness in UAV-based yield
+estimation in stone fruits. Further research is needed to de-
+velop affordable solutions for precision agriculture involving
+consumer-grade UAVs, multi-sensory inputs, and smartphones
+as portable computing platforms.
+C. Efficiency Analysis
+Evaluation results reported in Table IV show the inference
+time (latency) and frames per second (FPS) of different vari-
+ants of the YOLOv8 family, along with the proposed quantized
+version of the YOLOv8-Nano model, on two different smart-
+phone devices: SD-732G and SD-870. Inference time and the
+FPS depend on the size and complexity of the model, as well
+as the hardware specifications of the device. The results are
+obtained by computing the average after running the models
+on the test sets.
+TABLE IV
+EFFICIENCY ANALYSIS OF VARIOUS MODELS ON MOBILE DEVICES
+Model
+Inference Time (s) [FPS]
+SD-732G
+SD-870
+YOLOv8-Nano
+0.43 [2.3]
+0.11 [10.2]
+YOLOv8-Small
+0.80 [1.3]
+0.24 [4.2]
+YOLOv8-Medium
+1.10 [0.9]
+0.63 [1.6]
+YOLOv8-Large
+1.44 [0.7]
+0.74 [1.4]
+YOLOv8-Nano-416
+0.23 [4.3]
+0.07 [14.3]
+YOLOv8-Nano-320
+0.14 [7.2]
+0.06 [16.6]
+YOLOv8-Nano-M-320
+0.11 [9.1]
+0.05 [20.0]
+The non-quantized variants of the models performed as
+expected. The YOLOv8-Nano, being the fastest, was further
+optimized through quantization and input resolution reduction,
+which caused it to achieve nearly 10 FPS on the mid-range
+device compared to the non-quantized 2.3 FPS. Similarly, its
+performance on SD-870 also improved from 10 FPS to 20+
+FPS after quantization and input resolution reduction, making
+it suitable for real-time inference on UAV video streams.
+The other more capable models can also be quantized and
+optimized for more recent and capable hardware to achieve
+better performance.
+V. DISCUSSION
+Enabling consumer-grade UAVs for precision agriculture
+applications through mobile computing platforms offers many
+advantages. They are inexpensive compared to specialized
+UAVs for precision agriculture, which have dedicated com-
+puting hardware onboard. Drone footage can be stored on
+the smartphone device for future analysis, allowing for assess-
+ments of the effectiveness of fertilizers or pesticides at a later
+time. Similarly, yield estimate data can be aggregated from
+videos captured at different dates during a season to obtain
+more accurate statistics. Insights extracted from the UAV video
+stream can be viewed on the smartphone or uploaded to the
+cloud for future use. In brief, utilizing consumer-grade UAVs
+with smartphone applications capable of analyzing video feeds
+5
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:44 UTC from IEEE Xplore.  Restrictions apply. 
+
+will enable many farmers to adopt innovative methods that
+may not have the resources for expensive off-the-shelf solu-
+tions.
+VI. CONCLUSION
+This paper presented an efficient processing pipeline to
+analyze UAV-captured video streams of orchards for yield
+estimation. We demonstrated how video streams from UAVs
+equipped with RGB cameras can be processed on smartphones
+or edge devices using preprocessing, object detection, and
+yield estimation. Our evaluation of apple and peach datasets
+illustrated their effectiveness in detecting and counting fruits
+and estimating yield. Our method can potentially reduce the
+cost and complexity of deploying UAVs for precision agri-
+culture, particularly in small-to-medium-sized fields and de-
+veloping countries. Additionally, we discussed the challenges
+and opportunities for future research in this domain, including
+improving the accuracy and robustness of the fruit detector,
+integrating other sensors and data sources, and creating user-
+friendly interfaces and applications.
+ACKNOWLEDGMENT
+The authors thank the Technology Innovation Institute (TII)
+for partially funding this research.
+REFERENCES
+[1] S. Coulibaly, B. Kamsu-Foguem, D. Kamissoko, and D. Traore, “Deep
+learning for precision agriculture: A bibliometric analysis,” Intelligent
+Systems with Applications, vol. 16, p. 200102, 2022.
+[2] A. Dakir, F. Barramou, and O. B. Alami, “Opportunities for artificial
+intelligence in precision agriculture using satellite remote sensing,”
+Geospatial Intelligence: Applications and Future Trends, pp. 107–117,
+2022.
+[3] M. F. Aslan, A. Durdu, K. Sabanci, E. Ropelewska, and S. S. G¨ultekin,
+“A comprehensive survey of the recent studies with uav for precision
+agriculture in open fields and greenhouses,” Applied Sciences, vol. 12,
+no. 3, p. 1047, 2022.
+[4] N. Lu, J. Zhou, Z. Han, D. Li, Q. Cao, X. Yao, Y. Tian, Y. Zhu,
+W. Cao, and T. Cheng, “Improved estimation of aboveground biomass
+in wheat from rgb imagery and point cloud data acquired with a low-
+cost unmanned aerial vehicle system,” Plant Methods, vol. 15, no. 1,
+pp. 1–16, 2019.
+[5] Z. Dai, H. Liu, Q. V. Le, and M. Tan, “Coatnet: Marrying convolu-
+tion and attention for all data sizes,” Advances in neural information
+processing systems, vol. 34, pp. 3965–3977, 2021.
+[6] S. Minaee, Y. Boykov, F. Porikli, A. Plaza, N. Kehtarnavaz, and
+D. Terzopoulos, “Image segmentation using deep learning: A survey,”
+IEEE transactions on pattern analysis and machine intelligence, vol. 44,
+no. 7, pp. 3523–3542, 2021.
+[7] J. Ahmad, B. Jan, H. Farman, W. Ahmad, and A. Ullah, “Disease
+detection in plum using convolutional neural network under true field
+conditions,” Sensors, vol. 20, no. 19, p. 5569, 2020.
+[8] F. A. Shah, M. A. Khan, M. Sharif, U. Tariq, A. Khan, S. Kadry, and
+O. Thinnukool, “A cascaded design of best features selection for fruit
+diseases recognition,” Comput. Mater. Contin, vol. 70, pp. 1491–1507,
+2022.
+[9] M. Zia Ur Rehman, F. Ahmed, M. Attique Khan, U. Tariq, S. Shaukat Ja-
+mal, J. Ahmad, and I. Hussain, “Classification of citrus plant diseases
+using deep transfer learning,” Computers, Materials & Continua, vol. 70,
+no. 1, 2021.
+[10] J. Ahmad, K. Muhammad, I. Ahmad, W. Ahmad, M. L. Smith, L. N.
+Smith, D. K. Jain, H. Wang, and I. Mehmood, “Visual features based
+boosted classification of weeds for real-time selective herbicide sprayer
+systems,” Computers in Industry, vol. 98, pp. 23–33, 2018.
+[11] L. Wittstruck, M. Schirrmann, U. Lussem, J. B”urger, and A. Ruck-
+elshausen, “Uav-based rgb imagery for hokkaido pumpkin (cucurbita
+max.) detection and yield estimation,” Sensors, vol. 21, no. 1, p. 118,
+2020.
+[12] M. Mokria, A. Gebrekirstos, H. Said, K. Hadgu, N. Hagazi, W. Dubale,
+and A. Br¨auning, “Fruit weight and yield estimation models for five av-
+ocado cultivars in ethiopia,” Environmental Research Communications,
+vol. 4, no. 7, p. 075013, 2022.
+[13] D. Agriculture, “DJI smartfarm web,” 2023. [Online]. Available:
+https://ag.dji.com/smartfarm-web
+[14] A. Albanese, M. Nardello, and D. Brunelli, “Automated pest detection
+with dnn on the edge for precision agriculture,” IEEE Journal on
+Emerging and Selected Topics in Circuits and Systems, vol. 11, no. 3,
+pp. 458–467, 2021.
+[15] T. B. Shahi, C.-Y. Xu, A. Neupane, and W. Guo, “Recent advances in
+crop disease detection using uav and deep learning techniques,” Remote
+Sensing, vol. 15, no. 9, p. 2450, 2023.
+[16] B. Li, X. Zhang, Z. Li, J. Liu, L. Liu, and G. Yang, “Above-ground
+biomass estimation and yield prediction in potato by using uav-based
+rgb and hyperspectral imaging,” ISPRS Journal of Photogrammetry and
+Remote Sensing, vol. 162, p. 161–172, 2020.
+[17] Z. Zheng, Y. Wang, S. Wang, Z. Zhang, H. Zhang, X. Chen, and
+Y. Zhang, “An efficient online citrus counting system for large-scale
+unstructured orchards based on the unmanned aerial vehicle,” Journal
+of Field Robotics, vol. 40, no. 3, p. 552–573, 2023.
+[18] H. Jemaa, M. A. Ben Abdallah, B. Bouaziz, and M. E. M. Mountassir,
+“Uav-based computer vision system for orchard apple tree detection and
+health assessment,” Remote Sensing, vol. 15, no. 14, p. 3558, 2023.
+[19] S. A. Shah, G. M. Lakho, H. A. Keerio, M. N. Sattar, G. Hussain,
+M. Mehdi, R. B. Vistro, E. A. Mahmoud, and H. O. Elansary, “Applica-
+tion of drone surveillance for advance agriculture monitoring by android
+application using convolution neural network,” Agronomy, vol. 13, no. 7,
+p. 1764, 2023.
+[20] M. Tan and Q. Le, “Efficientnet: Rethinking model scaling for con-
+volutional neural networks,” in International conference on machine
+learning.
+PMLR, 2019, pp. 6105–6114.
+[21] Y. Egi, M. Hajyzadeh, and E. Eyceyurt, “Drone-computer communica-
+tion based tomato generative organ counting model using yolo v5 and
+deep-sort,” Agriculture, vol. 12, no. 9, p. 1290, 2022.
+[22] DJI,
+“DJI
+mobile
+sdk
+-
+downloads,”
+https://developer.dji.com/
+mobile-sdk/downloads/, 2021, accessed on 2023-10-06.
+[23] A. Robotics, “Autelsdk - github,” https://github.com/AutelSDK, 2021,
+accessed on 2023-10-06.
+[24] R. Tech, “Tello - downloads,” https://www.ryzerobotics.com/tello/
+downloads, 2021, accessed on 2023-10-06.
+[25] Hubsan, “Connect tutorial - hubsan zino series,” https://www.hubsan.
+com/support/files/products/ZINO/ct/connectTutorial.pdf, 2019, accessed
+on 2023-10-08.
+[26] R. Girshick, “Fast r-cnn,” in Proceedings of the IEEE international
+conference on computer vision, 2015, pp. 1440–1448.
+[27] W. Liu, D. Anguelov, D. Erhan, C. Szegedy, S. Reed, C.-Y. Fu, and
+A. C. Berg, “Ssd: Single shot multibox detector,” in Computer Vision–
+ECCV 2016: 14th European Conference, Amsterdam, The Netherlands,
+October 11–14, 2016, Proceedings, Part I 14.
+Springer, 2016, pp.
+21–37.
+[28] J. Terven and D. Cordova-Esparza, “A comprehensive review of yolo:
+From yolov1 to yolov8 and beyond,” arXiv preprint arXiv:2304.00501,
+2023.
+[29] X. Zheng and T. He, “Reduced-parameter yolo-like object detector
+oriented to resource-constrained platform,” Sensors, vol. 23, no. 7, p.
+3510, 2023.
+[30] J. Terven and D. Cordova-Esparza, “A comprehensive review of yolo:
+From yolov1 and beyond,” 2023.
+[31] F. Gao, W. Fang, X. Sun, Z. Wu, G. Zhao, G. Li, R. Li, L. Fu, and
+Q. Zhang, “A novel apple fruit detection and counting methodology
+based on deep learning and trunk tracking in modern orchard,” Com-
+puters and Electronics in Agriculture, vol. 197, p. 107000, 2022.
+6
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:44 UTC from IEEE Xplore.  Restrictions apply. 

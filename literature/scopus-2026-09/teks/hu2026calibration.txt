@@ -1,0 +1,1715 @@
+ 
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+ 
+Original papers
+Calibration-enhanced multi-view RGB-D vision for robust recognition and 3D 
+localization of strawberries under occlusions$
+Shimin Hu a,b, Meili Sun a, Chunjiang Zhao a,b, Ya Xiong a
+,∗
+a Intelligent Equipment Research Center, Beijing Academy of Agriculture and Forestry Sciences, Beijing, 100097, China
+b School of Intelligence Science and Technology, University of Science and Technology Beijing, Beijing, 100083, China
+A R T I C L E  I N F O
+Keywords:
+Strawberry harvesting robot
+Multi-RGB-D calibration
+Residual compensation
+Multi-RGB-D fusion
+3D localization
+ 
+A B S T R A C T
+Accurate 3D localization remains a bottleneck for strawberry-harvesting robots due to occlusions, calibration 
+errors, and ineffective multi-view fusion. This paper presents a comprehensive solution integrating a two-sided 
+checkerboard calibration with residual modeling (TCC-RM) method for high-precision extrinsic calibration of 
+dual RGB-D cameras and hand–eye systems, alongside a multi-RGB-D fusion pipeline for robust strawberry 
+perception under occlusions. The TCC-RM method combined rigid initialization with sphere-based residual 
+compensation to address nonlinear distortions. For multi-view perception, we introduced a modified 3D 
+Intersection over Union (IoU) metric to enhance occlusion-resistant strawberry matching and compare the 
+sequence of coordinate transform among multiple RGB-D frames and the base frame. Experimental results 
+demonstrated that the TCC-RM reduced the calibration errors (RMSE) to 7.23 mm (dual-RGB-D) and 6.74 mm 
+(hand–eye), achieving 49.23% and 69.3% improvements over the traditional TCC method, respectively. 
+Compared with single-RGB-D configuration, the multi-RGB-D fusion reduced the Euclidean localization errors 
+by 2.84%–39.21% and expanded the perception range by 42.86% (mild occlusion). The strawberry perception 
+pipeline achieved RMSEs of 6.31 mm (mild occlusion) and 12.62 mm (moderate occlusion), representing 
+minimum improvements of 11.7% over any single-view configuration. The framework, validated online on the 
+HarvestFlex platform, achieved high-precision 3D localization in greenhouse environments, thereby enhancing 
+the deployment readiness of strawberry-harvesting robots.
+1. Introduction
+As global agriculture advances toward intelligent and unmanned 
+operations, fruit and vegetable harvesting robots have emerged as a 
+key technology to improve efficiency and ensure food security. Straw-
+berries, as delicate and high-value horticultural crops, are a major focus 
+due to their short ripening period, limited shelf life, and susceptibility 
+to damage (Parsa et al., 2023). Perceiving and localizing strawberries 
+constitute the initial and most critical phases of automated harvesting. 
+However, the complexity of the strawberry harvesting environment in-
+troduces considerable challenges to the reliability and accuracy of these 
+processes. Dense clustering, occlusions from leaves and neighboring 
+fruits, and irregular structures hinder the stable 3D localization (Fu 
+et al., 2020; Tituaña et al., 2024).
+To address the challenge of occlusion in strawberry localization, 
+researchers have explored a variety of strategies. Ge et al. combined 
+$ This work was supported by the Reform and Development Project of Beijing Academy of Agriculture and Forestry Sciences (BAAFS), the Haidian District 
+Bureau of Agriculture and Rural Affairs, the Innovation Ability Project of BAAFS (KJCX20240321), the Outstanding Youth Foundation of BAAFS (YKPY2025007), 
+the BAAFS Talent Recruitment Program and the National Natural Science Foundation of China (NSFC) Excellent Young Scientists Fund (overseas).
+∗Corresponding author.
+E-mail address: yaxiong@nercita.org.cn (Y. Xiong).
+density clustering with spatial priors to estimate positions, achieving 
+74.1% picking success in tabletop setups but with poor generalization 
+to natural fields (Ge et al., 2019). Yu et al. introduced rotated bounding 
+boxes in R-YOLO for embedded posture prediction, yet the handling of 
+occlusion remained limited (Yu et al., 2020). LiY et al. incorporated 
+RGB-D fusion and centroid regression in YOLOv7 to enhance Z-axis 
+accuracy, though performance relied heavily on detection quality (Li 
+et al., 2024a). To enhance occlusion adaptation, LiT et al. employed 2D 
+segmentation and point cloud cropping for centroid estimation, improv-
+ing accuracy but vulnerable to segmentation errors (Li et al., 2022). 
+Gong et al. fused RGB, depth, and infrared data, achieving 2 mm error 
+under mild occlusion, but with slow processing (456 ms/frame) (Gong 
+et al., 2022). Kang et al.’s OccluInst used attention-guided RGB-D fusion 
+for occlusion-aware recognition, though its effectiveness for straw-
+berries remains unverified (Kang et al., 2025). Multi-camera systems 
+https://doi.org/10.1016/j.compag.2025.111221
+Received 15 June 2025; Received in revised form 4 October 2025; Accepted 10 November 2025
+Computers and Electronics in Agriculture 241 (2026) 111221 
+Available online 21 November 2025 
+0168-1699/© 2025 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+
+S. Hu et al.
+offer greater resilience to occlusion. Mejia et al. used stereo vision on 
+mobile platforms for spatial mapping, improving recognition by 14%, 
+but lacked fine localization (Mejia et al., 2023). Zheng et al. applied 
+multi-view instance matching for large-scale occluded target merging, 
+but resolution was insufficient for close-range detection (Zheng et al., 
+2023).
+To achieve high-precision 3D localization of strawberry targets, 
+multi-camera systems are widely adopted due to their complemen-
+tary viewpoints. However, their performance largely depends on the 
+accuracy of inter-camera extrinsic parameters, making calibration a 
+central research focus. The classic checkerboard method (Zhang, 2000) 
+is effective in static or close-range setups but relies on overlapping 
+fields of view, limiting its use in wide-baseline systems. To address 
+this, researchers have proposed dual-sphere targets (Wei et al., 2016) 
+and auxiliary high-precision cameras (Sun et al., 2016), which im-
+prove flexibility but increase complexity and cost. Optimization-based 
+methods such as baseline correction (Darwish et al., 2019), multi-
+temporal adjustment (Kumar et al., 2018), moving-sphere trajecto-
+ries (Su et al., 2018), and robust circle detection (Kwon et al., 2019) 
+enhance calibration under challenging conditions but often lack real-
+time efficiency. To improve robustness and adaptability, Liu et al. 
+(2022) introduced a circular calibration board with sub-pixel edge 
+extraction. Yuan et al. (2025) proposed an evaluation strategy for non-
+overlapping views based on residual analysis, while Xu et al. (2021) 
+used person re-identification to establish correspondences across wide-
+baseline views without dedicated targets. Hou et al. (2025) developed 
+a hierarchical framework combining multiple modalities, though with 
+high system complexity. In recent years, deep learning techniques 
+have been widely applied in multi-camera system calibration. For 
+instance, Duan et al. proposed a deep neural network-based method 
+that achieves high-precision calibration using small calibration boards 
+in large field-of-view setups, improving efficiency and accuracy (Duan 
+et al., 2024). Additionally, Talakoob introduced a real-time neural 
+network recalibration method for multi-camera systems, dynamically 
+adjusting camera parameters in real-time based on changing poses, en-
+suring system robustness (Talakoob, 2024). However, their reliance on 
+substantial data and computational resources, coupled with challenges 
+in interpretability and generalization, raises concerns about practical 
+deployment in resource-limited settings.
+Hand–eye calibration is essential for establishing spatial transfor-
+mations between vision systems and robotic manipulators, enabling 
+accurate execution based on visual perception. The classical AX=XB for-
+mulation (Tsai et al., 1989) offers efficient computation but is sensitive 
+to pose noise and large viewpoint changes. To improve robustness, Wu 
+et al. (2023) used a single-sphere point cloud model combined with 
+quaternion and Kronecker product methods to jointly solve rotation and 
+translation, though performance depends heavily on point cloud qual-
+ity. Shin et al. (2024) enhanced observability through pure rotational 
+motions around orthogonal axes, requiring precise motion control. Cui 
+et al. (2024) proposed a two-stage closed-form method with RANSAC 
+and error refinement, achieving higher accuracy under noisy conditions 
+but increasing computational burden. Wang et al. (2025) introduced 
+pose graph optimization to jointly estimate transformations and system 
+errors, improving global consistency but reducing real-time feasibility. 
+Geometric constraint methods, such as those by Yang et al. (2022) 
+and Zhong et al. (2025), simplify deployment but are limited by joint 
+precision or depth perception. Recent intelligent approaches, including 
+neural network modeling with evolutionary optimization (Zhu et al., 
+2022), and target-free self-calibration via point cloud matching (Li 
+et al., 2024b), improve autonomy but rely on high data quality. Multi-
+sensor fusion strategies (Gautam et al., 2025) enhance adaptability 
+but impose strict synchronization requirements. Recent advancements, 
+such as the methods proposed by Valassakis et al. (2021) and Tang et al. 
+(2025), have significantly improved calibration processes. Valassakis 
+et al. explored deep learning for eye-in-hand camera calibration from 
+a single image, showcasing the potential of direct regression models to 
+outperform classical methods in noisy environments (Valassakis et al., 
+2021). Tang et al. proposed Kalib, a markerless hand–eye calibration 
+method that uses reference point tracking, forward kinematics, and 
+a PnP solver to estimate the camera–robot transformation, offering a 
+more user-friendly, low-effort solution for dynamic environments (Tang 
+et al., 2025).
+Despite recent progress, achieving reliable 3D localization in un-
+structured field environments remains hindered by key challenges. 
+Existing perception methods are sensitive to occlusion, multi-camera 
+calibration under wide baselines or limited overlap faces a trade-
+off between accuracy and efficiency, and hand–eye calibration often 
+lacks robustness and deployability. These issues limit the effective 
+transformation of visual data into precise robotic actions.
+To address these limitations, this study developed a multi-view 3D 
+localization system tailored for agricultural scenarios and makes two 
+key contributions:
+(1) A two-stage calibration method (TCC-RM) that combined rigid 
+initialization with residual modeling was proposed to correct 
+nonlinear distortions and significantly improve the calibration 
+accuracy.
+(2) The proposed multi-RGB-D fusion pipeline enhanced strawberry 
+localization accuracy and expanded perception coverage through 
+occlusion-aware matching and optimized coordinate transforma-
+tions.
+2. Methodology
+2.1. Overall framework and hardware configuration of the strawberry har-
+vesting system
+This study focused on table-top grown strawberries and proposed 
+a multi-view RGB-D vision-based robotic system for this task. The 
+entire system architecture, illustrated in Fig. 1, consisted of three 
+core functional modules—Perception, Processing, and Localization—
+implemented on the newly developed robotic harvesting platform, 
+HarvestFlex (https://xiong-lab.cn/), as shown in Fig. 2. HarvestFlex 
+integrated a mobile base, vision system, robotic arm, and end-effector.
+Perception Module: The vision system adopted a dual RGB-D 
+camera setup (Intel RealSense D455F), symmetrically mounted on both 
+sides of the mobile base to create a complementary field-of-view (FOV) 
+configuration, with the robotic arm’s motion rail centrally positioned 
+between the cameras. The cameras were optimally oriented at an 
+outward-facing horizontal angle of approximately 110◦ and an upward 
+tilt of about 55◦, effectively covering the robot’s operational workspace, 
+typically ranging from 1.2 to 3 m. RGB and depth images were acquired 
+at 640 × 480 pixels to balance detail and real-time performance.
+Processing Module: This module performed dual-camera and hand–
+eye calibrations to unify heterogeneous data from RGB images, depth 
+maps, and robot poses. We propose a two-stage TCC-RM calibration 
+(Section 2.2), combining checkerboard initialization with residual mod-
+eling for high accuracy. This is followed by a dedicated coordinate 
+transformation study (Section 2.3) that implements and compares CF 
+and BF strategies.
+Localization Module: The 3D bounding box of each strawberry 
+was generated from 2D detections and depth information. A modified 
+IoU metric refined cross-view matching, while a weighted multi-view 
+fusion integrated complementary observations (Section 2.4). The final 
+3D coordinates were transmitted to the robotic system for precise 
+manipulation and harvesting.
+Computers and Electronics in Agriculture 241 (2026) 111221 
+2 
+
+S. Hu et al.
+Fig. 1. System architecture of the proposed harvesting framework.
+Fig. 2. HarvestFlex robotic harvesting platform (https://xiong-lab.cn/).
+2.2. TCC-RM: A two-stage calibration method
+Camera calibration is essential for geometric consistency across 
+sensors and the robotic arm. While traditional methods like Zhang’s 
+and Tsai-Lenz provide global alignment, they fail to correct nonlinear 
+errors, especially prominent in RGB-D cameras due to depth-dependent 
+biases and edge distortions. Pure error compensation methods, though 
+capable of modeling such biases, often lack generalizability without 
+structural constraints.
+To address these issues, we proposed a unified two-stage calibration 
+framework, two-sided checkerboard calibration with residual modeling 
+(TCC-RM) (Fig. 3). The first stage established rigid transformations for 
+global consistency, while the second stage employed residual modeling 
+to explicitly compensate for depth-related errors. This hybrid approach 
+combined structural stability with precise bias correction, providing a 
+millimeter-accurate foundation for multi-view fusion, as validated in 
+Section 3.
+2.2.1. Stage 1: Rigid initialization
+The first stage of the TCC-RM framework aims to establish the initial 
+extrinsic parameters. Two types of transformations are involved:
+Dual-camera calibration employed a novel two-sided checkerboard 
+design, enabling simultaneous feature capture from both cameras. This 
+approach minimized occlusion and improved data collection efficiency. 
+Using Zhang’s method (Zhang, 2000), the relative pose between the 
+cameras was computed by leveraging the known rigid transforma-
+tion between the checkerboard sides. To minimize calibration drift, 
+multiple checkerboard poses covering diverse spatial configurations 
+were sampled, and the pose with the minimum average re-projection 
+error was selected to determine the final transformation matrix 𝐓. This 
+matrix establishes the coordinate mapping foundation for subsequent 
+sphere-based error modeling.
+Hand–eye calibration adopted an eye-to-hand configuration. Using 
+the Tsai-Lenz method (Tsai et al., 1989), the AX=XB problem was 
+solved by combining robot end-effector poses with camera observa-
+tions of the calibration target, yielding the initial camera-to-robot 
+transformation.
+While this stage provided a consistent geometric foundation, it 
+remained susceptible to sensor noise, depth-dependent biases, and non-
+linear distortions—limitations that were addressed in the subsequent 
+residual modeling stage.
+2.2.2. Stage 2: Sphere-based residual compensation modeling
+(a) Sphere-Based Error Data Acquisition. To quantify the cali-
+bration errors in the dual-RGB-D system, a 3D-printed sphere with a 
+Computers and Electronics in Agriculture 241 (2026) 111221 
+3 
+
+S. Hu et al.
+Fig. 3. Flowchart of the TCC-RM calibration method.
+Fig. 4.  The figure illustrates the imaging model of cameras C1 and C2 observing a sphere with center O and radius r. Image projections 𝑃𝐶1 and 𝑃𝐶2, along 
+with depth d, allow back-projection to 3D surface points. Adding r recovers the sphere center. 𝑃1𝑛𝑟, 𝑃1𝑛𝑤, 𝑃2𝑛𝑟, 𝑃2𝑛𝑤 indicate boundary projections; 𝑋1𝑅, 𝑌1𝑅, 𝑍2𝐶
+and 𝑋2𝑅, 𝑌2𝑅, 𝑍1𝐶 represent the camera coordinate axes. Arrows indicate the positive directions of each axis, following the right-handed coordinate convention.
+radius of 5 cm was employed as the calibration target. The method is 
+based on the geometric invariance of the sphere center in multi-view 
+imaging: after rigid transformation, the estimated sphere centers from 
+the two camera coordinate systems should ideally coincide, and the 
+actual measured spatial deviation serves as a direct observation of the 
+calibration error (Fig. 4).
+High-precision sphere center extraction was critical for obtaining 
+reliable observational data. As illustrated in Fig. 5, a processing pipeline 
+fusing color and depth information was designed. The procedure began 
+with image pre-processing, where RGB images were rectified using 
+the camera intrinsic matrix and distortion coefficients, and regions of 
+interest were cropped. The calibration sphere was then segmented in 
+the HSV color space using thresholding to extract its complete contour. 
+A minimum enclosing circle was fitted to the contour to estimate 
+the 2D projection center and pixel radius. For 3D reconstruction, the 
+corresponding depth value was retrieved from the aligned depth map, 
+and the 3D coordinates of the surface point were calculated via the 
+pinhole model. Perspective distortion was subsequently corrected using 
+the known sphere radius, yielding the final accurate 3D sphere center 
+coordinates.
+This pipeline, through multi-modal data fusion and geometric con-
+straints, ensured the provision of highly accurate and robust sphere 
+center coordinate data for subsequent residual compensation.
+(b) Residual Compensation. To address depth-dependent biases 
+and nonlinear distortions not corrected by rigid calibration, a residual 
+compensation model was introduced. This step refined the coordinate 
+mapping point-wise while preserving global consistency.
+For a sphere center observed in frames 𝐴 and 𝐵, the residual error 
+was defined as: 
+𝛥𝐏𝑖= 𝐏(𝐴)𝑖−𝑇𝐵→𝐴, 𝐏(𝐵)
+𝑖
+.
+(1)
+Each component of 𝛥𝐏𝑖 was approximated via second-order polyno-
+mial regression: 
+𝛥𝑥= 𝑓𝑥(𝑥, 𝑦, 𝑧),
+𝛥𝑦= 𝑓𝑦(𝑥, 𝑦, 𝑧),
+𝛥𝑧= 𝑓𝑧(𝑥, 𝑦, 𝑧).
+(2)
+For any new point 𝐗(𝐵), the compensated coordinate in frame 𝐴 was 
+calculated as: ̂
+𝐗(𝐴) = 𝑇𝐵→𝐴, 𝐗(𝐵) + 𝛥𝐏.
+(3)
+This formulation applied uniformly to both inter-camera and hand–
+eye calibration, significantly improving spatial accuracy to millimeter 
+level.
+2.3. Coordinate transformation sequence study of the multi-RGB-D-Arm
+Existing studies have primarily addressed multi-camera calibration 
+and hand–eye calibration separately (Allegro et al., 2024; Kroeger 
+et al., 2019). For integrated systems, however, the optimal data fusion 
+sequence remains underexplored. To bridge this gap, we analyzed 
+Computers and Electronics in Agriculture 241 (2026) 111221 
+4 
+
+S. Hu et al.
+Fig. 5. Sphere center extraction process.
+Camera-Frame Fusion(CF):
+Step 1:
+𝐏𝑐2
+𝑐1 = 𝐓𝑐1
+𝑐2𝐏𝑐2 + 𝛥(2)
+𝑐1
+(
+𝐓𝑐1
+𝑐2𝐏𝑐2, 𝐞
+)
+// Transform RGB-D 2 point to RGB-D 1 with compensation
+(4)
+Step 2:
+𝐏fused
+𝑐1
+= 
+(
+𝐏𝑐1, 𝐏𝑐2
+𝑐1
+)
+// Fusion in RGB-D 1 coordinate system
+(5)
+Step 3:
+𝐏rigid
+𝑏
+= 𝐓𝑏
+𝑐1𝐏fused
+𝑐1
+// Rigid transform to robot base frame
+(6)
+Step 4:
+𝐏𝐴= 𝐏rigid
+𝑏
++ 𝛥(2)
+𝑏
+(
+𝐏rigid
+𝑏
+, 𝐞
+)
+// Final base frame compensation
+(7)
+Base-Frame Fusion(BF):
+Step 1a:
+𝐏𝑐1
+𝑏= 𝐓𝑏
+𝑐1𝐏𝑐1 + 𝛥(2)
+𝑏
+(
+𝐓𝑏
+𝑐1𝐏𝑐1, 𝐞
+)
+// Rigid + residual compensation for RGB-D 1
+(8)
+Step 1b:
+𝐏𝑐2
+𝑏= 𝐓𝑏
+𝑐2𝐏𝑐2 + 𝛥(2)
+𝑏
+(
+𝐓𝑏
+𝑐2𝐏𝑐2, 𝐞
+)
+// Rigid + residual compensation for RGB-D 2
+(9)
+Step 2:
+𝐏𝐵= (𝐏𝑐1
+𝑏, 𝐏𝑐2
+𝑏
+)
+// Fusion in base frame
+(10)
+Box I. 
+and compared two representative transformation strategies—Camera-
+Frame Fusion (CF) and Base-Frame Fusion (BF)—focusing on how 
+the sequence of coordinate transformations impacts multi-view data 
+fusion. CF first constructs a unified camera coordinate system before 
+transformation to the robot base, whereas BF projects each camera’s 
+data directly to the base frame prior to fusion. The mathematical 
+formulations are as follows (See Box I): 
+where:
+• 𝐏𝑐1, 𝐏𝑐2: Points detected in RGB-D 1 and RGB-D 2 coordinate 
+systems, respectively.
+• 𝐏𝑐2
+𝑐1: Point from RGB-D 2 transformed into the coordinate system 
+of RGB-D 1.
+• 𝐓𝑏
+𝑐1, 𝐓𝑏
+𝑐2: Rigid transformations from RGB-D 1 and RGB-D 2 to 
+robot arm base.
+• 𝐓𝑐1
+𝑐2: Rigid transformation from RGB-D 2 to RGB-D 1.
+• 𝛥(2)
+𝑐1 (⋅, 𝐞), 𝛥(2)
+𝑏(⋅, 𝐞): Second-order residual compensation terms in 
+RGB-D 1 or base frame.
+As summarized in Table 1, CF provides superior projection consistency 
+through hierarchical compensation but is sensitive to calibration errors. 
+BF offers better modularity and handles view asymmetry well, but 
+requires precise hand–eye calibration. Therefore, in practical deploy-
+ment, the choice depends on application-specific needs for accuracy 
+versus robustness.
+2.4. Strawberry matching and multi-view fusion
+To integrate detections from dual RGB-D cameras, we developed a 
+multi-view fusion strategy comprising detection alignment, matching, 
+and weighted fusion. For enhanced robustness in occluded agricultural 
+environments, we introduced: (i) a modified 3D IoU metric tolerant 
+to partial occlusion, and (ii) a weighted fusion scheme incorporating 
+projection area and depth reliability. These adaptations were essential 
+for achieving stable and accurate multi-view localization in practice.
+2.4.1. Strawberry matching
+In the dual-RGB-D configuration, the same strawberry may be ob-
+served from multiple viewpoints, resulting in multiple 3D boxes that 
+provide complementary information of the same target. To integrate 
+these observations, a cross-view matching process is applied, with 
+candidate pairs filtered based on a center-distance threshold. For the 
+remaining pairs, spatial overlap is evaluated using the modified 3D 
+Intersection-over-Union (IoU), which is widely used as an evaluation 
+metric in object detection (Yu et al., 2019), but here adapted as a 
+geometric criterion for cross-view matching.
+The traditional 3D IoU often produces low similarity scores under 
+viewpoint changes or partial occlusion. To address this issue, a mod-
+ified 3D IoU metric is used, which is more tolerant to occlusion and 
+size discrepancies. The geometric relationship is illustrated in Fig. 6, 
+where the intersection volume 𝑉𝑖𝑛𝑡𝑒𝑟 between two 3D bounding boxes 
+is highlighted. The modified IoU is defined as: 
+IoU𝑛𝑒𝑤=
+𝑉inter
+min(𝑉1, 𝑉2) .
+(11)
+Computers and Electronics in Agriculture 241 (2026) 111221 
+5 
+
+S. Hu et al.
+Table 1
+Integrated comparison of Camera-Frame Fusion (CF) and Base-Frame Fusion (BF) strategies.
+ Dimension
+Camera-Frame Fusion (CF)
+Base-Frame Fusion (BF)
+ 
+ Geometric Consistency
+Fusion in unified camera coordinate: 
+𝑃fused = (𝑃𝑐1 , 𝑇𝑐1
+𝑐2 𝑃𝑐2 )
+- Accurate XY-plane projection 
+- Depends on inter-camera calibration 
+- Sensitive to depth
+Fusion in robot base frame: 
+𝑃𝐵= (𝑇𝑏
+𝑐1 𝑃𝑐1 , 𝑇𝑏
+𝑐2 𝑃𝑐2 )
+- Good spatial consistency 
+- Robust to asymmetric views 
+- Inconsistency with poor hand–eye calibration
+ 
+ Compensation Structure
+Hierarchical: 
+- 𝛥(2)
+𝑐: camera frame residual 
+- 𝛥(2)
+𝑏: base frame residual 
+- Requires joint optimization
+Distributed: 
+- Per-branch residual terms 
+- Independent sensor-level correction 
+- May fragment under view inconsistency
+ 
+ Error Controllability
+Serial propagation: 
+𝑃𝑐2 →𝑇𝑐1
+𝑐2 𝑃→𝑃fused →𝑇𝑏
+𝑐1 𝑃
+- 𝜖total = 𝜖cross-cal + 𝜖fusion + 𝜖eye-hand
+- High single-point failure risk
+Parallel propagation: 
+𝜖𝑘= 𝑓(𝜖eye-hand, 𝜖sensor)
+- Modular, branch-specific errors 
+- Scattered or inconsistent residual paths
+ 
+ Mathematical Stability
+- Requires planar convexity for fusion 
+- Coupled Jacobian-based modeling 
+- Sensitive to depth discontinuity
+- Uses least-squares in Euclidean space 
+- Allows independent optimization 
+- Only needs geometric consistency 
+- May affect convergence if residuals mismatch
+ 
+Fig. 6.  Schematic diagram of strawberry 3D box intersection.
+Where 𝑉1 and 𝑉2 represent the volumes of the two bounding boxes. This 
+approach ensures that occlusion and partial visibility do not disrupt the 
+matching process.
+2.4.2. Multi-view fusion strategy
+To enhance positional accuracy in multi-view fusion, both the tar-
+get’s projection area in RGB images and its depth information were 
+incorporated into the weight design. A larger projection area indicates 
+more reliable localization under the given viewpoint, while a smaller 
+depth value reflects higher measurement precision. These attributes 
+jointly represent observation quality.
+Formally, given center points 𝑐1, 𝑐2, projection areas 𝐴1, 𝐴2, and 
+depths 𝑑1, 𝑑2, the fusion weights are defined as: 
+𝑤𝑖=
+𝐴𝑖
+𝑑2
+𝑖+ 𝜖
+,
+(𝑖= 1, 2),
+(12)
+where 𝜖> 0 ensures numerical stability. The fused center point is then 
+obtained as: 
+𝐜fused = 𝑤1𝐜1 + 𝑤2𝐜2
+𝑤1 + 𝑤2
+.
+(13)
+When both weights approach zero due to very small projection areas 
+or unstable depth estimates, the fused center was instead approximated 
+by the simple average of 𝑐1 and 𝑐2 to avoid abnormal predictions.
+2.4.3. Hybrid localization strategy for computational efficiency
+The overall process, from recognition to fusion, is illustrated in 
+Fig. 7. To maximize computational efficiency, a hybrid localization 
+strategy was implemented based on the fixed geometric configuration 
+of the dual cameras. Prior to operation, the non-overlapping regions 
+of the two cameras’ fields of view were calculated. During runtime, 
+strawberries detected within these pre-defined non-overlapping regions 
+were directly localized using single-camera data, effectively bypassing 
+computationally expensive cross-view matching. For detections in the 
+Fig. 7. Strawberry Fusion Process.
+overlapping region, a modified 3D Intersection-over-Union (IoU) metric 
+was used for matching. Successfully matched pairs were then processed 
+with multi-view fusion to achieve superior localization accuracy. All re-
+sulting 3D positions—whether from efficient single-camera localization 
+or accurate multi-view fusion—were transformed into the robot-base 
+frame for picking. This strategy ensures optimal trade-off between 
+computational speed and localization precision.
+3. Experiments and results
+Experiments were conducted on the HarvestFlex strawberry-
+harvesting robot. The evaluation focused on three main aspects: the 
+calibration accuracy of the proposed TCC-RM method for dual-RGB-
+D and hand–eye systems; the robustness of the improved IoU-based 
+matching strategy in multi-fruit scenarios; and the 3D localization 
+Computers and Electronics in Agriculture 241 (2026) 111221 
+6 
+
+S. Hu et al.
+Fig. 8. Checkerboard and calibration sphere images in dual-RGB-D calibration. (a) and (b) show checkerboard views from Camera 1 and 2 for initial extrinsic 
+calibration; (c) and (d) show calibration sphere views for center extraction and residual error compensation.
+Table 2
+Error reduction achieved by the TCC-RM method in dual-RGB-D calibration. ‘‘Euc.’’ denotes the Euclidean error computed from the XYZ axes.
+ Method
+MAE (mm)
+STD (mm)
+MAX (mm)
+RMSE
+ 
+ 
+X
+Y
+Z
+Euc.
+X
+Y
+Z
+Euc.
+X
+Y
+Z
+Euc.
+(Euc., mm) 
+ TCC
+8.64
+7.97
+5.79
+13.68
+3.73
+2.84
+3.28
+4.06
+16.52
+12.29
+11.41
+21.11
+14.24
+ 
+ TCC-RM
+4.37
+2.49
+3.41
+6.70
+2.93
+1.65
+2.19
+2.79
+9.69
+5.86
+8.49
+13.15
+7.23
+ 
+ Reduction (%)
+49.42
+68.76
+41.11
+51.02
+21.45
+41.90
+33.23
+31.28
+41.34
+52.32
+25.59
+37.71
+49.23
+ 
+performance under both unoccluded and partially occluded conditions. 
+Additionally, perception coverage was specifically evaluated in multi-
+strawberry scenes to assess the system’s effectiveness in expanding 
+visible target regions.
+3.1. Calibration performance evaluation
+To validate the effectiveness of the proposed TCC-RM calibration 
+method, we conducted experiments for both dual-RGB-D camera extrin-
+sic calibration and camera-to-robot-base (hand–eye) calibration. Fig. 8 
+showed images of the checkerboard and calibration sphere from the 
+two camera views. The effectiveness of the method was systematically 
+evaluated at three levels: error statistics, sample trends, and error distri-
+bution. Quantitative analysis was based on four standard error metrics: 
+Mean Absolute Error (MAE), Root Mean Square Error (RMSE), Standard 
+Deviation (STD), and Maximum Error (MAX), where MAE and RMSE 
+reflect overall error magnitude, while STD and MAX capture error 
+dispersion and outlier behavior (Hodson, 2022). These metrics were 
+applied to the Euclidean error in the estimated 3D position of a target 
+point (e.g., calibration sphere center), as well as to its decomposition 
+along the X, Y, and Z axes.
+3.1.1. Dual-RGB-D calibration accuracy
+For the dual-RGB-D calibration task reported in Table 2, the calibra-
+tion error refers to the Euclidean distance between the sphere center 
+position directly observed in the reference camera’s coordinate frame 
+and the position transformed from the other camera, as well as its 
+components along the X, Y, and Z axes. As quantified in Table 2, 
+TCC-RM achieves substantial absolute reductions in all error metrics. 
+Most critically, the Euclidean RMSE was reduced by 7.01 mm (from 
+14.24 mm to 7.23 mm, a 49.2% reduction). A major improvement is 
+seen in the Y-axis MAE, which saw an absolute decrease of 5.48 mm 
+(from 7.97 mm to 2.49 mm). Significant absolute error reductions were 
+also achieved on the X-axis (4.27 mm) and Z-axis (2.38 mm). These 
+improvements, particularly on the Y-axis, are potentially linked to the 
+effective compensation of systematic biases related to sensor placement 
+and the camera’s field-of-view limitations.
+Fig. 9 illustrates per-sample error trends. Post-compensation curves 
+(red) exhibit enhanced stability across all axes with fewer outliers. Y-
+axis and Euclidean errors cluster tightly near zero, indicating effective 
+suppression of systematic bias. Fig. 10 provides statistical validation: 
+Kernel Density Estimation (KDE) curves shift toward zero and narrow 
+significantly after compensation. The Euclidean error mean decreased 
+from 13.68 mm to 6.70 mm (51.0% reduction), with standard devia-
+tion dropping from 4.06 mm to 2.79 mm (31.28% reduction). Y-axis 
+improvements dominate, aligning with its MAE reduction.
+Collectively, Table 2, Figs. 9, and 10 demonstrate TCC-RM’s efficacy 
+in modeling directionally structured residuals—particularly for Y-axis 
+correction. This validates its physical and geometric rationality while 
+highlighting robustness in multi-camera calibration scenarios.
+3.1.2. Hand–eye calibration accuracy
+TCC-RM delivered even more pronounced improvements in hand–
+eye calibration between Camera 1 and the robotic arm (Table 3, Fig. 
+11), reducing errors to the millimeter level. For the hand–eye cali-
+bration task reported in Table 3, the calibration error refers to the 
+Euclidean distance between the sphere center’s position transformed 
+from the camera to the robot base frame and its ground-truth position 
+in the robot base frame, as well as the errors along the X, Y, and Z axes. 
+The most dramatic absolute improvement was on the X-axis, where the 
+MAE was cut by 16.51 mm (from 18.58 mm to 2.07 mm) and the stan-
+dard deviation was reduced by 3.29 mm. This optimization stems from 
+the effective modeling and compensation of major systematic biases, 
+such as initial sensor misalignment. The Z-axis MAE was also substan-
+tially reduced by 5.54 mm(65.1% reduction), effectively suppressing 
+depth residuals caused by quantization noise and geometric distortion 
+(Fig. 11). On the Y-axis, where the baseline MAE was already relatively 
+low (5.43 mm), the absolute improvement was smaller (0.48 mm), yet 
+the method still improved stability, as evidenced by a reduction in 
+standard deviation (1.20 mm). It is noteworthy that the error for the 
+TCC-RM method on the Y-axis is larger than that of the TCC method in 
+some samples (Fig. 11). This is likely because the data used to build 
+the compensation model had a relatively limited range of variation 
+along the Y-axis, while the validation data exhibited greater variation in 
+this axis. Nevertheless, the TCC-RM method demonstrates significantly 
+higher overall robustness.
+KDE-based error distributions (Fig. 12) further confirm: post-
+compensation errors shifted closer to zero with tighter concentration. 
+Euclidean error mean decreased from 21.42 mm to 6.50 mm, and STD 
+dropped from 4.78 mm to 1.84 mm. The most pronounced KDE curve 
+narrowing occurred for X-axis and Euclidean errors, demonstrating 
+TCC-RM’s capability to compensate structured residuals and improve 
+calibration robustness.
+TCC-RM achieved Euclidean RMSEs of 7.23 mm (dual-RGB-D) and 
+6.74 mm (hand–eye), meeting millimeter-level accuracy requirements 
+for fruit localization. These results validate residual modeling as a prac-
+tical and scalable error compensation strategy for agricultural vision 
+systems.
+Computers and Electronics in Agriculture 241 (2026) 111221 
+7 
+
+S. Hu et al.
+Fig. 9. Per-sample error trends in dual-RGB-D calibration using TCC-RM. Each subplot shows error changes on the X, Y, Z axes and Euclidean distance. Blue: 
+before compensation (TCC); red: after compensation (TCC-RM).
+Fig. 10.  KDE-based comparison of dual-RGB-D calibration errors on the X, Y, Z axes and Euclidean distance. Orange and purple curves represent errors before 
+and after compensation, respectively. 𝜇 and 𝜎 denote the mean and standard deviation.
+Computers and Electronics in Agriculture 241 (2026) 111221 
+8 
+
+S. Hu et al.
+Fig. 11. Per-sample error trends for TCC-RM in hand–eye calibration. Blue: before compensation (TCC); red: after compensation (TCC-RM), across X, Y, Z axes 
+and Euclidean distance.
+Table 3
+Error reduction achieved by the TCC-RM method in hand–eye calibration.
+ Method
+MAE (mm)
+STD (mm)
+MAX (mm)
+RMSE
+ 
+ 
+X
+Y
+Z
+Euc.
+X
+Y
+Z
+Euc.
+X
+Y
+Z
+Euc.
+(Euc.mm) 
+ TCC
+18.58
+5.43
+8.51
+21.42
+4.82
+2.83
+1.95
+4.78
+26.57
+11.22
+12.65
+29.59
+21.92
+ 
+ TCC-RM
+2.07
+4.95
+2.97
+6.50
+1.53
+1.63
+1.81
+1.84
+5.34
+7.95
+6.11
+9.04
+6.74
+ 
+ Reduction (%)
+88.86
+8.84
+65.10
+69.64
+68.27
+42.40
+7.18
+61.51
+79.89
+29.15
+51.70
+69.45
+69.25
+ 
+Table 4
+Average performance results of different IoU matching, IoU threshold is 0.4 
+for both.
+ Matching strategy
+Precision (%)
+Recall (%)
+F1-score (%) 
+ Traditional IoU
+100.00
+19.75
+32.99
+ 
+ Modified IoU
+93.65
+72.84
+81.94
+ 
+3.2. Performance of modified IoU matching under occlusion
+Robust matching across viewpoints under occlusion is critical for 
+multi-view fusion. We evaluated the proposed modified IoU strategy 
+against the traditional IoU in 21 multi-view strawberry samples exhibit-
+ing mild occlusion. The IoU threshold was set to 0.4 for both strategies. 
+The performance difference between the two strategies is systematically 
+evaluated from three dimensions: Precision, Recall, and F1 score.
+Table 4 summarizes the average performance comparison results 
+of the two strategies. Traditional IoU has high precision (100%) but 
+very low recall (19.75%), indicating that although this method has 
+almost no false positives, it misses a large number of real strawberries, 
+and the F1 score is low (32.99%), reflecting poor overall performance. 
+Modified IoU has high precision (93.65%), recall significantly improved 
+(72.84%), and a higher F1 score (81.94%), indicating that this method 
+maintains a low false positive rate while reducing missed detections, 
+with overall performance superior to traditional IoU.
+Fig. 13 illustrates a sample-by-sample comparison of matched straw-
+berries across the 21 test sets. The traditional IoU strategy could only 
+match 1–2 targets in most samples, with significant missed detections. 
+In contrast, the improved strategy matched over 4 strawberries in sev-
+eral samples, closer to the true count, demonstrating stronger matching 
+ability. In typical scenes like samples 4, 5, and 7, the improved strat-
+egy perfectly matched all true targets, showing higher accuracy and 
+robustness.
+The modified IoU strategy, leveraging minimum volume normal-
+ization, substantially enhanced the robustness of instance association 
+under occlusion, reducing missed matches by 53.1% (Recall increase) 
+and improving overall matching quality (F1-score increased 48.95%). 
+This is vital for reliable multi-view data fusion.
+3.3. Strawberry localization accuracy evaluation (Occlusion-free & oc-
+cluded)
+The core objective of the perception system is accurate 3D localiza-
+tion. We evaluated the performance of the proposed Camera-Frame Fu-
+sion (CF) and Base-Frame Fusion (BF) strategies against single-camera 
+baselines in both occlusion-free and occluded multi-strawberry scenar-
+ios.
+All experimental data were collected in real-world agricultural fields 
+under varying lighting conditions, representative of typical agricultural 
+scenarios. The strawberry localization error is the difference in 3D 
+coordinates under the base frame between the ground-truth position 
+(obtained through forward kinematics) and the vision-based estimate, 
+specifically referring to the coordinates of the strawberry’s center point. 
+To obtain the true position of the strawberries, a 3D-printed fixture was 
+Computers and Electronics in Agriculture 241 (2026) 111221 
+9 
+
+S. Hu et al.
+Fig. 12.  KDE-based distribution of hand–eye calibration errors on the X, Y, Z axes and Euclidean distance. Orange: before compensation (TCC); purple: after 
+(TCC-RM). 𝜇 and 𝜎 denote the mean and standard deviation.
+Fig. 13. Comparison of strawberry sample matching under different IoU strategies. Red bars indicate ground truth, blue bars represent traditional IoU matches, 
+and green bars show results from the improved method.
+attached to the robot’s end-effector, as shown in Fig. 14. The fixture 
+featured a slender metal pin at its top, which was used to point to the 
+strawberry. The position of the pin’s tip could be accurately determined 
+via the robot’s inverse kinematics. To simplify the experiment, the var-
+ious strawberries (under unoccluded and slightly occluded conditions) 
+were directly affixed to the metal pin. The robot arm was then moved 
+to different positions to quantify the localization error.
+The 3D points of strawberries in the robot’s base frame were ob-
+tained using five distinct strategies for comparison: the two proposed 
+fusion strategies—CF and BF—alongside three single-camera baseline 
+methods:
+• C1-B: Camera 1 to the robotic arm base transformation
+• C2-B: Camera 2 to the robotic arm base transformation
+• C2-C1-B: Camera 2 to Camera 1 to base
+Computers and Electronics in Agriculture 241 (2026) 111221 
+10 
+
+S. Hu et al.
+Table 5
+Comparison of 3D localization errors under different fusion strategies in unoccluded and occluded scenes.
+ Scene
+Method
+MAE (mm)
+STD (mm)
+MAX (mm)
+RMSE 
+ 
+X
+Y
+Z
+Euc.
+X
+Y
+Z
+Euc.
+X
+Y
+Z
+Euc.
+(Euc.) 
+ 
+Unoccluded
+C1-B
+3.44
+2.12
+3.47
+6.03
+2.99
+1.30
+1.74
+2.38
+11.48
+5.93
+6.43
+12.68
+6.49 
+ 
+C2-B
+4.37
+4.33
+3.64
+6.26
+2.65
+2.44
+2.05
+2.36
+12.60
+9.47
+8.64
+14.73
+8.52 
+ 
+C2-C1-B
+3.80
+4.31
+5.45
+9.28
+2.99
+3.35
+3.73
+2.59
+10.90
+9.12
+12.49
+13.68
+9.60 
+ 
+CF
+2.48
+1.74
+4.17
+5.83
+1.76
+1.10
+2.55
+1.83
+6.99
+4.17
+9.48
+10.27
+6.11 
+ 
+BF
+2.60
+2.17
+3.80
+5.70
+2.03
+1.70
+1.54
+1.66
+7.54
+5.85
+7.50
+9.38
+5.94 
+ 
+Slight Occluded
+C1-B
+3.82
+1.90
+3.85
+6.36
+2.92
+1.42
+2.49
+3.04
+10.54
+5.89
+9.39
+12.54
+7.05 
+ 
+C2-B
+5.35
+3.52
+4.48
+8.72
+2.91
+2.51
+2.92
+2.88
+13.22
+11.01
+10.73
+15.99
+9.19 
+ 
+C2-C1-B
+4.73
+2.88
+7.15
+9.98
+2.92
+2.30
+3.47
+2.84
+13.71
+9.08
+14.86
+17.47
+10.38 
+ 
+CF
+2.46
+1.57
+5.19
+6.44
+1.97
+1.30
+2.43
+2.33
+7.27
+4.42
+10.86
+11.95
+6.85 
+ 
+BF
+2.80
+2.16
+3.75
+5.84
+2.25
+1.73
+2.26
+2.39
+8.02
+6.30
+9.10
+11.15
+6.31 
+Fig. 14. Strawberry Positioning Measurement Device.(a) Device schematic.(b) 
+A strawberry in the fixed state.
+The efficacy of the proposed fusion strategies is first illustrated 
+qualitatively. Fig. 15 demonstrates successful cross-view matching un-
+der slight occlusion: a strawberry partially obscured in Camera 1 is 
+accurately matched in Camera 2 using the proposed fusion. Quanti-
+tatively, the results (Table 5) show that both fusion strategies con-
+sistently outperform single-camera baselines. For instance, compared 
+to the best single-camera baseline (C1-B), the BF fusion strategy re-
+duced the Euclidean RMSE by 0.55 mm in unoccluded scenes and 
+0.74 mm under slight occlusion. The percentage reductions across 
+different scenarios and metrics ranged from 2.84% to 39.21%, demon-
+strating the robustness of the fusion approach. Among all approaches, 
+BF achieves the highest overall 3D accuracy, attaining the lowest Eu-
+clidean RMSE (5.94 mm unoccluded, 6.31 mm slight occluded), while 
+CF also performs well (6.11 mm unoccluded, 6.85 mm slight occluded).
+The strategies showed complementary strengths: CF excelled in the 
+X-Y plane, reducing horizontal MAE under occlusion by 35.61% (X) 
+and 16.84% (Y) vs. C1-B. BF offered superior depth (Z-axis) stabil-
+ity, achieving the lowest standard deviation (1.54 mm unoccluded; 
+2.26 mm slight occluded) and MAE (3.75 mm), outperforming CF by 
+up to 27.7%.
+Both strategies effectively suppressed extreme errors. BF reduced 
+the maximum Euclidean error by 36.3% (from 14.73 mm to 9.38 mm) 
+in unoccluded scenes and retained a 10.5% RMSE advantage over C1-
+B under slight occlusion. This improved robustness and consistency 
+under challenging conditions is further illustrated in the occlusion 
+error distributions (Fig. 16). Whereas single-camera baselines exhibit 
+broad, skewed curves with pronounced tails, CF and BF both yield 
+markedly sharper and more concentrated distributions—confirming 
+their enhanced reliability.
+Furthermore, we evaluated the localization performance for straw-
+berries under moderate occlusion in a denser field environment. In this 
+scenario, instead of fixing strawberries to the fixture, the tip of the 
+metal pin was positioned directly beneath the center of each occluded 
+strawberry to establish ground truth, and the localization error was 
+calculated against the visual prediction. Fig. 17 shows the front view of 
+the strawberry scene along with the corresponding images from Camera 
+1 and Camera 2. Quantitative results (as shown in Table 6) reveal 
+that the BF method achieved the lowest overall RMSE (12.62 mm), 
+demonstrating the best precision in Euclidean localization under oc-
+clusion. The CF method followed closely with an RMSE of 13.65 mm, 
+and notably achieved the lowest Euclidean MAE (12.01 mm), indicating 
+high accuracy. In contrast, the C2-C1-B method exhibited the largest 
+errors across almost all metrics, including the highest Euclidean MAE 
+(18.38 mm), MAX error (34.85 mm), and RMSE (25.37 mm), highlight-
+ing its limitations in handling occlusions in dense environments. The 
+single-camera methods (C1-B, C2-B) showed intermediate performance, 
+with C1-B yielding a lower Euclidean MAE than C2-B (13.34 mm vs. 
+13.79 mm), but a comparable RMSE (14.32 mm vs. 14.72 mm).
+As occlusion grew from slight to moderate, all methods showed 
+a corresponding increase in localization error. The root cause was 
+two-fold: structured-light cameras provided fewer valid depth points 
+for occluded targets and suffered from point cloud adhesion in dense 
+scenes. Under mild occlusion, enough strawberry pixels remained for a 
+basic 3D approximation. However, moderate occlusion reduced usable 
+data and introduced depth errors that skewed calculations. The incom-
+plete data also impaired filtering, often discarding good points with 
+the noise (Ge et al., 2023). These issues—combined with point cloud 
+adhesion and the flattening of occluded shapes (Zhang, 2018)—confirm 
+the problem lay in the camera’s perceptual limits and algorithmic 
+shortcomings, not in calibration. Thus, the resulting 3D bounding boxes 
+were inaccurate, increasing localization error.
+Despite this overall performance degradation, the proposed fusion 
+strategies maintained their relative advantage. The BF method achieved 
+the lowest overall RMSE (12.62 mm), while the CF method also 
+demonstrated competitive performance with a lower Euclidean MAE 
+(12.01 mm) than BF (13.00 mm). These results confirm that both 
+fusion frameworks offer superior robustness compared to single-view 
+baselines under challenging occlusion conditions. It should be clarified 
+that our study also attempted to evaluate performance under heavy 
+occlusion; however, the current perception model failed to detect 
+strawberries in such scenarios, preventing a quantitative localization 
+analysis. Therefore, the discussion and results presented here are appli-
+cable to conditions ranging from unoccluded to moderately occluded. 
+The reported localization errors represent the cumulative effect of 
+errors from perception, calibration, robotic arm motion, and ground-
+truth measurement. Meanwhile, the full pipeline—from perception and 
+multi-target matching to base-frame transformation—was executed at 
+an average of 250 ms per frame.
+3.4. Multi-view completion and perception range enhancement
+In complex agricultural environments, occlusions from fruits, fo-
+liage, and limited viewpoints often lead to blind spots in single RGB-D 
+Computers and Electronics in Agriculture 241 (2026) 111221 
+11 
+
+S. Hu et al.
+Fig. 15. Matching of a slightly occluded strawberry. (a) Matched strawberry in Cam1 view; (b) Matched strawberry in Cam2 view; (c) 3D matching verification 
+(Green box: Cam1 detection; Blue box: Cam2 detection; Red box: Fusion result).
+Fig. 16. Probability density distribution of errors under occluded conditions for different localization methods (X, Y, Z, and Euclidean distance). Values in 
+parentheses are mean (𝜇) and standard deviation 𝜎.
+Fig. 17. Strawberry Occlusion under Dense Conditions. (a) Front View; (b) Cam1 view; (c) Cam2 view.
+Computers and Electronics in Agriculture 241 (2026) 111221 
+12 
+
+S. Hu et al.
+Table 6
+Comparison of 3D localization errors of different strawberry localization methods under dense conditions.
+ Method
+MAE (mm)
+STD (mm)
+MAX (mm)
+RMSE 
+ 
+X
+Y
+Z
+Euc.
+X
+Y
+Z
+Euc.
+X
+Y
+Z
+Euc.
+(Euc.) 
+ C1-B
+7.67
+5.27
+4.36
+13.34
+5.13
+3.62
+3.29
+4.35
+15.79
+15.95
+13.64
+21.31
+14.32 
+ C2-B
+7.32
+9.43
+8.26
+13.79
+5.03
+4.50
+3.11
+5.14
+18.08
+21.91
+10.82
+25.87
+14.72 
+ C2-C1-B
+11.99
+9.02
+10.66
+18.38
+7.53
+9.13
+4.43
+9.68
+31.31
+29.00
+16.17
+34.85
+25.37 
+ CF
+5.99
+6.19
+6.13
+12.01
+3.38
+3.85
+2.01
+3.86
+12.78
+18.57
+12.01
+20.93
+13.65 
+ BF
+7.08
+7.89
+5.36
+13.00
+4.21
+4.12
+2.23
+4.31
+21.95
+17.45
+10.03
+20.15
+12.62 
+Table 7
+Multi-view perception coverage gain statistics table.
+ Sample
+Strawberry
+detections
+(Cam1)
+Strawberry
+detections
+(Cam2)
+Matched
+pairs
+Fused
+detections
+Max 
+single-view 
+detections
+Absolute
+increase
+Coverage
+gain (%)
+ 
+ 1
+9
+9
+3
+15
+9
++6
+66.67
+ 
+ 2
+9
+8
+2
+15
+9
++6
+66.67
+ 
+ 3
+12
+9
+4
+16
+12
++4
+33.33
+ 
+ 4
+11
+6
+3
+14
+11
++3
+27.27
+ 
+ 5
+4
+9
+2
+11
+9
++2
+22.22
+ 
+ 6
+6
+6
+2
+10
+6
++4
+66.67
+ 
+ 7
+4
+4
+1
+7
+4
++3
+75.00
+ 
+ 8
+5
+4
+1
+8
+5
++3
+60.00
+ 
+ 9
+7
+7
+2
+12
+7
++5
+71.43
+ 
+ 10
+3
+6
+1
+8
+6
++2
+33.33
+ 
+ 11
+6
+3
+1
+8
+6
++2
+33.33
+ 
+ 12
+9
+7
+4
+12
+9
++3
+33.33
+ 
+ 13
+4
+9
+1
+12
+9
++3
+33.33
+ 
+ 14
+5
+9
+2
+12
+9
++3
+33.33
+ 
+ 15
+7
+4
+4
+12
+7
++5
+71.43
+ 
+ 16
+7
+9
+4
+12
+9
++3
+33.33
+ 
+ 17
+8
+10
+2
+16
+10
++6
+60.00
+ 
+ 18
+10
+10
+5
+15
+10
++5
+50.00
+ 
+ 19
+3
+10
+2
+11
+10
++1
+10.00
+ 
+ 20
+5
+7
+2
+10
+7
++3
+42.86
+ 
+ 21
+6
+8
+1
+13
+8
++5
+62.50
+ 
+ Total
+140
+159
+49
+250
+175
++75
+42.86
+ 
+systems, reducing perception completeness and picking success. To 
+address this, we deployed a multi-camera fusion system. To establish 
+a theoretical performance baseline for this system, we first constructed 
+a geometric perception model of the bilateral camera layout (Fig. 2). 
+Under idealized assumptions of continuous target distribution and a 
+perfect detection algorithm, this model calculated an average theo-
+retical perception coverage gain upper bound of approximately 60% 
+across the operational distance range (1.2 m to 3.0 m), representing 
+the maximum potential improvement in physical Field of View (FOV).
+However, we recognized that real-world agricultural environments 
+present challenges such as discretely distributed targets and perfor-
+mance degradation at the FOV edges. Therefore, we introduced a 
+task-oriented Perception Coverage Gain metric based on actual detec-
+tion counts to more accurately reflect the system’s effective capability. 
+The evaluation metrics are defined as follows:
+•  A: Number of strawberries detected by the left camera (Cam1).
+•  B: Number of strawberries detected by the right camera (Cam2).
+•  C: Number of matched pairs determined to be the same strawberry 
+by modified IoU matching (threshold 0.5).
+Then the non-redundant total detection count of the fused system is: 
+Fused = A + B - C. Using the maximum detection count from a single 
+view as the baseline, define the perception coverage gain rate: 
+Coverage Gain = (𝐴+ 𝐵−𝐶) −max(𝐴, 𝐵)
+max(𝐴, 𝐵)
+× 100%
+(14)
+This metric measured the net increase in total detected targets by 
+the multi-view system, excluding redundancy caused by overlap, and 
+can more objectively reflect the completion capability of the perception 
+range. No false positives were encountered in this experiment. How-
+ever, missed detections did occur for smaller strawberries, strawberries 
+under very strong lighting, and those with severe occlusion. Missed 
+detections were not considered during the experiment.
+As summarized in Table 7, the multi-view RGB-D fusion system 
+outperformed the single-view baseline, with an average coverage gain 
+of 42.86%. Notably, 85.7% of samples achieved gains above 30%. Each 
+sample yielded an average of 2.33 matched pairs, indicating moderate 
+overlap, while 80.4% of detections came from non-overlapping views, 
+highlighting bilateral complementarity. Some samples (e.g., Sample 
+5: Cam1=4, Cam2=9) showed large inter-view discrepancies, likely 
+due to asymmetric camera mounting or scene-specific occlusion. Such 
+variations are common in field settings and underscore the benefit of 
+multi-view fusion in mitigating single-view bias.
+Overall, the dual-RGB-D setup expands perception range and im-
+proves robustness by reducing occlusion-related blind spots.
+3.5. Discussions
+This study systematically evaluated the performance of the TCC-
+RM calibration method and the multi-view perception system. Our 
+TCC-RM method demonstrated superior hand–eye calibration accu-
+racy compared to the deep learning-based Kalib method, even when 
+operating under an inherent disadvantage. Using an external configu-
+ration, we achieved errors of 2.07/4.95 mm (X/Y), which outperforms 
+Kalib’s (Tang et al., 2025) reported errors of 4.8 mm (eye-to-hand) 
+and 3.0 mm (eye-in-hand). This is significant because the external 
+configuration is theoretically less precise than the setups Kalib employs, 
+Computers and Electronics in Agriculture 241 (2026) 111221 
+13 
+
+S. Hu et al.
+making our method’s higher observed accuracy a strong testament to 
+its robustness. Furthermore, the illumination sensitivity of the sphere-
+based residual modeling was addressed by performing this step as 
+a one-time calibration under controlled indoor conditions, ensuring 
+long-term parameter stability during field operation.
+In terms of occlusion robustness, the upward-looking side-view 
+camera configuration was employed to circumvent frontal occlusion 
+from leaves and better observe fruits within the canopy. A characteristic 
+of this perspective is the convergence of spatial occlusions (where lower 
+fruits block higher ones) and projection overlaps in the 2D image plane. 
+The multi-view fusion strategy effectively addressed this by integrating 
+geometric information from disparate viewpoints to reconstruct an 
+accurate 3D scene. Consequently, the system significantly enhanced lo-
+calization stability from unoccluded to moderately occluded conditions. 
+Nonetheless, perception under heavy occlusion remains a fundamental 
+challenge.
+The high-precision localization, quantified under static conditions, 
+provides a reliable input for the current open-loop system, where the 
+250 ms processing time is viable within the 8-second cycle. However, 
+transitioning to dynamic closed-loop harvesting introduces system-level 
+challenges, as final success depends not only on perception accuracy 
+but also on robot control and motion planning. Thus, this work es-
+tablishes a precise perceptual foundation, while identifying dynamic 
+tracking and extreme occlusion handling as key targets for future 
+development.
+4. Conclusion
+This study established a high-precision, multi-view RGB-D percep-
+tion system for strawberry harvesting, delivering a comprehensive 
+solution from calibration to occlusion-aware fusion. The cornerstone 
+of this system was the TCC-RM calibration method, which reduced 
+dual RGB-D and hand–eye calibration errors by 49.23% and 69.25%, 
+respectively. The resulting accuracy enabled a robust fusion pipeline, 
+wherein the Camera-Frame and Base-Frame strategies offered distinct 
+performance trade-offs, both significantly outperforming single-view 
+methods under occluded conditions. The integrated system operates at 
+4 Hz, meeting the requirements for open-loop harvesting of stationary 
+fruit, as validated in this work. This research conclusively demonstrates 
+that accurate static perception forms the cornerstone of reliable robotic 
+picking. Building on this foundation, future work will address current 
+limitations through a structured plan: first, by prioritizing the develop-
+ment of advanced algorithms for localizing fruits under heavy foliage; 
+second, by increasing the perception speed to enable real-time, closed-
+loop tracking of dynamically moving fruit; and finally, by integrating 
+and validating these improvements within a complete robotic system 
+for end-to-end dynamic harvesting.
+CRediT authorship contribution statement
+Shimin Hu: Writing – review & editing, Writing – original draft, Vi-
+sualization, Validation, Software, Methodology, Formal analysis, Data 
+curation. Meili Sun: Data curation. Chunjiang Zhao: Supervision, 
+Resources, Funding acquisition. Ya Xiong: Writing – review & editing, 
+Supervision, Resources, Project administration, Methodology, Investi-
+gation, Funding acquisition, Conceptualization.
+Declaration of competing interest
+The authors declare the following financial interests/personal rela-
+tionships which may be considered as potential competing interests: Ya 
+Xiong reports financial support was provided by the Haidian District 
+Bureau of Agriculture and Rural Affairs. If there are other authors, 
+they declare that they have no known competing financial interests or 
+personal relationships that could have appeared to influence the work 
+reported in this paper.
+Data availability
+Data will be made available on request.
+References
+Allegro, D., et al., 2024. Multi-camera hand-eye calibration for human-robot collab-
+oration in industrial robotic workcells. IEEE Robot. Autom. Lett. 9, 9852–9859. 
+http://dx.doi.org/10.1109/LRA.2024.3468089.
+Cui, X., et al., 2024. A method to improve the accuracy of hand-eye calibration based 
+on data filtering and parameters optimization. IEEE Access 12, 153874–153885. 
+http://dx.doi.org/10.1109/ACCESS.2024.3483442.
+Darwish, W., et al., 2019. A robust calibration method for consumer grade RGB-
+D sensors for precise indoor reconstruction. IEEE Access 7, 8824–8833. http:
+//dx.doi.org/10.1109/ACCESS.2018.2890713.
+Duan, Q., et al., 2024. A deep-learning based high-accuracy camera calibration 
+method for large-scale scene. Precis. Eng. 88, 464–474. http://dx.doi.org/10.1016/
+j.precisioneng.2024.02.019, URL: https://www.sciencedirect.com/science/article/
+pii/S0141635924000552.
+Fu, L., et al., 2020. Application of consumer RGB-D cameras for fruit detection and 
+localization in field: A critical review. Comput. Electron. Agric. 177, 105687. 
+http://dx.doi.org/10.1016/j.compag.2020.105687.
+Gautam, S., et al., 2025. Streamlined robotic hand–eye calibration of multiple 2D-
+profilers: A rapid, closed-form two-stage method via a single-plane artefact. 
+Robot. Comput.-Integr. Manuf. 95, 102984. http://dx.doi.org/10.1016/j.rcim.2025.
+102984.
+Ge, Y., et al., 2019. Fruit localization and environment perception for strawberry 
+harvesting robots. IEEE Access 7, 147642–147652. http://dx.doi.org/10.1109/
+ACCESS.2019.2946369.
+Ge, Y., et al., 2023. Three-dimensional location methods for the vision system of 
+strawberry-harvesting robots: development and comparison. Precis. Agric. 24 (2), 
+764–782. http://dx.doi.org/10.1007/s11119-022-09974-4.
+Gong, L., et al., 2022. Robotic harvesting of the occluded fruits with a precise shape 
+and position reconstruction approach. J. Field Robot. 39, 69–84. http://dx.doi.org/
+10.1002/rob.22041.
+Hodson, T., 2022. Root-mean-square error (RMSE) or mean absolute error (MAE): When 
+to use them or not. Geosci. Model. Dev. 15, 5481–5487. http://dx.doi.org/10.5194/
+gmd-15-5481-2022.
+Hou, C., et al., 2025. Multi-camera hierarchical calibration and three-dimensional 
+reconstruction method for bulk material transportation system. Sensors 25, 2111. 
+http://dx.doi.org/10.3390/s25072111.
+Kang, S., et al., 2025. Maturity recognition and localisation of broccoli under occlusion 
+based on RGB-D instance segmentation network. Biosyst. Eng. 250, 270–284. 
+http://dx.doi.org/10.1016/j.biosystemseng.2025.01.007.
+Kroeger, O., et al., 2019. An automatic calibration approach for a multi-camera-robot 
+system. In: 2019 24th IEEE International Conference on Emerging Technologies 
+and Factory Automation. ETFA, IEEE, Zaragoza, Spain, pp. 1515–1518. http://dx.
+doi.org/10.1109/ETFA.2019.8869522.
+Kumar, A., et al., 2018. Multi-capture dynamic calibration of multi-camera systems. 
+In: 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition 
+Workshops. CVPRW, IEEE, Salt Lake City, UT, pp. 1924–19248. http://dx.doi.org/
+10.1109/CVPRW.2018.00238.
+Kwon, Y., et al., 2019. Multi-cue-based circle detection and its application to robust 
+extrinsic calibration of RGB-D cameras. Sensors 19, 1539. http://dx.doi.org/10.
+3390/s19071539.
+Li, T., et al., 2022. Occluded apple fruit detection and localization with a frustum-
+based point-cloud-processing approach for robotic harvesting. Remote. Sens. 14, 
+482. http://dx.doi.org/10.3390/rs14030482.
+Li, Y., et al., 2024a. Recognition and positioning of strawberries based on improved 
+YOLOv7 and RGB-D sensing. Agriculture 14, 624. http://dx.doi.org/10.3390/
+agriculture14040624.
+Li, L., et al., 2024b. Automatic robot hand-eye calibration enabled by learning-based 
+3D vision. J. Intell. Robot. Syst. 110, 130. http://dx.doi.org/10.1007/s10846-024-
+02166-4.
+Liu, X., et al., 2022. A stereo calibration method of multi-camera based on 
+circular calibration board. Electronics 11 (4), 627. http://dx.doi.org/10.3390/
+electronics11040627.
+Mejia, G., et al., 2023. Strawberry localization in a ridge planting with an autonomous 
+rover. Eng. Appl. Artif. Intell. 119, 105810. http://dx.doi.org/10.1016/j.engappai.
+2022.105810.
+Parsa, S., et al., 2023. Autonomous strawberry picking robotic system (robofruit). 
+http://dx.doi.org/10.48550/arXiv.2301.03947, arXiv preprint.
+Shin, H., et al., 2024. Robust hand-eye calibration using well-conditioned motion 
+guidance. Available At SSRN 4715102, https://ssrn.com/abstract=4715102.
+Su, P.C., et al., 2018. A fast and robust extrinsic calibration for RGB-D camera networks. 
+Sensors 18, 235. http://dx.doi.org/10.3390/s18010235.
+Sun, J., et al., 2016. Global calibration of multiple cameras based on sphere targets. 
+Sensors 16, 77. http://dx.doi.org/10.3390/s16010077.
+Computers and Electronics in Agriculture 241 (2026) 111221 
+14 
+
+S. Hu et al.
+Talakoob, R., 2024. Neural real-time recalibration for image-based multi-camera 
+systems. URL: https://spectrum.library.concordia.ca/id/eprint/994066/, Concordia 
+University.
+Tang, T., et al., 2025. Kalib: Easy hand-eye calibration with reference point tracking. 
+http://dx.doi.org/10.48550/arXiv.2408.10562, ArXiv Preprint arXiv:2408.10562 
+[cs.RO], Cite as: arXiv:2408.10562 [cs.RO] (or arXiv:2408.10562v2 [cs.RO] for 
+this version).
+Tituaña, L., et al., 2024. A small autonomous field robot for strawberry harvesting. 
+Smart Agric. Technol. 8, 100454. http://dx.doi.org/10.1016/j.atech.2024.100454.
+Tsai, R.Y., et al., 1989. A new technique for fully autonomous and efficient 3D 
+robotics hand/eye calibration. IEEE Trans. Robot. Autom. 5 (3), 345–358. http:
+//dx.doi.org/10.1109/70.34770.
+Valassakis, E., Dreczkowski, K., Johns, E., 2021. Learning eye-in-hand camera cali-
+bration from a single image. http://dx.doi.org/10.48550/arXiv.2111.01245, ArXiv 
+Preprint arXiv:2111.01245 [cs.RO].
+Wang, Z., et al., 2025. High accuracy hand-eye calibration method using pose graph 
+constraints and sequential quadratic programming in robotic inspection. In: 2025 
+IEEE International Conference on Mechatronics. ICM, IEEE, Wollongong, Australia, 
+pp. 1–6. http://dx.doi.org/10.1109/ICM62621.2025.10934902.
+Wei, Z., et al., 2016. Structural parameters calibration for binocular stereo vision 
+sensors using a double-sphere target. Sensors 16, 1074. http://dx.doi.org/10.3390/
+s16071074.
+Wu, L., et al., 2023. Simple and high-precision hand–eye calibration for 3D robot 
+measurement systems. Adv. Intell. Syst. 5, 2300307. http://dx.doi.org/10.1002/
+aisy.202300307.
+Xu, Y., et al., 2021. Wide-baseline multi-camera calibration using person re-
+identification. In: Proceedings of the IEEE/CVF Conference on Computer Vision 
+and Pattern Recognition. CVPR, IEEE, Nashville, TN, USA, pp. 13129–13138. 
+http://dx.doi.org/10.1109/CVPR46437.2021.01293.
+Yang, S., et al., 2022. An improved hand-eye calibration method based on 3D 
+position information. In: 2022 2nd International Conference on Algorithms, High 
+Performance Computing and Artificial Intelligence. AHPCAI, IEEE, Guangzhou, 
+China, pp. 535–541. http://dx.doi.org/10.1109/AHPCAI57455.2022.10087400.
+Yu, J., et al., 2019. IoU loss for 2D/3D object detection. arXiv preprint arXiv:1908.
+03851.
+Yu, Y., et al., 2020. Real-time visual localization of the picking points for a ridge-
+planting strawberry harvesting robot. IEEE Access 8, 116556–116568. http://dx.
+doi.org/10.1109/ACCESS.2020.3003034.
+Yuan, F., et al., 2025. Calibration accuracy evaluation method for multi-camera 
+measurement systems. Measurement 242, 116311. http://dx.doi.org/10.1016/j.
+measurement.2024.116311.
+Zhang, Z., 2000. A flexible new technique for camera calibration. IEEE Trans. Pattern 
+Anal. Mach. Intell. 22, 1330–1334. http://dx.doi.org/10.1109/34.888718.
+Zhang, S., 2018. High-speed 3D shape measurement with structured light methods: 
+A review. Opt. Lasers Eng. 106, 119–131. http://dx.doi.org/10.1016/j.optlaseng.
+2018.02.017.
+Zheng, C., et al., 2023. Object-detection from multi-view remote sensing images: A case 
+study of fruit and flower detection and counting on a central florida strawberry 
+farm. Int. J. Appl. Earth Obs. Geoinf. 123, 103457. http://dx.doi.org/10.1016/j.
+jag.2023.103457.
+Zhong, K., et al., 2025. Hand-eye calibration method for a line structured light robot 
+vision system based on a single planar constraint. Robot. Comput.-Integr. Manuf. 
+91, 102825. http://dx.doi.org/10.1016/j.rcim.2024.102825.
+Zhu, J., et al., 2022. Hand-eye calibration of surgical robots based on a BP neural 
+network optimized by using an improved sparrow search algorithm. In: 2022 
+17th International Conference on Control, Automation, Robotics and Vision. 
+ICARCV, IEEE, Singapore, Singapore, pp. 856–861. http://dx.doi.org/10.1109/
+ICARCV57592.2022.10004291.
+Computers and Electronics in Agriculture 241 (2026) 111221 
+15 

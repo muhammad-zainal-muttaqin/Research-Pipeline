@@ -1,0 +1,854 @@
+An object-tracking technique for counting grape
+clusters in Brazilian Northeast’s pergola vineyards
+1Arthur M. Sasse, 1Jo˜ao Pedro V. B. Wieland, 1Adriano G. Pereira, 2Lincoln R. Proenc¸a,
+2Ian M. P. Freitas, 1,3Pablo Rangel, 1Claudio M. de Farias
+1PESC-COPPE, 2DEL-POLI, 3Digital Systems Group
+1,2Universidade Federal do Rio de Janeiro, 3Marinha do Brasil
+Rio de Janeiro, Brazil
+{artsasse, jpvbwieland, adrianopereira}@cos.ufrj.br,
+{lincoln22220, ianmeirelles}@poli.ufrj.br,
+{pablorangel, cmicelifarias}@cos.ufrj.br
+Abstract—In precision viticulture, deep learning and computer
+vision have been increasingly employed to automate grape cluster
+counting, a crucial task for yield estimation and farm man-
+agement. However, existing methods fail to address the unique
+challenges posed by the pergola vine training system — a widely
+used but understudied method, particularly in Brazil’s Northeast,
+where viticulture plays a key role in economic and social
+development. To address these limitations, we propose a novel,
+lightweight approach that combines object detection (YOLOv8)
+and tracking (ByteTrack) to count grape clusters in handheld
+smartphone videos captured under diverse environmental con-
+ditions. Unlike previous works, our technique is applied to the
+unique layout of the pergola system, where occlusions, perspective
+variations, and irregular cluster distributions complicate auto-
+mated counting. We evaluate our method on real-world vineyard
+footage, achieving 75.1% mAP@50 and a 69.9% F1-score for
+cluster detection, with a final cluster count only 27% above the
+actual value—establishing the first baseline for this challenging
+task. By enabling cost-effective, accessible yield estimation, our
+work contributes to improving efficiency and equity in viticul-
+ture. We publicly release our implementation to encourage fur-
+ther research and practical adoption (https://github.com/artsasse/
+pergola-grape-count/blob/main/grape cluster count.ipynb).
+Index Terms—grape cluster counting, pergola training system,
+object detection, object tracking, computer vision, deep learning
+I. INTRODUCTION
+The integration of computer vision and deep learning
+is revolutionizing various fields. In the agricultural sector,
+these innovations have boosted productivity by leveraging
+data collected through sensors and vision-based systems to
+optimize decision-making. The fusion of these data sources
+enables a more precise analysis of farm activities, integrating
+information from different sources to enhance monitoring and
+agricultural management [1].
+In grape cultivation, these new technologies have been
+widely employed to predict yield, detect pests, automate
+processes with robots, map vineyard areas, among other tasks.
+This study was partially supported by Coordenac¸˜ao de Aperfeic¸oamento de
+Pessoal de N´ıvel Superior - CAPES, Conselho Nacional de Desenvolvimento
+Cient´ıfico e Tecnol´ogico - CNPq (grants 182318/2024-9 and 131477/2024-2)
+and Fundac¸˜ao Carlos Chagas Filho de Amparo `a Pesquisa do Estado do Rio
+de Janeiro - FAPERJ (grant 201.467/2022).
+Yield prediction, in particular, is a key aspect of precision
+viticulture and can involve several subtasks, such as grape clus-
+ter and berry counting, grape classification based on quality
+and ripeness, and crop weight estimation. Grape cluster and
+berry counting are essential for estimating vineyard produc-
+tivity and optimizing harvest planning. Traditional methods,
+based on manual sampling, are labor-intensive and prone to
+errors, making computer vision and deep learning approaches
+promising alternatives. Convolutional neural networks (CNNs)
+[2], and multiple object trackers (MOTs) [3] have been used to
+identify and count fruits in images and videos, often surpassing
+conventional methods in accuracy and scalability [4].
+In addition to the inherent inaccuracies of manual counting,
+the limited frequency of data collection can undermine the
+reliability of yield estimates, particularly given the dynamic
+nature of agricultural environments. For instance, factors such
+as early ripening, extreme weather conditions, or damage
+caused by pests and strong winds can lead to the premature
+loss of grape clusters. Without data freshness [5], farmers may
+rely on outdated estimates, resulting in suboptimal decisions
+regarding irrigation, harvesting, and commercial distribution.
+Automating cluster counting through efficient computational
+methods based on computer vision and deep learning would
+enable more frequent monitoring of vineyard production, al-
+lowing real-time strategic adjustments.
+In this context, we propose, implement, and validate a
+novel technique for automatically counting grape clusters,
+specifically designed for the pergola vine training system. This
+system, predominantly used in vineyards across Brazil’s South
+and Northeast regions [6], [7], presents a unique structural
+layout that introduces challenges in image analysis not ad-
+dressed in previous studies. Given that grape production in
+Northeastern Brazil has been linked to more equitable income
+distribution [8], and that the pergola system demands greater
+labor and costs compared to alternative training methods [7],
+bridging this research gap represents a valuable step toward
+fostering social and economic benefits in the region. The main
+contributions of this research are:
+• A technique to automatically count grape clusters in RGB
+videos of pergola system vineyards, a previously unex-
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:34 UTC from IEEE Xplore.  Restrictions apply. 
+
+plored context in grape cluster detection and counting.
+• A quantitative evaluation of the performance of our
+technique when applied to real-world data.
+The document is divided as follows: in Section II we
+delve into the grape cluster counting problem and possible
+approaches; in Section III, we compare this work with others
+focused on grape cluster counting and detection; in Section IV,
+we explain the proposed technique, the experimental setup and
+the dataset used; in Section V we present the results of our
+tests, discussing our findings; in Section VI we comment on
+the limitations of our study and future work; and in Section
+VII we synthesize our findings and perspectives about grape
+cluster counting.
+II. PROBLEM DEFINITION AND HYPOTHESES
+Several computational methods for grape counting have
+been proposed in the literature, but many of them exhibit
+significant limitations. Some techniques estimate only the
+number of individual berries rather than entire grape clusters,
+which may not be suitable for certain agricultural applications.
+Others are designed exclusively for static images, making
+them unsuitable for full-video analysis, or require specialized
+recording equipment, limiting accessibility for many farmers.
+Drone-based counting methods, for example, also face chal-
+lenges in vineyards with dense foliage, where cluster visibility
+is obstructed, as illustrated in Fig. 1.
+Besides these technical challenges, none of these methods
+have been specifically tested in vineyards using the pergola
+system [9], which features an arched canopy structure, as
+illustrated in Fig. 2. The pergola system is the most widely
+used vine training method in vineyards across Brazil’s South
+and Northeast regions [6], [7]. Unlike traditional row-based
+vineyards, where grape clusters form a relatively uniform
+”wall” at a consistent distance from the camera, pergola
+vineyards create a tunnel-like structure where clusters are dis-
+tributed at varying depths. This results in significant variations
+in their apparent size and the occurrence of occlusion, due to
+perspective, making analysis more challenging compared to
+previous studies, where cameras could be positioned perpen-
+dicularly to the clusters for a more uniform view. Moreover,
+some of the previous techniques are only described in research
+papers, with no publicly available implementations, making it
+difficult to reproduce results and adapt them to different data.
+In the studied vineyard, the grape cluster counting is cur-
+rently performed manually, by workers who walk along the
+vineyard rows, annotating the quantity of clusters in each of
+them. We decided to proceed with a counting technique based
+on processing videos captured in a similar way, by someone
+traversing these vineyard rows. This way, we expect our work
+to be easily applied to real-world farms and extended to be
+used as an application in a smartphone, for example, without
+disrupting much of the traditional process, but ensuring a
+higher efficiency.
+Fig. 1.
+Aerial image captured by drone at the vineyard where the images
+were captured.
+Fig. 2. Frame from video captured inside one of the vineyard corridors.
+A. Approach Selection
+Based on Farjon et al.’s survey about counting methods in
+agriculture using deep learning [4], we highlight four possible
+approaches for this task:
+1) Direct counting and weakly supervised methods, which
+estimate the number of fruits without requiring individ-
+ual identification;
+2) Object detection combined with 2D tracking, where a
+detector identifies fruits in each video frame, and a
+tracker associates these detections over time to prevent
+duplicate counting;
+3) Object detection combined with 3D mapping, which
+reconstructs a three-dimensional scene to enhance count-
+ing accuracy;
+4) Density estimation, which generates a heat map of the
+target objects in each image and try to regress the
+number of objects from that representation.
+The density estimation approach, despite bringing a good
+performance and demanding less in terms of image annotation
+efforts, has been mainly applied to static images, especially
+those from Unmanned Aerial Vehicles (UAVs), which can not
+be used in our case, since the dense foliage at the top of the
+pergola vineyards prevents the capture of useful images for
+counting. Actually this protection against the sunlight is one
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:34 UTC from IEEE Xplore.  Restrictions apply. 
+
+of the main reasons the pergola training system is used in the
+Northeast of Brazil [6].
+The direct counting and weakly supervised methods suffer
+from a similar problem, since they are direct towards the
+analysis of static images, not keeping track of repeated fruits
+along successive frames.
+The object detection methods are best suited for our case,
+since we are using videos instead of static images. Between the
+2D and the 3D tracking approaches, we chose to implement
+the former since it is computationally cheaper than the latter
+in general [10] and we found more detailed examples of its
+use in counting tasks, which could serve as inspiration for
+our own technique. Many 3D mapping techniques also require
+the usage of specific hardware, like stereo cameras or depth
+sensors, demanding more than just RGB videos, which are our
+only resources in this study.
+More specifically, our selected approach first employs a
+convolutional deep learning-based detection method to learn
+and predict bounding boxes for grape clusters in the frames for
+each captured video. Then based on the predicted bounding
+boxes for the successive frames, a tracking algorithm assigns
+identifiers to unique grape clusters, keeping track of their
+trajectories. The effective counting is based on the total
+number of identifiers assigned during the video reproduction.
+Even though the pergola system videos differ considerably
+in layout, perspective and occlusion, to the data captured
+in other studies, as the the camera moves deeper into the
+vineyard, each grape cluster still define a trajectory, which can
+be uniquely tracked. To evaluate our technique with pergola-
+specific data, we collected video footage from a table grape
+farm located in the S˜ao Francisco Valley, a key hub for
+irrigated fruit production in Brazil’s Northeast. The technique’s
+implementation and evaluation and the dataset captured are
+described in detail in Section IV.
+Following Dasarathy’s characterization [11], we can identify
+three main fusion steps in our technique:
+1) Object Detection: Data Input - Feature Output (DaI
+- FeO), through the feature extraction from pixels by
+CNNs, and Feature Input - Decision Output (FeI - DeO),
+through the prediction of object locations in each video
+frame.
+2) Object Tracking: Temporal Decision Input - Decision
+Output (DeI - DeO), through the association of trajecto-
+ries between detected objects in successive video frames.
+3) Object Counting: Decision Input - Decision Output
+(DeI - DeO), through the processing of the raw number
+of tracks to compute the quantity of grape clusters.
+B. Research Questions and Metrics
+Since our objective is to propose a cluster counting tech-
+nique adequate to pergola vineyards, we defined two research
+questions to guide our evaluation, one focused on each com-
+ponent of our method (detection and tracking):
+• RQ1: How well does the technique detect clusters in
+static images?
+• RQ2: How well does the technique count clusters in
+videos?
+Farjon et al.’s survey [4] highlights the importance of
+measuring the performance of object detection and counting
+separately, whose metrics are used to evaluate each of our re-
+search questions, respectively. For RQ1, we use the following
+metrics:
+• Mean Average Precision (mAP): since the number of
+grape clusters (positives) is much smaller than the number
+of other objects (negatives) in an image, the model
+accuracy would not be a balanced metric for evaluation.
+Precision and Recall are metrics that take this imbalance
+into account, since the former measures the fraction of
+detections that correspond to true grape clusters, and the
+latter measures the fraction of true grape clusters correctly
+detected. However, each of them only indicate the level of
+overestimation and underestimation respectively. Average
+Precision (AP) helps measuring both problems since it
+averages the Precision over all possible levels of Recall.
+Different levels of Recall are achieved by varying the
+confidence threshold of the detections [12]. In practice,
+this threshold should be optimized for each application,
+considering which error needs to be avoided the most
+(grape clusters going undetected or mistaken detections)
+to optimize counting, but the average of possible preci-
+sions gives a balanced perspective. mAP measures the
+average of APs for each class, but in our case we only
+have one class (grape clusters). We specifically use mAP
+for an Intersection over Union (IoU) threshold of 50%
+(mAP@50), which is a standard value [4]. IoU is defined
+by the fraction of I (area of intersection between the
+predicted bounding box and the ground-truth bounding
+box) in relation to U (union between the bounding
+boxes’ areas). Whenever the IoU is above the determined
+threshold we consider the predicted bounding box as a
+correct detection. The AP (which is the mAP in our
+case) also directly corresponds to the area under the curve
+(AUC) of the recall-precision curve.
+• F1-Score: Similarly to mAP, F1-Score also takes both
+Precision and Recall into account by calculating their
+harmonic mean [13]. The difference is that the F1-Score
+is calculated for an individual confidence threshold and
+typically, in practice, we aim at the confidence threshold
+which gives us the best F1-Score. We fix the confidence
+threshold in the default value used by YOLOv8, the tool
+we used for object detection, which will be described in
+detail in Section IV. Since different values of precision
+and recall can yield the same score, we also report these
+two metrics as a complement to the F1-Score.
+For RQ2, regarding counting performance, we use the
+following metric:
+• Mean Absolute Error (MAE): it is the absolute dif-
+ference between the predicted number of grape clusters
+and the ground-truth quantity [14]. Since we only have
+one class, we don’t need to average that error over
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:34 UTC from IEEE Xplore.  Restrictions apply. 
+
+multiple classes. Although we are dealing with deep
+neural networks, we chose the absolute value instead of
+the squared one, since we don’t use this error in the
+network learning process and it represents the error more
+intuitively.
+III. RELATED WORK
+Shen et al. [10] proposed a grape cluster counting approach
+using YOLOv5, a 2D tracking algorithm, and a counting
+line. However, their study was conducted in vineyards with
+a conventional training system, where the camera moves
+perpendicularly to the vine rows. Additionally, their source
+code and dataset were not publicly released, limiting repro-
+ducibility and direct comparison. Despite these differences,
+their methodology is the most similar to ours.
+Santos et al. [15] introduced the Wine Grape Instance
+Segmentation Dataset (WGISD) and explored YOLO-based
+detection. They employed a 3D reconstruction technique to
+estimate cluster positions from motion across multiple images.
+While they demonstrated the integration of detection and 3D
+mapping in videos, their study does not quantitatively evaluate
+counting accuracy.
+Jaramillo et al. [16] also applied a 2D tracking-by-detection
+approach for grape cluster counting using smartphone cameras.
+Their method relied on artificial illumination for nighttime
+image capture, and the camera was stabilized by a gimbal and
+mounted on an all-terrain vehicle (ATV) moving at a constant
+speed. Instead of YOLO, they used Faster R-CNN [17] for
+detection.
+Ciarfuglia et al. [18] combined detection, segmentation, and
+both 2D and 3D tracking for grape cluster counting. They
+worked in a tendone vineyard, a trellis system similar to
+pergola, and used a semi-supervised annotation approach to
+improve counting accuracy.
+Beyond grapes, tracking-by-detection strategies have been
+used for other fruits with similar growth patterns, such as
+passion fruit [19], [20] and tomatoes [21]. However, these
+studies were conducted under controlled conditions with cam-
+eras positioned perpendicularly to the crop rows.
+Unlike previous works, our study specifically addresses
+pergola-trained vineyards, where grape clusters are distributed
+along a tunnel-like canopy, making conventional perpendicu-
+lar imaging impractical. This results in significant variations
+in cluster distance and scale, increasing the complexity of
+detection and tracking. Furthermore, while many studies use
+fixed camera setups on drones or vehicles, our videos were
+recorded by people under variable daytime conditions, adding
+further real-world challenges. Our approach also stands out for
+its accessibility, as it relies solely on standard RGB images
+without the need for specialized sensors. Lastly, we ensure
+reproducibility by providing our code and model configura-
+tions, while leveraging state-of-the-art detection (YOLOv8)
+and tracking (ByteTrack) techniques to address this underex-
+plored scenario.
+Fig. 3. Side view of a vineyard row. At this angle, bunches in other rows could
+be confused with the one under review. Also, we lost sight of the bunches in
+the center of the aisle.
+Fig. 4. Image from bottom to top inside one of the corridors of the vineyard.
+Although we captured the bunches in the center of the corridor better, we
+missed the bunches on the sides of the corridor.
+IV. METHODOLOGY
+First we present the data used for training and evaluation,
+details of the technique implementation and then we delve into
+how the technique was tested to answer the research questions.
+A. Dataset
+Our original dataset consisted of 445 manually annotated
+frames on the Roboflow platform, extracted from four videos
+recorded in the vineyard under study. Three of these videos
+were captured in the late afternoon and one in the morning. All
+recordings were made using the 26 mm camera of an iPhone
+XR, by the same research team member, ensuring some level
+of consistency in capture conditions.
+To enhance dataset diversity and improve the model’s gen-
+eralization ability, we applied data augmentation techniques,
+including rotation, horizontal flipping, brightness and contrast
+adjustments, and slight saturation modifications. This process
+expanded the dataset to 1,069 frames. The data was split into
+training, validation, and test sets following a 88%, 8%, and
+4% ratio, respectively.
+It is important to note that the original images were captured
+at 1080p resolution with a 16:9 aspect ratio, but were resized
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:34 UTC from IEEE Xplore.  Restrictions apply. 
+
+Fig. 5. Annotated resized image from one of the vineyard rows.
+to 640x640 pixels, to optimize processing. An example of an
+annotated and resized image is shown in Fig. 5.
+B. Implementation
+Based on our literature review, we decided to implement a
+technique comprised of two components: object detection and
+object tracking. For the detection step, we selected YOLOv8
+[22], which had not yet been explored in previous grape
+cluster counting studies. The model was trained and assessed
+using manually annotated frames extracted from video footage
+collected in the vineyard. For the tracking step, we employed
+ByteTrack [23], an out-of-the-box tracking algorithm that
+builds upon the widely used SORT [24] and DeepSORT [25].
+YOLOv8 was selected for this project due to its advanced
+architecture, which provides high accuracy, speed, and ro-
+bustness in complex scenarios, with even greater inference
+efficiency compared to previous versions [22]. YOLO [26] was
+the first deep learning one-stage detector, being characterized
+by its speed, with each version bringing new improvements
+in accuracy and efficiency [12]. One of the key advantages
+of YOLOv8 specifically is its enhanced feature pyramid, a
+mechanism that leverages multiple levels of abstraction during
+processing. This improvement enables the model to detect
+objects of various sizes with greater accuracy, which is essen-
+tial for counting grape clusters that can vary significantly in
+scale and position within the video. Additionally, this approach
+minimizes information loss and enhances the model’s ability
+to handle variations in lighting, occlusions, and perspective
+changes. In this study, we specifically used YOLOv8s, an
+optimized version that maintains detection quality while sig-
+nificantly reducing model size. This choice was driven by the
+intent to run inference on low-power edge devices, ensuring
+a balance between performance and computational efficiency
+for real-world field applications. We use the detection-oriented
+version of YOLOv8s, which was pre-trained on the MS-COCO
+dataset [27] to speed up convergence of the model.
+ByteTrack [23] is a multi-object tracking tool that employs
+the Kalman Filter [28] and the Hungarian Algorithm [29]
+to associate detected objects and predicted trajectories in a
+video. Its unique feature is how it leverages low-probability
+detections, instead of focusing only on high-probability ones,
+like previous techniques. First, high-confidence detections are
+assigned to existing trajectories, ensuring accurate matching.
+Then, low-confidence detections are considered and linked
+to previously unmatched trajectories, preserving object tracks
+that might otherwise be discarded due to temporary detec-
+tion failures. This strategy significantly improves tracking
+robustness and continuity, particularly in challenging scenar-
+ios where occlusion and object appearance variations impact
+detection accuracy. We chose ByteTrack because it offers
+competitive performance on Multiple Object Tracking (MOT)
+tasks, while keeping state-of-the-art or similar efficiency, mea-
+sured by frames per second (FPS), in many of these tasks,
+even against more recent techniques [30]–[32]. Moreover,
+ByteTrack can be used as an out-of-the-box general purpose
+tool through the Supervision1 library, making it easy to apply
+to new contexts, without needing to adapt code from specific
+experiments or benchmarks.
+Our development pipeline was based on the Roboflow
+tutorial2 on object counting in videos. In addition to the official
+YOLOv8 version provided by Ultralytics, we extensively used
+the Roboflow Supervision library, which streamlined both the
+integration with ByteTrack and the generation of annotated
+videos with object counts.
+C. Experiment
+In this study, our focus is to propose a grape cluster
+counting technique based on object detection and tracking and
+to evaluate its performance on data collected from vineyards
+that follow the pergola training system. To synthesize our
+objective, we define the following research questions:
+• RQ1: How well does the technique detect clusters in static
+images?
+• RQ2: How well does the technique count clusters in
+videos?
+To answer these research questions, we will rely on metrics
+discussed in the survey by [4]:
+• For object detection performance (RQ1), we will use
+Mean Average Precision (mAP) and F1-Score. Especially
+we use mAP@50, which evaluates detection performance
+at a 50% Intersection over Union (IoU) threshold. The
+IoU measures the overlap between the predicted bounding
+boxes and the ground truth, and mAP@50 specifically
+considers detections where IoU exceeds 0.5. This en-
+sures that we account for both localization accuracy and
+detection confidence in our evaluation. The precision is
+averaged over the precision values for all confidence
+levels in the detections. The F1-Score is computed for the
+1https://supervision.roboflow.com/latest/
+2https://blog.roboflow.com/yolov8-tracking-and-counting/
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:34 UTC from IEEE Xplore.  Restrictions apply. 
+
+YOLOv8s predetermined confidence threshold, ensuring
+a balanced evaluation of precision and recall.
+• For grape cluster counting accuracy (RQ2), we adopt
+Mean Absolute Error (MAE). Unlike squared error met-
+rics, MAE is sufficient in this case since we are not using
+this error for training any neural network, but rather to
+assess the overall system performance in the counting
+task.
+We trained YOLOv8s for 25 epochs, using the default
+hyperparameters provided by the package. We also trained the
+same model again for 75 epochs, a YOLOv5s [33] model for
+200 epochs leveraging the pre-trained weights from another
+study [34] and a YOLOv12n model [35] for 200 epochs.
+However, all of them yielded results slightly worse than the
+ones obtained in our first training trial, which will be detailed
+in Section V. This early convergence for different models and
+a preliminary exploration with public but unofficial datasets
+available in the Roboflow platform suggest the need of more
+data to achieve better results. Similarly, we adopted the default
+settings for ByteTrack.
+For the line-based counting method, we arbitrarily defined
+the position of the counting line based on the heatmap of
+detections in the training images, as shown in Fig. 6. This
+is certainly a hyperparameter that can be optimized in future
+studies to improve accuracy and robustness.
+The detection stage was evaluated using a validation set of
+88 images. The counting stage was assessed using a 5-second
+video from a separate recording, which was not part of the
+training set. The ground-truth cluster count was determined
+through detailed video annotation using the CVAT3 software.
+Due to the high cost of training and annotation, only one
+execution of the experiment was performed. However, future
+studies should incorporate multiple repetitions to ensure the
+statistical significance of the results. The experiment was
+conducted in an environment with a dedicated GPU (NVIDIA
+GeForce RTX 4060).
+V. RESULTS
+Regarding RQ1 (detection performance), our technique
+achieved the following results for the evaluated metrics:
+• Precision: 71%
+• Recall: 68.9%
+• F1-Score: 69.9%
+• mAP@50: 75.1%
+A direct comparison with previous works is not possible,
+as these studies focused on vineyard systems and camera
+perspectives very different from ours. Still, we expected to
+face a challenging scenario for detection due to the image
+perspective, which causes grape clusters in the background to
+appear smaller, increasing the likelihood of missed detections.
+Additionally, in our dataset, dense foliage, combined with
+perspective variations and the presence of people in the videos,
+contributes to partial occlusions of grape clusters, further
+complicating the detection task.
+3https://www.cvat.ai
+Fig. 6.
+Object Detection Heatmap and the counting line. With the line
+counting method, grape clusters would only be counted when their respective
+bounding boxes crossed the line.
+Regarding RQ2 (counting performance), our technique,
+which employs two different counting methods, achieved the
+following results for the 5-second video extracted from unseen
+data, which contained 74 clusters:
+• MAE (counting by unique IDs): 20
+(27% above the
+actual value).
+• MAE (counting using a predefined line): 53 (71.62%
+below the actual value).
+Relying solely on the number of unique identifiers associ-
+ated with tracks leads to an overestimation of grape clusters,
+indicating the need for a fusion mechanism to improve accu-
+racy. On the other hand, the counting line—a technique used
+in previous works [10] to prevent double counting—results in
+a severe underestimation, as many grape clusters never cross
+the line due to the vineyard’s perspective. This highlights the
+necessity of a more adaptive counting strategy that accounts
+for the spatial distribution of clusters within the video. We
+hypothesize that using multiple counting lines and merging
+their results could yield a more precise estimate. For now,
+despite its overestimation, counting unique identifiers appears
+to be the most practical approach given our specific camera
+position.
+Fig. 7 illustrates the algorithm in action, showcasing both
+the assignment of unique IDs to clusters and the use of the
+counting line simultaneously.
+VI. LIMITATIONS AND FUTURE WORK
+Regarding data, we have additional videos available from
+the studied farm, which could be used to further train and eval-
+uate the proposed technique. Additionally, we could leverage
+publicly available datasets, such as the one by Santos et al.
+(2020) [15], to enhance detection performance.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:34 UTC from IEEE Xplore.  Restrictions apply. 
+
+Fig. 7. The proposed technique at work in one of the videos used for testing
+the counting part.
+Concerning the models, we could explore more thoroughly
+the hyperparameter optimization for both detection and count-
+ing models. Also some studies incorporate auxiliary mecha-
+nisms such as attention [36] or pruning [10], which could be
+tested in combination with our approach.
+For better counting evaluation, it would be ideal to have
+more videos with reliable ground-truth counts and to find a
+more precise method for manual counting. We could leverage
+the expertise of field workers who perform manual grape
+cluster counting as part of their daily tasks.
+As stated in [3], multi-source sensor data fusion is the
+next frontier for tracking techniques, which could also be
+explored in our case. Since the videos were captured manually
+in an irregular terrain there are non-uniform movements of
+the camera which could be taken into account to avoid track
+association mistakes. A related problem for YOLO-based
+detection in drone-captured aerial images has been addressed
+in [37]. In other fusion level, in [38], the authors estimate 3D
+positions from 2D RGB images to enhance pedestrian tracking,
+which could be adapted to our case. Finally, with the presence
+of multiple sensors in modern smartphones, we could use the
+same equipment and resources to employ stereo or RGB-D
+imaging, which has already been done in other contexts [39].
+VII. CONCLUSION
+In this study, we proposed and evaluated a grape cluster
+counting technique for videos of vineyards using the pergola
+training system. Our method is based on modern object de-
+tection and tracking techniques and was trained and evaluated
+on video data collected from a grape farm in the Brazilian
+Semi-Arid region.
+As expected, the pergola system layout, the environmental
+conditions and the video perspective created a challenging
+context for detection and counting. Nonetheless, our technique
+achieved significant results for both tasks, representing the first
+result of its kind for pergola system vineyards.
+Finally, this study represents a promising step toward the
+application of computer vision techniques, particularly object
+detection and tracking methods, for automated grape cluster
+counting in vineyards where the pergola system is predominant
+— both in the Brazilian Northeast and South regions and in
+other parts of the world.
+ACKNOWLEDGMENT
+We thank Scinet Institute, Netcon and Fazenda IPFittipaldi
+for the partnership and access to the vineyard.
+REFERENCES
+[1] L. Mohimont, F. Alin, M. Rondeau, N. Gaveau, and L. A. Steffenel,
+“Computer Vision and Deep Learning for Precision Viticulture,”
+Agronomy, vol. 12, no. 10, p. 2463, Oct. 2022. [Online]. Available:
+https://www.mdpi.com/2073-4395/12/10/2463
+[2] Y. Lecun, L. Bottou, Y. Bengio, and P. Haffner, “Gradient-based learning
+applied to document recognition,” Proceedings of the IEEE, vol. 86,
+no. 11, pp. 2278–2324, 1998.
+[3] J. Cao, H. Zhang, L. Jin, J. Lv, G. Hou, and C. Zhang, “A review of
+object tracking methods: From general field to autonomous vehicles,”
+Neurocomputing, vol. 585, p. 127635, Jun. 2024. [Online]. Available:
+https://linkinghub.elsevier.com/retrieve/pii/S0925231224004065
+[4] G. Farjon, L. Huijun, and Y. Edan, “Deep-learning-based counting
+methods, datasets, and applications in agriculture: a review,” Precision
+Agriculture, vol. 24, no. 5, pp. 1683–1711, Oct. 2023. [Online].
+Available: https://link.springer.com/10.1007/s11119-023-10034-8
+[5] M. Bouzeghoub, “A framework for analysis of data freshness,” in
+Proceedings of the 2004 International Workshop on Information
+Quality in Information Systems, ser. IQIS ’04.
+New York, NY,
+USA: Association for Computing Machinery, 2004, p. 59–67. [Online].
+Available: https://doi.org/10.1145/1012453.1012464
+[6] A. Miele and F. Mandelli, “Sistemas de conduc¸˜ao da videira: latada
+e espaldeira,” in Produc¸˜ao integrada de uva para processamento:
+implantac¸˜ao do vinhedo, cultivares e manejo da planta.
+Brasilia,
+Brazil:
+Embrapa,
+2015,
+vol.
+3,
+pp.
+41–49.
+[Online].
+Available:
+http://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/1060143
+[7] Alberto Miele, Henrique Pessoa dos Santos, Lucas da Ressureic¸˜ao
+Garrido, Joelsio Jos´e Lazzarotto, Jo˜ao Carlos Taffarel, and Cesar
+Luis Girardi, “Colheita Mecanizada de Videiras Conduzidas em
+Latada: Avaliac¸˜ao Agronˆomica, Econˆomica e Qualidade do Suco,”
+EMBRAPA Uva e Vinho, Bento Gonc¸alves, Brazil, Tech. Rep. 22,
+Dec. 2021. [Online]. Available: https://www.infoteca.cnptia.embrapa.br/
+infoteca/bitstream/doc/1136851/1/BolPesqDes-22online-21.pdf
+[8] L. Arata, S. Hauschild, and P. Sckokai, “Socio-economic impact
+of grape growing in North-eastern Brazil,” Italian Association of
+Agricultural and Applied Economics (AIEAA), 2017 Sixth AIEAA
+Conference, June 15-16, Piacenza, Italy 261264, Jul. 2017. [Online].
+Available: https://ideas.repec.org/p/ags/aiea17/261264.html
+[9] P. C. D. S. LE ˜AO, Cultivo da Videira, 2nd ed., ser. Embrapa
+Semi´arido.
+Sistemas
+de
+Produc¸˜ao.
+Embrapa
+Semi´arido,
+2010,
+no.
+1.
+[Online].
+Available:
+http://www.infoteca.cnptia.embrapa.br/
+infoteca/handle/doc/884525
+[10] L. Shen, J. Su, R. He, L. Song, R. Huang, Y. Fang, Y. Song, and
+B. Su, “Real-time tracking and counting of grape clusters in the field
+based on channel pruning with YOLOv5s,” Computers and Electronics
+in Agriculture, vol. 206, p. 107662, Mar. 2023. [Online]. Available:
+https://linkinghub.elsevier.com/retrieve/pii/S0168169923000509
+[11] B.
+Dasarathy,
+“Sensor
+fusion
+potential
+exploitation-innovative
+architectures
+and
+illustrative
+applications,”
+Proceedings
+of
+the
+IEEE, vol. 85, no. 1, pp. 24–38, Jan. 1997. [Online]. Available:
+http://ieeexplore.ieee.org/document/554206/
+[12] Z. Zou, K. Chen, Z. Shi, Y. Guo, and J. Ye, “Object Detection in
+20 Years: A Survey,” Proceedings of the IEEE, vol. 111, no. 3, pp.
+257–276, Mar. 2023. [Online]. Available: https://ieeexplore.ieee.org/
+document/10028728/
+[13] P. Christen, D. J. Hand, and N. Kirielle, “A review of the f-
+measure: Its history, properties, criticism, and alternatives,” ACM
+Comput. Surv., vol. 56, no. 3, Oct. 2023. [Online]. Available:
+https://doi.org/10.1145/3606367
+[14] Y. Huang, Y. Qian, H. Wei, Y. Lu, B. Ling, and Y. Qin, “A survey
+of deep learning-based object detection methods in crop counting,”
+Computers and Electronics in Agriculture, vol. 215, p. 108425, Dec.
+2023. [Online]. Available: https://linkinghub.elsevier.com/retrieve/pii/
+S016816992300813X
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:34 UTC from IEEE Xplore.  Restrictions apply. 
+
+[15] T. T. Santos, L. L. De Souza, A. A. Dos Santos, and S. Avila, “Grape
+detection, segmentation, and tracking using deep neural networks
+and three-dimensional association,” Computers and Electronics in
+Agriculture, vol. 170, p. 105247, Mar. 2020. [Online]. Available:
+https://linkinghub.elsevier.com/retrieve/pii/S0168169919315765
+[16] J. Jaramillo, J. Vanden Heuvel, and K. H. Petersen, “Low-Cost,
+Computer
+Vision-Based,
+Prebloom
+Cluster
+Count
+Prediction
+in
+Vineyards,” Frontiers in Agronomy, vol. 3, p. 648080, Apr. 2021.
+[Online]. Available: https://www.frontiersin.org/articles/10.3389/fagro.
+2021.648080/full
+[17] S. Ren, K. He, R. Girshick, and J. Sun, “Faster r-cnn: Towards real-time
+object detection with region proposal networks,” IEEE Transactions on
+Pattern Analysis and Machine Intelligence, vol. 39, no. 6, pp. 1137–
+1149, 2017.
+[18] T.
+A.
+Ciarfuglia,
+I.
+M.
+Motoi,
+L.
+Saraceni,
+M.
+Fawakherji,
+A. Sanfeliu, and D. Nardi, “Weakly and semi-supervised detection,
+segmentation and tracking of table grapes with limited and noisy
+data,” Computers and Electronics in Agriculture, vol. 205, p. 107624,
+Feb. 2023. [Online]. Available: https://linkinghub.elsevier.com/retrieve/
+pii/S0168169923000121
+[19] S. Tu, Y. Huang, Y. Liang, H. Liu, Y. Cai, and H. Lei, “A
+passion fruit counting method based on the lightweight YOLOv5s
+and improved DeepSORT,” Precision Agriculture, vol. 25, no. 3, pp.
+1731–1750, Jun. 2024. [Online]. Available: https://link.springer.com/10.
+1007/s11119-024-10132-1
+[20] S. Tu, J. Pang, H. Liu, N. Zhuang, Y. Chen, C. Zheng, H. Wan,
+and Y. Xue, “Passion fruit detection and counting based on multiple
+scale faster R-CNN using RGB-D images,” Precision Agriculture,
+vol. 21, no. 5, pp. 1072–1091, Oct. 2020. [Online]. Available:
+http://link.springer.com/10.1007/s11119-020-09709-3
+[21] J. Rong, H. Zhou, F. Zhang, T. Yuan, and P. Wang, “Tomato cluster
+detection and counting using improved YOLOv5 based on RGB-D
+fusion,” Computers and Electronics in Agriculture, vol. 207, p. 107741,
+Apr. 2023. [Online]. Available: https://linkinghub.elsevier.com/retrieve/
+pii/S0168169923001291
+[22] R. Varghese and S. M., “Yolov8: A novel object detection algorithm
+with enhanced performance and robustness,” in 2024 International
+Conference on Advances in Data Engineering and Intelligent Computing
+Systems (ADICS), 2024, pp. 1–6.
+[23] Y. Zhang, P. Sun, Y. Jiang, D. Yu, F. Weng, Z. Yuan, P. Luo, W. Liu,
+and X. Wang, “Bytetrack: Multi-object tracking by associating every
+detection box,” in European conference on computer vision.
+Springer,
+2022, pp. 1–21.
+[24] A. Bewley, Z. Ge, L. Ott, F. Ramos, and B. Upcroft, “Simple
+online and realtime tracking,” in 2016 IEEE International Conference
+on Image Processing (ICIP).
+IEEE, Sep. 2016. [Online]. Available:
+http://dx.doi.org/10.1109/ICIP.2016.7533003
+[25] N. Wojke, A. Bewley, and D. Paulus, “Simple online and realtime
+tracking with a deep association metric,” in 2017 IEEE International
+Conference on Image Processing (ICIP), 2017, pp. 3645–3649.
+[26] J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, “You Only
+Look Once: Unified, Real-Time Object Detection,” in 2016 IEEE
+Conference on Computer Vision and Pattern Recognition (CVPR).
+Las
+Vegas, NV, USA: IEEE, Jun. 2016, pp. 779–788. [Online]. Available:
+http://ieeexplore.ieee.org/document/7780460/
+[27] T.-Y. Lin, M. Maire, S. Belongie, J. Hays, P. Perona, D. Ramanan,
+P. Doll´ar, and C. L. Zitnick, “Microsoft coco: Common objects in con-
+text,” in Computer Vision – ECCV 2014, D. Fleet, T. Pajdla, B. Schiele,
+and T. Tuytelaars, Eds. Cham: Springer International Publishing, 2014,
+pp. 740–755.
+[28] R. E. Kalman, “A new approach to linear filtering and prediction
+problems,” Journal of Basic Engineering, vol. 82, no. 1, pp. 35–45, 03
+1960. [Online]. Available: https://doi.org/10.1115/1.3662552
+[29] H. W. Kuhn, “The hungarian method for the assignment problem,”
+Naval Research Logistics Quarterly, vol. 2, no. 1-2, pp. 83–97, 1955.
+[Online]. Available: https://onlinelibrary.wiley.com/doi/abs/10.1002/nav.
+3800020109
+[30] Z. Liu, X. Wang, C. Wang, W. Liu, and X. Bai, “SparseTrack:
+Multi-Object Tracking by Performing Scene Decomposition based
+on
+Pseudo-Depth,”
+IEEE
+Transactions
+on
+Circuits
+and
+Systems
+for Video Technology, pp. 1–1, 2025. [Online]. Available: https:
+//ieeexplore.ieee.org/document/10819455/
+[31] Y. Chen, Z. Li, L. Wu, and P. Chen, “An Efficient Multi-Object
+Tracking Guided by Spatial Clustering on Vision Sensors,” IEEE
+Sensors Journal, vol. 24, no. 12, pp. 19 344–19 351, Jun. 2024.
+[Online]. Available: https://ieeexplore.ieee.org/document/10508744/
+[32] Y. Du, Z. Zhao, Y. Song, Y. Zhao, F. Su, T. Gong, and H. Meng,
+“StrongSORT: Make DeepSORT Great Again,” IEEE Transactions
+on Multimedia, vol. 25, pp. 8725–8737, 2023. [Online]. Available:
+https://ieeexplore.ieee.org/document/10032656/
+[33] G. Jocher, “Ultralytics yolov5,” 2020. [Online]. Available: https:
+//github.com/ultralytics/yolov5
+[34] G. Farjon and Y. Edan, “AgroCounters—A repository for counting
+objects in images in the agricultural domain by using deep-learning
+algorithms: Framework and evaluation,” Computers and Electronics
+in Agriculture, vol. 222, p. 108988, Jul. 2024. [Online]. Available:
+https://linkinghub.elsevier.com/retrieve/pii/S016816992400379X
+[35] Y. Tian, Q. Ye, and D. Doermann, “Yolov12: Attention-centric real-time
+object detectors,” arXiv preprint arXiv:2502.12524, 2025.
+[36] X. Zhou, Y. Zhang, X. Jiang, K. Riaz, P. Rosenbaum, M. Lefsrud,
+and
+S.
+Sun,
+“Advancing
+tracking-by-detection
+with
+MultiMap:
+Towards occlusion-resilient online multiclass strawberry counting,”
+Expert
+Systems
+with
+Applications,
+vol.
+255,
+p.
+124587,
+Dec.
+2024. [Online]. Available: https://linkinghub.elsevier.com/retrieve/pii/
+S0957417424014544
+[37] Z. Tian, Y. Bar-Shalom, R. Yang, H. J. Huang, and G. W. Ng,
+“Interframe Association of YOLO Bounding Boxes in the Presence of
+Camera Panning and Zooming,” in 2023 26th International Conference
+on Information Fusion (FUSION).
+Charleston, SC, USA: IEEE, Jun.
+2023, pp. 1–7. [Online]. Available: https://ieeexplore.ieee.org/document/
+10224131/
+[38] J. Krejˇc´ı, O. Kost, O. Straka, and J. Dun´ık, “Pedestrian Tracking
+with Monocular Camera using Unconstrained 3D Motion Model,” in
+2024 27th International Conference on Information Fusion (FUSION).
+Venice,
+Italy:
+IEEE,
+Jul.
+2024,
+pp.
+1–8.
+[Online].
+Available:
+https://ieeexplore.ieee.org/document/10706432/
+[39] H. Hilmarsen, N. Dalhaug, T. A. Nyg˚ard, E. F. Brekke, R. Mester,
+and A. Stahl, “Maritime tracking-by-detection with object mask depth
+retrieval through stereo vision and lidar*,” in 2024 27th International
+Conference on Information Fusion (FUSION), 2024, pp. 1–8.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:34 UTC from IEEE Xplore.  Restrictions apply. 

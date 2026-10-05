@@ -1,0 +1,1002 @@
+Vol.:(0123456789)
+Precision Agriculture (2024) 25:1731–1750
+https://doi.org/10.1007/s11119-024-10132-1
+1 3
+A passion fruit counting method based on the lightweight 
+YOLOv5s and improved DeepSORT
+Shuqin Tu1,2 · Yufei Huang1 · Yun Liang1 · Hongxing Liu1 · Yifan Cai1 · Hua Lei1
+Accepted: 28 February 2024 / Published online: 26 March 2024 
+© The Author(s), under exclusive licence to Springer Science+Business Media, LLC, part of Springer Nature 2024
+Abstract
+Accurate yield estimation of passion fruits is essential for planning acreage and harvest 
+timing. However, due to the complexity of the natural environment and tracking instability, 
+the existing yield estimation methods suffer from excessively large models that are dif-
+ficult to deploy or repetitive counting of fruit. Therefore, an improved approach for effi-
+cient passion fruit yield estimation was proposed using the lightweight YOLOv5s and 
+improved DeepSORT. First, the video is fed into the proposed lightweight YOLOv5s 
+called YOLOv5s-little to obtain coordinates and confidence information about the fruits 
+within each frame. Then, the information obtained from the detection model is input into 
+improved DeepSORT for continuous frame tracking of passion fruit. Considering the fre-
+quent error IDs (ID switching), two improvements based on DeepSORT are proposed: 
+delaying the creation of tracks and adding a second round of IoU matching. Finally, to 
+overcome the problem of repetitive counting, a specific tracking counting method based 
+on the track information and state is used for accurate passion fruit counting. Our method 
+achieved a competitive result in tests. YOLOv5s-little detector achieved precision of 
+98.9%, 98.3% recall, 99.5% mAP, and only 0.9MB model size. The improved DeepSORT 
+algorithm achieved higher order tracking accuracy (HOTA) of 79.6%, multi-object tracking 
+accuracy (MOTA) of 92.58%, identification F1 (IDF1) of 95.02%, and ID switch (IDSW) 
+of 11 respectively. Compared with DeepSORT, it improved by 4.66%, 1.8%, and 9.16% in 
+HOTA, MOTA and IDF1, respectively, and IDSW improved the most with 85%. Compared 
+with FairMOT and TransTrack, the HOTA of YOLOv5s-little + improved DeepSORT 
+achieved improvements of 11.56% and 25.24%, respectively. The statistical average count-
+ing accuracy of our proposed counting method reaches 95.1%, which is a 7.09% improve-
+ment over the maximum ID value counting method. The counting results from test vid-
+eos are highly correlated with the manual counting results ( R2 = 0.96), indicating that the 
+counting method has high accuracy and effectiveness. These results show that YOLOv5s-
+little + improved DeepSORT can meet the practical needs of passion fruit yield estimation 
+in real scenarios.
+ *	 Yun Liang 
+	
+Liang_Yun168@163.com
+1	
+College of Mathematics and Informatics, South China Agricultural University, Guangzhou 510642, 
+China
+2	
+Guangzhou Key Laboratory of Intelligent Agriculture, Guangzhou, China
+
+1732
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+Keywords  Lightweight · Multiple object tracking · YOLOv5s · DeepSORT
+Introduction
+Passion fruit is rich in nutritional and medicinal value, which is mainly cultivated in tropi-
+cal and subtropical regions. It is an important local crop in South America with high eco-
+nomic value (Bezerra et al., 2019; Thokchom & Mandal, 2017). However, manual yield 
+estimation of passion fruit is a laborious and time-consuming task. This presents chal-
+lenges for farmers in planning cultivation areas, determining optimal harvest times, and 
+devising sales strategies. Fortunately, recent advancements in computer vision technology 
+have provided effective support in addressing this issue (He et al., 2022a, 2022b; Vasconez 
+et al., 2020). An automatic counting system for passion fruits can be developed, enabling 
+farmers to plan their production and marketing strategies more accurately and maximizing 
+their profitability.
+With the development of deep learning methods, many researchers have implemented 
+fruit detection and counting with the help of deep learning-based object detection (Assun-
+ção et al., 2022; Liu et al., 2017; Wang et al., 2022b). For example, Koirala et al. (2019) 
+developed a new detection model called MangoYOLO based on the features of YOLOv2 
+(tiny) and YOLOv3. Tu et al. (2020) were able to robustly detect small fruits of passion 
+fruit by feeding RGB-D images into an improved multiple scale faster region-based con-
+volutional neural networks (MS-FRCNN) based model. Qi et al. (2022) used YOLOv5 as 
+a target detection model to detect the main stem of litchi in litchi images and obtain the 
+accurate location information of the main stem picking point. Liu et al. (2023) proposed a 
+method based on binocular stereo vision and an improved YOLOv3 model to detect pine-
+apples, improved by the optimization of the backbone network and the use of the binocular 
+camera to get the left and right images. The above methods are used to detect fruits in cap-
+turing images for counting. However, the rapid development and widespread use of robots, 
+mobile terminals, and smart devices in modern agriculture. Many detection models cannot 
+be deployed on these devices due to limitations in calculating ability and storage capacity 
+(He et al., 2022a, 2022b).
+Therefore, model lightweight has become a trend in fruit detection. In particular, Zhou 
+et al. (2020) used SSD with two lightweight backbones MobileNetV2 and InceptionV3 for 
+kiwi detection in the field. Wang and He (2021) developed a small model size based on a 
+channel-pruned YOLOv5s deep learning algorithm to accurately detect apple small fruit. 
+Wang et al., (2022a, 2022b) proposed an improved YOLOv5 model to detect litchi, the 
+improved backbone network uses ShuffleNetV2, introduces the CBAM module in the fea-
+ture fusion stage, and adjusts the input size to 1280 × 1280. Shen et al. (2023) obtained a 
+lighter-weight YOLOv5s cluster detection model based on the channel pruning algorithm, 
+and soft non-maximum suppression is introduced in the prediction stage to improve the 
+detection performance of grape overlapping clusters. Inspired by the above studies, a light-
+weight network based on YOLOv5 was designed according to the characteristics of passion 
+fruit.
+The input from object detection for counting fruits is images. These counting meth-
+ods can only detect a portion of the fruits in that image, and each image has overlap-
+ping parts. Therefore, these methods will inevitably double count, leading to inaccu-
+rate results. To address the issue, most researchers use the multi-object tracking (MOT) 
+technique to perform fruit counting (Egi et al., 2022; He et al., 2022a, 2022b; Liu et al., 
+
+1733
+Precision Agriculture (2024) 25:1731–1750	
+1 3
+2019). MOT locates targets in a video and assigns a unique ID to each object (Guo 
+et al., 2022; Luo et al., 2021). For example, Gao et al. (2022) used a YOLOv4-tiny net-
+work integrated with the CSR-DCF algorithm to count apples, which solved the prob-
+lem of losing targets during the tracking process. Tan et al. (2022) used an optical flow-
+based tracking method to estimate camera motions. The number of cotton seedlings was 
+updated by comparing the positions of bounding boxes predicted by optical flow and 
+detected by the YOLOv4 network in the same frame. Yang et al. (2022) used CenterNet 
+to detect cotton seedlings, extract their identity embedding, and associate the data based 
+on DeepSORT fused localization and identity information.
+In addition, there have been studies combining segmentation and multi-objec-
+tive tracking for fruit tracking. De Jong et al. (2022) used MOTS architectures called 
+TrackR-CNN and PointTrack and demonstrated the applicability of these methods for 
+the joint detection of apples. Ariza-Sentís et al. (2023) applied the PointTrack algorithm 
+for the detection and tracking of grape bunches and compared two instance segmenta-
+tion algorithms (YOLACT and spatial embedding) to find the most suitable method for 
+detecting grape bunches.
+However, due to the complexity of the natural environment, there are frequent error 
+IDs during the tracking process, leading to double counting. Regarding this issue, many 
+researchers have already conducted studies on it. For example, Zhang et al. (2022) pro-
+posed OrangeSort to establish a specific tracking region counting strategy and track-
+ing algorithm based on motion displacement estimation, aiming to alleviate the dou-
+ble counting problem associated with shaded fruits. Ge et al. (2022) obtained tracking 
+results and used OpenCV to create a virtual counting line to count tomatoes. Rong et al. 
+(2023) designed a specific tracking region counting method to overcome the problem of 
+tracked tomato cluster IDs. Since passion fruits are often partially obscured by leaves or 
+other fruits as they grow, and some of them are small, this can cause them to be easily 
+missed. If the fruit is missed for a long time, it may lose its original ID and be re-iden-
+tified as a new ID. This will cause duplicate counting problems in subsequent counting 
+tasks. However, Current solutions are complex and not well suited to the problem of 
+tracking passion fruit. Therefore, we design a method to alleviate frequent error IDs.
+In addition to the challenges of models that are too large to deploy and frequent error 
+IDs, we found that the currently proposed counting methods suffer from significant 
+errors or cumbersome processes. Presently, the widely adopted approach is to use the 
+maximum ID value generated by DeepSORT as the predicted value. While easily obtain-
+able, the maximum ID often deviates significantly from manual counts. To address this 
+issue, some studies have introduced alternative methods. Parico and Ahamed (2021) 
+compared the ROI method with the maximum ID way. The ROI method counts fruits by 
+crossing a line horizontally. Tests have shown that this method brings predicted counts 
+closer to manual counts. Although the count line method has a high accuracy rate, it 
+requires additional steps to be performed after tracking.
+To address these challenges mentioned above, we have proposed an improved pas-
+sion fruit yield estimation method based on YOLOv5s and DeepSORT. The specific 
+improvements we have made are as follows:
+(1)	 A lightweight network based on YOLOv5s is designed.
+(2)	 We have introduced a delaying the creation of tracks method to avoid frequent error 
+IDs and added a second round of IoU matching to improve tracking accuracy.
+
+1734
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+(3)	 We have proposed a convenient counting method based on track state and track infor-
+mation. We ensure that the estimated values are closer to the actual values and simplify 
+the counting process by counting the fruits during the process of track creation and 
+deletion.
+Materials and methods
+Dataset description
+The videos used in the experiment were obtained in passion fruit plantations in Heyuan 
+City, Guangdong Province, China, and Huadu District, Guangzhou City, China. The rea-
+son for choosing these two locations is that they represent typical characteristics of pas-
+sion fruit cultivation. Both selected data collection sites are large passion fruit plantations 
+using the widely used pergola cultivation technique. The video capture device was a cell 
+phone (Huawei Mate30), and the horizontal shot was used. The distance between the cap-
+ture device and the passion fruit was kept at 5–8 m in order to effectively capture multi-
+ple passion fruit plants and to ensure the passion fruit in the video is at the right size. In 
+this acquisition, a total of 12 videos were captured, each video was about 15 s in length. 
+The videos were stored in MP4 format with a frame rate of 25 fps and a resolution of 
+1280 × 720. Figure 1 illustrates a partial dataset.
+The dataset processing mainly includes video annotation, video cropping into images, 
+and data augmentation. The following are the specific steps:
+(1)	 The videos of 15s with dense fruit content were chosen as the dataset. The length of 
+the videos ensures that each video shows a portion of the characteristics of the passion 
+fruit orchard and meets the criteria for fruit-densely (videos with 10 or more fruits). 
+Then, each video was cut using FFmpeg software, and the captured videos were labeled 
+Fig. 1   Part of the dataset
+
+1735
+Precision Agriculture (2024) 25:1731–1750	
+1 3
+using DrakLabel software. All the passion fruits in each frame image are annotated 
+and each passion fruit is given a unique ID. Figure 2 shows an annotated image of the 
+video.
+(2)	 After labeling the video, the videos were converted into image frames. A total of 1 287 
+image frames were obtained. These images were used for the training of YOLOv5 with 
+DeepSORT. Additionally, a Python script was employed to transform the annotated 
+files into txt files suitable for detection (COCO dataset) and reidentification (ReID) 
+data suitable for DeepSORT. All image frames are randomly divided into training set, 
+validation, and test set in the ratio of 7:1:2(900:130:257).
+(3)	 When performing data augmentation on the original image for the training set, we 
+perform the following steps, including randomly adjusting brightness and contrast, 
+adding Gaussian noise, and cropping the image. Finally, the original 900 images used 
+for YOLOv5 training were expanded to 1800 images.
+Fig. 2   Annotated images of video sequence
+Improved DeepSORT
+Kalman 
+filtering
+Track 
+Management
+Object Detector
+YOLOv5s
+-little
+Input Video Sequences
+Yield Estimation
+Increase count :
+Create Tracklet
+Reduce count : unmatched 
+tracklet’ state is tentative
+Output Video Sequences
+Data Association
+Motion 
+Information
+Appearance 
+Information
+IOU matching
+Detection Results
+Detection Box
+Confidence
+Fig. 3   Passion fruit yield estimation tracking flowchart
+
+1736
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+Method process and flow chart
+Figure 3 illustrates the flowchart detailing the passion fruit yield estimation algorithm. The 
+algorithm encompasses three main steps, each serving a crucial role in the overall process.
+Object Detection using YOLOv5s-little: A lightweight detector named YOLOv5s-little 
+is used to detect each passion fruit and obtain its detection box and confidence in each 
+frame of the video.
+Tracking with Improved DeepSORT: Information from the detector is imported into the 
+improved DeepSORT algorithm to achieve accurate tracking of each passion fruit in the 
+current frame and the next frame. To avoid error frequent IDs and improve tracking accu-
+racy, two strategies in the improved DeepSORT are introduced: delaying the creation of 
+track and adding the second round of IoU matching.
+Passion Fruit Yield Estimation: The counting module completes passion fruit yield esti-
+mation according to track information and track state. The output includes the results of the 
+MOT sequences and the passion fruit yield estimation.
+YOLOv5s, YOLOv5s‑2level and YOLOv5s‑little detection network
+As one of the most widely used one-stage object detection algorithms, YOLO has been widely 
+applied in industry and agriculture due to its outstanding performance and fast detection speed 
+(Bochkovskiy et al., 2020; Redmon & Farhadi, 2018). YOLOv5 was developed by Ultralytics 
+and released in June 2020 as an upgrade to the YOLOv4 model. Compared to the structures 
+of YOLOv3 and YOLOv4, YOLOv5 has been further optimized to enable fast and accurate 
+object detection. In addition, YOLOv5’s tractable network architecture allows for further opti-
+mization and enhancement, while also being conducive to use with other multi-target tracking 
+algorithms. The YOLOv5 series includes four versions, YOLOv5s, YOLOv5m, YOLOv5x, 
+and YOLOv5xl, which vary in network depth and width. YOLOv5s was chosen as the detector 
+for improvement because it can balance the requirements of speed and accuracy.
+Two improved YOLOv5 detection networks for passion fruit targets are proposed, the 
+two-layer (YOLOv5s-2Level) and the lightweight network (YOLOv5s-little). YOLOv5s-
+little adopts the same structure as YOLOv5s-2Level. The network architecture of YOLOv5s 
+and YOLOv5s-2Level is shown in Fig. 4. As the targets of passion fruit in video tracking are 
+generally small, the YOLOv5s model has little impact on the accuracy of fruit detection in 
+high-level feature maps for large targets, and it consumes more detection time. Therefore, 
+YOLOv5s-2Level mainly removes the P5 layer in the YOLOv5s model. Since passion fruits 
+are usually round and have little shape variation, based on YOLOv5s-2Level, YOLOv5s-little 
+P4
+P5
+P3
+FPN
+PAN
+(a) YOLOV5s
+Downsample
+Upsample
+Keep Resolution
+P4
+P3
+FPN
+PAN
+(b) YOLOV5s-2level
+Downsample
+Upsample
+Keep Resolution
+Fig. 4   Network structure of YOLOv5s and YOLOv5-2level
+
+1737
+Precision Agriculture (2024) 25:1731–1750	
+1 3
+further decreases model parameters, compresses network depth and width, and reduces the 
+number of anchor boxes to shrink the model size, making it less than one-tenth the size of the 
+YOLOv5s model while maintaining fast detection speed and good detection accuracy.
+Improved deepSORT for passion fruit yield estimation model
+The DeepSORT algorithm is an improved algorithm based on the SORT algorithm (Wojke et al., 
+2017). The SORT algorithm consists of three parts, Kalman filtering, the Hungarian matching 
+algorithm, and track management (Bewley et al., 2016). The algorithm first uses Kalman filtering 
+(KF) to predict the position of each detected target. Then a data association algorithm is used to 
+associate the tracked targets with their detection results in consecutive frames. Finally, tracks on 
+matches are updated, tracks that are no longer detected are deleted, and new tracks are created 
+for unmatched objects. On top of the SORT, DeepSORT uses a convolutional neural network 
+to extract the features of the target and employs appearance similarity for data association. This 
+enhances the precision and robustness of multi-object tracking, particularly in complex scenarios.
+Figure 5 shows the flowchart of the improved DeepSORT algorithm. The specific track-
+ing process is as follows:
+(1)	 First, cascade matching is performed between the detection results and the confirmed 
+state track predicted by the KF. The Hungarian matching algorithm is used to match the 
+previous tracks with the current detection boxes by solving the cost matrix of motion 
+and appearance information.
+(2)	 For unmatched detection boxes, unmatched tracks, and unconfirmed tracks, the algo-
+rithm uses first round of IoU matching to complete trajectory tracking using the Hun-
+garian algorithm.
+(3)	 The second round of IoU matching is performed to match the unmatched tracks and 
+detection boxes from the first round of IoU matching. If an unmatched detection sat-
+isfies the track creation condition, a track is created. If an unmatched track satisfies 
+the deletion condition, the track is deleted. If an unmatched track does not satisfy the 
+deletion condition, it continues to participate in the next round of matching.
+(4)	 After all matching in the current frame is completed, the KF update is performed on 
+the matched tracks.
+Detections
+Casacde
+Matching
+First IOU
+Matching
+Second IOU
+Matching
+Satisfy the 
+generation 
+condition
+Tracks
+Kalman Filter
+Predict
+Confirmed
+Tracks
+Unconfirmed
+Tracks
+Kalman Filter Update
+3 consecutive hits: Unconfirmed tracks 
+Confirmed tracks
+Yes
+New Tracks
+Increase count
+Matched
+Tracks
+Unmatched
+Tracks
+Unmatched
+Detections
+Matched
+Tracks
+Unmatched
+Tracks
+Unmatched
+Detections
+Matched
+Tracks
+Unmatched
+Tracks
+Unmatched
+Detections
+Improvement 2
+Improvement 1
+Satisfy the 
+deletion
+condition
+Deleted Tracks
+Reduce count
+Yes
+No
+Fig. 5   Flow chart of the tracking process of the improved DeepSORT
+
+1738
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+Two improvements to DeepSORT (as shown in Fig. 5) are proposed to address the prob-
+lems encountered in passion fruit tracking, namely delaying the creation of tracks and the 
+second round of IoU matching. They are described below:
+(1)	 Delaying the creation of tracks
+	
+  Due to the mutual occlusion between fruits and the similarity in color between imma-
+ture fruits and leaves, it is easy to cause false detection of fruits, leading to frequent 
+IDs. Figure 6 displays the frequent IDs of passion fruit in real-life scenarios. In Fig. 6a, 
+the highest ID shown is 47, whereas the manual annotation for this frame indicates 
+27. Similarly, in Fig. 6b, the highest ID is 21, but the manual annotation indicates 19. 
+After many experiments, we find that frequent error IDs occur mainly in the central 
+region and the border region. The reasons for this include two points. First, fruits in the 
+central region lose their original ID due to feature significant changes (e.g., illumina-
+tion, shape, occlusion, etc.) and are assigned a new ID. Second, leaves and stems in 
+the border region are easily error detected as fruits, leading to error frequent IDs.
+	
+  Therefore, we propose a method for the creation of tracks to limit the increase in fruit 
+ID in the central and boundary regions. This method is shown as improvement 1 in Fig. 5. 
+Specifically, in Fig. 7, the inner red area is the central area, and the outer red area is the 
+boundary area. New tracks can only be created in the red area, not in the center area or the 
+boundary area. During the experiment, we use the two values of coordinates of the bound-
+ing box (BB) and the resolution of the current frame to determine whether the bounding 
+box is in the central region or the boundary region. After the third frame, if the unmatched 
+detection is in the central area or the boundary area, no track is allowed to be created, 
+Fig. 6   Illustration of passion fruit frequent IDs
+Fig. 7   Area map allowing crea-
+tion of tracks
+
+1739
+Precision Agriculture (2024) 25:1731–1750	
+1 3
+otherwise a track is created and given an ID. The boundary value is set according to the 
+size of the fruit (set 25 in this paper). The detailed steps are described in Algorithm 1.
+Algorithm 1 The creation of track
+
+1740
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+(2)	 The second round of IoU matching
+	
+  Due to delaying the creation of tracks, new tracks cannot be created in either the cen-
+tral region or the boundary region. If a track in these regions fails to match new detec-
+tion boxes multiple times, the track is then deleted. In addition, no new tracks could 
+be created for fruits in these regions, leading to missed detections. Therefore, we add 
+the second round of IoU matching to achieve better results in associating unmatched 
+detections with tracks that were not matched in the first two rounds of matching.
+Yield estimation algorithm
+The maximum ID value generated based on DeepSORT can be used to predict the number 
+of passion fruits, and the maximum ID value counting method (MAX-IDVC) is commonly 
+used. However, the predicted count from MAX-IDVC exceeds the actual count. The single 
+line counting method, which counts fruits by tracking them as they cross a line horizon-
+tally, can solve the repetition counting problem. But it needs to be counted after each frame 
+of tracking, which is a rather cumbersome process. Our proposed method estimates the 
+yield of fruits based on the track information and state during the track management pro-
+cess. This method not only resolves duplicate counting problems but also simplifies opera-
+tions. This yield estimation algorithm is shown as improvement 1 in Fig. 6.
+The passion fruit yield count of each video is set as Total. The yield count is estimated 
+in three cases based on track information and track state, specifically as shown in Eq. 1. 
+Total is added by 1 If there is a creation of the track. The total is subtracted by 1 for the 
+unmatched track state is tentative. The total remains unchanged if the number of recent KF 
+update (time-since-update) parameters of the track is greater than 30.
+Experiment and result analysis
+Implementation details
+The experiments for estimating the passion fruit yield in this study are divided into three 
+parts: 
+•	 YOLOv5s, YOLOv5s-2level, and YOLOv5s-little models were used to detect passion 
+fruit.
+•	 Based on the YOLOv5s-little model, passion fruit was tracked using DeepSORT and 
+the improved DeepSORT.
+•	 Based on YOLOv5s-little and the improved DeepSORT, MAX-IDVC, and our counting 
+method were used to count passion fruits.
+For the detection experiment, 4000 images with data augmentation were used for model 
+training. The original resolution of the images was 1280 × 720 pixels, but it was com-
+pressed to 640 × 640 pixels after input preprocessing. In the training process, a pre-trained 
+(1)
+Total =
+⎧
+⎪
+⎨
+⎪⎩
+Total + 1
+if a creation of track
+Total −1 if unmatched track state is tentative
+Total
+if track’s time-since-update > 30
+⎫
+⎪
+⎬
+⎪⎭
+
+1741
+Precision Agriculture (2024) 25:1731–1750	
+1 3
+model was not used, and the optimizer was set to SGD. The learning rate, batch size, and 
+epoch were set to 0.01, 32, and 200, respectively.
+Twelve annotated videos were used, with three videos used for tracking testing and the 
+remaining nine videos used for ReID training. The target dataset for ReID training con-
+tained 198 passion fruits. The number of images per passion fruit was increased to around 
+250 through data augmentation. The ratio of the training set to the test set was set at 4:1.
+For the tracking experiment, three videos with 28, 42, and 19 passion fruits, respec-
+tively, were used, covering both sparse and dense scenes. The max_IoU_distance threshold 
+was set to 0.7, while other parameters were kept at their default values.
+Evaluation metrics
+In this section, we have chosen metrics because of their widespread use and comprehensive 
+nature, which allows for effective comparisons with other studies and ensures the cred-
+ibility and comparability of our research. The evaluation metrics used in each of the three 
+experiments are described below.
+The object detection section was evaluated using precision (P), recall (R), mean aver-
+age precision (mAP), run time, and model size for YOLOv5s, YOLOv5s-2Level, and 
+YOLOv5s-little (Padilla et al., 2020). Among them, P, R and, mAP reflect the overall per-
+formance of the detector, and the higher the value, the better the performance. The running 
+time and model size reflect the lightness of the detector, and the lower the value, the higher 
+the lightness.
+The multi-object tracking part uses higher order tracking accuracy (HOTA), multiple 
+object tracking accuracy (MOTA), identification F1 (IDF1), ID switch (IDSW) for Deep-
+SORT and the improved DeepSORT is evaluated comprehensively (Luiten et al., 2021). 
+Among them, HOTA, MOTA, IDF1, and IDSW are important to reflect the performance 
+of the tracking algorithm, the higher the value of HOTA, MOTA, and IDF1, the better the 
+performance, and the smaller the value of IDSW, the better the performance.
+The counting part uses counting accuracy and Statistical average counting accuracy 
+(Rong et al., 2023) to evaluate the counting method. The higher the value of these two met-
+rics, the closer the predicted value of the counting method is to the true value.
+The detection results of YOLOv5s, YOLOv5s‑2Level, and YOLOv5s‑little
+Table  1 displayed the evaluation results of the YOLOv5s, YOLOv5s-2Level, and 
+YOLOv5s-little detectors. The main difference in precision between the three models is 
+reflected in the values of mAP@0.5:0.95. And the mAP@0.5:0.95 values for YOLOv5s-
+2Level and YOLOv5s-little were 0.856 and 0.782, respectively, representing a decrease of 
+1.4% and 8.8% compared to the original YOLOv5s model. Furthermore, the detection time 
+Table 1   Detection results of YOLOv5s, YOLOv5s-2Level, and YOLOv5s-little
+P/%
+R/%
+mAP@0.5/%
+mAP@0.5:0.95/%
+Time/s
+Size/MB
+YOLOv5s
+99.1
+98.8
+99.8
+87
+0.0127
+14.4
+YOLOv5s-2Level
+98.7
+99.6
+99.8
+85.6
+0.0097
+3.4
+YOLOv5s-little
+98.9
+98.3
+99.5
+78.2
+0.0079
+0.9
+
+1742
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+per image for YOLOv5s-2Level and YOLOv5s-little models were 0.0097 s and 0.0079 s, 
+respectively, resulting in a speed improvement of 30% and 60%. With a size of less than 
+1MB, the YOLOv5s-little model was more suitable for online, real-time applications and 
+portable devices than the YOLOv5s and YOLOv5s-2Level. Considering detection speed, 
+precision, and model size, the YOLOv5s-little model was chosen as detector for the later 
+tracking experiments.
+Figure 8 showed the detection results for YOLOv5s and YOLOv5s-little under sparse 
+(in the left column of Fig. 8) and dense scene (in the right column of Fig. 8). In the former, 
+nine fruits were present in the original image, and both YOLOv5s and YOLOv5s-little suc-
+cessfully detected them. In the latter, the original image contained twenty fruits, and both 
+models also detected all of them with equal accuracy. Taken together, these results demon-
+strated the robust detection capability of both YOLOv5s and YOLOv5s-little across diverse 
+scene densities.
+(a) Original images in sparsely-fruited scenes.
+Ground labeled result : 9
+(b) Original images in densely-fruited scenes.
+Ground labeled result : 20
+(c) Detection map of YOLOv5s in 
+sparsely-fruited scenes.
+Detection result : 9
+(d) Detection map of YOLOv5s in 
+densely-fruited scenes.
+Detection result : 20
+(e) Detection map of YOLOv5s-little in 
+sparsely-fruited scenes.
+Detection result : 9
+(f) Detection map of YOLOv5s-little in 
+densely-fruited scenes.
+Detection result : 20
+Fig. 8   The detection results of YOLOv5s and YOLOv5s-little in different scenes
+
+1743
+Precision Agriculture (2024) 25:1731–1750	
+1 3
+The tracking results of improved and original DeepSORT Based on YOLOv5s‑little
+The comparison results between the improved and original DeepSORT tracking algo-
+rithms based on YOLOv5s-little were presented in Table  2. The average or total of 
+each evaluation metric in all test videos is labeled in bold. Five metrics mentioned in 
+Sect.  3.2 were used to evaluate the tracking performance. The values of the HOTA, 
+MOTA, IDF1, and IDSW indicators were 74.94%, 90.78%, 85.86%, and 76, respec-
+tively using the original DeepSORT, while they were 79.6%, 92.58%, 95.02%, and 11, 
+respectively using the improved DeepSORT. The improved DeepSORT showed excel-
+lent performance in the first four indicators, with improvements of 4.66%, 1.8%, 9.16%, 
+and 85% in HOTA, MOTA, IDF1, and IDSW, respectively, compared to the original 
+algorithm. The improvement in IDSW was most significant, effectively reducing the 
+problem of frequent IDs. This was very helpful for subsequent fruit-counting tasks and 
+would lead to more accurate fruit-counting results, thus improving the efficiency and 
+accuracy of crop management. Despite using IOU matching one more time than the 
+original, the tracking speed of the improved DeepSORT did not decrease significantly. 
+In conclusion, the improved DeepSORT showed significant improvements in both track-
+ing stability and accuracy.
+Figures 9 and 10 showed the tracking results of test videos 02 and 03 using the origi-
+nal and improved DeepSORT. Both videos had 100 frames. Test video 02 contained 19 
+fruits which were sparsely distributed, and video sequences were captured from right 
+to left. Test video 3 contained 42 fruits which are densely distributed, while video 03 
+sequences were captured from right to left.
+In Fig.  9a and c, the highest ID value by the original DeepSORT was 14, while 
+the maximum ID value by the improved DeepSORT was 10. The original DeepSORT 
+showed discontinuity in ID in the 50th frame, while the ID value by the improved Deep-
+SORT remained continuous. In Fig. 9b and d, the maximum ID value by the improved 
+DeepSORT was 19, while the maximum ID value by the original DeepSORT was 26. 
+The maximum ID value by the original DeepSORT differed from the actual number of 
+fruits by 7 units, while the improved DeepSORT was closer to the actual situation.
+In Fig.  10a and c, the maximum ID value of the original DeepSORT reached 65, 
+which exceeded the ground truth count significantly. However, the maximum ID value 
+of the improved DeepSORT was 40, which was close to the ground truth count (equal to 
+42). In Fig. 10b and d, the maximum ID value of the original DeepSORT was 89, which 
+was more than twice the ground truth count, while the maximum ID of the improved 
+Table 2   Tracking results of improved and original DeepSORT Based on YOLOv5s-little
+Method
+Test video
+HOTA/%↑
+MOTA/%↑
+IDF1/%↑
+IDSW↓
+FPS (f ⋅s−1)↑
+Original DeepSORT
+01
+83.42
+96.24
+97.06
+4
+35
+02
+66.53
+87.58
+75.05
+71
+52
+03
+79.72
+88.52
+94.08
+1
+27
+All
+74.94
+90.78
+85.86
+76
+38
+Improved DeepSORT
+01
+84.25
+96.73
+98.27
+2
+33
+02
+75.57
+90.29
+92.58
+9
+52
+03
+80.69
+90.46
+95.25
+0
+28
+All
+79.6
+92.58
+95.02
+11
+38
+
+1744
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+DeepSORT was 43, which was also close to the ground truth count. In conclusion, the 
+improved DeepSORT can effectively solve the problem of frequent IDs in fruit sparse 
+and dense scenarios.
+(a) Original DeepSORT, Frame 50
+(c) Improved DeepSORT, Frame 50
+(b) Original DeepSORT, Frame 100
+(d) Improved DeepSORT, Frame 100
+Fig. 9   The tracking results of original and improved DeepSORT of test 02
+(a) Original DeepSORT, Frame 50
+(c) Improved DeepSORT, Frame 50
+(b) Original DeepSORT, Frame 100
+(d) Improved DeepSORT, Frame 100
+Fig. 10   The tracking results of original and improved DeepSORT of test 03
+
+1745
+Precision Agriculture (2024) 25:1731–1750	
+1 3
+Evaluation of counting method
+The comparison experiments between the MAX-IDVC approach and our counting method 
+were shown in Fig. 11. The x-axis in Fig. 11 represented the video number, and the y-axis 
+represented the fruit counts. The blue bars represented the ground truth of the fruit count 
+value, while the red bars represented the fruit count values between the two methods 
+including the MAX-IDVC approach and our counting method. The counting accuracy per-
+centage values were shown above each bar.
+According to the results of Fig. 11, our counting method achieved higher counting accu-
+racy than that of the MAX-IDVC method for most videos. In Fig. 11a, the lowest counting 
+accuracy achieved by the MAX-IDVC method is 52.4%, while the highest counting accu-
+racy was 94.7%. In Fig. 11b, our counting method achieved the lowest counting accuracy 
+of 76.2% and the highest counting accuracy of 100%. Statistical average counting accuracy 
+using the MAX-IDVC method was 86.19%, while statistical average counting accuracy 
+using our counting method was 93.28%. Therefore, our counting method can achieve better 
+result than that of the MAX-IDVC method.
+The regression curves between the predicted values and the ground truth count between 
+the maximum ID value counting and the proposed methods were shown in Fig. 12. Fig-
+ure 12a displayed the regression curve between the maximum ID value and the ground 
+truth count, while Fig.  12b showed the regression curve between the proposed method 
+count value and the ground truth count. The R2 value of the regression curve between the 
+maximum ID value and the ground truth count was 0.9419, while the R2 value of the pro-
+posed method was 0.9633, which was higher than that of the maximum ID value regression 
+curve. In addition, the slope of the regression curve of the proposed method was closer to 1 
+than that of the maximum ID value. In conclusion, the proposed method was more accurate 
+in predicting the passion fruit yield.
+Comparison with other MOT method
+FairMOT and TransTrack were chosen for comparison with lightweight YOLOv5s-little 
+and improved DeepSORT. FairMOT (Zhang et al., 2021) consists of two homogeneous 
+branches—one for predicting pixel-level object scores and the other for re-ID features. This 
+(a)
+(b)
+Fig. 11   The counting results of the ground truth and the predicted value. a The MAX-IDVC method. b Our 
+counting method
+
+1746
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+algorithm addresses the fairness issue between these two tasks and achieves high levels of 
+detection and tracking accuracy. On the other hand, TransTrack (Sun et al., 2020) estab-
+lishes a new joint detection and tracking paradigm. TransTrack fully leverages the advan-
+tages of transformer architecture to achieve object detection and object association in a 
+single shot.
+Table 3 shows the comparison of experimental results using our method with FairMOT 
+and TransTrack tracking methods. The best value for each metric is shown in bold. Our 
+method performs the best on four metrics of MOT. Specifically, the HOTA, MOTA, IDF1, 
+and IDSW values of our approach were 79.6%, 92.58%, 95.02%, and 11, respectively. 
+Compared to the FairMOT method, our method improved by 11.56% for HOTA, 7.91% 
+for MOTA, and 19.29% for IDF1, while reducing IDSW by 269. Compared to TransTrack, 
+our method achieved significant improvements of 25.24% for HOTA, 37.22% for MOTA, 
+and 23.67% for IDF1. Additionally, the IDSW values of TransTrack were 351 higher than 
+that of our approach. These comparative results further validated the effectiveness of our 
+method in reducing frequent errors in fruit IDs and improving the accuracy of yield estima-
+tion algorithms.
+Discussion
+While existing fruit counting methods focus on clustered fruits (e.g., tomatoes, etc.), our 
+study focuses on addressing the challenge of counting passion fruit individually. The char-
+acteristics of passion fruit make it similar in color to leaves and occlusion by leaves. To 
+(b)
+(a)
+Fig. 12   The regression curve between the ground truth and the predicted value. a The MAX-IDVC method. 
+b Our counting method
+Table 3   The experimental 
+results of comparison with other 
+tracking methods
+Method
+HOTA/%↑
+MOTA/%↑
+IDF1/%↑
+IDSW↓
+YOLOv5s-
+little + Improved 
+DeepSORT
+79.60
+92.58
+95.02
+11
+FairMOT
+68.04
+84.67
+75.73
+280
+TransTrack
+54.36
+55.36
+71.35
+351
+
+1747
+Precision Agriculture (2024) 25:1731–1750	
+1 3
+address these challenges, three key improvements for passion fruit counting are proposed: 
+model lightweighting, delaying the creation of track and adding a second round of IoU 
+matching to enhance tracking stability, and a counting method based on track informa-
+tion and track state. Our study shows that with these improvements, our proposed method 
+makes significant progress in terms of model lightweight, tracking stability, and counting 
+accuracy.
+First, the YOLOv5s detection model is replaced by a lightweight detector named 
+YOLOv5s-little. In the test set, YOLOv5s-little can effectively detect passion fruit in dense 
+or sparse scenes, and the size of the model is only 0.9 MB. Compared to the lightweight 
+networks such as MobileNet or ShuffleNet (Wang et al., ) based on YOLOv5s, the model 
+of the proposed YOLOv5s-little is smaller in size. While the YOLOv5s-little performs well 
+in that scene, it may not perform well when faced with different lighting or angle changes 
+in different scenes. This may pose a challenge to its application in a wide range of scenes.
+Second, we delay the creation of tracks and add the second round of IoU matching dur-
+ing passion fruit tracking, effectively reducing the frequent error IDs. Table 4 shows the 
+results of the ablation study for the tracking improvement method. The best value for each 
+metric is shown in bold. The original tracker achieved the HOTA of 74.94%, MOTA of 
+90.78%, IDF1 of 85.86%, and IDSW of 76. The value of HOTA and MOTA using the 
+second round of IoU matching increases by 2.89% and 1.68% compared with the original 
+tracker, which indicates that adopting it can get better tracking performance. Delaying the 
+creation of tracks and the second round of IoU matching can further decrease the IDSW 
+to 11. At the same time, the values of HOTA, MOTA, and IDF1 can also be enhanced 
+by 4.66%,1.8%, and 9.16% compared with the original one (Table 4 first row). Therefore, 
+by reducing IDs and improving tracking performance, the improved DeepSORT can con-
+sistently track passion fruit in videos. These enhancements significantly contribute to the 
+accuracy improvement in subsequent counting results. However, when the restricted area is 
+set unreasonably, it limits the generation of new tracks within that area, which might lead 
+to missed detections. Therefore, considering the characteristics of different scenarios, it’s 
+necessary to adjust the restricted area based on the characteristics of different scenes.
+Finally, when using DeepSORT to track each passion fruit, calculating the total number 
+of passion fruits directly based on the maximum ID value leads to inaccurate counting. To 
+solve this problem, a counting method based on track information and track state is pro-
+posed to overcome the double counting problem, and the number of passion fruits using 
+our method is close to manual counting.
+The different classes of MOT algorithms currently available all have their own char-
+acteristics. For example, FairMOT has higher computational efficiency and is able to 
+perform target tracking in real time, but its performance may be poor in complex sce-
+narios. TransTrack is capable of handling large-scale target sets based on Transformer, 
+it may face computational complexity and speed challenges and is not applicable in real 
+Table 4   Ablation study of tracking improvement
+Delaying the creation 
+of tracks
+The second round of 
+IoU matching
+HOTA↑
+MOTA↑
+IDF1↑
+IDSW↓
+74.94
+90.78
+85.86
+76
+√
+74.87
+86.52
+87.94
+29
+√
+77.83
+92.46
+91.30
+33
+√
+√
+79.60
+92.58
+95.02
+11
+
+1748
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+production environments. Compared to these two tracking algorithms, the proposed 
+improved DeepSORT offers an improvement in tracking accuracy while satisfying better 
+real-time performance and can be adapted for use in practical applications.
+When estimating the passion fruit yield, there are two key challenges in video data 
+collection. Firstly, rapid movement of the camera can result in blurred images, making 
+it difficult to capture and detect the fruits. Hence, stabilizing the camera is necessary to 
+ensure accurate fruit detection. Secondly, shooting toward sunlight can result in exces-
+sively dark footage, affecting image quality. To better track the fruits, video capture 
+should avoid shooting toward sunlight.
+In passion fruit yield estimation, it is difficult to fully consider agricultural expertise 
+and specific environmental factors using only machine learning models. In subsequent 
+studies, incorporating human expertise into machine learning processes, such as inte-
+grating the experience of agricultural experts, can significantly improve the accuracy 
+and interpretability of prediction results (Holzinger et al., 2022). This approach not only 
+provides yield-related data, but also delves into the factors that influence plant growth 
+stages, including soil conditions, climate change, and plant pests and diseases. Such 
+insights help to identify the true causality behind yield fluctuations, providing farmers 
+with more targeted support and decision-making advice.
+Conclusion
+This study presents a method for estimating passion fruit yield by combining the light-
+weight YOLOv5s-little detector and an improved DeepSORT algorithm. By adopt-
+ing a lightweight detection network and multi-object tracking techniques, our method 
+achieves accurate passion fruit counting in natural environments. The YOLOv5s-little 
+detector demonstrates excellent performance with 98.9% precision, 98.3% recall, and 
+99.5% mAP@0.5, while the model size is only 0.9MB. The improved DeepSORT algo-
+rithm achieves HOTA of 79.6%, MOTA of 92.58%, IDF1 of 95.02%, and IDSW of 11 
+respectively. A specific counting method based on track information and track state 
+is proposed to overcome the issue of double counting, achieving a statistical average 
+counting accuracy of 95.1%. And the counting results from test videos are highly cor-
+related with the manual counting results ( R2 = 0.96).
+The passion fruit yield estimation method proposed in this study will have a profound 
+impact on the agricultural industry. Issues of model oversizing and double counting in 
+existing methods have been successfully addressed, providing a more stable and real-
+time means of yield estimation for agricultural production. In the future, further optimi-
+zation of the model’s performance will be undertaken by considering additional factors 
+in real-world planting scenarios, such as changes in light and fruit ripeness. Meanwhile, 
+the integration of human expertise into the machine learning process is planned to 
+enhance the accuracy and interpretability of prediction results.
+Funding  Funding was provided by National Natural Science Foundation of China (Grant Nos. 
+61772209, 31600591), Science and Technology Planning Project of Guangdong Province (Grant No. 
+2019A050510034), National College Students Innovation and Entrepreneurship Training Program (Grant 
+No. 202110564025), Key Research and Development Program of Guangzhou (No. 2024B03J1358).
+
+1749
+Precision Agriculture (2024) 25:1731–1750	
+1 3
+References
+Ariza-Sentís, M., Baja, H., Vélez, S., & Valente, J. (2023). Object detection and tracking on UAV RGB 
+videos for early extraction of grape phenotypic traits. Computers and Electronics in Agriculture, 211, 
+108051. https://​doi.​org/​10.​1016/j.​compag.​2023.​108051
+Assunção, E. T., Gaspar, P. D., Mesquita, R. J. M., Simões, M. P., Ramos, A., Proença, H., & Inacio, P. 
+R. M. (2022). Peaches detection using a deep learning technique—a contribution to yield estimation, 
+resources management, and circular economy. Climate, 10(2), 11. https://​doi.​org/​10.​3390/​cli10​020011
+Bewley, A., Ge, Z., Ott, L., Ramos, F., & Upcroft, B. (2016). Simple online and realtime tracking. 2016 
+IEEE international conference on image processing (ICIP) (pp. 3464–3468). IEEE.
+Bezerra, A. D. M., Pacheco Filho, A. J. S., Bomfim, I. G. A., Smagghe, G., & Freitas, B. M. (2019). Agri-
+cultural area losses and pollinator mismatch due to climate changes endanger passion fruit production 
+in the Neotropics. Agricultural Systems, 169, 49–57. https://​doi.​org/​10.​1016/j.​agsy.​2018.​12.​002
+Bochkovskiy, A., Wang, C. Y., & Liao, H. Y. M. (2020). Yolov4: Optimal speed and accuracy of object 
+detection. Preprint retrieved from https://​arxiv.​org/​abs/​2004.​10934
+De Jong, S., Baja, H., Tamminga, K., & Valente, J. (2022). APPLE MOTS: Detection, segmentation and 
+tracking of homogeneous objects using MOTS. IEEE Robotics and Automation Letter, 7(4), 11418–
+11425. https://​doi.​org/​10.​1109/​LRA.​2022.​31990​26
+Egi, Y., Hajyzadeh, M., & Eyceyurt, E. (2022). Drone-computer communication based tomato generative 
+organ counting model using YOLO V5 and deep-sort. Agriculture, 12(9), 1290. https://​doi.​org/​10.​
+3390/​agric​ultur​e1209​1290
+Gao, F., Fang, W., Sun, X., Wu, Z., Zhao, G., Li, G., Li, R., Fu, L., & Zhang, Q. (2022). A novel apple fruit 
+detection and counting methodology based on deep learning and trunk tracking in modern orchard. 
+Computers and Electronics in Agriculture, 197, 107000. https://​doi.​org/​10.​1016/j.​compag.​2022.​
+107000
+Ge, Y., Lin, S., Zhang, Y., Li, Z., Cheng, H., Dong, J., Shao, S., Zhang, J., Qi, X., & Wu, Z. (2022). Track-
+ing and counting of tomato at different growth period using an improving YOLO-deepsort network for 
+inspection robot. Machines, 10(6), 489. https://​doi.​org/​10.​3390/​machi​nes10​060489
+Guo, S., Wang, S., Yang, Z., Wang, L., Zhang, H., Guo, P., Gao, Y., & Guo, J. (2022). A review of deep 
+learning-based visual multi-object tracking algorithms for autonomous driving. Applied Sciences, 
+12(21), 10741. https://​doi.​org/​10.​3390/​app12​21107​41
+He, L., Fang, W., Zhao, G., Wu, Z., Fu, L., Li, R., Majeed, Y., & Dhupia, J. (2022a). Fruit yield prediction 
+and estimation in orchards: A state-of-the-art comprehensive review for both direct and indirect meth-
+ods. Computers and Electronics in Agriculture, 195, 106812. https://​doi.​org/​10.​1016/j.​compag.​2022.​
+106812
+He, L., Wu, F., Du, X., & Zhang, G. (2022b). Cascade-SORT: A robust fruit counting approach using multi-
+ple features cascade matching. Computers and Electronics in Agriculture, 200, 107223. https://​doi.​org/​
+10.​1016/j.​compag.​2022.​107223
+Holzinger, A., Saranti, A., Angerschmid, A., Retzlaff, C. O., Gronauer, A., Pejakovic, V., Medel-Jimenez, 
+F., Krexner, T., Gollob, C., & Stampfer, K. (2022). Digital transformation in smart farm and forest 
+operations needs human-centered AI: Challenges and future directions. Sensors, 22(8), 3043. https://​
+doi.​org/​10.​3390/​s2208​3043
+Koirala, A., Walsh, K. B., Wang, Z., & McCarthy, C. (2019). Deep learning for real-time fruit detection and 
+orchard fruit load estimation: Benchmarking of ‘MangoYOLO.’ Precision Agriculture, 20(6), 1107–
+1135. https://​doi.​org/​10.​1007/​s11119-​019-​09642-0
+Liu, S., Cossell, S., Tang, J., Dunn, G., & Whitty, M. (2017). A computer vision system for early stage grape 
+yield estimation based on shoot detection. Computers and Electronics in Agriculture, 137, 88–101. 
+https://​doi.​org/​10.​1016/j.​compag.​2017.​03.​013
+Liu, T. H., Nie, X. N., Wu, J. M., Zhang, D., Liu, W., Cheng, Y. F., Zheng, Y., Qiu, J., & Qi, L. (2023). 
+Pineapple (Ananas comosus) fruit detection and localization in natural environment based on binocular 
+stereo vision and improved YOLOv3 model. Precision Agriculture, 24(1), 139–160. https://​doi.​org/​10.​
+1007/​s11119-​022-​09935-x
+Liu, X., Chen, S. W., Liu, C., Shivakumar, S. S., Das, J., Taylor, C. J., Underwood, J., & Kumar, V. (2019). 
+Monocular camera based fruit counting and mapping with semantic data association. IEEE Robotics 
+and Automation Letter, 4(3), 2296–2303. https://​doi.​org/​10.​1109/​LRA.​2019.​29019​87
+Luiten, J., Osep, A., Dendorfer, P., Torr, P., Geiger, A., Leal-Taixé, L., & Leibe, B. (2021). HOTA: A higher 
+order metric for evaluating multi-object tracking. International Journal of Computer Vision, 129(2), 
+548–578. https://​doi.​org/​10.​1007/​s11263-​020-​01375-2
+Luo, W., Xing, J., Milan, A., Zhang, X., Liu, W., & Kim, T. K. (2021). Multiple object tracking: A literature 
+review. Artificial Intelligence, 293, 103448. https://​doi.​org/​10.​1016/j.​artint.​2020.​103448
+
+1750
+	
+Precision Agriculture (2024) 25:1731–1750
+1 3
+Padilla, R., Netto, S. L., & da Silva, E. A. B. (2020). A survey on performance metrics for object-detection 
+algorithms. 2020 international conference on systems, signals and image processing (IWSSIP) (pp. 
+237–242). Niterói: IEEE.
+Qi, X., Dong, J., Lan, Y., & Zhu, H. (2022). Method for identifying litchi picking position based on 
+YOLOv5 and PSPNet. Remote Sensing, 14(9), 2004. https://​doi.​org/​10.​3390/​rs140​92004
+Redmon, J., & Farhadi, A. (2018). Yolov3: An incremental improvement. Preprint retrieved from https://​
+arxiv.​org/​abs/​1804.​02767
+Rong, J., Zhou, H., Zhang, F., Yuan, T., & Wang, P. (2023). Tomato cluster detection and counting using 
+improved YOLOv5 based on RGB-D fusion. Computers and Electronics in Agriculture, 207, 107741. 
+https://​doi.​org/​10.​1016/j.​compag.​2023.​107741
+Shen, L., Su, J., He, R., Song, L., Huang, R., Fang, Y., Song, Y., & Su, B. (2023). Real-time tracking and 
+counting of grape clusters in the field based on channel pruning with YOLOv5s. Computers and Elec-
+tronics in Agriculture, 206, 107662. https://​doi.​org/​10.​1016/j.​compag.​2023.​107662
+Sun, P., Cao, J., Jiang, Y., Zhang, R., Xie, E., Yuan, Z., Wang, C., & Luo, P. (2020). Transtrack: Multiple 
+object tracking with transformer. Preprint retrieved form https://​arxiv.​org/​abs/​2012.​15460
+Tan, C., Li, C., He, D., & Song, H. (2022). Towards real-time tracking and counting of seedlings with a one-
+stage detector and optical flow. Computers and Electronics in Agriculture, 193, 106683. https://​doi.​org/​
+10.​1016/j.​compag.​2021.​106683
+Thokchom, R., & Mandal, G. (2017). Production preference and importance of passion fruit (Passiflora 
+edulis): A review. Journal of Agricultural Engineering and Food Technology, 4(1), 27–30.
+Tu, S., Pang, J., Liu, H., Zhuang, N., Chen, Y., Zheng, C., Wan, H., & Xue, Y. (2020). Passion fruit detec-
+tion and counting based on multiple scale faster R-CNN using RGB-D images. Precision Agriculture, 
+21(5), 1072–1091. https://​doi.​org/​10.​1007/​s11119-​020-​09709-3
+Vasconez, J. P., Delpiano, J., Vougioukas, S., & Auat Cheein, F. (2020). Comparison of convolutional neural 
+networks in fruit detection and counting: A comprehensive evaluation. Computers and Electronics in 
+Agriculture, 173, 105348. https://​doi.​org/​10.​1016/j.​compag.​2020.​105348
+Wang, D., & He, D. (2021). Channel pruned YOLO V5s-based deep learning approach for rapid and accu-
+rate apple fruitlet detection before fruit thinning. Biosystems Engineering, 210, 271–281. https://​doi.​
+org/​10.​1016/j.​biosy​stems​eng.​2021.​08.​015
+Wang, L., Zhao, Y., Xiong, Z., Wang, S., Li, Y., & Lan, Y. (2022a). Fast and precise detection of litchi fruits 
+for yield estimation based on the improved YOLOv5 model. Frontiers in Plant Science, 13, 965425. 
+https://​doi.​org/​10.​3389/​fpls.​2022.​965425
+Wang, Z., Jin, L., Wang, S., & Xu, H. (2022b). Apple stem/calyx real-time recognition using YOLO-v5 
+algorithm for fruit automatic loading system. Postharvest Biology and Technology, 185, 111808. 
+https://​doi.​org/​10.​1016/j.​posth​arvbio.​2021.​111808
+Wang, X., Wu, Z., Jia, M., Xu, T., Pan, C., Qi, X., & Zhao, M. (2023). Lightweight SM-YOLOv5 tomato 
+fruit detection algorithm for plant factory. Sensors, 23(6), 3336. https://​doi.​org/​10.​3390/​s2306​3336
+Wojke, N., Bewley, A., & Paulus, D. (2017). Simple online and realtime tracking with a deep association 
+metric. 2017 IEEE international conference on image processing (ICIP) (pp. 3645–3649). IEEE.
+Yang, H., Chang, F., Huang, Y., Xu, M., Zhao, Y., Ma, L., & Su, H. (2022). Multi-object tracking using 
+Deep SORT and modified CenterNet in cotton seedling counting. Computers and Electronics in Agri-
+culture, 202, 107339. https://​doi.​org/​10.​1016/j.​compag.​2022.​107339
+Zhang, W., Wang, J., Liu, Y., Chen, K., Li, H., Duan, Y., Wu, W., Shi, Y., & Guo, W. (2022). Deep-learning-
+based in-field citrus fruit detection and tracking. Horticulture Research, 9, 1–10.
+Zhang, Y., Wang, C., Wang, X., Zeng, W., & Liu, W. (2021). FairMOT: On the fairness of detection and 
+re-identification in multiple object tracking. International Journal of Computer Vision, 129(11), 3069–
+3087. https://​doi.​org/​10.​1007/​s11263-​021-​01513-4
+Zhou, Z., Song, Z., Fu, L., Gao, F., Li, R., & Cui, Y. (2020). Real-time kiwifruit detection in orchard using 
+deep learning on Android™ smartphones for yield estimation. Computers and Electronics in Agricul-
+ture, 179, 105856. https://​doi.​org/​10.​1016/j.​compag.​2020.​105856
+Publisher’s Note  Springer Nature remains neutral with regard to jurisdictional claims in published maps and 
+institutional affiliations.
+Springer Nature or its licensor (e.g. a society or other partner) holds exclusive rights to this article under 
+a publishing agreement with the author(s) or other rightsholder(s); author self-archiving of the accepted 
+manuscript version of this article is solely governed by the terms of such publishing agreement and applicable 
+law.

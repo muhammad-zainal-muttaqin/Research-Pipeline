@@ -1,0 +1,746 @@
+Surveying Apple Orchards with a Monocular Vision System
+Pravakar Roy and Volkan Isler
+Abstract— We present computer vision algorithms to collect
+yield related information in an apple orchard using images
+collected from a single camera. The goal of our system is
+to give farmers the capability to use their phones or digital
+cameras to record images and obtain yield related parameters.
+There are two challenges in this setup which necessitate novel
+methods: (i)
+It is very difﬁcult to generate dense matches
+using standard image features. (ii) The constrained geometry
+of the setup causes existing structure from motion algorithms
+to fail. We present a novel structure from motion technique to
+register and reconstruct the apples which is used for extracting
+count and diameter information. We validate our approach by
+presenting results from multiple ﬁeld trials.
+I. INTRODUCTION
+Modern precision agriculture techniques are revolutioniz-
+ing farming by enabling farmers to collect, on demand, high-
+resolution data about the status of their crops. Access to
+such data helps in decision making for irrigation, fertilizer
+application, harvesting and sales. It also allows farmers to
+detect fruit diseases and nutrient deﬁciencies. In this work,
+we focus particularly on yield estimation in specialty farms
+such as apple orchards. We present a convenient method with
+which a farmer can collect images from a single camera (e.g.
+using a phone as shown in Figure 1) and obtain information
+regarding fruit count and size. Obtaining this information
+before harvest allows the farmer to make decisions regarding
+the number of pickers, the number of storage bins and
+make sales contracts early in the season. The information
+obtained also helps horticulture scientists by automating data
+collection e.g. for phenotyping.
+Extracting yield related data is challenging. As a result,
+most existing methods operate under controlled lighting and
+imaging conditions (for example, they operate at night with
+artiﬁcial lighting). Others rely on stereo vision and active
+sensors such as laser scanners. Such systems, reviewed in
+Section II, are costly and not very convenient. The goal
+of the work presented in this paper is to provide farmers
+a mechanism to obtain yield-related data using only a single
+camera. Undoubtedly, cameras are the most widely used and
+one of the cheapest sensors available. Almost every phone
+today has a high resolution color camera good enough for
+data collection. We present computer vision techniques to
+extract yield and count information from such images.
+Estimating Structure from Motion (SfM) is a fundamental
+problem in computer vision [1]. In a standard SfM pipeline
+The authors are with the Department of Computer Science and
+Engineering,
+University
+of
+Minnesota,
+Minneapolis,
+MN,
+USA.
+{proy,isler}@cs.umn.edu.
+This material is based upon work supported by the National Science
+Foundation under Grant No. 1317788 and MnDrive RSAM initiative.
+Fig. 1: An example usage of our system where a smartphone
+is used for collecting images. Our system extracts apple
+count and diameter information from such footage.
+(Figure 3(a)) features such as Harris corners, SIFT [2] or
+SURF [3] are detected and matched across images. These
+matches are then used to estimate the geometry of the
+scene. Such methods fail in our application for two reasons:
+(i) Features: Often, point features such as SURF and SIFT
+are not detected on apples. Even when found, in the presence
+of occlusions and specularities these features can generate
+zero or false matches. Remaining correct matches are too
+sparse to estimate diameters. (ii) Geometry:
+baseline SfM
+methods fail to align dense apple clusters across multiple
+frames resulting in the same apple being registered multiple
+times (Figure 4).
+Our primary contribution is a novel SfM pipeline where
+apple contours are directly used for generating dense point
+matches. These matches are then used for estimating the mo-
+tion of the camera and reconstructing the apples in 3D. Our
+method is the ﬁrst among such methods where fruit diameter
+information is obtained from images from a monocular
+camera. It should be noted that reconstruction from a single
+camera is bound to have global scale ambiguity (we can not
+know the scale without knowing the distance to the scene
+and vice versa). Our method ﬁxes the reconstruction scale
+across the images, and normalizes the sizes with respect to
+a reference apple. This apple can be identiﬁed and measured
+by the user in order to obtain diameter information in a given
+unit (e.g. centimeters). We present results which validate our
+methods with footage obtained from a tablet and monocular
+cameras in multiple ﬁeld trials.
+We start with an overview of related work.
+II. RELATED WORK
+There has been signiﬁcant recent activity for automating
+yield estimation [4]–[6]. Wang et al. [7] presented a system
+for apple yield estimation. Their system uses a side facing,
+CONFIDENTIAL. Limited circulation. For review only.
+Preprint submitted to 12th Conference on Automation Science and Engineering.
+Received March 28, 2016.
+
+wide-baseline vertical stereo rig mounted on an autonomous
+ground vehicle. It operates in controlled artiﬁcial illumination
+settings at night. In addition to count information, the stereo
+system extracts fruit sizes. Hung et al. [8] presented a feature
+based learning approach for identiﬁcation of red and green
+apples and extraction of fruit count. Das et al. [9] developed a
+sensor suite for extracting plant morphology, canopy volume,
+leaf area index and fruit count that consists of a laser range
+scanner, multi-spectral cameras, a thermal imaging camera
+and navigational sensors. In contrast, our goal is to extract
+count and diameter from a single camera.
+Jimenez et al. [10] present a survey of existing computer
+vision methods for locating fruit on trees. In particular, Mao
+et al. [11] developed methods for detecting Fuji apples based
+on color. However, these methods rely on images taken from
+a high-resolution camera mounted on a tripod and they only
+estimate yield in a single image. It is difﬁcult to use such
+methods to obtain yield across the farm because multiple
+images can have overlapping fruit. In [12], a system for esti-
+mating the number of apples from color images in orchards
+under natural illumination was developed. This technique is
+also applicable on single images. The authors avoid specular
+lighting conditions by capturing images close to sunset. Our
+work does not rely on any particular assumption about the
+time of day or the position of the sun.
+We have built a proof of concept system where a UAV
+equipped with a stereo pair captures images of apple trees,
+registers them in image space, and estimates the count and
+diameter of the apples [13]. In this paper, we remove the
+need for stereo. We ﬁrst present an improved method for
+aligning apples across the images. Next, we present a new
+SfM pipeline to reconstruct the apples. This is then used
+to estimate diameters measured with respect to a reference
+apple.
+III. PROBLEM FORMULATION AND ASSUMPTIONS
+In developing our algorithms, we made a few assumptions
+about the setup. First, we assume that the camera is intrin-
+sically calibrated. While auto-calibration techniques can be
+incorporated into the pipeline, we have not investigated this
+extension yet. It should also be noted that newer platforms
+such as Google Tango Tablet are making calibration param-
+eters available to developers. As a result of the calibration
+assumption, we require the camera to have ﬁxed focus. A
+camera whose focus changes dynamically (i.e auto-focus)
+is not compatible with our system. Most of the cameras in
+smart phones and tablets have ﬁxed focal length and can be
+used for data collection (the auto-focus functionality in these
+cameras does not change the true focal length and camera
+center). Cameras with variable focal length can be used after
+ﬁxing the zoom and focus. We have used the calibration
+toolbox and the standard chessboard pattern to calibrate the
+cameras [14].
+We do not make any assumptions regarding environmental
+(e.g. illumination) conditions. The goal of the work presented
+in this paper can be summarized as: Given a sequence of
+images from a calibrated monocular camera, register all
+apples, estimate their counts and ﬁnd their diameters up to a
+user deﬁned scale. As a by product, the observed apples are
+reconstructed up to a scale. For exact estimation of diameters,
+users can choose to scale the scene up or down according to
+metric measurements.
+IV. OVERVIEW OF THE APPROACH
+As mentioned earlier, we have previously developed a
+system for counting and diameter estimation using a stereo
+camera system. We utilize the preprocessing and post-
+processing components of this system which can be found
+in our technical report [13].
+The primary components of our approach are:
+1) Preprocessing involving the segmentation of input
+images to identify image contours containing apple
+clusters.
+2) Apple clusters in consecutive segmented images are
+matched to compute dense features. This step is per-
+formed by computing an afﬁne transformation to align
+two matching contours.
+3) The dense features along with segmented images are
+then input to our SfM pipeline which registers the
+images and produces a reconstruction (up to a scale)
+4) (Optional) The reconstruction is scaled by the user.
+5) Post-processing: after reconstruction, the apples are
+counted and their diameters estimated.
+Our contributions in this paper are the intermediate steps
+2 and 3 which involve reconstruction using images from a
+single camera. We also investigate step 4 in section VIII.
+V. COMPUTATION OF DENSE FEATURE MATCHES
+In an orchard setting, usually only the frontal views of
+the apple clusters are available. Even from a few meters, the
+depth change in the visible portion of an apple is negligible
+and the apple geometry can be approximated by a circle
+lying on a plane. This allows us to make the assumption
+that matching apples across individual apple clusters in
+consecutive images are related by an afﬁne transformation. In
+our earlier work [13], we have used exhaustive search to ﬁnd
+the best afﬁne transformation. In order to speed up process,
+we switched to an nonlinear optimization method based
+on Gauss-Newton gradient descent as described in [15].
+In this section, we present the equations for apple contour
+alignment.
+Given two apple contours, the afﬁne transformation relat-
+ing them is parameterized in the following way,
+A(p) =
+1 + p1
+p3
+p5
+p2
+1 + p4
+p6
+
+We seek the transformation A which minimizes
+X
+¯x
+[I2(¯x) −I1(A(¯x))]2
+(1)
+where, I1 and I2 are the corresponding apple clusters and ¯x is
+the homogeneous vector representation of image coordinates
+[u, v, 1]T . Here, I2 can be thought of as a template and
+I1 as an image that is to be aligned to the template after
+CONFIDENTIAL. Limited circulation. For review only.
+Preprint submitted to 12th Conference on Automation Science and Engineering.
+Received March 28, 2016.
+
+going through the afﬁne transformation A. Note that we seek
+to compute a separate afﬁne transformation for each apple
+cluster. The inverse compositional algorithm [15] seeks to
+minimize,
+argmin∆p
+X
+x
+[I2(A(∆p)¯x) −I1(A(p)¯x)]2
+(2)
+here ∆p is the incremental transformation to be applied
+to the existing afﬁne warp A(p). This warp is applied in the
+following way:
+A(p) ←A(p) ∗A(∆p)−1
+As evident from the name, the incremental warp has to be
+inversed before composing with current warp. Performing a
+ﬁrst order Taylor expansion of equation (2) we get,
+X
+¯x
+
+I2(A(0)¯x) + ∆I2
+δA
+δp −I1(A(p)¯x)
+2
+If we assume that the initial warp A(0) is identity, the
+incremental warp ∆p can be computed as a least square
+solution to the above equation,
+∆p = H−1 X
+¯x
+
+∆I2
+δA
+δp
+T
+[I1(A(p)¯x) −I2(¯x)]
+where the Hessian is
+H =
+X
+¯x
+
+∆T δA
+δp
+T 
+∆T δA
+δp
+
+The details of the algorithm can be found in the inverse
+compositional algorithm section in
+[15]. In step (2) of
+the inverse compositional algorithm [15] the error image is
+obtained as plain subtraction (i.e I1(A(p)∗¯x)−I2(¯x)). This
+step is changed in our implementation to penalize the warps
+that map the image points outside the template. We impose
+a heavy cost whenever, the warped points are outside the
+template.
+Following the computation of dense matches, we can
+formulate an afﬁne hierarchy between the matching con-
+tours across images and identify them uniquely. Figure 2(b)
+shows such an example. Afﬁne transformation A1
+1,2 maps
+contour C1 in image I1 to I2 and afﬁne transformation
+A1
+2,3 maps contour C1 from image I2 to I3. Therefore the
+afﬁne transformation relating contour C1 from frame I1
+to frame I3 is A1
+1,2 ∗A1
+2,3. We emphasize the novelty of
+our approach that different contours are related by different
+afﬁne transformations (For contour C2 we have a different
+afﬁne hierarchy). The obtained dense matches and segmented
+images are next fed into our novel SfM pipeline, which is
+discussed in the next section.
+VI. THE STRUCTURE FROM MOTION PIPELINE
+Most of the standard feature based sequential SfM
+pipelines operate by selecting a pair of good initial frames
+for reconstruction (Figure 3(a)) [16]. After reconstructing
+the initial structure, each additional frame is matched to the
+frames already used in reconstruction. The reprojection error
+between reconstructed world points and matching points in
+the new frame is minimized to recover the camera pose
+and introduce new points to the structure
+[17]. Another
+standard approach, is to do two/three view reconstruction
+and then merging them using the constraints enforced by
+the common view [18]. Both these standard approaches
+work well for sparse reconstructions in the presence of large
+number of non-planar features. In contrast we have dense
+features from apples but many of them are planar. These
+standard approaches fail to align the reconstructed apples in
+different frames even with the aid of costly non-linear bundle
+adjustment (Fig. 4).
+To resolve this problem, we propose a novel piecewise
+incremental structure from motion pipeline (Figure 3(b)).
+Similar to most incremental methods, our pipeline operates
+by pairwise reconstruction and merging the reconstructed
+point-clouds. As the cameras are calibrated, reconstructed
+points in different reference frames differ from each other by
+a similarity transformation. Our merging procedure utilizes
+the obtained afﬁne relationship in the previous step to merge
+the reconstructions. Instead of solving for the transformation
+between two reference frames, we solve for the transfor-
+mation between the matching apple clusters and align them
+individually.
+Our novel pipeline for dense structure from motion has
+three steps:
+1) Keyframe selection and pairwise reconstruction
+2) Alignment of reconstructed point-clouds using cluster-
+wise transformation
+3) Computation of overall camera motion and optional
+bundle adjustment
+We describe each of these steps in details in the following:
+A. Keyframe Selection and Pairwise Reconstruction
+To do precise reconstruction from an image sequence
+we need to ensure that frames within a pair satisfy the
+epipolar constraints, and have sufﬁcient parallax between
+each other. Given the image sequence I1, I2, ..., In we choose
+an arbitrary frame Im where m ∈{1, 2, ...n}, as the ﬁrst
+frame. Then we ﬁnd another frame Im+i which is consistent
+with frame m in terms of epipolar constraints. We perform
+pairwise reconstruction in the following way:
+1) As the correspondence problem has already been
+solved in a previous step, we have dense feature
+matches between the images. To ensure enough paral-
+lax we compute both essential matrix E [19] and ho-
+mography between the images and then check whether
+they satisfy the Geometric Robust Information Cri-
+terion (GRIC) deﬁned by Torr [20]. This criterion
+CONFIDENTIAL. Limited circulation. For review only.
+Preprint submitted to 12th Conference on Automation Science and Engineering.
+Received March 28, 2016.
+
+(a) Matching between contours.
+(b) Afﬁne Map
+(c) Dense matching between images
+Fig. 2: Computation of dense matching through afﬁne transformation. For clarity only 10% of the matches are shown.
+(a) A standard PnP based SfM pipeline
+(b) Our piecewise incremental SfM pipeline
+Fig. 3: Comparison of a common SfM pipeline and our pipeline. On Fig(a) we show a common structure from motion
+pipeline. It operates by constructing an initial structure. Then it incrementally augments the structure by adding new points
+from subsequent frames by solving the Perspective n Point (PnP) 2D to 3D correspondence problem. In the ﬁgure, matching
+points p,q and their reconstruction X is shown. The next camera pose is determined by minimizing the reprojection of the
+world point X to matching image point r. On Fig(b) we show Our SFM pipeline. Instead of aligning entire frames, we
+align the apple clusters individually. The average scale factor of these individual alignments are used to align non-matching
+clusters.
+basically makes sure that the essential matrix is mod-
+elling the relationship between the frames better than
+homography. If the frames do not satisfy GRIC, we
+skip the current frame and move to the next one.
+2) We decompose E to ﬁnd the R and t between the
+cameras as described in section 9.6.2 of [21].
+CONFIDENTIAL. Limited circulation. For review only.
+Preprint submitted to 12th Conference on Automation Science and Engineering.
+Received March 28, 2016.
+
+(a) Reference view to which we
+align other views
+(b) An image obtained by re-
+projecting 3d points produced by
+baseline incremental SfM
+(c) An image obtained by re-
+projecting 3d points produced by
+baseline PnP based SfM
+(d) Same image obtained from our
+pipeline
+Fig. 4: Failure of baseline incremental SfM and PnP based methods to align dense apple clusters. Fig(a) shows the reference
+image to which we project all the 3D points from our reconstruction. Fig(b) shows a reprojected image frame from the
+baseline incremental SfM reconstruction and Fig(c) shows a reprojected image frame from a PnP based reconstruction. Both
+images contain same apples multiple times (some of them are shown in rectangular boxes) which shows the inability of
+these methods to register the clusters successfully. In Fig(d) we show the same image in Fig. 4 obtained from our pipeline.
+It solves the problem of multiple registration of the same apples observed while applying the baseline methods.
+3) While decomposing E, if we ﬁnd that, determinant(E)
+is not close to zero (we use determinant(E)< 1e−10),
+or the two singular values (we use singular value ratio
+<= .9) of E are not identical we reject the essential
+matrix and go to step 6.
+4) Decomposition of E yields four combinations of R
+and t. We triangulate using each of these combinations
+and check for the cheriality condition (we checked
+whether 99% of the reconstructed points are in front of
+the camera). If we ﬁnd a valid triangulation with low
+average reprojection error (the threshold we use is 1.00
+pixels), we reconstruct using the obtained projection
+matrices.
+5) We impose one additional constraint on the triangula-
+tion angle to ensure the robustness of the reconstructed
+structure. Triangulated points for which the triangula-
+tion angle is within ﬁve to sixty degrees are kept and
+the rest are discarded. This is done to protect against
+parallel and vertical triangulation rays that lead to poor
+structure [22].
+6) If we do not ﬁnd a valid triangulation or we reject the
+essential matrix because of not satisfying the criteria
+in step 4, we discard the current frame and move to
+the next one.
+Following these steps we reconstruct using the matches
+from the image pair, <
+Im, Im+i
+>. We assume our
+world/reference frame is the ﬁrst camera frame. Next, we
+look for a subsequent frame which is consistent with frame
+Im+i using the same procedure described above and recon-
+struct from the found pair. If none of the subsequent image
+frames are consistent with frame Im+i, we discard one of the
+initial frames (e.g discard Im+i and ﬁnd a new suitable frame
+for pairwise reconstruction with frame Im and continue in
+this way). As mentioned previously, the ﬁrst camera frame
+used for reconstructing the initial pair acts as the frame of
+reference. Proceeding this way, we have multiple pairwise
+reconstructions, none of which are aligned. In the following
+section, we describe how to align these reconstructed point-
+clouds.
+B. Alignment of reconstructed point-clouds using cluster-
+wise transformation
+The alignment proceeds by calculating the transformation
+T Cm
+i,j
+between matching reconstructed apple cluster Cm
+between reference frame i and j. Let
+iCm denote the
+reconstructed cluster in reference frame i and jCm denote
+the reconstructed cluster in reference frame j. Here, the
+reference frames also denote corresponding camera reference
+frames. The reconstruction in reference frame i is obtained
+from image pairs < Ii, Ij > and reconstruction in reference
+frame j is obtained from pair < Ij, Ik >. So,
+iCm =
+iRj
+jCm + λi
+iTjorg
+(3)
+CONFIDENTIAL. Limited circulation. For review only.
+Preprint submitted to 12th Conference on Automation Science and Engineering.
+Received March 28, 2016.
+
+Fig. 5: Dense reconstruction from our pipeline. We show
+a sample reconstruction of three trees from our novel SfM
+pipeline. The circles are shown for illustration purposes.
+where iRj,i Tjorg is the rotation and translation mapping
+reference frame j to i, λi is the lost scale factor while
+extraction of translation from essential matrix. If i is our
+base reference frame (i.e all other reconstructions will be
+mapped to this frame), without loss of generality we can set
+λi = 1. All other frames will be reconstructed up to the scale
+of the initial reconstruction in base frame i. Moving onto the
+next reconstruction of cluster Cm in reference frame j,
+jCm =
+jRk
+kCm + λj
+jTkorg
+(4)
+Replacing the value of jCm in equation (3) from equa-
+tion (4) we obtain:
+iCm =
+iRj(jRk
+kCm + λj
+jTkorg) + λi
+iTjorg
+(5)
+Using the correspondences from the cluster Cm in equa-
+tion (5) we can solve for the scale factor λj. Then the points
+in reconstruction of jCm in reference frame j which do not
+correspond to any points in iCm can be aligned to base
+frame i using the right side of equation (5). An illustration of
+this procedure can be found in Figure 3(b). As equation (5)
+uses only correspondences within a cluster Cm and therefore
+the obtained scale is local with respect to the reconstructed
+points in iCm. If we average all of these local scales, we
+will obtain a scale consistent across the entire point-cloud.
+This scale is used to align point-clouds of clusters that do
+not have corresponding matching clusters in the previous
+reconstruction.
+C. Computation of overall camera motion and optional
+bundle adjustment
+The retained overall scale in the previous step deﬁnes the
+additional camera pose up to a consistent scale. The pose
+for camera k is, jTk =
+h
+jRk|λj
+GTkorg
+i
+, where λG denote
+the overall scale. In conventional incremental SfM, this step
+is followed by a bundle adjustment [23]. The robustness of
+the piecewise alignment enables us to skip this step. Figure 8
+shows, even without bundle adjustment the reprojection error
+is much lower than the baseline incremental and PnP based
+methods. Nevertheless, we perform bundle adjustment as
+the ﬁnal step of the reconstruction procedure. It helps to
+remove small drifts in the camera motion resulting in robust
+estimation of both structure and motion (Fig. 7).
+VII. COUNTING AND DIAMETER ESTIMATION
+Once we obtain the full structure from all the frames, we
+are in a good position to estimate the count and diameter of
+the apples.
+For counting the number of apples, the counting method
+in [13] is used. The method takes registered segmented apple
+images as input. As we have already registered the apples in
+3D space, it is trivial to generate the 2D registered images.
+We divide our total structure into arbitrary portions and
+project the 3D point-clouds of apple clusters to a camera
+frame where they are visible.
+As apple clusters are tricky to separate into individual
+apples, we select only single apples for diameter estimation.
+This is ensured by the counting method. To compute the
+diameters, we use the diameter estimation method in [13].
+This method essentially ﬁnds the pixel diameter and average
+depth of the pixels within the apple. Then it projects the
+pixel diameter to average depth to ﬁnd the metric diameter.
+As our reconstruction is only up to a scale, the obtained
+diameter is also deﬁned upto a scale. We ﬁx the diameter of
+a random apple in metric unit to obtain the required scale
+factor. This scale factor is used to convert our obtained up to
+scale diameters to metric units. The metric diameter of the
+random apple is a user input in our estimation system. In
+the section, VIII-B we evaluate our counting and diameter
+estimation procedures rigorously.
+VIII. EXPERIMENTAL RESULTS
+As outlined previously our main contribution in this paper,
+is a novel sequential structure from motion pipeline for
+reconstruction in orchard settings. Utilizing, this pipeline we
+obtain a dense reconstruction of orchard rows and estimate
+fruit counts and diameters. We collected many different data
+sets using stereo (for ground truth of diameter data) and
+monocular cameras. In this paper we have used two datasets:
+• Dataset1 primarily contains red Apples. Total number
+of images are 965. Sample images from the dataset are
+shown in Fig. 6. These images covers a full row of an
+orchard.
+• Dataset2 contains a mixture of red and green apples.
+Total number of images are 464. Sample images from
+the dataset are shown in Fig. 6. This dataset covers one
+block containing six trees.
+We tested both our SfM pipeline and yield estimation
+capabilities using these two data sets.
+A. Evaluation of the novel SfM pipeline
+Our SfM pipeline uses a piecewise incremental process
+to recover camera motion and scene structure. The ﬁgures
+CONFIDENTIAL. Limited circulation. For review only.
+Preprint submitted to 12th Conference on Automation Science and Engineering.
+Received March 28, 2016.
+
+Fig. 6: Sample images from used datasets. The ﬁgure on left shows a sample image from Dataset1 primarily containing red
+apples. The ﬁgure on right shows a sample image from Dataset2 containing a mixture of red and green apples.
+(Fig. 7, 8) are produced from over 200 frames in Dataset2.
+The ﬁgures show only the keyframes selected by our SfM
+pipeline. Even without the aid of bundle adjustment the
+reprojection error (Fig. 8) is very low. However, the camera
+motion without bundle adjustments have small drifts as
+shown in Fig. 7. The bundle adjustment procedure eliminates
+these small drifts and corrects the camera motion and scene
+structure.
+Fig. 7: The computed camera motion with and without
+bundle adjustment. Bundle adjustment removes the drifts in
+camera motion.
+We compare our method with the two popular base-
+line methods: incremental SfM and PnP based SfM. Both
+methods are implemented with full bundle adjustment after
+addition of each new frame. The results show that even
+without bundle adjustment our piecewise incremental method
+has far lower reprojection error than the baseline methods
+(Fig. 8).
+B. Field results for apple count and diameter estimation
+As discussed earlier, the full description of the counting
+and diameter estimation algorithm is beyond the scope of this
+paper. For details of these methods please see [13]. Field
+Fig. 8: Reprojection error comparison. Our piecewise incre-
+mental method performs better than both baseline methods
+even without bundle adjustment. Bundle adjustment though
+reduces the reprojection error further and helps to correct the
+small drifts and smooth camera motion as shown in Fig. 7.
+trials have shown that the counting accuracy for Dataset1
+(containing red apples only) and Dataset2 (containing both
+red and green apples) is 85.87% and 81.3492%.
+For evaluating diameter estimation using monocular cam-
+eras, we use stereo data as ground truth. The diameters from
+our SfM reconstruction is only up to a scale. To ﬁx the
+scale, we randomly choose an apple and ﬁnd the metric
+value of its diameter. The ratio of the obtained diameter
+from our pipeline and this metric value provides us with
+the scale factor needed to scale our diameter data. Fig.
+9
+shows the histogram of obtained diameters from stereo and
+single camera. We compared the diameters of hundred single
+apples from the Datasets. The results show that the mean
+difference between monocular and stereo diameter is +.90
+centimeters(cm) and the standard deviation is ±2.9 cm. To
+ﬁnd the dissimilarity between the two distributions more
+rigorously, we used earth mover’s distance [24]. The found
+dissimilarity between the two distribution is .65. In other
+words, to morph one distribution into another, the average
+distance per weight in the horizontal axis is less than one.
+Using only one apple to scale up the scene can be
+susceptible to noise. To get accurate estimates we may need
+to choose multiple apples, ﬁnd their actual diameter and ﬁnd
+CONFIDENTIAL. Limited circulation. For review only.
+Preprint submitted to 12th Conference on Automation Science and Engineering.
+Received March 28, 2016.
+
+Fig. 9: Comparison of diameter estimation from Monocular
+Camera (top-left) with Stereo (top-right). Middle row: The
+scale can be estimated by measuring apples as ground
+truth. The error as a function number of apples used to
+estimate the scale. With four or more measurements, the
+error drops below one centimeter. Bottom row: The scaled
+diameter estimation from our method (left) and a side by
+side comparison of obtained histograms (right).
+the average scale factor. Figure 9 shows how the error in
+the monocular estimate decreases with increasing number of
+apples used for estimating scale. The results indicate that if
+we use more than four ground truth apples, the error drops
+below one cm.
+IX. CONCLUSION
+This paper presented ﬁrst results for a system which can
+produce yield estimates from monocular images. The system
+provides count information and a distribution of the relative
+size. If the absolute size is required, the only input required
+from the farmer would be the true size of a single measured
+apple. From a technical viewpoint, our main contribution
+is a method to reconstruct the structure of the fruit by
+generating dense matches from contour correspondences.
+The techniques described in this paper require cameras to be
+calibrated. They are also executed ofﬂine after data collec-
+tion. In future, we would like to extend these techniques for
+non-calibrated cameras. We are also interested in real time
+implementations (using GPU available on smartphones) so
+that the application runs directly on the platform while data
+is being collected.
+X. ACKNOWLEDGEMENT
+The authors thank Professors Emily Hoover, Cindy Tong
+and James Luby from Department of Horticultural Science,
+University of Minnesota, for their expertise and help with
+the experiments.
+REFERENCES
+[1] T. S. Huang and A. N. Netravali, “Motion and structure from feature
+correspondences: A review,” Proceedings of the IEEE, vol. 82, no. 2,
+pp. 252–268, 1994.
+[2] H. Bay, T. Tuytelaars, and L. Van Gool, “Surf: Speeded up robust
+features,” in Computer vision–ECCV 2006.
+Springer, 2006, pp. 404–
+417.
+[3] D. G. Lowe, “Object recognition from local scale-invariant features,”
+in Computer vision, 1999. The proceedings of the seventh IEEE
+international conference on, vol. 2.
+Ieee, 1999, pp. 1150–1157.
+[4] D. Ball, P. Ross, A. English, T. Patten, B. Upcroft, R. Fitch,
+S. Sukkarieh, G. Wyeth, and P. Corke, “Robotics for sustainable broad-
+acre agriculture,” Proceedings of Field and Service Robotics (FSR
+2013), pp. 1–14, 2013.
+[5] M. Bergerman, S. Singh, and B. Hamner, “Results with autonomous
+vehicles operating in specialty crops,” in IEEE International Confer-
+ence on Robotics and Automation (ICRA).
+IEEE, 2012, pp. 1829–
+1835.
+[6] M. Bergerman, E. Van Henten, J. Billingsley, J. Reid, and D. Ming-
+cong, “Ieee robotics and automation society technical committee on
+agricultural robotics and automation,” IEEE Robotics and Automation
+Magazine, vol. 20, no. 2, pp. 20–23, 2013.
+[7] Q. Wang, S. Nuske, M. Bergerman, and S. Singh, “Automated
+crop yield estimation for apple orchards,” in Experimental Robotics,
+ser. Springer Tracts in Advanced Robotics, J. P. Desai, G. Dudek,
+O. Khatib, and V. Kumar, Eds.
+Springer International Publishing,
+2013, vol. 88, pp. 745–758.
+[8] C. Hung, J. Underwood, J. Nieto, and S. Sukkarieh, “A feature learning
+based approach for automated fruit yield estimation,” in Field and
+Service Robotics.
+Springer, 2015, pp. 485–498.
+[9] J. Das, G. Cross, C. Qu, A. Makineni, P. Tokekar, Y. Mulgaonkar, and
+V. Kumar, “Devices, systems, and methods for automated monitoring
+enabling precision agriculture,” in Proceedings of IEEE Conference
+on Automation Science and Engineering, 2015.
+[10] A. Jimenez, R. Ceres, and J. Pons, “A survey of computer vision
+methods for locating fruit on trees,” Transactions of the ASAE-
+American Society of Agricultural Engineers, vol. 43, no. 6, pp. 1911–
+1920, 2000.
+[11] W. Mao, B. Jia, X. Zhang, and X. Hub, “Detection and position method
+of apple tree image,” in Computer and Computing Technologies in
+Agriculture II, Volume 2, ser. IFIP Advances in Information and
+Communication Technology, D. Li and C. Zhao, Eds.
+Springer US,
+2009, vol. 294, pp. 1039–1048.
+[12] R. Linker, O. Cohen, and A. Naor, “Determination of the number of
+green apples in rgb images recorded in orchards,” Comput. Electron.
+Agric., vol. 81, pp. 45–57, Feb. 2012.
+[13] P. Roy, N. Stefas, C. Peng, H. Bayram, P. Tokekar, and V. Isler,
+“Robotic surveying of apple orchards,” University of Minnesota,
+Department of Computer Science, Tech. Rep., 07 2015.
+[14] Z. Zhang, “A ﬂexible new technique for camera calibration,” Pattern
+Analysis and Machine Intelligence, IEEE Transactions on, vol. 22,
+no. 11, pp. 1330–1334, 2000.
+[15] S. Baker and I. Matthews, “Lucas-kanade 20 years on: A unifying
+framework,” International journal of computer vision, vol. 56, no. 3,
+pp. 221–255, 2004.
+[16] D. Scaramuzza and F. Fraundorfer, “Visual odometry [tutorial],”
+Robotics & Automation Magazine, IEEE, vol. 18, no. 4, pp. 80–92,
+2011.
+[17] L. Quan and Z. Lan, “Linear n-point camera pose determination,”
+Pattern Analysis and Machine Intelligence, IEEE Transactions on,
+vol. 21, no. 8, pp. 774–780, 1999.
+[18] S. N. Sinha, D. E. Steedly, and R. S. Szeliski, “Multi-stage linear
+structure from motion,” Sept. 16 2014, uS Patent 8,837,811.
+[19] D. Nist´er, “An efﬁcient solution to the ﬁve-point relative pose prob-
+lem,” Pattern Analysis and Machine Intelligence, IEEE Transactions
+on, vol. 26, no. 6, pp. 756–770, 2004.
+[20] P. H. Torr, “An assessment of information criteria for motion model
+selection,” in Computer Vision and Pattern Recognition, 1997. Pro-
+ceedings., 1997 IEEE Computer Society Conference on.
+IEEE, 1997,
+pp. 47–52.
+[21] R. Hartley and A. Zisserman, Multiple view geometry in computer
+vision.
+Cambridge university press, 2003.
+[22] P. Parsonage, A. Hilton, and J. Starck, “Efﬁcient dense reconstruction
+from video,” in Visual Media Production (CVMP), 2011 Conference
+for.
+IEEE, 2011, pp. 30–38.
+[23] S. Agarwal, N. Snavely, S. M. Seitz, and R. Szeliski, “Bundle
+adjustment in the large,” in Computer Vision–ECCV 2010.
+Springer,
+2010, pp. 29–42.
+[24] Y. Rubner, C. Tomasi, and L. J. Guibas, “The earth mover’s distance
+as a metric for image retrieval,” International journal of computer
+vision, vol. 40, no. 2, pp. 99–121, 2000.
+CONFIDENTIAL. Limited circulation. For review only.
+Preprint submitted to 12th Conference on Automation Science and Engineering.
+Received March 28, 2016.

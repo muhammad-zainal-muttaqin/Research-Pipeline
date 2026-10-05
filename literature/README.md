@@ -27,7 +27,7 @@ korpus:
 
 | Lokasi | Isi |
 |---|---|
-| `scopus-2026-09/` | Korpus `main6`: kueri, rekaman, penyaringan, matriks bukti, kajian metodologi, 480 PDF (teks terekstrak untuk 331 di antaranya), katalog PDF |
+| `scopus-2026-09/` | Korpus `main6`: kueri, rekaman, penyaringan, matriks bukti, kajian metodologi, 480 PDF (teks terekstrak untuk 476 di antaranya), katalog PDF |
 | `entries/` | 182 ringkasan makalah (satu berkas per makalah), `INDEX.md`, `INDEX-TAHUN.md` |
 | `withheld/` | 20 entri yang ditahan karena PDF sumber tidak tersedia |
 | `synthesis.md` | Sintesis lintas makalah dari seluruh korpus |

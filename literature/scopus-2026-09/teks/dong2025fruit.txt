@@ -1,0 +1,1590 @@
+Fruit detection and yield estimation in Camellia oleifera based on improved 
+YOLOv8 and ByteTrack algorithm
+Zhipeng Dong a,b, Wei Long a,*, Fan Yang b, Chunlian Yu c, Jiayi Du b, Kailiang Wang a,  
+Leyan Lyu d
+a State Key Laboratory of Tree Genetics and Breeding, Key Laboratory of Tree Breeding of Zhejiang Province, Research Institute of Subtropical Forestry, Chinese Academy 
+of Forestry, Hangzhou 311400, Zhejiang, China
+b College of Computer and Information Engineering, Central South University of Forestry & Technology, Changsha 410004, Hunan, China
+c Changshan Country Oil Tea Industry Development Center, Changshan 324299, China
+d College of Hydraulic Engineering, Zhejiang Tongji Vocational College of Science and Technology, Hangzhou 311231, Zhejiang, China
+A R T I C L E I N F O
+Keywords:
+Camellia oleifera
+Deep learning
+Fruit detection
+Multi-target tracking
+Fruit counting
+Yield estimation
+A B S T R A C T
+Camellia oleifera, an essential woody oil tree species, produces camellia oil, which is highly nutritious and edible 
+after seed pressing. The demand for camellia oil has increased in recent years, so accurate estimates of camellia 
+oil production are key to fruit harvesting and price setting. The rapid development of computer vision and deep 
+learning techniques has found wide applications in agriculture, demonstrating significant fruit detection capa­
+bilities. This study proposes a surface fruit detection algorithm in C.oleifera based on the improved YOLOv8 
+model, with lightweight RepViT as the backbone of the model, a small object detection layer with p2 layer added 
+on the multi-scale basis of FPN and PAN, and a network structure optimized by Shape IoU loss function. 
+Meanwhile, the improved ByteTrack algorithm based on ByteTrack is utilized for multi-scale small-target 
+tracking. Using LightGBM and linear regression to establish the relationship between the number of surface fruits 
+and the number of individual fruits, combined with the number of typical sample trees and the average single 
+fruit quality in the dataset, a production estimation model for the automatic detection of C.oleifera is constructed. 
+The mAP value of the improved YOLOv8 algorithm on the C.oleifera fruit dataset reached 86.21 %, an 
+improvement of 4.51 % compared to the original model. Combined with average single-fruit mass and the 
+number of representative sample trees, these counts yielded whole-tree production estimates.The approach 
+produced a fruit-number prediction R²of 0.945 and a yield- estimation R²of 0.902 across our sample trees, 
+demonstrating strong linear relationships and validating the pipeline for automated C. oleifera yield forecasting.
+1. Introduction
+Camellia oleifera is a woody oil tree species unique to southern China, 
+known for its high oil content (up to 90 % unsaturated fatty acids), 
+which can promote metabolism and is considered a high-quality edible 
+oil [1–3]. The main production areas of C.oleifera are located in the 
+Yangtze River Basin, including Hunan, Hubei, Guangdong, and Guangxi 
+[4]. The joint efforts of the Chinese government and enterprises have 
+significantly expanded the C.oleifera industry in recent years. However, 
+the alternate bearing phenomenon of economic forest tree species has 
+led to fluctuations in the annual production of C.oleifera, making it 
+difficult to stabilize the oil price of C.oleifera. Therefore, scientific 
+management and accurate production estimation are crucial [5]. The 
+traditional method of investigating oil tea production involves 
+hand-picking, counting, and weighing fresh fruits. Although accurate, it 
+is time-consuming, labor-intensive, costly, and environmentally 
+damaging. Integrating factors such as soil type, meteorological data, and 
+farmland management for yield prediction poses challenges for data 
+collection, integration, and quality control [6] and may not capture the 
+complex interactions and nonlinear relationships between crop param­
+eters [7]. In addition, the variation of the tree parameters over time and 
+space can further affect the prediction accuracy. Therefore, a simple, fast 
+fruit identification and counting method is urgently needed.
+The object detection model in computer vision provides a new 
+* Corresponding author.
+E-mail addresses: 17674723013@163.com (Z. Dong), ylslongwei@caf.ac.cn (W. Long), yangfanf117@hnu.edu.cn (F. Yang), 540511537@qq.com (C. Yu), 
+dujiayi@csuft.edu.cn (J. Du), wangkl163@163.com (K. Wang), 20409316@qq.com (L. Lyu). 
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+https://doi.org/10.1016/j.atech.2025.101435
+Received 21 July 2025; Received in revised form 1 September 2025; Accepted 12 September 2025  
+Smart Agricultural Technology 12 (2025) 101435 
+Available online 15 September 2025 
+2772-3755/© 2025 The Author(s). Published by Elsevier B.V. This is an open access article under the CC BY-NC license ( http://creativecommons.org/licenses/by- 
+nc/4.0/ ). 
+
+solution for estimating the production of C.oleifera. Most yield estima­
+tion studies focus on a single image but may be hampered by object 
+occlusion and dynamic scenes. In contrast, video counting provides 
+comprehensive target dynamics and adversarial occlusion and offers 
+temporal information and motion features [8]. Traditional methods 
+such as haar features, histogram of oriented gradients and adaptive 
+boosting, support vector machine, and deformable part-based model 
+rely on object features such as color, shape, texture, and edges [9,10] but 
+often exhibit difficulties in natural orchard environments. Deep learning 
+algorithms, especially those based on convolutional neural networks, 
+have shown promise in crop detection [11]. The You Only Look Once v8 
+series and R-CNN series of object detection networks have demonstrated 
+excellent performance [12–16]. For example, You Only Look Once v5 
+and Faster R-CNN were used for apple fruit detection, while deep simple 
+online and realtime tracking was used for counting, with average 
+counting errors of 20.07 % and 31.52 %, respectively [17]; ‘Man­
+goYOLO’ is used for mango fruit detection, with an estimated error of 4.6 
+% to 15.2 % in orchard fruit load [18]. We trained Faster R-CNN models 
+for orange detection and long short-term memory models for yield 
+estimation, achieving an approximation error of 4.53 % [19].
+However, tracking fruits often faces challenges such as occlusion and 
+different lighting conditions [20,21]. To improve detection perfor­
+mance, Ge et al [22] introduced the YOLO DeepSORT visual object 
+tracking network, Wu et al [23] proposed the NDMFCS automatic 
+counting method, Farjon et al. [24] proposed the OrangeSort algorithm, 
+Gao et al [25] selected tree trunks as single target tracking targets, and 
+used lightweight YOLOv5 and improved DeepSORT for lotus yield 
+counting [26]. These multi-objective tracking algorithms significantly 
+improve the accuracy of fruit yield estimation in natural scenarios [17, 
+25,27,28]. Researchers have further proposed various refinements to 
+improve the efficiency and accuracy of fruit yield estimation. Gao et al 
+[25] proposed a YOLOv4 mini method that integrates the channel and 
+spatial reliability discriminant correlation filter algorithm to improve 
+the accuracy of apple yield counting. Rong et al [29] introduced an 
+improved tomato cluster counting method that combines YOLOv5–4D 
+and ByteTrack, effectively overcoming the challenge of automatic yield 
+estimation in intelligent greenhouse automation. Fu [30] proposed a 
+small YOLOv3 network with computational complexity optimization for 
+automatically detecting kiwifruit in orchards. Xia et al [31] introduced a 
+new method that combines the CenterNet model with a patch-matching 
+model based on the Kuhn Munkres algorithm, successfully solving the 
+problem of duplicate counting in continuous images of apples and or­
+anges. Oliveira et al [32] proposed a method combining linear regres­
+sion and support vector machine algorithms to solve strawberry yield 
+estimation’s efficiency and accuracy issues. Bai et al [33] introduced a 
+method that combines leaf area index from Landsat satellite data with 
+the WOFOST model to improve the accuracy of yield estimation for 
+perennial jujube crops at the field scale. Mirhaji et al [34] proposed a 
+deep learning method based on YOLO-V4 for automatic detection and 
+counting of oranges in orchards. Zhang et al [35] proposed a deep 
+learning algorithm that combines OrangeYolo and OrangeSort, effec­
+tively solving the accuracy and duplicate counting problems in citrus 
+counting.
+However, most existing methods for estimating fruit yield rely on 
+planar computation, and for counting videos, the issues of accuracy, 
+real-time performance, and computational complexity have not been 
+simultaneously addressed. Therefore, this study proposes a modified 
+YOLOv8 method based on Reparameterized Vision Transformer for oil 
+tea yield estimation in complex orchard environments. RepViT [36] 
+combines CNN and ViT [37] to balance local and global feature 
+extraction, making it suitable for mobile devices with limited resources. 
+We optimize the backbone and neck of YOLOv8. We introduce 
+state-of-the-art object tracking techniques to reduce the computational 
+complexity of the model while increasing the accuracy and counting 
+speed of oil palm localization.
+The primary aim of this study is to improve the accuracy of fruit 
+detection and yield estimation for C. oleifera using advanced computer 
+vision techniques. Specifically, we focus on utilizing an enhanced 
+YOLOv8 model integrated with a multi-target tracking algorithm. The 
+study aims to address several key objectives: 
+(1) Improve the accuracy of fruit detection in C. oleifera using an 
+optimized YOLOv8 model. This objective is motivated by the need to 
+overcome challenges such as occlusion and small object detection in 
+natural orchard environments.
+(2) Enhance the multi-target tracking performance with the 
+improved ByteTrack algorithm. This objective is justified by the 
+significant impact of tracking performance on fruit counting accu­
+racy, especially in complex scenes with occlusion and varying 
+lighting conditions.
+(3) Establish a reliable relationship between the number of detected 
+fruits and the yield of the tree, by integrating the fruit count data 
+with fruit quality measurements. This objective is essential for 
+improving yield prediction accuracy, as traditional methods often 
+fail to account for variations in fruit quality.
+(4) Develop an empirical yield estimation model for C. oleifera that 
+incorporates both fruit count and fruit quality, using linear regres­
+sion methods. This is necessary to address the challenge of yield 
+estimation in varying environmental conditions, as current models 
+often focus solely on fruit quantity without considering quality.
+2. Materials and methods
+2.1. Collection of phenotypic data on fruits
+All image and video data used in this study were collected at the 
+Changshan Oil Tea Experimental Base (120.825542◦E, 29.748715◦N) of 
+the Research Institute of Subtropical Forestry, Chinese Academy of 
+Forestry(Fig. 1). Three varieties of C. oleifera (CL4, CL40, and CL53) 
+were selected for investigation. For each variety, twenty trees of similar 
+age, exhibiting healthy growth and free from pests and diseases, were 
+chosen as sampling subjects.Data collection was conducted from 
+November 15 to 18, 2023, between 08:30 and 17:00 local time, utilizing 
+natural lighting conditions. To ensure dataset diversity and model 
+robustness, data were captured under various natural conditions 
+including different lighting intensities, occlusion scenarios, and shadow 
+variations.Two smartphone models were employed for data acquisition: 
+(1) Xiaomi 13 (Xiaomi Inc., China): 50 MP main camera, f/1.8 aperture, 
+1/1.49″ sensor size. (2)Apple iPhone 13 (Apple Inc., USA): 12 MP main 
+camera, f/1.6 aperture, 1/1.88″ sensor size.Both devices were set to 
+record 4 K video at 60 fps. The data collection protocol involved circling 
+each target tree at approximately 0.2 m/s while maintaining the 
+smartphone at a 45◦upward tilt angle. The shooting distance was 
+maintained between 0.6–1.5 m from the tree canopy. Video data were 
+processed by extracting frames at 30-frame intervals, resulting in adja­
+cent images with approximately 70 % overlap. A total of 3630 images 
+were obtained through this process. All images were annotated using 
+LabelImg, with 64,975 C. oleifera fruits identified and labeled using 
+Fig. 1. Orchard layout and individual fruit tree showing spacing, fruit distri­
+bution, and conditions for yield estimation.
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+2 
+
+bounding boxes.The dataset was partitioned into training and testing 
+subsets using an 8:2 ratio, consistent with common practices in deep 
+learning applications [38]. The composition and treatment of the data 
+set are shown in Table S1. During model training, data augmentation 
+techniques including rotation, scaling, and color adjustments were 
+implemented to enhance model generalization capability.Following 
+image acquisition, all fruits from each tree were harvested for pheno­
+typic characterization. Thirty fruits per tree were randomly selected for 
+detailed measurement. Fresh fruit weight was determined using an 
+electronic balance with 0.01 g precision. All sampling procedures were 
+conducted in compliance with institutional guidelines and were autho­
+rized by the local forestry management authority.
+2.2. Framework construction of detecting models
+In this study, we employed the YOLOv8 model [39] for the detection 
+and counting of C. oleifera fruits. YOLOv8 was selected due to its 
+balanced performance in both accuracy and computational efficiency. 
+While earlier YOLO versions, such as YOLOv4 and YOLOv5, demon­
+strated effectiveness in agricultural produce detection, YOLOv8 in­
+troduces several improvements. These include enhanced real-time 
+performance, better precision in small object detection, and advanced 
+features like the RepViT backbone and multi-scale detection layers. 
+YOLOv8 was preferred over subsequent versions, from YOLOv9 to 
+YOLOv12, due to its superior feature extraction capabilities and the 
+computational efficiency of the RepViT backbone, which is optimized 
+Fig. 2. Improved algorithm framework based on YOLOv8. The backbone of the improved model uses RepViT’s 4 main processing stages, each with a different spatial 
+resolution. The Stage also contains FFN (Feature Fusion Network), RepVitTSEBlock, and RepVitBlock. The stages are connected by various Conv, Downsample, 
+Upsampleand feature extraction modules (C2f), which are used to process data and extract multi-scale features.
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+3 
+
+for mobile and embedded devices. These advancements allow YOLOv8 
+to handle the small size of C. oleifera fruits effectively while maintaining 
+relatively low computational cost.
+However, YOLOv8 faces challenges when detecting small C. oleifera 
+fruits in complex backgrounds, particularly when targets are occluded or 
+feature data is sparse, leading to false positives and missed detections. 
+To address this, we enhanced YOLOv8 by improving its network struc­
+ture to capture more location information. While this modification re­
+sults in a slight reduction in detection speed, it significantly boosts 
+accuracy. The improved framework consists of a backbone feature 
+extraction network, an enhanced feature extraction network, and a 
+prediction network (Fig. 2). The backbone employs RepViT, which 
+combines CNN and Vision Transformer architectures, and integrates 
+FPN and PAN networks in the Neck section. The prediction network 
+utilizes YOLOv8’s universal detection layer.
+In the original YOLOv8 model, the backbone employs the 
+CSPDarkNet-53 network. However, our improved model replaces this 
+with RepViT, which better accommodates the constraints of mobile 
+devices without sacrificing performance. RepViT integrates convolu­
+tional layers and ViT’s self-attention mechanism after each layer, 
+enhancing feature extraction while adapting to resource limitations 
+through its lightweight design (Fig. 2). This structure improves perfor­
+mance through structural reparameterization and deep convolutions.
+During the inference process, we designed the RepViTSEBlock and 
+RepViTBlock to merge multi-branch convolutional structures into a 
+single-branch design, reducing computational and memory overhead. 
+Additionally, we adopted a smaller expansion ratio, uniformly set to 2, 
+to reduce computation and channel redundancy while enhancing overall 
+width. For input processing, RepViT uses a simplified stem module and 
+early convolution operation, allowing it to process high-resolution input 
+feature maps effectively and avoid information loss caused by down­
+sampling. Similar fine-tuned YOLOv8 approaches have been success­
+fully applied in greenhouse environments for detecting capsicum fruits 
+and assessing their growth stages, further confirming the adaptability of 
+YOLOv8 for horticultural applications [40].
+In the Neck section, YOLOv8 utilizes FPN and PAN networks to 
+detect objects of various sizes. FPN captures multi-scale target features, 
+while PAN improves small target detection by enhancing semantic 
+feature flow (Fig. 3). The introduction of the P2 layer enables better 
+detection of small targets, which are more challenging to detect due to 
+their small pixel size. Related research in uncontrolled environment 
+settings has highlighted the necessity of specialized detection and seg­
+mentation strategies when dealing with low-light or night-time sce­
+narios, such as peduncle detection in capsicum, which underscores the 
+importance of tailoring vision models to specific environmental 
+challenges [41].
+Due to YOLOv8’s adoption of an anchor-free approach, its loss 
+function differs significantly from that of YOLOv5. The loss function 
+optimization consists of two parts: classification and regression. The 
+classification loss uses binary cross-entropy loss (BCEL), while the 
+regression loss incorporates distribution focus loss (DFL) and bounding 
+box regression loss (BBRL). The full loss function is expressed as shown 
+in Eq. (1). 
+floss = λ1fBCEL + λ2fDFL + λ3fBBRL
+(1) 
+Unlike the CIoU loss in YOLOv8, the Shape IoU (Fig. 4) loss function 
+is used here as the boundary box regression loss. The original boundary 
+box regression method usually considered the geometric relationship 
+between the GT box and the prediction box, using the relative position 
+and shape of the boundary box to calculate the loss while ignoring the 
+influence of inherent properties such as the shape and scale of the 
+Fig. 3. Structure of improved neck.
+Fig. 4. Focus on boundary box shape and scale boundary box of regres­
+sion methods.
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+4 
+
+boundary box on the boundary box regression. To remedy the short­
+comings of existing studies, we use a bounding box regression method by 
+Eq. (2)–5 that focuses on the shape and scale of the bounding box itself. 
+This approach can make bounding box regression more accurate by 
+focusing on the shape and scale of the bounding box itself to calculate 
+the loss. 
+IoU = |B ∩Bgt|
+|B ∪Bgt|
+(2) 
+ωω =
+2*(ωgt)scale
+(ωgt)scale +
+(
+hgt)scale
+(3) 
+hh =
+2*
+(
+hgt)scale
+(ωgt)scale +
+(
+hgt)scale
+(4) 
+Ωshape =
+∑
+t=ω,h
+(1 −e−ωt)θ, θ = 4
+(5) 
+Here, scale refers to the scaling factor related to the target size in the 
+dataset. The variables ωω and hh represent weight coefficients in the 
+horizontal and vertical directions, respectively, with their values 
+dependent on the shape of the GT box. The corresponding bounding box 
+regression loss is given in Eq. (6–9). 
+D =̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+hh*xc −xgt
+c
+2 + ωω*yc −ygt
+c
+2
+√
+(6) 
+S =̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+∑M
+i=1
+∑Ni
+j=1ωij*hij
+∑M
+i=1Ni
+√
+√
+√
+√
+(7) 
+Dot Dshape = e−D
+S
+(8) 
+Lshape−IoU = 1 −IoU + Dot Dshape + 0.5*Ωshape
+(9) 
+2.3. Fruit counting method based on multi-target tracking algorithm
+This study uses a multi-object tracking algorithm for counting 
+C. oleifera fruits. Multi-target tracking relies on computer vision to track 
+target objects in a video sequence. The common paradigm is "Tracking 
+by Detection" [42], which involves object detection in each frame, fol­
+lowed by target association to track them across frames [43]. In each 
+frame, an object detection algorithm locates the C. oleifera fruits and 
+extracts their features. A unique identifier (ID) is assigned to each target 
+to maintain consistency and track its trajectory.
+The core of the multi-target tracking algorithm is data association, 
+which matches the predicted trajectory with the detection box in the 
+current frame to track the target. The accuracy of this matching de­
+termines the overall tracking precision. To improve data association, we 
+introduce the ORB algorithm’s feature extraction and matching methods 
+into the ByteTrack algorithm (Fig. 5). ORB, a fast and stable feature 
+point detection algorithm, uses FAST for corner detection, and solves 
+scale and rotation invariance with pyramid and grayscale centroid 
+calibration. Descriptors are constructed using BRIEF, and the similarity 
+between features is calculated.
+In tracking, if a sequence exists, the Kalman filter predicts the tra­
+jectory, generating expected positions. Simultaneously, object detection 
+is performed on the current frame. The detection confidence threshold is 
+set to 0.001, with high (Thigh) and low (Tlow) score thresholds for the 
+bounding box. High-score boxes are matched to tracked trajectories, and 
+if matched, the Kalman filter updates the trajectory. Unmatched boxes 
+are processed with ORB feature extraction and matching. After three 
+consecutive frames of unmatched boxes, new trajectories are created 
+and added to the tracking sequence.
+2.4. Yield prediction method
+The yield prediction of C. oleifera in this study was achieved through 
+a three-stage pipeline integrating fruit detection, tracking-based count­
+ing, and regression modeling. First, an improved YOLOv8 model was 
+employed for fruit detection, in which the RepViT backbone replaced 
+the original CSPDarkNet structure, a P2 layer was added to the 
+FPN–PAN neck to enhance small-object detection, and the Shape IoU 
+loss was introduced to optimize bounding box regression, thereby 
+enabling robust recognition of small fruits in complex orchard envi­
+ronments. Second, to obtain reliable fruit counts from video sequences, 
+we adopted an improved ByteTrack algorithm following the tracking-by- 
+detection paradigm, in which ORB feature extraction and matching were 
+incorporated into the data association process to maintain consistent 
+fruit identities across frames, reduce duplicate counts, and ensure ac­
+curate tracking under occlusion and variable lighting. Finally, the 
+regression modeling process was constructed in two steps: (i) estab­
+lishing a mapping between the number of detected surface fruits and the 
+actual total fruit load per tree, where surface counts serve as the inde­
+pendent variable and manually measured total fruit numbers as the 
+dependent variable; and (ii) incorporating the average weight of indi­
+vidual fruits, obtained from phenotypic sampling, into the model so that 
+total yield could be expressed as the product of the predicted fruit load 
+and the average fruit weight. Linear regression was selected as the pri­
+mary modeling method due to its simplicity and interpretability, while 
+additional machine learning regressors (e.g., Random Forest, Extra­
+Trees, and LightGBM) were also tested to verify robustness. Recent 
+studies in greenhouse fruit monitoring have shown that combining 
+multiple detection strategies, including hybrid and fusion models, can 
+Fig. 5. Flow chart of the tracking process of the improved ByteTrack.
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+5 
+
+improve zero-shot detection and enhance generalization across different 
+environments, which provides methodological support for incorporating 
+multi-model regression approaches in yield prediction [44]. This inte­
+grated framework provides a systematic and reproducible method for 
+automated yield prediction of C. oleifera.
+2.5. Experiment evaluation metrics
+In this experiment, we used the AMD EPYC 7T83 64-core processor 
+and RTX4090 GPU for model training. The software environment in­
+cludes CUDA version 11.8, Python version 3.8, and Pytorch version 
+2.0.0. To ensure optimal model performance during training, we adop­
+ted specific parameters and hyperparameter settings. The image size 
+during training was set to 640 × 640, with the number of iterations set to 
+300. To improve computational efficiency and model convergence 
+speed, we fixed the batch size to 16 and disabled the Mosaic data 
+augmentation technique in the last 10 epochs.
+For hyperparameter selection, we employed a gradient-based SGD 
+optimizer for model optimization. The initial learning rate was set to 
+0.01 and decreased to 0.0001 by the end of training. The momentum 
+was set to 0.937, and the weight decay was set to 0.0005 to ensure 
+stability and convergence speed during the training process. These 
+hyperparameters were selected based on multiple experimental results 
+and relevant literature, ensuring excellent model performance under 
+different conditions (Table S2). This metric provides a standardized 
+evaluation of detection accuracy under relaxed localization constraints, 
+making it particularly suitable for real-world agricultural scenarios 
+where precise bounding box alignment can be challenging due to small 
+object size or partial occlusion.
+To evaluate the effectiveness of the proposed method in the context 
+of C. oleifera fruit detection and counting, we adopted a comprehensive 
+set of metrics that reflect both detection accuracy and practical 
+deployability: Precision measures the system’s ability to avoid false 
+alarms. For instance, a high precision indicates that the model rarely 
+misclassifies leaves, branches, or shadows as fruits. In orchard auto­
+mation systems, this reliability is critical for downstream applications 
+such as robotic harvesting or yield mapping, where false positives may 
+lead to inefficient resource allocation or inaccurate inventory estimates. 
+Recall indicates how well the model captures all visible fruits, especially 
+under challenging conditions such as foliage occlusion, low contrast, 
+small target size, or uneven illumination. Since accurate yield estimation 
+relies on minimizing missed detections, a high recall is essential for 
+robust monitoring and effective harvest planning. mAP (mean Average 
+Precision), particularly mAP@0.5, serves as a holistic measure of 
+detection performance. A high mAP reflects consistent object localiza­
+tion and classification across diverse environmental conditions. In our 
+application, this translates to stable performance despite variations in 
+tree density, fruit maturity, and lighting, which are common challenges 
+in real-world C. oleifera orchards. FPS (Frames Per Second) quantifies 
+the model’s inference speed, which directly affects its feasibility for real- 
+time deployment on mobile platforms such as drones or ground robots. A 
+higher FPS enables efficient, large-scale field monitoring without 
+sacrificing timeliness, thus supporting practical use in precision agri­
+culture. Together, these metrics provide a context-aware evaluation 
+framework that goes beyond generic benchmarks, aligning technical 
+performance with real-world agricultural requirements.
+In evaluating the model’s performance on the C. oleifera dataset, we 
+employed various evaluation metrics, including precision, FPS, recall, 
+and mAP. Precision (P), FPS, and recall (R) are calculated using the 
+following Eq. (10–13): 
+P =
+TP
+TP + FP
+(10) 
+R =
+TP
+TP + FN
+(11) 
+FPS = Total number of frames processed
+Total time taken(in seconds)
+(12) 
+AP =
+∫1
+0
+P(R)
+(13) 
+AP represents the area under the precision-recall curve for a specific 
+class at different confidence thresholds. mAP represents the mean 
+average precision, which is calculated by averaging the APs for each 
+categoryEq. (14–15): 
+mAP = 1
+C
+∑
+C
+i=1
+A
+(14) 
+mAP@50% = 1
+C
+∑
+C
+i=1
+A P@0.5i
+(15) 
+Where N is the number of classes, and A Pi is the average precision 
+for class i mAP50 specifically refers to the mean average precision at an 
+intersection over union (IoU) threshold of 0.5.
+In addition, Multiple Object Tracking Accuracy (MOTA) evaluates 
+the accuracy of multi-target tracking, mainly reflecting the accuracy of 
+target quantity estimation and related attributes. It is used to calculate 
+the accumulation of errors in tracking. The formula for MOTA is Eq. 
+(16,17): 
+MOTA = 1 −
+∑
+t(FP + FN + IDSW)
+∑
+tgt
+(16) 
+MOTP =
+∑
+i,tdi
+t
+∑
+tct
+(17) 
+Multiple Object Tracking Precision (MOTP) evaluates the spatial 
+accuracy of tracked fruit positions. High MOTP ensures precise locali­
+zation, which is vital for targeting or spatial yield distribution analysis. 
+A low number of ID switches means the tracker maintains consistent 
+identification of individual fruits across frames, which is crucial for 
+longitudinal studies of fruit development or automated counting in dy­
+namic scenes. In dense canopies where fruits frequently occlude one 
+another, a high MOTA indicates that the system maintains accurate fruit 
+identity and count over time. These metrics, interpreted within the 
+specific context of oil tea fruit monitoring, provide a holistic assessment 
+of the model’s technical performance and its practical utility in precision 
+agriculture.
+3. Results
+3.1. Comparison of training results of classical object detection models
+In this study, we compared the improved YOLOv8 model with Faster 
+R-CNN, SSD, YOLOv3, YOLOv5, YOLOv7, YOLOv8, and the newer 
+YOLOv9 to YOLOv12 series. Faster R-CNN, a classic two-stage detector, 
+relies on a Region Proposal Network (RPN) but suffers from high 
+computational cost, while SSD, though faster, faces challenges in 
+detecting small objects. The YOLO series, from YOLOv3 to YOLOv12, 
+reformulates object detection as a regression problem, providing a good 
+balance of speed and accuracy. Among them, YOLOv8 has been widely 
+adopted due to its stable performance and efficiency, making it a reliable 
+baseline model.
+Our results show that YOLO models generally outperform Faster R- 
+CNN and SSD in both accuracy and efficiency, while our improved 
+YOLOv8 further advances performance across all key metrics (Table 1). 
+Specifically, it achieved FLOPs, parameter count, and model size values 
+of only 23.2 G, 6.6 M, and 14.0 MB, significantly lower than most YOLO 
+models. At the same time, it outperformed the standard YOLOv8 in 
+precision (85.13 % vs. 81.06 %), recall (77.84 % vs. 74.07 %), mAP50 
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+6 
+
+(86.21 % vs. 81.70 %), and mAP50–95 (48.97 % vs. 44.28 %).
+When compared with the newer YOLOv9–YOLOv12 models, which 
+deliver only incremental gains in certain metrics (e.g., mAP50 ranging 
+from 80.96 % to 81.78 % and recall around 74 %), our improved 
+YOLOv8 shows clear superiority by achieving substantially higher pre­
+cision, recall, and mAP values while maintaining a smaller computa­
+tional footprint. For example, despite YOLOv9–YOLOv12 requiring 
+larger parameter sizes (12–17.6 M) and weights (16.9–22.8 MB), their 
+performance remains lower than our improved YOLOv8, which com­
+bines lightweight design with the highest accuracy. These results high­
+light that the improved YOLOv8 achieves a better trade-off between 
+efficiency and detection performance, making it more suitable for real- 
+world applications where both accuracy and computational cost are 
+critical.
+3.2. Evaluation of the proposed detection model
+In this study, the RepViT network replaces the original CSPDarkNet- 
+53 backbone in YOLOv8. The neck design adds a P2 layer feature 
+network, and the IoU section implements our proposed Shape IoU 
+calculation in the loss function. To assess the effectiveness of the various 
+improvement modules in the enhanced YOLOv8 model, ablation studies 
+were conducted comparing YOLOv8 (baseline), YOLOv8 (RepViT), 
+YOLOv8 (p2), and YOLOv8 (Shape IoU). These models were evaluated 
+in terms of precision (P), recall, mAP50, and mAP50–95 (Table 2). The 
+results show that different configurations significantly improve the ob­
+ject detection system, with YOLOv8 (RepViT) yielding the most notable 
+improvements. Depending on specific requirements, selecting the 
+appropriate configuration enhances the system’s accuracy and stability.
+YOLOv8 (RepViT) showed significant improvements over the base­
+line YOLOv8 in precision, recall, mAP50, and mAP50–95, with increases 
+of 2.68 %, 3.36 %, 3.43 %, and 3.92 %, respectively. YOLOv8 (Neck) and 
+YOLOv8 (Shape IoU) also showed improvements over the baseline 
+model, with increases of up to 1.91 % in precision and recall. Ultimately, 
+the improved YOLOv8 model outperformed all others with P, recall, 
+mAP50, and mAP50–95 values of 85.13 %, 77.84 %, 86.21 %, and 48.97 
+%, respectively, surpassing the baseline YOLOv8 by 4.07 %, 3.77 %, 
+4.51 %, and 4.69 %.
+Although box-loss, obj-loss, and cls-loss for the improved model were 
+slightly higher than the original, precision, recall, mAP50, and 
+mAP50–95 showed notable improvements (Fig. 6, 7). The improved 
+YOLOv8 algorithm demonstrated excellent convergence across various 
+performance indicators, confirming the reliability of the C. oleifera fruit 
+counting model built on this detection framework. Lower values of the 
+three losses indicate better model training, while higher values of the 
+four evaluation metrics indicate improved detection accuracy.
+A heatmap analysis was conducted to visualize the performance 
+improvements (Fig. 8). The first column shows the original image, the 
+second column displays the heatmap from the baseline YOLOv8 model, 
+and the third column shows the heatmap from the improved model. By 
+extracting the confidence of the largest predicted value and generating 
+the attention heatmap, we can see that the baseline model’s heatmap is 
+spread over the complex background. In contrast, the improved model 
+focuses the heatmap on the target, with a redder color indicating higher 
+attention in those regions. This improvement allows for more accurate 
+object localization and identification.
+To further improve interpretability, future work should focus on 
+enhancing heatmap resolution and bounding box clarity. Clearer heat­
+maps and more contrasting bounding boxes will make it easier to vali­
+date detection results, especially in challenging conditions like occlusion 
+and varying lighting.
+3.3. Improved tracking method for accurate acquisition of C.oleifera 
+fruits
+To demonstrate the effectiveness of the improved fruit tracking 
+method based on ByteTrack, comparative experiments were conducted 
+with several mainstream tracking methods. The experimental results 
+show that the improved tracking performance based on ByteTrack is 
+better than other methods (Table 3). Perhaps because SORT, DeepSORT, 
+and DeepMOT only retain high-confidence detection boxes for subse­
+quent tracking, it is easy to filter out C.oleifera fruit detection boxes with 
+lower confidence due to occlusion, which reduces the tracking perfor­
+mance of the target. ByteTrack have addressed the aforementioned 
+shortcomings, but the algorithms overly rely on the quality of detection 
+results, and NMS operations during the detection phase may result in 
+filtering of available detection boxes for tracking, leading to inaccurate 
+tracking results. Therefore, the method proposed in this study can 
+effectively track C.oleifera fruits, reducing false positives and omissions. 
+The performance comparison results of several Multi Object Tracking 
+(MOT) methods on our C.oleifera dataset (Table 3) show that our method 
+achieved the best performance in all three indicators, with MOTA of 
+63.7 %, MOTP of 80.2 %, and IDF1 of 77.1 %. MOTA considers the ef­
+fects of false positives, false negatives, and identity switching, with 
+Table 1 
+Performance comparison of different models.
+Model
+FLOPs (G)
+Paras (Million)
+Weight (MB)
+P ( %)
+Recall ( %)
+mAP50 ( %)
+mAP50–95 ( %)
+Faster R-CNN
+180
+42.3
+160.3
+57.33
+62.17
+60.25
+27.34
+SSD
+273.7
+33.8
+98.6
+68.81
+71.41
+70.73
+34.10
+YOLOv3
+193.89
+61.53
+120.5
+73.36
+66.73
+68.64
+32.77
+YOLOv5
+48.8
+20.9
+43.6
+80.43
+73.11
+80.21
+41.76
+YOLOv7
+105
+37.2
+74.9
+79.16
+74.52
+79.83
+40.36
+YOLOv8
+28.7
+11.1
+21.5
+81.06
+74.07
+81.70
+44.28
+YOLOv9
+26.9
+12.0
+22.8
+82.10
+74.00
+81.11
+45.12
+YOLOv10
+24.8
+14.0
+17.3
+81.98
+74.25
+80.96
+44.32
+YOLOv11
+22.7
+15.0
+18.4
+81.23
+74.65
+81.45
+44.85
+YOLOv12
+22.2
+17.6
+16.9
+81.78
+74.36
+81.78
+44.63
+Improved YOLOv8
+23.2
+6.6
+14.0
+85.13
+77.84
+86.21
+48.97
+Table 2 
+Ablation experiment results.
+Model
+Backbone
+Neck
+IoU
+P
+Recall
+mAP50
+mAP50–95
+YOLOv8 (Baseline)
+​
+​
+​
+81.06
+74.07
+81.70
+44.28
+YOLOv8 (RepViT)
+✓
+​
+​
+83.74(+2.68)
+77.43(+3.36)
+85.13(+3.43)
+48.20(+3.92)
+YOLOv8 (p2)
+​
+✓
+​
+82.65(+1.59)
+75.98(+1.91)
+83.61(+1.91)
+45.93(+1.65)
+YOLOv8(ShapeIoU)
+​
+​
+✓
+81.73(+0.67)
+74.30(+0.27)
+82.17(+0.47)
+44.83(+0.55)
+Improved YOLOv8
+✓
+✓
+✓
+85.13(+4.07)
+77.84(+3.77)
+86.21(+4.51)
+48.97(+4.69)
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+7 
+
+higher values indicating better tracking performance. MOTP measures 
+the alignment between predicted and real bounding boxes, with higher 
+values indicating more accurate localization. The IDF1 evaluation 
+tracker maintains continuity with the same target, with higher values 
+indicating better identity preservation. Overall, our method outperforms 
+other tracking algorithms regarding accuracy, precision, and identity 
+preservation capability.
+3.4. Fruits quantity estimation of C.oleifera
+To validate the effectiveness of the proposed counting method, we 
+evaluated a dataset containing a large amount of counting data. To 
+ensure the accuracy and reliability of the evaluation, we randomly 
+selected 60 video clips from the dataset as evaluation samples. The re­
+sults showed that the counting algorithm for C.oleifera fruits yielded 
+highly similar results to manual counting, indicating that our algorithm 
+can accurately estimate the quantity of C.oleifera fruits. By calculating 
+the correlation coefficient (R2), we found a significant positive correla­
+tion between the algorithmic and manual counting results, specifically 
+with an R2 value of 0.945. This indicates that the algorithm can capture 
+most trends in counting changes and has a certain degree of consistency 
+with manual counting results.
+Further analysis shows that in all test videos, the absolute counting 
+error of most test results is less than or equal to a certain threshold. This 
+Fig. 6. The performance indicators of YOLOv8 algorithm.
+Fig. 7. The performance indicators of the improved YOLOv8 algorithm.
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+8 
+
+means that the difference between the algorithmic and manual counting 
+results is slight. In most cases, the algorithm can accurately estimate the 
+number of C.oleifera fruits.
+A strong linear correlation was observed between the actual fruit 
+count of CL4, CL40, and CL53 and the estimated surface fruit count, with 
+an R² value of 0.945, indicating a high level of consistency (Fig. 9). The 
+scatter plots and corresponding linear regression models of the three 
+varieties all have a fitting R2 value exceeding 0.9, indicating that the 
+model can predict the number of fruits well. The linear regression 
+equation for the CL4 variety is y = 1.1660x-3.734, with a fitting degree 
+R2 of 0.989. The linear equation for the CL40 variety is y =
+1.448x+5.445, with an R2 of 0.931. Notably, the slope coefficient of 
+1.448 in the linear equation of the CL40 variety is mainly due to the tall 
+tree body of the CL40 variety, which may affect data collection, resulting 
+in a relatively large difference between actual counting and recognized 
+counting. The linear equation for the CL53 variety is y =
+1.144x+14.829, with an R2 of 0.914. The linear regression equation for 
+Fig. 8. Comparison of heatmaps among original image, improved YOLOv8 and YOLOv8 algorithm Original image a, b, c, d. The heatmap of YOLOv8: a1, b1, c1, d1. 
+Improved YOLOv8: a2, b2, c2, d2.
+Table 3 
+Experimental results of different target tracking methods on C.oleifera dataset.
+Methods
+MOTA
+MOTP
+IDF1
+SORT
+53.7
+68.4
+67.2
+DeepSORT
+59.8
+73.6
+70.2
+DeepMOT
+61.9
+75.9
+75.1
+Bot-SORT
+59.4
+77.7
+74.6
+ByteTrack
+62.6
+79.4
+76.7
+Improved ByteTrack
+63.7
+80.2
+77.1
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+9 
+
+the mixed analysis of all varieties is y = 1.138x+14.868, with an R2 of up 
+to 0.945. Compared with the previous analysis of a single variety, the 
+fruit quantity data after mixing all varieties still maintained an excellent 
+linear fitting effect, improving the overall R2 value. This reflects the 
+strong applicability and robustness of the established fruit number 
+recognition model in cross-variety applications, and the established 
+recognition model has good applicability and accuracy in predicting the 
+number of fruits per plant of different varieties.
+To further predict the surface fruit data of the tree, 40 sample tree 
+data were used for model construction, and 20 reserved sample tree data 
+were used for accuracy verification. The results showed that the existing 
+regression models achieved good performance, with R2 and MAPE 
+varying between 0.622–0.901 and 9.898 % −13.859 %, respectively 
+(Table 4). In terms of counting accuracy, the linear regression method 
+and ExtraTrees regression method have slightly higher accuracy than 
+other regression methods, with R2 and MAPE of 0.901 and 0.098 and 
+0.901 and 0.109, respectively, indicating an excellent linear relationship 
+between the number of surface fruits and the actual number of fruits per 
+plant based on C.oleifera. Our method has good stability and 
+effectiveness.
+3.5. Fruit yield estimation of C.oleifera
+Various analyses were also performed during the yield prediction 
+analysis. Good yield estimation results were achieved in all three vari­
+eties, with R2 and RMSE ranging from 0.854 to 0.921 and 38.9 % to 55.9 
+%, respectively (Fig. 10). Overall shows a clear linear positive correla­
+tion between the actual fruit quantity and yield of all varieties, with a 
+fitting coefficient R ^ 2 of 0.854, indicating that this linear model can 
+better describe the overall yield pattern of C.oleifera (Fig. 10d). The 
+model equation y = 0.026x + 0.26 further quantifies this linear relation. 
+The effect of the fit varies when subdividing into specific varieties. The 
+CL4 has the highest fitting degree, with R2 reaching 0.921 and a model 
+RMSE of only 0.508, indicating good prediction accuracy (Fig. 10a). The 
+fitting degree of the CL40 and CL53 is slightly decreased (Fig. 10b,10c). 
+This situation may be due to significant differences in the average fruit 
+quality per plant between varieties. To further improve the prediction 
+accuracy, we incorporate the mean weights of individual fruit plants 
+into the model. The specific approach introduces the number of identi­
+fied fruits and the average quality of individual fruits per plant into the 
+yield prediction model, which is fitted using linear regression.
+The fitting effect of the C.oleifera yield estimation model was con­
+structed based on the number of fruits and the average quality of each 
+fruit in Fig. 11. This comprehensive analysis method significantly im­
+proves the prediction accuracy compared to previous models consid­
+ering only the number of fruits. Specifically, when the critical indicator 
+of average quality per fruit was introduced, the fitting degree of the CL4 
+variety further improved, with R2 reaching 0.976 and RMSE decreasing 
+to 0.28, indicating that the model can more accurately capture the yield 
+pattern of the CL4 variety. The fitting degree of the CL40 variety has also 
+improved, with R2 reaching 0.906 and RMSE decreasing to 0.372, 
+indicating an improvement in prediction performance. Although the 
+Fig. 9. Regression analysisof the actual and estimated of fruits per tree in C.oleifera. a:CL4. b:CL40. c:CL53. d: All varieties.
+Table 4 
+The comparison of MSE, RMSE, MAE, MAPE, R2 values in different regression 
+models.
+Methods
+MSE
+RMSE
+MAE
+MAPE
+R2
+DT Regression
+320.079
+17.891
+13.737
+13.859
+0.831
+RF Regression
+226.749
+15.058
+12.242
+12.654
+0.880
+adaboost Regression
+347.733
+18.648
+13.136
+12.969
+0.816
+GBDT Regression
+320.073
+17.891
+13.737
+13.859
+0.831
+ExtraTrees Regression
+187.741
+13.702
+10.836
+10.989
+0.901
+CatBoost Regression
+246.926
+15.714
+12.449
+12.511
+0.869
+KNN Regression
+197.798
+14.064
+11.305
+11.545
+0.895
+BPnet
+196.985
+14.035
+9.582
+10.073
+0.896
+SVR Regression
+303.184
+17.412
+13.314
+13.286
+0.840
+XGBoost Regression
+715.214
+26.743
+21.32
+16.892
+0.622
+LightGBM Regression
+187.247
+13.684
+9.626
+9.898
+0.901
+Linear regression
+320.079
+17.891
+13.737
+13.859
+0.831
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+10 
+
+fitting degree of the CL53 variety is still relatively low, it has also 
+improved, with R2 of 0.893 and RMSE of 0.379. By integrating data from 
+all varieties for modeling, R2 reached 0.905, RMSE was 0.451, and 
+overall prediction accuracy was improved. This result suggests that the 
+average quality of individual fruits is an essential factor in C.oleifera 
+production and that including it in the model can more accurately reflect 
+actual production patterns.
+The effect of the average weight of individual fruits on the prediction 
+of yield of Camellia oleifera, an essential woody oil tree species, produces 
+camellia oil, which is highly nutritious and edible after seed pressing. 
+The demand for camellia oil has increased in recent years, so accurate 
+estimates of camellia oil production are key to fruit harvesting and price 
+setting. The rapid development of computer vision and deep learning 
+techniques has found wide applications in agriculture, demonstrating 
+significant fruit detection capabilities. This study proposes an surface 
+fruit detection algorithm in C.oleifera based on the original YOLOv8 
+model, with lightweight RepViT as the backbone of the model, a small 
+object detection layer with p2 layer added on the multi-scale basis of 
+FPN+PAN, and a network structure optimized by Shape IoU loss func­
+tion. Meanwhile, the improved ByteTrack algorithm based on ByteTrack 
+is utilized for multi-scale small-target tracking. Using machine learning 
+methods to establish the relationship between the number of surface 
+fruits and the number of individual fruits, combined with the number of 
+typical sample trees and the average single fruit quality in the dataset, a 
+production estimation model for the automatic detection of C.oleifera is 
+constructed. The mAP value of the improved YOLOv8 algorithm on the 
+C.oleifera fruit dataset reached 86.21 %, an improvement of 4.51 % 
+compared to the original model. Regarding fruit number prediction, our 
+method achieved an R2 of 0.945. In terms of production estimation, R2 
+reached 0.902. This indicates that our method has found an excellent 
+linear fitting relationship between the number of surface fruits per plant 
+and the measured number of fruits, and it also proves the effectiveness of 
+our method in fitting the yield of sample trees based on the number of 
+surface fruits. is multifaceted. It is related to the total yield of the C. 
+oleifera variety and directly affects the accuracy and applicability of the 
+estimated model. The significant differences in average single-fruit 
+quality among different varieties of C.oleifera may be due to genetic 
+characteristics, growth environment, and nutrient absorption. If these 
+differences are not considered in the yield estimation model, they can 
+lead to bias in the estimation results. The direct relationship between the 
+average weight of single fruit and yield means that even if the number of 
+fruits is the same, the total yield of different varieties of C.oleifera may 
+vary significantly. Therefore, incorporating the average weight of a 
+single fruit into the model is a critical step in improving prediction ac­
+curacy and in the initial model, only considering the number of fruits 
+limited the model’s predictive ability. However, when we included the 
+average quality of individual fruits in the model, not only did the fitting 
+degree of specific varieties such as CL4 increase from 0.921 to 0.976, but 
+the RMSE also significantly decreased from 0.389 to 0.28. In addition, 
+the fitting degree of the CL40 variety increased from 0.854 to 0.906, and 
+the RMSE decreased from 0.559 to 0.372. The fitting degree of the CL53 
+variety also increased from 0.854 to 0.893, and the RMSE decreased 
+from 0.559 to 0.379. This proves the importance of the average weight 
+of a single fruit in improving prediction accuracy. In addition, the 
+sensitivity of different varieties to the average weight of a single fruit 
+suggests that we must differentiate different varieties when establishing 
+prediction models to ensure the model’s generalization ability.
+An empirical predictive model was developed based on surface fruit 
+count data identification and the relationship between average fruit 
+weight per plant and yield per plant. 40 sample tree data are used for 
+model construction, and 20 reserved sample tree data are used for ac­
+curacy verification. Our method achieves an R2 of 0.902 between the 
+identified surface fruit counts, the average fruit weight per plant, and 
+the individual plant yields, indicating an excellent linear fit between the 
+surface tree fruit counts and the measured individual plant fruit counts 
+(Table 5). This demonstrates the effectiveness of our method in fitting 
+individual plant yields for sample trees based on crown fruit counts. 
+decisions in resource allocation, market planning, and risk management. 
+Fig. 10. Regression analysis between actual and estimated yields for different varieties of C.oleifera. a:CL4. b:CL40. c:CL53. d: All varieties.
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+11 
+
+Ultimately, this scientifically-based yield estimation supports the sus­
+tainable development of the oil tea industry.
+4. Discussion
+4.1. The improved YOLOv8 model distinctly enhances the recognition 
+ability of C.oleifera fruit count
+YOLOv8 has undergone various optimizations and improvements 
+while maintaining the high efficiency and precision features of the 
+YOLO series. Its efficiency, accuracy, multiscale detection capability, 
+and scalability make it a powerful tool for achieving tasks such as object 
+detection and image segmentation. After improvement, it has been 
+widely applied [36,45]. This study improves and integrates YOLOv8 in 
+terms of backbone layer, Neck layer, and loss calculation, enriching the 
+position information of feature maps without significantly reducing 
+detection speed, thereby improving the detection accuracy of object 
+detection algorithms. The results showed that the improved YOLOv8 
+model achieved an accuracy of 85.13 %, a recall of 77.84 %, and an 
+average accuracy of 86.21 % on the C.oleifera dataset. Compared to the 
+original detection model, there were improvements of 4.07 %, 3.77 %, 
+and 4.51 %, respectively. The mAP of the improved algorithm is superior 
+to some advanced object detection algorithms, such as the SSD algo­
+rithm, R-CNN algorithm, and other YOLO series algorithms. Our 
+improved algorithm reduces false positives and false negatives of targets 
+in complex environments without significantly reducing detection 
+speed, improving detection accuracy and exhibiting superior detection 
+performance.
+Interestingly, in this study, RepViT replaced CSPDarkNet-53 in 
+YOLOv8 and had a more advantageous enhancement effect compared to 
+the introduction of P2 and Shape IoU, respectively. The introduction of 
+RepViT in YOLOv8 can significantly increase the computational speed 
+[45], show strong feature detection capabilities, and strike a good 
+Fig. 11. Regression analysis of yield estimation for different varieties based on the number of fruits per plant and average single fruit weight a:CL4. b:CL40. c:CL53. 
+d: all varieties.
+Table 5 
+Regression relationship yield per plant between measured and estimation.
+Methods
+MSE
+RMSE
+MAE
+MAPE
+R2
+DT Regression
+0.361
+0.601
+0.464
+22.202
+0.813
+RF Regression
+0.355
+0.596
+0.452
+19.762
+0.874
+adaboost Regression
+0.318
+0.564
+0.41
+17.896
+0.808
+GBDT Regression
+0.503
+0.709
+0.491
+19.35
+0.791
+ExtraTrees Regression
+0.228
+0.477
+0.333
+16.153
+0.873
+CatBoost Regression
+0.249
+0.499
+0.409
+19.049
+0.885
+KNN Regression
+0.31
+0.557
+0.459
+17.621
+0.856
+BPnet
+0.272
+0.522
+0.415
+18.881
+0.902
+SVR Regression
+0.628
+0.793
+0.662
+119.731
+0.71
+XGBoost Regression
+0.435
+0.659
+0.524
+17.571
+0.781
+LightGBM Regression
+0.537
+0.733
+0.573
+21.303
+0.743
+Linear regression
+0.297
+0.545
+0.415
+17.555
+0.902
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+12 
+
+balance between latency and accuracy.Introducing the P2 small object 
+detection layer in the Neck layer can more sensitively detect and locate 
+small objects, thereby improving the accuracy of small object detection. 
+Regarding loss calculation, although existing methods consider the in­
+fluence of the distance, shape, and angle between the GT box and An­
+chor box on bounding box regression, they ignore that the shape and size 
+of the bounding box itself can also affect bounding box regression. In 
+order to improve the accuracy of regression further, Shape IoU adds new 
+geometric constraints on top of IoU to make the regression more accu­
+rate. Simultaneously, the geometric relationship between the GT box 
+and the prediction box and the shape and size of the bounding box itself 
+should be considered for bounding box regression. This makes the 
+bounding box regression more accurate. From this, it can be seen that 
+the combination of the improved YOLOv8 model and object tracking 
+algorithm in C.oleifera, using the number of fruits in the video for 
+real-time detection and recognition, can help C.oleifera plantation 
+managers effectively evaluate the yield of C.oleifera in the forest. Solving 
+the problem of manual production estimation takes a long time, requires 
+a workforce, and incurs high costs. These results provide valuable in­
+sights into the tracking performance of each algorithm and help select 
+the most suitable algorithm based on specific tracking requirements and 
+dataset features.
+4.2. The introduction of the ORB algorithm in the Bytetrack model 
+significantly improves the accuracy and speed of multi-target tracking
+Multiobject tracking tracks and localizes objects in subsequent 
+frames based on the tracked object’s position in the initial frame, asso­
+ciating the same object in the video. Among them, the tracking method 
+based on the Kalman filter is widely used in the field of fruit tracking. 
+Gan et al [46] used an extended KF-integrated autonomous navigation 
+system to locate and track citrus fruits, but the tracking cost was 
+expensive. To reduce costs, Wang et al [47] combined KF and Hungarian 
+algorithms for mango tracking, reducing tracking costs and complexity, 
+but there was a severe problem of mango occlusion. To minimize 
+duplicate counting of fruits, Gao et al [25] proposed an improved 
+Hungarian algorithm that preserves the tracking boxes that disappear 
+due to occlusion during apple tracking and re-match them, improving 
+the accuracy of apple tracking. However, for fruit trees with large or 
+dense leaves, leaf occlusion of the fruit may result in the loss of the 
+tracking target. To address this issue, Zhang et al [35] proposed 
+OrangeSort based on DeepSORT, which reduces the impact of leaf oc­
+clusion on the accuracy of citrus counting results for field citrus tracking. 
+However, this approach ignores the appearance features of the target. Ge 
+et al [22] proposed an improved YOLODeepsort for tomato tracking, 
+which utilizes the appearance feature extraction network in DeepSORT 
+for association matching, meeting the practical needs of tomato yield 
+prediction. Since the above methods are all proposed as target tracking 
+solutions in an ensemble scenario, they are not applicable for tracking 
+and counting C.oleifera in a natural scenario. The tracking algorithm 
+proposed in this work introduces the ORB algorithm into the ByteTrack 
+tracking model to enrich the feature information of the target. The 
+improved tracking algorithm achieved a MOTA of 63.7 %, a MOTP of 
+80.2 %, and an IDF1 of 77.1 % in the C.oleifera fruit dataset. Compared 
+to before the improvement, the accuracy of multi-target tracking has 
+increased by 1.1 %, the accuracy of multi-target tracking has increased 
+by 0.8 %, and the ID harmonic mean has increased by 0.4 %. Compared 
+to other state-of-the-art tracking algorithms, it has a higher FPS and a 
+more significant number of correct tracked trajectories with relatively 
+fewer numbered jumps. When the relative distance between two targets 
+moves closer and closer over time, traditional tracking algorithms rely 
+solely on motion information for association matching, which may result 
+in jumps in the number of target bins or even lead to incorrect matching 
+or missing targets. The modified tracking algorithm performs 
+frame-to-frame correlation matching through the dual action of motion 
+and appearance information to improve the matching accuracy between 
+predicted tracking and detection boxes. It effectively improves the 
+problem of target-number hopping and target-box loss when matching 
+solely on a single piece of information, greatly enhancing the tracking 
+accuracy of the tracking algorithm. So, we propose an algorithm with 
+high accuracy and fast tracking speed.
+4.3. The estimation of fruit yield based on videos provides a new idea for 
+determining the region yield of C.oleifera
+Yield estimation in agriculture is critical, and diverse methodologies 
+offer their own unique merits and challenges. Statistical methods, a 
+traditional approach, analyze historical data for yield estimation. Their 
+simplicity suits data- or resource-constrained settings but may 
+compromise accuracy due to oversimplifying complex growth dynamics 
+[48]. Conversely, physical models incorporate crop growth physics and 
+environmental factors, offering precision but necessitating intricate 
+construction, accurate parameters, and extensive data [49]. Meteoro­
+logical analysis uses weather data to predict yields [50], correlating 
+weather with yields but possibly neglecting other influential factors. 
+Remote sensing, especially via UAVs, facilitates large-scale yield esti­
+mation based on fruit counts. Its high spatiotemporal resolution captures 
+crop dynamics but may be costly and less suitable for small-scale 
+farmlands [51,52].
+In contrast, video-based multi-objective tracking methods have 
+shown unique advantages in crop yield prediction. It offers swift data 
+acquisition, ease of use, and high accuracy. This approach utilizes 
+refined object detection models to locate fruits precisely, assigns unique 
+IDs via ByteTrack to prevent double counting, and employs machine 
+learning to correlate canopy fruit counts with actual yields. This method 
+achieved a fitting effect of 0.902 and RMSE of 0.415 in this study, 
+demonstrating remarkable accuracy and practicality in predicting oil tea 
+production. By integrating advanced detection and tracking technolo­
+gies, this approach offers a robust solution for large-scale yield estima­
+tion, fostering the sustainable growth of the C.oleifera industry.
+Meanwhile, our model also has inconsistent prediction yield accu­
+racy rates among different varieties. This discrepancy can be attributed 
+to several factors. First, dataset imbalance likely impacted the model’s 
+ability to learn from CL40, which may have been underrepresented in 
+the training data, leading to a stronger model bias toward CL4. To 
+address this, future work should focus on balancing the dataset or using 
+data augmentation techniques to enhance the model’s ability to gener­
+alize across different varieties. Second, the morphological similarities 
+between CL4 and CL40, such as fruit size and shape, could contribute to 
+difficulties in distinguishing between the two, highlighting the need for 
+more distinct feature extraction methods. Additionally, the error dis­
+tribution between predicted and actual yield values, particularly for 
+CL40, suggests the model may be prone to false negatives, likely due to 
+occlusion or complex background conditions, which could lead to 
+missed detections. Further research could focus on improving the 
+model’s sensitivity to such factors, including occlusion handling and 
+multi-view tracking.
+4.4. Future applications and deployment in real-world environments
+While this study focuses on improving the YOLOv8 model for fruit 
+detection and tracking in controlled environments, future work could 
+explore the deployment of this system in real farm or forest environ­
+ments on edge devices. The successful integration of the improved 
+YOLOv8 and ByteTrack algorithm provides a strong foundation for real- 
+time yield estimation in precision agriculture. Deploying this method in 
+outdoor environments would require suitable hardware, such as mobile 
+robotic platforms or drones equipped with edge devices like Raspberry 
+Pi or NVIDIA Jetson, which can support real-time processing while 
+maintaining high performance. These devices, coupled with high- 
+resolution cameras (e.g., Sony IMX series for RGB cameras or depth 
+cameras for improved occlusion handling), could be used for fruit 
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+13 
+
+detection and counting in dynamic, natural settings.
+Additionally, the operational settings of these devices would need to 
+accommodate the complexities of real-world farm environments, 
+including varying lighting conditions, terrain, and plant structure. For 
+instance, during fruit detection, challenges such as occlusion, leaf 
+interference, and tree canopy variations could influence the model’s 
+performance. By deploying this method on edge devices, the model 
+could provide real-time feedback to farmers or agricultural managers, 
+facilitating quicker decision-making for fruit harvesting and yield 
+estimation.
+This future integration with mobile platforms would not only 
+enhance the scalability of the method but also improve its practical 
+applicability, enabling autonomous robots to navigate orchards or for­
+ests, detect fruits, and provide accurate yield predictions without human 
+intervention. Future work will focus on addressing scalability issues, 
+ensuring robustness under different environmental conditions, and 
+exploring potential sensor fusion techniques to combine visual data with 
+other sensory inputs for even more precise predictions.
+5. Conclusion
+A video sequence-based fruit counting algorithm for C. oleifera is 
+proposed to address the small target characteristics of wild oil tea tree 
+fruits and the challenges posed by different occlusion states in video 
+sequences. The algorithm incorporates two sub-algorithms: improved 
+YOLOv8 for fruit detection and enhanced ByteTrack for multi-object 
+tracking. The improved YOLOv8 model, featuring a lightweight 
+RepViT backbone, a minimal object detection layer with the P2-layer 
+added on top of the multi-scale FPN+PAN, and a network optimized 
+by the Shape IoU loss function, achieved an improved accuracy of 85.13 
+%, with mAP50 reaching 86.21 %. Additionally, the ByteTrack model, 
+enhanced with the ORB algorithm, performed significantly better than 
+other tracking models, showing improvements in MOTA, MOTP, and 
+IDF1 by 1.1 %, 0.8 %, and 0.4 %, respectively.
+The yield prediction model developed in this study demonstrated 
+strong performance, with R2 values of 0.989, 0.931, 0.914, and 0.945 for 
+CL4, CL40, CL53, and mixed samples, respectively. The R² and RMSE for 
+model accuracy tests were 0.901 and 10.989, respectively, showing 
+good consistency between predicted and measured yield values. By 
+incorporating the number of detected fruits and the average fruit qual­
+ity, the model significantly improved production estimates, with R², 
+MSE, RMSE, MAE, and MAPE values of 0.902, 0.297, 0.545, 0.415, and 
+17.55, respectively.
+While the proposed method has shown effectiveness in yield esti­
+mation for C. oleifera, some limitations must be acknowledged. The 
+model’s performance varies across different varieties, and the detection 
+accuracy may be influenced by factors such as fruit size differences and 
+tree size variability. Additionally, generalizing the model to other fruit 
+types may pose challenges due to morphological differences. Environ­
+mental constraints, such as lighting conditions and occlusion, could also 
+impact the model’s robustness in diverse natural settings. Finally, scal­
+ability issues may arise when applying the model to larger or more 
+complex orchard environments.
+In future work, we plan to extend the framework to incorporate 
+multiple-view tracking data to further improve automatic counting and 
+yield prediction. Addressing these limitations will help enhance the 
+model’s applicability to a wider range of fruit types and real-world 
+agricultural conditions.
+Availability of Supporting Data
+The datasets used and/or analyzed in the current study are available 
+from the corresponding author upon reasonable request.
+CRediT authorship contribution statement
+Zhipeng Dong: Writing – review & editing, Writing – original draft, 
+Conceptualization. Wei Long: Writing – review & editing, Validation, 
+Supervision, Funding acquisition. Fan Yang: Writing – original draft. 
+Chunlian Yu: Validation, Supervision, Conceptualization. Jiayi Du: 
+Writing – original draft, Conceptualization. Kailiang Wang: Writing – 
+review & editing, Validation, Supervision. Leyan Lyu: Writing – review 
+& editing, Validation, Supervision.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Acknowledgement
+This work was supported by Zhejiang Science and Technology Major 
+Program on Agricultural New Variety Breeding (2021C02070–2); Quz­
+hou Science & Technology Project (2022K303).
+Supplementary materials
+Supplementary material associated with this article can be found, in 
+the online version, at doi:10.1016/j.atech.2025.101435.
+Data availability
+Data will be made available on request.
+References
+[1] H. Qi, X. Sun, W. Yan, H. Ye, J. Chen, J. Yu, D. Jun, C. Wang, T. Xia, X. Chen, 
+Genetic relationships and low diversity among the tea-oil camellia species in Sect. 
+Oleifera, a bulk woody oil crop in China, Front. Plant Sci. 13 (2020) 996731, 
+https://doi.org/10.3389/fpls.2022.996731.
+[2] W. Quan, A. Wang, C. Gao, C. Li, Applications of Chinese Camellia oleifera and its 
+by-products: a review, Front. Chem. 10 (2022) 921246, https://doi.org/10.3389/ 
+fchem.2022.921246.
+[3] F. Zhang, Z. Li, J. Zhou, Y. Gu, X. Tan, Comparative study on fruit development and 
+oil synthesis in two cultivars of Camellia oleifera, BMC Plant Biol. 21 (2021) 348, 
+https://doi.org/10.1186/s12870-021-03114-2.
+[4] J. Tu, J. Chen, J. Zhou, W. Ai, L. Chen, Plantation quality assessment of camellia 
+oleifera in mid-subtropical China, Soil Till Res. 186 (2019) 249–258, https://doi. 
+org/10.1016/j.still.2018.10.023.
+[5] H.L. Ye, Z.G. Chen, T.T. Jia, Q.W. Su, S.C. Su, Response of different organic mulch 
+treatments on yield and quality of Camellia oleifera, Agri. Water Manage. 245 
+(2021) 106654, https://doi.org/10.1016/j.agwat.2020.106-654.
+[6] W.S. Lee, V. Alchanatis, C. Yang, M. Hirafuji, D. Moshou, C. Li, Sensing 
+technologies for precision specialty crop production, Comput. Electron. Agric. 74 
+(2010) 2–33, https://doi.org/10.1016/j.compag.2010.08.005.
+[7] D. Pasquel, S. Roux, J. Richetti, D. Cammarano, B. Tisseyre, J.A. Taylor, A review 
+of methods to evaluate crop model performance at multiple and changing spatial 
+scales, Precis. Agric. 23 (2022) 1489–1513, https://doi.org/10.1007/s11119-022- 
+09885-4.
+[8] L. Miranda. Deep Clustering of Animal Motion Tracking Data: software 
+development and applications to, Doctoral dissertation, Universit¨at München, 
+2023.
+[9] A.K. Maji, Marwaha S.Kumar S, A. Arora, V. Chinnusamy, Islam S. SlypNet, 
+Spikelet-based yield prediction of wheat using advanced plant phenotyping and 
+computer vision techniques, Front. Plant Sci. 13 (2022) 889853, https://doi.org/ 
+10.3389/fpls.2022.889853.
+[10] K. Mochida, S. Koda, K. Inoue, T. Hirayama, S. Tanaka, R. Nishii, F. Melgani, 
+Computer vision-based phenotyping for improvement of plant productivity: a 
+machine learning perspective, GigaScience 8 (1) (2019) giy153, https://doi.org/ 
+10.1093/gigascience/giy153.
+[11] H. Tian, T. Wang, Y. Liu, X. Qiao, Y. Li, Computer vision technology in agricultural 
+automation—a review, Inf. Process. Agric. 7 (1) (2020) 1–19, https://doi.org/ 
+10.1016/j.inpa.2019.09.006.
+[12] R. Gai, N. Chen, H. Yuan, A detection algorithm for cherry fruits based on the 
+improved YOLO-v4 model, Neural Comput. Applic. 35 (2023) 13895–13906, 
+https://doi.org/10.1007/s00521-021-06029-z.
+[13] R. Girshick, J. Donahue, T. Darrell, J. Malik, Rich feature hierarchies for accurate 
+object detection and semantic segmentation, in: Proceedings of the IEEE 
+Conference on Computer Vision and Pattern Recognition, 2014, pp. 580–587.
+[14] G. Liu, J.C. Nouaze, P.L. Touko Mbouembe, J.H Kim, YOLO-tomato: a robust 
+algorithm for tomato detection based on YOLOv3, Sensors 20 (7) (2020) 2145, 
+https://doi.org/10.3390/s20072145.
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+14 
+
+[15] J. Redmon, S. Divvala, R. Girshick, A. Farhadi, You only look once: unified, real- 
+time object detection, in: Proceedings of the IEEE Conference on Computer Vision 
+and Pattern Recognition, 2016, pp. 779–788.
+[16] A. Kuznetsova, T. Maleva, V. Soloviev, Using YOLOv3 algorithm with pre-and post- 
+processing for apple detection in fruit-harvesting robot, Agronomy 10 (7) (2020) 
+1016.
+[17] J. Villacr´es, M. Viscaino, J. Delpiano, S. Vougioukas, F.A. Cheein, Apple orchard 
+production estimation using deep learning strategies: a comparison of tracking-by- 
+detection algorithms, Comput. Electron. Agric. 204 (2023) 107513, https://doi. 
+org/10.1016/j.compag.2022.107513.
+[18] A. Koirala, K.B. Walsh, Z. Wang, C. McCarthy, Deep learning for real-time fruit 
+detection and orchard fruit load estimation: benchmarking of ‘MangoYOLO.’ Precis, 
+Agric. 20 (2019) 1107–1135, https://doi.org/10.1007/s11119-019-09642-0.
+[19] O.E. Apolo-Apolo, J. Martínez-Guanter, G. Egea, P. Raja, M. P´erez-Ruiz, Deep 
+learning techniques for estimation of the yield and size of citrus fruits using a UAV, 
+Eur. J. Agron. 115 (2020) 126030.
+[20] X. Li, X. Wang, P. Ong, Z. Yi, L. Ding, C. Han, Fast recognition and counting method 
+of dragon fruit flowers and fruits based on video stream, Sensors 23 (20) (2023) 
+8444, https://doi.org/10.3390/s23208444.
+[21] Y. Xie, X. Zhong, J. Zhan, C. Wang, N. Liu, L. Li, P. Zhao, L. Li, G. Zhou, ECLPOD: 
+an extremely compressed lightweight model for pear object detection in smart 
+agriculture, Agronomy 13 (7) (2023) 1891, https://doi.org/10.3390/ 
+agronomy13071891.
+[22] Y. Ge, S. Lin, Y. Zhang, Z. Li, H. Cheng, J. Dong, S. Shao, J. Zhang, X. Qi, Z. Wu, 
+Tracking and counting of tomato at different growth period using an improving 
+YOLO-deepsort network for inspection robot, Machines 10 (6) (2022) 489, https:// 
+doi.org/10.3390/machines10060489.
+[23] Z. Wu, X. Sun, H. Jiang, W. Mao, R. Li, N. Andriyanov, V. Soloviev, L. Fu, NDMFCS: 
+an automatic fruit counting system in modern apple orchard using abatement of 
+abnormal fruit detection, Comput. Electron. Agric. 211 (2023) 108036, https:// 
+doi.org/10.1016/j.compag.2023.108036.
+[24] G. Farjon, Y. Edan, AgroCounters—A repository for counting objects in images in 
+the agricultural domain by using deep-learning algorithms: framework and 
+evaluation, Comput. Electron. Agric. 222 (2024) 108988, https://doi.org/ 
+10.1016/j.compag.2024.108988.
+[25] F. Gao, W. Fang, X. Sun, Z. Wu, G. Zhao, G. Li, R. Li, L. Fu, Q. Zhang, A novel apple 
+fruit detection and counting methodology based on deep learning and trunk 
+tracking in modern orchard, Comput. Electron. Agric. 197 (2022) 107000, https:// 
+doi.org/10.1016/j.compag.2022.107000.
+[26] S. Tu, Y. Huang, Y. Liang, H. Liu, Y. Cai, H. Lei, A passion fruit counting method 
+based on the lightweight YOLOv5s and improved DeepSORT, Precis. Agric. 25 (3) 
+(2024) 1731–1750.
+[27] D.M. Jim´enez-Bravo, Murciego ´AL, A.S. Mendes, H.S. San Bl´as, J. Bajo, Multi- 
+object tracking in traffic environments: a systematic literature review, 
+Neurocomputing 494 (2022) 43–55, https://doi.org/10.1016/j. 
+neucom.2022.04.087, 494:43-55.
+[28] C. Tan, C. Li, D. He, H. Song, Towards real-time tracking and counting of seedlings 
+with a one-stage detector and optical flow, Comput. Electron. Agric. 193 (2022) 
+106683.
+[29] J. Rong, H. Zhou, F. Zhang, T. Yuan, P. Wang, Tomato cluster detection and 
+counting using improved YOLOv5 based on RGB-D fusion, Comput Electron. Agric. 
+207 (2023) 107741, https://doi.org/10.1016/j.compag.2023.107741.
+[30] L. Fu, Wu J FengY, Z. Liu, F. Gao, Y. Majeed, A. Al-Mallahi, Q. Zhang, R. Li, Y. Cui, 
+Fast and accurate detection of kiwifruit in orchard using improved YOLOv3-tiny 
+model, Precision Agric. 22 (2021) 754–776, https://doi.org/10.1007/s11119-020- 
+09754-y.
+[31] H. Xia, B. Yang, Y. Li, B. Wang, An improved CenterNet model for insulator defect 
+detection using aerial imagery, Sensors 22 (8) (2022) 2850, https://doi.org/ 
+10.3390/s22082850.
+[32] G. Oliveira, A.C. Fonseca, J. Ferro, A.L. Oliveira, Deep learning-based extraction of 
+biomarkers for the prediction of the functional outcome of ischemic stroke 
+patients, Diagnostics 13 (24) (2023) 3604, https://doi.org/10.3390/ 
+diagnostics13243604.
+[33] T. Bai, N. Zhang, B. Mercatoris, Y. Chen, Improving jujube fruit tree yield 
+estimation at the field scale by assimilating a single landsat remotely-sensed LAI 
+into the WOFOST model, Remote Sens. 11 (9) (2019) 1119, https://doi.org/ 
+10.3390/rs11091119.
+[34] H. Mirhaji, M. Soleymani, A. Asakereh, S.A. Mehdizadeh, Fruit detection and load 
+estimation of an orange orchard using the YOLO models through simple 
+approaches in different imaging and illumination conditions, Comput. Electron. 
+Agric. 191 (2021) 106533, https://doi.org/10.1016/j.compag.2021.106533.
+[35] W. Zhang, J. Wang, Y. Liu, K. Chen, H. Li, Y. Duan, W. Wu, Y. Shi, W. Guo, Deep- 
+learning-based in-field citrus fruit detection and tracking, Hortic. Res. 9 (2022), 
+https://doi.org/10.1093/hr/uhac003 uhac003.
+[36] A. Wang, H. Chen, Z. Lin, J. Han, G. Ding, RepViT: revisiting mobile CNN from ViT 
+perspective, in: Presented at the Proceedings of the IEEE/CVF Conference on 
+Computer Vision and Pattern Recognition, 2024, pp. 15909–15920, https://doi. 
+org/10.1109/CVPR52733.2024.01506.
+[37] Alexey, D. (2020). An image is worth 16x16 words: transformers for image 
+recognition at scale. arXiv preprint arXiv: 2010.11929.
+[38] A. Paul, R. Machavaram, D. Kumar, H. Nagar, Smart solutions for capsicum 
+harvesting: unleashing the power of YOLO for detection, segmentation, growth 
+stage classification, counting, and real-time mobile identification, Comput 
+Electron. Agric. 19 (2024) 108832.
+[39] M. Sohan, T. Sai Ram, ChV. Rami Reddy, A review on YOLOv8 and its 
+advancements, in: I.J. Jacob, S. Piramuthu, P. Falkowski-Gilski (Eds.), A review on 
+YOLOv8 and its advancements, Data Intelligence and Cognitive Informatics, 
+Algorithms for Intelligent Systems (2024) 529–545, https://doi.org/10.1007/978- 
+981-99-7962-2_39.
+[40] Paul, A., Nagar, H., & Machavaram, R. Utilizing fine-tuned YOLOv8 deep learning 
+model for greenhouse capsicum detection and growth stage determination. In 2023 
+7th International Conference on I-SMAC (IoT in Social, Mobile, Analytics and 
+Cloud)(I-SMAC) (pp. 649–656). IEEE.
+[41] A. Paul, R. Machavaram, Advanced segmentation models for automated capsicum 
+peduncle detection in night-time greenhouse environments, Syst. Sci. Control Eng. 
+12 (1) (2024) 2437162.
+[42] C.Y. Wang, H.Y.M. Liao, Y.H. Wu, P.Y. Chen, J.W. Hsieh, I.H. Yeh, CSPNet: a new 
+backbone that can enhance learning capability of CNN, in: Proceedings of the 
+IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops, 
+2020, pp. 390–391.
+[43] W. Luo, J. Xing, A. Milan, X. Zhang, W. Liu, T.K. Kim, Multiple object tracking: a 
+literature review, Artif. Intell. 293 (2021) 103448, https://doi.org/10.1016/j. 
+artint.2020.103448.
+[44] A. Paul, R. Machavaram, Advancing capsicum detection in night-time greenhouse 
+environments using deep learning models: comparative analysis and improved 
+zero-shot detection through fusion with a single-shot detector, Franklin Open. 10 
+(2025) 100243.
+[45] Wang A., Chen H., Lin Z., Han J., Ding G. RepViT-sam: Towards real-time 
+segmenting anything. arXiv preprint arXiv:2312.05760. 2023. https://doi.org/10. 
+48550/arXiv.2312.05760.
+[46] H. Gan, W.S. Lee, V. Alchanatis, A prototype of an immature citrus fruit yield 
+mapping system, in: ASABE Annual International Meeting. American Society of 
+Agricultural and Biological Engineers, 2017, p. 1, https://doi.org/10.13031/ 
+AIM.201700164.
+[47] Z. Wang, K. Walsh, A. Koirala, Mango fruit load estimation using a video based 
+MangoYOLO—Kalman filter—Hungarian algorithm method, Sensors 19 (12) 
+(2019) 2742, https://doi.org/10.3390/s19122742.
+[48] B. Basso, L. Liu, Seasonal crop yield forecast: methods, applications, and 
+accuracies, Adv. Agron. 154 (2019) 201–255, https://doi.org/10.1016/bs. 
+agron.2018.11.002.
+[49] B.A.M. Bouman, Crop modelling and remote sensing for yield prediction, Neth. J. 
+Agric. Sci. 43 (1995) 143.
+[50] A.J. de Wit, C.A. Van Diepen, Crop growth modelling and crop yield forecasting 
+using satellite-derived meteorological inputs, Int. J. Appl. Earth Obs. Geoinfo. 10 
+(4) (2008) 414–425, https://doi.org/10.1016/j.jag.2007.10.004.
+[51] D. Li, Y. Miao, S.K. Gupta, C.J. Rosen, F. Yuan, C. Wang, L. Wang, Y. Huang, 
+Improving potato yield prediction by combining cultivar information and UAV 
+remote sensing data using machine learning, Remote Sens. 13 (16) (2021) 3322, 
+https://doi.org/10.3390/rs13163322.
+[52] A.M. Ali, M. Abouelghar, A.A. Belal, N. Saleh, M. Yones, A.I. Selim, M.E.S. Amin, 
+A. Elwesemy, D.E. Kucher, S. Maginan, I. Savin, Crop yield prediction using multi 
+sensors remote sensing. Egypt, J. Remote Sens. Space Sci. 25 (3) (2022) 711–716.
+Z. Dong et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101435 
+15 

@@ -1,0 +1,1600 @@
+A case study on the integration of a snapshot hyperspectral
+field-portable imager solving fruit quality assessment
+SeongHyun Choa, Eli Shepparda, Elvira Castelloa, Alexander Spanellisa, Daniel Pearcea, and
+Steve Chappella
+aLiving Optics LTD, 100 Park Drive, Milton Park, Abingdon, OX14 4RY, United Kingdom
+ABSTRACT
+This case study investigates the integration of a snapshot hyperspectral, field-portable imaging system for com-
+prehensive fruit quality and yield assessment in agricultural orchards. The study introduces a novel framework
+for segmenting, counting, sizing, and estimating the ripeness of orchard fruit using spatial-spectral data. By
+combining hyperspectral imaging (HSI) with RGB data, we address the complexities of real-world agricultural
+environments, including occlusion, shadowing, and motion blur.
+Our proposed 1D-ConvNet + SAM2 model outperforms the RGB-only YOLOv8s approach, achieving a 25
+percent improvement in recall by leveraging spectral data to detect partially occluded fruit. Using DepthAny-
+thingV2 (DAv2), we estimate metric depth to localize fruit detections within a unified 3D coordinate system,
+enabling unique tracking and accurate fruit counting across video frames. This capability supports yield es-
+timation by providing precise counts and sizes of individual fruits in the orchard. Furthermore, segmentation
+masks and point clouds derived from monocular depth estimation are employed for fruit sizing, with future work
+focusing on improving handling of occlusions and segmentation errors.
+In addition to spatial-spectral detection, we demonstrate the feasibility of non-destructive ripeness estimation
+by correlating spectral features in the fruit’s skin with sugar content. An in-lab experiment using the Living
+Optics hyperspectral camera achieved a Brix correlation with an R2 of 0.71, underscoring the potential of HSI
+for assessing ripeness and fruit quality.
+This research highlights the utility of snapshot hyperspectral imaging as an all-in-one solution for end-to-end
+fruit quality and yield assessment in orchards. The dataset used in this study is publicly available at https:
+//huggingface.co/datasets/LivingOptics/hyperspectral-orchard, encouraging further advancements in
+agricultural hyperspectral imaging and computer vision.
+1. INTRODUCTION
+Hyperspectral imaging (HSI) has emerged as a transformative technology for solving complex challenges in fruit
+quality and yield assessment, particularly in the context of precision agriculture. Unlike traditional imaging
+techniques that rely on the visible spectrum’s three primary colors (red, green, and blue), HSI captures a wide
+range of wavelengths across the electromagnetic spectrum, including visible, infrared, and ultraviolet regions.
+This broad spectral coverage allows HSI to extract detailed spectral signatures, unique patterns that describe how
+materials reflect, absorb, or emit light at different wavelengths.1,2 By leveraging these spectral signatures, HSI
+can differentiate between materials and identify subtle biochemical and structural changes, even when objects
+appear visually identical.3,4
+HSI has shown significant promise in various fields, including material identification, medical diagnostics,
+cultural heritage preservation, and environmental monitoring.5,6 In agriculture, it offers unique advantages for
+tasks such as fruit detection, sizing, ripeness estimation, and yield prediction.7–9 However, these applications face
+challenges, including the high dimensionality of spectral data, limited labeled training datasets, and variability
+in spectral signatures caused by environmental factors such as occlusion, shadowing, and motion blur.10,11
+Advancing the capabilities of HSI in real-world scenarios remains an active area of research, with a need for
+Further author information: send correspondence to Alexander Spanellis e-mail: alex@livingoptics.com
+Photonic Instrumentation Engineering XII, edited by Lynda E. Busse, Yakov Soskind,
+Proc. of SPIE Vol. 13373, 1337304 · © 2025 SPIE · 0277-786X
+doi: 10.1117/12.3042114
+Proc. of SPIE Vol. 13373  1337304-1
+
+Figure 1: System overview for a hyperspectral detection, segmentation, tracking and quantification framework.
+Components in Blue are fully implemented, integrated and tested. Components in Red are beyond the scope of
+this work and their full development and integration will be the scope of future work.
+robust frameworks that integrate HSI with complementary technologies like RGB imaging and advanced machine
+learning algorithms.
+This paper presents a case study on integrating a snapshot hyperspectral, field-portable imaging system to
+solve fruit quality and yield assessment challenges in orchards. The study introduces a novel framework that
+combines spatial and spectral information to enhance segmentation, tracking, sizing, and ripeness estimation
+of orchard fruit in complex agricultural environments.
+Specifically, we explore the use of spectral data to
+complement RGB-based approaches, addressing limitations in traditional imaging systems. Our contributions
+are as follows:
+1. Establish Benchmarks for Spectral Sensing Technology: We define and develop standardized bench-
+marks to assess the accuracy and effectiveness of spectral sensing technologies used in HSI for fruit data
+analysis. This provides a clear framework for evaluating the performance of various HSI systems in tasks
+such as detecting, classifying, and segmenting fruit.
+2. Highlight the Benefits of Spectral Sensing: We explore the advantages of using spectral sensing
+technologies in the context of fruit data analysis, improving the precision of fruit detection and classification,
+enhancing the ability to track fruit growth, and providing valuable insights for agricultural applications.
+3. Identify Efficient Feature Recognition Methods: We investigate efficient and effective methods for
+feature recognition by comparing the performance of spectral-based methods with spatial-spectral-based
+techniques. This demonstrates the potential of combining spectral and spatial information for improved
+detection and classification of fruit in diverse environments.
+4. Conduct Empirical Experiments: We perform a series of empirical experiments to compare the per-
+formance of algorithms used in fruit data analysis, including tasks such as counting, tracking, sizing, and
+ripeness estimation. These experiments utilize the same data and evaluation framework to ensure fairness
+and consistency in evaluating different methods.
+Proc. of SPIE Vol. 13373  1337304-2
+
+5. Address Real-World Challenges: We identify practical challenges, including fruit occlusion, varying
+lighting conditions, and environmental factors, that affect the accuracy of detection and classification
+systems. Solutions based on shared results from machine learning approaches applied to fruit data are
+proposed.
+6. Evaluate Performance Metrics: We introduce and evaluate performance metrics that accurately mea-
+sure the capabilities of HSI systems, providing robust indicators for their practical applicability in real-world
+scenarios.
+Figure 1 shows an overview of the fruit quality assessment system that we have implemented for orchard
+fruit yield estimation. This system will be described and evaluated in this work. The methods and findings
+discussed in this study are not only applicable to orchard fruit but can also be adapted to other domains where
+hyperspectral imaging is valuable. Furthermore, a public dataset is made available at https://huggingface.co/
+datasets/LivingOptics/hyperspectral-orchard to encourage further advancements in hyperspectral imaging
+and agricultural computer vision. By addressing real-world challenges and delivering actionable insights, this
+study aims to advance the practical application of hyperspectral imaging in precision agriculture.
+2. RELATED WORKS
+2.1 Evolution of HSI Classification Techniques
+The evolution of HSI classification has seen significant advancements, transitioning from traditional machine
+learning techniques such as k-Nearest Neighbors (k-NN),12 Support Vector Machines (SVM),13 and Random
+Forests (RF)14 to more sophisticated methods. While these early approaches addressed high-dimensional spectral
+data challenges, they were limited in handling the data’s complexity and scale.
+In recent years, advanced
+techniques like multinomial logistic regression15 and deep learning models—such as transformers,16 stacked
+autoencoders (SAEs),17 and Convolutional Neural Networks (ConvNets)18—have gained prominence.
+These
+methods leverage spatial correlations between spectral pixels, significantly improving classification performance
+when applied effectively.19
+2.2 Spectral and Spatial-spectral Approaches
+HSI classification approaches can be broadly categorised into spectral-based and spatial-spectral-based methods.
+Spectral-based approaches focus solely on the spectral signatures of individual pixels, often overlooking spatial
+dependencies.20 Although these methods capture detailed spectral information, they may lack the spatial con-
+text necessary for higher accuracy.21 Spatial-spectral approaches, in contrast, integrate both spectral and spatial
+features, yielding enhanced classification results. Among these, ConvNets have demonstrated exceptional per-
+formance due to their ability to effectively combine spatial and spectral information, especially for agricultural
+tasks such as fruit classification.22,23
+2.3 Deep Learning and Recent Advances in HSI Classification
+Recent advancements in deep learning have revolutionised HSI classification. A notable framework combining
+spectral and spatial features with SAEs, Principal Component Analysis (PCA), and logistic regression10 achieved
+higher accuracy than traditional methods like SVM and PCA classifiers. This study highlighted the importance
+of hierarchical feature extraction for improved classification, noting, however, that excessive network depth
+could hinder performance. Reviews of deep learning techniques for HSI emphasised challenges related to limited
+labelled datasets and spectral differences from traditional optical images,24 while underscoring the effectiveness
+of 2D and 3D convolutional networks. Li et al.25 categorised deep learning approaches into spectral-feature,
+spatial-feature, and spatial-spectral-feature networks, advocating for methods like reinforcement learning and
+data augmentation to address data scarcity.
+Proc. of SPIE Vol. 13373  1337304-3
+
+2.4 HSI in Fruit Quality Assessment
+HSI has emerged as a powerful tool for assessing fruit quality, enabling non-destructive evaluation of physical-
+chemical properties, maturity stages, and decay detection. A comprehensive review identified challenges in image
+processing, data analysis, and parameter optimisation, suggesting the integration of spectral and image data for
+enhanced utility.26 Studies have also explored HSI’s potential for early decay detection in fruits like apples and
+citrus, reporting promising results but acknowledging barriers such as large data sizes, high hardware costs, and
+redundant data, which limit industrial adoption.27
+2.5 Dimensionality Reduction and Quality Assessment Techniques
+Dimensionality reduction techniques, such as PCA and Linear Discriminant Analysis (LDA), have been exten-
+sively employed to simplify HSI data processing. Applications include distinguishing banana maturity stages
+under varying temperatures, where HSI effectively correlated spectral data with chemical transformations dur-
+ing ripening, such as the conversion of starch into soluble sugars like glucose and fructose.28 HSI’s capabilities
+in evaluating textural, biochemical, and safety attributes of fruits and vegetables have further highlighted its
+non-destructive nature and real-time application potential, despite challenges like computational demands and
+morphological calibration.29
+2.6 Innovations in Fruit Ripeness, Maturity and Health Estimation
+The assessment of fruit ripeness and maturity using HSI has gained traction due to its precision and non-
+invasive nature. Studies have employed techniques like band selection and dimensionality reduction to classify
+fruit maturity stages with high accuracy. For instance, blueberry maturity stages were classified with accuracies
+exceeding 88% using methods such as pairwise class discriminability and hierarchical dimensionality reduction
+alongside classifiers like k-NN, SVM, and AdaBoost.30 Similarly, persimmon ripeness was determined with 95.3%
+accuracy through feature wavelength analysis and texture-based classification.31
+HSI has also been used to automate ripeness evaluation in apples, combining spectral data with texture
+features to detect surface lesions and other quality parameters.32
+By capturing internal and external fruit
+characteristics, these studies illustrate HSI’s potential to enhance ripeness assessment accuracy significantly,
+paving the way for its integration into smart agricultural systems.
+2.7 Methods and Challenges in Fruit Counting
+Accurate fruit counting is vital for yield estimation, and various traditional and advanced methods have been
+developed to address this need.
+For instance, mango yield estimation using line-scan HSI on an unmanned
+vehicle achieved determination coefficients of up to 0.83, outperforming RGB methods.33 Automated systems
+for pineapple crown counting have achieved 94.4% accuracy using UAV-captured RGB images combined with
+machine learning classifiers like artificial neural networks.34 Similarly, texture- and shape-based methods have
+successfully counted mangoes on tree canopies, achieving counts within 16% of actual values under controlled
+imaging conditions.35
+2.8 Advances in Machine Learning for Fruit Counting
+Machine learning has advanced fruit counting methods significantly. Studies comparing ConvNet architectures
+for detecting avocados, lemons, and apples demonstrated that Faster R-CNN achieves superior accuracy, albeit
+with higher computational demands, compared to single-shot detectors.36
+ConvNets have also been used to
+count clustered apples, achieving 97% accuracy by addressing challenges like occlusions and varying lighting
+conditions.37 A low-cost green fruit counting system for orange trees reported a detection error of only 5% under
+controlled conditions, showcasing the potential for accessible technology adoption.38
+2.9 HSI for Fruit Detection and Size Estimation
+HSI’s versatility extends to fruit detection and size estimation. Reviews of deep learning techniques for these
+applications have highlighted efforts to overcome challenges like canopy occlusion and lighting variability.39
+Studies assessing peaches’ internal and external quality attributes achieved high accuracy in weight prediction
+and diameter estimation with minimal error margins.40 By integrating spectral and spatial data, HSI-based
+methods for fruit size and count estimation have consistently outperformed manual approaches, demonstrating
+its practical value in agriculture.41
+Proc. of SPIE Vol. 13373  1337304-4
+
+2.10 Challenges in Yield Estimation Using HSI
+Despite its potential, HSI faces significant challenges in yield estimation, including the misclassification of young
+leaves and overlapping fruit due to spectral similarities and canopy occlusion.42 Environmental variables such
+as inconsistent lighting, shadows, and debris further complicate data acquisition in outdoor conditions. Compu-
+tational demands for processing high-dimensional data and the scalability of HSI systems remain key hurdles,
+particularly in commercial agricultural applications.
+The processing of high-dimensional hyperspectral data poses significant computational challenges. Traditional
+techniques, such as linear unmixing, have been used to estimate vegetation abundance and correlate it with
+yield by analyzing multidate imagery. While these methods achieve reasonable accuracy, they struggle with
+nonlinear interactions and require extensive preprocessing to address errors caused by mixed spectral signatures
+in heterogeneous canopies.43
+Deep learning models, like Convolutional Neural Networks (CNNs), have shown promise for yield estima-
+tion by combining spectral and spatial information. For example, a CNN-based approach integrating spectral
+and RGB data achieved a prediction accuracy of 75.5% for corn yields, surpassing one-dimensional and two-
+dimensional models.
+However, the approach faced limitations, including small dataset sizes and a reliance
+on preprocessing to optimize performance, emphasizing the need for larger datasets and robust preprocessing
+pipelines for broader applicability.44
+In orchard environments, ground-based HSI has been employed to estimate mango yields with results compa-
+rable to RGB-based methods. Despite its advantages in detecting nuanced traits like disease and maturity, the
+cost-effectiveness of HSI as a standalone tool for yield estimation remains questionable. Its practical scalability
+is further hindered by labour-intensive ground truthing and the significant preprocessing demands of HSI data.33
+Efforts to integrate hyperspectral data with machine vision systems for automated fruit detection across
+growth stages have demonstrated potential. However, these systems face challenges in developing algorithms
+that can handle variability in fruit appearance, such as differences in colour and size, across developmental stages
+and environmental conditions. Furthermore, achieving the real-time processing speeds necessary for large-scale
+agricultural operations remains an ongoing hurdle.45
+3. OVERVIEW
+The remainder of this paper is structured as follows:
+IV. Dataset Preparation – This section describes the collection and preparation of the dataset, detailing its
+structure and the preprocessing steps involved.
+V. Fruit Detection and Segmentation Methodology – Here, we outline the methods developed for fruit
+detection using hyperspectral imaging and compare the performance of various approaches.
+VI. Yield Estimation Through Object Tracking – This section presents our tracking algorithm for de-
+tecting fruit and demonstrates how it can be applied to estimate the total yield in a row of trees.
+VII. Fruit Sizing – A method for analyzing the size distribution of fruit within a row of trees is discussed,
+providing insights into size variability and uniformity.
+VIII. Ripeness Estimation – This section explores a non-destructive approach for estimating fruit ripeness
+using hyperspectral imaging, emphasizing its potential to assess internal and external quality attributes
+effectively.
+IX. Conclusion – A summary of the key contributions and findings of this research is provided.
+X. Future Work – Finally, we discuss potential areas for improvement and further exploration to enhance
+the utility and scalability of hyperspectral imaging workflows.
+Proc. of SPIE Vol. 13373  1337304-5
+
+4. DATASET PREPARATION
+The dataset was acquired using a Living Optics hyperspectral camera,46 which captures detailed spectral data
+spanning the visible to near-infrared (VIS-NIR) range, covering wavelengths from 440nm to 900nm. Each data
+sample includes both standard RGB images with a resolution of 2048 × 2432 × 3 and hyperspectral (HS) data,
+comprising 96 narrow spectral bands from 4384 spectral samples. For simplicity, we refer to the combined RGB
+and spectral data as hyperspectral (HS) images.
+4.1 Data Scope and Collection
+This dataset was developed in collaboration with the UK’s largest orchard fruit producer and covers over 1,000
+trees of multiple fruit varieties throughout the growing season (March to September). The dataset supports
+various applications, including fruit detection, sizing, segmentation, and disease detection, by offering a compre-
+hensive view of fruit development stages.
+4.2 Data Annotation and Splitting
+A subset of the dataset has been annotated, encompassing 44 unique raw files and 439 frames. To ensure robust
+evaluation, an 8:2 train-test split is employed at the raw file level, so all frames from a given file are confined
+to either the training or testing set. This approach minimizes the risk of data leakage and maintains dataset
+integrity.
+4.3 Class Distribution
+The dataset includes three annotated fruit classes: Royal Gala Apple, Pear, and Cox Apple, with respective
+instance counts of 3,785, 2,523, and 73, respectively. This substantial class imbalance necessitates careful data
+preprocessing to address training challenges, particularly for the underrepresented Cox Apple class, which is
+present exclusively in the training set.
+4.4 Background Class and Imbalance
+Unlabelled portions of each scene are mined for spectral samples to create a background class, which adds
+substantial imbalance due to the high volume of background data compared to foreground spectra. Additional
+details are provided in section 12.
+4.5 Spectral Characteristics
+The spectral profiles for each class, as shown in Figure 2, demonstrate unique characteristics. Royal Gala Apples
+exhibit a pronounced peak between channels 42 and 62, associated with their strong red coloration.
+Pears
+exhibit spectral profiles similar to the background, primarily because of shared green hues. Lastly, the Cox
+Apple’s profile indicates broad spectral responses across the visible range capturing changes akin to yellow-tone
+identifiers reflective of its pale appearance.
+4.6 Labeling Spectra
+Spectral samples are extracted from HS images and assigned labels based on the segmentation mask at their
+respective locations. This process produces two aligned arrays for each dataset split: a spectral array of shape
+[N, 96], which represents the spectral samples, and a class array of shape [N, 1], containing the corresponding
+class labels. Samples that fall outside labeled segmentation masks are assigned to the background class, which
+is labeled as 0, thereby contributing to the imbalance within the dataset.
+4.7 Data Normalisation
+To enhance the performance of spectral classification algorithms, two normalization steps are applied to the
+spectra:
+Proc. of SPIE Vol. 13373  1337304-6
+
+Figure 2: Mean spectrum of each class in the dataset. The shaded area represents the standard deviation of each
+class.
+Figure 3: A selection of spectra and the estimated scene illuminant in radiance (left) and reflectance (right).
+Proc. of SPIE Vol. 13373  1337304-7
+
+Figure 4: A selection of spectra and the estimated scene illuminant in reflectance (left) and sum normalised
+reflectance (right).
+4.7.1 Reflectance Conversion
+The average spectrum of the brightest 5% of pixels in each HS image is calculated to estimate the illuminant.
+Each spectrum is then divided by this illuminant to convert radiance to pseudo-reflectance, mitigating lighting
+variability between scenes. Figure 3 illustrates this process.
+4.7.2 Sum Normalisation
+Each spectrum is divided by its channel-wise sum to standardize the area under the curve to one. This step
+reduces intra-class variance caused by variations in camera settings (gain, exposure) and environmental factors
+like shadows. Examples are shown in Figure 4.
+5. FRUIT DETECTION AND SEGMENTATION METHODOLOGY
+5.1 Experimental Setup
+The image dimensions vary by model type. The Spectral Segmentation Model leverages the full spectral resolution
+of 4384 spectral points, while the Spatial-Spectral and YOLOv8s models operate on standardized images resized
+to 960x960 pixels (cropped and half resolution).
+This resolution limitation arises due to the Living Optics
+Camera, which collects spectral samples only in the central 1920×1920 region due to its optical design.46 As a
+result, only objects within this central area are labeled, leaving regions outside this area without ground truth
+segmentation masks.
+This study benchmarks the performance of seven models on spectral detection tasks with HS and RGB data.
+These models, including two Spectral detection algorithms, four Spatial-Spectral segmentation methods, and one
+RGB segmentation model, employ diverse strategies to optimize detection accuracy and computational efficiency
+for HS and RGB analysis challenges.
+Proc. of SPIE Vol. 13373  1337304-8
+
+5.2 Spectral Detection Algorithms
+This section details two spectral detection models used for hyperspectral data classification: a RF classifier as
+a baseline and a 1D Convolutional Neural Network (1D-ConvNet) as a more advanced approach. Each model
+leverages spectral information to predict class labels for individual spectra.
+5.2.1 Random Forest
+The RF classifier is implemented using the scikit-learn library, employing the OneVsRestClassifier framework
+for multiclass classification. It predicts the most probable class for each spectrum. Custom hyperparameters,
+such as a minimum of two samples per leaf, five samples per split, and 400 estimators, are used to configure the
+model. Class weighting strategies are also applied to address the dataset’s imbalance, as discussed in section 12.
+While the RF model achieves perfect accuracy on training data, it tends to overfit due to its decision trees
+extending fully until leaf nodes are pure. Attempts to mitigate overfitting by limiting the maximum depth of trees
+result in decreased test set performance. This outcome suggests that preprocessing steps, such as reflectance
+conversion and sum normalization (subsection 4.7), have effectively produced well-separated classes, thereby
+reducing the need for additional regularization.
+5.2.2 1D Convolutional Classifier
+The second method employs a 1D-ConvNet for spectral classification. A grid search is conducted to refine the
+model’s architecture and hyperparameters, starting with a foundational structure. This baseline consists of a
+single convolutional layer, a ReLU activation, batch normalization, a dropout layer to prevent overfitting, and a
+fully connected output layer with four neurons. To optimize performance, various configurations of convolutional
+and fully connected layers are tested during the grid search.
+The final architecture identified through this process includes a single convolutional layer with 64 neurons,
+followed by four fully connected layers that progressively narrow from 512 to 64 neurons. The output layer
+applies Sigmoid and Softmax activations to compute class probabilities. Training is performed using the Adam
+optimizer with early stopping based on validation F1 scores, and the model achieves its best results by balancing
+robust spectral features with effective generalization.
+The grid search explores two primary parameters to identify the optimal 1D-ConvNet architecture. The first
+involves varying the number and size of convolutional layers, ranging from one to four layers, with neuron counts
+set at 64, 128, 256, and 512. The second parameter involves the number and size of fully connected layers, tested
+across configurations ranging from zero to four layers beyond the output layer. Both increasing and decreasing
+layer-width patterns, such as [64, 128, 256, 512] and [512, 256, 128, 64], are considered. This combination results
+in a total of 32 potential architectures for evaluation.
+The grid search is conducted using the ”Background subsampling 1” method to address class imbalance.
+Training is performed with a batch size of 4384, equivalent to one frame of spectral data, and optimized using
+the Adam algorithm47 with default hyperparameters. An early stopping mechanism, triggered after 100 epochs
+without improvement in the validation F1 score, is employed to prevent unnecessary computation. The final
+architecture selected is the one achieving the highest validation F1 score. As is common in architecture searches,48
+it is assumed that strong interim performance correlates with robust final results.
+The selected architecture begins with a single convolutional layer comprising 64 neurons operating along
+the spectral channels. This is followed by a ReLU activation and batch normalization to stabilize the feature
+distributions. Beyond the convolutional block, the network contains four fully connected layers with progressively
+narrowing sizes of 512, 256, 128, and 64 neurons. The output layer includes four neurons, utilizing Sigmoid and
+Softmax activation functions to compute class probabilities.
+A significant challenge in training the 1D-ConvNet arises from the pronounced imbalance in the orchard
+dataset. This imbalance manifests in two ways: the overwhelming prevalence of background spectra compared
+to foreground spectra and the uneven distribution of samples among the foreground classes. To counter these
+issues, various techniques are employed to ensure that the model effectively learns to distinguish all classes,
+despite the dataset’s inherent disparities.
+Proc. of SPIE Vol. 13373  1337304-9
+
+Table 1: Results of different data balancing methods on the optimised 1D convolutional classifier architecture.
+Balancing scheme
+Validation Accuracy
+Background
+Pear
+Royal Gala Apple
+Cox Apple
+Total
+None
+1.0
+0.0
+0.0
+N/A
+0.97‡
+Class weighting
+1.0
+0.0
+0.0
+N/A
+0.97‡
+Background subsampling 1
+0.89
+0.79
+0.60
+N/A
+0.88
+Background subsampling 2
+0.16
+0.59
+0.54
+N/A
+0.18
+Data duplication 1
+0.99
+0.20
+0.06
+N/A
+0.97‡
+Data duplication 2
+0.96
+0.57
+0.23
+N/A
+0.94
+1. None: The dataset is used without any adjustments to address the imbalance, relying on the raw distri-
+bution of the data.
+2. Class Weighting: Loss values are weighted inversely to the frequency of each class, giving more signifi-
+cance to rare classes while reducing the impact of common ones. This approach penalizes misclassification
+of rare classes more heavily, while frequent classes, due to their prevalence, contribute equivalently to the
+overall loss.
+3. Background Subsampling 1: At each training epoch, a subset of background spectra is randomly
+sampled to match the total number of foreground spectra across all foreground classes.
+4. Background Subsampling 2: A subset of background spectra is selected per epoch to equal the number
+of spectra in the rarest foreground class.
+5. Data Duplication 1: Foreground spectra are replicated to equal the number of background spectra,
+aiming for balance.
+6. Data Duplication 2: Each class’s spectra are duplicated to match the total number of background
+spectra, ensuring uniform representation across all classes.
+Further details about these methods are available in section 12.
+The best-performing architecture from the grid search was retrained from scratch using each of these data
+balancing strategies. Results are detailed in Table 1. An early stopping patience of 500 epochs ensured models
+reached convergence.
+The most effective strategy was Background Subsampling 1. Although training without any balancing
+achieved a nominal accuracy of 97%, this was due to the model learning to classify all spectra as ”background,”
+thus failing to provide meaningful predictions.
+This underscores the necessity of balancing techniques and
+alternative metrics beyond accuracy to evaluate machine learning models effectively.
+The Class Weighting approach also performed poorly, with the model again defaulting to predicting ”back-
+ground” for all inputs. This suggests the current architecture lacks the capacity to model background spectra
+adequately while capturing the characteristics of foreground classes. Increasing the model’s complexity, such as
+adding more convolutional layers, or further reducing the weight assigned to the background class, could improve
+its performance.
+Data Duplication methods showed moderate success, though the model still exhibited a strong bias toward
+the ”background” class. Combining duplication techniques with spectral augmentation could enhance general-
+ization. Among these methods, Data Duplication 2, which replicates spectra from each foreground class to
+match the background, yielded encouraging results. However, duplication-based strategies significantly increased
+training time, which is a notable drawback.
+It is important to note that the architecture was originally optimized using Background Subsampling 1,
+which likely contributes to its strong performance with this method. A comprehensive architecture search across
+all combinations of data balancing techniques and model configurations would be ideal but is computationally
+Proc. of SPIE Vol. 13373  1337304-10
+
+Table 2: Results of post-processing optimisation for both spatial and spectral metrics.
+Model
+Optimised for
+SC
+SCC
+SA Factor
+F1 Score
+1D-ConvNet
+Spectral performance
+N/A
+No Filter
+No Filter
+0.3653
+N/A
+0.1
+6.5
+0.3502
+1D-ConvNet + SAM2
+Spatial performance
+0.1
+No Filter
+No Filter
+0.5574
+0.4
+0.3
+6.5
+0.5729
+prohibitive when using grid search. Future work may explore more sophisticated optimization algorithms to
+efficiently handle this multidimensional parameter space.
+For subsequent sections, the 1D-ConvNet model referenced is the one trained using the Background Sub-
+sampling 1 method with the architecture determined through grid search.
+5.3 Spatial-spectral Segmentation Algorithms
+The spatial-spectral approach integrates spectral classification with spatial segmentation to enhance detection
+capabilities in HSI. This method involves evaluating four combinations of spectral and spatial models: RF +
+FastSAM, RF + SAM2, 1D-ConvNet + FastSAM, and 1D-ConvNet + SAM2. Each combination capitalizes on
+the strengths of its spectral and spatial components to achieve optimal performance.
+The spatial-spectral segmentation process operates in two stages.
+Initially, spectra are classified using a
+spectral classifier. Subsequently, the RGB image is over-segmented by a spatial segmentation algorithm. The
+results from these steps are merged, mapping spectral classifications onto the segmentation masks to delineate
+objects of interest.
+Spectral classification relies on machine learning models to analyze HS data directly. The Random Forest
+RF classifier identifies patterns using an ensemble of decision trees, allowing it to learn relationships within
+the spectral inputs. In contrast, the 1D-ConvNet extracts hierarchical features using its deep learning architec-
+ture, combining convolutional and fully connected layers. Despite differing methodologies, both classifiers are
+fundamentally data-driven, leveraging the patterns within the HS dataset to make predictions.
+For spatial segmentation, two distinct models are used: FastSAM and SAM2. FastSAM is optimized for com-
+putational efficiency and speed, making it well-suited for real-time or large-scale applications. Conversely, SAM2
+focuses on achieving higher accuracy by employing more resource-intensive spatial segmentation techniques,
+prioritizing precision over speed.
+Segments identified by either FastSAM or SAM2 are classified based on the most frequently occurring non-
+background class within the segment, determined from the predictions of the N spectra it contains. The class
+of each individual spectrum within a segment is assigned based on the highest classification probability output
+by the spectral detector, whether RF or 1D-ConvNet.
+This integrated approach leverages the strengths of spectral and spatial models, enabling effective detection
+and segmentation of objects within HS images.
+5.3.1 Detection Post-processing via Confidence Thresholds and Similarity Filtering
+To enhance the performance of spectral and spatial-spectral algorithms, we introduce three hyperparameters:
+Spectral Classification Confidence (SCC), Spectral Angle Factor (SA Factor), and Segmentation Confidence
+(SC). The first two are applicable to spectral detections, while SC is specific to spatial-spectral algorithms.
+These hyperparameters facilitate filtering and refining model outputs, improving both detection accuracy and
+segmentation quality.
+The SC parameter applies exclusively to spatial-spectral models. It is used to validate whether a segmentation
+mask represents a true positive detection. It is calculated as:
+SC =
+PN prn == c
+N
+(1)
+Proc. of SPIE Vol. 13373  1337304-11
+
+Here, prn denotes the spectral classification of spectrum n ∈N, c is the predicted class of the segment, and N
+represents the set of spectra within the segment. By applying a threshold to SC, predictions with low confidence
+are filtered out. This approach discards segmentation masks covering large background regions or segments with
+ambiguous spectral signatures, thereby refining the final output.
+SCC introduces a threshold-based confidence mechanism for spectral detections. Spectra with a maximum
+class probability below the threshold are reassigned to the background class. This is described as:
+label =
+(
+argmax(P)
+if max(P) >= thresh
+0
+otherwise
+(2)
+Here, P represents the predicted probability distribution across classes, including background, Royal Gala
+Apple, Pear, and Cox Apple. This filtering step enhances the specificity of spectral predictions by ensuring
+low-confidence detections are excluded.
+The SA Factor applies a similarity-based filter, leveraging SAs to compare individual spectra with class-mean
+spectra derived from training data. The SA calculation is formalized as:
+SA(u, v) = θ = cos−1
+ u · v
+∥u∥∥v∥
+
+(3)
+Using Equation 4, spectra are filtered based on their SA values relative to predefined thresholds for each
+class:
+label =
+
+
+
+
+
+labelinitial
+if θc <= threshc
+argmin(SA)
+else if min(SA) <= threshk
+0
+else
+(4)
+The SA threshold for each class is determined by the SA Factor, as described in Equation 5:
+threshc = SA Factor × STD(SA(Sc, Mean(Sc)))
+(5)
+Here, standard deviation of the SA represents the standard deviation of SAs between spectra within a class
+and the class mean spectrum in the training data.
+Consequently, classes with high variability have higher
+thresholds, whereas uniform classes have stricter thresholds for the same SA Factor.
+A grid search was conducted to determine the optimal values for SCC, SA Factor, and SC, optimizing
+for the F1 score of the spatial-spectral segmentation predictions. This approach prioritizes final segmentation
+performance over intermediate spectral detections, although optimizing the latter remains a viable strategy.
+Preliminary results suggest that appropriate post-processing hyperparameters can substantially enhance per-
+formance. For spectral detection, SCC and SA Factor filtering led to improved F1 scores, while SC optimization
+refined spatial segmentation predictions, resulting in a 1.5% increase in the segmentation F1 score. The optimal
+parameters for spectral detection differed from those for spatial segmentation due to two key factors: the high
+false-negative rate of the unfiltered spectral detector and the sparsity of spectral sampling.
+The high false-negative rate implies that many true positive segmentation masks contain few positive spectral
+detections. Simultaneously, sparse spectral sampling means false positives are often spatially isolated, minimizing
+their impact on segmentation results at suitable SC thresholds. Loosening spectral detection filters to reduce
+false negatives improves the true positive rate for spatial segmentation.
+Finally, a finer-grained grid search or more sophisticated optimization techniques could yield further perfor-
+mance improvements.
+Proc. of SPIE Vol. 13373  1337304-12
+
+5.3.2 RGB Detection and Segmentation with a Fine-tuned YOLO model
+The RGB detection and segmentation model utilises a fine-tuned YOLOv8s architecture, originally pre-trained
+with Ultralytics weights, specifically adapted for segmentation tasks. The model underwent fine-tuning on the
+orchard dataset to enhance its performance in predicting bounding boxes for objects.
+To prepare the dataset for YOLOv8s, the RGB scene views were extracted from hyperspectral images, and
+segmentation masks were converted into polygon corner coordinates outlining the labeled objects. These data
+were exported in the YOLOv5 segmentation format, ensuring compatibility with the model.
+The RGB scene views and segmentation masks were cropped to the central 1920x1920 region prior to data
+export. This cropping was necessary for two primary reasons: first, the labeled data included segmentation
+masks only for this region; second, the Living Optics Camera provides spectral samples exclusively within this
+area. By standardizing the dataset in this manner, it became easier and fairer to compare the performance of
+various detection and segmentation models.
+The fine-tuning process was conducted using the Ultralytics fine-tuning framework. Key hyperparameters
+included a maximum of 10,000 training epochs, with an early stopping patience of 200 epochs to prevent over-
+fitting. The model was trained using 960x960 image dimensions, the Adam optimizer with default settings,
+and a dropout rate of 40%. Default data augmentation parameters provided by the Ultralytics framework were
+employed during training by calling the ‘YOLO.train()’ function.
+6. PERFORMANCE COMPARISON
+This research employs a comprehensive performance evaluation framework to rigorously analyse the capabili-
+ties of various models in HSI and RGB detection and segmentation tasks. By examining both spectral and
+spatial characteristics, the framework provides an in-depth understanding of each model’s strengths and limita-
+tions, ensuring a nuanced evaluation of detection efficacy. The metrics used in the analysis facilitate a robust,
+multidimensional assessment of the models’ performance.
+Accuracy serves as the baseline measure, providing an overall indication of prediction correctness. However,
+due to the limitations of accuracy in capturing nuanced performance, particularly in datasets with imbalanced
+class distributions, additional metrics such as Precision and Recall are considered.
+Precision evaluates the
+model’s ability to correctly identify positive instances while minimising false positives. Recall, equivalent to the
+true positive rate, assesses the model’s capability to detect all actual positive instances. These metrics, used in
+tandem, offer a detailed view of detection capabilities.
+The F1 score balances Precision and Recall, providing a single measure of performance. The F2 score, which
+places greater emphasis on Recall, is particularly valuable in scenarios where minimising false negatives is critical.
+This is especially important in spectral detection tasks, where undetected instances can have a significant impact
+on performance.
+For localisation evaluation, the framework incorporates IoU in two forms: Spectral IoU and Spatial IoU.
+Spectral IoU assesses the effectiveness of spectral feature detection, particularly in the context of the Living Optics
+Camera, which uses a sparse spectral sampling mask comprising 4,384 points across the scene. It compares the
+predicted class area within this mask against the ground truth area. Spatial IoU, on the other hand, evaluates
+localisation accuracy using dense RGB segmentation masks, offering insights into the geometric accuracy of
+spatial predictions.
+To complement IoU, mAP summarises precision across multiple thresholds, providing a
+holistic measure of detection quality.
+Additional evaluation metrics include G-Mean49 and the Matthews Correlation Coefficient (MCC).50 G-Mean
+reflects the balance between sensitivity and specificity, ensuring equitable performance across classes.
+MCC
+provides a comprehensive measure derived from all elements of the confusion matrix, making it particularly
+suitable for imbalanced datasets.
+Error patterns are further explored through False Positive Rate (FPR) and False Negative Rate (FNR). These
+metrics, when considered alongside Recall, offer deeper insights into misclassification trends and their underlying
+causes.
+Proc. of SPIE Vol. 13373  1337304-13
+
+Table 3: Experimental results of spectral classifiers
+Metrics
+RF
+1D-ConvNet
+1DConvNet + Similarity Filtering
+mAP@50
+0.2266
+0.3768
+0.3254
+F1 score
+0.1836
+0.3653
+0.3502
+F2 score
+0.1637
+0.5077
+0.4744
+Recall
+0.1569
+0.7840
+0.7276
+Precision
+0.3059
+0.2622
+0.2649
+Spectral IoU
+0.1170
+0.2319
+0.2192
+TNR
+0.9949
+0.5077
+0.4744
+FNR
+0.8431
+0.2160
+0.2724
+FPR
+0.0051
+0.0895
+0.0863
+G-Mean
+0.2694
+0.8387
+0.8018
+MCC
+0.1936
+0.3688
+0.3384
+Accuracy
+0.5229
+0.9082
+0.9103
+GFLOPs
+1.05
+0.09
+0.09
+Table 4: Experimental results of spatial-spectral classifiers
+Metrics
+RF
+RF
+1D-ConvNet
+1D-ConvNet
+1DConvNet + SAM2
++ FastSAM
++ SAM2
++ FastSAM
++ SAM2
++ Similarity Filtering
+mAP@50
+0.4572
+0.4238
+0.5738
+0.8192
+0.8210
+F1 score
+0.3171
+0.2978
+0.3619
+0.6396
+0.6416
+F2 score
+0.2947
+0.2820
+0.3402
+0.6596
+0.6620
+Recall
+0.2893
+0.2813
+0.3399
+0.7004
+0.7030
+Precision
+0.4442
+0.3920
+0.5170
+0.6732
+0.6741
+Spatial IoU
+0.2531
+0.2315
+0.2623
+0.4866
+0.4886
+TNR
+0.9977
+0.9971
+0.9938
+0.9809
+0.9809
+FNR
+0.7107
+0.7187
+0.6601
+0.2996
+0.2970
+FPR
+0.0023
+0.0029
+0.0062
+0.0191
+0.0191
+G-Mean
+0.3722
+0.3622
+0.4527
+0.8157
+0.8175
+MCC
+0.3321
+0.3086
+0.3848
+0.6508
+0.6527
+Accuracy
+0.5585
+0.5446
+0.6732
+0.9750
+0.9751
+GFLOPS
+7.33
+5550.52
+6.48
+5549.56
+5549.56
+While real-time application performance is not the primary focus of this study, the estimated Giga Float-
+ing Point Operations per Second (GFLOPs) for each algorithm are reported. This metric offers a proxy for
+computational efficiency and resource requirements, which are essential considerations for model deployment.
+For the random forest model, GFLOPs per frame are estimated using the formula in Equation 6:
+GFLOPsRF ≈
+Pn=N
+n=0 Depthn × 96 × 4384
+109
+(6)
+Here, 96 represents the number of features per spectrum, and 4,384 corresponds to the number of spectra per
+frame. Since Gini impurity splits are precomputed at inference, the primary computational cost of the random
+forest is determined by the number of trees and their respective depths.
+The FLOPs for FastSAM, YOLOv8, SAM2, and the 1D-ConvNet models are calculated using PyTorch’s flop
+counter, ensuring consistency and accuracy in performance estimation.
+6.1 Experimental Results
+6.1.1 Spectral Results
+The spectral performance results presented in Table 3 reveal that the 1D-ConvNet significantly outperforms the
+RF model across several metrics. The 1D-ConvNet demonstrates notably higher Accuracy, Recall, and Spectral
+Proc. of SPIE Vol. 13373  1337304-14
+
+Table 5: Experimental results of spatial-spectral classifiers
+Metrics
+1DConvNet + SAM2
+YOLOv8s
++ Similarity Filtering
+mAP@50
+0.8210
+0.7535
+F1 score
+0.6416
+0.5561
+F2 score
+0.6620
+0.4918
+Recall
+0.7030
+0.4586
+Precision
+0.6741
+0.7532
+Spatial IoU
+0.4886
+0.4098
+TNR
+0.9809
+0.9970
+FNR
+0.2970
+0.5414
+FPR
+0.0191
+0.0030
+G-Mean
+0.8175
+0.6473
+MCC
+0.6527
+0.5721
+Accuracy
+0.9751
+0.9372
+GFLOPS
+5549.56
+6.28
+Table 6: Counting rate
+Labels
+1DConvNet + SAM2
+YOLOv8s
++ Similarity Filtering
+Royal Gala Apple
+0.4981
+0.2541
+Pear
+0.7948
+0.4802
+IoU, underscoring its ability to identify true positives effectively and capture HS features comprehensively.
+Conversely, the RF exhibits superior Precision and a lower FPR, indicating its conservative approach and fewer
+false positives.
+However, its high FNR and low F2 score highlight substantial limitations in detecting true
+positives—a critical drawback in applications like fruit yield estimation, where accurate detection is paramount.
+Visual comparisons between Figure 5a and Figure 5b highlight the RF’s pronounced FNR, as it fails to detect
+numerous pear spectra. The 1D-ConvNet, while more adept at detecting pears, exhibits a higher FPR, frequently
+misclassifying background spectra and mistakenly categorising many pear spectra as belonging to the Cox Apple
+class. Additionally, by applying post-processing in Figure 5c, less relevant spectral detections were eliminated.
+This leads to reduced False Positives while increasing Precision value.
+In this workflow, individual false-positive spectral detections have a less pronounced impact compared to false-
+negative detections. Given the sparse nature of spectral sampling and the subsequent use of spatial segmentation
+on the RGB image, false-positive spectral detections are unlikely to propagate to downstream tasks. In other
+words, such detections are unlikely to occur with sufficient density to result in false-positive spatial-spectral
+detections.
+The misclassification of numerous pear spectra as Cox Apple by the 1D-ConvNet suggests that excluding the
+very limited Cox Apple spectra from the training data could improve performance. These spectra have clearly
+acted as a confounding factor for the Pear class, diminishing the model’s overall accuracy.
+Class imbalance, particularly between foreground and background regions, posed a significant challenge during
+the training of the spectral detector. While the 1D-ConvNet employed custom balancing techniques—including
+background subsampling and foreground duplication—the RF training process could not accommodate such
+methods. Instead, the RF relied solely on a loss weighting scheme. Although this approach mitigated some
+bias towards the background class, it could not fully address the data imbalance.
+A similar loss weighting
+scheme applied to the 1D-ConvNet also failed to yield satisfactory results, as the 1D-ConvNet suffered from
+mode collapse, learning to predict only the ”background” class for all spectra. In this specific setup, the RF
+performed better than the 1D-ConvNet, as it achieved a non-zero True Positive Rate (TPR), unlike the collapsed
+state of the 1D-ConvNet.
+The RF’s high FNR becomes particularly problematic when combined with an RGB segmentation algorithm.
+Since a confidence threshold on spectral classifications is necessary to determine segment classification, the spec-
+Proc. of SPIE Vol. 13373  1337304-15
+
+tral model’s high FNR exacerbates the FNR in the combined system. A single true-positive spectral classification
+is often insufficient to classify a segment as true positive, further amplifying the FNR when spectral and spatial
+components are integrated.
+6.1.2 Spatial-Spectral Results
+The evaluation of the four spatial-spectral segmentors and the spatial-only YOLOv8s model revealed distinct
+strengths and weaknesses across different approaches. The results, summarised in Table 4 and Table 5, alongside
+object-specific counting rates in Table 6, highlight the comparative performance of these methods.
+Among all configurations, the 1D-ConvNet + SAM2 combination emerged as the top performer across most
+metrics. While YOLOv8s demonstrated strong Spatial IoU and achieved the highest Precision, reflecting its
+spatial segmentation strengths, it struggled in metrics such as Recall and F1 score. This deficiency, particularly
+its high FNR, severely limits its suitability for downstream tasks such as yield estimation, where both counting
+and sizing of fruit are critical. Over half of all fruit were missed by YOLOv8s.
+The object-specific detection outcomes in Table 6 further emphasise the advantages of the 1D-ConvNet +
+SAM2 configuration. With counting rates of 0.4597 for Royal Gala Apple and 0.7926 for Pear, it outperformed all
+other configurations, including those based on RF models and YOLOv8s. These results confirm the effectiveness
+of 1D-ConvNet + SAM2 in integrating spectral and spatial data for precise instance counting.
+Its superior
+Recall and F2 score underscore its strength in detecting true positives, a critical factor for tasks requiring
+high accuracy in instance detection. By contrast, while the RF demonstrated higher Precision, it suffered from
+substantially lower Recall, resulting in missed detections and reduced counting accuracy. This disparity highlights
+the importance of recall-focused metrics, such as the F2 score, when evaluating models in scenarios prioritising
+true positive detection.
+The RF + SAM2 combination served as a baseline for spatial-spectral detection. However, its low Recall
+significantly hindered its utility in downstream tasks due to many missed detections.
+In contrast, the 1D-ConvNet + SAM2 combination delivered superior performance by learning spectral
+features directly from the data. The use of categorical cross-entropy loss and batch normalisation stabilised
+the training process, while a data subsampling scheme improved dataset balance. These enhancements enabled
+the 1D-ConvNet to surpass the baseline model in all key metrics. Furthermore, integrating SAM2 for spatial
+segmentation allowed the model to effectively combine spectral and spatial features, establishing a robust and
+consistent framework for spatial-spectral detection. This combination significantly outperformed the RF + SAM2
+baseline, particularly in classifying spectral data.
+The 1D-ConvNet + SAM2 with similarity filtering combination emerged as the most effective spatial-spectral
+detector, achieving the highest performance across key metrics. It recorded a Spatial IoU of 0.4886 and an
+mAP@50 of 0.8210, demonstrating its capability to seamlessly integrate spectral and spatial features.
+Although YOLOv8s exhibited strong spatial segmentation performance with a Spatial IoU of 0.4098 and
+Precision of 0.7532, its low Recall and high FNR render it unsuitable for real-world scenarios involving occlusion
+and shadowing.
+By contrast, the 1D-ConvNet + SAM2 combination effectively balanced spectral and spatial detection through
+deep learning for spectral feature extraction and SAM2’s advanced spatial segmentation. Its high Recall rep-
+resents a promising foundation for future detection workflows.
+However, the significant computational cost
+associated with SAM2 remains a notable limitation.
+The relatively weak performance of the 1D-ConvNet + FastSAM combination highlights the necessity of fine-
+tuning the RGB segmentor. Despite sharing the same core RGB segmentation model, YOLOv8s significantly
+outperformed FastSAM due to fine-tuning. Future work will explore fine-tuning FastSAM to achieve results
+comparable to the 1D-ConvNet + SAM2 model but with considerably reduced computational requirements.
+As YOLOv8s surpasses the 1D-ConvNet + SAM2 with similarity filtering model in some metrics, fine-tuning
+FastSAM could reveal the true benefits of integrating RGB and spectral data—namely, significantly improved
+detection rates with only a modest increase in computational demands.
+The segmentation mask differences between FastSAM (Figure 6a) and YOLOv8s (Figure 6e) further highlight
+this point. Unlike YOLOv8s, which correctly identifies nearly all pears in the scene, FastSAM proposes numerous
+Proc. of SPIE Vol. 13373  1337304-16
+
+incorrect segmentation masks. This disparity likely stems from the fine-tuning applied to YOLOv8s but absent
+for FastSAM.
+(a) RF
+(b) 1D-ConvNet
+(c) 1D-ConvNet with optimised
+detection post-processing
+Figure 5: Spectral points of detected masks.
+(a) RF + FastSAM
+(b) RF + SAM2
+(c) 1D-ConvNet +
+FastSAM
+(d) 1D-ConvNet +
+SAM2
+(e) YOLOv8s
+Figure 6: Bounding boxes of detected masks.
+7. YIELD ESTIMATION VIA OBJECT TRACKING
+With the completion of the spatial-spectral detector, we proceed to develop a tracking algorithm that builds
+upon the best-performing spatial-spectral detector.
+While counting the number of detections per frame is straightforward, determining the number of unique
+detections across a sequence of frames is more challenging. Objects may not be detected on every frame, and
+variations in both the scene and the camera’s movement make it difficult to identify previously detected objects.
+To address this, we employ a tracking algorithm that estimates which detections correspond to unique objects
+and which are simply repeated detections of the same object(s).
+7.1 Method
+Each detected fruit is assigned a set of 3D coordinates relative to the camera’s position in the first frame. This
+requires estimating the distance between the camera and each detection, which involves generating a metric
+depth image.
+We utilise DepthAnythingV2 (DAv2)51,52 with the ‘vitl’ encoder and the ‘VKitti 2’ metric depth check-
+point.53,54 Although these weights were designed for urban scenes in the VKitti 2 dataset and are not optimal
+for orchard environments, fine-tuning DAv2 for this domain is beyond the scope of this study.
+Proc. of SPIE Vol. 13373  1337304-17
+
+We set the maximum output depth to 1, as it is simply a scalar that will be calibrated in a later step. Thus,
+the initial detections will be in ‘uncalibrated units’—units proportional to meters, with a calibration step to
+convert them to actual measurements.
+After applying DAv2 to the RGB image from the Living Optics Camera, we convert the resulting depth
+image into a point-cloud in uncalibrated units using Equation 7 for each (X, Y) coordinate.
+The segmentation mask for each detected fruit is used to identify the centroid of the object, by calculating
+the mean Xucu, Yucu, and the corresponding Zucu coordinates of the detection’s centroid. Here, Xucu, Yucu, and
+Zucu represent the uncalibrated units along the X, Y, and Z axes of the centroid, respectively.
+Pucua = Zucu(Ppa −ca
+fa
+)
+(7)
+Equation 7 converts pixel coordinates to uncalibrated units, using the intrinsic parameters of the Living
+Optics Camera. Pucu represents the coordinate along axis a (X or Y), Ppa ∈[xp, yp] is the pixel coordinate, fa
+is the focal length in pixels for axis a, and ca is the principal point along axis aa. We assume that the principal
+point lies at the centre of the image, i.e., (2048, 2432)/2 = (1024, 1216).
+fa = fma
+PPx
+(8)
+Equation 8 demonstrates the conversion from the focal length in millimetres fma to pixels, using the pixel
+pitch PPx (the size of a pixel) in metres. For the Living Optics Camera, PPx = 2.76e−6m, and the focal length
+in the orchard dataset is 8.5mm for both the X and Y axes.
+Figure 7: The average size of the black squares is used to estimate the conversion from uncalibrated units to
+meters.
+To convert from uncalibrated units to meters, we use a reference object of known size, manually labelled in
+two scenes. We use black squares from a printed chequerboard pattern (shown in Figure 7), each square with a
+side length of 2.5 cm. By measuring the size of these squares in uncalibrated units, we derive a calibration factor
+for converting from uncalibrated units to meters.
+Lm = Lucu ∗J
+(9)
+Equation 9 describes how to convert a length LL in uncalibrated units to meters using the conversion factor
+J, which is calculated as J = 0.025/Mean(Lsquare−ucu). In practice, we found that calibrating the X and Y
+Proc. of SPIE Vol. 13373  1337304-18
+
+axes separately yields better results, likely because the depth image and RGB image have different resolutions
+along these axes. We set Jx = 15.524 and Jy = 15.863).
+This approach to generating and calibrating a point-cloud has several limitations:
+1. DAv2 is computationally demanding.
+2. Depth measurements in uncalibrated units vary depending on the resolution of the input image.
+3. The requirement for a calibration object reduces the generalisability of this method.
+4. The calibration factor JJ may not be valid for scenes where it was not explicitly calculated.
+5. The calibration factor JJ may not be valid at depths other than the calibration object’s depth, as DAv2
+may produce non-linear depth values.
+6. Automatic detection of the calibration object is not implemented, so this process requires offline human
+intervention.
+In,51 the authors use a single value for J based on the maximum depth of the dataset. However, this does
+not generalise well to real-world data, as shown by the need to derive axis-dependent calibration factors. This
+implies that DAv2 should ideally provide linearly varying depth values, reducing concerns about points 4 and 5.
+Future work will explore ways to enhance the performance of the monocular depth algorithm, focusing on
+inference speed, depth accuracy, calibration accuracy, and calibration methods.
+To unify the coordinate system of all detections, we employ Iterative Closest Point (ICP)55 with a ‘PointTo-
+Plane’ transformation56 to compute the transformation between framen and framen−1. This transformation
+allows us to map the coordinates of detections in framen to the coordinate system of framen−1. The ICP im-
+plementation provided by Open3D is used, with the following hyperparameters: maxcorrespondencedistance =
+5000, relativefitness = 1e−07, relativermse = 1e−07 and maxiterations = 50. Fine-tuning these parameters
+may improve results in subsequent fruit counting steps.
+TN→0 =
+n=N
+Y
+n=0
+Tn→n−1
+(10)
+By keeping track of the cumulative transformation between framen and frame0, we can localise all detections
+relative to the camera’s initial position using Equation 10, where Tn→n−1 is the transform between framen and
+framen−1.
+We use a homogeneous definition of the coordinates system thus Tn→n−1 is defined as follows:
+T =
+
+
+R11
+R12
+R13
+tx
+R21
+R22
+R23
+ty
+R31
+R32
+R33
+tz
+0
+0
+0
+1
+
+
+The 4 × 4 homogeneous transformation matrix includes a 3 × 3 rotation matrix (Rij) in the top-left, a
+translation vector (tx, ty, tz) in the top-right, and a bottom row of [0, 0, 0, 1] to maintain homogeneity.
+c0 = Tn→0 × cn
+(11)
+By applying Equation 11 to the centroid cn ∈Cn of each detection in frame n, we map it to the coordinate
+system of the first image frame, c0 ∈C0.
+In Figure 8, we observe significant drift in the unified coordinate system between frames.
+This is likely
+due to improper hyperparameter selection in the ICP algorithm, as mentioned earlier. The multiplication in
+Equation 10 means any error in the estimated transformation between two frames compounds over time.
+Proc. of SPIE Vol. 13373  1337304-19
+
+Figure 8: Centroids of the calibration squares in the unified coordinate system. Colour and number represent
+the frame number in which the squares were imaged.
+Figure 9: Centroids of the calibration squares in the unified coordinate system. Colour and number represent
+the estimated unique grouping of the detections.
+Once all detections are localised within a single coordinate system, we use agglomerative clustering to group
+duplicate detections into a linkage matrix and then apply the ‘fcluster’ algorithm to extract the flattened clusters.
+We use the Ward variance minimization algorithm Equation 12 to calculate the distance between clusters.
+The distance between a newly formed cluster u, which consists of clusters s and t, and another cluster v is given
+by:
+d(u, v) =
+r
+|v| + |s|
+L
+d(v, s)2 + |v| + |t|
+L
+d(v, t)2 −|v|
+L d(s, t)2
+(12)
+where L = |v| + |s| + |t|.
+Figure 9 shows how agglomerative clustering groups detections into assumed unique objects. Due to cumu-
+lative error in the transformation calculation, the grouping is not perfect.
+Proc. of SPIE Vol. 13373  1337304-20
+
+Figure 10: Centroids of the detected pears in the unified coordinate system. Colour and number represent the
+estimated unique cluster IDs of the detections. Figure is not to scale.
+To estimate the total number of fruit on one side of a row of trees in the orchard, we count the number of
+unique detections for a video of that row.
+7.2 Results
+Despite the cumulative error in Tn→0, Figure 10 demonstrates that we have successfully grouped the detections
+of pears in one row of trees into unique objects.
+Table 7: Pear detection statistics by block ID and side of row
+Block ID
+Side
+Total Detections
+Total Unique Detections
+Estimated Counting Accuracy
+7-157
+Left
+2616
+1418
+18.91%
+7-157
+Right
+6589
+2725
+36.33%
+7-160
+Left
+7038
+2914
+38.85%
+7-160
+Right
+19376
+3694
+49.25%
+Combined
+-
+35619
+10751
+35.84%
+In Table 7, we do not have a ground truth total count for the unique pears in each of these rows. However,
+each row is expected to have approximately 15,000 pears. Since we only image one side of the row per video, we
+assume that we will capture approximately half of the pears. Therefore, we expect to see around 7,500 pears on
+each side of each row.
+8. FRUIT SIZING
+8.1 Method
+To estimate the size of a fruit, we utilise the segmentation mask provided by the spatial-spectral segmentation
+algorithm and the point cloud generated by DAv2.
+By applying the segmentation mask to the point cloud of a detected fruit, we can estimate its height and
+width.
+This is done by selecting the four furthest points within the mask in the left, right, up, and down
+directions in the imaging plane, and then computing the width as width = right −left and the height as
+height = up −down.
+This method does not account for the rotation of the fruit around the Z axis (which is orthogonal to the
+imaging plane). However, it is computationally simple, and most pears tend to grow vertically due to the increase
+Proc. of SPIE Vol. 13373  1337304-21
+
+in mass in the lower half of the fruit. Apples, being roughly spherical, are not significantly affected by rotational
+orientation.
+8.1.1 Occlusion
+A significant challenge in estimating the size of a detected object is occlusion. If an object is partially blocked
+by an obstacle, such as a leaf, the measured extent of the object will be inaccurate.
+To mitigate this effect, we apply an aspect ratio threshold for pears. Since pears are roughly twice as tall as
+they are wide, any detected pear that does not meet this aspect ratio is likely to be either a false positive or an
+occluded detection.
+We utilise an aspect ratio threshold function, as shown in Equation 13, to filter out detections that are likely
+to be of occluded pears. Specifically, a detection is considered a partial detection if the height is less than 1.7
+times the width of the detection.
+Fulldetection =
+(
+True
+if H >= 1.7W
+False
+else
+(13)
+8.2 Results
+Table 8: Pear Size Distribution by Block ID and Side of Row
+Block ID
+Side
+Size Distribution (%)
+Average Width (cm)
+Average Length (cm)
+W < 5.1cm
+5.1cm ≤W < 10.2cm
+W > 10.2cm
+L < 7.6cm
+7.6cm ≤L < 15.2cm
+L > 15.2cm
+157
+Left
+56.91%
+28.18%
+18.78%
+4.88 ± 2.04
+10.75 ± 4.33
+157
+Right
+44.01%
+35.33%
+23.55%
+5.54 ± 1.99
+11.94 ± 3.98
+7-160
+Left
+62.57%
+27.19%
+12.10%
+4.68 ± 1.89
+10.09 ± 4.05
+7-160
+Right
+13.11%
+54.87%
+33.71%
+6.88 ± 1.56
+14.04 ± 2.96
+Combined
+-
+41.59%
+38.08%
+22.64%
+5.62 ± 2.05
+11.88 ± 4.08
+Table 8 presents the distribution of pear sizes measured across the sides of the tree rows tested.
+While
+the average sizes appear reasonable, the standard deviation of the measurements is quite large. This variance
+is attributed to both errors in the measurement system—stemming from the calibration method and DAv2
+itself—as well as the inclusion of clearly undersized and oversized detections in the calculations.
+The typical size of a pear is approximately (7.62 cm, 11.43 cm).57 To identify pears of the expected size, we
+apply a 33% threshold on either side of these values.
+The largest group of detected pears are undersized. This could indicate an issue with the size estimation
+method, but it may also result from the improper selection of sizing bands. The expected pear size was sourced
+from the internet and may not correspond to the variety of pears being imaged. Additionally, the 33% threshold
+was chosen somewhat arbitrarily.
+In future work, it will be important to gather ground truth size data for comparison. At a minimum, this
+should include the mean and standard deviation of pear sizes for each row. We could also consider using size
+grading thresholds typically applied by farmers, though these are not available at the time of writing.
+Proc. of SPIE Vol. 13373  1337304-22
+
+(a) Block 157, left
+(b) Block 157, right
+(c) Block 160, left
+(d) Block 160, right
+(e) Combined
+Figure 11: Distribution of measured pear sizes. The top subplot in each sub-figure (a - e) is for the pear width
+(X), the bottom for the pear length (Y).
+Proc. of SPIE Vol. 13373  1337304-23
+
+Figure 11 illustrates the distribution of pear sizes measured across each row. For both the width and length
+of pears, the data from all rows follows a largely normal distribution, which is expected. However, some clear
+outliers can be observed in the detections, with certain pears appearing too small and others too large. The very
+small detections are likely to be of occluded pears. The method used to filter out partial detections is rather
+simplistic, as it only considers the height-to-width ratio and does not take into account the actual size of the
+detected pears. The unusually large detections might result from errors in the segmentation mask generation,
+as shown in Figure 6d, where a non-pear object (such as a stick) is mistakenly classified as a pear due to False
+Positive spectral detections.
+Implementing minimum object size constraints could help filter out such False
+Positives, but ultimately, improving the spatial-spectral detection model would provide the best solution.
+9. FRUIT RIPENESS ESTIMATION
+The accurate estimation of fruit ripeness is essential for the agricultural supply chain, directly influencing harvest
+timing, post-harvest handling, and consumer satisfaction. Ripeness determines critical fruit attributes such as
+texture, flavor, sweetness, and shelf life, making it a key quality metric for high-value crops like apples and pears.
+These attributes also influence market pricing and consumer purchasing decisions. Inconsistent ripeness across
+a batch can lead to economic losses due to overripe or underripe fruits being rejected during quality inspections
+or by end-users.
+Traditional approaches to ripeness assessment involve destructive and resource-intensive techniques. These
+include measuring sugar content, represented by total soluble solids (TSS) or Brix, as well as acidity levels such
+as pH and titratable acidity. These methods typically require juicing the fruit, performing chemical titrations, or
+using handheld refractometers. While effective, these techniques rely on labor-intensive sampling protocols and
+require specialized laboratory infrastructure. For large-scale farming operations, the periodic sampling needed
+to monitor ripeness across orchards over several weeks results in substantial operational costs.
+Traditional methods face several challenges that limit their effectiveness in modern agricultural practices.
+First, their destructive nature results in wasted produce, as sampled fruits cannot be sold or consumed. Moreover,
+sampling bias often arises because only a small subset of fruits is tested, which may not accurately represent
+ripeness variability across an orchard. The time-consuming nature of these processes further delays decision-
+making, which is critical in large-scale operations where timing can impact both yield and quality. Additionally,
+environmental factors such as temperature and humidity can influence the accuracy of measurements, reducing
+reproducibility across different conditions. Finally, the dependence on manual intervention and laboratory setups
+makes these methods incompatible with automation, a key component of modern precision agriculture.
+These challenges underline the need for innovative approaches to ripeness estimation that are non-invasive,
+scalable, and capable of providing real-time insights directly in the field. Hyperspectral imaging (HSI) offers a
+solution that addresses these limitations by enabling detailed, non-destructive analysis of ripeness indicators.
+9.1 Method
+Hyperspectral imaging is a powerful technique that captures spectral information across a broad range of wave-
+lengths, allowing for the detection of subtle biochemical and structural changes in the fruit’s skin that correlate
+with ripeness. Unlike traditional methods, HSI provides a non-destructive means of assessment, enabling re-
+peated measurements on the same sample without causing damage. This makes it ideal for longitudinal studies
+of ripening. Additionally, HSI systems are highly adaptable and can be integrated into automated setups, offering
+potential for high-throughput analysis in industrial or field environments. Recent advances in HSI technology,
+such as compact sensors and portable configurations, further enhance its usability for in-field applications.
+The spectral data collected through HSI can be processed using statistical and machine learning models to
+predict ripeness indicators. In this study, partial least squares regression (PLSR) was used to estimate Brix
+values, a key measure of sweetness and ripeness. Previous studies have shown that HSI combined with PLSR
+can achieve coefficients of determination (R2) ranging from 0.2 to 0.7 and root mean square error (RMSE) values
+between 0.3 and 1.5, depending on the dataset and experimental conditions. This demonstrates the potential of
+HSI for ripeness estimation while highlighting the need for further refinement of the methodology.
+Proc. of SPIE Vol. 13373  1337304-24
+
+In our experiments, 40 Royal Gala apple samples were imaged using a Living Optics HSI camera in a
+controlled laboratory setting. The imaging setup included broadband light sources arranged at a 45/0° geometry
+to ensure consistent illumination. A white Tivet sheet was used to facilitate reflectance conversion. To evaluate
+the robustness of the technique, two types of broadband light sources were employed—halogen and broadband
+LED. The variation in radiance spectra caused by these lighting conditions is shown in Figure 12b. This setup
+enabled us to assess the influence of lighting variations on the accuracy of ripeness predictions.
+After imaging, the sugar content of the apples was measured using a handheld refractometer, which provides
+an accuracy of ±0.2°Bx. Preprocessing steps included normalization to minimize the effects of surface curvature
+and smoothing to reduce spectral noise. The spectral data were analyzed in radiance space rather than reflectance
+space due to challenges in achieving reliable reflectance conversions in the presence of shadows.
+While this
+approach requires larger datasets to account for variability, it simplifies preprocessing and makes the model more
+adaptable to real-world conditions. A linear PLSR model was trained and evaluated using a 50/50 dataset split,
+correlating spectral features to measured Brix scores.
+This decision to work in radiance space, while unconventional, reflects our focus on developing a methodology
+that can be extended to field applications. Although this approach introduces the need for additional training
+data, we hypothesize that it offers a more robust pathway for adapting the system to varying environmental con-
+ditions. Future work will validate this hypothesis by testing the method under diverse lighting and environmental
+scenarios.
+9.2 Results
+(a) Predicted vs measured Brix values.
+(b) Radiance variation across the dataset.
+Figure 12: (a) Predicted vs measured values for linear PLSR fitted on the apple Brix dataset. (b) Distribution
+of radiance spectra across the dataset.
+The results, shown in Figure 12a, demonstrate a strong correlation between spectral features and Brix scores,
+with an R2 value of 0.71 and an RMSE of 0.4385. These findings confirm that HSI, when combined with a
+linear PLSR model, can effectively estimate Brix levels. The ability to achieve this level of accuracy using a
+relatively small dataset highlights the potential of this approach, though further work is required to generalize
+these findings to diverse conditions.
+Despite the controlled nature of the experiments, the study showcases the capability of the Living Optics HSI
+camera to capture detailed spectral data suitable for ripeness evaluation. Future efforts will focus on expanding
+the dataset to include a broader range of fruit varieties and environmental conditions. This will enable the
+development of more robust models and lay the groundwork for field-deployable systems.
+While the findings of this study are promising, several areas require further exploration. Expanding the
+dataset to include a wider variety of apple cultivars and other fruits will improve the generalizability of the
+Proc. of SPIE Vol. 13373  1337304-25
+
+model. Field trials under variable lighting and environmental conditions will be essential to validate the system’s
+robustness and adaptability. Advanced machine learning techniques, such as convolutional neural networks, may
+further enhance the accuracy of predictions by capturing complex spectral patterns. Additionally, integrating the
+HSI system with automated sorting and grading equipment could streamline its adoption in industrial settings,
+enabling large-scale, real-time ripeness assessment.
+10. CONCLUSION
+We have presented a comprehensive case study on integrating a snapshot hyperspectral, field-portable imaging
+system to solve critical challenges in orchard fruit quality assessment. Our work introduces a publicly available
+dataset, benchmarking framework, and system for segmenting, counting, sizing, and estimating fruit ripeness.
+The dataset, hosted at livingoptics.com/huggingface, is designed to inspire further advancements in hyperspectral
+computer vision algorithms and foster collaborative innovation in this emerging field.
+The results highlight the advantages of combining spectral classification with RGB-based segmentation al-
+gorithms. Our proposed 1D-ConvNet + SAM2 with a similarity filter outperformed the RGB-only YOLOv8s
+approach by nearly 25 percent in Recall, effectively addressing the challenges posed by occlusion, shadowing,
+and motion blur in real-world agricultural settings. Unlike YOLOv8s, which struggled to detect over half of the
+fruit due to its reliance on shape and limited color information, the Spatial-Spectral approach achieved over 70
+percent detection accuracy. By leveraging hyperspectral data, our method demonstrated the ability to detect
+partially occluded fruit, requiring only a small visible portion for successful identification.
+Beyond fruit detection and segmentation, we developed a two-stage process that uniquely tracks individual
+fruit across video frames and estimates their size. This approach enables accurate fruit count and size estimation,
+key metrics for yield and quality assessment in orchards. Additionally, we demonstrated the feasibility of non-
+destructive ripeness estimation using the Living Optics hyperspectral camera, achieving a Brix correlation with
+an R2 of 0.71.
+This study underscores the potential of snapshot hyperspectral imaging systems like the Living Optics HSI
+camera to deliver end-to-end quality assessments of orchard fruit without requiring additional camera systems.
+By addressing key agricultural challenges, our work paves the way for scalable, efficient, and automated solutions
+to support modern precision agriculture.
+11. FUTURE WORK
+This research highlights the potential to further improve spatial-spectral detection, segmentation, counting, and
+sizing methodologies within hyperspectral imaging systems. Several areas of improvement have been identified
+that will serve as the basis for future work.
+11.1 Spectral detection improvements
+Future work will focus on refining the spectral detection algorithm to improve both accuracy and robustness.
+A comprehensive search for optimal architectures and hyperparameters is essential to achieve the right balance
+between complexity and performance. Employing Bayesian Optimised Hyperband48 will speed up this process
+by eliminating poorly performing areas in the search space. Exploring alternative loss functions tailored for HS
+data is also crucial to address imbalanced datasets and improve convergence. Increasing training data through
+augmentation or more real-world data will help improve generalization and reduce overfitting. Additionally,
+postprocessing techniques can be introduced to refine detections and minimize False Positives and False Negatives.
+11.2 Object segmentation
+Currently, segmentation relies on third-party models, and fine-tuning them on domain-specific data is an impor-
+tant next step. However, long-term goals include developing a custom RGB segmentation algorithm optimized
+for HS tasks, which would emphasize both speed and accuracy. Furthermore, creating a joint spectral and RGB
+encoder to leverage both modalities directly, instead of treating them separately, could improve performance.
+Proc. of SPIE Vol. 13373  1337304-26
+
+11.3 Monocular depth
+Depth estimation currently uses a third-party monocular depth model, and future work will focus on fine-tuning
+this system to better align with the dataset’s characteristics. Developing a custom monocular depth estimation
+algorithm tailored to HSI applications would offer better control over both accuracy and computational efficiency.
+Integrating spectral data into the monocular depth algorithm may also enhance performance, as it would provide
+more detailed feature embeddings. Improving the depth calibration process and automating it will be key to
+ensuring precise measurements and minimizing calibration errors.
+11.4 Tracking
+Tracking improvements will focus on unifying the coordinate system used in HS analysis. Optimising ICP hyper-
+parameters will enhance alignment and improve tracking accuracy across multiple frames. For faster processing,
+replacing ICP with a non-point cloud-based approach like Scale-Invariant Feature Transform combined with
+homography computation could significantly speed up the process. A key limitation of the current tracking algo-
+rithm is its assumption of a static scene and a moving camera; future work should account for object movement
+within the scene.
+11.5 Sizing
+The current sizing method relies on bounding box dimensions and can be enhanced by considering object rotation.
+Future efforts will focus on developing algorithms to estimate the maximum length and width of an object by
+analyzing its mask, irrespective of orientation. This will provide more accurate size estimates. Capturing ground
+truth fruit sizes, or at least mean and standard deviation values, would also allow for a more empirical analysis
+of sizing results.
+11.6 Yield estimation
+Obtaining ground truth counts of unique fruit would significantly improve the analysis quality in this study.
+Additionally, combining the counts from the tracking system with size data could enable an estimate of the total
+volume of fruit. Integrating spectral metrics to assess the health and quality of the fruit could further enhance
+yield estimation, enabling classifications such as healthy, damaged, or diseased fruit.
+11.7 Ripeness Extimation
+This study represents an initial test to evaluate HSI’s capability in assessing fruit ripeness. While promising,
+there is a need to expand the dataset in future studies to improve the robustness of predictive models and ensure
+statistical reliability. Implementing this method in field conditions will be critical for evaluating its real-world
+applicability, accounting for variables such as ambient lighting and environmental factors. Enhanced predictive
+algorithms and calibration techniques will also be essential to accommodate diverse fruit varieties and ripening
+stages, further refining the model’s accuracy and generalisability.
+12. APPENDIX A
+Preliminary experiments with the Random Forest classifier demonstrated the necessity of forming a background
+class in the training data. This is due to two factors:
+1. Random forests must assign a class to all inputs - leading to background spectra being assigned foreground
+classes if no background class is utilised.
+2. The subtle difference between foreground class spectra and background spectra mean that the confidence
+score of the random forest is not wholly reliable for distinguishing between some foreground and background
+spectra. Therefore we cannot easily suppress background spectra classified as foreground classes.
+Proc. of SPIE Vol. 13373  1337304-27
+
+The background class is formed of all spectra which do not lie inside a mask from the foreground labelling.
+The background class contains many more times the number of spectra that are found in all foreground
+classes combined - for the training set 1,855,755 background spectra vs 51,285 foreground spectra. This biases
+both any algorithm trained on the data to preferentially select the background class over all other classes if no
+attempt is made to either balance the training data or the training loss.
+In the case of the random forest, we have no notion of epochs of training or data batching, therefore if we
+want to make use of all of the training data, we cannot easily remove background spectra to balance the number
+of foreground vs background spectra.
+Instead we have two possible directions to take to achieve a balanced training set:
+1. Class weighting
+2. Foreground data duplication
+12.1 Class weighting
+We can provide a set of weights to the random forest training algorithm to reduce the importance of correctly
+classifying the background class vs the foreground class. These weights are calculated as being inversely pro-
+portional to the frequency of the class. This can be done at either the dataset level or at the subsample level
+and is directly supported in Scikit-learn by passing either ‘None’, ‘balanced’ or ‘balanced subsample’ to the
+‘class weight’ argument of the random forest.
+We can take a similar approach when training the 1D convolutional neural network, providing a set of class
+weights which can be used to adjust the loss for each class so as to attempt to avoid biasing the model towards
+the background class. We only calculate the weighting once, for the entire dataset, rather than on a batch by
+batch basis as this would require reinitialising the loss function on each batch which would be prohibitively slow
+during training. Though such an approach might yield better results by re-balancing the loss each batch.
+wc = N
+nc
+(14)
+In Equation 14, the weighting associated with a class, wc ∈W, is inversely proportional to the frequency of class
+c. N is the total number of spectra in the training data and nc is the number of spectra of class c in the training
+data. We then normalise the weights by the maximum, Wnorm =
+W
+max(W ).
+12.2 Foreground data duplication
+We could choose to duplicate a random sample of the foreground spectra so that the number of background and
+foreground spectra match as well as providing balancing across classes.
+However, without a data augmentation method, this duplication isn’t helpful for training the random forest
+as duplicated spectra will be classified by the same nodes, without the need for additional nodes to distinguish
+them. As spectral data augmentation is beyond the scope of this work, we do not explore this approach for the
+random forest.
+For the 1D convolutional classifier, directly duplicating the data is a more reasonable approach, even without
+data augmentation as this simply biases the loss away from the background class by providing more frequent
+weight updates calculated from the foreground class losses.
+There are two ways in which we can duplicate the foreground data - 1) match the total number of foreground
+spectra to the total number of background spectra 2) match the number of spectra in each foreground class to
+the number of spectra in the background class.
+Df = duplicate(Df, Nb)
+(15)
+Equation 15 uses a function called duplicate which will create copies of Df, the foreground data, so that Nf,
+the number of foreground spectra matches Nb the number of background spectra.
+Proc. of SPIE Vol. 13373  1337304-28
+
+Dfc = duplicate(Dfc, Nb)
+(16)
+Equation 16 uses the duplicate function to match the number of spectra in class c to the number of background
+spectra Nb. By applying this method to all c ∈C, all foreground classes will have the same number of samples
+as the background class.
+12.2.1 Background data sampling
+A third option for dataset balancing is available to the 1D convolutional classifier - background data sampling.
+As the convolutional classifier is trained for a number of epochs, we can randomly select a sample of the
+background data at the start of each epoch such that the training set for each consists of N foreground spectra
+and N background spectra.
+Alternatively, we could select the number of background spectra to be equal to the number of spectra in the
+largest foreground class.
+Background data sampling is a good approach to solving the data imbalance problem as it still allows us to
+leverage all of the background data whilst ensuring that the average loss per epoch is not overly biased towards
+the background class.
+ACKNOWLEDGMENTS
+This unnumbered section is used to identify those who have aided the authors in understanding or accomplishing
+the work presented and to acknowledge sources of funding.
+REFERENCES
+[1] Stamford, J., Aciksoz, S. B., and Lawson, T., “Remote sensing techniques: Hyperspectral imaging and data
+analysis,” in [Photosynthesis : Methods and Protocols], Covshoff, S., ed., 373–390, Springer US, New York,
+NY (2024).
+[2] Aref, M. H., Korganbayev, S., Aboughaleb, I. H., Hussein, A. A., Abbass, M. A., Abdlaty, R., Sabry, Y. M.,
+Saccomandi, P., and Youssef, A.-B. M., “Custom hyperspectral imaging system reveals unique spectral
+signatures of heart, kidney, and liver tissues,” Spectrochimica Acta Part A: Molecular and Biomolecular
+Spectroscopy 305, 123363 (2024).
+[3] Taneepanichskul, N., Hailes, H. C., and Miodownik, M., “Automatic identification and classification of
+compostable and biodegradable plastics using hyperspectral imaging,” Frontiers in Sustainability 4, 1125954
+(2023).
+[4] Ma, P., Li, J., Zhuo, Y., Jiao, P., and Chen, G., “Coating condition detection and assessment on the steel
+girder of a bridge through hyperspectral imaging,” Coatings 13(6), 1008 (2023).
+[5] Karim, S., Qadir, A., Farooq, U., Shakir, M., and Laghari, A. A., “Hyperspectral imaging: a review and
+trends towards medical imaging,” Current Medical Imaging 19(5), 417–427 (2023).
+[6] Jaiswal, G., Rani, R., Mangotra, H., and Sharma, A., “Integration of hyperspectral imaging and autoen-
+coders: Benefits, applications, hyperparameter tunning and challenges,” Computer Science Review 50,
+100584 (2023).
+[7] Guerri, M. F., Distante, C., Spagnolo, P., Bougourzi, F., and Taleb-Ahmed, A., “Deep learning techniques
+for hyperspectral image analysis in agriculture: A review,” ISPRS Open Journal of Photogrammetry and
+Remote Sensing , 100062 (2024).
+[8] Ram, B. G., Oduor, P., Igathinathane, C., Howatt, K., and Sun, X., “A systematic review of hyperspec-
+tral imaging in precision agriculture: Analysis of its current state and future prospects,” Computers and
+Electronics in Agriculture 222, 109037 (2024).
+[9] Shuai, L., Li, Z., Chen, Z., Luo, D., and Mu, J., “A research review on deep learning combined with
+hyperspectral imaging in multiscale agricultural sensing,” Computers and Electronics in Agriculture 217,
+108577 (2024).
+Proc. of SPIE Vol. 13373  1337304-29
+
+[10] Chen, Y., Lin, Z., Zhao, X., Wang, G., and Gu, Y., “Deep learning-based classification of hyperspectral
+data,” IEEE Journal of Selected topics in applied earth observations and remote sensing 7(6), 2094–2107
+(2014).
+[11] Borsoi, R. A., Imbiriba, T., and Bermudez, J. C. M., “A data dependent multiscale model for hyperspectral
+unmixing with spectral variability,” IEEE Transactions on Image Processing 29, 3638–3651 (2020).
+[12] Ma, L., Crawford, M. M., and Tian, J., “Local manifold learning-based k-nearest-neighbor for hyperspectral
+image classification,” IEEE Transactions on Geoscience and Remote Sensing 48(11), 4099–4109 (2010).
+[13] Melgani, F. and Bruzzone, L., “Classification of hyperspectral remote sensing images with support vector
+machines,” IEEE Transactions on geoscience and remote sensing 42(8), 1778–1790 (2004).
+[14] Ham, J., Chen, Y., Crawford, M. M., and Ghosh, J., “Investigation of the random forest framework for
+classification of hyperspectral data,” IEEE Transactions on Geoscience and Remote Sensing 43(3), 492–501
+(2005).
+[15] Li, J., Bioucas-Dias, J. M., and Plaza, A., “Semisupervised hyperspectral image segmentation using multino-
+mial logistic regression with active learning,” IEEE Transactions on Geoscience and Remote Sensing 48(11),
+4085–4098 (2010).
+[16] Hong, D., Han, Z., Yao, J., Gao, L., Zhang, B., Plaza, A., and Chanussot, J., “Spectralformer: Rethink-
+ing hyperspectral image classification with transformers,” IEEE Transactions on Geoscience and Remote
+Sensing 60, 1–15 (2021).
+[17] Zabalza, J., Ren, J., Zheng, J., Zhao, H., Qing, C., Yang, Z., Du, P., and Marshall, S., “Novel segmented
+stacked autoencoder for effective dimensionality reduction and feature extraction in hyperspectral imaging,”
+Neurocomputing 185, 1–10 (2016).
+[18] Lee, H. and Kwon, H., “Going deeper with contextual cnn for hyperspectral image classification,” IEEE
+Transactions on Image Processing 26(10), 4843–4855 (2017).
+[19] Hsieh, T.-H. and Kiang, J.-F., “Comparison of cnn algorithms on hyperspectral image classification in
+agricultural lands,” Sensors 20(6), 1734 (2020).
+[20] Hu, W., Huang, Y., Wei, L., Zhang, F., and Li, H., “Deep convolutional neural networks for hyperspectral
+image classification,” Journal of Sensors 2015(1), 258619 (2015).
+[21] Sun, H., Zheng, X., Lu, X., and Wu, S., “Spectral–spatial attention network for hyperspectral image
+classification,” IEEE Transactions on Geoscience and Remote Sensing 58(5), 3232–3245 (2019).
+[22] Vaddi, R. and Manoharan, P., “Hyperspectral image classification using cnn with spectral and spatial
+features integration,” Infrared Physics & Technology 107, 103296 (2020).
+[23] Yu, C., Zhao, M., Song, M., Wang, Y., Li, F., Han, R., and Chang, C.-I., “Hyperspectral image classification
+method based on cnn architecture embedding with hashing semantic feature,” IEEE Journal of Selected
+Topics in Applied Earth Observations and Remote Sensing 12(6), 1866–1881 (2019).
+[24] Audebert, N., Le Saux, B., and Lef`evre, S., “Deep learning for classification of hyperspectral data: A
+comparative review,” IEEE geoscience and remote sensing magazine 7(2), 159–173 (2019).
+[25] Li, S., Song, W., Fang, L., Chen, Y., Ghamisi, P., and Benediktsson, J. A., “Deep learning for hyperspectral
+image classification: An overview,” IEEE Transactions on Geoscience and Remote Sensing 57(9), 6690–6709
+(2019).
+[26] Wang, N.-N., Sun, D.-W., Yang, Y.-C., Pu, H., and Zhu, Z., “Recent advances in the application of
+hyperspectral imaging for evaluating fruit quality,” Food analytical methods 9, 178–191 (2016).
+[27] Min, D., Zhao, J., Bodner, G., Ali, M., Li, F., Zhang, X., and Rewald, B., “Early decay detection in fruit
+by hyperspectral imaging–principles and application potential,” Food Control 152, 109830 (2023).
+[28] Rajkumar, P., Wang, N., EImasry, G., Raghavan, G., and Gariepy, Y., “Studies on banana fruit quality
+and maturity stages using hyperspectral imaging,” Journal of food engineering 108(1), 194–200 (2012).
+[29] Pu, Y.-Y., Feng, Y.-Z., and Sun, D.-W., “Recent progress of hyperspectral imaging on quality and safety in-
+spection of fruits and vegetables: a review,” Comprehensive Reviews in Food Science and Food Safety 14(2),
+176–188 (2015).
+[30] Yang, C., Lee, W. S., and Gader, P., “Hyperspectral band selection for detecting different blueberry fruit
+maturity stages,” Computers and Electronics in Agriculture 109, 23–31 (2014).
+Proc. of SPIE Vol. 13373  1337304-30
+
+[31] Wei, X., Liu, F., Qiu, Z., Shao, Y., and He, Y., “Ripeness classification of astringent persimmon using
+hyperspectral imaging technique,” Food and Bioprocess Technology 7, 1371–1380 (2014).
+[32] Khort, D. O., Kutyrev, A., Smirnov, I., Andriyanov, N., Filippov, R., Chilikin, A., Astashev, M. E.,
+Molkova, E. A., Sarimov, R. M., Matveeva, T. A., et al., “Enhancing sustainable automated fruit sorting:
+Hyperspectral analysis and machine learning algorithms,” Sustainability 16(22), 10084 (2024).
+[33] Guti´errez, S., Wendel, A., and Underwood, J., “Ground based hyperspectral imaging for extensive mango
+yield estimation,” Computers and Electronics in Agriculture 157, 126–135 (2019).
+[34] Syazwani, R. W. N., Asraf, H. M., Amin, M. M. S., and Dalila, K. N., “Automated image identification,
+detection and fruit counting of top-view pineapple crown using machine learning,” Alexandria Engineering
+Journal 61(2), 1265–1276 (2022).
+[35] Qureshi, W. S., Payne, A., Walsh, K., Linker, R., Cohen, O., and Dailey, M., “Machine vision for counting
+fruit on mango tree canopies,” Precision Agriculture 18, 224–244 (2017).
+[36] Vasconez, J. P., Delpiano, J., Vougioukas, S., and Cheein, F. A., “Comparison of convolutional neural
+networks in fruit detection and counting: A comprehensive evaluation,” Computers and Electronics in
+Agriculture 173, 105348 (2020).
+[37] H¨ani, N., Roy, P., and Isler, V., “Apple counting using convolutional neural networks,” in [2018 IEEE/RSJ
+international conference on intelligent robots and systems (IROS)], 2559–2565, IEEE (2018).
+[38] Maldonado Jr, W. and Barbosa, J. C., “Automatic green fruit counting in orange trees using digital images,”
+Computers and Electronics in Agriculture 127, 572–581 (2016).
+[39] Miranda, J. C., Gen´e-Mola, J., Zude-Sasse, M., Tsoulias, N., Escol`a, A., Arn´o, J., Rosell-Polo, J. R., Sanz-
+Cortiella, R., Mart´ınez-Casasnovas, J. A., and Gregorio, E., “Fruit sizing using ai: a review of methods and
+challenges,” Postharvest Biology and Technology 206, 112587 (2023).
+[40] Xuan, G., Gao, C., and Shao, Y., “Spectral and image analysis of hyperspectral data for internal and external
+quality assessment of peach fruit,” Spectrochimica acta part A: molecular and biomolecular spectroscopy 272,
+121016 (2022).
+[41] Shao, H., Li, X., Wang, F., Sun, L., Wang, C., and Hu, Y., “Feasibility study on fruit parameter estimation
+based on hyperspectral lidar point cloud,” Journal of Food Measurement and Characterization 18(8), 7185–
+7197 (2024).
+[42] Okamoto, H. and Lee, W. S., “Green citrus detection using hyperspectral imaging,” Computers and elec-
+tronics in agriculture 66(2), 201–208 (2009).
+[43] Luo, B., Yang, C., Chanussot, J., and Zhang, L., “Crop yield estimation based on unsupervised linear un-
+mixing of multidate hyperspectral imagery,” IEEE Transactions on Geoscience and Remote Sensing 51(1),
+162–173 (2012).
+[44] Yang, W., Nigon, T., Hao, Z., Paiao, G. D., Fern´andez, F. G., Mulla, D., and Yang, C., “Estimation of
+corn yield based on hyperspectral imagery and convolutional neural network,” Computers and Electronics
+in Agriculture 184, 106092 (2021).
+[45] Safren, O., Alchanatis, V., Ostrovsky, V., and Levi, O., “Detection of green apples in hyperspectral images
+of apple-tree foliage using machine vision,” Transactions of the ASABE 50(6), 2303–2313 (2007).
+[46] Chappell, S., Wang, R., Hornett, S., and Spanellis, A., “A VIS-NIR hyperspectral video imager,” in [Pho-
+tonic Instrumentation Engineering XI], Busse, L. E. and Soskind, Y., eds., PC12893, PC1289307, Inter-
+national Society for Optics and Photonics, SPIE (2024).
+[47] Kingma, D. P. and Ba, J., “Adam: A method for stochastic optimization,” CoRR abs/1412.6980 (2014).
+[48] Wang, J., Xu, J., and Wang, X., “Combination of hyperband and bayesian optimization for hyperparameter
+optimization in deep learning,” (2018).
+[49] Esp´ındola, R. P. and Ebecken, N. F., “On extending f-measure and g-mean metrics to multi-class problems,”
+WIT Transactions on Information and Communication Technologies 35, 25–34 (2005).
+[50] Chicco, D. and Jurman, G., “The advantages of the matthews correlation coefficient (mcc) over f1 score
+and accuracy in binary classification evaluation,” BMC genomics 21, 1–13 (2020).
+[51] Yang, L., Kang, B., Huang, Z., Zhao, Z., Xu, X., Feng, J., and Zhao, H., “Depth anything v2,”
+arXiv:2406.09414 (2024).
+Proc. of SPIE Vol. 13373  1337304-31
+
+[52] Yang, L., Kang, B., Huang, Z., Xu, X., Feng, J., and Zhao, H., “Depth anything: Unleashing the power of
+large-scale unlabeled data,” in [CVPR], (2024).
+[53] Gaidon, A., Wang, Q., Cabon, Y., and Vig, E., “Virtual worlds as proxy for multi-object tracking analysis,”
+in [Proceedings of the IEEE conference on Computer Vision and Pattern Recognition], 4340–4349 (2016).
+[54] Cabon, Y., Murray, N., and Humenberger, M., “Virtual kitti 2,” (2020).
+[55] Besl, P. J. and McKay, N. D., “Method for registration of 3-d shapes,” in [Sensor fusion IV: control
+paradigms and data structures], 1611, 586–606, Spie (1992).
+[56] Chen, Y. and Medioni, G., “Object modelling by registration of multiple range images,” Image and vision
+computing 10(3), 145–155 (1992).
+[57] Team, S. G., “How big is a pear?,” (2024). Accessed: 2024-12-06.
+Proc. of SPIE Vol. 13373  1337304-32

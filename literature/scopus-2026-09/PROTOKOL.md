@@ -110,5 +110,6 @@ Dua aturan berlaku saat menetapkan kode (keputusan Fatma, 5 Oktober 2026):
   (`topik/penyaringan/abstrak_F00.txt`).
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
 - PDF tersedia untuk 479 dari 1.001 kajian (`KATALOG-PDF.md`); teksnya sudah
-  diekstrak untuk 330 kajian. Daftar awal PDF yang belum ada tercantum di
+  diekstrak untuk 475 kajian (empat PDF jurnal CSAM memerlukan OCR). Satu kajian C1
+  (Safre dkk., 2024) tidak diperoleh teks lengkapnya dan dilaporkan demikian di naskah. Daftar awal PDF yang belum ada tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.

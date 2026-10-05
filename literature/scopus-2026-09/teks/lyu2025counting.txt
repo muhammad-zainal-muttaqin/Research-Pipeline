@@ -1,0 +1,1333 @@
+ 
+ 
+基于改进YOLOv9s 与自适应卡尔曼滤波的套袋葡萄
+视频计数方法
+吕　佳 ，冉　洁
+（1.   重庆师范大学计算机与信息科学学院，重庆 401331；2.   重庆市数字农业服务工程技术研究中心，重庆 401331）
+摘　要：针对现有果实计数方法实时性不足，以及套袋葡萄遮挡和检测噪声导致追踪失败的问题，该研究提出一种基于
+改进YOLOv9s 与自适应卡尔曼滤波的套袋葡萄视频计数方法。该方法由改进YOLOv9s 检测模型、自适应卡尔曼滤波
+追踪算法和划线计数3 个子方法构成。在检测阶段，为减少YOLOv9s 模型的参数量并提升推理速度，同时增强其在遮
+挡场景下的检测性能，设计了EFEM（efficient feature enhancement module）优化特征提取，并引入SEAM（spatially
+enhanced attention module）以提高遮挡情况下的检测性能。在追踪阶段，为解决因拍摄设备抖动和快速运动等因素引起
+的检测噪声导致卡尔曼滤波轨迹预测精度下降问题，提出一种自适应卡尔曼滤波追踪算法。该算法根据检测置信度自动
+调整噪声估计，以提高卡尔曼滤波对套袋葡萄轨迹的预测精度，进而提升追踪性能。在计数阶段，采用划线计数策略实
+现对套袋葡萄的自动计数。试验结果表明，在检测性能方面，改进后的YOLOv9s 模型参数量减少了29.6%，推理速度
+达到了70 帧/s；在追踪性能方面，改进后的追踪算法在高阶追踪准确率、多目标追踪准确率及ID 调和平均数指标上，
+分别提升了4.3、2.2 和2.5 个百分点；在计数性能方面，平均计数精度达到了80.0%。综上，该方法在实时追踪与计数
+方面展现了良好的应用潜力，可为套袋葡萄收获前的产量估计提供技术支持。
+关键词：YOLOv9；套袋葡萄；果实追踪；果实计数；卡尔曼滤波
+doi：10.11975/j.issn.1002-6819.202412026
+中图分类号：S126　　　　文献标志码：A　　　　文章编号：1002-6819(2025)-10-0195-09
+吕佳，冉洁. 基于改进YOLOv9s 与自适应卡尔曼滤波的套袋葡萄视频计数方法[J]. 农业工程学报，2025，41(10)：195-
+203. doi: 10.11975/j.issn.1002-6819.202412026　　http://www.tcsae.org
+LYU  Jia,  RAN  Jie.  Counting bagging grape using improved YOLOv9s and adaptive Kalman filter[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE), 2025, 41(10): 195-203. (in Chinese with English abstract)　　
+doi: 10.11975/j.issn.1002-6819.202412026　　http://www.tcsae.org
+ 
+0　引　言
+葡萄不仅富含多种营养成分，还具有预防心脑血管
+疾病等益处[1]。在葡萄种植管理中，果农常采用套袋措
+施减少农药和病虫害对葡萄品质的影响，从而提高经济
+收益[2]。预估葡萄产量不仅有助于果农合理规划采摘、
+销售和存储[3]，也为市场供需调节与政府资源配置提供
+依据[4-5]。实现精准估产的关键在于对套袋葡萄的准确计
+数。近年来，随着深度学习的快速发展，目标检测与目
+标追踪算法逐渐被应用到果实计数领域[6]。然而，由于
+移动设备的计算资源有限及拍摄环境的复杂性，迫切需
+要一种轻量、高效且稳健的套袋葡萄计数方法。
+目标检测算法是实现果实计数的关键技术之一，主
+要分为两阶段和一阶段检测算法。两阶段检测算法首先
+生成一组候选区域，然后对这些区域进行分类与回归。
+其中，R-CNN[7]、Fast R-CNN[8] 和Faster R-CNN[9] 等两
+阶段检测算法在农业领域应用最为广泛。例如，YAN 等[10]
+通过引入高效通道注意力和多尺度融合特征金字塔对
+Faster R-CNN 进行改进，使得苹果识别平均精度达到了
+95.42%。然而，两阶段检测算法计算资源和时间消耗较
+大，推理速度慢，无法满足农业领域的高实时性要求。
+相比之下，一阶段检测算法能直接从图像中进行检测，
+推理速度更快，更适合农业应用场景的需求。在一阶段
+检测算法中，YOLO 系列检测算法因其高效率和准确性，
+在提高农业生产效率、优化资源分配和推动可持续农业
+实践中发挥了重要作用[11]。QIAO 等[12] 通过优化YOLOv5
+模型，提出了一种基于改进YOLOv5 的红枣计数方法，
+实现了在复杂环境中对红枣的高效检测与计数；MA 等[13]
+提出了一种基于改进YOLOv7-tiny 的轻量级检测算法，
+结合多尺度特征融合和轻量化注意力机制，提高了模型
+在复杂自然环境中对苹果的检测精度。然而，上述方法
+仅实现了单张图片的果实计数，单张图片提供视野有限，
+无法覆盖整颗果树，限制了在大规模果树计数任务中的
+准确性和实用性。
+为克服单张图片在果实计数中的局限性，研究者开
+始在视频数据流中应用目标追踪算法，实现果实计数[14]。
+目标追踪算法利用上一帧目标的位置信息，定位当前帧
+中的同一目标，从而实现连续追踪[15]。基于卡尔曼滤波[16]
+（Kalman filtering, KF）的追踪算法，因其能够保留被遮
+  
+收稿日期：2024-12-04　　修订日期： 2025-04-20
+基金项目：重庆市高校创新研究群体(CXQT20015)；重庆市研究生科研创
+新项目(CYS240362)
+作者简介：吕佳，博士，教授，研究方向为计算机视觉与机器学习、数字
+农业工程。Email：lvjia@cqnu.edu.cn
+ 
+第 41 卷 　 第 10 期
+农 业 工 程 学 报　
+Vol.41　No.10
+2025 年 　　 5 月
+Transactions of the Chinese Society of Agricultural Engineering
+May 2025
+195
+
+挡果实的预测框，并在果实重新出现时进行匹配，减少
+了因重复检测造成的计数误差，而被广泛应用。高芳芳
+等[17] 基于YOLOv4-tiny 与KF 实现苹果视频计数，有效
+避免了重复计数。然而，该方法在果实匹配时忽略了果
+实的外观特征，影响了匹配的准确性。为此，GE 等[18]
+基于YOLOv5 模型和DeepSort 追踪算法[19] 提出了一种
+视觉目标追踪网络。该网络利用DeepSort 提取果实的外
+观特征信息，增强了网络的目标关联匹配能力。由于
+DeepSort 仅考虑高置信度检测框，忽略了低置信度检测
+框，易导致目标丢失及ID 切换。为了解决这一问题，
+LI 等[20] 采用改进的ByteTrack 追踪算法[21] 对火龙果进行
+追踪，该算法保留了低置信度检测框，提高了火龙果的
+追踪性能和平均计数精度。吕佳等[22] 进一步优化KF，
+将非极大值抑制操作后置，并引入相机运动补偿，缓解了
+人工拍摄不稳导致的干扰。然而，ByteTrack 引入额外的
+操作，增加了计算开销，限制其在移动设备上的实时性。
+尽管基于KF 的目标追踪算法在果实计数领域得到
+广泛应用[23-25]，但在套袋葡萄计数的实际应用中，仍存
+在以下问题：1) 现有果实检测模型都侧重于检测精度的
+提升，忽略了在真实场景下的实时性与实用性，难以满
+足资源受限场景下的应用需求；2) 套袋后的葡萄体积增
+大，果实之间相互遮挡或被葡萄叶片遮挡，导致检测困
+难；3) 拍摄设备抖动和快速不规则运动会引起检测噪声，
+进而影响KF 对轨迹的预测，降低追踪性能。为了解决
+套袋葡萄计数中存在的上述问题，本文提出了一种基于
+改进YOLOv9s 与自适应卡尔曼滤波的套袋葡萄视频计
+数方法。
+ 
+1　数据采集和预处理
+ 
+1.1　数据采集
+本文构建了一个套袋葡萄的图像和视频数据集，数
+据采集地点为重庆市璧山区派登科技示范园区，地理坐
+标为经度106.221°、维度29.753°、高度353 m。数据采
+集时间分别为2022 年7 月22 日和2023 年9 月1 日，采
+集工具为OPPO Reno6pro+和红米K40 智能手机。为了
+获得套袋葡萄在自然环境中真实地形态，选择了一天中
+的不同时间段进行了拍摄，包括清晨、午后和傍晚，以
+捕捉不同光照条件下的多角度外观。此外，拍摄还覆盖
+了多个视角，如正视、俯视、仰视和侧面，全面展现葡
+萄的外观特征。拍摄时，研究人员沿葡萄种植行分段进
+行记录，最终收集了700 张高分辨率原始图像和6 个视
+频。图像的分辨率分别为4 000×3 000 像素和4 096×3 072
+像素，视频则以1920×1 080 像素的高清分辨率、MP4 格
+式记录，帧率为30 帧/s，每段视频时长约20 s。
+ 
+1.2　图像增强与标注
+本文将700 张原始图像按照7∶2∶1 的比例随机划
+分为训练集490 张、验证集140 张和测试集70 张。另外，
+6 个套袋葡萄视频用于评估所提计数方法的计数性能。
+为了增强检测模型的鲁棒性和泛化性，本文在训练集中
+应用了高斯噪声、翻转和饱和度调整等图像增强方法，
+将训练集的图像扩增至2 100 张。通过饱和度调整、亮
+度增强与减弱，使模型能够适应多种光照条件下的情况。
+镜像翻转、高斯噪声以及图像翻转等操作使模型能够学
+习套袋葡萄在不同角度和视角下的特征，从而提高模型
+应对复杂环境的能力。图1 为原始图像增强后的示例。
+ 
+ 
+c. 翻转
+c. Flip
+b. 亮度增强
+b. Brightness enhancement 
+a. 高斯噪声
+a. Gaussian noise
+d. 镜像
+d. Mirror
+e. 饱和度
+e. Saturation
+f. 亮度变暗
+f. Brightness reduction
+图1　图像增强效果
+Fig.1    Image enhancement effect
+ 
+本文采用Make Sense 工具对原始图像和增强处理后
+的图像进行了标注，通过矩形框精确标记图像中套袋葡
+萄的位置，并导出符合YOLO 标准的数据集格式，其中
+包含套袋葡萄矩形框的尺寸和中心点位置信息。本文还
+使用DarkLabel 工具对视频进行逐帧标注，为捕捉套袋
+葡萄从出现到消失的连续变化，在每一帧上绘制出套袋
+葡萄的最小外接矩形框，以确保准确追踪套袋葡萄的动
+态变化。
+ 
+2　套袋葡萄视频计数方法
+为解决现有方法在检测实时性、遮挡条件下检测准
+确性及检测噪声处理方面的不足，本文提出了一种基于
+改进YOLOv9s 与自适应卡尔曼滤波的套袋葡萄视频计
+数方法。该方法的整体流程如图2 所示。首先，将输入
+的套袋葡萄视频分解为视频帧序列。其次，利用改进后
+的检测模型（ES-YOLOv9s）对每一帧进行检测。ES-
+YOLOv9s 通过引入高效特征增强模块（efficient feature
+enhancement module, EFEM）和空间增强注意力模块[26]
+（spatially enhanced attention module, SEAM）对YOLOv9s
+模型进行改进，并使用套袋葡萄图像数据集进行训练，
+使得该模型能够精准识别出每一帧中的套袋葡萄。随后，
+使用自适应KF 追踪（adaptive  Kalman  filter  tracking,
+AKFT）算法对不同帧中的同一套袋葡萄进行关联匹配，
+并为每个套袋葡萄分配唯一ID。在关联匹配过程中，
+AKFT 通过自适应KF 根据检测置信度自动调整KF 的噪
+声估计，提高套袋葡萄轨迹预测精度，从而实现对套袋
+葡萄的准确追踪。最后，通过划线计数策略实现对套袋
+葡萄的自动计数，即套袋葡萄中心点碰撞到计数线时，
+套袋葡萄数量自动加1。
+ 
+2.1　ES-YOLOv9s 检测模型
+YOLOv9s[27] 作为YOLO 系列的实时检测算法之
+一，通过引入可编程梯度信息(programmable gradient
+　 196
+农业工程学报（http://www.tcsae.org）
+2025 年
+
+information, PGI) 解决了深度网络中信息瓶颈问题，在识
+别各种大小和复杂性的目标时表现出色。因此，本文选
+择了YOLOv9s 检测模型作为套袋葡萄视频计数的基础
+检测模型。
+在实际应用中，检测模型的参数量不仅影响套袋葡
+萄的检测实时性，还对计数设备的计算资源提出较高的
+要求。然而，目前大多数检测模型主要关注果实检测精
+度的提升，而未充分考虑模型的实时性和计数设备的需
+求，这限制了检测模型在实际场景中的应用效果。为了
+平衡模型的参数量、检测精度和推理速度，本文设计了
+EFEM，以替换YOLOv9s 原有的RepNCSPELAN4 模块。
+同时，针对套袋处理后的葡萄体积增大，容易与其他葡
+萄、葡萄叶片、葡萄藤等物体产生重叠遮挡，本文引入
+了SEAM 增强模型对于遮挡套袋葡萄的检测。改进后的
+ES-YOLOv9s 模型结构如图3 所示。
+ 
+ 
+视频输入
+视频帧序列
+ES-YOLOv9s
+每一帧
+检测结果
+将同一套袋葡萄
+进行关联匹配
+AKFT对套袋葡萄
+进行追踪
+划线计数，套袋葡萄在
+线实时追踪与计数
+图2　套袋葡萄视频计数整体流程
+Fig.2    Overall workflow of bagged grape video counting
+ 
+ 
+SPPELAN 
+EFEM
+EFEM
+Aconv
+EFEM
+Aconv
+EFEM
+Detect
+Detect
+Detect
+SEAM 
+SEAM
+SEAM  
+SEAM
+SPPELAN
+EFEM
+SEAM
+EFEM
+SEAM
+Conv
+ELAN1
+Conv 
+Aconv
+EFEM
+Aconv
+EFEM
+Aconv
+EFEM
+Detect
+Detect
+Detect
+辅助训练分支
+Auxiliary reversible branch
+主干网络
+Backbone
+颈部网络
+Neck
+Upsample
+Upsample
+Upsample
+Upsample
+头部网络
+Head
+ 
+Input
+cat
+cat
+cat
+cat
+cat
+cat
+Transition
+MaxPool2d
+Conv
+MaxPool2d
+Conv
+MaxPool2d
+Conv
+Conv
+Conv
+Transition
+ELAN1
+cat
+SPPELAN 
+cat
+头部网络
+Head
+注：Conv 表示卷积操作；Cat 表示特征拼接；Aconv 是一种结合平均池化和卷积操作的模块；SPPELAN 表示一种空间金字塔池化结构；Upsample 表示上
+采样操作；SEAM 是空间增强注意力模块；EFEM 是高效特征增强模块。
+Note:  Conv  denotes  the  convolution  operation;  Cat  denotes  feature  concatenation;  Aconv  is  a  module  that  combines  average  pooling  and  convolution  operations;
+SPPELAN refers to a spatial pyramid pooling structure; Upsample denotes the upsampling operation; SEAM is the spatially enhanced attention module; EFEM is the
+efficient feature enhancement module.
+图3　ES-YOLOv9s 模型结构图
+Fig.3    ES-YOLOv9s model architecture diagram
+ 
+ 
+2.1.1　EFEM 模块
+由于YOLOv9s 中RepNCSPELAN4 模块大量使用标
+准卷积(convolution, Conv)，导致其参数量较大且推理速
+度较慢，这使得YOLOv9s 部署到移动设备上时难以实
+现高实时性检测。Conv 需要对所有特征图进行卷积操作，
+计算复杂度高。在神经网络中不同特征图之间信息高度
+相似或相关，特别是经过套袋处理后的葡萄体积增大且
+轮廓更加明显，其特征信息可能在不同特征图之间重复
+出现。因此，本文设计了EFEM，通过FasterNet[28] 模块
+仅对套袋葡萄部分特征图进行学习，从而实现高效的特
+征提取和更快的推理速度，其结构如图4a 所示。
+FasterNet 模块旨在通过减少冗余计算和内存访问来
+第 10 期
+吕　佳等：基于改进YOLOv9s 与自适应卡尔曼滤波的套袋葡萄视频计数方法
+197 　
+
+高效地提取空间特征，其结构如图4b 所示。首先，部分
+卷积(partial convolution, PConv) 通过仅在部分输入通道
+上执行卷积操作来有效降低计算负担，从而实现高效的
+空间特征提取，PConv 和Conv 如图4c 所示。随后，两
+个1×1 卷积负责在保持空间分辨率不变的前提下，对通
+道维度进行处理以调整通道数。在这两个1×1 卷积之间，
+进行了归一化操作(batch normalization, BN) 和ReLU 激
+活，其中BN 有助于加速模型的收敛过程并维持训练稳
+定性，而ReLU 则通过引入非线性来增强模型的表达力。
+此外，采用了残差连接将输入直接添加到输出中，这不
+仅保留了原始输入特征，而且有助于缓解深层网络中的
+梯度消失问题，确保信息的有效传递与特征重用。
+ 
+ 
+Conv
+Conv
+Conv
+Conv
+Input
+Output
+Input
+Output
+Conv
+PConv
++
+BN
+ReLU
+PConv
+Conv
+Concat
+FasterNet
+FasterNet
+a. 高效特征增强模块
+a. Efficient feature
+enhancement module
+b. FasterNet模块
+b. FasterNet module
+c. 部分卷积与标准卷积对比
+c. Comparison between partial
+convolution and standard convolution
+*
+*
+w
+w
+w
+w
+h
+h
+h
+h
+c
+c
+c
+c
+cₚ
+cₚ
+注：PConv 为部分卷积；Conv 为标准卷积；h 和w 为输入特征图的高度和
+宽度；c 为输入特征图的通道数；cp 为参与卷积的通道数；*表示卷积操作。
+Note: PConv is partial convolution; Conv is standard convolution; h and w are
+the height and width of the input feature map; c is the number of channels of the
+input feature map; cp is the number of channels involved in the convolution; *
+denotes the convolution operation.
+图4　高效特征增强模块、FasterNet 模块结构及部分卷积与标
+准卷积对比
+Fig.4    Comparison of efficient feature enhancement module,
+FasterNet module structure and partial convolution with standard
+convolution
+ 
+2.1.2　SEAM 模块
+套袋处理后的葡萄体积增大，容易与其他葡萄、葡
+萄叶片、葡萄藤等物体产生重叠遮挡。由于套袋葡萄遮
+挡区域的特征信息不完整，SEAM 通过学习套袋葡萄遮
+挡区域与未遮挡区域之间的关系，预测并补偿被遮挡的
+部分特征，从而提高对遮挡套袋葡萄的检测。
+SEAM 结构如图5 所示。首先，将输入的套袋葡萄
+特征图经过通道和空间混合模块（channel-spatial mixed
+module, CSMM）进行处理，以学习空间维度和通道之间
+的相关性。其次，使用一个两层全连接网络以融合每个
+通道的信息，从而增强通道间的连接性。最后，将
+SEAM 的输出与原始特征图相乘，作为注意力权重，使
+模型能够更有效地处理目标遮挡问题。
+在CSMM 中，套袋葡萄特征图被分割成不同大小的
+图像序列块，随后将这些块线性映射并展平为一维向量。
+然后，采用带有残差连接的3×3 深度卷积进行处理。深
+度卷积以逐通道的方式操作，即对每个通道进行独立的
+卷积运算。尽管深度卷积能够有效学习不同通道的重要
+性并减少参数量，但其忽略了通道间信息的交互关系。
+为了弥补这一不足，随后通过1×1 逐点卷积将不同深度
+卷积的输出进行组合。
+ 
+ 
+Average
+pooling
+Channel
+exp
+Input
++
++
+Patch embedding
+GELU
+BatchNorm
+Depthwise
+convolution
+GELU
+BatchNorm
+Pointwise
+convolution
+GELU
+BatchNorm
++
+CSMM
+Patch=8
+CSMM
+Patch=7
+CSMM
+Patch=6
+注：Patch=6、Patch=7 和Patch=8 表示输入的特征图被分为6×6、7×7 和
+8×8 的小块。
+Note:  Patch=6,  Patch=7,  and  Patch=8 indicate  that  the  input  feature  map  is
+divided into 6×6, 7×7, and 8×8 patches, respectively.
+图5　空间增强注意力模块结构图
+Fig.5    Spatially enhanced attention module structure diagram
+ 
+2.2　AKFT 追踪算法
+ByteTrack 追踪算法[21] 引入Byte 的数据关联方法，
+不仅针对高置信度检测框进行处理，还对低置信度检测
+框进行二次关联匹配。该算法在保持实时性的同时，显
+著提升了目标追踪性能。因此，本文选择ByteTrack 追
+踪算法作为套袋葡萄追踪阶段的基础追踪算法。
+ByteTrack 追踪算法采用KF 进行轨迹预测。KF 是
+一种用于预测和估计系统状态的方法[16]，其过程主要包
+括两个步骤：预测和更新。在预测步骤中，追踪算法基
+于上一时刻的状态值和运动模型来预测当前时刻的状态，
+如式（1）所示。在更新步骤中，将预测结果与当前时刻
+的实际观测值相结合，以获得更准确的状态估计，如式
+（2）所示。然而，由于KF 主要适用于简单且匀速的运动
+预测，在拍摄条件不稳定或目标运动非匀速的情况下，检
+测结果包含较多噪声干扰，导致其预测精度下降，进而影
+响整体的追踪性能。为了解决这一问题，本文提出了自适
+应KF，以提高在复杂拍摄条件下追踪的准确性与稳定性。
+
+ˆxt|t−1 = Aˆxt−1|t−1 + But
+Pt|t−1| = APt−1|t−1 AT +Q
+（1）
+A
+B
+ut
+Q
+ˆxt|t−1
+t
+Pt|t−1|
+式中
+是状态转移矩阵，
+是控制输入矩阵，
+是控制向
+量，
+是过程噪声协方差矩阵，
+是第帧时刻的状态
+矩阵，
+是预测的状态协方差矩阵。
+
+Kt = Pt|t−1HT(HPt|t−1HT + N)−1
+ˆxt|t = ˆxt|t−1 + Kt(zt −H ˆxt|t−1)
+Pt|t = (I −KtH)Pt|t−1
+（2）
+　 198
+农业工程学报（http://www.tcsae.org）
+2025 年
+
+H
+N
+Kt
+zt
+t
+式中
+是观测矩阵，
+是噪声协方差矩阵，
+是卡尔曼
+增益，
+表示在第帧时刻检测到的套袋葡萄位置信息，
+I 为单位矩阵。
+N
+˜N
+在更新步骤中，传统KF 会根据当前的观测值修正
+状态预测，以获取更准确的状态估计。在这个过程中，
+测量噪声的协方差矩阵
+被用来衡量观测值的不确定性。
+然而，传统的KF 噪声协方差矩阵是固定不变的，可能
+无法准确反映由于套袋葡萄快速运动、遮挡等原因导致
+的不同目标的噪声差异。因此，本文提出动态调整的测
+量噪声协方差矩阵
+，使得KF 能够根据检测结果的置
+Ct
+信度
+自动调整噪声值，如式(3) 所示。这样可以确保
+高置信度的检测结果在状态更新过程中被赋予更大的权
+重，而低置信度的检测结果则被赋予较小的权重。将ES-
+YOLOv9s 引入到采用自适应KF 的ByteTrack 追踪算法
+中形成本文提出的AKFT 追踪算法，其整体追踪流程如
+图6 所示。
+˜Nt = (1−Ct)Nt
+（3）
+C
+N
+˜N
+式中，
+t 是检测框置信度得分，
+t 是噪声协方差矩阵，
+t 是更新后的噪声协方差矩阵。
+ 
+ 
+输入视频
+检测框
+低置信度
+检测框
+高置信度
+检测框
+第t−1帧
+轨迹
+第t帧轨迹
+的预测框
+未匹配的
+检测框
+匹配成功
+未匹配的
+预测框
+第二次
+关联匹配
+未匹配的
+检测框
+匹配成功
+未匹配的
+预测框
+第t 帧的轨迹
+第一次
+关联匹配
+自适应卡尔
+曼滤波预测
+自适应卡尔曼滤波更新
+自适应卡尔曼滤波更新
+ES-YOLOv9s
+检测
+初始化为新轨迹
+删除
+Dt<score
+Dt>score
+Dt
+注：
+是t 帧检测框的置信度得分；score 为设定置信度阈值。
+Dt
+Note:
+is the confidence score of the detection box in frame t; score is the predefined confidence threshold.
+图6　AKFT 追踪流程
+Fig.6    Tracking process of the AKFT
+  
+3　结果与分析
+ 
+3.1　试验环境
+本文使用的试验设备为：Windows 11 专业版操作系
+统，搭载13 th Gen Intel® Core™ i5-13490F CPU，32GB
+RAM，GPU 为NVIDIA GeForce RTX 4060 Ti 16G。使用
+PyCharm2023 作为集成开发环境，编程语言为Python3.7，
+深度学习框架为Pytorch1.12.0。初始学习率为0.01，训
+练轮次为700，批量大小为32。
+ 
+3.2　评价指标
+在套袋葡萄检测阶段，本文采用精度（precision, P）、
+召回率（recall, R）、平均精度（average precision, AP）、
+每秒帧数（frame per second, FPS）、参数量（parameters）
+和浮点运算数（floating point operations, FLOPs）作为评
+价指标。
+AFPS 表示追踪算法处理一个视频的平均每秒帧数，
+数值越大表示追踪算法处理速度越快，实时性越高，计
+算式如下所示。
+HOTA =
+w 1
+0 HOTAαdα ≈1
+19
+∑
+α∈{0.05,0.1........,0.95}
+HOTAα
+（4）
+HOTAα =
+√
+∑
+mp∈{Tp} A(mp)
+||TP ||+||FN ||+||FP ||
+（5）
+A(mp) =
+TPA(mp)
+
+TPA(mp)
++
+FNA(mp)
++
+FPA(mp)
+
+（6）
+MOTA = 1−FN + FP + IDS W
+GT
+（7）
+IDF1 =
+2TP
+2TP + FN + FP
+（8）
+AFPS = TF
+TT
+（9）
+HOTA
+MOTA
+IDF1
+α
+TPA(c)
+FNA(c)
+FPA(c)
+式中TP 表示检测模型正确检测到的套袋葡萄数量，FP
+表示检测模型错误检测为套袋葡萄的数量，FN 表示模型
+未能检测到的套袋葡萄数量。
+为高阶追踪准确率，
+为多目标追踪准确率，
+为ID 调和平均数，AFPS
+为平均每秒帧数，表示IoU 阈值，dα 表示的微小变化
+量，mp 为预测轨迹与真实轨迹间的匹配对，
+、
+和
+分别表示套袋葡萄正确关联、未关联和错误关联
+的次数，IDSW 表示在追踪过程中套袋葡萄身份变换的次
+数，GT 表示追踪过程中真实套袋葡萄的数量，TF 表示视
+频的总帧数，TT 表示处理所有帧所需的总时间，s。
+ 
+3.3　套袋葡萄检测结果
+为了验证ES-YOLOv9s 在套袋葡萄检测中的速度和
+精度，本文将YOLOv5s、YOLOv7-tiny[29]、YOLOv8s、
+YOLOv9s[27]、YOLOv10s[30] 与ES-YOLOv9s 进行了对比
+试验。表1 展示了不同检测模型的对比结果。试验结果
+表明，YOLOv9s 在P 和AP 上取得最佳，达到了98.5% 和
+96.9%。这是因为YOLOv9s 通过引入PGI 解决信息在经
+过多层网络丢失的问题，使检测模型在经过多层网络学
+第 10 期
+吕　佳等：基于改进YOLOv9s 与自适应卡尔曼滤波的套袋葡萄视频计数方法
+199 　
+
+习后依然能利用浅层网络中的关键信息。然而，引入
+PGI 增加了网络的复杂和计算开销，导致YOLOv9s 推理
+速度显著低于其他模型。因此，本文设计了EFEM 对其
+进行改进，改进后的ES-YOLOv9s 不仅在AP 和R 方面
+表现优异，同时具备较高的推理速度，证明ES-YOLOv9s
+可作为实现套袋葡萄追踪与计数的检测模型。此外，为
+更直观地评估各模型性能差异，本文还选择了背景噪声、
+套袋葡萄重叠以及叶片遮挡比较明显的三张图进行了检
+测可视化。可视化结果如图7 所示，YOLOv5s、YOLOv7-
+tiny、YOLOv8s、YOLOv9s 和YOLOv10s 均存在不同程
+度的漏检和误检，而ES-YOLOv9s 能够精准且稳定地框
+定套袋葡萄，无论是在密集情况还是复杂背景条件下，
+均展现出良好的检测效果。
+ 
+ 
+表 1    不同检测模型的对比结果
+Table 1    Comparison results of different detection models
+模型
+Model
+P/%
+R/%
+AP/%
+FPS/(帧·s−1)
+YOLOv5s
+95.1
+90.7
+96.0
+35
+YOLOv7-tiny
+95.2
+92.7
+95.2
+26
+YOLOv8s
+89.3
+89.5
+94.0
+62
+YOLOv9s
+98.5
+87.4
+96.9
+51
+YOLOv10s
+93.6
+87.2
+93.3
+65
+ES-YOLOv9s
+95.3
+93.1
+96.9
+70
+注：FPS 为每秒帧数，P 为精度，R 为召回率，AP 为平均精度。
+Note: FPS is frames per second, P is precision, R is recall, AP is average precision.
+ 
+ 
+ES-YOLOv9
+YOLOv10
+YOLOv9
+YOLOv8
+YOLOv7-tiny
+YOLOv5s
+套袋葡萄重叠
+Bagged grapes overlap
+背景噪声
+Background noise
+叶片遮挡
+Blade occlusion
+注：绿色圆圈表示漏检的套袋葡萄；黄色箭头表示误检的套袋葡萄。
+Note: Green circles indicate missed bagged grapes; yellow arrows indicate misdiagnosed bagged grapes.
+图7　检测结果可视化
+Fig.7    Visualization of detection results
+ 
+EFEM 和SEAM 对ES-YOLOv9s 性能的影响如表2
+所示。首先，EFEM 旨在降低模型参数量并提高推理速
+度，在将EFEM 替换YOLOv9s 中RepNCSPELAN4 模块
+后，模型的参数量减少了32.7%，FLOPs 减少了11.8G，
+FPS 提升至70 帧/s，同时R 值也有所提高。然而，
+EFEM 仅对输入特征图的部分进行特征提取，导致P 和
+AP 值略微下降。其次，单独在YOLOv9s 中加入SEAM
+会导致各个指标下降。由于SEAM 增强了对遮挡套袋葡
+萄的学习，遮挡套袋葡萄存在更多噪声干扰，从而影响
+模型的性能。最后，将EFEM 和SEAM 同时应用于
+YOLOv9s 时，得到改进的ES-YOLOv9s 检测模型。
+ 
+ 
+表 2    不同模块对ES-YOLOv9s 性能的影响
+Table 2    Influence of different modules on performance of
+ES-YOLOv9s
+EFEM
+SEAM
+P/%
+R/%
+AP/%
+参数量
+Parameters/
+M
+浮点运算数
+Floating point
+operations/G
+FPS/
+帧·s−1
+−
+−
+98.5
+87.4
+96.9
+9.8
+39.9
+51
+√
+−
+98.2
+88.1
+96.7
+6.6
+28.1
+70
+−
+√
+94.5
+89.8
+96.5
+10.0
+40.8
+46
+√
+√
+95.3
+93.1
+96.9
+6.9
+29.0
+70
+注：“−”表示未使用该模块；“√”表示使用了该模块。
+Note: “−” indicates that the module is not used; “√” indicates that the module
+is used.
+ 
+与YOLOv9s 相比，ES-YOLOv9s 参数量下降了
+29.6%，FLOPs 减少了10.9G，FPS 提升了20 帧/s，同
+时AP 值持平，R 值提升了5.7 个百分点。试验结果证明，
+ES-YOLOv9s 在不牺牲精度的情况下实现了轻量化和提
+高推理速度。
+ 
+3.4　套袋葡萄追踪与计数
+ 
+3.4.1　不同追踪算法对比结果
+为了评估AKFT 在套袋葡萄数据集上的追踪性能，
+将其与Sort[31]、DeepSort[19]、DeepMot[32]、UAVmot[33]、
+ByteTrack[21] 和NMS-ByteTrack[22] 追踪算法进行了对比
+试验。试验结果如表3 所示，AKFT 在HOTA、MOTA
+和IDF1 指标上分别达到了58.6%、63.6% 和78.8%，均
+优于其他追踪算法。其原因在于，Sort 在设计时未考虑
+目标遮挡和外观特征信息，其运动估计和数据关联仅依
+赖检测框的位置和大小。DeepSort 和DeepMot 在Sort 基
+础上引入了卷积神经网络和循环神经网络用于提取套袋
+葡萄外观信息，并结合运动信息提高追踪算法性能。然
+而，DeepSort 和DeepMot 仅保留高置信度检测框，忽略
+了低置信度检测框。尽管低置信度检测框的可靠性较低，
+但可能包含实际存在的套袋葡萄，将其丢弃会导致部分
+套袋葡萄追踪失败。为了进一步提升目标关联精度，
+UAVmot 引入了ID 特征更新模块以增强目标的关联匹配，
+但在处理外观高度相似的套袋葡萄时，相邻目标的特征
+相似性仍可能影响关联匹配的准确性，限制了整体的追
+踪性能。由于低置信度检测框可能包含套袋葡萄，ByteTrack
+　 200
+农业工程学报（http://www.tcsae.org）
+2025 年
+
+通过将低置信度检测框进行二次关联匹配，考虑了所有
+检测框，从而减少了套袋葡萄追踪丢失。NMS-ByteTrack
+在ByteTrack 的基础上，通过将非极大值抑制操作后置、
+改进KF 以及引入相机运动补偿，解决套袋葡萄遮挡和
+人工拍摄不稳定等问题，提高追踪性能。然而，引入相
+机运动补偿和改进KF 增加了算法的计算复杂度，对计
+算资源的要求较高，导致其追踪实时性较低。由于
+ByteTrack 依赖传统的KF 进行轨迹预测，传统KF 未对
+检测噪声进行处理，导致其对套袋葡萄轨迹预测精度低。
+因此，本文提出自适应KF 对ByteTrack 追踪算法进行了
+改进，并将ES-YOLOv9s 引入到ByteTrack 追踪算法中，
+形成本文提出的AKFT 追踪算法。该追踪算法根据检测
+置信度自动调整噪声估计，在确保实时追踪的同时，提
+高KF 对套袋葡萄轨迹的预测精度。试验结果显示，
+AKFT 追踪算法在HOTA、MOTA 和IDF1 指标上分别
+较ByteTrack 提高了4.3、2.2 和2.5 个百分点，验证了其
+在套袋葡萄追踪的有效性。
+ 
+ 
+表 3    不同追踪算法在套袋葡萄数据集上的对比结果
+Table 3    Comparison results of different tracking algorithms
+追踪方法
+Tracking method
+HOTA/%
+MOTA/%
+IDF1/%
+IIDSW
+AFPS/(帧·s-1)
+Sort
+51.0
+59.9
+67.8
+13
+35
+DeepSort
+51.5
+58.1
+71.5
+17
+27
+DeepMot
+39.4
+54.3
+44.4
+28
+30
+UAVmot
+53.5
+59.9
+75.4
+3
+37
+ByteTrack
+54.3
+61.4
+76.3
+3
+35
+NMS-ByteTrack
+57.0
+60.0
+70.0
+0
+22
+AKFT
+58.6
+63.6
+78.8
+6
+35
+注：HOTA 为高阶追踪准确率；MOTA 为多目标追踪准确率；IDF1 为ID 调和平均
+数；IDSW 为ID 切换次数；AFPS 为平均每秒帧数。
+Note: HOTA is the high-order tracking accuracy; MOTA is the multi-target tracking
+accuracy; IDF1 is identification F1-score; IDSW is ID switch; AFPS is the average
+frames per second.
+ 
+为了验证不同改进对套袋葡萄追踪性能的影响，本
+文以YOLOv9s 作为检测阶段的基础模型，ByteTrack 作
+为追踪阶段的基础模型，试验结果如表4 所示。首先，
+EFEM 和SEAM 是对YOLOv9s 检测模型进行改进。
+EFEM 旨在降低YOLOv9s 检测模型参数量和提升推理速
+度，对追踪性能影响较小。SEAM 增强了对遮挡套袋葡
+萄的检测能力，相比YOLOv9s 检测模型，在HOTA 上
+提升了0.9 个百分点；但遮挡套袋葡萄检测结果存在更
+多噪声，导致MOTA、IDF1 分别下降了3.4、1.5 个百分
+点，IDSW 增加了3 次。其次，自适应KF 是对ByteTrack
+追踪算法的改进，根据检测噪声动态调整KF 对套袋葡
+萄的预测，相比ByteTrack，在HOTA、MOTA 和IDF1
+提升了1.5、1.6 和1.4 个百分点，IDSW 减少了2 次。
+图8 展示了ByteTrack 改进前后KF 预测框的可视化对比。
+结果表明，在遮挡情况下，改进后的预测框更加精准，
+长宽比例和尺寸更好地框住了套袋葡萄。最后，将使用
+EFEM 和SEAM 改进的ES-YOLOv9s 检测模型引入到采
+用自适应KF 的ByteTrack 追踪算法中，形成AKFT。该
+算法不仅增强对遮挡套袋葡萄的检测，还能根据检测置
+信度自动调整噪声估计。与基础模型相比，AKFT 在
+HOTA、MOTA 和IDF1 上提升了4.3、2.2 和2.5 个百分
+点，证明了AKFT 在追踪性能方面的有效性。
+ 
+表 4    不同改进对套袋葡萄追踪性能的影响
+Table 4    Impact of different improvements on the tracking
+performance of bagged grapes
+EFEM
+SEAM
+自适应卡尔曼滤波
+Adaptive Kalman filtering
+HOTA/%
+MOTA/%
+IDF1/%
+IDSW
+−
+−
+−
+54.3
+61.4
+76.3
+3
+√
+−
+−
+55.0
+58.0
+74.8
+6
+−
+√
+−
+55.2
+60.3
+75.4
+6
+−
+−
+√
+55.8
+63.0
+77.7
+1
+√
+√
+−
+56.0
+57.9
+73.4
+3
+√
+−
+√
+54.7
+58.5
+73.4
+6
+−
+√
+√
+56.5
+62.3
+76.4
+8
+√
+√
+√
+58.6
+63.6
+78.8
+6
+ 
+ 
+改进后KF的预测框
+The prediction box of the KF
+after improvement
+改进前KF的预测框
+The prediction box of the KF
+before improvement
+d. 第1 360帧
+d. Frame 1 360
+c. 第1 359帧
+c. Frame 1 359
+b. 第110帧
+b. Frame 110
+a. 第109帧
+a. Frame 109
+图8　改进前后的预测框可视化对比
+Fig.8    Visualization comparison of prediction boxes before and
+after improvement
+ 
+3.4.2　套袋葡萄实时计数
+为评估划线计数策略的准确性，本文在6 个套袋葡萄
+视频上进行了试验，并将结果与人工计数进行了对比。为
+了确保人工计数的准确性，每个视频由两名研究人员独立
+计数，通过在计算机上逐帧观看视频，详细记录每个套
+袋葡萄出现和消失的情况，并取两者的平均值以减少人
+为误差。结果如表5 所示。试验表明该计数策略与人工计
+数的结果相近，证实了套袋葡萄视频计数方法的有效性。
+ 
+ 
+表 5    人工计数与划线计数比较
+Table 5    Comparison between manual count and line count
+计数方法
+Counting
+method
+视频1
+Video
+one
+视频2
+Video
+two
+视频3
+Video
+three
+视频4
+Video
+four
+视频5
+Video
+five
+视频6
+Video
+six
+平均计数精度
+Average counting
+accuracy/%
+人工计数
+Manual
+counting
+22
+7
+22
+11
+13
+19
+_
+划线计数
+Line count
+18
+7
+11
+10
+9
+17
+80.0
+ 
+4　结　论
+本文以套袋葡萄为研究对象，提出了基于改进YOLOv9s
+与自适应卡尔曼滤波的套袋葡萄视频计数方法，实现了
+套袋葡萄在线实时追踪与计数。该研究主要结论如下：
+1）检测阶段，本文设计了EFEM 并引入SEAM，
+对YOLOv9s 进行了改进。改进ES-YOLOv9s 在AP 和R
+分别达到了96.9% 和93.1%。同时，其推理速度达到了
+70 帧/s。与原YOLOv9s 相比，ES-YOLOv9s 的参数量减
+第 10 期
+吕　佳等：基于改进YOLOv9s 与自适应卡尔曼滤波的套袋葡萄视频计数方法
+201 　
+
+少了29.6%，FLOPs 降低了10.9G，推理速度提升了
+20 帧/s。
+2）追踪阶段，本文采用自适应KF 根据检测置信度
+自动调整噪声估计，提出了AKFT。相比其他6 种追踪
+算法，AKFT 在HOTA、MOTA、IDF1 等指标上显著优于其
+他追踪算法，分别到达了58.6%、63.6% 和78.8%。相较
+于基础追踪算法提高了4.3、2.2 和2.5 个百分点。
+3）计数阶段，本文采用划线计数策略对套袋葡萄进
+行计数。结果表明，该策略与人工计数的结果相近，平
+均精度达到了80.0%。证实本文提出的基于改进YOLOv9s
+与自适应卡尔曼滤波的套袋葡萄视频计数方法可为套袋
+葡萄收获前的产量估计提供参考。
+本文仅对套袋葡萄实现实时追踪与计数，未来将考
+虑扩展到其他果实种类。此外，针对实际生产过程中，
+模型轻量化、便捷性以及算法稳健等方面可以进一步改
+进，以实现更加精准的果实追踪与计数。
+[ 参    考    文    献]
+ 
+ SABRA  A,  NETTICADAN  T,  WIJEKOON  C.  Grape
+bioactive  molecules,  and  the  potential  health  benefits  in
+reducing the risk of heart diseases[J]. Food Chemistry: X, 2021,
+12: 100149.
+[1]
+ KARAJEH M R. Pre-harvest bagging of grape clusters as a non-
+chemical  physical  control  measure  against  certain  pests  and
+diseases of grapevines[J]. Organic Agriculture, 2018, 8(3): 259-
+264.
+[2]
+ HE  L,  FANG  W,  ZHAO  G,  et  al.  Fruit  yield  prediction  and
+estimation  in  orchards:  A  state-of-the-art  comprehensive
+review for both direct and indirect methods[J]. Computers and
+Electronics in Agriculture, 2022, 195: 106812.
+[3]
+ 杨志强，彭韵，石水平. 战略购销协议、客户需求稳定性
+与企业投资效率——基于供应链管控视角的分析[J]. 上海
+财经大学学报，2024，26(4)：107-123.
+YANG  Zhiqiang,  PENG  Yun,  SHI  Shuiping.  Strategic
+purchase and sales agreements, customer demand stability, and
+enterprise  investment  efficiency:  From  the  perspective  of
+supply-chain management and control[J]. Journal of Shanghai
+University  of  Finance  and  Economics,  2024,  26(4):  107-123.
+(in Chinese with English abstract)
+[4]
+ 王晓东. 在统筹发展和安全中完善重要商品储备制度：以
+农产品为视角的分析[J]. 中国农村经济，2022，5：2-19.
+WANG  Xiaodong.  Improving  important  commodity  reserve
+system in overall development and security: An analysis from
+the  perspective  of  agricultural  products[J].  Chinese  Rural
+Economy, 2022, 5: 2-19. (in Chinese with English abstract)
+[5]
+ ZHANG W, WANG J, LIU Y, et al. Deep-learning-based in-
+field citrus fruit detection and tracking[J]. Horticulture Research,
+2022, 9: uhac003.
+[6]
+ GIRSHICK R, DONAHUE J, DARRELL T, et al. Rich feature
+hierarchies  for  accurate  object  detection  and  semantic
+segmentation[C]//Proceedings  of  the  IEEE  Conference  on
+Computer  Vision  and  Pattern  Recognition.  Columbus,  OH,
+USA: IEEE, 2014: 580-587.
+[7]
+ GIRSHICK  R.  Fast  r-cnn[C]//Proceedings  of  the  IEEE
+International Conference on Computer Vision. Piscataway, NJ:
+IEEE, 2015: 1440-1448.
+[8]
+ REN S, He K, GIRSHICK R, et al. Faster R-CNN: Towards real-
+time object detection with region proposal networks[J]. IEEE
+Transactions  on  Pattern  Analysis  and  Machine  Intelligence,
+[9]
+2016, 39(6): 1137-1149.
+ YAN  Z,  ZHANG  H,  LI  L.  An  integrated  target  recognition
+method based on improved Faster-RCNN for apple detection,
+counting,  localization,  and  quality  estimation[C]//2024  IEEE
+4th  International  Conference  on  Power,  Electronics  and
+Computer Applications. Shenyang, China: IEEE, 2024: 1234-
+1240.
+[10]
+ FU  H,  GUO  Z,  FENG  Q,  et  al.  MSOAR-YOLOv10:  Multi-
+Scale  occluded  apple  detection  for  enhanced  harvest
+robotics[J]. Horticulturae, 2024, 10(12): 1246.
+[11]
+ QIAO Y, HU Y, ZHENG Z, et al. A counting method of red
+jujube  based  on  improved  YOLOv5s[J].  Agriculture,  2022,
+12(12): 2071.
+[12]
+ MA L, ZHAO L, WANG Z, et al. Detection and counting of
+small target apples under complicated environments by using
+improved YOLOv7-tiny[J]. Agronomy, 2023, 13(5): 1419.
+[13]
+ WANG  Z,  WALSH  K,  KOIRALA  A.  Mango  fruit  load
+estimation  using  a  video  based  MangoYOLO-kalman  filter-
+hungarian algorithm method[J]. Sensors, 2019, 19(12): 2742.
+[14]
+ LUO W, XING J, MILAN A, et al. Multiple object tracking: A
+literature  review[J].  Artificial  Intelligence,  2021,  293(4):
+103448.
+[15]
+ KALMAN  R  E.  A  new  approach  to  linear  filtering  and
+prediction  problems[J].  Journal  of  Basic  Engineering,  1960,
+82(1): 35-45.
+[16]
+ 高芳芳，武振超，索睿，等. 基于深度学习与目标跟踪的
+苹果检测与视频计数方法[J]. 农业工程学报，2021，37(21)：
+217-224.
+GAO  Fangfang,  WU  Zhenchao,  SUO  Rui,  et  al.  Apple
+detection  and  counting  using  real-time  video  based  on  deep
+learning  and  object  tracking[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2021, 37(21): 217-224. (in Chinese with English abstract)
+[17]
+ GE  Y,  LIN  S,  ZHANG  Y,  et  al.  Tracking  and  counting  of
+tomato at different growth period using an improving YOLO-
+DeepSort  network  for  inspection  robot[J].  Machines,  2022,
+10(6): 489.
+[18]
+ WOJKE  N,  BEWLEY  A,  PAULUS  D.  Simple  online  and
+realtime tracking with a deep association metric[C]//2017 IEEE
+International Conference on Image Processing. Beijing, China:
+IEEE, 2017: 3645-3649.
+[19]
+ LI X, WANG X, ONG P, et al. Fast recognition and counting
+method  of  dragon  fruit  flowers  and  fruits  based  on  video
+stream[J]. Sensors, 2023, 23(20): 8444.
+[20]
+ ZHANG Y, SUN P, JIANG Y, et al. Bytetrack: Multi-object
+tracking  by  associating  every  detection  box[C]//European
+Conference  on  Computer  Vision.  Cham:  Springer  Nature
+Switzerland, 2022: 1-21.
+[21]
+ 吕佳，张翠萍，刘琴，等. 基于自纠正 NMS-ByteTrack 的套袋
+葡萄估产方法[J]. 农业工程学报，2023，39(13)：182-190.
+LYU Jia, ZHANG Cuiping, LIU Qin, et al. Bagged grape yield
+estimation method using a self-correcting NMS-ByteTrack[J].
+Transactions
+ of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+Engineering (Transactions of the CSAE), 2023, 39(13): 182-190.
+(in Chinese with English abstract)
+[22]
+ SHEN L, SU J, HE R, et al. Real-time tracking and counting of
+grape  clusters  in  the  field  based  on  channel  pruning  with
+YOLOv5s[J]. Computers and Electronics in Agriculture, 2023,
+206: 107662.
+[23]
+ 刘鑫，马本学，李玉洁，等. 基于改进 YOLOv7-ByteTrack
+的干制哈密大枣缺陷检测与计数系统[J]. 农业工程学报，
+2024，40(3)：303-312.
+LIU  Xin,  MA  Benxue,  LI  Yujie  et  al.  Defect  detection  and
+counting  system  of  dried  hami  dates  based  on  improved
+YOLOv7-ByteTrack[J]. Transactions of the Chinese Society of
+[24]
+　 202
+农业工程学报（http://www.tcsae.org）
+2025 年
+
+Agricultural  Engineering  (Transactions  of  the  CSAE),  2024,
+40(3): 303-312. (in Chinese with English abstract)
+ 殷慧军，王宝丽，景运革，等. 基于改进 YOLOv7 的无人
+机航拍视频西瓜计数方法[J]. 农业工程学报，2024，40(19)：
+124-134.
+YIN  Huijun,  WANG  Baoli,  JING  Yunge,  et  al.  Improved
+YOLOv7  method  for  counting  watermelons  in  UAV  aerial
+videos[J]. Transactions of the Chinese Society of Agricultural
+Engineering (Transactions of the CSAE), 2024, 40(19): 124-134.
+(in Chinese with English abstract)
+[25]
+ YU Z, HUANG H, CHEN W, et al. Yolo-facev2: A scale and
+occlusion  aware  face  detector[J].  Pattern  Recognition,  2024,
+155: 110714.
+[26]
+ WANG C Y, YEH I H, MARK LIAO H Y. Yolov9: Learning
+what  you  want  to  learn  using  programmable  gradient
+information[C]//European  Conference  on  Computer  Vision.
+Cham: Springer Nature Switzerland, 2025: 1-21.
+[27]
+ CHEN J R, KAO S H, HE H, et al. Run, don't walk: Chasing
+higher  FLOPS  for  faster  neural  networks[C]//Proceedings  of
+the  IEEE/CVF  Conference  on  Computer  Vision  and  Pattern
+[28]
+Recognition. Vancouver, Canada: IEEE, 2023: 12021-12031.
+ WANG C Y, BOCHKOVSKIY A, LIAO H Y M. YOLOv7:
+Trainable bag-of-freebies sets new state-of-the-art for real-time
+object detectors[C]//Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition. Vancouver, BC,
+Canada: IEEE, 2023: 7464-7475.
+[29]
+ WANG A, CHEN H, LIU L, et al. Yolov10: Real-time end-to-
+end  object  detection[J].  Advances  in  Neural  Information
+Processing Systems, 2024, 37: 107984-108011.
+[30]
+ BEWLEY A, GE Z, OTT L, et al. Simple online and realtime
+tracking[C]//2016  IEEE  International  Conference  on  Image
+Processing, Beijing. China: IEEE, 2017: 3645-3649.
+[31]
+ XU Y, OSEP A, BAN Y, et al. How to train your deep multi-
+object  tracker[C]//Proceedings  of  the  IEEE/CVF  Conference
+on  Computer  Vision  and  Pattern  Recognition.  Seattle,  WA,
+USA: IEEE, 2020: 6787-6796.
+[32]
+ LIU S, LI X, LU H, et al. Multi-object tracking meets moving
+UAV[C]//Proceedings  of  the  IEEE/CVF  Conference  on
+Computer Vision and Pattern Recognition. New Orleans, LA,
+USA: IEEE, 2022: 8876-8885.
+[33]
+ 
+Counting bagging grape using improved YOLOv9s and adaptive Kalman filter
+LYU Jia , RAN Jie
+(1. College of Computer and Information Science, Chongqing Normal University, Chongqing 401331, China;　2. Chongqing Digital
+Agricultural Service Engineering Technology Research Center, Chongqing 401331, China)
+Abstract: Grapes can be one type of the fruit with the widest cultivation area, the highest yield, and extremely high economic
+value in China. Among them, bagging techniques can be often employed to reduce the impact of pests and diseases on the
+grape  quality  during  the  harvest  period.  An  accurate  yield  estimation  can  greatly  contribute  to  the  plan  picking,  sales,  and
+storage, in order to reduce the economic losses caused by supply-demand mismatches. The accurate counting of bagged grapes
+can  be  required  before  yield  estimation.  However,  the  existing  fruit  counting  can  usually  suffer  from  insufficient  real-time
+detection and tracking failure, due to the occlusion of bagged grapes and unprocessed detection noise. In this study, video
+counting was proposed for the bagged grapes using an improved YOLOv9s and adaptive Kalman filter. Three modules were
+included: the improved YOLOv9s detection model, an adaptive Kalman filter tracking algorithm, and a line-drawing counting.
+In detection, the original RepNCSPELAN4 module in YOLOv9s was replaced with an efficient feature enhancement module
+(EFEM),  in  order  to  reduce  the  number  of  model  parameters  for  the  inference  speed.  The  performance  of  the  improved
+YOLOv9s model was enhanced for sufficient real-time detection. The EFEM was designed to selectively learn from the partial
+feature maps of the bagged grapes, thereby enabling efficient feature extraction and faster inference. The FasterNet module was
+specifically utilized to efficiently extract the spatial features, in order to minimize the redundant computation and memory
+access. A spatially enhanced attention module (SEAM) was introduced to further improve the detection performance under
+occlusion conditions. The SEAM was used to learn the relationship between occluded and unoccluded areas. The occluded
+features were predicted and compensated to thereby improve the detection accuracy of bagged grapes under full and partial
+occlusion. In tracking, an adaptive Kalman filter algorithm was proposed to reduce the detection noise caused by camera shake
+and rapid movement. The accuracy of Kalman filter trajectory prediction was promoted after tracking. Noise estimation was
+automatically adjusted, according to the detection confidence. A line-drawing counting was used for the real-time counting of
+bagged grapes; Once the center of the bagged grape was collided with a virtual counting line, the number of bagged grapes
+increased  by  one.  The  experimental  dataset  was  collected  from  the  PaiDengTe  Technology  Demonstration  Park  in  Bishan
+District, Chongqing, China. There were 700 original images of bagged grapes and six video clips. The dataset was randomly
+divided into a training set of 490 images, a validation set of 140 images, and a test set of 70 images at a ratio of 7∶2∶1. The
+six video clips were used to test the counting performance. Some image enhancement techniques were applied to the training
+set during training, such as saturation adjustment, brightness variation, image mirroring, and Gaussian noise addition, thereby
+expanding  the  training  set  to  2100  images.  The  robustness  and  generalization  of  the  detection  model  were  enhanced  after
+enhancement.  Experimental  results  show  that  the  best  performance  of  the  improved  YOLOv9s  model  (ES-YOLOv9s)
+outperformed five other models. The highest mean average precision and recall were 96.9% and 93.1%, respectively, while
+there was an inference speed of 70 frames per second. Compared with the original YOLOv9s, the ES-YOLOv9s reduced the
+number of parameters by 29.6%, and the number of floating-point operations decreased by 10.9G, whereas, the frame rate was
+improved by 20 frames per second. In terms of tracking performance, the adaptive Kalman filter tracking algorithm achieved
+58.6%,  63.6%,  and  78.8%  in  the  higher-order  tracking  accuracy,  multi-object  tracking  accuracy,  and  ID  harmonic  mean
+metrics,  respectively,  thus  representing  improvements  of  4.3,  2.2,  and  2.5  percentage  points  over  ByteTrack.  In  terms  of
+counting  performance,  line-drawing  counting  was  achieved  with  an  average  accuracy  of  80.0%,  compared  with  manual
+counting. In conclusion, the video counting of bagged grapes with the improved YOLOv9s and Kalman filter also demonstrated
+better application potential in real-time tracking and counting. The finding can provide technical support for the pre-harvest
+yield estimation of bagged grapes.
+Keywords: YOLOv9; bagged grapes; fruit tracking; fruit counting; Kalman filtering
+第 10 期
+吕　佳等：基于改进YOLOv9s 与自适应卡尔曼滤波的套袋葡萄视频计数方法
+203 　

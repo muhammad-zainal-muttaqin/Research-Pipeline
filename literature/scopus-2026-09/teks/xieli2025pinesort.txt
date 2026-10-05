@@ -1,0 +1,2191 @@
+PineSORT: A Simple Online Real-time Tracking Framework for Drone Videos in
+Agriculture
+Danny Xie-Li
+Costa Rica Institute of Technology (TEC)
+Cartago, Costa Rica
+dxie@ic-itcr.ac.cr
+Fabian Fallas-Moya
+University of Costa Rica (UCR)
+Turrialba, Cartago, Costa Rica
+fabian.fallasmoya@ucr.ac.cr
+Abstract
+We introduce PineSORT, a novel Multiple Object Track-
+ing (MOT) system for drone-based agricultural monitoring,
+specically tracking pineapples for yield estimation. Our
+approach tackles key challenges such as repetitive patterns,
+similar object appearances, low frame rates, and drone
+motion effects. PineSORT enhances the tracking accuracy
+with motion direction cost, camera motion compensation,
+a three-stage association strategy, and overlap manage-
+ment. To handle large displacements, we propose an ORB-
+based camera compensation technique that signicantly
+improves the Association Accuracy (AssA). Evaluated via
+5-fold cross-validation against BoTSORT and AgriSORT,
+PineSORT achieves statistically signicant gains in our
+Identity-Switch Penalized IDF1 (ISP-IDF1) metric, along
+with gains in IDF1 (Identity F1 Score), HOTA (Higher Or-
+der Tracking Accuracy) and AssA. These results conrm its
+effectiveness in tracking low-FPS drone footage, making it
+a valuable tool for precision agriculture.
+1. Introduction
+Multiple Object Tracking (MOT) is a fundamental task in
+computer vision that involves detecting and tracking mul-
+tiple objects across a sequence of video frames. The goal
+is to determine the object locations in each frame while
+maintaining their identities over time, even as they move,
+interact, or become occluded temporarily. MOT has broad
+applications in elds such as action recognition, pose es-
+timation [28], surveillance [2], autonomous driving [40],
+sports analysis [9], and human-computer interaction. How-
+ever, their application in agricultural environments, partic-
+ularly for crop monitoring using drones, presents unique
+challenges that require specialized solutions.
+Drones have become valuable tools in agriculture ow-
+ing to their ability to capture high-resolution data over large
+areas. However, applying MOT in agricultural elds in-
+troduces several challenges related to the characteristics of
+both the environment and objects being tracked. For in-
+stance, pineapples, similar to many agricultural products,
+exhibit high visual similarity and are arranged in repeti-
+tive patterns, making it difcult to distinguish individual
+instances accurately.
+Additionally, occlusions caused by
+leaves or other vegetation can partially or completely ob-
+scure fruits. These factors increase the likelihood of identity
+switches in tracking algorithms and reduce reliability.
+Further complexity arises because of the motion of the
+drone. Even in cases where the drone moves in a single di-
+rection while the pineapples remain stationary, the objects
+in the image undergo continuous changes in position, scale,
+and perspective. Motion blur and changes in the frame rate
+can exacerbate tracking errors, particularly when the drone
+moves at high speeds, leading to inconsistent object associ-
+ations.
+Accurate MOT in agriculture is crucial for applica-
+tions such as yield estimation, harvesting automation, and
+crop monitoring. However, several challenges hinder real-
+world implementation, including occlusions, dense object
+arrangements, and redundant detections. The latter occurs
+when multiple bounding boxes are generated for a single
+object, leading to tracking inconsistencies. Moreover, the
+sparse distribution of pineapples in elds, with large empty
+spaces between them, adds another layer of difculty. Tra-
+ditional tracking approaches often struggle with scale varia-
+tions, occlusions, and high visual similarity among objects.
+To tackle these challenges, it is crucial to develop ad-
+vanced MOT methods that can effectively handle dynamic
+scenes caused by drone movement while maintaining real-
+time performance. These methods have to be robust against
+occlusions, redundant detections, and the repetitive patterns
+commonly found in pineapple elds.
+Overcoming these
+limitations will enhance MOT systems, improving agricul-
+tural monitoring and automation.
+This, in turn, enables
+more efcient and precise crop management. Additionally,
+ensuring accurate object counting is essential for reliable
+yield estimation and preventing multiple detections of the
+65
+2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)
+2160-7516/25/$31.00 ©2025 IEEE
+DOI 10.1109/CVPRW67362.2025.00012
+2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW) | 979-8-3315-9994-2/25/$31.00 ©2025 IEEE | DOI: 10.1109/CVPRW67362.2025.00012
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+same object.
+In this work, we propose an MOT approach tailored for
+drone-based agricultural applications. Our method incor-
+porates directional motion features, camera compensation
+using Kalman Filter (KF) state correction after prediction,
+and a three-stage object association based on Intersection
+over Union (IoU). This approach is specically designed
+for agricultural scenarios in which objects exhibit similar
+appearances, remain mostly stationary, and maintain rela-
+tively consistent sizes throughout tracking. Our key contri-
+butions are as follows:
+• We introduce a novel MOT SORT-based tracker based on
+tracking-by-detection specically designed for low-FPS
+drone video applications in agricultural environments.
+• We propose the use of motion features and Oriented
+FAST and Rotated BRIEF (ORB) for camera compensa-
+tion in stationary drone video footage.
+• We conduct a statistical analysis to evaluate the perfor-
+mance of various tracking algorithms on a drone-based
+agricultural dataset.
+2. Related work
+2.1. Multiple Object Tracking
+The Simple Online and Realtime Tracking (SORT) [6] fam-
+ily of algorithms has become a cornerstone in MOT, em-
+ploying a tracking-by-detection paradigm that involves de-
+tection and association stages. In the detection stage, ob-
+ject detectors like YOLO [29], Faster R-CNN [31], or
+SSD [22] localize objects in each frame using bounding
+boxes, while the association stage links detections across
+frames using the Hungarian algorithm [20]. SORT variants
+have evolved to address various MOT challenges. Deep-
+SORT [36] enhances SORT by incorporating appearance
+information, while ByteTrack [41] introduces a hierarchi-
+cal data association strategy to leverage low-score detec-
+tions. BoTSORT [1] integrates motion and appearance cues
+with camera-motion compensation, and StrongSORT [11]
+improves DeepSORT with tools like AFLink for track re-
+covery and GSI for handling temporary object losses. OC-
+SORT [8] addresses Kalman lter limitations by incorpo-
+rating observation-centric corrections, and DeepOCSORT
+[24] further integrates appearance cues. HybridSORT [39]
+leverages both strong and weak cues for improved perfor-
+mance in occlusion and clustering scenarios. Finally, SF-
+SORT [26] introduces the Bounding Box Similarity Index,
+replacing the Kalman Filter. The SORT family is favored
+for its simplicity and adaptability in MOT tasks.
+2.2. Multiple Object Tracking in Agriculture
+There have been many recent advancement in precision
+agriculture [12–14, 16, 38].
+Regarding multiple object
+tracking, it has focused on addressing challenges specic to
+dynamic eld environments. NTrack [27], a novel frame-
+work, utilizes dense optical ow and particle ltering to
+track cotton bolls, outperforming existing methods. An-
+other approach employs fusion point cloud data and an im-
+proved Graph Neural Network (GNN) method for object
+tracking in farmlands, achieving high accuracy and preci-
+sion [17]. An EKF-based multi-object tracking framework
+has been developed for mobile robots in precision agricul-
+ture, specically for tracking table-grape bunches in vine-
+yards [4]. AgriSORT, a simple online real-time tracking-
+by-detection pipeline, focuses on efciency and exibility
+for agricultural applications, particularly in challenging en-
+vironments like table grape vineyards [34]. These methods
+enhance crop monitoring, yield prediction, and robotic har-
+vesting but lack drone-based precision for yield estimation.
+3. Proposed Method
+PineSORT introduces a cutting-edge approach to MOT in
+agricultural drone footage, incorporating three key innova-
+tions that signicantly enhance tracking performance. Our
+novel pipeline integrates (1) a camera compensation using
+ORB features (Fig. 1-Estimate Camera Motion), (2) a three-
+stage association process (Fig. 1-Third Association), and
+(3) a novel overlapping management (Fig. 1-Overlap Man-
+agement based on IoU) that effectively handles challenging
+detection scenarios. These enhancements collectively ad-
+dress the unique challenges of drone-based tracking, such
+as low frame rates, repetitive patterns, and camera-induced
+motion distortions.
+Our proposed pipeline works as follows: Upon receiving
+an input frame at time t, the system estimates camera mo-
+tion compensation using ORB features between frames at
+times t  1 and t (see details in Sec. 3.1). It then computes
+the afnity matrix transformation and correct the Kalman
+lter for each tracked object’s state, executing the predic-
+tion step within the Kalman lter.
+The object detector generates detection proposals cate-
+gorized into low and high condence detections. These de-
+tections are processed in the rst association step, which
+employs a threshold  based on the IoU metric to match ob-
+ject detections with tracked states. The second association
+step similarly utilizes IoU for matching. Unmatched detec-
+tions and tracklets from the rst two association steps are
+processed in a third association step (see Sec. 3.2), which
+identies matches among the remaining unmatched detec-
+tions and tracklets.
+Matched tracklets from all three association steps are
+subsequently managed by the tracklet management system
+(Sec. 3.3). When a detection is absent, the system checks
+for overlaps using IoU with other tracklets to minimize
+redundancy.
+Furthermore, the frame is utilized to com-
+pute ORB features, which are matched using a brute-force
+matcher to rene the bounding box based on the drone’s
+66
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+Object
+Detector
+based fused
+IoU
+Estimate
+Camera Motion
+with ORB
+Tracklets
+Predicted state based
+on Kalman Filter
+* Update Kalman Filter
+* Update velocity
+* Create new tracklets
+* Kill inactive tracklets
+Overlap
+Management
+based on IoU
+Tracklets
+Frame
+based fused IoU
+high score detections
+Second Association
+Tracklets
+Managemement
+low score detections
+unmatched
+tracklets
+matched tracklets
+unmatched
+detections
+Create new
+tracklet
+No
+Yes
+First Association
+t
+t-1
+t
+Trackst
+based fused DIoU
+Third Association
+unmatched
+detections and tracklets
+matched tracklets
+matched tracklets
+unmatched
+detections
+Figure 1. Overview of the PineSORT Pipeline: Our contributions are highlighted in blue. The pipeline begins with an object detector
+that generates both low- and high-score detections, which feed into the rst two IoU-based association steps. Unmatched detections and
+tracklets then proceed to a third IoU-based association step. Matched tracklets undergo management to reduce object redundancy through
+IoU-based overlap checks. Additionally, ORB features are computed and matched using a brute-force matcher to rene bounding boxes in
+accordance with drone movement.
+movement.
+3.1. Camera Compensation with ORB
+To address the impact of large displacements between con-
+secutive frames caused by low frame rates (FPS), the sys-
+tem employs the ORB [33] algorithm, with the implemen-
+tation of OpenCV [7]. This process consists of three main
+steps: keypoint detection, descriptor computation, and fea-
+ture matching.
+In the rst step, ORB utilizes the FAST algorithm for
+keypoint detection, which identies keypoints based on cor-
+ner features within the image. For each detected keypoint,
+ORB computes a binary descriptor known as BRIEF, which
+is rotation-invariant and suitable for efcient matching.
+The nal step involves matching features.
+The
+ORB descriptors can be matched using a brute-force
+approach.
+Let It
+and It1
+represent the current
+and previous frames, respectively.
+ORB detects key-
+points pt
+=
+{pt,1, pt,2, . . . , pt,N} in It and pt1
+=
+{pt1,1, pt1,2, . . . , pt1,M} in It1, along with their cor-
+responding descriptors dt and dt1.
+Feature match-
+ing is performed by calculating the Euclidean distance
+D(pt,i, pt1,j) between descriptors dt and dt1, thus iden-
+tifying the set of matched keypoints M = {(pt,i, pt1,j)}.
+Using the matched keypoints M, the system computes
+the afne transformation matrix A, which maps the coordi-
+nates of keypoints from It1 to It. The afne transforma-
+tion is represented as a 2 × 3 matrix:
+A =
+
+a11
+a12
+tx
+a21
+a22
+ty
+
+,
+where a11, a12, a21, and a22 encode rotation, scaling, and
+shearing, while tx and ty represent translation in the x
+and y directions, respectively. The transformation is com-
+puted using Random sample consensus (RANSAC) [15]
+from OpenCV [7].
+The computed afne transformation matrix A is then ap-
+plied to the state vector of the KF to update the predicted
+track positions. Let xk = [xk, yk] represent the x and y
+coordinates of the track’s state vector at time k. The updated
+coordinates x
+k are computed as:
+x
+k =
+
+x
+k
+y
+k
+
+=
+
+xk
+yk
+
++
+
+tx
+ty
+
+.
+This transformation ensures that the KF predictions are
+aligned with the observed motion between frames, com-
+pensating for drone-camera motion and large object dis-
+placements (see the problem of misaligned prediction in
+Fig. 2). By integrating ORB-based feature matching and
+afne transformation into the tracking pipeline, the system
+achieves robust performance in low-FPS scenarios and dy-
+namic agricultural environments.
+3.2. Three-Stage Association
+The proposed three-stage association module aims to as-
+sociate tracklets with detections at varying condence lev-
+els. In the rst stage, tracklets are associated with high-
+condence detections using a variant of the IoU metric. Let
+Dh represent the set of high-condence detections with a
+threshold, and T denote the set of tracklets. A detection
+d  Dh is associated with a tracklet t  T if their IoU
+exceeds a predened minimum of threshold t, expressed as
+IoU(d, t)  t.
+In the second stage, tracklets are associated with low-
+condence detections using a reduced threshold t, where
+t < t.
+Let Dl represent the set of low-condence de-
+tections. Detections with condence below t are removed
+from the detection set D. The association condition for this
+stage is IoU(d, t)  t
+d  Dl.
+67
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+(a) Optical Flow, t  1
+(b) Optical Flow, t
+(c) ORB, t  1
+(d) ORB, t
+Figure 2. Comparison of Kalman lter predictions (blue) and ob-
+ject detector detections (red) across frames t  1 and t. In Figures
+2a and 2b, the analysis is conducted using Optical Flow, while
+Figures 2c and 2d utilize ORB. Specically, Figure 2a illustrates
+alignment in frame t  1 with Optical Flow, but Figure 2b reveals
+misalignment in frame t. Conversely, for ORB, Figure 2c shows
+alignment in frame t  1, and Figure 2d conrms alignment in
+frame t.
+In the nal stage, partial objects are associated with
+tracklets using the Distance IoU (DIoU) metric. This metric
+evaluates both the overlap and the distance between the cen-
+ters of bounding boxes, making it useful for aligning par-
+tial objects with KF predictions when they are exiting the
+scene. This step unies the remaining detections that were
+not matched in the rst two stages. Let Du represent the set
+of unmatched detections, and Tu denote the set of tracklets
+not matched in the previous steps. The association condi-
+tion for this stage is DIoU(d, t)  t
+d  Du, t  Tu,
+where t is a threshold specic to the DIoU metric. The
+third stage is designed to match partial objects with track-
+lets that were not successfully associated in the rst and
+second stages. For the association step in our experiments,
+we arbirtrary utilized a threshold t, t and t  0.30 and
+t  0.10.
+3.3. Overlapping Management
+The overlapping management mechanism computes the
+IoU between track bounding boxes Btrack and detec-
+tion bounding boxes Bdet when creating a new track
+for detections not matched in the association steps.
+If
+the computed IoU exceeds a predened threshold t, i.e.,
+IoU(Btrack, Bdet) > t, redundant detections are removed
+to prevent ID switches. This mechanism is particularly crit-
+ical in sparse agricultural environments, where overlapping
+objects are uncommon but can still occur due to detection
+errors, occlusions, or perspective effects. By ltering out
+redundant detections, the system enhances tracking accu-
+racy and robustness, ensuring reliable performance in ap-
+plications such as yield estimation and automated harvest-
+ing. The threshold t is empirically determined to optimize
+the trade-off between minimizing false positives and pre-
+serving valid detections, thereby maintaining the integrity
+of object trajectories.
+4. Experiments
+This section outlines the experimental setup, evaluation
+metrics, and benchmark results, comparing PineSORT to
+the baseline and analyzing its performance.
+4.1. Dataset
+The dataset includes 10 videos from a pineapple planta-
+tion from Upala Agricola [3] (the world’s largest exporter
+of fresh pineapple), recorded with a DJI Mavic 3 drone at
+1920×1080 resolution. Videos capture crop rows from ver-
+tical (90°) and oblique (45°) angles, lasting 7–35 seconds
+(183–882 frames each).
+For MOT, we manually annotated the dataset using La-
+belStudio [35]. The annotations were converted into the
+MOT format [21], serving as the ground truth labels. The
+nal annotations were exported at a frame rate of 25 Frame
+per second (FPS).
+4.2. Evaluation Metrics
+We evaluate tracking performance using TrackEval [19],
+which provides comprehensive metrics.
+Overall perfor-
+mance is assessed with Multiple Object Tracking Accu-
+racy (MOTA) [5], considering false positives, missed detec-
+tions, and identity mismatches, along with Identity F1 Score
+(IDF1) [32] and Higher Order Tracking Accuracy (HOTA)
+[23], the geometric mean of Detection Accuracy (DetA) and
+Association Accuracy (AssA).
+Given the importance of preserving object identities for
+yield estimation, we emphasize AssA, which measures
+identity consistency, and Identity Switches (IDSW) [5],
+which counts identity switches. We also assess trajectory-
+level metrics: Mostly tracked (MT) (trajectories tracked
+for  80% of their duration), Mostly lost (ML) (trajecto-
+ries lost for > 80%), and Partially tracked (PT) (objects
+tracked for 20–80% of their lifespan). Additional measures
+include Identication Precision (IDP) and Identication Re-
+call (IDR) for identity-based analysis.
+To account for identity preservation, we introduce the
+Identity-Switch Penalized IDF1 (ISP-IDF1) metric incor-
+porating an exponential penalty based on IDSW. This nor-
+malization penalizes high ID switch counts while having a
+minimal effect when IDSW is low, for futher analysis in the
+evaluation dataset:
+68
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+ISP-IDF1 = IDF1 ×
+
+1 
+IDSW  min(IDSW)
+max(IDSW)  min(IDSW)
+k
+(1)
+where k = 4 was enough.
+This equation modies the
+ranking of results by penalizing high IDSW values, empha-
+sizing solutions with fewer identity switches. This aligns
+with reweighting functions used in optimization and ma-
+chine learning to adjust scores adaptively [30].
+In agricultural drone applications, maintaining consis-
+tent track identities is crucial for accurate object counting.
+Therefore, AssA, IDF1, IDSW, and ISP-IDF1 are particu-
+larly relevant to our analysis.
+4.3. Implementation details
+We use YOLOv11n [18] as the detector for its speed-
+accuracy balance. The model was trained on the pineapple
+dataset using k-fold cross-validation, training on one video
+and evaluating on the rest. Training data included vertical,
+oblique, and combined camera orientations.
+4.4. Trackers for comparison
+We evaluate our approach against state-of-the-art (SOTA)
+SORT-based MOT methods, specically SORT, ByteTrack,
+DeepOCSORT, StrongSORT, BoTSORT, and AgriSORT. In
+addition, to isolate the impact of motion-based tracking, we
+use BoTSORT without the Re-Identication (ReID) module
+in our analysis.
+We also include HybridSORT and OCSORT, which im-
+prove robustness in occlusion and non-linear motion scenar-
+ios. Finally, we examine SFSORT, which replaces the KF
+with a custom cost function for better accuracy.
+5. Results and Discussion
+5.1. Camera Compensation Analysis
+Table 1 compares the performance of Scale-Invariant Fea-
+ture Transform (SIFT), ORB, and Optical Flow for cam-
+era motion compensation.
+We conduct a 5-fold valida-
+tion and report the mean and standard deviation of IDF1,
+HOTA, AssA, and ISP-IDF1 across folds, along with the
+total IDSW. For SIFT and ORB, we compute descriptors
+and use a Brute-Force Matcher with k-nearest neighbors (k-
+NN) based on L2 distance to establish correspondences. For
+Optical Flow, we detect key points using the Shi-Tomasi
+method and track them with the Lucas-Kanade method.
+The afne transformation matrix is then computed using the
+RANSAC algorithm.
+The results indicate that SIFT and ORB consistently
+achieve higher scores across key metrics. Specically, ORB
+attains a mean ISP-IDF1 score of approximately 0.63 with
+low variability (0.136), demonstrating robust tracking per-
+formance with fewer identity switches compared on using
+Table 1. Performance comparison of camera compensation tech-
+niques using 5-fold cross-validation, reporting mean (μ) and stan-
+dard deviation () of IDF1, HOTA, AssA, ISP-IDF1, and total ID
+switches (IDSW).
+Technique
+IDF1 
+HOTA 
+AssA 
+IDSW 
+ISP-IDF1 
+μ
+
+μ
+
+μ
+
+Total
+μ
+
+ORB
+0.836
+0.064
+0.636
+0.056
+0.712
+0.039
+131
+0.630
+0.136
+Optical Flow
+0.813
+0.093
+0.621
+0.069
+0.687
+0.064
+451
+0.400
+0.220
+SIFT
+0.835
+0.064
+0.636
+0.056
+0.712
+0.039
+129
+0.634
+0.137
+optical ow. SIFT achieves similar performance across met-
+rics, reecting its effectiveness in maintaining object iden-
+tity despite appearance variations. In bold the best mean is
+highlighted.
+In contrast, Optical Flow exhibits lower mean IDF1,
+HOTA, AssA, and ISP-IDF1 scores, along with a signi-
+cantly higher identity switch count (451), highlighting dif-
+culties in preserving object identities over time. Its lower
+ISP-IDF1 score (0.4) suggests challenges in maintaining ac-
+curate object correspondences. Additionally, optical ow -
+in lower FPS - struggles to handle large object displace-
+ments, often resulting in track loss or identity switches dur-
+ing fast movements.
+SIFT and ORB are best for tracking under low frame
+rates, while Optical Flow struggles due to higher identity
+switches and reduced consistency. Its assumption of small
+motion fails with large displacements [37].
+5.2. PineSORT vs baselines trackers
+Table 2 summarizes the performance of PineSORT, com-
+pared to baseline trackers. The evaluation uses a detector
+trained and tested on vertical, oblique, and combined videos
+via k-fold cross-validation. The table shows the mean (μ)
+and standard deviation () for each tracker. The “Tracker”
+column lists the tracking algorithm, while the “Camera”
+column species the evaluation dataset (oblique or vertical).
+The “Training” column indicates the dataset used for train-
+ing (combined, oblique, or vertical). Additionally, the table
+reports mean (μ), standard deviation (), and total sums for
+PT, MT, ML, and IDSW.
+To identify the suitable statistical method for compar-
+ing the ten tracker groups in our experiment, we evaluated
+the assumptions of normality and homoscedasticity using
+R software. The analysis revealed that none of the tracker
+groups exhibited a normal distribution or satised the ho-
+moscedasticity assumption.
+As a result, we applied the
+Kruskal-Wallis test [25], followed by a post-hoc Dunn test
+[10], for our statistical analysis.
+The Kruskal-Wallis test produced a p-value of < 2.2 ×
+1016 based on the ISP-IDF1 metric, which is signicantly
+lower than the 0.05 threshold. Consequently, we reject the
+null hypothesis, conrming that the performance distribu-
+tion of at least one tracker differs from the others. To iden-
+69
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+Table 2. Performance comparison of tracking algorithms on vertical and oblique datasets. Object detector models were trained on vertical,
+oblique, or combined data using K-fold cross-validation. Metrics (MOTA, HOTA, IDF1, AssA, IDP, IDR, ISP-IDF1) are reported as mean
+(μ) ± standard deviation (); PT, MT, ML, and IDSW are shown as total counts across folds. Bold and underlined values indicate the best
+performance per metric.
+Tracker
+Camera
+Training
+MOTA 
+HOTA
+IDF1
+AssA
+IDP
+IDR
+PT
+MT
+ML
+IDSW
+ISP-IDF1
+μ
+
+μ
+
+μ
+
+μ
+
+μ
+
+μ
+
+Total
+Total
+Total
+Total
+μ
+
+AgriSORT
+oblique
+combined
+-1.068
+0.861
+0.256
+0.084
+0.323
+0.135
+0.309
+0.103
+0.243
+0.110
+0.500
+0.170
+3323
+1731
+974
+6082
+0.109
+0.103
+oblique
+-1.261
+1.379
+0.222
+0.104
+0.273
+0.172
+0.267
+0.119
+0.222
+0.139
+0.390
+0.230
+2929
+1207
+1892
+5411
+0.099
+0.090
+vertical
+-1.168
+0.697
+0.181
+0.049
+0.199
+0.087
+0.224
+0.063
+0.163
+0.072
+0.281
+0.130
+3968
+605
+2962
+7205
+0.063
+0.052
+vertical
+combined
+-2.205
+1.622
+0.203
+0.081
+0.229
+0.154
+0.272
+0.097
+0.162
+0.118
+0.405
+0.204
+3586
+775
+1559
+4443
+0.107
+0.108
+oblique
+-2.725
+2.623
+0.179
+0.077
+0.186
+0.140
+0.249
+0.079
+0.135
+0.111
+0.318
+0.178
+3936
+579
+2885
+5164
+0.076
+0.074
+vertical
+-1.992
+1.338
+0.205
+0.079
+0.228
+0.153
+0.270
+0.090
+0.166
+0.121
+0.381
+0.191
+3452
+650
+1818
+4109
+0.108
+0.099
+BoTSORT
+oblique
+combined
+0.591
+0.173
+0.576
+0.079
+0.768
+0.110
+0.643
+0.060
+0.785
+0.088
+0.755
+0.132
+1647
+3847
+534
+1079
+0.610
+0.142
+oblique
+0.369
+0.398
+0.477
+0.165
+0.624
+0.245
+0.569
+0.130
+0.708
+0.224
+0.588
+0.259
+1959
+2542
+1527
+949
+0.511
+0.228
+vertical
+0.263
+0.173
+0.382
+0.086
+0.522
+0.144
+0.484
+0.064
+0.678
+0.119
+0.441
+0.147
+3584
+1448
+2503
+1426
+0.406
+0.131
+vertical
+combined
+0.664
+0.216
+0.624
+0.077
+0.811
+0.100
+0.682
+0.073
+0.845
+0.113
+0.785
+0.097
+1556
+4078
+286
+795
+0.686
+0.130
+oblique
+0.270
+0.687
+0.477
+0.139
+0.636
+0.226
+0.583
+0.093
+0.690
+0.252
+0.599
+0.207
+2711
+3124
+1565
+1037
+0.529
+0.200
+vertical
+0.593
+0.304
+0.590
+0.085
+0.781
+0.122
+0.663
+0.069
+0.823
+0.151
+0.750
+0.098
+1778
+3711
+431
+728
+0.671
+0.137
+ByteTrack
+oblique
+combined
+0.381
+0.153
+0.437
+0.084
+0.595
+0.132
+0.543
+0.055
+0.814
+0.111
+0.484
+0.137
+2719
+1242
+2067
+237
+0.566
+0.134
+oblique
+0.271
+0.207
+0.320
+0.173
+0.426
+0.259
+0.450
+0.150
+0.792
+0.153
+0.327
+0.222
+1969
+706
+3353
+169
+0.410
+0.253
+vertical
+0.127
+0.088
+0.210
+0.083
+0.254
+0.136
+0.373
+0.087
+0.761
+0.135
+0.161
+0.096
+1777
+144
+5614
+253
+0.243
+0.132
+vertical
+combined
+0.393
+0.109
+0.458
+0.059
+0.622
+0.090
+0.529
+0.071
+0.747
+0.077
+0.535
+0.099
+3193
+1467
+1260
+910
+0.518
+0.144
+oblique
+0.268
+0.162
+0.321
+0.136
+0.431
+0.219
+0.472
+0.124
+0.801
+0.198
+0.324
+0.184
+2836
+738
+3826
+529
+0.388
+0.207
+vertical
+0.398
+0.135
+0.440
+0.063
+0.610
+0.106
+0.520
+0.073
+0.784
+0.105
+0.504
+0.106
+3106
+1290
+1524
+777
+0.525
+0.152
+DeepOCSORT
+oblique
+combined
+0.563
+0.150
+0.523
+0.088
+0.718
+0.116
+0.581
+0.070
+0.846
+0.070
+0.630
+0.135
+3035
+2102
+891
+1313
+0.545
+0.154
+oblique
+0.380
+0.286
+0.412
+0.172
+0.555
+0.251
+0.490
+0.148
+0.769
+0.210
+0.464
+0.243
+2800
+1187
+2041
+1162
+0.429
+0.220
+vertical
+0.227
+0.126
+0.294
+0.085
+0.413
+0.144
+0.387
+0.070
+0.751
+0.114
+0.298
+0.122
+3734
+241
+3560
+1485
+0.315
+0.120
+vertical
+combined
+0.610
+0.113
+0.556
+0.073
+0.763
+0.075
+0.609
+0.067
+0.909
+0.062
+0.662
+0.094
+4118
+1343
+459
+453
+0.689
+0.064
+oblique
+0.360
+0.318
+0.406
+0.130
+0.574
+0.214
+0.498
+0.095
+0.782
+0.232
+0.463
+0.192
+4654
+602
+2144
+721
+0.505
+0.189
+vertical
+0.574
+0.118
+0.526
+0.071
+0.736
+0.080
+0.589
+0.063
+0.903
+0.064
+0.625
+0.093
+4217
+1062
+641
+425
+0.669
+0.064
+HybridSORT
+oblique
+combined
+0.560
+0.157
+0.521
+0.091
+0.713
+0.122
+0.578
+0.077
+0.846
+0.071
+0.624
+0.144
+2952
+2120
+956
+1367
+0.541
+0.179
+oblique
+0.382
+0.283
+0.406
+0.180
+0.546
+0.261
+0.480
+0.163
+0.763
+0.211
+0.455
+0.254
+2643
+1236
+2149
+1233
+0.428
+0.246
+vertical
+0.220
+0.129
+0.282
+0.093
+0.390
+0.155
+0.370
+0.087
+0.732
+0.115
+0.279
+0.132
+3414
+283
+3838
+1777
+0.290
+0.145
+vertical
+combined
+0.537
+0.159
+0.502
+0.115
+0.669
+0.146
+0.543
+0.125
+0.842
+0.088
+0.566
+0.172
+3796
+1427
+697
+1861
+0.477
+0.239
+oblique
+0.318
+0.288
+0.365
+0.142
+0.499
+0.222
+0.448
+0.121
+0.734
+0.218
+0.392
+0.203
+4142
+703
+2555
+1799
+0.367
+0.213
+vertical
+0.508
+0.150
+0.477
+0.107
+0.650
+0.137
+0.528
+0.117
+0.841
+0.091
+0.539
+0.153
+3932
+1140
+848
+1673
+0.475
+0.218
+OCSORT
+oblique
+combined
+0.552
+0.153
+0.507
+0.095
+0.694
+0.126
+0.562
+0.079
+0.853
+0.066
+0.594
+0.146
+3070
+1876
+1082
+1548
+0.505
+0.173
+oblique
+0.380
+0.264
+0.389
+0.184
+0.525
+0.264
+0.466
+0.162
+0.784
+0.192
+0.427
+0.250
+2590
+1086
+2352
+1183
+0.407
+0.234
+vertical
+0.208
+0.122
+0.263
+0.092
+0.362
+0.154
+0.354
+0.084
+0.753
+0.118
+0.251
+0.125
+3183
+199
+4153
+1669
+0.270
+0.135
+vertical
+combined
+0.531
+0.155
+0.495
+0.114
+0.661
+0.145
+0.538
+0.122
+0.852
+0.078
+0.552
+0.169
+3823
+1329
+768
+1914
+0.463
+0.229
+oblique
+0.334
+0.243
+0.358
+0.143
+0.491
+0.224
+0.449
+0.119
+0.769
+0.206
+0.377
+0.201
+4026
+621
+2753
+1573
+0.370
+0.204
+vertical
+0.508
+0.137
+0.472
+0.104
+0.646
+0.131
+0.526
+0.110
+0.862
+0.065
+0.525
+0.148
+3895
+1074
+951
+1625
+0.471
+0.202
+SFSORT
+oblique
+combined
+0.388
+0.163
+0.390
+0.111
+0.490
+0.167
+0.492
+0.078
+0.860
+0.081
+0.361
+0.159
+2110
+1054
+2864
+1485
+0.351
+0.144
+oblique
+0.254
+0.195
+0.271
+0.169
+0.333
+0.229
+0.366
+0.177
+0.778
+0.158
+0.235
+0.183
+1653
+560
+3815
+1086
+0.248
+0.175
+vertical
+0.112
+0.072
+0.154
+0.074
+0.175
+0.106
+0.263
+0.095
+0.762
+0.098
+0.103
+0.067
+1398
+72
+6065
+900
+0.145
+0.088
+vertical
+combined
+0.593
+0.096
+0.515
+0.097
+0.634
+0.132
+0.512
+0.139
+0.791
+0.128
+0.533
+0.131
+1724
+2963
+1233
+4414
+0.290
+0.241
+oblique
+0.306
+0.204
+0.302
+0.155
+0.369
+0.221
+0.389
+0.140
+0.754
+0.181
+0.272
+0.187
+2065
+1341
+3994
+2957
+0.207
+0.167
+vertical
+0.523
+0.086
+0.463
+0.084
+0.579
+0.121
+0.482
+0.128
+0.786
+0.129
+0.462
+0.114
+1998
+2337
+1585
+3873
+0.289
+0.216
+SORT
+oblique
+combined
+0.528
+0.146
+0.488
+0.080
+0.693
+0.112
+0.539
+0.069
+0.799
+0.080
+0.617
+0.129
+3256
+1897
+875
+1458
+0.508
+0.144
+oblique
+0.351
+0.299
+0.395
+0.156
+0.545
+0.238
+0.462
+0.137
+0.717
+0.217
+0.465
+0.233
+2914
+1169
+1945
+1464
+0.400
+0.209
+vertical
+0.215
+0.128
+0.290
+0.080
+0.409
+0.138
+0.372
+0.071
+0.690
+0.129
+0.302
+0.119
+3829
+263
+3443
+1812
+0.295
+0.114
+vertical
+combined
+0.535
+0.131
+0.483
+0.073
+0.714
+0.086
+0.537
+0.066
+0.861
+0.079
+0.618
+0.108
+4388
+965
+567
+554
+0.631
+0.075
+oblique
+0.292
+0.352
+0.369
+0.115
+0.545
+0.202
+0.453
+0.087
+0.722
+0.230
+0.444
+0.181
+4810
+442
+2148
+906
+0.465
+0.178
+vertical
+0.499
+0.149
+0.463
+0.074
+0.690
+0.091
+0.524
+0.064
+0.848
+0.095
+0.587
+0.099
+4446
+736
+738
+541
+0.611
+0.076
+StrongSORT
+oblique
+combined
+0.517
+0.165
+0.512
+0.084
+0.690
+0.118
+0.558
+0.078
+0.750
+0.092
+0.644
+0.138
+2666
+2596
+766
+2942
+0.371
+0.176
+oblique
+0.320
+0.355
+0.412
+0.161
+0.546
+0.237
+0.473
+0.145
+0.669
+0.219
+0.488
+0.242
+2627
+1669
+1732
+2732
+0.305
+0.183
+vertical
+0.190
+0.143
+0.305
+0.077
+0.416
+0.126
+0.376
+0.067
+0.622
+0.114
+0.326
+0.120
+3935
+483
+3117
+3660
+0.215
+0.103
+vertical
+combined
+0.482
+0.192
+0.465
+0.111
+0.615
+0.142
+0.484
+0.124
+0.731
+0.109
+0.542
+0.168
+3810
+1624
+486
+3883
+0.297
+0.195
+oblique
+0.171
+0.538
+0.350
+0.128
+0.470
+0.199
+0.405
+0.113
+0.594
+0.222
+0.399
+0.185
+4356
+1045
+1999
+4117
+0.230
+0.155
+vertical
+0.430
+0.223
+0.436
+0.108
+0.589
+0.143
+0.465
+0.117
+0.710
+0.127
+0.512
+0.157
+3866
+1393
+661
+3706
+0.289
+0.184
+PineSORT (ours)
+oblique
+combined
+0.615
+0.162
+0.587
+0.082
+0.784
+0.111
+0.651
+0.062
+0.822
+0.075
+0.755
+0.138
+1793
+3745
+490
+491
+0.706
+0.121
+oblique
+0.404
+0.378
+0.477
+0.176
+0.630
+0.254
+0.557
+0.152
+0.752
+0.226
+0.574
+0.265
+2197
+2332
+1499
+537
+0.570
+0.258
+vertical
+0.272
+0.150
+0.366
+0.092
+0.507
+0.150
+0.457
+0.074
+0.717
+0.105
+0.411
+0.149
+3952
+1083
+2500
+972
+0.424
+0.131
+vertical
+combined
+0.723
+0.149
+0.669
+0.057
+0.858
+0.061
+0.735
+0.040
+0.884
+0.085
+0.837
+0.051
+1095
+4562
+263
+218
+0.818
+0.068
+oblique
+0.372
+0.545
+0.500
+0.146
+0.669
+0.227
+0.602
+0.114
+0.749
+0.245
+0.614
+0.218
+2526
+3287
+1587
+431
+0.625
+0.225
+vertical
+0.688
+0.133
+0.636
+0.056
+0.836
+0.064
+0.712
+0.039
+0.883
+0.083
+0.795
+0.059
+1323
+4169
+428
+131
+0.812
+0.063
+70
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+tify specic differences among the tracker groups, we per-
+formed a post-hoc Dunn test. Notably, when comparing
+BoTSORT (the best baseline tracker) and PineSORT using
+the ISP-IDF1 metric, the test yielded a p-value of 0.0244,
+resulting in the rejection of the null hypothesis H0. This
+indicates a statistically signicant difference between these
+two trackers, with PineSORT demonstrating superior per-
+formance in maintaining ID integrity in tracking.
+Among the evaluated trackers, AgriSORT exhibited the
+least favorable performance metrics, characterized by a no-
+tably high IDSW across various combinations of camera
+evaluation settings and training protocols. This high IDSW
+was the highest recorded among all trackers, coupled with
+low ISP-IDF1 scores. However, AgriSORT demonstrated
+a high PT, indicating effective tracking within 20%-80%
+of the object lifespan. This suboptimal performance can
+be attributed to its reliance on the Lucas-Kanade method
+for sparse optical ow to estimate camera motion. Addi-
+tionally, AgriSORT replaces the Kalman lter’s transition
+matrix with an afne transformation between consecutive
+frames t1 and t during the state prediction phase. The ef-
+cacy of this ltering approach is highly contingent upon the
+congruence of the afne matrix with the underlying system
+dynamics. Discrepancies in the afne matrix can lead to sig-
+nicant degradation of track predictions, particularly in low
+FPS scenarios, where increased matching errors and chal-
+lenges in accurately capturing motion components—such as
+translation, rotation, and scaling—culminate in heightened
+estimation errors. Furthermore, the optical ow technique
+operates under the assumption of small camera displace-
+ments, which limits its effectiveness in scenarios involving
+substantial motion.
+As observed in Table 2, SFSORT exhibits a consider-
+able number of identity switches, resulting in a lower IDR
+compared to other trackers. This indicates its inadequacy in
+accurately maintaining object identities across frames in ac-
+cordance with the ground truth. These performance metrics
+highlight the limitations of its cost index function, which re-
+lies solely on object bounding box characteristics and lacks
+integration of a Kalman lter for motion prediction. The
+absence of a Kalman lter compromises temporal consis-
+tency, leading to an overreliance on shape similarity, dis-
+tance, and bounding box overlap. When an object is only
+partially visible upon entering or exiting the frame, its size
+may be underestimated, causing a decline in shape similar-
+ity scores as the object becomes fully visible in subsequent
+frames. Moreover, larger displacements between frames at
+FPS further increase the likelihood of identity switches, as
+they contribute to a decrease in bounding box overlap.
+BoTSORT demonstrates a lower ID switch rate com-
+pared to most other tracking methods, with the exception of
+PineSORT. However, it still experiences some ID switches
+due to its reliance on sparse optical ow for feature track-
+ing and RANSAC for afne matrix estimation. While this
+approach aims to accurately estimate background motion,
+the inherent assumptions of optical ow may not adequately
+capture large displacements between frames.
+We antici-
+pated that StrongSORT and DeepOCSORT, which depend
+on feature embeddings to enhance object association be-
+tween tracks and predictions, would perform poorly since
+they were not trained on our dataset for feature embeddings
+comparison. StrongSORT, which relies heavily on appear-
+ance features, exhibits a high frequency of ID switches in
+our scenario, particularly when tracking homogeneous ob-
+jects, leading to mismatches and inaccuracies, especially
+at low FPS with signicant object displacement. In con-
+trast, DeepOCSORT demonstrates improved performance
+over StrongSORT, likely due to the introduction of Camera
+Motion Compensation using optical ow and RANSAC, re-
+sulting in a substantial difference in the ISP-IDF1 metric.
+There is not a statistical difference between the track-
+ers HybridSORT and OCSORT indicating similar perfor-
+mance for our benchmark in agricultural applications, as
+both tracking algorithms are predicated on the same SORT
+framework. Given the unidirectional trajectory of the drone,
+the implementation of camera compensation is critical for
+accurately capturing the dynamics of this movement. In
+instances where the object detector fails to identify a tar-
+get in the subsequent frame, it may inadvertently assign
+new identiers to newly detected objects in the next frame,
+while neglecting to update the states of the previously
+tracked objects.
+The tracking algorithms that do not in-
+tegrate this feature include SORT, HybriSORT, OC-SORT,
+ByteTrack, and StrongSORT. Conversely, AgriSORT, BoT-
+SORT, and PineSORT uniquely incorporate camera com-
+pensation techniques to facilitate the updating and correc-
+tion of object states based on camera movement.
+The analysis of tracking performance across various con-
+gurations of training data reveals that trackers utilizing
+a combined dataset of vertical and oblique orientations
+demonstrate superior performance. This enhancement can
+be attributed to the increased volume of training data, which
+allows the model to better capture the inherent variability
+present in agricultural environments. These environments
+are often characterized by clutter, diverse variations, and the
+unique challenges posed by pineapples obscured by foliage.
+Notably, training models with vertical data while eval-
+uating them under the same conditions leads to enhanced
+performance. This observation suggests that recording agri-
+cultural elds using a drone camera in a vertical orientation
+optimally facilitates the detection and tracking of objects,
+resulting in reduced variability and improved distinguisha-
+bility of the target objects. Conversely, models trained and
+evaluated using oblique data exhibit lower performance lev-
+els. The diverse perspectives captured by the drone when
+operating in an oblique orientation introduce increased vari-
+71
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+(a) BotSORT
+(b) AgriSORT
+(c) PineSORT
+Figure 3. Qualitative comparison of motion-based tracking algorithms—BotSORT, AgriSORT, and PineSORT (ours)—across consecutive
+time frames. The upper panels display the tracking results at time frame t  1, while the lower panels show the corresponding results at
+time frame t. Bounding boxes represent tracklets, with consistent colors indicating the same object ID and different colors denoting distinct
+IDs. As shown, PineSORT shows the most consistent results in localization and identication in consecutive frames.
+ability, necessitating additional training data to adequately
+account for the different appearances of the pineapples.
+Furthermore, it is essential to highlight that training a
+model on data captured from a vertical camera orientation
+and subsequently evaluating it with an oblique dataset re-
+sults in suboptimal performance. Similarly, the reverse sce-
+nario, where a model trained on oblique data is evaluated on
+vertical data, also yields poor performance. These ndings
+underscore the limitations of supervised learning concern-
+ing generalization across different perspectives. Such lim-
+itations emphasize the need for a robust training strategy
+with wider variety of perspectives to enhance the model’s
+adaptability and effectiveness in real-world applications.
+5.3. Motion-based Method Qualitative Analysis
+In our qualitative comparative analysis of motion tracker-
+based methods, we evaluate our PineSORT algorithm
+alongside BoTSORT and AgriSORT. As illustrated in Fig.
+3, PineSORT consistently maintains object IDs across con-
+secutive frames t  1 and t. In contrast, BoTSORT experi-
+ences frequent ID switches due to signicant displacements
+between tracked and detected objects, resulting in the as-
+signment of new IDs in frame t and compromising iden-
+tity consistency. This inconsistency is primarily attributed
+to BoTSORT’s reliance on the Lukas-Kanade optical ow
+method for estimating motion between frames.
+Similarly, AgriSORT encounters challenges with un-
+matched tracked objects resulting from large displacements,
+leading to the generation of new IDs, akin to the issues
+faced by BoTSORT. AgriSORT employs an afnity matrix
+derived from Lukas-Kanade optical ow, which substitutes
+the transition matrix F in the Kalman lter’s prediction step
+from frame t  1 to frame t. This method does not remove
+unmatched tracks during track management, leading to in-
+creased identity switches and adversely affecting the consis-
+tent identication of each object. Consequently, these lim-
+itations hinder the performance of agricultural video drone
+counting analyses.
+6. Conclusion
+In this paper, we introduced PineSORT, a novel MOT
+tracker designed for drone videos in agricultural settings.
+The framework integrates key components such as a three-
+stage association process, motion direction cost, camera
+compensation, and overlap management, signicantly im-
+proving tracking performance, especially in dynamic condi-
+tions with rapid object movement and low frame rates. We
+improved bounding box predictions and reduced identity
+switches in dense environments by integrating a KF with
+a constant-velocity model and expanding the state vector to
+include width and height.
+Tested on drone footage from a pinneaple plantation
+case, PineSORT leverages ORB for effective camera com-
+pensation in low FPS drone footage, outperforming tradi-
+tional optical ow method. PineSORT consistently outper-
+formed baseline trackers, including BoTSORT, in terms of
+IDF1 and AssA scores, demonstrating its robustness in agri-
+cultural object tracking. Overall, PineSORT provides a re-
+liable solution for agricultural tracking, laying the ground-
+work for future developments in yield estimation and auto-
+mated harvesting, with a focus on scalability and improving
+performance in more challenging environments.
+72
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+Acknowledgment
+We thank CeNAT (Centro Nacional de Alta Tecnolog´a)
+for supporting this research through an scholarship (Becas-
+CONARE), and to the CNCA (Colaboratorio Nacional de
+Computaci´on Avanzada) for their support during the de-
+velopment of this research.
+Finally, to the University
+of Costa Rica (research project C4612) for the nan-
+cial support and to the Costa Rica Institute of Tecnology
+(ITCR) Postgraduate Ofce for supporting this publica-
+tion.
+References
+[1] Nir Aharon, Roy Orfaig, and Ben-Zion Bobrovsky.
+Bot-
+sort: Robust associations multi-pedestrian tracking. arXiv
+preprint arXiv:2206.14651, 2022. 2
+[2] Jumabek Alikhanov and Hakil Kim. Online action detection
+in surveillance scenarios: A comprehensive review and com-
+parative study of state-of-the-art multi-object tracking meth-
+ods. IEEE Access, 2023. 1
+[3] Luis Diego Arias Campos, Juan Manuel Retana C´espedes,
+Daniel Torres Sand´, and Lidia Pe˜na Rivera. Los nuevos fru-
+tos de oro. aparato productivo de pi˜na y naranja en la zona
+norte, costa rica (1974-2015). Revista Rupturas, 8(1):93–
+121, 2018. 4
+[4] Andrea Arlotta, Martina Lippi, and Andrea Gasparri. An ekf-
+based multi-object tracking framework for a mobile robot in
+a precision agriculture scenario. 2023 European Conference
+on Mobile Robots (ECMR), pages 1–6, 2023. 2
+[5] Keni Bernardin and Rainer Stiefelhagen. Evaluating mul-
+tiple object tracking performance: the clear mot metrics.
+EURASIP Journal on Image and Video Processing, 2008:1–
+10, 2008. 4
+[6] Alex Bewley, Zongyuan Ge, Lionel Ott, Fabio Ramos, and
+Ben Upcroft. Simple online and realtime tracking. In 2016
+IEEE international conference on image processing (ICIP),
+pages 3464–3468. IEEE, 2016. 2
+[7] G. Bradski. The OpenCV Library. Dr. Dobb’s Journal of
+Software Tools, 2000. 3
+[8] Jinkun Cao, Jiangmiao Pang, Xinshuo Weng, Rawal Khi-
+rodkar, and Kris Kitani. Observation-centric sort: Rethink-
+ing sort for robust multi-object tracking. In Proceedings of
+the IEEE/CVF conference on computer vision and pattern
+recognition, pages 9686–9696, 2023. 2
+[9] Yutao Cui, Chenkai Zeng, Xiaoyu Zhao, Yichun Yang,
+Gangshan Wu, and Limin Wang. Sportsmot: A large multi-
+object tracking dataset in multiple sports scenes. In Proceed-
+ings of the IEEE/CVF International Conference on Com-
+puter Vision, pages 9921–9931, 2023. 1
+[10] Alexis Dinno. Nonparametric pairwise multiple comparisons
+in independent groups using dunn’s test. The Stata Journal,
+15(1):292–300, 2015. 5
+[11] Yunhao Du, Zhicheng Zhao, Yang Song, Yanyun Zhao, Fei
+Su, Tao Gong, and Hongying Meng. Strongsort: Make deep-
+sort great again.
+IEEE Transactions on Multimedia, 25:
+8725–8737, 2023. 2
+[12] Fabian Fallas-Moya, Manfred Gonzalez-Hernandez, Luis
+Barboza-Barquero, Kenneth Obando, Ovidio Valerio, An-
+drea Holst, and Ronald Arias. Looking for the best t of
+a function over circadian rhythm data. In 2019 18th IEEE
+International Conference On Machine Learning And Appli-
+cations (ICMLA), pages 1950–1955. IEEE, 2019. 2
+[13] Fabian Fallas-Moya, Manfred Gonzalez-Hernandez, and
+Amir Sadovnik.
+Size does matter:
+Overcoming limita-
+tions during training when using a feature pyramid net-
+work.
+In 2021 20th IEEE International Conference on
+Machine Learning and Applications (ICMLA), pages 1553–
+1560. IEEE, 2021.
+[14] Fabian
+Fallas-Moya,
+Saul
+Calderon-Ramirez,
+Amir
+Sadovnik, and Hairong Qi. Object detection in pineapple
+elds drone imagery using few shot learning and the
+segment anything model. In 2023 International Conference
+on Machine Learning and Applications (ICMLA), pages
+1635–1642. IEEE, 2023. 2
+[15] Martin A. Fischler and Robert C. Bolles. Random sample
+consensus: a paradigm for model tting with applications to
+image analysis and automated cartography. Commun. ACM,
+24(6):381–395, 1981. 3
+[16] Manfred Gonzalez-Hernandez, Fabian Fallas-Moya, Werner
+Rodriguez-Montero, Danny Xie-Li, Bryan Roman-Solano,
+Francini Corrales-Garro, Amir Sadovnik, and Hairong Qi.
+Evaluation of the inuence of multispectral imaging for ob-
+ject detection in pineapple crops. In 2023 IEEE 5th Inter-
+national Conference on BioInspired Processing (BIP), pages
+1–6. IEEE, 2023. 2
+[17] Yuhan Ji, Cheng-Wei Peng, Shichao Li, Bin Chen, Yanlong
+Miao, Man Zhang, and Han Li. Multiple object tracking in
+farmland based on fusion point cloud data. Comput. Elec-
+tron. Agric., 200:107259, 2022. 2
+[18] Glenn Jocher and Jing Qiu. Ultralytics yolo11, 2024. 5
+[19] Arne Hoffhues Jonathon Luiten.
+Trackeval.
+https://
+github.com/JonathonLuiten/TrackEval, 2020.
+4
+[20] Harold W Kuhn. The hungarian method for the assignment
+problem. Naval research logistics quarterly, 2(1-2):83–97,
+1955. 2
+[21] Laura Leal-Taix´e, Anton Milan, Ian Reid, Stefan Roth, and
+Konrad Schindler. Motchallenge 2015: Towards a bench-
+mark for multi-target tracking, 2015. 4
+[22] Wei Liu, Dragomir Anguelov, Dumitru Erhan, Christian
+Szegedy, Scott Reed, Cheng-Yang Fu, and Alexander C.
+Berg.
+SSD: Single Shot MultiBox Detector, page 21–37.
+Springer International Publishing, 2016. 2
+[23] Jonathon Luiten, Aljosa Osep, Patrick Dendorfer, Philip
+Torr, Andreas Geiger, Laura Leal-Taix´e, and Bastian Leibe.
+Hota:
+A higher order metric for evaluating multi-object
+tracking. International Journal of Computer Vision, 129(2):
+548–578, 2020. 4
+[24] Gerard Maggiolino, Adnan Ahmad, Jinkun Cao, and Kris
+Kitani. Deep oc-sort: Multi-pedestrian tracking by adaptive
+re-identication. In 2023 IEEE International Conference on
+Image Processing (ICIP), pages 3025–3029. IEEE, 2023. 2
+[25] Patrick E McKight and Julius Najab. Kruskal-wallis test. The
+corsini encyclopedia of psychology, pages 1–1, 2010. 5
+73
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+[26] M Mehrdad Morsali, Z Shari, F Fallah, S Hashembeiki,
+Hoda Mohammadzade, and S Bagheri Shouraki.
+Sfsort:
+Scene features-based simple online real-time tracker. arXiv
+preprint arXiv:2404.07553, 2024. 2
+[27] Md Ahmed Al Muzaddid and William J. Beksi.
+Ntrack:
+A multiple-object tracker and dataset for ineld cotton boll
+counting. IEEE Transactions on Automation Science and En-
+gineering, 21:7452–7464, 2023. 2
+[28] Tomas Pster, James Charles, and Andrew Zisserman. Flow-
+ing convnets for human pose estimation in videos, 2015. 1
+[29] Joseph Redmon, Santosh Divvala, Ross Girshick, and Ali
+Farhadi. You only look once: Unied, real-time object de-
+tection, 2016. 2
+[30] Mengye Ren, Wenyuan Zeng, Bin Yang, and Raquel Urta-
+sun. Learning to reweight examples for robust deep learn-
+ing. In International conference on machine learning, pages
+4334–4343. PMLR, 2018. 5
+[31] Shaoqing Ren, Kaiming He, Ross Girshick, and Jian Sun.
+Faster r-cnn: Towards real-time object detection with region
+proposal networks, 2016. 2
+[32] Ergys Ristani, Francesco Solera, Roger S. Zou, Rita Cuc-
+chiara, and Carlo Tomasi. Performance measures and a data
+set for multi-target, multi-camera tracking, 2016. 4
+[33] Ethan Rublee, Vincent Rabaud, Kurt Konolige, and Gary
+Bradski. Orb: An efcient alternative to sift or surf. In 2011
+International Conference on Computer Vision, pages 2564–
+2571, 2011. 3
+[34] Leonardo Saraceni, Ionut M Motoi, Daniele Nardi, and
+Thomas A Ciarfuglia.
+Agrisort:
+A simple online real-
+time tracking-by-detection framework for robotics in preci-
+sion agriculture. In 2024 IEEE International Conference on
+Robotics and Automation (ICRA), pages 2675–2682. IEEE,
+2024. 2
+[35] Maxim Tkachenko, Mikhail Malyuk, Andrey Holmanyuk,
+and Nikolai Liubimov.
+Label Studio: Data labeling soft-
+ware, 2020-2025.
+Open source software available from
+https://github.com/HumanSignal/label-studio. 4
+[36] Nicolai Wojke, Alex Bewley, and Dietrich Paulus. Simple
+online and realtime tracking with a deep association metric,
+2017. 2
+[37] Liu Xiaochen, Liu Xiaojie, Xiong Yufeng, Yang Jiangtao,
+Wang Yubo, Wang Linwei, Liu Jun, Shen Chong, and Tang
+Jun.
+Evaluation of lucas-kanade based optical ow algo-
+rithm. In 2018 IEEE CSAA Guidance, Navigation and Con-
+trol Conference (CGNCC), pages 1–6, 2018. 5
+[38] Danny Xie-Li, Fabian Fallas-Moya, and Saul Calderon-
+Ramirez. Simple object detection framework without train-
+ing. In 2024 IEEE 6th International Conference on BioIn-
+spired Processing (BIP), pages 1–6. IEEE, 2024. 2
+[39] Mingzhan Yang, Guangxin Han, Bin Yan, Wenhua Zhang,
+Jinqing Qi, Huchuan Lu, and Dong Wang.
+Hybrid-sort:
+Weak cues matter for online multi-object tracking. In Pro-
+ceedings of the AAAI Conference on Articial Intelligence,
+pages 6504–6512, 2024. 2
+[40] Peng Zhang, Xin Li, Liang He, and Xin Lin. 3d multiple
+object tracking on autonomous driving: A literature review,
+2023. 1
+[41] Yifu Zhang, Peize Sun, Yi Jiang, Dongdong Yu, Fucheng
+Weng, Zehuan Yuan, Ping Luo, Wenyu Liu, and Xinggang
+Wang. Bytetrack: Multi-object tracking by associating every
+detection box. In European conference on computer vision,
+pages 1–21. Springer, 2022. 2
+74
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 

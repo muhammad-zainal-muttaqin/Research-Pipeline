@@ -1,0 +1,649 @@
+Active View Planning for Counting Apples in Orchards
+Pravakar Roy and Volkan Isler
+Abstract— We consider an agricultural automation scenario
+where a robot, equipped with a camera mounted on a manip-
+ulator, is charged with counting the number of apples in an
+orchard. We focus on the subtask of planning views so as to
+accurately estimate the number of apples in an apple cluster.
+We present a method to efﬁciently enumerate combinatorially
+distinct world models and to compute the most likely model
+from one or more views. These are incorporated into single and
+multi-step planners. We evaluate these planners in simulation
+as well as with experiments on a real robot.
+I. INTRODUCTION
+Yield mapping is emerging as an important task in agri-
+cultural automation [1]–[4]. Current systems for automated
+yield mapping involve the capture of imagery along an
+arbitrary and/or predetermined path. This approach is sufﬁ-
+cient for large commercial orchards which have “fruit-walls”
+where the fruits are visible from the outside and the clusters
+contain a small number of fruits. However, in more general
+settings, estimating the exact count from an arbitrary view
+is difﬁcult. See Figure 1.
+In this work, we show how active vision techniques can
+be used to accurately obtain the number of apples in a
+cluster. Consider a system where a robot equipped with a
+controllable camera is charged with surveying an orchard
+(Fig. 1 (rightmost image)). Imagine that the robot positions
+the base near a tree and obtains the ﬁrst view of an apple
+cluster. Where should it take the second image from so as
+to accurately estimate the number of apples in the cluster?
+We study this novel active perception problem.
+Our approach can be summarized as follows: Consider
+the set of all possible “world states” where each world state
+encodes the position and diameter of each apple. The images
+acquired by the robot can be used to associate likelihoods
+to these world views. The goal is to plan views that reduce
+the entropy of this distribution sufﬁciently so that we can
+estimate the count accurately. Directly enumerating all such
+world states is computationally expensive: In a 1m×1m×1m
+volume, a 1cm resolution grid would have 106 cells. Even if
+we assume that the diameter is ﬁxed, for a cluster of 6 apples,
+there would be 1036 hypotheses. Our main contributions in
+this work are (1) a technique to efﬁciently enumerate only
+combinatorially distinct world states, and (2) a method to
+estimate their likelihoods from images. We experimentally
+demonstrate that together these methods yield an efﬁcient
+view planning method for counting spherical objects which
+can be used in other agricultural applications.
+The authors are with the Department of Computer Science and
+Engineering,
+University
+of
+Minnesota,
+Minneapolis,
+MN,
+USA.
+{royxx268,isler}@umn.edu.
+The paper is organized as follows: We present an overview
+of related work in section
+II. In section III, we present
+our system description, which is followed by the problem
+formulation in section IV. From section V to section VI, we
+present our technical approach which includes generating the
+world models and planning for the next best view. We present
+our simulation and indoor experiment results in section VII
+followed by the conclusion and future work.
+Fig. 1: A single view of a cluster can be deceiving (First
+three images from left). The ﬁrst view suggests that there
+are three apples, the second one suggests ﬁve and ﬁnally
+from a bottom up view we see that there are actually six
+apples in the cluster. The rightmost image shows our platform
+for automating different precision agriculture and phenomics
+operation.
+II. RELATED WORK
+In active vision, the parameters of a camera are actively
+controlled so as to improve the performance of the vision
+system [5]. One of the fundamental problems in active vision
+is view planning to improve coverage
+[6]. Recently, there
+has been increasing activity to scale up active perception
+to sensing tasks over longer periods of time and in larger
+environments [7]. Recent work in this area is concerned with
+object detection and classiﬁcation [8]–[10]. In the context of
+agricultural applications, most of the work on yield mapping
+does not involve active perception [1]–[4]. Related to our
+work, Baur et al. [11] designed a heuristic based algorithm
+for trajectory generation for apple picking. Underwood et
+al. [12] developed a system for weed removal. In this work,
+we explicitly address the occlusions among objects (the
+apples) and present representations and planning algorithms
+to estimate their count.
+III. SYSTEM DESCRIPTION
+Our system consists of a monocular camera mounted on
+a robotic manipulator which is ﬁxed on a ground robot
+(Fig. 1 (rightmost image)). Our long-term target is to develop
+algorithms enabling this platform to traverse the orchard
+rows autonomously and collect useful data for phenomics
+
+and precision agriculture. This paper focuses speciﬁcally on
+close up view planning for fruit counting using the camera
+mounted on the manipulator. We assume that the camera
+is calibrated. The robot pose [wRr|tr] and the camera pose
+[wRc|tc] are known with respect to world frame {w}. From
+this camera {c} mounted on a robotic manipulator {r} and
+facing an apple cluster A, we want to compute a sequence
+of of viewpoints to place the camera to correctly predict the
+number of apples. We assume that we have a rough estimate
+(dest) of the working distance (distance from the camera to
+the apple cluster). Using this estimate, we deﬁne a viewing
+sphere S centered at the center of A and having radius dest.
+As the viewing sphere is around the cluster center, we can
+only operate in the hemisphere facing the camera which is in
+the reachable workspace of the robot. We place m viewpoints
+V = {v1, v2, . . . , vm} in the frontal hemisphere of S. Fig. 2
+shows an example of one such viewing sphere (left image)
+and the viewpoints placed on it(right image). The ellipsoids
+inside the viewing sphere are colored randomly for clarity
+of understanding and have no other signiﬁcance.
+Fig. 2: We deﬁne the center of our viewing sphere to be
+the perceived center of the apple cluster under observation.
+The radius is set as the estimated distance from camera to
+the cluster center. Figure on left shows the viewing sphere,
+the ellipsoidal fruits inside it (the fruits inside the cluster are
+colored randomly for identiﬁcation purposes) and the blue
+line joining camera center to the cluster center. Figure on
+the right, shows the placed viewpoints (red dots).
+IV. PROBLEM FORMULATION
+In this section, we formalize the problem deﬁnition for
+intra-cluster view planning. The term, “intra-cluster” means
+that at any speciﬁc time instant we are only planning
+views for one particular cluster. We will represent the
+apples in 3D space by their enclosing ellipsoids e. Let
+A = {e1, e2, . . . en} represent an apple cluster of size n in
+world space. The condition for apples being in a cluster
+is that the maximum distance between any two enclosing
+ellipsoids ei, ej where i, j ∈[1, n] has to be bounded. As
+mentioned before, we assume that we have an approximate
+estimate of the working distance dest from the camera to
+the cluster A. Given this, we deﬁne our view planning
+problem as the following
+Problem Statement: Given an initial image I1 and an
+approximate distance from camera to the cluster A, compute
+the next best view vk, so as to minimize the entropy of our
+set of world hypotheses W,
+arg min
+vk
+H(W|Iv1, Ivk) = arg min
+vk
+−P (W|Iv1, Ivk)
+log P (W|Iv1, Ivk)
+(1)
+where vk ∈V and it is not the initial view point.
+V. GENERATING WORLD MODELS
+In the previous section, we formulated the problem
+as computing a viewpoint that minimizes the entropy
+H(W|Iv1, Ivk). The ﬁrst and most important step for our
+view planning strategy is generating a complete set of world
+hypotheses W. They must cover all possible geometric con-
+ﬁgurations for a maximum cluster size to ensure convergence
+to the correct fruit count.
+Instead of enumerating all possible ellipsoids (which can
+be computationally prohibitive), we utilize a small set of
+combinatorial models in terms of visible and occluded apples
+which does not have any position and orientation associated
+with it. This combinatorial representation of fruits is our
+main contribution in this paper. We convert these models to
+physical world models using image based measurements. In
+this section, we present the details of the world model gen-
+eration procedure. We start by introducing the combinatorial
+world models.
+A. Combinatorial World Models
+Two models are combinatorially equivalent if the number
+of visible and occluded apples from the orthographic frontal
+view are equal. Figure
+3(b) shows two such models. We
+assume that the initial view obtained by the camera is the
+view from the frontal plane. According to our assumption
+W
+= {w1, w2, . . . , wp}, is a set of all possible world
+models and where wi = {ewi
+1 , ewi
+2 , ewi
+3 . . . ewi
+n }, is a set
+of n ellipsoids in world space where i ∈[1, p] and n ∈
+[1, maxClusterSize].
+We ﬁx the cluster size n and generate our world models
+in terms of occluded and visible apples. Initially, we assume
+that each visible apple can occlude only one other apple. The
+occluded apples cannot further occlude other apples. Later,
+we show how to extend this approach to the case where
+occluded apples are allowed to occlude other apples. Under
+the current assumption, there are only two layers: visible and
+occluded. The maximum number of occluded apples aoc and
+minimum number of visible apples avis, for cluster size n
+and number of layers L = 2 is
+aoc =
+l n
+L
+m
+avis = n −
+l n
+L
+m
+By varying the number of visible apples (i.e the apples in
+layer 1) from 1 to n we can generate all possible models
+for this particular cluster size n. The total number of models
+for cluster size n is actually,
+ L+aoc−1
+aoc
+
+= aoc. In practice,
+this assumption of one occlusion layer (i.e L = 2) holds for
+most apple clusters.
+
+(a) Combinatorial models for
+cluster size = 3
+(b)
+Two
+combinatorially
+equivalent models
+Fig. 3: Combinatorial Models. Fig.(a) shows the combinato-
+rial models for clusters of maximum size three. It shows that
+there is six model in total with no restriction on the number
+of occlusion layers. If we restrict the number of occlusion
+level to one, the last model is eliminated. Right image shows
+two combinatorially equivalent views
+We can easily extend the current method for the cases of
+multiple occlusion layers. Again, we assume that each apple
+can occlude just one apple. When the number of occluded
+apples is 1, or n −1 where n is the cluster size, the number
+of models is trivially one. From the previous paragraph, we
+know that when the number of layers L = 2, the total number
+of models is
+ 1+aoc
+aoc
+
+. For cases where L > 2 and 1 < aoc <
+n −1 we ﬁnd the models by using a recursive divide and
+conquer strategy. We subdivide occluded apples as visible
+and hidden for L ≥2, decrease the occlusion level by 1 until
+we reach one of the base cases and combine the solutions
+together.
+It should be noted that these models are not concerned
+with the actual locations or sizes of the apples. Their
+purpose is to capture the combinatorial structure of the
+clusters in terms of visible and occluded apples and occlusion
+hierarchy. Consequently, the models only need a tag for
+visible/occluded and a layer number. For the rest of the paper,
+we refer to these models as combinatorial world models.
+Figure 3(a) shows combinatorial world models for maximum
+cluster size three.
+B. Sensing from Individual Images
+For predicting next best views and to relate the combina-
+torial models to actual images we need to have a sensing
+method for individual images and actual physical models
+corresponding to each of the combinatorial model. For
+sensing from singular input images, we utilize our previous
+work [3]. There, we exploited the idea of the images being
+generated from a two-dimensional world model (probability
+distribution). Each apple in the input image is modelled by
+a Gaussian probability distribution function (pdf) and apple
+clusters are modelled as mixture of Gaussian.
+For a given image and a particular size of input clusters,
+this method provides us with the tentative pixel location and
+pixel size for each apple and a likelihood of that cluster
+size being optimal. Essentially, our sensing method provides
+us with the likelihood of a certain number of apples being
+visible in the input image. In the next section, we look at
+how we can combine this information with the combinatorial
+world models and associate position and orientation to them.
+C. From Combinatorial Models to World Models with Posi-
+tion and Orientation
+Each of our combinatorial world models contains a
+nonzero number of visible apples and a few occluded apples.
+The sensing model provides us with an estimate of the visible
+apples in the image. We backproject this apples and utilize
+estimated depth dest to obtain their tentative 3D location.
+The sensing estimate provides only diameters across x and
+y axis. We assume the diameter of the ellipsoid along the
+z axis is average of the x, y axis diameter. Following this
+procedure for all the combinatorial models, we obtain a
+physical model corresponding to each of the visible apples in
+the combinatorial models. Now, we need to associate position
+and orientation to the occluded apples. We place the occluded
+apples exactly behind the visible apples, following a left
+to right order. For the case of multiple level occlusion, an
+apple can occupy a place in a higher occlusion level if all
+the corresponding places in the lower occlusion levels are
+ﬁlled. The sensing model only provide us with likelihoods
+of the visible apples. To generate the likelihoods for models
+with occlusion we utilize the penalty and reward function
+described in [3]. The occluded apples do not contribute
+anything to the reward function and consequently they are
+just penalized for the increasing number of components.
+Therefore, by adding the penalty for the occluded apples to
+the likelihood of the visible apples we obtain the likelihood
+of the world models with occlusion. Figure 4 shows an
+example of the generated world models for three apples.
+Fig. 4: World hypotheses generated from combinatorial mod-
+els for three apples.
+VI. VIEW PLANNING
+In this section, we present the details of our view planning
+approach. We show how to determine the next best view
+point from the current information, how to update the pos-
+terior probabilities of the world models after each additional
+view and the termination criteria to be checked on each
+iteration.
+At each viewpoint, the camera provides us an image
+of the apple cluster, Ivj(A), wherevj is the jth viewpoint.
+Let, v1, v2, . . . vk be the viewpoints we have chosen so far.
+Therefore, the next best view should be chosen so that it
+
+minimizes the entropy of the entire set of world hypotheses
+W. Equation (1) has the following general form
+arg min
+vk+1
+p
+X
+i=1
+−P
+ wi|Iv1, Iv2, . . . IvkIvk+1
+
+log P
+ wi|Iv1, Iv2, . . . IvkIvk+1
+
+(2)
+Now
+we
+take
+a
+closer
+look
+at
+the
+term
+P (wi|Iv1, Iv2, . . . Ivk)
+and
+see
+how
+we
+can
+evaluate
+it.
+P (wi|Iv1, Iv2, . . . Ivk) = P (Iv1, Iv2, . . . Ivk|wi) P (wi)
+P (Iv1, Iv2, . . . Ivk)
+≈P (Iv1|wi) P (Iv2|wi) . . . P (Ivk|wi) P (wi)
+(3)
+In equation (3), the conditional independence of the terms
+of form P (Ivk|wi) follows from the fact that, for a ﬁxed
+world hypothesis wi the camera views depend only on wi
+and are independent of each other. However, for choos-
+ing the next best view (equation (2)), we cannot evaluate
+P
+ Ivk+1|wi
+
+. This is because we have not yet seen Ivk+1.
+For this case, we generate a utility value for viewpoint vk+1
+based on the expected number of occluded and visible apples
+for world model wi (described in details in section VI-A).
+A. Next Best View Planning
+For predicting the next viewpoint, we need to evalu-
+ate the utility of each of the possible candidate views.
+Let Vc = {vk+1, vk+2, . . . vk+r} be the set of candidate
+viewpoints. For each of this view points vk+j, j ∈[1, r],
+we generate an image of each of our world hypotheses
+wi. Our physical world models consist of ellipsoids wi =
+{ewi
+1 , ewi
+2 , ewi
+3 . . . ewi
+n }. We represent each of them in a
+quadric format which allows us to compute their projection
+quickly. While projecting, we sort the quadric by their depth
+order and compute the overlap between the projected ellipses.
+Following this procedure, we determine the visibility of each
+ellipsoid in the resulting image. If more than 20% of a
+projected ellipse is not occluded by any other we mark
+it as visible. Performing this operation for each viewpoint
+vk+j and world model wi we can determine the visible and
+occluded fruits for each view point for each world model
+wi. We build two tables, visModel, occModel, of dimension
+m × p where m is the total number of viewpoints and p is
+the total number of world models.
+visModel(i, j) = visible apples generated by
+wj from vi
+occModel(i, j) = occluded apples generated by
+wj from view point vi
+We deﬁne the utility of a view in terms of these visibility
+and occlusion models by building a similar table which we
+refer to as the utilityModel.
+utilityModel(i, j) =
+visModel (i, j)
+occModel(i, j) + visModel (i, j)
+Following the computation of this table, we normalize the
+utilities across all the view points to obtain a probability
+distribution of the utility for each world model. The next best
+view is found from these computed utilities. We consider two
+methods for this step. First, we plan for a single view that
+minimizes the entropy of our hypotheses set W. Second, we
+plan for a sequence of views which must be taken to verify
+the all different conﬁgurations of visible and occluded apples
+from our hypotheses set. It should be noted that regardless
+of the single/ multiple step planning we make one move
+at time(for multiple step - the ﬁrst view in the sequence),
+recompute the posterior probabilities of world hypotheses
+and plan for the next view using the single/multiple step
+method. We start with the single step planning.
+(a) Viewpoints chosen by single step view planning
+(b) Posterior probability distribution of the world hypotheses
+Fig. 5: Sample result from simulations. We randomly gen-
+erated a 3D model of four apples. Our multiple step view
+planning algorithm selected three more views before con-
+verging to a world model with correct world counts
+1) Planning Single Step at a Time: For single step plan-
+ning we can directly use equation (2). For any candidate view
+point vk+1, and the hallucinated image Ivk+1 (generated by
+projecting world model wi to the camera at view point vk+1),
+P
+ wi|Iv1, Iv2, . . . Ivk, Ivk+1
+
+≈P (Iv1|wi) P (Iv2|wi) . . . P (Ivk|wi) P
+ Ivk+1|wi
+
+P (wi)
+= P (wi|Iv1, Iv2, . . . Ivk, ) utilityModel(k + 1, i)
+(4)
+We replace this value in equation (2), after normalizing the
+values across all the view points.
+2) Planning Multiple Steps: A simple way to do, multiple
+step planning is to plan a ﬁxed number of views together.
+Essentially, it means considering
+ m
+k
+
+candidates, where k is
+
+the number of views to be planned together and m is the
+cardinality of the viewpoint sets. Consequently, it involves
+multiplying k−1 additional utility values to equation (4) and
+evaluating equation (2).
+Instead of focusing on maximizing the number of visible
+apples, we can uncover the geometry of all possible world
+hypotheses from different view points. This is our second
+strategy for multiple step planning. For this, we ﬁnd different
+conﬁgurations of visible and occluded apples from different
+viewpoints. Then we group the viewpoints for a particular
+world hypothesis wi by the number of visible apples. Next,
+we ﬁnd the maximum cardinality of these groups for all the
+world hypotheses and use this maximum cardinality g as
+the number of views to be planned together. We generate
+the candidate viewpoint sequence like the previous method
+and evaluate them in terms of the covered conﬁgurations
+of visible and occluded apples. The view sequences with
+the maximum score are evaluated using equation
+(2) and
+the best sequence is selected. The performance of the single
+and multiple step methods have been evaluated in terms of
+convergence and the average number of views required to
+converge. Figure 6 shows the results. We see that the multiple
+step method outperforms the single step method for cluster
+sizes 5 −9. We explain the results further in section VII.
+B. Updating the Posterior Probabilities of the World Model
+and Convergence Criterion
+In this section we discuss, how we can incorporate infor-
+mation from new views to our world models. Essentially,
+with each additional view the posterior probabilities of our
+world models are updated. Suppose we have taken measure-
+ments from viewpoints v1, v2, . . . vk, and have chosen vk+1
+as our next measurement location. Then the posterior for
+world model wi is updated as follows
+P
+ wi|Iv1, Iv2, . . . IvkIvk+1
+
+≈
+P (Iv1|wi) P (Iv2|wi) . . . P (Ivk|wi) P
+ Ivk+1|wi
+
+P (wi)
+(5)
+The exact value of the posterior is found by normalizing
+the likelihood across all the world models. Before we can
+apply equation (5) we need to resolve one more issue. Our
+sensing model does not directly provide the quantities of
+the form P (Ivk|wi). Instead, it provides the likelihood of a
+certain number of apples being visible in the input image.
+For the particular world model under consideration, we need
+to ﬁnd the expected number of visible apples from the
+visibility model that was constructed in the previous section.
+After this step, we can associate the sensing likelihoods with
+P (Ivk|wi)
+We use the reduction in posterior entropy coupled with
+the difference between the successive peaks of the posterior
+as our termination criteria.
+VII. EXPERIMENTAL RESULTS
+To verify our algorithms, we conducted tests both in
+simulations and indoor environment. During the winter time
+there are no apples on the trees and therefore ﬁeld experi-
+ments were not possible. However, indoor experiments were
+arranged by using a realistic artiﬁcial apple tree (Figure 7a).
+For both simulation and indoor environments we assume that
+the fruit detection problem has been solved (i.e. we can locate
+fruit clusters in the input image). As currently there exists
+no method for actively planning views for counting apples,
+we compared our results against a lower bound provided by
+orthographic cameras. We also compared the performance of
+the single and multi-step view planning strategy.
+A. Comparison with Lower Bounds from an Orthographic
+Camera Using Cardinal Views
+An orthographic camera can unfold the visible geometry of
+any object with six cardinal views: front, back, top, bottom,
+right and left. These views are often used in engineering
+drawings to capture the scale of objects. Essentially, an
+orthographic camera can compute the number of apples
+(visible from at least one view) in any cluster size with
+six views maximally. Given a ﬁxed cluster size, we use the
+number of views required by an orthographic camera to be
+the lower bound for the number of views. For single apples,
+two perpendicular views are necessary to make sure that
+there is only a single apple. For two apples, we need three
+mutually perpendicular views, for three and four apples we
+need four and ﬁve views. For ﬁve or more apples six cardinal
+views are required. For orthographic cameras this bound is
+tight.
+B. Simulation Results
+We developed a simulation system using MATLAB for
+testing purposes. We use sets of randomly generated ellip-
+soids as the apples and simulate a camera with 40 ◦ﬁeld
+of view for capturing the images. To simulate the estimated
+depth from camera to the apple cluster we added Gaussian
+noise to the actual distance(σ = 1, µ = 0). Using the
+estimated distance and estimated cluster center from image
+based measurements we deﬁne a viewing sphere (Figure. 2.
+Then 25 viewpoints are placed on the frontal hemisphere fac-
+ing the camera. Using our world model generation procedure
+described in section V, we generate a set of world hypotheses
+W and predict the next best view points using single step and
+multiple step planning strategies. Here, we present simulation
+results for cluster size ranging from [1, 10]. We created 20
+instances for each cluster size and computed the number of
+views required to converge for the single step and multiple
+step strategies. Figure 6 shows the comparison of the single
+step and multiple step strategy along with the orthographic
+lower bound and convergence plot. We see that the multiple
+step planner outperforms the single step planner for cluster
+sizes 5 −9 (Fig. 6(a)). We see that for the large cluster
+sizes both planners have a higher chance of converging to
+wrong cluster size. This is attributed to our sensing model.
+In our previous work [3] we showed that, the accuracy of
+the likelihoods provided by our sensing model drops with
+increasing cluster size. However, in practice large clusters
+
+are not very common and therefore handling them with 90%
+convergence is quite acceptable.
+(a) Single step and multi-
+step view planning with or-
+thographic lower bound
+(b) Convergence to the correct
+world model
+Fig. 6: Simulation Results
+C. Indoor Experiments
+For the indoor experiments we use an artiﬁcial apple tree
+and synthetic apples. Figure 7 shows our experimental setup
+and how our algorithm performs in one of the experiments.
+The cluster under observation (Figure 7(b)) has three apples,
+but none of the views shows all of them. Our multi step
+planning algorithm plans the views required and converges
+to the correct world model containing three apples in four
+views.
+VIII. CONCLUSION
+In this paper, we considered a view planning task where
+the goal is to choose views so as to accurately count the
+number of fruits in a cluster. We presented an approach
+where the fruit are represented as ellipsoids. The number of
+ellipsoids, as well as their parameters (location and dimen-
+sions) constitute a world hypothesis. Rather than enumerating
+all possible world hypotheses, which is computationally
+prohibitive, we show how combinatorially distinct world
+hypotheses (regarding the visibility relationship between
+the apples) can be enumerated. Additionally, we present a
+likelihood function which associates a probability with each
+(a) Experimental Setup (b) Planned Views. None of them shows
+all three apples clearly.
+(c) Posterior Probabilities of the World Model. The conﬁguration
+of visible and hidden apples in the models {1, 2, 3, 4, 5} are
+{(1, 0), (1, 1), (2, 0), (3, 0), (2, 1)}
+Fig. 7: Indoor Experiments
+world hypothesis for a given view and propose greedy and
+multi-step planners which choose viewpoints to minimize the
+entropy of the posterior. These planners are implemented and
+evaluated both in simulation and in an indoor experimental
+setup. Our results indicate that for larger cluster size 5 −9
+the multi-step planner performs better than the single step
+planner.The results from simulations and indoor experiments
+are similar. It can be attributed to the fact that most of the
+difﬁculties in real world scenes are in sensing from individual
+images which is taken care of by our sensing model. In our
+future work, we plan to evaluate the system in an orchard
+during apple season (July – September in Minnesota) and
+also plan for the motion of the robot base.
+IX. ACKNOWLEDGEMENT
+The authors thank Professors Emily Hoover, Cindy Tong
+and James Luby from Department of Horticultural Science,
+University of Minnesota, for their expertise and help with the
+experiments. Special thanks to Nicolai Haeni for help with
+experimental set up, camera and hand eye calibration.
+REFERENCES
+[1] Q. Wang, S. Nuske, M. Bergerman, and S. Singh, “Automated
+crop yield estimation for apple orchards,” in Experimental Robotics,
+ser. Springer Tracts in Advanced Robotics, J. P. Desai, G. Dudek,
+O. Khatib, and V. Kumar, Eds.
+Springer International Publishing,
+2013, vol. 88, pp. 745–758.
+[2] S. Bargoti and J. P. Underwood, “Image segmentation for fruit
+detection and yield estimation in apple orchards,” CoRR, vol.
+abs/1610.08120, 2016. [Online]. Available: http://arxiv.org/abs/1610.
+08120
+[3] P. Roy and V. Isler, “Vision-based apple counting and yield estima-
+tion,” in Experimental Robotics.
+Springer, 2016.
+[4] ——, “Surveying apple orchards with a monocular vision system,”
+in Automation Science and Engineering (CASE), 2016 IEEE Interna-
+tional Conference on.
+IEEE, 2016, pp. 916–921.
+[5] R. Bajcsy, “Active perception,” Proceedings of the IEEE, vol. 76, no. 8,
+pp. 966–1005, 1988.
+[6] W. R. Scott, G. Roth, and J.-F. Rivest, “View planning for automated
+three-dimensional object reconstruction and inspection,” ACM Com-
+puting Surveys (CSUR), vol. 35, no. 1, pp. 64–96, 2003.
+[7] R. Bajcsy, Y. Aloimonos, and J. K. Tsotsos, “Revisiting active per-
+ception,” arXiv preprint arXiv:1603.02729, 2016.
+[8] N. Atanasov, B. Sankaran, J. Le Ny, G. J. Pappas, and K. Daniilidis,
+“Nonmyopic view planning for active object classiﬁcation and pose
+estimation,” IEEE Transactions on Robotics, vol. 30, no. 5, pp. 1078–
+1090, 2014.
+[9] C. Potthast and G. S. Sukhatme, “A probabilistic framework for next
+best view estimation in a cluttered environment,” Journal of Visual
+Communication and Image Representation, vol. 25, no. 1, pp. 148–
+164, 2014.
+[10] T. Patten, W. Martens, and R. Fitch, “Monte carlo planning for active
+object classiﬁcation,” Autonomous Robots, pp. 1–31, 2017.
+[11] J. Baur, C. Sch¨utz, J. Pfaff, T. Buschmann, and H. Ulbrich, “Path
+planning for a fruit picking manipulator,” in Proceedings International
+Conference of Agricultural Engineering, Z¨urich, Switzerland, 2014.
+[12] J. Underwood, M. Calleija, Z. Taylor, C. Hung, J. Nieto, R. Fitch,
+and S. Sukkarieh, “Real-time target detection and steerable spray for
+vegetable crops,” in proceedings, Workshop on Robotics in Agriculture
+at International Conference on Robotics and Automation (ICRA),
+2015.

@@ -1,0 +1,591 @@
+1 
+ 
+ 
+An ASABE Meeting Presentation 
+DOI: https://doi.org/10.13031/aim.202500502 
+Paper Number: 2500502 
+Neural Radiance Fields for Plot-level Cotton Crop Three-
+dimensional Reconstruction and Yield Estimation 
+Lizhi Jiang1,2, Changying Li2, Peng W. Chee3, Longsheng Fu1 
+ 
+1College of Mechanical and Electronic Engineering, Northwest A&F University, Yangling, Shaanxi 712100, 
+China 
+2Bio-Sensing, Automation, and Intelligence Laboratory, Department of Agricultural and Biological Engineering, 
+University of Florida, Gainesville, FL 32611, USA 
+3Department of Crop and Soil Science and Institute of Plant Breeding, Genetics, and Genomics, University of 
+Georgia-Tifton Campus, University of Georgia, Tifton, GA 31793, USA 
+ 
+Written for presentation at the 
+2025 ASABE Annual International Meeting 
+Sponsored by ASABE 
+Toronto, ON, Canada 
+July 13-16, 2025 
+ 
+ABSTRACT. Cotton boll counting is a critical component of cotton yield prediction and plays a key role in advancing plant 
+phenomics and precision agriculture. However, the complex distribution of cotton bolls and occlusions in 2D images pose 
+significant challenges to fast and accurate counting. To overcome these challenges, a novel Neural Radiance Fields (NeRF)-
+based workflow was developed, integrating data acquisition, 3D reconstruction, and cotton boll mapping at the field-plot 
+level. Two methods were employed for red-green-blue (RGB) image collection. The first used 10 cameras arranged in a 
+single row and evenly mounted on a custom robotic platform to scan the cotton plants. The second utilized a smartphone for 
+multi-angle scanning around plot-level cotton plants to capture complete plant videos. NeRF was then applied to reconstruct 
+3D models of plot-level cotton plants using the RGB images and export point clouds, and the reconstruction quality of the 
+two data collection methods was compared. Next, an efficient data annotation method based on the Segment Anything Model 
+(SAM) was designed to generate 2D masks of cotton bolls. Finally, cotton boll counting for each plot was achieved using 
+improved FruitNeRF. In the experimental results, both data acquisition methods enabled effective 3D reconstruction. For 
+the 3D reconstruction from smartphone data, the Peak Signal-to-Noise Ratio (PSNR) was 16.21, the Structural Similarity 
+Index Measure (SSIM) was 0.34, and the Learned Perceptual Image Patch Similarity (LPIPS) was 0.49. The semi-automatic 
+2D mask annotation designed in this experiment reduced the labeling workload, and the final mean Average Precision at 
+IoU 0.50 (mAP50) for cotton boll segmentation was 0.85. In yield estimation, the Mean Absolute Percentage Error (MAPE) 
+between the predicted and ground truth number of cotton bolls was 4.41%, while the MAPE between the predicted number 
+and the ground truth boll weight was 8.83%. This approach provides a low-cost and efficient solution for generating high-
+quality plot-level cotton point clouds, offering a valuable tool for field-based cotton phenotyping and precision management. 
+Keywords. 3D reconstruction; 3D segmentation; NeRF; SAM; Plot-level cotton crop 
+
+2 
+1 Introduction 
+Cotton is the world's most important renewable fiber crop, with a global production value exceeding $50 billion, 
+supporting the livelihoods of 150 million cotton workers across 75 countries (Devoto et al., 2024; Kun et al., 2025). As the 
+global population continues to grow, developing effective strategies to improve cotton yield has become a critical challenge 
+in modern agriculture. Plant phenotypic information plays a key role in supporting breeding programs to increase cotton 
+yield by providing essential data (Conaty et al., 2022; Voss-Fels et al., 2019). Currently, phenotypic data collection in cotton 
+is primarily conducted through manual field sampling, which is time-consuming, labor-intensive, and prone to human error, 
+especially under high-temperature outdoor conditions (Chen et al., 2025). Therefore, there is an urgent need for efficient 
+methods to analyze cotton phenotypic traits. 
+Deep learning methods for 2D images analysis have been successfully applied in fruit recognition tasks. For instance, 
+YOLOv5x achieved an average precision of 99.5% in kiwifruit detection (Gao et al., 2024). while YOLOv8n attained an 
+average accuracy of 91.93% for strawberry detection (An et al., 2024). The spatial distribution of these fruits is relatively 
+simple, which facilitates accurate detection in two-dimensional (2D) images. In contrast, fruits with more complex three-
+dimensional (3D) spatial distributions—such as blueberries and apples—are more difficult to detect comprehensively due 
+to frequent occlusions in 2D projections (Ni et al., 2021; Zheng et al., 2024). Similarly, although grape clusters can be 
+identified in 2D images, detecting individual grapes within a cluster remains highly challenging because of their dense 3D 
+arrangement (Yang et al., 2025). Cotton bolls also grow in a 3D spatial configuration, especially at the plot level, where 
+severe occlusions in 2D images significantly compromise detection accuracy. 
+Compared to 2D images, point clouds offer a significant advantage by mitigating occlusion and enabling detailed 3D 
+analysis of plant traits. Recent studies have employed point cloud instance segmentation to extract a variety of phenotypic 
+traits, such as branch length and canopy volume in apple trees, and plant height and leaf angle in maize (Jiang et al., 2025a; 
+Miao et al., 2021). Segmenting individual apples in point clouds facilitates accurate fruit counting and volume estimation 
+(Dong et al., 2023). High-precision 3D point clouds are a prerequisite for successful segmentation. Terrestrial Light 
+Detection and Ranging (LiDAR) systems can directly acquire high-quality point clouds; however, their high cost and slow 
+acquisition speed hinder large-scale applications (Jiang et al., 2025b). In contrast, RGB-D cameras provide a more cost-
+effective alternative, but their limited resolution makes it difficult to capture fine-scale details such as branches (Bloch et 
+al., 2025). Therefore, developing an efficient and low-cost 3D reconstruction method is critical for advancing high-
+throughput plant phenotyping and trait analysis. 
+Multi-view 3D reconstruction demonstrates great potential in balancing sensor cost and model resolution. This approach 
+reconstructs the 3D structure of an object or scene by analyzing and processing 2D images captured from multiple 
+overlapping viewpoints, typically through a classical combination of Structure from Motion (SfM) and Multi-View Stereo 
+(MVS). SfM is primarily used to estimate camera parameters and generate a sparse point cloud, while MVS further refines 
+the geometric details to produce a high-precision dense point cloud or mesh model. This reconstruction pipeline has been 
+successfully applied to the 3D modeling of individual plants such as carex and kale (Yang et al., 2024). Several software 
+tools that integrate SfM and MVS techniques—such as COLMAP (Schonberger and Frahm, 2016), PIX4D Mapper (Pix4D 
+S.A., Lucerne, Switzerland), and Agisoft Metashape (Agisoft LLC, St. Petersburg, Russia)—have been widely adopted. By 
+importing 2D images, these tools can automatically generate high-quality 3D models and have been applied to crops such 
+as cotton and maize (Sun et al., 2020; Wu et al., 2020).  
+Neural Radiance Fields (NeRF) is a novel approach that leverages neural networks to implicitly represent 3D scenes 
+(Mildenhall et al., 2020). By constructing a continuous volumetric radiance field, NeRF replaces traditional geometric 
+techniques such as MVS, surface reconstruction, and texture mapping, thereby simplifying the pipeline while enabling 
+photorealistic 3D rendering. NeRF has been successfully applied to the high-fidelity reconstruction of various fruits, 
+including dragon fruit, grapes, lychees, and oranges (Hu et al., 2024). This method supports not only the 3D reconstruction 
+of individual fruits but also entire plants. Moreover, its feasibility has been demonstrated at the plot level for crops such as 
+corn and strawberries (Arshad et al., 2024; Zhang et al., 2024). However, the morphological complexity of cotton plants and 
+the spatial distribution of cotton bolls pose greater challenges, necessitating further validation of NeRF's reconstruction 
+performance at the plot scale. 
+After reconstructing the plant 3D model, segmentation is a key step for trait extraction. The segmentation of 3D plants 
+can mainly be divided into two types of methods. One method involves exporting point clouds from a NeRF model and then 
+using these point clouds to train a point cloud segmentation model. For example, PointNet++ (Qi et al., 2017) can be used 
+The authors are solely responsible for the content of this meeting presentation. The presentation does not necessarily reflect the official position of the 
+American Society of Agricultural and Biological Engineers (ASABE), and its printing and distribution does not constitute an endorsement of views 
+which may be expressed. Meeting presentations are not subject to the formal peer review process by ASABE editorial committees; therefore, they are 
+not to be presented as refereed publications. Publish your paper in our journal after successfully completing the peer review process. See 
+www.asabe.org/JournalSubmission for details. Citation of this work should state that it is from an ASABE meeting paper. EXAMPLE: Author’s Last 
+Name, Initials. 2025. Title of presentation. ASABE Paper No. ---. St. Joseph, MI.: ASABE. For information about securing permission to reprint or 
+reproduce a meeting presentation, please contact ASABE at www.asabe.org/copyright (2950 Niles Road, St. Joseph, MI 49085-9659 USA). 
+
+3 
+to segment cotton bolls from cotton plants (Jiang et al., 2022). However, this approach requires extensive annotation of point 
+clouds, leading to significant time spent on data labeling, particularly when labeling plants at the plot level, which is even 
+more challenging. Additionally, the scarcity of data is also a notable issue. Another approach leverages multi-view 3D 
+reconstruction techniques. It first obtains the target's 2D masks from 2D images, then maps these 2D masks into 3D space, 
+subsequently segmenting the object in 3D (Jiang et al., 2024). This approach has already been applied to fruits such as apples 
+and blueberries (Gené-Mola et al., 2020; Meyer et al., 2024; Ni et al., 2021). Considering the limited volume of our plot-
+level data and the challenges associated with 3D annotation, the second approach is more suitable for our data analysis. 
+Combining NeRF technology to segment plot-level cotton data is promising, but it has not yet been explored by researchers. 
+To fill the knowledge gap, the overall goal of this study was to leverage NeRF for plot-level cotton plant 3D reconstruction 
+and to develop a novel method for cotton boll segmentation by mapping 2D masks into 3D space. The specific objectives 
+were to (1) design a data collection method based on ground robots equipped with multiple cameras and another method 
+using a smartphone; (2) implement plot-level 3D reconstruction (NeRF) of cotton plants; (3) develop a 2D instance 
+annotation strategy for cotton bolls based on SAM; (4) conduct plot-level cotton boll counting and evaluation. 
+2 Materials and Methods 
+2.1 Experimental field setup and data collection 
+The data used in this experiment were collected on October 25, 2024, in Tifton, Georgia, USA (Fig. 1a). The experimental 
+field consisted of 160 plots (Fig. 1b), comprising 32 different genotypes, with each plot containing a single genotype. The 
+center point of each plot was used as a reference, with a row spacing of 6 feet and a column spacing of 25 feet (Fig. 1e). 
+Each plot measured approximately 18 feet in length. A defoliant was applied to the entire field one week prior to data 
+collection. In some plots, most of the leaves had already fallen off (Fig. 1c), while others still retained a substantial amount 
+of foliage (Fig. 1d). Nearly all bolls had already opened, with only a few remaining green. These immature bolls were 
+excluded from yield measurements in this study. Data for testing were collected from the first, second, and seventh rows. 
+ 
+Fig. 1. Experimental field. (a) Data collection location. (b) The planting layout of plot-level cotton plants in the experimental field. (c) and (d) 
+show two different plots. The leaves have completely fallen off, making the plot appear relatively sparse in (c). Some leaves remain on the plants, 
+making the plot look denser in (d). (e) The red dots in the figure represent the center point of each plot. The distance between adjacent rows is 6 
+ft, and the distance between adjacent columns is 25 ft. 
+Two data collection methods were employed in this experiment. The first was a high-throughput approach utilizing a 
+ground robot equipped with multiple cameras, while the second was a low-cost method based on a smartphone. The ground 
+robot, MARS (Xu and Li, 2022), was equipped with ten cameras, which were mounted approximately evenly around the 
+
+4 
+canopy bracket. Due to the limited availability of cameras, two different types were used in this setup. The cameras marked 
+with red circles in Fig. 2a indicate five Fuji X-A10 cameras (Fujifilm Holdings Corporation, Tokyo, Japan), whereas the 
+blue circles represent five Lumix DMC-G7 cameras (Panasonic Corporation, Osaka, Japan). All cameras recorded videos at 
+30 frames per second for plant scanning. The Fuji cameras captured video at a resolution of 1920×1080, while the Lumix 
+cameras recorded at 3840×2160. Each camera was adjusted to maximize its field of view, and the angles were fine-tuned to 
+ensure that the plants were centered in the image frame (Fig. 2c). On average, it took approximately 40 seconds to scan a 
+single plot using this method. 
+Video collection using a smartphone provides greater flexibility. The smartphone was mounted on a handheld stabilizer 
+and used to scan the plants directly. Videos were recorded at a resolution of 3840×2160 and a frame rate of 30 frames per 
+second. The field of view was adjusted to ensure that the entire scanning area was included in the image. For instance, when 
+capturing side views of the plant, both the top and bottom of the cotton plant were visible within the frame (Fig. 2b). For top 
+views, the plant was positioned as close to the center of the image as possible. The field of view was kept consistent across 
+all individual plots. On average, it took approximately 130 seconds to scan a single plot using this method. 
+ 
+Fig. 2. Multi-view image acquisition system. (a) The MARS robot is equipped with 10 cameras, with Fuji cameras marked by red circles and 
+Lumix cameras marked by blue circles. (b) Data collection path using a smartphone. The green path represents the top view, while the red and 
+blue lines indicate side views at different heights. Data were collected at three height levels: upper, middle, and lower. (c) Data acquisition 
+guidelines. The plant should remain within the camera’s field of view and be positioned at the center of the frame whenever possible. 
+
+5 
+2.2 Plot-level cotton plant 3D reconstruction based on NeRF 
+Neural Radiance Fields (NeRF) is a novel implicit method for 3D reconstruction that models the appearance of a scene 
+from any spatial position and viewing direction using a trained neural network (Mildenhall et al., 2020). The input to NeRF 
+consists of a 3D coordinate (𝑥𝑥, 𝑦𝑦, 𝑧𝑧) and a viewing direction (𝜃𝜃, 𝜑𝜑), while the output is the color (𝑅𝑅, 𝐺𝐺, 𝐵𝐵) and volumetric 
+density (𝜎𝜎) at that point in the specified direction. By sampling points along camera rays and applying volume rendering 
+techniques, NeRF can synthesize photorealistic images from arbitrary viewpoints using multiple 2D images, while 
+preserving detailed geometric and texture information. 
+NeRF was employed to reconstruct cotton plants at the plot level and to generate corresponding point clouds. Images 
+were extracted from recorded videos and standardized to a resolution of 1920×1080. For multi-camera recordings, 
+approximately 90 frames were uniformly sampled from each video, ensuring over 90% overlap between adjacent frames. In 
+the case of smartphone-captured videos, 500 frames were evenly extracted across the video duration, with similarly high 
+overlap (>90%) between neighboring frames. The extracted multi-view images were processed using COLMAP, which 
+performed feature extraction, feature matching, and sparse reconstruction to estimate both intrinsic and extrinsic camera 
+parameters, ultimately generating a sparse point cloud of the entire scene. Three-dimensional (3D) reconstruction and 
+evaluation of plot-level cotton plants were conducted using Nerfstudio (version 1.1.4; https://docs.nerf.studio/). Based on 
+the estimated camera parameters and RGB images, the Nerfacto (Tancik et al., 2023) model was utilized to learn a 3D 
+representation of the scene. Each scene was trained for 30,000 iterations to complete the reconstruction process. 
+2.3 Plot-level 3D cotton boll segmentation and counting 
+To enable cotton boll counting at the plot level, this study proposed a workflow based on 2D-to-3D mapping, effectively 
+addressing the challenge of limited 3D annotation data. First, the YOLOv11x model was used to predict 2D masks of cotton 
+bolls from RGB images. Then, FruitNeRF was trained using the RGB images and their corresponding binary cotton boll 
+masks to segment the cotton boll point cloud from the 3D plot-level model. Finally, Hierarchical Density-Based Spatial 
+Clustering of Applications with Noise (HDBSCAN) was applied to the point cloud for clustering and boll counting. 
+2.3.1 A cotton boll 2D mask annotation method based on a foundation model 
+Building on the laboratory's previous research (Tan et al., 2024), this study developed a semi-automatic 2D mask 
+annotation method for cotton bolls based on the Segment Anything Model (SAM; Kirillov et al., 2023). First, a YOLOv11x 
+object detection model was trained using a cotton boll detection dataset from previous research. These existing images were 
+collected in 2022 using a top-view acquisition method. They were already annotated, with each cotton boll labeled with a 
+2D bounding box. Second, the trained model was used to predict cotton bolls on unlabeled new data, where each detected 
+boll was assigned a 2D bounding box (Fig. 3). 
+Next, the predicted 2D bounding boxes were provided as prompts to SAM to generate 2D masks of the cotton bolls. SAM 
+is a foundation model with zero-shot learning capabilities. Unlike supervised learning models that rely on large amounts of 
+pixel-level annotations, SAM follows a prompt-based segmentation paradigm, where user-provided prompts—such as 
+points, bounding boxes, or text—guide the segmentation process. Trained on a large-scale dataset containing over 11 million 
+images and more than 1 billion masks, SAM demonstrates strong generalization to unseen tasks and objects. This extensive 
+training enables SAM to perform accurate segmentation without requiring task-specific fine-tuning. For the new data 
+collected in 2024, the 2D bounding boxes predicted by YOLOv11x were used as prompts, while for the 2022 data, manually 
+annotated 2D bounding boxes were provided as prompts to SAM to generate 2D masks of cotton bolls. 
+The 2D masks generated by SAM required further manual refinement. When cotton bolls were occluded by the main 
+stem or branches, the generated masks were often incomplete and needed manual correction. YOLOv11x occasionally 
+produced incorrect detections or missed cotton bolls entirely, leading to inaccurate or missing masks. To address these issues, 
+the SAM-generated masks and corresponding RGB images were imported into Roboflow (https://roboflow.com/) for manual 
+refinement. Finally, a 2D segmentation dataset of cotton bolls was obtained. 
+
+6 
+ 
+Fig. 3. Semi-automatic annotation pipeline for a 2D segmentation dataset using SAM. 
+The 2D segmentation dataset of cotton bolls was used to train the YOLOv11x segmentation model, which was then used 
+to segment 2D masks of cotton bolls in the predicted images. Table 1 presents a summary of the cotton boll segmentation 
+dataset. In this study, the dataset was divided into a training set and a validation set. The YOLOv11x model was first trained 
+on the 2022 dataset and then fine-tuned on the 2024 dataset to obtain the final cotton boll segmentation model. 
+Table 1. Summary of cotton boll segmentation dataset for training and validation. 
+ 
+Training images 
+Validation images 
+2022 data 
+606 
+260 
+2024 data 
+98 
+27 
+2.3.2 Point cloud semantic segmentation based on FruitNeRF 
+FruitNeRF (Meyer et al., 2024) is a unified fruit segment framework that leverages NeRF to construct a 3D representation 
+of the scene and incorporates semantic information for exporting the fruit point cloud. The model first takes an unordered 
+set of RGB images and generates semantic segmentation masks for the fruits in each image. In the workflow of this study, 
+YOLOv11x was used to obtain 2D masks of cotton bolls. The RGB images and the corresponding binary masks of the cotton 
+bolls were combined to train FruitNeRF, enabling the entire scene to be enriched with semantic information of the fruits 
+(Fig. 4). The trained FruitNeRF was then uniformly sampled to generate the cotton boll point cloud. 
+FruitNeRF extends the original NeRF framework by introducing a semantic field, in addition to the existing density and 
+appearance fields. This semantic field encodes fruit-related information within the 3D scene, allowing each spatial location 
+to be identified and labeled as either a cotton boll or background. It is implemented using a multi-layer perception (MLP) 
+that approximates the semantic logits 𝑆𝑆(𝑟𝑟) or each pixel based on its 3D position. To estimate the semantic logits 𝑆𝑆(𝑟𝑟) for a 
+pixel, volume density and semantic data are integrated over 𝐾𝐾 sample points along the ray 𝑟𝑟 using numerical methods. 
+𝑆𝑆(𝑟𝑟) = ෍𝑇𝑇(𝑡𝑡𝑘𝑘)
+𝐾𝐾
+𝑘𝑘=1
+𝛼𝛼(𝜎𝜎(𝑡𝑡𝑘𝑘)𝛿𝛿𝑘𝑘)𝑠𝑠(𝑡𝑡𝑘𝑘)                                                           (1) 
+𝑇𝑇(𝑡𝑡𝑘𝑘) represents the accumulated transmittance from 𝑡𝑡𝑛𝑛 to 𝑡𝑡𝑘𝑘 . 𝛿𝛿𝑘𝑘= 𝑡𝑡𝑘𝑘+1 −𝑡𝑡𝑘𝑘 represents the distance between adjacent 
+sampled points. 𝜎𝜎(𝑡𝑡𝑘𝑘) represents the volume density at the point 𝑡𝑡𝑘𝑘. 𝛼𝛼(𝜎𝜎(𝑡𝑡𝑘𝑘)𝛿𝛿𝑘𝑘) represents the light absorption value at the 
+sampled point, calculated as: 𝛼𝛼(𝑥𝑥) = 1 −exp (−𝑥𝑥). 𝑠𝑠(𝑡𝑡𝑘𝑘) represents the semantic value at the sampled point 𝑡𝑡𝑘𝑘, which is 
+obtained through the MLP network and represents the semantic information of that location. 
+The cotton boll semantic field consists of 3 layers, with a hidden layer size of 128 neurons. The input layer has a dimension 
+of 30, derived from a 30-dimensional latent vector from the density field, and the output dimension of the neural network is 
+64. This output serves as input for the neural segmentation head, which further reduces the dimension to a single class. When 
+exporting the cotton boll point cloud, the number of rays to be sampled per batch during the point cloud generation process 
+is set to 3000, and the number of points to be sampled along each edge of the 3D scene (bounding box) is set to 6000. 
+Afterward, the cotton boll point cloud for a single plot is manually cropped to include only the cotton boll points of the plot 
+of interest. 
+
+7 
+2.3.3 Clustering cotton boll point clouds for counting 
+The cotton boll points for each plot were obtained in the previous step. To achieve boll counting, instance segmentation 
+was performed using a clustering method. Hierarchical Density-Based Spatial Clustering of Applications with Noise 
+(HDBSCAN) is a density-based clustering algorithm that effectively identifies clusters of arbitrary shapes and varying 
+densities, while also handling noise points (McInnes et al., 2017). Combining the advantages of DBSCAN and hierarchical 
+clustering, HDBSCAN eliminates the need for predefined cluster numbers or distance thresholds. Its reachability distance 
+design enables it to handle clusters with varying densities and automatically determines the number of clusters by 
+constructing a minimum spanning tree and performing hierarchical clustering. This makes HDBSCAN particularly suitable 
+for datasets with clusters of varying densities, especially in high-dimensional, non-uniformly distributed point cloud data. It 
+is ideal for 3D segmentation and counting tasks in complex plant structures with an unknown number of targets. In this 
+study, the min_cluster_size and min_samples parameters of HDBSCAN were set to 20 and 5, respectively, based on 
+empirical values derived from experimentation. 
+2.4 Implementation details 
+The training of the point cloud deep learning model was conducted on the HiPerGator high-performance computing 
+cluster, which was equipped with 8 AMD EPYC Rome CPU cores and a single NVIDIA DGX A100 GPU node (80 GB), 
+running on a Linux operating system. The YOLOv11x segmentation model was trained on the same cluster. The software 
+environment included Python 3.10, PyTorch 1.12.1, and CUDA 11.3. The training parameters were as follows: the input 
+image size was 1280×1280, the batch size was 8, and the total number of training epochs was 300. All other parameters were 
+set to their default values. The 3D reconstruction of cotton plants using the NeRF model was tested on the Nerfstudio 
+platform, with FruitNeRF tested on the official code provided. 
+ 
+
+8 
+Fig. 4. Plot-level cotton boll point cloud segmentation workflow. First, camera parameters were estimated by Structure-from-Motion (SfM) 
+using multi-view images. Then, YOLOv11x was employed to extract semantic masks of cotton bolls. Next, the posed RGB images and the 
+corresponding semantic masks were used to train a Neural Radiance Field (NeRF). Finally, a dense cotton boll point cloud was generated by 
+uniformly sampling the NeRF model with embedded cotton boll semantic information. 
+2.5 Evaluation Metrics 
+The Mean Squared Error (MSE) was adopted to quantify the difference between two images. A lower MSE value indicates 
+a higher level of similarity. In this context, 𝑚𝑚 and 𝑛𝑛 denote the height and width of the image, respectively. 𝐼𝐼(𝑖𝑖, 𝑗𝑗) represents 
+the pixel intensity at position (𝑖𝑖, 𝑗𝑗) in the original image, while 𝐾𝐾(𝑖𝑖, 𝑗𝑗) corresponds to the pixel intensity at the same position 
+in the processed image. The Peak Signal-to-Noise Ratio (PSNR), a widely used metric for assessing image quality, reflects 
+how closely the processed image matches the reference image. A higher PSNR value signifies better image quality (Eq. 3). 
+PSNR is computed based on the MSE, where MAX stands for the maximum possible pixel value in image 𝐼𝐼. 
+𝑀𝑀𝑀𝑀𝑀𝑀= 1
+𝑚𝑚𝑚𝑚෍෍[𝐼𝐼(𝑖𝑖, 𝑗𝑗) −𝐾𝐾(𝑖𝑖, 𝑗𝑗)]2
+𝑛𝑛−1
+𝑗𝑗=0
+𝑚𝑚−1
+𝑖𝑖=0
+                                                                    (2) 
+𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃= 10 ∙𝑙𝑙𝑙𝑙𝑙𝑙10 ቆ𝑀𝑀𝑀𝑀𝑀𝑀𝐼𝐼
+2
+𝑀𝑀𝑀𝑀𝑀𝑀ቇ                                                                                    (3) 
+The Structural Similarity Index (SSIM) was employed to evaluate image similarity in terms of brightness, contrast, and 
+structural information. In this metric, 𝜇𝜇𝑥𝑥 and 𝜇𝜇𝑦𝑦 represent the mean pixel intensities of images 𝑥𝑥 and 𝑦𝑦, respectively, while 
+𝜎𝜎𝑥𝑥 and 𝜎𝜎𝑦𝑦 denote their variances. 𝜎𝜎𝑥𝑥𝑥𝑥 refers to the covariance between the two images. The constants 𝑐𝑐1, 𝑐𝑐2, and 𝑐𝑐3 are used 
+to stabilize the calculations of brightness, contrast, and structure components. In addition, the Learned Perceptual Image 
+Patch Similarity (LPIPS), also known as perceptual loss (Zhang et al., 2018), compares the deep features of image patches, 
+aiming to reflect perceptual similarity as captured by the human visual system. 
+𝑆𝑆𝑆𝑆𝑆𝑆𝑆𝑆(𝑥𝑥, 𝑦𝑦) =
+(2𝜇𝜇𝑥𝑥𝜇𝜇𝑦𝑦+ 𝑐𝑐1)(2𝜎𝜎𝑥𝑥𝑥𝑥+ 𝑐𝑐2)(𝜎𝜎𝑥𝑥𝑥𝑥+ 𝑐𝑐3)
+(𝜇𝜇𝑥𝑥2 + 𝜇𝜇𝑦𝑦2 + 𝑐𝑐1)(𝜎𝜎𝑥𝑥2 + 𝜎𝜎𝑦𝑦2 + 𝑐𝑐2)(𝜎𝜎𝑥𝑥𝜎𝜎𝑦𝑦+ 𝑐𝑐3)                                   (4) 
+The accuracy of cotton boll count estimation was evaluated using root mean square error (RMSE), mean absolute error 
+(MAE), and mean absolute percentage error (MAPE). In these formulas, 𝑁𝑁𝑖𝑖 denotes the predicted count for the 𝑖𝑖-th sample, 
+𝑚𝑚𝑖𝑖 denotes the corresponding ground truth, and 𝑛𝑛 represents the total number of evaluated samples. 
+𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅= ඩ1
+𝑛𝑛෍(𝑁𝑁𝑖𝑖−𝑚𝑚𝑖𝑖)2
+𝑛𝑛
+𝑖𝑖=1
+                                                                                          (5) 
+𝑀𝑀𝑀𝑀𝑀𝑀= 1
+𝑛𝑛෍|𝑁𝑁𝑖𝑖−𝑚𝑚𝑖𝑖|
+𝑛𝑛
+𝑖𝑖=1
+                                                                                                   (6) 
+𝑀𝑀𝑀𝑀𝑀𝑀𝑀𝑀= 100%
+𝑛𝑛
+෍ฬ𝑁𝑁𝑖𝑖−𝑚𝑚𝑖𝑖
+𝑚𝑚𝑖𝑖
+ฬ
+𝑛𝑛
+𝑖𝑖=1
+                                                                                       (7) 
+3 Results and Discussion 
+3.1 3D reconstruction result evaluation 
+Various types and combinations of cameras can be utilized for 3D reconstruction, each potentially yielding different 
+reconstruction qualities. In the present study, due to constraints on the number of available devices, multiple types of cameras 
+were employed. Consequently, it was necessary to compare the reconstruction performance across different camera 
+configurations. Table 2 summarizes the evaluation results of the NeRF model applied to data from different cameras. Given 
+the inherently complex and dynamic nature of field environments, the reconstruction quality exhibited variability among 
+different plots. To account for this, ten representative plots were selected, and the average performance metrics were 
+calculated. Although the reported metrics are primarily designed to assess the rendering quality of NeRF, the point clouds 
+were directly derived from the trained NeRF models. Therefore, these metrics can serve as indirect indicators of the 
+geometric quality of the exported point clouds. 
+In the overall evaluation of NeRF reconstruction, the 3D results based on smartphone data and those using five Lumix 
+cameras outperformed the reconstructions generated using five Fuji cameras and the combination of ten cameras. The use 
+of different types of cameras can lead to poor reconstruction quality due to color discrepancies between camera sensors. It 
+is not recommended to use multiple cameras of different types for NeRF-based reconstruction. This is primarily due to 
+inherent differences in camera sensor characteristics, which can result in variations in color representation across captured 
+images. Such discrepancies are reflected in the reconstructed point clouds, as illustrated in Fig. 5. Specifically, the point 
+
+9 
+cloud generated using five Lumix cameras appears darker in color (Fig. 5c), whereas the one reconstructed with five Fuji 
+cameras is noticeably brighter (Fig. 5d). When both camera types are used simultaneously, the resulting point cloud displays 
+inconsistent and visually chaotic color patterns (Fig. 5b). These findings underscore the importance of maintaining sensor 
+consistency in multi-camera data acquisition setups for improved reconstruction quality. 
+In the quantitative evaluation results, the NeRF reconstruction quality of the data collected by five Lumix cameras showed 
+a PSNR 1.0 higher, an SSIM 0.14 higher, and an LPIPS 0.05 lower compared to the smartphone data. The comparison of 
+the visualization results in Fig. 5 reveals that both data collection methods achieved good 3D reconstruction results. Since 
+the smartphone scanned the top view and both side views of the entire plot, while the five Lumix cameras only scanned the 
+top view and a single side view, this experiment first tested the cotton boll counting results using the smartphone-collected 
+data, and future tests will focus on the cotton boll counting results using the Lumix camera-collected data. 
+Table 2. Comparison of NeRF model results reconstructed from images captured by different cameras. 
+ 
+PSNR ↑ 
+SSIM ↑ 
+LPIPS ↓ 
+10 cameras 
+14.5190 
+0.3766 
+0.6915 
+5 Lumix cameras 
+17.2100 
+0.4883 
+0.5435 
+5 Fuji cameras 
+14.6100 
+0.3186 
+0.6314 
+Smartphone 
+16.2105 
+0.3435 
+0.4909 
+ 
+Fig. 5. Plot-level cotton plant point clouds reconstructed using different camera combinations.  (a) Single smartphone. (b) Ten cameras of two 
+different types. (c) Five Lumix cameras. (d) Five Fuji cameras. 
+
+10 
+3.2 2D instance segmentation evaluation 
+The 2D segmentation approach based on SAM and YOLOv11x developed in this study substantially accelerated the data 
+annotation process and reduced the annotation burden for new datasets. Compared with conventional manual labeling 
+methods, this approach significantly decreased the labor required. According to our rough estimates during the annotation 
+process, the annotation time per image was reduced by at least 50%. Furthermore, the proposed workflow is highly adaptable 
+and can be easily extended to other crop species or datasets, demonstrating strong flexibility and scalability. 
+Fine-tuning the YOLOv11x segmentation model with new data from 2024 led to a substantial performance improvement 
+over the model trained solely on the 2022 dataset. When evaluated on the 2024 dataset, the model trained exclusively on 
+2022 data achieved an mAP50 of only 72.8%. After fine-tuning with the 2024 data, the mAP50 increased to 84.5%, 
+representing a notable improvement of 11.7% (Table 3). As illustrated by the segmentation results of smartphone-captured 
+images in Fig. 6, cotton bolls were accurately segmented in both top-view (Fig. 6a, c) and side-view (Fig. 6b, d) images. 
+The results also indicate that cotton bolls from adjacent plots were occasionally segmented. However, these instances can 
+be manually filtered out during the subsequent 3D mapping process. 
+ 
+Table 3. 2D instance segmentation with YOLOv11x. 
+ 
+P 
+R 
+mAP50 
+mAP50-95 
+2022 data 
+0.732 
+0.661 
+0.728 
+0.428 
+2024 data 
+0.812 
+0.778 
+0.845 
+0.548 
+ 
+ 
+Fig. 6. YOLOv11x cotton boll 2D instance segmentation visualization. (a) and (c) are top views, while (b) and (d) are side views. 
+3.3 3D instance segmentation and boll counting using smartphone data 
+FruitNeRF enables the segmentation of cotton boll point clouds at the plot level, effectively addressing both occlusion 
+issues present in 2D imagery and the scarcity of annotated 3D data. By applying HDBSCAN clustering to the cotton boll 
+point clouds segmented by FruitNeRF, instance-level segmentation and accurate counting of cotton bolls were achieved. 
+Figure 7 presents segmentation results for two representative plots. A key distinction between the two plots is that one has 
+completely shed its leaves (Fig. 7a–c), while the other retains a substantial number of leaves (Fig. 7d–f). Despite this 
+difference in foliage, accurate cotton boll counts were obtained in both cases. Figures 7a and 7d display the HDBSCAN 
+clustering results applied to the point clouds exported by FruitNeRF, where each identified cluster is assigned a unique color 
+and enclosed within a 3D bounding box. Figures 7b and 7e project the clustering results back onto the original plot-level 
+point clouds, showing the side view of the plants. Figures 7c and 7f provide the corresponding top views, further illustrating 
+the spatial distribution of the segmented cotton bolls. 
+
+11 
+ 
+Fig. 7. Cotton boll segmentation and clustering results based on data collected using a smartphone. (a)-(c) and (d)-(f) represent two different 
+plots. Within each plot case, the three sub-figures show the clustering results of cotton bolls, the side view of the plot, and the top view of the 
+plot, respectively. 
+The accuracy of cotton boll counting is not only related to the segmentation precision of FruitNeRF, but also depends on 
+the clustering results of HDBSCAN. Fig. 8 illustrates a common issue in the clustering step of the cotton boll counting 
+pipeline. As highlighted by the yellow circle, two adjacent cotton bolls are incorrectly grouped into a single cluster by 
+
+12 
+HDBSCAN. This occurs due to the close spatial proximity and partial occlusion between the bolls, which makes it difficult 
+for the density-based algorithm to distinguish them as separate instances. Such cases can lead to slight underestimation in 
+the final boll count and suggest the need for further refinement in clustering parameters or post-processing strategies. 
+ 
+Fig. 8. Limitations of cotton boll clustering results. The two cotton bolls within the red circle were grouped into one cluster. 
+The workflow developed in this study enables accurate estimation of cotton yield (Fig. 9). In the evaluation conducted 
+on 10 plots, the predicted number of cotton bolls showed a strong correlation with manual counts (R² = 0.94), achieving a 
+high accuracy with a mean absolute percentage error (MAPE) of 4.41%. The predicted boll numbers were further used to 
+estimate the yield for each plot. A regression analysis between the predicted boll numbers and the actual measured weights 
+revealed a strong correlation (R² = 0.92), with a prediction error of 8.83%. The average weight estimation error per plot was 
+less than 130 grams. 
+ 
+Fig. 9. Plot-level cotton yield estimation. (a) Linear regression between the predicted and ground truth number of cotton bolls. (b) Linear 
+regression between the predicted number and the ground truth weight of cotton bolls. The red solid line represents the fitted line, the black 
+dashed line indicates the 1:1 line, and the blue dots represent different plots. 
+4 Conclusion 
+This study proposes a novel plot-level workflow for 3D reconstruction and cotton boll counting. The workflow enables 
+high-fidelity NeRF reconstruction of cotton plants and exports a complete plot-level point cloud of the cotton crop. By 
+obtaining high-quality 2D masks of cotton bolls from RGB images and projecting them onto the 3D point cloud using 
+FruitNeRF, the method effectively bridges 2D segmentation with 3D analysis to achieve plot-level boll counting and yield 
+estimation. This innovative approach provides a new tool for 3D plant phenotyping and high-resolution plant mapping, 
+which can be extended to other crops. In future work, we will test more plot-level data to evaluate the robustness of the 
+cotton boll counting method. 
+
+13 
+Acknowledgements 
+This work was supported by the USDA National Institute of Food and Agriculture (Award No. 2023-67021-40646), 
+Cotton Incorporated and the USDA Hatch Project (FLA-ABE-006451). The authors sincerely thank Dalton West for his 
+support in data collection and for weighing the cotton bolls from each plot. We also appreciate Rui Xu and Daniel Petti for 
+their assistance in the fieldwork. 
+References 
+An, Q., Cui, Y., Tong, W., Liu, Y., Zhao, B., Wei, L., 2024. StraTracker: A dynamic counting method for growing 
+strawberries based on multi-target tracking. Computers and Electronics in Agriculture 227, 109564. 
+https://doi.org/10.1016/j.compag.2024.109564 
+Arshad, M.A., Jubery, T., Afful, J., Jignasu, A., Balu, A., Ganapathysubramanian, B., Sarkar, S., Krishnamurthy, A., 2024. 
+Evaluating Neural Radiance Fields for 3D Plant Geometry Reconstruction in Field Conditions. Plant Phenomics 6, 1–
+17. https://doi.org/10.34133/plantphenomics.0235 
+Bloch, V., Shapiguzov, A., Kotilainen, T., Pastell, M., 2025. A method for phenotyping lettuce volume and structure from 
+3D images. Plant Methods 21, 27. https://doi.org/10.1186/s13007-025-01347-y 
+Chen, X., Wen, S., Zhang, L., Lan, Y., Ge, Y., Hu, Y., Luo, S., 2025. A calculation method for cotton phenotypic traits 
+based on unmanned aerial vehicle LiDAR combined with a three-dimensional deep neural network. Computers and 
+Electronics in Agriculture 230, 109857. https://doi.org/10.1016/j.compag.2024.109857 
+Conaty, W.C., Broughton, K.J., Egan, L.M., Li, X., Li, Z., Liu, S., Llewellyn, D.J., MacMillan, C.P., Moncuquet, P., Rolland, 
+V., Ross, B., Sargent, D., Zhu, Q.H., Pettolino, F.A., Stiller, W.N., 2022. Cotton Breeding in Australia: Meeting the 
+Challenges of the 21st Century. Frontiers in Plant Science 13, 1–18. https://doi.org/10.3389/fpls.2022.904131 
+Devoto, F., Reynolds-Massey-Reed, S., Segura, P.C., Bell, M., Mclaren, T., Awale, R., Camino, C., Bange, M., Woodgate, 
+W., Chapman, S., Potgieter, A.B., 2024. Insights in the Ability of High-Resolution Narrow Band Multispectral and 
+Thermal Sensors to Estimate Cotton Production in Australia. IGARSS 2024 - 2024 IEEE International Geoscience 
+and Remote Sensing Symposium 1510–1513. https://doi.org/10.1109/igarss53475.2024.10642663 
+Dong, X., Kim, W.Y., Zheng, Y., Oh, J.Y., Ehsani, R., Lee, K.H., 2023. Three-dimensional quantification of apple 
+phenotypic traits based on deep learning instance segmentation. Computers and Electronics in Agriculture 212, 
+108156. https://doi.org/10.1016/j.compag.2023.108156 
+Gao, C., Jiang, H., Liu, X., Li, H., Wu, Z., Sun, X., He, L., Mao, W., Majeed, Y., Li, R., Fu, L., 2024. Improved binocular 
+localization of kiwifruit in orchard based on fruit and calyx detection using YOLOv5x for robotic picking. Computers 
+and Electronics in Agriculture 217, 108621. https://doi.org/10.1016/j.compag.2024.108621 
+Gené-Mola, J., Sanz-Cortiella, R., Rosell-Polo, J.R., Morros, J.R., Ruiz-Hidalgo, J., Vilaplana, V., Gregorio, E., 2020. Fruit 
+detection and 3D location using instance segmentation neural networks and structure-from-motion photogrammetry. 
+Computers and Electronics in Agriculture 169, 105165. https://doi.org/10.1016/j.compag.2019.105165 
+Hu, K., Ying, W., Pan, Y., Kang, H., Chen, C., 2024. High-fidelity 3D reconstruction of plants using Neural Radiance Fields. 
+Computers and Electronics in Agriculture 220, 108848. https://doi.org/10.1016/j.compag.2024.108848 
+Jiang, L., Li, C., Fu, L., 2025a. Apple tree architectural trait phenotyping with organ-level instance segmentation from point 
+cloud. Computers and Electronics in Agriculture 229, 109708. https://doi.org/10.1016/j.compag.2024.109708 
+Jiang, L., Li, C., Fu, L., 2022. 3D Deep Learning-based Segmentation to Reveal the Spatial Distribution of Cotton Bolls. 
+2022 ASABE Annual International Meeting 1–10. https://doi.org/10.13031/aim.202200361 
+Jiang, L., Li, C., Sun, J., Chee, P., Fu, L., 2024. Estimation of Cotton Boll Number and Main Stem Length Based on 3D 
+Gaussian Splatting Written for presentation at the 2024 ASABE Annual International Meeting Sponsored by ASABE 
+1–11. https://doi.org/10.13031/aim.202400898 
+Jiang, L., Sun, J., Chee, P.W., Li, C., Fu, L., 2025b. Cotton3DGaussians: Multiview 3D Gaussian Splatting for boll mapping 
+and 
+plant 
+architecture 
+analysis. 
+Computers 
+and 
+Electronics 
+in 
+Agriculture 
+234, 
+110293. 
+https://doi.org/10.1016/j.compag.2025.110293 
+Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A.C., Lo, W.Y., 
+Dollár, P., Girshick, R., 2023. Segment Anything. Proceedings of the IEEE International Conference on Computer 
+Vision 3992–4003. https://doi.org/10.1109/ICCV51070.2023.00371 
+Kun, W., Shoupu, H., Yuxian, Z., 2025. Cotton2035: From genomics research to optimized breeding. Molecular Plant 18, 
+298–312. https://doi.org/10.1016/j.molp.2025.01.010 
+McInnes, L., Healy, J., Astels, S., 2017. hdbscan: Hierarchical density based clustering. The Journal of Open Source 
+Software 2, 205. https://doi.org/10.21105/joss.00205 
+
+14 
+Meyer, L., Gilson, A., Schmidt, U., Stamminger, M., 2024. FruitNeRF: A Unified Neural Radiance Field based Fruit 
+Counting Framework. 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) 1–8. 
+https://doi.org/10.1109/IROS58592.2024.10802065 
+Miao, T., Zhu, C., Xu, T., Yang, T., Li, N., Zhou, Y., Deng, H., 2021. Automatic stem-leaf segmentation of maize shoots 
+using 
+three-dimensional 
+point 
+cloud. 
+Computers 
+and 
+Electronics 
+in 
+Agriculture 
+187. 
+https://doi.org/10.1016/j.compag.2021.106310 
+Mildenhall, B., Srinivasan, P.P., Tancik, M., Barron, J.T., Ramamoorthi, R., Ng, R., 2020. NeRF: Representing Scenes as 
+Neural Radiance Fields for View Synthesis. Communications of the ACM 12346 LNCS, 405–421. 
+https://doi.org/10.1007/978-3-030-58452-8_24 
+Ni, X., Li, C., Jiang, H., Takeda, F., 2021. Three-dimensional photogrammetry with deep learning instance segmentation to 
+extract berry fruit harvestability traits. ISPRS Journal of Photogrammetry and Remote Sensing 171, 297–309. 
+https://doi.org/10.1016/j.isprsjprs.2020.11.010 
+Qi, C.R., Yi, L., Su, H., Guibas, L.J., 2017. PointNet++: Deep hierarchical feature learning on point sets in a metric space. 
+Advances 
+in 
+Neural 
+Information 
+Processing 
+Systems 
+2017-Decem, 
+5100–5109. 
+https://doi.org/10.48550/arXiv.1706.02413 
+Schonberger, J.L., Frahm, J.M., 2016. Structure-from-Motion Revisited. Proceedings of the IEEE Computer Society 
+Conference 
+on 
+Computer 
+Vision 
+and 
+Pattern 
+Recognition 
+2016-Decem, 
+4104–4113. 
+https://doi.org/10.1109/CVPR.2016.445 
+Sun, S., Li, C., Chee, P.W., Paterson, A.H., Jiang, Y., Xu, R., Robertson, J.S., Adhikari, J., Shehzad, T., 2020. Three-
+dimensional photogrammetric mapping of cotton bolls in situ based on point cloud segmentation and clustering. ISPRS 
+Journal of Photogrammetry and Remote Sensing 160, 195–207. https://doi.org/10.1016/j.isprsjprs.2019.12.011 
+Tan, C., Li, C., Sun, J., Song, H., 2024. Multi-Object Tracking for Cotton Boll Counting in Ground Videos Based on 
+Transformer 1–12. https://doi.org/10.13031/aim.202400619 
+Tancik, M., Weber, E., Ng, E., Li, R., Yi, B., Wang, T., Kristoffersen, A., Austin, J., Salahi, K., Ahuja, A., Mcallister, D., 
+Kerr, J., Kanazawa, A., 2023. Nerfstudio: A Modular Framework for Neural Radiance Field Development. 
+Proceedings - SIGGRAPH 2023 Conference Papers 1–12. https://doi.org/10.1145/3588432.3591516 
+Voss-Fels, K.P., Stahl, A., Hickey, L.T., 2019. Q&A: Modern crop breeding for future food security 07 Agricultural and 
+Veterinary Sciences 0703 Crop and Pasture Production 06 Biological Sciences 0607 Plant Biology 06 Biological 
+Sciences 0604 Genetics. BMC Biology 17, 1–7. https://doi.org/10.1186/s12915-019-0638-4 
+Wu, S., Wen, W., Wang, Y., Fan, J., Wang, C., Gou, W., Guo, X., 2020. MVS-Pheno: A portable and low-cost phenotyping 
+platform for maize shoots using multiview stereo 3D reconstruction. Plant Phenomics 2020, 1848437. 
+https://doi.org/10.34133/2020/1848437 
+Xu, R., Li, C., 2022. A modular agricultural robotic system (MARS) for precision farming: Concept and implementation. 
+Journal of Field Robotics 39, 387–409. https://doi.org/10.1002/rob.22056 
+Yang, C., Geng, T., Peng, J., Xu, C., Song, Z., 2025. Mask-GK: An efficient method based on mask Gaussian kernel for 
+segmentation and counting of grape berries in field. Computers and Electronics in Agriculture 234, 110286. 
+https://doi.org/10.1016/j.compag.2025.110286 
+Yang, D., Yang, H., Liu, D., Wang, X., 2024. Research on automatic 3D reconstruction of plant phenotype based on Multi-
+View images. Computers and Electronics in Agriculture 220, 108866. https://doi.org/10.1016/j.compag.2024.108866 
+Zhang, J., Wang, X., Ni, X., Dong, F., Tang, L., Sun, J., Wang, Y., 2024. Neural radiance fields for multi-scale constraint-
+free 3D reconstruction and rendering in orchard scenes. Computers and Electronics in Agriculture 217, 108629. 
+https://doi.org/10.1016/j.compag.2024.108629 
+Zhang, R., Isola, P., Efros, A.A., Shechtman, E., Wang, O., 2018. The Unreasonable Effectiveness of Deep Features as a 
+Perceptual Metric. Proceedings of the IEEE Computer Society Conference on Computer Vision and Pattern 
+Recognition 586–595. https://doi.org/10.1109/CVPR.2018.00068 
+Zheng, Z., Wu, M., Chen, L., Wang, C., Xiong, J., Wei, L., Huang, X., Wang, S., Huang, W., Du, D., 2024. A robust and 
+efficient citrus counting approach for large-scale unstructured orchards. Agricultural Systems 215, 103867. 
+https://doi.org/10.1016/j.agsy.2024.103867 
+ 

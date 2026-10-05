@@ -1,0 +1,708 @@
+3860
+IEEE ROBOTICS AND AUTOMATION LETTERS, VOL. 11, NO. 3, MARCH 2026
+Incremental 3D Crop Model Association for
+Real-Time Counting in Dense Orchards
+Daesung Park
+, KwangEun Ko
+, Dongbum Pyo
+, and Jaehyeon Kang
+Abstract—Accurate real-time crop counting is essential for au-
+tonomous agricultural systems. However, existing methods often
+fail in dense plantings due to heavy foliage, irregular planting
+patterns, and frequent occlusions. While 2D tracking suffers from
+double-counting and 3D reconstruction requires ofﬂine process-
+ing, we propose a real-time crop counting framework that in-
+crementally constructs global 3D crop instances during data col-
+lection. Each crop is modeled as a 3D oriented bounding box,
+initialized upon detection and updated with subsequent observa-
+tions. To ensure robust association across frames, we employ 3D
+Generalized Intersection over Union (GIoU) for spatial matching
+and conﬁdence-based ﬁltering for validation, effectively reducing
+double-counting in dense orchards. Unlike prior methods, our
+approach supports on-the-ﬂy counting without post-hoc recon-
+struction and performs reliably in unstructured ﬁeld conditions.
+Experimental results demonstrate the accuracy and real-time ca-
+pability of the proposed system in dense agricultural settings.
+Index Terms—Agricultural automation, robotics and automa-
+tion in agriculture and forestry, object detection, segmentation and
+categorization.
+I. INTRODUCTION
+R
+EAL-TIME crop counting is essential for autonomous agri-
+cultural systems, enabling responsive decision-making in tasks
+such as multi-robot coordination, targeted interventions, and adaptive
+harvesting. However, achieving precise counts in unstructured envi-
+ronments, such as natural orchards or open ﬁelds, remains challeng-
+ing. Unlike controlled trellis or row-wise setups, unstructured settings
+lack regular plant arrangements and often feature dense foliage, high
+planting density, and minimal spacing between plants (e.g., 0.2 m).
+These factors lead to frequent occlusions and partial views of crops,
+signiﬁcantly degrading counting performance.
+Received 3 October 2025; accepted 30 December 2025. Date of publication
+6 February 2026; date of current version 17 February 2026. This article was
+recommended for publication by Associate Editor H. I. Son and Editor H. Moon
+upon evaluation of the reviewers’ comments. This work was supported in part by
+the Industrial Technology Innovation Program (Development of an Agricultural
+Robot Platform Capable of Continuously Harvesting more than 3 Fruits per
+minute and Controlling Multiple Transport Robots in an Outdoor Orchard
+Environment) funded by the Ministry of Trade, Industry & Energy (MOTIE,
+Korea) under Grant 20023014 and in part by the Korea Institute of Planning and
+Evaluation for Technology in Food, Agriculture and Forestry (IPET) through
+funding from the Ministry of Agriculture, Food and Rural Affairs under Grant
+RS-2025-02310974. (Corresponding author: Jaehyeon Kang.)
+Daesung Park, KwangEun Ko, and Dongbum Pyo are with the Human-Centric
+Robotics R&D Department, Korea Institute of Industrial Technology, Ansan
+15588, Republic of Korea.
+Jaehyeon
+Kang
+is
+with
+the
+Department
+of
+Computer
+Engineer-
+ing, Gachon University, Seongnam 13120, Republic of Korea (e-mail:
+jhkang@gachon.ac.kr).
+This
+article
+has
+supplementary
+downloadable
+material
+available
+at
+https://doi.org/10.1109/LRA.2026.3662648, provided by the authors.
+Digital Object Identiﬁer 10.1109/LRA.2026.3662648
+Fig. 1.
+Real-time incremental crop counting in densely planted environments.
+The proposed method enables real-time crop counting by combining 3D crop
+modeling with incremental data association within the 3D reconstruction pro-
+cess. Rather than relying on 2D tracking or post-hoc global reconstruction, the
+system continuously updates global 3D crop models on-the-ﬂy. This approach
+offers a practical and real-time solution, addressing the limitations of 2D tracking
+(double-counting) and 3D reconstruction (ofﬂine processing and reconstruction
+failures) methods in dense and irregular cultivation settings.
+Traditional 2D tracking-by-detection methods identify crops in im-
+age frames and associate them over time for automated crop count-
+ing. These frameworks support real-time processing due to their low
+computational cost. However, they are prone to double-counting due
+to tracking loss caused by occlusions or detection failures. This is
+particularly problematic in unstructured environments, where dense
+crops and irregular foliage cause frequent occlusions. Additionally,
+unpredictable scanning paths in such settings increase the likelihood
+of crop revisits, during which 2D trackers assign new instance IDs to
+previously observed crops, resulting in repeated counts.
+To minimize double-counting, alternative approaches reconstruct
+a 3D model of the environment using techniques like simultaneous
+localization and mapping (SLAM) and structure-from-motion (SfM).
+However, these methods are unsuitable for real-time crop counting
+due to high computational demands from batch processing. Moreover,
+vision-based systems in unstructured agricultural settings suffer from
+frequent occlusions and weak visual features, leading to reconstruc-
+tions with holes, noise, and misalignments. Additionally, the repetitive
+appearance of vegetation causes unreliable loop closure for SLAM.
+In particular, specialized sensors like RGB-D become ineffective in
+ambient sunlight, which severely degrades their depth-sensing capabil-
+ities. Although LiDAR is robust to these visual issues, it faces distinct
+challenges, as the constrained space in dense orchards ampliﬁes noise
+from nearby objects, leading to accumulated mapping errors.
+We propose a real-time, incremental 3D association framework using
+a LiDAR-Visual-Inertial conﬁguration that avoids the pitfalls of both
+error-prone 2D tracking and ofﬂine 3D reconstruction (Fig. 1). Its
+parallelized architecture decouples state estimation from crop model
+processing, achieving the spatial perception of 3D methods while main-
+taining real-time performance (28 Hz). The system builds a persistent
+2377-3766 © 2026 IEEE. All rights reserved, including rights for text and data mining, and training of artiﬁcial intelligence and similar technologies.
+Personal use is permitted, but republication/redistribution requires IEEE permission. See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:09 UTC from IEEE Xplore.  Restrictions apply. 
+
+PARK et al.: INCREMENTAL 3D CROP MODEL ASSOCIATION FOR REAL-TIME COUNTING IN DENSE ORCHARDS
+3861
+Fig. 2.
+Failure cases of 3D reconstruction in a densely planted environ-
+ment with minimal space between plants. In the camera-based reconstruction
+(COLMAP [1]), the target plant (green circle) is incomplete due to limited
+image overlap and frequent occlusions. In the LiDAR-based reconstruction
+(FAST-LIVO [2]), noise increases in close-proximity plant regions, leading to
+accumulated errors that make the reconstructed plants and crops difﬁcult to
+recognize.
+map by modeling crops as 3D oriented bounding boxes. These models
+are initialized from ﬁltered local scans and incrementally fused across
+frames by associating them via 3D Generalized Intersection over Union
+(GIoU), with conﬁdence-based ﬁltering applied to the fused detections.
+This incremental strategy eliminates double-counting, avoids batch
+processing delays, and ensures robustness against 3D reconstruction
+failures (Fig. 2), providing a practical real-time solution for crop
+counting.
+The key contributions of our approach include:
+r We introduce a crop counting method for densely planted envi-
+ronments with irregular arrangements, where existing 2D tracking
+and 3D reconstruction methods often fail.
+r We represent each crop as a 3D bounding box, initialized at ﬁrst
+detectionusingspatialﬁlteringandgeometricﬁtting,thenupdated
+with subsequent observations to handle viewpoint-dependent oc-
+clusions.
+r We incrementally associate crops by spatially matching new de-
+tections to existing instances via 3D GIoU, then validate matches
+using conﬁdence scores from the fused detections to ensure
+identity consistency over time.
+r We design a real-time pipeline, which allows continuous crop
+count updates during scanning and highlights the practical value
+of the proposed system.
+r We validate our framework’s real-time counting accuracy in dense
+orchards through extensive experiments on a ﬁeld dataset, which
+we make publicly available.
+II. RELATED WORK
+Image-based crop detection and tracking are widely used approaches
+for crop counting. Das et al. [3] employed SVM-based crop detection
+followed by optical-ﬂow tracking to count crops in row-wise envi-
+ronments. Halstead et al. [4] performed IoU-based tracking, assuming
+one-directional robot path along rows in structured greenhouses with
+regularly spaced plants. Subsequent research [5] enhanced the tracking
+by incorporating wheel odometry-based reprojection and depth ﬁltering
+for counting row-wise and trellised crops in glasshouses.
+A comparative study by Villacrés et al. [6] evaluated multi-object
+tracking methods for crop counting in structured, row-wise apple
+orchards, ﬁnding that DeepSORT [7] achieved the lowest counting
+error. AgriSORT [8] extended appearance-based trackers like Deep-
+SORT by integrating motion-based tracking with Kalman ﬁltering for
+real-time multi-object tracking in structured, row-wise trellis vineyards.
+Similarly, CascadeSORT [9] addresses crop counting by combining
+Kalman ﬁltering with cascade matching that leverages both appearance
+and motion features. Tu et al. [10] proposed a central region counting
+strategy to enhance the accuracy of tracking-based yield estimation by
+deﬁning a robust region of interest.
+These tracking-by-detection methods struggle with double-counting
+due to revisits, limiting their applicability to structured row-wise en-
+vironments. This challenge is more signiﬁcant in unstructured settings
+with dense, irregular planting, where random scanning paths in uncon-
+trolled environments lead to frequent crop revisits.
+To address double-counting in tracking-based frameworks, several
+studiespreprocess3Dmapreconstructionbeforetracking.Liuetal.[11]
+combined crop pixel detection with object tracking using the Kanade-
+Lucas-Tomasi (KLT) tracker and Kalman ﬁlter, incorporating ofﬂine
+SfM-based 3D reconstruction to remove double-counting and outliers.
+Santos et al. [12] introduced a grape tracking method that leverages
+instance connectivity by projecting points from ofﬂine SfM onto 2D
+segmentation masks in row-wise trellis environments. In contrast, our
+approach enables real-time crop counting without relying on ofﬂine
+reconstruction.
+Anotherapproachinvolvesreconstructing3Dmapsbeforeextracting
+crops from the reconstructed model. Liu et al. [13] used semantic SfM
+with crop and trunk pixels to convert 2D detections into 3D landmarks,
+preventing double-counting in row-wise orchards. Dong et al. [14]
+combined semantic segmentation and SfM map, identifying 3D crop
+points by intersecting segmented crop pixels with projected SfM points,
+followed by 3D connected component analysis [15] for apple counting
+in row-wise orchards. Fusaro et al. [16] used MinkPanoptic [17] to
+extract crop instances from colored point clouds in row-wise green-
+houses. Meyer et al. [18] applied NeRF for multi-fruit counting using
+contrastive learning.
+Unlike methods that extract crops from reconstructed maps, the
+proposed method achieves real-time crop counting by incrementally as-
+sociating crop models within the 3D reconstruction process. Moreover,
+existing methods focus on controlled row-wise settings, whereas our
+approach targets unstructured environments with dense and irregular
+planting, where SfM and LiDAR-based reconstruction fail, as shown
+in Fig. 2.
+Recent advances in 3D object detection (e.g., [19]), driven by au-
+tonomous driving, have shown promising results. However, the main
+challenge for applying these methods in agriculture is their need for 3D
+bounding box annotations—data that is common in autonomous driving
+but difﬁcult to acquire in dense orchards. High levels of LiDAR noise
+from cluttered foliage make the 3D annotation process unreliable. Our
+framework avoids this bottleneck by operating with more accessible
+2D annotations, providing a practical and deployable solution.
+III. CROP COUNTING ALGORITHM
+A. Overview
+Fig. 3 illustrates the pipeline of the proposed real-time crop counting
+algorithm based on the incremental association of 3D crop models.
+Given camera, LiDAR, and IMU inputs, our method estimates sen-
+sor poses using a LiDAR-Inertial-Visual odometry algorithm (FAST-
+LIVO) [2]. It produces synchronized, posed image–point cloud pairs
+through tightly-coupled sensor fusion within an iterative Kalman ﬁlter
+framework.
+The resulting posed images are used to estimate crop models in a
+global map. From each frame, crop instances with conﬁdence scores are
+segmented using YOLOv11 [20]. The synchronized point cloud is then
+projected onto each segment to extract its instance-wise 3D points, and a
+3D oriented bounding box is ﬁtted to create the initial crop model. These
+per-frame models are incrementally associated with the global 3D crop
+map by measuring GIoU, either registered as new entities or merged
+with existing models in the crop model database. After conﬁdence-
+based ﬁltering, the remaining crop models in the global map determine
+the current count.
+B. 3D Crop Model Generation
+Each crop is represented by a 3D Oriented Bounding Box (3D OBB),
+providing a compact description of its position, orientation, and size.
+The OBB is parameterized by a center point, three orthogonal unit
+vectors deﬁning its orientation (the box’s local axes), and correspond-
+ing half-lengths along each axis. This representation supports robust
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:09 UTC from IEEE Xplore.  Restrictions apply. 
+
+3862
+IEEE ROBOTICS AND AUTOMATION LETTERS, VOL. 11, NO. 3, MARCH 2026
+Fig. 3.
+Pipeline of the proposed real-time crop counting system. Camera, LiDAR, and IMU data are fused via FAST-LIVO [2] for state estimation. Tracked
+images and point clouds are used for crop detection and 3D crop model generation, with each crop represented as a 3D oriented bounding box. The generated
+models are incrementally associated with a global 3D crop map using GIoU, then ﬁltered by segmentation conﬁdence scores, enabling real-time crop counting in
+dense environments.
+Fig. 4.
+Comparison of global and scan-wise crop points. Global crop points
+(left) exhibit accumulated noise due to high LiDAR noise near crops in densely
+planted orchards. In contrast, scan-wise crop points (right), colored by frame,
+capture localized observations from individual LiDAR poses, enabling more
+effective noise suppression.
+association across viewpoints and effectively suppresses LiDAR noise,
+especially ampliﬁed in densely planted environments, through spatial
+noise ﬁltering and geometric ﬁtting.
+Direct crop extraction from global point clouds suffers from noise
+accumulation, particularly in densely planted ﬁelds, where LiDAR
+noise is ampliﬁed by nearby vegetation and compounds over time.
+This leads to irregular noise artifacts around target crops, reducing the
+crop extraction accuracy from the global map. In contrast, constructing
+crop models from local per-frame scans systematically reduces such
+artifacts by keeping noise localized along the LiDAR ray direction. The
+proposed system ﬁlters each local scan before crop model generation,
+preventing cross-viewpoint noise accumulation. Fig. 4 illustrates a
+visual comparison of global and scan-wise crop points.
+For local modeling, we obtain conﬁdence-scored 2D instance seg-
+mentations using YOLOv11 [20]. We then extract 3D crop points by
+projecting the pre-calibrated LiDAR point cloud onto the image plane
+and selecting the points that fall within each segmentation mask. This
+process yields localized 3D point clusters corresponding to each crop
+instance.
+We then apply a noise ﬁltering step by removing points whose Eu-
+clideandistancetotheirnearestneighborexceedsapredeﬁnedthreshold
+(0.1 m in this work). To ensure reliable bounding box estimation, only
+clusters with at least ﬁve points remaining after ﬁltering are used. For
+each valid cluster, the crop model center is deﬁned as the centroid of
+the ﬁltered points. The 3D OBB orientation is estimated using Principal
+Component Analysis (PCA), implemented via the Point Cloud Library
+(PCL) [21], with the principal axes forming the local coordinate frame
+of the OBB. The bounding box dimensions are then determined by
+computing the minimum and maximum extents of the ﬁltered points
+along these axes.
+Each generated 3D OBB encapsulates a unique crop ID, position,
+orientation, dimensions, and segmentation conﬁdence score. These
+bounding boxes are incrementally integrated and updated as new ob-
+servations are acquired, enabling real-time crop tracking and counting.
+To support crop model updates, the point cloud associated with each
+crop instance is preserved and cumulatively merged with subsequent
+observations from different viewpoints. This fusion enhances model
+completeness and strengthens association reliability. The criteria for
+identifying whether two observations correspond to the same crop
+instance are detailed in the following section.
+C. Incremental Association
+The proposed method incrementally associates newly generated 3D
+crop models with existing models in the global crop map to enable
+accurate crop counting. To achieve this, each local 3D crop model, de-
+rived from each consecutive image–point cloud pair, is ﬁrst transformed
+into the global coordinate frame using the corresponding odometry
+pose estimated by FAST-LIVO [2]. The transformed crop models are
+then evaluated for association with the existing global models, thereby
+preventing redundant crop representations and double-counting.
+The association process consists of two main stages: candidate
+search and association decision. During candidate search, the algo-
+rithm identiﬁes the nearest existing crop model Cref in the global
+map for each newly generated crop model Cnew by calculating the
+Euclidean distance between their centroids. To support an efﬁcient
+nearest-neighbor retrieval, we employ a k-d tree to index and manage
+the global crop model database. This localized search strategy ensures
+scalability and real-time performance as the global map grows.
+In the association stage, we determine if a new crop model (Cnew)
+matches an existing model (Cref) by calculating their 3D GIoU, a
+metric that evaluates spatial alignment across translation, rotation,
+and scale. If the GIoU exceeds a speciﬁed threshold, the models are
+associated: their point clouds are merged, a new 3D OBB is ﬁtted to the
+combined points, and conﬁdence scores are concatenated. The resulting
+fused model replaces Cref in the global k-d tree. If no valid match is
+found, the newly generated crop model Cnew is inserted into the global
+map as a new entry.
+Unlike traditional IoU, which is limited to axis-aligned boxes, 3D
+GIoUaccuratelyevaluatesarbitrarilyoriented3Dboundingboxesusing
+convex hull-based computations, making it ideal for our 3D tracking
+task. The robustness of this metric allows our system to reliably asso-
+ciate crop detections across consecutive frames, thereby compensating
+for false negatives that may occur in any single frame.
+To address false positive detections, we ﬁlter fused crop models
+based on their accumulated conﬁdence scores from 2D segmentations.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:09 UTC from IEEE Xplore.  Restrictions apply. 
+
+PARK et al.: INCREMENTAL 3D CROP MODEL ASSOCIATION FOR REAL-TIME COUNTING IN DENSE ORCHARDS
+3863
+Algorithm 1: AssociateCropModel.
+Input: A new crop model Cnew, a global crop model database
+indexed by KDTree, minimum nuber of observed frames N,
+conﬁdence threshold τconf, and GIoU threshold τGIoU.
+Output: Updated KDTree with associated crop models.
+Cref = KDTree.NearestNeighbor(Cnew)
+if GIoU(Cnew, Cref) > τGIoU
+// Merge and update if associated
+Cfuse ←Initialize()
+Cfuse.pcd = {Cref.pcd, Cnew.pcd}
+Cfuse.conf = {Cref.conf, Cnew.conf}
+Cfuse.obb = FitOrientedBoxUsingPCA(Cfuse.pcd)
+KDTree.Remove(Cref)
+KDTree.Insert(Cfuse)
+if |Cfuse.conf| > N and median(Cfuse.conf) < τconf
+KDTree.Remove(Cfuse)
+end if
+else
+// Add if not associated
+KDTree.Insert(Cnew)
+end if
+return KDTree
+A model is only considered for removal after it has been tracked for
+a minimum number of N = 9 frames to gather sufﬁcient evidence. It
+is then ﬁltered out if the median of its accumulated conﬁdence scores
+falls below a predeﬁned threshold. This ﬁltering strategy effectively
+removes unreliable models and improves counting accuracy over time.
+Crop counting is achieved by determining the number of crop models
+in the global map. The position and orientation of each crop can
+also be directly retrieved from its associated 3D OBB. The complete
+association procedure is summarized in Algorithm 1, which details
+candidate selection, decision logic, and k-d tree updates used to manage
+the global crop map.
+D. Real-Time System Implementation
+A key advantage of the proposed incremental crop counting frame-
+work is its ability to perform on-the-ﬂy estimation as sensors scan the
+environment. Achieving this requires the entire pipeline to operate in
+real-time. To meet this requirement, the system adopts a lightweight,
+parallelized architecture that decouples crop model processing from
+state estimation tasks.
+The system consists of two primary threads that operate in parallel.
+The state estimation thread, executed on a multi-core CPU, estimates
+poses for synchronized images and point clouds using FAST-LIVO [2].
+These outputs are passed to the crop counting thread for further pro-
+cessing.
+The crop counting thread handles all crop model-related operations,
+including crop detection, model generation, incremental association,
+and ﬁltering. It receives tracked images and performs crop instance
+segmentation using YOLOv11, which is converted to ONNX format for
+efﬁcient GPU inference. This conversion signiﬁcantly reduces memory
+consumption and improves inference speed, enabling real-time process-
+ing of incoming frames without compromising accuracy. Additionally,
+a k-d tree structure is employed to efﬁciently manage and query the
+global crop model database during association.
+Leveraging this architecture, the system performs real-time crop
+counting by processing local scans and incrementally updating the
+global crop map. This approach offers a real-time alternative to methods
+that rely on full global reconstruction or batch processing, which are
+computationally intensive and unsuitable for real-time deployment.
+Fig. 5.
+Handheld sensor system used for data collection in densely planted
+environments. The platform consists of a FLIR Blackﬂy RGB camera (FL3-U3-
+1324C-C) with a 4.5 mm ﬁxed focal length lens (Edmund Optics 86900) and a
+Livox Avia LiDAR with a built-in IMU (BMI088). This conﬁguration captures
+high-resolution images, LiDAR point clouds, and inertial measurements for crop
+model construction and association.
+IV. EXPERIMENTAL EVALUATION
+A. Dataset
+We used a custom handheld rig equipped with sensors to capture data
+in densely planted, unstructured environments, as shown in Fig. 5. The
+platform consisted of a FLIR Blackﬂy RGB camera with an Edmund
+Optics 86900 lens (providing 1280×1024 resolution, 84.7◦horizontal
+FoV) and a Livox Avia LiDAR with an integrated BMI088 IMU. To
+ensure accurate cross-modal alignment, extrinsic calibration between
+the camera and LiDAR was performed using an edge-based method [22]
+that extracts and aligns edge features from both image and point cloud
+domains.
+To evaluate our method under challenging and realistic conditions,
+we collected a dataset using the described sensor system. The data was
+captured in tangerine orchards (speciﬁcally Citrus unshiu and Kanpei)
+located in Seogwipo, Jeju, Republic of Korea. These orchards featured
+mature trees with dense foliage, and the target crops were in a pre-
+harvest state, showing a distinctive orange color and ranging from 5 to
+10 cm in diameter and highly variable sensor-to-crop distances (0.2 to
+3.0 m).
+In these settings, we constructed a dataset1 to evaluate the pro-
+posed crop counting system under challenging, real-world conditions.
+The dataset includes three representative motion patterns: (i) Revisit
+Sequences, where the sensors revisit a previously traversed region;
+(ii) Circular Sequences, representing rotational movement around a
+tree in conﬁned spaces; and (iii) Straight Sequences, involving linear
+motion toward trees. A schematic diagram visualizing these trajectories
+is provided with the public dataset. For ground truth, frame-wise
+crop counts were manually annotated for each sequence, with details
+summarized in Table I. Fig. 6 illustrates the challenging conditions
+of the dataset, including uncontrolled illumination, dense foliage, and
+irregular vegetative patterns.
+B. Evaluation
+To evaluate the performance of the proposed method, we compare
+it against several representative baselines. For 2D tracking-based ap-
+proaches, we include ByteTrack [23] and DeepSORT [7], two widely
+adopted multi-object tracking (MOT) algorithms. DeepSORT, in par-
+ticular, has demonstrated strong performance in orchard environments,
+achieving the lowest error in a recent apple tracking study [6]. To
+benchmark against methods tailored explicitly for crop tracking, we
+1The dataset is accessible at https://doi.org/10.5281/zenodo.15893214.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:09 UTC from IEEE Xplore.  Restrictions apply. 
+
+3864
+IEEE ROBOTICS AND AUTOMATION LETTERS, VOL. 11, NO. 3, MARCH 2026
+TABLE I
+DATASET CHARACTERISTICS
+TABLE II
+CROP COUNTING RESULTS OF OBJECT TRACKING, CROP TRACKING, AND MAP-BASED METHODS. BOLD INDICATES THE BEST PERFORMANCE.
+Fig. 6.
+Example images of the benchmark dataset. Data were collected from
+tangerine orchards in greenhouse and open-ﬁeld settings. These unstructured
+environments feature densely planted trees and irregular planting patterns,
+leading to frequent occlusions and limited sensor visibility.
+also include AgriSORT [8] and CascadeSORT [9]. All methods are
+evaluated using their publicly available implementations with default
+parameter settings.
+To ensure a fair comparison that isolates the association strategy, we
+used a single YOLOv11s-seg detector for all baselines and the proposed
+method. We trained this model, initialized with COCO pre-trained
+weights, on 1,449 custom images (70% train, 10% val, 20% test)
+with 13,587 annotated crop masks, kept separate from our benchmark
+sequences. The model was trained for 100 epochs with a batch size of
+32 using default hyperparameters from the ofﬁcial repository, and the
+ﬁnal checkpoint was selected based on YOLOv11’s validation metric
+(0.1× mAP@0.5 + 0.9×mAP@0.5:0.95).
+As a reproducible 3D reconstruction baseline, we selected the Con-
+nected Component Analysis (CCA) method from [14]. To ensure a
+fair comparison, we applied CCA to the 3D map generated by our
+state estimator (FAST-LIVO [2]). Since the original work does not
+specify CCA parameters, we conﬁgured CCA with an octree level of
+9 and a minimum cluster size of 5 points, aligning with our 3D OBB
+generation requirements. This high-resolution setting preserves small
+object structures essential for accurate crop-level segmentation.
+To further evaluate our association strategy, we implement two ab-
+lation baselines: one replacing GIoU with Euclidean distance between
+bounding box centroids, and another using GIoU without conﬁdence-
+based ﬁltering. These baselines isolate the individual contributions
+of spatial matching and conﬁdence ﬁltering to identity consistency.
+The association thresholds (τconf and τGIoU in Algorithm 1) were
+tuned using a dedicated validation sequence that is excluded from
+the benchmark test set, with ﬁnal values set to τconf = 0.6 and
+τGIoU = 0.25. These thresholds were set constant across all bench-
+mark sequences. While per-sequence tuning may yield marginal gains,
+using a single ﬁxed parameter set highlights the generalizability of our
+method.
+TableIIsummarizesthecropcountingresultsoftheproposedmethod
+compared to the baseline approaches. Overall, the proposed method
+achieves crop count estimates closest to the ground truth (GT), with
+the lowest RMSE of 8.9 and an error standard deviation of 6.4. These
+results demonstrate the accuracy and reliability of the proposed method
+in densely planted, unstructured agricultural environments.
+Object tracking methods such as ByteTrack [23] and DeepSORT [7]
+exhibit signiﬁcantly higher errors, primarily due to their reliance on
+2D image-domain information. This reliance becomes a critical lim-
+itation in unstructured settings, where dense foliage, high planting
+density, frequent occlusions, and irregular sensor motion adversely
+affect appearance-based tracking performance. Although crop-speciﬁc
+trackers such as CascadeSORT [9] and AgriSORT [8] outperform
+general-purpose object trackers, their accuracy remains unsatisfactory,
+implying continued vulnerability to visual ambiguity and unstable
+associations in densely planted scenes.
+Among the map-based methods, CCA [14] exhibits the highest error.
+This is primarily due to the accumulated pose drift and reconstruction
+errors in unstructured environments, where uneven terrain, dense vege-
+tation, and irregular sensor motion introduce substantial challenges.
+These factors lead to noisy and distorted crop representations (as
+introduced in Fig. 2) that obscure crop boundaries and disrupt reliable
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:09 UTC from IEEE Xplore.  Restrictions apply. 
+
+PARK et al.: INCREMENTAL 3D CROP MODEL ASSOCIATION FOR REAL-TIME COUNTING IN DENSE ORCHARDS
+3865
+Fig. 7.
+Frame-wise crop count for each evaluation sequence. The dashed black line represents the ground truth (GT), the solid green line shows the cumulative
+crop count estimated by the proposed method, and the red line indicates the absolute frame-wise error. In the Revisit sequences, the vertical blue line marks the
+return point where the sensors begin revisiting the previously scanned area. Each subplot includes the RMSE and visualizes the cumulative crop count progression.
+While the proposed method closely follows the overall GT trend, counting delays are observed due to sparse LiDAR point density at longer ranges, particularly for
+small or distant crops.
+Fig. 8.
+Crop counting results across various threshold values for τconf (left) and τGIoU (right). Each bar group represents the estimated crop count for a given
+sequence and threshold setting, with the ground truth (GT) included for reference. In the left plot τconf is varied while τGIoU is ﬁxed at 0.25; in the right plot,
+τGIoU is varied with τconf ﬁxed at 0.6.
+segmentation. Consequently, the effectiveness of the map-based ap-
+proach is reduced in densely planted settings. In contrast, the proposed
+incremental approach overcomes these challenges by estimating crop
+models from localized scans, which preserve local structure and enable
+more accurate segmentation.
+In the ablation studies, the distance baseline tends to overcount crops
+due to localization noise, which causes repeated observations of the
+same crop to fall outside the distance threshold (0.03 m). Similarly, re-
+moving conﬁdence-based ﬁltering degrades performance, with RMSE
+rising from 8.9 to 14.5 and standard deviation from 6.4 to 7.5. These
+results demonstrate that both GIoU-based association and conﬁdence
+ﬁltering are essential for accurate crop model association, as discussed
+in Section III-C.
+C. Frame-Wise Crop Counting Analysis
+To demonstrate the on-the-ﬂy crop counting capability of the pro-
+posed method, we evaluate frame-wise crop counts across each eval-
+uation sequence. Ground truth (GT) counts are obtained by manually
+annotating newly visible crops as they become observable in the image
+sequence. Fig. 7 shows the estimated crop counts over time, along with
+the corresponding ground truth and absolute error for each sequence.
+Overall, the proposed method effectively tracks the general trend of
+the GT crop count. However, a noticeable delay in counting is observed
+compared to the GT annotations. This delay is primarily attributable to
+the modality gap between vision and LiDAR: crops farther from the
+sensor may appear in RGB images (and are thus included in the GT)
+but lack sufﬁcient LiDAR points for reliable 3D crop modeling. This
+arises from the inherently low point density of LiDAR at longer ranges,
+particularly for small objects like crops. Consequently, these crops are
+typicallycountedonlywhentheplatformmovescloserorobservesthem
+across multiple frames, at which point they can be reliably modeled
+using both modalities.
+Additionally, in the Revisit sequences, both the GT and estimated
+crop counts continue to increase gradually even after the initial traversal
+of the scene. This behavior is attributed to previously occluded crops
+or those outside the sensor’s ﬁeld of view becoming visible along the
+return path.
+D. Effect of Association Thresholds on Crop Counting
+As summarized in Algorithm 1, the proposed crop model association
+relies on two key parameters: a threshold on the conﬁdence score
+(τconf), and a threshold on the 3D GIoU (τGIoU) between the two
+models. To evaluate the inﬂuence of these parameters on system perfor-
+mance, Fig. 8 presents the crop counting results under various threshold
+settings. The left plot varies τconf while ﬁxing τGIoU = 0.25, and the
+right plot varies τGIoU with τconf = 0.6 ﬁxed.
+In the left plot, increasing τconf results in a consistent decline in crop
+count estimates across all sequences. This trend arises because a larger
+conﬁdence score threshold ﬁlters out more potential crops, including
+valid detections. Consequently, the system tends to undercount when
+τconf is too high (e.g., 0.75), especially in dense scenes where valid
+detections may have lower conﬁdence scores.
+Conversely, the right plot shows that higher values of τGIoU lead
+to a steady increase in crop count estimates. A larger GIoU threshold
+makes the system more conservative, requiring more substantial spatial
+overlap to associate models. While this reduces false merges, it also
+increases the risk of under-association, where repeated observations of
+the same crop are not merged, resulting in overcounting.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:09 UTC from IEEE Xplore.  Restrictions apply. 
+
+3866
+IEEE ROBOTICS AND AUTOMATION LETTERS, VOL. 11, NO. 3, MARCH 2026
+TABLE III
+AVERAGE EXECUTION TIME PER FRAME
+These results highlight a clear trade-off where a high τconf leads to
+undercounting, while a high τGIoU causes overcounting. Our experi-
+ments show that moderate thresholds (τconf = 0.6 and τGIoU = 0.25)
+achieve a desirable trade-off that minimizes total counting error across
+diverse sequences.
+E. Runtime Analysis
+Toanalyzetheruntimeoftheproposedmethod, wereporttheaverage
+execution time of each module within the crop counting system. All
+experiments were conducted on a machine equipped with an 8-core
+Intel i7-11800H CPU, 16 GB RAM, and an NVIDIA GeForce RTX
+3050Ti GPU, using the evaluation dataset described in Section IV-A.
+The average runtime for each module is summarized in Table III,
+where each value represents the time required to process an image
+frame and its corresponding point cloud. Notably, the object detection
+runs exclusively on the GPU, while the remaining modules—including
+crop model generation, association, and map updating—are processed
+on the CPU. The total processing time per frame is 35.30 ms on average,
+corresponding to approximately 28.3 frames per second, satisfying real-
+time performance. These results demonstrate that the proposed system
+is both efﬁcient and practical for deployment in real-world agricultural
+environments.
+F. Limitations
+While the proposed method demonstrates robust performance in
+densely planted, unstructured environments under typical conditions,
+it has several limitations. First, the system’s reliance on RGB image-
+based detection makes it vulnerable to adverse weather and lighting
+conditions; performance may degrade in scenarios such as rain, night-
+time operation, or intense sunlight, causing lens glare. Second, the
+framework focuses on incremental crop model association and does
+not incorporate global loop closure within the state estimation pipeline,
+which may affect long-term consistency in large-scale deployments.
+Third, although the crop models provide reliable geometric features,
+they are not leveraged as landmarks for odometry. Incorporating them
+into the state estimation—along with their spatial relationships—could
+improve localization accuracy. Lastly, occlusion due to camera–LiDAR
+viewpoint disparity is not explicitly modeled.
+V. CONCLUSION
+This paper presents a real-time crop counting method in densely
+planted environments, where conventional 2D tracking and global 3D
+reconstruction approaches often struggle due to frequent occlusions,
+irregular crop arrangements, and limited sensor visibility. The proposed
+method constructs robust 3D crop models by combining locally ﬁltered
+LiDAR scans with 2D image segmentations to generate 3D Oriented
+Bounding Boxes. An incremental association strategy using 3D GIoU
+for spatial matching and conﬁdence-based ﬁltering for validation is
+introduced to maintain crop identity across frames while avoiding
+double-counting. This approach enables reliable crop tracking and
+counting in real-time. Experimental results on a ﬁeld-collected dataset
+demonstrate that the proposed method achieves accurate and efﬁcient
+crop counting under challenging agricultural conditions.
+REFERENCES
+[1] J. L. Schönberger and J.-M. Frahm, “Structure-from-motion revisited,” in
+Proc. IEEE Conf. Comput. Vis. Pattern Recognit., 2016, pp. 4104–4113.
+[2] C. Zheng, Q. Zhu, W. Xu, X. Liu, Q. Guo, and F. Zhang, “FAST-
+LIVO: Fast and tightly-coupled sparse-direct LiDAR-inertial-visual
+odometry,” in Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst., 2022,
+pp. 4003–4009.
+[3] J. Das et al., “Devices, systems, and methods for automated monitoring
+enabling precision agriculture,” in Proc. IEEE Int. Conf. Automat. Sci.
+Eng., 2015, pp. 462–469.
+[4] M. Halstead, C. McCool, S. Denman, T. Perez, and C. Fookes,
+“Fruit quantity and ripeness estimation using a robotic vision sys-
+tem,” IEEE Robot. Automat. Lett., vol. 3, no. 4, pp. 2995–3002,
+2018.
+[5] C. Smitt, M. Halstead, T. Zaenker, M. Bennewitz, and C. McCool,
+“PATHoBot: A robot for glasshouse crop phenotyping and intervention,”
+in Proc. IEEE Int. Conf. Robot. Automat., 2021, pp. 2324–2330.
+[6] J. Villacrés, M. Viscaino, J. Delpiano, S. Vougioukas, and F. A. Cheein,
+“Apple orchard production estimation using deep learning strategies:
+A comparison of tracking-by-detection algorithms,” Comput. Electron.
+Agriculture, vol. vol. 204, 2023, Art. no. 107513.
+[7] N. Wojke, A. Bewley, and D. Paulus, “Simple online and realtime tracking
+with a deep association metric,” in Proc. IEEE Int. Conf. Image Process.,
+2017, pp. 3645–3649.
+[8] L. Saraceni, I. M. Motoi, D. Nardi, and T. A. Ciarfuglia, “AgriSORT: A
+simple online real-time tracking-by-detection framework for robotics in
+precision agriculture,” in Proc. IEEE Int. Conf. Robot. Automat., 2024, pp.
+2675–2682.
+[9] L. He, F. Wu, X. Du, and G. Zhang, “Cascade-SORT: A robust fruit
+counting approach using multiple features cascade matching,” Comput.
+Electron. Agriculture, vol. 200, 2022, Art. no. 107223.
+[10] S. Tu, Y. Huang, Q. Huang, H. Liu, Y. Cai, and H. Lei, “Estimation of
+passion fruit yield based on YOLOv8n + OC-SORT + CRCM algorithm,”
+Comput. Electron. Agriculture, vol. 229, 2025, Art. no. 109727.
+[11] X. Liu et al., “Robust fruit counting: Combining deep learning, tracking,
+and structure from motion,” in Proc. IEEE/RSJ Int. Conf. Intell. Robots
+Syst., 2018, pp. 1045–1052.
+[12] T. T. Santos, L. L. De Souza, A. A. dos Santos, and S. Avila, “Grape
+detection, segmentation, and tracking using deep neural networks and
+three-dimensional association,” Comput. Electron. Agriculture, vol. 170,
+2020, Art. no. 105247.
+[13] X. Liu et al., “Monocular camera based fruit counting and mapping with
+semantic data association,” IEEE Robot. Automat. Lett., vol. 4, no. 3,
+pp. 2296–2303, Jul. 2019.
+[14] W. Dong, P. Roy, and V. Isler, “Semantic mapping for orchard environ-
+ments by merging two-sides reconstructions of tree rows,” J. Field Robot.,
+vol. 37, no. 1, pp. 97–121, 2020.
+[15] D. Girardeau-Montaut, M. Roux, R. Marc, and G. Thibault, “Change
+detection on points cloud data acquired with a ground laser scanner,”
+Int. Arch. Photogrammetry, Remote Sens. Spatial Inf. Sci., vol. 36, no.
+3, pp. 30–35, 2005.
+[16] D. Fusaro, F. Magistri, J. Behley, A. Pretto, and C. Stachniss,
+“Horticultural temporal fruit monitoring via 3D instance segmentation
+and re-identiﬁcation using point clouds,” 2024, arXiv:2411.07799.
+[17] R. Marcuzzi, L. Nunes, L. Wiesmann, J. Behley, and C. Stachniss,
+“Mask-based panoptic LiDAR segmentation for autonomous driving,”
+IEEE Robot. Automat. Lett., vol. 8, no. 2, pp. 1141–1148, Feb. 2023.
+[18] L. Meyer, A.-T. Ardelean, T. Weyrich, and M. Stamminger, “Fruit-
+NeRF++: A generalized multi-fruit counting method utilizing contrastive
+learning and neural radiance ﬁelds,” in Proc. IEEE/RSJ Int. Conf. Intell.
+Robots Syst., 2025, pp. 1717–1724.
+[19] J. Yin et al., “IS-Fusion: Instance-scene collaborative fusion for multi-
+modal 3D object detection,” in Proc. IEEE Conf. Comput. Vis. Pattern
+Recognit., 2024, pp. 14905–14915.
+[20] G. Jocher and J. Qiu, “Ultralytics YOLO11,” 2024. [Online]. Available:
+https://github.com/ultralytics/ultralytics
+[21] R. B. Rusu and S. Cousins, “3D is here: Point cloud library (PCL),” in
+Proc. IEEE Int. Conf. Robot. Automat., 2011, pp. 1–4.
+[22] C. Yuan, X. Liu, X. Hong, and F. Zhang, “Pixel-level extrinsic self
+calibration of high resolution LiDAR and camera in targetless environ-
+ments,” IEEE Robot. Automat. Lett., vol. 6, no. 4, pp. 7517–7524, Oct.
+2021.
+[23] Y. Zhang et al., “ByteTrack: Multi-object tracking by associating every
+detection box,” in Proc. Eur. Conf. Comput. Vis., 2022, pp. 1–21.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:09 UTC from IEEE Xplore.  Restrictions apply. 

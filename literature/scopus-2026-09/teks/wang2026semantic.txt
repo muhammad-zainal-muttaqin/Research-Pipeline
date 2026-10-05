@@ -1,0 +1,1567 @@
+IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 23, 2026
+11401
+Semantic NeRF-Oriented 3-D Object Counting
+for Industrial Fruit Harvesting
+Yimo Wang , Bin Kang , Member, IEEE, Jian Liu , Member, IEEE, and Changyin Sun , Senior Member, IEEE
+Abstract—Object counting is the core of perception compo-
+nents in the industry system. Nevertheless, real-world occlusion
+and dense clustering pose signiﬁcant challenges to fruit har-
+vesting.
+Existing
+methods
+closely
+rely
+on
+physics-agnostic
+2D clustering with rigid thresholds, neglecting critical 3D geo-
+metric cues in complex scenes. Thus, they suﬀer from the
+multi-view double-counting issue. In this paper, we propose a
+3D object counting framework that integrates semantic Neural
+Radiance Fields (NeRF) with a physics-guided adaptive clustering
+algorithm. In particular, we employ a semantic NeRF to achieve
+implicit 3D scene reconstruction, which eﬀectively isolates target
+objects from the background. Based on the semantic NeRF,
+we introduce a physics-guided adaptive clustering algorithm
+that exploits physically interpretable features, including surface
+normals and elevation gradients, for accurate unsupervised
+point cloud segmentation. Subsequently, an energy function
+optimization mechanism is utilized to autonomously aggregate
+multi-dimensional features for dynamically adjusting clustering
+thresholds, which enables the 3D counting to adapt to diverse
+fruit morphologies without manual parameter tuning. Extensive
+experiments on both synthetic and real-world datasets demon-
+strate the superiority of the proposed framework, which improves
+counting accuracy by an average of 9.0 percentage points
+(6.9 pp on synthetic, 7.2 pp on real-world, and 12.9 pp on Fuji)
+over the state-of-the-art 3-D baseline.
+Note to Practitioners—This work targets the challenge of
+accurate fruit counting in orchards where heavy occlusion and
+dense clustering often cause double-counting and unreliable yield
+estimation. Conventional 2D vision systems depend on hand-
+tuned thresholds and lack spatial awareness. To address this,
+we propose a 3D counting framework that integrates a semantic
+Neural Radiance Field (NeRF) with a physics-guided adaptive
+clustering algorithm. The framework reconstructs the orchard
+scene in 3D, isolates fruits from the background, and adaptively
+segments point clouds by analyzing geometric cues such as sur-
+Received 7 November 2025; revised 19 April 2026; accepted 30 May
+2026. Date of publication 5 June 2026; date of current version 24 June
+2026. This article was recommended for publication by Associate Editor
+J. C. Rodriguez-Qui˜nonez and Editor Z. Liu upon evaluation of the review-
+ers’ comments. This work was supported in part by the National Natural
+Science Foundation of China under Grant 62495083 and Grant 62236002.
+(Corresponding author: Changyin Sun.)
+Yimo Wang is with the School of Automation, Southeast University,
+Nanjing 210096, China (e-mail: yimowang@seu.edu.cn).
+Bin Kang is with the School of Internet of Thing, Nanjing Univer-
+sity of Posts and Telecommunications, Nanjing 210003, China (e-mail:
+kangb@njupt.edu.cn).
+Jian Liu is with the School of Automation, Southeast University, Nanjing
+210096, China (e-mail: bkliujian@seu.edu.cn).
+Changyin Sun is with the School of Automation, Southeast University,
+Nanjing 210096, China, also with the Key Laboratory of Measurement
+and Control of Complex System of Engineering, Ministry of Education,
+Southeast University, Nanjing 210096, China, and also with the School
+of Artiﬁcial Intelligence, Anhui University, Hefei 230601, China (e-mail:
+cysun@seu.edu.cn).
+Digital Object Identiﬁer 10.1109/TASE.2026.3700861
+face normals and elevation gradients. This approach eliminates
+the need for manual calibration and improves counting accuracy
+under varying lighting and viewing conditions. For practitioners,
+the method can be incorporated into automated yield-estimation
+or robotic-harvesting systems to enhance reliability and reduce
+labor costs. The current pipeline targets oﬄine pre-harvest
+yield estimation within an edge–cloud workﬂow, where a UAV
+or ground robot captures imagery in the ﬁeld and a remote
+server performs NeRF reconstruction and counting. The current
+limitation lies in the computational load of NeRF reconstruction.
+Future work will explore eﬃcient 3D representations such as
+Gaussian Splatting for real-time deployment in ﬁeld robots.
+Index Terms—Intelligent agriculture, object counting, semantic
+reconstruction, adaptive point cloud clustering.
+I. INTRODUCTION
+I
+NDUSTRY 4.0 is expanding into diﬀerent areas, e.g.
+Artiﬁcial Intelligence (AI), and robotics are increas-
+ingly permeating agriculture, giving rise to the paradigm of
+‘Agriculture 4.0’. Within this development trend, automated
+harvesting is a critical component for modernizing orchard
+management. Speciﬁcally, the capability for precise and robust
+real-time fruit counting and sorting is fundamental for accu-
+rate yield prediction and robotic operational planning [1].
+This capability is profoundly important. Because accurate in-
+ﬁeld counting enables precise yield forecasting essential for
+optimizing logistics and business strategies, while automated
+sorting by quality attributes like size and color is vital for
+minimizing post-harvest losses. Therefore, developing reliable
+automated counting and sorting technologies is a foundational
+pillar for the economic viability and eﬃciency of next-
+generation smart agriculture systems.
+In fruit harvesting contexts, the object counting task is
+intrinsically complicated by the tendency of dense three-
+dimensional
+clusters,
+resulting
+in
+severe
+occlusion
+that
+obscures individual boundaries [4]. Conventional 2D vision-
+based approaches, such as image processing reliant on color
+segmentation or edge detection [14], frequently fail to achieve
+reliable counting in such complex spatial scenarios. Traditional
+three-dimensional counting methodologies aim to achieve a
+comprehensive enumeration of target objects by leveraging
+visual data from images or videos captured across multi-
+ple viewpoints. Although deep learning-based 3D counting
+methods have shown promise in certain scenarios, they often
+suﬀer redundant counting issues when aggregating multi-view
+observations [5], [6], [7], as illustrated in Fig. 1. The core
+challenge arises from the projective nature of their 2D imag-
+ing, wherein diﬀerent viewpoints capture only partial object
+1558-3783 © 2026 IEEE. All rights reserved, including rights for text and data mining, and training of artiﬁcial intelligence and
+similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+11402
+IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 23, 2026
+Fig. 1. Double counting issue in multi-view Object Counting. In the context of multi-view image-based counting, variations in viewpoint and the high degree
+of similarity among target objects make it challenging to disambiguate individual instances across diﬀerent perspectives, which consequently leads to the
+problem of erroneous duplicate counting.
+appearances, lacking inherent spatial awareness. This results
+in two primary limitations: on the one hand the inability to
+distinguish individual object instances in overlapping regions,
+and on the other hand, the absence of consistent identity
+tracking across multiple views.
+Three-dimensional (3D) reconstruction-based methodolo-
+gies present a viable avenue for circumventing the inher-
+ent limitations of conventional object counting techniques.
+By generating explicit 3D models from multi-view imagery,
+these methods furnish a comprehensive spatial context essen-
+tial for enumeration tasks. Prominent among contemporary
+3D reconstruction approaches are Neural Radiance Fields
+(NeRF) and 3D Gaussian Splatting (3DGS). Eﬀective object
+counting via 3D reconstruction, however, mandates more
+than the mere reconstruction of target objects; a cru-
+cial prerequisite is the separation of these objects from
+the background to enable the isolation of their respec-
+tive point clouds for subsequent enumeration. While 3DGS
+demonstrates eﬃciency in scene approximation through the
+ﬁtting of anisotropic Gaussian kernels, integrating seman-
+tic information into Gaussian-splat representations typically
+requires explicit feature-ﬁeld distillation that increases pipeline
+complexity [40]. Conversely, NeRF’s architectural ﬂexibility
+natively permits the incorporation of semantic inputs, such as
+object masks, into the continuous volumetric ﬁeld. This facil-
+itates the direct disentanglement of radiance ﬁelds pertinent
+to target objects from convoluted backgrounds. Nevertheless,
+the direct utilization of point clouds derived from NeRF
+reconstructions does not comprehensively address the counting
+problem. This is due to the fact that existing point cloud
+clustering algorithms, including DBSCAN and Euclidean
+clustering, are heavily reliant on meticulous hyperparame-
+ter tuning and exhibit diﬃculties in processing objects of
+irregular morphology [8], [9], [10]. Distance-centric methods
+often prove inadequate in separating concave surface regions
+of
+proximate
+fruits,
+whereas
+density-centric
+approaches
+are prone to misclassifying sparsely distributed peripheral
+points [11]. Furthermore, supervised deep learning methods
+impose considerable prerequisites [4]. Critically, a majority
+of extant approaches neglect vital geometric cues, such as
+surface normals and elevation diﬀerentials, which encapsulate
+indispensable shape information for clustered fruits [12], [13].
+In this paper, we introduce a physics-guided object counting
+framework that leverages 3D information. Our framework
+ﬁrst employs a semantic-aware Neural Radiance Field (NeRF)
+to isolate target objects from the background. The extracted
+point cloud is then subjected to a physics-guided adaptive
+clustering algorithm to perform robust instance segmenta-
+tion and counting. The primary innovation of our work lies
+in the physics-guided clustering solution, which presents a
+new paradigm for instance segmentation in point cloud-based
+counting tasks. In contrast, conventional clustering methods
+are often physics-agnostic, only relying on point density or
+Euclidean distance while ignoring the rich geometric informa-
+tion that encodes physical reality. Consequently, they fail to
+resolve boundaries between closely-packed or touching fruits
+where density remains uniformly high, leading to erroneous
+merging (i.e., under-segmentation) and inaccurate counts.
+To model the core physical properties of fruit clusters, the
+proposed physics-guided clustering method initially employs
+point density as a primary geometric feature. This feature
+is utilized to deﬁne object contours, as high-density regions
+typically correspond to an object’s body while sparse, low-
+density areas delineate potential boundaries. However, point
+density only is insuﬃcient for the fruit counting task due
+to frequent occlusion and inter-fruit contact. Speciﬁcally, in
+regions of direct physical contact between adjacent fruits,
+the point density remains uniformly high. This results in
+erroneously merging distinct instances. To address this critical
+limitation, our framework introduces two additional, more
+descriptive geometric features: normal vectors and elevation
+gradients.
+Descriptive geometric features leverage the observation that
+a surface normal vector’s direction remains consistent across
+a single, continuous object. Consequently, a sharp, abrupt
+change in vector orientation serves as a powerful physical
+indicator of a boundary, such as the crease between two
+touching objects. We capture this trait by analyzing the local
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+WANG et al.: SEMANTIC NeRF-ORIENTED 3-D OBJECT COUNTING FOR INDUSTRIAL FRUIT HARVESTING
+11403
+consistency of the normal vectors, where a high variance
+is treated as strong evidence of an inter-object boundary.
+In addition to normal vectors, we incorporate elevation.
+A point’s elevation gradient on a fruit’s surface is tied to its
+growth orientation, indicating that a single fruit should exhibit
+a smooth elevation proﬁle. By evaluating elevation gradients,
+we can capture the sharp, discontinuous changes that occur at
+the junction of two separate fruits. This abrupt gradient change
+is treated as further physical evidence for delineating an
+instance boundary. Based on the above observation, we oper-
+ationalize the physical model by integrating density, normal
+vectors, and elevation gradients within a hierarchical opti-
+mization framework. This framework leverages progressive
+threshold optimization to precisely estimate the point cloud
+distribution of each fruit in 3D physical space. This adaptive
+process proﬁciently distinguishes concave boundary regions
+between contiguous objects from true topological separations.
+This endows the 3D object counting framework with the
+adaptability to accommodate variations in fruit morphology
+without manual parameter recalibration.
+The main contributions of this paper are as follows:
+• We propose an object counting framework that formulates
+the conventional multi-view counting problem into the
+3D domain, which fundamentally resolves the duplicate
+counting issue that arises when aggregating observations
+from overlapping 2D views.
+• We propose a physics-guided adaptive point cloud clus-
+tering algorithm in the object counting framework. Our
+algorithm integrates multi-dimensional geometric fea-
+tures, including surface normals and elevation gradients,
+into a hierarchical optimization to adapt to diverse fruit
+morphologies and accurately distinguish between densely
+clustered or occluded instances without manual parameter
+tuning.
+• Extensive
+experiments
+on
+synthetic
+and
+real-world
+datasets, including Fuji-SfM, validate our method’s
+eﬀectiveness. Our method excels at handling severe occlu-
+sion and dense clustering, improving counting accuracy
+by an average of 9.0 percentage points (6.9 pp on
+synthetic, 7.2 pp on real-world, and 12.9 pp on Fuji) over
+the state-of-the-art 3-D baseline.
+II. RELATED WORKS
+A. Object Counting
+Conventional fruit counting methods, relying on manual
+or semi-automated techniques, are limited in accuracy by
+occlusion and dense clustering. These approaches are often
+impeded by dense fruit arrangements [2] and fail to generalize
+across diverse lighting conditions and fruit morphologies [4].
+While 2D deep learning methods have shown potential for
+handling occlusion in speciﬁc applications [14], [15], they
+are inherently unable to resolve the duplicate counting prob-
+lem that arises when observing a 3D scene from multiple
+viewpoints. Although object tracking across image sequences
+can mitigate this issue [6], a more robust paradigm involves
+reformulating the problem in the 3D domain. Leveraging
+modern reconstruction technology, this approach has emerged
+as a new research direction. For instance, Meyer et al. utilized
+a Neural Radiance Field (NeRF) to reconstruct the fruit point
+cloud, which enables direct counting in 3D space and resolves
+the issue of inter-frame duplicate counts [3].
+B. Neural Radiance Field
+Neural
+Radiance
+Field
+(NeRF),
+introduced
+by
+Mildenhall
+et
+al.,
+transformed
+3D
+scene
+representation
+by
+using
+neural
+networks
+to
+implicitly
+model
+scenes
+for high-quality novel view synthesis. This foundational
+work has since been extended and improved in various
+aspects [16]. Key advancements include addressing anti-
+aliasing, with Mip-NeRF introducing conical tracing [17] and
+Zip-NeRF proposing a grid-based method [18]. Eﬃciency
+has also been a central research focus, with methods
+like
+Instant-NGP
+reducing
+computational
+costs
+through
+adaptive input encoding [19] and TensoRF employing tensor
+decomposition to accelerate processing [20]. Extending NeRF
+to semantic modeling is crucial for 3D scene understanding.
+The initial approach, Semantic-NeRF, integrated a semantic
+ﬁeld supervised by annotated labels [21]. However, this
+method’s reliance on extensive annotated data is a signiﬁcant
+limitation. To address this, subsequent research has explored
+unsupervised or self-supervised techniques. For instance,
+Tschernezki et al. proposed a teacher-student framework [22]
+that distills features from a pre-trained DINO model [23] into
+a trainable semantic ﬁeld.
+C. Point Cloud Segmentation
+Point cloud segmentation is a fundamental task in 3D analy-
+sis, with clustering methods often categorized by their under-
+lying principles. Density-based methods, such as DBSCAN
+[10], deﬁne clusters based on local point density, which is
+eﬀective for identifying irregularly shaped groups. However,
+their eﬃcacy is limited by a sensitivity to manually tuned
+parameters (e.g., neighborhood radius) and outliers, which can
+disrupt density connectivity, a notable challenge in fruit count-
+ing applications. Distance-based methods, including k-means
+[24] and KD-tree Euclidean clustering [25], [26], rely on ﬁxed
+distance thresholds or initial centers. This reliance makes them
+susceptible to errors in complex scenes; k-means is sensitive to
+initialization and may mispartition non-spherical fruits, while
+Euclidean clustering’s uniform thresholds perform poorly on
+heterogeneous data. Region-growing methods [27] expand
+clusters based on local similarity metrics. While eﬀective for
+coherent surfaces, their strict connectivity requirements can
+lead to over-segmentation of sparse point clouds, such as those
+representing individual fruits. Model-based approaches [13] ﬁt
+geometric primitives (e.g., spheres, planes) to the data. This is
+eﬃcient for regular structures but fails for irregular objects like
+fruits, where the limited representational power of primitives
+leads to poor segmentation. Graph-based methods [28], [29]
+excel at encoding complex spatial relationships but often incur
+high computational costs, limiting their applicability to large-
+scale point clouds or real-time scenarios.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+11404
+IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 23, 2026
+III. METHOD
+A. Pipeline Overview
+The proposed framework processes multi-view RGB images
+in three sequential stages. First, a Structure-from-Motion
+(SfM) pipeline recovers camera parameters. Second, the
+posed images and fruit segmentation masks jointly supervise
+a semantic NeRF, from which a fruit-only point cloud is
+extracted via orthographic ray-marching. Third, the point
+cloud is fed to our physics-guided adaptive clustering algo-
+rithm, which identiﬁes individual fruit instances and produces
+the ﬁnal count. Within this pipeline, the SfM module, the Ner-
+facto backbone, and the segmentation priors (Grounded-SAM
+or U-Net) are adopted without modiﬁcation; the instance-
+decoupled semantic NeRF formulation (Section III-C) and the
+physics-guided adaptive clustering algorithm (Section III-E)
+constitute our novel contributions. The framework assumes
+that each fruit instance is approximately convex and at least
+partially visible from the camera trajectory, so that its surface
+can be reconstructed with suﬃcient point density for reliable
+normal estimation.
+B. Structure-From-Motion Preliminaries
+Training a Neural Radiance Field (NeRF) requires robust
+camera poses and intrinsics, which are typically obtained via
+a Structure-from-Motion (SfM) pipeline. Given an unordered
+image set I = {I1, . . . , IN}, the initial step is to establish
+geometric correspondences by matching features across views.
+For a feature i in image Ik with 2D coordinates u(k)
+i
+∈R2 and
+descriptor d(k)
+i , the matching process identiﬁes pairs between
+images (Ip, Iq) that satisfy ∥d(p)
+i
+−d(q)
+j ∥2 < ϵ, where ϵ is a
+similarity threshold.
+Once matches are established, the camera projection is
+modeled. Each camera k is deﬁned by an intrinsic matrix Kk
+and extrinsic parameters (rotation Rk ∈S O(3) and translation
+tk ∈R3). The perspective projection from a 3D world point
+X = [X, Y, Z]T to its 2D image projection u = [u, v]T is given
+by:
+λ
+2
+4
+u
+v
+1
+3
+5 = Kk[Rk|tk]
+2
+664
+X
+Y
+Z
+1
+3
+775
+(1)
+where λ is a depth scale factor. The intrinsic matrix is
+parameterized as Kk =
+2
+4
+fk
+0
+cx
+0
+fk
+cy
+0
+0
+1
+3
+5, assuming a shared
+focal length fk.
+Finally, the SfM pipeline reﬁnes all camera parameters and
+the 3D scene structure by solving a large-scale non-linear
+optimization known as Bundle Adjustment (BA). This process
+minimizes the total reprojection error-the discrepancy between
+projected 3D points and their observed 2D feature locations.
+The objective function is:
+arg min
+{Kk,Rk,tk},{X j}
+N
+X
+k=1
+X
+j∈Vk
+ρ
+π
+ Kk, Rk, tk, Xj
+
+−u(k)
+j
+
+2
+2
+
+(2)
+Here, Vk is the set of 3D points visible in image Ik, π(·)
+is the projection function, and ρ(·) is a robust cost function
+(e.g., Cauchy loss) to reduce the inﬂuence of outliers. This
+optimization yields a set of reﬁned camera parameters and a
+sparse 3D point cloud, providing the essential geometric priors
+for subsequent NeRF training.
+C. Instance-Decoupled Reconstruction With Semantic
+Guidance
+Our framework employs semantic-aware neural reconstruc-
+tion to achieve instance-level decomposition, enabling precise
+segregation of target objects from cluttered backgrounds.
+As illustrated in Fig. 2, our approach extends the classical
+NeRF by jointly modeling scene appearance and semantics.
+The model comprises three core components:
+• Density Field: Fσ : x →σ, maps a 3D coordinate x ∈R3
+to a volume density σ ∈R.
+• Appearance Field: Fc : (x, d) →c, maps a coordinate x
+and viewing direction d ∈S2 to an RGB color c ∈R3.
+• Semantic Field: Fs : x →s, maps a coordinate x
+to a semantic logit s ∈R to distinguish target from
+background. Crucially, Fs is conditioned only on position
+and the gradient of the semantic loss is back-propagated
+solely through Fs, so the learned fruit occupancy is
+invariant to view-dependent illumination eﬀects.
+1) Volume Rendering: For a camera ray r(t) = o + td, we
+sample K points along the ray to compute the pixel’s color and
+semantic values. The color ˆC(r) is rendered via the equation:
+ˆC(r) =
+K
+X
+k=1
+T (tk) αv (σ (tk) δk) c (tk)
+(3)
+where T (tk) = exp
+
+−Pk−1
+a=1 σ (ta) δa
+
+is the accumulated
+transmittance, αv(x) = 1−exp(−x) is the absorption probability,
+and δk is the distance between adjacent samples.
+Similarly, the semantic logit ˆS (r) is rendered as:
+ˆS (r) =
+K
+X
+k=1
+T (tk) αv (σ (tk) δk) s (tk)
+(4)
+where s (tk) is the semantic logit at the sample point. The
+corresponding semantic probability is obtained via the sigmoid
+activation ˆp(r) = σg( ˆS (r)) ∈[0, 1], where σg(·) denotes the
+logistic sigmoid (distinguished from the density σ).
+D. Point Cloud Extraction From the Reconstructed Volume
+For subsequent analysis, we export the semantically recon-
+structed scene as a point cloud. We use a ray-marching
+technique with an orthographic camera setup to sample
+the
+continuous
+volumetric
+representation.
+For
+each
+ray
+r(t) = o + td, we sample points xk at ﬁxed intervals.
+At each sample point xk, we query the density ﬁeld to obtain
+σk = Fσ (xk) and the semantic probability ˆpk = σg(Fs(xk)).
+A point is retained if its density exceeds the density
+threshold τσ (indicating proximity to a surface) and its seman-
+tic probability exceeds the semantic threshold τs (indicating
+fruit class). The ﬁnal point cloud P is deﬁned as:
+P = {xk | σk > τσ ∧ˆpk > τs}
+(5)
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+WANG et al.: SEMANTIC NeRF-ORIENTED 3-D OBJECT COUNTING FOR INDUSTRIAL FRUIT HARVESTING
+11405
+Fig. 2. Overview of the proposed counting framework. The pipeline comprises three sequential stages: SfM-based pose recovery, semantic neural rendering
+(producing a fruit-only point cloud P), and physics-guided adaptive clustering (producing the fruit count). Coloured points in the clustering stage indicate
+distinct fruit instances.
+To ensure comprehensive coverage, points sampled from all
+six orthographic views are aggregated. This multi-view sam-
+pling enhances the point cloud’s density and completeness,
+mitigating occlusions present in any single perspective.
+E. Adaptive Physics-Guided Point Cloud Segmentation
+We propose an adaptive, shape-based point cloud clustering
+method to accurately estimate fruit counts from the recon-
+structed point cloud. Our approach is distinguished by two key
+innovations. First, it employs shape-based clustering, which
+leverages geometric information such as surface normals rather
+than relying solely on Euclidean distance or point density,
+thereby capturing the morphological characteristics of fruits
+more accurately. Second, its adaptive nature eliminates the
+need to manually specify the number of clusters or density
+thresholds, enhancing robustness to initial conditions via auto-
+mated representative selection and dynamic thresholding. The
+proposed method consists of three main steps: point cloud
+preprocessing, adaptive clustering, and counting.
+1) Point Cloud Preprocessing: Given an input fruit point
+cloud P =
+˚
+pj
+	M
+j=1 extracted from the 3D reconstruction,
+where pj =
+ xj, y j, zj
+
+, we ﬁrst preprocess the data to improve
+the eﬃciency and quality of subsequent clustering. The process
+begins with downsampling, where a voxel grid ﬁlter is applied
+to reduce the point cloud resolution to a uniform grid size
+v, yielding a downsampled point cloud P′ =
+˚
+p′
+k
+	M′
+k=1 and
+reducing computational complexity. This step also enforces a
+uniform spatial resolution across fruit types of diﬀerent sizes,
+which makes the dynamic threshold below scale-invariant.
+Following this, a statistical outlier removal ﬁlter is employed
+to eliminate noise points based on an outlier-distance threshold
+τout derived from the average distance to neighbouring points,
+producing a clean point cloud for clustering.
+2) Adaptive Clustering: Adaptive clustering forms the core
+of our method, designed to identify individual fruit instances
+from the preprocessed point cloud P′ without manual inter-
+vention. This is achieved through automatic representative
+selection and shape-based dynamic threshold clustering.
+a) Automatic
+representative
+selection:
+Conventional
+clustering approaches often rely on predeﬁned parameters
+that do not adapt well to variable fruit morphologies.
+To overcome this, we formulate an adaptive framework based
+on energy function optimization to automatically determine
+optimal cluster representatives while maintaining spatial con-
+sistency. The framework operates without prior assumptions
+about the number of clusters, as deﬁned by the following
+objective function:
+E =
+M′
+X
+i=1
+K
+min
+j=1 d
+ p′
+i, r j
+
++ λK
+(6)
+where p′
+i
+∈P′ is a point, r j is the j-th representative,
+d(·, ·) is the Euclidean distance, and λ is a regularization
+parameter controlling the number of representatives. The
+objective is to minimize E, balancing the distance from points
+to their nearest representatives against the total number of rep-
+resentatives. We solve this using a bottom-up merging strategy.
+The algorithm is initialized by setting the representative set to
+be the entire point cloud, R = P′, and initializing λ as the
+median of nearest neighbor distances. In each iteration, for
+every representative ri, its nearest neighbor rj is identiﬁed, and
+the energy change ∆E = λ−(points managed by r j)×d(ri, r j)
+upon merging is computed. If ∆E > 0, the representatives
+are merged, and the set R is updated. After each iteration, λ is
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+11406
+IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 23, 2026
+doubled to progressively reduce the number of representatives.
+The doubling schedule λ ←2λ is chosen because the optimal
+cluster count scales approximately as K∗∝1/λ; doubling
+therefore halves the expected number of remaining represen-
+tatives at each step and guarantees convergence in O(log M′)
+iterations. The process continues until |∆E| < 10−4, yielding
+the ﬁnal representative set R =
+˚
+r j
+	K
+j=1.
+b) Shape-based dynamic threshold clustering: Using the
+ﬁnal representative set R, we employ a depth-ﬁrst search (DFS)
+to cluster the point cloud, assigning each point p′
+i to its nearest
+representative. To enhance accuracy, we incorporate surface
+normal information and a dynamic threshold. The normal ni
+of each point is estimated via principal component analysis
+(PCA) of its local neighborhood. The dynamic threshold, θ, is
+deﬁned as:
+θ = α · δ ·
+p′
+i −p′
+j
+
+ˇˇˇp′
+i,z −p′
+j,z
+ˇˇˇ · arccos
+ κ
+ ni · nj
+
+(7)
+This threshold integrates three complementary geometric cues
+that together provide a suﬃcient description of a fruit bound-
+ary. The normal-consistency term arccos(κ(ni · nj)) detects the
+sharp angular discontinuity that appears at the crease between
+two touching convex fruits, which is the dominant signal
+when fruits are in direct contact and distance-based cues fail.
+The elevation-gradient term |p′
+i,z −p′
+j,z|/∥p′
+i −p′
+j∥captures the
+height-proﬁle discontinuity of vertically stacked fruits, and is
+complementary to the normal cue where adjacency is near-
+tangential. The local density δ weights both cues by the
+reconstruction reliability of the local region, tightening the
+threshold in sparse or occluded areas and relaxing it in well-
+sampled ones. Because horizontal and vertical contacts are
+the two principal contact modes in gravity-aligned orchard
+scenes, these cues provide suﬃcient coverage of the boundary
+geometries encountered in practice. Here, α is a scalar adjust-
+ment factor that scales the composite score to the Euclidean
+distance units used by the DFS expansion, and κ(·) is a clipping
+function that conﬁnes the dot product to the valid input range
+of arccos to avoid ﬂoating-point-induced numerical failure.
+The clustering process is detailed in Algorithm 1.
+3) Fruit Counting: Finally, the fruit count is estimated from
+the optimised clusters
+n
+C′
+j
+oK
+j=1. Each cluster C′
+j is treated as a
+potential fruit instance. We compute the convex-hull volume
+of each cluster:
+Vj = ConvexHull
+ C′
+j
+
+.volume
+(8)
+No externally speciﬁed reference volume is required: we
+derive the reference directly from the clustering output as the
+median of the per-cluster volumes,
+Vref = median
+ {Vj}K
+j=1
+
+,
+(9)
+which is robust to under- or over-segmented outliers since the
+median has a 50% breakdown point. The per-cluster fruit count
+Algorithm 1 Adaptive Shape-Based Clustering for Fruit
+Counting
+Input: Preprocessed point cloud P′ = {p′
+k}M′
+k=1, regulariza-
+tion parameter λ, adjustment factor α
+Output: Fruit count N
+Initialization: Set representative set R = P′, initialize λ as
+the median of nearest neighbor distances
+Step 1: Automatic Representative Selection
+while energy E not converged (|∆E| > 10−4) do
+Update representatives R by merging based on energy
+change ∆E
+Adjust λ ←2 × λ
+end while
+Obtain ﬁnal representatives R = {r j}K
+j=1
+Step 2: Adaptive Clustering with Shape Features
+for each point p′
+i in P′ do
+Compute normal ni using PCA
+Assign p′
+i to nearest representative r j with dynamic
+threshold θ from Eq. (7)
+Expand cluster C j using DFS
+end for
+Step 3: Cluster Boundary Optimization
+while clusters not converged do
+Reassign points to dominant cluster labels in their neigh-
+borhood
+end while
+Obtain optimized clusters {C′
+j}K
+j=1
+Step 4: Fruit Counting
+Compute V j for each cluster via Eq. (8); compute Vref via
+Eq. (9)
+for each cluster C′
+j do
+Estimate count j via Eq. (10)
+end for
+Compute total fruit count N = PK
+j=1 count j
+is then assigned by comparing Vj to Vref within a tolerance
+band:
+count j =
+8
+ˆ<
+ˆ:
+1,
+if 0.9Vref ≤Vj ≤1.1Vref,
+
+V j/Vref
+
+,
+if Vj > 1.1Vref,
+0,
+if Vj < 0.9Vref.
+(10)
+The ﬁrst case handles single-fruit clusters; the second han-
+dles multi-fruit (under-segmented) clusters, exploiting that the
+convex-hull volume of n touching convex fruits scales approx-
+imately linearly in n; the third ﬁlters out noise fragments.
+The total count is N = PK
+j=1 count j. This volume-based
+rule is parameter-free and adapts across fruit types (because
+Vref is recomputed per scene), in contrast to template-matching
+approaches that require a predeﬁned exemplar.
+The overall complexity of the clustering pipeline is
+O(M′ log2 M′), dominated by the energy-minimisation step,
+which is near-linear in the point count and scales gracefully
+to large orchard scenes.
+IV. EXPERIMENT
+This section details the experimental evaluation of our pro-
+posed object counting framework. We ﬁrst outline the datasets
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+WANG et al.: SEMANTIC NeRF-ORIENTED 3-D OBJECT COUNTING FOR INDUSTRIAL FRUIT HARVESTING
+11407
+Fig. 3. Visualisation of the synthetic dataset with three controlled fruit-density levels.
+Fig. 4. Rendered example images for all eight fruit types in the synthetic dataset: apple, plum, lemon, pear, peach, mango, strawberry, and blueberry.
+and experimental setup, followed by a comparative analysis
+against state-of-the-art methods. We then provide a qualita-
+tive analysis through visualisations, investigate the impact of
+various factors via ablation, and report the computational cost.
+A. Datasets and Evaluation Protocol
+For our evaluation, we utilise publicly available synthetic
+and real-world datasets from FruitNeRF [3], supplemented
+by the Fuji-SfM dataset [31], to ensure objectivity and
+comparability. We report Accuracy (Acc), Recall, F1-score,
+Mean Absolute Error (MAE), and Root Mean Squared Error
+(RMSE). Here, Acc = 1 −|Npred −Ngt|/Ngt denotes scene-
+level counting accuracy, whereas Recall and F1-score are
+computed from instance-level fruit matching. For the 2D
+baselines in Table II, the ﬁrst-column values follow the
+precision numbers reported in the original papers because
+scene-level count accuracy is not available. The same hyper-
+parameter suite is used across all datasets without per-dataset
+tuning.
+1) Synthetic Dataset:
+The synthetic dataset, generated
+using Blender with the BlenderNeRF plugin [30], com-
+prises eight fruit types: apple, plum, lemon, pear, peach,
+mango, strawberry, and blueberry. Each tree is represented
+by 300 images at a resolution of 1024 × 1024 px. To enable
+systematic performance assessment, the dataset features con-
+trolled variations across two dimensions: occlusion level and
+fruit density, categorised into three levels based on inter-
+fruit spacing: sparse (> 5 cm), medium (2–5 cm), and
+dense (< 2 cm), as visualised in Figure 3. Ground-truth
+counts are read directly from the scene graph, eliminating
+annotation uncertainty. Rendered examples for all eight fruit
+types are shown in Figure 4. Note that the strawberry and
+blueberry scenes are modelled with suﬃcient spatial separation
+that each berry is at least partially visible from the camera
+hemisphere; the most extreme natural clustering conﬁgurations
+of these two species, in which inner berries are permanently
+occluded, fall outside the applicability scope of any multi-view
+reconstruction pipeline.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+11408
+IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 23, 2026
+TABLE I
+SOFTWARE LIBRARIES AND TOOLS USED IN THE MAIN PIPELINE STAGES
+2) Real-World Dataset: The real-world evaluation uses the
+three apple-tree scenes (Tree 01–03) from the FruitNeRF
+benchmark (approx. 350 images per tree at 1000 × 1500 px,
+captured with a Nikon D7100 at 35 mm focal length, with
+per-tree ground-truth counts 179/113/291 obtained by on-site
+manual counting), together with the Fuji-SfM dataset [31],
+which contains 11 Fuji apple trees in a single row with
+582 images and per-fruit 3D annotations. We adopt both
+datasets and their published ground truth without modiﬁcation.
+B. Experiment Setup
+All experiments are conducted on an NVIDIA RTX 3090
+GPU with an AMD Ryzen 9 5950X CPU, running Ubuntu
+22.04 with CUDA 11.8. The main software components
+are summarised in Table I. Unless otherwise stated, the
+ﬁxed implementation constants are: orthographic ray step
+∆s = 0.004 (normalised units), density threshold τσ = 0.01,
+semantic threshold τs = 0.5, voxel size v = 0.01 m, statistical-
+outlier k = 20, outlier multiplier σth = 2.0, normal-estimation
+radius rn = 0.05 m with kn = 8 neighbours, adjustment
+factor α = 0.5, λ0 initialised as the median nearest-neighbour
+distance and doubled each iteration, and κ(x) = max(−1 +
+ε, min(1 −ε, x)) with ε = 10−6.
+We evaluate our method against 2D and 3D baselines on
+all datasets. To analyse the eﬀect of the upstream semantic
+segmentation and reconstruction, we compare two segmen-
+tation strategies—a pre-trained Grounded-SAM model [32]
+prompted with “fruit” and a U-Net instance-segmentation
+model [33] trained on annotated data—and two NeRF capac-
+ities: a Small model (2 hidden layers, 64 units) and a Large
+model (3 layers, 128 units).
+Model training is guided by a joint loss function comprising
+a photometric loss and a semantic loss. The photometric loss
+measures the mean squared error (MSE) between rendered and
+ground-truth pixel colors:
+LPhoto = 1
+|R|
+X
+r∈R
+∥C(r) −ˆC(r)∥2
+2
+(11)
+where R is the set of sampled rays, and C(r) and ˆC(r) are the
+ground-truth and predicted colors, respectively.
+The semantic loss employs binary cross-entropy (BCE) to
+optimize the classiﬁcation between target (fruit) and back-
+ground:
+LSem = −1
+|R|
+X
+r∈R
+
+p(r) log ˆp(r) + (1 −p(r)) log(1 −ˆp(r))
+
+(12)
+where p(r) ∈{0, 1} is the ground-truth label, and ˆp(r) =
+σg( ˆS (r)) is the predicted probability. The total loss is a sum
+of these two components:
+L = LPhoto + LSem
+(13)
+Crucially, the gradient of LSem is back-propagated only
+through Fs and not through the shared Density Field, prevent-
+ing the density estimate from collapsing to fruit-only surfaces.
+C. Experiment Results
+1) Quantitative Results: To validate the eﬃcacy of our
+proposed method, we conduct extensive experiments on
+three distinct datasets: a synthetic dataset, a real-world
+dataset, and the Fuji dataset. Our approach is benchmarked
+against a comprehensive suite of baseline methods, encom-
+passing density-based techniques (GMN [34], FamNet [35],
+CounTR [36]), detection-based approaches (FR [37], FSOD
+[38], PseCo [39]), and the state-of-the-art 3D counting method,
+FruitNeRF [3]. Given the scarcity of methods for fruit counting
+in the 3D domain, we selected the most representative and
+advanced model, FruitNeRF, for comparison. Table II presents
+the quantitative comparison across all datasets using the ﬁve
+standard evaluation metrics: Acc, Recall, F1-score, MAE,
+and RMSE.
+On the synthetic dataset, 2D methods exhibit varied per-
+formance. CounTR demonstrates robust performance with an
+F1-score of 0.818 and an MAE of 18.74. In contrast, FR
+records a markedly lower F1-score of 0.570 and a substantial
+MAE of 44.17, reﬂecting inferior performance, while PseCo
+achieves a moderate F1-score of 0.700. This trend persists
+in real-world datasets, where CounTR maintains high eﬃcacy
+(F1 0.833, MAE 19.27), whereas GMN and FSOD display
+larger errors, with MAEs of 31.39 and 35.76, respectively.
+On the challenging Fuji dataset, which emulates complex
+agricultural scenarios, CounTR’s F1-score declines to 0.721,
+indicating performance limitations under intricate conditions.
+Although these methods perform adeptly in single-view sce-
+narios, their eﬃcacy diminishes in complex three-dimensional
+environments. Lacking an understanding of spatial distribu-
+tions, these methods are unable to eﬀectively distinguish
+the same target across diﬀerent viewpoints, which results in
+redundant counting.
+In contrast, FruitNeRF signiﬁcantly enhances counting
+accuracy by reformulating the problem in a three-dimensional
+space, achieving F1 = 0.750 / MAE = 15.75 / RMSE = 31.42
+on synthetic, F1 = 0.783 / MAE = 16.94 / RMSE = 25.87
+on real-world, and F1 = 0.760 / MAE = 20.86 / RMSE =
+47.36 on Fuji. However, its performance is constrained by
+its reliance on the DBSCAN clustering algorithm and prede-
+ﬁned object templates: the initialisation process signiﬁcantly
+impacts clustering performance, and the morphological vari-
+ability of real-world fruits makes precise counting with
+predeﬁned templates diﬃcult.
+Our
+proposed
+method
+builds
+upon
+the
+3D
+counting
+paradigm by integrating adaptive point-cloud clustering with
+the fusion of geometric features, thereby enhancing both
+accuracy and robustness. We achieve Acc:0.996, F1:0.977,
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+WANG et al.: SEMANTIC NeRF-ORIENTED 3-D OBJECT COUNTING FOR INDUSTRIAL FRUIT HARVESTING
+11409
+TABLE II
+QUANTITATIVE COMPARISONS ON THE THREE DATASETS. THE FIRST AND SECOND PARTS CONTAIN THE DENSITY-BASED AND DETECTION-BASED
+METHODS. THE THIRD PART FOCUSES ON THE STATE-OF-THE-ART COUNTING METHODS IN THREE-DIMENSIONAL SCENES. THE BEST RESULTS
+ARE SHOWN IN BOLD. HERE, ACC DENOTES SCENE-LEVEL COUNTING ACCURACY 1 −|Npred −Ngt|/Ngt FOR THE 3D METHODS; FOR THE
+2D BASELINES, THE FIRST-COLUMN VALUES ARE THE PRECISION NUMBERS REPORTED IN THEIR ORIGINAL PAPERS
+Fig. 5.
+Qualitative counting results for 3D methods on the dense mango and apple scenes. Coloured points denote per-cluster assignments. Our method
+correctly separates touching fruits at the canopy apex and base, where FruitNeRF exhibits missed detections and merged clusters.
+MAE:13.26, RMSE:25.38 on synthetic, Acc:0.979, F1:0.960,
+MAE:14.15, RMSE:19.33 on real-world, and Acc:0.916,
+F1:0.840, MAE:16.14, RMSE:34.84 on Fuji, consistently
+outperforming FruitNeRF across all datasets. These results
+demonstrate stronger robustness to variation in fruit type,
+morphology, and scene complexity, as further validated by the
+statistical signiﬁcance test below.
+Statistical
+signiﬁcance. To assess whether the MAE
+improvements over FruitNeRF are statistically signiﬁcant,
+we performed a paired Wilcoxon signed-rank test [44] on
+per-tree MAE values from the real-world apple dataset
+(Trees 01–03) and the Fuji-SfM dataset (11 trees), totalling
+n = 14 paired observations. All 14 per-tree MAE diﬀerences
+favour our method, yielding the maximum possible test statis-
+tic W+ = 105 and a two-sided p-value p < 0.001, well below
+the α = 0.01 signiﬁcance level.
+Accuracy improvement. The accuracy gains over Fruit-
+NeRF, expressed as absolute diﬀerences in Acc (percentage
+points), are 6.9 pp on synthetic, 7.2 pp on real-world, and
+12.9 pp on Fuji.
+2) Qualitative Results: Figure 5 illustrates the qualitative
+results of the 3D counting methods. While 2D approaches
+such as CounTR can manage counting tasks from a single
+perspective, they inadequately address the issue of redundant
+counting inherent in 3D scenes. Our comparative analysis
+therefore focuses on the 3D method, FruitNeRF.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+11410
+IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 23, 2026
+TABLE III
+RECONSTRUCTION QUALITY OF SEMANTIC NERF WITH DIFFERENT SEGMENTATION METHODS ON PEAR, MANGO, AND LEMON DATASETS
+TABLE IV
+QUANTITATIVE COMPARISONS OF COUNTING PERFORMANCE ON PEAR, MANGO, AND LEMON DATASETS.
+HERE, ACC DENOTES SCENE-LEVEL COUNTING ACCURACY 1 −|Npred −Ngt|/Ngt
+TABLE V
+ABLATION STUDY ON THE REGULARIZATION PARAMETER λ. THIS TABLE SHOWS THE SENSITIVITY OF THE MODEL’S PERFORMANCE METRICS (ACC,
+RECALL, F1-SCORE, AND MAE) TO VARIATIONS IN THE INITIAL λ VALUE, SCALED BY A FACTOR β. HERE, ACC DENOTES SCENE-LEVEL
+COUNTING ACCURACY 1 −|Npred −Ngt|/Ngt. THE BEST RESULT IN EACH COLUMN IS SHOWN IN BOLD
+As depicted in Figs. 5(b) and 5(d), our method achieves
+more precise detection of fruits under high-density distribu-
+tions, yielding counting results that more closely align with
+the ground truth. Moreover, in comparison with FruitNeRF,
+our approach exhibits a lower rate of missed detections. Even
+at the apex and base of the fruit trees, where enumeration is
+diﬃcult, our method still produces accurate counts. Among the
+eight fruit types in the synthetic dataset, the pear (781 fruits)
+and mango (1150 fruits) scenes represent the most challenging
+dense-fruit conﬁgurations among the quantitatively analysed
+cases; our method achieves F1-scores of 0.96 and 0.95, respec-
+tively, on these scenes (Large NeRF + U-Net; see Table IV),
+demonstrating that the physics-guided clustering scales eﬀec-
+tively to scenes with over a thousand densely packed fruits per
+tree. Qualitative results for strawberry and blueberry, under
+the individually-resolvable modelling conditions described in
+Section IV-A, are shown in Figure 6.
+D. Ablation Study
+In the ablation experiments, we explore the impacts of dif-
+ferent factors on counting accuracy: reconstruction model size
+Fig. 6.
+Qualitative counting results for strawberry and blueberry under
+individually-resolvable modelling conditions. Yellow spheres = ground-truth
+fruit centres; red spheres = predicted cluster centres.
+and segmentation strategy (Tables III and IV), the sensitivity
+to the regularisation parameter λ (Table V), and the eﬀect
+of voxel-grid downsampling on the cost–accuracy trade-oﬀ
+(Table VI).
+The size of the reconstruction model signiﬁcantly inﬂu-
+ences counting accuracy across all datasets. We employed two
+reconstruction models of diﬀerent sizes. The speciﬁc details
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+WANG et al.: SEMANTIC NeRF-ORIENTED 3-D OBJECT COUNTING FOR INDUSTRIAL FRUIT HARVESTING
+11411
+TABLE VI
+EFFECT OF VOXEL GRID SIZE v ON POINT COUNT, CLUSTERING
+RUNTIME, AND COUNTING ACCURACY (SYNTHETIC DATASET,
+APPLE SCENE AS REPRESENTATIVE)
+are as described in the previous text, and we refer to them
+as Small NeRF and Large NeRF. Large NeRF consistently
+outperforms Small NeRF in counting metrics, particularly in
+F1-score and MAE. For instance, on the Mango dataset, Large
+NeRF with U-Net achieves an F1-score of 0.95 and MAE
+of 13.0, compared to Small NeRF with U-Net’s F1-score
+of 0.93 and MAE of 14.0. Similarly, on the Lemon dataset,
+Large NeRF with U-Net yields an F1-score of 0.94, surpassing
+Small NeRF’s 0.92. These results suggest that Large NeRF’s
+enhanced capacity to capture complex scene representations
+improves the quality of reconstructed inputs, thereby boosting
+counting precision. Small NeRF, while slightly competitive in
+reconstruction quality on the Pear dataset, fails to match Large
+NeRF’s counting performance, indicating that model capacity
+is critical for downstream tasks.
+The choice of segmentation method also plays a pivotal
+role in counting accuracy. U-Net consistently outperforms
+SAM, particularly when paired with Large NeRF. On the
+Pear dataset, Large NeRF with U-Net achieves an F1-score
+of 0.96 and MAE of 12.3, signiﬁcantly better than Large
+NeRF with SAM’s F1-score of 0.90 and MAE of 16.5. This
+trend holds across datasets, with U-Net improving IoU scores,
+which directly enhance the quality of reconstructed inputs
+for counting. For example, on the Mango dataset, U-Net
+yields an IoU of 0.60 compared to SAM’s 0.52, correlating
+with better counting metrics. U-Net’s superior segmentation
+precision ensures more accurate object delineation, which is
+critical for reliable counting, whereas SAM’s lower IoU limits
+its eﬀectiveness.
+To investigate the method’s sensitivity to the regularization
+parameter λ, we conducted an ablation study on its initial-
+ization. Our method automatically initializes λ as the median
+of nearest neighbor distances, which corresponds to a scaling
+factor of β = 1.0. We analyzed the performance by varying
+this initial λ with diﬀerent β factors, with the results presented
+in Table V.
+The quantitative results demonstrate that our framework
+maintains high performance within a stable range around
+the automatic initialization. On the Synthetic and Real-
+World datasets, the F1-score remains robust (F1 > 0.95)
+for β values between 0.80 and 1.00. On the Synthetic dataset,
+the F1-score peaks at 0.977 for our proposed β = 1.0.
+Similarly, on the Real-World dataset, our β = 1.0 achieves
+the peak F1-score of 0.960. Crucially, our automatic initial-
+ization strategy (β = 1.0) consistently yields the lowest MAE
+(13.26 and 14.15) on these two datasets.
+Performance degrades signiﬁcantly only at extreme values
+of β. When β is set too low (e.g., β ≤0.25), the low
+regularization penalty leads to severe over-segmentation. This
+is reﬂected by high Recall but poor scene-level counting
+accuracy (e.g., Acc = 0.865 on Synthetic at β = 0.25), because
+the resulting over-count inﬂates the total-count error and drives
+the MAE sharply upward. Conversely, when β is set too high
+(e.g., β ≥5.0), the high penalty causes aggressive merging and
+under-segmentation. This is evidenced by a catastrophic drop
+in Recall (e.g., 0.640 on Synthetic and 0.400 on Fuji) and the
+highest MAE values across all datasets.
+On the more challenging Fuji dataset, the optimal F1-score
+(0.931) is achieved at β = 0.80. This is slightly higher than
+our automatic β = 1.0 (F1 = 0.840), which is consistent with
+the dataset’s high recall (0.970) at the baseline, indicating a
+tendency toward over-segmentation. However, β = 1.0 yields
+the lowest MAE (16.14) on the Fuji dataset, conﬁrming it
+as the most balanced choice for count-error minimization.
+This analysis conﬁrms that our automatic initialization is an
+eﬀective and reliable choice, and that the energy optimization
+framework is stable even with moderate deviations in this
+parameter.
+Eﬀect of voxel-grid downsampling: The voxel-grid ﬁlter
+reduces the number of points entering clustering and stan-
+dardises the spatial resolution, both of which aﬀect cost
+and accuracy. We varied the voxel size v from 0.005 m
+to 0.020 m and measured the clustering runtime and the
+counting F1-score on the synthetic dataset (apple scene as
+representative; Table VI). For v ≤0.010 m the F1-score stays
+in a narrow plateau of 0.977–0.978, and the ﬁnest resolution
+(v = 0.005) is not better (and marginally worse), because
+excessively dense point clouds amplify noise in PCA-based
+normal estimation. Beyond v = 0.010 m, accuracy degrades
+as the ﬁne-scale geometric signatures at inter-fruit creases are
+averaged away within a single voxel. The default v = 0.010 m
+therefore occupies a practical sweet spot of the cost–accuracy
+trade-oﬀ: it is within 0.001 F1 and 0.2 MAE of the best-
+performing setting (v = 0.008 m) while reducing clustering
+time by more than 20× relative to the raw point cloud and by
+4.4× relative to the ﬁnest tested resolution.
+E. Computational Cost and Runtime Analysis
+To assess practical deployability, we measured the wall-
+clock time of each pipeline stage and compared the overall
+cost with FruitNeRF and 2D baselines. All measurements use
+the hardware described in Section IV-B, with input images at
+1024 × 1024 px (synthetic) and 1000 × 1500 px (real-world),
+averaged over three independent runs. Table VII reports the
+per-stage runtime, and Table VIII gives a per-image timing
+reference for representative 2D baselines. NeRF training dom-
+inates the full pipeline (> 95% of total time) and is shared
+between FruitNeRF and our method. Our physics-guided clus-
+tering adds a 4-second overhead in the clustering sub-step
+(22 s vs. 18 s) but saves 5 s in the counting sub-step
+(2.7× speed-up: 3 s vs. 8 s, due to the parameter-free
+volume-based counting replacing template matching), for a net
+1-second reduction in the post-NeRF stage (72±3 s vs. 73±3 s
+for FruitNeRF). Relative to the total pipeline budget, this
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+11412
+IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 23, 2026
+TABLE VII
+PER-STAGE RUNTIME (MEAN ± STD). NERF TRAINING TIMES ARE
+IDENTICAL BECAUSE THE BACKBONE IS UNCHANGED.
+POST-NERF TOTAL IS THE PRACTICALLY RELEVANT
+RUNTIME FOR REPEATED YIELD ESTIMATION
+TABLE VIII
+INFERENCE-TIME REFERENCE FOR REPRESENTATIVE 2D BASELINES
+(PER IMAGE). THESE METHODS ARE FAST PER IMAGE BUT REQUIRE
+ADDITIONAL TRACKING OR DEDUPLICATION
+TO HANDLE MULTI-VIEW COUNTING
+TABLE IX
+F1-SCORE UNDER THREE CONTROLLED DENSITY CONDITIONS
+(AVERAGED ACROSS EIGHT FRUIT TYPES, MEAN ± STD)
+change is well under 0.1%, meaning the substantial accuracy
+improvement comes at virtually no additional computational
+cost. Compared with 2D baselines, per-image inference is
+faster (∼0.2–0.4 s) but those methods do not inherently resolve
+multi-view duplicate counting, which our 3D framework elim-
+inates by construction.
+V. DISCUSSION
+In this section we interpret the results beyond the raw
+numbers: how performance varies with fruit density, how the
+framework behaves under diﬀerent lighting conditions, and
+what the two representative failure modes reveal about the
+operational envelope of the method.
+A. Performance Across Fruit Density Levels
+Table IX reports F1-scores under the three controlled density
+conditions in the synthetic dataset, averaged across all eight
+fruit types. These three per-density averages are weighted
+across the synthetic dataset’s fruit-type distribution to recover
+the Synthetic F1 of 0.75 (FruitNeRF) and 0.977 (Ours)
+TABLE X
+COUNTING PERFORMANCE UNDER FOUR CONTROLLED LIGHTING
+CONDITIONS (SYNTHETIC DATASET, APPLE SCENE AS
+REPRESENTATIVE). HERE, ACC DENOTES SCENE-
+LEVEL COUNTING ACCURACY 1 −|Npred −Ngt|/Ngt
+reported in Table II. The performance gap over FruitNeRF
+widens as density increases: at sparse density both methods
+perform well, but at dense density (physical contact, inter-
+fruit distance < 2 cm) FruitNeRF’s F1 drops to 0.643 while
+ours remains at 0.966. The reason is structural rather than
+parametric. When two fruits are in contact, their Euclidean
+separation is zero, so no distance threshold—regardless of
+tuning—can separate them, which is why DBSCAN-based
+pipelines collapse in this regime. Our physics-guided approach
+exploits the fact that the normal ﬁeld still exhibits a
+sharp discontinuity at the contact crease: arccos(κ(ni · nj))
+approaches π at the junction of two convex surfaces, which
+places a large factor in the denominator of Eq. (7) and sup-
+presses θ precisely at the boundary, enforcing a segmentation
+cut. The high F1 at dense density is therefore a genuine
+algorithmic advantage, not the product of parameter tuning.
+B. Robustness to Lighting Conditions
+In real-world orchards, the relative geometry between
+camera, sun, and fruit surface changes continuously, pro-
+ducing direct illumination, partial shadow, and specular
+highlights on the same fruit across diﬀerent frames. Our
+framework absorbs these eﬀects through the structural design
+of the NeRF components: the view-conditioned Appearance
+Field absorbs specular highlights and directional shadows,
+while the position-only Semantic Field produces consistent
+fruit logits regardless of lighting angle. The physics-guided
+clustering operates exclusively on geometry, further insulat-
+ing the ﬁnal count from any residual photometric eﬀects.
+To quantify this robustness, we conﬁgured four controlled
+lighting scenarios in the Blender synthetic environment
+(Figure 7); counting performance under each is reported
+in Table X. Accuracy remains consistently high across all
+four conditions, with the moderate decrease under backlight
+(∆F1 = 0.032) attributable to the reduced quality of upstream
+segmentation
+masks
+in
+high-contrast
+silhouette
+regions.
+Under truly extreme conditions (near-darkness, severe over-
+exposure), photometric supervision becomes uninformative
+and reconstruction quality will degrade, but such conditions
+fall outside the normal operating envelope of ﬁeld data
+acquisition.
+C. Failure Cases and Applicability Scope
+Two representative failure modes delineate the operational
+envelope of the method.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+WANG et al.: SEMANTIC NeRF-ORIENTED 3-D OBJECT COUNTING FOR INDUSTRIAL FRUIT HARVESTING
+11413
+Fig. 7. Representative input images under four common orchard lighting conditions: (a) normal daylight, (b) strong direct sunlight, (c) weak/diﬀuse light,
+(d) backlight.
+Fig. 8. Failure case 1: Fuji-SfM Tree 3. A constrained linear camera trajectory
+produces incomplete point clouds at the canopy periphery (red = predicted
+cluster centres, yellow = ground-truth centres).
+Case 1: insuﬃcient hemispherical coverage. Tree 3 of the
+Fuji-SfM dataset lies at the end of a multi-tree row, where the
+capture trajectory is constrained to a partial arc rather than a
+complete hemispherical orbit. Fruits at the canopy periphery
+are observed from a limited angular range, yielding incomplete
+point clouds and unreliable normal estimates. The clustering
+stage consequently under-segments fruit groups at the canopy
+extremities (Figure 8). This is fundamentally an acquisition-
+geometry problem: when the same tree is re-scanned with a
+complete orbit, accuracy recovers to the level of Trees 01–02.
+This motivates acquisition-protocol guidance (minimum orbit
+arc and minimum number of viewpoints per fruit) as future
+work.
+Case 2: permanently occluded cluster-internal fruits.
+In dense blueberry clusters (Figure 9), inner berries are
+completely surrounded by outer layers and remain invisible
+from any external viewpoint. The NeRF converges to a single
+opaque outer shell, and the point cloud lacks the per-berry
+geometry that our clustering needs. This is a fundamental lim-
+itation shared by all multi-view reconstruction-based counting
+pipelines: invisible fruits cannot be reconstructed from RGB
+observations alone. Overcoming this requires complementary
+sensing modalities or generative priors about bunch structure.
+Based on these cases, the framework is applicable to fruits
+satisfying two conditions: (C1) approximate convexity, so that
+normals reverse at inter-fruit contact boundaries; and (C2)
+Fig. 9. Failure case 2: densely occluded blueberry cluster. Inner berries that
+are never visible from any viewpoint cannot be reconstructed; the NeRF yields
+only the outer shell, which is correctly recognised as a single convex surface
+and thus counted as one instance (red = predicted cluster, yellow = ground-
+truth berry centres).
+individual resolvability, i.e., each fruit is at least partially vis-
+ible from the camera trajectory. Fruits satisfying both include
+apples, pears, lemons, peaches, mangoes, plums, and tomatoes
+(including those in physical contact on a truss). Fruits violating
+(C2) due to cluster-internal occlusion—such as inner berries
+in grape bunches or tightly packed blueberry clusters—are
+outside the applicability scope of our current framework.
+Additionally, the NeRF assumption of scene rigidity is violated
+by wind-induced motion of branches and fruit; robust-loss
+formulations such as RobustNeRF [45] are a straightforward
+extension to mitigate this in future work.
+VI. CONCLUSION
+This paper introduces a dual-framework that integrates
+3D neural reconstruction and physics-guided adaptive clus-
+tering to address object counting in occluded, clustered 3D
+scenes. To address the limitations of 2D methods that suf-
+fer from duplicate counting when aggregating multi-view
+observations, we employ a semantic NeRF to reconstruct
+the
+scene
+and
+segment
+target
+instances
+simultaneously.
+This approach eliminates background interference and view-
+based duplicates without requiring extensive 3D annotations.
+To overcome the challenges of traditional clustering algo-
+rithms, which are often physics-agnostic and rely on rigid
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+11414
+IEEE TRANSACTIONS ON AUTOMATION SCIENCE AND ENGINEERING, VOL. 23, 2026
+thresholds, we propose a physics-guided clustering method
+that adapts to object morphology. This algorithm fuses multi-
+dimensional geometric features, including surface normals and
+elevation gradients, and utilizes a hierarchical optimization
+framework to avoid manual parameter tuning. We integrate the
+semantic reconstruction and adaptive clustering into a uniﬁed
+pipeline for robust counting. Extensive experiments on the syn-
+thetic, real-world, and Fuji-SfM datasets demonstrate that our
+approach improves counting accuracy by 6.9 percentage points
+(0.996 vs. 0.927) over the state-of-the-art 3D baseline on the
+synthetic dataset, with corresponding gains of 7.2 pp and
+12.9 pp on the real-world and Fuji datasets. For future work,
+we aim to generalise the framework to more diverse crops,
+adopt faster reconstruction backbones such as 3D Gaussian
+Splatting for real-time deployment, and integrate multi-modal
+sensors to lift the individual-resolvability requirement in
+cluster-structured fruits such as grapes and dense blueberries.
+REFERENCES
+[1]
+D.-J. Lee, J. K. Archibald, and G. Xiong, “Rapid color grading for fruit
+quality evaluation using direct color mapping,” IEEE Trans. Autom. Sci.
+Eng., vol. 8, no. 2, pp. 292–302, Apr. 2011.
+[2]
+L. He, F. Wu, X. Du, and G. Zhang, “Cascade-SORT: A robust fruit
+counting approach using multiple features cascade matching,” Comput.
+Electron. Agricult., vol. 200, Sep. 2022, Art. no. 107223.
+[3]
+L. Meyer, A. Gilson, U. Schmid, and M. Stamminger, “FruitNeRF:
+A uniﬁed neural radiance ﬁeld based fruit counting framework,” in
+Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS), Oct. 2024,
+pp. 1–8.
+[4]
+L. Zeng, W. J. Lv, Z. K. Dong, and Y. J. Liu, “PPR-Net++: Accurate 6-
+D pose estimation in stacked scenarios,” IEEE Trans. Autom. Sci. Eng.,
+vol. 19, no. 4, pp. 3139–3151, Oct. 2022.
+[5]
+B. Calli, W. Caarls, M. Wisse, and P. P. Jonker, “Active vision via
+extremum seeking for robots in unstructured environments: Applications
+in object recognition and manipulation,” IEEE Trans. Autom. Sci. Eng.,
+vol. 15, no. 4, pp. 1810–1822, Oct. 2018.
+[6]
+S. Kobayashi, W. Wan, T. Kiyokawa, K. Koyama, and K. Harada,
+“Obtaining an object’s 3D model using dual-arm robotic manipulation
+and stationary depth sensing,” IEEE Trans. Autom. Sci. Eng., vol. 20,
+no. 3, pp. 2075–2087, Jul. 2023.
+[7]
+P. Roy, W. Dong, and V. Isler, “Registering reconstructions of the two
+sides of fruit tree rows,” in Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst.
+(IROS), Oct. 2018, pp. 1–9.
+[8]
+M.
+Jayaratne,
+D.
+de
+Silva,
+and
+D.
+Alahakoon,
+“Unsupervised
+machine
+learning
+based
+scalable
+fusion
+for
+active
+perception,”
+IEEE
+Trans.
+Autom.
+Sci.
+Eng.,
+vol. 16,
+no. 4,
+pp. 1653–1663,
+Oct. 2019.
+[9]
+X. Liu et al., “An adaptive signal photon detection method based
+on DBSCAN for photon-counting laser altimeter,” IEEE J. Sel.
+Topics Appl. Earth Observ. Remote Sens., vol. 17, pp. 3674–3686,
+2024.
+[10] H. Chen, M. Liang, W. Liu, W. Wang, and P. X. Liu, “An approach to
+boundary detection for 3D point clouds based on DBSCAN clustering,”
+Pattern Recognit., vol. 124, Apr. 2022, Art. no. 108431.
+[11] M. Nasor and W. Obaid, “Detection and localization of early-stage
+multiple brain tumors using a hybrid technique of patch-based process-
+ing, k-means clustering and object counting,” Int. J. Biomed. Imag.,
+vol. 2020, Jan. 2020, Art. no. 9035096.
+[12] H. Liu, Y. Yu, F. Sun, and J. Gu, “Visual–tactile fusion for
+object recognition,” IEEE Trans. Autom. Sci. Eng., vol. 14, no. 2,
+pp. 996–1008, Apr. 2017.
+[13] B. Zhao, X. Hua, K. Yu, W. Xuan, X. Chen, and W. Tao, “Indoor point
+cloud segmentation using iterative Gaussian mapping and improved
+model ﬁtting,” IEEE Trans. Geosci. Remote Sens., vol. 58, no. 11,
+pp. 7890–7907, Nov. 2020.
+[14] Q. Liu, Y. Zhang, and G. Yang, “Small unopened cotton boll counting
+by detection with MRF-YOLO in the wild,” Comput. Electron. Agricult.,
+vol. 204, Jan. 2023, Art. no. 107576.
+[15] D. Ma, H. Fang, N. Wang, C. Zhang, J. Dong, and H. Hu, “Automatic
+detection and counting system for pavement cracks based on PCGAN
+and YOLO-MF,” IEEE Trans. Intell. Transp. Syst., vol. 23, no. 11,
+pp. 22166–22178, Nov. 2022.
+[16] B. Mildenhall, P. P. Srinivasan, M. Tancik, J. T. Barron, R. Ramamoorthi,
+and R. Ng, “NeRF: Representing scenes as neural radiance ﬁelds for
+view synthesis,” in Proc. Eur. Conf. Comput. Vis. Glasgow, U.K.:
+Springer, Aug. 2020, pp. 405–421.
+[17] J. T. Barron, B. Mildenhall, M. Tancik, P. Hedman, R. Martin-Brualla,
+and P. P. Srinivasan, “Mip-NeRF: A multiscale representation for anti-
+aliasing neural radiance ﬁelds,” in Proc. IEEE/CVF Int. Conf. Comput.
+Vis. (ICCV), Oct. 2021, pp. 5855–5864.
+[18] J. T. Barron, B. Mildenhall, D. Verbin, P. P. Srinivasan, and P. Hed-
+man, “Zip-NeRF: Anti-aliased grid-based neural radiance ﬁelds,”
+in Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV), Oct. 2023,
+pp. 19640–19648.
+[19] T. M¨uller, A. Evans, C. Schied, and A. Keller, “Instant neural graphics
+primitives with a multiresolution hash encoding,” ACM Trans. Graph.,
+vol. 41, no. 4, pp. 1–15, Jul. 2022.
+[20] A. Chen et al., “TensoRF: Tensorial radiance ﬁelds,” in Proc. Eur. Conf.
+Comput. Vis. Cham, Switzerland: Springer, 2022, pp. 333–350.
+[21] S. Zhi, T. Laidlow, S. Leutenegger, and A. J. Davison, “In-place scene
+labelling and understanding with implicit scene representation,” in Proc.
+IEEE/CVF Int. Conf. Comput. Vis. (ICCV), Oct. 2021, pp. 15838–15847.
+[22] V.
+Tschernezki,
+I.
+Laina,
+D.
+Larlus,
+and
+A.
+Vedaldi,
+“Neural
+feature fusion ﬁelds: 3D distillation of self-supervised 2D image
+representations,” in Proc. Int. Conf. 3D Vis. (3DV), Sep. 2022,
+pp. 443–453.
+[23] M. Caron et al., “Emerging properties in self-supervised vision
+transformers,” in Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV), Oct.
+2021, pp. 9650–9660.
+[24] S. Lloyd, “Least squares quantization in PCM,” IEEE Trans. Inf. Theory,
+vol. IT-28, no. 2, pp. 129–137, Mar. 1982.
+[25] Y. Chen et al., “On mitigating hard clusters for face clustering,” in Proc.
+Eur. Conf. Comput. Vis. (ECCV), 2022, pp. 529–544.
+[26] C. Kang, Z. Lin, S. Wu, Y. Lan, C. Geng, and S. Zhang, “A triangular
+grid ﬁlter method based on the slope ﬁlter,” Remote Sens., vol. 15,
+no. 11, p. 2930, Jun. 2023.
+[27] N. Luo, Y. Jiang, and Q. Wang, “Supervoxel-based region growing
+segmentation for point cloud data,” Int. J. Pattern Recognit. Artif. Intell.,
+vol. 35, no. 3, Mar. 2021, Art. no. 2154007.
+[28] X. Zhu et al., “Robust 3-D plane segmentation from airborne
+point clouds based on quasi-a-contrario theory,” IEEE J. Sel. Top-
+ics
+Appl.
+Earth
+Observ.
+Remote
+Sens.,
+vol. 14,
+pp. 7133–7147,
+2021.
+[29] L. Landrieu and M. Simonovsky, “Large-scale point cloud semantic seg-
+mentation with superpoint graphs,” in Proc. IEEE/CVF Conf. Comput.
+Vis. Pattern Recognit., Jun. 2018, pp. 4558–4567.
+[30] M. Raafat. (2023). BlenderNeRF: A Blender Add-on for Generating
+Synthetic NeRF and Gaussian Splatting Datasets. Accessed: May 2026.
+[Online]. Available: https://github.com/maximeraafat/BlenderNeRF
+[31] J. Gen´e-Mola et al., “Fuji-SfM dataset: A collection of annotated images
+and point clouds for Fuji apple detection and location using structure-
+from-motion photogrammetry,” Data Brief, vol. 30, Jun. 2020, Art. no.
+105591.
+[32] T. Ren et al., “Grounded SAM: Assembling open-world models for
+diverse visual tasks,” 2024, arXiv:2401.14159.
+[33] O. Ronneberger, P. Fischer, and T. Brox, “U-Net: Convolutional net-
+works for biomedical image segmentation,” in Proc. 18th Int. Conf. Med.
+Image Comput. Comput.-Assist. Intervent., vol. 9351. Cham, Switzer-
+land: Springer, 2015, pp. 234–241.
+[34] E. Lu, W. Xie, and A. Zisserman, “Class-agnostic counting,” in Proc.
+Asian Conf. Comput. Vis., 2018, pp. 669–684, doi: 10.1007/978-3-030-
+20893-6 42.
+[35] V. Ranjan, U. Sharma, T. Nguyen, and M. Hoai, “Learning to count
+everything,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.
+(CVPR), Jun. 2021, pp. 3394–3403.
+[36] C. Liu et al., “CounTR: Transformer-based generalised visual counting,”
+2022, arXiv:2208.13721.
+[37] S. Ren, K. He, R. Girshick, and J. Sun, “Faster R-CNN: Towards
+real-time object detection with region proposal networks,” IEEE Trans.
+Pattern Anal. Mach. Intell., vol. 39, no. 6, pp. 1137–1149, Jun. 2017.
+[38] Q. Fan, W. Zhuo, C.-K. Tang, and Y.-W. Tai, “Few-shot object
+detection with attention-RPN and multi-relation detector,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2020,
+pp. 4013–4022.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 
+
+WANG et al.: SEMANTIC NeRF-ORIENTED 3-D OBJECT COUNTING FOR INDUSTRIAL FRUIT HARVESTING
+11415
+[39] Z. Huang, M. Dai, Y. Zhang, J. Zhang, and H. Shan, “Point, segment
+and count: A generalized framework for object counting,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Seattle, WA,
+USA, Jun. 2024, pp. 17067–17076.
+[40] S. Zhou et al., “Feature 3DGS: Supercharging 3D Gaussian splatting
+to enable distilled feature ﬁelds,” in Proc. IEEE/CVF Conf. Com-
+put. Vis. Pattern Recognit. (CVPR), Seattle, WA, USA, Jun. 2024,
+pp. 21676–21685.
+[41] J. L. Sch¨onberger and J.-M. Frahm, “Structure-from-motion revisited,”
+in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2016,
+pp. 4104–4113.
+[42] M. Tancik et al., “NeRFStudio: A modular framework for neural
+radiance ﬁeld development,” in Proc. ACM SIGGRAPH, 2023, pp. 1–12.
+[43] Q.-Y. Zhou, J. Park, and V. Koltun, “Open3D: A modern library for 3D
+data processing,” 2018, arXiv:1801.09847.
+[44] F. Wilcoxon, “Individual comparisons by ranking methods,” Biometrics
+Bull., vol. 1, no. 6, pp. 80–83, 1945.
+[45] S. Sabour, S. Vora, D. Duckworth, I. Krasin, D. J. Fleet, and
+A. Tagliasacchi, “RobustNeRF: Ignoring distractors with robust losses,”
+in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR),
+Vancouver, BC, Canada, Jun. 2023, pp. 20626–20636.
+Yimo
+Wang
+received the B.Eng. degree from
+Southeast University, Nanjing, China, in 2023,
+where he is currently pursuing the Ph.D. degree
+in control science and engineering with the School
+of Automation. His research interests include deep
+learning and pattern recognition.
+Bin Kang (Member, IEEE) received the Ph.D.
+degree in electrical engineering from Nanjing Uni-
+versity of Posts and Telecommunications, Nanjing,
+China, in 2016. He is an Associate Professor with
+Nanjing University of Posts and Telecommunica-
+tions. His research interests are in the area of
+computer vision and pattern recognition.
+Jian Liu (Member, IEEE) received the B.S. and
+Ph.D. degrees from the School of Automation
+and Electrical Engineering, University of Science
+and Technology Beijing, Beijing, China, in 2015 and
+2020, respectively. From September 2017 to 2018,
+he was a Joint Training Student with the Department
+of Mathematics, Dartmouth College, Hanover, NH,
+USA. From 2020 to 2021, he was a Post-Doctoral
+Fellow with the School of Automation, Southeast
+University, Nanjing, China, where he is currently an
+Associate Professor. His research interests include
+multiagent systems, nonlinear control, event-triggered control, ﬁxed-time
+control, and intermittent control.
+Changyin Sun (Senior Member, IEEE) received the
+B.S. degree in mathematics from Sichuan University,
+Chengdu, China, and the M.S. and Ph.D. degrees
+in electrical engineering from Southeast University,
+Nanjing, China, in 2001 and 2004, respectively. He
+is currently a Professor with the School of Artiﬁcial
+Intelligence, Anhui University, Hefei, China. His
+research interests include artiﬁcial intelligence, intel-
+ligent control, and optimal theory. He is an Associate
+Editor of IEEE TRANSACTIONS ON NEURAL NET-
+WORKS AND LEARNING SYSTEMS and IEEE/CAA
+JOURNAL OF AUTOMATICA SINICA.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:47:04 UTC from IEEE Xplore.  Restrictions apply. 

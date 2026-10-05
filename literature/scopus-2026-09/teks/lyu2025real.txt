@@ -1,0 +1,1533 @@
+ 
+▪  农业信息与电气技术  ▪
+基于EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数
+吕　佳1,2 ，张翠萍1,2
+（1.   重庆师范大学计算机与信息科学学院，重庆 401331；2.   重庆市数字农业服务工程技术研究中心，重庆 401331）
+摘　要：实现套袋葡萄串的实时准确计数是保障后续果园产量估计准确性的关键前提。为解决现有果实计数方法实时性
+不足，且套袋葡萄串分布密集、遮挡现象以及相机移动不稳定等因素导致的目标追踪丢失问题，该研究提出一种基于
+EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数方法。首先在检测阶段，引入高效模型EMO 替代YOLOv5s 的原
+始骨干网络，以降低模型的参数量和计算量；其次在追踪阶段，在ByteTrack 基础上提出一种基于BIoU 和欧式距离的
+双关联方法，对套袋葡萄串的检测框和预测框进行二次关联，以缓解目标追踪丢失问题；最后在计数阶段，设计一种矩
+形区域计数方法，扩大套袋葡萄串的可计数范围，提升其计数准确性。试验结果表明，在检测性能方面，参数量和浮点
+运算量较YOLOv5s 分别下降38.6% 和39.0%，平均精度和检测速度分别为96.5% 和77 帧/s；在追踪性能方面，高阶追
+踪准确率、多目标追踪准确率和ID 调和平均数较基线分别提高了3.6、4.1 和6.0 个百分点；在计数性能方面，平均计
+数精度为93.1%。该研究结果可为后续果园的产量预测提供可靠的依据。
+关键词：图像处理；实时检测；目标追踪；视频计数；YOLOv5s；套袋葡萄串
+doi：10.11975/j.issn.1002-6819.202412150
+中图分类号：S126　　　　文献标志码：A　　　　文章编号：1002-6819(2025)-12-0161-11
+吕佳，张翠萍. 基于EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数[J]. 农业工程学报，2025，41(12)：161-171.
+doi: 10.11975/j.issn.1002-6819.202412150　　http://www.tcsae.org
+LYU Jia, ZHANG Cuiping. Real-time detecting and counting dual-association bagged grape clusters using EMO-YOLOv5s[J].
+Transactions of the Chinese Society of Agricultural Engineering (Transactions of the CSAE), 2025, 41(12): 161-171. (in Chinese
+with English abstract)　　doi: 10.11975/j.issn.1002-6819.202412150　　http://www.tcsae.org
+ 
+0　引　言
+葡萄作为一种重要的经济作物，被广泛用于生产鲜
+食葡萄、葡萄干和葡萄酒等产品[1]。随着全球市场对葡
+萄的需求不断增加，葡萄产业为世界经济发展创造了巨
+大的价值[2]。根据美国农业部（USDA）发布的《世界鲜
+食苹果、葡萄与梨市场及贸易情况报告》，预计2024/25 年
+度全球鲜食葡萄产量将达到2 890 万t，其中中国约占全
+球鲜食葡萄产量的49%，成为全球最大的鲜食葡萄生产
+国。面对如此庞大的葡萄产量，科学合理地估算产量对
+葡萄的收获、储存和销售规划至关重要，有助于避免因
+产量波动而引起供需失衡的问题[3]。果实估产的核心在
+于果实计数。传统的人工计数方法耗时费力，且易受人
+为误差影响，难以满足大规模葡萄园对计数效率与准确
+性的要求[4]。此外，葡萄果实通常呈簇状密集分布，导
+致逐颗计数存在较大难度。因此，亟需设计一种基于计
+算机视觉技术的葡萄串自动计数方法，以实现高效、可
+靠的数量统计。
+近年来，计算机视觉技术[5] 的日趋成熟，为果实计
+数领域提供了新的思路。MEKHALFI 等[6] 设计了一种全
+自动无创的计算机视觉系统，能够自动对猕猴桃进行计
+数，既提高了效率，又降低了误差。然而，该方法采用
+基于图像的果实计数，单张图像无法全面覆盖像葡萄这
+种大型果树上的所有果实。相比之下，视频计数方法可
+以有效解决这一问题。视频计数是一种基于目标检测与
+追踪的计数方法[7]，其计数精度高度依赖于果实的检测
+和追踪性能。在果实检测阶段，VASCONEZ 等[8] 采用
+Faster-RCNN 检测网络，分别对黑斯鳄梨、柠檬和苹果
+进行训练和测试，实现了对3 种果实的精准检测。然而，
+由于Faster-RCNN 属于两阶段检测方法，需先从输入图
+像中生成候选区域，再对其候选区域进行分类和定位，
+整体检测过程耗时较长，难以满足果实实时检测的应用
+需求。为了实现果实的实时检测，一阶段检测方法受到
+了越来越多的关注。该类方法直接从输入图像中预测目
+标的位置与类别，省略了候选框生成过程，因而在实时
+检测方面具有明显优势。GREMES 等[9] 提出了一种将
+YOLOv4 与目标追踪方法相结合的解决方案，应用于机
+器人收获橘子，并实现了对橘子的自动计数。随着YOLOv5
+的诞生，RONG 等[10] 提出了一种多模态数据融合方法，
+通过优化YOLOv5 的输入，以减少对背景噪声的错误识
+别。该方法虽然在一定程度上减少了果实的误检，但实
+时性较差。为了降低模型的参数量，SHEN 等[11] 采用通
+道修剪算法得到了一个轻量化的YOLOv5s 检测模型，
+该模型参数量仅占3.4 MB。同时，在检测模型的预测阶
+段引入软非极大值抑制，提高了葡萄串重叠遮挡时的检
+测性能。果实的准确检测为后续的果实追踪奠定了坚实
+  
+收稿日期：2024-12-19　　修订日期： 2025-05-20
+基金项目：重庆市高校创新研究群体项目（CXQT20015）；重庆市研究生
+科研创新项目（CYS240362）
+作者简介：吕佳，博士，教授，研究方向为计算机视觉与机器学习、数字
+农业工程。Email：lvjia@cqnu.edu.cn
+ 
+第 41 卷 　 第 12 期
+农 业 工 程 学 报　
+Vol.41　No.12
+2025 年 　　 6 月
+Transactions of the Chinese Society of Agricultural Engineering
+June 2025
+161
+
+的基础。
+目标追踪利用上一帧中目标的位置，对当前帧的目
+标进行定位，从而实现视频中同一目标的连续追踪[12]。
+其中，基于卡尔曼滤波器（kalman filter, KF）[13] 的追踪
+算法广泛应用于果实追踪领域[14-15]。WANG 等[16] 提出
+了一种基于KF 的追踪方法，用于实现对视频中芒果的
+自动计数，但受遮挡影响，果实在追踪过程中易发生ID
+标识切换，导致重复计数较为严重。ZHANG 等[17] 提出
+了OrangeSort 追踪方法，利用平均运动位移来估计该目
+标在当前帧的位置，缓解了柑橘在连续帧遮挡或无法检
+测时重复计数问题，然而，该方法忽略了果实的外观特
+征，导致外观相似的果实被误匹配。HE 等[18] 提出了一
+种结合外观特征和优化运动特征的级联匹配方法。该方
+法在KF 更新消失果实的运动状态时，通过最近邻居确
+定出消失果实的最近匹配轨迹，以此优化消失果实的速
+度信息，从而有效地降低了KF 的预测误差。但该方法
+在处理果实特征信息时耗时较长，不利于果实的实时追
+踪计数。为此，吕佳等[19] 提出了将ByteTrack[20] 用于对
+套袋葡萄串的追踪。该追踪方法保留了低置信度的套袋
+葡萄串检测框并进行二次关联处理，既确保了实时性，
+又进一步增强了追踪准确性。然而，在计数阶段，该方
+法仅通过在视频中央划定竖线进行统计，容易造成套袋
+葡萄串漏计的问题。
+尽管视频计数方法已经在果实计数领域得到了广泛
+应用[21]，但对于套袋后的葡萄串计数研究相对较少。在
+实际果园管理中，为了防止葡萄串在成熟期遭受光照灼
+伤和鸟类啄食，果园管理者通常会在葡萄串成熟前进行
+套袋处理，以保障葡萄串的产量和品质[22]。套袋葡萄串
+的追踪计数仍存在以下问题：1）一般来说，果实计数模
+型通常需部署在移动设备上，以实现果实数量的统计。
+然而，目前大多数果实计数模型侧重于提升计数精度，
+导致参数规模较大、计算开销较高，进而对设备性能提
+出了更高要求，同时较长的推理时延也限制了模型在实
+际应用中的实时性与实用性。2）在葡萄种植环境中，由
+于套袋葡萄串分布密集、存在遮挡，以及相机在移动过
+程中产生抖动或偏移，容易引发帧间错位现象。这种现
+象会使视频中的套袋葡萄串发生非线性位移或局部形变，
+从而降低模型的追踪性能。3）实际计数过程中，拍摄视
+角的变化会引起套袋葡萄串前景与背景的动态变化，葡
+萄叶片及邻近套袋葡萄串的干扰易导致目标追踪失败并
+引发套袋葡萄串的丢失，从而使得现有计数方法[19] 易发
+生漏计数的问题。基于此，本文提出一种基于EMO-YOLOv5s
+的双关联套袋葡萄串实时检测与计数方法，以期缓解套
+袋葡萄串计数过程中存在的上述问题，从而实现其实时
+准确检测与计数。
+ 
+1　数据采集与预处理
+ 
+1.1　数据采集
+试验数据集来源于重庆市璧山区派登特科技示范园，
+其经度和纬度分别为106.221°E 和29.753°N[19]。葡萄采
+用按行种植的方式，行间距基本相等，套袋葡萄串分布
+相对均匀，如图1a 所示。为了全面地获取套袋葡萄串在
+不同视角和时间段的生长状态，研究人员于2022 年7
+月22 日分别在08:00、12:00 和18:00 共3 个时间段（天
+气阴），手持OPPO Reno6pro+和红米 K40 两种移动手
+机，从正视、俯视、仰视和侧视四个角度对套袋葡萄串
+进行拍摄，拍摄时长约6 h，拍摄水平距离为0.1 ～1.0 m，
+垂直距离为1.0 ～1.8 m，视频拍摄移动速度约1 m/s。通
+过逐行拍摄套袋葡萄串图像和视频，如图1b 所示，共获
+取500 张套袋葡萄串原始图像。有效套袋葡萄串视频
+6 个，视频分辨率为1 920×1 080 像素，视频格式为MP4，
+视频帧率为30 帧/s，视频时长约20 s，视频速度为非匀速。
+ 
+ 
+a. 试验采集环境
+b. 数据采集示例
+a. Test collection environment
+b. Data collection example
+图1　数据采集环境与示例
+Fig.1    Data collection environment and example
+ 
+此外，为了进一步丰富试验数据集，研究人员于
+2023 年9 月1 日09:00 至11:00（天气多云）再次拍摄
+了200 张套袋葡萄串图像，作为原始数据集的补充，图
+像分辨率为4 096×3 072 像素。
+ 
+1.2　数据增强
+本文将获得的700 张原始套袋葡萄串图像按照7:2:1
+的比例进行随机划分，得到训练集490 张、验证集140
+张和测试集70 张。6 个有效套袋葡萄串视频用于测试模
+型的计数性能。此外，为了丰富套袋葡萄串的训练集，
+本文采用数据增强方法，对训练集图像进行饱和度调整、
+高斯噪声和图像翻转等操作，成功将训练集490 张原始
+套袋葡萄串图像增强至2 100 张。
+ 
+1.3　数据标记
+为训练检测模型以及评估套袋葡萄串检测与追踪效
+果，本文对数据增强后的2 310 张套袋葡萄串图像和6
+个视频进行了数据标注。图像标注采用Make Sense 标注
+软件，生成套袋葡萄串相关信息的文本文件。该文本文
+件包含每张图像中套袋葡萄串的个数、类别、中心点坐
+标、长度和宽度信息。视频标注使用Dark Label 标注软
+件，生成整个视频的套袋葡萄串信息文本文件。该文本
+文件包含每一帧出现的套袋葡萄串数量、ID 标识、矩形
+框的左上角和右下角坐标位置、以及对应的类别信息。
+ 
+2　套袋葡萄串视频的实时检测与计数
+实现套袋葡萄串的实时精准计数对于后续果园产量
+估计至关重要。因此，本文提出一种基于EMO-YOLOv5s
+的双关联套袋葡萄串实时检测与计数方法。该方法由基
+于EMO-YOLOv5s 的实时检测、基于BIoU 和欧式距离
+的双关联追踪和矩形区域计数3 种子方法构成。该方法
+的整体计数流程如图2 所示。
+　 162
+农业工程学报（http://www.tcsae.org）
+2025 年
+
+ 
+输入视频帧序列
+Input the video
+frame sequence
+基于EMO-YOLOv5s
+的实时检测
+基于BIoU和欧式距
+离的双关联追踪
+矩形区域计数
+输出计数结果
+Output counting
+result
+图2　基于EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数方法流程图
+Fig.2    Flowchart of real-time detection and counting method of dual-association bagged grape clusters using EMO-YOLOv5s
+ 
+ 
+2.1　基于EMO-YOLOv5s 的实时检测
+在套袋葡萄串实时检测任务中，目标通常呈现出分
+布密集、遮挡严重及背景复杂等特征，对检测模型的特
+征感知能力和鲁棒性提出了较高要求。近年来，YOLO 系
+列目标检测模型因其结构简洁、检测速度快、精度表现
+优异，广泛应用于各类实时检测任务中，并不断迭代发展，
+形成了包括YOLOv5、YOLOv7[23]、YOLOv8、YOLOv9[24]、
+YOLOv10[25] 和YOLOv11 等多个版本。尽管较新版本
+的YOLO 模型在通用数据集上表现出较高的检测精度，
+但在套袋葡萄串检测任务中，受复杂背景与密集遮挡等
+因素影响，目标识别能力方面仍略显不足；同时，大多
+数模型往往具有更复杂的网络结构，且对计算资源的需
+求增加。相比之下，YOLOv5s 作为YOLOv5 系列中的
+轻量化模型，采用了改进的CSPDarknet 主干结构，并结
+合路径聚合网络与特征金字塔网络的多尺度特征融合机
+制[26]，能够减少冗余计算的同时，有效捕捉套袋葡萄串
+的关键特征，提升对复杂目标的识别能力。因此，本文
+选择YOLOv5s 作为基础检测模型。
+考虑到葡萄园实际管理需求，计数模型需部署在移
+动设备上，以便管理者开展现场计数。然而，现有计数
+模型较少关注检测模型的实时性，导致其在实际应用中
+存在响应速度慢、实用性不强的问题[27-28]。此外，
+YOLOv5s 在特征提取过程中大量采用标准卷积操作，卷
+积参数量较大，在一定程度上限制了模型在移动端的
+部署效率。EMO[29] 融合了深度可分离卷积（depthwise
+separable convolution, DSConv）[30] 的结构优势，将标准
+卷积拆解为逐通道卷积和逐点卷积两步，有效减少了卷
+积核数量与计算量；同时结合Swin Transformer 中基于
+窗口的多头自注意力机制[31]，在保留套袋葡萄串特征图
+建模长距离依赖能力的基础上，确保模型检测精度不受
+影响。基于此，本文引入EMO 替换YOLOv5s 的原始骨
+干网络，既保证了模型的检测精度，又提升了其检测实
+时性。EMO-YOLOv5s 的整体结构如图3 所示。
+由图3 可知，EMO 内部仅由倒残差移动模块（inverted
+residual mobile block, iRMB）堆叠组成。模型输入为套
+袋葡萄串图像，经过卷积后传递至EMO 中，实现特征
+提取过程。EMO 将整个特征提取过程划分为4 个阶段，
+每个阶段分别由N1、N2、N3 和N4 个iRMB 模块组成。
+通过对特征图分阶段下采样操作，EMO 可以提取到更高
+层次的语义信息。
+X ∈RC×H×W
+Q = K = X(∈RC×H×W)
+Xe ∈RλC×H×W
+V = Xe (∈RλC×H×W)
+iRMB 是一种高效特征提取模块，融合了MobileNetv2[30]
+的倒残差模块和扩展的窗口多头自注意力机制（expanded
+window multi-head self-attention, EW-MHSA）。该模块将
+前一个阶段输出的特征图
+作为输入，并设置
+EW-MHSA 中的
+。首先，通过1×1
+卷积核对通道进行升维，得到
+，如式（1）
+所示，同时令EW-MHSA 的
+。接着，
+对Q、K、V 进行自注意力计算后，利用DSConv 建模特
+征图的局部依赖关系，并通过跳跃连接Skip 融合不同尺
+度的特征信息，如式（2）所示。最后，通过1×1 卷积核
+降维特征图的通道数，将其还原为原始通道数，如式（3）
+所示。模块的输出结果再与原始特征图残差连接，如式
+（4）所示，以实现跨层次特征信息的融合。
+Xe = Conv1×1(X)(∈RλC×H×W)
+（1）
+X f = (DSConv,Skip) (EW−MHSA(Xe))
+（2）
+Xs = Conv1×1(X f) (∈RC×H×W)
+（3）
+Y = X + Xs
+（4）
+式中Xe 表示特征图通道升维后的特征向量，Xf 表示经
+过EW-MHSA 与DSConv 后的特征向量，Xs 表示特征图
+通道降维后的特征向量，Y 表示特征图经过残差连接后
+的最终输出特征向量，λ 表示升维因子。
+ 
+2.2　基于BIoU 和欧式距离的双关联追踪
+ByteTrack 是一种基于目标检测的追踪模型[20]，其根
+据置信度阈值将目标检测框划分为高置信度和低置信度
+两类，分别进行关联匹配，从而实现对遮挡目标的恢复，
+提升了目标追踪性能。
+ByteTrack 采用联合交并比（intersection over union,
+IoU）[32] 作为关联准则，即根据目标检测框与预测框之
+间的交并比来判断他们的关联度。然而，当使用手持相
+机拍摄套袋葡萄串视频时，由于相机在移动过程中产生
+抖动或偏移，易引发帧间错位现象。这种现象会使得视
+频中套袋葡萄串发生非线性位移或局部形变，若采用IoU
+进行关联，可能会导致套袋葡萄串检测框与预测框之间
+缺乏有效重叠，即IoU 值为0，进而产生关联匹配失败
+的问题。相比之下，BIoU 具有扩大检测框与预测框可匹
+配区域的特性[33]，替代IoU 用于目标关联时，可有效缓
+第 12 期
+吕　佳等：基于EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数
+163 　
+
+解套袋葡萄串的非线性位移或局部形变问题。然而，葡
+萄串在套袋后整体体积增大，导致其在视频中呈现出较
+高的空间密集度，进而发生遮挡现象，仅依赖BIoU 可
+能会出现相邻套袋葡萄串匹配错误。欧式距离能够通过
+度量检测框与预测框之间的中心点距离，减少对BIoU
+的关联依赖，进一步提升关联匹配的准确性。基于两者
+的互补优势，本文在ByteTrack 基础上提出一种基于
+BIoU 和欧式距离的双关联方法，构成套袋葡萄串关联匹
+配阶段的总代价函数，如式（5）所示。具体的追踪流程
+如图4 所示。
+ 
+ 
+输入
+Input
+Attention matrix
+Q, K
+V
+卷积批归一化激活块
+Convolution batch normalization activation block (CBS)
+倒残差移动模块
+Inverted residual mobile block (iRMB)
+MaxPooling
+MaxPooling
+MaxPooling
+BottleNeck
+Contact
+Contact
+Contact
+Contact
+Contact
+Contact
+EMO
+C3
+C3
+C3
+C3
+iRMB
+iRMB
+iRMB
+iRMB
+×N1
+×N2
+×r
+×N3
+×N4
+空间金字塔池化层
+Spatial pyramid pooling layer (SPPF)
+Unsample
+CBS
+CBS
+CBS
+CBS
+CBS
+CBS
+CBS
+CBS
+CBS
+CBS
+CBS
+Input
+Input
+Input
+Input
+Unsample
+三阶段卷积块
+Three-stage convolution block (C3)
+SPPF
+Conv
+1×1
+Conv
+1×1
+Conv
+3×3
+DSConv
+Conv
+BN
+SILU
+Conv
+Conv
+Conv
+骨干网络
+Backbone
+颈部网络
+Neck
+头部
+Head
+输出
+Output
+注：Conv 为卷积模块；Unsample 为上采样层；Q、K、V 分别为查询向量，键向量，值向量；N1、N2、N3 与N4 分别表示不同数量的iRMB 模块；r 表示r
+个数量的Bottle Neck 模块。
+Note: Conv is a convolution block; Unsample is an upsampling laye; Q, K, and V are the query vector, key vector, and value vector, respectively; N1, N2, N3, and N4
+represent different numbers of iRMB blocks; r represent the r number of BottleNeck block.
+图3　EMO-YOLOv5s 检测框架图
+Fig.3    EMO-YOLOv5s detection framework diagram
+ 
+Costtotal
+ij
+= αCostBIoU
+ij
++(1−α)CostDist
+ij
+（5）
+Costtotal
+i j
+CostBIoU
+i j
+CostDist
+ij
+式中
+表示第i 个检测框与第j 个预测框之间的总代
+价值，
+表示第i 个检测框与第j 个预测框BIoU 关
+联后的代价值，
+表示第i 个检测框与第j 个预测框
+欧式距离关联后的代价值。α 用于平衡BIoU 关联和欧氏
+距离关联之间的代价。
+ 
+2.2.1　BIoU 关联
+首先，BIoU 关联以当前帧检测框和预测框的中心点
+为原点，设置相同的缓冲比例b 分别对套袋葡萄串框的
+宽度和高度进行扩展，扩展前后的框具有相同的中心点。
+如图5 所示。
+接着，对扩展后的套袋葡萄串检测框和预测框进行
+BIoU 关联，如式（6）所示。
+BIoUij = |Ai ∩A j|
+|Ai ∪A j|
+（6）
+式中BIoUij 表示扩展后第i 个检测框与第j 个预测框的交
+并比，Ai 表示扩展后第i 个检测框，Aj 表示扩展后第j 个
+预测框。
+最后，将计算出的交并比值代入到BIoU 代价函数
+中，如式（7）所示。
+CostBIoU
+ij
+= 1−BIoUij
+（7）
+在套袋葡萄串关联匹配过程中，缓冲比例的设置并
+非越大越好。具体而言，当相机移动相对稳定时，设置
+较小的缓冲比例可能更为适合。如果将缓冲比例设置得
+过大，会增加附近套袋葡萄串对目标关联的干扰，反而
+降低了套袋葡萄串的关联性能。而当相机移动不稳定时，
+则需要较大的缓冲比例。因此，本文根据相机移动的两
+种状态设置了不同的缓冲比例b1 和b2，以实现级联关联
+匹配。先使用较小的缓冲比例b1 对检测框和预测框进行
+扩展并关联匹配。关联匹配完成后，对于未匹配的检测
+框和预测框，再采用较大的缓冲比例b2 扩展框的区域。
+这种方式不仅能够应对相机移动的不稳定性，还能提高
+套袋葡萄串关联匹配的准确性。
+　 164
+农业工程学报（http://www.tcsae.org）
+2025 年
+
+ 
+级联匹配
+级联匹配
+匹配成功
+的框
+匹配成
+功的框
+低置信度
+检测框
+<score
+>score
+基于BIoU和欧式距
+离的双关联匹配
+(b1=0.4)
+(b2=0.5)
+未匹配的
+<max_age
+>max_age
+检测框和
+预测框
+基于BIoU和欧式
+距离的双关联匹配
+(b2=0.5)
+基于BIoU和欧式
+距离的双关联匹配
+(b1=0.4)
+基于BIoU和欧式
+距离的双关联匹配
+未匹配的
+预测框
+未匹配的
+预测框
+未匹配的
+检测框
+未匹配的
+检测框
+EMO-
+YOLOv5s
+输入视
+频
+第t帧检
+测框
+第t帧预
+测框
+第t−1帧
+追踪框
+第t帧的
+追踪框
+卡尔曼滤波更新
+卡尔曼滤波预测
+卡尔曼滤波更新
+高置信度
+检测框
+未匹配的
+删除
+检测框和
+预测框
+新建轨迹
+匹配成功
+的框
+匹配成功
+的框
+注：score 为置信度阈值；b1 与b2 表示不同扩展比例大小；max_age 为追踪框保留的最大帧数。
+Note: score is the confidence threshold; b1 and b2 represent different expansion ratios; max_age is the maximum number of frames to keep in the tracking boxes.
+图4　基于BIoU 和欧式距离的双关联追踪流程图
+Fig.4    Dual-association tracking flowchart based on BIoU and Euclidean distance
+ 
+ 
+ 
+Bh
+Bw
+w
+h
+b = Bw −w
+w
+= Bh −h
+h
+注：w，h 分别为原始框的宽度和高度；Bw，Bh 分别为原始框扩展后的宽
+度和高度。缓冲比例：
+。
+b = Bw −w
+w
+= Bh −h
+h
+Note：w, h are the width and height of the original box; Bw, Bh are the width and
+height of the expanded box. Buffer ratio:
+.
+图5　BIoU 扩展图
+Fig.5    BIoU extension diagram
+  
+2.2.2　欧式距离关联
+欧氏距离关联的具体计算如式（8）所示。
+CostDist
+ij
+=
+√
+(xi −xj)2 +(yi −yj)2
+（8）
+式中xi 和xj 分别表示第i 个检测框和第j 个预测框的中
+心点横坐标，yi 和yj 分别表示第i 个检测框和第j 个预测
+框的中心点纵坐标。
+ 
+2.3　矩形区域计数
+x1≤xc≤x2
+y1≤yc≤y2
+实际计数过程中，当计数设备拍摄同一套袋葡萄串
+时，随着拍摄视角的变化，套袋葡萄串的前景和背景也
+随之发生改变。此过程中，葡萄叶片及邻近套袋葡萄串
+的干扰可能导致目标追踪失败并引发套袋葡萄串的丢失，
+从而使得现有计数方法易发生漏计数的问题。为解决该
+问题，本文设计矩形区域计数方法，如图6 所示。该方
+法在视频屏幕上设定一个矩形框，当追踪到的套袋葡萄
+串红色中心点经过该矩形区域时，即（xc, yc）同时满足
+和
+，就进行计数。同时，为避免重
+复计数，相同ID 的套袋葡萄串仅计数一次，其计数结果
+将实时更新，并显示在视频屏幕的左上角，直至计数完
+成。通过引入矩形区域计数方法，有效缓解套袋葡萄串
+的漏计问题，提升其计数准确性。
+ 
+ 
+(x1,y1)
+(x2,y2)
+(xc,yc)
+矩形计数区域
+Rectangular counting
+region
+注：（xc，yc）表示套袋葡萄串的红色中心点。
+Note: (xc, yc) represents the red center of the bagged grape clusters.
+图6　矩形区域计数
+Fig.6    Rectangular region counting
+ 
+ 
+2.4　试验环境与评价指标
+ 
+2.4.1　试验环境
+操作系统为Windows 11 专业版，搭载12 th Gen
+Intel(R)  Core(TM)  i5-12490F  3.00 GHz 处理器，16GB
+RAM，GPU 为NVIDIA  RTX  3 060。运行软件采用
+PyCharm2021，编程语言为Python3.7，深度学习框架为
+Pytorch1.12.0。
+为了获取套袋葡萄串检测最优权重文件，本文将经
+过数据增强后的套袋葡萄串图像送入到EMO-YOLOv5s
+检测模型中进行训练。训练过程中，选择SGD 作为优化
+器，设置初始学习率为0.01，学习率动量为0.937，权重
+第 12 期
+吕　佳等：基于EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数
+165 　
+
+衰减系数为0.000 5，训练轮数为500。
+ 
+2.4.2　评价指标
+在检测阶段，本文选取的检测指标包括平均精度
+（average precision, AP）、参数量（parameters, Params）、
+每秒帧数（frame per second, FPS）和浮点运算量（floating
+point operations, FLOPs）。其中平均精度用于评估套袋
+葡萄串的检测准确性，参数量、每秒帧数和浮点运算量
+用于评估套袋葡萄串的检测实时性。
+在追踪阶段，本文选取的追踪指标包括高阶追踪准
+确率（higher order tracking accuracy, HOTA）、多目标追
+踪准确率（multiple  object  tracking  accuracy,  MOTA）、
+ID 调和平均数（identification F1-score, IDF1）和ID 变换
+次数（ID switch, IDS）[19]。
+在计数阶段，本文选取的计数指标包括平均计数精
+度（average counting precision, ACP）和平均绝对误差
+（mean absolute error, MAE）。平均计数精度和平均绝
+对误差的具体计算如式（9）和式（10）所示。
+ACP =
+n
+∑
+1
+(
+1−|S −G|
+G
+)
+n
+×100%
+（9）
+MAE =
+n
+∑
+1
+|S −G|
+n
+×100%
+（10）
+式中S 为计数方法计数的目标数目，G 为视频的真实目
+标数目，n 为视频的数目。
+ 
+3　结果与分析
+ 
+3.1　套袋葡萄串检测性能
+ 
+3.1.1　不同检测模型的基础网络与实时性对比
+为了比较不同检测模型的基础网络与检测实时
+性，本文对YOLOv5s、YOLOv7-tiny[23]、YOLOv8s、
+YOLOv9-tiny[24]、YOLOv10[25]、YOLOv11s 和
+EMO-
+YOLOv5s 共7 种检测模型进行了对比试验，如表1 所示。
+从表1 观察到，YOLOv5s 在平均精度上相较于其他基础检
+测模型具有一定的优势。虽然YOLOv7-tiny 和YOLOv9-tiny
+在参数量和浮点运算量上相较于YOLOv5s 更加轻量，
+能够在较低的计算资源消耗下实现较快的推理速度，但
+在实际应用中，仅追求轻量化并不能完全满足复杂场景
+下的检测需求。本文结合套袋葡萄串数据集的特性，发
+现该数据集中存在套袋葡萄串与叶片颜色相近、密集分
+布等挑战性因素。基于上述考虑，本文选择YOLOv5s
+作为基础检测网络，以确保在复杂环境下能够稳定、精
+准地检测到套袋葡萄串，为后续追踪任务提供高质量的
+检测结果。
+此外，EMO-YOLOv5s 相较于其他检测模型，在参
+数量和浮点运算量上有所降低，同时在每秒帧数和平均
+精度方面表现更优。具体而言，与YOLOv5s 相比，
+EMO-YOLOv5s 在参数量和浮点运算量上分别降低了38.6%
+和39.0%。这一提升原因在于EMO 模型充分利用了
+DSConv 中低参数量的优势，有效提高了检测阶段的实
+时性。此外，EMO-YOLOv5s 的平均精度为96.5%，比
+YOLOv5s 提高了0.8 个百分点。这是因为EMO 中的
+EW-MHSA 通过捕获特征图中的长距离依赖关系，使检
+测模型能够学习到更丰富的上下文信息，从而提高了检
+测精度。
+ 
+ 
+表 1    不同检测模型的对比试验结果
+Table 1    Comparative test results of different detection models
+检测模型
+Detection models
+Params
+FLOPs/G
+FPS/（帧·s−1）
+AP/%
+YOLOv5s
+7.0×106
+15.9
+57
+95.7
+YOLOv7-tiny
+6.0×106
+13.0
+64
+95.4
+YOLOv8s
+11.1×106
+28.4
+20
+95.3
+YOLOv9-tiny
+2.6×106
+10.7
+65
+95.4
+YOLOv10
+8.0×106
+24.4
+19
+95.0
+YOLOv11s
+9.4×106
+21.3
+72
+94.9
+EMO-YOLOv5s
+4.3×106
+9.7
+77
+96.5
+注：Params 为参数量；FLOPs 为浮点运算量；FPS 为每秒帧数；AP 为平均
+精度。
+Note: Params is parameters; FLOPs is floating point operations; FPS is frame per
+second; AP is average precision.
+ 
+3.1.2　改进前后的检测模型可视化效果对比
+为了比较改进前后检测模型的检测效果，本文对
+YOLOv5s 与EMO-YOLOv5s 的检测结果进行了可视化
+对比，如图7 所示。从图7 可以看出，YOLOv5s 检测精
+度较低的原因主要是由于套袋葡萄串的漏检问题。具体
+而言，图7a 中的漏检受到邻近套袋葡萄串的重叠影响，
+导致YOLOv5s 未能检测到目标；图7b 中的漏检归因于
+YOLOv5s 将该套袋葡萄串误判为复杂背景，从而未能识
+别；而图7c 则是由于叶片部分遮挡导致的目标漏检。相
+比之下，EMO-YOLOv5s 在应对套袋葡萄串间重叠、复
+杂背景及叶片遮挡等复杂情况时，均能够实现对套袋葡
+萄串的完整检测，有效缓解了上述问题，进一步验证了
+EMO-YOLOv5s 的检测有效性。
+ 
+ 
+YOLOv5s
+EMO-
+YOLOv5s
+a. 套袋葡萄串间重叠
+b. 复杂背景
+c. 叶片遮挡
+a. The bagged
+grape clusters overlap
+c. Blade
+occlusion
+b. Complex
+background
+注：图中椭圆框用于圈住YOLOv5s 漏检的套袋葡萄串。
+Note: The oval boxes in the figure are used to circle the bagged grape clusters
+missed by YOLOv5s.
+图7　改进前后的检测模型可视化对比
+Fig.7    Visual comparison of the detection models before and after
+improvement
+ 
+3.2　套袋葡萄串追踪性能
+ 
+3.2.1　不同追踪模型的追踪性能对比
+为验证基于EMO-YOLOv5s 的双关联套袋葡萄串实
+时检测与计数方法在性能上的有效性，本文追踪模型与
+SORT[34]、DeepSORT[35]、ByteTrack[20]、SMILEtrack[36] 和
+　 166
+农业工程学报（http://www.tcsae.org）
+2025 年
+
+C-BIoU Tracker[33] 追踪模型进行了对比，结果如表2 所示。
+ 
+ 
+表 2    不同追踪模型的对比试验结果
+Table 2    Comparative test results of different tracking models
+追踪模型
+Tracking models
+HOTA/%
+MOTA/%
+IDF1/%
+IDS
+SORT
+52.9
+53.9
+67.3
+17
+DeepSORT
+50.8
+50.2
+67.4
+16
+ByteTrack
+53.7
+53.8
+70.4
+5
+SMILEtrack
+49.2
+47.8
+67.5
+16
+C-BIoU Track
+48.6
+55.6
+62.9
+10
+基于BIoU 和欧式距离的双关联追踪
+Dual-accosiation tracking based on
+BIoU and Euclidean distance
+58.6
+64.7
+80.0
+2
+注：HOTA 为高阶追踪准确率；MOTA 为多目标追踪准确率；IDF1 为ID 调
+和平均数；IDS 为ID 变换次数。下同。
+Note: HOTA is higher order tracking accuracy; MOTA is multiple object tracking
+accuracy; IDF1 is identification F1-score; IDS is id switch. The same below.
+ 
+根据表2 分析，ByteTrack 在整体追踪性能上优于其
+他基础追踪模型，主要原因在于SORT 和C-BIoU Tracker
+忽略了低置信度的检测框，无法有效追踪被遮挡的套袋
+葡萄串。SMILEtrack 和DeepSORT 虽然引入了外观特征
+进行关联，但由于葡萄串套袋后的外观高度相似，容易
+导致关联匹配错误。基于上述分析，本文选择ByteTrack
+作为基础追踪模型，并在此基础上提出了基于BIoU 和
+欧式距离的双关联追踪模型。试验结果表明，相较于
+ByteTrack，本文提出的追踪模型在高阶追踪准确率、多
+目标追踪准确率和ID 调和平均数上分别提高了4.9、
+10.9 和9.6 个百分点，同时ID 变换次数减少了3 次。通
+过结合BIoU 和欧式距离进行关联匹配，有效缓解了套
+袋葡萄串分布密集、遮挡现象以及相机移动不稳定等问
+题，展现出明显的优势。
+ 
+3.2.2　消融试验
+为了验证不同改进点对套袋葡萄串追踪性能的有效
+性，本文以YOLOv5s 和ByteTrack 分别作为套袋葡萄串
+检测阶段和追踪阶段的基础模型进行了消融试验，试验
+结果如表3 所示。根据表3 分析，首先，将YOLOv5s
+的骨干网络替换为EMO，得到EMO-YOLOv5s 检测模
+型。与YOLOv5s 相比，EMO-YOLOv5s 在高阶追踪准
+确率、多目标追踪准确率和ID 调和平均数上分别提高
+了2.3、3.6 和3.6 个百分点。这是由于EMO 中引入了
+EW-MHSA，能够捕获更多的长期依赖关系，从而保证
+了检测模型具有较高的检测精度。其次，在EMO-
+YOLOv5s 的基础上，引入BIoU 关联替代追踪阶段的
+IoU 关联。BIoU 关联通过扩大套袋葡萄串检测框和预测
+框之间的关联匹配区域，以提高追踪模型的成功关联匹
+配概率。相较于EMO-YOLOv5s，引入BIoU关联后的模
+型在高阶追踪准确率、多目标追踪准确率和ID 调和平均
+数上分别提高了0.6、0.1 和1.6 个百分点。最后，为了
+缓解套袋葡萄串密集分布、遮挡现象时的关联错误问题，
+在BIoU 关联的基础上，提出一种基于BIoU 和欧氏距离
+的双关联方法，以减少对BIoU 关联的代价依赖。试验
+结果显示，加入欧氏距离度量后的模型相比EMO-
+YOLOv5s 在高阶追踪准确率、多目标追踪准确率和ID
+调和平均数上分别提高了1.3、0.5 和2.4 个百分点，有
+效地减少了套袋葡萄串关联错误的次数。综上，基于
+EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数方
+法的高阶追踪准确率为58.6%、多目标追踪准确率为
+64.7% 和ID 调和平均数为80.0%，相比于基础模型分别
+提高了3.6、4.1 和6.0 个百分点，同时ID 变换次数减少
+了1 次，证明了本文方法的有效性。
+ 
+表 3    消融试验结果
+Table 3    Ablation test results
+EMO BIoU
+欧式距离
+Euclidean
+distance
+HOTA/%
+MOTA/%
+IDF1/%
+IDS
+−
+−
+−
+55.0
+60.6
+74.0
+3
+√
+−
+−
+57.3
+64.2
+77.6
+4
+√
+√
+−
+57.9
+64.3
+79.2
+3
+√
+−
+√
+58.4
+64.3
+79.7
+2
+√
+√
+√
+58.6
+64.7
+80.0
+2
+注：“√”表示加入改进模块；“-”表示未加入改进模块。
+Note: “√” means that the improvement model is added; “-” means that the
+improvement model is not added.
+ 
+3.2.3　参数b1 和b2 的消融试验
+BIoU 关联中，缓冲比例参数b1 和b2 是影响套袋葡
+萄串关联匹配能力的关键因素。为了确定这两个参数在
+关联匹配中的最佳取值，本文对此进行了消融试验。图8
+展示了在不同的b1 和b2 取值下，套袋葡萄串的追踪性能
+表现。由于b2 是用于对b1 中未匹配的套袋葡萄串检测框
+和预测框进行二次关联匹配的参数，因此试验设置中b2
+大于b1。
+ 
+ 
+HOTA/%
+MOTA/%
+IDF1/%
+0.2
+0.3
+0.4
+0.5
+0.6
+0.1
+0.2
+0.3
+0.4
+0.5
+b1
+b2
+58.50
+58.4
+79.8
+79.8
+79.8
+79.8
+79.8
+79.9
+79.8
+79.8
+79.9
+80.0
+64.7
+64.5
+64.5
+58.6
+58.6
+58.6
+58.6
+58.5
+58.6
+58.6
+58.6
+58.5
+58.25
+58.00
+57.75
+57.50
+57.25
+57.00
+0.2
+0.3
+0.4
+0.5
+0.6
+0.1
+0.2
+0.3
+0.4
+0.5
+b1
+b2
+b2
+64.8
+64.4
+64.2
+64.0
+63.8
+0.2
+0.3
+0.4
+0.5
+0.6
+0.1
+0.2
+0.3
+0.4
+0.5
+b1
+80.00
+79.75
+79.50
+79.25
+78.75
+79.00
+78.50
+78.25
+78.00
+a. HOTA
+b. MOTA
+c. IDF1
+注：b1 与b2 表示不同扩展比例大小。
+Note: b1 and b2 represent different expansion ratios.
+图8　HOTA、MOTA 和IDF1 指标的试验结果
+Fig.8    Experimental results of HOTA, MOTA and IDF1 metrics
+ 
+从图8 可以观察到，高阶追踪准确率指标下，b1 和
+b2 存在多组最优参数，这导致无法仅根据单个指标来评
+第 12 期
+吕　佳等：基于EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数
+167 　
+
+价一组参数的优劣。因此，本文还考虑了b1 和b2 在多目
+标追踪准确率和ID 调和平均数指标上的性能表现，综合
+判断出当b1 为0.4，b2 为0.5 时，该追踪模型实现了对套
+袋葡萄串的最佳追踪性能，在高阶追踪准确率、多目标
+追踪准确率和ID 调和平均数上分别达到了58.6%、
+64.7% 和80.0%。
+ 
+3.2.4　双关联代价系数α 的消融试验
+为了确定双关联方法代价函数中系数α 的最佳取值，
+本文对系数α 进行了消融试验，结果如表4 所示。根据
+表4 综合分析，当系数α 为0.7 时，套袋葡萄串的追踪
+性能达到最优，高阶追踪准确率、多目标追踪准确率和
+ID 调和平均数分别达到了58.4%、64.3% 和79.7%，ID
+变换次数只切换了2 次。而当系数α 小于或大于0.7 时，
+由于代价函数对欧式距离度量的依赖过多或过少，导致
+其追踪性能都有所下降。因此，合理地设置系数α，以
+平衡BIoU 和欧式距离之间的代价依赖，更有利于提高
+套袋葡萄串的追踪性能。
+ 
+ 
+表 4    双关联代价系数α 的消融试验结果
+Table 4    Ablation test results of dual-association cost coefficient α
+双关联代价系数α
+Dual-association cost coefficient α
+HOTA/%
+MOTA/%
+IDF1/%
+IDS
+0.5
+58.4
+63.6
+76.0
+4
+0.6
+58.4
+64.0
+79.7
+1
+0.7
+58.4
+64.3
+79.7
+2
+0.8
+58.2
+64.1
+79.4
+3
+0.9
+57.1
+64.3
+77.2
+7
+ 
+3.2.5　不同关联方法的可视化效果对比
+为了验证基于BIoU 和欧式距离的双关联方法在追
+踪阶段的关联性能，本文与原始IoU 关联进行了可视化
+对比，如图9 所示。从图9 中可以观察到，当使用IoU
+关联时，由于相机移动不稳定以及受到叶片的遮挡，导
+致ID 标识为10 的套袋葡萄串追踪框尺度变化差异较大，
+在第566 帧时发生了关联匹配失败，进而造成目标丢失。
+后续在第567 帧时，该套袋葡萄串又被重新追踪到，但
+ID 标识由10 变为了12，这表明同一个套袋葡萄串发生
+了ID 标识切换。然而，当使用基于BIoU 和欧式距离的
+双关联方法时，ID 标识为10 的套袋葡萄串在第552 帧
+至第567 帧期间的ID 标识保持一致且未发生丢失。因此，
+该双关联方法能够有效缓解复杂场景下的追踪目标丢失
+问题，提高了套袋葡萄串的追踪性能。
+ 
+ 
+交并比
+Intersection
+over union
+BIoU+欧式距离
+BIoU+Euclidean
+distance (BIoU)
+a. 第552帧
+b. 第566帧
+c. 第567帧
+a. Frame 552
+b. Frame 566
+c. Frame 567
+注：图中椭圆框用于标记同一套袋葡萄串的追踪状态。
+Note: The oval boxes in the figure are used to mark the tracking status of bagged
+grape clusters.
+图9　不同关联方法的可视化对比
+Fig.9    Visual comparison of different association methods
+ 
+3.3　套袋葡萄串计数性能
+ 
+3.3.1　套袋葡萄串计数性能对比
+为了验证矩形区域计数方法的有效性，本文与ID 计
+数方法[14]、撞线计数方法[19] 进行了对比试验，试验结果
+及可视化分别如表5 与图10 所示。由表5 可知，矩形区
+域计数方法的平均计数精度为93.1%，相较于ID 计数方
+法和撞线计数方法分别提高了8.9 和8.0 个百分点。同时，
+矩形区域计数方法的平均绝对误差为1.3%，相比ID 计
+数方法和撞线计数方法分别降低了1.2 和1.5 个百分点。
+这一提升源于矩形区域计数方法扩大了对套袋葡萄串的
+可计数范围，有效地缓解了ID 计数方法中因ID 标识频
+繁切换导致的重复计数问题，以及撞线计数方法中由于
+计数范围较小而引发的漏计数问题。
+ 
+ 
+表 5    不同计数方法的对比试验结果
+Table 5    Comparative test results of different counting methods
+计数方法
+Counting methods
+视频Video
+ACP/
+%
+MAE/
+%
+1
+2
+3
+4
+5
+6
+真实个数
+Real number
+22
+7
+22
+11
+13
+19
+_
+_
+ID 计数方法
+ID counting method
+23
+8
+24
+10
+15
+27
+84.2
+2.5
+撞线计数方法
+Collision counting
+method
+16
+7
+16
+10
+11
+17
+85.1
+2.8
+矩形区域计数方法
+Rectangular region
+counting method
+20
+7
+18
+10
+13
+18
+93.1
+1.3
+注：ACP 为平均计数精度；MAE 为平均绝对误差。
+Note: ACP is average counting precision; MAE is mean absolute error.
+ 
+ 
+撞线计数方法
+Collision counting
+矩形区域计数
+Rectangular
+region counting
+a. 第644帧
+b. 第645帧
+c. 第706帧
+a. Frame 644
+b. Frame 645
+c. Frame 706
+注：图中竖线和矩形框都用于计数套袋葡萄串。
+Note: The vertical line and rectangular box in the figure are used to count bagged
+grape clusters.
+图10　不同计数方法的可视化对比
+Fig.10    Visual comparison of different counting methods
+ 
+从图10 中可以明显观察到，当使用撞线计数方法时，
+ID 标识为10 的套袋葡萄串在第644 帧时被成功追踪到。
+但从第645 帧至第705 帧期间，该套袋葡萄串发生了追
+踪丢失，直到第706 帧才重新恢复追踪，导致撞线计数
+方法未能对其有效计数。相比之下，矩形区域计数方法
+可以有效地规避这一问题。由于该方法增大了可计数区
+域，使得ID 标识为10 的套袋葡萄串在第644 帧时就被
+成功计数，避免了后续帧中漏计数情况，有效提高了套
+袋葡萄串的计数性能。
+ 
+4　讨　论
+1）在套袋葡萄串检测阶段，EMO-YOLOv5s 通过引
+入更轻量的骨干网络，在保证检测精度的同时，降低了
+模型的参数量与计算量。相较于已有研究中常用的
+　 168
+农业工程学报（http://www.tcsae.org）
+2025 年
+
+MobileNet 等轻量网络，EMO 更加注重效率与精度的平
+衡，适用于农业等实时性要求较高的场景。然而，本文
+只简单地将YOLOv5s 的骨干网络替换为EMO，尚未对
+网络结构中的冗余参数进行优化，后续研究可从整体网
+络架构出发，精简冗余结构，实现模型的轻量化。
+2）在套袋葡萄串追踪阶段，结合BIoU 和欧式距离
+的双关联方法增强了套袋葡萄串的关联匹配能力。与当
+前方法主要依赖IoU 关联不同，本文方法综合考虑了预
+测框与检测框之间的重叠程度和空间距离，增强了对目
+标密集、相机不稳定场景下的适应性。然而，在相机移
+动速度持续动态变化下，固定的缓冲比例可能会导致关
+联匹配错误，后续工作中可考虑引入动态自适应机制，
+以增强追踪模型对相机不稳定移动的适应性。此外，当
+套袋葡萄串发生长时间遮挡时，现有追踪方法仍可能出
+现目标丢失或ID 标识变换的问题，未来可以结合时空信
+息分析或引入其他序列学习模型，捕捉遮挡前后的目标
+状态变化，对遮挡期间的轨迹进行预测与恢复，以进一
+步提升追踪性能。
+ 
+5　结　论
+本文针对现有果实计数模型实时性不足，且套袋葡
+萄串分布密集、遮挡现象以及相机移动不稳定所引发的
+目标丢失问题，提出一种基于EMO-YOLOv5s 的双关联
+套袋葡萄串实时检测与计数方法。首先，在检测阶段引
+入EMO 以替代YOLOv5s 的骨干网络，试验结果表明，
+该检测模型的平均精度为96.5%，每秒帧数为77 帧/s，
+有效提升其检测实时性；其次，在追踪阶段结合BIoU
+和欧氏距离，对套袋葡萄串的检测框与预测框进行二次
+关联，以增强关联匹配能力。与IoU 关联相比，该方法
+在高阶追踪准确率、多目标追踪准确率和ID 调和平均数
+上分别提高了1.3、0.5 和2.4 个百分点，ID 变换次数减
+少了2 次，有效降低了关联匹配误差；最后，在计数阶
+段设计矩形区域计数方法，以扩大套袋葡萄串的可计数
+范围，试验结果表明，该方法平均计数精度为93.1%，
+提高了其计数精度。然而，本文仅在单一葡萄园中开展
+试验，且所使用的数据集均由手持移动设备采集，存在
+一定的场景与设备局限性。未来可通过引入移动小车等
+平台，在不同葡萄园及多种葡萄品种条件下采集数据，
+开展更广泛的研究，以设计更具通用性的套袋葡萄串计
+数方法。
+[ 参    考    文    献]
+ 
+ ZHOU D D, LI J, XIONG R G, et al. Bioactive compounds,
+health benefits and food applications of grape[J]. Foods, 2022,
+11(18): 2755-2776.
+[1]
+ ROSELLI  L,  CASIERI  A,  DE  GENNARO  B  C,  et  al.
+Environmental  and  economic  sustainability  of  table  grape
+production in Italy[J]. Sustainability, 2020, 12(9): 3670-3693.
+[2]
+ HE  L,  FANG  W,  ZHAO  G,  et  al.  Fruit  yield  prediction  and
+estimation  in  orchards:  A  state-of-the-art  comprehensive
+[3]
+review for both direct and indirect methods[J]. Computers and
+Electronics in Agriculture, 2022, 195(4): 106812.
+ MAHESWARI  P,  RAJA  P,  APOLO-APOLO  O  E,  et  al.
+Intelligent  fruit  yield  estimation  for  orchards  using  deep
+learning based semantic segmentation techniques: A review[J].
+Frontiers in Plant Science, 2021, 12(6): 684328.
+[4]
+ TIAN H, WANG T, LIU Y, et al. Computer vision technology
+in
+ agricultural
+ automation:
+ A
+ review[J]. 
+Information
+Processing in Agriculture, 2020, 7(1): 1-19.
+[5]
+ MEKHALFI M L, NICOLÒ C, IANNIELLO I, et al. Vision
+system  for  automatic  on-tree  kiwifruit  counting  and  yield
+estimation[J]. Sensors, 2020, 20(15): 4214-4231.
+[6]
+ GAO F, FANG W, SUN X, et al. A novel apple fruit detection
+and  counting  methodology  based  on  deep  learning  and  trunk
+tracking  in  modern  orchard[J].  Computers  and  Electronics  in
+Agriculture, 2022, 197(6): 107000.
+[7]
+ VASCONEZ  J  P,  DELPIANO  J,  VOUGIOUKAS  S,  et  al.
+Comparison of convolutional neural networks in fruit detection
+and counting: A comprehensive evaluation[J]. Computers and
+Electronics in Agriculture, 2020, 173(6): 105348.
+[8]
+ GREMES  M  F,  FERMO  I  R,  KRUMMENAUER  R,  et  al.
+System  of  counting  green  oranges  directly  from  trees  using
+artificial  intelligence[J].  AgriEngineering,  2023,  5(4):  1813-
+1831.
+[9]
+ RONG J, ZHOU H, ZHANG F, et al. Tomato cluster detection
+and  counting  using  improved  YOLOv5  based  on  RGB-D
+fusion[J].  Computers  and  Electronics  in  Agriculture,  2023,
+207(4): 107741.
+[10]
+ SHEN L, SU J, HE R, et al. Real-time tracking and counting of
+grape  clusters  in  the  field  based  on  channel  pruning  with
+YOLOv5s[J]. Computers and Electronics in Agriculture, 2023,
+206(3): 107662.
+[11]
+ LUO W, XING J, MILAN A, et al. Multiple object tracking: A
+literature  review[J].  Artificial  Intelligence,  2021,  293(4):
+103448.
+[12]
+ KALMAN  R  E.  A  new  approach  to  linear  filtering  and
+prediction  problems[J].  Journal  of  Basic  Engineering,  1960,
+82(1): 35-45.
+[13]
+ 高芳芳，武振超，索睿，等. 基于深度学习与目标追框的
+苹果检测与视频计数方法[J]. 农业工程学报，2021，37(21)：
+217-224.
+GAO  Fangfang,  WU  Zhenchao,  SUO  Rui,  et  al.  Apple
+detection  and  counting  using  real-time  video  based  on  deep
+learning  and  object  tracking[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2021, 37(21): 217-224. (in Chinese with English abstract)
+[14]
+ XIA  Y,  NGUYEN  M,  YAN  W.  Kiwifruit  counting  using
+kiwidetector
+ and
+ kiwitracker[C]//IntelliSys
+ Conference,
+Amsterdam, Amsterdam: Springer, 2023: 325-336.
+[15]
+ WANG  Z,  WALSH  K,  KOIRALA  A.  Mango  fruit  load
+estimation  using  a  video  based  MangoYOLO— Kalman
+[16]
+第 12 期
+吕　佳等：基于EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数
+169 　
+
+filter—hungarian algorithm method[J]. Sensors, 2019, 19(12):
+2742-2758.
+ ZHANG W, WANG J, LIU Y, et al. Deep-learning-based in-
+field citrus fruit detection and tracking[J]. Horticulture Research,
+2022, 9(1): 6526907.
+[17]
+ HE  L,  WU  F,  DU  X,  et  al.  Cascade-sort:  A  robust  fruit
+counting approach using multiple features cascade matching[J].
+Computers  and  Electronics  in  Agriculture,  2022,  200(9):
+107223.
+[18]
+ 吕佳，张翠萍，刘琴，等. 基于自纠正NMS-ByteTrack 的
+套袋葡萄估产方法[J]. 农业工程学报，2023，39(13)：182-190.
+LYU Jia, ZHANG Cuiping, LIU Qin, et al. Bagged grape yield
+estimation method using a self-correcting NMS-ByteTrack[J].
+Transactions
+ of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+Engineering (Transactions of the CSAE), 2023, 39(13): 182-190.
+(in Chinese with English abstract)
+[19]
+ ZHANG Y, SUN P, JIANG Y, et al. Bytetrack: Multi-object
+tracking  by  associating  every  detection  box[C]//European
+Conference  on  Computer  Vision.  Cham:  Springer  Nature
+Switzerland, 2022: 1-21.
+[20]
+ LI X, WANG X, ONG P, et al. Fast recognition and counting
+method  of  dragon  fruit  flowers  and  fruits  based  on  video
+stream[J]. Sensors, 2023, 23(20): 8444-8459.
+[21]
+ 李淑芳. 阳光玫瑰葡萄栽培管理常见问题分析及对策[J]. 果
+树资源学报，2023，4(5)：72-74.
+LI  Shufang.  Analysis  and  countermeasures  of  common
+problems  in  cultivation  and  management  of  shine  muscat
+grap[J].  Journal  of  Fruit  Resources,  2023,  4(5):  72-74.  (in
+Chinese with English abstract)
+[22]
+ WANG C Y, BOCHKOVSKIY A, LIAO H Y M. YOLOv7:
+Trainable bag-of-freebies sets new state-of-the-art for real-time
+object detectors[C]//Proceedings of the IEEE/CVF Conference
+on  Computer  Vision  and  Pattern  Recognition,  Vancouver,
+Canada: IEEE, 2023: 7464-7475.
+[23]
+ WANG C Y, YEH I H, MARK LIAO H Y. Yolov9: Learning
+what  you  want  to  learn  using  programmable  gradient
+information[C].  European  Conference  on  Computer  Vision,
+Munich, Germany:Springer, 2025: 1-21.
+[24]
+ WANG A, CHEN H, LIU L, et al. Yolov10: Real-time end-to-
+end  object  detection[J].  Advances  in  Neural  Information
+Processing Systems, 2024, 37: 107984-108011.
+[25]
+ 吕强，林刚，蒋杰，等. 基于改进YOLOv5s 模型的自然场
+景中绿色柑橘果实检测[J]. 农业工程学报，2024，40(18)：
+147-154.
+LYU  Qiang,  LIN  Gang,  JIANG  Jie,  et  al.  Detecting  green
+citrus  fruit  in  natural  scenes  using  improved  YOLOv5s
+model[J]. Transactions of the Chinese Society of Agricultural
+[26]
+Engineering (Transactions of the CSAE), 2024, 40(18): 147-154.
+(in Chinese with English abstract)
+ 黄小毛，张维，邱天，等. 基于无人机视频影像的油菜苗
+检测与计数[J]. 农业工程学报，2024，40(10)：147-156.
+HUANG Xiaomao, ZHANG Wei, QIU Tian, et al. Rapeseed
+seedling
+ detection
+ and
+ counting
+ based
+ on
+ UAV[J].
+Transactions
+ of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+Engineering (Transactions of the CSAE), 2024, 40(10): 147-156.
+(in Chinese with English abstract)
+[27]
+ HU J, FAN C, WANG Z, et al. Fruit detection and counting in
+apple orchards based on improved YOLOv7 and multi-object
+tracking methods[J]. Sensors, 2023, 23(13): 5903-5917.
+[28]
+ ZHANG  J,  LI  X,  LI  J,  et  al.  Rethinking  mobile  block  for
+efficient
+ attention-based
+ models[C]//Proceedings
+ of
+ the
+IEEE/CVF International Conference on Computer Vision, Paris,
+France: IEEE, 2023: 1389-1400.
+[29]
+ SANDLER  M,  HOWARD  A,  ZHU  M,  et  al.  Mobilenetv2:
+Inverted residuals and linear bottlenecks[C]//Proceedings of the
+IEEE Conference on Computer Vision and Pattern Recognition,
+Salt Lake City, UT, USA: IEEE, 2018: 4510-4520.
+[30]
+ LIU Z, LIN Y, CAO Y, et al. Swin transformer: Hierarchical
+vision  transformer  using  shifted  windows[C]//Proceedings  of
+the IEEE/CVF International Conference on Computer Vision,
+Montreal, QC, Canada: IEEE, 2021: 10012-10022.
+[31]
+ YU J, JIANG Y, WANG Z, et al. Unitbox: An advanced object
+detection
+ network[C]//Proceedings
+ of
+ the
+ 24th
+ ACM
+International  Conference  on  Multimedia,  Amsterdam,  The
+Netherlands: ACE, 2016: 516-520.
+[32]
+ YANG  F,  ODASHIMA  S,  MASUI  S,  et  al.  Hard  to  track
+objects with irregular motions and similar appearances? make
+it  easier  by  buffering  the  matching  space[C]//Proceedings  of
+the  IEEE/CVF  Winter  Conference  on  Applications  of
+Computer Vision, Waikoloa, Hawaii, USA: IEEE, 2023: 4799-
+4808.
+[33]
+ BEWLEY A, GE Z, OTT L, et al. Simple online and realtime
+tracking[C]//2016  IEEE  International  Conference  on  Image
+Processing, Phoenix, AZ, USA: IEEE, 2016: 3464-3468.
+[34]
+ WOJKE  N,  BEWLEY  A,  PAULUS  D.  Simple  online  and
+realtime tracking with a deep association metric[C]//2017 IEEE
+International Conference on Image Processing, Beijing, China:
+IEEE, 2017: 3645-3649.
+[35]
+ WANG  Y  H,  HSIEH  J  W,  CHEN  P  Y,  et  al.  Smiletrack:
+Similarity  learning  for  occlusion-aware  multiple  object
+tracking[C]//Proceedings of the AAAI Conference on Artificial
+Intelligence,  Vancouver,  Canada:  AAAI,  2024,  38(6):  5740-
+5748.
+[36]
+　 170
+农业工程学报（http://www.tcsae.org）
+2025 年
+
+ 
+Real-time detecting and counting dual-association bagged grape clusters
+using EMO-YOLOv5s
+LYU Jia1,2 , ZHANG Cuiping1,2
+(1. College of Computer and Information Science, Chongqing Normal University, Chongqing 401331, China;　2. Chongqing Center of
+Engineering Technology Research on Digital Agriculture & Service, Chongqing 401331, China)
+Abstract: An accurate real-time counting is vital for the bagged grape clusters, in order to ensure the subsequent estimation of
+the orchard yield. However, some challenges are still remained on the current real-time fruit counting. The tracking target can
+be lost in the bagged grape clusters, due to the dense distribution, occlusion and unstable camera movement. In this study, a real-
+time  detection  and  counting  were  combined  for  the  dual-association  bagged  grape  clusters  using  EMO-YOLOv5s.  Dual-
+association tracking was used as the BIoU and Euclidean distance. The rectangular region counting was also selected after
+target tracking. Firstly, the efficient model (EMO) was introduced as the backbone network of YOLOv5s in the detection stage.
+The fewer parameters were sufficiently utilized by the window multi-head self-attention (W-MHSA) mechanism in the Swin
+Transformer  and  the  depthwise  separable  convolution  (DSConv).  EMO-YOLOv5s  was  improved  the  inference  speed.
+Secondly, a dual-association was realized using ByteTrack and buffered intersection over union (BIoU) in the tracking stage.
+Euclidean  distance  was  proposed  to  solve  the  target  loss  in  the  bagged  grape  clusters  tracking.  The  association-matching
+performance of the tracking stage was enhanced to conduct twice associations between the bagged grape clusters detection and
+the  prediction  boxes.  Finally,  the  rectangular  region  was  designed  to  improve  the  counting  accuracy  of  the  bagged  grape
+clusters in the counting stage. The counting increased the probability of the effectively counting bagged grape clusters. The
+automatic counting of the bagged grape clusters was realized to enlarge the countable range of the fruits. The experimental
+dataset was collected from the Agricultural Science and Technology Demonstration Park in Bishan District, Chongqing, China.
+The coordinate longitude, latitude, and altitude of the demonstration park were 106.221°E, 29.753°N, and 353 m, respectively.
+The grapes were planted line by line, with the equal row spacing, and the relatively uniform distribution of the bagged grape
+clusters. OPPO Reno6pro+ and Redmi K40 mobile phones were used to capture the images of the bagged grape clusters. Four
+angles were selected as the front, top, upward, and side in three periods of 08:00, 12:00, and 18:00 on July 22, 2022. The
+growth of the bagged grape clusters was then evaluated at the different angles and periods. The shooting time was about 6 h,
+where the height was 1.0-1.8 m from the ground, and the horizontal distance was 0.1-1.0 m. The 500 original images of the
+bagged grape clusters were obtained to capture line by line, with the image resolutions of 4 000×3 000 pixels and 4 096×3 072
+pixels. There were 6 valid videos of the bagged grape clusters. The video resolution was 1 920×1 080 pixels, where the video
+format was MP4, the video frame rate was 30 frames per second and the video time was about 20 s. In addition, 200 images of
+the bagged grape clusters were also taken to supplement the original dataset on September 1, 2023, from 09:00 to 11:00, with
+an image resolution of 4 096×3 072 pixels. The experiments were conducted on the self-built dataset of the bagged grape
+clusters.  The  results  showed  that:  1)  The  parameters  and  floating-point  operations  decreased  by  38.6%  and  39.0%  in  the
+performance  of  the  detection,  respectively,  compared  with  the  YOLOv5s.  Meanwhile,  the  average  precision  and  detection
+speed  were  achieved  by  96.5%  and  77  frames  per  second,  respectively.  2)  In  the  tracking  performance,  the  higher  order
+tracking accuracy, multiple-object tracking accuracy, and identification F1-score were 58.6%, 64.7% and 80.0%, respectively,
+which were 3.6, 4.1, and 6.0 percentage point higher than ByteTrack. 3) In the counting performance, the average counting
+precision was achieved by 93.1%. Meanwhile, the mean absolute error was 1.3%. As such, the improved model was effectively
+solved the problems of the tracking and counting bagged grape clusters. The finding can provide a reliable basis to predict the
+orchard yield.
+Keywords: image processing; real-time detection; object tracking; video counting; YOLOv5s; bagged grape clusters
+第 12 期
+吕　佳等：基于EMO-YOLOv5s 的双关联套袋葡萄串实时检测与计数
+171 　

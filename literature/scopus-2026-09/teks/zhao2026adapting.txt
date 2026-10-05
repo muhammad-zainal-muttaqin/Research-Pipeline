@@ -1,0 +1,1867 @@
+ 
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+ 
+Adapting SAM3 for 3D fruit counting with cross-view contrastive learning 
+and Hough voting$
+Kai Zhao a
+,∗, Chenchen Kang d, Suzy Rogiers b, Oula Ghannoum a,∗, Yi Guo c,∗
+a Hawkesbury Institute for the Environment, Western Sydney University, Richmond, 2753, NSW, Australia
+b Department of Primary Industries and Regional Development, Horticulture, Wollongbar Primary Industries Institute, Wollongbar, NSW, Australia
+c School of Computer, Data and Mathematical Sciences, Western Sydney University, Parramatta, 2150, NSW, Australia
+d Department of Agricultural Science and Engineering, Tennessee State University, McMinnville, 37110, TN, USA
+A R T I C L E  I N F O
+Dataset link: https://github.com/kkk0216/SAM
+3-3DFruit
+Keywords:
+3D Gaussian
+Fruit counting
+Vision foundation model
+Occlusion
+Agricultural robotics
+ 
+A B S T R A C T
+Fruit detection and 3D localization have been shown to be critical for precision agriculture applications, such 
+as yield estimation and robot harvesting tasks. However, real-world agricultural settings can be associated with 
+high density of fruits, strong occlusions, and variable illumination, leading to difficulty in accurately detecting 
+and localizing fruits. Although there exist 2D approaches dedicated for fruit counting, these approaches may 
+easily merge adjacent fruits due to projection effects in dense occlusions, thus limiting their effectiveness. 
+Motivated by this, in this paper, we explore the problem of 3D fruit detection and localization with vision 
+foundation model adaptation and 3D Gaussian-based scene representation. Particularly, we use low-rank 
+adaptation to leverage SAM3 to generate high-quality instance masks with different crops and illuminations. 
+Meanwhile, to address noisy pseudo label issue, we adopt cross-view contrastive learning with uncertainty 
+weighting for enhanced 3D feature representation. Moreover, we devise a Hough voting procedure in the 
+3D Gaussian space to integrate multi-view evidence of occluded fruits, followed by clustering to estimate 
+the number of fruits as well as their 3D locations. The proposed approach has been extensively tested with 
+thousands of fruits from synthetic orchard scenes, real apple orchard datasets, as well as greenhouse sweet 
+pepper scenes. Experiment results show significant performance gains for densely occluded cases, with the 
+F1-scores reaching 0.971 and 0.977 for plum and mango, respectively. Meanwhile, our approach can achieve 
+more than a twofold boost for 3D instance segmentation over FruitNeRF. More notably, the adapted weights 
+and the post-processing settings transfer from the open-field apple orchard to greenhouse sweet pepper scenes, 
+where only the SAM3 text prompt is changed and the 3D Gaussian representation is still optimized for each 
+new scene.
+1. Introduction
+Modern precision agriculture heavily utilizes automated systems 
+to facilitate the observation and analysis of crop traits across differ-
+ent field environments (Tian et al., 2020). Fruit counting is crucial, 
+directly impacting yield estimation, harvest planning, and robotic op-
+erations (Tu et al., 2025). In actual production, manual counting is not 
+only time-consuming but also often unreliable in large-scale orchard 
+scenarios. Therefore, vision-based methods have been widely adopted, 
+primarily due to the rapid development of deep learning in object 
+detection tasks.
+With the recent progress of deep learning and vision foundation 
+models (VFMs), agricultural perception tasks have become increasingly 
+$ This article is part of a Special issue entitled: ‘Foundation Models in Agriculture’ published in Computers and Electronics in Agriculture.
+∗Corresponding authors.
+E-mail addresses: Kai.Zhao@westernsydney.edu.au (K. Zhao), O.Ghannoum@westernsydney.edu.au (O. Ghannoum), Y.Guo@westernsydney.edu.au (Y. Guo).
+automated (Devanna et al., 2025; Li et al., 2026). Trained on large-
+scale datasets, these models exhibit strong general visual representation 
+capabilities and provide effective support for object detection, seg-
+mentation, and recognition in complex agricultural scenes. However, 
+agricultural images differ significantly from general natural images. In 
+orchards and greenhouses, dense foliage, varying illumination, occlu-
+sion, and similar appearances of fruit often reduce the effectiveness of 
+general-purpose models when applied directly. Therefore, this study 
+focuses on adapting vision foundation models to agricultural scenes 
+and integrating them with three-dimensional spatial reasoning for more 
+reliable fruit perception. The overall pipeline of the proposed method 
+is shown in Fig. 1.
+https://doi.org/10.1016/j.compag.2026.112325
+Received 24 March 2026; Received in revised form 12 August 2026; Accepted 13 August 2026
+Computers and Electronics in Agriculture 255 (2026) 112325 
+Available online 31 August 2026 
+0168-1699/© 2026 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY license ( http://creativecommons.org/licenses/by/4.0/ ). 
+
+K. Zhao et al.
+Fig. 1. Pipeline overview. SAM3 is adapted to produce 2D instance masks from input images, which guide 3D Gaussian Splatting reconstruction. Cross-View 
+Contrastive Learning and a voting mechanism refine feature consistency and estimate fruit centers, with final counts and 3D positions obtained via clustering.
+Early research primarily relied on handcrafted features or depth 
+detectors to achieve 2D image detection from a single RGB image 
+(Sapkota et al., 2024; Kang and Chen, 2020). These methods performed 
+well under controlled conditions, but their performance significantly 
+degraded in real orchard or greenhouse environments. In real-world 
+scenes, fruits are typically densely distributed and often occlude one 
+another, while short-term illumination variations can be drastic, with 
+adjacent fruits sometimes separated by only a few centimeters or even 
+overlapping (Gené-Mola et al., 2020). Representative examples include 
+plum scenes in FruitNeRF (Meyer et al., 2024) and apple scenes in 
+Fuji-SfM (Gené-Mola et al., 2020).
+Recent studies on fruit counting and yield estimation based on the 
+YOLO family of detectors have achieved substantial progress in tasks 
+such as young apple fruit detection (Z. Liu et al., 2024), grape picking-
+point localization (Wang et al., 2025), passion fruit yield estimation (Tu 
+et al., 2025), cotton boll number prediction (Tan et al., 2025), and 
+lightweight detection networks for orchard deployment (Song et al., 
+2025; Zhang et al., 2025). However, most existing approaches still rely 
+on single-view detection or video-tracking paradigms, which exhibit 
+limited robustness under severe occlusion among adjacent fruits (Liu 
+et al., 2025). As highlighted by Z. Li et al. (2025) in a recent review 
+of fruit 3D reconstruction, the transition from 2D detection to 3D 
+perception is becoming an important trend in precision agriculture for 
+addressing densely occluded fruit scenes.
+Multi-view geometry offers a potential solution to this problem by 
+improving reliability through the fusion of observations from differ-
+ent perspectives. Structure from Motion (SfM) can reconstruct cam-
+era poses and sparse scene geometry, thereby enabling the alignment 
+of detection results across multiple views (Gené-Mola et al., 2020). 
+Neural scene representation methods further extend this approach. 
+FruitNeRF (Meyer et al., 2024), for example, combines segmentation 
+with volumetric rendering to reduce duplicate counting to some extent. 
+However, its high computational cost and lengthy optimization process 
+limit its applicability in practical agricultural workflows (Z. Li et al., 
+2025).
+In recent years, 3D Gaussian Splatting (3DGS) (Kerbl et al., 2023) 
+has gained increasing attention as a more efficient scene representation. 
+It uses explicit Gaussian primitives to describe the scene, each carrying 
+information on position, shape, opacity, and color. Compared to the im-
+plicit model NeRF, this representation renders faster and facilitates geo-
+metric inference. In agricultural applications, these Gaussian primitives 
+can be filtered or grouped to identify individual fruits without relying 
+on expensive volume queries (Jiang et al., 2025). Existing research has 
+applied this technology to plant phenotypic analysis, such as cotton 
+boll localization and strawberry reconstruction (Jiang et al., 2025; 
+J. Li et al., 2025). Regarding vision foundation models, the Segment 
+Anything Model (SAM) (Kirillov et al., 2023) has demonstrated stable 
+zero-shot segmentation capability, while its successor SAM3 (Carion 
+et al., 2025) further supports text-driven open-vocabulary instance 
+segmentation, allowing segmentation tasks to be guided by natural lan-
+guage descriptions. Early studies adapting vision foundation models to 
+agricultural applications have shown promising potential. For example, 
+Devanna et al. (2025) combined SAM with Grounding DINO for zero-
+shot annotation of grape bunches; Tan et al. (2025) integrated SAM 
+with a density-map model for cotton boll counting; and Li et al. (2026) 
+applied SAM to agricultural field parcel extraction through adaptive 
+mask refinement. However, directly applying these general-purpose 
+foundation models to dense fruit scenes remains challenging. The visual 
+distribution of orchards and greenhouses differs substantially from that 
+of the natural images used for pre-training: fruits frequently occlude 
+each other, shadows and illumination variations blur object bound-
+aries, and dense spatial distributions make instance separation more 
+difficult. These factors collectively introduce domain bias and reduce 
+segmentation accuracy.
+Training such models from scratch is computationally expensive 
+and requires large-scale annotations, making it impractical for most 
+agricultural scenarios. In contrast, Low-Rank Adaptation (LoRA) (Hu 
+et al., 2022) provides a parameter-efficient fine-tuning strategy that 
+updates only a small number of parameters while effectively mitigating 
+domain bias. In this work, we adapt SAM3 using LoRA to improve its 
+segmentation performance in agricultural scenes while preserving its 
+general visual knowledge. Nevertheless, improving 2D segmentation 
+alone is insufficient, because the resulting masks are further used for 
+3D reconstruction. If the masks contain noise or if instance labels are 
+inconsistent across different viewpoints, these errors can propagate into 
+the 3D representation and ultimately affect fruit counting. To address 
+this issue, we tightly integrate cross-view 3D reasoning with the vision 
+Computers and Electronics in Agriculture 255 (2026) 112325 
+2 
+
+K. Zhao et al.
+foundation model. Specifically, we use 3D Gaussian representations to 
+aggregate multi-view information, and design an uncertainty-weighted 
+cross-view contrastive learning strategy to reduce the influence of noisy 
+pseudo-labels. Meanwhile, a voting mechanism is introduced to fuse 
+cross-view spatial cues, enabling stable fruit center estimation even 
+under occlusion.
+The main contributions of this paper are summarized as follows. 
+First, we propose SAM3-Adapt, a LoRA-based parameter-efficient adap-
+tation method for improving fruit instance segmentation with SAM3 
+in agricultural scenes. It keeps the general representation ability of 
+the vision foundation model while reducing the domain gap caused 
+by agricultural images. Second, we introduce an uncertainty-aware 
+cross-view contrastive learning module, which reduces the effect of 
+noisy pseudo-labels on 3D feature learning and makes fruit instance 
+features more consistent across views. Third, for fruit counting and 3D 
+localization under occlusion, we add a Hough voting mechanism to 
+the 3D Gaussian representation. By combining spatial evidence from 
+multiple views, it helps estimate fruit centers and separate instances 
+more reliably. In addition, we build a fruit perception dataset covering 
+different agricultural scenes and crop types to evaluate the method 
+under different environments. Finally, by applying the same adapted 
+weights and post-processing settings from open-field orchards to green-
+house sweet pepper scenes, with only the text prompt changed, we 
+demonstrate its transferability for cross-crop 3D fruit perception.
+2. Materials and methods
+2.1. Dataset construction and preprocessing
+We constructed datasets for three types of agricultural scenarios: 
+synthetic scenes, open-air apple orchards, and greenhouses. Experi-
+ments were conducted using 3D Gaussian Splatting (3DGS) (Kerbl et al., 
+2023) and the vision foundation model SAM3 (Carion et al., 2025) to 
+examine the model’s performance under different lighting conditions, 
+occlusion levels, and fruit densities, while also verifying the transfer-
+ability of the proposed method across different visual environments.
+2.1.1. Multi-source dataset integration
+Although computer vision in agriculture has progressed rapidly in 
+recent years (Tian et al., 2020), high-quality 3D agricultural datasets 
+remain scarce. Existing works mainly address 2D detection (Sapkota 
+et al., 2024; Z. Liu et al., 2024) or segmentation (Kang and Chen, 2020), 
+and therefore provide limited geometric information (Z. Li et al., 2025). 
+Collection of 3D agricultural datasets is expensive, and it requires 
+a multi-view collection procedure, precise calibration, and a stable 
+reconstruction algorithm. In addition, different datasets may use differ-
+ent sensors, making comparisons between datasets challenging. In this 
+work, we combine three complementary public agricultural datasets, 
+each of which represents various agricultural scenes and difficulties. 
+Basic statistical properties of the used datasets are listed in Table 1.
+The FruitNeRF (Meyer et al., 2024) dataset contains images of 
+synthetic and real-world scenes. Its synthetic part was created using 
+Blender, and includes six classes of fruits: apple, plum, lemon, pear, 
+peach, and mango, providing 2942 annotated fruit instances, along 
+with exact 3D location annotations. Images of 583 real-world fruit 
+instances taken using the Nikon D7100 camera at a resolution of 
+6000 × 4000 were also included in this dataset. The dataset provides 
+relatively simple scenes with clearly defined geometric structure and 
+stable camera motion which makes it good for evaluating performance 
+of the considered tasks under controlled conditions. However, it has 
+low diversity of scenes.
+The Fuji-SfM (Gené-Mola et al., 2020) dataset consists of images 
+taken from a commercial Fuji apple orchard. In contrast to the Fruit-
+NeRF dataset, this one includes a much higher diversity of outdoor 
+scenes that have varying lighting conditions, dense foliage and oc-
+clusions. It includes images of one outdoor scene taken using a Sony 
+Alpha 6000 camera at a resolution of 4000 × 3000 which contain 1455 
+annotated fruit instances. Due to the absence of annotations on exact 
+3D fruit locations, the dataset becomes challenging for solving tasks of 
+fruit instance segmentation, localization, and 3D scene understanding.
+The BUP20 (Pan et al., 2023) dataset was acquired using a mobile 
+robot with an attached Intel RealSense D435i RGB-D sensor, capturing 
+RGB-D images and odometry information in a greenhouse environment 
+with sweet peppers. This dataset differs from Fuji-SfM in the presence 
+of depth cues and an indoor structured environment, making it a 
+good choice for multimodal perception evaluation. However, it lacks 
+annotated fruit instances and 3D fruit location labels.
+Overall, these three datasets complement each other well. Fruit-
+NeRF provides accurate geometric annotations on controlled scenes, 
+while Fuji-SfM brings challenging outdoor orchard conditions. In turn, 
+BUP20 dataset adds RGB-D information from a greenhouse environ-
+ment to our benchmark.
+2.1.2. Data standardization and instance annotation
+The datasets used in this article are sourced from different sources, 
+and the formats of the sensor and dataset vary. To ensure data con-
+sistency, we first converted all camera parameters to a COLMAP-
+compatible format. For data sets that contain depth, for example 
+BUP20, the 3D points were created using back-projection of the depth 
+map. However, for RGB data only, as in Fuji-SfM, the cameras were 
+first estimated and point clouds were then built using COLMAP.
+With respect to the generation of ground truth (GT) for each dataset, 
+we took various strategies depending on the annotation conditions of 
+each dataset. In the case of FruitNeRF’s synthetic subset, we directly 
+utilized the official annotation information in Blender, which includes 
+fruit instance’s identity and 3D coordinate. Hence, these annotations do 
+not depend on our method and are not generated from SAM3 results.
+For real-world datasets where no complete 3D annotations can be 
+found, we followed a semi-automatic annotation procedure as depicted 
+in Fig. 2. Firstly, we employed SAM3 to get rough candidate instance 
+segmentation results, and then manually corrected each image by 
+using VGG Image Annotator (Dutta and Zisserman, 2019). The process 
+includes excluding false positives, adding missing fruits, splitting stuck 
+instances in dense regions, and correcting inaccurate instance masks. 
+We would like to note that the predicted results from SAM3 were used 
+only for initialization purpose but not directly taken as ground truth.
+In addition, we manually refined masks in heavily occluded and 
+dense regions by using the combination of multiview information and 
+reconstructed 3D structure, as illustrated in Fig. 2. Specifically, we keep 
+a fruit when it is occluded in one view but is visible in other views 
+and is consistent with the 3D reconstruction result. And, if an instance 
+cannot be distinguished at all, then it will be removed from GT for 3D 
+localization evaluation.
+2.2. SAM3 in agricultural scenes
+2.2.1. Limitations of open-set detection for 3D fruit reconstruction
+Closed-set detectors are unsuitable for 3D fruit reconstruction, be-
+cause they require every target category to be fixed before training and 
+degrade sharply once the deployment distribution shifts. Detectors of 
+the YOLO family (Wang et al., 2024) perform stably under a known 
+data distribution, but their generalization ability decreases markedly in 
+unfamiliar environments or for new species unless data are re-collected 
+and the model is fine-tuned. Open-vocabulary detection alleviates this 
+problem by locating objects of unseen categories from textual cues. 
+Grounding DINO (S. Liu et al., 2024) is a representative method: it 
+aligns visual and linguistic features so that detection no longer depends 
+on a predefined category list, which gives it strong semantic generaliza-
+tion ability. However, directly applying such open-vocabulary detection 
+methods to 3D reconstruction still has significant limitations. A key 
+issue is the relatively coarse-grained output format, primarily providing 
+Computers and Electronics in Agriculture 255 (2026) 112325 
+3 
+
+K. Zhao et al.
+Table 1
+Statistics of the four datasets. GT Fruits: number of annotated fruit instances; GT 3D Pose: 
+availability of 3D coordinates; ‘‘–’’: incomplete annotation.
+ Dataset
+Source
+Fruit type
+Scenes
+GT Fruits
+GT 3D Pose 
+ FruitNeRF (Syn)
+Synthetic (Blender)
+6 types
+6
+2942
+✓
+ 
+ FruitNeRF (Real)
+Real (Nikon D7100)
+Apple
+3
+583
+×
+ 
+ Fuji-SfM
+Real (Sony 𝛼6000)
+Apple
+1
+1455
+×
+ 
+ BUP20
+Real (RealSense D435i)
+Sweet pepper
+1
+–
+×
+ 
+Fig. 2. The annotation refinement pipeline. The annotation refinement pipeline begins with a raw image; the process proceeds through SAM3 prediction, ending 
+with manual correction.
+supervision information in the form of bounding boxes. In real agricul-
+tural environments, fruits are typically densely distributed and heavily 
+occluded, leading to overlapping bounding boxes between adjacent 
+targets. This results in uncertainty in label assignment and makes it 
+difficult to accurately depict the true geometric boundaries of the fruits. 
+More importantly, in agricultural scenarios, these methods are prone to 
+missing detections, false detections, or category confusion. These errors 
+already exist in the 2D stage and are further amplified after multi-
+view fusion. For 3DGS segmentation, high-quality segmentation relies 
+on accurate pixel-level supervision signals with cross-view consistency. 
+However, the bounding boxes provided by open-vocabulary detectors 
+are not only coarse-grained but also contain detection errors, making it 
+difficult to maintain consistency across multiple views. These combined 
+problems limit the accuracy of geometric detail recovery, ultimately 
+affecting the accuracy of fruit counting and localization.
+2.2.2. Adapting SAM3 to agricultural scenes
+Text-prompted segmentation alone is insufficient for agricultural 
+imagery, because foundation models pre-trained on generic natural 
+images underperform task-specific supervised models when the target 
+domain has distinctive visual statistics (Kirillov et al., 2023; Li et al., 
+2023). SAM3 (Carion et al., 2025) employs a text-based segmentation 
+mechanism, in which a natural-language description drives pixel-level 
+localization and segmentation of all matching instances in an image. 
+Compared with interactive paradigms that rely on manual clicks or 
+bounding boxes, this mechanism generalizes better in open-vocabulary 
+settings. Its pre-training data, however, consist mainly of generic nat-
+ural images, so zero-shot segmentation in a specialized domain often 
+falls short of expectations.
+The visual characteristics of agricultural scenes further amplify this 
+problem. In orchards and greenhouses, fruits of the same type have 
+highly similar colors and textures, resulting in severe mutual occlusion, 
+making it difficult to distinguish instance boundaries in dense areas. 
+Under these conditions, SAM3’s text-based prompt mechanism strug-
+gles to effectively separate neighboring fruits, easily leading to mask 
+adhesion or boundary drift, and failing to provide stable and consistent 
+pixel-level supervision for subsequent multi-view 3DGS segmentation. 
+In addition, the appearance of fruits varies greatly within a class due to 
+differences in variety, growth stage and light conditions. General text 
+descriptions are difficult to fully cover these fine-grained out-of-domain 
+samples, which naturally affects the robustness of segmentation (Gurav 
+et al., 2023).
+2.2.3. Adaptive vision foundation model based on low-rank fine-tuning
+Parameter-efficient fine-tuning offers a practical route to close this 
+domain gap, because it adapts a foundation model to a new visual do-
+main at a small fraction of the cost of full fine-tuning while preserving 
+the pre-trained representation (Hu et al., 2022). We therefore employ 
+Low-Rank Adaptation (LoRA) (Hu et al., 2022) to fine-tune the vision 
+foundation model SAM3 (Carion et al., 2025). LoRA does not update all 
+parameters of the model; it inserts small learnable matrices and keeps 
+the pre-trained weights fixed, so the model can absorb agricultural 
+data without losing its general visual capability. For a weight matrix 
+𝐖0 ∈R𝑑×𝑘 in the SAM3 image encoder, LoRA introduces two low-rank 
+matrices 𝐁∈R𝑑×𝑟 and 𝐀∈R𝑟×𝑘, where 𝑟≪min(𝑑, 𝑘). The forward 
+computation can be written as: 
+𝐡= 𝐖0𝐱+ 𝐁𝐀𝐱
+(1)
+Indeed, these update terms are injected in the linear projections 
+of Q, K, and V for the Transformer blocks. As shown in Table 2, an 
+ablation study was conducted regarding the LoRA rank 𝑟. We observe 
+that the rank 𝑟= 8 outperforms all other choices, while introducing 
+just 2.95M trainable parameters, representing 0.1% of all parameters 
+in SAM3. The mask decoder, on the contrary, remains unchanged for 
+the segmentation task. The complete procedure is depicted in Fig. 3.
+The LoRA rank ablation demonstrates that parameter-efficient adap-
+tation can substantially improve segmentation performance with only 
+a small number of trainable parameters. Even at a low rank of 𝑟= 2, 
+the adapted model achieves a clear improvement over the Grounded-
+SAM2 baseline, increasing the average mIoU from 0.561 to 0.737, as 
+shown in Table 2. Among different rank settings, 𝑟= 8 obtains the 
+best average mIoU of 0.856 with only 2.95M trainable parameters, 
+indicating the most effective trade-off between segmentation accuracy 
+and computational cost. Increasing the rank from 𝑟= 8 to 𝑟= 16
+slightly improves the performance on the lemon category, but brings 
+negligible improvement in the overall average mIoU. When the rank is 
+further increased to 𝑟= 32, the average mIoU decreases to 0.846, while 
+the training time increases by approximately 76%. Therefore, we adopt 
+𝑟= 8 as the default LoRA rank in our experiments.
+Training is divided into two phases. In the first phase, all pre-
+training parameters are fixed, and only the LoRA module is updated. 
+This allows the model to learn domain-specific content, such as dense 
+regions and different lighting conditions. In the second phase, the last 
+and penultimate layers of the image encoder are unfrozen and fine-
+tuned together. This allows learning higher-level information without 
+altering the lower-level content.
+Computers and Electronics in Agriculture 255 (2026) 112325 
+4 
+
+K. Zhao et al.
+Fig. 3. Overview of the SAM3 adaptation process. Insert low-rank modules into the image encoder, keep the remaining pre-trained layers fixed, and only update 
+the selected layers during training.
+Table 2
+LoRA rank ablation for SAM3 adaptation, evaluated by 2D segmentation mIoU on the six FruitNeRF synthetic 
+categories. Best value per column in bold.
+ Method
+Params (M)
+Apple
+Plum
+Lemon
+Pear
+Peach
+Mango
+Avg. mIoU ↑
+Train (h) 
+ Grounded-SAM2
+–
+0.659
+0.382
+0.556
+0.519
+0.662
+0.588
+0.561
+–
+ 
+ SAM3 (zero-shot)
+0
+0.712
+0.428
+0.601
+0.567
+0.704
+0.624
+0.606
+–
+ 
+ Ours, 𝑟= 2
+0.74
+0.819
+0.604
+0.748
+0.715
+0.806
+0.732
+0.737
+2.1
+ 
+ Ours, 𝑟= 4
+1.47
+0.871
+0.731
+0.815
+0.788
+0.858
+0.798
+0.810
+2.4
+ 
+ Ours, 𝑟= 8a
+2.95
+0.898
+0.806
+0.859
+0.837
+0.887
+0.847
+0.856
+2.9
+ 
+ Ours, 𝑟= 16
+5.90
+0.901
+0.802
+0.864
+0.834
+0.885
+0.844
+0.855
+3.6
+ 
+ Ours, 𝑟= 32
+11.80
+0.893
+0.787
+0.857
+0.829
+0.880
+0.831
+0.846
+5.1
+ 
+a Marks the default configuration.
+The segmentation loss combines Focal Loss and Dice Loss to balance 
+class imbalance and boundary quality: 
+seg = 𝜆focalFocal + 𝜆diceDice
+(2)
+To improve robustness, we employ common image data augmen-
+tation techniques, such as random cropping, horizontal flipping, color 
+jittering, and Gaussian blur. These simulate variations in agricultural 
+conditions caused by different lighting, angles, or sensor noise. Training 
+is performed using the AdamW optimizer on an NVIDIA A6000 GPU.
+2.2.4. Evaluating adaptation of vision foundation models
+After LoRA fine-tuning, SAM3 produces more stable and spatially 
+consistent instance masks in both synthetic and real agricultural scenes, 
+especially in densely occluded regions, as shown in Figs. 4 and 5. 
+We compare our method with two segmentation baselines used for 
+agricultural scenes: the original SAM3 and Grounded-SAM2, which 
+pairs Grounding DINO with a SAM-family segmenter (Ren et al., 2024). 
+For a fair comparison, all methods use the corresponding fruit category 
+names as text prompts. The evaluation is carried out on four datasets, 
+including FruitNeRF synthetic scenes, FruitNeRF real-world samples, 
+the Fuji-SfM orchard dataset, and the BUP20 greenhouse dataset.
+From the qualitative results, the adapted model gives more complete 
+masks and separates nearby fruits more clearly than the baselines. This 
+is especially noticeable when fruits are clustered together or partly oc-
+cluded, where instance separation is difficult. By contrast, the original 
+SAM3 and Grounded-SAM2 often produce broken masks or overlapping 
+instance regions, which makes the segmentation less reliable. These re-
+sults suggest that LoRA fine-tuning helps the foundation segmentation 
+model better fit agricultural scenes with dense fruit layouts and strong 
+occlusion.
+Although LoRA adaptation improves the quality of 2D fruit masks, 
+the generated pseudo-labels still contain errors. In heavily occluded 
+regions, mask boundaries may be inaccurate. Fruits with colors close 
+to leaves, branches, or the background may also be missed or wrongly 
+classified. In addition, because the appearance of the same fruit changes 
+across viewpoints, its pseudo-labels may not always be consistent in dif-
+ferent views. These issues make fully reliable 2D supervision difficult to 
+obtain in real agricultural scenes. If such noisy masks are directly used 
+for 3D representation learning, the supervision may become biased 
+and affect feature learning as well as instance separation. To reduce 
+this problem, we use two complementary mechanisms. The contrastive 
+learning module in Section 2.3.1 weakens the influence of unreliable 
+samples and helps learn more discriminative instance-level features. At 
+the same time, the multi-view voting strategy in Section 2.3.3 combines 
+observations from different views to improve spatial consistency. Al-
+though these mechanisms cannot remove all segmentation errors, they 
+reduce the effect of noisy 2D masks and provide more stable guidance 
+for 3D fruit localization, centroid estimation, and instance prototype 
+construction.
+2.3. 3D Gaussian splatting-based fruit instance segmentation
+2.3.1. Cross-view feature learning for Gaussian representations
+Refining the 2D masks is necessary but not sufficient, because resid-
+ual mask noise propagates into the 3D representation and is amplified 
+after multi-view mask fusion. Even after adaptation, the SAM3 masks 
+still show blurred boundaries, missing small fruits, and leaf occlusions. 
+Computers and Electronics in Agriculture 255 (2026) 112325 
+5 
+
+K. Zhao et al.
+Fig. 4. Segmentation results on real-world scenes, including orchard and greenhouse environments.
+To limit the impact of these errors and improve consistency across 
+views, we apply contrastive learning to the Gaussian features, so that 
+Gaussians belonging to the same fruit stay close in feature space while 
+those from different fruits are pushed apart.
+3DGS (Kerbl et al., 2023) represents a scene as a collection of 𝑁
+explicit Gaussian primitives = {𝑔𝑖}𝑁
+𝑖=1, where each Gaussian 𝑔𝑖=
+{𝐩𝑖, 𝐬𝑖, 𝐪𝑖, 𝑜𝑖, 𝐜𝑖} contains position, scaling, rotation, opacity, and color. 
+Given camera pose, pixel colors are rendered through 𝛼-blending: 
+𝐶𝑢=
+∑
+𝑖∈
+𝐜𝑖𝛼𝑖𝑇𝑖
+(3)
+where  denotes the ordered set of Gaussian primitives whose pro-
+jections cover pixel 𝑢, sorted in ascending depth (front-to-back) along 
+the viewing ray, and the index 𝑖 enumerates this sorted sequence; 
+𝛼𝑖= 𝑜𝑖exp(−1
+2𝐝⊤𝛴−1𝐝) is the Gaussian weight, 𝑇𝑖= ∏𝑖−1
+𝑗=1(1 −𝛼𝑗) is the 
+cumulative transmittance accumulated over the 𝑖−1 Gaussians lying 
+in front of the 𝑖th one, 𝐝 is the vector from the sample point to the 
+Gaussian center, and 𝛴 is the covariance matrix.
+We attach a learnable feature vector 𝐟𝑖∈R16 to each Gaussian, 
+rendered via 𝛼-blending: 
+𝐅𝑢=
+∑
+𝑖∈
+𝐟𝑖𝛼𝑖𝑇𝑖
+(4)
+We adopt ProtoNCE contrastive learning (Li et al., 2020) to optimize 
+features. Let {𝛺𝑗}𝐶
+𝑗=1 denote the set of SAM3 instances in the current 
+view, where 𝛺𝑗 is the set of pixels covered by the 𝑗th instance. We 
+compute instance prototypes ̄𝐅𝑗=
+1
+|𝛺𝑗|
+∑
+𝑢∈𝛺𝑗𝐅𝑢. The contrastive loss 
+is: 
+contra = −1
+𝐶
+𝐶
+∑
+𝑗=1
+∑
+𝑢∈𝛺𝑗
+log
+exp(sim(𝐅𝑢,̄ 𝐅𝑗)∕𝜙𝑗)
+∑𝐶
+𝑙=1 exp(sim(𝐅𝑢,̄ 𝐅𝑙)∕𝜙𝑙)
+(5)
+where sim(⋅, ⋅) denotes cosine similarity and 𝜙𝑗 is a dynamic temper-
+ature parameter. The inner summation ∑
+𝑢∈𝛺𝑗 runs over all pixels 𝑢
+belonging to the 𝑗th instance 𝛺𝑗, so that each pixel feature 𝐅𝑢 is 
+contrasted against its own instance prototype ̄𝐅𝑗 (positive) and all other 
+prototypes (negatives). This loss encourages pixel features within the 
+same instance to cluster around their prototype while remaining distant 
+from other prototypes.
+The contrastive objective above is constructed independently within 
+each view. The instance partition, the prototypes, and the positive and 
+negative pairs are all defined by the SAM3 masks of the current image, 
+so no instance correspondence between different views is required. The 
+rendered feature 𝐅𝑢 is obtained by 𝛼-weighted accumulation of the 
+per-Gaussian features 𝐟𝑖, and each 𝐟𝑖 is a view-independent, scene-level 
+parameter shared by every view in which the corresponding primitive 
+is visible. The per-view contrastive losses therefore update the same 
+feature vector, and the gradient accumulates over the visible views, 
+𝜕contra
+𝜕𝐟𝑖
+=
+∑
+𝑣∈(𝑖)
+𝜕(𝑣)
+contra
+𝜕𝐟𝑖
+,
+(6)
+where (𝑖) denotes the set of views in which Gaussian primitive 𝑖
+is visible. This parameter sharing couples the supervision provided 
+by different views within a single 3D feature field and thereby pro-
+motes cross-view feature consistency, without any explicit cross-view 
+instance matching. In this study, cross-view integration is achieved by 
+jointly optimizing a shared 3D representation with per-view supervi-
+sion, rather than through explicit inter-view matching, object tracking, 
+or positive-pair construction.
+To filter noisy labels, we design an uncertainty estimation module. 
+Let 𝐾𝑢 denote the instance ID assigned to pixel 𝑢 by the SAM3 mask, 
+which serves as the pseudo-label. The uncertainty weight is computed 
+as: 
+𝜔𝑢= 1 −
+exp(sim(𝐅𝑢,̄ 𝐅𝐾𝑢))
+∑𝐶
+𝑙=1 exp(sim(𝐅𝑢,̄ 𝐅𝑙))
+(7)
+A pixel is regarded as reliable when its uncertainty weight is below 
+a threshold 𝜏; that is, the reliable pixel set used for supervision is 
+reliable = { 𝑢∣𝜔𝑢≤𝜏}, and pixels with 𝜔𝑢> 𝜏 are treated as 
+unreliable and excluded from the contrastive and clustering losses. The 
+choice of the threshold 𝜏= 0.5 is critical for maintaining robustness 
+across different crop categories. This is because weak-contrast cases, 
+such as green sweet peppers against green foliage, and strong-contrast 
+cases, such as red apples, exhibit different levels of tolerance to seg-
+mentation noise. To examine this effect, we systematically evaluate 
+𝜏∈{0.3, 0.4, 0.5, 0.6, 0.7} on six representative crop categories. The 
+results are reported in Table 3.
+The sensitivity analysis for 𝜏 provides findings similar to those 
+reported in Table 3. The best performance values for plum and mango 
+are obtained at 𝜏= 0.3, indicating that more boundary pixels need 
+to be retained when the foreground–background contrast is weak. In 
+contrast, apple and peach achieve their best results at 𝜏= 0.5. Across 
+all six crop categories, the highest average F1 score is 0.977, which 
+Computers and Electronics in Agriculture 255 (2026) 112325 
+6 
+
+K. Zhao et al.
+Fig. 5. Qualitative comparison of fruit segmentation on synthetic FruitNeRF scenes, including apple, pear, lemon, plum, peach, and mango. Grounded-SAM2 
+produces clear false positives in the peach scene and misclassifies almost the entire mango tree canopy as fruit. SAM3 reduces some background errors but still 
+suffers from fragmented and over-segmented predictions. In contrast, our improved SAM3 generates more accurate and coherent fruit masks across different fruit 
+categories.
+is also obtained at 𝜏= 0.5. Within the range of 𝜏∈[0.4, 0.6], the 
+performance variation does not exceed 1.5%, suggesting that 𝜏= 0.5
+can be considered a stable parameter setting for different crops. When 
+𝜏 is too high, for instance at 𝜏= 0.7, the F1 score for plum decreases 
+to 0.882, indicating that an overly aggressive threshold may remove 
+useful fruit regions.
+2.3.2. Object-level codebook and clustering loss
+Per-view instance identities cannot serve directly as global supervi-
+sion, because a promptable segmenter returns identities that are local 
+to each image; an intermediate scene-level representation is therefore 
+required to bind them together. To obtain object-level instance assign-
+ments from the learned Gaussian features, we introduce a learnable 
+Computers and Electronics in Agriculture 255 (2026) 112325 
+7 
+
+K. Zhao et al.
+Table 3
+Sensitivity of the uncertainty threshold 𝜏 on the FruitNeRF synthetic dataset. Best value per column in bold.
+ Threshold 𝜏
+Apple F1
+Plum F1
+Lemon F1
+Pear F1
+Peach F1
+Mango F1
+Avg. F1 
+ 0.3
+0.951
+0.968
+0.928
+0.943
+0.932
+0.974
+0.949 
+ 0.4
+0.978
+0.962
+0.958
+0.971
+0.964
+0.969
+0.967 
+ 0.5a
+0.996
+0.967
+0.971
+0.981
+0.977
+0.971
+0.977 
+ 0.6
+0.984
+0.934
+0.964
+0.973
+0.969
+0.948
+0.962 
+ 0.7
+0.946
+0.882
+0.937
+0.945
+0.938
+0.893
+0.924 
+a Marks the default configuration.
+object-level codebook 𝐅obj ∈R256×16, where 256 is the number of 
+codewords and 16 is the feature dimension that matches the dimen-
+sionality of the Gaussian feature vectors. Each codeword, i.e., each 
+row of 𝐅obj, represents a candidate fruit instance prototype in the 
+scene. The codebook serves as an intermediate representation during 
+training, which maps the rendered pixel-level Gaussian features to 
+different object prototypes. It is jointly optimized with the Gaussian 
+features through backpropagation and does not rely on crop-specific 
+shape or size priors. Given the rendered feature map, we first flatten 
+the per-pixel features along the spatial dimensions and compute the 
+pixel–codebook response as: 
+𝐒= 𝐅obj ⋅𝐅flatten,
+𝐏𝑢= softmax (𝐒∶,𝑢
+) .
+(8)
+Here, 𝐅flatten ∈R16×𝐻𝑊 denotes the flattened pixel-level feature matrix, 
+where 𝐻 and 𝑊 are the height and width of the rendered feature 
+map, and the operator ⋅ denotes matrix multiplication rather than an 
+element-wise product, so that 𝐒∈R256×𝐻𝑊. Accordingly, 𝐒∶,𝑢∈R256
+denotes the response vector of pixel 𝑢 to all 256 codewords, and 𝐏𝑢=
+softmax(𝐒∶,𝑢) ∈R256 is the resulting probability distribution of pixel 
+𝑢 over the codewords. During inference, the instance ID of pixel 𝑢 is 
+assigned by selecting the codeword with the highest response, where 
+𝑙∈{1, … , 256} indexes the codewords and 𝐏𝑢[𝑙] is the 𝑙th entry of 𝐏𝑢: ̂
+𝐾𝑢= arg max
+𝑙
+𝐏𝑢[𝑙].
+(9)
+Since the instance IDs predicted by SAM3 are local to each image 
+and are not globally consistent across views, directly aligning these 
+IDs in multi-view images may introduce label drift during training. 
+For example, the same fruit may be assigned different instance IDs 
+in different views. To avoid this problem, we perform the assignment 
+between SAM3 instances and codebook prototypes within each indi-
+vidual view. This assignment is a one-to-one matching between the 
+SAM3 instances and the object-level codewords inside a single frame, 
+and is used only to define the supervision target of the clustering loss; it 
+does not perform any temporal or cross-view tracking of fruit instances. 
+Given the SAM3 instance partition {𝛺𝑗}𝐶
+𝑗=1 in the current view, we 
+construct the following cost matrix for Hungarian matching: 
+𝐶𝑗𝑙= −
+∑
+𝑢∈𝛺𝑗
+𝐏𝑢[𝑙].
+(10)
+This cost measures the overall response of pixels belonging to instance 
+𝛺𝑗 to the 𝑙th codeword. If the pixels within an instance show a stronger 
+response to a certain codeword, assigning this instance to that code-
+word produces a lower cost. Solving the resulting linear assignment 
+problem gives the optimal mapping: 
+𝛱∗= arg min
+𝛱
+𝐶
+∑
+𝑗=1
+𝐶𝑗,𝛱(𝑗).
+(11)
+Here, 𝛱∗ assigns each SAM3 instance in the current view to a unique 
+object prototype. To reduce the influence of noisy pseudo-labels, the 
+clustering loss is computed only on reliable pixels selected by the 
+uncertainty-aware filtering strategy described in Section 2.3.1. This 
+avoids using ambiguous boundary pixels, occluded regions, or
+background-like responses as strong supervision for object-level proto-
+type learning. Based on the Hungarian assignment, the clustering loss 
+is defined as: 
+cluster =
+1
+||reliable||
+∑
+𝑢∈reliable
+‖‖‖‖‖
+𝐅obj
+[𝛱∗(𝐾𝑢
+)] −
+𝐅𝑢
+‖‖𝐅𝑢‖‖2
+‖‖‖‖‖1
+.
+(12)
+Here, 𝐾𝑢 denotes the SAM3 instance ID of pixel 𝑢, and reliable denotes 
+the reliable pixel set obtained from the uncertainty-aware filtering 
+strategy. This loss encourages the assigned object prototype and the 
+normalized rendered Gaussian feature to have consistent directions in 
+the feature space. As a result, Gaussian primitives belonging to the same 
+fruit instance are pulled closer in the feature space, while different fruit 
+instances become easier to separate.
+2.3.3. 3D fruit localization based on hough voting
+The SAM3 masks may contain spatial noise caused by leaf occlusion, 
+blurred boundaries, and inconsistent instance labels across different 
+viewpoints, making direct use of the projected Gaussian primitives un-
+reliable. Moreover, in 3DGS, Gaussian primitives mainly represent the 
+visible object surfaces rather than the complete fruit volume. Therefore, 
+directly clustering the original Gaussian positions is highly sensitive to 
+mask noise and boundary errors.
+To address this issue, we propose a voting-based method to fuse 
+spatial information from multiple viewpoints. Each Gaussian primitive 
+is assigned a learnable 3D offset 𝛥𝐩𝑖, which shifts its center toward a 
+potential fruit instance center. The corresponding Gaussian-level voting 
+point is defined as 𝐕3𝐷
+𝑖
+= 𝐩𝑖+𝛥𝐩𝑖. Through this voting process, Gaussian 
+primitives belonging to the same fruit are encouraged to produce voting 
+points that converge to a common instance center.
+The offset is parameterized by a learnable variable ̂𝐨𝑖 that is op-
+timized jointly with position, scale, rotation, opacity, color, and the 
+feature vector, rather than being predicted by an additional network 
+head. It is initialized to zero, and its magnitude is bounded: 
+𝐕3𝐷
+𝑖
+= 𝐩𝑖+ 𝛥𝐩𝑖,
+𝛥𝐩𝑖= 𝛿max tanh(̂𝐨𝑖),
+𝛥𝐩𝑖||𝑡=0 = 𝟎,
+(13)
+where 𝛿max = 0.05 𝑑scene and 𝑑scene is the diagonal length of the bound-
+ing box of the COLMAP sparse point cloud. The hyperbolic tangent 
+is applied coordinate-wise, so every offset component is confined to 
+[−𝛿max, 𝛿max], which gives ‖𝛥𝐩𝑖‖∞≤𝛿max and ‖𝛥𝐩𝑖‖2 ≤
+√
+3 𝛿max. The 
+offset parameters use the same learning rate and decay schedule as the 
+Gaussian positions, and new primitives created by densification inherit 
+the offset of their parent. This constraint bounds the displacement of a 
+voting point relative to the scale of the scene and prevents background 
+primitives from producing large non-physical offsets.
+For each pixel 𝑢, the visible Gaussian-level voting points are aggre-
+gated by averaging: 
+𝐕3𝐷
+𝑢
+=
+1
+|𝑢|
+∑
+𝑖∈𝑢
+𝐕3𝐷
+𝑖
+(14)
+where 𝑢 denotes the set of Gaussian primitives that are visible at pixel 
+𝑢, i.e., those that contribute to the rendering of pixel 𝑢, and |𝑢| is its 
+cardinality.
+Supervision comes from the 2D instance centroids of the SAM3 
+masks. Let 𝐦2𝐷
+𝐾𝑢 denote the 2D centroid of the SAM3 mask (indexed 
+by 𝐾𝑢) assigned to pixel 𝑢, and let 𝜋(⋅) ∶
+R3
+→R2 denote the 
+camera projection operator that maps a 3D point to its 2D image-plane 
+coordinates using the camera intrinsics and extrinsics, including the 
+perspective division. The voting loss is then defined as 
+vote =
+1
+||
+∑
+𝑢∈
+‖‖‖𝜋(𝐕3𝐷
+𝑢) −𝐦2𝐷
+𝐾𝑢
+‖‖‖1
+(15)
+where  denotes the set of pixels used for voting supervision. This loss 
+indirectly trains the per-Gaussian 3D offset by projecting the aggregated 
+Computers and Electronics in Agriculture 255 (2026) 112325 
+8 
+
+K. Zhao et al.
+3D voting point back to 2D and aligning it with the corresponding mask 
+centroid.
+After training convergence, Gaussian primitives located on leaves, 
+branches, or background regions may still produce unstable or seman-
+tically weak voting responses. Therefore, before instance clustering, we 
+remove unreliable primitives according to two criteria: the cross-view 
+dispersion of their Gaussian-level voting points and their maximum 
+response to the object-level codebook.
+Let (𝑖) denote the set of views in which primitive 𝑖 is judged visible 
+by the rasterizer and can be associated with a valid SAM3 fruit mask, 
+and let 𝐦(𝑣)
+𝑖 be the centroid of the corresponding instance mask in view 
+𝑣. The reprojection residual of the 3D voting point in that view and its 
+mean over the visible views are 
+𝐫(𝑣)
+𝑖
+= 𝜋𝑣
+(𝐕3𝐷
+𝑖
+) −𝐦(𝑣)
+𝑖,̄
+𝐫𝑖=
+1
+|(𝑖)|
+∑
+𝑣∈(𝑖)
+𝐫(𝑣)
+𝑖,
+(16)
+where 𝜋𝑣(⋅) is the camera projection of view 𝑣. The cross-view voting 
+dispersion is then 
+𝜎𝑖=
+[
+1
+|(𝑖)|
+∑
+𝑣∈(𝑖)
+‖‖‖𝐫(𝑣)
+𝑖
+−̄ 𝐫𝑖‖‖‖
+2
+2
+]1∕2
+,
+(17)
+measured in pixels. Primitives that lie on fruit produce consistent 
+reprojection residuals across views and therefore have a small 𝜎𝑖, 
+whereas the residuals of leaves, branches, and other background prim-
+itives vary strongly with viewpoint. Accordingly, primitives with 𝜎𝑖
+above a fixed threshold 𝜎thr are labeled as background and discarded 
+before clustering. The threshold is determined once on the synthetic 
+scenes and is then held fixed for all datasets, including the real or-
+chard and greenhouse scenes; it is not re-tuned per scene or per 
+crop, so the final fruit count does not depend on any scene-specific 
+threshold adjustment. Primitives with inconsistent voting offsets or 
+low object-level confidence are treated as background and excluded 
+from subsequent clustering. The remaining Gaussian-level voting points 
+{𝐕3𝐷
+𝑖
+} are then clustered using HDBSCAN (McInnes et al., 2017) to 
+obtain fruit-instance hypotheses.
+HDBSCAN is adopted because the density of fruit-related voting 
+points is often non-uniform in orchard and greenhouse scenes. Unlike 
+DBSCAN, which requires a manually specified global density thresh-
+old, HDBSCAN builds a hierarchical cluster structure based on mu-
+tual reachability distance and selects stable clusters according to the 
+Excess of Mass criterion. This property allows the method to han-
+dle fruit instances with different point densities caused by occlusion, 
+viewpoint changes, and varying fruit sizes. As illustrated in Fig. 6, 
+dense voting points are grouped into stable clusters, while isolated 
+or weakly supported points are regarded as noise and removed from 
+counting. In all experiments, we use the same HDBSCAN configura-
+tion across FruitNeRF synthetic scenes, FruitNeRF real scenes, Fuji-
+SfM, and BUP20, without crop-specific adjustment. The retained voting 
+points are aligned to a common metric scale by a Sim(3) transform 
+before clustering, and no anisotropic normalization is applied. We set
+min_cluster_size = 30, min_samples = 10, and alpha = 1.0. 
+Points assigned the noise label −1 are excluded from counting, the 
+number of valid clusters is taken as the predicted fruit count, and the 
+3D center of each fruit is the mean of the voting points in its cluster.
+Let {𝑘}𝐾
+𝑘=1 denote the set of valid clusters returned by HDBSCAN, 
+where points assigned to the noise label −1 are excluded. The fruit 
+count is defined as the number of valid clusters 𝐾, and the 3D center of 
+the 𝑘th fruit is estimated by computing the centroid of its corresponding 
+voting points: 
+𝐜𝑘=
+1
+|𝑘|
+∑
+𝑖∈𝑘
+𝐕3𝐷
+𝑖
+.
+(18)
+In contrast, FruitNeRF (Meyer et al., 2024) adopts a cascaded clus-
+tering scheme that combines DBSCAN, agglomerative clustering, and 
+Hausdorff-distance template matching. Its performance relies on several 
+crop-specific geometric priors, including a template fruit point cloud, 
+the average fruit radius, and an upper bound on the number of fruits per 
+cluster, all of which must be re-specified for a new crop type, limiting 
+the generalizability of the approach. Our clustering pipeline introduces 
+no priors related to fruit shape or size, and can therefore be transferred 
+directly from apples in open orchards to sweet peppers in greenhouses 
+without re-tuning any parameter at the clustering stage; only the SAM3 
+text prompt is changed, while the 3D Gaussian representation is still 
+optimized for each new scene. This is empirically supported by the 
+BUP20 results reported in Section 3.
+Clustering these voting-refined 3D points rather than the direct 
+SAM3 segmentation masks or per-view Gaussian primitives makes the 
+instance segmentation results less sensitive to mask noise, occlusions, 
+and inaccurate boundaries. The full voting pipeline, shown in Fig. 
+7, integrates 2D mask-guided segmentation, multi-view voting, and 
+background filtering into a single process. It should be noted that voting 
+is not utilized in our work to predict a rigid geometric center of each 
+fruit instance. Instead, the voting process estimates a mask-guided mass 
+center through the supervision of projected centroids of 2D masks. 
+As a result, the learned voting response is more robust for instance 
+grouping rather than accurate geometric center estimation. For fruits 
+with irregular or elongated shapes such as sweet peppers, the visible 
+centroid position can be further affected by occlusion and viewpoint 
+changes. To address this, multi-view voting points are aggregated in 3D 
+and used as clustering cues, which reduces the offset caused by single-
+view occlusion and shape irregularity. The experiments on the BUP20 
+sweet pepper dataset have shown that the voting-refined points can be 
+clustered into separate fruit instances.
+2.3.4. Joint optimization and end-to-end inference
+The complete objective function integrates reconstruction, feature 
+learning, voting, and clustering into a single loss function: 
+= recon + 𝜆𝑐contra + 𝜆𝑣vote + 𝜆𝑛cluster
+(19)
+where recon = (1−𝜆dssim)⋅𝐿1+𝜆dssim⋅(1−SSIM) denotes the photometric 
+reconstruction loss following Kerbl et al. (2023), and 𝜆𝑐, 𝜆𝑣, 𝜆𝑛 are 
+the weighting coefficients of the corresponding loss terms. Each loss 
+term plays a different role during training: the reconstruction loss 
+preserves visual consistency between the rendered images and the input 
+views; the contrastive loss improves instance-level feature separation; 
+the voting loss encourages Gaussian primitives to shift toward the 
+fruit center; and the clustering loss associates the learned features 
+with the codebook. By jointly optimizing these losses, information 
+from different modules can interact during training, leading to more 
+stable fruit instance separation and localization. During inference, the 
+feature map 𝐹 is rendered from the learned Gaussian primitives. The 
+codebook response is then computed as 𝐒= 𝐅obj ⋅𝐅flatten, and the 
+instance label for each pixel is assigned as ̂𝐾𝑢= arg max𝑙softmax(𝐒∶,𝑢)[𝑙]. 
+This process does not require additional parameter tuning. Finally, the 
+converged Gaussian-level 3D voting points are sequentially processed 
+by the background pruning and HDBSCAN clustering stages described 
+in Section 2.3.3, simultaneously producing the fruit count and the 3D 
+center location of each fruit, which together provide complete counting 
+and spatial information for downstream tasks.
+2.4. Experimental settings
+2.4.1. Training hyperparameters
+The implementation details and training settings are summarized as 
+follows. During the SAM3 LoRA adaptation stage, we use the AdamW 
+optimizer with a learning rate of 1 × 10−4, a weight decay of 0.01, and 
+a batch size of 4. The model is trained for 30 epochs. The LoRA rank 
+is set to 𝑟= 8, with a scaling factor of 𝛼= 16 and a dropout rate of 0.1. 
+For 3DGS optimization, the model is trained for 30,000 iterations. The 
+learning rates for position, feature, and opacity are set to 1.6 × 10−4, 
+2.5 × 10−3, and 0.05, respectively, and the densification interval is set 
+to 100. The loss weights 𝜆𝑐, 𝜆𝑣, and 𝜆𝑛 are set to 1 × 10−5, 1 × 10−6, 
+and 1 × 10−6, respectively. All experiments are conducted on a single 
+NVIDIA A6000 GPU with 48 GB memory.
+Computers and Electronics in Agriculture 255 (2026) 112325 
+9 
+
+K. Zhao et al.
+Fig. 6. Conceptual illustration of HDBSCAN-based fruit instance clustering. (a) Voting-refined 3D points are grouped into density-connected clusters, while 
+isolated sparse points are identified as noise. (b) A hierarchical cluster tree is constructed along decreasing density, where stable branches are retained as final 
+fruit instances and unstable candidates are discarded.
+Fig. 7. Hough voting method. (a) 2D mask-guided 3D Gaussian segmentation; (b) Multi-view voting to remove non-fruit Gaussian primitives; (c) Comparison of 
+point clouds before and after filtering.
+2.4.2. Evaluation metrics
+Counting performance is evaluated using Precision, Recall, F1-score, 
+and mean absolute error (MAE). MAE measures the absolute deviation 
+between the predicted and ground-truth fruit counts, and is defined as 
+MAE = 1
+𝑁
+𝑁
+∑
+𝑖=1
+|||𝑦𝑖
+pred −𝑦𝑖
+gt
+||| ,
+(20)
+where 𝑁 is the number of test samples, and 𝑦𝑖
+pred and 𝑦𝑖
+gt denote the 
+predicted and ground-truth fruit counts of the 𝑖th sample, respectively. 
+The per-category absolute error (AE) is the individual term of this sum, 
+and the MAE is its mean over the evaluated categories.
+For the synthetic scenes, where ground-truth 3D fruit centers are 
+available, we also report the 3D center localization error. Predicted 
+and ground-truth centers are matched one-to-one with the Hungarian 
+algorithm on their Euclidean distances, and a match is valid only if the 
+distance does not exceed the mean fruit diameter of that category. The 
+center error is the mean distance over all valid matches; unmatched 
+predictions and unmatched ground-truth instances are counted as false 
+positives and false negatives, so that the center error, Precision, and 
+Recall all derive from the same matching.
+Computers and Electronics in Agriculture 255 (2026) 112325 
+10 
+
+K. Zhao et al.
+Table 4
+Computational efficiency and end-to-end processing time on the FruitNeRF synthetic plum scene (300 frames), NVIDIA RTX A6000. Peak GPU memory is reported; 
+best result in bold. 
+ Method
+Backbone
+SfM
+Training
+Post-
+processing
+End-to-end
+Rendering FPSa
+GPU Memory
+F1 (Plum) 
+ FruitNeRF (Meyer et al., 2024)
+NeRF
+35 min
+2.5 h
+13 min
+3.3 h
+<0.5
+24 GB
+0.575
+ 
+ FruitNeRF++ (Meyer et al., 2025)
+NeRF + Contrastive
+38 min
+∼8 h
+18 min
+8.9 h
+<0.5
+24 GB
+0.859
+ 
+ SAM3-Adapt (Ours) ⋆
+3DGS + LoRA SAM3
+36 min
+1.5 h
+15 min
+2.4 h
+∼110
+21 GB
+0.971
+ 
+a Novel-view rendering only.
+For 3D instance segmentation evaluation, each predicted fruit in-
+stance is represented by a cluster of Gaussian primitives and eval-
+uated against the ground-truth instance annotations using 3D IoU. 
+We perform instance matching based on the IoU between predicted 
+and ground-truth instances. A prediction is considered a true positive 
+(TP) when its IoU with a ground-truth instance exceeds a prede-
+fined threshold. Unmatched predictions are counted as false positives 
+(FP), and unmatched ground-truth instances are counted as false nega-
+tives (FN). Following this evaluation protocol, we report mIoU, mAcc, 
+mAP, AP@0.25, and AP@0.50. Here, mIoU denotes the mean IoU 
+over matched instances, and mAcc reflects the instance-level matching 
+accuracy. The mAP is computed over IoU thresholds from 0.50 to 0.95 
+with a step size of 0.05, while AP@0.25 and AP@0.50 are reported at 
+fixed IoU thresholds of 0.25 and 0.50, respectively.
+3. Results
+3.1. Dataset splits and computational cost
+We conduct experiments on three datasets, with the dataset compo-
+sition and splitting strategy described in Section 2.1.1. All experiments 
+are run on a single NVIDIA RTX A6000 GPU. Camera pose estimation 
+and 3D reconstruction can take a large amount of time in large orchard 
+scenes. Therefore, we also report the running time of each part of the 
+full pipeline. For the Tree03 scene with 300 input frames, COLMAP 
+sparse reconstruction takes about 38 min, 2D mask inference with the 
+adapted SAM3 model takes about 12 min, and 3DGS training for 30k 
+iterations takes around 1.5 h. For the larger Fuji-SfM scene with 1455 
+fruit instances, COLMAP sparse reconstruction takes nearly 4 h, which 
+is about 45% of the total pipeline time. This shows that camera pose 
+estimation is still a major time-consuming step in large-scale 3D fruit 
+counting.
+The SAM3 LoRA adaptation stage takes about 3 h. However, this 
+cost is only needed once and is not tied to a specific test scene. After 
+training, the LoRA weights can be reused directly for different orchard 
+or greenhouse scenes. Therefore, this stage is not counted as repeated 
+per-scene cost when reporting the running time of a single scene. The 
+overall efficiency comparison of different methods is reported in Table 
+4.
+End to end, the proposed method completed the full pipeline in 
+2.4 h on the 300-frame scene, compared with 3.3 h for FruitNeRF 
+and 8.9 h for FruitNeRF++ (Table 4). Each pipeline comprised three 
+stages: COLMAP-based sparse reconstruction (SfM), scene optimization, 
+and post-processing, including mask inference, point-cloud or feature 
+export, clustering, and counting. COLMAP was run independently for 
+each method using identical input images and reconstruction parame-
+ters. Under this common protocol, SfM and post-processing required 
+35–38 min and 13–18 min, respectively, across the three methods. 
+Rendering throughput was measured only after scene optimization and 
+excluded offline voting and HDBSCAN clustering; it therefore should 
+not be interpreted as end-to-end efficiency. Benefiting from the explicit 
+3DGS representation, the proposed method achieves approximately 
+110 FPS, which is about two orders of magnitude faster than NeRF-
+based methods. This substantial improvement in rendering efficiency 
+is important for future deployment in real-world agricultural scenar-
+ios, where fast visualization and repeated scene inspection are often 
+required. Consistent with the timings above, camera pose estimation re-
+mains a substantial fraction of the total cost and becomes the dominant 
+bottleneck in larger scenes such as Fuji-SfM.
+3.2. Fruit counting performance
+3.2.1. Synthetic dataset results
+On the FruitNeRF synthetic dataset, our method performs better 
+than FruitNeRF in all six fruit categories, and the improvement is more 
+obvious in dense scenes, as shown in Table 5. In the apple scene, our 
+method detects all 283 fruits and obtains an F1-score of 1.000. The 
+difference becomes larger when fruits are highly clustered. In the plum 
+scene, there are 781 fruit instances, and the distance between nearby 
+fruits is smaller than 5 cm. FruitNeRF detects only 315 fruits with 
+an F1-score of 0.575, mainly because overlapping projections tend to 
+merge several fruits into one detection. By comparison, our method 
+detects 741 fruits and reaches an F1-score of 0.971, giving a relative 
+improvement of 68.9%. A similar result can be found in the mango 
+scene, which contains 1150 heavily occluded instances. FruitNeRF 
+detects 807 fruits with an F1-score of 0.816, while our method detects 
+1123 fruits and obtains an F1-score of 0.977.
+Table 5 additionally reports the absolute counting error and the 3D 
+center localization error; for FruitNeRF, both are computed from its 
+released predictions under the protocol of Section 2.4.2, so the two 
+column groups are directly comparable. Averaged over the six cate-
+gories, the mean absolute counting error is 13.67 fruits for the proposed 
+method and 139.17 fruits for FruitNeRF. The 3D center localization 
+error ranges from 0.21 to 0.56 cm for the proposed method and from 
+0.34 to 0.88 cm for FruitNeRF, and the proposed method is closer to 
+the ground-truth center in every category, with the largest margin in 
+the heavily occluded plum and mango scenes. Precision, Recall, and F1 
+are reported alongside the absolute error because a correct count does 
+not imply that every instance is matched correctly: in the lemon scene 
+the count predicted by FruitNeRF equals the ground truth exactly, yet 
+about six instances remain incorrectly matched.
+3.2.2. Real-world dataset results
+On the four real-world scenes, SAM3-Adapt gives counting results 
+close to the ground truth, with errors within four fruits. It also shows 
+clear advantages in the densely occluded Tree03 scene and the BUP20 
+scene where the annotations are less precise, as reported in Table 6 and 
+Fig. 8. For Tree01, our method detects 175 fruits, compared with 173 
+from FruitNeRF and 179 ground-truth fruits. For Tree03, our method 
+detects 290 fruits, very close to the ground truth of 291, whereas 
+FruitNeRF detects only 264 fruits. In the large-scale Fuji-SfM scene with 
+1455 fruit instances, our method detects 1450 fruits, which is close to 
+FruitNeRF with 1459 detections. In the BUP20 greenhouse scene, our 
+method detects 107 sweet peppers, while FruitNeRF detects only 83. As 
+shown in Fig. 8, we further compare our method with the Grounded-
+SAM2 and SAM3 baselines, whose 2D masks are fed into the same 
+3DGS-based voting and clustering pipeline to obtain their 3D counts; 
+our method produces counts consistently closer to the ground truth 
+across all scenes.
+Computers and Electronics in Agriculture 255 (2026) 112325 
+11 
+
+K. Zhao et al.
+Table 5
+Fruit counting and 3D center localization on the FruitNeRF synthetic dataset (300 frames per category at 1024 × 1024). The count closest to the ground 
+truth in each row is highlighted. 
+FruitNeRF (SAM)
+Ours (Adapted SAM3)
+Fruit type
+Counta
+Precisiona
+Recalla
+F1-scorea
+Absolute
+errora
+Center error
+(cm)a
+Count
+Precision
+Recall
+F1-score
+Absolute
+error
+Center error
+(cm)
+Apple
+282/283
+0.992
+0.989
+0.991
+1
+0.34
+283/283
+1.0
+1.0
+1.0
+0
+0.29
+Plum
+315/781
+1.0
+0.403
+0.575
+466
+0.70
+741/781
+0.995
+0.949
+0.971
+40
+0.21
+Lemon
+326/326
+0.982
+0.982
+0.982
+0
+0.41
+323/326
+0.991
+0.957
+0.974
+3
+0.27
+Pear
+229/250
+1.0
+0.916
+0.956
+21
+0.52
+243/250
+1.0
+0.972
+0.986
+7
+0.36
+Peach
+148/152
+1.0
+0.973
+0.987
+4
+0.38
+147/152
+0.993
+0.967
+0.980
+5
+0.30
+Mango
+807/1150
+0.989
+0.694
+0.816
+343
+0.88
+1123/1150
+0.977
+0.976
+0.977
+27
+0.56
+a FruitNeRF counting results from Meyer et al. (2024).
+Fig. 8. Comparison of 3D fruit counting results in real-world scenes.
+Table 6
+3D fruit counting on real-world scenes. The 
+count closest to the ground truth in each row 
+is highlighted.
+Dataset
+FruitNeRF
+Ours
+Ground truth
+Tree01
+173
+175
+179
+Tree02
+112
+112
+113
+Tree03
+264
+290
+291
+Fuji-SfM
+1459
+1450
+1455
+BUP20
+83
+107
+–
+3.2.3. Ablation study
+To separately examine the independent contributions of the four 
+core components, namely LoRA adaptation, cross-view contrastive 
+learning, clustering loss, and Hough voting, we conduct a systematic 
+ablation study on the two most challenging scenes, plum and mango, 
+from the FruitNeRF synthetic dataset. The baseline configuration al-
+ready uses LoRA-adapted SAM3 together with 3DGS and DBSCAN, 
+in order to isolate the contribution of the 3D components. Other 
+configurations progressively introduce additional components based on 
+this baseline. The results are reported in Table 7.
+The ablation study confirms that each introduced component con-
+tributes positively to the final performance, as reported in Table 7. 
+Specifically, contrastive learning, clustering loss, and Hough voting 
+improve the average F1-score by +0.063, +0.033, and +0.051, respec-
+tively. Hough voting shows a particularly notable effect in the densely 
+occluded plum scene, where the F1-score increases by +0.077 from 
+configuration (C) to configuration (D). This result highlights the impor-
+tance of explicit 3D center voting for reducing the ambiguity caused by 
+2D projection overlap. When all three components are combined, the 
+full method improves the average F1-score by +0.147 compared with 
+the baseline.
+3.2.4. 3D instance segmentation performance
+To further evaluate the 3D reasoning ability of the proposed method, 
+we report explicit 3D instance-level evaluation results in this section. 
+The evaluation protocol is described in Section 2.4.2. Specifically, we 
+compute the 3D IoU between each predicted 3D fruit instance and the 
+corresponding ground-truth instance. TP, FP, and FN are determined 
+under two IoU thresholds, 0.25 and 0.50, and five metrics are then 
+reported, including mIoU, mAcc, mAP, AP@0.25, and AP@0.50. Since 
+real-world scenes lack accurate 3D instance-level ground truth, this 
+evaluation is conducted on the most challenging plum scene from the 
+FruitNeRF synthetic dataset. The results are shown in Table 8.
+3.3. 3D reconstruction results
+The data sets used in our experiments include diverse settings in 
+terms of data acquisition, varying from synthetic data generated in 
+Blender to real-life orchards with natural lighting changes, foliage, and 
+occlusions. This variety ensures that we have a multi-level environment 
+for evaluation of our method, as illustrated in Fig. 9. While synthetic 
+data sets provide high-quality geometric data due to accurate rendering 
+in Blender, the real FruitNeRF data sets incorporate more realistic 
+factors like different lighting conditions and heavy occlusion.
+To further validate our method, we conducted evaluations on two 
+large-scale scenes, which differ significantly from each other in their 
+domains, i.e., Fuji-SfM and BUP20. As seen in Fig. 10, in both cases, 
+Computers and Electronics in Agriculture 255 (2026) 112325 
+12 
+
+K. Zhao et al.
+Table 7
+Component ablation on the FruitNeRF synthetic plum and mango scenes. Hough voting contributes the most under dense occlusion.
+ Configuration
+LoRA
+Contrastive
+Clustering
+Voting
+Plum F1
+Mango F1
+Avg F1 
+ (A) Baseline: SAM3 + 3DGS + DBSCAN
+✓
+×
+×
+×
+0.781
+0.873
+0.827 
+ (B) + Contrastive learning w/ uncertainty weighting
+✓
+✓
+×
+×
+0.852
+0.928
+0.890 
+ (C) + Clustering loss
+✓
+✓
+✓
+×
+0.894
+0.951
+0.923 
+ (D) Full method (+ Hough voting) ⋆
+✓
+✓
+✓
+✓
+0.971
+0.977
+0.974 
+ 𝛥 from (A)
++0.190
++0.104
++0.147 
+Fig. 9. Dataset visualization. (a–c) Apple, pear, and plum scenes from the FruitNeRF synthetic dataset; (d–f) Lemon, peach, and mango scenes; (g–i) Tree01, 
+Tree02, and Tree03 scenes from the FruitNeRF real-world dataset.
+Table 8
+3D instance segmentation on the FruitNeRF synthetic plum scene, computed after 3D IoU 
+matching at thresholds of 0.25 and 0.50.
+ Method
+mIoU ↑
+mAcc ↑
+mAP ↑
+AP@0.25 ↑
+AP@0.50 ↑ 
+ Grounded-SAM2
+0.382
+0.461
+0.218
+0.337
+0.142
+ 
+ FruitNeRF (Meyer et al., 2024)
+0.498
+0.572
+0.341
+0.486
+0.273
+ 
+ SAM3-Adapt (Ours) ⋆
+0.741
+0.823
+0.581
+0.792
+0.562
+ 
+our method generated highly consistent 3D reconstructions of fruits in 
+the scene. Specifically, Fuji-SfM consists of 1455 apples distributed in 
+an outdoor orchard scene at various depths, while the BUP20 scene 
+includes greenhouse sweet peppers with very different shapes, textures, 
+and positioning from each other. Nevertheless, the same pipeline is able 
+to generate reasonable results for both scenes.
+Computers and Electronics in Agriculture 255 (2026) 112325 
+13 
+
+K. Zhao et al.
+Fig. 10. 3D reconstruction scenes from Fuji-SfM and BUP20 datasets. (a) Bird’s-eye view of large-scale Fuji-SfM orchard scene containing 1455 fruits; (b) BUP20 
+sweet pepper greenhouse scene, demonstrating cross-crop generalization capability.
+Computers and Electronics in Agriculture 255 (2026) 112325 
+14 
+
+K. Zhao et al.
+4. Discussion
+4.1. Counting performance and scene complexity
+Experiments on synthetic and real datasets show that the effective-
+ness of this method is largely determined by the density and occlusion 
+of fruits in the scene. The best improvement is achieved when fruits are 
+very close together, with their boundaries almost completely overlap-
+ping on two 2D images. For example, in the plum scene, the F1 score 
+improved from 0.575 to 0.971. This improvement is mainly related 
+to the difference between counting from 2D projections and voting 
+for centers in 3D space. Methods such as FruitNeRF (Meyer et al., 
+2024) mainly count fruits from rendered 2D masks. When fruits are 
+dense or strongly occluded, several nearby fruits may appear as one 
+connected region in the 2D projection, which easily leads to under-
+counting. By contrast, our method introduces Hough voting into the 
+3DGS representation and uses the 3D fruit centers for counting. In 
+this way, fruits that overlap in the image can still be separated in 3D 
+space. As a result, the method does not fully depend on complete 2D 
+object boundaries, but distinguishes instances through their 3D center 
+responses. This change from 2D mask aggregation to 3D center voting 
+explains the clear improvement in dense and complex scenes.
+Compared with recent studies on 3D agricultural perception (Jiang 
+et al., 2025; J. Li et al., 2025; Meyer et al., 2025), the proposed method 
+combines foundation model adaptation, cross-view contrastive learn-
+ing, and 3D voting in one framework. It keeps the real-time rendering 
+advantage of 3DGS, with about 110 FPS, while adding instance segmen-
+tation and 3D counting ability. Existing methods are often limited by 
+slower inference, weaker domain adaptation, or insufficient handling 
+of fruit counting under dense occlusion. Compared with recent high-
+performance 2D detection methods (Z. Liu et al., 2024; Tu et al., 2025; 
+Song et al., 2025; Zhang et al., 2025; Liu et al., 2025), our method uses 
+a 3D representation as an intermediate counting layer. Therefore, it can 
+estimate the fruit number and also provide 3D center coordinates for 
+robotic harvesting and spatial analysis.
+4.2. Contribution of each loss term
+The ablation study gives a closer look at how the three losses work 
+during training. Fig. 11 plots the fruit-count curves under three training 
+settings on four real-world scenes, namely Tree01, Tree02, Tree03, and 
+Fuji-SfM. When only the contrastive loss is used, the count changes 
+slowly and is often higher than the ground truth. In most cases, it 
+becomes stable only after 25,000 iterations. This shows that cross-
+view feature consistency is helpful for matching the same fruit across 
+views, but it does not give a clear constraint on the 3D position of 
+fruit centers. Adding the clustering loss makes the training process more 
+stable. The predicted count usually settles between 15,000 and 20,000 
+iterations. This is because features from the same fruit are pulled closer, 
+while features from different fruits are pushed apart. Still, when fruits 
+are very close or heavily occluded, nearby instances may not be fully 
+separated, which can cause small counting errors. After the voting loss 
+guided by 2D mask centroids is included, the count becomes stable 
+earlier, usually within 10,000–15,000 iterations. The final counting 
+error is within 2%. This trend can also be seen from the green curves 
+in Fig. 11, where the predicted counts move toward the gray dashed 
+ground-truth lines more quickly. This indicates that the voting loss 
+provides a clearer cue for learning 3D fruit centers, especially in dense 
+scenes. More quantitative results are listed in Table 7.
+4.3. Transferability across crop types
+To further evaluate the transferability of the proposed framework 
+across different crop types and cultivation environments, we apply it 
+to the greenhouse sweet pepper dataset BUP20, in addition to the 
+two orchard apple datasets. Compared with orchard apples, sweet pep-
+pers exhibit substantial differences in plant morphology, fruit appear-
+ance, spatial distribution, and imaging conditions. Apples are typically 
+grown in open-field orchard environments, whereas sweet peppers are 
+cultivated under more controlled greenhouse conditions. Therefore, 
+BUP20 provides a representative test case for assessing the cross-crop 
+generalizability of the proposed framework.
+The experimental results show that the adapted weights and the 
+post-processing settings transfer from orchard apples to greenhouse 
+sweet peppers: only the SAM3 text prompt is changed, while the LoRA 
+weights and the clustering configuration are kept unchanged, and the 
+3D Gaussian representation is still optimized for every new scene. This 
+indicates that the method is not limited to orchard apple datasets, but 
+can be transferred to crop types with different visual characteristics 
+and growing environments. From the perspective of crop structure, or-
+chard apples and greenhouse sweet peppers still share certain common 
+properties: in both cases, fruits are generally located within observable 
+canopy regions, and sufficient spatial information can be obtained 
+from multi-view images. These shared properties provide necessary 
+conditions for cross-view feature learning and 3D voting-based in-
+stance localization, which partly explains why the framework can be 
+transferred from orchard apple scenes to greenhouse sweet pepper 
+scenes.
+However, the applicability of the proposed method to other crop 
+systems still requires further investigation. In particular, vine crops 
+such as grapes and kiwifruits usually have more complex spatial struc-
+tures, with fruits densely distributed in clusters and very small dis-
+tances between adjacent instances. In addition, intertwined branches, 
+leaves, and fruit occlusions may further increase the difficulty of in-
+stance separation, center localization, and cross-view consistency mod-
+eling. Moreover, trellis structures and constrained acquisition paths 
+may limit the available viewpoints, thereby reducing the stability of 
+3D reconstruction and fruit localization.
+It should be noted that the main components of the proposed 
+framework, including LoRA-based vision foundation model adaptation, 
+cross-view contrastive learning, and 3D Hough voting, do not rely on 
+fixed geometric templates or size priors for a specific crop. Therefore, 
+the method has the potential to be extended to other crop types. 
+For vine crops, future work may further incorporate local geometric 
+constraints, cluster-level instance modeling, or separation strategies 
+designed for densely distributed fruits, in order to improve robustness 
+under complex canopy structures and severe occlusions. Recent studies 
+on grape and kiwifruit detection and yield prediction (Devanna et al., 
+2025; Wang et al., 2025) also provide useful references for extending 
+the proposed framework to vine crop scenarios.
+4.4. Limitations
+Quantitative evaluation of 3D localization was restricted to the 
+synthetic FruitNeRF scenes because comparable annotations are un-
+available for real-world datasets. Neither Fuji-SfM nor BUP20 provides 
+reliable 3D fruit centers or instance-level labels; evaluation on these 
+datasets therefore focused primarily on counting accuracy. Real-world 
+benchmarks containing 3D fruit centers and instance-level annotations 
+are needed to assess localization and segmentation under field condi-
+tions. Computational scalability also remains a substantial constraint 
+for orchard-scale deployment. Processing a medium-sized tree required 
+several hours, while COLMAP pose estimation alone required approx-
+imately 4 h for the large-scale Fuji-SfM scene. Moreover, each scene 
+requires a separately optimized 3DGS model, limiting scalability to 
+commercial orchards containing thousands of trees. The framework 
+also inherits the static-scene assumption of 3DGS, which may not hold 
+under field conditions. Wind-induced motion, illumination changes, 
+and specular reflections from irrigation or dew may reduce geometric 
+and photometric consistency across views.
+Computers and Electronics in Agriculture 255 (2026) 112325 
+15 
+
+K. Zhao et al.
+Fig. 11. Convergence curves for fruit counting during training. Red: contrastive loss only; blue: contrastive + clustering loss; green: full loss with voting. Clustering 
+loss accelerates convergence, but accurate final counts require the voting mechanism.
+More efficient camera-pose estimation may reduce the dominant 
+computational overhead in large orchard scenes. Learning-based SLAM 
+and global SfM methods, including DROID-SLAM (Teed and Deng, 
+2021), MASt3R-SfM (Duisterhof et al., 2025), and GLOMAP (Pan et al., 
+2024), offer potential alternatives to COLMAP. Integrating these ap-
+proaches with online 3DGS optimization warrants investigation as a 
+route toward deployment on agricultural robotic platforms. Evaluation 
+on vine crops such as grapes and kiwifruit would provide a more strin-
+gent test of the framework under dense clustering and severe occlusion. 
+Such scenes complicate fruit-center definition, instance separation, and 
+occlusion modeling across multiple views. Finally, cross-scene pretrain-
+ing and more generalizable 3DGS representations may reduce per-scene 
+optimization and improve transfer across scenes and crop types.
+5. Conclusions
+This study addresses fruit counting and 3D localization in orchards 
+and greenhouses, where dense clustering, occlusion, and variable illu-
+mination limit the reliability of single-view approaches. We propose 
+a unified framework that combines domain-adapted SAM3 with an 
+explicit 3D Gaussian representation. Low-rank adaptation improves 
+instance segmentation in agricultural imagery while updating only a 
+small subset of model parameters. Uncertainty-weighted cross-view 
+contrastive learning then integrates per-view instance evidence into 
+a shared 3D Gaussian feature space. Hough voting aggregates multi-
+view geometric cues, followed by clustering to estimate fruit counts 
+and three-dimensional locations. By performing instance discrimination 
+and counting in 3D, the framework exploits complementary views 
+and reduces instance merging, missed detections, and duplicate counts 
+caused by projection overlap.
+The results demonstrate that integrating an adapted vision founda-
+tion model with an explicit 3D scene representation enables reliable 
+fruit perception across synthetic, orchard, and greenhouse environ-
+ments. The benefits are particularly evident in densely clustered and 
+heavily occluded scenes. Because clustering and post-processing require 
+no crop-specific shape or size priors, the adapted weights and settings 
+transfer from open-field apples to greenhouse sweet peppers. This 
+transfer requires only a change to the SAM3 text prompt, although the 
+3D Gaussian representation must be re-optimized for each new scene. 
+The resulting fruit counts and 3D locations provide valuable spatial 
+information for yield estimation and robotic harvesting, with potential 
+applications in other plant phenotyping tasks.
+CRediT authorship contribution statement
+Kai Zhao: Writing – original draft, Visualization, Validation, Su-
+pervision, Methodology, Data curation, Conceptualization. Chenchen 
+Kang: Writing – review & editing, Investigation, Funding acquisition, 
+Formal analysis. Suzy Rogiers: Resources, Project administration, In-
+vestigation, Funding acquisition. Oula Ghannoum: Writing – review 
+& editing, Writing – original draft, Validation, Supervision, Project ad-
+ministration, Funding acquisition. Yi Guo: Writing – review & editing, 
+Methodology, Investigation, Funding acquisition.
+Ethics declaration
+The authors declare that this study did not involve human partici-
+pants or animal subjects.
+Declaration of AI-assisted Writing
+During the preparation of this work, the authors used ChatGPT 
+for language polishing and improving clarity. After using this tool, 
+the authors reviewed and edited the content as needed and take full 
+responsibility for the content of the publication.
+Funding
+Financial support was provided by Future Food Systems Cooperative 
+Research Centre, Australia.
+Declaration of competing interest
+The authors declare no conflict of interest.
+Data availability
+The source code, configuration files, and dataset access links are 
+publicly available at https://github.com/kkk0216/SAM3-3DFruit.
+References
+Carion, N., Gustafson, L., Hu, Y.-T., Debnath, S., Hu, R., Suris, D., Ryali, C., Al-
+wala, K.V., Khedr, H., Huang, A., et al., 2025. SAM 3: Segment anything with 
+concepts. http://dx.doi.org/10.48550/arXiv.2511.16719, arXiv preprint arXiv:2511.
+16719.
+Devanna, R.P., Reina, G., Cheein, F.A., Milella, A., 2025. Boosting grape bunch 
+detection in RGB-d images using zero-shot annotation with segment anything and 
+groundingdino. Comput. Electron. Agric. 229, 109611. http://dx.doi.org/10.1016/
+j.compag.2024.109611.
+Duisterhof, B.P., Zust, L., Weinzaepfel, P., Leroy, V., Cabon, Y., Revaud, J., 2025. 
+MASt3r-sfm: A fully-integrated solution for unconstrained structure-from-motion. 
+In: 2025 International Conference on 3D Vision. 3DV, IEEE, pp. 1–10.
+Dutta, A., Zisserman, A., 2019. The VIA annotation software for images, audio and 
+video. In: Proceedings of the 27th ACM International Conference on Multimedia. 
+pp. 2276–2279.
+Gené-Mola, J., Sanz-Cortiella, R., Rosell-Polo, J.R., Morros, J.-R., Ruiz-Hidalgo, J., 
+Vilaplana, V., Gregorio, E., 2020. Fuji-sfm dataset: A collection of annotated 
+images and point clouds for fuji apple detection and location using structure-from-
+motion photogrammetry. Data Brief 30, 105591. http://dx.doi.org/10.1016/j.dib.
+2020.105591.
+Computers and Electronics in Agriculture 255 (2026) 112325 
+16 
+
+K. Zhao et al.
+Gurav, R., Patel, H., Shang, Z., Eldawy, A., Chen, J., Scudiero, E., Papalexakis, E., 2023. 
+Can SAM recognize crops? quantifying the zero-shot performance of a semantic 
+segmentation foundation model on generating crop-type maps using satellite 
+imagery for precision agriculture. http://dx.doi.org/10.48550/arXiv.2311.15138, 
+arXiv preprint arXiv:2311.15138.
+Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W., et 
+al., 2022. Lora: Low-rank adaptation of large language models. In: International 
+Conference on Learning Representations. ICLR, http://dx.doi.org/10.48550/arXiv.
+2106.09685.
+Jiang, L., Sun, J., Chee, P.W., Li, C., Fu, L., 2025. Cotton3DGaussians: Multiview 
+3D Gaussian splatting for boll mapping and plant architecture analysis. Comput. 
+Electron. Agric. 234, 110293. http://dx.doi.org/10.1016/j.compag.2025.110293.
+Kang, H., Chen, C., 2020. Fruit detection, segmentation and 3D visualisation of 
+environments in apple orchards. Comput. Electron. Agric. 171, 105302. http:
+//dx.doi.org/10.1016/j.compag.2020.105302.
+Kerbl, B., Kopanas, G., T. Leimkühler, G. Drettakis, 2023. 3D Gaussian splatting 
+for real-time radiance field rendering. ACM Trans. Graph. 42 (4), 1391. http:
+//dx.doi.org/10.1145/3592433.
+Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., 
+Whitehead, S., Berg, A.C., Lo, W.-Y., et al., 2023. Segment anything. In: Proceedings 
+of the IEEE/CVF International Conference on Computer Vision. pp. 4015–4026.
+Li, Y., Wang, D., Yuan, C., Li, H., Hu, J., 2023. Enhancing agricultural image 
+segmentation with an agricultural segment anything model adapter. Sensors 23 
+(18), 7884. http://dx.doi.org/10.3390/s23187884.
+Li, Z., Xu, X., Xu, T., Gao, Y., Rao, X., 2025. Process, challenges and solutions of 
+fruit 3D reconstruction: A review. Comput. Electron. Agric. 239, 111068. http:
+//dx.doi.org/10.1016/j.compag.2025.111068.
+Li, J., Zhou, P., Xiong, C., Hoi, S.C., 2020. Prototypical contrastive learning of 
+unsupervised representations. http://dx.doi.org/10.48550/arXiv.2005.04966, arXiv 
+preprint arXiv:2005.04966.
+Li, H., Zhu, J., Mao, X., Hao, X., Li, S., Yu, Q., Shi, Y., Qian, J., 2026. Achieving 
+precise cropland parcel extraction from remote sensing images through integration 
+of segment anything model and adaptive mask refinement. Comput. Electron. Agric. 
+243, 111347. http://dx.doi.org/10.1016/j.compag.2025.111347.
+Li, J., Zhu, K., Zhang, Q., Chen, D., Sun, Q., Li, Z., 2025. Object-centric 3D Gaussian 
+splatting for strawberry plant reconstruction and phenotyping. http://dx.doi.org/
+10.48550/arXiv.2511.02207, arXiv preprint arXiv:2511.02207.
+Liu, Z., Abeyrathna, R.R.D., Sampurno, R.M., Nakaguchi, V.M., Ahamed, T., 2024. 
+Faster-YOLO-AP: A lightweight apple detection algorithm based on improved 
+YOLOv8 with a new efficient pdwconv in orchard. Comput. Electron. Agric. 223, 
+109118. http://dx.doi.org/10.1016/j.compag.2024.109118.
+Liu, Z., Abeyrathna, R.R.D., Sampurno, R.M., Nakaguchi, V.M., Ahamed, T., 2025. 
+A new occlusion-avoidance and dual-view fruit localization method with a 6-
+DOF manipulator for orchard harvesting. Comput. Electron. Agric. 237, 110634. 
+http://dx.doi.org/10.1016/j.compag.2025.110634.
+Liu, S., Zeng, Z., Ren, T., Li, F., Zhang, H., Yang, J., Jiang, Q., Li, C., Yang, J., Su, H., et 
+al., 2024. Grounding DINO: Marrying DINO with grounded pre-training for open-
+set object detection. In: European Conference on Computer Vision. Springer, pp. 
+38–55.
+McInnes, L., Healy, J., Astels, S., et al., 2017. Hdbscan: Hierarchical density based 
+clustering. J. Open Source Softw. 2 (11), 205. http://dx.doi.org/10.21105/joss.
+00205.
+Meyer, L., Ardelean, A.-T., Weyrich, T., Stamminger, M., 2025. FruitNeRF++: A 
+generalized multi-fruit counting method utilizing contrastive learning and neural 
+radiance fields. In: 2025 IEEE/RSJ International Conference on Intelligent Robots 
+and Systems. IROS, IEEE, pp. 1717–1724. http://dx.doi.org/10.1109/IROS60139.
+2025.11247341.
+Meyer, L., Gilson, A., Schmid, U., Stamminger, M., 2024. FruitNeRF: A unified neural 
+radiance field based fruit counting framework. In: 2024 IEEE/RSJ International 
+Conference on Intelligent Robots and Systems. IROS, IEEE, pp. 1–8.
+Pan, L., D. Baráth, M. Pollefeys, J.L. Schönberger, Global structure-from-motion re-
+visited, 2024. European Conference on Computer Vision. Springer, pp. 
+58–77.
+Pan, Y., Magistri, F., T. Läbe, E. Marks, Smitt, C., McCool, C., Behley, J., Stachniss, C., 
+2023. Panoptic mapping with fruit completion and pose estimation for horticultural 
+robots. In: 2023 IEEE/RSJ International Conference on Intelligent Robots and 
+Systems. IROS, IEEE, pp. 4226–4233.
+Ren, T., Liu, S., Zeng, A., Lin, J., Li, K., Cao, H., Chen, J., Huang, X., Chen, Y., Yan, F., 
+et al., 2024. Grounded SAM: Assembling open-world models for diverse visual tasks. 
+http://dx.doi.org/10.48550/arXiv.2401.14159, arXiv preprint arXiv:2401.14159.
+Sapkota, R., Ahmed, D., Churuvija, M., Karkee, M., 2024. Immature green apple 
+detection and sizing in commercial orchards using YOLOv8 and shape fitting 
+techniques. IEEE Access 12, 43436–43452.
+Song, Z., Li, W., Tan, W., Qin, T., Chen, C., Yang, J., 2025. LBSR-YOLO: Blueberry 
+health monitoring algorithm for WSN scenario application. Comput. Electron. Agric. 
+238, 110803. http://dx.doi.org/10.1016/j.compag.2025.110803.
+Tan, C., Sun, J., Song, H., Li, C., 2025. A customized density map model and segment 
+anything model for cotton boll number, size, and yield prediction in aerial images. 
+Comput. Electron. Agric. 232, 110065. http://dx.doi.org/10.1016/j.compag.2025.
+110065.
+Teed, Z., Deng, J., 2021. DROID-SLAM: Deep visual SLAM for monocular, stereo, and 
+RGB-d cameras. Adv. Neural Inf. Process. Syst. 34, 16558–16569.
+Tian, H., Wang, T., Liu, Y., Qiao, X., Li, Y., 2020. Computer vision technology in 
+agricultural automation—a review. Inf. Process. Agric. 7 (1), 1–19. http://dx.doi.
+org/10.1016/j.inpa.2019.09.006.
+Tu, S., Huang, Y., Huang, Q., Liu, H., Cai, Y., Lei, H., 2025. Estimation of passion fruit 
+yield based on YOLOv8n+ OC-SORT+ CRCM algorithm. Comput. Electron. Agric. 
+229, 109727. http://dx.doi.org/10.1016/j.compag.2024.109727.
+Wang, A., Chen, H., Liu, L., Chen, K., Lin, Z., Han, J., et al., 2024. YOLOv10: Real-time 
+end-to-end object detection. Adv. Neural Inf. Process. Syst. 37, 107984–108011. 
+http://dx.doi.org/10.48550/arXiv.2405.14458.
+Wang, Q., Xu, F., Chen, Q., Mi, Z., Fan, Y., Su, B., 2025. Detection and location 
+of wine grape (cabernet sauvignon) picking points by using a dual-stage deep 
+learning method. Comput. Electron. Agric. 237, 110637. http://dx.doi.org/10.
+1016/j.compag.2025.110637.
+Zhang, Y., Li, N., Zhang, L., An, N., Gao, X., Chen, G., 2025. Parallel depthwise 
+separable multiscale information aggregation network for real-time fruit detection 
+in trellis apple orchard. Comput. Electron. Agric. 237, 110503. http://dx.doi.org/
+10.1016/j.compag.2025.110503.
+Computers and Electronics in Agriculture 255 (2026) 112325 
+17 

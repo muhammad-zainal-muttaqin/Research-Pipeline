@@ -1,0 +1,1271 @@
+Apple Detection and Counting Using Neural
+Networks
+Roxana Garderes
+Facultad de Ingenier´ıa
+Universidad de la Rep´ublica
+Montevideo, Uruguay
+roxana.garderes@fing.edu.uy
+Facundo Guti´errez
+Facultad de Ingenier´ıa
+Universidad de la Rep´ublica
+Montevideo, Uruguay
+facundo.gutierrez@fing.edu.uy
+Mercedes Marzoa Tanco
+Facultad de Ingenier´ıa
+Universidad de la Rep´ublica
+Montevideo, Uruguay
+mmarzoa@fing.edu.uy
+Gonzalo Tejera
+Facultad de Ingenier´ıa
+Universidad de la Rep´ublica
+Montevideo, Uruguay
+gtejera@fing.edu.uy
+Abstract—It is important to estimate the number of fruits
+which are going to be harvested, since that information allows
+farmers to make key decisions regarding the production, distri-
+bution and commercialization of crops. In this project, solutions
+for detecting and counting apples are explored, by using detec-
+tion and tracking algorithms based on neural networks. Four
+neural network object detection models were trained: YOLOv5,
+YOLOv8 and two variants of Faster R-CNN, using public as well
+as self-made datasets. Three tracking algorithms (StrongSort,
+ByteTrack and OCSort) were tested using the trained models
+and labeled video datasets. These datasets were developed with
+recordings of a real-world orchard and recordings generated with
+a ROS-based apple field simulator, developed as part of this
+project. Finally, two fitting models based on linear regression
+were evaluated in order to minimize prediction errors. As a
+conclusion of this research, it was found that the YOLOv5 and
+YOLOv8 performances were better than the other two, achieving
+a mAP50 of 0.87 and 0.85. In terms of apple tracking, the
+performance of OCSort stands out, reaching a HOTA metric
+of 60.24% and running times in the order of 30 ms.
+Index Terms—Apples, Neural Networks, Counting, Detection,
+Tracking, ROS (Robot Operating System), YOLOv5, YOLOv8,
+Faster R-CNN, SORT, OCSort, Bytetrack, StrongSort, Linear
+Regression
+I.
+INTRODUCCI ´ON
+El concepto de agricultura inteligente ha tomado relevancia
+en los ´ultimos a˜nos. Las redes neuronales, en particular
+las redes neuronales convolucionales (CNN), han mostrado
+un gran potencial en la resoluci´on de problemas complejos,
+incluso en problemas vinculados a la agricultura [1]. Adem´as,
+las CNN han evolucionado notablemente, convirti´endose en
+sin´onimo de excelencia en t´erminos de resultados, realizando
+tareas de clasificaci´on y predicci´on, y superando con creces a
+t´ecnicas cl´asicas de procesamiento de imagen.
+Los avances en esta ´area podr´ıan tener importantes aplica-
+ciones en la optimizaci´on de la producci´on agr´ıcola, ya que
+un conocimiento anticipado de la cantidad de manzanas a
+cosechar permite una mejor planificaci´on de ventas, as´ı como
+de la mano de obra y recursos para la cosecha, traslado y
+distribuci´on de las manzanas, llevando a una reducci´on de los
+costos, mayor exactitud en la planificaci´on y fomentando una
+producci´on sustentable [2], [3].
+La identificaci´on y conteo de frutas en plantaciones repre-
+senta un gran desaf´ıo debido a la variedad de tama˜nos, colores
+y formas que pueden presentar las frutas, y las oclusiones
+por otras manzanas, ramas y hojas. Trabajar en ambientes no
+controlados, como lo es una plantaci´on de manzanos, conlleva
+variables que pueden afectar notoriamente el resultado. El
+clima, la hora del d´ıa y las oclusiones de los frutos, condi-
+cionan el desempe˜no de los m´etodos elegidos. Factores como
+el recorrido elegido para grabar los datos impactan en la
+visibilidad de filas de ´arboles contiguas, lo que puede alterar
+considerablemente los resultados de conteo.
+Otro problema frecuente a la hora de utilizar redes neu-
+ronales para estimar cantidades de manzanas en ´arboles, es
+el contar con los datos suficientes para entrenarlas. Si bien
+existen conjuntos de datos p´ublicos de im´agenes de manzanas,
+que son muy ´utiles para abordar el problema de detecci´on, no
+fue posible encontrar grabaciones en video que contengan filas
+completas de manzanas, las cuales son necesarias para evaluar
+soluciones de conteo.
+Los simuladores son relevantes en inteligencia artificial,
+y m´as a´un cuando se utilizan robots, pues proporcionan
+un entorno controlado y escalable para entrenar modelos,
+explorar una variedad de escenarios y reducir costos y riesgos
+asociados con el desarrollo y despliegue en el mundo real.
+En virtud de estas consideraciones, se relevaron caracter´ısticas
+de los manzanos y sus montes, y se desarroll´o un simulador
+parametrizable que permite exportar v´ıdeos del recorrido de
+un robot terrestre.
+A lo largo del trabajo se entrenaron y compararon cuatro
+modelos de redes neuronales, presentando mejores resultados
+YOLOv5 [4] y YOLOv8 [5]. Estas ´ultimas se utilizaron junto
+con algunos algoritmos de seguimiento del estado del arte
+(OCSort [6], ByteTrack [7] y StrongSort [8]) para detectar
+y seguir las frutas en una ´unica fila de manzanos. Idealmente,
+la cantidad de identificadores asignados corresponde a la
+cantidad de manzanas en la fila.
+Sin embargo, por problemas como la visibilidad variable de
+las manzanas, la cantidad requiere ser ajustada para acercarse
+m´as a la cantidad esperada de manzanas. Para esto se plantea
+un ajuste basado en regresi´on lineal.
+Este informe inicia con una revisi´on de la literatura que
+abarca estudios previos pertinentes al tema en cuesti´on, luego
+979-8-3315-4097-5/24/$31.00 ©2024 IEEE
+2024 L Latin American Computer Conference (CLEI) | 979-8-3315-4097-5/24/$31.00 ©2024 IEEE | DOI: 10.1109/CLEI64178.2024.10700174
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+se detallan las redes neuronales y algoritmos de seguimiento
+seleccionados. A continuaci´on se exponen los datasets a
+utilizar, incluyendo la creaci´on de un simulador de campos
+de manzanas. Finalmente, se describen las pruebas ejecutadas
+en la experimentaci´on y se analizan los resultados obtenidos.
+II.
+TRABAJOS RELACIONADOS
+En esta secci´on se incluyen algunos proyectos que presentan
+similitudes con el que se describe en esta publicaci´on. Por la
+diferencia de tecnolog´ıas y m´etricas utilizadas, se dividen en
+dos apartados, diferenciando investigaciones de detecci´on con
+las que incluyen conteo.
+II-A.
+Detecci´on
+En lo que respecta a la aplicaci´on de redes neuronales para
+resolver el problema de detecci´on de manzanas, se destacan
+los resultados de dos modelos, Faster R-CNN y YOLO, en sus
+diferentes versiones.
+En [9] se propone el uso del modelo Faster R-CNN como
+sistema de detecci´on de frutas, concretamente almendras, man-
+gos y manzanas. Estas tres frutas exhiben notables diferencias
+morfol´ogicas, tales como la cantidad de frutos por ´arbol, el
+color y la textura, lo cual plantea un desaf´ıo significativo.
+El entrenamiento de la RN se realiza con im´agenes tomadas
+durante el d´ıa en distintas plantaciones, utilizando un robot
+terrestre y t´ecnicas de data augmentation. Con esto eval´uan
+dos modelos de Faster R-CNN, logrando obtener F1 de 0.876
+y 0.908.
+Otro ejemplo relevante es la utilizaci´on de YOLOv5 para
+reconocer las manzanas que pueden ser recolectadas por
+un robot [10]. Para esto se deben detectar las manzanas y
+clasificarlas entre las que puedan ser recogidas directamente
+por el robot y las que presentan alg´un obst´aculo que lo impida
+(como una rama u otra manzana). En este caso, la elecci´on
+del algoritmo YOLOv5 se debe a que puede ser utilizado
+en tiempo real, es r´apido de entrenar y ligero, por lo que es
+razonable de implementar en dispositivos embebidos.
+Se tomaron 1214 im´agenes de manzanas para el entrena-
+miento. Estas fueron obtenidas de una plantaci´on, en diferentes
+horarios y condiciones lum´ınicas, a distancias de entre 0.5 y
+1.5 metros. El modelo entrenado alcanza valores de mAP de
+86.75 %, P de 91.48 % y F1 de 87.49 %, con un tiempo de
+detecci´on promedio de 0.013 segundos por imagen.
+II-B.
+Conteo
+A la hora de contar objetos en video, el conteo de duplicados
+es uno de los problemas m´as frecuentes [11]. Una manzana
+puede ser cubierta con otro objeto por algunos segundos y
+luego volver a estar visible, o ser visible desde ambos lados
+de la fila de ´arboles, llevando a ser contada m´as de una vez.
+Para este desaf´ıo se encuentran varias propuestas de solucio-
+nes, que combinan diferentes tecnolog´ıas. Un ejemplo de esto
+es la construcci´on de modelos 3D de campos de manzanas a
+partir de los datos obtenidos de ambos lados de una hilera de
+manzanos, unificando los modelos construidos con los datos
+de cada lado [12].
+Otro ejemplo es una aplicaci´on de Faster R-CNN [13], en la
+cual se combina la detecci´on con el seguimiento de las frutas a
+lo largo de los cuadros para lograr la identificaci´on individual
+y, por consiguiente, el conteo preciso. Con este fin, se utilizan
+puntos proporcionados por el LiDAR para la ubicaci´on GPS
+de cada ´arbol, y las frutas se asocian con su respectivo ´arbol.
+Tambi´en se encuentran ejemplos en la bibliograf´ıa de
+combinaciones de algoritmos de detecci´on con seguimiento,
+que utilizan video como ´unica entrada de datos. En [11] se
+combinan y personalizan YOLOv3 y SORT para detectar y
+contar c´ıtricos, logrando un AP de 0.938 en detecci´on y un
+error de entre 6 % y 40 % en conteo.
+III.
+METODOLOG´IA
+Este estudio utiliza tanto conjuntos de datos p´ublicos como
+de elaboraci´on propia. Con estos datos, se entrenaron y proba-
+ron cuatro modelos de redes neuronales (RN) para detecci´on
+de manzanas en ´arboles.
+Primero se seleccionaron los mejores modelos de cada RN
+de acuerdo a los resultados obtenidos sobre el conjunto de test
+de cada dataset. Luego, estos modelos entrenados se ejecuta-
+ron sobre un dataset diferente, dise˜nado espec´ıficamente para
+evaluarlos.
+La siguiente etapa del proyecto consisti´o en valorar los
+resultados de los algoritmos de seguimiento seleccionados,
+utilizando los dos mejores modelos de detecci´on entrenados
+de la etapa anterior. Dicha evaluaci´on se realiz´o con un
+conjunto de datos consistente en cuadros de video etiquetados
+y utilizando m´etricas del Mot Challange [14].
+Por otro lado, se realizaron pruebas de conteo utilizando las
+diferentes combinaciones de RN de detecci´on y algoritmos de
+seguimiento, utilizando videos de recorridos completos de una
+fila de manzanos, de la cual se conoc´ıa la cantidad total de
+manzanas recolectadas momentos despu´es de filmado el video.
+Finalmente, se analizaron dos modelos de ajuste de los
+resultados de conteo obtenidos. Se generaron dos m´etodos,
+uno aplicando regresi´on lineal y otro mediante la generaci´on
+de un coeficiente. Ambos modelos se construyeron utilizando
+datos de cantidad real de manzanas y resultados obtenidos
+sobre videos de instancias simuladas.
+III-A.
+Selecci´on de modelos
+A nivel de RN para detecci´on, se seleccionaron modelos de
+YOLO y de Faster-RCNN, con el fin de comparar arquitecturas
+diferentes del estado del arte.
+Las implementaciones de YOLO seleccionadas para la parte
+experimental fueron YOLOv5 y YOLOv8. La elecci´on de
+YOLOv5 se dio por ser el estado del arte con aplicaciones
+en detecci´on de manzanas, con respaldo de la comunidad y
+m´ultiples aplicaciones documentadas. En particular, se escogi´o
+el modelo yolov5s.yaml (small), por ser el m´as liviano de los
+disponibles en el 2022.
+La selecci´on de YOLOv8 se debi´o al buen desempe˜no de
+este algoritmo y porque inclu´ıa la posibilidad de ejecutar
+seguimiento nativo. Para esta implementaci´on se seleccion´o
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+el modelo Y OLOv8n (nano), por ser el m´as liviano y r´apido
+de entrenar y ejecutar.
+Por otro lado, se observ´o que la librer´ıa Detectron2 [15],
+desarrollada por Facebook, ofrece una forma m´as simple e in-
+tuitiva de utilizar Faster R-CNN que en las implementaciones
+oficiales. Detectron2, implementado en Python y utilizando la
+librer´ıa Pytorch, proporciona una interfaz sencilla que facilita
+la implementaci´on, entrenamiento y evaluaci´on de algoritmos
+de detecci´on y segmentaci´on, entre los que destaca Faster R-
+CNN.
+En lo que respecta a Faster R-CNN, Detectron2 provee una
+serie de modelos preentrenados con COCO [16]. A partir de
+los resultados disponibles, se seleccionaron los modelos con
+mejor desempe˜no en cuanto a tiempo de inferencia y medida
+mAP sobre COCO:
+1. faster rcnn R 50 FPN 3x: con mAP de 40.2 % y un
+tiempo de inferencia de 0.038 segundos.
+2. faster rcnn X 101 32x8d FPN 3x:
+con
+mAP
+de
+43.0 % y un tiempo de inferencia de 0.098 segundos.
+Donde R 50 FPN y X 101 32x8d FPN son las redes back-
+bone y 3x es la cantidad de ciclos de entrenamiento sobre el
+conjunto COCO. En adelante, a estos modelos se les nombrar´a
+como Faster-50 y Faster-101 respectivamente.
+III-B.
+Algoritmos de seguimiento
+Para ejecutar los algoritmos de seguimiento, se seleccion´o
+[17] por permitir la ejecuci´on con varias redes neuronales de
+detecci´on y algoritmos de seguimiento, as´ı como la posibilidad
+de exportar m´etricas con el formato de MOT Challenge [18].
+Dicho proyecto incluye como algoritmos de seguimiento OC-
+Sort, ByteTrack y StrongSort, considerados suficientes para la
+etapa de experimentaci´on debido a sus numerosas diferencias.
+III-C.
+Conjuntos de datos
+III-C1.
+Simulador de campos de manzanas: Contar con
+un simulador que genere datos para entrenar modelos de
+detecci´on y conteo es de gran utilidad, ya que posibilita
+simular distintos ambientes conociendo exactamente datos
+como la cantidad total de las manzanas y sus coordenadas. A
+su vez, permite tener control sobre distintos factores externos,
+como la iluminaci´on o el clima, y generar datos sin importar
+la etapa de maduraci´on de la fruta a estudiar.
+Esto motiv´o el desarrollo de un simulador basado en ROS
+[19], que permite generar campos de manzanas aleatorios a
+partir de una serie de par´ametros configurables. Para esto
+fue necesario conocer las caracter´ısticas morfol´ogicas y de
+desarrollo de los manzanos. A partir de una serie de reuniones
+con expertos en el ´area y bibliograf´ıa recomendada [20], se
+lograron relevar los requisitos necesarios para la implementa-
+ci´on del simulador.
+Dichos requisitos definen ciertas condiciones esperadas para
+los ´arboles de manzanas, como su altura (2.3m a 3.5m), el
+grosor de las ramas principales y secundarias (un m´aximo de
+14cm y 2cm respectivamente), el tama˜no de las frutas (entre
+6.5 y 7.0cm en promedio) y de las hojas (un m´aximo de 14cm).
+A nivel de distribuci´on, los ´arboles se ubican en filas cada 1m
+y las filas separadas por una distancia de entre 2.5 y 4m.
+Esta implementaci´on parte del proyecto Fields Ignition [21],
+desarrollado con el objetivo de generar ambientes aleatorios
+de pruebas para robots agr´ıcolas. Utilizando Ignition Gazebo
+[22] y la API de Python provista por Blender [23], el simu-
+lador permite generar campos aleatorios de tomates y realizar
+recorridos en un entorno simulado.
+Si bien los resultados provistos por el simulador son satis-
+factorios y de gran utilidad a la hora de realizar un trabajo
+de investigaci´on de esta ´ındole, vale la pena aclarar que se
+trata de una herramienta complementaria que ignora una gran
+cantidad de aspectos del mundo real (iluminaci´on, texturas,
+irregularidades del camino y clima, entre otras). Por lo tanto,
+no sustituye la validaci´on en un entorno real.
+III-C1a.
+Generaci´on de los ´arboles: Los ´arboles de
+manzanas pueden tener distintas morfolog´ıas seg´un el tipo
+de plantaci´on [20]. Un ´arbol pueden tener una o m´as ramas
+principales, donde nacen ramas secundarias. En las ramas
+secundarias crecen brindillas, en las que brotan las hojas y
+las manzanas.
+La generaci´on del ´arbol en el simulador consiste en la
+ejecuci´on de un script en python que utiliza la API de Blender,
+y se puede resumir en dos instancias. En la primera se
+genera el esqueleto del ´arbol, es decir, la estructura de ramas
+principales y ramas secundarias, que da como resultado un
+modelo similar al de la figura 1a. Posteriormente, se agregan
+de forma aleatoria las hojas y frutas en las ramas secundarias,
+lo que da como resultado un ´arbol completo como el que se
+muestra en la figura 1b.
+(a)
+(b)
+Figura 1: Ejemplo de un ´arbol (1b) y esqueleto del ´arbol (1a)
+generado por el simulador
+La generaci´on del ´arbol es parametrizable, pudiendo definir
+el tama˜no de las frutas, la longitud, la cantidad de ramas
+principales y las distintas probabilidades para agregar frutas
+y hojas en las ramas secundarias.
+III-C1b.
+Generaci´on del mundo simulado y ejecuci´on:
+Para generar cada instancia se necesitan cuatro par´ametros
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+clave: la cantidad de filas (n), la cantidad de ´arboles por fila
+(m), la distancia entre ´arboles y la distancia entre filas. A partir
+de estos par´ametros, se generan los n × m ´arboles siguiendo
+el proceso detallado en la secci´on anterior.
+El modelo de robot elegido es el robot Husky [24], que
+incluye sensores de navegaci´on, LiDAR y c´amara RGB. El
+modelo original se modifica de forma que la posici´on de la
+c´amara sea tomada como par´ametro de la generaci´on de la
+instancia, y se elimina el modelo 3D que representa el soporte
+de los sensores, a modo de evitar posibles interferencias con la
+c´amara. Adem´as, los par´ametros de configuraci´on de la c´amara
+se modifican para simular uno de los lentes de las c´amaras
+ZED 2 [25], con el prop´osito de replicar con mayor precisi´on
+el ambiente real.
+El modelo de suelo consiste en una superficie cuadrada
+modelada en un objeto DAE, al cual se le asignan f´ısicas
+de colisi´on para evitar que los objetos pasen a trav´es de ´el.
+Respecto al modelo de suelo original, cambia ´unicamente la
+escala y la textura, pasando de simular un suelo de tierra a
+pasto.
+La ejecuci´on de cada instancia simulada se puede traducir
+a la arquitectura definida en la figura 2. Ignition interpreta el
+esquema definido en el archivo SDF que define la instancia y
+publica los t´opicos de Ignition correspondientes, los cuales son
+traducidos a mensajes de ROS, que se publican en t´opicos de
+ROS. Entre los mensajes publicados se encuentran mensajes de
+navegaci´on, de la c´amara y de otros sensores como el LiDAR.
+Figura 2: Arquitectura del simulador.
+Un ejemplo de la ventana de Ignition ejecutando una
+instancia del simulador se puede observar en la figura 3.
+III-D.
+Conjuntos de datos utilizados
+III-D0a.
+Datos para detecci´on: Para entrenar y eva-
+luar los algoritmos de detecci´on se utilizaron 5 conjuntos
+de datos, seleccionados por diferentes motivos. Algunos de
+estos conjuntos de datos son p´ublicos, extra´ıdos de distintas
+fuentes, mientras que otros fueron elaborados como parte de
+este proyecto. Parte de estos ´ultimos fueron tomados en un
+campo de experimentaci´on agr´ıcola del Instituto Nacional de
+Investigaci´on Agropecuaria (INIA), en Uruguay.
+Dataset 1 (DS1): obtenido de la plataforma Universe de
+Roboflow [26]. Consiste en 232 im´agenes etiquetadas de
+´arboles de manzanas, donde las manzanas parcialmente
+ocluidas no son etiquetadas y el ´area etiquetada es mayor
+al ´area de la manzana.
+Figura 3: Ventana de Ignition con una instancia de simulador
+ejecutando.
+Dataset 2 (DS2):
+obtenido tambi´en de la plataforma
+Roboflow [27], consiste en 1789 im´agenes de ´arboles de
+manzanas. Incluye las im´agenes del conjunto de datos
+Minneapple [28], as´ı como im´agenes desde una vista
+a´erea por encima de los ´arboles, y primeros planos de
+manzanas.
+Dataset 3 (DS3): tambi´en obtenido de Roboflow [29],
+consiste en 331 im´agenes etiquetadas de ´arboles de
+manzana.
+Dataset 4 (DS4): de elaboraci´on propia, consiste en 80
+im´agenes obtenidas en una salida de campo a INIA Las
+Brujas. Las im´agenes fueron capturas con un dispositivo
+Xiaomi Redmi Note 11 Pro 5G y los ´arboles capturados
+est´an parcialmente cubiertos por una red para aves, lo
+que dificulta el proceso de etiquetado y detecci´on.
+Dataset 5 (DS5): tambi´en de elaboraci´on propia, con-
+tiene 48 im´agenes obtenidas en una salida de campo. A
+diferencia del conjunto de datos DS4, los ´arboles de la
+fila no tienen la red para aves.
+Dataset 7 (DS7): corresponde al conjunto de datos Min-
+neApple [28]. Consiste en 41000 manzanas etiquetadas
+en un total 1000 im´agenes tomadas a lo largo de dos
+a˜nos.
+En la figura 4 se pueden observar im´agenes representativas
+de cada conjunto de datos.
+Los conjuntos de datos para entrenar los modelos se
+complementaron con t´ecnicas de Data Augmentation que se
+detallan a continuaci´on, con sus nombres correspondientes en
+la plataforma [30].
+Corte (crop): se selecciona una parte de la imagen
+aleatoriamente, resultando un equivalente a entre 0 % y
+20 % de zoom.
+Rotaci´on (rotation): rotaci´on aleatoria de las im´agenes
+entre -15° y +15°.
+Saturaci´on (saturation): ajuste aleatorio de la saturaci´on
+de una imagen entre -40 % y +40 %, para hacerla m´as
+brillante o m´as oscura.
+Brillo (brightness): ajuste del brillo de una imagen de
+entre -50 % y +50 %.
+Exposici´on: (exposure): ajuste aleatorio de la exposici´on
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+(a) Dataset 1
+(b) Dataset 2
+(c) Dataset 3
+(d) Dataset 4
+(e) Dataset 5
+(f) Dataset 7
+Figura 4: Im´agenes representativas de cada dataset.
+gama de una imagen entre -15 % y +15 %, para hacerla
+m´as brillante o m´as oscura.
+Desenfoque (blur): agregado de gaussian blur de hasta
+1px.
+III-D1.
+Datos para seguimiento: Con el fin de evaluar los
+modelos de detecci´on se contaba con dos videos, uno generado
+con el simulador y otro filmado con un celular Samsung
+Galaxy S21 FE sujeto a un robot Jackal [31], de una fila
+de manzanos en INIA Las Brujas, recorriendo la fila en un
+sentido de un lado de la fila y en el sentido opuesto del otro
+lado.
+El video filmado en INIA Las Brujas se dividi´o en dos
+partes, seg´un el lado de la fila (ida y vuelta). Se etiquetaron
+alrededor de 200 cuadros en cada parte (procurando que
+fueran el mismo fragmento de la fila) utilizando la plataforma
+Supervisely [32]. Adem´as, se sabe que en la fila se recolectaron
+2133 manzanas al final del d´ıa, aunque no se sabe exactamente
+cu´antas aparecen en el video.
+En resumen, los conjuntos de datos para seguimiento son:
+DS-SIM: generado con el simulador, etiquetado, tiene
+una duraci´on de 6 segundos y est´a compuesto por una
+´unica fila de 4 de ´arboles, donde aparecen 61 manzanas.
+DS-INIA-1: fragmento del video de ida de la filmaci´on
+de la fila en campo, etiquetado, con una duraci´on de 20
+segundos y 139 manzanas.
+DS-INIA-2: fragmento del video de vuelta de la filmaci´on
+de la fila en campo, etiquetado, con una duraci´on de 25
+segundos y 200 manzanas.
+DS-INIA-IDA: primera mitad del recorrido de la fila en
+campo (de ida), sin etiquetar, de 2 minutos 38 segundos.
+DS-INIA-VUELTA: segunda mitad del recorrido de la
+fila en campo (de vuelta), sin etiquetar, de 2 minutos 39
+segundos.
+DS-INIA-COMPLETO: recorrido completo de la fila (ida
+y vuelta, con el giro intermedio), sin etiquetar, de 5
+minutos 45 segundos.
+IV.
+EXPERIMENTACI ´ON
+La etapa de experimentaci´on se dividi´o fundamentalmente
+en dos: el entrenamiento y selecci´on de redes neuronales para
+detecci´on de manzanas, y el uso de estas redes entrenadas
+en conjunto con algoritmos de seguimiento para el rastreo y
+conteo de manzanas en video. Se documentan por separado por
+utilizar conjuntos de datos, m´etricas y algoritmos diferentes.
+Para garantizar consistencia y disponibilidad de recursos, el
+entrenamiento y evaluaci´on de los modelos se realiz´o en la
+plataforma Google Colab [33]. En el caso particular de los
+entrenamientos, considerando los altos tiempos de ejecuci´on,
+se utiliz´o el plan Pro de dicha plataforma, mientras que para
+la evaluaci´on de los algoritmos de detecci´on y seguimiento, el
+plan gratuito fue suficiente.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+(a) Video simulado
+(b) Video filmado
+Figura 5: Ejemplos de cuadros etiquetados en Supervisely
+IV-A.
+Detecci´on
+Los cuatro modelos de detecci´on seleccionados (YOLOv5,
+YOLOv8, Faster-101 y Faster-50) fueron entrenados con los
+conjuntos de datos descritos en la secci´on III-C con una
+distribuci´on de 70 % para entrenamiento, 20 % para validaci´on
+y 10 % para pruebas.
+La m´etrica com´unmente utilizada para evaluar modelos de
+detecci´on de objetos es Mean Average Precision (mAP) [34],
+que se calcula como la media de la m´etrica Average Precision
+(AP) por cada clase que se busca detectar (en este caso es una
+´unica clase, manzana). La m´etrica AP se calcula como el ´area
+bajo la curva Precision −Recall, por lo que el el umbral de
+IoU elegido impacta directamente en el valor de esta m´etrica.
+El umbral m´as popular en la literatura es 50 %, lo que indica
+que al menos un 50 % del objeto detectado coincide con el
+objeto real.
+Las ´epocas o epochs son los ciclos de entrenamiento de una
+red neuronal, y este fue el par´ametro seleccionado para variar
+en esta instancia de experimentaci´on por considerarse clave y
+altamente influyente. En general, a mayor cantidad de ´epocas,
+la red obtiene mejores resultados, pero tambi´en tarda m´as el
+entrenamiento y puede llevar a sobreajustes [35].
+Para determinar cu´al era la cantidad ´optima de ´epocas para
+entrenar las RN en este caso, se realizaron entrenamientos
+de los mismos modelos con conjuntos de datos variando la
+cantidad de ´epocas. Inicialmente, se tomaron 50 y 100 ´epocas
+[36], pero luego se agregaron 20 ´epocas para las RN m´as
+pesadas, as´ı como 200 y 500 para las m´as livianas.
+No se realizaron pruebas con mayor cantidad de ´epocas
+porque los resultados indicaban que no exist´ıan mejoras en
+los modelos entrenados (en el mejor caso, a parir del ciclo
+151, pero en general mucho antes), lo cual se hab´ıa observado
+previamente en la bibliograf´ıa [10]. A modo de referencia, se
+incluyen las gr´aficas resultantes del entrenamiento de YOLOv8
+con el DS2 para 200 ´epocas en la figura 6.
+Para todas las redes entrenadas, los mejores resultados se
+dan con el DS2. Esto era esperable, ya que es el dataset de
+mayor cantidad y variedad de im´agenes. En el cuadro I se
+Figura 6: Resultados del entrenamiento de YOLOv8 con DS2
+para 200 ´epocas.
+Modelo
+´Epocas
+AP50
+YOLOv5
+50
+0.906
+YOLOv8
+200
+0.904
+Faster-101
+20
+0.869
+Faster-50
+50
+0.878
+Cuadro I: Resultados de AP50 por modelo de detecci´on y
+´epocas para el DS2.
+incluyen los mejores resultados de cada red neuronal para
+dicho dataset, detallando las ´epocas y el AP50 obtenido.
+Por otro lado, analizando los resultados respecto a las
+´epocas y la cantidad de im´agenes, se observa que para los
+conjuntos de datos grandes (a partir de 1000 im´agenes),
+los entrenamientos con 50 ´epocas dan resultados ligeramente
+mejores que en 100 o 200, indicando que no existen mejoras
+a partir de las 50 ´epocas. En cambio, en los datasets m´as
+peque˜nos se obtienen mejores resultados con 100 y 200
+´epocas.
+A su vez, se observa que Faster-101 logra resultados simila-
+res a los de YOLOv5 y YOLOv8 en 20 ´epocas, pero el tiempo
+requerido para entrenar el modelo es considerablemente ma-
+yor, y no resultaba viable entrenarlo con m´as de 20. Lo mismo
+ocurri´o con Faster-50, donde se pudo entrenar solo con 20 y
+50 ´epocas.
+IV-A1.
+Evaluaci´on sobre DS5: Como se mencion´o ante-
+riormente, DS5 es un conjunto de datos etiquetados a partir de
+im´agenes capturadas en la plantaci´on objetivo de este proyecto,
+e incluso muchas de estas im´agenes son cuadros de los videos
+utilizados para probar en la secci´on de seguimiento y conteo.
+Por este motivo, la validaci´on m´as relevante de los modelos
+entrenados es sobre este conjunto de datos, ya que cuenta con
+caracter´ısticas ambientales y espaciales m´as similares a las que
+van a ser utilizadas en las pruebas de video.
+En el cuadro II se incluyen los resultados obtenidos de la
+aplicaci´on de las red neuronales entrenadas con cada con-
+junto de datos sobre DS5, resaltando algunos de los mejores
+resultados en cada m´etrica seleccionada. Para estas pruebas,
+se tomaron los modelos entrenados con mejor AP50 de la
+evaluaci´on anterior (sobre su propio conjunto de test).
+Los resultados m´as destacables son los siguientes:
+El mejor AP50 se da en el DS2 con YOLOv5, mientras
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+Red neuronal
+Dataset
+AP
+AP50
+Tiempo (ms)
+DS1
+0.164
+0.599
+19.3
+DS2
+0.443
+0.865
+14.3
+DS3
+0.320
+0.707
+19.7
+DS4
+0.438
+0.854
+21.7
+YOLOv5
+DS7
+0.437
+0.836
+15.9
+DS1
+0.285
+0.720
+13.8
+DS2
+0.503
+0.853
+4.9
+DS3
+0.274
+0.653
+11.2
+DS4
+0.474
+0.850
+10.9
+YOLOv8
+DS7
+0.465
+0.823
+12.6
+DS1
+0.227
+0.715
+275.0
+DS2
+0.352
+0.783
+282.0
+DS3
+0.350
+0.650
+283.0
+DS4
+0.279
+0.622
+295.0
+Faster-101
+DS7
+0.255
+0.558
+278.0
+DS1
+0.192
+0.699
+135.0
+DS2
+0.356
+0.773
+139.0
+DS3
+0.265
+0.544
+137.0
+DS4
+0.323
+0.708
+145.0
+Faster-50
+DS7
+0.248
+0.524
+139.0
+Cuadro II: Resultados exportados por cada modelo, evaluando
+sobre DS5. Se destacan los resultados del DS2 en las mejores
+redes neuronales y el AP50 de DS4.
+que el m´as bajo se da en MinneApple con Faster-50.
+El mejor AP se da con el DS2 en YOLOv8, mientras
+que el peor se da con DS1 y YOLOv5 (por el tama˜no
+de las bounding boxes y que muchas manzanas no tienen
+etiquetas).
+El DS4 da mejores resultados sobre el DS5 que sobre su
+propio conjunto de test en todos los casos. Esto se debe
+a que el DS4 y DS5 son ambos tomados en el mismo
+lugar, pero el DS4 tiene im´agenes con redes sobre los
+´arboles, mientras que el DS5 no.
+Sorprendentemente, MinneApple se desempe˜na muy por
+debajo del DS2 a pesar de ser un subconjunto de este.
+Una de las razones por las que el AP no es muy bueno,
+es porque se detectan manzanas en ´arboles de la fila
+siguiente, que no est´an etiquetadas, aun con el DS4, que
+est´a entrenado con manzanas sin etiquetar en segunda
+fila. Esto baja la recuperaci´on (recall), ya que agrega
+falsos positivos, disminuyendo el AP.
+Respecto a tiempos de inferencia, YOLOv8 es m´as veloz
+que los dem´as modelos, seguido por YOLOv5, al que supera
+por menos de 10 ms en promedio. En el caso de Faster R-
+CNN, es sustancialmente m´as lento que ambas versiones de
+YOLO, dado que Faster-50 demora al menos 10 veces m´as y
+Faster-101 20 veces m´as.
+A modo de resumen, los mejores resultados fueron obte-
+nidos con YOLOv5 y YOLOv8, ambos entrenados con el
+DS2, por lo que son los modelos que se utilizan para la
+experimentaci´on con los algoritmos de seguimiento.
+IV-B.
+Conteo de manzanas
+Para la experimentaci´on de conteo se realizaron tres tipos de
+pruebas. La primera fue sobre videos etiquetados, evaluando
+distintas m´etricas de seguimiento. En el segundo tipo de prue-
+ba, se utilizaron videos completos sin etiquetar, conociendo
+´unicamente el total de manzanas recolectadas de ese conjunto
+de ´arboles. Finalmente, se realizan pruebas de regresi´on lineal
+con videos generados por el simulador, con el fin de evaluar
+la posibilidad de utilizar un coeficiente de ajuste para mejorar
+los resultados del seguimiento.
+IV-B0a.
+Resultados sobre datos etiquetados: En esta
+etapa se evaluaron los algoritmos de seguimiento sobre el
+conjunto de datos DS-SIM, generado con el simulador, con 61
+manzanas, y los conjuntos de datos DS-INIA-1 y DS-INIA-
+2, filmados en INIA Las Brujas, y con 139 y 200 manzanas
+respectivamente.
+En lo que respecta a m´etricas de seguimiento, se tomaron
+un subconjunto de las definidas en el MOT Challenge [14].
+Las m´etricas seleccionadas fueron MOTA [17], que toma en
+cuenta los errores en la predicci´on de la posici´on de los objetos
+y es una de las m´as utilizadas en el seguimiento de m´ultiples
+objetos, e IDF1 que permite evaluar la conservaci´on de los
+identificadores a lo largo del video, siendo una m´etrica global
+del conjunto de datos. Tambi´en se seleccion´o HOTA [37],
+por presentar mejor balance entre seguimiento y asignaci´on de
+identificadores. Por ´ultimo, se defini´o una m´etrica m´as simple,
+IDs, que consiste en la cantidad de identificadores asignados.
+Como se puede notar en el cuadro III, los mejores resultados
+en HOTA y MOTA se dan con OCSort en todos los casos,
+mientras que los mejores resultados de EAIDs (error absoluto
+en la cantidad de IDs) son siempre menores con StrongSort,
+y los de IDF1 var´ıan entre StrongSort y OCSort. Esto induce
+a pensar que, si bien el seguimiento es mejor con OCSort, la
+asociaci´on de los identificadores con los objetos rastreados es
+m´as exacta con StrongSort. En cuanto a tiempos de ejecuci´on,
+OCSort y ByteTrack tienen tiempos similares, en el orden de
+los 30ms, mientras que StrongSort demora entre 3 y 4 veces
+m´as.
+IV-B0b.
+Resultados sobre el recorrido completo: En
+segundo lugar, se busc´o validar la cantidad de manzanas
+contadas en los videos filmados en INIA Las Brujas. Para esto,
+se analiz´o la relaci´on entre las frutas visibles en los videos y
+las recolectadas.
+Los resultados est´an disponibles en el cuadro IV, donde para
+cada modelo de detecci´on se compara el rendimiento de los
+tres algoritmos de seguimiento seleccionados sobre los videos
+DS-INIA-IDA, DS-INIA-VUELTA y DS-INIA-COMPLETO.
+Los resultados de cada video est´an en las columnas “Ida”,
+“Vuelta” y “Recorrido completo”, y la columna “Suma” es
+la suma de las columnas “Ida” y “Vuelta”. Cabe mencionar
+que en el recorrido completo se incluye el giro del robot para
+cambiar de sentido, por lo que se detectan algunas manzanas
+adicionales.
+En general, los resultados de cantidad total de manzanas son
+considerablemente mayores a la cantidad real de manzanas.
+Estos errores pueden darse por errores en el seguimiento de las
+manzanas, sin embargo, visualmente no parece que haya una
+gran variaci´on en los identificadores asignados a las frutas. Lo
+que es m´as claro es que se est´an detectando una gran cantidad
+de manzanas de filas posteriores, lo que altera el conteo de la
+cantidad total de frutas.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+Red neuronal
+Dataset
+Seguimiento
+HOTA
+MOTA
+IDF1
+EA IDs
+Tiempo (ms)
+OCSort
+50.406
+58.372
+76.864
+11
+47.9
+Bytetrack
+43.729
+43.627
+65.062
+56
+34.1
+DS-SIM
+Strongsort
+47.471
+55.052
+72.471
+1
+177.8
+OCSort
+55.310
+43.424
+71.141
+205
+40.9
+Bytetrack
+45.986
+30.007
+61.713
+211
+39.2
+DS-INIA-1
+Strongsort
+54.39
+28.676
+69.612
+151
+170.9
+OCSort
+52.981
+51.114
+70.341
+172
+39.0
+Bytetrack
+46.451
+39.353
+61.836
+183
+29.1
+YOLOv5
+(DS2)
+DS-INIA-2
+Strongsort
+50.762
+37.248
+68.020
+96
+154.6
+OCSort
+55.418
+64.441
+79.196
+26
+43.3
+Bytetrack
+45.923
+57.194
+68.166
+67
+30.0
+DS-SIM
+Strongsort
+52.069
+61.728
+74.927
+1
+175.0
+OCSort
+60.240
+54.424
+73.473
+184
+36.2
+Bytetrack
+50.081
+49.257
+67.453
+95
+26.7
+DS-INIA-1
+Strongsort
+59.301
+53.316
+73.832
+69
+134.2
+OCSort
+57.109
+58.684
+70.326
+164
+32.0
+Bytetrack
+47.072
+47.771
+63.797
+83
+29.7
+YOLOv8
+(DS2)
+DS-INIA-2
+Strongsort
+56.086
+55.377
+71.031
+26
+118.9
+Cuadro III: Resultados de algoritmos de seguimiento con m´etricas, donde EA IDs corresponde al error absoluto de cantidad
+de identificadores asignados. Se restaltan los mejores resultados de cada m´etrica.
+Estas detecciones en el fondo son problem´aticas dado su
+alto ´ındice de confianza. Por esto, aplicar un filtro sobre esta
+m´etrica no solo no filtrar´ıa alguna de estas manzanas de otras
+filas, sino que descartar´ıa algunas detecciones de la fila que
+se est´a evaluando. Algo similar ocurre con el filtrado por el
+tama˜no de la bounding box, dado que algunas detecciones en
+el fondo tienen bounding boxes de mayor tama˜no que otras
+en la fila actual.
+Para resolver este problema, se exploraron diferentes enfo-
+ques para eliminar el fondo. Se intentaron utilizar herramientas
+para eliminar el fondo en cada cuadro, herramientas para
+generar una vista panor´amica a partir del video, y finalmente
+una grabaci´on capturada con una c´amara est´ereo ZED 2. En
+ning´un caso los resultados fueron satisfactorios, ya que no se
+contaba con los recursos necesarios.
+En lo que respecta a tiempos de ejecuci´on por cuadro, los
+tiempos obtenidos muestran que StrongSort es el m´etodo m´as
+lento, con un tiempo promedio de 153ms para YOLOv8 y
+97ms para YOLOv5. Esto es en el orden de 5 veces m´as lento
+que los otros dos modelos, donde ByteTrack es el m´as veloz,
+con un promedio de 22ms y OCSort logra en promedio 28ms.
+RN
+Seguimiento
+Ida
+Vuelta
+Suma
+Recorrido
+completo
+OCSort
+2932
+2789
+5721
+5782
+Bytetrack
+2587
+2503
+5090
+5121
+YOLOv5
+(DS2)
+StrongSort
+2659
+2385
+5044
+5092
+OCSort
+2621
+2569
+5190
+5259
+Bytetrack
+1877
+1818
+3695
+3730
+YOLOv8
+(DS2)
+StrongSort
+1959
+1808
+3767
+3810
+Cuadro IV: Resultados de algoritmos de seguimiento sin
+etiquetas, donde la cantidad esperada de manzanas en la fila
+es 2133, “Ida”, “Vuelta” y “Recorrido completo” son los
+resultados de cada video y “Suma” es la suma de “Ida” y
+“Vuelta”.
+IV-C.
+Ajuste mediante regresi´on lineal
+Al contar la cantidad de manzanas en un recorrido completo,
+se pueden clasificar las manzanas en tres categor´ıas seg´un su
+visibilidad [38]: visibles desde un ´unico lado, desde ambos
+lados y no visibles desde afuera del ´arbol.
+Dado que las manzanas visibles desde ambos y de ning´un
+lado generan errores en el conteo mediante mecanismos de
+seguimiento, se plantea el uso de un m´etodo simple de
+regresi´on lineal para minimizar el error y predecir el valor
+real a partir del valor estimado.
+Para construir m´etodos de ajuste, se generaron 20 instancias
+del simulador con par´ametros constantes. Estas instancias con-
+tienen filas de 5 ´arboles, manteniendo las mismas condiciones
+ambientales, con un recorrido fijo a 0.2 m/s y posici´on de la
+c´amara constante.
+Adem´as, se generan cinco instancias de prueba, las primeras
+tres con exactamente los mismos par´ametros de las instancias
+de entrenamiento, resultando en 375 manzanas. En la cuarta
+instancia, se cambia la cantidad de ´arboles a 10 (722 manza-
+nas), mientras que en la ´ultima se utilizan 3 filas de 5 ´arboles
+cada una (362 manzanas en la fila a estudiar), de forma de
+que aparezcan manzanas de fondo. En adelante, las instancias
+con 1 fila y 5 ´arboles se referencian como V1 5, las de 1 fila
+y 10 ´arboles V1 10, y V3 5 la instancia de 3 filas y 5 ´arboles
+en cada una.
+Sobre los videos generados, se ejecutaron los algoritmos de
+seguimiento y detecci´on definidos previamente (YOLOv5 y
+YOLOv8 combinados con StrongSort, Bytetrack y OCSort).
+Algunas de las ejecuciones se encuentran disponibles en una
+lista de reproducci´on p´ublica del proyecto [39]. A partir de
+estas ejecuciones, se obtuvo una predicci´on de la cantidad de
+manzanas por instancia.
+Los resultados obtenidos, combinados con la cantidad real
+de manzanas de cada video, se utilizaron como entrada de un
+modelo de regresi´on [40]. La recta de regresi´on permite ajustar
+nuevos resultados de predicciones, minimizando la diferencia
+con el valor real de la instancia.
+Como m´etodo alternativo, se registraron los coeficientes de
+ajuste por cada combinaci´on de modelos. La idea detr´as de
+este m´etodo es encontrar un factor que permita ajustar las
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+predicciones de manera m´as simple, aplicando ´unicamente una
+multiplicaci´on.
+El coeficiente de ajuste es definido como el promedio de
+los cocientes de cada resultado esperado sobre su predicci´on.
+Esto se representa en la ecuaci´on 1, donde n es la cantidad
+total de entradas del modelo.
+coeficiente = 1
+n
+n
+X
+1
+cantidad real
+cantidad predicha
+(1)
+IV-C1.
+Evaluaci´on de m´etodos de ajuste: Para evaluar
+los modelos de ajuste, se ejecutaron los algoritmos en las
+instancias de prueba antes definidas y en el video del recorrido
+completo filmado (en adelante DS-INIA-COMPLETO).
+Instancia
+GT
+R*CA
+ERRCA
+Reg.
+ERReg
+V1 5
+375
+373
+0,06 ± 0,04
+366
+0,04 ± 0,03
+V1 10
+722
+672
+0,07 ± 0,03
+491
+0,32 ± 0,15
+V3 5
+362
+348
+0,04 ± 0,02
+354
+0,02 ± 0,09
+DS-INIA-
+COMPLETO
+2133
+2533
+0,20 ± 0,19
+1261
+0,45 ± 0,28
+Cuadro V: Resultados promedio de aplicar los modelos en-
+trenados de ajuste a los resultados obtenidos, donde “R*CA”
+corresponde a los resultados de multiplicar el resultado por el
+coeficiente de ajuste, “Reg.” el ajuste con regresi´on lineal y
+“ER” los errores relativos en cada caso.
+Los resultados promediados se incluyen en el cuadro V.
+Como se puede observar, los resultados difieren seg´un el tipo
+de instancia evaluada. En el caso de V1 5 y V3 5, los errores
+relativos de ambos modelos se mantienen por debajo del 10 %.
+En estos casos, si bien los errores relativos son muy similares,
+el error cometido por el modelo de regresi´on es menor que
+el modelo de coeficiente, indicando un mejor desempe˜no del
+primero.
+Sin embargo, en los resultados para la instancia V1 10, si
+bien el modelo de ajuste por coeficiente mantiene un error
+promedio cercano al 10 %, el modelo de regresi´on comete un
+error relativo promedio del 32 %. Esto se repite en el caso
+de DS-INIA-COMPLETO, donde el error relativo del modelo
+de regresi´on asciende al 45 % y el del modelo de coeficiente
+asciende a 20 %.
+Cabe observar que, si bien en el video V3 5 hay tres filas de
+´arboles, las manzanas de las filas posteriores a la fila grabada
+se ven muy peque˜nas en comparaci´on con las manzanas de la
+fila principal. Por este motivo, pr´acticamente no se detectan
+manzanas de otras filas, a diferencia del ambiente real. La
+diferencia puede apreciarse en la figura 7, donde se incluyen
+dos recortes de detecciones de videos del simulador y de DS-
+INIA-COMPLETO.
+V.
+CONCLUSIONES
+Durante la etapa de entrenamiento, se constat´o que la
+similitud de los datos de entrenamiento con los de evaluaci´on
+influyen positivamente en los resultados. Por este motivo, el
+DS4, con apenas 80 im´agenes, pero tomadas en INIA Las
+Brujas, obtiene resultados mejores que los de MinneApple
+(con 1000 im´agenes) al evaluarlo sobre el DS5.
+(a) Video simulado
+(b) Video de entorno real
+Figura 7: Capturas de manzanas en filas posteriores de videos.
+Otros factores determinantes son el tama˜no y la variedad de
+los datos, lo que se visualiza en los resultados superiores de
+DS2 en comparaci´on con DS7, siendo que el primero incluye
+al segundo y, por tanto, tiene mayor cantidad y variedad de
+im´agenes.
+A su vez, se concluy´o que los conjuntos de datos etiquetados
+para recolecci´on de manzanas son inadecuados para entrenar
+algoritmos de detecci´on y conteo. Esto es relevante dada la
+mayor disponibilidad y facilidad de construcci´on de datasets
+para recolecci´on.
+Respecto a las redes neuronales para detecci´on de objetos
+evaluadas, se concluye que YOLOv5 y YOLOv8 son superio-
+res a Faster-101 y Faster-50, tanto en los resultados obtenidos
+como en los tiempos de entrenamiento y de detecci´on. Con-
+cretamente, los modelos de Faster R-CNN evaluados tardan al
+menos 10 veces m´as que los de YOLO, llevando a tiempos de
+ejecuci´on que no son suficientemente buenos para la ejecuci´on
+en tiempo real.
+Al comparar ambas versiones de YOLO, se obtienen re-
+sultados bastante similares, aunque YOLOv5 tiende a obtener
+mejores resultados de AP50, mientras que YOLOv8 los obtie-
+ne en AP y con menores tiempos de ejecuci´on. Se observa
+que esto puede estar afectado por el modelo de YOLOv8
+seleccionado, siendo la versi´on nano, mientras que la versi´on
+de YOLOv5 seleccionada es la small. Aun teniendo esto en
+cuenta, se considera que YOLOv8 es la red neuronal con mejor
+desempe˜no y que convendr´ıa seguir estudiando.
+Los algoritmos de seguimiento evaluados fueron StrongSort,
+Bytetrack y OCSort. De estos, OCSort es el que obtiene
+mejores resultados en general (tanto en MOTA como HOTA,
+y destacando en IDF1), pero StrongSort obtiene la menor can-
+tidad de errores absolutos en detecci´on. En cuanto a tiempos,
+Bytetrack es el m´as veloz, seguido de cerca por OCSort, y
+superando ampliamente a StrongSort, que tarda al menos 3
+veces m´as.
+Por otro lado, a la hora de evaluar sobre el recorrido com-
+pleto, el algoritmo que se acerca m´as al valor real de cantidad
+de manzanas es StrongSort. Si bien esto es consistente con
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 
+
+sus valores de error absoluto de identificadores, los resultados
+de todos los algoritmos sobre este video se ven afectados por
+las manzanas detectadas en segunda fila y las condiciones de
+iluminaci´on.
+Por los motivos anteriores, se concluye que el mejor algo-
+ritmo de seguimiento es OCSort, siendo el m´as equilibrado en
+resultados obtenidos y tiempo de ejecuci´on.
+En lo que respecta a los modelos de ajuste, se destacan los
+buenos resultados de los m´etodos elegidos, logrando ajustar la
+estimaci´on para tomar en cuenta las frutas que son visibles de
+ambos lados de la fila y las que no son visibles.
+Sin embargo, estos resultados no parecen ser consistentes
+cuando las caracter´ısticas de los datos evaluados difieren de
+las de los datos de entrenamiento. Particularmente, el modelo
+de regresi´on lineal se destaca cuando la cantidad de ´arboles se
+mantiene, con un error relativo menor al 10 %, pero aumenta
+al 30 % al tener el doble de ´arboles en el video evaluado. Esto
+no aplica para el m´etodo del coeficiente, que logra mantener el
+error relativo en el orden del 10 % incluso cuando se duplica
+la cantidad de ´arboles.
+Por lo tanto, para evaluar predicciones sobre videos con una
+cantidad de ´arboles similar a la de los datos de entrenamiento,
+se recomienda el uso del modelo de regresi´on. Por el contrario,
+si se quiere variar la cantidad de ´arboles, se recomienda el uso
+del modelo del coeficiente.
+REFERENCIAS
+[1] A. Kamilaris and F. X. Prenafeta-Bold´u, “A review of the use of con-
+volutional neural networks in agriculture,” The Journal of Agricultural
+Science, vol. 156, no. 3, pp. 312–322, 2018.
+[2] M. K. van Ittersum and R. Rabbinge, “Concepts in production ecology
+for analysis and quantification of agricultural input-output combina-
+tions,” Field crops research, vol. 52, no. 3, pp. 197–208, 1997.
+[3] Q. Wang, S. Nuske, M. Bergerman, and S. Singh, “Automated crop
+yield estimation for apple orchards,” in Experimental Robotics: The
+13th International Symposium on Experimental Robotics, pp. 745–758,
+Springer, 2013.
+[4] Z. Ge, S. Liu, F. Wang, Z. Li, and J. Sun, “Yolox: Exceeding yolo series
+in 2021,” arXiv preprint arXiv:2107.08430, 2021.
+[5] G. Jocher, A. Chaurasia, and J. Qiu, “Yolo by ultralytics,” 2023.
+Accedido: 2023-06-18.
+[6] J. Cao, X. Weng, R. Khirodkar, J. Pang, and K. Kitani, “Observation-
+centric sort: Rethinking sort for robust multi-object tracking,” arXiv
+preprint arXiv:2203.14360, 2022.
+[7] Y. Zhang, P. Sun, Y. Jiang, D. Yu, F. Weng, Z. Yuan, P. Luo, W. Liu, and
+X. Wang, “Bytetrack: Multi-object tracking by associating every detec-
+tion box,” in Computer Vision–ECCV 2022: 17th European Conference,
+Tel Aviv, Israel, October 23–27, 2022, Proceedings, Part XXII, pp. 1–21,
+Springer, 2022.
+[8] Y. Du, Z. Zhao, Y. Song, Y. Zhao, F. Su, T. Gong, and H. Meng, “Strong-
+sort: Make deepsort great again,” IEEE Transactions on Multimedia,
+2023.
+[9] S. Bargoti and J. Underwood, “Deep fruit detection in orchards,” in 2017
+IEEE International Conference on Robotics and Automation (ICRA),
+pp. 3626–3633, IEEE, 2017.
+[10] B. Yan, P. Fan, X. Lei, Z. Liu, and F. Yang, “A real-time apple targets
+detection method for picking robot based on improved yolov5,” Remote
+Sensing, vol. 13, no. 9, p. 1619, 2021.
+[11] W. Zhang, J. Wang, Y. Liu, K. Chen, H. Li, Y. Duan, W. Wu, Y. Shi,
+and W. Guo, “Deep-learning-based in-field citrus fruit detection and
+tracking,” Horticulture Research, vol. 9, 2022.
+[12] P. Roy, W. Dong, and V. Isler, “Registering reconstructions of the two
+sides of fruit tree rows,” in 2018 IEEE/RSJ International Conference on
+Intelligent Robots and Systems (IROS), pp. 1–9, IEEE, 2018.
+[13] M. Stein, S. Bargoti, and J. Underwood, “Image based mango fruit de-
+tection, localisation and yield estimation using multiple view geometry,”
+Sensors, vol. 16, no. 11, p. 1915, 2016.
+[14] P. Dendorfer, A. Osep, A. Milan, K. Schindler, D. Cremers, I. Reid,
+S. Roth, and L. Leal-Taix´e, “Motchallenge: A benchmark for single-
+camera multiple target tracking,” International Journal of Computer
+Vision, vol. 129, pp. 845–881, 2021.
+[15] Y. Wu, A. Kirillov, F. Massa, W.-Y. Lo, and R. Girshick, “Detectron2.”
+https://github.com/facebookresearch/detectron2, 2019.
+[16] Y. Wu, “Detectron2 model zoo and baselines,” 2019.
+[17] M. Brostr¨om, “BoxMOT: A collection of SOTA real-time, multi-object
+trackers for object detectors ,” 2022.
+[18] F. C. Doerflinger, W. B. Miller, J. F. Nock, and C. B. Watkins,
+“Relationships between starch pattern indices and starch concentrations
+in four apple cultivars,” Postharvest Biology and Technology, vol. 110,
+pp. 86–95, 2015.
+[19] Stanford Artificial Intelligence Laboratory, “Robotic operating system,”
+2007.
+[20] D. Cabrera, P. Rodr´ıguez, and B. Carra, “Performance of different trai-
+ning systems in a pedestrian orchard for an efficient apple production,”
+in XII International Symposium on Integrating Canopy, Rootstock and
+Environmental Physiology in Orchard Systems 1346, pp. 319–326, 2021.
+[21] A. Polg´ar, “GitHub - azazdeaz/fields-ignition: Generate random crop
+fields for Ignition Gazebo — github.com,” 2020.
+[22] N. Koenig and A. Howard, “Design and use paradigms for gazebo,
+an open-source multi-robot simulator,” in 2004 IEEE/RSJ international
+conference on intelligent robots and systems (IROS)(IEEE Cat. No.
+04CH37566), vol. 3, pp. 2149–2154, IEEE, 2004.
+[23] Blender Foundation, “Api overview 2014; blender python api.” https://
+docs.blender.org/api/current/info overview.html, 2014. Accedido: 2023-
+06-11.
+[24] OpenRobotics, “Costar husky sensor config 1,” October 2021.
+[25] StereoLabs, “Zed2 stereo camera.” Product information, 2020. URL:
+https://www.stereolabs.com/zed2/.
+[26] Roboflow, “Roboflow universe: Open source computer vision commu-
+nity.” Accedido: 2024-04-09.
+[27] wangwang, “Apple dataset.” https://universe.roboflow.com/wangwang/apple-
+shybf, Mayo 2022. Accedido: 2023-05-04.
+[28] N. H¨ani, P. Roy, and V. Isler, “Minneapple: a benchmark dataset for
+apple detection and segmentation,” IEEE Robotics and Automation
+Letters, vol. 5, no. 2, pp. 852–858, 2020.
+[29] O.
+Girling,
+“Apple
+recognition
+dataset.”
+https://universe.roboflow.com/oliver-girling0-gmail-com/apple-
+recognition, Enero 2023. Accedido: 2023-05-03.
+[30] Roboflow, “Generate augmented images to improve model performan-
+ce.,” 2023. Accedido: 2023-06-07.
+[31] R. Automation. Accedido: 2024-04-10.
+[32] Supervisely, “Supervisely, unified os for computer vision,” 2017. Acce-
+dido: 2023-06-07.
+[33] “Google colab,” 2017. Accedido: 2023-05-31.
+[34] J. Terven and D. Cordova-Esparza, “A comprehensive review of yolo:
+From yolov1 to yolov8 and beyond,” arXiv preprint arXiv:2304.00501,
+2023.
+[35] SabrePC, “Epochs, batch size, iterations - how are they important to
+training ai and deep learning models.” Accedido: 2024-04-10.
+[36] S. Lyu, R. Li, Y. Zhao, Z. Li, R. Fan, and S. Liu, “Green citrus detection
+and counting in orchards based on yolov5-cs and ai edge system,”
+Sensors, vol. 22, no. 2, 2022.
+[37] J. Luiten, A. Osep, P. Dendorfer, P. Torr, A. Geiger, L. Leal-Taix´e,
+and B. Leibe, “Hota: A higher order metric for evaluating multi-object
+tracking,” International journal of computer vision, vol. 129, pp. 548–
+578, 2021.
+[38] O. Apolo-Apolo, J. Mart´ınez-Guanter, G. Egea, P. Raja, and M. P´erez-
+Ruiz, “Deep learning techniques for estimation of the yield and size
+of citrus fruits using a uav,” European Journal of Agronomy, vol. 115,
+p. 126030, 2020.
+[39] R. Garderes and F. Guti´errez, “Videos: Construcci´on y evaluaci´on
+de m´etodos de ajuste..” https://www.youtube.com/watch?v=DpCvVA3c
+qU&list=PLUL58q01TzjuGC-vsQkdnunfs36MG9vCt, 2023.
+[40] F. Pedregosa, G. Varoquaux, A. Gramfort, V. Michel, B. Thirion, O. Gri-
+sel, M. Blondel, P. Prettenhofer, R. Weiss, V. Dubourg, J. Vanderplas,
+A. Passos, D. Cournapeau, M. Brucher, M. Perrot, and E. Duchesnay,
+“Scikit-learn: Machine learning in Python,” Journal of Machine Learning
+Research, vol. 12, pp. 2825–2830, 2011.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:44:36 UTC from IEEE Xplore.  Restrictions apply. 

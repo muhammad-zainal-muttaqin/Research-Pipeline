@@ -1,0 +1,1475 @@
+IEEE INTERNET OF THINGS JOURNAL, VOL. 12, NO. 23, 1 DECEMBER 2025
+49083
+IoT-Based Precision Litchi Tracking and Counting
+Method Using Gated Metrics
+Jianqiang Lu
+, Senior Member, IEEE, Guoqing Bao
+, Xiaoling Deng
+, Xiongzhe Han, Yubin Lan
+,
+and Haiwei Wu
+Abstract—Accurate and efﬁcient multiobject tracking and
+counting methods are designed to address the challenges of
+counting in complex environments. This study presents a novel
+tracking and counting method called LitchiCount, integrating the
+multiobject tracking detection model LitchiDet with a counting
+module to address issues, such as missing counts, repeated counts,
+and the lack of interpretability commonly found in traditional
+machine learning approaches. The method is designed with the
+guidance of the visual interpretable method Grad-CAM++, as
+well as the experimental validation method based on important
+features. To improve the detection accuracy of small targets
+under dense occlusion and overlapping, we proposed LitchiDet,
+which combines a small target detection layer, a decoupled
+fully connected attention with C3Ghost module (DFC-C3Ghost),
+and an efﬁcient layer aggregation network block (ELANB).
+Our counting module improves target tracking accuracy and
+robustness in dense occlusion scenes while reducing counting
+errors from scene changes. We propose a distance-generalized
+intersection over union association metric using a gating mech-
+anism (DG-GM) and an AreaC counting strategy tailored to
+ﬁeld intricate scenes. Finally, to enhance Internet of Things (IoT)
+deployment, we migrated LitchiCount to the Jetson AGX Xavier
+platform and optimized the model with TensorRT, signiﬁcantly
+improving computational efﬁciency and real-time performance,
+particularly in resource-limited IoT environments, meeting real-
+time and low-power demands. The results demonstrated that our
+proposed method outperforms state-of-the-art detection models,
+as well as DeepSort-based counting methods in detection and
+counting. Importantly, by applying our method to the scenario
+of detecting and counting litchi from multiple perspectives in
+Received 12 February 2025; revised 18 March 2025; accepted 12
+April 2025. Date of publication 15 April 2025; date of current version
+20 November 2025. This work was supported in part by the Key-
+Area Research and Development Program of Guangdong Province under
+Grant 2023B0202090001; in part by the Key Research and Development
+Program of Guangzhou under Grant 2023B03J1392; in part by The 111
+Project under Grant D18019; in part by the Open Project Program of
+Guangdong Provincial Key Laboratory of Agricultural Artiﬁcial Intelligence
+under Grant GDKL-AAI-2023007; in part by the Open Fund of State Key
+Laboratory of Agricultural Equipment Technology, South China Agricultural
+University under Grant SKLAET-202412; and in part by The National Key
+Research and Development Plan Project under Grant 2023YFD2000200.
+(Corresponding authors: Yubin Lan; Xiongzhe Han.)
+Jianqiang Lu, Xiaoling Deng, and Yubin Lan are with the College of
+Electronic Engineering (College of Artiﬁcial Intelligence), South China
+Agricultural University, Guangzhou 510642, China (e-mail: ljq@scau.edu.cn;
+dengxl@scau.edu.cn; ylan@scau.edu.cn).
+Guoqing
+Bao
+and
+Haiwei
+Wu
+are
+with
+the
+College
+of
+Electronic
+Engineering
+(College
+of
+Artiﬁcial
+Intelligence),
+South
+China
+Agricultural
+University,
+Guangzhou
+510642,
+China
+(e-mail:
+20233172009@stu.scau.edu.cn; whw@stu.scau.edu.cn).
+Xiongzhe Han is with the Department of Agricultural and Biological
+Engineering, Mississippi State University, Starkville, MA 39762 USA,
+and also with the Department of Biosystems Engineering, Kangwon
+National University, Chuncheon 24341, South Korea (e-mail: hanxiongzhe@
+kangwon.ac.kr).
+Digital Object Identiﬁer 10.1109/JIOT.2025.3561130
+a ﬁeld setting, we achieved low-repetitive and reliable counting,
+demonstrating the robust performance of this approach in real-
+world applications.
+Index Terms—Fruits counting, interpretability, Litchi, multiple
+object tracking (MOT), object detection, real-time.
+I. INTRODUCTION
+A
+CCURATE yield estimation is crucial for improving
+the economic beneﬁts of orchards. With the rapid
+development of agricultural Internet of Things (IoT), the
+integration of IoT-based data acquisition devices with deep
+learning algorithms has become a promising research trend.
+This study aims to develop a high-precision and interpretable
+litchi counting method by combining key agricultural IoT
+technologies, such as sensors, cameras, and edge computing
+platforms, to address challenges in data collection, analysis,
+and processing. By seamlessly integrating these technologies,
+the method signiﬁcantly improves counting accuracy and com-
+putational efﬁciency, effectively overcoming common issues
+such as missing counts, repeated counts [1], and environmental
+constraints that arise in real-world ﬁeld conditions.
+In recent years, numerous methods have been proposed
+for fruit detection using machine learning techniques [2].
+While the machine learning-based fruit detection studies have
+demonstrated satisfactory detection performance, detecting
+fruit in real-world ﬁeld environments presents signiﬁcantly
+more challenging and intricate conditions. This often leads to
+a signiﬁcant number of missed detections and false positives.
+Furthermore, there are relatively few optimizations speciﬁ-
+cally aimed at deploying on IoT edge devices with limited
+storage space and computing power, which poses challenges
+for achieving real-time operation and efﬁcient data process-
+ing in resource-constrained IoT environments. A number of
+regression counting methods for fruit yield estimation, crop
+counting, etc., have also been proposed [3], [4]. Although
+these counting methods can provide approximate fruit count
+results within an acceptable margin of error, they suffer from
+the loss of location information for each individual fruit target.
+This limitation hinders the ability to accurately associate the
+same target and often resulting in missing counting and repeat
+counting.
+On the other hand, the rapid development of agricultural
+IoT, artiﬁcial intelligence, and object tracking technologies
+has sparked growing interest in utilizing deep learning-
+based methods for fruit detection and counting [5], [6], [7].
+2327-4662 c⃝2025 IEEE. All rights reserved, including rights for text and data mining, and training of artiﬁcial intelligence
+and similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+49084
+IEEE INTERNET OF THINGS JOURNAL, VOL. 12, NO. 23, 1 DECEMBER 2025
+There are two main methods for fruit detection. The ﬁrst
+is one-stage target detection models, such as SSD [8], Yolo
+series [9], etc. They show strong robustness in night and
+dense scenes [10], [11], [12]. The second is two-stage target
+detection models, such as Faster R-CNN, Mask-RCNN and so
+on [13], [14], [15]. Fruit counting methods primarily include
+single-view or dual-view detection and counting [16], [17],
+LIDAR and thermal imaging counting [18], [19], and count-
+ing by object tracking [20], [21], [22]. Recent advances in
+multiobject tracking (MOT) have demonstrated particular
+effectiveness in handling occlusions. For instance, Viveros
+Escamilla et al. [59] proposed a fruit counting system based on
+YOLOv5 for detection and DeepSORT for tracking, achieving
+85.7% accuracy in challenging greenhouse conditions through
+temporal association. Similarly, Feng et al. [60] developed
+a dynamic counting method using YOLOv7-tiny and an
+improved Hungarian algorithm, enhancing fruit association
+accuracy to 81.02% in highly occluded orchards. Other track-
+ing improvements include cascade reﬁnement [23], integration
+of semantic segmentation modules [24], and optimization of
+cross-modal fusion [25].
+Despite the strong performance demonstrated by the deep
+learning-based methods, challenges, such as frequent tracking
+identity (ID) switches, repeat counting, and missed detec-
+tions still arise in diverse scenarios, particularly when litchi
+targets are located at the edge of the ﬁeld of view (FOV)
+due to limitations in video acquisition. More importantly,
+the majority of deep learning models exhibit high com-
+plexity, lack transparency, and interpretability, which poses
+challenges for individuals in comprehending the decision-
+making mechanisms of the models and enhancing their
+performance [26], [27].
+Although existing fruit detection and counting methods have
+achieved some success, they still face numerous challenges in
+real agricultural environments. Traditional machine learning
+methods perform poorly in complex lighting conditions, dense
+occlusion, and small object detection, leading to high false
+negative and false positive rates. While current deep learn-
+ing methods have improved detection accuracy, their model
+complexity is too high to be deployed for real-time opera-
+tion on resource-constrained IoT edge devices. Furthermore,
+existing multiobject tracking methods are prone to issues,
+such as ID switching and duplicate counting, when targets
+frequently enter and exit the FOV or exhibit nonlinear motion,
+and they lack effective target association strategies. These
+limitations signiﬁcantly restrict the feasibility and reliability of
+real-time yield estimation in precision agriculture. Therefore,
+the development of a lightweight, high-accuracy, and robust
+real-time litchi counting method is of great theoretical and
+practical signiﬁcance for enhancing orchard economic beneﬁts
+and advancing the practical application of agricultural IoT
+technologies.
+To address the aforementioned issues of fruit detection
+and counting, We propose a fast video counting method (as
+shown in Fig. 1) for dense ﬁeld scenes. Speciﬁcally, our main
+contributions are summarized as follows.
+1) The ﬁrst attempt to work on litchi fruit video counting
+from multiple sides and achieve robust tracking and
+counting performance.
+2) We use Grad-CAM++ and the experimental validation
+method based on important features to identify the
+reasons for the poor performance of litchi detection in
+the ﬁeld and determined the features that contribute
+more signiﬁcantly to data association decisions. Based
+on these ﬁndings, we develop a counting method that
+signiﬁcantly reduces repeat counting, thereby improving
+the accuracy and interpretability of litchi counting.
+3) We
+present
+LitchiDet,
+a
+lightweight
+model
+for
+litchi detection. The introduction of a small target
+detection
+layer
+signiﬁcantly
+improves
+the
+detec-
+tion
+accuracy
+of
+small
+litchi
+in
+dense
+scenes.
+The decoupled fully connected attention with the
+C3Ghost (DFC-C3Ghost) module, which incorporates a
+hardware-efﬁcient attention mechanism, captures long-
+range pixel dependencies, thereby enhancing model
+representation and highlighting ﬁne litchi features. The
+efﬁcient layer aggregation network block (ELANB)
+module improves gradient ﬂow and delivers robust
+performance in scenarios involving occlusion and over-
+lap. Compared to existing fruit detection models,
+LitchiDet not only achieves higher detection accuracy
+but also maintains efﬁcient performance on hardware
+devices.
+4) A
+tracking
+and
+counting
+module
+is
+designed.
+Speciﬁcally, the distance-generalized IoU based on the
+gating mechanism (DG-GM) is proposed to signiﬁcantly
+reduce the error caused by fruit ID switching and
+further improve the tracking association [55] accuracy
+under dense scenes. Then, an area counting strategy
+(AreaC) based on ﬁeld litchi scenes is developed,
+which effectively mitigates the occurrences of missing
+and repeat counting in video sequences under varying
+scene.
+5) The experiments, compared with existing DeepSort-
+based tracking and counting methods, demonstrate that
+the proposed approach outperforms in both tracking
+accuracy and counting reliability. To further enhance
+real-time processing capabilities, the LitchiCount model
+has been successfully deployed on the Jetson AGX
+Xavier platform. By leveraging the TensorRT optimizer,
+the detection and tracking components have been sig-
+niﬁcantly accelerated, enabling efﬁcient inference while
+minimizing
+computational
+latency.
+Speciﬁcally,
+the
+Jetson AGX Xavier functions as the runtime platform,
+seamlessly executing detection, tracking, and counting
+tasks in-ﬁeld. It integrates the LitchiDet module for
+precise litchi detection and the tracking-counting module
+for association and trajectory analysis. This architec-
+ture allows LitchiCount to achieve high-precision litchi
+counting directly on edge devices, making it a promis-
+ing solution for deployment in unmanned vehicles to
+automate orchard patrol operations.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+LU et al.: IoT-BASED PRECISION LITCHI TRACKING AND COUNTING METHOD USING GATED METRICS
+49085
+Fig. 1.
+Framework of LitchiCount.
+II. DATASET PREPARATION
+A. Data Acquisition
+In this section, we present a new dataset for litchi detection
+and video counting, collected in Conghua and Zengcheng,
+Guangzhou, China, between June and July 2022–2023. The
+dataset includes litchi species, such as Huai Zhi, Guiwei,
+and Xianjinfeng. Data were captured using a Huawei Mate40
+(12MP, f/1.9), an iPhone13 (12MP, f/1.6), and a 3-axis gimbal.
+To improve model accuracy under various conditions, we
+captured images and videos featuring variations in size, bright-
+ness, occlusion, and density from multiple angles at distances
+of 0.5–2 m. In total, 475 RGB images containing over 23 000
+litchi targets were collected, alongside videos totaling 933 s.
+The movement speed during collection ranged from 0.1 to
+0.3 m/s, with a frame rate of 30 FPS and a resolution of 1080p.
+Fig. 2 provides an overview of the data collection process and
+sample images.
+B. Data Augmentation and Dataset Construction
+In the initial dataset construction, we manually annotated
+litchi instances using LabelImg software. The dataset was split
+into training (334 images) and test sets (141 images) in a 7:3
+ratio for model training and evaluation. Data augmentation
+techniques, including horizontal ﬂipping, brightness adjust-
+ment, motion blur, simulated rainfall, and salt-and-pepper
+noise, were applied to simulate diverse ﬁeld conditions and
+reduce overﬁtting [28]. This increased the training set to 2004
+images. For further validation, the litchi counts in each video
+sequence were manually precounted.
+III. DESIGN FOR INTERPRETABLE WORK
+Our proposed method LitchiCount is designed under the
+guidance of interpretability methods and follows the tracking-
+by-detection paradigm, with the foundation and core of this
+paradigm being object detection and data association [29].
+Fig. 2.
+Acquisition process and image data examples.
+Fig. 3.
+Example diagram of trajectory interruption. (a) t-frame moment of
+Case1. (b) t+15 frame moment of Case1. (c) t-frame moment of Case2. (d) t+9
+frame moment of Case2.
+To enhance the detection performance, we conducted inter-
+pretability research using Grad-CAM++ as a method [30].
+Step1: The output of a convolutional neural network (CNN)
+for classiﬁcation is deﬁned as Y. Next, the output score Y for
+a particular class c is computed by performing a dot product
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+49086
+IEEE INTERNET OF THINGS JOURNAL, VOL. 12, NO. 23, 1 DECEMBER 2025
+Fig. 4.
+Structure of LitchiDet.
+between the weight W and the feature map K
+Yc =
+
+k
+wc
+k.
+
+i
+
+j
+Ak
+ij
+(1)
+where wc
+k represents the weight of the kth feature map
+corresponding to class c, and Ak
+ij represents the pixel value
+at a particular spatial location (i, j) within the kth feature
+map. Step2: The heatmaps Lc
+ij are obtained by applying the
+principle of weighted summation. Speciﬁcally, the weights of
+feature map are determined by calculating a weighted average
+of pixel-scale gradients. It is one of the widely used visual
+explanation methods and explains the predictions of models
+based on CNNs through image visualization. Speciﬁcally,
+it can accurately localize the predicted class and generate
+heatmaps at all positions of the class, which highlight the
+key regions that inﬂuence the model’s decision-making. The
+heatmaps are obtained through the following steps:
+wc
+k =
+
+i
+
+j
+αkc
+ij .relu
+
+∂Yc
+∂Ak
+ij
+
+(2)
+Lc
+ij =
+
+k
+wc
+k.Ak
+ij
+(3)
+where αkc
+ij
+represents the gradient weights, which signiﬁes
+gradient weights for the pixel for class c at position (i, j) in
+the kth feature map Ak
+In this article, we utilize heatmaps generated by Grad-
+CAM++ to highlight the regions of interest within our litchi
+detection model. This process aids in identifying issues,
+designing with a speciﬁc target in mind, and making improve-
+ments to enhance the model’s interpretability.
+In multiobject tracking, data association plays a crucial role
+in matching and associating targets by calculating their sim-
+ilarity between adjacent frames [31], [32]. At present, target
+similarity is mainly determined by the motion information
+or appearance features between adjacent frames. According
+to preliminary experiments, the original tracking model is
+prone to trajectory interruption under conditions, such as
+fruit occlusion and camera shaking, as shown in Fig. 3.
+Hence, we employ an experimental validation method based
+on important features to guide the enhancement of the tracking
+model. In particular, we modify or introduce two crucial
+features, namely, target motion information and appearance
+information, into the original tracking model to examine their
+individual impacts on the model’s prediction. The features
+that exert a signiﬁcant impact on model predictions and lead
+to higher accuracy are the ones that contribute more to data
+association.
+Based on this idea, we enhanced the IoU metric and inte-
+grated an appearance feature metric into the original tracking
+model. Additionally, fruit counting experiments will be con-
+ducted to develop a scheme that achieves higher performance
+and better interpretability.
+IV. LITCHIDET DETECTION MODEL DESIGN
+Considering the existing issues of missed and false detec-
+tions in fruit detection models, we introduce a lightweight
+litchi detection model, LitchiDet, designed for edge computing
+platforms in this section (as shown in Fig. 4). The following is
+an introduction to the three core components in the LitchiDet.
+A. Low Computational Cost Global Attention Method Design
+Recently, some scholars have suggested the integration of
+self-attention mechanisms, like transformers, with ghost mod-
+ules [33]. Despite their ability to capture global information,
+these modules require a considerable number of reshape and
+transpose operations. This poses challenges for hardware-
+friendly deployment [34], [35]. The GhostNetV2 module [36],
+which incorporates the DFC and Ghost module, will be a
+satisfactory solution to the aforementioned issues, so we
+incorporated it into the C3 module to form DFC-C3ghost.
+This method offers the following beneﬁts: 1) it gen-
+erates more features with fewer parameters, maintaining
+low-computational cost while improving global information
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+LU et al.: IoT-BASED PRECISION LITCHI TRACKING AND COUNTING METHOD USING GATED METRICS
+49087
+attention and 2) it reduces the attention module’s computa-
+tional complexity from O(H2W2) to O(H2W + HW2), aiding
+hardware deployment. The input feature X ∈RH×W×C is
+processed through two branches. The Ghost module generates
+the output feature, and the DFC attention mechanism computes
+the attention matrix. DFC attention works on downsampled
+features, then upsamples them to the original size. DFC’s fully
+connected (FC) layer is split into horizontal and vertical FC
+layers to prioritize horizontal and vertical pixels in the feature
+map. This division helps capture long-range relationships in
+both directions, enhancing Ghost module’s output features.
+After a 1 × 1 convolution on the input, we get Z ∈RH×W×C
+for the attention module. The long-range spatial information
+in the horizontal direction of Z is computed as
+a′
+hw =
+H
+
+h′=1
+FH
+h,h′w ⊙zh′w, h = 1, 2, . . . , H, w = 1, 2, . . . , W.
+(4)
+Based on (4), the formula to calculate the long-range spatial
+information in the vertical direction is as follows:
+ahw =
+W
+
+w′=1
+FW
+w,hw′ ⊙a′
+hw′, h = 1, 2, . . . , H, w = 1, 2, . . . , W
+(5)
+where ⊙is the element-wise multiplication of the array, and F
+represents the learnable weights in the FC layer. The FC layer
+can eliminate tensor reshaping and transposition operations
+that signiﬁcantly affect inference speed by sharing a portion
+of weights F.
+Finally, the output ϑ is obtained by performing element-
+wise multiplication on the results of the two branches of the
+GhostnetV2 module
+ϑ = Sigmoid (A) ⊙V(X)
+(6)
+where A = {a11, a12, . . . , aHW} represents the attention map
+obtained by the DFC attention mechanism, and V represents
+the output features of the Ghost module.
+Therefore, in order to highlight intricate details of litchi
+fruits in dense scenes and suppressing irrelevant back-
+ground features, partial C3 modules in the backbone and
+neck networks were replaced with DFC-C3ghost to cap-
+ture long-range between pixels at various spatial positions.
+Consequently, the detection [46] performance of small litchi
+targets is enhanced while reducing computational costs on
+edge devices. The network architecture of DFC-C3ghost is
+depicted in Fig. 5.
+B. New Target Detection Scale Design
+Our constructed image dataset contains numerous small
+litchi objects. Nevertheless, the original model, undergoing
+multiple downsampling operations, has signiﬁcantly dimin-
+ished the amount of feature information available for detecting
+targets smaller than 8 pixels in size [37]. To enhance small
+litchi detection, we integrated a specialized detection head
+and incorporated feature fusion layers into the Neck network
+to leverage both shallow and deep features. The large object
+detection head was removed due to its minimal contribution,
+Fig. 5.
+Architecture of the DFC-C3Ghost module: (a) Basic structure of
+GhostNetV2, which includes lightweight feature generation using the Ghost
+module; (b) DFC attention module, which builds long-range dependencies
+through horizontal and vertical fully connected layers; (c) Complete structure
+of the DFC-C3Ghost module that integrates GhostNetV2 with the DFC
+attention mechanism.
+Fig. 6.
+Structure of ELANB.
+allowing the model to focus on small litchi objects and reduce
+computational costs. The introduction of new feature scales at
+160 × 160, 80 × 80, and 40 × 40 improves detection accuracy
+in dense scenes and enhances the extraction of occluded litchi
+features.
+C. Flow Information Enhancement Module Integration
+Given the limited feature extraction capability of deep
+neural networks, researchers have recently proposed network
+architectures that leverage gradient path design strategies.
+Unlike traditional mainstream networks that are designed
+based on data paths, these architectures facilitate the learn-
+ing of a wider range of features through distinct groups
+of computational blocks. As a result, deeper networks can
+effectively learn and converge while maximizing the utilization
+of parameters and enhancing their generalization capabil-
+ity [38]. In this article, we propose replacing the original
+C3 module with ELANB (as shown in Fig. 6), a new backbone
+network structure based on gradient path design strategy. The
+enhanced network can capture more abundant gradient ﬂow
+information without introducing additional complex architec-
+tures. As a result, this further improves the capabilities of
+feature information extraction and learning, effectively solving
+the issue of inadequate extraction of litchi feature information
+by deep networks in natural environments.
+V. LITCHI ONLINE TRACKING AND COUNTING
+METHOD DESIGN
+Given the speciﬁc litchi scenarios observed during the
+experiments, such as dense occlusion, target disappearance,
+and nonlinear motion, signiﬁcant challenges arise for exist-
+ing multiobject trackers based on simple motion models. In
+response, we referred to ByteTrack [39] and subsequently
+developed a counting-by-tracking module applicable to litchi
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+49088
+IEEE INTERNET OF THINGS JOURNAL, VOL. 12, NO. 23, 1 DECEMBER 2025
+Fig. 7.
+Flowchart of LitchiCount.
+Fig. 8.
+Comparison of IoU and DG-GM in occlusion and matching range
+scenarios. (a) Occlusion case: IoU fails to associate detection boxes D1 and
+D2 (same fruit) due to zero overlap, while DG-GM (via GIoU and DIoU
+gating) retains spatial relationships for correct association. (b) Matching range
+expansion: Unconstrained GIoU (yellow box D3 and red box D4) may cause
+ID drift, but DG-GM uses DIoU to limit distance, preventing misassociation
+of distinct fruits.
+in the ﬁeld, and fused it with Litchidet to form LitchiCount.
+We will introduce the details of the mentioned above module
+and the corresponding implementation details in this section.
+A. Overall Implementation
+In this section, we mainly describe the implementation
+process of LitchiCount, the ﬂowchart is shown in Fig. 7. First,
+the litchi detection results derived from LitchiDet are used as
+inputs to the tracking module and are divided into high and
+low-score detection boxes. Subsequently, initial trajectories are
+created for all the targets in the ﬁrst frame of the video, fol-
+lowed by three stages of tracking. LitchiCount is speciﬁcally
+designed for video-based tracking and counting. It processes
+video in a frame-by-frame manner, where each frame is ﬁrst
+processed by the detection module (LitchiDet), and then the
+detected objects are associated using the tracking and counting
+module. This enables continuous tracking of litchi across
+frames, ensuring accurate and robust counting in dynamic
+orchard environments. The ﬁrst step involves matching using
+the high-score boxes and all previously generated trajectories.
+The second step is to use the low-score boxes to match with
+the trajectories that were not matched in the ﬁrst step. The
+third step involves creating a new trajectory for the unmatched
+high-score boxes from the previous two steps. We retain only
+60 frames for the unmatched trajectories and match them when
+they reappear. Speciﬁcally, the Kalman ﬁlter is initially applied
+to accomplish cross-frame tracking of the fruit in the video.
+It uses observed data to optimally estimate the system state
+and aids tracking primarily by predicting and updating target
+trajectories. That is, the posteriori state vector Xm−1 of the
+frame m-1 is ﬁrst used to obtain the priori state vector X−
+m of
+the frame m by dot product it with the state transfer matrix F
+X−
+m = FXm−1.
+(7)
+The prior state estimation covariance P−
+m of the frame m can
+be represented as
+P−
+m = FPm−1FT + Qm−1
+(8)
+where Qm−1 represents the system noise covariance of the m-1
+frame.
+Updating means using the detection results of the current
+frame to correct the tracking state associated with it [40]. Here,
+it is necessary to ﬁrst calculate the average error um−1 between
+detection and tracking based on the detection result Zm−1 of
+m+1 frames
+um+1 = Zm+1 −HXm
+(9)
+where H denotes the transformation matrix, which is respon-
+sible for converting state variables into observation variables.
+To obtain the innovation covariance M, it is necessary to
+map the covariance matrix to the detection space using the
+transformation matrix H and incorporate the observation noise
+R
+M = HPmHT + R.
+(10)
+Based on (10), the Kalman gain can be expressed as
+Km+1 = PmHTM−1.
+(11)
+With the above steps, the state update is completed, and the
+posterior state estimation QXm+1 and covariance matrix Pm−1
+of the updated current state are represented as follows:
+Xm+1 = Xm + Km+1um+1
+(12)
+Pm+1 = (I −Km+1H)Pm
+(13)
+where I is the unit matrix.
+After the Kalman ﬁltering is accomplished [57], the sim-
+ilarity between the prediction and detection boxes is then
+calculated using our proposed DG-GM, and the matching is
+completed by the Hungarian algorithm. At this moment, an ID
+is assigned to each litchi target for association, and as long
+as the targets are consistently tracked, their assigned IDs will
+remain constant. After that, ﬁeld litchi counting needs to be
+combined with our proposed area counting strategy AreaC.
+B. DG-GM Association Metrics Design
+Due to the acquisition device’s susceptibility to shaking
+from angle changes and obstacle avoidance, capturing ﬁeld
+images presents additional challenges. Relying solely on the
+IoU metric can lead to issues with tracking initialization and
+trajectory interruptions [56], ultimately resulting in signiﬁcant
+accuracy errors. To address this issue, we propose DG-GM, a
+simple and efﬁcient association metric suitable for real-time
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+LU et al.: IoT-BASED PRECISION LITCHI TRACKING AND COUNTING METHOD USING GATED METRICS
+49089
+Algorithm 1 DG-GM Association Metrics
+Input: Bounding boxes of objects and detections, IoU
+between objects and detection boxes I[a*b], the gating
+metrics of DG-GM α(α=0.34)
+Output: DG-GM
+1: Initialize gating matrix T
+2: for i = 1; i < a ∗b; i + + do
+3:
+Obtain DIoU between the two boxes by (16)
+4:
+if DIoU < α then
+5:
+Obtain IoU between the two boxes by (14) and use
+it as the matching score
+6:
+else
+7:
+Obtain GIoU between the two boxes by (15) and use
+it as the matching score
+8:
+end if
+9:
+Update the gating matrix T based on matching score
+10: end for
+11: Compute the DG-GM by gating matrix T
+12: return the DG-GM
+scenarios. DG-GM improves association performance under
+conditions of occlusion and changes in motion speed, reducing
+fruit ID switching and repeated counting. Speciﬁcally, IoU is
+replaced with GIoU [41], which accounts for both the overlap
+and the smallest enclosing rectangle. The ﬁnal GIoU value
+is constrained between 0 and 1 and is obtained through the
+following steps.
+Calculate the IoU of the two boxes
+IoU(A, B) = A ∩B
+A ∪B
+(14)
+where A and B refer to detection box A and B, respectively.
+Utilize the calculated IoU to compute the GIoU metric
+GloU(A, B) = 1 −IoU(A, B) + |C| −|A ∪B|
+|C|
+(15)
+where C is the minimum bounding box that contains both A
+and B.
+Compared to IoU, GIoU provides a value even when bound-
+ing boxes do not overlap, offering a more accurate measure
+of similarity. This extends the matching range of litchi targets
+across frames, improving robustness against occlusion and
+velocity changes [42], [43]. For instance, during occlusion,
+the IoU between detection boxes D1 and D2 becomes zero
+[Fig. 8(a)], resulting in ID reassignment when using IoU-based
+tracking. In contrast, GIoU preserves the relationship between
+the boxes, correctly associating them with the same fruit.
+In addition, we examine the unregulated expansion of the
+matching range, The tracker may erroneously assign the same
+ID to different objects, resulting in an ampliﬁcation of ID drift.
+As shown in Fig. 8(b), When the yellow detection box that
+contains the litchi is occluded at frame t, and if there are no
+constraints on the matching range, the ID of D3 will shift to
+D4 after 20 frames. Further, we propose association metric
+called DG-GM that incorporates a gating mechanism. The
+DIoU, which exhibits greater sensitivity to centroid distance,
+is initially employed as a gating control mechanism to restrain
+the unregulated expansion of the matching range [44]. The
+DIoU value is also limited in the range of 0 to 1 and it is
+calculated as
+DloU(A, B) = IoU(A, B) −ρ2(A, B)
+c2
+(16)
+where ρ2 represents the Euclidean distance between the two
+boxes, and c represents the diagonal length of the minimum
+bounding box.
+During the DG-GM similarity calculation, if the DIoU falls
+below the speciﬁed threshold value, indicating a signiﬁcant
+separation between the two boxes, the IoU will be reintroduced
+to minimize the misjudgment of identical objects beyond the
+expanded matching range. Otherwise, the GIoU will be used
+for calculation. The DG-GM association metrics algorithm is
+shown in Algorithm 1.
+After using DIoU for distance limitation, two litchi that
+are too far apart are no longer recognized as litchi with the
+same ID when the matching range is extended [as shown
+in Fig. 8(b)]. This approach ensures robustness in handling
+occlusion and nonlinear motion scenarios, including velocity
+changes, while effectively reducing ID drift and confusion,
+which is extremely critical for accurate litchi counting in large
+scenes.
+C. Area Counting Strategic Develop
+In general, litchi counting can be accomplished by tracking
+unique IDs. However, due to the large size of litchi trees and
+the limitations of video capture, dynamic adjustment of the
+FOV becomes necessary, leading to more complex scenarios.
+Methods such as cross-line or full-area counting may result in
+signiﬁcant undercounting or double counting. After a thorough
+analysis, we identiﬁed the following situations.
+1) When shooting around a litchi tree, it is common for
+fruits located on one side of the tree to reemerge in the
+FOV at another angle, usually at the left and right edges
+of the video. As shown in Fig. 9(a) and (b), all the litchi
+in the yellow circle have been updated with their IDs
+after a few frames, which will result in repeat counting.
+2) Modify the shooting FOV upward or downward to
+ensure coverage of litchi located at varying heights. As
+shown in Fig. 9(e), litchi at the lower edge are in an
+unstable state and tend to switch IDs as the device moves
+up and down.
+3) During the camera movement, litchi may be in an
+unstable state due to occlusion and other conditions.
+As shown in Fig. 9(c) and (d), the litchi with IDs 179
+and 187 in the yellow circle in Fig. 9(c) are detectable,
+but they have been completely obscured in Fig. 9(d),
+resulting in a failure to cross the yellow counting line
+and causing a signiﬁcant number of missed counts.
+To alleviate the above problem, we developed a special-
+ized area counting strategy, named AreaC. As illustrated in
+Fig. 9(f), the counting region is centrally located within the
+video frame, covering 60% of the horizontal width and 95%
+of the vertical height. Litchi are counted based on their unique
+IDs as they enter this region, where their state is more stable,
+minimizing the frequency of ID switching. AreaC is designed
+to maximize the effective counting area while minimizing
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+49090
+IEEE INTERNET OF THINGS JOURNAL, VOL. 12, NO. 23, 1 DECEMBER 2025
+Fig. 9.
+Scenarios using different counting strategies. (a) and (b) 702-frame
+and 865-frame picture, respectively, obtained using the Full Count strategy.
+(c)–(e) 476-frame, the 629-frame, and the anomaly picture which litchi locate
+at the lower edge of the video, respectively. The yellow line is the counting
+line. (f) Example of using AreaC for counting, and the yellow area in the
+diagram is the counting area.
+repeated counts, thereby improving the overall efﬁciency of
+video analysis. This approach demonstrates superior adapt-
+ability to different scene variations and offers higher accuracy
+compared to the Cross Line and Full Count methods.
+VI. TEST EQUIPMENT AND RELATED CONFIGURATION
+The experiments in this article are mainly performed by
+servers and AI edge devices. The server side is mainly for
+model training and pretest simulation, with platform environ-
+ment: Windows 10, Intel Xeon Gold 5118 CPU, 128 GB
+RAM, NVIDIA GeForce RTX 2080(8 GB) GPU, CUDA11.3,
+PyTorch1.10.0, and Python3.8. The training parameters of
+LitchiDet are: the input size is 640×640, the learning rate
+is 0.01, the batch size is 8, the epoch is 200. Nvidia Jetson
+AGX Xavier is utilized on the edge device side, with the
+device environment: 8-core NVIDIA Carmel ARMv8.2 64-bit
+CPU, GPU with 32TOPS. TensorRT, a high-performance deep
+learning inference optimizer, which compared to pruning [52],
+distillation [53], and transfer learning [54], can reduce model
+inference time while maintaining high detection accuracy,
+is used for hardware-accelerated optimization, mainly for
+model testing and applications. It optimizes the network
+structure mainly through model compression and hardware
+mapping [45]. The LitchiDet detection model is quantized
+using TensorRT in order to construct a model in TRT format
+to speed up the inference of LitchiCount on edge platforms.
+The evaluation metrics in this article are mainly divided into
+two parts, as follows.
+1) Performance Metrics for detection: In order to scientif-
+ically evaluate the performance of litchi detection model in
+complex ﬁeld environments, we used the following metrics:
+map, model parameters, model size, and FPS. The precision
+(P), recall rate (R), and average precision (AP) used for
+computing the mean AP (mAP) are determined by (17), (18),
+and (19), respectively. The mAP is then determined by (20).
+TP, FP, and FN represent true positives, false positives, and
+false negatives, respectively. In this article, the category is
+denoted by C, where C has a value of 1
+P =
+TP
+TP + FP
+(17)
+R =
+TP
+TP + FN
+(18)
+AP(k) =
+ 1
+0
+P(R) dR
+(19)
+mAP = Q
+1 AP(k)
+Q
+.
+(20)
+2) Performance Metrics for counting: Mean absolute per-
+centage error (MAPE), mean error (ME), and FPS are used to
+evaluate the litchi counting performance in video sequences.
+Counting accuracy increases as the MAPE and ME decrease.
+The positive and negative of ME can additionally reﬂect
+the situations of missing counting and repeat counting. The
+manual counting is the average obtained by ﬁve different
+individuals manually counting from the video. MAPE, ME are
+calculated as
+MAPE = 1
+n
+n
+
+i=1
+
+Method Counti −Manual Counti
+Manual Counti
+ (21)
+ME = 1
+n
+n
+
+i=1
+Method Counti −Manual Counti. (22)
+VII. EXPERIMENTAL RESULTS
+A. Litchi Detection Model Experiments
+In this section, we ﬁrst introduce the process of network
+optimization based on visual interpretability methods, and then
+conduct relevant evaluations of the detection model.
+1) Grad-CAM++-Based
+Model
+Optimization
+Process:
+Here, Grad-CAM++ is applied to the detection model to gen-
+erate heat maps, enabling thorough analysis and interpretation
+of the inﬂuential feature regions on the model’s prediction
+results. This analysis serves as the foundation for deriving
+performance improvement strategies. As shown in Fig. 10, the
+red and blue dots indicate that they can activate and inhibit
+decision outcomes. We ﬁrst generate maps for the 17th layer
+network of the detection model using Grad-CAM++.
+Fig. 10(b) shows that without network improvements, the
+model focuses only on large litchi targets, indicating the need
+to enhance detection robustness for small targets. Therefore,
+we designed a new detection scale with a small target detection
+layer. To address this issue, we designed a small target
+detection layer. As shown in Fig. 10(c), this layer improves
+attention to small litchi, but occluded litchi remain challeng-
+ing, likely due to the network’s limited feature extraction
+under extreme occlusion. To further address this issue, we
+introduced the ELANB module. As shown in Fig. 10(d),
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+LU et al.: IoT-BASED PRECISION LITCHI TRACKING AND COUNTING METHOD USING GATED METRICS
+49091
+TABLE I
+ABLATION STUDY OF DETECTION ALGORITHM
+Fig. 10.
+(a) Heat map of the LitchiDet improvement process. (b) Original
+detection model, where the attention is primarily on large litchi targets, leading
+to missed small and occluded fruits. (c) Heat map after incorporating a small
+object detection layer, improving the focus on small litchi but still struggling
+with occlusions. (d) Effect of adding the ELANB module, which enhances
+gradient ﬂow and enables more comprehensive feature extraction, though
+some irrelevant areas still receive attention. (e) Impact of the DFC-C3Ghost
+module, which reﬁnes attention by suppressing background noise and further
+strengthening small-object detection.
+the improved network focuses on both large and small litchi
+targets under various occlusion scenarios, while also capturing
+richer features from dispersed areas like branches, indicat-
+ing that ELANB enhances feature extraction. However, the
+increased attention to irrelevant objects raises the risk of
+false detections. To mitigate this, we added the DFC-C3Ghost
+attention module, which, as shown in Fig. 10(e), reﬁnes the
+network’s focus on litchi regions and enhances multiscale
+litchi detection. The combination of all three improvements
+signiﬁcantly boosts prediction accuracy, the above image
+visualization results clearly explain how each improvement
+branch affects the network’s decision-making on litchi, which
+effectively enhances the interpretability and performance of
+LitchiDet.
+2) Ablation Experiment: To validate the effect of each
+improved branch on the LitchiDet, we conducted ablation
+experiments on our litchi image dataset. From Table I, we
+observe that the introduction of the small target layer substan-
+tially improves the detection model performance. The mAP is
+also improved by 5.42% and 5.11% with the introduction of
+ELANB and DFC-C3ghost module, respectively. Although the
+improved model FPS slightly decreases, the mAP is signiﬁ-
+cantly improved by 5.97% and the model size is compressed
+by 33.56%. The above proves that the improved LitchiDet can
+realize high-precision and real-time detection of litchi in large
+scenarios.
+TABLE II
+EFFECT COMPARISON OF TENSORRT ON PERFORMANCE AND SPEED
+TABLE III
+PERFORMANCE COMPARISON OF DIFFERENT OBJECT DETECTION
+MODELS
+3) TensorRT
+Acceleration
+Comparison
+Experiment: To
+better fulﬁll the real-time requirements, we adopt the TensorRT
+technique to improve the edge inference speed of the model.
+Next, we conducted a comparison experiment. From Table II,
+it can be clearly seen that after the TensorRT optimization,
+the model detection accuracy loss is very small, only 0.25%,
+and the image detection and video counting FPS improvement
+is signiﬁcant, about 50.29% and 29.69%. This indicates
+that TensorRT is signiﬁcantly useful for LitchiDet, both in
+maintaining the litchi detection accuracy in dense scenarios
+and in increasing the operation speed of edge devices with
+limited storage space and computational power.
+4) Performance Comparison With Other Detection Models:
+To further validate the efﬁciency of the LitchiDet, we
+conducted performance comparison experiments on Faster
+R-CNN,
+Nanodet
+[47],
+YOLOv6
+[48],
+YOLOv7
+[38],
+YOLOv8 (As shown in Table III). In terms of detection
+accuracy, LitchiDet is 118.91% and 122.13% higher than
+Faster R-CNN and Nanodet and surpasses the above yolo
+series, in addition, the running speed is also superior to Faster
+R-CNN and yolo series. The above experiments demonstrate
+that our proposed LitchiDet is superior to several other models
+in terms of both performance and speed and enables real-time
+and efﬁcient recognition of litchi in dense ﬁeld scenarios.
+5) Performance Comparison of Image Detection After
+Improvement: To verify the detection model’s improvement,
+we conducted comparison experiments on litchi images.
+As shown in Fig. 11, LitchiDet detects more small litchi
+targets and better distinguishes overlapping litchi in dense
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+49092
+IEEE INTERNET OF THINGS JOURNAL, VOL. 12, NO. 23, 1 DECEMBER 2025
+Fig. 11.
+Detection results of LitchiDet(a) The original model misses small
+litchi and fails to separate overlapping fruits. (b) Improved model detects small
+targets, resolves overlaps, and reduces false positives by leveraging multi-scale
+features, attention mechanisms, and enhanced gradient ﬂow.
+Fig. 12.
+Examples of keyframe groups that demonstrate performance in the
+presence of occlusion. The fruits in Case 1 and Case 2 experienced occlusion
+during the course of the process, yet their respective IDs remained unchanged.
+scenes, indicating the improved method signiﬁcantly enhances
+detection accuracy.
+B. Litchi Counting Experiments
+In this section, we perform enhancements to the counting
+model and evaluate its performance based on the litchi video
+dataset.
+1) Performance Comparison of Different Metrics and
+Gating Parameters on Counting: To validate the applicability
+of the DG-GM metric, two experiments were conducted. The
+ﬁrst compared the performance of various metrics without gat-
+ing, while the second focused on different gating parameters.
+In the ﬁrst experiment, IoU, DIoU, CIoU, EIoU, and GIoU
+were sequentially integrated into the model as association
+metrics, followed by counting. Results in Table IV show
+frequent repeated counting with IoU, while GIoU provided
+more accurate results. Other methods generally produced
+lower counts. All approaches improved continuous tracking
+of litchi occluded by leaves and fruits compared to IoU
+matching. However, lower counts were attributed to variation
+in association metrics, leading to an expanded matching range
+and ID drift between fruits.
+Further, in order to select the most suitable gating parameter
+values to control the matching range, we conducted relevant
+Fig. 13.
+Examples of keyframe groups that demonstrate performance in the
+presence of velocity changes. Where DG-GM denotes the improved effect.
+In Case1, the fruit with ID 137 experienced ID drift, and after improvement,
+the fruit IDs in the two frames were 145 and 149, and no drift occurred. In
+Case2, the fruit with ID 126 experienced ID drift, and after improvement, no
+drift occurred.
+Fig. 14.
+Performance comparison between DG-GM and FastReID.
+(a) Comparison of both with the MAPE of the model using IoU before the
+improvement. (b) Correlation coefﬁcient R2 between the counting results of
+the algorithms and the actual results for both.
+counting comparison experiments. We selected ten keyframe
+groups for additional comparison, ﬁve of which are to reﬂect
+the tracking performance during occlusion, and the other ﬁve
+aim to assess the ability to mitigate ID drift. When the
+keyframe groups yield positive results, the value increases
+by 1. Table V demonstrates the counting performance for
+different gating values. Figs. 12 and 13 show examples
+of two types of keyframe groups. As shown in Table V,
+with a gating parameter of 0.34, the keyframe groups all
+showed a better ability to overcome occlusion and ID drift,
+and the MAPE was also the lowest. In other words, the
+DG-GM with this parameter achieves a better balance between
+continuous tracking ability [58] and addressing the issue of ID
+drifting when dealing with occlusions, thereby reducing repeat
+counting.
+2) Experimental Validation Method Based on Important
+Features: Additionally, we conducted experiments by inte-
+grating the reidentiﬁcation technique FastReID [49], which
+allows cross-frame association using appearance information
+as their similarity. This experiment
+aimed to compare
+FastReID with DG-GM and IoU to determine the most effec-
+tive improvement approach using different important features.
+As shown in Fig. 14(a), the introduction of FastReID performs
+similarly to IoU and does not signiﬁcantly improve the model.
+In contrast, the DG-GM metric outperforms FastReID in
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+LU et al.: IoT-BASED PRECISION LITCHI TRACKING AND COUNTING METHOD USING GATED METRICS
+49093
+Fig. 15.
+Performance under fast camera movement or shaking when
+combined with FastReID. (a)–(h) denote the video tracking trajectory within
+a span of 40 frames.
+TABLE IV
+PERFORMANCE COMPARISON OF DIFFERENT SIMILARITY METRICS
+TABLE V
+PERFORMANCE COMPARISON OF DIFFERENT THRESHOLD FOR DG-GM
+counting accuracy. Fig. 15 illustrates that the litchi with the
+initial ID of 1023 still experienced ID switching (a total of
+7 ID switches occurred in 40 frames) during camera shake
+and fast movement, which is a key factor leading to repeated
+counting. Based on this analysis, it is concluded that DG-
+GM signiﬁcantly contributes to data association decisions and
+proves to be a more effective solution for litchi video counting.
+3) Performance
+Comparison
+of
+Different
+Counting
+Strategies and Models: In this experiment, the tracking input
+was standardized using the detection results from LitchiDet,
+with DG-GM employed as the uniﬁed association metric.
+The counting strategies considered were Cross Line, Full
+Count, and AreaC. The experimental results, as shown in
+Table VI, indicate that the MAPE values were higher for both
+the Cross Line and Full Count strategies. The Cross Line
+strategy yielded a higher MAPE due to a signiﬁcant number
+of missed counts, while the Full Count strategy resulted in
+elevated MAPE values due to repeated counting. In contrast,
+the AreaC strategy achieved a balance between missed and
+repeated counts, effectively mitigating the limitations inherent
+to video capture.
+Fig. 16.
+Comparison of tracking robustness under occlusion. First row:
+counting with LitchiCount. Second row: counting with DeepSort.
+Fig. 17.
+Comparison of tracking robustness under camera’s speed change
+or shaking. First row: counting with LitchiCount. Second row: counting with
+DeepSort.
+To validate the effectiveness of our method in real-time
+litchi counting under ﬁeld conditions, we compared it with a
+classical fruit counting method [50]. The experimental setup
+remained consistent with previous tests. Using DeepSORT and
+Cross Line [51], the MAPE was 49.79%, which decreased to
+46.95% with the AreaC strategy. However, the performance
+remained suboptimal. Our method achieved a signiﬁcantly
+lower MAPE and an eight-fold increase in frame rate.
+Figs. 16 and 17 demonstrate improved robustness in tracking,
+particularly under conditions of occlusion and camera motion,
+where the DeepSORT-based method exhibited frequent ID
+switching. Consequently, our method outperformed in both
+accuracy and speed.
+VIII. CONCLUSION
+In this article, we proposed a low-repetitive and reli-
+able video counting method based on gating metrics for
+litchi, called LitchiCount. It is the ﬁrst attempt to perform
+fast counting work from multiple sides of the litchi tree.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+49094
+IEEE INTERNET OF THINGS JOURNAL, VOL. 12, NO. 23, 1 DECEMBER 2025
+TABLE VI
+PERFORMANCE COMPARISON OF DIFFERENT COUNTING
+STRATEGIES AND MODELS
+We develop it, which contains a detection model LitchiDet
+and a tracking and counting module, oriented by Grad-
+CAM++ and the experimental validation method based on
+important features. First, LitchiDet which combines a small
+target detection layer, DFC-C3Ghost, ELANB was proposed.
+LitchiDet can capture the global information of litchi in
+complex backgrounds, obtain rich gradient ﬂow information,
+and then improve the robustness of litchi small targets in
+scenes with occlusions and overlapping. Second, we propose a
+tracking and counting module containing an association metric
+based on a gating mechanism DG-GM and an area counting
+strategy AreaC. Speciﬁcally, DG-GM has the capability to
+improve the tracking association accuracy and adaptability
+to velocity variations of litchi under occluded conditions,
+while AreaC can address the limitations of video acquisition,
+and ﬁnally jointly alleviate the issue of missed counting and
+repeat counting. Finally, To further address the computational
+constraints of IoT edge devices, we deployed LitchiCount on
+the Jetson AGX Xavier platform and leveraged TensorRT for
+hardware acceleration. The experimental results demonstrate
+that LitchiCount achieves a MAPE of 3.29%, signiﬁcantly out-
+performing DeepSort-based methods in counting performance.
+Although the proposed method enables low-repetitive and
+rapid litchi video counting in the ﬁeld, certain limitations
+and areas for improvement remain. The primary challenges
+are as follows: First, while the method is highly effective
+for short-term occlusions, it still struggles with long-term
+occlusion scenarios. Therefore, we plan to further enhance the
+continuous tracking capability of LitchiCount to handle long-
+term occlusions and cases where fruits reappear after leaving
+the frame. Second, when capturing litchi trees surrounded by
+sparse branches and leaves, fruits on the opposite side may
+frequently enter the camera’s FOV, leading to instances of
+repeat counting. Consequently, we will continue to explore
+and incorporate depth information in future work to improve
+the accuracy of litchi identiﬁcation and counting at varying
+distances, thereby reducing the occurrence of repeat counting.
+REFERENCES
+[1] F. Gao et al., “A novel apple fruit detection and counting methodology
+based on deep learning and trunk tracking in modern orchard,” Comput.
+Electron. Agricult., vol. 197, Jun. 2022, Art. no. 107000.
+[2] S. Bargoti and J. Underwood, “Deep fruit detection in orchards,” in
+Proc. IEEE Int. Conf. Robot. Autom. (ICRA), 2017, pp. 3626–3633.
+[3] U. Bhattarai and M. Karkee, “A weakly-supervised approach for
+ﬂower/fruit counting in apple orchards,” Comput. Ind., vol. 138, Jun.
+2022, Art. no. 103635.
+[4] S. Madec et al., “Ear density estimation from high resolution RGB
+imagery using deep learning technique,” Agricult. Forest Meteorol.,
+vol. 264, pp. 225–234, Jan. 2019.
+[5] Y. Liu, J. Wang, J. Li, S. Niu, and H. Song, “Machine learning for the
+detection and identiﬁcation of Internet of Things devices: A survey,”
+IEEE Internet Things J., vol. 9, no. 1, pp. 298–320, Jan. 2022.
+[6] L. Porzi, M. Hoﬁnger, I. Ruiz, J. Serrat, S. R. Bulo, and P. Kontschieder,
+“Learning multi-object tracking and segmentation from automatic anno-
+tations,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit., 2020,
+pp. 6846–6855.
+[7] X. Chang, H. Pan, W. Sun, and H. Gao, “YolTrack: Multitask learning
+based real-time multiobject tracking and segmentation for autonomous
+vehicles,” IEEE Trans. Neural Netw. Learn. Syst., vol. 32, no. 12,
+pp. 5323–5333, Dec. 2021.
+[8] W. Liu et al., “SSD: Single shot multibox detector,” in Proc. 14th Eur.
+Conf. Comput. Vis. ECCV, 2016, pp. 21–37.
+[9] M. Hnewa and H. Radha, “Integrated multiscale domain adaptive
+YOLO,” IEEE Trans. Image Process., vol. 32, pp. 1857–1867, 2023.
+[10] C. Liang et al., “A visual detection method for nighttime litchi fruits
+and fruiting stems,” Comput. Electron. Agricult., vol. 169, Feb. 2020,
+Art. no. 105192.
+[11] L. Cui et al., “Context-aware block net for small object detection,” IEEE
+Trans. Cybern., vol. 52, no. 4, pp. 2300–2313, Apr. 2022.
+[12] L. Wang, Y. Zhao, S. Liu, Y. Li, S. Chen, and Y. Lan, “Precision detec-
+tion of dense plums in orchards using the improved YOLOV4 model,”
+Front. Plant Sci., vol. 13, Mar. 2022, Art. no. 839269.
+[13] S. Ren, K. He, R. Girshick, and J. Sun, “Faster R-CNN: Towards real-
+time object detection with region proposal networks,” in Proc. Adv.
+Neural Inf. Process. Syst., vol. 28, 2015, pp. 91–99.
+[14] J. Lu et al., “Citrus green fruit detection via improved feature network
+extraction,” Front. Plant Sci., vol. 13, Nov. 2022, Art. no. 946154.
+[15] K. He, G. Gkioxari, P. Dollár, and R. Girshick, “Mask R-CNN,” in Proc.
+IEEE Int. Conf. Comput. Vis., 2017, pp. 2961–2969.
+[16] A. Koirala, K. Walsh, Z. Wang, and C. McCarthy, “Deep learning for
+real-time fruit detection and orchard fruit load estimation: Benchmarking
+of mangoyolo’,” Precis. Agricult., vol. 20, pp. 1107–1135, Feb. 2019.
+[17] L. Wang, Y. Zhao, Z. Xiong, S. Wang, Y. Li, and Y. Lan, “Fast
+and precise detection of litchi fruits for yield estimation based on the
+improved YOLOV5 model,” Front. Plant Sci., vol. 13, Aug. 2022, Art.
+no. 965425.
+[18] V. Méndez et al., “In-ﬁeld estimation of orange number and size by 3D
+laser scanning,” Agronomy, vol. 9, no. 12, p. 885, 2019.
+[19] H. Gan, W. S. Lee, V. Alchanatis, and A. Abd-Elrahman, “Active thermal
+imaging for immature citrus fruit detection,” Biosyst. Eng., vol. 198,
+pp. 291–303, Oct. 2020.
+[20] X. Liu et al., “Robust fruit counting: Combining deep learning, tracking,
+and structure from motion,” in Proc. IEEE/RSJ Int. Conf. Intell. Robots
+Syst. (IROS), 2018, pp. 1045–1052.
+[21] X. Liu et al., “Monocular camera based fruit counting and mapping
+with semantic data association,” IEEE Robot. Autom. Lett., vol. 4, no. 3,
+pp. 2296–2303, Jul. 2019.
+[22] L. Shen et al., “Real-time tracking and counting of grape clusters in
+the ﬁeld based on channel pruning with YOLOV5S,” Comput. Electron.
+Agricult., vol. 206, Mar. 2023, Art. no. 107662.
+[23] S. Ge, C. Zhang, S. Li, D. Zeng, and D. Tao, “Cascaded correlation
+reﬁnement for robust deep tracking,” IEEE Trans. Neural Netw. Learn.
+Syst., vol. 32, no. 3, pp. 1276–1288, Mar. 2021.
+[24] X. Xue, Y. Li, X. Yin, C. Shang, T. Peng, and Q. Shen, “Semantic-aware
+real-time correlation tracking framework for UAV videos,” IEEE Trans.
+Cybern., vol. 52, no. 4, pp. 2418–2429, Apr. 2022.
+[25] C. Li, Z. Xiang, J. Tang, B. Luo, and F. Wang, “RGBT tracking via
+noise-robust cross-modal ranking,” IEEE Trans. Neural Netw. Learn.
+Syst., vol. 33, no. 9, pp. 5019–5031, Sep. 2022.
+[26] X. Kong and Z. Ge, “Deep PLS: A lightweight deep learning model
+for interpretable and efﬁcient data analytics,” IEEE Trans. Neural Netw.
+Learn. Syst., vol. 34, no. 11, pp. 8923–8937, Nov. 2023.
+[27] W. Dong et al., “Deep spatial–spectral joint-sparse prior encoding
+network for hyperspectral target detection,” IEEE Trans. Cybern., vol.
+54, no. 12, pp. 7780–7792, Dec. 2024.
+[28] C. Shorten and T. M. Khoshgoftaar, “A survey on image data augmen-
+tation for deep learning,” J. Big Data, vol. 6, no. 1, pp. 1–48, 2019.
+[29] Z. Qin, S. Zhou, L. Wang, J. Duan, G. Hua, and W. Tang, “MotionTrack:
+Learning robust short-term and long-term motions for multi-object
+tracking,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.,
+2023, pp. 17939–17948.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+LU et al.: IoT-BASED PRECISION LITCHI TRACKING AND COUNTING METHOD USING GATED METRICS
+49095
+[30] A. Chattopadhay, A. Sarkar, P. Howlader, and V. N. Balasubramanian,
+“Grad-cam++: Generalized gradient-based visual explanations for deep
+convolutional networks,” in Proc. IEEE Winter Conf. Appl. Comput. Vis.
+(WACV), 2018, pp. 839–847.
+[31] L. Jiao, D. Wang, Y. Bai, P. Chen, and F. Liu, “Deep learning in visual
+tracking: A review,” IEEE Trans. Neural Netw. Learn. Syst., vol. 54, no.
+12, pp. 7780–7792, Dec. 2024.
+[32] Z. Sun, J. Chen, L. Chao, W. Ruan, and M. Mukherjee, “A survey of
+multiple pedestrian tracking based on tracking-by-detection framework,”
+IEEE Trans. Circuits Syst. Video Technol., vol. 31, no. 5, pp. 1819–1833,
+May 2021.
+[33] K. Han, Y. Wang, Q. Tian, J. Guo, C. Xu, and C. Xu, “GhostNet: More
+features from cheap operations,” in Proc. IEEE/CVF Conf. Comput. Vis.
+Pattern Recognit., 2020, pp. 1580–1589.
+[34] Z. Zhang, X. Lu, G. Cao, Y. Yang, L. Jiao, and F. Liu, “VIT-YOLO:
+Transformer-based YOLO for object detection,” in Proc. IEEE/CVF Int.
+Conf. Comput. Vis., 2021, pp. 2799–2808.
+[35] K. Han et al., “A survey on vision transformer,” IEEE Trans. Pattern
+Anal. Mach. Intell., vol. 45, no. 1, pp. 87–110, May 2022.
+[36] Y. Tang, K. Han, J. Guo, C. Xu, C. Xu, and Y. Wang, “GhostNetV2:
+Enhance cheap operation with long-range attention,” in Proc. Adv.
+Neural Inf. Process. Syst., vol. 35, 2022, pp. 9969–9982.
+[37] S. Yuan, Y. Wang, T. Liang, W. Jiang, S. Lin, and Z. Zhao, “Real-time
+recognition and warning of mask wearing based on improved YOLOV5
+R6. 1,” Int. J. Intell. Syst., vol. 37, no. 11, pp. 9309–9338, 2022.
+[38] C.-Y. Wang, A. Bochkovskiy, and H.-Y. M. Liao, “YOLOV7: Trainable
+bag-of-freebies sets new state-of-the-art for real-time object detec-
+tors,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit., 2023,
+pp. 7464–7475.
+[39] Y. Zhang et al., “ByteTrack: Multi-object tracking by associating every
+detection box,” in Proc. Eur. Conf. Comput. Vis., 2022, pp. 1–21.
+[40] J. Villacrés, M. Viscaino, J. Delpiano, S. Vougioukas, and F. A. Cheein,
+“Apple orchard production estimation using deep learning strategies:
+A comparison of tracking-by-detection algorithms,” Comput. Electron.
+Agricult., vol. 204, Jan. 2023, Art. no. 107513.
+[41] H. Rezatoﬁghi, N. Tsoi, J. Gwak, A. Sadeghian, I. Reid, and S. Savarese,
+“Generalized intersection over union: A metric and a loss for bound-
+ing box regression,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern
+Recognit., 2019, pp. 658–666.
+[42] F. Yang, S. Odashima, S. Masui, and S. Jiang, “Hard to track objects with
+irregular motions and similar appearances? Make it easier by buffering
+the matching space,” in Proc. IEEE/CVF Winter Conf. Appl. Comput.
+Vis., 2023, pp. 4799–4808.
+[43] W. Wang, K. Zhang, M. Lv, and J. Wang, “Hierarchical spatiotempo-
+ral context-aware correlation ﬁlters for visual tracking,” IEEE Trans.
+Cybern., vol. 51, no. 12, pp. 6066–6079, Dec. 2021.
+[44] Z. Zheng, P. Wang, W. Liu, J. Li, R. Ye, and D. Ren, “Distance-IoU
+loss: Faster and better learning for bounding box regression,” in Proc.
+AAAI Conf. Artif. Intell., vol. 34, 2020, pp. 12993–13000.
+[45] Y. Lan, S. Lin, H. Du, Y. Guo, and X. Deng, “Real-time UAV patrol
+technology in orchard based on the swin-tyolox lightweight model,”
+Remote Sens., vol. 14, no. 22, p. 5806, 2022.
+[46] X. Zhou, X. Xu, W. Liang, Z. Zeng, and Z. Yan, “Deep-learning-
+enhanced multitarget detection for end–edge–cloud surveillance in smart
+IoT,” IEEE Internet Things J., vol. 8, no. 16, pp. 12588–12596, Aug.
+2021.
+[47] E. Arani, S. Gowda, R. Mukherjee, O. Magdy, S. Kathiresan, and
+B. Zonooz, “A comprehensive study of real-time object detection
+networks across multiple domains: A survey,” 2023, arXiv:2208.10895.
+[48] C. Li et al., “YOLOV6: A single-stage object detection framework for
+industrial applications,” 2022, arXiv:2209.02976.
+[49] L. He, X. Liao, W. Liu, X. Liu, P. Cheng, and T. Mei, “FastREID:
+A
+pytorch
+toolbox
+for
+general
+instance
+re-identiﬁcation,”
+2020,
+arXiv:2006.02631.
+[50] S. Lyu, R. Li, Y. Zhao, Z. Li, R. Fan, and S. Liu, “Green citrus detection
+and counting in orchards based on YOLOV5-CS and AI edge system,”
+Sensors, vol. 22, no. 2, p. 576, 2022.
+[51] N. Wojke, A. Bewley, and D. Paulus, “Simple online and realtime
+tracking with a deep association metric,” in Proc. IEEE Int. Conf. Image
+Process. (ICIP), 2017, pp. 3645–3649.
+[52] Y. Li, K. Adamczewski, W. Li, S. Gu, R. Timofte, and L. Van Gool,
+“Revisiting random channel pruning for neural network compression,”
+in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit., 2022,
+pp. 191–201.
+[53] Z. Li et al., “When object detection meets knowledge distillation:
+A survey,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 45, no. 8,
+pp. 10555–10579, Aug. 2023.
+[54] S. Niu, Y. Liu, J. Wang, and H. Song, “A decade survey of transfer learn-
+ing (2010–2020),” IEEE Trans. Artif. Intell., vol. 1, no. 2, pp. 151–166,
+Oct. 2020.
+[55] Y. Wu, H. Sheng, Y. Zhang, S. Wang, Z. Xiong and W. Ke, “Hybrid
+motion model for multiple object tracking in mobile devices,” IEEE
+Internet Things J., vol. 10, no. 6, pp. 4735–4748, Mar. 2023.
+[56] Y. Zhao, H. Liu, Q. Wang, and C. Li, “A multi-object tracking
+method using IoU and color fusion model,” in Proc. 9th Int. Conf.
+Signal Image Process. (ICSIP), Nanjing, China, 2024, pp. 747–751, doi:
+10.1109/ICSIP61881.2024.10671489.
+[57] Z. Luo, D. Shi, X. Shen, J. Ji and W.-S. Gan, “GFANC-Kalman:
+Generative ﬁxed-ﬁlter active noise control with CNN-Kalman ﬁltering,”
+IEEE Signal Process. Lett., vol. 31, pp. 276–280, 2024.
+[58] A. Balachandran, A. Acharya, S. Chomal, and R. Tharmarasa,
+“Multipath-assisted multitarget tracking with better track formation,”
+IEEE Trans. Aerosp. Electron. Syst., vol. 60, no. 3, pp. 3021–3037, Jun.
+2024.
+[59] L. D. V. Escamilla et al., “Maturity recognition and fruit counting for
+sweet peppers in greenhouses using deep learning neural networks,”
+Agriculture, vol. 14, no. 3, p. 331, 2024.
+[60] Y. Feng et al., “Approach of dynamic tracking and counting for obscured
+citrus in smart orchard based on machine vision,” Appl. Sci., vol. 14,
+no. 3, p. 1136, 2023, doi: 10.3390/app14031136.
+Jianqiang Lu (Senior Member, IEEE) received the
+B.S. degree in electronic information engineering
+from Jinan University, Guangzhou, China, in 2003,
+and the M.S. degree in pattern recognition and
+intelligent systems and the Ph.D. degree in agri-
+cultural electriﬁcation and automation from South
+China Agricultural University, Guangzhou, in 2011
+and 2017, respectively.
+He has long been engaged in scientiﬁc research in
+the ﬁelds of agricultural artiﬁcial intelligence, low-
+altitude remote sensing imagery, and collaborative
+control of unmanned vehicles. He has achieved a series of scientiﬁc results
+in intelligent monitoring, model construction, and collaborative control in
+China’s agriculture, forestry, animal husbandry, and ﬁshery sectors. These
+achievements have had a certain impact on research in related ﬁelds in terms
+of theory and methodology.
+Dr. Lu is a member of the Big Data Committee of the Chinese Society of
+Agricultural Engineering, a consulting expert in digital agriculture and rural
+affairs for Guangdong Province, a rural science and technology envoy for
+Guangzhou and Heyuan cities, and an Expert in the think tank of the Shaoguan
+Association for Science and Technology.
+Guoqing Bao received the bachelor’s degree in
+Internet of Things engineering from Gannan Medical
+University, Ganzhou, China, in 2023. He is cur-
+rently pursuing the master’s degree in engineering
+with the School of Electronic Engineering (Artiﬁcial
+Intelligence), South China Agricultural University,
+Guangzhou, China.
+He has been focusing on research in the ﬁelds of
+agricultural artiﬁcial intelligence, machine learning,
+and computer vision, particularly on the appli-
+cation of deep learning technologies in precision
+agriculture operations.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 
+
+49096
+IEEE INTERNET OF THINGS JOURNAL, VOL. 12, NO. 23, 1 DECEMBER 2025
+Xiaoling Deng received the B.S. degree in electron-
+ics from Guangzhou University, Guangzhou, China,
+in 2001, and the M.S. and Ph.D. degrees from the
+School of Information Science and Technology, Sun
+Yat-sen University, Guangzhou, in 2014 and 2021,
+respectively.
+She is a Key Member of the International
+Joint Research Center for Precision Agriculture
+and Aviation Application Technology, Guangzhou,
+China, and has been a Visiting Scholar with Texas
+A&M University at College Station, College Station,
+TX, USA. She has led three National Natural Science Foundation projects, one
+National Key R&D Special Subproject, and several key projects in Guangdong
+Province and Guangzhou City. Her research focuses on computer vision, drone
+remote sensing, and intelligent edge technologies, with extensive experience
+in intelligent orchard monitoring, decision-making, and unmanned operations.
+Dr. Deng also serves as a guest editor for Remote Sensing and as a reviewer
+for various international journals, including Computers and Electronics in
+Agriculture.
+Xiongzhe Han received the Ph.D. degree in biosys-
+tems engineering from Seoul National University,
+Seoul, South Korea, in 2017.
+He then spent three years as a Postdoctoral
+Research Associate and an Assistant Research
+Scientist of Biological and Agricultural Engineering
+with Texas A&M University at College Station,
+College Station, TX, USA. He is currently an
+Associate Professor of Biosystems Engineering with
+Kangwon National University, Chuncheon, South
+Korea, and an Adjunct Professor of Agricultural
+and Biological Engineering with Mississippi State University, Starkville,
+MA, USA. He has published over 50 papers in leading international jour-
+nals and collaborates with institutions like China Agricultural University,
+Zhejiang University, and Mississippi State University. His work is supported
+by national agencies, including the Korean Research Foundation and the
+Rural Development Administration of South Korea. His research focuses
+on advanced technologies, such as automatic UAV spraying, autonomous
+agricultural vehicles, and hyperspectral imaging for farmland analysis.
+Yubin Lan received the bachelor’s degree in agri-
+cultural machinery engineering and the master’s
+and Doctoral degrees in agricultural machinery
+engineering from Jilin University of Technology
+(currently, Jilin University), Changchun, China, in
+1982, 1984, and 1989, respectively, and a Doctoral
+degree in agricultural engineering from Texas A&M
+University at College Station, College Station, TX,
+USA, in 1993.
+He is the Dean of the School of Agricultural
+Engineering and Food Science, Shandong University
+of Technology, Zibo, China, and the Dean of the School of Electronic
+Engineering (Artiﬁcial Intelligence), South China Agricultural University,
+Guangzhou, China. He is an expert in the ﬁeld of precision agriculture
+and aviation. He is mainly engaged in research in the ﬁeld of agricultural
+engineering, including aviation pesticide technology, remote sensing tech-
+nology, precision agriculture, grain harvesting machinery, grain processing
+and storage, instrument, and sensor technology development and research.
+He is advocating for the concept, technical route, and system of “precision
+agriculture aviation,” conducting research and application combining remote
+sensing and aviation pesticide application. His team leads the international
+innovation of key technologies and equipment for precision agriculture
+aviation, and has established the ﬁrst “ecological unmanned farm” in China.
+Dr. Lan is an Academician of the European Academy of Sciences, Arts
+and Humanities, a Foreign Academician of the Russian Academy of Natural
+Sciences, a Foreign Academician of the Georgian National Academy of
+Sciences, a Special Assistant to the President of Shandong University of
+Technology.
+Haiwei
+Wu
+received the bachelor’s degree in
+network
+engineering
+from
+Foshan
+University,
+Foshan, China, in 2021, and the master’s degree
+in
+engineering
+from
+the
+School
+of
+Electronic
+Engineering (Artiﬁcial Intelligence), South China
+Agricultural University, Guangzhou, China, in 2023.
+He has been focusing on research in the ﬁelds
+of agricultural artiﬁcial intelligence and computer
+vision, particularly on the application of object
+tracking and counting technology in real-world
+scenarios.
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:45:53 UTC from IEEE Xplore.  Restrictions apply. 

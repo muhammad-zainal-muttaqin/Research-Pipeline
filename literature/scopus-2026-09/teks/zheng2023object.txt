@@ -1,0 +1,1235 @@
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+Available online 30 August 2023
+1569-8432/© 2023 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY-NC-ND license (http://creativecommons.org/licenses/by-
+nc-nd/4.0/).
+Object-Detection from Multi-View remote sensing Images: A case study of 
+fruit and flower detection and counting on a central Florida 
+strawberry farm 
+Caiwang Zheng a,b,1, Tao Liu c,d,1,*, Amr Abd-Elrahman a,b, Vance M. Whitaker a, 
+Benjamin Wilkinson b 
+a Gulf Coast Research and Education Center, University of Florida, Wimauma, FL 33598, USA 
+b School of Forest, Fisheries, and Geomatics Sciences, Gainesville, FL 32603, USA 
+c College of Forest Resources and Environmental Science, Michigan Technological University, Houghton, MI 49931, USA 
+d Ecosystem Science Center, Michigan Technological University, Houghton, MI 49931, USA   
+A R T I C L E I N F O  
+Keywords: 
+Remote sensing 
+Deep learning 
+Strawberry fruit detection 
+A B S T R A C T  
+Object detection in remote sensing images is one of the most critical computer vision tasks for various earth 
+observation applications. Previous studies applied object detection models to orthomosaic images generated 
+from the SfM (Structure-from-Motion) analysis to perform object detection and counting. However, some small 
+objects that are occluded from the vertical view but observable in raw images from the oblique views cannot be 
+detected in the orthomosaic image, leading to an occlusion issue that cannot be resolved with the traditional 
+orthophoto-based approach. Taking strawberry detection as a case study, the objective of this study is to detect 
+small objects directly from multi-view raw images. Firstly, an object-detection model (Faster R-CNN in this 
+study) was applied to each raw image to identify strawberry fruit and flower objects. Each unique strawberry 
+object on the ground can be detected multiple times in the raw images because images have forward- and side 
+overlap. To find the unique objects from the step one detection results, an improved FaceNet model was proposed 
+to combine the image and position information to calculate the feature distance between those objects, and a 
+clustering algorithm was used to associate the cluster with each unique strawberry using the object distance 
+output from the FaceNet model, from which the final position and number of strawberry fruits and flowers were 
+obtained. Compared with the orthomosaic image alone, this approach using multi-view images effectively solved 
+the occlusion problem and improved overall recognition accuracy of strawberry flowers, unripe fruits, and ripe 
+fruits from 76.28% to 96.98%, 71.64% to 99.09%, and 69.81% to 97.17%, respectively, highlighting the po­
+tential of multi-view stereovision (MVS) in small object detection.   
+1. Introduction 
+Object detection has long been considered a common but challenging 
+task in remote sensing and computer vision as it requires locating objects 
+in a given image and classifying each object (Zou et al., 2019; Jiang 
+et al., 2022). Over the past decade, various remote sensing systems have 
+been developped for agricultural tasks, such as ground-based platforms, 
+low-altitude UAVs (Unmanned aerial vehicles), and multirobot systems 
+(integration of ground and aerial platforms) (Weiss et al., 2020; Ju et al., 
+2022). These platforms were adopted to collect high-quality and 
+redundant image data for agricultural robotics and high-throughput 
+phenotyping tasks (Fountas et al., 2020; Clemente et al., 2021). Object 
+detection is a fundamental and critical problem for these applications 
+(Wesner et al., 2021). 
+In recent years, deep learning has been widely used to address the 
+object detection problem with its powerful feature learning and 
+extraction capabilities for remote sensing applications (Osco et al., 
+2021; Han et al., 2022; Wosner et al., 2021; Zhou et al., 2022). The 
+mainstream object detectors can be divided into three categories: one- 
+stage, two-stage, and transformer-based detectors (Zaidi et al., 2022). 
+* Corresponding author. 
+E-mail address: taoliu@mtu.edu (T. Liu).   
+1 Caiwang Zheng and Tao Liu are equal contributors to this work and designated as co-first authors. 
+Contents lists available at ScienceDirect 
+International Journal of Applied Earth  
+Observation and Geoinformation 
+journal homepage: www.elsevier.com/locate/jag 
+https://doi.org/10.1016/j.jag.2023.103457 
+Received 2 February 2023; Received in revised form 18 April 2023; Accepted 10 August 2023   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+2
+One-stage detectors simplify detection as regression problems and 
+directly predict bounding box and class attribute based on the feature 
+map. YOLO (You only look once) (Shafiee et al., 2017), SSD (Single Shot 
+MultiBox Detector) (Liu et al., 2016), RetinaNet (Lin et al., 2017) and 
+EfficientDet (Tan et al., 2020) are representative one-stage object de­
+tectors. Two-stage detectors typically generate an arbitrary number of 
+region proposals on feature maps, which may contain objects of interest, 
+and then perform classification and bounding box refinement on the 
+region proposals to localize objects. Commonly used two-stage detectors 
+include Faster R-CNN (Girshick (2015)), Cascade-RCNN (Cai and Vas­
+concelos (2018)) and DetectoRS (Qiao et al., 2021), etc. 
+Transformers were initially used in the natural language processing 
+and have recently been introduced to computer vision tasks (Han et al., 
+2020). It relies on the self-attention mechanism which achieves global 
+receptive field and information exchange between image samples (Liu 
+et al., 2021). Some popular transformer-based detectors include DETR 
+(DEtection TRansformer) (Carion et al., 2020), ViDT (Vision and 
+Detection Transformers) (Song et al., 2021), and etc. Combined with 
+high-resolution remote sensing images with sufficient object details, 
+these deep learning algorithms have made considerable strides in small 
+object detection tasks and achieved promising results even in the face of 
+complex unstructured agricultural environments (Han et al., 2022; 
+Reedha et al., 2022; Parico and Ahamed (2021); Mostafa et al., 2021). 
+Here we take the strawberry farm application as an example. 
+Strawberry (Fragaria × ananassa) is one of the most popular berry fruits 
+in the world due to its attractive appearance, delicious taste, high 
+nutritional value, and wide production (Weng et al., 2020; Zheng et al., 
+2021). Since strawberry fruits are highly perishable and sensitive to the 
+environment (Savini et al., 2005), timely and effective monitoring of 
+fruit growth is vital for growers and marketers to determine optimal 
+strategies for strawberry harvesting, transportation, and marketing 
+(Abdel-Mawgoud et al., 2010; Zhou et al., 2020). Accurate forecast can 
+help reduce waste and avoid situations where overripe fruits are not 
+picked due to insufficient labor (Guthman 2017; Chen at al., 2019). 
+Deep learning has been widely studied and applied in autonomous ro­
+botic harvesting and yield prediction of strawberries (Koirala et al., 
+2019; Vasconez et al., 2020). 
+Many state-of-the-art frameworks, such as Faster R-CNN, SSD, and 
+Mask R-CNN, have been proven effective in various scenarios and 
+complex situations of strawberry detection, such as multi-fruit adhesion, 
+occlusion of stems and leaves, and changes in the light intensity of the 
+environment, especially changes caused by shadows. For example, Lin 
+and Chen (2018) compared the performance of R-CNN, Fast R-CNN, and 
+Faster R-CNN in identifying outdoor-field grown strawberry flowers of 
+various morphological characteristics, such as sheltered, concatenated, 
+non-carpel, shadowed, blazed, white/pink bud-shaped, and those in 
+blurred images. The average detection rate of the above three models 
+were 63.4%, 76.7% and 86.1%, respectively. Lamb and Chuah (2018) 
+implemented modifications to the SSD framework and network to ach­
+ieve optimal execution speed and detection rate, which can run quickly 
+on mobile low-power hardware for strawberry detection with an 
+average precision of 84%. Chen et al. (2019) used Faster R-CNN to detect 
+and count mature/immature strawberries and flowers for yield predic­
+tion from drone images taken from 2 m and 3 m heights. The mean 
+average precision (mAP) was 83% at 2 m and 72% at 3 m height for all 
+kinds of detected objects. 
+Yu et al. (2019) applied Mask R-CNN to generate mask images of ripe 
+strawberry fruits and presented a visual localization method to get the 
+strawberry picking points from these masks. The average detection 
+precision rate was 95.78% and the picking point error was within 1.2 
+mm, which is a valuable advancement for fruit picking robots. Zhou 
+et al. (2020) improved Faster R-CNN for greenhouse strawberry detec­
+tion and plumpness evaluation by using RestNet-50 model as the back­
+bone for feature extraction. Transfer learning was used to reduce the 
+number of samples required for the training process, reaching a fruit 
+extraction accuracy of about 86%. Wang et al. (2022) introduced a DSE- 
+YOLO (Detail- Semantics Enhancement You Only Look Once) model to 
+detect multi-stage strawberries. The average mAP (mean average pre­
+cision) and F1-score were 86.58% and 81.59%, respectively. 
+However, most of the studies mentioned above are based on the 
+orthomosaic or 2D planar image, which introduces a serious problem as 
+explained below. When using remote sensing images for fruit yield 
+prediction, the general idea is to process a series of raw images with 
+overlap into an orthomosaic image over the entire study area through 
+the Structure-from-Motion (SfM) photogrammetry analysis. The deep 
+neural networks are then applied on the orthomosaic image to detect, 
+evaluate, and count fruits and flowers. The orthomosaic image is 
+dominated by pixel information from one angle (usually the angle most 
+close to vertical direction) or contains a combination of pixel informa­
+tion from different images taken from different directions; therefore, 
+some strawberry objects that are occluded by leaves or blurred (due to 
+multiple image fusion) in the orthomosaic image could be clearly visible 
+in the oblique-angled raw images. As shown in Fig. 1, strawberries 
+invisible from the vertical observation pose (t) could be seen from 
+oblique angle shots (t-1, t + 1). Compared with two-dimensional images, 
+multi-view stereovision (MVS) may help find more strawberry fruits and 
+flowers through the analysis of overlapping images taken from multiple 
+perspectives The multi-view information has been shown to substan­
+tially improve landcover mapping accuracy compared to using only the 
+orthomosaic (Liu and Abd-Elrahman (2018a); Liu and Abd-Elrahman 
+(2018b); Liu et al., 2019), but there are yet no studies that have 
+attempted to use multi-view information for small object detection and 
+counting tasks. This study proposes a new method for detecting and 
+counting strawberry fruits and flowers directly from raw images based 
+on deep learning and SfM technology. Initially, Faster R-CNN was 
+applied on each raw image to detect fruits and flowers. An improved 
+FaceNet model, and Threshold and DBSCAN clustering algorithms were 
+then used to cluster duplicate strawberry objects obtained from raw 
+images to get the final position and count of strawberry fruits and 
+flowers. 
+2. Methodology 
+2.1. Experiment workflow 
+An outline of the experiment workflow is illustrated as Fig. 2. To 
+evaluate the performance of our proposed approach against the con­
+ventional approach, two experiments were carried out for comparison: 
+1) Benchmark approach. Faster R-CNN was used to identify unripe 
+fruits, ripe fruits, and flowers, and then make a count from the ortho­
+masic image; 2) Proposed approach. Faster R-CNN was first applied on 
+each individual raw image to obtain the location information and image 
+patches of strawberry fruits and flowers; then the duplicate strawberries 
+detected from multi-view images were projected onto the ground using a 
+photogrammetric model to form object (i.e., fruits or flowers) clusters; 
+this is followed by applying clustering algorithms to find the final po­
+sition and number of unique strawberry fruits and flowers. 
+2.2. Image acquisition 
+Images used in this study were collected during the 2017–2018 
+strawberry growing season at a strawberry farm (located in 27◦45′40″N, 
+82◦13′40″W) at the University of Florida’s Gulf Coast Research and 
+Education Center (GCREC) in Wimauma, FL, as shown in Fig. 3(a). The 
+strawberry field included six adjacent 100 m-long raised beds, which 
+were cultivated according to commercial standards. A Vegetation Mo­
+bile Mapping System (Fig. 3(b)) introduced by Abd-Elrahman et al. 
+(2011, Abd-Elrahman et al. (2016)) was utilized to capture strawberry 
+RGB images. The imaging sensor in this study was a Nikon D-300 
+consumer-grade digital camera. The images taken by this camera were 
+synchronized to a Global Positioning System (GPS) receiver’s time based 
+on a custom-built electronic board. The exposure position of each image 
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+3
+was determined from Global Navigation Satellite System (GNSS)-tra­
+jectory acquired by a dual-frequency Topcon HiperLite Plus GNSS 
+receiver. This system was towed by a tractor and was placed approxi­
+mately 3.5 m above the ground. The platform acquired images with 
+more than 70% overlap and 60% sidelap. Several reliable ground control 
+points (GCPs) with centimeter-level accuracy (~2cm) were evenly 
+established and distributed in the field as described by Guan et al. 
+(2020) using a total station and GNSS receivers. 
+2.3. Orthomosaic and orthorectified images construction from SfM 
+analysis 
+SfM, combined with photogrammetry, is a widely used technology 
+that can be used to estimate the three-dimensional structure of an object 
+or scene based on a series of sequential overlapping two-dimensional 
+images (Fonstad et al., 2013). The GCPs established in the field were 
+visible in the image and used for the SfM image processing. The process 
+starts with the detection of tie points, image coordinate locations of 
+features identifiable in multiple images. This is usually achieved using a 
+proprietary feature-based image matching algorithm similar to the scale 
+invariant feature transform (SIFT) method (Lowe (1987)). Then, a 
+bundle-block adjustment (Triggs et al., 2000) is performed using these 
+tie points and GCPs to compute the exterior orientation parameters 
+(position and angular orientation) of each camera exposure. Next, a 
+dense 3D point cloud is created over the whole scene which may be used 
+to derive a 3D terrain surface raster or mesh. Using the estimated camera 
+poses and parameters along with the 3D model, pixel information for a 
+synthesized orthomosaic covering the entire area is computed, simu­
+lating orthographic projection at some nominal scale and thus removing 
+image-displacing effects of camera tilt and terrain relief. In this study, an 
+RGB orthomosaic image with spatial resolution of 1 mm was created and 
+used for the strawberry detection task, shown in Fig. 2. This procedure 
+was implemented using the Agisoft Metashape software. 
+For a detected strawberry object in the raw image, the relationship 
+between the pixel coordinates of the center point position and its real 
+geographic coordinates is shown as Equation (1), which is derived from 
+collinearity equations and has been used in Liu and Abd-Elrahman 
+(2018a); Liu and Abd-Elrahman (2018b) for multi-view object extrac­
+tion for mapping task. Based on Eq (1), the calculation of the real-world 
+coordinates of a given point can theoretically be achieved by the multi- 
+image ray intersection method with known internal and exterior ele­
+ments of multiple cameras as observations (Zhang and Elaksher (2012); 
+Yang et al., 2021). In our study, we used the Agisoft Metashape Python 
+API to project the image coordinates of the object on the raw image in 
+terms of row and column number to its position in the ground coordinate 
+system in terms of (X, Y, Z). This process comprises finding the inter­
+section of a ray originating from the camera projection center passing 
+through the object’s image location on the raw image with the 3D model 
+surface generated by the dense 3D point cloud. Then, the (X, Y, Z) po­
+sitions obtained here are used as feature inputs for the FaceNet model as 
+discussed in Section 2.5. 
+⎧
+⎪
+⎪
+⎪
+⎨
+⎪
+⎪
+⎪
+⎩
+xp = (x0 −f r11(X −X0) + r12(Y −Y0) + r13(Z −Z0)
+r13(X −X0) + r23(Y −Y0) + r33(Z −Z0))/p
+yp = H −(y0 −f r21(X −X0) + r22(Y −Y0) + r23(Z −Z0)
+r13(X −X0) + r23(Y −Y0) + r33(Z −Z0))/p
+(1) 
+In Eq (1), xp, yp are the column and row number of a given point 
+referenced to the top left corner of the raw image; X, Y, Z represents the 
+point coordinates in the World Coordinate System (WGS 84/UTM zone 
+17 N in this study); f is the focal length of camera lens in millimeters; x0, 
+y0 are the principal point coordinates in millimeters; p is the pixel pitch 
+in millimeters; H are the row dimensions of the image; X0, Y0, Z0 rep­
+resents the position of the camera in the World Coordinate System; rij 
+represents the ith and jth element of rotation matrix. The X0, Y0, Z0 co­
+ordinates, and R rotation matrix are camera exterior orientation pa­
+rameters outputted from the bundle adjustment. 
+Fig. 1. Multi-view observation of strawberry fruits from ground-based images.  
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+4
+2.4. Faster R-CNN 
+2.4.1. Model description 
+Faster R-CNN is an integrated convolutional object detection 
+framework proposed by Ren et al. (2015). Compared with Fast R-CNN, it 
+replaced the selective search method as the Region Proposal Network 
+(RPN) to overcome the running time bottleneck in the task of generating 
+proposals. The Faster R-CNN detection framework architecture first 
+passes a color (usually RGB) image through a pre-trained CNN using 
+ImageNet dataset to obtain a convolutional feature map. The image 
+feature extraction backbone used in this study is ResNet-50. Then it can 
+be divided into two parts. The first part is to use the RPN to produce 
+high-quality rectangular regions (bounding boxes) that could contain 
+the object(s) of interest. The second part uses Fast R-CNN as classifier to 
+determine if the proposals generated from RPN belong to an object class 
+of interest. The classifier can be 2 class or N class. In this work, we 
+Fig. 2. Workflow of strawberry detection from multi-view high-resolution imagery.  
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+5
+adopted a four-class scheme composed of: flowers, unripe strawberry 
+fruits, ripe fruits, and background. 
+2.4.2. Dataset and evaluation 
+In the training phase of the Faster R-CNN implementation, we per­
+formed fine-tuning and prepared several manually labelled (annotated) 
+bounding box samples for strawberry flowers, ripe and unripe fruits, 
+respectively. The numbers of training and test images are shown in 
+Table 1. 
+The intersection-over-union (IoU) overlap with manually annotated 
+bounding box was used to evaluate the correctness of detected objects, 
+which was defined as follows: 
+IoU = AO
+AU
+(2)  
+where AO indicates the overlap area between the predicted bounding 
+box and manually annotated bounding box, and AU is the union area of 
+the predicted and manually annotated bounding boxes. A detected ob­
+ject with IOU higher than a threshold value was called as a true positive 
+(TP). Otherwise, it was considered as a false positive (FP) as it did not 
+match with any ground truth bounding box. If one manually annotated 
+case was missed, a false negative (FP) was determined. The IOU 
+threshold value was set as 0.5 in this study. 
+To evaluate the performance of Faster R-CNN, the precision and 
+recall were used, which were calculated as follows: 
+⎧
+⎪
+⎪
+⎨
+⎪
+⎪
+⎩
+precision =
+TP
+TP + FP
+Recall =
+TP
+TP + FN
+(3)  
+2.5. FaceNet 
+2.5.1. FaceNet model description 
+FaceNet is a unified framework proposed by Schroff et al. in 2015 to 
+solve tasks such as face recognition, verification, and clustering. It maps 
+each face image to a Euclidean space where the distance between feature 
+descriptors of images reflects the face similarity. Compared with pre­
+vious techniques, this model trained a deep convolution network (CNN) 
+directly to optimize the embedding itself instead of using an interme­
+diate bottleneck layer. In the training process, face patches are imported 
+to the CNN network and each patch includes three images: anchor, 
+positive, and negative. Considering the small training samples, the CNN 
+feature extraction backbone used in this study is ResNet-34 as shown in 
+Fig. 5, which was also adopted in the work of Schroff et al. 2015. The 
+anchor and positive images belong to the same identity while the 
+negative image is a different identity (see Fig. 4). Thus, a triplet loss (L) 
+was employed and minimized, and it aims to train the embedding model 
+that makes the squared distance between all faces, regardless of imaging 
+conditions, of the same identity is small, while the distance between 
+images of different identities is large. The triplet loss can be calculated as 
+following formulas: 
+L =
+∑
+N
+i=0
+[⃦⃦
+f(xa
+i ) −f(xp
+i )⃦⃦
+2
+2−⃦⃦
+f(xa
+i ) −f(xn
+i )⃦⃦
+2
+2+α
+]
+(4)  
+here, f(x) is an embedding model that maps an image × into a feature 
+space Rd. The length of the output feature vector is set as 128. xi
+a, xi
+p, and 
+xi
+n represent the anchor, positive and negative image of the ith patch, 
+respectively; N is the number of image patch; α represents the margin 
+between positive and negative pairs. 
+2.5.2. Improved FaceNet 
+To utilize multi-view observations to identify potential strawberries 
+occluded by leaves, this study applied Faster R-CNN to all raw images for 
+strawberry detection. The orthomosaic image was used as a benchmark 
+for comparison. Due to the overlap between the raw images, many 
+duplicate strawberries corresponding to one cluster (or one strawberry 
+identity) were detected from different views, as shown in Fig. 6.. It is 
+necessary to cluster these strawberry objects to obtain the final number, 
+location, and distribution of strawberries. Before the clustering process, 
+we improved the FaceNet model to directly learn a mapping from images 
+and geographical position of strawberry objects to a compact Euclidean 
+space. As shown in Fig. 5, two models were presented to provide each 
+strawberry object a feature vectorial representation, known as embed­
+ding: 1) Model-1: according to the bounding box information provided 
+by Faster R-CNN, a cropped image of a detected strawberry object was 
+Fig. 3. The study site (a) and ground-based platform (b), which is pulled by a tractor carrying: a. camera trigger box hardware; b. computer; c. timing GPS; d. GNSS 
+navigation system; e. Nikon D300 RGB camera. 
+Table 1 
+Faster R-CNN training samples preparation.   
+Training 
+Test 
+Number of Images 
+2058 
+357 
+Size 
+536 × 712  
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+6
+imported to the FaceNet model. Similar to the face verification discussed 
+in section 2.5.1, images of detected objects were mapped to feature 
+vectors and the distance between image-derived vectors were used to 
+assess if they belong to the same strawberry identity based on a given 
+threshold; 2) Model-2: in addition to the images, the position informa­
+tion (X, Y, Z) of image center were also used in the output feature vector 
+of the deep architecture. 
+2.5.3. Labeled strawberry dataset 
+To train the FaceNet model, we prepared a dataset of manually 
+labeled images for strawberry flowers, unripe and ripe fruits, respec­
+tively. In this study, Faster R-CNN was applied on 456 raw images and 
+detected 4363 objects, which were manually corrected and interpreted, 
+and corresponded to 1086 unique strawberry identities. The image 
+samples of these detected objects were cropped and saved according to 
+the bounding box. Each strawberry object was marked with the 
+following attributes: X, Y, Z, Sample_ID, Strawberry_ID, True_Class, 
+IF_Visible, and Photo_ID. Here, X, Y and Z are the geographic coordinates 
+of the centroid point of the bounding box. Sample_ID is the image sample 
+name. Strawberry_ID represents which strawberry identity it belongs to. 
+True_Class is the sample class (flower, unripe fruit, ripe fruit). IF_Visible 
+indicates if this strawberry object is visible in the orthomasic image, 
+where 1 represents True, and 0 represents False. Photo_ID represents the 
+raw image name from which it was detected. Due to the difficulty of 
+ground-truth sample preparation, we selected 995 samples of 250 
+strawberry identities in a small area for FaceNet model training and set 
+aside 500 samples for testing. Then, the FaceNet model and the clus­
+tering process was implemented on all 4363 samples to calculate the 
+number of strawberry objects. Examples of strawberry sample data are 
+shown in Fig. 7. 
+2.5.4. FaceNet model performance evaluation 
+Given a pair of two strawberry objects (i, j), the calculated distance D 
+(xi, xj) using the FaceNet model was compared with a given squared L2 
+distance threshold d. Then we can determine a binary classification of 
+same and different. All strawberry pairs (i, j) of the same identity are 
+denoted with ρsame while the pairs of different identities were denoted 
+with ρdif. 
+The set of true positive (TP) represents these strawberry pairs (i, j) 
+correctly classified as same according to the threshold d, which is defined 
+as follows: 
+TP(d) =
+{(
+i, j) ∈ρsame, with D(xi, xj)⩽d
+}
+(5) 
+The set of false positive (FP) represents those pairs which were falsely 
+classified as same at the threshold d. FP(d) is defined as: 
+FP(d) =
+{(
+i, j) ∈ρdif , with D(xi, xj)⩽d
+}
+(6) 
+Similarly, we define the set of true negative (TN) and false negative 
+(FN) as: 
+{ TN(d) =
+{(
+i, j) ∈ρdif , with D(xi, xj) > d
+}
+FN(d) =
+{(
+i, j) ∈ρsame, with D(xi, xj) > d
+}
+(7)  
+where TN and FN are the pairs (i, j) that were correctly and falsely 
+classified as different at the threshold d, respectively. 
+To assess the FaceNet model performance, the validate rate VAL(d), 
+false accept rate FAR(d) and accuracy (d) based on the threshold given 
+by the model are defined as: 
+⎧
+⎪
+⎪
+⎪
+⎨
+⎪
+⎪
+⎪
+⎩
+VAL(d) = TP(d)
+ρsame
+, FAR(d) = FP(d)
+ρdif
+AccuracyFaceNet =
+TP(d) + TN(d)
+TP(d) + TN(d) + FP(d) + FN(d)
+(8)  
+Table 2 
+Faster R-CNN performance on the orthomosaic image.  
+Category 
+Manually Count 
+Faster 
+R-CNN count (TP þ FP) 
+TP 
+TP Rate 
+FP 
+FP Rate 
+FN 
+FN Rate 
+P 
+R 
+Flower 
+346 
+328 
+313  
+90.5% 
+15  
+4.3% 
+33  
+9.5%  
+95.4%  
+90.5% 
+Unripe Fruit 
+417 
+394 
+374  
+89.7% 
+20  
+4.8% 
+43  
+10.3%  
+94.9%  
+89.7% 
+Ripe Fruit 
+78 
+74 
+71  
+91.0% 
+3  
+3.8% 
+7  
+8.97%  
+95.9%  
+91.0% 
+All 
+841 
+796 
+758  
+90.1% 
+38  
+4.5% 
+83  
+9.87%  
+95.2%  
+90.1%  
+Fig. 4. The anchor and positive image pair belong to the same identity while the anchor and negative image are from different identities. The triplet loss in FaceNet 
+mapping aims to minimize the distance between the anchor and positive and maximize the distance between the anchor and negative image. The length of the black 
+arrow indicates the distance. 
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+7
+2.6. Strawberry clustering 
+2.6.1. Threshold clustering 
+The threshold clustering approach was used in the work of Schroff 
+et al. (2015) to achieve face clustering. It calculates the Euclidean dis­
+tance between a pair of faces based on the FaceNet embedding feature 
+vectors. When the distance between feature vectors is smaller than a 
+given threshold, the strawberry instances are assigned to the same 
+cluster. Thus, the embedding of a new instance is compared with already 
+clustered strawberry instances. If the distance between a new strawberry 
+fruit or flower instance with its nearest neighbor already in a cluster set 
+is less than a specified threshold, it will be added to the existing cluster. 
+Otherwise, it is considered a new cluster. The performance of this 
+clustering algorithm heavily relies on the selection of the threshold. A 
+low threshold will result in many false negatives: instances with a dis­
+tance higher than the threshold but belong to the same strawberry 
+identity. High threshold will cause many false positives: instances hav­
+ing a distance lower than the threshold but coming from different 
+strawberry identities. In our experiment, we used the optimal threshold 
+with highest validation accuracy in the improved FaceNet training 
+process as the distance criterion. Each detected strawberry instance was 
+evaluated and clustered based on the improved FaceNet embedding. 
+2.6.2. Density based spatial clustering of applications with noise (DBSCAN) 
+DBSCAN is a density-based data clustering algorithm proposed by 
+Ester et al. (1996). DBSCAN a non-parametric parametric method that 
+doesn’t need to specify the exact number of clusters in advance (Khan 
+et al., 2014). It can cluster data of arbitrary shapes and is also robust in 
+the presence of noise. The DBSCAN algorithm performs clustering based 
+on two input parameters: 1) eps specifies the maximum neighborhood 
+distance threshold (radius) for a given point, 2) minpts denotes the 
+minimum number of points lying in the radius eps of one point to form a 
+Fig. 5. Model structure. (a) FaceNet: this network imports an image batch to a deep CNN followed by L2 normalization to get an embedding feature vector, which 
+was used in the triplet loss training; (b) Improved FaceNet: it combines the image and positional information to obtain an embedding feature vector for each 
+strawberry object. The backbone network used in this study was ResNet-34; (c) ResNet-34 architecture. 
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+8
+Fig. 6. A set of strawberry clusters shown in the orthomosaic image at two zoom scales (a-b). One unique strawberry cluster (or identity) contains several centroid 
+points of bounding boxes detected from multi-view raw images using Faster R-CNN model. The yellow points represent strawberry flowers. The cyan points and dark 
+pink points represent strawberry unripe and ripe fruits, respectively. Several cases show up in (b) where objects are obscured by leaves on orthomosaic but are 
+detected on multi-view raw images. (For interpretation of the references to color in this figure legend, the reader is referred to the web version of this article.) 
+Fig. 7. Strawberry samples detected by Faster R-CNN. (a) Multi-view observations of one strawberry identity. The central image came from the orthomosaic image, 
+and the other images were from raw images; (b) Samples obtained from raw images. Each row represents one strawberry identity. 
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+9
+cluster. According to the two parameters, several concepts were defined:  
+• eps-neighborhood: for any point p ∈D, the eps-neighborhood (Neps) 
+denotes the total number of points whose distance from p is less than 
+or equal to eps. D represents the database of points. 
+Neps = {q ∈D, withdist(p, q)⩽eps}
+(9)    
+• Core points: If the eps-neighborhood of a point p contains more than 
+minpts points, it is considered as core point. The core point is defined 
+as: 
+Neps(p) > minpts
+(10)    
+• Border points: A point that is lying at the border of a core point’s eps 
+neighborhood is called as border point.  
+• Noise points: If a point does not belong to any cluster, it is treated as a 
+noise point.  
+• A point q is said to be directly density reachable from a point p if q ∈
+Neps and p is a core point.  
+• If there is a sequence of points q1…qn, q1 = p, qn = q, such that qi+1 is 
+direct density-reachable from qi, the point q is considered density 
+reachable from p.  
+• A point p is density-connected to another point q if there is one core 
+point o such that p and q are both density reachable from o. 
+DBSCAN checks the eps-neighborhood of each point in the point 
+database. If Neps of a point p contains at least minpts points, p is a core 
+point and all the points of Neps(p) are created as a new cluster X. Then, 
+for each point q ∈Neps, the eps-neighborhood will be checked. If q is also a 
+core point, all the points of Neps(q) which are not already assigned will be 
+added to the cluster X. This procedure continues until no new point can 
+be added to the cluster X. 
+This study applied the threshold clustering and DBSCAN algorithms 
+on the improved FaceNet embedding of duplicated strawberry objects to 
+perform clustering. Beside the distance principle, another criterion is 
+that if two objects have the same Photo_ID, they will not be clustered to 
+the same group. This is based on the hypothesis that all the detected 
+objects from the same image are unique. 
+2.6.3. Clustering evaluation 
+To evaluate the performance of two clustering algorithms, the pair­
+wise F-measure defined by Bijl (2018) is used in our experiments. 
+Assuming two sets of labels: LTrue and LCluster. The set LTrue = {t1, t2, …, tn} 
+contains the actual identity labels for each detected strawberry object. 
+Set LCluster = {c1, c2, …, cn} is the output label of the clustering algorithm 
+for each strawberry object. 
+The set of true positives (TPCluster) consists of strawberry object pairs 
+(i, j) that are correctly clustered to the same cluster, which is defined as: 
+TPCluster =
+{(
+i, j), where ci = cj and ti = tj
+}
+(11) 
+The set of false positives (FPCluster) consists of strawberry object pairs 
+(i, j) that are incorrectly clustered to the same cluster, which is defined 
+as: 
+FPCluster =
+{(
+i, j), where ci = cj and ti ∕=tj
+}
+(12) 
+The set of true negative (TNCluster) consists of strawberry object pairs 
+(i, j) that are correctly clustered to different clusters, which is defined as: 
+TNCluster =
+{(
+i, j), where ci ∕=cj and ti ∕=tj
+}
+(13) 
+The set of false negatives (FNCluster) consists of strawberry object pairs 
+(i, j) that are incorrectly clustered to different clusters, which is defined 
+as: 
+FNCluster =
+{(
+i, j), where ci ∕=cj and ti = tj
+}
+(14) 
+The pairwise precision (PrecisionCluster) is defined as the proportion of 
+pairs that are correctly clustered to the same cluster (TPCluster) over all 
+pairs that were clustered to the same cluster by the cluster algorithm 
+(TPCluster + FPCluster). Therefore, the PrecisionCluster is defined as: 
+PrecisionCluster =
+TPCluster
+TPCluster + FPCluster
+(15) 
+Similarly, the pairwise recall (RecallCluster) the proportion of pairs 
+that are correctly clustered to the same cluster (TPCluster) over all pairs 
+that are actually of the same cluster (TPCluster + FNCluster). Therefore, the 
+pairwise recall is given by: 
+RecallCluster =
+TPCluster
+TPCluster + FNCluster
+(16) 
+Finally, the F-measure can be defined as: 
+F = 2 PrecisionCluster⋅RecallCluster
+PrecisionCluster + RecallCluster
+(17)  
+2.7. Overall performance evaluation 
+With the number of strawberries manually counted from raw images 
+as reference, the overall strawberry detection accuracy of different 
+models including: 1) Faster R-CNN applied in the orthomosaic image, 2) 
+Faster R-CNN, FaceNet and Threshold Clustering, and 3) Faster R-CNN, 
+FaceNet and DBSCAN Clustering, can be defined as follows: 
+Overall Accuary = 1 −⃒⃒
+NR −Np⃒⃒
+NR
+(18) 
+In Eq (18), NR is the reference number of unique strawberries, which 
+manually counted in this study by visual interpretation of multi-view 
+raw images; Np is the predicted number of strawberries detected from 
+the above three models. 
+3. Results 
+All our experiments were implemented under the deep learning 
+framework of Pytorch 1.11, with an Nvidia TITANX (Pascal generation) 
+for GPU acceleration. The strawberry detection experiments from the 
+orthomosaic image and multi-view raw images were carried out sepa­
+rately, and the results are as follows: 
+3.1. Orthomosaic image analysis 
+A total number of 236 raw images (2848 × 4288 pixels) were pro­
+cessed using the Agisoft software to generate one orthomosaic image 
+over the whole field. Faster R-CNN was then implemented on the 
+orthomosaic image to detect flowers, unripe fruits, and ripe fruits. Fig. 8 
+shows strawberry flower and fruit detection examples from the ortho­
+mosaic image. The detection performance of Faster R-CNN is summa­
+rized in Table 1. The precision and recall rate are 95.4% and 90.5% for 
+flowers, 94.9% and 89.7% for unripe fruits, and 95.9% and 91.0% for 
+ripe fruits, respectively. The average precision and recall rate for all 
+three types of strawberry objects were 95.2% and 90.1%, respectively. 
+The detection accuracy of unripe fruits was lower than that of ripe fruits 
+and flowers, possibly due to the similar color of the unripe fruit to the 
+leaves. 
+3.2. Multi-view image analysis 
+3.2.1. FaceNet mapping 
+The classification (same or different) was performed on the prepared 
+strawberry dataset using the FaceNet model as discussed in Section 
+2.5.3. Fig. 9 illustrates the training process of the FaceNet model. After 
+one hundred epochs, the training and validation classification accuracy 
+can reach about 85.8% and 86.1% using Model-1, 99.62% and 99.1% 
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+10
+using Model-2, respectively. Table 3 shows the FaceNet model perfor­
+mance on the testing set of strawberry flowers, unripe and ripe fruits. 
+Compared with Model-1, the Model-2 increased the VAL of flowers from 
+84.63% to 98.36%, that of unripe fruits from 83.75% to 95.29%, and 
+that of ripe fruits from 86.8% to 99.68%, respectively. Correspondingly, 
+the Model-2 decreased the FAR of flowers from 10.31% to 1.11%, that of 
+unripe fruits from 9.53% to 1.08%, and that of ripe fruits from 8.42% to 
+0.25%, respectively. The addition of geographic information substan­
+tially improved the model performance in determining whether a pair of 
+detected strawberry objects belong to the same identity or not. The re­
+sults of FaceNet on ripe fruit are slightly better than the other two types 
+of objects, probably because ripe strawberries have richer color and 
+shape information. 
+Fig. 8. Faster R-CNN detection examples form the orthomosaic image.  
+Fig. 9. Accuracy curve for two models during the training process.  
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+11
+3.2.2. Clustering 
+The optimal FaceNet model during the training process was applied 
+on all detected duplicate strawberry samples to obtain the embedding 
+feature vectors. Then, we used two methods to cluster strawberries 
+based on these features: threshold clustering and DBSCAN algorithm. 
+Table 4 summarizes the clustering performance of the two algorithms. 
+For threshold clustering, the F-measure values for flowers, unripe fruits, 
+and ripe fruits are 0.853, 0.870, and 0.891, respectively. The corre­
+sponding F-measure values of DBSCAN algorithm are 0.860, 0.869 and 
+0.904, respectively. The difference between predicted and known clus­
+ters is not obvious, and the precision and recall metrics fluctuate be­
+tween 0.791 and 0.973. Fig. 10 shows the variation curve of F-measure 
+values and the number of strawberry clusters with different distance 
+threshold settings (d in Section 2.5.4). With increasing the distance, 
+strawberries are clustered together. Increasing the distance makes less 
+and large clusters. As shown in Fig. 10 (a-e), there was a narrow range of 
+distance threshold values which achieved the highest F-measure values 
+and optimal number of strawberry clusters. Both algorithms were able to 
+detect the number of clusters close to the ground truth with comparable 
+accuracy (Table 4), but the DBSCAN algorithm appeared to be slightly 
+more effective and robust than threshold clustering. 
+Table 5 shows the comparison results of the number of strawberry 
+objects counted by human visual interpretation and deep learning from 
+the orthomosaic image and raw images. The occlusion rate is defined as 
+the ratio of the number of strawberry objects invisible in the orthomo­
+saic image to the number of strawberries counted from raw images. In 
+this experiment, the occlusion rate was about 19.53%, 24.18%, and 
+26.42% for strawberry flowers, unripe fruits, and ripe fruits, respec­
+tively. The average occlusion rate was about 22.56%. Some occlusion 
+examples are shown as Fig. 11. Based on Table 5, the FaceNet clustering 
+algorithms based on the raw images effectively solved the occlusion 
+problem and improved the overall recognition accuracy of strawberry 
+flowers, unripe fruits, and ripe fruits from 76.28% to 96.98%, 71.64% to 
+99.09%, and 69.81% to 97.17% respectively, compared with the results 
+obtained from the orthomosaic image using Faster R-CNN only. 
+4. Discussion 
+Counting and locating flowers and fruits in the strawberry field from 
+remote sensing images is traditionally conducted by applying deep 
+learning networks (such as Faster R-CNN and YOLO series) on an 
+orthomosaic image of the whole study area generated by SfM analysis 
+for object detection. This method has been proven effective in many 
+previous studies (Lin and Chen (2018); Lamb and Chuah (2018); Chen 
+et al., 2019). However, some fruits that are obscured by leaves but 
+observable in raw images could be lost in the orthomosaic image due to 
+photogrammetric processes such as pixel merging and blending. As 
+shown in Table 2, although Faster R-CNN exhibits high detection rates 
+(~90.1%) in the orthomosaic image, this accuracy is still only around 
+73.3% based on the actual number of strawberries on the ground. 
+Therefore, the occlusion issue is the main reason affecting the recogni­
+tion accuracy rather than the deep learning object detection model itself. 
+This study aims to develop a novel method to make full use of the in­
+formation in the multi-view raw images acquired by a ground-based 
+platform to solve the occlusion problem. 
+4.1. General interpretation 
+Our proposed method mainly consists of three steps: 1) strawberry 
+object detection from raw images using Faster R-CNN; 2) clustering 
+feature extraction using FaceNet; 3) duplicate strawberry detection 
+removal using clustering algorithm. We tested the off-the-shelf algo­
+rithms for step 1, 2 and 3, and developed alternative customized algo­
+rithms to carry out step 2. 
+In step 1, we adopted a commonly used deep learning model named 
+Faster R-CNN for object detection. It showed good performance in both 
+orthomosaic and multi-view image (see Table 3 and 6). However, with 
+the overall occlusion rate up to 22.56%, the traditional approach based 
+on orthomosaic image won’t obtain comparable accuracy compared to 
+the proposed approach even if it can detect all the visible objects on the 
+orthomosaic image. Since the proposed approach is based on the object 
+detection results by Faster R-CNN, poor detection of objects will 
+certainly damage the performance of the proposed approach. Table 6 
+indicates that occlusion is the key factor preventing the traditional 
+approach from catching up with the proposed approach and Faster R- 
+CNN is not a bottleneck due to its good performance for object detection 
+task. 
+In step 2, the off-the-shelf algorithm FaceNet was used to learn 
+feature embeddings that will be used in step 3 for clustering task. 
+Alternatively, we also developed a new feature learning neural network 
+based on FaceNet by adding geographic location information of straw­
+berry objects (see Fig. 5). Our experiment shows by adding geographic 
+location information, the feature learning algorithm achieved a sub­
+stantially high improvement to separate objects (e.g., 1.11% vs 10.31% 
+FAR for flowers, 9.53% vs 1.08% FAR for unripe fruits in Table 3). The 
+embedding generated from step 2 will be directly used in step 3 to 
+discriminate unique objects among the duplicate objects which were 
+generated from step 1 from multi-view raw images; therefore, a robust 
+embedding extractor is important to achieve good clustering perfor­
+mance in step 3. 
+In step 3, we tested two clustering algorithms including threshold 
+and DBSCAN to find the unique objects. In Fig. 10 (a-e), we analyzed the 
+impact of the threshold parameter on the performance of the thresh­
+olding clustering algorithm. Our results indicate that there is a narrow 
+range of distance threshold values that can achieve the highest F-mea­
+sure scores and optimal number of strawberry clusters. The F-measure 
+scores for the threshold clustering algorithm were 0.853, 0.870, and 
+0.891 for flowers, unripe fruits, and ripe fruits, respectively. For the 
+DBSCAN algorithm, the corresponding F-measure scores were 0.860, 
+Table 3 
+Model performance of the testing set of strawberry flowers, unripe and ripe 
+fruits.  
+Category 
+FaceNet Model 
+VAL 
+FAR 
+Flowers 
+Model-1  
+84.63%  
+10.31% 
+Model-2  
+98.36%  
+1.11% 
+Unripe Fruits 
+Model-1  
+83.75%  
+9.53% 
+Model-2  
+95.29%  
+1.08% 
+Ripe Fruits 
+Model-1  
+86.8%  
+8.42% 
+Model-2  
+99.68%  
+0.25%  
+Table 4 
+Performance of two clustering algorithms on the strawberry flowers, unripe and ripe fruits.  
+Target 
+Clustering method 
+Number of predicted clusters 
+Number of known clusters 
+PrecisionCluster 
+RecallCluster 
+F-measure 
+Flowers 
+Threshold clustering 
+417 
+430  
+0.872  
+0.837  
+0.853 
+DBSCAN 
+414  
+0.791  
+0.943  
+0.860 
+Unripe fruits 
+Threshold clustering 
+585 
+550  
+0.839  
+0.905  
+0.870 
+DBSCAN 
+555  
+0.860  
+0.879  
+0.869 
+Ripe fruits 
+Threshold clustering 
+109 
+106  
+0.821  
+0.973  
+0.891 
+DBSCAN 
+109  
+0.850  
+0.965  
+0.904  
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+12
+0.869, and 0.904, respectively. Both algorithms were able to detect the 
+number of clusters close to the ground truth with comparable accuracy 
+(Table 4), but the DBSCAN algorithm appeared to be slightly more 
+effective and robust than threshold clustering. It’s worth noting that the 
+accuracy of the clustering outputs could be influenced by several factors, 
+including the choice of clustering algorithm, the quality of feature 
+embedding, and the accuracy of object detection. Nevertheless, our 
+study suggests that robust algorithms are available to achieve good 
+performance for each task, and combining these algorithms can lead to 
+good performance for the final results. 
+4.2. Limitations and future work 
+This study has yet to test the performance of our method during a 
+growing stage when almost all the strawberries become mature, and the 
+strawberry farm is crowded with strawberries growing together. The 
+proposed method involves object detection, feature learning and clus­
+tering steps, indicating that it may be challenging to achieve reliable 
+recognition results for such a scenario. To enhance the method’s per­
+formance, other advanced deep learning object detection models such as 
+YOLO and SSD can be explored, and a unified model integrating FaceNet 
+feature mapping and clustering procedures could be developed in the 
+future. In addition, the improvement of image data quality may 
+contribute to the reliable model performance of our approach. The study 
+hypothesizes that there could be an optimal oblique viewing angle for 
+maximizing the clear view of occluded strawberries without losing 
+information from the vertical angle. Future research will focus on 
+designing a more optimized imaging platform that can capture images 
+from multiple views and generate detailed 3D reconstructions of 
+strawberry objects. The overlap rate setting will also impact the number 
+of multi-angle observations for object detection, with a larger overlap 
+generating more information but increasing algorithm complexity and 
+model robustness challenges. Investigating the effect of side/front 
+overlap is another potential direction for future research. Despite its 
+limitations, this study is the first attempt to directly extract information 
+about small objects like strawberry fruits and flowers from raw multi- 
+view images. 
+5. Conclusion 
+Taking strawberry detection as a case study, we proposed a new 
+method to detect small objects directly from the raw images containing 
+multi-view information with comprehensive use of deep learning and 
+SfM technologies. This differs from traditional methods that rely on 
+object detection on orthomosaic images and are not well-suited to deal 
+with occluded objects. The result shows the raw images helped us find 
+19.53%, 24.18%, and 26.42% more flowers, unripe fruits, and ripe fruits 
+respectively than the orthomosaic image. Correspondingly, the use of 
+FaceNet clustering algorithms in raw images effectively solves the oc­
+clusion problem and increased the overall recognition accuracy from 
+76.28% to 96.98%, 71.64% to 99.09%, and 69.81% to 97.17% for those 
+three types of strawberry objects, in contrast to using only Faster R-CNN 
+Fig. 10. The variation curve of F-measure values and strawberry clusters with the distance threshold.  
+Table 5 
+Comparison of the number of strawberries detected from the orthomosaic image and raw images using human visual interpretation and deep learning technology, 
+respectively.  
+Category 
+Manually counted 
+Counted by deep learning 
+From orthomosaic image 
+From raw images 
+Occlusion rate 
+From orthomosaic image 
+From raw images 
+DBSCAN 
+Threshold clustering 
+Flowers 
+346 
+430  
+19.53% 
+328 
+414 
+417 
+Unripe Fruits 
+417 
+550  
+24.18% 
+394 
+555 
+585 
+Ripe Fruits 
+78 
+106  
+26.42% 
+74 
+109 
+109 
+All 
+841 
+1086  
+22.56% 
+796 
+1078 
+1111  
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+13
+on the orthomosaic image. This study demonstrates that multi-view 
+object detection has the potential to outperform previous approaches 
+in detecting occluded objects from remote sensing images. 
+CRediT authorship contribution statement 
+Caiwang Zheng: Methodology, Software, Writing – original draft, 
+Formal analysis, Visualization, Writing – review & editing. Tao Liu: 
+Conceptualization, Methodology, Software, Writing – review & editing, 
+Supervision. Amr Abd-Elrahman: Conceptualization, Supervision, 
+Project administration. Vance M. Whitaker: Supervision, Writing – 
+review & editing. Benjamin Wilkinson: Supervision, Writing – review 
+& editing. 
+Declaration of Competing Interest 
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper. 
+Data availability 
+Data will be made available on request. 
+Acknowledgments 
+The authors would like to acknowledge the Michigan Technological 
+University to support this research with start up fund (grant ID D97314). 
+Besides, the authors also acknowledge the Gulf Coast Research and 
+Education field technical support staff and strawberry breeding program 
+staff for their efforts in developing the data acquisition platform and 
+field trials. 
+References 
+Abdel-Mawgoud, A.M.R., Tantawy, A.S., El-Nemr, M.A., Sassine, Y.N., 2010. Growth and 
+yield responses of strawberry plants to chitosan application. Eur. J. Sci. Res. 39, 
+170–177. 
+Abd-Elrahman, A., Pande-Chhetri, R., Vallad, G., 2011. Design and development of a 
+multi-purpose low-cost hyperspectral imaging system. Remote Sens. 3, 570–586. 
+Abd-Elrahman, A., Sassi, N., Wilkinson, B., Dewitt, B., 2016. Georeferencing of mobile 
+ground-based hyperspectral digital single-lens reflex imagery. J. Appl. Remote Sens. 
+10, 14002. 
+Cai, Z., Vasconcelos, N., 2018. Cascade r-cnn: Delving into high quality object detection, 
+in. In: Proceedings of the IEEE Conference on Computer Vision and Pattern 
+Recognition, pp. 6154–6162. 
+Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A., Zagoruyko, S., 2020. End-to- 
+end object detection with transformers, in: Computer Vision–ECCV 2020: 16th 
+European Conference, Glasgow, UK, August 23–28, 2020, Proceedings, Part I 16. 
+Springer, pp. 213–229. 
+Chen, Y., Lee, W.S., Gan, H., Peres, N., Fraisse, C., Zhang, Y., He, Y., 2019. Strawberry 
+yield prediction based on a deep neural network using high-resolution aerial 
+orthoimages. Remote Sens. 11, 1584. 
+Clemente, A.A., Maciel, G.M., Siquieroli, A.C.S., de Araujo Gallis, R.B., Pereira, L.M., 
+Duarte, J.G., 2021. High-throughput phenotyping to detect anthocyanins, 
+chlorophylls, and carotenoids in red lettuce germplasm. Int. J. Appl. Earth Obs. 
+Geoinf. 103, 102533. 
+Ester, M., Kriegel, H.-P., Sander, J., Xu, X., 1996. A density-based algorithm for 
+discovering clusters in large spatial databases with noise., in: Kdd. pp. 226–231. 
+Fonstad, M.A., Dietrich, J.T., Courville, B.C., Jensen, J.L., Carbonneau, P.E., 2013. 
+Topographic structure from motion: A new development in photogrammetric 
+measurement. Earth Surf. Process. Landforms 38, 421–430. 
+Fountas, S., Mylonas, N., Malounas, I., Rodias, E., Hellmann Santos, C., Pekkeriet, E., 
+2020. Agricultural robotics for field operations. Sensors 20, 2672. 
+Girshick, R., 2015. Fast r-cnn, in. In: Proceedings of the IEEE International Conference on 
+Computer Vision, pp. 1440–1448. 
+Fig. 11. Examples of strawberries obscured by leaves in the orthomosaic image and but visible in raw images: flowers with red bounding boxes, unripe fruits with 
+yellow bounding boxes, and ripe fruits with blue bounding boxes. Nine samples are displayed. For each sample, the unlabeled image on the left is cropped from the 
+orthomosaic image, and the right image is from raw images. (For interpretation of the references to color in this figure legend, the reader is referred to the web 
+version of this article.) 
+Table 6 
+The overall accuracy of deep learning models applied in the orthomosaic image 
+and raw images.   
+From orthomosaic image 
+From raw images 
+DBSCAN 
+Threshold clustering 
+Flowers  
+76.28%  
+96.28%  
+96.98% 
+Unripe Fruits  
+71.64%  
+99.09%  
+93.64% 
+Ripe Fruits  
+69.81%  
+97.17%  
+97.17% 
+All  
+73.30%  
+99.26%  
+97.70%  
+C. Zheng et al.                                                                                                                                                                                                                                   
+
+International Journal of Applied Earth Observation and Geoinformation 123 (2023) 103457
+14
+Guan, Z., Abd-Elrahman, A., Fan, Z., Whitaker, V.M., Wilkinson, B., 2020. Modeling 
+strawberry biomass and leaf area using object-based analysis of high-resolution 
+images. ISPRS J. Photogramm. Remote Sens. 163, 171–186. 
+Guthman, J., 2017. Paradoxes of the border: Labor shortages and farmworker minor 
+agency in reworking California’s strawberry fields. Econ. Geogr 93, 24–43. 
+Han, W., Li, J., Wang, S., Wang, Y., Yan, J., Fan, R., Zhang, X., Wang, L., 2022. A context- 
+scale-aware detector and a new benchmark for remote sensing small weak object 
+detection in unmanned aerial vehicle images. Int. J. Appl. Earth Obs. Geoinf. 112, 
+102966. 
+Jiang, C., Ren, H., Ye, X., Zhu, J., Zeng, H., Nan, Y., Sun, M., Ren, X., Huo, H., 2022. 
+Object detection from UAV thermal infrared images and videos using YOLO models. 
+Int. J. Appl. Earth Obs. Geoinf. 112, 102912. 
+Ju, C., Kim, J., Seol, J., Son, H.I., 2022. A review on multirobot systems in agriculture. 
+Comput. Electron. Agric. 202, 107336. 
+Khan, K., Rehman, S.U., Aziz, K., Fong, S., Sarasvady, S., 2014. DBSCAN: Past, present 
+and future, in: The Fifth International Conference on the Applications of Digital 
+Information and Web Technologies (ICADIWT 2014). IEEE, pp. 232–238. 
+Koirala, A., Walsh, K.B., Wang, Z., McCarthy, C., 2019. Deep learning–Method overview 
+and review of use for fruit detection and yield estimation. Comput. Electron. Agric. 
+162, 219–234. 
+Lamb, N., Chuah, M.C., 2018. A strawberry detection system using convolutional neural 
+networks. In: In: 2018 IEEE International Conference on Big Data (Big Data). IEEE, 
+pp. 2515–2520. 
+Lin, P., Chen, Y., 2018. Detection of strawberry flowers in outdoor field by deep neural 
+network. In: in: 2018 IEEE 3rd International Conference on Image, Vision and 
+Computing (ICIVC). IEEE, pp. 482–486. 
+Lin, T.-Y., Goyal, P., Girshick, R., He, K., Doll´ar, P., 2017. Focal loss for dense object 
+detection. In: in: Proceedings of the IEEE International Conference on Computer 
+Vision, pp. 2980–2988. 
+Liu, T., Abd-Elrahman, A., 2018a. Multi-view object-based classification of wetland land 
+covers using unmanned aircraft system images. Remote Sens. Environ. 216, 
+122–138. 
+Liu, T., Abd-Elrahman, A., 2018b. Deep convolutional neural network training 
+enrichment using multi-view object-based analysis of Unmanned Aerial systems 
+imagery for wetlands classification. ISPRS J. Photogramm. Remote Sens. 139, 
+154–170. 
+Liu, T., Abd-Elrahman, A., Dewitt, B., Smith, S., Morton, J., Wilhelm, V.L., 2019. 
+Evaluating the potential of multi-view data extraction from small Unmanned Aerial 
+Systems (UASs) for object-based classification for Wetland land covers. GIScience 
+Remote Sens. 56, 130–159. 
+Liu, W., Anguelov, D., Erhan, D., Szegedy, C., Reed, S., Fu, C.-Y., Berg, A.C., 2016. Ssd: 
+Single shot multibox detector, in: Computer Vision–ECCV 2016: 14th European 
+Conference, Amsterdam, The Netherlands, October 11–14, 2016, Proceedings, Part I 
+14. Springer, pp. 21–37. 
+Liu, Y., Zhang, Yao, Wang, Y., Hou, F., Yuan, J., Tian, J., Zhang, Yang, Shi, Z., Fan, J., He, 
+Z., 2021. A survey of visual transformers. arXiv Prepr. arXiv2111.06091. 
+Lowe, D.G., 1987. Three-dimensional object recognition from single two-dimensional 
+images. Artif. Intell. 31, 355–395. 
+Mostafa, A.M., Kumar, S.A., Meraj, T., Rauf, H.T., Alnuaim, A.A., Alkhayyal, M.A., 2021. 
+Guava disease detection using deep convolutional neural networks: A case study of 
+guava plants. Appl. Sci. 12, 239. 
+Osco, L.P., Junior, J.M., Ramos, A.P.M., de Castro Jorge, L.A., Fatholahi, S.N., de 
+Andrade Silva, J., Matsubara, E.T., Pistori, H., Gonçalves, W.N., Li, J., 2021. 
+A review on deep learning in UAV remote sensing. Int. J. Appl. Earth Obs. Geoinf. 
+102, 102456. 
+Parico, A.I.B., Ahamed, T., 2021. Real time pear fruit detection and counting using 
+YOLOv4 models and deep SORT. Sensors 21, 4803. 
+Qiao, S., Chen, L.-C., Yuille, A., 2021. Detectors: Detecting objects with recursive feature 
+pyramid and switchable atrous convolution, in: Proceedings of the IEEE/CVF 
+Conference on Computer Vision and Pattern Recognition. pp. 10213–10224. 
+Reedha, R., Dericquebourg, E., Canals, R., Hafiane, A., 2022. Transformer neural 
+network for weed and crop classification of high resolution UAV images. Remote 
+Sens. 14, 592. 
+Ren, S., He, K., Girshick, R., Sun, J., 2015. Faster r-cnn: Towards real-time object 
+detection with region proposal networks. Adv. Neural Inf. Process, Syst, p. 28. 
+Savini, G., Neri, D., Zucconi, F., Sugiyama, N., 2005. Strawberry growth and flowering: 
+an architectural model. Int. J. fruit Sci. 5, 29–50. 
+Schroff, F., Kalenichenko, D., Philbin, J., 2015. Facenet: A unified embedding for face 
+recognition and clustering, in: Proceedings of the IEEE Conference on Computer 
+Vision and Pattern Recognition. pp. 815–823. 
+Shafiee, M.J., Chywl, B., Li, F., Wong, A., 2017. Fast YOLO: A fast you only look once 
+system for real-time embedded object detection in video. arXiv Prepr. 
+arXiv1709.05943. 
+Song, H., Sun, D., Chun, S., Jampani, V., Han, D., Heo, B., Kim, W., Yang, M.-H., 2021. 
+Vidt: An efficient and effective fully transformer-based object detector. arXiv Prepr. 
+arXiv2110.03921. 
+Tan, M., Pang, R., Le, Q. V, 2020. Efficientdet: Scalable and efficient object detection, in: 
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern 
+Recognition. pp. 10781–10790. 
+Triggs, B., McLauchlan, P.F., Hartley, R.I., Fitzgibbon, A.W., 2000. Bundle adjustment—a 
+modern synthesis, in: Vision Algorithms: Theory and Practice: International 
+Workshop on Vision Algorithms Corfu, Greece, September 21–22, 1999 Proceedings. 
+Springer, pp. 298–372. 
+Vasconez, J.P., Delpiano, J., Vougioukas, S., Cheein, F.A., 2020. Comparison of 
+convolutional neural networks in fruit detection and counting: A comprehensive 
+evaluation. Comput. Electron. Agric. 173, 105348. 
+Wang, Y., Yan, G., Meng, Q., Yao, T., Han, J., Zhang, B., 2022. DSE-YOLO: Detail 
+semantics enhancement YOLO for multi-stage strawberry detection. Comput. 
+Electron. Agric. 198, 107057. 
+Weiss, M., Jacob, F., Duveiller, G., 2020. Remote sensing for agricultural applications: A 
+meta-review. Remote Sens. Environ. 236, 111402. 
+Weng, S., Yu, S., Dong, R., Pan, F., Liang, D., 2020. Nondestructive detection of storage 
+time of strawberries using visible/near-infrared hyperspectral imaging. Int. J. Food 
+Prop. 23, 269–281. 
+Wosner, O., Farjon, G., Bar-Hillel, A., 2021. Object detection in agricultural contexts: A 
+multiple resolution benchmark and comparison to human. Comput. Electron. Agric. 
+189, 106404. 
+Yang, B., Ali, F., Yin, P., Yang, T., Yu, Y., Li, S., Liu, X., 2021. Approaches for exploration 
+of improving multi-slice mapping via forwarding intersection based on images of 
+UAV oblique photogrammetry. Comput. Electr. Eng. 92, 107135. 
+Yu, Y., Zhang, K., Yang, L., Zhang, D., 2019. Fruit detection for strawberry harvesting 
+robot in non-structural environment based on Mask-RCNN. Comput. Electron. Agric. 
+163, 104846. 
+Zaidi, S.S.A., Ansari, M.S., Aslam, A., Kanwal, N., Asghar, M., Lee, B., 2022. A survey of 
+modern deep learning-based object detection models. Digit. Signal Process. 103514. 
+Zhang, C., Elaksher, A., 2012. An unmanned aerial vehicle-based imaging system for 3D 
+measurement of unpaved road surface distresses 1. Comput. Civ. Infrastruct. Eng. 27, 
+118–129. 
+Zheng, C., Abd-Elrahman, A., Whitaker, V., 2021. Remote sensing and machine learning 
+in crop phenotyping and management, with an emphasis on applications in 
+strawberry farming. Remote Sens. 13, 531. 
+Zhou, C., Hu, J., Xu, Z., Yue, J., Ye, H., Yang, G., 2020. A novel greenhouse-based system 
+for the detection and plumpness assessment of strawberry using an improved deep 
+learning technique. Front. Plant Sci. 11, 559. 
+Zhou, C., Ye, H., Sun, D., Yue, J., Yang, G., Hu, J., 2022. An automated, high- 
+performance approach for detecting and characterizing broccoli based on UAV 
+remote-sensing and transformers: A case study from Haining, China. Int. J. Appl. 
+Earth Obs. Geoinf. 114, 103055. 
+Zou, Z., Shi, Z., Guo, Y., Ye, J., 2019. Object detection in 20 years: A survey. arXiv Prepr. 
+arXiv1905.05055. 
+C. Zheng et al.                                                                                                                                                                                                                                   

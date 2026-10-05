@@ -1,0 +1,1644 @@
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+A real-time semantic 3D vineyard mapping and fruit localization system for 
+yield estimation in dynamic vineyards
+Runbin Yang
+1, Xilong Zhang
+1, Yanyang Chen
+1, Xiaotao Huang
+1, Sang Feng
+1,∗
+School of Electromechanical Engineering, Guangdong University of Technology, Guangzhou, 510006, China
+a r t i c l e i n f o
+Keywords:
+Yield estimation
+Semantic SLAM
+Dynamic environments
+Fruit counting
+Point cloud optimization
+ 
+a b s t r a c t
+In precision viticulture, autonomous systems are increasingly deployed for inspection and yield estimation. How-
+ever, mapping 3D vineyard environments and monitoring fruit distribution presents challenges due to fruit oc-
+clusion, moving objects, and unstructured backgrounds. To address these issues, this study presents a semantic 
+3D mapping and fruit localization system designed for yield estimation in dynamic environments. The proposed 
+framework integrates the ORB-SLAM3 backend with a lightweight semantic segmentation model, named Edge 
+Fusion Segmentation Network (EFSegNet). Derived from the PIDNet baseline, EFSegNet introduces a Gradient 
+Feature Fusion Block (GFFM) and a Deformable Spatial Attention (DSA) module. These components are designed 
+to reﬁne fruit boundaries and separate overlapping grape bunches, a requirement for individual counting. The 
+generated semantic masks guide the removal of dynamic feature points to maintain map consistency, while en-
+abling semantic mapping of fruit clusters. Additionally, a three-stage point cloud ﬁltering strategy is applied to 
+reﬁne the global map, followed by DBSCAN clustering and PCA-based modeling to extract the 3D location and 
+quantity of grape bunches. Validation experiments in a real-world dynamic vineyard indicate that the system 
+operated at 23.1 FPS, with an average 3D localization error of 21.02 mm. The average counting error was 5.95%, 
+demonstrating the system’s applicability for automated yield estimation.
+1.  Introduction
+In precision agriculture, obtaining accurate spatial data on fruit dis-
+tribution and yield is fundamental for orchard management [1,2]. Au-
+tonomous inspection robots equipped with 3D mapping and yield es-
+timation capabilities assist in optimizing logistics, labor planning, and 
+market forecasting [3,4]. Beyond detection, the 3D localization of fruit 
+clusters supports tasks such as high-throughput phenotyping, maturity 
+monitoring [5], and pest detection [6], providing data for vineyard op-
+erations.
+Although agricultural robots are utilized in structured settings like 
+greenhouses [7] and standardized orchards [8], perception in unstruc-
+tured ﬁeld conditions remains a challenge. Traditional fruit recogni-
+tion methods, relying on image processing techniques such as color 
+thresholding [9], are aﬀected by variable lighting and cluttered back-
+grounds in real-world orchards. Deep learning has enhanced feature ex-
+traction capabilities. Earlier works adopted object detection networks 
+such as YOLO [10] and R-CNN [11]. To enable volume estimation 
+through contour extraction, research has transitioned towards seman-
+tic segmentation networks, including Mask R-CNN [12], DeepLabv3+ 
+∗Corresponding author.
+ 
+E-mail address: fengsang@gdut.edu.cn (S. Feng).
+1 These authors contributed equally to this work.
+[13], BiSeNetv2 [14], SegFormer [15], and PIDNet [16]. Neverthe-
+less, segmenting irregularly shaped, occluded, and touching grape 
+bunches remains a challenge for yield estimation, as noted in recent 
+reviews [17,18]. Lightweight networks often compromise boundary pre-
+cision for speed, resulting in under-counting of clustered fruits. While 
+Transformer-based architectures [19] oﬀer high accuracy, they impose 
+a computational load that aﬀects real-time deployment on mobile plat-
+forms.
+To resolve the spatial ambiguity in 2D methods, research has fo-
+cused on 3D perception [20]. Depth acquisition technologies, includ-
+ing RGB-D cameras, LiDAR, and structured light, have been inte-
+grated to facilitate the transition from 2D detection to 3D localiza-
+tion. For instance, instance segmentation combined with geometric 
+analysis has been used for 3D reconstruction of guava fruits [21]. 
+Similarly, algorithms integrating obstacle perception have been pro-
+posed for tomato selection [22]. Furthermore, point cloud processing 
+methods have proven instrumental, as exempliﬁed by the combina-
+tion of Mask R-CNN with PointNet for pomegranate modeling [23]. 
+Slim-Banana integrates a lightweight YOLO-based detector with cali-
+brated TOF depth to recover 3D coordinates from 2D detections [24]. 
+https://doi.org/10.1016/j.atech.2026.101784
+Received 13 December 2025; Received in revised form 2 January 2026; Accepted 2 January 2026
+Smart Agricultural Technology 13 (2026) 101784 
+Available online 9 January 2026 
+2772-3755/© 2026 The Author(s). Published by Elsevier B.V. This is an open access article under the CC BY-NC-ND license ( http://creativecommons.org/licenses/by- 
+nc-nd/4.0/ ). 
+
+R. Yang et al.
+A two-stage multimodal method further uses instance masks to regular-
+ize depth completion before estimating 3D harvesting points via key-
+point and pose inference [25]. Despite success in static scenes or of-
+ﬂine processing, many systems face diﬃculties in dynamic real-world 
+orchards populated by moving persons. This necessitates the fusion of 
+perception with Simultaneous Localization and Mapping (SLAM). Ap-
+proaches such as ORB-Livox [26] have fused LiDAR and visual SLAM 
+for dynamic fruit detection. Semantic mapping solutions using depth 
+cameras have also been explored in citrus orchards [27] and straw-
+berry ﬁelds [28]. Monocular SLAM has been used for indoor UAV nav-
+igation [29] and tree trait estimation [30]. Multi-sensor fusion strate-
+gies [31] and 2D-to-3D conversion mechanisms [32] have also been 
+proposed. However, inspection robots in dynamic vineyards still face 
+issues: (a) map corruption and tracking drift caused by moving per-
+sons; (b) computational constraints aﬀecting real-time monitoring; and 
+(c) inaccurate yield counts due to coarse spatial aggregation in dense
+canopies.
+This study addresses these challenges by proposing a real-time se-
+mantic 3D mapping and yield estimation system based on the ORB-
+SLAM3 framework. We introduce a lightweight network, EFSegNet, to 
+generate masks. These masks serve a dual purpose: ﬁltering out dynamic 
+objects to stabilize SLAM tracking, and segmenting grape bunches with 
+deﬁned boundaries to support counting. A spatial clustering strategy 
+leveraging DBSCAN and PCA-based ﬁtting is then applied to determine 
+the 3D position of each grape bunch.
+The contributions of this paper are:
+1. Development of a 3D mapping and yield estimation framework that 
+integrates semantic perception with ORB-SLAM3, ensuring inspec-
+tion capabilities in dynamic vineyards with human interference.
+2. Proposal of the EFSegNet segmentation model by incorporating a 
+Gradient Feature Fusion Block (GFFM) and Deformable Spatial At-
+tention (DSA) into the PIDNet baseline, introducing a network de-
+signed to separate overlapping fruit clusters and handle irregular 
+boundaries for counting accuracy.
+3. Implementation of a three-stage point cloud ﬁltering strategy that 
+improves global map quality by sequentially eliminating noise and 
+outliers via voxel grid ﬁltering, statistical outlier removal, and radius 
+ﬁltering.
+4. Deployment of a fruit localization and counting pipeline using DB-
+SCAN clustering and PCA-based ellipsoid ﬁtting to extract the 3D 
+coordinates and quantity of grape bunches for yield estimation.
+2.  Materials and methods
+2.1.  Hardware conﬁguration
+The experimental setup consists of three primary subsystems: the 
+chassis, the sensor suite, and the control unit. The overall architecture 
+is depicted in Fig. 1.
+The mobility platform is based on a diﬀerential drive chassis mea-
+suring 0.776 m × 0.671 m × 0.319 m (L×W×H). It weighs 35.6 kg and can 
+carry a payload of up to 45 kg. The platform is capable of speeds up to 
+1.65 m∕s and can navigate slopes up to 25◦, with support for manual joy-
+stick control. The perception module includes a ZED2 stereo camera and 
+a Robosense Helios 32 LiDAR. The ZED2 functions as the main sensor for 
+real-time fruit detection and 3D mapping. It is an active stereo system 
+with an integrated IMU, oﬀering a depth range of 0.2 to 20 m and a res-
+olution of 2208 × 1242 pixels at up to 100 FPS. The Robosense Helios 32 
+LiDAR (360◦ FOV, ±1 cm accuracy) is used solely to acquire ground 
+truth point clouds for accuracy validation and does not participate in 
+the real-time mapping loop. A Lenovo Legion Y9000 laptop serves as 
+the central processing unit, featuring an Intel i5-12500H CPU, 16 GB of 
+RAM, and an NVIDIA GeForce RTX 3060 GPU (8 GB VRAM), running 
+Ubuntu 20.04. This unit handles all sensor data processing, semantic 
+Fig. 1. The experimental robot platform.
+segmentation, point cloud mapping, and fruit localization tasks in real-
+time.
+2.2.  Data collection and site description
+Field experiments were carried out at the Shangguo Pick-Your-
+Own Orchard in Panyu District, Guangzhou, China (113◦26′25.688′′E, 
+22◦54′41.602′′N), as shown in Fig. 2. Situated in the Pearl River Delta, 
+this location oﬀers a warm, humid climate ideal for fruit cultivation. The 
+vineyard represents a typical unstructured agricultural setting, charac-
+terized by dense planting, complex intertwined foliage, and fruit occlu-
+sion. These conditions provide a realistic testbed for grape detection and 
+localization tasks.
+Image sequences of green grapes were captured using the mobile 
+robot as it navigated through the orchard rows. The ZED2 camera was 
+conﬁgured to operate at a resolution of 640 × 360 pixels and a frame rate 
+of 30 FPS. From the recorded sequences, 940 representative RGB images 
+were selected randomly to create the dataset. These images were man-
+ually annotated at the pixel level using the LabelMe tool, with pixels 
+categorized into two semantic classes: ’fruit’ and ’pedestrian’. This re-
+sulting dataset was subsequently used to train and evaluate the seman-
+tic segmentation network performance. Sample images from the dataset 
+are presented in Fig. 3.
+2.3.  System framework
+The proposed semantic mapping system, as shown in Fig. 4, inte-
+grates four key modules to enable robust 3D mapping and fruit local-
+ization: the EFSegNet semantic segmentation module, the ORB-SLAM3 
+visual backend, the point cloud optimization module, and the fruit clus-
+tering/localization module. First, the input stereo images are processed 
+by EFSegNet. The resulting semantic masks are then utilized by the 
+ORB-SLAM3 module to ﬁlter out feature points associated with dynamic 
+regions during feature extraction, thereby improving pose estimation 
+stability and map accuracy. Following dynamic point elimination, the 
+system constructs a global 3D point cloud map using depth data from 
+keyframes. This map is semantically enriched by projecting 2D masks 
+onto their corresponding 3D points. To improve map quality, a three-
+stage ﬁltering process is applied, utilizing voxel downsampling, statis-
+tical outlier removal, and radius ﬁltering to remove noise and redun-
+dant points. Finally, the reﬁned fruit point cloud is clustered using the 
+Density-Based Spatial Clustering of Applications with Noise (DBSCAN) 
+Smart Agricultural Technology 13 (2026) 101784 
+2 
+
+R. Yang et al.
+Fig. 2. The vineyard experimental environment.
+Fig. 3. Sample images from the vineyard dataset. (a) Static grape bunches. (b) A dynamic scene containing a pedestrian.
+Fig. 4. Architectural overview of the proposed system. It integrates the EFSegNet segmentation module, ORB-SLAM3 backend, point cloud optimization, and fruit 
+localization modules.
+algorithm. Principal Component Analysis (PCA) is then applied to model 
+each cluster as an ellipsoid, allowing for the extraction of 3D positions 
+and the counting of grape bunches.
+2.3.1.  Segmentation network
+Reliable yield estimation depends on the ability to distinguish in-
+dividual grape bunches, particularly when they are touching or over-
+lapping. Standard real-time networks often struggle to deﬁne the subtle 
+boundaries between adjacent clusters, resulting in under-counting. To 
+solve this, we introduce EFSegNet, a real-time semantic segmentation 
+network derived from the PIDNet backbone, speciﬁcally tuned for vine-
+yard inspection.
+As illustrated in Fig. 5, EFSegNet maintains a three-branch struc-
+ture: spatial, context, and edge. To enhance edge feature extraction, we 
+replace the standard convolutional modules in the edge branch with 
+a Gradient Feature Fusion Block (GFFM). This module facilitates the 
+fusion of spatial and semantic information by providing explicit edge 
+guidance. Additionally, a Deformable Spatial Attention (DSA) mod-
+ule is integrated into the spatial branch to improve the network’s 
+sensitivity to anisotropic targets, such as irregularly shaped grape
+clusters.
+While PIDNet includes an edge-guided design, its original standard 
+convolutions are insuﬃcient for capturing the complex edge gradients 
+found in vineyards. Our proposed GFFM addresses this by integrating 
+three types of diﬀerential convolutions to heighten sensitivity to edge 
+gradient changes, as shown in Fig. 6. A lightweight residual path with 
+a gated attention mechanism is also added to compensate for feature 
+degradation.
+The central diﬀerence convolution (CDConv) [33] highlights local 
+edge variations by subtracting the central response from the output of a 
+Smart Agricultural Technology 13 (2026) 101784 
+3 
+
+R. Yang et al.
+Fig. 5. The framework of EFSegNet. It features a spatial branch with Deformable Spatial Attention (DSA), a context branch, and an edge branch enhanced with the 
+Gradient Feature Fusion Block (GFFM).
+Fig. 6. Gradient Feature Fusion Block (GFFM). This module integrates diﬀeren-
+tial convolutions to enhance edge sensitivity.
+conventional convolution. First, the output of the standard convolution 
+is computed as:
+𝑓′(𝑥) = Conv(𝑥, 𝑊)
+(1)
+Where 𝑓′(𝑥) is the output of standard convolution. Next, we deﬁne the 
+central response term 𝑊center by summing all the kernel weights 𝑊(𝑖,𝑗)
+of the convolution kernel 𝑊 across its spatial dimensions:
+𝑊center =
+∑
+𝑖,𝑗
+𝑊(𝑖,𝑗)
+(2)
+We introduce a modulation factor 𝜃∈[0, 1] to control the propor-
+tion of the central diﬀerence term. The output of the central diﬀerence 
+convolution 𝑓cd(𝑥) is obtained by:
+𝑓cd(𝑥) = 𝑓′(𝑥) −𝜃⋅Conv(𝑥, 𝑊center)
+(3)
+Subsequently, the angular diﬀerence convolution (ADConv) simu-
+lates directional variations. 𝑅𝑜𝑡𝑎𝑡𝑒(𝑊) represents a predeﬁned angular 
+reordering of the kernel weights. The rotated kernel 𝑊rot is obtained by 
+subtracting the rotated kernel scaled by 𝜃 from the original kernel. The 
+angular diﬀerence convolution is formulated as: 
+Rotate(𝑊) = [𝑊3, 𝑊0, 𝑊1, 𝑊6, 𝑊4, 𝑊2, 𝑊7, 𝑊8, 𝑊5]
+(4)
+𝑊rot = 𝑊−𝜃⋅Rotate(𝑊)
+(5)
+𝑓ad(𝑥) = Conv(𝑥, 𝑊rot)
+(6)
+Finally, the radial diﬀerence convolution (RDConv) is constructed 
+using a 5 × 5 kernel with a radially symmetric weighting scheme. The 
+Fig. 7. Deformable Spatial Attention (DSA) module. It uses single-axis de-
+formable convolution to adapt to irregular object geometries.
+kernel 𝑊rd is deﬁned as:
+𝑊rd[𝑖, 𝑗] =
+⎧
+⎪
+⎪
+⎨
+⎪
+⎪⎩
++𝑊𝑘,
+(𝑖, 𝑗) ∈forward radial positions
+−𝜃⋅𝑊𝑘,
+(𝑖, 𝑗) ∈backward radial positions
+(1 −𝜃) ⋅𝑊0,
+(𝑖, 𝑗) = central position
+0,
+otherwise
+(7)
+The output 𝑓rd(𝑥) is obtained by convolving input 𝑥 with 𝑊rd. The 
+feature is then activated by ReLU and compressed using a 1 × 1 convo-
+lution. The ﬁnal output of the GFFM (𝑓GFFM) is the element-wise sum of 
+the diﬀerential path output and the residual path output 𝑓res, as formu-
+lated in Eqs. (8) and (9):
+𝑓diff = Conv1×1(ReLU(𝑥))
+(8)
+𝑓GFFM = 𝑓diff + 𝑓res
+(9)
+The DSA module [34], as shown in Fig. 7, is integrated into the spa-
+tial branch to handle anisotropic features. It processes input features 
+through 1 × 1 convolution and ReLU, followed by single-axis deformable 
+convolutions (DSCN) along horizontal and vertical directions, as formu-
+lated in Eqs. (10)–(13). Finally, a spatial attention map is generated and 
+applied to the features, as formulated in Eqs. (14) and (15):
+𝑥′ = ReLU(Conv1×1(𝑥))
+(10)
+𝑥𝑐= DWConv5×5(𝑥′)
+(11)
+Smart Agricultural Technology 13 (2026) 101784 
+4 
+
+R. Yang et al.
+Fig. 8. Dynamic feature point removal process.
+𝑥attn-x = DSCN𝑥(𝑥𝑐)
+(12)
+𝑥attn-y = DSCN𝑦(𝑥attn-x, 𝑥𝑐)
+(13)
+atten = Conv1×1(𝑥attn-y)
+(14)
+𝑥output = 𝑥′ ⊙atten
+(15)
+2.3.2.  Dynamic feature point removal
+To eliminate dynamic feature points in dynamic environments and 
+enhance the robustness of the ORB-SLAM3 system in dynamic scenes, 
+a semantic segmentation module is integrated into the original ORB-
+SLAM3 framework. Speciﬁcally, an additional semantic segmentation 
+thread is introduced. In this thread, each RGB frame is processed by EF-
+SegNet, to produce a corresponding semantic mask. The semantic mask 
+is subsequently synchronized and forwarded to the front-end tracking 
+thread. As illustrated in Fig. 8, during the frame initialization stage, the 
+system ﬁrst extracts ORB feature points from the input image. Subse-
+quently, it obtains the spatial coordinates of these feature points and 
+queries the corresponding semantic labels from the semantic mask. If 
+a label indicates a dynamic object, the associated feature point is re-
+moved; otherwise, it is retained. Therefore, by leveraging the semantic 
+mask, all dynamic feature points within the regions of moving objects 
+can be eliminated, while only the static feature points from the back-
+ground are preserved for subsequent tracking and mapping. This process 
+reduces matching errors and trajectory drift caused by dynamic object 
+motion, thereby improving the robustness of the SLAM system in dy-
+namic environments.
+2.3.3.  Semantic mapping and map optimization
+During dense point cloud reconstruction, grape fruits are semanti-
+cally annotated within the point cloud to enhance the semantic rep-
+resentation of the map. Semantic labels are assigned to grape-related 
+points based on the segmentation results. For visualization purposes, a 
+speciﬁc color 𝐶grape, which is set to cyan in this study, is assigned to 
+the grape point cloud. This facilitates subsequent tasks such as classi-
+ﬁcation, recognition, and human-robot interaction. The rules for point 
+cloud color assignment are deﬁned as Eq. (16):
+𝐂𝑖=
+⎧
+⎪
+⎨
+⎪⎩
+𝐂grape = [0, 255, 255],
+label𝑖= ‘‘grape’’
+discard,
+label𝑖= ‘‘pedestrian’’
+𝐂RGB(𝑢𝑖, 𝑣𝑖),
+label𝑖= ‘‘other’’
+(16)
+Where 𝐂RGB(𝑢𝑖, 𝑣𝑖) represents the pixel color in the RGB image corre-
+sponding to the 𝑖-th point in the point cloud, label𝑖 indicates the semantic 
+label of the 𝑖-th point, 𝐂𝑖 denotes the assigned color of the 𝑖-th point in 
+the point cloud. Due to dense plant spacing, complex branch and leaf 
+structures, and external disturbances such as natural illumination and 
+wind, the reconstructed dense map may present local density anoma-
+lies, outliers in the point cloud, and isolated points near plant bound-
+aries and supporting frames. Voxel Grid Filtering is a widely adopted 
+point cloud downsampling method. It divides the 3D space into equally 
+sized voxel grids and replaces all points within each voxel with their 
+centroid. This process reduces point redundancy and improves compu-
+tational eﬃciency while preserving the overall structural integrity of the 
+scene. For each voxel 𝑉𝑘, the representative point 𝑝voxel is computed as 
+the mean position of all points 𝑝𝑖∈𝑉𝑘, as deﬁned in:
+𝑝voxel = 1
+𝑁
+𝑁
+∑
+𝑖=1
+𝑝𝑖,
+∀𝑝𝑖∈𝑉𝑘
+(17)
+To mitigate local density anomalies in the point cloud, we adopt 
+the statistical outlier removal method. Statistical outlier removal iden-
+tiﬁes outlier points by statistically analyzing the local neighborhood of 
+each point and detecting inconsistencies in point density. Based on local 
+statistical characteristics, abnormal points are removed from the point 
+cloud map. For each point 𝑝𝑖, the average distance 𝜇𝑖 to its 𝑘 nearest 
+neighbors is computed as in Eq. (18):
+𝜇𝑖= 1
+𝑘
+𝑘
+∑
+𝑗=1
+‖𝑝𝑖−𝑝𝑗‖
+(18)
+Outliers are further removed based on global statistical character-
+istics. Speciﬁcally, a point is considered an outlier and removed if its 
+average distance exceeds the global mean ̄𝜇 plus 𝜎 times the standard 
+deviation as in Eq. (19). Meanwhile, a tolerance parameter 𝜆 is intro-
+duced to adjust the strength of the statistical outlier removal process:
+𝜇𝑖>̄ 𝜇+ 𝜆⋅𝜎
+(19)
+To further eliminate spatially isolated points, we introduce the ra-
+dius outlier removal method. This approach evaluates the number of 
+neighboring points within a ﬁxed radius 𝑟 for each point. If the number 
+of neighbors 𝑁𝑟(𝑝𝑖) is less than the minimum threshold 𝑁min, the point 
+is considered an outlier and removed. The ﬁltering criterion is described 
+in Eq. (20):
+𝑁𝑟(𝑝𝑖) < 𝑁min
+(20)
+2.3.4.  Fruit clustering and localization
+To achieve spatial localization of fruit targets in point clouds, we 
+propose a clustering method based on DBSCAN (Density-Based Spa-
+tial Clustering of Applications with Noise). This method utilizes se-
+mantic segmentation masks to identify and isolate spatially indepen-
+dent grape regions within the point cloud. By clustering grape points 
+according to their spatial density distribution, the algorithm separates 
+distinct grape clusters corresponding to diﬀerent grape bunches. For any 
+3D point 𝑝𝑖= (𝑥𝑖, 𝑦𝑖, 𝑧𝑖)⊤∈ℝ3, we calculate the number of neighboring 
+points located within a Euclidean distance 𝜀, as deﬁned by 𝑁𝜀(𝑝𝑖). If 
+|𝑁𝜀(𝑝𝑖)| ≥MinPts, then 𝑝𝑖 is classiﬁed as a core point, and its neighbor-
+ing points are assigned to the same cluster. Clusters are formed through 
+neighborhood connectivity between core points, while points that do 
+not belong to any cluster are considered noise, as deﬁned in:
+𝑁𝜀(𝑝𝑖) =
+{
+𝑝𝑗= (𝑥𝑗, 𝑦𝑗, 𝑧𝑗)⊤∈ℝ3 ||| ‖𝑝𝑗−𝑝𝑖‖2 ≤𝜀
+}
+(21)
+Smart Agricultural Technology 13 (2026) 101784 
+5 
+
+R. Yang et al.
+To accommodate the spatial scale of grape fruits, the neighborhood 
+radius 𝜀 is set to 0.05m, and the minimum number of points MinPts is set 
+to 50, to avoid misclassifying isolated points as fruit targets. Addition-
+ally, the maximum number of points in a single cluster is limited to 5000
+to prevent the merging of occluded fragments. After completing spatial 
+clustering, PCA is applied to each grape fruit cluster to extract its geo-
+metric structure and perform ellipsoidal modeling. For the 𝑘-th cluster, 
+denoted as 𝐶𝑘= {𝑝1, … , 𝑝𝑛}, the geometric center of the point cloud is 
+ﬁrst computed and used as the spatial position of the fruit cluster in the 
+global coordinate system, as deﬁned in:
+𝑐𝑘= 1
+𝑛
+𝑛
+∑
+𝑖=1
+𝑝𝑖
+(22)
+The point cloud is ﬁrst zero-centered, and the covariance matrix is 
+then constructed as in Eq. (23):
+Σ𝑘= 1
+𝑛
+𝑛
+∑
+𝑖=1
+(𝑝𝑖−𝑐𝑘)(𝑝𝑖−𝑐𝑘)⊤
+(23)
+By performing eigenvalue decomposition on the covariance matrix 
+Σ𝑘, a direction matrix 𝑅𝑘∈ℝ3×3 is obtained. The column vectors of 𝑅𝑘
+deﬁne the principal axes of the point cloud. The clustered points are 
+then projected onto this principal axis coordinate system. The maximum 
+extent along each axis (𝑎𝑘, 𝑏𝑘, 𝑐𝑘) is used to compute the semi-axis lengths 
+of the ellipsoid, as deﬁned in Eq. (24):
+𝑎𝑘= 1
+2(𝑥′
+max −𝑥′
+min)𝑏𝑘= 1
+2(𝑦′
+max −𝑦′
+min)𝑐𝑘= 1
+2(𝑧′
+max −𝑧′
+min)
+(24)
+Where 𝑥′, 𝑦′, and 𝑧′ represent the coordinate components of the clus-
+tered points in the principal axis coordinate system. Each cluster is ul-
+timately modeled as a 3D ellipsoid with center 𝑐𝑘 and semi-axis lengths 
+(𝑎𝑘, 𝑏𝑘, 𝑐𝑘). The estimated volume of the ellipsoid is given by Eq. (25):
+𝑉𝑘= 4
+3𝜋𝑎𝑘𝑏𝑘𝑐𝑘
+(25)
+To ensure the physical plausibility of the clustering results, a volume-
+based ﬁltering range is applied. Only clusters satisfying 𝑉𝑘∈[𝑉min, 𝑉max]
+are retained, where 𝑉min = 0.001 m3 and 𝑉max = 0.05 m3.
+3.  Experiments and results
+To quantitatively evaluate the contribution of each proposed mod-
+ule, we conducted a series of experiments focusing on six key aspects: se-
+mantic segmentation performance analysis (Section 3.1), dynamic elim-
+ination performance analysis (Section 3.2), 3D reconstruction in a dy-
+namic vineyard (Section 3.3), 3D point cloud map optimization (Sec-
+tion 3.4), fruit localization and bunch counting (Section 3.5), and over-
+all system real-time performance (Section 3.6).
+3.1.  Semantic segmentation performance
+3.1.1.  Semantic segmentation comparative experiments
+The EFSegNet semantic segmentation network was trained on a sys-
+tem with an Intel i5-12500H CPU and an NVIDIA RTX 3060 GPU, run-
+ning the Ubuntu 20.04 operating system. The deep learning framework 
+used was PyTorch 1.11. The dataset was partitioned into training, val-
+idation, and test sets at an 8:1:1 ratio. The network was trained using 
+the conﬁguration parameters detailed in Table 1.
+To provide a comprehensive evaluation of the proposed EFSegNet 
+network’s semantic segmentation performance, we conducted a system-
+atic comparison against several state-of-the-art networks: DeepLabv3+, 
+BiSeNetv2, SegFormer-B0, DDRNet-23-slim [35], and PIDNet. All exper-
+iments were performed on the vineyard dataset. To ensure a fair and re-
+producible comparison, all networks were trained for 60,000 iterations 
+with an initial learning rate of 1e-2, using the SGD optimizer. We em-
+ployed six standard evaluation metrics to assess network performance: 
+mean Intersection over Union (mIoU), mean Accuracy (mAcc), Frames 
+Per Second (FPS), Flops(G), Params(M), and Model Size(M). Here, mIoU 
+Table 1 
+Conﬁguration parameters for EFSegNet 
+training.
+ Parameter Type
+ Parameter Setting
+ Optimizer
+ SGD
+ Learning Rate
+ 0.01
+ Momentum
+ 0.9
+ Weight Decay
+ 0.005
+ Batch Size
+ 12
+ Iterations
+ 60,000
+represents the average of the IoU values across all classes and is the 
+standard metric for overall segmentation precision. mAcc is the aver-
+age recognition accuracy for each class, which is particularly useful for 
+evaluating performance on small targets or in scenarios with class imbal-
+ance. Flops(G) and Params(M) measure the computational complexity 
+of the network, with Flops(G) representing the number of ﬂoating-point 
+operations per second and Params(M) denoting the number of trainable 
+parameters in millions. Model Size(M) quantiﬁes the network’s memory 
+footprint. FPS measures the network’s operational speed. The metrics 
+are calculated based on the following: 𝑇𝑃𝑖, 𝐹𝑃𝑖, and 𝐹𝑁𝑖 represent the 
+number of true positives, false positives, and false negatives for class 𝑖, 
+respectively, and 𝑘 is the total number of classes (two in this study: ’fruit’ 
+and ’pedestrian’). The relevant formulas are as follows Eqs. (26)–(28): 
+mIoU =
+1
+𝑘+ 1
+𝑘
+∑
+𝑖=0
+𝑇𝑃𝑖
+𝑇𝑃𝑖+ 𝐹𝑃𝑖+ 𝐹𝑁𝑖
+(26)
+mAcc =
+1
+𝑘+ 1
+𝑘
+∑
+𝑖=0
+𝑇𝑃𝑖
+𝑇𝑃𝑖+ 𝐹𝑁𝑖
+(27)
+FPS = FrameNums
+ElapsedTime
+(28)
+The results of the semantic segmentation experiments are presented 
+in Table 2. On the vineyard dataset, EFSegNet achieved a mIoU of 
+89.45% and a mAcc of 93.55% with an inference speed of 120.92 FPS. 
+Compared to PIDNet, EFSegNet improved by 1.01% in mIoU and 0.65% 
+in mAcc, attaining the best segmentation performance among all evalu-
+ated models. With the integration of the GFFM and DSA modules, both 
+the FLOPs and the number of parameters slightly increased relative to 
+PIDNet, but the increase remains within an acceptable range. Although 
+the inference speed of EFSegNet is lower than that of DDRNet, it re-
+mains suﬃcient for the real-time requirements of the proposed system 
+while delivering superior segmentation accuracy. Therefore, EFSegNet 
+achieves a balanced trade-oﬀ between accuracy and eﬃciency, main-
+taining high segmentation precision while satisfying the real-time per-
+formance demands of the system.
+To complement the quantitative metrics and provide an intuitive val-
+idation of EFSegNet’s superior performance, a qualitative analysis of the 
+segmentation outputs from the test set is presented. These visualizations 
+are chosen to demonstrate the models’ eﬀectiveness in handling the key 
+challenges of irregular object boundaries, severe occlusion, and dynamic 
+scene elements.Fig. 9 illustrates the models’ segmentation performance 
+under conditions of irregular grape bunch contours and severe occlu-
+sion. While methods such as DeepLabv3+, BiSeNetv2, and DDRNet-23-
+slim can approximate the location of the fruit regions, they generate 
+coarse masks with imprecise boundaries. Segformer-B0 fails to detect 
+the occluded target areas entirely. PIDNet approximately captures the 
+occluded targets, but its segmentation quality remains poor. This deﬁ-
+ciency arises because the baseline PIDNet’s edge branch employs stan-
+dard convolutions, which struggle to capture complex background gra-
+dient variations. Consequently, it fails to achieve complete segmenta-
+tion of occluded targets. In contrast, the GFFM module within EFSegNet 
+enhances sensitivity to edge gradient changes by integrating three dif-
+ferential convolutions, enabling ﬁner contour extraction. Therefore, EF-
+SegNet exhibits superior segmentation performance in this challenging 
+Smart Agricultural Technology 13 (2026) 101784 
+6 
+
+R. Yang et al.
+Table 2 
+Comparison results of classic semantic segmentation networks.
+ Segmentation Method
+ mIoU(%)
+ mAcc(%)
+ Flops(G)
+ Params(M)
+ FPS
+ Model Size(M)
+ DeepLabv3+
+ 87.85
+ 92.85
+ 158.72
+ 41.217
+ 27.4
+ 357.9
+ BiSeNetv2
+ 87.60
+ 89.93
+ 10.824
+ 3.342
+ 273.04
+ 128.7
+ Segformer-B0
+ 86.24
+ 96.46
+ 6.857
+ 3.715
+ 177.7
+ 37.7
+ DDRNet-23-slim
+ 88.02
+ 92.88
+ 4.065
+ 5.732
+ 321.94
+ 46.4
+ PIDNet
+ 88.41
+ 92.9
+ 19.854
+ 28.759
+ 162.16
+ 118.4
+ EFSegNet
+ 89.45
+ 93.55
+ 21.786
+ 30.779
+ 120.92
+ 124.6
+Fig. 9. Comparison of segmentation results on the test set. (a) Image. (b) Ground truth (c) DeepLabv3+. (d) BiSeNetv2. (e) Segformer-B0. (f) DDRNet-23-slim. (g) 
+PIDNet. (h) EFSegNet.
+Fig. 10. Comparison of segmentation results on the test set. (a) Image. (b) Ground truth. (c) DeepLabv3+. (d) BiSeNetv2. (e) Segformer-B0. (f) DDRNet-23-slim. (g) 
+PIDNet. (h) EFSegNet.
+static scenario. Fig. 10 demonstrates the segmentation performance in 
+a dynamic scene, a critical test for SLAM robustness. Here, BiSeNetv2, 
+Segformer-B0, and DDRNet-23-slim all fail to identify the distant grape 
+bunch targets. DeepLabv3+ provides incomplete segmentation of the 
+distant targets, while PIDNet produces erroneous segmentation. EFSeg-
+Net again outperforms the other models, a result attributed to the syn-
+ergistic eﬀects of two key components: ﬁrst, the DSA module provides 
+an adaptive receptive ﬁeld, enabling better perception of distant grape 
+targets; and second, the GFFM module provides more precise, lower-
+noise edge priors for both the dynamic pedestrians and the static grape 
+bunches. This, in turn, guides the spatial branch and the semantic seg-
+mentation fusion, enabling the generation of a more complete mask.
+3.1.2.  Ablation study
+To further evaluate the eﬀectiveness of each proposed module, a se-
+ries of ablation experiments were conducted under consistent training 
+and testing conditions, with the results summarized in Table 3. Using 
+PIDNet as the baseline, we systematically analyzed the individual con-
+tributions of the GFFM module, its residual path, and the DSA mod-
+ule to overall network performance. Besides mIoU, we introduced the 
+Boundary F-measure to speciﬁcally evaluate the quality of boundary 
+segmentation, as mIoU is dominated by internal object pixels and may 
+not fully reﬂect edge improvements. Integrating the GFFM module into 
+the edge branch of PIDNet enhanced the network’s ability to extract 
+edge features, improving the mIoU to 88.92%. Notably, the Bound-
+ary F-measure increased from 78.32% to 80.28%, demonstrating that 
+GFFM eﬀectively sharpens fruit boundaries. The addition of a residual 
+path within the GFFM further mitigated gradient attenuation and stabi-
+lized feature propagation, resulting in an mIoU increase to 89.12% and 
+a Boundary F-measure increase to 81.92%. When both the GFFM and 
+DSA modules were incorporated, EFSegNet achieved a well-balanced 
+trade-oﬀ between global context modeling and local geometric percep-
+tion. This conﬁguration yielded the best performance, with an mIoU of 
+89.45% and a Boundary F-measure of 82.78%.
+Compared with the original PIDNet, EFSegNet demonstrated signiﬁ-
+cant improvements in segmentation accuracy with only a marginal and 
+acceptable reduction in inference speed. These results conﬁrm the eﬀec-
+tiveness of the proposed modules in enhancing edge feature extraction 
+and optimizing multi-scale feature representation. To qualitatively vali-
+date the eﬃcacy of the proposed modules at the feature-representation 
+level, as shown in Figs. 11 and 12, we provide a visual comparison of 
+the activations within the edge branch and the bag layer for both EF
+Smart Agricultural Technology 13 (2026) 101784 
+7 
+
+R. Yang et al.
+Table 3 
+Ablation study results of the GFFM and DSA modules.
+ Method
+ GFFM
+ GFFM Residual Path
+ DSA
+ mIoU(%)
+ Boundary F-measure(%)
+ mAcc(%)
+ FPS
+ PIDNet
+×
+×
+×
+ 88.41
+ 78.32
+ 92.90
+ 162.16
+ EFSegNet
+✓
+×
+×
+ 88.92
+ 80.28
+ 93.20
+ 143.78
+ EFSegNet
+✓
+✓
+×
+ 89.12
+ 81.92
+ 93.37
+ 135.46
+ EFSegNet
+✓
+✓
+✓
+ 89.45
+ 82.78
+ 93.55
+ 120.92
+Fig. 11. Comparison of segmentation results between PIDNet and the proposed EFSegNet in the horizontal sequence. (a) Image. (b) PIDNet edge branch output. 
+(c) PIDNet Bag layer output. (d) PIDNet segmentation result. (e) Ground truth. (f) EFSegNet edge branch output. (g) EFSegNet Bag layer output. (h) EFSegNet 
+segmentation result.
+SegNet and the baseline PIDNet. The activation heatmaps from the base-
+line PIDNet’s edge branch are diﬀuse, fail to capture grape bunch con-
+tours accurately, and exhibit noise artifacts. Conversely, the EFSegNet 
+edge branch, integrated with GFFM, generates signiﬁcantly enhanced 
+activation regions. Its hotspots are more concentrated, sharper, and 
+align closely with the actual grape cluster edges. This precise edge prior 
+from the GFFM subsequently propagates to the Bag layer, which, in turn, 
+makes EFSegNet’s feature response for the main fruit body demonstrably 
+more focused and conﬁdent. This visually conﬁrms that the GFFM mod-
+ule, through its integration of diﬀerential convolutions, signiﬁcantly en-
+hances the network’s perception of complex boundaries and ﬁne-grained 
+structures. In scenarios involving dynamic pedestrians and signiﬁcant 
+target scale variations, the baseline PIDNet reveals its limitations. Its Bag 
+layer almost completely fails to activate on small-scale, distant grape 
+targets, demonstrating a limited receptive ﬁeld. In contrast, EFSegNet 
+successfully overcomes this challenge. This success is attributed to the 
+synergistic eﬀect of the GFFM and DSA modules. First, the GFFM en-
+hanced edge branch provides robust contour information for all targets. 
+Second, the DSA module integrated into the spatial branch dynamically 
+adjusts its receptive ﬁeld, allowing it to generate strong and accurate 
+activations for distant, small-scale grape clusters, mirroring its focus on 
+nearby targets. This capability enables EFSegNet to generate more pre-
+cise and robust feature representations than the baseline, consequently 
+leading to the signiﬁcant performance improvements quantiﬁed in the 
+metrics.
+3.2.  Dynamic elimination performance
+To evaluate the eﬀectiveness of dynamic feature point removal, the 
+semantic mask corresponding to each input image is integrated into the 
+system. During the frame creation stage, dynamic feature points located 
+within red pedestrian regions are removed based on the semantic mask, 
+thereby reducing the negative impact of moving objects on subsequent 
+tracking and localization accuracy. Three representative frames from 
+the dataset constructed in this study are selected to demonstrate the ef-
+fect of semantic mask–based dynamic point removal. Fig. 13(a) shows 
+the original input image frames. Fig. 13(b) displays the feature points 
+extracted by the original ORB-SLAM3 system. As no dynamic point ﬁlter-
+ing is applied, feature points are also extracted from moving pedestrian 
+regions, which degrades localization accuracy. Fig. 13(c) shows the re-
+moval results using masks generated by the original PIDNet network. 
+Most dynamic points are eﬀectively removed; however, due to the com-
+plex background of the vineyard and pedestrian motion, the segmenta-
+tion task becomes more challenging, resulting in incomplete removal of 
+edge features associated with dynamic objects. Fig. 13(d) presents the 
+results using masks generated by the proposed EFSegNet network. The 
+system successfully removes dynamic feature points both within pedes-
+trian regions and along their boundaries, signiﬁcantly reducing the in-
+ﬂuence of moving objects on SLAM performance and improving the re-
+liability of subsequent pose estimation and map construction. The eﬀec-
+tiveness of dynamic feature point elimination is demonstrated through 
+comparative analysis of diﬀerent approaches, as illustrated in Fig. 13. 
+The results show that EFSegNet achieves superior performance in re-
+moving both interior and boundary dynamic feature points compared 
+to the original PIDNet and baseline ORB-SLAM3.
+The TUM RGB-D dataset [36], provided by the Technical Univer-
+sity of Munich, contains RGB images, depth maps, and corresponding 
+camera poses captured by a Kinect sensor. This dataset is speciﬁcally 
+designed for evaluating and benchmarking VSLAM algorithms. In our 
+experiments, four highly dynamic sequences and one low dynamic se-
+quence were selected from the TUM dataset. The fr3-walking sequences 
+represent highly dynamic scenarios in which two people move freely 
+within an oﬃce environment, while fr3-sitting represents a low dynamic 
+sequence where two people sit at a desk with only hand movements. 
+The Absolute Trajectory Error (ATE) directly computes the diﬀerence 
+between the ground truth and the estimated camera poses, providing 
+an intuitive measure of both the accuracy and global consistency of the 
+estimated trajectory. The Root Mean Square Error (RMSE) of the ATE 
+compares the estimated trajectory against the ground truth trajectory; 
+a smaller RMSE indicates that the estimated trajectory is closer to the 
+true path.
+To evaluate the localization accuracy and robustness of the proposed 
+system, comparative experiments were conducted against the original 
+ORB-SLAM2 and several representative dynamic SLAM algorithms, in-
+cluding DynaSLAM [37], DS-SLAM [38], and Panoptic-SLAM [39]. The 
+RMSE results for all methods across diﬀerent sequences are summa-
+rized in Table 4. As shown in Table 4, our system achieved the low-
+est RMSE in all sequences. In the fr3-walking-rpy sequence, the system 
+Smart Agricultural Technology 13 (2026) 101784 
+8 
+
+R. Yang et al.
+Fig. 12. Comparison of segmentation results between PIDNet and the proposed EFSegNet in the vertical sequence. (a) Image. (b) PIDNet edge branch output. 
+(c) PIDNet Bag layer output. (d) PIDNet segmentation result. (e) Ground truth. (f) EFSegNet edge branch output. (g) EFSegNet Bag layer output. (h) EFSegNet 
+segmentation result.
+Table 4 
+Comparison of the RMSE of ATE in TUM sequences.
+ Sequence
+ fr3-sitting-static
+ fr3-walking-halfsphere
+ fr3-walking-rpy
+ fr3-walking-static
+ fr3-walking-xyz
+ ORB-SLAM3
+ 0.011
+ 0.370
+ 0.658
+ 0.097
+ 0.393
+ DynaSLAM
+ 0.0075
+ 0.035
+ 0.162
+ 0.043
+ 0.019
+ DS-SLAM
+ 0.0084
+ 0.032
+ 0.385
+ 0.058
+ 0.022
+ Panoptic-SLAM
+ 0.0065
+ 0.033
+ 0.131
+ 0.039
+ 0.016
+ Proposed System
+ 0.0052
+ 0.031
+ 0.082
+ 0.037
+ 0.015
+Fig. 13. Comparison of dynamic feature point elimination eﬀectiveness across diﬀerent approaches. (a) Original RGB frames showing vineyard scenes with moving 
+pedestrian. (b) Feature points extracted by original ORB-SLAM3 without dynamic ﬁltering. (c) Feature points after dynamic elimination using original PIDNet mask. 
+(d) Feature points after dynamic elimination using EFSegNet mask.
+attained an RMSE of 0.082, representing an 87.5% improvement over 
+ORB-SLAM3, and 49.4% and 37.4% improvements over DynaSLAM and 
+DS-SLAM, respectively. In the low dynamic fr3-sitting-static sequence, 
+where dynamic motion is limited, the improvement is relatively smaller, 
+achieving a 52.7% reduction in RMSE compared with ORB-SLAM3 and 
+30.7% and 38.1% reductions compared with DynaSLAM and DS-SLAM, 
+respectively. Table 5 provides an intuitive visualization of the ATE for 
+diﬀerent algorithms on the fr3/walking-halfsphere and fr3/walking-rpy 
+sequences. The red lines represent the deviation between the estimated 
+and ground truth trajectories. As illustrated in the ﬁgure, the developed 
+solution demonstrates superior localization accuracy and robustness in 
+dynamic environments compared to the other methods.
+3.3.  3D Reconstruction in dynamic vineyards
+To validate the 3D mapping capabilities of the proposed system 
+in a dynamic orchard environment, we conduct a series of exper-
+iments using our built vineyard dataset. The experiments included 
+scenes with both single-row and double-row. Data was collected from 
+both a lateral scanning perspective and a forward-moving perspective 
+along the rows to simulate the typical movement paths and visual 
+changes experienced by an agricultural robot during orchard opera-
+tions. Fig. 14 illustrates the mapping of a single-row trellis. Without 
+semantic information (Fig. 14a), the system only produced a structural 
+reconstruction. By incorporating EFSegNet, the system accurately em-
+Smart Agricultural Technology 13 (2026) 101784 
+9 
+
+R. Yang et al.
+Table 5 
+Ground truth and trajectories estimated in the TUM sequences.
+beds fruit semantics into the map, making the grape bunches clearly 
+discernible (Fig. 14b). This capability is further demonstrated on a 
+more complex double-row trellis structure from both a global perspec-
+tive (Fig. 15) and the robot’s forward-moving perspective (Fig. 16). 
+The system’s robustness in dynamic scenes is highlighted in Fig. 17.
+Without dynamic object handling, the map is corrupted by artifacts 
+from the moving pedestrian (Fig. 17a and b). In contrast, our EFSegNet-
+assisted approach removes these dynamic points, resulting in a clean 
+and coherent map where the integrity of the static structure is preserved
+(Fig. 17).
+Smart Agricultural Technology 13 (2026) 101784 
+10 
+
+R. Yang et al.
+Fig. 14. 3D reconstruction comparison of a single-row trellis from a lateral scanning perspective.(a) Original 3D point cloud reconstruction. (b) Semantic 3D 
+reconstruction with fruit regions highlighted in cyan.
+Fig. 15. 3D reconstruction comparison of a double-row trellis from a global perspective.(a) Original 3D point cloud reconstruction. (b) Semantic 3D reconstruction 
+with fruit regions highlighted in cyan.
+Fig. 16. 3D reconstruction comparison of a double-row trellis from a forward-moving perspective.(a) Original 3D point cloud reconstruction. (b) Semantic 3D 
+reconstruction with fruit regions highlighted in cyan.
+Smart Agricultural Technology 13 (2026) 101784 
+11 
+
+R. Yang et al.
+Fig. 17. Dynamic 3D reconstruction results. (a) Original 3D point cloud reconstruction. (b) 3D reconstruction with pedestrian point clouds annotated using EFSegNet 
+semantic masks. (c) 3D reconstruction result after pedestrian point cloud removal.
+Fig. 18. 3D reconstruction of a single-row trellis from a lateral scanning perspective. (a) Comparison of point cloud map before and after ﬁltering. (b) Comparison 
+of semantic point cloud before and after ﬁltering.
+3.4.  Map optimization analysis
+Although the system achieves clear point cloud reconstruction 
+and fruit semantic enhancement in various orchard perspectives and
+scenarios, a detailed analysis of local regions reveals some limitations. 
+The resulting point cloud maps still contain a degree of noise, including 
+outliers, non-uniform density, and fragmented structural edges. These 
+abnormalities are mainly caused by light eﬀects, branch and leaf shad-
+ing, and depth estimation errors in the orchard environment, which may 
+have an impact on the subsequent fruit clustering and spatial modeling 
+accuracy if not treated.
+Fig. 18 demonstrates the comparative eﬀect of the reconstruction re-
+sults before and after point cloud map and semantic point cloud map 
+ﬁltering optimization in a single-row grapevine scene. As shown in 
+Fig. 18(a), there are obvious edge burrs, outlier noise and structural 
+repetitive noise in the original point cloud map, especially in the re-
+gions with dense branches and leaves or occluded viewpoints, where 
+the noise density is high. After the three-stage point cloud ﬁltering, the 
+overall point cloud map converges signiﬁcantly, the local contours are 
+clearer, the outliers are eﬀectively eliminated, and the boundary is more 
+regular. Further observing the semantic point cloud in Fig. 18(b), the 
+unﬁltered result shows that there are breakage or diﬀusion problems in 
+Smart Agricultural Technology 13 (2026) 101784 
+12 
+
+R. Yang et al.
+the fruit region, and semantic overlapping occurs in the junction region 
+of the tree trunk and the fruit. After ﬁltering, the semantic point cloud 
+more closely matches the real fruit distribution, the semantic structure 
+is complete, the redundant points are obviously compressed, and the
+consistency between the semantic information and the geometric struc-
+ture of the point cloud is improved.
+3.5.  Fruit clustering and localization
+To quantify the quality of 3D reconstruction in the vineyard, we con-
+ducted quantitative experiments with grape bunches for fruit localiza-
+tion accuracy experiments and bunch counting experiments.
+3.5.1.  Fruit localization accuracy
+To obtain high-precision 3D ground truth positions of the fruit, a 
+Robosense Helios 32 LiDAR was integrated into the experimental plat-
+form. This LiDAR provides high spatial resolution and ranging accuracy 
+(typically < 1 cm), enabling it to precisely capture the true geometry 
+of grape bunches and the surrounding environment. During data ac-
+quisition, the robotic platform moved slowly through the trellis rows 
+to ensure complete scanning of each grape bunch. Subsequently, the 
+ground truth data was generated through a meticulous manual anno-
+tation process on the collected LiDAR point clouds. Each grape bunch 
+was manually annotated in CloudCompare by selecting its correspond-
+ing point cloud region. The geometric centroid of each annotated cluster 
+was computed and recorded as the ground truth 3D position. To ensure 
+rigorous spatial alignment, we perform LiDAR–stereo registration via 
+oﬄine LiDAR–camera extrinsic calibration using a checkerboard target, 
+following Fu et al.’s two-stage framework (point-to-plane initialization 
+and diﬀerentiable reﬁnement [40]). We validated the calibration stabil-
+ity by performing a stereo baseline consistency check across 10 indepen-
+dent trials. The reﬁned alignment achieved a mean translation residual 
+of 2.91 mm (𝜎= 0.51 mm). For the ground-truth generation, the anno-
+tated LiDAR centroids were transformed into the global SLAM frame 
+using the uniﬁed pose chain:
+𝑻𝑊𝐿(𝑡) = 𝑻𝑊𝐶(𝑡)𝑻𝐶𝐿
+(29)
+where 𝑻𝑊𝐶(𝑡) represents the camera pose estimated by ORB-SLAM3.
+We calculate the error between the ellipsoidal centers of fruit clusters 
+estimated by the system and the ground truth geometric centers of the 
+fruits. The error components are projected onto the three coordinate 
+axes to evaluate the discrepancies along each direction, with the RMSE 
+employed as the evaluation metric:
+RMSE =
+√
+√
+√
+√1
+𝑛
+𝑛
+∑
+𝑖=1
+(𝑣𝑎𝑙𝑢𝑒𝑖−̂ 𝑣𝑎𝑙𝑢𝑒𝑖)2
+(30)
+where 𝑛 denotes the number of grape bunches, 𝑣𝑎𝑙𝑢𝑒𝑖 represents the 
+ground truth value of the 𝑖-th grape bunch, and ̂𝑣𝑎𝑙𝑢𝑒𝑖 denotes the pre-
+dicted value of the 𝑖-th grape bunch.
+For a comprehensive evaluation of the system’s localization capa-
+bilities, data was acquired under three distinct experimental sequences: 
+(1) lateral scanning perspective, simulating cross-row observation; (2) 
+forward-moving perspective, representing typical in-row navigation; 
+and (3) forward-moving perspective with pedestrian interference, de-
+signed to assess robustness in dynamic scenes. The localization error 
+metrics for each of these sequences are detailed in Table 6.
+As shown in Table 6, the lateral scanning perspective (Sequence 1) 
+yields the lowest 3D RMSE of 19.02 mm, primarily due to the sen-
+sor’s optimal distance and viewing angle, which allows for clear grape 
+bunches representation and uniform point cloud distribution, thus fa-
+cilitating precise cluster centroid extraction. Conversely, the forward-
+moving perspective (Sequence 2) shows a slightly higher 3D RMSE of 
+20.98 mm. This increase is attributed to view angle variations and lo-
+calized occlusions inherent in longitudinal movement, leading to mi-
+nor depth estimation drifts. Despite this, the error remains well within 
+Table 6 
+Localization error.
+ Sequence
+ RMSE (mm)
+ Standard Deviation (mm)
+ 3D RMSE
+ΔX
+ΔY
+ΔZ
+ 1
+ 19.02
+ 10.3
+ 11.5
+ 11.1
+ 4.9
+ 2
+ 20.98
+ 12.9
+ 11.7
+ 11.7
+ 5.4
+ 3
+ 23.07
+ 13.1
+ 15.4
+ 14.7
+ 6.5
+ average
+ 21.02
+ 12.1
+ 12.8
+ 12.7
+ 5.6
+Table 7 
+Experimental results of bunch counting.
+ Sample
+ True value
+ Predicted value
+ Relative error (%)
+ Single-row
+ 88
+ 84
+ 5.7
+ Double-row
+ 146
+ 137
+ 6.2
+the acceptable range. As expected, the forward-moving perspective with 
+pedestrian interference (Sequence 3) records the highest 3D RMSE of 
+23.07 mm, clearly demonstrating the impact of dynamic elements on 
+localization accuracy. From the 3D reconstruction results of grapes in 
+the three experimental sequences, the overall localization error of the 
+system is well controlled. Sequence 1 exhibited the lowest standard de-
+viation with an average value of 4.9 mm, while Sequence 2 showed a 
+slightly higher average error of 5.4 mm due to the change of view an-
+gle. As illustrated in Fig. 19(a) for Sequence 3, the RMSE distribution 
+with respect to distance shows that, throughout the robot’s movement, 
+most RMSE values remain within 30 mm, with only two outlier points 
+exceeding 40 mm. It can be observed from Fig. 19(b) that, except for a 
+single point with slightly larger error in the Sequence 1 and 2, the rest 
+of the data are tightly distributed and most of them are well controlled.
+3.5.2.  Grape bunches counting
+This paper introduces a density-based clustering method called DB-
+SCAN, which is combined with a semantic segmentation mask to auto-
+matically identify and separate spatially independent regions of grapes 
+from a 3D point cloud. After spatial clustering is complete, the PCA 
+method is adopted to model the point cloud shape of each cluster and 
+extract its geometric structure. The ﬁnal result of this process is shown 
+in Fig. 20, where each ellipsoid represents a bunch of grapes, and the 
+relative error between the actual and predicted numbers of fruits mea-
+sures the accuracy of the 3D semantic reconstruction results, as shown 
+in Eq. (31), where 𝛿 denotes the relative error, 𝑁𝑡 the actual number of 
+fruits and 𝑁𝑝 the predicted number of fruits. The combined statistics of 
+these evaluations are shown in Table 7.
+𝛿=
+|𝑁𝑝−𝑁𝑡|
+𝑁𝑡
+× 100%
+(31)
+The experimental results are summarized in Table 7. In the single-
+row scenario, the system predicted 84 bunches against a true value of 
+88, resulting in a relative error of 5.7%. In the more complex double-
+row scenario, it predicted 137 bunches against a true value of 146, with 
+a relative error of 6.2%. These results demonstrate that the proposed 
+method can achieve reliable and accurate fruit bunch counting in dif-
+ferent orchard conﬁgurations.These accurate bunch count estimates can 
+be directly used to derive per-row and per-block yield estimates in pre-
+cision viticulture workﬂows.
+Considering that ﬁxed clustering parameters may not adapt to vari-
+ations in fruit cluster density across diﬀerent growth cycles, a parame-
+ter sensitivity analysis was conducted for the DBSCAN algorithm. The 
+counting relative error was evaluated under a combination of neigh-
+borhood radius 𝜀 values ranging from 0.04 m to 0.06 m and minimum 
+points MinPts ranging from 40 to 60. As shown in Table 8, the count-
+ing error remained relatively stable and ranged from 5.95% to 7.86% 
+within the tested parameter space. The lowest error of 5.95% was ob-
+served when the parameters were set to the default values of 𝜀= 0.05
+and MinPts = 50. A slight increase in error to 7.86% occurred with 𝜀 at 
+Smart Agricultural Technology 13 (2026) 101784 
+13 
+
+R. Yang et al.
+Fig. 19. Fruit localization accuracy (RMSE) results. (a) RMSE distribution by distance for the forward-moving perspective with pedestrian interference (Sequence 
+3). (b) RMSE distribution across diﬀerent experimental sequences.
+Fig. 20. Grape bunch clustering and ellipsoid modeling results. (a) Extracted grape bunches point cloud after DBSCAN clustering. (b) PCA-based ellipsoid ﬁtting 
+results.
+Table 8 
+Sensitivity analysis of DBSCAN parameters on count-
+ing error.
+ MinPts=40
+ MinPts=50
+ MinPts=60
+𝜀= 0.04
+ 6.26%
+ 6.49%
+ 6.72%
+𝜀= 0.05
+ 6.27%
+ 5.95%
+ 6.04%
+𝜀= 0.06
+ 7.86%
+ 6.50%
+ 6.16%
+0.06 and MinPts at 40, which is likely due to the merging of adjacent 
+clusters caused by the relaxed density constraints. Overall, the results in-
+dicate that the system is not overly sensitive to parameter ﬂuctuations 
+of approximately ±20%, suggesting good generalization capability for 
+practical deployment.
+3.5.3.  Robustness to illumination variations
+Agricultural environments are subject to drastic lighting changes 
+which can signiﬁcantly aﬀect the performance of visual sensors. To eval-
+uate system robustness, comparative experiments were performed under 
+three typical lighting intensities including normal light, shadows, and 
+backlight conditions, as illustrated in Fig. 21. The quantitative impact 
+of these variations on fruit localization and counting is detailed in Ta-
+bles 9 and 10. Under normal lighting, the system achieved the lowest 3D 
+RMSE of 19.73 mm and a relative counting error of 5.4%. In shadowed 
+conditions, the localization error increased slightly to 21.99 mm while 
+the counting error was 5.6%. However, backlight scenarios caused the 
+localization error to rise to 25.22 mm with a standard deviation of 7.6 
+mm, and the counting error reached 7.3%. This degradation is primar-
+ily attributed to the instability of stereo matching and increased depth 
+noise caused by local overexposure and poor texture contrast in back-
+light scenarios. Despite this increase, the overall performance remains 
+within a reliable range for yield estimation tasks.
+Table 9 
+Localization accuracy on diﬀerent lighting intensities.
+ Condition
+ RMSE (mm)
+ Standard Deviation (mm)
+ 3D RMSE
+ΔX
+ΔY
+ΔZ
+ Normal
+ 19.73
+ 12.4
+ 10.6
+ 11.1
+ 5.1
+ Shadows
+ 21.99
+ 11.5
+ 13.8
+ 12.7
+ 5.8
+ Backlight
+ 25.22
+ 13.3
+ 15.4
+ 14.9
+ 7.6
+Table 10 
+Experimental results of bunch counting on diﬀerent lighting in-
+tensities.
+ Sample
+ True value
+ Predicted value
+ Relative error (%)
+ Normal
+ 92
+ 87
+ 5.4
+ Shadows
+ 89
+ 82
+ 5.6
+ Backlight
+ 96
+ 89
+ 7.3
+3.5.4.  Robustness to occlusion
+To validate the necessity of the GFFM and DSA modules in com-
+plex scenarios, Fig. 22 ﬁrst presents a qualitative visual comparison. As 
+observed in Fig. 22(c), the baseline PIDNet struggles to distinguish adja-
+cent grape bunches that are heavily overlapped and tends to merge them 
+into single connected regions. In contrast, EFSegNet successfully delin-
+eates the boundaries of individual fruit clusters as shown in Fig. 22(d). 
+Following this qualitative assessment, an independent quantitative anal-
+ysis was performed on a heavily occluded test subset, as summarized 
+in Table 11. While both models experience performance degradation 
+compared to the full dataset, EFSegNet demonstrates superior robust-
+ness by achieving an mIoU of 87.62%, which outperforms PIDNet by 
+3.48%. Furthermore, this advantage in segmentation translates to the 
+downstream counting task, where EFSegNet reduces the counting error 
+to 6.23% compared to 9.71% for PIDNet. These results indicate that 
+Smart Agricultural Technology 13 (2026) 101784 
+14 
+
+R. Yang et al.
+Fig. 21. Test set on diﬀerent lighting intensities. (a) Normal. (b) Shadows. (c) Backlight.
+Fig. 22. Visual comparison of segmentation results in a heavily occluded scenario. (a) Original image. (b) Ground truth. (c) PIDNet result. (d) EFSegNet result.
+Table 11 
+Performance comparison on heavily occluded subset.
+ Method
+ mIoU (%)
+ True value
+ Predicted value
+ Relative Error (%)
+ PIDNet
+ 84.14
+ 48
+ 43
+ 9.71
+ EFSegNet
+ 87.62
+ 48
+ 45
+ 6.23
+Table 12 
+Process time.
+ Module
+ Time (ms)
+ EFSegNet
+ 7.57
+ Track
+ 14.37
+ Point Cloud Mapping
+ 21.4
+ Fruit Cluster and Localization
+ 8.1
+the enhanced edge perception eﬀectively mitigates mis-segmentation in 
+occluded regions, thereby directly contributing to accurate yield estima-
+tion.
+3.6.  System real-time performance
+To evaluate the real-time processing capability of the system, the 
+average processing time of each module of the proposed system was 
+counted, as shown in Table 12. The system’s real-time performance is 
+primarily determined by the processing times of the semantic segmen-
+tation, track, and point cloud mapping modules. Speciﬁcally, the track 
+module responsible for feature extraction and matching operates at an 
+average of 14.37 ms, while the semantic segmentation module, EFSeg-
+Net, processes at 7.57 ms on average. The point cloud mapping mod-
+ule takes 21.4 ms per frame. In contrast, the fruit clustering and local-
+ization module operates in parallel threads with an average processing 
+time of 8.1 ms, and thus has a limited impact on overall real-time per-
+formance. The parallel execution design ensures that all key modules 
+remain within acceptable time bounds, supporting eﬃcient real-time 
+operation, and the system achieves a real-time performance of 23.1 FPS.
+4.  Discussion
+This study introduces a comprehensive real-time 3D mapping and 
+fruit localization system speciﬁcally designed for dynamic vineyard 
+yield estimation. Experimental results demonstrate the system’s robust-
+ness in addressing dynamic disturbances and the unstructured condi-
+tions typical of orchard environments.
+4.1.  Comparative analysis
+Previous orchard SLAM studies, such as ORB-Livox[26], SLAM-
+PYE[41], and SCTNet-B & ORB-SLAM2[42], typically evaluated their 
+systems in controlled, static scenarios, as shown in Table 13. In con-
+trast, our system integrates dynamic object ﬁltering through semantic 
+segmentation, eﬀectively mitigating dynamic disturbances encountered 
+in realistic vineyard environments, such as moving persons. Regarding 
+real-time performance, the system achieves a throughput of 23.1 FPS 
+while providing 3D mapping and fruit localization. Other systems re-
+port diﬀerent frame rates–for example, ORB-Livox (>30 FPS), SLAM-
+PYE (23 FPS), and SCTNet-B & ORB-SLAM2 (28.36 FPS)–yet SCTNet-B & 
+ORB-SLAM2 lacks fruit localization, and SLAM-PYE omits 3D mapping. 
+In terms of localization accuracy, our system achieves a mean RMSE of 
+21.02 mm under dynamic outdoor conditions, substantially outperform-
+ing prior methods such as ORB-Livox (26 mm RMSE) and SLAM-PYE 
+(46.3 mm horizontal RMSE). In addition to SLAM-based systems, yield 
+estimation is also widely studied using pure-vision detection-tracking-
+counting (DTC) pipelines. [43] reported grape-cluster counting with 
+pruned YOLOv5s and SORT, achieving 84.9% accuracy at 43.1–50.4 
+FPS. [44] reported counting performance with an 𝑅2 of 0.85 and RMSE 
+of 1.57, and [45] reported fruit-number prediction with an 𝑅2 of 0.945 
+and yield-estimation performance of 𝑅2=0.902. DTC relies on 2D asso-
+ciation for de-duplication and can fail under revisits. Our SLAM world-
+frame anchoring reduces repeated counts and provides centimeter-level 
+3D localization, achieving 21.02 mm RMSE at 23.1 FPS. This is cost-
+eﬀective when yield estimation requires both counting and spatial lo-
+calization.
+4.2.  Limitations
+Despite its demonstrated robustness, the proposed system faces spe-
+ciﬁc limitations that aﬀect its overall performance.
+Firstly, system accuracy heavily depends on depth estimation from 
+binocular stereo vision. While semantic segmentation helps mitigate the 
+negative impact of dynamic disturbances, it does not resolve inherent 
+limitations of stereo matching algorithms in regions with weak texture 
+or poor illumination. Such conditions increase depth measurement un-
+certainty, resulting in gaps, structural distortions, and reduced localiza-
+tion accuracy, especially during longitudinal vineyard traversal.
+Secondly, while the three-stage ﬁltering strategy eﬀectively removes 
+ghost points and noise, it inevitably incurs a loss of geometric details. 
+The voxelization process, which substitutes point clusters with cen-
+troids, coupled with aggressive outlier removal, tends to over-smooth 
+Smart Agricultural Technology 13 (2026) 101784 
+15 
+
+R. Yang et al.
+Table 13 
+Comparison of yield estimation systems: SLAM baselines vs. Pure Vision (DTC) methods.
+ System
+ ORB-Livox [26]
+ SLAM-PYE [41]
+ SCTNet-B & ORB-SLAM2 [42]
+ [43] (DTC)
+ [44] (DTC)
+ [45] (DTC)
+ Proposed
+ Object
+ Apple
+ Pitaya
+ Eggplant
+ Grape clusters
+ Apple (orchard)
+ Camellia oleifera fruit
+ Grape
+ Sensor
+ LiDAR, Stereo Camera
+ GNSS, Binocular- Camera, IMU
+ Depth Camera, LiDAR, RTK
+ RGB Video Camera
+ RGB Camera (image+video)
+ RGB Camera
+ Stereo Camera
+ Hardware
+ Intel i5-8300H GTX-1060
+ NVIDIA RTX-3060
+ Intel Xeon w5-3423 NVIDIA RTX A5000
+ NVIDIA RTX 3090
+ AMD EPYC 9754S NVIDIA RTX 4090(24GB)
+ AMD EPYC 9754S NVIDIA RTX 4090(24GB)
+ Intel i5-12500H NVIDIA RTX-3060
+ Scenario
+ 6 (outdoor)
+ F1 (greenhouse)
+ Greenhouse
+ Grape Field
+ 7311 imgs & 24s video
+ Tree-level yield estimation
+ 3(Dynamic Orchard)
+ RMSE(mm)
+ 26
+ 46.3 (Horizontal) 54.0 (Vertical)
+ Without fruit localization
+ –
+ –
+ –
+ 21.02
+ SD(mm)
+ 13.6
+ –
+ –
+ –
+ –
+ –
+ 5.6
+ Metric
+ –
+ –
+ –
+ Counting accuracy 84.9%
+ Counting: 𝑅2=0.85 RMSE=1.57
+ Fruit 𝑅2=0.94 Yield 𝑅2=0.90
+ Relative error 5.7% / 6.2% (Avg 5.95%)
+ Real-time (FPS)
+> 30
+ –
+ 28.36
+ Up to 50.4
+ Not reported
+ Not reported
+ 23.1
+ Dynamic Filtering
+×
+×
+×
+×
+×
+×
+✓
+high-frequency features. Consequently, sparse but valid structures, such 
+as thin tendrils or fruit peduncles, may be inadvertently ﬁltered out. 
+Although this does not impact the volume-based counting of grape 
+bunches, it limits the potential extension of the current system to more 
+delicate phenotyping tasks that require sub-centimeter structural ﬁ-
+delity.
+Thirdly, the current strategy for handling dynamics focuses on rigid 
+objects such as pedestrians and does not incorporate speciﬁc mecha-
+nisms to handle environmental dynamism involving deformable ele-
+ments, speciﬁcally foliage swaying caused by wind. Although the back-
+end optimization and ﬁltering modules eﬀectively suppress these oscil-
+latory motions of small magnitude as point cloud noise, the lack of a 
+dedicated mechanism for tracking deformable objects means the system 
+may face stability challenges. This limitation becomes particularly rel-
+evant under conditions where environmental factors induce non-rigid 
+deformations that exceed the capacity of robust adjustment.
+5.  Conclusion
+This study presents a real-time semantic 3D mapping and fruit lo-
+calization system designed to address the challenges of yield estima-
+tion in dynamic and unstructured vineyard environments. The proposed 
+system integrates the EFSegNet, enhanced with Gradient Feature Fu-
+sion and Deformable Spatial Attention, into the ORB-SLAM3 frame-
+work to eﬀectively eliminate dynamic feature points while ensuring 
+high-quality semantic mapping. Experimental results demonstrate that 
+EFSegNet achieves an mIoU of 89.45% and a Boundary F-measure of 
+82.78%, signiﬁcantly reﬁning fruit boundaries and separating overlap-
+ping clusters. This segmentation superiority translates into robust down-
+stream performance, maintaining a low counting error of 6.23% even 
+in heavily occluded scenarios and showing stability under varying il-
+lumination conditions. Overall, the system realized an average 3D lo-
+calization accuracy of 21.02 mm with a processing speed of 23.1 FPS, 
+conﬁrming its eﬀectiveness for autonomous orchard inspection.
+Future work will focus on three key directions to further improve sys-
+tem adaptability. First, we plan to introduce multi-sensor fusion strate-
+gies, incorporating LiDAR or IMU data, to compensate for the inherent 
+limitations of visual depth estimation in low-texture or strong backlight 
+regions. Second, we aim to develop adaptive ﬁltering and clustering al-
+gorithms that automatically adjust parameters according to local point 
+cloud density, enhancing generalizability across diﬀerent fruit varieties. 
+Finally, future research will address environmental dynamism involving 
+non-rigid deformations, speciﬁcally modeling foliage swaying caused by 
+wind, to further ensure tracking stability in complex ﬁeld conditions.
+CRediT authorship contribution statement
+Runbin Yang: Writing – review & editing, Writing – original draft, 
+Visualization, Methodology, Data curation; Xilong Zhang: Writing – 
+review & editing, Writing – original draft, Validation, Methodology;
+Yanyang Chen: Writing – review & editing, Visualization, Data cu-
+ration; Xiaotao Huang: Writing – review & editing; Sang Feng: Re-
+sources, Project administration, Conceptualization.
+Data availability
+I have shared the dataset associated with this manuscript at the 
+following public repository: https://github.com/yangrb2333/grl-slam/
+tree/main
+Ethical statement
+This paper adheres to the fundamental principles of academic in-
+tegrity and relevant ethical norms. The content is original, free from 
+plagiarism, fabrication, or inappropriate data manipulation, with all 
+sources fully and accurately cited. No potential conﬂicts of interest exist 
+Smart Agricultural Technology 13 (2026) 101784 
+16 
+
+R. Yang et al.
+among the authors. All contributors conﬁrm compliance with academic 
+ethical standards and take full responsibility for the accuracy and in-
+tegrity of the work.
+Declaration of competing interest
+The authors declare that they have no known competing ﬁnancial 
+interests or personal relationships that could have appeared to inﬂuence 
+the work reported in this paper. 
+Supplementary material
+Supplementary material associated with this article can be found, in 
+the online version, at 10.1016/j.atech.2026.101784
+References
+[1] G. Hou, H. Chen, M. Jiang, R. Niu, An overview of the application of machine vision 
+in recognition and localization of fruit and vegetable harvesting robots, Agriculture 
+13 (9) (2023). https://doi.org/10.3390/agriculture13091814
+[2] Y. Yang, Y. Han, S. Li, Y. Yang, M. Zhang, H. Li, Vision based fruit recognition and 
+positioning technology for harvesting robots, Comput. Electron. Agric. 213 (2023) 
+108258. https://doi.org/10.1016/j.compag.2023.108258
+[3] J. Villacrés, M. Viscaino, J. Delpiano, S. Vougioukas, F. Auat Cheein, Apple orchard 
+production estimation using deep learning strategies: a comparison of tracking-by-
+detection algorithms, Comput. Electron. Agric. 204 (2023) 107513. https://doi.org/
+10.1016/j.compag.2022.107513
+[4] Z. Xiong, L. Wang, Y. Zhao, Y. Lan, Precision detection of dense litchi fruit in UAV 
+images based on improved YOLOv5 model, Remote Sens. 15 (16) (2023). https:
+//doi.org/10.3390/rs15164017
+[5] J. Giménez-Gallego, J. Martínez-del Rincon, P.J. Blaya-Ros, H. Navarro-Hellín, P.J. 
+Navarro, R. Torres-Sánchez, Fruit monitoring and harvest date prediction using on-
+tree automatic image tracking, IEEE Trans. AgriFood Electron. 3 (1) (2024) 56–68. 
+https://doi.org/10.1109/TAFE.2024.3408912
+[6] M. Li, Z. Tao, W. Yan, S. Lin, K. Feng, Z. Zhang, Y. Jing, Apnet: lightweight network 
+for apricot tree disease and pest detection in real-world complex backgrounds, Plant 
+Methods 21 (1) (2025) 4. https://doi.org/10.1186/s13007-025-01324-5
+[7] J.A. Sánchez-Molina, F. Rodríguez, J.C. Moreno, J. Sánchez-Hermosilla, A. Giménez, 
+Robotics in greenhouses. scoping review, Comput. Electron. Agric. 219 (2024) 
+108750. https://doi.org/10.1016/j.compag.2024.108750
+[8] W. Hua, Z. Zhang, W. Zhang, X. Liu, C. Hu, Y. He, M. Mhamed, X. Li, H. Dong, C.K. 
+Saha, W.U. Khan, F. Abid, M.A. Abdelhamid, Key technologies in apple harvesting 
+robot for standardized orchards: a comprehensive review of innovations, challenges, 
+and future directions, Comput. Electron. Agric. 235 (2025) 110343. https://doi.org/
+10.1016/j.compag.2025.110343
+[9] A. Koirala, K.B. Walsh, Z. Wang, C. McCarthy, Deep learning - method overview and 
+review of use for fruit detection and yield estimation, Comput. Electron. Agric. 162 
+(2019) 219–234. https://doi.org/10.1016/j.compag.2019.04.017
+[10] J. Redmon, S. Divvala, R. Girshick, A. Farhadi, You only look once: uniﬁed, real-
+time object detection, in: 2016 IEEE Conference on Computer Vision and Pattern 
+Recognition (CVPR), 2016, pp. 779–788. https://doi.org/10.1109/CVPR.2016.91
+[11] R. Girshick, J. Donahue, T. Darrell, J. Malik, Rich feature hierarchies for accurate 
+object detection and semantic segmentation, in: 2014 IEEE Conference on Computer 
+Vision and Pattern Recognition, 2014, pp. 580–587. https://doi.org/10.1109/CVPR.
+2014.81
+[12] K. He, G. Gkioxari, P. Dollár, R. Girshick, Mask R-CNN, in: 2017 IEEE International 
+Conference on Computer Vision (ICCV), 2017, pp. 2980–2988. https://doi.org/10.
+1109/ICCV.2017.322
+[13] L. Chen, G. Papandreou, F. Schroﬀ, H. Adam, Rethinking atrous convolution for se-
+mantic image segmentation, CoRR abs/1706.05587 (2017). https://arxiv.org/abs/
+1706.05587
+[14] C. Yu, J. Wang, C. Peng, C. Gao, G. Yu, N. Sang, Bisenet: bilateral segmentation 
+network for real-time semantic segmentation, CoRR abs/1808.00897 (2018). https:
+//arxiv.org/abs/1808.00897
+[15] E. Xie, W. Wang, Z. Yu, A. Anandkumar, J.M. Álvarez, P. Luo, Segformer: simple and 
+eﬃcient design for semantic segmentation with transformers, CoRR abs/2105.15203 
+(2021). https://arxiv.org/abs/2105.15203
+[16] J. Xu, Z. Xiong, S.P. Bhattacharyya, PIDNet: a real-time semantic segmentation net-
+work inspired by PID controllers, 2023, pp. 19529-19539. https://doi.org/10.1109/
+CVPR52729.2023.01871
+[17] F. Xiao, H. Wang, Y. Xu, R. Zhang, Fruit detection and recognition based on 
+deep learning for automatic harvesting: an overview and review, Agronomy 13 (6) 
+(2023). https://doi.org/10.3390/agronomy13061625
+[18] D. Mao, H. Sun, X. Li, X. Yu, J. Wu, Q. Zhang, Real-time fruit detection using deep 
+neural networks on CPU (RTFD): an edge AI application, Comput. Electron. Agric. 
+204 (2023) 107517. https://doi.org/10.1016/j.compag.2022.107517
+[19] B. Xiao, M. Nguyen, W.Q. Yan, Apple ripeness identiﬁcation from digital images 
+using transformers, Multimed. Tools Appl. 83 (3) (2024) 7811–7825. https://doi.
+org/10.1007/s11042-023-15938-1
+[20] Y. Xia, X. Lei, J. Pan, L. Chen, Z. Zhang, X. Lyu, Research on orchard navigation 
+method based on fusion of 3D SLAM and point cloud positioning, Front. Plant Sci. 
+14 (2023) 1207742. https://doi.org/10.3389/fpls.2023.1207742
+[21] G. Lin, Y. Tang, X. Zou, C. Wang, Three-dimensional reconstruction of guava fruits 
+and branches using instance segmentation and geometry analysis, Comput. Electron. 
+Agric. 184 (2021) 106107. https://doi.org/10.1016/j.compag.2021.106107
+[22] L. Zhou, A. Hu, Y. Cheng, W. Zhang, B. Zhang, X. Lu, Q. Wu, N. Ren, Barrier-free 
+tomato fruit selection and location based on optimized semantic segmentation and 
+obstacle perception algorithm, Front. Plant Sci. 15 (2024) 1460060. https://doi.org/
+10.3389/fpls.2024.1460060
+[23] T. Yu, C. Hu, Y. Xie, J. Liu, P. Li, Mature pomegranate fruit detection and location 
+combining improved F-PointNet with 3D point cloud clustering in orchard, Com-
+put. Electron. Agric. 200 (2022) 107233. https://doi.org/10.1016/j.compag.2022.
+107233
+[24] Z. Zheng, L. Chen, L. Wei, W. Huang, D. Du, G. Qin, Z. Yang, S. Wang, An eﬃ-
+cient and lightweight banana detection and localization system based on deep CNNs 
+for agricultural robots, Smart Agric. Technol. 9 (2024) 100550. https://doi.org/10.
+1016/j.atech.2024.100550
+[25] Q. Shen, D. Xu, T. Guo, X. Mao, F. Xia, Two-stage multimodal 3D point localization 
+framework for automatic grape harvesting, Smart Agric. Technol. 12 (2025) 101062. 
+https://doi.org/10.1016/j.atech.2025.101062
+[26] T. Liu, H. Kang, C. Chen, ORB-Livox: a real-time dynamic system for fruit detection 
+and localization, Comput. Electron. Agric. 209 (2023) 107834. https://doi.org/10.
+1016/j.compag.2023.107834
+[27] J. Xiong, J. Liang, Y. Zhuang, D. Hong, Z. Zheng, S. Liao, W. Hu, Z. Yang, Real-time 
+localization and 3D semantic map reconstruction for unstructured citrus orchards, 
+Comput. Electron. Agric. 213 (2023) 108217. https://doi.org/10.1016/j.compag.
+2023.108217
+[28] Q. Yuan, P. Wang, W. Luo, Y. Zhou, H. Chen, Z. Meng, Simultaneous localization and 
+mapping system for agricultural yield estimation based on improved VINS-RGBD: a 
+case study of a strawberry ﬁeld, Agriculture 14 (5) (2024). https://doi.org/10.3390/
+agriculture14050784
+[29] K. Sukvichai, N. Thongton, K. Yajai, Implementation of a monocular ORB SLAM for 
+an indoor agricultural drone, in: 2023 Third International Symposium on Instrumen-
+tation, Control, Artiﬁcial Intelligence, and Robotics (ICA-SYMP), 2023, pp. 45–48. 
+https://doi.org/10.1109/ICA-SYMP56348.2023.10044953
+[30] J. Su, Y. Fan, A. Mannan, S. Wang, L. Long, Z. Feng, Real-time estimation of tree po-
+sition, tree height, and tree diameter at breast height point, using smartphones based 
+on monocular SLAM, Forests 15 (6) (2024). https://doi.org/10.3390/f15060939
+[31] Y. Zhang, H. Sun, F. Zhang, B. Zhang, S. Tao, H. Li, K. Qi, S. Zhang, S. Ninomiya, 
+Y. Mu, Real-time localization and colorful three-dimensional mapping of orchards 
+based on multi-sensor fusion using extended kalman ﬁlter, Agronomy 13 (8) (2023). 
+https://doi.org/10.3390/agronomy13082158
+[32] P. Chu, Z. Li, K. Zhang, K. Lammers, R. Lu, High-precision fruit localization us-
+ing active laser-camera scanning: robust laser line extraction for 2D-3D transfor-
+mation, Smart Agric. Technol. 7 (2024) 100391. https://doi.org/10.1016/j.atech.
+2023.100391
+[33] Z. Yu, C. Zhao, Z. Wang, Y. Qin, Z. Su, X. Li, F. Zhou, G. Zhao, Searching central 
+diﬀerence convolutional networks for face anti-spooﬁng, in: 2020 IEEE/CVF Con-
+ference on Computer Vision and Pattern Recognition (CVPR), 2020, pp. 5294–5304. 
+https://doi.org/10.1109/CVPR42600.2020.00534
+[34] Z. Yu, X. Zhang, L. Zhao, G. Xiao, DSAN: exploring the relationship between de-
+formable convolution and spatial attention, TechRxiv (2024). https://doi.org/10.
+36227/techrxiv.171328860.02479778/v1
+[35] H. Pan, Y. Hong, W. Sun, Y. Jia, Deep dual-resolution networks for real-time and 
+accurate semantic segmentation of traﬃc scenes, IEEE Trans. Intell. Transp. Syst. 24 
+(3) (2023) 3448–3460. https://doi.org/10.1109/TITS.2022.3228042
+[36] D. Schubert, T. Goll, N. Demmel, V. Usenko, J. Stückler, D. Cremers, The TUM VI 
+benchmark for evaluating visual-inertial odometry, in: 2018 IEEE/RSJ International 
+Conference on Intelligent Robots and Systems (IROS), 2018, pp. 1680–1687. https:
+//doi.org/10.1109/IROS.2018.8593419
+[37] B. Bescos, J.M. Fácil, J. Civera, J. Neira, DynaSLAM: tracking, mapping, and in-
+painting in dynamic scenes, IEEE Rob. Autom. Lett. 3 (4) (2018) 4076–4083. 
+https://doi.org/10.1109/LRA.2018.2860039
+[38] C. Yu, Z. Liu, X.J. Liu, F. Xie, Y. Yang, Q. Wei, Q. Fei, DS-SLAM: a semantic visual 
+SLAM towards dynamic environments, in: 2018 IEEE/RSJ International Conference 
+on Intelligent Robots and Systems (IROS), 2018, pp. 1168–1174. https://doi.org/
+10.1109/IROS.2018.8593691
+[39] G.F. Abati, J.C.V. Soares, V.S. Medeiros, M.A. Meggiolaro, C. Semini, Panoptic-
+SLAM: visual SLAM in dynamic environments using panoptic segmentation, in: 
+2024 21st International Conference on Ubiquitous Robots (UR), 2024, pp. 01–08. 
+https://doi.org/10.1109/UR61395.2024.10597506
+[40] L.F.T. Fu, N. Chebrolu, M. Fallon, Extrinsic calibration of camera to LIDAR using a 
+diﬀerentiable checkerboard model, in: 2023 IEEE/RSJ International Conference on 
+Intelligent Robots and Systems (IROS), 2023, pp. 1825–1831. https://doi.org/10.
+1109/IROS55552.2023.10341781
+[41] H. Wang, X. Hong, L. Qin, C. Shi, G. Wu, SLAM-PYE: Tightly coupled GNSS-
+binocular-inertial fusion for pitaya positioning, counting, and yield estimation, Com-
+put. Electron. Agric. 224 (2024) 109177. https://doi.org/10.1016/j.compag.2024.
+109177
+[42] P. Wang, W. Luo, J. Liu, Y. Zhou, X. Li, S. Zhao, G. Zhang, Y. Zhao, Real-time se-
+mantic SLAM-based 3D reconstruction robot for greenhouse vegetables, Comput.
+Electron. Agric. 237 (2025) 110582. https://doi.org/10.1016/j.compag.2025.
+110582
+Smart Agricultural Technology 13 (2026) 101784 
+17 
+
+R. Yang et al.
+[43] L. Shen, J. Su, R. He, L. Song, R. Huang, Y. Fang, Y. Song, B. Su, Real-time tracking 
+and counting of grape clusters in the ﬁeld based on channel pruning with YOLOv5s, 
+Comput. Electron. Agric. 206 (2023) 107662. https://doi.org/10.1016/j.compag.
+2023.107662
+[44] Z. Yaning, Z. Ling, H. Xin, Y. Fanghu, H. Yang, A dynamic kalman ﬁltering method 
+for multi-object fruit tracking and counting in complex orchards, Sensors 25 (13) 
+(2025) 4138. https://doi.org/10.3390/s25134138
+[45] Z. Dong, W. Long, F. Yang, C. Yu, J. Du, K. Wang, L. Lyu, Fruit detection and yield 
+estimation in camellia oleifera based on improved YOLOv8 and ByteTrack algo-
+rithm, Smart Agric. Technol. 12 (2025) 101435. https://doi.org/10.1016/j.atech.
+2025.101435
+Smart Agricultural Technology 13 (2026) 101784 
+18 

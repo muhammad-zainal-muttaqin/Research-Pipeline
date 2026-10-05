@@ -1,0 +1,1852 @@
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+Instance segmentation and multi-object tracking for fruit quality grading 
+and dynamic yield estimation in Egyptian citrus orchards
+Saleh A. Farhoud a,b,∗, Yasmine A. Zaghloul a, Omar M. Shehata b
+a Faculty of Engineering, German International University (GIU), Egypt
+b Faculty of Engineering and Materials Science, German University in Cairo (GUC), Egypt
+a r t i c l e i n f o
+Keywords:
+Smart agriculture
+Computer vision
+Instance segmentation
+Fruit quality grading
+Yield estimation
+Multi-object tracking
+YOLO
+ 
+a b s t r a c t
+Egypt ranks among the world’s leading citrus producers and exporters; however, orchard operations remain con-
+strained by subjective, labor-intensive manual quality grading and time-consuming yield estimation that require 
+specialized expertise. This study presents an AI-driven orchard-intelligence framework for automated fruit qual-
+ity grading and dynamic yield estimation under the unstructured conditions of Egyptian orange farms. To address 
+the lack of in-ﬁeld public datasets, a domain-speciﬁc instance-segmentation dataset of 618 original pixel-level an-
+notated images, expanded to 1,545 augmented training images, and 15 videos was constructed. This dataset was 
+used to benchmark single-stage segmentation models (YOLOv8, YOLOv11) against a two-stage (Mask R-CNN), 
+alongside a transformer-based bounding-box detection (RT-DETR), under dense canopy occlusion, clustered fruit 
+instances, and variable natural illumination. Each ﬁne-tuned model was evaluated across two stages: static qual-
+ity grading and dynamic yield estimation. For static grading (Good vs. Defective), YOLOv11l ranked among the 
+top tier of evaluated segmenters, reaching mean Average Precision (mAP) of 0.932 with balanced precision-
+recall behavior, while maintaining real-time feasibility at 26.1 ms per image. For dynamic yield estimation, a 
+multi-object tracking pipeline was implemented using BoT-SORT with camera-motion compensation and a vir-
+tual line-crossing counting mechanism. The evaluation reveals a three-way dissociation: the highest-mAP static 
+segmenter (YOLOv11l), the best dynamic total counter (RT-DETR, WMAPE = 5.66%, despite the lowest box-
+level static accuracy), and the best quality-resolved dynamic grader (YOLOv11s, WMAPE = 6.97% at 14.2 ms 
+per frame) are three diﬀerent systems; RT-DETR did not resolve fruit quality reliably under motion. Counting 
+accuracy and grading capability are thus separable properties requiring separate evaluation. Overall, the frame-
+work enables objective fruit quality assessment and actionable in-ﬁeld fruit counting to support harvest logistics 
+and labor planning, providing a practical foundation for smart agriculture in the Egyptian citrus sector.
+1.  Introduction
+Global food demand is projected to intensify as the world population 
+approaches 10 billion by 2050 [1], requiring sustainable intensiﬁcation 
+that increases productivity without proportional resource consumption. 
+Within this paradigm, citrus is a strategic crop: Egypt is a dominant or-
+ange exporter, with annual shipments of approximately 2 million met-
+ric tons [2] and a signiﬁcant share of national agricultural exports [3]. 
+As shown in Fig. 1, Egypt consistently leads the other major exporting 
+origins in annual orange export volume, underscoring its strategic im-
+portance in the global citrus supply chain.
+Despite this economic importance, Egyptian citrus production still 
+depends heavily on manual fruit inspection, grading, and yield esti-
+mation. These practices are slow, subjective, and diﬃcult to scale, and 
+they are further strained by a steadily declining agricultural workforce 
+∗Corresponding author at: Faculty of Engineering, German International University (GIU), Egypt.
+ 
+E-mail addresses: saleh.farhoud@giu-uni.de (S.A. Farhoud), yasmine.zaghloul@giu-uni.de (Y.A. Zaghloul), omar.mohamad@guc.edu.eg (O.M. Shehata).
+(Fig. 2) that raises production costs and operational uncertainty [4]. 
+Manual yield estimation also introduces substantial errors that com-
+promise harvest planning, labor allocation, and post-harvest logistics
+[5].
+Artiﬁcial Intelligence (AI) and Computer Vision (CV) have emerged 
+as key enablers of smart agriculture, automating fruit detection, localiza-
+tion, and quality assessment directly from images or videos and achiev-
+ing substantial gains under occlusion, clustering, and variable illumina-
+tion [6]. However, most existing work evaluates models on static images 
+using segmentation accuracy metrics such as mean Average Precision 
+(mAP), while practical yield estimation is performed on moving-camera 
+video streams where temporal consistency, object tracking, and identity 
+preservation become decisive. Consequently, high per-image segmen-
+tation accuracy does not automatically translate into reliable counting 
+performance.
+https://doi.org/10.1016/j.atech.2026.102529
+Received 26 April 2026; Received in revised form 16 August 2026; Accepted 30 August 2026
+Smart Agricultural Technology 15 (2026) 102529 
+Available online 1 September 2026 
+2772-3755/© 2026 The Author(s). Published by Elsevier B.V. This is an open access article under the CC BY license ( http://creativecommons.org/licenses/by/4.0/ ). 
+
+S.A. Farhoud et al.
+Fig. 1. Annual orange exports by the top 5 origins [2].
+Fig. 2. Percentage of employment in the agricultural sector in Egypt [4].
+1.1.  Problem statement
+Deploying computer vision in real Egyptian citrus orchards is chal-
+lenging: fruits are frequently occluded by leaves and branches, clus-
+tered with partial overlap, and captured under variable natural illumina-
+tion. Moreover, yield assessment is typically conducted using handheld 
+moving-camera videos rather than framed still images, so intermittent 
+detections and conﬁdence oscillations can fragment tracked identities 
+and cause systematic overcounting or undercounting. The core problem 
+addressed in this study is therefore the lack of a ﬁeld-validated, end-to-
+end pipeline that performs instance segmentation, quality grading, and 
+dynamic yield estimation under the unstructured conditions of Egyptian 
+citrus farms.
+1.2.  Research objectives
+The primary objective is to develop and validate an end-to-end com-
+puter vision system for automated citrus crop monitoring and yield es-
+timation. The speciﬁc objectives are:
+• Construct a domain-speciﬁc instance segmentation dataset for 
+Egyptian citrus, with 618 original images (expanded to 1,545 aug-
+mented training images) annotated into Good and Defective quality 
+classes.
+• Benchmark YOLOv8, YOLOv11, and Mask R-CNN, together with 
+a transformer-based bounding-box detection baseline (RT-DETR), on 
+the dataset using mAP@0.5, precision-recall behavior, and inference 
+latency to determine the best accuracy-eﬃciency trade-oﬀ.
+• Validate dynamic yield estimation by integrating the ﬁne-tuned 
+models with a multi-object tracker and evaluating counting relia-
+bility on moving-camera videos using Relative Error and Weighted 
+Mean Absolute Percentage Error (WMAPE).
+2.  Related work
+Deep learning methods for fruit recognition generally fall into two 
+families. Single-stage detectors perform classiﬁcation and localization 
+jointly in one forward pass and favor inference speed; representative 
+examples include YOLO [7], RetinaNet [8], and SSD [9]. Two-stage de-
+tectors ﬁrst generate region proposals and then reﬁne them, typically 
+achieving higher accuracy at higher computational cost, with Fast R-
+CNN [10], Faster R-CNN [11], and Mask R-CNN [12] being the most 
+widely adopted. More recently, real-time detection transformers such 
+as RT-DETR [13] have eliminated non-maximum suppression through 
+end-to-end set prediction; however, they operate at the bounding-box 
+level and do not natively produce the instance masks required for pixel-
+level grading. Within orchard-oriented research, instance segmenta-
+tion is increasingly preferred over bounding-box detection because its
+Smart Agricultural Technology 15 (2026) 102529 
+2 
+
+S.A. Farhoud et al.
+Fig. 3. Comparison between classiﬁcation, object detection, and instance segmentation.
+pixel-level masks enable reliable separation of clustered or occluded 
+fruits and support shape-based analysis such as sizing [14].
+2.1.  From detection to instance segmentation
+As illustrated in Fig. 3, image classiﬁcation, object detection, and 
+instance segmentation form a hierarchy of increasing spatial speci-
+ﬁcity. Bounding boxes provide rough localization but overlap heavily 
+in clustered canopies, whereas instance masks separate adjacent fruits 
+and capture shape information critical for accurate counting and sizing
+[14].
+Early fruit detection work relied on YOLO variants, including 
+YOLOv4 for orange detection [15] and several improved YOLO-based 
+models for citrus [16–20], mangoes [21], apples [22], passion fruit [23], 
+and capsicum [24]. More recently, YOLOv11 has demonstrated eﬃcient 
+real-time crop detection with clear gains over earlier versions [25]. 
+However, bounding-box outputs remain insuﬃcient whenever fruits 
+overlap or when shape information is needed.
+To address these limitations, instance segmentation has gained trac-
+tion. Mask R-CNN has served as a benchmark for high-accuracy seg-
+mentation on sweet pepper [26], cocoa pods [27], strawberries [28], 
+and partially occluded mangoes [29], but its two-stage design is com-
+putationally heavy for real-time edge deployment. Single-stage segmen-
+tation models such as YOLOv8-seg have extended YOLO with a mask 
+branch, producing strong results on strawberries [30], tomatoes [31], 
+weeds [32], and apple sizing via 3D reconstruction [33]. Notably, Sap-
+kota et al. [6] showed that YOLOv8 outperformed Mask R-CNN on im-
+mature green apples (mAP@0.5 of 90.2% vs. 85.0%) while also being 
+faster, suggesting that modern single-stage segmenters can oﬀer a strong 
+speed-accuracy trade-oﬀ for dense orchards.
+2.2.  Multi-class attribute assessment
+Beyond localization, segmentation models have been extended to 
+classify fruit attributes such as ripeness, growth stage, and quality. Ex-
+amples include four cocoa-pod ripening stages with YOLOv8x [27]; ripe 
+vs. unripe Gannan navel oranges with YOLOv5-NMM at 93.2% accu-
+racy [20]; ripe vs. unripe strawberries with YOLOv8 [30]; ﬁve capsicum 
+growth stages [24]; and healthy vs. diseased tomato plants [31]. Multi-
+class segmentation has also been used to isolate target fruits from sur-
+rounding plant structures relevant to robotic navigation or harvesting, 
+such as apples vs. branches and trunks [6], sweet peppers and their pe-
+duncles [26], and uncut weeds vs. trunks and poles [32]. These studies 
+support the feasibility of training a segmentation model that localizes 
+citrus fruits and simultaneously classiﬁes each instance as Good or De-
+fective.
+2.3.  Yield estimation
+Early yield estimation approaches relied on counting detections in 
+static images [15,22,29,30]. Although useful for controlled evaluation, 
+static-image counting fails in real orchards where moving cameras gen-
+erate continuous video streams and the same fruit may be detected 
+across many frames, causing severe overestimation [17]. Practical yield 
+estimation therefore requires Multi-Object Tracking (MOT) to link de-
+tections of the same object over time. Representative tracking-based 
+pipelines include centroid-based counting for mangoes [21], YOLOv5s 
++ DeepSORT with virtual-line counting for citrus [17], tracking-based 
+grape-cluster counting [34], and YOLOv8n + OC-SORT for passion fruit 
+[23].
+2.4.  Summary of literature gaps
+Table 1 summarizes recent computer vision studies in agriculture 
+and highlights several important gaps. While foundational approaches 
+such as object detection and instance segmentation are widely used, 
+most studies adapt these methods to address only one agricultural objec-
+tive, rather than developing integrated end-to-end pipelines. Detection-
+based approaches remain common because of their eﬃciency, but they 
+do not provide the pixel-level precision required for handling clustered 
+or occluded fruits. In addition, attribute-based multi-class classiﬁcation, 
+such as fruit quality grading, has received comparatively limited atten-
+tion. Yield estimation is also still performed mainly on static images, 
+which does not address repeated counting of the same fruit across con-
+secutive video frames. Moreover, despite Egypt’s importance as a citrus-
+producing and exporting country, only limited work has focused on the 
+speciﬁc environmental and orchard conditions of Egyptian citrus farms. 
+These gaps provide the main motivation for the end-to-end pipeline pro-
+posed in this study.
+3.  Methodology
+The proposed framework is organized into three phases, as illustrated 
+in Fig. 4: (i) construction of a domain-speciﬁc dataset, (ii) comparative 
+training of single-stage and two-stage segmentation models, and (iii) 
+implementation of a dynamic yield estimation pipeline. The following 
+subsections detail each phase and the evaluation metrics used.
+3.1.  Dataset construction
+3.1.1.  Data acquisition
+Field data were collected from a commercial citrus farm in the Be-
+heira Governorate, Egypt (30.5702◦ N, 30.2131◦ E), representative of the 
+Smart Agricultural Technology 15 (2026) 102529 
+3 
+
+S.A. Farhoud et al.
+Table 1 
+Summary of recent studies on computer vision tasks in agriculture, highlighting the proposed framework.
+Task
+ Year
+ Ref
+ Crop
+Dataset Size
+ Segmentation Dynamic
+Model
+ Number of Classes
+Detection
+ 2022
+ [16] Orange
+1266
+×
+×
+Citrus-YOLOv7
+ 1
+Detection
+ 2024
+ [18] Orange
+1223
+×
+×
+YOLOv5
+ 1
+Detection
+ 2024
+ [19] Orange
+975
+×
+×
+AG-YOLOv8
+ 1
+Detection
+ 2024
+ [20] Orange
+3000
+×
+×
+YOLOv5-NMM
+ Ripe vs. Unripe
+Detection
+ 2025
+ [25] Cabbage
+2715
+×
+×
+YOLOv11
+ 1
+Segmentation
+ 2023
+ [26] Pepper
+1127
+✓
+×
+Mask R-CNN
+ Fruit vs. Stem
+Segmentation
+ 2023
+ [31] Tomato
+1600
+✓
+×
+YOLOv8
+ Healthy vs. Diseased
+Segmentation
+ 2024
+ [6]
+ Apple
+1553
+✓
+×
+YOLOv8 / Faster R-CNN
+ Fruit vs. Branch
+Segmentation
+ 2024
+ [33] Apple
+1079
+✓
+×
+YOLOv8
+ 1
+Segmentation
+ 2024
+ [32] Weeds
+5000
+✓
+×
+YOLOv8
+ Weed vs. Tree
+Segmentation
+ 2025
+ [27] Cocoa
+4116
+✓
+×
+YOLOv8 / Faster R-CNN
+ 4 Ripening Stages
+Segmentation
+ 2025
+ [28] Strawberry
+3100
+✓
+×
+Mask R-CNN
+ 1
+Yield Estimation
+ 2021
+ [15] Orange
+1568
+×
+×
+YOLOv4
+ 1
+Yield Estimation
+ 2023
+ [22] Apple
+829
+×
+×
+YOLOv7-tiny
+ 1
+Yield Estimation
+ 2023
+ [17] Orange
+1940
+×
+✓
+YOLOv5
+ 1
+Yield Estimation
+ 2023
+ [34] Grape
+464
+×
+✓
+YOLOv5
+ 1
+Yield Estimation
+ 2024
+ [30] Strawberry
+813
+✓
+×
+YOLOv8
+ Ripe vs. Unripe
+Yield Estimation
+ 2024
+ [29] Mango
+308
+✓
+×
+Mask R-CNN
+ 1
+Yield Estimation
+ 2024
+ [24] Capsicum
+450
+✓
+✓
+YOLOv8
+ 5 Growth Stages
+Yield Estimation
+ 2025
+ [23] Passion Fruit
+6445
+×
+✓
+YOLOv8
+ 1
+Yield Estimation
+ 2025
+ [21] Mango
+704
+×
+✓
+YOLOv5
+ 1
+Yield Estimation
+(Proposed Framework)
+ 2026 –
+ Orange
+618 (1545 augmented 
+training images)
+✓
+✓
+YOLOv8 / YOLOv11 / Mask 
+R-CNN / RT-DETR
+ Good vs. Defective
+Fig. 4. Proposed research methodology framework.
+Table 2 
+Software environments used for reproducibility (YOLO vs. 
+Mask R-CNN).
+ Component
+ YOLO Environment
+ Mask R-CNN Environment
+ Python
+ 3.11.0
+ 3.10.11
+ PyTorch
+ 2.7.0
+ 1.13.1
+ CUDA
+ 12.6
+ 11.6
+ cuDNN
+ 9.7.1
+ 8.3.2
+ Ultralytics
+ 8.3.143
+ -
+ Detectron2
+ -
+ 0.6
+Egyptian citrus sector. Acquisition took place in the pre-harvest season 
+when fruits had reached commercial maturity and full coloration. A total 
+of 618 high-resolution images (3024 × 4032 pixels) were captured with a 
+smartphone camera from multiple angles and distances. Close-up shots 
+captured ﬁne fruit details and surface defects; wider shots documented 
+full-tree fruit distribution; oblique angles were used deliberately to in-
+clude oranges partially hidden inside the canopy. Representative sam-
+ples are shown in Fig. 5.
+3.1.2.  Data annotation
+Images were manually annotated in Roboﬂow using polygonal masks 
+to exclude background noise and preserve exact fruit contours. Each 
+fruit instance was labeled as “Good” or “Defective.” A fruit was assigned 
+the Defective class if it exhibited (i) visible disease symptoms, such as 
+citrus canker lesions, black spot, or rind rot; (ii) physical damage, includ-
+ing punctures, splits, or crushing; or (iii) clearly abnormal discoloration 
+or deformation; all remaining fruits were labeled Good. To control anno-
+tation subjectivity, the entire dataset was labeled independently by two 
+annotators, and every annotation was subsequently veriﬁed by a third 
+reviewer who adjudicated all disagreements before the dataset was ﬁ-
+nalized. The dataset, training images, contains 376 Good and 239 Defec-
+tive instances (615 in total, prior to any oﬄine or online augmentation), 
+corresponding to a class ratio of approximately 61:39. Annotations were 
+exported in both YOLO format (for YOLOv8/YOLOv11 and RT-DETR) 
+and COCO JSON format (for Mask R-CNN). Fig. 6 shows the polygonal 
+ground truth corresponding to the samples in Fig. 5.
+3.1.3.  Data augmentation
+To preclude any data leakage, the 83.3:8.1:8.6 train/validation/test 
+split was performed before augmentation. The original dataset of 618 
+images was partitioned into exactly 515 training images, 50 validation 
+images, and 53 blind-test images. All augmentation described below was 
+applied only to the 515-image training partition, while the validation 
+and test subsets consist solely of original, non-augmented images. Oﬄine 
+augmentation in Roboﬂow expanded the training partition by a 3× factor, 
+yielding exactly 515 × 3 = 1,545 augmented training images. Geometric 
+transformations (random rotations of ±15◦, horizontal and vertical ﬂips) 
+handled camera-orientation variability, while photometric transforma-
+tions (random brightness and exposure adjustments) helped the model 
+separate true defects from lighting artifacts such as shadows or direct 
+sunlight (Fig. 7). Online augmentation during training followed each ar-
+chitecture’s best practice: YOLO models used Mosaic augmentation to 
+improve small-object detection, while Mask R-CNN used random ﬂip-
+ping and multi-scale resizing; aggressive techniques such as Mosaic were 
+avoided for Mask R-CNN to preserve the structural context required by 
+its Region Proposal Network (RPN).
+Smart Agricultural Technology 15 (2026) 102529 
+4 
+
+S.A. Farhoud et al.
+Fig. 5. Sample of collected images from the constructed dataset; sub-ﬁgures (a)–(i) illustrate the variability in the data collection process.
+3.2.  Implementation and training conﬁguration
+3.2.1.  Experimental environment
+All training and evaluation were performed on a single worksta-
+tion with an Intel Core i9-14900HX CPU (2.2 GHz, 32 threads), 16 GB 
+of RAM, and an NVIDIA GeForce RTX 4070 GPU (8 GB VRAM). The 
+YOLOv8 and YOLOv11 networks were trained with the Ultralytics pack-
+age, and Mask R-CNN with Detectron2; two isolated virtual environ-
+ments managed dependency conﬂicts. Exact software versions are listed 
+in Table 2. To ensure a controlled comparison across all model conﬁgu-
+rations, the random seed was ﬁxed (seed = 0) for every training run, so 
+that all models were exposed to identical data ordering, augmentation 
+sampling, and initialization stochasticity.
+3.2.2.  Hyperparameter conﬁguration
+Hyperparameters were tuned to the characteristics of the Egyptian 
+citrus dataset. Full conﬁgurations are given in Table 3 for YOLO, Table 4 
+for Mask R-CNN, and Table 5 for RT-DETR.
+YOLO conﬁguration
+YOLOv8 and YOLOv11 were trained with AdamW (base learning rate 
+1.667 × 10−3), a 3-epoch warmup (bias LR 0.1, momentum 0.9), and co-
+sine annealing thereafter. A weight decay of 0.0005 was applied to mit-
+igate overﬁtting. The composite loss combined Box Regression, Classi-
+ﬁcation, and Distribution Focal Loss, with gains biased toward accurate 
+localization in dense canopies. Training was capped at 300 epochs with 
+early stopping (patience = 50).
+Mask R-CNN conﬁguration
+Mask R-CNN (Detectron2) used a ResNet-50 + FPN backbone and 
+SGD (momentum 0.9, base LR 0.001, batch size 4 due to memory). Train-
+ing ran for 6,400 iterations with a linear warmup over the ﬁrst 640 it-
+erations followed by a multi-step decay (factor 0.1 at iterations 768 and 
+1024). The RPN was conﬁgured to sample 128 RoIs per image to im-
+prove detection under clutter. The ﬁnal checkpoint was selected by the 
+lowest validation loss.
+Smart Agricultural Technology 15 (2026) 102529 
+5 
+
+S.A. Farhoud et al.
+Fig. 6. Visualization of the annotated ground truth; sub-ﬁgures (a)–(i) display the polygonal masks overlaid on the original images, classifying oranges as either 
+“Good” or “Defective”.
+RT-DETR conﬁguration
+A transformer-based baseline, RT-DETR-l, was additionally ﬁne-
+tuned on the dataset with the same ﬁxed random seed (seed = 0), using 
+the Ultralytics implementation within the same software environment 
+as the YOLO models (Table 2). Training used AdamW and an early-
+stopping protocol, an input resolution of 640 × 640, 300 object queries, 
+and a GIoU-based localization loss.
+3.3.  Dynamic yield estimation pipeline
+Static image analysis is limited for real yield estimation because a 
+moving camera revisits the same fruit, causing double counting, while 
+single viewpoints often hide defects. The proposed dynamic pipeline 
+(Fig. 8) extracts frames, applies instance segmentation (YOLO or Mask 
+R-CNN), assigns persistent identities via multi-object tracking, and then 
+counts each fruit exactly once as its trajectory crosses a virtual line. Ev-
+ery crossing also updates the corresponding Good or Defective counter, 
+yielding real-time quality-aware yield statistics. The tracking and count-
+ing components are detailed below.
+3.3.1.  Multi-object tracking integration
+BoT-SORT was used to assign a unique persistent ID to each orange 
+across frames. It predicts per-track positions with a Kalman ﬁlter and 
+associates new detections by IoU overlap. Unlike simpler trackers that 
+assume a static camera, BoT-SORT applies Global Motion Compensa-
+tion (GMC) to counteract handheld camera motion, which is essential 
+for ﬁeld videos. The same tracker conﬁguration (Table 6) was used for 
+every segmentation model so that diﬀerences in counts reﬂect detector 
+stability rather than tracker behavior.
+3.3.2.  Virtual line counting mechanism
+For a frame width 𝑊, a vertical counting line is placed at:
+𝑥line = 0.85 𝑊
+(1)
+The value 0.85 𝑊 is an empirically selected parameter speciﬁc to 
+the current validation protocol. It was chosen so that (i) the line lies 
+Smart Agricultural Technology 15 (2026) 102529 
+6 
+
+S.A. Farhoud et al.
+Fig. 7. Examples of oﬄine data augmentation techniques applied to the dataset, including geometric transformations (a-b) and photometric transformations (c-d).
+Fig. 8. Flowchart of the proposed dynamic yield estimation pipeline, illustrating the integration of segmentation, multi-object tracking, and counting logic.
+Smart Agricultural Technology 15 (2026) 102529 
+7 
+
+S.A. Farhoud et al.
+Table 3 
+Training hyperparameters for the single-
+stage YOLO architectures.
+ Parameter
+ Value
+ Optimizer
+ AdamW
+ Initial LR (lr0)
+1.667 × 10−3
+ Final LR Ratio (lrf)
+ 0.01
+ Momentum
+ 0.9
+ Weight Decay
+ 0.0005
+ Max Epochs
+ 300
+ Patience (Early Stopping)
+ 50 Epochs
+ Batch Size
+ 8
+ Warmup Epochs
+ 3
+ Box Loss Gain
+ 7.5
+ Class Loss Gain
+ 0.5
+ DFL Loss Gain
+ 1.5
+ IoU Threshold
+ 0.7
+Table 4 
+Training hyperparameters for 
+the two-stage Mask R-CNN ar-
+chitecture.
+ Parameter
+ Value
+ Optimizer
+ SGD
+ Base LR
+ 0.001
+ Momentum
+ 0.9
+ Weight Decay
+ 0.0001
+ Max Iterations
+ 6400
+ Batch Size
+ 4
+ Min Image Size
+ 800
+ Warmup Iters
+ 640
+ Gamma Decay
+ 0.1
+ LR Decay Steps
+ [768, 1024]
+ RPN Batch/Img
+ 128
+Table 5 
+Training hyperparameters for the RT-
+DETR transformer architecture.
+ Parameter
+ Value
+ Optimizer
+ AdamW
+ Initial LR (lr0)
+1.667 × 10−3
+ Final LR Ratio (lrf)
+ 0.01
+ Momentum
+ 0.9
+ Weight Decay
+ 0.0005
+ Max Epochs
+ 300
+ Patience (Early Stopping)
+ 50 Epochs
+ Batch Size
+ 4
+ Input Resolution
+640 × 640
+ Warmup Epochs
+ 3
+ Object Queries (max_det)
+ 300
+ GIoU Loss Gain
+ 7.5
+ Class Loss Gain
+ 0.5
+suﬃciently far along the direction of camera travel for each track to 
+have persisted for several frames before crossing, allowing BoT-SORT to 
+consolidate the identity (min_hits = 3) and the detection conﬁdence to 
+stabilize, and (ii) it is not so close to the frame border that fruit centroids 
+exit the frame before crossing it, given the lateral panning motion used 
+in our acquisition protocol.
+For each conﬁrmed track 𝑖𝑑, the bounding-box centroid is tracked 
+across frames.
+𝑥(𝑖𝑑)
+𝑡
+=
+𝑥(𝑖𝑑)
+1,𝑡+ 𝑥(𝑖𝑑)
+2,𝑡
+2
+,
+𝑦(𝑖𝑑)
+𝑡
+=
+𝑦(𝑖𝑑)
+1,𝑡+ 𝑦(𝑖𝑑)
+2,𝑡
+2
+.
+(2)
+A valid crossing is recorded when the centroid transitions from 
+strictly left of the line in frame 𝑡−1 to on or past the line in frame 
+𝑡:
+𝑖𝑑(𝑡) =
+(
+𝑥(𝑖𝑑)
+𝑡−1 < 𝑥line
+)
+∧
+(
+𝑥(𝑖𝑑)
+𝑡
+≥𝑥line
+)
+.
+(3)
+A binary ﬂag 𝑧𝑖𝑑∈{0, 1} enforces the count-once rule: it is set to 1
+at the ﬁrst crossing and prevents subsequent detections of the same 𝑖𝑑
+from incrementing the count. The total yield is
+𝑧id =
+{
+1,
+if the track crosses the counting line at any frame,
+0,
+otherwise,̂
+𝑁=
+∑
+id∈
+𝑧id,
+(4)
+where  is the set of all unique track identities. At each valid cross-
+ing, the fruit’s class label routes the increment to either 𝐶𝑜𝑢𝑛𝑡Good or 
+𝐶𝑜𝑢𝑛𝑡Defective.
+3.4.  Evaluation metrics
+3.4.1.  Segmentation performance
+Segmentation accuracy was measured at an Intersection over Union 
+(IoU) threshold of 0.5, where
+IoU =
+|𝑀pred ∩𝑀gt|
+|𝑀pred ∪𝑀gt|
+(5)
+Detections with IoU ≥0.5 count as True Positives (TP); others are False 
+Positives (FP), and missed fruits are False Negatives (FN). Precision, 
+Recall, and F1-score are then deﬁned [35] as:
+Precision =
+TP
+TP + FP ,
+Recall =
+TP
+TP + FN ,
+F1 = 2 ⋅Precision ⋅Recall
+Precision + Recall.
+(6)
+Across conﬁdence thresholds, mean Average Precision at IoU = 0.5 ag-
+gregates per-class Average Precision over the two classes (Good and De-
+fective):
+mAP@0.5 = 1
+𝐶
+𝐶
+∑
+𝑐=1
+AP𝑐,
+(7)
+computed with the COCO evaluation protocol (Ultralytics for YOLO and 
+Detectron2 COCOEvaluator for Mask R-CNN). In the yield pipeline, high 
+Precision limits false fruits added to the count and high Recall ensures 
+occluded fruits are tracked through the scene; the latter is particularly 
+important for the Defective class so damaged fruits are not misgraded.
+3.4.2.  Eﬃciency of models
+Computational eﬃciency was quantiﬁed by the per-image total la-
+tency decomposed into three stages,
+𝑇total = 𝑇preprocess + 𝑇inference + 𝑇postprocess,
+(8)
+in addition to parameter count, network depth, and GFLOPs. Training 
+practicality was characterized by total wall-clock time and number of 
+epochs to convergence.
+3.4.3.  Yield estimation accuracy
+The per-video estimation error captures both magnitude and direc-
+tion (positive for over-counting, negative for under-counting):
+𝐸𝑟𝑟𝑜𝑟(%) =
+(
+𝐶predicted −𝐶ground_truth
+𝐶ground_truth
+)
+× 100.
+(9)
+Overall counting stability across videos is summarized with the 
+Weighted Mean Absolute Percentage Error (WMAPE), which weights 
+each video by its ground-truth count so that small-count videos do not 
+dominate the result:
+𝑊𝑀𝐴𝑃𝐸=
+∑𝑁
+𝑖=1
+|||𝐶(𝑖)
+predicted −𝐶(𝑖)
+ground_truth
+|||
+∑𝑁
+𝑖=1 𝐶(𝑖)
+ground_truth
+× 100,
+(10)
+where 𝑁 is the number of evaluated videos.
+Smart Agricultural Technology 15 (2026) 102529 
+8 
+
+S.A. Farhoud et al.
+Table 6 
+BoT-SORT conﬁguration used for multi-object tracking in dynamic yield estimation.
+ Parameter
+ Value
+Description
+ max_age
+ 30
+Maximum duration (frames) a track may remain lost before termination.
+ min_hits
+ 3
+Minimum matched frames required to initialize a conﬁrmed track (suppresses 
+short-lived false tracks).
+ iou_threshold
+ 0.30
+Minimum IoU overlap required for valid detection-to-track association.
+ gmc_method
+ sparseOptFlow
+GMC using sparse optical ﬂow features.
+ gmc_downscale
+ 2
+Downscale factor applied during GMC to improve eﬃciency while preserving 
+stability.
+Fig. 9. Segmentation performance for all YOLOv8, YOLOv11, and Mask R-CNN conﬁgurations, together with the RT-DETR bounding-box baseline (box-level metrics).
+4.  Results and discussion
+This section evaluates the trained models on the Egyptian citrus 
+dataset, ﬁrst on static segmentation and computational eﬃciency, and 
+then on dynamic video-based yield estimation.
+4.1.  Segmentation performance
+Fig. 9 summarizes the Precision, Recall, F1-score, and mAP@0.5 
+values of every evaluated model. All segmentation models exceed 
+mAP@0.5 of 0.88, conﬁrming that both single-stage and two-stage ar-
+chitectures can handle the occlusion and clustering typical of Egyptian 
+orchards. YOLOv11l (large) was among the top tier of evaluated seg-
+menters, attaining mAP@0.5 of 0.932 with balanced precision-recall be-
+havior (Precision = 0.88, Recall = 0.865, F1 = 0.87). The transformer-
+based RT-DETR baseline recorded a Precision of 0.753, a Recall of 0.860, 
+an F1-score of 0.803, and an mAP@0.5 of 0.827. Because RT-DETR func-
+tions as a bounding-box detector rather than a mask-level instance seg-
+menter, these metrics are computed exclusively at the bounding-box 
+level to serve as a cross-paradigm detection reference. Furthermore, 
+its detection proﬁle is notably recall-leaning (Recall 0.860 vs. Preci-
+sion 0.753), a characteristic whose practical consequences for temporal 
+tracking will be discussed in the dynamic evaluation of Section 4.6.
+The YOLOv11 gain over YOLOv8 is attributable to architectural 
+reﬁnements, in particular the C3k2 bottleneck and C2PSA spatial-
+attention modules, which strengthen multi-scale feature processing in 
+natural canopies with varied fruit sizes and ﬁlter out leaf/branch clut-
+ter, improving Precision.
+4.1.1.  Precision-recall trade-oﬀ
+Mask R-CNN produced a notably diﬀerent proﬁle: a top-ranked Re-
+call of 0.953 paired with a lower Precision of 0.82. This is characteristic 
+of two-stage detectors, whose region-proposal stage produces many can-
+didates, beneﬁcial for Recall but more prone to false positives on leaf 
+and background clutter. YOLO models apply stricter selection and there-
+fore achieve higher Precision. Our ﬁndings extend those of Sapkota et 
+al. [6] (YOLOv8 > Mask R-CNN on apples, 90.2% vs. 85% mAP): while 
+YOLOv11l ranked among the top tier on mAP, Mask R-CNN remains 
+practical when maximizing Recall is the priority over strict quality grad-
+ing.
+4.1.2.  Model complexity and performance scaling
+Within the YOLOv11 family, accuracy improves up to the Large 
+variant (mAP@0.5 = 0.932) and then drops for the Extra-Large vari-
+ant (0.902). With 1,545 augmented training images, the extra capacity 
+of YOLOv11x (62.0 M parameters vs. 27.6 M for the Large) is under-
+utilized given the size of the training set; the observed drop is therefore 
+best interpreted as a data-limited over-parameterization eﬀect, whereby 
+the larger model becomes more sensitive to training noise rather than 
+learning better features, and its greater depth likely complicates opti-
+mization.
+4.1.3.  Class-wise quality grading analysis
+To assess the suitability of the evaluated models for automated qual-
+ity grading, segmentation performance was analyzed separately for the 
+Good and Defective classes. The detailed class-wise results for all YOLO 
+conﬁgurations are presented in Table 7.
+A clear and consistent class-wise asymmetry was observed across 
+nearly all evaluated models: defective fruits were detected more reliably 
+than good fruits. The average Recall for the Defective class was approxi-
+mately 0.93, whereas the average Recall for the Good class was substan-
+tially lower at 0.761. From a quality-control standpoint, this asymmetry 
+is favorable, since it minimizes the risk of a defective fruit being missed 
+and erroneously accepted as good. Conversely, the Good class exhib-
+ited a higher average Precision (0.905) than the Defective class (0.804), 
+indicating that fruits classiﬁed as good were rarely mislabeled.
+Comparing the two architecture families, YOLOv11 generally 
+achieved stronger defect-detection performance than YOLOv8 at 
+matched scales, with the exception of the extra-large variant. For in-
+stance, YOLOv11n attained a Defective mAP@0.5 of 0.933, exceeding 
+YOLOv8n at 0.913, which suggests that the architectural reﬁnements 
+of YOLOv11 improve the learning of the ﬁne visual patterns associated 
+with fruit defects even at small model scales. The advantage widens at 
+larger scales: YOLOv11l achieved a high Defective mAP@0.5 (0.952), 
+Smart Agricultural Technology 15 (2026) 102529 
+9 
+
+S.A. Farhoud et al.
+Table 7 
+Class-wise performance comparison (Good vs. Defective oranges) across YOLO architectures. The F1-score 
+highlights the trade-oﬀ between Precision and Recall for each class.
+Model
+ Class: Good
+ Class: Defective
+ Precision
+ Recall
+ F1-Score
+ mAP@0.5
+ Precision
+ Recall
+ F1-Score
+ mAP@0.5
+ YOLOv11n
+ 0.838
+ 0.797
+ 0.817
+ 0.868
+ 0.853
+ 0.875
+ 0.864
+ 0.933
+ YOLOv11s
+ 0.936
+ 0.734
+ 0.823
+ 0.903
+ 0.823
+ 0.975
+ 0.893
+ 0.926
+ YOLOv11m
+ 0.842
+ 0.844
+ 0.843
+ 0.903
+ 0.835
+ 0.884
+ 0.859
+ 0.928
+ YOLOv11l
+ 0.943
+ 0.781
+ 0.854
+ 0.912
+ 0.806
+ 0.950
+ 0.872
+ 0.952
+ YOLOv11x
+ 0.988
+ 0.703
+ 0.821
+ 0.891
+ 0.814
+ 0.982
+ 0.890
+ 0.913
+ YOLOv8n
+ 0.881
+ 0.688
+ 0.773
+ 0.860
+ 0.751
+ 0.950
+ 0.839
+ 0.913
+ YOLOv8s
+ 0.920
+ 0.766
+ 0.836
+ 0.879
+ 0.797
+ 0.975
+ 0.877
+ 0.891
+ YOLOv8m
+ 0.894
+ 0.790
+ 0.839
+ 0.904
+ 0.786
+ 0.925
+ 0.850
+ 0.922
+ YOLOv8l
+ 0.929
+ 0.734
+ 0.820
+ 0.868
+ 0.789
+ 0.950
+ 0.862
+ 0.908
+ YOLOv8x
+ 0.876
+ 0.772
+ 0.821
+ 0.893
+ 0.791
+ 0.850
+ 0.819
+ 0.926
+Fig. 10. Comparative analysis of preprocessing, inference, postprocessing, and total latency for all evaluated models, including the RT-DETR bounding-box baseline.
+exceeding YOLOv8l (0.908). These results indicate that the YOLOv11 
+family is better suited to quality-grading tasks on this dataset.
+The class-wise results also expose distinct operating trade-oﬀs across 
+model scales. YOLOv11s achieved the highest Defective Recall (0.975), 
+making it the preferred choice when detecting every possible defect is 
+the overriding priority, even at the cost of rejecting some good fruits. 
+YOLOv11m oﬀered the most balanced behavior between the two classes, 
+making it a strong candidate for general-purpose grading. Consistent 
+with the aggregate results in Section 4.1.2, YOLOv11x provided no im-
+provement over YOLOv11l: despite a very high Precision on the Good 
+class, its Defective-class performance regressed relative to the Large 
+variant, reinforcing the conclusion that increasing capacity beyond the 
+Large scale yields no beneﬁt on a dataset of this size. Importantly, the 
+uniformly high Defective Recall observed here (0.85–0.98 across all 
+models) indicates that the static quality-grading capability of the trained 
+models is consistent across architectures and scales; as discussed in Sec-
+tion 4.6, the low absolute Defective counts observed in the dynamic 
+evaluation therefore reﬂect the low prevalence of defective fruits in 
+harvest-season videos rather than a limitation of the grading models 
+themselves.
+4.2.  Inference speed and real-time feasibility
+Per-image latency, decomposed into preprocessing, inference, and 
+postprocessing on an RTX 4070 (8 GB), is shown in Fig. 10, and the 
+accuracy-latency trade-oﬀ is plotted in Fig. 11.
+Mask R-CNN reached 67.8 ms (∼14.7 FPS), dominated by its 62.8 ms 
+inference stage, expected for a two-stage pipeline that proposes then 
+reﬁnes regions. YOLOv11l processed the same image in 26.1 ms 
+(∼38.3 FPS), well above the ∼30 FPS threshold used for real-time ap-
+plications. The RT-DETR baseline required 22.1 ms per image (1.1 ms 
+preprocessing, 20.5 ms inference, and 0.5 ms postprocessing; ∼45 FPS).
+In the accuracy-latency plot, models closer to the upper-left corner 
+are preferred. YOLOv11l sits in this region, oﬀering the most eﬀective 
+balance: YOLOv11n and YOLOv11s are faster but less accurate, while 
+YOLOv11x and Mask R-CNN are slower without a comparable accuracy 
+gain. Within YOLOv11, latency grows from 11.2 ms (n) to 41.3 ms (x), 
+conﬁrming the expected capacity-speed trade-oﬀ but also showing that 
+the largest variant is not the optimal deployment choice.
+4.3.  Architectural complexity and resource eﬃciency
+Parameter count (Fig. 12), network depth (Fig. 13), and GFLOPs 
+(Fig. 14) characterize the suitability of each model for resource-
+constrained platforms.
+YOLOv11 is markedly more parameter-eﬃcient than YOLOv8 at 
+comparable scales. YOLOv11l uses only 27.6 M parameters, versus 
+45.9 M for YOLOv8l and 43.9 M for Mask R-CNN. For deployment this 
+translates to a much smaller on-disk footprint (≈55 MB for YOLOv11l vs. 
+≈90 MB for YOLOv8l), easing integration into embedded systems. Com-
+pute cost follows the same trend: YOLOv11l requires 141.9 GFLOPs, 
+roughly 46% below Mask R-CNN’s 265.5 GFLOPs and well below 
+YOLOv8l’s 220.1 GFLOPs, important for battery-powered platforms. Al-
+though YOLOv11 is deeper than YOLOv8 (e.g., 203 vs. 125 layers at 
+the Large scale), its design trades width for a lighter, more expres-
+sive structure. The RT-DETR occupies an intermediate complexity point: 
+approximately 32.0 M parameters (between YOLOv11l’s 27.6 M and 
+Mask R-CNN’s 43.9 M), 302 layers (the deepest network evaluated), and 
+103.4 GFLOPs (below YOLOv11l’s 141.9 GFLOPs).
+4.4.  Training eﬃciency and convergence analysis
+Training time and epochs to convergence are summarized in Fig. 15. 
+Epoch count and wall-clock time do not strictly track one another: for in-
+stance, YOLOv11s ran for 188 epochs but ﬁnished in under 30 minutes, 
+while the larger variants required substantially more time per epoch.
+Convergence was not monotonic across model scales. YOLOv8s 
+and YOLOv8m converged faster (94 and 88 epochs, respectively) than 
+Smart Agricultural Technology 15 (2026) 102529 
+10 
+
+S.A. Farhoud et al.
+Fig. 11. Accuracy-latency trade-oﬀ for the evaluated models, using mAP@0.5 and total latency per image; RT-DETR is plotted using its box-level mAP@0.5.
+Fig. 12. Number of parameters for YOLOv8, YOLOv11, and Mask R-CNN segmentation models, and the RT-DETR.
+Fig. 13. Number of layers in YOLOv8, YOLOv11, and Mask R-CNN segmentation models, and the RT-DETR.
+Smart Agricultural Technology 15 (2026) 102529 
+11 
+
+S.A. Farhoud et al.
+Fig. 14. Comparison of GFLOPs for YOLOv8, YOLOv11, and Mask R-CNN segmentation models, and the RT-DETR.
+Fig. 15. Training time in minutes and number of epochs for YOLOv8, YOLOv11, and Mask R-CNN models, and the RT-DETR.
+their YOLOv11 counterparts (188 and 163 epochs), suggesting that the 
+deeper YOLOv11 architectures at these mid-scales require more param-
+eter updates before stabilizing. However, this trend reversed at other 
+scales: YOLOv11n converged in 115 epochs (vs. 158 for YOLOv8n), 
+and YOLOv11l converged in 158 epochs (vs. 187 for YOLOv8l). Since 
+YOLOv11l also ranks among the top tier of evaluated segmenters, 
+this represents a highly favorable outcome in terms of training eﬃci-
+ency.
+Mask R-CNN halted early after only 50 epochs, yet still accumulated 
+a total wall-clock time of 120 minutes. Consequently, its per-epoch cost 
+was the highest among the evaluated models (≈2.4 min/epoch) com-
+pared to ≈0.35 min/epoch for YOLOv11l (55.38 min over 158 epochs). 
+A notable outlier is YOLOv11x, which required 1,232.7 min (∼20.5 h) 
+approximately 6.5× the time required by YOLOv8x (188.16 min). This 
+is likely a memory-bound artifact: YOLOv11x operated near the GPU 
+VRAM limit, severely throttling the processing speed of each epoch. Be-
+cause its mAP@0.5 remained below that of YOLOv8x, this extensive 
+additional computational cost is not justiﬁed. Finally, the bounding-box 
+detection, RT-DETR, converged in 78 epochs with a wall-clock time of 
+48.66 minutes. This demonstrates a training cost comparable to the mid-
+scale YOLO conﬁgurations, though without yielding the mask-level seg-
+mentation provided by the other models.
+4.5.  Static validation
+Qualitative inference results of YOLOv11l across representative sce-
+narios are shown in Fig. 16.
+Masks closely follow fruit contours. Good fruits are correctly clas-
+siﬁed with high conﬁdence despite leaf shadows or dust, and phys-
+ical damage (rot, skin disease) is reliably assigned to the Defective 
+class. Even touching Good/Defective pairs receive independent, non-
+overlapping instance boundaries, and fallen oranges on soil are detected 
+accurately despite the strongly diﬀerent background context.
+4.6.  Yield estimation accuracy
+Dynamic yield estimation was evaluated using the same BoT-SORT 
+conﬁguration (Table 6) for every segmentation model, so that all dif-
+ferences in counts stem from detector stability rather than tracking. 
+The comparison across detection paradigms is methodologically fair at 
+the counting stage: the virtual-line mechanism of Section 3.3.2 oper-
+ates exclusively on the bounding-box centroid predicted by each model 
+(Eq.  (3)), and instance masks are not utilized at any point in the tracking 
+or counting stage. The mask-level segmenters therefore hold no advan-
+tage over the box-level RT-DETR in this comparison, as every model’s 
+Smart Agricultural Technology 15 (2026) 102529 
+12 
+
+S.A. Farhoud et al.
+Fig. 16. Visualized inference results of the YOLOv11l model. The blue/green overlays represent the generated segmentation masks, with bounding boxes indicating 
+class conﬁdence. (For interpretation of the references to color in this ﬁgure legend, the reader is referred to the web version of this article.)
+predictions are processed for counting through an identical geometric 
+representation.
+4.6.1.  Counting results and error analysis
+From 15 videos, a subset of 6 representative videos, speciﬁcally cho-
+sen to encompass varying levels of canopy density and severe occlusion, 
+was established as the formal evaluation benchmark. The remaining 9 
+videos featured highly sparse, unoccluded fruit distributions and were 
+utilized solely for initial tracker calibration and debugging; they were 
+excluded from the ﬁnal benchmark to avoid artiﬁcially inﬂating the ag-
+gregate performance metrics. The BoT-SORT conﬁguration reported in 
+Table 6 was selected using only these nine auxiliary videos, which thus 
+served as a development set for the tracking stage; the conﬁguration was 
+ﬁxed before any of the six benchmark videos was processed, and the 
+two video sets are fully disjoint. These auxiliary sequences include con-
+trolled, non-orchard scenes used to verify the counting logic in isolation; 
+Fig. 18 is obtained from this set. The six benchmark videos, captured in 
+Egyptian orchards, span low density (20–70 oranges), medium density 
+(100–200), and high density with heavy occlusion (400). The manual 
+ground truth for every benchmark video was established in-ﬁeld by a 
+professional crop estimator through physical counting of the fruit in the 
+orchard. For each benchmark video, the estimator selected a section of 
+the orchard and deﬁned a ﬁxed trajectory that was traversed jointly 
+by the estimator and the camera operator during recording. Counting 
+was performed from the camera’s vantage along this trajectory, so the 
+reference count for each video corresponds to the fruit visible along 
+the ﬁlmed path rather than to the total fruit load of the trees in that 
+section; fruit fully occluded by foliage or borne on the far side of the 
+canopy is excluded from the reference count by construction, exactly as 
+it is absent from the model’s input. The quality class of each counted 
+fruit was assigned at the moment of counting by the same estimator, 
+applying the same visual criteria established for the image annotation 
+protocol (Section 3.1.2): visible disease symptoms, physical damage, 
+and clearly abnormal discoloration or deformation. These criteria are in
+Smart Agricultural Technology 15 (2026) 102529 
+13 
+
+S.A. Farhoud et al.
+Fig. 17. Comparison of evaluated models based on Weighted Mean Absolute Percentage Error (WMAPE) for dynamic yield estimation.
+Fig. 18. Tracking success scenario in a simple scene outside the orchard; frames progress from right to left as indicated by the arrows. Each fruit retains a persistent 
+track ID, crosses the virtual counting line exactly once, and correctly increments the Good/Defective counters.
+routine commercial use at the orchard and are shared by the growers 
+and the estimator, so the ﬁeld classiﬁcation and the image annotations 
+rest on a single common deﬁnition of the Defective class. Table 8 reports 
+Good/Defective/Total predictions against manual ground truth, Table 9 
+gives the signed per-video relative error and the aggregate WMAPE, and 
+Fig. 17 ranks models by WMAPE.
+Regarding the per-class composition of the dynamic counts, the 
+low absolute Defective totals in Table 8 reﬂect the composition of the 
+test footage rather than a grading failure. All validation videos were
+deliberately captured during the harvest season, the period in which 
+yield estimation is operationally useful for planning, when orchards at 
+commercial maturity naturally carry very few defective fruits (14 of 990 
+ground-truth fruits, a prevalence of ≈1.4%). The low prevalence of de-
+fects in the dynamic evaluation must be acknowledged as a limitation. 
+Speciﬁcally, the dynamic grading ﬁdelity reported in this study rests on 
+a tiny absolute defective count; thus, the quality grading in the dynamic 
+yield estimation pipeline requires subsequent validation on explicitly 
+defect-rich footage.
+In the target deployment, the pipeline deliberately defaults toward 
+the Good class at long camera distances where defect cues fall below 
+the resolvable scale. The harvested yield subsequently passes through 
+a conveyor-belt sorting stage in which every fruit is inspected at close 
+range; a defective fruit provisionally counted as Good in the orchard is 
+removed downstream, whereas a spurious in-orchard Defective count 
+would distort harvest-planning quantities. Per-class counting ﬁdelity in 
+the dynamic setting should therefore be interpreted as a primary screen-
+ing signal complemented by downstream sorting.
+The RT-DETR baseline attained the lowest overall counting error 
+across all models, with a WMAPE of 5.66% and per-video deviations 
+never exceeding 15% (e.g., 199 counted against a ground truth of 200 
+in Video 4). This aggregate ﬁgure, however, quantiﬁes total-count ac-
+curacy only. At the class level, RT-DETR did not resolve fruit qual-
+ity reliably in the dynamic setting: it reported zero Defective fruits in 
+Videos 1–5 (ground truth: 1, 1, 2, 4, and 3, respectively) and, conversely, 
+assigned 20 of its 23 counted fruits to the Defective class in Video 6 
+against a ground truth of only 3, inverting the class composition of that 
+scene. This behavior is consistent with the detector’s comparatively low 
+box-level Precision (0.753) in the static evaluation. The RT-DETR results 
+should therefore be read strictly as a cross-paradigm total-yield counting 
+demonstration.
+Across the mask-level segmentation models, YOLOv11s attained the 
+best counting stability with a WMAPE of 6.97%; for example, in Video 2 
+(GT = 200) it predicted 221 and in the denser Video 5 (GT = 400) 
+it predicted 408, a 2% deviation. YOLOv8x stood at the opposite end 
+with a WMAPE of 46.67%, returning 636 oranges in Video 5 against a 
+ground truth of 400. Notably, YOLOv11l, among the top tier of static 
+segmenters, consistently under-counted (WMAPE = 20.10%; 336 in 
+Video 5), while Mask R-CNN achieved the second-best across segmen-
+tation models with WMAPE of 7.47%.
+4.6.2.  Inﬂuence of detection stability on tracking continuity
+Because the tracker was held constant, these diﬀerences are at-
+tributable to detection stability across frames. Overcounting arises from 
+ﬂickering detections: in canopy clutter or under lighting changes, a 
+model may detect a fruit, miss it in the next frame, and re-detect it af-
+terwards; the tracker treats the reappearance as a new identity, so each 
+ﬂicker adds a separate crossing of the counting line, the dominant failure 
+mode for YOLOv8x and YOLOv11n. Undercounting, seen in YOLOv11l, 
+Smart Agricultural Technology 15 (2026) 102529 
+14 
+
+S.A. Farhoud et al.
+Table 8 
+Detailed yield estimation results (Good, Defective, Total) across all six test videos. The table aggregates the Good (G), Defective (D), 
+and Total (T) counts into a single view. The manual ground truth is provided in the ﬁrst row for direct comparison.
+ Video
+ Video 1
+ Video 2
+ Video 3
+ Video 4
+ Video 5
+ Video 6
+ G
+ D
+ T
+ G
+ D
+ T
+ G
+ D
+ T
+ G
+ D
+ T
+ G
+ D
+ T
+ G
+ D
+ T
+ Manual
+ 69
+ 1
+ 70
+ 199
+ 1
+ 200
+ 98
+ 2
+ 100
+ 196
+ 4
+ 200
+ 397
+ 3
+ 400
+ 17
+ 3
+ 20
+ YOLOv11n
+ 109
+ 0
+ 109
+ 255
+ 0
+ 255
+ 129
+ 0
+ 129
+ 248
+ 0
+ 248
+ 546
+ 0
+ 546
+ 16
+ 3
+ 19
+ YOLOv11s
+ 62
+ 0
+ 62
+ 221
+ 0
+ 221
+ 91
+ 4
+ 95
+ 165
+ 10
+ 175
+ 402
+ 6
+ 408
+ 16
+ 2
+ 18
+ YOLOv11m
+ 70
+ 2
+ 72
+ 160
+ 0
+ 160
+ 84
+ 5
+ 89
+ 150
+ 6
+ 156
+ 350
+ 0
+ 350
+ 16
+ 3
+ 19
+ YOLOv11l
+ 60
+ 0
+ 60
+ 155
+ 1
+ 156
+ 81
+ 1
+ 82
+ 137
+ 1
+ 138
+ 336
+ 0
+ 336
+ 17
+ 2
+ 19
+ YOLOv11x
+ 75
+ 1
+ 76
+ 232
+ 0
+ 232
+ 92
+ 4
+ 96
+ 160
+ 5
+ 165
+ 399
+ 4
+ 403
+ 11
+ 2
+ 13
+ YOLOv8n
+ 52
+ 0
+ 52
+ 135
+ 0
+ 135
+ 91
+ 0
+ 91
+ 145
+ 0
+ 145
+ 297
+ 0
+ 297
+ 13
+ 3
+ 16
+ YOLOv8s
+ 61
+ 0
+ 61
+ 174
+ 0
+ 174
+ 86
+ 0
+ 86
+ 164
+ 0
+ 164
+ 372
+ 0
+ 372
+ 17
+ 2
+ 19
+ YOLOv8m
+ 81
+ 1
+ 82
+ 184
+ 0
+ 184
+ 96
+ 0
+ 96
+ 150
+ 0
+ 150
+ 386
+ 0
+ 386
+ 8
+ 6
+ 14
+ YOLOv8l
+ 73
+ 0
+ 73
+ 230
+ 0
+ 230
+ 96
+ 0
+ 96
+ 181
+ 0
+ 181
+ 431
+ 0
+ 431
+ 10
+ 7
+ 17
+ YOLOv8x
+ 133
+ 0
+ 133
+ 283
+ 0
+ 283
+ 122
+ 0
+ 122
+ 254
+ 0
+ 254
+ 636
+ 0
+ 636
+ 13
+ 3
+ 16
+ Mask R-CNN
+ 52
+ 0
+ 52
+ 191
+ 0
+ 191
+ 107
+ 0
+ 107
+ 179
+ 1
+ 180
+ 382
+ 1
+ 383
+ 15
+ 2
+ 17
+ RT-DETR
+ 74
+ 0
+ 74
+ 181
+ 0
+ 181
+ 89
+ 0
+ 89
+ 199
+ 0
+ 199
+ 418
+ 0
+ 418
+ 3
+ 20
+ 23
+Table 9 
+Estimation accuracy analysis. Values represent the Relative Error (%) for each video, with the Weighted 
+Mean Absolute Percentage Error (WMAPE) quantifying overall stability.
+ Model
+ Video 1
+ Video 2
+ Video 3
+ Video 4
+ Video 5
+ Video 6
+ WMAPE (%)
+ (Ground Truth)
+ (70)
+ (200)
+ (100)
+ (200)
+ (400)
+ (20)
+ (Lower is Better)
+ YOLOv11n
+ +55.7%
+ +27.5%
+ +29.0%
+ +24.0%
+ +36.5%
+−5.0%
+ 32.12
+ YOLOv11s
+−11.4%
+ +10.5%
+−5.0%
+−12.5%
+ +2.0%
+−10.0%
+ 6.97
+ YOLOv11m
+ +2.9%
+−20.0%
+−11.0%
+−22.0%
+−12.5%
+−5.0%
+ 14.95
+ YOLOv11l
+−14.3%
+−22.0%
+−18.0%
+−31.0%
+−16.0%
+−5.0%
+ 20.10
+ YOLOv11x
+ +8.6%
+ +16.0%
+−4.0%
+−17.5%
+ +0.8%
+−35.0%
+ 8.79
+ YOLOv8n
+−25.7%
+−32.5%
+−9.0%
+−27.5%
+−25.8%
+−20.0%
+ 25.66
+ YOLOv8s
+−12.9%
+−13.0%
+−14.0%
+−18.0%
+−7.0%
+−5.0%
+ 11.52
+ YOLOv8m
+ +17.1%
+−8.0%
+−4.0%
+−25.0%
+−3.5%
+−30.0%
+ 10.30
+ YOLOv8l
+ +4.3%
+ +15.0%
+−4.0%
+−9.5%
+ +7.8%
+−15.0%
+ 9.09
+ YOLOv8x
+ +90.0%
+ +41.5%
+ +22.0%
+ +27.0%
+ +59.0%
+−20.0%
+ 46.67
+ Mask R-CNN
+−25.7%
+−4.5%
+ +7.0%
+−10.0%
+−4.2%
+−15.0%
+ 7.47
+ RT-DETR
+ +5.7%
+−9.5%
+−11.0%
+−0.5%
+ +4.5%
+ +15.0%
+ 5.66
+is the opposite pathology: the detector drops a track when the fruit be-
+comes partially hidden and never recovers it before the counting line, so 
+the fruit is missed entirely. Either way, a model that is highly accurate 
+on still frames can still be unreliable on video.
+YOLOv11s’s low WMAPE (6.97%) indicates more temporally stable 
+detections, letting the tracker maintain persistent identities and count 
+each fruit exactly once. Mask R-CNN’s 7.47% WMAPE stems from a 
+diﬀerent mechanism: its RPN produces a comprehensive set of candi-
+dates per frame and is therefore less prone to dropped detections dur-
+ing viewpoint changes. However, YOLOv11s is a much lighter single-
+stage model (10.1 M parameters vs. 43.9 M; 14.2 ms vs. 67.8 ms per 
+frame, i.e., ∼70 FPS vs. ∼14.7 FPS), oﬀering a combined advantage 
+of accuracy, stability, real-time throughput, and suitability for deploy-
+ment on resource-constrained edge devices that Mask R-CNN cannot 
+match. Overall, these results establish that reliable in-ﬁeld yield estima-
+tion requires temporally consistent detections, not just high per-frame
+mAP.
+To complement these aggregate statistics with frame-level quali-
+tative evidence, Figs. 18–20 visualize representative success and fail-
+ure scenarios of the tracking-and-counting pipeline across consecutive 
+frames, showing the assigned track IDs, the virtual counting line, and 
+the live Good/Defective counters. Fig. 18 depicts a simple, sparsely pop-
+ulated scene outside the orchard canopy: every fruit retains a single per-
+sistent identity across the sequence, crosses the virtual line exactly once, 
+and increments the corresponding Good or Defective counter, demon-
+strating correct identity preservation and count-once behavior. Fig. 19 
+illustrates the ﬁrst characteristic failure mode, corresponding to the un-
+dercounting behavior: the orange assigned ID 77 (dashed circle) is ini-
+tially detected, then becomes totally occluded by foliage and never re-
+emerges before the counting line, so its track is terminated and the fruit 
+is never counted. Fig. 20 shows the second failure mode: the bounding 
+box of the orange assigned ID 40 (dashed circle) ﬂickers in the frames 
+immediately preceding the counting line and reappears afterwards, so 
+the strict left-to-right crossing event of Eq.  (3) is never registered and 
+the fruit is likewise excluded from the count. These sequences make 
+explicit the mechanisms through which per-frame detection instability 
+propagates into counting error.
+4.7.  The proposed framework in the context of recent studies
+Table 1 situates the proposed framework within recent deep learn-
+ing studies on fruit detection, segmentation, and yield estimation. As the 
+comparison shows, prior works have typically addressed these capabil-
+ities in isolation: detection-oriented citrus studies [16,18–20] operate 
+strictly at the bounding-box level; segmentation-based studies [6,26,27] 
+are evaluated on static single-image scenarios; and video-based yield 
+estimation works [17,21,23,34] generally count a single generic fruit 
+class without an accompanying quality assessment. To explicitly bench-
+mark across architectural paradigms, this study evaluated both CNN-
+based segmenters and the modern, transformer-based RT-DETR detec-
+tion baseline. It is also noteworthy that the dataset constructed in this 
+study (618 original images, expanded to 1,545 augmented training im-
+ages) is comparable to, and in several cases larger than, the datasets em-
+ployed in these peer-reviewed studies, despite being collected entirely 
+Smart Agricultural Technology 15 (2026) 102529 
+15 
+
+S.A. Farhoud et al.
+Fig. 19. Tracking failure scenario 1 (track loss under total occlusion). The orange assigned ID 77 (dashed circle) is detected and subsequently disappears completely 
+behind leaves before reaching the virtual counting line; its track is terminated and the fruit is never counted, producing an undercount.
+Fig. 20. Tracking failure scenario 2 (detection ﬂicker at the counting line). The bounding box of the orange assigned ID 40 (dashed circle) is detected, ﬂickers 
+(transient missed detection) just before crossing the virtual line, and reappears after it; the crossing event is never registered, so the fruit is not counted.
+from scratch in Egyptian orchards rather than assembled from existing 
+public sources.
+The framework developed in this study uniﬁes these three ca-
+pabilities: instance segmentation, quality-resolved classiﬁcation, and 
+tracking-based dynamic counting, within a single pipeline validated on 
+a localized dataset from Egyptian orange orchards. The experimental re-
+sults demonstrate that each stage operates at a level suitable for practical 
+deployment. For static quality grading (Good vs. Defective), YOLOv11l 
+achieved a mAP@0.5 of 0.932 at an inference latency of 26.1 ms 
+per image, conﬁrming that pixel-level grading is feasible in real time
+under dense occlusion and variable illumination. For dynamic yield esti-
+mation, the integration of instance segmentation with BoT-SORT track-
+ing, camera-motion compensation, and virtual line-crossing logic en-
+abled YOLOv11s to achieve a low counting error of 6.97% WMAPE at 
+14.2 ms per frame on handheld orchard videos while resolving each 
+counted fruit into its quality class. Additionally, the bounding-box RT-
+DETR baseline demonstrated strong total-count stability (WMAPE = 
+5.66%), although without reliable per-class resolution in the dynamic 
+setting (Section 4.6). Taken together, these results establish the pro-
+posed framework as an end-to-end system that quantiﬁes and grades 
+the harvest in a single pass, extending the methods of prior studies into 
+an integrated solution tailored to the operational conditions of the Egyp-
+tian citrus sector.
+5.  Conclusion
+This study delivered a validated, end-to-end computer-vision frame-
+work for real-time segmentation, quality grading, and yield estima-
+tion in Egyptian orange farms, and constructed a localized dataset of 
+618 original images (1,545 augmented training images) and 15 videos 
+benchmarking single-stage (YOLOv8, YOLOv11) and two-stage (Mask 
+R-CNN) models, together with a transformer-based bounding-box de-
+Smart Agricultural Technology 15 (2026) 102529 
+16 
+
+S.A. Farhoud et al.
+tection baseline (RT-DETR), under realistic occlusion, clustering, and 
+illumination variability.
+For static segmentation and quality grading, YOLOv11l was among 
+the top tier of evaluated segmenters (mAP@0.5 = 0.932) with real-time 
+feasibility (26.1 ms per image), and comparing favorably with Mask 
+R-CNN, which achieved higher Recall (0.953) but at the cost of much 
+higher latency (67.8 ms) and lower Precision. The RT-DETR’s box-level 
+mAP@0.5 (0.827) was below the mask-level mAP@0.5 of every seg-
+mentation model, though the two criteria are not directly comparable. 
+For dynamic yield estimation with BoT-SORT and virtual line-crossing, 
+the best model was not the most accurate one per frame: RT-DETR, de-
+spite its lowest box-level static accuracy, produced the lowest overall 
+total-count error (WMAPE = 5.66%), although its per-class dynamic 
+grading was unreliable; YOLOv11s achieved the lowest error among the 
+mask-level segmentation models (WMAPE = 6.97%) while preserving 
+quality resolution, and YOLOv11l consistently under-counted. This in-
+dicates that temporal detection stability, rather than static mAP, is the 
+dominant factor in in-ﬁeld counting reliability in this evaluation.
+The principal ﬁnding of this evaluation is therefore a three-way dis-
+sociation: the highest-mAP static segmenter (YOLOv11l), the most ac-
+curate dynamic total counter (RT-DETR), and the best quality-resolved 
+dynamic grader (YOLOv11s) are three diﬀerent systems. Counting accu-
+racy and grading capability are consequently separable properties and 
+require separate evaluation when selecting a model for deployment. Col-
+lectively, the framework oﬀers a practical path to modernize Egyptian 
+citrus production by reducing reliance on subjective manual inspection 
+and supporting harvest logistics and labor planning.
+All results derive from single training runs without dispersion esti-
+mates; the counting ranking among the leading models, where RT-DETR 
+leads YOLOv11s by 1.31 WMAPE points, therefore rests on single runs.
+Future work will prioritize dataset expansion. In particular, the dy-
+namic validation set will be extended with videos acquired in orchard 
+blocks of higher defect prevalence: only ≈1.4% in the present six videos 
+were Defective, which is insuﬃcient to characterize class-wise counting 
+reliability. Future work will also integrate depth sensing for 3D fruit siz-
+ing and volumetric yield forecasting, and combine the ﬁne-tuned models 
+with mobile manipulators for autonomous inspection and robotic har-
+vesting.
+CRediT authorship contribution statement
+Saleh A. Farhoud: Writing – original draft, Software, Methodology, 
+Formal analysis; Yasmine A. Zaghloul: Writing – review & editing, Su-
+pervision; Omar M. Shehata: Writing – review & editing, Supervision.
+Ethics declaration
+The author(s) declare(s) that the study does not involve humans nor 
+animal subjects.
+Funding
+This research did not receive any speciﬁc grant from funding agen-
+cies in the public, commercial, or not-for-proﬁt sectors.
+Declaration of competing interest
+The authors declare that they have no known competing ﬁnancial 
+interests or personal relationships that could have appeared to inﬂuence 
+the work reported in this paper. 
+Acknowledgements
+The authors gratefully acknowledge the support provided by the 
+commercial citrus farm in the Beheira Governorate for facilitating in-
+ﬁeld data acquisition. 
+Data availability
+Data will be made available on request.
+References
+[1] Food and Agriculture Organization of the United Nations (FAO), Our approach, 
+2026. https://www.fao.org/food-systems/our-approach/en/. Accessed: Oct. 24, 
+2025.
+[2] U. S. Department of Agriculture, Citrus: World Markets and Trade, Global 
+Market Analysis, USDA Foreign Agricultural Service, Washington, DC, 2024. 
+https://esmis.nal.usda.gov/sites/default/release-ﬁles/w66343603/cz30rd902/vh5
+3zg80g/citrus.pdf. Accessed: Feb. 1, 2024.
+[3] State Information Service (SIS), Total Agricultural Exports, 2025, (Egyptian Minister 
+of Agriculture and Land Reclamation). https://sis.gov.eg/en/media-center/news/
+total-agricultural-exports-hit-75-million-tons-so-far/. Accessed: Oct. 25, 2025.
+[4] World Bank, Employment in Agriculture in Egypt, Arab Rep, 2023, 
+https://data.worldbank.org/indicator/SL.AGR.EMPL.ZS?%end=2023&locations=
+EG&start=1991&view=chart. Accessed: Oct. 24, 2025.
+[5] U.-O. Dorj, M. Lee, S.-s. Yun, An yield estimation in citrus orchards via fruit detection 
+and counting using image processing, Comput. Electron. Agric. 140 (2017) 103–112.
+[6] R. Sapkota, D. Ahmed, M. Karkee, Comparing YOLOv8 and Mask R-CNN for in-
+stance segmentation in complex orchard environments, Artif. Intell. Agric. 13 (2024) 
+84–99.
+[7] J. Redmon, S. Divvala, R. Girshick, A. Farhadi, You only look once: uniﬁed, real-
+time object detection, in: Proceedings of the IEEE Conference on Computer Vision 
+and Pattern Recognition, 2016, pp. 779–788.
+[8] T.-Y. Lin, P. Goyal, R. Girshick, K. He, P. Dollár, Focal loss for dense object detection, 
+in: Proceedings of the IEEE International Conference on Computer Vision, 2017, pp. 
+2980–2988.
+[9] W. Liu, D. Anguelov, D. Erhan, C. Szegedy, S. Reed, C.-Y. Fu, A.C. Berg, SSD: sin-
+gle shot multibox detector, in: European Conference on Computer Vision, Springer, 
+2016, pp. 21–37.
+[10] R. Girshick, Fast R-CNN, in: Proceedings of the IEEE International Conference on 
+Computer Vision, 2015, pp. 1440–1448.
+[11] S. Ren, K. He, R. Girshick, J. Sun, Faster R-CNN: towards real-time object detection 
+with region proposal networks, Adv. Neural Inf. Process. Syst. 28 (2015) 91–99.
+[12] K. He, G. Gkioxari, P. Dollár, R. Girshick, Mask R-CNN, in: Proceedings of the IEEE 
+International Conference on Computer Vision, 2017, pp. 2961–2969.
+[13] Y. Zhao, W. Lv, S. Xu, J. Wei, G. Wang, Q. Dang, Y. Liu, J. Chen, Detrs beat yolos on 
+real-time object detection, in: Proceedings of the IEEE/CVF Conference on Computer 
+Vision and Pattern Recognition, 2024, pp. 16965–16974.
+[14] C. Charisis, D. Argyropoulos, Deep learning-based instance segmentation architec-
+tures in agriculture: a review of the scopes and challenges, Smart Agric. Technol. 8 
+(2024) 100448.
+[15] H. Mirhaji, M. Soleymani, A. Asakereh, S.A. Mehdizadeh, Fruit detection and load es-
+timation of an orange orchard using the YOLO models through simple approaches in 
+diﬀerent imaging and illumination conditions, Comput. Electron. Agric. 191 (2021) 
+106533.
+[16] J. Chen, H. Liu, Y. Zhang, D. Zhang, H. Ouyang, X. Chen, A multiscale lightweight 
+and eﬃcient model based on YOLOv7: applied to citrus orchard, Plants 11 (23) 
+(2022) 3260.
+[17] Y. Lin, W. Hu, Z. Zheng, J. Xiong, Citrus identiﬁcation and counting algorithm based 
+on improved YOLOv5s and DeepSort, Agronomy 13 (7) (2023) 1674.
+[18] Y. Yu, Y. Liu, Y. Li, C. Xu, Y. Li, Object detection algorithm for citrus fruits based 
+on improved YOLOv5 model, Agriculture 14 (10) (2024) 1798. https://doi.org/10.
+3390/agriculture14101798
+[19] Y. Lin, Z. Huang, Y. Liang, Y. Liu, W. Jiang, Ag-yolo: a rapid citrus fruit detection 
+algorithm with global context fusion, Agriculture 14 (1) (2024) 114.
+[20] B. Zhou, K. Wu, M. Chen, Detection of Gannan navel orange ripeness in natural 
+environment based on YOLOv5-NMM, Agronomy 14 (5) (2024) 910.
+[21] H.C. Pichhika, P. Subudhi, R.V. Prasad Yerra, Enhanced YOLO-based mango detec-
+tion and centroid tracking for precise yield estimation, Appl. Fruit Sci. 67 (3) (2025) 
+164.
+[22] L. Ma, L. Zhao, Z. Wang, J. Zhang, G. Chen, Detection and counting of small target 
+apples under complicated environments by using improved YOLOv7-tiny, Agronomy 
+13 (5) (2023) 1419.
+[23] S. Tu, Y. Huang, Q. Huang, H. Liu, Y. Cai, H. Lei, Estimation of passion fruit yield 
+based on YOLOv8n+ OC-SORT+ CRCM algorithm, Comput. Electron. Agric. 229 
+(2025) 109727.
+[24] A. Paul, R. Machavaram, D. Kumar, H. Nagar, et al., Smart solutions for capsicum 
+harvesting: unleashing the power of YOLO for detection, segmentation, growth 
+stage classiﬁcation, counting, and real-time mobile identiﬁcation, Comput. Electron. 
+Agric. 219 (2024) 108832.
+[25] H. Shi, C. Liu, M. Wu, H. Zhang, H. Song, H. Sun, Y. Li, J. Hu, Real-time detection 
+of chinese cabbage seedlings in the ﬁeld based on YOLO11-CGB, Front. Plant Sci. 
+16 (2025) 1558378.
+[26] J.D. López-Barrios, J.A. Escobedo Cabello, A. Gómez-Espinosa, L.-E. Montoya-
+Cavero, Green sweet pepper fruit and peduncle detection using mask R-CNN in 
+greenhouses, Appl. Sci. 13 (10) (2023) 6296.
+[27] J.F. Restrepo-Arias, M.J. Montoya-Castaño, M.F. Moreno-De La Espriella, J.W. 
+Branch-Bedoya, An application of deep learning models for the detection of cocoa 
+pods at diﬀerent ripening stages: an approach with faster R-CNN and mask R-CNN, 
+Computation 13 (7) (2025) 159.
+Smart Agricultural Technology 15 (2026) 102529 
+17 
+
+S.A. Farhoud et al.
+[28] A. Crespo, C. Moncada, F. Crespo, M.E. Morocho-Cayamcela, An eﬃcient strawberry 
+segmentation model based on mask R-CNN and tensorRT, Artif. Intell. Agric. 15 (2) 
+(2025) 327–337.
+[29] A. Chanda, P. Voraseyanont, P. Siricharoen, Deep learning-based mango fruit de-
+tection and counting, in: 2024 21st International Conference on Electrical Engi-
+neering/Electronics, Computer, Telecommunications and Information Technology 
+(ECTI-CON), IEEE, 2024, pp. 1–5.
+[30] A.-R.A. Gamani, I. Arhin, A.K. Asamoah, Performance evaluation of YOLOv8 model 
+conﬁgurations, for instance segmentation of strawberry fruit development stages in 
+an open ﬁeld environment, (2024). arXiv preprint arXiv:2408.05661.
+[31] X. Yue, K. Qi, X. Na, Y. Zhang, Y. Liu, C. Liu, Improved YOLOv8-Seg network for 
+instance segmentation of healthy and diseased tomato plants in the growth stage, 
+Agriculture 13 (8) (2023) 1643.
+[32] R.M. Sampurno, Z. Liu, R.M. R.D. Abeyrathna, T. Ahamed, Intrarow uncut weed 
+detection using you-only-look-once instance segmentation for orchard plantations, 
+Sensors 24 (3) (2024) 893.
+[33] R. Sapkota, D. Ahmed, M. Churuvija, M. Karkee, Immature green apple detection 
+and sizing in commercial orchards using YOLOv8 and shape ﬁtting techniques, IEEE 
+Access 12 (2024) 43436–43452.
+[34] L. Shen, J. Su, R. He, L. Song, R. Huang, Y. Fang, Y. Song, B. Su, Real-time tracking 
+and counting of grape clusters in the ﬁeld based on channel pruning with YOLOv5s, 
+Comput. Electron. Agric. 206 (2023) 107662.
+[35] C. Sammut, G.I. Webb, Encyclopedia of Machine Learning, Springer Science & Busi-
+ness Media, 2011.
+Smart Agricultural Technology 15 (2026) 102529 
+18 

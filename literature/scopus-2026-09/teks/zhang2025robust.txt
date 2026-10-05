@@ -1,0 +1,1273 @@
+Robust real-time blueberry counting in greenhouses using small-object 
+detection and mamba-driven multi-step trajectory completion
+Naiqi Zhang , Jianhua Cao *
+College of Artificial Intelligence, Tianjin University of Science and Technology, No. 9, 13th Street, Binhai New Area, Tianjin 300457, China
+A R T I C L E I N F O
+Keywords:
+Blueberry counting
+Small object detection
+Multi-object tracking
+Mamba architecture
+A B S T R A C T
+Accurate counting is essential for enabling automated blueberry harvesting and logistics decision-making in 
+greenhouse environments. However, the features of small size, dense distribution, and frequent occlusion of 
+blueberries result in severe missed detections and duplicate counting, making accurate counting highly chal­
+lenging for yield estimation. To address these challenges, we propose an effective technical framework for real- 
+time accurate counting of ripe blueberries in greenhouse environments, including specific deep-learning algo­
+rithms of lightweight small-object detection and mamba-based trajectory completion. First we introduce a hybrid 
+loss function and a multi-scale feature fusion module, both integrated into the YOLOv12n model to enhance 
+small object detection performance. Then in the trajectory prediction phase, we design encoders based on KAN 
+and decoders based on Mamba, integrating multi-target positions and trajectories to achieve efficient and ac­
+curate position prediction. Thereafter we put forward a prediction-driven two-stage matching strategy based on 
+ByteTrack, which effectively reduces duplicate counting caused by missed detections. Experimental results 
+demonstrate the validity and robustness of the framework, and also highlight the algorithms’ performance ad­
+vantages. The proposed lightweight small-object detection method increases precision by 8.3% and mAP@50 by 
+2.9% compared to the baseline on the public PEST24 dataset, and achieves an object detection mAP@50 of 0.877 
+on the real blueberry greenhouse dataset, The trajectory prediction based on our mamba-based trajectory 
+completion algorithm results in an ADE of 15.4 pixels and an FDE of 24.8 pixels over 6 frames, and a single-frame 
+ADE of 3.68 pixels. For blueberry greenhouse counting task, the overall pipeline achieves an accuracy of 92.5% 
+and a processing speed of 35 FPS on the edge device. It effectively addresses repeated counting caused by oc­
+clusion and small target size, thereby achieving reliable fruit detection and accurate counting.
+1. Introduction
+In facility agriculture, accurate fruit counting forms the foundation 
+for intelligent decision-making, harvest management, and yield pre­
+diction. Small berry crops, such as blueberries, are characterized by 
+small fruit size, dense distribution, overlapping ripening periods, and 
+frequent occlusion. These features render traditional manual counting 
+methods inefficient and error-prone, failing to meet the accuracy and 
+scalability requirements of modern automated greenhouse production.
+Existing fruit counting methods primarily fall into two categories: 
+traditional image processing techniques and deep learning-based 
+detection algorithms. Representative approaches include threshold 
+segmentation combined with the watershed algorithm [1], image 
+enhancement [2], image segmentation [3], YOLO-based detection [4,5], 
+and methods integrating Transformer and Mask R-CNN [6]. Although 
+these methods improve the accuracy of frame-by-frame detection, most 
+systems estimate the total count by accumulating frame-wise detections. 
+This approach can easily result in duplicate counting in video-based fruit 
+counting tasks [7]. To address this issue, multi-object tracking (MOT) 
+was introduced to the detection framework to ensure cross-frame con­
+sistency by assigning unique identities to each fruit. However, chal­
+lenges such as trajectory drift and identity switching still persist [8,9].
+In real-world scenarios, factors such as camera shake and uneven 
+ground surfaces often result in nonlinear trajectories, leading to com­
+mon issues such as trajectory drift, identity switches, and duplicate 
+counting [10]. To overcome these limitations, deep learning–based 
+trajectory prediction methods have been proposed, aiming to forecast 
+future object positions based on historical motion patterns. For instance, 
+Trajectory Former [11] and PECNet [12] are capable of modeling 
+complex trajectory dynamics and have demonstrated high-precision 
+* Corresponding author.
+E-mail addresses: Zhang.naiqi@hotmail.com (N. Zhang), caojh@tust.edu.cn (J. Cao). 
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+https://doi.org/10.1016/j.atech.2025.101402
+Received 26 June 2025; Received in revised form 28 July 2025; Accepted 30 August 2025  
+Smart Agricultural Technology 12 (2025) 101402 
+Available online 30 August 2025 
+2772-3755/© 2025 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY-NC license ( http://creativecommons.org/licenses/by- 
+nc/4.0/ ). 
+
+motion forecasting performance. Nevertheless, relying solely on an in­
+dividual target’s historical trajectory often overlooks the dynamic in­
+teractions between agents, and fails to exploit the motion information of 
+neighboring targets. Therefore approaches such as Social LSTM [13] and 
+Social GAN [14] attempt to incorporate the behavior of nearby agents by 
+modeling within-frame interactions. These methods introduce social 
+behavior modeling mechanisms to trajectory prediction, enabling the 
+network to better capture inter-agent motion dependencies. However, 
+such methods focus on local neighborhood relationships but ignore the 
+temporal dynamics of neighboring targets and their influence on the 
+main trajectory. As a result, these approaches struggle to provide 
+effective performance under occlusion conditions. This limitation is 
+particularly critical in small fruit counting, where occlusions are 
+frequent and severe. Currently, mainstream trajectory modeling 
+methods are primarily based on Transformers, LSTMs, and MLPs. 
+However, each has significant limitations in practical applications. MLPs 
+struggle to capture complex nonlinear interactions [15]; LSTMs have 
+limited capability in modeling long-term dependencies [16]; and while 
+Transformers offer strong performance, they require excessive compu­
+tational resources, making them unsuitable for edge deployment [17]. 
+Therefore, achieving efficient and robust trajectory modeling for small 
+fruit counting under dense occlusion remains a critical and unsolved 
+challenge.
+As discussed previously, trajectory modeling using MLPs suffers from 
+limited fitting ability, while self-attention mechanisms incur excessive 
+computational overhead. These drawbacks motivate us to consider more 
+efficient and expressive alternatives. The Kolmogorov-Arnold Network 
+(KAN) [18] can fit high-order nonlinear functions with low computa­
+tional overhead and minimal dependence on dataset size, making it 
+effective for modeling complex interactions and nonlinear motion pat­
+terns between fruits. Mamba [19], a new generation of efficient 
+state-space sequence modeling frameworks, accurately captures 
+long-term temporal dependencies while maintaining linear growth in 
+parameter size and computational complexity. It offers greater repre­
+sentational power than models such as LSTM and incurs significantly 
+lower computational overhead than Transformer architectures. These 
+features are crucial for applications such as greenhouse environments, 
+where edge computing power is limited and target motion patterns 
+change nonlinearly over extended periods.
+To address the challenge of accurately counting densely packed 
+small fruits in greenhouse environments, this paper proposes a 
+comprehensive framework integrating enhanced small-object detection, 
+interactive perception-based trajectory prediction, and multi-target 
+tracking. This framework effectively models complex motion relation­
+ships and long-term dependencies among fruits. The proposed pipeline 
+is given as Fig. 1. And our main contributions of this paper are as follows: 
+(1) We propose a lightweight small-object detection model based on 
+YOLOv12 [20], with a hybrid loss function (HL) to address the 
+challenges of small-object detection, together with a lightweight 
+module named MCSPF. The proposed method significantly im­
+proves blueberry detection accuracy in real-world scenarios and 
+consistently outperforms the baseline on the public small-object 
+detection benchmark PEST24 [21].
+(2) We propose a lightweight GamaKAN encoder that jointly models 
+the historical trajectories and spatial positions of both primary 
+and neighboring auxiliary targets via spatio-temporal in­
+teractions. This approach significantly improves trajectory pre­
+diction accuracy and robustness under occlusion and complex 
+motion conditions. The framework achieves top performance on 
+our dataset and demonstrates strong generalizability on the 
+MOT17 [22] dataset.
+(3) We put forward a real-time deep-learning based blueberry 
+counting framework that integrates small object detection, 
+spatio-temporal interactive trajectory prediction, and a two-stage 
+trajectory completion strategy. This system achieves high- 
+precision counting in greenhouse environments by effectively 
+reducing duplicate counts caused by occlusion and missed 
+detections.
+2. Materials and methods
+2.1. Datasets
+The blueberry dataset utilized in this study was acquired by an inter- 
+row patrol robot operating in a greenhouse situated in Yunnan Province, 
+Fig. 1. The proposed tracking and counting framework for blueberry in greenhouses.
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+2 
+
+China. Thirty-second video segments were reserved for final evaluation, 
+while the remaining footage was sampled at 3 frames per second, 
+yielding a total of 2182 images. Each image was manually annotated 
+with bounding boxes of ripe blueberries using LabelImg. The dataset was 
+split into training, validation, and test sets in a ratio of 8:1:1. On average, 
+27 ripe blueberries are visible per frame. Additionally, The video dataset 
+is divided into a training set and a validation set. The training set con­
+tains 2 min of video with 4132 annotated trajectories of varying lengths. 
+The validation set contains 33 s of video with 1743 annotated trajec­
+tories of varying lengths. All videos have a frame resolution of 544 × 960 
+and were annotated using Darklabel. A sample from the dataset is shown 
+in Fig. 2.
+To evaluate the proposed method on a public dataset, we used the 
+PEST24 dataset, which contains 17,001 images in the training set and 
+7700 images in the validation set. The dataset contains a large number of 
+small insect instances, presenting significant challenges for detection 
+models. To assess the generalization capability of our trajectory pre­
+diction module, we also conducted experiments on the MOT17 multi- 
+object pedestrian tracking dataset. Each frame in MOT17 has a resolu­
+tion of 1920 × 1080 pixels. Sliding windows were applied to extract sub- 
+trajectories that meet the input-output sequence length requirements, 
+and each trajectory was converted to NumPy binary format (.npy) for 
+efficient loading. In total, 325,791 valid trajectories were obtained, with 
+sequences from the first half of the videos used for training and the 
+second half reserved for validation.
+2.2. Object detection model
+Given the dynamic nature of the detection task, the dataset 
+frequently contains challenging samples such as motion-blurred objects, 
+heavy occlusions, and small targets. To address these issues, we adopt 
+the latest YOLOv12 model as the baseline. We propose a hybrid loss 
+function to replace the IoU loss in the box loss of YOLOv12, and intro­
+duce the Small-object Perception Fusion (MCSPF) module to replace the 
+A2C2f module in the head. The enhanced YOLOv12 architecture pro­
+posed in this study is illustrated in Fig. 3.
+2.2.1. Hybrid loss
+Our blueberry dataset contains a large number of small objects, with 
+the smallest target as small as 16 pixels. In small object detection tasks, 
+challenges such as limited target size, blurred boundaries, and amplified 
+localization errors are particularly pronounced. To address these issues, 
+we design a stage-wise hybrid loss strategy that leverages the strengths 
+of different loss functions at different training stages. This method 
+effectively balances global localization accuracy and boundary refine­
+ment throughout the optimization process.
+Small-Object Focal Wasserstein Loss: During the early training phase, 
+we employ the Small-Object Focal Wasserstein Loss as the primary 
+regression objective. This loss is formulated based on the Wasserstein 
+distance, where the center-point error is normalized by the target’s 
+width and height. A focal mechanism is introduced to emphasize 
+regression gradients for small objects and samples with small spatial 
+deviations. In addition, logarithmic smoothing is applied to width and 
+height errors to suppress the influence of extreme scale deviations on 
+gradient magnitude. This stage enables the network to rapidly establish 
+a coarse spatial localization capability and learn scale-aware represen­
+tations. The formulation of the loss is defined as follows. 
+LossW = Focal
+(
+wgthgt|cp −cgt|2
+)
++ log
+(
+1 +⃒⃒wp −wgt⃒⃒
+)
++ log
+(
+1 +⃒⃒hp −hgt⃒⃒
+)
+(1) 
+Hierarchical Boundary Attention Loss (HBALoss): As training pro­
+ceeds, the Hierarchical Boundary Attention Loss (HBA Loss) is pro­
+gressively introduced, with its loss weight incrementally increased. HBA 
+Fig. 2. Close-up images of blueberries from the blueberry dataset collected in a greenhouse environment. Subfigures (a)-(h) show blueberries at different ripeness 
+stages: green or pink berries are unripe, while blue berries are ripe. In this study, ripe blueberries are the targets for recognition and counting.
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+3 
+
+Loss directly models the normalized errors of the four edges between the 
+predicted and ground-truth bounding boxes. A boundary attention fac­
+tor is incorporated to adaptively adjust the contribution of each edge 
+during training, enabling the model to focus more on challenging 
+boundary regions. This mechanism enhances the network’s capability to 
+regress bounding box edges with higher precision. This stage aims to 
+refine the geometry and completeness of the predicted boxes, thereby 
+improving overall localization accuracy. The computation is defined as 
+follows. 
+HBALoss =
+∑
+b∈{l,t,r,b}
+αb⋅
+1
+wgt + hgt
+⋅⃒⃒bp −bgt⃒⃒
+(2) 
+2.2.2. MCSPF (multi-branch cross-stage pyramid fusion)
+To improve the detection of small and densely packed objects, a 
+Multi-branch Cross-stage Pyramid Fusion (MCSPF) module is proposed. 
+Based on the Cross Stage Partial (CSP) architecture, the module divides 
+the input features into two parallel branches: one serves as a direct re­
+sidual connection to retain low-level semantic information, while the 
+other passes through multiple deep residual blocks followed by a Spatial 
+Pyramid Pooling (SPP) module to achieve multi-scale and multi-level 
+feature fusion.
+Specifically, the MCSPF module first applies a 1 × 1 convolution to 
+divide the input features into two branches. One branch bypasses further 
+processing to retain shallow semantic information, while the other 
+stacks multiple inverted residual blocks for deep feature extraction. An 
+spp block is inserted within this path to significantly enhance the net­
+work’s ability to capture objects at varying scales. The two branches are 
+concatenated along the channel axis and then fused through another 1 ×
+1 convolution to produce the final output. 
+O = Conv1×1(Concat[Conv1×1(X1), SPP(ResBlock(X2))])
+(3) 
+Here, X denotes the input feature map, ResBlock represents the 
+stacked residual block sequence, and SPP refers to the Spatial Pyramid 
+Pooling module. By leveraging multi-branch fusion and multi-scale 
+enhancement, the MCSPF module effectively maintains a trade-off be­
+tween computational efficiency and feature representation quality. It 
+significantly improves detection accuracy for small objects and in 
+complex scenarios. Moreover, the module demonstrates high inference 
+speed and strong portability, making it well-suited for real-world 
+deployment.
+2.3. Mamba-driven trajectory prediction module
+The overall structure of the proposed trajectory prediction frame­
+work is illustrated in Fig. 4. The module takes as input the multi-frame 
+historical trajectories of blueberry fruits obtained from the object de­
+tector and outputs multi-step predictions of fruit positions at future time 
+steps.
+First, the OTAM (Other Trajectory Aggregation Module) applies 
+attention pooling to the auxiliary target trajectories, generating 
+contextual features that capture neighborhood interactions. These fea­
+tures, together with the primary trajectory, are then fed into the 
+GamaKAN encoder. The GamaKAN encoder initially employs one- 
+dimensional convolution to capture local temporal dependencies, fol­
+lowed by a channel-wise KAN module to model nonlinear feature 
+Fig. 3. The improved YOLOv12 architecture, in which MCSPF is the lightweight multi-scale information fusion module developed in this work, represented by a red 
+dashed box on a yellow background.
+Fig. 4. The structure of the proposed trajectory modeling framework. OTAM aggregates auxiliary trajectories and other agents’ positions; GamaKAN encodes the 
+aggregated data; OTEM uses the primary trajectory as reference to perform a weighted fusion of auxiliary trajectory features; the knowledge-graph-fused features are 
+then fed into a mamba-based decoder to predict future trajectories.
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+4 
+
+transformations. A gating mechanism and residual connection are sub­
+sequently incorporated to enhance the stability and expressiveness of 
+the encoded features. The output of this stage is a set of feature vectors 
+encoding both the primary and auxiliary targets.
+Subsequently, the OTEM (Other Trackers Encode Model) further 
+captures the dynamic behavior of auxiliary targets and generates tem­
+poral semantic features for downstream feature fusion. The KG (Gated 
+Fusion) module performs channel-wise alignment and fusion of the 
+encoded features from both the primary and auxiliary streams, pro­
+ducing a unified high-dimensional trajectory representation via a 
+learnable gating mechanism.
+Finally, all fused features are fed into a multi-layer stacked Mamba 
+decoder, which employs an autoregressive strategy to predict the future 
+positions of the primary target over multiple time steps, yielding the 
+final multi-step trajectory predictions.
+The overall structure of the trajectory prediction module can be 
+formulated as: ̂
+Y = Mamba(KG(GamaKAN(Xmain, OTAM(Xaux)), OTEM(Xaux)))
+(4) 
+2.3.1. OTAM (other trajectory aggregation module)
+To achieve robust modeling of the primary target in complex scenes, 
+relying solely on its own trajectory is often insufficient to handle oc­
+clusions and interactions. Therefore, we introduce an “other-target- 
+aware” mechanism into the trajectory prediction framework by aggre­
+gating information from surrounding trajectories to enhance the spatial 
+understanding of the primary target. To this end, we design a light­
+weight module named Other Trajectory Aggregation Module (OTAM), 
+which models inter-object spatial relationships using attention pooling.
+The module takes as input the center-position tensor of all auxiliary 
+targets, where each entry represents the 2D center coordinate of a 
+neighboring object at a given frame. The position of the primary target 
+at each frame is mapped as the query vector, and it interacts with the key 
+and value vectors constructed from the same-frame auxiliary targets via 
+scaled dot-product attention. The output is a spatial context represen­
+tation that encodes the local environment as perceived by the primary 
+target.
+Within the overall framework, the spatial features generated by 
+OTAM are used in two separate paths: (1) they are concatenated with the 
+primary trajectory and fed into the primary trajectory encoder to sup­
+plement environmental semantics, and (2) they are aggregated into a 
+global motion representation of auxiliary targets, which serves as input 
+to the auxiliary trajectory encoder. This modular design enables spatial 
+and temporal decoupling and aggregation of primary and auxiliary 
+trajectory information, substantially enhancing the model’s robustness 
+under occlusion and interference.
+2.3.2. GamaKAN: lightweight trajectory fusion encoding module
+To effectively model the temporal trajectory of the primary target 
+while incorporating its spatial context at each frame, we design a 
+GamaKAN module as the core component of the primary trajectory 
+modeling path. The input to this module is a concatenated sequence 
+composed of the primary target’s historical positions and the context- 
+aware spatial features aggregated from the OTAM module. The output 
+is a dynamic feature representation of the primary target across the 
+entire historical window.
+Compared to conventional structures such as MLPs or Transformers, 
+KAN achieves a better trade-off between representational capacity and 
+computational efficiency, making it well-suited for deployment in 
+resource-limited agricultural scenarios. The overall architecture of 
+GamaKAN is illustrated in Fig. 5.
+The GamaKAN module first applies a depth-wise separable convo­
+lution to encode the fused trajectory sequence. This structure uses 
+channel-wise convolutions to capture intra-channel temporal patterns, 
+followed by pointwise (1 × 1) convolutions to integrate information 
+across channels. This step generates a feature representation that is both 
+locally sensitive and adaptively responsive to temporal variations, 
+forming a stable foundation for subsequent nonlinear modeling in the 
+temporal dimension.
+To enhance the model’s capacity to model complex trajectory evo­
+lution patterns, GamaKAN incorporates a nonlinear transformation 
+block based on KAN. According to the Kolmogorov–Arnold representa­
+tion theorem, any multivariate continuous function can be expressed as 
+a superposition of univariate functions, which theoretically provides 
+Fig. 5. Architecture of the GamaKAN encoder module.
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+5 
+
+theoretical justification for channel-wise modeling.
+In our design, the KAN module utilizes spline basis functions to 
+implement the nonlinear mappings and applies a linear combination 
+across channels to generate the final output. The core formulation of this 
+computation is as follows: 
+y = W base ⋅φ(x) + W spline ⋅B(x)
+(5) 
+Here, φ(x) denotes the base activation function, and B(x) represents a 
+set of nonlinear basis functions constructed from splines. W base and 
+W spline are the weight matrices for the base and nonlinear trans­
+formation paths, respectively. All operations are performed indepen­
+dently across the channel dimension. This design retains the end-to-end 
+trainability of neural networks while providing strong structural inter­
+pretability and numerical stability.
+To further enhance the stability and robustness of feature represen­
+tations, GamaKAN introduces a channel-wise gating mechanism after 
+nonlinear modeling. This gating unit learns the relative importance of 
+each trajectory channel for the primary target and adjusts the fusion 
+weight between the nonlinear output and the original input accordingly.
+The final output of the GamaKAN module is a high-dimensional 
+temporal representation of the primary trajectory over the historical 
+window. This output is passed to the subsequent primary–auxiliary 
+fusion module, where it is combined with spatial features generated by 
+OTAM. This integration effectively fuses environmental context with 
+dynamic motion cues, forming the foundation for downstream multi- 
+object interaction modeling and trajectory forecasting.
+2.3.3. OTEM (other trackers encode model)
+In multi-object trajectory prediction, explicitly modeling the motion 
+trends and spatial distribution of auxiliary agents is crucial for 
+enhancing the prediction accuracy of the primary target. To better 
+capture group behavior patterns, we propose a dedicated auxiliary tra­
+jectory encoding module that extracts dynamic semantic cues from the 
+surrounding agent clusters and provides rich contextual information for 
+primary target forecasting. The module takes as input a tensor con­
+taining multiple auxiliary trajectories, from which n representative 
+auxiliary agents are selected per frame. Their center-point sequences 
+serve as the basis for temporal modeling, balancing computational ef­
+ficiency and representational completeness.
+Structurally, the module adopts an attention pooling mechanism to 
+aggregate the spatial motion features of the selected auxiliary trajec­
+tories, where the primary target serves as the query and the auxiliary 
+targets as keys and values. By computing attention weights, the module 
+adaptively fuses auxiliary features, yielding a compact behavioral rep­
+resentation highly relevant to the primary target. The aggregated fea­
+tures are then passed through a lightweight temporal encoder based on 
+the GamaKAN architecture, which integrates linear projection, depth­
+wise separable convolutions, and KAN-based nonlinear units to extract 
+temporally coherent semantic representations. The design maintains 
+structural symmetry between the primary and auxiliary encoding 
+pathways, facilitating unified modeling and effective feature fusion in 
+subsequent stages.
+The output of the auxiliary trajectory encoding module is integrated 
+with the primary target encoding in the gated fusion module to achieve 
+feature-level alignment and unified interaction modeling. This design 
+enables efficient and robust multi-agent behavior modeling, signifi­
+cantly enhancing prediction performance in challenging scenarios such 
+as occlusion. The core computation of this module is summarized as: 
+zaux =
+∑
+n
+j=1
+αjhj
+(6) 
+where αj denotes the relevance weight between the primary target and 
+the j-th auxiliary target, which is adaptively learned by the gating 
+network, and hj represents the spatiotemporal feature of the auxiliary 
+target.
+2.3.4. Gated fusion module (KG)
+To mitigate semantic discrepancies between the encoded features of 
+primary and auxiliary targets—which can cause instability in trajectory 
+prediction when directly concatenated or merged—we introduce a 
+Gated Fusion Module to enable feature alignment and dynamic inte­
+gration across the two streams.
+The inputs to this module are the trajectory encoding features of both 
+the primary and auxiliary targets. Each stream is first projected into a 
+unified representation space via separate linear transformation layers to 
+ensure consistent dimensionality. The projected features are then 
+concatenated along the feature dimension and fed into a gating sub­
+module. This submodule comprises a linear layer followed by a Sigmoid 
+activation, which learns adaptive fusion weights to balance the contri­
+butions of each target type.
+The fused representation retains the key dynamic patterns of the 
+primary target while incorporating contextual information from the 
+auxiliary group behavior. This mechanism enhances the model’s 
+robustness in scenarios involving dense interactions or partial target 
+disappearance, ensuring more stable and accurate trajectory forecasting.
+To further enhance the nonlinear expressiveness of the fused repre­
+sentation, we introduce a gated channel-wise nonlinear transformation 
+layer (KG), constructed based on Kolmogorov–Arnold Networks (KAN). 
+This component applies a set of one-dimensional spline-based nonlinear 
+mappings across individual channels, enabling flexible, learnable 
+transformations on the fused feature space. The output of this layer is 
+then passed to the decoder module for final position prediction.
+The KG module achieves semantic alignment and integration be­
+tween the primary and auxiliary encoding pathways. Through its gating 
+mechanism, it provides dynamic control over the contribution of 
+different feature channels, ensuring consistent multi-target modeling 
+and stable trajectory forecasting. The resulting unified semantic repre­
+sentation is forwarded to the decoder to generate multi-frame future 
+trajectory predictions.
+2.3.5. Multi-layer mamba decoder
+To progressively generate future target positions across multiple 
+time steps, we propose a trajectory prediction decoder based on state 
+space modeling. The core of this module is a Selective State Space Model 
+(SSM), implemented in a multi-layer stacked architecture that performs 
+step-wise prediction along the temporal axis. This design provides high 
+parallelism and strong modeling capacity.
+The decoder consists of L stacked SSM decoding units, each respon­
+sible for predicting the target’s position at one future time step. At layer 
+l, the decoder takes the previous prediction and the encoded trajectory 
+features as input to generate the current output xl. The prediction pro­
+cess follows an autoregressive scheme, which is defined as follows: 
+x(l) = MambaDecoder
+(
+x(l−1), f
+)
+for l = 1, …, L
+(7) 
+Each Mamba decoder unit consists of three components: a fixed 
+sine–cosine positional encoding layer, a Selective State-Space Model 
+(SSM), and an output projection module. For each normalized target 
+position input, we apply a fixed sine–cosine positional encoding to 
+transform it into a multi-scale periodic embedding. This enhances the 
+model’s spatial awareness without introducing any trainable parame­
+ters. The encoding is generalizable across varying spatial scales and 
+sequence lengths. 
+PEpi[d]
+⎧
+⎪
+⎨
+⎪
+⎩
+sin
+(
+2π.pi
+/
+10000
+2[d/2]
+D , d mod 2 = 0
+cos
+(
+2π.pi
+/
+10000
+2[d/2]
+D , d mod 2 = 1
+for i = 1, …..n, d
+= 0, …, D −1
+(8) 
+Next, the Selective SSM component is applied to efficiently capture 
+temporal dependencies. This structure supports parallel computation 
+while maintaining strong representational capacity, making it well- 
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+6 
+
+suited for long-sequence modeling tasks. The resulting hidden state yt at 
+each time step is then projected into a bounding box prediction through 
+an output mapping module.
+Specifically, yt is passed through a fully connected layer to generate 
+the raw prediction, followed by a Sigmoid activation to normalize the 
+output. The predicted trajectory not only serves as supervision for model 
+optimization but also provides real-time target state updates for down­
+stream tracking modules.
+2.4. Multi-object tracking framework based on trajectory prediction and 
+two-stage track completion mechanism
+In crowded and heavily occluded scenarios, conventional tracking 
+methods that rely on detection and association frequently experience 
+trajectory interruptions and identity switches. To address these prob­
+lems, we propose a trajectory prediction-centered counting framework 
+consisting of four key components: trajectory state encoding, spatial 
+interaction reasoning, state forecasting, and track maintenance. First, 
+the GamaKAN encoder encodes the historical trajectory of the primary 
+target to generate a dynamic temporal feature representation. Second, 
+the OTAM network models the spatial interactions among auxiliary 
+targets, providing contextual environmental cues for primary trajectory 
+prediction. Third, the primary and auxiliary features are fused using the 
+gated fusion module and passed to the Mamba decoder, which predicts 
+the target’s next position. The output not only guides future motion 
+estimation but also serves as a fallback state reference when detection 
+fails during tracking.
+To enhance the robustness of trajectory maintenance, we propose a 
+two-stage trajectory completion mechanism built upon the ByteTrack 
+method, which incorporates a trajectory prediction module. In the first 
+stage, the current detection box is matched with all active trajectories 
+using a standard matching approach. During matching, the trajectory 
+state estimate is provided by the linear extrapolation from the trajectory 
+prediction module, and the cost matrix is calculated using the pixel 
+distance between center points. For unmatched trajectories, if their 
+history length meets the minimum requirement of the prediction mod­
+ule, the extrapolated box is activated and participates in the second- 
+stage matching.
+In the second stage, the predicted extrapolated boxes are matched 
+with the remaining unmatched detection boxes. If a match is found, the 
+track is updated with the predicted position and continues to be main­
+tained. If a track fails to match any detection for a specified number of 
+consecutive frames, it is considered terminated and removed.
+Compared with traditional detection-based multi-object tracking 
+methods, the proposed two-stage completion mechanism incorporates 
+trajectory prediction into the association process. This integration en­
+ables the algorithm to utilize both detection and prediction information, 
+which significantly reduces ID switching and trajectory fragmentation 
+caused by short-term occlusion or detection failure, and effectively 
+mitigates repeated counting resulting from frame loss.
+As shown in Fig. 6, the area within the yellow box experienced 
+missed detections due to small object size and motion blur. However, 
+when the object was re-detected, the ID remained consistent, demon­
+strating the robustness of the dual-stage trajectory recovery method 
+proposed in this study.
+2.5. Loss supervision
+To enhance the detection performance for small objects, we reuse the 
+Wasserstein distance-based loss function described in Section 2.2.1, and 
+employ it to supervise trajectory prediction with the aim of improving 
+small-object trajectory prediction accuracy. In addition, ADE loss, FDE 
+loss, and Velocity Loss (VEL Loss) are combined in a weighted manner to 
+jointly supervise bounding box regression. Experimental results 
+demonstrate that this combination of losses achieves superior perfor­
+mance on small-object scenarios in our greenhouse dataset.
+3. Results
+3.1. Experimental platform and evaluation metrics
+The experiments were conducted on a system running Ubuntu 22.04, 
+equipped with an NVIDIA GeForce RTX 4090D GPU. The implementa­
+tion was based on PyTorch 2.4.0 with CUDA 11.8 and TensorRT 8.6.1 for 
+acceleration.
+For evaluating the object detection module under complex 
+Fig. 6. This figure illustrates the tracklet recovery process in cases of missed detections caused by various factors. Specifically, the blueberry with ID 142 was missed 
+in frames 2 and 6; however, these missed detections did not result in duplicate counting. The stable tracking of IDs 144 and 147, among others, further demonstrates 
+the robustness of our approach.
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+7 
+
+environmental conditions, we adopt Precision, Recall, and mAP@50 as 
+performance metrics. Precision measures detection accuracy, while 
+Recall reflects the rate of missed detections. The F1-score is used to 
+measure the harmonic mean of Precision and Recall. mAP@50 is a 
+widely used metric that quantifies the average precision at an IoU 
+threshold of 0.5. Additionally, frames per second (FPS) is reported to 
+evaluate the system’s inference speed and deployment feasibility.
+For the trajectory prediction task, we employ Average Displacement 
+Error (ADE), Final Displacement Error (FDE), and FPS as evaluation 
+metrics. ADE represents the average error between predicted and 
+ground-truth center points over all time steps, while FDE captures the 
+error at the final frame. Lower values for ADE and FDE indicate higher 
+prediction accuracy. The tracklet recovery metrics are further detailed 
+in Section 3.4 and the counting accuracy is calculated as follows: 
+Counting Accuracy = 1 −|Ground Truth −Prediction|
+Ground Truth
+(9) 
+3.2. Performance evaluation of object detection models
+3.2.1. Ablation study of object detection models
+To evaluate the effectiveness and generalizability of the proposed 
+Hybrid Loss and MCSPF module for small-object detection, we con­
+ducted experiments on the public small-object dataset PEST24 as well as 
+our self-collected blueberry dataset. The ablation results on the PEST24 
+dataset are summarized in Table 1. In this setting, Loss1 refers to the 
+Focal Wasserstein Loss, and Loss2 denotes the Hierarchical Boundary 
+Attention Loss (HBALoss). The Split column indicates whether the 
+weight of HBALoss is scheduled to increase progressively during 
+training.
+3.2.2. Comparison analysis of object detection models
+To balance both the real-time performance and detection accuracy 
+required for tracking, we adopt the YOLO series as the detection back­
+bone. To further validate the effectiveness of the proposed detection 
+components, we compare our method against several mainstream YOLO 
+variants, which serve as baselines. The results are presented in Table 2.
+As shown in the table, the selected baseline model achieves the best 
+performance on our dataset, particularly with notable improvements in 
+Precision and mAP@50. These results demonstrate the strong capability 
+of our proposed Hybrid Loss and MCSPF module in enhancing small- 
+object detection performance.
+Fig. 7 presents the qualitative detection results of different models 
+under challenging conditions, including occluded targets, small objects, 
+and partially visible blueberries. The results demonstrate that our pro­
+posed method achieves robust recognition performance across a variety 
+of complex scenarios, effectively addressing the challenges posed by 
+real-world greenhouse environments.
+3.3. Performance evaluation of multi-object tracking algorithms
+Ablation and comparative experiments are conducted to evaluate the 
+effectiveness of the proposed trajectory prediction module and multi- 
+object tracking framework. The experimental setup is carefully 
+designed to isolate and verify the contribution of each module, 
+demonstrating the superiority of our approach through comprehensive 
+evaluation. As shown in the Fig. 8, the schematic diagram of multi- 
+object tracking shows that our method in this study performs stably in 
+the real blueberry greenhouse scenario, and the repeated counting 
+caused by ID switching and other factors is significantly reduced.
+3.3.1. Ablation study on multi-object tracking algorithm
+To systematically assess the effectiveness of each component in our 
+framework, we conducted seven groups of ablation experiments as fol­
+lows. Group A investigates the impact of the KAN structure and gating 
+mechanism within the GamaKAN module by replacing KAN with MLP, 
+multi-head attention, and linear attention, as well as comparing 
+different gating strategies. Group B replaces the GamaKAN encoder with 
+a Mamba encoder to evaluate the effect of the encoder architecture. 
+Group C compares various pooling methods. Group D examines the in­
+fluence of removing information from other trajectories and auxiliary 
+target positions, respectively. Group E evaluates the KG module by 
+replacing KAN with MLP and attention mechanisms, and by ablating the 
+gating mechanism. Group F investigates different decoder structures by 
+comparing Mamba, GRU, and LSTM. Finally, Group G represents the 
+complete method proposed in this work, integrating all optimized 
+modules and achieving the best overall performance. Table 3 reports the 
+results in terms of Average Displacement Error (ADE), Final Displace­
+ment Error (FDE), and Frames Per Second (FPS).
+Results indicate that while baseline methods such as MLP and 
+average pooling achieve high inference speeds, they exhibit large pre­
+diction errors, rendering them unsuitable for real-world deployment. 
+Although multi-head attention improves prediction accuracy, it sub­
+stantially increases computational cost, thereby limiting practical 
+applicability. Removing either the cooperative target modeling or 
+tracking information improves speed but leads to a notable drop in ac­
+curacy and generalization ability.
+Only the full proposed architecture (GamaKAN + APR + OT + KG) 
+achieves the best overall balance, outperforming all other configurations 
+in both ADE and FDE while maintaining a high FPS. These results 
+confirm the necessity and effectiveness of our collaborative module 
+design for robust and efficient multi-object trajectory prediction.
+3.3.2. Comparative analysis of multi-object tracking algorithms
+We select several representative state-of-the-art multi-object 
+tracking and trajectory prediction methods, including Social-LSTM, 
+GTR, and MOTR, as baselines for comparison. Evaluation metrics 
+include First Frame Distance (FFD), Final Displacement Error at 6 frames 
+(FDE@6), and Frames Per Second (FPS). The results are summarized in 
+Table 4.
+As shown in the table, our proposed method outperforms all baseline 
+Table 1 
+Ablation experiment.
+Loss1
+Loss2
+Split
+MCSPF
+Precision
+Recall
+map@50
+GFLOPs
+×
+×
+×
+×
+0.584
+0.539
+0.534
+6.0
+√
+×
+×
+√
+0.660
+0.532
+0.553
+5.8
+√
+×
+×
+×
+0 0.593
+0.541
+0.536
+6.0
+×
+√
+×
+×
+0.617
+0.538
+0.542
+6.0
+√
+√
+×
+√
+0.621
+0.540
+0.558
+5.8
+√
+√
+√
+√
+0.667
+0.543
+0.563
+5.8
+Table 2 
+Contrast experiment.
+algorithm
+Precision
+Recall
+F1
+map@50
+GFLOPs
+Yolov5
+0.782
+0.763
+0.772
+0.812
+15.4
+Yolov8
+0.747
+0.751
+0.749
+0.795
+9.1
+Yolov10
+0.778
+0.774
+0.776
+0.814
+8.4
+Yolo11
+0.790
+0.780
+0.785
+0.828
+7.0
+Yolov12
+0.804
+0.795
+0.799
+0.841
+6.0
+OURS
+0.822
+0.811
+0.816
+0.877
+5.8
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+8 
+
+models across all prediction metrics. Notably, it achieves a 10.1-pixel 
+reduction in FDE@6 over the second-best method, demonstrating su­
+perior robustness and accuracy in position forecasting. Moreover, this 
+performance is achieved while maintaining a high inference speed, 
+highlighting the method’s practical applicability and efficiency.
+As shown in Fig. 9, our method also demonstrates superior perfor­
+mance compared to TrackFormer and TADAM, consistently out­
+performing them across multiple evaluation metrics.
+3.4. Multi-frame prediction and missed detection completion
+To further assess the model’s capability in handling short-term frame 
+loss and occlusion, a simulated occlusion test set is constructed by 
+deliberately omitting detection results for selected targets over several 
+consecutive frames. This setup evaluates whether the method can 
+effectively achieve prediction-based recovery. Experimental results 
+show that when detection boxes are omitted for three consecutive 
+frames, the proposed method achieves a trajectory recovery success rate 
+Fig. 7. Detection results of different object detection models.
+Fig. 8. Tracking results illustration. During long-term tracking, the blueberry targets frequently changed their movement directions and experienced partial oc­
+clusions, with extremely dense target distributions within single frames. Nevertheless, the IDs of all targets remained consistent throughout, demonstrating the 
+overall system’s tracking robustness and stability under complex scenarios.
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+9 
+
+of 74.8 %.
+Specifically, detection results are manually removed to measure the 
+system’s ability to recover missing trajectories. The results are presented 
+in Table 5. Given the density of target scenes, a practical constraint is 
+imposed: if a target is occluded for more than three consecutive frames, 
+it is considered to have exited the scene and is excluded from the re­
+covery evaluation.
+In addition, we designed a counting experiment to verify the supe­
+riority of the proposed method in the blueberry counting scenario. 
+ByteTrack was selected as the baseline model, and comparative 
+experiments were conducted with OCSORT and SORT. We report Ac­
+curacy, undercounting, overcounting, re-association recall, re- 
+association precision. The undercounting metric reflects missed de­
+tections, assignment of the same ID to multiple targets, and similar is­
+sues. The overcounting metric represents cases such as missed detections 
+and failed re-identification leading to duplicate counting, among others. 
+The accuracy metric indicates the overall counting precision.
+The recall metric for tracklet association measures the proportion of 
+true associations correctly identified by the algorithm, reflecting its 
+sensitivity. The precision metric quantifies the proportion of correctly 
+associated cases among all associations identified by the algorithm, 
+indicating its accuracy in tracklet association. The calculation methods 
+can be expressed as follows: 
+Re −Association −recall =
+TPRA
+TPRA + FNRA
+(10) 
+Re −Association −precision =
+TPRA
+TPRA + FPRA
+(11) 
+where TPRA denotes the number of successful re-associations after true 
+track fragmentation, FNRA denotes the number of failed re-associations, 
+and FPRA denotes the number of re-associations with incorrect identities. 
+The results are presented in Table 6.
+A total of 1743 trajectories were included in the validation set. As 
+observed in the table, SORT lacks a tracklet complementation mecha­
+nism, resulting in a high number of missed detections and duplicate 
+counts. Although OCSORT achieves high recall for tracklet comple­
+mentation and maintains a low number of duplicate counts, its overly 
+aggressive strategy—disregarding spatial distance—often causes some 
+IDs to disappear on the left side of the frame and then be reassigned to 
+new objects entering from the right, leading to a substantial number of 
+uncontrollable undercounting and extremely low precision. While 
+ByteTrack achieves high precision in tracklet complementation, its naive 
+linear extrapolation based on the Kalman filter is insufficient for 
+handling nonlinear trajectories, indicating significant room for 
+Table 3 
+Ablation experiment of trackers prediction.
+Group
+Variant
+ADE(px)
+FDE(px)
+FPS
+A(Gama)
+MLP
+21.2
+38.2
+115
+​
+Multi-head Attention
+16.1
+25.4
+52
+​
+GSA
+19.8
+36.3
+83
+​
+-Gate
+16.7
+29.5
+93
+​
+Linear Attention
+18.2
+33.1
+95
+B(Encoder)
+Mamba Encoder
+25.7
+46.5
+74
+C(Pooling)
+Grid Pooling(without mask)
+27.0
+52.4
+112
+​
+MLP Pooling
+20.7
+37.6
+103
+​
+Mean Pooling
+26.5
+50.4
+113
+​
+Attention Pooling
+20.2
+34.7
+96
+​
+Tempor Attention Pooling
+25.1
+46.2
+93
+​
+Multi-head Attention Pooling
+19.1
+30.6
+56
+D(Others)
+-Other Targets
+24.3
+43.8
+110
+​
+-Other Trackers
+27.6
+50.0
+117
+E(Gate Fusion)
+Multi-head Attention
+24.6
+39.4
+76
+​
+MLP
+28.5
+54.2
+96
+​
+Temporal Attention
+25.9
+48.3
+87
+​
+-KAN
+29.0
+56.3
+93
+​
+-Gate
+19.2
+32.1
+91
+F(decoder)
+GRU
+19.0
+29.9
+90
+​
+LSTM
+17.4
+29.5
+86
+G(OURS)
+GamaKANþAPRþOTþKG
+15.4
+24.8
+91
+Table 4 
+Comparative experiment of trackers prediction.
+First frame dist (pixel)
+FDE@6 (pixel)
+FPS
+Kalman filter
+13.7
+​
+250
+GTR
+5.10
+41.3
+45
+MOTR
+4.71
+34.9
+26
+Social LSTM
+8.33
+52.4
+75
+OURS
+3.68
+24.8
+91
+Fig. 9. Final displacement error increases with the number of predicted frames.
+Table 5 
+Recovery performance under varying occlusion durations.
+Occlusion Duration (N)
+DE (pixel)
+Recovery Rate( %)
+1
+3.68
+90.2
+2
+9.88
+85.4
+3
+15.21
+74.8
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+10 
+
+improvement.
+We further evaluated the overall speed of our method on the Nvidia 
+Jetson AGX Orin 32 GB. The object detection model was accelerated 
+using TensorRT, and the trajectory prediction model was quantized to 8 
+bits. The system achieves up to 35 FPS, meeting real-time operation 
+requirements. During execution, the process utilized approximately 1.4 
+GB of system memory and 1518 MB of GPU memory.
+3.5. Multi-frame prediction experiments on the MOT17 public dataset
+In addition to the above experiments, we conduct evaluations on the 
+MOT17 public dataset to further validate the model’s generalization 
+capability and predictive accuracy of our proposed model. This experi­
+ment also provides reference metrics for future studies.
+We split the dataset by using the first half of the sequences for 
+training and the second half for validation. A 6-frame historical trajec­
+tory is used as input, and the model performs step-wise prediction of 
+target positions over the next 6 frames. The final results show a Mean 
+ADE of 26.9 pixels and a Mean FDE of 45.8 pixels, as summarized in 
+Table 7.
+Since the evaluation is not conducted on the official MOT17 test set, 
+we do not directly compare our results with those of other methods. 
+Nevertheless, these results serve as a useful benchmark for future studies 
+that adopt the same custom split strategy.
+4. Discussion
+Results 
+demonstrate 
+that 
+the 
+proposed 
+unified 
+detec­
+tion–interaction–prediction framework effectively addresses the chal­
+lenges 
+of 
+high-density, 
+small-object 
+scenarios 
+in 
+greenhouse 
+environments. By leveraging semantically-aware pooling, the method 
+recovers from severe occlusions by aggregating contextual cues from 
+neighboring trajectories. The GamaKAN encoder captures complex, 
+nonlinear motion patterns without compromising inference speed. The 
+multi-layer Mamba decoder then yields smooth, long-range trajectory 
+forecasts, enabling stable object counting even under rapid motion 
+variability. Quantitatively, the proposed method achieves a detection 
+mAP@50 of 0.877 on the in-house blueberry dataset, and improves 
+Precision by 8.3 % and mAP@50 by 2.9 % on the PEST24 small-object 
+benchmark. Furthermore, in real-world scenarios, our method ach­
+ieves a counting accuracy of 92.5 %, with an edge device deployment 
+efficiency of 35 fps. These results validate both the accuracy and real- 
+time efficiency of our method.
+Despite the encouraging results, this study still presents certain 
+limitations and outlines several promising directions for future research. 
+Most publicly available agricultural image datasets focus on specific 
+scenarios or a single object scale, and there remains a lack of high- 
+quality datasets that simultaneously cover both large and small blue­
+berry instances. To better evaluate model robustness under extreme 
+occlusion and small-object conditions, we adopted the PEST24 small- 
+object detection benchmark as a public validation dataset to assess 
+generalization on challenging samples. While the proposed framework 
+demonstrates strong adaptability across various fruit types and agri­
+cultural environments, it has not yet been validated in certain deploy­
+ment scenarios, such as UAV-based fruit counting.
+In addition, the current system primarily relies on RGB imagery for 
+blueberry ripeness estimation, which makes it vulnerable to interference 
+from strong illumination, specular reflection, and occlusion. This limi­
+tation particularly affects the ability to distinguish between unripe and 
+discolored ripe fruits, thereby reducing the reliability of maturity 
+assessment. To enhance robustness under such complex lighting condi­
+tions, we plan to incorporate multimodal sensing, such as near-infrared 
+(NIR) imaging, to enable more stable fruit state recognition. Moreover, 
+in high-density scenes with frequent occlusions and complex motion 
+trajectories, long-term identity preservation accuracy tends to decline. 
+To address this issue, we propose to fuse static visual cues of fruits (e.g., 
+shape and texture) with dynamic trajectory information, in order to 
+improve trajectory continuity and identity consistency, especially under 
+extended occlusion or intermittent detection loss.
+5. Conclusions
+This paper presents an effective technical framework for accurate 
+blueberries counting in greenhouse scenarios, featuring in deep learning 
+algorithms of lightweight object detection for small size blueberries and 
+mamba-based trajectory completion for target position prediction in 
+continuous multi-frame scenes. detection, trajectory prediction, and 
+tracking-based counting. For object detection, a hybrid loss function and 
+the MCSPF module are introduced to address the challenges posed by 
+the small size and low detectability of greenhouse blueberries. For tra­
+jectory prediction, a Mamba-driven position prediction model is 
+employed to accurately model complex nonlinear movement patterns. 
+And a two-stage tracking and track-completion strategy is implemented 
+to effectively reduce repeated counting for accurate counting task. 
+Extensive experiments on real greenhouse datasets and public bench­
+marks demonstrate that the proposed method achieves real-time per­
+formance and surpasses existing methods in accuracy. These results 
+confirm the framework’s applicability for practical deployment in 
+agricultural environments and its strong cross-scenario generalization. 
+Future work will explore cross-modal fusion and multi-task perception 
+to further improve robustness in diverse practical applications.
+Ethical statement
+The blueberry detection and tracking dataset used in this study was 
+collected by the research team. The dataset contains only images of 
+blueberry plants and fruits. It does not involve human or animal subjects 
+and contains no personal or private information. Therefore, ethical 
+approval was not required for this study.
+Funding
+This research received no external funding.
+CRediT authorship contribution statement
+Naiqi Zhang: Writing – original draft, Visualization, Software, 
+Methodology, Investigation, Data curation, Conceptualization. Jianhua 
+Table 6 
+Comparison of counting results.
+Algorithms
+Counting
+Accuracy
+Undercounting
+Overcounting
+RA-rec
+RA-pre
+SORT
+2031
+83.5 %
+9.1 %
+25.6 %
+​
+​
+OC-SORT
+1293
+74.2 %
+35.7 %
+11.6 %
+75.1 %
+52.0 %
+ByteTrack
+1902
+90.9 %
+7.9 %
+17.0 %
+68.7 %
+81.7 %
+OURS
+1874
+92.5 %
+3.7 %
+11.2 %
+73.0 %
+87.2 %
+Table 7 
+Multi-frame trajectory prediction performance on the MOT17 dataset.
+Dataset
+Future
+Resolution
+FDE@1
+Mean ADE
+Mean FDE
+MOT17
+6
+1920×1080
+9.0 pixels
+26.9 pixels
+45.8 pixels
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+11 
+
+Cao: Writing – review & editing, Supervision, Project administration.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Acknowledgements
+The authors have no acknowledgements to declare.
+Data availability
+Data will be made available on request.
+References
+[1] U.O. Dorj, S. Yun, Fruit detection and counting using thresholding and watershed 
+algorithms, Comput. Electron. Agric. 140 (2017) 103–112, https://doi.org/ 
+10.1016/j.compag.2017.05.019.
+[2] W. Maldonado, J.C. Barbosa, Automatic green fruit counting in orange trees using 
+digital images, Comput. Electron. Agric. 127 (2016) 572–581, https://doi.org/ 
+10.1016/j.compag.2016.07.023.
+[3] J. Tureˇckov´a, et al., High-accuracy tomato counting through image tiling 
+strategies, Comput. Electron. Agric. 192 (2022). Article 107348.
+[4] A. Zhu, R. Zhang, L. Zhang, X. Li, Y. Wang, YOLOv5s-CEDB: a robust and efficient 
+camellia oleifera fruit detection algorithm in complex natural scenes, Comput. 
+Electron. Agric. 223 (2024), https://doi.org/10.1016/j.compag.2024.109471. 
+Article 109471.
+[5] X. Li, Research on multi-scenario fruit detection and classification based on 
+improved YOLOv5, in: ACE Conference Proceedings, Article 23113, 2025, https:// 
+doi.org/10.54254/2755-2721/2025.23113.
+[6] J. Gim´enez-Gallego, J. Martinez-del-Rincon, J.D. Gonzalez-Teruel, H. Navarro- 
+Hellín, P.J. Navarro, On-tree fruit image segmentation comparing mask R-CNN and 
+vision transformer models: application in a novel algorithm for pixel-based fruit 
+size estimation, Comput. Electron. Agric. 195 (2024), https://doi.org/10.1016/j. 
+compag.2024.109077. Article 106847.
+[7] X. Xia, X. Chai, N. Zhang, Z. Zhang, Q. Sun, T. Sun, Culling double counting in 
+sequence images for fruit yield estimation, Agronomy 12 (2) (2022) 440.
+[8] Z. Wang, K. Walsh, A. Koirala, Mango fruit load estimation using a video based 
+MangoYOLO—Kalman filter—Hungarian algorithm method, Sensors 19 (12) 
+(2019) 2742, https://doi.org/10.3390/s19122742.
+[9] J. Cheng, J. Jiang, Camellia oleifera fruit static and dynamic detection counting 
+method based on improved COF-YOLOv8n, Trans. Chin. Soc. Agric. Mach. 55 (4) 
+(2024) 123–130.
+[10] P. Du, S. Chen, X. Li, W. Hu, N. Lan, X. Lei, Y. Xiang, Green pepper fruits counting 
+based on improved DeepSort and optimized Yolov5s, Front. Plant Sci. 15 (2024) 
+1417682.
+[11] X. Chen, S. Shi, C. Zhang, B. Zhu, Q. Wang, K.C. Cheung, S. See, H. Li, 
+TrajectoryFormer: 3D object tracking transformer with predictive trajectory 
+hypotheses, in: Proceedings of the IEEE/CVF International Conference on 
+Computer Vision (ICCV), 2023, pp. 18527–18536.
+[12] K. Mangalam, H. Girase, S. Agarwal, K.-H. Lee, E. Adeli, J. Malik, A. Gaidon, It is 
+not the journey but the destination: endpoint conditioned trajectory prediction, in: 
+European Conference on Computer Vision (ECCV), 2020.
+[13] A. Alahi, K. Goel, V. Ramanathan, A. Robicquet, F.-F. Li, S. Savarese, Social LSTM: 
+human trajectory prediction in crowded spaces, in: Proceedings of the IEEE 
+Conference on Computer Vision and Pattern Recognition, 2016, pp. 961–971, 
+https://doi.org/10.1109/CVPR.2016.110.
+[14] Gupta, A., Johnson, J., Fei-Fei, L., Savarese, S. & Alahi, A., 2018. Social GAN: 
+socially acceptable trajectories with generative adversarial networks. arXiv 
+preprint.
+[15] Battaglia, P.W., Hamrick, J.B., Bapst, V., Sanchez-Gonzalez, A., Zambaldi, V., 
+Malinowski, M., … & Pascanu, R. (2018). Relational inductive biases, deep 
+learning, and graph networks. arXiv preprint.
+[16] S.M. Al-Selwi, M.F. Hassan, S.J. Abdulkadir, A. Muneer, LSTM inefficiency in long- 
+term dependencies regression problems, J. Adv. Res. Appl. Sci. Eng. Technol. 30 (3) 
+(2023) 16–31.
+[17] S. Saha, L. Xu, Vision transformers on the edge: a comprehensive survey of model 
+compression and acceleration strategies, Neurocomputing (2025) 130417.
+[18] Xu, K., Chen, L. & Wang, S., 2024. Kolmogorov-Arnold networks for time series: 
+bridging predictive power and interpretability. arXiv preprint.
+[19] Gu, A. & Dao, T., 2023. Mamba: linear-time sequence modeling with selective state 
+spaces. arXiv preprint.
+[20] Tian, Y., Ye, Q., & Doermann, D. (2025). Yolov12: attention-centric real-time 
+object detectors. arXiv preprint.
+[21] Q.J. Wang, S.Y. Zhang, S.F. Dong, G.C. Zhang, J. Yang, R. Li, H.Q. Wang, PEST24: a 
+large-scale very small object dataset of agricultural pests for multi-target detection, 
+Comput. Electron. Agric. 175 (2020), https://doi.org/10.1016/j. 
+compag.2020.105585. Article 105585.
+[22] Milan, A., Leal-Taix´e, L., Reid, I., Roth, S. & Schindler, K., 2016. MOT16: a 
+benchmark for multi-object tracking. arXiv preprint.
+N. Zhang and J. Cao                                                                                                                                                                                                                           
+Smart Agricultural Technology 12 (2025) 101402 
+12 

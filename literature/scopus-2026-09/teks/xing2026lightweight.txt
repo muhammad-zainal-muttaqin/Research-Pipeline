@@ -1,0 +1,1676 @@
+A lightweight multi-view detection and counting method for real-time 
+cherry tomato yield estimation using greenhouse inspection robots
+Xushuo Xing a, Jin Gao a,*
+, Xue Deng b
+, Shubo Wang c, Peng Qi d, Fangyan Wang e,  
+Xiuning Hou a, Junfeng Gao f
+a College of Mechanical and Electrical Engineering, Qingdao University, Qingdao 266100, China
+b Chinese Academy of Agricultural Mechanization Sciences Group Co., Ltd, Beijing 100083, China
+c School of Automation, Qingdao University, Qingdao 266071, China
+d Shandong Academy of Agricultural Machinery Sciences, Jinan 250100, China
+e College of Mechanical and Electrical Engineering, Qingdao Agricultural University, Qingdao 266109, China
+f Department of Computer Science, University of Aberdeen, UK
+A R T I C L E I N F O
+Keywords:
+Tomato yield
+Cascaded network
+Detection and counting
+Deep learning
+Agricultural robot
+A B S T R A C T
+Crop yield prediction is one of the key measures for dynamically adjusting harvest schedules and minimizing 
+production losses. To address the production requirements for multi-object real-time detection and accurate 
+counting of tomatoes in complex greenhouse environments, this study proposes a lightweight “detection–­
+tracking–counting–compensation” cascaded network framework, optimized for deployment on inspection robots. 
+First, a sparse convolution module (G-FConv) and a lightweight multi-scale feature aggregation module (L-MFA) 
+were designed, and a lightweight feature extraction network was constructed to reduce computational load and 
+complexity. Second, a lightweight asymmetric decoupled head incorporating the SimAM attention mechanism 
+was developed to enhance critical feature extraction while further reducing parameter count. Third, a multi-view 
+cooperative detection and compensation method was proposed to optimize multi-object tracking performance in 
+dense and occluded scenes. Finally, TensorRT-based inference acceleration was applied to improve the robot’s 
+real-time processing capability. The proposed model achieves high detection (90.8%) and counting (95.2%) 
+accuracy with a compact size of 3.98 MB and 5.3 GFLOPs, while the proposed MVC method reduces counting 
+errors by 95.6%. This study provides an effective technical solution for precise tomato yield prediction in 
+greenhouses, offering significant practical value for optimizing harvest schedules and reducing production losses.
+1. Introduction
+Tomato is a globally significant economic crop, with an annual 
+production exceeding 180 million tons cultivated over more than 5 
+million hectares. Its strategic importance and substantial economic 
+value are well established. The expanding global market, projected to 
+reach US$261.2 billion by 2030 [1], reflects strong and growing con­
+sumer demand. However, current tomato yields frequently fail to align 
+with actual market requirements, resulting in regional oversupply. This 
+imbalance disrupts supply chain stability and undermines brand credi­
+bility, leading to considerable economic losses. Accurate yield estima­
+tion is therefore critical for maintaining efficient supply chain 
+operations and promoting sustainable agricultural practices. Object 
+detection and tracking are critical techniques to enhance precision 
+farming and pave the way for robotization in the agricultural sector, as 
+they provide accurate results and insights for crop management while 
+optimizing resource allocation [2].
+Traditional object detection methods primarily rely on hand-crafted 
+features and classical image processing. These approaches can be cate­
+gorized into three types: Color-space-based segmentation (e.g., HSV or 
+Lab thresholding) extracts target regions but is highly sensitive to 
+lighting conditions and color variations [3]. Edge detection and 
+morphological operations (e.g., Canny and Sobel filters combined with 
+erosion/dilation) facilitate contour extraction but are prone to noise and 
+perform poorly with occluded or clustered objects [4]. Feature 
+descriptor-based classifiers (e.g., HOG + SVM) use Histograms of Ori­
+ented Gradients (HOG) for texture representation and classification [5]; 
+however, these methods suffer from limited feature expressiveness, poor 
+* Corresponding author.
+E-mail address: gaojin@qdu.edu.cn (J. Gao). 
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+https://doi.org/10.1016/j.atech.2026.102260
+Received 8 April 2026; Received in revised form 22 May 2026; Accepted 30 May 2026  
+Smart Agricultural Technology 14 (2026) 102260 
+Available online 30 May 2026 
+2772-3755/© 
+2026 
+Qingdao 
+University. 
+Published 
+by 
+Elsevier 
+B.V. 
+This 
+is 
+an 
+open 
+access 
+article 
+under 
+the 
+CC 
+BY 
+license 
+( http://creativecommons.org/licenses/by/4.0/ ). 
+
+generalization across diverse scenes, and often require crop-specific 
+parameter tuning. While traditional methods offer advantages in sim­
+ple scenarios—such as lower computational costs and reduced 
+latency—they face critical limitations in complex, unstructured agri­
+cultural settings. These challenges include extensive reliance on 
+expert-driven parameter adjustments, difficulties in segmenting densely 
+occluded or overlapping targets, and limited adaptability to fluctuating 
+lighting conditions. Collectively, these constraints significantly hinder 
+the robustness and scalability of traditional detection systems in 
+real-world agricultural applications.
+Traditional counting methods predominantly rely on hand-crafted 
+features, such as Histogram of Oriented Gradients (HOG) and color 
+histograms for pedestrian tracking [6]. However, these methods exhibit 
+limited generalization in dynamic environments and are highly sus­
+ceptible to noise interference during data association. Given the 
+inherent limitations of hand-crafted features, Multi-Object Tracking 
+(MOT) methods have become prevalent, following a "detection-feature 
+extraction-data association" framework. The performance of such 
+methods is heavily dependent on the accuracy of object detection, the 
+discriminative power of extracted features, and the robustness of the 
+association strategy. In complex scenes, challenges such as object oc­
+clusion, deformation, appearance variation, similar-object interference 
+leading to identity switches (ID switches), and real-time processing re­
+quirements significantly exacerbate tracking difficulties, posing serious 
+challenges for traditional counting methods [7]. The OC-SORT algo­
+rithm proposed by Cao et al. [8] introduces a stable tracking framework 
+by integrating Kalman filtering, the Hungarian algorithm, and multiple 
+association recovery strategies. Building on this, Deep OC-SORT [9] 
+incorporates stability-enhancing mechanisms to improve adaptability in 
+complex scenarios. Nevertheless, substantial challenges remain in 
+handling occlusion, object deformation, appearance changes, and 
+interference from similar targets, which continue to limit the perfor­
+mance gains of current approaches and present bottlenecks to further 
+advancement.
+The rapid progression of deep learning technologies is driving a 
+transformative shift towards automation and intelligence in tomato 
+cultivation [10], with researchers increasingly integrating these meth­
+odologies for crop yield estimation. For instance, while Fast R-CNN [11] 
+offers high detection accuracy, its substantial computational resource 
+demands and deployment complexity present practical challenges. 
+Similarly, the SSD model [12], reduces the computational load, but its 
+intricate parameter tuning and sensitivity to small objects limit its effi­
+cacy for yield estimation, making it more suitable for small-target ap­
+plications like pest and disease monitoring [13]. Tenorio and Caarls [14] 
+developed an automated tomato detection model capable of classifying 
+fruit maturity levels. Xu et al. [15] proposed an edge-friendly framework 
+that enhances inference efficiency while maintaining accuracy. Sapkota 
+et al. [16] developed an instance segmentation algorithm for robotic 
+tasks. Gao et al. [17] introduced an unstructured detection framework 
+that enables seamless integration into harvesting robots. Paul et al. [18] 
+presented a complete solution for agricultural robots that integrates 
+detection, localization, tracking, and application, thereby advancing the 
+development of automated capsicum harvesting technology. These ap­
+proaches provide feasible solutions for tomato detection, counting, and 
+algorithm deployment.
+Tomato detection and counting remain challenging tasks, especially 
+in complex greenhouse environments. Specifically, truss tomatoes in 
+greenhouse settings often exhibit severe fruit overlap and mutual oc­
+clusion, leading to blurred object boundaries and difficulty in dis­
+tinguishing individual fruits. Meanwhile, the image acquisition process 
+introduces significant motion blur due to robot movement or fruit 
+cluster swaying, and the pose variations of tomatoes further increase 
+detection difficulty. These factors collectively make it difficult for 
+traditional detection and tracking methods to meet practical re­
+quirements in terms of accuracy and robustness. Therefore, there is an 
+urgent need for a lightweight detection framework that balances 
+accuracy, speed, and computational efficiency, especially one that can 
+effectively address overlapping occlusion, motion blur, and pose varia­
+tion. However, the large parameter size and high computational de­
+mands of deep learning models hinder their deployment on resource- 
+constrained edge devices, and existing edge intelligence techniques 
+still face challenges in interpretability, security, and energy efficiency 
+[19]. At present, counting algorithms specifically designed for such 
+highly challenging scenarios are still lacking.
+To address the above challenges, this study proposes a lightweight 
+cascaded neural network for tomato detection and counting. By opti­
+mizing the network architecture, integrating multi-object real-time 
+tracking algorithms, and developing a multi-view compensation 
+method, the proposed framework achieves real-time, efficient, and ac­
+curate detection and counting of tomatoes in complex greenhouse en­
+vironments. This offers a promising solution to the labor shortages and 
+inaccurate yield estimation currently faced by the tomato cultivation 
+industry.
+2. Data collection and processing
+From November 2024 to March 2025, image acquisition of cherry 
+tomatoes was conducted at the Kaisheng Haofeng (Laixi) Smart Agri­
+culture Industrial Park in Qingdao, Shandong Province, China. The to­
+mato cultivation base adopts a modern planting model with 
+standardized plant layouts. Each row consists of two lines of tomato 
+plants growing in opposite directions, and the growth conditions are 
+largely consistent. However, occlusion and overlap among fruits are 
+common. The image acquisition device used was the Intel RealSense 
+Depth Camera D455, which was mounted on a mobile inspection robot. 
+The distance between the camera and the cherry tomato plants ranged 
+from 400 mm to 600 mm. Videos were recorded at a resolution of 1280 
+× 720 with a frame rate of 30 FPS. The collected videos encompass 
+cherry tomatoes captured across various planting zones during both 
+morning and afternoon time periods, viewing angles, and environmental 
+conditions, with all weather conditions being sunny. In the sample 
+collection scenarios, normal lighting accounts for approximately 65%, 
+low lighting for about 25%, and strong lighting for about 10%. The 
+sample proportions across different time periods are generally balanced. 
+An overview of the typical greenhouse cultivation scene is shown in 
+Fig. 1.
+In this study, the collected video data were divided and processed in 
+two ways. A portion of the data was directly used as the validation set for 
+evaluating the model’s detection performance. The remaining video 
+data were processed by the keyframe extraction at 60 FPS intervals. A 
+total of 1792 images were extracted and annotated using the Makesense 
+AI platform [20]. Based on the color and size characteristics of cherry 
+tomatoes, the detected targets are divided into two categories: ripe to­
+matoes and unripe tomatoes, marked as "rt" and "ut" respectively. The 
+dataset comprises 17,940 “ut” instances and 33,433 “rt” instances. For 
+occluded fruits, annotators inferred the complete boundary based on 
+visible contours and contextual information, drawing the bounding box 
+within the occluded boundary to ensure object completeness under oc­
+clusion. As illustrated in Fig. 2, the full contours of occluded tomatoes 
+were annotated to improve the accuracy of object representation. All 
+annotation results were standardized and saved in .txt format, and the 
+dataset was divided into training, validation, and testing subsets in a 
+7:2:1 ratio.
+3. Material and methods
+3.1. Development of a multi-task cascaded neural network
+To meet the real-time and efficient detection requirements of 
+greenhouse inspection robots, this study proposes a lightweight multi- 
+task cascaded neural network capable of performing real-time multi- 
+object detection and multi-region tracking-based counting. The overall 
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+2 
+
+architecture, illustrated in Fig. 3, adopts a cascaded "detection–track­
+ing–counting–compensation" framework. Through modular design and 
+optimization, the network achieves a synergistic optimization between 
+detection accuracy and computational efficiency, thereby enhancing 
+performance in complex greenhouse environments.
+In operation, the network first integrates a lightweight detection 
+module, which is responsible for identifying the number and type of 
+cherry tomatoes and outputting corresponding confidence scores and 
+class labels. This information is then passed to the Deep OC-SORT 
+tracking network, which assigns a unique ID to each detected object 
+and performs continuous tracking across frames. To address challenges 
+like occlusion and duplicate counting in agricultural scenarios, a multi- 
+view compensation (MVC) network is introduced based on the principles 
+of 3D spatial projection. By conducting independent detection and in­
+tegrated analysis across different spatial regions, MVC effectively miti­
+gates counting errors caused by occlusion and overlapping, thereby 
+improving the reliability and accuracy of detection and counting in 
+complex greenhouse environments. The lightweight detection module 
+serves as the front-end, the tracking and multi-view compensation 
+module performs counting, and the edge deployment optimization en­
+sures real-time performance
+3.2. Lightweight multi-object real-time detection network
+3.2.1. Lightweight feature extraction backbone network
+The input image first passes through a GhostConv module for light­
+weight convolution, generating redundant feature maps via cheap linear 
+transformations to reduce computational cost. It then enters L‑MFA, to 
+extract and fuse multi‑scale contextual information. Next, the G‑FConv 
+module further compresses parameters and computational cost using 
+sparse convolution and linear expansion. This G‑FConv is stacked twice 
+to enhance feature abstraction. Finally, the Spatial Pyramid Pooling Fast 
+module, denoted as SPPF, performs multi‑scale pooling on the feature 
+maps, aggregating information from different receptive fields and 
+outputting multi‑level feature maps such as P3, P4 and P5 for subse­
+quent detection tasks. Among these components, the G‑FConv module is 
+specifically designed to reduce computational overhead and memory 
+access, and its architecture is detailed as follows. G-FConv is a sparse 
+convolution module derived from the lightweight GhostNet [21], 
+designed to reduce computational overhead and memory access. The 
+architecture of the proposed module is illustrated in Fig. 4. The core idea 
+is to generate redundant features through linear transformations, while 
+integrating PConv [22] to perform convolution on a subset of the input 
+Fig. 1. Typical greenhouse cultivation scene and geographic location.
+Fig. 2. Image acquisition platform and data annotation.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+3 
+
+channels, thereby reducing computational cost. Furthermore, a 
+co-design strategy combining sparse convolution and linear feature 
+expansion is adopted to enhance feature extraction efficiency. Specif­
+ically, in the G-FConv module, the PConv part uses a 3 × 3 kernel, and its 
+output channels are set to 1/4 of the input channel. The Ghost linear 
+transformation part uses 1 × 1 convolutions to generate redundant 
+features with an expansion ratio of 2. The input and output channel 
+numbers of the entire G-FConv module are kept identical to facilitate 
+residual connections. This design allows the network backbone to 
+maintain high accuracy in visual tasks while achieving lightweight 
+characteristics. The computational formulation of its feature extraction 
+is as follows: 
+YCombine = fF⋅fG⋅fF⋅fG(X)
+(1) 
+where, fG denotes the feature extraction output from the GhostConv 
+module. fF denotes the feature extraction output from the PConv mod­
+ule. YCombinedenotes the connection strategy of the feature extraction 
+module.
+To further reduce model computational complexity and enhance 
+real-time processing performance, this study proposes a lightweight 
+multi-scale feature aggregation module (L-MFA). As illustrated in Fig. 5, 
+the module is primarily composed of Conv and CG Blocks. By concate­
+nating the outputs of different CG Blocks with the original feature maps, 
+the module achieves more effective multi-scale information aggrega­
+tion. In addition, the convolutional operations within the module effi­
+ciently compress the feature maps, substantially reducing computational 
+cost. The L-MFA module adopts the classical Cross-Stage Partial (CSP) 
+structure characterized by a “split–process–integrate” design, ensuring 
+efficient gradient flow, while incorporating the context-guided (CG) 
+Block to further strengthen feature fusion. The L-MFA module uses a 
+Split operation to directly pass a portion of the features across layers, 
+while the other portion is processed through multiple CG block for deep 
+feature extraction. Finally, the multi‑level information is fused via 
+concatenation and a 1 × 1 convolution. Given an input feature map of 
+size h × w × cin, it first passes through a 1 × 1 convolution (stride 1, 
+padding 0) that compresses the number of channels to cout, resulting in 
+an output size of h × w × cout. Then a Split operation is performed, 
+which evenly divides the feature map into two branches along the 
+channel dimension, each having 0.5 × cout channels, i.e., h × w ×
+0.5cout. The left branch remains unchanged and is directly kept for later 
+concatenation. The right branch goes into a sub-network consisting of n 
+CG bBock modules stacked in series. Each CG Block has an optional 
+shortcut connection and maintains the same spatial size and channel 
+count, thus its output is still h × w × 0.5cout. Finally, a Concat operation 
+concatenates the original left branch feature map and the n outputs from 
+the right branch along the channel dimension. This design not only in­
+herits the advantages of the CSP architecture but also leverages the su­
+perior capability of CGNet [23] in extracting contextual information. To 
+enhance multi-scale contextual information without significantly 
+increasing computation, we introduce the CG Block, which captures 
+local, surrounding, and global features across multiple receptive fields. 
+The CG Block, a key component of the CGNet model, employs a 
+four-dimensional context fusion mechanism to capture and integrate 
+local features, surrounding context, and global context. In doing so, it 
+Fig. 3. Architecture of the proposed cascaded network framework for real-time cherry tomato detection and multi-region counting.
+Fig. 4. Network structural design of G-FConv combining PConv-based sparse computing and Ghost-style linear expansion.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+4 
+
+maintains model accuracy while effectively reducing computational 
+complexity. In the L‑MFA module, the CG Block consists of three feature 
+extractors. The local feature extractor applies a 3 × 3 depthwise 
+convolution (stride 1, padding 1). The surrounding context extractor 
+uses a 3 × 3 depthwise dilated convolution with a dilation rate of 2. The 
+global context extractor performs global average pooling followed by a 
+two‑layer Linear‑ReLU‑Linear‑Sigmoid, whose hidden dimension is set 
+to 1/16 of the input channels. The outputs from the local and 
+surrounding extractors are concatenated channel‑wise, then passed 
+through batch normalization and a PReLU activation. The output 
+channel count remains equal to the input channel count of the block. The 
+detailed principle of the CG Block is illustrated in the lower part of Fig. 5
+and can be summarized as follows: 
+Y = fjoin(floc(X)⋅fsur(X)⋅fglo(X))
+(2) 
+Fig. 5. Network structural composition of the lightweight L-MFA module for efficient multi-scale information fusion.
+Fig. 6. A network architecture of the Lightweight Asymmetric Decoupled Head (LADH) with SimAM Attention Mechanism.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+5 
+
+where, floc(X) denotes the local feature extractor, which uses standard 
+convolutional layers to learn fine-grained local features. fsur(X) denotes 
+the surrounding context extractor, which utilizes dilated convolutional 
+layers to capture context from a larger receptive field. fglo(X) denotes the 
+global context extractor, which captures global information through 
+global average pooling followed by a Multi-Layer Perceptron. fjoin(X)
+denotes the joint feature extractor, which refines the concatenated local 
+and surrounding features using Batch Normalization and a Parametric 
+ReLU activation.
+3.2.2. Lightweight detection head network
+As the core component that transforms feature maps into outputs for 
+object detection tasks, the head detection network plays a crucial role in 
+determining the model’s accuracy, inference speed, and generalization 
+capability. Building upon the asymmetric decoupled head (ADH) pro­
+posed by Zhang et al. [24], this study introduces a lightweight asym­
+metric decoupled head (LADH), as illustrated in Fig. 6. LADH employs 
+three independent branches to handle different sub-tasks separately and 
+integrates a multi-stage channel compression technique to reduce pa­
+rameters within each convolutional layer, thereby significantly 
+decreasing computational cost and model size.
+To mitigate the interference of background noise, this study in­
+corporates the lightweight attention mechanism SimAM [25] into the 
+highest detection layer of the head network. The SimAM attention 
+module introduces no extra parameters. It estimates the importance of 
+each neuron in the feature map by optimizing an energy function 
+through a linear transformation operation, enabling simultaneous 
+attention across both channel and spatial dimensions. Through direct 
+processing, the output dimension strictly remains the same as the input. 
+This module is inserted after the highest‑level feature map of the 
+detection head to enhance the detection capability of large‑object 
+layers. First, the initial energy function for a single neuron is defined as: 
+et(wt, bt, y, xi) = (yt −̂ t)2 +
+1
+M −1
+∑
+M−1
+i=1
+(yo −̂ xi)2
+(3) 
+Subsequently, etundergoes regularization, and its closed-form solu­
+tion is derived to obtain a simplified expressione∗
+t , which is used to 
+identify key neuronal parameters, denoted as: 
+e∗
+t =
+4(̂σ2 + λ)
+(t −̂ μ)2 + 2̂σ2 + 2λ
+(4) 
+Finally, a scaling operator is applied to refine the feature map, 
+enabling the model to focus more precisely on critical features. This 
+effectively suppresses interference from background noise, thereby 
+enhancing performance in the tomato detection task, represented as: ̃
+X = sigmoid
+(1
+E
+)
+⊙X
+(5) 
+As illustrated in Fig. 6, the SimAM attention mechanism is incorpo­
+rated into the highest detection layer to enhance the representational 
+capacity of high-level semantic features. This integration improves both 
+detection accuracy and robustness, thereby increasing the model’s 
+adaptability in scenarios involving complex backgrounds and 
+occlusions.
+3.3. Multi-view compensation tracking and counting network
+In complex scenarios, real-time multi-object tracking and counting 
+often encounter multiple interferences such as occlusion, motion dy­
+namics, and viewpoint variations. To overcome the limitations of 
+traditional approaches, this study introduces the Deep OC-SORT algo­
+rithm and proposes a multi-view compensation (MVC) method. By 
+integrating multiple collaborative modules, the robustness and accuracy 
+of both tracking and counting are significantly enhanced.
+3.3.1. Deep OC-SORT algorithm
+Deep OC-SORT is a multi-object tracking algorithm that integrates 
+deep learning with Kalman filtering. The algorithm comprises three key 
+modules: Camera Motion Compensation (CMC), Dynamic Appearance 
+(DA), and Adaptive Weighting (AW). These modules are cascaded to 
+enable real-time tracking in dynamic scenes. The algorithm utilizes a 
+pre-trained convolutional neural network to extract target appearance 
+descriptors and fuses appearance information with motion cues through 
+weighted similarity measures. During data association, the Hungarian 
+algorithm is employed to solve the optimal assignment problem, while 
+Kalman filtering enhances robustness in tracking fast-moving objects.
+After the object detector produces a set of bounding boxes from a 
+single frame, the DA module refines the detection results by extracting 
+highly discriminative Re-Identification (ReID) features using a deep 
+neural network, and constructing target appearance representation 
+vectors. Existing trajectories are predicted using Kalman filtering, after 
+which the CMC module applies an affine transformation matrix to 
+geometrically correct the predicted states, thereby mitigating state drift 
+caused by camera motion and enabling more accurate motion estima­
+tion. Finally, the AW module dynamically adjusts the fusion weights 
+between motion information (Mahalanobis distance) and appearance 
+information (cosine distance) based on the uncertainty represented by 
+the covariance matrix output from the Kalman filter. This results in an 
+optimized association cost matrix, thereby improving data association 
+accuracy in complex scenarios. The overall pipeline is illustrated in 
+Fig. 7.
+3.3.2. Multi-view compensation method
+To address the issues of false detections and missed detections during 
+inspection robot operations, this study proposes an algorithmic frame­
+work based on multi-view compensation (MVC). By performing real- 
+time multi-view cooperative detection and tracking on the video 
+streams captured by the robot, the method significantly improves 
+counting accuracy within continuous spatial regions. As illustrated in 
+Fig. 8, the morphological features of the same target in two-dimensional 
+images vary markedly due to differences in spatial position. Therefore, 
+the detection area in this study is divided into three subregions located 
+at different positions. The MVC method partitions each frame into 
+distinct regions and performs multi-view cooperative detection and 
+compensation, thereby decomposing the complex global multi-object 
+tracking task into a set of parallel local subtasks.
+The implementation of the MVC method proceeds as follows: first, a 
+spatial partitioning module generates K adjacent subregions; second, 
+each frame is processed by the cascaded network to produce unified 
+outputs for ID assignment; finally, in the cross-view compensation 
+module, contextual information across subregions is utilized to refine 
+counting decisions. The method is built upon two key principles: (1) 
+Local Appearance Consistency - by exploiting the fact that target 
+Fig. 7. The pipeline of Deep OC-SORT for tomato detection, tracking 
+and counting.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+6 
+
+projection deformations remain nearly invariant within a limited spatial 
+neighborhood, the stringent requirement for long-term tracking stability 
+is relaxed to a weaker constraint on local tracking stability, thereby 
+effectively suppressing identity-switch errors caused by long-distance 
+target movement; and (2) Multi-View Redundant Complementarity — 
+by performing independent detection within each subregion, targets 
+occluded in one view can be effectively detected in other complemen­
+tary views, and cooperative counting across the three regions substan­
+tially reduces missed detections while enhancing algorithmic 
+robustness. Within each subregion, the system detects target IDs, and 
+whether an ID changes is determined by a comprehensive cost matrix. 
+This matrix fuses motion information (Mahalanobis distance) and 
+appearance feature similarity (cosine distance), and the optimal 
+assignment is solved using the Hungarian algorithm. To ensure tracking 
+quality, a detection confidence threshold is set to 0.5: only detections 
+with confidence higher than 0.5 are fed into the tracker; low‑confidence 
+detections are directly filtered out, reducing false alarms. Additionally, 
+an IoU matching threshold of 0.3 is defined: when the Intersection over 
+Union (IoU) of two bounding boxes exceeds 0.3, the algorithm considers 
+them as potentially the same object and allows subsequent identity 
+matching. If the IoU is equal to or below 0.3, they are treated as different 
+targets and no association is performed. Under short-distance tracking 
+conditions, where the effects of occlusion and illumination variation are 
+relatively small, the target ID remains stable without switching, thereby 
+enabling stable tracking over short ranges.
+The Deep OC-SORT algorithm exhibits clear limitations when 
+handling multi-target scenarios with complex backgrounds and highly 
+variable target postures. The integration of the MVC method effectively 
+addresses these deficiencies by employing a multi-region parallel 
+detection and counting strategy. This not only mitigates false and missed 
+detections caused by local occlusions or restricted viewpoints but also 
+improves adaptability and accuracy in dense fruit distributions and 
+complex greenhouse scenes with severe background interference, 
+enabling a more comprehensive and precise assessment of tomato pro­
+duction conditions in greenhouses.
+3.4. Edge device deployment
+The greenhouse inspection robot deployed is equipped with the 
+Jetson Orin Nano as its main control unit—an edge computing device 
+developed by NVIDIA that combines low power consumption with high- 
+performance AI inference and computational capability. To ensure 
+efficient operation under resource-constrained hardware conditions, 
+this study applies lightweight architecture optimization and parameter 
+tuning to both the backbone and detection head of the model, thereby 
+achieving high detection performance while maintaining computational 
+efficiency. Furthermore, TensorRT is employed to accelerate model 
+inference. Techniques such as weight and activation precision calibra­
+tion, layer and tensor fusion, and multi-stream execution are utilized to 
+significantly enhance inference performance without compromising 
+accuracy. The model is first converted from ONNX format to a TensorRT 
+engine using the trtexec command-line tool provided by TensorRT, and 
+then deployed for inference using TensorRT Runtimes. The deployment 
+workflow of the developed multi-task cascaded neural network on the 
+edge device is illustrated in Fig. 9.
+4. Result and analysis
+4.1. Model training and evaluation
+4.1.1. Experiment environment
+This study adopts a cloud-based training and edge-side testing 
+strategy, in which model training is conducted on a cloud server, while 
+testing and deployment are performed on a local PC. To ensure consis­
+tency across experimental conditions, the hardware configurations are 
+closely matched. The input image size for the model is set to 640 × 640 
+pixels. Considering the influence of model depth and width on the 
+number of parameters and computational complexity, the batch size is 
+Fig. 8. Principle of the Multi-View Compensation (MVC) method based on spatial partitioning and redundant feature complementarity.
+Fig. 9. Illustration of the deployment process and practical performance 
+demonstration on the edge device Jetson Orin Nano.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+7 
+
+set to 64, with an initial learning rate of 0.00672. The momentum and 
+weight decay coefficients are configured to 0.86304 and 0.00241, 
+respectively. To reduce the risk of overfitting, an early stopping mech­
+anism is employed: training is automatically terminated if the mean 
+Average Precision (mAP) does not exhibit a significant improvement 
+over 50 consecutive epochs. The experimental dataset is based on a self- 
+constructed cherry tomato dataset, and a transfer learning approach is 
+adopted to enhance both training efficiency and model performance.
+4.1.2. Evaluation indicators
+To comprehensively evaluate the performance of the proposed 
+model, this study adopts a range of evaluation indicators covering both 
+object detection and object tracking and counting. 
+(1) Object Detection Indicators. For detection performance, the 
+following indicators are selected: Precision, Recall, F1 Score, 
+mAP@0.5, Model Size, Number of Parameters and FLOPs.
+Precision (P) measures the proportion of correctly predicted positive 
+samples among all positive predictions, defined as: 
+P =
+TP
+TP + FP
+(6) 
+where TP (True Positive) denotes correctly identified positive samples, 
+and FP (False Positive) denotes negative samples incorrectly predicted as 
+positive.
+Recall (R) assesses the model’s ability to detect all actual positive 
+samples: 
+R =
+TP
+TP + FN
+(7) 
+where FN (False Negative) refers to positive samples incorrectly pre­
+dicted as negative.
+Mean Average Precision (mAP) is used as the primary indicator of 
+object detection performance. It reflects the average precision across all 
+classes at an IoU threshold of 0.5, providing a direct comparison of 
+detection effectiveness: 
+AP =
+∫1
+0 P(R)dr
+(8) 
+mAP = 1
+n
+∑n
+1 AP
+(9) 
+F1 Score offers a balanced assessment of model performance by 
+harmonizing Precision and Recall: 
+F1 = 2 × P × R
+P + R
+(10) 
+FLOPs represent the computational cost and complexity of the 
+model, typically measured in GFLOPs. Number of Parameters and Model 
+Size are critical indicators of model complexity, memory footprint, and 
+suitability for real-time deployment on edge devices. 
+(2) Object Tracking and Counting Indicators. For tracking and 
+counting performance, three commonly used indicators are 
+employed: MOTA, HOTA, and IDF1.
+Multiple Object Tracking Accuracy (MOTA) combines false nega­
+tives, false positives, and identity switches to evaluate overall tracking 
+performance: 
+MOTA = 1 −|FN| + |FP| + |IDSW|
+|GT|
+(11) 
+where FN is the number of missed detections, FP the number of false 
+positives, IDSW the number of identity switches, and GT the total 
+number of ground truth targets.
+Higher Order Tracking Accuracy (HOTA) provides a balanced 
+assessment of both detection and association accuracy. It is calculated 
+as: 
+HOTA =̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+∑
+C∈{TP}A(c)
+|TP| + |FN| + |FP|
+√
+(12) 
+where A(c) represents the accuracy at each association threshold c.
+The ID F1 Score (IDF1) measures the accuracy of identity assignment 
+by incorporating both ID precision and recall: 
+IDF1 =
+2⋅IDTP
+2⋅IDTP + IDFP + IDFN
+(13) 
+where IDTP is the number of correctly identified trajectories, IDFP de­
+notes ID mismatches, and IDFN refers to unmatched ground truth tracks.
+Mean Absolute Error (MAE) quantifies the average of the absolute 
+differences between predicted and true values across all individual 
+samples: 
+MAE = 1
+N
+∑
+N
+i=1
+|yi −̂ yi|
+(14) 
+where N is the total number of samples. yi is the Ground Truth (GT) 
+value for the i th sample ̂yi is the predicted value for the i th sample. |yi −̂
+yi| the Absolute Error (AE) for the i th sample.
+Root Mean Square Error (RMSE) measures the square root of the 
+average of the squared differences between predicted and true values 
+RMSE =̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+1
+N
+∑
+N
+i=1
+(yi −̂ yi)2
+√
+√
+√
+√
+(15) 
+where 
+(
+yi −̂ yi
+)2 is the Squared Error (SE) for the i th sample.
+Weighted Mean Absolute Error (WMAE) is a variant of MAE that 
+assigns different weights or levels of importance to the error of each 
+sample when calculating the average absolute error 
+WMAE =
+∑
+N
+i=1
+wi × |yi −̂ yi|
+∑
+N
+i=1
+wi
+(16) 
+where wi is the weight assigned to the i th sample. wi ×⃒⃒yi −̂ yi⃒⃒is the 
+Weighted Absolute Error for the i th sample. ∑N
+i=1 wi is the sum of all 
+weights.
+Counting Precision is defined a 1 −
+|PT−GT|
+GT
+, expressed as a percentage. 
+It measures the relative accuracy of the final count independent of 
+identity association.
+4.2. Result analysis of model training
+During robotic inspection, performance is often influenced by factors 
+such as occlusion, illumination variability, and other environmental 
+disturbances. The mean Average Precision (mAP) serves as a compre­
+hensive metric to evaluate the model’s effectiveness under such complex 
+conditions. In real-world operation scenarios, challenges such as back­
+ground clutter and dense fruit overlap impose a dual requirement on the 
+detection model: accurately identifying all fruits ("no misses") while 
+avoiding false identification of non-fruit objects ("no false positives"). A 
+low Recall would lead to underestimation of crop yield, whereas a low 
+Precision could result in yield overestimation. The F1 Score, as a har­
+monic mean of Precision and Recall, provides an effective measure of 
+how well the model balances these two objectives. Consequently, this 
+study places particular emphasis on analyzing both mAP and F1 Score to 
+comprehensively evaluate model performance.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+8 
+
+As shown in Fig. 10, a comparative analysis between Model 6 and the 
+baseline Model 0 reveals that the F1 Score curve of Model 6 is slightly 
+lower during the early stages of training. However, as training pro­
+gresses, Model 6 demonstrates improved stability in the mid-training 
+phase, validating its robustness under various complex conditions. 
+Notably, Model 6 achieves a higher peak performance during the later 
+training stages, suggesting further optimization potential. With respect 
+to mAP, although Model 0 shows strong early-stage performance, it 
+exhibits overfitting in the mid-training phase. By contrast, while Model 
+6 initially underperforms slightly, it eventually matches and surpasses 
+the peak mAP of Model 0 in subsequent training epochs. This behavior 
+highlights the superior generalization capability and training stability of 
+Model 6. Overall, across multiple training rounds, Model 6 consistently 
+exhibits stronger comprehensive performance and better adaptability to 
+complex visual environments.
+To achieve accurate fruit localization, the metric Distance Focal Loss 
+(DFL) is specifically emphasized in this study. DFL quantifies the local­
+ization precision of detected objects, and is particularly relevant to the 
+accuracy of fruit counting and tracking. Accordingly, this study analyzes 
+and compares the values of train/dfl_loss and val/dfl_loss, corresponding 
+to the training and validation sets, respectively, to validate the meth­
+odological reliability. The results indicate that by epoch 200, both 
+Model 0 and Model 6 show highly similar dfl_loss values, suggesting that 
+the adopted detection strategy does not introduce additional localiza­
+tion error during fruit counting. This indirectly confirms the effective­
+ness and stability of the proposed method in accurately localizing 
+tomato positions.
+4.3. Ablation and comparison experiments
+To validate the effectiveness of the proposed optimization strategies, 
+a series of experiments were conducted using Precision, Recall, 
+mAP@50, mAP@50–95, Model Size, Number of Parameters, and 
+GFLOPs as evaluation indicators. The results of the ablation experiment 
+are presented in Table 1.
+Experimental results indicate that Model 1, by incorporating a 
+lightweight module, achieved a significant reduction in both number of 
+parameters and computational cost, while simultaneously improving the 
+mAP@50 score. This result suggests that the lightweight design provides 
+targeted improvements for object detection in occluded environments. 
+Model 2, which employs a novel backbone replacement strategy, not 
+only enhanced detection precision substantially but also achieved sig­
+nificant reductions in model parameters and computation. In addition, it 
+maintained high performance across all key evaluation metrics. After 
+integrating the LDAH module, Model 4 demonstrated improved Recall 
+performance during the lightweight transformation process, further 
+validating the effectiveness of this module design. A comparison be­
+tween Model 5 and Model 6 reveals that the introduction of an attention 
+mechanism can provide performance gains without increasing the 
+number of parameters or computational overhead, highlighting its value 
+in efficiency-sensitive scenarios.
+Compared to Model 0 through Model 4, Model 6 stands out in terms 
+of parameter efficiency, with a 38.9% reduction in the number of pa­
+rameters compared to the baseline Model 0 (from 3.16 million to 1.93 
+million). Correspondingly, the model size decreased from 6.24 MB to 
+Fig. 10. The training results of the baseline model and the proposed model on F1_Score, mAP50, val-loss, train loss.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+9 
+
+3.98 MB, a 36.2% reduction, and the GFLOPs dropped by 40.4%, making 
+it the most computationally efficient among all models tested. This 
+lightweight architecture not only improves training efficiency but also 
+greatly reduces the demands for storage and computational resources, 
+thereby enhancing its deployability on edge devices. In terms of per­
+formance, Model 6 outperforms Model 0 in mAP while consuming fewer 
+resources during both inference and training, making it especially suit­
+able for real-time applications with limited hardware capacity. Addi­
+tionally, the introduction of the SimAM module in Model 6 led to 
+superior performance over Model 5 in terms of Precision, Recall, and 
+mAP@50, indicating that SimAM significantly contributes to noise 
+suppression and enhancement of key feature representation. Notably, 
+despite its reduced computational complexity and model size, Model 6 
+maintains a level of Precision comparable to the baseline Model 0. 
+Although there is a slight decrease in Recall, the values of mAP@50 and 
+mAP@50–95 remain relatively stable. This confirms the reliability of 
+Model 6 in retaining detection accuracy during the lightweight 
+transformation.
+As illustrated in Fig. 11, Model 6 achieves substantial improvements 
+in lightweight metrics such as model size, computational cost, and 
+number of parameters. More importantly, it attains a slight improve­
+ment in the key metric mAP for tomato yield estimation while main­
+taining its lightweight nature, thereby effectively balancing model 
+compactness and detection performance optimization.
+To further validate the superiority of our model, we compared it with 
+several representative detectors, including SSD, YOLOv8n, MobileNe­
+t‑YOLO, and YOLOv9t, under identical dataset and training settings. As 
+summarized in Table 2, the proposed model achieves a competitive 
+mAP@0.5 of 90.8%, slightly lower than YOLOv9t (91.2%) but on par 
+with YOLOv8n (90.5%), and substantially higher than MobileNet‑YOLO 
+(88.8%) and SSD (56.3%). More importantly, our model achieves the 
+smallest model size (3.98 MB), the lowest computational cost (5.3 
+GFLOPs), and the fewest parameters (1.94 M) among all compared 
+methods. Compared to YOLOv8n, our model reduces model size by 36%, 
+FLOPs by 40%, and parameters by 38%. These results demonstrate that 
+the proposed G‑FConv + L‑MFA + LADH architecture strikes an excel­
+lent balance between detection accuracy and lightweight efficiency, 
+making it particularly suitable for real‑time deployment on edge in­
+spection robots.
+4.4. Visualization analysis of detection results
+To further investigate the model’s decision-making mechanism and 
+enhance its interpretability, this study employed Gradient-weighted 
+Class Activation Mapping (Grad-CAM) [26] to visualize the regions of 
+interest during the tomato detection task. Grad-CAM generates 
+class-discriminative heatmaps that highlight the spatial regions 
+contributing most significantly to the model’s predictions, thereby 
+providing intuitive visual evidence for evaluating the rationality of 
+decision-making and diagnosing potential errors.
+The visualization results are presented in Fig. 12. Overall, both the 
+proposed improved model and the baseline model are capable of 
+focusing their attention on tomato target regions; however, the 
+improved model demonstrates a clear performance advantage. Under 
+normal illumination conditions, the activation regions of the improved 
+model are more concentrated and primarily centered on the core areas of 
+tomato clusters, whereas the baseline model exhibits relatively 
+dispersed and blurred activations. In low-light scenarios, the improved 
+model maintains strong and well-defined responses, while the baseline 
+model shows weakened activations and incomplete coverage. Under 
+strong illumination conditions, the improved model accurately distin­
+guishes and localizes multiple independent tomato clusters, whereas the 
+baseline model is more susceptible to background interference. In 
+summary, the improved model exhibits superior attention concentration 
+capability and robustness across diverse environmental conditions. 
+Although some sensitivity persists under extremely complex scenarios, 
+its overall performance remains within the acceptable operational range 
+Table 1 
+Results of ablation experiment.
+Models
+CG
+G-FConv
+SimAM
+LADH
+P/%
+Recall/%
+mAP50/%
+mAP50 
+−95/%
+Size/MB
+Params/106
+GFlops
+Model0 
+(Baseline)
+—
+—
+—
+—
+88.3
+86.6
+90.5
+61.3
+6.24
+3.157200
+8.9
+Model1
+√
+—
+—
+—
+88.0
+86.7
+91.2
+61.0
+5.37
+2.691773
+7.5
+Model2
+—
+√
+—
+—
+88.7
+85.8
+91.3
+61.5
+4.08
+1.996440
+6.7
+Model3
+—
+—
+√
+—
+88.0
+86.5
+90.9
+61.2
+6.24
+3.157200
+8.9
+Model4
+—
+—
+—
+√
+87.8
+87.2
+91.3
+61.4
+6.21
+3.139968
+8.1
+Model5
+√
+√
+—
+√
+86.8
+85.8
+90.3
+59.1
+3.98
+1.939637
+5.3
+Model6 (Our)
+√
+√
+√
+√
+88.3
+86.2
+90.8
+59.8
+3.98
+1.939637
+5.3
+Fig. 11. Comparison of key indicators for different models.
+Table 2 
+Performance comparison with different detectors.
+Model
+Precision
+mAP@0.5
+Parameters 
+(Million)
+FLOPs 
+(G)
+size 
+(MB)
+SSD
+83.8
+56.3
+23.880
+30.5
+99.1
+YOLOv8n
+88.3
+90.5
+3.1572
+8.9
+6.24
+MobileNet- 
+YOLO
+87.2
+88.8
+2.5004
+6.4
+5.04
+YOLOv9t
+88.4
+91.2
+2.1287
+8.5
+4.43
+Proposed
+88.3
+90.8
+1.9396
+5.3
+3.98
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+10 
+
+for greenhouse inspection tasks.
+4.5. Comparative analysis of tracking and counting results
+In this study, a custom dataset designed for tomato tracking tests was 
+annotated with ID labels using the DarkLabel tool. The model’s tracking 
+performance was evaluated using four metrics: MOTA, HOTA, IDF1, and 
+DetA (detection accuracy). The results are summarized Table 3. In 
+crowded greenhouse scenes, conventional multi‑object tracking metrics 
+such as MOTA, HOTA, and IDF1 are strongly penalized by frequent 
+occlusions and reappearances, often yielding low or even negative 
+values. For example, a temporarily occluded fruit that is later re‑de­
+tected is counted as both a false negative (during occlusion) and a false 
+positive (upon reappearance), causing rapid error accumulation that 
+does not necessarily reflect counting performance.Therefore, we place 
+greater emphasis on DetA, which measures detection quality indepen­
+dently of identity association. As shown in Table 3, the proposed model 
+achieves a DetA of 71.5%, outperforming the baseline (68.2%). This 
+3.3‑point improvement confirms that our lightweight detection archi­
+tecture (G‑FConv + L‑MFA + LADH + SimAM) enhances fruit locali­
+zation robustness under challenging greenhouse conditions.Although 
+the HOTA and IDF1 scores remain relatively low (8.56% and 11.05%, 
+respectively) due to severe occlusion, dense fruit clustering, and camera 
+motion, the improved DetA demonstrates that the primary bottleneck 
+lies in association, not detection – a key motivation for our multi‑view 
+Fig. 12. Grad-CAM Visualization of Model Focus Across Diverse Scenarios. This figure presents a comparative analysis of visual heatmaps generated by Grad-CAM 
+for the Baseline and Proposed models, illustrating feature attention under varied environmental conditions.
+Table 3 
+Multi-object tracking performance evaluation.
+Model
+MOTA/%
+HOTA/%
+IDF/%
+DetA /%
+Baseline
+−8.97
+8.36
+10.47
+68.2
+Our
+−8.77
+8.56
+11.05
+71.5
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+11 
+
+compensation (MVC) strategy.
+To validate the effectiveness of the proposed multi-region compen­
+sation strategy, this study evaluated SVC, MVC, and Deep OC-SORT 
+across six distinct scenarios. The experimental results are presented in 
+Table 4. The findings indicate that both compensation-based methods 
+(SVC and MVC) significantly outperform the baseline tracking method, 
+Deep OC-SORT, in counting performance. Specifically, the baseline 
+method Deep OC-SORT exhibits substantial counting deviations, with a 
+mean absolute error (MAE) as high as 595.03 and a root mean square 
+error (RMSE) of 644.44. These results suggest that the baseline approach 
+struggles to handle ID switching and duplicate counting in dense and 
+heavily occluded environments. In sharp contrast, the adoption of 
+compensation strategies in SVC and MVC leads to remarkable perfor­
+mance improvements, reducing the error values to approximately one- 
+twentieth of those observed in Deep OC-SORT and achieving results 
+closely aligned with the ground truth (GT). Furthermore, compared with 
+the single-view compensation method (SVC), the multi-view compen­
+sation method (MVC) achieves lower MAE (26.11) and RMSE (30.50), 
+corresponding to reductions of 15% and 10%, respectively. These results 
+indicate that the MVC framework, through its multi-region compensa­
+tion mechanism, effectively mitigates errors that remain uncorrected in 
+SVC due to the inherent limitations of a single viewpoint. Even in 
+severely occluded and highly dense scenarios (e.g., Seg 5 and Seg 6), the 
+proposed method maintains relatively low error levels. The multi-view 
+compensation mechanism effectively addresses tracking failures 
+caused by occlusion and appearance similarity, thereby substantially 
+enhancing the final counting accuracy.
+To investigate the impact of frame rate on tracking performance, this 
+study conducted a comparative analysis of the counting performance of 
+the SVC and MVC methods under three frame rate settings: 10 FPS, 20 
+FPS, and 30 FPS. The detailed results are presented in Table 5. The 
+experimental data indicate that as the frame rate increases from 10 FPS 
+to 30 FPS, the mean absolute error (MAE) of SVC and MVC decreases by 
+25.8% and 43.7%, respectively. These findings demonstrate that 
+tracking accuracy improves with higher frame rates. This improvement 
+occurs because a higher frame rate reduces inter‑frame displacement of 
+targets, thereby lowering the probability of ID switches and missed de­
+tections, which in turn enhances counting stability. This improvement 
+can be attributed to the reduced inter-frame motion variation at higher 
+frame rates, which enables the model to obtain more stable positional 
+information, thereby effectively reducing false negatives (FN) and 
+enhancing counting robustness. Furthermore, MVC consistently out­
+performs SVC across all frame rate settings. In complex scenarios under 
+low frame rate conditions (10 FPS), MVC achieves a 15.3% reduction in 
+MAE and a 20.0% reduction in root mean square error (RMSE) 
+compared with SVC. Under high frame rate conditions (30 FPS), MVC 
+attains its best performance (MAE = 38.33; RMSE = 38.41). Relative to 
+SVC, MAE and RMSE are reduced by 35.8% and 39.5%, respectively, 
+further widening the performance gap. These results confirm that the 
+MVC method effectively compensates for missed detections in single- 
+view settings through multi-view feature fusion, demonstrating strong 
+robustness and environmental adaptability.
+In complex greenhouse environments, illumination variation con­
+stitutes one of the critical factors affecting crop counting performance. 
+To evaluate the adaptability of the proposed model under different 
+greenhouse production scenarios, two distinct video sequences were 
+selected, and comparative experiments were conducted under five 
+artificially controlled illumination conditions (50%, 75%, 100%, 125%, 
+and 150%). As illustrated in the radar chart in Fig. 13, both counting 
+methods exhibit moderate performance under low-light conditions, 
+which may be attributed to the inherent accuracy limitations of the 
+baseline detection model. However, under high-illumination conditions, 
+and even in overexposed scenarios (e.g., brightness levels set to 125% 
+and 150%), the MVC algorithm significantly outperforms SVC. These 
+experimental results demonstrate that the MVC algorithm maintains 
+superior robustness and adaptability under strong and dynamically 
+varying illumination conditions.
+To evaluate the counting performance across different target cate­
+gories, this study conducted counting experiments on two custom- 
+defined classes—ripe tomatoes (“rt”) and unripe tomatoes (“ut”)— 
+across six distinct scenarios. The results are presented in Table 6. As 
+shown in the table, the baseline model exhibits substantial deviations in 
+counting performance for both categories, with a weighted mean abso­
+lute error (WMAE) as high as 598.08. In contrast, the proposed SVC and 
+MVC methods produce counting results that are considerably closer to 
+the ground truth for both maturity levels. Notably, the MVC algorithm 
+demonstrates superior counting accuracy for the ripe category, 
+achieving a WMAE of only 20.10. Overall, the MVC algorithm exhibits 
+clear advantages in detection and counting performance across different 
+fruit maturity stages. It is particularly well-suited for yield estimation 
+tasks targeting mature fruits, where higher accuracy and robustness are 
+required.
+To evaluate the counting performance of the proposed model under 
+practical production conditions, model predictions were conducted in a 
+real greenhouse environment, and the predicted results were subjected 
+to regression analysis against the ground truth (GT). The results are 
+presented in Fig. 14. As shown in the figure, the data points are closely 
+distributed around the diagonal line, indicating a strong linear corre­
+lation between the predicted and actual values (R² = 0.99). The model 
+maintains high counting consistency across varying fruit densities and 
+degrees of occlusion. Furthermore, the fitted linear regression equation 
+is Y = 0.926X−6.1605, where the slope (0.926) is close to the ideal value 
+of 1. This further confirms the strong agreement between the predicted 
+and ground truth values. In summary, the proposed model demonstrates 
+high accuracy and reliability in tomato yield estimation tasks and sat­
+isfies the practical application requirements of real-world greenhouse 
+production environments.
+4.6. Comparison among multiple counting methods and error source 
+analysis
+In the analysis of MOT metrics, it was found that unstructured 
+scenes, camera motion, position and pose, and other factors have a 
+serious impact on target tracking performance. To provide an intuitive 
+Table 4 
+The results of the comprehensive video testing and counting of multiple actual scenarios.
+Video
+GT
+SVC
+MVC
+Deep OC-SORT
+Count
+MI
+FP
+Count
+MI
+FP
+Count
+MI
+FP
+Seg 1
+58
+50
+2
+3.47%
+50
+2
+3.47%
+189
+132
+228.03%
+Seg 2
+105
+96
+3
+2.85%
+102
+2
+1.90%
+559
+453
+430.38%
+Seg 3
+229
+203
+6
+2.62%
+214
+4
+1.75%
+908
+679
+296.29%
+Seg 4
+288
+251
+7
+2.43%
+251
+7
+2.43%
+1034
+746
+259.03%
+Seg 5
+343
+305
+8
+2.33%
+305
+8
+2.33%
+1254
+911
+265.29%
+Seg 6
+417
+387
+10
+2.40%
+395
+10
+2.40%
+1067
+650
+155.88%
+MAE
+​
+30.72
+26.11
+595.03
+RMSE
+​
+34.04
+30.50
+644.44
+Note: FP (False Positive rate) = MI / GT, where MI denotes misidentification in this counting method.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+12 
+
+comparison of the counting performance among the three methods—ID- 
+based counting, SVC, and MVC—five consecutive video frames were 
+randomly selected for evaluation. The results are presented in Fig. 15. 
+Under inter-frame analysis, yellow represents the original target ID, 
+while red represents ID switches. It can be observed that ID switches 
+occur from the first frame to the fifth frame due to various factors. Using 
+the original ID-based counting approach, the majority of targets were 
+successfully detected; however, instances of target loss occurred, leading 
+to unstable counting results. In contrast, both the SVC and MVC methods 
+achieved more accurate counting outcomes without missed counts, 
+demonstrating greater stability throughout the detection and counting 
+process. Compared with the SVC method, MVC incorporates a region- 
+based compensation strategy, in which the counting area is divided 
+into multiple independent subregions. Multi-view feature information is 
+then complementarily fused to mitigate counting fluctuations caused by 
+target tracking loss or ID switching under a single-view configuration. 
+When a target is temporarily lost within a specific region due to occlu­
+sion or ID switching, it can be re-detected and counted in adjacent re­
+gions, or counting errors can be reduced through boundary-based logical 
+constraints. By reducing sensitivity to ID loss, the MVC method signifi­
+cantly enhances reliability and precision in complex and dynamic 
+greenhouse tomato production environments.
+5. Discussion
+In response to the demand for accurate prediction of tomato yield, 
+Table 5 
+Comparative performance of compensation methods under varying frame rates.
+Video
+GT
+SVC
+MVC
+Count
+MI
+FP
+MAE
+RMSE
+Count
+MI
+FP
+MAE
+RMSE
+10FPS
+​
+​
+​
+​
+80.33
+88.3
+​
+​
+68
+70.69
+Video 1
+464
+342
+10
+2.16%
+380
+11
+2.89%
+Video 2
+392
+374
+33
+8.42%
+374
+33
+8.82%
+Video 3
+436
+405
+27
+6.19%
+405
+27
+6.67%
+20FPS
+​
+​
+​
+​
+63.67
+66.26
+​
+​
+51.33
+51.96
+Video 1
+464
+382
+7
+1.51%
+418
+12
+2.87%
+Video 2
+392
+350
+4
+1.02%
+355
+3
+0.85%
+Video 3
+436
+387
+7
+1.61%
+387
+7
+1.81%
+30FPS
+​
+​
+​
+​
+59.67
+63.47
+​
+​
+38.33
+38.41
+Video 1
+464
+379
+5
+1.08%
+431
+6
+1.39%
+Video 2
+392
+355
+4
+1.02%
+355
+4
+1.13%
+Video 3
+436
+395
+7
+1.61%
+408
+7
+1.72%
+Fig. 13. Comparative robustness of SVC and MVC under varied illumination.
+Table 6 
+Maturity-specific counting performance comparison.
+Video
+GT
+SVC
+MVC
+Deep OC-SORT
+ut
+rt
+ut
+rt
+ut
+rt
+ut
+rt
+Video1
+118
+206
+93
+180
+93
+184
+588
+708
+Video2
+104
+231
+82
+212
+82
+214
+652
+1119
+Video3
+204
+256
+172
+240
+172
+240
+1011
+903
+Video4
+172
+217
+143
+201
+143
+204
+800
+837
+Video5
+137
+262
+105
+246
+108
+248
+560
+1003
+Video6
+181
+244
+159
+226
+166
+226
+468
+641
+WMAE
+21.88
+20.10
+598.08
+Fig. 14. Ground truth versus estimated number of tomatoes per plot. The 
+horizontal axis refers to the number of tomatoes estimated by the proposed 
+model, and the vertical axis refers to the number of tomatoes that have been 
+manually counted.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+13 
+
+this study proposes a lightweight multi-task cascaded neural network 
+capable of real-time and precise detection, tracking, and counting of 
+tomatoes in complex greenhouse environments. By improving the 
+network architecture and optimizing parameters, the proposed method 
+effectively addresses issues such as high computational cost and 
+deployment on edge devices. A multi-view compensation strategy is 
+introduced to enhance the accuracy of tracking and counting under 
+challenging conditions such as occlusion, object overlap, and dynamic 
+scenes. Comparative experiments conducted under diverse scenarios, 
+illumination conditions, and frame rates (see Tables 4, 5, and Fig. 14) 
+validate the robustness of the proposed MVC method under complex 
+operating conditions. Furthermore, multi-category counting analysis 
+(see Table 6) demonstrates its significant advantage in classification- 
+based counting tasks involving fruits at different maturity stages. In 
+real production environments, the model’s predicted results were 
+compared with manual counting values, and linear regression analysis 
+(see Fig. 15) further confirmed the effectiveness and reliability of the 
+proposed method in practical application scenarios. In addition, 
+instance-level analysis based on consecutive video frames indicates that, 
+compared with SVC and Deep OC-SORT, the MVC method achieves 
+Fig. 15. Comparison of Counting Strategies Across Continuous Frames. This figure illustrates the counting results of five consecutive video frames, comparing the 
+baseline ID-Counting, Single-View Compensation (SVC), and the proposed Multi-View Compensation (MVC) method.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+14 
+
+superior counting performance in complex greenhouse environments.
+Compared with representative works in related domains, our method 
+offers distinct advantages. For lightweight edge detection, models such 
+as YOLOv8n and MobileNet‑YOLO achieve high accuracy but either 
+have larger model sizes or lack an integrated counting module. As shown 
+in Table 2, our model achieves the smallest size (3.98 MB) and lowest 
+computational cost (5.3 GFLOPs) while maintaining competitive mAP 
+(90.8%). For multi‑view crop phenotyping, many existing methods rely 
+on 3D reconstruction from multiple calibrated cameras, which is 
+computationally expensive and difficult to deploy on a moving robot. By 
+contrast, our MVC works directly on 2D video streams from a single 
+camera, using spatial partitioning and confidence‑weighted fusion to 
+reduce counting errors by 95.6% without 3D reconstruction. For agri­
+cultural robot perception, complete solutions often focus on detection 
+and segmentation but do not specifically address the multi‑view 
+counting problem under severe occlusion. However, our framework 
+uniquely combines a lightweight detection backbone, an occlusion‑ro­
+bust MVC counter, and a systematic error analysis, making it suitable for 
+real‑time yield estimation in greenhouse inspection robots.
+In terms of real-time detection, the model significantly reduces the 
+number of parameters while maintaining detection accuracy. This is 
+achieved by integrating lightweight convolutional modules and atten­
+tion mechanisms deeply into the backbone network, thereby effectively 
+compressing computational complexity. Although the proposed method 
+already achieves promising performance in detection, there remains 
+room for improvement, such as expanding the dataset to include more 
+complex environmental scenarios to enhance model robustness. 
+Furthermore, the lightweight design involves a trade-off between model 
+size and the extraction of fine-grained features, which may lead to 
+reduced sensitivity in identifying extremely small or heavily blurred 
+targets in the far field. Future work could explore more adaptive feature 
+fusion techniques to maintain high precision across all scales without 
+significant computational overhead.
+For tracking and counting tasks, the study addresses the ID switch 
+issue inherent in Deep OC-SORT by introducing the MVC method. 
+Through a region-based divide-and-conquer strategy, this approach 
+enables multi-angle feature complementation, substantially reducing 
+counting errors in complex greenhouse scenes. Nevertheless, challenges 
+such as ID switches caused by occlusion and overlapping, as well as 
+positional state shifts of tomatoes due to camera motion across consec­
+utive frames, still require further refinement and optimization. Addi­
+tionally, the current multi-view compensation (MVC) strategy relies on 
+fixed regional partitions, which might lack flexibility when the inspec­
+tion robot undergoes non-uniform motion or drastic vibrations. The 
+cumulative error in counting over extremely long planting rows also 
+remains a technical bottleneck. Integrating inertial measurement units 
+(IMU) data with visual odometry could potentially mitigate these 
+motion-induced tracking failures in future iterations.
+6. Conclusion
+In response to the application requirements for multi-object real- 
+time detection and accurate counting of tomatoes in complex green­
+house environments, this study proposes a lightweight cascaded 
+framework integrating detection, tracking, counting, and compensation. 
+Experimental results demonstrate that the proposed network achieves 
+real-time processing performance of 31.3 FPS on an NVIDIA Jetson Orin 
+Nano edge device, while maintaining high detection accuracy (90.8%) 
+and counting precision (95.2%). In terms of model optimization, 
+architectural refinements and parameter compression reduced compu­
+tational cost to 5.3 GFLOPs (a 40.4% decrease) and shrank the model 
+size to 3.98 MB, significantly enhancing the feasibility of edge deploy­
+ment. The proposed MVC method utilizes a multi-view redundant 
+complementarity mechanism to significantly suppress miscounting 
+caused by identity switching. This approach effectively reduces the 
+counting error in dense and occluded scenarios by 95.6%. Validation in 
+real-world production settings confirmed a yield prediction accuracy of 
+93%, providing robust technical support for dynamic harvest planning 
+and supply chain loss reduction. The proposed method offers an inno­
+vative solution for tomato yield assessment in complex greenhouse en­
+vironments and can be extended to the detection of other crop 
+production scenarios, holding substantial theoretical significance and 
+practical application potential.
+Statement for studies in humans / animals
+This study does not involve any research related to humans or 
+animals.
+CRediT authorship contribution statement
+Xushuo Xing: Writing – original draft, Methodology, Investigation, 
+Formal analysis, Conceptualization. Jin Gao: Writing – review & edit­
+ing, Resources, Methodology, Funding acquisition. Xue Deng: Meth­
+odology. 
+Shubo 
+Wang: 
+Investigation. 
+Peng 
+Qi: 
+Resources, 
+Investigation. Fangyan Wang: Resources, Methodology. Xiuning Hou: 
+Writing – review & editing. Junfeng Gao: Writing – review & editing.
+Declaration of competing interest
+No conflict of interest exits in the submission of this manuscript, and 
+manuscript is approved by all authors for publication. I would like to 
+declare on behalf of my co-authors that the work described was original 
+research that has not been published previously, and not under 
+consideration for publication elsewhere, in whole or in part. All the 
+authors listed have approved the manuscript that is enclosed.
+Acknowledgments
+This research was founded by National Natural Science Foundation 
+of China (Grant No. 32401699), the Taishan Scholar Youth Expert 
+Project (Grant No. tsqn202306243) and the Shandong Provincial Nat­
+ural Science Foundation (Grant No. ZR2024QC084). The authors would 
+like to acknowledge all partners in this project who contributed to the 
+conducted work.
+Data availability
+The authors do not have permission to share data.
+References
+[1] WPTC, Production, 2024. https://www.wptc.to/production/ (accessed 5 February 
+2025).
+[2] M. Ariza-Sentis, S. Velez, R. Martinez-Pena, H. Baja, J. Valente, Object detection 
+and tracking in precision farming: a systematic review, Comput. Electron. Agric. 
+219 (2024) 108757, https://doi.org/10.1016/j.compag.2024.108757.
+[3] C. Liu, X. Lu, S. Ji, W. Geng, A fog level detection method based on image HSV 
+color histogram, 2014 IEEE International Conference on Progress in Informatics 
+and Computing, in: Proceedings of the 2014 International Conference on Progress 
+in Informatics and Computing (PIC), Shanghai, China, IEEE, 2014, pp. 373–377, 
+https://doi.org/10.1109/PIC.2014.6972360.
+[4] S. Biswas, D. Ghoshal, Blood cell detection using thresholding estimation based 
+watershed transformation with Sobel filter in frequency domain, Procedia Comput. 
+Sci. 89 (2016) 651–657, https://doi.org/10.1016/j.procs.2016.06.029.
+[5] S.H. Lee, M. Bang, K.H. Jung, K. Yi, An efficient selection of HOG feature for SVM 
+classification of vehicle, 2015 International Symposium on Consumer Electronics 
+(ISCE), in: Proceedings of the 2015 International Symposium on Consumer 
+Electronics (ISCE), 2015, pp. 1–2, https://doi.org/10.1109/ISCE.2015.7177766.
+[6] L. Guo, G.X. Zhang, P.S. Ge, L.H. Li, Pedestrian Tracking with HOG and Color 
+Histogram Features, 241-244, AMM, 2012, pp. 498–501, https://doi.org/10.4028/ 
+www.scientific.net/AMM.241-244.498.
+[7] L. Rakai, H. Song, S. Sun, W. Zhang, Y. Yang, Data association in multiple object 
+tracking: a survey of recent techniques, Expert Syst. Appl. 192 (2022) 116300, 
+https://doi.org/10.1016/j.eswa.2021.116300.
+[8] J. Cao, J. Pang, X. Weng, R. Khirodkar, K. Kitani, Observation-centric SORT: 
+rethinking SORT for robust multi-object tracking, in: Proceedings of the 2023 
+IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+15 
+
+Vancouver, BC, Canada, IEEE, 2023, pp. 9686–9696, https://doi.org/10.1109/ 
+CVPR52729.2023.00934.
+[9] G. Maggiolino, A. Ahmad, J. Cao, K. Kitani, Deep OC-sort: multi-pedestrian 
+tracking by adaptive re-identification, in: Proceedings of the 2023 IEEE 
+International Conference on Image Processing (ICIP), Kuala Lumpur, Malaysia, 
+IEEE, 2023, pp. 3025–3029, https://doi.org/10.1109/icip49359.2023.10222576. 
+Presented at the 2023 IEEE International Conference on Image Processing (ICIP).
+[10] S. Ghazal, A. Munir, W.S. Qureshi, Computer vision in smart agriculture and 
+precision farming: techniques and applications, Artif. Intell. Agric. 13 (2024) 
+64–83, https://doi.org/10.1016/j.aiia.2024.06.004.
+[11] R. Girshick, Fast R-CNN, 2015 IEEE International Conference on Computer Vision 
+(ICCV), in: Proceedings of the 2015 IEEE International Conference on Computer 
+Vision (ICCV), Santiago, Chile, IEEE, 2015, pp. 1440–1448, https://doi.org/ 
+10.1109/ICCV.2015.169.
+[12] Liu, W., Anguelov, D., Erhan, D., Szegedy, C., Reed, S., Fu, C.Y., Berg, A.C., 2016. 
+SSD: single shot MultiBox detector. pp. 21–37. https://doi.org/10.1007/978-3- 
+319-46448-0_2.
+[13] A. Fuentes, S. Yoon, S. Kim, D. Park, A robust deep-learning-based detector for real- 
+time tomato plant diseases and pests recognition, Sensors 17 (2017) 2022, https:// 
+doi.org/10.3390/s17092022.
+[14] G.L. Tenorio, W. Caarls, Automatic visual estimation of tomato cluster maturity in 
+plant rows, Mach. Vis. Appl. 32 (2021), https://doi.org/10.1007/s00138-021- 
+01202-9.
+[15] J. Xu, F. Pan, X. Han, L. Wang, Y. Wang, W. Li, EdgeTrim-YOLO: improved trim 
+YOLO framework tailored for deployment on edge devices, in: 2024 4th 
+International Conference on Computer Communication and Artificial Intelligence 
+(CCAI), in: Proceedings of the 2024 4th International Conference on Computer 
+Communication and Artificial Intelligence (CCAI), Xi’an, China, IEEE, 2024, 
+pp. 113–118, https://doi.org/10.1109/ccai61966.2024.10602964.
+[16] R. Sapkota, D. Ahmed, M. Karkee, Comparing YOLOv8 and Mask R-CNN for 
+instance segmentation in complex orchard environments, Artif. Intell. Agric. 13 
+(2024) 84–99, https://doi.org/10.1016/j.aiia.2024.07.001.
+[17] Jin Gao, J. Zhang, F. Zhang, J. Gao, LACTA: a lightweight and accurate algorithm 
+for cherry tomato detection in unstructured environments, Expert Syst. Appl. 238 
+(2024) 122073, https://doi.org/10.1016/j.eswa.2023.122073.
+[18] A. Paul, R. Machavaram, D. Ambuj Kumar, H. Nagar, Smart solutions for capsicum 
+harvesting: unleashing the power of YOLO for detection, segmentation, growth 
+stage classification, counting, and real-time mobile identification, Comput. 
+Electron. Agric. 219 (2024) 108832, https://doi.org/10.1016/j. 
+compag.2024.108832.
+[19] T. Wang, J. Guo, B. Zhang, G. Yang, D. Li, Deploying AI on edge: advancement and 
+challenges in edge intelligence, Mathematics 13 (2025) 1878, https://doi.org/ 
+10.3390/math13111878.
+[20] Make Sense, 2022. https://www.makesense.ai/ (accessed 5 February 2025).
+[21] K. Han, Y. Wang, Q. Tian, J. Guo, C. Xu, C. Xu, GhostNet: more features from cheap 
+operations, 2020 IEEE/CVF Conference on Computer Vision and Pattern 
+Recognition (CVPR), in: Proceedings of the 2020 IEEE/CVF Conference on 
+Computer Vision and Pattern Recognition (CVPR), Seattle, WA, USA, IEEE, 2020, 
+pp. 1577–1586, https://doi.org/10.1109/cvpr42600.2020.00165.
+[22] J. Chen, S. Kao, H. He, W. Zhuo, S. Wen, C.H. Lee, S.H.G. Chan, Run, don’t walk: 
+chasing higher FLOPS for faster neural networks, 2023 IEEE/CVF Conference on 
+Computer Vision and Pattern Recognition (CVPR), in: Proceedings of the 2023 
+IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 
+Vancouver, BC, Canada, IEEE, 2023, pp. 12021–12031, https://doi.org/10.1109/ 
+cvpr52729.2023.01157.
+[23] T. Wu, S. Tang, R. Zhang, J. Cao, Y. Zhang, CGNet: a light-weight context guided 
+network for semantic segmentation, IEEE Trans. Image Process. 30 (2021) 
+1169–1179, https://doi.org/10.1109/tip.2020.3042065.
+[24] J. Zhang, Z. Chen, G. Yan, Y. Wang, B. Hu, Faster and lightweight: an improved 
+YOLOv5 object detector for remote sensing images, Remote Sens. 15 (2023) 4974, 
+https://doi.org/10.3390/rs15204974.
+[25] L. Yang, R.Y. Zhang, L. Li, X. Xie, SimAM: a simple, parameter-free attention 
+module for convolutional neural networks, in: Proceedings of the 38th 
+International Conference on Machine Learning, PMLR (2021) 11863–11874.
+[26] R.R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, D. Batra, Grad-CAM: 
+visual explanations from deep networks via gradient-based localization, in: 2017 
+IEEE International Conference on Computer Vision (ICCV), in: Proceedings of the 
+2017 IEEE International Conference on Computer Vision (ICCV), Venice, IEEE, 
+2017, pp. 618–626, https://doi.org/10.1109/iccv.2017.74.
+X. Xing et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 14 (2026) 102260 
+16 

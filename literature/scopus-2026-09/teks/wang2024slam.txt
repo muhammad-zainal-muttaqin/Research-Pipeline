@@ -1,0 +1,1917 @@
+Computers and Electronics in Agriculture 224 (2024) 109177
+Available online 29 June 2024
+0168-1699/© 2024 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies.
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+Original papers
+SLAM-PYE: Tightly coupled GNSS-binocular-inertial fusion for pitaya
+positioning, counting, and yield estimation
+Hongjie Wang, Xiangyu Hong, Linlin Qin ∗, Chun Shi, Gang Wu
+Department of Automation, University of Science and Technology of China, No. 443 Huangshan Road, Shushan District, Hefei, 230027, Anhui, China
+A R T I C L E
+I N F O
+Keywords:
+Dynamic fruit localization
+Radius estimation
+Probabilistic factor graph
+Sensor fusion
+Multi-view measurement
+A B S T R A C T
+Accurate pre-harvest yield estimation facilitates the more rational allocation of resources. Previous methods
+of estimating fruit position, either directly from hardware or through Structure from Motion (SFM), encounter
+challenges such as high hardware costs, extensive computational resources, and repetitive counting. In
+this paper, we present a graph optimization-based system that tightly couples dual-frequency GNSS raw
+measurements and visual-inertial data to estimate pitaya state, including its position and radius. Firstly,
+the system utilizes a coarse-to-fine approach to estimate the transformations on three axes and align three
+complementary sensors to a unified coordinate system, thus reducing the computational complexity of pure
+visual navigation. Secondly, for the first time, this system analytically calculates the pitaya state using
+the single-view measurement output from the binocular camera, replacing expensive lidar. It employs this
+calculated state as the initial value, then optimizes the pitaya state and eliminates outliers by multiple
+reprojection residuals from multi-view measurements. Next, for the first time, we integrate ionospheric-
+free pseudorange and Doppler residuals into the visual-inertial factor graph, thereby mitigating multipath
+interference in double-layer film greenhouse and providing a unique ID and position for each pitaya. Finally,
+we calculate the weight of each pitaya using a cubic polynomial based on its radius and estimate the overall
+greenhouse yield by summing all individual weights. In greenhouse experiments, our system achieved an Root
+Mean Square Error (RMSE) of 7 cm for position estimation, 7 mm for radius estimation, and a weight Mean
+Absolute Percentage Error (MAPE) of about 16% for individual pitaya. Overall, our system can provide cost-
+effective, real-time, non-repetitive, and low-missing pitaya yield estimation to assist greenhouse managers in
+decision-making.
+1. Introduction
+Cheap, fast, simple, and precise yield estimation is desired by agri-
+cultural practitioners. It plays a vital role in risk management through-
+out various stages of fruit production, including picking, warehousing,
+transportation, and sales. The traditional method of estimating orchard
+yield, which involves weighing fruits at multiple sampling points,
+faces challenges related to sampling quantity and distribution strate-
+gies (Wulfsohn et al., 2012). Subsequently, prior studies has proposed
+numerous automatic yield estimation systems, categorized as direct or
+indirect methods based on whether the measurement is specific to the
+individual fruit (He et al., 2022).
+The indirect method assesses orchard yield by constructing a sta-
+tistical model that incorporates various yield-related factors, includ-
+ing meteorological conditions, geographical conditions, management
+strategies, and plant characteristics. For instance, Obsie et al. (2020)
+∗Corresponding author.
+E-mail addresses: hjwang010@mail.ustc.edu.cn (H. Wang), hongxiangyu2001@mail.ustc.edu.cn (X. Hong), qinll@ustc.edu.cn (L. Qin),
+cshi@mail.ustc.edu.cn (C. Shi), wug@ustc.edu.cn (G. Wu).
+utilized the composition of bee species and meteorological conditions
+to predict blueberry yields, while Bai et al. (2021) employed mul-
+tispectral images and solar radiation data to predict apple yields.
+Similarly, Matese and Di Gennaro (2021) used multispectral images,
+meteorological conditions, and canopy volume to estimate grape yields.
+Although the indirect method does not directly measure specific fruits,
+it has the ability to provide a broad range of macroscopic estimates.
+However, assembling a comprehensive dataset of factors poses chal-
+lenges due to the multifaceted nature of yield determination. Fur-
+thermore, unique regional characteristics make generalizing statistical
+models across different areas challenging.
+Conversely, the direct method focuses on determining the size of
+each fruit, and then calculating the total yield of the orchard by
+aggregating individual weights (Miranda et al., 2023b). Dorj et al.
+(2017) utilized traditional image processing techniques for citrus detec-
+tion, whereas Santos et al. (2020) employed various neural networks
+https://doi.org/10.1016/j.compag.2024.109177
+Received 29 January 2024; Received in revised form 12 June 2024; Accepted 13 June 2024
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+2
+H. Wang et al.
+for grape detection and tracking. Li et al. (2023) enhanced YOLOv5
+for tomato detection and position estimation using a depth camera,
+although this hardware may suffer from instability under intense sun-
+light. To address this issue, Hou et al. (2022) used the kriging method
+to recover missing depth readings for citrus in case of camera measure-
+ment failure. In contrast, Kang et al. (2022) opted to utilize sunlight-
+insensitive lidar to assist the depth camera in achieving robust and
+accurate positioning of apples.
+Despite the evident limitations of the depth camera, it remains
+widely employed in radius estimation and fruit reconstruction tasks
+owing to its rich data and moderate cost. Yu et al. (2022) used a
+depth camera to measure the radius of pomegranate, achieving an
+error of 2.4 mm. Gong et al. (2022) employed a depth camera to
+attain a center positioning accuracy of 0.6 mm for partially occluded
+tomatoes. Additionally, they conducted an analysis of the correlation
+between lighting conditions and accuracy of depth camera. Miranda
+et al. (2023a) utilized a different depth camera that is more resilient
+to sunlight, to measure the radius of an unoccluded apple, achieving in
+a weight error of 5% by allometric modeling. To mitigate the impact
+of sunlight variations on measurements, Liu et al. (2023) integrated a
+depth camera and lidar, achieving in a position error of 21 mm for the
+apple in outdoor experiments. In terms of orchard reconstruction, Chen
+et al. (2021) opted to integrate a binocular camera and a robotic arm
+for reconstructing a dense map. Xiong et al. (2023) utilized OctoMap
+for optimizing the dense map, achieving an average memory saving rate
+of 97%.
+Additionally, apart from utilizing 3D measurement directly from
+hardware, software triangulation can recover 3D information lost in
+the projection. For example, Rakun et al. (2019) proposed a method to
+estimate the radius and distance of plants or fruits through image reg-
+istration and template matching. They introduce geometric principles
+and compare various pixel matching methods. In addition, Herrero-
+Huerta et al. (2015) used camera photos to reconstruct a 3D model
+of the grape bunch, achieving a coefficient of determination of 0.78
+between the estimated and actual weights. Luo et al. (2016) estimated
+the cutting point and volume of grape bunches through binocular
+matching and curve fitting. Operating at a speed of 0.7 seconds per
+frame, the errors for both height and diameter are less than 20 mm.
+Furthermore, Gené-Mola et al. (2021) employed Structure from Motion
+(SFM) and multi-view binocular technology to reconstruct complex
+point clouds over a wider range, utilizing multiple models to estimate
+the radius and visualize the fruit. This study confirmed that relying
+solely on vision enables high-precision radius estimation, with an error
+of approximately 4 mm and taking 46 min.
+Despite the compromises on equipment cost and computing re-
+sources, the aforementioned methods successfully achieve accurate
+estimation of fruit state within a limited region. If the device’s motion
+trajectory involves multiple passes forth and back, or if the fruit is
+occluded during single-view measurement, and the system lacks sensors
+for global position measurement, it may result in repetitive count-
+ing. Experiments conducted by Rapado-Rincón et al. (2023) utilize
+a robotic arm and lidar to track and count tomatoes. The results
+demonstrate that the multi-view measurement can effectively reduce
+counting errors caused by occlusion and ID switching. In addition, the
+integration of Global Navigation Satellite System (GNSS) measurements
+into the system ensures the uniqueness of the position in the map.
+However, multipath interference in the greenhouse makes fixing the
+solution challenging for Real-Time Kinematic positioning (RTK) en-
+gines and introduces jumps in the outcomes of Single-Point Positioning
+(SPP) algorithms (Pini et al., 2020). Mitigating multipath interference
+by linearly combining multiple raw GNSS measurements at various
+frequencies has been demonstrated to be effective (Kamatham and
+Vemuri, 2017). Moreover, the introduction of inertial data into the
+system ensures continuity between successive frames (Mur-Artal and
+Tardós, 2017b).
+Fig. 1. The measuring equipment utilized in the experiments. The digital caliper has
+an accuracy of 0.1 mm. The electronic scale has an accuracy of 1 g. A homemade
+binocular camera with a baseline of 55 mm, a depth camera with a built-in IMU, three
+GNSS antennas, and two GNSS receivers are affixed to the handheld platform. The
+image and depth output of the Intel RealSense D455 depth camera is blocked, and
+solely inertial data is output. In the arrangement from left to right, the three antennas
+are the UM982 secondary antenna, the ZED-F9P primary antenna, and the UM982
+primary antenna. Detailed specifications are presented in Table 2.
+Overall, the previous systems for estimating fruit yield have several
+limitations. Firstly, sensors capable of directly measuring the state of
+fruit are often expensive, while our system achieves this function by a
+combination of cost-effective sensors. Secondly, SFM can restore fine
+but unnecessary textures, while our system reconstructs only sparse
+mappoints and pitaya for real-time performance. Additionally, sensors
+lacking the capability of global position measurement may present
+varying relative positions for the same fruit, while our system integrates
+GNSS raw measurements, ensuring the unique position of each pitaya
+and avoiding repetitive counting. Lastly, the fixed perspective causes
+certain fruits to be obscured and ignored, whereas our system measures
+the pitaya radius from multiple perspectives, facilitating the exclusion
+of outliers and enhancing the accuracy. Therefore, the objective of our
+system is to tightly couple complementary sensors to obtain a unique
+and accurate estimation of position and radius, and ultimately estimate
+the yield of the entire greenhouse inexpensively and rapidly based on
+pitaya’s radius and quantity. The main contributions of this article are
+as follows.
+(a) A graph optimization-based approach that tightly couples Visual-
+Inertial (VI) data and dual-frequency GNSS raw measurements. It
+integrates ionospheric-free pseudoranges and Doppler residuals
+to the VI factor graph for the first time.
+(b) An innovative analytical algorithm for calculating pitaya posi-
+tion and radius from single-view measurement, as well as their
+reprojection residuals from multi-view measurements.
+(c) An empirical cubic polynomial with respect to radius for esti-
+mating the weight of individual pitaya.
+(d) An evaluation of the proposed system regarding its stability,
+accuracy, and real-time performance in both indoor and green-
+house experiments.
+2. System overview
+In terms of hardware, the system incorporates three types of het-
+erogeneous sensors. Given that pitaya typically has a ground clearance
+of less than one meter, roughly equivalent to the height of a standing
+person’s elbow, the sensors are mounted on a handheld platform,
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+3
+H. Wang et al.
+Fig. 2. System framework of SLAM-PYE. The main thread of the system is represented in red, the approaches related to GNSS raw measurement processing and pitaya state
+estimation are in green, and blue arrows indicate data flow.
+illustrated in
+Fig. 1. In terms of software, the system framework
+consists of seven interconnected threads, depicted in Fig. 2. The prepro-
+cessing thread receives raw measurements from hardware-synchronized
+sensors, processes the data, and then transmits crucial information to
+both feature tracking and pitaya tracking, as detailed in Section 3.1.
+Section 3.5 details the pitaya tracking thread, which determines the 2D
+position of the pitaya in the image. Concurrently, the feature tracking
+thread establishes the initial position and orientation of the device for
+Bundle Adjustment (BA).
+Considering the cost and stability, our system does not utilize
+hardware capable of directly measuring the distance, such as the depth
+camera, lidar, or robotic arm. Instead, we present an analytical algo-
+rithm in Sections 3.6 and 3.7 that calculates both the position and
+radius of the pitaya in a single-view measurement from the binocular
+camera. This algorithm provides the initial estimation for BA. Because
+of the variation in perspective and distance between the camera and the
+pitaya during movement, obtaining consistent state estimation across
+multi-view measurements poses a challenge when relying solely on an-
+alytical algorithms. We propose an approach that considers the pitaya
+state as variables and optimizes them through residuals from multi-
+view measurements. This approach is more effective in eliminating
+outliers and fusing pitaya from various perspectives, thereby leading
+to reliable and accurate estimation. Visual reprojection residuals on
+position and radius are also detailed in Sections 3.6 and 3.7.
+To prevent the same pitaya from being repeatedly counted due to
+occlusion or multiple occurrences, our system integrates GNSS raw
+measurements into BA. These measurements are specifically divided
+into the pseudorange factor that constrains the device’s position as
+detailed in Section 3.3, and Doppler factor that constrains the device’s
+velocity as detailed in Section 3.4. However, since sensor data is
+presented in various coordinate systems, it requires initialization and
+alignment before utilization. Consequently, in the local mapping thread
+of Fig. 2, there is a sequential execution of Vision-Only SFM, VI-
+Initialization, and GNSS-VI Alignment, all contingent on the device’s
+motion. Section 3.2 describes the approach to aligning the local coordi-
+nate system post-VI-Initialization in three axes with the Earth-centered,
+Earth-fixed (ECEF) coordinate system of GNSS.
+For real-time performance, the dense point clouds and textures
+calculated in SFM are ignored, and the system only estimates the device
+state 𝐝, sparse mappoint position 𝐦, and pitaya state 𝐩. The pitaya state
+includes its position and radius, while the device state includes its po-
+sition, orientation, and velocity. Furthermore, the system’s BA assumes
+the independence of all measurements, with their noise following a
+zero-mean Gaussian distribution. Thus, similar to the derivation in Cao
+et al. (2022), the maximum a posteriori problem (MAP) involving the
+above state is reformulated to minimize the sum of residuals from
+multiple measurements, as depicted in Eq. (1). In this equation, 𝐕,
+𝐈, and 𝐆represent the binocular image, inertial data, and GNSS raw
+measurements, respectively, while r (… ) represents the residuals on
+the specific state measured by these sensors. It is noteworthy that
+the Inertial Measurement Unit (IMU) and GNSS lack the capability to
+directly measure mappoint position and pitaya state. Therefore, these
+variables are not included in the GNSS and inertial residuals of the
+optimization problem.
+(𝐝, 𝐩, 𝐦)∗
+MAP
+=
+arg max 𝑝(𝐝, 𝐩, 𝐦∣𝐕, 𝐈, 𝐆)
+=
+arg min {∑𝑚
+𝑖=1|r (𝐕𝐢, 𝐝, 𝐩, 𝐦)|2 +
+∑𝑛
+𝑖=1|r (𝐈𝐢, 𝐝)|2 + ∑𝑜
+𝑖=1|r (𝐆𝐢, 𝐝)|2}.
+(1)
+Each residual in Eq. (1) is only related to several state (Kschis-
+chang et al., 2001), thus it can be transformed into the probability
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+4
+H. Wang et al.
+Fig. 3. Probability factor graph of the optimization problem after GNSS-VI alignment in our system, with a sliding window size of three. The annotated ellipse represents the state
+to be optimized in the system, such as the position and radius of pitaya. Colored rectangles represent the factors used to constrain the system’s state, such as four pseudorange
+factors simultaneously constraining the position of the device. As the number of sliding windows increases, more factors and variables are involved in the optimization, resulting in
+a smoother estimated state with more computation time. Therefore, a real-time system needs to find a balance between computing resources and the number of sliding windows.
+factor graph shown in Fig. 3. As depicted in Eq. (2), the GNSS raw
+measurement 𝐆is refined into the pseudorange factor 𝑃𝑠
+IF 𝑟on device
+position 𝑇𝐝in Section 3.3, and the Doppler factor 𝐷𝑠
+𝑟on device velocity
+𝑣𝐝in Section 3.4. In addition, the binocular image 𝐕is used not
+only to constrain the mappoint position 𝐦as introduced in Mur-Artal
+and Tardós (2017a), but also to constrain the pitaya state 𝐩. The
+reprojection residual on pitaya state r (𝐕, 𝐩) is refined into the residual
+on position r (𝐕, 𝑝𝐩
+) introduced in Section 3.6, and the residual on
+radius r (𝐕, 𝑟𝐩
+) introduced in Section 3.7. The IMU data 𝐈is refined into
+the random walk factor, ensuring the availability of the measurements,
+and the inertial factor, which constrain the movement between the two
+frames as introduced in Campos et al. (2021). For real-time purposes,
+the local BA optimizes only the state within the sliding window, with
+the other state serve as priori factors.
+r (𝐆, 𝐝) = r (𝑃𝑠
+IF 𝑟, 𝑇𝐝
+) + r (𝐷𝑠
+𝑟, 𝑣𝐝
+) ,
+(2a)
+r (𝐕, 𝐩) = 𝜌𝐻𝑢𝑏
+(r (𝐕, 𝑝𝐩
+)) + 𝜌𝐻𝑢𝑏
+(r (𝐕, 𝑟𝐩
+)) .
+(2b)
+Incorrect matching and fusion of pitaya data can result in signif-
+icant reprojection residual of the pitaya state, further leading to the
+estimated overall state deviating from the normal range and causing
+optimization failure. To address this issue, our system employs three
+strategies to identify and eliminate outliers. First, a robust kernel, such
+as the Huber cost function, 𝜌𝐻𝑢𝑏(… ), is used to reduce the weights of
+measurements with large residuals (Kümmerle et al., 2011), as shown
+in
+Eq. (2). Second, edges with residuals exceeding a threshold are
+removed from the factor graph. This threshold is affected by many
+factors, such as the image resolution, the confidence level of pitaya,
+and projection distance. The final strategy is based on manually defined
+attributes, such as the vertical and radius distributions of regular pitaya
+in Section 4.5.
+3. Methodology
+3.1. Preprocessing
+Our system centers on frames captured by a binocular camera, uti-
+lizing IMU data and GNSS raw measurements to guarantee the smooth
+and consistent estimate of the pitaya’s position and radius across long-
+range maps. However, due to the different measurement principles
+and output formats of these three sensors, we employ a preprocessing
+thread to extract the essential information.
+Sensor calibration is an essential preparatory step prior to deploying
+a multi-sensor system. Our system entails two calibration steps: cali-
+brating the binocular camera with the IMU, and calibrating the IMU
+with the GNSS receiver. Binocular matching relies on the assumption
+that identical features are projected at a consistent height in both the
+left and right images. Calibrating the binocular camera with IMU helps
+mitigate sensor and lens deviations that may arise during welding,
+assembly, and power-on, minimizing disparities between reality and
+the assumptions mentioned above. Calibrating between the binocular
+camera and the IMU is conducted using the excellent Kalibr toolbox,
+assuming a pinhole model camera and fixed temperature drift in the
+IMU (Rehder et al., 2016). Calibrating between the IMU and GNSS re-
+ceiver facilitates the conversion between different coordinate systems.
+Given their proximity and the centimeter-level accuracy required, the
+distance between them is manually measured using a digital caliper.
+Since the IMU output frequency surpasses that of the camera and GNSS
+receiver, pre-integrating IMU data between frames reduces redundant
+calculations in the BA (Forster et al., 2017).
+When processing GNSS raw measurements, the system initially
+excludes satellites with abnormal state registers, low signal-to-noise ra-
+tios, incomplete dual-frequency measurements, or low elevation angles
+to mitigate strong multipath interference in greenhouses. Subsequently,
+the terms of 𝐿MW and 𝐿GF, as presented in Eq. (3) and proposed
+by Blewitt (1990), are employed to combine the raw measurements and
+detect the cycle slip. Finally, the raw dual-frequency pseudorange are
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+5
+H. Wang et al.
+Table 1
+GNSS raw measurements used in the system.
+GNSS system
+Signal type
+Frequency (MHz)
+Pseudo-range
+Doppler
+Carrier phase
+GPS
+L1
+1575.42
+𝑃1
+𝐷1
+𝐿1
+GPS
+L2
+1227.6
+𝑃2
+𝐷2
+𝐿2
+BDS
+B1
+1561.098
+𝑃1
+𝐷1
+𝐿1
+BDS
+B3
+1268.52
+𝑃2
+𝐷2
+𝐿2
+combined into an ionospheric-free pseudorange 𝑃IF. In Eq. (3), 𝐿rep-
+resents the carrier phase measurement, 𝑃represents the pseudorange
+measurement, and 𝑓1 and 𝑓2 denote the frequencies of two navigation
+signals within the same constellation, as detailed in Table 1.
+𝐿MW = 𝑓1𝐿1 −𝑓2𝐿2
+𝑓1 −𝑓2
+−𝑓1𝑃1 + 𝑓2𝑃2
+𝑓1 + 𝑓2
+,
+(3a)
+𝐿GF = 𝐿1 −𝐿2,
+(3b)
+𝑃IF =
+𝑓2
+1 𝑃1 −𝑓2
+2 𝑃2
+𝑓2
+1 −𝑓2
+2
+.
+(3c)
+3.2. GNSS-VI alignment
+The GNSS receiver provides satellite positions, pseudorange and
+Doppler measurements in ECEF coordinate system, whereas the device’s
+position, orientation, and velocity are described in the local coordinate
+system after VI initialization. Therefore, ensuring the global consistency
+of the map with the aid of raw GNSS measurements begins by aligning
+ECEF coordinate system with the local one. To facilitate the conversion
+between ECEF and local coordinates, an East-North-Up (ENU) coor-
+dinate system, centered on the device origin, is introduced into the
+system. In Eq. (4), the position 𝑝or velocity 𝑣in the local coordinate
+system (… )𝑤is initially converted to the ENU coordinate (… )𝑛, and
+then to the ECEF coordinate (… )𝑒.
+𝑝𝑒
+𝑟= 𝑅𝑒
+𝑛𝑅𝑛
+𝑤
+(𝑝𝑤
+𝑟−𝑝𝑤
+anc
+) + 𝑝𝑒
+anc,
+(4a)
+𝑣𝑒
+𝑟= 𝑅𝑒
+𝑛𝑅𝑛
+𝑤𝑣𝑤
+𝑟.
+(4b)
+Before GNSS-VI alignment, there is insufficient information regard-
+ing the rotation 𝑅𝑛
+𝑤and translation 𝑝𝑤
+anc that convert local coordinates to
+ENU coordinates, as well as the rotation 𝑅𝑒
+𝑛and translation 𝑝𝑒
+anc convert-
+ing ENU coordinates to ECEF coordinates. The position 𝑝𝑤
+𝑟and velocity
+𝑣𝑤
+𝑟of the device in the local coordinate system, as well as the position
+𝑝𝑒
+𝑟and velocity 𝑣𝑒
+𝑟of the GNSS receiver in ECEF coordinate system,
+are known. Therefore, GNSS-VI alignment involves adjusting rotation
+and translation to minimize pseudorange and Doppler residuals. Eq.
+(4) indicates that velocity conversion between two coordinate systems
+is solely linked to rotation, whereas position conversion is affected by
+both rotation and translation. Therefore, our system employs a three-
+step approach, progressing from coarse to fine adjustments, to achieve
+GNSS-VI alignment.
+Step 1: Estimate the position of the receiver solely based on the
+constraints imposed by the pseudorange factor, excluding the visual
+and inertial factors. The coarse position within the greenhouse, affected
+by multipath interference, served as the initial anchor point for GNSS-
+VI alignment. Findings from greenhouse experiments reveal an anchor
+point drift of approximately ten meters, although it notably mitigates
+the nonlinearity resulting from the rotation between ECEF and ENU
+coordinate systems.
+Step 2: Estimate the rotation between ECEF coordinate system and
+the local coordinate system, taking into account the constraint imposed
+by the Doppler factor. The initial rotation for 𝑅𝑒
+𝑛is computed using
+Eq. (5), where 𝜙and 𝜆are the latitude and longitude of the initial
+anchor point in Step 1. Concurrently, the initial rotation for 𝑅𝑛
+𝑤is set
+as the identity matrix. In contrast to the approach outlined in Cao et al.
+(2022), which focuses solely on estimating single-axis yaw, our system
+computes the rotation matrix for all three axes. This necessity arises
+from aligning the gravity direction estimated from low-cost IMU data
+with that in the ENU coordinate system, which proves to be challenging
+in experiments where the device is kept in motion.
+𝑅𝑒
+𝑛
+=
+⎡
+⎢
+⎢⎣
+−sin𝜆
+−sin𝜙cos𝜆
+cos𝜙cos𝜆
+cos𝜆
+−sin𝜙sin𝜆
+cos𝜙sin𝜆
+0
+−cos𝜙
+sin𝜙
+⎤
+⎥
+⎥⎦
+.
+(5)
+Step 3: Estimate the position of the anchor point and the rotation
+from ECEF coordinate system to the local coordinate system, consider-
+ing the constraints of pseudorange and Doppler factor. The accuracy
+of Doppler measurements surpasses that of pseudoranges, especially
+when strong multipath interference is present (Kubo, 2009). As a result,
+the rotation after Step 3 differs slightly from that in Step 2, but a
+more accurate anchor point is obtained. Furthermore, as the position
+𝑝𝑤
+𝑟and velocity 𝑣𝑤
+𝑟of the GNSS receiver in the local coordinate system
+differ from those of the IMU (… )𝑏, a transformation is necessary, as
+illustrated by Eq. (6). The rotation 𝑅𝑟
+𝑏is set as the identity matrix, and
+the translation 𝑡𝑟
+𝑏is manually measured during calibration.
+𝑝𝑤
+𝑟= 𝑅𝑟
+𝑏𝑝𝑤
+𝑏+ 𝑡𝑟
+𝑏,
+(6a)
+𝑣𝑤
+𝑟= 𝑅𝑟
+𝑏𝑣𝑤
+𝑏.
+(6b)
+After completing the above three steps, the optimized anchor point,
+serving as the origin within the ENU coordinate system, becomes the
+origin of the local coordinate system. The three axes of the local
+coordinate system are aligned with those of the ENU coordinate system.
+Following a coarse-to-fine GNSS-VI alignment, the GNSS raw measure-
+ments are integrated into factor graphs for both local and global BA, in
+the form of pseudorange and Doppler factors.
+3.3. Pseudorange factor
+Pseudorange measurement, a fundamental output of a GNSS re-
+ceiver, depicts the geometric distance between the receiver 𝑟and the
+satellite 𝑠. Thus, when the satellite position is known, pseudorange
+factor can be employed to constrain the position of the receiver. How-
+ever, it encompasses a range of errors in signal generation, propagation,
+and processing. These errors primarily involve receiver clock bias 𝛿𝑡𝑟,
+satellite clock bias 𝛿𝑡𝑠, ionospheric delay 𝐼𝑠
+𝑟, tropospheric delay 𝑇𝑠
+𝑟, and
+measurement error 𝜖𝑠
+𝑟, modeled as a zero-mean Gaussian distribution,
+as depicted in Eq. (7). The satellite’s position 𝑝𝑒
+𝑠and clock bias 𝛿𝑡𝑠
+are determined from the broadcast navigation message. The velocity
+of light in a vacuum is denoted by 𝑐, and the tropospheric delay 𝑇𝑠
+𝑟is
+estimated using the Saastamoinen model (Saastamoinen, 1972). Due
+to the ionosphere-free combination for dual-frequency pseudorange
+measurements, the ionospheric delay is absorbed by the measurement
+error 𝜖𝑠
+𝑟.
+𝑃𝑠
+IF 𝑟
+=
+|𝑝𝑒
+𝑠−𝑝𝑒
+𝑟| + 𝑐(𝛿𝑡𝑟−𝛿𝑡𝑠) + 𝐼𝑠
+𝑟+ 𝑇𝑠
+𝑟+ 𝜖𝑠
+𝑟.
+(7)
+The time systems varies among different navigation constellation,
+and a minimum of five satellite signals are required to deliver complete
+position and velocity services for our dual-constellation system. Thanks
+to the abundant and evenly distributed signals from both GPS and
+BDS, our system can receive more than a dozen satellite signals, even
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+6
+H. Wang et al.
+within a greenhouse covered with double-layer film. As a result, GNSS
+degradation is not considered.
+r (𝑃𝑠
+IF 𝑟, 𝑇𝐝
+)
+=
+|𝑅𝑧
+(
+𝜔𝐸𝑡
+𝑠𝑗
+𝑓𝑟𝑘
+)
+𝑝𝑒
+𝑠𝑗−̂ 𝑝𝑒
+𝑟𝑘|+
+𝑐
+(̂
+𝛿𝑡𝑟𝑘−𝛿𝑡𝑠𝑗
+)
++ 𝑇
+𝑠𝑗
+𝑟𝑘−𝑃
+𝑠𝑗
+IF 𝑟𝑘.
+(8)
+The device’s position in BA is constrained by the pseudorange
+residuals, as illustrated in Eq. (8). The time 𝑡
+𝑠𝑗
+𝑓𝑟𝑘required for the
+signal to travel from the 𝑗th satellite to the 𝑘th receiver position is
+not instantaneous. To compensate for the Earth’s rotation during this
+interval, we refer to the axis 𝑅𝑧and angular velocity 𝜔𝐸of the Earth’s
+rotation. The receiver’s estimated position̂ 𝑝𝑒
+𝑟𝑘is calculated from the
+device’s estimated position̂ 𝑝𝑤
+𝑏𝑖using Eqs. (6) and (4). The estimated
+pseudorange represents the geometric distance between the satellite’s
+position 𝑝𝑒
+𝑠𝑗and the receiver’s estimated position̂ 𝑝𝑒
+𝑟𝑘. The disparity
+between the estimated pseudorange and the actual pseudorange mea-
+surements, adjusted for the clock biaseŝ 𝛿𝑡𝑟𝑘and 𝛿𝑡𝑠𝑗of the receiver and
+satellite, as well as the tropospheric delay 𝑇
+𝑠𝑗
+𝑟𝑘, forms the pseudorange
+residuals r (𝑃𝑠
+IF 𝑟, 𝑇𝐝
+) in Eq. (2).
+3.4. Doppler factor
+It is well-known that when the relative velocity between the receiver
+and the satellite is non-zero, the frequency of the signal received by
+the receiver experiences a deviation from the fixed frequency set by
+the satellite. The greater the relative velocity, the more significant the
+deviation between the received signal frequency and the set frequency
+becomes. Thus, when the satellite velocity is known, Doppler factor
+can be employed to constrain the velocity of the receiver. The rela-
+tionship among receiver velocity 𝑣𝑒
+𝑟, satellite velocity 𝑣𝑒
+𝑠, and Doppler
+measurements 𝐷𝑠
+𝑟is defined in Eq. (9).
+𝐷𝑠
+𝑟
+=
+−1
+𝜆
+(𝟏𝑠
+𝑟
+(𝑣𝑒
+𝑠−𝑣𝑒
+𝑟
+) + 𝛿𝑓𝑟−𝛿𝑓𝑠+̇ 𝐼𝑠
+𝑟+̇ 𝑇𝑠
+𝑟
+) + 𝜖𝑠
+𝑟.
+(9)
+In Eq. (9), 𝛿𝑓𝑟represents the unknown drift in receiver clock fre-
+quency, 𝛿𝑓𝑠denotes the drift in satellite clock frequency calculated
+from the broadcast navigation message, and 𝟏𝑠
+𝑟signifies the unit vector
+pointing from the receiver to the satellite in ECEF coordinate system.
+Considering the ionosphere and troposphere undergo slight changes
+over millisecond timescales, their rates of change, denoted aṡ 𝐼𝑠
+𝑟anḋ 𝑇𝑠
+𝑟,
+are integrated into random errors 𝜖𝑠
+𝑟. The random error is also modeled
+as a zero-mean Gaussian distribution.
+r (𝐷𝑠
+𝑟, 𝑣𝐝
+)
+=
+1
+𝜆
+(
+𝟏
+𝐬𝐣
+𝐫𝐤
+(
+𝑣𝑒
+𝑠𝑗−̂ 𝑣𝑒
+𝑟𝑘
+)
++̂ 𝛿𝑓𝑟𝑘−𝛿𝑓𝑠𝑗
+)
++ 𝐷
+𝑠𝑗
+𝑟𝑘.
+(10)
+The Doppler factor constrains the device velocity in BA, as depicted
+in Eq. (10). The calculation of the Doppler residuals is similar to that
+of the pseudorange residuals in Section 3.3. The receiver’s estimated
+velocitŷ 𝑣𝑒
+𝑟𝑘is calculated from the device’s estimated velocitŷ 𝑣𝑤
+𝑏𝑖using
+Eqs. (6) and (4). The estimated Doppler represents the difference be-
+tween the satellite velocity 𝑣𝑒
+𝑠𝑗and the estimated receiver velocitŷ 𝑣𝑒
+𝑟𝑘.
+The disparity between the estimated Doppler and the actual Doppler
+measurements, adjusted for the clock frequency driftŝ 𝛿𝑓𝑟𝑘and 𝛿𝑓𝑠𝑗
+of the receiver and satellite, is represented as the Doppler residuals
+r (𝐷𝑠
+𝑟, 𝑣𝐝
+) in Eq. (2).
+3.5. Pitaya tracking
+To simplify annotation and calculation, contrasting the 3D tomato
+tracking in point clouds by Rapado-Rincón et al. (2023), the pitaya
+tracking in our system is divided into two components: detection
+and tracking, both employing 2D real-time state-of-the-art image al-
+gorithms. The well-known YOLOv8 network is employed to extract
+the projected position and radius of the pitaya in the image (Jocher
+et al., 2023). To ensure robust performance in greenhouse experiments,
+we construct a dataset comprising 1267 images with varying sizes,
+illumination, and maturity levels for training the network. As shown in
+Fig. 4. The performance of the YOLOv8 network on the self-constructed pitaya dataset.
+Green and red represent immature and mature pitaya, respectively, and the system
+requires the position and quantity of the latter. The precision reaches one when the
+confidence level is below 0.834, indicating the absence of false positives in the system’s
+results. The recall is greater than zero in all confidence levels, indicating that our system
+did not recognize pitaya in exceptional cases. Detailed cases and corresponding coping
+strategies are presented in Section 5.3.
+Fig. 4, The Mean Average Precision (mAP@0.5) of the neural network
+on this dataset achieves an impressive 95.1%. Our system maintains the
+unchanged network architecture, and thus, the YOLOv8 network output
+includes the coordinates [
+𝑎
+𝑏
+]⊤of the upper-left corner, length 𝑐,
+width 𝑑, and the confidence level of the pitaya. The projected position
+𝑝𝑖
+𝑝∶[
+𝑥
+𝑦
+𝑧
+]⊤and projected radius 𝑟𝑖
+𝑝of the pitaya are determined
+by Eq. (11). (… )𝑙or (… )𝑟indicates whether pitaya is in the left or right
+image.
+𝑝𝑖
+𝑝=
+⎡
+⎢
+⎢
+⎢⎣
+𝑎𝑙+ 0.5 × 𝑐𝑙
+𝑏𝑙+ 0.5 × 𝑑𝑙
+𝑎𝑟+ 0.5 × 𝑐𝑟
+⎤
+⎥
+⎥
+⎥⎦
+,
+(11a)
+𝑟𝑖
+𝑝= 0.5 × 0.7 ×
+√
+𝑐𝑙× 𝑐𝑙+ 𝑑𝑙× 𝑑𝑙.
+(11b)
+The tracking algorithm selected by our system is Deep OC-Sort
+(Maggiolino et al., 2023), which assigns a consistent ID to each pitaya
+across consecutive frames. It is crucial to emphasize that the dedu-
+plication process for pitaya in the tracking algorithm only works in
+adjacent frames. As depicted in Fig. 5(a), if a pitaya reappears after
+being obscured or moving out of the image, it will be assigned a new ID,
+even if it is the same pitaya in reality. Consequently, the system requires
+assistance from GNSS measurements to establish a globally consistent
+map, thereby preventing repetitive counting.
+3.6. Estimation of pitaya position
+Pitaya that appear in both the left and right images with a confi-
+dence level above the threshold, along with similar heights and radii,
+are treated as matching pairs. Once the projected position 𝑝𝑖
+𝑝of a
+matching pair is known, the position 𝑝𝑐
+𝑝of the pitaya in the 3D camera
+coordinate system can be determined using Eq. (12). Additionally, the
+position of the pitaya 𝑝𝑤
+𝑝in the local coordinate system is derived based
+on the camera’s position 𝑡𝑤
+𝑐and orientation 𝑅𝑤
+𝑐. The intrinsic parame-
+ters of the camera include 𝑓𝑥, 𝑓𝑦, 𝑐𝑥, and 𝑐𝑦, whereas 𝑏represents the
+baseline of the binocular camera.
+𝑑=
+𝑓𝑥× 𝑏
+𝑝𝑖
+𝑝.𝑥−𝑝𝑖
+𝑝.𝑧,
+(12a)
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+7
+H. Wang et al.
+Fig. 5. ID switching occurs when the pitaya is occluded or moved out of the image. As shown in Fig. 5(a), when the two pitaya are measured for the first time, the device moves
+forward, and their IDs are 115 and 117. The second time they are measured, the device is moving backwards, and their new IDs are 196 and 198. The same is true for Fig. 5(b).
+Due to the device’s movement, the fixed pitaya may not always be visible in the image. Consequently, determining whether the pitaya in two discontinuous images is the same
+becomes challenging without the assistance of global position measurement. As shown in Fig. 11(a), this ID switching results in the same pitaya being created in two different
+positions in the map.
+𝑝𝑐
+𝑝=
+⎡
+⎢
+⎢
+⎢
+⎢⎣
+(
+𝑝𝑖
+𝑝.𝑥−𝑐𝑥
+)
+× 𝑑
+𝑓𝑥
+(
+𝑝𝑖
+𝑝.𝑦−𝑐𝑦
+)
+× 𝑑
+𝑓𝑦
+𝑑
+⎤
+⎥
+⎥
+⎥
+⎥⎦
+,
+(12b)
+𝑝𝑤
+𝑝= 𝑅𝑤
+𝑐𝑝𝑐
+𝑝+ 𝑡𝑤
+𝑐.
+(12c)
+Aided by GNSS, the 3D position of each pitaya matching pair
+in the map is unique and does not vary as the movement of the
+device, thus avoiding repetitive counting. Nonetheless, as discussed
+in Section 5.2, achieving a consistent position estimate with multiple
+single-view measurements poses a challenge. Consequently, the system
+utilizes the reprojection residuals, defined in Eq. (13), to constrain the
+pitaya position. The projection function 𝜋𝑖
+𝑐of the calibrated binocular
+camera is utilized to project the pitaya from the 3D camera coordinate
+system (… )𝑐to the 2D image coordinate system (… )𝑖. The disparity
+between the measured projected position from the binocular image
+and the estimated one constitutes a reprojection residual on the pitaya
+position.
+r (𝐕, 𝑝𝐩
+) = 𝑝𝑖
+𝑝−𝜋𝑖
+𝑐
+(̂
+𝑅𝑐
+𝑤̂𝑝𝑤
+𝑝+̂ 𝑡𝑐
+𝑤
+)
+,
+(13a)
+𝜋𝑖
+𝑐
+⎛
+⎜
+⎜
+⎜⎝
+⎡
+⎢
+⎢
+⎢⎣
+𝑥
+𝑦
+𝑧
+⎤
+⎥
+⎥
+⎥⎦
+⎞
+⎟
+⎟
+⎟⎠
+=
+⎡
+⎢
+⎢
+⎢⎣
+𝑓𝑥
+𝑥
+𝑧+ 𝑐𝑥
+𝑓𝑦
+𝑦
+𝑧+ 𝑐𝑦
+𝑓𝑥
+𝑥−𝑏
+𝑧
++ 𝑐𝑥
+⎤
+⎥
+⎥
+⎥⎦
+.
+(13b)
+3.7. Estimation of pitaya radius
+Pitaya yield is typically expressed as the total weight, representing
+the aggregate weight of all pitaya in the greenhouse. Estimating the
+weight of each pitaya requires its radius and the relationship between
+radius and weight. The analytical algorithm for calculating the pitaya
+radius is described by Eq. (14), corresponding to the projection illus-
+trated in Fig. 6. In addition, our system excludes measurements where
+𝜃exceeds a 45 degree angle due to the asymmetry between 𝑚and 𝑛
+regarding 𝑝𝑥.
+𝑚≈𝑝𝑥−𝑟𝑖
+𝑝,
+(14a)
+𝑛≈𝑝𝑥+ 𝑟𝑖
+𝑝,
+(14b)
+𝜃= 𝑎𝑟𝑐𝑡𝑎𝑛
+(
+𝑚
+𝑓𝑥
+)
+,
+(14c)
+Fig. 6. Geometric demonstration of the projection of a spherical pitaya onto a binocular
+camera. The baseline of the binocular camera is denoted as 𝑏, while 𝑂𝑙and 𝑂𝑟represent
+the principal points of the left and right cameras. As 𝑝𝑖
+𝑝.𝑧is a negative value, we
+introduce a negative sign before 𝑝𝑧, which represents the distance. The 3D position is
+determined by 𝑝𝑥and 𝑝𝑧, while the actual radius 𝑟𝑤
+𝑝is calculated from 𝑚and 𝑛, which
+are derived from the projected radius 𝑟𝑖
+𝑝in Eq. (11).
+𝜙= 0.5 ×
+(
+𝑎𝑟𝑐𝑡𝑎𝑛
+(
+𝑛
+𝑓𝑥
+)
+−𝜃
+)
+,
+(14d)
+𝑟𝑤
+𝑝= 𝑠𝑖𝑛(𝜙) ×
+𝑧
+𝑐𝑜𝑠(𝜃+ 𝜙) .
+(14e)
+As illustrated by Eq. (14), the initial step involves converting the
+projected radius acquired from the pitaya tracking thread into angles
+𝜃and 𝜙. Subsequently, these angles are integrated with the pitaya
+depth 𝑧to compute the actual radius 𝑟𝑤
+𝑝. Given that the measured angle
+remains constant throughout the optimization iteration of the pitaya
+state, it acts as a connection between the projected radius and the
+actual radius. Eq. (15) illustrates the reprojection residuals on pitaya
+radius, indicating the disparity between the measured radius and the
+estimated radius.
+r (𝐕, 𝑟𝐩
+)
+=̂
+𝑟𝑤
+𝑝−̂ 𝑧×
+𝑠𝑖𝑛(𝜙)
+𝑐𝑜𝑠(𝜃+𝜙).
+(15)
+3.8. Yield estimation
+To reliably estimate yield, we further establish the relationship
+between the radius and individual weight. Considering the ellipsoidal
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+8
+H. Wang et al.
+Table 2
+Sensors and equipment used in the experiments and their detailed specifications.
+Sensor Type/Item
+Value
+Unit
+Camera
+Sensor
+AR0234
+Shutter
+Global
+Resolution
+1280 × 720
+pixel
+Horizontal field of view
+100
+degree
+Vertical field of view
+80
+degree
+Meas. frequency
+20
+Hz
+IMU
+Sensor (Built-in)
+BMI-088
+Meas. frequency
+200
+Hz
+Gyroscope noise
+1.89e−3
+rad
+s×
+√
+Hz
+Accelerometer noise
+1.87e−2
+m
+s2×
+√
+Hz
+GNSS
+Receiver1
+ZED-F9P
+Meas. frequency
+10
+Hz
+RTK frequency
+10
+Hz
+Receiver2
+UM982
+Meas. frequency
+20
+Hz
+RTK frequency
+20
+Hz
+Prime 17W
+View number
+10
+Range
+6 × 6 × 3
+m
+Solution frequency
+200
+Hz
+Precision
+0.1
+mm
+Table 3
+The third-party open-source libraries used in main approaches of the system.
+Library
+Function
+Version
+Reference
+RTKLIB
+RINEX decoding
+2.4.3
+Takasu et al. (2009)
+OpenCV
+image processing
+3.4.18
+Bradski (2000)
+g2o
+graph optimization
+1.0.0
+Kümmerle et al. (2011)
+approximation of pitaya, our system uses a cubic polynomial with
+respect to the radius, as detailed in Eq. (16), to fit the weight. Using the
+least squares algorithm, we calculate the three parameters 𝑎= 0.011,
+𝑏= −0.521, and 𝑐= 14.656 from 54 pairs of weights and radii, measured
+using the electronic scale and digital caliper depicted in Fig. 1. Because
+of measurement and assumption errors, the coefficient of determination
+𝑅2 for the fitted equation is 0.852.
+𝑤𝑝
+=
+𝑎× 𝑟𝑤
+𝑝
+3 + 𝑏× 𝑟𝑤
+𝑝
+2 + 𝑐× 𝑟𝑤
+𝑝.
+(16)
+4. Experiment
+4.1. Experimental setup
+As depicted in Fig. 1, our system is deployed on a handheld platform
+that includes GNSS receivers, an IMU, and a binocular camera. The
+detailed hardware specifications are shown in Table 2. Besides, we
+utilize several third-party open-source libraries, as listed in Table 3,
+to promptly verify the system’s feasibility. To tackle the inconsistent
+trigger frequency of the these sensors, the platform synchronizes the
+timestamps of the camera and IMU with Universal Time Coordinated
+(UTC) by leveraging the Pulse Per Second (PPS) signal of the UM982.
+All experiments in this section are conducted on a desktop computer
+featuring an Intel i7-8700 CPU clocked at 3.8 GHz, 32 GB of RAM, and
+an NVIDIA RTX-3060 GPU.
+Indoor experiments are conducted at the Information Science Ex-
+periment Center of USTC, as illustrated in Fig. 7. Because of the weak
+indoor GNSS signal, we verify the accuracy of the pitaya’s position
+estimated by our system using the optical 3D positioning device, Prime
+17 W. We collect four sequences (A, B, C, and D) with references, ad-
+justing the distance of the trajectory from the shelves while maintaining
+the pitaya’s position and radius constant.
+The greenhouse experiments are conducted at a commercial pitaya
+plantation situated on the outskirts of Hefei City, Anhui Province. The
+pitaya species cultivated in the plantation is Hylocereus costaricen-
+sis, which is easily distinguished by its red fruits against the green
+branches. An individual mature greenhouse is selected to validate our
+system’s yield estimate, as depicted in Fig. 8(b). The experiments are
+conducted in December 2023, with the greenhouse being covered by
+a double-layer plastic film to retain warmth. Prior to the experiments,
+twenty pitaya on the branches are selected and numbered. The sampled
+pitaya are fresh, ripe and free from rot, with a radius within the
+normal range, suitable for marketing. In addition, in order to verify the
+accuracy of the system’s estimates over long distances and to facilitate
+manual confirmation of the system’s results, the spacing between sam-
+pling points is 2–5 m. The distances between them are measured using
+a tape measure, serving as a reference for positioning. After collecting
+two sequences (E and F), their actual radii and weights are measured
+using an electronic scale and a digital caliper as references.
+Our system employs the evaluation metrics outlined by Miranda
+et al. (2023a), as shown in Eq. (17). The Root Mean Square Error
+(RMSE) quantifies the position and radius error, while the Mean Abso-
+lute Percentage Error (MAPE) quantifies the weight error. In addition,
+the Coefficient of Variation (CV) quantifies the stability of the system in
+estimating weight within the same sequence. 𝑥𝑖denotes the reference
+value,̂ 𝑥𝑖denotes the estimated value,̄ 𝑥denotes the mean of the
+estimated values, and 𝜎denotes the sample standard deviation of the
+estimated values. 𝑛denotes the number of samples, with 24 samples for
+indoor experiments, 20 for greenhouse experiments, and 5 for estimates
+number of each sequence.
+RMSE =
+√∑𝑛
+𝑖=1
+(̂𝑥𝑖−𝑥𝑖
+)2
+𝑛
+,
+(17a)
+MAPE = 1
+𝑛
+𝑛
+∑
+𝑖=1
+|̂ 𝑥𝑖−𝑥𝑖
+𝑥𝑖
+| × 100%,
+(17b)
+CV = 𝜎̄
+𝑥× 100%,
+(17c)
+where 𝜎=
+√∑𝑛
+𝑖=1
+(̂𝑥𝑖−̄ 𝑥)2
+𝑛−1
+.
+(17d)
+4.2. Position accuracy analysis
+To mitigate the impact of randomness introduced during feature
+selection in feature tracking thread, Table 4 presents the RMSE between
+30 estimates generated by our system from six sequences and their
+corresponding references. Fig. 9 is a visualization of a single estimate
+from indoor experiments, showing a map containing device’s motion
+trajectory and 24 simulated pitaya models.
+When comparing the horizontal and vertical position accuracy,
+disparities emerge between indoor and greenhouse experiments. In
+indoor experiments, the horizontal position estimation error is around
+20 mm, surpassing the error in the vertical direction. In greenhouse
+experiments, both horizontal and vertical accuracies are approximately
+50 mm, indicating minimal disparity. This discrepancy may stem from
+the ellipsoidal pitaya’s transverse positioning in indoor experiments,
+approximated as a sphere, leading to uncertainty in the 𝑥-axis co-
+ordinate within the image coordinate system output by the pitaya
+tracking thread. While the orientation of the pitaya in the greenhouse
+is arbitrary.
+Regarding the comparison of positional error in the form of Eu-
+clidean distance between the indoor and greenhouse experiments, the
+former achieves approximately 30 mm, while the latter reaches about
+70 mm. The positioning of the pitaya relies on the device’s coordinates.
+As a result, sequences E and F, derived from long-range greenhouse
+experiments, manifest higher pitaya positional errors in contrast to
+those observed in indoor experiments with motion restrictions.
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+9
+H. Wang et al.
+Fig. 7. In indoor experiments, the simulated pitaya models are fixed on shelves with uniform spacing. The pitaya’s radius is larger in the blue area than in the yellow area. A
+digital caliper is utilized to measure the reference radius in indoor experiments.
+Fig. 8. Commercial pitaya plantation. The left image, captured in October, illustrates an outdoor temperature of approximately 20 ◦C, with the pitaya plantation left uncovered by
+polyethylene plastic film. The red line marks the dimensions of the greenhouse, the blue line indicates the experimental area, and the yellow line indicates that the northeastern
+part of the greenhouse is adjacent to the irrigation canal. The right image, captured in December when the outdoor temperature was approximately 10 ◦C, depicts the greenhouse
+covered with a double-layer film, thus maintaining an indoor temperature of around 25 ◦C. Twenty pitaya are numbered, and distances between them are measured using a tape
+measure as references.
+Moreover, to assess the correlation between projection distance and
+accuracy, we intentionally increased the gap between the trajectory
+and two shelves incrementally from sequence A to sequence D during
+indoor experiments. With an increase in 𝑧as indicated in Eq. (13), 𝑥
+necessitates a larger positional correction than 𝑧to yield an equivalent
+residual. Consequently, the positional error exhibits a gradual increase
+from sequence A to sequence D.
+4.3. Radius accuracy analysis
+Accurate pitaya detection and decoupling the pitaya radius estima-
+tion from the absolute position of the device contribute to a smaller
+error in radius estimation compared to positional error. In indoor
+experiments detailed in Table 4, the median radius RMSE for the large
+pitaya is 6.4 mm, while for the small pitaya, it is 5.6 mm. The large size
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+10
+H. Wang et al.
+Fig. 9. A map containing pitaya created in indoor experiments. Each colored sphere represents an individual pitaya, and corresponds to the simulated pitaya model illustrated in
+Fig. 7. The red line illustrates the trajectory of the device’s movement. All pitaya on both shelves are created, and their radii are accurately estimated.
+Table 4
+RMSEs for the estimated position and radius of the pitaya. Six sequences, denoted as A, B, C, D, E, and F, are collected during
+the experiments. The first four sequences are acquired indoors, while the last two are acquired in the greenhouse. As there
+are no large and small simulated pitaya models in greenhouse experiments, the corresponding entries are left blank. Results
+for five typical estimates are presented for each sequence, so there are 30 entries in total in the table.
+Sequence
+Horizontal RMSE (mm)
+Vertical RMSE (mm)
+Large radius RMSE (mm)
+Small radius RMSE (mm)
+A1
+19.5
+12.3
+6.8
+4.9
+A2
+20.8
+11.8
+5.0
+2.9
+A3
+19.9
+12.1
+5.9
+2.5
+A4
+18.7
+19.1
+8.3
+3.3
+A5
+20.5
+12.1
+8.5
+3.6
+B1
+22.1
+16.6
+5.6
+5.8
+B2
+22.8
+17.9
+8.1
+6.6
+B3
+23.6
+17.0
+9.2
+6.4
+B4
+21.3
+18.1
+8.6
+6.4
+B5
+21.9
+22.2
+3.8
+3.9
+C1
+23.3
+19.0
+4.8
+5.6
+C2
+22.0
+20.6
+5.0
+5.6
+C3
+24.3
+22.0
+7.0
+8.1
+C4
+23.6
+18.6
+8.6
+8.1
+C5
+19.6
+17.3
+9.8
+7.6
+D1
+22.1
+18.1
+7.0
+4.8
+D2
+22.5
+19.9
+4.6
+5.2
+D3
+21.8
+19.6
+4.8
+5.7
+D4
+31.8
+26.8
+5.4
+6.5
+D5
+23.5
+20.0
+4.5
+5.6
+E1
+47.6
+39.0
+E2
+47.9
+61.1
+E3
+61.5
+53.1
+E4
+51.5
+43.1
+E5
+39.3
+45.0
+F1
+46.3
+54.0
+F2
+42.8
+51.1
+F3
+51.0
+49.6
+F4
+45.5
+57.1
+F5
+47.1
+45.1
+of the pitaya leads to less accurate estimation of 𝑚and 𝑛in Eq. (14),
+resulting in lower accuracy in estimating the radius compared to the
+small one.
+Table 5 displays the system’s radius estimates for two sequences
+conducted in the greenhouse, along with their respective errors. In
+greenhouse experiments, the median radius RMSE is 7.1 mm, which
+is slightly higher than that in indoor experiments. Possible reasons
+include an inadequate number of measurements resulting from rapid
+motion and occlusion due to complex environments. Nevertheless,
+these errors remain below the actual pitaya radius of approximately
+40 mm, thereby confirming the feasibility of radius estimation by our
+system.
+To uphold the precision of the system’s yield estimation, pitaya
+located at distances exceeding twenty times the baseline are ignored,
+thereby diminishing the clarity of the relationship between radius error
+and projection distance.
+4.4. Yield accuracy analysis
+Following the exclusion of pitaya with unreasonable positions and
+radii in the map, the total weight derived from summing the individual
+weights calculated from the radii represents the estimated yield of a
+single greenhouse. While it is feasible to harvest all pitaya from the
+entire greenhouse and weigh them to verify accuracy, such an action
+is wasteful. Consequently, we assess accuracy based on the twenty
+sampled pitaya. All twenty pitaya in our system have been estimated
+and none have been identified as outliers. Their mean weights and
+MAPEs are listed in Table 5.
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+11
+H. Wang et al.
+Table 5
+Errors in the radius and weight of pitaya in greenhouse experiments.
+Sequence
+Mean radius (mm)
+Radius RMSE (mm)
+Mean weight (g)
+Weight MAPE (%)
+E1
+40.3
+8.6
+471.8
+17.4
+E2
+39.7
+5.1
+459.9
+13.9
+E3
+39.6
+8.2
+455.6
+15.7
+E4
+39.6
+7.1
+454.3
+14.9
+E5
+38.3
+6.9
+422.4
+21.5
+F1
+40.5
+6.0
+492.4
+18.2
+F2
+38.5
+5.7
+445.7
+16.0
+F3
+40.2
+8.6
+433.7
+17.1
+F4
+39.4
+7.1
+464.5
+15.3
+F5
+40.2
+8.1
+485.9
+13.2
+Table 6
+The time consumption of the main approaches in our system. Given that the speed of the feature tracking thread (feature
+extraction + pose estimation) surpasses the camera output speed, our system runs in real-time.
+Sequence
+Pitaya detection (ms)
+Feature extraction (ms)
+Pose estimation (ms)
+Pitaya creation (ms)
+Local BA (ms)
+A
+12.6
+20.4
+6.6
+113.7
+256.7
+B
+13.1
+23.8
+10.7
+94.9
+293.4
+C
+13.5
+22.7
+7.2
+112.2
+307.2
+D
+12.9
+22.7
+8.4
+115.1
+222.2
+E
+12.5
+21.7
+7.6
+38.8
+145.0
+F
+12.9
+22.2
+12.1
+37.6
+108.1
+According to Eq. (17), the CV of the estimated mean weight for
+the sequence E is 4.1%, while that for the sequence F is 5.5%, which
+indicates the stability of our system. Additionally, most of the weight
+MAPEs in Table 5 remain within 20%, with a median of 15.7% in se-
+quence E and 16% in sequence F. We manually checked and confirmed
+that the system does not include repetitive counting in both sequences.
+Consequently, based on the median weight MAPE of 20 pitaya sampled
+from the 97 pitaya created in sequence E, we speculate that the yield es-
+timation error of our system for the entire greenhouse is approximately
+16%. Various factors will influence this result, notably the significant
+deviation in the shape of the pitaya from the ellipsoid assumed by the
+system. Additionally, the system encounters the challenge of missing
+counting, as discussed in Section 5.3.
+4.5. Distribution analysis
+In addition, each pitaya created by our system is assigned a unique
+position, which facilitates analysis of pitaya distribution rather than
+just a total yield. The horizontal distribution portrayed in Fig. 10
+indicates that pitaya are primarily concentrated in the northeastern
+part of the greenhouse, with fewer occurrences in the central and
+southwestern parts. Given that the northeastern part of the greenhouse
+depicted in Fig. 8(a) is adjacent to an irrigation canal, providing more
+abundant water and nutrients, this factor might have contributed to
+this distribution pattern. Regarding vertical distribution, the growth of
+pitaya shows no noticeable preference for height. They attach them-
+selves to branches that are secured to shelves, ensuring that the height
+of the pitaya remains below that of the shelves. The height being less
+than one meter not only facilitates manual harvesting but also allows a
+camera-equipped device to observe most pitaya without requiring ver-
+tical movement. The radius distribution is also generally uniform, with
+the majority measuring approximately 40 mm. Therefore, the system
+leverages these regular vertical and radius distributions to eliminate
+outliers.
+4.6. Time analysis
+Table 6 presents the time consumption of the main approaches
+across various sequences in our system. Pitaya detection takes approx-
+imately 12 ms, employed to forward propagate the image through
+the neural network, and remains constant regardless of the number of
+pitaya. The time consumption of feature extraction remains relatively
+Fig. 10. Distribution of pitaya positions and radii estimated in greenhouse experiments,
+and each circle represents a pitaya. The 𝑥-axis represents the relative position in the
+south–north direction, and the 𝑦-axis represents the relative values in the west-east
+direction, vertical direction, and pitaya radius, respectively. Because the greenhouse is
+not strictly aligned with the ENU coordinate system, the circles in the upper figure are
+distributed on a slope. To facilitate drainage during the rainy season, the greenhouse is
+designed with higher elevation in the southwest and lower elevation in the northeast,
+resulting in the tilted representation of relative altitude in the middle figure.
+stable, as the parameters are fixed at 800 feature points and 5 layers of
+the pyramid. If there is no pitaya in the sliding window, the pitaya
+creation in Fig. 2 is skipped, so its time consumption is dependent
+on the number of pitaya in the window. Owing to the lower density
+of pitaya in the greenhouse compared to indoors, sequences E and F
+require less time for pitaya creation.
+Time consumed by local BA is similar to pitaya creation and cor-
+relates with the number of state and residuals. Although pseudoranges
+and Doppler residuals in greenhouse experiments can constrain the de-
+vice’s position, their number, being less than a hundred, has a minimal
+impact on time consumption. Indoor experiments involve numerous
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+12
+H. Wang et al.
+Table 7
+Hardware cost estimates for several typical orchard reconstruction and fruit positioning systems. In our system, the depth camera only outputs inertial data, so only the cost of
+the sensor chips is considered.
+Reference
+Robotic arm
+Lidar
+Depth camera
+Binocular camera
+IMU
+GNSS receiver
+Approximate prize (Dollar)
+Kang et al. (2022)
+Livox Mid-70
+Realsense D455
+1300
+Chen et al. (2021)
+6-DOF
+ZED2
+1200
+Liu et al. (2023)
+Livox Mid-70
+Realsense D435
+1100
+Miranda et al. (2023a)
+Azure Kinect
+900
+Gong et al. (2022)
+Kinect v2
+200
+Ours
+AR0234
+BMI-088
+UM982
+200
+overlapping perspectives, leading to a higher number of reprojection
+residuals. Due to the reduced number of residuals in greenhouse experi-
+ments with the same sliding window size, which is about half compared
+to the indoor one, sequences E and F exhibit faster processing than the
+first four sequences.
+The bottleneck in processing speed within this system occurs within
+the feature tracking thread as depicted in Fig. 2. This thread integrates
+the Visual-Inertial Odometry (VIO) system, primarily involving feature
+extraction and pose estimation. The former operates at a speed of
+around 22 milliseconds per frame, while pose estimation takes approx-
+imately 10 milliseconds per frame. The average processing speed of a
+single VIO system is approximately 25 frames per second. Thanks to the
+multi-threaded framework, the overall system operates at an average
+speed of 23 frames per second. Since this speed exceeds the camera’s
+output speed of 20 frames per second, our system ensures real-time
+performance.
+4.7. Cost analysis
+An affordable and easy-to-maintain device is appealing for farming
+with narrow profit margins. Table 7 illustrates the hardware costs for
+several typical orchard studies. Given that most pitaya are under one
+meter in height, our system does not necessitate a robotic arm for
+vertical motion. Lidar offers numerous advantages, and its price is
+expected to decrease with widespread adoption. Depth cameras are
+widely used in orchard studies for several reasons, including being cost-
+effective and easy to maintain, and offering denser depth and wider
+field of view than lidar at appropriate distances, reflections, lighting,
+and textures. (Fu et al., 2020). We also attempted to utilize depth
+camera in our system. In winter greenhouse experiments, we observed
+accurate depth estimation. However, under direct autumn sunlight,
+certain pixels exhibit inaccurate or non-existent depth readings, as
+encountered by Gong et al. (2022) or Kang et al. (2022). This challenge
+is caused by the measurement principle based on structured light or
+Time of Flight (ToF), and cannot be avoided. Therefore, we blocked
+the image and depth output of the depth camera. Our system does not
+use standard commodity kits, but rather abundantly available sensor
+chips, so there is room for further price reduction through integration.
+5. Discussion
+5.1. GNSS validity
+A tightly coupled VIO system can achieve centimeter-level accuracy
+in small-range scenarios (Campos et al., 2021). Without global position
+and velocity constraints, a system utilizing low-cost sensors becomes
+insensitive to rotation, leading to distortion in the constructed map.
+Fig. 11(a) illustrates the erroneous creation of the same pitaya multiple
+times at different positions in the map, resulting in unreliable yield
+estimation. Consequently, our system integrates GNSS raw measure-
+ments to impose constraints on the device’s position and velocity,
+ensuring consistency in the position and radius of the same pitaya
+across multiple measurements, as depicted in Fig. 11(b).
+5.2. Multi-view measurement
+Pitaya positions calculated analytically from single-view measure-
+ments often deviate from predefined distribution rules, posing chal-
+lenges in achieving consistent estimates using methods like clustering.
+As illustrated in Fig. 12, variations in perspective and distance result
+in positional offsets, particularly in the depth direction, which can
+be ten times the pitaya’s radius. Moreover, the occlusion by branches
+limits the measurement to a specific perspective, resulting in fixed
+uncertainty in that direction. Similar to estimating the pitaya position,
+measuring the pitaya radius from different perspectives and distances
+produces varying noise distributions, albeit significantly smaller than
+the noise distribution of the position. Hence, our system utilizes a
+unified reprojection residual to constrain both the position and radius
+of the pitaya. Measurements with excessive residuals are excluded as
+outliers to avoid interference with state estimation. The RMSE for
+the horizontal and vertical positions of the pitaya, calculated using
+the analytical algorithm from single-view measurements, is 134 and
+237 mm, whereas our system achieves an RMSE within 30 mm in
+indoor experiments.
+5.3. Misidentification
+The complex greenhouse environment leads to unpredictable
+misidentifications by the pitaya detector. Increasing the size of the
+dataset or enhancing its distribution can reduce false positives. Expand-
+ing the dataset’s size ensures that objects like the red bricks shown in
+Fig. 13(a) are no longer misclassified as pitaya. The manually discarded
+rotten pitaya depicted in Fig. 13(b) are filtered based on their heights
+above the ground. The dataset is segmented into mature and immature
+categories to better handle cases like the one in Fig. 13(c). Therefore, in
+both indoor and greenhouse experiments, once our system identifies an
+object as a pitaya in the map, it is guaranteed to be a pitaya in reality.
+In other words, there are zero false positives.
+More challenging than false positives are false negatives, which
+reduce the estimated yield and pose difficulties in appropriate han-
+dling. Fig. 14(a) illustrates a case of treating multiple adjacent pitaya
+as one, a common phenomenon during concentrated maturation. A
+radius threshold is set by our system to suppress this error. The oc-
+clusion depicted in Fig. 14(b) minimally interferes with the multi-view
+measurement system since most pitaya can be fully exposed in cer-
+tain perspectives. The system disregards the small pitaya depicted in
+Fig. 14(c). On one hand, this prevents the detector from accumulating
+sufficient features to make accurate judgments; On the other hand, in
+reality, it cannot be sold in the market.
+In the entire sequence E, the detector detected a total of 294 pitaya
+in 2D images, and the system created 97 pitaya in the 3D map, out
+of which 19 are filtered out. The reasons for system filtering include
+cases where the radius or 3D position falls outside a reasonable range,
+the number of multi-view measurements is below the threshold, or the
+distance from the camera is unreasonable. The corresponding filtered
+numbers for these reasons are 5, 12, and 8, respectively. Some pitaya
+are filtered out due to multiple reasons simultaneously. Nonetheless,
+biases are introduced into the system and several normal pitaya is
+eliminated. The manual check results indicated that only 13 out of the
+19 pitaya should have been filtered out, suggesting the need for further
+investigation into missing counting.
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+13
+H. Wang et al.
+Fig. 11. The mappoints are represented by black dots, the device’s motion trajectory is indicated by a red line, and pitaya is depicted as colored spheres. Each pitaya is measured
+multiple times, forming multiple colored lines connecting it to the trajectory. In the upper figure, the system exhibits low sensitivity to rotation, causing deviations between the
+trajectory’s starting and ending points, with non-parallel back-and-forth trajectory. In the lower figure, the trajectory forms a closed loop under the constraints of the raw GNSS
+measurements. In addition, because the same pitaya in Section 3.5 is assigned multiple IDs and is created at different positions in the map, this makes yield estimation unreliable.
+In the lower figure, the pitaya fusion in Fig. 2, along with reprojection residuals from multi-view measurements, ensures a globally consistent estimate of both position and radius.
+Fig. 12. Position and radius offset of three pitaya (ID = 1,2,3) estimated by two
+different algorithms. The 𝑥-axis corresponds to multiple estimates of three pitaya,
+while the 𝑦-axis represents the offset of the results. The original estimates are adjusted
+by subtracting the averages, ensuring they are centered at zero. The 𝑧-axis (depth
+direction) exhibits higher uncertainty in position offsets calculated from single-view
+measurements (s-v) by analytical algorithms. In multi-view measurements (m-v), the
+3D position constrained by multiple reprojection residuals is more stable and accurate
+compared to the former, thanks to the outlier exclusion. The radius offset estimated by
+both approaches is roughly one order of magnitude smaller than the position offset.
+6. Conclusions and future work
+This article introduces a system that tightly couples complementary
+sensors for estimating the position and radius of pitaya, further estimat-
+ing greenhouse yield. The system integrates raw measurements from a
+binocular camera, IMU, and GNSS receiver within the graph optimiza-
+tion framework, which provides a cost-effective and low-maintenance
+alternative compared to lidar or robotic arm. Only the state of sparse
+mappoints and pitaya are estimated, combined with inertial assisted
+visual navigation, enables the system to achieve real-time performance.
+The integration of dual-frequency GNSS raw measurements ensures the
+global consistency of the constructed map, even in a commercial green-
+house with strong multipath interference, while also avoids repetitive
+Fig. 13. Three cases of false positives. In Fig. 13(a), the detector mistakenly identifies
+a brick as a pitaya. In Fig. 13(b), the detector incorrectly re-identifies a discarded
+pitaya with wormholes on the ground. Fig. 13(c) shows a case of immature pitaya
+being misidentified.
+counting. The pitaya state is constrained by the reprojection residuals
+from multi-view measurements in a unified probability factor graph,
+thereby facilitating outlier exclusion and improving radius estimation
+accuracy. Results from indoor and greenhouse experiments demon-
+strate that the position RMSE of pitaya is 7 cm, the radius RMSE is
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+14
+H. Wang et al.
+Fig. 14. Three cases of false negatives. In Fig. 14(a), the detector erroneously interprets
+the two closely positioned pitaya at the bottom as a single entity. In Fig. 14(b), the
+pitaya remains undetected due to obstruction by branches. In Fig. 14(c), despite being
+red, the upper pitaya is not recognized due to its premature ripeness and small size.
+7 mm, and the weight MAPE of individual pitaya is about 16%. In
+conclusion, our system has demonstrated the feasibility of achieving
+real-time and accurate pitaya yield estimation through the integration
+of cost-effective sensors with general computing resources.
+In greenhouse experiments, the vertical position accuracy of our
+system is lower than that of the horizontal one, which is consistent with
+the characteristics of pure GNSS measurements. Satellites are only dis-
+tributed around and above, and their signals cannot penetrate the earth
+to propagate. As a result, there are more constraints in the horizontal
+direction than the vertical direction in the factor graph. Moreover, our
+pitaya tracking algorithm, originally designed for general objects, may
+result in missing counting for pitaya. For future research, we plan to
+explore and integrate additional low-cost sensors, such as barometers
+and magnetometers, into our systems to enhance the vertical accuracy.
+Additionally, we will improve the neural network architecture and try
+more challenging fruits, such as occluded and similar-colored pears, tall
+and dense apples, as well as low and small strawberries.
+CRediT authorship contribution statement
+Hongjie Wang: Writing – original draft, Software, Methodology,
+Conceptualization. Xiangyu Hong: Software, Data curation. Linlin
+Qin: Writing – review & editing, Supervision, Methodology. Chun Shi:
+Supervision. Gang Wu: Supervision.
+Declaration of competing interest
+The authors declare that they have no known competing finan-
+cial interests or personal relationships that could have appeared to
+influence the work reported in this paper.
+Data availability
+Data will be made available on request.
+Acknowledgments
+This work is supported by students’ innovation and entrepreneur-
+ship foundation of USTC, China (CY2022G30), and the indoor experi-
+mental venue is provided by the Information Science Experiment Center
+of USTC, China. The authors wish to thank the useful comments of the
+anonymous reviewers to this paper.
+References
+Bai, X., Li, Z., Li, W., Zhao, Y., Li, M., Chen, H., Wei, S., Jiang, Y., Yang, G., Zhu, X.,
+2021. Comparison of machine-learning and casa models for predicting apple fruit
+yields from time-series planet imageries. Remote Sens. 13, http://dx.doi.org/10.
+3390/rs13163073, URL: https://www.mdpi.com/2072-4292/13/16/3073.
+Blewitt, G., 1990. An automatic editing algorithm for gps data. Geophys. Res. Lett. 17,
+199–202. http://dx.doi.org/10.1029/GL017i003p00199.
+Bradski, G., 2000. The OpenCV library. Dr. Dobb’s J. Softw. Tools.
+Campos, C., Elvira, R., Rodríguez, J.J.G., Montiel, J.M.M., Tardós, J.D., 2021. Orb-
+slam3: An accurate open-source library for visual, visual–inertial, and multimap
+slam. IEEE Trans. Robot. 37, 1874–1890. http://dx.doi.org/10.1109/TRO.2021.
+3075644.
+Cao, S., Lu, X., Shen, S., 2022. Gvins: Tightly coupled gnss–visual–inertial fusion
+for smooth and consistent state estimation. IEEE Trans. Robot. 38, 2004–2021.
+http://dx.doi.org/10.1109/TRO.2021.3133730.
+Chen, M., Tang, Y., Zou, X., Huang, Z., Zhou, H., Chen, S., 2021. 3D global
+mapping of large-scale unstructured orchard integrating eye-in-hand stereo vi-
+sion and slam. Comput. Electron. Agric. 187, 106237. http://dx.doi.org/10.
+1016/j.compag.2021.106237, URL: https://www.sciencedirect.com/science/article/
+pii/S0168169921002544.
+Dorj, U.O., Lee, M., seok Yun, S., 2017. An yield estimation in citrus orchards
+via fruit detection and counting using image processing. Comput. Electron.
+Agric. 140, 103–112. http://dx.doi.org/10.1016/j.compag.2017.05.019, URL: https:
+//www.sciencedirect.com/science/article/pii/S0168169916312455.
+Forster, C., Carlone, L., Dellaert, F., Scaramuzza, D., 2017. On-manifold preintegration
+for real-time visual–inertial odometry. IEEE Trans. Robot. 33, 1–21. http://dx.doi.
+org/10.1109/TRO.2016.2597321.
+Fu, L., Gao, F., Wu, J., Li, R., Karkee, M., Zhang, Q., 2020. Application of consumer
+rgb-d cameras for fruit detection and localization in field: A critical review. Comput.
+Electron. Agric. 177, 105687. http://dx.doi.org/10.1016/j.compag.2020.105687,
+URL: https://www.sciencedirect.com/science/article/pii/S0168169920319530.
+Gené-Mola, J., Sanz-Cortiella, R., Rosell-Polo, J.R., Escolà, A., Gregorio, E., 2021.
+In-field apple size estimation using photogrammetry-derived 3d point clouds:
+Comparison of 4 different methods considering fruit occlusions. Comput. Electron.
+Agric. 188, 106343. http://dx.doi.org/10.1016/j.compag.2021.106343, URL: https:
+//www.sciencedirect.com/science/article/pii/S0168169921003604.
+Gong, L., Wang, W., Wang, T., Liu, C., 2022. Robotic harvesting of the oc-
+cluded fruits with a precise shape and position reconstruction approach. J.
+Field
+Robotics
+39,
+69–84.
+http://dx.doi.org/10.1002/rob.22041,
+URL:
+https:
+//onlinelibrary.wiley.com/doi/abs/10.1002/rob.22041. arXiv:https://onlinelibrary.
+wiley.com/doi/pdf/10.1002/rob.22041.
+He, L., Fang, W., Zhao, G., Wu, Z., Fu, L., Li, R., Majeed, Y., Dhupia, J., 2022. Fruit yield
+prediction and estimation in orchards: A state-of-the-art comprehensive review for
+both direct and indirect methods. Comput. Electron. Agric. 195, 106812. http://
+dx.doi.org/10.1016/j.compag.2022.106812, URL: https://www.sciencedirect.com/
+science/article/pii/S0168169922001296.
+Herrero-Huerta,
+M.,
+González-Aguilera,
+D.,
+Rodriguez-Gonzalvez,
+P.,
+Hernández-
+López, D., 2015. Vineyard yield estimation by automatic 3d bunch modelling
+in field conditions. Comput. Electron. Agric. 110, 17–26. http://dx.doi.org/10.
+1016/j.compag.2014.10.003, URL: https://www.sciencedirect.com/science/article/
+pii/S0168169914002506.
+Hou, C., Zhang, X., Tang, Y., Zhuang, J., Tan, Z., Huang, H., Chen, W., Wei, S.,
+He, Y., Luo, S., 2022. Detection and localization of citrus fruit based on im-
+proved you only look once v5s and binocular vision in the orchard. Frontiers in
+Plant Science 13, http://dx.doi.org/10.3389/fpls.2022.972445, URL: https://www.
+frontiersin.org/articles/10.3389/fpls.2022.972445.
+Jocher, G., Chaurasia, A., Qiu, J., 2023. Ultralytics yolov8. URL: https://github.com/
+ultralytics/ultralytics.
+Kamatham, Y., Vemuri, S.S., 2017. Analysis and estimation of multipath interference us-
+ing dual and triple frequency gnss signals. In: 2017 IEEE Applied Electromagnetics
+Conference. AEMC, pp. 1–2. http://dx.doi.org/10.1109/AEMC.2017.8325762.
+Kang, H., Wang, X., Chen, C., 2022. Accurate fruit localisation using high reso-
+lution lidar-camera fusion and instance segmentation. Comput. Electron. Agric.
+203,
+107450.
+http://dx.doi.org/10.1016/j.compag.2022.107450,
+URL:
+https://
+www.sciencedirect.com/science/article/pii/S016816992200758X.
+Kschischang, F., Frey, B., Loeliger, H.A., 2001. Factor graphs and the sum–product
+algorithm. IEEE Trans. Inform. Theory 47, 498–519. http://dx.doi.org/10.1109/
+18.910572.
+
+Computers and Electronics in Agriculture 224 (2024) 109177
+15
+H. Wang et al.
+Kubo, N., 2009. Advantage of velocity measurements on instantaneous rtk positioning.
+GPS Solut. 13, 271–280. http://dx.doi.org/10.1007/s10291-009-0120-9.
+Kümmerle, R., Grisetti, G., Strasdat, H., Konolige, K., Burgard, W., 2011. G2o: A general
+framework for graph optimization. In: 2011 IEEE International Conference on
+Robotics and Automation. pp. 3607–3613. http://dx.doi.org/10.1109/ICRA.2011.
+5979949.
+Li, T., Sun, M., He, Q., Zhang, G., Shi, G., Ding, X., Lin, S., 2023. Tomato
+recognition and location algorithm based on improved yolov5. Comput. Electron.
+Agric. 208, 107759. http://dx.doi.org/10.1016/j.compag.2023.107759, URL: https:
+//www.sciencedirect.com/science/article/pii/S0168169923001473.
+Liu, T., Kang, H., Chen, C., 2023. Orb-livox: A real-time dynamic system for fruit
+detection and localization. Comput. Electron. Agric. 209, 107834. http://dx.doi.
+org/10.1016/j.compag.2023.107834, URL: https://www.sciencedirect.com/science/
+article/pii/S0168169923002223.
+Luo, L., Tang, Y., Zou, X., Ye, M., Feng, W., Li, G., 2016. Vision-based extraction of
+spatial information in grape clusters for harvesting robots. Biosyst. Eng. 151, 90–
+104. http://dx.doi.org/10.1016/j.biosystemseng.2016.08.026, URL: https://www.
+sciencedirect.com/science/article/pii/S1537511015303901.
+Maggiolino, G., Ahmad, A., Cao, J., Kitani, K., 2023. Deep oc-sort: Multi-pedestrian
+tracking by adaptive re-identification. In: 2023 IEEE International Conference
+on Image Processing. ICIP, pp. 3025–3029, URL: https://api.semanticscholar.org/
+CorpusID:257102808.
+Matese, A., Di Gennaro, S.F., 2021. Beyond the traditional ndvi index as a key
+factor to mainstream the use of uav in precision viticulture. Sci. Rep. 11, 2721.
+http://dx.doi.org/10.1038/s41598-021-81652-3.
+Miranda, J.C., Arnó, J., Gené-Mola, J., Lordan, J., Asín, L., Gregorio, E., 2023a.
+Assessing automatic data processing algorithms for rgb-d cameras to predict fruit
+size and weight in apples. Comput. Electron. Agric. 214, 108302. http://dx.doi.
+org/10.1016/j.compag.2023.108302, URL: https://www.sciencedirect.com/science/
+article/pii/S0168169923006907.
+Miranda, J.C., Gené-Mola, J., Zude-Sasse, M., Tsoulias, N., Escolà, A., Arnó, J., Rosell-
+Polo, J.R., Sanz-Cortiella, R., Martínez-Casasnovas, J.A., Gregorio, E., 2023b. Fruit
+sizing using ai: A review of methods and challenges. Postharvest Biol. Technol.
+206, 112587. http://dx.doi.org/10.1016/j.postharvbio.2023.112587, URL: https://
+www.sciencedirect.com/science/article/pii/S0925521423003484.
+Mur-Artal, R., Tardós, J.D., 2017a. Orb-slam2: An open-source slam system for
+monocular, stereo, and rgb-d cameras. IEEE Trans. Robot. 33, 1255–1262. http:
+//dx.doi.org/10.1109/TRO.2017.2705103.
+Mur-Artal, R., Tardós, J.D., 2017b. Visual-inertial monocular slam with map reuse. IEEE
+Robot. Autom. Lett. 2, 796–803. http://dx.doi.org/10.1109/LRA.2017.2653359.
+Obsie, E.Y., Qu, H., Drummond, F., 2020. Wild blueberry yield prediction using a
+combination of computer simulation and machine learning algorithms. Comput.
+Electron. Agric. 178, 105778. http://dx.doi.org/10.1016/j.compag.2020.105778,
+URL: https://www.sciencedirect.com/science/article/pii/S016816992031156X.
+Pini, M., Marucco, G., Falco, G., Nicola, M., De Wilde, W., 2020. Experimental
+testbed and methodology for the assessment of rtk gnss receivers used in precision
+agriculture. IEEE Access 8, 14690–14703. http://dx.doi.org/10.1109/ACCESS.2020.
+2965741.
+Rakun, J., Stajnko, D., Zazula, D., 2019. Plant size estimation based on the construction
+of high-density corresponding points using image registration. Comput. Electron.
+Agric. 157, 288–304. http://dx.doi.org/10.1016/j.compag.2018.12.053, URL: https:
+//www.sciencedirect.com/science/article/pii/S0168169917304660.
+Rapado-Rincón, D., van Henten, E.J., Kootstra, G., 2023. Development and evalua-
+tion of automated localisation and reconstruction of all fruits on tomato plants
+in a greenhouse based on multi-view perception and 3d multi-object tracking.
+Biosyst. Eng. 231, 78–91. http://dx.doi.org/10.1016/j.biosystemseng.2023.06.003,
+URL: https://www.sciencedirect.com/science/article/pii/S1537511023001162.
+Rehder, J., Nikolic, J., Schneider, T., Hinzmann, T., Siegwart, R., 2016. Extending
+kalibr: Calibrating the extrinsics of multiple imus and of individual axes. In: 2016
+IEEE International Conference on Robotics and Automation. ICRA, pp. 4304–4311.
+http://dx.doi.org/10.1109/ICRA.2016.7487628.
+Saastamoinen, J., 1972. Contributions to the theory of atmospheric refraction. Bull.
+Géod. (1946-1975) 105, 279–298. http://dx.doi.org/10.1007/BF02521844.
+Santos, T.T., de Souza, L.L., dos Santos, A.A., Avila, S., 2020. Grape detection,
+segmentation, and tracking using deep neural networks and three-dimensional
+association. Comput. Electron. Agric. 170, 105247. http://dx.doi.org/10.1016/
+j.compag.2020.105247,
+URL:
+https://www.sciencedirect.com/science/article/pii/
+S0168169919315765.
+Takasu, T., et al., 2009. Rtklib: Open source program package for rtk-gps. In: Proceed-
+ings of the FOSS4G. vol. 1, pp. 1–6, URL: https://api.semanticscholar.org/CorpusID:
+37732623.
+Wulfsohn, D., Aravena, Zamora, F., Potin, T., 2012. Multilevel systematic sampling
+to estimate total fruit number for yield forecasts. Precis. Agric. 13, 256–275.
+http://dx.doi.org/10.1007/s11119-011-9245-2.
+Xiong, J., Liang, J., Zhuang, Y., Hong, D., Zheng, Z., Liao, S., Hu, W., Yang, Z.,
+2023. Real-time localization and 3d semantic map reconstruction for unstruc-
+tured citrus orchards. Comput. Electron. Agric. 213, 108217. http://dx.doi.org/10.
+1016/j.compag.2023.108217, URL: https://www.sciencedirect.com/science/article/
+pii/S0168169923006051.
+Yu, T., Hu, C., Xie, Y., Liu, J., Li, P., 2022. Mature pomegranate fruit detection
+and location combining improved f-pointnet with 3d point cloud clustering
+in orchard. Comput. Electron. Agric. 200, 107233. http://dx.doi.org/10.1016/
+j.compag.2022.107233,
+URL:
+https://www.sciencedirect.com/science/article/pii/
+S0168169922005476.

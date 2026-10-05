@@ -123,13 +123,19 @@ def main():
     tulis("- Multi-pengamatan per tahun: " + ", ".join(f"{t}: {c1_th[t]}" for t in sorted(c1_th)))
     n_abs = sum(1 for r in mat if r["ada_abstrak"] == "ya")
     n_teks = sum(1 for r in mat if (KORPUS / "teks" / (r["key"] + ".txt")).exists())
-    tulis(f"- Dengan abstrak {n_abs} dari {len(mat)}; teks lengkap lokal {n_teks}")
+    n_pdf = sum(1 for r in mat if (KORPUS / "pdf" / (r["key"] + ".pdf")).exists())
+    c1_pdf = sum(1 for r in mat if r["kode"] == "C1" and (KORPUS / "pdf" / (r["key"] + ".pdf")).exists())
+    n_c1 = sum(1 for r in mat if r["kode"] == "C1")
+    tulis(f"- Dengan abstrak {n_abs} dari {len(mat)}; PDF teks lengkap {n_pdf} (teks terekstrak {n_teks}); "
+          f"multi-pengamatan dengan PDF {c1_pdf} dari {n_c1}")
     m("nYearFirst", th[2012])
     m("nYearPeak", th[2025])
     m("nMultiEarlyMax", max(c1_th[t] for t in range(2012, 2020)))
     m("nMultiPeak", c1_th[2025])
     m("nWithAbstract", n_abs)
-    m("nFullText", n_teks)
+    m("nFullText", n_pdf)
+    m("nMultiFullText", c1_pdf)
+    m("nMultiNoFullText", n_c1 - c1_pdf)
 
     # peta istilah (aturan sama dengan gambar_istilah di gambar_tinjauan.py)
     from gambar_tinjauan import ISTILAH

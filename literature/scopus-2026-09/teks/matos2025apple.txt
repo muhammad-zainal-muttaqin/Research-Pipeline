@@ -1,0 +1,567 @@
+An Apple Counting System Robust
+to Multiple Intermittent Occlusions
+Gon¸calo P. Matos1,3(B), Tiago G. Oliveira1, Filipe Silva1, Francisco Martinho2,
+Miguel Le˜ao2, Filipe Fonseca1, Jos´e Silvestre2, Jo˜ao P. Costeira3,
+Ricardo L. Saldanha1, Carlos Santiago3, and Ernesto M. Morgado1
+1 SISCOG – Sistemas Cognitivos, SA, Lisbon, Portugal
+goncalo.matos@siscog.pt
+2 Instituto Nacional de Investiga¸c˜ao Agr´aria e Veterin´aria (INIAV, IP),
+Alcoba¸ca, Portugal
+3 Institute for Systems and Robotics (ISR/IST), LARSyS, Instituto Superior
+T´ecnico, Lisbon, Portugal
+Abstract. Automated fruit counting, through the use of computer
+vision methods, is a very important step towards the development of
+precision agriculture, and, as a consequence, has been object of study by
+multiple authors. In this work, we present a novel method to detect, track
+and count fruits that is scalable and robust towards problems existing in
+other fruit counting methods. Namely, our approach consists in a method
+that uses (1) a stereo camera that can be used reliably under direct sun-
+light, (2) a fast detection algorithm, and (3) an algorithmic approach to
+track fruits which is robust to fruit occlusions. We applied our proposed
+solution in an apple orchard and were able to provide apple counts with
+an error ranging from 15% to 57%. The characteristics of this novel app-
+roach and the preliminary results achieved seem promising in order to
+tackle the problem of fruit counting with occlusions at the large scale of a
+whole orchard, since it addresses the problem of intermittent occlusions
+that is overlooked by other approaches. Even with errors, the overview
+of the entire orchard, resulting from the scalability of the process, which
+can be implemented with a camera in a tractor, makes real-time mapping
+possible, supporting technical decisions with major economical impact,
+such as supplementary fruit thinning, water or nutrient adjustments or
+harvest management.
+Keywords: Apple Orchard · Fruit counting · Fruit tracking · Stereo
+vision
+1
+Introduction
+1.1
+Problem Description and Motivation
+Recent improvements in sensor technology and the development of new com-
+puter vision techniques have made possible remarkable advancements towards
+c
+⃝The Author(s), under exclusive license to Springer Nature Switzerland AG 2025
+M. F. Santos et al. (Eds.): EPIA 2024, LNAI 14967, pp. 181–192, 2025.
+https://doi.org/10.1007/978-3-031-73497-7_15
+
+182
+G. P. Matos et al.
+automated agriculture, from decision support systems for agronomic manage-
+ment, to the ambitious goal of automation of cultural practices by machines.
+In particular, there is a strong interest in automatically counting fruits in an
+orchard, a task that is currently being handled by manual counting estimations,
+which is time consuming, impractical on a large scale, and highly error-prone.
+To address this problem, it is important to study, not just the algorithmic
+techniques to process data, but the sensors to collect it, as the feasibility of any
+proposed solution depends on the possible drawbacks of the tools available. In
+particular, we study the case of an apple orchard, although our system is general
+enough to potentially handle other kinds of fruits. This task has speciﬁc hurdles
+to be surpassed: the variability of fruit colour, size, orientation, visibility, and
+lightning conditions make the problem of detecting fruits challenging. Moreover,
+the intermittent occlusion of fruits by other fruits, branches and leaves is a major
+challenge to the problem of tracking and counting fruits.
+We approach the problem in this work using a very simple setup composed
+by a single stereo camera, which is more aﬀordable than most Digital Single-
+Lens Reﬂex (DSLR) cameras used in many similar works and performs better
+under sunlight conditions than most depth cameras studied. On the algorithmic
+part, we present a multi-step solution, beginning by detecting, then tracking, and
+ﬁnally counting the total number of fruits. On the detection end, we use a Deep
+Learning model for fast-detection. Regarding the tracking and counting part, we
+present a novel approach to fruit tracking based on 3D centroids which is robust
+to intermittent occlusions that happen when a fruit is being tracked, becomes
+occluded during a few frames, and reappears again later, and is computationally
+less demanding than a previously proposed approach to the same problem [8].
+Our solution may be summarised as follows. First, an object detector, trained
+on images of fruits that we collected and manually annotated, is used to detect
+fruits in each video frame. Then, fruits are tracked in 3D across the video frames
+by an algorithm that we developed, in order to associate detections of the same
+fruit across the video frames and count each fruit only once. Finally, the total
+number of fruits can be recovered by simply counting the number of objects that
+the algorithm tracked in step 2, after applying some ﬁlters.
+1.2
+Related Work
+Gongal et al. made a review [3] about the sensors, features and methods more
+commonly used for fruit detection and location and summarised the main issues
+that arise when tackling these problems, namely: variable lighting conditions,
+complex canopy structures, varying colour, size and shape of fruits, occlusions
+of fruits, clustering of fruits, and displacement of fruits by wind.
+Several authors already tackled the problem of identifying and counting
+fruit in orchards, with a variety of methods. Gen´e-Mola et al. [2] used RGB
+images collected with a DSLR camera and processed through a Structure-from-
+Motion (SfM) [15] pipeline in order to detect and locate fruits in 3D. They
+applied the Mask R-CNN deep learning model to segment apples, while using
+
+An Apple Counting System Robust to Multiple Intermittent Occlusions
+183
+other faster detection methods such as the YOLO [11] would improve the perfor-
+mance of the system. Moreover, the high computational time needed to process
+the images with SfM is one limitation that has to be taken into account. Gongal
+et al. [4] used a combination of RGB images and depth maps collected with a
+time-of-ﬂight depth camera to locate and count apples on an orchard. Wang et
+al. [16] used a stereo camera rig composed of two DSLR cameras to detect and
+count apples, by triangulating their 3D positions in the image sequence, and
+then projecting them onto a global coordinate system. The biggest limitation of
+both works is their fruit detection being heavily tied to colour features, which are
+very sensitive to variations in light and colour. Despite the good results in the
+identiﬁcation of red apples, the methods struggle to identify apples in early phe-
+nological stages, when they are green and smaller in size. The solutions proposed
+by Nguyen et al. [9] and Tao et al. [14] used a low-cost RGB-D camera to photo-
+graph orchards and generate a 3D point cloud, and for fruit detection, they ﬁlter
+the point cloud by colour and apply clustering techniques. These solutions using
+depth cameras rely on infrared light and thus have limitations in outdoor con-
+ditions under direct sunlight, depending on a light shield, tunnel or some other
+device to block it and on the usage of LEDs to create the ideal lighting conditions.
+This adds complexity to the data collection process, and makes the solution less
+scalable if one intends to apply it in large scale to a whole orchard, for example,
+and to various conditions such as terrain slope. Stein et al. [13] and also Liu
+et al. [7] tackled the problem of counting and locating fruits with a monocular
+RGB camera by training a Faster R-CNN model. The biggest limitation of both
+approaches is that the tracking is done sequentially, with each detection being
+matched against the ones in the next image only. This means that a single false
+negative, i.e. a fruit that is not detected in a given image, inevitably breaks the
+tracking of that fruit, and a new track is introduced later on when the fruit is
+detected again in a subsequent image, leading the system to count two fruits
+instead of one.
+To summarise, most of the works relying on depth cameras based on infrared
+light have limited applicability under direct sunlight, resorting to solutions such
+as light tunnels to block it. On the other hand, solutions relying on monocular
+RGB cameras tend to use SfM to produce 3D data and are thus computation-
+ally more demanding than stereo approaches. On the detection side, approaches
+relying on colour and geometric features to detect fruits through more traditional
+computer vision and/or clustering techniques are strongly aﬀected by variations
+in fruit colour and light conditions, whereas approaches based on Deep Learning
+models are usually more robust. Therefore, we propose a solution to the fruit
+counting problem that is scalable – i.e. suitable to be adopted at a whole orchard
+level by a farmer –, robust to light and colour changes in outdoor conditions. We
+ruled out solutions relying on infrared light and light shields, and fruit detectors
+based solely on colour, and decided to go for a stereo solution in order to recover
+depth maps in real time.
+
+184
+G. P. Matos et al.
+2
+Materials and Methods
+2.1
+Description of the Data
+The data for the following tasks was collected in an orchard owned by INIAV [5]
+in Alcoba¸ca, Portugal (Lat. 39,549 N; Long. −8,957 W), with a stereo camera—
+the ZED 2i—being held by hand, attached to a computer, by shooting video in
+roughly straight lines parallel to the line of trees. No stabiliser or any other type
+of helping device was used. Several lines of trees were captured, corresponding
+to diﬀerent apple tree clones from the group Gala, when the fruits were close to
+harvest, corresponding to the phenological stages from BBCH 81 (beginning of
+ripening) to BBCH 87 (near fruit ripe for picking), according to BBCH-scale for
+pome fruits.
+2.2
+Detecting Fruits in 2D Images
+Data Annotation. Our image annotations consist of bounding boxes around
+all the apples visible in each image. Video frames corresponding to the left view
+of the stereoscopic camera were extracted from the ZED proprietary video ﬁles
+and stored as image ﬁles. They were then manually annotated using the open-
+source tool Makesense [12]. Only one in every 30 frames was annotated due to
+the similarity between consecutive frames. We annotated a total of 183 images,
+each one containing approximately 100 fruits, on average, convering the afore-
+mentioned phenological states.
+Model Training. For this work, a Darknet implementation of the YOLOv4
+[1] was used. Darknet is an open source neural network framework written in
+C and CUDA [10]. The YOLOv4 is an object detection Deep Learning model
+belonging to the YOLO family, which was speciﬁcally designed to handle real-
+time object detection [11]. Unlike many of the deep learning models used in some
+of the previous works, this type of model is more suitable for in-ﬁeld operations
+due to its speed. Although more recent YOLO models are available, we stick
+to v4 due to its license allowing commercial usage. Our YOLO model was ﬁrst
+pre-trained on the MS COCO [6] dataset—a large scale image dataset containing
+330K images over 80 diﬀerent object categories. Then, we ﬁne-tuned it to our
+own tasks, using our annotated dataset.
+2.3
+Tracking and Counting Fruits in 3D
+Overview. Having a YOLO detector capable of detecting the fruits of interest
+in each video frame is not suﬃcient to count them. In fact, the same fruit will
+most certainly appear in several video frames, thus simply summing the num-
+ber of detected boxes ends up with duplicate counts. We must track each fruit
+across frames in order to understand which detection boxes (in diﬀerent frames)
+correspond to the same fruit, and then count only one of them. This is where 3D
+data becomes useful.
+
+An Apple Counting System Robust to Multiple Intermittent Occlusions
+185
+By using a Structure-from-Motion (SfM) algorithm, it is possible to assemble,
+from a set of 2D images, a 3D representation of the photographed scene in
+the form of a point cloud and/or a depth map. Another way of obtaining a
+point cloud is by using a depth camera or a stereo camera, such as the ZED
+2i. These devices are designed to output a depth map – from which a point
+cloud can be directly generated –, thus avoiding the need to run computationally
+expensive SfM algorithms.
+Having a dense 3D representation of the scene in the form of a point cloud,
+there is a matching between each pixel in a 2D image and a 3D point in space.
+This allows us to project each fruit detected in a 2D frame onto its 3D repre-
+sentation in a global coordinate system that is common to all frames. Therefore,
+whenever the same fruit is detected in diﬀerent frames, the projection of the cor-
+responding detection boxes will lead to the same region in 3D space, and so we
+can conclude that it is in fact the same object and thus count it only once.
+Algorithm Description. In order to track and count fruits along a video, we
+implemented the algorithm proposed in [8] which works by reconstructing a 3D
+scene from the video and localising the fruits in 3D space. While the authors in
+[8] used a SfM pipeline to obtain the camera extrinsics and dense depth maps for
+the scene, which is a computationally demanding task, we used the ZED SDK
+instead to retrieve this data in real time from the ZED 2i stereo camera. As a
+result, we avoid several hours of computation and obtain a system that is less
+demanding in terms of computer resources and suitable to be setup and used in
+ﬁeld, either manually operated or mounted on an agricultural vehicle. Moreover,
+we also implemented an algorithm similar to [8] but, instead of re-projecting the
+whole set of 3D points, it re-projects only the 3D centroid of each fruit. This
+algorithm is summarised in the block diagram shown in Fig. 1, and detailed in
+the pseudo-code of Algorithm 1.
+For each video frame, we ﬁrst run YOLO on that frame to detect fruits. Then,
+for each detected fruit, the pixels contained in its bounding box are projected
+onto the 3D global coordinate system using the frame’s depth map. Since some
+of these points belong to the fruit, but others do not – usually some background
+pixels are contained in the bounding box –, we compute the median of the coor-
+dinates of these points to obtain a centroid representing the fruit. The centroid
+is used to describe each encountered fruit throughout the video.
+The centroids of all the fruits detected in the previous frames are reprojected
+into the 2D image plane of the current video frame by using Eq. 1:
+λ
+⎡
+⎣
+u
+v
+1
+⎤
+⎦= K · [R|t] ·
+⎡
+⎢⎢⎣
+X
+Y
+Z
+1
+⎤
+⎥⎥⎦
+(1)
+where (X, Y, Z) is a 3D point in the global coordinate system, R and t are the
+rotation matrix and translation vector, respectively, from world to camera coor-
+dinates, K is the camera intrinsics matrix, λ is the scale factor and (u, v) are
+
+186
+G. P. Matos et al.
+Fig. 1. Block diagram of the tracking algorithm steps for one frame. This procedure is
+repeated for every frame in the video. In the end, the number of fruits is given by the
+number of centroids.
+Algorithm 1. Fruit tracking and counting algorithm
+1: procedure Count fruits(video)
+2:
+centroids ←∅
+3:
+for i = 1 to num frames(video) do
+4:
+frame ←next frame(video)
+5:
+detections ←Y OLO detect(frame)
+6:
+reprojected ←reproject(centroids, frame)
+▷Equation 1
+7:
+for each detection in detections do
+8:
+new centroid ←compute centroid(detection)
+9:
+for each centroid in reprojected do
+10:
+if centroid ∈detection.box then
+11:
+centroid ←update(centroid, new centroid)
+12:
+detection.ID ←centroid.ID
+13:
+else
+14:
+detection.ID ←new centroid.ID
+15:
+centroids ←centroids + {new centroid}
+return card(centroids)
+the coordinates of the corresponding 2D projection into the frame. The camera
+intrinsics matrix K includes parameters such as the lens’ focal length and the
+optical center, and is obtained by a calibration procedure. The scale factor λ
+appears in the equation due to the ambiguity induced by the loss of one dimen-
+sion in the projection from the 3D world to the 2D image plane. We may simply
+divide the ﬁrst two coordinates of the 2D projection by the third coordinate to
+convert homogeneous coordinates from projective space into euclidean space and
+obtain (u, v).
+If the 2D projection of a given centroid falls within a bounding box in the
+current frame, then the fruit in this bounding box is assumed to be the same
+
+An Apple Counting System Robust to Multiple Intermittent Occlusions
+187
+of that centroid, which means we are tracking a fruit that has been seen before,
+and so we assign it the same ID. If, however, there is no 2D projection falling
+inside a given bounding box, then we assume it corresponds to a new fruit and
+a new ID is assigned to it. We follow this procedure until the last video frame.
+In the end, the number of unique IDs is, in theory, the total number of fruits,
+without repetition.
+Due to the error associated with the computation of the camera poses and
+the fruit centroids, the centroids sometimes lie closer to the surface of the fruit
+than to its center of mass. Therefore, when the camera sees the same fruit in
+a diﬀerent angle, in a subsequent frame, the centroid projection may end up
+outside of the bounding box of that fruit by a small margin, originating a new
+detection with a brand new ID, making the algorithm wrongly count this fruit
+twice. To minimise this problem and improve the tracking stability, we update
+the coordinates of each centroid with each new frame where that same fruit is
+detected, by averaging over the centroids previously calculated for that fruit.
+Another obstacle to this method is created by YOLO, which sometimes pro-
+duces false positive detections. In order to mitigate these, in the end, when we
+are counting the unique IDs of the detected fruits, we ignore fruits that were
+detected in less than 5 frames in the whole video, as proposed in [8].
+The algorithm that we propose here has the potential to be particularly
+suitable for real-time detection since, in each step, it only needs the current
+video frame, its depth map and the previously calculated centroid coordinates,
+instead of having to handle all the 3D points, like in [8]. The depth camera
+used is capable of calculating the depth map in real-time, and the rest of the
+computational resources are mostly spent on the 2D detection. Thus, given our
+practical choice of the YOLO model, the combination of our setup, algorithm,
+and model is ideal for in-ﬁeld fruit detection.
+3
+Experimental Results
+3.1
+Test Procedure
+We prepared three diﬀerent scenarios to match as closely as possible the one
+in which our system is intended to be used, each corresponding to a diﬀerent
+clone of the most important apple variety planted all over the world (Schninga
+Schnico, Schnico Red, Galafab). In the same orchard used for training the models
+(Sect. 2.1), we chose 3 portions of tree lines that were not used during training.
+For each portion, we chose 3 to 6 representative trees to evaluate our algorithm
+on, which were ﬁlmed on one side of the line only, and whose fruits were manually
+counted in the ﬁeld and on the video. The selected trees are not necessarily
+consecutive, so the video frames were manually edited to mask all other trees
+before we passed them to the algorithm.
+Fruit counts manually obtained in ﬁeld are not a suitable ground truth to
+directly evaluate our system’s performance, because the number of apples visible
+on the video captured from one side of the trees is less than the whole number
+of fruits present on the trees, and is higher than the number of fruits counted
+
+188
+G. P. Matos et al.
+on that side of the trellis—i.e. because trees are espaliered, so there are fruits
+hanging on the other side of the tree that are visible. Therefore, we had to
+manually annotate all the fruits on the videos and track them “by hand” to
+produce a reliable ground truth for the number of fruits that are actually visible
+in the videos. In the following section, that is the number we used as ground
+truth.
+The datasets are summarised in Table 1. These correspond to the same
+datasets published by [8], which include erratic camera movement, low frame
+rates and intermittent occlusions of fruits. Therefore, the results presented here
+reﬂect the behaviour of the proposed system under real usage scenarios with
+those challenging conditions.
+Table 1. Datasets description.
+Dataset
+# trees
+# apples (ground truth)
+Galafab-west
+3
+233
+Schnico-Red-east
+5
+356
+Schniga-Schnico-west
+6
+373
+We evaluate the tracking and counting capacity of our system using the
+YOLOv4 model trained to detect mature apples (Sect. 2.2). A visual output
+of the fruit tracking algorithm is illustrated in Fig. 2.
+Fig. 2. The fruit tracking process. On the left image, which is frame 1, all the fruits
+are detected for the ﬁrst time (yellow boxes). On the right image, which is frame 4,
+most of the fruits are the same of the previous frames, so they are represented in
+cyan boxes. The red dots are the projections of the 3D centroids of all fruits visible
+in previous frames onto the current frame. Grey boxes correspond to fruits that were
+detected by YOLO but whose estimated centroid lies outside of the detection box when
+re-projected onto the same frame, due to noise in the depth data, and hence are not
+considered in the current frame for fruit counting (Color ﬁgure online).
+
+An Apple Counting System Robust to Multiple Intermittent Occlusions
+189
+3.2
+Results on Fruit Tracking and Counting
+The results obtained with the proposed Algorithm (Sect. 2.3) and the algorithm
+proposed by [8] are shown on Table 2 and Table 3, respectively.
+The Absolute Percentage Error (APE) metric shown on the Tables corre-
+sponds the quotient
+APE = |Estimated −Actual|
+Actual
+× 100
+(2)
+where Estimated is the number of fruits estimated by the algorithm and Actual
+is the actual number of fruits (ground truth).
+The Multiple Object Tracking Accuracy (MOTA) is a metric used to evaluate
+object trackers that takes into account both the performance of the detection (i.e.
+false negatives (FN), false positives (FP)) and the number of identity switches
+(IDS) between tracked objects (i.e. tracking errors), and is computed as:
+MOTA = 1 −FN + FP + IDS
+GT
+(3)
+where GT is the ground truth number of objects to track.
+Table 2. Fruit tracking and counting results with the algorithm we propose, which
+re-projects only fruit centroids.
+Dataset
+# apples (estimated)
+# APE (%)
+MOTA
+Galafab-west
+267
+14.59
+0.32
+Schnico-Red-east
+286
+19.66
+0.14
+Schniga-Schnico-west
+586
+57.10
+0.27
+Table 3. Fruit tracking and counting results with the algorithm proposed in [8], which
+re-projects all the 3D points for each fruit.
+Dataset
+# apples (estimated)
+# APE (%)
+MOTA
+Galafab-west
+193
+17.17
+0.49
+Schnico-Red-east
+248
+30.34
+0.25
+Schniga-Schnico-west
+395
+5.90
+0.42
+Overall, the results suggest that the system that we propose, either with
+algorithm proposed in this paper or the one proposed by [8], is able to successfully
+track fruits with high precision and provide acceptable errors for the total fruit
+count. Comparing the algorithm that we propose in this paper with that of
+
+190
+G. P. Matos et al.
+[8], we realise that re-projecting all the points, rather than only the centroids,
+makes the system more robust to errors generated by the object detector and
+the depth estimated by stereo. This conclusion stems from the higher MOTA
+values reported in Table 3, which indicate more stable tracks.
+Our algorithm (Table 2) achieves slightly better results in terms of total fruit
+count on the ﬁrst two datasets, but produces a much worse count in the third
+dataset due to over-counting, compared to the algorithm proposed by [8]. We
+believe this is due to noise in the camera extrinsics estimated in real-time, prob-
+ably because the images in this dataset are more diﬃcult to track from a visual
+odometry perspective. The increased robustness shown by the algorithm pro-
+posed in [8] comes from re-projecting all the points from each fruit and com-
+bining that with a Hungarian assignment. That approach reinforces the correct
+matches frame after frame, such that even if errors or noise occur later, the mass
+of points previously matched avoids a wrong match of new detections to fruits.
+On the other hand, when we project only the fruit centroids, since the tracking is
+less robust, the algorithm tends to overestimate the number of fruits, because it
+tends to lose track of a fruit more easily and thus a new tracking “object” is
+created for the same fruit, which ends up being counted several times.
+The advantage of working with centroids is a less computationally demanding
+algorithm (less points to process), which makes it more suitable for real time
+usage on less powerful IoT devices, at the cost of a decreased accuracy. Moreover,
+the usage of a stereo camera instead of COLMAP (the SfM component used in
+[8]) allowed us to reduce the total computational time drastically. Overall, with
+the solution here proposed, we could reduce the total processing time for each
+dataset from 2–3 h to 1.5–2.5 min.
+4
+Conclusions
+This work’s strong suit is its robustness when tracking fruits with intermittent
+occlusions (as in [8]) while keeping its applicability to devices with lower com-
+putational resources. Compared to the algorithm proposed in [8], the approach
+that we propose, based on 3D centroids, is computationally less demanding and
+thus more suitable to online settings, e.g. where a system with a stereo camera
+is used to obtain fruit counts in real time. For use cases where accuracy is more
+important than speed, our system can still be paired with the more robust algo-
+rithm proposed in [8] either with a stereo camera, such as the ZED 2i used in
+this work, or even with a SfM pipeline as described in [8].
+The results shown in this paper were obtained with a ZED camera operated
+by hand, and the video processed oﬄine. In the near future, we want to test our
+algorithm in an online setting, where the camera is attached to an agricultural
+vehicle and the depth maps for each frame are fetched in real-time from the ZED
+camera, as this would be the most realistic and scalable setup, capable of easily
+covering large ﬁeld portions.
+Besides the promising results shown here, we must look for the opportuni-
+ties that a system like this can add to the precision fruit farming, compared
+
+An Apple Counting System Robust to Multiple Intermittent Occlusions
+191
+to the information obtained by the manual counting of a few trees, currently
+applied in modern fruit farms. In fact, even with errors, the overview of the
+entire orchard, resulting from the installation of the camera in a tractor makes
+real-time mapping possible, supporting technical decisions with major economi-
+cal impact, such as supplementary fruit thinning, water or nutrient adjustments
+or harvest management. Historical data inside each orchard also allows diﬀer-
+ent approaches in pruning strategies, adjusting the number of ﬂower buds, as
+well as in the deﬁnition of an optimised fruit setting strategy. Combined with
+other solutions provided by remote sensing, it can be also a powerful tool for the
+application of variable rate technologies, such as precision fertilisation.
+The algorithmic approach presented in this work, along with its future
+improvements, was done during the development of a software solution which is
+currently being built by SISCOG1 . This solution seeks to integrate and process
+data from diﬀerent sensors (remote or not), and display the results in a user-
+friendly manner in order to support farmer’s decision making. We believe that,
+by presenting the results of this research to farmers in this way, we are able to
+obtain valuable feedback that will allow us to deﬁne future directions for this
+work.
+Acknowledgements. To INIAV [5], for providing access to the orchards, for collect-
+ing images and data. To the colleagues Andr´e Leit˜ao, Carolina Resende and Sara Barros
+from SISCOG, for the help with ground truth annotations. This work was supported by
+LARSyS funding (DOI: 10.54499/LA/P/0083/2020, 10.54499/UIDP/50009/2020, and
+10.54499/UIDB/50009/2020) and 10.54499/2022.07849.CEECIND/CP1713/CT0001,
+through Funda¸c˜ao para a Ciˆencia e a Tecnologia, and by the SmartRetail project
+[PRR - C645440011-00000062], through IAPMEI - Agˆencia para a Competitividade e
+Inova¸c˜ao.
+Competing interests. The authors have no competing interests to declare that are
+relevant to the content of this article.
+References
+1. Bochkovskiy, A., Wang, C.Y., Liao, H.Y.M.: YOLOv4: optimal speed and accuracy
+of object detection. arXiv preprint arXiv:2004.10934 (2020)
+2. Gen´e-Mola, J., et al.: Fruit detection and 3D location using instance segmentation
+neural networks and structure-from-motion photogrammetry. Comput. Electron.
+Agric. 169, 105165 (2020). https://doi.org/10.1016/j.compag.2019.105165
+3. Gongal, A., Amatya, S., Karkee, M., Zhang, Q., Lewis, K.: Sensors and systems
+for fruit detection and localization: a review. Comput. Electron. Agric. 116, 8–19
+(2015). https://doi.org/10.1016/j.compag.2015.05.021
+4. Gongal, A., Silwal, A., Amatya, S., Karkee, M., Zhang, Q., Lewis, K.: Apple crop-
+load estimation with over-the-row machine vision system. Comput. Electron. Agric.
+120, 26–35 (2016).https://doi.org/10.1016/j.compag.2015.10.022
+5. INIAV: Instituto nacional de investiga¸c˜ao agr´aria e veterin´aria. https://www.iniav.
+pt/. Accessed 24 Mar 2023
+1 SISCOG - Sistemas Cognitivos, SA. https://www.siscog.pt/en-gb/rd/.
+
+192
+G. P. Matos et al.
+6. Lin, T.-Y., et al.: Microsoft COCO: common objects in context. In: Fleet, D.,
+Pajdla, T., Schiele, B., Tuytelaars, T. (eds.) ECCV 2014, Part V. LNCS, vol.
+8693, pp. 740–755. Springer, Cham (2014). https://doi.org/10.1007/978-3-319-
+10602-1 48
+7. Liu, X., et al.: Monocular camera based fruit counting and mapping with semantic
+data association. IEEE Robot. Autom. Lett. 4(3), 2296–2303 (2019). https://doi.
+org/10.1109/LRA.2019.2901987
+8. Matos, G.P., Santiago, C., Costeira, J.P., Saldanha, R.L., Morgado, E.M.: Tracking
+and counting apples in orchards under intermittent occlusions and low frame rates.
+In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition, pp. 5413–5421 (2024)
+9. Nguyen, T.T., Vandevoorde, K., Wouters, N., Kayacan, E., De Baerdemaeker, J.G.,
+Saeys, W.: Detection of red and bicoloured apples on tree with an RGB-D camera.
+Biosyst. Eng. 146, 33–44 (2016). https://doi.org/10.1016/j.biosystemseng.2016.01.
+007
+10. Redmon, J.: DarkNet: Open Source Neural Networks in C (2013–2016). http://
+pjreddie.com/darknet/
+11. Redmon, J., Divvala, S., Girshick, R., Farhadi, A.: You only look once: uniﬁed,
+real-time object detection. In: Proceedings of the IEEE Conference on Computer
+Vision and Pattern Recognition, pp. 779–788 (2016)
+12. Skalski, P.: Make Sense (2019). https://github.com/SkalskiP/make-sense/
+13. Stein, M., Bargoti, S., Underwood, J.: Image based mango fruit detection, local-
+isation and yield estimation using multiple view geometry. Sensors 16(11), 1915
+(2016). https://doi.org/10.3390/s16111915
+14. Tao, Y., Zhou, J.: Automatic apple recognition based on the fusion of color and 3D
+feature for robotic fruit picking. Comput. Electron. Agric. 142, 388–396 (2017).
+https://doi.org/10.1016/j.compag.2017.09.019
+15. Ullman, S.: The interpretation of structure from motion. Proc. Royal Soc. Lond.
+Ser. B Biol. Sci. 203(1153), 405–426 (1979)
+16. Wang, Q., Nuske, S., Bergerman, M., Singh, S.: Automated crop yield estimation
+for apple orchards. In: Desai, J.P., Dudek, G., Khatib, O., Kumar, V. (eds.) Exper-
+imental Robotics, vol. 88, pp. 745–758. Springer, Heidelberg (2013). https://doi.
+org/10.1007/978-3-319-00065-7 50

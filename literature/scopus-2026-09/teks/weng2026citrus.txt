@@ -1,0 +1,1642 @@
+ 
+ 
+无人机遥感视频影像结合改进YOLO11 的柑橘追踪计数方法
+翁海勇1,2,3 ，杜　璐1,2 ，张博昱1,2 ，苏磊磊1,2 ，许金钗1,2 ，
+肖桂淼1,2 ，孙大伟3,4 ，叶大鹏1,2※
+（1.   福建农林大学机电工程学院，福州 350002；2.   福建省农业信息感知技术重点实验室，福州 350002；3.   农业农村部东南丘
+陵山地农业装备重点实验室（部省共建），杭州 310021；4.   浙江省农业科学院农业装备研究所，杭州 310021）
+摘　要：针对无人机遥感尺度下，柑橘估产过程中存在跟踪计数误差大的问题，该研究提出一种轻量化 YOLO11-PMSL
+模型与ByteTrack-DIoU 算法相融合的无人机视频流柑橘果实跟踪计数方法。首先，在YOLO11n 架构的基础上，通过重
+构特征金字塔结构，将检测头层级精简为P2～P4 三级结构，以增强微小目标感知能力；其次，引入C3k2-
+MSEIE（C3k2-multi-scale edge information enhance）多尺度边缘增强模块，通过自适应尺度融合与轮廓强化机制，以提
+升果实轮廓表征能力；进一步，采用SIoU（scylla-IoU）损失函数替代CIoU（complete-IoU）损失函数，引入方向敏感
+性约束以期提升检测框定位质量与训练稳定性，最后，通过LAMP（layer adaptive magnitude-based pruning）方法模型剪
+枝，去除冗余的权重，以减少参数量和浮点运算量，压缩模型体积。在ByteTrack-DIoU 算法中嵌入区域计数防抖机制，
+进一步解决遮挡导致的ID 跳变问题。结果表明，改进后YOLO11-PMSL 目标检测模型精确率（P）、均值平均精度
+（mAP0.5）分别提高3.3、9.3 个百分点。剪枝后，与原始的YOLO11n 相比，在保持精度总体提升的同时，模型的参数
+量、浮点运算量和模型大小分别降低了86.05%、26.98% 和76.36%，检测速度由84.83 帧/s 提高到140.12 帧/s。与传统
+SORT、DeepSORT 和BotSORT 算法相比，ByteTrack-DIoU 算法的多目标跟踪准确率分别提高5.5、5.7 和 4.3 个百分点，
+跟踪计数平均精度达88.4%。该方法可准确实现果园柑橘果实的跟踪计数，为柑橘产量预测提供有效的技术方案。
+关键词：无人机；遥感；柑橘；YOLO11n；ByteTrack；计数
+doi：10.11975/j.issn.1002-6819.202508166
+中图分类号：S24　　　　文献标志码：A　　　　文章编号：1002-6819(2026)-07-0182-11
+翁海勇，杜璐，张博昱，等. 无人机遥感视频影像结合改进YOLO11 的柑橘追踪计数方法[J]. 农业工程学报，2026，
+42(7)：182-192. doi: 10.11975/j.issn.1002-6819.202508166　　http://www.tcsae.org
+WENG Haiyong, DU Lu, ZHANG Boyu, et al. Citrus tracking and counting using UAV remote sensing video imagery with
+improved YOLO11[J]. Transactions of the Chinese Society of Agricultural Engineering (Transactions of the CSAE), 2026, 42(7):
+182-192. (in Chinese with English abstract)　　doi: 10.11975/j.issn.1002-6819.202508166　　http://www.tcsae.org
+ 0　引　言
+柑橘产量数据的精准获取是果园精细化管理的核心
+基础[1]。在传统的估产实践中，多以人工计数的方式进
+行，存在费时耗力，成本高以及估测结果并不准确等问
+题。因此，研究快速且实用的柑橘产量预测方法具有重
+要意义。
+早期农作物计数研究主要依赖传统图像处理技术。
+TRAN 等[2] 采用图像分割、边界确定、形状分析和重叠
+分析，以计算每棵树的火龙果数量。BEHERA 等[3] 以迭
+代方式实现霍夫圆变换（hough circle transform, HCT）和
+颜色阈值，以检测和计数每个苹果果实。然而上述算法，
+对复杂背景和光照变化的鲁棒性差，难以处理多目标场
+景及遮挡问题。近年来，深度学习技术在果实计数领域
+得到了广泛应用。ZHU 等[4] 通过深度学习的检测模型来
+计算树木图像中的果实数量，考虑包括果实数量、树木
+修剪强度和三个不同的图像视图，采用XGBoost 模型根
+据果实计数估计单棵树的产量。LI 等[5] 基于 MHSA-
+YOLOv8 构建的番茄果实成熟度分级模型，构建计数模
+型的精确度为99%。为克服二维图像在空间信息表达上
+的局限，研究者开始引入三维信息，以增强模型的空间
+感知能力。ZINE-EL-ABIDINE 等[6] 提出 3D 彩色点云处
+理管道，通过冬季与收获期点云对齐将苹果分配给单棵
+树，实现了高于 95% 的分配准确率，为茂密果园单树苹
+果计数提供可行方案。ZHANG 等[7] 基于三维点云多特
+征融合，采用 SVM 分类、加权 KNN 平滑优化，结合集
+聚 - 分裂分层聚类计数，石榴果实计数准确率和召回率
+分别为78.15% 和87.74%，提升自然环境下计数准确性。
+虽然以上研究均取得了较高精度，但这些方法大多基于
+静态图像处理，缺乏实时性，且数据采集过程耗时费力，
+难以实现果园大范围的快速动态监测。此外，捕捉三维
+信息的设备昂贵、操作复杂、数据处理缓慢，实用性受
+到极大限制。
+为解决上述问题，研究者开始尝试基于目标检测与
+多目标跟踪技术相结合的动态计数方法。WANG
+等 [8] 使用YOLO 实现对芒果的检测，并结合卡尔曼滤波
+  
+收稿日期：2025-08-20　　修订日期： 2026-01-22
+基金项目：农业农村部东南丘陵山地农业装备重点实验室（部省共建）项
+目（KFKT2024008）；福建省工信厅人工智能应用场景项目项目（KLY24501XA）；
+福建农林大学科技创新专项基金（KFB24041A）
+作者简介：翁海勇，博士，副教授，研究方向为农作物光学传感及装备。
+Email：hyweng@fafu.edu.cn
+※通信作者：叶大鹏，博士，教授，研究方向为智能农业装备。
+Email：dpy@fafu.edu.cn
+ 
+第 42 卷 　 第 7 期
+农 业 工 程 学 报
+Vol.42　No.7
+182
+2026 年 　　 4 月
+Transactions of the Chinese Society of Agricultural Engineering
+Apr. 2026
+
+和匈牙利算法，实现对芒果的实时计数。高芳芳等[9] 利
+用改进的匈牙利算法和YOLOV4-tiny 进行苹果匹配，算
+法改进后的跟踪置信度大大增强。然而，这种跟踪方法
+只对 30 s 内的视频进行计数。GE 等[10] 提出了一种称为
+YOLO-deepsort 的视觉对象跟踪网络，用于识别和计数
+不同生育时期的番茄。但是由于环境复杂其检测不稳定，
+检测过程中会晃动，目标跟踪和计数效果不好，需进一
+步提高应对复杂环境的能力。VIVEROS  等[11] 利用
+YOLOv5 模型对甜椒进行实时目标检测、分类和定位，
+并结合 DeepSORT 算法进行高效跟踪，有效克服了遮挡、
+叶子和树枝等环境影响，准确率达到 85.7%。LIN 等[12]
+针对阴影和光照影响计数精度的问题，对 YOLOv5s 进行
+改进，并结合 DeepSORT 实现跟踪计数。改进后模型的
+多目标跟踪准确率达 90.83%，但模型对小目标的感知能
+力有限，且模型整体轻量化水平与实时性难以满足大规
+模果园的高效计数需求。ZHENG 等[13] 提出基于无人机
+的柑橘计数，该方法实现了无人机在线计数管道在弱光
+场景的应用，在白天傍晚的场景下其误差均值仅为
+9.81%，实现昼夜场景计数，提升了检测精度与运行时
+长。但该系统轻量化程度有待提升。殷慧军等[14] 提出
+YOLOv7-GCSF 与 DeepSORT 融合的无人机视频西瓜计
+数方法，计数精度达 96.3%，但因西瓜体积较大、生长
+形态相对规则，其遮挡场景复杂度较低，研究未考虑严
+重遮挡问题。ByteTrack 能有效利用低置信度检测框进行
+目标关联，从而在遮挡、密集及晃动场景中保持连续轨
+迹，吕佳等[15] 提出一种基于自纠正 NMS-ByteTrack 的套
+袋葡萄计数方法，平均计数精度达到 82.8%。刘鑫等[16]
+设计一种结合改进YOLOv7 与ByteTrack 的干制哈密大
+枣在线检测与计数系统，改进模型平均检测精度达
+98.03%，配套计数模型准确率为90.12%。吕佳等[17] 提
+出一种基于EMO-YOLOv5s 的双关联套袋葡萄串实时检
+测与计数方法，模型优化后平均检测精度96.5%，平均
+计数精度达93.1%。这些研究表明目标检测与多目标跟
+踪技术在农业计数领域具有巨大潜力，为柑橘估产提供
+了重要基础。
+然而，果园大范围快速动态监测的实际应用场景，
+对模型的部署环境提出了严苛要求：模型需能够适配低
+功耗、小体积的移动边缘计算平台以实现现场实时处理。
+但现有模型的参数量与计算量较大，其在资源受限的边
+缘平台上难以满足实时性运行需求。针对边缘端资源受
+限的部署特性，适用模型需具备三项核心条件：一是模
+型体积小，适配边缘硬件存储容量，二是计算复杂度低，
+适配硬件算力水平，可实现数据的实时处理；三是参数
+量少，便于在资源有限的边缘硬件上高效部署。
+针对柑橘的追踪计数主要存在以下3 个问题：
+1）检测目标过小以及复杂背景干扰，导致果实漏检、
+误检率高，直接影响计数起点；
+2） 枝叶晃动、果实密集造成的频繁遮挡极易导致
+目标丢失（ID switch）和轨迹断裂，难以保证长时间、
+连续、准确的ID 保持与计数；
+3） 现有高性能模型计算量大，难以在资源受限的
+移动边缘平台上实时处理。
+针对上述问题，本研究对YOLO11n 的网络结构进
+行改造，提升目标检测精度，控制模型复杂度，兼顾精
+度与效率。同时，对 ByteTrack 算法进行改进，旨在提
+高追踪的精度，从而实现对柑橘果实的精准计数，为柑
+橘果园产量预测提供高效可靠的技术支持。
+ 1　数据集构建
+ 1.1　图像采集
+本研究以“脐橙52 号”柑橘（Navel Orange 52）为
+研究对象。为构建具有代表性的数据集，于2024 年11
+月中上旬，在中国福建省福州市闽侯县白沙镇（东经
+119.04°，北纬26.22°）的原味综合农场柑橘种植基地，
+开展数据采集，拍摄路线如图1 所示。数据采集设备选
+用大疆精灵Phantom 4 无人机（DJI Phantom 4），支持
+4K 分辨率视频录制。为确保获取全面反映果实状态的数
+据，无人机飞行设定如下：采用俯仰角约为45°的倾斜
+视角，该视角可有效避开上层冠层叶片对低层柑橘的垂
+直遮挡，飞行离地高度保持在2 m 以上，既能保证镜头
+对低层柑橘的清晰成像，又能避免飞行过程中与植株冠
+层发生碰撞，与两侧植株冠层保持最小水平距离0.5 m，
+可减少冠层边缘叶片对镜头的遮挡干扰，以0.5 m/s 的恒
+定速度平稳飞行，确保相机曝光稳定，避免因速度过快
+导致低层柑橘图像模糊、细节丢失，共采集有效视频片
+段30 段。所获取视频的分辨率为4 096×2 160 像素，帧
+率为23.98 帧/s。拍摄无人机遥感视频后，对实际果园中
+的果树，按行实施人工逐果计数。
+ 
+ 
+图1　数据采集线路图
+Fig.1    Data acquisition circuit diagram
+ 
+ 1.2　数据标注
+考虑到视频中相邻帧间存在高度相似性，为避免数
+据冗余并提升训练效率，本研究使用OpenCV 库对视频
+进行处理，每隔15 帧提取一帧图像，共获得3 549 张分
+辨率为4 096×2 160 像素的高清静态图像，采用LabeLme
+标注工具对图像进行精细标注。将标注好的3 549 张图
+像及其标注文件按照 7:2:1 的比例随机划分为训练集、验
+证集和测试集。
+ 2　模型构建
+ 2.1　基准模型
+选用 YOLO11n 作为核心目标检测的基准模型。
+YOLO11 [18] 作为新一代实时目标检测框架，在检测精度
+与推理速度上取得了显著提升。而YOLO11n 作为该系
+列的轻量化版本，在模型复杂度与计算资源需求上进行
+了优化，能够适配资源受限边缘计算平台的共性部署需
+求（模型体积小、计算复杂度低、参数量少），为实时
+检测提供了潜在的高效解决方案。然而，在对于柑橘的
+实际无人机航拍场景中，原始 YOLO11n 模型在检测上
+面临背景复杂、果实聚集与相互遮挡现象以及由于拍摄
+第 7 期
+翁海勇等：无人机遥感视频影像结合改进YOLO11 的柑橘追踪计数方法
+183 　
+
+距离导致的目标像素占比极小等严峻挑战。这些因素共
+同作用，导致模型容易出现对小尺寸柑橘果实的漏检和
+误检。因此，需要对YOLO11n 模型进行改进以满足柑
+橘估产对检测鲁棒性的要求。
+ 2.2　YOLO11-PMSL 目标检测模型
+本研究对原始YOLO11n 模型进行架构优化，优化
+后的YOLO11-PMSL 模型见图2。
+1）特征金字塔重构：将检测头层级精简为P2～P4
+三级结构，通过移除深层冗余模块并融合高分辨率浅层
+特征，以增强微小目标感知能力；
+2）边缘感知增强：将基础卷积模块升级为C3k2-
+MSEIE 多尺度边缘增强架构，通过自适应尺度融合与轮
+廓强化机制，以提升果实轮廓表征能力；
+3）损失函数优化：采用SIoU 损失函数替代传统边
+界框回归方法，引入方向敏感性约束以提升检测框定位
+质量与训练稳定性。
+4）模型剪枝：通过LAMP 方法模型剪枝，去除冗
+余的权重以，减少参数量和浮点运算量，压缩模型体积。
+ 
+ 
+Conv k=3 s=2
+C3k2-MSEIE
+Conv k=3 s=2
+C3k2-MSEIE
+Conv k=3 s=2
+C3k2-MSEIE
+SPPF
+C2PSA
+C3k2
+Concat
+Upsample
+C3k2
+Concat
+Upsample
+Conv k=3 s=2
+Concat
+C3k2
+Conv k=3 s=2
+Concat
+C3k2
+Head
+Head
+Head
+Conv k=3 s=2
+3×640×640
+64×320×320
+256×160×160
+128×160×160
+256×160×160
+256×160×160
+256×80×80
+256×80×80
+256×80×80
+256×80×80
+128×160×160
+128×160×160
+256×80×80
+512×80×80
+512×40×40
+256×40×40
+1 536×80×80
+1 024×80×80
+1 024×40×40
+1 024×40×40
+1 280×40×40
+512×160×160
+256×80×80
+512×80×80
+512×80×80
+512×40×40
+512×40×40
+1 024×40×40
+Conv
+MSEIE-Bottleneck
+MSEIE-Bottleneck
+Concat
+Conv
+Conv
+. . .
+Split
+C3k-MSEIE
+C3k-MSEIE
+Concat
+Conv
+Conv
+. . .
+C3k-MSEIE
+C3k2-MSEIE
+C3k-MSEIE
+=
+C3k2-MSEIE =
+Backbone
+Nect
+Head
+注：k 为卷积核大小，s 为步长。
+Note: k is the kernel size, and s is the stride
+图2　YOLO11-PMSL 模型结构图
+Fig.2    YOLO11-PMSL network structral diagram
+ 
+ 2.2.1　小目标检测
+YOLO11n 通过双向特征传递路径整合不同层级的
+特征表达，配置三级检测头（图3a），实现对多尺度
+目标的适应性检测。尽管深层卷积能提取抽象语义信
+息，但原始图像经高倍率下采样后，微小目标的几何
+信息严重衰减，导致关键特征丢失。为提升对柑橘果
+实的检测能力，本研究在YOLO11n 中引入P2 高分辨
+率检测层，引入 P2 高分辨率特征层后，模型在柑橘测
+试集上的 mAP0.5 与召回率显著提升，充分证明了 P2 层
+在增强小目标特征表征方面的有效性。该扩展虽能强
+化小目标感知能力，但需处理更高维度的浅层特征，
+显著增加计算负荷。鉴于航拍场景中检测主体均为小
+尺度目标，深层P5 检测头的高阶语义提取功能贡献有
+限，却占据大量计算资源。通过解耦冗余的P5 检测模
+块及其关联卷积层，可削减运算开销，降低计算复杂
+度，并减小模型的参数量，实现检测精度与计算复杂
+度之间的平衡。改进后的网络结构（图3b）移除P5 检
+测头后，在颈部网络层对生成P3 的中间特征图进行上
+采样，将其与骨干网络首个C3k2 模块输出的高分辨率
+特征图进行通道对齐与特征拼接，拼接后经过C3k2 模
+块进行特征融合，生成新的高分辨率特征层P2，并同
+步构建对应的P2 检测头，最终形成P2～P4 三级检测
+体系。该架构通过聚焦骨干网络浅层的高粒度特征，
+增强对细小像素目标的轮廓辨识能力，同时压缩了参
+数量，实现检测精度与计算效率的协同优化。
+ 2.2.2　C3k2_MSEIE 模块
+在无人机获取柑橘冠层过程中，密集枝叶遮挡、果
+实重叠以及光照变化等因素导致果实边缘特征模糊，原
+始YOLO 模型的标准C3k2 模块的固定感受野设计在应
+对柑橘果实尺度差异时缺乏灵活性，尤其对部分遮挡果
+实和小型果实的轮廓捕捉能力有限，制约了检测精度。
+针对该问题，本研究将多尺度边缘增强机制引入骨干网
+络（backbone）的C3k2，构建了C3k2_MSEIE 模块。该
+模块位置如图2 所示，C3k2_MSEIE 模块替换了原来的
+C3k2 模块，具体位于backbone 的第2、4、6 层。
+EdgeEnhancer 模块是以分离并强化高频边缘信息为
+核心思路的边缘增强机制。EdgeEnhancer 模块结构如
+图4 所示。该模块首先通过对输入特征图进行平均池化
+　 184
+农业工程学报（http://www.tcsae.org）
+2026 年
+
+操作，实现平滑处理，以提取其中的低频背景信息。接
+着，将原始输入特征图与此平滑后的低频信息进行差值
+运算，从而分离并凸显出高频边缘信息。这些被提取出
+的边缘信息会经过一个卷积层操作，以进一步强化其边
+缘响应。最后，经过增强处理的边缘特征被加回到原始
+输入特征图中，在保留原始特征信息的基础上，强化图
+像边缘细节，在遮挡场景下增强柑橘果实的圆形轮廓响
+应，有效解决边缘模糊问题。
+ 
+ 
+640×640
+80×80
+40×40
+20×20
+640×640
+160×160
+80×80
+40×40
+a. 原检测头结构
+b. 改进检测头结构
+a. Original detection head structure
+b. Improved probe structure
+输入Input
+P1
+P2
+P3
+P4
+P5
+Concat+C3k2
+Concat+C3k2
+Concat+C3k2
+Concat+C3k2
+Upsample
+Upsample
+Downsample
+Downsample
+输入Input
+P1
+P2
+P3
+P4
+Concat+C3k2
+Concat+C3k2
+Concat+C3k2
+Concat+C3k2
+Upsample
+Upsample
+Downsample
+Downsample
+注：P1、P2、P3、P4、P5 为5 个不同尺寸的特征图。
+Note: P1, P2, P3, P4, and P5 are five feature maps of different sizes.
+图3　小目标检测层改进
+Fig.3    Improvements of the small target detection layer
+ 
+MSEIE 模块构建使用自适应平均池化构建多尺度并
+行架构以增强边缘特征表征能力，实现多尺度边缘特征
+提取。MSEIE 模块结构如图5 所示。该模块对同一输入
+的特征图，首先通过自适应池化层构建3×3、6×6、9×9
+和12×12 四种尺度的特征提取分支，提取蕴含不同感受
+野的上下文信息，然后将每个分支先采用1×1 卷积压缩
+通道至输入1/4，消除特征冗余，再通过分组卷积提取空
+间信息，随后经过上采样操作将特征图恢复到与输入相
+同大小，最后经边缘增强模块优化轮廓响应，通过通道
+拼接形成包含不同尺度边缘信息的特征图，再经卷积模
+块对拼接后的特征进行跨通道信息融合与优化。这种设
+计使网络能捕获更多的局部细节，克服了传统固定感受
+野的局限性，输出兼具细节感知与语义理解能力的增强
+特征，特别适用于复杂场景下的小目标检测任务。
+ 
+ 
+AvgPool
+Conv
+输入Input
++
+−
+图4　EdgeEnhancer 模型结构图
+Fig.4    EdgeEnhancer model structure diagram
+ 
+ 
+AdaptiveAvgPool 
+AdaptiveAvgPool
+AdaptiveAvgPool
+AdaptiveAvgPool 
+Conv
+Conv
+Conv
+Conv
+Conv
+Conv
+Conv
+Conv
+EdgeEnhancer
+EdgeEnhancer
+EdgeEnhancer
+EdgeEnhancer
+UpSample
+UpSample
+UpSample
+UpSample
+Concat
+Conv
+Conv
+输入Input
+图5　MSEIE 模型结构图
+Fig.5    MSEIE model structure diagram
+ 
+C3k2_MSEIE 模块使用多尺度边缘信息增强模块
+MSEIE 优化了C3k2，将C3k 瓶颈块中的普通卷积替换
+为多尺度边缘信息增强MSEIE 模块，得到了优化后的
+C3k_MSEIE，然后，将C3k_MSEIE模块嵌入到C3k2 中，
+得到了C3k2_MSEIE 模块。该模块通过多尺度边缘增强
+机制提升了细粒度特征的提取能力。既强化了局部细节
+表达能力，增强了对果实轮廓提取能力，又保留了果实
+整体形态特征，可在果实密集区域展现更优的特征表达
+能力。C3k2_MSEIE 模块结构如图6 所示。
+ 2.2.3　SIoU 损失函数
+YOLO11n 模型默认采用的CIoU[19] 损失函数，然而，
+对于航拍图像中有效像素区域有限且轮廓易受环境干扰
+而模糊的柑橘小目标，CIoU 在充分建模其细微几何特征
+方面存在局限，可能制约定位准确性的进一步提升。为
+解决上述问题，本研究在YOLO11n 框架中引入SIoU[20]
+（Scylla-IoU）损失函数替代CIoU。SIOU 损失函数及维
+第 7 期
+翁海勇等：无人机遥感视频影像结合改进YOLO11 的柑橘追踪计数方法
+185 　
+
+度计算式如下：
+1）角度损失（angle cost, Λ）：
+Λ = 1−2·sin2
+[
+arcsinch
+σ −π
+4
+]
+= cos
+[
+2·
+(
+arcsinch
+σ −π
+4
+)]
+（1）
+式中ch 为真实框和预测框中心点的高度差，σ 为真实框
+和预测框中心点的距离。
+ch
+σ = sinα
+（2）
+σ =
+√(
+bgt
+cx −bcx
+)2 +
+(
+bgt
+cy −bcy
+)2
+（3）
+ch = max(bgt
+cy,bcy)−min(bgt
+cy,bcy)
+（4）
+bgt
+cx,bgt
+cy
+bcx,bcy
+π
+2
+π
+4
+式中(
+) 为真实框中心坐标，(
+) 为预测框中心
+坐标，当α 为
+或0 时，角度损失为0，在训练过程中
+若α<
+，则最小化α，否则最小化β。
+2）距离损失（distance cost, Δ）：
+∆=
+∑
+t=x,y (1−e−γp(t)) = 2−e−γp(x)−e−γp(y)
+（5）
+
+p(x) =
+(bgt
+cx −bcx
+cw
+)2
+,
+p(y) =
+(bgt
+cy −bcy
+ch
+)2
+,
+γ = 2−Λ
+（6）
+(cw,ch)
+式中
+为真实框和预测框最小外接矩形的宽和高；p(t)
+是真实框和预测框中心点偏移量的尺度归一化平方值，
+用于量化预测框与真实框在对应方向上的位置偏差程度。
+3）形状损失（shape cost, Ω）：
+Ω=
+∑
+t=w,h (1−e−W(t))θ= (1−e−W(w))θ+(1−e−W(h))θ
+（7）
+
+W(w) =
+|w−wgt|
+max(w,wgt)
+W(h) =
+|h−hgt|
+max(h,hgt)
+（8）
+式中（w,h）和（wgt,hgt）分别为预测框和真实框的宽和
+高，θ 控制对形状损失的关注程度；W(t) 是预测框与真
+实框在宽度和高度方向上的归一化绝对差异，用于量化
+形状失配程度。
+4）IoU 损失（IoU）：
+IoU = A∩B
+A∪B
+（9）
+式中A 为预测框区域，B 为真实框区域，A∩B 为预测框与
+真实框的交集区域，A∪B 为预测框与真实框的并集区域。
+5）SIoU 损失函数（LossSIoU）：
+LossSIoU = 1−IoU+ ∆+π
+2
+（10）
+SIoU 损失函数通过整合距离度量、方向感知、形态
+约束及交并比优化4 个维度构建多要素协同的几何建模
+框架，在空间关系建模中同步考量边界框中心点偏移、
+重叠区域覆盖度、宽高比例差异以及整体形状分布特性，
+形成对目标几何关系的综合表征机制；针对无人机俯拍
+场景中易受背景干扰的小尺度目标，该设计通过强化边
+缘分布建模与形状匹配能力可提升检测框定位精度并降
+低误检率，同时引入的方向敏感性设计增强了对目标方
+向特征的捕获能力，鉴于航拍视角动态变化及目标自然
+朝向多样性，该机制使预测框与实际目标方位可能实现
+更紧密的空间对齐，从而在方向复杂场景中增强检测稳
+定性，上述多维度优化要素通过全局约束框架协同作用，
+使该损失函数在优化IoU 指标的同时可能促进边界框回
+归精度提升、加速模型收敛过程并增强对目标几何特性
+及方向变化的适应能力，为密集小目标的农业视觉检测
+任务提供新的优化路径。
+ 
+Conv
+MSEIE-Bottleneck
+MSEIE-Bottleneck
+Concat
+Conv
+Conv
+. . .
+MSEIE
+MSEIE
+Split
+C3k-MSEIE
+C3k-MSEIE
+Concat
+Conv
+Conv
+. . .
+MSEIE-Bottleneck
+C3k-MSEIE
+图6　C3k2_MSEIE 模块结构
+Fig.6    C3k2-MSEE module structure
+ 
+ 2.2.4　模型剪枝
+在优化YOLO11 网络架构的过程中，检测精度的提
+升伴随着计算资源的显著增加。为协调模型复杂度与表
+征能力之间的平衡，本研究引入基于层自适应幅度的剪
+枝（layer adaptive magnitude-based pruning，LAMP）[21]。
+LAMP 的核心在于建立跨层统一的重要性评估体系。与
+传统剪枝方法的分层独立阈值设定不同，LAMP 提出全
+局重要性评分机制，LAMP 评分计算式如下：
+score(u,W) =
+(W[u])2
+∑
+v∈Ωu (W[v])2
+（11）
+式中score(u, W) 表示LAMP 评分，W[u] 表示权重张量
+中索引u 处的标量值，W[v] 表示权重张量中索引v 处的
+标量值，Ωu 定义为u 索引后的权重子集。
+式（11）通过归一化处理消除层间权重规模差异，
+使评分值具有跨层可比性。LAMP 通过动态阈值实现全
+局优化，该方法确保在预设约束下，自动确定各层的最
+佳剪枝强度，无需人工干预层间压缩比例。LAMP 的自
+适应机制显著降低超参数调优复杂度。通过全局稀疏约
+束参数控制，模型可自动生成层间非均匀的剪枝方案。
+这种特性使算法在保持原网络表征能力的前提下，有效
+降低计算复杂度。同时，LAMP 结构化剪枝方案与主流
+硬件平台不存在本质性兼容冲突，其核心原因在于该剪
+枝策略仅针对模型通道维度实施结构化裁剪，并未改变
+原始模型的算子类型与核心计算逻辑，只要剪枝后模型
+的算子集合仍在目标硬件的支持范围内，即可正常导出
+并完成推理部署。
+ 2.3　柑橘实时计数模型
+ 2.3.1　ByteTrack 的柑橘目标跟踪算法
+在柑橘果实目标跟踪任务中，传统的 ByteTrack 算
+法相似度度量上采用交并比（IoU）指标进行轨迹匹配。
+然而IoU 仅考虑两个框的重叠区域，无法直接反映中心
+点偏移的程度，在果园场景中，无人机移动、风力导致
+　 186
+农业工程学报（http://www.tcsae.org）
+2026 年
+
+果实晃动或枝叶部分遮挡都可能导致相邻帧果实检测框
+的中心点发生偏移。该度量方式易导致匹配错误、身份
+切换或轨迹丢失等问题。
+为解决IoU 在空间位置度量上的不足，进一步提
+升果实跟踪在复杂果园环境下的准确性和稳定性，本
+研究将ByteTrack 中的相似度度量由IoU 改进为DIoU
+(distance-IoU)。
+DIoU 在IoU 的基础上增加了一个惩罚项(Penalty
+Term)，该惩罚项直接最小化预测框（Bpred）与检测框
+（Bdet）中心点之间的归一化距离，其计算式为
+DIoU = IoU−ρ2(bpred,bdet)
+c2
+（12）
+式中ρ2(bpred, bdet) 是Bpred 中心点 (xpred, ypred) 与 Bdet 中心点
+(xdet, ydet) 之间的欧氏距离。c 是能同时覆盖 Bpred 和 Bdet 的
+最小闭包区域的对角线长度。ρ2 / c2 项将中心点距离归一
+化到 [0, 1) 区间。
+DIoU 作为距离度量，使用 (1 - DIoU) 作为关联的距
+离代价。DIoU 值范围在(−1, 1]，值越大表示两个框空间
+位置越接近。
+ByteTrack 的核心在于其“两次关联”策略，将
+DIoU 替换IoU 后，可增强对复杂果园环境的鲁棒性。
+DIoU 对中心点距离的显式优化，使得算法能更准确地关
+联发生位置偏移的果实检测框，减少因位置跳变导致的
+跟踪丢失或ID 切换。DIoU 在第二次关联中，通过同时
+考虑重叠区域和中心点距离，能更可靠地将这些低分但
+位置基本正确的检测框关联回被短暂遮挡的果实轨迹，
+维持轨迹连续性，减少因遮挡造成的漏计。DIoU 通过中
+心点距离信息，有助于更精确地区分相邻果实并关联到
+正确的轨迹上，减少因密集造成的ID 切换。ByteTrack-
+DIoU 的流程图如图7 所示。
+ 2.3.2　区域计数机制
+由于柑橘果树呈行状分布，果实密集且存在重叠遮
+挡，单帧检测易产生重复计数或漏检。传统逐帧累加方
+法无法区分新出现的果实与已跟踪目标，导致计数误差
+累积。因此，本研究设计了一种基于虚拟检测线的区域
+计数防抖机制。该机制的核心是为每个跟踪目标（果实）
+维护一个独立的状态机（如图8），并根据其边界框中
+心点与预定义检测区域的相对位置关系，进行稳健的计
+数决策。区域计数算法优势在于：首先，采用物体中心
+点连续N 帧（N 的取值在算法的灵敏度和鲁棒性之间进
+行权衡。N 值过小，则防抖效果不佳；N 值过大，则可
+能导致快速移动的目标漏计。本文参考目标跟踪领域中
+常用的轨迹平滑与确认策略，如在黄鹤飞[22] 的区域计数
+机制中，使用5 帧来确认一个新轨迹的诞生，以避免虚
+警。因此，本机制设N=5。）位于区域内才触发计数的
+策略，避免果实因风吹摆动产生的边界抖动误判；其次，
+区分"进入"与"离开"双通道计数逻辑，适配无人机平行
+于果树行飞行的作业模式。
+ 
+追踪中轨迹
+轨迹状态判断
+高分匹配(DIoU)
+未匹配轨迹
+未匹配检测框
+匹配轨迹
+更新轨迹为激活状态
+低分匹配(DIoU)
+置信度判断
+检测结果
+更新轨迹为激活状态更新轨迹为丢失状态
+匹配(DIoU)
+未匹配轨迹
+未匹配检测框
+匹配轨迹
+更新轨迹为激活状态更新轨迹为丢失状态
+置信度判断
+更新轨迹为激活状态
+丢弃
+第一次追踪轨迹
+第一次追踪轨迹
+未匹配高置信度
+高置信度
+低
+置
+信
+度
+正常追踪轨迹
+图7　ByteTrack-DIoU 的流程图
+Fig.7    ByteTrack-DIoU flowchart
+ 
+ 
+OUTSIDE
+Outside
+初始状态
+持续在区域外
+ENTERING
+Entering
+由OUTSIDE进入
+在区域内但未达N帧
+C_in++
+任一帧离开区域/ 消失
+/重置C_in
+进入区域
+【进入计数通道】用于
+无人机飞向果树行最终
+计数=Count_enter
+INSIDE
+Inside
+由ENTERIN进入
+持续在区域内
+连续N帧在区域内
+/触发进入计数
+LEVAING
+Levaing
+由INSIDE进入
+在区域外但未达N帧
+C_out++
+离开区域
+连续N帧在区域外
+/触发离开计数
+目标首次出
+现在区域外
+目标首次出
+现在区域内
+【离开计数通道】用于
+无人机飞离果树行或首
+次检测已在区域内最终
+计数=Count_leave
+任一帧回到区域/消失
+/重置C_in
+注：状态机包含以下几种状态：OUTSIDE，目标位于检测区域之外；ENTERING，目标首次从外部进入检测区域，进入“进入检测”流程；INSIDE，目标
+已确认进入区域，并已被计数（针对进入流程）；LEAVING，目标从内部离开检测区域，进入“离开检测”流程。
+Note: The state machine contains the following states: OUTSIDE, the target is outside the detection area; ENTERING, the target enters the detection area from the
+outside for the first time and enters the "Enter Detection" process; INSIDE, the target has confirmed entry into the zone and has been counted (for the entry process);
+LEAVING, the target leaves the detection area from the inside and enters the "leaving detection" process.
+图8　区域计数防抖机制状态机
+Fig.8    Area counting anti-shake mechanism state machine
+第 7 期
+翁海勇等：无人机遥感视频影像结合改进YOLO11 的柑橘追踪计数方法
+187 　
+
+当无人机扫描每行果树时，果实依次通过检测区域，
+该算法能精准记录通过虚拟检测线的果实数量，消除因
+果实重叠导致的重复计数。其工作流程为当改进模型检
+测到果实并输出边界框后，ByteTrack-DIoU 算法为每个
+果实分配唯一ID 并建立跨帧轨迹。随后，区域计数器对
+每条轨迹进行状态分析：算法记录每个果实首次出现时
+的位置状态，若首次出现在检测区域外，则启动“进入
+检测”流程；若首次出现在区域内，则启动“离开检测”流程。
+ 2.4　试验环境及评价指标
+ 2.4.1　试验环境
+本试验使用的设备平台配置为，CPU 处理器型号为
+Intel Core i7-13700kf@5.4 GHz，为16 核24 线程的桌面
+处理器，GPU 型号为NVIDIA GeForce RTX 3060，显
+存为16 GB，内存为64 GB。操作系统为Linux Debian
+12.2.0，计算架构为CUDA  12.9，编程语言为Python
+3.10.16，深度学习框架为Pytorch 2.4.0。训练轮次为800，
+批处理大小为8，优化器为Adam（adaptive  moment
+estimation），初始学习率为0.001。
+ 2.4.2　评价指标
+本研究采用多维度指标综合量化模型性能。目标检
+测效能通过精确率（precision, P）、召回率（recall, R）
+与均值平均精度（mean average precision, mAP0.5）进行
+评价，三者分别反映误检控制能力、漏检规避能力及综
+合检测精度。模型计算复杂度则采用浮点运算量
+（floating point operations, FLOPs）和参数量（parameters）
+表征，同时以帧率（frames per second, FPS）衡量模型的
+实时处理能力
+多目标跟踪性能通过三类核心指标验证：多目标跟
+踪准确率（multiple object tracking accuracy, MOTA）评
+估目标跨帧连续追踪的可靠性，体现轨迹完整性维持水
+平；多目标跟踪精确率（multiple object tracking precision,
+MOTP）则量化预测边界框与真实标注框的空间重合精
+度，反映定位偏差程度。身份识别F1 分数（identification
+F1 score，IDF1）评估多目标跟踪算法性能，衡量跟踪器
+在整个视频序列中保持目标身份（ID）一致性的能力。
+MOTA[23]、MOTP 和IDF1[24] 计算式为
+MOTA = 1−
+∑
+t
+(FNt + FPt + IDS Wt
+)
+∑
+tGTt
+（13）
+MOTP =
+∑
+t,i δt,i
+∑
+tCt
+×100%
+（14）
+IDF1 =
+∑
+t 2TPt
+∑
+t(2TPt + FNt + FPt)
+×100%
+（15）
+TPt
+FNt
+FPt
+IDS Wt
+GTt
+式中
+为目标身份正确匹配数，
+为目标身份漏报数，
+为目标身份误报数，
+为目标ID 变化的次数，
+为目标出现的总数，δt,i 为跟踪框与检测框之间的重叠率，
+Ct 为当前帧匹配成功的目标数；t 为测试视频帧序列。
+采用平均计数精度（mean counting accuracy, MCA）
+作为计数估算的核心评价依据，其数值正相关于计数准
+确性。该指标定义为预测计数与真实计数的归一化绝对
+误差补偿值，MCA[25] 计算式为
+MAC = 1
+n
+∑n
+i=1
+Pi
+Gi
+×100%
+（16）
+式中MAC 为平均计数精度，Pi 为检测到的目标数，Gi
+为真实目标个数，n 为测试视频个数。
+ 3　结果与分析
+ 3.1　目标检测结果
+ 3.1.1　不同网络模型对比
+为验证检测方法 YOLO11-PMSL 在柑橘果实数据
+集上的检测性能，本文将其与当前主流轻量级目标检测
+模型开展全面对比试验，包括经典模型快速区域卷积神
+经网络（faster region-based convolutional neural network,
+Faster-RCNN）、单次多框检测器（single shot multibox
+detector, SSD）以及 YOLO 系列轻量级模型YOLOv8n[26]、
+YOLOv9 t[27]、YOLOv10n[28]、YOLO12n[29] 进行了对比
+试验。
+由表1 可知，本研究选用YOLO11n 作为基准模型，
+在整体性能方面优于其他基础模型。改进后的轻量化
+YOLO11-PMSL 模型与其他主流的轻量化模型相比，在
+柑橘果实数据集测试中，模型的各项性能表现出色，其
+关键性指标mAP0.5 比Faster-RCNN 、SSD、YOLOv8n、
+YOLOv9 t、YOLOv10n 和YOLO12n 分别高出25.9、14.0、
+12.7、9.7、9.9 和11.7 个百分点；参数量分别降低了
+99.13%、98.48%、86.57%、79.19%、84.07% 和85.66%；
+浮点运算量分别减少了129.4、209.4、2.2、1.8、1.9 和
+1.2 G；模型大小分别下降了99.72%、99.52%、76.79%、
+69.05%、77.59% 和75%。
+ 
+ 
+表 1    不同模型柑橘果实检测结果
+Table 1    Results of citrus fruit testing using different models
+模型
+Models
+精度
+Precision
+P/%
+召回
+率
+Recall
+R/%
+mAP0.5/
+%
+参数量
+Parameters
+Pa/M
+浮点
+运算数
+FLOPs/
+G
+模型
+大小
+Modes
+size/
+MB
+FPS/
+(帧·s−1)
+FasterRcnn
+68.9
+53.4
+64.6
+41.35
+134
+472.1
+30.9
+SSD
+73.7
+75.9
+76.5
+23.75
+214
+272.1
+24.8
+YOLOv8n
+78.6
+70.3
+77.8
+2.68
+6.8
+5.6
+82.83
+YOLOv9 t
+79.6
+74.4
+80.8
+1.73
+6.4
+4.2
+87.06
+YOLOv10n
+82.8
+69.4
+80.6
+2.26
+6.5
+5.8
+85.46
+YOLO11n
+83.0
+71.4
+81.2
+2.58
+6.3
+5.5
+84.83
+YOLO12n
+80.7
+70.6
+78.8
+2.51
+5.8
+5.2
+75.49
+YOLO11-PMSL
+86.3
+83.0
+90.5
+0.36
+4.6
+1.3
+140.12
+ 
+同时，YOLO11-PMSL 的帧率优于其他模型。这表
+明YOLO11-PMSL 实现了检测精度与模型轻量化之间的
+双重优化，保证模型的实用性。改进模型实现对复杂场
+景下柑橘果实的高精度识别，同时，低参数量与计算量
+使模型具备部署边缘计算平台的能力，显著降低硬件成
+本与数据传输延迟，为智慧果园构建的产量监测体系提
+供技术支撑。
+ 3.1.2　模型剪枝率对比结果
+为评估结构化剪枝对YOLO11-PMSL 模型的影响，
+对YOLO11-PMSL 模型进行渐进式压缩对比试验。剪枝
+率定义为模型剪枝前后计算量之比：剪枝率为1.0 时，
+表示基准模型，剪枝率为2.0 则表明计算量降低50%。
+　 188
+农业工程学报（http://www.tcsae.org）
+2026 年
+
+每次剪枝后执行微调训练以补偿精度损失。剪枝率的设
+置范围从1.6 到2.4，步长为0.2。
+由表2 可知，当剪枝率在1.6 时，模型参数量、浮
+点运算量和体积均明显缩减，精度明显上升，而召回率
+出现明显下降，帧速率明显提升。随着剪枝率的提升，
+模型参数量、浮点运算量和体积均持续下降，召回率和
+mAP0.5 先上升后又下降，而帧速率一直降低。当剪枝率
+达到2.2 时，成功实现性能表现与轻量化的最优平衡。
+此时mAP0.5 达到90.5%，参数量精简至0.36 M，模型体
+积压缩至1.3 MB，计算复杂度降至4.6 G，帧速率提升
+至140.12 帧/s。相较于原始模型，该剪枝方案在模型关
+键性能指标上无差异，而在轻量化上正向提高，验证了
+适度剪枝可协同优化效率与精度。基于综合评价，最终
+选定剪枝率在2.2 为最优剪枝强度。
+ 
+表 2    模型剪枝率对比结果
+Table 2    Comparison of model pruning rates
+剪枝率
+Pruning rate P/% R/% mAP0.5/% Pa/M FLOPs/G
+模型大小
+Modes size/MB FPS/(帧·s−1)
+1.0
+85.2 83.8
+90.6
+1.21
+10.4
+3.1
+73.68
+1.6
+87.9 81.2
+90.4
+0.48
+6.3
+1.5
+136.96
+1.8
+87.1 81.4
+90.7
+0.44
+5.6
+1.4
+128.86
+2.0
+88.4 80.1
+90.5
+0.41
+5.0
+1.4
+122.96
+2.2
+86.3 83.0
+90.5
+0.36
+4.6
+1.3
+140.12
+2.4
+87.0 80.9
+90.0
+0.34
+4.2
+1.2
+155.14
+ 
+ 3.1.3　消融试验结果
+为解析模型架构调整的有效性，本研究对YOLOv11-
+PCMS 框架实施渐进式消融分析。试验设计以基准模型
+为起点，首先重构特征金字塔层级为P2～P4 精简结构，
+其次引入多尺度边缘增强单元（C3k2_MSEIE），再采
+用SIoU 边界框回归损失替代原损失函数，最后对模型实
+施LAMP 剪枝操作，生成轻量化模型。该消融策略的系
+统性验证结果如表3 所示。
+由表3 可知，在原始 YOLO11n 目标检测模型增加P2
+检测头后，模型的召回率以及mAP0.5 得到了大幅提升，
+然而模型的浮点运算量也大幅增长，增加计算负荷。通
+过解耦冗余的P5 检测模块及其关联卷积层，重构特征金
+字塔为P2～P4 三级检测结构后，与原始模型相比模型参
+数量下降了55%，模型体积压缩至2.6 MB，模型的召回
+率和mAP0.5 有了明显的上升，分别提高了7.9， 5.1 个百
+分点，说明重构后模型更轻量，对小目标检测更加准确。
+但模型浮点运算数上升了55.5%，不满足轻量化需求。
+叠加C3k2_MSEIE 边缘增强模块后，性能得到进一步提
+升，模型精度、召回率以及mAP0.5，较原始模型分别上
+升了2.2、10.7 和8.7 个百分点。模型的参数量与浮点运
+算数较YOLO11n+P2 有小幅度上升。将损失函数由CIoU
+更换为SIoU 后，模型的召回率上升了12.4 个百分点，mAP0.5
+上升了9.4 个百分点，速率下降了13.14%。此时，模型
+在目标检测的关键指标上表现出了最优的性能，但由于
+引入P2 检测层不可避免的增加了模型的计算量，为满足
+边缘终端部署的轻量化需求，将模型进行LAMP 剪枝操
+作，剪枝后模型在核心性能指标维持剪枝前的基准水平，
+模型的参数量、浮点运算量，以及模型大小较剪枝前大
+幅度下，分别下降了70.25%、55.77% 和58.06%。最终
+在目标检测方面，与原始YOLO11n 模型相比，模型精
+度、召回率和mAP0.5 分别提高3.3、11.6 和9.3 个百分点；
+在模型轻量化方面，与原始模型相比参数量、模型大小，
+以及浮点运算量分别降低86.05%、76.36% 和26.98%；
+在检测速度方面，与原模型相比，速率提升了65.18%，
+说明改进的 YOLO11-PMSL 模型在柑橘果实数据集上达
+到检测精度和速度的双重提升。
+ 
+ 
+表 3    YOLO11n 模型在柑橘果实检测上的消融试验结果
+Table 3    Ablation experiment results of YOLO11n model on citrus fruit detection
+模型
+Models
+P/%
+R/%
+mAP0.5/%
+Pa/M
+FLOPs/G
+模型大小
+Modes size/MB
+FPS/(帧·s−1)
+YOLO11n
+83.0
+71.4
+81.2
+2.58
+6.3
+5.5
+84.83
+YOLO11n+P2 345
+83.8
+78.2
+87.4
+2.67
+10.3
+5.9
+58.32
+YOLO11n+P234
+81.8
+79.3
+86.3
+1.16
+9.8
+2.6
+60.49
+YOLO11n+P234+C3k2_MSEIE
+85.2
+82.1
+89.9
+1.21
+10.4
+3.1
+73.52
+YOLO11n+P234+C3k2_MSEIE+SIoU
+85.2
+83.8
+90.6
+1.21
+10.4
+3.1
+73.68
+YOLO11n+P234+C3k2_MSEIE+SIoU
++LAMP(YOLO11-PMSL)
+86.3
+83.0
+90.5
+0.36
+4.6
+1.3
+140.12
+注：P2345 为添加小目标检测层，P234 为优化的小目标检测层
+Note: P2345 adds a small object detection layer, P234 is an optimized small object detection layer
+ 
+ 3.1.4　可视化分析
+为验证YOLO11-PMSL 模型在柑橘果实检测任务中的
+特征聚焦特性，本研究采用梯度加权类激活映射（Grad-
+CAM[30]）技术对比YOLO11n 基准模型与YOLO11-PMSL
+改进模型的关键区域响应模式。如图9 所示的热力图可
+视化结果中，特征激活强度通过色谱梯度表征，可观察
+到YOLO11n 基准模型的热力图（图9b）多存在局部离
+散分布的黄色中强度响应区，且目标与目标之间红色区
+域出现粘连现象；相比之下，改进模型（图9c）对果实
+目标更具关注度，位置多呈现红色和黄色信号，且相邻
+果实间激活边界清晰可辨，同时图9b 中基准模型对特定
+果实未生成显著激活响应的现象，与实际检测中的漏检
+行为形成空间关联。可见，本研究所构建的YOLO11-PMSL
+模型对果实目标关注力高，证明改进模型的优越性高。
+ 3.1.5　模型检测结果
+为验证YOLO11-PMSL 架构在复杂果园场景下的检
+测性能，本研究随机抽取测试集与验证集样本进行可视
+化验证（图10）。对比分析表明，在强光和阴天两种典
+型光照环境下，原始 YOLO11 模型主要存在两类典型局
+限，首先是在高密度果实区域中出现明显漏检，特别是
+对于枝叶遮挡的果实，检测完整性较差；在强光场景中
+易受高反射与过曝影响，出现部分果实目标特征模糊或
+丢失，导致漏检率较高；其次是存在误检情况，常将叶
+片、果皮反光或地面高亮区域误判为柑橘果实，并且对
+同一果实可能生成多个检测框。同时，在阴天的情况下，
+则因果实与背景对比度较低而产生一定的误检。
+第 7 期
+翁海勇等：无人机遥感视频影像结合改进YOLO11 的柑橘追踪计数方法
+189 　
+
+ 
+a. 原图
+a. Original image
+b. YOLO11
+c. YOLO11-PMSL
+注：红色：高响应；蓝色：低响应。
+Note: Red: High response; Blue: Low response.
+图9　YOLO11 和YOLO11-PMSL 柑橘检测热点图
+Fig.9    YOLO11 and YOLO11-PMSL citrus detection heat map
+ 
+ 
+ 
+阴天Cloudy
+a. 视频-22第1帧
+a. Video-22 frame 1
+b. 视频-25第81帧
+b. Video-25 frame 81
+强光Bright light
+c. 视频-26第15帧
+c. Video-26 frame 15
+d. 视频-29第338帧
+d. Video-29 frame 338
+YOLO11n
+YOLO11-PMSL
+注：红色框表示漏检，黄色框表示误检。
+Note:  Red  boxes  indicate  missed  detection,  and  yellow  boxes  indicate  false
+detection.
+图10　YOLO11 和YOLO11-PMSL 柑橘果实检测结果对比
+Fig.10    Comparison of citrus fruit detection results between
+YOLO11 and YOLO11-PMSL
+ 
+相比之下，改进后的 YOLO11-PMSL 模型优势明显。
+其密集区域的漏检率降低，对微小及部分遮挡果实的检
+出能力得到明显提升。同时误检率明显降低，对果实识
+别的准确度较高，不易将背景或反光物体误检测为果实。
+综上，YOLO11-PMSL 模型在复杂光照与遮挡条件下均
+展现出更高的检测精度与稳定性。
+ 3.2　果实跟踪与计数
+使用
+SORT[31]、DeepSORT[32]、Bot-SORT[33] 和
+ByteTrack[34] 四种跟踪模型结合YOLO11-PMSL 分别实
+现柑橘果实目标跟踪计数，跟踪计数结果如表4 所示。
+由表4 可知，YOLO11-PMSL 结合ByteTrack 的集
+成模型展现出优异跟踪性能，相较同检测模型搭载
+SORT、DeepSORT 与Bot-SORT 的方案，多目标跟踪准
+确率（MOTA）指标分别高出3.3、3.5 和2.1 个百分点，
+跟踪精确率（MOTP）分别高于13.2、13.4 和7.8 个百分
+点，验证ByteTrack 在复杂果园环境中的优势。在身
+份识别F1 分数关键指标上，该模型的F1 分数为90.8%，
+同样优于对比算法。而YOLO11-PMSL 结合ByteTrack-
+DIoU 的集成模型展现出最优的跟踪性能，其多目标跟踪
+准确率（MOTA）达92.8%，跟踪精确率（MOTP）为
+81.7%。相较YOLO11-PMSL 搭载ByteTrack 的方案，多
+目标跟踪准确率（MOTA）提升2.2 个百分点，跟踪精
+确率（MOTP）提升3 个百分点，在身份识别F1 分数指
+标提升1.2 个百分点。
+ 
+ 
+表 4    不同模型跟踪计数结果
+Table 4    Tracking and counting results of different models
+(%)
+模型
+Models
+多目标跟踪
+准确率
+Multiple object
+tracking accuracy
+RMOTA
+多目标跟踪
+精确率
+Multiple object
+tracking accuracy
+RMOTP
+身份识别
+F1 分数
+Identification
+F1 Score
+IDF1
+YOLO11-PMSL+SORT
+87.3
+62.5
+86.4
+YOLO11-PMSL+DeepSORT
+87.1
+62.3
+89.0
+YOLO11-PMSL+Bot-SORT
+88.5
+70.9
+90.6
+YOLO11-PMSL+ByteTrack
+90.6
+78.7
+90.8
+YOLO11-PMSL+
+ByteTrack-DIoU
+92.8
+81.7
+92.0
+ 
+针对航拍视频中柑橘目标因尺度动态变化与枝叶遮
+挡导致的身份标识漂移（ID Switch）问题，本研究在
+ByteTrack 框架中引入区域计数机制。该设计通过建立空
+间位置约束规则，有效关联被遮挡目标的跨帧轨迹，消
+除因ID 跳变引发的计数累积误差。为验证该计数策略的
+准确性，本文随机抽取5 个（视频1～5 分别对应第1、
+2、3、5、8 行柑橘果树）不同的视频上进行的试验，并
+将结果与人工计数进行了对比，结果如表5 所示，改进
+后模型计数结果与人工统计值的差异缩小，平均计数精
+度提高至88.4%。综合考虑跟踪性能（表4）与计数精度
+（表5）的量化结果，本研究所提算法在柑橘果实统计
+中与人工统计结果偏差小于12%，满足实际需求。区域
+计数机制的解决复杂场景下的ID 稳定性问题，满足果园
+估产对计数鲁棒性与精确性的双重需求。
+ 
+ 
+表 5    不同计数方法的计数结果
+Table 5    Counting results of different counting methods
+模型
+Models
+视频1
+Video 1
+视频2
+Video 2
+视频3
+Video 3
+视频4
+Video 4
+视频5
+Video 5
+平均计数精度
+Mean counting
+accuracy/%
+人工计数
+Manual counting
+970
+1 522
+963
+899
+860
+88.4
+YOLO11-PMSL+
+ByteTrack-DIoU
+859
+1 317
+854
+799
+770
+　 190
+农业工程学报（http://www.tcsae.org）
+2026 年
+
+ 4　结　论
+本研究提出融合YOLO11-PMSL 检测模型与Byte-
+Track-DIoU 算法的集成框架，实现在复杂果园环境下的
+柑橘果实高效检测与精准计数，具体结论如下：
+1）检测模型YOLO11-PMSL 在柑橘数据集上的检测
+精度超越基准模型。经对YOLO11n-PCMS 模型剪枝过后，
+模型更加轻量化，参数量、浮点运算量及模型体积较原
+始YOLO11n 分别压缩了2.2 M、1.7 G 与4.2 MB，帧率
+提高到140.12 帧/s，证实其在精度与效率上的双重突破。
+2）跟踪算法上YOLO11-PMSL 和ByteTrack-DIoU
+组合实现最优跟踪性能，多目标跟踪准确率达到92.8%、
+跟踪精确率为81.7%，与传统 SORT 、DeepSORT  和
+BotSORT 算法相比，ByteTrack-DIoU 算法多目标跟踪准
+确率分别提高5.5，5.7 和 4.3 个百分点，表明YOLO11-
+PMSL 结合ByteTrack-DIoU 跟踪性能更加优异。
+3）针对ID 跳变引发的计数误差，设计区域计数与
+防抖协同机制，将平均计数精度提升至88.4%，与人工
+统计结果偏差小于12%，满足实际需求。
+该方法实现了复杂果园环境下88.4% 平均计数精度
+的柑橘果实实时预测，为智慧果园精准管理提供了可靠
+的技术支撑。
+[ 参    考    文    献]
+ 
+ JIBRIL DAAIEDDINE M, BADROUSS S, EL HARTI A, et al.
+UAV  imagery,  advanced  deep  learning,  and  YOLOv7  object
+detection model in enhancing citrus yield estimation[J]. Foods
+and Raw Materials, 2025: 13(2): 242-253.
+[1]
+ TRAN C C, NGUYEN D T, LE H D, et al. Automatic dragon
+fruit
+ counting
+ using
+ adaptive
+ thresholds
+ for
+ image
+segmentation  and  shape  analysis[C]//2017  4th  NAFOSTED
+Conference  on  Information  and  Computer  Science.  Hanoi,
+Vietnam. IEEE, 2017: 132-137.
+[2]
+ BEHERA  S  K,  MISHRA  N,  SETHY  P  K,  et  al.  On-tree
+detection  and  counting  of  apple  using  color  thresholding  and
+CHT[C]//  2018  International  Conference  on  Communication
+and  Signal  Processing  (ICCSP).  Chennai,  India.  IEEE,  2018:
+0224-0228.
+[3]
+ ZHU Y H, LIU F, ZHAO Y Y, et al. Citrus yield estimation for
+individual  trees  integrating  pruning  intensity  and  image
+views[J].  European  Journal  of  Agronomy,  2024,  161(11):
+127349.
+[4]
+ LI  P,  ZHENG  J,  Li  P,  et  al.  Tomato  maturity  detection  and
+counting model based on MHSA-YOLOv8[J]. Sensors, 2023,
+23(15): 6701.
+[5]
+ ZINE-EL-ABIDINE  M,  DUTAGACI  H,  GALOPIN  G,  et  al.
+Assigning apples to individual trees in dense orchards using 3D
+colour point clouds[J]. Biosystems Engineering, 2021, 209: 30-
+52.
+[6]
+ ZHANG  C,  ZHANG  K,  GE  L,  et  al.  A  method  for  organs
+classification and fruit counting on pomegranate trees based on
+multi-features fusion and support vector machine by 3D point
+cloud[J]. Scientia Horticulturae, 2021, 278: 109791.
+[7]
+ WANG  Z,  WALSH  K,  KOIRALA  A.  Mango  fruit  load
+estimation  using  a  video  based  MangoYOLO— Kalman
+filter—hungarian algorithm method[J]. Sensors, 2019, 19(12):
+2742.
+[8]
+ 高芳芳，武振超，索睿，等. 基于深度学习与目标跟踪的
+苹果检测与视频计数方法[J]. 农业工程学报，2021，37(21)：
+217-224.
+GAO  Fangfang,  WU  Zhenchao,  SUO  Rui,  et  al.  Apple
+detection  and  counting  using  real-time  video  based  on  deep
+learning  and  object  tracking[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+[9]
+2021, 37(21): 217-224. (in Chinese with English abstract).
+ GE  Y,  LIN  S,  ZHANG  Y,  et  al.  Tracking  and  counting  of
+tomato at different growth period using an improving YOLO-
+deepsort network for inspection robot[J]. Machines, 2022, 10(6):
+489.
+[10]
+ VIVEROS  ESCAMILLA  L  D,  GÓMEZ-ESPINOSA  A,
+ESCOBEDO CABELLO J A, et al. Maturity recognition and
+fruit  counting  for  sweet  peppers  in  greenhouses  using  deep
+learning neural networks[J]. Agriculture, 2024, 14(3): 331.
+[11]
+ LIN Y H, HU W X, ZHENG Z H, et al. Citrus identification
+and  counting  algorithm  based  on  improved  YOLOv5s  and
+DeepSort[J]. Agronomy-Basel, 2023, 13(7): 1674
+[12]
+ ZHENG Z H, WU M, CHEN L, et al. A robust and efficient
+citrus
+ counting
+ approach
+ for
+ large-scale
+ unstructured
+orchards[J]. Agricultural Systems, 2024, 215(3): 103867
+[13]
+ 殷慧军，王宝丽，景运革，等. 基于改进YOLOv7 的无人机航
+拍视频西瓜计数方法[J]. 农业工程学报，2024，40(19)：124-134.
+YIN  Huijun,  WANG  Baoli,  JING  Yunge,  et  al.  Improved
+YOLOv7  method  for  counting  watermelons  in  UAV  aerial
+videos[J]. Transactions of the Chinese Society of Agricultural
+Engineering (Transactions of the CSAE), 2024, 40(19): 124-134.
+(in Chinese with English abstract).
+[14]
+ 吕佳，张翠萍，刘琴，等. 基于自纠正NMS-ByteTrack 的套
+袋葡萄估产方法[J]. 农业工程学报，2023，39(13)：182-190.
+LYU  Jia,  ZHANG  Cuiping,  LIU  Qin,  et  al.  Method  for
+estimation of bagged grape yield using a self-correcting NMS-
+ByteTrack[J].  Transactions  of  the  Chinese  Society  of
+Agricultural  Engineering  (Transactions  of  the  CSAE),  2023,
+39(13): 182-190. (in Chinese with English abstract).
+[15]
+ 刘鑫，马本学，李玉洁，等. 基于改进YOLOv7-ByteTrack
+的干制哈密大枣缺陷检测与计数系统[J]. 农业工程学报，
+2024，40(3)：303-312.
+LIU Xin, MA Benxue, LI Yujie, et al. Detecting and counting
+defects  in  dried  Hami  jujube  using  improved  YOLOv7-
+ByteTrack[J]. 
+Transactions
+ of
+ the
+ Chinese
+ Society
+ofAgricultural Engineering (Transactions of the CSAE), 2024,
+40(3): 303-312
+[16]
+ 吕佳，张翠萍. 基于EMO-YOLOv5s 的双关联套袋葡萄串
+实时检测与计数[J]. 农业工程学报，2025，41(12)：161-171.
+LYU Jia, ZHANG Cuiping. Real-time detecting and counting
+dual-association
+ bagged
+ grape
+ clusters
+ using
+ EMO-
+YOLOv5s[J]. 
+Transactions
+ of
+ the
+ Chinese
+ Society
+ofAgricultural Engineering (Transactions of the CSAE), 2025,
+41(12): 161-171
+[17]
+ KHANAM R, HUSSAIN M. YOLOv11: An overview of the
+key  architectural  enhancements[EB/OL].  (2024-10-23)[2025-
+04-25]. https://www.arxiv.org/abs/2410.17725.
+[18]
+ ZHENG  Z  H,  WANG  P,  REN  D  W,  et  al.  Enhancing
+Geometric factors in model learning and Inference for object
+detection and instance segmentation[J]. IEEE Transactions on
+Cybernetics, 2022, 52(8): 8574-8586.
+[19]
+ GEVORGYAN  Z.  SIoU  loss:  More  powerful  learning  for
+bounding  box  regression[EB/OL].  (2022-05-25)[2025-08-
+06]https://arxiv.org/abs/2205.12740.
+[20]
+ LEE J, PARK S, MO S, et al. Layer-adaptive sparsity for the
+magnitude-based
+ pruning[EB/OL].
+ (2020-10-15)[2025-08-
+06]https://arxiv.org/abs/2010.07611.
+[21]
+ 黄鹤飞. 一种改进YOLOv8 和StrongSORT 的车流量检测
+方法[D]. 石家庄：石家庄铁道大学，2025.
+HUANG  Hefei.  A  Traffic  Flow  Counting  Method  Based  on
+Improved
+ YOLOv8
+ and
+ StrongSORT
+ Algorithms[D].
+Shijiazhuang:  Shijiazhuang  Tiedao  University,  2025.  (in
+Chinese with English abstract).
+[22]
+ 涂淑琴，黄磊，梁云，等. 基于JDE 模型的群养生猪多目
+标跟踪[J]. 农业工程学报，2022，38(17)：186-195.
+TU Shuqin, HUANG Lei, LIANG Yun, et al. Multiple object
+tracking  of  group-housed  pigs  based  on  JDE  model[J].
+Transactions
+ of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+Engineering (Transactions of the CSAE), 2022, 38(17): 186-195.
+(in Chinese with English abstract).
+[23]
+ 吕佳，冉洁. 基于改进YOLOv9s 与自适应卡尔曼滤波的套袋葡
+[24]
+第 7 期
+翁海勇等：无人机遥感视频影像结合改进YOLO11 的柑橘追踪计数方法
+191 　
+
+萄视频计数方法[J]. 农业工程学报，2025，41(10)：195-203.
+LYU  Jia,  RAN  Jie.  Counting  bagging  grape  using  improved
+YOLOv9s  and  adaptive  Kalman  filter[J].  Transactions  of  the
+Chinese Society of Agricultural Engineering (Transactions of
+the CSAE), 2025, 41(10): 195-203. (in Chinese with English
+abstract).
+ 郭明月，刘雅晨，李伟夫，等. 基于视频跟踪算法的果园猕
+猴桃产量实时预估[J]. 农业机械学报，2023，54(6)：178-185.
+GUO  Mingyue,  LIU  Yachen,  LI  Weifu,  et  al.  Real-time
+production  prediction  of  kiwifruit  in  orchard  based  on  video
+tracking algorithm[J]. Transactions of the Chinese Society for
+Agricultural  Machinery,  2023,  54(6):  178-185.  (in  Chinese
+with English abstract).
+[25]
+ LOU  H,  DUAN  X,  GUO  J,  et  al.  DC-YOLOv8:  Small-size
+object  detection  algorithm  based  on  camera  sensor[J].
+Electronics, 2023, 12(10): 2323.
+[26]
+ WANG  C  Y,  YEH  I  H,  LIAO  M  H  Y.  YOLOv9:  Learning
+what  you  want  to  learn  using  programmable  gradient
+information[A].  European  conference  on  computer  vision[C].
+Cham: Springer Nature Switzerland, 2024.
+[27]
+ PAN  W,  CHEN  J,  LV  B,  et  al.  Lightweight  marine
+biodetection
+ model
+ based
+ on
+ improved
+ YOLOv10[J].
+Alexandria Engineering Journal, 2025, 119: 379-390.
+[28]
+ TIAN Y, YE Q, DOERMANN D. Yolov12: Attention-centric
+real-time object detectors[EB/OL]. (2025-02-18)[2025-04-25].
+https://arxiv.org/abs/2502.12524.
+[29]
+ SELVARAJU R R, COGSWELL M, DAS A, et al. Grad-cam:
+visual  explanations  from  deep  networks  via  gradient-based
+localization[C]//Proceedings
+ of
+ the
+ IEEE
+ international
+conference on computer vision. Venice, Italy. 2017: 618-626.
+[30]
+ 杜磊. 基于SORT 算法的图像轨迹跟踪混合控制方法[J]. 现
+代电子技术，2024，47(13)：32-35.
+DU Lei. Image trajectory tracking hybrid control method based
+on  SORT  algorithm[J].  Modern  Electronic  Technique,  2024,
+47(13): 32-35. (in Chinese with English abstract) .
+[31]
+ WOJKE  N,  BEWLEY  A,  PAULUS  D.  Simple  online  and
+realtime tracking with a deep association metric[C]//2017 IEEE
+International Conference on Image Processing. Beijing, China:
+IEEE, 2017: 3645-3649.
+[32]
+ AHARON  N,  ORFAIG  R,  BOBROVSKY  B  Z.  BoT-SORT:
+Robust associations multi-pedestrian tracking[EB/OL]. (2022-
+06-29)[2025-08-06]https://arxiv.org/abs/2206.14651.
+[33]
+ ZHANG Y, SUN P, JIANG Y, et al. Bytetrack: Multi-object
+tracking  by  associating  every  detection  box[C]//  European
+Conference  on  Computer  Vision.  Cham:  Springer  Nature
+Switzerland, 2022: 1-21.
+[34]
+ 
+Citrus tracking and counting using UAV remote sensing video imagery
+with improved YOLO11
+WENG Haiyong1,2,3 , DU Lu1,2 , ZHANG Boyu1,2 , SU Leilei1,2 , XU Jinchai1,2 ,
+XIAO Guimiao1,2 , SUN Dawei3,4 , YE Dapeng1,2※
+(1. College of Mechanical and Electrical Engineering, Fujian Agriculture and Forestry University, Fuzhou 350002, China;　2. Fujian Key
+Laboratory of Agricultural Information Sensring Technology, Fuzhou 350002, China;　3. Key Laboratory of Agricultural Equipment for
+Hilly and Mountainous Areas in Southeastern China(Co-construction by Ministry and Province) , Ministry of Agriculture and Rural Affairs,
+Hangzhou 310021, China;　4. Institute of Agricultural Equipment, Zhejiang Academy of Agricultural Sciences, Hangzhou 310021, China)
+Abstract: Citrus yield estimation is often required for low missed detection rates, tracking, and counting errors using UAV
+remote sensing, particularly for dense fruit occlusion and small target size. In this study, citrus tracking and counting were
+proposed  using  UAV  remote  sensing  video  imagery  with  improved  YOLO11.  The  video  data  was  first  collected  by  a  DJI
+Phantom  4  UAV  at  an  angle  of  approximately  45°.  A  citrus  target  detection  was  constructed  on  the  tracking  dataset.  An
+automatic citrus counting was realized using UAV video streams. A lightweight YOLO11-PMSL model was combined with an
+improved ByteTrack algorithm. The detection head layer was simplified to a three-level structure (P2-P4) using the YOLO11n
+network architecture. The feature pyramid structure was reconstructed. Deep redundant modules were removed to fuse the high-
+resolution  shallow  features,  and  then  perceive  small  targets.  Secondly,  the  C3k2-MSEIE  multi-scale  edge  module  was
+introduced after adaptive scale fusion and contour enhancement. The local details were expressed to extract the fruit contours.
+The overall morphological features of the fruit were preserved, with better feature expression in the densely populated fruit
+areas. Subsequently, the loss function was replaced by SIoU. A direction-sensitive constraint was introduced to improve the
+localization accuracy and training stability of the detection boxes. Finally, the LAMP was used to prune the model for the
+removal  of  redundant  weights.  The  number  of  parameters  and  floating-point  operations  was  then  reduced  to  compress  the
+model  size  for  model  lightweighting.  The  ByteTrack  algorithm  framework  was  improved,  rather  than  using  IoU  in  spatial
+location measurement. The accuracy and stability of fruit tracking were further enhanced in complex orchard environments.
+The similarity metric in ByteTrack was replaced with the DIoU. Simultaneously, a region-counting anti-shake mechanism was
+embedded in the algorithm. The target ID jump problem under occlusion was effectively solved for the accurate counting of
+citrus fruits. Experimental results showed that the YOLO11-PMSL model effectively improved the performance of the model.
+Specifically, compared with the original YOLO11n object model, better performance was achieved in the feature pyramid into
+a P2-P4 three-level structure. The number of model parameters was reduced to 116 m, the model size was compressed to 2.6
+MB, and the recall and mAP0.5 metrics were significantly improved by 7.9 and 5.1 percentage points, respectively. The more
+lightweight model was verified by the higher accuracy for small targets. The precision, recall, and mAP0.5 were improved by
+2.2, 10.7, and 8.7 percentage points, respectively, with the C3k2-MSEIE edge module. Once the loss function was replaced
+from CIoU to SIoU, the convergence speed was accelerated to further improve its performance. The LAMP algorithm was used
+to prune the model, fully meeting the lightweight deployment of edge terminals. The performance remained at the baseline
+level before pruning. While the number of parameters, floating-point operations, and model size were significantly reduced
+from before. Ultimately, the precision, recall, and mAP0.5 were improved by 3.3, 11.6, and 9.3 percentage points, respectively,
+in the object detection task. In terms of lightweighting, the number of parameters, model size, and floating-point operations
+were  reduced  by  86.05%,  76.36%,  and  26.98%,  respectively,  compared  with  the  original  model.  The  detection  speed  was
+improved by 65.18%. The YOLO11-PMSL model achieved a detection accuracy and speed on the citrus dataset. In the object
+tracking task, the ByteTrack multi-object tracking algorithm achieved an accuracy of 92.8% and a tracking precision of 81.7%.
+Compared  with  the  SORT,  DeepSORT,  and  BotSort  algorithms,  the  tracking  accuracy  was  improved  by  5.5,  5.7,  and  4.3
+percentage  points,  respectively,  and  the  tracking  precision  was  improved  by  19.2,  19.4,  and  10.8  percentage  points,
+respectively. The average accuracy of citrus counting reached 88.4%, compared with manual counting. The counting error was
+smaller than that of manual counting. Citrus counting was effectively realized in farmland scenarios. This finding can provide a
+technical approach for citrus yield prediction.
+Keywords: UAV; remote sensing; critus; YOLO11n; ByteTrack; counting
+　 192
+农业工程学报（http://www.tcsae.org）
+2026 年

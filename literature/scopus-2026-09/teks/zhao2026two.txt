@@ -1,0 +1,883 @@
+A two-stage fine-tuning strategy for 3D object segmentation from 
+multi-view images
+Jiangsan Zhao a,*, Jakob Geipel a
+, Krzysztof Kusnierek a
+, Xuean Cui b,*
+a Department of Agricultural Technology, Center for Precision Agriculture, Norwegian Institute of Bioeconomy Research (NIBIO), Nylinna 226, Kapp, 2849, Norway
+b Biotechnology Research Institute, Chinese Academy of Agricultural Sciences, Beijing, 100081, China
+A R T I C L E I N F O
+Keywords:
+Neural radiance fields
+Fine-tuning
+3D segmentation
+Point cloud
+Object counting
+A B S T R A C T
+Neural Radiance Fields (NeRF) have been widely adopted for reconstructing high-quality 3D scenes from 2D RGB 
+images. However, achieving accurate 3D object segmentation within these reconstructed scenes remains chal­
+lenging. Existing NeRF-based segmentation methods either rely on post-processing (SA3D), which produces noisy 
+point clouds due to the absence of density field optimization, or employ joint training with additional seg­
+mentation heads (FruitNeRF), which can lead to suboptimal performance due to conflicting learning objectives. 
+In this work, we propose InvNeRF-Seg (Input-substitution NeRF for Segmentation), a two-stage fine-tuning 
+strategy for 3D object segmentation that preserves the original NeRF architecture and loss function entirely. We 
+first train a standard NeRF on RGB images and then fine-tune it using 2D segmentation masks formatted as RGB- 
+like inputs, without introducing any architectural modifications or additional loss functions. This input- 
+substitution approach reshapes the density field to align with object regions while suppressing background 
+density. We validate InvNeRF-Seg through comprehensive ablation studies examining the roles of density and 
+color MLPs, loss function choices, and training strategies. Field density analysis reveals consistent semantic 
+refinement: densities of object regions increase while background densities are suppressed. Experiments on 
+synthetic fruit datasets and real-world soybean imagery demonstrate that InvNeRF-Seg produces cleaner 3D 
+segmented point clouds compared to both SA3D and FruitNeRF, enabling more accurate downstream object 
+counting. The method is further validated on a self-collected soybean dataset to demonstrate its applicability in 
+real-world agricultural scenarios. Our code is available at https://github.com/ZJiangsan/InvNeRF-Seg.
+1. Introduction
+Neural Radiance Fields (NeRF) have demonstrated remarkable suc­
+cess in reconstructing photo-realistic 3D scenes from 2D images by 
+learning a volumetric scene representation [1–3]. However, while 
+NeRF-based models have been widely adopted for view synthesis, 
+research into object-level 3D segmentation within reconstructed NeRF 
+scenes remains relatively limited [1,4,5].
+Accurate 3D segmentation is essential for downstream applications 
+such as robotic perception [6], augmented reality (AR) [7], autonomous 
+driving [8], medical imaging [9], and plant phenotyping in agriculture 
+[4,10]. However, existing approaches to 3D segmentation either rely on 
+fully annotated point clouds—requiring substantial manual labeling 
+[11]—or introduce significant architectural complexity by coupling 
+additional semantic branches or loss functions into NeRF models [4,5]. 
+Alternatively, post-processing-based methods like SA3D [1] perform 3D 
+segmentation by back-projecting 2D masks, but suffer from noise and 
+lack of density refinement. These limitations hinder the adoption of 
+NeRF-based segmentation in real-world applications where robustness 
+and ease of implementation are critical.
+A key observation motivating this work is that directly training NeRF 
+on binary segmentation masks—which lack the smooth photometric 
+gradients essential for geometry learning—leads to complete failure, 
+producing entirely black, degenerate outputs (Fig. 1). However, when a 
+NeRF model has already learned accurate geometry from RGB images, 
+fine-tuning on binary masks can effectively reshape the density field to 
+focus on foreground objects while suppressing background density.
+Motivated by these challenges, we introduce InvNeRF-Seg, a simple 
+yet effective two-step fine-tuning method for NeRF-based 3D object 
+segmentation. The method maintains the original NeRF architecture and 
+loss function entirely unchanged. The first step involves training a high- 
+quality NeRF model on multi-view RGB images using a standard NeRF 
+* Corresponding authors.
+E-mail addresses: jiangsan.zhao@nibio.no (J. Zhao), cuixuean@caas.cn (X. Cui). 
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+https://doi.org/10.1016/j.atech.2026.102443
+Received 24 May 2026; Received in revised form 26 July 2026; Accepted 26 July 2026  
+Smart Agricultural Technology 15 (2026) 102443 
+Available online 28 July 2026 
+2772-3755/© 2026 The Author(s). Published by Elsevier B.V. This is an open access article under the CC BY license ( http://creativecommons.org/licenses/by/4.0/ ). 
+
+pipeline. In the second step, the pretrained NeRF is fine-tuned using 2D 
+segmentation masks of the same images—without altering any archi­
+tectural components—to derive a 3D segmentation-aware model.
+Despite its simplicity, InvNeRF-Seg produces high-quality segmented 
+3D point clouds across both synthetic fruit datasets and real-world plant 
+imagery, offering a practical bridge between 2D mask supervision and 
+3D semantic reconstruction. To ensure practical relevance, we further 
+validate the proposed method on a self-collected soybean dataset ac­
+quired under real-world conditions. The main contributions of this work 
+are summarized as follows: 
+(1) We demonstrate that 3D segmentation in NeRF can be achieved 
+through mask-based fine-tuning that reshapes the volumetric 
+density field without requiring architectural modifications.
+(2) We provide field-level analysis revealing consistent density 
+redistribution — foreground reinforced, background suppressed 
+— offering insight into how supervision influences implicit neu­
+ral representations.
+(3) We show through systematic ablation studies that this geometry- 
+first, semantics-later strategy outperforms joint training, leading 
+to cleaner 3D segmentation and more accurate downstream 
+counting.
+The rest of the paper is organized as follows: Section II reviews 
+related work on NeRF-based 3D segmentation. Section III presents the 
+details of the proposed InvNeRF-Seg method. Section IV provides a 
+comprehensive evaluation including ablation studies. Section V dis­
+cusses key insights and practical considerations. Finally, conclusions are 
+drawn in Section VI.
+2. Related work
+Classical deep learning methods for 3D segmentation, such as 
+PointNet [11] and PointNet++ [12], have achieved remarkable success. 
+However, their reliance on labor-intensive and time-consuming 3D point 
+cloud annotation remains a significant bottleneck, limiting their scal­
+ability and applicability across domains [13]. Additionally, these 
+methods often struggle in scenarios with noisy or incomplete point 
+clouds, especially in complex environments with occlusions [14,15].
+Neural Radiance Fields (NeRF) have transformed 3D reconstruction 
+through learning implicit neural representations of scenes from multi- 
+view RGB images, enabling photo-realistic novel view synthesis [2]. 
+Building on this foundation, several approaches have been developed on 
+top of NeRF to achieve 3D segmentation with the help of segmented 2D 
+segmentation masks. Among these, two prominent categories have 
+emerged: Segment Anything in 3D (SA3D) [1] and FruitNeRF [4].
+2.1. SA3D: post-processing approach
+SA3D is a post-processing method that does not change the NeRF 
+model or training. Instead, it uses a pretrained RGB NeRF and performs 
+3D segmentation by projecting 2D binary masks into the scene using the 
+rendered weights ωᵢ for each sample point Xᵢ along ray r. The weights 
+from volume rendering are computed as: 
+ωi = Ti⋅(1 −
+exp(−σᵢδᵢ))⋅mᵢ
+(1) 
+where Tᵢ is the accumulated transmittance, σᵢ is the predicted density, δᵢ 
+is the distance between sampled points, and mᵢ is the binary mask value 
+for the corresponding 2D pixel. For all rays r whose corresponding 2D 
+pixels are labeled as foreground in the segmentation mask (i.e., M 
+(r) = 1), SA3D collects 3D points where the rendering weights exceed a 
+threshold τ: 
+P SA3D = {Xᵢ|Σ rM(r)⋅ωᵢ(r)〉τ}
+(2) 
+No backpropagation or model update is involved in SA3D. Even 
+though it is fast, the noisy and fragmented segmentation point cloud 
+affects subsequent analysis negatively because no density field optimi­
+zation occurs. Although SA3D incorporates self-prompting strategies 
+and IoU-aware view rejection to improve segmentation robustness, 
+these techniques primarily address errors in 2D mask generation rather 
+than 3D point cloud quality.
+2.2. FruitNeRF: joint training approach
+FruitNeRF extends NeRF by adding a segmentation branch that 
+outputs a scalar foreground probability m(t) ∈[0,1] at each sampled 
+point along a ray. The output of the modified NeRF is: 
+fθ(X, d)→(c, σ, m)
+(3) 
+where c is RGB color, σ is volume density, and m is segmentation con­
+fidence. The rendered mask is computed with the same volume 
+rendering accumulation used for RGB color: ̂
+W(r) = Σ Tᵢ(1 −
+exp(−σᵢδᵢ))⋅mᵢ
+(4) 
+FruitNeRF uses a composite loss: 
+l
+FruitNeRF = l
+RGB + φl
+seg
+(5) 
+where ℓ_RGB is the mean squared error (MSE) loss on RGB reconstruc­
+tion, ℓ_seg = BCE( ˆW, M_gt) is the binary cross-entropy (BCE) between 
+rendered and ground truth masks, and φ is the weighting factor between 
+RGB and segmentation tasks, set to 1 by default.
+FruitNeRF adopts a joint training strategy, where a single model is 
+Fig. 1. Training NeRF from scratch on binary masks. (a) Predicted output (completely black), (b) predicted depth (no structure), (c) ground truth mask. Training on 
+masks without pretrained geometry fails completely.
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+2 
+
+trained to simultaneously predict RGB colors and segmentation masks. 
+While FruitNeRF has demonstrated success in segmenting various fruit 
+types, the joint training process must balance two inherently different 
+objectives, which can lead to suboptimal performance in both RGB 
+reconstruction and mask prediction. This problem becomes more pro­
+nounced when the objects of interest are small, since the segmentation 
+loss contributes less to the overall optimization compared to the RGB 
+loss. InvNeRF-Seg addresses the limitations of both SA3D and FruitNeRF 
+by simplifying the model training process while achieving better per­
+formance in 3D segmentation.
+3. Proposed approach
+3.1. Motivation
+NeRF models rely heavily on smooth photometric gradients—such as 
+color, shading, and texture—to infer scene geometry [2]. As a result, 
+directly training NeRF using binary segmentation masks, which lack 
+these properties, typically leads to failure. The model produces entirely 
+black outputs with no meaningful geometry (Fig. 1), because binary 
+masks provide insufficient gradient signals for learning a coherent 
+density field from scratch.
+However, a NeRF trained on RGB images already encodes accurate 
+geometry. We hypothesized that fine-tuning the model on 2D binary 
+masks—without changing the model or loss functions—could shift the 
+density field to focus on foreground objects. This simple fine-tuning 
+strategy proved effective, resulting in high-quality segmentation in 
+both rendered 2D masks and 3D point clouds.
+3.2. Pipeline formulation
+3.2.1. Training a standard NeRF model based on RGB images
+NeRF learns a continuous function fθ to map a 3D spatial coordinate 
+X ∈ℝ³ and a viewing direction d ∈ℝ³ to an emitted color c ∈ℝ³ and a 
+volume density σ ∈ℝ≥0 based on multi-view 2D RGB images with 
+known camera poses: 
+fθ(X, d)→(c, σ)
+(6) 
+Points are sampled from rays marched from each pixel to camera 
+origin within the distance between near a and far b planes and then 
+rendered to RGB values: ̂
+C(r) =
+∫
+a∧b T(t)σ(t)c(t) dt
+(7) 
+where the transmittance is: 
+T(t) = exp
+(
+−
+∫
+a∧t σ(s) ds
+)
+(8) 
+The training MSE between rendered and ground-truth RGB values is: 
+l
+RGB = Σ {r ∈R}⃒⃒⃒⃒̂
+C(r) −
+C gt(r)⃒⃒⃒⃒
+2
+(9) 
+3.2.2. Fine-tune the trained standard NeRF using segmented 2D masks
+The model architecture and loss functions are unchanged compared 
+to a standard NeRF model. During fine-tuning, we replace RGB images 
+with binary masks formatted as RGB-like inputs (i.e., [1,1,1] for object, 
+[0,0,0] for background). The loss remains as MSE: 
+l
+mask = Σ r⃒⃒⃒⃒̂
+C(r) −
+M gt(r)⃒⃒⃒⃒
+2
+(10) 
+where ˆC(r) is the rendered RGB prediction (interpreted as soft mask) and 
+M_gt ∈{0,1}³ is the binary mask target. No semantic supervision or 
+binary loss (e.g., BCE) is introduced in InvNeRF-Seg. The model is 
+implicitly encouraged to reshape its density field to align with the 
+masked object regions, since only those regions contribute to the loss. 
+This formulation preserves the original NeRF architecture, training 
+pipeline, and loss function, but shifts the model’s learning objective via 
+input substitution alone. Because Stage 2 fine-tunes the entire network 
+on masks formatted as RGB inputs, the resulting checkpoint is a dedi­
+cated segmentation model: its rendered output encodes foreground 
+probability rather than scene appearance, and the original colour, 
+shading, and texture are intentionally overwritten. The two stages are 
+stored as separate checkpoints. The Stage-1 RGB model is retained both 
+as the initialization for fine-tuning and for any task that still requires 
+photometric rendering, while the Stage-2 model is used exclusively for 
+segmentation and point-cloud extraction. This separation is by 
+design—appearance and semantics are represented by two specialized 
+models rather than one multi-task network—which is precisely what 
+allows each to be optimized without compromise.
+4. Experiments and results
+4.1. Dataset
+We used the apple and peach datasets from synthetic fruit trees in the 
+publicly available FruitNeRF Dataset as testing examples (Fig. 2a and b). 
+Details about the data creation can be found in FruitNeRF [4]. Since the 
+dataset includes segmentation masks, camera intrinsics and poses, no 
+additional processing was required.
+To further challenge the models, we collected a real-world soybean 
+dataset specifically for this study. Video recordings of a soybean plant 
+was captured using an iPhone 12 Pro under natural outdoor lighting 
+conditions, with bright sunlight to reflect realistic field environments 
+(Fig. 2c and d). The soybean plant was in a mature stage with clearly 
+visible pods. The video was captured by manually moving a handheld 
+camera around the soybean plant placed on the ground, ensuring multi- 
+view coverage from different angles. Standard preprocessing was per­
+formed, including frame extraction from video using FFmpeg [16] at 5 
+frames per second and followed by camera pose estimation using COL­
+MAP [17]. After discarding motion-blurred frames from the handheld 
+capture, 149 clean RGB images of the plant were retained for recon­
+struction; camera poses were estimated with COLMAP, and this single 
+reconstruction was used for both the single-pod and double-pod seg­
+mentation tasks, which share the same RGB images and differ only in 
+their target masks (a single-pod mask or a double-pod mask). To 
+generate pod segmentation masks, we used the AnyLabeling annotation 
+tool with Segment Anything (MobileSAM) [18] integrated for automatic 
+mask generation. Two tasks were defined using this dataset: (1) binary 
+instance-level 3D segmentation of a single soybean pod, and (2) 
+multi-instance 3D segmentation of two pods from the same plant. Two 
+pods were selected as a controlled proof of concept for the 
+multi-instance setting rather than as an exhaustive plant-level count; 
+annotating every pod on the plant was not the objective of this feasibility 
+validation and is constrained by severe pod-to-pod occlusion in a single 
+handheld capture.
+4.2. Implementation details
+4.2.1. NeRF configuration
+We adopted the Nerfacto model from Nerfstudio [19] using its 
+default 
+configuration 
+settings 
+(hidden_dim 
+=
+64, 
+hidden_dim_color = 64, appearance_embed_dim = 32). For the apple 
+and peach datasets, all experiments were conducted using the default 
+far-plane value of 1000 without any parameter tuning, demonstrating 
+that 
+InvNeRF-Seg 
+operates 
+effectively 
+under 
+standard 
+NeRF 
+configurations.
+For the soybean plant dataset, where the target object occupies a 
+relatively small spatial region compared to the full scene, the model 
+capacity was increased (hidden dimensions raised to 128), and the far 
+plane was reduced to 2 to restrict sampling to an object-centric volume. 
+This adjustment is consistent with standard NeRF practice for sparse- 
+object scenes, where excessive background sampling can dilute 
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+3 
+
+supervision signals and hinder effective optimization.
+The RGB training stage was performed for 4000 epochs using 
+learning rates of 1 × 10⁻² for the field and proposal networks and 
+1 × 10⁻⁴ for the camera optimizer. The subsequent fine-tuning stage was 
+conducted for an additional 6000 epochs, with all learning rates reduced 
+by a factor of 100.
+To ensure a fair comparison, all configuration settings—including 
+model capacity, training schedule, and far-plane values—were kept 
+identical between InvNeRF-Seg and FruitNeRF for each dataset. Fruit­
+NeRF was trained for a total of 6000 epochs to match the overall training 
+budget.
+4.2.2. SA3D implementation
+We implemented two variants of SA3D for comparison. The original 
+weight-based SA3D back-projects 2D segmentation masks into 3D using 
+volume-rendered weights with a threshold of τ = 0.1, producing surface- 
+like point clouds. In addition, we implemented a density-based variant 
+that thresholds raw field density (σ ≥70) combined with 2D mask 
+filtering, resulting in denser volumetric point clouds that better capture 
+object interiors. This density-thresholded variant extracts points directly 
+from the unmodified NeRF density field, followed by the same DBSCAN 
+clustering pipeline used for all methods. It therefore serves as a 
+geometry-based NeRF + DBSCAN baseline without any density-field 
+refinement.
+Both variants operate on the pretrained RGB NeRF model without 
+any additional training or fine-tuning. The density-based variant is 
+included to provide a more favorable setting for clustering-based 
+downstream tasks, as volumetric representations are better suited for 
+density-based clustering methods such as DBSCAN.
+4.2.3. Clustering and counting
+All methods used an identical clustering pipeline to ensure fair 
+comparison: DBSCAN clustering (eps=0.0065, min_samples=3), fol­
+lowed by recursive splitting of large clusters using KMeans based on size 
+and volume statistics. This ensures that counting accuracy differences 
+reflect segmentation quality rather than post-processing choices.
+4.3. Evaluation metrics
+Peak Signal-to-Noise Ratio (PSNR) [20] and Intersection over Union 
+(IoU) [21] were used to evaluate the quality of the rendered 2D RGB 
+images and masks, respectively, during training. The accuracy of fruit 
+counting was used to evaluate the quality of generated 3D segmentation 
+point clouds. A two-tailed t-test was performed using SciPy (v1.15.2) 
+[22] to evaluate statistical significance.
+4.4. Experimental environment
+All experiments were carried out on a Windows 11 Pro platform with 
+Intel Core i9 5 GHz × 16 processor (CPU), 64 GB of RAM, and NVIDIA 
+RTX A5500 GPU with 16 GB of RAM.
+4.5. Results on synthetic datasets
+4.5.1. Rendered image and mask quality
+The quality of the rendered RGB images for both apple and peach 
+datasets was comparable between InvNeRF-Seg and FruitNeRF, as 
+indicated by the non-significant differences in PSNR values—despite 
+slightly higher scores from InvNeRF-Seg (Fig. S1). This outcome is ex­
+pected, as both models share the same architecture for RGB-based 3D 
+reconstruction.
+The IoU of the rendered masks for both apple and peach datasets was 
+significantly higher in InvNeRF-Seg compared to FruitNeRF, with p 
+values below 0.001—highlighting the superior segmentation accuracy 
+of InvNeRF-Seg (Fig. 3). This is expected, as FruitNeRF remains 
+dependent on RGB supervision, treating segmentation as a secondary 
+task. In contrast, InvNeRF-Seg fine-tunes the density field directly using 
+ground truth masks, allowing for more precise alignment between the 
+learned radiance field and object boundaries.
+4.5.2. 3D point cloud quality
+The clearest difference between methods is visible in the 3D 
+segmented point clouds, apple (Fig. 4) and peach (Fig. S2). InvNeRF-Seg 
+produces clean, well-separated fruit-shaped blobs with minimal noise. 
+The instances in Fig. 4 are sufficiently well separated that a simple non- 
+learned clustering method (DBSCAN) recovers near-exact fruit counts 
+(282 vs. 283 for apple and 155 vs. 152 for peach) without requiring a 
+learned detector. This demonstrates one practical advantage of reshap­
+ing the density field into discrete, well-separated object instances. 
+FruitNeRF generates recognizable but fragmented fruits with scattered 
+points around object boundaries. SA3D (both variants) produces heavily 
+noisy point clouds with extensive scattered points throughout the scene. 
+This quality difference is primarily attributable to the refined density 
+field: InvNeRF-Seg’s fine-tuning suppresses background density while 
+reinforcing object density, whereas SA3D operates on an unmodified 
+density field and FruitNeRF’s joint training compromises density field 
+quality.
+4.5.3. Object counting
+Using the identical clustering pipeline across all methods, InvNeRF- 
+Seg achieves the most accurate fruit counts (Table 1). The cleaner point 
+clouds from InvNeRF-Seg naturally separate into individual fruit 
+Fig. 2. Examples of the synthetic data from FruitNeRF and real-world data of a soybean plant: apple (a), peach trees (b) and a soybean plant with a single pod (c) and 
+two pods (d) annotated in different views (top row) and segmented fruit/pod masks (bottom row).
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+4 
+
+clusters, while noisier point clouds from other methods lead to 
+fragmentation and overcounting.
+4.6. Ablation studies
+We conducted systematic ablation studies on the apple and peach 
+datasets to understand why InvNeRF-Seg works and what each compo­
+nent contributes.
+4.6.1. Training from scratch on masks
+Directly training NeRF on binary masks without pretrained RGB 
+geometry produces completely degenerate outputs: entirely black 
+Fig. 3. Comparison of IoU between FruitNeRF and InvNeRF-Seg for predicting masks of apple (a) and peach (b). ‘***’ indicates p < 0.001.
+Fig. 4. Comparison of segmented and clustered 3D point clouds for the apple dataset. Top row: segmented fruit point clouds (white) from InvNeRF-Seg (a), 
+FruitNeRF (b), and SA3D (c). Bottom row: corresponding clustered point clouds with individual fruits shown in distinct colors from InvNeRF-Seg (d), FruitNeRF (e), 
+and SA3D (f). Ground truth count: 283.
+Table 1 
+Fruit counting results across methods using identical clustering parameters.
+Method
+Apple (GT¼283)
+Peach (GT¼152)
+InvNeRF-Seg
+282
+155
+FruitNeRF (BCE)
+294
+160
+FruitNeRF (MSE)
+289
+156
+SA3D (density)
+1573
+1249
+SA3D (weight)
+351
+328
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+5 
+
+rendered images with no meaningful depth structure (Fig. 1). This 
+confirms that pretrained geometry is essential and cannot be learned 
+from binary masks alone. The IoU remains approximately zero 
+throughout training.
+4.6.2. Component analysis: density vs. color MLP
+Nerfacto’s architecture consists of a density MLP (mlp_base, 12.2 M 
+parameters) and a color MLP (mlp_head, 39 K parameters). We isolated 
+the contributions of each by selectively freezing one during fine-tuning. 
+The qualitative differences in 3D segmentation under different training 
+strategies are illustrated in Fig. 5, where InvNeRF-Seg produces cleaner 
+and more coherent point clouds compared to partial fine-tuning or joint 
+training approaches.
+Fine-tune density only (color frozen). Training progresses slowly, 
+taking roughly 3000 epochs before IoU begins to improve. This is likely 
+due to the large number of parameters in the density MLP, which makes 
+optimization under mask-only supervision difficult. Nevertheless, 
+modifying the density field is essential for forming clean and well- 
+separated 3D point cloud structures.
+Fine-tune color only (density frozen). Training converges quickly, 
+reflecting the small size of the color MLP. However, since the geometry 
+is fixed, the model produces spatially biased masks and flat depth maps. 
+As a result, the extracted point clouds contain noticeably more noise.
+Fine-tuning both (InvNeRF-Seg). Jointly updating both compo­
+nents leads to faster convergence and higher IoU, indicating that 
+adapting color and density together is necessary for the best overall 
+performance.
+Counting results further validate this analysis (Table 2). While 
+density-only fine-tuning achieves near-perfect counting on apple (281/ 
+283), color-only fine-tuning significantly overcounts (294/283), indi­
+cating that density refinement is critical for producing well-separated 3D 
+clusters suitable for downstream tasks.
+4.6.3. Loss function: MSE vs. BCE in joint training
+To isolate whether the advantage of InvNeRF-Seg comes from the 
+two-stage strategy or the loss function, we trained FruitNeRF with MSE 
+loss (replacing its default BCE) on the segmentation head. FruitNeRF 
+with MSE achieved comparable final IoU to BCE but with slower initial 
+convergence. Since both loss functions yield similar results under joint 
+training, yet InvNeRF-Seg outperforms both, this demonstrates that the 
+two-stage fine-tuning strategy—not the loss function choice—is the 
+primary driver of InvNeRF-Seg's advantage.
+4.6.4. Convergence analysis
+IoU convergence curves (Fig. 6) reveal distinct behaviors across all 
+ablation conditions. InvNeRF-Seg (full fine-tuning) converges fastest 
+and reaches the highest IoU. Fine-tune color only converges quickly but 
+plateaus at a lower level. FruitNeRF (BCE and MSE) converges more 
+slowly, lacking the pretrained geometry advantage for the fine-tuning 
+stage. Fine-tune density only is dramatically slower, requiring approxi­
+mately 3000 epochs before meaningful IoU improvement, but 
+Fig. 5. 3D segmented point clouds from the apple dataset under different training strategies: (a) train from scratch on masks (failed — no meaningful output), (b) 
+fine-tune density only, (c) fine-tune color only, (d) InvNeRF-Seg (full fine-tuning), (e) FruitNeRF (BCE), (f) FruitNeRF (MSE).
+Table 2 
+Ablation study: fruit counting with different fine-tuning strategies.
+Fine-tuning Strategy
+Apple (GT¼283)
+Peach (GT¼152)
+Both (InvNeRF-Seg)
+282
+155
+Density only
+281
+157
+Color only
+294
+154
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+6 
+
+eventually reaches competitive final values. These results confirm that 
+pretrained geometry provides a critical head start, and that co-adapting 
+both MLPs yields the best convergence profile.
+4.7. SA3D variant comparison
+We compared the original weight-based SA3D with our density- 
+based variant. The density-based variant produces cleaner, denser 
+point clouds because raw density captures object interiors rather than 
+surfaces only. Despite this more favorable formulation for SA3D, 
+InvNeRF-Seg still substantially outperforms both SA3D variants in 
+downstream counting (Table 1), confirming that the advantage comes 
+from density field refinement through fine-tuning, not from the point 
+cloud extraction strategy.
+4.8. Real-World validation: soybean dataset
+To evaluate robustness under challenging conditions, we tested 
+InvNeRF-Seg on a self-collected real-world soybean dataset acquired 
+under natural conditions for binary instance-level 3D segmentation of a 
+single pod. InvNeRF-Seg achieved comparable performance in rendering 
+RGB images (Fig. 7a), while producing substantially higher-quality 
+segmentation 
+masks 
+during 
+training 
+compared 
+to 
+FruitNeRF 
+(p < 0.01) (Fig. 7b). Single-pod segmentation quality is further quanti­
+fied by rendered-mask IoU and PSNR during training (Fig. 7), where 
+InvNeRF-Seg significantly exceeds FruitNeRF in mask IoU (p < 0.01). 
+The segmented 3D single pod generated by InvNeRF-Seg also appeared 
+visibly cleaner and less noisy than those produced by both FruitNeRF 
+and SA3D, based on visual inspection (Fig. 8 and Fig. S3). These results 
+further confirm the robustness and practical applicability of the 
+proposed approach in real-world agricultural scenarios. Because no 
+dense 3D ground truth is available for the field-collected plant, this 3D 
+point cloud is assessed qualitatively.
+4.9. Extension to multi-instance segmentation
+Although InvNeRF-Seg was originally designed for binary segmen­
+tation, we further tested its ability to handle multi-instance segmenta­
+tion by separating two distinct pods from the same soybean plant. 
+Despite using the same MSE loss and unchanged model architecture, the 
+method produced promising results for double-pod segmentation. 
+However, its performance was slightly lower than in the binary case, as 
+evidenced by some misclassified points near the instance boundaries 
+(Fig. 9). SA3D also performed reasonably well in this task, although its 
+outputs exhibited noticeable noise across both object and background 
+regions.
+4.10. Field Density Change Analysis
+The volumetric field density before and after fine-tuning was 
+analyzed to better understand the internal behavior of InvNeRF-Seg. 
+Targeted object regions consistently show increased density after fine- 
+tuning, leading to sharper and more localized peaks along sampled 
+rays (Fig. 10a-f). In contrast, non-targeted objects and background areas 
+exhibit field density suppression or small fluctuations around zero, 
+which results in minimal accumulated weights and effective background 
+removal (Fig. 10g-l). These patterns confirm that InvNeRF-Seg seman­
+tically reshapes the radiance field without requiring architectural 
+changes.
+Fig. 6. IoU convergence curves during training for all ablation conditions on apple (a) and peach (b): InvNeRF-Seg (full), fine-tune density only, fine-tune color only, 
+FruitNeRF (BCE), and FruitNeRF (MSE).
+Fig. 7. Comparison of PSNR (a) and IoU (b) for single pod segmentation from a soybean plant between FruitNeRF and InvNeRF-Seg. 'ns' indicates no statistical 
+significance; '**' indicates p < 0.01.
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+7 
+
+5. Discussion
+Our experiments across both synthetic and real-world datasets 
+demonstrate that InvNeRF-Seg, a two-step fine-tuning strategy that le­
+verages a pre-trained RGB NeRF, consistently outperforms existing 3D 
+segmentation methods—namely SA3D [1] and the joint training-based 
+FruitNeRF [4]—in terms of segmentation accuracy, 3D point cloud 
+quality, and object-level counting performance.
+Decoupling geometry and semantics. The fundamental insight is 
+that geometry learning and semantic learning should be decoupled. 
+NeRF models rely on smooth color gradients in RGB images to learn 
+scene geometry; binary segmentation masks with hard transitions pro­
+vide limited geometric cues and can hinder training if used too early. 
+Joint learning, as in FruitNeRF, forces the model to optimize for con­
+flicting objectives—RGB fidelity and semantic separation—using shared 
+features, which can lead to suboptimal performance on both tasks [23]. 
+In contrast, InvNeRF-Seg preserves geometric integrity by first opti­
+mizing for RGB reconstruction, and only then introduces semantic su­
+pervision during fine-tuning.
+Nature of the contribution. InvNeRF-Seg is not a new network 
+architecture but a training strategy that exploits an empirical property of 
+converged NeRF models: once a smooth density field has been learned 
+from RGB images, it can be reshaped toward object regions by continued 
+optimization of the unchanged MSE objective on mask-substituted in­
+puts. The contribution is therefore twofold—an empirical finding about 
+the adaptability of pretrained radiance fields, and a simple, architecture- 
+invariant recipe that turns this finding into a practical 3D segmentation 
+tool. We make no claim of a new loss or module; the value lies in 
+showing that none is needed.
+Why input substitution reshapes the density field. The mecha­
+nism follows from the volume-rendering objective. Under MSE super­
+vision, 
+optimization 
+encourages 
+the 
+accumulated 
+rendering 
+contribution to match the binary target masks. Through the volume- 
+rendering formulation, this results in increased density in foreground 
+regions and reduced density in background regions, consistent with the 
+density redistribution observed in Fig. 10. Starting from a pretrained 
+field is essential: the gradients sharpen an existing surface rather than 
+having to discover geometry from a near-binary signal, which is why 
+training from scratch collapses (Fig. 1). This view also predicts when 
+substitution fails—when foreground and background project onto the 
+same rays (thin or heavily occluded structures), when 2D masks are 
+inconsistent across views (the field cannot satisfy contradictory targets 
+and blurs the boundary), and when the sampling volume greatly exceeds 
+the object, so that most samples receive an uninformative background 
+target and the effective foreground gradient is diluted, the same effect 
+addressed by the far-plane setting discussed below.
+Why density adapts rather than colour. A natural question is why, 
+under the unchanged MSE objective, the network satisfies the mask 
+target by reshaping the density field rather than by simply having the 
+colour MLP emit white on foreground samples and black elsewhere. 
+Both pathways receive gradients, but they are not equally effective. The 
+colour MLP can only set the emitted value of a sample that is already 
+being rendered; it cannot remove the contribution of background or 
+occluding matter along the ray, because that contribution is governed by 
+density and transmittance rather than colour. To render a clean binary 
+image consistently across all views, the network must therefore 
+concentrate accumulated weight on the object surface and drive it to 
+zero elsewhere—an operation only the density field can perform, since a 
+purely colour-based solution would have to encode a consistent fore­
+ground/background label for every 3D sample under every viewing di­
+rection, which the geometry represents far more parsimoniously. The 
+ablations confirm this: colour-only fine-tuning leaves the density field 
+diffuse and overcounts (294 versus a ground truth of 283), whereas 
+density adaptation yields the clean, separable clusters required for ac­
+curate counting (Fig. 5; Table 2).
+Both MLPs contribute complementary roles. Our ablation studies 
+reveal that both density and color MLPs play complementary roles 
+during fine-tuning. The density MLP reshapes the volumetric structure, 
+which is critical for clean 3D point cloud extraction—as evidenced by 
+density-only fine-tuning achieving near-perfect counting (281/283 
+Fig. 8. Segmented single-pod 3D point clouds from a soybean plant obtained with InvNeRF-Seg (a), FruitNeRF (b) and SA3D (c).
+Fig. 9. Segmented double-pod 3D point clouds from a soybean plant obtained 
+with InvNeRF-Seg (a, c) and SA3D (b, d); the two pods are separated 
+by instance.
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+8 
+
+apples) despite slow convergence. The color MLP quickly adapts the 
+rendered output to match binary targets. Full fine-tuning achieves the 
+best results because both adaptations reinforce each other. Density-only 
+fine-tuning is therefore a viable, simpler alternative when counting is 
+the sole objective and a longer training budget is acceptable, since it 
+attains comparable counting accuracy; full fine-tuning is preferred when 
+both faster convergence and higher rendered-mask IoU are required.
+Point cloud quality matters >2D IoU. While convergence curves 
+show that several methods achieve similar final 2D IoU values, the 3D 
+point cloud quality differs dramatically. InvNeRF-Seg produces clean, 
+well-separated clusters that naturally correspond to individual objects, 
+whereas FruitNeRF and SA3D produce fragmented or noisy point clouds 
+that challenge downstream clustering. This highlights that 2D metrics 
+alone are insufficient for evaluating NeRF-based 3D segmentation 
+Fig. 10. Field density changes after fine-tuning in targeted (object) and non-targeted (background) regions. Top two rows: example input pixels from apple, peach, 
+and soybean pod, including targeted object regions (a–c) and background/non-targeted regions (g–i). Bottom two rows: corresponding per-ray field density dif­
+ferences for object regions (d–f) and background regions (j–l). Positive values indicate density enhancement in targeted object regions, whereas negative values 
+indicate density suppression in background and non-targeted regions.
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+9 
+
+methods.
+Volume control is critical. Setting an appropriately small far plane 
+is essential for stable fine-tuning, especially when the target object oc­
+cupies a small portion of the scene. For instance, fine-tuning for single- 
+pod segmentation consistently failed when using a large far plane (e.g., 
+1000), but succeeded reliably when the far plane was reduced to 2. The 
+far plane must be consistent between RGB NeRF training and fine- 
+tuning. The reason is that a large far plane places most sampled points 
+in empty background whose mask target is zero; the background term 
+then dominates the loss and the sparse foreground gradient cannot build 
+a coherent density peak, which is why single-pod fine-tuning failed at a 
+far plane of 1000 but succeeded at 2. In practice the far plane need not 
+be found by trial and error: it can be set directly from the reconstruction 
+geometry—for example from the extent of the COLMAP sparse point 
+cloud or the depth range rendered by the Stage-1 model—choosing a 
+value that just encloses the object of interest. The apple and peach scenes 
+required no adjustment because the fruit-bearing tree fills the recon­
+structed volume, so the default far plane already concentrates sampling 
+on foreground.
+Relation to direct 3D reconstruction. InvNeRF-Seg does depend on 
+2D masks, but this is a mild requirement in practice: 2D segmentation is 
+mature and can be produced automatically with foundation models such 
+as SAM, whereas direct 3D segmentation would require annotated point 
+clouds—the very bottleneck this work aims to avoid—or a separately 
+reconstructed and registered 3D model that still has to be segmented. By 
+lifting inexpensive 2D masks into a geometry-consistent 3D field, the 
+method converts a well-supported 2D task into 3D labels with no manual 
+3D annotation. The trade-off is that segmentation quality is upper- 
+bounded by the multi-view consistency of the input masks and by the 
+fidelity of the underlying reconstruction.
+Choice of baselines. SA3D and FruitNeRF were selected because 
+they represent the two established paradigms for NeRF-based 3D 
+segmentation—training-free post-processing of a fixed field (SA3D) and 
+joint RGB-plus-semantics training (FruitNeRF)—and together bracket 
+the design space that InvNeRF-Seg occupies. We additionally evaluated 
+a density-thresholded SA3D variant (raw NeRF density with 2D-mask 
+filtering, clustered with DBSCAN) as a stronger volumetric baseline. 
+Feature-field distillation methods that lift 2D foundation-model features 
+into NeRF are a promising further comparison, but they target open- 
+vocabulary querying rather than the single-object, count-oriented 
+setting studied here; a broader benchmark against them is left to future 
+work.
+Limitations. InvNeRF-Seg assumes access to accurate multi-view 
+RGB images and corresponding 2D segmentation masks. The multi- 
+instance extension using intensity-encoded masks shows boundary am­
+biguity due to the regression nature of MSE [24]. Incorporating 
+class-aware losses such as cross-entropy may improve multi-instance 
+performance, although this would break the “zero-change” design. The 
+method has been validated primarily on agricultural datasets; evalua­
+tion on general-purpose scenes with more diverse object categories re­
+mains future work. Our soybean masks were generated with MobileSAM 
+and manually verified. More broadly, the proposed two-stage segmen­
+tation is, by design, dependent on two high-quality inputs—a 
+high-fidelity RGB NeRF reconstruction and accurate 2D segmentation 
+masks—both of which are standard, well-supported components 
+obtainable with current NeRF pipelines and foundation-model seg­
+menters, and are treated here as prerequisites of the method rather than 
+variables it must be robust to. Characterizing the precise input-quality 
+threshold below which the pipeline fails is not well defined, since 
+neither reconstruction nor segmentation quality reduces to a single 
+tunable axis and the tolerance depends on scene geometry, object scale, 
+occlusion, and view distribution; we therefore scope the method to the 
+good-quality-input regime and make no claim outside it. Point-cloud 
+quality is reported here through downstream counting accuracy, as 
+dense 3D metrics such as Chamfer distance or 3D IoU require per-point 
+ground truth, which neither the FruitNeRF synthetic data (annotated by 
+fruit count) nor the field-collected soybean data provide. Finally, the 
+real-world validation is deliberately small in scale—one plant and one to 
+two pods—and is intended to demonstrate feasibility under field con­
+ditions rather than large-scale performance; because no dense 3D 
+ground truth exists for the field plant, its reconstructions are assessed by 
+rendered-mask IoU/PSNR during training and by qualitative 3D in­
+spection, and evaluation on multi-plant, densely-podded canopies re­
+mains future work.
+6. Conclusions
+We proposed InvNeRF-Seg, a two-step, zero-change fine-tuning 
+strategy for NeRF-based 3D object segmentation that preserves the 
+original network architecture and loss function. Through systematic 
+ablation studies, we demonstrated that: (1) pretrained geometry is 
+essential—training on masks from scratch fails completely; (2) both 
+density and color MLPs must co-adapt during fine-tuning for optimal 
+performance; and (3) the two-stage approach outperforms joint training 
+regardless of loss function choice (MSE or BCE).
+InvNeRF-Seg consistently produced cleaner 3D segmented point 
+clouds than the compared methods, enabling accurate downstream ob­
+ject counting with minimal post-processing tuning. Field-level analysis 
+reveals reinforced density in target regions and suppression of back­
+ground content, confirming effective semantic refinement within the 
+radiance field. Moreover, the method extends naturally from binary 
+instance-level to multi-instance segmentation tasks, demonstrating 
+generalizability across scenes of varying complexities.
+This zero-change, modular strategy provides a practical architecture- 
+invariant framework for bridging 2D segmentation and 3D semantic 
+reconstruction.
+Funding
+This research was funded by the Research Council of Norway (RCN), 
+grant number No 352,849 and 344,343; Central Public-interest Scien­
+tific Institution Basal Research Fund of China (Y2026YC23 and CAAS- 
+ZDRW202503).
+CRediT authorship contribution statement
+Jiangsan Zhao: Conceptualization, Data curation, Formal analysis, 
+Investigation, Methodology, Software, Validation, Visualization, 
+Writing – original draft, Writing – review & editing. Jakob Geipel: 
+Funding acquisition, Writing – review & editing. Krzysztof Kusnierek: 
+Funding acquisition, Project administration, Writing – review & editing. 
+Xuean Cui: Conceptualization, Funding acquisition, Project adminis­
+tration, Writing – review & editing.
+Declaration of competing interest
+The authors declare the following financial interests/personal re­
+lationships which may be considered as potential competing interests: 
+Jiangsan Zhao reports financial support was provided by Research 
+Council of Norway. Xuean Cui reports financial support was provided by 
+Innovation Program of Chinese Academy of Agricultural Sciences. 
+Xuean Cui has patent pending to Chinese Academy of Agricultural Sci­
+ences. If there are other authors, they declare that they have no known 
+competing financial interests or personal relationships that could have 
+appeared to influence the work reported in this paper.
+Acknowledgments
+The authors thank the Norwegian Institute of Bioeconomy Research 
+(NIBIO) for providing computational resources and research facilities. 
+We also acknowledge the contributors of the FruitNeRF dataset for 
+making their data publicly available.
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+10 
+
+Supplementary materials
+Supplementary material associated with this article can be found, in 
+the online version, at doi:10.1016/j.atech.2026.102443.
+Data availability
+Data will be made available on request.
+References
+[1] J. Cen, J. Fang, Z. Zhou, C. Yang, L. Xie, X. Zhang, W. Shen, Q. Tian, Segment 
+anything in 3d with radiance fields, Int. J. Comput. Vis. 133 (2025) 5138–5160.
+[2] B. Mildenhall, P.P. Srinivasan, M. Tancik, J.T. Barron, R. Ramamoorthi, R. Ng, 
+Nerf: representing scenes as neural radiance fields for view synthesis, Commun. 
+ACM 65 (2022) 99–106.
+[3] A. Pumarola, E. Corona, G. Pons-Moll, F. Moreno-Noguer, -nerf: neural radiance 
+fields for dynamic scenes, in: Proceedings of the IEEE/CVF Conference on 
+Computer Vision and Pattern Recognition, 2021, pp. 10318–10327.
+[4] L. Meyer, A. Gilson, U. Schmid, M. Stamminger, Fruitnerf: a unified neural radiance 
+field based fruit counting framework, in: 2024 IEEE/RSJ International Conference 
+on Intelligent Robots and Systems (IROS), IEEE, 2024, pp. 1–8.
+[5] S. Zhi, T. Laidlow, S. Leutenegger, A.J. Davison, In-place scene labelling and 
+understanding with implicit scene representation, in: Proceedings of the IEEE/CVF 
+International Conference on Computer Vision, 2021, pp. 15838–15847.
+[6] Y. Jiang, G. Liu, Z. Huang, B. Yang, W. Yang, Geometry perception and motion 
+planning in robotic assembly based on semantic segmentation and point clouds 
+reconstruction, Eng. Appl. Artif. Intell. 130 (2024) 107678.
+[7] Y. Wen, A.B. Shah, R. Cao, C. Zhang, J. Chen, X. Wu, C. Xie, X. Fu, AR-Light: 
+enabling fast and lightweight multi-user augmented reality via semantic 
+segmentation and collaborative view synchronization, IEEE Trans. Comput. 74 
+(2025) 2073–2086.
+[8] Y. Zhuang, Q. Li, Y. Chen, J. Huai, M. Li, T. Ma, Y. Tang, X. Liang, 3D-SeqMOS: a 
+novel sequential 3D moving object segmentation in autonomous driving, IEEE 
+Trans. Intell. Transp. Syst. 25 (2024) 8782–8795.
+[9] W. Li, H. Xu, G. Zhang, H. Gao, M. Gao, M. Wang, H. Zhao, Fairdiff: fair 
+segmentation with point-image diffusion, in: International Conference on Medical 
+Image Computing and Computer-Assisted Intervention, Springer, 2024, 
+pp. 617–628.
+[10] R. Yang, Y. He, X. Lu, Y. Zhao, Y. Li, Y. Yang, W. Kong, F. Liu, 3D-based precise 
+evaluation pipeline for maize ear rot using multi-view stereo reconstruction and 
+point cloud semantic segmentation, Comput. Electron. Agric. 216 (2024) 108512.
+[11] C.R. Qi, H. Su, K. Mo, L.J. Guibas, Pointnet: deep learning on point sets for 3d 
+classification and segmentation, in: Proceedings of the IEEE Conference on 
+Computer Vision and Pattern Recognition, 2017, pp. 652–660.
+[12] C.R. Qi, L. Yi, H. Su, L.J. Guibas, Pointnet++: deep hierarchical feature learning on 
+point sets in a metric space, in: Advances in Neural Information Processing Systems 
+30, 2017.
+[13] T. Miao, W. Wen, Y. Li, S. Wu, C. Zhu, X. Guo, Label3DMaize: toolkit for 3D point 
+cloud data annotation of maize shoots, Gigascience 10 (2021) giab031.
+[14] C. Liu, D. Zeng, A. Akbar, H. Wu, S. Jia, Z. Xu, H. Yue, Context-aware network for 
+semantic segmentation toward large-scale point clouds in urban environments, 
+IEEE Trans. Geosci. Remote Sens. 60 (2022) 1–15.
+[15] L. Pan, ECG: edge-aware point cloud completion with graph convolution, IEEE 
+Robot. Autom. Lett. 5 (2020) 4392–4398.
+[16] S. Tomar, Converting video formats with FFmpeg, Linux J. 2006 (2006) 10.
+[17] J.L. Sch¨onberger, J.-M. Frahm, Structure-from-motion revisited, in: Proceedings of 
+the IEEE Conference on Computer Vision and Pattern Recognition, 2016, 
+pp. 4104–4113.
+[18] Zhang, C., Han, D., Qiao, Y., Kim, J.U., Bae, S.-H., Lee, S., Hong, C.S., 2023. Faster 
+segment anything: towards lightweight sam for mobile applications. arXiv Prepr. 
+arXiv2306.14289.
+[19] M. Tancik, E. Weber, E. Ng, R. Li, B. Yi, T. Wang, A. Kristoffersen, J. Austin, 
+K. Salahi, A. Ahuja, Nerfstudio: a modular framework for neural radiance field 
+development, in: ACM SIGGRAPH 2023 Conference Proceedings, 2023, pp. 1–12.
+[20] J. Korhonen, J. You, Peak signal-to-noise ratio revisited: is simple beautiful?, in: 
+2012 Fourth International Workshop on Quality of Multimedia Experience, 2012, 
+pp. 37–38. IEEE.
+[21] R. Girshick, Fast r-cnn, in: Proceedings of the IEEE International Conference on 
+Computer Vision, 2015, pp. 1440–1448.
+[22] P. Virtanen, R. Gommers, T.E. Oliphant, M. Haberland, T. Reddy, D. Cournapeau, 
+E. Burovski, P. Peterson, W. Weckesser, J. Bright, SciPy 1.0: fundamental 
+algorithms for scientific computing in Python, Nat. Methods. 17 (2020) 261–272.
+[23] T. Standley, A. Zamir, D. Chen, L. Guibas, J. Malik, S. Savarese, Which tasks should 
+be learned together in multi-task learning?, in: International Conference on 
+Machine Learning. PMLR, 2020, pp. 9120–9132.
+[24] J. Zhao, A. Kumar, B.N. Banoth, B. Marathi, P. Rajalakshmi, B. Rewald, 
+S. Ninomiya, W. Guo, Deep-learning-based multispectral image reconstruction 
+from single natural color RGB image—enhancing UAV-based phenotyping, Remote 
+Sens. 14 (2022) 1272.
+J. Zhao et al.                                                                                                                                                                                                                                     
+Smart Agricultural Technology 15 (2026) 102443 
+11 

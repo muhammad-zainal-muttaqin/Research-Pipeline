@@ -1,0 +1,1275 @@
+ 
+ 
+基于自纠正NMS-ByteTrack 的套袋葡萄估产方法
+吕　佳 ※，张翠萍 ，刘　琴 ，李帅军
+（1.   重庆师范大学计算机与信息科学学院，重庆 401331；2.   重庆市数字农业服务工程技术研究中心，重庆 401331）
+摘　要：针对套袋后的葡萄体积增加和葡萄叶片表面积大容易出现重叠遮挡，及人工拍摄视频的速度不稳定可能导致套
+袋葡萄目标丢失的问题，该研究提出一种基于自纠正NMS(non-maximum suppression)-ByteTrack 的套袋葡萄估产方法。
+该方法首先通过目标检测方法YOLOv5s 检测视频中的套袋葡萄，将检测阶段的NMS 操作后置到追踪阶段，保留因遮
+挡而被过滤的果实检测框；其次在ByteTrack 的基础上加入相机运动补偿和改进的卡尔曼滤波算法，以自动纠正果实预
+测框的位置并进行追踪；最后提出一种划线计数策略对套袋葡萄自动计数。试验结果表明，该方法的多目标追踪准确率、
+多目标追踪精度和ID 调和平均数分别为64.6%、82.4% 和80.8%，相比ByteTrack 分别提高了1.7、1.0 和4.1 个百分点，
+平均计数精度达到82.8%。因此，基于自纠正NMS-ByteTrack 的估产方法能有效解决套袋葡萄的追踪计数问题，实现对
+套袋葡萄更精确地估产。
+关键词：图像处理；农业；目标追踪；视频计数；估产方法；套袋葡萄；ByteTrack；卡尔曼滤波器
+doi：10.11975/j.issn.1002-6819.202304116
+中图分类号：TP391.4；S24　　　　文献标志码：A　　　　文章编号：1002-6819(2023)-13-0182-09
+吕佳，张翠萍，刘琴，等. 基于自纠正NMS-ByteTrack 的套袋葡萄估产方法[J]. 农业工程学报，2023，39（13）：182-
+190. doi: 10.11975/j.issn.1002-6819.202304116　　http://www.tcsae.org
+LYU  Jia,  ZHANG  Cuiping,  LIU  Qin,  et  al.  Method  for  estimation  of  bagged  grape  yield  using  a  self-correcting  NMS-
+ByteTrack[J]. Transactions of the Chinese Society of Agricultural Engineering (Transactions of the CSAE), 2023, 39(13): 182-
+190. (in Chinese with English abstract)　　doi: 10.11975/j.issn.1002-6819.202304116　　http://www.tcsae.org
+ 0　引　言
+葡萄是中国栽培面积最广、产量最多的果实之一，
+在全国果实生产中占有重要地位[1]。葡萄产业作为中国
+农业生产的支柱产业，在乡村振兴、精准扶贫工作中发
+挥重要作用[2]。由于葡萄产量对价格的影响较大，对葡
+萄的有效估产能为后续的葡萄收获、仓储、运输和加工
+计划提供有效的指导[3]。传统葡萄估产依靠人工抽样计
+数，耗时费力且估计结果并不准确[4]，而深度学习技
+术[5-6] 在农业领域的应用为葡萄的估产提供了思路。
+果实估产的实质是实现果实的自动计数，近年来，
+深度学习被广泛地应用于果实的自动计数中。BHATTARAI
+等[7] 提出一种基于深度学习的自动计数网络(CountNet)，
+应用在商业果园计数中，取得了较好的计数性能。但他
+是基于单张静态图片进行计数，对于葡萄等大型果树，
+单张图片并不能包含一棵果树的所有果实，导致无法实
+现完整的果实计数[8]，而通过视频对果实计数可以有效
+解决这一问题。视频果实计数主要分为果实检测和果实
+追踪两个阶段，其中果实的准确检测是实现视频果实计
+数的前提。目前主流的目标检测方法分为两类：单阶段
+目标检测方法和两阶段目标检测方法，其中单阶段目标
+检测方法推理速度更快[9]，两阶段目标检测方法检测精
+度更高。为了实现实时检测计数，以YOLO 系列为代表
+的单阶段目标检测方法在果实检测领域得到了广泛应
+用[10-12]，果实检测为后续果实的追踪计数提供了基础，
+而实现精准果实计数的难点在于果实追踪。
+目标追踪[13-15] 根据初始帧中追踪目标的位置对后续
+帧中目标进行追踪定位，从而使视频中相同目标关联起
+来，其中基于卡尔曼滤波器(kalman filter, KF)[16] 的追踪
+方法在果实追踪领域应用广泛。GAN 等[17] 使用扩展KF
+集成出自主导航系统定位追踪柑橘类果实，但追踪成本
+昂贵。为降低成本，WANG 等[18] 结合KF 和匈牙利算法
+对芒果追踪计数，降低了追踪成本和复杂性，但存在遮
+挡芒果重复计数的问题。为减少果实的重复计数，高芳
+芳等[19] 提出改进的匈牙利算法，保留对苹果追踪过程中
+因遮挡而消失的追踪框，并进行重新匹配，提高了苹果
+计数精度，而对于叶片较大或茂密的果树，叶片遮挡果
+实可能导致追踪目标丢失。为解决此问题，ZHANG 等[20]
+在简单在线实时追踪(simple online and real-time tracking,
+SORT)[21] 的基础上提出OrangeSort，对田间柑橘计数，
+降低了叶片遮挡对柑橘计数结果准确性的影响，但该方
+法忽略了目标的外观特征。GE 等[22] 提出改进的YOLO-
+Deepsort 对番茄追踪计数，该方法利用DeepSORT[23] 中
+的外观特征提取网络进行关联匹配，满足了对番茄产量
+预测的实际需求。由于上述方法都是在设定场景下提出
+的目标追踪解决方案，对于真实场景下葡萄的追踪计数
+并不适用。针对葡萄的追踪计数主要存在以下3 个问题：
+  
+收稿日期：2023-04-15　　修订日期： 2023-06-07
+基金项目：重庆市高校创新研究群体(CXQT20015)
+※通信作者：吕佳，博士，教授，研究方向为计算机视觉与机器学习、数
+字农业工程。Email: lvjia@cqnu.edu.cn
+ 
+第 39 卷 　 第 13 期
+农 业 工 程 学 报
+Vol.39　No.13
+182
+2023 年 　　 7 月
+Transactions of the Chinese Society of Agricultural Engineering
+July 2023
+
+1) 实际场景中，套袋后的葡萄因体积增大易发生重
+叠遮挡，导致部分套袋葡萄在检测阶段被过滤，后续追
+踪结果不准确。
+2) 搭载相机的遥控小车通常以匀速拍摄果树视频，
+而人工拍摄视频的速度不稳定，导致视频中追踪的套袋
+葡萄目标丢失，进而影响计数的准确性。
+3) 真实果园中，葡萄叶片较大且套袋后的葡萄相互
+遮挡，在追踪过程中果实被遮挡可能导致追踪目标丢失、
+身份标识转变，因此对视频中的果实逐个赋予ID(从1
+开始) 实现果实计数的方法[24] 并不适用。
+为解决上述问题，本文提出一种基于自纠正NMS-
+ByteTrack 的套袋葡萄估产方法。首先，将非极大值抑
+制(non-maximum suppression, NMS)[25] 操作从检测阶段
+后置到追踪阶段，规避套袋葡萄在检测时因遮挡而被过
+滤的现象，以解决上述问题1)；其次，利用相机运动补
+偿和改进的KF 算法，通过前后帧背景信息生成的仿射
+变换矩阵对KF 生成的预测框进行自动纠正，以解决上
+述问题2)；最后，提出一种划线计数策略，通过撞线对
+追踪目标进行计数，以解决上述问题3)。
+ 1　数据采集与预处理
+ 1.1　数据采集
+×
+×
+×
+为使试验数据集具有实际参考价值，本文将真实果
+园拍摄的套袋葡萄图片和视频作为试验数据集。该数据
+集来源于重庆璧山区派登特农业科技示范园，其经度、
+纬度和高度分别为106.221°、29.753°与353 m[26]。为拍
+摄不同时间段、不同角度下的套袋葡萄，研究人员使用
+红米K40 和OPPO Reno6pro+的手机摄像头对同一个套
+袋葡萄分别在8:00、12:00、18:00 进行正拍、侧拍和俯
+拍等不同角度拍摄，总拍摄时长约6 h，拍摄高度距地面
+约1.5 m，拍摄路线为逐行拍摄，共获取套袋葡萄图片
+500 张，分辨率有4 000 3 000 像素和4 096 3 072 像素
+两种。采集套袋葡萄有效视频数据集6 个，每个视频平
+均时长约20 s，视频速度为非匀速，视频格式为MP4，
+分辨率为1 920 1 080 像素，视频帧率为30 帧/s。
+ 1.2　数据增强
+原始的500 张套袋葡萄图片是经过数据筛选后的实
+际拍摄图片。为提高模型的泛化性，通过对原始图片进
+行饱和度、亮度增强、亮度变暗和镜像等操作，如图1
+所示，以满足套袋葡萄在不同光照条件下的生长状态和
+不同角度下的分布状态。
+ 
+ 
+a. 饱和度
+b. 亮度增强
+c. 亮度变暗
+d. 镜像
+a. Saturation
+b. Brightness
+enhancement
+c. Brightness
+reduction  
+d. Mirror
+图1　图片增强方法
+Fig.1    Image augmentation methods
+ 
+通过以上操作，将原始的500 张套袋葡萄图片扩展
+为2 000 张，并将2 000 张图片按照8∶2 的比例随机划
+分成训练集和验证集，6 个有效视频作为测试集。
+ 1.3　数据标记
+数据增强后，本文对套袋葡萄的2 000 张图片进行
+标注，标注软件为MAKE SENSE，通过在线对套袋葡萄
+绘制矩形框，使矩形框完全包含整个套袋葡萄，生成该
+目标矩形框位置信息的txt 文件。用于测试试验的6 个视
+频使用DarkLabel 软件进行标注，如图2 所示。通过逐
+帧绘制每个套袋葡萄从出现到消失过程中的最小矩形框，
+生成目标位置信息的txt 文件。
+ 
+ 
+注：图中虚线框为DarkLabel 软件的参数设置，实线框用于标识和定位视
+频中的套袋葡萄。
+Note:  In  the  figure,  the  doted  box  is  the  parameter  setting  of  the  DarkLabel
+software, and the solid box is used to identify and locate the bagged grape in the
+video.
+图2　视频标注软件
+Fig.2    Video annotation software
+ 
+ 2　套袋葡萄视频追踪计数方法
+YOLO 系列目标检测方法中，YOLOv5s 是一种高性
+能、高精度、易于扩展和部署的目标检测模型，具有更
+快的速度和更高的可扩展性[27]。在保证目标检测精度的
+前提下，为利于实现果实的实时检测，本文选择
+YOLOv5s 作为套袋葡萄的检测方法。
+2022 年，ZHANG 等[28] 在SORT 的基础上首次提出
+了在线追踪双关联方法ByteTrack。该方法对低置信度的
+检测框进行二次关联，保证实时性的同时，进一步提升
+了目标追踪性能，因此本文将ByteTrack 作为对套袋葡
+萄追踪的基础方法。
+为降低套袋葡萄被遮挡的影响，并减少因相机姿势
+变化而产生的误差，本文提出一种基于自纠正NMS-
+ByteTrack 的追踪方法解决上述问题。同时提出一种划线
+计数策略，实现对套袋葡萄更精准地计数估产。
+ 2.1　基于自纠正NMS-ByteTrack 的套袋葡萄估产方法
+在套袋葡萄的计数研究中，葡萄经过套袋后体积变
+大，使得部分套袋葡萄重叠遮挡，在YOLOv5s 中直接
+进行NMS 操作可能导致重叠遮挡的套袋葡萄检测框被
+过滤。为解决该问题，本文将检测阶段的NMS 操作后
+置到追踪阶段，并提出基于NMS-ByteTrack 的算法。为
+使套袋葡萄追踪计数具有便捷性和实时性，大多数果农
+并不会使用机器小车拍摄，更多采用手机拍摄，而人工
+拍摄的视频通常是非匀速的，使得套袋葡萄的产量估计
+不准确。因此本文在上述基础上加入相机运动补偿和改
+进的KF 算法，以自动纠正视频中非线性运动的不足。
+估产方法的整体流程如图3 所示。
+ 
+第 13 期
+吕　佳等：基于自纠正NMS-ByteTrack 的套袋葡萄估产方法
+183 　
+
+检测框
+YOLOv5s
+预测框
+检测框
+计算IOU并筛选
+预
+预
+测
+检测框
+NMS
+低置信
+检测框
+高置信
+检测框
+<score
+>score
+未匹配的
+检测框
+未匹配的
+预测框
+匹配成功
+的框
+匹配成
+功的框
+未匹配
+的框
+第二次匹配
+第一次匹配
+第t 帧的
+追踪框
+创建新轨迹
+卡尔曼滤波更新
+后执行 NMS
+删
+除
+卡
+尔
+曼
+滤
+波
+更
+新
+第t−1帧的
+追踪框
+第t 帧的
+预测框
+相机运动补偿
+改进的卡尔曼
+滤波预测
+注：图中score 是置信度阈值，置信度高于置信度阈值的检测框被判定为高置信检测框，置信度低于置信度阈值的检测框被判定为低置信检测框。图中匹配
+成功的框包括检测框和追踪框。图中虚线框内容为本文的改进点。
+Note: In the figure, the score represents the confidence threshold. In the method, detection boxes with confidence higher than the confidence threshold are judged as high-
+confidence detection boxes, and detection boxes with confidence lower than the confidence threshold are judged as low-confidence detection boxes. The successfully
+matched boxes in the figure include both detection boxes and tracking boxes. The dotted boxes in the figure show the improvement points of this paper.
+图3　基于自纠正NMS-ByteTrack 的套袋葡萄估产方法整体流程图
+Fig.3    Overall flowchart of bagged grape yield estimation method based on self-correcting NMS-ByteTrack
+ 
+ 2.1.1　基于NMS-ByteTrack 的算法
+NMS 是一种去除非极大值的算法，常用于计算机视
+觉中的边缘检测、目标检测和行人检测等，其作用是去
+除检测任务中重复的检测框。目前大多数多目标追踪方
+法中，NMS 用于检测阶段，而非追踪阶段。NMS 操作
+可以过滤一些低置信度检测框或冗余检测框，并获得一
+些高分检测结果，而在检测阶段使用NMS 操作可能会
+导致可用于追踪的候选框被过滤，致使追踪结果不准确。
+因此，本文提出一种基于NMS-ByteTrack 的算法，将
+NMS 操作后置到追踪阶段，使结果更专注于追踪任务，
+有效地为追踪保留更多的候选框。
+Bt = {B1
+t , B2
+t , B3
+t , ..., Bn
+t
+}
+Bn
+t
+Ci
+首先，在视频的每一帧中运用检测方法，获得一系
+列的检测框
+，其中
+代表第t 帧的
+第n 个检测框。通过KF 预测第t 帧的套袋葡萄目标位置
+为P，计算套袋葡萄检测框与他对应预测框之间的交并
+比
+，如式（1）所示。
+Ci = Intersection(Bi
+t, P)
+Union(Bi
+t, P)
+（1）
+θ
+其次，若交并比大于给定阈值，则该检测框被保留，
+计算过程如式（2）所示。
+ˆBt = {Bi
+t ∈Bt |Ci ＞θ}
+（2）
+ˆBt
+B′
+t =
+NMS( ˆBt)
+最后，对
+中的检测框执行NMS 操作，即
+，获得最终候选框作为追踪匹配的检测框。
+ 2.1.2　相机运动补偿
+相机运动是指相机旋转、缩放和平移等姿势的变化。
+由于人工拍摄过程中相机不经意的移动，导致视频中同
+一个套袋葡萄的背景信息不断改变，干扰了对套袋葡萄
+的追踪计数。为减少追踪过程中相机运动产生的误差，
+本文使用一种传统的全局运动补偿(global  motion
+compensation, GMC) 图像配准技术[29]，其本质是关联相
+邻帧的同一套袋葡萄，根据相邻帧的背景运动生成仿射
+矩阵，从而将套袋葡萄的位置信息从上一帧的坐标系转
+换到当前帧的坐标系中。该技术首先提取上一帧和当前
+帧的套袋葡萄图片中除追踪目标外的背景关键点，利用
+稀疏光流[30] 对提取的套袋葡萄背景关键点进行匹配；其
+次使用RANSAC[31] 计算得到背景运动的仿射变换矩阵，
+利用KF 预测出当前帧的套袋葡萄预测框；最后获取的
+仿射变换矩阵将该预测框从上一帧的坐标系中变换到当
+前帧的坐标系，实现对当前帧预测框的位置信息矫正，
+具体流程如图4 所示。
+ 
+ 
+YOLOv5s 检测的当前
+帧图片
+当前帧的原始图片
+提取的关键点
+匹配的关键点
+仿射矩阵
+基于卡尔曼滤波
+的当前帧预测框
+更新矫正后的当
+前帧预测框
+提取除追踪目标外的背
+景关键点
+稀疏光流匹配
+RANSAC
+更新矫正公式
+提取上一帧的
+背景关键点
+注：RANSAC 是一种随机抽样一致性算法。
+Note: RANSAC (random sample consensus) is a random sampling consensus algorithm.
+图4　相机运动补偿流程
+Fig.4    Camera motion compensation flowchart
+　 184
+农业工程学报（http://www.tcsae.org）
+2023 年
+
+At|t−1 ∈R2×3
+M ∈R2×2
+T ∈R2×1
+代表从第t−1 帧到第t 帧的坐标变换仿射
+矩阵，如式（3）所示。其中
+代表坐标系缩放和
+旋转部分变换矩阵，
+代表坐标系平移部分变换矩
+阵，分别如式（4）和式（5）所示，更新矫正KF 预测
+框如式（6）和式（7）所示。
+At|t−1 = [M T]
+（3）
+ˆMt|t−1 = diag{M, M, M, M}
+（4）
+ˆTt|t−1 = [T, 0, 0, 0, 0, 0, 0]T
+（5）
+ˆx′
+t|t−1 = ˆMt|t−1 ˆxt|t−1 + ˆTt|t−1
+（6）
+P′
+t|t−1 = ˆMt|t−1Pt|t−1 ˆMT
+t|t−1
+（7）
+ˆMt|t−1 ∈R8×8
+ˆTt|t−1 ∈R8×1
+ˆxt|t−1
+ˆx′
+t|t−1
+Pt|t−1
+P′
+t|t−1
+式中
+代表从第t−1 帧到第t 帧的旋转和缩放部
+分变换矩阵，对套袋葡萄的位置信息进行更新矫正，
+代表从第t−1 帧到第t 帧的平移部分变换矩阵，
+只移动套袋葡萄目标框的中心坐标位置，
+和
+分别
+代表第t-1 帧到第t 帧的追踪预测框和更新矫正后的追踪
+预测框，
+和
+分别代表第t−1 帧到第t 帧的追踪预
+测框协方差和更新矫正后的追踪预测框协方差。
+ 2.1.3　改进的KF 算法
+KF 是一种利用线性系统状态方程对系统状态进行最
+优估计的算法[16]。通过对追踪目标位置进行预测，再与
+对应追踪目标的观测位置数据融合，从而得到目标最优
+位置估计。本文使用KF 线性匀速模型对套袋葡萄的追
+踪框进行最优估计。KF 主要分为预测和更新两个阶段，
+通过上一帧的套袋葡萄追踪框对当前帧的套袋葡萄追踪
+框进行预测，得到当前帧套袋葡萄的追踪预测框，同时，
+利用检测方法YOLOv5s 检测出当前帧套袋葡萄的检测
+框，与当前帧的追踪预测框进行数据融合更新，得到当
+前帧该套袋葡萄的最优估计追踪框。
+[x, y, a, h, vx, vy, va, vh
+]
+vx
+vy
+va
+vh
+[x, y, w, h, vx, vy, vw, vh
+]
+目前主流的追踪方法[32-34] 使用的KF 状态向量为
+，其中x、y 分别代表估计框的中
+心点横纵坐标，a 表示宽高比，h 表示高度，
+、、
+和
+分别代表前面4 个变量的变化速度。为了正确预测出
+套袋葡萄的位置信息，本文提出改进的KF 算法，将之
+前KF 状态向量的宽高比a 更改为宽度w，得到KF 状态
+向量为
+。通过消融试验结果证
+明，直接使用宽度去最优估计套袋葡萄追踪框的效果更好。
+ 2.2　划线计数策略
+实际拍摄套袋葡萄过程中，观察到葡萄的叶片表面
+积很大，易遮挡套袋葡萄，在目标追踪过程中可能导致
+同一个套袋葡萄的身份标识发生转变，易重复计数。因
+此本文提出一种划线计数策略，对套袋葡萄进行自动计
+数，提高计数的准确性，如图5 所示。为准确估计视频
+中套袋葡萄的个数，避免在视频追踪过程中套袋葡萄还
+未到划线处，追踪目标就消失于视频屏幕之外。本文将
+计数线设置到视频屏幕的中间，并在拍摄的每个视频前
+几秒预留出无套袋葡萄的空闲帧，在计数过程中，具有
+同一ID 的套袋葡萄只能计数一次，避免套袋葡萄重复撞
+线计数的情况。通过套袋葡萄的追踪框中心点与计数线
+成功碰撞，实现对套袋葡萄的自动计数。
+ 2.3　试验环境与评价指标
+ 2.3.1　试验环境
+平台配备有CPU 为Intel Core i5-12400F，内存为
+16  GB，显卡型号为RTX3060-12GB，计算机系统为
+Windows11 专业版，开发环境为PyCharm2021，所用语
+言为Python3.7，所用框架为Pytorch1.12.0。
+ 
+ 
+grape
+grape
+grape
+grape
+grape
+ID-4
+ID-1
+ID-2
+ID-3
+ID-7
+Counting line
+计数线
+Counting line
+注：图中矩形框用于标识和定位视频中的套袋葡萄。其中矩形框上的
+grape 是葡萄名称，grape 后面的数字表示该套袋葡萄的ID 数。
+Note: In the figure, the rectangular box is used to identify and locate the bagged
+grape in the video. The grape on the rectangular box is the name of the grape,
+and the number behind the grape indicates the ID number of the bagged grape.
+图5　套袋葡萄的追踪计数线
+Fig.5    Tracking and counting line for bagged grape
+ 
+Ltotal
+Lbox_loss
+Lobj_loss
+Lcls_loss
+为了实时检测套袋葡萄，本文将2 000 张图片放入
+到YOLOv5s 中训练得到最优权重。其中YOLOv5s 模型
+训练设置的最优超参数为：训练轮次设置为600，批量
+大小为36，优化器为SGD，初始学习率为0.01，同时采
+用余弦退火策略辅助学习率下降，学习率动量为0.937，
+权重衰减系数为0.000 5。训练总损失函数(
+) 由定位
+损失(
+)、置信度损失(
+) 和分类损失(
+)
+构成，如式(8) 所示。
+Ltotal = λ1Lbox_loss +λ2Lobj_loss +λ3Lcls_loss
+（8）
+λ1
+λ2
+λ3
+式中
+，
+和
+是权重因子，均为YOLOv5s 默认参数
+设置。
+ 2.3.2　评价指标
+在果实检测中，本文使用精度(precision)、召回率
+(recall rate) 和平均精度(average precision, AP) 作为对套
+袋葡萄检测效果的评价指标[10]。精度、召回率和平均精
+度的值越大，说明目标检测方法的检测性能越好。
+在果实追踪中，本文使用多目标追踪准确率
+(multiple object tracking accuracy, MOTA)、多目标追踪精
+度(multiple object tracking precision, MOTP)、ID 调和平
+均数(identification  F1-score,  IDF1) 和ID 变换次数(ID
+switch, IDSW) 作为对套袋葡萄追踪效果的评价指标[19]。
+多目标追踪准确率、多目标追踪精度和ID 调和平均数
+的值越大，ID 变换次数越小，说明套袋葡萄的追踪性能
+越好。
+Acp
+在果实计数中，本文采用平均计数精度(average
+counting precision, 
+) 作为对套袋葡萄计数效果的评价
+指标[19]。平均计数精度越大，说明套袋葡萄的计数性能
+越准确。具体计算如式(9) 所示：
+Acp =
+n
+∑
+1
+(
+1−|S −G|
+G
+)
+n
+×100%
+（9）
+式中S 表示估产方法计数视频的果实个数，G 表示人工
+第 13 期
+吕　佳等：基于自纠正NMS-ByteTrack 的套袋葡萄估产方法
+185 　
+
+计数视频的果实个数，n 表示视频的个数。
+ 3　结果与分析
+ 3.1　果实检测性能
+ 3.1.1　不同检测方法的对比试验
+为验证检测方法YOLOv5s 在套袋葡萄数据集上的
+准确性，本文将YOLOv5s 与YOLOX-s[35]、YOLOv7[36]
+进行了对比试验，如表1 所示。
+ 
+ 
+表 1    不同目标检测方法在套袋葡萄数据集上的试验结果
+Table 1    Test results of several different object detection methods
+on bagged grape dataset
+%
+目标检测方法
+Methods for object detection
+精度
+Precision
+召回率
+Recall rate
+平均精度
+Average precision
+YOLOv5s
+97.6
+96.2
+97.6
+YOLOX-s
+94.8
+93.1
+90.0
+YOLOv7
+97.1
+96.4
+97.2
+ 
+试验结果表明，YOLOv5s 的精度、召回率和平均精
+度分别为97.6%、96.2% 和97.6%，比YOLOX-s 的精度、
+召回率和平均精度分别提高了2.8、3.1 和7.6 个百分点，
+YOLOv5s 相比YOLOv7 的精度和平均精度分别提高了
+0.5 和0.4 个百分点。证明了YOLOv5s 在套袋葡萄数据
+集上检测性能的优越性。试验结果分析可知，YOLOX-s
+和YOLOv7 对套袋葡萄的检测效果不理想主要有以下3
+个原因：1)YOLOX-s 和YOLOv7 将背景噪声检测为套袋
+葡萄目标，如图6a 所示；2) 两个目标相互重叠遮挡，被
+遮挡的套袋葡萄目标在YOLOX-s 和YOLOv7 中检测不
+到，如图6b 所示；3) 由于叶片的遮挡，导致YOLOX-s
+和YOLOv7 检测不出被遮挡的套袋葡萄，如图6c 所示。
+以上问题都在不同程度上降低了YOLOX-s 和YOLOv7
+检测套袋葡萄的精度，因其检测精度较高而对套袋葡萄
+等大目标的检测效果不理想。
+ 
+a. 背景噪声
+b. 目标重叠
+c. 叶片遮挡
+a.Background noise
+b.Overlapping goals
+c.Blade obstructio
+YOLOv5s
+YOLOv7
+YOLOX-s
+YOLOv5s
+注：图中矩形框用于标识和定位检测方法给出的目标区域，其中矩形框上
+的grape 表示葡萄名称，grape 后的数字表示检测置信度。箭头表示误检的
+套袋葡萄，椭圆表示漏检的套袋葡萄。
+Note: The rectangular box in the figure is used to identify and locate the target
+area given by the detection method. The grape on the rectangular box represents
+the name of the grape, and the number after the grape represents the detection
+confidence. The arrow represents falsely detected bagged grape, and the ellipse
+represents missed bagged grape.
+图6　套袋葡萄不同检测方法的效果对比
+Fig.6    Effect comparison of different detection methods for
+bagged grape
+ 
+ 3.1.2　YOLOv5s 的收敛性分析
+为了验证套袋葡萄数据集在YOLOv5s 上训练的收
+敛性，本文在图7 中展示了YOLOv5s 在训练过程中的
+损失和检测指标变化趋势图，其中横坐标代表训练轮次，
+纵坐标代表损失值或检测指标值。由图可知，训练400
+轮次后，模型的训练损失和验证损失都逐渐达到收敛状
+态，精度、召回率和平均精度都趋于稳定。
+ 
+ 
+a. 模型训练定位损失值
+a. Model training
+positioning loss value
+b. 模型训练置信度损失值
+b. Model training
+confidence loss value
+d. 模型训练精度
+d. Model training
+precision
+e. 模型训练召回率
+e. model training
+recall rate
+j.模型训练平均精度 (0.5~0.95)
+j. Average precision
+(0.5~0.95) change of model training
+i.模型训练平均精度 (0.5)
+i. Average precision
+(0.5) change of model training
+g.模型验证置信度损失值
+g.  Model validation
+confidence loss value
+f. 模型验证定位损失值
+f.  Model validation
+positioning loss value
+训练集定位损失
+Training set localization loss
+训练集置信度损失
+Training set confidence loss
+精度 Precision/%
+召回率 Recall rate/%
+平均精度 (0.5~0.95)
+Average precision (0.5~0.95)/%
+平均精度 (0.5)
+Average precision (0.5)/%
+验证集置信度损失
+Validation set confidence loss
+验证集定位损失
+Validation set localization loss
+0.10
+0.04
+100
+80
+60
+40
+20
+0
+100
+80
+60
+40
+20
+0
+100
+80
+60
+40
+20
+0
+100
+80
+60
+40
+20
+0
+0.03
+0.02
+0.01
+0
+100 200 300 400
+0
+100 200 300 400
+0
+100 200 300 400
+0
+100 200 300 400
+0
+100 200 300 400
+0
+100 200 300 400
+0
+100 200 300 400
+0
+100 200 300 400
+0.08
+0.06
+0.04
+0.02
+0
+0.07
+0.025
+0.020
+0.015
+0.010
+0.005
+0
+0.06
+0.05
+0.04
+0.03
+0.02
+0.01
+迭代次数 Iterations
+迭代次数 Iterations
+迭代次数 Iterations
+迭代次数 Iterations
+迭代次数 Iterations
+迭代次数 Iterations
+迭代次数 Iterations
+迭代次数 Iterations
+图7　训练损失和检测指标变化趋势
+Fig.7    Trend chart of training loss and detection metrics
+　 186
+农业工程学报（http://www.tcsae.org）
+2023 年
+
+ 3.2　果实追踪性能
+ 3.2.1　不同追踪方法的对比试验
+为证明基于自纠正NMS-ByteTrack 的套袋葡萄追踪
+方法有效性，本文与5 种追踪方法进行了对比试验，如
+表2 所示。试验结果表明，基于自纠正NMS-ByteTrack
+的追踪效果相比其他方法更好。其原因是DeepSORT[23]、
+MOTDT[37] 和StrongSORT[32] 都只保留了高置信度检测
+框用于后续追踪，容易过滤因遮挡而置信度变低的套袋
+葡萄检测框，降低了目标的追踪性能。ByteTrack[28] 和
+Bot-SORT[29] 虽弥补了上述的不足，但算法过于依赖检
+测结果的质量，检测阶段的NMS 操作可能会导致可用
+于追踪的检测框被过滤，致使追踪结果不准确。因此，
+本文提出的方法能够有效地追踪套袋葡萄，减少了误检
+和漏检。
+ 
+ 
+表 2    不同目标追踪方法在套袋葡萄数据集上的试验结果
+Table 2    Test results of several different object tracking methods
+on bagged grape dataset
+目标追踪方法
+Methods
+for object
+tracking
+多目标追
+踪准确率
+Multiple object
+tracking
+accuracy/%
+多目标追
+踪精度
+Multiple object
+tracking
+precision/%
+ID 调和
+平均数
+Identification
+F1-score/%
+ID 变换
+次数
+ID switch
+DeepSORT
+59.7
+82.9
+66.6
+14
+MOTDT
+54.8
+80.6
+70.2
+12
+Bot-SORT
+61.9
+75.9
+75.1
+31
+StrongSORT
+59.4
+78.1
+74.6
+14
+ByteTrack
+62.9
+81.4
+76.7
+6
+本文方法
+Proposed method
+64.6
+82.4
+80.8
+3
+ 
+ 3.2.2　数据集扩展前后检测性能对比
+为了评估数据集扩展对检测模型的有效性，本文选
+取500 张原始套袋葡萄图片和2 000 张扩展后图片进行
+对比试验，试验结果如表3 所示。结果表明，扩展后数
+据集的检测精度相比原始数据集的精度、召回率和平均
+精度分别提高了3.3、7.8 和2.6 个百分点，证明了数据
+集扩展的必要性。
+ 
+ 
+表 3    不同数据集的对比试验结果
+Table 3    Comparative test results of different dataset
+%
+数据集大小
+Dataset size
+精度
+Precision
+召回率
+Recall rate
+平均精度
+Average precision
+500 张图片
+500 images
+94.3
+88.4
+95.0
+2 000 张图片
+2 000 images
+97.6
+96.2
+97.6
+ 
+ 3.2.3　基于ByteTrack 追踪方法的消融试验
+为了验证不同改进点对提高套袋葡萄追踪性能的有
+效性，本文在ByteTrack 的基础上进行消融试验，如表4
+所示。通过将KF 中预测目标框位置的宽高比直接改为
+预测目标框的宽度，减少宽高比产生的误差。试验结果
+表明，改进KF 的ByteTrack 追踪方法相比改进前的多目
+标追踪准确率提高了0.8 个百分点、多目标追踪精度提
+高了0.8 个百分点、ID 调和平均数提高了0.7 个百分点
+和ID 变换次数减少1 次。
+为降低拍摄视频时相机非线性运动的影响，本文引
+入相机运动补偿以弥补相机不规则运动的缺陷，自动纠
+正KF 预测的目标框位置，提升检测框和预测框的成功
+关联匹配能力。试验结果表明，加入相机运动补偿后相
+比改进KF 的ByteTrack 追踪方法的多目标追踪准确率提
+高了0.6 个百分点、多目标追踪精度提高了0.2 个百分点、
+ID 调和平均数提高了1.9 个百分点和ID 变换次数减少
+1 次。
+ 
+ 
+表 4    基于ByteTrack 追踪方法在套袋葡萄数据集上的消融试
+验结果
+Table 4    Ablation test results based on ByteTrack tracking method
+on bagged grape dataset
+目标追踪模型
+Models
+for object
+tracking
+多目标追
+踪准确率
+Multiple object
+tracking
+accuracy/%
+多目标追
+踪精度
+Multiple object
+tracking
+precision/%
+ID 调和
+平均数
+Identification
+F1-score/%
+ID 变换
+次数
+ID switch
+ByteTrack
+62.9
+81.4
+76.7
+6
+改进的KF+
+ByteTrack
+63.7
+82.2
+77.4
+5
+改进的KF+
+相机运动补偿+
+ByteTrack
+64.3
+82.4
+79.3
+4
+本文方法
+Proposed method
+64.6
+82.4
+80.8
+3
+ 
+为使套袋葡萄计数更关注于追踪阶段，本文将检测
+阶段中的NMS 筛选框功能后置到追踪阶段进行，避免
+套袋葡萄重叠遮挡后，其检测框在检测阶段被过滤的情
+况，提升目标追踪性能。因此本文在上述基础上，提出
+基于自纠正NMS-ByteTrack 的追踪方法。试验结果表明，
+基于自纠正NMS-ByteTrack 的追踪方法在多目标追踪准
+确率和ID 调和平均数分别为64.6% 和80.8%，比加入相
+机运动补偿和改进KF 的ByteTrack 追踪方法的多目标追
+踪准确率提高了0.3 个百分点、ID 调和平均数提高了
+1.5 个百分点和ID 变换次数减少1 次。
+综上，基于自纠正NMS-ByteTrack 的追踪方法相比
+基础方法ByteTrack 在多目标追踪准确率、多目标追踪
+精度和ID 调和平均数分别提高了1.7 个百分点、1.0 个
+百分点和4.1 个百分点，ID 变换次数减少3 次，证明了
+本文方法对提高套袋葡萄追踪性能的有效性。
+ 3.3　果实计数精度比较
+为准确估计视频中套袋葡萄的个数，实现对套袋葡
+萄的计数估产，本文提出一种划线计数策略对视频中的
+套袋葡萄进行计数，并在人工拍摄的6 个套袋葡萄视频
+数据集上试验，通过基于自纠正NMS-ByteTrack 估产方
+法得到的套袋葡萄个数与人工估计套袋葡萄的个数进行
+对比，如表5 所示。试验结果表明，利用基于自纠正
+NMS-ByteTrack 估产方法估计的套袋葡萄个数与人工估
+计套袋葡萄的个数接近，并计算出他们的平均计数精度
+为82.8%，证明了该划线计数策略在套袋葡萄自动计数
+上的适用性。
+ 
+第 13 期
+吕　佳等：基于自纠正NMS-ByteTrack 的套袋葡萄估产方法
+187 　
+
+表 5    不同计数方法在套袋葡萄数据集上的试验结果
+Table 5    Test results of different counting methods on bagged
+grape dataset
+计数方法
+Counting
+methods
+视频1
+Video
+one
+视频2
+Video
+two
+视频3
+Video
+three
+视频4
+Video
+four
+视频5
+Video
+five
+视频6
+Video
+six
+平均计
+数精度
+Average
+counting
+precision/%
+人工计数
+Manual
+counting
+22
+7
+22
+11
+13
+19
+82.8
+本文方法
+Proposed
+method
+15
+7
+17
+10
+10
+16
+ 
+ 4　结　论
+本文提出基于自纠正NMS-ByteTrack 的套袋葡萄估
+产方法，分别对套袋葡萄在果实检测、果实追踪和果实
+计数3 个方面进行试验并得出以下结论：
+1) 在套袋葡萄检测方面，本文使用YOLOv5s 分别
+与YOLOX-s 和YOLOv7 进行了对比试验。结果表明，
+YOLOv5s 在精度和平均精度上都比YOLOX-s 和
+YOLOv7 高，试验分析可知是由于背景噪声、目标重叠
+和叶片遮挡等原因，降低了套袋葡萄的检测精度，进而
+影响了目标追踪性能，因此YOLOv5s 更适用于检测套
+袋葡萄目标。
+2) 在套袋葡萄追踪方面，本文方法与其他追踪方法
+进行了对比。结果表明，基于自纠正NMS-ByteTrack 追
+踪方法的追踪性能都优于其他方法，有效解决了套袋葡
+萄在真实场景下的问题。同时，消融试验结果表明，本
+文方法相比改进前多目标追踪准确率、多目标追踪精度
+和ID 调和平均数分别提高了1.7、1.0 和4.1 个百分点，
+ID 变换次数减少3 次，证明了该方法在套袋葡萄追踪计
+数上的有效性。
+3) 在套袋葡萄计数方面，本文提出一种划线计数策
+略对套袋葡萄计数。结果表明，通过该策略估计视频中
+套袋葡萄的个数与人工计数结果接近，且平均计数精度
+为82.8%，证明了该划线计数策略在套袋葡萄自动计数
+上具有较强的适用性，其试验结果可以为套袋葡萄的实
+际估产提供参考。
+[ 参    考    文    献]
+ 
+ 王蕾，李华，王华. 中国葡萄气候区划Ⅰ：指标与方法[J].
+科学通报，2017，62(14)：1527-1538.
+WANG Lei, LI Hua, WANG Hua. Climatic regionalization of
+grape  in  China  I:  Indexes  and  methods[J].  Science  Bulletin,
+2017, 62(14): 1527-1538. (in Chinese with English abstract)
+[1]
+ 刘江，苏建兰. 基于乡村振兴的宾川葡萄产业发展研究综
+述[J]. 农业与技术，2021，41(24)：170-173.
+[2]
+ HE  L,  FANG  W,  ZHAO  G,  et  al.  Fruit  yield  prediction  and
+estimation  in  orchards:  A  state-of-the-art  comprehensive
+review for both direct and indirect methods[J]. Computers and
+Electronics in Agriculture, 2022, 195(4): 106812.
+[3]
+ MAHESWARI  P,  RAJA  P,  APOLO-APOLO  O  E,  et  al.
+Intelligent  fruit  yield  estimation  for  orchards  using  deep
+learning
+ based
+ semantic
+ segmentation
+ techniques:
+ A
+review[J]. Frontiers in Plant Science, 2021, 12(6): 684328.
+[4]
+ KAMILARIS  A,  PRENAFETA-BOLDÚ  F  X.  Deep  learning
+in  agriculture:  A  survey[J].  Computers  and  Electronics  in
+Agriculture, 2018, 147(4): 70-90.
+[5]
+ TIAN H, WANG T, LIU Y, et al. Computer vision technology
+in
+ agricultural
+ automation:
+ A
+ review[J]. 
+Information
+Processing in Agriculture, 2020, 7(1): 1-19.
+[6]
+ BHATTARAI U, KARKEE M. A weakly-supervised approach
+for  flower/fruit  counting  in  apple  orchards[J].  Computers  in
+Industry, 2022, 138(5): 103635.
+[7]
+ 曹家乐，李亚利，孙汉卿，等. 基于深度学习的视觉目标
+检测技术综述[J]. 中国图象图形学报，2022，27(6)：1697-
+1722.
+CAO  Jiale,  LI  Yali,  SUN  Hanqing,  et  al.  A  survey  on  deep
+learning  based  visual  object  detection[J].  Chinese  Journal  of
+Image and Graphics, 2022, 27(6): 1697-1722. (in Chinese with
+English abstract)
+[8]
+ REDMON J, DIVVALA S, GIRSHICK R, et al. You only look
+once:  Unified,  real-time  object  detection[C]//Proceedings  of
+the  IEEE  Conference  on  Computer  Vision  and  Pattern
+Recognition, Las Vegas, USA, 2016: 779-788.
+[9]
+ 易诗，李俊杰，张鹏，等. 基于特征递归融合YOLOv4 网
+络模型的春见柑橘检测与计数[J]. 农业工程学报，2021，
+37(18)：161-169.
+YI Shi, LI Junjie, ZHANG Peng, et al. Detecting and counting
+of  spring-see  citrus  using  YOLOv4 network  model  and
+recursive  fusion  of  features[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2021, 37(18): 161-169. (in Chinese with English abstract)
+[10]
+ 孙俊，陈义德，周鑫，等. 快速精准识别棚内草莓的改
+进YOLOv4-Tiny 模型[J]. 农业工程学报，2022，38(18)：
+195-203.
+SUN  Jun,  CHEN  Yide,  ZHOU  Xin,  et  al.  Fast  and  accurate
+recognition  of  the  strawberries  in  greenhouse  based  on
+improved  YOLOv4-Tiny  model[J].  Transactions  of  the
+Chinese Society of Agricultural Engineering (Transactions of
+the CSAE), 2022, 38(18): 195-203. (in Chinese with English
+abstract)
+[11]
+ 吕志远，张付杰，魏晓明，等. 采用组合增强的YOLOX-
+ViT 协同识别温室内番茄花果[J]. 农业工程学报，2023，
+39(4)：124-134.
+LYU  Zhiyuan,  ZHANG  Fujie,  WEI  Xiaoming,  et  al.
+Synergistic  recognition  of  tomato  flowers  and  fruits  in
+greenhouse  using  combination  enhancement  of  YOLOX-
+ViT[J].  Transactions  of  the  Chinese  Society  of  Agricultural
+Engineering (Transactions of the CSAE), 2023, 39(4): 124-134.
+(in Chinese with English abstract)
+[12]
+　 188
+农业工程学报（http://www.tcsae.org）
+2023 年
+
+ 刘文强，裘杭萍，李航，等. 深度在线多目标跟踪算法综
+述[J]. 计算机科学与探索，2022，16(12)：2718-2733.
+LIU Wenqiang, QIU Hangping, LI Hang, et al. Survey of deep
+online  multi-object  tracking  algorithms[J].  Journal  of
+Computer Science and Exploration, 2022, 16(12): 2718-2733.
+(in Chinese with English abstract)
+[13]
+ SHAGDAR Z, ULLAH M, ULLAH H, et al. Geometric deep
+learning  for  multi-object  tracking:  A  brief  review[C]//
+European Workshop on Visual Information Processing, Paris,
+France: IEEE, 2021: 1-6.
+[14]
+ LUO W, XING J, MILAN A, et al. Multiple object tracking: A
+literature  review[J].  Artificial  Intelligence,  2021,  293(10):
+103448.
+[15]
+ KALMAN  R  E.  A  new  approach  to  linear  filtering  and
+prediction  problems[J].  Journal  of  Basic  Engineering,  1960,
+82(1): 35-45.
+[16]
+ GAN  H,  LEE  W  S,  ALCHANATIS  V.  A  prototype  of  an
+immature  citrus  fruit  yield  mapping  system[C]//2017 ASABE
+Annual
+ International
+ Meeting.
+ American
+ Society
+ of
+Agricultural and Biological Engineers, Washington, 2017: 1-6.
+[17]
+ WANG  Z,  WALSH  K,  KOIRALA  A.  Mango  fruit  load
+estimation  using  a  video  based  MangoYOLO— Kalman
+filter—hungarian algorithm method[J]. Sensors, 2019, 19(12):
+2742-2758.
+[18]
+ 高芳芳，武振超，索睿，等. 基于深度学习与目标跟踪的
+苹果检测与视频计数方法[J].  农业工程学报，2021，
+37(21)：217-224.
+GAO  Fangfang,  WU  Zhenchao,  SUO  Rui,  et  al.  Apple
+detection  and  counting  using  real-time  video  based  on  deep
+learning  and  object  tracking[J].  Transactions  of  the  Chinese
+Society of Agricultural Engineering (Transactions of the CSAE),
+2021, 37(21): 217-224. (in Chinese with English abstract)
+[19]
+ ZHANG W, WANG J, LIU Y, et al. Deep-learning-based in-
+field  citrus  fruit  detection  and  tracking[J].  Horticulture
+Research, 2022, 9(1): 6526907.
+[20]
+ BEWLEY A, GE Z, OTT L, et al. Simple online and realtime
+tracking[C]//2016 IEEE  International  Conference  on  Image
+Processing, Phoenix, AZ, USA: IEEE, 2016: 3464-3468.
+[21]
+ GE  Y,  LIN  S,  ZHANG  Y,  et  al.  Tracking  and  counting  of
+tomato at different growth period using an improving YOLO-
+deepsort  network  for  inspection  robot[J].  Machines,  2022,
+10(6): 489-508.
+[22]
+ WOJKE  N,  BEWLEY  A,  PAULUS  D.  Simple  online  and
+realtime tracking with a deep association metric[C]//2017 IEEE
+International Conference on Image Processing, Beijing, China:
+IEEE, 2017: 3645-3649.
+[23]
+ GAO F, FANG W, SUN X, et al. A novel apple fruit detection
+and  counting  methodology  based  on  deep  learning  and  trunk
+tracking in modern orchard[J]. Computers and Electronics in
+Agriculture, 2022, 197(6): 107000.
+[24]
+ LIANG  H,  WU  T,  ZHANG  Q,  et  al.  Non-maximum
+[25]
+suppression performs later in multi-object tracking[J]. Applied
+Sciences, 2022, 12(7): 3334-3344.
+ 吕佳，李帅军，曾梦瑶，等. 基于半监督SPM-YOLOv5 的
+套袋柑橘检测算法[J]. 农业工程学报，2022，38(18)：
+204-211.
+LYU  Jia,  LI  Shuaijun,  ZENG  Mengyao,  et  al.  Detection
+bagged  citrus  using  a  semi-supervised  SPM-YOLOv5[J].
+Transactions
+ of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+Engineering (Transactions of the CSAE), 2022, 38(18): 204-211.
+(in Chinese with English abstract)
+[26]
+ YAO J, QI J, ZHANG J, et al. A real-time detection algorithm
+for kiwifruit defects based on YOLOv5[J]. Electronics, 2021,
+10(14): 1711-1723.
+[27]
+ ZHANG Y, SUN P, JIANG Y, et al. Bytetrack: Multi-object
+tracking  by  associating  every  detection  box[C]//Computer
+Vision-ECCV  2022:  17 th  European  Conference,  Tel  Aviv,
+Israel, 2022: 1-21.
+[28]
+ AHARON  N,  ORFAIG  R,  BOBROVSKY  B  Z.  BoT-SORT:
+Robust associations multi-pedestrian tracking [EB/OL]. (2022-
+07-07)[2023-04-15].https://arxiv.org/abs/ 2206.14651.
+[29]
+ LUCAS  B  D,  KANADE  T.  An  iterative  image  registration
+technique  with  an  application  to  stereo  vision[C]//IJCAI'81:
+7 th  International  Joint  Conference  on  Artificial  Intelligence,
+Vancouver, Canada: Morgan Kaufmann, 1981: 674-679.
+[30]
+ FISCHLER M A, BOLLES R C. Random sample consensus: a
+paradigm for model fitting with applications to image analysis
+and automated cartography[J]. Communications of the ACM,
+1981, 24(6): 381-395.
+[31]
+ DU Y, SONG Y, YANG B, et al. Strongsort: Make deepsort
+great again[C]//IEEE Transactions on Multimedia, Singapore:
+IEEE, 2023: 1-14.
+[32]
+ ZHANG  Y,  WANG  C,  WANG  X,  et  al.  Fairmot:  On  the
+fairness  of  detection  and  re-identification  in  multiple  object
+tracking[J].  International  Journal  of  Computer  Vision,  2021,
+129(9): 3069-3087.
+[33]
+ CAO  J,  PANG  J,  WENG  X,  et  al.  Observation-centric  sort:
+Rethinking
+ sort
+ for
+ robust
+ multi-object
+ tracking[C]//
+Proceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition, Vancouver, Canada, 2023: 9686-9696.
+[34]
+ GE Z, LIU S, WANG F, et al. Yolox: Exceeding yolo series in
+2021[EB/OL].  (2021-08-06)[2023-04-15].https://  arxiv.org/
+abs/ 2107.08430.
+[35]
+ WANG C Y, BOCHKOVSKIY A, LIAO H Y M. YOLOv7:
+Trainable bag-of-freebies sets new state-of-the-art for real-time
+object detectors[C]//Proceedings of the IEEE/CVF Conference
+on  Computer  Vision  and  Pattern  Recognition,  Vancouver,
+Canada, 2023: 7464-7475.
+[36]
+ CHEN L, AI H, ZHUANG Z, et al. Real-time multiple people
+tracking with deeply learned candidate selection and person re-
+identification[C]//2018  IEEE  International  Conference  on
+Multimedia and Expo, San Diego, CA, USA: IEEE, 2018: 1-6.
+[37]
+第 13 期
+吕　佳等：基于自纠正NMS-ByteTrack 的套袋葡萄估产方法
+189 　
+
+ 
+Method for estimation of bagged grape yield using a self-correcting
+NMS-ByteTrack
+LYU Jia※, ZHANG Cuiping, LIU Qin, LI Shuaijun
+(1. College of Computer and Information Science, Chongqing Normal University, Chongqing 401331, China;　2. Chongqing Center of
+Engineering Technology Research on Digital Agriculture & Service, Chongqing 401331, China)
+Abstract: Overlapping occlusion has seriously limited the yield estimation of bagged grapes in recent years, due to the ever-
+increasing grape volume after bagging and the large surface area of grape leaves. The unstable speed of manual video shooting
+can also lead to the loss of bagging grape targets. In this study, a yield estimation was proposed for the bagged grape using self-
+correcting Non-Maximum Suppression (NMS)-ByteTrack. Firstly, the bagged grapes were detected in the video using object
+detection (YOLOv5s). The NMS operation was also post-positioned to the tracking stage to retain the fruit detection boxes that
+filtered under the occlusion. Specifically, the detection boxes of bagged grapes were detected by object detection (YOLOv5s),
+whereas, the prediction boxes of bagged grapes were predicted to calculate the intersection over union using the Kalman filter.
+If the intersection over the union was less than the given threshold, the detection box was filtered to reserve the detection boxes
+closer to the predicted position. Then, the final detection box was obtained using the NMS operation. Secondly, the camera
+motion  compensation  and  improved  Kalman  filter  algorithm  were  added  to  automatically  correct  the  position  of  the  fruit
+prediction boxes and track them using ByteTrack. Specifically, the camera motion compensation was used to first extract the
+background key points in the bagged grape pictures of the previous frame and the current frame except for the tracking target.
+The sparse optical flow was used to match the extracted background in the key points of the bagged grapes. Then the affine
+transformation matrix of background motion was calculated by the RANSAC algorithm, and the Kalman filter was utilized to
+predict  the  bagged  grape  prediction  boxes  of  the  current  frame.  Finally,  the  affine  transformation  matrix  was  obtained  to
+convert the prediction boxes in the coordinate system from the previous to the current frame, in order to realize the position
+information correction for the prediction boxes of the current frame. In addition, the improved Kalman filter algorithm can be
+used to change the aspect ratio in the state vector, and then to express the position of the bagged grape tracking boxes in the
+Kalman filter directly as the width, in order to more accurately estimate the position of the bagged grape tracking boxes. As
+such, a line-counting strategy was proposed to automatically count the bagged grapes. The strategy was also to set the counting
+line in the middle of the video, and also retain the idle frames without the bagged grapes in the first few seconds of the video.
+Furthermore,  the  bagged  grapes  with  the  same  ID  were  only  counted  once  to  avoid  repeated  collision  line  counting.  The
+successful collision between the center point of the tracking box of bagged grapes and the counting line was achieved in the
+automatic  counting  of  bagged  grapes.  The  dataset  was  collected  from  the  Paidengte  Agricultural  Science  and  Technology
+Demonstration Park, Bishan District, Chongqing of China. The mobile phone cameras of Redmi K40 and OPPO Reno6pro+
+were selected to capture the pictures of the same bagged grape at 8:00, 12:00, and 18:00 from different angles, such as frontal,
+sideways, and overhead shots. The total shooting time was about 6 h, the shooting height was about 1.5 m from the ground, and
+the shooting route was line by line. A total of 500 images and six videos were obtained for the bagged grapes. Among them,
+500  images  were  expanded  to  2000  images  after  saturation,  brightness  enhancement,  brightness  reduction,  and  mirror
+operations. Then, 2000 images were randomly divided into the training and validation sets in the ratio of 8:2, where six valid
+videos were used as the test set. Relevant experiments were conducted using this dataset. The experimental results showed that
+the yield estimation achieved a significant improvement in the tracking performance of bagged grapes using self-correcting
+NMS-ByteTrack. The multi-object tracking accuracy and precision, as well as the identification F1-score, were 64.6%, 82.4%
+and 80.8%, respectively, which increased by 1.7, 1.0 and 4.1 percentage points, respectively, compared with the ByteTrack.
+The number of ID switch was reduced by 3 times. Then, the average counting accuracy reached 82.8% in terms of counting
+performance, compared with manual counting. In addition, a comparison was also made with the five tracking methods. A
+better tracking performance was achieved, compared with the rest. The applicability of this estimation was also verified in
+tracking and counting bagged grapes. Therefore, the yield estimation can be expected to effectively promote the tracking and
+counting of bagged grapes in real scenarios using self-correcting NMS-ByteTrack. More accurate yield estimation of bagged
+grapes was also achieved in this field.
+Keywords：image processing; agriculture; object tracking; video counting; yield estimation method; bagged grape; ByteTrack;
+Kalman filter
+　 190
+农业工程学报（http://www.tcsae.org）
+2023 年

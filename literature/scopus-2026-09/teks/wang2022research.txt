@@ -1,0 +1,825 @@
+ 
+  
+Abstract— Accurate monitoring of fruit quantity in apple 
+orchards will allow growers to manage their orchards more 
+efficiently, leading to higher yields. In addition, the rapid and 
+accurate inspection of fruit in the orchard is also one of the basic 
+technologies needed for smart agriculture. This paper proposes a 
+real-time method for apple tracking and yield estimation. UAV 
+carrying RGB camera is used as an inspection platform, which 
+analyzes the video in real time during the inspection. The 
+algorithm is built according to the Tracking-by-Detecting 
+framework, where YOLOV5 target detection model is used to 
+obtain apples’ exact position. Meanwhile, the apples’ position in 
+next frame is estimated according to the optical flow calculated 
+from FlowNet2 model. Then, the predicted position and detected 
+position is matched by the Hungarian algorithm. A dataset close 
+to the actual situation in the orchard is constructed to verify the 
+effectiveness of the proposed method. To improve the detection 
+accuracy of apple under actual scene, the data enhancement 
+strategy of random occlusion and mosaic enhancement is used 
+for model training. As a result, the accuracy of apple detection 
+achieved by the algorithm in this paper is 85.5%, which is 11% 
+higher than previous studies. Besides, it can keep well tracking 
+of detected apples even under the influence of complex occlusion 
+or other factors, and achieve an accuracy of 90.39% in apple 
+yield estimation. More importantly, this algorithm can reach a 
+speed of 20FPS on the experimental platform, which meets the 
+real-time requirements of UAV inspection. 
+I. INTRODUCTION 
+Nowadays, apple is one of the most widely grown and sold 
+fruits all over the world. China accounts for nearly half of the 
+worldwide apple production according to the data from the 
+Food and Agriculture Organization of the United Nations. 
+However, apple cultivation in China is still dominated by 
+manual labor, with low level of mechanization and automation 
+[1]. With the aging of the population and the migration of 
+labor to cities and towns, China's apple industry urgently 
+needs to be automated and intelligent. Among them, the 
+ 
+*Research supported by the Fundamental Research Funds for the Central 
+Universities. 
+Shaopeng Wang is with the School of Mechanical Engineering, Xi'an 
+Jiaotong University. Shaanxi Province, 710049 CHINA (corresponding 
+author to provide phone: 15109282029; e-mail: wsp1175223615@ 
+stu.xjtu.edu.cn). 
+Xiaodong Zhang is the School of Mechanical Engineering, Research 
+Center of Smart Agricultural Technology And Equipment, Xi'an Jiaotong 
+University, Shaanxi Province, 710049 CHINA Professor (e-mail: 
+amct@xjtu.edu.cn). 
+Haiming Shen， Minxuan Tian and Mingyang Li, are with the School of 
+Mechanical Engineering, Xi'an Jiaotong University. Shaanxi Province, 
+710049 CHINA (e-mail: 11500606@qq.com; mingyangli0825@163.com; 
+568409850@qq.com). 
+regular visual inspection of apple orchard with flying 
+inspection robot and artificial intelligence technology is 
+particularly important, which can provide farmers with the 
+accurate information of individual fruit and yield information 
+of the whole orchard, so that the subsequent orchard 
+intelligent management and apple picking robot precision 
+picking technology can be realized. Among them, apple 
+detection, tracking and counting methods based on machine 
+vision is the key technology. Relevant researches have been 
+carried out and applied in apple pruning [2], yield estimation 
+[3-4], harvesting [5] and other aspects. 
+In terms of apple's visual detection, early studies mainly 
+used manual extracted image features combined with machine 
+learning methods for fruit detection [6]. However, recent 
+studies have shown that deep learning-based methods can 
+achieve better display results. Inkyu Sa et. al. [7] fused RGB 
+image and NIR image, and then adopted Faster R-CNN model 
+to realize the detection of fruits, which provides a method to 
+merge multispectral data. LJ Biffi et. al. [8] used Adaptive 
+Training Sample Selection (ATSS) deep learning method to 
+reduce the cost of data annotation. X Wang et. al. [9] designed 
+an apple detection network for apple harvesting robot and 
+used the method of instance segmentation to detect apples. K 
+Zhang et. al. [10] also designed the apple instance 
+segmentation network for apple picking robot, and fused the 
+detection result from two cameras. Other recent studies are not 
+too detailed here [11-13]. The above research is aimed at 
+apple detection under the ideal environment of close distance 
+and no serious occlusion, and most algorithms cannot run in 
+real time on the inspection robot. However, what flying 
+inspection robot needs to face is real-time fruit detection for 
+small targets under the condition of serious illumination and 
+occlusion influence. And there are few studies concern on this 
+issue. 
+Besides, in terms of apple’s visual tracking and counting, 
+researchers mainly focus on off-line algorithms. Nicolai Hani 
+et. al. [4] simplified the problem into two parts: detection of 
+apple clusters and classification of apple clusters by number 
+of apples in the cluster, and the algorithm could only calculate 
+the number of apples in a single image. Xu Liu et. al. [14] 
+obtained the apple center by means of semantic segmentation, 
+and realized apple matching in continuous frames through 3d 
+reconstruction of apples, so as to realize apple counting, 
+which is time-consuming. Uddhav Bhattaraia et. al. [15] 
+designed a network based on VGG16 to estimate the number 
+of apples directly from a single image. This method also 
+cannot be applied to apple counts in video sequences. Similar 
+to apple's detection, methods suitable for flying inspection 
+robots are rarely studied. 
+Research on UAV Online Visual Tracking Algorithm based on 
+YOLOv5 and FlowNet2 for Apple Yield Inspection* 
+Shaopeng Wang, Xiaodong Zhang, Member, IEEE, Haiming Shen, Minxuan Tian and Mingyang Li 
+   Proceedings of the 4th WRC Symposium
+on Advanced Robotics and Automation 2022
+       Beijing, China, September 20, 2022
+978-1-6654-6369-0/22/$31.00 ©2022 IEEE
+280
+2022 WRC Symposium on Advanced Robotics and Automation (WRC SARA) | 978-1-6654-6369-0/22/$31.00 ©2022 IEEE | DOI: 10.1109/WRCSARA57040.2022.9903925
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+Frame i
+Frame i+1
+Detection 
+Model
+(YOLOv5s)
+Apple 
+Position
+Estimation
+Model
+(FlowNet2)
+Apple 
+Position
+Optical 
+Flow
+Predicted 
+Position
+Matching 
+Model
+(Hungarian)
+Counting
+Strategy 
+Detection 
+Model
+(YOLOv5s)
+Video Sequence
+Frame i
+Frame i+1
+Apple 
+Position
+optical
+flow
+apple
+position
+apple
+position
+predicted
+position
+match & count
+(1)
+(2)
+(3)
+(4)
+(5)
+(6)
+ 
+Figure 1.  Overall Algorithm Architecture. Continuous frames are taken out as the input of the algorithm from video sequence. (1) The position of apples in 
+frame i is obtained through the YOLOv5s6 detection model; (2) Combining frame i and i +1, the information of image motion is obtained by estimation model 
+based on FlowNet2; (3) Apple’s position in frame i+1 is predicted with the optical flow corresponding to the position of apple; (4) The position of apple in 
+frame i +1 is determined by detection model; (5) The predicted position of apple in frame i +1 is matched with apple’s actual position; (6) Number of apple is 
+updated by counting strategy. 
+ 
+This paper aims to provide a real-time visual tracking 
+algorithm used for apple yield inspection with UAV. As 
+shown in Fig.1, the algorithm includes YOLOv5 apple 
+detection module, position estimation module based on 
+FlowNet2 and matching counting module based on Hungarian 
+algorithm. Combined with the UAV inspection method 
+proposed in this paper, the apple yield in the orchard can be 
+obtained in real time during the inspection. The main 
+contributions of our paper are:(1) a flying inspection method 
+for apple orchard; (2) a real-time apple visual tracking 
+algorithm used for apple quality inspection; and (3) a strategy 
+for counting both healthy and diseased apples based on 
+Hungarian matching algorithm. 
+II. PROPOSED METHOD 
+A. UAV Inspection method 
+ 
+Figure 2.  UAV inspection method in apple orchard 
+In order to improve the efficiency of inspection, UAVs 
+carrying RGB cameras are used as inspection platforms. The 
+inspection method of UAV determines the characteristics of 
+the images obtained during inspection. Apple trees in orchards 
+are usually planted in rows. Therefore, the UAV inspection 
+method designed in this paper is shown in Fig. 2. For tall and 
+densely planted arbor trees, UAV will take images from the 
+top down for inspection; for dwarf trees with large planting 
+width, the UAV will fly over the middle of the tree path and 
+take images from the horizontal direction for inspection. 
+Therefore, in the images obtained by inspection, fruits are 
+usually small and seriously blocked by leaves and other 
+objects, accompanied by strong light changes. In addition, due 
+to the high flight speed of UAV, the target movement distance 
+between frames in the inspection video sequence is large. 
+Therefore, the apple tracking algorithm designed in this paper 
+based on the framework of tracking-by-Detecting. And the 
+problem about apple’s yield inspection is divided into three 
+sub-problems: (1) Visual detection of small sized apples that 
+are shaded and affected by light and shadow (2) Position 
+estimation of detected apples in consecutive video frames (3) 
+Matching between estimated position and detected position of 
+apples followed by the counting of both kind of apples. The 
+detailed algorithm architecture is shown in Fig. 1. The input of 
+the algorithm is real-time images taken by the UAV. 
+B. Detection with YOLOv5s 
+Compared with traditional machine vision methods, the 
+object detection method based on deep learning has more 
+advantages in accuracy and generalization ability. They are 
+further divided into one-stage and two-stage, among which the 
+method detection speed of one-stage is faster. Therefore, this 
+method is more suitable for real-time detection application 
+281
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+scenarios. YOLO series of algorithms are representative of 
+one-stage class detection methods, which are widely used in 
+various target detection tasks. Fan et. al. [16] applied the 
+pruned YOLOv4 model to the apple detection task on the 
+apple sorting line, and obtained an average accuracy of 
+93.9%.  
+As an upgraded version of YOLOv4, YOLOv5 is widely 
+used by researchers for its advanced detection speed and 
+accuracy. Its improvement was reflected in three aspects :(1) 
+Mosaic data augmentation, adaptive image scaling and other 
+image preprocessing methods were adopted, which greatly 
+optimized the performance of the model; (2) CSPNet is used 
+in backbone and head to strengthen the ability of network 
+feature fusion; (3) The structure of FPN and PANet in head 
+accelerates the information flow between various levels. 
+According to the results presented by the authors, YOLOv5s 
+can run at a speed of 6.4ms per frame on COCO dataset, which 
+shows the great real-time performance. 
+In order to complete the accurate detection of apple in the 
+complex environment and ensure the real-time direction of the 
+algorithm, the lightweight YOLOv5s model is used as the core 
+module of the detection. The S model of YOLOV5 also has 
+several versions, the most commonly used ones are Yolov5S 
+and YOLOV5S6. On the basis of the former, the latter uses 
+convolution to replace the Focus structure, and uses CSPNet 
+containing three layers of convolution to replace various types 
+of CSPNet in original model, which increases the depth of the 
+network and the number of parameters. The detection 
+accuracy is improved at the expense of running speed. In the 
+training stage of the model, the transfer learning strategy is 
+applied to accelerate the model training speed. The 
+parameters of the YOLOv5s model are initialized by its 
+pre-trained model on the COCO dataset. 
+C. Position Estimation Based on Optical Flow 
+Under the framework of tracking-by-detecting, the core of 
+target tracking lies in the matching of corresponding objects 
+between successive frames. Predicting the target's possible 
+position in the next frame can greatly improve the accuracy of 
+matching. In multi-target visual tracking, Kalman filter, 
+particle filter, optical flow and other methods are often used to 
+estimate targets’ position [17]. Since video images may 
+contain many apples, it is not practical to build tracking 
+models for each individual. Therefore, it is a more feasible 
+scheme to directly calculate pixel-level image motion 
+information by optical flow method and then obtain the 
+estimation of apples’ position.  
+Studies in recent years show that optical flow diagrams 
+obtained by deep learning-based methods have higher quality 
+and faster inference speed compared with traditional methods 
+such as Farneback [18]. In the experiment of this paper, the 
+traditional method takes about 100ms for each frame of 
+optical flow, which cannot meet the real-time requirements of 
+the algorithm. FlowNet2 is a deep learning optical flow 
+method with good performance at present [19]. It 
+continuously optimizes the optical flow diagram by stacking 
+FlowNetC and FlowNetS on the basis of FlowNet. In order to 
+ensure the real-time performance of the tracking algorithm, 
+the FlowNet2CS module, part of FlowNet2, is selected as the 
+reasoning model of optical flow. 
+ 
+Figure 3.  Apples’ position estimation based on optical flow 
+The process of apple position estimation based on this 
+algorithm is shown in Fig. 3. In the figure, the detected 
+bounding box is in red, and apple's bounding box in blue is 
+estimated in the next frame. The left picture is the RGB image 
+taken in inspection, and the middle one is the visual optical 
+flow diagram, where the color represents the direction of pixel 
+movement. The right picture is the legend of the visual optical 
+flow diagram. Since the optical flow of a single pixel has 
+certain noise, the average value of all optical flows in apple's 
+bounding box (red box) is regarded as the movement 
+information of the center points of the bounding box. The final 
+estimated position of the apple is determined by the following 
+formula. 
+ 
+1
+(
+,
+)
+i
+i
+i
+i
+i
+F
+F x
+y
+ave
+h
+w
+=
+
+
+ 
+() 
+ 
+(
+,
+)
+i
+i
+i
+x
+y
+bbox
+
+ 
+() 
+ 
+ˆ 1
+i
+i
+i
+P
+P
+Fave
+t
+t
+=
++
++
+ 
+() 
+where: 
+i
+bbox is the  i th apple’s bounding box in the image. 
+( , )
+F x y is the optical flow at ( , )
+x y . ih and 
+i
+w are the height 
+and width pixel values of the 
+i
+bbox respectively.
+i
+Fave is the 
+average optical flow of pixels in 
+i
+bbox .
+i
+Pt and ˆ 1
+i
+Pt+ are 
+respectively the position of 
+i
+bbox at the current moment and 
+its predicted position at the next moment. 
+D. Object Matching and Counting 
+As the final step in tracking, the predicted apple locations 
+need to be matched with the actual detected apple locations to 
+track the instance. The core of matching is to find the most 
+matching pairs from all possible matching relationships. 
+282
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+Predicted 
+Position   
+Detected 
+Position  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Predicted 
+Position   
+Detected 
+Position  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+Matching
+ 
+Figure 4.  Bipartite graph model of apple matching. Dotted lines represent 
+possible matching relationships, and solid lines represent the final matching 
+result. 
+As shown in Fig. 4, the problem can be described by the 
+bipartite graph model, described as (4) and (5). In the process 
+of tracking, an apple may be blocked for a certain period of 
+time, and its position and pose can only be estimated by 
+optical flow method. When the apple is detected again, its 
+estimated position has a large deviation from the actual 
+position. Therefore, as shown in (6)(7)(8), the judgment 
+conditions of potential matching pairs consist of two points :(a) 
+the IOU of predicted bounding box and detected bounding 
+box is greater than the given threshold; (b) The prediction 
+bounding box and the detection bounding box do not intersect 
+but the distance is less than the given threshold. The 
+mathematical description of this problem is shown in the 
+following formula. 
+ 
+( ,
+)
+G
+V E
+=
+ 
+() 
+ 
+ˆ
+ˆ
+,  
+V
+P
+P
+P
+P
+=
+
+
+= 
+ 
+() 
+ 
+80% , 
+0
+ˆ
+ˆ
+30       , 
+0
+ˆ
+ˆ
+ˆ
+( ,
+)
+,
+ˆ
+ˆ
+,
+IOU
+IOU
+pp
+pp
+Dis
+IOU
+pp
+pp
+p p
+E
+p P p P
+
+
+
+
+
+=
+
+
+
+
+
+() 
+ 
+ˆ
+ˆ
+ˆ
+bbox
+bboxp
+p
+IOU pp
+bbox
+bboxp
+p
+
+=
+
+ 
+() 
+ 
+ˆ
+2
+ˆ
+center
+center
+p
+p
+Dispp
+−
+=
+ 
+() 
+where: G is a binary graph composed of node V and edge E . 
+Node V is divided into two disjoint subsets, namely, the 
+predicted position ˆP and the actual detected position P . 
+centerp is the center of bounding box of position p . 
+In the binary graph model described above, our goal is to 
+find as many matches as possible. The Hungarian algorithm is 
+usually used to solve the maximum matching problem of 
+binary graphs. Therefore, the Hungarian algorithm is used to 
+obtain the matching relationship between apple's estimated 
+position and the new detected position. In the matching results, 
+it is possible that some apples are not matched, as shown in 
+Fig. 6. The apple that is not matched in the predicted position 
+means that the apple is not detected in the new frame, and the 
+apple that is not matched in the detected position is the new 
+apple in the image. To avoid double counting, the counting 
+strategy is designed as follows: 
+1. Open a video sequence and detect the apples in first 
+frame to initialize the count. 
+2. Read a new frame from the video sequence. 
+3. Calculate the optical flow and estimate the position of 
+detected apples. 
+4. Detect the apples in new frame. 
+5. Matches detected apples with newly detected apples 
+6. For the matched individual in detected apple, the 
+location is updated based on matching results. 
+7. For the unmatched individual in the detected apple, the 
+actual position is updated with the estimated position. If 
+the unmatched individual does not appear in 10 
+consecutive frames or the detection frame is beyond the 
+range of the image, the individual is deleted. 
+8. For unmatched individuals in newly detected apples, 
+add them to the current apple queue and update the 
+count. 
+9. Go to 2 if the video does not end, otherwise save the 
+video processing result and end the program. 
+III. EXPERIMENT AND RESULT 
+ 
+Figure 5.  Experimental principle 
+The experimental principle is shown in Fig. 5. Model 
+apples were hung on trees to simulate real orchards. Then, the 
+orchard inspection images and videos obtained by UAV are 
+used to construct apple detection dataset and apple tracking 
+and counting data set respectively. Manually marked apple 
+detection dataset is used for training and testing the apple 
+detection module. The apple tracking and counting dataset is 
+used to verify the performance of the whole algorithm. The 
+experiment is carried out on NVIDIA GeForce 940MX 
+platform with only 2GB video memory, which can well 
+simulate the computing performance of embedded platform. 
+283
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+A.  Data Acquisition 
+The data set constructed in this article consists of partial 
+images in the Minneapple dataset [20] as well as images 
+captured in the simulated experiment, of which 62.2% were 
+captured experimentally. The dataset contains 1790 simulated 
+real inspection images for Apple inspection and 9 videos for 
+verification of the Apple tracking and production estimates. In 
+the image, 28084 apples were manually labeled for training 
+and testing the network. The dataset used to detect Apple was 
+split into separate training and testing set, with 1,211 and 579 
+images, respectively. 
+ 
+Figure 6.  Images in dataset 
+The images in the dataset are shown in the Fig. 6. The left 
+image is the selected Minneapple dataset and the right image 
+is the inspection image collected from the experiment. In the 
+experiment, the apple model was hung on the outdoor fruit 
+tree according to the growth status of apple on the actual fruit 
+tree, and DJI Mavic 3 was used as the inspection platform to 
+shoot inspection images and videos. The data set fully 
+simulates the characteristics of small apple targets, which are 
+seriously affected by occlusion and illumination. 
+B. Apple Detection 
+TABLE I.  
+TRAINING RESULTS OF APPLE DETECTION MODEL  
+Model  
+Parameters and Performance Results 
+Imag
+e Size 
+Precisi
+on 
+Reca
+ll 
+mAP.5 
+mAP0.
+5:0.95 
+Speed 
+YOLO
+v5s 
+640 
+0.842 
+0.78
+3 
+0.867 
+0.491 
+32ms 
+YOLO
+v5s 
+1280 
+0.853 
+0.82
+7 
+0.897 
+0.531 
+107ms 
+YOLO
+v5s6 
+640 
+0.853 
+0.78
+3 
+0.864 
+0.469 
+35ms 
+YOLO
+v5s6 
+1280 
+0.855 
+0826 
+0.902 
+0.534 
+132ms 
+The accuracy of apple detection obtained in previous 
+studies on the Minneapple dataset was only 77% [20]. The 
+model adopted in this paper has a significantly improved 
+accuracy of 85%. In order to conduct comparative verification 
+and select the optimal model, this paper selected multiple 
+versions of YOLOv5s and set image input of different sizes 
+for training. The training results of each model are shown in 
+Tab. Ⅰ. Among them, the detection accuracy of YOLOv5s6 
+model with an image of 640 size as input is 85.8%, which 
+takes only 32ms, achieving a balance in accuracy and 
+real-time performance. Therefore, this model is used as the 
+detection module of tracking algorithm. 
+ 
+Figure 7.  Results of apple detection 
+The actual detection results are shown in Fig. 7. It can be 
+seen that the model can achieve more accurate detection for 
+small apples and apples in shadow or shade. The model even 
+detected apples that had not been manually labeled. Therefore, 
+the data in Tab. 1. may underestimate the performance of the 
+model. 
+C. Apple Tracking and Counting 
+ 
+(a) tracking of frame i                            (b)tracking of frame i+5 
+ 
+(c) prediction of frame I                         (d) prediction of frame i+5 
+Figure 8.  process of the Apple tracking and counting 
+Tracking and counting of Apple are shown in Fig. 8. (a) 
+and (b) are the tracking and counting results of two frames 
+separated by a period of time in the video sequence 
+respectively, where the red box indicates the tracking target 
+and the number represents the ID of the current individual. (c) 
+and (d) are the corresponding position prediction and 
+matching schematic diagram. In the figure, the red box 
+represents the newly detected target of the detection model, 
+and the green box represents the estimated position of apple. 
+As can be seen from the figure, there is a high degree of 
+coincidence between the estimated location and the actual 
+detected location. Even if the current location of the 
+individual is not updated continuously according to the newly 
+detected location, the prediction model can still track the 
+corresponding individual well, as shown in individual 6. 
+284
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 
+
+ 
+TABLE II.  
+RESULTS OF APPLE COUNTING  
+Video 
+number 
+Result of apple counting 
+Ground truth 
+Count  
+Precision 
+1 
+29 
+27 
+93.10% 
+2 
+30 
+27 
+90.00% 
+3 
+31 
+29 
+93.55% 
+4 
+20 
+17 
+85.00% 
+5 
+15 
+16 
+93.33% 
+6 
+40 
+45 
+87.50% 
+7 
+33 
+33 
+100.00% 
+8 
+35 
+44 
+74.29% 
+9 
+31 
+32 
+96.77% 
+Standard Deviation 
+7.12% 
+Average precision 
+90.39% 
+Finally, the algorithm is run on 9 videos in the dataset, and 
+the counting results are shown in Tab. Ⅱ. It can be seen that the 
+algorithm can accurately count the number of apples in the 
+inspection video with an average precision of 90.39%. And 
+the algorithm only takes about 50ms to analyze each frame, 
+which means the algorithm can run at 20FPS on the embedded 
+platform on the UAV to estimate orchard yield in real time 
+during training. 
+IV. CONCLUSION 
+A real-time UAV visual tracking algorithm for apple yield 
+inspection is proposed. A dataset suitable for apple orchard 
+flying inspection was constructed to train and verify the 
+algorithm. The YOLOv5s6 model is used as the apple 
+detection model, and the detection accuracy reached 85%. 
+FlowNet2CS model is used to get optical flow for apple 
+location prediction. By building the bipartite graph model, 
+applying Hungarian algorithm and combining with the 
+counting strategy, tracking and counting of apple in the 
+orchard was realized. And the average counting accuracy 
+reached 90.39%. Besides, the whole algorithm can run at the 
+speed of 20FPS, which means this algorithm can work on the 
+UAV in real time.  
+Future work includes adding apples with diseases and 
+insect pests to the data set, train the algorithm to realize the 
+detection of diseases and insect pests, and finally realize the 
+rapid inspection of apples in the orchard. In addition, this 
+method will be transferred to apple picking robot to achieve 
+precise apple picking. 
+ACKNOWLEDGMENT 
+This research is supported by the Fundamental Research 
+Funds for the Central Universities. Thanks to Xi'an Jiaotong 
+University Smart Agriculture Fund Project. 
+REFERENCES 
+[1] X. Liang, "Sustainable Apple Disease Management in China: 
+Challenges and Future Directions for a Transforming Industry", Plant 
+Disease, vol. 106, no. 3, pp. 786-799, 2022. 
+[2] A. Zahid, "Technological advancements towards developing a robotic 
+pruner for apple trees: A review", Computers and Electronics in 
+Agriculture, vol. 189, p. 106383, 2021. 
+[3] T. DH Jarvinen, "Multiple object tracking-by-detection for fruit 
+counting on an apple tree canopy", ASABE Annual International 
+Meeting, American Society of Agricultural and Biological Engineers, 
+2018. 
+[4] N. Häni, "Apple Counting using Convolutional Neural Networks," 
+2018 IEEE/RSJ International Conference on Intelligent Robots and 
+Systems (IROS), 2018, pp. 2559-2565, doi: 10.1109/IROS.2018. 
+8594304. 
+[5] W. Jia, "Apple harvesting robot under information technology: A 
+review", International Journal of Advanced Robotic Systems, vol. 17, 
+no. 3, p. 172988142092531, 2020. 
+[6] A. Gongal, "Sensors and systems for fruit detection and localization: A 
+review," Computers and Electronics in Agriculture, vol. 116, pp. 8-19, 
+2015. 
+[7] I. Sa, "DeepFruits: A Fruit Detection System Using Deep Neural 
+Networks", Sensors, vol. 16, no. 8, p. 1222, 2016. 
+[8] L. Biffi, "ATSS Deep Learning-Based Approach to Detect Apple 
+Fruits", Remote Sensing, vol. 13, no. 1, p. 54, 2020. 
+[9] X. Wang, "Geometry-aware fruit grasping estimation for robotic 
+harvesting in apple orchards", Computers and Electronics in 
+Agriculture, vol. 193, p. 106716, 2022. 
+[10] K. Zhang, "Algorithm Design and Integration for a Robotic Apple 
+Harvesting System." arXiv preprint arXiv:2203.00582 (2022). 
+[11] Z. Li, “Detection Method of Apple Based on Improved Lightweight 
+YOLOv5,” International Conference on Cognitive Systems and Signal 
+Processing, 2021, pp. 286-294. 
+[12] J. Ji, "Apple Fruit Recognition Based on a Deep Learning Algorithm 
+Using an Improved Lightweight Network", Applied Engineering in 
+Agriculture, vol. 37, no. 1, pp. 123-134, 2021. 
+[13] H. Kang, "Visual Perception and Modeling for Autonomous Apple 
+Harvesting," IEEE Access, vol. 8, pp. 62151-62163, 2020, doi: 
+10.1109/ACCESS.2020.2984556. 
+[14] X. Liu, "Robust Fruit Counting: Combining Deep Learning, Tracking, 
+and Structure from Motion," 2018 IEEE/RSJ International Conference 
+on Intelligent Robots and Systems (IROS), 2018, pp. 1045-1052, doi: 
+10.1109/IROS.2018.8594239. 
+[15] U. Bhattarai, "A weakly-supervised approach for flower/fruit counting 
+in apple orchards", Computers in Industry, vol. 138, p. 103635, 2022. 
+[16] S. Fan, "Real-time defects detection for apple sorting using NIR 
+cameras with pruning-based YOLOV4 network", Computers and 
+Electronics in Agriculture, vol. 193, p. 106715, 2022. 
+[17] W. Luo, "Multiple object tracking: A literature review", Artificial 
+Intelligence, vol. 293, p. 103448, 2021. 
+[18] G. Farnebäck. “Two-frame motion estimation based on polynomial 
+expansion”, Scandinavian conference on Image analysis, Springer, 
+Berlin, Heidelberg, 2003, pp. 363-370. 
+[19] E. Ilg, "FlowNet 2.0: Evolution of Optical Flow Estimation with Deep 
+Networks," 2017 IEEE Conference on Computer Vision and Pattern 
+Recognition (CVPR), 2017, pp. 1647-1655, doi: 10.1109/CVPR.2017. 
+179. 
+[20] N. Häni, "MinneApple: A Benchmark Dataset for Apple Detection and 
+Segmentation," IEEE Robotics and Automation Letters, vol. 5, no. 2, 
+pp. 852-858, April 2020, doi: 10.1109/LRA.2020.2965061. 
+ 
+285
+Authorized licensed use limited to: INSTITUTE OF ENGINEERING & MANAGEMENT TRUST. Downloaded on October 05,2026 at 02:46:35 UTC from IEEE Xplore.  Restrictions apply. 

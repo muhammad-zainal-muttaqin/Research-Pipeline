@@ -1,0 +1,834 @@
+Geometry-Driven Triangulation and Differentiable Semantic
+Gaussian Refinement for 3D Grape Bunch Model Reconstruction
+in the Field
+Yan San Woo∗
+Department of Computer Science and
+Engineering, Faculty of Engineering
+University of Yamanashi
+Kofu, Japan
+yansanwoo@gmail.com
+Kabin Yok-In
+Department of Computer Science and
+Engineering, Faculty of Engineering
+University of Yamanashi
+Kofu, Japan
+kbyokin@gmail.com
+Prawit Buayai
+Graduate Faculty of Interdisciplinary
+Research
+University of Yamanashi
+Kofu, Japan
+buayai@yamanashi.ac.jp
+Hiromitsu Nishizaki
+Graduate Faculty of Interdisciplinary
+Research
+University of Yamanashi
+Kofu, Japan
+hnishi@yamanashi.ac.jp
+Latifah Munirah Kamarudin
+Faculty of Electronic Engineering &
+Technology
+Universiti Malaysia Perlis
+Perlis, Malaysia
+latifahmunirah@unimap.edu.my
+Xiaoyang Mao
+Graduate Faculty of Interdisciplinary
+Research
+University of Yamanashi
+Kofu, Japan
+mao@yamanashi.ac.jp
+Abstract
+Berry thinning in table-grape production requires estimating berry
+count and bunch structure under severe occlusion. While exist-
+ing 3D reconstruction and neural rendering pipelines can recover
+dense geometry or enable novel view synthesis, they rarely produce
+compact, instance-level models for densely packed grape bunches.
+We propose a geometry-aware, three-stage framework that recon-
+structs a semantic 3D model of individual berries from handheld
+field video. Each berry is represented as an opaque 3D Gaussian
+ellipsoid with a 3D center, principal radii, and orientation. Stage
+1 applies a berry detection/segmentation network together with
+a lightweight structure-from-motion (SfM) COLMAP method run
+to obtain multi-view 2D attributes (centers, circle/ellipse parame-
+ters, masks, and visibility labels) and initial camera poses; these 2D
+observations later act as supervision for optimizing the 3D model.
+Stage 2 forms multi-view tracks using epipolar constraints, azimuth-
+based neighborhood restriction, and radius consistency (without ap-
+pearance descriptors), then triangulates and consolidates 3D berry
+centers via geometric gating and 3D non-maximum suppression.
+Stage 3 refines the compact semantic model by differentiable ren-
+dering under multi-head 2D losses, with conservative clone–prune
+topology updates driven by persistent unmatched evidence. On 30
+real-field bunches with labelled point-cloud ground truth converted
+to 3D ellipsoids, the refined models achieve F1 scores of 78.7–88.5%
+at oriented bounding box Intersection of Union (OBB-IoU) thresh-
+old (𝜏) at 0.10 and 64.5–74.9% at 𝜏= 0.25, while Stage 3 runs in
+1.8–5.1 minutes per bunch for 10–30 selected views. These results
+∗Corresponding author
+This work is licensed under a Creative Commons Attribution 4.0 International License.
+ICICT 2026, Honolulu, HI, USA
+© 2026 Copyright held by the owner/author(s).
+ACM ISBN 979-8-4007-2252-3/2026/03
+https://doi.org/10.1145/3803291.3803356
+show that combining geometry-driven initialization with differ-
+entiable, instance-level refinement yields robust and interpretable
+per-berry 3D reconstructions from unconstrained vineyard video.
+CCS Concepts
+• Computing methodologies; • Computer vision; • Rendering;
+Keywords
+3D semantic reconstruction, precision viticulture, multi-view ge-
+ometry, differentiable rendering, 3D Gaussian primitives
+ACM Reference Format:
+Yan San Woo, Kabin Yok-In, Prawit Buayai, Hiromitsu Nishizaki, Lati-
+fah Munirah Kamarudin, and Xiaoyang Mao. 2026. Geometry-Driven
+Triangulation and Differentiable Semantic Gaussian Refinement for 3D
+Grape Bunch Model Reconstruction in the Field. In 2026 The 9th Interna-
+tional Conference on Information and Computer Technologies (ICICT 2026),
+March 11–13, 2026, Honolulu, HI, USA. ACM, New York, NY, USA, 8 pages.
+https://doi.org/10.1145/3803291.3803356
+1
+INTRODUCTION
+Table-grape quality depends strongly on bunch compactness and
+berry size, both of which are regulated during berry thinning. In
+practice, workers must estimate the number and spatial arrange-
+ment of berries under heavy occlusion and strong self-similarity,
+which makes thinning cognitively demanding and leads to variabil-
+ity between operators.
+Computer-vision tools have been proposed for berry detection
+and 2D counting from single images [1–4], but their outputs are in-
+herently viewpoint-dependent and do not provide the 3D structure
+needed for robust phenotyping or downstream automation. At the
+other extreme, general 3D pipelines such as classical structure-from-
+motion / multi-view stereo (SfM/MVS) and neural rendering (e.g.
+NeRF [5] and 3D Gaussian Splatting [6]) recover dense scene geom-
+etry or radiance fields, yet typically lack a compact, instance-level
+168
+
+ICICT 2026, March 11–13, 2026, Honolulu, HI, USA
+Yan San Woo et al.
+Figure 1: Proposed three-stage pipeline. Stage 1: multi-view 2D supervision and initial camera poses from detection/segmenta-
+tion and lightweight SfM. Stage 2: geometry-aware matching and triangulation with 3D NMS to initialize berry centers. Stage 3:
+differentiable refinement of 3D Gaussian berries with joint pose warm-up and clone–prune topology maintenance.
+representation and often require controlled capture. Extracting per-
+berry centers, sizes, and identities from such dense representations
+remains challenging in cluttered vineyard scenes.
+This work targets instance-level 3D semantic reconstruction of
+grape bunches from short handheld multi-view sequences in real
+vineyards. Each berry is modeled as a compact parametric primi-
+tive (3D center, radii, orientation). We combine geometry-aware
+triangulation from multi-view 2D detections with differentiable
+refinement of a small set of 3D Gaussian berries guided by multiple
+2D cues (centres, masks, boxes, and shape/scale).
+Contributions. We introduce
+1. a geometry-aware triangulation pipeline that builds multi-
+view berry tracks from 2D detections and lightweight SfM
+method COLMAP, then initializes per-berry 3D centers via
+robust triangulation and 3D non-maximum suppression
+2. differentiable refinement of a compact set of 3D Gaussian
+berries using multi-head 2D losses and a warm-up phase
+that refines camera poses; and
+3. a conservative clone–prune strategy that adds berries sup-
+ported by persistent unmatched evidence and removes con-
+sistently unsupported hypotheses, improves berry-count ac-
+curacy and 3D oriented bounding-box Intersection of Union
+(OBB-IoU) on 30 real-field bunches at practical runtimes.
+An overview is shown in Figure 1.
+2
+RELATED WORK
+3D reconstruction for agriculture has used classical SfM/MVS
+pipelines to recover geometry from multi-view images, but per-
+formance in vineyards is often limited by foliage clutter, repeated
+textures, motion blur, and occlusion, producing noisy or incomplete
+point clouds that require additional segmentation or clustering for
+object-level analysis. Neural rendering methods such as NeRF [5],
+pose-refining extensions [7], and 3D Gaussian Splatting [6] opti-
+mize dense scene representations from posed images and excel
+at view synthesis and fine detail, but their outputs are dense and
+entangled; obtaining compact, instance-level semantics typically
+requires external masks or post-hoc clustering, which is difficult
+when many small, similar berries overlap in depth.
+For grape bunches specifically, prior work includes laboratory
+systems based on laser scanning, stereo, or structured light that
+yield accurate point clouds under controlled backgrounds but are
+not field-deployable [8, 9], and image-based methods that exploit
+spherical priors or simplified geometry to estimate 3D structure
+from one or a few views [2, 10]. More recent pipelines combine SfM
+with berry segmentation and point-cloud clustering (e.g., K-means)
+to initialize per-berry hypotheses and refine them via reprojection
+losses [11], but they are sensitive to pose error and point-cloud
+quality and depend on external berry-count estimates to set the
+number of clusters.
+3
+PROPOSED METHOD
+Given a handheld multi-view sequence {𝐼𝑣}𝑉
+𝑣=1 of a single grape
+bunch, our goal is to reconstruct a compact semantic 3D model
+ℬ= {(𝑋𝑘, 𝑠𝑘, 𝑞𝑘)}𝐾
+𝑘=1
+where 𝑋𝑘∈ℝ3 is the 3D center of berry 𝑘, 𝑠𝑘= (𝑠𝑥,𝑘, 𝑠𝑦,𝑘, 𝑠𝑧,𝑘)
+are principal-axis Gaussian radii, and 𝑞𝑘= (𝑞𝑥,𝑘, 𝑞𝑦,𝑘, 𝑞𝑧,𝑘, 𝑞𝑤,𝑘) is
+a unit quaternion encoding orientation. Each berry is therefore
+modeled as an opaque 3D Gaussian ellipsoid, and the set B forms
+the semantic 3D bunch model.
+The pipeline has three stages as illustrate in Figure 1
+169
+
+Geometry-Driven Triangulation and Differentiable Semantic Gaussian Refinement for 3D Grape Bunch Model
+Reconstruction in the Field
+ICICT 2026, March 11–13, 2026, Honolulu, HI, USA
+Figure 2: Stage 2: Initial 3D model generation (view-guided triangulation flow).
+Stage 1 – input processing: extract multi-view 2D berry observa-
+tions (centres, shape/scale, masks, boxes, visibility labels) and initial
+camera parameters (intrinsics and extrinsics) from a lightweight
+SfM method COLMAP run.
+Stage 2 – initial 3D model generation: build geometry-aware
+multi-view tracks from the 2D detections, triangulate 3D berry cen-
+tres under several gating checks, and consolidate nearby hypotheses
+into a compact set of 3D seeds.
+Stage 3 – differentiable refinement: refine the semantic Gaussian
+berries via differentiable rendering with multi-head 2D losses, a
+short pose-refinement warm-up, and a conservative clone–prune
+mechanism for topology maintenance.
+4
+Stage 1: Input Processing (2D Supervision and
+Camera Pose Estimation)
+Each image 𝐼𝑣is processed by the berry detection/segmentation net-
+work of [4], yielding for each detected berry 𝑖in view 𝑣a bounding
+box 𝐵(𝑣)
+𝑖
+and an instance mask 𝑀(𝑣)
+𝑖
+. From these outputs we derive
+per-berry 2D attributes that will later be used to supervise Stage
+3, the 3D optimization. For each detection we extract: (i) center
+u(𝑣)
+𝑖
+= (𝑢(𝑣)
+𝑖
+, 𝑣(𝑣)
+𝑖
+); (ii) shape/scale, represented either as a circle
+radius 𝑟(𝑣)
+𝑖
+or ellipse semi-axes (𝑟(𝑣)
+𝑥,𝑖,𝑟(𝑣)
+𝑦,𝑖); (iii) in-plane ellipse orien-
+tation 𝛼(𝑣)
+𝑖
+, estimated by ellipse fitting to 𝑀(𝑣)
+𝑖
+when an elongated
+footprint is detected; and (iv) a visibility label (visible / partially
+occluded / not reliably visible) used to gate losses. The bounding
+boxes 𝐵(𝑣)
+𝑖
+and masks 𝑀(𝑣)
+𝑖
+are also used for box- and mask-level
+losses in Stage 3.
+In parallel, we estimate camera parameter using a lightweight
+SfM method COLMAP run configured with a single OPENCV cam-
+era model. COLMAP reports one set of intrinsics K𝑣(focal lengths,
+principal point, and distortion coefficients) shared by all views, and
+per-view extrinsics (R𝑣,t𝑣) that describe the camera pose in the
+world coordinate system (rotation and translation from world to
+camera coordinates). To reduce computation relative to a full SfM
+method COLMAP configuration, global bundle adjustment is dis-
+abled. All geometry is expressed in this COLMAP world coordinate
+system so that triangulation (Stage 2) and differentiable rendering
+(Stage 3) are consistent. These poses are treated as an approximate
+initialization: Stage 2 uses them for geometric constraints, and
+Stage 3 refines extrinsics (R𝑣,t𝑣) during a warm-up phase.
+Stage-1 output therefore consists of:
+• per-view 2D supervision
+{𝐵(𝑣)
+𝑖
+, 𝑀(𝑣)
+𝑖
+, 𝑢(𝑣)
+𝑖
+, 𝑟(𝑣)
+𝑖
+or (𝑟(𝑣)
+𝑥,𝑖, 𝑟(𝑣)
+𝑦,𝑖), 𝛼(𝑣)
+𝑖
+, vis(𝑣)
+𝑖
+}; and
+• camera parameters {𝐾𝑣, 𝑅𝑣, 𝑡𝑣}𝑉
+𝑣=1 for all views v.
+4.1
+Stage 2: Initial 3D Model Generation
+(View-Guided Triangulation)
+Stage 2 converts per-view detections into an initial semantic seed
+model as shown in Figure 2. Because berries are visually repetitive
+and weakly textured, we avoid appearance descriptors and rely
+purely on geometry.
+4.1.1
+View Filtering and Robust Bunch Center. Let 𝑁𝑣be the number
+of detected berries in view 𝑣. We define 𝑁max = max𝑣𝑁𝑣and
+𝑁min = 𝜏det𝑁max; views with 𝑁𝑣< 𝑁min are discarded. We use
+a scalar threshold 𝜏det = 0.6 in all experiments, which removes
+frames with very weak detections while retaining most informative
+views.
+170
+
+ICICT 2026, March 11–13, 2026, Honolulu, HI, USA
+Yan San Woo et al.
+For each remaining view we define a bunch anchor 𝑢(𝑣)
+𝐵
+as the
+median of its berry centers. We back-project this pixel into a world-
+space ray using the COLMAP camera:̃
+𝑑cam
+𝑣
+= 𝐾−1
+𝑣̃ 𝑢(𝑣)
+𝐵, 𝑑𝑣=
+𝑅⊤𝑣̃ 𝑑cam
+𝑣
+‖𝑅⊤𝑣̃ 𝑑cam
+𝑣
+‖2
+,
+where 𝐾𝑣is the intrinsic matrix of view 𝑣, 𝑅𝑣is its rotation,̃ 𝑢denotes
+homogeneous coordinates and 𝑑𝑣is a unit ray direction in world
+coordinates. Let 𝐶𝑣be the camera center in world coordinates. The
+3D bunch center 𝑋𝐵is estimated as the point with minimum total
+orthogonal distance to all rays:
+𝑋𝐵= arg min
+𝑋∑
+𝑣
+‖(𝐼−𝑑𝑣𝑑⊤𝑣) (𝑋−𝐶𝑣)‖2
+2 ,
+(1)
+We then compute each view’s azimuth 𝜙𝑣around 𝑋𝐵. These
+azimuths are used for neighborhood restriction and angular gating
+in the matching stage.
+4.1.2
+Geometry-Aware Pairwise Matching and Multi-View Tracks.
+We construct correspondences between detections using four geo-
+metric cues.
+• Neighborhood restriction (azimuth window)
+Views are sorted by azimuth 𝜙𝑣. Each view 𝑖is matched only to
+views whose indices differ by at most 4 (i.e., |Δ𝑖𝑛𝑑𝑒𝑥| ≤4). This
+preserves parallax while avoiding matching all possible view pairs.
+• Epipolar gating
+For a detectioñ 𝑢𝑖ℓin view 𝑖, candidate matches in view 𝑗must
+lie near its epipolar line
+ℓ𝑗= 𝐹𝑖𝑗̃𝑢𝑖ℓ,
+where 𝐹𝑖𝑗is the fundamental matrix from (𝐾𝑖,𝑅𝑖,𝑡𝑖) and (𝐾𝑗,𝑅𝑗,𝑡𝑗).
+The point-to-line distance
+𝑑epi (̃𝑢𝑖ℓ,̃ 𝑢𝑗𝑚) =
+|̃𝑢⊤
+𝑗𝑚𝐹𝑖𝑗̃𝑢𝑖ℓ|
+√𝑎2 + 𝑏2 , ℓ𝑗= (𝑎, 𝑏, 𝑐)⊤
+must satisfy 𝑑epi ≤𝜏epiwith 𝜏epi = 3px.
+• Angular consistency
+Candidate view pairs must satisfy
+|Δ𝜙| = |𝜙𝑖−𝜙𝑗| < 𝜏𝜙,
+with 𝜏𝜙= 25∘. This enforces a smooth change of apparent ordering
+around the bunch and excludes pairs that are too far apart on the
+view ring.
+• Scale consistency
+We softly prefer matches with similar normalized 2D radiî 𝑟𝑖,̂ 𝑟𝑗
+(either circles or ellipse sizes, normalized to account for per-view
+scale differences).
+These cues define a gated matching cost for a detection pair
+(𝑖,ℓ)↔(𝑗,𝑚):
+𝐶𝑖𝑗(ℓ, 𝑚) = 𝑤epi𝑑epi+
+𝑤ang |Δ𝜙| + 𝑤rad [̂𝑟𝑖ℓ−̂ 𝑟𝑗𝑚) ,
+with weights 𝑤epi = 1.0, 𝑤ang = 0.1, 𝑤rad = 0.02.
+Pairs that violate epipolar or angular thresholds are forced to a
+large constant cost 𝐶max = 106.
+For each view pair (𝑖,𝑗) in the azimuth window, we solve a Hun-
+garian assignment on the cost matrix 𝐶𝑖𝑗to obtain an optimal one-to-
+one matching between detections (Hungarian = standard minimum-
+cost bipartite matching algorithm).. Accepted matches across all
+view pairs are then aggregated using a union–find (disjoint-set)
+structure, which merges all detections connected by matches into
+multi-view tracks
+𝒯𝑛= {(𝑣𝑘, ℓ𝑘)}𝑀𝑛
+𝑘=1 .
+Tracks observed in fewer than three views (𝑀𝑛< 3) are dis-
+carded.
+4.1.3
+Triangulation with Geometric Validation and 3D Consolidation.
+For each track 𝒯𝑛we triangulate a 3D berry-center hypothesis 𝑋𝑛.
+Let {𝑃𝑣𝑘} be the projection matrices
+𝑃𝑣𝑘= 𝐾𝑣𝑘[𝑅𝑣𝑘𝑡𝑣𝑘]
+and {𝑢𝑘} the corresponding image points. We form a standard Direct
+Linear Transform (DLT) system 𝐴𝑋= 0 from the cross-product
+constraints 𝑢𝑘× (𝑃𝑣𝑘𝑋) = 0 and solve for a homogeneous point̃ 𝑋𝑛;
+and obtain the Euclidean 3D point
+𝑋𝑛=̃ 𝑋𝑛̃
+𝑋𝑛,4
+.
+We then apply three geometric checks:
+• Minimum baseline angle
+Using the world-space ray directions {𝑑𝑘} associated with 𝒯𝑛,
+compute
+𝜃min (𝑋𝑛) = min
+𝑎≠𝑏∠(𝑑𝑎, 𝑑𝑏) .
+Tracks with 𝜃min(𝑋𝑛) < Θmin are rejected as ill-conditioned; we
+use a baseline threshold Θmin = 1.5∘.
+• Reprojection error
+We project into each view,̂
+𝑢𝑘= 𝜋(𝑃𝑣𝑘𝑋𝑛) , 𝑟𝑘= ‖𝑢𝑘−̂ 𝑢𝑘‖2,
+and require the median reprojection error̃ 𝑟(𝑋𝑛) = median𝑘(𝑟𝑘) ≤
+𝜏reproj, with threshold 𝜏reproj = 3px.
+• Cheirality
+Depth must be positive in at least 𝑀+views:
+𝑧𝑘= (𝑃𝑣𝑘𝑋𝑛)𝑧> 0, # {𝑘∶𝑧𝑘> 0} ≥𝑀+.
+where (⋅)𝑧denotes the third (depth) component.
+Triangulation often yields duplicates when several tracks corre-
+spond to the same physical berry. We therefore apply a simple 3D
+non-maximum suppression (NMS) in Euclidean space. Let {𝑋𝑛}𝑁
+𝑛=1
+be the set of triangulated points that pass the above gates. Using a
+consolidation radius 𝜌nms ≈8 −10 mm, we are greedily:
+1. Pick an unassigned point as a new representative.
+2. Group all points within 𝜌nms of this representative.
+3. Replace the group by its centroid.
+This yields a compact set of 3D berry centers {𝑋𝑘}.
+171
+
+Geometry-Driven Triangulation and Differentiable Semantic Gaussian Refinement for 3D Grape Bunch Model
+Reconstruction in the Field
+ICICT 2026, March 11–13, 2026, Honolulu, HI, USA
+Figure 3: Data-driven topology maintenance (Clone and Prune).
+4.1.4
+Initialization of Semantic Parameters and View Subset Selec-
+tion. For each 3D center 𝑋𝑘, we initialize the semantic parameters:
+• Gaussian radii 𝑠𝑘from multi-view scale cues when stable
+(consistent 2D radii across views); otherwise from a dataset-
+derived spherical prior.
+• Orientation 𝑞𝑘as the identity quaternion; 𝑞𝑘is kept fixed dur-
+ing refinement in our current system to reduce degeneracies
+between pose, scale, and orientation under 2D supervision.
+Stage 3 does not need all remaining views. To trade off runtime
+and angular coverage we select a subset 𝑉𝑀with 𝑀∈{10, 20, 30} by
+farthest-point sampling (FPS) over azimuths {𝜙𝑣}, i.e., a greedy pro-
+cedure that repeatedly chooses the view whose azimuth is furthest
+from those already selected.
+The output of Stage 2 is therefore:
+• The initial semantic seeds {(𝑋𝑘, 𝑠𝑘, 𝑞𝑘)}, and
+• The selected view subset 𝑉𝑀used for Stage-3 refinement.
+4.2
+Stage 3: Differentiable Refinement of
+Semantic Gaussians
+Stage 3 takes the initial 3D semantic seeds from Stage 2 and re-
+fines it by differentiable rendering under multi-view 2D supervi-
+sion. In parallel, a conservative clone–prune mechanism can add
+or remove berries when the 2D evidence is consistently under- or
+over-explained as shown in Figure 3.
+4.2.1
+Semantic Representation and Learnable Camera Extrinsics.
+Each berry 𝑘is represented as an opaque 3D Gaussian ellipsoid
+parameterized by (𝑋𝑘,𝑠𝑘,𝑞𝑘), where 𝑋𝑘∈ℝ3 is the center, 𝑠𝑘∈ℝ3
+are principal-axis radii, and 𝑞𝑘∈ℝ4 is a unit quaternion encoding
+orientation. We initialize all berries as spherical Gaussians with
+𝑠𝑥,𝑘= 𝑠𝑦,𝑘= 𝑠𝑧,𝑘; anisotropic radii are only enabled later in training.
+For each selected view 𝑣∈𝑉𝑀, the camera intrinsics matrix 𝐾𝑣
+is fixed. The camera extrinsics (𝑅𝑣,𝑡𝑣) are initialized from COLMAP
+and optimized only during an initial warm-up phase; afterwards
+they are then frozen so that topology updates (clone/prune) occur
+under a stable camera configuration.
+The inputs to Stage 3 are thus the Stage-2 seeds {(𝑋𝑘, 𝑠𝑘, 𝑞𝑘)},
+camera parameters {𝐾𝑣,𝑅𝑣,𝑡𝑣}𝑣∈𝑉𝑀restricted to 𝑉𝑀, and the 2D
+supervision from Stage 1 (centers, radii/ellipse parameters, masks,
+and boxes).
+4.2.2
+Differentiable Rendering, Per-View Matching and Loss. A dif-
+ferentiable renderer projects all Gaussians into each view 𝑣∈𝑉𝑀.
+We use a standard z-buffer to determine which berry is visible at
+each pixel, so occlusions are handled naturally. For each rendered
+berry in view 𝑣we extract: (i) projected center̂ u(𝑣)
+𝑘; (ii) projected
+shape/scale (circle radiuŝ 𝑟(𝑣)
+𝑖
+or ellipse semi-axes (̂ 𝑟(𝑣)
+𝑥,𝑖,̂ 𝑟(𝑣)
+𝑦,𝑖)); (iii)
+predicted mask̂ 𝑀(𝑣)
+𝑘
+and bounding box̂ 𝐵(𝑣)
+𝑘; and (iv) a visibility
+state (visible / partially occluded / out-of-bounds).
+Because the number of visible berries differs per view, we estab-
+lish correspondences by solving a Hungarian assignment between
+rendered instances and 2D detections in that view, restricted to
+visible and partially occluded, in-frame projections. The matches
+define a multi-head loss:
+ℒ= 𝜆ctrℒctr + 𝜆radℒrad+
+𝜆maskℒmask + 𝜆boxℒbox.
+where:
+• ℒctr: robust (Huber) loss on 2D centers,
+• ℒrad: robust loss on radii / ellipse axes,
+• ℒmask: segmentation loss (Dice + focal BCE) on masks,
+• ℒbox: IoU-type loss on bounding boxes.
+Each term is evaluated only when the berry is labelled as vis-
+ible and partially occluded in that view and the corresponding
+annotation is available.
+172
+
+ICICT 2026, March 11–13, 2026, Honolulu, HI, USA
+Yan San Woo et al.
+4.2.3
+Optimization Schedule and Clone–Prune Topology Mainte-
+nance. To avoid instability at the start of training, we adopt a three-
+phase schedule:
+Phase 1 – Warm-up (pose refinement)
+Optimize berry centers 𝑋𝑘and camera extrinsics (𝑅𝑣,𝑡𝑣); keep
+radii {𝑠𝑘} and orientations {𝑞𝑘} fixed. Clone–prune is disabled. We
+exit warm-up once the average per-view match rate (fraction of
+detections matched by the Hungarian step) exceeds a threshold
+(e.g., ≥0.40).
+Phase 2 – Stable topology with clone–prune.
+Freeze camera extrinsics (𝑅𝑣,𝑡𝑣) and continue optimizing 𝑋𝑘(and
+optionally a subset of radii). After a short buffer (e.g., 5 epochs), we
+enable a conservative topology update:
+• Clone: if a 2D detection stays unmatched for at least 3 con-
+secutive epochs and lies near a well-supported 3D neighbor,
+we spawn a new berry by copying that neighbor’s radii and
+orientation and adding a small 3D perturbation. A mini-
+mum spacing constraint and a cap on new clones per epoch
+prevents duplicates.
+• Prune: for each 3D berry we track (i) match-rate and (ii)
+high-percentile residuals over a sliding window of epochs.
+Berries that are never matched or that have persistently low
+match rate and large residuals are removed, again with a
+per-epoch cap.
+Phase 3 – Scale refinement
+Once the loss plateaus, we unfreeze radii {𝑠𝑘} and jointly optimize
+(𝑋𝑘,𝑠𝑘) with camera extrinsics fixed. Orientations {𝑞𝑘} remains fixed
+in our current implementation.
+The final output of Stage 3 is an image-aligned semantic 3D
+reconstruction {(𝑋𝑘, 𝑠𝑘, 𝑞𝑘)} whose berry count and geometry are
+jointly supported by all selected views.
+5
+EXPERIMENTAL AND RESULTS
+We evaluate the proposed three-stage framework on 30 real-field
+table-grape bunch sequences captured with a handheld smartphone
+while moving around each bunch to approximate a view ring. The
+videos are recorded at a resolution of 1080 × 1920, and all frames
+are processed at this native resolution before Stage-1 detection/seg-
+mentation. The berry detector/segmentor of [4] is applied to each
+frame to obtain per-berry masks and bounding boxes, as described
+in Stage 1: Input Processing (2D Supervision and Camera Pose
+Estimation).
+For each bunch, we first run Stage 2 once to obtain the initial se-
+mantic 3D model, denoted INIT. Stage 3 is then executed three times
+using view subsets of size 𝑀∈{10, 20, 30}. The corresponding re-
+fined models are denoted OPT-10, OPT-20, and OPT-30, respectively.
+Unless otherwise stated, quantitative results are reported for both
+INIT and the OPT variants.
+Stage-3 refinement is implemented in PyTorch and run on a
+single NVIDIA RTX 4080 SUPER (16 GB) GPU. We use SGD with
+learning rate 10−3 for berry parameters (𝑋𝑘,𝑠𝑘) and a smaller learn-
+ing rate 10−5 for camera extrinsics (𝑅𝑣,𝑡𝑣) during the warm-up
+phase. Berry orientations 𝑞𝑘are kept fixed throughout refinement
+to avoid pose–scale–orientation degeneracies under purely 2D su-
+pervision. Reported Stage-3 runtimes correspond to the wall-clock
+time from INIT to the converged OPT-M model for each bunch
+(Stage-1 and Stage-2 costs are shared across all M and are therefore
+not included).
+5.1
+Ground Truth 3D Semantic
+Ground-truth 3D annotations are provided as labelled point clouds,
+where each 3D point is assigned a berry ID. For evaluation, every
+berry-specific point cluster is converted into a Gaussian ellipsoid
+via PCA: the centroid defines the 3D center 𝑋gt
+𝑘, the principal axes
+define the orientation 𝑞gt
+𝑘, and axis lengths are derived from the
+PCA variances with a global scaling factor 𝛾= 1.45 to obtain radii
+𝑠gt
+𝑘. This yields a ground-truth semantic model
+ℬgt = {(𝑋gt
+𝑘, 𝑠gt
+𝑘, 𝑞gt
+𝑘)}
+𝐾gt
+𝑘=1 ,
+which is directly comparable to INIT and OPT predictions.
+5.2
+Evaluation Metrics
+We report three complementary evaluation measures.
+• Runtime
+For each view subset 𝑉𝑀, we measure the Stage-3 wall-clock
+runtime 𝑇𝑀from the INIT model to the refined OPT-M model. This
+quantifies the runtime–accuracy trade-off as M increases.
+• Berry Counting Accuracy
+Let 𝑁pred
+𝑏,𝑚be the predicted berry count for bunch 𝑏under method
+𝑚∈{INIT, OPT −10,
+OPT −20, OPT −30}, and let 𝑁gt
+𝑏be the ground-truth count.
+The mean absolute error (MAE) for method 𝑚is
+MAE𝑚= 1
+𝐵
+𝐵
+∑
+𝑏=1
+|𝑁pred
+𝑏,𝑚−𝑁gt
+𝑏| .
+(2)
+We report MAE over all bunches and, separately, over dense
+bunches with 𝑁gt
+𝑏≥60 to highlight behaviour under heavy occlu-
+sion.
+• 3D Geometric Accuracy
+To evaluate the quality of the 3D geometry, we compare pre-
+dicted semantic ellipsoids with ground truth via OBB-IoU. For each
+method 𝑚, predicted ellipsoids are first matched to ground truth
+by Hungarian assignment using center distance. For each matched
+pair (𝐸𝑝,𝐸𝑔), we compute the OBB-IoU
+IoU (𝐸𝑝, 𝐸𝑔) =
+Vol (𝐸𝑝∩𝐸𝑔)
+Vol (𝐸𝑝∪𝐸𝑔)
+.
+(3)
+Given an IoU threshold 𝜏∈{0.10, 0.25, 0.45}, a match with IoU ≥
+𝜏is counted as a true positive (TP); unmatched predictions and
+ground-truth ellipsoids are treated as false positives (FP) and false
+negatives (FN), respectively. Precision, recall, and F1 for method 𝑚
+at threshold 𝜏are then
+Precision𝑚,𝜏=
+TP
+TP+FP, Recall𝑚,𝜏=
+TP
+TP+FN,
+F1𝑚,𝜏=
+2 TP
+2 TP+FP+FN.
+(4)
+We report these metrics for INIT and all OPT-M configura-
+tions; low thresholds emphasize center localization, whereas higher
+thresholds require accurate alignment in position, scale, and (where
+applicable) orientation.
+173
+
+Geometry-Driven Triangulation and Differentiable Semantic Gaussian Refinement for 3D Grape Bunch Model
+Reconstruction in the Field
+ICICT 2026, March 11–13, 2026, Honolulu, HI, USA
+Table 1: Average Stage-3 refinement time (minutes) for different view subsets 𝑉𝑀(30 bunches).
+Selected Views, 𝑉𝑀
+𝑉10
+𝑉20
+𝑉30
+Stage 3 Average Time (min)
+1.8
+3.8
+5.1
+Table 2: Mean absolute error (MAE) of berry count for INIT (Stage 2) and OPT (Stage 3 with view subset 𝒱M).
+Range
+Count
+INIT (MAE)
+OPT-10 (MAE)
+OPT-20 (MAE)
+OPT-30 (MAE)
+< 40
+2
+0.5
+0.5
+0.5
+0.5
+40 < 49
+9
+1.1
+1.1
+1.1
+1.1
+50 < 59
+13
+2.8
+2.6
+2.7
+2.7
+>= 60
+6
+10.5
+8.0
+8.2
+4.8
+Overall
+30
+3.7
+3.1
+3.2
+2.5
+Table 3: Oriented bounding box Intersection of Union (OBB-IoU) detection metrics (mean precision/recall/F1 in %, 30 bunches).
+INIT (Stage-2 output); O10, O20, and O30 = OPT (Stage-3 output) with 10, 20 and 30 selected views, respectively.
+IoU(𝜏)
+INITR
+INITP
+INITF1
+O10R
+O10P
+O10F1
+O20R
+O20P
+O20F1
+O30R
+O30P
+O30F1
+0.10
+34.7
+36.6
+35.6
+77.1
+80.4
+78.7
+86.0
+89.8
+87.8
+87.3
+89.9
+88.5
+0.25
+10.1
+10.4
+10.3
+63.3
+65.8
+64.5
+72.6
+75.8
+74.1
+74.0
+76.0
+74.9
+0.45
+0.3
+0.3
+0.3
+6.2
+6.3
+6.3
+10.4
+10.7
+10.5
+9.8
+10.0
+9.9
+5.3
+Runtime and Computational Efficiency
+Stage 3 runtime increases approximately linearly with the number
+of views used in differentiable optimization (Table 1). Using 𝑀= 10
+views provide fast refinement (≈1.8 min/bunch), while 𝑀= 30
+yields the highest accuracy at increased cost (≈5.1 min/bunch).
+These timings are measured from the Stage-2 initialization (INIT)
+to the converged refined model (OPT-M); Stage-1 and Stage-2 costs
+are shared across all settings and are therefore excluded.
+5.4
+Counting Accuracy and Topology Behavior
+Table 2 reports berry-count MAE for the Stage-2 output (INIT) and
+the Stage-3 refined models (OPT-10/20/30). For small and medium
+bunches, Stage 2 already achieves low counting error, and Stage
+3 largely preserves topology. The main gains appear in dense
+bunches (≥60 berries), where refinement significantly reduces
+under-counting, particularly at 𝑀= 30(dense MAE: 10.5 →4.8).
+Topology updates are conservative: across 30 sequences most
+bunches retain the same berry count, and when changes occur, they
+are dominated by berry additions rather than deletions, consistent
+with the design of the clone–prune mechanism.
+5.5
+3D Geometric Accuracy Oriented Bounding
+Box Intersection of Union (OBB-IoU)
+We evaluate 3D geometric quality using OBB-IoU between predicted
+and ground-truth ellipsoids. For a given IoU threshold 𝜏, we match
+predictions to ground truth by Hungarian assignment on centers
+and compute precision, recall, and F1 over matched pairs.
+Table 3 shows results for INIT and OPT-M at 𝜏∈{0.10, 0.25, 0.45}.
+Differentiable refinement yields substantial gains at 𝜏= 0.10and
+𝜏= 0.25, indicating much tighter alignment of berry centres and
+scales. Performance at 𝜏= 0.45 remains challenging due to occlu-
+sion and noise in the ellipsoid ground truth but still improves over
+the Stage-2 initialisation.
+Overall, Stage 3 improves F1 by roughly +43–53 points at 𝜏=
+0.10 and +54–65 points at 𝜏= 0.25, while keeping refinement time
+under 6 minutes per bunch for 𝑀≤30.
+5.6
+Qualitative Comparison
+Figure 4 illustrates a representative dense bunch (ground-truth:
+55 berries). The labelled point cloud is converted into a semantic
+ground-truth model by fitting Gaussian ellipsoids to each berry (54
+berries after minor manual consolidation). The Stage-2 initialisa-
+tion already recovers a plausible topology but exhibits noticeable
+misalignment in some centres and orientations.
+After Stage-3 refinement, models using 𝑉𝑀with 𝑀∈{10, 20, 30}
+all converge to the correct berry count (54) and progressively im-
+prove geometric alignment, reaching IoU scores of 80.7 (M=10) and
+89.9 (M=20/30) with runtimes of about 1.4, 4.2, and 6.2 minutes,
+respectively. The refined ellipsoids also correct several erroneous
+ground-truth orientations, indicating that the differentiable op-
+timisation improves both position and shape under multi-view
+supervision.
+6
+CONCLUSION
+We presented a three-stage framework for instance-level 3D seman-
+tic reconstruction of grape berries from short handheld multi-view
+sequences captured in real vineyards. Stage 1 extracts multi-view
+2D supervision (centres, shape/scale, masks, boxes, visibility) and
+initial camera poses from a lightweight SfM COLMAP run. Stage 2
+builds a compact 3D berry set via geometry-aware matching and
+triangulation with conservative validation and 3D consolidation.
+174
+
+ICICT 2026, March 11–13, 2026, Honolulu, HI, USA
+Yan San Woo et al.
+Figure 4: Qualitative comparison on a dense bunch (ground truth: 55 berries). (a) Labelled 3D point cloud. (b) Ground-truth
+semantic ellipsoids (55 berries). (c) Stage-2 initialization. (d–f) Stage-3 refined models using 𝑉𝑀with M = 10, 20, 30 views,
+respectively. Refinement preserves the correct berry count (54) while increasing IoU up to 89.9 with practical runtimes (∼1.4–6.2
+min).
+Stage 3 refines 3D Gaussian berry primitives through differentiable
+rendering with multi-head 2D losses, combining a warm-up phase
+that corrects moderate pose drift with a conservative clone–prune
+mechanism for topology adaptation.
+On 30 real-field bunches, refinement remains practical (≈1.8–5.1
+min/bunch for 𝑀∈{10, 20, 30}), substantially reduces under-
+counting in dense bunches (dense MAE from 10.5 to 4.8 at 𝑀= 30),
+and significantly improves 3D alignment according to OBB-IoU
+detection metrics. Overall, the results indicate that combining
+geometry-aware initialisation with differentiable, instance-level
+refinement yields a compact and interpretable per-berry 3D repre-
+sentation suitable for unconstrained field imagery and downstream
+agronomic analysis.
+References
+[1] S. Liu, M. Whitty, and S. Cossell, ”A lightweight method for grape berry counting
+based on automated 3D bunch reconstruction from a single image,” in ICRA,
+International conference on robotics and automation (IEEE), workshop on robotics
+in agriculture, 2015, vol. 4.
+[2] S. Liu, X. Zeng, and M. Whitty, ”3DBunch: A novel iOS-smartphone application to
+evaluate the number of grape berries per bunch using image analysis techniques,”
+Ieee Access, vol. 8, pp. 114663–114674, 2020b.
+[3] Y. S. Woo, P. Buayai, H. Nishizaki, K. Makino, L. M. Kamarudin, and X. Mao,
+”End-to-end lightweight berry number prediction for supporting table grape
+cultivation,” Computers and Electronics in Agriculture, vol. 213, p. 108203, 2023.
+[4] P. Buayai, K. R. Saikaew, and X. Mao, ”End-to-end automatic berry counting for
+table grape thinning,” IEEE Access, vol. 9, pp. 4829–4842, 2020.
+[5] B. Mildenhall, P. P. Srinivasan, M. Tancik, J. T. Barron, R. Ramamoorthi, and
+R. Ng, ”Nerf: Representing scenes as neural radiance fields for view synthesis,”
+Communications of the ACM, vol. 65, no. 1, pp. 99–106, 2021.
+[6] B. Kerbl, G. Kopanas, T. Leimkühler, and G. Drettakis, ”3D Gaussian splatting
+for real-time radiance field rendering,” ACM Trans. Graph., vol. 42, no. 4, pp.
+139:1–139:14, 2023.
+[7] C.-H. Lin, W.-C. Ma, A. Torralba, and S. Lucey, ”Barf: Bundle-adjusting neural ra-
+diance fields,” in Proceedings of the IEEE/CVF international conference on computer
+vision, 2021, pp. 5741–5751.
+[8] E. Ivorra, A. Sánchez, J. Camarasa, M. P. Diago, and J. Tardáguila, ”Assessment
+of grape cluster yield components based on 3D descriptors using stereo vision,”
+Food control, vol. 50, pp. 273–282, 2015.
+[9] F. Rist, D. Gabriel, J. Mack, V. Steinhage, R. Töpfer, and K. Herzog, ”Combination of
+an automated 3D field phenotyping workflow and predictive modelling for high-
+throughput and non-invasive phenotyping of grape bunches,” Remote Sensing,
+vol. 11, no. 24, p. 2953, 2019.
+[10] S. Liu, X. Zeng, and M. Whitty, ”A vision-based robust grape berry counting al-
+gorithm for fast calibration-free bunch weight estimation in the field,” Computers
+and Electronics in Agriculture, vol. 173, p. 105360, 2020c.
+[11] Y. S. Woo et al., ”3D grape bunch model reconstruction from 2D images,” Com-
+puters and Electronics in Agriculture, vol. 215, p. 108328, 2023.
+175

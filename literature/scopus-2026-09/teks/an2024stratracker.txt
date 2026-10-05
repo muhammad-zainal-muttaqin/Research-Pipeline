@@ -1,0 +1,1547 @@
+StraTracker: A dynamic counting method for growing strawberries based
+on multi-target tracking
+Qilin An , Yongzhi Cui , Wenyu Tong , Yangchun Liu , Bo Zhao *, Liguo Wei *
+State Key Laboratory of Agricultural Equipment Technology, Chinese Academy of Agricultural Mechanization Sciences, Beijing 100083, China
+A R T I C L E I N F O
+Keywords:
+Yield estimation
+Multiple object tracking
+Fruit counting
+Appearance features
+Data association
+A B S T R A C T
+Accurately counting fruit in orchards is a critical step for effective digital farming management. However, the
+variability in fruit size, overlapping shadows, and light interference present significant challenges to applying
+computer vision during the strawberry growth phase. To address these challenges, we propose StraTracker, a
+multi-object tracking (MOT) algorithm specifically designed to identify and count strawberries at various growth
+stages. StraTracker transforms the counting task into a frame-by-frame tracking problem, integrating both mo-
+tion and appearance features. The algorithm is composed of three key components: a strawberry detector based
+on YOLOv8n, a feature association module, and a dual-area counting (DC) module. First, the strawberry detector
+accurately recognizes five growth stages, achieving an average accuracy of 91.93 % at 38.3 FPS. Next, the feature
+association module, incorporating the Feature Slicing Attention (FSA) and Adaptive Kalman Filtering (AKF)
+modules, mitigates issues such as light interference, impractical tracking frames, and ID switching (IDs). As a
+result, StraTracker achieves a Multi-Object Tracking Accuracy (MOTA) of 83.28 % and a Higher-Order Tracking
+Accuracy (HOTA) of 77.26 %, with only 259 IDs, outperforming existing baseline models. Finally, the DC module
+categorizes fruit counts based on the unique IDs assigned during tracking. The algorithm’s coefficient of
+determination (R2 = 0.91) and GEH of 2.33 indicate a strong correlation between predicted and actual counts. In
+conclusion, StraTracker offers a promising solution for farmers to optimize planting strategies and develop more
+precise harvesting plans.
+1. Introduction
+Strawberries are a crop of great economic and nutritional impor-
+tance, with global cultivation expanding from 310,000 ha in 1999 to
+more than 900,000 ha by 2023.(H¨akkinen et al., 2000; Gudowska et al.,
+2024). However, the absence of timely monitoring frequently results in
+challenges such as incomplete flower thinning, untimely picking, and
+improper
+fertilization,
+significantly
+diminishing
+fruit
+production
+(Samtani et al., 2019). Therefore, real-time solutions for monitoring
+fruit growth stages and counting information are urgently needed. Some
+existing monitoring solutions rely on manual observation or specialized
+instruments(H¨ani et al., 2020; Culman et al., 2023), but these are
+expensive and require damage to the fruit(Scott et al., 2021). In contrast,
+deep learning and computer vision-based methods provide a new solu-
+tion for digital farming management with the benefits of low cost, high
+efficiency, and real-time performance(Attri et al., 2023).
+Deep learning addresses the challenge of target recognition and
+detection by modeling human visual perception(Sanaeifar et al., 2023).
+The orchard has unique challenges compared to general detection sce-
+narios, including complex backgrounds, diverse fruit growth patterns,
+and light interference(Lu et al., 2023). These factors increase the
+complexity of fruit counting, which leads to most of the studies
+improving the accuracy of recognition and counting by improving the
+models of target detection(Vasconez et al., 2020). For example, Song
+et al. (2014) employed a color classifier to count chili fruits in images,
+achieving a correlation of 74 % with manual counting. Mirhaji et al.
+(2021) introduced the utilization of the YOLO model for detecting and
+counting ripe oranges in an orchard, achieving a detection accuracy
+mAP of 90.8 %. Parvathi et al. (2021) utilized Fast-RCNN and ResNet-50
+algorithmic models to assess the ripeness of coconuts, classifying them
+into two categories: ripe or unripe. Bhattarai et al. (2022) employed
+weakly supervised methods to detect apple flowers and fruits, achieving
+root mean square errors of 2.9 and 4.3, respectively. However, tradi-
+tional target detection encounters significant limitations in monitoring
+strawberry growth: it can only effectively analyze static single-frame
+images, rendering it inadequate for the comprehensive task of
+* Corresponding authors.
+E-mail addresses: zhaoboshi@126.com (B. Zhao), weilg78@126.com (L. Wei).
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+https://doi.org/10.1016/j.compag.2024.109564
+Received 17 February 2024; Received in revised form 2 October 2024; Accepted 14 October 2024
+Computers and Electronics in Agriculture 227 (2024) 109564 
+Available online 9 November 2024 
+0168-1699/© 2024 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+
+counting and overseeing the entire orchard. To overcome this challenge,
+we employ Multi-Object Tracking (MOT) to facilitate holistic orchard
+monitoring through cross-frame correlation.
+MOT algorithms leverage information from preceding and succeed-
+ing frames to predict the target’s state, thus facilitating cross-frame
+target association(Y. Zhang et al., 2024). The most canonical and
+widely-adopted MOT algorithms include the SORT(Bewley et al., 2016),
+DeepSORT(Pujara et al., 2022), and BoT-SORT(Aharon et al., 2022)
+models. Both SORT and DeepSORT algorithms utilize KF to forecast
+target trajectories and employ an IOU model for data similarity
+matching. DeepSORT further incorporates a ReID module to re-extract
+target appearance features. BoT-SORT, recognized as a state-of-the-art
+(SOTA) MOT algorithm, augments the feature association module by
+integrating motion and appearance information, implementing a camera
+motion compensation module, and optimizing the model structure with
+a low-score quadratic correlation function.
+In the field of agriculture, researchers track and count fruits using
+UAVs(Zheng et al., 2023), Robots(Mirbod et al., 2023), or Monitoring
+platforms(W. L. Zhang et al., 2022). For example, He et al. (2022)
+monitored and counted camellia flowers using YOLOv3, Kalman
+filtering (KF), and multiple feature matching through video captured by
+a cell phone, achieving a MOTA of 66.1 %. Gao et al. (2022) used KF and
+Euclidean distance to count ripe apples in robotic applications,
+achieving 69.14 % MOTA with their algorithm. Lin et al. (2022) inte-
+grated the improved YOLOv5s and Deepsort algorithms to count peanuts
+on UAVs. This approach assigns ID to all targets using the MOT algo-
+rithm, facilitating counting by tracking these ID. However, algorithmic
+errors can cause ID switching(IDs), which exaggerates the number of
+fruits by resulting in mismatched counts. Wu et al. (2023) developed an
+automated fruit counting system for apples on mobile platforms by
+combining abnormal fruit detection, trunk tracking, and ID assignment,
+achieving a MOTA of 89.9 %. Bolouri et al. (2024) combined Mask-
+RCNN with SORT for the split counting of cotton in four states at the
+edge device. Although existing studies have effectively integrated target
+detection and tracking algorithms, they are limited to fruit targets
+ripening during the same time period, such as camellia, peanuts and
+apples. These studies lack the capability to comprehensively monitor the
+entire growth cycle of strawberries. Specifically, strawberries continue
+to produce new flowers and fruits throughout their growth cycle,
+resulting in the simultaneous appearance of fruits at different growth
+stages (Yang et al., 2010; J. Zhang et al., 2023). Hence, the MOT method
+applied to strawberry fruits during the growing stages requires further
+improvement and modification. Additionally, the SOTA BoT-SORT al-
+gorithm still faces challenges related to tracking frame irrelevance, light
+interference, and IDs.
+To address the above challenges, we propose a dynamic counting
+model for strawberries named StraTracker based on the BoT-SORT al-
+gorithm. The structural model structure is illustrated in Fig. 1. To the
+best of our knowledge, this is the inaugural study of the MOT algorithm
+for monitoring and counting fruits during the strawberry growth cycle.
+The StraTracker model monitors and visualizes the distribution of fruit
+quantities in the orchard, which facilitates timely management and
+harvesting by growers. The main contributions of this paper can be
+summarized as follows:
+Collected and curated a StraMOT dataset tailored for the MOT al-
+gorithm, undergoing data calibration and preprocessing.
+Designed the Feature Slice Attention (FSA) module to refine small
+target features and enhance the real-time performance of the
+tracking model.
+Introduced the Adaptive Kalman Filter (AKF) module to optimise the
+ability of model adaptive tuning under real-time scene changes.
+Implemented a Dual-area Counting method(DC) at the output to
+quantify the number of fruits based on their unique identifiers (ID).
+This work is structured as follows: Section 2 describes the method-
+ology for data collection and preprocessing. Section 3 outlines the
+methodology, highlighting improvements to the detector, feature asso-
+ciation, and counting modules. Section 4 details the experiments con-
+ducted, providing an in-depth analysis of the detector, feature
+association, and counting experiments. Section 5 discusses the limita-
+tions of the StraTracker model and proposes directions for future
+research. Finally, Section 6 concludes the study.
+2. Materials
+Data serves as the input to the deep learning model, and the accuracy
+and precision of the model can be enhanced through a substantial
+number of correct samples. Currently, the available open-source
+strawberry datasets are limited in size and application scenarios,
+Fig. 1. MOT-based fruit counting architecture.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+2 
+
+which provides minimal reference value for our study. Therefore, in this
+section, we delve into methods for dataset acquisition, growth stages
+calibration, and data enhancement. Furthermore, we have meticulously
+curated the StraMOT strawberry dataset, specifically designed for the
+MOT algorithm. This dataset is an invaluable resource that aids in both
+model training and evaluation.
+2.1. Data acquisition
+First, we established a strawberry monitoring platform, as shown in
+Fig. 2(a). The platform’s motion system is driven and steered by hub
+motors, while the microcontroller processes signals from a remote
+control to regulate the platform’s movement. Notably, the platform can
+traverse strawberry ridges at a speed of 3.7 km/h without causing harm
+to the growing environment or the fruits. Secondly, between November
+2021 and April 2022, as well as October 2022 and March 2023, we
+conducted data acquisition utilizing the platform in the strawberry
+greenhouse situated at the Academy of Agricultural Sciences in Weifang
+City,
+Shandong
+Province,
+China
+(longitude
+119.21866,
+latitude
+36.819597), as illustrated in Fig. 2(b). On the one hand, to ensure the
+generality and generalization of the strawberry monitoring model, we
+selected the varieties ’Rouge’, ’Suizhu’, and ’Zhangji’, whose fruit col-
+oring gradually changes to red at maturity. On the other hand, to ensure
+the diversity of the dataset, we selected different weather and light
+conditions by collecting in multiple orchards every other week.
+2.2. Data calibration
+The accuracy of data calibration directly influences model training.
+Based on the practical experience of senior farmers and relevant in-
+dustry standards, we classify the growth of strawberry fruits into five
+stages: flowering (FLOWING), greening (GROWING_G), white ripening
+(GROWING_W), coloring (NEARLY_M), and ripening (MATURE), Spe-
+cific calibrations and corresponding labels are detailed in Table 1. Ac-
+cording to industry standards for strawberries in both China (NY/T
+444–2001) and American (USA Strawberry Grade Standard), straw-
+berries are considered mature and suitable for picking, sale, and con-
+sumption when their overall color exceeds 70 %. The flowering period is
+primarily determined through the detection of strawberry flowers.
+These flowers typically form cymes featuring white petals that are nearly
+round or obovate-elliptic. During the white ripening and green fruit
+stage, strawberries undergo an expansion period where the overall
+growth transitions from flowers to green fruits. Subsequently, the fruits
+gradually shift in color, evolving from green to white, and the texture
+transforms from hardness to a gradual softening.
+The dataset is labeled to obtain information about the categories,
+coordinates, and labels present in each image in preparation for
+subsequent training of the model. The captured videos were annotated
+using CVAT, a powerful online image annotation system. The smallest
+rectangular annotation box encompassing the strawberry is selected as
+the accurate bounding box(B-box), aiming to minimize the inclusion of
+background pixels in the actual box. The captured data was stored at a
+resolution of 1920x1080, with a video frame rate of 60 fps(frames per
+second) in MP4 format. The specific steps of data labeling are outlined
+below:
+• Sliced the videos in the training subset every 60 frames using Python,
+resulting in a total of 5,198 valid data frames. Of these, 4,103 frames
+Fig. 2. Monitoring platforms and acquisition methods.
+Table 1
+Calibration of strawberry fruit stages.
+Number
+Fruits
+Stages
+Labels
+Features
+0
+Mature
+MATURE
+The fruit’s surface color
+changes to red or deep red
+and the overall coloring of
+the fruit is ≥70 %.
+1
+Coloring
+NEARLY_M
+The fruits gradually turn
+red, the surface is partially
+colored, and the coloring
+area is ≤70 %.
+2
+White
+ripening
+GROWING_W
+The fruit’s surface color
+gradually changes from
+green to light white, and
+the fruits are enlarged in
+size. and fuller in shape.
+3
+Greening
+GROWING_G
+The fruits grow from the
+stamens into fruits that are
+green in color on the
+surface, which are smaller
+and less full in shape.
+4
+Flowering
+FLOWERING
+Cymes with white,
+suborbicular, or obovate-
+elliptic petals.
+Table 2
+Details of the StraMOT datasets.
+Dataset
+Video
+Average
+length(min)
+Original
+Data enhanced
+Frame
+B-box
+Frame
+B-box
+Complete
+dataset
+57
+10.46
+35,792
+−
+56,584
+−
+Train Subset
+13
+−
+4103
+27,741
+16,412
+110,964
+Test Subset
+−
+1095
+7404
+4380
+29,616
+Counting
+TestSets
+44
+−
+30,594
+−
+−
+−
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+3 
+
+were included in the training subset, while 1,095 frames were
+assigned to the test subset (see Table 2 for more details).
+• Obtained information through the CVAT annotation system, con-
+taining Frame ID, object trajectory ID,B-box location, object width
+and height, classes, and visibility ratio.
+• Collected a total of 35,145 strawberry annotation target frames,
+including those labeled ‘MATURE’: 6,373, ‘NEARLY_M’: 7,271,
+‘GROWING_W’: 8,923, ‘GROWING_G’: 6,941 and ‘FLOWERING’:
+5637 (see Fig. 3 for more details).
+2.3. Dataset augmentation
+We investigated three hybrid data enhancement methods to augment
+the original dataset, including RandAugment, motion blur, and AI-for-
+background, to increase the original dataset to 20,792 valid data, as
+shown in Fig. 4. The data enhancement is performed as follows:
+• RandAugment: randomized augmentation of data by mixing pretzels,
+amplitude incremental cropping and rotation.
+• Motion blur: Combine data randomly mixed linear motion blur,
+Gaussian blur, mean blur, and median blur in the horizontal direc-
+tion for enhancement.
+• AI changes background: batch the data through AI to remove the
+background and then randomly generate different backgrounds.
+3. Methodology
+In this section, we detail the components of the StraTracker model, as
+shown in algorithm 1. The framework consists of three main parts: the
+strawberry detector, the feature association module, and the Dual-area
+Counting (DC) module. In the detection module, the YOLOv8n algo-
+rithm was developed to detect strawberries at different growth stages.
+The feature association module incorporates the Feature Slice Attention
+(FSA) module, the Adaptive Kalman Filter (AKF) module, and deep fruit
+feature fusion. The counting module employs the DC method based on
+the tracked target frames and ID. The workflow of the model is as fol-
+lows: firstly, the consecutive frames are inputted into YOLOv8 to detect
+the strawberries and obtain the confidence, position, and category in-
+formation of the fruits. Secondly, the results are inputted into the feature
+correlation module to be processed, such as FSA, AKF module, Hun-
+garian Algorithm, etc. Thirdly, based on the tracking results, the DC
+Module is utilized to realize the counting of the fruits in different
+growing states by judging the moving direction, ID, and category of the
+fruits.
+Algorithm 1. Pseudo-code of StraTracker
+Input: Real-time camera or video sequence V; Detector D; Deep fruit feature extractor
+Enc; High detection score threshold τ; New track score threshold η; Adaptive kalman
+Filter Module AKF;
+Output: Tracks T of the V; Number of strawberries in different growing status S
+1
+Initialization: T ←∅
+2
+for frame fi in V do
+/* Update detection results */
+3
+Di←D
+(
+fi
+)
+; Dhight←∅; Dlow←∅, F i←∅
+4 for d in Di do
+5
+if d. score ＞τ then
+/* High score detection storage */
+6
+Dhight←Dhight ∪{d}
+/* Based on the ISA block refinement features */
+7
+c←FSA(d.box) /* See subsection 3.2.1 for details. */
+8
+F i←F i ∪Enc
+(
+fi, c
+)
+9
+else
+/* Low score detection storage */
+10
+Dlow←Dlow ∪{d}
+/* Update the prediction trajectory */
+11
+for t in T do
+12
+T ←CMC(t )
+13
+T ←AKF(t ) /* See subsection 3.2.2 for details. */
+/* First association */
+14
+At←IoU&ReID Dist
+(
+Dhight, T
+)
+15
+Dremain←remaining object boxes from Dhight and Dlow
+16
+T remain←remaining tracks from T
+/* Second association */
+17
+At←IoUDist(Dremain,T remain)
+18
+T re−remain←remaining tracks from T remain
+/* Update matching tracks and counting */
+19
+Updatetracklets for AKF and fruit features
+/* Delete unmatched tracks * /
+20
+T ←T \T re−remain
+21
+S←DC(At) /* For the counting module, see Algorithm 2. */
+/* Creating new tracks */
+22
+for d in Dremain do
+23
+if d. score ＞η then
+24
+T ←T ∪{d}
+25
+Return:T , S
+3.1. Detector
+To reduce the inference time and memory usage of the counting
+model and to improve its detection speed, we integrated the SOTA
+YOLOv8 algorithm. This algorithm, developed by the Ultralytics team as
+the latest version of YOLO based on YOLOv5, is primarily utilized for
+target detection, segmentation, and classification tasks. Moreover, to
+meet the requirements of lightweight and real-time detection, we opted
+for the light model YOLOv8n as the detector for StraTracker. As illus-
+trated in Fig. 5, the structure of YOLOv8 utilizes the anchor-free method
+Fig. 3. Illustrates the dataset parameters, where (a) represents the distribution statistics of fruit size, and (b) represents the distribution statistics of center co-
+ordinates. The shade of the dot color in (a,b) indicates the density or quantity of data points: blue signifies a low density of data points, while red signifies a high
+density of data points. Additionally, (c) displays the distribution statistics of the number of five states.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+4 
+
+based on the original YOLO model. It incorporated the extraction
+module to the lightweight C2f structure, simplified the PAN-FPN up and
+down sampling structure, employed the VFL loss as the classification
+loss, the CIOU Loss + DFL as the regression loss, and adopted the Task-
+AlignedAssigner sample matching method.
+3.2. Feature association
+We refer to the BoT-SORT algorithm (Aharon et al., 2022) to design
+the association module of StraTracker. Unlike existing MOT algorithms,
+StraTracker focuses more on fine-grained underlying features due to the
+small size of strawberry fruits and the presence of light shading.
+Therefore, we designed the FSA and AKF modules to be incorporated
+into the association module while retaining the twice feature fusion and
+deep feature extraction modules.
+For more details about the association module, refer to Fig. 6 and
+Algorithm 1. First, we initialize the trajectory set and traverse the input
+real-time camera or video sequence frames (V). For each frame, we
+Fig. 4. Dataset enhancement.
+Fig. 5. Structure of the yolov8 algorithm.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+5 
+
+perform the following operations: obtain fruit target information using
+the YOLOv8 detector and apply a high detection score threshold (τ) to
+categorize detection into high detection score set (Dhight) and low
+detection score set (Dlow). The fruits in Dhight are processed through the
+FSA module to slice their refined features, which are then extracted
+through the Deep Fruit Feature Extractor (Enc). Meanwhile, the FSA
+module also improves the accuracy of each frame via Camera Motion
+Compensation (Cmc) and predicts the fruit target’s trajectory (T ) using
+AKF,generating corresponding ID for each trajectory and storing them
+(line 1–16 in Algorithm 1).
+Subsequently, we perform the first feature association using the IOU
+fusion ReID module, storing the successfully matched tracked targets.
+We combine the failed matches from Dhight and Dlow into Dremain. The
+second association involves matching Dremain with the unmatched
+tracklet trajectories (T remain) using IOU only, and any unmatched target
+tracking trajectories and detection information are directly deleted.
+Finally, the successfully fused tracklet trajectories are continuously
+monitored and managed, including updating, creating, deleting, and
+completing the category counting function through the DC module (line
+17–25 in Algorithm 1).
+3.2.1. Feature slicing attention module (FSA)
+During the development of the original BoT-SORT algorithm, vari-
+ations in fruit size led to challenges, resulting in leakage and false
+detection problems. Additionally, the existing Reid feature extraction
+module in the MOT algorithm employed a global search for feature
+extraction, resulting in prolonged processing times and falling short of
+real-time tracking requirements. To address these issues, we introduced
+the FSA module, inspired by the Vision Transformer(Vaswani et al.,
+2017). The FSA module integrates the target slicing architecture in front
+of the feature extraction network, enabling the model to rapidly and
+meticulously extract strawberry appearance features.
+Fig. 6. Feature association framework of StraTracker.
+Fig. 7. FSA block.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+6 
+
+The FSA block is depicted in Fig. 7. When YOLOv8 provided the
+acquired fruit coordinates, species, and confidence information to the
+fruit feature extraction network NFNet, the FSA block performed slicing
+on each input strawberry feature, dividing it into N individual patches.
+Subsequently, it embedded all the patches and their corresponding in-
+formation into three sets of compact features, namely, QUERY, KEY, and
+VALUE. Leveraging the features from the QUERY and KEY, we calculated
+different combinations of attention. The set of values for each patch was
+then weighted using these attentions, resulting in the formation of a
+feature vector. Finally, the feature vectors underwent weighting and
+were incorporated into the feature recognition network. This improve-
+ment is intended to increase the accuracy of the model’s associations for
+small target fruits and the speed of monitoring. The core formula of the
+Q-K-V attention mechanism is depicted in Eq (1).
+Q −K −VAttenVvtion = Softmax
+(QKT̅̅̅̅̅
+dk
+√
+)
+V
+(1)
+3.2.2. Adaptive Kalman filtering module(AKF)
+To predict and estimate the motion trajectory of the target on the 2D
+plane, MOT algorithms universally employ the KF(Mandic et al., 2015)
+with constant velocity as the prediction module. While the KF can pre-
+dict the next trajectory of the target accurately during the motion state,
+it has limitations. The original KF input state matrix is modeled with a
+constant velocity, causing a mismatch in the tracking frame during
+platform motion, as depicted in Fig. 8.
+The initial state matrix is determined by estimating the aspect ratio
+of the strawberry target to select the tracking box. During the develop-
+ment of the correlation module, we discovered that the accuracy of the
+bounding box directly affects tracking and counting precision. Even a
+small deviation of only 1 cm can lead to two major issues: First, closely
+positioned target bounding boxes may overlap and interfere with each
+other, resulting in tracking failures and significant IDs problems. Sec-
+ond, there is an increased likelihood of misidentification, causing other
+objects to be recognized as strawberries, which affects counting
+accuracy. Therefore, we redefined the state vector of the KF in Eq. (2)
+and Eq. (3) to directly estimate the width and height of the tracking
+frame.
+xk =
+[
+xc(t), yc(t), ω(t), h(t), ˙xc(t), ˙yc(t), ˙ω(t), ˙h(t)
+]T
+(2)
+zk =
+[
+zxc(t), zyc(t), zω(t), zh(t)
+]T
+(3)
+Where, [xc(t),yc(t)]: the center coordinates of the tracking box; [ω(t),
+h(t)]: the width and height of the tracking box; [ ˙xc(t), ˙yc(t), ˙ω(t), ˙h(t)]: is
+the speed change value of the corresponding parameter; zk is the center
+coordinates and width/height at the time of measurement.
+During KF training and application, the model is updated and cor-
+rected in real-time using both real and predicted data. Consequently, it is
+imperative to tailor the measurement noise R(k) and process noise Q(k)
+settings to the particular scene. Nonetheless, when the camera un-
+dergoes movement or when there are changes in light or the environ-
+ment, the original R(k) and Q(k) parameters fail to adapt to the real-time
+scene. This results in tracking loss and a decline in accuracy. Therefore,
+we introduce the AKF module based on the KF. The AKF dynamically
+adjusts the gain of the associated module by fine-tuning the weights of
+the sum. The specific implementation process is as follows.
+The first is the prediction process, which is performed for the state
+quantity x and the accompanying covariance p, as shown in Eq. (4) and
+(5):̂
+X(k|k−1) = Φ(k,k−1)̂X(k−1)
+(4)
+P(k|k−1) = Φ(k,k−1)P(k−1)̂Φ
+T
+(k,k−1) + Γ(K,K−1)Q(k)ΓT
+(K,K−1)
+(5)
+Where P(k|k−1) and P(k−1) denote the prediction error covariance and
+error covariance; Φ(k,k−1) is the system state transfer matrix; and Γ(K,K−1)
+is the system noise matrix.
+We introduced the moderating update parameter dk in KF so that R(k)
+can be dynamically adjusted based on dk, and R(k) tends to R(k−1) as the
+Fig. 8. Problems with the original tracking box, where (a) the tracking frame misses enclosing fruit; (b) the tracking box is too large.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+7 
+
+number of frames k varies, indicating that R(k−1) tends to stabilize, as
+shown in Eq. (6) and (7):
+dk =
+1 −b
+1 −bk+1, 0 < b < 1(0.95 0.99)
+(6)
+v(k) = Z(k) −H(k)̂X(k|k−1)
+(7)
+Yk =
+[
+I −H(k)K(k−1)
+]
+v(k)VT
+(k)
+(
+I −H(k)K(k−1)
+)
+(8)
+R(k) = (1 −dk)R(k−1) + dk
+[(
+Yk
+T)
++ H(k)P(k−1)HT
+(k)
+]
+(9)
+where is the b forgetting factor with values ranging from 0.95 to 0.99;
+H(k) is the system observation matrix; and v(k) is the system observation
+vector;
+S(k) = H(k)P(k,k−1)HT
+(k) + R(k)
+(10)
+The next step is to test the update process, which updates the state
+vector of the update section:
+K(k−1) = P(k|k−1)HTS−1
+(k)
+(11)
+P(k) =
+[
+I −K(k)H(k)
+]
+P(k,k−1)
+(12)̂
+X(k) =̂ X(k|k−1) + K(k)v(k)
+(13)
+3.3. Count module
+To accurately count strawberries during the growing period, we in-
+tegrated a cross-frame counting module into StraTracker and explored
+four counting methods through comparison. The specific counting
+methods are as follows:
+1. ID-based counting(IC): An ID will be assigned to each target during
+the monitoring process, and strawberry fruits with different growth
+stages will be counted based on ID, respectively(X. Li et al., 2022), as
+illustrated in Fig. 9(a). This method heavily depends on the perfor-
+mance of the tracking and detection algorithm, and the detection
+results often exceed the true value.
+2. Line-based counting(LC): A counting line is incorporated into the
+algorithm to indicate the center coordinates of the tracking box and
+estimate when the trajectory of the target center intersects with the
+counting line(S. Li et al., 2020), as shown in Fig. 9(b). This method is
+prone to a significant number of missed detections due to the limited
+range of counting lines.
+3. Area range-based counting(AC): Integrate a region range into the
+algorithm to detect the target’s tracking box as a signal and count the
+strawberry tracking box when it is detected within the region range,
+as shown in Fig. 9(c). This method has the potential to reduce the
+tracking range and enhance the counting accuracy of the model.
+However, it is limited in its ability to categorize strawberry targets,
+only providing a total count.
+4. Based on dual-area counting(DC): Introduce two judgment regions
+into the algorithm to monitor the tracking box of the fruit, as shown
+in Fig. 9(d). When the tracking box passes through the first region,
+confidence judgment is performed, and its corresponding ID is
+stored. Upon reaching the second region, the growth stages is
+assessed, and the ID is reevaluated for classification in the count.
+Refer to Algorithm 2 for the pseudo-code of our DC method (line
+1–10 in Algorithm 2).
+We conducted several experiments on these four fruit counting
+methods, as described in Section 4.4. The results indicate that the DC
+method is the most efficient and capable of monitoring the overall
+growth of fruit in the orchard.
+Algorithm 2. (Pseudo-code of Dual-area Counting (DC))
+Input: Fusion matrix At(Includes d and T ); Two judgment regions R1 and R2; High
+detection score threshold τ
+Output: Number of strawberries in different growing status S
+(continued on next page)
+Fig. 9. Comparison of counting methods, where the dark red markers with numbers indicate a successful count.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+8 
+
+(continued)
+1
+Initialization: S←{ FLOWING: 0, GROWING_G: 0, GROWING_W: 0, NEARLY_M: 0,
+MATURE: 0};R1 IDs←∅
+2
+for t in At do
+/* Confidence judgment in R1 */
+3
+If d.box through R1 then
+4
+If d.conf ＞τ then
+5
+R1 IDs←R1 IDs ∪{T .ID}
+6
+store R1 IDs
+/* Assess growth status in R2 */
+7
+If d.box passes R2 then
+8
+If T .ID in R1 IDs then
+9
+S{growth status} + = 1
+10
+Return:S
+3.4. Evaluation metrics
+We selected HOTA (Higher Order Tracking Accuracy), MOTA (Multi-
+Object Tracking Accuracy), MOTP(Multi-Objective Object Tracking
+Precision), mAP (Mean Detection Precision), and IDs as the evaluation
+metrics for strawberry tracking models. Where the IDs represent the
+number of IDs, which is the change of predicted trajectory ID for the
+same target GT trajectory between consecutive frames. Ideally, the ID
+should remain constant, but various factors can cause the model to
+generate multiple ID for the same target, thus affecting counting accu-
+racy. The larger the number of IDs, the worse the model performance.
+HOTA encompasses higher latitude accuracy metrics, providing a
+more balanced and comprehensive evaluation of the model’s tracking
+performance.
+HOTA =̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+∑
+c∈{TP}
+A(c)
+TP + FN + FP
+√
+√
+√
+√
+(14)
+A(c) =
+TPA(c)
+TPA(c) + FNA(c) + FPA(c)
+(15)
+Where A(c) denotes association accuracy, TPA(c) denotes accurate
+association accuracy; FNA(c) denotes accuracy of unassociated pre-
+dicted trajectories, FPA(c) indicates the accuracy of predicting incor-
+rectly associated trajectories, FP denotes the number of misdetected
+targets, FN denotes the number of lost targets, and TP denotes the
+number of targets used for correct detection of positive samples.
+MOTA denotes Multi-Objective Monitoring Accuracy, which visual-
+izes the monitoring accuracy of the model by combining the error rates
+of False Detection, Missed Detection, and IDs.
+MOTA = 1 −
+∑
+t(FP + FN + IDs)
+∑
+tgt
+(16)
+Where t denotes the t-th frame, gt represents the number of all correct
+targets, and IDs indicate the number of target ID switches per frame.
+We also refer to the metrics designed in the counting algorithm by X.
+Li et al. (2022) to evaluate the model’s counting results. The counting
+metrics are Accuracy and GEH, as shown in Eq (17) and Eq (18).
+Accuracy denotes the accuracy of the counting results, and GEH is a
+classical quality metric for verifying counting accuracy.
+Accuracy = 1 −Ds
+Gt
+(17)
+GEH =̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+2 × Ds
+Ct + Gt
+√
+(18)
+Where Gt denotes the true number of fruits, Ct denotes the model
+count results, and Ds represents the deviation of the real situation from
+the count results.
+4. Experiments
+Several sets of experiments were conducted to validate the efficacy
+and utility of StraTracker. (1) detector experiments: Experiments were
+carried out on different lightweight deep learning detectors, involving a
+trade-off analysis between real-time processing and detection accuracy.
+The goal was to identify the most suitable detector for integration into
+StraTracker. (2) feature association experiments: We compared the
+proposed StraTracker with a variety of popular MOT algorithms and
+conducted ablation experiments and counting tests. (3) field dynamic
+experiments: dynamic evaluation of strawberries was conducted in the
+orchard based on the experimental monitoring platform, and real-time
+strawberry growth distribution and occupancy maps were generated.
+4.1. Experimental environment
+In this study, the StraTracker model underwent training on a work-
+station equipped with an NVIDIA RTX 3090 GPU, coupled with an Intel
+(R) Xeon(R) Gold 6234 @3.30 GHz processor and 192 GB of RAM. The
+programming language employed was Python 3.8, and the deep learning
+framework utilized was PyTorch 1.7.1 GPU version. Subsequent tests
+were conducted using Intel’s NUC minicomputer, featuring an NVIDIA
+GeForce RTX 2060 GPU, 32 GB of RAM, and an Intel(R) Core(TM) i7-
+1165G7 @2.80 GHz processor.
+4.2. Detector experiments
+Detectors are essential for accurately identifying the growth stages
+and ripeness of strawberry fruits. To determine the most effective model,
+we evaluated several lightweight detection algorithms, including Fast-
+RCNN, RetinaNet, NanoDet, YOLOv5s, and YOLOv8n, using the Stra-
+MOT dataset. The experimental results, detailed in Table 3 and Fig. 10,
+revealed distinct performance differences among these models. Fast-
+RCNN, due to its high parameter count and two-phase structure,
+exhibited poor accuracy and real-time performance, achieving a mAP of
+only 73.26 %. In contrast, YOLOv5s demonstrated higher real-time FPS
+but slightly lower detection accuracy, particularly in the colouring
+phase, where it achieved an accuracy of only 88.86 %. NanoDet, while
+being a lightweight model, also showed lower accuracy and unsatis-
+factory real-time performance for detecting strawberry growth stages.
+Among the tested models, YOLOv8n emerged as the best-performing
+lightweight detector, with a mAP of 93.74 % for ripening fruits, an F1
+score of 90.46 %, and a minimal parameter count of just 3.2 M. This
+made YOLOv8n the most suitable model for monitoring the growth and
+ripeness of strawberries.
+Notably, key parameters, including the real-time loss function, mAP,
+F1 score, and FPS, were visualized throughout the training process of the
+five detection algorithms, as depicted in Fig. 10. This visualization
+provides an intuitive depiction of each detector’s strengths and weak-
+nesses. In particular, the similarity between the training and validation
+loss curves suggests that the model is not overfitting. Overfitting, which
+occurs when a model performs well on training data but poorly on un-
+seen data, was effectively mitigated by optimizing the dataset and
+applying a regularization strategy to control model complexity. More-
+over, YOLOv8n demonstrates a tendency toward stabilization in its loss
+function after 40 epochs, indicating faster convergence, while also
+achieving an impressive mAP of 91.93 %, signifying superior detection
+accuracy. Additionally, on the StraMOT dataset, YOLOv8n attains a real-
+time monitoring frame rate of 38.3 fps, demonstrating effective real-
+time detection capabilities. Thus, we have chosen YOLOv8n as the de-
+tector for the StraTracker model.
+4.3. Feature association experiments
+4.3.1. Ablation experiment
+Ablation experiments were conducted on the StraMOT dataset to
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+9 
+
+Table 3
+Comparison of the performance of different detectors.
+Detector
+AP(%)↑
+FPS↑
+Params↓
+MATURE
+NEARLY_M
+GROWING_W
+GROWING_G
+FLOWERING
+Fast-RCNN
+75.85
+73.05
+71.29
+71.83
+74.28
+10.4
+330.3 M
+RetinaNet
+85.08
+87.84
+85.32
+84.57
+87.95
+20.8
+36.3 M
+NanoDet
+75.72
+74.66
+72.03
+72.15
+75.28
+37.2
+2.4 M
+YOLOv5s
+92.47
+88.86
+90.13
+90.60
+91.91
+41.7
+7.2 M
+YOLOv7-tiny
+92.97
+90.16
+89.71
+89.23
+91.49
+30.1
+6.1 M
+YOLOv8n
+93.74
+90.31
+91.63
+92.35
+91.64
+38.3
+3.2 M
+Fig. 10. Experimental comparison of the detector.
+Table 4
+Comparison table of ablation trials, where DA indicates data augmentation.
+BoT-SORT
+DA
+YOLOv8
+AKF
+FSA
+MOTA↑(%)
+MOTP↑(%)
+HOTA↑(%)
+IDs↓
+FPS↑
+√
+−
+−
+−
+−
+78.52
+80.52
+74.39
+330
+32.7
+√
+√
+−
+−
+−
+78.83
+80.71
+74.85
+321
+32.5
+√
+√
+√
+−
+−
+81.01
+80.94
+76.41
+294
+35.7
+√
+√
+√
+√
+−
+82.72
+81.13
+76.93
+267
+37.2
+√
+√
+√
+√
+√
+83.28
+81.35
+77.26
+259
+38.3
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+10 
+
+validate the effectiveness of each proposed module. Table 4 presents the
+results using BoT-SORT as the baseline, where we tested the perfor-
+mance of the algorithm by adding the following modules: data
+augmentation (DA), YOLOv8, AKF, and FSA blocks. The experimental
+outcomes show that the detector significantly enhances the model’s
+tracking performance. Specifically, integrating the YOLOv8n algorithm
+improved MOTA, MOTP, and HOTA by 2.18 %, 0.23 %, and 1.56 %,
+respectively, representing a substantial gain. The AKF module had the
+most significant impact on the IDs metric, reducing it by 33. The FSA
+module further enhanced the accuracy of tracking small target fruits,
+raising MOTA to 83.28 % and HOTA to 77.26 %. DA also contributed to
+improved model accuracy and reduced overfitting. Overall, the model
+achieved a 4.76 % improvement in MOTA, a 0.83 % increase in HOTA,
+and a 2.87 % gain in MOTP. Furthermore, fps increased from 32.7 to
+38.3, while IDs decreased from 330 to 259, demonstrating notable
+improvements.
+The tracking effects of the original ground truth (GT), BoT-SORT,
+and StraTracker models are compared in Fig. 11. Fig. 11(a) displays
+the GT, where boxes with the same color labels correspond to the same
+fruit. In Fig. 11(b), the labeled white boxes indicate instances where the
+BoT-SORT algorithm encounters problem such as misfitting tracking
+boxes and missed detections. Additionally, the model exhibits problems
+with low confidence and IDs. In Fig. 11(c), the accuracy of the tracking
+boxes for fruit selection is superior, attributed to the modification of the
+input state matrix in the AKF module of the StraTracker algorithm. The
+StraTracker model accurately recognized the growth of the strawberry
+and assigned specific IDs from frame 29 to frame 38. Throughout the
+process, it successfully detected small target fruits without any IDs or
+omissions. This performance is attributed to the integration of the FSA
+and AKF modules, which significantly enhance the model’s adaptability
+and ability to monitor small targets.
+4.3.2. Comparison of the different models
+To validate the superiority of the StraTracker model, we conducted
+cross-vertical comparison experiments using the StraMOT dataset
+described in Section 2. The tracking performance experiments evaluated
+various MOT algorithms and the original model with modified YOLOv8
+detectors. Specifically, we selected six widely recognized MOT algo-
+rithms for comparison: SORT(Bewley et al., 2016), DeepSORT(Pujara &
+Bhamare, 2022), ByteTrack(Y. Zhang et al., 2022), OCSORT(Cao et al.,
+2023), StrongSORT(Du et al., 2023), and BoT-SORT(Aharon et al.,
+2022). Unlike existing methods, these algorithms required modification
+and training to track and monitor strawberries during their growing
+stage effectively. Additionally, each model utilized pre-training weights
+obtained from training on the MOT17 dataset and underwent training
+on the StraMOT dataset for 100 epochs.
+The results of the experiments are presented in Table 5, where the
+StraTracker model outperformed the other methods across all metrics,
+achieving a MOTA value of 83.28 % with only 259 occurrences of IDs. In
+contrast, the SORT and DeepSORT models exhibited lower multi-target
+accuracy. This discrepancy was likely due to their use of cascade
+matching in the feature association module, which was more suitable for
+tracking large targets such as pedestrians and vehicles, rather than small
+Fig. 11. Comparison of tracking effect before and after improvement. The same color circles in Fig. (a) indicate the same fruits in different frames; the white circles in
+Fig. (b) indicate the occurrence of box prediction frames that are not fit and IDs problems.
+Table 5
+Cross-vertical comparison experiment of MOT algorithms. Where ↑indicates a
+positive correlation, signifying that a larger value corresponds to better model
+performance; ↓indicates a negative correlation, suggesting that a smaller value
+corresponds to better model performance.
+Tracker
+MOTA↑
+(%)
+MOTP↑
+(%)
+HOTA↑
+(%)
+IDs↓
+FPS↑
+SORT
+63.32
+66.61
+55.85
+682
+9.3
+DeepSORT
+70.44
+77.69
+58.36
+514
+18.2
+ByteTrack
+77.83
+79.56
+68.72
+361
+38.6
+OCSORT
+76.18
+78.41
+73.16
+397
+43.5
+BoT-SORT
+78.52
+80.52
+74.39
+330
+32.7
+StrongSort
+81.69
+79.05
+73.83
+318
+30.9
+DeepSORT
+(YOLOv8)
+72.15
+78.39
+60.05
+437
+22.5
+OCSORT(YOLOv8)
+76.82
+79.13
+73.92
+383
+43.9
+StrongSort
+(YOLOv8)
+81.75
+79.63
+74.35
+311
+31.8
+BoT-SORT
+(YOLOv8)
+80.57
+80.81
+74.89
+305
+34.2
+StraTracker(our)
+83.28
+81.35
+77.26
+259
+38.3
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+11 
+
+objects like strawberries. Despite recent advances in MOT algorithms,
+models such as OCSORT, ByteTrack, and StrongSort showed limited
+effectiveness in tracking and monitoring strawberry growth in natural
+environments. For instance, OCSORT introduced a motion model and
+simplified the detector, achieving the best real-time performance at 43.9
+fps. However, its MOTA was only 76.18 %, with 397 IDs. StrongSort,
+which utilized the NAS nonlinear KF module to predict the state of
+targets with more complex motion patterns, showed poorer real-time
+performance, reflected in a HOTA of 73.83 %. Through data-level
+analysis, the StraTracker model demonstrates optimal feature associa-
+tion ability, attributed to the FSA and AKF modules designed to enhance
+the MOT model’s suitability for agricultural applications.
+Improving the detector of the MOT model to YOLOv8 enhanced the
+accuracy of all the algorithms, with the most significant improvement
+seen in the BoT-SORT algorithm, which is the method used by
+StraTracker. This proves the effectiveness of our proposed model. In
+terms of real-time performance, our designed model achieved 38.3 fps,
+an improvement of 6 fps over the BoT-SORT algorithm. However, it still
+lags behind ByteTrack and OCSORT, primarily due to the inclusion of a
+DC module, which affects its real-time efficiency. Nevertheless, when
+combining the evaluation metrics, the StraTracker model demonstrated
+a clear overall advantage.
+In Fig. 12, we evaluated the model’s effectiveness, where white
+boxes denote missed or misdetected targets. Particularly in Fig. 12(a), it
+is evident that the Deepsort model encounters a more severe problem of
+missed and misdetected targets, directly affecting counting accuracy.
+Additionally, in Fig. 12(c, d), the ByteTrack and OCSORT models display
+issues related to tracking frame mismatch and IDs. Overall, these models
+struggle to effectively handle challenges such as high occlusion, overlap,
+and IDs.
+Fig. 12. Comparison of different algorithms. The white dashed boxes in the figure indicate missed or incorrectly detected targets.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+12 
+
+However, the StraTracker model was designed with the aim of
+solving the challenge of monitoring and counting strawberry fruits at
+different growth stages in natural environments. As shown in Fig. 12(a,
+b, c, d), all models suffer from leakage and false detection problems. In
+contrast, the StraTracker model tracks accurately. We believe that the
+design of the FSA and AKF modules enables the StraTracker model to
+quickly and meticulously extract the appearance features of strawberries
+and dynamically adjust the gain of the relevant modules, thereby
+improving the model’s tracking performance on highly occluded and
+overlapping targets. As a result, the StraTracker model shows excellent
+performance in monitoring strawberry growth stages.
+4.4. Counting experiments
+4.4.1. Experimentation with different methods
+The counting module directly affects the usefulness of the model. We
+compared the proposed counting modules to select the most suitable
+counting
+method
+for
+StraTracker.
+Four
+counting
+methods
+were
+employed: IC (ID counting), LC (line counting), AC (area counting), and
+DC (dual-area counting). The results are shown in Table 6, where the DC
+method proves to be the most effective, achieving an accuracy of 90.43
+%. The GEH is only 2.33, and The Coefficient of determination(R2) is as
+high as 0.91. However, due to the DC method being designed with the ID
+and growth stages judgment function, it results in an increased model
+detection time, leading to a slightly smaller FPS compared to several
+other methods, with only 38.3 fps. however, the method counts all IDs in
+the frame, including ID conversions and false detection targets. This
+results in the reported count being much larger than the true value. Our
+experiments also indicated that the counting range is most effective
+between 1/5 and 1/10, with the best balance observed at 1/8. At this
+setting, the model maintains high accuracy and achieves reasonable
+real-time processing efficiency. While the IC method offers a higher
+frame rate, it does not match the accuracy of the DC method.
+Fig. 13 illustrates the linear regression between the predicted and
+actual quantities obtained by applying the four counting methods in the
+test data. We extracted 44 videos from the StraMOT dataset as the
+sample. The X-axis represents the actual number of manual counts, and
+the Y-axis represents the estimated number. Each point on the plot
+represents one sample data, and the straight line represents the fitted
+linear regression equation. From Fig. 13(a), it was observed that the
+overall IC method detected a large number of poor counts with an R2 of
+only 0.68. In Fig. 13(b) and (c), using LC and AC methods, respectively,
+the accuracy is 87.72 % and 83.15 %. We consider that the LC method’s
+collision line detection range is too small, leading to a significant
+number of missed detections. On the other hand, the AC method could
+not determine the growth stages of the fruits and could only obtain the
+overall number of fruits. Fig. 13(d) displays the linear regression of the
+DC method with the equation of Y = 0.9841X −0.4501 and the R2 of
+0.91, suggesting optimal performance for the counting method. There-
+fore, the DC method is more suitable for application to the StraTracker
+model.
+4.4.2. Experiments with different conditions
+During the data collection process, we discovered that varying
+lighting conditions and webcam angles significantly impact the accuracy
+of the model’s counting. Consequently, we evaluated the model’s per-
+formance under actual orchard conditions and tested its counting
+function using the StraMOT dataset. The results are detailed in Table 7
+and Fig. 14.
+First,
+we
+primarily
+considered
+sunlighting,
+backlighting,
+and
+occluded light under various lighting conditions, as illustrated in Fig. 14
+(a-c). Under backlighting conditions, exposure and background dark-
+ening occur, impacting the feature association module and counting
+function. This lead to association failures or missed counts, resulting in
+an accuracy and GEH of only 86.04 % and 2.87, respectively. In contrast,
+under both smooth and shaded lighting conditions, the counting results
+were more accurate, with accuracy rates exceeding 93 %.
+Moreover, We evaluated the monitoring effect on fruits at angles of
+0◦, 30◦, and 45◦, as depicted in Fig. 14(c-f). The highest counting ac-
+curacy was achieved when the camera was positioned directly at 0◦,
+with an accuracy of 93.97 % and a GEH of 0.96. As the angle increased,
+significant occlusion of fruits and leaves occurred, providing a wider
+field of view but also introducing redundant information. This increased
+monitoring complexity, leading to misses and misdetections. Specif-
+ically, at 45◦, the model’s counts exceeded the true value due to the
+detection of fruits in adjacent rows, resulting in redundant counts.
+In summary, enhancing the model’s counting accuracy under
+different lighting conditions, particularly backlighting, is crucial and
+provides a direction for future research. Preliminary experiments veri-
+fied that the monitoring model was most effective at a 0◦angle under
+sunlight conditions. Therefore, for optimal results, the camera angle
+should be controlled between 0◦and 30◦.
+4.5. Field dynamics experiment
+Real-time visualization of the distribution of fruits in the orchard can
+assist growers in performing timely tasks such as flower thinning,
+pollination, fertilization, or picking. Therefore, we conducted testing of
+the StraTracker model in the orchard using the monitoring platform
+from December 2022 to January 2023. We selected four high ridges in
+the orchard for validation, with the total length of the ridges being
+approximately 100 m, as illustrated in Fig. 15 for the path planning
+diagram.
+The StraTracker model enables us to accurately obtain the distribu-
+tion and occupancy of strawberries in the orchard. As depicted in
+Fig. 16, we visualized the distribution of the five growth stages of
+strawberries in each ridge through stacked plots and the overall orchard
+distribution through percentage plots. In the distribution map, a, b, c,
+and d represent the four high rows in the orchard corresponding to the
+planning trajectory in Fig. 15. These are visualized in the form of per-
+centages, with different colors representing different growth stages.
+In Fig. 16(a) and (d), the white ripening stage in the overall orchard
+reached a maximum of 33.84 %, while the ripening stage accounted for
+only 6.79 %. The analysis indicates that the strawberries in the orchard
+at this time are predominantly in the early stage of planting and
+development. It is crucial to implement early treatments, such as flower
+thinning and pollination, for them in a timely manner. By January 2, the
+proportion of white ripening and coloring stage fruits reached 24.41 %
+and 27.43 %, respectively. This suggests that the fruits in the orchard are
+in the process of expansion in anticipation of maturity. To support their
+development, additional measures such as spraying, fertilizing, water-
+ing, and other protective measures are needed. As of January 10, the
+ripening stage reached 30.64 %, indicating an overall ripening of fruits
+in the orchard. Timely picking is now necessary. The StraTracker model
+not only captures the growth of strawberries in the orchard but also
+predicts the date of fruit ripening, enabling the scheduling of subsequent
+management tasks in a timely manner.
+5. Limitations and future work
+All in all, various experiments have demonstrated the ability of the
+StraTracker model to accurately monitor the growth of strawberries in
+orchards and count them in real time. However, there are limitations
+Table 6
+Comparison experiment of counting methods.
+Counting method
+Accuracy(%)↑
+GEH↑
+R2↑
+FPS↑
+IC
+80.64
+4.85
+0.68
+43.9
+LC
+83.15
+4.19
+0.76
+41.3
+AC
+87.72
+3.02
+0.87
+41.7
+DC
+90.43
+2.33
+0.91
+38.3
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+13 
+
+that need to be addressed. Specifically, the model’s environmental
+suitability and counting accuracy require further improvement, and the
+effects of different factors on counting accuracy need to be investigated
+experimentally. Future work will focus on enhancing the model’s per-
+formance in monitoring growth stages, optimizing the counting scheme,
+and validating the model’s applicability to other crops.
+To achieve these goals, we will discuss future directions in terms of
+hardware, software, datasets, and experimental design. In terms of
+hardware, we will enhance the platform’s mobility and stability, and
+improve the resolution and quality of the camera. For software, we will
+develop user-friendly interactive interfaces, more accurate data associ-
+ation algorithms, and improved counting schemes. We will also extend
+the monitoring capabilities to include additional crop characteristics
+such as pests, diseases, phenotypic information, and fruit location.
+Regarding datasets, we will increase the diversity of crop data, integrate
+information from various environmental scenarios and cultivation
+methods, and research data enhancement methods to improve robust-
+ness. Experimentally, we will explore the effects of platform movement
+speed, different cultivation methods, and various crop varieties on the
+model’s monitoring and counting functions.
+6. Conclusions
+Real-time, accurate, and efficient identification and counting of
+strawberry growth are crucial for the orchard management industry. In
+this paper, we propose a novel strawberry tracking algorithm (StraT-
+racker), specifically designed for identifying and counting strawberry
+growth stages. Firstly, we developed a large-scale strawberry tracking
+dataset (StraMOT), for training and testing the proposed model. Sec-
+ondly, we selected the lightweight YOLOv8n detector to reduce infer-
+ence time and improve the speed of fruit growth stage detection.
+Furthermore, we introduced the AFK and FSA modules in feature asso-
+ciation to enhance small target tracking and optimize adaptability.
+Finally, we designed the DC module, a fruit counting method that tracks
+real-time monitored fruits based on detected growth stages and IDs
+using a dual-area approach. Experimental results demonstrate that
+StraTracker achieves MOTA, MOTP, and accuracy scores of 83.28 %,
+81.35 %, and 90.43 %, respectively, with only 259 IDs. These outcomes
+surpass existing baseline models while meeting real-time processing
+requirements, with a speed of 38.3 frames per second. Moreover, real-
+Fig. 13. Comparison of counting regression performance.
+Table 7
+Comparative experiments on counting conditions.
+Different conditions
+GT
+StraTracker
+Accuracy(%)↑
+GEH↑
+Shunlight
+0◦
+249
+234
+93.97
+0.96
+30◦
+192
+176
+91.61
+1.25
+45◦
+261
+287
+90.03
+1.36
+Backlight
+0◦
+394
+339
+86.04
+2.87
+30◦
+458
+393
+85.81
+3.15
+45◦
+352
+394
+83.90
+3.52
+Occluded light
+0◦
+315
+291
+92.38
+1.37
+30◦
+157
+134
+85.35
+3.71
+45◦
+216
+238
+89.81
+2.46
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+14 
+
+time visualization of fruit distribution and growth stages was success-
+fully achieved through stacked and occupancy maps, providing valuable
+insights for precise orchard management. Future work will focus on
+applying the model to more diverse environments and extending the
+StraMOT dataset to include a wider variety of strawberry varieties and
+orchard conditions, further improving the model’s generalization
+capabilities.
+CRediT authorship contribution statement
+Qilin An: Writing – original draft, Methodology, Data curation,
+Conceptualization. Yongzhi Cui: Visualization, Validation, Investiga-
+tion. Wenyu Tong: Supervision, Resources, Investigation. Yangchun
+Liu: Writing – review & editing, Supervision, Software. Bo Zhao: Su-
+pervision, Resources, Project administration. Liguo Wei: Writing – re-
+view & editing, Resources, Methodology.
+Fig. 14. Effectiveness of StraTracker monitoring under different light conditions.
+Fig. 15. Dynamic Experimental Path Planning in the Field. Figures a, b, c, and d indicate the corresponding strawberry ridges corresponding to the subsequent fruit
+distribution map.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+15 
+
+Declaration of competing interest
+The authors declare that they have no known competing financial
+interests or personal relationships that could have appeared to influence
+the work reported in this paper.
+Acknowledgements
+This work received support from the National Key Research and
+Development
+Program
+of
+China
+(2021YFD2000705)
+and
+(2022YFD2001800). The authors express gratitude to the National Key
+Laboratory of Agricultural Equipment Technology and Weifang Acad-
+emy of Agricultural Sciences for providing the experimental site.
+Appreciation is extended to the anonymous reviewers and editors for
+their valuable comments, which contributed to the enhancement of the
+manuscript.
+Appendix A. Supplementary material
+Supplementary data to this article can be found online at https://doi.
+org/10.1016/j.compag.2024.109564.
+Data availability
+Data will be made available on request.
+References
+Aharon, N., Orfaig, R., & Bobrovsky, B.-Z. J. a. p. a. (2022). BoT-SORT: Robust
+associations multi-pedestrian tracking.
+Attri, I., Awasthi, L.K., Sharma, T.P., Rathee, P., 2023. A review of deep learning
+techniques used in agriculture. Eco. Inform. 77, 102217. https://doi.org/10.1016/j.
+ecoinf.2023.102217.
+Bewley, A., Ge, Z., Ott, L., Ramos, F., & Upcroft, B. (2016). Simple online and realtime
+tracking. Paper presented at the 2016 IEEE international conference on image
+processing (ICIP).
+Bhattarai, U., Karkee, M., 2022. A weakly-supervised approach for flower/fruit counting
+in apple orchards. Comput. Ind. 138. https://doi.org/10.1016/j.
+compind.2022.103635.
+Bolouri, F., Kocoglu, Y., Lorraine B Pabuayon, I., Lorin Ritchie, G., & Sari-Sarraf, H.
+(2024). CottonSense: A high-throughput field phenotyping system for cotton fruit
+segmentation and enumeration on edge devices. Computers and Electronics in
+Agriculture, 216, 108531. doi: https://doi.org/10.1016/j.compag.2023.108531.
+Cao, J., Pang, J., Weng, X., Khirodkar, R., & Kitani, K. (2023). Observation-centric sort:
+Rethinking sort for robust multi-object tracking. Paper presented at the Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern Recognition.
+Culman, M., Delalieux, S., Beusen, B., Somers, B., 2023. Automatic labeling to overcome
+the limitations of deep learning in applications with insufficient training data: A case
+study on fruit detection in pear orchards. Comput. Electron. Agric. 213, 108196.
+https://doi.org/10.1016/j.compag.2023.108196.
+Du, Y., Zhao, Z., Song, Y., Zhao, Y., Su, F., Gong, T., & Meng, H. J. I. T. o. M. (2023).
+Strongsort: Make deepsort great again.
+Gao, F., Fang, W., Sun, X., Wu, Z., Zhao, G., Li, G., Zhang, Q., 2022. A novel apple fruit
+detection and counting methodology based on deep learning and trunk tracking in
+modern orchard. Comput. Electron. Agric. 197, 107000. https://doi.org/10.1016/j.
+compag.2022.107000.
+Gudowska, A., Cwajna, A., Marja´nska, E., Moro´n, D., 2024. Pollinators enhance the
+production of a superior strawberry – A global review and meta-analysis. Agr.
+Ecosyst. Environ. 362, 108815. https://doi.org/10.1016/j.agee.2023.108815.
+H¨akkinen, S.H., T¨orr¨onen, A.R., 2000. Content of flavonols and selected phenolic acids in
+strawberries and Vaccinium species: influence of cultivar, cultivation site and
+technique. Food Res. Int. 33 (6), 517–524. https://doi.org/10.1016/S0963-9969(00)
+00086-7.
+H¨ani, N., Roy, P., Isler, V., 2020. A comparative study of fruit detection and counting
+methods for yield mapping in apple orchards. J. Field Rob. 37 (2), 263–282. https://
+doi.org/10.1002/rob.21902.
+He, L., Wu, F., Du, X., Zhang, G., 2022. Cascade-SORT: A robust fruit counting approach
+using multiple features cascade matching. Comput. Electron. Agric. 200, 107223.
+https://doi.org/10.1016/j.compag.2022.107223.
+Fig. 16. Distribution of strawberries in the orchard, where figures (a) and (d) show the distribution and percentage of fruit on December 11; figures (b) and (e) show
+the distribution and percentage of fruit on January 2; and figures (c) and (f) show the distribution and percentage of fruit on January 10.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+16 
+
+Li, S., Chang, F., Liu, C., Li, N., 2020. Vehicle counting and traffic flow parameter
+estimation for dense traffic scenes. IET Intel. Transport Syst. 14 (12), 1517–1523.
+https://doi.org/10.1049/iet-its.2019.0521.
+Li, X., Zhao, Z., Wu, J., Huang, Y., Wen, J., Sun, S., Gao, Y., 2022. Y-BGD: Broiler
+counting based on multi-object tracking. Comput. Electron. Agric. 202, 107347.
+https://doi.org/10.1016/j.compag.2022.107347.
+Lin, Y., Chen, T., Liu, S., Cai, Y., Shi, H., Zheng, D., Zhang, L., 2022. Quick and accurate
+monitoring peanut seedlings emergence rate through UAV video and deep learning.
+Comput. Electron. Agric. 197, 106938. https://doi.org/10.1016/j.
+compag.2022.106938.
+Lu, J., Chen, P., Yu, C., Lan, Y., Yu, L., Yang, R., Wang, L., 2023. Lightweight green citrus
+fruit detection method for practical environmental applications. Comput. Electron.
+Agric. 215, 108205. https://doi.org/10.1016/j.compag.2023.108205.
+Mandic, D.P., Kanna, S., Constantinides, A.G., 2015. On the intrinsic relationship
+between the least mean square and Kalman filters [Lecture Notes]. IEEE Signal
+Process Mag. 32 (6), 117–122. https://doi.org/10.1109/MSP.2015.2461733.
+Mirbod, O., Choi, D., Heinemann, P.H., Marini, R.P., He, L., 2023. On-tree apple fruit size
+estimation using stereo vision with deep learning-based occlusion handling. Biosyst.
+Eng. 226, 27–42. https://doi.org/10.1016/j.biosystemseng.2022.12.008.
+Mirhaji, H., Soleymani, M., Asakereh, A., Abdanan Mehdizadeh, S., 2021. Fruit detection
+and load estimation of an orange orchard using the YOLO models through simple
+approaches in different imaging and illumination conditions. Comput. Electron.
+Agric. 191, 106533. https://doi.org/10.1016/j.compag.2021.106533.
+Parvathi, S., Tamil Selvi, S., 2021. Detection of maturity stages of coconuts in complex
+background using Faster R-CNN model. Biosyst. Eng. 202, 119–132. https://doi.org/
+10.1016/j.biosystemseng.2020.12.002.
+Pujara, A., & Bhamare, M. (2022, 24-26 Nov. 2022). DeepSORT: Real Time & Multi-Object
+Detection and Tracking with YOLO and TensorFlow. Paper presented at the 2022
+International Conference on Augmented Intelligence and Sustainable Systems
+(ICAISS).
+Samtani, J.B., Rom, C.R., Friedrich, H., Fennimore, S.A., Finn, C.E., Petran, A.,
+Bergefurd, B., 2019. The status and future of the strawberry industry in the United
+States. HortTechnology hortte 29 (1), 11–24. https://doi.org/10.21273/
+HORTTECH04135-18.
+Sanaeifar, A., Guindo, M.L., Bakhshipour, A., Fazayeli, H., Li, X., Yang, C., 2023.
+Advancing precision agriculture: The potential of deep learning for cereal plant head
+detection. Comput. Electron. Agric. 209, 107875. https://doi.org/10.1016/j.
+compag.2023.107875.
+Scott, S., Rye, J.F., 2021. Praised, prized, yet penalised: A critical examination of low-
+wage hiring queues in the global strawberry industry. J. Rural. Stud. 88, 473–481.
+https://doi.org/10.1016/j.jrurstud.2021.04.014.
+Song, Y., Glasbey, C.A., Horgan, G.W., Polder, G., Dieleman, J.A., van der Heijden, G.W.
+A.M., 2014. Automatic fruit recognition and counting from multiple images. Biosyst.
+Eng. 118, 203–215. https://doi.org/10.1016/j.biosystemseng.2013.12.008.
+Vasconez, J.P., Delpiano, J., Vougioukas, S., Auat Cheein, F., 2020. Comparison of
+convolutional neural networks in fruit detection and counting: A comprehensive
+evaluation. Comput. Electron. Agric. 173, 105348. https://doi.org/10.1016/j.
+compag.2020.105348.
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., . . .
+Polosukhin, I. J. A. i. n. i. p. s. (2017). Attention is all you need. 30.
+Wu, Z., Sun, X., Jiang, H., Mao, W., Li, R., Andriyanov, N., Fu, L., 2023. NDMFCS: An
+automatic fruit counting system in modern apple orchard using abatement of
+abnormal fruit detection. Comput. Electron. Agric. 211, 108036. https://doi.org/
+10.1016/j.compag.2023.108036.
+Yang, X., Zhou, C., Li, J., Li, W., Lin, J., 2010. Effect of cropping system on yield of
+strawberry and soil biological property under plastic greenhouse condition.
+Zhongguo Shengtai Nongye Xuebao / Chin. J. Eco-Agric. 18 (2), 312–315. https://
+doi.org/10.3724/SP.J.1011.2010.00312.
+Zhang, J., Jiang, W., Jia, Z., Zhang, W., Zhang, T., Wei, M., 2023. Stereoselective
+behavior and residues of the imazalil during strawberry growth and strawberry wine
+production. J. Food Prot. 86 (1), 100006. https://doi.org/10.1016/j.
+jfp.2022.10.005.
+Zhang, Y., Liang, Y., Leng, J., Wang, Z., 2024. SCGTracker: Spatio-temporal correlation
+and graph neural networks for multiple object tracking. Pattern Recogn. 149,
+110249. https://doi.org/10.1016/j.patcog.2023.110249.
+Zhang, W.L., Wang, J.Q., Liu, Y.X., Chen, K.Z., Li, H.B., Duan, Y.L., Guo, W., 2022. Deep-
+learning-based in-field citrus fruit detection and tracking. Hortic. Res. 9. https://doi.
+org/10.1093/hr/uhac003.
+Zheng, Z.H., Xiong, J.T., Wang, X., Li, Z.X., Huang, Q.Y., Chen, H.R., Han, Y.L., 2023. An
+efficient online citrus counting system for large-scale unstructured orchards based on
+the unmanned aerial vehicle. J. Field Rob. 40 (3), 552–573. https://doi.org/
+10.1002/rob.22147.
+Q. An et al.
+Computers and Electronics in Agriculture 227 (2024) 109564 
+17 

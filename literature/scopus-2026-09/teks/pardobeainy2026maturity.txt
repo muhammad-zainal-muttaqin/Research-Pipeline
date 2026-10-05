@@ -1,0 +1,1855 @@
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+Maturity and size estimation with yield mapping for hydroponic 
+strawberries using machine vision
+Camilo Pardo-Beainy
+a,b,∗, Carlos Parra
+b, Leonardo Solaque
+c
+a Faculty of Electronic Engineering, Universidad Santo Tomás, Tunja, 150001, Colombia
+b Department of Electronics, Faculty of Engineering, Pontiﬁcia Universidad Javeriana, Bogotá, 110211, Colombia
+c Department of Engineering, Mechatronics Engineering, Universidad Militar Nueva Granada, Bogotá, 110111, Colombia
+a r t i c l e i n f o
+Keywords:
+RGB-D imaging
+GNSS RTK
+Strawberry yield mapping
+Fruit maturity estimation
+Fruit size estimation
+Instance segmentation
+ 
+a b s t r a c t
+Strawberry production in hydroponic systems requires precise and spatially explicit information on fruit load, 
+maturity, and size to support harvest planning and quality control. This study presents an integrated computer 
+vision and GNSS RTK framework that detects individual strawberries, estimates their maturity and physical di-
+mensions, assigns fruits to operational size–maturity categories, and generates high-resolution yield maps in an 
+open-ﬁeld hydroponic system. RGB-D images are processed with YOLOv8-seg and a BoT-SORT-based tracking 
+module to obtain instance-level masks, from which a color-based ripeness index and 3D point clouds are derived. 
+After DBSCAN-based ﬁltering, fruit length and width are computed in metric space and combined with ripeness 
+percentage to assign each strawberry to one of nine operational size–maturity categories using predeﬁned thresh-
+old rules. The system was evaluated in a commercial hydroponic crop in Arcabuco, Boyacá, Colombia, achieving 
+accurate segmentation, with median IoU values up to 0.83 for bounding boxes and 0.71 for masks, and mean 
+absolute errors of 2.51 mm in length and 1.85 mm in width with respect to Vernier caliper measurements. Yield 
+maps aggregated in 1 m2 cells and by crop row revealed marked spatial variability in fruit density, maturity 
+state, and size–maturity composition, allowing the identiﬁcation of zones with a high concentration of fruits 
+ready for harvest versus areas dominated by immature fruits. The proposed framework provides a practical and 
+low-cost decision support tool for hydroponic strawberry management and may be adapted to other high-value 
+horticultural crops after recalibration under diﬀerent crop architectures, cultivars, and environmental conditions.
+1.  Introduction
+Accurate estimation of yield and maturity in high-value horticultural 
+crops such as strawberries represents a fundamental technical and lo-
+gistical challenge to improve harvest eﬃciency, reduce losses, and en-
+sure product quality standards. In hydroponic systems, where plant den-
+sity is higher and growing conditions are more controlled, data-driven 
+planning becomes even more critical, especially in environments with 
+limited labor or narrow commercial maturity windows [1]. However, 
+continuous monitoring of fruit status remains predominantly manual, 
+subjective, and costly.
+In response to this need, the scientiﬁc community has made consider-
+able progress in developing computer vision and deep learning systems 
+to detect, classify, and characterize fruits across diﬀerent crops. In a pi-
+oneering work, Swain et al.[2] developed a system to estimate yield in 
+wild blueberries based on visual counts from images, achieving a corre-
+lation of 𝑅2 = 0.97. More recently, Safre et al.[3] applied YOLOv8 and 
+∗Corresponding author.
+ 
+E-mail addresses: camilo.pardo@usantoto.edu.co, pardo-camilo@javeriana.edu.co (C. Pardo-Beainy), carlos.parra@javeriana.edu.co (C. Parra), 
+leonardo.solaque@unimilitar.edu.co (L. Solaque).
+YOLOv11 models for automatic tart cherry counting on conveyor belts, 
+achieving a mAP@50 of 92% with YOLOv11x and a linear correlation 
+with actual yield of 𝑅2 = 0.62.
+Beyond detection, various strategies have been developed to es-
+timate maturity and size–two key attributes for commercial grading. 
+Tamilarasi and Muthulakshmi[4] proposed a system to predict in-
+termediate maturity in brinjal using k-means segmentation and con-
+tour analysis, reaching 96% accuracy and an F1-score of 91%. In 
+fruits such as baobab, other studies have shown that morphologi-
+cal characteristics can be eﬀectively modeled using computer vision 
+and supervised methods, achieving volume predictions with 𝑅2 = 0.998
+[5].
+Physical dimension estimation has also been the focus of several 
+studies. Chu et al.[6] used a laser-camera scanner for three-dimensional 
+localization in apples, achieving mean localization errors between 6.9 
+and 11.2 mm, signiﬁcantly lower than those obtained with commercial 
+RGB-D sensors like RealSense, which averaged 21.5mm.
+https://doi.org/10.1016/j.atech.2026.102416
+Received 25 March 2026; Received in revised form 9 July 2026; Accepted 18 July 2026
+Smart Agricultural Technology 14 (2026) 102416 
+Available online 19 July 2026 
+2772-3755/© 2026 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY license ( http://creativecommons.org/licenses/by/4.0/ ). 
+
+C. Pardo-Beainy et al.
+Fig. 1. Proposed framework.
+Yield mapping has become a key tool in precision agriculture. Apolo-
+Apolo et al.[7] used UAVs to map citrus distribution, obtaining a pre-
+diction error of 6.59%, while [8] introduced a neural network that uses 
+16 visual fruit descriptors from olive trees to estimate yield with only 
+a 2.64% overestimation compared to actual weight. Safre et al.[3] also 
+integrated YOLO and BoT-SORT for tart cherry counting, validating the 
+results with real weights and achieving an average error of 10 kg per 
+tree.
+Despite these advances, the simultaneous integration of segmenta-
+tion, maturity/size estimation, and georeferenced fruit mapping remains 
+limited, especially in low-structure crops like strawberries, where fruits 
+occur in various maturity stages, with high occlusion and signiﬁcant 
+variability in color and size [9–11]. While some studies have applied the 
+Segment Anything Model (SAM), Transformers, or multi-view strategies 
+to improve segmentation and tracking [12,13], their application under 
+real ﬁeld conditions and their linkage to GNSS RTK coordinates remains 
+incipient.
+In the speciﬁc case of hydroponic crops, the literature is even more 
+scarce. Sharmin et al.[1] reviewed yield prediction models for hydro-
+ponic lettuce, highlighting that most approaches lack spatial data in-
+tegration, and that the production-control capabilities oﬀered by hy-
+droponics have not been fully exploited by computer vision systems. 
+Similarly, studies on grapes [14], tomatoes [15], and bananas [16] un-
+derscore the need to model intra-plot variability in attributes such as 
+maturity and weight to improve harvest planning, but these approaches 
+have not been fully extended to structured hydroponic strawberry sys-
+tems.
+However, hydroponic strawberry crops should not be regarded 
+merely as a planting method. From a computer vision and preci-
+sion agriculture perspective, these systems introduce particular op-
+erating conditions: high fruit and plant density, fruit overlap, par-
+tial occlusion by leaves, support structures, repetitive backgrounds 
+from adjacent rows, and illumination variability under open-ﬁeld con-
+ditions. These characteristics increase scene complexity and compli-
+cate not only individual fruit detection, but also reliable maturity 
+estimation, dimension measurement, and spatial localization of each
+fruit.
+This work builds upon a previously developed RGB-D and GNSS RTK 
+framework for hydroponic strawberry detection, segmentation, track-
+ing, counting, and fruit-density yield mapping [17]. In the present study, 
+that perception module is used as a validated input stage, and the main 
+contribution is to extend it toward fruit-level characterization through 
+maturity estimation, depth-based size measurement, operational size–
+maturity categorization, and enriched yield maps.
+In this context, this study proposes a ﬁeld-validated yield monitoring 
+and mapping methodology for hydroponic strawberry crops. The system 
+includes:
+• Detection and segmentation of strawberries using deep learning 
+models with RGB-D sensors.
+• Estimation of fruit maturity through colorimetric analysis and fruit 
+size through depth-based measurement.
+• Georeferencing of each detected fruit using GNSS RTK coordinates.
+• Rule-based assignment of fruits into operational size–maturity cate-
+gories.
+• Generation of yield maps in 1 m2 grid cells with aggregated indica-
+tors per zone, including fruit count, maturity, size, and size–maturity 
+composition.
+This proposal addresses a key gap in the scientiﬁc literature by of-
+fering a practical, automated, and adaptable tool for spatially explicit 
+fruit-level monitoring in hydroponic strawberry crops.
+2.  Materials and methods
+Fig. 1 presents the framework devoted to strawberry feature extrac-
+tion and yield mapping. Starting from RGB-D images georeferenced with 
+GNSS RTK, the workﬂow is organized into ﬁve tightly coupled compo-
+nents: (i) data acquisition and localization, where RGB-D crop images 
+are captured and associated with precise spatial coordinates; (ii) detec-
+tion and segmentation, responsible for identifying and isolating each 
+strawberry as an independent instance in the images; (iii) feature ex-
+traction, in which quantitative attributes are derived for each fruit, such 
+as ripeness percentage and geometric dimensions; (iv) rule-based size–
+maturity categorization, which integrates ripeness and size information 
+Smart Agricultural Technology 14 (2026) 102416 
+2 
+
+C. Pardo-Beainy et al.
+Fig. 2. Background removal.
+to assign each fruit to a predeﬁned operational category; and (v) yield 
+mapping, where individual measurements are aggregated into discrete 
+spatial units to build thematic maps of fruit count, maturity, size, and 
+category composition. In the following subsections, each of these com-
+ponents is described in detail, following the order shown in the concep-
+tual framework of the ﬁgure.
+All modules described in this framework were implemented as an in-
+tegrated processing workﬂow and applied to the ﬁeld-collected dataset. 
+In the current implementation, the recognition, tracking, feature ex-
+traction, size–maturity categorization, and map-generation stages are 
+executed as a processing pipeline on the georeferenced RGB-D images. 
+Therefore, the algorithms are not presented only as conceptual com-
+ponents, but as applied modules used to produce the measurements, 
+categories, and maps analyzed in this study.
+2.1.  Data acquisition and localization
+The proposed system was implemented in an open-ﬁeld hydroponic 
+strawberry crop located in Arcabuco, Boyacá, Colombia (Lat: 5°45’46.3" 
+N, Lon: 73°26’46.9" W; altitude: 2739 m a.s.l.), using an Intel RealSense 
+D435i RGB-D camera and an Ardusimple simpleRTK2B GNSS RTK sys-
+tem operating in a Base–Rover conﬁguration. The camera and rover 
+receiver were mounted on a telescopic monopod with a lateral view 
+towards the crop rows, at an approximate height of 1.2 m above the 
+ground, a lateral oﬀset of about 0.6 m with respect to the row, and a 
+tilt angle close to 25◦. Data acquisition was carried out in the morning 
+(between 8:00 and 11:00 h), under partially cloudy conditions, in or-
+der to reduce abrupt changes in illumination. Under these conditions, 
+the plants exhibited diﬀerent fruiting stages, with fruits of various sizes 
+and ripeness levels. A total of 1626 RGB-D images were captured at a 
+resolution of 1280 × 720 pixels and a frame rate of 7 fps, which allowed 
+dense coverage of the crop and adequate spatial continuity for subse-
+quent analysis stages.
+Camera control and data ﬂow management were performed in 
+Python using the pyrealsense2 library and Intel RealSense SDK 2.0 
+tools. The detailed preprocessing of depth images (application of dec-
+imation ﬁlters, disparity–depth transformations, spatial and temporal 
+ﬁlters, and hole ﬁlling) has been described in a previous work by the 
+authors on strawberry detection and counting using georeferenced RGB-
+D images in the same hydroponic system [17]. In the present article, 
+this preprocessing is assumed as an input stage, and one additional step 
+speciﬁcally related to feature extraction is highlighted.
+Fig. 2 illustrates the background removal process, where the already 
+ﬁltered depth information is used to discard pixels that fall outside the 
+expected range of the target crop row. Based on the depth map, a dis-
+tance interval associated with the furrow where the plants and fruits of 
+the analyzed row are located is deﬁned. Pixels with depth values below 
+or above this interval are marked as background and masked out, thus 
+removing distant rows, support structures and other elements that are 
+not part of the fruit analysis. Simple morphological ﬁltering operations 
+are applied to clean small disconnected regions, so that the resulting 
+image mainly preserves the foliage and fruits of the row of interest. This 
+procedure reduces scene complexity and improves the robustness of the 
+subsequent detection, segmentation and feature extraction stages, in a 
+manner consistent with other vision-based fruit yield mapping systems 
+that integrate RGB-D sensors [18,19] and GNSS RTK [20,21].
+In parallel with RGB-D image acquisition, localization data from 
+the GNSS RTK system on the simpleRTK2B rover were continuously 
+recorded. The base receiver was placed at a point with known coor-
+dinates and transmitted real-time diﬀerential corrections to the rover 
+through a radio link in the 902–927 MHz band. This Base–Rover conﬁgu-
+ration compensates for atmospheric and geometric signal errors, achiev-
+ing centimetre-level positioning accuracy. The acquisition system was 
+programmed with independent execution threads for the GNSS and the 
+camera, synchronized by shared timestamps so that each RGB-D image 
+was associated with a corresponding GNSS RTK position.
+To quantify the eﬀective accuracy of the GNSS RTK system under 
+the actual operating conditions, a static experiment was carried out by 
+keeping the rover at a ﬁxed point for an extended period. The resulting 
+localization coordinates were represented in a planar coordinate system, 
+generating a dispersion pattern around the true position. Fig. 3 shows 
+the dispersion of GNSS data at a ﬁxed location, with the resulting point 
+cloud and reveals a maximum radius of approximately 5.61 cm, which 
+characterizes the variability of the system in Base–Rover mode. This dis-
+persion is relevant because it directly propagates to the spatial accuracy 
+of the fruit-level yield maps.
+Although this centimeter-level accuracy characterizes the localiza-
+tion of the acquisition platform and propagates to the yield maps, it 
+should not be interpreted as the ability to spatially resolve adjacent fruits 
+separated by only a few centimeters within the same plant or fruit clus-
+ter. In this system, individual fruit separation is primarily performed 
+in image space through instance segmentation and temporal tracking, 
+whereas GNSS RTK provides the geospatial reference for each image 
+and its associated detections. Therefore, RTK accuracy is adequate for 
+the target spatial scale of this study, namely crop-row analysis and ag-
+gregation in 1 m2 grid cells, but it is not intended to replace visual 
+discrimination of closely spaced fruits within the canopy.
+Finally, the GNSS coordinates were transformed from latitude–
+longitude to a projected coordinate system in metres, speciﬁcally UTM 
+(Universal Transverse Mercator), as commonly employed in precision 
+agriculture applications [22,23]. This transformation allows each im-
+age and each detected fruit to be located within a Cartesian reference 
+frame suitable for spatial analysis and yield map generation. The acqui-
+sition and localization scheme described in this section forms the basis 
+Smart Agricultural Technology 14 (2026) 102416 
+3 
+
+C. Pardo-Beainy et al.
+Fig. 3. Dispersion of GNSS data at a ﬁxed location.
+on which the subsequent stages of detection and segmentation, feature 
+extraction and yield mapping presented in this work are built.
+2.2.  Detection and segmentation
+The detection and segmentation stage receives as input the RGB-D 
+images that have already undergone the preprocessing and background 
+removal described in the previous section. On these images, an instance 
+segmentation pipeline is implemented, allowing each strawberry to be 
+individually identiﬁed at the pixel level and associated with its corre-
+sponding depth information and geographic location.
+For strawberry detection, four variants of the YOLOv8 model with 
+instance segmentation capabilities were used: YOLOv8n-seg, YOLOv8s-
+seg, YOLOv8m-seg, and YOLOv8l-seg. The construction of the dataset, 
+the annotation protocol, the partition into training, validation, and test 
+subsets, and the training details of these models were presented in de-
+tail in [17]. In the present manuscript, YOLOv8-seg is not introduced 
+as the main algorithmic novelty, but as a previously developed percep-
+tion module that provides fruit masks, bounding boxes, tracking iden-
+tiﬁers, and georeferenced detections. The methodological contribution 
+of this study is to extend this perception stage toward fruit-level fea-
+ture extraction, maturity and size estimation, operational size–maturity 
+categorization, and enriched yield mapping.
+Dataset annotations were performed at the instance level, delineat-
+ing each visible strawberry in the image with polygons that follow the 
+fruit contour. From these polygons, the corresponding bounding boxes 
+are also derived. This dual representation (polygon masks and bounding 
+boxes) enables the evaluation of both object detection performance and 
+instance segmentation quality.
+During inference, each preprocessed RGB image is fed into one of 
+the YOLOv8-seg models. For each detected strawberry, the network out-
+puts the class label (strawberry), a conﬁdence score, a bounding box, 
+and a binary mask that delineates the fruit at pixel level. The result-
+ing set of detections per image constitutes the input for the temporal 
+tracking module. Tracking of strawberries along the image sequence 
+is performed using a tracking-by-detection strategy based on the BoT-
+SORT algorithm, which associates detections across consecutive frames 
+by combining motion and appearance information. Each strawberry is 
+assigned a track identiﬁer (track ID) when it is detected for the ﬁrst 
+time, and this identiﬁer is maintained while the fruit remains visible. If 
+a track stops receiving associations for a predeﬁned number of frames, 
+it is considered terminated. This mechanism prevents double counting 
+when the same strawberry appears in multiple consecutive frames with 
+small viewpoint changes or partial occlusions.
+The Fig. 4 summarizes the overall operation of this stage. In the ini-
+tial part of the ﬁgure, a set of RGB images is shown after depth ﬁltering 
+and background removal, so that only the target crop row remains vis-
+ible. The ﬁgure also shows the result of instance segmentation, where 
+strawberries are detected with their corresponding masks and bounding 
+boxes. Subsequently, the tracking process is depicted, where each straw-
+berry is followed along the sequence by its track ID, ensuring that the 
+system identiﬁes it as the same object in diﬀerent frames and enabling a 
+unique count for each fruit. Finally, the ﬁgure illustrates the individual 
+extraction of strawberries: for each detection, the RGB image is cropped 
+using the mask, the aligned depth map is cropped in the same region, 
+and the associated information is organized in a structured ﬁle system.
+More speciﬁcally, for each detected strawberry, three main types of 
+information are stored:
+• The segmented color image of the fruit, obtained by cropping the 
+fruit region in the RGB image using its instance mask.
+• The depth map corresponding to the fruit, cropped from the original 
+depth image aligned with the RGB image, using the same instance 
+mask.
+• The detection metadata, including the mask (as a binary image), the 
+track identiﬁer (track ID), and the georeferenced location of the fruit, 
+obtained from the GNSS RTK system.
+The localization information of each fruit is stored in a .csv ﬁle, 
+where, among other ﬁelds, the image identiﬁer, the track ID, the pro-
+jected coordinates (UTM), and additional labels required for subsequent 
+stages are recorded. This procedure produces a dataset of georeferenced 
+strawberry instances, in which each fruit is represented by its RGB ap-
+pearance, its local 3D structure (through depth), and its spatial position 
+within the crop. These data form the basis for the feature extraction 
+stage (Section 2.3) and the yield mapping stage (Section 2.5).
+Smart Agricultural Technology 14 (2026) 102416 
+4 
+
+C. Pardo-Beainy et al.
+Fig. 4. Segmentation and extraction of georeferenced fruits.
+Fig. 5. Qualitative comparison between predicted detections and ground-truth annotations for bounding boxes and instance masks.
+2.2.1.  Evaluation metrics
+To quantitatively evaluate detection and segmentation performance, 
+geometric metrics were computed on the test subset for both bound-
+ing boxes and instance masks. Speciﬁcally, F1-Score, interpreted as the 
+Dice coeﬃcient between the predicted and ground-truth regions, and 
+Intersection over Union (IoU), which measures the overlap ratio be-
+tween both regions, were used. These metrics were computed for each 
+prediction–ground-truth pair and summarized using the median, mean, 
+and standard deviation to characterize both typical performance and 
+model variability under diﬀerent scene conﬁgurations, illumination con-
+ditions, and occlusion levels.
+In addition to detection and segmentation quality, the com-
+putational performance of each YOLOv8-seg variant was evalu-
+ated using total inference time, average inference time per image, 
+frames per second (FPS), and peak GPU memory usage. These met-
+rics allow the geometric accuracy and computational eﬃciency of 
+YOLOv8n-seg, YOLOv8s-seg, YOLOv8m-seg, and YOLOv8l-seg to be 
+compared. Fig. 5 qualitatively illustrates the comparison between 
+predictions and ground-truth annotations for bounding boxes and
+masks.
+Overall, the detection and segmentation stage establishes the link 
+between the preprocessed RGB-D sequences and the subsequent mod-
+ules for feature extraction, rule-based size–maturity categorization, and 
+yield mapping. This stage ensures that each strawberry is localized, seg-
+mented, tracked over time, and associated with its depth information 
+and georeferenced location.
+2.3.  Feature extraction
+For each strawberry detected and segmented in the previous stage, 
+the system extracts two main groups of features:
+• A ripeness indicator, associated with the predominance of red tones 
+on the fruit surface.
+• The physical dimensions of each strawberry (width and length, in 
+millimeters), computed from the depth map and the intrinsic pa-
+rameters of the depth camera.
+These features are individually computed for each fruit and stored 
+together with its georeferenced location, forming the basis for the subse-
+quent operational size–maturity categorization and for the construction 
+of yield maps.
+Methodologically, feature extraction relies on two key inputs pro-
+duced by the detection and segmentation stage:
+• The segmented RGB image of the strawberry, where the background 
+has been removed and only the fruit remains.
+Smart Agricultural Technology 14 (2026) 102416 
+5 
+
+C. Pardo-Beainy et al.
+Fig. 6. Ripeness determination.
+• The aligned depth submatrix corresponding to that fruit, containing 
+the distance values for the fruit pixels.
+From these inputs, colour masks in HSV space are built to estimate 
+the percentage of ripe and unripe area, and a 3D point cloud of the fruit 
+is generated from the depth values and the camera intrinsics. A density-
+based clustering algorithm (DBSCAN) is then applied to this point cloud 
+to ﬁlter out distant or noisy points before computing the fruit dimen-
+sions.
+The following subsections describe in detail the procedure for 
+ripeness determination (Section 2.3.1) and for the estimation of the fruit 
+size (Section 2.3.2), including the mathematical formulation and the 
+speciﬁc role of DBSCAN in obtaining dimension estimates.
+2.3.1.  Ripeness determination
+Ripeness is estimated in HSV colour space, taking advantage of its 
+ability to separate the hue component from luminance and saturation. 
+The input to this stage is the segmented fruit image (without back-
+ground) obtained after detection and segmentation.
+Let 𝐼RGB denote the RGB image of the segmented strawberry and 𝐼HSV
+its representation in HSV space. A binary “fruit area” mask maskfruit is 
+obtained by applying an initial HSV threshold to roughly isolate the 
+fruit, followed by a logical inversion and a morphological erosion to 
+remove small noisy regions. Conceptually:
+maskfruit(𝑝) =
+{
+1,
+if pixel 𝑝 is considered part of the fruit,
+0,
+otherwise.
+(1)
+Within maskfruit, two types of regions are identiﬁed: ripe (red) and 
+unripe (green/yellow).
+• Ripe regions (red). Two hue intervals are used to cover red tones in 
+HSV:
+𝐻∈[0, 10], 𝑆≥100, 𝑉≥100,
+(2)
+𝐻∈[170, 180], 𝑆≥100, 𝑉≥100.
+(3)
+From these intervals, partial masks maskmature_1 and maskmature_2
+are obtained, and the global ripe mask is deﬁned as:
+maskmature = (maskmature_1 ∨maskmature_2
+) ∧maskfruit.
+(4)
+• Unripe regions (green/yellow). Unripe areas are identiﬁed with a 
+hue interval for green/yellow tones:
+𝐻∈[25, 85],
+𝑆≥40,
+𝑉≥40,
+(5)
+leading to a provisional mask maskimmature_HSV, which is then re-
+stricted to the fruit area:
+maskimmature = maskimmature_HSV ∧maskfruit.
+(6)
+The HSV thresholds used in this study are ﬁxed thresholds deﬁned for 
+the evaluated acquisition conditions. Although HSV partially separates 
+chromatic information from intensity, the results may still be aﬀected 
+by illumination changes, shadows, specular reﬂections, and exposure 
+variations. To reduce these eﬀects, the analysis is applied only to the 
+previously segmented fruit region rather than to the complete image, 
+thereby limiting the inﬂuence of the background and crop structures. In 
+addition, strawberry achenes may introduce yellow or light-colored pix-
+els within the fruit surface; therefore, the ripeness index is interpreted as 
+a relative measure of visible red-surface coverage, rather than as a direct 
+physiological measurement of internal ripeness. In future implementa-
+tions, this stage could be improved through adaptive color calibration, 
+radiometric normalization, or learning-based ripeness estimation mod-
+els.
+Pixels in the fruit area that do not fall into either ripe or unripe ranges 
+are ﬁrst marked as unclassiﬁed,
+maskunclassiﬁed = maskfruit ∧¬(maskmature ∨maskimmature
+),
+(7)
+and then reassigned to the unripe mask:
+maskimmature ←maskimmature ∨maskunclassiﬁed.
+(8)
+Ripeness percentage. Deﬁne
+𝑀= {𝑝∣maskmature(𝑝) = 1},
+(9)
+𝑈= {𝑝∣maskimmature(𝑝) = 1},
+(10)
+with
+𝑁mature = |𝑀|,
+𝑁immature = |𝑈|.
+(11)
+The percentage of ripe area is:
+Ripe =
+⎧
+⎪
+⎨
+⎪⎩
+𝑁mature
+𝑁mature + 𝑁immature
+× 100,
+if 𝑁mature + 𝑁immature > 0,
+NaN,
+otherwise,
+(12)
+and the unripe percentage is:
+Unripe = 100 −Ripe.
+(13)
+Thus, each strawberry is characterized by the pair (Ripe, Unripe), 
+which quantiﬁes its surface ripeness as the proportion of red area over 
+the eﬀective fruit area.
+This process is illustrated in Fig. 6, which shows the segmented RGB 
+fruit without background, the ripe area highlighted in red, and the un-
+ripe area highlighted in green.
+2.3.2.  Determination of fruit size (Length and width)
+The physical dimensions of each strawberry (length and width, in 
+millimeters) are estimated from the depth map aligned with the seg-
+mented fruit image and from the intrinsic parameters of the Intel Re-
+alSense D435i camera. The goal is to build a 3D point cloud of each 
+fruit, ﬁlter spurious points using DBSCAN, and compute its main geo-
+metric extents.
+Smart Agricultural Technology 14 (2026) 102416 
+6 
+
+C. Pardo-Beainy et al.
+• Projection to 3D coordinates.
+For each segmented strawberry, the corresponding depth sub-
+matrix, aligned with the RGB image, is masked using the com-
+bined fruit mask obtained from the ripeness stage, combined_mask =
+maskmature ∨maskimmature, so that only depth values belonging to the 
+fruit are retained. All pixels with valid depth are projected to metric 
+coordinates (𝑋, 𝑌, 𝑍) in the camera frame using a pinhole model and 
+the calibrated intrinsic parameters of the Intel RealSense D435i:
+𝑓𝑥= 1210,
+𝑓𝑦= 1210,
+𝑐𝑥= 640,
+𝑐𝑦= 360,
+(14)
+𝑋= (𝑗−𝑐𝑥) 𝑧
+𝑓𝑥
+,
+𝑌= −
+(𝑖−𝑐𝑦) 𝑧
+𝑓𝑦
+,
+𝑍= 𝑧,
+(15)
+where 𝑧 is the depth (in millimeters) at pixel (𝑖, 𝑗). This process yields 
+a 3D point cloud  that represents the fruit geometry from the cam-
+era viewpoint.
+In Fig. 7, subﬁgure (a) shows the segmented RGB strawberry, 
+while subﬁgure (b) shows the associated depth map from which  is 
+derived.
+• Outlier ﬁltering with DBSCAN and its eﬀect on dimensions.
+Despite 2D segmentation,  may contain points that do not 
+belong to the actual fruit body (e.g., mis-segmented background, 
+leaves, support structures, reﬂections). Using the full cloud directly 
+could artiﬁcially inﬂate the extensions along 𝑋 and 𝑌, leading to 
+unrealistic size estimates.
+To avoid this, the DBSCAN (Density-Based Spatial Clustering of 
+Applications with Noise) algorithm is applied to the points in . DB-
+SCAN groups points according to local density and labels as noise 
+those that do not belong to dense regions. In the implementation, 
+the following parameters are used:
+𝜀= 5 mm,
+𝑚= 10,
+(16)
+where 𝜀 is the neighbourhood radius (eps) and 𝑚 is the minimum 
+number of points (min_samples). The largest non-noise cluster is se-
+lected as the main fruit cluster, and all remaining points are treated 
+as outliers and discarded before dimension estimation.
+This behaviour is illustrated in Fig. 7:
+– In subﬁgure (c), Fruit Dimensions Raw, a 2D view of the original 
+point cloud is shown. A compact region corresponds to the main 
+fruit body, while a set of distant points appears highlighted in 
+red.
+– In subﬁgure (d), Fruit Dimensions DBSCAN, the same 2D view 
+is shown after applying DBSCAN. The distant red points are re-
+moved as noise and only the compact cluster remains.
+– Subﬁgures (e), Fruit Dimensions Raw (3-D), and (f), Fruit Dimen-
+sions DBSCAN (3-D), present 3D views of the raw and ﬁltered 
+point clouds, respectively, clearly showing the dispersion of dis-
+tant points and the compact volume of the fruit after DBSCAN 
+ﬁltering.
+This ﬁgure highlights the role of DBSCAN in the size feature ex-
+traction stage: by systematically removing distant depth points that 
+do not belong to the fruit body, it prevents length and width overes-
+timation and yields geometrically consistent measurements.
+• Computation of width and length from the main cluster.
+Once the main cluster has been obtained, the fruit dimensions are 
+computed along the 𝑋 (width) and 𝑌 (length) axes. From all points in 
+main cluster, the minimum and maximum coordinates are obtained, 
+and the raw geometric extensions along each axis are:
+Δ𝑋= 𝑋max −𝑋min
+Δ𝑌= 𝑌max −𝑌min
+(17)
+To compensate for systematic biases associated with viewing ge-
+ometry, depth discretization, partial visibility of the fruit surface, 
+and spatial sampling of the point cloud, the geometric extensions 
+were adjusted using empirical scale factors. These factors were ob-
+tained during a calibration stage using manual reference measure-
+ments with a Vernier caliper and were kept ﬁxed for processing the 
+evaluated dataset. In the implementation, the following scale factors 
+were used:
+𝑠𝑤= 1.43
+(width scale factor),
+𝑠𝑙= 1.67
+(length scale factor).
+(18)
+The calibrated continuous estimates are computed as:̂
+𝑊= Δ𝑋⋅𝑠𝑤,̂
+𝐿= Δ𝑌⋅𝑠𝑙.
+(19)
+For tabular reporting and subsequent operational categorization, 
+the dimensions were rounded to the nearest millimeter:
+Fruit_Width = round(̂𝑊),
+Fruit_Length = round(̂𝐿).
+(20)
+This rounding avoids reporting sub-millimetric precision that is 
+not justiﬁed under ﬁeld conditions with an RGB-D sensor, without 
+changing the practical interpretation of the size classes deﬁned in 
+this study.
+In the example illustrated in Fig. 7, before ﬁltering with DBSCAN, 
+the raw extensions produce 𝑊= 39 mm and 𝐿= 39 mm, whereas af-
+ter ﬁltering and recomputing the extensions from main cluster only, 
+the dimensions adjust to 𝑊= 29 mm and 𝐿= 38 mm.
+Although DBSCAN ﬁltering reduces the inﬂuence of spurious 
+points and mis-segmented background regions, size estimation may 
+still be aﬀected by partial occlusions, incomplete masks, depth quan-
+tization, sensor noise, and the limited visibility of the fruit from a 
+single lateral viewpoint. For this reason, the estimated dimensions 
+should be interpreted as practical measurements obtained from the 
+camera perspective, rather than as complete geometric reconstruc-
+tions of the fruit.
+• Validation of dimension measurements.
+To validate the dimensions obtained by the vision algorithm, 
+a comparison experiment was conducted against manual measure-
+ments using a Vernier caliper. A set of strawberries was measured 
+manually (width and length) and processed with the algorithm de-
+scribed above.
+For fruit 𝑖, let:
+– 𝐿ref
+𝑖 and 𝑊ref
+𝑖
+: reference length and width measured with the 
+caliper,
+– 𝐿cv
+𝑖 and 𝑊cv
+𝑖
+: length and width estimated by the vision system.
+The diﬀerences between both measurements are quantiﬁed using 
+standard error metrics. For length:
+– Mean Absolute Error (MAE) in length:
+MAE𝐿= 1
+𝑁
+𝑁
+∑
+𝑖=1
+|||𝐿cv
+𝑖−𝐿ref
+𝑖
+|||.
+(21)
+– Mean Relative Error (MRE) in length:
+MRE𝐿= 1
+𝑁
+𝑁
+∑
+𝑖=1
+|||𝐿cv
+𝑖−𝐿ref
+𝑖
+|||
+𝐿ref
+𝑖
+× 100.
+(22)
+– Root Mean Squared Error (RMSE) in length:
+RMSE𝐿=
+√
+√
+√
+√1
+𝑁
+𝑁
+∑
+𝑖=1
+(𝐿cv
+𝑖−𝐿ref
+𝑖
+)2.
+(23)
+Analogous metrics MAE𝑊, MRE𝑊 and RMSE𝑊 are deﬁned for 
+width. The speciﬁc values of these metrics are reported in the Results 
+section, showing that the errors remain within acceptable ranges for 
+ﬁeld applications in precision agriculture.
+This validation procedure is summarised in Fig. 8:
+– on the left, strawberries being measured with the Vernier caliper 
+are shown;
+– in the centre, the same fruits are captured by the RGB-D camera;
+– on the right, the length and width values estimated by the vi-
+sion algorithm are displayed, highlighting the general agreement 
+between manual and vision-based measurements.
+Smart Agricultural Technology 14 (2026) 102416 
+7 
+
+C. Pardo-Beainy et al.
+Fig. 7. Depth map and fruit dimensions with DBSCAN.
+Fig. 8. Validation of dimension measurements: Vernier caliper and computer vision algorithm.
+Smart Agricultural Technology 14 (2026) 102416 
+8 
+
+C. Pardo-Beainy et al.
+Table 1 
+Distribution of strawberries by operational size–maturity 
+category in the original dataset.
+ Category ID
+ Size–maturity category
+ Number of fruits
+ 0
+ Partially Ripe–Large
+ 178
+ 1
+ Partially Ripe–Medium
+ 196
+ 2
+ Partially Ripe–Small
+ 635
+ 3
+ Ripe–Large
+ 150
+ 4
+ Ripe–Medium
+ 147
+ 5
+ Ripe–Small
+ 379
+ 6
+ Unripe–Large
+ 352
+ 7
+ Unripe–Medium
+ 879
+ 8
+ Unripe–Small
+ 2670
+• Feature set.
+Finally, for each strawberry, the extracted feature set consists of:
+– ripeness and unripeness percentages, Ripe and Unripe,
+– physical dimensions, Fruit_Width and Fruit_Length (in mm),
+– georeferenced location information (Coordinates associated with 
+the fruit).
+These data are integrated into a tabular structure in CSV format 
+and form the basis for the subsequent stages of rule-based opera-
+tional size–maturity categorization (Section 2.4) and yield mapping 
+(Section 2.5).
+2.4.  Rule-based assignment of strawberry size–maturity categories
+Once the features of each fruit, speciﬁcally ripeness percentage and 
+physical dimensions, have been computed, each strawberry is assigned 
+to one of nine operational categories that combine maturity and size in-
+formation. This stage uses a transparent rule-based categorization proce-
+dure, in which the extracted fruit descriptors are converted into discrete 
+agronomic classes to support spatial interpretation, yield mapping, and 
+harvest planning.
+The categorization is based on two main axes:
+• Ripeness, expressed as the percentage of ripe fruit area obtained 
+from the masks of ripe and unripe regions (Section 2.3.1). From this 
+continuous value, three levels are deﬁned:
+– Unripe: ripeness ≤20%,
+– Partially Ripe: 20% < ripeness ≤60%,
+– Ripe: ripeness > 60%.
+• Size, derived from the physical dimensions Fruit_Width and
+Fruit_Length (in mm), as described in Section 2.3.2. Three size 
+ranges are deﬁned:
+– Small: width < 20 mm or length < 30 mm,
+– Medium: 20 mm ≤ width < 30 mm and 30 mm ≤ length < 40 mm,
+– Large: width ≥30 mm and length ≥40 mm.
+Combining the three ripeness levels with the three size ranges yields 
+nine size–maturity categories. Each fruit receives a category identiﬁer 
+between 0 and 8, which enables aggregation by spatial cell and crop row 
+during yield mapping. These categories are used as operational indica-
+tors to summarize spatial crop variability, distinguishing zones domi-
+nated by developing immature fruits from zones with larger ripe fruits 
+of greater interest for selective harvesting.
+The thresholds used in this study should be interpreted as opera-
+tional criteria deﬁned for the evaluated monitoring system, rather than 
+as universal commercial standards. They were selected to produce agro-
+nomically interpretable groups compatible with the measurement scale 
+of the RGB-D system. When the system is transferred to other production 
+contexts, the thresholds can be recalibrated or aligned with cultivar-
+speciﬁc traits, local commercial grading criteria, grower requirements, 
+or postharvest grading standards. The distribution of fruits per category 
+in the original dataset is shown in Table 1.
+2.5.  Yield mapping
+The yield mapping stage starts from the ﬁnal set of detected straw-
+berries
+= {𝑓𝑘}𝑁
+𝑘=1,
+(24)
+where each fruit 𝑓𝑘 is described by:
+• projected coordinates (𝑥𝑘, 𝑦𝑘) in UTM (meters),
+• ripeness percentage 𝑟𝑘 (% of visible ripe area),
+• physical dimensions (𝑤𝑘, 𝑙𝑘) (width and length, in mm),
+• rule-based operational size–maturity category 𝑐𝑘∈{0, … , 8}, as de-
+ﬁned in Section 2.4.
+The goal is to transform these point-level data into spatial indicators 
+that allow crop variability to be analyzed in terms of fruit density, visible 
+ripeness, physical dimensions, and size–maturity category composition.
+2.5.1.  Aggregation in 1 m2 cells
+Over the plot, expressed in UTM coordinates, a regular grid of square 
+cells 𝐶𝑖𝑗 of 1 m × 1 m is deﬁned. Each strawberry is assigned to the cell 
+that contains its point (𝑥𝑘, 𝑦𝑘), so that for each cell the set of fruits 𝑖𝑗
+and its size are obtained:
+𝑁𝑖𝑗= |𝑖𝑗|,
+(25)
+which directly corresponds to the fruit density (fruits/m2) at that loca-
+tion in the crop.
+From the fruits contained in each cell, the following indicators are 
+computed:
+• Fruit density: the value 𝑁𝑖𝑗 is used to generate density maps, where 
+each 1 m2 cell represents how many strawberries are found in that 
+area. This makes it possible to identify zones with higher and lower 
+fruit load.
+• Average ripeness per cell: using the ripe area percentage 𝑟𝑘 of each 
+fruit 𝑓𝑘∈𝑖𝑗, the average ripeness of the cell is obtained as the mean 
+of those values:̄
+𝑟𝑖𝑗=
+⎧
+⎪
+⎨
+⎪⎩
+1
+𝑁𝑖𝑗
+∑
+𝑓𝑘∈𝑖𝑗
+𝑟𝑘,
+𝑁𝑖𝑗> 0,
+NaN,
+𝑁𝑖𝑗= 0,
+(26)
+which reﬂects the average ripeness status in each area of the crop.
+• Category distribution: for each operational size–maturity category 
+ℎ∈{0, … , 8}, the number of fruits of that category in the cell is 
+counted:
+𝑁(ℎ)
+𝑖𝑗
+= |||{𝑓𝑘∈𝑖𝑗∣𝑐𝑘= ℎ}|||,
+(27)
+so that the vector (𝑁(0)
+𝑖𝑗, … , 𝑁(8)
+𝑖𝑗
+) describes the composition of the 
+cell in terms of size–maturity categories, for example, how many 
+“Ripe–Large”, “Unripe–Small”, etc. fruits are concentrated in each 
+square meter.
+When a smoother representation of these spatial patterns is required, 
+the values computed per cell, including total density, average ripeness, 
+or counts by size–maturity category, are associated with the cell cen-
+troids and interpolated over a denser grid. The result is a set of con-
+tinuous surfaces that allow gradients and transition zones in fruit load 
+and crop composition to be visualized at the plot scale. These interpo-
+lated maps are used only as visual aids for interpreting spatial trends. 
+Quantitative interpretation is based on the original counts and averages 
+computed in the 1 m2 cells, since interpolation may produce smoothed, 
+non-integer, or intermediate values that do not correspond to direct 
+fruit-count observations.
+Smart Agricultural Technology 14 (2026) 102416 
+9 
+
+C. Pardo-Beainy et al.
+Table 2 
+Performance of YOLOv8-seg models on the test dataset for bounding boxes and masks.
+ Bounding Boxes
+ Masks
+ Metric
+ YOLOv8n-seg
+ YOLOv8s-seg
+ YOLOv8m-seg
+ YOLOv8l-seg
+ YOLOv8n-seg
+ YOLOv8s-seg
+ YOLOv8m-seg
+ YOLOv8l-seg
+ F1-Score (Median)
+ 0.81
+ 0.83
+ 0.87
+ 0.90
+ 0.73
+ 0.75
+ 0.78
+ 0.80
+ F1-Score (Mean)
+ 0.78
+ 0.80
+ 0.83
+ 0.85
+ 0.70
+ 0.73
+ 0.75
+ 0.77
+ F1-Score (Std Dev)
+ 0.15
+ 0.14
+ 0.14
+ 0.13
+ 0.16
+ 0.15
+ 0.15
+ 0.14
+ IoU (Median)
+ 0.73
+ 0.76
+ 0.80
+ 0.83
+ 0.63
+ 0.65
+ 0.69
+ 0.71
+ IoU (Mean)
+ 0.70
+ 0.73
+ 0.77
+ 0.79
+ 0.61
+ 0.64
+ 0.66
+ 0.68
+ IoU (Std Dev)
+ 0.16
+ 0.15
+ 0.14
+ 0.13
+ 0.15
+ 0.15
+ 0.15
+ 0.14
+ Total Inference Time (s)
+ 25.64
+ 24.94
+ 39.46
+ 64.53
+ 34.65
+ 35.89
+ 44.16
+ 65.15
+ Inference Speed (ms)
+ 29.00
+ 28.21
+ 44.63
+ 73.00
+ 39.20
+ 40.60
+ 49.96
+ 73.70
+ FPS
+ 34.48
+ 35.45
+ 22.40
+ 13.70
+ 25.51
+ 24.63
+ 20.02
+ 13.57
+ GPU Memory Used (MB)
+ 114.48
+ 94.35
+ 106.72
+ 123.45
+ 139.67
+ 81.92
+ 92.42
+ 110.33
+2.5.2.  Row-wise distribution analysis
+In addition to the analysis based on regular cells, a speciﬁc study of 
+category distribution along the crop rows is carried out. Each fruit 𝑓𝑘 is 
+associated with a row index Row(𝑓𝑘). For each row 𝑟, the following are 
+deﬁned:
+• the set of fruits belonging to row 𝑟,
+• the total number of fruits 𝑁𝑟,
+• the counts per category 𝑁𝑟,ℎ, which represent how many fruits of 
+category ℎ are found in row 𝑟.
+Formally, the total number of fruits in row 𝑟 and the counts per cat-
+egory are expressed as:
+𝑁𝑟= |||{𝑓𝑘∈∣Row(𝑓𝑘) = 𝑟}|||,
+(28)
+𝑁𝑟,ℎ= |||{𝑓𝑘∈∣Row(𝑓𝑘) = 𝑟, 𝑐𝑘= ℎ}|||.
+(29)
+From these counts, row and category-wise proportions are computed:
+𝑝𝑟,ℎ=
+⎧
+⎪
+⎨
+⎪⎩
+𝑁𝑟,ℎ
+𝑁𝑟
+,
+𝑁𝑟> 0,
+0,
+𝑁𝑟= 0,
+(30)
+which indicate what fraction of the fruits in row 𝑟 belongs to each of the 
+nine categories considered.
+The matrix formed by 𝑁𝑟,ℎ (or by 𝑝𝑟,ℎ) is represented using heatmap-
+type plots, where:
+• each row in the plot corresponds to a crop row,
+• each column represents a strawberry category,
+• the color intensity reﬂects the count or proportion associated with 
+each row–category combination.
+This type of analysis makes it possible to identify rows with a higher 
+presence of large ripe fruits, rows dominated by small unripe fruits, or 
+more balanced patterns. Overall, the yield mapping stage formalizes the 
+transition from individual fruit data (𝑥𝑘, 𝑦𝑘, 𝑟𝑘, 𝑤𝑘, 𝑙𝑘, 𝑐𝑘) to spatial yield 
+indicators aggregated by 1 m2 cells and by crop rows, which serve as 
+the basis for the agronomic interpretation presented in the Results and 
+Discussion section.
+3.  Results and discussion
+3.1.  Evaluation of performance metrics on the test dataset
+The results in this section summarize the performance of the de-
+tection and segmentation module used as the perception stage of the 
+system. Since the original training and validation of the YOLOv8-seg 
+models were previously presented, these metrics are reported here to 
+contextualize the quality of the masks, bounding boxes, and detections 
+that feed the new stages of this manuscript: maturity estimation, size 
+measurement, rule-based size–maturity categorization, and yield map-
+ping.
+Table 2 summarizes the quantitative performance of the four 
+YOLOv8-seg variants on the test dataset, for both bounding boxes and 
+segmentation masks. The metrics reported follow the deﬁnitions intro-
+duced in Section 2.2.1 and are complemented by the boxplots in Fig. 9, 
+which illustrate the distribution of F1-Score and IoU values across all 
+test instances.
+For bounding boxes, a clear trend is observed as model complex-
+ity increases from YOLOv8n-seg to YOLOv8l-seg. The median F1-Score 
+increases from 0.81 to 0.90, while the median IoU rises from 0.73 to 
+0.83. Similarly, the mean values improve (F1-Score from 0.78 to 0.85, 
+IoU from 0.70 to 0.79), indicating that larger models not only achieve 
+better best-case predictions, but also increase the average overlap be-
+tween predicted and ground-truth regions. The standard deviations for 
+F1-Score and IoU remain within a relatively narrow range (approxi-
+mately 0.13–0.16), suggesting that these gains are not obtained at the 
+cost of higher instability in more complex scenes. The upper row of Fig. 9 
+shows that the interquartile ranges tend to shrink for YOLOv8m-seg and 
+YOLOv8l-seg, with higher medians and fewer low outliers, consistent 
+with more reliable localization of strawberry instances.
+For segmentation masks, the same monotonic trend holds, although 
+with slightly lower absolute values, as expected for a more demanding 
+task than box-level detection. The median F1-Score for masks increases 
+from 0.73 (YOLOv8n-seg) to 0.80 (YOLOv8l-seg), and the median IoU 
+from 0.63 to 0.71; in parallel, the mean F1-Score and IoU improve from 
+0.70 to 0.77 and from 0.61 to 0.68, respectively. These results indicate 
+that the segmentation head of YOLOv8-seg can capture fruit contours 
+with good accuracy despite occlusions, overlapping fruits, and appear-
+ance variability. The lower row of Fig. 9 shows that, although the disper-
+sion of mask-based metrics is somewhat higher than for bounding boxes, 
+the distributions corresponding to YOLOv8m-seg and YOLOv8l-seg are 
+clearly shifted toward higher overlap values, conﬁrming their superior 
+ability to delineate the eﬀective fruit area used later for ripeness and 
+size estimation.
+In addition to detection and segmentation quality, Table 2 reports 
+the computational performance of each model. As expected, there is 
+a clear trade-oﬀ between accuracy and inference speed. For bounding 
+boxes, YOLOv8n-seg and YOLOv8s-seg achieve the highest processing 
+rates, with 34.48 and 35.45 FPS, and mean inference times close to 
+28–29 ms per image. In contrast, YOLOv8m-seg and YOLOv8l-seg re-
+duce the processing rate to 22.40 and 13.70 FPS, with inference times of 
+44.63 and 73.00 ms per image. A similar behavior is observed for masks, 
+where the additional cost of the segmentation head further decreases 
+FPS (from 25.51 FPS for YOLOv8n-seg to 13.57 FPS for YOLOv8l-seg). 
+GPU memory usage remains within moderate ranges for all conﬁgu-
+rations (on the order of tens to a few hundred MB), which facilitates 
+deployment on standard GPU platforms.
+From an application standpoint, these results deﬁne diﬀerent op-
+erating points depending on the requirements of the target system. If 
+Smart Agricultural Technology 14 (2026) 102416 
+10 
+
+C. Pardo-Beainy et al.
+Fig. 9. Boxplots of F1-score and IoU metrics over the test dataset for YOLOv8-seg models.
+Fig. 10. Error measurements: Vernier caliper and computer vision algorithm.
+real-time processing is prioritized, for example in robotic harvesting or 
+fast in-ﬁeld assessment, the lighter variants, particularly YOLOv8s-seg, 
+oﬀer a favorable compromise between accuracy and speed, with com-
+petitive F1-Score and IoU and more than 30 FPS for bounding boxes. 
+Conversely, in oﬄine analysis scenarios, where throughput is less criti-
+cal and the main goal is to maximize the quality of downstream stages, 
+namely feature extraction, rule-based size–maturity categorization, and 
+yield mapping, the larger models, YOLOv8m-seg and YOLOv8l-seg pro-
+vide clear gains in box and mask overlap, which translate into more 
+precise fruit localization and contour delineation.
+3.2.  Evaluation of the accuracy of dimension measurements
+The evaluation of the dimension estimation stage was carried out 
+by comparing the length and width obtained by the vision algorithm 
+with reference measurements taken with a Vernier caliper. To this end, 
+43 strawberries with representative sizes and shapes were selected, and 
+for each fruit four values were recorded: length and width measured 
+manually, and length and width estimated by the vision system. From 
+these measurements, absolute errors (in mm) and relative errors (in %) 
+were computed for both length and width, as summarized in Table 3.
+Smart Agricultural Technology 14 (2026) 102416 
+11 
+
+C. Pardo-Beainy et al.
+Fig. 11. Yield map: Fruit density and spatial distribution of operational size–maturity categories.
+Fig. 12. Yield map: Average vs. individual ripeness.
+The values reported for the computer vision algorithm are presented 
+as integers because the calibrated estimates were rounded to the near-
+est millimeter, as deﬁned in the dimension estimation stage. This deci-
+sion avoids reporting sub-millimetric precision that is not justiﬁed under 
+ﬁeld conditions with an RGB-D sensor. In contrast, Vernier caliper mea-
+surements are kept with decimal resolution because they correspond to 
+the manual reference measurements.
+Table 3 shows that, for most fruits, the vision algorithm tends to 
+slightly overestimate the dimensions with respect to the Vernier caliper. 
+For length, absolute errors typically range between 2.0 and 3.0 mm, 
+while for width they are usually between 1.2 and 2.5 mm. These values 
+correspond to relative errors that, for length, are mostly between 5.5% 
+and 8.5%, and for width are around 5%–8%. This systematic overesti-
+mation is consistent with the nature of the error sources in the vision 
+system (depth quantization, sensor noise, point cloud discretization, and 
+geometric projection) and indicates that the algorithm does not produce 
+extreme random errors, but rather a moderate and relatively stable bias.
+The data in the table are summarized graphically in Fig. 10, which 
+presents two boxplot diagrams. The left panel shows the absolute errors 
+in length and width (in mm), while the right panel shows the relative 
+errors (in %). In both cases, the median absolute errors remain below 
+3 mm for length and below 2 mm for width, and the interquartile ranges 
+are relatively compact, indicating a moderate dispersion of errors and 
+the absence of extreme outliers. Similarly, the boxplots of relative er-
+ror show that most measurements are concentrated below 8% for both 
+length and width, which is consistent with the values reported in the 
+table.
+From these individual measurements, global error metrics of the vi-
+sion system were computed: Mean Absolute Error (MAE), Mean Relative 
+Error (MRE), and Root Mean Squared Error (RMSE), for both length and 
+width, using the deﬁnitions given in Section 2.3.2. The results, summa-
+rized in Table 4, indicate an MAE of 2.51 mm for length and 1.85 mm 
+for width, with mean relative errors of 7.03% and 6.62%, respectively. 
+The RMSE values are very close to the MAE (2.53 mm for length and 
+1.89 mm for width), which suggests that there are no isolated large er-
+rors dominating the global behavior; instead, the discrepancies between 
+the caliper and the algorithm are distributed relatively uniformly across 
+the sample.
+To analyze the stability of the error with respect to fruit size, the 
+dimensional range covered by the manual validation subset was exam-
+ined. The evaluated strawberries had reference lengths between 30.4 
+and 42.0 mm and widths between 22.5 and 38.2 mm. Within this inter-
+val, the absolute errors remained within compact ranges: 1.8–3.3 mm 
+for length and 1.2–3.0 mm for width. Similarly, the relative errors re-
+mained bounded between 5.57–8.55% for length and 5.04–8.70% for 
+width. This indicates that, within the evaluated size range, the method 
+maintains stable behavior and does not exhibit extreme errors associated 
+with smaller or larger fruits.
+Smart Agricultural Technology 14 (2026) 102416 
+12 
+
+C. Pardo-Beainy et al.
+Fig. 13. Yield map: Fruit count by size and maturity class.
+These results are coherent with the design of the dimension es-
+timation stage, which combines depth maps, projection to metric
+coordinates, and point cloud ﬁltering via DBSCAN. The removal of spu-
+rious points, especially those far from the main fruit body, prevents 
+small noisy regions or background reﬂections from artiﬁcially inﬂat-
+ing the maximum distances used to compute length and width. Even so, 
+size estimation may be aﬀected by depth quantization, sensor spatial 
+resolution, small segmentation inaccuracies, partial occlusions, and in-
+complete fruit visibility from a lateral viewpoint. These factors explain 
+the slight systematic overestimation observed and suggest that, in fu-
+ture validations with explicit occlusion annotations, the sensitivity of 
+the method to partially visible fruits could be assessed in greater detail.
+From an agronomic perspective, the observed errors are small rela-
+tive to the typical dimensions of the strawberries analyzed, with lengths 
+on the order of 30–40 mm and widths around 25–30 mm. The mean 
+absolute error close to 2-3 mm indicates that the vision algorithm can 
+reproduce the reference measurements with good accuracy under the 
+evaluated conditions. Consequently, the accuracy achieved by the sys-
+tem is suﬃcient to characterize fruit size at the individual level and to 
+support the subsequent stages of operational size–maturity categoriza-
+tion and yield map generation, incorporating average size information 
+and category composition across diﬀerent zones of the crop.
+3.3.  Yield maps and spatial distribution of size–maturity categories
+The yield maps generated from the complete set of georeferenced 
+strawberries make it possible to move from point-based measurements 
+to an explicitly spatial view of the crop. Unlike global analyses of total 
+counts or category distributions, these maps show how fruit density, 
+visible ripeness, and operational size–maturity categories are spatially 
+organized across the ﬁeld, revealing heterogeneities that are diﬃcult to 
+perceive by direct visual inspection.
+3.3.1.  Fruit density and category distribution
+The ﬁrst group of maps is based on the count of fruits per 1 m2 cell, 
+as deﬁned in the yield mapping stage. Fig. 11 summarizes these results. 
+In the left panel, the Fruit Density (count/m2) map shows, for each grid 
+cell, the number of strawberries detected within that area, represented 
+by symbols whose size and color are proportional to the local fruit count. 
+Smart Agricultural Technology 14 (2026) 102416 
+13 
+
+C. Pardo-Beainy et al.
+Fig. 14. Yield map: Interpolated fruit count by size and maturity class.
+This map conﬁrms a strong spatial variability: zones with high fruit con-
+centration alternate with areas of lower density within the same plot.
+The right panel of Fig. 11, labeled Fruits by Category, shows indi-
+vidual fruits at their UTM coordinates, colored according to the nine
+operational size–maturity categories deﬁned in Section 2.4. This rep-
+resentation not only conﬁrms the location of high-load zones, but 
+also reveals which types of fruits dominate in each sector. In sev-
+eral dense regions, most strawberries belong to the “Unripe–Small” or 
+“Unripe–Medium” categories, suggesting strong future production po-
+tential rather than immediate harvest availability. Conversely, there are 
+patches with moderate density but a higher presence of “Ripe–Medium” 
+and “Ripe–Large” fruits, which correspond to zones of particular inter-
+est for early or selective harvesting. The joint analysis of density and 
+category maps allows areas with high fruit load but still immature fruits 
+to be distinguished from less dense areas containing fruits closer to har-
+vest.
+3.3.2.  Average vs. individual ripeness
+Fig. 12 compares two complementary ways of representing fruit ma-
+turity. In the left panel, the Average Ripeness per Cell map associates each 
+1 m2 grid cell with the mean ripe-area percentage of the fruits it con-
+tains, as deﬁned in Eq. (26). This produces zones of higher or lower 
+average ripeness, which can be interpreted as zones of the ﬁeld that are 
+phenologically ahead of or behind the rest of the plot.
+The right panel shows the Individual Ripeness map, where each straw-
+berry is displayed at its georeferenced position and colored according 
+to its ripeness percentage, using the same color scale as in the cell-
+based map. It becomes clear that a cell with high average ripeness may 
+be composed almost entirely of mature fruits, but it may also corre-
+spond to a mixture of very ripe strawberries with others that are still 
+green. Likewise, some cells with intermediate average ripeness con-
+tain a mosaic of states, in which unripe, partially ripe, and ripe fruits
+coexist.
+Smart Agricultural Technology 14 (2026) 102416 
+14 
+
+C. Pardo-Beainy et al.
+Fig. 15. Row-wise distribution of fruits by operational size–maturity category.
+This comparison highlights the importance of considering both ag-
+gregated indicators (cell averages) and individual detail. The former is 
+useful to quickly prioritize sectors of the plot, while the latter warns 
+about internal heterogeneity and helps decide whether a partial harvest 
+or a more gradual management strategy is advisable in speciﬁc areas.
+3.3.3.  Fruit count by size and maturity class
+A third group of maps explores the interaction between size and ma-
+turity. Fig. 13 presents a 4 × 3 arrangement of yield maps. The three 
+columns correspond to the aggregated maturity classes Unripe, Partially 
+Ripe, and Ripe, while the four rows represent All sizes, Small, Medium, 
+and Large, respectively.
+In the ﬁrst row (All sizes), the maps show the global spatial distri-
+bution of unripe, partially ripe, and ripe fruits per square meter. As ex-
+pected from the category statistics, unripe fruits dominate large portions 
+of the plot, consistent with the overall phenological state of the crop. 
+However, when moving to the second, third, and fourth rows (Small, 
+Medium, and Large), important diﬀerences emerge. In the “Unripe–
+Small” maps, extended bands with very high counts appear, indicating 
+zones where fruit load is high but still at early stages of development. 
+In contrast, the “Ripe–Large” maps reveal more localized patches, typ-
+ically in sectors where plant vigor and microenvironmental conditions 
+have favored more complete fruit development.
+These maps support decisions such as: (i) prioritizing for harvest 
+those areas where high density coexists with a predominance of ripe 
+medium or large fruits; (ii) identifying zones that should be left for a 
+later harvest (areas dominated by “Unripe–Small” categories); and (iii) 
+recognizing sectors that might require speciﬁc agronomic interventions 
+to homogenize the crop status.
+Complementarily, Fig. 14 shows the same 4 × 3 arrangement of size–
+maturity combinations, but using interpolated surfaces instead of dis-
+crete cells. Each map represents a continuous color ﬁeld obtained by 
+spatial interpolation of the counts per 1 m2 cell. This continuous repre-
+sentation smooths transitions and makes spatial gradients in fruit con-
+centration more evident. In particular, it helps identify zones of high 
+density for speciﬁc size–maturity combinations and zones of gradual 
+transition where the composition of the fruit changes along the plot. 
+These interpolated maps are used as visual aids to interpret spatial 
+trends; quantitative interpretation is based on the original counts com-
+puted in the 1 m2 grid cells, since interpolation may produce smoothed 
+or intermediate values that do not correspond to direct fruit-count
+observations.
+3.3.4.  Row-wise distribution of fruits by category
+Finally, the row-wise organization of operational size–maturity cat-
+egories is summarized in Fig. 15, which presents a heatmap-style visu-
+alization of Fruits per Row by Category. On the vertical axis, each row 
+of the hydroponic system is represented, and on the horizontal axis the 
+nine operational categories deﬁned in Section 2.4 appear. The color in-
+tensity of each cell encodes the number of fruits of the corresponding 
+category in that row.
+Smart Agricultural Technology 14 (2026) 102416 
+15 
+
+C. Pardo-Beainy et al.
+Table 3 
+Comparison measurements: Vernier caliper and computer vision algorithm.
+ Vernier Caliper
+ Computer Vision Algorithm
+ Absolute Error
+ Relative Error
+ Fruit
+ Length (mm)
+ Width (mm)
+ Length (mm)
+ Width (mm)
+ Length (mm)
+ Width (mm)
+ Length (%)
+ Width (%)
+ 1
+ 37.0
+ 28.0
+ 40.0
+ 30.0
+ 3.0
+ 2.0
+ 8.11
+ 7.14
+ 2
+ 31.0
+ 25.5
+ 33.0
+ 27.0
+ 2.0
+ 1.5
+ 6.45
+ 5.88
+ 3
+ 36.0
+ 25.3
+ 39.0
+ 27.0
+ 3.0
+ 1.7
+ 8.33
+ 6.72
+ 4
+ 35.8
+ 22.5
+ 38.0
+ 24.0
+ 2.2
+ 1.5
+ 6.15
+ 6.67
+ 5
+ 32.0
+ 23.5
+ 34.0
+ 25.0
+ 2.0
+ 1.5
+ 6.25
+ 6.38
+ 6
+ 34.1
+ 23.8
+ 36.0
+ 25.0
+ 1.9
+ 1.2
+ 5.57
+ 5.04
+ 7
+ 33.0
+ 27.2
+ 35.0
+ 29.0
+ 2.0
+ 1.8
+ 6.06
+ 6.62
+ 8
+ 34.8
+ 26.1
+ 37.0
+ 28.0
+ 2.2
+ 1.9
+ 6.32
+ 7.28
+ 9
+ 33.5
+ 28.2
+ 36.0
+ 30.0
+ 2.5
+ 1.8
+ 7.46
+ 6.38
+ 10
+ 32.6
+ 25.7
+ 35.0
+ 27.0
+ 2.4
+ 1.3
+ 7.36
+ 5.06
+ 11
+ 37.6
+ 27.1
+ 40.0
+ 29.0
+ 2.4
+ 1.9
+ 6.38
+ 7.01
+ 12
+ 34.2
+ 29.0
+ 37.0
+ 31.0
+ 2.8
+ 2.0
+ 8.19
+ 6.90
+ 13
+ 37.7
+ 36.0
+ 40.0
+ 39.0
+ 2.3
+ 3.0
+ 6.10
+ 8.33
+ 14
+ 34.5
+ 29.5
+ 37.0
+ 32.0
+ 2.5
+ 2.5
+ 7.25
+ 8.47
+ 15
+ 33.0
+ 27.8
+ 35.0
+ 30.0
+ 2.0
+ 2.2
+ 6.06
+ 7.91
+ 16
+ 33.3
+ 27.3
+ 36.0
+ 29.0
+ 2.7
+ 1.7
+ 8.11
+ 6.23
+ 17
+ 32.0
+ 23.0
+ 34.0
+ 25.0
+ 2.0
+ 2.0
+ 6.25
+ 8.70
+ 18
+ 36.3
+ 27.5
+ 39.0
+ 29.0
+ 2.7
+ 1.5
+ 7.44
+ 5.45
+ 19
+ 34.5
+ 28.2
+ 37.0
+ 30.0
+ 2.5
+ 1.8
+ 7.25
+ 6.38
+ 20
+ 36.1
+ 29.7
+ 39.0
+ 32.0
+ 2.9
+ 2.3
+ 8.03
+ 7.74
+ 21
+ 32.6
+ 25.2
+ 35.0
+ 27.0
+ 2.4
+ 1.8
+ 7.36
+ 7.14
+ 22
+ 30.4
+ 25.3
+ 33.0
+ 27.0
+ 2.6
+ 1.7
+ 8.55
+ 6.72
+ 23
+ 32.2
+ 27.2
+ 34.0
+ 29.0
+ 1.8
+ 1.8
+ 5.59
+ 6.62
+ 24
+ 32.6
+ 23.6
+ 35.0
+ 25.0
+ 2.4
+ 1.4
+ 7.36
+ 5.93
+ 25
+ 32.5
+ 26.5
+ 35.0
+ 28.0
+ 2.5
+ 1.5
+ 7.69
+ 5.66
+ 26
+ 37.5
+ 27.4
+ 40.0
+ 29.0
+ 2.5
+ 1.6
+ 6.67
+ 5.84
+ 27
+ 38.3
+ 30.2
+ 41.0
+ 32.0
+ 2.7
+ 1.8
+ 7.05
+ 5.96
+ 28
+ 36.6
+ 30.1
+ 39.0
+ 32.0
+ 2.4
+ 1.9
+ 6.56
+ 6.31
+ 29
+ 39.6
+ 27.5
+ 42.0
+ 29.0
+ 2.4
+ 1.5
+ 6.06
+ 5.45
+ 30
+ 37.6
+ 28.4
+ 40.0
+ 30.0
+ 2.4
+ 1.6
+ 6.38
+ 5.63
+ 31
+ 40.1
+ 28.0
+ 43.0
+ 30.0
+ 2.9
+ 2.0
+ 7.23
+ 7.14
+ 32
+ 37.8
+ 26.5
+ 40.0
+ 28.0
+ 2.2
+ 1.5
+ 5.82
+ 5.66
+ 33
+ 38.6
+ 28.5
+ 41.0
+ 30.0
+ 2.4
+ 1.5
+ 6.22
+ 5.26
+ 34
+ 39.2
+ 29.4
+ 42.0
+ 31.0
+ 2.8
+ 1.6
+ 7.14
+ 5.44
+ 35
+ 37.0
+ 35.5
+ 40.0
+ 38.0
+ 3.0
+ 2.5
+ 8.11
+ 7.04
+ 36
+ 37.1
+ 30.5
+ 40.0
+ 33.0
+ 2.9
+ 2.5
+ 7.82
+ 8.20
+ 37
+ 39.1
+ 38.2
+ 42.0
+ 41.0
+ 2.9
+ 2.8
+ 7.42
+ 7.33
+ 38
+ 36.2
+ 29.0
+ 39.0
+ 31.0
+ 2.8
+ 2.0
+ 7.73
+ 6.90
+ 39
+ 40.7
+ 26.4
+ 44.0
+ 28.0
+ 3.3
+ 1.6
+ 8.11
+ 6.06
+ 40
+ 42.0
+ 26.3
+ 45.0
+ 28.0
+ 3.0
+ 1.7
+ 7.14
+ 6.46
+ 41
+ 35.8
+ 28.7
+ 38.0
+ 31.0
+ 2.2
+ 2.3
+ 6.15
+ 8.01
+ 42
+ 37.0
+ 30.2
+ 40.0
+ 32.0
+ 3.0
+ 1.8
+ 8.11
+ 5.96
+ 43
+ 35.6
+ 26.0
+ 38.0
+ 28.0
+ 2.4
+ 2.0
+ 6.74
+ 7.69
+Table 4 
+Global error metrics for measurement comparison.
+ Metric
+ Value
+ Unit
+ Mean Absolute Error (Length)
+ 2.51
+ mm
+ Mean Absolute Error (Width)
+ 1.85
+ mm
+ Mean Relative Error (Length)
+ 7.03
+ %
+ Mean Relative Error (Width)
+ 6.62
+ %
+ RMSE (Length)
+ 2.53
+ mm
+ RMSE (Width)
+ 1.89
+ mm
+This representation complements the 2D spatial maps with an opera-
+tional perspective: it allows immediate identiﬁcation of which rows con-
+centrate the largest numbers of “Ripe–Medium” or “Ripe–Large” fruits as 
+priority candidates for harvest, which rows are dominated by “Unripe–
+Small” fruits as zones still in development, and where more balanced 
+mixtures of states and sizes occur. Moreover, comparing rows reveals 
+possible management eﬀects, for example diﬀerences in irrigation or 
+fertigation between lines, and their impact on the distribution of size–
+maturity categories.
+Overall, the diﬀerent groups of yield maps, including global and 
+category-speciﬁc density, average versus individual ripeness, size and 
+maturity counts, and row-wise distributions, provide a rich geospatial 
+characterization of the crop. Beyond quantifying how many strawber-
+ries are present, they answer key questions about where harvest-priority 
+fruits are located, in what state they are distributed across the plot, and 
+how internal variability is structured, thus oﬀering a robust basis for 
+harvest planning and decision making in precision agriculture.
+4.  Conclusion
+This work presented an integrated RGB-D and GNSS RTK pipeline for 
+hydroponic strawberries that links instance segmentation, feature ex-
+traction, rule-based operational size–maturity categorization, and yield 
+mapping at the individual fruit level. The YOLOv8-seg models provided 
+fruit masks, bounding boxes, and detections with suﬃcient quality to 
+feed the subsequent stages of size estimation, ripeness estimation, and 
+spatial distribution analysis under real ﬁeld conditions.
+By projecting depth information into 3D and ﬁltering point clouds 
+with DBSCAN, the proposed method estimated strawberry length and 
+width with mean absolute errors of 2.51 mm and 1.85 mm, respectively, 
+relative to Vernier caliper measurements. These results indicate that the 
+system can characterize fruit dimensions at the individual level with suf-
+ﬁcient accuracy to support operational categorization and spatial aggre-
+gation. By combining these dimensions with visible ripeness percentage, 
+each fruit was assigned to one of nine size–maturity categories using the 
+predeﬁned rule-based procedure described in the methodology.
+Smart Agricultural Technology 14 (2026) 102416 
+16 
+
+C. Pardo-Beainy et al.
+The yield maps derived from georeferenced fruits revealed marked 
+spatial variability in density, visible ripeness, and size–maturity com-
+position, both at the 1 m2 grid scale and along crop rows. These maps 
+make it possible to identify zones with high concentrations of harvest-
+priority fruits, areas dominated by developing immature fruits, and spa-
+tial patterns potentially associated with management diﬀerences within 
+the crop.
+The system was implemented and applied as a processing pipeline 
+on ﬁeld-collected data. Although the evaluation was conducted in a sin-
+gle commercial hydroponic crop, the results show the potential of the 
+approach as a decision-support tool for harvest planning in precision 
+horticulture. Transfer to other cultivars, planting conﬁgurations, or en-
+vironmental conditions will require recalibration of maturity and size 
+thresholds, as well as renewed validation of the perception module. Fu-
+ture work should also compare more recent segmentation architectures 
+and evaluate the system under diﬀerent levels of occlusion, illumination, 
+and crop density.
+CRediT authorship contribution statement
+Camilo Pardo-Beainy: Writing – review & editing, Writing – origi-
+nal draft, Validation, Software, Methodology, Formal analysis, Data cu-
+ration, Conceptualization; Carlos Parra: Writing – original draft, Su-
+pervision, Resources, Methodology, Funding acquisition, Conceptual-
+ization; Leonardo Solaque: Writing – original draft, Supervision, Re-
+sources, Methodology, Conceptualization.
+Ethical statement
+This study did not involve human participants or animals, and there-
+fore ethical approval was not required. All data were collected through 
+ﬁeld experiments conducted in accordance with relevant regulations. 
+Artiﬁcial intelligence tools were used solely for language editing and did 
+not inﬂuence the scientiﬁc content or conclusions of this manuscript.
+Declaration of competing interest
+The authors declare that they have no known competing ﬁnancial 
+interests or personal relationships that could have appeared to inﬂuence 
+the work reported in this paper. 
+Acknowledgment
+The authors express their gratitude to Universidad Santo Tomás for 
+providing laboratory resources essential for data acquisition systems, 
+as well as to Pontiﬁcia Universidad Javeriana and Universidad Mili-
+tar Nueva Granada for their support with laboratory facilities and ex-
+perimental scenarios. Special thanks to the Precision Agriculture Lab-
+oratory of the Department of Agricultural and Biological Engineer-
+ing at the University of Florida for hosting Camilo Pardo-Beainy dur-
+ing his research internship, which served as a foundational element 
+for this study. Furthermore, the authors acknowledge the support of 
+Minciencias-Colfuturo through the Boyacá doctoral study grant, region 
+number 779, awarded to Camilo Pardo-Beainy. 
+Data availability
+Data will be made available on request.
+References
+[1] S. Sharmin, M.T. Hossan, M.S. Uddin, A review of machine learning approaches 
+for predicting lettuce yield in hydroponic systems, 2025. https://doi.org/10.1016/
+j.atech.2025.100925
+[2] K.C. Swain, Q.U. Zaman, A.W. Schumann, D.C. Percival, D.D. Bochtis, Computer 
+vision system for wild blueberry fruit yield mapping, Biosyst. Eng. 106 (2010) 
+389–394. https://doi.org/10.1016/j.biosystemseng.2010.05.001
+[3] A.L.S. Safre, A. Torres-Rua, B.L. Black, S. Young, Deep learning framework for fruit 
+counting and yield mapping in tart cherry using YOLOv8 and YOLO11, Smart Agric. 
+Technol. 11 (2025) 100948. https://doi.org/10.1016/j.atech.2025.100948
+[4] T. Tamilarasi, P. Muthulakshmi, Machine vision algorithm for detection and matu-
+rity prediction of brinjal, Smart Agric. Technol. 7 (2024). https://doi.org/10.1016/
+j.atech.2024.100402
+[5] F.X. Dono, B.N. Baatuuwie, F.K. Abagale, P.B. Sørensen, Application of computer 
+vision and machine learning in morphological characterization of Adansonia digi-
+tata fruits, Smart Agric. Technol. 9 (2024). https://doi.org/10.1016/j.atech.2024.
+100528
+[6] P. Chu, Z. Li, K. Zhang, K. Lammers, R. Lu, High-precision fruit localization using 
+active laser-camera scanning: robust laser line extraction for 2D-3D transformation, 
+Smart Agric. Technol. 7 (2024). https://doi.org/10.1016/j.atech.2023.100391
+[7] O.E. Apolo-Apolo, J. Martínez-Guanter, G. Egea, P. Raja, M. Pérez-Ruiz, Deep learn-
+ing techniques for estimation of the yield and size of citrus fruits using a UAV, Eur. 
+J. Agron. 115 (2020) 126030. https://doi.org/10.1016/j.eja.2020.126030
+[8] A. Aquino, J.M. Ponce, M. Noguera, J.M. Andújar, Olive-fruit yield estimation by 
+modelling perceptual visual features, Comput. Electron. Agric. 214 (2023) 108361. 
+https://doi.org/10.1016/j.compag.2023.108361
+[9] L. Wang, K. Yang, S. Zeng, Y. Yi, B. Li, A novel stone fruit quality non-destructive 
+evaluation method based on PVR by LF-NMRI, J. Food Eng. 387 (2025). https://doi.
+org/10.1016/j.jfoodeng.2024.112338
+[10] J. Giménez-Gallego, J. Martinez-del Rincon, J.D. González-Teruel, H. Navarro-
+Hellín, P.J. Navarro, R. Torres-Sánchez, On-tree fruit image segmentation com-
+paring mask R-CNN and vision transformer models. application in a novel algo-
+rithm for pixel-based fruit size estimation, Comput. Electron. Agric. 222 (2024). 
+https://doi.org/10.1016/j.compag.2024.109077
+[11] P. Roy, A. Kislay, P.A. Plonski, J. Luby, V. Isler, Vision-based preharvest yield map-
+ping for apple orchards, Comput. Electron. Agric. 164 (2019). https://doi.org/10.
+1016/j.compag.2019.104897
+[12] Z. Li, R. Xu, C. Li, P. Munoz, F. Takeda, B. Leme, In-ﬁeld blueberry fruit phenotyp-
+ing with a MARS-PhenoBot and customized BerryNet, Comput. Electron. Agric. 232 
+(2025). https://doi.org/10.1016/j.compag.2025.110057
+[13] M. Churuvija, R. Sapkota, D. Ahmed, M. Karkee, A pose-versatile imaging system for 
+comprehensive 3D modeling of planar-canopy fruit trees for automated orchard op-
+erations, Comput. Electron. Agric. 230 (2025). https://doi.org/10.1016/j.compag.
+2025.109899
+[14] A. Subeesh, S.P. Kumar, S.K. Chakraborty, K. Upendar, N.S. Chandel, D. Jat, K. 
+Dubey, R.U. Modi, M.M. Khan, UAV imagery coupled deep learning approach for 
+the development of an adaptive in-house web-based application for yield estimation 
+in citrus orchard, Meas. J. Int. Meas. Confed. 234 (2024). https://doi.org/10.1016/
+j.measurement.2024.114786
+[15] X. Zhang, A. Toudeshki, R. Ehsani, H. Li, W. Zhang, R. Ma, Yield estimation of citrus 
+fruit using rapid image processing in natural background, Smart Agric. Technol. 2 
+(2022). https://doi.org/10.1016/j.atech.2021.100027
+[16] L. He, W. Fang, G. Zhao, Z. Wu, L. Fu, R. Li, Y. Majeed, J. Dhupia, Fruit yield pre-
+diction and estimation in orchards: a state-of-the-art comprehensive review for both 
+direct and indirect methods, 2022. https://doi.org/10.1016/j.compag.2022.106812
+[17] C. Pardo-Beainy, C. Parra, L. Solaque, W.S. Lee, Deep learning and georeferenced 
+RGB-D imaging for hydroponic strawberry yield mapping, Smart Agric. Technol. 12 
+(2025) 101293. https://doi.org/10.1016/j.atech.2025.101293
+[18] T. Thayananthan, X. Zhang, Y. Huang, J. Chen, N.K. Wijewardane, V.S. Martins, 
+G.D. Chesser, C.T. Goodin, CottonSim: a vision-guided autonomous robotic system 
+for cotton harvesting in Gazebo simulation, Comput. Electron. Agric. 239 (2025) 
+110963. https://doi.org/10.1016/j.compag.2025.110963
+[19] Y. Zheng, A. Liu, A. Huang, D.-H. Kim, Y. Shen, K.-H. Lee, Realtime multi-RGBD 
+SLAM framework for 3D reconstruction and phenotyping in large-scale apple or-
+chards, Comput. Electron. Agric. 240 (2026) 111170. https://doi.org/10.1016/j.
+compag.2025.111170
+[20] M.N. Conejero, H. Montes, J.M. Bengochea-Guevara, L. Garrido-Rey, D. Andújar, A. 
+Ribeiro, A collaborative robotic ﬂeet for yield mapping and manual fruit harvesting 
+assistance, Comput. Electron. Agric. 235 (2025) 110351. https://doi.org/10.1016/
+j.compag.2025.110351
+[21] A.F. Colaço, R.G. Trevisan, F.H.S. Karp, J.P. Molin, Yield mapping methods for 
+manually harvested crops, Comput. Electron. Agric. 177 (2020). https://doi.org/
+10.1016/j.compag.2020.105693
+[22] M.K. Verma, M. Yadav, 3D LiDAR-based techniques and cost-eﬀective measures for 
+precision agriculture: a review, Rev. Int. Geomat. 34 (1) (2025) 855–879. https:
+//doi.org/10.32604/rig.2025.069914
+[23] K.M.S. Haque, P. Joshi, N. Subedi, Integrating UAV-based multispectral imaging 
+with ground-truth soil nitrogen content for precision agriculture: a case study on 
+paddy ﬁeld yield estimation using machine learning and plant height monitoring, 
+Smart Agric. Technol. 12 (2025) 101542. https://doi.org/10.1016/j.atech.2025.
+101542
+Smart Agricultural Technology 14 (2026) 102416 
+17 

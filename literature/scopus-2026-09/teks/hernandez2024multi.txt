@@ -1,0 +1,1651 @@
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+Multi-Object Tracking in Agricultural Applications using a Vision
+Transformer for Spatial Association
+Byron Hernandez ∗, Henry Medeiros
+Department of Agricultural and Biological Engineering, University of Florida, Gainesville, 32611-0570, FL, USA
+A R T I C L E
+I N F O
+Dataset link: https://github.com/Computer-Vis
+ion-and-Robotic-Perception/ag-tracking
+A B S T R A C T
+This paper introduces a Multi-Object Tracking (MOT) framework for agricultural applications that estimates
+global positions in pixel coordinates using the local feature matching transformer — LoFTR. We design an
+efficient tracker that augments the capabilities of a state-of-the-art tracking algorithm by incorporating a novel
+association strategy based on spatial information of targets leaving and returning the camera field of view. We
+evaluate our framework using the publicly available LettuceMOT benchmark dataset and an adapted version
+of the AppleMOTS benchmark dataset that we denominate AppleMOT. Our experimental results demonstrate
+that our method outperforms cutting-edge algorithms for robotic plant tracking in the LettuceMOT dataset.
+The evaluation metrics show average improvements of up to 25% compared to the best publicly available
+results, demonstrating the benefits of our spatial association approach. For the AppleMOT dataset, we obtained
+bounding-box-based MOT evaluation metrics comparable to the segmentation-based (MOTS) counterparts
+presented in the original AppleMOTS paper. These findings highlight the effectiveness and potential of our
+approach in addressing the unique challenges posed by agricultural environments.
+1. Introduction
+The increasing global population (Dorling, 2021) and decreasing
+availability of agricultural workers (Benoît et al., 2022) highlight the
+importance of addressing the critical issue of food production. To
+meet escalating demands for food while ensuring improved quality
+and efficiency throughout supply chains, the agricultural industry has
+embraced the transformative potential of Industry 4.0 (Liu et al., 2020).
+Specifically, integrating robotics and Artificial Intelligence (AI) within
+this framework is revolutionizing agricultural processes. Such processes
+include detecting fruits, plants, flowers, and weeds, as well as classify-
+ing related diseases (Biswas et al., 2022; Saranya et al., 2023). Plant
+phenotyping (Tabb and Medeiros, 2017; Dias et al., 2018; Saleem et al.,
+2021), irrigation (Saggi and Jain, 2022), and harvesting (Darwin et al.,
+2021) are also related areas of current research of great significance in
+agricultural research and production management (Attri et al., 2023).
+In this evolving landscape, computer vision has emerged as a crit-
+ical component in the sensing and perception mechanisms of robotic
+systems that perform agricultural tasks. Visual perception plays a vital
+role in precision agriculture and related applications involving human–
+robot interaction (Kragh et al., 2017; Pezzementi et al., 2018) as it
+enables the detection, segmentation, and tracking of plants, flowers,
+fruits, and humans (Patrício and Rieder, 2018). Multiple object track-
+ing (MOT) is a remarkably complex but essential task for advanced
+autonomous systems.
+∗Corresponding author.
+E-mail addresses: bhernandezosorio@ufl.edu, bshernandez@utp.edu.co (B. Hernandez).
+MOT is an active research area in computer vision with complex
+challenges and broad applicability across various sectors, including
+urban surveillance, autonomous driving, and agriculture. Recent meth-
+ods such as Simple Online and Real-Time Tracking (SORT) (Bewley
+et al., 2016) and DeepSORT (Wojke et al., 2017) integrate advanced
+data association techniques with features obtained using deep learning
+strategies. These approaches have shown outstanding performance in
+MOT problems in urban and human-centered scenarios. Improvements
+in motion prediction mechanisms, such as those proposed in Center-
+Track (Zhou et al., 2020), which focuses on predicting object displace-
+ments, and in ByteTrack (Zhang et al., 2022a), which aims to minimize
+identity switches, further contributed to significant recent advances in
+MOT techniques applied to urban and human-centered scenarios (Den-
+dorfer et al., 2021; Geiger et al., 2013). Recently, segmentation-based
+approaches, such as TrackRCNN (Voigtlaender et al., 2019) and Point-
+Track (Xu et al., 2020), introduced the ability to precisely delineate
+objects of interest and keep track of their identities over time. Moni-
+toring objects at the level of individual pixels enables a more accurate
+description of the physical characteristics of objects of interest, such
+as their shapes and sizes (Hussain et al., 2023). It also increases the
+robustness of the tracker against temporary occlusions, which are very
+common in agricultural research and production environments (Zhang
+https://doi.org/10.1016/j.compag.2024.109379
+Received 29 December 2023; Received in revised form 13 May 2024; Accepted 22 August 2024
+Computers and Electronics in Agriculture 226 (2024) 109379 
+Available online 11 September 2024 
+0168-1699/© 2024 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+
+B. Hernandez and H. Medeiros
+et al., 2022b). Unfortunately, the training data requirements of cur-
+rent segmentation and tracking techniques still prevent their broad
+applicability to a variety of agricultural scenarios (Yao et al., 2020).
+Applying MOT techniques to agricultural settings introduces chal-
+lenges not typically encountered in urban environments or other human-
+centered applications. Agricultural settings are characterized by high
+object homogeneity since crops and plants exhibit limited distinctive
+visual features, making tracking individual objects particularly chal-
+lenging (de Jong et al., 2022). The dynamic nature of these environ-
+ments, compounded by factors such as varying illumination conditions,
+weather changes, and the inherent clutter of natural scenes, further
+complicates the reliable detection and tracking of relevant objects in
+agricultural contexts (Hu et al., 2022a).
+Accurately tracking fruits and plants in the agricultural sector is
+crucial for automating chemical spraying and yield estimation (Wu
+et al., 2020). These applications are highly dependent on the preci-
+sion of tracking systems, as they directly influence the efficiency and
+effectiveness of resource use in farming operations. Fruit counting is
+fundamental for yield estimation, which informs farmers in decisions
+about crop management and market supply chains (Attri et al., 2023).
+Reliable MOT systems can automate the counting process, ensuring that
+each fruit is accurately accounted for, which is vital for economic plan-
+ning and reducing waste (de Jong et al., 2022). For automated spraying,
+accurate tracking ensures that each plant receives the correct treat-
+ment without unnecessary applications of pesticides and nutrients. The
+application of adequate amounts of chemicals optimizes productivity,
+reduces runoff, and mitigates the environmental impact of agricultural
+operations (Saggi and Jain, 2022). Efficient automated systems ensure
+that each plant or area is sprayed or treated exactly once, maximizing
+coverage and minimizing waste (Attri et al., 2023). These operations
+require the precise localization of each fruit and plant and consistent
+identification over time, even when plants are occluded or temporarily
+move out of the field of view (FOV) of the camera.
+The availability of relevant datasets for agricultural applications is
+limited. In the 2020 survey by Lu and Young (2020), only 34 datasets
+were identified for image classification, object detection, and segmen-
+tation in agricultural scenarios. Joshi et al. (2023) noted that the
+majority of the agricultural datasets in their 2023 study were sourced
+from Lu and Young’s work. Furthermore, only two publicly available
+datasets are explicitly designed for MOT in agricultural scenarios:
+AppleMOTS (de Jong et al., 2022) and LettuceMOT (Hu et al., 2022a).
+These datasets provide annotated trajectory identifiers for apples and
+lettuces, respectively.
+The LettuceMOT dataset is particularly relevant as it captures di-
+verse scenarios related to autonomous robotic navigation in agricultural
+fields. These scenarios include dynamic obstacle avoidance and actions
+such as leaving and returning to the working area to recharge batteries
+or refill chemicals for spraying. In addition to the LettuceMOT dataset,
+in Hu et al. (2022a), the authors present a benchmark evaluation of
+several tracking algorithms for lettuce tracking, including cutting-edge
+techniques such as SORT (Bewley et al., 2016) and ByteTrack (Zhang
+et al., 2022a).
+The AppleMOTS dataset addresses the notable gap in datasets for
+homogeneous agricultural objects, where similar appearance and envi-
+ronmental conditions complicate tracking tasks (de Jong et al., 2022).
+This dataset, which contains manually annotated segmentation masks
+of apples captured using an uncrewed aerial vehicle (UAV) and wear-
+able sensor platforms, is the first resource for developing and testing
+MOTS algorithms in agricultural scenarios. In addition to encouraging
+research in this important field, the dataset highlights the increased
+difficulty posed by the homogeneity and dense clustering typical of
+orchard settings.
+To address the specific challenges exhibited by datasets such as
+LettuceMOT, the LettuceTrack model (Hu et al., 2022b) uses the spatial
+relationships among objects to monitor their trajectory. This approach
+exploits the stationary nature of plants in scenarios featuring linear
+robot movement, guiding tracking by the central axis of the orchard’s
+layout. This approach results in a significant improvement in tracking
+accuracy. However, it faces difficulties capturing the spatial relations
+among different plants when the robot does not follow a straight-
+line trajectory. This limitation hinders the correct association and
+longer-term re-association of plants or fruits.
+Given the complexities highlighted above, there is a critical need to
+develop MOT systems specifically tailored to handle the unpredictable
+elements of agricultural environments. The objective of this work was
+to devise an MOT method capable of keeping track of the identities of
+multiple agricultural objects of interest, such as plants and fruits, even
+when those go out of and later return to the camera’s field of view,
+without losing generality in the broader MOT context.
+Therefore, we propose a novel tracking method for agricultural set-
+tings. We design a tracking-by-detection algorithm based on the bound-
+ing box regression technique for tracking introduced by Bergmann et al.
+(2019), which we denominate FloraTracktor. We also incorporate into
+our tracker a novel spatial association module, providing a flexible and
+efficient tracking framework. The proposed approach builds upon the
+Local Feature Matching Transformer (LoFTR) introduced by Sun et al.
+(2021) to perform object association and longer term re-association. In
+contrast to the extended Tracktor++ (Bergmann et al., 2019), which
+relies on separate modules for camera alignment, motion updates, and
+re-identification (reID), our method adopts LoFTR to build a unified
+module that seamlessly handles alignment, motion, and re-association.
+As a result, our improved algorithm eliminates the need for tracking
+annotations, outperforming Tracktor, which does not require tracking
+annotations either, and Tracktor++, which relies on temporally con-
+sistent ID labels for training. This paper presents the following key
+contributions:
+• We introduce a robust tracking-by-detection framework for effec-
+tive plant tracking.
+• The framework incorporates a spatial association module that
+leverages spatial relationships among static objects to estimate
+the robot’s motion.
+• A comprehensive experimental evaluation establishes a new
+benchmark performance level for the LettuceMOT dataset and
+the AppleMOT dataset. AppleMOT is an adaptation of Apple-
+MOTS for the task of bounding-box-based MOT. The performance
+gains shown by the proposed framework highlight the potential
+for substantial advancements in plant tracking accuracy and
+precision.
+• The implementation code of our framework is publicly available
+in the following repository: github/ag-tracking
+The remainder of this paper is organized as follows. Section 2 pro-
+vides a detailed description of our tracking and association algorithms.
+Section 3 first describes the experimental setup based on the protocols
+proposed by Hu et al. (2022a,b) and a set of benchmark metrics for the
+AppleMOT dataset before presenting the performance of our approach
+in comparison with existing methods. Finally, Section 4 concludes the
+paper.
+2. Materials and methods
+Fig. 1 illustrates our tracking framework. It comprises two main
+building blocks: a tracking-by-detection algorithm and a spatial as-
+sociation module. The tracking algorithm draws inspiration from the
+paradigm introduced by Bergmann et al. (2019). Our tracker handles
+occlusions, false positives, and false negatives by comparing retained
+and suppressed bounding boxes in a single non-maximum suppression
+(NMS) step. The second component is a novel association module
+tailored for agricultural applications that leverages spatial relationships
+among plants. The association module provides a global position esti-
+mate of each object of interest, allowing for longer-term re-association
+Computers and Electronics in Agriculture 226 (2024) 109379 
+2 
+
+B. Hernandez and H. Medeiros
+Fig. 1. Our framework performs real-time video tracking using input frames 𝐼𝑡and 𝐼𝑡−1. The FloraTracktor module updates active tracks, denoted as 𝜏𝑎
+𝑡. The Spatial Association
+Module carries out image matching between consecutive frames, estimates a global transformation 𝐻𝑡−1,𝑡used to update the global coordinates 𝐱𝑡, and finally uses the estimated
+global position 𝐱𝑡to associate potential new tracks in 𝑝
+𝑡with inactive tracks in 𝜏𝑖
+𝑡.
+even when objects go out of and back into the camera’s FOV. Our track-
+ing framework is denominated FloraTracktor+. Algorithm 1 presents
+the global pipeline of the approach. Please refer to Appendix A for
+a comprehensive description of our notation. The following sections
+describe the two main components of our method in details.
+Algorithm 1 FloraTracktor+: Iterative tracking updates integrating
+FloraTracktor with the Spatial Association Module.
+Input: Set of input images = {𝐼𝑡
+}𝑁
+𝑡=1
+Output: Set of plant tracks = {𝜏𝑎
+𝑡
+}𝑁
+𝑡=1
+1: 𝐼𝑡−1 ←𝐼0, 𝐱𝑡−1 ←[0, 0, 1]⊤, 𝜏𝑎
+𝑡−1 ←∅, 𝜏𝑖
+𝑡−1 ←∅
+2: for each 𝐼𝑡∈do
+3:
+𝜏𝑎
+𝑡, 𝜏𝑖
+𝑡, 𝑝
+𝑡←FloraTracktor(𝐼𝑡, 𝜏𝑎
+𝑡−1, 𝜏𝑖
+𝑡−1)
+4:
+𝐱𝑡←EstimateMotion(𝐼𝑡, 𝐼𝑡−1, 𝐱𝑡−1)
+5:
+𝜏𝑟
+𝑡←Associate(𝜏𝑖
+𝑡, 𝑝
+𝑡, 𝐱𝑡)
+6:
+𝜏𝑎
+𝑡, 𝜏𝑖
+𝑡, 𝜏𝑡←(𝜏𝑎
+𝑡∪𝜏𝑟
+𝑡
+) , (𝜏𝑖
+𝑡⧵𝜏𝑟
+𝑡
+) , (𝜏𝑎
+𝑡∪𝜏𝑖
+𝑡
+)
+7:
+𝐼𝑡−1, 𝐱𝑡−1, 𝜏𝑖
+𝑡−1 ←𝐼𝑡, 𝐱𝑡, 𝜏𝑖
+𝑡
+8: end for
+9: = ⋃𝑁
+𝑡=1 𝜏𝑎
+𝑡
+2.1. FloraTracktor
+As described by Bergmann et al. (2019), Tracktor uses a detec-
+tor from the region-based convolutional neural network family (R-
+CNN (Girshick et al., 2014)). Specifically, it uses the FasterRCNN
+model (Ren et al., 2015) as its base detector. It employs the region of
+interest (ROI) regression head (Girshick, 2015) to predict the bounding
+boxes of active tracks 𝜏𝑎
+𝑡given the latent features of the input image
+at time 𝑡and the bounding boxes of the active tracks in the previous
+frame 𝜏𝑎
+𝑡−1. It then uses the set of regressed bounding boxes 𝑎
+𝑡
+=
+{𝐛𝑎1
+𝑡, 𝐛𝑎2
+𝑡, …} and the set of new detections 𝑑
+𝑡
+=
+{
+𝐛𝑑1
+𝑡, 𝐛𝑑2
+𝑡, …
+}
+to
+distinguish between false positives, occluded objects, and potential new
+tracks. Each bounding box at frame 𝑡is represented by the vector
+𝐛
+𝑙𝑗
+𝑡=
+[
+𝑥
+𝑙𝑗
+𝑡, 𝑦
+𝑙𝑗
+𝑡, 𝑤
+𝑙𝑗
+𝑡, ℎ
+𝑙𝑗
+𝑡, 𝑠
+𝑙𝑗
+𝑡
+]⊤
+, where 𝐜
+𝑙𝑗
+𝑡= (𝑥
+𝑙𝑗
+𝑡, 𝑦
+𝑙𝑗
+𝑡) denotes the coordinates
+of its centroid, 𝑤
+𝑙𝑗
+𝑡its width, ℎ
+𝑙𝑗
+𝑡its height, and 𝑠
+𝑙𝑗
+𝑡its confidence score.
+We define each track in 𝜏𝑙
+𝑡as a vector 𝝉
+𝑙𝑗
+𝑡= [ID𝑙𝑗, 𝐛
+𝑙𝑗⊤
+last, 𝐱𝑙𝑗]⊤, where ID𝑙𝑗
+is the track ID, 𝐛
+𝑙𝑗
+last is the bounding box of the track in the previous
+frame it was observed, and 𝐱𝑙𝑗is its estimated global position. If the
+regressed bounding boxes have confidence scores higher than 𝑠active,
+their corresponding tracks stay alive. Otherwise, they become part of
+the set of inactive tracks 𝜏𝑖
+𝑡.
+Like Tracktor, we take the image 𝐼𝑡as input to perform detection
+and regress the bounding boxes of the active tracks 𝜏𝑎
+𝑡−1 in the previous
+frame. Tracktor performs three NMS steps: (i) among the raw detections
+in 𝑑
+𝑡; (ii) among the regressed bounding boxes of the active tracks
+in 𝑎
+𝑡to account for occlusions; and (iii) between each active track
+bounding box in 𝑎
+𝑡and all the new detections in 𝑑
+𝑡to discard de-
+tections already covered by existing tracks. Instead of performing NMS
+separately on 𝑑
+𝑡and 𝑎
+𝑡to account for possible occlusions, we perform
+a single NMS step on their union using a unique intersection-over-union
+(IoU) threshold 𝜆nms. After the NMS step, we use the retained bounding
+boxes to determine whether they belong to an active track, to a track
+that is currently occluding and thus temporarily deactivating another
+track, or if they are new detections that may correspond to a new
+object and hence require creating a new track. We denote this set of
+potentially new bounding boxes as 𝑝
+𝑡= {𝐛𝑝1
+𝑡, 𝐛𝑝2
+𝑡, …}. To activate an
+inactive track in 𝜏𝑖
+𝑡or create a new one, a new bounding box must have
+a confidence score greater than 𝑠new.
+In agricultural applications, all the objects in the field must be
+consistently tracked for precise spraying and accurate counting while
+allowing for the robot’s trajectory to be flexible and enabling dynamic
+planning. Therefore, our framework stores all the deactivated tracks
+to allow for longer-term re-association. Since appearance features are
+not sufficiently discriminative for the re-identification of individual
+plants, we retain only the estimated global locations of the target
+objects, as discussed in Section 2.2. In other words, our algorithm relies
+exclusively on the bounding boxes provided by an object detector to
+keep track of the global positions of all the objects of interest captured
+by the data acquisition platform.
+Finally, our method creates new tracks considering the size of
+the bounding box and its distance from the image edge. The size is
+generalized to the diameter of a circular approximation of the bounding
+Computers and Electronics in Agriculture 226 (2024) 109379 
+3 
+
+B. Hernandez and H. Medeiros
+box, which is given by Eq. (1).
+𝜙
+(
+𝐛
+𝑙𝑗
+𝑡
+)
+= 2 ⋅
+√
+𝑤
+𝑙𝑗
+𝑡⋅ℎ
+𝑙𝑗
+𝑡
+𝜋
+.
+(1)
+A new track centroid 𝐜
+𝑝𝑗
+𝑡
+must be at most 𝑓𝑑⋅𝜙
+(
+𝐛
+𝑙𝑗
+𝑡
+)
+away from
+the image edge to be considered valid, where 𝑓𝑑is a dataset-specific
+scaling factor. Our tracker is denoted as FloraTracktor(⋅) in Algorithm
+1.
+2.2. Spatial association module
+Our association module is based on the LoFTR (Sun et al., 2021)
+image matching model, which generates keypoint correspondences
+between two partially overlapping images. Given as input the pair of
+frames (𝐼𝑡−1, 𝐼𝑡
+), LoFTR generates a set of 𝐶point correspondences
+𝑡= {(𝐤𝑐
+𝑡, 𝐤𝑐
+𝑡−1)}𝐶
+𝑐=1 where 𝐤𝑐
+𝑡= [𝑥𝑐
+𝑡, 𝑦𝑐
+𝑡]⊤are the coordinates of the 𝑐th
+keypoint on frame 𝑡. This process is referred to as LoFTR(⋅) in Algorithm
+2.
+The set of correspondences is then used to estimate a homogeneous
+transformation 𝐻𝑡−1,𝑡∈R3×3 between frames 𝐼𝑡−1 and 𝐼𝑡, which defines
+the relationship between points in subsequent frames. We estimate
+𝐻𝑡−1,𝑡using RANSAC (Fischler and Bolles, 1981) to handle possible out-
+liers in the set of correspondences 𝑡. The 𝑛-point algorithm (Hartley,
+1997) is used at each RANSAC iteration. These two steps are performed
+by the function EstimateHomography(⋅) in Algorithm 2. As Step 4 of
+the algorithm indicates, this transformation is then used to update the
+camera position 𝐱𝑡at time 𝑡.
+Algorithm 2 Homography-based motion estimation.
+1: function EstimateMotion(𝐼𝑡, 𝐼𝑡−1, 𝐱𝑡−1)
+2:
+𝑡←LoFTR(𝐼𝑡−1, 𝐼𝑡)
+3:
+𝐻𝑡−1,𝑡←EstimateHomography(𝑡)
+4:
+𝐱𝑡←𝐱𝑡−1 + 𝐻𝑡−1,𝑡⋅𝐱𝑡−1
+5:
+return 𝐱𝑡
+6: end function
+Our implementation of Algorithm 1 executes the FloraTracktor(⋅)
+and EstimateMotion(⋅) functions in parallel. Upon the conclusion of both
+processes, we carry out a distance-based association step by invoking
+the function Associate(⋅), which is summarized in Algorithm 3 and
+described in detail below.
+Algorithm 3 Spatial association step.
+1: function Associate(𝜏𝑖
+𝑡, 𝑝
+𝑡, 𝐱𝑡)
+2:
+𝑖
+𝑡←GetBoundingBoxes(𝜏𝑖
+𝑡)
+3:
+for 𝐛𝑗
+𝑡∈𝑝
+𝑡∪𝑖
+𝑡do
+4:
+𝐜𝑗
+𝑡←Centroid(𝐛𝑗
+𝑡)
+5:
+𝐜𝑗
+𝑡←𝐜𝑗
+𝑡+ 𝐱𝑡
+6:
+end for
+7:
+𝑀𝑡←Dist(𝑝
+𝑡, 𝑖
+𝑡)
+8:
+𝑡←Hungarian(𝑀𝑡)
+9:
+𝜏𝑟
+𝑡←∅
+10:
+for (𝐛𝑝𝑖
+𝑡, 𝐛
+𝑖𝑗
+𝑡) ∈𝑡do
+11:
+if 𝑀𝑖𝑗< 𝑑𝑝then
+12:
+𝜏𝑟
+𝑡←𝜏𝑟
+𝑡∪
+{
+𝝉
+𝑖𝑗
+𝑡
+}
+13:
+end if
+14:
+end for
+15:
+return 𝜏𝑟
+𝑡
+16: end function
+The function Associate(⋅) first obtains the set of inactive bounding
+boxes 𝑖
+𝑡from the set of inactive tracks 𝜏𝑖
+𝑡, using the GetBoundingBoxes(⋅)
+function. For each bounding box 𝐛𝑗
+𝑡∈𝑝
+𝑡∪𝑖
+𝑡, we translate its centroid
+to the global coordinate system using the global camera position 𝐱𝑡
+so that the global coordinates of the centroids at time 𝑡are given by
+𝐱
+𝑙𝑗
+𝑡= 𝐜
+𝑙𝑗
+𝑡+ 𝐱𝑡.
+The algorithm builds a distance matrix 𝑀𝑡∈R|𝑝
+𝑡|×|𝑖
+𝑡| containing
+the Euclidean distances between the global coordinates of the bounding
+boxes in 𝑝
+𝑡and 𝑖
+𝑡. That is, let 𝑥𝑝𝑘
+𝑡
+and 𝑥𝑖𝑘
+𝑡be the global coordinates of
+the bounding boxes corresponding to the predicted and inactive tracks,
+the elements of 𝑀𝑡are given by 𝑀𝑝𝑘𝑖𝑘= ‖𝐱𝑝𝑘
+𝑡
+−𝐱𝑖𝑘
+𝑡‖, 𝑝𝑘= 1, … , |𝑝
+𝑡|,
+and 𝑖𝑘= 1, … , |𝑖
+𝑡|.
+We employ the Hungarian algorithm Hungarian(⋅) to find the optimal
+associations =
+{
+(𝐛
+𝑝𝑗
+𝑡, 𝐛
+𝑖𝑗
+𝑡)
+}min(|𝑝
+𝑡|, |𝑖
+𝑡|)
+𝑗=1
+between inactive and potential
+new tracks. The track corresponding to 𝐛
+𝑖𝑗
+𝑡
+becomes active only if its
+distance to an existing track is below the threshold 𝑑𝑝, defined by
+Eq. (2).
+𝑑𝑝=
+2
+|𝑝
+𝑡∪𝑖
+𝑡|
+∑
+∀𝐛𝑙𝑗∈𝑝
+𝑡∪𝑖
+𝑡
+𝜙(𝐛𝑙𝑗),
+(2)
+𝑑𝑝represents the average diameter of the circular bounding box ap-
+proximation. The algorithm returns the set of re-associated tracks 𝜏𝑟
+𝑡.
+3. Experiments and results
+This section shows the performance of our framework with experi-
+ments conducted on the LettuceMOT and AppleMOT datasets. We begin
+with a brief introduction to the datasets and the metrics used for evalua-
+tion. In our first experiment, we present our main results on the Lettuce-
+MOT dataset. We evaluate the performance of our framework through
+comparisons with the baseline provided by the LettuceMOT paper
+(Hu et al., 2022a) and the benchmark established by the LettuceTrack
+paper (Hu et al., 2022b). Then, we establish benchmark performance
+MOT metrics for the AppleMOT dataset using our framework and
+compare it to the performance of the ByteTrack algorithm (Zhang et al.,
+2022a), which is currently one of the best-performing general MOT
+methods. We also examine the impact of the modifications introduced
+to Tracktor by FloraTracktor and FloraTracktor+. Finally, a sensitivity
+analysis is conducted on the parameters of our tracking framework:
+𝑠new, 𝑠active, and 𝜆nms.
+3.1. Datasets
+We use the publicly available LettuceMOT and AppleMOTS datasets
+to evaluate our method. To use the AppleMOTS dataset, we derive a
+bounding-box-based version denominated AppleMOT. The construction
+of AppleMOT and the main properties of each dataset are described
+below.
+3.1.1. The LettuceMOT dataset
+This dataset consists of eight video sequences of a lettuce patch
+captured by an RGB camera mounted on a mobile robotic platform (Hu
+et al., 2022a). Each sequence includes annotated bounding boxes and
+frame-to-frame consistent identifiers for each lettuce plant. The differ-
+ent sequences represent typical situations in robotic-aided agricultural
+tasks, including various weather conditions, different plant growth
+stages, and various platform motion patterns. The eight sequences
+comprise 5466 frames with a resolution of 810 × 1080 pixels and 707
+unique object instances with 42,735 annotations.
+The dataset contains four sequences captured in a forward motion
+of the robot, denoted as straight1-straight4. Two additional se-
+quences represent obstacle avoidance by moving forward and backward
+in a lettuce row and are called B&F1-B&F2 sequences. Finally, the two
+remaining sequences represent chemical refilling or battery charging
+situations, where the robot goes outside the crop row and re-enters at
+a different point. These sequences are referred to as the O&I1-O&I2
+sequences.
+Computers and Electronics in Agriculture 226 (2024) 109379 
+4 
+
+B. Hernandez and H. Medeiros
+3.1.2. The AppleMOTS dataset
+The AppleMOTS dataset comprises 12 video sequences captured
+using three distinct systems: (i) a Matrice 210 RTK V2 UAV, (ii) a
+Parrot Anafi UAV, and (iii) a custom wearable sensor (de Jong et al.,
+2022). Each sequence includes annotated instance segmentation masks
+and identifiers for individual apples that remain consistent over the
+video frames. These sequences represent diverse scenarios encountered
+in computer vision-based agricultural tasks, encompassing varying il-
+lumination conditions and stages of fruit maturity. The 12 sequences
+comprise 1673 frames with a resolution of 1296 × 972 and 2304 unique
+object instances with 86,000 annotated masks.
+Since our method performs tracking based on bounding boxes,
+we use the mask annotations provided by the dataset to obtain the
+corresponding bounding boxes. The MOT-formatted bounding boxes,
+along with the original RGB images, comprise the AppleMOT dataset.
+3.2. Evaluation metrics
+Our evaluation is based on the well-established and widely recog-
+nized CLEAR-MOT metrics (Bernardin and Stiefelhagen, 2008) and the
+Higher Order Tracking Accuracy (HOTA) metric introduced by Luiten
+et al. (2020). Appendix B includes a detailed description of the metrics
+used in this work.
+MOTA (Multi-Object Tracking Accuracy) measures
+the
+overall
+tracking accuracy by computing the alignment of predicted and
+actual detections while maintaining consistent object identi-
+ties over time. It penalizes identity switches but not identity
+transfers.
+IDP (ID Precision) measures the precision of identity assignments,
+penalizing incorrect positive identity associations.
+IDR (ID Recall) measures the recall of identity assignments, penaliz-
+ing missed identity associations.
+IDF1 (ID F1 Score) combines the precision and recall of identity as-
+signments, offering a balanced measure of identity consistency
+over time.
+AssPr (Association Precision) measures the precision of trajectory
+associations across frames by penalizing incorrect associations
+over time.
+AssRe (Association Recall) measures the recall of trajectory asso-
+ciations across frames by penalizing missed associations over
+time.
+AssA (Association Accuracy) measures the overall accuracy of trajec-
+tory associations, penalizing incorrect and missed associations
+over time, thus accounting for both ID switches and transfers.
+DetA (Detection Accuracy) measures the accuracy of the detection
+process by comparing the predicted detections to actual detec-
+tions and penalizing both false positives and negatives.
+HOTA (Higher Order Tracking Accuracy) measures tracking perfor-
+mance by balancing detection accuracy (DetA) and association
+accuracy (AssA). It reflects both the accuracy of detecting ob-
+jects and the precision of maintaining their trajectories over
+time. HOTA is calculated as 𝐻𝑂𝑇𝐴𝛼=
+√
+𝐷𝑒𝑡𝐴𝛼⋅𝐴𝑠𝑠𝐴𝛼, pro-
+viding a holistic view of tracking performance. Refer to Luiten
+et al. (2020) for more details.
+All the metrics above are scored on a scale where higher values
+indicate better performance (↑) with a maximum possible score of 1,
+or 100%. Except for MOTA, which can take negative values under
+critically poor tracking conditions, the metrics have a lower bound of
+0. All the results reported in the following sections were obtained using
+the TrackEval tool (Jonathon Luiten, 2020).
+3.3. Lettuce tracking performance evaluation
+We compare the performance of our proposed approach with base-
+line results from the LettuceMOT dataset paper (Hu et al., 2022a)
+and the results reported in the LettuceTrack paper (Hu et al., 2022b).
+We follow the performance evaluation procedures described in the
+respective references to ensure a fair comparison. To compare with
+the LettuceMOT method, we train our detector using the sequences
+straight1 and straight3 and test it on the remaining sequences.
+For the LettuceTrack comparison, we train our detector using the
+sequences straight3 and straight4 and test it on the remaining
+sequences. The results below are obtained using the following default
+parameter values: 𝑓𝑑= 1, 𝑠new = 0.5, 𝑠active = 0.5, and 𝜆nms = 0.2.
+Table 1 presents a performance comparison between the proposed
+method and the baseline results presented by Hu et al. (2022a). Specif-
+ically, GIAOTracker (Du et al., 2021) is the best approach in the
+LettuceMOT paper, where it is referred to as Bytetrack + NSA Kalman
+Filter. FloraTracktor+ is our base tracker combined with our spatial
+association algorithm. The results demonstrate that FloraTracktor+
+consistently surpasses the performance of the baseline method. This
+improvement is especially remarkable in association, as observed in the
+Association Accuracy (AssA), with an improvement of nearly 50% in
+the B&F sequences, 12% in the straight sequences, and 5% in the O&I
+sequences. The association directly and positively influences ID consis-
+tency, as quantified by the IDF1 metric. It is also worth highlighting the
+significant enhancement observed in the HOTA metric, which considers
+both temporal association and the maintenance of ID consistency over
+time. The HOTA metric shows an average improvement of 35% in the
+B&F sequences, 10% in the straight sequences, and 15% in the O&I
+sequences. Despite the general improvement, the O&I sequences still
+face difficulties since parts of the videos include frames without any
+visible object of interest.
+Table 2 compares our FloraTracktor+ method with the baseline
+results from the LettuceTrack paper. In this scenario, SORT (Bewley
+et al., 2016) and LettuceTrack (Hu et al., 2022b) are the existing
+leading methods. The LettuceTrack paper omits assessments of the O&I
+sequences since the approach is tailored specifically for scenarios where
+the robot’s movement is linear, anchoring tracking to the central axis
+of the orchard’s layout (Hu et al., 2022b). FloraTracktor+ not only
+addresses this shortcoming but also significantly enhances association
+performance by more than 25%, leading to a corresponding increase in
+IDF1 score of more than 15% and an overall HOTA score improvement
+of more than 25%. O&I results are omitted from Table 2 because they
+are virtually indistinguishable from those shown in Table 1.
+3.3.1. Computation time
+FloraTracktor+ shows real-time performance, with an average exe-
+cution time of 82.7±22 milliseconds per frame, which corresponds to a
+rate of approximately 12 frames per second (fps). These results were
+obtained on a workstation with an NVIDIA GeForce 3090 GPU and
+an 11th Gen Intel Core i7-11700KF @ 3.60 GHz CPU. The algorithm
+was implemented in Python without optimizations to reduce execution
+time. Optimizations, such as using tensorRT (Xu et al., 2017; Davoodi
+et al., 2019) for model inference or employing model pruning and
+quantization as in Terven et al. (2023), Jocher et al. (2024), could
+substantially reduce the computation time of the proposed framework,
+but they are beyond the scope of this study.
+An essential feature of using PlantTracktor+ for ground plant track-
+ing is that the spatial association module uses image matching for
+localization. LoFTR can find enough keypoint correspondences with
+50% overlap between images without performance degradation (Sun
+et al., 2021). Therefore, the relative displacement of an object should
+be accurately estimated if it is visible in approximately two frames
+in a row. This allows PlantTracktor+ to retain the object for effective
+longer-term re-association. For the LettuceMOT straight sequences, an
+object is visible for 40 to 50 frames from the first time it becomes fully
+Computers and Electronics in Agriculture 226 (2024) 109379 
+5 
+
+B. Hernandez and H. Medeiros
+Table 1
+Results obtained following the test methodology described in the LettuceMOT paper (Hu et al., 2022a): train on sequences straight1 and straight3 and test
+on the remaining sequences. Values not reported in Hu et al. (2022a) are represented by a dash (–). The ↑means that higher values represent better performance.
+Dataset
+Method
+MOTA↑
+HOTA↑
+DetA↑
+AssA↑
+AssRe↑
+AssPr↑
+IDF1↑
+IDR↑
+IDP↑
+straight2
+GIAOTracker (Du et al., 2021)
+90.20
+87.24
+86.31
+88.15
+–
+–
+94.72
+–
+–
+FloraTracktor+ (ours)
+98.30
+98.21
+99.36
+98.04
+98.41
+99.58
+98.50
+98.56
+98.44
+straight4
+GIAOTracker (Du et al., 2021)
+86.43
+84.41
+84.01
+84.83
+–
+–
+92.722
+–
+–
+FloraTracktor+ (ours)
+98.09
+97.10
+99.17
+98.04
+98.70
+99.30
+98.51
+98.74
+98.44
+B&F1
+GIAOTracker (Du et al., 2021)
+91.93
+68.66
+89.79
+52.50
+–
+–
+59.66
+–
+–
+FloraTracktor+ (ours)
+98.12
+98.24
+99.12
+98.15
+98.51
+99.75
+98.56
+98.45
+98.67
+B&F2
+GIAOTracker (Du et al., 2021)
+86.51
+62.73
+84.02
+46.86
+–
+–
+52.07
+–
+–
+FloraTracktor+ (ours)
+98.08
+98.94
+99.12
+97.84
+98.51
+99.30
+98.43
+98.54
+98.41
+O&I1
+GIAOTracker (Du et al., 2021)
+89.91
+65.61
+85.81
+50.20
+–
+–
+58.73
+–
+–
+FloraTracktor+ (ours)
+97.34
+74.11
+98.89
+55.54
+55.93
+98.99
+61.30
+61.46
+61.13
+O&I2
+GIAOTracker (Du et al., 2021)
+51.30
+52.90
+61.92
+45.23
+–
+–
+46.25
+–
+–
+FloraTracktor+ (ours)
+95.38
+72.61
+96.36
+54.71
+55.46
+98.39
+58.06
+59.03
+57.11
+Table 2
+Results obtained following the test methodology described in the LettuceTrack paper (Hu et al., 2022b): train on sequences straight3 and straight4 and
+test on the remaining sequences. Values not reported in Hu et al. (2022b) are represented by a dash (–). The LettuceTrack paper does not provide results for
+the O&I sequences since it cannot handle these scenarios. The ↑means that higher values represent better performance.
+Dataset
+Method
+MOTA↑
+HOTA↑
+DetA↑
+AssA↑
+AssRe↑
+AssPr↑
+IDF1↑
+IDR↑
+IDP↑
+straight1
+SORT (Bewley et al., 2016)
+–
+80.01
+79.66
+80.34
+84.33
+91.31
+94.01
+90.36
+97.97
+LettuceTrack (Hu et al., 2022b)
+–
+77.59
+79.41
+75.81
+76.86
+95.73
+86.05
+77.34
+96.98
+FloraTracktor+ (ours)
+98.54
+98.52
+99.56
+98.49
+98.84
+99.64
+98.72
+98.79
+98.64
+straight2
+SORT (Bewley et al., 2016)
+–
+78.08
+77.73
+78.46
+82.99
+88.88
+94.12
+90.96
+97.50
+LettuceTrack (Hu et al., 2022b)
+–
+71.62
+71.26
+71.99
+72.32
+98.97
+84.07
+72.55
+99.95
+FloraTracktor+ (ours)
+98.30
+98.21
+99.36
+98.04
+98.41
+99.58
+98.50
+98.56
+98.44
+B&F1
+SORT (Bewley et al., 2016)
+–
+58.31
+78.57
+43.30
+44.39
+91.72
+54.28
+51.63
+57.22
+LettuceTrack (Hu et al., 2022b)
+–
+76.81
+79.69
+74.03
+75.42
+94.50
+85.30
+76.76
+95.97
+FloraTracktor+ (ours)
+98.12
+98.24
+99.12
+98.15
+98.51
+99.75
+98.56
+98.45
+98.67
+B&F2
+SORT (Bewley et al., 2016)
+–
+52.81
+71.89
+38.87
+39.98
+88.30
+48.36
+45.19
+52.01
+LettuceTrack (Hu et al., 2022b)
+–
+70.32
+72.24
+68.45
+69.53
+95.55
+81.86
+70.88
+96.87
+FloraTracktor+ (ours)
+98.08
+98.94
+99.12
+97.84
+98.51
+99.30
+98.43
+98.54
+98.41
+Table 3
+Summary of results following the test methodology proposed in the AppleMOTS paper (de Jong et al., 2022): train on sequences 0001 to 0005 and test on the
+remaining sequences. The ↑means the higher the metric, the better performance.
+Dataset
+Method
+MOTA↑
+HOTA↑
+DetA↑
+AssA↑
+AssRe↑
+AssPr↑
+IDF1↑
+IDR↑
+IDP↑
+testing
+ByteTrack (Zhang et al., 2022a)
+32.99
+38.21
+28.86
+50.96
+53.97
+74.97
+45.21
+31.49
+80.12
+FloraTracktor (ours)
+48.55
+45.45
+60.08
+34.81
+36.11
+86.66
+42.39
+38.91
+46.56
+visible to when it starts leaving the field of view. Hence, our method
+performs equally well even if the video frames are down-sampled at a
+20:1 ratio. This allows for a twenty-fold increase in robot motion speed
+under the same data acquisition conditions.
+3.4. Apple tracking performance evaluation
+The AppleMOT dataset allows us to evaluate the generalization
+capability of our approach. Since the AppleMOT dataset contains se-
+quences with vanishing points in the images, we use a factor 𝑓𝑑=
+max(𝐼𝑊, 𝐼𝐻) in Eq. (1), where (𝐼𝑊, 𝐼𝐻) represent the image dimensions.
+Following the AppleMOTS paper (de Jong et al., 2022), we present
+the aggregated results over the test sequences 0006 to 0012. Table 3
+presents the performance comparison between our framework and the
+state-of-the-art tracker ByteTrack (Zhang et al., 2022a).
+Our approach shows better tracking accuracy performance than
+ByteTrack as measured by the MOTA and HOTA metrics. The lower
+association accuracy and recall are largely due to the significantly lower
+detection accuracy obtained by ByteTrack. The dramatic reduction
+in true positive detections artificially inflates ByteTrack’s association
+recall, and consequently its accuracy. The comparable IDF1 obtained
+by both methods further supports this finding.
+The results obtained by our method are comparable with the Multi-
+Object Tracking and Segmentation Accuracy (MOTSA) reported in the
+AppleMOTS paper (de Jong et al., 2022). Note that de Jong et al.
+(2022) define image regions with limited visibility as ‘‘ignore regions’’.
+They report results for several tracking algorithms with and without
+excluding these regions at evaluation, but ground truth masks for these
+areas are not publicly available. The best method reported in de Jong
+et al. (2022) is PointTrack (Xu et al., 2020), which obtains a MOTSA of
+52.9% when it filters the ‘‘ignore regions’’ and 46% when it does not.
+Our approach outperforms the equivalent MOTSA without filtering the
+‘‘ignore regions’’ by 2.5%.
+3.5. Evaluation of improvements over tracktor
+We use the LettuceMOT dataset for this experiment since it includes
+sequences with ground plants and different scenarios of objects re-
+entering the camera’s FOV, which are explicitly addressed by our
+method as described in Section 2. Table 4 presents a performance
+evaluation based on the overall MOTA, HOTA, and IDF1 metrics.
+Specifically, Tracktor and Tracktor++ are the original approaches de-
+scribed in Bergmann et al. (2019). FloraTracktor is our modified version
+of Tracktor, and FloraTracktor+ includes our spatial association module
+defined in Section 2.2.
+Computers and Electronics in Agriculture 226 (2024) 109379 
+6 
+
+B. Hernandez and H. Medeiros
+Table 4
+Aggregated performance metrics for the proposed approach on the LettuceMOT dataset compared to the
+baseline trackers Tracktor and Tracktor++. The values are presented in the format 𝜇± 3𝜎where 𝜇is the
+mean value, and 𝜎is the standard deviation. The ↑means the higher the metric, the better performance.
+Method
+MOTA↑
+HOTA↑
+IDF1↑
+Tracktor (Bergmann et al., 2019)
+93.94 ± 0.92
+81.71 ± 12.00
+74.19 ± 18.88
+Tracktor++ (Bergmann et al., 2019)
+97.01 ± 0.68
+74.38 ± 6.44
+67.03 ± 12.68
+FloraTracktor
+95.29 ± 0.91
+83.81 ± 12.27
+78.03 ± 17.70
+FloraTracktor+
+𝟗𝟕.𝟕𝟒± 𝟎.𝟗𝟔
+𝟗𝟏.𝟗𝟖± 𝟏𝟎.𝟕𝟕
+𝟖𝟖.𝟖𝟐± 𝟏𝟔.𝟖𝟓
+Fig. 2. Performance of our approach for different values of 𝑠new, 𝑠active, and 𝜆nms.
+Table 4 shows that FloraTracktor enhances performance by ap-
+proximately 2%–4%, with consistent standard deviations compared
+to Tracktor. Although Tracktor++ achieves a modest increase in the
+MOTA metric due to its motion estimation module, it experiences a
+significant setback caused by false re-identifications that impair overall
+association, as reflected in the IDF1 metric. Consequently, this leads
+to a 7% decline in the HOTA metric in our experiments. Notably, our
+association algorithm in FloraTracktor+ not only achieves a MOTA
+score comparable to that of Tracktor++ but also leads to a 10% increase
+in IDF1 and an 8% HOTA improvement. Our method outperforms
+Tracktor with a 10% higher HOTA score and a 14% better IDF1 score.
+3.6. Parameter sensitivity analysis
+This section assesses the impact of parameter variations on the
+tracking performance of the proposed framework, mainly focusing on
+the MOTA, HOTA, and IDF1 metrics. As shown in Fig. 2, our method
+exhibits consistent performance across various parameter settings. This
+stability persists even when parameter values fluctuate between 0.2 and
+0.8, underscoring the model’s reliability without meticulous parameter
+tuning.
+In particular, the system’s resilience to changes in the NMS thresh-
+old underscores the efficacy of the improved tracking-by-detection
+approach. This approach is less dependent on NMS for distinguishing
+between true and false positives than the standard Tracktor model.
+Additionally, the relatively low impact of the detection threshold,
+𝑠new, highlights the framework’s capacity to handle slight detection
+inaccuracies effectively. The consistent performance across regression
+threshold values further validates our method’s enhanced precision in
+bounding box prediction, a critical aspect of the temporal accuracy
+required in the spatial association module for agricultural monitoring.
+3.7. The spatial association module in action
+Figs. 3–5 visually represent the estimated global positions of the
+lettuce plants. This representation demonstrates the accurate spatial re-
+lationships estimated by the proposed framework on various sequences
+of the LettuceMOT dataset, emphasizing the effectiveness of the spatial
+association module.
+This qualitative analysis indicates that sequences categorized un-
+der O&I pose significant challenges, notably when the camera’s FOV
+lacks target objects for extended periods. These gaps often lead to an
+accumulation of positional errors, which manifest as distortions in the
+reconstructed panorama. While these distortions primarily appear as
+rendering artifacts and do not directly affect the core performance
+metrics, they highlight potential issues with error accumulation in the
+estimated global position.
+The quantitative results presented in Table 1 support these observa-
+tions, indicating that despite the visual anomalies in the O&I sequence,
+the spatial association module significantly enhances tracking per-
+formance. This enhancement is particularly relevant in agricultural
+scenarios where robotic MOT involves nonlinear motion. However,
+distortions also point to limitations in our methodology, especially
+concerning error propagation in prolonged periods of complete absence
+of objects of interest. Our qualitative assessments further suggest that if
+our system has visibility of at least one trackable object, it can maintain
+accurate localization.
+The implications of error buildup are relevant, especially for ap-
+plications that rely on high cumulative positional accuracy. While our
+results validate the effectiveness of our approach, they also highlight
+areas requiring further refinement. Specifically, enhancing the robust-
+ness of the spatial association algorithm to handle extended periods
+of absolute object absence is a relevant area for ongoing and future
+research.
+4. Conclusions and future work
+We introduce a novel tracking algorithm designed specifically for
+mobile robots in agricultural environments, where the homogeneity of
+fruits and plants, coupled with nonlinear robot motion paths, presents
+significant challenges to conventional tracking frameworks. Our exper-
+iments show that our algorithm effectively addresses these challenges,
+demonstrating robustness and effectiveness, particularly in ground-
+plant tracking scenarios.
+Computers and Electronics in Agriculture 226 (2024) 109379 
+7 
+
+B. Hernandez and H. Medeiros
+Fig. 3. Global position estimates for the robot (camera) in sequence straight4 over 300 frames. The estimated trajectory on the global coordinate system (in pixels) is illustrated
+with a red path with arrows representing the direction of the velocity vector.
+Fig. 4. Global position estimates for the robot (camera) in sequence B&F1 over 360 frames. The estimated trajectory on the global coordinate system (in pixels) is illustrated with
+a red path with arrows representing the direction of the velocity vector.
+Fig. 5. Global position estimates for the robot (camera) in sequence O&I2 over 850 frames. The estimated trajectory on the global coordinate system (in pixels) is illustrated with
+a red path with arrows representing the direction of the velocity vector.
+A central feature of our approach is the innovative spatial associ-
+ation method, which leads to significant performance improvements,
+particularly when at least one object of interest remains within the
+camera field of view.
+Remarkably, our approach stands out as it does not require track-
+ing annotations, laying the foundation for a potential semi-automated
+tracking labeling methodology. Furthermore, our tracker requires few
+parameter adjustments, offering a user-friendly interface without com-
+promising performance. The performance of our algorithm remains
+relatively stable across large ranges of these parameters, underscoring
+its versatility and positioning it as a valuable asset in agricultural
+contexts.
+Our work advances plant tracking technology and establishes a
+baseline performance for the modified AppleMOTS dataset and bench-
+mark performance for the LettuceMOT dataset. Through a comprehen-
+sive set of experiments, results, and discussions, we have demonstrated
+the FloraTracktor+ framework’s superior performance, surpassing both
+the LettuceMOT and LettuceTrack benchmarks. Furthermore, our sen-
+sitivity analysis has underscored the model’s stability across diverse
+parameter settings, reducing the need for intricate parameter tuning.
+The visual representation of the global position estimates presented
+in Section 3.7 illustrate the effectiveness of our spatial association
+module, even when faced with the challenges posed by scenarios of
+prolonged periods of absolute object absence. The proposed spatial
+location estimation module could seamlessly incorporate auxiliary data
+sources, such as GPS and IMU sensors, typically available in agricultural
+robots. This integration would facilitate overcoming one of the critical
+limitations of maintaining tracking accuracy in scenarios where the
+camera temporarily loses sight of the objects of interest. We intend
+to explore a sensor fusion strategy in future developments to enhance
+the robustness of the overall framework. Past studies suggest that the
+performance of such integrated systems often matches or surpasses that
+of the most effective individual sensor (Torres et al., 2020; Barrile et al.,
+2022; Huang et al., 2024). This potential improvement underscores
+the fundamental need to incorporate multiple data sources to ensure
+consistent and reliable tracking performance in diverse agricultural
+environments.
+Computers and Electronics in Agriculture 226 (2024) 109379 
+8 
+
+B. Hernandez and H. Medeiros
+Table B.1
+Summary of the MOT evaluation metrics used in this work. In the table, 𝑚𝑡, 𝑓𝑝𝑡, and 𝑚𝑚𝑒𝑡are the number of misses, false positives, and mismatches. 𝐼𝐷𝑇𝑃,
+𝐼𝐷𝐹𝑃, and 𝐼𝐷𝐹𝑁are the identity-based true positives, false positives, and false negatives. For additional details, refer to Bernardin and Stiefelhagen (2008),
+Luiten et al. (2020).
+Metric
+Name
+Description
+Equation
+MOTA
+Multi-Object Tracking Accuracy
+Overall tracking accuracy, computed by aligning predicted and
+actual detections while maintaining consistent object identities over
+time. It penalizes identity switches but not identity transfers.
+1 −
+∑
+𝑡(𝑚𝑡+𝑓𝑝𝑡+𝑚𝑚𝑒𝑡)
+∑
+𝑡𝑔𝑡
+IDP
+ID Precision
+Precision of identity assignments, penalizing incorrect associations
+due to extra predictions.
+|𝐼𝐷𝑇𝑃|
+|𝐼𝐷𝑇𝑃|+|𝐼𝐷𝐹𝑃|
+IDR
+ID Recall
+Recall of identity assignments, penalizing missed identity
+associations.
+|𝐼𝐷𝑇𝑃|
+|𝐼𝐷𝑇𝑃|+|𝐼𝐷𝐹𝑁|
+IDF1
+F1 score for ID associations
+Geometric average between IDP and IDR.
+|𝐼𝐷𝑇𝑃|
+|𝐼𝐷𝑇𝑃|+0.5|𝐼𝐷𝐹𝑃|+0.5|𝐼𝐷𝐹𝑁|
+𝐴(𝑐)
+A score
+Association score for true positive detection 𝑐. 𝑇𝑃𝐴(𝑐), 𝐹𝑃𝐴(𝑐), and
+𝐹𝑁𝐴(𝑐) are the sets of true positive, false positive, and false
+negative detections with the same id as 𝑐.
+|𝑇𝑃𝐴(𝑐)|
+|𝑇𝑃𝐴(𝑐)|+|𝐹𝑃𝐴(𝑐)|+|𝐹𝑁𝐴(𝑐)|
+AssPr
+Association Precision
+Precision of trajectory associations across frames by penalizing
+incorrect associations over time.
+1
+|𝑇𝑃|
+∑
+𝑐∈(𝑇𝑃)
+|𝑇𝑃𝐴(𝑐)|
+|𝑇𝑃𝐴(𝑐)|+|𝐹𝑃𝐴(𝑐)|
+AssRe
+Association Recall
+Recall of trajectory associations across frames by penalizing missed
+associations over time.
+1
+|𝑇𝑃|
+∑
+𝑐∈(𝑇𝑃)
+|𝑇𝑃𝐴(𝑐)|
+|𝑇𝑃𝐴(𝑐)|+|𝐹𝑁𝐴(𝑐)|
+AssA
+Association Accuracy
+Overall accuracy of trajectory associations, which penalizes
+incorrect and missed associations over time, thus accounting for
+both ID switches and transfers.
+1
+|𝑇𝑃|
+∑
+𝑐∈(𝑇𝑃) 𝐴(𝑐)
+DetA
+Detection Accuracy
+Accuracy of similarity between the predicted and actual detections.
+Identities are not relevant for this metric.
+|𝑇𝑃|
+|𝑇𝑃|+|𝐹𝑃|+|𝐹𝑁|
+HOTA
+Higher Order Tracking Accuracy
+Double Jaccard index accounting for detection accuracy and
+association Accuracy.
+√
+∑
+𝑐∈(𝑇𝑃) 𝐴(𝑐)
+|𝑇𝑃|+|𝐹𝑃|+|𝐹𝑁|
+CRediT authorship contribution statement
+Byron Hernandez: Writing – review & editing, Writing – original
+draft, Visualization, Validation, Software, Methodology, Investigation,
+Formal analysis, Data curation, Conceptualization. Henry Medeiros:
+Writing – review & editing, Supervision, Resources, Project administra-
+tion, Methodology, Investigation, Funding acquisition, Formal analysis,
+Conceptualization.
+Declaration of competing interest
+The authors declare that they have no known competing finan-
+cial interests or personal relationships that could have appeared to
+influence the work reported in this paper.
+Data availability
+To reproduce our work, the code is available in the following reposi-
+tory: https://github.com/Computer-Vision-and-Robotic-Perception/ag-
+tracking[ag-tracking]. We use publicly available datasets.
+Acknowledgments
+This research was partially funded by the National Science Founda-
+tion, United States, Grant #2224591 and a University of Florida, United
+States LIFT/AI seed grant.
+Appendix A. Paper notation
+𝑝Superscript indicating membership in the potentially new set
+𝑟Superscript indicating membership in the re-associated set
+𝑑Superscript indicating membership in the detections set (raw)
+𝑖Superscript indicating membership in the inactive set
+𝑎Superscript indicating membership in the active set
+𝑡Subscript indicating time 𝑡
+𝐼𝑊
+Frame width
+𝐼𝐻Frame height
+𝐼𝑡Frame at time 𝑡
+𝑡Set of keypoints correspondences between frame 𝑡and 𝑡−1, defined
+as 𝑡= {(𝑘𝑐
+𝑡, 𝑘𝑐
+𝑡−1)}𝐶
+𝑐=1, 𝑘𝑐
+𝑡∈R2
+𝐱𝑡Global camera position at time 𝑡. The origin is 𝐱0 = [0, 0], 𝐱𝑡∈R2
+𝐻𝑡−1,𝑡Transformation for camera coordinates from time 𝑡−1 to time 𝑡
+𝐛
+𝑙𝑗
+𝑡
+𝑗th bounding box of set 𝑙
+𝑡, where 𝑙
+∈
+{𝑎, 𝑑, 𝑖, 𝑝}, comprised
+of its centroid coordinates 𝑥
+𝑙𝑗
+𝑡, 𝑦
+𝑙𝑗
+𝑡, width 𝑤
+𝑙𝑗
+𝑡, height ℎ
+𝑙𝑗
+𝑡, and
+confidence 𝑠
+𝑙𝑗
+𝑡, 𝐛
+𝑙𝑗
+𝑡=
+[
+𝑥
+𝑙𝑗
+𝑡, 𝑦
+𝑙𝑗
+𝑡, 𝑤
+𝑙𝑗
+𝑡, ℎ
+𝑙𝑗
+𝑡, 𝑠
+𝑙𝑗
+𝑡
+]⊤
+, 𝐛
+𝑙𝑗
+𝑡∈R5
+𝑡Set of associated bounding boxes at time 𝑡. Each element contains
+a pair (𝐛𝑝𝑖
+𝑡, 𝐛
+𝑖𝑗
+𝑡), 𝑡=
+{
+(𝐛𝑝𝑖
+𝑡, 𝐛
+𝑖𝑗
+𝑡)
+}min(|𝑝
+𝑡|, |𝑖
+𝑡|)
+𝑗=1
+𝐜
+𝑙𝑗
+𝑡
+Centroid of the 𝑙𝑗-th bounding box, 𝐜𝑗
+𝑡= [𝑥, 𝑦]⊤, 𝐜𝑙
+𝑡∈R2
+𝑟𝑙𝑗Radius of the circle enclosed by the bounding box 𝐛
+𝑙𝑗
+𝑡, defined as
+𝑟𝑙𝑗= (𝑤
+𝑙𝑗
+𝑡∕2 + ℎ
+𝑙𝑗
+𝑡∕2)∕2 = (𝑤
+𝑙𝑗
+𝑡+ ℎ
+𝑙𝑗
+𝑡)∕4
+𝜏𝑙
+𝑡Tracks in set 𝑙∈{𝑘, 𝑖, 𝑝, 𝑎} at time 𝑡. Each track in 𝜏𝑙
+𝑡is defined as
+𝝉
+𝑙𝑗
+𝑡= [ID𝑙𝑗, 𝐛
+𝑙𝑗⊤
+last, 𝐱𝑙𝑗⊤, 𝑟𝑙𝑗]⊤containing the track ID, its bounding
+box in the last frame it was observed, its estimated global
+position, and the radius of the circle enclosed by the bounding
+box
+
+Set of all the tracks, active or inactive. = {𝜏𝑎
+𝑡
+}𝑁
+𝑡=1
+𝑙
+𝑡Set of bounding boxes corresponding to the set 𝑙∈{𝑎, 𝑑, 𝑖, 𝑝} at time
+𝑡, 𝑙
+𝑡=
+{
+𝐛𝑙1
+𝑡, 𝐛𝑙2
+𝑡, …
+}
+Computers and Electronics in Agriculture 226 (2024) 109379 
+9 
+
+B. Hernandez and H. Medeiros
+𝑠new confidence threshold to initialize a new track (from a new detec-
+tion)
+𝑠active confidence threshold to keep a track alive (from a regressed
+box)
+𝜆nms global non-maxima suppression threshold
+𝑑𝑝distance threshold for association defined as the average diameter
+assuming a circular approximation of the shape. The potentially
+new tracks re-activate an inactive track if the distance between them
+is below 𝑑𝑝.
+Appendix B. Multiple object tracking metrics
+See Table B.1.
+References
+Attri, I., Awasthi, L.K., Sharma, T.P., Rathee, P., 2023. A review of deep learning
+techniques used in agriculture. Ecological Informatics.
+Barrile, V., Simonetti, S., Citroni, R., Fotia, A., Bilotta, G., 2022. Experimenting
+agriculture 4.0 with sensors: a data fusion approach between remote sensing, UAVs
+and self-driving tractors. Sensors.
+Benoît, D., Contzen, S., Nettle, R., Sraïri, M.T., 2022. The multiple influences on the
+future of work in agriculture: global perspectives. Frontiers in Sustainable Food
+Systems.
+Bergmann, P., Meinhardt, T., Leal-Taixe, L., 2019. Tracking without bells and whistles.
+In: IEEE/CVF International Conference on Computer Vision.
+Bernardin, K., Stiefelhagen, R., 2008. Evaluating multiple object tracking performance:
+the CLEAR MOT metrics. EURASIP Journal on Image and Video Processing.
+Bewley, A., Ge, Z., Ott, L., Ramos, F., Upcroft, B., 2016. Simple online and realtime
+tracking. In: 2016 IEEE International Conference on Image Processing.
+Biswas, M., Ray, M., Jahan, I., Khan, S., Ahmad Saad, S., Bharman, P., 2022. Deep
+learning in agriculture: a review. Asian Journal of Research in Computer Science.
+Darwin, B., Dharmaraj, P., Prince, S., Popescu, D.E., Hemanth, D.J., 2021. Recognition
+of bloom/yield in crop images using deep learning models for smart agriculture: a
+review. Agronomy.
+Davoodi, P., Gwon, C., Lai, G., Morris, T., 2019. TensorRT inference with Tensorflow.
+In: GPU Technology Conference.
+de Jong, S., Baja, H., Tamminga, K., Valente, J., 2022. AppleMOTS: Detection,
+segmentation and tracking of homogeneous objects using MOTS. IEEE Robotics
+and Automation Letters.
+Dendorfer, P., Osep, A., Milan, A., Schindler, K., Cremers, D., Reid, I., Roth, S., Leal-
+Taixé, L., 2021. MOTChallenge: a benchmark for single-camera multiple target
+tracking. International Journal of Computer Vision.
+Dias,
+P.A.,
+Tabb,
+A.,
+Medeiros,
+H.,
+2018.
+Apple
+flower
+detection
+using
+deep
+convolutional networks. Computers in Industry.
+Dorling, D., 2021. World population prospects at the UN: our numbers are not our
+problem?. In: The Struggle for Social Sustainability.
+Du, Y., Wan, J., Zhao, Y., Zhang, B., Tong, Z., Dong, J., 2021. GIAOTracker: a
+comprehensive framework for mcmot with global information and optimizing
+strategies in visdrone 2021. In: IEEE/CVF International Conference on Computer
+Vision.
+Fischler,
+M.A.,
+Bolles,
+R.C.,
+1981.
+Random
+sample
+consensus:
+a
+paradigm
+for
+model fitting with applications to image analysis and automated cartography.
+Communications of the ACM.
+Geiger, A., Lenz, P., Stiller, C., Urtasun, R., 2013. Vision meets robotics: the KITTI
+dataset. International Journal of Robotics Research.
+Girshick, R., 2015. Fast R-CNN. In: Proceedings of the IEEE International Conference
+on Computer Vision.
+Girshick, R., Donahue, J., Darrell, T., Malik, J., 2014. Rich feature hierarchies for
+accurate object detection and semantic segmentation. In: Proceedings of the IEEE
+Conference on Computer Vision and Pattern Recognition.
+Hartley, R.I., 1997. In defense of the eight-point algorithm. IEEE Transactions on
+pattern analysis and machine intelligence.
+Hu, N., Su, D., Wang, S., Nyamsuren, P., Qiao, Y., Jiang, Y., Cai, Y., 2022b.
+LettuceTrack: detection and tracking of lettuce for robotic precision spray in
+agriculture. Frontiers in Plant Science.
+Hu, N., Wang, S., Wang, X., Cai, Y., Su, D., Nyamsuren, P., Qiao, Y., Jiang, Y., Hai, B.,
+Wei, H., 2022a. LettuceMOT: a dataset of lettuce detection and tracking with
+re-identification of re-occurred plants for agricultural robots. Frontiers in Plant
+Science.
+Huang, W., Wang, Y., Xia, J., Jin, X., Zhu, H., Glamuzina, B., Yu, W., Zhang, X., 2024.
+Non-destructive classification of sturgeon stress using cross-modal data fusion and
+multi-input deep learning models. Computers and Electronics in Agriculture.
+Hussain, M., He, L., Schupp, J., Lyons, D., Heinemann, P., 2023. Green fruit segmenta-
+tion and orientation estimation for robotic green fruit thinning of apples. Computers
+and Electronics in Agriculture.
+Jocher, G., A., C., Qiu, J., 2024. YOLO by Ultralytics. URL https://github.com/
+ultralytics/ultralytics,
+Jonathon Luiten, A.H., 2020. TrackEval. https://github.com/JonathonLuiten/TrackEval.
+Joshi, A., Guevara, D., Earles, M., 2023. Standardizing and centralizing datasets for
+efficient training of agricultural deep learning models. Plant Phenomics.
+Kragh, M.F., Christiansen, P., Laursen, M.S., Larsen, M., Steen, K.A., Green, O.,
+Karstoft, H., Jørgensen, R.N., 2017. FieldSAFE: dataset for obstacle detection in
+agriculture. Sensors.
+Liu, Y., Ma, X., Shu, L., Hancke, G.P., Abu-Mahfouz, A.M., 2020. From industry 4.0
+to agriculture 4.0: current status, enabling technologies, and research challenges.
+IEEE Transactions on Industrial Informatics.
+Lu, Y., Young, S., 2020. A survey of public datasets for computer vision tasks in
+precision agriculture. Computers and Electronics in Agriculture.
+Luiten, J., Osep, A., Dendorfer, P., Torr, P., Geiger, A., Leal-Taixé, L., Leibe, B., 2020.
+HOTA: a higher order metric for evaluating multi-object tracking. International
+Journal of Computer Vision.
+Patrício, D.I., Rieder, R., 2018. Computer vision and artificial intelligence in precision
+agriculture for grain crops: a systematic review. Computers and Electronics in
+Agriculture.
+Pezzementi,
+Z.,
+Tabor,
+T.,
+Hu,
+P.,
+Chang,
+J.K.,
+Ramanan,
+D.,
+Wellington,
+C.,
+Wisely Babu, B.P., Herman, H., 2018. Comparing apples and oranges: off-road
+pedestrian detection on the National Robotics Engineering Center agricultural
+person-detection dataset. Journal of Field Robotics.
+Ren, S., He, K., Girshick, R., Sun, J., 2015. Faster R-CNN: towards real-time object
+detection with region proposal networks. In: Advances in Neural Information
+Processing Systems.
+Saggi, M.K., Jain, S., 2022. A survey towards decision support system on smart
+irrigation scheduling using machine learning approaches. Archives of computational
+methods in engineering.
+Saleem, M.H., Potgieter, J., Arif, K.M., 2021. Automation in agriculture by machine and
+deep learning techniques: a review of recent developments. Precision Agriculture.
+Saranya, T., Deisy, C., Sridevi, S., Anbananthen, K.S.M., 2023. A comparative study
+of deep learning and internet of things for precision agriculture. Engineering
+Applications of Artificial Intelligence.
+Sun, J., Shen, Z., Wang, Y., Bao, H., Zhou, X., 2021. LoFTR: detector-free local feature
+matching with transformers. In: IEEE/CVF Conference on Computer Vision and
+Pattern Recognition.
+Tabb, A., Medeiros, H., 2017. A robotic vision system to measure tree traits. In:
+IEEE/RSJ International Conference on Intelligent Robots and Systems.
+Terven, J., Córdova-Esparza, D.-M., Romero-González, J.-A., 2023. A comprehensive
+review of YOLO architectures in computer vision: From YOLOv1 to YOLOv8 and
+YOLO-NAS. Machine Learning and Knowledge Extraction.
+Torres, A.B., da Rocha, A.R., da Silva, T.L.C., de Souza, J.N., Gondim, R.S., 2020.
+Multilevel data fusion for the internet of things in smart agriculture. Computers
+and Electronics in Agriculture.
+Voigtlaender, P., Krause, M., Osep, A., Luiten, J., Sekar, B.B.G., Geiger, A., Leibe, B.,
+2019. MOTS: multi-object tracking and segmentation. In: Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition.
+Wojke, N., Bewley, A., Paulus, D., 2017. Simple online and realtime tracking with
+a deep association metric. In: 2017 IEEE International Conference on Image
+Processing.
+Wu, X., Aravecchia, S., Lottes, P., Stachniss, C., Pradalier, C., 2020. Robotic weed
+control using automated weed and crop classification. Journal of Field Robotics.
+Xu, J., Wang, B., Li, J., Hu, C., Pan, J., 2017. Deep learning application based on em-
+bedded GPU. In: 2017 First International Conference on Electronics Instrumentation
+& Information Systems.
+Xu, Z., Zhang, W., Tan, X., Yang, W., Huang, H., Wen, S., Ding, E., Huang, L., 2020.
+Segment as points for efficient online multi-object tracking and segmentation. In:
+European Conference on Computer Vision.
+Yao, R., Lin, G., Xia, S., Zhao, J., Zhou, Y., 2020. Video object segmentation and
+tracking: a survey. ACM Transactions on Intelligent Systems and Technology (TIST).
+Zhang, Y., Sun, P., Jiang, Y., Yu, D., Weng, F., Yuan, Z., Luo, P., Liu, W., Wang, X.,
+2022a. ByteTrack: multi-object tracking by associating every detection box. In:
+European Conference on Computer Vision.
+Zhang, W., Wang, J., Liu, Y., Chen, K., Li, H., Duan, Y., Wu, W., Shi, Y., Guo, W.,
+2022b. Deep-learning-based in-field citrus fruit detection and tracking. Horticulture
+Research.
+Zhou, X., Koltun, V., Krähenbühl, P., 2020. Tracking objects as points. In: European
+Conference on Computer Vision.
+Computers and Electronics in Agriculture 226 (2024) 109379 
+10 
