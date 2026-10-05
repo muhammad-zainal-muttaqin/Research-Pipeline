@@ -1,3 +1,20 @@
+# Fruit detection and 3D location using instance segmentation neural networks and structure-from-motion photogrammetry
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `genemola2020fruitb` |
+| Judul asli | Fruit detection and 3D location using instance segmentation neural networks and structure-from-motion photogrammetry |
+| Penulis | Gen\'e-Mola, Jordi; Sanz-Cortiella, Ricardo; Rosell-Polo, Joan R.; Morros, Josep-Ramon; Ruiz-Hidalgo, Javier; Vilaplana, Ver\'onica; Gregorio, Eduard |
+| Tahun | 2020 |
+| Venue | Computers and Electronics in Agriculture |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [genemola2020fruitb.pdf](../pdf/genemola2020fruitb.pdf)
+- DOI resmi: https://doi.org/10.1016/j.compag.2019.105165
+
 ## Gambaran Umum
 Makalah ini mengusulkan metodologi deteksi buah dan lokalisasi 3D apel yang terdiri atas empat tahap: (1) deteksi dan segmentasi instans 2D dengan Mask R-CNN; (2) pembangkitan awan titik 3D apel dengan fotogrametri *structure-from-motion* (SfM) dari citra bertopeng; (3) proyeksi deteksi 2D ke ruang 3D; dan (4) penyaringan positif palsu dengan *support vector machine* (SVM) linear yang dilatih. Metode diuji pada 11 pohon apel Fuji dengan total 1.455 apel di kebun komersial di Agramunt, Catalonia, Spanyol. Citra diperoleh dengan kamera DSLR Canon EOS 60D sebanyak 582 foto (291 per sisi baris), dan dataset dipublikasikan sebagai Fuji-SfM.
 

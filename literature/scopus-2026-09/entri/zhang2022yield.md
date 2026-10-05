@@ -1,3 +1,20 @@
+# Yield and maturity estimation of apples in orchards using a 3-step deep learning-based method
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `zhang2022yield` |
+| Judul asli | Yield and maturity estimation of apples in orchards using a 3-step deep learning-based method |
+| Penulis | Zhang, Xinxing; Song, Zhuping; Liang, Qianyue; Gao, Shumin |
+| Tahun | 2022 |
+| Venue | Quality Assurance and Safety of Crops and Foods |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [zhang2022yield.pdf](../pdf/zhang2022yield.pdf)
+- DOI resmi: https://doi.org/10.15586/qas.v14i2.1008
+
 ## Gambaran Umum
 Makalah ini menyajikan metode tiga langkah berbasis pembelajaran mendalam untuk memperkirakan hasil panen dan tingkat kematangan apel di kebun dari citra RGB. Langkah pertama adalah jaringan deteksi satu tahap bernama Deep-count (varian YOLOv4 dengan *backbone* ResNet-101 dan PANet berkonvolusi *depth-wise*) yang menghitung apel terlihat dari sisi depan dan sisi belakang pohon. Langkah kedua adalah jaringan klasifikasi (EfficientNet-b4) yang menyaring objek salah deteksi sekaligus mengelompokkan apel menjadi matang dan belum matang. Langkah ketiga adalah algoritma estimasi beban buah yang mengalikan jumlah buah terlihat dari kedua sisi dengan faktor koreksi per kebun untuk memperhitungkan buah yang tersembunyi.
 
