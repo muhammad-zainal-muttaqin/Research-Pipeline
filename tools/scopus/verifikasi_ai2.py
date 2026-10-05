@@ -8,7 +8,7 @@ putaran kedua yang dikerjakan model bahasa besar atas permintaan penulis pertama
 PERNAH ditulis ke kolom manusia (`keputusan_manusia`, `konfirmasi_*`, `final_*`,
 `benar`, `oleh`) di lembar Cek 1-6; semuanya disimpan di verifikasi/hasil-kerja-ai/.
 
-  python tools/scopus/verifikasi_ai2.py siapkan     # paket rekaman buta di ai2/berkas/
+  python tools/scopus/verifikasi_ai2.py siapkan     # paket rekaman buta di hasil-kerja-ai/berkas/
   python tools/scopus/verifikasi_ai2.py periksa s_000.json   # validasi satu berkas hasil
   python tools/scopus/verifikasi_ai2.py status      # paket mana yang hasilnya sudah ada dan sah
 

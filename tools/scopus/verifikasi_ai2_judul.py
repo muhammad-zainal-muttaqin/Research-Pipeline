@@ -7,9 +7,9 @@ verifikasi meminta, bila hal itu terjadi, semua rekaman sejenis diperiksa ulang.
 "Sejenis" di sini berarti: dikeluarkan di tahap judul dan diambil oleh kueri
 multi-pengamatan (Q1) atau kueri kelapa sawit (Q3).
 
-  python tools/scopus/verifikasi_ai2_judul.py daftar     # ai2/ulang_judul.csv (masukan enrich_records.py)
-  python tools/scopus/verifikasi_ai2_judul.py siapkan    # paket ai2/berkas/u_NNN.json (judul + abstrak)
-  python tools/scopus/verifikasi_ai2_judul.py sanggah    # paket ai2/berkas/ru_NNN.json dari usul masuk
+  python tools/scopus/verifikasi_ai2_judul.py daftar     # hasil-kerja-ai/ulang_judul.csv (masukan enrich_records.py)
+  python tools/scopus/verifikasi_ai2_judul.py siapkan    # paket hasil-kerja-ai/berkas/u_NNN.json (judul + abstrak)
+  python tools/scopus/verifikasi_ai2_judul.py sanggah    # paket hasil-kerja-ai/berkas/ru_NNN.json dari usul masuk
   python tools/scopus/verifikasi_ai2_judul.py terapkan [--kering]
 
 Abstrak diambil dengan:

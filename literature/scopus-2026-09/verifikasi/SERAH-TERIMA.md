@@ -1,9 +1,20 @@
-# Serah-Terima Verifikasi `main6` (diperbarui 2 Oktober 2026)
+# Serah-Terima Verifikasi `main6` (diperbarui 5 Oktober 2026)
 
 Dokumen ini memungkinkan agen atau penulis lain melanjutkan pekerjaan tanpa membaca percakapan sebelumnya.
 Rencana asal: `rencana/index.html` (Bu Fatma, 29 September 2026). Semua keputusan di bawah dibuat model bahasa
 besar (putaran kedua, "AI-2") dan **belum diperiksa manusia**. Isian manusia (`keputusan_manusia`, `final_*`,
 `benar`, `oleh`) di lembar Cek 1-6 tidak pernah ditulis AI-2.
+
+## 0. Status cek manusia per 5 Oktober 2026
+
+| Cek | Status | Berkas |
+|---|---|---|
+| 1 Sampel buta | Dihitung 4 Oktober 2026: judul 256 dari 300 sepakat (kappa 0,57); abstrak 86 dari 165 (kappa 0,45); 5 judul kritis. Bu Fatma memutuskan kelima judul itu pada 5 Oktober 2026: empat dieksklusi dan idx 3661 (Qiu dkk., 2022) masuk korpus sebagai C5, sehingga Cek 1 lulus tanpa penarikan 300 judul tambahan. Belum dikerjakan: mengisi kelima keputusan di `ketidaksepakatan.csv`, memasukkan idx 3661 ke korpus dan membangun ulang angka naskah, serta menambah dua aturan kode (stereo dan prioritas C1) ke `PROTOKOL.md` dan bagian metode naskah. Sebanyak 118 ketidaksepakatan lain belum diputuskan. | `cek-1-sampel-buta/kesepakatan.md`, `ketidaksepakatan.csv` |
+| 2 Cek tangan | Belum dimulai. Lembar `cek_C1` (187) dan `cek_C3` (170) masih mengikuti korpus sebelum putaran kedua (kini C1 195, C3 176); bangkitkan ulang dengan `verifikasi_cek_tangan.py` sebelum diisi. | `cek-2-cek-tangan/` |
+| 3 Makalah dikenal | Laporan model tersedia; keputusan penulis belum diambil. | `cek-3-makalah-dikenal/` |
+| 4 Teks lengkap | 213 dari 214 kajian memiliki PDF (C1 194 dari 195); satu kajian belum, yaitu `safre2024advanced` (ISHS, dikode dari judul). Sebanyak 41 PDF diperoleh lewat pembelian pada 5 Oktober 2026. Teks PDF yang masuk pada 3-5 Oktober 2026 belum diekstrak ke `teks/`, sehingga angka teks lengkap naskah tetap 331. | `cek-4-teks-lengkap/` |
+| 5 Kode ulang | Belum dimulai. Lembar `kode_ulang_C1` (187) perlu dibangkitkan ulang. | `cek-5-kode-ulang/` |
+| 6 Cek fakta | Belum dimulai oleh peninjau. | `cek-6-cek-fakta/` |
 
 ## 1. Sudah selesai
 

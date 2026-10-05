@@ -172,7 +172,7 @@ def populasi_abstrak():
 def abstrak_bersarang():
     """Sampel abstrak yang diambil dari sampel judul: semua rekaman sampel judul yang oleh AI
     putaran 1 dinyatakan lanjut ke abstrak (kunci_judul.csv), dengan keputusan abstrak AI
-    putaran 1 (salinan ai2/putaran_1). Urutan mengikuti sampel judul."""
+    putaran 1 (salinan hasil-kerja-ai/putaran_1). Urutan mengikuti sampel judul."""
     sampel = [int(r["idx"]) for r in baca_csv(VER / "sampel_judul.csv")]
     lanjut = {int(r["idx"]) for r in baca_csv(KUNCI / "kunci_judul.csv") if r["keputusan_ai"] == "L"}
     pilih = [i for i in sampel if i in lanjut]
