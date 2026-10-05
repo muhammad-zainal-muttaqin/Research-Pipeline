@@ -1,3 +1,20 @@
+# Multiple orange detection and tracking with 3-D fruit relocalization and neural-net based yield regression in commercial sweet orange orchards
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `santos2024multiple` |
+| Judul asli | Multiple orange detection and tracking with 3-D fruit relocalization and neural-net based yield regression in commercial sweet orange orchards |
+| Penulis | Santos, Thiago T.; de Souza, Kleber X.S.; Camargo Neto, Jo\~ao; Koenigkan, Luciano V.; Moreira, Al\'ecio S.; Ternes, S\^onia |
+| Tahun | 2024 |
+| Venue | Computers and Electronics in Agriculture |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | citrus |
+
+## Tautan Akses
+- PDF: [santos2024multiple.pdf](../pdf/santos2024multiple.pdf)
+- DOI resmi: https://doi.org/10.1016/j.compag.2024.109199
+
 ## Gambaran Umum
 Makalah ini mengusulkan alur kerja (*pipeline*) pencacahan buah jeruk manis dari video untuk perkiraan hasil panen di kebun komersial. Alur tersebut terdiri atas deteksi buah tampak dengan jaringan saraf konvolusional (*convolutional neural network*, CNN), pelacakan antarbingkai dengan algoritma Hungarian, komponen relokalisasi berbasis estimasi lokasi 3D buah untuk menangani buah yang tertutup dan buah yang muncul kembali, serta regresor jaringan saraf yang memperkirakan jumlah buah total pada pohon. Teks yang tersedia adalah versi *preprint* (arXiv 2312.16724v1, 29 Desember 2023). Data berasal dari program Orange Crop Forecast milik Fundecitrus di sabuk jeruk São Paulo dan Minas Gerais, Brasil. Buah yang dicacah umumnya masih hijau (belum matang), dan video direkam dengan ponsel pada tingkat tanah di antara baris pohon.
 
