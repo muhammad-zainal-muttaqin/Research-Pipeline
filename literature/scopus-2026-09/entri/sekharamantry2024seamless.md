@@ -1,3 +1,20 @@
+# A Seamless Deep Learning Approach for Apple Detection, Depth Estimation, and Tracking Using YOLO Models Enhanced by Multi-Head Attention Mechanism
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `sekharamantry2024seamless` |
+| Judul asli | A Seamless Deep Learning Approach for Apple Detection, Depth Estimation, and Tracking Using YOLO Models Enhanced by Multi-Head Attention Mechanism |
+| Penulis | Sekharamantry, Praveen Kumar; Melgani, Farid; Malacarne, Jonni; Ricci, Riccardo; de Almeida Silva, Rodrigo; Marcato Junior, Jose |
+| Tahun | 2024 |
+| Venue | Computers |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [sekharamantry2024seamless.pdf](../pdf/sekharamantry2024seamless.pdf)
+- DOI resmi: https://doi.org/10.3390/computers13030083
+
 ## Gambaran Umum
 Makalah ini mengusulkan sistem deteksi, estimasi kedalaman, dan penghitungan apel dari video kebun yang direkam dengan drone. Detektor berupa YOLOv7 yang diberi mekanisme perhatian multi-kepala (*multi-head attention mechanism*, MAM), dan penghitungan dilakukan dengan pelacak multi-objek ByteTrack sehingga buah yang tampak pada bingkai-bingkai berurutan dihitung satu kali.
 
