@@ -13,8 +13,8 @@ dengan skrip di `tools/scopus/`.
 | Membaca protokol penyaringan dan pengodean | [`PROTOKOL.md`](PROTOKOL.md) |
 | Melihat keputusan per rekaman | `topik/penyaringan/` |
 | Membuka matriks bukti (satu baris per kajian) | `topik/bukti/matriks_bukti.csv` |
-| Membaca PDF akses terbuka | `pdf/` (479 berkas, gambar sudah diperkecil); teks 331 berkas di `teks/`; daftar menurut kode di [`KATALOG-PDF.md`](KATALOG-PDF.md) |
-| Mengetahui PDF yang belum ada | `unduhan/pdf_belum_ada.csv` (daftar 28 September 2026, 640 kajian; per 5 Oktober 2026 tersisa 522 dari 1.000 kajian); untuk kajian inti lihat `verifikasi/cek-4-teks-lengkap/PERMINTAAN-PDF.md` |
+| Membaca PDF akses terbuka | `pdf/` (480 berkas, gambar sudah diperkecil); teks 331 berkas di `teks/`; daftar menurut kode di [`KATALOG-PDF.md`](KATALOG-PDF.md) |
+| Mengetahui PDF yang belum ada | `unduhan/pdf_belum_ada.csv` (daftar 28 September 2026, 640 kajian; per 5 Oktober 2026 tersisa 522 dari 1.001 kajian); untuk kajian inti lihat `verifikasi/cek-4-teks-lengkap/PERMINTAAN-PDF.md` |
 | Melihat kajian metodologi tinjauan pustaka | `metodologi/` dan `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md` |
 
 ## Isi folder

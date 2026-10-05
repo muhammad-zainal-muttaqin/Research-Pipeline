@@ -123,9 +123,13 @@ daftar pilihan bila bisa.
 | R | Tinjauan terdahulu |
 | T | Metode yang dapat dipindahkan dari luar pertanian |
 
-Protokol tidak menetapkan urutan prioritas bila lebih dari satu kode cocok.
-Pilih kode yang paling menggambarkan kontribusi utama kajian dan tulis kode
-lain yang juga cocok di `catatan` (misalnya `juga C3`).
+Bila lebih dari satu kode cocok, C1 didahulukan untuk kajian yang menggabungkan
+beberapa pengamatan buah yang sama. Sepasang citra stereo dihitung sebagai satu
+pengamatan, sehingga berkode C5; kajian stereo berkode C1 hanya bila buah
+dihubungkan antar-*frame* atau antarposisi kamera (`PROTOKOL.md` bagian 4,
+keputusan Fatma, 5 Oktober 2026). Untuk kasus lain, pilih kode yang paling
+menggambarkan kontribusi utama kajian dan tulis kode lain yang juga cocok di
+`catatan` (misalnya `juga C3`).
 
 ### 3.4 Alasan eksklusi
 

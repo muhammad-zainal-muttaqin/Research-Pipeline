@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 478 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 479 kajian korpus `main6` yang PDF-nya tersedia, dari 1.001 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -10,10 +10,10 @@ Katalog ini memuat 478 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 238 | 63 |
 | C3 | Pencitraan TBS kelapa sawit | 176 | 56 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 49 | 14 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 134 | 41 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 135 | 42 |
 | R | Tinjauan terdahulu | 120 | 63 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 88 | 47 |
-| | **Jumlah** | 1.000 | 478 |
+| | **Jumlah** | 1.001 | 479 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (194)
 
@@ -362,7 +362,7 @@ Katalog ini memuat 478 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2022 | Zhang X. | Measurement of tomato fruits quantity at different ripening stages based on color point cloud images | Journal of South China Agricultural University | [PDF](pdf/zhang2022measurement.pdf) | [DOI](https://doi.org/10.7671/j.issn.1001-411x.202105021) |
 | 2020 | Ni X. | Deep learning image segmentation and extraction of blueberry fruit traits associated with harvestability and yield | Horticulture Research | [PDF](pdf/ni2020deep.pdf) | [DOI](https://doi.org/10.1038/s41438-020-0323-3) |
 
-## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (41)
+## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (42)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -395,6 +395,7 @@ Katalog ini memuat 478 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2022 | Kang H. | Accurate fruit localisation using high resolution LiDAR-camera fusion and instance segmentation | Computers and Electronics in Agriculture | [PDF](pdf/kang2022accurate.pdf) | [DOI](https://doi.org/10.1016/j.compag.2022.107450) |
 | 2022 | Mengoli D. | On-line real-time fruit size estimation using a depth-camera sensor | 2022 IEEE Workshop on Metrology for Agriculture and Forestry Metroagrifor 2022 Proceedings | [PDF](pdf/mengoli2022line.pdf) | [DOI](https://doi.org/10.1109/metroagrifor55389.2022.9964960) |
 | 2022 | Neupane C. | In-Orchard Sizing of Mango Fruit: 1. Comparison of Machine Vision Based Methods for On-The-Go Estimation | Horticulturae | [PDF](pdf/neupane2022orchard.pdf) | [DOI](https://doi.org/10.3390/horticulturae8121223) |
+| 2022 | Qiu C. | Grape Maturity Detection and Visual Pre-Positioning Based on Improved YOLOv4 | Electronics Switzerland | [PDF](pdf/qiu2022grape.pdf) | [DOI](https://doi.org/10.3390/electronics11172677) |
 | 2022 | Sun M. | Fast Location and Recognition of Green Apple Based on RGB-D Image | Frontiers in Plant Science | [PDF](pdf/sun2022fast.pdf) | [DOI](https://doi.org/10.3389/fpls.2022.864458) |
 | 2022 | Tang J. | Identification of the Yield of Camellia oleifera Based on Color Space by the Optimized Mean Shift Clustering Algorithm Using Terrestrial Laser Scanning | Remote Sensing | [PDF](pdf/tang2022identification.pdf) | [DOI](https://doi.org/10.3390/rs14030642) |
 | 2022 | Van Daalen T. | Determining fresh tomato weight using depth images from an AR headset | IFAC Papersonline | [PDF](pdf/van2022determining.pdf) | [DOI](https://doi.org/10.1016/j.ifacol.2022.11.125) |

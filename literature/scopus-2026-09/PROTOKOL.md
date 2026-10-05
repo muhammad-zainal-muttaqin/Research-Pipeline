@@ -36,12 +36,12 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Rekaman unik | 5.889 |
 | Dikeluarkan menurut tipe dokumen (front matter prosiding, erratum, catatan, editorial, surat, ditarik) | 166 |
 | Judul disaring | 5.723 |
-| Dikeluarkan pada tahap judul | 4.580 |
-| Dinilai kelayakannya | 1.143 |
-| — dengan abstrak | 889 |
+| Dikeluarkan pada tahap judul | 4.579 |
+| Dinilai kelayakannya | 1.144 |
+| — dengan abstrak | 890 |
 | — hanya judul, sumber, dan ringkasan TLDR | 254 |
 | Dikeluarkan pada tahap kelayakan | 143 |
-| Masuk peta (Scopus) | 1.000 |
+| Masuk peta (Scopus) | 1.001 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026) | 1 |
 
 Alasan eksklusi tahap kelayakan: E1 bukan buah pada tanaman (20), E2 hanya
@@ -57,9 +57,18 @@ lain (65), E6 sensor non-citra (3), E7 bahasa selain Inggris (1).
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 238 |
 | C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 176 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 49 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 134 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 135 |
 | R | Tinjauan terdahulu | 120 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 88 |
+
+Dua aturan berlaku saat menetapkan kode (keputusan Fatma, 5 Oktober 2026):
+
+- **Stereo.** Sepasang citra stereo dihitung sebagai satu pengamatan, sehingga
+  kajian yang mendeteksi, melokalisasi, atau mengukur buah dari satu pasang stereo
+  berkode C5. Kajian berkode C1 hanya bila buah dihubungkan antar-*frame* atau
+  antarposisi kamera.
+- **Prioritas.** Bila lebih dari satu kode cocok, C1 didahulukan untuk kajian
+  yang menggabungkan beberapa pengamatan buah yang sama.
 
 ## 5. Pengodean
 
@@ -93,6 +102,13 @@ lain (65), E6 sensor non-citra (3), E7 bahasa selain Inggris (1).
   prosedur, bukan penilaian independen oleh orang kedua. Rincian: `verifikasi/hasil-kerja-ai/`,
   `verifikasi/log_perubahan.csv`, `verifikasi/SERAH-TERIMA.md`. Eksklusi judul dari
   kueri selain Q1 dan Q3 belum dibaca ulang.
+- **Sampel buta peninjau (Cek 1, 4 Oktober 2026).** Peninjau menilai 300 judul dan
+  165 rekaman tahap abstrak tanpa melihat keputusan model
+  (`verifikasi/cek-1-sampel-buta/kesepakatan.md`). Lima judul yang dieksklusi model
+  tetapi ditandai peninjau sebagai C1 atau C3 diputuskan Fatma pada 5 Oktober 2026:
+  empat tetap dieksklusi, dan satu (Qiu dkk., 2022, idx 3661) masuk peta sebagai C5
+  (`topik/penyaringan/abstrak_F00.txt`).
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
-- PDF akses terbuka diperoleh untuk 330 dari 1.000 kajian; sisanya tercantum di
+- PDF tersedia untuk 479 dari 1.001 kajian (`KATALOG-PDF.md`); teksnya sudah
+  diekstrak untuk 330 kajian. Daftar awal PDF yang belum ada tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.
