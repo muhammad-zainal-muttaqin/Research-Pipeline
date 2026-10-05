@@ -5,16 +5,16 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 ## Seksi 2: alur rekaman
 
 - Rekaman diambil 6,491; unik 5,889; duplikat 602
-- Dibuang menurut tipe dokumen 166; judul disaring 5,723; dikeluarkan di tahap judul 4,580
-- Dinilai kelayakannya 1,143 (dengan abstrak 889; judul dan sumber saja 254)
+- Dibuang menurut tipe dokumen 166; judul disaring 5,723; dikeluarkan di tahap judul 4,579
+- Dinilai kelayakannya 1,144 (dengan abstrak 890; judul dan sumber saja 254)
 - Dikeluarkan di tahap kelayakan 143: E1 20, E2 18, E3 27, E4 9, E5 65, E6 3, E7 1
-- Masuk peta dari Scopus 1000: C1 195, C2 238, C3 176, C4 49, C5 134, R 120, T 88
+- Masuk peta dari Scopus 1001: C1 195, C2 238, C3 176, C4 49, C5 135, R 120, T 88
 - Metode lain 1: liu2026shaping (R)
-- Total kajian masuk 1001
-- Kajian per tahun: 2012: 9, 2013: 14, 2014: 13, 2015: 17, 2016: 22, 2017: 25, 2018: 29, 2019: 37, 2020: 67, 2021: 72, 2022: 90, 2023: 116, 2024: 164, 2025: 193, 2026: 132
+- Total kajian masuk 1002
+- Kajian per tahun: 2012: 9, 2013: 14, 2014: 13, 2015: 17, 2016: 22, 2017: 25, 2018: 29, 2019: 37, 2020: 67, 2021: 72, 2022: 91, 2023: 116, 2024: 164, 2025: 193, 2026: 132
 - Multi-pengamatan per tahun: 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 2, 2018: 1, 2019: 5, 2020: 10, 2021: 13, 2022: 13, 2023: 25, 2024: 38, 2025: 47, 2026: 31
-- Dengan abstrak 775 dari 1000; teks lengkap lokal 330
-- Peta istilah: 43 istilah, 311 tautan; istilah identitas 24-37 kajian; detection 610; counting 424
+- Dengan abstrak 776 dari 1001; teks lengkap lokal 330
+- Peta istilah: 43 istilah, 311 tautan; istilah identitas 24-37 kajian; detection 611; counting 424
 
 ## Seksi 3: kajian multi-pengamatan
 
@@ -55,8 +55,8 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 
 ## Seksi 7: kedalaman dan sensor lain
 
-- Kajian 134; modalitas (kemunculan): RGB-D 77, RGB 33, stereo 19, LiDAR 13, monocular depth 3, NIR 3, hyperspectral 2, thermal 2, multispectral 1
-- Tanaman: apple 47, (tanaman tidak disebut) 16, tomato 16, citrus 13, grape 13
+- Kajian 135; modalitas (kemunculan): RGB-D 77, RGB 33, stereo 20, LiDAR 13, monocular depth 3, NIR 3, hyperspectral 2, thermal 2, multispectral 1
+- Tanaman: apple 47, (tanaman tidak disebut) 16, tomato 16, grape 14, citrus 13
 
 ## Seksi 8: kelapa sawit
 
