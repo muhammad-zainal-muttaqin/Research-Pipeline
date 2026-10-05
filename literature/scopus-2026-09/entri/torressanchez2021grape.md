@@ -43,7 +43,7 @@ Citra nadir dan oblik diproses bersama di Agisoft Metashape Professional 1.7.0 d
 ### 3. Algoritma deteksi tandan
 Algoritma ditulis di R 3.5.3 dengan paket `sf` dan `lidR`, dan berjalan otomatis dengan enam langkah:
 
-1. Dimasukkan penipisan (*decimation*) awan titik ke kepadatan awan terendah (Ga-20, 30.902 titik/m²) dengan fungsi `homogenize`.
+1. Penipisan (*decimation*) awan titik ke kepadatan awan terendah (Ga-20, 30.902 titik/m²) dengan fungsi `homogenize`.
 2. Pembuatan model elevasi digital dengan *cloth simulation filter* (ambang 0,5 m, resolusi kain 1 m, voksel 0,1 m).
 3. Pembuangan titik di luar zona tandan, yaitu titik dengan tinggi di bawah 0,5 m dan di atas 1 m dari tanah.
 4. Penyaringan warna: titik dengan $B/G > 1$ dan $B/R > 1$ diklasifikasikan sebagai anggur.

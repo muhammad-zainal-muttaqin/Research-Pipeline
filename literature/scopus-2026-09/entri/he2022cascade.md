@@ -1,3 +1,19 @@
+# Cascade-SORT: A robust fruit counting approach using multiple features cascade matching
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `he2022cascade` |
+| Judul asli | Cascade-SORT: A robust fruit counting approach using multiple features cascade matching |
+| Penulis | He, Leiying; Wu, Fangdong; Du, Xiaoqiang; Zhang, Guofeng |
+| Tahun | 2022 |
+| Venue | Computers and Electronics in Agriculture |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+
+## Tautan Akses
+- PDF: [he2022cascade.pdf](../pdf/he2022cascade.pdf)
+- DOI resmi: https://doi.org/10.1016/j.compag.2022.107223
+
 ## Gambaran Umum
 Makalah ini mengusulkan Cascade-SORT, sebuah metode pencacahan buah dari video yang memperlakukan pencacahan sebagai masalah pelacakan multi-objek (*multi-object tracking*, MOT) dengan kerangka *tracking-by-detection* (TBD). Detektor yang dipakai adalah YOLO-v3. Asosiasi data antarbingkai dilakukan melalui pencocokan bertingkat (*cascade matching*) yang memadukan jarak Mahalanobis (gerak), kemiripan tampilan berbasis *vector of locally aggregated descriptors* (VLAD) dari fitur SIFT, dan *intersection over union* (IoU), disertai filter Kalman yang dioptimalkan untuk memprediksi lintasan objek yang tidak terdeteksi.
 

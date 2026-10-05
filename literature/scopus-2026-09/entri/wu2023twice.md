@@ -1,3 +1,20 @@
+# Twice matched fruit counting system: An automatic fruit counting pipeline in modern apple orchard using mutual and secondary matches
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `wu2023twice` |
+| Judul asli | Twice matched fruit counting system: An automatic fruit counting pipeline in modern apple orchard using mutual and secondary matches |
+| Penulis | Wu, Zhenchao; Sun, Xiaoming; Jiang, Hanhui; Gao, Fangfang; Li, Rui; Fu, Longsheng; Zhang, Dong; Fountas, Spyros |
+| Tahun | 2023 |
+| Venue | Biosystems Engineering |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [wu2023twice.pdf](../pdf/wu2023twice.pdf)
+- DOI resmi: https://doi.org/10.1016/j.biosystemseng.2023.09.005
+
 ## Gambaran Umum
 Makalah ini mengusulkan *twice matched fruit counting system*, yaitu alur pencacahan apel otomatis dari video baris pohon di kebun apel modern. Sistem terdiri dari tiga submetode: detektor fruit dan batang pohon (*trunk*) berbasis YOLOv4-tiny, pelacakan buah dengan pencocokan timbal balik (*mutual match*) dan pencocokan sekunder (*secondary match*), serta pencacahan dengan penetapan ID unik. Tujuannya adalah mengurangi kesalahan pencocokan pada buah bergerombol (*clustered fruit*) yang membuat satu buah dihitung lebih dari sekali.
 
