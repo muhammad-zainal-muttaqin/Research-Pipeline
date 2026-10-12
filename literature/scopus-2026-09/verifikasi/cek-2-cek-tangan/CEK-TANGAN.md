@@ -1,7 +1,7 @@
 # Cek 2 — Pemeriksaan Tangan Keputusan Terpenting
 
 > Berkas ini dibuat ulang oleh `tools/scopus/verifikasi_cek_tangan.py` setiap kali
-> skrip dijalankan (terakhir 2026-10-12). Jangan disunting
+> skrip dijalankan (terakhir 2026-10-13). Jangan disunting
 > tangan; ubah skripnya.
 
 ## Tujuan
@@ -20,8 +20,8 @@ Lembar tersedia dalam format `.csv` dan `.xlsx` di folder ini. Isi lembar `.xlsx
 | Kelompok | Lembar | Jumlah | Rencana | Diputuskan dari judul saja | Sudah dikonfirmasi |
 |---|---|---:|---:|---:|---:|
 | Kajian inti C1 | `cek_C1` | 195 | 187 | 43 | 193 |
-| Kajian sawit C3 | `cek_C3` | 176 | 170 | 35 | 0 |
-| Eksklusi tahap kelayakan | `cek_eksklusi` | 143 | 153 | 29 | 0 |
+| Kajian sawit C3 | `cek_C3` | 176 | 170 | 35 | 172 |
+| Eksklusi tahap kelayakan | `cek_eksklusi` | 143 | 153 | 29 | 132 |
 
 Rencana kelompok "judul saja": C1 42, C3 35.
 
