@@ -6,9 +6,9 @@ meminta pemeriksaan manusia. Skrip ini menyiapkan dan menggabungkan pemeriksaan
 putaran kedua yang dikerjakan model bahasa besar atas permintaan penulis pertama
 (1 Oktober 2026), supaya penulis kemudian memeriksa hasilnya. Hasil AI-2 TIDAK
 PERNAH ditulis ke kolom manusia (`keputusan_manusia`, `konfirmasi_*`, `final_*`,
-`benar`, `oleh`) di lembar Cek 1-6; semuanya disimpan di verifikasi/hasil-kerja-ai/.
+`benar`, `oleh`) di lembar Cek 1-6; semuanya disimpan di verifikasi/hasil-kerja-ai/putaran-kedua/.
 
-  python tools/scopus/verifikasi_ai2.py siapkan     # paket rekaman buta di hasil-kerja-ai/berkas/
+  python tools/scopus/verifikasi_ai2.py siapkan     # paket rekaman buta di hasil-kerja-ai/putaran-kedua/berkas/
   python tools/scopus/verifikasi_ai2.py periksa s_000.json   # validasi satu berkas hasil
   python tools/scopus/verifikasi_ai2.py status      # paket mana yang hasilnya sudah ada dan sah
 
@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parents[2]
 KORPUS = ROOT / "literature/scopus-2026-09"
 TOPIK = KORPUS / "topik"
 VER = KORPUS / "verifikasi"
-AI2 = VER / "hasil-kerja-ai"
+AI2 = VER / "hasil-kerja-ai" / "putaran-kedua"
 BERKAS = AI2 / "berkas"
 HASIL = AI2 / "hasil"
 BENIH = 20261001

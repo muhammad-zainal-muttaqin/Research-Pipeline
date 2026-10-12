@@ -23,7 +23,10 @@ Kolom penilaian manusia sengaja dikosongkan dan hanya boleh diisi peninjau.
 
 | Lokasi | Isi |
 |---|---|
-| `hasil-kerja-ai/` | Seluruh keluaran putaran kedua penyaringan oleh model (paket kerja, hasil, banding, ajudikasi, laporan perubahan) dan salinan keputusan putaran pertama di `putaran_1/`. **Bukan penilaian manusia.** |
+| `hasil-kerja-ai/PERLU-DICEK.md` | **Daftar keluaran model yang menunggu persetujuan peninjau.** Baca ini dahulu. |
+| `hasil-kerja-ai/menunggu-acc/` | Draf model yang belum disetujui peninjau, satu subfolder per cek. Model selalu menulis ke sini dahulu; berkas baru dipindah ke folder cek setelah disetujui. **Bukan penilaian manusia.** |
+| `hasil-kerja-ai/putaran-kedua/` | Keluaran putaran kedua penyaringan oleh model (paket kerja, hasil, banding, ajudikasi, laporan perubahan) dan salinan keputusan putaran pertama di `putaran_1/`. Sudah diterapkan ke data sumber; disimpan sebagai jejak dan dibaca skrip. |
+| `arsip/` | Cadangan lama yang tidak lagi dipakai (misalnya sampel abstrak versi sebelumnya) |
 | `log_perubahan.csv` | Log lintas cek: satu baris untuk setiap nilai yang diubah pada berkas keputusan sumber (`tanggal, berkas, idx_atau_key, kolom, nilai_lama, nilai_baru, alasan, oleh`) |
 | `rencana/` | Salinan rencana verifikasi Bu Fatma |
 | `SERAH-TERIMA.md` | Apa yang sudah selesai, apa yang tersisa, dan aturan agar data tidak rusak |

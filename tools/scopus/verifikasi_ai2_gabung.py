@@ -3,7 +3,7 @@
 
   python tools/scopus/verifikasi_ai2_gabung.py
 
-Keluaran di literature/scopus-2026-09/verifikasi/hasil-kerja-ai/:
+Keluaran di literature/scopus-2026-09/verifikasi/hasil-kerja-ai/putaran-kedua/:
   banding_kelayakan.csv   510 rekaman C1/C3/X: keputusan dan kode kedua putaran, tanda beda
   banding_sampel.csv      sampel buta Cek 1 (tahap judul dan tahap kelayakan)
   cek_fakta_ai2.csv       penilaian klaim naskah terhadap sumbernya

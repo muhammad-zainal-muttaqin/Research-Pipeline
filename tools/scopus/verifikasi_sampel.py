@@ -45,7 +45,7 @@ KORPUS = ROOT / "literature/scopus-2026-09"
 TOPIK = KORPUS / "topik"
 PEN = TOPIK / "penyaringan"
 VER = KORPUS / "verifikasi" / "cek-1-sampel-buta"
-PUTARAN_1 = KORPUS / "verifikasi" / "hasil-kerja-ai" / "putaran_1"
+PUTARAN_1 = KORPUS / "verifikasi" / "hasil-kerja-ai" / "putaran-kedua" / "putaran_1"
 KUNCI = VER / ".kunci"
 
 BENIH_BAWAAN = 20260929
@@ -172,7 +172,7 @@ def populasi_abstrak():
 def abstrak_bersarang():
     """Sampel abstrak yang diambil dari sampel judul: semua rekaman sampel judul yang oleh AI
     putaran 1 dinyatakan lanjut ke abstrak (kunci_judul.csv), dengan keputusan abstrak AI
-    putaran 1 (salinan hasil-kerja-ai/putaran_1). Urutan mengikuti sampel judul."""
+    putaran 1 (salinan hasil-kerja-ai/putaran-kedua/putaran_1). Urutan mengikuti sampel judul."""
     sampel = [int(r["idx"]) for r in baca_csv(VER / "sampel_judul.csv")]
     lanjut = {int(r["idx"]) for r in baca_csv(KUNCI / "kunci_judul.csv") if r["keputusan_ai"] == "L"}
     pilih = [i for i in sampel if i in lanjut]
@@ -365,8 +365,8 @@ def main():
         akhir = [VER / f"sampel_abstrak.{e}" for e in ("csv", "xlsx")]
         if any(ada_isian(x) for x in akhir if x.exists()):
             sys.exit("sampel_abstrak sudah berisi keputusan manusia; tidak akan ditimpa.")
-        cad = VER / "cadangan_sampel_abstrak_terpisah"
-        cad.mkdir(exist_ok=True)
+        cad = VER.parent / "arsip" / VER.name / "cadangan_sampel_abstrak_terpisah"
+        cad.mkdir(parents=True, exist_ok=True)
         for x in akhir + [KUNCI / "kunci_abstrak.csv"]:
             if x.exists():
                 x.replace(cad / x.name)
