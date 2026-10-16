@@ -1,6 +1,6 @@
 # Keluaran Model yang Menunggu Persetujuan Peninjau
 
-Diperbarui 13 Oktober 2026. Aturan kerjanya ada di `AGENTS.md` §11: model menulis
+Diperbarui 16 Oktober 2026; jumlah di bawah dihitung ulang dari lembar pada tanggal itu. Aturan kerjanya ada di `AGENTS.md` §11: model menulis
 ke `menunggu-acc/` dahulu, dan berkas baru dipindah ke folder cek (struktur
 rencana Bu Fatma) setelah peninjau menyetujuinya. Butir yang sudah disetujui
 dihapus dari daftar ini.
@@ -17,11 +17,15 @@ Keputusan pada tiap butir di bawah tetap terbuka.
 | `cek-2-cek-tangan/cek_C3` (176) | 165 lengkap, 7 hanya `konfirmasi_C3` | 4 baris berjudul saja; `kode_benar` pada 7 baris |
 | `cek-2-cek-tangan/cek_eksklusi` (143) | 132 | 11 baris yang memerlukan teks lengkap |
 | `cek-5-kode-ulang/kode_ulang_C1.csv` (195) | 147 (`final_*`; kode tidak berubah) | 39 usul perubahan kode, 4 berkeyakinan rendah, 5 belum dikode; drafnya ada di kolom `draf_ai_*` |
-| `cek-6-cek-fakta/cek_fakta.csv` (273) | 263 | 10 klaim yang tidak dapat diperiksa |
+| `cek-6-cek-fakta/cek_fakta.csv` (292 baris klaim terkini + 202 baris `lama`) | 69 (58 Y, 11 N) | 223 baris klaim terkini tanpa isian; lihat butir 3c |
 
 Belum dijalankan: `verifikasi_kode_ulang.py --terapkan` (uji keringnya lolos: 147
 baris, 451 sel pada kolom verifikasi, tanpa perubahan kode), perbaikan naskah
 dari Cek 6, dan penerapan usul koreksi kode ke `topik/bukti/`.
+
+Pada 16 Oktober 2026 `main6.pdf` dikompilasi ulang dengan `tectonic` (34 halaman,
+tanpa rujukan atau sitasi yang tidak terdefinisi) dan dipindah ke
+`manuscript/output/papers/`.
 
 ## 1. Cek 2, lembar C1 — sudah terisi, menunggu empat keputusan
 
@@ -43,8 +47,9 @@ No 17 `safre2024advanced` tetap kosong karena tidak ada PDF.
 
 ## 2. Cek 2, lembar C3 — usul isian siap, lembar belum diisi
 
-Lembar `cek-2-cek-tangan/cek_C3.xlsx` masih kosong (176 baris). Usul isiannya ada
-di `menunggu-acc/cek-2/usul_isian_cek_C3.csv` (kolom `usul_*`, `status`, `dasar`).
+Usul berstatus `siap` sudah diisikan ke `cek-2-cek-tangan/cek_C3.xlsx` (176
+baris); drafnya ada di `menunggu-acc/cek-2/usul_isian_cek_C3.csv` (kolom
+`usul_*`, `status`, `dasar`).
 Dasarnya: 83 baris dikonfirmasi Haiku 5.5 dalam dua putaran; 93 baris sisanya
 dinilai buta oleh dua agen Opus 5.5 dan diperiksa ulang oleh agen Opus 5.5 ketiga
 (`cek_C3_buta_opus.csv`). Dari 93 baris itu, 6 dinilai dari teks lengkap, 74
@@ -61,7 +66,7 @@ Angka ini sudah memuat penilaian ulang Sonnet 5.5 (butir 3a).
 
 | Yang diputuskan | Baris |
 |---|---|
-| Menyetujui usul isian 165 baris berstatus `siap` untuk diisikan ke lembar | saring `status = siap` |
+| Menyetujui 165 isian model yang sudah ada di lembar | saring `catatan` yang menyebut isian model |
 | Empat kajian yang dinilai bukan C3: tiga diusulkan C1 karena aturan prioritas, satu dikeluarkan dengan E6 | no 15 `daud2023detection`, no 116 `daud2022loose`, no 126 `aji2021automatic`, no 12 `narendran2024palm` |
 | Empat baris yang hanya berjudul; perlu teks lengkap | no 7, 11, 21, 31 |
 | Tujuh baris yang dipastikan C3 dari abstrak, tetapi kode rincinya berbeda antarpenilai (tugas, lokasi, modalitas, atau per kelas) | no 33, 35, 46, 114, 131, 132, 176 |
@@ -69,8 +74,8 @@ Angka ini sudah memuat penilaian ulang Sonnet 5.5 (butir 3a).
 
 ## 3. Cek 2, lembar eksklusi — usul isian siap, lembar belum diisi
 
-Lembar `cek-2-cek-tangan/cek_eksklusi.xlsx` masih kosong (143 baris). Usul
-isiannya ada di `menunggu-acc/cek-2/usul_isian_cek_eksklusi.csv`. Dasarnya: 95
+Usul berstatus `siap` sudah diisikan ke `cek-2-cek-tangan/cek_eksklusi.xlsx`
+(132 dari 143 baris); drafnya ada di `menunggu-acc/cek-2/usul_isian_cek_eksklusi.csv`. Dasarnya: 95
 baris dikonfirmasi Haiku 5.5; 48 baris sisanya dinilai buta oleh satu agen Opus
 5.5 dan diperiksa ulang oleh agen Opus 5.5 lain (`cek_eksklusi_buta_opus.csv`).
 Dari 48 baris itu, 28 dinilai dari abstrak dan 20 dari judul saja.
@@ -89,7 +94,7 @@ Angka ini sudah memuat penilaian ulang Sonnet 5.5 (butir 3a).
 | **Sembilan belas rekaman yang dinilai layak masuk** (C5 8, C2 4, C1 3, R 2, C3 1, C4 1). Memasukkannya mengubah angka korpus, gambar, dan naskah | saring `usul_catatan` yang memuat "layak masuk" |
 | Sebelas baris yang buktinya tetap tidak cukup; perlu teks lengkap | saring `status = perlu peninjau` |
 | Empat alasan eksklusi yang diusulkan diganti | no 7, 48, 101, 134 |
-| Menyetujui usul isian 109 baris yang alasannya dikonfirmasi | saring `usul_konfirmasi_alasan = Y` |
+| Menyetujui 109 isian model yang mengonfirmasi alasan eksklusi | saring `konfirmasi_alasan = Y` |
 
 Catatan pemeriksa atas ketidakseragaman penilaian (batas C1 pada pelacakan tanpa
 hitungan, E2 lawan E3 untuk buah di mesin pemanen, lokasi yang disimpulkan dari
@@ -134,24 +139,42 @@ Keenam belas makalah dikenal ada di peta dan dikutip di naskah.
 ## 3c. Cek 6 — usul cek fakta (273 klaim)
 
 Draf: `menunggu-acc/cek-6/usul_cek_fakta.csv` dan `KEMAJUAN.md` (dua agen Sonnet
-5.5 berurutan). Lembar `cek-6-cek-fakta/cek_fakta.csv` belum diisi. Putusan: 206
-benar, 57 salah atau sebagian benar, 10 tidak dapat diperiksa.
+5.5 berurutan). Putusannya (206 benar, 57 salah atau sebagian benar, 10 tidak
+dapat diperiksa) dibuat atas lembar yang disusun dari naskah 29 September 2026,
+sebelum naskah ditulis ulang pada 2 dan 5 Oktober 2026.
+
+Pada 16 Oktober 2026 lembar dibuat ulang dengan `verifikasi_cek_fakta.py` dari
+naskah terkini: 203 klaim, 292 baris. Hasilnya:
+
+- 61 baris yang kalimatnya tidak berubah mempertahankan isian model.
+- 8 baris salah yang masalahnya masih ada di kalimat terkini diisi dengan menyalin
+  isian baris lamanya; asal salinan tertulis di kolom `catatan`.
+- 223 baris klaim terkini belum diisi. Bahan bantu: `menunggu-acc/cek-6/peta_klaim_kosong.csv`
+  memuat baris lama terdekat untuk setiap baris kosong (kemiripan kalimat ≥0,9: 34;
+  0,6–0,9: 55; 0,3–0,6: 69; tanpa padanan: 65). Putusan baris lama tidak otomatis
+  berlaku untuk kalimat baru.
+- 202 baris isian lama disimpan di bawah lembar dengan prioritas `lama` dan id
+  berawalan `L-`.
+
+`KEMAJUAN.md` memakai id lama. Padanannya di lembar baru: K006 → K006, K014 →
+K014, K020 → K021, K038-1 → K043-1, K112-2/4/5/6 → K136-2/4/5/6, K142 → K170,
+K184 → K200, K094-1 → K113-1.
 
 | Yang diputuskan | Rincian |
 |---|---|
-| **Sembilan klaim yang masih salah di naskah terkini**; usul kalimat pengganti ada di `KEMAJUAN.md` | K006, K014, K020, K038-1, K112-2, K112-4, K112-5, K142, K184 |
+| **Sembilan klaim yang masih salah di naskah terkini**; usul kalimat pengganti ada di `KEMAJUAN.md` | id lembar baru: K006, K014, K021, K043-1, K136-2, K136-4, K136-5, K170, K200 |
 | Hamdani 2026 menghitung buah di dalam tandan, bukan tandan; Hutapea 2024 tidak memuat hasil pencacahan | Memengaruhi kalimat "nine counting studies" dan mungkin kode kedua kajian |
 | Kueri Q9 tidak memuat batas bidang subjek | Kalimat metode dan `PROTOKOL.md` bagian 2 perlu disesuaikan |
 | Sepuluh klaim yang tidak dapat diperiksa | saring `usul_benar` kosong |
-| Lembar `cek_fakta.csv` usang: 48 klaim salah hanya di lembar, sedangkan naskah terkini sudah benar | Buat ulang lembar dengan `verifikasi_cek_fakta.py` sebelum diisi |
+| 223 baris klaim terkini tanpa isian | Diperiksa peninjau, atau diserahkan ke putaran model baru bila peninjau memintanya |
 | `pdf/kang2022accurate.pdf` dan teksnya memuat makalah lain dari penulis yang sama | Unduh ulang PDF yang benar (Cek 4) |
 
 ## 3d. Cek 5 — usul kode ulang C1 (190 dari 195 kajian)
 
 Draf: `menunggu-acc/cek-5/usul_kode_ulang_C1.csv` dan `KEMAJUAN.md` (tiga agen
 Sonnet 5.5 berurutan, dari teks lengkap). Kolom `final_*` di
-`cek-5-kode-ulang/kode_ulang_C1.csv` belum diisi. Keyakinan: 88 tinggi, 97
-sedang, 5 rendah.
+`cek-5-kode-ulang/kode_ulang_C1.csv` terisi 147 baris (kode tidak berubah); 48
+baris kosong. Keyakinan: 88 tinggi, 97 sedang, 5 rendah.
 
 | Yang diputuskan | Rincian |
 |---|---|
@@ -165,8 +188,7 @@ sedang, 5 rendah.
 Dibanding 42 usul koreksi kode di butir 1 (Cek 2): 26 kajian mendapat usul
 perubahan di kedua cek, 16 hanya di Cek 2, dan 13 hanya di Cek 5. Isi usul pada
 26 kajian itu belum dicocokkan. Kelima kajian yang dinilai bukan C1 di Cek 2
-tetap diberi kode di sini. Lembar kerja di folder cek sudah
-dibuat ulang skrip menjadi 195 baris dan tidak memuat isian.
+tetap diberi kode di sini.
 
 ## 4. Draf lain di `menunggu-acc/cek-2/`
 

@@ -18,7 +18,7 @@ Kolom isian tangan (halaman, benar, perbaikan, catatan, oleh, tanggal) hanya
 diisi manusia. Skrip tidak pernah mengisinya. Saat dijalankan ulang, isian
 yang sudah ada dipertahankan menurut pasangan (kalimat, key); baris lama yang
 kalimatnya sudah berubah di naskah tetap disimpan di bawah dengan prioritas
-"lama" agar tidak ada isian yang hilang.
+"lama" dan id berawalan "L-" agar tidak ada isian yang hilang.
 
     python tools/scopus/verifikasi_cek_fakta.py
 """
@@ -184,6 +184,9 @@ def main():
     yatim = [r for kk, r in lama.items() if kk not in dipakai and any(r.get(k) for k in KOLOM_TANGAN)]
     for r in yatim:
         r["prioritas"] = "lama"
+        # Awalan L- mencegah id lama bentrok dengan penomoran klaim terkini.
+        if not r["id"].startswith("L-"):
+            r["id"] = "L-" + r["id"]
         baris.append({k: r.get(k, "") for k in KOLOM})
 
     with OUT.open("w", encoding="utf-8-sig", newline="") as f:
