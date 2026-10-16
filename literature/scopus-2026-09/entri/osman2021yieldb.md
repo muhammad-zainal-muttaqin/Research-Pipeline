@@ -1,3 +1,20 @@
+# Yield Estimation using Deep Learning for Precision Agriculture
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `osman2021yieldb` |
+| Judul asli | Yield Estimation using Deep Learning for Precision Agriculture |
+| Penulis | Osman, Youssef; Dennis, Reed; Elgazzar, Khalid |
+| Tahun | 2021 |
+| Venue | 7th IEEE World Forum on Internet of Things Wf Iot 2021 |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [osman2021yieldb.pdf](../pdf/osman2021yieldb.pdf)
+- DOI resmi: https://doi.org/10.1109/wf-iot51360.2021.9595143
+
 ## Gambaran Umum
 Makalah prosiding (IEEE WF-IoT 2021) ini membangun alur dua tahap untuk mencacah buah pada video: detektor YOLOv3 (varian dengan *spatial pyramid pooling*, YOLOv3-SPP) menghasilkan kotak pembatas, lalu pelacak DeepSORT yang dimodifikasi mengaitkan deteksi antarbingkai sehingga setiap apel dihitung satu kali. Penyesuaian utama adalah mengganti pengekstraksi fitur penampilan DeepSORT, yang semula dilatih untuk identifikasi ulang pejalan kaki, dengan ResNet18 berbobot pralatih ImageNet, serta memakai kecocokan penampilan dan kecocokan IoU.
 

@@ -1,3 +1,20 @@
+# Active view planning for counting apples in orchards
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `roy2017active` |
+| Judul asli | Active view planning for counting apples in orchards |
+| Penulis | Roy, Pravakar; Isler, Volkan |
+| Tahun | 2017 |
+| Venue | IEEE International Conference on Intelligent Robots and Systems |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [roy2017active.pdf](../pdf/roy2017active.pdf)
+- DOI resmi: https://doi.org/10.1109/iros.2017.8206500
+
 ## Gambaran Umum
 Makalah ini membahas perencanaan sudut pandang aktif (*active view planning*) untuk menghitung jumlah apel dalam satu gugus (*cluster*) pada kebun. Sebuah robot dengan kamera monokular pada lengan manipulator harus memilih sudut pandang kedua dan berikutnya agar jumlah apel dalam gugus dapat ditaksir dengan benar, karena satu pandangan sering menyesatkan akibat oklusi antarbuah (Gambar 1: tiga pandangan berbeda menunjukkan tiga, lima, dan enam apel pada gugus yang sama).
 

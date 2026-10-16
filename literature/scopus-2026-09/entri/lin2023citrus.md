@@ -1,3 +1,20 @@
+# Citrus Identification and Counting Algorithm Based on Improved YOLOv5s and DeepSort
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `lin2023citrus` |
+| Judul asli | Citrus Identification and Counting Algorithm Based on Improved YOLOv5s and DeepSort |
+| Penulis | Lin, Yuhan; Hu, Wenxin; Zheng, Zhenhui; Xiong, Juntao |
+| Tahun | 2023 |
+| Venue | Agronomy |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | citrus |
+
+## Tautan Akses
+- PDF: [lin2023citrus.pdf](../pdf/lin2023citrus.pdf)
+- DOI resmi: https://doi.org/10.3390/agronomy13071674
+
 ## Gambaran Umum
 Makalah ini (Lin, Hu, Zheng, dan Xiong; *Agronomy* 2023, 13, 1674) mengusulkan metode pencacahan jeruk (*citrus*) pada video kebun dengan detektor YOLOv5s yang ditingkatkan dan pelacak DeepSort. Peningkatan detektor terdiri atas tiga perubahan: modul atensi CBAM ditambahkan sebelum lapisan SPPF pada tulang punggung, semua modul C3 pada tulang punggung diganti modul *Contextual Transformer* (CoT), dan fungsi kerugian diganti dari CIoU/GIoU menjadi SIoU.
 

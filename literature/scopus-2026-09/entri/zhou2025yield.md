@@ -1,3 +1,20 @@
+# Yield Estimation in Banana Orchards Based on DeepSORT and RGB-Depth Images
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `zhou2025yield` |
+| Judul asli | Yield Estimation in Banana Orchards Based on DeepSORT and RGB-Depth Images |
+| Penulis | Zhou, Lei; Yang, Zhou; Fu, Lanhui; Duan, Jieli |
+| Tahun | 2025 |
+| Venue | Agronomy |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | banana |
+
+## Tautan Akses
+- PDF: [zhou2025yield.pdf](../pdf/zhou2025yield.pdf)
+- DOI resmi: https://doi.org/10.3390/agronomy15051119
+
 ## Gambaran Umum
 
 Makalah ini mengusulkan metode penghitungan tandan pisang dan estimasi hasil kebun pisang dengan pelacak DeepSORT dan citra RGB-D. Detektor YOLO-Banana, yang dikembangkan pada karya terdahulu penulis, mendeteksi tandan dan tangkai pisang. Berat tiap tandan dihitung dengan model dari kedalaman dan volume dari karya terdahulu yang sama. DeepSORT (filter Kalman, algoritma Hungarian, jarak Mahalanobis dan jarak kosinus tampilan) memberi identitas lintas bingkai, lalu tiga batasan (jumlah pelacakan berturut-turut, rentang jarak, dan rentang berat) mengendalikan kapan tandan dihitung.

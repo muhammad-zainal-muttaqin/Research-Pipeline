@@ -1,3 +1,19 @@
+# Multi-Fruit Tracking and 3-D Structure Recovery via CoTracker
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `santos2026multi` |
+| Judul asli | Multi-Fruit Tracking and 3-D Structure Recovery via CoTracker |
+| Penulis | Santos, Thiago Teixeira |
+| Tahun | 2026 |
+| Venue | Revista De Informatica Teorica E Aplicada |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+
+## Tautan Akses
+- PDF: [santos2026multi.pdf](../pdf/santos2026multi.pdf)
+- DOI resmi: https://doi.org/10.22456/2175-2745.150960
+
 ## Gambaran Umum
 Makalah ini (*Revista de Informática Teórica e Aplicada*, vol. 33, no. 2, 2026) memakai CoTracker, model berbasis *transformer* untuk pelacakan titik dengan perhatian silang antar-lintasan dan antar-waktu (*cross-track/cross-time attention*), untuk sekaligus melacak banyak buah, melokalisasi buah dalam 3D, dan memperkirakan pose kamera dari video kebun jeruk manis. Sistem menerima kotak pembatas dari detektor YOLOv5, memperlakukan buah sebagai penanda (*landmark*) untuk odometri visual, dan mengoptimalkan pose serta posisi buah dengan graf faktor (*factor graph*).
 

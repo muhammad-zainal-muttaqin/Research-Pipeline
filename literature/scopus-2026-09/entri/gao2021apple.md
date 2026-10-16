@@ -1,3 +1,20 @@
+# Apple detection and counting using real-time video based on deep learning and object tracking
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `gao2021apple` |
+| Judul asli | Apple detection and counting using real-time video based on deep learning and object tracking |
+| Penulis | Gao, F.; others |
+| Tahun | 2021 |
+| Venue | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [gao2021apple.pdf](../pdf/gao2021apple.pdf)
+- DOI resmi: https://doi.org/10.11975/j.issn.1002-6819.2021.21.025
+
 ## Gambaran Umum
 Makalah ini mengusulkan metode pendeteksian dan penghitungan apel pada video kebun dengan detektor ringan YOLOv4-tiny, pelacak berbasis filter Kalman (*Kalman filter*), dan algoritma Hungarian yang diperbaiki dengan jarak Euklides serta *Intersection over Union* (IoU). Objek penelitian adalah apel Fuji pada kebun modern berbentuk dinding buah vertikal (*vertical fruiting wall*) di Kabupaten Fufeng, Kota Baoji, Provinsi Shaanxi, Tiongkok. Data diambil pada akhir September 2020 dengan kamera RealSense D435 pada kereta kendali jarak jauh, menghasilkan 800 citra dan 10 video.
 
