@@ -46,7 +46,7 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 | `literature/withheld/` | 20 entri ditahan; jangan masuk naskah |
 | `manuscript/source/` | `main6.tex`, `main6-body.tex`, `references6.bib`; berkas `main`–`main5v3` adalah arsip |
 | `manuscript/figures/main6/` | Gambar F01–F10 (keluaran skrip) |
-| `manuscript/guides/` | Panduan penulisan dan `POLA-TINJAUAN-PUSTAKA.md` |
+| `manuscript/guides/` | Panduan penulisan dan `POLA-TINJAUAN-PUSTAKA.md`; artikel contoh yang dirujuk panduan ada di `literature/example/` |
 | `manuscript/output/papers/` | PDF hasil kompilasi |
 | `experiments/` | `STATUS.md`, `EKSPERIMEN.md` (log), `METRICS.md`, `SERI-F.md`, `SR/`, `code/` (peta: `PETA-SKRIP.md`) |
 | `pipeline/` | Deliverable produksi: YOLO 4 kanal untuk kamera Orbbec Gemini |
