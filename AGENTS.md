@@ -25,7 +25,7 @@ Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 | Jalur | Status |
 |---|---|
 | Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 34 halaman, 12 seksi, 2 lampiran, 10 gambar, 6 tabel). `main`–`main5v3` adalah arsip: jangan disunting atau dirujuk. |
-| Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.144 dinilai kelayakannya → **1.001 masuk peta** (2012–2026). Kode: C1 195 · C2 238 · C3 176 · C4 49 · C5 135 · R 120 · T 88. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Status verifikasi dan sisa pekerjaan: `literature/scopus-2026-09/verifikasi/SERAH-TERIMA.md` (baca dahulu).** |
+| Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.144 dinilai kelayakannya → **1.001 masuk peta** (2012–2026). Kode: C1 195 · C2 238 · C3 176 · C4 49 · C5 135 · R 120 · T 88. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: peninjau mulai dari `literature/scopus-2026-09/verifikasi/README.md` (tugas di `TUGAS.md`); agen membaca `SERAH-TERIMA.md` dahulu.** |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed 0,0049. |
 | Depth sensor (E-022…E-033b) | Pipeline reproyeksi tervalidasi, tetapi **tidak ada klaim peningkatan deteksi yang sah**. |
@@ -41,7 +41,7 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 | Lokasi | Isi |
 |---|---|
 | `literature/scopus-2026-09/` | Korpus `main6`: `PROTOKOL.md`, `QUERY.md`, `topik/` (kueri, rekaman, penyaringan, `bukti/`), `pdf/` dan `teks/` |
-| `literature/scopus-2026-09/verifikasi/` | `cek-1-…` sampai `cek-6-…` mengikuti rencana Bu Fatma dan hanya memuat bahan peninjau. Keluaran model ada di `hasil-kerja-ai/`: `PERLU-DICEK.md` (daftar yang menunggu persetujuan), `menunggu-acc/` (draf), `putaran-kedua/` (sudah diterapkan). Cadangan lama di `arsip/` |
+| `literature/scopus-2026-09/verifikasi/` | `cek-1-…` sampai `cek-6-…` mengikuti rencana Bu Fatma dan hanya memuat bahan peninjau. Pintu masuk manusia `README.md`; keputusan yang menunggu peninjau `TUGAS.md`; arti kode `ISTILAH.md`; catatan teknis `SERAH-TERIMA.md`. Keluaran model ada di `hasil-kerja-ai/`: `menunggu-acc/` (draf), `putaran-kedua/` (sudah diterapkan). Cadangan lama di `arsip/` |
 | `literature/entries/` | 182 ringkasan makalah korpus lama (dasar Ruang Baca dan naskah arsip) |
 | `literature/withheld/` | 20 entri ditahan; jangan masuk naskah |
 | `manuscript/source/` | `main6.tex`, `main6-body.tex`, `references6.bib`; berkas `main`–`main5v3` adalah arsip |
@@ -186,9 +186,10 @@ plafon.
 - **Keluaran model untuk verifikasi ditulis ke
   `literature/scopus-2026-09/verifikasi/hasil-kerja-ai/menunggu-acc/<cek>/`
   dahulu**, bukan ke folder `cek-N`. Setiap draf baru dicatat di
-  `hasil-kerja-ai/PERLU-DICEK.md` beserta keputusan yang diminta dari peninjau.
+  `verifikasi/TUGAS.md` sebagai butir berbahasa awam (pertanyaan, berkas yang
+  dibuka, dampak); asal-usul teknisnya dicatat di `SERAH-TERIMA.md`.
   Berkas baru dipindah atau diisikan ke folder `cek-N` setelah pengguna
-  menyetujuinya secara eksplisit; butirnya lalu dihapus dari `PERLU-DICEK.md`.
+  menyetujuinya secara eksplisit; butirnya lalu dihapus dari `TUGAS.md`.
 - Isian lembar verifikasi yang berasal dari model harus ditandai demikian di
   kolom `catatan`; jangan disajikan sebagai bacaan peninjau.
 - Klaim tentang depth berstatus hipotesis yang dapat dipalsukan.

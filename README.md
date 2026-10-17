@@ -32,6 +32,7 @@ menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
 | Menemukan skrip dan bukti hasil | [Peta skrip](experiments/code/PETA-SKRIP.md) |
 | Membaca sintesis literatur | [Sintesis lintas makalah](literature/synthesis.md) |
 | Membaca naskah *review* terkini | [`main6.pdf`](manuscript/output/papers/main6.pdf), sumber [`main6-body.tex`](manuscript/source/main6-body.tex) |
+| Mengerjakan verifikasi `main6` (tugas peninjau) | [Verifikasi](literature/scopus-2026-09/verifikasi/README.md), lalu [daftar tugas](literature/scopus-2026-09/verifikasi/TUGAS.md) |
 | Memeriksa korpus dan protokol tinjauan `main6` | [Korpus Scopus 2026-09](literature/scopus-2026-09/README.md), [protokol](literature/scopus-2026-09/PROTOKOL.md), [kueri](literature/scopus-2026-09/QUERY.md) |
 | Membaca pola penulisan tinjauan yang dipakai | [`POLA-TINJAUAN-PUSTAKA.md`](manuscript/guides/POLA-TINJAUAN-PUSTAKA.md) |
 | Menyusun naskah | [README naskah](manuscript/README.md) dan [panduan naskah](manuscript/guides/) |

@@ -1,45 +1,47 @@
-# Verifikasi Korpus `main6` — Peta Folder
+# Verifikasi Tinjauan `main6`
 
-Folder ini memuat semua bahan untuk memeriksa penyaringan dan pengodean korpus
-`main6`, mengikuti rencana verifikasi Bu Fatma (29 September 2026; salinannya di
-[`rencana/index.html`](rencana/index.html)). Status dan sisa pekerjaan:
-[`SERAH-TERIMA.md`](SERAH-TERIMA.md).
+Tinjauan `main6` menyaring 6.491 artikel Scopus menjadi 1.001 artikel dengan
+bantuan AI. Keputusan AI itu wajib diperiksa manusia sebelum naskah dikirim.
+Folder ini berisi semua lembar pemeriksaannya, mengikuti rencana Bu Fatma
+(29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 
-Hampir semua berkas di sini **disiapkan skrip atau model**, bukan diisi manusia.
-Kolom penilaian manusia sengaja dikosongkan dan hanya boleh diisi peninjau.
+## Posisi per 17 Oktober 2026
 
-## Satu folder untuk satu cek
+AI sudah mengisi usulan di hampir semua lembar. Usulan itu belum sah sebelum
+Anda periksa.
 
-| Folder | Isi | Diisi oleh | Tenggat |
+| Pemeriksaan | Yang diperiksa | Keadaan | Tenggat |
 |---|---|---|---|
-| [`cek-1-sampel-buta/`](cek-1-sampel-buta/PANDUAN.md) | Sampel acak 300 judul dan 165 rekaman tahap abstrak dengan keputusan peninjau dan keputusan AI; hasil di `kesepakatan.md` dan `ketidaksepakatan.csv` | Peninjau | 6 Oktober 2026 |
-| [`cek-2-cek-tangan/`](cek-2-cek-tangan/CEK-TANGAN.md) | Lembar periksa tangan semua C1, C3, dan eksklusi tahap kelayakan | Peninjau | 20 Oktober 2026 |
-| [`cek-3-makalah-dikenal/`](cek-3-makalah-dikenal/cek_makalah_dikenal.md) | Laporan 16 makalah yang sudah dikenal dan kandidat tambahan | Laporan model; keputusan penulis | 20 Oktober 2026 |
-| [`cek-4-teks-lengkap/`](cek-4-teks-lengkap/PERMINTAAN-PDF.md) | Status PDF tiap kajian dan daftar permintaan PDF | Peninjau (status permintaan) | 6 dan 23 Oktober 2026 |
-| [`cek-5-kode-ulang/`](cek-5-kode-ulang/KODE-ULANG.md) | Lembar kode ulang C1 dari teks lengkap; sampel 20 kajian untuk Bu Fatma | Peninjau; Bu Fatma | 6 November 2026 |
-| [`cek-6-cek-fakta/`](cek-6-cek-fakta/CEK-FAKTA.md) | Satu baris per klaim naskah untuk dicek ke sumbernya | Peninjau | 13 November 2026 |
+| 1. Sampel acak | Kecocokan keputusan peninjau dan AI pada 300 judul dan 165 abstrak acak | Lulus pada 5 Oktober. Sisa 118 perbedaan menunggu Bu Fatma | 6 Okt |
+| 2. Periksa keputusan penting | Semua artikel C1 (195) dan C3 (176), serta 143 artikel yang dikeluarkan | AI sudah mengisi lembar; aturan, koreksi label, dan 19 artikel yang layak masuk menunggu Anda | 20 Okt |
+| 3. Makalah yang sudah dikenal | Apakah 16 makalah penting ikut tertangkap pencarian | Semuanya tertangkap; 4 kandidat tambahan perlu diputuskan | 20 Okt |
+| 4. PDF lengkap | Ketersediaan PDF untuk 195 artikel C1 dan 19 artikel sawit yang menghitung atau memakai beberapa pandang | 213 dari 214 ada (yang tidak diperoleh dilaporkan di naskah); 1 PDF salah isi | 23 Okt |
+| 5. Label ulang dari PDF | Label 195 artikel C1 dibaca ulang dari PDF | 147 cocok; 39 usul perubahan, 5 belum dilabel | 6 Nov |
+| 6. Cek fakta naskah | Kecocokan setiap kalimat naskah dengan sumbernya | 69 dari 292 kalimat terisi; 9 kalimat salah perlu diganti | 13 Nov |
 
-## Di luar keenam cek
+## Langkah berikutnya
 
-| Lokasi | Isi |
-|---|---|
-| `hasil-kerja-ai/PERLU-DICEK.md` | **Daftar keluaran model yang menunggu persetujuan peninjau.** Baca ini dahulu. |
-| `hasil-kerja-ai/menunggu-acc/` | Draf model yang belum disetujui peninjau, satu subfolder per cek. Model selalu menulis ke sini dahulu; berkas baru dipindah ke folder cek setelah disetujui. **Bukan penilaian manusia.** |
-| `hasil-kerja-ai/putaran-kedua/` | Keluaran putaran kedua penyaringan oleh model (paket kerja, hasil, banding, ajudikasi, laporan perubahan) dan salinan keputusan putaran pertama di `putaran_1/`. Sudah diterapkan ke data sumber; disimpan sebagai jejak dan dibaca skrip. |
-| `arsip/` | Cadangan lama yang tidak lagi dipakai (misalnya sampel abstrak versi sebelumnya) |
-| `log_perubahan.csv` | Log lintas cek: satu baris untuk setiap nilai yang diubah pada berkas keputusan sumber (`tanggal, berkas, idx_atau_key, kolom, nilai_lama, nilai_baru, alasan, oleh`) |
-| `rencana/` | Salinan rencana verifikasi Bu Fatma |
-| `SERAH-TERIMA.md` | Apa yang sudah selesai, apa yang tersisa, dan aturan agar data tidak rusak |
+Buka **[TUGAS.md](TUGAS.md)**. Isinya daftar keputusan, diurutkan dari yang
+paling penting. Arti kode seperti C1 atau E5 ada di [ISTILAH.md](ISTILAH.md).
 
-## Skrip
+## Isi folder
 
-Semua skrip ada di `tools/scopus/` dan menulis langsung ke folder cek yang sesuai.
+| Folder | Isi | Petunjuk rinci |
+|---|---|---|
+| [`cek-1-sampel-buta/`](cek-1-sampel-buta/) | Sampel acak dan perbedaan keputusan | [PANDUAN.md](cek-1-sampel-buta/PANDUAN.md), hasil di [kesepakatan.md](cek-1-sampel-buta/kesepakatan.md) |
+| [`cek-2-cek-tangan/`](cek-2-cek-tangan/) | Lembar C1, C3, dan eksklusi (`.xlsx` untuk diisi) | [CEK-TANGAN.md](cek-2-cek-tangan/CEK-TANGAN.md) |
+| [`cek-3-makalah-dikenal/`](cek-3-makalah-dikenal/) | Laporan 16 makalah dikenal | [cek_makalah_dikenal.md](cek-3-makalah-dikenal/cek_makalah_dikenal.md) |
+| [`cek-4-teks-lengkap/`](cek-4-teks-lengkap/) | Status PDF dan daftar permintaan PDF | [PERMINTAAN-PDF.md](cek-4-teks-lengkap/PERMINTAAN-PDF.md) |
+| [`cek-5-kode-ulang/`](cek-5-kode-ulang/) | Lembar label ulang C1 dan sampel untuk Bu Fatma | [KODE-ULANG.md](cek-5-kode-ulang/KODE-ULANG.md) |
+| [`cek-6-cek-fakta/`](cek-6-cek-fakta/) | Lembar cek fakta, satu baris per klaim | [CEK-FAKTA.md](cek-6-cek-fakta/CEK-FAKTA.md) |
+| [`hasil-kerja-ai/menunggu-acc/`](hasil-kerja-ai/menunggu-acc/) | Draf AI yang menjadi bahan butir di `TUGAS.md`. Dibuka hanya bila butir merujuknya | — |
 
-| Cek | Skrip |
-|---|---|
-| 1 | `verifikasi_sampel.py` (tarik sampel), `verifikasi_kappa.py` (kesepakatan dan kappa) |
-| 2 | `verifikasi_cek_tangan.py` |
-| 4 | `verifikasi_teks_lengkap.py` |
-| 5 | `verifikasi_kode_ulang.py` |
-| 6 | `verifikasi_cek_fakta.py` |
-| Hasil kerja AI | `verifikasi_ai2.py`, `verifikasi_ai2_gabung.py`, `verifikasi_ai2_terapkan.py`, `verifikasi_ai2_judul.py` |
+Boleh diabaikan: `hasil-kerja-ai/putaran-kedua/` (penyaringan ulang AI yang
+sudah diterapkan), `arsip/` (cadangan lama), dan `cek-1-sampel-buta/.kunci/`
+(kunci jawaban sampel buta). `log_perubahan.csv` mencatat setiap nilai yang
+diubah dan diisi oleh skrip.
+
+## Untuk agen
+
+Catatan teknis, perintah bangun ulang, dan aturan agar data tidak rusak ada di
+[SERAH-TERIMA.md](SERAH-TERIMA.md). Aturan kerja model ada di `AGENTS.md` §11.
