@@ -11,6 +11,28 @@ asing ditulis miring dan dijelaskan singkat saat pertama muncul. Nama pustaka,
 perintah, dan berkas tetap dalam bahasa aslinya. Naskah LaTeX untuk jurnal
 ditulis dalam bahasa Inggris.
 
+**Penyampaian kepada manusia.** Jawaban di percakapan dan dokumen yang dibaca
+peninjau ditulis agar dipahami sekali baca, tanpa mengorbankan ketepatan untuk
+agen.
+
+- Pokok lebih dahulu, kalimat pendek, satu gagasan per kalimat. Istilah awam
+  ditulis dahulu dan kode internal menyusul dalam kurung, misalnya "artikel yang
+  menggabungkan beberapa foto (C1)". Kode verifikasi dijelaskan di
+  `literature/scopus-2026-09/verifikasi/ISTILAH.md`.
+- Setiap folder kerja punya satu pintu masuk manusia (`README.md`) yang menjawab
+  tiga hal: apa isi folder, posisi sekarang, dan langkah berikutnya. Rincian
+  teknis untuk agen (aturan data, perintah, asal-usul isian model) ditaruh di
+  berkas terpisah, misalnya `SERAH-TERIMA.md`, dan ditautkan dari bagian
+  "Untuk agen".
+- Satu fakta, satu tempat. Keputusan yang menunggu peninjau hanya dicatat di
+  satu daftar (untuk verifikasi: `verifikasi/TUGAS.md`); status tidak
+  digandakan di beberapa berkas.
+- Butir tugas memakai pola tetap: pertanyaan yang dapat dijawab, tautan relatif
+  ke lembar yang dibuka, nomor baris atau saringan kolom, dan dampaknya
+  (misalnya "angka naskah berubah").
+- Angka di dokumen manusia dihitung ulang dari data saat dokumen diperbarui,
+  bukan disalin dari catatan lama.
+
 ## 2. Isi Repo
 
 Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
