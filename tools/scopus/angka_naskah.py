@@ -382,6 +382,43 @@ def main():
         m("nTitleReinstatedMulti", masuk["C1"])
         m("nTitleReinstatedPalm", masuk["C3"])
 
+    # ---------------------------------------------------------------- Cek 1: sampel buta peninjau
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from verifikasi_kappa import kappa, muat, tiga
+    C1S = KORPUS / "verifikasi/cek-1-sampel-buta"
+    sj, sa = muat()
+    kj = kappa([r["hm"] for r in sj], [r["ai"] for r in sj])
+    ka = tiga(sa)[0]
+    tsp = baca(C1S / "ketidaksepakatan.csv")
+    kritis = [r for r in tsp if r["kritis"] == "ya"]
+    kritis_masuk = sum(1 for r in kritis if r["keputusan_final_fatma"] and not r["keputusan_final_fatma"].startswith("X"))
+    aj = baca(C1S / "ajudikasi/ajudikasi_cek1.csv")
+    luar = ("luar peta", "tetap dikeluarkan")
+    aj_masuk = sum(1 for r in aj if r["kode_peta_kini"] == "luar peta" and r["keputusan_akhir"] not in luar)
+    aj_keluar = sum(1 for r in aj if r["kode_peta_kini"] != "luar peta" and r["keputusan_akhir"].startswith("X"))
+    aj_pindah = sum(1 for r in aj if r["kode_peta_kini"] != "luar peta" and not r["keputusan_akhir"].startswith("X")
+                    and r["keputusan_akhir"] != r["kode_peta_kini"])
+    tulis("\n## Cek 1: sampel buta peninjau terhadap keputusan model\n")
+    tulis(f"- Judul: sepakat {pct(kj['sepakat'], kj['n'])}; kappa {kj['kappa']:.2f}")
+    tulis(f"- Kelayakan (kode penuh): sepakat {pct(ka['sepakat'], ka['n'])}; kappa {ka['kappa']:.2f}")
+    tulis(f"- Ketidaksepakatan: kritis {len(kritis)} (masuk {kritis_masuk}); lainnya {len(aj)}, "
+          f"diajudikasi dengan model: masuk {aj_masuk}, keluar {aj_keluar}, pindah kelompok {aj_pindah}")
+    m("nHumTitles", kj["n"])
+    m("nHumTitlesAgree", kj["sepakat"])
+    m("pHumTitles", persen(kj["sepakat"], kj["n"]))
+    m("kHumTitles", f"{kj['kappa']:.2f}")
+    m("nHumElig", ka["n"])
+    m("nHumEligAgree", ka["sepakat"])
+    m("pHumElig", persen(ka["sepakat"], ka["n"]))
+    m("kHumElig", f"{ka['kappa']:.2f}")
+    m("nHumCritical", len(kritis))
+    m("nHumCriticalIn", kritis_masuk)
+    m("nHumRest", len(aj))
+    m("nHumChanged", aj_masuk + aj_keluar + aj_pindah)
+    m("nHumIn", aj_masuk)
+    m("nHumOut", aj_keluar)
+    m("nHumMoved", aj_pindah)
+
     teks = "\n".join(out) + "\n"
     print(teks)
     if "--simpan" in sys.argv:

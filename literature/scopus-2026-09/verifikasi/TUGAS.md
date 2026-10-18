@@ -1,6 +1,6 @@
 # Tugas Peninjau
 
-Diperbarui 17 Oktober 2026. Ini satu-satunya daftar keputusan yang menunggu
+Diperbarui 18 Oktober 2026. Ini satu-satunya daftar keputusan yang menunggu
 Anda. Arti kode ada di [ISTILAH.md](ISTILAH.md).
 
 ## Cara kerja
@@ -44,12 +44,13 @@ setujui.
 
 ## Tahap 2. Keputusan yang mengubah jumlah artikel
 
-- [ ] **2.1 Sembilan belas artikel yang dikeluarkan menurut AI layak masuk.
-  Masukkan?** (C5 8, C2 4, C1 3, R 2, C3 1, C4 1.)
+- [ ] **2.1 Delapan belas artikel yang dikeluarkan menurut AI layak masuk.
+  Masukkan?** (C5 8, C2 3, C1 3, R 2, C3 1, C4 1.)
   [cek_eksklusi.xlsx](cek-2-cek-tangan/cek_eksklusi.xlsx), saring `catatan` yang
-  memuat "layak masuk".
-- [ ] **2.2 Lima artikel C1 yang menurut AI bukan C1. Keluarkan dari C1?**
-  [cek_C1.xlsx](cek-2-cek-tangan/cek_C1.xlsx) no 35, 103, 140, 161, 194.
+  memuat "layak masuk". No 103 sudah dimasukkan lewat ajudikasi Cek 1.
+- [ ] **2.2 Tiga artikel C1 yang menurut AI bukan C1. Keluarkan dari C1?**
+  [cek_C1.xlsx](cek-2-cek-tangan/cek_C1.xlsx) no 103, 140, 194. No 35 dan 161
+  sudah diputuskan lewat ajudikasi Cek 1.
 - [ ] **2.3 Tujuh artikel yang status C1-nya lemah menurut pembacaan PDF.
   Tetap C1?** `kutyrev2025uav`, `ahmad2024enabling`, `torressanchez2021grape`,
   `zineelabidine2021assigning`, `zaenker2021viewpoint`, `zaenker2023graph`,
@@ -73,7 +74,7 @@ setujui.
 
 ## Tahap 3. Usul koreksi label
 
-- [ ] **3.1 Usul koreksi label C1.** Ada 42 usul dari Cek 2 dan 39 usul dari
+- [ ] **3.1 Usul koreksi label C1.** Ada 42 usul dari Cek 2 dan 38 usul dari
   Cek 5; 26 artikel muncul di keduanya. Kerjakan per artikel, dua lembar
   berdampingan: [cek_C1.xlsx](cek-2-cek-tangan/cek_C1.xlsx) (saring
   `kode_benar` = N) dan [kode_ulang_C1.csv](cek-5-kode-ulang/kode_ulang_C1.csv)
@@ -106,7 +107,7 @@ setujui.
   [cek_eksklusi.xlsx](cek-2-cek-tangan/cek_eksklusi.xlsx), baris dengan
   `konfirmasi_alasan` kosong.
 - [ ] **4.3 Empat PDF berbahasa Mandarin yang teksnya tidak terbaca AI.**
-  [kode_ulang_C1.csv](cek-5-kode-ulang/kode_ulang_C1.csv) no 29, 44, 48, 58.
+  [kode_ulang_C1.csv](cek-5-kode-ulang/kode_ulang_C1.csv) no 29, 44, 48, 57.
 - [ ] **4.4 PDF `kang2022accurate` berisi artikel lain dari penulis yang sama.**
   Unduh ulang PDF yang benar ke folder `pdf/` dengan nama yang sama.
 
@@ -116,13 +117,13 @@ setujui.
   Usulnya ada di [KEMAJUAN.md Cek 6](hasil-kerja-ai/menunggu-acc/cek-6/KEMAJUAN.md).
   Nomor di sana memakai lembar lama; padanannya di
   [cek_fakta.csv](cek-6-cek-fakta/cek_fakta.csv): K006, K014, K021, K043-1,
-  K136-2, K136-4, K136-5, K170, K200. Dua usul opsional: K136-6, K113-1.
+  K136-2, K136-4, K136-5, K170, K201. Dua usul opsional: K136-6, K113-1.
 - [ ] **5.2 Kalimat tentang penelusuran daftar pustaka** (`main6-body.tex`
   baris 75, "ten candidates ... none met the criteria") hanya benar untuk
   kriteria C1. Ubah?
 - [ ] **5.3 Kueri Q9 ternyata tidak dibatasi bidang ilmu.** Kalimat metode dan
   `PROTOKOL.md` bagian 2 perlu disesuaikan. Setuju?
-- [ ] **5.4 Sebanyak 223 kalimat naskah terbaru belum dicek ke sumbernya.
+- [ ] **5.4 Sebanyak 224 kalimat naskah terbaru belum dicek ke sumbernya.
   Periksa sendiri, atau minta AI memeriksa dahulu?**
   [cek_fakta.csv](cek-6-cek-fakta/cek_fakta.csv), baris dengan `benar` kosong
   dan id tanpa awalan `L-`. Daftar
@@ -138,11 +139,8 @@ setujui.
 
 ## Bagian Bu Fatma
 
-- [ ] **F.1 118 perbedaan keputusan antara peninjau dan AI pada sampel acak.**
-  [ketidaksepakatan.csv](cek-1-sampel-buta/ketidaksepakatan.csv), kolom
-  `keputusan_final_fatma`.
 - [ ] **F.2 Konfirmasi alasan E1 untuk idx 1338.**
-- [ ] **F.3 Empat artikel C1 yang mungkin terkena aturan stereo:**
-  `zhang2021method`, `xie2023fruit`, `hu2026calibration`, `vulpi2022rgb`.
+- [ ] **F.3 Dua artikel C1 yang mungkin terkena aturan stereo:**
+  `xie2023fruit`, `hu2026calibration`.
 - [ ] **F.4 Kode buta 20 artikel C1 acak.**
   [sampel_fatma_C1.csv](cek-5-kode-ulang/sampel_fatma_C1.csv), kolom `fatma_*`.

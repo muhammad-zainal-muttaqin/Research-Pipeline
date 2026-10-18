@@ -36,16 +36,16 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Rekaman unik | 5.889 |
 | Dikeluarkan menurut tipe dokumen (front matter prosiding, erratum, catatan, editorial, surat, ditarik) | 166 |
 | Judul disaring | 5.723 |
-| Dikeluarkan pada tahap judul | 4.579 |
-| Dinilai kelayakannya | 1.144 |
-| — dengan abstrak | 890 |
+| Dikeluarkan pada tahap judul | 4.578 |
+| Dinilai kelayakannya | 1.145 |
+| — dengan abstrak | 891 |
 | — hanya judul, sumber, dan ringkasan TLDR | 254 |
-| Dikeluarkan pada tahap kelayakan | 143 |
-| Masuk peta (Scopus) | 1.001 |
+| Dikeluarkan pada tahap kelayakan | 145 |
+| Masuk peta (Scopus) | 1.000 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026) | 1 |
 
-Alasan eksklusi tahap kelayakan: E1 bukan buah pada tanaman (20), E2 hanya
-pascapanen atau laboratorium (18), E3 model hasil tanpa deteksi tingkat buah (27),
+Alasan eksklusi tahap kelayakan: E1 bukan buah pada tanaman (21), E2 hanya
+pascapanen atau laboratorium (19), E3 model hasil tanpa deteksi tingkat buah (27),
 E4 hanya pemetikan atau manipulasi (9), E5 deteksi tanpa pencacahan atau evaluasi
 lain (65), E6 sensor non-citra (3), E7 bahasa selain Inggris (1).
 
@@ -54,10 +54,10 @@ lain (65), E6 sensor non-citra (3), E7 bahasa selain Inggris (1).
 | Kode | Arti | Jumlah |
 |---|---|---:|
 | C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 195 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 238 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 237 |
 | C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 176 |
-| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 49 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 135 |
+| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 50 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 134 |
 | R | Tinjauan terdahulu | 120 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 88 |
 
@@ -107,9 +107,13 @@ Dua aturan berlaku saat menetapkan kode (keputusan Fatma, 5 Oktober 2026):
   (`verifikasi/cek-1-sampel-buta/kesepakatan.md`). Lima judul yang dieksklusi model
   tetapi ditandai peninjau sebagai C1 atau C3 diputuskan Fatma pada 5 Oktober 2026:
   empat tetap dieksklusi, dan satu (Qiu dkk., 2022, idx 3661) masuk peta sebagai C5
-  (`topik/penyaringan/abstrak_F00.txt`).
+  (`topik/penyaringan/abstrak_F00.txt`). Sebanyak 118 perbedaan lainnya
+  diajudikasi pada 18 Oktober 2026. Peninjau menyerahkan ajudikasi itu kepada
+  model: dua pembacaan buta dan satu penengah, lalu diperiksa ulang. Delapan
+  keputusan berubah: dua masuk, tiga keluar, dan tiga pindah kelompok
+  (`topik/penyaringan/abstrak_V00.txt`, `verifikasi/cek-1-sampel-buta/ajudikasi/`).
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
-- PDF tersedia untuk 479 dari 1.001 kajian (`KATALOG-PDF.md`); teksnya sudah
-  diekstrak untuk 475 kajian (empat PDF jurnal CSAM memerlukan OCR). Satu kajian C1
+- PDF tersedia untuk 477 dari 1.000 kajian (`KATALOG-PDF.md`); teksnya sudah
+  diekstrak untuk 473 kajian (empat PDF jurnal CSAM memerlukan OCR). Satu kajian C1
   (Safre dkk., 2024) tidak diperoleh teks lengkapnya dan dilaporkan demikian di naskah. Daftar awal PDF yang belum ada tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.

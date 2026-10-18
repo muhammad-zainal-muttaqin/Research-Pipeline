@@ -95,6 +95,57 @@ bagian 4, `cek-1-sampel-buta/PANDUAN.md`, dan bagian metode naskah. Kode E1 untu
 idx 1338 dilengkapi peninjau pada 11 Oktober 2026 dan menunggu konfirmasi
 Bu Fatma.
 
+Ajudikasi 118 perbedaan nonkritis (18 Oktober 2026) diserahkan peninjau kepada
+model. Isinya sebagai berikut.
+
+- **Paket bacaan.** `cek-1-sampel-buta/ajudikasi/paket/R001–R118.json` memuat judul,
+  sumber, tahun, DOI, abstrak (`enrich.jsonl`), dan jalur teks lengkap. Paket
+  tidak memuat keputusan peninjau maupun AI. Urutannya diacak dengan benih
+  20261018, dan peta nomor ke `idx` ada di `peta_id.csv`.
+- **Pembaca.** Setiap rekaman dibaca dua agen Haiku 5.5 *effort* high secara
+  terpisah, memakai pohon keputusan 13 langkah dari `PROTOKOL.md` §4 dan
+  `cek-1-sampel-buta/PANDUAN.md` §3. Bila kodenya berbeda, agen Haiku ketiga
+  menengahi. Abstrak yang kosong dicari agen di OpenAlex atau di web.
+- **Keluaran.** Mentahnya di `hasil_baca.json`, gabungannya di
+  `ajudikasi_cek1.csv` (kolom `keputusan_akhir`).
+- **Hasil.** Kedua pembaca sepakat pada 115 rekaman, dan 3 ditengahi. Usul
+  sama dengan AI awal pada 91 rekaman, sama dengan peninjau pada 16, dan
+  berbeda dari keduanya pada 11. Pembaca dan penyaring awal sama-sama model
+  bahasa, jadi kecocokan dengan AI awal bukan bukti independen.
+- **Kelompok usul.** 93 tetap, 13 usul ubah, 11 bergantung pada cakupan R/T,
+  dan 1 bergantung pada aturan rekonstruksi 3D (idx 131).
+- **Pohon keputusan menyimpang dari protokol di dua tempat.** Pertama, T
+  dibatasi pada pencacahan, pelacakan, re-ID, asosiasi lintas pandang, dan fusi
+  instans 3D, dan tinjauan pelacakan di luar pertanian diberi R. Kedua, C4
+  disyaratkan berupa hitungan per kelas, padahal `PROTOKOL.md` §4 hanya
+  mensyaratkan atribut kelas disertai pencacahan. Usul yang hanya lahir dari
+  penyimpangan ini tidak diterapkan; kode korpus dipertahankan.
+- **Keputusan akhir (diperiksa agen utama terhadap abstrak dan teks lengkap).**
+  Delapan berubah dan ditulis ke `topik/penyaringan/abstrak_V00.txt`. Yang
+  keluar: 1383 C2 → E5, 3641 C1 → E1, 3749 C5 → E2. Yang pindah kelompok:
+  614 C1 → C5, 570 C2 → C1, 131 C5 → C1. Yang masuk: 479 → C2 dan 2598 → C4
+  (tahap judul X → I, abstrak OpenAlex ditambahkan ke `enrich.jsonl`, kunci
+  `wei2024apple`). Baris `mekanisme_C1.txt` untuk 614 dan 3641 dihapus, dan
+  baris untuk 570 dan 131 ditambahkan. Semuanya dicatat di `log_perubahan.csv`
+  dengan oleh = AI-Cek1.
+- **Usul yang tidak diterapkan.** Usul C4 → C2 (1111, 1128, 2569) dan seluruh
+  usul R/T tidak diterapkan karena penyimpangan di atas. 4082 (*data paper*
+  KFuji) tetap C5, menunggu aturan *dataset* (`TUGAS.md` 1.2). 2226 tetap
+  dikeluarkan karena hanya ada judul. Hasil korpus: 1.000 kajian.
+- **Lembar.** Lembar Cek 2 dibuat ulang dengan `verifikasi_cek_tangan.py`
+  tanpa `--segarkan-ai`. `cek_C1` no 35 dan 161 serta `cek_eksklusi` no 103
+  dipertahankan sebagai baris yatim. Baris baru (`cek_C1` no 198 dan 199,
+  `cek_eksklusi` no 156–158) diisi dari ajudikasi dan ditandai di `catatan`,
+  baik di CSV maupun XLSX. `kode_ulang_C1.csv` dibuat ulang dengan
+  `verifikasi_kode_ulang.py`. Baris 3641 dan 614 terbuang karena tidak ada
+  isian `final_*`; drafnya tetap ada di `menunggu-acc/cek-5/`. Baris 131 dan
+  570 belum berdraf, dan nomor baris di atas no 57 bergeser satu.
+- **Naskah.** Laporan Cek 1 ditulis di subbagian *Study selection and
+  screening* dan di keterbatasan ketiga. Angkanya memakai makro `\nHum*`,
+  `\pHum*`, dan `\kHum*` dari `angka_naskah.py`, yang membaca
+  `sampel_judul.csv`, `sampel_abstrak.csv`, `ketidaksepakatan.csv`, dan
+  `ajudikasi/ajudikasi_cek1.csv`.
+
 ### Putaran kedua (1–2 Oktober 2026)
 
 | Pekerjaan | Hasil | Berkas |
@@ -147,7 +198,7 @@ Semua isian dibuat atas instruksi peninjau dan ditandai di kolom `catatan`.
   `safre2024advanced` tidak diperoleh dan dilaporkan lewat makro
   `\nMultiNoFullText` atas arahan Bu Fatma (5 Oktober 2026). 41 PDF dibeli. Teks
   diekstrak ke `../teks/` (476 berkas). Makro `\nFullText` menghitung PDF yang
-  diperoleh (479 dari 1.001).
+  diperoleh (477 dari 1.000 per 18 Oktober 2026).
 - **Cek 5.** Tiga agen Sonnet 5.5 berurutan mengodekan 190 dari 195 kajian dari
   teks lengkap (`menunggu-acc/cek-5/usul_kode_ulang_C1.csv`, `KEMAJUAN.md`;
   keyakinan 88 tinggi, 97 sedang, 5 rendah; 39 usul perubahan). Kolom `final_*`
@@ -164,7 +215,7 @@ Semua isian dibuat atas instruksi peninjau dan ditandai di kolom `catatan`.
   baris lama terdekat untuk tiap baris kosong (kemiripan ≥0,9: 34; 0,6–0,9: 55;
   0,3–0,6: 69; tanpa padanan: 65). Padanan id `KEMAJUAN.md` ke lembar baru:
   K020 → K021, K038-1 → K043-1, K112-2/4/5/6 → K136-2/4/5/6, K142 → K170,
-  K184 → K200, K094-1 → K113-1; K006 dan K014 tetap.
+  K184 → K200, K094-1 → K113-1; K006 dan K014 tetap. Pada 18 Oktober 2026 paragraf laporan Cek 1 menggeser K174 ke atas satu nomor (K200 → K201); id di draf `menunggu-acc/cek-6/` sudah dipetakan ulang, dan baris untuk dua kalimat yang diubah (K173, K182 lama) diberi awalan `lama-`.
 
 ### Naskah
 

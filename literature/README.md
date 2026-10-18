@@ -4,7 +4,7 @@ Korpus tinjauan pustaka untuk riset tandan buah segar kelapa sawit. Ada dua
 korpus:
 
 1. **Korpus Scopus September 2026** (`scopus-2026-09/`), dasar naskah aktif
-   `main6`: 5.889 rekaman unik, 1.001 kajian masuk peta, 195 kajian
+   `main6`: 5.889 rekaman unik, 1.000 kajian masuk peta, 195 kajian
    multi-pengamatan dikodekan mekanisme M0–M5.
 2. **Korpus lama**: 182 ringkasan makalah terverifikasi, 20 entri yang ditahan
    karena PDF sumber tidak tersedia, sintesis lintas makalah, dan bahan
@@ -43,4 +43,4 @@ korpus:
   Format: `NNN - YYYY - Judul singkat - Tema.md`. Jangan mengubah nama berkas.
 - Angka **182** adalah invarian korpus lama. Mengubah jumlah entri berarti
   memperbarui `synthesis.md`, naskah lama, dan `audit/claim-audit-182.md`.
-  Angka `main6` (1.001, 195, dst.) hanya bersumber dari `scopus-2026-09/`.
+  Angka `main6` (1.000, 195, dst.) hanya bersumber dari `scopus-2026-09/`.

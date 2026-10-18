@@ -4,7 +4,7 @@ Repositori ini menyatukan dua jalur riset tentang tandan buah segar kelapa sawit
 
 1. Tinjauan pustaka untuk jurnal terindeks Scopus. Naskah aktif **`main6`**,
    *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and
-   Design Space for Class-Wise Inventories*, memetakan 1.001 kajian Scopus
+   Design Space for Class-Wise Inventories*, memetakan 1.000 kajian Scopus
    (2012–2026) dan mengelompokkan 195 kajian multi-pengamatan ke dalam enam
    mekanisme asosiasi identitas (M0–M5). Korpus lama 182 ringkasan tentang YOLO,
    RGB-D, dan deteksi tandan tetap tersedia sebagai bahan latar.

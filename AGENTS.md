@@ -47,7 +47,7 @@ Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 | Jalur | Status |
 |---|---|
 | Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 34 halaman, 12 seksi, 2 lampiran, 10 gambar, 6 tabel). `main`–`main5v3` adalah arsip: jangan disunting atau dirujuk. |
-| Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.144 dinilai kelayakannya → **1.001 masuk peta** (2012–2026). Kode: C1 195 · C2 238 · C3 176 · C4 49 · C5 135 · R 120 · T 88. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: peninjau mulai dari `literature/scopus-2026-09/verifikasi/README.md` (tugas di `TUGAS.md`); agen membaca `SERAH-TERIMA.md` dahulu.** |
+| Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.145 dinilai kelayakannya → **1.000 masuk peta** (2012–2026). Kode: C1 195 · C2 237 · C3 176 · C4 50 · C5 134 · R 120 · T 88. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: peninjau mulai dari `literature/scopus-2026-09/verifikasi/README.md` (tugas di `TUGAS.md`); agen membaca `SERAH-TERIMA.md` dahulu.** |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed 0,0049. |
 | Depth sensor (E-022…E-033b) | Pipeline reproyeksi tervalidasi, tetapi **tidak ada klaim peningkatan deteksi yang sah**. |
