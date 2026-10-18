@@ -117,6 +117,7 @@ def main():
     for kode, nama in [("C1", "Multi"), ("C2", "Single"), ("C3", "Palm"), ("C4", "ClassSingle"), ("C5", "Depth"),
                        ("R", "Reviews"), ("T", "Outside")]:
         m(f"n{nama}", inc[kode] + lain_k[kode])
+    m("nMultiScopus", inc["C1"])
     th = Counter(int(r["year"]) for r in mat)
     tulis("- Kajian per tahun: " + ", ".join(f"{t}: {th[t]}" for t in sorted(th)))
     c1_th = Counter(int(r["year"]) for r in mat if r["kode"] == "C1")

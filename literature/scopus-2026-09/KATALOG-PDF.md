@@ -1,21 +1,21 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 476 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 195 | 194 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 237 | 62 |
-| C3 | Pencitraan TBS kelapa sawit | 176 | 56 |
-| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 50 | 14 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 134 | 41 |
-| R | Tinjauan terdahulu | 120 | 63 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 199 | 197 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 243 | 64 |
+| C3 | Pencitraan TBS kelapa sawit | 171 | 50 |
+| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 52 | 14 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 138 | 41 |
+| R | Tinjauan terdahulu | 122 | 63 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 88 | 47 |
-| | **Jumlah** | 1.000 | 477 |
+| | **Jumlah** | 1.013 | 476 |
 
-## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (194)
+## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (197)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -98,7 +98,6 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2025 | Zhang N. | Robust real-time blueberry counting in greenhouses using small-object detection and mamba-driven multi-step trajectory completion | Smart Agricultural Technology | [PDF](pdf/zhang2025robust.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.101402) |
 | 2025 | Zheng W. | A Robust Tomato Counting Framework for Greenhouse Inspection Robots Using YOLOv8 and Inter-Frame Prediction | Agronomy | [PDF](pdf/zheng2025robust.pdf) | [DOI](https://doi.org/10.3390/agronomy15051135) |
 | 2025 | Zhou L. | Yield Estimation in Banana Orchards Based on DeepSORT and RGB-Depth Images | Agronomy | [PDF](pdf/zhou2025yield.pdf) | [DOI](https://doi.org/10.3390/agronomy15051119) |
-| 2024 | Ahmad J. | Enabling Consumer UAVs for Precision Agriculture Applications: A Case Study of Yield Estimation | Digest of Technical Papers IEEE International Conference on Consumer Electronics | [PDF](pdf/ahmad2024enabling.pdf) | [DOI](https://doi.org/10.1109/icce59016.2024.10444191) |
 | 2024 | Ahmedt-Aristizabal D. | An In-Field Dynamic Vision-Based Analysis for Vineyard Yield Estimation | IEEE Access | [PDF](pdf/ahmedtaristizabal2024field.pdf) | [DOI](https://doi.org/10.1109/access.2024.3431244) |
 | 2024 | An Q. | StraTracker: A dynamic counting method for growing strawberries based on multi-target tracking | Computers and Electronics in Agriculture | [PDF](pdf/an2024stratracker.pdf) | [DOI](https://doi.org/10.1016/j.compag.2024.109564) |
 | 2024 | Ariza-Sentís M. | GrapeMOTS: UAV vineyard dataset with MOTS grape bunch annotations recorded from multiple perspectives for enhanced object detection and tracking | Data in Brief | [PDF](pdf/arizasentis2024grapemots.pdf) | [DOI](https://doi.org/10.1016/j.dib.2024.110432) |
@@ -107,7 +106,6 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2024 | Feng Y. | Approach of Dynamic Tracking and Counting for Obscured Citrus in Smart Orchard Based on Machine Vision | Applied Sciences Switzerland | [PDF](pdf/feng2024approach.pdf) | [DOI](https://doi.org/10.3390/app14031136) |
 | 2024 | Garderes R. | Apple Detection and Counting Using Neural Networks | Proceedings 2024 50th Latin American Computing Conference Clei 2024 | [PDF](pdf/garderes2024apple.pdf) | [DOI](https://doi.org/10.1109/clei64178.2024.10700174) |
 | 2024 | Hernandez B. | Multi-Object Tracking in Agricultural Applications using a Vision Transformer for Spatial Association | Computers and Electronics in Agriculture | [PDF](pdf/hernandez2024multi.pdf) | [DOI](https://doi.org/10.1016/j.compag.2024.109379) |
-| 2024 | Huang T. | An automatic tracking method for fruit abscission of litchi using convolutional networks | Computers and Electronics in Agriculture | [PDF](pdf/huang2024automatic.pdf) | [DOI](https://doi.org/10.1016/j.compag.2024.109213) |
 | 2024 | Ishizuka T. | Eggplant Detection and Counting Across the Entire Greenhouse Using Deep Learning and Motion Parallax | 10th IEEE International Smart Cities Conference Smart Cities Revolution for Mankind Isc2 2024 Proceedings | [PDF](pdf/ishizuka2024eggplant.pdf) | [DOI](https://doi.org/10.1109/isc260477.2024.11004199) |
 | 2024 | Kang R. | Toward Real Scenery: A Lightweight Tomato Growth Inspection Algorithm for Leaf Disease Detection and Fruit Counting | Plant Phenomics | [PDF](pdf/kang2024real.pdf) | [DOI](https://doi.org/10.34133/plantphenomics.0174) |
 | 2024 | Magalhães S.A.C. | MonoVisual3DFilter: 3D tomatoes' localisation with monocular cameras using histogram filters | Robotica | [PDF](pdf/magalhaes2024monovisual3dfilter.pdf) | [DOI](https://doi.org/10.1017/s0263574724000936) |
@@ -140,6 +138,7 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2023 | Ariza-Sentís M. | Object detection and tracking on UAV RGB videos for early extraction of grape phenotypic traits | Computers and Electronics in Agriculture | [PDF](pdf/arizasentis2023object.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.108051) |
 | 2023 | Arlotta A. | An EKF-Based Multi-Object Tracking Framework for a Mobile Robot in a Precision Agriculture Scenario | Proceedings of the 11th European Conference on Mobile Robots Ecmr 2023 | [PDF](pdf/arlotta2023ekf.pdf) | [DOI](https://doi.org/10.1109/ecmr59166.2023.10256338) |
 | 2023 | Ciarfuglia T.A. | Weakly and semi-supervised detection, segmentation and tracking of table grapes with limited and noisy data | Computers and Electronics in Agriculture | [PDF](pdf/ciarfuglia2023weakly.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.107624) |
+| 2023 | Daud M.M. | Detection of Oil Palm Tree and Loose Fruitlets for Fresh Fruit Bunch's Ready-to-Harvest Prediction via Deep Learning Approach | Iaeng International Journal of Computer Science | [PDF](pdf/daud2023detection.pdf) |  |
 | 2023 | Gené-Mola J. | Video-Based Fruit Detection and Tracking for Apple Counting and Mapping | 2023 IEEE International Workshop on Metrology for Agriculture and Forestry Metroagrifor 2023 Proceedings | [PDF](pdf/genemola2023video.pdf) | [DOI](https://doi.org/10.1109/metroagrifor58484.2023.10424135) |
 | 2023 | Gremes M.F. | System of Counting Green Oranges Directly from Trees Using Artificial Intelligence | Agriengineering | [PDF](pdf/gremes2023system.pdf) | [DOI](https://doi.org/10.3390/agriengineering5040111) |
 | 2023 | Guo M. | Real-time Production Prediction of Kiwifruit in Orchard Based on Video Tracking Algorithm | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery | [PDF](pdf/guo2023real.pdf) | [DOI](https://doi.org/10.6041/j.issn.1000-1298.2023.06.018) |
@@ -152,6 +151,7 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2023 | Qureshi A. | Seeing the Fruit for the Leaves: Robotically Mapping Apple Fruitlets in a Commercial Orchard | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/qureshi2023seeing.pdf) | [DOI](https://doi.org/10.1109/iros55552.2023.10341502) |
 | 2023 | Rapado-Rincón D. | Development and evaluation of automated localisation and reconstruction of all fruits on tomato plants in a greenhouse based on multi-view perception and 3D multi-object tracking | Biosystems Engineering | [PDF](pdf/rapadorincon2023development.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2023.06.003) |
 | 2023 | Shen L. | Real-time tracking and counting of grape clusters in the field based on channel pruning with YOLOv5s | Computers and Electronics in Agriculture | [PDF](pdf/shen2023real.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.107662) |
+| 2023 | Shiddiq M. | COUNTING OF OIL PALM FRESH FRUIT BUNCHES USING COMPUTER VISION | Journal of Oil Palm Research | [PDF](pdf/shiddiq2023counting.pdf) | [DOI](https://doi.org/10.21894/jopr.2022.0029) |
 | 2023 | Vijayakumar V. | Tree-level citrus yield prediction utilizing ground and aerial machine vision and machine learning | Smart Agricultural Technology | [PDF](pdf/vijayakumar2023tree.pdf) | [DOI](https://doi.org/10.1016/j.atech.2022.100077) |
 | 2023 | Villacrés J. | Apple orchard production estimation using deep learning strategies: A comparison of tracking-by-detection algorithms | Computers and Electronics in Agriculture | [PDF](pdf/villacres2023apple.pdf) | [DOI](https://doi.org/10.1016/j.compag.2022.107513) |
 | 2023 | Wu Z. | Twice matched fruit counting system: An automatic fruit counting pipeline in modern apple orchard using mutual and secondary matches | Biosystems Engineering | [PDF](pdf/wu2023twice.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2023.09.005) |
@@ -161,6 +161,7 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2023 | Zheng Z. | An efficient online citrus counting system for large-scale unstructured orchards based on the unmanned aerial vehicle | Journal of Field Robotics | [PDF](pdf/zheng2023efficient.pdf) | [DOI](https://doi.org/10.1002/rob.22147) |
 | 2023 | Zhou X. | A Dynamic Object Counting Method for Strawberry Fruits using Vision Transformer Networks and Kalman Filter Tracking | 2023 Asabe Annual International Meeting | [PDF](pdf/zhou2023dynamic.pdf) | [DOI](https://doi.org/10.13031/aim.202301450) |
 | 2022 | Dai G. | Tracking and Counting Method for Tomato Fruits Scouting Robot in Greenhouse | Lecture Notes in Computer Science Including Subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics | [PDF](pdf/dai2022tracking.pdf) | [DOI](https://doi.org/10.1007/978-3-031-13844-7_6) |
+| 2022 | Daud M.M. | Loose Fruitlet and Fresh Fruit Bunch Detection for Palm Oil Harvest Management | Proceedings of the 2022 IEEE International Conference on Internet of Things and Intelligence Systems Iotais 2022 | [PDF](pdf/daud2022loose.pdf) | [DOI](https://doi.org/10.1109/iotais56727.2022.9975972) |
 | 2022 | Egi Y. | Drone-Computer Communication Based Tomato Generative Organ Counting Model Using YOLO V5 and Deep-Sort | Agriculture Switzerland | [PDF](pdf/egi2022drone.pdf) | [DOI](https://doi.org/10.3390/agriculture12091290) |
 | 2022 | Gao F. | A novel apple fruit detection and counting methodology based on deep learning and trunk tracking in modern orchard | Computers and Electronics in Agriculture | [PDF](pdf/gao2022novel.pdf) | [DOI](https://doi.org/10.1016/j.compag.2022.107000) |
 | 2022 | Ge Y. | Tracking and Counting of Tomato at Different Growth Period Using an Improving YOLO-Deepsort Network for Inspection Robot | Machines | [PDF](pdf/ge2022tracking.pdf) | [DOI](https://doi.org/10.3390/machines10060489) |
@@ -172,6 +173,7 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2022 | Zhang W. | Deep-learning-based in-field citrus fruit detection and tracking | Horticulture Research | [PDF](pdf/zhang2022deep.pdf) | [DOI](https://doi.org/10.1093/hr/uhac003) |
 | 2022 | Zhang X. | Yield and maturity estimation of apples in orchards using a 3-step deep learning-based method | Quality Assurance and Safety of Crops and Foods | [PDF](pdf/zhang2022yield.pdf) | [DOI](https://doi.org/10.15586/qas.v14i2.1008) |
 | 2022 | Zhu Q. | Identification and Counting Method of Potted Kumquat Fruits Based on Point Cloud Registration | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery | [PDF](pdf/zhu2022identification.pdf) | [DOI](https://doi.org/10.6041/j.issn.1000-1298.2022.05.021) |
+| 2021 | Aji W.S. | Automatic Oil Palm Unstripped Bunch (USB) Counting System based on Faster RCNN and Object Tracking | Proceedings 2nd International Conference on Computer Science and Engineering the Effects of the Digital World After Pandemic Edwap Ic2se 2021 | [PDF](pdf/aji2021automatic.pdf) | [DOI](https://doi.org/10.1109/ic2se52832.2021.9792068) |
 | 2021 | Anderson N.T. | Estimation of fruit load in australian mango orchards using machine vision | Agronomy | [PDF](pdf/anderson2021estimation.pdf) | [DOI](https://doi.org/10.3390/agronomy11091711) |
 | 2021 | Gao F. | Apple detection and counting using real-time video based on deep learning and object tracking | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering | [PDF](pdf/gao2021apple.pdf) | [DOI](https://doi.org/10.11975/j.issn.1002-6819.2021.21.025) |
 | 2021 | Gao F. | Apple fruit detection and counting based on deep learning and trunk tracking | American Society of Agricultural and Biological Engineers Annual International Meeting Asabe 2021 | [PDF](pdf/gao2021appleb.pdf) | [DOI](https://doi.org/10.13031/aim.202100193) |
@@ -213,8 +215,9 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2014 | Song Y. | Automatic fruit recognition and counting from multiple images | Biosystems Engineering | [PDF](pdf/song2014automatic.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2013.12.008) |
 | 2013 | Qian J. | Yield estimation model of single tree of Fuji apples based on bilateral image identification | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering | [PDF](pdf/qian2013yield.pdf) | [DOI](https://doi.org/10.3969/j.issn.1002-6819.2013.11.017) |
 | 2013 | Wang Q. | Automated Crop Yield Estimation for Apple Orchards | Springer Tracts in Advanced Robotics | [PDF](pdf/wang2013automated.pdf) | [DOI](https://doi.org/10.1007/978-3-319-00065-7_50) |
+| 2012 | Kassim M.S.M. | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation | Journal of Food Agriculture and Environment | [PDF](pdf/kassim2012oil.pdf) |  |
 
-## C2: Pencacahan atau estimasi hasil dari satu pandang (62)
+## C2: Pencacahan atau estimasi hasil dari satu pandang (64)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -237,10 +240,12 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2025 | Zhai M. | Deriving Early Citrus Fruit Yield Estimation by Combining Multiple Growing Period Data and Improved YOLOv8 Modeling | Sensors | [PDF](pdf/zhai2025deriving.pdf) | [DOI](https://doi.org/10.3390/s25154718) |
 | 2025 | Zhao Y. | Ta-YOLO: overcoming target blocked challenges in greenhouse tomato detection and counting | Frontiers in Plant Science | [PDF](pdf/zhao2025ta.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1618214) |
 | 2025 | Zhou C. | MDE-DETR: multi-domain enhanced feature fusion algorithm for bayberry detection and counting in complex orchards | Frontiers in Plant Science | [PDF](pdf/zhou2025mde.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1711545) |
+| 2024 | Ahmad J. | Enabling Consumer UAVs for Precision Agriculture Applications: A Case Study of Yield Estimation | Digest of Technical Papers IEEE International Conference on Consumer Electronics | [PDF](pdf/ahmad2024enabling.pdf) | [DOI](https://doi.org/10.1109/icce59016.2024.10444191) |
 | 2024 | Bhattarai U. | AgRegNet: A deep regression network for flower and fruit density estimation, localization, and counting in orchards | Computers and Electronics in Agriculture | [PDF](pdf/bhattarai2024agregnet.pdf) | [DOI](https://doi.org/10.1016/j.compag.2024.109534) |
 | 2024 | Bolouri F. | CottonSense: A high-throughput field phenotyping system for cotton fruit segmentation and enumeration on edge devices | Computers and Electronics in Agriculture | [PDF](pdf/bolouri2024cottonsense.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.108531) |
 | 2024 | Carneiro G.A. | Chestnut Burr Segmentation for Yield Estimation Using UAV-Based Imagery and Deep Learning | Drones | [PDF](pdf/carneiro2024chestnut.pdf) | [DOI](https://doi.org/10.3390/drones8100541) |
 | 2024 | Duncan B. | Development of a Cross-Platform Mobile Application for Fruit Yield Estimation | Agriengineering | [PDF](pdf/duncan2024development.pdf) | [DOI](https://doi.org/10.3390/agriengineering6020105) |
+| 2024 | Huang T. | An automatic tracking method for fruit abscission of litchi using convolutional networks | Computers and Electronics in Agriculture | [PDF](pdf/huang2024automatic.pdf) | [DOI](https://doi.org/10.1016/j.compag.2024.109213) |
 | 2024 | Jing J. | Optimizing the YOLOv7-Tiny Model with Multiple Strategies for Citrus Fruit Yield Estimation in Complex Scenarios | Agriculture Switzerland | [PDF](pdf/jing2024optimizing.pdf) | [DOI](https://doi.org/10.3390/agriculture14020303) |
 | 2024 | Kodors S. | Autonomous Yield Estimation System for Small Commercial Orchards Using UAV and AI | Drones | [PDF](pdf/kodors2024autonomous.pdf) | [DOI](https://doi.org/10.3390/drones8120734) |
 | 2024 | Lanza B. | A Stride Toward Wine Yield Estimation from Images: Metrological Validation of Grape Berry Number, Radius, and Volume Estimation | Sensors | [PDF](pdf/lanza2024stride.pdf) | [DOI](https://doi.org/10.3390/s24227305) |
@@ -281,7 +286,7 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2017 | Pinho T.M. | Comparative Analysis between LDR and HDR Images for Automatic Fruit Recognition and Counting | Journal of Sensors | [PDF](pdf/pinho2017comparative.pdf) | [DOI](https://doi.org/10.1155/2017/7321950) |
 | 2015 | Font D. | Vineyard yield estimation based on the analysis of high resolution images obtained with artificial illumination at night | Sensors Switzerland | [PDF](pdf/font2015vineyard.pdf) | [DOI](https://doi.org/10.3390/s150408284) |
 
-## C3: Pencitraan TBS kelapa sawit (56)
+## C3: Pencitraan TBS kelapa sawit (50)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -309,24 +314,19 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2024 | Hidayat M.R. | Establishing a Standard Operating Procedure (SOP) for Palm Oil Plantation FFB Image Capture: Utilizing YOLOv8 for Counting and Ripeness Classification | 2024 6th International Conference on Cybernetics and Intelligent System Icoris 2024 | [PDF](pdf/hidayat2024establishing.pdf) | [DOI](https://doi.org/10.1109/icoris63540.2024.10903724) |
 | 2024 | Hutapea R.R. | Palm Fruit Ripeness Detection and Counting Using YOLOv8 Algorithm in PTPN IV Medan North Sumatera Indonesia | 2024 6th International Conference on Cybernetics and Intelligent System Icoris 2024 | [PDF](pdf/hutapea2024palm.pdf) | [DOI](https://doi.org/10.1109/icoris63540.2024.10903790) |
 | 2024 | Naftali M.G. | Palm Oil Counter: State-of-the-Art Deep Learning Models for Detection and Counting in Plantations | IEEE Access | [PDF](pdf/naftali2024palm.pdf) | [DOI](https://doi.org/10.1109/access.2024.3419835) |
-| 2024 | Narendran R. | Palm fruit harvesting using IoT-based fruit counting system | Aip Conference Proceedings | [PDF](pdf/narendran2024palm.pdf) | [DOI](https://doi.org/10.1063/5.0229292) |
 | 2024 | Omar Z. | Outdoor oil palm fruit ripeness dataset | Data in Brief | [PDF](pdf/omar2024outdoor.pdf) | [DOI](https://doi.org/10.1016/j.dib.2024.110667) |
 | 2024 | Puttinaovarat S. | Oil Palm Bunch Ripeness Classification and Plantation Verification Platform: Leveraging Deep Learning and Geospatial Analysis and Visualization | ISPRS International Journal of Geo Information | [PDF](pdf/puttinaovarat2024oil.pdf) | [DOI](https://doi.org/10.3390/ijgi13050158) |
 | 2024 | Shiddiq M. | Multispectral imaging and deep learning for oil palm fruit bunch ripeness detection | Bulletin of Electrical Engineering and Informatics | [PDF](pdf/shiddiq2024multispectral.pdf) | [DOI](https://doi.org/10.11591/eei.v13i6.8120) |
 | 2024 | Shiddiq M. | Neural network with k-fold cross validation for oil palm fruit ripeness prediction | Telkomnika Telecommunication Computing Electronics and Control | [PDF](pdf/shiddiq2024neural.pdf) | [DOI](https://doi.org/10.12928/telkomnika.v22i1.24845) |
 | 2024 | Soetrisno Y.A.A. | OIL PALM LEVEL OF RIPENESS CLASSIFICATION USING EFFICIENTDET-LITE CNN ARCHITECTURE | Journal of Oil Palm Research | [PDF](pdf/soetrisno2024oil.pdf) | [DOI](https://doi.org/10.21894/jopr.2023.0059) |
 | 2024 | Wang H.H. | Novel Feature Extraction for Oil Palm Bunches Classification | Journal of Advanced Research in Applied Sciences and Engineering Technology | [PDF](pdf/wang2024novel.pdf) | [DOI](https://doi.org/10.37934/araset.34.1.350360) |
-| 2023 | Daud M.M. | Detection of Oil Palm Tree and Loose Fruitlets for Fresh Fruit Bunch's Ready-to-Harvest Prediction via Deep Learning Approach | Iaeng International Journal of Computer Science | [PDF](pdf/daud2023detection.pdf) |  |
 | 2023 | Herman | DEEP LEARNING WITH AUXILIARY LEARNING ATTENTION MECHANISM FOR OIL PALM FRUIT IMAGE RIPENESS CLASSIFICATION | Icic Express Letters | [PDF](pdf/herman2023deep.pdf) | [DOI](https://doi.org/10.24507/icicel.17.12.1303) |
 | 2023 | Mamat N. | Enhancing Image Annotation Technique of Fruit Classification Using a Deep Learning Approach | Sustainability Switzerland | [PDF](pdf/mamat2023enhancing.pdf) | [DOI](https://doi.org/10.3390/su15020901) |
-| 2023 | Shiddiq M. | COUNTING OF OIL PALM FRESH FRUIT BUNCHES USING COMPUTER VISION | Journal of Oil Palm Research | [PDF](pdf/shiddiq2023counting.pdf) | [DOI](https://doi.org/10.21894/jopr.2022.0029) |
 | 2023 | Suharjito | Annotated Datasets of Oil Palm Fruit Bunch Piles for Ripeness Grading Using Deep Learning | Scientific Data | [PDF](pdf/suharjito2023annotated.pdf) | [DOI](https://doi.org/10.1038/s41597-023-01958-x) |
 | 2023 | Suharjito | Real-Time Oil Palm Fruit Grading System Using Smartphone and Modified YOLOv4 | IEEE Access | [PDF](pdf/suharjito2023real.pdf) | [DOI](https://doi.org/10.1109/access.2023.3285537) |
 | 2022 | Aji W.S. | Oil palm unstripped bunch detector using modified faster regional convolutional neural network | Iaes International Journal of Artificial Intelligence | [PDF](pdf/aji2022oil.pdf) | [DOI](https://doi.org/10.11591/ijai.v11.i1.pp189-200) |
 | 2022 | Alfatni M.S.M. | Towards a Real-Time Oil Palm Fruit Maturity System Using Supervised Classifiers Based on Feature Analysis | Agriculture Switzerland | [PDF](pdf/alfatni2022real.pdf) | [DOI](https://doi.org/10.3390/agriculture12091461) |
-| 2022 | Daud M.M. | Loose Fruitlet and Fresh Fruit Bunch Detection for Palm Oil Harvest Management | Proceedings of the 2022 IEEE International Conference on Internet of Things and Intelligence Systems Iotais 2022 | [PDF](pdf/daud2022loose.pdf) | [DOI](https://doi.org/10.1109/iotais56727.2022.9975972) |
 | 2022 | Zolfagharnassab S. | Classification of Oil Palm Fresh Fruit Bunches Based on Their Maturity Using Thermal Imaging Technique | Agriculture Switzerland | [PDF](pdf/zolfagharnassab2022classification.pdf) | [DOI](https://doi.org/10.3390/agriculture12111779) |
-| 2021 | Aji W.S. | Automatic Oil Palm Unstripped Bunch (USB) Counting System based on Faster RCNN and Object Tracking | Proceedings 2nd International Conference on Computer Science and Engineering the Effects of the Digital World After Pandemic Edwap Ic2se 2021 | [PDF](pdf/aji2021automatic.pdf) | [DOI](https://doi.org/10.1109/ic2se52832.2021.9792068) |
 | 2021 | Cherie D. | Non-Destructive Evaluation of Oil Palm Fresh Fruit Bunch Quality Using Thermal Vision | Iop Conference Series Earth and Environmental Science | [PDF](pdf/cherie2021non.pdf) | [DOI](https://doi.org/10.1088/1755-1315/644/1/012024) |
 | 2021 | Makky M. | Pre-harvest oil palm FFB nondestructive evaluation technique using thermal-imaging device | Iop Conference Series Earth and Environmental Science | [PDF](pdf/makky2021pre.pdf) | [DOI](https://doi.org/10.1088/1755-1315/757/1/012003) |
 | 2021 | Siong C.Z. | A Combinatorial RGB and Depth Images CNN-based Model for Oil Palm Fruit Bunch Detection and Heatmap Localisation for a Visual SLAM System | Jurnal Kejuruteraan | [PDF](pdf/siong2021combinatorial.pdf) | [DOI](https://doi.org/10.17576/jkukm-2021-33(4)-34) |
@@ -340,7 +340,6 @@ Katalog ini memuat 477 kajian korpus `main6` yang PDF-nya tersedia, dari 1.000 k
 | 2014 | Bensaeed O. | Oil palm fruit grading using a hyperspectral device and machine learning algorithm | Iop Conference Series Earth and Environmental Science | [PDF](pdf/bensaeed2014oil.pdf) | [DOI](https://doi.org/10.1088/1755-1315/20/1/012017) |
 | 2014 | Makky M. | Automatic non-destructive quality inspection system for oil palm fruits | International Agrophysics | [PDF](pdf/makky2014automatic.pdf) | [DOI](https://doi.org/10.2478/intag-2014-0022) |
 | 2012 | Fadilah N. | Intelligent color vision system for ripeness classification of oil palm fresh fruit bunch | Sensors Switzerland | [PDF](pdf/fadilah2012intelligent.pdf) | [DOI](https://doi.org/10.3390/s121014179) |
-| 2012 | Kassim M.S.M. | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation | Journal of Food Agriculture and Environment | [PDF](pdf/kassim2012oil.pdf) |  |
 
 ## C4: Atribut kelas disertai pencacahan dari citra tunggal (14)
 

@@ -7,70 +7,70 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Rekaman diambil 6,491; unik 5,889; duplikat 602
 - Dibuang menurut tipe dokumen 166; judul disaring 5,723; dikeluarkan di tahap judul 4,578
 - Dinilai kelayakannya 1,145 (dengan abstrak 891; judul dan sumber saja 254)
-- Dikeluarkan di tahap kelayakan 145: E1 21, E2 19, E3 27, E4 9, E5 65, E6 3, E7 1
-- Masuk peta dari Scopus 1000: C1 195, C2 237, C3 176, C4 50, C5 134, R 120, T 88
-- Metode lain 1: liu2026shaping (R)
-- Total kajian masuk 1001
-- Kajian per tahun: 2012: 9, 2013: 14, 2014: 13, 2015: 16, 2016: 22, 2017: 25, 2018: 29, 2019: 37, 2020: 67, 2021: 72, 2022: 89, 2023: 117, 2024: 165, 2025: 193, 2026: 132
-- Multi-pengamatan per tahun: 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 2, 2018: 1, 2019: 5, 2020: 10, 2021: 13, 2022: 12, 2023: 25, 2024: 38, 2025: 48, 2026: 31
-- Dengan abstrak 776 dari 1000; PDF teks lengkap 477 (teks terekstrak 473); multi-pengamatan dengan PDF 194 dari 195
-- Peta istilah: 43 istilah, 310 tautan; istilah identitas 24-36 kajian; detection 611; counting 426
+- Dikeluarkan di tahap kelayakan 132: E1 23, E2 18, E3 25, E4 1, E5 60, E6 4, E7 1
+- Masuk peta dari Scopus 1013: C1 199, C2 243, C3 171, C4 52, C5 138, R 122, T 88
+- Metode lain 5: liu2026shaping (R), payne2014estimating (C2), apoloapolo2020deep (C1), choi2015machine (C5), kwon2024enhancing (C2)
+- Total kajian masuk 1018
+- Kajian per tahun: 2012: 9, 2013: 14, 2014: 13, 2015: 16, 2016: 22, 2017: 25, 2018: 29, 2019: 39, 2020: 67, 2021: 73, 2022: 90, 2023: 117, 2024: 166, 2025: 196, 2026: 137
+- Multi-pengamatan per tahun: 2012: 1, 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 2, 2018: 1, 2019: 5, 2020: 10, 2021: 14, 2022: 13, 2023: 27, 2024: 36, 2025: 48, 2026: 32
+- Dengan abstrak 787 dari 1013; PDF teks lengkap 476 (teks terekstrak 472); multi-pengamatan dengan PDF 197 dari 199
+- Peta istilah: 43 istilah, 317 tautan; istilah identitas 24-37 kajian; detection 621; counting 431
 
 ## Seksi 3: kajian multi-pengamatan
 
-- Multi-pengamatan 195; makalah dataset 4; kajian metode 191
-- Kemunculan mekanisme: temporal tracking 119 dari 191 (62%); geometric or 3D association 77 dari 191 (40%); appearance matching 50 dari 191 (26%); statistical correction 18 dari 191 (9%); no association 4 dari 191 (2%); learned association 7 dari 191 (4%)
-- Kajian yang menggabungkan mekanisme: 79
-- Kategori eksklusif: M3 50, M4 46, M2+M3 43, M3+M4 20, M1 10, M1+M4 4, M0 4, M4+M5 3, M1+M3 2, M1+M2+M3 2, M2+M4+M5 1, M3+M4+M5 1, M5 1, M2+M4 1, M2 1, M2+M3+M4 1, M2+M5 1
-- Akuisisi (V video, D diskret, S pindaian 3D, T kunjungan ulang, 1 satu pandang): V 149, D 34, S 4, T 4, 1 0
-- Periode 2012-2017 (n = 12): M1 5 (42%), M3 1 (8%), M4 8 (67%)
-- Periode 2018-2020 (n = 14): M1 1 (7%), M2 1 (7%), M3 6 (43%), M4 11 (79%)
-- Periode 2021-2022 (n = 25): M0 1 (4%), M1 3 (12%), M2 7 (28%), M3 16 (64%), M4 7 (28%), M5 1 (4%)
-- Periode 2023-2024 (n = 61): M0 3 (5%), M1 5 (8%), M2 24 (39%), M3 42 (69%), M4 18 (30%), M5 1 (2%)
-- Periode 2025-2026 (n = 79): M1 4 (5%), M2 18 (23%), M3 54 (68%), M4 33 (42%), M5 5 (6%)
-- Periode sejak 2023 (n = 140): M0 3 (2%), M1 9 (6%), M2 42 (30%), M3 96 (69%), M4 51 (36%), M5 6 (4%)
-- Tanaman: apple 53, (tanaman tidak disebut) 23, citrus 21, grape 20, tomato 19, strawberry 11, mango 7, sweet pepper 6, cotton 5, pear 4, passion fruit 3, kiwifruit 3
-- Melaporkan hitungan per kelas: 19 dari 191
-- Akuisisi x kategori mekanisme: V: M3 50, M2+M3 43, M4 21, M3+M4 20, M1+M4 3; D: M4 21, M1 8, M4+M5 3, M0 2; S: M4 3, M1+M4 1; T: M2+M4+M5 1, M4 1, M2+M4 1, M2 1
-- Pandangan diskret: dengan asosiasi geometris 24, dengan koreksi statistik 8
-- Platform (satu kategori per kajian): tidak disebut 116, ground vehicle/robot 38, lebih dari satu 18, UAV 11, handheld/smartphone 6, conveyor/lab 2
-- Modalitas (kemunculan): RGB 159, RGB-D 13, LiDAR 7, stereo 6, multispectral 4, monocular depth 2, hyperspectral 1
-- Pencocokan penampilan: satu-satunya mekanisme pada 1, digabung pada 49
-- Kajian no association: ahmad2024enabling, nenavath2024tree, tureckova2022slicing, villacres2024assessing
-- Kajian learned association: fusaro2026horticultural, isobe2025mandarin, meyer2025fruitnerf, santos2026multi, xia2022culling, zhao2026adapting, zheng2023object
+- Multi-pengamatan 199; makalah dataset 4; kajian metode 195
+- Kemunculan mekanisme: temporal tracking 126 dari 195 (65%); geometric or 3D association 79 dari 195 (41%); appearance matching 57 dari 195 (29%); statistical correction 13 dari 195 (7%); no association 1 dari 195 (1%); learned association 8 dari 195 (4%)
+- Kajian yang menggabungkan mekanisme: 84
+- Kategori eksklusif: M2+M3 52, M4 52, M3 47, M3+M4 19, M1 12, M4+M5 3, M2+M3+M4 3, M3+M5 2, M2+M4+M5 1, M3+M4+M5 1, M0+M3 1, M2+M5 1, M1+M3 1
+- Akuisisi (V video, D diskret, S pindaian 3D, T kunjungan ulang, 1 satu pandang): V 138, D 20, S 33, T 4, 1 0
+- Periode 2012-2017 (n = 13): M1 2 (15%), M3 3 (23%), M4 10 (77%)
+- Periode 2018-2020 (n = 14): M3 6 (43%), M4 12 (86%)
+- Periode 2021-2022 (n = 27): M0 1 (4%), M1 3 (11%), M2 8 (30%), M3 18 (67%), M4 7 (26%), M5 1 (4%)
+- Periode 2023-2024 (n = 61): M1 5 (8%), M2 24 (39%), M3 45 (74%), M4 17 (28%), M5 2 (3%)
+- Periode 2025-2026 (n = 80): M1 3 (4%), M2 25 (31%), M3 54 (68%), M4 33 (41%), M5 5 (6%)
+- Periode sejak 2023 (n = 141): M1 8 (6%), M2 49 (35%), M3 99 (70%), M4 50 (35%), M5 7 (5%)
+- Tanaman: apple 52, (tanaman tidak disebut) 23, citrus 21, grape 21, tomato 19, strawberry 11, mango 7, oil palm 6, sweet pepper 6, cotton 5, pear 4, passion fruit 3
+- Melaporkan hitungan per kelas: 25 dari 195
+- Akuisisi x kategori mekanisme: V: M2+M3 52, M3 46, M4 17, M3+M4 12, M1 4; D: M4 11, M1 8, M4+M5 1; S: M4 23, M3+M4 7, M4+M5 2, M2+M3+M4 1; T: M2+M4+M5 1, M4 1, M2+M3+M4 1, M3 1
+- Pandangan diskret: dengan asosiasi geometris 12, dengan koreksi statistik 8
+- Platform (satu kategori per kajian): tidak disebut 118, ground vehicle/robot 39, lebih dari satu 17, UAV 11, handheld/smartphone 6, conveyor/lab 4
+- Modalitas (kemunculan): RGB 162, RGB-D 14, LiDAR 7, stereo 6, multispectral 4, monocular depth 2, hyperspectral 1
+- Pencocokan penampilan: satu-satunya mekanisme pada 0, digabung pada 57
+- Kajian no association: daud2022loose
+- Kajian learned association: arizasentis2023object, arizasentis2025comparative, fusaro2026horticultural, meyer2025fruitnerf, santos2026multi, xia2022culling, zhao2026adapting, zheng2023object
 - Makalah dataset: arizasentis2023dataset, arizasentis2024grapemots, genemola2020fuji, genemola2020lfuji
-- Dasar pengodean kajian multi-pengamatan: abstrak 118, teks lengkap 68, judul 9
-- Referensi hitung (kemunculan): anotasi 99, pohon 43, tidak ada 39, panen 23, packhouse 1
-- Tingkat metrik menurut pengodean kajian (kemunculan): hitung 148, deteksi 90, identitas 49, tidak ada 11
-- Cara pemberian kelas pada kajian per kelas: tidak dinyatakan 9, saat pelacakan 7, voting antarpandang 1, sesudah pelacakan 1, (kosong) 1
+- Dasar pengodean kajian multi-pengamatan: teks lengkap 195, abstrak 4
+- Referensi hitung (kemunculan): anotasi 125, pohon 43, panen 28, tidak ada 19, packhouse 1
+- Tingkat metrik menurut pengodean kajian (kemunculan): hitung 157, deteksi 135, identitas 70, tidak ada 4
+- Cara pemberian kelas pada kajian per kelas: tidak dinyatakan 12, saat pelacakan 10, voting antarpandang 2, sesudah pelacakan 1
 
 ## Seksi 5: metrik di abstrak kajian metode multi-pengamatan
 
-- Dengan abstrak 146 dari 191: hitung 62 dari 146 (42%); deteksi 57 dari 146 (39%); identitas 18 dari 146 (12%); tanpa metrik 52 dari 146 (36%)
+- Dengan abstrak 149 dari 195: hitung 64 dari 149 (43%); deteksi 58 dari 149 (39%); identitas 18 dari 149 (12%); tanpa metrik 53 dari 149 (36%)
 
 ## Seksi 6: pencacahan per kelas pada citra tunggal
 
-- Kajian 50; tanaman: tomato 18, blueberry 7, (tanaman tidak disebut) 6, apple 5, coffee 4, grape 1
-- Atribut kelas kematangan: 44
+- Kajian 52; tanaman: tomato 18, (tanaman tidak disebut) 7, blueberry 7, apple 5, coffee 4, strawberry 2
+- Atribut kelas kematangan: 46
 
 ## Seksi 7: kedalaman dan sensor lain
 
-- Kajian 134; modalitas (kemunculan): RGB-D 77, RGB 32, stereo 20, LiDAR 13, monocular depth 3, NIR 3, hyperspectral 2, thermal 2, multispectral 1
-- Tanaman: apple 47, (tanaman tidak disebut) 16, grape 14, tomato 14, citrus 13
+- Kajian 138; modalitas (kemunculan): RGB-D 81, RGB 32, stereo 20, LiDAR 13, monocular depth 3, NIR 3, hyperspectral 2, thermal 2, multispectral 1
+- Tanaman: apple 48, (tanaman tidak disebut) 16, grape 14, tomato 14, citrus 13
 
 ## Seksi 8: kelapa sawit
 
-- Kajian 176 (matriks: 176)
-- Tugas: KLS 74, DET 42, SENSOR 21, MUTU 15, LF 11, HIT 9, DATA 4
-- Lokasi: ? 82, POHON 39, PABRIK 35, TANAH 17, UAV 3
-- Modalitas: RGB 147, MSI 7, TERMAL 5, RGB+DEPTH 3, RGB+LASER 3, RGB+NIR 2, HSI 2, LIDAR 2, RGB+RADAR 1, STEREO 1, RGB+TERMAL 1, LASER 1, RGB+NIR+DEPTH 1
-- Multipandang Y: 12; kelas per instans Y: 133
-- Kajian pencacahan (HIT): aji2021automatic, daud2022loose, hamdani2026automated, hidayat2024establishing, hutapea2024palm, naftali2024palm, narendran2024palm, prasetyo2020automatic, shiddiq2023counting
-- Kajian multipandang: aji2021automatic, arief2026machine, cherie2020optical, daud2023detection, kassim2012oil, makky2021pre, omar2024outdoor, shiddiq2023counting, suharjito2023annotated, suharjito2023real, suharjito2025oil, wang2024novel
+- Kajian 171 (matriks: 171)
+- Tugas: KLS 76, DET 42, MUTU 18, SENSOR 16, LF 12, DATA 4, HIT 3
+- Lokasi: ? 136, POHON 13, PABRIK 11, TANAH 8, UAV 3
+- Modalitas: RGB 139, ? 5, MSI 5, TERMAL 5, RGB+DEPTH 3, HSI 2, LASER 2, LIDAR 2, RGB+LASER 2, RGB+NIR 1, RGB+RADAR 1, MSI+NIR 1, STEREO 1, MSI+TERMAL 1, RGB+NIR+DEPTH 1
+- Multipandang Y: 17; kelas per instans Y: 131
+- Kajian pencacahan (HIT): hamdani2026automated, naftali2024palm, prasetyo2020automatic
+- Kajian multipandang: arief2026machine, cherie2015advance, cherie2015optical, cherie2020optical, cherie2021non, fadilah2012intelligent, hidayat2024establishing, junior2023video, naftali2024palm, omar2024outdoor, salambue2018investigation, shiddiq2024multispectral, shiddiq2024neural, suharjito2023annotated, suharjito2023real, suharjito2025oil, wang2024novel
 
 ## Seksi 9: tinjauan terdahulu dan metode luar pertanian
 
-- Tinjauan terdahulu 120 (+ 1 metode lain); metode luar pertanian 88
+- Tinjauan terdahulu 122 (+ 1 metode lain); metode luar pertanian 88
 
 ## Verifikasi putaran kedua (model bahasa besar; bukan peninjau manusia)
 

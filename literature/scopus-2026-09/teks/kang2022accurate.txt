@@ -1,1185 +1,977 @@
-Semantic Segmentation of Fruits on Multi-sensor
-Fused Data in Natural Orchards
-Hanwen Kang∗,†
-College of Engineering
-South China Agricultural University
-Guangzhou, China
-∗Corresponding author
-† These authors contributed equally
-Xing Wanga,b,†
-aMechanical and Aerospace Engineering
-Monash University
-Melbourne, Australia
-bRobotics and Autonomous Systems Group
-Data61, CSIRO
-Brisbane, Australia
-Abstract—Semantic segmentation is a fundamental task for
-agricultural robots to understand the surrounding environments
-in natural orchards. The recent development of the LiDAR
-techniques enables the robot to acquire accurate range mea-
-surements of the view in the unstructured orchards. Compared
-to RGB images, 3D point clouds have geometrical properties.
-By combining the LiDAR and camera, rich information on
-geometries and textures can be obtained. In this work, we propose
-a deep-learning-based segmentation method to perform accurate
-semantic segmentation on fused data from a LiDAR-Camera
-visual sensor. Two critical problems are explored and solved in
-this work. The ﬁrst one is how to efﬁciently fused the texture
-and geometrical features from multi-sensor data. The second one
-is how to efﬁciently train the 3D segmentation network under
-severely imbalance class conditions. Moreover, an implementation
-of 3D segmentation in orchards including LiDAR-Camera data
-fusion, data collection and labelling, network training, and
-model inference is introduced in detail. In the experiment, we
-comprehensively analyze the network setup when dealing with
-highly unstructured and noisy point clouds acquired from an
-apple orchard. Overall, our proposed method achieves 86.2%
-mIoU on the segmentation of fruits on the high-resolution point
-cloud (100k-200k points). The experiment results show that the
-proposed method can perform accurate segmentation in real
-orchard environments.
-Index Terms—Semantic segmentation, deep-learning, pointnet,
-LiDAR
+Accurate Fruit Localisation for Robotic Harvesting
+using High Resolution LiDAR-Camera Fusion
+Hanwen Kang†, Xing Wang†, Chao Chen∗
+Abstract—Accurate depth-sensing plays a crucial role in secur-
+ing a high success rate of robotic harvesting in natural orchard
+environments. Solid-state LiDAR (SSL), a recently introduced
+LiDAR technique, can perceive high-resolution geometric infor-
+mation of the scenes, which can be potential utilised to receive
+accurate depth information. Meanwhile, the fusion of the sensory
+information from LiDAR and camera can signiﬁcantly enhance
+the sensing ability of the harvesting robots. This work introduces
+a LiDAR-camera fusion-based visual sensing and perception
+strategy to perform accurate fruit localisation for a harvesting
+robot in the apple orchards. Two SOTA extrinsic calibration
+methods, target-based and targetless-based, are applied and
+evaluated to obtain the accurate extrinsic matrix between the
+LiDAR and camera. With the extrinsic calibration, the point
+clouds and color images are fused to perform fruit localisation
+using a one-stage instance segmentation network. Experimental
+shows that LiDAR-camera achieves better quality on visual
+sensing in the natural environments. Meanwhile, introducing
+the LiDAR-camera fusion largely improves the accuracy and
+robustness of the fruit localisation. Speciﬁcally, the standard
+deviations of fruit localisation by using LiDAR-camera at 0.5 m,
+1.2 m, and 1.8 m are 0.245, 0.227, and 0.275 cm respectively. These
+measurement error is only one one ﬁfth of that from Realsense
+D455. Lastly, we have attached our visualised point cloud3 to
+demonstrate the highly accurate sensing method.
 I. INTRODUCTION
-With the recent development of the LiDAR techniques, data
-in 3D point cloud format has been gradually used in robotics
-tasks under agricultural scenarios because it is robust to the
-variances in lighting, shadows, and other factors. The 3D point
-cloud can provide accurate and robust range measurements of
-the real world. Additionally, RGB cameras can still provide
-dense texture information missing from LiDAR data, which
-can cooperate with Lidar to receive rich information [1]. With
-proper extrinsic calibration of the cameras and LiDARs, the
-point cloud with texture information of the real world can
-be obtained. Semantic scene understanding is a fundamental
-task in many agricultural scenarios, such as growth monitor-
-ing and robotics perception tasks [2]–[4]. However, semantic
-Identify applicable funding agency here. If none, delete this.
-segmentation of 3D point clouds, particularly segmentation of
-large-scale point clouds, is still a challenging task as 3D point
-clouds are generally unstructured and unordered [5], [6]. How
-to improve the performance of semantic segmentation of 3D
-point cloud data in these agricultural scenes has attracted more
-and more attention.
-Semantic segmentation plays a core role in computer vision.
-It groups image pixels together which belong to the same
-class, which is visually meaningful areas for analysis and un-
-derstanding [7]. Semantic segmentation has been widely used
-in robotic perception, medical image processing, autonomous
-driving, agricultural harvesting etc [8]–[11]. The recent de-
-velopment in Convolutional Neural Networks (CNN) provides
-remarkable performance improvement as compared with the
-traditional classiﬁers like random forest [12]. Jonathon et al.
-[13] developed a fully convolutional network (FCN) for end-
-to-end image segmentation, which achieved a 20% increase in
-the segmentation performance on Pascal VOC 2012 database.
-Olaf et al. [14] proposed a UNet network and training strat-
-egy that highly utilizes the data augmentation with available
-annotated samples for biomedical image segmentation. The
-authors further developed the Deeplab-v3 network and applied
-ResNet/MobileNet as the backbone [15]. Modules with dilate
-convolution in the cascade were designed to capture multi-
-scale context by adopting multiple dilate rates. Additionally,
-the augments on dilate Spatial Pyramid Pooling was imple-
-mented to probe convolutional features at multiple scales.
-The semantic segmentation method has also been widely ap-
-plied to promote the advancement of the agricultural ﬁeld. Zou
-et al. proposed a UNet-based algorithm to segment weeds from
-similar crops under a ﬁeld environment [16]. The segmenta-
-tion network was trained using a two-stage training method,
-including pre-processing and ﬁne-tuning, which achieved an
-IOU of 92.92%. Wu et al. applied DeepLabV3 models with
-four backbones of ResNet-50, ResNet-101, Xception-65, and
-Xception-71 to segment abnormal leaves of hydroponic lettuce
-[17]. ResNet-101 had the best segmentation performance in
-the uniform weight assignation method with pixel accuracy
-of 99.2%, and mIoU of 0.8326. Peng et al. applied FCN to
-segment the dense grapes with different varieties, and an IOU
-arXiv:2208.02483v1  [cs.CV]  4 Aug 2022
+Robotic harvesting of fruits has shown signiﬁcant progress
+in recent development of agricultural industry [1]. A general
+procedure for robotic fruit picking requires the localisation
+then detachment from trees [2]. Under the highly complex
+and unstructured environments in orchards, the accuracy of the
+fruit localisation is crucial to the performance of the robotic
+harvesting. Visual perception is the most widely-used method
+to localize fruits. Signiﬁcant researches have been conducted
+to detect and localize the target fruit in 2D color images by
+means of deep learning [3], [4], [5]. Additionally, the 3D
+coordinates is required to conduct the robotic harvesting. In
+this case. the accurate depth sensing is needed to obtain the
+information of fruits’ location, which is crucial to secure a
+high success rate of robotic harvesting.
+Depth sensing of 3D environments is a fundamental task
+in robotic vision [6]. To achieve a promising performance,
+various kinds of depth sensors have been developed in past
+decades, such as monocular camera, stereo depth camera,
+structural light camera, and Light Detection and Ranging
+1H. Kang, X. Wang, C. Chen are with the Department of Mechanical
+Engineering, Monash University, Melbourne, Australia.
+2† Equal Contributions
+3https://drive.google.com/drive/folders/16NV0Bb6N-zlvJC0bFyu-
+8pl4Gbh9lyOE?usp=sharing
+(LiDAR) [7]. The monocular camera can predict the depth
+value of each pixel, given only a single RGB image as input.
+Although features like the texture or color of the target can
+give the information about its depth, the method fails to
+accurately determine the object’s absolute depth [8]. The stereo
+depth camera has two or more visual sensors spaced a small
+distance from each other. The depth of each pixel is computed
+by stereo disparity through triangulation. The stereo depth
+camera requires features to associate data, so its accuracy
+can be severely affected in non-textured or repetitive-textured
+scenes [9]. The structural-light depth camera projects the light
+with known patterns from an emitter onto the scene. The
+depth information of the scene is computed by comparing the
+original pattern with the deformed pattern from the receiver.
+However, both structural-light depth camera and stereo depth
+camera have low robustness under complex illumination con-
+ditions, which limits their sensing capability in the complex
+and unstructured agricultural environments [10], [11]. LiDAR
+emits the laser and wavelength, and sweeps them over the
+scene. The point cloud of the scene is obtained by calculating
+the time required for each laser beam to get back to the sensor.
+LiDAR can provide accurate 3D geometric information and be
+robust to complex illumination conditions. However, the point
+cloud from a traditional mechanical spinning LiDAR has low
+resolution, which cannot provide the ﬁne details of a scene
+[12]. Solid-State LiDAR (SSL), a recently introduced LiDAR
+technique, can provide high-resolution scenes by accumulating
+point clouds from irregular scanning patterns for a certain
+period [13].
+Even though LiDAR has shown superior performance in
+perceiving accurate 3D geometries, it cannot capture context
+and semantic information of the scenes. Fusion of LiDAR and
+RGB camera is a promising way to achieve better sensing
+capability for visual perception[10], [14]. The RGB camera
+records information by capturing the context of the natural
+world, while the point cloud directly stores the spatial geo-
+metric details of the scenes. However, a preliminary hurdle
+in LiDAR-camera fusion is to obtain a highly accurate ex-
+trinsic calibration between the two sensors. LiDAR-camera
+calibration can be performed in two steps: feature extraction
+and extrinsic computation [13], [15]. The ﬁrst step associates
+the features from different data expressions, while the sec-
+ond step computes the extrinsic matrix between the sensors.
+LiDAR-camera fusion is promising and robust for applications
+that require accurate colorization of dense point clouds, for
+example, for an automated robotic task within unstructured
+environments [16].
+arXiv:2205.00404v1  [cs.RO]  1 May 2022
 
-of 75.61% was achieved on the RGB images. He also applied
-UNet and DeeplabV3 to compare the segmentation accuracy,
-which ended up with an accuracy of 77.53% and 84.26% for
-the IOU [18].
-Even though the 2D semantic segmentation achieves com-
-patible segmentation accuracy and robustness, its performance
-experiences signiﬁcant degeneration while dealing with com-
-plex natural orchards, especially for highly occluded large-
-scale scenes. Additionally, purely 2D images can not describe
-the 3D space well due to a lack of depth information. Recent
-research has focused on the semantic segmentation of 3D point
-clouds. Wei et al. proposed BushNet to achieve the semantic
-segmentation of 3D points in a large-scale agroforestry envi-
-ronment [19]. It included a minimum probability of random
-sampling module that can quickly and randomly sample a
-huge point and a multi-channel attention module to improve
-the attention distribution accuracy and training efﬁciency. The
-segmentation accuracy was improved by 12% with the addi-
-tional modules implemented. Chen et al. introduced RandLa-
-Net for large-scale unstructured agricultural scenes [20]. A
-local feature aggregation module was integrated and improved
-to achieve the large-scale 3D point cloud segmentation. The
-experiment results suggested the best segmentation accuracy
-of 94%, and the mIoU can reach 74%. Yu et al. designed
-LFPNet that can directly consume fruit point clouds in real
-scenes to deal with classiﬁcation error, incomplete segmen-
-tation, and low-efﬁciency [21]. The ﬁnal results achieved
-an average segmentation accuracy and mIOU of 80.2% and
-76.4%, respectively. However, the data were collected from
-the facility environment with a Kinect-v2 RGB-D camera,
-which will experience high-performance degeneration under
-natural lighting conditions. The network can not be deployed
-to mobile devices or be used for on-site segmentation tasks.
-Despite the signiﬁcant importance of semantic segmentation
-on 3D point clouds, it has been rarely studied for scene
-segmentation in unstructured scenes of real orchards. The point
-clouds of the surrounding environment and other factors in
-the real orchard are highly unstructured, uneven distributed,
-and noisy even compared to the point clouds acquired in city
-scenes. These pose huge challenges in performing semantic
-segmentation directly on 3D point clouds.
-This study proposes a PointNet-based 3D segmentation
-method to perform segmentation in natural orchards. Two
-critical challenges are solved in this work. The ﬁrst challenge
-is how to efﬁciently fuse features from images and point
-clouds to perform semantic segmentation. Since image data
-can provide enriched texture information and point cloud data
-can provide geometrical information about the world. The
-second challenge is how to train the point-based semantic
-segmentation under imbalance class conditions efﬁciently. A
-complete point cloud data of an orchard scene may contain
-more than 100k points, while only a few belong to the
-foreground objects. Such problematic class distribution could
-severely affect the accuracy of the trained model. Yu et al.’s
-work [21] is the most similar work to our method. However,
-their work does not discuss the multi-sensor data fusion and
-training under imbalance class, which are two critical problems
-of 3D semantic segmentation orchard scenes. Meanwhile, their
-method requires a high-precision multi-viewpoint cloud that
-can only be obtained in ideal environments. While Our method
-only requires the fused RGB-point data that can be collected
-by LiDAR-Camera in the orchard environments.
-In this paper, we propose a deep-learning-based 3D seg-
-mentation network to segment fruits in the high-resolution
-(100k - 200k points) colorized point clouds. We leverage
-the PointNet++ architecture [22], an existing SOTA deep-
-learning model in processing point clouds, and present an
-improved PointNet++ architecture that can fuse texture and
-geometrical information from a LiDAR-Camera visual sensor.
-We show that the accuracy of the PointNet-based model can
-be signiﬁcantly improved by efﬁciently designing the fusion
-behaviour of the color and point clouds. To further promote
-the performance of the presented network, we utilize under-
-sampling and Weighted Cross-Entropy (WCE) to improve
-the network training efﬁcacy. By distilling multiple network
-designs and training strategies, we obtain a comparatively
-accurate and robust 3D semantic segmentation method. More-
-over, a complete implementation of the methods in terms of the
-LiDAR-Camera data fusion, data labelling and pre-processing,
-network training and inference is also introduced in detail. Our
-primary contributions to this paper are:
-• A method that can perform semantic segmentation on
-high-resolution colorised point cloud data from a LiDAR-
-Camera fused sensor.
-• A concise but efﬁcient network architecture that can fuse
-features from image color and point cloud data.
-• Demonstration of the proposed method from LiDAR-
-Camera fusion, and data labelling, to the network training
-and prediction, providing an end-to-end implementation
-for semantic segmentation in natural orchard environ-
-ments.
-The rest of the paper is organized as follows. The method-
-ologies of our approach are presented in Section II. The
-experiment results and discussion are presented in Sections
-III and IV, followed by the conclusion in Section V.
-II. MATERIALS AND METHODOLOGY
-A. Method Overview
-An overview of the proposed segmentation method is shown
-in Figure 1. The system captures sensor data from a Solid State
-LiDAR (SSL) Livox Mid-70 or Livox AVIA and an RGB
-camera. The intrinsic of the camera and extrinsic between
-LiDAR and camera are calibrated using the method from
-our previous work [23]. We seek to estimate the semantic
-label of points that belong to the fruits using either point
-cloud or fused color information. This estimation problem
-can be formulated as a dense semantic segmentation problem.
-We leverage the PointNet++ architecture to perform semantic
-segmentation on input data since it shows SOTA performance
-in processing point cloud data in many core vision perception
-tasks. Our method can perform semantic segmentation on raw
+Fig. 1. (a) The apple harvesting robot, (b) The attached LiDAR-D455 sensor, (c) Target-less based extrinsic calibration method and its reconstructed scene,
+(d) Visual sensing of the apple tree in orchard environment
+Depth sensing also plays an essential role in visual sensing
+in conducting agricultural tasks [17], [18]. To perceiving the
+depth information from environments, various depth sensors
+have been intensively researched, including monocular camera,
+stereo depth camera, etc. Mehta et al. [3] utilized a monocular
+RGB camera to ﬁnd the depth distance of citrus relative
+to the robot base. The 2D position is initially obtain using
+intrinsic parameters of the camera, fruit size, and the pixel
+coordinates of fruits. The depth information in the camera
+frame is obtained using triangulation while moving the camera
+towards the target. The 3D position relative to the robot base
+was ﬁnally calculated using the extrinsic camera parameters.
+The overall accuracy of the controller was approximately 15
+mm, thus making the harvesting of medium or large varieties
+of citrus fruit possible. Si et al. [4] utilized a stereo camera
+to detect and locate apples in a natural orchard environment.
+The apples were detected based on color features, and the
+detection rate was over 89.5% with a maximum error of
+20 mm at a measuring distance range of 400 to 1500 mm.
+Our previous works utilized an RGB-D camera, Realsense
+D435 and D455 to localise apples from the trees [19], [20],
+[21]. The depth is received from the aligned depth map from
+RGB-D camera. In addition, the point cloud from the depth
+camera was used to estimate each fruit’s grasping pose to
+assist in robotic retrieving. The average accuracy of grasping
+estimation is 0.61 cm and 4.8◦in centre and orientation
+respectively, at a scanning distance of 0.4m. However, the
+grasping estimation performance still suffers degradation when
+the scanning distance increases or under intense sunlight.
+Another comprehensive comparison of commonly-used depth
+cameras is conducted and presented in Neupane’s work [22].
+Depth sensors are also widely applied in other agricultural
+scenes, such as branch pruning [23].
+Even though depth sensors have been widely applied for
+robotic tasks in orchard environment, few works discuss
+improving visual perception performance by enhancing the
+sensing capacity of depth sensors. With the rapid growth of
+robotic tasks in the natural orchards, the demand for accurate
+depth-sensing becomes essential, especially for applications
+such as robotic harvesting. To promote the advance of visual
+perception by enhancing the depth sensing capacity, LiDAR-
+camera fusion can be potentially studied. This work presents a
+LiDAR-camera fusion-based depth-sensing strategy to perform
+accurate fruit localisation in the real orchards environments.
+The presented method fuses the depth and color data of the
+environments from a SSL and a camera. It then performs
+visual perception on fused sensory data to ﬁnd the precise
+locations of each fruit. Our method includes two steps: vi-
+sual sensing and visual perceptions. The visual sensing step
+utilises a LiDAR-camera fusion to fuse the sensory data from
+the LiDAR and camera. Before applying data fusion, two
+SOTA extrinsic calibration methods are applied and evaluated
+to obtain the accurate extrinsic matrix between the LiDAR
+and camera. The visual perception step localises the fruits
+using a one-stage instance segmentation network, which can
+detect and segment the fruits from the image. Then the depth
+information from the LiDAR-camera fusion is used to localise
+the fruits in the task space. To summarise, the following
+contributions are presented in this paper:
+• A visual sensing and perception approach that can per-
+form accurate fruit detection and localisation using high-
+resolution LiDAR-camera fusion method.
+• A comprehensive study and evaluation on extrinsic cali-
+bration strategy of LiDAR and camera.
+• Demonstration of the presented visual sensing and per-
+ception approach on fruit localisation for a robotic har-
+vesting robot in the natural orchard environments.
+The rest of the paper is organised as follows. The system
+overview and methodologies of our approach are presented in
+Section II. The experiment results and discussion are presented
+in Section III, followed by the conclusion in Section IV.
+II. METHODOLOGY
+A. System Setup
+The LiDAR-camera system includes an SSL: Livox Mid-
+70, and an RGB camera: Intel Realsense-D455, as shown in
 
-Fig. 1. Illustration of our proposed 3D semantic segmentation method. (a) the input data is colorized point clouds collected by using LiDAR-Camera, (b)
-the input point clouds are segmented by using the proposed segmentation module, which includes a spatial subdivision algorithm and a PointNet-based
-segmentation network, (c) the segmentation results.
-point cloud data and point cloud with color information. Note
-that without loss of generality, the proposed method can also
-incorporate measurements from other 3D range sensors, like
-spinning LiDARs. Mean Intersection over Union (mIoU) is
-used to evaluate the performance of the network model.
-Fig. 2. The proposed segmentation method can use both (a) raw point cloud,
-(b) colorized point cloud. (c) is the an example of segmentation result.
-1) Input Data: Our method uses a set of sensors to collect
-data from the orchard environment. The inputs of the proposed
-method include point clouds and 2D color images. The Livox
-Mid-70 or Livox AVIA measures the surrounding geometry by
-sweeping over the scene with a set of lasers (one line for Livox
-Mid-70 and six lines for Livox AVIA). The data collection
-frequency of the Livox Lidar is 10 HZ. For Livox Mid-70, the
-LiDAR-camera sensor typically requires 10 seconds to obtain
-sufﬁcient points to cover one single scene. In comparison,
-Livox AVIA only needs 3 seconds since it has more laser
-channels than the former. The input points are ﬁrstly fused
-with color information and then added to construct a complete
-point cloud for the current scene. A typical complete point
-cloud for a working scene (the width and height of the scene
-are 2.5 to 3 meters, the depth of the scene is between 1.2
-to 2.5 meters) normally includes 100k - 200k points after
-post-processing. The post-processing steps comprise outlier
-rejection and voxelization. The size of the voxel grid is set
-as 1cm×1cm×1cm to preserve the details of the local-scale
-geometries. An example of the raw and colorized point cloud
-and semantic segmentation result of the scene is shown in
-Figure 2.
-Fig. 3. Illustration of spatial subdivision of proposed method in segmentation
-inference. The complete scene is subdivided by an Octree until the point
-number within a leaf node is less than the given number, which is set as 4096
-or 8192.
-2) Partitioned Inference on Point Cloud: Since the point
-cloud of a complete scene contains more than 100k points,
-which cannot be processed at once. Therefore, we partition
-the whole point cloud of a scene into multiple blocks through
-the Octree. Each node of the Octree should contain the points
-that are not beyond the given number. The typical value of the
-given number is 4096 and 8192, based on different situations.
-Based on the value of the given number of points, we divide
-the segmentation into two cases: small-scale segmentation and
-large-scale segmentation. Small-scale segmentation stands for
-performing segmentation on a node that contains a number
-of points less than 4096. In contrast, large-scale segmentation
-stands for performing segmentation on the node containing
-either 4096 or 8192 points. Additionally, fruits always count
-only a small part of points in the whole point cloud. Hence
-performing segmentation on the large-scale point cloud is more
-challenging due to the presence of an imbalanced distribution
-of classes. Therefore, ﬁnding a suitable point number value
-in each node is also a critical task to secure segmentation
-accuracy. During the forward inference, the complete point
-cloud is partitioned into small blocks and fed into the network
-
-Fig. 4. PointNet++ uses a set of SA blocks and FP blocks to extract and process features from the point cloud. SA blocks under-sampling the points and
-extracts features from the point set by a local-to-global behaviour by increasing the grouping region of each chosen centroid. FP blocks up-sampling the
-points and propagates the processed features to each point within the set.
-one by one until all blocks are processed. Then, the predictions
-of these blocks are assembled to obtain the ﬁnal results. The
-overall procedures of the partitioned inference as shown in
-Figure 3.
-B. Network Architecture
-1) PointNet++ Architecture: PointNet++ network uses a
-hierarchical feature learning strategy to extract and learn
-features from the point cloud, as shown in Figure 4. It builds
-a hierarchical grouping of points, which can progressively
-learn features from larger and larger local regions along
-the hierarchy and aggregate local and global information.
-However, since the point cloud is unordered, highly non-
-uniform, and does not have a structured neighbourhood region
-similar to the image. Hence the Set Abstraction (SA) layer and
-Feature Propagation (FP) layer are used to process the point
-cloud in each hierarchical level and perform dense prediction
-by propagating point features along the neighbour region,
-respectively. The base PointNet++ network has four SA layers
-and four FP layers to process and predict the label of each
-point.
-The SA layer comprises three layers: the sampling layer,
-grouping layer, and PointNet layer. Sampling layer sample
-a given number of centroids from the point cloud using
-the iterative farthest point sampling. Iterative Farthest Point
-Sampling (FPS) can ensure an even distribution of centroids
-within the point cloud. Then, the grouping layer is used to ﬁnd
-the neighbour points within a local region of each centroid.
-Different grouping methods can be used, including K Nearest
-Neighbor (KNN) points or points in a certain radius. After
-that, the PointNet layer is used to extract features from each
-neighbour region of the centroids. With the increase of the
-hierarchical level, the SA layer gradually extracts the features
-from a small local area to a larger global region. In this
-manner, PointNet++ builds a hierarchical structure to learn
-multi-scale features from the point set.
-SA layer down-samples the points cloud by progressively
-increasing the local region size and reducing the number of
-centroids. Semantic segmentation is a dense classiﬁcation task
-that requires labels on each point. Instead of using transpose
-convolution in a 2D segmentation network, PointNet++ uses
-the FP layer to propagate features from the centroids to the
-points of the local region. That is, the features of a point are
-from the interpolation of nearby centroids weighted based on
-the distance from the points to each centroid. The interpolated
-features of points are also concatenated with the skip-linked
-point features from the SA layer. Then the concatenated
-features are passed through a one-by-one convolution in CNNs
-and ReLu layers.
-Fig. 5. The network architecture of the PointNet++ model, which includes
-four SA blocks and four FP blocks. color information of point cloud can be
-fused by either early-stage fusion or late-stage fusion ways.
-2) Fusion with color Feature: The PointNet++ architecture
-can fuse points and other features by increasing the number of
-
-input data channels. For example, PointNet++ use the normal
-vector of each point within the point set in the classiﬁcation of
-ModelNet40 dataset, and a 1.2% improvement of accuracy is
-achieved. PointNet++ has fused the features at the beginning
-and the end of the network, named early-stage fusion and later-
-stage fusion, respectively, as shown in Figure 5. Similarly, we
-input XYZ and RGB values into the network together to test
-their effect on the segmentation performance. Unexpectedly,
-the segmentation accuracy of using the fusion data drops to
-0.72, while the point-only network model can achieve 0.84,
-as listed in Table I. To investigate the reason why fusion data
-affect the segmentation accuracy, we respectively input color
-features in only early-stage fusion or later-stage fusion. Results
-show that later-stage fusion can improve the segmentation
-accuracy while the accuracy of early-stage fusion is reduced.
-Fig. 6. The network architecture of the proposed Fuse-PointNet++ model. A
-SA block is used to extract color features of each point, and the processed
-feature is fused through the later-stage fusion.
-A possible reason leading to the accuracy degeneration
-introduced by early-stage feature fusion is the large difference
-between feature distributions. Since PointNet++ fuse the multi-
-sensor features by simply concatenating with each other and
-processing them with convolution operations. When those fea-
-tures have large differences in the distribution in feature space,
-this operation will affect the learning performance of the net-
-work on multi-sensor features. Therefore, we only introduce
-color features in later-stage fusion. Rather than directly using
-the RGB values on each point, we use a color-only SA block to
-gather color features from the neighbourhood of each point.
-The introduced later-stage fusion PointNet++ architecture is
-named as Fuse-PointNet++ model, and it achieves 0.88 on
-segmentation accuracy, as shown in Table I. The network
-architecture of the Fuse-PointNet++ model is shown in Figure
-6.
-3) Sampling and Grouping Strategy: PointNet++ can apply
-FPS or Random Sampling (RS) strategy to sample N centroids
-from a point cloud with the number of M points and then uses
-KNN or distance to gather K points within the neighbourhood
-of each centroid. We use the FPS method as it can sample
-evenly distributed centroids from the point cloud. Then, a
-given number of points within a certain radius is gathered
-to extract the local features of each centroid.
-C. Class Imbalance Training
-1) Training Method: Class imbalance problem occurs when
-one class has much more samples than other classes, which
-is one of the most signiﬁcant issues in network training [24].
-In our case, a point cloud can have up to 16k points, while
-only a small subset of points (less than 1k) belongs to positive
-samples. The imbalance class can cause training degeneration
-since most samples are easy negatives that contribute no
-useful backward gradient. Introducing a weighting factor on
-training loss or Under-Sampling (US) are the two common
-methods to deal with the class imbalance problem. Therefore,
-we introduce the under-sampling strategy for training data pre-
-processing and introduce a weighting factor on loss function
-to alleviate the training degeneration caused by the imbalance
-class problem.
-Fig. 7. (a) Region A has sufﬁcient fruit points while (b) region B has only
-background points. Region A is used in network training while region B is
-removed.
-Firstly, we set the minimum number of fruits point within
-each training sample. That is, the training samples in the small-
-scale dataset (point number is 4096) should keep the points
-belonging to fruit larger than 1k (as shown in Figure 7), while
-the training samples in the large-scale dataset (point number
-is 8192) should have fruit points larger than 1.5k, respectively.
-Secondly, we introduce the weighting factor α ∈[0, 1] to
-balance the loss value of the two classes. The loss function
-L(p) is formulated as follows:
-L(p) = −1
-N
-M
-X
-c=0
-αc
-N
-X
-i
-1cyilog(pi)
+Figure 1 (b). The LiDAR and camera are installed together
+with a ﬁxed conﬁguration using 3D printing components. The
+intrinsic parameters of the RGB camera are evaluated before
+LiDAR-camera calibration. During the LiDAR-camera cali-
+bration, the LiDAR-camera system requires a data acquisition
+time of 15 seconds for SSL to obtain sufﬁciently dense points
+for feature extraction. The LiDAR-camera sensor typically
+requires less than 2 seconds to acquire sufﬁcient points during
+visual sensing. Extrinsic calibration plays an essential role in
+order to accurately matching the depth and color stream from
+the LiDAR-camera sensor. We comparatively evaluate two
+SOTA extrinsic calibration approaches: target-based extrinsic
+calibration and targetless-based extrinsic calibration, which
+is presented in Section II-C. An NVIDIA TX2 is used and
+connected to the LiDAR and camera to acquire the depth
+and RGB information simultaneously. We use the LiDAR-
+camera sensor in a robotic retrieving system to demonstrate
+the performance of our approach in the in-ﬁeld agricultural
+scenarios, which is presented in II-D. The pipeline of visual
+sensing and perception is shown in Figure 2.
+Fig. 2.
+The point cloud from LiDAR and RGB from camera are fused to
+generate the colored point cloud of the apple tree.
+B. Visual Sensing
+A pin-hole projection model that project a point Cpi ∈R3
+from the LiDAR to a pixel C ˆpuv ∈R2 on color image plane
+can be computed by using the equation:
+C ˆpuv = π(KCpi)
 (1)
-where yi and pi are the label and prediction of the points,
-respectively. αc is the weight factor of the points in class
-c. 1c denotes the sign function whether points in class c
-(1c = 1) or not (1c = 0). We denote the weighted cross
-entropy loss function as WCE in the following experiments.
-
-Fig. 8. A illustration of the used LiDAR-Camera visual sensor, (a) it includes a RealSense-D455 and a Livox Mid-70; (b) the raw input of the visual sensor are
-RGB images from the camera and the point cloud from the LiDAR; (c) LiDAR and camera can be automatically calibrated by performing feature extraction
-and matching [25]; (d) a demonstration of fused colorized point cloud.
-The preliminary results as shown in Table I show that US and
-WCE can improve the network training performance. A more
-detail experiments of parameter setup of US and WCE are
-introduced in the experiment.
-TABLE I
-COMPARISON OF NETWORK PERFORMANCE UNDER DIFFERENT FUSION
-AND TRAINING STRATEGIES.
-Input
-Fusion Method
-Training Method
-mIoU
-pc
--
--
-0.73
-pc
--
-US
-0.79
-pc
--
-US + WCE
-0.81
-pc + rgb
-early+later fusion
-US + WCE
-0.75
-pc + rgb
-early fusion
-US + WCE
-0.72
-pc + rgb
-later fusion
-US + WCE
-0.84
-pc + rgb (SA)
-later fusion
-US + WCE
-0.88
-2) Training Details: During the training process, the learn-
-ing rate and decay rate are respectively set as 0.001 and
-0.95 per epoch, and the minimum learning rate is speciﬁed
-as 0.0001. The Adam optimizer is used to train the network,
-and the batch size is set from 4 to 16 based on the different
-number of input points (batch sizes are 4 for 8192, and 16
-for 4096, respectively) due to limited memory consumption on
-GPU. Data augmentation is conducted on both points and color
-images. For point set data, augmentations such as rotation
-and adding white noise are introduced, while adjustments of
-saturation and brightness are introduced on color information.
-We train the network model for 100 epochs and use the
-checkpoint with the best validation accuracy in the last epochs
-as the ﬁnal network weights.
-D. System Implementations
-1) LiDAR-camera Fusion: To build a customized and large
-3D dataset, we use the LiDAR-Camera sensors that include a
-pin-hole camera model to acquire color images and a LiDAR
-for 3D points acquisition, as shown in Figure 8. The pin-hole
-camera model project a point Cpi ∈R3 from the LiDAR
-coordinate to a pixel C ˆpuv ∈R2 on color image plane by
-using the equation:
+where π(·) is the camera distortions model, K is the intrinsic
+matrix of camera. The Lpi ∈R3 is the point that acquired
+by LiDAR. Each point Lpi is transformed into camera frame
+by using the extrinsic matrix ˆT C
+L , where ˆT C
+L = ( ˆRC
+L, ˆtC
+C,L) ∈
+SE(3) (where ˆRC
+L ∈SO(3) and ˆtC
+C,L ∈R3). Therefore, a
+point Lpi that is acquired by LiDAR is projected onto a pixel
+C ˆpuv on RGB image plane through the equation:
 C ˆpuv = π(K ˆT C
 L
 Lpi)
 (2)
-where π(·) is the camera distortions model, K is the intrinsic
-matrix of camera, ˆT C
-L = ( ˆRC
-L, ˆtC
-C,L) ∈SE(3) (where ˆRC
-L ∈
-SO(3) and ˆtC
-C,L ∈R3) is the extrinsic between the LiDAR
-and camera. The intrinsic of the camera is evaluated ﬁrstly,
-and then the calibration between LiDAR and camera can be
-conducted in either manual or automatic way.
-2) Data Collection and Labelling: The data were collected
-in the Fankhauser apple orchard located in Melbourne, Aus-
-tralia, using the proposed Lidar-camera sensor. The collection
-time varied from 10:00 am to 4:00 pm. The distance between
-the vision sensor to the tree trunk ranged from 1.2 to 2.5
-meters. The scanning height was adjusted to guarantee the
-apple trees are within the FoV of both sensors. In total, there
-were 152 point cloud data pairs, including ROSbag or PCD
-format and 152 corresponding color images. The point clouds
-were recorded by setting the scanning time to 10 seconds to
-accumulate sufﬁcient points of the scene. Each point cloud
-contains approximately 100k to 200k points. The ground truth
-of the semantic segmentation was labelled using the open-
-source labelling tool on Github 1.
-3) Hardware and Software: Both the LiDARs and RGB
-camera (Intel Realsense D-435 or D-455) are connected with
-an Nvidia Xavier using the Robotic Operation System (ROS)
-in the Melodic version of Ubuntu 18.04. The data transmission
-between the Livox LiDAR and camera and Nvidia Xavier
-is through the Ethernet and USB port. The communica-
-tion between Livox LiDARs and Intel RealSense cameras is
-achieved by using the Livox-ROS-Driver and Realsense-ROS-
-SDK, respectively. Other required packages such as LiDAR-
-RGB calibration and fusion nodes are also programmed and
-running on ROS. The network models are developed based
-on Tensorﬂow-1.15. The network training is performed using
-an NVIDIA RTX-3060 (6GB), and the forward inference is
-tested on both NVIDIA RTX-3060 and NVIDIA Xavier.
-1https://github.com/Hitachi-Automotive-And-Industry-Lab/semantic-
-segmentation-editor
+The intrinsic matrix of the RGB camera is obtained before
+the LiDAR-camera calibration. The calibrated color and depth
+image from the LiDAR-camera sensor for visual perception.
+The obtained colourised point cloud are shown in Figure .
+C. LiDAR-camera Calibration
+The LiDAR-RGB calibration calculates the extrinsic matrix
+ˆT C
+L to minimise the reprojection error between image pixels
+Cpuv and the matched projected pixels C ˆpuv of the LiDAR
+points Lpi, which is formulated as:
+min
+n
+X
+i
+||Cpuv −C ˆpuv||2
+(3)
+Two fundamental problems are solved in LiDAR-camera
+extrinsic calibration: feature extraction & data association
+and extrinsic estimation. The ﬁrst step extracts features from
+colour and depth streams. The correspondence between pixels
+Cpuv from the camera and C ˆpuv from LiDAR are matched
+based on the distance or feature similarity. The second step
+calculates the extrinsic matrix ˆT C
+L between LiDAR and camera
+by minimising the reprojection error between the matched
+points and pixels respectively from the LiDAR and camera.
+Based on the different methods used in the feature extraction
+& data association, LiDAR-camera calibration can be divided
+into target-based calibration and targetless-based calibration.
+We respectively study and evaluate two calibration methods
+of target-based and targetless-based methods in this work.
+The process with better accuracy is used to perform extrinsic
+calibration of the LiDAR-camera sensor.
+1) Target-based Method:
+Target-based method is com-
+monly used in extrinsic calibration. This method requires a
+reference target that can be clearly viewed in Field-of-Views
+(FOVs) of all visual sensors. A recent target-based method,
+ASAC [15], is used to calibrate the extrinsic matrix between
+the LiDAR and camera.
+Fig. 3. (a) Corner feature extraction (7×5) on the point cloud data, (b) Corner
+feature extraction on RGB image
+It ﬁrstly ﬁnds the checkerboard corners on point clouds and
+RGB image, as highlighted in while dots in Figure 3 (a) and
+red dots in Figure 3 (b), respectively. The checkerboard corners
+are estimated by optimisation of transformation matrix ˆT L
+M
 
-III. EXPERIMENTS
-A. Experiment Method
-In this section, we evaluate the proposed methods in four
-experiments. Firstly, an ablation study of the network model
-on small-scale and large-scale scenes is presented. Then, the
-experiment of semantic segmentation on a complete point
-cloud is conducted. After that, the comparison studies of 3D
-and 2D segmentation are presented, and segmentation on data
-from RGB-D cameras is presented. In the experiment, each
-network is trained three times, and the network weights of the
-best validation accuracy are saved for performance evaluation.
-In the experiments, mIoU is used to evaluate the segmentation
-performance of the network.
-We use 76 of 152 scenes to create the dataset for network
-training, and the rest of the scenes are used to perform training
-validation and evaluation. We randomly choose 100-200 seeds
-from each point cloud and create the training dataset by
-crop the neighbour points of each seed. The training dataset
-is classiﬁed into small-scale (M = 4096) and large-scale
-(M = 8192) datasets. Each dataset includes from 10000-
-15000 training samples by using the proposed pre-processing
-methods.
-B. Ablation Study of Model
-TABLE II
-COMPARISON OF SAMPLING AND GROUPING STRATEGIES ON NETWORK
-PERFORMANCE
-index
-Method
-N
-K
-mIoU
-1
-KNN
-1024
-24
-0.868
-2
-FPS
-1024
-24
-0.872
-3
-FPS
-1024
-12
-0.842
-4
-FPS
-1024
-48
-0.857
-5
-FPS
-512
-24
-0.833
-6
-FPS
-2048
-24
-0.867
-We ﬁrstly analyse the effect of network parameters on
-segmentation performance. Table II shows the evaluation of
-segmentation accuracy on centroids sampling and neighbour
-points grouping strategy by using the small-scale dataset
-(M=4096) on the Fuse-PointNet++ model. Tests 1 and 2 com-
-pare the model that uses KNN and FPS sampling strategies,
-respectively. Experimental results show that FPS and KNN do
-not affect the accuracy signiﬁcantly, while the network with
-FPS achieves a slightly higher score compared to the method
-of using KNN. Tests 2, 3, and 4 compare the network perfor-
-mance of using a different number of grouping points. Results
-show that the network achieves the best performance when
-K = 24. Tests 2, 5, and 6 compare the network performance
-o using a different sampling centroid. Results show that under-
-numbered sampling centroids would reduce the accuracy of the
-segmentation, while over-number of sampling centroids would
-not improve the segmentation accuracy but the computational
-consumption is signiﬁcantly increased.
-Table III shows the ablation experiment using a differ-
-ent scale of neighbour points grouping by using the Fuse-
-PointNet++ model on the small-scale dataset. The results of
-TABLE III
-COMPARISON OF GROUPING SCALE ON NETWORK PERFORMANCE
-index
-Scale
-Nor (Scale)
-mIoU
-1
-0.1 ,→0.2 ,→0.4 ,→0.8
-False
-0.813
-2
-0.05 ,→0.1 ,→0.2 ,→0.4
-False
-0.836
-3
-0.01 ,→0.02 ,→0.04 ,→0.08
-False
-0.872
-4
-0.1 ,→0.2 ,→0.4 ,→0.8
-True
-0.742
-5
-0.05 ,→0.1 ,→0.2 ,→0.4
-True
-0.746
-6
-0.01 ,→0.025 ,→0.05 ,→0.1
-True
-0.752
-tests 1, 2, and 3 show different grouping scales can lead
-to different segmentation accuracy. A small grouping scale
-achieves a higher accuracy on segmentation results. Tests
-4, 5, and 6 show the network performance by normalizing
-the scale of the input point cloud. Results show that the
-segmentation accuracy of the network with scale normalizing
-drops compared to the un-normalized case. Since fruits always
-have a physical scale in the real world, a proper grouping
-scale can help the network to learn local features efﬁciently.
-Meanwhile, since input clouds always have different spatial
-sizes and scale normalization changes the scale of the data,
-hence the network performance on segmentation is reduced.
-TABLE IV
-COMPARISON OF COLOR FUSION ON NETWORK PERFORMANCE
-Index
-Method
-No. channels
-mIoU
-1
-pc
--
-0.812
-2
-raw RGB
-3
-0.841
-3
-W/o grouping
-32
-0.847
-4
-grouping
-32
-0.872
-5
-grouping
-16
-0.867
-6
-grouping
-64
-0.874
-Table IV shows the experiment result of using the different
-setups on color fusion by using the Fuse-PointNet++ model on
-the small-scale dataset. Tests 1 to 4 evaluate the segmentation
-accuracy of the network by using the different fusion methods.
-Method 1 only uses the point cloud, method 2 concatenates
-raw RGB values to the feature vectors, method 3 uses a one-
-by-one convolution operation to process color information,
-and method 4 applies a SA block to gather the neighbour
-of each point and then process the color information within
-this neighbour region. Experimental results show that method
-3 achieves the best accuracy on network performance. These
-results show that grouping can help the network to gather
-the spatial distribution of the color features, which is similar
-to the convolution operations in 2D image processing. Tests
-4, 5, and 6 further investigate the proper number of color
-channels for feature fusion. Experimental results show that
-although increasing feature channels can slightly improve the
-segmentation accuracy, it also brings higher computational re-
-quirements. Therefore, we choose the feature channel number
-32 in this work.
-From the results in this section, we set grouping points num-
-ber K=24, grouping scale as 0.01 ,→0.02 ,→0.04 ,→0.08,
-and the fusion color feature channels as 32.
+to maximise the similarity between LiDAR points LP and a
+template checkerboard model points MS, which is deﬁned as:
+L(MS,L P| ˆT L
+M) =
+Ni
+X
+i
+li
+(4)
+li = σ(¯pi)σ(IS(¯pi), IP (¯pi))d(¯pi, Gi)
+(5)
+where Ni is the number of points in point cloud. ¯pi is the
+LiDAR point that transformed from the template frame by
+ˆT L
+M.σ(¯pi) is the discriminate function to determine whether
+¯pi fall in bound of checkerboard area. σ(IS(¯pi), IL(¯pi)) is the
+discriminate function to identify whether points from template
+and model have same intensity. d(¯pi, Gi) measures the dis-
+tance between ¯pi and the closest corner Gi on checkerboard.
+Equation (4) can be solved by a non-linear optimisation to
+ﬁnd correspondence between template and LiDAR. Once the
+location of each checkerboard corner are determined. The
+extrinsic matrix between LiDAR and camera can be computed
+by minimising the reprojection error between matched corners.
+2) Targetless-based Method: Rather than detecting fea-
+tures from a known geometry, Yuan et al [13] introduced a
+tergetless-based method that can calibrate LiDAR and camera
+by using edge features in general environments. Firstly, edge
+features are extracted from both image and point cloud. The
+Canny edge detector is used to extract features from the colour
+images, as shown in Figure 4 (b). Then, it down-samples the
+point cloud into small voxels, and the RANSAC algorithm is
+used to ﬁt planes and ﬁnd the depth-continuous intersection
+lines, as shown in Figure 4 (d). Only depth-continuous edges
+from the point cloud are used to avoid signiﬁcant calibration
+errors. Correspondences between features are determined by
+the closest distance by projecting LiDAR points into the image
+frame using an initial extrinsic matrix. The matched image
+edges are denoted as Qi = {Iqi; i = 1, · · · , k}. While the
+edges points from Lidar are denoted as Pi = {Lpi; i =
+1, · · · , k}.
+The image edge point Iqi =I ˆqi +I wi, where Iwi ∼
+N(0, P
+i) is the noise associate with point during edge extrac-
+tion. Let ˆdi be the measurement depth and σdi ∼N(0, P
+di)
+be the measurement noise. The true depth of ith measurement
+from LiDAR is given by:
+di = ˆdi + σdi
+(6)
+Similarly, let ˆwi be the measurement bearing direction and
+σ(wi) ∼N(02×1, P
+σi) be the measurement noise at the
+tangent plane of ˆwi. The true bearing direction of measurement
+wi is obtained by:
+wi = e([
+ˆ
+wi
+|| ˆ
+wi||2 σ(wi)]) ˆwi
+(7)
+where [·] is the skew-symmetric operator. By combining (6)
+and (7), the edge point of Lidar can be expressed as:
+Lpi = ˆdi ˆwi = ( ˆdi + σdi)e([
+ˆ
+wi
+|| ˆ
+wi||2 σ(wi)]) ˆwi
+(8)
+Fig. 4. The scene for targetless extrinsic calibration: (a)RGB image, (b)Edges
+extracted from RGB images, (c)Point cloud in pcd format, (d)edges extracted
+from the point cloud
+Since e[A] is approximately equals (1 + [A]), the (8) can be
+expand to:
+Lpi = ˆdi ˆwi
+|{z}
+ˆpi
++ σdi ˆwi −ˆdi[wi]
+ˆwi
+|| ˆwi||2
+σwi
+|
+{z
+}
+ˆ
+Lwi
+(9)
+The projection error of the calibration can be expressed as:
+ri = π(KT C
+L (Lˆpi +L wi)) −(I ˆqi +I wi)
+(10)
+The optimisation problem ﬁnds the extrinsic matrix ˆT C
+L to
+minimise reprojection error:
+T C
+L = argmin
+T C
+L
+k
+X
+i
+||ri||2
+(11)
+Rather than directly solve the (11), authors expand (10) with
+ﬁrst order term, leads to
+0 = π(KT C
+L (Lˆpi +L wi)) −(I ˆqi +I wi)
+≈ri + JTiσT + JwiWi
+(12)
+where
+Wi =
+ Lwi
+Iwi
+
+(13)
+Equation (12) implies that:
+ri + JTiσT = −JTiWi ∼N(0, Jwi
+X
+wi
+JT
+wi)
+(14)
 
-Fig. 9. The semantic segmentation of complete scene using the proposed method. (a), (b), and (c) are the input colorized point cloud, (d), (e), and (f) are the
-segmentation results of (a), (b), and (c), respectively.
-C. Experiment on Training Strategy
-This section uses different training strategies in network
-training and evaluates the segmentation accuracy of the ob-
-tained model. We ﬁrst evaluate the training method to ﬁnd the
-optimal parameters for WCE on the small-scale dataset. In
-the small-scale training dataset, the average points number of
-fruits in a point cloud is 1200 (minimum fruits point in training
-samples is 1000) and the total point number of the point cloud
-is 4096. We use the optimal network setup from the last section
-and evaluate the effect of US and WCE strategies on trained
-network performance, the experimental results are shown in
-Table V.
-TABLE V
-COMPARISON OF TRAINING STRATEGY ON NETWORK PERFORMANCE IN
-SMALL-SCALE DATASET
-Index
-Method
-No. pts
-αnobj
-αobj
-mIoU
+The maximal likelihood with minimum variance extrinsic
+estimation can be expressed as:
+min
+σT
+k
+X
+i
+||ri + JTiσT ||P
+Jwi Wi
+=
+k
+X
+i
+(ri + JTi)(Jwi
+X
+wi
+JT
+wi)−1(ri + JTi)
+(15)
+The update policy for σT is that
+σT = (JT
+T (Jw
+X
+w
+JT
+w)−1JT )†JT
+T (Jw
+X
+w
+JT
+w)−1r
+(16)
+σT is updated iteratively until convergence.
+D. Visual Perception
+Fig. 5. One stage instance segmentation network for apple detection
+1) Perception Network: Fruit recognition and localisation is
+the core task of the vision system of a robotic system for fruit
+picking. In this section, we demonstrate the proposed LiDAR-
+RGB sensor in a robotic fruit picking scenarios. Our method
+uses an one-stage instance segmentation network architecture,
+Yolact, to recognise and segment the fruits’ mask from the
+RGB images. Our previous works [21] presented a modiﬁed
+Yolact architecture to perform real-time instance segmentation
+of the fruits. Compared to the original Yolact, our network
+architecture can achieve equal or even better accuracy in
+fruit recognition with better inference efﬁciency. The network
+has three sub-networks (as shown in Figure 5), including a
+backbone for feature processing, a detection branch for detect
+fruits from feature maps, and a ProtoNet branch for mask
+generation. ResNet-50 is used as the backbone of network as
+it can achieve balance performance on both of accuracy and
+computational efﬁciency. A PANet is used in detection branch
+to fuse feature maps from C3, C4, and C5 of the backbone.
+Then, each level of output of PANet has a detection head to
+predict class, Bounding Box (bbox), and ProtoNet coefﬁcients
+of each object. ProtoNet predicts instance masks of objects
+follows the principle of semantic segmentation network, which
+generates a feature map mask of size of H × W × k, where
+H and W are height and width of the feature map, k is the
+number of mask coefﬁcients. The assembly of objects’ mask
+is operated by matrix multiplication and sigmoid activation,
+M = σ(mask · CT )
+(17)
+where C is the n×k mask coefﬁcients for n objects. The ﬁnal
+instance segmentation mask of each objects are then cropped
+by using bbox information.
+2) Network Training: The cost function to train the network
+including three parts, which are objects’ conﬁdence loss,
+bounding box localisation loss, and objects’ mask coefﬁcient
+loss. The training cost is formulated as below:
+L =λobj
+X
+1objLobj + λnobj
+X
+(1 −1obj)Lnobj
++ λbbox
+X
+1objLbbox + λmask
+X
+1objLmask
+(18)
+1obj =
+(
 1
-CE
-250
-1.0
-1.0
-0.757
-2
-CE
-500
-1.0
-1.0
-0.803
-3
-WCE
-500
-0.75
-1.25
-0.822
-4
-CE
-1000
-1.0
-1.0
-0.872
-5
-WCE
-1000
-0.85
-1.15
-0.877
-6
-WCE
-1000
-0.75
-1.25
-0.881
-7
-WCE
-1000
-0.65
-1.35
-0.865
-1 CE stands for Cross Entropy.
-2 No. pts is the minimum fruit points in training samples.
-The results of tests 1, 2, and 4 show that the imbalance
-class problem would severely affect the performance of the
-model, while under-sampling in the data pre-processing step
-could largely alleviate this training degeneration. After the
-US on training data (test-4), the segmentation accuracy of
-the model is signiﬁcantly improved compared to the training
-result without US (test-1). Tests 2 and 3, 4 and 6 compare the
-network performance by respectively using cross-entropy loss
-and WCE. Results show that WCE can improve approximately
-1% to 2% compared to the network trained by the cross-
-entropy. Tests 5 to 7 compare the network performance by
-using different weight factors in WCE. Results show that dif-
-ferent values in WCE can also inﬂuence network performance.
-For the small-scale dataset, we set αnobj and αobj respectively
-as 0.75 and 1.25 since the network achieves the best accuracy
-when using these values.
-We further evaluate the training strategies on a large
-(M=8192) dataset. The network setup follows the same setup
-as the small-scale dataset. The number of centroids points in
-the sampling step is set as 2048 and the training batch size
-is 6. In the middle-scale training dataset, the average points
-number of fruits in a point cloud is 1800 (minimum fruits point
-in training samples is 1500) and the total point number of the
-point cloud is 8192. The experiments are shown in Table VI.
-Tests 1, 2, and 3 evaluate the network performance by
-setting a different minimum number of fruit points in data pre-
-processing. Results show that imbalance class problems could
-lead to severe performance degeneration in large-scale dataset
-training. Increasing the minimum number of fruits point in
+obj
+0
+nobj
+(19)
+where Lobj and Lnobj are the objects’ conﬁdence loss, Lbbox
+and Lmask are respectively object mask coefﬁcient loss and
+objects’ mask coefﬁcient loss. During the training, We set λobj
+,λnobj, λbbox, and λmask as 2.5, 1.0, 1.0, 1.0, respectively. We
+train the network by using Adam-optimizer for 100 epoches.
+Since the weights in backbone is pre-trained by using the
+ImageNet dataset, we frozen the weights of the backbone in
+the ﬁrst 70 epoches and train the whole network weights in
+the last 30 epoches. The learning rate and decay rate are set
+as 0.001 and 0.9, respectively, in the training.
+Fig. 6.
+(a) apple instance segmentation on RGB image, (b)Projection of
+instance masks on point cloud, while green box indicates the detected apples
+3) Fruit Localisation: During the vision perception, the
+LiDAR-RGB sensor can output the matched color and depth
+images by using the LiDAR-RGB fusion algorithm which is
+presented in previous section. From the network inference, we
+obtained a list of detected fruits with their correspond mask on
+the RGB image. With the information of the fruits’ position
+and shape on color image, the instance mask of each fruit is
+projected onto the matched point cloud. Therefore, the point
+cloud of each fruits can be computed, as shown in Figure
+6. In another word, the instance mask pixels of a object Oi
+in image are CQmask
+i
+. We ﬁnd the correspond pixels from
+the matched depth image and compute their position CP mask
+i
+in 3D space. Since this work focus on evaluation of fruit
+localisation accuracy, we use the centre of the point cloud
+of each fruits as the location of the fruits. In real picking
+cases, further grasping pose estimation need to be considered
+to ensure that robot can successfully access and detach the
+fruits from the tree. A Z-score algorithm is used to reject
 
-TABLE VI
-COMPARISON OF TRAINING STRATEGY ON NETWORK PERFORMANCE IN
-LARGE-SCALE DATASET
-Index
-N1
-Method
-No. pts2
-αnobj
-αobj
-mIoU
-1
-2048
-CE3
-500
-1.0
-1.0
-0.667
-2
-2048
-CE
-1000
-1.0
-1.0
-0.712
-3
-2048
-CE
-1500
-1.0
-1.0
-0.767
-4
-1024
-CE
-1500
-1.0
-1.0
-0.722
-54
-3072
-CE
-1500
-1.0
-1.0
-0.784
-6
-2048
-WCE
-1500
-0.75
-1.25
-0.786
-7
-2048
-WCE
-1500
-0.60
-1.40
-0.797
-8
-2048
-WCE
-1500
-0.50
-1.50
-0.808
-9
-2048
-WCE
-1500
-0.40
-1.60
-0.793
-1 N is the centroid number in sampling step.
-2 No. pts is the minimum fruit points in training samples.
-3 CE stands for Cross Entropy.
-4 Training batch size set as 3.
-training samples could improve the network performance to a
-certain degree. Tests 3, 4, and 5 evaluate the network perfor-
-mance in the large-scale dataset by using different centroids
-numbers in the sampling step. Results show that an increase of
-centroids can improve the ﬁnal segmentation accuracy but the
-computational consumption also grows. Therefore, we choose
-the centroids number N = 2048 as it achieves the balance
-between performance and computational efﬁciency. Tests 6 to
-9 evaluate the network performance by using the WCE during
-the training process. Results show that WCE can improve
-the training results by re-weighting the loss. The proposed
-Network achieves the best accuracy (mIoU = 0.808) when
-αnobj and αobj are set as 0.5 and 1.5, respectively.
-D. Segmentation in Orchards
+outliers in CP mask
+i
+due to measurement errors, such as depth
+discontinuous error. The estimated location RpO
+i ∈R3 of the
+fruits then be transformed into the robotic frame by using the
+equation as below:
+RpO
+i = T R
+C
+C ¯P mask
+i
+(20)
+where T R
+C ∈SE(3) is the transformation matrix of camera
+frame in the robotic frame.
+E. Implementation Details
+Both LiDAR and camera are connected to a Nvidia TX2,
+which forms the centre control of the proposed vision system.
+The communication between the LiDAR-RGB sensor and TX2
+is achieved by Robotic Operation System (ROS) in Melodic
+version. The data communication between the TX2 and the
+LiDAR is achieved by using the Livox-ROS-SDK. The data
+communication between the TX2 and the Intel Realsense-
+D455 is achieved by using the Realsense-ROS-SDK. The
+LiDAR-RGB fusion and calibration are also programmed and
+running in ROS-melodic. The vision perception network model
+is programmed by using the Tensorﬂow-1.15. The training of
+the network are performed by using a GTX-1080Ti GPU and
+inference is running on the TX2.
+III. EXPERIMENTS AND RESULTS
+A. Experimental Setup
+In this study, Livox Mid 70 and Realsense D455 camera
+are utilized as the LiDAR and RGB module, respectively.
+They are attached together to maintain relatively ﬁxed position.
+After the attachment, the RGB camera is calibrated to obtain
+the intrinsic parameters and distortion coefﬁcients. Next, two
+extrinsic calibration methods are utilized to ﬁnd the extrinsic
+matrix between the Lidar and RGB modules. Lastly, three
+experiments are conducted to evaluate the accuracy of two
+extrinsic calibration methods, the accuracy of depth perception
+by LiDAR-camera system in different indoor scenes, and the
+fruit detection accuracy in the natural orchard environment,
+respectively.
+B. Camera Intrinsic Calibration
+Fig. 7. Calibration of RGB module with checkerboard
+The calibration on the RGB camera is ﬁrstly required to ob-
+tain its intrinsic parameters, including the 3×3 camera intrinsic
+matrix and the distortion coefﬁcients, which is performed via
+the MATLAB calibration toolbox. A checkerboard with 10×7
+grids is placed on the cardboard, which is then placed within
+the FoV of RGB module. The image of the checkerboard is
+then taken for image processing, after which the checkerboard
+is moved and re-orientated to capture abundant image infor-
+mation. More than 20 images are taken and imported into the
+camera calibrator toolbox of MATLAB. After checking the
+corner extraction results, an automatic intrinsic calibration is
+conducted ending up with results shown in Figure 7.
+Fig. 8.
+(a) The relative position of RGB module and captured images, (b)
+The reprojection error of camera intrinsic calibration
+The relative positions and orientations between the captured
+images and the camera are in Figure 8. Additionally, a repro-
+jection error can be visualized in Figure 8, from which the
+maximum reprojection error can be observed to be less than
+0.09 pixel. This small reprojection error is critical to guarantee
+an accurate intrinsic calibration for RGB camera. Finally, the
+intrinsic matrix and the distortion coefﬁcients can be exported
+and utilized in the following experiments.
+C. Comparison of LiDAR-RGB Extrinsic Calibration Methods
+This section details the experimental results of the extrinsic
+calibration. Note that with the relatively ﬁxed position, an
+initial extrinsic matrix between the LiDAR and camera can
+be estimated from the CAD ﬁle. For further data collection
+with the integration of LiDAR and camera, it is placed on
+a tripod and started simultaneously to capture both the RGB
+image and point cloud data. The collection time for each scene
+is set to be 15 seconds to allow sufﬁcient numbers of stack
+frames of the point clouds collected for calibration. Different
+setups are utilized to conduct the target-based and target-less
+calibration methods, respectively.
+Fig. 9.
+Target-based calibration: (a) RGB image of the checkerboard, (b)
+Projection of depth information on RGB image, (c) colored point cloud
+For the target-based method, a checkerboard is used as the
+reference target, with a dimension of the inner corners as 7×5
+
+and an inner grid size of 5 cm. Various placements of checker-
+board within the common FoV are conducted, including a
+different range of positions and orientations. To guarantee a
+successful calibration, some requirements on the selection and
+placement of the target need to be noticed beforehand. The
+checkerboard needs to be printed on white paper that is ﬁxed
+on a non-deformed surface. It should hang in the air with a
+lower edge parallel to the ground. The ﬁnal calibration results
+are visualized in two ways: projecting the point clouds on top
+of the RGB image Figure 9 (b), and providing the point clouds
+with colour information Figure 9 (c). The obtained extrinsic
+matrix is recorded for further accuracy evaluation.
 Fig. 10.
-Details of the semantic segmentation on point cloud using the
-proposed method.
-After evaluation of the key network parameters and train-
-ing strategies respectively in the small-scale and large-scale
-datasets, this section evaluates the network performance on
-semantic segmentation of the complete point cloud. The input
-point cloud is ﬁrstly subdivided into small blocks by the Octree
-algorithm, each node should contain a point that less than
-the given threshold. We respectively use the network trained
-by using the small-scale dataset (network-S) and large-scale
-dataset (network-L). A complete point cloud of a scene after
-octree subdivision always contains 15 to 30 local blocks for
-network-L to process, and a double number of blocks for
-network-S to process. The accuracy of the network-S and
-network-L on complete scene segmentation is shown in Table
-VII.
-TABLE VII
-ACCURACY EVALUATION OF NETWORK ON COMPLETE SCENE
-SEGMENTATION
-Index
+The scene and results for targetless extrinsic calibration with :
+(a)RGB image, (b)Edges extracted from RGB image (blue) and point cloud
+(red), (c)Projection of depth information on RGB image, (d)Colourised point
+cloud with the calibrated extrinsic matrix
+For the targetless-based method, several scenes with abun-
+dant geometrical features are chosen to calibrate the LiDAR-
+camera. It should be noted that there are requirements for
+the selection of scenes for the targetless-based method. For
+instance, scenes with purely cylindrical objects like pillars
+are not suitable due to the plane ﬁtting requirement of edge
+extraction. Besides, the extracted edges need to distribute
+relatively evenly within the FoV to reduce the measurement
+noise. Lastly, edges should distribute in different directions
+instead of one like vertical distribution. The initial extrinsic
+matrix is obtained based on the CAD model and further
+optimized based on the edges matching. A example of LiDAR-
+camera extrinsic calibration with origin RGB image, extracted
+features, depth projection on RGB and colourised point cloud
+by using targetless-based method are shown in Figure 10.
+TABLE I
+COMPARISON OF REPROJECTION ERROR
 Method
-No. blocks1
-mIoU
-1
-Network-S
-28.8
-0.862
-2
-Network-L
-17.4
-0.794
-1 No. blocks is the mean number of subdivided
-blocks of a scene.
-The result shows that both networks trained by small-scale
-and large-scale datasets have a slight accuracy reduction on
-complete scene segmentation compared to their performance
-on the evaluation dataset. The possible reason is due to the
-different distribution of classes between training data and
-the original point cloud. As the utilized data pre-processing
-strategy under-sampling the non-objects classes to improve the
-training efﬁcacy. Overall, the complete scene segmentation by
-using Network-S achieved 86.2% on mIoU. The visualization
-results of the complete scene segmentation are shown in Figure
-9. Figure 10 shows the details of the segmentation result.
-E. Segmentation using RGB-D Cameras
-In our previous study, a LiDAR-Camera sensor and a
-multi-sensor data fusion method are developed to obtain high
-accuracy colorized point cloud from the orchard environ-
-ments. In this work, we demonstrate a pipeline and a deep-
-learning-based network to perform semantic segmentation on
-the colorized point cloud. For comparison, we evaluate the
-performance of the proposed network with or without RGB
-information on data acquired by using the Intel RealSense-
-D455, a stereo-depth camera that has been widely applied in
-many agricultural types of research. We collect the RGB-D
-data of a tree from different distances (0.8m and 2.0m) in
-orchard environments, the resolution of the color and depth
-images are 640 × 480. The accuracy of semantic segmentation
-by using Network-S on RGB-D data from Intel RealSense-
-D455 is shown in Table VIII.
-TABLE VIII
-ACCURACY OF NETWORK USING THE RGB-D CAMERA
-Index
-Distance
-mIoUpc
-mIoUfused
-1
-0.8
-0.763
-0.797
-2
-1.2
-0.712
-0.752
-3
-1.6
-0.654
-0.704
-4
-2.0
-0.524
-0.627
-Results show that the accuracy of the segmentation drops
-dramatically with the increase in the distance between the
-sensor and the tree. Also, the network using fused data shows
-better accuracy compared to the network that only uses the
-point cloud, which shows that color information can help
-improve the accuracy of the segmentation when the point cloud
-has limited quality. These results also indicate that network
+AVG/pixel
+NRE/pixel
+Target-based
+2.03
+0.78
+Target-less
+1.91
+0.66
+‘
+Except for this qualitative evaluation, Normalized Repro-
+jection Error (NRE) is applied to evaluate the accuracy of
+both target-based and target-less based methods qualitatively.
+To be speciﬁc, we re-project the estimated 3D corners of
+checkerboard to 2D space with the obtained intrinsic and
+extrinsic matrix. The corners from RGB images are utilized
+as the pseudo ground truth to calculate the reprojection error.
+Additionally, the reprojection error is sensitive to the scanning
+distance, for example, the error will be smaller than actual
+value if it is placed too far. So, the error is normalized by
+multiplying the ratio between scanning distance and maximum
+distance to eliminate the effect of scanning distance [15].
+Note that different extrinsic matrix are utilized from target-
+based and target-less calibration methods, with the same
+camera intrinsic matrix. Finally, the results for the NRE are
+summarised as follows.
+D. Evaluation of LiDAR-camera Fusion
+After the calibration as mentioned above, the calculated
+intrinsic parameters of the camera and extrinsic matrix of
+the LiDAR-camera are used to fuse the colour and depth
+streams. This section evaluates and compares the accuracy of
+depth sensing by using the proposed LiDAR-camera and the
+Realsense-D455, respectively. Realsense D455 depth camera is
+a stereo depth camera that has been widely utilized to perform
+depth-sensing in many robotic applications. Firstly, Table II
+gives the conﬁgurations of the LiDAR and Realsense D455.
+TABLE II
+COMPARISON OF TECHNICAL SPECIFICATIONS OF DEPTH SENSORS USED
+IN THIS STUDY.
+Sensor model
+RS-D455
+Livox-Mid70
+Detection range/m
+0.6-6
+0.2-201
+Depth image (pixel)
+up to 1280x720
+-
+Point rate
+-
+100,000 points/s
+Range error (0.6-4m)
+≤2%
+-
+Range error (0.2-20m)
+-
+≤2cm
+FoV (H×W)
+87◦× 58◦
+70.4◦circular
+1 : This can go up to 260m @ 80% reﬂectivity. 0.2-20m is to
+keep error less than 2cm
+Realsense-D455 has a higher point rate and a much smaller
+detection range compared to the Livox-Mid70. In the fruit
+detection and localisation task during robotic harvesting, a
+detection range of up to 6 meters is sufﬁcient. Regarding the
+sensing error in the distance, Livox-Mid70 has better accuracy
+than the Realsense-D455. The depth-sensing performance is
+qualitatively evaluated by visualising the fusion results of
+depth and colour streams from the LiDAR and camera. Indoor
+and outdoor environments are included in this experiment. The
+fusion results of depth sensing and colour information of a fake
+apple tree in an indoor scene by using Realsense-D455 and
+LiDAR-camera are respectively shown in Figure 11 and Figure
+12. The fusion results of depth sensing and color information
+in real orchard by using Realsense-D455 and LiDAR-camera
+are respectively shown in Figure 13 and Figure 14.
+Figures 11 and 12 show the fusion result of a fake apple
+tree in the indoor environments at the distance of 1.8 meters.
 
-using fused data has better robustness to deal with data quality
-degeneration in real implementations.
-F. Comparison with 2D segmentation method
-We further compare the segmentation accuracy of our
-proposed method and the SOTA 2D segmentation network
-Deeplab-v3+ 2. The training data of 2D segmentation is from
-the 2D RGB image of each fused data. We use 76 images to
-train the network, 38 images for validation during training, and
-the rest 38 for evaluation. Image augmentation such as color
-adjustment in HSV space, translation, and rotation is applied.
-The training resolution is 512 × 512. We used ResNet51 as
-the backbone and pre-trained models from Pascal VOC and
-Cityscapes datasets. The mIoU of the trained network on 2D
-segmentation is 0.8075. The point cloud colorized by using
-segmentation results from 2D segmentation methods is shown
-in Figure 11.
-Fig. 11. The segmentation results of using the 2D segmentation method, (a)
-segmentation result of the complete scene; (b) details of the segmentation re-
-sult; (c) details of the segmentation result using the proposed 3D segmentation
-method.
-It can be seen that 3D segmentation methods achieve better
-accuracy on fruit segmentation compared to 2D segmentation.
-As shown in Figure 11, laser beam divergence angle may
-cause fake points near the objects’ edge. Due to lack of
-information from the point cloud, 2D segmentation methods
-have limited performance when dealing with this inherent
-defect of LiDAR data, while 3D segmentation capability in
-this condition. Meanwhile, 3D segmentation methods can
-also be easily integrated with SLAM, a common framework
-to obtain the point cloud models of large-scale scenes. 3D
-segmentation network can be directly applied to the colorized
-3D point clouds. This means the segmentation task takes both
-geometry and color information into the feature extraction
-process, which can potentially compensate for the error caused
-by the noisy outlier points in 3D point clouds and by the
-Lidar-camera extrinsic calibration. However, 2D segmentation
-is conducted on RGB images initially and requires an accurate
-calibration between 2D to 3D data to achieve promising
-performance.
-IV. DISCUSSIONS
-This study proposes a deep-learning-based point cloud
-segmentation network to perform semantic segmentation on
-2https://github.com/VainF/DeepLabV3Plus-Pytorch
-fused colorized point cloud data acquired using the LiDAR-
-Camera sensor. An octree subdivision algorithm is used to
-subdivide the complete scene into multiple blocks to perform
-segmentation on a large number of points (100k - 200k points).
-The point cloud from each block is processed by the net-
-work and then added together to form the ﬁnal segmentation
-results. Multi-sensor data fusion and network training under
-imbalance class distribution are two critical problems that need
-to be solved in point cloud segmentation network training.
-For multi-sensor data fusion, we analyze the architecture of
-the PointNet++ model and develop a later-fusion strategy to
-fuse color features into point cloud processing, which largely
-improves the segmentation accuracy of the model. For network
-training under imbalance class distribution, we utilize the
-under-sampling strategy in data pre-processing and WCE loss
-function during training, which secures the network training
-performance in dealing with the imbalance class training
-problem.
-In the experiments, we analyze the effect of different
-sampling and grouping strategies in SA block within the
-pointNet++ architecture. Results show that the insufﬁcient
-number of centroids and grouping of neighbour points may
-lead to network performance degeneration. In contrast, the
-excessive number of centroids and grouping of neighbour
-points can largely increase the computational requirements.
-After that, we evaluate the network performance by applying
-different fusion designs in network architecture. The results
-show that the proposed later-stage fusion can largely improve
-the network accuracy using fused data from LiDAR-Camera.
-Moreover, we analyze the imbalance class problem in network
-training. The under-sampling and WCE are utilized to enhance
-the training efﬁcacy of the network. Overall, with proper
-design of the network architecture and training strategies,
-the proposed Fuse-PointNet++ model achieves 0.881 on the
-evaluation dataset and 0.862 on complete scene segmentation
-from the real orchard.
-For comparison, we use the 3D segmentation network on
-fused data from an RGB-D camera. Results show that the
-accuracy of the network on the RGB-D camera shows a
-large reduction. The possible reason for this performance
-degeneration is the low accuracy of the point cloud data from
-the RGB-D camera. This result indicates that an accurate input
-point clout is essential to secure the performance of the point-
-based segmentation network. Furthermore, we compare the
-segmentation performance using the SOTA 2D segmentation
-method. Results show that 3D segmentation achieves a better
-score on accuracy. Meanwhile, since 3D segmentation methods
-can efﬁciently learn the geometrical features by the multi-scale
-grouping operations, our proposed Fuse-PointNet++ model has
-better capability to classify noise points near the edge of the
-objects.
-V. CONCLUSION
-In this work, a deep-learning-based 3D segmentation net-
-work is presented to perform fruit segmentation on a high-
-resolution point cloud. The proposed method can efﬁciently
+Fig. 11.
+The in-lab tests of fake apple trees by Realsense D455: (a) The
+recorded depth map, (b) The zoom-in view of colored 3D tree
+Fig. 12.
+The in-lab tests of fake apple trees by LiDAR-Camera: (a) front
+view, (b) side view, (c) cropped view, (d) zoom-in view
+It can be seen that the region of the fake trees can be clearly
+observed from the point cloud of both Realsense-D455 and the
+LiDAR-camera. The point cloud from LiDAR-camera has ﬁne
+geometrical details on the fruits, branches, and leaves. Their
+shape can be clearly seen in the (c) and (d) of Figure 12. In
+contrast, the fruits’ shape in the point cloud from Realsense-
+D455 (as shown in Figure 11 (b)) is distorted, and the edge
+between the fruits and other components cannot be clearly
+distinguished. Figures 13 and 14 show the fusion results in a
+real orchards at the distance of 1.5-2 meters. At this condition,
+the quality of the fused point cloud from Realsense-D455
+are severely affected. The shape of the apple trees and fruits
+are severely distorted as shown in Figure 13 (b). Although
+the quality of the fused point cloud from the LiDAR-camera
+is also affected, the geometric information of the fruits and
+surrounding objects are still well preserved, as shown in Figure
+14 (b).
+Fig. 13.
+The apple tree detected by Realsense D455 in Fankhauser apple
+farm (a)depth map, (b)colored point cloud with diffuse lighting
+Fig. 14.
+The apple tree detected by Realsense D455 in Fankhauser apple
+farm: (a) colored point cloud, (b) zoom-in view of colored point cloud
+E. Demonstration in Fruit Localisation
+This section demonstrate the utilisation of the proposed
+LiDAR-RGB sensor on a robotic fruit picking system, which
+is developed in our previous works for the autonomous robotic
+harvesting of apple in orchards, as shown in Figure 15.
+Fig. 15. Monash Apple Retrieving System (MARS) operates in Fankhauser
+apple orchard, Melbourne.
+LiDAR-RGB sensor is used as the ”eye” of the system to
+perceiving the environments. Vision perception algorithms
+are used to detect and localise the apples from the input
+sensory data, which forms a critical step before manipulator
+picking the apple. By using the methods that is described in
+Section II-D, a measurement model for estimation of the fruits’
+location can be expressed as:
+yk = xk + nk, k = 0 · · · K
+(21)
+where nk is the measurement noise of the fruit location, which
+can be expressed as a zero-mean Gaussian distribution, as
+below:
+nk ∈R3 ∼N(0, Rk)
+(22)
+In this experiment, we use det(Rk) to represent the uncertainty
+within the measurement of the fruits’ location. A large value
+of uncertainty means large error are presented within the
+measurements. In contract, measurement with higher accuracy
+will have smaller value on uncertainty. This section evaluates
+the accuracy of fruits’ localisation by respectively using the
+proposed LiDAR-RGB and Realsense-D455 in natural orchard
+environments: Fankhauser Apple Farm located in Melbourne,
+Australia. To eliminate the variables due to other factors such
 
-fuse the features from both objects’ texture and geometrical
-appearances. Meanwhile, the proposed method utilized an
-under-sampling data pre-processing strategy and WCE loss
-function to improve the training performance when dealing
-with imbalance class problems. Our method is evaluated in
-both the evaluation dataset and complete scene segmentation,
-which are collected by using the LiDAR-Camera sensor in ap-
-ple orchards. Overall, the proposed Fuse-PointNet++ network
-model achieved a mIoU of 0.881 on the evaluation dataset and
-0.862 on complete scene segmentation. Experimental results
-show that our proposed method can perform accurate semantic
-segmentation of fruits in real orchards environments. Future
-work will investigate the feature fusion and network training
-strategies under the imbalance class condition to improve the
-segmentation accuracy on the point cloud.
+Fig. 16.
+Fankhauser apple orchard: (a)colourised point cloud of apple trees from visual sensing, (b) Closer view of the visual sensing results, (c)Visual
+perception to detect the apples and project to colourised point cloud, (d)Closer view of the apple detection and projection
+as ambient light, we collect data from the scenes by using the
+LiDAR-RGB and Realsense-D455 with the same view-angles.
+TABLE III
+COMPARISON OF DEPTH SENSING ACCURACY OF FUSED SENSOR AND RS
+D455
+Sensing Distance
+Standard Deviation (cm)
+LiDAR-RGB
+RS-D455
+0.5 m
+0.245
+1.006
+0.8 m
+0.236
+1.051
+1.2 m
+0.227
+1.175
+1.5 m
+0.204
+1.238
+1.8 m
+0.275
+1.360
+The two types of vision sensors are placed at about 0.5m,
+1.2m, and 1.8m in front of the tree trunk to evaluate the
+accuracy of the measurements with the increasing of the
+sensing distance. The standard deviation (SD) of the uncer-
+tainty on the fruit’s location is listed in Table III. It can be
+found that the LiDAR-RGB sensor achieves much smaller
+error in the measurement of the fruit localisation, which is
+one-ﬁfth compared with the error of Realsense camera at a
+maximum sensing distance of 1.8 m. Additionally, the SD is
+similar for the LiDAR-RGB measurement within the proposed
+sensing range. On the contrary, the SD for Realsense camera’s
+measurement increases with respect to the scanning distance.
+This is because the scanning accuracy of D455 is proportional
+to the scanning distance in the depth direction and its accuracy
+on 2D pixel frame is also coupled with the depth distance.
+The visualisations of the fruit recognition and localisation at
+around 1.5 m are shown in Figures 16 and 17.
+F. Discussion
+The experimental results clearly show that LiDAR-camera
+can perceive accurate depth and context information of the
+scene compared to the conventional stereo depth camera, such
+as Realsense-D455. The key to achieving successful visual
+sensing of the scene requires association between depth and
+context data from the LiDAR and camera correctly. Therefore,
+a good estimation of the extrinsic matrix between sensors
+is essential. Two SOTA automatic LiDAR-camera extrinsic
+calibration methods are evaluated in this study. Firstly, both
+work extracts and match the features from the scenes and then
+calculate the extrinsic matrix by minimising the reprojection
+error between the corresponding features. From the experimen-
+tal results, it can be seen that both methods achieve similar
+accuracy on extrinsic calibration. Comparatively, targetless-
+based calibration shows better convenience since it does not
+
+Fig. 17. Colourised point clouds of apple trees in Tatura Smartfarm, Australia
+requires a speciﬁc target. Meanwhile, targetless-based calibra-
+tion can extract features that are evenly distributed in the
+scenes, which does not require various placements of the
+reference target within the FoV.
+From the comparison of the colourised point cloud from
+the LiDAR-camera and Realsense-D455, it can be obviously
+seen that LiDAR-camera can obtain a point cloud with better
+quality in depth sensing. The geometries of the objects, such
+as the branches and fruits, within the scenes can be clearly
+distinguished from the point cloud sensed by the LiDAR-
+camera. In comparison, most of these geometries are severely
+distorted in point cloud from the Realsense-D455. The com-
+plex geometries and various ambient illumination lead to a
+signiﬁcant challenge in perceiving the accurate structure of
+scenes in an outdoor natural orchard environment. Under this
+condition, LiDAR-camera shows much better accuracy and
+robustness than the stereo depth camera. We also notice that
+the point cloud at the centre region of the LiDAR-camera has
+better accuracy than the point cloud at the side. This drawback
+is due to bleeding points caused by laser beam divergence
+angle. A potential solution to ﬁx this drawback can be achieved
+by applying multiple LiDAR and only using the point cloud of
+the centre region from each LiDAR to perform depth sensing.
+Finally, the LiDAR-camera demonstrates superior accuracy
+in fruit localisation for a harvesting robot using a deep-learning
+detector. The accuracy of the fruit localisation is crucial to
+secure the success rate and efﬁciency of the robotic harvesting
+in the orchard. Meanwhile, a better accuracy on depth sensing
+can also improve the robotic harvesting strategies by: (1) a
+better understanding of the geometries of the task space in the
+real environment, and (2) a more accurate estimation of the
+proper grasping estimation to avoid collision between robot
+and trees, which will be concluded in our future works.
+IV. CONCLUSION
+This study presented a LiDAR-camera fusion-based visual
+sensing and perception strategy to perform accurate fruit lo-
+calisation for a harvesting robot in real orchards environments.
+Two SOTA extrinsic calibration methods, respectively target-
+based method and targetless-based method, are comprehen-
+sively evaluated to calculate the accurate extrinsic matrix
+between the LiDAR and camera. After calibration, the point
+clouds and images are fused to perform fruit localisation using
+a one-stage instance segmentation network. The experimental
+results show that LiDAR-camera can perform precise and
+robust depth-sensing in the orchard environments. Meanwhile,
+introduce of LiDAR-camera largely improve the accuracy and
+robustness of the fruit localisation. The standard deviations
+of fruit localisation by using LiDAR-camera at 0.5m, 1.2m,
+and 1.8m are respectively 0.245, 0.227, and 0.275 m, which
+signiﬁcantly outperforms the results by using the Realsense-
+D455. Future work will focus on further improving the
+LiDAR-camera extrinsic calibration accuracy. Moreover, the
+point cloud close to the centre of the LiDAR is more accurate,
+which indicates that the visual sensing can be enhanced by
+fusing LiDARs from multiple views.
+ACKNOWLEDGEMENT
+We gratefully acknowledge the ﬁnancial support from Aus-
+tralian Research Council (ARC ITRH IH150100006).
 REFERENCES
-[1] X. Wang, H. Kang, H. Zhou, W. Au, and C. Chen, “Geometry-aware fruit
-grasping estimation for robotic harvesting in apple orchards,” Computers
-and Electronics in Agriculture, vol. 193, p. 106716, 2022.
-[2] H. Zhou, X. Wang, W. Au, H. Kang, and C. Chen, “Intelligent robots for
-fruit harvesting: Recent developments and future challenges,” Precision
-Agriculture, pp. 1–52, 2022.
-[3] F. Westling, J. Underwood, and M. Bryson, “A procedure for automated
-tree pruning suggestion using lidar scans of fruit trees,” Computers and
-Electronics in Agriculture, vol. 187, p. 106274, 2021.
-[4] A. Scalisi, L. McClymont, J. Underwood, P. Morton, S. Scheding, and
-I. Goodwin, “Reliability of a commercial platform for estimating ﬂower
-cluster and fruit number, yield, tree geometry and light interception in
-apple trees under different rootstocks and row orientations,” Computers
-and Electronics in Agriculture, vol. 191, p. 106519, 2021.
-[5] C. R. Qi, H. Su, K. Mo, and L. J. Guibas, “Pointnet: Deep learning on
-point sets for 3d classiﬁcation and segmentation,” in Proceedings of the
-IEEE conference on computer vision and pattern recognition, 2017, pp.
-652–660.
-[6] Z. Zhuang, R. Li, K. Jia, Q. Wang, Y. Li, and M. Tan, “Perception-aware
-multi-sensor fusion for 3d lidar semantic segmentation,” in Proceedings
-of the IEEE/CVF International Conference on Computer Vision, 2021,
-pp. 16 280–16 290.
-[7] P. Wang, P. Chen, Y. Yuan, D. Liu, Z. Huang, X. Hou, and G. Cottrell,
-“Understanding convolution for semantic segmentation,” in 2018 IEEE
-winter conference on applications of computer vision (WACV).
-IEEE,
-2018, pp. 1451–1460.
-[8] A. Valada, J. Vertens, A. Dhall, and W. Burgard, “Adapnet: Adaptive
-semantic segmentation in adverse environmental conditions,” in 2017
-IEEE International Conference on Robotics and Automation (ICRA).
-IEEE, 2017, pp. 4644–4651.
-[9] S. Asgari Taghanaki, K. Abhishek, J. P. Cohen, J. Cohen-Adad, and
-G. Hamarneh, “Deep semantic segmentation of natural and medical
-images: a review,” Artiﬁcial Intelligence Review, vol. 54, no. 1, pp. 137–
-178, 2021.
-[10] D. Feng, C. Haase-Sch¨utz, L. Rosenbaum, H. Hertlein, C. Glaeser,
-F. Timm, W. Wiesbeck, and K. Dietmayer, “Deep multi-modal object
-detection and semantic segmentation for autonomous driving: Datasets,
-methods, and challenges,” IEEE Transactions on Intelligent Transporta-
-tion Systems, vol. 22, no. 3, pp. 1341–1360, 2020.
-[11] G. Lin, Y. Tang, X. Zou, and C. Wang, “Three-dimensional recon-
-struction of guava fruits and branches using instance segmentation and
-geometry analysis,” Computers and Electronics in Agriculture, vol. 184,
-p. 106107, 2021.
-[12] R. Yamashita, M. Nishio, R. K. G. Do, and K. Togashi, “Convolutional
-neural networks: an overview and application in radiology,” Insights into
-imaging, vol. 9, no. 4, pp. 611–629, 2018.
-[13] J. Long, E. Shelhamer, and T. Darrell, “Fully convolutional networks
-for semantic segmentation,” in Proceedings of the IEEE conference on
-computer vision and pattern recognition, 2015, pp. 3431–3440.
-[14] O. Ronneberger, P. Fischer, and T. Brox, “U-net: Convolutional networks
-for biomedical image segmentation,” in International Conference on
-Medical image computing and computer-assisted intervention. Springer,
-2015, pp. 234–241.
-[15] L.-C. Chen, G. Papandreou, F. Schroff, and H. Adam, “Rethinking
-atrous convolution for semantic image segmentation,” arXiv preprint
-arXiv:1706.05587, 2017.
-[16] K. Zou, X. Chen, Y. Wang, C. Zhang, and F. Zhang, “A modiﬁed u-net
-with a speciﬁc data argumentation method for semantic segmentation
-of weed images in the ﬁeld,” Computers and Electronics in Agriculture,
-vol. 187, p. 106242, 2021.
-[17] Z. Wu, R. Yang, F. Gao, W. Wang, L. Fu, and R. Li, “Segmentation of
-abnormal leaves of hydroponic lettuce based on deeplabv3+ for robotic
-sorting,” Computers and Electronics in Agriculture, vol. 190, p. 106443,
-2021.
-[18] Y. Peng, A. Wang, J. Liu, and M. Faheem, “A comparative study of
-semantic segmentation models for identiﬁcation of grape with different
-varieties,” Agriculture, vol. 11, no. 10, p. 997, 2021.
-[19] H. Wei, E. Xu, J. Zhang, Y. Meng, J. Wei, Z. Dong, and Z. Li, “Bushnet:
-Effective semantic segmentation of bush in large-scale point clouds,”
-Computers and Electronics in Agriculture, vol. 193, p. 106653, 2022.
-[20] Y. Chen, Y. Xiong, B. Zhang, J. Zhou, and Q. Zhang, “3d point cloud
-semantic segmentation toward large-scale unstructured agricultural scene
-classiﬁcation,” Computers and Electronics in Agriculture, vol. 190, p.
-106445, 2021.
-[21] Q. Yu, H. Yang, Y. Gao, X. Ma, G. Chen, and X. Wang, “Lfpnet:
-Lightweight network on real point sets for fruit classiﬁcation and
-segmentation,” Computers and Electronics in Agriculture, vol. 194, p.
-106691, 2022.
-[22] C. R. Qi, L. Yi, H. Su, and L. J. Guibas, “Pointnet++: Deep hierarchical
-feature learning on point sets in a metric space,” Advances in neural
-information processing systems, vol. 30, 2017.
-[23] H. Kang, X. Wang, and C. Chen, “Accurate fruit localisation for robotic
-harvesting using high resolution lidar-camera fusion,” arXiv preprint
-arXiv:2205.00404, 2022.
-[24] X. Yuan, L. Xie, and M. Abouelenien, “A regularized ensemble frame-
-work of deep learning for cancer detection from multi-class, imbalanced
-training data,” Pattern Recognition, vol. 77, pp. 160–172, 2018.
-[25] C. Yuan, X. Liu, X. Hong, and F. Zhang, “Pixel-level extrinsic self cal-
+[1] J. P. Vasconez, G. A. Kantor, and F. A. A. Cheein, “Human–robot
+interaction in agriculture: A survey and current challenges,” Biosystems
+engineering, vol. 179, pp. 35–48, 2019.
+[2] H. Zhou, X. Wang, W. Au, H. Kang, and C. Chen, “Intelligent robots
+for fruit harvesting: Recent developments and future challenges,” 2021.
+[3] S. Mehta and T. Burks, “Vision-based control of robotic manipulator for
+citrus harvesting,” Computers and Electronics in Agriculture, vol. 102,
+pp. 146–158, 2014.
+[4] Y. Si, G. Liu, and J. Feng, “Location of apples in trees using stereoscopic
+vision,” Computers and Electronics in Agriculture, vol. 112, pp. 68–74,
+2015.
+[5] H. Kang and C. Chen, “Fruit detection, segmentation and 3d visualisa-
+tion of environments in apple orchards,” Computers and Electronics in
+Agriculture, vol. 171, p. 105302, 2020.
+
+[6] Y. Liu, J. Jiang, J. Sun, L. Bai, and Q. Wang, “A survey of depth
+estimation based on computer vision,” in 2020 IEEE Fifth International
+Conference on Data Science in Cyberspace (DSC).
+IEEE, 2020, pp.
+135–141.
+[7] R. Horaud, M. Hansard, G. Evangelidis, and C. M´enier, “An overview of
+depth cameras and range scanners based on time-of-ﬂight technologies,”
+Machine vision and applications, vol. 27, no. 7, pp. 1005–1020, 2016.
+[8] Z. Said, K. Sundaraj, and M. Wahab, “Depth estimation for a mobile
+platform using monocular vision,” Procedia Engineering, vol. 41, pp.
+945–950, 2012.
+[9] T. Luhmann, C. Fraser, and H.-G. Maas, “Sensor modelling and camera
+calibration for close-range photogrammetry,” ISPRS Journal of Pho-
+togrammetry and Remote Sensing, vol. 115, pp. 37–46, 2016.
+[10] H. Zhong, H. Wang, Z. Wu, C. Zhang, Y. Zheng, and T. Tang, “A survey
+of lidar and camera fusion enhancement,” Procedia Computer Science,
+vol. 183, pp. 579–588, 2021.
+[11] M. B. Maru, D. Lee, K. D. Tola, and S. Park, “Comparison of depth
+camera and terrestrial laser scanner in monitoring structural deﬂections,”
+Sensors, vol. 21, no. 1, p. 201, 2020.
+[12] X. Liu and F. Zhang, “Extrinsic calibration of multiple lidars of small
+fov in targetless environments,” IEEE Robotics and Automation Letters,
+vol. 6, no. 2, pp. 2036–2043, 2021.
+[13] C. Yuan, X. Liu, X. Hong, and F. Zhang, “Pixel-level extrinsic self cal-
 ibration of high resolution lidar and camera in targetless environments,”
 IEEE Robotics and Automation Letters, vol. 6, no. 4, pp. 7517–7524,
 2021.
+[14] K. El Madawi, H. Rashed, A. El Sallab, O. Nasr, H. Kamel, and
+S. Yogamani, “Rgb and lidar fusion based 3d semantic segmentation for
+autonomous driving,” in 2019 IEEE Intelligent Transportation Systems
+Conference (ITSC).
+IEEE, 2019, pp. 7–12.
+[15] J. Cui, J. Niu, Z. Ouyang, Y. He, and D. Liu, “Acsc: Automatic
+calibration for non-repetitive scanning solid-state lidar and camera
+systems,” arXiv preprint arXiv:2011.08516, 2020.
+[16] K. Samal, H. Kumawat, P. Saha, M. Wolf, and S. Mukhopadhyay,
+“Task-driven rgb-lidar fusion for object tracking in resource-efﬁcient
+autonomous system,” IEEE Transactions on Intelligent Vehicles, 2021.
+[17] Y. Ch´en´e, D. Rousseau, P. Lucidarme, J. Bertheloot, V. Cafﬁer, P. Morel,
+´E. Belin, and F. Chapeau-Blondeau, “On the use of depth camera for 3d
+phenotyping of entire plants,” Computers and Electronics in Agriculture,
+vol. 82, pp. 122–127, 2012.
+[18] S. C. Hassler and F. Baysal-Gurel, “Unmanned aircraft system (uas)
+technology and applications in agriculture,” Agronomy, vol. 9, no. 10,
+p. 618, 2019.
+[19] H. Kang, H. Zhou, and C. Chen, “Visual perception and modeling for
+autonomous apple harvesting,” IEEE Access, vol. 8, pp. 62 151–62 163,
+2020.
+[20] H. Kang, H. Zhou, X. Wang, and C. Chen, “Real-time fruit recognition
+and grasping estimation for robotic apple harvesting,” Sensors, vol. 20,
+no. 19, p. 5670, 2020.
+[21] X. Wang, H. Kang, H. Zhou, W. Au, and C. Chen, “Geometry-aware fruit
+grasping estimation for robotic harvesting in apple orchards,” Computers
+and Electronics in Agriculture, vol. 193, p. 106716, 2022.
+[22] C. Neupane, A. Koirala, Z. Wang, and K. B. Walsh, “Evaluation of depth
+cameras for use in fruit localization and sizing: Finding a successor to
+kinect v2,” Agronomy, vol. 11, no. 9, p. 1780, 2021.
+[23] M. Polic, M. Car, F. Petric, and M. Orsag, “Compliant plant exploration
+for agricultural procedures with a collaborative robot,” IEEE Robotics
+and Automation Letters, vol. 6, no. 2, pp. 2768–2774, 2021.

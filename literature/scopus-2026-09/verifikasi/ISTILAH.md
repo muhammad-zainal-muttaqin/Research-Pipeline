@@ -9,19 +9,31 @@ Setiap artikel yang masuk tinjauan diberi satu kelompok.
 
 | Kode | Arti | Jumlah |
 |---|---|---:|
-| C1 | Menghitung buah dari beberapa pengamatan buah yang sama: video, beberapa sisi pohon, atau pindaian berulang. Kelompok inti tinjauan | 195 |
-| C2 | Menghitung buah atau memperkirakan hasil panen dari satu foto | 238 |
-| C3 | Pencitraan tandan sawit, termasuk penilaian mutu di pabrik dan brondolan | 176 |
-| C4 | Menghitung buah per kelas (misalnya per tingkat kematangan) dari satu foto | 49 |
-| C5 | Mendeteksi atau mengukur buah dengan kamera depth, 3D, atau sensor selain kamera biasa | 135 |
-| R | Artikel tinjauan pustaka lain | 120 |
+| C1 | Menghitung buah dari beberapa pengamatan buah yang sama: video, beberapa sisi pohon, atau pindaian berulang. Kelompok inti tinjauan | 199 + 1 |
+| C2 | Menghitung buah atau memperkirakan hasil panen dari satu foto | 243 + 2 |
+| C3 | Pencitraan tandan sawit, termasuk penilaian mutu di pabrik dan brondolan | 171 |
+| C4 | Menghitung buah per kelas (misalnya per tingkat kematangan) dari satu foto | 52 |
+| C5 | Mendeteksi atau mengukur buah dengan kamera depth, 3D, atau sensor selain kamera biasa | 138 + 1 |
+| R | Artikel tinjauan pustaka lain | 122 + 1 |
 | T | Metode dari luar pertanian yang dapat dipakai untuk buah | 88 |
+
+Angka sesudah tanda + adalah kajian dari luar pencarian Scopus (daftar pustaka dan daftar makalah dikenal).
 
 Dua aturan Bu Fatma (5 Oktober 2026):
 
 - **Stereo.** Sepasang foto stereo dihitung satu pengamatan, jadi masuk C5,
   bukan C1. C1 hanya bila buah dihubungkan antarfoto atau antarposisi kamera.
 - **Prioritas.** Bila artikel cocok untuk beberapa kelompok, C1 didahulukan.
+
+Aturan tambahan (diputuskan model, 19 Oktober 2026; rincian di `PROTOKOL.md` §4):
+
+- **Model 3D dari banyak foto.** Bila buah dihitung di model 3D, panorama, atau
+  ortomosaik yang disusun dari banyak foto, artikel masuk C1 dengan label M4.
+- **Gabungan statistik.** Hitungan dari dua foto atau lebih atas tanaman yang sama
+  yang digabung dengan rumus hasil pemasangan masuk C1 (M1). Penjumlahan biasa: M0.
+- **Pelacakan tanpa evaluasi.** Pelacakan buah yang tidak dievaluasi dan tidak
+  menghasilkan hitungan dikeluarkan (E5).
+- **Bahasa.** E7 hanya bila judul dan abstrak juga tidak berbahasa Inggris.
 
 ## Alasan artikel dikeluarkan
 
@@ -33,7 +45,7 @@ Dua aturan Bu Fatma (5 Oktober 2026):
 | E4 | hanya membahas pemetikan oleh robot |
 | E5 | mendeteksi buah tanpa menghitung atau mengevaluasi hasilnya |
 | E6 | memakai sensor yang bukan kamera |
-| E7 | tidak berbahasa Inggris |
+| E7 | tidak memiliki judul dan abstrak berbahasa Inggris |
 
 ## Label artikel C1
 
@@ -54,8 +66,8 @@ Setiap artikel C1 diberi tiga label: mekanisme, akuisisi, dan per kelas.
 Gabungan ditulis dengan tanda tambah, misalnya M3+M4.
 
 **Akuisisi**, yaitu cara foto diambil: V video sepanjang lintasan; D beberapa foto
-dari posisi terpisah; S pindaian 3D atau awan titik; T kunjungan ulang pada
-waktu berbeda; 1 satu foto.
+dari posisi terpisah; S buah dihitung di awan titik atau model 3D; T buah yang sama
+ditautkan antarkunjungan; 1 satu foto.
 
 **Per kelas**: Y bila hitungan dilaporkan per kelas, misalnya per tingkat kematangan.
 

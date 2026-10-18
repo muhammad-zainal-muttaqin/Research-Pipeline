@@ -1,6 +1,6 @@
 # Serah-Terima Teknis Verifikasi `main6`
 
-Diperbarui 17 Oktober 2026. Dokumen ini untuk agen dan penulis yang menjalankan
+Diperbarui 19 Oktober 2026. Dokumen ini untuk agen dan penulis yang menjalankan
 skrip. Peninjau mulai dari [README.md](README.md). Keputusan yang menunggu
 peninjau hanya dicatat di [TUGAS.md](TUGAS.md); arti kode di
 [ISTILAH.md](ISTILAH.md).
@@ -32,8 +32,11 @@ peninjau hanya dicatat di [TUGAS.md](TUGAS.md); arti kode di
   `references6.bib`, `figures/main6/F*`, `ANGKA-NASKAH.md`, serta panduan cek
   yang dibuat skrip (`CEK-TANGAN.md`, `KODE-ULANG.md`, `CEK-FAKTA.md`,
   `PERMINTAAN-PDF.md`).
-- Model untuk *workflow*: Sonnet 5.5, `effort: 'high'` (permintaan pengguna
-  2 Oktober 2026).
+- Model untuk pekerjaan massal per makalah: Haiku 5.5, `effort: 'high'`, tipe agen
+  `Explore` agar konteks repo tidak dimuat (permintaan pengguna, Oktober 2026).
+- Keputusan butir verifikasi diserahkan peninjau kepada model pada 19 Oktober
+  2026. Isian model tetap ditandai di kolom `catatan` atau `catatan_peninjau`, dan
+  `oleh` = `AI-Tugas` di `log_perubahan.csv`.
 
 ## 2. Perintah bangun ulang
 
@@ -60,24 +63,21 @@ cd manuscript/source && tectonic main6.tex && mv main6.pdf ../output/papers/
 
 ## 3. Pekerjaan teknis yang tersisa
 
-1. Menerapkan jawaban peninjau atas butir `TUGAS.md`, lalu bangun ulang (bagian 2)
-   dan perbarui teks naskah, `PROTOKOL.md`, dan `AGENTS.md` §3 bila angka berubah.
-2. `verifikasi_kode_ulang.py --terapkan` setelah peninjau menyetujui butir 3.7.
-   Uji keringnya lolos: 147 baris, 451 sel pada kolom verifikasi, tanpa
-   perubahan kode.
-3. Pemeriksaan ulang eksklusi tahap judul untuk kueri Q2 dan Q4–Q9 (sekitar
+1. Bila Bu Fatma mengisi `cek-5-kode-ulang/sampel_fatma_C1.csv` (butir F.4), hitung
+   kesepakatan dengan `final_*` dan laporkan di naskah (subbagian kode dan
+   keterbatasan).
+2. Pemeriksaan ulang eksklusi tahap judul untuk kueri Q2 dan Q4–Q9 (sekitar
    3.300 rekaman) belum dikerjakan. Pakai `verifikasi_ai2_judul.py` dengan
    mengubah `KUERI_INTI`. Q1 dan Q3 sudah selesai (1.325 rekaman, 19 dimasukkan
    kembali; laporan `hasil-kerja-ai/putaran-kedua/ULANG-JUDUL.md`).
-4. OCR empat PDF jurnal CSAM: `guo2023real`, `tu2026passion`,
-   `wang2024camellia`, `zhu2022identification`.
-5. Ekstrak ulang teks `kang2022accurate` setelah peninjau mengganti PDF-nya
-   (butir 4.4).
-6. Penulisan ulang gaya mengikuti `manuscript/guides/CATATAN-GAYA-TULIS-CONTOH.md`
+3. Teks empat PDF jurnal CSAM (`guo2023real`, `tu2026passion`,
+   `wang2024camellia`, `zhu2022identification`) belum diekstrak; fonnya tanpa
+   pemetaan Unicode. Halamannya sudah dibaca model sebagai citra (pymupdf).
+4. Penulisan ulang gaya mengikuti `manuscript/guides/CATATAN-GAYA-TULIS-CONTOH.md`
    yang belum selesai: pembagian paragraf panjang, kolom hasil terpisah di tabel
    perbandingan, ringkasan sawit per subseksi. Aturan: jangan memperpanjang
    kalimat; satu kajian per kalimat; kutip dengan `\citet`.
-7. Ringkasan Ruang Baca (`../entri/`): 176 dari 479 kajian ber-PDF; kepala entri
+5. Ringkasan Ruang Baca (`../entri/`): 176 dari 479 kajian ber-PDF; kepala entri
    dibuat `tools/scopus/entri_main6.py`. Isinya ditulis model dan belum
    diperiksa peninjau.
 
@@ -138,13 +138,48 @@ model. Isinya sebagai berikut.
   `cek_eksklusi` no 156–158) diisi dari ajudikasi dan ditandai di `catatan`,
   baik di CSV maupun XLSX. `kode_ulang_C1.csv` dibuat ulang dengan
   `verifikasi_kode_ulang.py`. Baris 3641 dan 614 terbuang karena tidak ada
-  isian `final_*`; drafnya tetap ada di `menunggu-acc/cek-5/`. Baris 131 dan
+  isian `final_*`; drafnya tetap ada di `putaran-kedua/draf-cek/cek-5/`. Baris 131 dan
   570 belum berdraf, dan nomor baris di atas no 57 bergeser satu.
 - **Naskah.** Laporan Cek 1 ditulis di subbagian *Study selection and
   screening* dan di keterbatasan ketiga. Angkanya memakai makro `\nHum*`,
   `\pHum*`, dan `\kHum*` dari `angka_naskah.py`, yang membaca
   `sampel_judul.csv`, `sampel_abstrak.csv`, `ketidaksepakatan.csv`, dan
   `ajudikasi/ajudikasi_cek1.csv`.
+
+### Keputusan model atas butir verifikasi (19 Oktober 2026)
+
+Rincian per butir: `hasil-kerja-ai/putaran-kedua/tugas-model/README.md`.
+
+- **Aturan.** Panel tiga agen tanpa konteks repo (brief `aturan_tahap1_brief.md`).
+  Aturan akhir di `PROTOKOL.md` §4 dan bagian metode naskah.
+- **Penyaringan.** 87 rekaman dibaca ulang buta (alur kerja Haiku 5.5: dua pembaca
+  dan penengah); perbedaan diperiksa agen utama terhadap sumber. 26 baris
+  `topik/penyaringan/abstrak_W00.txt`. `abstrak_W00.txt` diurutkan sesudah
+  `abstrak_V00.txt`, sehingga 33 idx muncul di lebih dari satu berkas penyaringan
+  (peringatan `verifikasi_cek_tangan.py` itu wajar).
+- **Kode C1.** 107 kajian dikode ulang buta (`label_c1.csv`), sisanya kontrol.
+  `final_*` diisi di `kode_ulang_C1.csv`, lalu `verifikasi_kode_ulang.py --terapkan
+  --oleh AI-Tugas`. Koreksi agen utama atas label buta ditulis di
+  `catatan_peninjau` (misalnya `nenavath2024tree` M1 D, `zhao2026adapting` M4+M5,
+  `cara_kelas` empat kajian). Komposit akuisisi `+T` dipetakan ke T hanya untuk
+  `lei2025spatio`, `fusaro2026horticultural`, dan `kassim2012oil`.
+- **Kode C3.** 169 kajian dikode ulang buta (`label_c3.csv`); 105 sel berubah
+  langsung di `kode_C3.txt`. `lokasi` = "?" bila sumber tidak menyatakannya.
+- **Tambahan luar pencarian.** L2–L5 di `topik/tambahan_metode_lain.csv`. Penulis
+  `choi2015machine` diisi tangan di `crossref.jsonl` dari meta halaman ASABE,
+  karena Crossref tidak memuatnya. Makro `\nMultiScopus` (C1 Scopus saja) dipakai
+  untuk statistik kode; `\nMulti` mencakup kajian luar pencarian.
+- **PDF.** `kang2022accurate` diganti dengan artikel yang benar, lalu teksnya
+  diekstrak ulang (butir 4.4).
+- **Cek 6.** 190 pasangan klaim dan kajian diperiksa buta oleh dua agen Haiku 5.5
+  per kajian, dengan penengah pada 26 kajian (putusan mentah di
+  `tugas-model/cek_fakta_buta.json`). Agen utama menilai ulang 100 putusan bukan-Y:
+  63 diperbaiki di naskah, sisanya dinilai Y dengan alasan di `catatan`. Dua
+  kalimat abstrak dan 50 klaim angka korpus atau ringkasan diperiksa agen utama.
+  Lembar dibuat ulang; kalimat yang diperbaiki menjadi baris `lama` berputusan N,
+  dan baris barunya diisi Y dengan rujukan ke baris lama.
+- **Draf lama.** `menunggu-acc/cek-2`, `cek-3`, `cek-5`, `cek-6` dipindah ke
+  `putaran-kedua/draf-cek/` karena butirnya sudah diputuskan.
 
 ### Putaran kedua (1–2 Oktober 2026)
 
@@ -161,7 +196,7 @@ model. Isinya sebagai berikut.
 Semua isian dibuat atas instruksi peninjau dan ditandai di kolom `catatan`.
 
 - **`cek_C1`.** 117 baris dari konfirmasi Haiku 5.5 dua putaran
-  (`menunggu-acc/cek-2/cek_C1_haiku.csv`, `cek_C1_haiku_ulang.csv`); 47 baris
+  (`putaran-kedua/draf-cek/cek-2/cek_C1_haiku.csv`, `cek_C1_haiku_ulang.csv`); 47 baris
   dari penilaian buta per makalah (Opus 5.5 untuk 42 makalah, Haiku 5.5 *effort*
   high untuk 35; `cek_C1_buta.csv`); 32 baris sisa dinilai buta oleh tiga agen
   Opus 5.5 dan diperiksa agen Opus 5.5 keempat (`cek_C1_sisa_opus.csv`). Kasus
@@ -190,7 +225,7 @@ Semua isian dibuat atas instruksi peninjau dan ditandai di kolom `catatan`.
 
 ### Cek 3, 4, 5, dan 6
 
-- **Cek 3.** Usul keputusan agen Sonnet 5.5 di `menunggu-acc/cek-3/`. Keenam
+- **Cek 3.** Usul keputusan agen Sonnet 5.5 di `putaran-kedua/draf-cek/cek-3/`. Keenam
   belas makalah dikenal ada di peta dan dikutip. Dari sepuluh kandidat
   *snowballing*, empat memenuhi kriteria; enam tidak (tiga di luar rentang
   tahun, satu E1, satu E5, satu duplikat).
@@ -200,13 +235,13 @@ Semua isian dibuat atas instruksi peninjau dan ditandai di kolom `catatan`.
   diekstrak ke `../teks/` (476 berkas). Makro `\nFullText` menghitung PDF yang
   diperoleh (477 dari 1.000 per 18 Oktober 2026).
 - **Cek 5.** Tiga agen Sonnet 5.5 berurutan mengodekan 190 dari 195 kajian dari
-  teks lengkap (`menunggu-acc/cek-5/usul_kode_ulang_C1.csv`, `KEMAJUAN.md`;
+  teks lengkap (`putaran-kedua/draf-cek/cek-5/usul_kode_ulang_C1.csv`, `KEMAJUAN.md`;
   keyakinan 88 tinggi, 97 sedang, 5 rendah; 39 usul perubahan). Kolom `final_*`
   diisi pada 13 Oktober 2026 untuk 147 baris yang kodenya tidak berubah.
   Dibanding 42 usul koreksi Cek 2: 26 kajian mendapat usul di kedua cek, 16 hanya
   di Cek 2, 13 hanya di Cek 5; isi usul pada 26 kajian itu belum dicocokkan.
 - **Cek 6.** Dua agen Sonnet 5.5 berurutan menilai 273 klaim dari lembar yang
-  disusun dari naskah 29 September 2026 (`menunggu-acc/cek-6/usul_cek_fakta.csv`,
+  disusun dari naskah 29 September 2026 (`putaran-kedua/draf-cek/cek-6/usul_cek_fakta.csv`,
   `KEMAJUAN.md`): 206 benar, 57 salah atau sebagian benar, 10 tidak dapat
   diperiksa. Pada 16 Oktober 2026 lembar dibuat ulang dari naskah terkini: 203
   klaim, 292 baris. 61 baris mempertahankan isian model; 8 baris salah disalin
@@ -215,7 +250,7 @@ Semua isian dibuat atas instruksi peninjau dan ditandai di kolom `catatan`.
   baris lama terdekat untuk tiap baris kosong (kemiripan ≥0,9: 34; 0,6–0,9: 55;
   0,3–0,6: 69; tanpa padanan: 65). Padanan id `KEMAJUAN.md` ke lembar baru:
   K020 → K021, K038-1 → K043-1, K112-2/4/5/6 → K136-2/4/5/6, K142 → K170,
-  K184 → K200, K094-1 → K113-1; K006 dan K014 tetap. Pada 18 Oktober 2026 paragraf laporan Cek 1 menggeser K174 ke atas satu nomor (K200 → K201); id di draf `menunggu-acc/cek-6/` sudah dipetakan ulang, dan baris untuk dua kalimat yang diubah (K173, K182 lama) diberi awalan `lama-`.
+  K184 → K200, K094-1 → K113-1; K006 dan K014 tetap. Pada 18 Oktober 2026 paragraf laporan Cek 1 menggeser K174 ke atas satu nomor (K200 → K201); id di draf `putaran-kedua/draf-cek/cek-6/` sudah dipetakan ulang, dan baris untuk dua kalimat yang diubah (K173, K182 lama) diberi awalan `lama-`.
 
 ### Naskah
 
