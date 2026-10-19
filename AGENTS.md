@@ -28,9 +28,25 @@ agen.
   artinya, misalnya "M3 (pelacakan video)"; daftar artinya ada di
   `tools/scopus/verifikasi_istilah.py`. Berkas yang sulit dibaca diperbaiki
   langsung, bukan dijelaskan dengan berkas tambahan.
-- Bahan antara buatan model (paket bacaan, JSON mentah, draf, cadangan) tidak
-  disimpan di repo. Yang disimpan hanya hasil akhir yang dibaca manusia dan data
-  minimum yang dibaca skrip.
+- **Jangan membuat berkas yang kelak harus dibersihkan.** Yang tidak boleh
+  masuk repo: paket bacaan, JSON atau CSV mentah keluaran model, draf usul,
+  cadangan (`arsip/`, `*_lama`, `cadangan_*`), salinan format lain dari isi yang
+  sama (CSV dan XLSX kembar), dan berkas yang hanya menerangkan berkas lain
+  (`ISTILAH`, `PANDUAN`, `SERAH-TERIMA`, `RINGKASAN`, `KEMAJUAN`, dan sejenisnya).
+  Bahan kerja itu ditulis ke scratchpad sesi. Yang masuk repo hanya hasil akhir
+  yang dibaca manusia dan data minimum yang dibaca skrip (di `.teknis/`). Pada
+  19 Oktober 2026 folder `verifikasi` harus dibersihkan dari 667 menjadi 24
+  berkas karena aturan ini dilanggar.
+- Lembar untuk manusia: kode ditulis bersama artinya; Y/N ditulis ya/tidak;
+  asal isian di kolom `diisi_oleh` atau `oleh`; catatan tidak memuat nama
+  model, nama proses, tanggal isian, atau jalur berkas. Log perubahan memuat
+  satu baris per perubahan: artikel (penulis, tahun, judul), kelompok sekarang,
+  yang diubah, sebelum, sesudah, alasan sebenarnya, dan pengubah; baris yang
+  mengubah keanggotaan artikel ditaruh paling atas.
+- Sebelum pekerjaan diserahkan, periksa `git status`. Setiap berkas baru harus
+  dibaca manusia atau dibaca skrip; selain itu dihapus. Sebelum menghapus berkas
+  yang dibaca skrip, jalankan ulang `angka_naskah.py` dan pastikan angka naskah
+  tidak berubah.
 - Satu fakta, satu tempat. Keputusan yang menunggu peninjau hanya dicatat di
   satu daftar (untuk verifikasi: `verifikasi/TUGAS.md`); status tidak
   digandakan di beberapa berkas.
