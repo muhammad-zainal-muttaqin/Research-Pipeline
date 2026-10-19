@@ -24,7 +24,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 KORPUS = ROOT / "literature/scopus-2026-09"
 TOPIK = KORPUS / "topik"
-AI2 = KORPUS / "verifikasi/hasil-kerja-ai/putaran-kedua"
 TEX = ROOT / "manuscript/source/main6-angka.tex"
 MEK = ["M0", "M1", "M2", "M3", "M4", "M5"]
 NAMA = {"M0": "no association", "M1": "statistical correction", "M2": "appearance matching",
@@ -324,86 +323,29 @@ def main():
     tulis("\n## Seksi 9: tinjauan terdahulu dan metode luar pertanian\n")
     tulis(f"- Tinjauan terdahulu {inc['R']} (+ {lain_k['R']} metode lain); metode luar pertanian {inc['T']}")
 
-    # ---------------------------------------------------------------- verifikasi putaran kedua
-    p_final = AI2 / "keputusan_final.csv"
-    if p_final.exists():
-        fin = baca(p_final)
-        st = Counter(r["status"] for r in fin)
-        bk = baca(AI2 / "banding_kelayakan.csv")
-        sama = sum(1 for r in bk if r["status_grup"] in ("sama", "lunak"))
-        tulis("\n## Verifikasi putaran kedua (model bahasa besar; bukan peninjau manusia)\n")
-        tulis(f"- Rekaman kunci dinilai ulang {len(bk)}; kelompok sama atau juga cocok {pct(sama, len(bk))}; "
-              f"ada perbedaan kode apa pun {sum(1 for r in bk if r['beda'])}")
-        tulis(f"- Status akhir ({len(fin)} rekaman termasuk tambahan): " + ", ".join(f"{k} {v}" for k, v in st.most_common()))
-        m("nSecondPass", len(bk))
-        m("pSecondAgree", persen(sama, len(bk)))
-        m("nAdjudicated", sum(1 for r in bk if r["beda"]))
-        m("nGroupChanged", st["kelompok berubah"])
-        m("nGroupNotUpheld", st["sengketa"])
-        m("nNeedsHuman", st["perlu manusia"])
-        bs = baca(AI2 / "banding_sampel.csv")
-        sj = [r for r in bs if r["tahap"] == "judul"]
-        sa = [r for r in bs if r["tahap"] == "kelayakan"]
-        j_sama = sum(1 for r in sj if r["sama"] == "ya")
-        j_lanjut = sum(1 for r in sj if r["ai1"].startswith("X") and r["ai2"].startswith("L"))
-        a_sama = sum(1 for r in sa if r["sama"] in ("ya", "kelompok sama"))
-        tulis(f"- Sampel judul {len(sj)}: sama {pct(j_sama, len(sj))}; putaran 1 eksklusi tetapi putaran 2 lanjut {j_lanjut}")
-        tulis(f"- Sampel kelayakan {len(sa)}: kelompok sama {pct(a_sama, len(sa))}")
-        m("nSampleTitles", len(sj))
-        m("pSampleTitles", persen(j_sama, len(sj)))
-        m("nSampleTitlesFlagged", j_lanjut)
-        m("nSampleElig", len(sa))
-        m("pSampleElig", persen(a_sama, len(sa)))
-        t_hasil = [x for fn in sorted(glob.glob(str(AI2 / "hasil/t_*.json"))) for x in json.load(open(fn, encoding="utf-8"))]
-        t_masuk = Counter(x["kode"] for x in t_hasil if x["kode"] != "X")
-        tulis(f"- Dari {len(t_hasil)} judul sampel yang dilanjutkan putaran 2, layak menurut abstrak: {sum(t_masuk.values())} "
-              f"({dict(t_masuk)})")
-        m("nSampleTitlesEligible", sum(t_masuk.values()))
-        cf = baca(AI2 / "cek_fakta_ai2.csv")
-        cfc = Counter(r["benar_ai2"] for r in cf)
-        vf = [k for fn in sorted(glob.glob(str(AI2 / "hasil/vf_*.json"))) for s in json.load(open(fn, encoding="utf-8")) for k in s["klaim"]]
-        vfc = Counter(k["putusan"] for k in vf)
-        tulis(f"- Cek fakta: {len(cf)} pasangan klaim-kajian; Y {cfc['Y']}, SEBAGIAN {cfc['SEBAGIAN']}, N {cfc['N']}, "
-              f"tak terperiksa {cfc['TAK-TERPERIKSA']}; verifikasi kedua atas {len(vf)}: {dict(vfc)}")
-        m("nClaims", len(cf))
-        m("nClaimsOk", cfc["Y"])
-        m("nClaimsFlagged", cfc["SEBAGIAN"] + cfc["N"])
-        m("nClaimsUnchecked", cfc["TAK-TERPERIKSA"])
-        m("nClaimsCorrected", vfc["SEBAGIAN"] + vfc["N"])
-    p_u = sorted(glob.glob(str(AI2 / "hasil/u_[0-9]*.json")))
-    if p_u:
-        u = [x for fn in p_u for x in json.load(open(fn, encoding="utf-8"))]
-        ref = {x["idx"]: x for fn in sorted(glob.glob(str(AI2 / "hasil/ref_ru_[0-9]*.json")))
-               for x in json.load(open(fn, encoding="utf-8"))}
-        masuk = Counter(x["kode"] for x in u if x["kode"] != "X" and ref.get(x["idx"], {}).get("bertahan") is True)
-        tulis(f"- Pemeriksaan ulang eksklusi tahap judul (Q1, Q3): {len(u)} rekaman; dimasukkan kembali {sum(masuk.values())} "
-              f"({dict(masuk)})")
-        m("nTitleRecheck", len(u))
-        m("nTitleReinstated", sum(masuk.values()))
-        m("nTitleReinstatedMulti", masuk["C1"])
-        m("nTitleReinstatedPalm", masuk["C3"])
+    # ---------------------------------------------------------------- pemeriksaan ulang tahap judul
+    tek = KORPUS / "verifikasi/.teknis"
+    sj = baca(KORPUS / "verifikasi/cek-1-sampel-buta/sampel_judul.csv")
+    sj_layak = sum(1 for r in baca(tek / "sampel_judul_dibaca_abstrak.csv") if r["kode"] != "X")
+    ue = baca(tek / "ulang_eksklusi_judul.csv")
+    ue_masuk = sum(1 for r in ue if r["kode"] != "X" and r["bertahan_setelah_disanggah"] == "ya")
+    tulis("\n## Pemeriksaan ulang tahap judul\n")
+    tulis(f"- Sampel judul {len(sj)}: eksklusi judul yang layak setelah abstrak dibaca {sj_layak}")
+    tulis(f"- Eksklusi judul kueri Q1 dan Q3 dibaca abstraknya: {len(ue)}; dimasukkan kembali {ue_masuk}")
+    m("nSampleTitles", len(sj))
+    m("nSampleTitlesEligible", sj_layak)
+    m("nTitleRecheck", len(ue))
+    m("nTitleReinstated", ue_masuk)
 
     # ---------------------------------------------------------------- Cek 1: sampel buta peninjau
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from verifikasi_kappa import kappa, muat, tiga
-    C1S = KORPUS / "verifikasi/cek-1-sampel-buta"
     sj, sa = muat()
     kj = kappa([r["hm"] for r in sj], [r["ai"] for r in sj])
     ka = tiga(sa)[0]
-    tsp = baca(C1S / "ketidaksepakatan.csv")
-    kritis = [r for r in tsp if r["kritis"] == "ya"]
-    kritis_masuk = sum(1 for r in kritis if r["keputusan_final_fatma"] and not r["keputusan_final_fatma"].startswith("X"))
-    aj = baca(C1S / "ajudikasi/ajudikasi_cek1.csv")
-    luar = ("luar peta", "tetap dikeluarkan")
-    aj_masuk = sum(1 for r in aj if r["kode_peta_kini"] == "luar peta" and r["keputusan_akhir"] not in luar)
-    aj_keluar = sum(1 for r in aj if r["kode_peta_kini"] != "luar peta" and r["keputusan_akhir"].startswith("X"))
-    aj_pindah = sum(1 for r in aj if r["kode_peta_kini"] != "luar peta" and not r["keputusan_akhir"].startswith("X")
-                    and r["keputusan_akhir"] != r["kode_peta_kini"])
     tulis("\n## Cek 1: sampel buta peninjau terhadap keputusan model\n")
     tulis(f"- Judul: sepakat {pct(kj['sepakat'], kj['n'])}; kappa {kj['kappa']:.2f}")
     tulis(f"- Kelayakan (kode penuh): sepakat {pct(ka['sepakat'], ka['n'])}; kappa {ka['kappa']:.2f}")
-    tulis(f"- Ketidaksepakatan: kritis {len(kritis)} (masuk {kritis_masuk}); lainnya {len(aj)}, "
-          f"diajudikasi dengan model: masuk {aj_masuk}, keluar {aj_keluar}, pindah kelompok {aj_pindah}")
     m("nHumTitles", kj["n"])
     m("nHumTitlesAgree", kj["sepakat"])
     m("pHumTitles", persen(kj["sepakat"], kj["n"]))
@@ -412,13 +354,6 @@ def main():
     m("nHumEligAgree", ka["sepakat"])
     m("pHumElig", persen(ka["sepakat"], ka["n"]))
     m("kHumElig", f"{ka['kappa']:.2f}")
-    m("nHumCritical", len(kritis))
-    m("nHumCriticalIn", kritis_masuk)
-    m("nHumRest", len(aj))
-    m("nHumChanged", aj_masuk + aj_keluar + aj_pindah)
-    m("nHumIn", aj_masuk)
-    m("nHumOut", aj_keluar)
-    m("nHumMoved", aj_pindah)
 
     teks = "\n".join(out) + "\n"
     print(teks)

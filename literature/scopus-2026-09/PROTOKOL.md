@@ -75,7 +75,6 @@ Angka setelah tanda + adalah rekaman dari metode lain. Aturan berikut diputuskan
 pada 19 Oktober 2026 oleh model atas penyerahan peninjau: panel tiga agen tanpa
 konteks repo; semua aturan disepakati ketiganya, kecuali aturan akuisisi (dua dari tiga).
 Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
-Rinciannya ada di `verifikasi/hasil-kerja-ai/putaran-kedua/tugas-model/`.
 
 - **Rekonstruksi.** Citra dari banyak posisi yang dilebur menjadi model 3D, panorama,
   atau ortomosaik, lalu buah dideteksi atau dicacah di model itu: C1, mekanisme M4.
@@ -126,8 +125,8 @@ Rinciannya ada di `verifikasi/hasil-kerja-ai/putaran-kedua/tugas-model/`.
   kelayakan), sampel buta 300 judul dan 100 abstrak, ajudikasi rekaman yang berbeda,
   uji sanggah untuk setiap perubahan kelompok, dan pembacaan ulang 1.325 eksklusi
   tahap judul dari kueri Q1 dan Q3 (19 dimasukkan kembali). Ini mengukur konsistensi
-  prosedur, bukan penilaian independen oleh orang kedua. Rincian: `verifikasi/hasil-kerja-ai/`,
-  `verifikasi/log_perubahan.csv`, `verifikasi/SERAH-TERIMA.md`. Eksklusi judul dari
+  prosedur, bukan penilaian independen oleh orang kedua. Setiap perubahan tercatat di
+  `verifikasi/log_perubahan.csv`. Eksklusi judul dari
   kueri selain Q1 dan Q3 belum dibaca ulang.
 - **Sampel buta peninjau (Cek 1, 4 Oktober 2026).** Peninjau menilai 300 judul dan
   165 rekaman tahap abstrak tanpa melihat keputusan model
@@ -138,7 +137,7 @@ Rinciannya ada di `verifikasi/hasil-kerja-ai/putaran-kedua/tugas-model/`.
   diajudikasi pada 18 Oktober 2026. Peninjau menyerahkan ajudikasi itu kepada
   model: dua pembacaan buta dan satu penengah, lalu diperiksa ulang. Delapan
   keputusan berubah: dua masuk, tiga keluar, dan tiga pindah kelompok
-  (`topik/penyaringan/abstrak_V00.txt`, `verifikasi/cek-1-sampel-buta/ajudikasi/`).
+  (`topik/penyaringan/abstrak_V00.txt`, `verifikasi/cek-1-sampel-buta/ketidaksepakatan.csv`).
 - **Butir verifikasi lain (19 Oktober 2026).** Peninjau menyerahkan keputusan butir
   `verifikasi/TUGAS.md` kepada model. Sebanyak 87 rekaman dibaca ulang buta (dua
   pembaca Haiku 5.5 dan penengah); setiap perbedaan dengan keputusan lama diperiksa

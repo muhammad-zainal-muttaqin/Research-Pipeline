@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Mencari halaman PDF yang memuat suatu potongan teks.
 
-Nomor halaman = urutan halaman berkas PDF (halaman pertama = 1), sesuai aturan
-kolom `halaman` di literature/scopus-2026-09/verifikasi/cek-5-kode-ulang/KODE-ULANG.md.
+Nomor halaman = urutan halaman berkas PDF (halaman pertama = 1), seperti kolom
+`halaman_bukti` di verifikasi/cek-5-kode-ulang/kode_ulang_C1.csv.
 
   python tools/scopus/cari_halaman.py <key> "potongan teks" ["potongan lain" ...]
   python tools/scopus/cari_halaman.py <key> --halaman 5        # cetak teks halaman 5

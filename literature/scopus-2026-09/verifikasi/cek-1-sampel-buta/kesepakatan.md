@@ -19,15 +19,15 @@ Sampel terdiri atas 300 judul yang ditarik secara acak dari 5.723 judul yang dis
 | **Peninjau: lanjut** | 43 | 25 |
 | **Peninjau: eksklusi** | 19 | 213 |
 
-**Aturan lulus.** Terdapat 5 judul yang dieksklusi AI tetapi ditandai peninjau sebagai C1 atau C3. Kelima judul itu diberi tanda pada kolom `kritis` di `ketidaksepakatan.csv`. Status lulus tahap judul ditetapkan setelah keputusan akhir atas kelima judul tersebut tersedia.
+**Aturan lulus.** Terdapat 5 judul yang dieksklusi AI tetapi ditandai peninjau sebagai calon C1 (hitung dari banyak pengamatan buah yang sama) atau calon C3 (sawit). Bu Fatma memutuskan kelimanya pada 5 Oktober 2026: empat tetap dikeluarkan dan satu masuk sebagai C5 (kamera depth/3D atau sensor lain). Karena tidak ada yang masuk C1 atau C3, tahap judul dinyatakan lulus tanpa sampel tambahan.
 
-| idx | Peninjau | Judul |
-|---|---|---|
-| 4128 | Yes-C1 | Deep learning-based image segmentation for grape bunch detection |
-| 1338 | Yes-C3 | Oil palm counting and age estimation from WorldView-3 imagery and LiDAR data using an integrated OBIA height model and regression analysis |
-| 3038 | Yes-C1 | A YOLO-based citrus image recognition and harvesting system |
-| 3661 | Yes-C1 | Grape Maturity Detection and Visual Pre-Positioning Based on Improved YOLOv4 |
-| 3901 | Yes-C1 | Research on Spatial Positioning System of Fruits to be Picked in Field Based on Binocular Vision and SSD Model |
+| idx | Peninjau | Keputusan Bu Fatma | Judul |
+|---|---|---|---|
+| 4128 | calon C1 | dikeluarkan, E5 (deteksi tanpa hitung atau evaluasi) | Deep learning-based image segmentation for grape bunch detection |
+| 1338 | calon C3 | dikeluarkan, E1 (bukan buah di tanaman) | Oil palm counting and age estimation from WorldView-3 imagery and LiDAR data using an integrated OBIA height model and regression analysis |
+| 3038 | calon C1 | dikeluarkan, E4 (hanya robot pemetik) | A YOLO-based citrus image recognition and harvesting system |
+| 3661 | calon C1 | C5 (kamera depth/3D atau sensor lain) | Grape Maturity Detection and Visual Pre-Positioning Based on Improved YOLOv4 |
+| 3901 | calon C1 | dikeluarkan, E5 (deteksi tanpa hitung atau evaluasi) | Research on Spatial Positioning System of Fruits to be Picked in Field Based on Binocular Vision and SSD Model |
 
 ## 2. Tahap abstrak
 
@@ -35,7 +35,7 @@ Sampel terdiri atas 300 rekaman yang ditarik secara acak dari 1.143 rekaman taha
 
 | Perbandingan | Kesepakatan (*n* = 165) | Kappa [selang kepercayaan 95%] |
 |---|---|---|
-| Kode penuh (C1–C5, R, T, X-E1 sampai X-E7) | 86 dari 165 (52,1%) | 0,45 [0,36; 0,54] |
+| Kode penuh (C1–C5, R, T, dan tujuh alasan eksklusi E1–E7) | 86 dari 165 (52,1%) | 0,45 [0,36; 0,54] |
 | Kode dengan semua eksklusi digabung | 87 dari 165 (52,7%) | 0,45 [0,37; 0,54] |
 | Biner: masuk atau eksklusi | 139 dari 165 (84,2%) | 0,23 [−0,04; 0,50] |
 
@@ -46,7 +46,7 @@ Hasil pada 98 rekaman yang termasuk subsampel acak 100 adalah sebagai berikut.
 | Kode penuh | 56 dari 98 (57,1%) | 0,51 [0,39; 0,62] |
 | Biner: masuk atau eksklusi | 80 dari 98 (81,6%) | 0,20 [−0,13; 0,54] |
 
-Matriks berikut memuat sebaran kode untuk 165 rekaman. Baris menyatakan kode peninjau, kolom menyatakan kode AI, dan semua kode eksklusi digabung sebagai X. Tanda titik tengah (·) berarti nol.
+Matriks berikut memuat sebaran kode untuk 165 rekaman. Baris menyatakan kode peninjau, kolom menyatakan kode AI, dan semua eksklusi digabung sebagai X. Tanda titik tengah (·) berarti nol. Arti kode: C1 hitung dari banyak pengamatan buah yang sama, C2 hitung dari satu foto, C3 sawit, C4 hitung per kelas dari satu foto, C5 kamera depth/3D atau sensor lain, R tinjauan pustaka, T metode dari luar pertanian, X dikeluarkan.
 
 | | C1 | C2 | C3 | C4 | C5 | R | T | X | Jumlah |
 |---|---|---|---|---|---|---|---|---|---|
@@ -61,13 +61,3 @@ Matriks berikut memuat sebaran kode untuk 165 rekaman. Baris menyatakan kode pen
 | **Jumlah** | 37 | 31 | 28 | 4 | 19 | 22 | 10 | 14 | 165 |
 
 **Aturan lulus.** Tidak terdapat rekaman yang dieksklusi AI tetapi dinilai peninjau sebagai C1 atau C3.
-
-## 3. Berkas
-
-| Berkas | Isi |
-|---|---|
-| `sampel_judul.csv` | Keputusan peninjau dan keputusan AI untuk 300 judul, dengan kolom `keputusan_final_fatma` |
-| `sampel_abstrak.csv` | Keputusan peninjau dan keputusan AI untuk 165 rekaman tahap abstrak, dengan kolom `keputusan_final_fatma` |
-| `sampel_judul_manusia.xlsx` | Lembar isian asli peninjau untuk tahap judul |
-| `ketidaksepakatan.csv` | Semua rekaman yang keputusannya berbeda, dengan kolom `keputusan_final_fatma` dan `alasan_fatma` |
-| `../log_perubahan.csv` | Koreksi isian peninjau |

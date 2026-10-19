@@ -14,11 +14,11 @@ dikutip), dan mengurutkannya menurut rencana verifikasi:
      dengan keluaran kode_bukti.py setelah dijalankan ulang, tidak dicek ke
      makalah
 
-Kolom isian tangan (halaman, benar, perbaikan, catatan, oleh, tanggal) hanya
-diisi manusia. Skrip tidak pernah mengisinya. Saat dijalankan ulang, isian
-yang sudah ada dipertahankan menurut pasangan (kalimat, key); baris lama yang
-kalimatnya sudah berubah di naskah tetap disimpan di bawah dengan prioritas
-"lama" dan id berawalan "L-" agar tidak ada isian yang hilang.
+Urutan ditulis bersama artinya di kolom urutan_periksa. Kolom isian tangan
+(halaman, benar, perbaikan, catatan, oleh, tanggal) tidak pernah diisi skrip.
+Saat dijalankan ulang, isian yang sudah ada dipertahankan menurut pasangan
+(kalimat, key); baris yang kalimatnya sudah berubah di naskah disimpan di bawah
+sebagai "kalimat lama" dengan id berawalan "L-" agar tidak ada isian yang hilang.
 
     python tools/scopus/verifikasi_cek_fakta.py
 """
@@ -35,18 +35,47 @@ BODY = SRC / "main6-body.tex"
 MAIN = SRC / "main6.tex"
 BIB = SRC / "references6.bib"
 PDF_DIR = KORPUS / "pdf"
-TEKS_DIR = KORPUS / "teks"
 OUT = KORPUS / "verifikasi" / "cek-6-cek-fakta" / "cek_fakta.csv"
 
-KOLOM = ["id", "prioritas", "bagian", "jenis", "kalimat", "key", "kajian",
-         "pdf_ada", "teks_lokal", "halaman", "benar", "perbaikan", "catatan",
-         "oleh", "tanggal"]
+KOLOM = ["id", "urutan_periksa", "bagian", "jenis", "kalimat", "key", "kajian",
+         "pdf_tersedia", "halaman", "benar", "perbaikan", "catatan", "oleh", "tanggal"]
 KOLOM_TANGAN = ["halaman", "benar", "perbaikan", "catatan", "oleh", "tanggal"]
 
 TABEL_P1 = {"tab:acq", "tab:assoc"}
 TABEL_P4 = {"tab:position"}
 SEKSI_P3 = {"sec:acq", "sec:mech", "sec:class", "sec:depth", "sec:palm"}
 URUT_PRIORITAS = {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "S": 6, "lama": 7}
+URUTAN = {"1": "1 tabel akuisisi dan tabel perbandingan pada data yang sama",
+          "2": "2 abstrak dan pendahuluan",
+          "3": "3 seksi akuisisi, mekanisme, atribut kelas, depth, dan sawit",
+          "4": "4 tabel tinjauan terdahulu",
+          "5": "5 seksi lain",
+          "S": "6 angka korpus dari skrip, dicocokkan dengan keluaran skrip",
+          "lama": "7 kalimat lama yang sudah diubah di naskah"}
+YA = {"Y": "ya", "N": "tidak"}
+PROSES = re.compile(r"^Isian model|^Diisi \d+ Oktober|Belum dibaca peninjau|^$")
+
+
+def rapikan(r):
+    """Isian tangan ditulis dalam bahasa biasa: ya/tidak, pengisi, catatan tanpa keterangan proses."""
+    r["benar"] = YA.get(r.get("benar", ""), r.get("benar", ""))
+    if r.get("oleh", "").startswith("model"):
+        r["oleh"] = "AI, disetujui peninjau 19 Oktober 2026"
+    c = re.sub(r"Disalin \d+ Oktober 2026 dari (\S+) \(kalimat lembar lama\); menurut \S+ masalah yang sama "
+               r"masih ada pada kalimat naskah terkini\.",
+               r"Masalah yang sama dengan baris lama \1 masih ada pada kalimat naskah terkini.", r.get("catatan", ""))
+    c = re.sub(r"Catatan asal: Diisi \d+ Oktober 2026 atas instruksi peninjau dari draf model \([^)]*\)\.\s*", "", c)
+    c = re.sub(r"\s*\([^()]*(hasil-kerja-ai|draf-cek|KEMAJUAN)[^()]*\)", "", c)
+    c = re.sub(r"Dua pemeriksa buta \w+ [\d.]+[^;]*; putusan pemeriksa \w+\.\s*", "", c)
+    c = re.sub(r"Dua pemeriksa buta \w+ [\d.]+[^;]*; putusan pemeriksa \w+; menilai Y: ",
+               "Pemeriksa pertama ragu; dinilai benar setelah diperiksa ulang: ", c)
+    c = re.sub(r"Sumber dibaca: ([^;]+); keyakinan \w+\.", r"Dibaca dari \1.", c)
+    bag = [b.strip() for b in re.split(r"(?<=[.)])\s+(?=[A-Z\[])", c)]
+    teks = " ".join(b for b in bag if not PROSES.search(b))
+    teks = re.sub(r"^Sumber dibaca: ([^;]+); keyakinan \w+\.", r"Dibaca dari \1.", teks)
+    teks = teks.replace("[Lembar usang] ", "").replace(" agen utama", "").replace("sudah Y pada", "sudah benar pada")
+    r["catatan"] = teks.strip()
+    return r
 
 
 def cites(teks):
@@ -171,34 +200,35 @@ def main():
             if key and key not in kajian:
                 tak_dikenal.add(key)
             r = {"id": f"K{i:03d}" + (f"-{j + 1}" if len(keys) > 1 else ""),
-                 "prioritas": p, "bagian": bagian, "jenis": jenis, "kalimat": kal,
+                 "urutan_periksa": URUTAN[p], "bagian": bagian, "jenis": jenis.replace("_", " "), "kalimat": kal,
                  "key": key, "kajian": kajian.get(key, "") if key else "",
-                 "pdf_ada": ("Y" if (PDF_DIR / f"{key}.pdf").exists() else "N") if key else "",
-                 "teks_lokal": (f"teks/{key}.txt" if (TEKS_DIR / f"{key}.txt").exists() else "") if key else ""}
+                 "pdf_tersedia": ("ya" if (PDF_DIR / f"{key}.pdf").exists() else "tidak") if key else ""}
             sebelum = lama.get((kal, key), {})
             for k in KOLOM_TANGAN:
                 r[k] = sebelum.get(k, "")
             dipakai.add((kal, key))
-            baris.append(r)
+            baris.append(rapikan(r))
 
     yatim = [r for kk, r in lama.items() if kk not in dipakai and any(r.get(k) for k in KOLOM_TANGAN)]
     for r in yatim:
-        r["prioritas"] = "lama"
+        r["urutan_periksa"] = URUTAN["lama"]
+        r["jenis"] = r.get("jenis", "").replace("_", " ")
+        r.setdefault("pdf_tersedia", YA.get(r.get("pdf_ada", ""), ""))
         # Awalan L- mencegah id lama bentrok dengan penomoran klaim terkini.
         if not r["id"].startswith("L-"):
             r["id"] = "L-" + r["id"]
-        baris.append({k: r.get(k, "") for k in KOLOM})
+        baris.append(rapikan({k: r.get(k, "") for k in KOLOM}))
 
     with OUT.open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=KOLOM)
         w.writeheader()
         w.writerows(baris)
 
-    hit = Counter(r["prioritas"] for r in baris)
-    klaim_n = Counter(k[0] for k in klaim)
+    hit = Counter(r["urutan_periksa"] for r in baris)
+    klaim_n = Counter(URUTAN[k[0]] for k in klaim)
     print(f"{OUT.relative_to(ROOT)}: {len(baris)} baris dari {len(klaim)} klaim")
-    for p in sorted(hit, key=URUT_PRIORITAS.get):
-        print(f"  prioritas {p}: {klaim_n.get(p, 0)} klaim, {hit[p]} baris")
+    for p in sorted(hit):
+        print(f"  {p}: {klaim_n.get(p, 0)} klaim, {hit[p]} baris")
     kunci = {r["key"] for r in baris if r["key"]}
     ada_pdf = sum((PDF_DIR / f"{k}.pdf").exists() for k in kunci)
     print(f"  kajian unik dikutip: {len(kunci)}, PDF lokal: {ada_pdf}")

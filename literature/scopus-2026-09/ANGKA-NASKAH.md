@@ -72,18 +72,12 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 
 - Tinjauan terdahulu 122 (+ 1 metode lain); metode luar pertanian 88
 
-## Verifikasi putaran kedua (model bahasa besar; bukan peninjau manusia)
+## Pemeriksaan ulang tahap judul
 
-- Rekaman kunci dinilai ulang 510; kelompok sama atau juga cocok 436 dari 510 (85%); ada perbedaan kode apa pun 232
-- Status akhir (511 rekaman termasuk tambahan): tetap 470, kelompok berubah 16, perlu manusia 10, alasan berubah 8, sengketa 7
-- Sampel judul 300: sama 256 dari 300 (85%); putaran 1 eksklusi tetapi putaran 2 lanjut 44
-- Sampel kelayakan 100: kelompok sama 83 dari 100 (83%)
-- Dari 44 judul sampel yang dilanjutkan putaran 2, layak menurut abstrak: 11 ({'C1': 1, 'C5': 4, 'C3': 1, 'R': 1, 'T': 4})
-- Cek fakta: 213 pasangan klaim-kajian; Y 171, SEBAGIAN 29, N 2, tak terperiksa 11; verifikasi kedua atas 31: {'SEBAGIAN': 26, 'Y': 3, 'N': 2}
-- Pemeriksaan ulang eksklusi tahap judul (Q1, Q3): 1325 rekaman; dimasukkan kembali 19 ({'C1': 6, 'C2': 4, 'C5': 1, 'T': 2, 'C3': 6})
+- Sampel judul 300: eksklusi judul yang layak setelah abstrak dibaca 11
+- Eksklusi judul kueri Q1 dan Q3 dibaca abstraknya: 1325; dimasukkan kembali 19
 
 ## Cek 1: sampel buta peninjau terhadap keputusan model
 
 - Judul: sepakat 256 dari 300 (85%); kappa 0.57
 - Kelayakan (kode penuh): sepakat 86 dari 165 (52%); kappa 0.45
-- Ketidaksepakatan: kritis 5 (masuk 1); lainnya 118, diajudikasi dengan model: masuk 2, keluar 3, pindah kelompok 3

@@ -9,12 +9,14 @@ alasan memuat alasan sebenarnya, bukan nama proses.
 import csv, re
 from pathlib import Path
 
+from verifikasi_istilah import AKU, EKS, KEL, KLS, LOK, MEK, MET, REF, TUGAS, YN, kelompok
+
 ROOT = Path(__file__).resolve().parents[2]
 B = ROOT / 'literature/scopus-2026-09'
 VER = B / 'verifikasi'
-SRC = VER / '.teknis/log_perubahan.csv'
+TEK = VER / '.teknis'
+SRC = TEK / 'log_perubahan.csv'
 OUT = VER / 'log_perubahan.csv'
-TM = VER / 'hasil-kerja-ai/putaran-kedua/tugas-model'
 
 
 def baca(p, enc='utf-8'):
@@ -23,43 +25,13 @@ def baca(p, enc='utf-8'):
 
 rec = {r['idx']: r for r in baca(B / 'topik/records_all.csv')}
 tamb = {r['key']: r for r in baca(B / 'topik/tambahan_metode_lain.csv')}
-adj = {r['idx']: r['alasan'] for r in baca(VER / 'cek-1-sampel-buta/ajudikasi/ajudikasi_cek1.csv', 'utf-8-sig')}
-c1 = {r['idx']: r['alasan'] for r in baca(TM / 'label_c1.csv')}
-c3 = {r['idx']: r['alasan'] for r in baca(TM / 'label_c3.csv')}
+adj = {r['idx']: r['alasan'] for r in baca(TEK / 'ajudikasi_cek1.csv', 'utf-8-sig')}
+c1 = {r['idx']: r['alasan'] for r in baca(TEK / 'label_c1.csv')}
+c3 = {r['idx']: r['alasan'] for r in baca(TEK / 'label_c3.csv')}
 
 W = r'\b'
-KEL = {'C1': 'C1 (hitung dari banyak pengamatan buah yang sama)', 'C2': 'C2 (hitung dari satu foto)',
-       'C3': 'C3 (sawit)', 'C4': 'C4 (hitung per kelas dari satu foto)',
-       'C5': 'C5 (kamera depth/3D atau sensor lain)', 'R': 'R (tinjauan pustaka)',
-       'T': 'T (metode dari luar pertanian)'}
-EKS = {'E1': 'bukan buah di tanaman', 'E2': 'hanya pascapanen/laboratorium',
-       'E3': 'hasil panen tanpa deteksi buah', 'E4': 'hanya robot pemetik',
-       'E5': 'deteksi tanpa hitung atau evaluasi', 'E6': 'sensor bukan kamera', 'E7': 'tidak berbahasa Inggris'}
-MEK = {'M0': 'tanpa penghubungan buah', 'M1': 'koreksi statistik', 'M2': 'pencocokan penampilan',
-       'M3': 'pelacakan video', 'M4': 'pencocokan posisi 3D', 'M5': 'pencocokan yang dipelajari',
-       'DATA': 'dataset'}
-AKU = {'V': 'video sepanjang lintasan', 'D': 'beberapa foto dari posisi terpisah', 'S': 'model 3D/awan titik',
-       'T': 'kunjungan ulang antarwaktu', '1': 'satu foto'}
-TUGAS = {'KLS': 'kematangan', 'DET': 'deteksi tandan', 'HIT': 'menghitung', 'LF': 'brondolan',
-         'MUTU': 'mutu/massa/volume', 'SENSOR': 'sensor non-RGB', 'DATA': 'dataset', '?': 'tidak jelas'}
-LOK = {'POHON': 'di pohon', 'TANAH': 'di tanah/TPH', 'PABRIK': 'pabrik/laboratorium', 'UAV': 'dari drone',
-       '?': 'tidak disebut'}
-REF = {'pohon': 'hitungan tangan di pohon', 'panen': 'hasil panen', 'packhouse': 'hitungan di packhouse',
-       'anotasi': 'foto/video beranotasi', 'tidak ada': 'tidak ada pembanding'}
-MET = {'hitung': 'galat hitungan', 'identitas': 'metrik identitas (MOTA/IDF1/HOTA)', 'deteksi': 'metrik deteksi',
-       'tidak ada': 'tidak ada'}
-KLS = {'-': 'tidak berlaku (tidak dihitung per kelas)'}
-YN = {'Y': 'ya', 'N': 'tidak'}
 OLEH = {'AI-2': 'AI, disetujui peninjau', 'AI-Tugas': 'AI, disetujui peninjau', 'AI-Cek1': 'AI, disetujui peninjau',
         'peninjau': 'peninjau', 'Fatma': 'Bu Fatma'}
-
-
-def kelompok(v):
-    v = v.replace('-', ' ')
-    if v.startswith('X'):
-        e = v.split()[-1]
-        return f'dikeluarkan ({EKS[e]})' if e in EKS else 'dikeluarkan'
-    return KEL.get(v.split()[0], v)
 
 
 def gabung(peta, sep='+'):

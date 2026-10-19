@@ -10,11 +10,9 @@ verifikasi teks lengkap, lalu menurunkan daftar permintaan PDF darinya.
   4  kajian sawit C3 yang dibahas rinci: pencacahan (tugas HIT) dan
      multipandang (kolom multipandang = Y) di topik/bukti/kode_C3.txt
 
-Keluaran (literature/scopus-2026-09/verifikasi/cek-4-teks-lengkap/ dan unduhan/):
-  verifikasi/cek-4-teks-lengkap/teks_lengkap.csv       daftar kerja (dibaca dan ditulis ulang)
-  verifikasi/cek-4-teks-lengkap/PERMINTAAN-PDF.md      daftar kajian tanpa PDF
-  verifikasi/cek-4-teks-lengkap/PERMINTAAN-PDF-BU-FATMA.xlsx  daftar yang sama (Excel)
-  unduhan/PRIORITAS-UNDUH-MANUAL.md daftar centang unduh manual
+Keluaran di literature/scopus-2026-09/verifikasi/cek-4-teks-lengkap/:
+  teks_lengkap.csv                daftar kerja (dibaca dan ditulis ulang)
+  PERMINTAAN-PDF-BU-FATMA.xlsx    kajian tanpa PDF
 
 Aman dijalankan ulang: kolom pdf_ada dihitung ulang dari folder pdf/,
 sedangkan kolom isian tangan (status, tanggal_minta, sumber_pdf, catatan,
@@ -48,9 +46,7 @@ LOG_UNDUH = KORPUS / "unduhan" / "log_unduh.csv"
 PDF_DIR = KORPUS / "pdf"
 BODY = ROOT / "manuscript" / "source" / "main6-body.tex"
 OUT_CSV = KORPUS / "verifikasi" / "cek-4-teks-lengkap" / "teks_lengkap.csv"
-OUT_MINTA = KORPUS / "verifikasi" / "cek-4-teks-lengkap" / "PERMINTAAN-PDF.md"
 OUT_XLSX = KORPUS / "verifikasi" / "cek-4-teks-lengkap" / "PERMINTAAN-PDF-BU-FATMA.xlsx"
-OUT_PRIOR = KORPUS / "unduhan" / "PRIORITAS-UNDUH-MANUAL.md"
 
 KOLOM = ["prioritas", "kelompok", "key", "kode", "tahun", "penulis_pertama",
          "judul", "sumber", "doi", "penerbit", "pdf_ada", "jalur_disarankan",
@@ -330,12 +326,7 @@ def tulis_csv(keluar):
         w.writerows(keluar)
 
 
-def md_sel(t):
-    return (t or "").replace("|", "\\|").replace("\n", " ")
 
-
-def doi_link(doi):
-    return f"[{doi}](https://doi.org/{doi})" if doi else "(tanpa DOI)"
 
 
 def rekap(keluar):
@@ -356,37 +347,8 @@ def urut_minta(keluar):
                   key=lambda r: (int(r["prioritas"]), r["penerbit"], r["key"]))
 
 
-def tulis_permintaan(keluar):
-    belum = urut_minta(keluar)
-    rk = rekap(keluar)
-    L = []
-    a = L.append
-    a("# Cek 4: Daftar Permintaan PDF Teks Lengkap")
-    a("")
-    a(f"Daftar ini memuat {len(belum)} kajian yang belum memiliki PDF. Isinya sama dengan "
-      f"`{OUT_XLSX.name}`. Kedua berkas dihasilkan `tools/scopus/verifikasi_teks_lengkap.py` dari "
-      "`teks_lengkap.csv`, sehingga tidak disunting dengan tangan. PDF yang diterima disimpan di "
-      "`literature/scopus-2026-09/pdf/` dengan nama pada kolom terakhir.")
-    a("")
-    a("| Prioritas | Kelompok | Jumlah kajian | Sudah memiliki PDF | Belum memiliki PDF |")
-    a("|---|---|---|---|---|")
-    for p in (1, 2, 3, 4):
-        t, y, _ = rk[p]
-        a(f"| {p} | {NAMA_P[p]} | {t} | {y} | {t - y} |")
-    a(f"| | **Jumlah** | {len(keluar)} | {len(keluar) - len(belum)} | {len(belum)} |")
-    a("")
-    a("| No. | Prioritas | Kode | Tahun | Penulis pertama | Judul | Sumber | Penerbit | DOI | Nama berkas PDF |")
-    a("|---|---|---|---|---|---|---|---|---|---|")
-    for i, r in enumerate(belum, 1):
-        a(f"| {i} | {r['prioritas']} | {r['kode']} | {r['tahun']} | {md_sel(r['penulis_pertama'])} | "
-          f"{md_sel(r['judul'])} | {md_sel(r['sumber'])} | {r['penerbit']} | {doi_link(r['doi'])} | "
-          f"`{r['key']}.pdf` |")
-    a("")
-    OUT_MINTA.write_text("\n".join(L), encoding="utf-8")
-
-
 def tulis_xlsx(keluar):
-    """Daftar yang sama dengan PERMINTAAN-PDF.md dalam satu lembar Excel."""
+    """Kajian tanpa PDF dalam satu lembar Excel untuk dikirim ke Bu Fatma."""
     try:
         from openpyxl import Workbook
         from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -422,50 +384,10 @@ def tulis_xlsx(keluar):
     wb.save(OUT_XLSX)
 
 
-def tulis_prioritas(keluar):
-    belum = [r for r in keluar if r["pdf_ada"] == "N"]
-    rk = rekap(keluar)
-    L = []
-    a = L.append
-    a("# Prioritas unduh manual PDF `main6`")
-    a("")
-    a("Dibuat oleh `tools/scopus/verifikasi_teks_lengkap.py` dari "
-      "`literature/scopus-2026-09/verifikasi/cek-4-teks-lengkap/teks_lengkap.csv`; jalankan ulang skrip setelah "
-      "menambah PDF (baris yang PDF-nya sudah ada akan hilang dari tabel).")
-    a("")
-    a("Urutan mengikuti rencana verifikasi teks lengkap: (1) kajian Tabel 2 dan 3 naskah, "
-      "(2) kajian C1 yang dikode dari judul, (3) sisa kajian C1, (4) kajian sawit C3 "
-      "pencacahan dan multipandang. Di dalam prioritas 2–4: OA dulu, lalu perpustakaan, "
-      "Bu Fatma, penulis; tahun terbaru dulu.")
-    a("")
-    a("Simpan setiap PDF sebagai `literature/scopus-2026-09/pdf/<key>.pdf` (nama persis kolom "
-      "*key*). Centang kotak setelah selesai. Daftar permintaan: "
-      "`literature/scopus-2026-09/verifikasi/cek-4-teks-lengkap/PERMINTAAN-PDF.md`.")
-    a("")
-    a("| Prioritas | Kelompok | Kajian | PDF ada | Belum | OA ditemukan |")
-    a("|---|---|---|---|---|---|")
-    for p in (1, 2, 3, 4):
-        t, y, o = rk[p]
-        a(f"| {p} | {NAMA_P[p]} | {t} | {y} | {t - y} | {o} |")
-    a("")
-    a("| ✓ | # | Prioritas | Kode | Key (nama berkas) | Tahun | Judul | Penerbit | DOI | Jalur disarankan |")
-    a("|---|---|---|---|---|---|---|---|---|---|")
-    for i, r in enumerate(belum, 1):
-        j = r["jalur_disarankan"]
-        if j.startswith("OA: "):
-            j = f"OA: <{j[4:]}>"
-        a(f"| ☐ | {i} | {r['prioritas']} | {r['kode']} | `{r['key']}` | {r['tahun']} | "
-          f"{md_sel(r['judul'])} | {r['penerbit']} | {doi_link(r['doi'])} | {j} |")
-    a("")
-    OUT_PRIOR.write_text("\n".join(L), encoding="utf-8")
-
-
 def main():
     keluar, peringatan = susun()
     tulis_csv(keluar)
-    tulis_permintaan(keluar)
     tulis_xlsx(keluar)
-    tulis_prioritas(keluar)
     rk = rekap(keluar)
     print(f"{OUT_CSV.relative_to(ROOT)}: {len(keluar)} baris")
     for p in (1, 2, 3, 4):

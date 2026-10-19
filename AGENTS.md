@@ -17,17 +17,20 @@ agen.
 
 - Pokok lebih dahulu, kalimat pendek, satu gagasan per kalimat. Istilah awam
   ditulis dahulu dan kode internal menyusul dalam kurung, misalnya "artikel yang
-  menggabungkan beberapa foto (C1)". Kode verifikasi dijelaskan di
-  `literature/scopus-2026-09/verifikasi/ISTILAH.md`.
+  menggabungkan beberapa foto (C1)".
 - Setiap folder kerja punya satu pintu masuk manusia (`README.md`) yang menjawab
   tiga hal: apa isi folder, posisi sekarang, dan langkah berikutnya. Rincian
-  teknis untuk agen (aturan data, perintah, asal-usul isian model) ditaruh di
-  berkas terpisah, misalnya `SERAH-TERIMA.md`, dan ditautkan dari bagian
-  "Untuk agen".
+  teknis untuk agen ditulis di docstring skrip dan di berkas ini, bukan di
+  berkas catatan terpisah.
 - Setiap berkas dapat dipahami sendiri. Arti kode, isi kolom, dan alasan
   ditulis lengkap di berkas itu, bukan dirujuk ke berkas lain atau ditulis
-  sebagai nama proses ("putaran kedua (AI-2)"). Berkas yang sulit dibaca
-  diperbaiki langsung, bukan dijelaskan dengan berkas tambahan.
+  sebagai nama proses ("putaran kedua (AI-2)"). Di lembar, kode ditulis bersama
+  artinya, misalnya "M3 (pelacakan video)"; daftar artinya ada di
+  `tools/scopus/verifikasi_istilah.py`. Berkas yang sulit dibaca diperbaiki
+  langsung, bukan dijelaskan dengan berkas tambahan.
+- Bahan antara buatan model (paket bacaan, JSON mentah, draf, cadangan) tidak
+  disimpan di repo. Yang disimpan hanya hasil akhir yang dibaca manusia dan data
+  minimum yang dibaca skrip.
 - Satu fakta, satu tempat. Keputusan yang menunggu peninjau hanya dicatat di
   satu daftar (untuk verifikasi: `verifikasi/TUGAS.md`); status tidak
   digandakan di beberapa berkas.
@@ -50,8 +53,8 @@ Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 
 | Jalur | Status |
 |---|---|
-| Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 34 halaman, 12 seksi, 2 lampiran, 10 gambar, 6 tabel). `main`–`main5v3` adalah arsip: jangan disunting atau dirujuk. |
-| Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.145 dinilai kelayakannya → **1.013 masuk peta**, ditambah 5 dari luar pencarian = 1.018 (2012–2026). Kode Scopus: C1 199 · C2 243 · C3 171 · C4 52 · C5 138 · R 122 · T 88; luar pencarian: C1 1 · C2 2 · C5 1 · R 1. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: butir peninjau diputuskan model pada 19 Oktober 2026; tersisa F.4 dan 5.7 di `verifikasi/TUGAS.md`. Agen membaca `verifikasi/SERAH-TERIMA.md` dahulu.** |
+| Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 34 halaman, 12 seksi, 2 lampiran, 10 gambar, 6 tabel). `main`–`main5v3` adalah arsip: jangan disunting atau dirujuk. Penulisan ulang gaya menurut `manuscript/guides/CATATAN-GAYA-TULIS-CONTOH.md` belum selesai (paragraf panjang, kolom hasil terpisah di tabel perbandingan, ringkasan sawit per subseksi). |
+| Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.145 dinilai kelayakannya → **1.013 masuk peta**, ditambah 5 dari luar pencarian = 1.018 (2012–2026). Kode Scopus: C1 199 · C2 243 · C3 171 · C4 52 · C5 138 · R 122 · T 88; luar pencarian: C1 1 · C2 2 · C5 1 · R 1. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: Cek 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026; tersisa F.4 dan 5.7 di `verifikasi/TUGAS.md`.** Belum dikerjakan: pemeriksaan ulang eksklusi tahap judul untuk kueri Q2 dan Q4–Q9 (sekitar 3.300 rekaman; Q1 dan Q3 sudah); ekstraksi teks empat PDF CSAM (`guo2023real`, `tu2026passion`, `wang2024camellia`, `zhu2022identification`) yang fonnya tanpa pemetaan Unicode. |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed 0,0049. |
 | Depth sensor (E-022…E-033b) | Pipeline reproyeksi tervalidasi, tetapi **tidak ada klaim peningkatan deteksi yang sah**. |
@@ -67,7 +70,7 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 | Lokasi | Isi |
 |---|---|
 | `literature/scopus-2026-09/` | Korpus `main6`: `PROTOKOL.md`, `QUERY.md`, `topik/` (kueri, rekaman, penyaringan, `bukti/`), `pdf/` dan `teks/` |
-| `literature/scopus-2026-09/verifikasi/` | `cek-1-…` sampai `cek-6-…` mengikuti rencana Bu Fatma dan hanya memuat bahan peninjau. Pintu masuk manusia `README.md`; keputusan yang menunggu peninjau `TUGAS.md`; arti kode `ISTILAH.md`; catatan teknis `SERAH-TERIMA.md`. Keluaran model ada di `hasil-kerja-ai/`: `menunggu-acc/` (draf), `putaran-kedua/` (sudah diterapkan). Cadangan lama di `arsip/` |
+| `literature/scopus-2026-09/verifikasi/` | `cek-1-…` sampai `cek-6-…` mengikuti rencana Bu Fatma dan hanya memuat lembar peninjau. Pintu masuk `README.md`; keputusan yang menunggu peninjau `TUGAS.md`; log perubahan `log_perubahan.csv`. `.teknis/` berisi data yang dibaca skrip: log teknis, alasan label C1/C3 dan ajudikasi Cek 1 (sumber alasan log), serta dua CSV dasar angka pemeriksaan ulang tahap judul |
 | `literature/entries/` | 182 ringkasan makalah korpus lama (dasar Ruang Baca dan naskah arsip) |
 | `literature/withheld/` | 20 entri ditahan; jangan masuk naskah |
 | `manuscript/source/` | `main6.tex`, `main6-body.tex`, `references6.bib`; berkas `main`–`main5v3` adalah arsip |
@@ -214,15 +217,22 @@ plafon.
 - Subagen: jangan menjalankan puluhan agen Opus; untuk pekerjaan massal per
   makalah pakai Haiku. Penilaian buta berarti konteks baru tanpa kode model,
   hasil sebelumnya, atau petunjuk lain.
-- **Keluaran model untuk verifikasi ditulis ke
-  `literature/scopus-2026-09/verifikasi/hasil-kerja-ai/menunggu-acc/<cek>/`
-  dahulu**, bukan ke folder `cek-N`. Setiap draf baru dicatat di
+- **Usul model untuk verifikasi tidak langsung diisikan ke lembar `cek-N`.**
+  Bahan kerja model disimpan di scratchpad. Setiap usul dicatat di
   `verifikasi/TUGAS.md` sebagai butir berbahasa awam (pertanyaan, berkas yang
-  dibuka, dampak); asal-usul teknisnya dicatat di `SERAH-TERIMA.md`.
-  Berkas baru dipindah atau diisikan ke folder `cek-N` setelah pengguna
-  menyetujuinya secara eksplisit; butirnya lalu dihapus dari `TUGAS.md`.
-- Isian lembar verifikasi yang berasal dari model harus ditandai demikian di
-  kolom `catatan`; jangan disajikan sebagai bacaan peninjau.
+  dibuka, dampak). Usul diisikan setelah pengguna menyetujuinya secara
+  eksplisit; butirnya lalu dihapus dari `TUGAS.md`.
+- Isian lembar verifikasi yang berasal dari model ditandai di kolom
+  `diisi_oleh` atau `oleh` ("AI, disetujui peninjau …"); jangan disajikan
+  sebagai bacaan peninjau.
+- Data verifikasi diubah di sumbernya: keputusan penyaringan di
+  `topik/penyaringan/abstrak_*.txt` (setiap idx tepat satu baris; rekaman yang
+  dimasukkan peninjau di `abstrak_F00.txt`), label C1 di
+  `topik/bukti/mekanisme_C1.txt`, label C3 di `topik/bukti/kode_C3.txt`. Setiap
+  perubahan dicatat sebagai baris di `verifikasi/.teknis/log_perubahan.csv`,
+  lalu `python3 tools/scopus/verifikasi_log_manusia.py` dijalankan untuk
+  membuat ulang `verifikasi/log_perubahan.csv`. Log manusia tidak disunting
+  tangan.
 - Klaim tentang depth berstatus hipotesis yang dapat dipalsukan.
 - Temuan yang mengubah cara kerja jangka panjang dicatat di berkas ini, bukan di
   log eksperimen.
