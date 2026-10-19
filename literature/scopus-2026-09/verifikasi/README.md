@@ -12,6 +12,10 @@ diputuskan dan diterapkan, kecuali dua yang hanya dapat dikerjakan manusia
 ([TUGAS.md](TUGAS.md)). Isian model di lembar ditandai di kolom `catatan` atau
 `catatan_peninjau`.
 
+Pada 19 Oktober 2026 peninjau menyatakan telah memeriksa dan menyetujui
+seluruh 2.194 perubahan model di `log_perubahan.csv` (AI-2, AI-Cek1, AI-Tugas).
+Kolom `oleh` tetap mencatat model sebagai pembuat perubahan.
+
 | Pemeriksaan | Yang diperiksa | Keadaan |
 |---|---|---|
 | 1. Sampel acak | Kecocokan keputusan peninjau dan AI pada 300 judul dan 165 abstrak acak | Selesai. 118 perbedaan diputuskan pada 18 Oktober (8 keputusan berubah) |

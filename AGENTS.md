@@ -127,8 +127,13 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
 - Kode mekanisme C1 dan kode C3 disunting di `topik/bukti/mekanisme_C1.txt` dan
   `kode_C3.txt`; berkas itu menimpa kode otomatis `kode_bukti.py`.
 - Naskah tidak memuat jalur folder atau kode internal repo.
-- Penyaringan dilakukan satu peninjau dengan bantuan model bahasa besar;
-  nyatakan apa adanya, jangan diklaim sebagai dua peninjau independen.
+- Naskah hanya memuat metode yang diperlukan pembaca jurnal untuk menilai dan
+  mengulang peta. Riwayat verifikasi internal (putaran model, ajudikasi, uji
+  sanggah, pendelegasian keputusan, isi log perubahan) tidak dijabarkan di
+  naskah; rinciannya cukup di repo dan bahan tambahan.
+- Penyaringan dilakukan satu peninjau dengan bantuan model bahasa besar.
+  Nyatakan sekali secara ringkas di metode, keterbatasan, dan deklarasi AI
+  jurnal; jangan diklaim sebagai dua peninjau independen.
 - Hasil eksperimen SawitMVC (E-/F-) bukan bagian korpus `main6`; bila dikutip,
   angkanya dari `experiments/METRICS.md`.
 

@@ -180,6 +180,14 @@ Rincian per butir: `hasil-kerja-ai/putaran-kedua/tugas-model/README.md`.
   dan baris barunya diisi Y dengan rujukan ke baris lama.
 - **Draf lama.** `menunggu-acc/cek-2`, `cek-3`, `cek-5`, `cek-6` dipindah ke
   `putaran-kedua/draf-cek/` karena butirnya sudah diputuskan.
+- **Persetujuan peninjau.** Pada 19 Oktober 2026 peninjau menyatakan telah
+  memeriksa dan menyetujui seluruh 2.194 baris model di `log_perubahan.csv`
+  (AI-2 1.232, AI-Tugas 949, AI-Cek1 13). Persetujuan dicatat di sini dan di
+  `README.md`, bukan dengan mengganti kolom `oleh`, agar asal perubahan tetap
+  terlacak (`AGENTS.md` §11). Pada hari yang sama naskah dipangkas sesuai
+  `AGENTS.md` §7 yang baru: subbagian penyaringan, paragraf pengodean,
+  keterbatasan ketiga, dan deklarasi AI tidak lagi menjabarkan putaran model,
+  ajudikasi, atau pendelegasian. Lembar Cek 6 belum dibuat ulang.
 
 ### Putaran kedua (1–2 Oktober 2026)
 
