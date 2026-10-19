@@ -36,7 +36,7 @@ from verifikasi_ai2_gabung import himp_mek, himp_mod, muat_tab
 
 TANGGAL = "2026-10-01"
 OLEH = "AI-2"
-LOG = VER / "log_perubahan.csv"
+LOG = VER / ".teknis" / "log_perubahan.csv"
 KOLOM_LOG = ["tanggal", "berkas", "idx_atau_key", "kolom", "nilai_lama", "nilai_baru", "alasan", "oleh"]
 KUAT = ("teks lengkap", "teks lengkap (web)")
 

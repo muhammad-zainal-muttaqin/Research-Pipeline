@@ -453,7 +453,7 @@ ubah juga berkas sumbernya, lalu catat setiap perubahan di log.
 | Keputusan penyaringan (C1/C2/C3/…/X, alasan E#) | baris `idx KODE [E#]` di `topik/penyaringan/abstrak_*.txt` |
 | Kode mekanisme, akuisisi, per_kelas, hasil ringkas C1 | `topik/bukti/mekanisme_C1.txt` |
 | Kode tugas, lokasi, modalitas, multipandang, per_kelas C3 | `topik/bukti/kode_C3.txt` |
-| **Setiap** perubahan di atas | `verifikasi/log_perubahan.csv` |
+| **Setiap** perubahan di atas | `verifikasi/.teknis/log_perubahan.csv`, lalu `python3 tools/scopus/verifikasi_log_manusia.py` |
 
 Aturan penyuntingan berkas penyaringan:
 
@@ -471,7 +471,7 @@ Aturan penyuntingan berkas penyaringan:
   perlu baris baru di `kode_C3.txt`. Rekaman yang keluar dari C1/C3 dihapus
   barisnya dari berkas kode itu.
 
-Format `log_perubahan.csv` (satu baris per sel yang berubah):
+Format `.teknis/log_perubahan.csv` (satu baris per sel yang berubah):
 
 ```
 tanggal,berkas,idx_atau_key,kolom,nilai_lama,nilai_baru,alasan,oleh
@@ -590,7 +590,8 @@ def main():
             print(f"Gagal menulis {nama}: {e}. Tutup berkas di Excel lalu jalankan ulang.", file=sys.stderr)
             sys.exit(1)
 
-    log = OUT.parent / "log_perubahan.csv"
+    log = OUT.parent / ".teknis" / "log_perubahan.csv"
+    log.parent.mkdir(exist_ok=True)
     try:
         with open(log, "x", newline="", encoding="utf-8") as f:
             f.write("tanggal,berkas,idx_atau_key,kolom,nilai_lama,nilai_baru,alasan,oleh\n")

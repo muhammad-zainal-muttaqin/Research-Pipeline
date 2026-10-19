@@ -42,7 +42,7 @@ MANUAL = KORPUS / "topik/bukti/mekanisme_C1.txt"
 BODY = ROOT / "manuscript/source/main6-body.tex"
 VER = KORPUS / "verifikasi"
 LEMBAR = VER / "cek-5-kode-ulang" / "kode_ulang_C1.csv"
-LOG = VER / "log_perubahan.csv"
+LOG = VER / ".teknis" / "log_perubahan.csv"
 SAMPEL = VER / "cek-5-kode-ulang" / "sampel_fatma_C1.csv"
 LOG_KEPALA = ["tanggal", "berkas", "idx_atau_key", "kolom", "nilai_lama",
               "nilai_baru", "alasan", "oleh"]

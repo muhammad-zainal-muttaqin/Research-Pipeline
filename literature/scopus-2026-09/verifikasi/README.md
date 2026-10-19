@@ -13,8 +13,7 @@ diputuskan dan diterapkan, kecuali dua yang hanya dapat dikerjakan manusia
 `catatan_peninjau`.
 
 Pada 19 Oktober 2026 peninjau menyatakan telah memeriksa dan menyetujui
-seluruh 2.194 perubahan model di `log_perubahan.csv` (AI-2, AI-Cek1, AI-Tugas).
-Kolom `oleh` tetap mencatat model sebagai pembuat perubahan.
+seluruh 2.194 perubahan buatan AI di `log_perubahan.csv`.
 
 | Pemeriksaan | Yang diperiksa | Keadaan |
 |---|---|---|
@@ -48,8 +47,9 @@ kode seperti C1 atau E5 ada di [ISTILAH.md](ISTILAH.md).
 
 Boleh diabaikan: `hasil-kerja-ai/putaran-kedua/draf-cek/` (draf model 11–18
 Oktober yang sudah diputuskan), `arsip/` (cadangan lama), dan
-`cek-1-sampel-buta/.kunci/` (kunci jawaban sampel buta). `log_perubahan.csv`
-mencatat setiap nilai yang diubah dan diisi oleh skrip.
+`cek-1-sampel-buta/.kunci/` (kunci jawaban sampel buta), dan `.teknis/`
+(salinan log untuk skrip). `log_perubahan.csv` mencatat setiap perubahan:
+artikel, yang diubah, sebelum, sesudah, alasan, dan pengubahnya.
 
 ## Untuk agen
 

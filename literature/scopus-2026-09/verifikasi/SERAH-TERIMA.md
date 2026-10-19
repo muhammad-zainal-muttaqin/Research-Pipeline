@@ -182,12 +182,19 @@ Rincian per butir: `hasil-kerja-ai/putaran-kedua/tugas-model/README.md`.
   `putaran-kedua/draf-cek/` karena butirnya sudah diputuskan.
 - **Persetujuan peninjau.** Pada 19 Oktober 2026 peninjau menyatakan telah
   memeriksa dan menyetujui seluruh 2.194 baris model di `log_perubahan.csv`
-  (AI-2 1.232, AI-Tugas 949, AI-Cek1 13). Persetujuan dicatat di sini dan di
-  `README.md`, bukan dengan mengganti kolom `oleh`, agar asal perubahan tetap
-  terlacak (`AGENTS.md` §11). Pada hari yang sama naskah dipangkas sesuai
-  `AGENTS.md` §7 yang baru: subbagian penyaringan, paragraf pengodean,
-  keterbatasan ketiga, dan deklarasi AI tidak lagi menjabarkan putaran model,
-  ajudikasi, atau pendelegasian. Lembar Cek 6 belum dibuat ulang.
+  (AI-2 1.232, AI-Tugas 949, AI-Cek1 13). Pada hari yang sama naskah
+  dipangkas sesuai `AGENTS.md` §7 yang baru: subbagian penyaringan, paragraf
+  pengodean, keterbatasan ketiga, dan deklarasi AI tidak lagi menjabarkan
+  putaran model, ajudikasi, atau pendelegasian. Lembar Cek 6 belum dibuat ulang.
+- **Dua log.** Log teknis `verifikasi/.teknis/log_perubahan.csv` (kolom `berkas`,
+  `idx_atau_key`, `kolom`, nilai mentah, `oleh` = AI-2/AI-Tugas/AI-Cek1) ditulis
+  skrip penerap dan dipakai untuk mencegah pencatatan ganda. `verifikasi/log_perubahan.csv`
+  adalah versi manusia (`AGENTS.md` §1), dibuat ulang dengan
+  `python3 tools/scopus/verifikasi_log_manusia.py` setiap kali log teknis berubah.
+  Skrip itu menerjemahkan kode, menyebut artikel dengan penulis dan judul, dan
+  mengambil alasan sebenarnya dari `ajudikasi_cek1.csv`, `tugas-model/label_c1.csv`,
+  `label_c3.csv`, dan `tambahan_metode_lain.csv` bila alasan log teknis hanya nama
+  proses. Jangan menyunting log manusia dengan tangan.
 
 ### Putaran kedua (1–2 Oktober 2026)
 

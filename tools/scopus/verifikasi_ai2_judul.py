@@ -218,7 +218,7 @@ def terapkan():
     c3_baru = tambah_tab(TOPIK / "bukti/kode_C3.txt", c3)
 
     # log
-    log_path = VER / "log_perubahan.csv"
+    log_path = VER / ".teknis" / "log_perubahan.csv"
     sudah_log = {(r["berkas"], str(r["idx_atau_key"]), r["kolom"]) for r in baca_csv(log_path)}
     with open(log_path, "a", encoding="utf-8", newline="") as f:
         w = csv.writer(f)

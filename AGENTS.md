@@ -24,6 +24,10 @@ agen.
   teknis untuk agen (aturan data, perintah, asal-usul isian model) ditaruh di
   berkas terpisah, misalnya `SERAH-TERIMA.md`, dan ditautkan dari bagian
   "Untuk agen".
+- Setiap berkas dapat dipahami sendiri. Arti kode, isi kolom, dan alasan
+  ditulis lengkap di berkas itu, bukan dirujuk ke berkas lain atau ditulis
+  sebagai nama proses ("putaran kedua (AI-2)"). Berkas yang sulit dibaca
+  diperbaiki langsung, bukan dijelaskan dengan berkas tambahan.
 - Satu fakta, satu tempat. Keputusan yang menunggu peninjau hanya dicatat di
   satu daftar (untuk verifikasi: `verifikasi/TUGAS.md`); status tidak
   digandakan di beberapa berkas.
