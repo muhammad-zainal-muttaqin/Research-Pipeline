@@ -249,6 +249,10 @@ plafon.
   lalu `python3 tools/scopus/verifikasi_log_manusia.py` dijalankan untuk
   membuat ulang `verifikasi/log_perubahan.csv`. Log manusia tidak disunting
   tangan.
+- Pekerjaan verifikasi `main6` di-commit setiap kali satu cek selesai, dengan
+  pesan yang diawali nama ceknya, misalnya `Cek 4: PDF Yok-In dkk. 2026
+  diperoleh`. Commit yang menyentuh beberapa cek menyebut semuanya
+  (`Cek 4, Cek 5: …`). Aturan ini berasal dari rencana verifikasi Bu Fatma.
 - Klaim tentang depth berstatus hipotesis yang dapat dipalsukan.
 - Temuan yang mengubah cara kerja jangka panjang dicatat di berkas ini, bukan di
   log eksperimen.
