@@ -119,7 +119,7 @@ NAMA = {
     'hasil_ringkas': ('Ringkasan hasil artikel', lambda v: v),
     'sumber_kode': ('Keterangan artikel dibaca dari', lambda v: v),
     'halaman': ('Letak bukti di artikel', lambda v: 'hanya judul; abstrak dan teks lengkap tidak dapat dibaca'
-                if re.search(r'pdftoppm|null', v) else '; '.join(
+                if re.search(r'pdftoppm|null', v) and not v.startswith('Abstrak') else '; '.join(
         p.strip() for p in re.sub(r'\s*\([^)]*paket[^)]*\)', '', v.replace('Judul paket', 'Judul')).split(';')
         if not re.search(r'paket|Paket|sumber:|/', p))),
     'referensi_hitung': ('Hitungan artikel dibandingkan dengan', gabung(REF, ';')),

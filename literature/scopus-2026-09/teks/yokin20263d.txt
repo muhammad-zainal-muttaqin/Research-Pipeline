@@ -1,0 +1,2066 @@
+Original papers
+3D reconstruction and segmentation of grape bunches for robotic 
+berry thinning
+Kabin Yok-In a
+, Prawit Buayai b, Dear Moeurn b, Xiaoyang Mao b,*
+a Department of Computer Science and Engineering, Faculty of Engineering, University of Yamanashi, Japan
+b Graduate Faculty of Interdisciplinary Research, University of Yamanashi, 4-3-11 Takeda, Kofu, Yamanashi 400-8511, Japan
+A R T I C L E I N F O
+Keywords:
+Table grape berry thinning
+Neural radiance fields
+3D reconstruction
+Point cloud segmentation
+RANSAC sphere fitting
+Robotic manipulation
+Agricultural robotics
+A B S T R A C T
+Table grape thinning requires selective removal of 20–40% of berries from dense clusters. In practice, workers 
+decide which berries to remove by considering both the approximate berry count and local 3D spatial charac­
+teristics such as crowding and relative positioning. Automating this task is challenging because conventional 2D 
+image-based approaches suffer from occlusion-related counting errors and lack explicit 3D spatial information 
+necessary for reliable manipulation. We propose a robot-integrated vision pipeline that reconstructs grape bunch 
+structure from posed multi-view RGB images. Neural Radiance Fields (NeRF) is used to learn a volumetric scene 
+representation, from which a dense, low-noise point cloud is extracted via depth back-projection, and RANSAC- 
+based geometric fitting models individual berries and stems, enabling berry-level segmentation and orientation 
+estimation for manipulation planning. The perception pipeline uses an eye-in-hand RealSense D405 camera 
+mounted on a Fanuc CRX-5iA collaborative robot. Camera poses are derived from the robot kinematic chain, 
+allowing the reconstructed point cloud and detected berry centers to be expressed directly in the metric robot 
+base frame without external scale recovery. In robot-mounted RealSense D405 experiments on 10 grape bunches, 
+RANSAC sphere fitting achieved a counting MAE of 0.50 berries, RMSE of 0.71 berries, and mean center 
+localization error of 2.71 mm. On a 52-bunch benchmark, RANSAC sphere fitting outperforms the learning-based 
+SoftGroup++ method for 3D berry instance segmentation (92.1% vs 82.8% average precision) without requiring 
+annotated training data. In 35 manipulation trials, the system achieved an 85.7% pre-grasp reachability rate and 
+an 83.3% conditional target success rate demonstrating an end-to-end pipeline from neural reconstruction to 
+manipulation-ready berry poses.
+1. Introduction
+Berry thinning is a critical horticultural practice in table grape 
+cultivation that involves strategic removal of berries during early bunch 
+development to improve fruit quality for better market value. This 
+operation provides adequate spacing for remaining berries to expand, 
+improves airflow within the bunch to reduce disease pressure from 
+pathogens, and optimizes bunch compactness for premium market 
+presentation. The impact of proper berry thinning on final product 
+quality is substantial and multifaceted. Berry thinning prevents exces­
+sive bunch compactness which is one of the most important physical 
+barriers to avoid fungal infections (Roberto et al., 2015). Thinning 
+treatments have been shown to increase berry weight, total soluble 
+solids, sugar content (fructose and glucose), berry firmness, and mineral 
+contents, while decreasing titratable acidity and improving the ratio of 
+sugar to acid (Jia et al., 2023). The timing of thinning is equally critical. 
+Early berry thinning (7 days after flowering) is most effective in 
+reducing bunch compactness and achieving optimal bunch quality 
+(Ivaniˇsevi´c et al., 2020; Roberto et al., 2015). Research has demon­
+strated that appropriate thinning reduces grape yield but increases mean 
+cluster weight, total phenols, anthocyanins, and individual berry size, 
+while the bunch becomes more open and less inclined toward disease 
+development (Karoglan et al., 2014). Beyond fruit quality, controlled 
+bagging treatments combined with proper thinning timing can effec­
+tively regulate light exposure, influencing sugar metabolism and 
+anthocyanin accumulation during berry maturation (Zha et al., 2019). 
+These quality improvements directly affect market price, making berry 
+thinning economically essential despite its labor intensity.
+However, berry thinning faces critical operational constraints in 
+commercial production. The suitable period for this operation is limited 
+* Corresponding author.
+E-mail address: mao@yamanashi.ac.jp (X. Mao). 
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+https://doi.org/10.1016/j.compag.2026.111898
+Received 27 February 2026; Received in revised form 4 May 2026; Accepted 12 May 2026  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+Available online 19 May 2026 
+0168-1699/© 2026 The Author(s). Published by Elsevier B.V. This is an open access article under the CC BY-NC-ND license ( http://creativecommons.org/licenses/by- 
+nc-nd/4.0/ ). 
+
+to only one to two weeks post-flowering, when there is still enough space 
+among berries to allow unnecessary berries to be cut without damaging 
+those to be retained, before the grapes begin to accumulate sugar. This 
+narrow time window, combined with labor shortages and aging farming 
+populations in major production regions such as Japan, creates severe 
+bottlenecks in table grape production. In Japan, technologies enabling 
+unskilled farmers to perform berry thinning using deep learning and 
+augmented reality technologies are reported (Buayai et al., 2023b).
+The practice of high-quality berry thinning by skilled farmers relies 
+on understanding both the spatial arrangement and developmental po­
+tential of berries within the bunch. Accurate berry counting serves as a 
+key information for effective thinning decisions. Farmers must first ac­
+cess the initial berry count (typically 60–80 berries in early bunch 
+development) to determine the removal target (typically 35–40 berries 
+for premium table grapes) based on variety-specific quality standards. 
+As illustrated in Fig. 1a, the temporal transformation from pre-thinning 
+to harvest demonstrates why geometric and developmental assessment 
+is critical: an initial bunch of 70 berries at early development (left) 
+undergoes strategic thinning during the narrow 2–3 weeks post- 
+flowering window to approximately 35 berries (middle), which then 
+expand over 2 months to produce marketable full-grown bunch (right). 
+This progression reveals that farmers must assess not only the current 
+berry count but also predict the 3D spatial arrangement evaluating 
+whether remaining berries will have adequate spacing to expand 
+without physical interference from neighbors. The target bunch archi­
+tecture after thinning (Fig. 1b) follows a hierarchical structure: a total 
+length of 7–8 cm with berries distributed across multiple lateral sub- 
+branches, typically maintaining 4–5 berries per 2 sub-branches in the 
+upper region, 3 berries per 5 sub-branches in the middle section, and 2 
+berries per 5 sub-branches in the lower portion, yielding target counts of 
+28–40 berries. This spatial organization serves multiple agronomic ob­
+jectives: adequate spacing allows each berry to expand to target 
+marketable size without physical interference from neighbors, improved 
+airflow between berries reduces humidity and fungal disease pressure, 
+and the open architecture facilitates uniform light exposure promoting 
+anthocyanin development and sugar accumulation that characterizes 
+premium table grapes. This geometric reasoning about 3D structure, 
+spacing adequacy, and growth potential cannot be reliably inferred from 
+single 2D images due to occlusion and perspective ambiguity. For ro­
+botic execution, this task further demands accurate 3D localization of 
+individual berries in metric coordinates compatible with robot motion 
+planning, along with collision-aware approach.
+2D image-based methods achieve fast berry detection and counting 
+using deep learning with hand-crafted features or end-to-end neural 
+networks (Buayai et al., 2021; Buayai et al., 2023b; Du & Liu, 2023; Woo 
+et al., 2023a). Early work employed regression model based on hand 
+crafted features (Buayai et al., 2021), while recent approaches use 
+convolutional neural networks for predicting berry counting from single 
+image (Woo et al., 2023a) or instance segmentation using advanced 
+architectures like Swin transformer with adaptive spatial feature fusion 
+(Du & Liu, 2023). While instance segmentation methods like AS-SwinT 
+achieve impressive 2D detection performance (AP > 90%), these 
+methods suffer from fundamental limitations that make them inade­
+quate for precision berry thinning. First, they exhibit view-dependent 
+predictions: the same bunch yields different berry counts from 
+different viewpoints due to occlusion. Reported counting errors increase 
+systematically with bunch density, reaching mean absolute errors of 
+3.72 and 5.46 berries for bunch containing 52–61 and more than 61 
+Fig. 1. Berry thinning process and target bunch structure for Shine Muscat table grape. (a) Temporal progression from pre-thinning to post-thinning, and the 
+resulting full-grown bunch. (b) Target post-thinning structure.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+2 
+
+berries respectively (Woo et al., 2023a), with RMSE of 4.72–7.13 berries 
+for larger, denser bunches (Du & Liu, 2023). This error magnitude is 
+problematic for berry thinning, where the task typically involves 
+removing berries from initial counts of 70 down to target counts of 
+35–40. More critically, pixel coordinates from 2D detection cannot 
+directly guide robot motion without depth information. Extensions to 
+berry removal recommendation (Buayai et al., 2023b; Tamura et al., 
+2024) operate in image space by training a CNN model with bunch 
+images before and after thinning performed by a skilled farmer. How­
+ever, due to lacking 3D depth and structural information, such methods 
+cannot provide geometric reasoning about actual 3D inter-berry dis­
+tances and collision-free approach paths.
+Accurate 3D positioning for robotic manipulation requires depth 
+information that 2D method cannot provide. Single-view depth sensing 
+approaches attempted to bridge this gap by integrating RGB-D cameras 
+or stereo vision for 3D positioning, Buayai et al. (2023a) combined 
+depth sensing technology with neural networks to control robotic arm 
+end-effector for grape berry approaching, integrating 2D berry detection 
+with depth maps to estimate 3D target coordinates and training neural 
+networks to map detected berry positions to feasible robot end-effector 
+poses. However, single-view depth sensing achieves only 20% approach 
+success due to challenges for outdoor agricultural applications: noisy 
+depth estimates under variable lighting. Furthermore, single-view depth 
+provides no geometric consistency across viewpoints, depth estimates 
+for the same berry differ depending on viewing angle and cannot handle 
+severe occlusion where berries are completely hidden from the sensor’s 
+line of sight. These depth errors propagate directly to collision checking 
+and trajectory planning limiting reliability for safe manipulation in 
+cluttered bunches.
+Multi-view reconstruction methods offer the potential for com­
+plete geometric understanding. Classical Structure-from-Motion (SfM) 
+and Multi-View Stereo (MVS) have been applied to grape bunch 
+reconstruction (Woo et al., 2023b). However, photometric stereo 
+matching faces significant challenges for grape berries. This approach 
+relies on identifying corresponding texture features across multiple 
+views. Grape berries present two key challenges for this approach: (1) 
+surface texture-poor that provides few distinctive matching points, and 
+(2) small physical size (typically 10–20 mm diameter) relative to prac­
+tical reconstruction resolution. These factors result is sparse, incomplete 
+reconstruction where many berries are missed or only partially 
+captured.
+Neural Radiance Fields (NeRF) (Mildenhall et al., 2020) overcome 
+these texture-matching limitations through learned volumetric repre­
+sentations from multi-view images to render photorealistic images from 
+arbitrary viewpoints. Unlike classical MVS methods that relies on 
+explicit feature matching and produce sparse point clouds, NeRF learns 
+continuous volumetric scene representations without requiring explicit 
+depth supervision (Li et al., 2025). Recent agricultural applications 
+demonstrate NeRF’s capability for high-fidelity crop reconstruction of 
+small and complex crop structures: rice panicles achieving mean F1 
+score of 86.9% and IoU of 79.8% (Yang et al., 2024), cherries (Hu et al., 
+2024), general plant phenotyping (Smitt et al., 2023), and tomato 
+morphological analysis (Choi et al., 2024).
+However, existing agricultural NeRF works focus on visualization 
+and phenotyping rather than robotic manipulation, revealing critical 
+gaps when extended to manipulation tasks. Three fundamental limita­
+tions persist: 2D mask fusion approaches (Meyer et al., 2024; Smitt et al., 
+2023) project neural network detections onto reconstructed geometry, 
+inheriting view-dependent errors and requiring heuristic merging rules 
+that introduce inconsistencies when berries appear differently across 
+views. Shrestha et al. (2025) render novel views for training pose esti­
+mation networks but require separate networks per object category and 
+provide no geometric primitives for collision checking. Phenotyping 
+pipelines (Choi et al., 2024) require separate calibration procedures 
+with known-dimension reference objects to recover metric scale and, 
+critically, do not validate end-to-end manipulation.
+NeRF was originally proposed for novel view synthesis by learning a 
+continuous volumetric scene representation from multi-view images to 
+render photorealistic images from arbitrary viewpoints. However, the 
+learned density field implicitly encodes scene geometry, enabling 
+extraction of dense 3D point clouds through ray-based depth estimation 
+and back-projection. We leverage this geometric byproduct for down­
+stream segmentation and manipulation rather than rendering capability 
+itself. Critically for our application, NeRF’s volumetric learning does not 
+require explicit feature matching between views, making it well suited 
+to texture-poor grape surfaces where classical multi-view stereo 
+methods produce sparse, incomplete reconstructions. By extracting in­
+dividual berry instances from reconstructed point cloud requires seg­
+mentation. For instance-level segmentation of 3D point clouds, two 
+primary approaches are commonly adopted: learning based approaches 
+and geometry-based approaches. Learning-based 3D instance segmen­
+tation method such as SoftGroup (Vu et al., 2022) directly segmenting 
+3D point clouds using neural networks. These methods require extensive 
+manually annotated 3D training data, which is costly to produce. 
+Furthermore, when berries are small and densely clustered with signif­
+icant occlusion, learned segmentation can fail to reliably separate in­
+dividual instances.
+In contrast, geometry-based approaches rely on explicit shape priors 
+and parametric primitive fitting. In this work, we adopt a RANSAC based 
+geometric primitive fitting strategy that leverages the strong prior that 
+grape berries are approximately by spherical. The method exploits the 
+geometric constraint: berry surfaces are well approximated by spheres, 
+whereas stem structures are more accurately modeled by connected 
+cylindrical primitives. This distinction enables robust separation 
+through primitive fitting without dependence on annotated training 
+data. Recent work has demonstrated RANSAC’s robustness to imaging 
+noise and outliers in agricultural point clouds, achieving R2 > 0.90 for 
+diameter and angle measurements even with up to 10% outlier 
+contamination 
+in 
+structure-from-motion 
+reconstructed 
+data 
+(Ghahremani et al., 2021). Prior applications have successfully identi­
+fied individual grape berries as spherical primitives using laser scanning 
+combined with RANSAC shape detection (Schnabel et al., 2007) in 
+controlled settings (Mack et al., 2018).
+This work builds on established components, including NeRF-based 
+reconstruction, RANSAC primitive fitting, skeletonization, and robotic 
+motion planning, and focuses on the integration into a robot-ready 
+perception-to-manipulation pipeline for grape berry thinning. Existing 
+agricultural NeRF studies mainly focus on visualization, trait measure­
+ment, or synthetic data generation, whereas robotic berry thinning re­
+quires relative berry positions to robot coordinate system, local stem- 
+aware approach orientations, and collision-aware motion execution. 
+To address these requirements, our system integrates robot-derived 
+camera poses, NeRF-based volumetric reconstruction, depth-based 
+point cloud extraction, RANSAC geometric primitive fitting, stem skel­
+eton extraction, and motion planning into a complete pipeline that 
+produces berry-level 3D positions and 6-DoF approach poses for robotic 
+execution. The key insight is that neural volumetric reconstruction and 
+geometric shape detection are complementary: NeRF learns a contin­
+uous scene representation from multi-view RGB images, from which a 
+dense point cloud is extracted through depth rendering and back- 
+projection, while RANSAC sphere fitting provides robust, training-free 
+berry segmentation by exploiting spherical geometry priors. By 
+deriving camera poses from robot kinematics, the extracted grape bunch 
+point cloud is expressed directly in the metric robot base frame, enabling 
+end-to-end validation from perception to physical manipulation.
+Our specific contributions are: 
+1. Robot-ready metric NeRF reconstruction for manipulation: We 
+develop an integrated eye-in-hand multi-view reconstruction 
+framework in which RGB images from a robot-mounted RealSense 
+D405, and camera poses derived from robot forward kinematics 
+chain through ROS 2 TF2 are used for NeRF training. This produced 
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+3 
+
+grape bunch point clouds directly in metric robot base coordinates 
+system, avoiding external scale estimation or frame transformation 
+and enabling seamless integration with downstream robot motion 
+execution.
+2. Training-free 3D berry segmentation and structure-aware pose 
+estimation: We propose a geometry-driven pipeline that segments 
+individual berries directly from NeRF-exported point clouds without 
+annotated training data. RANSAC sphere fitting detects berry in­
+stances and estimates their centers and radii, while the residual point 
+cloud is used to reconstruct the supporting stem and branch struc­
+ture. This produces both berry-level instances and structure-aware 6- 
+DoF target poses required for robotic thinning.
+3. System validation: We validate the proposed pipeline on robot- 
+derived metric reconstruction from 10 grape bunches and demon­
+strate accurate berry detection with an MAE of 0.50 berries, RMSE of 
+0.71 berries, and mean berry-center localization error of 2.71 mm. 
+We further evaluate the geometry-based segmentation method on a 
+52-bunch high-resolution benchmark, where it outperformed 
+SoftGroup++ without annotated training data. Physical robot 
+manipulation experiments on 35 sequential berry targets showed 
+that stem-aligned 6-DoF pose estimation improve collision-free grip 
+success from 78.3% to 96.0% among target-reachable trials.
+2. Materials and methods
+This section presents our complete pipeline for grape bunch recon­
+struction and robotic manipulation through multi-view neural recon­
+struction and RANSAC fitting. Fig. 2 illustrates the five-stages approach: 
+(1) multi-view data acquisition using an eye-in-hand camera mounted 
+on industrial manipulator (Section 2.2), (2) NeRF-based 3D recon­
+struction trained from 360-degree view images with metric-scale pres­
+ervation through robot-derived camera poses (Section 2.1), (3) 
+RANSAC-based primitive detection to segment individual berries and 
+stems in the point cloud (Section 2.3), (4) grape bunch structure 
+extraction from extracted primitives and 6-DoF berry pose optimization 
+that aligns end-effector approach direction with berry-stem attachment 
+geometry (Section 2.4), (5) robot motion planning and execution using 
+optimized berry poses as manipulation targets (Section 2.5).
+2.1. 3D reconstruction using NeRF
+NeRF represents a 3D scene as a continuous function fθ : (x, d)→(c, σ)
+mapping 3D position x ∈R3 and viewing direction d ∈S2 to RGB color c 
+and volume density σ ≥0. The function fθ is parameterized by a multi- 
+layer perceptron (MLP) with learnable weights θ. To render the color 
+observed along camera ray, we cast a ray r(t) = o +td from camera 
+center o through a pixel in direction d, sample N points along the ray 
+depths at {ti}N
+i=1 between near plane tnear and far plane tfar, and compute: ̂
+C(r) =
+∑N
+i=1Tiαici, where(ci, σi) = fθ(r(ti), d
+(1) 
+The transmittance Ti represents the probability that ray reaches 
+sample point i without being occluded, while the alpha compositing 
+weight αi determines each sample’s contribution to the final color: 
+αi = 1 −exp( −σiΔi), Δi = ti + 1 −ti
+(2) 
+Ti = exp
+(
+−
+∑
+i−1
+j=1
+σjΔj
+)
+=
+∏
+i−1
+j=1
+(
+1 −αj
+)
+(3) 
+Training optimizes the weights θ to minimize photometric recon­
+struction loss between rendered colors and observed pixel colors across 
+all training views: 
+L photo =
+∑
+r∈R
+‖̂C(r) −C(r)‖2
+(4) 
+where R is the set of all rays sampled from the training images and C(r) is 
+the ground truth pixel color.
+In this study, Nerfacto method from the Nerfstudio framework 
+(Tancik et al., 2023) was trained with 5000 iterations, this number of 
+iterations was evaluated the trade-off between quality and training time 
+(result in Section 3.1), a learning rate of 0.01 for the networks (0.001 for 
+camera optimization), and a batch size of 4096 rays. Near and far planes 
+set to tnear = 0.05 m and tfar = 15 m.
+After NeRF training, a dense point cloud is extracted through ray- 
+based depth sampling and back-projection. Rather than rendering full 
+depth images for each camera view, we repeatedly sample batches of 
+training rays from the NeRF data manager. For each ray r(t) = o + td, 
+the model predicts color, opacity, and depth via volumetric rendering. 
+The expected depth is computed as the transmittance-weighted average 
+Fig. 2. Pipeline overview. Multi-view images captured from an eye-in-hand camera configuration provide both RGB appearance and metric camera poses derived 
+from robot kinematics (Section 2.2). These poses train a NeRF model that renders novel views and exports dense point clouds directly in the robot base coordinate 
+frame (Section 2.1). RANSAC sphere detection identifies individual berries and extracts their 3D centers and radii (Section 2.3). The residual point cloud after berry 
+removal undergoes Laplacian-based contraction to extract a skeletal representation of the stem structure and each detected berry's 6-DoF pose is optimized to align 
+the end-effector approach direction with the local stem attachment direction inferred from the skeleton (Section 2.4). The optimized poses serve as motion planning 
+targets for collision-checked robot approaching, with simplified collision geometry representing the bunch volume, support poles, and workspace boundaries 
+(Section 2.5).
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+4 
+
+of sample depths: ̂
+D(r) =
+∑N
+i=1Tiαiti
+∑N
+i=1Tiαi
+(5) 
+and a 3D point is obtained directly in the NeRF coordinate frame by 
+back-projecting along the ray: 
+p = o +̂ D(r)d
+(6) 
+Points are retained only if their rendered opacity exceeds a fixed 
+threshold τopacity = 0.5, which removes samples corresponding to empty 
+space: 
+opacity(r) =
+∑
+N
+i=1
+Tiαi
+(7) 
+To further improve geometric quality, statistical outlier removal is 
+applied using 20 nearest neighbors and a standard deviation ratio of 
+10.0. The final-colored point cloud is exported in PLY format and con­
+tains approximately two million points per grape bunch.
+NeRF training thus requires two inputs: a set of multi-view RGB 
+images with sufficient viewpoint coverage and per-image camera pose 
+estimates comprising intrinsic parameters and 6-DoF extrinsic trans­
+formations. The following section describes how these inputs are ob­
+tained through our robotic data acquisition system.
+2.2. Data acquisition
+The images used to train the NeRF model for the manipulation 
+pipeline were captured with an Intel RealSense D405 camera mounted 
+on a Fanuc CRX-5iA robot with an eye-in-hand configuration. This 
+arrangement supports repeatable viewpoint sampling and provides a 
+consistent relationship between camera and the robot end-effector, 
+which is required to express reconstructed geometry in the robot base 
+frame.
+2.2.1. Image capture
+RGB images were recorded at a resolution of 840 × 480 pixels using 
+only the RGB sensor of an Intel RealSense D405 mounted on Fanuc CRX- 
+5iA with custom end-effector (Fig. 3a). The D405 depth channel was not 
+used for NeRF reconstruction or point-cloud generation. To ensure 
+photometric consistency across viewpoints and minimize auto-exposure 
+artifacts that degrade NeRF training quality, camera settings were held 
+fixed during acquisition: ISO was set to 100, auto-exposure was disabled 
+with a fixed exposure time of 20 ms, and white balance was locked to 
+4000 K to compensate for greenhouse lighting conditions.
+The robot was commanded through a complete 360◦circular tra­
+jectory around each target grape bunch. The trajectory was planned in 
+the robot joint space, with the camera positioned at a working distance 
+of approximately 300 mm from the bunch center. Total of 279 images 
+were captured per acquisition sequence, corresponding to 1.29◦angular 
+increment between consecutive frames. This sampling density provides 
+substantial overlap between consecutive views and was further evalu­
+ated through the view-sampling ablation study reported in Section 3.2.
+During acquisition, each saved RGB image was paired with camera 
+pose obtained from the robot kinematic chain through ROS 2 TF2 at the 
+time of saving (Fig. 3b). The transform base link to D405 frame was 
+converted to the OpenGL camera convention allowing NeRF recon­
+struction to be expressed directly in the robot base coordinate frame. 
+The resulting posed image sequence therefore allowed NeRF recon­
+struction to be expressed directly in the robot base coordinate frame. 
+Fig. 3c shows a representative circular D405 acquisition trajectory and 
+the corresponding camera viewpoints around the target bunch.
+Although the proposed reconstruction pipeline does not use active 
+depth sensing, RGB image quality remains important because NeRF 
+optimization depends on multi-view photometric consistency. The effect 
+of RGB acquisition quality was therefore evaluated separately using a 
+paired robot-mounted D405/iPhone comparison, as reported in Section 
+3.4. The D405 depth channel may still be useful in future deployment for 
+coarse target-bunch localization, initial bunch-center estimation, scan- 
+trajectory initialization, ROI placement, and workspace-level collision 
+awareness.
+2.2.2. Camera intrinsics and extrinsic
+NeRF reconstruction requires camera intrinsics parameters and per- 
+image extrinsic poses. Camera intrinsics were obtained from the Real­
+Sense D405 factory calibration provided by the ROS 2 camera driver 
+node. The pinhole intrinsic matrix K (focal lengths and principal points): 
+K =
+⎡
+⎣
+fx
+0
+cx
+0
+fy
+cy
+0
+0
+1
+⎤
+⎦
+where 
+(
+fx, fy
+)
+= (433.3, 432.2) pixels are the focal lengths, and 
+(
+cxcy
+)
+=
+(848.0, 480.0) pixels are the principal points. Images were processed at 
+the original resolution (840 × 480), so intrinsics were applied without 
+additional scaling.
+Fig. 3. Eye-in-hand Intel RealSense D405 acquisition setup and robot-derived camera poses. (a) Intel RealSense D405 mounted on the Fanuc CRX-5iA end-effector for 
+robot-integrated RGB image acquisition. (b) ROS 2 TF2 transform tree used to obtain the camera pose from the robot kinematic chain. (c) Representative 360◦
+circular image acquisition trajectory around the target grape bunch. The small image planes indicate camera viewpoints along the trajectory. The D405 RGB images 
+and TF2-derived camera poses were used for NeRF reconstruction in the robot base coordinate frame.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+5 
+
+Camera extrinsic poses, the 6-DoF position and orientation of the 
+camera for each captured image are conventionally estimated using 
+structure-from-motion (SfM), with COLMAP (Schonberger & Frahm, 
+2016) being the de facto preprocessing tool in NeRF workflows. COL­
+MAP performs feature extraction, cross-view matching, and bundle 
+adjustment to recover camera poses from image correspondences. 
+However, this offline processing adds computational overhead (typically 
+several minutes for hundreds of images) and, more critically, produces 
+pose estimates in an arbitrary coordinate frame with unknown metric 
+scale. In our robotic pipeline, we bypass COLMAP entirely by deriving 
+camera poses directly from robot’s kinematic chain via the ROS 2 TF2 
+(Transform Framework). For each captured image, its timestamp was 
+recorded, and the corresponding camera pose was queried from TF2 at 
+that timestamp by computing the transform chain from the robot base 
+frame to the camera optical frame. This approach provides two advan­
+tages: (1) it eliminates the computational cost and potential failure 
+modes of feature-based pose estimation, and (2) it produces camera 
+poses in the metric robot base coordinate system, enabling the recon­
+structed point cloud to be used directly for robot motion planning 
+without additional frame transformations or scale calibration.
+2.2.3. Environment filtering
+Before berry detection, we remove background points outside the 
+region of interest to eliminate false positive detection from environ­
+mental clutter. The NeRF reconstruction produces a dense point cloud of 
+entire visible scene, including the target grape bunch, neighboring 
+bunch, canopy, and distance object.
+Our filtering strategy leverages the known camera trajectory geom­
+etry from eye-in-hand acquisition setup. During data acquisition the 
+camera was positioned at a fixed working distance of 300 mm from the 
+estimated bunch center throughout the 360◦circular trajectory. We 
+define a spherical region of interest (ROI) centered at this target position 
+with radius of 200 mm (diameter 400 mm). This radius was chosen to 
+provide sufficient margin beyond typical grape bunch dimension.
+As shown in Fig. 4, this spherical filtering effectively isolates the 
+grape bunch while removing the environment objects in the raw 
+reconstruction and provides a cleaner input for RANSAC-based berry 
+detection. This design assumes that the target bunch has been selected 
+before reconstruction and that the objective is to recover berry-level 
+geometry for one bunch at a time. Multi-bunch and canopy-level 
+reconstruction would require additional target-bunch detection, 
+bunch-level instance separation, and adaptive scan planning, which are 
+discussed as future work in Section 4.
+2.3. Berry segmentation using RANSAC geometry fitting
+The geometric characteristics of grape bunch point clouds motivate 
+the adoption of RANSAC-based sphere detection for berry segmentation. 
+As reported by Mack et al. (2018), berry surfaces exhibit approximately 
+spherical and smoothly curved geometry in laser-scanned point clouds, 
+whereas stem structures are more accurately described by connected 
+cylindrical primitives. This distinction in local surface geometry makes 
+geometric primitive fitting well suited for separating berries from stem 
+structures. In particular, the spherical shape of berries supports robust 
+detection through sphere fitting, while the geometry of stems is natu­
+rally excluded under appropriate geometric constraints.
+Grape berries are approximately spherical and therefore amenable to 
+detection via geometric primitive fitting. We employed the RANSAC 
+algorithm for robustly identify multiple spherical structures in the 
+presence of noise and outliers (Schnabel et al., 2007). Each sphere is 
+parameterized by a center c ∈R3 and a radius r > 0. The algorithm 
+operates iteratively by randomly sampling minimal point sets from the 
+point cloud, fitting sphere hypotheses to these samples, and determining 
+the subset of points that support each hypothesis. Sphere hypotheses are 
+generated by randomly sampling four points from the point cloud and 
+computing an initial estimate of the sphere center c = (x, y, z)⊤and 
+radius r. For each hypothesis, an inlier set I is defined as the set of 
+points whose distance to the sphere surface is below a predefined 
+tolerance ∊. A point p is classified as an inlier if |‖p −c‖ −r| ≤∊. If the 
+number of inliers exceeds a minimum threshold Nmin and rmin ≤r ≤rmax, 
+the sphere parameters are refined using least-squares fitting over all 
+inliers and the hypothesis is accepted; otherwise, it is rejected. This 
+procedure is repeated for a maximum of Kmax iterations to identify the 
+sphere with the largest inlier support. Since grape bunch point clouds 
+typically contain multiple berries, sphere detection is performed itera­
+tively. After each successful detection, the corresponding inlier points 
+are removed from the point cloud, and the detection process is applied to 
+the remaining points. Iteration continues until either an insufficient 
+number of points remains, or no further valid sphere hypotheses can be 
+identified. To avoid biologically implausible detections, candidate 
+spheres are constrained to an admissible radius range [rmin, rmax] derived 
+from known berry sizes of the target grape observed from the dataset in 
+Section 3.5.1. These parameters are summarized in Table 1.
+2.4. Bunch structure reconstruction and berry orientation prediction
+Robotic berry thinning requires an accurate 6-DoF target pose for 
+each berry so that the end effector can align its tool axis with the 
+intended approach direction and maintain clearance from neighboring 
+Fig. 4. Spherical region of interest filtering for background removal.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+6 
+
+berries and the supporting branch structure. In dense grape bunches, a 
+3D berry center coordinate alone is insufficient for reliable manipulation 
+because it defines only the position of the target, leaving end-effector 
+orientation unconstrained. As illustrated in Fig. 5a, a target berry 
+located deep inside a dense cluster cannot be reliably approached using 
+only its 3D center coordinate. Fig. 5b shows that without berry orien­
+tation to its local sub-branch direction may cause the gripper to collide 
+with neighboring berries during insertion. Only orientations whose 
+approach axis aligns with the local sub-branch direction, shown in 
+Fig. 5c, allow safe tool insertion without disturbing the surrounding 
+cluster. We therefore estimate a manipulation-ready pose for each 
+detected berry by leveraging the spatial relationship between the berry 
+surface and its stem attachment. The procedure consists of two steps. 
+First, we extract a branch and stem skeleton from the residual point 
+cloud obtained after removing berry inliers from the RANSAC sphere 
+fitting stage. Second, we optimize each berry’s orientation such that its 
+approach axis is consistent with the local stem attachment direction 
+inferred from skeleton. The resulting rotation matrix, together with the 
+berry center, defines 6-DoF target pose used to compute a pre-grasp pose 
+and subsequent approach motion.
+2.4.1. Grape bunch skeletonization
+To recover the supporting structure of the bunch, we apply skeleto­
+nization to the residual point cloud C ∈RNC×3 (Fig. 6a), where NC is the 
+number of remaining points after excluding all berry inliers. We 
+employed Laplacian-based contraction (LBC) (Cao et al., 2010) to iter­
+atively contract C into a set of skeleton points in Fig. 6b. The LBC output 
+can be discontinuous due to occlusion, varying point density, and partial 
+incompleteness, we further impose connectivity by constructing a 
+minimum spanning tree (MST) over the skeleton points (Meyer et al., 
+2023). In Fig. 6c, the resulting graph provides a coherent representation 
+of the branch and stem structure and serves as a geometric reference for 
+estimating berry attachment directions in the subsequent orientation 
+optimization.
+2.4.2. Berry orientation optimization
+Given each detected berry instance Pj with center cj, our goal is to 
+estimate a rotation R that aligns the end-effector approach axis with the 
+berry-to-stem attachment direction. We first compute an initial rotation 
+RPCA
+j 
+from PCA on Pj. The eigenvectors define three principal axes or­
+dered by decreasing variance; for approximately spherical berries, the 
+third eigenvector (minimum variance direction) provides a geometric 
+approximation of the berry’s polar axis and serves as our initialization 
+for the approach direction. The resulting initial berry orientation frames 
+are visualized in Fig. 7d, showing the directional variance inherent in 
+PCA-derived orientations. However, this initialization is often physical 
+imprecise in practice, as can be assess visually. Furthermore, PCA alone 
+provides no information about direction of the berry to local stem. We 
+therefore refine this initialization by constraining the approach axis 
+using the extract skeleton, which provides explicit geometric evidence of 
+stem attachment direction.
+Next, we identify the skeleton point closest to the berry center as a 
+stem point: 
+s*
+j = argmin
+s∈S⃦⃦
+s −cj⃦⃦
+(8) 
+where S denotes the set of skeleton points obtained in Section 2.4.1. 
+Fig. 7a illustrates this geometric relationship, showing the berry center 
+cj, its nearest skeleton point s*
+j and the resulting stem direction vector dj.
+We then refine the berry orientation by aligning the third principal 
+axis with the stem point s*
+j . The ideal approach direction is defined as the 
+normalized vector from the berry center toward the skeleton stem point 
+dj =
+sj•cj
+‖s*
+j −cj‖. As shown in Fig. 7b, the angular misalignment θ between the 
+PCA-derived approach axis e3 and the target stem direction dj motivates 
+this refinement step. The optimization objective is: 
+L (R) = arccos
+(
+< Re3, dj >
+)
+(9) 
+where e3 = [0, 0, 1]1 is the third principal axis and < •, • > denotes inner 
+product. This directly minimizes angular misalignment between rotated 
+approach axis Re3 and the stem direction. Fig. 7c shows the resulting 
+Table 1 
+RANSAC sphere detection parameters.
+Parameter
+Symbol
+Value
+Description
+Distance 
+tolerance
+∊
+1.5 mm
+Maximum deviation of points from 
+fitted sphere surface
+Radius range
+[rmin,
+rmax]
+[10,20] 
+mm
+Berry radius bounds from observed 
+grape sizes
+Minimum inliers
+Nmin
+400 
+points
+Minimum supporting points required 
+per sphere hypothesis
+Maximum 
+iterations
+Kmax
+1000
+Maximum RANSAC iterations per 
+detection cycle
+Normal angle 
+threshold
+θmax
+25◦
+Maximum angular deviation between 
+sphere and point normals
+Fig. 5. Motivation for 6-DoF pose estimation for berry manipulation. (a) Target berry located deep inside cluster, approaching correct angle is challenging for naïve 
+3D berry center. (b) The same berry targeted with geometrically reachable but orientation-unsafe end-effector poses; most approach axes cause the gripper to collide 
+with neighboring berries during insertion. (c) The stem-aligned approach vector, clear path, and aligned the sub-branch direction.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+7 
+
+optimal rotation, where the approach axis is fully aligned with the 
+inferred berry-stem attachment direction.
+To enable stable gradient-based optimization, we parameterized R 
+using the continous 6D rotation representation of Zhou et al. (2019), 
+which avoids the discontinuities and singularities inherent in Euler an­
+gles and axis-angle representations and yield smoother convergence and 
+lower error as depicted in Fig. 24. We optimized the 6D parameters with 
+Adam optimizer (Kingma & Ba, 2015) using a learning rate of 0.01 for up 
+to 2000 iterations. Gradients are computed by automatic differentiation 
+in PyTorch. The refinement typically reduces the alignment objective by 
+approximately one order of magnitude relative to PCA initialization. 
+Fig. 7e confirms this improvement at the bunch level: the optimized 
+orientation frames are visibly more consistent with local stem directions 
+compared to the PCA initialization in Fig. 7b. The final target poses for 
+berry j is given 
+(
+cj, Rj
+)
+, which is subsequently used to compute a pre- 
+grasp pose and execute approach motions in the robot planning 
+framework.
+Fig. 6. Grape bunch skeletonization via Laplacian-based contraction (LBC). (a) Original residual point cloud after removing RANSAC berry inliers, representing the 
+stem and branch structure. (b) Skeleton produced by iterative LBC contraction. (c) Final bunch topology obtained by connecting skeleton points via a minimum 
+spanning tree (MST), providing a tree-structured geometric reference for berry-to-stem attachment estimation.
+Fig. 7. Structure-aware berry orientation inference using reconstructed grape bunch geometry. (a) Berry center cj and nearest skeleton point s*
+j extracted from the 
+reconstructed bunch topology, with the stem direction vector dj illustrated. (b) Angular misalignment θ between the PCA-derived initial approach axis e3 and the 
+target stem direction, visualized per berry. (c) Optimal rotation aligning the approach axis with the inferred berry-stem attachment direction after gradient-based 
+optimization. (d) Initial end-effector orientation frames at all detected berries derived from PCA, showing large directional variance. (e) Optimized end-effector 
+orientation frames at all detected berries after 6D rotation optimization, showing consistent alignment with local stem directions.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+8 
+
+To evaluate the contribution of structure-aware orientation estima­
+tion, the stem-aligned approach is evaluated against a fixed-direction 
+baseline in which the robot approaches each berry using an end- 
+effector orientation with no geometric reasoning. Fig. 8 contrasts the 
+spatial distribution of pre-grasp frames under two conditions. In Fig. 8a, 
+without orientation constraints, all pre-grasp frames are clustered near 
+the robot's home configuration, concentrating approach directions over 
+a narrow angular range regardless of local berry geometry. In Fig. 8b, 
+with stem-aligned orientation, the pre-grasp frames are distributed 
+across a wider solid angle that matches the three-dimensional arrange­
+ment of the bunch's lateral branches. This structured diversity is a direct 
+consequence of incorporating skeleton topology into the pose optimi­
+zation and is the geometric prerequisite for the collision-free grip suc­
+cess rates reported in Section 3.7.2.
+2.5. Robot control
+Robot motion is executed by a ROS 2 motion node integrating TF2 for 
+frame management, MoveIt 2 (Coleman et al., 2014) for motion plan­
+ning and trajectory execution, and a gripper controller for end effector 
+actuation. At initialization, the node loads the set of optimized berry 
+poses computed in Section 2.4. Each berry instance j is represented by a 
+target 6 DoF pose Ttarget
+j 
+and a corresponding pre grasp pose Tpre
+j
+, both 
+expressed in the robot base frame. These poses are published to the TF 
+tree for verification in RViz.
+Fig. 9 illustrates the manipulation pipeline. Fig. 9a shows the gripper 
+coordinate frame definition. The gripper local z axis defines the 
+approach direction and is aligned with the optimized berry orientation. 
+During execution, the gripper approaches along the negative z direction, 
+with the jaws-oriented perpendicular to the approach vector to mini­
+mize disturbance to neighboring berries.
+Pre grasp poses are generated by offsetting 80 mm along the negative 
+approach direction from each target pose. Fig. 9b visualizes the pre- 
+grasp frames for an approach target berry. The diversity of orienta­
+tions reflects the geometric optimization described in Section 2.4.2, 
+where approach directions are aligned with local stem attachment 
+structure rather than uniformly outward.
+For each target berry j, the system executes a three-stage motion 
+primitive:
+Stage 1: Global motion to pre-grasp. Generate collision-aware tra­
+jectory from current configuration to pre-grasp pose Tpre
+j 
+(80 mm offset 
+from target) using MoveIt 2 with OMPL RRTConnect planner (5 time­
+out). If planning fails, retry with alternative planners and relaxed 
+tolerances.
+Stage 2: Cartesian linear insertion. Execute straight-line motion from 
+Tpre
+j 
+to Ttarget
+j
+, enforcing direct approach near the berry.
+Stage 3: Grasp. At target pose, actuate gripper close based on berry 
+diameter, hold for 1 s for alignment verification, then open and retract.
+2.6. Implementations
+NeRF training and point cloud export were performed on a work­
+station with an AMD EPYC 7543P CPU (32 cores, 64 threads), with GPU 
+acceleration provided by an NVIDIA A100 (80 GB PCIe). The system 
+used NVIDIA driver 565.57.01 and CUDA 12.7 to accelerate NeRF 
+optimization and dense point sampling.
+For robotic experiments were executed using ROS 2 Humble running 
+on an NVIDIA Jetson AGX Orin 64 GB as the robot control computer. The 
+manipulator platform as Fanuc CRX-5iA (6-DoF). An Intel RealSense 
+D405 RGB-D camera was used for scene capture. The end-effector was a 
+custom RGIC gripper, and gripper actuation was limited to open-close 
+motion with a closing width constrained to the berry size to avoid 
+excessive contact during approach validation.
+3. Results and discussions
+3.1. NeRF training convergence
+We trained the NeRF model and evaluated intermediate checkpoints 
+at 1 k, 5 k, 10 k, and 100 k iterations using SSIM and PSNR on a held-out 
+test set. Table 2 summarizes reconstruction fidelity and training time.
+The metrics indicate rapid early improvement followed by satura­
+tion. From 1 k to 10 k, SSIM increased by +0.041 and PSNR by +0.59 dB, 
+reflecting visibly sharper geometry and fewer rendering artifacts. 
+Beyond 10 k, gains were marginal: SSIM improved by only +0.009 at 
+100 k, while PSNR slightly decreased (18.54–18.46 dB). Importantly, 
+Fig. 8. Comparison of pre-grasp pose distributions for a representative bunch. (a) Without orientation constraints: pre-grasp frames cluster near a default global 
+orientation, concentrating approach directions over a narrow angular range. (b) With stem-aligned orientation constraints: pre-grasp frames are spatially distributed 
+to match local branch geometry, producing the directional diversity necessary for collision-free insertion.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+9 
+
+the training time increased by approximately 7.8 times from 10 k to 100 
+k. Collectively, these results suggest that 5 k to 10 k iterations provide 
+the best trade-off between reconstruction quality and computational 
+cost for downstream point cloud extraction pipeline.
+Fig. 10 qualitatively compares the rendered test view (top row) and 
+the exported point cloud (bottom row) across iteration counts. At very 
+low iteration count (100), both rendered image and exported geometry 
+are unstable, producing blurred appearance and diffuse, low-density 
+point cloud with substantial floating noise. By 1 k iterations, the 
+model begins to recover the coarse silhouette of the bunch, but berry 
+boundaries remain poorly separated and the point cloud still contains 
+many invalid points, particularly around high-frequency regions.
+At 5 k iterations, the reconstructed surface becomes substantially 
+more coherent: individual berries start to appear as separable in the 
+point cloud, and the rendered view shows reduced blur and improved 
+edge definition. At 10 k iterations, geometry is most consistent for 
+downstream processing: berry structure is clearer, outlier density is 
+reduced, and the reconstructed bunch exhibits the most stable berry-to- 
+stem continuity among the tested checkpoints, which is critical for 
+reliable sphere fitting and collision-aware manipulation. Although 10 k 
+iterations produced slightly higher SSIM and PSNR, 5 k was selected as 
+Fig. 9. Robot manipulation framework. (a) Gripper coordinate frame with approach axis (blue) aligned to berry poses. (b) Pre-grasp pose distribution (RGB frames) 
+for all detected berries, offset 80 mm along approach directions. (c) Motion execution sequence: initial pose, collision scene setup, pre-grasp approach, and 
+target insertion.
+Table 2 
+NeRF reconstruction quality and training computational cost.
+Iterations
+SSIM ↑
+PSNR ↑
+Training Time (mins)
+1 k
+0.509
+17.95
+1:30
+5 k
+0.542
+18.45
+2:47
+10 k
+0.550
+18.54
+3:56
+100 k
+0.559
+18.46
+30:52
+Fig. 10. Qualitative comparison of NeRF training convergence for grape bunch reconstruction. Top row: reference RGB image and NeRF renderings at increasing 
+training iterations (100, 1 k, 5 k, and 10 k). Bottom row: corresponding point clouds extracted via ray-based depth back-projection, showing progressive 
+improvement in geometric completeness and reduced background noise.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+10 
+
+the default because it achieved comparable reconstruction quality with 
+lower computational cost.
+3.2. View-sampling requirement for NeRF reconstruction and berry 
+detection
+To clarify the inference-stage input requirement, we conducted a 
+view-sampling ablation study using the full 360◦acquisition sequence as 
+the reference. The original sequence contained 279 posed RGB images 
+captured at approximately 1.29◦angular increments. We generated 
+reduced training sets by uniformly subsampling the original trajectory at 
+angular intervals of 3◦, 9◦, 12◦, 20◦, and 25◦, and trained a separate 
+NeRF model for each setting using the same reconstruction and point- 
+cloud export parameters.
+Fig. 11 shows the sampled camera viewpoints for each angular in­
+terval. As the angular interval increases, the number of training views 
+decreases and the overlap between neighboring views become smaller. 
+The 25◦settings therefore represent the sparest sampling condition, 
+while the 3◦settings represent the densest reduced-view condition. This 
+experiment evaluates the trade-off between acquisition density recon­
+struction fidelity, and downstream RANSAC-based berry detection.
+For each sampling condition, we compared the reconstructed point 
+cloud with the full-view 279-image reconstruction. Let A denote the 
+point cloud reconstructed from sampled views and B denote the point 
+cloud reconstructed from the full 279-view sequence. We computed 
+bidirectional nearest-neighbor distance between A and B. The A→B di­
+rection measures how closely the sampled reconstruction agrees with 
+the full-view reference, whereas the B→A direction measures how 
+completely the sampled reconstruction preserves geometry present in 
+the full-view reconstruction. For each direction, we report the mean and 
+95th percentile of the nearest-neighbor distances as robust geometric 
+discrepancy metrics. In addition, we report the symmetric Hausdorff 
+maximum, Hmax = max(maxdA→B, maxdB→A), as a conservative worst- 
+case deviation. Because Hmax is sensitive to isolated floating points, it 
+is interpreted together with the mean and 95th percentile distances 
+rather than as the sole reconstruction-quality indicator.
+Fig. 12 shows rendered images and point cloud distance maps for 
+each sampling condition. Quantitative results are summarized in 
+Table 3. The geometric distance increased as the angular sampling 
+became sparser. At 3◦sampling, the sampled reconstruction was very 
+close to the full-view reference, with mean distances of 0.286 mm for A 
+→ B and 0.281 mm for B → A. At 25◦sampling, the mean distances 
+increased to 0.801 mm and 0.824 mm, respectively. The 95th-percentile 
+distance showed the same trend, increasing from 0.697/0.667 mm at 3◦
+to 2.338/1.9262 mm at 25◦. This confirms that denser view sampling 
+produces point clouds that are geometrically closer to the full 279-view 
+reconstruction, while the sparsest 25◦condition produces the largest 
+deviation.
+Downstream berry detection followed the same trend. The ground- 
+truth berry counts for this bunch was 55. The 25◦and 20◦settings 
+detected only 45 and 48 berries, respectively, indicating that sparse 
+angular sampling loses local berry surface structure needed for reliable 
+RANSAC sphere fitting. The 12◦settings improved detection to 53 
+berries, while the 9◦and 3◦settings detected all 55 berries. Rendering 
+metrics were also highest at 9◦and 3◦sampling, with the 9◦settings 
+achieving PSNR of 18.33 dB and SSIM of 0.61, and the 3◦setting 
+achieving PSNR of 18.0 dB and SSIM of 0.59.
+Overall, this ablation shows that the proposed method requires a 
+posed multi-view image sequence rather than a single image. In this 
+representative case, 9◦and 3◦angular sampling detected all 55 berries, 
+while 12◦, 20◦, and 25◦sampling progressively lost berries. Thus, 
+approximately 9◦angular spacing can be interpreted as an empirical 
+lower bound for this bunch. Nevertheless, the main pipeline uses the full 
+279-view sequence because the objective of robotic berry thinning is not 
+only correct counting, but robust reconstruction of berry surfaces, 
+occluded regions, and fine stem geometry for downstream segmentation 
+and manipulation planning.
+3.3. Berry detection and localization from robot-derived RealSense D405 
+reconstruction
+3.3.1. Evaluation metrics
+Berry detection performance was evaluated at the bunch level and 
+berry-center level. For each bunch i, let Ni denote the manual ground- 
+truth berry count and ̂ Ni denote the number of berries detected by 
+RANSAC sphere fitting. The absolute counting error is defined as 
+|̂Ni −Ni|. Across B evaluated bunches, counting performance was sum­
+marized using mean absolute error (MAE) and root mean square error 
+(RMSE): 
+MAE = 1
+B
+∑
+B
+i=1
+|̂Ni −Ni|
+(10) 
+RMSE =̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+1
+B
+∑
+B
+i=1
+(̂Ni −Ni)2
+√
+√
+√
+√
+(11) 
+To evaluate berry-center localization accuracy, detected berries were 
+first matched to ground-truth berries using 3D IoU-based matching. 
+Each detected berry and ground-truth berry was represented as a sphere 
+parameterized by its center and radius. A detected berry was considered 
+matched to a ground-truth berry when their IoU exceeded a threshold 
+τIoU.
+For two spherical berry instances Bi and ̂Bj, 3D IoU as defined as the 
+ratio between their volumetric intersection and volumetric union: 
+3DIoU
+(
+Bi,̂ Bj
+)
+= Vol⃒⃒Bi ∩̂ Bj⃒⃒
+Vol⃒⃒Bi ∪̂ Bj⃒⃒
+(12) 
+A detected berry was considered matched to a ground-truth berry 
+when 3DIoU
+(
+Bi,̂ Bj
+)
+≥τIoU. In this evaluation, τIoU = 0.25 was used.
+One-to-one matching was enforced so that each detected berry could 
+Fig. 11. View-sampling strategy for evaluating inference-stage input requirements. The original 360◦acquisition sequence contained 279 posed RGB images. 
+Reduced training sets were generated by selecting views at angular intervals of 3◦, 9◦, 12◦, 20◦, and 25◦. Each circle shows the selected camera viewpoints around the 
+grape bunch.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+11 
+
+match at most one ground-truth berry, and each ground-truth berry 
+could be assigned to at most one detection. For each matched pair j, let ̂cj 
+and cj denote the detected and ground-truth berry centers, respectively. 
+The mean center distance error was defined as: 
+ec = 1
+M
+∑
+M
+j=1⃒⃒̂
+cj −cj⃒⃒2
+(13) 
+3.3.2. Counting and localization accuracy
+We first evaluated berry detection using the robot-derived D405 
+reconstruction, corresponding to the eye-in-hand acquisition pipeline 
+described in Section 2.2.1. This evaluation is the primary robot- 
+integrated segmentation result because the D405 RGB images were 
+captured from the robot-mounted sensor and the camera poses were 
+obtained from the robot kinematic chain through ROS 2 TF2. Therefore, 
+the reconstructed point cloud and detected berry centers were expressed 
+directly in the robot base frame and could be used for downstream stem 
+reconstruction, 6-DoF target pose estimation, and robot motion 
+planning.
+Table 4 summarizes the counting and localization results for 10 
+grape bunches. RANSAC sphere fitting achieved an MAE of 0.50 berries 
+and an RMSE of 0.71 berries. The absolute counting error was at most 
+one berry for all tested bunches, indicating that the robot-mounted D405 
+reconstruction preserved sufficient local berry surface geometry for 
+reliable sphere fitting. The center distance error was 2.712 mm on 
+average, confirming that the detected berry centers were geometrically 
+consistent with manual ground-truth annotations.
+3.3.3. Qualitative segmentation results from robot-mounted reconstruction
+Fig. 13 shows representative RealSense D405 reconstructions and 
+corresponding RANSAC sphere fitting results. Despite the relatively 
+compact RGB sensor, individual berry surfaces were sufficiently recon­
+structed for geometric primitive fitting. Most berries were detected as 
+distinct spherical primitives, while small errors occurred mainly around 
+peripheral berries and partially occluded regions where the recon­
+structed surface support was limited. These qualitative results are 
+Fig. 12. Effect of angular view sampling on rendered appearance and point-cloud geometry. Top row: rendered views from NeRF models trained with 3◦, 9◦, 12◦, 
+20◦, and 25◦angular sampling. Bottom row: point-wise A→B nearest-neighbor distance maps, where A is the sampled-view reconstruction and B is the full 279-view 
+reference reconstruction. Denser sampling preserves the bunch geometry more completely, whereas sparse 20◦and 25◦sampling produces missing local berry 
+surfaces and increased geometric deviation.
+Table 3 
+View-sampling ablation results.
+Angular step
+PSNR
+SSIM
+A→B mean (mm)
+B→A mean (mm)
+A→B 95th (mm)
+B→A 95th (mm)
+Detected / Ground truth
+Count error
+Hmax(m)
+3◦
+18.0
+0.59
+0.286
+0.281
+0.697
+0.667
+55/55
+0
+0.07
+9◦
+18.33
+0.61
+0.304
+0.308
+0.752
+0.717
+55/55
+0
+0.08
+12◦
+16.85
+0.47
+0.372
+0.359
+0.952
+0.856
+53/55
+2
+0.12
+20◦
+16.89
+0.46
+0.587
+0.515
+1.631
+1.191
+48/55
+7
+0.43
+25◦
+17.08
+0.52
+0.801
+0.824
+2.338
+1.962
+45/55
+10
+0.50
+Table 4 
+Berry detection accuracy using robot-derived D405 reconstruction. Manual 
+berry counts are used as ground truth. D405 detected counts were obtained by 
+applying RANSAC sphere fitting to NeRF-reconstructed point clouds generated 
+from robot-mounted D405 RGB images and TF2-derived camera poses. Count 
+error denotes absolute counting error. Mean center distance error is computed 
+over matched berry pairs.
+Grape ID
+Ground-truth count
+Detect count
+Count error
+ec(mm)
+ID 1
+44
+45
+1
+4.32
+ID 2
+41
+41
+0
+2.14
+ID 3
+43
+43
+0
+3.60
+ID 4
+37
+37
+0
+3.54
+ID 5
+54
+54
+0
+2.08
+ID 6
+39
+40
+1
+2.52
+ID 7
+50
+51
+1
+1.89
+ID 8
+55
+56
+1
+3.23
+ID 9
+45
+46
+1
+2.55
+ID 10
+62
+62
+0
+1.25
+MAE
+0.50
+2.712
+RMSE
+0.71
+2.854
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+12 
+
+consistent with the low counting error reported in Table 4 and support 
+the use of the RealSense D405 as the primary robot-mounted sensing 
+configuration.
+3.4. Comparison of robot-mounted iPhone and RealSense acquisition for 
+reconstruction and berry segmentation
+To examine whether using a higher-quality RGB sensor improves 
+reconstruction and berry detection, we conducted a paired robot- 
+mounted acquisition comparison between the D405 RGB image and an 
+iPhone RGB image. Both sensors were mounted on the Fanuc CRX-5iA 
+end-effector and used to capture the same 10 grape bunches under 
+comparable acquisition conditions. The D405 sequences used camera 
+poses obtained from the robot kinematic chain through ROS 2 TF2 as 
+described in Section 2.2, whereas the iPhone sequences used Record3D 
+poses. Fig. 14 shows the robot-mounted iPhone acquisition setup used 
+for the paired sensor comparison.
+This comparison is not intended to isolate RGB image resolution 
+alone, because the two acquisition pipelines differ in optical center, 
+intrinsic parameters, focus behavior, exposure characteristics, and pose- 
+estimation source. Instead, the experiment compares two practical 
+robot-mounted RGB acquisition pipelines: a compact D405 setup with 
+robot-derived poses and a smartphone-based RGB setup with higher 
+nominal image quality.
+Table 5 compares berry counting accuracy between the D405 and 
+iPhone acquisition pipelines. Across 10 bunches, the D405 pipeline 
+achieved an MAE of 0.50 berries and an RMSE of 0.71 berries, whereas 
+the iPhone pipeline achieved an MAE of 1.70 berries and an RMSE of 
+2.02 berries. The D405 result was better in 8 of the 10 bunches and tied 
+in the remaining 2. The iPhone detections showed a systematic under- 
+counting tendency, while the D405 detections produced only small 
+count deviations. This result does not imply that the D405 RGB sensor 
+has higher intrinsic image quality; rather, it suggests that stable focus, 
+synchronized robot-derived poses, and consistent acquisition can be 
+more important for downstream RANSAC counting than nominal RGB 
+Fig. 13. Qualitative berry detection results from robot-derived-pose D405 reconstruction. Representative NeRF-reconstructed point clouds and corresponding 
+RANSAC sphere fitting results from the robot-mounted D405 acquisition pipeline are shown. Detected berry spheres are colored by instance. The results show that 
+D405 RGB reconstruction with TF2-derived poses preserves sufficient berry geometry for instance-level detection and downstream robot planning.
+Fig. 14. Robot-mounted iPhone acquisition setup used for paired sensor comparison. (a) iPhone RGB camera mounted near the robot end-effector. (b) Example 
+iPhone acquisition trajectory and reconstructed camera pose around the grape bunch.
+Table 5 
+Quantitative comparison of berry counting accuracy between robot-mounted 
+iPhone and RealSense D405 acquisition pipelines. Manual berry counts are 
+used as ground truth, and absolute counting errors are reported for RANSAC 
+sphere fitting results from NeRF-reconstructed point clouds.
+Grape 
+ID
+Ground- 
+truth count
+iPhone 
+count
+RealSense 
+count
+iPhone 
+error
+RealSense 
+error
+ID 1
+44
+40
+45
+4
+1
+ID 2
+41
+42
+41
+1
+0
+ID 3
+43
+44
+43
+1
+0
+ID 4
+37
+35
+37
+2
+0
+ID 5
+54
+54
+54
+0
+0
+ID 6
+39
+38
+40
+1
+1
+ID 7
+50
+48
+51
+2
+1
+ID 8
+55
+52
+56
+3
+1
+ID 9
+45
+43
+46
+2
+1
+ID 10
+62
+61
+62
+1
+0
+MAE
+1.70
+0.50
+RMSE
+2.02
+0.71
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+13 
+
+resolution alone under the tested robot-mounted acquisition conditions.
+Fig. 15 visualizes the same trend by plotting iPhone detections 
+against RealSense D405 detections for all 10 bunches. Most points lie 
+above the diagonal line, indicating that the D405 pipeline detected more 
+berries than the iPhone pipeline for the same bunches.
+Fig. 16 shows an example failure case from the robot-mounted 
+iPhone acquisition. Although the iPhone provided higher-resolution 
+RGB images, several sequences contained out-of-focus frames. These 
+frames reduced multi-view photometric consistency during NeRF opti­
+mization and produced incomplete point clouds with missing berry 
+surfaces. Because RANSAC sphere fitting depends on sufficient local 
+surface support, these incomplete surfaces caused missed detections and 
+contributed to the under-counting observed in Table 5.
+Fig. 17 further compares paired D405 and iPhone reconstructions 
+across representative bunches. The iPhone reconstructions are visually 
+smooth in some regions, but several contain missing local berry surfaces, 
+particularly around peripheral or partially occluded berries. In contrast, 
+the D405 reconstructions are sometimes less smooth but preserve more 
+consistent berry-level surface support, which explains their lower 
+counting error. Together, Figs. 16 and 17 indicate that reconstruction 
+completeness and acquisition stability are more important for RANSAC- 
+based berry counting than nominal RGB resolution alone.
+3.5. Large-scale high-resolution benchmark for berry instance 
+segmentation
+3.5.1. Dataset overview
+After validating the proposed berry detection pipeline using robot- 
+derived-pose D405 reconstruction in Section 3.3, we further evaluated 
+the RANSAC sphere fitting method on a larger high-resolution bench­
+mark dataset. This dataset comprised 52 grape bunches captured during 
+March-April 2024 using an iPhone 15 at 3840 × 2160 pixels and 60 fps. 
+Each bunch was recorded as a 360◦handheld video, from which 80–120 
+frames were extracted using FFmpeg to provide sufficient view overlap 
+for multi-view reconstruction (in Fig. 18).
+This dataset was used only for large-scale berry instance segmenta­
+tion and counting evaluation. It was not used for robot control because 
+camera poses were estimated using COLMAP's structure-from-motion 
+pipeline. NeRF models were trained following Section 2.1 methodol­
+ogy. Since COLMAP produces scale-ambiguous reconstructions, metric 
+scale was recovered using a reference calibration tag (45.0 mm height) 
+positioned adjacent to each bunch during capture (in Fig. 26). The 
+reconstructed tag height determined a per-bunch scale factor applied 
+uniformly to all coordinates.
+Berry diameters range 10.2–24.8 mm (mean: 17.43 mm) as shown in 
+Fig. 19a with bunch sizes ranging from 12 to 89 berries (mean: 53.5 ±
+18.2), illustrated per sample in Fig. 19b.
+3.5.2. Instance-level segmentation metrics
+Instance-Instance-level berry segmentation was evaluated using the 
+3D IoU defined in Section 3.3.1. For both RANSAC and SoftGroup++, 
+each predicted berry instance was represented as a parameterized 
+sphere over the evaluated point cloud. For SoftGroup++, the mask 
+corresponds to the predicted instance output. For RANSAC, the mask 
+corresponds to the set of points assigned to each fitted sphere.
+Predicted and ground-truth berry instances were matched using one- 
+to-one IoU-based matching. A prediction was counted as a true positive 
+when its point-mask IoU with an unmatched ground-truth instance 
+exceeded the evaluation threshold. Unmatched predictions were coun­
+ted as false positives, and unmatched ground-truth instances were 
+counted as false negatives. Average precision and recall were reported at 
+IoU thresholds of 0.25 and 0.50, denoted as AP@0.25, AP@0.50, 
+AR@0.25, and AR@0.50. Because berry was the only evaluated object 
+class, all reported metrics correspond to single-class berry instance 
+segmentation performance.
+For matched true-positive instances, berry-center localization error 
+was computed using the same definition as in Section 3.3.1.
+3.5.3. Berry segmentation performance
+Using the evaluation metrices defined in the previous section, the 
+proposed pipeline achieves high and consistent performance across both 
+datasets. Precision and recall exceed 0.93 on average. The average 
+center localization error remains within a few millimeters, and radius 
+estimation errors fall within plausible ranges for grape berries.
+Table 6 compares RANSAC sphere detection (Section 2.3) against 
+SoftGroup++ (Vu et al., 2022), a learning-based point cloud instance 
+segmentation method. Results are averaged over all 52 bunches. RAN­
+SAC achieves 92.1% average precision and 94.5% recall, substantially 
+outperforming SoftGroup++ (82.8% AP, 88.4% AR). The performance 
+advantage is consistent across IoU thresholds, with RANSAC 
+Fig. 15. Comparison of berry counts obtained from robot-mounted iPhone and RealSense D405 reconstructions across 10 grape bunches. The x-axis shows iPhone- 
+based detections, and the y-axis shows RealSense D405-based detections. Each point corresponds to one bunch and is labeled as (iPhone, RealSense, GT), where GT 
+denotes the manual count. The dashed diagonal indicates equal counts between the two sensing pipelines. Points above the diagonal indicate cases where the 
+RealSense pipeline detected more berries than the iPhone pipeline.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+14 
+
+maintaining 88.2% AP even at IoU = 0.50. while SoftGroup++ drops to 
+83.0%. Importantly, RANSAC exhibits superior localization accuracy (ec 
+= 0.07 cm). The superior performance of RANSAC shape detection can 
+be attributed to three factors: (1) strong geometric priors matching 
+actual berry, (2) robustness to incomplete point clouds due to para­
+metric fitting, and (3) deterministic behavior eliminating training data 
+dependency. Fig. 20 shows failure cases of SoftGroup++ in larger berry 
+sizes where RANSAC does not failed to detect berries.
+Beyond individual berry detection, accurate bunch-level counting is 
+critical for yield estimation and thinning decision support. Table 7
+compares our approach against recent grape counting methods. 
+RANSAC-based detection achieves MAE of 1.1 berries and RMSE of 1.7 
+berries, representing 52% error reduction compared to the best prior 2D 
+method (Woo et al., 2023: MAE 2.3) and 71% reduction compared to 
+RGB-based approaches (Buayai et al., 2021: MAE 3.79).
+Fig. 20
+provides qualitative comparison of RANSAC and 
+SoftGroup++
+segmentation results across representative bunches 
+spanning the difficulty (sparse, moderate, dense packing).
+3.6. Bunch structure reconstruction
+Direct ground-truth evaluation of grape bunch skeletonization is not 
+feasible, as no physical reference centerline can be reliably obtained, 
+and manual annotation of branch centerlines in occluded point clouds 
+introduces unacceptable subjectively. We therefore adopt a two-level 
+evaluation strategy applied to the same subset of 8 bunches 
+comprising 491 berries: first, an indirect geometric consistency evalu­
+ation that quantifies how accurately the extracted skeleton captures the 
+observed stem point cloud geometry; second, a topological assignment 
+evaluation that assesses how reliably each berry is assigned to its current 
+parent stem segment.
+Geometric consistency evaluation. The evaluation pipeline is 
+illustrated in Fig. 21. The residual point cloud obtained after removing 
+RANSAC berry inliers (Fig. 21a) was first contracted into a 1D skeleton 
+via Laplacian-based contraction (LBC), then connected into a tree to­
+pology via minimum spanning tree (MST) construction (Fig. 21b and c). 
+Each MST edge was replaced by a fitted cylinder with fixed radius. The 
+resulting cylinder surfaces were densely sampled (Fig. 21d) to generate a 
+synthetic point cloud Ṕstem that is geometrically comparable to the 
+original residual cloud Pstem.
+Geometric fidelity is evaluated using directional Hausdorff distances 
+between the synthetic cylinder point cloud Ṕstem (Fig. 22a) and the 
+original residual point cloud Pstem (Fig. 22b). The cylinder fit direction 
+(Ṕstem → Pstem) measures how closely fitted cylinders approximate 
+observed stem geometry, while the branch coverage direction (Pstem → 
+Ṕstem) measures how completely the cylinder model captures the original 
+stem structure. Results are summarized in Table 8.
+Both directions achieve sub-millimeter mean accuracy, confirming 
+that the Laplcian-based contraction produces geometrically faithful 
+skeleton representations. The per-point distance map (Fig. 22c) shows 
+that errors are spatially concentrated at fine secondary pedicels and 
+peripheral branch tips, while the main rachis and primary lateral 
+branches exhibit close agreement (predominantly blue, < 1 mm). The 
+elevatedṔstem → Pstemmaximum of 15.17 mm reflects isolated MST edges 
+bridging spatial gaps at branching junctions; this affects fewer than 1% 
+of points (99th percentile: 2.08 mm) and does not propagate to berry 
+orientation estimates, which depend on the direction to the nearest 
+skeleton point rather than global surface accuracy.
+Topological assignment evaluation. Geometric accuracy alone 
+does not guarantee that each berry is assigned to its anatomically correct 
+parent stem. To evaluate topological correctness, we visualize berry-to- 
+stem correspondences by colorizing each berry’s point cloud according 
+to its assigned stem segment, as shown in Fig. 23a. This visualization 
+enables human inspection of assignment quality across the full bunch 
+without requiring explicit ground-truth labelling.
+However, topological accuracy cannot be assessed from geometric 
+distance alone, as two distinct failure modes produce incorrect assign­
+ments despite geometrically plausible skeleton representations. These 
+are illustrated in Fig. 23b and c.
+The first failure mode, shown in Fig. 23b, arises from biological 
+ambiguity: berries from adjacent sub-branches physically penetrate 
+neighboring clusters, causing a berry’s nearest skeleton point to belong 
+to an adjacent branch rather than its true anatomical parent. The 
+orange-highlighted berries indicate shared assignments to stem.
+The second failure mode, shown in Fig. 23c, arises from insufficient 
+reconstruction resolution: fine sub-branches that is insufficient recon­
+struction resolution are absent from the skeleton, causing the berry to be 
+assigned to a geometrically closer but anatomically incorrect stem 
+segment. In Fig. 23c contrasts the actual stem attachment direction with 
+the incorrectly assigned closest reconstructed segment.
+Both failure cases produce shared berry-to-stem assignments where a 
+single stem segment is matched to two or more berries but arise from 
+fundamentally different causes. To quantify this, a shared-assignment 
+rate error was defined as a stem segment matched to two or more 
+berries across the same 8-bunch evaluation subset. The mean error rate 
+was 14.1 ± 9.3% (range: 4.3–28.2%), with two bunches exceeding 25%. 
+Most shared assignments involved pairs of berries mapped to the same 
+stem, with no triple assignments observed. A moderate positive corre­
+lation between bunch size and the absolute number of shared berries 
+Fig. 16. Example of out-of-focus iPhone frames causing incomplete reconstruction. Defocused image frames reduce multi-view photometric consistency and lead to 
+incomplete NeRF point clouds, which can cause missed RANSAC sphere detections.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+15 
+
+(R2 = 0.63) indicates that larger, denser bunches accumulate more to­
+pological ambiguity, consistent with the increased physical overlap 
+between sub-branches at higher packing densities.
+3.6.1. Berry orientation optimization
+To establish manipulation-ready target poses, we optimize berry 
+orientation to align the end-effector approach axis with the estimated 
+stem attachment direction (Section 2.4.2). We compared five rotation 
+parameterizations for the gradient-based optimization: axis-angle, 
+quaternion, Euler angles, 5D representation, and the 6D representa­
+tion of Zhou et al. (2019).
+Table 9 summarizes final angular errors after 2000 optimization it­
+erations, averaged across all detected berries in single grape bunch. 
+Fig. 24 shows average error curves for each rotation representation. The 
+6D and quaternion representations achieve lower final error (0.09◦and 
+0.10◦, respectively).
+Fig. 25 provides a qualitative comparison by visualizing the opti­
+mized end-effector frames at each berry target. Axis-angle optimization 
+(Fig. 25a) produces inconsistent orientations (blue axis), exhibit more 
+than 40◦deviation in approach direction, could potentially create 
+collision risk during sequential manipulation. The 6D representation 
+(Fig. 25b) yields more consistent orientation outcome where the blue 
+axis is pointing toward local stem point (red dot), whereas axis angle 
+representation shows greater variation in the optimized orientations 
+across berries.
+3.7. Robot manipulation
+3.7.1. Metric scale verification
+In our system, camera poses are provided in metric coordinate via the 
+robot TF tree, and the NeRF scene is trained using these metric extrinsic. 
+As a result, the exported NeRF point cloud preserves metric scale and is 
+directly compatible with downstream geometric processing and robot 
+motion planning.
+To validate that metric scale is preserved through the pipeline, we 
+reconstructed a reference object (Fig. 26a) has known height dimensions 
+Fig. 17. Qualitative comparison of RealSense D405 and iPhone acquisition pipelines. For each representative bunch, the NeRF-reconstructed point cloud and 
+corresponding RANSAC sphere fitting result is shown. Several iPhone reconstructions contain incomplete berry surfaces caused by out-of-focus frames, resulting in 
+missed detections. In contrast, the D405 reconstructions are generally more complete and produce more consistent berry detections under the tested robot-mounted 
+acquisition conditions.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+16 
+
+of 45 mm. The corresponding dimension measured in point cloud 
+(Fig. 26b) is 45.9 mm, confirming metric scale preservation without 
+requiring additional calibration objects or scaling procedures. This 
+validation establishes that reconstructed berry positions can be used 
+directly for motion planning in the robot base frame.
+3.7.2. Manipulator trails
+Experimental setup. We evaluate end-to-end manipulation feasi­
+bility through 35 sequential approaching trials using the complete 
+perception-to-motion pipeline described in Section 2. Each trial com­
+manded the robot to execute a two-stage motion primitive: (i) global 
+collision-free motion from the current configuration to a pre-grasp pose 
+aligned with the detected berry's estimated approach vector (Fig. 27b), 
+followed by (ii) an 80 mm straight-line Cartesian insertion to the final 
+berry target pose (Fig. 27c). A trial was marked as a pre-grasp success if 
+the robot reached the pre-grasp pose without collision, and as a target 
+success if it subsequently completed the full insertion to the berry sur­
+face. Elapsed time was recorded at each stage. A single failure did not 
+terminate the sequence; the robot returned to the safe home configu­
+ration before proceeding to the next target.
+Success criteria. We report three outcome metrics: (1) pre-grasp 
+reachability, whether the robot reached the pre-grasp pose from its 
+Fig. 18. NeRF reconstruction diversity across dataset. Four representative bunches demonstrating reconstruction quality across varying bunch density (sparse to 
+dense), berry size (10–20 mm), and development stage (early to mature).
+Fig. 19. Distribution of berry size and berry count in the annotated benchmark dataset. (a) Berry diameter distribution estimated from per-berry instance point 
+clouds. Dashed vertical lines indicate the mean diameter of 17.43 mm and median diameter of 16.39 mm. (b) Number of annotated berries per bunch. The dashed 
+horizontal line indicates the dataset mean of 53.5 berries per bunch, highlighting inter-bunch variation in cluster density and segmentation difficulty.
+Table 6 
+Quantitative comparison of berry instance detection performance (n = 52 bunches). Results compare RANSAC shape detection against SoftGroup++. AP and AR 
+denote average precision and recall, respectively, with subscripts indicating IoU thresholds (0.25, 0.50).
+Method
+AP
+AP@0.25
+AP@0.50
+AR
+AR@0.25
+AR@0.50
+ec(cm)
+RANSAC
+0.914
+0.921
+0.882
+0.945
+0.941
+0.910
+0.07
+SoftGroup++
+0.828
+0.839
+0.830
+0.884
+0.890
+0.873
+0.18
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+17 
+
+current configuration; (2) target reachability, whether the robot 
+completed the full 80 mm linear insertion to the berry surface, condi­
+tioned on pre-grasp success; and (3) collision-free insertion, whether the 
+final approach was completed without any collision contact with the 
+bunch or support structure, as judged by the absence of force-torque 
+anomalies and visual inspection. The conditional success rate is 
+computed as target-reachable/pre-grasp-reachable, isolating IK feasi­
+bility at the constrained 6-DoF target pose from motion planning (in 
+Fig. 28).
+Main results. As depicted in Fig. 29a, the robot reached the pre- 
+grasp pose for 30 of 35 targets (85.7%). Among these, 25 achieved 
+successful final approach and collision-free insertion, yielding a condi­
+tional success rate of 83.3% (25/30). The five failures at the final 
+approach stage resulted entirely from inverse kinematics infeasibility 
+under the strict 6-DoF orientation constraint, where no valid joint 
+configuration existed to satisfy the requested end-effector pose. No 
+failures were attributed to collision avoidance or perception errors at 
+this stage, confirming that the dominant bottleneck is IK feasibility 
+rather than detection accuracy.
+Ablation study: effect of approach orientation strategy. To 
+isolate the contribution of structure-aware orientation estimation, we 
+repeated the 35-trial sequence under two baseline strategies defined in 
+Section 2.6: a radially-outward baseline, in which the approach direc­
+tion for each berry is defined as the unit vector from the bunch centroid 
+through the berry center, requiring no skeleton extraction; and our 
+proposed stem-aligned strategy, in which approach directions are 
+inferred from the reconstructed branch skeleton. Results are summa­
+rized in Table 10.
+Stage-by-stage analysis. The two conditions exhibit a characteristic 
+trade-off that manifests across the three stages, ultimately resolving in 
+favor of stem-aligned orientation at the end-to-end level. At the pre- 
+grasp stage, the unconstrained baseline achieves 100% reachability 
+because the absence of an orientation constraint gives the IK solver 
+maximum freedom to find joint configurations within the robot's 
+workspace. In contrast, the stem-aligned condition imposes a specific 6- 
+DoF target for the pre-grasp pose, reducing reachability to 85.7% as 
+some orientations require wrist configurations near joint limits. This 
+14.3% reduction at the pre-grasp stage represents the cost of incorpo­
+rating structural geometry into manipulation planning.
+However, this cost is recovered at the target reachability stage. 
+Fig. 20. Qualitative comparison of berry detection methods on representative grape bunches. Top row: RANSAC sphere detection results with fitted spheres, colored 
+by instance. Bottom row: SoftGroup++ instance segmentation with per-instance coloring. RANSAC maintains consistent detection quality across density levels and 
+sizes, while SoftGroup++ exhibits systematic under-segmentation in dense regions (bottom-right).
+Table 7 
+Bunch-level berry counting accuracy comparison. Prior methods operate on 2D 
+RGB images; our method operates on NeRF-reconstructed 3D point clouds.
+Previous
+Approach
+MAE
+RMSE
+Buayai et al. (2021)
+2D detection + Machine learning
+3.79
+−
+Woo et al. (2023)
+2D detection + Machine learning
+2.3
+−
+Du & Liu (2023)
+2D multi-view fusion
+−
+4.72
+Woo et al. (2023b)
+Classical SfM + 3D projection
+1.92
+−
+Our
+NeRF þ 3D RANSAC Sphere Detection
+1.1
+1.7
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+18 
+
+Among targets where the pre-grasp was reached, the unconstrained 
+baseline achieves only 65.7% target reachability (23/35 overall) 
+because the unconstrained pre-grasp orientation frequently places the 
+end-effector in a kinematically unfavorable posture for the subsequent 
+constrained insertion. Conversely, the stem-aligned pre-grasp orienta­
+tion is designed to be consistent with the final target pose, so once the 
+pre-grasp is reached, the conditional probability of completing the 
+insertion rises to 83.3% (25/30). The net effect is that target reachability 
+Fig. 21. Skeleton-based stem reconstruction pipeline. (a) Residual point cloud after removing RANSAC berry inliers. (b) Laplacian-based contraction (LBC) pro­
+ducing a skeleton. (c) Minimum spanning tree (MST) connecting skeleton points into a tree topology. (d) Cylinder fitting along each MST edge, with dense surface 
+sampling to generate the synthetic point cloud Ṕstem. (e) Dense point cloud from fitted cylinder model surfaces (orange), showing spatial correspondence between 
+reconstructed and observed stem geometry.
+Fig. 22. Geometric evaluation of skeleton-based cylinder reconstruction via directional Hausdorff distance. (a) Synthetic point cloud sampled from fitted cylinder 
+surfaces. (b) Original residual stem point cloud after berry removal. (c) Per-point distance map of the branch coverage direction (B → A), where each original stem 
+point is colored by its distance to the nearest cylinder surface point. Blue indicates close agreement (<1 mm); red indicates regions where the original stem structure 
+is not captured by the cylinder model, predominantly at fine secondary pedicels below reconstruction resolution.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+19 
+
+is comparable across conditions (65.7% vs. 71.4%) despite the large 
+difference in pre-grasp reachability.
+The most significant difference between two methods occurs during 
+the gripping stage. In the unconstrainted baseline, 5 of 23 target- 
+reachable trails (21.7%) failed because the end-effector collide with 
+neighboring berries during insertion. Because the approach vector was 
+randomly oriented, it often missed the clearance space between berries, 
+causing the gripper to push the target out of reach. Conversely, the stem- 
+aligned approach follows the natural direction of the local branch, 
+which almost entirely eliminated this failure mode. Only 1 of 25 target- 
+reachable trails failed at gripping (4%), resulting in a 96.0% conditional 
+grip success rate. Ultimately, the end-to-end grip success rate improved 
+from 51.4% to 68.6%. This absolute gain of +17.2% highlights the value 
+of structure-aware orientation estimation. Notably, this overall 
+improvement occurred despite a 14.3% drop in pre-grasp reachability, 
+providing that higher-quality approaches easily offset the limitations of 
+stricter IK constraints.
+Execution timing. Timing analysis of the stem-aligned trials is 
+presented in Fig. 29b. Pre-grasp motion exhibited substantial variance 
+(median: 6.0 s, IQR: 4.25–9.08 s), reflecting variable path length and 
+complexity through the canopy structure depending on the robot's prior 
+configuration and the spatial distribution of collision objects. In 
+contrast, final approach timing was highly consistent (median: 2.0 s, 
+IQR: 1.01–4.12 s), consistent with the deterministic nature of a fixed 80 
+mm straight-line Cartesian motion once a valid IK solution existed. The 
+overall median time per successful berry approach was 8.5 s.
+3.8. Runtime analysis and deployment implications
+To evaluate practical applicability, we measured the processing time 
+of the proposed scan-then-plan pipeline from image acquisition to robot- 
+executable berry approach targets. Because the proposed method opti­
+mizes a NeRF model for each target bunch, inference in this study refers 
+to the complete processing required to processed captured posed multi- 
+view RGB sequence into berry-level geometric decisions, including berry 
+segmentation, stem reconstruction, stem-aligned 6-DoF pose estimation, 
+and motion execution targets. Table 11 summarizes the runtime of each 
+stage.
+The results indicates that the computational cost is dominated by 
+neural reconstruction and point-cloud extraction, rather than by 
+downstream geometric reasoning stages. NeRF optimization and point- 
+cloud export account for most of the post-acquisition processing time, 
+whereas RANSAC berry detection, stem skeletonization, and berry 
+orientation optimization together require less than one minute. 
+Including image acquisition, the system requires approximately 3 min 
+53 s before robot execution begins, followed by approximately 8.5 to 10 
+s of motion planning and approach execution per selected berry. This 
+runtime is acceptable for experimental validation and for workflows in 
+which the robot first scans a target bunch and then performs thinning 
+decisions after reconstruction. However, real production deployment 
+would require reducing idle time during reconstruction. A practical 
+strategy is to pipeline sensing and computation across nearby bunches, 
+while reconstruction and pose estimation are performed for one scanned 
+Table 8 
+Directional Hausdorff distance evaluation of skeleton-based cylinder recon­
+struction. All values in millimeters.
+Metric
+Ṕ stem→Pstem (Cylinder fit)
+Pstem→Ṕ stem (Branch coverage)
+Mean ± Std
+0.66 ± 0.48
+0.45 ± 0.31
+Median
+0.54
+0.37
+95th Percentile
+1.51
+1.08
+99th Percentile
+2.08
+1.49
+Max
+15.17
+2.21
+Fig. 23. Berry-to-stem topological assignment and failure modes. (a) Berry point clouds colorized by assigned stem for visual quality inspection. (b) Biological 
+ambiguity: a berry physically overlaps a neighboring cluster (red circle), causing incorrect branch assignment. (c) Resolution failure: a missing fine sub-branch causes 
+the berry (orange dot) to be assigned to an incorrect stem segment (orange arrow) instead of its true parent (blue arrow).
+Table 9 
+Quantitative comparison of orientation optimization errors.
+Representation
+Mean (◦)
+Max (◦)
+Std (◦)
+AxisA
+41.03
+110.80
+25.57
+Quaternion
+0.10
+0.11
+0.01
+Euler
+0.34
+10.59
+1.60
+5D
+1.94
+34.02
+6.19
+6D
+0.09
+0.11
+0.01
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+20 
+
+bunch, image acquisition for the next bunch can be performed in 
+parallel.
+4. Limitations and future work
+The proposed system demonstrates an end-to-end perception-to- 
+manipulation pipeline for robotic grape berry thinning, but several 
+limitations remain before production deployment. First, the current 
+implementation requires a posed multi-view scan of one target bunch at 
+a time. The view-sampling ablation indicates that overly sparse angular 
+coverage can degrade reconstruction quality, berry counting, and berry 
+localization, which may affect downstream thinning decisions such as 
+local spacing estimation and berry removal selection. Therefore, the 
+present system prioritizes dense 360◦acquisition for reliable berry-level 
+reconstruction. Although this target-bunch-level formulation is appro­
+priate for robotic thinning, production environments often contain 
+multiple neighboring bunches, leaves, and canopy structures. In this 
+study, these surrounding structures were intentionally removed using 
+spherical region-of-interest filtering, and multi-bunch or canopy-level 
+reconstruction was not fully evaluated. Future extension could 
+Fig. 24. Convergence of average orientation error during orientation optimization.
+Fig. 25. Qualitative comparison of optimized end-effector orientations using (a) axis angle and (b) 6D rotation representations. For each detected berry, a local 
+coordinate frame is visualized at the estimated target pose (red, green, and blue arrow denote the orientation of the end-effector frame, respectively), overlaid on the 
+reconstructed grape bunch. Axis angle frequently yields inconsistent orientations across neighboring target, whereas the 6D representation produces more coherent 
+and stable rotations relative to the local stem points, consistent with its lower optimization residuals.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+21 
+
+combine target-bunch reconstruction with bunch-level and leaf-level 
+segmentation to support multi-bunch or canopy-level scene under­
+standing. Such scene-level segmentation would be useful for collision 
+detection, scan-path planning, and selecting the next target bunch dur­
+ing sequential robotic thinning.
+Runtime is another remaining limitation, as per-bunch NeRF opti­
+mization and point-cloud export dominate the scan-to-pose processing 
+time. Future work will investigate accelerated reconstruction, adaptive 
+view planning, more efficient point-cloud extraction, and scan-process- 
+return operation across nearby bunches. In such a workflow, the robot 
+Fig. 26. Metric consistency confirmation of exported point cloud. (a) Reference object with a known physical height 45 mm. (b) The reference object in 3D space 
+dimension showing the measured height of 45.9 mm, demonstrating that the reconstruction preserves metric scale inherited from robot-provided camera poses and is 
+directly usable for motion planning.
+Fig. 27. Robot manipulation task decomposition for manipulation experiments. Sequential stages of 6-DoF berry approaching using Fanuc CRX-5iA collaborative 
+robot. (a) Home configuration: robot positioned near grape bunch with end-effector in neutral orientation. (b) Pre-grasp pose: robot moved to 80 mm offset from 
+target berry center along optimized approach vector (blue arrow). (c) Target pose reached: robot advanced final 80 mm along approach vector to berry surface 
+contact position.
+Fig. 28. Sequential trajectory visualization for representative berry approaching task. Four key waypoints showing robot motion from current configuration (a) to 
+final target berry pose (d). The robot navigates collision-free through the cluttered grape canopy (visible as green point cloud) and support structures while 
+maintaining end-effector orientation constraint. Sequential frames illustrate: (a) current configuration, (b-c) intermediate waypoints navigating around obstacles, 
+and (d) final approach with aligned gripper orientation at target berry.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+22 
+
+can scan one bunch, move to acquire data from a neighboring bunch 
+while reconstruction and pose estimation are performed for the previous 
+bunch, and return to execute the planned thinning motion once pro­
+cessing is complete. This strategy could reduce idle time between image 
+acquisition and robot execution while preserving the geometric 
+completeness required for reliable thinning decisions.
+In addition, some manipulation failures were caused by IK infeasi­
+bility under strict 6-DoF stem-aligned target poses rather than percep­
+tion errors. This limitation could be mitigated by improved robot base 
+placement, operation-zone selection, workspace-aware scan planning, 
+or redundant manipulators such as 7-DoF arms. Finally, berry-to-stem 
+assignment remains sensitive to missing fine pedicels under occlusion 
+or insufficient reconstruction resolution, and broader validation is 
+needed across cultivars, growth stages, illumination conditions, canopy 
+densities, and full thinning operations, including berry selection, phys­
+ical removal, and post-thinning quality assessment.
+5. Conclusions
+This paper presents an integrated perception-to-manipulation pipe­
+line for robotic grape berry thinning, combining NeRF-based 3D 
+reconstruction, RANSAC geometric segmentation, and structure-aware 
+pose optimization. Three principal findings emerge from the evaluation.
+First, deriving camera poses directly from robot forward kinematics 
+via ROS 2 TF2 eliminates the scale ambiguity inherent in COLMAP- 
+based NeRF workflows, producing metric-coordinate point clouds in 
+the robot base frame without additional calibration. Scale verification 
+confirmed sub-millimeter accuracy (45.9 mm reconstructed vs. 45.0 mm 
+reference), establishing that reconstructed berry positions are directly 
+usable for motion planning.
+Second, RANSAC sphere fitting on NeRF-exported point clouds 
+achieves 92.1% average precision and MAE of 1.1 berries, out­
+performing the learning-based SoftGroup++ baseline (82.8% AP) and 
+reducing counting error by 52% compared to state-of-the-art 2D 
+methods, without requiring any annotated training data. The geometry- 
+based approach generalizes across bunch densities and berry sizes where 
+learned methods exhibit systematic under-segmentation.
+Third, stem-aligned 6-DoF pose optimization yields an end-to-end 
+grip success rate of 68.6%, compared to 51.4% under a fixed-direction 
+baseline — an absolute improvement of 17.2 percentage points. The 
+ablation study reveals that orientation constraints reduce pre-grasp 
+reachability by 14.3% due to stricter IK requirements, but this cost is 
+recovered through a substantially higher collision-free grip rate (96% vs. 
+78.3%), confirming that structure-aware orientation estimation is 
+essential for reliable manipulation in dense grape clusters.
+The primary remaining limitation is IK infeasibility under strict 6- 
+DoF orientation constraints, which accounts for all target-stage fail­
+ures. This stems from optimizing only the approach axis direction while 
+leaving gripper roll unconstrained, occasionally producing wrist con­
+figurations near joint limits. Joint-limit-aware pose optimization that 
+jointly considers approach direction and wrist configuration represents 
+the most direct path to improving end-to-end success. Computationally, 
+NeRF training requires approximately 167 s per bunch; acceleration via 
+Instant-NGP or 3D Gaussian Splatting is promising but requires careful 
+validation to ensure sub-millimeter geometric accuracy is preserved, as 
+manipulation success is sensitive to precise berry localization.
+Beyond these technical improvements, broader deployment requires 
+Fig. 29. Robotic manipulation performance evaluation on 35 sequential berry targets. (a) Stage-wise reachability following task decomposition in Fig. 27. Left bar 
+(blue): indicates successful motion from the initial state to the pre-grasp pose, Middle bar (orange): indicates pre-grasp poses reachability from previous configu­
+ration. Right bar (green/red): Green color indicates success case where IK solution is solved, and gripper aligned with target berry while red color indicates failure 
+cases where no IK solution to approach target berry. (b) Execution time distributions for successful trials.
+Table 10 
+Ablation study comparing approach orientation strategies on 35 sequential 
+targets. Values report absolute counts and percentages. Collision-free insertion is 
+evaluated only for trials that reached the target pose.
+Pre-grasp reachable
+Target reachable
+Success grip
+Without orientation
+35/35 (100%)
+23/35 (65.71%)
+18/23 (78.26%)
+With orientation
+30/35 (85.7%)
+25/30 (83.33%)
+24/25 (96%)
+Table 11 
+Runtime breakdown of the proposed pipeline for one target grape 
+bunch, including multi-view acquisition, NeRF reconstruction, 
+point-cloud processing, berry-level pose estimation, and robot 
+approach execution.
+Processing stage
+Time
+Data acquisition
+26 s
+NeRF reconstruction
+2 min 47 s
+Point cloud export
+35 s
+RANSAC berry detection
+5 s
+Stem skeletonization
+12 s
+Berry orientation optimization
+5 s
+Robot approach per berry
+8.5–10 s
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+23 
+
+validation across grape varieties, growth stages, and multi-season field 
+conditions. The persistent 3D models produced by NeRF reconstruction 
+also offer a natural path toward digital twin applications, where 
+repeated reconstruction of the same bunch across growth stages could 
+support predictive models of berry development and enable thinning 
+decisions informed by forecasted cluster morphology rather than current 
+state alone.
+CRediT authorship contribution statement
+Kabin Yok-In: Writing – original draft, Visualization, Validation, 
+Software, Methodology. Prawit Buayai: Validation, Data curation, 
+Conceptualization. Dear Moeurn: Validation, Software. Xiaoyang 
+Mao: Writing – review & editing, Supervision, Conceptualization.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Acknowledgements
+This research was supported by development, improvement, and 
+implementation of next-generation smart agricultural technologies, 
+Grant ID JPJ011397 from the Project of the Bio-oriented Technology 
+Research Advancement Institution (BRAIN)
+Data availability
+The data that has been used is confidential.
+References
+Buayai, P., Saikaew, K.R., Mao, X., 2021. End-to-end automatic berry counting for table 
+grape thinning. IEEE Access 9, 4829–4842. https://doi.org/10.1109/ 
+ACCESS.2020.3048374.
+Buayai, P., Tan, Y.S., Kamarudzaman, M.F., Bin, M.K., Nishizaki, H., Mao, X., 2023a. 
+Automating grape thinning: predicting robotic arm end-effector positions using 
+depth sensing technology and neural Networks. In: 2023 IEEE International 
+Workshop on Metrology for Agriculture and Forestry, MetroAgriFor 2023 - 
+Proceedings. https://doi.org/10.1109/MetroAgriFor58484.2023.10424399.
+Buayai, P., Yok-In, K., Inoue, D., Nishizaki, H., Makino, K., Mao, X., 2023b. Supporting 
+table grape berry thinning with deep neural network and augmented reality 
+technologies. Comput. Electron. Agric. 213. https://doi.org/10.1016/j. 
+compag.2023.108194.
+Cao, J., Tagliasacchiy, A., Olsony, M., Zhangy, H., Su, Z., 2010. Point cloud skeletons via 
+Laplacian-based contraction. In: SMI 2010 - International Conference on Shape 
+Modeling and Applications, Proceedings. https://doi.org/10.1109/SMI.2010.25.
+Choi, H.B., Park, J.K., Park, S.H., Lee, T.S., 2024. NeRF-based 3D reconstruction pipeline 
+for acquisition and analysis of tomato crop morphology. Front. Plant Sci. 15. https:// 
+doi.org/10.3389/fpls.2024.1439086.
+Coleman, D., Sucan, I., Chitta, S., and Correll, N., 2014. Reducing the Barrier to Entry of 
+Complex Robotic Software: a MoveIt! Case Study. http://arxiv.org/abs/1404.3785.
+Du, W., Liu, P., 2023. Instance segmentation and berry counting of table grape before 
+thinning based on AS-SwinT. Plant Phenom 5. https://doi.org/10.34133/ 
+plantphenomics.0085.
+Ghahremani, M., Williams, K., Corke, F., Tiddeman, B., Liu, Y., Wang, X., Doonan, J.H., 
+2021. Direct and accurate feature extraction from 3D point clouds of plants using 
+RANSAC. Comput. Electron. Agric. 187. https://doi.org/10.1016/j. 
+compag.2021.106240.
+Hu, K., Ying, W., Pan, Y., Kang, H., Chen, C., 2024. High-fidelity 3D reconstruction of 
+plants using Neural Radiance Fields. Comput. Electron. Agric. 220. https://doi.org/ 
+10.1016/j.compag.2024.108848.
+Ivaniˇsevi´c, D., Kalajdˇzi´c, M., Drenjanˇcevi´c, M., Puˇskaˇs, V., Kora´c, N., 2020. The impact of 
+cluster thinning and leaf removal timing on the grape quality and concentration of 
+monomeric anthocyanins in Cabernet-Sauvignon and Probus (Vitis vinifera L.) wines. 
+OENO one 54 (1), 63–74. https://doi.org/10.20870/oeno-one.2020.54.1.2505.
+Jia, N., Yin, Y., Li, M., Han, B., Sun, Y., Liu, C., Tian, K., Liu, S., Wang, Y., Guo, Z., 2023. 
+Berry thinning affects the fruit quality composition of two table grape cultivars 
+under linkage greenhouse conditions. HortSci. 58 (2), 134–140. https://doi.org/ 
+10.21273/HORTSCI16952-22.
+Karoglan, M., Osreˇcak, M., Maslov, L., Kozina, B., 2014. Effect of cluster and berry 
+thinning on Merlot and Cabernet Sauvignon wines composition. Czech J Food Sci 32 
+(5). https://doi.org/10.17221/598/2013-cjfs.
+Kingma, D.P., Ba, J.L., 2015. Adam: a method for stochastic optimization. In: 3rd 
+International Conference on Learning Representations, ICLR 2015 - Conference 
+Track Proceedings.
+Li, J., Qi, X., Nabaei, S.H., Liu, M., Chen, D., Sun, Q., Zhang, X., Yin, X., Li, Z., 2025. 
+A survey on 3D reconstruction techniques in plant phenotyping: from classical 
+methods to Neural Radiance Fields (NeRF), 3D Gaussian Splatting (3DGS), and 
+beyond. Plant Phenom. https://doi.org/10.1016/j.plaphe.2025.100137.
+Mack, J., Schindler, F., Rist, F., Herzog, K., T¨opfer, R., Steinhage, V., 2018. Semantic 
+labeling and reconstruction of grape bunches from 3D range data using a new RGB-D 
+feature descriptor. Comput. Electron. Agric. 155, 96–102. https://doi.org/10.1016/ 
+j.compag.2018.10.011.
+Meyer, L., Gilson, A., Schmid, U., Stamminger, M., 2024. Fruitnerf: A unified neural 
+radiance field based fruit counting framework. In: 2024 IEEE/RSJ International 
+Conference on Intelligent Robots and Systems (IROS). IEEE, pp. 1–8. http://arxiv. 
+org/abs/2408.06190.
+Meyer, L., Gilson, A., Scholz, O., Stamminger, M., 2023. CherryPicker: Semantic 
+skeletonization and topological reconstruction of cherry trees. In: Proceedings of the 
+IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 6244–6253. 
+https://doi.org/10.1109/CVPRW59228.2023.00664.
+Mildenhall, B., Srinivasan, P. P., Tancik, M., Barron, J. T., Ramamoorthi, R., and Ng, R., 
+2020. NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis. 
+Lecture Notes in Computer Science (Including Subseries Lecture Notes in Artificial 
+Intelligence and Lecture Notes in Bioinformatics), 12346 LNCS. https://doi.org 
+/10.1007/978-3-030-58452-8_24.
+Roberto, S.R., Borges, W.F.S., Colombo, R.C., Koyama, R., Hussain, I., de Souza, R.T., 
+2015. Berry-cluster thinning to prevent bunch compactness of “BRS Vitoria”, a new 
+black seedless grape. Sci. Hortic. 197, 297–303. https://doi.org/10.1016/j. 
+scienta.2015.09.049.
+Schnabel, R., Wahl, R., Klein, R., 2007. Efficient RANSAC for point-cloud shape 
+detection. Comput. Graphics Forum 26 (2). https://doi.org/10.1111/j.1467- 
+8659.2007.01016.x.
+Schonberger, J.L., Frahm, J.M., 2016. Structure-from-motion revisited. In: Proceedings of 
+the IEEE conference on computer vision and pattern recognition, pp. 4104–4113. 
+https://doi.org/10.1109/CVPR.2016.445.
+Shrestha, R., Rijal, M., Smith, T., and Gu, Y., 2025. FloPE: flower pose estimation for 
+precision pollination. http://arxiv.org/abs/2503.11692.
+Smitt C, Halstead M, Zimmer P, L¨abe T, Guclu E, Stachniss C, et al., 2023. PAg-NeRF: 
+Towards fast and efficient end-to-end panoptic 3D representations for agricultural 
+robotics. http://arxiv.org/abs/2309.05339.
+Tamura, S., Buayai, P., Chang, W.D., Mao, X., 2024. AR grape thinning support. In: 
+Proceedings - 2024 International Conference on Cyberworlds, CW 2024, 
+pp. 308–314. https://doi.org/10.1109/CW64301.2024.00043.
+Tancik, M., Weber, E., Ng, E., Li, R., Yi, B., Wang, T., Kristoffersen, A., Austin, J., 
+Salahi, K., Ahuja, A., Mcallister, D., Kerr, J., Kanazawa, A., 2023. Nerfstudio: a 
+modular framework for neural radiance field development. In: Proceedings - 
+SIGGRAPH 2023 Conference Papers. https://doi.org/10.1145/3588432.3591516.
+Vu, T., Kim, K., Luu, T.M., Nguyen, T., Yoo, C.D., 2022. Softgroup for 3d instance 
+segmentation on point clouds. In: Proceedings of the IEEE/CVF conference on 
+computer vision and pattern recognition, pp. 2708–2717. https://doi.org/10.1109/ 
+CVPR52688.2022.00273.
+Woo, Y.S., Buayai, P., Nishizaki, H., Makino, K., Kamarudin, L.M., Mao, X., 2023a. End- 
+to-end lightweight berry number prediction for supporting table grape cultivation. 
+Comput Electron Agric 213. https://doi.org/10.1016/j.compag.2023.108203.
+Woo, Y.S., Li, Z., Tamura, S., Buayai, P., Nishizaki, H., Makino, K., Kamarudin, L.M., 
+Mao, X., 2023b. 3D grape bunch model reconstruction from 2D images. Comput 
+Electron Agric 215. https://doi.org/10.1016/j.compag.2023.108328.
+Yang, X., Lu, X., Xie, P., Guo, Z., Fang, H., Fu, H., Hu, X., Sun, Z., Cen, H., 2024. 
+PanicleNeRF: low-cost, high-precision in-field phenotyping of rice panicles with 
+smartphone. Plant Phenomics 6. https://doi.org/10.34133/plantphenomics.0279.
+Zha, Q., Xi, X.J., He, Y., Jiang, A.L., 2019. Bagging affecting sugar and anthocyanin 
+metabolism in the ripening period of grape berries. Notulae Botanicae Horti 
+Agrobotanici Cluj-Napoca 47 (4), 1194–1205. https://doi.org/10.15835/ 
+nbha47411577.
+Zhou, Y., Barnes, C., Lu, J., Yang, J., Li, H., 2019. On the continuity of rotation 
+representations in neural networks. In: Proceedings of the IEEE/CVF conference on 
+computer vision and pattern recognition, pp. 5745–5753. https://doi.org/10.1109/ 
+CVPR.2019.00589.
+K. Yok-In et al.                                                                                                                                                                                                                                  
+Computers and Electronics in Agriculture 250 (2026) 111898 
+24 

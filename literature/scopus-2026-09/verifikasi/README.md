@@ -17,8 +17,8 @@ dan menyetujui seluruh perubahan buatan AI di
 | 1. Sampel acak | Keputusan peninjau dan AI pada 300 judul dan 165 abstrak acak | Kappa 0,57 (judul) dan 0,45 (abstrak). 123 perbedaan sudah diputuskan: 5 oleh Bu Fatma, 118 oleh AI dan disetujui peninjau |
 | 2. Keputusan penting | Semua artikel C1, C3, dan yang dikeluarkan di tahap kelayakan | 203 baris C1, 177 baris C3, dan 145 eksklusi diperiksa |
 | 3. Makalah yang sudah dikenal | Apakah 16 makalah penting tertangkap pencarian | Semuanya tertangkap; 5 kajian dari luar pencarian ditambahkan |
-| 4. PDF lengkap | Ketersediaan PDF 199 artikel C1 dan 19 artikel sawit inti | 213 dari 218 ada; dua artikel C1 tanpa PDF dilaporkan di naskah |
-| 5. Label ulang dari PDF | Label 199 artikel C1 | 195 dibaca dari teks lengkap, 4 dari abstrak; 98 label berubah |
+| 4. PDF lengkap | Ketersediaan PDF 199 artikel C1 dan 19 artikel sawit inti | 217 dari 218 ada; satu artikel C1 tanpa PDF (Safre dkk. 2024) dilaporkan di naskah |
+| 5. Label ulang dari PDF | Label 199 artikel C1 | 196 dibaca dari teks lengkap, 3 dari abstrak; 98 label berubah |
 | 6. Cek fakta naskah | Kecocokan setiap klaim naskah dengan kajian yang dikutip | 303 pasangan klaim dan kajian sesuai sumber |
 
 Label C1 belum dikode buta oleh manusia, sehingga kesepakatan yang dilaporkan

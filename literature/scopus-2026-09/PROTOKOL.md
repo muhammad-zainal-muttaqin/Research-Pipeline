@@ -146,9 +146,9 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   dengan cara yang sama; label C1 diterapkan lewat Cek 5. Empat kajian dari
   penelusuran daftar pustaka ditambahkan ke `topik/tambahan_metode_lain.csv`.
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
-- PDF tersedia untuk 476 dari 1.013 kajian Scopus (`KATALOG-PDF.md`); teksnya
-  diekstrak untuk 472 kajian. Empat PDF jurnal CSAM tidak dapat diekstrak teksnya
-  (fon tanpa pemetaan Unicode); halamannya dibaca sebagai citra. Dua kajian C1
-  (Safre dkk., 2024; Yok-In dkk., 2026) tidak diperoleh teks lengkapnya dan dilaporkan
-  demikian di naskah. Daftar awal PDF yang belum ada tercantum di
+- PDF tersedia untuk 480 dari 1.013 kajian Scopus (`KATALOG-PDF.md`); teksnya
+  diekstrak untuk 476 kajian. Empat PDF jurnal CSAM tidak dapat diekstrak teksnya
+  (fon tanpa pemetaan Unicode); halamannya dibaca sebagai citra. Satu kajian C1
+  (Safre dkk., 2024) tidak diperoleh teks lengkapnya dan dilaporkan demikian di
+  naskah. Daftar awal PDF yang belum ada tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.

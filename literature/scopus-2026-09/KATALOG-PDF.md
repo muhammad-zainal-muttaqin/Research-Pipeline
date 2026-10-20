@@ -1,21 +1,21 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 476 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 199 | 197 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 199 | 198 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 243 | 64 |
-| C3 | Pencitraan TBS kelapa sawit | 171 | 50 |
+| C3 | Pencitraan TBS kelapa sawit | 171 | 53 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 52 | 14 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 138 | 41 |
 | R | Tinjauan terdahulu | 122 | 63 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 88 | 47 |
-| | **Jumlah** | 1.013 | 476 |
+| | **Jumlah** | 1.013 | 480 |
 
-## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (197)
+## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (198)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -46,6 +46,7 @@ Katalog ini memuat 476 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2026 | Woo Y.S. | Geometry-Driven Triangulation and Differentiable Semantic Gaussian Refinement for 3D Grape Bunch Model Reconstruction in the Field | Icict 2026 Proceedings of 2026 the 9th International Conference on Information and Computer Technologies | [PDF](pdf/woo2026geometry.pdf) | [DOI](https://doi.org/10.1145/3803291.3803356) |
 | 2026 | Xing X. | A lightweight multi-view detection and counting method for real-time cherry tomato yield estimation using greenhouse inspection robots | Smart Agricultural Technology | [PDF](pdf/xing2026lightweight.pdf) | [DOI](https://doi.org/10.1016/j.atech.2026.102260) |
 | 2026 | Yang R. | A real-time semantic 3D vineyard mapping and fruit localization system for yield estimation in dynamic vineyards | Smart Agricultural Technology | [PDF](pdf/yang2026real.pdf) | [DOI](https://doi.org/10.1016/j.atech.2026.101784) |
+| 2026 | Yok-In K. | 3D reconstruction and segmentation of grape bunches for robotic berry thinning | Computers and Electronics in Agriculture | [PDF](pdf/yokin20263d.pdf) | [DOI](https://doi.org/10.1016/j.compag.2026.111898) |
 | 2026 | Yoshida T. | Cross-Day Grape Cluster Tracking Using Branch-Based 3D Alignment in Vineyards | Journal of Robotics and Mechatronics | [PDF](pdf/yoshida2026cross.pdf) | [DOI](https://doi.org/10.20965/jrm.2026.p0953) |
 | 2026 | Zhao J. | A two-stage fine-tuning strategy for 3D object segmentation from multi-view images | Smart Agricultural Technology | [PDF](pdf/zhao2026two.pdf) | [DOI](https://doi.org/10.1016/j.atech.2026.102443) |
 | 2026 | Zhao K. | Adapting SAM3 for 3D fruit counting with cross-view contrastive learning and Hough voting | Computers and Electronics in Agriculture | [PDF](pdf/zhao2026adapting.pdf) | [DOI](https://doi.org/10.1016/j.compag.2026.112325) |
@@ -286,7 +287,7 @@ Katalog ini memuat 476 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2017 | Pinho T.M. | Comparative Analysis between LDR and HDR Images for Automatic Fruit Recognition and Counting | Journal of Sensors | [PDF](pdf/pinho2017comparative.pdf) | [DOI](https://doi.org/10.1155/2017/7321950) |
 | 2015 | Font D. | Vineyard yield estimation based on the analysis of high resolution images obtained with artificial illumination at night | Sensors Switzerland | [PDF](pdf/font2015vineyard.pdf) | [DOI](https://doi.org/10.3390/s150408284) |
 
-## C3: Pencitraan TBS kelapa sawit (50)
+## C3: Pencitraan TBS kelapa sawit (53)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -321,6 +322,7 @@ Katalog ini memuat 476 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2024 | Soetrisno Y.A.A. | OIL PALM LEVEL OF RIPENESS CLASSIFICATION USING EFFICIENTDET-LITE CNN ARCHITECTURE | Journal of Oil Palm Research | [PDF](pdf/soetrisno2024oil.pdf) | [DOI](https://doi.org/10.21894/jopr.2023.0059) |
 | 2024 | Wang H.H. | Novel Feature Extraction for Oil Palm Bunches Classification | Journal of Advanced Research in Applied Sciences and Engineering Technology | [PDF](pdf/wang2024novel.pdf) | [DOI](https://doi.org/10.37934/araset.34.1.350360) |
 | 2023 | Herman | DEEP LEARNING WITH AUXILIARY LEARNING ATTENTION MECHANISM FOR OIL PALM FRUIT IMAGE RIPENESS CLASSIFICATION | Icic Express Letters | [PDF](pdf/herman2023deep.pdf) | [DOI](https://doi.org/10.24507/icicel.17.12.1303) |
+| 2023 | Junior F.A. | Video based oil palm ripeness detection model using deep learning | Heliyon | [PDF](pdf/junior2023video.pdf) | [DOI](https://doi.org/10.1016/j.heliyon.2023.e13036) |
 | 2023 | Mamat N. | Enhancing Image Annotation Technique of Fruit Classification Using a Deep Learning Approach | Sustainability Switzerland | [PDF](pdf/mamat2023enhancing.pdf) | [DOI](https://doi.org/10.3390/su15020901) |
 | 2023 | Suharjito | Annotated Datasets of Oil Palm Fruit Bunch Piles for Ripeness Grading Using Deep Learning | Scientific Data | [PDF](pdf/suharjito2023annotated.pdf) | [DOI](https://doi.org/10.1038/s41597-023-01958-x) |
 | 2023 | Suharjito | Real-Time Oil Palm Fruit Grading System Using Smartphone and Modified YOLOv4 | IEEE Access | [PDF](pdf/suharjito2023real.pdf) | [DOI](https://doi.org/10.1109/access.2023.3285537) |
@@ -337,6 +339,8 @@ Katalog ini memuat 476 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2018 | Sabri N. | Evaluation of color models for palm oil fresh fruit bunch ripeness classification | Indonesian Journal of Electrical Engineering and Computer Science | [PDF](pdf/sabri2018evaluation.pdf) | [DOI](https://doi.org/10.11591/ijeecs.v11.i2.pp549-557) |
 | 2018 | Salambue R. | Investigation of the ripeness of oil palm fresh fruit bunches using bio-speckle imaging | Journal of Physics Conference Series | [PDF](pdf/salambue2018investigation.pdf) | [DOI](https://doi.org/10.1088/1742-6596/978/1/012071) |
 | 2016 | Shabdin M.K. | A study on the oil palm fresh fruit bunch (FFB) ripeness detection by using Hue, Saturation and Intensity (HSI) approach | Iop Conference Series Earth and Environmental Science | [PDF](pdf/shabdin2016study.pdf) | [DOI](https://doi.org/10.1088/1755-1315/37/1/012039) |
+| 2015 | Cherie D. | Advance models for camera-vision based oil content prediction of intact oil palm fruits (Elaeis Guineensis Jacq) on trees with nondestructive evaluation | International Journal on Advanced Science Engineering and Information Technology | [PDF](pdf/cherie2015advance.pdf) | [DOI](https://doi.org/10.18517/ijaseit.5.4.542) |
+| 2015 | Cherie D. | Optical characteristics of oil palm fresh fruits bunch (FFB) under three spectrum regions influence for harvest decision | International Journal on Advanced Science Engineering and Information Technology | [PDF](pdf/cherie2015optical.pdf) | [DOI](https://doi.org/10.18517/ijaseit.5.3.534) |
 | 2014 | Bensaeed O. | Oil palm fruit grading using a hyperspectral device and machine learning algorithm | Iop Conference Series Earth and Environmental Science | [PDF](pdf/bensaeed2014oil.pdf) | [DOI](https://doi.org/10.1088/1755-1315/20/1/012017) |
 | 2014 | Makky M. | Automatic non-destructive quality inspection system for oil palm fruits | International Agrophysics | [PDF](pdf/makky2014automatic.pdf) | [DOI](https://doi.org/10.2478/intag-2014-0022) |
 | 2012 | Fadilah N. | Intelligent color vision system for ripeness classification of oil palm fresh fruit bunch | Sensors Switzerland | [PDF](pdf/fadilah2012intelligent.pdf) | [DOI](https://doi.org/10.3390/s121014179) |

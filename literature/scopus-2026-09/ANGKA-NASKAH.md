@@ -13,7 +13,7 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Total kajian masuk 1018
 - Kajian per tahun: 2012: 9, 2013: 14, 2014: 13, 2015: 16, 2016: 22, 2017: 25, 2018: 29, 2019: 39, 2020: 67, 2021: 73, 2022: 90, 2023: 117, 2024: 166, 2025: 196, 2026: 137
 - Multi-pengamatan per tahun: 2012: 1, 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 2, 2018: 1, 2019: 5, 2020: 10, 2021: 14, 2022: 13, 2023: 27, 2024: 36, 2025: 48, 2026: 32
-- Dengan abstrak 787 dari 1013; PDF teks lengkap 476 (teks terekstrak 472); multi-pengamatan dengan PDF 197 dari 199
+- Dengan abstrak 787 dari 1013; PDF teks lengkap 480 (teks terekstrak 476); multi-pengamatan dengan PDF 198 dari 199
 - Peta istilah: 43 istilah, 317 tautan; istilah identitas 24-37 kajian; detection 621; counting 431
 
 ## Seksi 3: kajian multi-pengamatan
@@ -39,9 +39,9 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Kajian no association: daud2022loose
 - Kajian learned association: arizasentis2023object, arizasentis2025comparative, fusaro2026horticultural, meyer2025fruitnerf, santos2026multi, xia2022culling, zhao2026adapting, zheng2023object
 - Makalah dataset: arizasentis2023dataset, arizasentis2024grapemots, genemola2020fuji, genemola2020lfuji
-- Dasar pengodean kajian multi-pengamatan: teks lengkap 195, abstrak 4
-- Referensi hitung (kemunculan): anotasi 125, pohon 43, panen 28, tidak ada 19, packhouse 1
-- Tingkat metrik menurut pengodean kajian (kemunculan): hitung 157, deteksi 135, identitas 70, tidak ada 4
+- Dasar pengodean kajian multi-pengamatan: teks lengkap 196, abstrak 3
+- Referensi hitung (kemunculan): anotasi 126, pohon 43, panen 28, tidak ada 19, packhouse 1
+- Tingkat metrik menurut pengodean kajian (kemunculan): hitung 158, deteksi 136, identitas 70, tidak ada 4
 - Cara pemberian kelas pada kajian per kelas: tidak dinyatakan 12, saat pelacakan 10, voting antarpandang 2, sesudah pelacakan 1
 
 ## Seksi 5: metrik di abstrak kajian metode multi-pengamatan
