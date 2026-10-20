@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MAT = ROOT / "literature/scopus-2026-09/topik/bukti/matriks_bukti.csv"
 OUT = ROOT / "manuscript/source/main6-appendix-c1.tex"
 
-PLAT = {"UAV": "UAV", "ground vehicle/robot": "Ground vehicle", "handheld/smartphone": "Handheld",
+PLAT = {"UAV": "UAV", "ground vehicle/robot": "Ground vehicle or robot", "handheld/smartphone": "Handheld",
         "fixed camera": "Fixed camera", "conveyor/lab": "Laboratory"}
 AKUISISI = {"V": "Video", "D": "Discrete views", "S": "3D scan", "T": "Revisits", "1": "Single view"}
 NAMA_MEK = {"M0": "No association", "M1": "Statistical correction", "M2": "Appearance matching",
