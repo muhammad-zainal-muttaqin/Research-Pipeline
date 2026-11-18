@@ -10,8 +10,6 @@ Anda.
   Hal yang harus diputuskan penulis:
   - Peran CRediT kedua penulis (usulan sudah terisi).
   - Ada atau tidaknya dana hibah (teks bawaan menyatakan tidak ada).
-  - Apakah keikutsertaan kedua penulis dalam makalah SawitMVC yang dikutip
-    perlu diungkapkan.
   - Isi ucapan terima kasih, atau hapus seksinya.
   - Abstrak kini 288 kata. Periksa batas kata dan kebijakan AI di *Guide for
     Authors* jurnal *Computers and Electronics in Agriculture*.
