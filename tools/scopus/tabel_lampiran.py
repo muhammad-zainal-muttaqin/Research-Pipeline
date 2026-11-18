@@ -23,9 +23,7 @@ NAMA_MEK = {"M0": "No association", "M1": "Statistical correction", "M2": "Appea
             "DATA": "Dataset paper"}
 NAMA_PENDEK = {"M0": "no association", "M1": "statistical", "M2": "appearance", "M3": "tracking",
                "M4": "geometric", "M5": "learned"}
-MET = [("Count", {"MAE", "RMSE", "R2", "MAPE/rel. error", "count accuracy"}),
-       ("Identity", {"MOTA", "IDF1", "HOTA", "ID switch"}),
-       ("Detection", {"mAP/AP", "F1"})]
+TINGKAT = [("hitung", "Count"), ("identitas", "Identity"), ("deteksi", "Detection")]
 DASAR = {"teks lengkap": "Full text", "abstrak": "Abstract", "judul": "Title"}
 CROP_ABBR = {"peach/nectarine": "peach", "sweet pepper": "pepper", "litchi/longan": "litchi",
              "plum/apricot": "plum", "passion fruit": "passion fruit", "other berries": "berry",
@@ -42,10 +40,11 @@ def nama_mekanisme(kode):
 
 
 def sel_metrik(r):
-    if r["ada_abstrak"] != "ya":
-        return "No abstract"
-    ms = set(r["metrik"].split(";")) if r["metrik"] else set()
-    out = [nama for nama, s in MET if ms & s]
+    """Jenis metrik dari kolom tingkat_metrik (kode teks lengkap); "Not coded" bila kolom itu kosong."""
+    ms = {x.strip() for x in r["tingkat_metrik"].split(";") if x.strip()}
+    if not ms:
+        return "Not coded"
+    out = [nama for k, nama in TINGKAT if k in ms]
     return ", ".join(out).capitalize() if out else "None"
 
 
@@ -60,19 +59,18 @@ def main():
     rows.sort(key=lambda r: (int(r["year"]), r["first_author"]))
     baris = []
     for r in rows:
-        tan = r["tanaman"].split(";")[0] if r["tanaman"] else "Not stated"
-        tan = CROP_ABBR.get(tan, tan).capitalize()
+        tan = ", ".join(CROP_ABBR.get(x, x) for x in r["tanaman"].split(";") if x).capitalize() or "Not stated"
         plat = ", ".join(PLAT[p] for p in r["platform"].split(";") if p in PLAT) or "Not stated"
         kelas = "Yes" if r["per_kelas"] == "Y" else "No"
         baris.append(f"\\citet{{{r['key']}}} & {tan} & {plat} & "
                      f"{AKUISISI.get(r['akuisisi_manual'], 'Not stated')} & {nama_mekanisme(r['mekanisme'])} & "
                      f"{kelas} & {sel_metrik(r)} & {sel_dasar(r)} \\\\")
     judul = (r"Study & Crop & Platform & Acquisition & Association mechanism & Per-class counts & "
-             r"Metrics in abstract & Coded from\\")
+             r"Metric types & Coded from\\")
     kepala = r"""%% Dibuat otomatis oleh tools/scopus/tabel_lampiran.py; jangan disunting manual.
 \begin{footnotesize}
 \setlength{\tabcolsep}{3pt}
-\begin{longtable}{@{}L{3.7cm}L{1.5cm}L{1.9cm}L{1.6cm}L{3.2cm}L{1.1cm}L{1.9cm}L{1.2cm}@{}}
+\begin{longtable}{@{}L{3.5cm}L{1.5cm}L{1.9cm}L{1.6cm}L{3.2cm}L{1.1cm}L{1.9cm}L{1.2cm}@{}}
 \caption{Detailed coding records of the %d multi-observation studies.}\label{tab:c1matrix}\\
 \toprule
 %s
@@ -85,7 +83,7 @@ def main():
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Not stated, the property is not stated in the abstract. Metric types were read from abstracts only: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or ID switches; Detection, detection quality; No abstract, no abstract was available. Coded from: the most complete source that was read when the codes were assigned. UAV, unmanned aerial vehicle.}\\
+\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Not stated, the property was not found by the coding rules. Metric types were coded from the full text: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or ID switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Coded from: the most complete source that was read when the codes were assigned. UAV, unmanned aerial vehicle.}\\
 \endlastfoot
 """ % (len(rows), judul, judul)
     OUT.write_text(kepala + "\n".join(baris) + "\n\\end{longtable}\n\\end{footnotesize}\n", newline="\n")
