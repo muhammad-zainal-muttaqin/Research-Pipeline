@@ -6,8 +6,8 @@ mengimpor berkas ini. Nomor bagian dirujuk berkas lain (terutama §3, §7, dan
 
 Berkas ini adalah satu-satunya pusat aturan repo. Aturan yang terlalu rinci
 untuk ditaruh di sini ditulis di berkas khusus berikut, dan hanya di sana.
-Aturan baru yang mengikat seluruh repo ditulis di berkas ini; aturan rinci
-untuk satu bidang ditulis di berkas bidangnya lalu didaftarkan di tabel ini.
+Aturan baru ditulis di berkas ini. Berkas aturan baru hanya dibuat bila
+pengguna memintanya, lalu didaftarkan di tabel ini.
 
 | Bidang | Berkas aturan rinci |
 |---|---|
@@ -43,6 +43,7 @@ agen.
   artinya, misalnya "M3 (pelacakan video)"; daftar artinya ada di
   `tools/scopus/verifikasi_istilah.py`. Berkas yang sulit dibaca diperbaiki
   langsung, bukan dijelaskan dengan berkas tambahan.
+
 **Kebersihan repo.**
 
 - **Jangan membuat berkas yang kelak harus dibersihkan.** Yang tidak boleh
@@ -60,6 +61,36 @@ agen.
   Keadaan sebelumnya tersimpan di tag Git `arsip-pra-rapi-2026-11-18`
   (`git show arsip-pra-rapi-2026-11-18:<jalur>`). Jangan memulihkannya ke
   pohon kerja kecuali diminta.
+
+**Larangan tulisan agen.** Berlaku untuk dokumen, komentar kode, docstring,
+pesan commit, dan naskah.
+
+- **Dilarang membuat berkas Markdown yang tidak diminta.** Agen tidak membuat
+  `.md` untuk menjelaskan, membela, atau merangkum pekerjaannya sendiri. Contoh
+  yang dilarang: laporan sesi, catatan keputusan, rencana, ringkasan
+  perubahan, dan berkas aturan baru. Penjelasan ditulis di jawaban percakapan
+  atau pesan commit. Berkas `.md` baru hanya boleh dibuat bila pengguna
+  memintanya, atau bila berkas itu menggantikan berkas yang ada sehingga jumlah
+  berkas tidak bertambah.
+- **Dilarang menimbun aturan.** Agen tidak menambah aturan atas inisiatif
+  sendiri. Aturan baru hanya ditulis bila pengguna memintanya atau bila ada
+  kesalahan nyata yang perlu dicegah, dalam satu butir pendek di bagian yang
+  sesuai. Butir yang sudah ada diperbarui, bukan ditambah butir baru yang
+  menggandakannya.
+- **Dilarang komentar sampah.** Komentar kode hanya menerangkan *mengapa* yang
+  tidak tampak dari kode, misalnya jebakan data, batasan perangkat, atau
+  alasan angka tetap. Yang dilarang: komentar yang mengulang isi kode, riwayat
+  perubahan ("diperbaiki", "versi baru", "sebelumnya"), nama model atau sesi,
+  catatan TODO tanpa pemilik, dan kode mati yang dijadikan komentar. Riwayat
+  perubahan cukup di Git.
+- **Dilarang slogan.** Tidak ada slogan, kata pemasaran, atau penekanan
+  kosong, misalnya "kokoh", "canggih", "siap produksi", "solusi menyeluruh",
+  "game changer", atau emoji. Huruf tebal hanya untuk peringatan yang
+  berakibat salah bila terlewat. Setiap kalimat harus memuat fakta yang dapat
+  diperiksa.
+- **Dilarang mengarang.** Setiap klaim di dokumen, komentar, atau commit
+  menyebut sumbernya: data, skrip, berkas, atau keluaran perintah. Klaim yang
+  belum diperiksa ditulis "belum diperiksa", bukan disajikan sebagai fakta.
 
 **Lembar, log, dan tugas.**
 
@@ -291,7 +322,11 @@ plafon.
 
 ## 11. Cara Kerja
 
-- Laporkan hasil apa adanya, termasuk kegagalan, dengan bukti.
+- Verifikasi adalah langkah terpenting. Pekerjaan baru dinyatakan selesai
+  setelah diperiksa dengan cara yang dapat diulang: skrip dijalankan, naskah
+  dikompilasi, angka dihitung ulang, atau berkas dibaca ulang. Laporkan hasil
+  apa adanya, termasuk kegagalan, dengan keluaran pemeriksaannya. Yang belum
+  diperiksa disebut belum diperiksa.
 - "GPU/CPU jangan menganggur" berarti mempercepat todo yang sudah ada, **bukan**
   menambah eksperimen baru tanpa diminta.
 - Paralelisme dibatasi VRAM (RTX A4500 20,4 GB; RF-DETR-L @1280 ~10,3 GB,
