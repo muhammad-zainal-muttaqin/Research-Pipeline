@@ -1,23 +1,13 @@
 #!/usr/bin/env python3
-"""Cek 5: label kajian C1 yang dibaca ulang dari teks lengkap.
-
-Mode:
-  (tanpa opsi)       tulis verifikasi/cek-5-kode-ulang/kode_ulang_C1.csv dari
-                     topik/bukti/mekanisme_C1.txt dan matriks_bukti.csv. Kolom
-                     `bukti` dan `catatan` diambil dari lembar yang sudah ada.
-  --sampel-fatma     tulis sampel_fatma_C1.xlsx: 20 kajian C1 acak (benih
-                     20261106) untuk dikode buta Bu Fatma, dengan daftar pilihan
-                     dan lembar kedua berisi arti setiap pilihan.
-  --banding-fatma    bandingkan isian Bu Fatma dengan mekanisme_C1.txt.
+"""Cek 5: tulis verifikasi/cek-5-kode-ulang/kode_ulang_C1.csv dari
+topik/bukti/mekanisme_C1.txt dan matriks_bukti.csv.
 
 Label C1 diubah langsung di mekanisme_C1.txt dan setiap perubahan dicatat di
 verifikasi/.teknis/log_perubahan.csv (lihat verifikasi_log_manusia.py).
 
   python3 tools/scopus/verifikasi_kode_ulang.py
 """
-import argparse
 import csv
-import random
 import re
 import sys
 from pathlib import Path
@@ -30,8 +20,6 @@ MAT = KORPUS / "topik/bukti/matriks_bukti.csv"
 MANUAL = KORPUS / "topik/bukti/mekanisme_C1.txt"
 CEK5 = KORPUS / "verifikasi/cek-5-kode-ulang"
 LEMBAR = CEK5 / "kode_ulang_C1.csv"
-SAMPEL = CEK5 / "sampel_fatma_C1.xlsx"
-BENIH_FATMA, N_FATMA = 20261106, 20
 
 KOLOM_MANUAL = ["mekanisme", "akuisisi", "per_kelas", "hasil_ringkas", "sumber_kode", "halaman",
                 "referensi_hitung", "tingkat_metrik", "cara_kelas", "berubah"]
@@ -40,15 +28,6 @@ KELAS = {"-": "tidak berlaku", "saat pelacakan": "kelas ditetapkan saat pelacaka
          "sesudah pelacakan": "kelas ditetapkan sesudah pelacakan",
          "voting antarpandang": "kelas dipilih dengan suara antarpandang",
          "tidak dinyatakan": "tidak dinyatakan"}
-# Kolom lembar Bu Fatma: (judul kolom, kolom mekanisme_C1.txt, pilihan kode -> arti)
-ISIAN_FATMA = [("cara_penghubungan", "mekanisme", {k: v for k, v in MEK.items() if k != "DATA"}),
-               ("cara_foto_diambil", "akuisisi", AKU),
-               ("hitung_per_kelas_kematangan", "per_kelas", YN),
-               ("acuan_hitungan", "referensi_hitung", REF),
-               ("metrik_evaluasi", "tingkat_metrik", MET),
-               ("cara_kelas", "cara_kelas", KELAS),
-               ("dibaca_dari", "sumber_kode", {"teks lengkap": "teks lengkap", "abstrak": "abstrak"}),
-               ("halaman_bukti", "halaman", None)]
 
 
 def baca(path):
@@ -133,98 +112,8 @@ def bangun_lembar():
     print(f"{len(baris)} kajian C1 -> {LEMBAR.relative_to(ROOT)}")
 
 
-def sampel_fatma(idx=None):
-    import openpyxl
-    from openpyxl.styles import Alignment, Font, PatternFill
-    from openpyxl.worksheet.datavalidation import DataValidation
-
-    if SAMPEL.exists():
-        sys.exit(f"{SAMPEL.relative_to(ROOT)} sudah ada; hapus dahulu bila memang ingin menarik ulang.")
-    mat = sorted((r for r in baca(MAT) if r["kode"] == "C1"), key=lambda r: int(r["idx"]))
-    pilih = [r for r in mat if r["idx"] in idx] if idx else random.Random(BENIH_FATMA).sample(mat, N_FATMA)
-    pilih.sort(key=lambda r: int(r["idx"]))
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "isian"
-    kepala = ["no", "idx", "judul", "tahun", "doi", "pdf_tersedia"] + [c for c, _, _ in ISIAN_FATMA] + ["catatan"]
-    ws.append(kepala)
-    for n, r in enumerate(pilih, 1):
-        ws.append([n, int(r["idx"]), r["title"], r["year"], r["doi"],
-                   "ya" if (KORPUS / "pdf" / f"{r['key']}.pdf").exists() else "tidak"])
-    kuning = PatternFill("solid", fgColor="FFF2CC")
-    for j, c in enumerate(kepala, 1):
-        sel = ws.cell(1, j)
-        sel.font = Font(bold=True)
-        if j > 6:
-            sel.fill = kuning
-    ref = wb.create_sheet("pilihan")
-    ref.append(["kolom", "pilihan", "arti"])
-    for kol, sumber, peta in ISIAN_FATMA:
-        j = kepala.index(kol) + 1
-        if peta is None:
-            ref.append([kol, "bebas", "halaman, tabel, atau gambar tempat hasil utama ditemukan"])
-            continue
-        nilai = [f"{k} ({v})" if sumber in ("mekanisme", "akuisisi") else v for k, v in peta.items()]
-        for k, v in zip(peta, nilai):
-            ref.append([kol, v, ""])
-        if kol in ("cara_penghubungan", "acuan_hitungan", "metrik_evaluasi"):
-            ref.append([kol, "lebih dari satu", "tulis semuanya, dipisah ' + ', misalnya M2 + M3"])
-        dv = DataValidation(type="list", formula1='"' + ",".join(nilai) + '"', showErrorMessage=False)
-        ws.add_data_validation(dv)
-        dv.add(f"{ws.cell(2, j).coordinate}:{ws.cell(len(pilih) + 1, j).coordinate}")
-    ref.append(["catatan", "bebas", "alasan bila ragu"])
-    for lembar, lebar in ((ws, {"C": 60}), (ref, {"A": 28, "B": 45, "C": 60})):
-        for k, v in lebar.items():
-            lembar.column_dimensions[k].width = v
-        for row in lembar.iter_rows(min_row=2):
-            for sel in row:
-                sel.alignment = Alignment(wrap_text=True, vertical="top")
-    wb.save(SAMPEL)
-    print(f"{N_FATMA} kajian (benih {BENIH_FATMA}) -> {SAMPEL.relative_to(ROOT)}")
-
-
-def banding_fatma():
-    import openpyxl
-    ws = openpyxl.load_workbook(SAMPEL).worksheets[0]
-    rows = list(ws.iter_rows(values_only=True))
-    kepala = list(rows[0])
-    manual = muat_manual()
-    banding = [(c, s, p) for c, s, p in ISIAN_FATMA if s in ("mekanisme", "akuisisi", "per_kelas",
-                                                           "referensi_hitung", "tingkat_metrik", "cara_kelas")]
-    beda, belum = [], 0
-    for row in rows[1:]:
-        r = {k: ("" if v is None else str(v)) for k, v in zip(kepala, row)}
-        if not r["cara_penghubungan"].strip():
-            belum += 1
-            continue
-        acuan = manual.get(r["idx"], {})
-        d = []
-        for kol, sumber, peta in banding:
-            f = {kode(p, peta) for p in re.split(r" \+ |;", r[kol]) if p.strip()}
-            a = {p.strip() for p in re.split(r"[+;]", acuan.get(sumber, "")) if p.strip()} or {"-"}
-            f = f or {"-"}
-            if f != a:
-                d.append(f"{kol}: Bu Fatma {sorted(f)}, label {sorted(a)}")
-        if d:
-            beda.append(f"idx {r['idx']}: " + " | ".join(d))
-    print("\n".join(beda))
-    n = len(rows) - 1 - belum
-    print(f"{len(beda)} dari {n} kajian berbeda (ambang: lebih dari 3 dari 20 -> cari penyebab dan periksa ulang)")
-    if belum:
-        print(f"belum diisi: {belum} kajian")
-
-
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--sampel-fatma", action="store_true")
-    ap.add_argument("--banding-fatma", action="store_true")
-    a = ap.parse_args()
-    if a.sampel_fatma:
-        sampel_fatma()
-    elif a.banding_fatma:
-        banding_fatma()
-    else:
-        bangun_lembar()
+    bangun_lembar()
 
 
 if __name__ == "__main__":

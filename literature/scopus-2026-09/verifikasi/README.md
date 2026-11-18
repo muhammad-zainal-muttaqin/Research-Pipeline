@@ -26,8 +26,6 @@ di [`log_perubahan.csv`](log_perubahan.csv)). Butir yang masih menunggu ada di
 | Tahap teks lengkap (18 November 2026) | Kelompok 480 artikel yang PDF-nya ada | 17 pindah ke C1, 3 pindah kelompok lain, 12 dikeluarkan; disetujui peninjau |
 | PDF ganda (18 November 2026) | Bab buku Parico dkk. 2023 dan artikel *Sensors* 2021 memakai berkas yang sama | Bab buku dicatat tidak diperoleh; korpus menjadi 467 kajian, C1 214; disetujui peninjau |
 
-Label C1 belum dikode buta oleh manusia, sehingga kesepakatan yang dilaporkan
-untuk label C1 adalah antarmodel (butir F.4 di [TUGAS.md](TUGAS.md)).
 
 ## Langkah berikutnya
 

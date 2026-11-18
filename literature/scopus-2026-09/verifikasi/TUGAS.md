@@ -53,8 +53,3 @@ Anda.
   [kode_ulang_C1.csv](cek-5-kode-ulang/kode_ulang_C1.csv) dan saring kolom
   `diisi_oleh` = "AI dari teks lengkap, belum diperiksa peninjau". Dampak bila
   ada label yang diubah: angka mekanisme di naskah dan Lampiran A berubah.
-- [ ] **F.4 Kode buta 20 artikel C1 acak oleh Bu Fatma.**
-  Buka [sampel_fatma_C1.xlsx](cek-5-kode-ulang/sampel_fatma_C1.xlsx) dan isi
-  kolom berlatar kuning. Arti setiap pilihan ada di lembar `pilihan`. Hasilnya
-  menjadi satu-satunya ukuran kesepakatan manusia untuk label C1. Naskah saat
-  ini menyatakan bahwa label C1 dikode ulang oleh model.
