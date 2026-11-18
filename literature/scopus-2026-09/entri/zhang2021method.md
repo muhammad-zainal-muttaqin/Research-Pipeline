@@ -8,7 +8,7 @@
 | Penulis | Zhang, Chunlong; Zhang, Kaifei; Ge, Luzhen; Zou, Kunlin; Wang, Song; Zhang, Junxiong; Li, Wei |
 | Tahun | 2021 |
 | Venue | Scientia Horticulturae |
-| Kode | C1 (Gabungan beberapa pengamatan) |
+| Kode | C5 (Depth, 3D, dan non-RGB) |
 | Tanaman | pomegranate |
 
 ## Tautan Akses

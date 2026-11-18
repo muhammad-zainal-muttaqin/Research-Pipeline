@@ -8,7 +8,7 @@
 | Penulis | Huang, Tong; Guo, Jingfeng; Yu, Long; Chen, Houbin; Su, Zuanxian; Xue, Yueju |
 | Tahun | 2024 |
 | Venue | Computers and Electronics in Agriculture |
-| Kode | C1 (Gabungan beberapa pengamatan) |
+| Kode | C2 (Pencacahan satu pandang) |
 | Tanaman | litchi/longan |
 
 ## Tautan Akses

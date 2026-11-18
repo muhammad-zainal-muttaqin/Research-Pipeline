@@ -1,21 +1,21 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 467 kajian korpus `main6` yang PDF-nya tersedia, dari 467 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 199 | 198 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 243 | 64 |
-| C3 | Pencitraan TBS kelapa sawit | 171 | 53 |
-| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 52 | 14 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 138 | 41 |
-| R | Tinjauan terdahulu | 122 | 63 |
-| T | Metode yang dapat dipindahkan dari luar pertanian | 88 | 47 |
-| | **Jumlah** | 1.013 | 480 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 214 | 214 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 43 | 43 |
+| C3 | Pencitraan TBS kelapa sawit | 53 | 53 |
+| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 13 | 13 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 35 | 35 |
+| R | Tinjauan terdahulu | 62 | 62 |
+| T | Metode yang dapat dipindahkan dari luar pertanian | 47 | 47 |
+| | **Jumlah** | 467 | 467 |
 
-## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (198)
+## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (214)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -32,6 +32,7 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2026 | Indriani F. | SawitMVC: A multi-view oil palm fruit bunch dataset for detection and counting | Data in Brief | [PDF](pdf/indriani2026sawitmvc.pdf) | [DOI](https://doi.org/10.1016/j.dib.2026.112990) |
 | 2026 | Jiang L. | Robot-assisted Neural Radiance fields for plot-level cotton crop 3D reconstruction and yield estimation | Computers and Electronics in Agriculture | [PDF](pdf/jiang2026robot.pdf) | [DOI](https://doi.org/10.1016/j.compag.2026.112063) |
 | 2026 | Lee J. | LiDAR–Camera Fusion for 3D Fruit Counting and Density Mapping in Horizontal Trellis Orchards | Journal of Robotics and Mechatronics | [PDF](pdf/lee2026lidarcamera.pdf) | [DOI](https://doi.org/10.20965/jrm.2026.p0449) |
+| 2026 | Li A. | YOLO-MSRF: A Multimodal Segmentation and Refinement Framework for Tomato Fruit Detection and Segmentation with Count and Size Estimation Under Complex Illumination | Agriculture Switzerland | [PDF](pdf/li2026yolo.pdf) | [DOI](https://doi.org/10.3390/agriculture16020277) |
 | 2026 | Lin H.Y. | Tomato Maturity Classification and Fruit Counting Based on RGB and Multispectral Images † | Applied Sciences Switzerland | [PDF](pdf/lin2026tomato.pdf) | [DOI](https://doi.org/10.3390/app16073227) |
 | 2026 | Nguyen K. | A Modular UAV-Based Framework for Apple Detection and Yield Extrapolation from 3D Point Clouds | Proceedings of the ACM Symposium on Applied Computing | [PDF](pdf/nguyen2026modular.pdf) | [DOI](https://doi.org/10.1145/3748522.3779768) |
 | 2026 | Pardo-Beainy C. | Maturity and size estimation with yield mapping for hydroponic strawberries using machine vision | Smart Agricultural Technology | [PDF](pdf/pardobeainy2026maturity.pdf) | [DOI](https://doi.org/10.1016/j.atech.2026.102416) |
@@ -54,6 +55,7 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2025 | Akella A. | Deep Learning-Based Coconut Ripeness Classification and Yield Estimation using YOLO and Kalman Filtering | 2025 International Conference on Sensors and Related Networks Sennet 2025 Special Focus on Digital Healthcare 64220 | [PDF](pdf/akella2025deep.pdf) | [DOI](https://doi.org/10.1109/sennet64220.2025.11136053) |
 | 2025 | Ariza-Sentís M. | Comparative analysis of single-view and multiple-view data collection strategies for detecting partially-occluded grape bunches: Field trials | Journal of Agriculture and Food Research | [PDF](pdf/arizasentis2025comparative.pdf) | [DOI](https://doi.org/10.1016/j.jafr.2025.101736) |
 | 2025 | Cao D. | Research on Apple Detection and Tracking Count in Complex Scenes Based on the Improved YOLOv7-Tiny-PDE | Agriculture Switzerland | [PDF](pdf/cao2025research.pdf) | [DOI](https://doi.org/10.3390/agriculture15050483) |
+| 2025 | Checola G. | Apple phenotyping using deep learning and 3D depth analysis: An experimental study on fruitlet sizing during early development | Smart Agricultural Technology | [PDF](pdf/checola2025apple.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.100964) |
 | 2025 | Cho S.H. | A case study on the integration of a snapshot hyperspectral field-portable imager solving fruit quality assessment | Proceedings of SPIE the International Society for Optical Engineering | [PDF](pdf/cho2025case.pdf) | [DOI](https://doi.org/10.1117/12.3042114) |
 | 2025 | Dong Z. | Fruit detection and yield estimation in Camellia oleifera based on improved YOLOv8 and ByteTrack algorithm | Smart Agricultural Technology | [PDF](pdf/dong2025fruit.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.101435) |
 | 2025 | Garg K. | Autonomous UAV Navigation and Mapping for Accurate Fruit Detection and Counting in Controlled Environments: Simulation and Real-World Validation | 2025 International Conference on Unmanned Aircraft Systems Icuas 2025 | [PDF](pdf/garg2025autonomous.pdf) | [DOI](https://doi.org/10.1109/icuas65942.2025.11007888) |
@@ -76,10 +78,12 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2025 | Meyer L. | FruitNeRF++: A Generalized Multi-Fruit Counting Method Utilizing Contrastive Learning and Neural Radiance Fields | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/meyer2025fruitnerf.pdf) | [DOI](https://doi.org/10.1109/iros60139.2025.11247341) |
 | 2025 | Mollineda R.A. | Estimation of orange tree production by regression from video segments under uncontrolled conditions | Neural Computing and Applications | [PDF](pdf/mollineda2025estimation.pdf) | [DOI](https://doi.org/10.1007/s00521-024-10772-4) |
 | 2025 | Ogundele O.M. | Real-Time Strawberry Ripeness Classification and Counting: An Optimized YOLOv8s Framework with Class-Aware Multi-Object Tracking | Agriculture Switzerland | [PDF](pdf/ogundele2025real.pdf) | [DOI](https://doi.org/10.3390/agriculture15181906) |
+| 2025 | Okabe Y. | Classification of Tomato Harvest Timing Using an AI Camera and Analysis Based on Experimental Results | Agriengineering | [PDF](pdf/okabe2025classification.pdf) | [DOI](https://doi.org/10.3390/agriengineering7020048) |
 | 2025 | Pichhika H.C. | Enhanced YOLO-Based Mango Detection and Centroid Tracking for Precise Yield Estimation | Applied Fruit Science | [PDF](pdf/pichhika2025enhanced.pdf) | [DOI](https://doi.org/10.1007/s10341-025-01385-9) |
 | 2025 | Ponce-Machete R.A. | Optimizing Fruit Yield Prediction: Evaluating Multiobject Tracking Algorithms for Calamansi Fruit Detection Using Yolov8m | 2025 17th International Conference on Computer and Automation Engineering Iccae 2025 | [PDF](pdf/poncemachete2025optimizing.pdf) | [DOI](https://doi.org/10.1109/iccae64891.2025.10980575) |
 | 2025 | Qi Z. | Assessment of the tomato cluster yield estimation algorithms via tracking-by-detection approaches | Information Processing in Agriculture | [PDF](pdf/qi2025assessment.pdf) | [DOI](https://doi.org/10.1016/j.inpa.2025.02.005) |
 | 2025 | Sasse A.M. | An Object-Tracking Technique for Counting Grape Clusters in Brazilian Northeast's Pergola Vineyards | Proceedings of the 2025 28th International Conference on Information Fusion Fusion 2025 | [PDF](pdf/sasse2025object.pdf) | [DOI](https://doi.org/10.23919/fusion65864.2025.11124157) |
+| 2025 | Shimomoto K. | Predicting Sweet Pepper Yield Based on Fruit Counts at Multiple Ripeness Stages Monitored by an AI-Based System Mounted on a Pipe-Rail Trolley † | Horticulturae | [PDF](pdf/shimomoto2025predicting.pdf) | [DOI](https://doi.org/10.3390/horticulturae11070718) |
 | 2025 | Singh R. | Robust real-time strawberry maturity detection using UAV-mounted deep learning for precision agriculture | BMC Plant Biology | [PDF](pdf/singh2025robust.pdf) | [DOI](https://doi.org/10.1186/s12870-025-07246-7) |
 | 2025 | Tan S. | AppleYOLO: Apple yield estimation method using improved YOLOv8 based on Deep OC-SORT | Expert Systems with Applications | [PDF](pdf/tan2025appleyolo.pdf) | [DOI](https://doi.org/10.1016/j.eswa.2025.126764) |
 | 2025 | Timprae W. | Tomato Growth Monitoring and Phenological Analysis Using Deep Learning-Based Instance Segmentation and 3D Point Cloud Reconstruction | Sustainability Switzerland | [PDF](pdf/timprae2025tomato.pdf) | [DOI](https://doi.org/10.3390/su172210120) |
@@ -103,6 +107,7 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2024 | An Q. | StraTracker: A dynamic counting method for growing strawberries based on multi-target tracking | Computers and Electronics in Agriculture | [PDF](pdf/an2024stratracker.pdf) | [DOI](https://doi.org/10.1016/j.compag.2024.109564) |
 | 2024 | Ariza-Sentís M. | GrapeMOTS: UAV vineyard dataset with MOTS grape bunch annotations recorded from multiple perspectives for enhanced object detection and tracking | Data in Brief | [PDF](pdf/arizasentis2024grapemots.pdf) | [DOI](https://doi.org/10.1016/j.dib.2024.110432) |
 | 2024 | Ashokan A. | Fruit yield estimation and forecasting for precision agriculture | Aip Conference Proceedings | [PDF](pdf/ashokan2024fruit.pdf) | [DOI](https://doi.org/10.1063/5.0196960) |
+| 2024 | Bolouri F. | CottonSense: A high-throughput field phenotyping system for cotton fruit segmentation and enumeration on edge devices | Computers and Electronics in Agriculture | [PDF](pdf/bolouri2024cottonsense.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.108531) |
 | 2024 | Du P. | Green pepper fruits counting based on improved DeepSort and optimized Yolov5s | Frontiers in Plant Science | [PDF](pdf/du2024green.pdf) | [DOI](https://doi.org/10.3389/fpls.2024.1417682) |
 | 2024 | Feng Y. | Approach of Dynamic Tracking and Counting for Obscured Citrus in Smart Orchard Based on Machine Vision | Applied Sciences Switzerland | [PDF](pdf/feng2024approach.pdf) | [DOI](https://doi.org/10.3390/app14031136) |
 | 2024 | Garderes R. | Apple Detection and Counting Using Neural Networks | Proceedings 2024 50th Latin American Computing Conference Clei 2024 | [PDF](pdf/garderes2024apple.pdf) | [DOI](https://doi.org/10.1109/clei64178.2024.10700174) |
@@ -111,6 +116,7 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2024 | Kang R. | Toward Real Scenery: A Lightweight Tomato Growth Inspection Algorithm for Leaf Disease Detection and Fruit Counting | Plant Phenomics | [PDF](pdf/kang2024real.pdf) | [DOI](https://doi.org/10.34133/plantphenomics.0174) |
 | 2024 | Magalhães S.A.C. | MonoVisual3DFilter: 3D tomatoes' localisation with monocular cameras using histogram filters | Robotica | [PDF](pdf/magalhaes2024monovisual3dfilter.pdf) | [DOI](https://doi.org/10.1017/s0263574724000936) |
 | 2024 | Matos G.P. | Tracking and Counting Apples in Orchards under Intermittent Occlusions and Low Frame Rates | IEEE Computer Society Conference on Computer Vision and Pattern Recognition Workshops | [PDF](pdf/matos2024tracking.pdf) | [DOI](https://doi.org/10.1109/cvprw63382.2024.00550) |
+| 2024 | Melnychenko O. | Intelligent Integrated System for Fruit Detection Using Multi-UAV Imaging and Deep Learning † | Sensors | [PDF](pdf/melnychenko2024intelligent.pdf) | [DOI](https://doi.org/10.3390/s24061913) |
 | 2024 | Meyer L. | FruitNeRF: A Unified Neural Radiance Field based Fruit Counting Framework | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/meyer2024fruitnerf.pdf) | [DOI](https://doi.org/10.1109/iros58592.2024.10802065) |
 | 2024 | Muzaddid M.A.A. | NTrack: A Multiple-Object Tracker and Dataset for Infield Cotton Boll Counting | IEEE Transactions on Automation Science and Engineering | [PDF](pdf/muzaddid2024ntrack.pdf) | [DOI](https://doi.org/10.1109/tase.2023.3342791) |
 | 2024 | Nenavath D.N. | On-Tree Mango Fruit Count Using Live Video-Split Image Dataset to Predict Better Yield at Pre-Harvesting Stage | International Journal of Electrical and Computer Engineering Systems | [PDF](pdf/nenavath2024tree.pdf) | [DOI](https://doi.org/10.32985/ijeces.15.9.5) |
@@ -145,10 +151,10 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2023 | Guo M. | Real-time Production Prediction of Kiwifruit in Orchard Based on Video Tracking Algorithm | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery | [PDF](pdf/guo2023real.pdf) | [DOI](https://doi.org/10.6041/j.issn.1000-1298.2023.06.018) |
 | 2023 | Hu J. | Fruit Detection and Counting in Apple Orchards Based on Improved Yolov7 and Multi-Object Tracking Methods | Sensors | [PDF](pdf/hu2023fruit.pdf) | [DOI](https://doi.org/10.3390/s23135903) |
 | 2023 | Lawal O.M. | A simplified network topology for fruit detection, counting and mobile-phone deployment | Plos One | [PDF](pdf/lawal2023simplified.pdf) | [DOI](https://doi.org/10.1371/journal.pone.0292600) |
+| 2023 | Li D. | A longan yield estimation approach based on UAV images and deep learning | Frontiers in Plant Science | [PDF](pdf/li2023longan.pdf) | [DOI](https://doi.org/10.3389/fpls.2023.1132909) |
 | 2023 | Li Z. | Blueberry Yield Estimation Through Multi-View Imagery with YOLOv8 Object Detection | 2023 Asabe Annual International Meeting | [PDF](pdf/li2023blueberry.pdf) | [DOI](https://doi.org/10.13031/aim.202300883) |
 | 2023 | Lin Y. | Citrus Identification and Counting Algorithm Based on Improved YOLOv5s and DeepSort | Agronomy | [PDF](pdf/lin2023citrus.pdf) | [DOI](https://doi.org/10.3390/agronomy13071674) |
 | 2023 | Lyu J. | Method for estimation of bagged grape yield using a self-correcting NMS-ByteTrack | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering | [PDF](pdf/lyu2023method.pdf) | [DOI](https://doi.org/10.11975/j.issn.1002-6819.202304116) |
-| 2023 | Parico A.I.B. | Real-Time Pear Fruit Detection and Counting Using YOLOv4 Models and Deep SORT | Iot and AI in Agriculture Self Sufficiency in Food Production to Achieve Society 5 0 and Sdgs Globally | [PDF](pdf/parico2023real.pdf) | [DOI](https://doi.org/10.1007/978-981-19-8113-5_11) |
 | 2023 | Qureshi A. | Seeing the Fruit for the Leaves: Robotically Mapping Apple Fruitlets in a Commercial Orchard | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/qureshi2023seeing.pdf) | [DOI](https://doi.org/10.1109/iros55552.2023.10341502) |
 | 2023 | Rapado-Rincón D. | Development and evaluation of automated localisation and reconstruction of all fruits on tomato plants in a greenhouse based on multi-view perception and 3D multi-object tracking | Biosystems Engineering | [PDF](pdf/rapadorincon2023development.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2023.06.003) |
 | 2023 | Shen L. | Real-time tracking and counting of grape clusters in the field based on channel pruning with YOLOv5s | Computers and Electronics in Agriculture | [PDF](pdf/shen2023real.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.107662) |
@@ -168,10 +174,12 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2022 | Ge Y. | Tracking and Counting of Tomato at Different Growth Period Using an Improving YOLO-Deepsort Network for Inspection Robot | Machines | [PDF](pdf/ge2022tracking.pdf) | [DOI](https://doi.org/10.3390/machines10060489) |
 | 2022 | He L. | Cascade-SORT: A robust fruit counting approach using multiple features cascade matching | Computers and Electronics in Agriculture | [PDF](pdf/he2022cascade.pdf) | [DOI](https://doi.org/10.1016/j.compag.2022.107223) |
 | 2022 | Marangoz S. | Fruit Mapping with Shape Completion for Autonomous Crop Monitoring | IEEE International Conference on Automation Science and Engineering | [PDF](pdf/marangoz2022fruit.pdf) | [DOI](https://doi.org/10.1109/case49997.2022.9926466) |
+| 2022 | Tang J. | Identification of the Yield of Camellia oleifera Based on Color Space by the Optimized Mean Shift Clustering Algorithm Using Terrestrial Laser Scanning | Remote Sensing | [PDF](pdf/tang2022identification.pdf) | [DOI](https://doi.org/10.3390/rs14030642) |
 | 2022 | Turečková A. | Slicing aided large scale tomato fruit detection and counting in 360-degree video data from a greenhouse | Measurement Journal of the International Measurement Confederation | [PDF](pdf/tureckova2022slicing.pdf) | [DOI](https://doi.org/10.1016/j.measurement.2022.111977) |
 | 2022 | Wang S. | Research on UAV Online Visual Tracking Algorithm based on YOLOv5 and FlowNet2 for Apple Yield Inspection | Proceedings of the 4th Wrc Symposium on Advanced Robotics and Automation 2022 Wrc Sara 2022 | [PDF](pdf/wang2022research.pdf) | [DOI](https://doi.org/10.1109/wrcsara57040.2022.9903925) |
 | 2022 | Xia X. | Culling Double Counting in Sequence Images for Fruit Yield Estimation | Agronomy | [PDF](pdf/xia2022culling.pdf) | [DOI](https://doi.org/10.3390/agronomy12020440) |
 | 2022 | Zhang W. | Deep-learning-based in-field citrus fruit detection and tracking | Horticulture Research | [PDF](pdf/zhang2022deep.pdf) | [DOI](https://doi.org/10.1093/hr/uhac003) |
+| 2022 | Zhang X. | Measurement of tomato fruits quantity at different ripening stages based on color point cloud images | Journal of South China Agricultural University | [PDF](pdf/zhang2022measurement.pdf) | [DOI](https://doi.org/10.7671/j.issn.1001-411x.202105021) |
 | 2022 | Zhang X. | Yield and maturity estimation of apples in orchards using a 3-step deep learning-based method | Quality Assurance and Safety of Crops and Foods | [PDF](pdf/zhang2022yield.pdf) | [DOI](https://doi.org/10.15586/qas.v14i2.1008) |
 | 2022 | Zhu Q. | Identification and Counting Method of Potted Kumquat Fruits Based on Point Cloud Registration | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery | [PDF](pdf/zhu2022identification.pdf) | [DOI](https://doi.org/10.6041/j.issn.1000-1298.2022.05.021) |
 | 2021 | Aji W.S. | Automatic Oil Palm Unstripped Bunch (USB) Counting System based on Faster RCNN and Object Tracking | Proceedings 2nd International Conference on Computer Science and Engineering the Effects of the Digital World After Pandemic Edwap Ic2se 2021 | [PDF](pdf/aji2021automatic.pdf) | [DOI](https://doi.org/10.1109/ic2se52832.2021.9792068) |
@@ -180,6 +188,7 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2021 | Gao F. | Apple fruit detection and counting based on deep learning and trunk tracking | American Society of Agricultural and Biological Engineers Annual International Meeting Asabe 2021 | [PDF](pdf/gao2021appleb.pdf) | [DOI](https://doi.org/10.13031/aim.202100193) |
 | 2021 | Itakura K. | Automatic pear and apple detection by videos using deep learning and a Kalman filter | OSA Continuum | [PDF](pdf/itakura2021automatic.pdf) | [DOI](https://doi.org/10.1364/osac.424583) |
 | 2021 | Kirk R. | Robust Counting of Soft Fruit Through Occlusions with Re-identification | Lecture Notes in Computer Science Including Subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics | [PDF](pdf/kirk2021robust.pdf) | [DOI](https://doi.org/10.1007/978-3-030-87156-7_17) |
+| 2021 | Koirala A. | Attempting to estimate the unseen—correction for occluded fruit in tree fruit load estimation by machine vision with deep learning | Agronomy | [PDF](pdf/koirala2021attempting.pdf) | [DOI](https://doi.org/10.3390/agronomy11020347) |
 | 2021 | Osman Y. | Yield estimation and visualization solution for precision agriculture | Sensors | [PDF](pdf/osman2021yield.pdf) | [DOI](https://doi.org/10.3390/s21196657) |
 | 2021 | Osman Y. | Yield Estimation using Deep Learning for Precision Agriculture | 7th IEEE World Forum on Internet of Things Wf Iot 2021 | [PDF](pdf/osman2021yieldb.pdf) | [DOI](https://doi.org/10.1109/wf-iot51360.2021.9595143) |
 | 2021 | Parico A.I.B. | Real time pear fruit detection and counting using yolov4 models and deep sort | Sensors | [PDF](pdf/parico2021real.pdf) | [DOI](https://doi.org/10.3390/s21144803) |
@@ -195,14 +204,21 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2020 | Gené-Mola J. | Fuji-SfM dataset: A collection of annotated images and point clouds for Fuji apple detection and location using structure-from-motion photogrammetry | Data in Brief | [PDF](pdf/genemola2020fuji.pdf) | [DOI](https://doi.org/10.1016/j.dib.2020.105591) |
 | 2020 | Gené-Mola J. | LFuji-air dataset: Annotated 3D LiDAR point clouds of Fuji apple trees for fruit detection scanned under different forced air flow conditions | Data in Brief | [PDF](pdf/genemola2020lfuji.pdf) | [DOI](https://doi.org/10.1016/j.dib.2020.105248) |
 | 2020 | Häni N. | A comparative study of fruit detection and counting methods for yield mapping in apple orchards | Journal of Field Robotics | [PDF](pdf/hani2020comparative.pdf) | [DOI](https://doi.org/10.1002/rob.21902) |
+| 2020 | Mekhalfi M.L. | Vision system for automatic on-tree kiwifruit counting and yield estimation | Sensors Switzerland | [PDF](pdf/mekhalfi2020vision.pdf) | [DOI](https://doi.org/10.3390/s20154214) |
 | 2020 | Santos T.T. | Grape detection, segmentation, and tracking using deep neural networks and three-dimensional association | Computers and Electronics in Agriculture | [PDF](pdf/santos2020grape.pdf) | [DOI](https://doi.org/10.1016/j.compag.2020.105247) |
 | 2020 | Serafino S.E. | Detection and Counting of Lemons using Artificial Vision and Tracking Techniques for Real Time Harvest Estimation | Proceedings 2020 46th Latin American Computing Conference Clei 2020 | [PDF](pdf/serafino2020detection.pdf) | [DOI](https://doi.org/10.1109/clei52000.2020.00064) |
 | 2020 | Sun S. | Three-dimensional photogrammetric mapping of cotton bolls in situ based on point cloud segmentation and clustering | ISPRS Journal of Photogrammetry and Remote Sensing | [PDF](pdf/sun2020three.pdf) | [DOI](https://doi.org/10.1016/j.isprsjprs.2019.12.011) |
+| 2020 | Tsoulias N. | Apple shape detection based on geometric and radiometric features using a LiDAR laser scanner | Remote Sensing | [PDF](pdf/tsoulias2020apple.pdf) | [DOI](https://doi.org/10.3390/rs12152481) |
+| 2020 | Zhao X. | Automatic sweet pepper detection based on point cloud images using subtractive clustering | International Journal of Agricultural and Biological Engineering | [PDF](pdf/zhao2020automatic.pdf) | [DOI](https://doi.org/10.25165/j.ijabe.20201303.5460) |
+| 2019 | Gutiérrez S. | Ground based hyperspectral imaging for extensive mango yield estimation | Computers and Electronics in Agriculture | [PDF](pdf/gutierrez2019ground.pdf) | [DOI](https://doi.org/10.1016/j.compag.2018.12.041) |
 | 2019 | Huang Y.H. | High-throughput image analysis framework for fruit detection, localization and measurement from video streams | 2019 Asabe Annual International Meeting | [PDF](pdf/huang2019high.pdf) | [DOI](https://doi.org/10.13031/aim.201900487) |
 | 2019 | Liu X. | Monocular Camera Based Fruit Counting and Mapping with Semantic Data Association | IEEE Robotics and Automation Letters | [PDF](pdf/liu2019monocular.pdf) | [DOI](https://doi.org/10.1109/lra.2019.2901987) |
+| 2019 | Méndez V. | In-field estimation of orange number and size by 3D laser scanning | Agronomy | [PDF](pdf/mendez2019field.pdf) | [DOI](https://doi.org/10.3390/agronomy9120885) |
 | 2019 | Nellithimaru A.K. | ROLS : Robust object-level SLAM for grape counting | IEEE Computer Society Conference on Computer Vision and Pattern Recognition Workshops | [PDF](pdf/nellithimaru2019rols.pdf) | [DOI](https://doi.org/10.1109/cvprw.2019.00321) |
 | 2019 | Roy P. | Vision-based preharvest yield mapping for apple orchards | Computers and Electronics in Agriculture | [PDF](pdf/roy2019vision.pdf) | [DOI](https://doi.org/10.1016/j.compag.2019.104897) |
 | 2019 | Wang Z. | Mango fruit load estimation using a video based MangoYOLO—Kalman filter—hungarian algorithm method | Sensors Switzerland | [PDF](pdf/wang2019mango.pdf) | [DOI](https://doi.org/10.3390/s19122742) |
+| 2018 | Aquino A. | Automated early yield prediction in vineyards from on-the-go image acquisition | Computers and Electronics in Agriculture | [PDF](pdf/aquino2018automated.pdf) | [DOI](https://doi.org/10.1016/j.compag.2017.11.026) |
+| 2018 | Häni N. | Apple Counting using Convolutional Neural Networks | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/hani2018apple.pdf) | [DOI](https://doi.org/10.1109/iros.2018.8594304) |
 | 2018 | Liu X. | Robust Fruit Counting: Combining Deep Learning, Tracking, and Structure from Motion | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/liu2018robust.pdf) | [DOI](https://doi.org/10.1109/iros.2018.8594239) |
 | 2017 | Roy P. | Active view planning for counting apples in orchards | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/roy2017active.pdf) | [DOI](https://doi.org/10.1109/iros.2017.8206500) |
 | 2017 | Roy P. | Vision-Based Apple Counting and Yield Estimation | Springer Proceedings in Advanced Robotics | [PDF](pdf/roy2017vision.pdf) | [DOI](https://doi.org/10.1007/978-3-319-50115-4_42) |
@@ -218,44 +234,30 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2013 | Wang Q. | Automated Crop Yield Estimation for Apple Orchards | Springer Tracts in Advanced Robotics | [PDF](pdf/wang2013automated.pdf) | [DOI](https://doi.org/10.1007/978-3-319-00065-7_50) |
 | 2012 | Kassim M.S.M. | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation | Journal of Food Agriculture and Environment | [PDF](pdf/kassim2012oil.pdf) |  |
 
-## C2: Pencacahan atau estimasi hasil dari satu pandang (64)
+## C2: Pencacahan atau estimasi hasil dari satu pandang (43)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
 | 2026 | Aldakn H. | UAV-Based Computer Vision Approach for Melon Fruit Detection and Yield Estimation | Agriengineering | [PDF](pdf/aldakn2026uav.pdf) | [DOI](https://doi.org/10.3390/agriengineering8020053) |
-| 2026 | Bijwe K.B. | FruitNet: a deep hybrid model for fruit detection and yield estimation | Bulletin of Electrical Engineering and Informatics | [PDF](pdf/bijwe2026fruitnet.pdf) | [DOI](https://doi.org/10.11591/eei.v15i2.11112) |
 | 2026 | Du W. | A precise berry counting method for in-cluster grapes to guide berry thinning | Frontiers in Plant Science | [PDF](pdf/du2026precise.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1739688) |
-| 2026 | Guo C. | High-density Apple Counting Method Based on Lightweight Improved YOLO v8 | Nongye Jixie Xuebao Transactions of the Chinese Society for Agricultural Machinery | [PDF](pdf/guo2026high.pdf) | [DOI](https://doi.org/10.6041/j.issn.1000-1298.2026.05.032) |
-| 2026 | Li A. | YOLO-MSRF: A Multimodal Segmentation and Refinement Framework for Tomato Fruit Detection and Segmentation with Count and Size Estimation Under Complex Illumination | Agriculture Switzerland | [PDF](pdf/li2026yolo.pdf) | [DOI](https://doi.org/10.3390/agriculture16020277) |
 | 2026 | Sapkota R. | Comprehensive performance evaluation of YOLOv12, YOLO11, YOLOv10, YOLOv9 and YOLOv8 on detecting and counting fruitlet in complex orchard environments | Agriculture Communications | [PDF](pdf/sapkota2026comprehensive.pdf) | [DOI](https://doi.org/10.1016/j.agrcom.2026.100125) |
 | 2026 | Xie X. | Unified Multi-Level Grape Counting Framework with Low Annotation Cost for Natural Orchard Scenes | Applied Sciences Switzerland | [PDF](pdf/xie2026unified.pdf) | [DOI](https://doi.org/10.3390/app16157500) |
-| 2026 | Yu C. | YieldNet: A Lightweight YOLOv8n Enhancement for Immature Green Tomato Detection in UAV Images: Real-Time Edge Demonstration Toward Pre-Harvest Yield Estimation | Agriengineering | [PDF](pdf/yu2026yieldnet.pdf) | [DOI](https://doi.org/10.3390/agriengineering8080311) |
 | 2026 | Zhang L. | YOLO11-SBS: leveraging ACE and ORCM to gauge robust and accurate apple counting in complex orchards | Frontiers in Plant Science | [PDF](pdf/zhang2026yolo11.pdf) | [DOI](https://doi.org/10.3389/fpls.2026.1841916) |
 | 2026 | Zheng S. | YOLOv11-IMP: Anchor-Free Multiscale Detection Model for Accurate Grape Yield Estimation in Precision Viticulture | Agronomy | [PDF](pdf/zheng2026yolov11.pdf) | [DOI](https://doi.org/10.3390/agronomy16030370) |
 | 2025 | Ballena-Ruiz J. | Automated Detection and Counting of Gossypium barbadense Fruits in Peruvian Crops Using Convolutional Neural Networks | Agriengineering | [PDF](pdf/ballenaruiz2025automated.pdf) | [DOI](https://doi.org/10.3390/agriengineering7050152) |
 | 2025 | Glukhikh I. | Deep Learning Method with Domain-Task Adaptation and Client-Specific Fine-Tuning YOLO11 Model for Counting Greenhouse Tomatoes | Applied System Innovation | [PDF](pdf/glukhikh2025deep.pdf) | [DOI](https://doi.org/10.3390/asi8030071) |
 | 2025 | Orlandi G. | Automated yield prediction in vineyard using RGB images acquired by a UAV prototype platform | Oeno One | [PDF](pdf/orlandi2025automated.pdf) | [DOI](https://doi.org/10.20870/oeno-one.2025.59.1.8133) |
 | 2025 | Osco-Mamani E. | The Detection and Counting of Olive Tree Fruits Using Deep Learning Models in Tacna, Perú | AI Switzerland | [PDF](pdf/oscomamani2025detection.pdf) | [DOI](https://doi.org/10.3390/ai6020025) |
-| 2025 | Quiñones R. | GCNet: A Deep Learning Framework for Enhanced Grape Cluster Segmentation and Yield Estimation Incorporating Occluded Grape Detection with a Correction Factor for Indoor Experimentation | Journal of Imaging | [PDF](pdf/quinones2025gcnet.pdf) | [DOI](https://doi.org/10.3390/jimaging11020034) |
-| 2025 | Yoo T.W. | Multi-Species Fruit-Load Estimation Using Deep Learning Models | Agriengineering | [PDF](pdf/yoo2025multi.pdf) | [DOI](https://doi.org/10.3390/agriengineering7070220) |
-| 2025 | Zhai M. | Deriving Early Citrus Fruit Yield Estimation by Combining Multiple Growing Period Data and Improved YOLOv8 Modeling | Sensors | [PDF](pdf/zhai2025deriving.pdf) | [DOI](https://doi.org/10.3390/s25154718) |
-| 2025 | Zhao Y. | Ta-YOLO: overcoming target blocked challenges in greenhouse tomato detection and counting | Frontiers in Plant Science | [PDF](pdf/zhao2025ta.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1618214) |
 | 2025 | Zhou C. | MDE-DETR: multi-domain enhanced feature fusion algorithm for bayberry detection and counting in complex orchards | Frontiers in Plant Science | [PDF](pdf/zhou2025mde.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1711545) |
 | 2024 | Ahmad J. | Enabling Consumer UAVs for Precision Agriculture Applications: A Case Study of Yield Estimation | Digest of Technical Papers IEEE International Conference on Consumer Electronics | [PDF](pdf/ahmad2024enabling.pdf) | [DOI](https://doi.org/10.1109/icce59016.2024.10444191) |
 | 2024 | Bhattarai U. | AgRegNet: A deep regression network for flower and fruit density estimation, localization, and counting in orchards | Computers and Electronics in Agriculture | [PDF](pdf/bhattarai2024agregnet.pdf) | [DOI](https://doi.org/10.1016/j.compag.2024.109534) |
-| 2024 | Bolouri F. | CottonSense: A high-throughput field phenotyping system for cotton fruit segmentation and enumeration on edge devices | Computers and Electronics in Agriculture | [PDF](pdf/bolouri2024cottonsense.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.108531) |
 | 2024 | Carneiro G.A. | Chestnut Burr Segmentation for Yield Estimation Using UAV-Based Imagery and Deep Learning | Drones | [PDF](pdf/carneiro2024chestnut.pdf) | [DOI](https://doi.org/10.3390/drones8100541) |
 | 2024 | Duncan B. | Development of a Cross-Platform Mobile Application for Fruit Yield Estimation | Agriengineering | [PDF](pdf/duncan2024development.pdf) | [DOI](https://doi.org/10.3390/agriengineering6020105) |
 | 2024 | Huang T. | An automatic tracking method for fruit abscission of litchi using convolutional networks | Computers and Electronics in Agriculture | [PDF](pdf/huang2024automatic.pdf) | [DOI](https://doi.org/10.1016/j.compag.2024.109213) |
-| 2024 | Jing J. | Optimizing the YOLOv7-Tiny Model with Multiple Strategies for Citrus Fruit Yield Estimation in Complex Scenarios | Agriculture Switzerland | [PDF](pdf/jing2024optimizing.pdf) | [DOI](https://doi.org/10.3390/agriculture14020303) |
-| 2024 | Kodors S. | Autonomous Yield Estimation System for Small Commercial Orchards Using UAV and AI | Drones | [PDF](pdf/kodors2024autonomous.pdf) | [DOI](https://doi.org/10.3390/drones8120734) |
 | 2024 | Lanza B. | A Stride Toward Wine Yield Estimation from Images: Metrological Validation of Grape Berry Number, Radius, and Volume Estimation | Sensors | [PDF](pdf/lanza2024stride.pdf) | [DOI](https://doi.org/10.3390/s24227305) |
-| 2024 | Melnychenko O. | Intelligent Integrated System for Fruit Detection Using Multi-UAV Imaging and Deep Learning † | Sensors | [PDF](pdf/melnychenko2024intelligent.pdf) | [DOI](https://doi.org/10.3390/s24061913) |
-| 2024 | Quach L.D. | Tomato Health Monitoring System: Tomato Classification, Detection, and Counting System Based on YOLOv8 Model With Explainable MobileNet Models Using Grad-CAM++ | IEEE Access | [PDF](pdf/quach2024tomato.pdf) | [DOI](https://doi.org/10.1109/access.2024.3351805) |
 | 2023 | Chen Y. | Instance Segmentation and Number Counting of Grape Berry Images Based on Deep Learning | Applied Sciences Switzerland | [PDF](pdf/chen2023instance.pdf) | [DOI](https://doi.org/10.3390/app13116751) |
 | 2023 | Del Brio D. | Apple (Malus domestica) and pear (Pyrus communis) yield prediction after tree image analysis | Revista De La Facultad De Ciencias Agrarias | [PDF](pdf/del2023apple.pdf) | [DOI](https://doi.org/10.48162/rev.39.104) |
 | 2023 | Lawal O.M. | An improved YOLOv5s model using feature concatenation with attention mechanism for real-time fruit detection and counting | Frontiers in Plant Science | [PDF](pdf/lawal2023improved.pdf) | [DOI](https://doi.org/10.3389/fpls.2023.1153505) |
-| 2023 | Li D. | A longan yield estimation approach based on UAV images and deep learning | Frontiers in Plant Science | [PDF](pdf/li2023longan.pdf) | [DOI](https://doi.org/10.3389/fpls.2023.1132909) |
 | 2023 | Ma L. | Detection and Counting of Small Target Apples under Complicated Environments by Using Improved YOLOv7-tiny | Agronomy | [PDF](pdf/ma2023detection.pdf) | [DOI](https://doi.org/10.3390/agronomy13051419) |
 | 2023 | Palacios F. | Early yield prediction in different grapevine varieties using computer vision and machine learning | Precision Agriculture | [PDF](pdf/palacios2023early.pdf) | [DOI](https://doi.org/10.1007/s11119-022-09950-y) |
 | 2023 | Saddik A. | Sustainable Yield Prediction in Agricultural Areas Based on Fruit Counting Approach | Sustainability Switzerland | [PDF](pdf/saddik2023sustainable.pdf) | [DOI](https://doi.org/10.3390/su15032707) |
@@ -266,22 +268,15 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2022 | Victorino G. | Comparing a New Non-Invasive Vineyard Yield Estimation Approach Based on Image Analysis with Manual Sample-Based Methods | Agronomy | [PDF](pdf/victorino2022comparing.pdf) | [DOI](https://doi.org/10.3390/agronomy12061464) |
 | 2022 | Wang L. | Fast and precise detection of litchi fruits for yield estimation based on the improved YOLOv5 model | Frontiers in Plant Science | [PDF](pdf/wang2022fast.pdf) | [DOI](https://doi.org/10.3389/fpls.2022.965425) |
 | 2021 | Buayai P. | End-to-End Automatic Berry Counting for Table Grape Thinning | IEEE Access | [PDF](pdf/buayai2021end.pdf) | [DOI](https://doi.org/10.1109/access.2020.3048374) |
-| 2021 | Koirala A. | Attempting to estimate the unseen—correction for occluded fruit in tree fruit load estimation by machine vision with deep learning | Agronomy | [PDF](pdf/koirala2021attempting.pdf) | [DOI](https://doi.org/10.3390/agronomy11020347) |
 | 2021 | Luo L. | Grape berry detection and size measurement based on edge image processing and geometric morphology | Machines | [PDF](pdf/luo2021grape.pdf) | [DOI](https://doi.org/10.3390/machines9100233) |
-| 2020 | Afonso M. | Tomato Fruit Detection and Counting in Greenhouses Using Deep Learning | Frontiers in Plant Science | [PDF](pdf/afonso2020tomato.pdf) | [DOI](https://doi.org/10.3389/fpls.2020.571299) |
 | 2020 | Coviello L. | GBCNet: In-field grape berries counting for yield estimation by dilated CNNs | Applied Sciences Switzerland | [PDF](pdf/coviello2020gbcnet.pdf) | [DOI](https://doi.org/10.3390/app10144870) |
-| 2020 | Mekhalfi M.L. | Vision system for automatic on-tree kiwifruit counting and yield estimation | Sensors Switzerland | [PDF](pdf/mekhalfi2020vision.pdf) | [DOI](https://doi.org/10.3390/s20154214) |
 | 2020 | Samiei S. | Toward joint acquisition-annotation of images with egocentric devices for a lower-cost machine learning application to apple detection | Sensors Switzerland | [PDF](pdf/samiei2020joint.pdf) | [DOI](https://doi.org/10.3390/s20154173) |
 | 2020 | Zabawa L. | Counting of grapevine berries in images via semantic segmentation using convolutional neural networks | ISPRS Journal of Photogrammetry and Remote Sensing | [PDF](pdf/zabawa2020counting.pdf) | [DOI](https://doi.org/10.1016/j.isprsjprs.2020.04.002) |
 | 2019 | Bellocchio E. | Weakly Supervised Fruit Counting for Yield Estimation Using Spatial Consistency | IEEE Robotics and Automation Letters | [PDF](pdf/bellocchio2019weakly.pdf) | [DOI](https://doi.org/10.1109/lra.2019.2903260) |
 | 2019 | Di Gennaro S.F. | A low-cost and unsupervised image recognition methodology for yield estimation in a vineyard | Frontiers in Plant Science | [PDF](pdf/di2019low.pdf) | [DOI](https://doi.org/10.3389/fpls.2019.00559) |
 | 2019 | Di Gennaro S.F. | A precision viticulture UAV-based approach for early yield prediction in vineyard | Precision Agriculture 2019 Papers Presented at the 12th European Conference on Precision Agriculture Ecpa 2019 | [PDF](pdf/di2019precision.pdf) | [DOI](https://doi.org/10.3920/978-90-8686-888-9_46) |
-| 2019 | Gutiérrez S. | Ground based hyperspectral imaging for extensive mango yield estimation | Computers and Electronics in Agriculture | [PDF](pdf/gutierrez2019ground.pdf) | [DOI](https://doi.org/10.1016/j.compag.2018.12.041) |
 | 2019 | Kanwal Z. | Overlapped apple fruit yield estimation using pixel classification and hough transform | International Journal of Advanced Computer Science and Applications | [PDF](pdf/kanwal2019overlapped.pdf) | [DOI](https://doi.org/10.14569/ijacsa.2019.0100271) |
-| 2018 | Aquino A. | Automated early yield prediction in vineyards from on-the-go image acquisition | Computers and Electronics in Agriculture | [PDF](pdf/aquino2018automated.pdf) | [DOI](https://doi.org/10.1016/j.compag.2017.11.026) |
-| 2018 | Häni N. | Apple Counting using Convolutional Neural Networks | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/hani2018apple.pdf) | [DOI](https://doi.org/10.1109/iros.2018.8594304) |
 | 2018 | Millan B. | On-the-go grapevine yield estimation using image analysis and boolean model | Journal of Sensors | [PDF](pdf/millan2018go.pdf) | [DOI](https://doi.org/10.1155/2018/9634752) |
-| 2018 | Sarron J. | Mango yield mapping at the orchard scale based on tree structure and land cover assessed by UAV | Remote Sensing | [PDF](pdf/sarron2018mango.pdf) | [DOI](https://doi.org/10.3390/rs10121900) |
 | 2017 | Bargoti S. | Image Segmentation for Fruit Detection and Yield Estimation in Apple Orchards | Journal of Field Robotics | [PDF](pdf/bargoti2017image.pdf) | [DOI](https://doi.org/10.1002/rob.21699) |
 | 2017 | Cheng H. | Early yield prediction using image analysis of apple fruit and tree canopy features with neural networks | Journal of Imaging | [PDF](pdf/cheng2017early.pdf) | [DOI](https://doi.org/10.3390/jimaging3010006) |
 | 2017 | Pinho T.M. | Comparative Analysis between LDR and HDR Images for Automatic Fruit Recognition and Counting | Journal of Sensors | [PDF](pdf/pinho2017comparative.pdf) | [DOI](https://doi.org/10.1155/2017/7321950) |
@@ -345,7 +340,7 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2014 | Makky M. | Automatic non-destructive quality inspection system for oil palm fruits | International Agrophysics | [PDF](pdf/makky2014automatic.pdf) | [DOI](https://doi.org/10.2478/intag-2014-0022) |
 | 2012 | Fadilah N. | Intelligent color vision system for ripeness classification of oil palm fresh fruit bunch | Sensors Switzerland | [PDF](pdf/fadilah2012intelligent.pdf) | [DOI](https://doi.org/10.3390/s121014179) |
 
-## C4: Atribut kelas disertai pencacahan dari citra tunggal (14)
+## C4: Atribut kelas disertai pencacahan dari citra tunggal (13)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -353,18 +348,17 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2026 | Liu S. | RESEARCH ON A TOMATO RIPENESS DETECTION METHOD BASED ON CMLE-YOLO | Inmateh Agricultural Engineering | [PDF](pdf/liu2026research.pdf) | [DOI](https://doi.org/10.35633/inmateh-78-62) |
 | 2026 | Soto M. | Monocular Estimation of Grape Berry Size (Caliber) Distributions Using Geometry-Aware Representations and Structured Prediction | Applied Sciences Switzerland | [PDF](pdf/soto2026monocular.pdf) | [DOI](https://doi.org/10.3390/app16126225) |
 | 2025 | Chiu M.C. | Remote Assessment of Size, Ripeness, and Count of Fruits in Orchard Greenhouse | Sensors and Materials | [PDF](pdf/chiu2025remote.pdf) | [DOI](https://doi.org/10.18494/sam5915) |
-| 2025 | Shimomoto K. | Predicting Sweet Pepper Yield Based on Fruit Counts at Multiple Ripeness Stages Monitored by an AI-Based System Mounted on a Pipe-Rail Trolley † | Horticulturae | [PDF](pdf/shimomoto2025predicting.pdf) | [DOI](https://doi.org/10.3390/horticulturae11070718) |
+| 2025 | Zhai M. | Deriving Early Citrus Fruit Yield Estimation by Combining Multiple Growing Period Data and Improved YOLOv8 Modeling | Sensors | [PDF](pdf/zhai2025deriving.pdf) | [DOI](https://doi.org/10.3390/s25154718) |
 | 2024 | Eron F. | Computer Vision-Aided Intelligent Monitoring of Coffee: Towards Sustainable Coffee Production | Scientia Horticulturae | [PDF](pdf/eron2024computer.pdf) | [DOI](https://doi.org/10.1016/j.scienta.2024.112847) |
+| 2024 | Quach L.D. | Tomato Health Monitoring System: Tomato Classification, Detection, and Counting System Based on YOLOv8 Model With Explainable MobileNet Models Using Grad-CAM++ | IEEE Access | [PDF](pdf/quach2024tomato.pdf) | [DOI](https://doi.org/10.1109/access.2024.3351805) |
 | 2024 | Tamrakar N. | Lightweight Improved YOLOv5s-CGhostnet for Detection of Strawberry Maturity Levels and Counting | Agriengineering | [PDF](pdf/tamrakar2024lightweight.pdf) | [DOI](https://doi.org/10.3390/agriengineering6020055) |
-| 2024 | Vo H.T. | Automating Tomato Ripeness Classification and Counting with YOLOv9 | International Journal of Advanced Computer Science and Applications | [PDF](pdf/vo2024automating.pdf) | [DOI](https://doi.org/10.14569/ijacsa.2024.01504113) |
 | 2024 | Zhang J. | Open-Source High-Throughput Phenotyping for Blueberry Yield and Maturity Prediction Across Environments: Neural Network Model and Labeled Dataset for Breeders | Horticulturae | [PDF](pdf/zhang2024open.pdf) | [DOI](https://doi.org/10.3390/horticulturae10121332) |
 | 2023 | Li P. | Tomato Maturity Detection and Counting Model Based on MHSA-YOLOv8 | Sensors | [PDF](pdf/li2023tomato.pdf) | [DOI](https://doi.org/10.3390/s23156701) |
 | 2023 | Restrepo-Arias J.F. | RipSetCocoaCNCH12: Labeled Dataset for Ripeness Stage Detection, Semantic and Instance Segmentation of Cocoa Pods | Data | [PDF](pdf/restrepoarias2023ripsetcocoacnch12.pdf) | [DOI](https://doi.org/10.3390/data8060112) |
 | 2022 | Wang X. | Online recognition and yield estimation of tomato in plant factory based on YOLOv3 | Scientific Reports | [PDF](pdf/wang2022online.pdf) | [DOI](https://doi.org/10.1038/s41598-022-12732-1) |
-| 2022 | Zhang X. | Measurement of tomato fruits quantity at different ripening stages based on color point cloud images | Journal of South China Agricultural University | [PDF](pdf/zhang2022measurement.pdf) | [DOI](https://doi.org/10.7671/j.issn.1001-411x.202105021) |
 | 2020 | Ni X. | Deep learning image segmentation and extraction of blueberry fruit traits associated with harvestability and yield | Horticulture Research | [PDF](pdf/ni2020deep.pdf) | [DOI](https://doi.org/10.1038/s41438-020-0323-3) |
 
-## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (41)
+## C5: Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB (35)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -373,12 +367,10 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2026 | Gao L. | OAFBC-Net: A Lightweight RGB-Depth Fusion Network for Occlusion-Aware Apple Detection in Complex Orchard Canopies | Agronomy | [PDF](pdf/gao2026oafbc.pdf) | [DOI](https://doi.org/10.3390/agronomy16141318) |
 | 2026 | Hossain T. | Dual-Detector Vision and Depth-Aware Back-Projection for Accurate Apple Detection and 3D Localisation for Robotic Harvesting | Robotics | [PDF](pdf/hossain2026dual.pdf) | [DOI](https://doi.org/10.3390/robotics15020047) |
 | 2026 | Ling F. | Boosting RGB-D Pear Detection via Depth-Constraint Enhanced Gaussian Prior | Plants | [PDF](pdf/ling2026boosting.pdf) | [DOI](https://doi.org/10.3390/plants15121852) |
-| 2025 | Checola G. | Apple phenotyping using deep learning and 3D depth analysis: An experimental study on fruitlet sizing during early development | Smart Agricultural Technology | [PDF](pdf/checola2025apple.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.100964) |
 | 2025 | Devanna R.P. | Automated On-Tree Detection and Size Estimation of Pomegranates by a Farmer Robot | Robotics | [PDF](pdf/devanna2025automated.pdf) | [DOI](https://doi.org/10.3390/robotics14100131) |
 | 2025 | Kim E. | Advanced 3D Depth Imaging Techniques for Morphometric Analysis of Detected On-Tree Apples Based on AI Technology | Agriculture Switzerland | [PDF](pdf/kim2025advanced.pdf) | [DOI](https://doi.org/10.3390/agriculture15111148) |
 | 2025 | Li Z. | CGA-ASNet: an RGB-D amodal segmentation network for restoring occluded tomato regions | Frontiers in Plant Science | [PDF](pdf/li2025cga.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1664718) |
 | 2025 | Liu X. | The apple detection method based on multimodal features | Plos One | [PDF](pdf/liu2025apple.pdf) | [DOI](https://doi.org/10.1371/journal.pone.0334911) |
-| 2025 | Okabe Y. | Classification of Tomato Harvest Timing Using an AI Camera and Analysis Based on Experimental Results | Agriengineering | [PDF](pdf/okabe2025classification.pdf) | [DOI](https://doi.org/10.3390/agriengineering7020048) |
 | 2025 | Von Hirschhausen L.S. | AppleGrowthVision: A Large-Scale Stereo Dataset for Phenological Analysis, Fruit Detection, and 3D Reconstruction in Apple Orchards | IEEE Computer Society Conference on Computer Vision and Pattern Recognition Workshops | [PDF](pdf/von2025applegrowthvision.pdf) | [DOI](https://doi.org/10.1109/cvprw67362.2025.00541) |
 | 2025 | Zhu K. | Foundation model-based apple ripeness and size estimation for selective harvesting | Computers and Electronics in Agriculture | [PDF](pdf/zhu2025foundation.pdf) | [DOI](https://doi.org/10.1016/j.compag.2025.110407) |
 | 2024 | Barbole D. | Comparative analysis of 2D and 3D vineyard yield prediction system using artificial intelligence | Journal of Agricultural Engineering | [PDF](pdf/barbole2024comparative.pdf) | [DOI](https://doi.org/10.4081/jae.2023.1545) |
@@ -398,19 +390,15 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2022 | Neupane C. | In-Orchard Sizing of Mango Fruit: 1. Comparison of Machine Vision Based Methods for On-The-Go Estimation | Horticulturae | [PDF](pdf/neupane2022orchard.pdf) | [DOI](https://doi.org/10.3390/horticulturae8121223) |
 | 2022 | Qiu C. | Grape Maturity Detection and Visual Pre-Positioning Based on Improved YOLOv4 | Electronics Switzerland | [PDF](pdf/qiu2022grape.pdf) | [DOI](https://doi.org/10.3390/electronics11172677) |
 | 2022 | Sun M. | Fast Location and Recognition of Green Apple Based on RGB-D Image | Frontiers in Plant Science | [PDF](pdf/sun2022fast.pdf) | [DOI](https://doi.org/10.3389/fpls.2022.864458) |
-| 2022 | Tang J. | Identification of the Yield of Camellia oleifera Based on Color Space by the Optimized Mean Shift Clustering Algorithm Using Terrestrial Laser Scanning | Remote Sensing | [PDF](pdf/tang2022identification.pdf) | [DOI](https://doi.org/10.3390/rs14030642) |
 | 2021 | Le Louëdec J. | 3D shape sensing and deep learning-based segmentation of strawberries | Computers and Electronics in Agriculture | [PDF](pdf/le20213d.pdf) | [DOI](https://doi.org/10.1016/j.compag.2021.106374) |
 | 2021 | Neupane C. | Evaluation of depth cameras for use in fruit localization and sizing: Finding a successor to kinect v2 | Agronomy | [PDF](pdf/neupane2021evaluation.pdf) | [DOI](https://doi.org/10.3390/agronomy11091780) |
 | 2021 | Zhang C. | A method for organs classification and fruit counting on pomegranate trees based on multi-features fusion and support vector machine by 3D point cloud | Scientia Horticulturae | [PDF](pdf/zhang2021method.pdf) | [DOI](https://doi.org/10.1016/j.scienta.2020.109791) |
+| 2020 | Afonso M. | Tomato Fruit Detection and Counting in Greenhouses Using Deep Learning | Frontiers in Plant Science | [PDF](pdf/afonso2020tomato.pdf) | [DOI](https://doi.org/10.3389/fpls.2020.571299) |
 | 2020 | Liu Z. | Improved Kiwifruit Detection Using Pre-Trained VGG16 with RGB and NIR Information Fusion | IEEE Access | [PDF](pdf/liu2020improved.pdf) | [DOI](https://doi.org/10.1109/access.2019.2962513) |
-| 2020 | Schneider T. | Towards predicting vine yield: Conceptualization of 3d grape models and derivation of reliable physical and morphological parameters | Gi Forum | [PDF](pdf/schneider2020predicting.pdf) | [DOI](https://doi.org/10.1553/giscience2020_01_s73) |
-| 2020 | Tsoulias N. | Apple shape detection based on geometric and radiometric features using a LiDAR laser scanner | Remote Sensing | [PDF](pdf/tsoulias2020apple.pdf) | [DOI](https://doi.org/10.3390/rs12152481) |
-| 2020 | Zhao X. | Automatic sweet pepper detection based on point cloud images using subtractive clustering | International Journal of Agricultural and Biological Engineering | [PDF](pdf/zhao2020automatic.pdf) | [DOI](https://doi.org/10.25165/j.ijabe.20201303.5460) |
 | 2019 | Hacking C. | Investigating 2-D and 3-D proximal remote sensing techniques for vineyard yield estimation | Sensors Switzerland | [PDF](pdf/hacking2019investigating.pdf) | [DOI](https://doi.org/10.3390/s19173652) |
-| 2019 | Méndez V. | In-field estimation of orange number and size by 3D laser scanning | Agronomy | [PDF](pdf/mendez2019field.pdf) | [DOI](https://doi.org/10.3390/agronomy9120885) |
 | 2017 | Wang Z. | On-tree mango fruit size estimation using RGB-D images | Sensors Switzerland | [PDF](pdf/wang2017tree.pdf) | [DOI](https://doi.org/10.3390/s17122738) |
 
-## R: Tinjauan terdahulu (63)
+## R: Tinjauan terdahulu (62)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -448,7 +436,6 @@ Katalog ini memuat 480 kajian korpus `main6` yang PDF-nya tersedia, dari 1.013 k
 | 2024 | Rani N. | A systematic review and comparative meta-analysis of nondestructive fruit maturity detection techniques | Plant Science Today | [PDF](pdf/rani2024systematic.pdf) | [DOI](https://doi.org/10.14719/pst.2844) |
 | 2024 | Wang C. | A Review of Perception Technologies for Berry Fruit-Picking Robots: Advantages, Disadvantages, Challenges, and Prospects | Agriculture Switzerland | [PDF](pdf/wang2024review.pdf) | [DOI](https://doi.org/10.3390/agriculture14081346) |
 | 2023 | Ahmed Mansour M.Y.M. | A REVIEW OF NON-DESTRUCTIVE RIPENESS CLASSIFICATION TECHNIQUES FOR OIL PALM FRESH FRUIT BUNCHES | Journal of Oil Palm Research | [PDF](pdf/ahmed2023review.pdf) | [DOI](https://doi.org/10.21894/jopr.2022.0063) |
-| 2023 | Baglat P. | Non-Destructive Banana Ripeness Detection Using Shallow and Deep Learning: A Systematic Review | Sensors | [PDF](pdf/baglat2023non.pdf) | [DOI](https://doi.org/10.3390/s23020738) |
 | 2023 | Ghazalli S.A. | Short Review on Palm Oil Fresh Fruit Bunches Ripeness and Classification Technique | Journal of Advanced Research in Applied Mechanics | [PDF](pdf/ghazalli2023short.pdf) | [DOI](https://doi.org/10.37934/aram.106.1.3747) |
 | 2023 | Hou G. | An Overview of the Application of Machine Vision in Recognition and Localization of Fruit and Vegetable Harvesting Robots | Agriculture Switzerland | [PDF](pdf/hou2023overview.pdf) | [DOI](https://doi.org/10.3390/agriculture13091814) |
 | 2023 | Hua X. | A Review of Target Recognition Technology for Fruit Picking Robots: From Digital Image Processing to Deep Learning | Applied Sciences Switzerland | [PDF](pdf/hua2023review.pdf) | [DOI](https://doi.org/10.3390/app13074160) |

@@ -102,9 +102,9 @@ def bersih(c):
 def bangun_lembar():
     lama = {r["idx"]: r for r in baca(LEMBAR)} if LEMBAR.exists() else {}
     manual = muat_manual()
-    mat = {r["idx"]: r for r in baca(MAT)}
+    mat = {r["idx"]: r for r in baca(MAT) if r["kode"] == "C1"}
     baris = []
-    for idx in sorted(manual, key=int):
+    for idx in sorted(set(manual) & set(mat), key=int):
         k, r, l = manual[idx], mat.get(idx, {}), lama.get(idx, {})
         baris.append({
             "idx": idx, "key": r.get("key", ""), "tahun": r.get("year", ""), "judul": r.get("title", ""),
@@ -119,7 +119,8 @@ def bangun_lembar():
             "halaman_bukti": k["halaman"],
             "bukti": l.get("bukti", l.get("draf_ai_bukti", "")),
             "berubah_saat_cek_5": perubahan(k["berubah"]),
-            "diisi_oleh": "AI dari teks lengkap, disetujui peninjau 19 Oktober 2026",
+            "diisi_oleh": ("AI dari teks lengkap, disetujui peninjau 19 Oktober 2026" if l
+                           else "AI dari teks lengkap, belum diperiksa peninjau"),
             "catatan": bersih(l.get("catatan", l.get("catatan_peninjau", ""))),
         })
     for n, b in enumerate(baris, 1):

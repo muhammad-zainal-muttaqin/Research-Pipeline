@@ -47,14 +47,14 @@ Anda.
   `kode` = C1, lalu lihat kolom `tanaman` dan `platform`. Dampak bila
   disetujui: Lampiran A, gambar tanaman dan sensor di bahan tambahan (S4),
   serta makro jumlah tanaman dan platform berubah.
-- [ ] **A.2 Dua laporan Parico dkk. memakai PDF yang sama.** Apakah bab buku
-  2023 (*Real-Time Pear Fruit Detection and Counting Using YOLOv4 Models and
-  Deep SORT*, Springer, idx 469) memang terbitan ulang artikel *Sensors* 2021
-  (idx 592)? Berkas `pdf/parico2021real.pdf` dan `pdf/parico2023real.pdf`
-  berukuran sama (1.601.908 bita), dan teks ekstraksinya identik. Jadi teks
-  lengkap bab buku itu sebenarnya belum dinilai. Dampak: bila bab buku tidak
-  dapat diperoleh, ia pindah ke "tidak diperoleh", dan angka korpus (468
-  masuk peta) berkurang satu.
+- [ ] **A.3 Label 17 kajian C1 belum diperiksa peninjau.** Apakah label
+  cara penghubungan, cara foto diambil, acuan hitungan, dan metrik untuk 17
+  kajian yang masuk C1 pada tahap teks lengkap sudah benar? Kajian itu masuk
+  setelah Cek 5 disetujui (19 Oktober 2026), sehingga labelnya diisi model
+  dari teks lengkap tanpa pemeriksaan peninjau. Buka
+  [kode_ulang_C1.csv](cek-5-kode-ulang/kode_ulang_C1.csv) dan saring kolom
+  `diisi_oleh` = "AI dari teks lengkap, belum diperiksa peninjau". Dampak bila
+  ada label yang diubah: angka mekanisme di naskah dan Lampiran A berubah.
 - [ ] **F.4 Kode buta 20 artikel C1 acak oleh Bu Fatma.**
   Buka [sampel_fatma_C1.xlsx](cek-5-kode-ulang/sampel_fatma_C1.xlsx) dan isi
   kolom berlatar kuning. Arti setiap pilihan ada di lembar `pilihan`. Hasilnya

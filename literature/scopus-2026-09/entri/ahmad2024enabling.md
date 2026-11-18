@@ -8,7 +8,7 @@
 | Penulis | Ahmad, Jamil; Gueaieb, Wail; Saddik, Abdulmotaleb El; Masi, Giulia De; Karray, Fakhri |
 | Tahun | 2024 |
 | Venue | Digest of Technical Papers IEEE International Conference on Consumer Electronics |
-| Kode | C1 (Gabungan beberapa pengamatan) |
+| Kode | C2 (Pencacahan satu pandang) |
 | Tanaman | apple, peach/nectarine |
 
 ## Tautan Akses

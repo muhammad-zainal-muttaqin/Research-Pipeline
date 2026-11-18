@@ -43,10 +43,10 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Dikeluarkan pada tahap kelayakan abstrak | 132 |
 | Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
-| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`; termasuk kelima rekaman metode lain) | 538 |
-| Dinilai dari teks lengkap | 480 |
+| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`; termasuk kelima rekaman metode lain) | 539 |
+| Dinilai dari teks lengkap | 479 |
 | Dikeluarkan pada tahap teks lengkap (E2 4, E3 1, E5 7) | 12 |
-| Total masuk peta | 468 |
+| Total masuk peta | 467 |
 
 Tahap teks lengkap (18 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
@@ -66,7 +66,7 @@ Kode yang sama dipakai pada tahap teks lengkap.
 
 | Kode | Arti | Jumlah |
 |---|---|---:|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 215 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 214 |
 | C2 | Pencacahan atau estimasi hasil dari satu pandang | 43 |
 | C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 53 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 13 |
@@ -159,8 +159,8 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   dengan cara yang sama; label C1 diterapkan lewat Cek 5. Empat kajian dari
   penelusuran daftar pustaka ditambahkan ke `topik/tambahan_metode_lain.csv`.
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
-- PDF tersedia untuk 480 dari 1.013 kajian Scopus (`KATALOG-PDF.md`); hanya
-  kajian itu yang dinilai pada tahap teks lengkap. Teksnya diekstrak untuk 476
+- PDF tersedia untuk 479 dari 1.013 kajian Scopus (`KATALOG-PDF.md`); hanya
+  kajian itu yang dinilai pada tahap teks lengkap. Teksnya diekstrak untuk 475
   kajian. Empat PDF jurnal CSAM tidak dapat diekstrak teksnya (fon tanpa
   pemetaan Unicode); dua di antaranya kajian C1 (`guo2023real`,
   `tu2026passion`) yang kodenya tetap bersumber dari abstrak. Daftar awal PDF yang belum ada tercantum di
