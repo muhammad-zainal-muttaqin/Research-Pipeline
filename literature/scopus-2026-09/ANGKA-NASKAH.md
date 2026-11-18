@@ -46,9 +46,9 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Tingkat metrik menurut pengodean kajian (kemunculan): hitung 173, deteksi 145, identitas 71, tidak ada 4
 - Cara pemberian kelas pada kajian per kelas: tidak dinyatakan 12, saat pelacakan 11, sesudah pelacakan 3, voting antarpandang 2
 
-## Seksi 5: metrik di abstrak kajian metode multi-pengamatan
+## Seksi 5: tingkat metrik kajian metode multi-pengamatan (kode teks lengkap)
 
-- Dengan abstrak 165 dari 211: hitung 71 dari 165 (43%); deteksi 62 dari 165 (38%); identitas 18 dari 165 (11%); tanpa metrik 61 dari 165 (37%)
+- Berkode 204 dari 211: hitung 173 dari 204 (85%); deteksi 145 dari 204 (71%); identitas 71 dari 204 (35%); tidak ada 4 dari 204 (2%)
 
 ## Seksi 6: pencacahan per kelas pada citra tunggal
 

@@ -460,34 +460,26 @@ def gambar_sawit(mat):
 # ------------------------------------------- F7 metrik yang dilaporkan
 def gambar_metrik(mat):
     c1 = [r for r in mat if r["kode"] == "C1" and r["mekanisme"] != "DATA"]
-    kel = {
-        "Count agreement (MAE, RMSE, R2, MAPE, count accuracy)": {"MAE", "RMSE", "R2", "MAPE/rel. error", "count accuracy"},
-        "Tracking or identity (MOTA, IDF1, HOTA, ID switches)": {"MOTA", "IDF1", "HOTA", "ID switch"},
-        "Detection quality (mAP, AP, F1)": {"mAP/AP", "F1"},
-    }
-    ada_abs = [r for r in c1 if r["ada_abstrak"] == "ya"]
-    hit = Counter()
-    for r in ada_abs:
-        ms = set(r["metrik"].split(";")) if r["metrik"] else set()
-        for k, s in kel.items():
-            if ms & s:
-                hit[k] += 1
-        if not ms:
-            hit["No quantitative metric in the abstract"] += 1
+    nama = {"hitung": "Count agreement (MAE, RMSE, R2, MAPE, count accuracy)",
+            "identitas": "Tracking or identity (MOTA, IDF1, HOTA, ID switches)",
+            "deteksi": "Detection quality (mAP, AP, F1)",
+            "tidak ada": "No quantitative metric"}
+    berkode = [r for r in c1 if r["tingkat_metrik"].strip()]
+    hit = Counter(x for r in berkode for x in set(r["tingkat_metrik"].split(";")) if x)
     kelas = sum(1 for r in c1 if r["per_kelas"] == "Y")
     fig, ax = plt.subplots(figsize=(4.6, 2.3))
-    urut = list(kel) + ["No quantitative metric in the abstract"]
-    vals = [100 * hit[k] / len(ada_abs) for k in urut]
+    urut = list(nama)
+    vals = [100 * hit[k] / len(berkode) for k in urut]
     ax.barh(range(len(urut))[::-1], vals, color=[C["biru"], C["hijau"], C["abu"], C["abu_muda"]], height=0.6)
     for i, (k, v) in enumerate(zip(urut, vals)):
         ax.text(v + 1, len(urut) - 1 - i, f"{hit[k]} ({v:.0f}%)", va="center", fontsize=7.5)
     ax.set_yticks(range(len(urut))[::-1])
-    ax.set_yticklabels([k.replace(" (", "\n(") for k in urut], fontsize=7.5)
+    ax.set_yticklabels([nama[k].replace(" (", "\n(") for k in urut], fontsize=7.5)
     ax.set_xlim(0, 100)
-    ax.set_xlabel(f"Share of the {len(ada_abs)} multi-observation studies with an abstract (%)\n"
+    ax.set_xlabel(f"Share of the {len(berkode)} multi-observation method studies (%)\n"
                   "(a study may report several metric types)")
     simpan(fig, "F07_metrik")
-    return hit, len(ada_abs), kelas
+    return hit, len(berkode), kelas
 
 
 # ------------------------------------------- F8 jaringan istilah

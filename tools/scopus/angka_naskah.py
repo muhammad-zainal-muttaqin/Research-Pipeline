@@ -29,9 +29,6 @@ MEK = ["M0", "M1", "M2", "M3", "M4", "M5"]
 NAMA = {"M0": "no association", "M1": "statistical correction", "M2": "appearance matching",
         "M3": "temporal tracking", "M4": "geometric or 3D association", "M5": "learned association"}
 MAKRO_MEK = {"M0": "None", "M1": "Stat", "M2": "App", "M3": "Track", "M4": "Geom", "M5": "Learn"}
-METRIK = {"hitung": {"MAE", "RMSE", "R2", "MAPE/rel. error", "count accuracy"},
-          "identitas": {"MOTA", "IDF1", "HOTA", "ID switch"},
-          "deteksi": {"mAP/AP", "F1"}}
 out = []
 makro = {}
 
@@ -281,21 +278,15 @@ def main():
         m("nClassVote", ck["voting antarpandang"])
         m("nClassUnstated", ck["tidak dinyatakan"] + ck["(kosong)"])
 
-    ada = [r for r in met if r["ada_abstrak"] == "ya"]
-    hit = Counter()
-    for r in ada:
-        ms = set(r["metrik"].split(";")) if r["metrik"] else set()
-        for k, s in METRIK.items():
-            if ms & s:
-                hit[k] += 1
-        if not ms:
-            hit["tanpa metrik"] += 1
-    tulis("\n## Seksi 5: metrik di abstrak kajian metode multi-pengamatan\n")
-    tulis(f"- Dengan abstrak {len(ada)} dari {n}: " + "; ".join(f"{k} {pct(hit[k], len(ada))}" for k in ["hitung", "deteksi", "identitas", "tanpa metrik"]))
-    m("nMethodAbs", len(ada))
-    for k, nama in [("hitung", "MetCount"), ("deteksi", "MetDet"), ("identitas", "MetIdent"), ("tanpa metrik", "MetNone")]:
+    berkode = [r for r in met if r["tingkat_metrik"].strip()]
+    hit = Counter(x for r in berkode for x in set(r["tingkat_metrik"].split(";")) if x)
+    tulis("\n## Seksi 5: tingkat metrik kajian metode multi-pengamatan (kode teks lengkap)\n")
+    tulis(f"- Berkode {len(berkode)} dari {n}: " + "; ".join(f"{k} {pct(hit[k], len(berkode))}" for k in ["hitung", "deteksi", "identitas", "tidak ada"]))
+    m("nMethodMetric", len(berkode))
+    for k, nama in [("hitung", "MetCount"), ("deteksi", "MetDet"), ("identitas", "MetIdent"), ("tidak ada", "MetNone")]:
         m(f"n{nama}", hit[k])
-        m(f"p{nama}", persen(hit[k], len(ada)))
+        m(f"p{nama}", persen(hit[k], len(berkode)))
+    m("nMetCountOnly", sum(1 for r in berkode if set(r["tingkat_metrik"].split(";")) == {"hitung"}))
 
     # ---------------------------------------------------------------- C4, C5
     c4 = [r for r in mat if r["kode"] == "C4"]
