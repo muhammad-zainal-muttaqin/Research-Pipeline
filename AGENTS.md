@@ -77,12 +77,29 @@ pesan commit, dan naskah.
   kesalahan nyata yang perlu dicegah, dalam satu butir pendek di bagian yang
   sesuai. Butir yang sudah ada diperbarui, bukan ditambah butir baru yang
   menggandakannya.
-- **Dilarang komentar sampah.** Komentar kode hanya menerangkan *mengapa* yang
-  tidak tampak dari kode, misalnya jebakan data, batasan perangkat, atau
-  alasan angka tetap. Yang dilarang: komentar yang mengulang isi kode, riwayat
-  perubahan ("diperbaiki", "versi baru", "sebelumnya"), nama model atau sesi,
-  catatan TODO tanpa pemilik, dan kode mati yang dijadikan komentar. Riwayat
-  perubahan cukup di Git.
+  Pelajaran yang berulang dikodekan menjadi pemeriksaan (skrip, *assert*, *hook*
+  Git), bukan teks tambahan. Teks hanya untuk hal yang butuh pertimbangan.
+- **Dilarang komentar sampah.** Komentar kode dihapus kecuali termasuk salah
+  satu dari lima pengecualian:
+  1. kepala lisensi;
+  2. perilaku tak terduga yang dipaksakan pihak luar yang tidak dapat kita
+     ubah, misalnya sidecar Orbbec `"alignedTo": "color"` yang menyesatkan;
+  3. penanda pemformat, atau penekan *lint* yang aturannya keliru atau hanya
+     soal gaya;
+  4. docstring yang menetapkan kontrak skrip: masukan, keluaran, dan cara
+     menjalankan;
+  5. tautan ke sumber luar (makalah, isu, dokumentasi) yang menjelaskan batasan
+     yang tidak dapat dinyatakan kode.
+
+  Bila ragu apakah suatu komentar termasuk pengecualian, komentarnya dihapus.
+  Perilaku mengejutkan di kode kita sendiri tidak dijelaskan dengan komentar.
+  Kodenya diubah (nama, fungsi terpisah, pemeriksaan) sampai jelas tanpa
+  prosa. Komentar penambal (*workaround*) diganti perbaikan akar masalah.
+  Komentar bertanda "PENTING" atau "jangan dihapus" dan pembelaan panjang
+  diperiksa dulu ke kode yang dirujuknya, karena belum tentu benar. Selalu
+  dilarang: komentar yang mengulang kode, riwayat perubahan ("diperbaiki",
+  "versi baru"), nama model atau sesi, TODO tanpa pemilik, dan kode mati yang
+  dijadikan komentar. Riwayat perubahan cukup di Git.
 - **Dilarang slogan.** Tidak ada slogan, kata pemasaran, atau penekanan
   kosong, misalnya "kokoh", "canggih", "siap produksi", "solusi menyeluruh",
   "game changer", atau emoji. Huruf tebal hanya untuk peringatan yang
