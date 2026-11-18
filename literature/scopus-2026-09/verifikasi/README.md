@@ -11,9 +11,9 @@ Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 
 Pemeriksaan 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026. Pada
 18 November 2026 ditambahkan tahap teks lengkap: 32 perubahan kelompok dan
-eksklusi dari pembacaan PDF menunggu persetujuan peninjau (baris "AI, belum
-disetujui peninjau" di [`log_perubahan.csv`](log_perubahan.csv)). Butir yang
-menunggu ada di [TUGAS.md](TUGAS.md).
+eksklusi dari pembacaan PDF, disetujui peninjau pada hari yang sama (rinciannya
+di [`log_perubahan.csv`](log_perubahan.csv)). Butir yang masih menunggu ada di
+[TUGAS.md](TUGAS.md).
 
 | Pemeriksaan | Yang diperiksa | Hasil |
 |---|---|---|
@@ -23,7 +23,7 @@ menunggu ada di [TUGAS.md](TUGAS.md).
 | 4. PDF lengkap | Ketersediaan PDF 199 artikel C1 dan 19 artikel sawit inti | 217 dari 218 ada; satu artikel C1 tanpa PDF (Safre dkk. 2024) dilaporkan di naskah |
 | 5. Label ulang dari PDF | Label 199 artikel C1 | 196 dibaca dari teks lengkap, 3 dari abstrak; 98 label berubah |
 | 6. Cek fakta naskah | Kecocokan setiap klaim naskah dengan kajian yang dikutip | 303 pasangan klaim dan kajian sesuai sumber |
-| Tahap teks lengkap (18 November 2026) | Kelompok 480 artikel yang PDF-nya ada | 17 pindah ke C1, 3 pindah kelompok lain, 12 dikeluarkan; menunggu persetujuan peninjau |
+| Tahap teks lengkap (18 November 2026) | Kelompok 480 artikel yang PDF-nya ada | 17 pindah ke C1, 3 pindah kelompok lain, 12 dikeluarkan; disetujui peninjau |
 
 Label C1 belum dikode buta oleh manusia, sehingga kesepakatan yang dilaporkan
 untuk label C1 adalah antarmodel (butir F.4 di [TUGAS.md](TUGAS.md)).
