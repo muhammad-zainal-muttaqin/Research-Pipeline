@@ -8,15 +8,15 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Dibuang menurut tipe dokumen 166; judul disaring 5,723; dikeluarkan di tahap judul 4,578
 - Dinilai kelayakannya dari judul dan abstrak 1,145 (dengan abstrak 891; judul dan sumber saja 254)
 - Dikeluarkan di tahap kelayakan abstrak 132: E1 23, E2 18, E3 25, E4 1, E5 60, E6 4, E7 1
-- Laporan dicari teks lengkapnya 1013; tidak diperoleh 534 (C1 2, C2 179, C3 118, C4 38, C5 97, R 59, T 41)
-- Dinilai dari teks lengkap 479; dikeluarkan 12: E2 4, E3 1, E5 7
-- Masuk dari Scopus 467: C1 214, C2 43, C3 53, C4 13, C5 35, R 62, T 47
+- Laporan dicari teks lengkapnya 1013; tidak diperoleh 531 (C1 2, C2 179, C3 118, C4 38, C5 97, R 56, T 41)
+- Dinilai dari teks lengkap 482; dikeluarkan 12: E2 4, E3 1, E5 7
+- Masuk dari Scopus 470: C1 214, C2 43, C3 53, C4 13, C5 35, R 65, T 47
 - Metode lain 5, teks lengkap diperoleh 0: liu2026shaping (R), payne2014estimating (C2), apoloapolo2020deep (C1), choi2015machine (C5), kwon2024enhancing (C2)
-- Total kajian masuk 467
-- Kajian per tahun: 2012: 2, 2013: 3, 2014: 6, 2015: 5, 2016: 7, 2017: 9, 2018: 12, 2019: 16, 2020: 28, 2021: 39, 2022: 37, 2023: 66, 2024: 77, 2025: 85, 2026: 75
+- Total kajian masuk 470
+- Kajian per tahun: 2012: 2, 2013: 3, 2014: 6, 2015: 6, 2016: 7, 2017: 9, 2018: 12, 2019: 17, 2020: 28, 2021: 39, 2022: 38, 2023: 66, 2024: 77, 2025: 85, 2026: 75
 - Multi-pengamatan per tahun: 2012: 1, 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 2, 2018: 3, 2019: 7, 2020: 13, 2021: 15, 2022: 15, 2023: 27, 2024: 37, 2025: 51, 2026: 33
-- Dengan abstrak 415 dari 467; PDF teks lengkap 467 (teks terekstrak 463); multi-pengamatan dengan PDF 214 dari 214
-- Peta istilah: 34 istilah, 217 tautan; istilah identitas 16-24 kajian; detection 304; counting 238
+- Dengan abstrak 417 dari 470; PDF teks lengkap 470 (teks terekstrak 466); multi-pengamatan dengan PDF 214 dari 214
+- Peta istilah: 34 istilah, 219 tautan; istilah identitas 16-24 kajian; detection 306; counting 239
 
 ## Seksi 3: kajian multi-pengamatan
 
@@ -72,7 +72,7 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 
 ## Seksi 9: tinjauan terdahulu dan metode luar pertanian
 
-- Tinjauan terdahulu 62 (+ 0 metode lain); metode luar pertanian 47
+- Tinjauan terdahulu 65 (+ 0 metode lain); metode luar pertanian 47
 
 ## Pemeriksaan ulang tahap judul
 

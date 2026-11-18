@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 467 kajian korpus `main6` yang PDF-nya tersedia, dari 467 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 470 kajian korpus `main6` yang PDF-nya tersedia, dari 470 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -11,9 +11,9 @@ Katalog ini memuat 467 kajian korpus `main6` yang PDF-nya tersedia, dari 467 kaj
 | C3 | Pencitraan TBS kelapa sawit | 53 | 53 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 13 | 13 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 35 | 35 |
-| R | Tinjauan terdahulu | 62 | 62 |
+| R | Tinjauan terdahulu | 65 | 65 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 47 | 47 |
-| | **Jumlah** | 467 | 467 |
+| | **Jumlah** | 470 | 470 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (214)
 
@@ -398,7 +398,7 @@ Katalog ini memuat 467 kajian korpus `main6` yang PDF-nya tersedia, dari 467 kaj
 | 2019 | Hacking C. | Investigating 2-D and 3-D proximal remote sensing techniques for vineyard yield estimation | Sensors Switzerland | [PDF](pdf/hacking2019investigating.pdf) | [DOI](https://doi.org/10.3390/s19173652) |
 | 2017 | Wang Z. | On-tree mango fruit size estimation using RGB-D images | Sensors Switzerland | [PDF](pdf/wang2017tree.pdf) | [DOI](https://doi.org/10.3390/s17122738) |
 
-## R: Tinjauan terdahulu (62)
+## R: Tinjauan terdahulu (65)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -449,6 +449,7 @@ Katalog ini memuat 467 kajian korpus `main6` yang PDF-nya tersedia, dari 467 kaj
 | 2023 | Rizzo M. | Fruit ripeness classification: A survey | Artificial Intelligence in Agriculture | [PDF](pdf/rizzo2023fruit.pdf) | [DOI](https://doi.org/10.1016/j.aiia.2023.02.004) |
 | 2023 | Xiao F. | Fruit Detection and Recognition Based on Deep Learning for Automatic Harvesting: An Overview and Review | Agronomy | [PDF](pdf/xiao2023fruit.pdf) | [DOI](https://doi.org/10.3390/agronomy13061625) |
 | 2023 | Xiao F. | Object Detection and Recognition Techniques Based on Digital Image Processing and Traditional Machine Learning for Fruit and Vegetable Harvesting Robots: An Overview and Review | Agronomy | [PDF](pdf/xiao2023object.pdf) | [DOI](https://doi.org/10.3390/agronomy13030639) |
+| 2022 | He L. | Fruit yield prediction and estimation in orchards: A state-of-the-art comprehensive review for both direct and indirect methods | Computers and Electronics in Agriculture | [PDF](pdf/he2022fruit.pdf) | [DOI](https://doi.org/10.1016/j.compag.2022.106812) |
 | 2022 | Li Y. | Advance of Target Visual Information Acquisition Technology for Fresh Fruit Robotic Harvesting: A Review | Agronomy | [PDF](pdf/li2022advance.pdf) | [DOI](https://doi.org/10.3390/agronomy12061336) |
 | 2022 | Mohimont L. | Computer Vision and Deep Learning for Precision Viticulture | Agronomy | [PDF](pdf/mohimont2022computer.pdf) | [DOI](https://doi.org/10.3390/agronomy12102463) |
 | 2021 | Anderson N.T. | Technologies for forecasting tree fruit load and harvest timing—from ground, sky and time | Agronomy | [PDF](pdf/anderson2021technologies.pdf) | [DOI](https://doi.org/10.3390/agronomy11071409) |
@@ -460,10 +461,12 @@ Katalog ini memuat 467 kajian korpus `main6` yang PDF-nya tersedia, dari 467 kaj
 | 2021 | Zhang C. | Orchard management with small unmanned aerial vehicles: a survey of sensing and analysis approaches | Precision Agriculture | [PDF](pdf/zhang2021orchard.pdf) | [DOI](https://doi.org/10.1007/s11119-021-09813-y) |
 | 2020 | Naranjo-Torres J. | A review of convolutional neural network applied to fruit image processing | Applied Sciences Switzerland | [PDF](pdf/naranjotorres2020review.pdf) | [DOI](https://doi.org/10.3390/app10103443) |
 | 2020 | Tang Y. | Recognition and Localization Methods for Vision-Based Fruit Picking Robots: A Review | Frontiers in Plant Science | [PDF](pdf/tang2020recognition.pdf) | [DOI](https://doi.org/10.3389/fpls.2020.00510) |
+| 2019 | Koirala A. | Deep learning – Method overview and review of use for fruit detection and yield estimation | Computers and Electronics in Agriculture | [PDF](pdf/koirala2019deepb.pdf) | [DOI](https://doi.org/10.1016/j.compag.2019.04.017) |
 | 2019 | Mavridou E. | Machine vision systems in precision agriculture for crop farming | Journal of Imaging | [PDF](pdf/mavridou2019machine.pdf) | [DOI](https://doi.org/10.3390/jimaging5120089) |
 | 2018 | Li B. | Advances in non-destructive early assessment of fruit ripeness towards defining optimal time of harvest and yield prediction—a review | Plants | [PDF](pdf/li2018advances.pdf) | [DOI](https://doi.org/10.3390/plants7010003) |
 | 2018 | Patkar G.S. | Challenging İssues in automated oil palm fruit grading | Iaes International Journal of Artificial Intelligence | [PDF](pdf/patkar2018challenging.pdf) | [DOI](https://doi.org/10.11591/ijai.v7.i3.pp111-118) |
 | 2016 | Cubero S. | Automated Systems Based on Machine Vision for Inspecting Citrus Fruits from the Field to Postharvest—a Review | Food and Bioprocess Technology | [PDF](pdf/cubero2016automated.pdf) | [DOI](https://doi.org/10.1007/s11947-016-1767-1) |
+| 2015 | Gongal A. | Sensors and systems for fruit detection and localization: A review | Computers and Electronics in Agriculture | [PDF](pdf/gongal2015sensors.pdf) | [DOI](https://doi.org/10.1016/j.compag.2015.05.021) |
 
 ## T: Metode yang dapat dipindahkan dari luar pertanian (47)
 

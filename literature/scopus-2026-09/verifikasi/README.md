@@ -3,7 +3,7 @@
 Tinjauan `main6` menyaring 6.491 artikel Scopus dengan bantuan AI. Sebanyak
 1.013 artikel lolos tahap judul dan abstrak, ditambah lima artikel dari luar
 pencarian. Hanya artikel yang PDF-nya tersedia yang dinilai dari teks
-lengkapnya (479), dan 467 di antaranya masuk peta.
+lengkapnya (482), dan 470 di antaranya masuk peta.
 Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 (29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 

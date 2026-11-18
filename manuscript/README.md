@@ -21,7 +21,7 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 
 | Berkas | Isi | Status |
 |---|---|---|
-| `main6.tex` + `main6-body.tex` | *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories*. 467 kajian Scopus (214 multi-pengamatan), mekanisme asosiasi M0–M5; 34 halaman, 11 seksi, 2 lampiran, 7 gambar, 6 tabel | **Kandidat aktif** |
+| `main6.tex` + `main6-body.tex` | *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories*. 470 kajian Scopus (214 multi-pengamatan), mekanisme asosiasi M0–M5; 34 halaman, 11 seksi, 2 lampiran, 7 gambar, 6 tabel | **Kandidat aktif** |
 | `main.tex` / `main-elsarticle.tex` + `evidence-body.tex` | Naskah asli 182 sumber (IEEEtran / Elsevier); PDF-nya ditautkan Ruang Baca | Stabil, jangan disunting |
 
 `main6` memakai `references6.bib` (dibuat `tools/scopus/buat_bib.py` dari
