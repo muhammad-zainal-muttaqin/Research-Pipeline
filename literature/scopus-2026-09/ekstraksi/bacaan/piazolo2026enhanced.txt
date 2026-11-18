@@ -1,0 +1,93 @@
+KEY: piazolo2026enhanced (Piazolo et al., "Enhanced grape tracking (using deep neural networks) with an extended matching algorithm for SORT and DeepSORT", Computers and Electronics in Agriculture 245 (2026) 111529)
+
+CROP / SETTING / SCALE: Grapevine (Vitis vinifera, one variety, early ripening stage), four rows of a vineyard in Tomiño, Spain (41°57'18.3"N 8°47'41.9"W; Table 7 / Appendix A). Single UAV flight campaign on 28 June 2021, four flights. Test set: 6 video sequences, 136 annotated frames. Visible clusters per the hand count: at least 186 (150 foreground, 36 background). Clusters occupy 0.01% to 0.17% of the frame area (Sec 2.1; Appendix A). Not a yield study: "the Appendix ... provides no data on grape weight or wine harvested from the vine rows" (Sec 5.3, lines 1030-1042).
+
+ACQUISITION: UAV RGB video along vine rows (Table 7, Appendix A). Platform: DJI Matrice 210 RTK. Flight speed 0.7 m/s. Flight altitude "3 m above ground level" (Table 7, line 1208). Frame size 4096 x 2160; 59.94 frames/s. Each video sequence has between 250 and 2000 frames; on average about 22 frames per sequence are annotated (Sec 2.1, lines 346-351). Four rows recorded; "sunny day with wind velocity lower than 0.5 m/s" (Table 7). No pruning and no leaf removal were done (Appendix A). Camera side coverage: "a drone captures the whole vine" (Appendix A, lines 1187-1193). Number of sides / passes per row: not stated. Frame rate used for tracking: not stated beyond the 59.94 frames/s specification. Main-text flight altitude (outside Table 7): not checked beyond lines 315-351 (no altitude found there). Table 7 is the only place the 3 m value was verified.
+
+OBSERVATION / DETECTOR: Mask R-CNN (He et al., 2017), the same detector for all trackers. Trained on 528 images (train split); Adam, learning rate 0.000105; "used in all subsequent detection and tracking evaluations" (Sec 3.2, lines 690-693). Input resolution used for training/inference: not stated; the authors say Mask R-CNN "is designed for resolutions of up to 1280 × 720 pixels" (Sec 5.2, lines 1080-1087) while the frames are 2160 x 4096. Detection accuracy as reported (Tables 3-4, test set): bbox mAP 19.4%, mAP50 44.8%, mAP75 14.1%; segmentation mAP 14.5%, mAP50 44.3%, mAP75 4.5%. Classifier (for appearance features, used by DeepSORT and DeepSORT+): ResNet-50 backbone, global average pooling, fully connected layer; Adam learning rate 0.000105, weight decay 0.0001; "achieved a mAP of 80.6%" (definition of classifier mAP not stated). Detector epoch was selected on the test set: "the model from the training epoch that achieved the highest performance on the test set was selected for all subsequent experiments, forgoing a separate validation set" (Sec 3.2). Code: https://github.com/Jax377/Grape-Detection-and-Tracking.git.
+
+ASSOCIATION METHOD: Five trackers: SORT (Bewley et al., 2016; Kalman filter plus IoU matching with Hungarian algorithm), DeepSORT (Wojke et al., 2017; Mahalanobis gate plus CNN appearance), ByteTrack (Zhang et al., 2022; IoU only), and the authors' SORT+ and DeepSORT+. SORT+ is a four-stage matching cascade, each stage solved with the Hungarian algorithm: (1) strict IoU, d_IoU <= 0.8 (overlap above 20%); (2) Mahalanobis distance, accepted below the chi-squared 0.9 quantile, tau2 = 4.605; (3) relaxed IoU, d_IoU <= 0.965 (overlap 3.5%); (4) Euclidean centre distance with threshold tau4 = (w_i + h_i)/2 (Eq. 8), "to recover matches where Mask R-CNN detects only part of a grape cluster". DeepSORT+ adds a Stage 0 that uses Euclidean distance between CNN feature vectors (tau0 = 1.5) and requires Mahalanobis distance below the chi-squared 0.995 quantile (10.597) before the SORT+ stages. Kalman filter predicts up to 50 frames for unmatched tracks; a tentative track is confirmed after five frames (SORT, Sec 3.2). Counting rule: "A tracking algorithm counts the grape clusters within the test subset by tallying the number of confirmed tracks" (Sec 4). 3D, SfM or SLAM: not used. Camera motion handling: not described for these trackers (the paper cites AgriSORT and CascadeSORT only in related work).
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- IoU threshold of 20% "strikes a good balance between accurately assigning correct detections to GTs and minimizing the number of ID switches (IDsw) due to incorrect assignment" (Sec 2.2, lines 404-406).
+- Re-identification networks need instance-ID labels: "Training such a network requires grape clusters in the training subset to be annotated with instance IDs" (Sec 2.3, lines 306-316). The authors' design avoids this: "these similarity measures allow SORT+ to achieve robust tracking performance without requiring a trained re-identification network or ID-labeled training data" (Intro, lines 200-203).
+- Mahalanobis, IoU and Euclidean distances "require no additional data or much computation" (lines 280-284). Complexity claim: all algorithms rely on the Hungarian algorithm, scaling with O(n^3); SORT, SORT+ and ByteTrack "are purely geometric" (Sec 5.2, lines 910-932). No runtime was measured in the passages read.
+- Track predictions can be trusted when the Kalman filter is used, but the authors also say "Kalman-based tracking ... tends to outperform purely geometric based re-identification trackers on datasets where objects blend into the background" (Sec 5.2, lines 964-974).
+- Counting accuracy is a valid proxy for yield: "demonstrating their ability to estimate grape yield" (Sec 5.3, lines 1136-1137). This is not tested (see Limitations).
+- The bootstrap is a valid uncertainty model for the 6 test sequences (Sec 3.3, lines 745-756).
+- Test-set evaluation is valid for model selection: all results are evaluated on the test set (lines 687-688, 466-472), so no held-out validation set exists for the detector.
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) Same fruit in consecutive frames: handled by the tracker's IoU and Kalman predictions across frames; counting is per confirmed track (Sec 4). Not discussed as a separate case.
+(b) Track lost and restarted: this is the main target of SORT+ Stage 3 and Stage 4 (relaxed IoU and Euclidean centre distance). Authors: "The Euclidean distance aims to recover fragmented tracks where the Kalman Filter causes the track estimate to converge onto the average size of the grape cluster" (Sec 3.2, lines 647-656). The consequence is reported as: "SORT+ identifying 192 grape clusters of at least 186 visible clusters, suggesting that lost IDs are later recovered by another ID switch" (Sec 5.1, lines 933-941). Authors interpret this; not separately tested.
+(c) Same fruit from both sides or different passes: not addressed. The dataset is one-sided video along rows; the paper does not describe revisits or multiple passes. Not stated.
+
+Additional double-count / overcount mechanism reported: the tracker counts background clusters as well as foreground clusters in the ground truth; "background grapes counted in GT" is listed as a dataset problem (Sec 2.1, lines 1065-1074), and the ground truth counts 186 visible clusters (150 f + 36 b).
+
+CLASS / MATURITY HANDLING: none. The paper does not assign classes or maturity; the dataset contains four rows of one variety at one early ripening stage (Sec 5.2, lines 1050-1056). Classifier in DeepSORT/DeepSORT+ is an appearance network for instance matching (ResNet-50, mAP 80.6%), not a class label.
+
+COUNT REFERENCE AND METRIC LEVEL:
+- Count reference: hand count on the video, "at least 150 grape clusters in the foreground (f) and 36 ... in the background (b), resulting in a total of at least 186 visible grape clusters" (Sec 4, lines 821-832). Annotated clusters: AG = 147 (Eq. 1 defines counting accuracy with AG, but Table 6 accuracy values match the HC total of 186; see INCONSISTENCIES).
+- Level: annotated video frames (MOTS-style masks/boxes, CVAT; Table 7). Harvest or packhouse counts: not used. Yield: not evaluated.
+- Metrics: MOTA, MOTP, IDF1, ID switches (IDsw), counting accuracy = 1 - |AG - CT| / AG (Eq. 1); MOTSA and MOTSP are used only for the comparison with Ariza-Sentis et al. (2023), with authors' note that their definitions are "derived using the same foundational formulas as MOTA and MOTP" (lines 801-810). Detection: mAP, mAP50, mAP75 (COCO sizes). Bootstrapped 95% CIs (1000 resamples, 6 test sequences, Mooney et al., 1993). Identity metrics MOTA/IDF1 reported; HOTA not reported.
+- Matching threshold: IoU 20% for a TP (Sec 2.2, lines 400-406).
+
+KEY QUANTITATIVE RESULTS (test set; mean and 95% bootstrap CI, Table 5; counts from Table 6):
+- SORT: MOTA 37.69% ± 0.33%; IDF1 60.42% ± 0.09%; IDsw 73.50 ± 1.20; MOTP 65.41% ± 0.08% (Table 5).
+- DeepSORT: MOTA 42.25% ± 0.37%; IDF1 66.93% ± 0.21%; IDsw 17.05 ± 0.29; MOTP 65.46% ± 0.07% (Table 5).
+- ByteTrack: MOTA 41.53% ± 0.37%; IDF1 66.01% ± 0.19%; IDsw 26.09 ± 0.33; MOTP 65.44% ± 0.08% (Table 5).
+- SORT+: MOTA 41.50% ± 0.40%; IDF1 66.48% ± 0.18%; IDsw 28.24 ± 0.49; MOTP 65.40% ± 0.07% (Table 5).
+- DeepSORT+: MOTA 42.71% ± 0.37%; IDF1 67.10% ± 0.19%; IDsw 14.90 ± 0.23; MOTP 65.39% ± 0.08% (Table 5).
+- Counts and counting accuracy (Table 6): SORT 313 / 32.7%; DeepSORT 195 / 95.2%; ByteTrack 238 / 72.0%; SORT+ 192 / 96.8%; DeepSORT+ 186 / 100%. Reference: AG 147; HC(f) 150; HC(b) 36.
+- Changes reported (Sec 5.3, lines 1094-1101): SORT to SORT+ MOTA 37.7% to 41.5%, IDsw 73.5 to 28.2; DeepSORT to DeepSORT+ IDsw 17.1 to 14.9.
+- Abstract: "It increases MOTA and IDF1 by 5% to 6%, while decreasing ... ID switches by 62%." "SORT+ improves the counting accuracy from 33% to 96%." "DeepSORT+ shows further performance gains, decreasing ID switches by 12% compared to DeepSORT."
+- Detection (Tables 3-4): bbox mAP 19.4%; seg mAP 14.5%; bbox mAP50 44.8%; seg mAP50 44.3%.
+- Classifier: mAP 80.6% (Sec 3.2).
+- Comparison values quoted from others: PointTrack (Ariza-Sentis et al., 2023) MOTSA -8.2% and MOTSP 66.6% on the same UAV data (Table 5, Sec 5.2, lines 948-974); Ciarfuglia et al. WGISD MOTA up to 46.7%, MOTP up to 72.9%, mAP 53.4% (lines 978-993); Saraceni et al. Lazio MOTA up to 66.1% and IDF1 up to 73.7% (lines 994-999).
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Small clusters: "The grape clusters occupy a very small area in the frame, ranging from 0.01% to 0.17%, which is less than half the size typically seen in other available datasets" (Sec 2.1, lines 327-345).
+- Missed annotations "substantially lowering the MOTA and MOTSA scores" (Sec 2.1, lines 327-345).
+- Background clusters in ground truth "falsely inflates yield calculations" (Sec 2.1, lines 327-345).
+- Mask R-CNN partial detection: "regularly detects only parts of a grape cluster" (Sec 5.2, lines 1009-1018); the gap between bbox mAP50 44.8% and mAP75 14.1% is cited as the evidence.
+- Occlusion: "partially obscured in many cases" (Sec 5.2, lines 1004-1009); future work on reconstructing masks and a GAN for occluded clusters (lines 1043-1049).
+- Overcounting: "The tracking algorithms tend to overcount grape clusters by up to 68%" (Sec 5.1, lines 846-848). SORT count 313 vs 186 hand count is +68.3%, a calculation from Table 6.
+- SORT ID switches: "exhibits the most identity switches; more than twice those of SORT+ and ByteTrack ... and more than four times those of DeepSORT ... and DeepSORT+" (Sec 5.1, lines 901-909).
+- Detector stated limitation: "Mask R-CNN (He et al., 2017) is designed for resolutions of up to 1280 × 720 pixels" (Sec 5.2, lines 1080-1087).
+- Single variety and stage: "the detector and tracking algorithms fine-tuned for the Appendix ... are expected to perform worse on datasets with different characteristics" (Sec 5.2, lines 1050-1056).
+- Authors' comparison caveat: PointTrack "limited comparability" and its data "is unknown" (lines 754-756; 801-810).
+
+COMPARISONS ON THE SAME DATA: Five trackers on the same test set with the same Mask R-CNN detector (Table 5, Table 6). PointTrack (Ariza-Sentis et al., 2023) on the same UAV data is cited with MOTSA -8.2% and MOTSP 66.6% in parentheses, with the note that its data "is unknown" (Table 5; lines 801-810). The authors state that the 95% bootstrap intervals overlap, so "it remains inconclusive which tracker consistently performs better on unseen similar data" (Sec 5.3, lines 1138-1143). Between-dataset comparisons (WGISD, Lazio) are not on the same data and are used only as context (lines 975-999).
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK:
+- Yield not evaluated: the dataset "provides no data on grape weight or wine harvested" (lines 1030-1042).
+- Bootstrap of counts suggested, not done: "these results should be interpreted with caution due to the unknown margin of error" (Sec 5.3, lines 1019-1029).
+- Generalisation: the dataset has one variety at one ripening stage; "expected to perform worse on datasets with different characteristics" (lines 1050-1056). Future work: a multi-variety dataset or C-GAN translation (lines 1057-1064).
+- Occlusion: future work on reconstructing cluster masks from track detections and a GAN for occluded grapes, citing Kierdorf et al. (2022) (lines 1043-1049).
+- ByteTrack with enhanced matching is proposed as future work (lines 1101-1106; 1152-1157).
+- Depth sensors for background removal are "either inconvenient or expensive" (Wu et al., 2023; lines 1065-1074).
+- Classification network: "the implementation of the classification network proves difficult" (Conclusion, lines 1158-1169).
+
+INCONSISTENCIES INSIDE THE PAPER:
+1. SORT ID switches: Table 5 "73.50 ± 1.20" and Sec 5.3 "73.5" vs Conclusion "from 74 to 28" (lines 1120-1122). Rounding differs.
+2. SORT counting accuracy: Table 6 and Conclusion "32.7%" vs Abstract "from 33% to 96%" (rounded). Also, computed by this extraction, Eq. 1 with HC total 186 gives 1 - |186 - 313| / 186 = 31.7%, not 32.7%. The other Table 6 values (95.2%, 72.0%, 96.8%, 100%) match the HC total 186 by the same formula. The paper's own formula names AG = 147 as the reference, which would give 1 - |147 - 313| / 147 = negative value; Eq. 1 notation and the reference actually used (186) differ. Not explained in the paper.
+3. DeepSORT ID switches: Table 5 "17.05" vs Sec 5.3 "17.1" vs Sec 5.1 "17 ID switches in 195 counted tracks" (lines 856-858).
+4. DeepSORT+ ID switches: Table 5 "14.90" vs Sec 5.3 "14.9" vs Sec 5.1 "15 ID switches over 186 counted tracks" (lines 852-855) and "only 15 ID switches over 186 tracks" (lines 1138-1140).
+5. Saraceni et al. (Lazio) MOTA in one paragraph: "MOTA scores up to 66.1%" (lines 994-996) vs "up to 62.7%" and "(62.7% vs. 37.7%)" (lines 1000-1003). No subset or condition explaining the difference was found in the text read.
+6. Dataset frame count: Table 1 UAV RGB "Labeled" = 681 vs Table 7 "annotated frames 664" and text 528 + 136 = 664 (lines 346-351; Table 7). Cause not found in the passages read.
+7. UAV MOT(S)A: Table 1 gives "-8.2%" for the UAV RGB dataset; Sec 2.1 attributes low MOTA/MOTSA to missed annotations (lines 340-341). Not reconciled.
+8. Counting reference: Eq. 1 uses AG = 147; Table 6 counting accuracies use the 186 total (see item 2).
+9. Yield claim: Sec 5.3 says the trackers "demonstrat[e] their ability to estimate grape yield" (lines 1136-1137), while Sec 5.2/Appendix say yield is not evaluated (lines 1030-1042).
+10. Table 3/4 vs text: detection values consistent across abstract, text and tables (bbox mAP 19.4%).
+
+QUOTES (verbatim, location given; line numbers are from the source text file, not page numbers):
+1. "Crucially, this approach allows SORT+ to achieve robust performance without the need for additional training data." (Abstract, lines 30-31)
+2. "SORT+ improves the counting accuracy from 33% to 96%." (Abstract, line 34)
+3. "Because ByteTrack (Zhang et al., 2022) and SORT+ do not rely on a classification network, which requires training and labeled instance IDs in the dataset, both algorithms are easier to implement and feasible for broader applications." (Sec 5.1, lines 942-945; line breaks in the source removed)
+4. "DeepSORT+, closely followed by DeepSORT (Wojke et al., 2017), achieves the highest MOTA score of 42.7% (±0.4%) and an IDF1 score of 67.1% (±0.2%), with only 15 ID switches over 186 tracks. However, it remains inconclusive which tracker consistently performs better on unseen similar data, due to the overlapping bootstrapped 95%-confidence intervals." (Sec 5.3, lines 1138-1143; line breaks removed)
+5. "The tracking algorithms tend to overcount grape clusters by up to 68%." (Sec 5.1, lines 846-848)
+6. "If the 95%-confidence intervals of two individual trackers overlap, it is inconclusive which tracking algorithm performs better." (Sec 4 / Sec 3.3, lines 811-815)
+7. "The grape clusters occupy a very small area in the frame, ranging from 0.01% to 0.17%, which is less than half the size typically seen in other available datasets." (Sec 2.1, lines 327-345)
+8. "the model from the training epoch that achieved the highest performance on the test set was selected for all subsequent experiments, forgoing a separate validation set." (Sec 3.2, lines 466-472)
+9. "The Euclidean distance aims to recover fragmented tracks where the Kalman Filter causes the track estimate to converge onto the average size of the grape cluster." (Sec 3.2, lines 647-656)
+10. "Only the UAV RGB Video dataset (Sentís et al., 2021) and the Lazio dataset (Saraceni et al., 2024) contain instance IDs and are therefore suitable to evaluate tracking." (Sec 2.1, lines 315-323)

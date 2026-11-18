@@ -1,0 +1,73 @@
+KEY: genemola2020fruitb
+(Gene-Mola et al. 2020, Computers and Electronics in Agriculture; "Fruit detection and 3D location using instance segmentation neural networks and structure-from-motion photogrammetry")
+
+CROP / SETTING / SCALE: Fuji apple (Malus domestica), tall spindle orchard, Agramunt, Catalonia (L241-251). One section of 11 consecutive trees in one row, 1455 apples counted (abstract L56-70; Table 1). Hand count in orchard: 1444 apples (L531-533). Training on 3 trees (434 apples), test on 8 trees (1021 apples) (L796-798).
+
+ACQUISITION: Discrete handheld views, not video (L263-264: "The photographs were taken freehand, which allowed an average shooting frequency of 8 photographs per minute."). Canon EOS 60D, 18 MP (5184x3456), EF-S 24 mm lens (38 mm equivalent) (L253-259). 582 photographs, 291 per row side, no artificial light (L261-262). 53 photographic positions per side, 5-6 photographs per vertical sweep, 22 cm between positions, camera about 3 m from the row mid-plane at 1.7 m height, overlap above 30% vertical and 90% horizontal between neighbouring images (L269-278). Both sides of the row were imaged.
+
+OBSERVATION / DETECTOR: Mask R-CNN (Abdulla 2017 implementation, ResNet-101-FPN backbone, COCO pre-trained, one class "apple"; L400-405). Input: each image split into 24 sub-images of 1024x1024 px (6 x 4), overlap 213 px vertical and 192 px horizontal (L410-414). Training set 231 sub-images, validation 57, 1749 apples labelled (Table 1). Trained 18 epochs (L697-699). Horizontal flip augmentation, learning rate 0.001, momentum 0.9, weight decay 0.0001 (L420-421). Instance segmentation (2D) reported: AP 0.8599, F1 0.8573 (text, L697-699); at confidence 0.9 recall 0.8597, precision 0.8569, F1 0.8583 (Table 2). Detection rate in 3D (test): DR 0.991, FDR 0.037 (L796-798). Hardware for Mask R-CNN: GeForce GTX TITAN X (L326-330).
+
+ASSOCIATION METHOD: Structure-from-motion (SfM) photogrammetry, Agisoft Professional Photoscan v1.4, bundle adjustment, run on masked images so only apples are reconstructed (L477-501, L544-548). Camera extrinsics per image; shared intrinsics because one camera (L521-527). Scale from known markers 85 cm apart (L548-552). 2D detections projected onto the 3D point cloud with the SfM camera matrices (L318-322). Clustering of projected points with DBSCAN, minimum distance between connected points 3 cm; nearest group to the camera kept (L591-599). Cross-image unification: a new detection from image 2 with IoU > 0.5 with a previously detected apple is unified; otherwise projected as new (L601-607). The unification rule is the only registration step; no learned matching or tracker is described. False-positive filter: linear SVM on four features per 3D detection: P (number of points), V (volume), density delta = V/P, and Psi = 27 x lambda1n x lambda2n x lambda3n (L609-629). SVM trained on 3 of the 11 trees (434 apples) (L631-635). Counting rule: detections are counted as fruit; D = TP + FP + MD (L818-820).
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- A fruit must be seen in at least two images to be reconstructed by SfM, so single-image false positives are removed automatically (L703-707; L1027-1029).
+- Missed detections matter more than false positives because of the two-view requirement (L703-707).
+- Registration between images is automatic through projection, so double counting is avoided (L218-221; L938-942).
+- Scale is invariant in SfM and fixed by markers (L548-552).
+- Human-counted total (1444) is a valid reference, with the difference from 1455 attributed to human error (L531-539).
+- Data acquisition by hand is acceptable for yield mapping, where processing can be offline (L1005-1009).
+- Yield proxy: correlation between D = TP + FP + MD and tree total T is what matters for yield prediction (L818-820).
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) Same fruit in consecutive frames: handled by 2D IoU > 0.5 unification against previously detected apples in the sequence of images (L601-607). Not a tracker; the paper does not describe consecutive-frame matching separately because the input is discrete photographs.
+(b) Track lost and restarted: not stated.
+(c) Same fruit from both sides or different passes: not unified well. Multi-detections "appeared in apples seen from both sides of the row of trees, when the detection from one side did not overlap sufficiently (they were not unified) with the detection from the other tree side" (L856-862). Reported as a source of error, MDR 0.106 on test set (L802). The paper states the registration "ensures no double counting" (L218-221) and also reports 10.6% multi-detection (L938-942), so this is a stated limitation.
+Also: two different apples merged in one 3D detection were counted as one true positive for recall (L862-868).
+
+CLASS / MATURITY HANDLING: none. Single class "apple"; no ripeness or maturity classes.
+
+COUNT REFERENCE AND METRIC LEVEL: Hand count on tree for the 11-tree section (1455 annotated in point cloud; 1444 counted manually in orchard) (L529-539). Reference for 2D: annotated images (1749 apples in 12 images; test/validation split as in Table 1). 3D metrics: DR = LD/T, recall, precision, FDR, MDR, F1 (L650-684). Yield proxy: linear correlation between D and T across 11 trees (L822-826). Not used: identity metrics (MOTA, IDF1, HOTA), ID switches.
+
+KEY QUANTITATIVE RESULTS:
+- 2D instance segmentation: AP 0.8599; F1 0.8573 (text L697-699); F1 0.8583 at confidence 0.9 (Table 2, L747-750; L961).
+- 2D to 3D change (Discussion L922-926): recall 0.878 to 0.906 (+2.8%); precision 0.762 to 0.857 (+9.5%); F1 0.816 to 0.881 (+6.5%).
+- Test set 3D (Table 3, L804-814): DR 0.991, FDR 0.037, MDR 0.106, recall 0.906, precision 0.857, F1 0.881.
+- Training set 3D (Table 3): DR 0.984, recall 0.905, precision 0.881, FDR 0.038, MDR 0.081, F1 0.893.
+- Yield proxy (L822-826): R^2 = 0.80, RMSE 6.42% of fruits.
+- Conclusions: detection rate 99.1%; 8.5% of apples grouped in multi-apple detections (L1019-1025).
+- Computing time (L883-895; Table 4): SfM 500 min on CPU (50 min on CPU+GPU); Mask R-CNN 35 min on CPU+GPU; projection 260 min.
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Apples clustered into one 3D detection (Fig. 9), which lowers recall while DR stays high (L862-868).
+- Apples seen from both sides of the row not unified, producing multi-detections (L856-862).
+- Mask R-CNN false negatives at image borders, highly occluded or small apples (L773-779); the sub-image overlap is said to prevent border failures affecting the 3D model.
+- Some false positives were annotation errors by humans (L766-770).
+- SfM is computationally intensive; not real-time, unsuitable for harvesting robots (L987-991; L1040-1044).
+- Manual data acquisition is labour and time consuming for larger areas (L1005-1009).
+
+COMPARISONS ON THE SAME DATA: none. Comparisons are with other studies, not on the same data: Gongal et al. (2016) duplicate identification error 21.1% with RGB-D projection; Stein et al. (2016) LiDAR multi-detection not assessed (L943-948). Tao and Zhou (2017) 3D F1 0.921 on 59 apples (L981-983). Bac et al. (2014) and Williams et al. (2019) detection rates below 85% (L985-987). Koirala et al. (2019) F1 range 0.73 to 0.97 for CNN fruit detection (L960-964).
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK:
+- Not real-time; SfM computational cost (L1040-1044).
+- Manual acquisition; future work on a compact system with several cameras on a terrestrial platform (L1011-1015).
+- Future work to measure fruit size and perform yield estimation (L1050-1054).
+- Dataset and annotations made public as the first dataset for 3D photogrammetric fruit detection and location (L1046-1048).
+
+INCONSISTENCIES INSIDE THE PAPER:
+- 2D F1: abstract and Discussion say 0.816 ("increased from an F1-score of 0.816 (2D fruit detection)", abstract; "from 0.816 to 0.881", L924-926). Results text says F1-score 0.8573 (L697-699), and Table 2 at confidence 0.9 gives F1 0.8583 (L961 "F1-score=0.8583").
+- Test 3D precision: Table 3 (test row) and L802 give 0.857; Conclusions L1033-1035 give 0.857 ("produced an increase in the precision metric from 0.762 (2D image detections) to 0.857 (3D detections)"). Discussion L956-958 gives "from 0.762 (2D image detections) to 0.881 (3D detections)". In Table 3, 0.881 is the training-set precision (training row, P column).
+- Precision gain: 9.5% (Discussion L924-926, "9.5% in precision (from 0.762 to 0.857)") versus 11.9% (Discussion L956-958, "an increase of 11.9% in precision, from 0.762 ... to 0.881"). Arithmetic on the reported values (this extraction, not stated by the authors): 0.857 - 0.762 = 0.095 and 0.881 - 0.762 = 0.119, so both figures are absolute point differences, and the 11.9% uses the training-set precision.
+- Multi-detection rate: 10.6% (L942, "results showed a 10.6% multi-detection rate"; Table 3 MDR 0.106) versus 8.5% of apples grouped in multi-apple detections (L1023-1025).
+- 2D operating point: the 2D precision 0.762 and F1 0.816 (abstract; Discussion L924-926 and L956-958) are not the Table 2 values at confidence 0.9 (precision 0.8569, F1 0.8583). The paper does not say which 2D threshold gives 0.762 and 0.816.
+
+QUOTES:
+1. "This methodology was tested on 11 Fuji apple trees containing a total of 1455 apples." (Abstract, L56-70)
+2. "the system performance increased from an F1-score of 0.816 (2D fruit detection) to 0.881 (3D fruit detection and location) with respect to the total amount of fruits." (Abstract, L56-70)
+3. "Detections from img2 that presented an overlap higher than 50% (IoU > 0.5) with previously detected apples were identified and unified (Fig. 6e), and new detections with no overlap with previous detections or with IoU < 0.5 were projected onto the 3D point cloud (Fig. 6f)." (Section 2.2.3, L601-607)
+4. "The minimum distance between connected points was set to 3 cm. If more than one group of connected points were found in a 3D detection, only the nearest (to the camera) was selected." (Section 2.2.3, L591-599)
+5. "This is because an increase of false positives (lower precision) is not as critical as decreasing the recall, since to build the 3D model an object has to be seen in, at least, two different images." (Section 3.1, L703-707)
+6. "Table 3 presents the detection rates achieved in the training (3 trees, 434 apples) and test (8 trees, 1021 apples) datasets. Results show a high detection rate (DR=0.991) with low false detections (FDR=0.037)." (Section 3.2, L796-798)
+7. "This is because when two apples were detected in a single detection, only one true positive is counted to compute the recall metric." (Section 3.2, L866-868)
+8. "When using multi-view imaging, an image registration is necessary to not double-count apples appearing in different images. In this work, this registration was automatically done by projecting 2D detections onto the 3D point cloud; even so, results showed a 10.6% multi-detection rate." (Section 4, Discussion, L938-942)
+9. "Due to the multi-view approach on which SfM is based, results showed a small number of fruit occlusions compared with other fruit detection systems, reporting a detection rate of 99.1%. However, 8.5% of the apples were grouped in detections with more than one apple, with the result that the recall rate decreased to 0.906." (Section 5, Conclusions, L1019-1025)
+10. "The main disadvantage of this methodology is that, due to the computationally-intensive operations of SfM, it cannot process the data in real-time, which is an important limitation for its application in harvesting robots." (Section 5, Conclusions, L1040-1044)

@@ -1,0 +1,107 @@
+KEY: roy2019vision
+Roy P., Kislay A., Plonski P. A., Luby J., Isler V. "Vision-Based Preharvest Yield Mapping for Apple Orchards." Full text read from the extracted text file; reference list skipped.
+
+CROP / SETTING / SCALE:
+Apple (Malus). University of Minnesota Horticultural Research Center, Victoria, Minnesota. The abstract describes "three tree rows consisting of 252 trees" (Abstract). Validation: four datasets with 6, 4, 10 and 6 trees (Sec 5.1, p.11). Training: 76 trees from 2015 (Sec 5.1, p.11). Authors state: "our data collection facility is not a commercial orchard" (Sec 5.1, p.11). The orchard is "not well trimmed" (Sec 5.5, p.18).
+
+ACQUISITION:
+- Video along the row. The camera can be mounted on "a ground robot or an Unmanned Aerial Vehicle (UAV)", or handheld (Introduction, p.2).
+- Validation videos: Samsung Galaxy S4, September 2016. Training video: Garmin VR camera, 2015 (Sec 5.1, p.11).
+- Speed: "5 to 6 frames per second on images of size 1920×1080 and 15 frames per second for images of the size of 640×480" (Sec 3, p.5). The counting step runs at 2-3 fps (Conclusion, p.19).
+- Test frames were annotated every 1-3 seconds at 30 fps, depending on camera movement (Sec 5.2, p.12).
+- Sides of row: Dataset1, Dataset3 and Dataset4 have videos from both sides. Dataset2 side coverage: not verified in this pass. Training data: a single side on a cloudy day (Sec 5.1, p.11).
+- Camera distance and field of view: not stated.
+- Viewing direction: "our camera viewing direction does not change much, and the scene is roughly planar" (Sec 4.2, p.9). The method assumes "the variance in viewing direction is very small" (Sec 2, p.4).
+
+OBSERVATION / DETECTOR:
+- Two-stage pipeline without deep learning. Stage 1 is colour segmentation: RGB is converted to LAB, and SLIC superpixels are formed (Sec 3, p.5-6). Each superpixel's mean LAB colour is modelled by a Gaussian mixture model (GMM) fitted by EM (Bilmes et al. (1998)).
+- Component labelling: the user selects the components that capture apples at initialization. A new frame is matched using KL divergence (Goldberger et al. (2003)). Superpixels inside the 90% confidence bounds are labelled apple (Sec 3, p.7).
+- Two models are compared. The "semi-supervised" model is trained on 2015 data and applied to 2016 data without user input. The "user-supervised" model lets the user choose apples from the first fifty frames of each video (Sec 5.3, p.13-14).
+- Stage 2 is per-frame counting: a GMM over the spatial pixel locations of the binary mask, with each apple a 2D Gaussian with diagonal covariance (Sec 4.1, p.7-8). The number of components is chosen by an MDL-based heuristic with a reward R and a penalty V = c'(3k) log(count of nonzero pixels), c' = 3/2 (Sec 4.1, p.8-9). The authors state that "None of them worked out of the box" for AIC, MDL and similar criteria (Fig. 8, p.8).
+- Detection accuracy as reported: precision, recall and F1 at IoU threshold 0.01 (Table 1, Sec 5.3, p.14). F1 values in Table 1 are .9662/.9658 (D1 Sunny), .9585/.9609 (D1 Shady), .9738/.9711 (D3 Sunny), .9541/.9592 (D3 Shady), .9774/.9775 (D4 Sunny) and .8931/.9710 (D2 Sunny), listed as semi-supervised / user-supervised. Per-frame precision is "always over 87%" (Fig. 16 caption, p.13).
+- Detector version, input size and training-run details: not stated.
+
+ASSOCIATION METHOD:
+- Cross-frame association uses planar homography, not learned matching or SfM. SIFT features (Lowe 1999) give a pairwise homography between frames (Sec 2.3, p.5; Sec 4.2, p.9).
+- Bounding boxes from one frame are propagated to the next by the homography. A propagated box whose overlap with a current box is more than 10% is treated as the same cluster: "If the overlap is more than 10% we assume that these bounding boxes correspond to the same cluster." (Sec 4.2, p.10). Overlapping boxes are merged and propagated onward.
+- Each unique box keeps a count list. A box with no overlap starts a new list with the current count. One overlap adds the current count to that box's list. Two or more overlaps add the counts together (Sec 4.2, p.10).
+- Final count: "We compute the median for each of the boxes and the sum of these are reported as the total count (Fig. 12)." (Sec 4.2, p.10).
+- Two-side merging: Agisoft reconstructions of each side are merged using "semantic constraints (Dong and Isler (2018); Roy et al. (2018))" (Sec 5.5, p.18). Clusters are found in 3D and reprojected. The count of each 3D cluster uses the median of the three frames with the most apple pixels. Intersecting connected components from the two sides are combined with the "inclusion-exclusion principle" (Andreescu and Feng (2004)) (Sec 5.5, p.18-19).
+- Learned matching, appearance embedding and a Kalman or other motion model: not stated.
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- "We utilize multiple views for detection and counting based on the assumption that for every apple there is 'some' view from which it can be detected." (Introduction, p.2).
+- The camera viewing direction changes little and the scene is roughly planar (Sec 4.2, p.9).
+- A cluster can be invisible from one view and visible from another: "A cluster might be completely invisible/partially visible from a particular view and yet clearly visible from other views." (Sec 4.2, p.9).
+- Training generalizes across days: "the method generalizes well for the cases where the training and testing data are from different portions of an orchard taken on different days" (Introduction). The Dataset2 result in Sec 5.3 reports a drop in recall for the semi-supervised model (see FAILURE CONDITIONS).
+- Single-side visible count is not a yield estimate: "the number of visible apples from a single side of a row varies a lot from datasets to datasets (40.85%-79.83%)" (Introduction, p.2).
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) Same fruit in consecutive frames: handled by the 10% box-overlap rule and homography propagation (Sec 4.2, p.10). The authors report that "using homography can lead to 8% overcounting" (Sec 5.4.2, p.16; Fig. 22a, p.19). The comparison basis is the manually annotated apples tracked with 3D camera poses (Sec 5.4.2, p.16).
+(b) Track lost and restarted: a box with no overlap starts a new count list (Sec 4.2, p.10). The median over a box's list limits the effect of a single bad count. No explicit ID-switch analysis is given.
+(c) Same fruit from both sides or different passes: addressed only in Sec 5.5, by 3D reconstruction of both sides, reprojected connected components and inclusion-exclusion. Summed single-side counts reach "101.93% -150%" of harvest (Sec 5.5, Fig. 24b, p.19). Passes beyond the two sides are not discussed: not stated.
+
+CLASS / MATURITY HANDLING:
+none. Apple versus non-apple is the only class. Red and green apples are mixed in Dataset2 (Sec 5.3). Colour variety is handled by per-video user supervision, not by a maturity class. Maturity or ripeness is not an output.
+
+COUNT REFERENCE AND METRIC LEVEL:
+- Detection: manual boxes on test frames. Apples were "clearly visible" or "marginally visible" (Sec 5.2, p.12). Metrics: precision, recall, F1 (Sec 5.3, p.13-14). Identity metrics (MOTA, IDF1, HOTA, ID switches): not stated.
+- Per-frame counting: human-perceived count on 5000 randomly selected components (Sec 5.4.1, p.14-15).
+- Merged counting: manually annotated apples tracked with 3D camera poses (Agisoft), used as reference for overcount (Sec 5.4.2, p.16).
+- Yield: harvested fruit counts (Table 2; Sec 5.5, p.18-19). The harvest protocol: not stated.
+- Validation ground truth: apples were labelled physically with stickers and their diameter was measured after harvest (Sec 5.1, p.11).
+
+KEY QUANTITATIVE RESULTS:
+- Abstract and Introduction: detection F1 of .95-.97 and counting accuracy of 89%-98%. Abstract and Introduction figures are not re-checked against Table 1 in this extract.
+- Per-frame counting overall accuracy: "Consequently, the overall accuracy of our method is high (94.4%)" (Sec 5.4.1, p.14). Single-apple clusters are 75.31% of the data, with precision 96% and recall 99% (Sec 5.4.1, Fig. 21b).
+- Per-frame recall "varies from 62.7% −99%" by cluster size. Precision "stays over 87% for any cluster size (varies from 87.8% −96%)" (Sec 5.4.1, p.14).
+- Per-frame counting accuracy by video: "varied from 94.01% −95.38%" (Fig. 21c, p.15). Undercount 3.62%-5.67%; overcount 0.74%-1.1% (Fig. 21c).
+- Merged count accuracy against human-perceived ground truth: "89% −98%" for the user-supervised model and "48% −98%" for the semi-supervised model (Sec 5.4.2, p.16).
+- Homography overcount: up to 8% (Fig. 22a, p.19).
+- Table 2 (summary of yield results), harvested count / merged both sides / sum of single sides:
+  - Dataset1: 270 / 256 (94.81%) / 348 (128.89%).
+  - Dataset3: 274 / 252 (91.98%) / 411 (150%).
+  - Dataset4: 414 / 392 (94.68%) / 422 (101.93%).
+- Single-side visible apples as a share of harvested yield: "40.85%−79.83%" (Sec 5.5, Fig. 24a, p.19).
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Lighting and colour on Dataset2: "the semi-supervised classification model does not generalize well". Precision is similar but "the recall drops by 20%" (Sec 5.3, p.14).
+- Threshold segmentation "often fails due to the variability of lighting conditions" (Sec 3, p.5).
+- Occlusion: recall falls as cluster size grows (Sec 5.4.1, p.14).
+- Segmentation error propagates to counting: "The drop in accuracy for the semi-supervised model was propagated from the segmentation phase." (Sec 5.4.2, p.16).
+- Homography overcount: up to 8% (Fig. 22a, p.19).
+- Single-side fraction depends on orchard trimming and fruit size. The source states: "This is expected as the orchard from which we collected the data is not well trimmed and the size and shape of the trees varies significantly even within the same row." (Sec 5.5, p.18).
+- Ground apples and fallen apples are removed by a user-selected line propagated by homography (Sec 5.2, p.12). Apples on rows behind the main row are not tagged.
+
+COMPARISONS ON THE SAME DATA:
+- None on the same data. The authors write: "The best known F1-measure .91 was obtained by (Bargoti and Underwood (2016))." They then state that "a direct comparison is not possible" because the datasets differ and the method does not maximize detection for a single image (Sec 5.3, p.14).
+- Per-frame counting baselines of 69% and 91% are cited from Roy and Isler (2017), not from this paper's own table (Sec 4.1, p.7).
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK:
+- Coupling the system more closely with the 3D geometry (Conclusion, p.19).
+- Localizing each apple, its pose and its diameter (Conclusion, p.19).
+- Training labels came from user input for the 2015 dataset, which was used without modification for the 2016 dataset (Sec 5.1, p.11).
+- Verification was on "multiple small datasets" (Conclusion, p.19).
+- Orchard is not commercial and not well trimmed (Sec 5.1, Sec 5.5).
+
+INCONSISTENCIES INSIDE THE PAPER:
+1. Claim strength: the Introduction says the algorithm achieves F1 ".95−.97" and is "outperforming all existing methods" (Introduction, p.2). The Conclusion says the algorithms "outperform most of the existing methods in terms of detection and counting accuracy" (Conclusion, p.19). Sec 5.3 says "a direct comparison is not possible" (p.14).
+2. F1 range: the Introduction gives F1 ".95−.97" for the videos. Table 1 shows D2 (Sunny) semi-supervised F1 .8931, which is outside that range (Table 1, p.14).
+3. Video count: the Introduction says "seven different videos". Table 1 has six rows, and Sec 5.3 says "for six videos" (p.14).
+4. Tree count: the abstract says "three tree rows consisting of 252 trees". Sec 5.1 lists 6+4+10+6 = 26 validation trees and 76 training trees. The paper does not reconcile these.
+5. Dataset3 merged percentage: Table 2 gives 252 (91.98%) for 252 of 274 apples. 252/274 = 91.97% by division; the paper reports 91.98%. (Computed by the reviewer of this extract, not stated in the paper.)
+6. Per-frame accuracy: the overall figure 94.4% (Sec 5.4.1, p.14) and the per-video range "varied from 94.01% −95.38%" (Fig. 21c, p.15) are different measures. The paper does not explain the difference.
+
+QUOTES:
+1. "Our proposed system is platform independent and does not require any specific lighting conditions." (Introduction, contributions list, p.2)
+2. "We utilize multiple views for detection and counting based on the assumption that for every apple there is “some” view from which it can be detected." (Introduction, p.2)
+3. "Our algorithm achieves F1-score of .95−.97 for different color varieties and lighting conditions outperforming all existing methods." (Introduction, p.2)
+4. "Results indicate that these algorithms perform well in practice and outperform most of the existing methods in terms of detection and counting accuracy." (Conclusion, p.19)
+5. "Unlike CHT, our method does not require any parameter tuning and can handle arbitrarily complex clusters." (Related Work, Counting Fruits, p.4)
+6. "Though deep learning methods are accurate, they require a large amount of training data" (Related Work, Deep Learning, p.4)
+7. "If the overlap is more than 10% we assume that these bounding boxes correspond to the same cluster." (Sec 4.2, p.10)
+8. "We compute the median for each of the boxes and the sum of these are reported as the total count (Fig. 12)." (Sec 4.2, p.10)
+9. "An apple was considered clearly visible if more than half of its cross-sectional area and more than half of its perimeter were unoccluded." (Sec 5.2, body text, near the Fig. 15 reference)
+10. "The best known F1-measure .91 was obtained by (Bargoti and Underwood (2016))." (Sec 5.3, p.14)
+11. "Consequently, the overall accuracy of our method is high (94.4%)" (Sec 5.4.1, p.14)
+12. "using homography can lead to 8% overcounting" (Sec 5.4.2, p.16; Fig. 22a)

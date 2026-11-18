@@ -1,0 +1,63 @@
+KEY: saraceni2024agrisort (Saraceni, Motoi, Nardi, Ciarfuglia; AgriSORT; arXiv:2309.13393v2, 28 Sep 2023; IEEE submission version)
+
+CROP / SETTING / SCALE: Table grapes (Tendone trellis system) in a vineyard in southern Lazio, Italy; plants more than three years old, about 3 m apart. Multi-object tracking (MOT) of grape bunches for robotics. Five-sequence-scale dataset: 4 sequences (CloseUp1 300 frames, CloseUp2 300 frames, Overview1 100 frames, Overview2 100 frames), HD 1280x720; 23, 22, 20, 31 tracks; 2583, 3581, 1040, 721 boxes (Table I, Sec. III-A).
+
+ACQUISITION: Video along vineyard rows, handheld Intel RealSense D435i (on a tripod for stabilization in Fig. 3) "simulating the motion of the robot". Recorded at 1280x720, 30 FPS; some sequences downsampled to 10 FPS. Pointed at grape bunches; close-up and overview shots; sudden direction changes, U-shaped paths. Side of row (left/right) and number of passes: not stated. Robot platform (CANOPIES, wrist-mounted D435i, Fig. 1) is described but the test data were not recorded on it. Ground truth: manual annotation in CVAT in MOT format.
+
+OBSERVATION / DETECTOR: YOLOv5s (chosen for speed/accuracy trade-off). Trained on the table-grape dataset of [9, 8]: 242 annotated images and 1469 images labelled by a pseudo-label generation strategy. Input size: not stated. Hardware: NVIDIA GeForce RTX 3070 Ti Laptop GPU. Detection accuracy: not reported; the same detector is shared by all trackers compared (Sec. IV-B). Detector output is the input to the tracker only; no detection-only metric (AP/mAP) is given.
+
+ASSOCIATION METHOD: Tracking-by-detection, no appearance features. Each detection gets a Kalman filter with state [xc, yc, w, h] (Eq. 1-2). Camera motion estimated per frame by Shi-Tomasi features + Lucas-Kanade sparse optical flow, fitted to a 2x3 affine transform (Eq. 3). Prediction moves only the box centre by the affine transform and keeps w, h fixed (Eq. 4). Association by IoU between detections and predicted boxes, solved with the Hungarian algorithm (Sec. III-C). Track IDs are kept by the tracker; no counting line or counting rule is described. Alternatives tested in Table III: ORB matching and homography. Q and R noise: diagonal, sigma_q = 0.05, sigma_r = 0.00625, scaled by dt = 0.033 (30 FPS) or 0.1 (10 FPS) (Eq. 5).
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- Objects of interest are static; the only motion source is the moving camera (Sec. III-B; Conclusion).
+- Linear motion of boxes (the usual KF velocity terms) does not hold on rough terrain with vibration; velocity and size derivatives are therefore left out of the state (Sec. III-B).
+- High frame rate relative to camera speed, so affine transforms approximate camera motion; perspective error is "limited" because robot motion is mostly parallel to the rows (Sec. III-B).
+- Appearance features are not reliable because "all crops are visually similar and static" and no re-ID training data exist (Sec. I).
+- Method is "general and easily extendable to any crop type for which a working detector is available" (Sec. I). Not tested beyond table grapes.
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) same fruit in consecutive frames: addressed by the IoU/KF association; the paper says tracking is needed "to ensure objects are only counted once" (Introduction, citing [16][10]), but no counting experiment is reported.
+(b) track lost and restarted: addressed only indirectly through MT/ML and ID-switch counts (Table II). The paper states that losing tracks makes "the same grape bunch gets counted more than once" (Sec. IV-D). No re-identification after loss.
+(c) same fruit from both sides or different passes: not stated.
+
+CLASS / MATURITY HANDLING: None. Single class (grape bunch). The authors list "extending the tracker to mixed classes of objects" as future work (Conclusion).
+
+COUNT REFERENCE AND METRIC LEVEL: No count reference (no hand count on tree, harvest, or packhouse count). Ground truth is manual box and track annotation in CVAT (MOT format). Metrics computed with TrackEval: MOTA, IDF1, HOTA, FP, FN, IDs (ID switches), MT (mostly tracked), ML (mostly lost) (Sec. IV-C). Detection metrics: not reported.
+
+KEY QUANTITATIVE RESULTS (AgriSORT row of Table II; columns MOTA / IDF1 / HOTA / FP / FN / IDs / MT / ML):
+- CloseUp1: 65.93 / 72.00 / 48.71 / 459 / 872 / 11 / 11 / 4. Best MOTA, IDF1, HOTA, FN, IDs, MT among the five trackers (BoT-SORT, ByteTrack, OC-SORT, SORT, StrongSORT). FP 459 is the highest of the group (BoT-SORT 197, ByteTrack 51, OC-SORT 37, SORT 31, StrongSORT 21).
+- CloseUp2: 66.13 / 73.00 / 56.08 / 655 / 1146 / 10 / 12 / 1. FP 655 is the highest (next: ByteTrack 371, StrongSORT 371).
+- Overview1: 62.21 / 73.72 / 52.74 / 255 / 284 / 12 / 13 / 0. ByteTrack and StrongSORT also have ML 0 or close (StrongSORT ML 0); SORT has the highest MOTA among baselines (62.69) and HOTA 51.20.
+- Overview2: 45.08 / 56.88 / 41.33 / 298 / 316 / 14 / 16 / 4. SORT has higher MOTA (49.515), IDF1 (61.96) and HOTA (44.431) than AgriSORT here (Table II, Sec. IV-D says SORT "remains competitive").
+- Camera-motion variants (Table III, MOTA / HOTA / FPS): LK+Aff (the default) CloseUp1 65.93 / 48.71 / 25.93; CloseUp2 66.13 / 56.08 / 66.09; Overview1 62.21 / 52.74 / 55.99; Overview2 45.08 / 41.33 / 55.43. ORB+Aff is slower by about 34 FPS on average (except CloseUp1, where the gap is 5 FPS) (Sec. IV-D). No single variant dominates.
+- Detection timing: about 10 ms per frame, same for all trackers, excluded from FPS.
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Frequent occlusion by overlapping crops, dense foliage and poles (Sec. III-A).
+- Motion blur from fast motion; potholes or obstructions cause extreme movement (Sec. III-A, Fig. 4).
+- Rapid illumination change, with light directed into the camera "causing unusable frames" (Sec. III-A).
+- Camera vibration on steep terrain (Sec. III-A).
+- SORT loses almost all IDs in CloseUp1 (fast non-linear motion, illumination change) (Fig. 5 caption).
+- Homography is better in CloseUp sequences by HOTA, because of toughest motion including scale change (Sec. IV-D; mixed evidence, see below).
+- Affine transform is "overly restrictive" for real robot motion (Sec. IV-D) (a limitation of the linear-motion case, not a measured failure).
+- AgriSORT has the highest FP count in both CloseUp sequences (459 and 655); the paper does not discuss this.
+
+COMPARISONS ON THE SAME DATA: Yes, on the same four sequences and same detector: BoT-SORT, ByteTrack, OC-SORT, SORT, StrongSORT (Table II). Appearance-based trackers (BoT-SORT, StrongSORT) use pretrained default re-ID models, not fine-tuned (Sec. IV-B). LettuceTrack [18] is discussed but not run. Camera-motion variants compared in Table III.
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK: Improve camera-motion estimation with learning-based methods; extend the tracker to mixed classes including moving objects such as people or tractors (Sec. V). The paper says the affine model is "overly restrictive" (Sec. IV-D). No explicit limitations section.
+
+INCONSISTENCIES INSIDE THE PAPER:
+1. Text vs Table II on ID switches: Sec. IV-D says "OCSORT provides the best results in terms of 'IDswitch'", but in CloseUp1 OC-SORT has IDs 16 and AgriSORT has IDs 11 (Table II). In CloseUp2 OC-SORT has 9 and AgriSORT 10 (OC-SORT lower). So the claim holds for CloseUp2 only.
+2. Text vs Table III on homography: Sec. IV-D says "homography works better in the 'CloseUp' sequences". In CloseUp1, LK+hom has MOTA 64.85 and IDF1 71.53, both lower than LK+Aff (65.93 and 72.00); only HOTA is higher (51.90 vs 48.71). In CloseUp2, LK+hom has MOTA 64.59 (lower than 66.13), IDF1 74.99 (higher), HOTA 57.24 (higher).
+3. Method vs formula (Sec. III-C): Aij is defined as IoU, but then as binary ("Aij = 1 if the ith observation perfectly overlaps ... Aij = 0 otherwise"). The Hungarian assignment is said to "minimize the overall IOU", which is opposite to the usual overlap-maximizing assignment. The definition does not match the stated objective.
+4. Table II, CloseUp2: ByteTrack and StrongSORT rows have identical FP (371), FN (1703), IDs (18), MT (8) and ML (3), but different MOTA, IDF1 and HOTA. Possible copy error; not checked against source data.
+5. Table II vs Sec. IV-D on ML: text says AgriSORT "consistently outperforms all its competitors in terms of MT and ML tracks". In Overview1, AgriSORT ML 0 ties with StrongSORT (ML 0). Not a contradiction, a tie.
+
+QUOTES:
+1. "Most modern trackers rely on the appearance of objects rather than motion for association, which can be ineffective when most targets are static objects with the same appearance, as in the agricultural case." (Abstract; line breaks in the extracted text removed)
+2. "a farm environment, all crops are visually similar and static." (Sec. I, Introduction, p. 1 column 1 of the extracted text)
+3. "Since our method does not use appearance features to identify instances in consecutive frames" (Sec. I, Introduction, contribution paragraph; line breaks removed)
+4. "The dataset for this tracking task is unique, as the objects being tracked remain static while the camera moves relatively to the crops." (Sec. III-A, Data acquisition)
+5. "where it is important to not lose tracks, otherwise the same grape bunch gets counted more than once, leading to a wrong estimate of the workload." (Sec. IV-D, Results and discussions; line breaks removed)
+6. "This happens because SORT excels particularly when the assumption of linear motion holds, as in the Overview2 sequence, because it consists of a slow and regular walk parallel to the vineyard." (Sec. IV-D, Results and discussions)
+7. "We propose a different formulation of the Kalman Filter specific for the agricultural case, where objects of interest are static and the only source of motion is the dynamic camera." (Sec. V, Conclusion; line breaks removed)

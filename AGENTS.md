@@ -52,7 +52,10 @@ agen.
   sama (CSV dan XLSX kembar), dan berkas yang hanya menerangkan berkas lain
   (`ISTILAH`, `PANDUAN`, `SERAH-TERIMA`, `RINGKASAN`, `KEMAJUAN`, dan sejenisnya).
   Bahan kerja itu ditulis ke scratchpad sesi. Yang masuk repo hanya hasil akhir
-  yang dibaca manusia dan data minimum yang dibaca skrip (di `literature/scopus-2026-09/verifikasi/.teknis/`). Pada
+  yang dibaca manusia dan data minimum yang dibaca skrip (di `literature/scopus-2026-09/verifikasi/.teknis/`).
+  Pengecualian: hasil ekstraksi teks lengkap per kajian oleh agen disimpan di
+  `literature/scopus-2026-09/ekstraksi/` agar tidak dibaca ulang tiap sesi
+  (diminta pengguna, 18 November 2026); folder itu tidak diisi bahan lain. Pada
   19 Oktober 2026 folder `verifikasi` harus dibersihkan dari 667 menjadi 24
   berkas karena aturan ini dilanggar.
 - Berkas usang dihapus, bukan dipindah ke folder arsip. Pada 18 November 2026
@@ -164,6 +167,7 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 |---|---|
 | `literature/scopus-2026-09/` | Korpus `main6`: `PROTOKOL.md`, `QUERY.md`, `topik/` (kueri, rekaman, penyaringan, `bukti/`), `pdf/` dan `teks/` |
 | `literature/scopus-2026-09/verifikasi/` | `cek-1-…` sampai `cek-6-…` mengikuti rencana Bu Fatma dan hanya memuat lembar peninjau. Pintu masuk `README.md`; keputusan yang menunggu peninjau `TUGAS.md`; log perubahan `log_perubahan.csv`. `.teknis/` berisi data yang dibaca skrip: log teknis, alasan label C1/C3 dan ajudikasi Cek 1 (sumber alasan log), serta dua CSV dasar angka pemeriksaan ulang tahap judul |
+| `literature/scopus-2026-09/ekstraksi/` | Hasil agen membaca teks lengkap: `perbandingan/` (perbandingan pada data yang sama, dasar `tab:assoc`), `tanaman-platform/`, `bacaan/` (lembar kajian inti); masing-masing dengan `prompt.txt`. Pintu masuk `README.md`. Bahan kerja, bukan sumber naskah |
 | `literature/entries/`, `synthesis.md`, `extracted/` | Korpus lama: 182 ringkasan makalah, sintesis, dan teks terekstrak (dasar Ruang Baca dan naskah 182 sumber) |
 | `literature/withheld/` | 20 entri ditahan; jangan masuk naskah |
 | `literature/references/` | PDF baseline SawitMVC; `revisi-dosen-2026-07-23/` berisi delapan permintaan revisi dosen (`Chat.txt`, catatan primer, jangan dihapus) |

@@ -1,0 +1,58 @@
+KEY: kirk2021robust (strawberry counting with a Thorvald robot; tracking and counting multiple classes in clusters). Author list and year not re-checked against the title page in this pass. Extracted text: lines 1-526 read; references from line 526 skipped.
+
+CROP / SETTING / SCALE: Strawberries in table-top rows; robot platform Thorvald (Univ. of Lincoln, Riseholme, as stated in the paper). Sequences of 500 frames each. Test sequence Amesti-1 (12219 boxes, 233 tracklets). Other sequences: Amesti-2 (4895 boxes, 172 tracklets), Katrina-1 (15850 boxes, 299 tracklets), Katrina-2 (14507 boxes, 326 tracklets). Split: train on Katrina-1, Katrina-2, Amesti-2; test on Amesti-1 (Sec. 3.3).
+
+ACQUISITION: Video from a moving robot along a fruit row. Camera: Intel RealSense D435i, resolution 1920x1080, frame rate 7 Hz. Robot speed printed in the extracted text as 0.1 and 0.2 with unit "ms" (extraction artefact; the unit is not confirmed from the source layout). Recorded in September. Robot odometry gives position along the row; no ego-motion information is assumed beyond that (Sec. 3.1). Side of row and number of passes: not stated in the body read.
+
+OBSERVATION / DETECTOR: Detector name, version and input size: not stated in the body read. Fig. 2 shows input as bounding-box detections plus images. Faster R-CNN, RetinaNet and YOLOv3 appear only in related work as background; the paper does not state that any of them was used here. Detection accuracy: not reported as a detector metric in the body read; the tracking results are the reported measures.
+
+ASSOCIATION METHOD: Tracking-by-detection with a 10-dimensional Kalman filter state (u, v, gamma, h, r and their velocities) under a constant-velocity model. Camera not calibrated; no ego-motion estimate; odometry row position r is used as an input (Sec. 3.1, lines 146-152). Association gate: squared Mahalanobis distance thresholded at chi-square 11.07 for 10 degrees of freedom (Eq. 1-2). Appearance: minimum cosine distance between the new detection embedding and a gallery of the last 100 observations of each track (Eq. 3). Class cost: cosine distance over a gallery of label probabilities (Eq. 4). Combined cost m = lambda d(1) + sum (1 - lambda) d(p), gated by the product of indicators (Eq. 5-6). Assignment with the Hungarian algorithm in a DeepSORT-style matching cascade. Embedding: RNN re-ID feature stem (Fig. 3) producing a 128-dimensional embedding, with two heads (re-ID and maturity/label); 825,152 trainable parameters; 412 microseconds per bounding box on a GTX 3090 at batch size 128 (Sec. 3.2). Counting rule: the total number of unique associated track IDs gives the count (Sec. 3).
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- No ego-motion information is available; odometry gives only the robot position along the fruit row (Sec. 3.1, lines 146-148).
+- Constant-velocity motion model for the Kalman filter (Sec. 3.1).
+- Class appearance is stable enough for a label-probability cost; the paper notes that class appearance can change under occlusion (lines 187-191).
+
+DOUBLE-COUNT SOURCES ADDRESSED: (a) same fruit in consecutive frames: addressed by the Kalman filter with squared Mahalanobis gating and appearance matching. (b) track lost and restarted: addressed by the appearance gallery of the last 100 observations, used to re-identify a track after it is lost. (c) same fruit from both sides or different passes: not stated; the paper does not describe a multi-pass or two-sided rule.
+
+CLASS / MATURITY HANDLING: Three classes annotated: Ripe (more than 85% red coverage), Flower (white petals with no calyx shown), Unripe (small to large immature green calyx visible) (Sec. 3.3). Classes are attached through a label-probability gallery and the class cost (Eq. 4-6); the combined cost fuses identity and class. When frames disagree: the paper describes the class cost gating and the occlusion-induced appearance change (lines 187-191), but a voting or resolution rule for disagreeing frames is not stated in the body read.
+
+COUNT REFERENCE AND METRIC LEVEL: Count reference: hand-labelled tracks on Amesti-1 (233 tracklets); annotation by manual labelling with expert knowledge (Sec. 3.3). Metric: L1 error of the per-frame count summed over 500 frames of Amesti-1 (Eq. 9). The abstract reports MAPE, but the MAPE formula is not given in the body read. Identity metrics (MOTA, IDF1, HOTA, ID switches) and detection metrics (AP, mAP): not stated in the body read.
+
+KEY QUANTITATIVE RESULTS:
+- Abstract: proposed system MAPE 3% (L1 loss = 7); baseline multi-object tracking MAPE 21% (L1 loss = 41) (Abstract, lines 18-21).
+- Table 1, L1 on Amesti-1 with pred/actual in parentheses; columns Agnostic / Flower / Ripe / Unripe. Table layout partly OCR-derived; the row order for Square and some other rows should be checked against the PDF.
+  - Baseline: 41 (192/233); 1 (23/24); 19 (69/50); 59 (100/159)
+  - Square: 57 (176/233); 2 (26/24); 3 (53/50); 62 (97/159)
+  - Sub-Net: 31 (202/233); 1 (25/24); 3 (53/50); 35 (124/159)
+  - Pad-8: 33 (266/233); 14 (38/24); 29 (79/50); 10 (149/159)
+  - Pad-16: 86 (319/233); 13 (37/24); 36 (86/50); 37 (196/159)
+  - Pad-32: 25 (258/233); 3 (27/24); 12 (62/50); 10 (169/159)
+  - Pad-64: 8 (241/233); 3 (27/24); 4 (54/50); 1 (160/159)
+  - Combined: 7 (240/233); 2 (26/24); 2 (52/50); 3 (162/159)
+- Computation time: 412 microseconds per bounding box (Sec. 3.2).
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Occlusion: the paper's stated motivation for tracking and the cause of track loss.
+- Mahalanobis gating fails under small angular or Cartesian camera movement (lines 175-178).
+- Class appearance changes under occlusion, so class labels can flip (lines 187-191).
+- Pad-16 has the highest agnostic L1 (86) among the tested variants in Table 1.
+
+COMPARISONS ON THE SAME DATA: Baseline detect-to-track multi-object tracking (Table 1) on Amesti-1. Other variants (Square, Sub-Net, Pad-8, Pad-16, Pad-32, Pad-64, Combined) are input-handling variants of the proposed system. Related-work counting numbers are quoted as background only: mango SfM mean error 27.8 [11]; oranges and apples per-frame L2 13.7 and 10.5 [4]; sequence counting L1 203 oranges and 322 apples [12]. These are not on the same data.
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK (Conclusion, lines 512-516): more evaluation; more tracking cues; different feature extractors; class embeddings; extension to full 3D through depth data or SfM.
+
+INCONSISTENCIES INSIDE THE PAPER:
+1. Sec. 4 (lines 461-462) states "The results show a strong improvement over the baseline experiment across all experiments." Table 1 shows the Agnostic L1 for Square (57 vs baseline 41), Pad-16 (86 vs 41) and the Unripe L1 for Square (62 vs 59) are worse than the baseline.
+2. The abstract's MAPE 21% for the baseline is not reconciled with the L1 values in the body; the MAPE formula is not given in the body read.
+3. Table counts (for example 233 actual) equal the tracklet count, while Eq. 9 defines a per-frame absolute error summed over frames; the body does not state whether table values are totals or per-frame sums.
+4. Sec. 3.3 spells the sequence "Katerina" where the dataset name is Katrina (typo).
+
+QUOTES:
+1. "Our proposed system achieves a mean average percentage error (MAPE) of 3% (L1 loss=7) improving on the baseline multi-object tracking approach which obtained an MAPE of 21% (L1 loss=41)." (Abstract, lines 18-21)
+2. "Data was annotated manually with expert knowledge into 3 distinct classes: Ripe (> 85% red coverage), Flower (white petals with no calyx shown) and Unripe (small to large immature green calyx visible)." (Sec. 3.3, lines 354-356)
+3. "We share the data to support bench-marking in the community, since we found no other sequences openly available." (Sec. 3.3, lines 376-377)
+4. "The results show a strong improvement over the baseline experiment across all experiments." (Sec. 4, line 462)
+5. "The results demonstrate that our system is capable of reliably tracking and counting multiple classes in clusters from multiple view points." (Conclusion, lines 504-505)
+6. "For a batch size of 128 one forward pass of the network takes 412µs per bounding box on a modern GPU (Nvidia GeForce GTX 3090)" (Sec. 3.2, lines 257-260)
+7. "We assume no ego-motion information is available, but odometry information relating to robot position along a fruit row is provided." (Sec. 3.1, lines 146-148)

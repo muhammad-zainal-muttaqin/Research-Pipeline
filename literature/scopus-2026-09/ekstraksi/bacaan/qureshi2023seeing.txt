@@ -1,0 +1,58 @@
+KEY: qureshi2023seeing
+
+CROP / SETTING / SCALE: Apple (Malus), 2D-trellised canopy (Y-shaped branches tied horizontally, about 3.4 m tall) in a commercial orchard in Hastings, New Zealand, 2022 thinning season. Branch-level scale: 10 branch segments, each about 900 mm long, scanned on both sides. Target: fruitlets (young apples) for thinning decisions per tree.
+
+ACQUISITION: Robot "Archie Snr" straddles the canopy. Two UR5 arms, each carrying a stereo camera pair (Basler acA2440-35uc USB 3.0, 2056x2464 px, Kowa 5 mm lenses, 100 mm baseline), mounted on linear rails on either side of the platform. Hardware trigger at 20 Hz. Cameras placed 300-400 mm from the branch centre. Each arm scans each branch along an arc at 10 equally spaced points; four arc scans spaced 15 mm apart across the branch width, giving 40 viewpoints per side over 900 mm. Data captured by manually driving the platform in front of a branch segment. Working distance 300-600 mm. Daylight operation, variable lighting; straddling chosen to avoid sun glare, wind and inaccessible fruitlets. Frame rate of the stored sequence not stated. Charuco board placed at the bottom of the tree to align the two sides.
+
+OBSERVATION / DETECTOR: Detectron2 instance segmentation (Mask R-CNN, ResNeXt-101 backbone) trained on 638 manually labelled fruitlet instances from 38 images. Input size not stated. Detects fruitlets in the RGB image as instance masks. Reported training mAP: 0.5 (no IoU threshold stated; no test-set detection metric reported). Depth from HSMnet (pre-trained, used without retraining; avgerr 2.07 px on Middlebury benchmark cited by authors), with a truncated-window modification in the weighted depth regression. Depth resolution claimed 1.10 mm per pixel of matching error at 0.4 m (disparity 362 px).
+
+ASSOCIATION METHOD: 3D association by geometry, not tracking. Each fruitlet's masked point cloud is fitted with a sphere: first the centroid (mean of points) and diameter (average point distance) are computed, then RANSAC refines the sphere (outside points not counted as inliers; points below minimum depth excluded). Point clouds are thresholded to a finite number of points before RANSAC. Each new scan point's fruitlet is matched against existing map entries using 3D position and sphere size. A match merges the two: each fruitlet is given a count ID, and when merged the position and size are the average of the two values. The paper states that sphere-size thresholding and other matching methods reduce over-counting. Matching criteria (distance threshold, size tolerance) not stated numerically. Two sides merged by aligning the Charuco-board-referenced coordinates. No learned matching, no SfM/SLAM, no statistical correction. Counting rule: unique count ID per map entry.
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS: 2D-trellised canopy is flat enough that the platform can straddle it. Wind is assumed to be excluded by the straddling design (wind causes registration problems). The 2D and 3D information is assumed to be "associated and matched correctly between frames" (Discussion). Fruitlets that are not visible from one view are assumed to be visible from another. Alignment of the two sides depends on the Charuco-board position estimate. The sphere model is assumed to be adequate for fruitlet shape.
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) Same fruitlet in consecutive frames or scan points: addressed. Depth noise can move a fruitlet's global position far enough to create a duplicate; the mapping merges it with the fruitlet from the next iteration (Section IV-C, lines 297-312).
+(b) Track lost and restarted: not addressed as a tracking problem; there is no track. The paper notes that fruitlets are matched by position and size only.
+(c) Same fruitlet from both sides or different passes: addressed by two-sided scanning and merging of the two single-sided maps. The paper reports that merging increased over-counting: precision fell from 90.7% to 80.3% from "further false positives (non-existent fruitlets) from the other side" (Discussion). Authors state this alignment is the main source of the remaining double-counting and list refining it as future work.
+
+CLASS / MATURITY HANDLING: none. Only one class (fruitlet). Size is estimated per unique fruitlet (sphere diameter), not used as a class label.
+
+COUNT REFERENCE AND METRIC LEVEL: Ground truth is the hand count of fruitlets on each of 10 branch segments, per side (manual counting on the tree), with diameter measured with a vernier caliper at the widest point (Section V). Metrics: accuracy defined as 1 - |calculated - ground truth| / ground truth x 100 (Section VI); precision, recall, F1 from true positive, false positive and false negative counts. Identity metrics (MOTA, IDF1, HOTA, ID switches): not reported. Size: RMSE of diameter on 100 fruitlets, expressed as 5.9% of size.
+
+KEY QUANTITATIVE RESULTS (Table I, Average row, and text):
+- One side only (average over 10 branches): accuracy 73.7%; precision 0.907; recall 0.924; F1 0.913.
+- Both sides merged: accuracy 81.167% (reported as 81.17%); precision 0.803; recall 0.926; F1 0.856.
+- Size estimation: RMSE 5.9% of true diameter, 100 fruitlets (Section VI, Fig. 7).
+- Prior work [2] (not this study, cited in Section I): 84% visible-fruitlet accuracy and 87% precision on a single-sided platform, evaluated against visible fruitlets only.
+- Detector: Mask R-CNN training mAP 0.5 (Section IV-A).
+- Table I rows 1-10 list ground truth per side (A and B). Scan 1: A GT 52, one-side accuracy 55.76, both-sides accuracy 78.84; B GT 35, accuracy 67.3 (one-side). Full per-side calculated counts for B rows are not present in the extracted text (see INCONSISTENCIES).
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- One-sided scans under-count because leaves and branches hide fruitlets (Discussion).
+- Sphere-size thresholding and matching cause under-counting as a side effect (Discussion).
+- Sphere fitting (average point distance + RANSAC) is biased towards larger fruitlets, which are the majority in the data (Section VII, Fig. 7).
+- Depth noise near discontinuities; the truncated window is used to reduce it (Section IV-B).
+- False positives from the second side (non-existent fruitlets) after merging (Discussion).
+- Misalignment of the two sides depends on the Charuco-board position estimate (Discussion).
+- Sun glare degrades detection and stereo matching; wind disrupts registration (Section III).
+
+COMPARISONS ON THE SAME DATA: One-side versus two-side scanning on the same 10 branches (Table I). No comparison with another detector, tracker, or method on this data set.
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK: "Future work will seek to reduce the over-counting through improvements to the alignment of each side's scan and to reduce the bias in size estimation." (Conclusions). Alignment "requires further improvements to refine the alignment of the fruitlets between the single scans" (Discussion). Prior system evaluated only on visible fruitlets (Section I).
+
+INCONSISTENCIES INSIDE THE PAPER:
+- Single-sided precision: Conclusions say "a precision of 92.4% and recall of 92.4%" (lines 638-639). Table I average row gives precision 0.907 and recall 0.924, and Discussion gives precision 90.7% (line 611). Conclusions' 92.4% precision contradicts the table.
+- Single-sided recall: Discussion "high recall of the single-sided scans (92.4%)" (lines 596-597) matches Table I (0.924).
+- Two-sided recall: Conclusions "recall of 92.6%" (line 635) matches Table I (0.926). Two-sided precision 80.3% (Discussion, Conclusions) matches Table I (0.803).
+- Table I, Scan 1 to 10, side B rows: ground truth, accuracy, precision, recall and F1 are present, but the "Calculated" count columns (one-side and both-sides) are absent in the extracted text. Per-side counts therefore cannot be checked from the text.
+- Accuracy of the both-sides row (81.167 in Table I, 81.17% in text) is consistent.
+
+QUOTES:
+1. "The requirement of an overarching platform was justified since two-sided scans had a higher counting accuracy of 81.17 % than one-sided scans at 73.7 %." (Abstract)
+2. "Each fruitlet is assigned a count id (Fig. 3f) and would merge with the fruitlet generated in the next iteration to avoid duplication." (Section IV-C, lines 309-310)
+3. "Presuming the 2D and 3D information is associated and matched correctly between frames, the fruitlets hidden from one view are detected in another." (Section VII Discussion, lines 599-601)
+4. "Sphere size-based thresholding and other fruitlet matching methods were effective in mitigating over-counting, but they also introduced the issue of under-counting." (Section VII Discussion, lines 601-604)
+5. "Merging the single-sided scans improved the accuracy of the total count from 73.7% to 81.17%. However, the precision was reduced from 90.7% to 80.3% due to the introduction of further false positives (non-existent fruitlets) from the other side." (Section VII Discussion, lines 609-612)
+6. "During size estimation, the average point distance approach using RANSAC was observed to be biased towards larger fruitlets, which were in the majority, as seen in Fig. 7." (Section VII Discussion, lines 621-624)
+7. "The arm does four arc scans spaced 15 mm apart along the branch width. A whole branch scan has 40 viewpoints on each side along 900 mm of the branch." (Section IV, lines 224-227)
+8. "The overarching platform is required to see all the fruitlets around the canopy obstructions." (Section VIII Conclusions, lines 636-637)

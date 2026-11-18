@@ -1,0 +1,134 @@
+KEY: zhao2026adapting
+
+Full citation (from title page, line 1-200 of text): Zhao, K., Kang, C., Rogiers, S., Ghannoum, O., Guo, Y. "Adapting SAM3 for 3D fruit counting with cross-view contrastive learning and Hough voting." Computers and Electronics in Agriculture 255 (2026) 112325. Received 24 March 2026; revised 12 Aug 2026; accepted 13 Aug 2026.
+
+CROP / SETTING / SCALE:
+- Crops: apple (open orchard, Fuji-SfM; FruitNeRF real apple scenes), sweet pepper (greenhouse, BUP20), and six crops in FruitNeRF synthetic scenes: apple, plum, lemon, pear, peach, mango (2942 annotated instances in total; Sec 2.1.1, L207-210).
+- Setting: synthetic Blender orchard scenes; real open-field apple orchard; greenhouse sweet pepper.
+- Scale: Fuji-SfM has 1455 annotated apples in one outdoor scene (L218-226). FruitNeRF real has 583 instances in 3 scenes (L211-213). The plum synthetic scene used in efficiency tests has 300 frames (Table 4). Synthetic scenes use 300 frames per category at 1024x1024 (Table 5). Plum scene has 781 GT fruits, and the text says the distance between nearby fruits is smaller than 5 cm (Table 5 text, Sec 3.2.1).
+- Number of plants/trees in real scenes: "Tree01", "Tree02", "Tree03" appear in Table 6 (Sec 3.2.2). The source dataset of Tree03 is not stated in the text read so far.
+
+ACQUISITION: (video along a path / discrete views / 3D scan / revisits / single images; camera, platform, frame rate, distance, sides of row)
+- Synthetic: Blender renders (FruitNeRF synthetic, L207-210). Camera trajectory and frame rate: not stated.
+- FruitNeRF real: Nikon D7100 camera, resolution 6000 x 4000 (L211-213). Platform, distance, frame rate: not stated.
+- Fuji-SfM: Sony Alpha 6000 camera, resolution 4000 x 3000, one outdoor scene with varying lighting (L218-226). Platform, frame rate, distance, sides of row: not stated.
+- BUP20: mobile robot with Intel RealSense D435i RGB-D camera, greenhouse sweet pepper (L227-233). 3D points obtained by back-projecting the depth map (L240-246).
+- All camera parameters converted to COLMAP format (L240-246). Fuji-SfM poses and point clouds estimated with COLMAP (L240-246).
+- The method uses multi-view images of each scene; the capture is discrete views, not a video tracking path (Sec 2.3, the 3DGS optimization is per scene).
+
+OBSERVATION / DETECTOR: (detector or segmenter and its version, input size, what it detects, detection accuracy as reported)
+- Segmenter: SAM3 with text prompts (Sec 2.2.2), adapted with LoRA (Sec 2.2.3). Version beyond "SAM3" not stated.
+- LoRA: injected into the Q, K, V linear projections of the SAM3 image encoder; rank r = 8, alpha = 16, dropout 0.1; 2.95M trainable parameters, "representing 0.1% of all parameters in SAM3" (L369-400). The mask decoder is unchanged (L369-400).
+- Two-phase training: phase 1 updates only LoRA; phase 2 also unfreezes the last and penultimate layers of the image encoder (L405-411).
+- Input image size for SAM3: not stated.
+- What is detected: fruit instances by category name as text prompt (apple, plum, lemon, pear, peach, mango, sweet pepper).
+- Baselines: original SAM3 and Grounded-SAM2 (Ren et al., 2024), with the fruit category names as text prompts (L518-528).
+- 2D segmentation accuracy, synthetic (Table 2, mIoU, average of six categories): Grounded-SAM2 0.561; SAM3 zero-shot 0.606; ours r=2 0.737; r=4 0.810; r=8 (default) 0.856; r=16 0.855; r=32 0.846.
+- 2D segmentation on real data: described qualitatively only in the text read so far (Figs. 4 and 5, L518-534 and L685-688). No real-data 2D mIoU table was found in the read text.
+- Other detector families discussed as unsuitable: YOLO family (Wang et al., 2024), where "generalization ability decreases markedly in unfamiliar environments" unless data are re-collected and fine-tuned; Grounding DINO (S. Liu et al., 2024), criticized for coarse box outputs, overlapping boxes, missed and false detections, and category confusion (L270-342). No quantitative comparison of these detectors is given.
+
+ASSOCIATION METHOD: (tracker, motion model, appearance features, 3D/SfM/SLAM, learned matching, statistical correction or calibration; counting rule e.g. unique ID or counting line; "none" if single images)
+- No tracker and no explicit cross-view matching. The paper states this directly (quote 2 below).
+- 3D Gaussian Splatting (3DGS) with a learnable 16-dimensional feature per Gaussian, shared by all views in which the Gaussian is visible (Sec 2.3.1, L591-647).
+- Cross-view coupling is through this shared feature field: per-view ProtoNCE contrastive loss (Eq. 5), with uncertainty weighting (Eq. 7, tau = 0.5).
+- Codebook F_obj of 256 x 16 object-level codewords; argmax assignment (Eqs. 8-9). Per-view Hungarian matching between SAM3 instances and codewords (Eqs. 10-11). This matching is used only to define the clustering target and "does not perform any temporal or cross-view tracking" (quote 3).
+- Learnable 3D offset per Gaussian: V_i = p_i + delta_p_i, with delta_p_i = delta_max * tanh(o_i), delta_max = 0.05 * d_scene, d_scene = diagonal of bounding box of the COLMAP sparse point cloud (Eq. 13, L852-875).
+- Voting points are the mean of positions of Gaussians visible at each pixel (Eq. 14). A 2D reprojection voting loss pulls them toward the 2D centroid of SAM3 masks (Eq. 15).
+- Cross-view dispersion filter (Eqs. 16-17) removes background primitives. The threshold is fixed on synthetic scenes (quote 4).
+- Clustering: HDBSCAN (McInnes et al., 2017) with min_cluster_size = 30, min_samples = 10, alpha = 1.0 on voting points after Sim(3) alignment to a common metric scale (L978-997).
+- Camera poses: COLMAP sparse reconstruction (SfM). Fuji-SfM COLMAP takes nearly 4 h, about 45% of total pipeline time (L1195-1199).
+- Counting rule: count = number of valid HDBSCAN clusters K (Eq. 18); points labelled -1 (noise) are excluded. 3D center = mean of the voting points in each cluster (L998-1000).
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- Implied (from L1668-1671, not stated as an assumption): the scene is static. Wind, illumination changes, and specular reflection (irrigation water, dew) are listed as limitations.
+- Stated: "fruits are generally located within observable canopy regions, and sufficient spatial information can be obtained from multi-view images" (L1624-1627).
+- Stated: the clustering stage uses no fruit shape or size priors, so it "can therefore be transferred directly from apples in open orchards to sweet peppers in greenhouses" (L1022-1028).
+- Stated: the Gaussian primitives mainly represent visible object surfaces, not the full fruit volume (L847-848). This is the reason for the learnable offset.
+- Stated: "in heavily occluded regions, mask boundaries may be inaccurate", and pseudo-labels "may not always be consistent in different views" (L538-547).
+- Implied: a single 3D Gaussian feature field can integrate per-view supervision without instance matching across views (L648-654).
+- Implied: voting around SAM3 mask centroids gives a point cloud whose clusters match fruit instances, with the voting points not required to be geometric centers (quote 5).
+
+DOUBLE-COUNT SOURCES ADDRESSED: (a) same fruit in consecutive frames, (b) track lost and restarted, (c) same fruit from both sides or different passes - which, and how
+- (a) Consecutive frames: not addressed as a separate case. The paper says it does no temporal tracking (quote 3). Frames are treated as views of one static 3D scene.
+- (b) Track lost and restarted: not applicable, because the paper uses no tracks. Not stated otherwise.
+- (c) Same fruit from different views: handled by the shared 3DGS feature field (contrastive coupling, L648-654), by voting points in 3D (Eqs. 14-15), and by clustering of voting points (Eq. 18). A single fruit should give one HDBSCAN cluster.
+- The authors attribute the failure of FruitNeRF to 2D mask aggregation: "Methods such as FruitNeRF mainly count fruits from rendered 2D masks... which easily leads to under-counting" (L1552-1569). This is the authors' attribution, not an isolated experiment.
+- Gaps reported: "nearby instances may not be fully separated, which can cause small counting errors" (L1594-1597). Fruits closer than 5 cm are noted in plum data (Table 5 text).
+
+CLASS / MATURITY HANDLING: (classes; how a class is attached to a unique fruit; what happens when frames disagree; "none" if no classes)
+- Classes are the crop category names used as SAM3 text prompts (six synthetic fruit types, apple, sweet pepper). Maturity or ripeness classes: not stated.
+- Per-class results are reported only for the six synthetic categories (Tables 2, 3, 5, 7).
+- Class-to-fruit attachment: a codeword in the 256 x 16 codebook is assigned per view by Hungarian matching; the codebook is class-agnostic. This label is the draft's own inference from L762-764 ("does not rely on crop-specific shape or size priors"), not the authors' word.
+- Disagreement between frames: handled by the uncertainty weight omega_u (Eq. 7); pixels with omega_u > tau = 0.5 are excluded from losses (L655-674). Not otherwise stated.
+
+COUNT REFERENCE AND METRIC LEVEL: (hand count on tree / harvest / packhouse / annotated images; count error, identity metrics MOTA/IDF1/HOTA/ID switches, detection metrics)
+- Synthetic: exact GT from Blender annotation with 3D fruit locations (L249-252). Real GT: SAM3 candidates manually corrected in VGG Image Annotator; "the predicted results from SAM3 were used only for initialization purpose but not directly taken as ground truth" (L253-261). Who annotated and how many annotators: not stated.
+- Real GT rule: a fruit occluded in one view but visible in others and consistent with the 3D reconstruction is kept; a fruit that cannot be distinguished is removed from GT for 3D localization evaluation (L262-268).
+- Counting metrics: Precision, Recall, F1, MAE (Eq. 20), with MAE as the mean over categories of absolute error (Sec 2.4.2, L1094-1122).
+- Counts on real data (Table 6): GT for Tree01 179, Tree02 113, Tree03 291, Fuji-SfM 1455. BUP20 GT count: "-" (not given in the table read). Real-data P/R/F1 in table form: not stated.
+- 3D center error (synthetic only): Hungarian matching on Euclidean distance; a match is valid only if distance <= mean fruit diameter of the category (L1114-1122).
+- 3D instance metrics (plum only, Table 8): mIoU, mAcc, mAP (IoU 0.50-0.95, step 0.05), AP@0.25, AP@0.50. The TP threshold is described as "a predefined threshold" with no value stated (L1171-1184).
+- Identity metrics (MOTA, IDF1, HOTA, ID switches): not stated; not used.
+
+KEY QUANTITATIVE RESULTS: (bullets, exact numbers as reported, with table/section)
+- 2D mIoU, synthetic, average of six (Table 2): Grounded-SAM2 0.561; SAM3 zero-shot 0.606; ours r=8 0.856 (2.95M params, 2.9 h training).
+- Uncertainty threshold (Table 3, F1, default tau = 0.5): average F1 0.977 at tau=0.5; 0.967 at tau=0.4; 0.962 at tau=0.6; 0.949 at tau=0.3; 0.924 at tau=0.7. Plum at tau=0.5: 0.967. Mango at tau=0.5: 0.971. Plum at tau=0.7: 0.882.
+- Efficiency, plum scene 300 frames (Table 4): FruitNeRF (Meyer 2024) end-to-end 3.3 h, F1 0.575, GPU 24 GB; FruitNeRF++ (Meyer 2025) end-to-end 8.9 h, F1 0.859; SAM3-Adapt end-to-end 2.4 h, F1 0.971, rendering ~110 FPS, GPU 21 GB. Note: the rendering FPS excludes voting and HDBSCAN (L1216-1218).
+- Plum counting (Table 5, FruitNeRF synthetic): ours 741/781 detected, P 0.995, R 0.949, F1 0.971, absolute error 40, center error 0.21 cm. FruitNeRF 315/781, F1 0.575, absolute error 466, center 0.70 cm.
+- Plum: text says "relative improvement of 68.9%" (L1252 area, Sec 3.2.1). Computed check: (0.971 - 0.575) / 0.575 = 68.9%, consistent with the paper (computed).
+- Mango (Table 5): ours F1 0.977, absolute error 27; FruitNeRF F1 0.816, absolute error 343.
+- Six synthetic categories (Table 5 text): mean absolute count error 13.67 for ours and 139.17 for FruitNeRF. Center error 0.21-0.56 cm (ours) vs 0.34-0.88 cm (FruitNeRF).
+- Real counts (Table 6): Tree01 ours 175, FruitNeRF 173, GT 179. Tree02 ours 112, FruitNeRF 112, GT 113. Tree03 ours 290, FruitNeRF 264, GT 291. Fuji-SfM ours 1450, FruitNeRF 1459, GT 1455. BUP20 ours 107, FruitNeRF 83, GT not given.
+- Real-data error: "SAM3-Adapt gives counting results close to the ground truth, with errors within four fruits" (Sec 3.2.2). Tree01 error is 4 (179-175); this matches the "within four fruits" wording.
+- Ablation (Table 7, plum and mango average F1): baseline A 0.827; +contrastive B 0.890 (+0.063); +clustering C 0.923 (+0.033); full D 0.974. Voting step C to D +0.051 on average (text, L1418-1428); total A to D +0.147. Plum only: step C to D +0.077 (computed from 0.894 to 0.971).
+- 3D instance (Table 8, plum only, Sec 3.2.4): Grounded-SAM2 mIoU 0.382, mAP 0.218, AP@0.50 0.142. FruitNeRF mIoU 0.498, mAP 0.341, AP@0.50 0.273. SAM3-Adapt mIoU 0.741, mAcc 0.823, mAP 0.581, AP@0.25 0.792, AP@0.50 0.562.
+- Ratios vs FruitNeRF (computed by me from Table 8, not stated by the paper): mAP 0.581 / 0.341 = 1.70; AP@0.50 0.562 / 0.273 = 2.06; mIoU 0.741 / 0.498 = 1.49.
+- Convergence (Fig. 11): contrastive-only count "usually becomes stable only after 25,000 iterations" (L1583-1600).
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED: (bullets)
+- Pseudo-label errors: "In heavily occluded regions, mask boundaries may be inaccurate. Fruits with colors close to leaves, branches, or the background may also be missed or wrongly classified" (L538-547).
+- Leaf occlusion, blurred boundaries, inconsistent instance labels across viewpoints (L844-847).
+- Very close or heavily occluded fruits: nearby instances may not be fully separated (L1594-1597).
+- Primitives on leaves and branches have large view-dependent residuals and are removed by the dispersion filter (L966-970). Filter error rate: not quantified.
+- Camera pose estimation: COLMAP is the dominant time cost in larger scenes such as Fuji-SfM (L1224-1226).
+- Static-scene assumption: wind, illumination changes, specular reflection from irrigation or dew (L1668-1671).
+- Scalability: each scene needs a separately optimized 3DGS model (L1665-1667).
+- Visible centroid of elongated sweet peppers "can be further affected by occlusion and viewpoint changes" (L1040-1042).
+- Contrastive loss alone: counts "often higher than the ground truth" during training (L1583-1589).
+
+COMPARISONS ON THE SAME DATA:
+- FruitNeRF synthetic (six categories, Table 5): ours better in all six categories per the text ("our method performs better than FruitNeRF in all six fruit categories"). Lemon: FruitNeRF count 326/326 matches GT exactly, but "about six instances remain incorrectly matched" (L1252-1256); ours 323/326.
+- FruitNeRF++ (Meyer 2025) on the plum scene: F1 0.859 (Table 4 only; not on the six-category Table 5).
+- Grounded-SAM2 and SAM3 as 2D baselines in the same 3DGS pipeline (Fig. 8, L1269-1273): "our method produces counts consistently closer to the ground truth across all scenes" (no table of these counts found).
+- Jiang 2025, J. Li 2025, and Meyer 2025 discussed qualitatively: "Existing methods are often limited by slower inference, weaker domain adaptation, or insufficient handling of fruit counting under dense occlusion" (L1570-1577).
+- FruitNeRF counts source: Table 5 footnote says "from Meyer et al. (2024)"; text says both metrics are "computed from its released predictions under the protocol of Section 2.4.2" (L1243-1246). See INCONSISTENCIES.
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK:
+- 3D localization evaluated only on synthetic FruitNeRF scenes: "Neither Fuji-SfM nor BUP20 provides reliable 3D fruit centers or instance-level labels" (L1655-1659).
+- Scalability to large orchards: "each scene requires a separately optimized 3DGS model, limiting scalability to commercial orchards containing thousands of trees" (L1665-1667).
+- Static-scene assumption (L1668-1671).
+- Future work (L1678-1690): replace COLMAP with DROID-SLAM (Teed and Deng, 2021), MASt3R-SfM (Duisterhof et al., 2025), or GLOMAP (Pan et al., 2024); online 3DGS; evaluation on vine crops; cross-scene pretraining and more generalizable 3DGS.
+- Vine crops (grapes, kiwifruit) are named but untested (L1632-1653).
+
+INCONSISTENCIES INSIDE THE PAPER: (numbers that differ between abstract, text and tables; quote both)
+a. Number of datasets. L204: "we combine three complementary public agricultural datasets". Table 1 caption: "Statistics of the four datasets." Sec 3.1 (L1187-1188): "We conduct experiments on three datasets, with the dataset composition and splitting strategy described in Section 2.1.1." Table 1 lists four rows (FruitNeRF Syn, FruitNeRF Real, Fuji-SfM, BUP20).
+b. Plum F1. Abstract: "F1-scores reaching 0.971 and 0.977 for plum and mango". Table 4 (plum, SAM3-Adapt): 0.971. Table 5 (plum, ours): 0.971. Table 3 (plum at default tau = 0.5): 0.967; best plum value is 0.968 at tau = 0.3. So the 0.971 plum value appears in Tables 4-5 and the abstract, but not in the Table 3 default row.
+c. Uncertainty threshold variation. L689-690: "Within the range of tau in [0.4, 0.6], the performance variation does not exceed 1.5%." Table 3 average F1: 0.967 (tau 0.4), 0.977 (0.5), 0.962 (0.6); spread 0.015 absolute. The text does not say whether 1.5% is absolute or relative.
+d. Hough voting contribution. Table 7 caption: "Hough voting contributes the most under dense occlusion." Text (L1418-1428): contrastive +0.063, voting +0.051, clustering +0.033 (average F1). By the text's own average figures, voting is second, not first. Plum-only step C to D is +0.077, which is the largest plum step.
+e. Counting error claim. Sec 4.2 (L1598-1599): "The final counting error is within 2%." Table 6 Tree01: ours 175, GT 179, which is an error of about 2.2% (computed: 4/179). The claim may refer to a different quantity or to the voting-loss run in Fig. 11; the paper does not say which.
+f. Source of FruitNeRF counts. Table 5 footnote: "from Meyer et al. (2024)". Text (L1243-1246): "for FruitNeRF, both are computed from its released predictions under the protocol of Section 2.4.2." The footnote and text describe different origins of the numbers.
+g. Symbols lost in extraction: Eq. 15 pixel-set symbol is missing ("where denotes the set of pixels used for voting supervision", L915). The numeric value of sigma_thr (dispersion threshold) is not stated.
+h. Abstract wording. Abstract: "more than a twofold boost for 3D instance segmentation over FruitNeRF". Table 8 (plum): mAP 0.581 vs 0.341 (computed ratio 1.70); AP@0.50 0.562 vs 0.273 (computed 2.06); mIoU 0.741 vs 0.498 (computed 1.49). The twofold claim holds only for AP@0.50, not for mAP or mIoU.
+i. Hardware: Sec 2.2.4 "NVIDIA A6000 GPU"; Sec 2.4.1 "single NVIDIA A6000 GPU with 48 GB memory"; Table 4 "RTX A6000" with 21-24 GB GPU memory. Consistent GPU model; memory values are not in conflict but are not explained.
+Not stated in the paper: annotator count and agreement; Tree03 source dataset; lambda_dssim value; sigma_thr value; confidence threshold for background pruning; the predefined IoU threshold for a TP; real-dataset 2D mIoU values; BUP20 GT count; real-dataset P/R/F1/MAE in table form (Table 6 gives counts only); SAM3 input size.
+
+QUOTES: (verbatim, with location)
+1. "The contrastive objective above is constructed independently within each view. The instance partition, the prototypes, and the positive and negative pairs are all defined by the SAM3 masks of the current image, so no instance correspondence between different views is required." (Sec 2.3.1, L628-631)
+2. "This parameter sharing couples the supervision provided by different views within a single 3D feature field and thereby promotes cross-view feature consistency, without any explicit cross-view instance matching." (Sec 2.3.1, L648-650)
+3. "Since the instance IDs predicted by SAM3 are local to each image and are not globally consistent across views, directly aligning these IDs in multi-view images may introduce label drift during training." (Sec 2.3.2, L784-788)
+4. "The threshold is determined once on the synthetic scenes and is then held fixed for all datasets, including the real orchard and greenhouse scenes; it is not re-tuned per scene or per crop, so the final fruit count does not depend on any scene-specific threshold adjustment." (Sec 2.3.3, L970-975)
+5. "It should be noted that voting is not utilized in our work to predict a rigid geometric center of each fruit instance." (Sec 2.3.3, L1034-1037)
+6. "only the SAM3 text prompt is changed, while the LoRA weights and the clustering configuration are kept unchanged, and the 3D Gaussian representation is still optimized for every new scene." (Sec 4.3, L1616-1620)
+7. "The final counting error is within 2%." (Sec 4.2, L1598-1599)
+8. "Moreover, each scene requires a separately optimized 3DGS model, limiting scalability to commercial orchards containing thousands of trees." (Sec 4.4, L1665-1667)
+9. "In heavily occluded regions, mask boundaries may be inaccurate." (Sec 2.2.4, L538-547)

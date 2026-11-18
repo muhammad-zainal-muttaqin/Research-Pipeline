@@ -1,0 +1,60 @@
+KEY: liu2019monocular (Liu, Chen, Liu, Shivakumar, Das, Taylor, Underwood, Kumar. "Monocular Camera Based Fruit Counting and Mapping with Semantic Data Association." IEEE Robotics and Automation Letters, 2019 preprint, arXiv 1811.01417v4; text read from the preprint, reference list not used.)
+
+CROP / SETTING / SCALE: Mango (Mangifera indica), one orchard (Simpson Farms, Bundaberg, Queensland, Australia), data collected 6 December 2017. 10 tree rows; 18 trees hand-counted as ground truth, chosen across all 10 rows for variability in NDVI (lines 761-767). Trees vary in size and occlusion. Average about 175 mangoes per tree (Fig. 8 text, lines 788-792). Motivation: cheap sensing for growers, with a sensor suite cost of about USD 25,000 stated for the cashew context (lines 103-104). Scale of the test: one 1000-frame video used for the SfM timing (lines 856-858).
+
+ACQUISITION: Unmanned ground vehicle (UGV) built by ACFR, University of Sydney, driven along tree rows. Camera: Prosilica GT3300C with Kowa LM8CX lens, RGB images 3296 x 2472 px (8.14 MP) at 5 Hz (lines 758-760). Platform also carried a 3D LiDAR and GPS/INS with RTK correction, used only by the benchmark system [3] (lines 756-758). Sides of row: the robot captured all rows facing east first, then turned and captured all rows facing west (lines 612-614). Camera-to-tree distance and driving speed: not stated in the text read.
+
+OBSERVATION / DETECTOR: Faster R-CNN (RPN plus classifier, cited as [15]) detects fruit; a probability threshold and non-maximum suppression follow (lines 225-232). Trunks are segmented with an FCN with dense CRF refinement (lines 626-631), and tree-trunk corners are tracked with Shi-Tomasi features (lines 623-627). Annotation: 1500 crops of 500 x 500 px sampled from 15,000 orchard images; only fruits on first-row trees were labelled (lines 235-241). Detector backbone, detector input size, and any detection accuracy (AP, precision, recall) are not stated in the text read.
+
+ASSOCIATION METHOD: 2D tracking follows the authors' earlier work [4]: KLT optical flow, a Kalman filter, and Hungarian assignment (lines 289-291, 287-299). The Kalman filter treats the KLT prediction and the Faster R-CNN detection as two measurements; state is 4x1 (u, v, u-dot, v-dot), a new filter starts for each new fruit, and initial velocity is the average optical flow of the previous image (lines 321-336, 353-366). Cost for tracking: C(i,j,k) = ||ĉ - c||^2 / (a_i + a_j) + (1 - overlap) (lines 317-320). Process noise Q = diag(6, 2, 3, 1) and measurement noise R = diag(3, 1, 1, 0.5, 1, 0.5) (lines 417-418). Semantic SfM: fruit centres in tracks are used as feature matches in COLMAP (lines 443-484, cited [21][22]); outputs 3D fruit landmarks and camera poses; bundle adjustment on reprojection error (lines 485-531). Double-tracking step: each 3D landmark is projected back to every image and matched by a second Hungarian assignment to Faster R-CNN detections; unmatched landmarks are discarded; an age cost favours older landmarks (lines 551-598). Trunk landmarks give depth thresholds for two-side double counts (lines 619-690). Counting rule: a fruit counts once per unique landmark that survives the trunk-depth test and the association refinement (lines 281-287, 691-721).
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS: Fruits are clustered and SfM gives only relative scale, so an absolute landmark-distance threshold cannot separate coincident landmarks (lines 546-550). The image motion of a fruit is due to camera motion, so the average optical flow initializes fruit velocity (lines 364-366). Trunk centroid is a usable depth reference: only fruits closer to the camera than the trunk are counted (lines 282-284, 619-622). Two-side double counts would disappear if the two views of a row were consecutive, since SfM would merge them into one point cloud (lines 844-849). Fruit features give a reliable SfM on this dataset (lines 856-864). Trunk centroid as depth threshold is "too aggressive" if applied to landmarks that are only occluded from one side (lines 838-843), which the authors accept as a cause of undercounting.
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) same fruit in consecutive frames: yes. Handled by 2D tracking (KLT, Kalman, Hungarian), and the track history forms the feature set M_F (lines 432-442).
+(b) track lost and restarted: yes. Handled by projecting 3D landmarks back to all images and re-associating them with Faster R-CNN detections; the older landmark is kept (lines 540-598). Authors call this "double tracking" (lines 540-543).
+(c) same fruit from both sides or different passes: yes, by a trunk-depth rule. The fruit is counted only when it is on the closer side of the trunk; trunk depth is the third quartile of trunk-corner depths, and a landmark is kept when votes from frames before the trunk outnumber votes from frames after it, looking back 15 frames (lines 604-690). The two sides are not merged by SfM because the dataset records all east-facing rows before the west-facing ones (lines 612-618).
+
+CLASS / MATURITY HANDLING: none. Only one class (mango fruit) plus tree trunk as a landmark class; no maturity or ripeness classification is described.
+
+COUNT REFERENCE AND METRIC LEVEL: Hand count of 18 trees in the field, including fully occluded fruit (lines 763-764, 789-791). Per-tree count error (mean and standard deviation) in Table/Fig. 10 (lines 798-808). Linear regression of estimated count against field count (Fig. 9, lines 816-823). No identity metrics (MOTA, IDF1, HOTA, ID switches) are reported. No detection metrics (AP, precision, recall) are reported in the text read.
+
+KEY QUANTITATIVE RESULTS:
+- Linear regression vs field count, Fig. 9 (lines 816-823): monocular "Mono Final" slope 0.86, R2 0.78; sensor suite (Suite Multi-view) slope 0.97, R2 0.88.
+- Per-tree count error (Table within Fig. 10, lines 798-808): "Per-tree Count Error Mean" 27.8 and 19.8; "Per-tree Count Error Std Dev" 29.6 and 22.9. Column assignment is NOT clear from the extracted text (see INCONSISTENCIES).
+- SfM runtime (lines 856-858): about 5 minutes for semantic SfM on a 1000-frame video, 4-core i7 CPU, versus 10 hours for traditional SIFT-based SfM; 2D fruit tracking time excluded.
+- Fig. 7 (lines 781-787): the dual-view benchmark "severely under-count"; Fig. 7 and Fig. 8 show improvement across the three pipeline stages (lines 772-773).
+- Fig. 8 (lines 788-792): average 175 mangoes per tree; both algorithms "slightly under-counting".
+- Fig. 9 text (lines 793-797): "R2 are within a relative high precision range" (no number in that sentence).
+- Pipeline stage counts (lines 774-777): 2D tracking and landmark counts both tend to over-count; landmark counts are closer to ground truth in most cases.
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Highly occluded fruit: most high-count trees fall below the unit diagonal, which the authors attribute to occlusion (lines 824-827, 834-835).
+- Fruit visible from only one side and lying behind the trunk centroid: counted as wrong-side and rejected, which causes undercounting (lines 838-843).
+- Suite Dual-view benchmark undercounts because it uses only two opposite images per tree (lines 809-815).
+- Performance gap vs sensor suite comes from trees with higher counts (lines 829-832).
+- Fruit clustering and relative SfM scale make distance-threshold merging of landmarks fail (lines 546-550).
+- Monocular-only system underperforms the sensor-suite system on trees with high fruit counts (lines 881-885).
+
+COMPARISONS ON THE SAME DATA: Same mango dataset and same Faster R-CNN detector for both systems (lines 833-835). Benchmark A: "Suite Multi-view", sensor-suite system [3] with monocular camera, 3D LiDAR and GPS/INS/RTK, using all images. Benchmark B: "Suite Dual-view", same sensor suite using two opposite images per tree (east and west). Monocular results are compared with both (lines 737-753). Authors state the monocular system has "comparable performance with the Suite Multi-view algorithm" (lines 750-753). No comparison with other monocular fruit-counting papers is reported in the text read.
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK: Monocular system underperforms the sensor suite on trees with high fruit counts; "Further experimentation is required to understand this tradeoff curve, and identify more possible failure cases to be improved upon" (lines 881-887). Future work: a more sophisticated algorithm to integrate the two point clouds from opposite views, rather than rejecting landmarks on the wrong side (lines 844-847). Collecting the two views of a row consecutively would remove the need for the trunk-centroid rule (lines 844-849). Evaluation covers one orchard, one date, and 18 trees (lines 761-767; not an explicit limitation statement in the text read).
+
+INCONSISTENCIES INSIDE THE PAPER:
+- Table (lines 798-808) column order is not determinable from the extracted text. In header order ("Measure", "Mono Final", "Suite Multi-view") the values would read Mono Final 27.8 / 29.6 and Suite Multi-view 19.8 / 22.9. The text then says the final output is "much more robust and accurate" (lines 809-811), which would contradict the header-order reading. Caption (lines 807-808) names both systems but gives no order. Check against the PDF before quoting any per-tree numbers.
+- Lines 809-811 ("much more robust and accurate") follow the sentence about double-track rejection; the sentence does not state the comparison baseline (mono final vs mono before rejection, or vs Suite Multi-view). Read in context it appears to compare with the pre-rejection stage, not the benchmark.
+- Notation: the age cost is written with w_0 in the formula and "wO" in the prose (lines 592-598; formula line 595, prose line 597). Possibly a typo; not resolved.
+- Contribution claim in the Introduction (lines 121-129) and conclusion (lines 887-891) say "comparable performance"; per-tree mean and slope/R2 values differ between systems (slope 0.86 vs 0.97; R2 0.78 vs 0.88), and the text does not give a significance test.
+
+QUOTES:
+1. "We consider three kinds of situations which lead to double counts." (Section IV, lines 265-266)
+2. "By constructing this set MF , we account for the ﬁrst kind of double counts which results from detecting the same fruit in consecutive frames." (Section IV-A, lines 440-442)
+3. "Unfortunately, this approach does not work well, as the fruits are clustered and the SfM reconstruction only provides relative scale." (Section IV, double-tracking subsection, lines 546-548)
+4. "Instead, we approach this problem by re-associating every 3D landmark with 2D Faster R-CNN detections, and discarding landmarks which are not associated to any detection." (Section IV, double-tracking subsection, lines 551-553)
+5. "In using the average optical ﬂow to initialize the fruit’s velocity, we exploit the fact that the perceived movement of the fruit in 2D is due to the motion of the camera." (Section IV-A, lines 364-366)
+6. "We approach this double counting problem by using the tree centroid, which is represented by the tree trunk, to separate the tree into two parts. We then only count the fruits that lie on the closer side of the tree trunk." (Section IV, third double-count subsection, lines 619-622)
+7. "Although our monocular camera system only utilizes the 2D images, the results show that it has comparable performance with the Suite Multi-view algorithm." (Section V, lines 750-753)
+8. "We have identiﬁed modes (trees with high fruit counts) where the monocular camera only algorithm underperforms the sensor suite algorithm." (Section VI, lines 881-884)
+9. "On a 4 core i7 CPU for a 1000 frame video, our SfM reconstruction takes about 5 minutes compared to 10 hours for traditional SIFT based SfM." (Section V, lines 856-858)
+
+Note on quotes: copied from the extracted text at the locations given, with the extraction's ligatures ("ﬁ", "ﬂ") and curly apostrophe kept. Quote 4 has "dis-carding" in the source as a line-break hyphen; it is written here as "discarding".

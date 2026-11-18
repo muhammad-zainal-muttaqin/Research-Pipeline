@@ -1,0 +1,100 @@
+KEY: hani2020comparative (Hani, Roy, Isler, "A Comparative Study of Fruit Detection and Counting Methods for Yield Mapping in Apple Orchards", arXiv:1810.09499v2, 6 Mar 2019; University of Minnesota)
+
+CROP / SETTING / SCALE: Apple (Malus) orchards, two sides of a tree row, yield mapping for a whole orchard. Test data: four orchard sections, seven videos from 2016 (Sec 5.1). Trees: D1 6 trees, D2 10 trees, D3 6 trees, D4 4 trees (Table 1). Fruit counts harvested per tree: 270, 274, 414 (Table 4). Scale of whole orchard: not stated.
+
+ACQUISITION: Monocular camera moved along the tree row (Sec 3: "monocular camera (cell phone, GoPro), front and back of row"). Test videos: Samsung Galaxy S4 cell phone, horizontal orientation, single side of row (Sec 5). Semi-supervised GMM dataset: Garmin VR camera (Sec 5). Images 1920x1080. Apples occupy 5-50 px from a typical imaging distance of 2-3 m (Sec 4.2). Detection test frames taken every 1-3 s from 30 fps video (Sec 5.3). Travel speed 2 m/s (Sec 6.2.1). Video from both sides used for yield estimation on datasets 1, 2, 3 (Sec 5.1). Training: 10 datasets from 6 tree rows, 103 annotated images at 1920x1080, all from 2015 (Sec 5.1).
+
+OBSERVATION / DETECTOR:
+- U-Net (pixel-wise segmentation), VGG-16 backbone, ImageNet initialisation, input 224x224 patches, stride 50, about 59,000 patches; batch 32 per GPU; up to 50 epochs; AdaDelta; no augmentation; weighted cross-entropy with inverse-frequency weights; fruit:background ratio about 1:20 (Sec 6.1, Sec 4.2).
+- Faster R-CNN (reimplementation): ResNet50 backbone (Bargoti and Underwood used VGG), FPN, focal loss, anchors 32 to 512, 100 epochs x 10,000 iterations, larger image side resized to 500 px (Sec 4.2). Initially trained on the open Bargoti and Underwood dataset (1120 images, 308x202); then own data, 500x500 patches, stride 50, about 9,000 patches (Sec 6.1).
+- GMM semi-supervised: SLIC superpixels in LAB space, about 25 colour classes, KL-divergence classification; trained on a separate dataset (Sec 4.2.2, Sec 6.1).
+- GMM user-supervised: 10-20 clicks per video, first five frames of each test video (Sec 4.2.2, Sec 6.1). Authors state it "does not work if the fruits are not distinguishable by color from the background" (Sec 4.2.2).
+- Detection accuracy: precision, recall, F1 per frame, true/false positives and negatives, averaged per dataset, IoU threshold range [0.01, 0.99] (Sec 6.2). Figures 11-13 (recall, precision, F1 by IoU) carry no numeric values in the text.
+- Counting, classifier: ResNet50 patch classifier, 7 classes (0-6 apples per RoI), input 224x224, batch 64, aspect-preserving zero padding, ImageNet init, Adam lr 0.001, flipping only, up to 50 epochs (Sec 4.3.1). Earlier paper used AlexNet. Inception-ResNet v2 gave "only ... 0.4% better on average" (Sec 4.3.1).
+- Counting, GMM: Roy and Isler 2017b GMM-EM, needs the number of apples a priori (Sec 4.3.2).
+- Counting accuracy metric definition: not stated in the sections read (only "accuracy" in Table 3 and Sec 6.3).
+
+ASSOCIATION METHOD:
+- Multi-view tracking by 3D reconstruction (Sec 4.4): semi-dense SfM reconstruction; point cloud projected back to frames; 3D connected components; reprojected outlines form an RoI series per cluster.
+- Per-cluster count: median count of the three frames with the highest amount of segmented apple pixels (Sec 4.4).
+- Ground plane and depth masks remove background fruit (Sec 4.4; Sec 6.6.2 "we use segmentation mask, obtained from 3D reconstruction, to remove apples on the ground or background trees").
+- Two sides merged by intersection of 3D connected components using the inclusion-exclusion principle (Sec 4.4).
+- Tracking details deferred to Roy et al. 2018a and Dong et al. 2018; authors "only mention the individual steps in this paper for completeness" (Sec 4.4).
+- Tracking in the wider literature (Sec 2.4): Wang et al. 2013 stereo block matching with GPS; Stein et al. 2016 GPS with epipolar geometry; Hung et al. 2015 avoided tracking by sampling so images do not overlap; Roy and Isler 2016 affine tracking with incremental SfM.
+- No learned matching or appearance re-identification is described for this paper.
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- Fruit is visible from both sides of the row and merging both sides is needed: "Since fruits are often visible from both sides of a tree row, it is essential to merge the fruit counts from both sides." (Sec 2.4).
+- Camera motion can be estimated for tracking (Sec 3: "Tracking uses estimated camera motion").
+- Seven count classes (0-6) are sufficient, but the authors later state this was too broad: "This finding suggests that our assumption of seven classes (fruit counts from 0 to 6) was too broad." (Sec 6.3).
+- Apples inside foliage are not counted: "The camera does not see any apples that are contained within the tree foliage, and therefore does not count them." (Sec 6.5).
+- Appearance of a cluster changes between views: "In cluttered environments, such as apple orchards, the appearance of any given cluster changes drastically between views." (Sec 4.4).
+- Test data for counting are adapted: "The test datasets were adapted, so the results are not directly comparable." (Sec 6.3).
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) Same fruit in consecutive frames: handled by counting per 3D cluster over reprojected RoI series and taking the median of three frames (Sec 4.4). Consecutive-frame matching is not described in detail in this paper.
+(b) Track lost and restarted: not stated.
+(c) Same fruit from both sides or different passes: addressed by intersecting the 3D connected components of the two sides and applying inclusion-exclusion (Sec 4.4). The single-side baseline is reported to over-count: summed single-side counts give GMM 101.93% to 150% and ResNet50 103.86% to 147.81% of harvest (Sec 6.5, Table 4). Earlier version in Sec 2.1: the prior system of Bargoti and Underwood 2017b sampled images about 0.5 m apart "to minimize image overlap and avoid double counting" (Sec 2.1).
+
+CLASS / MATURITY HANDLING: Detection is fruit vs background (binary; implied by weighted cross-entropy and the fruit:background ratio). Counting uses 7 classes (0-6 apples per RoI, maximum cluster 6 apples) (Sec 4.3.1). Maturity or colour class per fruit: not stated as a target; colour is discussed only as a detection cue (red, yellow/orange, green, mixed in Table 1, Table 2). Disagreement between frames: resolved by the median of the three frames with most segmented apple pixels (Sec 4.4). Label agreement: at least two labelers, third inspection for discrepancies (Sec 5.3); in Sec 6.6.2 "we annotate the datasets by multiple people and choose the median annotation."
+
+COUNT REFERENCE AND METRIC LEVEL:
+- Detection ground truth: manual bounding boxes on frames sampled every 1-3 s (Sec 5.3).
+- Counting ground truth: single count per patch in [0, 6], labelled by at least two labelers (Sec 5.3). Counting test sets: 2874 patches in total (Table 2).
+- Yield ground truth: harvested fruit count per tree (Table 4), plus per-tree yield and fruit diameters after harvest (Sec 5.1).
+- Metrics: detection precision, recall, F1 (per frame, IoU 0.01-0.99); counting accuracy (percentage); yield estimate as percentage of harvested count (Table 4). No MOTA, IDF1, HOTA or ID-switch metrics reported.
+
+KEY QUANTITATIVE RESULTS:
+- Precision: user-supervised GMM above 90% on all datasets (Sec 6.2). Semi-supervised GMM above 90% on five of seven; D2 (back) and D4 (front) below 80% at all IoU levels (Sec 6.2). U-Net "does not achieve precision values over 80% in four out of seven datasets" (Sec 6.2).
+- Frame timing: GMM 5 frames per second; U-Net under 100 ms per 224x224 patch; full 1920x1080 frame under 4.5 s; Faster R-CNN 120 ms per patch, up to 46 s per 1920x1080 frame (Sec 6.2.1). Hardware: laptop with one NVIDIA Quadro M1000 GPU.
+- Counting, Table 3 (accuracy, Test Sets 1-4): GMM 88.0%, 81.8%, 77.2%, 76.1%; ResNet50 88.8%, 92.68%, 95.1%, 88.5% (Sec 6.3).
+- Deep network rejects false positives in 87% of cases; GMM in 43% (Sec 6.3). U-Net and GMM rejections about 85% (Sec 6.6.1).
+- Overall counting accuracy of the deep method: 90.5% (Sec 6.6.2).
+- Yield, Table 4 (harvest D1 270, D2 274, D3 414): merged GMM 256 (94.81%), 252 (91.98%), 392 (94.68%); merged ResNet50 258 (95.56%), 268 (97.81%), 405 (97.83%). Single-side sums: GMM 348 (128.89%), 411 (150%), 422 (101.93%); ResNet50 347 (128.52%), 405 (147.81%), 430 (103.86%) (Sec 6.5).
+- Conclusion: yield accuracy 95.56% to 97.83% for classical segmentation plus CNN counting (Conclusion).
+- Test dataset sizes: 1 video set per dataset D1 to D4 with 270, 274, 414, 568 apples (Table 1).
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Colour insufficient: GMM recall drops in D1 (front) and D4 (front); GMM precision drop attributed to "dissimilarity in color space and lighting condition between the train and test sets" (Sec 6.2).
+- Yellowing leaves: U-Net and FRCNN detect yellowing leaves as apples; training data from 2015 had no yellowing leaves; "this problem can likely be solved by adding more varied training data" (Sec 6.2, Sec 6.4). Most false positives on Dataset 1, "Acquired in late September, the leaves in this dataset were turning yellow." (Sec 6.6.1).
+- FRCNN: lowest precision on all datasets even at low IoU; more false positives; merges instances; NMS threshold set manually (Sec 6.2).
+- NMS: "While NMS is the de-facto standard algorithm to reject overlapping instances, it hurts performance when we try to detect individual instances of grouped objects." (Sec 6.6.1).
+- GMM false negatives: cluster count chosen a priori by the user; "In some cases, the fruits might not be distinguishable by color at all." (Sec 6.6.1).
+- Counting errors: occur "often ... when fruits are partially visible" and one mislabel (Sec 6.6.2).
+- Single-side summation over-counts by up to 50% on some datasets (Sec 6.5).
+- Fruits inside foliage are not seen by the camera (Sec 6.5).
+- Three methods share causes: "grouping of object instances, false positive detections and false negatives" (Sec 6.6.1).
+
+COMPARISONS ON THE SAME DATA:
+- Three detectors (U-Net, Faster R-CNN, GMM semi- and user-supervised) on seven detection datasets, same frames (Sec 6.2, Figs 11-13). Text states the user-supervised GMM "outperforms the other three approaches on 6 out of seven datasets and is competitive on the last one" (Sec 6.2).
+- Counting: GMM (Roy and Isler 2017b) vs ResNet50 classifier on four counting test sets (Table 3, Sec 6.3). Authors note the test sets were adapted from earlier work, so not directly comparable to Hani et al. 2018.
+- Yield: GMM and ResNet50 counting, single-side and merged, on datasets 1-3 (Table 4).
+- Prior system Roy et al. 2018a: 91.98% to 94.81% yield accuracy (Introduction; Sec 6.5).
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK:
+- "However, the training set needs to cover a broader range of apple varieties, growth stages, and lighting conditions." (Conclusion).
+- "It has hard to offer conclusive insights towards the generalizability of the U-Net and FRCNN approaches based on the limited amount of data" (Conclusion, verbatim as printed).
+- Synthetic data is discussed as a possible route, with the caveat "models naively trained on synthetic data do not typically generalize to real data" (Conclusion).
+- Tiling approach infeasible for large orchards at 30 fps and 2 m/s (Sec 6.2.1).
+- Counting: "the majority of clusters returned by the detection method are in the range [0, 4]" so seven classes too broad (Sec 6.3).
+
+INCONSISTENCIES INSIDE THE PAPER:
+1. Which GMM is best: Sec 6.2 says "The user-supervised GMM method outperforms the other three approaches on 6 out of seven datasets"; the Conclusion says "the semi-supervised clustering technique, based on Gaussian Mixture Model (GMM) achieved the highest F1-score in six out of seven datasets." The two claims name different GMM variants.
+2. Counting differences, Table 3 vs text (Sec 6.3): Table 3 gives ResNet50 92.68% (TS2) and 95.1% (TS3) against GMM 81.8% and 77.2%, so gaps are 10.9 and 17.9 points. Text says "On the test set 3 the CNN outperforms the GMM by almost 11%. On test sets 2 and 4 it outperforms the GMM by 18% and 12% respectively." The TS2 and TS3 gaps appear swapped relative to Table 3. Gap for TS1 (0.8 points) is not mentioned in the text.
+3. Rejection of false positives: Sec 6.3 gives "87%" for the deep network and "43%" for the GMM. Sec 6.6.1 gives "∼85%" for the U-Net and GMM rejections. The figures differ and the 85% is not attributed to the 87% or 43% measurements.
+4. Detector quality: Sec 6.2 says U-Net "achieves consistently high recall for all the datasets" and FRCNN has "high recall (especially in the low IoU region)"; Sec 6.5 says "the U-Net and FRCNN approach did not show satisfactory detection rates"; Conclusion says U-Net "performed reasonably well".
+5. Overall counting accuracy: Sec 6.6.2 gives "90.5% accuracy". The mean of the Table 3 ResNet50 values (88.8, 92.68, 95.1, 88.5) is 91.27. This mean is computed here from the table and is not stated by the authors; the basis of 90.5% is not given.
+6. Dataset naming: Sec 6.2 refers to "Dataset4 (front)" as the case where U-Net outperforms the user-supervised GMM on recall, while Sec 6.2 also says user-supervised GMM outperforms on 6 of 7 datasets; these are not contradictory but the seven detection datasets and four counting or yield datasets use overlapping names (D1 to D4) with different sizes (Table 1 vs Table 2), which the text does not state explicitly.
+7. Figure 14 caption says "all four test datasets" while Sec 6.3 says "four datasets"; consistent, noted only for completeness.
+
+QUOTES:
+1. Abstract: "This is the ﬁrst work comparing multiple fruit detection and counting methods head-to-head on the same datasets." (Abstract, page not recorded)
+2. "Workers have to sample a few trees at random and extrapolate the counts to the whole orchard, which can lead to erroneous yield estimates." (Introduction, p. 1)
+3. "They sampled images manually at roughly 0.5m to minimize image overlap and avoid double counting." (Sec 2.1, Related Work, describing Bargoti and Underwood 2017b)
+4. "This is the ﬁrst approach that can merge fruit counts from both sides of a tree row without relying on any specialized hardware." (Sec 3, Problem statement)
+5. "We chose the three frames with the highest amount of segmented apple pixels and report the median count of these three frames as the fruit count for the cluster." (Sec 4.4, Multi-view tracking)
+6. "The ResNet50 network outperforms the GMM model on all of the test sets. On the test set 3 the CNN outperforms the GMM by almost 11%. On test sets 2 and 4 it outperforms the GMM by 18% and 12% respectively." (Sec 6.3, lines 1276-1277)
+7. "We conduct these experiments solely with the GMM detection method since the U-Net and FRCNN approach did not show satisfactory detection rates." (Sec 6.5, lines 1594-1595)
+8. "The camera does not see any apples that are contained within the tree foliage, and therefore does not count them." (Sec 6.5, lines 1633-1639)
+9. "Additionally, we see that the deep network can reject false positive detections in 87% of the cases. Comparably, the GMM does so in only 43% of the cases." (Sec 6.3, lines 1282-1286)
+10. "The deep learning based counting approach, although achieving overall 90.5% accuracy, contains a few failure cases." (Sec 6.6.2, lines 1730-1743)

@@ -1,0 +1,113 @@
+KEY: rapadorincon2023development
+
+CROP / SETTING / SCALE:
+- Crop: tomato (Solanum lycopersicum), variety Santiana for the tracking experiment (seven plants, 100 viewpoints). Detection training data used varieties Merlice and Campari (lines 305-314, 327-347).
+- Setting: Dutch tomato greenhouse, cart on rails between rows, plant stem about 60 cm in front of robot origin, semi-cylindrical path of radius 30 cm (lines 297-300, 327-347).
+- Scale: 700 images from 100 viewpoints of seven plants, ten height levels with ten viewpoints each (lines 327-347). Detection dataset 1180 RGB images (123 from Afonso et al. 2019, 1057 new) (lines 305-314).
+- Object classes: single class, tomato. Object representation in the world model is a 3D sphere (lines 362-370, 453-466).
+- Paper's own framing: generic 3D world model for robots, demonstrated on tomato counting and tracking.
+
+ACQUISITION:
+- Eye-in-hand 6DoF ABB IRB1200 robot with Intel Realsense L515 LiDAR camera; ROS (lines 292-293, 297-300).
+- Robot moves along a semi-cylindrical path around the plant; 100 viewpoints per plant; each frame gives a 960x540 colour image and a structured point cloud (lines 327-347).
+- Viewpoints are not optimised for information gain; several images contain no valuable information (lines 1352-1360).
+- Frame rate, exact camera distance from plant beyond the stated stem distance and radius, and sides of row: not stated.
+
+OBSERVATION / DETECTOR:
+- Detector: Mask RCNN (He et al., 2017). Text spells it "Mask ReCNN" once; the correct name is Mask RCNN (lines 374-391). Version, backbone and input size: not stated.
+- Detections are pixel masks and bounding boxes; the point cloud is masked by the mask (lines 305-314, 395-398).
+- Confidence thresholds 0.5 and 0.7; IoU threshold 0.5 for precision/recall (lines 606-615, 777-787).
+- Detection accuracy, Table 1 (lines 777-787): confidence 0.5 gives precision 0.86 and recall 0.71; confidence 0.7 gives precision 0.88 and recall 0.66.
+- Per-height-step detection results in Fig. 7 (lines 848-849); precision roughly flat across heights, recall drops steadily from the lowest to the highest step (lines 792-800).
+- 3D: sphere fitting on partial point cloud, radius limits 1 cm to 5 cm. Outside the limits the sphere is marked faulty but its centre is still set to the mean of the 3D points (lines 413-417). Detections with zero valid points are removed (lines 395-398).
+- Spatial filter (Eq. 1, lines 430-438) keeps only detections in a box around the robot-frame stem position, because Mask RCNN also detects tomatoes of other rows or plants (lines 424-426). Exact bounds unclear: minus signs were lost in extraction; only 0.2 m, 0.8 m and 0.4 m are legible.
+- Detection position stored as a Gaussian (mean and covariance) in the robot frame (lines 362-370).
+
+ASSOCIATION METHOD:
+- 3D multi-object tracking with a world model. Each track holds a position Gaussian, class and bounding box (lines 453-466).
+- Prediction: Kalman filter on position; class and bounding box held constant between updates (lines 579-586).
+- Data association: Hungarian algorithm with cost equal to squared Mahalanobis distance (Eq. 2); gate 7.82, the chi-square 0.95 quantile with 3 degrees of freedom (lines 508-543).
+- Track lifecycle: new tracks are tentative for ninit frames. "tentative tracks are removed from it if they are not associated with any detection"; confirmed tracks are never removed from the world model (lines 568-576).
+- Counting: per-frame count compared with the per-frame ground truth (lines 629-651). The exact rule for which tracks are counted is not re-checked in the notes. Track class and box updated from detections (lines 556-561).
+- Tracking uses only the estimated Cartesian centre of each object (lines 1343-1351).
+- No learned appearance features or learned matching.
+- Update rate: "The proposed method can update the world model with a rate up to 10 Hz." Most time is spent in pre-processing and detection (lines 826-829).
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- Tomatoes are approximately spherical; sphere fit gives each object's centre (lines 413-417, 362-370).
+- Detections outside a box around the robot-frame stem are from the target plant (lines 424-426).
+- Multi-view observation of the same tomato: "if a fruit is not detected in one viewpoint (frame), it can still be detected in one of the following viewpoints" (lines 833-843).
+- The Mahalanobis gate assumes Gaussian position uncertainty with 3 degrees of freedom (lines 508-543).
+- Counting metric assumed to be a useful summary of performance; the authors later argue it is not sufficient (lines 1323-1342, 1376-1379).
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) Same fruit in consecutive frames: addressed by the world model. Detections in later frames are associated to existing tracks by the Hungarian algorithm and Mahalanobis gate (lines 508-543).
+(b) Track lost and restarted: addressed partly. Confirmed tracks are never removed, so a lost track is not restarted in the world model (lines 568-576). Id switches are discussed but not quantified separately (lines 1323-1342). The authors state the world model cannot remove existing objects (lines 1270-1286).
+(c) Same fruit from both sides or different passes: not stated. The path is one semi-cylinder around the plant (lines 327-347). Cross-side handling not described.
+
+CLASS / MATURITY HANDLING:
+- Single class (tomato). No maturity classes. Class is stored per track and updated from each detection (lines 453-466, 556-561).
+- Disagreement between frames: not stated.
+
+COUNT REFERENCE AND METRIC LEVEL:
+- Ground truth: per-frame count of tomatoes labelled with bounding box and tracking ID in every frame, 700 images (lines 327-347).
+- Counting metrics: MPE (Eq. 3) and MAPE (Eq. 4) per frame; MPE reflects under or over counting (lines 629-651).
+- Identity metric: HOTA (Luiten et al., 2021) with alpha from 0.05 to 0.95, reporting LocA, DetA and AssA (lines 723-731). HOTA computed in image space because the evaluation tool required it: "Even though the data association is done fully in 3D, image space had to be used to evaluate HOTA" (lines 732-735).
+- Detection metrics: precision and recall at IoU 0.5 (lines 606-615).
+- MOTA, IDF1 and explicit ID-switch counts: not stated.
+- Evaluation per height step, cumulative over frames from first to last viewpoint of that step; results averaged over seven plants (lines 743-765).
+
+KEY QUANTITATIVE RESULTS:
+- Abstract: "with the total count of tomatoes estimated with a maximum error of 5.08% and the tomatoes tracked with an accuracy up to 71.47%."
+- Table 3 (lines 936-1184), best rows by metric. Columns: MAPE, MPE, HOTA, DetA, AssA; conf 0.5 then conf 0.7.
+  - step 1, ninit 0: MAPE 17.48 / 13.50; HOTA 71.47 / 69.49 (conf 0.5 / 0.7).
+  - step 2, ninit 1: MAPE 9.82 / 5.06 (conf 0.5 / 0.7); lowest MAPE in Table 3 is 5.06 at conf 0.7.
+  - step 10* (whole sequence), ninit 0: MAPE 27.50 / 18.01; HOTA 54.32 / 53.53; MPE 23.86 / 13.88.
+  - step 10* (whole sequence), ninit 1: MAPE 14.72 / 12.21; HOTA 52.51 / 51.25.
+  - step 2, ninit 0, conf 0.5: MAPE 11.35, HOTA 66.68 (cited in text, lines 1192-1200).
+  - step 5, ninit 1, conf 0.7: MAPE 11.36, HOTA 56.09 (cited in text, lines 1192-1200).
+- Table 1 (lines 777-787): conf 0.5 precision 0.86, recall 0.71; conf 0.7 precision 0.88, recall 0.66.
+- Table 2 (lines 850-912), RD and NSF: step 1 RD 2.37 / NSF 50.32 at conf 0.5, RD 1.22 / NSF 48.02 at conf 0.7; step 7 RD 4.83 at conf 0.5 (maximum RD); step 10 RD 4.58 / NSF 55.08 at conf 0.5, RD 3.16 / NSF 51.95 at conf 0.7.
+- Text: "RD approximately doubles from the lowest steps to the highest steps, while NSF increases approximately between 3 and 5 percentage points" (lines 803-810).
+- Conclusions: "a tracking accuracy of up to 71.47% using the HOTA metric and a low counting error of 5.06%" (lines 1363-1385).
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Higher camera (upper plant) steps: more leaves, clutter, occlusions, and smaller, less ripe tomatoes (lines 812-816; 1237-1251).
+- Rejected detections without 3D points (RD) and non-valid sphere fits (NSF), caused by "a partial tomato point cloud with few points or with high noise levels" (lines 1252-1258).
+- Configurations with higher recall and lower precision lower counting performance while increasing tracking performance (lines 1270-1286).
+- Inability to remove existing objects from the world model; removing false positive tracks under occlusion is hard (lines 1270-1286).
+- Occluding fruit has very similar 2D coordinates to the occluded fruit, so 2D tracking fails (lines 1315-1322).
+- Association errors at higher viewpoints, attributed to tracking only the Cartesian centre (lines 1343-1351).
+- Under- and over-counts across plants can cancel out, giving MPE near zero (lines 1187-1191).
+- Lighting "was not assessed in this study"; LiDAR "may be influenced by environmental light" (lines 1259-1269).
+- Authors' own view of the count: it "inadequately describes its performance" (lines 1376-1379).
+
+COMPARISONS ON THE SAME DATA:
+- None on the same data. Prior work is compared by reported MAPE values, not re-run (lines 1287-1294): Kirk et al. (2021), strawberries, MAPE 3%; Halstead et al. (2021), bell peppers, MAPE 4.1%; Smitt et al. (2021), tomato and sweet pepper, MAPE 21%.
+- Authors note different conditions: Kirk had "fewer occlusions and a larger distance between individual fruits" (lines 1287-1294).
+- Earlier 2D trackers (Halstead 2018; Smitt 2021; Kirk 2021) used fixed camera arrays moving parallel to the row, which are "less capable of overcoming certain occlusions" (lines 1308-1314).
+- Detector comparison to YOLACT++ (Bolya et al., 2022) only as a faster option suggested (lines 826-829).
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK:
+- Simple tracking uses only the Cartesian centre; suggested appearance features (Wojke et al., 2017) and end-to-end tracking (Meinhardt et al., 2022) (lines 1343-1351; 1386-1398).
+- Single-DoF viewpoint path without information gain; next best view (NBV) planning (Burusa et al., 2022; Wu et al., 2019) to be combined with the world model, which "will be evaluated" (lines 1352-1360; 1386-1398).
+- Detection training data should include the tomato variety used in counting and tracking (lines 1237-1251).
+- Use of MOT metrics (Luiten et al., 2021) to evaluate tracking properly (lines 1323-1342).
+- Faster detector, since pre-processing and detection take about 95% of time (lines 826-829).
+
+INCONSISTENCIES INSIDE THE PAPER:
+1. Table 1 versus Section 3.1 text, confidence 0.5. Table 1 gives precision 0.86 and recall 0.71. The text (lines 772-775) says "a recall of 0.86 and a precision of 0.71 when a confidence threshold of 0.5 is used", which swaps the two. The text also says "recall decreases to 0.66 while the precision increases to 0.88", which matches Table 1 at 0.7.
+2. Abstract versus body and conclusion on MAPE. Abstract (p.1): "maximum error of 5.08%". Discussion (line 1290): "a MAPE of 5.06%". Conclusions (line 1373): "a low counting error of 5.06%". Table 3's lowest MAPE is 5.06 (step 2, ninit 1, conf 0.7); 5.08 was not found in any Table 3 row read.
+3. RD in Discussion versus Table 2. Discussion (line 1254): "Up to 4.58% of the detections were rejected due to a lack of 3D points". Table 2 gives 4.83 for step 7 at conf 0.5, which is the maximum RD in the table; 4.58 is step 10 at conf 0.5.
+4. Abstract "accuracy up to 71.47%" is labelled as accuracy but is the HOTA value (Table 3, step 1, ninit 0, conf 0.5). The paper's own conclusion calls it "a tracking accuracy of up to 71.47% using the HOTA metric".
+5. Section 3.2 text on the ninit and confidence trade-off (lines 915-922) says a configuration with confidence 0.5 and ninit 1 "allows for more false positives", whereas the explanation of ninit = 1 (lines 844-847, 1208-1220) says a higher ninit removes false positives. The text does not reconcile these.
+
+QUOTES:
+1. "with the total count of tomatoes estimated with a maximum error of 5.08% and the tomatoes tracked with an accuracy up to 71.47%." (Abstract)
+2. "tentative tracks are removed from it if they are not associated with any detection" (Section 2, track lifecycle, lines 568-576)
+3. "The proposed method can update the world model with a rate up to 10 Hz. However, more of the 95% of the time on average is spent in the pre-processing and detection step." (Section 3.2, lines 826-829)
+4. "This suggests that a larger precision is more important than larger recall values." (Section 3.1, lines 833-836)
+5. "Even though the data association is done fully in 3D, image space had to be used to evaluate HOTA" (Section 2 metrics, lines 732-735)
+6. "The predicted sphere of up to 55.08% of the detected tomatoes was non-valid, mainly due to a partial tomato point cloud with few points or with high noise levels." (Section 4, lines 1252-1258)
+7. "The HOTA and AssA values at the higher viewpoints of the plant suggest that there are still numerous association errors. This is probably due to the simplicity of the tracking algorithm, where only the estimated Cartesian centre of the objects is used for tracking." (Section 4, lines 1343-1351)
+8. "the MOT algorithm's total count of objects at the end of a sequence inadequately describes its performance and fails to detect certain types of errors, particularly false positives and false negatives that offset one another." (Conclusions, lines 1376-1379)

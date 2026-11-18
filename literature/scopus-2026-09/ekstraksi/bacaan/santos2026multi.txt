@@ -1,0 +1,68 @@
+KEY: santos2026multi
+
+CROP / SETTING / SCALE: Sweet orange (Citrus sinensis, varieties Pera, Valencia, Natal, Hamlin) in commercial orchards, MOrangeT dataset. Seven image sequences (V01, V04, V05, V06, V08, V11, V12), 268–544 frames each, 87–192 visible oranges per sequence, 879 visible oranges in total (Table 1). Single author (Santos, Embrapa). Proof-of-concept paper, RITA 33(2), 2026.
+
+ACQUISITION: Video recorded by a moving camera along the tree; operators were instructed to first contour the lower part of the tree, then the middle canopy, then the top, pointing the camera at the tallest part (Section 3). Gimbal: yes for V06, V08, V11, V12; no for V01, V04, V05 (Table 1). Frame rate, camera model, distance from tree and sides of the row: not stated. Camera intrinsics and distortion estimated with COLMAP automatic calibration (Section 2.9).
+
+OBSERVATION / DETECTOR: YOLOv5 trained on OranDet (3,065 images, 9,769 annotated fruits; Section 2.2). Input size: not stated. Bounding-box detections with NMS IoU threshold 0.2; boxes with confidence below 0.7 discarded. The paper states the threshold favours fewer false positives over fewer misses. Detector accuracy (AP, precision, recall) on the test data: not stated; no detection metrics are reported.
+
+ASSOCIATION METHOD: Point tracking, not box tracking. CoTracker 2 (transformer, cross-track/cross-time attention, factorized attention) is run on windows of T = 8 frames. Query points are the centroids of detected boxes (Section 2.3, 2.5). A point track keeps a box if the tracked point lies inside it; tracks with 4 or more visible observations (T/2 = 4, i.e. at least 50% of the window) become bounding-box tracks. Uncovered boxes in later frames add new query points. Landmarks (3-D fruit centres in homogeneous coordinates) are created by initialisation: essential matrix from a 5-point algorithm with RANSAC on one frame pair, then triangulation (OpenCV 4.9) (Section 2.5.1). Later poses come from PnP resection on landmarks (Section 2.6). Landmarks and poses are refined by reprojection factors in a factor graph optimised with Levenberg–Marquardt (GTSAM 4.3) (Section 2.7). Landmarks that are visible in fewer than V_min = 8 frames are removed (Section 2.8). Counting rule: the paper does not state it in words. Table 2 reports "Pred" as the "predicted number of fruits". By inference from Section 2.8 this is the number of landmarks left after the V_min filter, not checked against code (the paper gives no code link for this).
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- Detections are "accurate yet imperfect"; missed fruits "can be observed from another viewpoint" (Section 1, 2.2).
+- Fruits serve as landmarks for visual odometry, so the scene must be static; a fruit is a rigid landmark (Section 1, 4.2).
+- The box centre approximates the fruit centre, though oranges are not perfectly spherical (Section 3).
+- Enough fruits are visible for successful visual odometry; sequences lacking them were excluded (Section 2.1).
+- Initial CoTracker windows are long enough (T = 8) to establish consistent correspondences; a landmark needs tracking across one complete window (Section 2.8).
+- Cross-track attention is assumed to help when fruits cluster (e.g. apples), which is not tested here (Section 4.3).
+- Wind moves fruits and foliage and breaks the static-landmark assumption; this is not tested (Section 4.2).
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) Same fruit in consecutive frames: addressed by CoTracker tracks within a window and by the landmark track set across windows (Section 2.4–2.6).
+(b) Track lost and restarted: addressed by adding "novel, uncovered bounding boxes" as new query points, and by projecting existing landmarks onto the first frame of each new window so that known fruits seed the prompt (Section 2.6, Figure 1). The paper gives no separate test of restarted tracks. It names the error source instead: sequence V06 has "numerous false positives caused by errors on re-identification of reappearing fruits" (Section 3).
+(c) Same fruit from both sides or different passes: not stated as a separate case. The 3-D landmark representation and projection into each frame (Section 2.4) is the mechanism that links reappearing fruits; the paper does not describe any side-specific or pass-specific handling.
+
+CLASS / MATURITY HANDLING: none. The paper tracks one class (orange).
+
+COUNT REFERENCE AND METRIC LEVEL: Reference is the per-sequence count of visible oranges in the MOrangeT MOT16-format annotations (Table 1 "Oranges", Table 2 "Truth"; Section 2.1). Metrics: HOTA (Section 3, Table 2), counting FP, FN, predicted and true counts, and percentage error. The paper states that HOTA "consolidate[s] various errors into a single score" (Section 3). MOTA, IDF1 and identity-switch counts: not reported. Detection metrics: not reported. Count reference is annotated video frames, not harvest or packhouse counts.
+
+KEY QUANTITATIVE RESULTS (Table 2, Section 3, Section 4.3):
+- Combined ("All"): HOTA 47.457; predicted 978; truth 879; FP 109; FN 10; error 11.26%.
+- Per sequence HOTA: V01 30.183; V04 66.485; V05 50.228; V06 40.583; V08 42.477; V11 45.431; V12 45.810.
+- Per sequence counting error: V01 6.36%; V04 -4.76%; V05 -3.38%; V06 43.44%; V08 18.75%; V11 12.64%; V12 1.74%.
+- Processing time for 3-D tracking and localisation: about 3 minutes (V05) to 15 minutes (V08); COLMAP-based SfM on the shortest sequences was "a standard run could require half an hour" (Section 3). No hardware variance reported beyond "Intel Xeon CPU at 3.40GHz with RTX 4000 GPU".
+- Previous work [2] (Santos et al., 2024): HOTA 56.039 and median counting error 6.95% (Section 4.3). Not checked against the cited paper.
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Re-identification of reappearing fruits in V06, "possibly caused by poor pose estimation" (Section 3). V06 error is 43.44%, the largest of the seven sequences.
+- Tracking metrics penalise short sub-tracks even when counting is correct (Section 3).
+- Wind: not tested; expected to break the static-landmark assumption (Section 4.2).
+- Rain and dust: not tested; the paper proposes augmentation (Section 4.2).
+- Point-based tracking "poorly represent[s] the full appearance and geometry of three-dimensional objects like fruits" (Section 4.3).
+- Landmark initialisation needs a full CoTracker window; short or heavily occluded fruit tracks are dropped (Section 2.8).
+
+COMPARISONS ON THE SAME DATA: Compared with the authors' previous work [2] on MOrangeT (HOTA 56.039, median counting error 6.95%); the current method "does not demonstrate superior performance" (Section 4.3). The comparison is with a cited paper, and the subset used there is not described in this paper. Compared with COLMAP-based SfM [7, 2] on processing time only (Section 3). No accuracy comparison with COLMAP, SORT, ByteTrack, or other trackers on the same data is reported.
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK:
+- Validate across more datasets, including different fruit species and orchard training systems (Section 5).
+- Extend landmarks to grid points and semantic classes (trunks, soil) (Section 4.1).
+- Test under wind and rain (Section 4.2).
+- Test whether cross-track/cross-time attention helps for clustered fruit such as apples (Section 4.3).
+- Build a multi-head network for joint detection and tracking (Section 4.3).
+
+INCONSISTENCIES INSIDE THE PAPER:
+- Abstract: "The proposed approach demonstrates promising results in fruit counting, tracking, and scene reconstruction". Section 4.3: "the current method does not demonstrate superior performance" and "cross-tracking offered no clear advantage over the tracking independence assumption". Section 5 calls the work "a successful proof-of-concept". The abstract's "promising results" is not qualified by the comparison with [2].
+- Section 2.1 says: "an issue that will be discussed in Section 4". Section 4 (4.1–4.3) does not discuss the exclusion of sequences that lack enough fruits for visual odometry.
+- Section 2.1 says the subset of seven was chosen "eliminating sequences where there are not enough fruits for successful visual odometry", but the paper gives no count or criterion for "not enough".
+- Table 2 "All" HOTA (47.457) is not described as a mean or a pooled value. The per-sequence values range from 30.183 to 66.485.
+- Section 3 gives the total counting error as 11% and Table 2 gives 11.26%. Consistent, not a discrepancy.
+
+QUOTES:
+1. "In this study, bounding boxes with a confidence score below 0.7 were discarded." (Section 2.2, p.82)
+2. "This threshold was chosen to match the CoTracker window size T = 8, as reliable landmark initialization requires tracking across at least one complete window to establish consistent spatial correspondences." (Section 2.8, p.85; the source line breaks hyphenate "cho-sen" and "correspon-dences", which are rejoined here)
+3. "The combined counting error in the seven sequences was 11%, largely influenced by a significant error in sequence V06 (43%)." (Section 3, Table 2, p.85)
+4. "This sequence exhibits numerous false positives caused by errors on re-identification of reappearing fruits, possibly caused by poor pose estimation." (Section 3, p.85)
+5. "Wind presents a more fundamental challenge. Since the SfM framework inherently assumes static landmarks, wind-induced movement of fruits and foliage could significantly compromise tracking accuracy." (Section 4.2, p.86)
+6. "For this dataset at least, cross-tracking offered no clear advantage over the tracking independence assumption." (Section 4.3, p.87)
+7. "This work presents a successful proof-of-concept integrating MOT and SfM for sweet orange tracking and 3-D localization." (Section 5, p.87)
+8. "The proposed approach demonstrates promising results in fruit counting, tracking, and scene reconstruction, highlighting its potential in agricultural automation." (Abstract, p.81)

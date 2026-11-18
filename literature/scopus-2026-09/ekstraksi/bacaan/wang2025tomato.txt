@@ -1,0 +1,133 @@
+KEY: wang2025tomato
+Wang et al. 2025, "Tomato Yield Estimation Using an Improved Lightweight YOLO11n Network and an Optimized Region Tracking-Counting Method", Agriculture 2025, 15, 1353, doi 10.3390/agriculture15131353. Full text read to line 1000 of 1060; lines 916-1060 are the reference list (skipped as instructed).
+
+CROP / SETTING / SCALE:
+- Crop: tomato (fruit classes by ripeness: ripe, semi-ripe, unripe).
+- Setting: greenhouse of Jiangsu Xingang Agricultural Technology Co., Ltd (Zhenjiang), data collected June 2023 (l.160-162).
+- Scale: 808 raw images (242 test; 566 for training and validation); 21 video segments of 30 s each (8 train, 4 validation, 9 test) (l.169-172, l.203-205).
+- Row layout, plant spacing, and total field area: not stated.
+
+ACQUISITION:
+- Camera: Intel RealSense D435, resolution 1280x720, video at 30 fps (l.160-168, l.205-206).
+- Platform: camera mounted on a vertical sliding rod on a rail cart; cart moves forward at constant speed during video capture; Jetson Orin NX connected via USB 3.0 (l.160-168, l.201-203).
+- Distance: about 1.2 m from the crop rows (l.160-168).
+- Sides of row (one side or both): not stated. The text describes one forward-moving camera; no second side is mentioned.
+- Repeat visits or 3D scanning: not stated.
+
+OBSERVATION / DETECTOR:
+- Baseline detector: YOLO11n, described as the lightest model of the family (l.209-221).
+- Proposed detector ("improved YOLO11n"): C3k2-F block (built on FasterNet/PConv), DSConv in place of Conv, and GIoU in place of CIoU for the box loss (l.240-283).
+- Training: Ubuntu 20.04, i9-11900K, GTX3080Ti, PyTorch 1.13.1; input 640x640; 200 epochs; batch 16; SGD lr 0.01; official pretrained weights loaded (l.367-377).
+- Annotation: Labelme 5.5.0; outlines include occluded parts; fruits with fewer than 2500 pixels not annotated (l.176-183).
+- Detection accuracy as reported (Table 1, improved model, final row): box P 91.3, R 86.2, mAP50 93.3, mAP50:90 65.8; seg P 90.5, R 85.4, mAP50 92.3, mAP50:90 59.3 (percent).
+- Model size: 2.66 M parameters, 8.0 GFLOPs (Table 1, Table 2).
+- Speed: 62 FPS (Table 2); hardware for the FPS in Table 2 is not stated there. Section 3.4 reports 62 FPS on Jetson Orin NX for the whole workflow.
+
+ASSOCIATION METHOD:
+- Tracker: ByteTrack integrated with YOLO11n for fruit tracking in video (l.286).
+- Motion model: Kalman filter state estimation (l.287-293).
+- Matching: Hungarian matching across consecutive frames; appearance features: not stated.
+- Unmatched tracks: "If an object remained unmatched across multiple frames, it was treated as a disappeared object, and its trajectory was then removed." (l.294-296)
+- Counting rule (ID-based, Bytetrack): "Each successfully tracked tomato fruit was assigned a unique ID for counting." (l.297-298)
+- Counting rule (cross-line): a virtual vertical counting line at the centre of the field of view; a fruit is counted when it crosses the line (Fig 7, l.302-308). The authors state that this method "does not rely on continuous target tracking or accurate ID recognition" (l.306-308).
+- Counting rule (region, proposed): the counting line is widened into a symmetric region along the vertical centreline; the width is optimized by PSO (l.324-365). "Whenever a target bounding box began to enter the detection area, its ID value was recorded and counted, avoiding the miss count due to occlusion between leaves and fruits." (l.330-332). The region method still uses tracker IDs.
+- PSO: fitness is RMSE between counted and actual counts over the videos (l.342-345); height fixed at 720 px; width range [0,1280]; optimum width 876 px, window 876 x 720 (l.346-365, l.686-687).
+- 3D/SfM/SLAM, learned matching, calibration: not stated.
+
+ASSUMPTIONS STATED OR IMPLIED BY AUTHORS:
+- Camera motion makes every fruit cross the centre line: "Considering that the camera is in motion during actual detection, this design ensures that all detected tomato fruits will inevitably cross the counting line during their movement." (l.302-306)
+- Tracker IDs are correct enough for counting: "If the fruit ID was misassigned or mismatch cases occurred, the counting results would suffer from substantial counting errors [35]." (l.298-301)
+- Detection accuracy drives count accuracy: "if the detection model could identify the fruits accurately, the proposed region tracking-counting method could count them correctly." (l.809-813)
+- Dataset representativeness: stated only as a limitation (see below).
+
+DOUBLE-COUNT SOURCES ADDRESSED:
+(a) Same fruit in consecutive frames: handled by ByteTrack unique IDs (ID-based count). The region method counts each ID once when its box first enters the region (l.330-332).
+(b) Track lost and restarted: Bytetrack is said to cause duplicate counts when tracks are lost during long occlusion: "the reason for the higher MR of the Bytetrack method is that the algorithm could lead to ID loss when tracking objects that were occluded for extended periods, resulting in duplicate counts." (l.756-759). The cross-line method avoids ID dependence (l.759-760). The region method uses IDs and still shows MR 8.3 (Table 4).
+(c) Same fruit from different passes or both sides: not addressed. Only one camera pass in one direction is described.
+- Other double-count causes named by the authors: "when tomatoes are in the unripe and semi-ripe stages or between semi-ripe and ripe stages, detection errors can lead to duplicate counting for both the Bytetrack and region tracking-counting methods." (l.764-766)
+
+CLASS / MATURITY HANDLING:
+- Classes: ripe, semi-ripe, unripe, labelled by RGB values in Labelme (l.176-185). Fig 2d colours: red ripe, green semi-ripe, yellow unripe.
+- Class attached to a unique fruit: not stated. Counting and MR are reported per class (Table 5) but the paper does not say which class label a tracked fruit keeps.
+- Disagreement across frames: Fig 12 (d, e) shows fruits switching between unripe and semi-ripe classes (l.798-800). The text does not describe a rule for this case.
+- Per-class results are on the video test set (Table 5); see KEY QUANTITATIVE RESULTS.
+
+COUNT REFERENCE AND METRIC LEVEL:
+- Ground truth (true count) per video segment, Gi, is used for all count metrics (Eq 7-10, l.404-454). How the true count was obtained (hand count, post-hoc annotation) is not stated.
+- Table 3: "video validation set" (true count per video: 157, 167, 123, 134).
+- Table 4: the data set is not named in the table (no split label).
+- Table 5: video test set (l.802-804).
+- Metrics:
+  - MP: mean precision over videos and frames (Eq 7).
+  - ME: mean error with Fij false recognitions (Eq 8).
+  - MR: mean repetition, Ci / Gi, where "Ci refers to the number of duplicate tomatoes in the i-th video, Gi represents the actual number of tomatoes in the i-th video" (l.452-453).
+  - MCE: mean of |Gi - Ei| / Gi, where Ei is the predicted count per video (Eq 10, l.440-446).
+- Identity metrics (MOTA, IDF1, HOTA, ID switches as a separate count): not reported.
+- Detection metrics: P, R, AP, mAP50, mAP50:90 (box and seg) (Eq 3-6, l.382-400; Tables 1-2).
+
+KEY QUANTITATIVE RESULTS:
+- Ablation (Table 1, box / seg):
+  - YOLO11n baseline: box P 89.4, R 91.6, mAP50 93.5, mAP50:90 69.7; seg P 89.2, R 91.3, mAP50 93.0, mAP50:90 62.1; 2.88 M params; 10.5 GFLOPs.
+  - +C3k2-F: box P 90.7, R 90.4, mAP50 94.6, mAP50:90 67.3; 2.66 M; 9.8 G.
+  - +DSConv: box P 90.3, R 88.2, mAP50 94.2, mAP50:90 66.4; 2.66 M; 8.0 G.
+  - +DSConv+GIoU (final): box P 91.3, R 86.2, mAP50 93.3, mAP50:90 65.8; seg P 90.5, R 85.4, mAP50 92.3, mAP50:90 59.3; 2.66 M; 8.0 G.
+  - Net change from baseline: Param -0.22 M; GFLOPs -2.5 (l.557-566).
+- Table 2 (detector comparison, same data, box P / box mAP50 / seg P / seg mAP50 / FPS / M params / GFLOPs):
+  - Mask-RCNN: 92.0 / 94.5 / 91.9 / 86.0 / 19 / 41.3 / 251.4
+  - YOLOv5n: 79.3 / 84.4 / 79.2 / 85.0 / 116 / 7.10 / 16.0
+  - YOLOv6n: 85.3 / 86.2 / 86.2 / 87.4 / 84 / 4.9 / 7.0
+  - YOLOv7: 91.8 / 90.6 / 91.4 / 90.2 / 32 / 36.90 / 104.7
+  - YOLOv8n: 88.4 / 89.5 / 87.8 / 88.7 / 60 / 3.40 / 12.6
+  - Improved YOLO11n: 91.3 / 93.3 / 90.5 / 92.3 / 62 / 2.66 / 8.0
+- Counting, video validation set, Table 3 (true / cross-line / region 500 px / PSO region):
+  - Video 1: 157 / 145 / 175 / 171
+  - Video 2: 167 / 153 / 173 / 171
+  - Video 3: 123 / 113 / 114 / 116
+  - Video 4: 134 / 119 / 125 / 124
+  - MCE: cross-line 8.8, region 500 px 7.3, PSO region 6.1 (l.714-715).
+- Counting, Table 4 (data set not named): Bytetrack MP 80.6, ME 11.4, MR 12.3, MCE 11.6; cross-line MP 84.9, ME 9.1, MR 6.8, MCE 8.7; region MP 86.6, ME 7.4, MR 8.3, MCE 6.6.
+- Counting by class, video test set, region method (Table 5): ripe MP 93.4, ME 7.5, MR 8.7, MCE 12.3; semi-ripe MP 71.9, ME 10.4, MR 3.4, MCE 16.9; unripe MP 91.3, ME 7.3, MR 11.8, MCE 17.3; all MP 86.6, ME 7.4, MR 8.3, MCE 6.6.
+- Speed and hardware (l.829-834): Jetson Orin NX, whole workflow 62 FPS average, peak memory about 3.1 GB, average power 15.6 W.
+- Runtime, improved model (l.595-597): "detection speed of 62 FPS, the total runtime was 4.05 s".
+
+FAILURE CONDITIONS / ERROR SOURCES REPORTED:
+- Occlusion by leaves and other fruit: the cross-line method "may still encounter cases where fruits are occluded by leaves when crossing the counting line, leading to a missed count." (l.325-327)
+- Tracker ID loss during long occlusion, giving duplicate counts (Bytetrack, MR 12.3; l.756-759).
+- Semi-ripe fruit: detection accuracy is lower; "The detection accuracy for semi-ripe fruits was obviously lower than that for ripe and unripe fruits, leading to counting errors" (l.884-888). Semi-ripe ME 10.4, MCE 16.9 (Table 5).
+- Unripe fruit: highest MR, 11.8; attributed to "size and color variations in unripe fruits" (l.814-817).
+- Class switches between unripe and semi-ripe (Fig 12 d, e; l.764-766).
+- Missed count at the centre line from occlusion (cross-line; l.762-764).
+- Lighting: dark and severe-occlusion images are shown in Fig 2 (b, c) but no error is reported for them.
+
+COMPARISONS ON THE SAME DATA:
+- Detectors on the same 808-image set: Table 2 (Mask-RCNN, YOLOv5n, YOLOv6n, YOLOv7, YOLOv8n vs improved YOLO11n). The authors state: "However, YOLOv5n and YOLOv6n demonstrate faster detection speeds, reaching 116 FPS and 84 FPS" (l.571-575). Mask-RCNN and YOLOv7 have higher accuracy but "entirely fail to meet the performance requirements of embedded devices" (l.575-579).
+- YOLOv8n vs improved (text l.589-591): box P -2.9, box mAP50 -3.8, seg P -2.7, seg mAP50 -3.6 (points); matches Table 2.
+- Counting methods on the same videos: Bytetrack vs cross-line vs region (Table 4), and region with 500 px vs PSO (Table 3). No external counting method is compared.
+
+AUTHORS' STATED LIMITATIONS / FUTURE WORK:
+- Semi-ripe detection: "can be improved further in future by modifying detection models or incorporating spectral imaging technologies." (l.884-888)
+- Dataset and camera: "The dataset (808 images and 21 video clips) and camera configuration may not fully capture the diversity of field conditions." (l.891-894) Future work named: "extreme lighting or occlusion scenarios" (l.891-894).
+- Deployment: "The functionality of the yield estimation system is currently in the development stages, with relatively limited application scope and high tool costs. Further integration is needed for ease of use." (l.895-898)
+
+INCONSISTENCIES INSIDE THE PAPER:
+- PSO region MCE: 6.1 in Table 3 (l.714-715) vs 6.6 in Table 4 (l.792) and in the abstract (l.62-64). Table 3 is the validation set; Table 4 set is not named.
+- Cross-line MCE: 8.8 in Table 3 vs 8.7 in Table 4 and in the abstract reduction (11.6 - 6.6 = 5.0; 8.7 - 6.6 = 2.1).
+- Abstract "detection and segmentation accuracies of 91.3% and 90.5%" (l.58-61) are box P and seg P (precision) from Table 1, not accuracy.
+- GIoU effect: text says "GIoU effectively improved the model's P, while slightly reducing the mAP and R" (l.476-477). Table 1, DSConv row to final row: box R 88.2 -> 86.2 (-2.0), seg R 88.5 -> 85.4 (-3.1); box mAP50 94.2 -> 93.3 (-0.9), seg mAP50 93.7 -> 92.3 (-1.4). The R drop is larger for seg than the word "slightly" suggests.
+- Matching of duplicate-count claims: text says cross-line "could effectively avoid the issue of duplicate counting, yielding an MR of only 6.8%" (l.759-760), while the region method has a higher MR (8.3, Table 4), and Table 4 MR is the only duplicate measure.
+- Semi-ripe duplicates: text says semi-ripe tomatoes "fluctuate between the two ripeness levels and resulting in duplicate counts" (l.820-822), but Table 5 gives semi-ripe MR 3.4, the lowest of the three classes.
+- MCE misread: "The MCE for all fruits is only 6.6%, which signifies that the counting accuracy reached 93.4%" (l.828-829). 93.4 is the ripe-class MP in Table 5; the all-class MP is 86.6.
+- Class MCE vs all-class MCE: Table 5 per-class MCE values 12.3, 16.9, 17.3 all exceed the all-class MCE 6.6; the paper does not explain how the all-class value is aggregated.
+- FPS wording: "detection speed of 62 FPS" (l.597) vs "processing speed of the whole workflow ... 62 FPS" (l.832).
+- Conclusions claim "achieving state-of-the-art counting accuracy" (l.879-880); no counting benchmark from other papers is cited or compared.
+- Table 4 region MP 86.6 and MR 8.3 are the same values as Table 5 "All" row; the data-set label for Table 4 is missing, so it is not stated whether Table 4 is the test set.
+
+QUOTES:
+1. "Considering that the camera is in motion during actual detection, this design ensures that all detected tomato fruits will inevitably cross the counting line during their movement." (Section 2.3, cross-line counting, l.302-306)
+2. "Each successfully tracked tomato fruit was assigned a unique ID for counting." (Section 2.2, l.297-298)
+3. "Whenever a target bounding box began to enter the detection area, its ID value was recorded and counted, avoiding the miss count due to occlusion between leaves and fruits." (Section 2.3, region method, l.330-332)
+4. "the reason for the higher MR of the Bytetrack method is that the algorithm could lead to ID loss when tracking objects that were occluded for extended periods, resulting in duplicate counts." (Section 3.3, l.756-759)
+5. "The detection accuracy for semi-ripe fruits was obviously lower than that for ripe and unripe fruits, leading to counting errors, and can be improved further in future by modifying detection models or incorporating spectral imaging technologies." (Section 4, Limitations, l.884-888)
+6. "The dataset (808 images and 21 video clips) and camera configuration may not fully capture the diversity of field conditions." (Section 4, l.891-894)
+7. "The MCE for all fruits was the lowest at just 6.6%, indicating that despite significant deviations at individual maturity stages, the system could still estimate the total number of fruits accurately." (Section 3.4, l.823-825)
+8. "For fruit counting, the MCE of the proposed region tracking counting method was 6.6%, achieving state-of-the-art counting accuracy." (Section 4, Conclusions, l.879-880)
