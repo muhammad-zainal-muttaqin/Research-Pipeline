@@ -34,21 +34,18 @@ menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
 | Membaca naskah *review* terkini | [`main6.pdf`](manuscript/output/papers/main6.pdf), sumber [`main6-body.tex`](manuscript/source/main6-body.tex) |
 | Mengerjakan verifikasi `main6` (tugas peninjau) | [Verifikasi](literature/scopus-2026-09/verifikasi/README.md), lalu [daftar tugas](literature/scopus-2026-09/verifikasi/TUGAS.md) |
 | Memeriksa korpus dan protokol tinjauan `main6` | [Korpus Scopus 2026-09](literature/scopus-2026-09/README.md), [protokol](literature/scopus-2026-09/PROTOKOL.md), [kueri](literature/scopus-2026-09/QUERY.md) |
-| Membaca pola penulisan tinjauan yang dipakai | [`POLA-TINJAUAN-PUSTAKA.md`](manuscript/guides/POLA-TINJAUAN-PUSTAKA.md) |
+| Membaca aturan gaya naskah `main6` | [`GAYA-NASKAH-MAIN6.md`](manuscript/guides/GAYA-NASKAH-MAIN6.md), dasarnya [`POLA-TINJAUAN-PUSTAKA.md`](manuscript/guides/POLA-TINJAUAN-PUSTAKA.md) |
 | Menyusun naskah | [README naskah](manuscript/README.md) dan [panduan naskah](manuscript/guides/) |
-| Memeriksa keterlacakan klaim | [Audit](audit/) |
 
 ## Struktur
 
 | Lokasi | Isi |
 |---|---|
-| [`literature/`](literature/) | Tinjauan pustaka: korpus Scopus `main6` (`scopus-2026-09/`), 182 ringkasan lama, sintesis, entri ditahan, protokol pencarian, teks terekstrak, dan PDF sumber |
+| [`literature/`](literature/) | Tinjauan pustaka: korpus Scopus `main6` (`scopus-2026-09/`), 182 ringkasan lama, sintesis, entri ditahan, teks terekstrak, dan PDF sumber |
 | [`experiments/`](experiments/) | Eksperimen: status, log, metrik, sub-laporan, skrip (`code/`), hasil (`results/`), log training, dan split |
 | [`manuscript/`](manuscript/) | Naskah: sumber LaTeX, figur, panduan penulisan, laporan, dan keluaran PDF/PPTX |
 | [`pipeline/`](pipeline/) | Deliverable produksi: pipeline YOLO 4-kanal untuk kamera Orbbec Gemini |
-| [`tools/`](tools/) | Skrip utilitas: pipeline korpus `main6` (`scopus/`), pembuat matriks bukti, tabel sintesis, dan presentasi |
-| [`audit/`](audit/) | Verifikasi lintas-topik: audit pra-submisi, register klaim, matriks bukti |
-| [`legacy/`](legacy/) | Draf dan figur usang |
+| [`tools/`](tools/) | Skrip utilitas: pipeline korpus `main6` (`scopus/`) dan pembuat dek presentasi |
 | [`site/`](site/) | Pembuat Ruang Baca dan pustaka kliennya |
 | [`index.html`](index.html) | Ruang Baca publik hasil build, tetap di akar untuk GitHub Pages |
 

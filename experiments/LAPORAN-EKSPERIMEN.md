@@ -20,8 +20,8 @@ Sumber kanonik yang dirangkum di sini:
 [`pipeline/README.md`](../pipeline/README.md) (deliverable produksi).
 
 > **Pembaruan audit 2 Agustus 2026.** Dokumen ini adalah snapshot kurasi
-> historis. Untuk status klaim terbaru, gunakan `reports.tex` dan
-> `REPORT_PLAN.md`. Khusus E-026, denominator identitas RGB dan RGB-D berbeda
+> historis. Untuk status klaim terbaru, gunakan
+> `manuscript/reports/reports.tex`. Khusus E-026, denominator identitas RGB dan RGB-D berbeda
 > sehingga hasilnya tidak konklusif; khusus E-032, 12/12 CI memuat nol tetapi
 > ekuivalensi belum dibuktikan. Status G0 tetap terbuka dan G4/G6 tidak ditutup
 > secara universal.
@@ -71,7 +71,7 @@ Yang diambil dari korpus dan benar-benar diuji:
   `evidence-body.tex` §174) → dasar I-4/I-5.
 - **Gerbang mutu depth** (SA-Gate entri 055; D3Net entri 037: depth buruk merusak
   prediksi) → I-8, masih menunggu GEMINI-PENDING.
-- **Detektor NMS-free** sebagai prioritas 1 (`literature/references/deep-research-report.md`) → E-020,
+- **Detektor NMS-free** sebagai prioritas 1 (laporan *deep research* Juli 2026, kini di tag Git `arsip-pra-rapi-2026-11-18`) → E-020,
   yang akhirnya menjadi hasil terbaik.
 
 Satu batas yang harus disebut sejak awal: **tidak ada satu pun benchmark RGB-D

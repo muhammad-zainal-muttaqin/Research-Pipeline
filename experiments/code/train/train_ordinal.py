@@ -17,7 +17,8 @@ Metrik evaluasi DiB sudah mengakui ordinalitas lewat toleransi +-1, tetapi
 objektif pelatihan belum: klasifikasi kategoris menghukum kesalahan ke tetangga
 sama beratnya dengan lompatan jauh. Model menghabiskan kapasitas memisahkan
 sesuatu yang metriknya sendiri tidak pedulikan -- persis "mismatch
-objective-ke-deployment" pada docs/deep-research-report.md.
+objective-ke-deployment" pada laporan deep research Juli 2026
+(berkasnya kini hanya ada di tag Git arsip-pra-rapi-2026-11-18).
 
 Cara kerja: sebelum BCE, massa target disebar sebagian ke kelas TETANGGA saja
 (bukan seluruh kelas seperti label smoothing biasa). Dengan alpha=0,2, sebuah

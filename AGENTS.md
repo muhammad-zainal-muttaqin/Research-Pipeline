@@ -1,8 +1,23 @@
 # AGENTS.md — Panduan Kerja Agen
 
 Berlaku untuk semua agen (Claude Code, Codex, dan lainnya). `CLAUDE.md` hanya
-mengimpor berkas ini. Nomor bagian dirujuk berkas lain (terutama §3 dan §7);
-jangan diubah.
+mengimpor berkas ini. Nomor bagian dirujuk berkas lain (terutama §3, §7, dan
+§11); jangan diubah.
+
+Berkas ini adalah satu-satunya pusat aturan repo. Aturan yang terlalu rinci
+untuk ditaruh di sini ditulis di berkas khusus berikut, dan hanya di sana.
+Aturan baru yang mengikat seluruh repo ditulis di berkas ini; aturan rinci
+untuk satu bidang ditulis di berkas bidangnya lalu didaftarkan di tabel ini.
+
+| Bidang | Berkas aturan rinci |
+|---|---|
+| Gaya tulis naskah `main6` (nama kategori, paragraf bukti, gambar, abstrak, simpulan, daftar periksa sebelum dikirim) | `manuscript/guides/GAYA-NASKAH-MAIN6.md` |
+| Pola tinjauan pustaka yang baik (dasar metodologis gaya `main6`) | `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md` |
+| Protokol tinjauan `main6`: kriteria, kode kelompok, tahap penyaringan | `literature/scopus-2026-09/PROTOKOL.md` |
+| Penulisan entri korpus lama 182 | `manuscript/guides/PANDUAN-PENULISAN.md` (kontrak bentuk di §6) |
+| Kontrak kanal ke-4 (depth) untuk model produksi | `pipeline/README.md` |
+| Reproduksi E-021: data, split, lingkungan | `experiments/code/REPRODUCE.md` |
+| Keputusan verifikasi yang menunggu peninjau | `literature/scopus-2026-09/verifikasi/TUGAS.md` |
 
 ## 1. Bahasa
 
@@ -28,6 +43,8 @@ agen.
   artinya, misalnya "M3 (pelacakan video)"; daftar artinya ada di
   `tools/scopus/verifikasi_istilah.py`. Berkas yang sulit dibaca diperbaiki
   langsung, bukan dijelaskan dengan berkas tambahan.
+**Kebersihan repo.**
+
 - **Jangan membuat berkas yang kelak harus dibersihkan.** Yang tidak boleh
   masuk repo: paket bacaan, JSON atau CSV mentah keluaran model, draf usul,
   cadangan (`arsip/`, `*_lama`, `cadangan_*`), salinan format lain dari isi yang
@@ -37,6 +54,15 @@ agen.
   yang dibaca manusia dan data minimum yang dibaca skrip (di `.teknis/`). Pada
   19 Oktober 2026 folder `verifikasi` harus dibersihkan dari 667 menjadi 24
   berkas karena aturan ini dilanggar.
+- Berkas usang dihapus, bukan dipindah ke folder arsip. Pada 18 November 2026
+  naskah `main2`–`main5v3`, folder `audit/` dan `legacy/`, bahan pencarian
+  OpenAlex Agustus, laporan *deep research*, serta brief gambar dihapus.
+  Keadaan sebelumnya tersimpan di tag Git `arsip-pra-rapi-2026-11-18`
+  (`git show arsip-pra-rapi-2026-11-18:<jalur>`). Jangan memulihkannya ke
+  pohon kerja kecuali diminta.
+
+**Lembar, log, dan tugas.**
+
 - Lembar untuk manusia: kode ditulis bersama artinya; Y/N ditulis ya/tidak;
   asal isian di kolom `diisi_oleh` atau `oleh`; catatan tidak memuat nama
   model, nama proses, tanggal isian, atau jalur berkas. Log perubahan memuat
@@ -69,7 +95,7 @@ Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 
 | Jalur | Status |
 |---|---|
-| Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 36 halaman, 12 seksi, 2 lampiran, 10 gambar, 6 tabel). `main`–`main5v3` adalah arsip: jangan disunting atau dirujuk. Penulisan ulang gaya menurut `manuscript/guides/CATATAN-GAYA-TULIS-CONTOH.md` belum selesai (paragraf panjang, kolom hasil terpisah di tabel perbandingan, ringkasan sawit per subseksi). |
+| Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 36 halaman, 12 seksi, 2 lampiran, 10 gambar, 6 tabel). Naskah 182 sumber (`main.tex`, `main-elsarticle.tex`) hanya dipertahankan untuk Ruang Baca; iterasi `main2`–`main5v3` sudah dihapus. Penulisan ulang gaya menurut `manuscript/guides/GAYA-NASKAH-MAIN6.md` belum selesai (paragraf panjang, kolom hasil terpisah di tabel perbandingan, ringkasan sawit per subseksi). |
 | Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.145 dinilai kelayakannya → 1.013 lolos tahap abstrak (+5 dari luar pencarian) → 480 dengan PDF dinilai dari teks lengkap (538 tidak diperoleh) → **468 masuk peta** (2012–2026). Kode: C1 215 · C2 43 · C3 53 · C4 13 · C5 35 · R 62 · T 47. Korpus dibatasi pada kajian yang PDF-nya ada di `pdf/`; keputusan teks lengkap di `topik/penyaringan/teks_lengkap.txt`. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: Cek 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026; keputusan tahap teks lengkap (18 November 2026), F.4, dan 5.7 menunggu di `verifikasi/TUGAS.md`.** Belum dikerjakan: pemeriksaan ulang eksklusi tahap judul untuk kueri Q2 dan Q4–Q9 (sekitar 3.300 rekaman; Q1 dan Q3 sudah); ekstraksi teks empat PDF CSAM (`guo2023real`, `tu2026passion`, `wang2024camellia`, `zhu2022identification`) yang fonnya tanpa pemetaan Unicode. |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed 0,0049. |
@@ -87,22 +113,25 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 |---|---|
 | `literature/scopus-2026-09/` | Korpus `main6`: `PROTOKOL.md`, `QUERY.md`, `topik/` (kueri, rekaman, penyaringan, `bukti/`), `pdf/` dan `teks/` |
 | `literature/scopus-2026-09/verifikasi/` | `cek-1-…` sampai `cek-6-…` mengikuti rencana Bu Fatma dan hanya memuat lembar peninjau. Pintu masuk `README.md`; keputusan yang menunggu peninjau `TUGAS.md`; log perubahan `log_perubahan.csv`. `.teknis/` berisi data yang dibaca skrip: log teknis, alasan label C1/C3 dan ajudikasi Cek 1 (sumber alasan log), serta dua CSV dasar angka pemeriksaan ulang tahap judul |
-| `literature/entries/` | 182 ringkasan makalah korpus lama (dasar Ruang Baca dan naskah arsip) |
+| `literature/entries/`, `synthesis.md`, `extracted/` | Korpus lama: 182 ringkasan makalah, sintesis, dan teks terekstrak (dasar Ruang Baca dan naskah 182 sumber) |
 | `literature/withheld/` | 20 entri ditahan; jangan masuk naskah |
-| `manuscript/source/` | `main6.tex`, `main6-body.tex`, `references6.bib`; berkas `main`–`main5v3` adalah arsip |
+| `literature/references/` | PDF baseline SawitMVC; `revisi-dosen-2026-07-23/` berisi delapan permintaan revisi dosen (`Chat.txt`, catatan primer, jangan dihapus) |
+| `manuscript/source/` | `main6.tex`, `main6-body.tex`, `main6-angka.tex` (keluaran `angka_naskah.py`), lampiran, `references6.bib`; naskah 182 sumber (`main.tex`, `main-elsarticle.tex`, `evidence-body.tex`, `references.bib`) dan `experiment-ledgers.tex` untuk laporan eksperimen |
 | `manuscript/figures/main6/` | Gambar F01–F10 (keluaran skrip) |
-| `manuscript/guides/` | Panduan penulisan dan `POLA-TINJAUAN-PUSTAKA.md`; artikel contoh yang dirujuk panduan ada di `literature/example/` |
+| `manuscript/guides/` | `GAYA-NASKAH-MAIN6.md`, `POLA-TINJAUAN-PUSTAKA.md`, `PANDUAN-PENULISAN.md`; artikel contoh yang dirujuk panduan ada di `literature/example/` |
+| `manuscript/reports/` | Laporan hasil eksperimen (`reports.tex` dan versi ringkas); figur rasternya di `manuscript/figures/` |
 | `manuscript/output/papers/` | PDF hasil kompilasi |
 | `experiments/` | `STATUS.md`, `EKSPERIMEN.md` (log), `METRICS.md`, `SERI-F.md`, `SR/`, `code/` (peta: `PETA-SKRIP.md`) |
 | `pipeline/` | Deliverable produksi: YOLO 4 kanal untuk kamera Orbbec Gemini |
 | `tools/scopus/` | Pipeline korpus `main6` |
+| `tools/presentation/` | Pembuat dek PPTX |
 | `site/build.js` → `index.html` | Ruang Baca Riset; `index.html` hasil build, **jangan disunting tangan** |
 | `datasets/`, `literature/pdf/` | Bahan lokal besar, tidak masuk Git |
-| `legacy/`, `temp/`, `tmp/` | Abaikan kecuali diminta |
+| `temp/`, `tmp/` | Abaikan kecuali diminta |
 
 **Invarian 182:** bila jumlah entri korpus lama berubah, perbarui juga
-`literature/synthesis.md`, `README.md`, `manuscript/source/evidence-body.tex`,
-dan `audit/claim-audit-182.md`. Invarian ini tidak berlaku untuk `main6`.
+`literature/synthesis.md`, `README.md`, dan `manuscript/source/evidence-body.tex`.
+Invarian ini tidak berlaku untuk `main6`.
 
 ## 5. Perintah
 
@@ -145,8 +174,10 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
   `literature/scopus-2026-09/` dengan skrip `tools/scopus/`. Bila data atau kode
   manual berubah, jalankan ulang skrip lalu perbarui teks naskah, `PROTOKOL.md`,
   dan §3 berkas ini.
-- `main6-appendix-c1.tex`, `main6-appendix-queries.tex`, `references6.bib`, dan
-  `manuscript/figures/main6/F0*` adalah keluaran skrip; **jangan disunting tangan**.
+- `main6-angka.tex`, `main6-appendix-c1.tex`, `main6-appendix-queries.tex`,
+  `references6.bib`, dan `manuscript/figures/main6/F*` adalah keluaran skrip;
+  **jangan disunting tangan**. Angka korpus di teks naskah ditulis sebagai
+  makro dari `main6-angka.tex`, bukan diketik.
 - Kode mekanisme C1 dan kode C3 disunting di `topik/bukti/mekanisme_C1.txt` dan
   `kode_C3.txt`; berkas itu menimpa kode otomatis `kode_bukti.py`.
 - Naskah tidak memuat jalur folder atau kode internal repo.
@@ -159,6 +190,30 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
   jurnal; jangan diklaim sebagai dua peninjau independen.
 - Hasil eksperimen SawitMVC (E-/F-) bukan bagian korpus `main6`; bila dikutip,
   angkanya dari `experiments/METRICS.md`.
+- Klaim kebaruan dibatasi pada pencarian yang dilaporkan ("not found in the
+  search reported in Section 2"), bukan "belum ada tinjauan yang membahas".
+- Gaya tulis mengikuti `manuscript/guides/GAYA-NASKAH-MAIN6.md`. Daftar
+  periksanya dijalankan sebelum naskah dikirim.
+- Arah naskah ditetapkan delapan permintaan revisi dosen pembimbing
+  (`literature/references/revisi-dosen-2026-07-23/Chat.txt`, 23 Juli 2026);
+  jangan diubah tanpa persetujuan penulis:
+  1. Metode pencarian dapat diulang: basis data (minimal Scopus), string
+     kueri, filter tahun, kriteria inklusi dan eksklusi, deduplikasi.
+  2. Kerangka naskah adalah ruang desain untuk satu tugas: mengubah banyak
+     pengamatan pohon menjadi inventaris buah unik per kelas. Bukan sejarah
+     YOLO/RGB-D dan bukan usulan arsitektur tunggal.
+  3. Kontribusi utama: deduplikasi lintas pandang (setiap buah dihitung
+     sekali), dengan pemosisian eksplisit terhadap tinjauan terdahulu.
+  4. Cakupan pertanian dengan sawit sebagai kasus utama; mekanisme dari luar
+     pertanian (pelacakan, re-ID, SfM) boleh dipakai sebagai bukti yang dapat
+     ditransfer.
+  5. Judul tanpa "YOLO", "RGB-D", dan "kelapa sawit".
+  6. Klasifikasi tidak terbatas pada kematangan, tetapi tetap bergantung pada
+     *instance*; kematangan hanya satu kasus.
+  7. Literatur sawit dan tanaman pohon yang terlewat (Suharjito, Goh,
+     penghitungan apel, jeruk, anggur) dimasukkan.
+  8. Matriks bukti masuk naskah sebagai tabel sintesis (satu baris per kajian),
+     bukan hanya CSV terpisah.
 
 ## 8. Log Eksperimen — Wajib
 
@@ -174,6 +229,13 @@ yang sama dengan selesainya eksperimen, lalu di-commit.
   tunggal**; `hasil.json` ultralytics tidak dipakai membandingkan antar lengan.
 - Penomoran: seri E sampai E-033b, seri F sampai F-009. Seri baru memakai
   prefiks baru.
+- Klaim bahwa depth menolong deteksi wajib diuji terhadap lengan kontrol
+  negatif tanpa informasi (kanal ke-4 berisi derau) dengan protokol identik
+  dan CI 95% bootstrap berpasangan. Bila kontrol memberi kenaikan sebanding,
+  klaimnya gugur (`experiments/SR/SR-015-depth-sensor-4kanal.md` §2).
+- Split SawitMVC per pohon 716/96/141 dengan irisan nol bersifat tetap; jangan
+  diacak ulang. Berkas split memakai jalur absolut `/workspace/SawitMVC/...`
+  (`experiments/code/REPRODUCE.md`).
 
 ## 9. Keputusan yang Mengikat — Jangan Ditawar Ulang
 
@@ -210,6 +272,11 @@ kehijauan). Jangan dibalik.
 | **SawitMVC** (HF `ULM-DS-Lab/SawitMVC`) | 953 pohon, 4–8 sisi, 3.992 citra 960×1280, 18.540 bbox, 9.823 tandan unik, split pohon 716/96/141 |
 | **Sawit** (master mentah) | 3.992 JPG 3024×4032 + 45 video. Nama berkas **tidak unik** antar folder `Kelompok N`; pemetaan ke anotasi harus berbasis isi |
 | **SawitMVC-Depth** (HF, private) | 352 pohon, 1.408 citra RGB 1280×800, 2.299 kotak, depth Orbbec Y16 848×480 mm. Distribusi kelas berbeda; **mAP di sini tidak sebanding dengan E-021** |
+
+Kanal ke-4 model produksi berisi *inverse depth* 1–255 pada rentang tetap
+0,3–8 m (0 = tidak ada data). Rentang ini dibekukan bersama bobot
+(`fourch.Z_NEAR/Z_FAR`); jangan menormalkan depth per citra
+(`pipeline/README.md`).
 
 Jebakan SawitMVC-Depth:
 

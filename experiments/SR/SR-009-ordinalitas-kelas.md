@@ -111,7 +111,7 @@ ke tetangga sama beratnya dengan lompatan jauh. Model karena itu menghabiskan
 kapasitas untuk memisahkan hal yang metriknya sendiri tidak pedulikan.
 
 Ini persis **"mismatch objective-ke-deployment"** yang disebut
-`literature/references/deep-research-report.md` sebagai salah satu dari empat sumber plafon.
+laporan *deep research* Juli 2026 (kini di tag Git `arsip-pra-rapi-2026-11-18`) sebagai salah satu dari empat sumber plafon.
 
 Bentuk konkret yang layak diuji:
 1. Loss dengan bobot jarak ordinal (hukuman ∝ |kelas prediksi − kelas benar|).

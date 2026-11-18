@@ -1,6 +1,7 @@
 """Ide I-14 — RT-DETR sebagai detektor NMS-free.
 
-Alasan dari korpus (deep-research-report.md, prioritas 1): NMS sering menjadi
+Alasan dari korpus (laporan deep research Juli 2026, prioritas 1;
+kini di tag Git arsip-pra-rapi-2026-11-18): NMS sering menjadi
 plafon STRUKTURAL pada objek rapat/bertumpuk. Tandan sawit di mahkota persis
 kondisi itu — banyak tandan berdekatan, saling menutup sebagian. YOLO memakai
 NMS greedy yang, saat dua tandan tumpang tindih, dapat menekan salah satu kotak

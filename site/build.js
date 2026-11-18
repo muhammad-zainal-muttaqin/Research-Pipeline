@@ -90,7 +90,7 @@ const SPECIAL_DOCS = [
 const PAGES_EXCLUDED = [
   'experiments/code/', 'experiments/results/', 'experiments/logs/', 'experiments/runs/',
   'experiments/splits/', 'experiments/figures/', 'literature/extracted/',
-  'literature/search-data/', 'datasets/', 'legacy/', 'site/', 'tools/', 'pipeline/'
+  'datasets/', 'site/', 'tools/', 'pipeline/'
 ];
 const ENTRY_LINK_RE = /(?:^|\/)\d{3}\s-\s.*\.md$/i;
 

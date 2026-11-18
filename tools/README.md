@@ -1,37 +1,20 @@
 # Tools
 
 Skrip utilitas yang bukan bagian eksperimen maupun naskah. Dipakai untuk
-membangun artefak pendukung seperti matriks bukti, tabel sintesis, dan
-dek presentasi.
+menjalankan pipeline korpus `main6` dan membangun dek presentasi. Skrip
+pencarian OpenAlex dan matriks bukti korpus lama dihapus pada 18 November
+2026; isinya ada di tag Git `arsip-pra-rapi-2026-11-18`.
 
 ## Saya ingin...
 
 | Tujuan | Buka ini |
 |---|---|
 | Menjalankan ulang korpus dan artefak naskah `main6` | [`scopus/`](scopus/) — perintah lengkap di [`literature/scopus-2026-09/README.md`](../literature/scopus-2026-09/README.md) |
-| Membangun matriks bukti | [`build_evidence_matrix.py`](build_evidence_matrix.py) — butuh `pypdf` dan folder `literature/pdf/benar/` |
-| Membangun tabel sintesis | [`build_synthesis_table.py`](build_synthesis_table.py) |
-| Mencari pustaka lewat OpenAlex | [`openalex_search.py`](openalex_search.py) |
-| Membangun register deduplikasi dan screening | [`build_literature_screening_master.py`](build_literature_screening_master.py) |
-| Menyelesaikan review konflik deduplikasi | [`resolve_literature_dedup.py`](resolve_literature_dedup.py) |
-| Membuat laporan review deduplikasi yang mudah dibaca | [`build_dedup_review_report.py`](build_dedup_review_report.py) |
-| Menjalankan triage judul berkepercayaan tinggi | [`build_title_screening.py`](build_title_screening.py) |
-| Menjalankan triage abstrak berkepercayaan tinggi | [`build_abstract_screening.py`](build_abstract_screening.py) |
-| Mengaudit full text lokal terhadap master pencarian | [`audit_local_fulltext.py`](audit_local_fulltext.py) |
 | Membuat dek presentasi PPTX | [`presentation/`](presentation/) — sudah punya README sendiri |
 
 ## Isi folder
 
 | Berkas / folder | Isi |
 |---|---|
-| `scopus/` | Pipeline `main6`: `scopus_search.py` (Scopus Search API), `enrich_records.py` (abstrak dan tautan OA), `fetch_pdfs.py` + `kompres_pdf.py` (PDF akses terbuka), `kode_bukti.py` (matriks bukti), `gambar_tinjauan.py` (gambar F01–F07), `tabel_lampiran.py` (Lampiran A), `lampiran_kueri.py` (Lampiran B), `buat_bib.py` + `latex_teks.py` (`references6.bib`) |
-| `build_evidence_matrix.py` | Membangun matriks bukti dari `literature/entries/` dan PDF sumber |
-| `build_synthesis_table.py` | Membangun tabel sintesis dari data korpus |
-| `openalex_search.py` | Pencarian dan pengunduhan metadata pustaka lewat API OpenAlex |
-| `build_literature_screening_master.py` | Deduplikasi raw Scopus/OpenAlex dan pembuatan audit, review manual, master screening, serta rekap PRISMA |
-| `resolve_literature_dedup.py` | Resolusi konservatif konflik DOI berbeda dengan bukti judul, tahun, penulis, venue, dan provenance |
-| `build_dedup_review_report.py` | Membuat laporan Markdown, HTML, dan CSV ringkas untuk kelompok deduplikasi yang tersisa |
-| `build_title_screening.py` | Menandai EC5/EC6 yang jelas dari judul dan meneruskan judul lain ke screening abstrak |
-| `build_abstract_screening.py` | Menandai EC1/EC5/EC6 yang sangat jelas dari abstrak dan meneruskan record lain ke pemeriksaan teks penuh |
-| `audit_local_fulltext.py` | Mencocokkan PDF terverifikasi lokal dengan master pencarian dan mengekstrak bukti full text untuk kecocokan yang ditemukan |
+| `scopus/` | Pipeline `main6`: `scopus_search.py` (Scopus Search API), `enrich_records.py` (abstrak dan tautan OA), `fetch_pdfs.py` + `kompres_pdf.py` (PDF akses terbuka), `kode_bukti.py` (matriks bukti), `gambar_tinjauan.py` (gambar F01–F10), `angka_naskah.py` (angka naskah), verifikasi `verifikasi_*.py`, `tabel_lampiran.py` (Lampiran A), `lampiran_kueri.py` (Lampiran B), `buat_bib.py` + `latex_teks.py` (`references6.bib`) |
 | `presentation/` | Skrip pembuat dek PPTX: `build_charts.py`, `build_deck.py`, `build_panel.py`, `chart_rgb.py`, `verify_deck.py` |

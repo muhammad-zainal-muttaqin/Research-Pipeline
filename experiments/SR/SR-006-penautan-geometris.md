@@ -110,7 +110,7 @@ mengalahkannya.
 **Konsekuensi strategis:** ruang perbaikan di tahap counting sudah tipis.
 Bersama SR-005, ini mempersempit arah secara tegas — sisa perbaikan harus datang
 dari **detektor**, persis kesimpulan DiB sendiri dan prioritas pertama
-`literature/references/deep-research-report.md`.
+laporan *deep research* Juli 2026 (kini di tag Git `arsip-pra-rapi-2026-11-18`).
 
 ## 6. Dampak
 

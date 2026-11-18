@@ -11,8 +11,8 @@ Dokumen ini adalah handoff singkat. Untuk peta lengkap, mulai dari
 > SD seed 0,0049); **F-007** dihentikan karena gate γ tidak pernah terbuka;
 > **F-006** dan **F-009** tidak dijalankan.
 
-> **Catatan status 2 Agustus 2026.** Laporan Elsevier di `reports.tex` dan
-> `experiments/REPORT_PLAN.md` adalah status audit terbaru. Bagian handoff
+> **Catatan status 2 Agustus 2026.** Laporan Elsevier di
+> `manuscript/reports/reports.tex` adalah status audit terbaru. Bagian handoff
 > lama di bawah dipertahankan untuk provenance, tetapi klaim yang menyatakan
 > semua gerbang tertutup atau menyatakan E-026/E-032 sebagai hasil ekuivalen
 > telah disupersesi oleh batas bukti terbaru.

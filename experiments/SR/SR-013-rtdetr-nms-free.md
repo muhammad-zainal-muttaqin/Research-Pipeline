@@ -17,7 +17,7 @@ Tandan di mahkota sawit rapat dan saling menutup. Setiap detektor keluarga YOLO
 kotak tumpang tindih melebihi ambang IoU, yang skornya lebih rendah dibuang. Pada
 objek yang memang berdekatan, NMS greedy dapat membuang kotak benar. Ini plafon
 **struktural** — di pasca-pemrosesan, bukan di model — jadi tak bisa dihapus
-dengan data, kapasitas, atau resolusi. `literature/references/deep-research-report.md` menempatkannya
+dengan data, kapasitas, atau resolusi. laporan *deep research* Juli 2026 (kini di tag Git `arsip-pra-rapi-2026-11-18`) menempatkannya
 **prioritas 1**.
 
 ## 2. Ide

@@ -150,7 +150,9 @@ Catatan status: I-4 (RGBD) dihentikan pada epoch 25 (mAP50 0,5135, datar);
 I-21 (RGBT) dan probe ordinal dihentikan saat E-014 mengalihkan fokus ke
 dekomposisi deteksi/klasifikasi.
 
-## Ide tambahan dari `literature/references/deep-research-report.md`
+## Ide tambahan dari laporan *deep research* Juli 2026
+
+Berkas laporannya kini hanya ada di tag Git `arsip-pra-rapi-2026-11-18`.
 
 Laporan itu memuat matriks 24 ide dan menempatkan **perombakan inti detektor**
 sebagai prioritas pertama — kesimpulan yang **sejalan dengan temuan eksperimen

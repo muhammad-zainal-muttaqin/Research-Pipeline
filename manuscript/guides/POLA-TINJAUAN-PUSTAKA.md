@@ -25,7 +25,7 @@ Dari hasil itu dipilih 60 artikel (`literature/scopus-2026-09/metodologi/terpili
 jumlah sitasi di Scopus dan relevansi langsung dengan pertanyaan "bagaimana menulis
 tinjauan yang benar" atau dengan topik naskah. PDF akses terbuka berhasil diperoleh
 untuk 25 artikel (`metodologi/pdf/`); teksnya diekstrak ke `metodologi/teks/`.
-Artikel lain dibaca dari abstraknya. Tabel di bagian 8 menandai mana yang dibaca
+Artikel lain dibaca dari abstraknya. Tabel di bagian 6 menandai mana yang dibaca
 penuh dan mana yang hanya abstrak. Klaim di dokumen ini yang bersumber dari abstrak
 saja ditulis lebih hati-hati.
 
@@ -219,57 +219,12 @@ Kraus dkk. (2022):
 8. Mencampur kesimpulan penulis asli dengan tafsiran sendiri.
 9. Tidak menyebut review terdahulu, sehingga kebaruan tidak dapat dinilai.
 
-## 5. Gaya bahasa
+## 5. Penerapan
 
-Pola P6 menentukan gaya. Setiap paragraf sintesis berisi: klaim, bukti operasional
-(studi, data, metode, angka), tafsiran, lalu batasnya. Yang dihindari:
+Aturan gaya yang diturunkan dari pola di atas, termasuk daftar periksa
+sebelum naskah dikirim, ada di `GAYA-NASKAH-MAIN6.md`.
 
-- Slogan dan kata sifat tanpa isi: "revolusioner", "terobosan", "sangat menjanjikan",
-  "memainkan peran penting".
-- Pembuka generik: "Dalam beberapa tahun terakhir, kecerdasan buatan telah...".
-- Jargon tanpa definisi. Istilah teknis ditulis sekali dengan definisi singkat.
-- Daftar tiga kata sifat yang berulang dan kalimat yang bisa ditukar ke topik lain
-  tanpa kehilangan makna.
-- Angka tanpa konteks. Setiap angka disertai data, split, dan metriknya.
-
-## 6. Kerangka yang diterapkan pada naskah `main6`
-
-Naskah `manuscript/source/main6.tex` + `main6-body.tex` menerapkan pola di atas
-sebagai berikut.
-
-| Bagian naskah `main6` | Isi | Pola |
-|---|---|---|
-| 1. Introduction | Masalah terukur (27–58% buah terlihat pada satu atau dua citra; 9,9% hitung ganda), kasus sensus sawit, empat pertanyaan tinjauan, tiga kontribusi | P2, P9, P10 |
-| 2. Review method | Tipe tinjauan, sumber dan tanggal, tabel 13 eksekusi kueri, kriteria E1–E7, penyaringan, pengodean, penilaian bukti, alur PRISMA (Gambar 1) | P1, P3, P4, P7 |
-| 3. Design space | Lima tahap dari akuisisi ke inventaris, tiga sumber hitung ganda, enam mekanisme M0–M5 beserta asumsinya (Gambar 3–5) | P10 |
-| 4. Acquisition | Tabel II: delapan kajian yang membandingkan desain akuisisi pada pohon yang sama | P5, P6, P8 |
-| 5. Evidence by mechanism | Tabel III: 13 perbandingan mekanisme pada data yang sama; bukti M1–M5; cara bukti diukur (Gambar 7) | P5, P6, P7, P8 |
-| 6. Class attributes | Hitungan per kelas pada buah unik (19 kajian C1, 49 kajian C4) | P5, P6 |
-| 7. Depth and other modalities | Peran depth pada deteksi, ukuran, dan asosiasi | P5, P6 |
-| 8. Oil palm | 170 kajian menurut tugas dan lokasi (Gambar 6); celah pencacahan lintas pandang | P5, P9 |
-| 9. Position | Tabel IV: sepuluh tinjauan terdahulu | P9 |
-| 10. Gaps and agenda | G1–G5, masing-masing dengan ukuran yang harus dilaporkan | P11 |
-| 11. Limitations | Sumber tunggal, abstrak dari layanan terbuka, satu peninjau dengan bantuan model bahasa | P11 |
-| Lampiran A | Matriks bukti 187 kajian C1 | P4, P8 |
-
-## 7. Daftar periksa sebelum naskah dikirim
-
-- [ ] Satu kalimat nilai tambah dapat ditulis dan muncul di abstrak dan pendahuluan.
-- [ ] Tipe tinjauan disebut dan sesuai dengan cara kesimpulan ditulis.
-- [ ] Pertanyaan tinjauan tertulis dan setiap bagian sintesis menjawab salah satunya.
-- [ ] Semua query ditulis lengkap dengan tanggal eksekusi dan jumlah hasil.
-- [ ] Kriteria inklusi dan eksklusi bernomor; alasan eksklusi tercatat per rekaman.
-- [ ] Diagram alir dengan angka setiap tahap.
-- [ ] Jumlah penyaring dan alat bantu disebut, termasuk alat berbasis AI.
-- [ ] Setiap klaim sintesis menyebut studi, data, metode, dan angka.
-- [ ] Tidak ada rata-rata lintas studi yang tidak sebanding.
-- [ ] Tabel pemosisian terhadap review terdahulu.
-- [ ] Matriks bukti di naskah atau lampiran.
-- [ ] Agenda menyebut apa yang diukur, dengan data dan metrik apa.
-- [ ] Bagian keterbatasan tinjauan.
-- [ ] Setiap rujukan dapat dilacak ke rekaman Scopus (EID atau DOI).
-
-## 8. Sumber
+## 6. Sumber
 
 Semua sumber ditemukan melalui Scopus. Kolom "Teks" menunjukkan apakah artikel
 dibaca dari teks lengkap (penuh) atau hanya abstrak.

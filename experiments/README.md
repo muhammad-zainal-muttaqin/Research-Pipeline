@@ -29,8 +29,8 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | **Audit** | Bukti koreksi atau pemeriksaan; jangan mengutip skor lama sebagai hasil final. |
 | **Ditangguhkan** | Kode, data, atau arah kerja sudah ada, tetapi belum mendukung klaim performa. |
 
-> **Status audit terbaru (2 Agustus 2026).** Gunakan `reports.tex` dan
-> `REPORT_PLAN.md` untuk putusan yang dibatasi bukti. Tabel ini adalah indeks
+> **Status audit terbaru (2 Agustus 2026).** Gunakan laporan hasil
+> `manuscript/reports/reports.tex` untuk putusan yang dibatasi bukti. Tabel ini adalah indeks
 > handoff dan dapat memuat label historis; khususnya E-026 harus dibaca sebagai
 > tidak konklusif karena denominator identitas berbeda, dan E-032 sebagai tidak
 > konklusif dalam rezim diuji, bukan sebagai ekuivalensi.
@@ -79,8 +79,6 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | Pembaca hasil | Halaman ini, [METRICS.md](METRICS.md), lalu [SR-014](SR/SR-014-rfdetr-dinov2.md). |
 | Pemeriksa bukti | Halaman ini, [AUDIT-E022.md](AUDIT-E022.md), [arsip E-022](archive/E022-seed42-awal.md), lalu [EKSPERIMEN.md](EKSPERIMEN.md). |
 | Pelaksana reproduksi | Halaman ini, [PETA-SKRIP.md](code/PETA-SKRIP.md), [catatan E-021](code/CATATAN-TEKNIS-E021.md), lalu [REPRODUCE.md](code/REPRODUCE.md). |
-| Pihak luar yang diberi tugas riset | [BRIEF-DEEP-RESEARCH.md](BRIEF-DEEP-RESEARCH.md) — paket pengarahan berbahasa Inggris berisi larangan eksplisit atas jalur yang sudah dipalsukan. Bukan hasil dan tidak boleh dikutip sebagai bukti. |
-| Perencana eksperimen berikutnya | [SINTESIS-DEEP-RESEARCH.md](SINTESIS-DEEP-RESEARCH.md) — rencana E-033…E-037 hasil sintesis dua jawaban deep research, beserta tiga pra-saring tanpa GPU. **Rencana, bukan hasil**; tidak ada run yang mendukungnya. |
 
 `EKSPERIMEN.md` tetap menjadi catatan kronologis. `SR/` merangkai bukti per ide,
 dan `experiments/` menyimpan skrip serta JSON sumber.
