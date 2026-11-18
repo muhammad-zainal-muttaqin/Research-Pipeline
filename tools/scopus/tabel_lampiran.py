@@ -30,6 +30,12 @@ CROP_ABBR = {"peach/nectarine": "peach", "sweet pepper": "pepper", "litchi/longa
              "persimmon/guava": "persimmon", "pumpkin/squash": "pumpkin", "nut crops": "nut"}
 
 
+DIBACA_TEKS_LENGKAP = {
+    "shimomoto2025predicting": {"tanaman": "sweet pepper"},
+    "liu2018robust": {"tanaman": "citrus;apple"},
+    "stein2016image": {"platform": "ground vehicle/robot"},
+}
+
 def nama_mekanisme(kode):
     """'M3+M2' -> 'Appearance + tracking'; urutan tetap M0..M5 apa pun urutan di berkas data."""
     bagian = sorted(set(kode.split("+")))
@@ -59,6 +65,7 @@ def main():
     rows.sort(key=lambda r: (int(r["year"]), r["first_author"]))
     baris = []
     for r in rows:
+        r = {**r, **DIBACA_TEKS_LENGKAP.get(r["key"], {})}
         tan = r["tanaman"].split(";")[0] if r["tanaman"] else "Not stated"
         tan = CROP_ABBR.get(tan, tan).capitalize()
         plat = ", ".join(PLAT[p] for p in r["platform"].split(";") if p in PLAT) or "Not stated"
