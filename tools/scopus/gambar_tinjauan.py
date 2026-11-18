@@ -5,6 +5,11 @@ Semua angka pada gambar dihitung ulang dari berkas di literature/scopus-2026-09,
 sehingga gambar selalu sesuai dengan data. Keluaran: PDF (vektor, untuk LaTeX)
 dan PNG (pratinjau) di manuscript/figures/main6/.
 
+F11 memotong dua citra dari literature/references/SawitMVC-DiB-2026.pdf
+(CC BY 4.0) dengan `pdfimages` (poppler). F12 membaca hasil yang dilaporkan
+kajian dari topik/bukti/nilai_terlapor.csv; setiap baris memuat kutipan
+sumbernya, dan nilai berkolom nilai_rujukan diubah menjadi persen rujukan.
+
   python3 tools/scopus/gambar_tinjauan.py            # semua gambar
   python3 tools/scopus/gambar_tinjauan.py F08 F09    # gambar tertentu saja
 """
@@ -749,6 +754,152 @@ def gambar_sensor(mat):
     return {t: dict(sel[t]) for t in baris}
 
 
+# ------------------------------------------- F11 foto sensus sawit (direproduksi, CC BY 4.0)
+DIB_PDF = ROOT / "literature/references/SawitMVC-DiB-2026.pdf"
+
+
+def potong_gambar_dib(halaman, y_akhir):
+    """Ambil citra tertanam pertama di halaman PDF Data in Brief SawitMVC, dipotong sampai baris y_akhir.
+
+    Butuh `pdfimages` (poppler). Citra tidak disimpan di repo; selalu diambil ulang dari PDF.
+    """
+    import subprocess
+    import tempfile
+
+    from PIL import Image
+
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run(["pdfimages", "-j", "-f", str(halaman), "-l", str(halaman), str(DIB_PDF),
+                        f"{tmp}/img"], check=True)
+        jalur = sorted(Path(tmp).glob("img-*.jpg"))[0]
+        img = Image.open(jalur).convert("RGB")
+        img.load()
+    assert img.width == 1511, f"ukuran citra halaman {halaman} berubah: {img.size}"
+    return img.crop((0, 0, img.width, y_akhir))
+
+
+def gambar_foto_sawit():
+    from PIL import ImageDraw
+
+    protokol = potong_gambar_dib(6, 372)
+    ImageDraw.Draw(protokol).rectangle((80, 0, 170, 50), fill="white")
+    kelas = potong_gambar_dib(7, 428)
+    tinggi = [protokol.height / protokol.width, kelas.height / kelas.width]
+    fig, axs = plt.subplots(2, 1, figsize=(7.0, 7.0 * sum(tinggi) * 1.08),
+                            gridspec_kw={"height_ratios": tinggi, "hspace": 0.12})
+    for ax, img, judul in zip(axs, [protokol, kelas],
+                              ["(a) Four sides of one palm, same bunch in the same colour",
+                               "(b) Bunch crops of the four census classes"]):
+        ax.imshow(img)
+        ax.set_axis_off()
+        ax.set_title(judul, loc="left", fontsize=8.5)
+    simpan(fig, "F11_foto_sawit")
+
+
+# ------------------------------------------- F12 hasil yang dilaporkan pada data yang sama
+JENIS_A = {"tidak ditautkan": ("Not linked (single view or sum)", C["abu"], "o"),
+           "ditautkan dengan pelacakan": ("Linked by tracking", C["biru"], "s"),
+           "ditautkan dengan langkah geometris": ("Linked with a geometric step", C["hijau"], "^")}
+JENIS_B = {"nomor identitas terbesar": ("Largest identity number", C["abu"], "o"),
+           "satu garis hitung": ("Single counting line", C["oranye"], "s"),
+           "aturan hitung penulis": ("Counting rule built by the authors", C["biru"], "^")}
+
+
+def gambar_hasil(mat):
+    baris = list(csv.DictReader(open(TOPIK / "bukti/nilai_terlapor.csv", encoding="utf-8")))
+    penulis = {r["key"]: (r["first_author"].split()[0], r["year"]) for r in mat}
+    kunci_hilang = {b["kunci"] for b in baris} - set(penulis)
+    assert not kunci_hilang, f"kunci tidak ada di matriks bukti: {kunci_hilang}"
+    assert {b["jenis_lengan"] for b in baris if b["panel"] == "a"} <= set(JENIS_A)
+    assert {b["jenis_lengan"] for b in baris if b["panel"] == "b"} <= set(JENIS_B)
+
+    def nilai(b):
+        lo, hi = float(b["nilai_bawah"]), float(b["nilai_atas"])
+        if b["nilai_rujukan"]:
+            ref = float(b["nilai_rujukan"])
+            lo, hi = 100 * lo / ref, 100 * hi / ref
+        return lo, hi
+
+    def tata_baris(rows):
+        """Satu baris per lengan; judul kajian di atas kelompoknya."""
+        posisi, judul, y, sebelum = {}, [], 0.0, None
+        for b in rows:
+            kunci = (b["kunci"], b["lengan"])
+            if kunci in posisi:
+                continue
+            if b["kunci"] != sebelum:
+                nama, tahun = penulis[b["kunci"]]
+                data = b["data"][0].lower() + b["data"][1:]
+                judul.append((y, f"{nama} et al. ({tahun}); {data}"))
+                y += 1.05
+            posisi[kunci] = y
+            sebelum = b["kunci"]
+            y += 1
+        return posisi, judul, y
+
+    def judul_kajian(ax, judul):
+        for yy, t in judul:
+            ax.text(0.004, yy, t, transform=ax.get_yaxis_transform(), ha="left", va="center",
+                    fontsize=6.8, style="italic")
+
+    def legenda(ax, jenis, turun):
+        ax.legend(handles=[plt.Line2D([], [], marker=m, color=c, ls="", mec="black", mew=0.4, label=n)
+                           for n, c, m in jenis.values()],
+                  loc="upper center", bbox_to_anchor=(0.5, -turun), ncol=3, fontsize=6.8, frameon=False)
+
+    a = [b for b in baris if b["panel"] == "a"]
+    b_rows = [b for b in baris if b["panel"] == "b"]
+    pos_a, judul_a, tinggi_a = tata_baris(a)
+    pos_b, judul_b, tinggi_b = tata_baris(b_rows)
+    fig, (ax_a, ax_b) = plt.subplots(2, 1, figsize=(6.4, 0.24 * (tinggi_a + tinggi_b) + 1.6),
+                                     gridspec_kw={"height_ratios": [tinggi_a, tinggi_b], "hspace": 0.38})
+
+    for b in a:
+        nama, warna, penanda = JENIS_A[b["jenis_lengan"]]
+        yy = pos_a[(b["kunci"], b["lengan"])]
+        lo, hi = nilai(b)
+        ax_a.plot([0, lo], [yy, yy], color=warna, lw=0.7, alpha=0.6)
+        if hi > lo:
+            ax_a.plot([lo, hi], [yy, yy], color=warna, lw=3.2, solid_capstyle="butt")
+        ax_a.plot([hi], [yy], penanda, color=warna, ms=5, mec="black", mew=0.4)
+        teks = f"{lo:.1f}" if hi == lo else f"{lo:.1f}–{hi:.1f}"
+        ax_a.text(hi + 3, yy, teks, va="center", fontsize=6.5)
+    ax_a.axvline(100, color="black", lw=0.6, ls="--")
+    ax_a.set_yticks(list(pos_a.values()))
+    ax_a.set_yticklabels([l for _, l in pos_a], fontsize=6.8)
+    judul_kajian(ax_a, judul_a)
+    ax_a.set_ylim(tinggi_a - 0.5, -0.6)
+    ax_a.set_xlim(0, 200)
+    ax_a.set_xlabel("Count as a percentage of the reference count (%)")
+    ax_a.set_title("(a) Linking observations against counting each view or frame", loc="left")
+    legenda(ax_a, JENIS_A, 0.11)
+
+    for (k, l), yy in pos_b.items():
+        vals = sorted(float(b["nilai_bawah"]) for b in b_rows if b["kunci"] == k and b["lengan"] == l)
+        ax_b.plot([vals[0], vals[-1]], [yy, yy], color="#555555", lw=0.7)
+    for b in b_rows:
+        nama, warna, penanda = JENIS_B[b["jenis_lengan"]]
+        yy = pos_b[(b["kunci"], b["lengan"])]
+        v = float(b["nilai_bawah"])
+        ax_b.plot([v], [yy], penanda, color=warna, ms=5, mec="black", mew=0.4, zorder=3)
+        rata = {"aturan hitung penulis": "right", "satu garis hitung": "left"}.get(b["jenis_lengan"], "center")
+        ax_b.text(v, yy - 0.28, b["nilai_bawah"], ha=rata, va="bottom", fontsize=6)
+    ax_b.set_xscale("log")
+    ax_b.set_xlim(3, 700)
+    ax_b.set_yticks(list(pos_b.values()))
+    ax_b.set_yticklabels([l for _, l in pos_b], fontsize=6.8)
+    metrik = {b["kunci"]: "mean relative error" if b["metrik"].startswith("galat relatif") else "MAPE"
+              for b in b_rows}
+    judul_kajian(ax_b, [(yy, t + "; " + metrik[k]) for (yy, t), k in
+                        zip(judul_b, dict.fromkeys(b["kunci"] for b in b_rows))])
+    ax_b.set_ylim(tinggi_b - 0.4, -0.6)
+    ax_b.set_xlabel("Reported count error on the same tracks (%, log scale)")
+    ax_b.set_title("(b) Counting rule applied to the same tracks", loc="left")
+    legenda(ax_b, JENIS_B, 0.2)
+    simpan(fig, "F12_hasil")
+    return len(a), len(b_rows)
+
+
 def main():
     pilih = {a.upper() for a in sys.argv[1:]}
 
@@ -778,6 +929,10 @@ def main():
         print("alur", gambar_alur(mat))
     if mau("F10"):
         print("sensor", gambar_sensor(mat))
+    if mau("F11"):
+        gambar_foto_sawit()
+    if mau("F12"):
+        print("hasil", gambar_hasil(mat))
 
 
 if __name__ == "__main__":

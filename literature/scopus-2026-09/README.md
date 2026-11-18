@@ -28,7 +28,7 @@ dengan skrip di `tools/scopus/`.
 | `topik/records_*.csv` | Rekaman per kueri dan gabungan unik (`records_all.csv`, 5.889 rekaman) |
 | `topik/enrich.jsonl` | Abstrak dan tautan akses terbuka dari OpenAlex, Semantic Scholar, Crossref, Europe PMC |
 | `topik/penyaringan/` | Keputusan tahap judul (`tahap_judul.csv`) dan tahap kelayakan (`abstrak_*.txt`) |
-| `topik/bukti/` | Kode manual C1 (`mekanisme_C1.txt`), kode manual C3 (`kode_C3.txt`), matriks bukti |
+| `topik/bukti/` | Kode manual C1 (`mekanisme_C1.txt`), kode manual C3 (`kode_C3.txt`), hasil yang dilaporkan kajian untuk gambar F12 beserta kutipan sumbernya (`nilai_terlapor.csv`), matriks bukti |
 | `crossref.jsonl` | Metadata Crossref untuk daftar pustaka `references6.bib` |
 | `pdf/`, `teks/` | PDF akses terbuka kajian yang lolos dan teks hasil ekstraksinya |
 | `entri/` | 470 ringkasan per kajian `main6`, satu berkas per kunci BibTeX; isi ringkasan dibaca Ruang Baca, teks lengkapnya di `teks/` |
@@ -41,7 +41,7 @@ export ELSEVIER_API_KEY_FILE=/path/ke/kunci.txt   # kunci tidak disimpan di repo
 python3 tools/scopus/scopus_search.py --queries literature/scopus-2026-09/topik/queries.json --out literature/scopus-2026-09/topik
 python3 tools/scopus/enrich_records.py --records literature/scopus-2026-09/topik/records_all.csv --cache literature/scopus-2026-09/topik/enrich.jsonl
 python3 tools/scopus/kode_bukti.py          # matriks bukti dari keputusan dan kode manual
-python3 tools/scopus/gambar_tinjauan.py     # gambar F01–F10 di manuscript/figures/main6
+python3 tools/scopus/gambar_tinjauan.py     # gambar F01–F12 di manuscript/figures/main6
 python3 tools/scopus/tabel_lampiran.py      # tabel lampiran C1
 python3 tools/scopus/buat_bib.py --rekaman literature/scopus-2026-09/topik/records_all.csv \
   literature/scopus-2026-09/metodologi/records_MA*.csv \

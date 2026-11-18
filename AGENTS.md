@@ -149,7 +149,7 @@ Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 
 | Jalur | Status |
 |---|---|
-| Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 41 halaman, 11 seksi, 2 lampiran, 7 gambar, 6 tabel; bahan tambahan `main6-supplementary.tex` 5 halaman). Naskah 182 sumber (`main.tex`, `main-elsarticle.tex`) hanya dipertahankan untuk Ruang Baca; iterasi `main2`–`main5v3` sudah dihapus. Badan naskah ditulis ulang pada 18 November 2026 agar setiap seksi bukti dibuka dengan klaim isi; rincian metode pindah ke bahan tambahan. |
+| Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 43 halaman, 11 seksi, 2 lampiran, 9 gambar, 6 tabel; bahan tambahan `main6-supplementary.tex` 5 halaman). Naskah 182 sumber (`main.tex`, `main-elsarticle.tex`) hanya dipertahankan untuk Ruang Baca; iterasi `main2`–`main5v3` sudah dihapus. Badan naskah ditulis ulang pada 18 November 2026 agar setiap seksi bukti dibuka dengan klaim isi; rincian metode pindah ke bahan tambahan. |
 | Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.145 dinilai kelayakannya → 1.013 lolos tahap abstrak (+5 dari luar pencarian) → 482 dengan PDF dinilai dari teks lengkap (536 tidak diperoleh) → **470 masuk peta** (2012–2026). Kode: C1 214 · C2 43 · C3 53 · C4 13 · C5 35 · R 65 · T 47. Korpus dibatasi pada kajian yang PDF-nya ada di `literature/scopus-2026-09/pdf/`; keputusan teks lengkap di `literature/scopus-2026-09/topik/penyaringan/teks_lengkap.txt`. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: Cek 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026; tahap teks lengkap disetujui peninjau pada 18 November 2026; 5.7, A.1, dan A.3 menunggu di `literature/scopus-2026-09/verifikasi/TUGAS.md`.** Belum dikerjakan: pemeriksaan ulang eksklusi tahap judul untuk kueri Q2 dan Q4–Q9 (sekitar 3.300 rekaman; Q1 dan Q3 sudah). |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed 0,0049. |
@@ -173,7 +173,8 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 | `literature/withheld/` | 20 entri ditahan; jangan masuk naskah |
 | `literature/references/` | PDF baseline SawitMVC; `revisi-dosen-2026-07-23/` berisi delapan permintaan revisi dosen (`Chat.txt`, catatan primer, jangan dihapus) |
 | `manuscript/source/` | `main6.tex`, `main6-body.tex`, `main6-supplementary.tex` (bahan tambahan), `main6-angka.tex` (keluaran `angka_naskah.py`), lampiran, `references6.bib`; naskah 182 sumber (`main.tex`, `main-elsarticle.tex`, `evidence-body.tex`, `references.bib`) dan `experiment-ledgers.tex` untuk laporan eksperimen |
-| `manuscript/figures/main6/` | Gambar F01–F10 (keluaran skrip) |
+| `manuscript/figures/main6/` | Gambar F01–F12 (keluaran skrip) |
+| `manuscript/templates/els-cas-templates/` | Bundel CAS Elsevier 2.4 (`cas-dc.cls`, `cas-common.sty`, `cas-model2-names.bst`) yang dipakai `main6.tex`; `main6.tex` berhenti bila kelas yang terbaca lebih tua |
 | `manuscript/guides/` | `GAYA-NASKAH-MAIN6.md`, `POLA-TINJAUAN-PUSTAKA.md`, `PANDUAN-PENULISAN.md`; artikel contoh yang dirujuk panduan ada di `literature/example/` |
 | `manuscript/reports/` | Laporan hasil eksperimen (`reports.tex` dan versi ringkas); figur rasternya di `manuscript/figures/` |
 | `manuscript/output/papers/` | PDF hasil kompilasi |
@@ -198,10 +199,10 @@ node site/build.js --dry        # laporan saja
 node site/build.js              # rakit ulang index.html
 
 cd manuscript/source
-tectonic main6.tex              # latexmk/pdflatex tidak tersedia
+tectonic -Z search-path=../templates/els-cas-templates main6.tex   # cas-dc 2.4; latexmk/pdflatex tidak tersedia
 
 python3 tools/scopus/kode_bukti.py       # matriks bukti
-python3 tools/scopus/gambar_tinjauan.py  # gambar F01–F10
+python3 tools/scopus/gambar_tinjauan.py  # gambar F01–F12
 python3 tools/scopus/tabel_lampiran.py   # Lampiran A
 python3 tools/scopus/lampiran_kueri.py   # Lampiran B
 ```

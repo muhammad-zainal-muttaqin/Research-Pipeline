@@ -96,6 +96,11 @@ def main():
     lain = [r for r in lain_semua if (KORPUS / "pdf" / (r["key"] + ".pdf")).exists()]
     n_scopus = len(mat)
     assert n_scopus == len(dinilai) - sum(xt.values()), "matriks_bukti.csv tidak sesuai tahap teks lengkap"
+    alasan = {f"E{i}" for i in range(1, 8)}
+    assert set(xa) <= alasan and set(xt) <= alasan, "alasan eksklusi di luar E1-E7"
+    assert unik - x0 - xj == len(dec), "diagram alur: judul disaring - eksklusi judul != dinilai dari abstrak"
+    assert len(dec) - sum(xa.values()) == len(tl), "diagram alur: lolos abstrak != laporan dicari teks lengkapnya"
+    assert len(tl) == sum(tidak_diperoleh.values()) + len(dinilai), "diagram alur: dicari != tidak diperoleh + dinilai"
     tulis("## Seksi 2: alur rekaman\n")
     tulis(f"- Rekaman diambil {diambil:,}; unik {unik:,}; duplikat {diambil - unik:,}")
     tulis(f"- Dibuang menurut tipe dokumen {x0}; judul disaring {unik - x0:,}; dikeluarkan di tahap judul {xj:,}")
