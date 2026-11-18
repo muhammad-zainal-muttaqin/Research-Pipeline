@@ -120,6 +120,8 @@ def main():
     n_cari = len(tl) + len(lain_semua)
     n_tdk = sum(tidak_diperoleh.values()) + len(lain_semua) - len(lain)
     m("pNotRetrieved", f"{100 * n_tdk / n_cari:.0f}")
+    for kode, nama in (("C2", "Single"), ("C3", "Palm"), ("C4", "Class"), ("C5", "Depth"), ("R", "Review"), ("T", "Transfer")):
+        m(f"nNotRetrieved{nama}", tidak_diperoleh[kode] + sum(1 for r in lain_semua if r["kode"] == kode and r not in lain))
     m("nNotRetrievedMulti", tidak_diperoleh["C1"] + sum(1 for r in lain_semua if r["kode"] == "C1" and r not in lain))
     m("nRetrieved", diambil)
     m("nUnique", unik)
