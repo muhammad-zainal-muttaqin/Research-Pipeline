@@ -32,8 +32,8 @@ const MARKED_VERSION = '12.0.0';
  * ------------------------------------------------------------------ *
  * Dokumen spesial = berkas Markdown di luar korpus entri yang tetap
  * dapat dibaca di dalam aplikasi. Mereka TIDAK pernah ikut menghitung
- * invarian korpus (182 entri, 14 tema, rentang tahun, statistik baca):
- * seluruh angka META dihitung dari `entries` saja.
+ * angka korpus (jumlah entri, tema, rentang tahun, statistik baca):
+ * seluruh angka META dihitung dari `korpus` saja.
  *
  * Medan:
  *   id        : rute hash (#/<id>) sekaligus kunci `byId` di runtime
@@ -327,9 +327,10 @@ const specials = SPECIAL_DOCS.map(function (d, i) {
  * Entri korpus main6
  * ------------------------------------------------------------------ *
  * Satu berkas per kajian di literature/scopus-2026-09/entri/<kunci>.md.
- * Entri ini TIDAK ikut invarian korpus 182 dan isinya TIDAK disematkan:
- * index.html hanya memuat metadata dan paragraf "Gambaran Umum" (untuk
- * pencarian); isi lengkap diambil runtime dari berkas .md saat entri dibuka.
+ * Entri ini kini menjadi bagian dari satu korpus bersama entri lama dan
+ * isinya TIDAK disematkan: index.html hanya memuat metadata dan paragraf
+ * "Gambaran Umum" (untuk pencarian); isi lengkap diambil runtime dari
+ * berkas .md saat entri dibuka.
  */
 const M6_DIR = path.join(ROOT, 'literature', 'scopus-2026-09', 'entri');
 const M6_URL = 'literature/scopus-2026-09/entri/';
@@ -369,7 +370,16 @@ if (fs.existsSync(M6_DIR)) {
 const m6Counts = {};
 m6.forEach(function (e) { m6Counts[e.theme] = (m6Counts[e.theme] || 0) + 1; });
 
-const DATA = specials.concat(entries, m6);
+// Satu korpus: entri lama memakai nomor aslinya (001..202, dengan celah),
+// entri main6 dilanjutkan setelah nomor tertinggi yang dipakai. Kunci teks
+// tetap dipakai sebagai id rute.
+const maxOldNum = entries.reduce(function (m, e) { return Math.max(m, e.num); }, 0);
+const maxNum = maxOldNum + m6.length;
+const korpus = entries.concat(m6.map(function (e, i) {
+  return Object.assign({}, e, { num: maxOldNum + i + 1 });
+}));
+
+const DATA = specials.concat(korpus);
 
 /* ------------------------------------------------------------------ *
  * Statistik dan META
@@ -377,7 +387,7 @@ const DATA = specials.concat(entries, m6);
 const themeCounts = {};
 const yearCounts = {};
 let totalWords = 0;
-entries.forEach(function (e) {
+korpus.forEach(function (e) {
   themeCounts[e.theme] = (themeCounts[e.theme] || 0) + 1;
   yearCounts[e.year] = (yearCounts[e.year] || 0) + 1;
   totalWords += e.words;
@@ -390,7 +400,7 @@ const totalMin = Math.round(totalWords / 200);
 const totalHours = Math.max(1, Math.round(totalMin / 60));
 
 const META = {
-  total: entries.length,
+  total: korpus.length,
   themeCount: themes.length,
   minYear: minYear,
   maxYear: maxYear,
@@ -409,8 +419,7 @@ const META = {
  * Laporan
  * ------------------------------------------------------------------ */
 console.log('\n=== build.js: Ruang Baca Riset ===');
-console.log('Entri reguler   : ' + entries.length + '  (invarian korpus; dokumen spesial tidak dihitung)');
-console.log('Entri main6     : ' + m6.length + '  (isi dimuat runtime; di luar invarian korpus)');
+console.log('Entri korpus    : ' + korpus.length + '  (gabungan ' + entries.length + ' entri lama + ' + m6.length + ' entri main6)');
 console.log('Dokumen spesial : ' + specials.length + '  ' +
   specials.map(function (s) { return s.id + ' [' + s.kind + ', ' + s.words + ' kata]'; }).join(' · '));
 console.log('Tema            : ' + themes.length);
@@ -1024,7 +1033,7 @@ function RUNTIME() {
   /* ---- data index ---- */
   var byId = {};
   DATA.forEach(function (e) { byId[e.id] = e; });
-  // ENTRIES = korpus 182 saja; entri main6 (e.m6) punya daftar sendiri.
+  // ENTRIES = seluruh entri korpus, termasuk entri main6 (e.m6).
   var ENTRIES = DATA.filter(function (e) { return !e.special && !e.m6; });
   var M6_BASE = 'literature/scopus-2026-09/';
   var SPECIALS = DATA.filter(function (e) { return e.special; });
@@ -1224,13 +1233,12 @@ function RUNTIME() {
   function buildChips() {
     var themes = Object.keys(META.themeCounts).sort(function (a, b) { return META.themeCounts[b] - META.themeCounts[a]; });
     chipsEl.innerHTML = '';
-    var m6Themes = Object.keys(META.m6Counts || {}).sort();
-    themes.concat(m6Themes).forEach(function (t) {
+    themes.forEach(function (t) {
       var c = doc.createElement('button');
       c.className = 'chip'; c.type = 'button'; c.dataset.tema = t;
       c.setAttribute('aria-pressed', 'false');
       c.style.setProperty('--tc', tColor(t));
-      c.innerHTML = '<span class="cd"></span>' + esc(t) + ' <span style="color:var(--ink-3);font-family:var(--mono);font-size:10px">' + (META.themeCounts[t] || META.m6Counts[t]) + '</span>';
+      c.innerHTML = '<span class="cd"></span>' + esc(t) + ' <span style="color:var(--ink-3);font-family:var(--mono);font-size:10px">' + META.themeCounts[t] + '</span>';
       c.addEventListener('click', function () {
         if (state.tema[t]) delete state.tema[t]; else state.tema[t] = 1;
         pushFilter(); renderList();
@@ -1247,7 +1255,7 @@ function RUNTIME() {
     });
   }
   function buildYears() {
-    // Pilihan tahun mencakup korpus 182 dan entri main6.
+    // Pilihan tahun mencakup seluruh entri korpus.
     var yc = {};
     DATA.forEach(function (e) { if (!e.special) yc[e.year] = (yc[e.year] || 0) + 1; });
     var ys = Object.keys(yc).map(Number).sort(function (a, b) { return a - b; });
@@ -1266,12 +1274,11 @@ function RUNTIME() {
     searchBox.classList.toggle('has-val', !!state.q);
     var active = state.q || state.thn || Object.keys(state.tema).length;
     // Hitungan penyaring memakai entri korpus saja: dokumen spesial tidak
-    // pernah menggeser angka 182.
+    // pernah menggeser angka korpus.
     var shown = state.ordered.filter(function (e) { return !e.special; }).length;
-    var all = META.total + (META.m6Total || 0);
     sbCount.textContent = active
-      ? (shown + ' dari ' + all + ' entri')
-      : (META.m6Total ? (META.total + ' entri · ' + META.m6Total + ' entri main6') : (META.total + ' entri · ' + META.themeCount + ' tema'));
+      ? (shown + ' dari ' + META.total + ' entri')
+      : (META.total + ' entri · ' + META.themeCount + ' tema');
   }
 
   /* ================= HASH / ROUTER ================= */
@@ -1418,11 +1425,11 @@ function RUNTIME() {
   /* ================= VIEWS ================= */
   function entryHeader(e) {
     var chip = '<span class="t-chip" style="--tc:' + tColor(e.theme) + '"><span class="cd"></span>' + esc(e.theme) + '</span>';
-    // Dokumen spesial memakai label dari registry; hanya entri korpus yang
-    // boleh menyandang nomor "ENTRI NNN / 182".
+    // Dokumen spesial memakai label dari registry; seluruh entri korpus,
+    // termasuk entri main6, menyandang nomor "ENTRI NNN / total".
     var eyebrow = e.special
       ? '<span>' + esc(e.label || 'DOKUMEN') + '</span><span class="sep">·</span>' + chip
-      : '<span>' + (e.m6 ? 'KORPUS MAIN6' : 'ENTRI ' + e.id + ' / ' + META.total) + '</span><span class="sep">·</span><span>' + e.year + '</span><span class="sep">·</span>' + chip;
+      : '<span>ENTRI ' + String(e.num).padStart(3, '0') + ' / ' + META.total + '</span><span class="sep">·</span><span>' + e.year + '</span><span class="sep">·</span>' + chip;
     var meta = '<span class="readtime">' + ICON.clock + readMin(e.words) + ' menit baca</span>';
     if (e.bib) meta += '<button class="meta-btn" data-copy="' + esc(e.bib) + '">' + ICON.copy + '<span>' + esc(e.bib) + '</span></button>';
     meta += '<button class="meta-btn" data-copy-link="' + e.id + '">' + ICON.copy + 'Salin tautan</button>';
@@ -1544,7 +1551,7 @@ function RUNTIME() {
     }).join(', ');
     main.innerHTML = '<div class="wrap"><div class="nf rv in"><div class="code">404 · HALAMAN TIDAK DITEMUKAN</div>' +
       '<h1>Alamat "' + esc(id) + '" tidak dikenali</h1>' +
-      '<p>Nomor entri korpus berkisar 001–' + pad3(META.total) + '. Di luar itu tersedia dokumen riset: ' + docs + '. ' +
+      '<p>Entri korpus bernomor 001–' + pad3(maxNum) + ' atau berkunci teks. Di luar itu tersedia dokumen riset: ' + docs + '. ' +
       'Periksa kembali tautannya, atau telusuri lewat daftar di samping.</p>' +
       '<a class="btn btn-solid" href="#/">' + ICON.arrowL + 'Kembali ke Beranda</a></div></div>';
     doc.title = 'Tidak ditemukan · Ruang Baca Riset';
@@ -1557,10 +1564,10 @@ function RUNTIME() {
     h += '<section class="hero">' +
       '<div class="eb rv"><span class="dot"></span>Tinjauan Pustaka · ' + META.minYear + '–' + META.maxYear + '</div>' +
       '<h1 class="rv" style="--i:1">Ruang Baca Riset<br><span class="muted">YOLO · RGB · RGB-D</span></h1>' +
-      '<p class="lede rv" style="--i:2">Ruang baca digital untuk ' + META.total + ' telaah makalah deteksi objek dan fusi RGB+Depth (' + META.minYear + '–' + META.maxYear + '), ' + (META.m6Total ? META.m6Total + ' ringkasan kajian korpus main6, ' : '') + 'plus ' + SPECIALS.length + ' dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.</p>' +
+      '<p class="lede rv" style="--i:2">Ruang baca digital untuk ' + META.total + ' telaah makalah deteksi objek dan fusi RGB+Depth (' + META.minYear + '–' + META.maxYear + '), ' + 'plus ' + SPECIALS.length + ' dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.</p>' +
       '<div class="cta-row rv" style="--i:3">' +
       '<a class="btn btn-solid" href="#/temuan">' + ICON.spark + 'Mulai dari Temuan' + ICON.arrowR + '</a>' +
-      '<button class="btn btn-ghost" id="exploreBtn" type="button">' + ICON.book + 'Jelajahi katalog ' + (META.total + (META.m6Total || 0)) + ' entri</button>' +
+      '<button class="btn btn-ghost" id="exploreBtn" type="button">' + ICON.book + 'Jelajahi katalog ' + META.total + ' entri</button>' +
       '</div>' + resumeHtml() + '</section>';
 
     h += sectionH('Dokumen riset', 'research documents · ' + SPECIALS.length + ' dokumen');
@@ -1572,7 +1579,6 @@ function RUNTIME() {
     h += sectionH('Sekilas angka', 'ringkasan korpus');
     h += '<div class="stats rv">' +
       statCell(META.total, 'Entri telaah') +
-      (META.m6Total ? statCell(META.m6Total, 'Entri korpus main6') : '') +
       statCell(META.themeCount, 'Tema klaster') +
       statCell(Object.keys(META.yearCounts).length, 'Tahun ' + META.minYear + '–' + META.maxYear) +
       statCell('±' + META.totalHours, 'Jam total baca') + '</div>';
