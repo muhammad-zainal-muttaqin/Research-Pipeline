@@ -20,6 +20,8 @@ MAT = KORPUS / "topik/bukti/matriks_bukti.csv"
 MANUAL = KORPUS / "topik/bukti/mekanisme_C1.txt"
 CEK5 = KORPUS / "verifikasi/cek-5-kode-ulang"
 LEMBAR = CEK5 / "kode_ulang_C1.csv"
+LOG = KORPUS / "verifikasi/.teknis/log_perubahan.csv"
+CEK5_DISETUJUI = "2026-10-19"
 
 KOLOM_MANUAL = ["mekanisme", "akuisisi", "per_kelas", "hasil_ringkas", "sumber_kode", "halaman",
                 "referensi_hitung", "tingkat_metrik", "cara_kelas", "berubah"]
@@ -78,8 +80,27 @@ def bersih(c):
     return re.sub(r"\b(M[0-5])\b(?! \()", lambda m: f"{m.group(1)} ({MEK[m.group(1)]})", teks)
 
 
+def isian_sesudah_cek5():
+    """idx -> isi diisi_oleh untuk baris mekanisme_C1.txt yang disunting sesudah Cek 5 disetujui.
+
+    Baris yang ditambahkan sesudah persetujuan belum diperiksa peninjau. Suntingan
+    yang dicatat dengan pengubah berawalan "AI, " memakai keterangan itu.
+    """
+    isian = {}
+    for r in baca(LOG):
+        if r["berkas"] != "topik/bukti/mekanisme_C1.txt" or r["tanggal"] <= CEK5_DISETUJUI:
+            continue
+        idx = r["idx_atau_key"].split()[0]
+        if r["kolom"] == "baris":
+            isian[idx] = "AI dari teks lengkap, belum diperiksa peninjau"
+        elif r["oleh"].startswith("AI, "):
+            isian[idx] = f"AI dari teks lengkap, {r['oleh'][4:]} ({r['tanggal']})"
+    return isian
+
+
 def bangun_lembar():
     lama = {r["idx"]: r for r in baca(LEMBAR)} if LEMBAR.exists() else {}
+    sesudah = isian_sesudah_cek5()
     manual = muat_manual()
     mat = {r["idx"]: r for r in baca(MAT) if r["kode"] == "C1"}
     baris = []
@@ -98,7 +119,8 @@ def bangun_lembar():
             "halaman_bukti": k["halaman"],
             "bukti": l.get("bukti", l.get("draf_ai_bukti", "")),
             "berubah_saat_cek_5": perubahan(k["berubah"]),
-            "diisi_oleh": ("AI dari teks lengkap, disetujui peninjau 19 Oktober 2026" if l
+            "diisi_oleh": (sesudah[idx] if idx in sesudah
+                           else "AI dari teks lengkap, disetujui peninjau 19 Oktober 2026" if l
                            else "AI dari teks lengkap, belum diperiksa peninjau"),
             "catatan": bersih(l.get("catatan", l.get("catatan_peninjau", ""))),
         })

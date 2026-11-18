@@ -17,7 +17,7 @@ Anda.
   Hapus semua `\authorcheck` sebelum dikirim. Dampaknya: tanpa isian ini,
   naskah belum dapat dikirim.
 - [ ] **A.1 Tanaman dan platform di Lampiran A dikode dari abstrak, dan
-  sebagian keliru.** Apakah tanaman dan platform 215 kajian multi-pengamatan
+  sebagian keliru.** Apakah tanaman dan platform 214 kajian multi-pengamatan
   (C1) perlu dikode ulang dari teks lengkap? Saat ini keduanya diisi aturan
   kata kunci pada judul dan abstrak (`tools/scopus/kode_bukti.py`). Tiga
   kesalahan sudah terbukti dari teks lengkap:
