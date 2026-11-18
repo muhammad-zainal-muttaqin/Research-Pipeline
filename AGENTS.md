@@ -71,7 +71,10 @@ pesan commit, dan naskah.
   perubahan, dan berkas aturan baru. Penjelasan ditulis di jawaban percakapan
   atau pesan commit. Berkas `.md` baru hanya boleh dibuat bila pengguna
   memintanya, atau bila berkas itu menggantikan berkas yang ada sehingga jumlah
-  berkas tidak bertambah.
+  berkas tidak bertambah. Larangan ini ditegakkan `.githooks/pre-commit`: commit
+  yang menambah `.md` di luar entri korpus, teks terekstrak, laporan
+  `experiments/SR/SR-NNN-*`, dan `README.md` ditolak. `IZINKAN_MD=1` hanya
+  dipakai bila pengguna memintanya, dan `--no-verify` tidak dipakai.
 - **Dilarang menimbun aturan.** Agen tidak menambah aturan atas inisiatif
   sendiri. Aturan baru hanya ditulis bila pengguna memintanya atau bila ada
   kesalahan nyata yang perlu dicegah, dalam satu butir pendek di bagian yang
@@ -184,6 +187,8 @@ Invarian ini tidak berlaku untuk `main6`.
 ## 5. Perintah
 
 ```bash
+git config core.hooksPath .githooks   # sekali per klon; mengaktifkan hook repo
+
 node site/build.js --dry        # laporan saja
 node site/build.js              # rakit ulang index.html
 
