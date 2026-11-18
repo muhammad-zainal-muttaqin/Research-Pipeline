@@ -13,6 +13,7 @@ from latex_teks import ke_latex  # noqa: F401  (dipakai skrip lain yang mengimpo
 
 ROOT = Path(__file__).resolve().parents[2]
 MAT = ROOT / "literature/scopus-2026-09/topik/bukti/matriks_bukti.csv"
+TEMUAN = ROOT / "literature/scopus-2026-09/topik/bukti/temuan_C1.tsv"
 OUT = ROOT / "manuscript/source/main6-appendix-c1.tex"
 
 PLAT = {"UAV": "UAV", "ground vehicle/robot": "Ground vehicle or robot", "handheld/smartphone": "Handheld",
@@ -63,6 +64,7 @@ def sel_dasar(r):
 def main():
     rows = [r for r in csv.DictReader(open(MAT, encoding="utf-8")) if r["kode"] == "C1"]
     rows.sort(key=lambda r: (int(r["year"]), r["first_author"]))
+    temuan = dict(l.rstrip("\n").split("\t", 1) for l in open(TEMUAN, encoding="utf-8") if "\t" in l)
     baris = []
     for r in rows:
         r = {**r, **DIBACA_TEKS_LENGKAP.get(r["key"], {})}
@@ -72,13 +74,13 @@ def main():
         kelas = "Yes" if r["per_kelas"] == "Y" else "No"
         baris.append(f"\\citet{{{r['key']}}} & {tan} & {plat} & "
                      f"{AKUISISI.get(r['akuisisi_manual'], 'Not stated')} & {nama_mekanisme(r['mekanisme'])} & "
-                     f"{kelas} & {sel_metrik(r)} & {sel_dasar(r)} \\\\")
+                     f"{kelas} & {sel_metrik(r)} & {temuan.get(r['key'], '')} \\\\")
     judul = (r"Study & Crop & Platform & Acquisition & Association mechanism & Per-class counts & "
-             r"Metric types & Coded from\\")
+             r"Metric types & Main finding\\")
     kepala = r"""%% Dibuat otomatis oleh tools/scopus/tabel_lampiran.py; jangan disunting manual.
 \begin{footnotesize}
 \setlength{\tabcolsep}{3pt}
-\begin{longtable}{@{}L{3.5cm}L{1.5cm}L{1.9cm}L{1.6cm}L{3.2cm}L{1.1cm}L{1.9cm}L{1.2cm}@{}}
+\begin{longtable}{@{}L{2.5cm}L{1.3cm}L{1.6cm}L{1.4cm}L{2.2cm}L{0.9cm}L{1.5cm}L{5.0cm}@{}}
 \caption{Detailed coding records of the %d multi-observation studies.}\label{tab:c1matrix}\\
 \toprule
 %s
@@ -91,7 +93,7 @@ def main():
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Crop (the first match in a fixed list of crops) and platform were assigned by keyword rules on the title and abstract; Not stated, no keyword matched. Metric types were coded from the source in the last column: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or ID switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Coded from: the most complete source that was read when the codes were assigned. UAV, unmanned aerial vehicle.}\\
+\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Crop (the first match in a fixed list of crops) and platform were assigned by keyword rules on the title and abstract; Not stated, no keyword matched. Metric types were coded from the full text where it was read: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or ID switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Main finding: the principal result reported by the study, as coded. UAV, unmanned aerial vehicle.}\\
 \endlastfoot
 """ % (len(rows), judul, judul)
     OUT.write_text(kepala + "\n".join(baris) + "\n\\end{longtable}\n\\end{footnotesize}\n", newline="\n")
