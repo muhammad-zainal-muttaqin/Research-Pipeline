@@ -234,10 +234,28 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
 - Kode mekanisme C1 dan kode C3 disunting di `literature/scopus-2026-09/topik/bukti/mekanisme_C1.txt` dan
   `literature/scopus-2026-09/topik/bukti/kode_C3.txt`; berkas itu menimpa kode otomatis `kode_bukti.py`.
 - Naskah tidak memuat jalur folder atau kode internal repo.
-- Naskah hanya memuat metode yang diperlukan pembaca jurnal untuk menilai dan
-  mengulang peta. Riwayat verifikasi internal (putaran model, ajudikasi, uji
-  sanggah, pendelegasian keputusan, isi log perubahan) tidak dijabarkan di
-  naskah; rinciannya cukup di repo dan bahan tambahan.
+- **Isi lebih dahulu, cara pengumpulan sesudahnya.** Ini berlaku untuk naskah
+  tinjauan dan untuk prioritas kerja agen. Pokok tinjauan adalah cara bidang
+  ini menyelesaikan masalahnya:
+  - asumsi setiap pendekatan;
+  - kapan pendekatan berhasil dan kapan gagal;
+  - perbandingan pada data yang sama;
+  - pertentangan antarkajian dan sebabnya.
+
+  Pencarian, penyaringan, pengodean, dan hitungan korpus hanya pendukung.
+  - **Metode dan statistik korpus.** Keduanya ditulis sekali, di metode dan
+    lanskap kuantitatif. Bersama-sama, panjangnya paling banyak seperlima badan
+    naskah. Naskah hanya memuat metode yang diperlukan pembaca jurnal untuk
+    menilai dan mengulang peta. Riwayat verifikasi internal (putaran model,
+    ajudikasi, uji sanggah, pendelegasian keputusan, isi log perubahan) dan
+    rincian prosedur ditaruh di bahan tambahan dan repo.
+  - **Seksi bukti.** Seksi bukti dibuka dengan klaim tentang isi, bukan dengan
+    "N dari M kajian".
+  - **Paragraf bukti.** Setiap paragraf bukti ditutup dengan sintesis lintas
+    kajian (pola, pertentangan, atau sebab), bukan daftar hasil per kajian.
+  - **Prioritas agen.** Saat memperbaiki naskah, agen lebih dahulu membaca isi
+    kajian dari teks lengkap, baru kemudian memperbaiki *pipeline* korpus.
+    Laporan kemajuan kepada pengguna juga dimulai dari temuan isi.
 - Penyaringan dilakukan satu peninjau dengan bantuan model bahasa besar.
   Nyatakan sekali secara ringkas di metode, keterbatasan, dan deklarasi AI
   jurnal; jangan diklaim sebagai dua peninjau independen.

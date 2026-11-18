@@ -82,11 +82,12 @@ Aturannya:
    kalimat. Nama penulis tidak diketik tangan.
 2. Satu kajian per kalimat. Kontras ditulis dengan "whereas", dan rantai titik
    koma dipecah.
-3. Subseksi mekanisme dibuka dengan nama, jumlah, dan penunjuk ke gambar atau
-   lampiran.
+3. Subseksi mekanisme dibuka dengan klaim tentang mekanismenya: asumsi, galat
+   yang dikendalikan, dan kondisi gagalnya. Jumlah kajian dan penunjuk ke gambar
+   atau lampiran menyusul sebagai pendukung (`AGENTS.md` §7, "Isi lebih dahulu").
 4. Rangkaian kajian ditutup dengan pola dan batasnya ("Taken together, ...").
-5. Batas ditulis sebagai hitungan ("none of the N abstracts reports ..."),
-   bukan kata penilaian.
+5. Batas ditulis dengan fakta yang dapat diperiksa (kajian yang tidak
+   mengukurnya, atau hitungan dari kode teks lengkap), bukan kata penilaian.
 6. Setiap angka disertai data, split atau rujukan hitung, dan metriknya. Angka
    antarkajian tidak dirata-ratakan, dan tabel perbandingan dibaca per baris.
 7. Kala dan persona: lampau untuk kajian, kini untuk himpunan bukti, "this
