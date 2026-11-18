@@ -37,30 +37,42 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Dikeluarkan menurut tipe dokumen (front matter prosiding, erratum, catatan, editorial, surat, ditarik) | 166 |
 | Judul disaring | 5.723 |
 | Dikeluarkan pada tahap judul | 4.578 |
-| Dinilai kelayakannya | 1.145 |
+| Dinilai kelayakannya dari judul dan abstrak | 1.145 |
 | — dengan abstrak | 891 |
 | — hanya judul, sumber, dan ringkasan TLDR | 254 |
-| Dikeluarkan pada tahap kelayakan | 132 |
-| Masuk peta (Scopus) | 1.013 |
-| Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka) | 5 |
-| Total masuk peta | 1.018 |
+| Dikeluarkan pada tahap kelayakan abstrak | 132 |
+| Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
+| Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
+| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`; termasuk kelima rekaman metode lain) | 538 |
+| Dinilai dari teks lengkap | 480 |
+| Dikeluarkan pada tahap teks lengkap (E2 4, E3 1, E5 7) | 12 |
+| Total masuk peta | 468 |
+
+Tahap teks lengkap (18 November 2026): korpus dibatasi pada kajian yang PDF-nya
+ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
+Model membaca teks lengkap setiap kajian dan melaporkan kelompok, alasan
+eksklusi, serta kutipan pendukung; setiap usul eksklusi atau perpindahan
+kelompok diperiksa terhadap teks sumber sebelum diterapkan. Perubahannya
+tercatat di `verifikasi/log_perubahan.csv` sebagai "AI, belum disetujui
+peninjau" sampai peninjau menyetujuinya.
 
 Alasan eksklusi tahap kelayakan: E1 bukan buah pada tanaman (23), E2 hanya
 pascapanen atau laboratorium (18), E3 model hasil tanpa deteksi tingkat buah (25),
 E4 hanya pemetikan atau manipulasi (1), E5 deteksi tanpa pencacahan atau evaluasi
 lain (60), E6 sensor non-citra (4), E7 tanpa judul dan abstrak berbahasa Inggris (1).
+Kode yang sama dipakai pada tahap teks lengkap.
 
 ## 4. Kode inklusi
 
 | Kode | Arti | Jumlah |
 |---|---|---:|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 199 + 1 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 243 + 2 |
-| C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 171 |
-| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 52 |
-| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 138 + 1 |
-| R | Tinjauan terdahulu | 122 + 1 |
-| T | Metode yang dapat dipindahkan dari luar pertanian | 88 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama (video, beberapa pandang, pindaian berulang) | 215 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 43 |
+| C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 53 |
+| C4 | Atribut kelas disertai pencacahan dari citra tunggal | 13 |
+| C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 35 |
+| R | Tinjauan terdahulu | 62 |
+| T | Metode yang dapat dipindahkan dari luar pertanian, termasuk model deteksi, segmentasi, dan estimasi kedalaman umum yang menjadi dasar pipeline | 47 |
 
 Dua aturan berlaku saat menetapkan kode (keputusan Fatma, 5 Oktober 2026):
 
@@ -98,7 +110,7 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
 
 ## 5. Pengodean
 
-- **C1** dikodekan manual dari abstrak dan, bila ada, teks lengkap
+- **C1** dikodekan manual dari teks lengkap (dua kajian dari abstrak karena teks PDF-nya tidak dapat diekstrak)
   (`topik/bukti/mekanisme_C1.txt`): mekanisme M0–M5, akuisisi (V, D, S, T, 1),
   hitungan per kelas (Y/N), dan hasil ringkas.
   - M0 tanpa asosiasi; M1 koreksi statistik; M2 pencocokan penampilan atau re-ID;
@@ -146,9 +158,9 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   dengan cara yang sama; label C1 diterapkan lewat Cek 5. Empat kajian dari
   penelusuran daftar pustaka ditambahkan ke `topik/tambahan_metode_lain.csv`.
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
-- PDF tersedia untuk 480 dari 1.013 kajian Scopus (`KATALOG-PDF.md`); teksnya
-  diekstrak untuk 476 kajian. Empat PDF jurnal CSAM tidak dapat diekstrak teksnya
-  (fon tanpa pemetaan Unicode); halamannya dibaca sebagai citra. Satu kajian C1
-  (Safre dkk., 2024) tidak diperoleh teks lengkapnya dan dilaporkan demikian di
-  naskah. Daftar awal PDF yang belum ada tercantum di
+- PDF tersedia untuk 480 dari 1.013 kajian Scopus (`KATALOG-PDF.md`); hanya
+  kajian itu yang dinilai pada tahap teks lengkap. Teksnya diekstrak untuk 476
+  kajian. Empat PDF jurnal CSAM tidak dapat diekstrak teksnya (fon tanpa
+  pemetaan Unicode); dua di antaranya kajian C1 (`guo2023real`,
+  `tu2026passion`) yang kodenya tetap bersumber dari abstrak. Daftar awal PDF yang belum ada tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.

@@ -25,7 +25,8 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, PathPatch
 from matplotlib.path import Path as MPath
 
 ROOT = Path(__file__).resolve().parents[2]
-TOPIK = ROOT / "literature/scopus-2026-09/topik"
+KORPUS = ROOT / "literature/scopus-2026-09"
+TOPIK = KORPUS / "topik"
 OUT = ROOT / "manuscript/figures/main6"
 OUT.mkdir(parents=True, exist_ok=True)
 
@@ -132,7 +133,16 @@ def muat_c3():
 
 
 # ---------------------------------------------------------------- F1 PRISMA
+ALASAN = [("E1", "Not fruit on the plant"), ("E2", "Postharvest or laboratory only"),
+          ("E3", "Yield model without fruit-level detection"), ("E4", "Picking or manipulation only"),
+          ("E5", "Detection without counting or evaluation"), ("E6", "Non-imaging sensor"),
+          ("E7", "Not in English")]
+
+
 def gambar_prisma():
+    """Diagram alur PRISMA 2020: identifikasi, penyaringan judul dan abstrak,
+    pencarian teks lengkap, penilaian teks lengkap, dan kajian yang masuk."""
+    from kode_bukti import muat_teks_lengkap
     counts = list(csv.DictReader(open(TOPIK / "counts.csv")))
     diambil = sum(int(r["retrieved"]) for r in counts)
     unik = sum(1 for _ in csv.DictReader(open(TOPIK / "records_all.csv")))
@@ -142,91 +152,85 @@ def gambar_prisma():
     dec = muat_keputusan()
     kand = len(dec)
     xa = Counter(d[1] for d in dec.values() if d[0] == "X")
-    inc = Counter(d[0] for d in dec.values() if d[0] != "X")
-    n_inc = sum(inc.values())
     judul_saja = 0
     for fn in glob.glob(str(TOPIK / "penyaringan/abstrak_*.txt")):
         for line in open(fn):
             if re.match(r"^\d+\s", line) and ("T00" in fn or "(judul)" in line):
                 judul_saja += 1
-
+    tl = muat_teks_lengkap(TOPIK)
+    dicari = len(tl)
+    tak = sum(1 for s, _, _ in tl.values() if s == "tidak diperoleh")
+    dinilai = [v for v in tl.values() if v[0] == "dinilai"]
+    xt = Counter(e for _, k, e in dinilai if k == "X")
+    inc = Counter(k for _, k, _ in dinilai if k != "X")
+    n_inc = sum(inc.values())
     lain = muat_tambahan()
-    n_lain = len(lain)
-    kanan = 128 if n_lain else 100
-    fig, ax = plt.subplots(figsize=(7.0 * kanan / 100, 5.6))
+    lain_ada = [r for r in lain if (KORPUS / "pdf" / (r["key"] + ".pdf")).exists()]
+
+    kanan = 128 if lain else 100
+    fig, ax = plt.subplots(figsize=(7.0 * kanan / 100, 7.4))
     ax.set_xlim(0, kanan)
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, 132)
     ax.axis("off")
 
-    def kotak(x, y, w, h, teks, warna="#FFFFFF", tebal=False):
-        b = FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.25,rounding_size=0.8",
-                           linewidth=0.7, edgecolor="#333333", facecolor=warna)
-        ax.add_patch(b)
-        ax.text(x + w / 2, y + h / 2, teks, ha="center", va="center", fontsize=7,
-                fontweight="bold" if tebal else "normal", linespacing=1.3)
+    def kotak(x, y, w, h, teks, warna="#FFFFFF", fs=7):
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.25,rounding_size=0.8",
+                                    linewidth=0.7, edgecolor="#333333", facecolor=warna))
+        ax.text(x + w / 2, y + h / 2, teks, ha="center", va="center", fontsize=fs, linespacing=1.25)
 
     def panah(x1, y1, x2, y2):
         ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>",
                                      mutation_scale=8, linewidth=0.7, color="#333333"))
 
-    for y, lab in [(88, "Identification"), (64, "Screening"), (37, "Eligibility"), (9, "Included")]:
-        ax.text(1, y, lab, rotation=90, ha="left", va="center", fontsize=7.5,
-                fontweight="bold", color="#444444")
-
-    kotak(8, 82, 44, 13,
-          f"Records identified from Scopus\n"
-          f"n = {diambil:,}")
-    kotak(60, 82, 36, 13,
-          f"Duplicates removed\nn = {diambil - unik:,}",
-          warna="#F2F2F2")
+    abu = "#F2F2F2"
+    for y, lab in [(120, "Identification"), (86, "Screening"), (40, "Eligibility"), (7, "Included")]:
+        ax.text(1, y, lab, rotation=90, ha="left", va="center", fontsize=7.5, fontweight="bold", color="#444444")
+    kotak(8, 115, 44, 11, f"Records identified from Scopus\nn = {diambil:,}")
+    kotak(60, 115, 36, 11, f"Duplicates removed\nn = {diambil - unik:,}", abu)
+    panah(52, 120.5, 60, 120.5)
+    kotak(8, 99, 44, 10, f"Unique records\nn = {unik:,}")
+    panah(30, 115, 30, 109)
+    kotak(60, 97, 36, 14, f"Removed by document type\n(proceedings front matter, errata,\nnotes, editorials, letters,\nretracted), n = {x0}", abu)
+    panah(52, 104, 60, 104)
+    kotak(8, 84, 44, 9, f"Titles screened\nn = {unik - x0:,}")
+    panah(30, 99, 30, 93)
+    kotak(60, 84, 36, 9, f"Excluded at title stage\nn = {xj:,}", abu)
     panah(52, 88.5, 60, 88.5)
-    kotak(8, 62, 44, 12, f"Unique records\nn = {unik:,}")
-    panah(30, 82, 30, 74)
-    kotak(60, 62, 36, 12,
-          f"Removed by document type\n(proceedings front matter, errata, notes,\neditorials, letters, retracted)\nn = {x0}", warna="#F2F2F2")
-    panah(52, 68, 60, 68)
-    kotak(8, 44, 44, 12,
-          f"Titles screened\nn = {unik - x0:,}")
-    panah(30, 62, 30, 56)
-    kotak(60, 44, 36, 12, f"Excluded at title stage\nn = {xj:,}", warna="#F2F2F2")
-    panah(52, 50, 60, 50)
-    kotak(8, 26, 44, 12,
-          f"Records assessed for eligibility\nn = {kand:,}\n"
+    kotak(8, 66, 44, 12, f"Records screened on title and abstract\nn = {kand:,}\n"
           f"with abstract {kand - judul_saja}; title and source only {judul_saja}")
-    panah(30, 44, 30, 38)
-    alasan = (f"Excluded, n = {sum(xa.values())}\n"
-              f"Not fruit on the plant: {xa['E1']}\n"
-              f"Postharvest or laboratory only: {xa['E2']}\n"
-              f"Yield model without fruit-level detection: {xa['E3']}\n"
-              f"Picking or manipulation only: {xa['E4']}\n"
-              f"Detection without counting or evaluation: {xa['E5']}\n"
-              f"Non-imaging sensor: {xa['E6']}; not in English: {xa['E7']}")
-    kotak(56, 21, 42, 20, alasan, warna="#F2F2F2")
-    panah(52, 32, 56, 32)
+    panah(30, 84, 30, 78)
+    kotak(56, 62, 42, 19, f"Excluded, n = {sum(xa.values())}\n" + "\n".join(
+        f"{nama}: {xa[e]}" for e, nama in ALASAN if xa[e]), abu, fs=6.2)
+    panah(52, 72, 56, 72)
+    kotak(8, 49, 44, 10, f"Reports sought for retrieval\nn = {dicari:,}")
+    panah(30, 66, 30, 59)
+    kotak(60, 49, 36, 10, f"Reports not retrieved\nn = {tak:,}", abu)
+    panah(52, 54, 60, 54)
+    kotak(8, 30, 44, 10, f"Reports assessed for eligibility\non the full text, n = {len(dinilai)}")
+    panah(30, 49, 30, 40)
+    kotak(56, 26, 42, 18, f"Excluded, n = {sum(xt.values())}\n" + "\n".join(
+        f"{nama}: {xt[e]}" for e, nama in ALASAN if xt[e]), abu, fs=6.2)
+    panah(52, 35, 56, 35)
     nama = {"C1": "multi-observation", "C2": "single-view counting", "C3": "oil palm",
             "C4": "single-image class-wise counting", "C5": "depth and 3D sensing",
             "R": "earlier reviews", "T": "methods outside agriculture"}
     b1 = ", ".join(f"{nama[k]} {inc[k]}" for k in ["C1", "C2", "C3", "C4"])
     b2 = ", ".join(f"{nama[k]} {inc[k]}" for k in ["C5", "R", "T"])
-    rinci = b1 + "\n" + b2
-    if n_lain:
-        kl = Counter(r["kode"] for r in lain)
-        b3 = ", ".join(f"{nama[k]} {kl[k]}" for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"] if kl[k])
-        ax.text(30, 98.5, "Identification of studies via Scopus", ha="center", fontsize=7.2, style="italic")
-        ax.text(114.5, 98.5, "Identification via other methods", ha="center", fontsize=7.2, style="italic")
-        kotak(103, 82, 23, 13, f"Records identified from\na check of known papers\nn = {n_lain}")
-        kotak(103, 26, 23, 12, f"Reports assessed\nfor eligibility\nn = {n_lain}")
-        panah(114.5, 82, 114.5, 38)
-        panah(114.5, 26, 114.5, 16)
-        kotak(8, 2, 118, 14, f"Studies included, n = {n_inc + n_lain} "
-              f"({n_inc} from Scopus: {b1},\n{b2}; {n_lain} from other methods: {b3})",
-              warna="#EAF2FA", tebal=False)
-    else:
-        kotak(8, 2, 90, 14, f"Studies included, n = {n_inc}\n{rinci}", warna="#EAF2FA", tebal=False)
-    panah(30, 26, 30, 16)
+    lebar = 118 if lain else 90
+    kotak(8, 1, lebar, 13, f"Studies included, n = {n_inc + len(lain_ada)}\n{b1},\n{b2}", "#EAF2FA")
+    panah(30, 30, 30, 14)
+    if lain:
+        ax.text(30, 130, "Identification of studies via Scopus", ha="center", fontsize=7.2, style="italic")
+        ax.text(114.5, 130, "Identification via other methods", ha="center", fontsize=7.2, style="italic")
+        kotak(103, 115, 23, 11, f"Records identified from\nknown papers and\nreference lists, n = {len(lain)}")
+        kotak(103, 49, 23, 10, f"Reports sought\nfor retrieval, n = {len(lain)}")
+        panah(114.5, 115, 114.5, 59)
+        kotak(103, 30, 23, 10, f"Reports not\nretrieved, n = {len(lain) - len(lain_ada)}", abu)
+        panah(114.5, 49, 114.5, 40)
     simpan(fig, "F01_prisma")
-    return {"diambil": diambil, "unik": unik, "x0": x0, "xj": xj, "kand": kand,
-            "judul_saja": judul_saja, "xa": xa, "inc": inc, "metode_lain": n_lain}
+    return {"diambil": diambil, "unik": unik, "x0": x0, "xj": xj, "kand": kand, "judul_saja": judul_saja,
+            "xa": xa, "dicari": dicari, "tidak_diperoleh": tak, "dinilai": len(dinilai), "xt": xt, "inc": inc,
+            "metode_lain": len(lain), "metode_lain_diperoleh": len(lain_ada)}
 
 
 # ---------------------------------------------------- F2 corpus per tahun
@@ -400,7 +404,8 @@ def gambar_peta_tanaman(mat):
 
 # ------------------------------------------- F6 korpus kelapa sawit
 def gambar_sawit(mat):
-    c3 = muat_c3()
+    masuk = {int(r["idx"]) for r in mat if r["kode"] == "C3"}
+    c3 = {i: v for i, v in muat_c3().items() if i in masuk}
     tahun = {int(r["idx"]): int(r["year"]) for r in mat}
     tugas = ["KLS", "DET", "HIT", "LF", "MUTU", "SENSOR", "DATA"]
     nama_t = {"KLS": "Ripeness classification\nof bunch images", "DET": "Bunch detection\nin a scene",

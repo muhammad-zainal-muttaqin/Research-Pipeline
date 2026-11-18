@@ -5,7 +5,14 @@ Aturan kata kunci di bawah hanya menghasilkan kode awal. Kode mekanisme
 identitas untuk kajian C1 diperiksa ulang secara manual dan disimpan di
 bukti/mekanisme_C1.txt; berkas itu menimpa kode otomatis.
 
-Keluaran: bukti/matriks_bukti.csv (satu baris per kajian yang lolos).
+Keluaran: bukti/matriks_bukti.csv (satu baris per kajian yang masuk peta).
+
+Tahap teks lengkap: kajian yang lolos tahap abstrak hanya masuk matriks bila
+PDF-nya ada di pdf/<key>.pdf dan keputusannya di
+penyaringan/teks_lengkap.txt bukan X. Format teks_lengkap.txt sama dengan
+abstrak_*.txt (idx, kode, alasan eksklusi opsional); bila idx tidak tercantum,
+kode tahap abstrak dipakai. Kajian tanpa PDF dihitung "tidak diperoleh" oleh
+muat_teks_lengkap() dan dilaporkan di diagram PRISMA.
 
 Kolom verifikasi teks lengkap (Pemeriksaan 5): mekanisme_C1.txt boleh
 memuat enam kolom TAB tambahan yang opsional sesudah hasil_ringkas, yaitu
@@ -123,6 +130,40 @@ def cocok(daftar, teks):
     return [nama for nama, pola in daftar if re.search(pola, teks, re.I)]
 
 
+def muat_teks_lengkap(topik):
+    """Tahap teks lengkap untuk setiap rekaman yang lolos tahap kelayakan abstrak.
+
+    Laporan dianggap diperoleh bila pdf/<kunci>.pdf ada di folder korpus. Untuk
+    laporan yang diperoleh, keputusan kelayakan dari teks lengkap dibaca dari
+    penyaringan/teks_lengkap.txt (baris "idx kode [Eangka]"); laporan tanpa baris
+    di berkas itu mempertahankan kode tahap abstrak.
+
+    Mengembalikan {idx: (status, kode_akhir, alasan)} dengan status
+    "tidak diperoleh" atau "dinilai"; kode_akhir "X" berarti dikeluarkan pada
+    tahap teks lengkap dengan alasan E1-E7."""
+    topik = Path(topik)
+    pdf = topik.parent / "pdf"
+    dec, _ = muat_keputusan(topik / "penyaringan")
+    ft = {}
+    path = topik / "penyaringan" / "teks_lengkap.txt"
+    if path.exists():
+        for line in open(path, encoding="utf-8"):
+            m = KODE.match(line.strip())
+            if m:
+                ft[int(m.group(1))] = (m.group(2), m.group(3) or "")
+    kunci = {int(r["idx"]): r["key"] for r in csv.DictReader(open(topik / "penyaringan" / "kandidat_abstrak.csv"))}
+    out = {}
+    for i, (kode, _) in dec.items():
+        if kode == "X":
+            continue
+        if not (pdf / f"{kunci.get(i, '')}.pdf").exists():
+            out[i] = ("tidak diperoleh", kode, "")
+        else:
+            k, e = ft.get(i, (kode, ""))
+            out[i] = ("dinilai", k, e)
+    return out
+
+
 def muat_keputusan(folder):
     dec, catatan = {}, {}
     for fn in sorted(glob.glob(str(folder / "abstrak_*.txt"))):
@@ -190,11 +231,17 @@ def main():
     if ada_verif:
         kolom += KOLOM_VERIFIKASI
     baris = []
+    tahap_tl = muat_teks_lengkap(topik)
     for r in csv.DictReader(open(pen / "kandidat_abstrak.csv")):
         i = int(r["idx"])
         kode, _ = dec.get(i, ("?", ""))
         if kode == "X":
             continue
+        # Hanya laporan yang teks lengkapnya diperoleh dan lolos penilaian teks lengkap.
+        status, kode, _ = tahap_tl[i]
+        if status != "dinilai" or kode == "X":
+            continue
+        sumber_kep[i] = "teks lengkap"
         e = enr.get(r["eid"], {})
         abstrak = e.get("abstract") or ""
         teks = f"{r['title']} {abstrak}"

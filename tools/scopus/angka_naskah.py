@@ -87,18 +87,43 @@ def main():
                 if "T00" in fn or "(judul)" in line:
                     judul_saja += 1
     xa = Counter(d[1] for d in dec.values() if d[0] == "X")
-    inc = Counter(d[0] for d in dec.values() if d[0] != "X")
+    lolos_abs = Counter(d[0] for d in dec.values() if d[0] != "X")
+    from kode_bukti import muat_teks_lengkap
+    tl = muat_teks_lengkap(TOPIK)
+    tidak_diperoleh = Counter(k for s, k, _ in tl.values() if s == "tidak diperoleh")
+    dinilai = [v for v in tl.values() if v[0] == "dinilai"]
+    xt = Counter(e for _, k, e in dinilai if k == "X")
+    inc = Counter(r["kode"] for r in mat)
     p_lain = TOPIK / "tambahan_metode_lain.csv"
-    lain = baca(p_lain) if p_lain.exists() else []
-    n_scopus = sum(inc.values())
+    lain_semua = baca(p_lain) if p_lain.exists() else []
+    lain = [r for r in lain_semua if (KORPUS / "pdf" / (r["key"] + ".pdf")).exists()]
+    n_scopus = len(mat)
+    assert n_scopus == len(dinilai) - sum(xt.values()), "matriks_bukti.csv tidak sesuai tahap teks lengkap"
     tulis("## Seksi 2: alur rekaman\n")
     tulis(f"- Rekaman diambil {diambil:,}; unik {unik:,}; duplikat {diambil - unik:,}")
     tulis(f"- Dibuang menurut tipe dokumen {x0}; judul disaring {unik - x0:,}; dikeluarkan di tahap judul {xj:,}")
-    tulis(f"- Dinilai kelayakannya {len(dec):,} (dengan abstrak {len(dec) - judul_saja}; judul dan sumber saja {judul_saja})")
-    tulis(f"- Dikeluarkan di tahap kelayakan {sum(xa.values())}: " + ", ".join(f"{k} {xa[k]}" for k in sorted(xa)))
-    tulis(f"- Masuk peta dari Scopus {n_scopus}: " + ", ".join(f"{k} {inc[k]}" for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"]))
-    tulis(f"- Metode lain {len(lain)}: " + ", ".join(f"{r['key']} ({r['kode']})" for r in lain))
+    tulis(f"- Dinilai kelayakannya dari judul dan abstrak {len(dec):,} (dengan abstrak {len(dec) - judul_saja}; judul dan sumber saja {judul_saja})")
+    tulis(f"- Dikeluarkan di tahap kelayakan abstrak {sum(xa.values())}: " + ", ".join(f"{k} {xa[k]}" for k in sorted(xa)))
+    tulis(f"- Laporan dicari teks lengkapnya {len(tl)}; tidak diperoleh {sum(tidak_diperoleh.values())} ("
+          + ", ".join(f"{k} {tidak_diperoleh[k]}" for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"]) + ")")
+    tulis(f"- Dinilai dari teks lengkap {len(dinilai)}; dikeluarkan {sum(xt.values())}: "
+          + ", ".join(f"{k} {xt[k]}" for k in sorted(xt)))
+    tulis(f"- Masuk dari Scopus {n_scopus}: " + ", ".join(f"{k} {inc[k]}" for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"]))
+    tulis(f"- Metode lain {len(lain_semua)}, teks lengkap diperoleh {len(lain)}: "
+          + ", ".join(f"{r['key']} ({r['kode']})" for r in lain_semua))
     tulis(f"- Total kajian masuk {n_scopus + len(lain)}")
+    m("nAbsIncl", sum(lolos_abs.values()))
+    m("nSought", len(tl) + len(lain_semua))
+    m("nNotRetrieved", sum(tidak_diperoleh.values()) + len(lain_semua) - len(lain))
+    m("nFTAssessed", len(dinilai) + len(lain))
+    m("nFTExcl", sum(xt.values()))
+    for i, nama in enumerate(["One", "Two", "Three", "Four", "Five", "Six", "Seven"], 1):
+        m(f"nFTExcl{nama}", xt[f"E{i}"])
+    m("nOtherRetrieved", len(lain))
+    n_cari = len(tl) + len(lain_semua)
+    n_tdk = sum(tidak_diperoleh.values()) + len(lain_semua) - len(lain)
+    m("pNotRetrieved", f"{100 * n_tdk / n_cari:.0f}")
+    m("nNotRetrievedMulti", tidak_diperoleh["C1"] + sum(1 for r in lain_semua if r["kode"] == "C1" and r not in lain))
     m("nRetrieved", diambil)
     m("nUnique", unik)
     m("nDocType", x0)
@@ -110,7 +135,7 @@ def main():
     for i, nama in enumerate(["One", "Two", "Three", "Four", "Five", "Six", "Seven"], 1):
         m(f"nExcl{nama}", xa[f"E{i}"])
     m("nScopusIncl", n_scopus)
-    m("nOther", len(lain))
+    m("nOther", len(lain_semua))
     m("nIncluded", n_scopus + len(lain))
     lain_k = Counter(r["kode"] for r in lain)
     for kode, nama in [("C1", "Multi"), ("C2", "Single"), ("C3", "Palm"), ("C4", "ClassSingle"), ("C5", "Depth"),
@@ -300,6 +325,9 @@ def main():
             continue
         p = line.rstrip("\n").split("\t")
         c3[int(p[0])] = p[1:6]
+    # Hanya kajian sawit yang masuk peta (teks lengkap diperoleh dan lolos).
+    masuk = {int(r["idx"]) for r in mat if r["kode"] == "C3"}
+    c3 = {i: v for i, v in c3.items() if i in masuk}
     tg, lk = Counter(v[0] for v in c3.values()), Counter(v[1] for v in c3.values())
     tulis("\n## Seksi 8: kelapa sawit\n")
     tulis(f"- Kajian {len(c3)} (matriks: {sum(1 for r in mat if r['kode'] == 'C3')})")

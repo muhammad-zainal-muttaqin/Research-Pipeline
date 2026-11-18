@@ -1,16 +1,19 @@
 # Verifikasi Tinjauan `main6`
 
-Tinjauan `main6` menyaring 6.491 artikel Scopus menjadi 1.013 artikel dengan
-bantuan AI. Lima artikel lain berasal dari luar pencarian, sehingga totalnya 1.018.
+Tinjauan `main6` menyaring 6.491 artikel Scopus dengan bantuan AI. Sebanyak
+1.013 artikel lolos tahap judul dan abstrak, ditambah lima artikel dari luar
+pencarian. Hanya artikel yang PDF-nya tersedia yang dinilai dari teks
+lengkapnya (480), dan 468 di antaranya masuk peta.
 Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 (29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 
-## Posisi per 19 Oktober 2026
+## Posisi per 18 November 2026
 
-Semua pemeriksaan selesai, kecuali dua butir yang hanya dapat dikerjakan manusia
-([TUGAS.md](TUGAS.md)). Pada 19 Oktober 2026 peninjau menyatakan telah memeriksa
-dan menyetujui seluruh perubahan buatan AI di
-[`log_perubahan.csv`](log_perubahan.csv).
+Pemeriksaan 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026. Pada
+18 November 2026 ditambahkan tahap teks lengkap: 32 perubahan kelompok dan
+eksklusi dari pembacaan PDF menunggu persetujuan peninjau (baris "AI, belum
+disetujui peninjau" di [`log_perubahan.csv`](log_perubahan.csv)). Butir yang
+menunggu ada di [TUGAS.md](TUGAS.md).
 
 | Pemeriksaan | Yang diperiksa | Hasil |
 |---|---|---|
@@ -20,6 +23,7 @@ dan menyetujui seluruh perubahan buatan AI di
 | 4. PDF lengkap | Ketersediaan PDF 199 artikel C1 dan 19 artikel sawit inti | 217 dari 218 ada; satu artikel C1 tanpa PDF (Safre dkk. 2024) dilaporkan di naskah |
 | 5. Label ulang dari PDF | Label 199 artikel C1 | 196 dibaca dari teks lengkap, 3 dari abstrak; 98 label berubah |
 | 6. Cek fakta naskah | Kecocokan setiap klaim naskah dengan kajian yang dikutip | 303 pasangan klaim dan kajian sesuai sumber |
+| Tahap teks lengkap (18 November 2026) | Kelompok 480 artikel yang PDF-nya ada | 17 pindah ke C1, 3 pindah kelompok lain, 12 dikeluarkan; menunggu persetujuan peninjau |
 
 Label C1 belum dikode buta oleh manusia, sehingga kesepakatan yang dilaporkan
 untuk label C1 adalah antarmodel (butir F.4 di [TUGAS.md](TUGAS.md)).

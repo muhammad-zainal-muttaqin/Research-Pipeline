@@ -31,7 +31,8 @@ c3 = {r['idx']: r['alasan'] for r in baca(TEK / 'label_c3.csv')}
 
 W = r'\b'
 OLEH = {'AI-2': 'AI, disetujui peninjau', 'AI-Tugas': 'AI, disetujui peninjau', 'AI-Cek1': 'AI, disetujui peninjau',
-        'peninjau': 'peninjau', 'Fatma': 'Bu Fatma'}
+        'peninjau': 'peninjau', 'Fatma': 'Bu Fatma',
+        'AI-TL': 'AI, belum disetujui peninjau'}
 
 
 def gabung(peta, sep='+'):
