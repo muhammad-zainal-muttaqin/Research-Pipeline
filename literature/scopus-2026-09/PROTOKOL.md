@@ -110,7 +110,7 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
 
 ## 5. Pengodean
 
-- **C1** dikodekan manual dari teks lengkap (dua kajian dari abstrak karena teks PDF-nya tidak dapat diekstrak)
+- **C1** dikodekan manual dari teks lengkap
   (`topik/bukti/mekanisme_C1.txt`): mekanisme M0–M5, akuisisi (V, D, S, T, 1),
   hitungan per kelas (Y/N), dan hasil ringkas.
   - M0 tanpa asosiasi; M1 koreksi statistik; M2 pencocokan penampilan atau re-ID;
@@ -160,8 +160,8 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   penelusuran daftar pustaka ditambahkan ke `topik/tambahan_metode_lain.csv`.
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
 - PDF tersedia untuk 482 dari 1.013 kajian Scopus (`KATALOG-PDF.md`); hanya
-  kajian itu yang dinilai pada tahap teks lengkap. Teksnya diekstrak untuk 478
-  kajian. Empat PDF jurnal CSAM tidak dapat diekstrak teksnya (fon tanpa
-  pemetaan Unicode); dua di antaranya kajian C1 (`guo2023real`,
-  `tu2026passion`) yang kodenya tetap bersumber dari abstrak. Daftar awal PDF yang belum ada tercantum di
+  kajian itu yang dinilai pada tahap teks lengkap. Setiap PDF di `pdf/`
+  punya teks di `teks/`. Empat PDF jurnal CSAM yang fonnya tanpa pemetaan
+  Unicode (`guo2023real`, `tu2026passion`, `wang2024camellia`,
+  `zhu2022identification`) dibaca dengan OCR. Daftar awal PDF yang belum ada tercantum di
   `unduhan/pdf_belum_ada.csv` beserta alasan kegagalan.

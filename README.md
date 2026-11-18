@@ -33,7 +33,7 @@ menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
 | Membaca sintesis literatur | [Sintesis lintas makalah](literature/synthesis.md) |
 | Membaca naskah *review* terkini | [`main6.pdf`](manuscript/output/papers/main6.pdf), sumber [`main6-body.tex`](manuscript/source/main6-body.tex) |
 | Mengerjakan verifikasi `main6` (tugas peninjau) | [Verifikasi](literature/scopus-2026-09/verifikasi/README.md), lalu [daftar tugas](literature/scopus-2026-09/verifikasi/TUGAS.md) |
-| Memeriksa korpus dan protokol tinjauan `main6` | [Korpus Scopus 2026-09](literature/scopus-2026-09/README.md), [protokol](literature/scopus-2026-09/PROTOKOL.md), [kueri](literature/scopus-2026-09/QUERY.md) |
+| Memeriksa korpus dan protokol tinjauan `main6` | [Korpus Scopus 2026-09](literature/scopus-2026-09/README.md), [protokol](literature/scopus-2026-09/PROTOKOL.md), [kueri](literature/scopus-2026-09/QUERY.md), [470 ringkasan per kajian](literature/scopus-2026-09/entri/) |
 | Membaca aturan gaya naskah `main6` | [`GAYA-NASKAH-MAIN6.md`](manuscript/guides/GAYA-NASKAH-MAIN6.md), dasarnya [`POLA-TINJAUAN-PUSTAKA.md`](manuscript/guides/POLA-TINJAUAN-PUSTAKA.md) |
 | Menyusun naskah | [README naskah](manuscript/README.md) dan [panduan naskah](manuscript/guides/) |
 
@@ -41,13 +41,13 @@ menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
 
 | Lokasi | Isi |
 |---|---|
-| [`literature/`](literature/) | Tinjauan pustaka: korpus Scopus `main6` (`scopus-2026-09/`), 182 ringkasan lama, sintesis, entri ditahan, teks terekstrak, dan PDF sumber |
+| [`literature/`](literature/) | Tinjauan pustaka: korpus Scopus `main6` (`scopus-2026-09/`, termasuk 470 ringkasan per kajian di `entri/`), 182 ringkasan lama, sintesis, entri ditahan, teks terekstrak, dan PDF sumber |
 | [`experiments/`](experiments/) | Eksperimen: status, log, metrik, sub-laporan, skrip (`code/`), hasil (`results/`), log training, dan split |
 | [`manuscript/`](manuscript/) | Naskah: sumber LaTeX, figur, panduan penulisan, laporan, dan keluaran PDF/PPTX |
 | [`pipeline/`](pipeline/) | Deliverable produksi: pipeline YOLO 4-kanal untuk kamera Orbbec Gemini |
 | [`tools/`](tools/) | Skrip utilitas: pipeline korpus `main6` (`scopus/`) dan pembuat dek presentasi |
-| [`site/`](site/) | Pembuat Ruang Baca dan pustaka kliennya |
-| [`index.html`](index.html) | Ruang Baca publik hasil build, tetap di akar untuk GitHub Pages |
+| [`site/`](site/) | Pembuat Ruang Baca (652 entri: 182 korpus lama + 470 entri `main6`) dan pustaka kliennya |
+| [`index.html`](index.html) | Ruang Baca publik hasil build (652 entri), tetap di akar untuk GitHub Pages |
 
 `literature/pdf/` dan `datasets/` adalah bahan lokal besar yang sengaja
 tidak masuk Git.
@@ -60,6 +60,6 @@ node site/build.js
 cd manuscript/source && tectonic main6.tex     # latexmk tidak tersedia
 ```
 
-Jalankan pembuat situs setelah mengubah entri literatur, sintesis, atau
-laporan eksperimen. `index.html` adalah keluaran build dan tidak disunting
-langsung.
+Jalankan pembuat situs setelah mengubah entri literatur lama, entri `main6`,
+sintesis, katalog PDF `main6`, atau laporan eksperimen. `index.html` adalah
+keluaran build dan tidak disunting langsung.

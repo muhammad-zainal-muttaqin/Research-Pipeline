@@ -4,10 +4,14 @@
 /*
  * build.js: Perakit "Ruang Baca Riset" (index.html mandiri)
  * -----------------------------------------------------------
- * Memindai literature/entries/*.md + literature/synthesis.md,
+ * Memindai literature/entries/*.md, literature/scopus-2026-09/entri/*.md,
+ * dan tiga dokumen spesial (literature/synthesis.md,
+ * experiments/LAPORAN-EKSPERIMEN.md, literature/scopus-2026-09/KATALOG-PDF.md),
  * menyerap metadata, lalu menyuntikkan seluruh konten + parser Markdown
  * (vendor/marked.min.js) + runtime aplikasi
  * ke dalam satu berkas index.html tanpa dependensi eksternal.
+ * Teks di literature/scopus-2026-09/teks/*.txt diambil saat entri dibuka;
+ * literature/scopus-2026-09/ekstraksi/ tidak dibaca.
  *
  * Pemakaian:
  *   node site/build.js         -> tulis index.html di akar repo
@@ -1823,7 +1827,7 @@ function RUNTIME() {
     if (_reveal) _reveal.disconnect();
     _reveal = new IntersectionObserver(function (ents, obs) {
       ents.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); obs.unobserve(en.target); } });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: .05 });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0 });
     main.querySelectorAll('.rv:not(.in)').forEach(function (el) { _reveal.observe(el); });
   }
   function teardownObservers() {

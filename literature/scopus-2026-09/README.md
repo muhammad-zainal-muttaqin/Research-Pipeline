@@ -13,7 +13,7 @@ dengan skrip di `tools/scopus/`.
 | Membaca protokol penyaringan dan pengodean | [`PROTOKOL.md`](PROTOKOL.md) |
 | Melihat keputusan per rekaman | `topik/penyaringan/` |
 | Membuka matriks bukti (satu baris per kajian) | `topik/bukti/matriks_bukti.csv` |
-| Membaca PDF akses terbuka | `pdf/` (487 berkas, gambar sudah diperkecil); teks 487 berkas di `teks/`; daftar menurut kode di [`KATALOG-PDF.md`](KATALOG-PDF.md) |
+| Membaca PDF akses terbuka | `pdf/` (483 berkas, gambar sudah diperkecil); teks 483 berkas di `teks/`; daftar menurut kode di [`KATALOG-PDF.md`](KATALOG-PDF.md) |
 | Mengetahui PDF yang belum ada | `unduhan/pdf_belum_ada.csv` (daftar 28 September 2026, 640 kajian; per 5 Oktober 2026 tersisa 522 dari 1.001 kajian); untuk kajian inti lihat `verifikasi/cek-4-teks-lengkap/teks_lengkap.csv` (kolom `pdf_ada`) |
 | Melihat kajian metodologi tinjauan pustaka | `metodologi/` dan `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md` |
 
@@ -31,6 +31,7 @@ dengan skrip di `tools/scopus/`.
 | `topik/bukti/` | Kode manual C1 (`mekanisme_C1.txt`), kode manual C3 (`kode_C3.txt`), matriks bukti |
 | `crossref.jsonl` | Metadata Crossref untuk daftar pustaka `references6.bib` |
 | `pdf/`, `teks/` | PDF akses terbuka kajian yang lolos dan teks hasil ekstraksinya |
+| `entri/` | 470 ringkasan per kajian `main6`, satu berkas per kunci BibTeX; isi ringkasan dibaca Ruang Baca, teks lengkapnya di `teks/` |
 | `unduhan/` | Log unduhan per rekaman dan daftar PDF yang belum diperoleh |
 
 ## Menjalankan ulang

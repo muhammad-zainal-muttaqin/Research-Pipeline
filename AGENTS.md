@@ -149,8 +149,8 @@ Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 
 | Jalur | Status |
 |---|---|
-| Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 34 halaman, 11 seksi, 2 lampiran, 7 gambar, 6 tabel; bahan tambahan `main6-supplementary.tex` 5 halaman). Naskah 182 sumber (`main.tex`, `main-elsarticle.tex`) hanya dipertahankan untuk Ruang Baca; iterasi `main2`–`main5v3` sudah dihapus. Badan naskah ditulis ulang pada 18 November 2026 agar setiap seksi bukti dibuka dengan klaim isi; rincian metode pindah ke bahan tambahan. |
-| Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.145 dinilai kelayakannya → 1.013 lolos tahap abstrak (+5 dari luar pencarian) → 482 dengan PDF dinilai dari teks lengkap (536 tidak diperoleh) → **470 masuk peta** (2012–2026). Kode: C1 214 · C2 43 · C3 53 · C4 13 · C5 35 · R 65 · T 47. Korpus dibatasi pada kajian yang PDF-nya ada di `literature/scopus-2026-09/pdf/`; keputusan teks lengkap di `literature/scopus-2026-09/topik/penyaringan/teks_lengkap.txt`. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: Cek 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026; tahap teks lengkap disetujui peninjau pada 18 November 2026; 5.7, A.1, dan A.3 menunggu di `literature/scopus-2026-09/verifikasi/TUGAS.md`.** Belum dikerjakan: pemeriksaan ulang eksklusi tahap judul untuk kueri Q2 dan Q4–Q9 (sekitar 3.300 rekaman; Q1 dan Q3 sudah); ekstraksi teks empat PDF CSAM (`guo2023real`, `tu2026passion`, `wang2024camellia`, `zhu2022identification`) yang fonnya tanpa pemetaan Unicode. |
+| Naskah | Hanya **`main6`** yang aktif (Muttaqin & Indriani; kelas Elsevier `cas-dc`, sitasi penulis-tahun; 41 halaman, 11 seksi, 2 lampiran, 7 gambar, 6 tabel; bahan tambahan `main6-supplementary.tex` 5 halaman). Naskah 182 sumber (`main.tex`, `main-elsarticle.tex`) hanya dipertahankan untuk Ruang Baca; iterasi `main2`–`main5v3` sudah dihapus. Badan naskah ditulis ulang pada 18 November 2026 agar setiap seksi bukti dibuka dengan klaim isi; rincian metode pindah ke bahan tambahan. |
+| Korpus `main6` | Scopus Search API, 28 September 2026: 6.491 rekaman → 5.889 unik → 5.723 disaring judul → 1.145 dinilai kelayakannya → 1.013 lolos tahap abstrak (+5 dari luar pencarian) → 482 dengan PDF dinilai dari teks lengkap (536 tidak diperoleh) → **470 masuk peta** (2012–2026). Kode: C1 214 · C2 43 · C3 53 · C4 13 · C5 35 · R 65 · T 47. Korpus dibatasi pada kajian yang PDF-nya ada di `literature/scopus-2026-09/pdf/`; keputusan teks lengkap di `literature/scopus-2026-09/topik/penyaringan/teks_lengkap.txt`. Angka terkini selalu di `literature/scopus-2026-09/ANGKA-NASKAH.md`. **Verifikasi: Cek 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026; tahap teks lengkap disetujui peninjau pada 18 November 2026; 5.7, A.1, dan A.3 menunggu di `literature/scopus-2026-09/verifikasi/TUGAS.md`.** Belum dikerjakan: pemeriksaan ulang eksklusi tahap judul untuk kueri Q2 dan Q4–Q9 (sekitar 3.300 rekaman; Q1 dan Q3 sudah). |
 | Hasil deteksi final | **RF-DETR-L E-021**: test mAP50 **0,6038**, mAP50-95 **0,2770** (SawitMVC). Kutip hanya dari `experiments/METRICS.md`. |
 | Replikasi E-021 | F-004 (3 seed): rerata test mAP50 0,5949, SD seed 0,0049. |
 | Depth sensor (E-022…E-033b) | Pipeline reproyeksi tervalidasi, tetapi **tidak ada klaim peningkatan deteksi yang sah**. |
@@ -166,9 +166,10 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 | Lokasi | Isi |
 |---|---|
 | `literature/scopus-2026-09/` | Korpus `main6`: `PROTOKOL.md`, `QUERY.md`, `topik/` (kueri, rekaman, penyaringan, `bukti/`), `pdf/` dan `teks/` |
+| `literature/scopus-2026-09/entri/` | 470 ringkasan per kajian `main6`, satu berkas per kunci BibTeX; dasar Ruang Baca bersama entri korpus lama |
 | `literature/scopus-2026-09/verifikasi/` | `cek-1-…` sampai `cek-6-…` mengikuti rencana Bu Fatma dan hanya memuat lembar peninjau. Pintu masuk `README.md`; keputusan yang menunggu peninjau `TUGAS.md`; log perubahan `log_perubahan.csv`. `.teknis/` berisi data yang dibaca skrip: log teknis, alasan label C1/C3 dan ajudikasi Cek 1 (sumber alasan log), serta dua CSV dasar angka pemeriksaan ulang tahap judul |
 | `literature/scopus-2026-09/ekstraksi/` | Hasil agen membaca teks lengkap: `perbandingan/` (perbandingan pada data yang sama, dasar `tab:assoc`), `tanaman-platform/`, `bacaan/` (lembar kajian inti); masing-masing dengan `prompt.txt`. Pintu masuk `README.md`. Bahan kerja, bukan sumber naskah |
-| `literature/entries/`, `synthesis.md`, `extracted/` | Korpus lama: 182 ringkasan makalah, sintesis, dan teks terekstrak (dasar Ruang Baca dan naskah 182 sumber) |
+| `literature/entries/`, `synthesis.md`, `extracted/` | Korpus lama: 182 ringkasan makalah, sintesis, dan teks terekstrak (dasar naskah 182 sumber; masuk Ruang Baca bersama entri `main6`) |
 | `literature/withheld/` | 20 entri ditahan; jangan masuk naskah |
 | `literature/references/` | PDF baseline SawitMVC; `revisi-dosen-2026-07-23/` berisi delapan permintaan revisi dosen (`Chat.txt`, catatan primer, jangan dihapus) |
 | `manuscript/source/` | `main6.tex`, `main6-body.tex`, `main6-supplementary.tex` (bahan tambahan), `main6-angka.tex` (keluaran `angka_naskah.py`), lampiran, `references6.bib`; naskah 182 sumber (`main.tex`, `main-elsarticle.tex`, `evidence-body.tex`, `references.bib`) dan `experiment-ledgers.tex` untuk laporan eksperimen |
@@ -180,7 +181,7 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 | `pipeline/` | Deliverable produksi: YOLO 4 kanal untuk kamera Orbbec Gemini |
 | `tools/scopus/` | Pipeline korpus `main6` |
 | `tools/presentation/` | Pembuat dek PPTX |
-| `site/build.js` → `index.html` | Ruang Baca Riset; `index.html` hasil build, **jangan disunting tangan** |
+| `site/build.js` → `index.html` | Ruang Baca Riset, 652 entri (182 korpus lama + 470 entri `main6`); `index.html` hasil build, **jangan disunting tangan** |
 | `datasets/`, `literature/pdf/` | Bahan lokal besar, tidak masuk Git |
 | `temp/`, `tmp/` | Abaikan kecuali diminta |
 
@@ -209,8 +210,12 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
   Elsevier dibaca dari `ELSEVIER_API_KEY` / `ELSEVIER_API_KEY_FILE` dan tidak
   pernah disimpan di repo.
 - Jalankan `build.js` setiap kali `literature/entries/*.md`,
-  `literature/synthesis.md`, atau laporan eksperimen berubah; commit `index.html`
-  bersamaan.
+  `literature/scopus-2026-09/entri/*.md`, `literature/synthesis.md`,
+  `literature/scopus-2026-09/KATALOG-PDF.md`, atau laporan eksperimen berubah;
+  commit `index.html` bersamaan. Teks di
+  `literature/scopus-2026-09/teks/*.txt` diambil saat entri dibuka dan isi
+  `literature/scopus-2026-09/ekstraksi/` tidak dibaca `build.js`, sehingga
+  keduanya tidak perlu build ulang.
 - Pindahkan PDF hasil `tectonic` ke `manuscript/output/papers/`.
 
 ## 6. Kontrak Berkas Entri (melanggar = build web rusak)

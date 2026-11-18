@@ -4,13 +4,14 @@ Korpus tinjauan pustaka untuk riset tandan buah segar kelapa sawit. Ada dua
 korpus:
 
 1. **Korpus Scopus September 2026** (`scopus-2026-09/`), dasar naskah aktif
-   `main6`: 5.889 rekaman unik, 480 kajian dinilai dari teks lengkap, 468
-   kajian masuk peta, 215 kajian multi-pengamatan (C1) dikodekan menurut
+   `main6`: 5.889 rekaman unik, 482 kajian dinilai dari teks lengkap, 470
+   kajian masuk peta, 214 kajian multi-pengamatan (C1) dikodekan menurut
    mekanisme asosiasi M0–M5. Angka terkini selalu di
    [`scopus-2026-09/ANGKA-NASKAH.md`](scopus-2026-09/ANGKA-NASKAH.md).
 2. **Korpus lama**: 182 ringkasan makalah terverifikasi, 20 entri yang ditahan
    karena PDF sumber tidak tersedia, dan sintesis lintas makalah. Dipakai
-   naskah 182 sumber (`main.tex`, `main-elsarticle.tex`) dan Ruang Baca situs.
+   naskah 182 sumber (`main.tex`, `main-elsarticle.tex`) dan Ruang Baca situs
+   bersama 470 entri `main6`.
 
 ## Saya ingin...
 
@@ -18,7 +19,7 @@ korpus:
 |---|---|
 | Memeriksa korpus naskah `main6` | [`scopus-2026-09/`](scopus-2026-09/README.md) — [`PROTOKOL.md`](scopus-2026-09/PROTOKOL.md), [`QUERY.md`](scopus-2026-09/QUERY.md), matriks bukti `topik/bukti/matriks_bukti.csv` |
 | Mengerjakan verifikasi `main6` | [`scopus-2026-09/verifikasi/`](scopus-2026-09/verifikasi/README.md), lalu [`TUGAS.md`](scopus-2026-09/verifikasi/TUGAS.md) |
-| Membaca ringkasan satu makalah | [`entries/`](entries/) — cari di [`INDEX.md`](entries/INDEX.md) (urut nomor) atau [`INDEX-TAHUN.md`](entries/INDEX-TAHUN.md) (per tahun dan tema) |
+| Membaca ringkasan satu makalah | [`entries/`](entries/) — cari di [`INDEX.md`](entries/INDEX.md) (urut nomor) atau [`INDEX-TAHUN.md`](entries/INDEX-TAHUN.md) (per tahun dan tema); untuk `main6`, [`scopus-2026-09/entri/`](scopus-2026-09/entri/) (470 berkas) |
 | Membaca sintesis lintas makalah | [`synthesis.md`](synthesis.md) — tayang juga di Ruang Baca situs |
 | Mencari teks lengkap korpus lama | [`extracted/`](extracted/) — satu berkas `.md` per makalah |
 | Melihat entri yang ditahan | [`withheld/`](withheld/) — 20 entri tanpa PDF sumber |
@@ -29,7 +30,7 @@ korpus:
 
 | Lokasi | Isi |
 |---|---|
-| `scopus-2026-09/` | Korpus `main6`: kueri, rekaman, penyaringan tiga tahap, matriks bukti, kajian metodologi, PDF dan teks terekstrak, katalog PDF, lembar verifikasi |
+| `scopus-2026-09/` | Korpus `main6`: kueri, rekaman, penyaringan tiga tahap, matriks bukti, 470 ringkasan per kajian di `entri/`, kajian metodologi, PDF dan teks terekstrak, katalog PDF, lembar verifikasi |
 | `entries/` | 182 ringkasan makalah (satu berkas per makalah), `INDEX.md`, `INDEX-TAHUN.md` |
 | `withheld/` | 20 entri yang ditahan karena PDF sumber tidak tersedia |
 | `synthesis.md` | Sintesis lintas makalah korpus lama |
