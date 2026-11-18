@@ -32,6 +32,17 @@ Anda.
     "Not stated", padahal mereka memakai kendaraan darat tak berawak
     ("Shrimp").
 
+  Tinjauan independen atas lampiran menemukan pola kesalahan aturan yang
+  sama:
+  - Kata "vehicle" di dalam "unmanned aerial vehicle" membuat kajian UAV
+    juga tercatat "Ground vehicle or robot", misalnya Piazolo dkk. 2026 dan
+    Zheng dkk. 2023 (*Efficient*).
+  - "Cherry tomato" tercatat sebagai dua tanaman, tomat dan ceri.
+  - Kata "orange" sebagai warna kematangan tercatat sebagai jeruk (Awal dkk.
+    2026, Viveros dkk. 2024).
+  - "Laboratory" muncul dari "non-laboratory", dan pabrik sawit tercatat
+    "Laboratory" (Aji dkk. 2021, Shiddiq dkk. 2023).
+
   Buka [matriks_bukti.csv](../topik/bukti/matriks_bukti.csv), saring kolom
   `kode` = C1, lalu lihat kolom `tanaman` dan `platform`. Dampak bila
   disetujui: Lampiran A, gambar tanaman dan sensor di bahan tambahan (S4),

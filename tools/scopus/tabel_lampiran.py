@@ -59,7 +59,8 @@ def main():
     rows.sort(key=lambda r: (int(r["year"]), r["first_author"]))
     baris = []
     for r in rows:
-        tan = ", ".join(CROP_ABBR.get(x, x) for x in r["tanaman"].split(";") if x).capitalize() or "Not stated"
+        tan = r["tanaman"].split(";")[0] if r["tanaman"] else "Not stated"
+        tan = CROP_ABBR.get(tan, tan).capitalize()
         plat = ", ".join(PLAT[p] for p in r["platform"].split(";") if p in PLAT) or "Not stated"
         kelas = "Yes" if r["per_kelas"] == "Y" else "No"
         baris.append(f"\\citet{{{r['key']}}} & {tan} & {plat} & "
@@ -83,7 +84,7 @@ def main():
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Not stated, the property was not found by the coding rules. Metric types were coded from the full text: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or ID switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Coded from: the most complete source that was read when the codes were assigned. UAV, unmanned aerial vehicle.}\\
+\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Crop (the first match in a fixed list of crops) and platform were assigned by keyword rules on the title and abstract; Not stated, no keyword matched. Metric types were coded from the source in the last column: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or ID switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Coded from: the most complete source that was read when the codes were assigned. UAV, unmanned aerial vehicle.}\\
 \endlastfoot
 """ % (len(rows), judul, judul)
     OUT.write_text(kepala + "\n".join(baris) + "\n\\end{longtable}\n\\end{footnotesize}\n", newline="\n")
