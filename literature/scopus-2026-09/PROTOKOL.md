@@ -119,10 +119,11 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
 - **C3** dikodekan manual (`topik/bukti/kode_C3.txt`): tugas, lokasi, modalitas,
   penggunaan beberapa pandang, dan label kelas pada instans.
 - Kategori lain dikodekan dengan aturan kata kunci (`tools/scopus/kode_bukti.py`)
-  untuk tanaman, modalitas, platform, atribut kelas, dan jenis metrik, lalu diperiksa
-  secara acak.
-- Jenis metrik hanya dibaca dari abstrak dan hanya dilaporkan untuk kajian yang
-  abstraknya tersedia.
+  untuk tanaman, modalitas, platform, dan atribut kelas, lalu diperiksa secara
+  acak.
+- Jenis metrik (hitung, deteksi, identitas, tidak ada) dibaca dari teks lengkap
+  untuk kajian metode C1, di kolom `tingkat_metrik` berkas
+  `topik/bukti/mekanisme_C1.txt`.
 
 ## 6. Keterbatasan
 

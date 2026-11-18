@@ -9,7 +9,7 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 |---|---|
 | Menyunting naskah kandidat aktif | [`source/main6-body.tex`](source/main6-body.tex) (driver `main6.tex`) |
 | Mengompilasi naskah | `cd manuscript/source && tectonic main6.tex`, lalu pindahkan PDF ke `output/papers/` |
-| Mengunduh PDF jadi | [`output/papers/main6.pdf`](output/papers/main6.pdf) |
+| Mengunduh PDF jadi | [`output/papers/main6.pdf`](output/papers/main6.pdf); bahan tambahan [`output/papers/main6-supplementary.pdf`](output/papers/main6-supplementary.pdf) (sumber `source/main6-supplementary.tex`, kompilasi dengan cara yang sama) |
 | Melihat gambar `main6` | [`figures/main6/`](figures/main6/) — F01–F10 (PDF + PNG), dibuat `tools/scopus/gambar_tinjauan.py`; simulator interaktif di `figures/main6/interaktif/` |
 | Melihat figur naskah 182 sumber dan laporan eksperimen | [`figures/`](figures/) — F01–F08, C01–C02, seri H/N/R yang dipakai `reports/*.tex` |
 | Membaca aturan gaya `main6` | [`guides/GAYA-NASKAH-MAIN6.md`](guides/GAYA-NASKAH-MAIN6.md); dasarnya [`guides/POLA-TINJAUAN-PUSTAKA.md`](guides/POLA-TINJAUAN-PUSTAKA.md) |
@@ -21,7 +21,7 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 
 | Berkas | Isi | Status |
 |---|---|---|
-| `main6.tex` + `main6-body.tex` | *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories*. 468 kajian Scopus (215 multi-pengamatan), mekanisme asosiasi M0–M5; 36 halaman, 12 seksi, 2 lampiran, 10 gambar, 6 tabel | **Kandidat aktif** |
+| `main6.tex` + `main6-body.tex` | *Cross-View Identity in Image-Based Fruit Counting: A Systematic Review and Design Space for Class-Wise Inventories*. 468 kajian Scopus (215 multi-pengamatan), mekanisme asosiasi M0–M5; 34 halaman, 11 seksi, 2 lampiran, 7 gambar, 6 tabel | **Kandidat aktif** |
 | `main.tex` / `main-elsarticle.tex` + `evidence-body.tex` | Naskah asli 182 sumber (IEEEtran / Elsevier); PDF-nya ditautkan Ruang Baca | Stabil, jangan disunting |
 
 `main6` memakai `references6.bib` (dibuat `tools/scopus/buat_bib.py` dari

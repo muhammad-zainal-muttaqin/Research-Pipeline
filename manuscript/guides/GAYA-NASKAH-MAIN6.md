@@ -55,14 +55,18 @@ tetap dalam tiga panjang.
 - Pendahuluan: satu fungsi per paragraf (masalah terukur, kasus, keterbatasan
   tinjauan terdahulu, tujuan, kontribusi, pertanyaan), ditutup peta isi "The
   remainder of this article is organized as follows."
-- Setiap seksi dibuka dengan tugasnya dan ukuran irisannya ("this section (i)
-  ..., (ii) ..."), lalu ditutup dengan sintesis, batas, dan penunjuk ke seksi
-  berikutnya.
+- Setiap seksi bukti dibuka dengan klaim tentang isinya (asumsi, galat yang
+  dikendalikan, atau kondisi gagal), lalu ditutup dengan sintesis, batas, dan
+  penunjuk ke seksi berikutnya. Seksi 5 dibuka dengan tabel sintesis
+  mekanisme (asumsi, sumber hitung ganda yang dihilangkan, kondisi gagal,
+  bukti pada data yang sama, kecocokan untuk pandang diskret).
 - Subseksi padat dipecah menjadi aliran atau isu berlabel miring, misalnya
   "*(1) Background removal.*"
-- Diskusi adalah lapisan tersendiri: lintasan mekanisme, jawaban empat
-  pertanyaan, celah (i)–(v), dan set pelaporan minimum. Diskusi tidak
-  mengulang uraian kajian.
+- Diskusi (Seksi 9) adalah lapisan tersendiri: lintasan mekanisme, jawaban
+  empat pertanyaan sebagai argumen, posisi terhadap tinjauan terdahulu, celah
+  (i)–(v), dan set pelaporan minimum. Diskusi tidak mengulang uraian kajian.
+- Seksi 8 (sawit) disusun: mengapa sensus menantang setiap mekanisme, cara
+  deteksi berkembang, lalu yang belum ada.
 - Setiap subseksi bukti merujuk Seksi 3 setidaknya sekali, dan setiap
   keterbatasan di Seksi 4–8 menunjuk ke Seksi 10.
 
@@ -105,10 +109,11 @@ Aturannya:
 
 - Seksi metode dibuka dengan jenis tinjauan (systematic mapping review,
   sintesis konfiguratif, tanpa penggabungan efek), PRISMA 2020, dan alur kerja.
-  Subseksinya: *Data source*, *Search strategy*, *Inclusion and exclusion
-  criteria*, *Study selection and screening*, *Data extraction and coding*,
-  *Analytical framework*, *Evidence appraisal and synthesis*, *Search results
-  and included studies*.
+  Subseksinya: *Search strategy*, *Inclusion and exclusion criteria*, *Study
+  selection*, *Data extraction and coding*, *Appraisal and synthesis*.
+  Rincian prosedur (lintasan kedua, pemeriksaan ulang tahap judul, aturan
+  pengodean lengkap, peta istilah, gambar tanaman dan sensor) ada di
+  `main6-supplementary.tex`.
 - Kriteria ditulis bernomor. Alasan eksklusi memakai kata dan urutan yang sama
   dengan kotak diagram alur.
 - Penyaringan ditulis tiga tahap: judul, judul dan abstrak, teks lengkap.
@@ -116,7 +121,7 @@ Aturannya:
   metode, keterbatasan, dan deklarasi AI.
 - Aturan keputusan pengodean ditulis dalam pola "A study was coded as X when
   ...".
-- Lanskap kuantitatif ditulis sebagai butir berlabel (i)–(v), satu gambar per
+- Lanskap kuantitatif ditulis sebagai butir berlabel (i)–(iii), satu gambar per
   butir. Cara hitung (kemunculan, bukan hitungan eksklusif) dinyatakan di
   teks, bukan di judul gambar.
 - Peta istilah dinyatakan sebagai alat orientasi yang tidak memengaruhi
