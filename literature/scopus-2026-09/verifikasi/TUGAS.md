@@ -18,6 +18,32 @@ Anda.
 
   Hapus semua `\authorcheck` sebelum dikirim. Dampaknya: tanpa isian ini,
   naskah belum dapat dikirim.
+- [ ] **A.1 Tanaman dan platform di Lampiran A dikode dari abstrak, dan
+  sebagian keliru.** Apakah tanaman dan platform 215 kajian multi-pengamatan
+  (C1) perlu dikode ulang dari teks lengkap? Saat ini keduanya diisi aturan
+  kata kunci pada judul dan abstrak (`tools/scopus/kode_bukti.py`). Tiga
+  kesalahan sudah terbukti dari teks lengkap:
+  - Shimomoto dkk. 2025, *Predicting Sweet Pepper Yield*: tertulis "Tomato,
+    pepper", padahal kajiannya hanya paprika. Kata "tomato" muncul karena
+    abstrak menyebut sistem tomat mereka sebelumnya.
+  - Liu dkk. 2018, *Robust fruit counting*: tanaman tertulis "Not stated",
+    padahal kajiannya jeruk dan apel.
+  - Stein dkk. 2016, *Image based mango fruit detection*: platform tertulis
+    "Not stated", padahal mereka memakai kendaraan darat tak berawak
+    ("Shrimp").
+
+  Buka [matriks_bukti.csv](../topik/bukti/matriks_bukti.csv), saring kolom
+  `kode` = C1, lalu lihat kolom `tanaman` dan `platform`. Dampak bila
+  disetujui: Lampiran A, gambar tanaman dan sensor di bahan tambahan (S4),
+  serta makro jumlah tanaman dan platform berubah.
+- [ ] **A.2 Dua laporan Parico dkk. memakai PDF yang sama.** Apakah bab buku
+  2023 (*Real-Time Pear Fruit Detection and Counting Using YOLOv4 Models and
+  Deep SORT*, Springer, idx 469) memang terbitan ulang artikel *Sensors* 2021
+  (idx 592)? Berkas `pdf/parico2021real.pdf` dan `pdf/parico2023real.pdf`
+  berukuran sama (1.601.908 bita), dan teks ekstraksinya identik. Jadi teks
+  lengkap bab buku itu sebenarnya belum dinilai. Dampak: bila bab buku tidak
+  dapat diperoleh, ia pindah ke "tidak diperoleh", dan angka korpus (468
+  masuk peta) berkurang satu.
 - [ ] **F.4 Kode buta 20 artikel C1 acak oleh Bu Fatma.**
   Buka [sampel_fatma_C1.xlsx](cek-5-kode-ulang/sampel_fatma_C1.xlsx) dan isi
   kolom berlatar kuning. Arti setiap pilihan ada di lembar `pilihan`. Hasilnya
