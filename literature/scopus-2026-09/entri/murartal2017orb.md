@@ -1,0 +1,28 @@
+# ORB-SLAM2: An Open-Source SLAM System for Monocular, Stereo, and RGB-D Cameras
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `murartal2017orb` |
+| Judul asli | ORB-SLAM2: An Open-Source SLAM System for Monocular, Stereo, and RGB-D Cameras |
+| Penulis | Mur-Artal, Raul; Tardos, Juan D. |
+| Tahun | 2017 |
+| Venue | IEEE Transactions on Robotics |
+| Kode | T (Metode dari luar pertanian) |
+
+## Tautan Akses
+- PDF: [murartal2017orb.pdf](../pdf/murartal2017orb.pdf)
+- DOI resmi: https://doi.org/10.1109/tro.2017.2705103
+
+## Gambaran Umum
+
+Penelitian ini membangun sistem simultaneous localization and mapping (SLAM, pemetaan dan penentuan posisi bersamaan) bernama ORB-SLAM2 yang bekerja untuk kamera monokular, stereo, dan RGB-D. Permasalahan utama adalah kamera monokular tidak dapat mengamati kedalaman sehingga skala peta dan lintasan tidak diketahui, mengalami pergeseran skala, serta dapat gagal saat kamera hanya berputar. Sistem yang diusulkan mengatasi hal itu dengan masukan stereo atau RGB-D, sekaligus menyediakan penutupan loop (loop closing), relokalisasi, dan penggunaan ulang peta. Penulis menargetkan lokalisasi yang konsisten secara global dan tahan lama, bukan rekonstruksi rapat penuh, serta berorientasi pada operasi waktu nyata pada prosesor biasa tanpa GPU.
+
+Data evaluasi mencakup 29 sekuens publik dari tiga kumpulan data. KITTI memuat 11 sekuens latihan stereo dari mobil di lingkungan perkotaan dan jalan tol, dengan baseline sekitar 54 cm, laju 10 Hz, dan resolusi 1240×376 piksel setelah rectification. EuRoC memuat 11 sekuens stereo dari wahana udara tanpa awak di dua ruangan dan satu lingkungan industri, dengan baseline sekitar 11 cm, citra WVGA pada 20 Hz, serta tingkat kesulitan easy, medium, dan difficult berdasarkan kecepatan, iluminasi, dan tekstur adegan. TUM RGB-D memuat sekuens dalam ruangan untuk menilai rekonstruksi objek serta SLAM/odometri pada berbagai tekstur, iluminasi, dan struktur. Pengujian dijalankan pada komputer Intel Core i7-4790 dengan RAM 16 GB; setiap sekuens diulang lima kali karena sistem multithreading bersifat nondeterministik, dan hasil yang ditampilkan adalah median.
+
+Mekanisme sistem terdiri atas tiga utas paralel, yaitu tracking yang menentukan posisi kamera setiap frame lewat pencocokan fitur dengan peta lokal dan meminimalkan galat proyeksi ulang melalui motion-only bundle adjustment (BA), local mapping yang mengelola dan mengoptimalkan peta lokal dengan local BA, serta loop closing yang mendeteksi loop besar dan mengoreksi akumulasi drift lewat optimasi pose-graph. Setelah penutupan loop, utas keempat menjalankan full BA. Pengenalan tempat memakai DBoW2 untuk relokalisasi saat tracking gagal atau saat inisialisasi ulang, dengan graph keterhubungan (covisibility graph) dan pohon rentang minimum yang memungkinkan operasi lokal pada peta besar. Sistem memakai fitur ORB yang sama untuk tracking, pemetaan, dan pengenalan tempat. Untuk RGB-D, nilai kedalaman d diubah menjadi koordinat kanan virtual uR = uL − fx·b/d, sehingga sistem tidak membedakan masukan stereo dan RGB-D. Titik kunci dibedakan menjadi monokular, stereo dekat (kedalaman kurang dari 40 kali baseline), dan stereo jauh; titik dekat dapat ditriangulasi dari satu frame dan memberi informasi skala, sedangkan titik jauh memberi informasi rotasi. Optimasi BA memakai metode Levenberg–Marquardt dalam pustaka g2o. Mode lokalisasi tambahan mematikan utas pemetaan dan penutupan loop serta memadankan pencocokan odometri visual dengan titik peta agar lokalisasi bebas drift pada lingkungan yang sudah dipetakan.
+
+Hasil diukur dengan metrik absolute translation RMSE (tabs), average relative translation error (trel), dan average relative rotation error (rrel), dengan angka pembanding diambil dari publikasi penulis aslinya. Pada KITTI, ORB-SLAM2 disebut sebagai solusi stereo SLAM terbaik pada benchmark visual odometry; misalnya sekuens 00 menghasilkan trel 0,70 persen, rrel 0,25 derajat per 100 m, dan tabs 1,3 m, dibanding Stereo LSD-SLAM sebesar 0,63 persen, 0,26 derajat per 100 m, dan 1,0 m, sedangkan sekuens 01 menghasilkan 1,39 persen, 0,21 derajat per 100 m, dan 10,4 m dibanding 2,36 persen, 0,36 derajat per 100 m, dan 9,0 m. Versi stereo tidak mengalami pergeseran skala seperti ORB-SLAM monokular pada sekuens 08. Pada EuRoC, sistem mencapai presisi lokalisasi beberapa sentimeter dan lebih akurat daripada Stereo LSD-SLAM. Pada TUM RGB-D, ORB-SLAM2 mengungguli ElasticFusion, Kintinuous, DVO-SLAM, dan RGB-D SLAM pada sebagian besar sekuens, misalnya fr1/desk sebesar 0,016 m dan fr2/desk sebesar 0,009 m, dibanding ElasticFusion sebesar 0,020 m dan 0,071 m. Penulis mencatat bahwa peta kedalaman untuk sekuens freiburg2 memiliki bias skala 4 persen yang dikompensasi dalam pengujian dan dapat menjelaskan sebagian keunggulan tersebut.
+
+Batasan yang dinyatakan penulis mencakup kehilangan pelacakan pada sekuens EuRoC V2_03 difficult akibat motion blur berat, serta ketergantungan mode lokalisasi pada lingkungan yang tidak banyak berubah. Peta yang dihasilkan bersifat sparse dan sistem tidak melakukan fusi rapat seperti KinectFusion, sehingga rekonstruksi tiga dimensi penuh memerlukan pemrosesan tambahan. Pengembangan berikutnya yang diusulkan mencakup dukungan beberapa kamera yang tidak saling overlap, kamera fisheye atau omnidirectional, fusi rapat skala besar, pemetaan kooperatif, dan ketahanan terhadap motion blur yang lebih tinggi. Penulis tidak menyatakan angka waktu pemrosesan per utas secara ringkas di luar tabel pengukuran.
+

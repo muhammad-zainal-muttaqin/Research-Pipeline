@@ -1,0 +1,28 @@
+# Toward joint acquisition-annotation of images with egocentric devices for a lower-cost machine learning application to apple detection
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `samiei2020joint` |
+| Judul asli | Toward joint acquisition-annotation of images with egocentric devices for a lower-cost machine learning application to apple detection |
+| Penulis | Samiei, Salma; Rasti, Pejman; Richard, Paul; Galopin, Gilles; Rousseau, David |
+| Tahun | 2020 |
+| Venue | Sensors Switzerland |
+| Kode | C2 (Pencacahan satu pandang) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [samiei2020joint.pdf](../pdf/samiei2020joint.pdf)
+- DOI resmi: https://doi.org/10.3390/s20154173
+
+## Gambaran Umum
+
+Penelitian ini berangkat dari masalah biaya anotasi citra bagi pembelajaran mesin. Penulis menyatakan anotasi piksel per piksel secara manual memakan waktu sekitar 1,5 jam per 100 citra berukuran 308 × 202 piksel. Tujuan penelitian adalah menguji apakah perangkat pencitraan egosentris, khususnya pelacak mata yang dipasang di kepala, dapat melakukan akuisisi citra dan anotasi otomatis secara bersamaan. Deteksi apel di kebun dipakai sebagai studi kasus karena mengandung oklusi antarbuah, oklusi oleh ranting, perubahan pencahayaan, latar yang menyerupai buah, serta variasi ukuran dan warna. Penulis tidak mengusulkan algoritma deteksi apel baru; yang dinilai adalah nilai area perhatian yang dihasilkan perangkat egosentris bagi segmentasi standar.
+
+Bahan berasal dari kebun INRAE Angers, Prancis. Perangkat yang dipakai adalah kacamata pelacak mata VPS-16 dengan kamera stereoskopik di jembatan hidung, kamera depan dengan jangkauan diagonal 88 derajat, dan mikrofon 10 kHz. Pemakai mendapat tugas mencari apel pada pohon dari jarak sekitar 1,5 m sambil menyebutkan jumlah apel yang tercatat melalui mikrofon sebagai landasan kebenaran. Peneliti merekam 10 video berlaju 25 fps dari 10 pohon apel pada dua hari tengah hari dengan cuaca berbeda, menghasilkan 24.618 frame. Frame yang menerima tatapan sekurang-kurangnya 275 ms berjumlah 419. Seluruh frame itu dianotasi manual dengan Matlab 2017a selama kurang lebih 54 detik per citra, sehingga total waktu anotasi manual sekitar 6 jam. Tidak ada pembagian latih dan uji; anotasi otomatis dibandingkan dengan anotasi manual tersebut.
+
+Pipeline pengolahan dimulai dari frame beresolusi 960 × 544 piksel, lalu penentuan area perhatian, segmentasi, dan evaluasi. Segmentasi memakai superpiksel SLIC dengan jumlah N = A/S, dengan A luas area perhatian dan S luas apel rata-rata 900 piksel, dilanjutkan K-means dengan K = 2 atas fitur R, G, B, H, S; gugus terkecil dianggap sebagai apel. Daerah biru dari langit dan label pohon dihapus lebih dulu dengan ambang warna RGB. Lima strategi area perhatian dibandingkan: tatapan dari kacamata pelacak mata, tatapan dari pelacak mata meja SMI berlaju 60 Hz pada layar 1.920 × 1.080 piksel, citra utuh, cakram 180 × 180 piksel di tengah citra sebagai prior egosentris, dan peta saliency yang diubah menjadi topeng biner. Untuk kacamata, suatu posisi tatapan dianggap fiksasi bila diamati selama enam frame, setara 25 fps dikali 275 ms; area di sekitarnya diperluas untuk mengompensasi galat kalibrasi, dengan radius optimal 80 piksel atau 160 × 160 piksel. Diameter apel rata-rata dalam data adalah 30 piksel dan galat pergeseran tatapan maksimum 169 piksel. Metrik evaluasinya adalah indeks Dice dan Jaccard, probabilitas deteksi baik PD = TP/(TP+FN), laju negatif sejati TNR = TN/(TN+FP), galat pergeseran jarak Euclid antara sentroid hasil dan sentroid landasan kebenaran dengan ambang tumpang tindih 75 persen, serta waktu jalankan dan perbandingan waktu terhadap anotasi manual. Pengukuran waktu memakai komputer Windows dengan CPU Intel Xeon dan RAM 32 GB.
+
+Hasil diratarakan atas 10 pohon. Kacamata pelacak mata memberi Dice 0,78 ± 0,08, Jaccard 0,64 ± 0,08, probabilitas deteksi baik 0,84 ± 0,16, TNR 0,09 ± 0,07, galat pergeseran 15,97 ± 11 piksel, waktu 1.960 detik, dan perolehan waktu 11 kali. Pelacak mata meja memberi hasil terbaik, yaitu Dice 0,85 ± 0,09, Jaccard 0,77 ± 0,13, deteksi baik 0,88 ± 0,12, TNR 0,09 ± 0,13, galat 2,37 ± 1,86 piksel, waktu 3.240 detik, dan perolehan 6 kali. Prior egosentris memberi Dice 0,46 ± 0,36 dan deteksi baik 0,54 ± 0,39 dengan perolehan waktu 11 kali. Citra utuh memberi Dice 0,24 ± 0,22 dan galat 174,11 ± 34 piksel, sedangkan saliency memberi Dice 0,27 ± 0,13 dan deteksi baik 0,42 ± 0,45. Penulis menyatakan galat pergeseran pelacak mata meja 125 piksel lebih kecil daripada kacamata, tetapi kacamata merupakan kompromi terbaik antara kecepatan dan mutu anotasi karena memungkinkan akuisisi dan anotasi bersamaan.
+
+Batasan yang dinyatakan penulis mencakup pergeseran kalibrasi perangkat pelacak mata yang dipasang di kepala, biaya pelacak mata sekitar 10.000 sampai 20.000 euro, dan kegagalan peta saliency karena perhatiannya tertarik pada objek kontras seperti batang, daun, atau benda di latar, bukan apel. Pengaturan K = 2 bergantung pada tidak adanya apel hijau dan penghapusan warna biru; penulis menyatakan kasus lain perlu menyesuaikan segmentasi. Superpiksel juga mengalami kebocoran batas di sekitar objek. Perolehan waktu 11 kali lebih kecil daripada sekitar 30 kali pada pekerjaan sebelumnya dengan pelacak mata meja, yang diduga karena tugas yang lebih kompleks dan banyaknya praproses. Penulis menyatakan validasi lanjutan masih diperlukan dengan melatih algoritma pembelajaran mesin pada citra beranotasi otomatis dan membandingkannya dengan citra beranotasi manual, serta menyediakan perangkat lunak yang ergonomis bagi teknisi lapangan.

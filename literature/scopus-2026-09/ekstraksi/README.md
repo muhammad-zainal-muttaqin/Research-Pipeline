@@ -74,13 +74,12 @@ dipakai untuk menulis ulang Seksi 4–8 pada November 2026.
 
 18 November 2026:
 
-- `perbandingan/`: korpus memuat 211 kajian metode C1. Empat di antaranya
-  (`guo2023real`, `tu2026passion`, `wang2024camellia`,
-  `zhu2022identification`) tidak punya teks karena fon PDF-nya tanpa
-  pemetaan Unicode, dan perlu OCR. Dari 207 sisanya, 186 sudah punya berkas
-  dan 111 memuat perbandingan pada data yang sama. Sisa 21 kajian sedang
-  dikerjakan.
-- `tanaman-platform/`: 81 dari 215 kajian C1 sudah tercatat.
+- `perbandingan/`: korpus memuat 210 kajian metode C1. Empat kajian yang dulu
+  tanpa teks (`guo2023real`, `tu2026passion`, `wang2024camellia`,
+  `zhu2022identification`) sudah diekstrak dengan OCR karena fon FzBookMaker.
+  Teks Mandarin terbaca, sebagian tanda baca mungkin meleset. Seluruh 210
+  kajian sudah punya berkas dan 127 memuat perbandingan pada data yang sama.
+- `tanaman-platform/`: 215 dari 215 kajian C1 sudah tercatat, selesai.
 - `bacaan/`: 49 kajian inti, selesai.
 
 Angka ini dihitung ulang dengan perintah di bawah, bukan disalin.
@@ -116,8 +115,8 @@ Melanjutkan ekstraksi:
 
 ## Langkah berikutnya
 
-- Selesaikan 21 kajian `perbandingan/` yang tersisa, lalu perbarui
-  `tab:assoc` dan teks Seksi 5 naskah.
-- Selesaikan `tanaman-platform/`. Setiap baris yang berbeda dari kode kata
-  kunci diperiksa di teks lengkap, lalu diisikan ke `topik/bukti/mekanisme_C1.txt`
-  dan dicatat di `verifikasi/.teknis/log_perubahan.csv`.
+- Perbarui `tab:assoc` dan teks Seksi 5 naskah dari 127 perbandingan pada data
+  yang sama di `perbandingan/`.
+- Periksa baris `tanaman-platform/` yang berbeda dari kode kata kunci di teks
+  lengkap, lalu isikan ke `topik/bukti/mekanisme_C1.txt` dan catat di
+  `verifikasi/.teknis/log_perubahan.csv`.

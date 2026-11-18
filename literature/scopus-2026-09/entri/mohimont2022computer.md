@@ -1,0 +1,29 @@
+# Computer Vision and Deep Learning for Precision Viticulture
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `mohimont2022computer` |
+| Judul asli | Computer Vision and Deep Learning for Precision Viticulture |
+| Penulis | Mohimont, Lucas; Alin, Fran\ccois; Rondeau, Marine; Gaveau, Nathalie; Steffenel, Luiz Angelo |
+| Tahun | 2022 |
+| Venue | Agronomy |
+| Kode | R (Tinjauan terdahulu) |
+| Tanaman | grape |
+
+## Tautan Akses
+- PDF: [mohimont2022computer.pdf](../pdf/mohimont2022computer.pdf)
+- DOI resmi: https://doi.org/10.3390/agronomy12102463
+
+## Gambaran Umum
+
+Tinjauan ini mengkaji metode penglihatan komputer dan pembelajaran mendalam untuk vitikultur presisi, dengan fokus pada citra RGB yang diambil langsung dari kebun. Vitikultur presisi bertujuan mengoptimalkan hasil dan biaya dengan memperhatikan keragaman lingkungan. Berbagai tugas masih dilakukan manual, seperti memilih tanaman, menghitung tandan dan buah untuk estimasi hasil, serta memeriksa tanda penyakit; pekerjaan ini memakan waktu dan rawan salah karena luas lahan serta kelelahan operator. Penulis menyusun kerangka umum metode penglihatan komputer yang terdiri atas praproses, tugas utama berupa klasifikasi, deteksi objek, atau segmentasi, dan pascaproses, dengan metrik akurasi, recall, presisi, dan F1. Untuk estimasi hasil ditambahkan langkah pemodelan penutupan buah menggunakan regresi dengan metrik R², MSE, RMSE, MAE, dan MAPE.
+
+Pada penghitungan bunga, pengukuran dilakukan pada tahap BBCH 55 ketika bunga masih berupa kuncup kecil. Tujuannya menghitung jumlah infloresens sebagai calon tandan dan jumlah bunga sebagai calon buah, yang memberi prediksi awal hasil meski sebagian bunga akan rontok saat pembentukan buah. Tugas ini sulit karena bunga berdiameter sekitar 3 mm dan berwarna hijau mirip daun. Metode klasik mendeteksi kandidat memakai transformasi h-maxima pada puncak pantulan cahaya, pendeteksian titik kunci SURF, serta penyaringan dengan K-means, dan sebagian besar memerlukan latar atau pencahayaan buatan. Metode pembelajaran mendalam memakai FCN, SegNet, dan Mask R-CNN. Angka dari kajian primer mencakup korelasi R² 0,99 pada metode morfologis dan watershed meskipun tanpa lokasi bunga, F1 98% pada Chardonnay dan MAPE rata-rata 6,92% dengan Mask R-CNN, tingkat keberhasilan 84,3% dan F1 86,7% pada dua kajian lain, F1 75,2% dengan FCN yang naik menjadi 80% pada mask dasar kebenaran, serta F1 0,73 dan 0,71 dengan SegNet dan watershed.
+
+Deteksi tandan dan penghitungan buah memakai empat keluarga metode. Segmentasi ambang memakai batas warna atau jarak Mahalanobis; pada pencahayaan buatan malam, metode ini mendeteksi 91% anggur putih dan 97% anggur merah, sedangkan satu kajian melaporkan tingkat keberhasilan 98% hanya pada sepuluh tanaman. Segmentasi berbasis tepi dengan kontur aktif mencapai 91,67%. Klasifikasi piksel memakai fitur warna, momen Zernike, atau histogram dengan SVM, MLP, dan AdaBoost; satu kajian memperoleh 96,56% pada blok tetapi 93,74% pada buah individual. Rekonstruksi 3D dengan SLAM mencapai 93%, sedangkan rekonstruksi stereo dengan classifier SVM hanya 82% dan memerlukan 10 GB penyimpanan serta delapan jam komputasi untuk 25 meter barisan. Untuk pembelajaran mendalam, Mask R-CNN mencapai F1 90% dalam kondisi alam dan 91% pada dataset GrapeCS-ML, YOLOv4 mencapai mAP 96,96%, YOLO lain mencapai F1 95,62% dengan waktu inferensi 12 ms per citra pada GTX 1050Ti, SSD-MobileNet mencapai mAP 49,85% dan 53,34% sebelum veraison, PSPNet termodifikasi mencapai IoU 87,42%, dan DeepLabV3+ mencapai IoU 88,44% dengan inferensi 60 ms per citra. Penghitungan buah dengan deteksi titik kunci dan penyaringan mencapai F1 91,5% pada pencahayaan malam, sedangkan Mask R-CNN yang dipadukan SLAM mencapai presisi 96,62% dan recall 98,81% pada satu barisan sepanjang 187 m.
+
+Pada estimasi hasil, komponen hasil terdiri atas jumlah tandan per tanaman, jumlah buah per tandan, dan bobot buah yang menyumbang berturut-turut 60%, 30%, dan 10% dari ragam hasil. Korelasi antara jumlah buah dan bobot berkisar R² 0,69–0,95 bergantung kultivar, sedangkan korelasi rasio piksel buah dan bobot berkisar R² 0,73–0,95. Angka galat estimasi hasil yang dikutip mencakup MAPE 27,8% di lapang, 11,8% dengan regresi CNN dan 15,2% dengan pembelajaran mendalam pada jumlah tanaman terbatas, 12,83% dengan model linear, serta 6,48%, 9,07%, dan 11,65% pada kultivar Flame Seedless dan −2,47% pada Chardonnay setelah kalibrasi. Kombinasi rekonstruksi 3D dan penghitungan tunas memberi galat 3%, 6%, dan 16% pada tiga petak, sedangkan analisis citra memberi galat rata-rata 8% berbanding 31% untuk pengambilan sampel manual. Daun dapat menyembunyikan hingga 72% buah pada kultivar Syrah, sehingga diperlukan pemodelan buah tersembunyi; satu kajian melaporkan recall 86% dan presisi 62,2% untuk buah tampak dengan NRMSE 26% dan R² 0,82 setelah pemodelan, sedangkan CycleGAN meningkatkan R² dari 0,72 menjadi 0,88.
+
+Penulis mencatat bahwa perbandingan antarkajian sulit karena perbedaan kultivar, tahap fenologis, lokasi, jumlah citra, kondisi terkontrol, dan metrik yang dipakai; belum ada standar metrik bersama. Metode klasik mensyaratkan pemilihan algoritma secara cermat serta penguasaan latar atau pencahayaan, sedangkan pembelajaran mendalam memerlukan data berlabel banyak dan GPU kuat; pelabelan memakan waktu, dan augmentasi data dapat menyebabkan kebocoran data bila pembagian data dilakukan sesudah augmentasi. Dua hambatan utama estimasi hasil adalah menghitung buah tersembunyi dan memperkirakan jumlah buah dalam tandan. Penulis mengusulkan penyeragaman metrik, pembangunan dataset berlabel berskala besar yang mencakup banyak kultivar, musim, dan tahap tumbuh beserta ukuran dasar, serta penambahan prediktor seperti kanopi dan volume buah, model multimodal, dan penanganan ketidakpastian akibat penyakit, cuaca, dan keragaman vigor.
+

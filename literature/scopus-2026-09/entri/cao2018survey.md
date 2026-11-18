@@ -1,0 +1,28 @@
+# A Survey on Feature Tracking Methods for SFM
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `cao2018survey` |
+| Judul asli | A Survey on Feature Tracking Methods for SFM |
+| Penulis | Cao, M.W.; others |
+| Tahun | 2018 |
+| Venue | Jisuanji Xuebao Chinese Journal of Computers |
+| Kode | T (Metode dari luar pertanian) |
+
+## Tautan Akses
+- PDF: [cao2018survey.pdf](../pdf/cao2018survey.pdf)
+- DOI resmi: https://doi.org/10.11897/sp.j.1016.2018.02536
+
+## Gambaran Umum
+
+Tinjauan ini membahas metode pelacakan fitur untuk *structure from motion* (SfM). SfM membangun model awan titik tiga dimensi dari citra atau sekuens video dan menghasilkan model yang memiliki konsistensi geometris tinggi dengan pemandangan asal, sehingga dipakai dalam rekonstruksi tiga dimensi, realitas tertambah, realitas virtual, navigasi, deteksi perubahan tiga dimensi, dan mobil tanpa pengemudi. Pelacakan fitur merupakan teknik dasar untuk mencari titik korespondensi antarcitra; mutu titik tersebut langsung menentukan bentuk geometris model yang dihasilkan. Penulis membagi metode yang ada menjadi dua kelompok, yaitu metode untuk kumpulan citra tidak teratur dan metode untuk sekuens video. Kajian sebelumnya lebih banyak mengejar akurasi dan efisiensi dalam lingkungan aplikasi tertentu, sementara beberapa persoalan mendasar belum terselesaikan, sehingga pengguna sulit memilih metode yang sesuai. Tinjauan ini bertujuan menganalisis ide inti serta kelebihan dan kekurangan metode mutakhir, mengumpulkan alat dan dataset yang tersedia, mengevaluasi metode klasik, merangkum persoalan terbuka, dan menunjukkan arah penelitian.
+
+Bahan evaluasi berupa dataset standar SfM, bukan data pertanian. Lima dataset dipakai untuk membandingkan KLT, Bundler, ETH 3D, dan VisualSFM (VSFM), yaitu Tsinghua, Not reDame, Rushmore, Yosemite, dan Church; enam dataset lain (Tsinghua, Hotel, Burgos, Castle, Kler, dan Lion) dipakai untuk mengukur galat posisi kamera (Cerr) dan galat sudut rotasi (Rerr) terhadap kebenaran dasar; dataset Radcliffe dipakai untuk membandingkan metode pembelajaran mendalam LIFT. Penulis juga merangkum banyak dataset lain, antara lain Castle, Palace, PoseNet, 1DSFM, KITTI suite, dan YFCC100M. Empat metode klasik memakai strategi berbeda: KLT berbasis aliran optik pada sekuens video, Bundler memakai SIFT, *brute force matching*, dan RANSAC, ETH 3D memakai SURF dan KNN, sedangkan VSFM memakai SIFTGPU. Eksperimen dijalankan pada komputer PC dengan prosesor Intel i5 dan memori 8,0 GB. Presisi dihitung sebagai proporsi korespondensi yang benar dari seluruh korespondensi dengan bantuan RANSAC; Cerr dan Rerr berturut-turut adalah rata-rata selisih posisi dan orientasi kamera hasil estimasi terhadap kebenaran dasar.
+
+Mekanisme pelacakan fitur berupa deteksi, pencocokan, dan pembentukan lintasan. Kerja *detection and matching framework* (DMF) terdiri atas deteksi ciri, pencocokan ciri, dan penggabungan hasil menjadi trek; kerangka ini dipakai oleh Bundler, ETH 3D, ACTS, dan VSFM. Untuk citra tidak teratur, penulis mengumpulkan detektor seperti Harris, MSER, SIFT, SURF, FAST, AGAST, BRISK, ORB, KAZE, dan DART, deskriptor seperti SIFT (128 dimensi), SURF (64 dimensi), BRIEF, ORB, KAZE, dan LDB, serta metode pencocokan seperti *brute force*, KNN, gKNN, SNN, ANN, LSH, MIH, CasHashing, dan FLANN. KLT memakai aliran optik dan dapat dipercepat dengan GPU; varian lain menggabungkan pengukuran inersia (IMU) dan matriks homografi. Persoalan yang disoroti meliputi daya ulang (*repeatability*), daya beda deskriptor, keberadaan pencilan, fitur berulang yang menimbulkan ambiguitas, serta penggunaan kamera omnidirectional dan mata ikan.
+
+Hasil evaluasi menunjukkan KLT konsisten memiliki presisi terendah, tetapi umumnya paling cepat. Presisi berturut-turut untuk KLT, Bundler, ETH 3D, dan VSFM adalah 25,34/72,56/82,75/78,73% pada Tsinghua, 41,26/72,35/79,83/82,75% pada Not reDame, 32,16/62,47/73,86/75,64% pada Rushmore, 58,63/71,34/78,54/74,26% pada Yosemite, dan 25,24/51,53/40,62/47,84% pada Church. Waktu pemrosesan pada Tsinghua adalah 29,53 detik untuk KLT, 70,65 detik untuk Bundler, 52,46 detik untuk ETH 3D, dan 18,57 detik untuk VSFM; pada Church, berturut-turut 50,26, 78,84, 50,32, dan 36,28 detik. Pada dataset Radcliffe, LIFT mencatat presisi 38,62%, jauh di atas KLT (4,35%), Bundler (10,42%), ETH 3D (11,27%), dan VSFM (10,86%), dengan waktu 25,46 detik. Galat Cerr dan Rerr pada enam dataset berada dalam kisaran 0,23–0,56.
+
+Batasan yang dinyatakan penulis mencakup ketiadaan satu metode yang memenuhi semua kebutuhan dan perubahan peringkat kinerja ketika data berubah, misalnya ETH 3D mengungguli VSFM pada Tsinghua tetapi sebaliknya pada Yosemite. KLT cocok untuk sekuens video namun lemah pada kumpulan citra tidak teratur, sedangkan metode berbasis DMF lebih akurat dengan biaya waktu lebih besar; pada YFCC100M, tahap deteksi SIFT menyumbang sekitar 30% dari total waktu rekonstruksi tiga dimensi, dan SIFTGPU lebih cepat tetapi kurang tepat daripada SIFT pada CPU. Masalah terbuka yang dirangkum mencakup daya ulang detektor, deskriptor yang diskriminatif dan representatif, pencilan, disambiguasi fitur berulang, penanganan kecocokan salah, serta kamera nonperspektif. Arah pengembangan yang dibahas adalah komputasi berskala besar dengan MPI, GPU, Hadoop, dan Spark serta metode berbasis pembelajaran mendalam seperti LIFT, DetNet, dan DeepCompare.
+

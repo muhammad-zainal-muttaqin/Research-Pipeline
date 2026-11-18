@@ -1,0 +1,29 @@
+# Remote Assessment of Size, Ripeness, and Count of Fruits in Orchard Greenhouse
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `chiu2025remote` |
+| Judul asli | Remote Assessment of Size, Ripeness, and Count of Fruits in Orchard Greenhouse |
+| Penulis | Chiu, Min-Chie; Cho, Shih-Ming; Yeh, Long-Jyi; Her, Ming-Guo; Lan, Yun-Cheng; Lan, Tian-Syung |
+| Tahun | 2025 |
+| Venue | Sensors and Materials |
+| Kode | C4 (Atribut kelas dan pencacahan) |
+| Tanaman | citrus |
+
+## Tautan Akses
+- PDF: [chiu2025remote.pdf](../pdf/chiu2025remote.pdf)
+- DOI resmi: https://doi.org/10.18494/sam5915
+
+## Gambaran Umum
+
+Penelitian ini bertujuan menyediakan sistem pemantauan jarak jauh untuk kebun rumah kaca yang mampu mengenali jumlah, tingkat kematangan, dan ukuran buah secara langsung tanpa bergantung pada infrastruktur jaringan nirkabel konvensional. Kebun sering berada di daerah terpencil dengan medan pegunungan, sehingga Bluetooth (10 m), Zigbee (10–100 m), dan Wi-Fi (sampai 300 m) tidak memadai. *Long range* (LoRa) menawarkan jangkauan 3 km di kawasan padat dan 10 km di pedesaan, tetapi bandwidth-nya terbatas. Karena itu, citra harus diolah di lokasi dan hanya hasil pengenalan yang dikirim ke pusat pemantauan. Sistem ini juga ditujukan untuk mengurangi kebutuhan tenaga kerja dan mendukung penghematan air dalam pengelolaan rumah kaca.
+
+Pengujian memakai pohon kumquat (*Citrus japonica*) yang berbuah di simulasi rumah kaca berskala kecil. Citra diambil dengan Pi Camera V2.1 pada resolusi asli 3280×2464 piksel, lalu diturunkan menjadi 1280×720 piksel untuk mengurangi beban hitung. Pemrosesan berjalan di Jetson Nano memakai OpenCV, dengan pengembangan perangkat lunak di PyCharm dan Anaconda3. Perangkat keras rumah kaca memakai mikrokontroler ESP-32S, sensor DHT11 untuk suhu dan kelembapan, sensor kelembapan tanah kapasitif, sensor cahaya TEMT-6000, dan sakelar magnetik, serta aktuator berupa pompa irigasi, sistem kabut, kipas konveksi, dan motor tirai naung. Kamera dan Jetson Nano dipasang pada kendaraan rel yang berjalan otomatis sesuai jadwal atau dikendalikan dari jauh. Hasil pengenalan dan data lingkungan ditampilkan pada antarmuka manusia–mesin berbasis C# di komputer jarak jauh dan disimpan ke berkas Microsoft Excel. Acuan kebenaran berasal dari tiga petani berpengalaman minimal sepuluh tahun dalam membudidayakan dan menggolongkan varietas yang diuji.
+
+Algoritma awal mengubah citra RGB ke ruang warna HSV memakai cvtColor, menyaring warna di luar rentang target dengan inRange, lalu melakukan operasi morfologi penutupan dan bitwise_and untuk membentuk mask buah. Jumlah buah dihitung dari kontur yang ditemukan dengan findContours; luas kontur diukur dengan contourArea dan kotak pembatas dibuat dengan boundingRect. Skor tiap kotak ditentukan dari luasnya, lalu dijumlahkan. Kematangan ditentukan dari warna dominan di dalam kotak pembatas dengan ambang HSV; sistem menghitung jumlah buah per kategori dan memilih kategori terbanyak sebagai hasil akhir. Ukuran diperkirakan dari luas kotak pembatas dan prinsip proporsionalitas linier terhadap jarak kamera, dengan ambang 750 piksel: diameter di bawah 26 mm dikategorikan kecil dan di atas 32 mm besar. Sistem yang dimodifikasi menambah GaussianBlur untuk menekan derau, operasi MORPH_OPEN, serta parameter luas dan posisi kotak, rasio luas buah terhadap kotak, rasio sisi kotak, dan *intersection over union* (IoU). Kotak dengan IoU lebih dari 90% dianggap duplikat dan kotak yang lebih kecil dibuang. Kotak dengan cakupan buah kurang dari 70% dimasukkan ke kelas B sebagai buah tunggal, sedangkan yang lebih dari 70% masuk kelas A sebagai kemungkinan banyak buah; kelas A diproses lanjutan dengan erosi pada sumbu panjang kotak dan findContours.
+
+Akurasi dihitung sebagai perbandingan antara hasil pengenalan sistem dan pengenalan manual, dinyatakan dalam persen. Sistem awal mencatat 66% untuk jumlah buah (35 berbanding 53), 0% untuk buah mentah (0/2), 44% untuk setengah matang (4/9), 74% untuk matang penuh (31/42), 59% untuk buah besar (13/22), dan 71% untuk buah kecil (22/31). Setelah perbaikan pertama, akurasi menjadi 80% untuk jumlah (45/56), 50% untuk mentah (1/2), 50% untuk setengah matang (7/14), 93% untuk matang penuh (37/40), 72% untuk besar (18/25), dan 87% untuk kecil (27/31). Pada validasi akhir memakai simulasi rumah kaca berskala kecil, sistem mencatat 90% untuk jumlah (27/30), 100% untuk mentah (1/1) dan setengah matang (2/2), 89% untuk matang penuh (24/27), serta 81% untuk buah besar dan 88% untuk buah kecil. Penulis menyatakan peningkatan itu berasal dari penyempurnaan prapemrosesan dan penggunaan parameter kotak pembatas serta IoU.
+
+Penulis mencatat beberapa keterbatasan. Akurasi awal yang rendah berasal dari perbedaan antara ukuran perkiraan dan ukuran sebenarnya serta salah penilaian kematangan; ambang HSV awal tidak cukup presisi sehingga perlu disempurnakan berdasarkan data yang diamati. Lima skenario kesalahan diidentifikasi, yaitu buah terbagi menjadi beberapa bagian karena ranting dan daun, beberapa buah bertumpuk secara vertikal, unsur bukan buah masuk ke dalam kotak pembatas, buah tidak tertangkap oleh mask, dan sebagian buah tertutup daun. Pada kasus luar biasa, buah yang tertutup sebagian masih salah dikenali sebagai buah kecil meskipun kriteria luas dan jari-jari telah dipakai, sehingga sistem belum mampu mengenalinya secara tepat. Validasi hanya dilakukan pada simulasi rumah kaca berskala kecil dengan satu pohon kumquat. Penulis menyatakan rencana pengujian penerapan lapangan dan kegunaan bagi petani sebagai kerja lanjutan, sehingga aspek tersebut belum dinilai.
+

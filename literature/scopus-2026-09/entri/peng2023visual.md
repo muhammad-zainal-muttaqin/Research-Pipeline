@@ -1,0 +1,28 @@
+# Visual SLAM Based on Object Detection Network: A Review
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `peng2023visual` |
+| Judul asli | Visual SLAM Based on Object Detection Network: A Review |
+| Penulis | Peng, Jiansheng; Chen, Dunhua; Yang, Qing; Yang, Chengjun; Xu, Yong; Qin, Yong |
+| Tahun | 2023 |
+| Venue | Computers Materials and Continua |
+| Kode | T (Metode dari luar pertanian) |
+
+## Tautan Akses
+- PDF: [peng2023visual.pdf](../pdf/peng2023visual.pdf)
+- DOI resmi: https://doi.org/10.32604/cmc.2023.041898
+
+## Gambaran Umum
+
+Tinjauan ini membahas penggabungan jaringan deteksi objek dengan visual SLAM, yaitu teknik yang memungkinkan robot atau kamera menentukan posisi sekaligus membangun peta lingkungan. Masalah utamanya adalah visual SLAM konvensional menganggap lingkungan statis, sehingga pejalan kaki, kendaraan, dan objek bergerak lain merusak akurasi penentuan posisi dan menghasilkan peta yang menyimpang. Penulis mencatat bahwa tinjauan sebelumnya membahas deteksi objek, segmentasi semantik, dan segmentasi instance secara bersamaan tanpa membandingkan kelebihan masing-masing. Oleh karena itu, tinjauan ini difokuskan secara khusus pada jaringan deteksi objek, dengan menelaah cara informasi semantiknya dipakai pada odometri visual, deteksi penutupan lintasan, relokalisasi, dan pembangunan peta.
+
+Tulisan ini adalah tinjauan literatur, bukan percobaan dengan model tunggal. Sumber dikumpulkan dari Web of Science, CNKI, Weipu, IEEE Electronic Library, dan Springer dengan kata kunci visual SLAM, semantic SLAM, YOLO, object detection, dan autonomous driving. Dari 5.907 artikel awal, penyaringan judul dan abstrak menyisakan 965 artikel, lalu 304 artikel dipilih berdasarkan bahasa, tahun terbit, dan relevansi. Pembacaan teks lengkap menghasilkan 98 artikel yang dianalisis, terdiri dari 4 tinjauan, 94 artikel penelitian, dan 7 artikel data. Objek yang dibahas bukan tanaman, melainkan objek umum seperti manusia, mobil, anjing, kucing, perabot, dan tanda jalan untuk robotika serta kendaraan otonom. Tujuh himpunan data SLAM yang dibandingkan adalah New College, KITTI, TUM RGB-D, Nordland, EuRoC, Oxford RobotCar, dan TUK Campus. KITTI memuat label kotak dua dan tiga dimensi delapan kategori, sedangkan TUK Campus memuat kotak dua dimensi empat kategori.
+
+Mekanisme yang dirangkum memakai keluaran jaringan deteksi, berupa kotak pembatas dan label kelas, sebagai informasi semantik dalam tiga bagian sistem. Pada odometri visual, kotak pembatas objek yang berpotensi bergerak dipakai untuk membuang titik fitur dinamis. Pendekatan paling sederhana membuang semua titik di dalam kotak, tetapi ini juga membuang titik statis; karena itu, penulis merangkum penggabungan dengan aliran optik, uji konsistensi geometris, klastering kedalaman memakai k-means atau DBSCAN, serta segmentasi memakai GrabCut atau DeepLabV3+. Pada deteksi penutupan lintasan dan relokalisasi, label dan kotak semantik menggantikan atau melengkapi pencocokan fitur BOW, antara lain melalui vektor jumlah dan kelas objek dengan locality sensitive hashing serta jarak kosinus. Pada pembangunan peta, pendekatan berorientasi objek hanya memetakan objek yang diinginkan, sedangkan pendekatan berorientasi adegan menggabungkan deteksi dengan point cloud untuk peta statis penuh; keduanya dapat berupa peta raster dua dimensi atau peta point cloud tiga dimensi.
+
+Perbandingan pada Tabel 5 mencakup 16 sistem berbasis deteksi objek. Sebagian besar sistem memakai kamera RGB-D dan jaringan SSD atau keluarga YOLO; beberapa memakai backbone ringan seperti MobileNetV3 atau YOLOv5s dan YOLOv3 tiny agar berjalan waktu nyata. Satu angka kuantitatif yang dinyatakan penulis adalah metode Wu dkk. yang menggantikan backbone YOLOv5s dengan MobileNetV3 dan membuang titik berdasarkan ambang aliran optik; metode ini dilaporkan meningkatkan akurasi penentuan posisi sebesar 80,16 persen dibandingkan ORB-SLAM3 dan dapat berjalan waktu nyata pada prosesor CPU. Penulis tidak menyajikan tabel metrik numerik yang seragam untuk sistem lainnya; perbandingan kebanyakan berupa kemampuan menangani adegan dinamis, jenis peta, himpunan data, dan status waktu nyata. Penulis menyimpulkan bahwa penggabungan deteksi objek dengan aliran optik atau konsistensi geometris membantu membuang titik dinamis, segmentasi mampu membuang seluruh titik pada sebuah objek, pemberian identitas unik serta filter Kalman membantu asosiasi data, dan jarak kosinus antarkotak semantik meningkatkan ketahanan deteksi penutupan lintasan pada adegan kompleks.
+
+Batasan yang dinyatakan penulis mencakup empat kesulitan deteksi objek, yaitu kebutuhan data anotasi yang banyak, kemampuan generalisasi yang terbatas, beragamnya jenis dan jumlah target, serta variasi bentuk dan skala objek. Pada sisi SLAM, kesulitan terletak pada pemenuhan kebutuhan waktu nyata, asosiasi data karena perbedaan representasi dan sistem koordinat, serta penanganan objek dinamis yang memiliki ketidakpastian, oklusi, dan pola gerak beragam. Penulis juga mencatat kelemahan tiap teknik, seperti SSD yang lambat, pembuangan titik di dalam kotak yang menghilangkan titik statis, aliran optik dan uji geometris yang rawan galat, k-means yang kurang tepat, serta GrabCut yang memakan waktu. Kendala utama penggunaan SLAM berbasis deteksi di industri adalah keterbatasan sumber daya komputasi dan tingginya biaya perangkat keras. Arah lanjutan yang diusulkan meliputi jaringan deteksi ringan dengan ShuffleNetV2, MobileNetV2, MobileNetV3, atau GhostNet, peningkatan asosiasi data semantik, navigasi robot otonom, dan SLAM objek tiga dimensi yang masih terkendala akurasi deteksi serta kebutuhan daya komputasi.
+

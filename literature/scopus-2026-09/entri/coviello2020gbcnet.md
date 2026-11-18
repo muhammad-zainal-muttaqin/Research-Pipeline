@@ -1,0 +1,28 @@
+# GBCNet: In-field grape berries counting for yield estimation by dilated CNNs
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `coviello2020gbcnet` |
+| Judul asli | GBCNet: In-field grape berries counting for yield estimation by dilated CNNs |
+| Penulis | Coviello, Luca; Cristoforetti, Marco; Jurman, Giuseppe; Furlanello, Cesare |
+| Tahun | 2020 |
+| Venue | Applied Sciences Switzerland |
+| Kode | C2 (Pencacahan satu pandang) |
+| Tanaman | grape |
+
+## Tautan Akses
+- PDF: [coviello2020gbcnet.pdf](../pdf/coviello2020gbcnet.pdf)
+- DOI resmi: https://doi.org/10.3390/app10144870
+
+## Gambaran Umum
+
+Penelitian ini bertujuan memperkirakan hasil panen anggur secara nondestruktif segera setelah pembentukan buah dengan memakai kamera ponsel. Prosedur lazim menghitung hasil sebagai Y = Nv × Nb × Pb, dengan Nv jumlah tanaman per satuan luas, Nb jumlah tandan per tanaman, dan Pb berat rata-rata tandan. Penulis menunjukkan Pb hanya dapat ditentukan tepat menjelang panen dan nilai historisnya dapat menyimpang sampai 10 persen antartahun, sedangkan berat rata-rata per buah lebih stabil. GBCNet menggantikan Pb dengan Na × Pa, sehingga Na, jumlah buah rata-rata per tandan, diperoleh dari citra dan Pa diambil dari data historis. Dua strategi diuji: menghitung buah pada citra close-up satu tandan, atau menghitung seluruh buah pada citra panorama jarak 1-2 m lalu mengalikannya dengan berat buah rata-rata.
+
+Bahan berupa dua kumpulan citra lapangan yang dianotasi satu per buah, dengan total 35.668 anotasi. CR1 berisi 128 citra close-up dari tujuh varietas (Chardonnay, Lagrein, Marzemino, Pinot Gris, Pinot Noir, Sauvignon, Traminer) yang diambil dengan kamera ponsel 8 Mpx dan 2 Mpx, menghasilkan 17.006 anotasi; buah masih kecil dan terpisah sehingga oklusi rendah dan setiap citra diusahakan memuat satu tandan. CR1 dibagi menjadi 102 citra latih dan 26 citra uji, setara 13.353 dan 3.653 buah, dengan validasi silang lima lipat pada data latih. CR2 berisi 17 citra Teroldego beresolusi 2.448 × 3.268 piksel yang diambil dari jarak 1-1,5 m, menghasilkan 18.622 anotasi; setiap citra memuat lebih dari satu tandan dan buah hampir mencapai ukuran akhir dengan oklusi tinggi. CR2 dibagi menjadi 11 citra latih dan 6 citra validasi, dengan validasi silang tiga lipat. CR2 bersifat publik, sedangkan CR1 tidak dapat dibagikan. Citra diubah menjadi tinggi 800 piksel, dinormalkan dengan parameter VGG-16, dan diaugmentasi dengan pemotongan patch seperempat ukuran citra serta pembalikan horizontal berpeluang 0,5.
+
+GBCNet merupakan adaptasi CSRNet dari penghitungan kerumunan. Model memakai sepuluh lapisan konvolusi pertama VGG-16 yang telah dilatih pada ImageNet sebagai pengekstrak fitur, dilanjutkan jaringan konvolusional terdilatasi untuk menghasilkan peta kepadatan; jumlah buah diperoleh dari integral peta tersebut. Bobot VGG-16 dibekukan dan hanya lapisan terdilatasi yang diperbarui. Landasan kebenaran berupa peta kepadatan yang dibentuk dari anotasi titik berbentuk delta Dirac yang dikonvolusikan dengan kernel Gaussian; untuk mengatasi adegan padat, penulis memakai kernel adaptif geometri dengan σi = α di, tetapi tetangga terdekat k = 3 dan α = 0,3, mengikuti pengaturan CSRNet. Pelatihan memakai Adam dengan learning rate awal 10^-5 untuk CR1 dan 10^-4 untuk CR2, diturunkan sepuluh kali setiap 50 epoch, dan konvergen dalam kurang dari 200 epoch. Ukuran batch 20 untuk CR1 dan 4 untuk CR2, dengan rata-rata 71 buah per patch pada CR1 dan 427 pada CR2. Metriknya adalah mean absolute error (MAE), mean squared error (MSE), dan overall MAE yang membandingkan jumlah prediksi dan jumlah sebenarnya setelah diagregasi.
+
+Pada CR1 dengan validasi silang lima lipat, MAE per citra sebesar 13,66 ± 4,70 buah (11,16 persen ± 2,70 persen) dan MSE 18,33 ± 6,33; overall MAE sebesar 56,48 ± 60,08 buah (2,13 persen ± 1,97 persen). Pada citra uji CR1, MAE per citra 13,25 buah (10,32 persen), MSE 16,07, dan overall MAE 10,65 buah (0,29 persen). Nilai overall MAE uji per varietas berkisar dari 0,85 persen untuk Pinot Gris sampai 11,73 persen untuk Marzemino; varietas lain berturut-turut Chardonnay 3,77 persen, Lagrein 6,72 persen, Pinot Noir 2,00 persen, Sauvignon 2,60 persen, dan Traminer 1,12 persen. Pada CR2 dengan validasi silang tiga lipat, MAE per citra sebesar 117,36 ± 14,07 buah (10,74 persen ± 1,15 persen) dan MSE 137,81 ± 18,19; overall MAE sebesar 466,53 ± 182,99 buah (7,24 persen ± 1,53 persen). Penulis menyatakan agregasi prediksi dari lebih dari tiga citra pada satu petak menurunkan galat persentase dari sekitar 10 persen menjadi kurang dari 1 persen, dan menyebut rata-rata galat uji sekitar 5 persen layak untuk penerapan operasional.
+
+Mekanisme yang diamati penulis pada CR1 adalah jaringan belajar mengabaikan buah di latar belakang yang buram karena hanya tandan terdepan yang dianotasi; fitur yang dipakai diduga berupa ketajaman dan ukuran tepi buah. Batasan yang dinyatakan mencakup variasi penampilan antarvarietas karena kondisi fenologis tidak seragam meskipun citra diambil pada hari yang sama, serta kecenderungan menyalahartikan daerah latar hijau bervariasi tinggi dalam kecerahan dan kontras sebagai buah yang menyebabkan overestimasi. CR2 menyulitkan model karena tingkat oklusi tinggi dan ukuran tandan berkisar dari 70 piksel sampai 1.000 piksel, sementara variasi warna antartandan lebih besar daripada perbedaan warna antara tandan dan daun. Penulis juga menyatakan estimasi hasil akhir masih memerlukan faktor selain jumlah buah dan merencanakan koreksi untuk buah yang tidak terlihat. Kode GBCNet tidak dapat dibagikan karena dimiliki bersama oleh Fondazione Bruno Kessler dan CAVIT s.c.

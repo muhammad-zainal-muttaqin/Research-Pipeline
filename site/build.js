@@ -333,6 +333,7 @@ const specials = SPECIAL_DOCS.map(function (d, i) {
  */
 const M6_DIR = path.join(ROOT, 'literature', 'scopus-2026-09', 'entri');
 const M6_URL = 'literature/scopus-2026-09/entri/';
+const M6_TEKS_URL = 'literature/scopus-2026-09/teks/';
 const m6 = [];
 if (fs.existsSync(M6_DIR)) {
   fs.readdirSync(M6_DIR).filter(function (f) { return /\.md$/i.test(f); }).sort().forEach(function (file) {
@@ -345,7 +346,7 @@ if (fs.existsSync(M6_DIR)) {
       warnings.push('Entri main6 tanpa kepala sah (jalankan tools/scopus/entri_main6.py): ' + file);
       return;
     }
-    const ov = raw.match(/^##\s+Gambaran Umum\s*\n([\s\S]*?)(?=^##\s)/m);
+    const ov = raw.match(/^##[ \t]+Gambaran Umum[ \t]*\r?\n([\s\S]*?)(?=^##[ \t]|(?![\s\S]))/m);
     m6.push({
       num: 1000 + m6.length,
       id: key,
@@ -360,7 +361,8 @@ if (fs.existsSync(M6_DIR)) {
       semantic: null,
       md: '',
       ov: ov ? ov[1].trim() : '',
-      lazy: M6_URL + file
+      lazy: M6_URL + file,
+      srcLazy: M6_TEKS_URL + key + '.txt'
     });
   });
 }
@@ -1472,18 +1474,28 @@ function RUNTIME() {
       tocEl.innerHTML = '';
       doc.title = e.title + ' · Ruang Baca Riset';
       var failed = false;
-      fetch(e.lazy).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
-        .then(function (t) { e.md = lazyMd(t); })
-        .catch(function () {
-          failed = true;
-          e.md = (e.ov ? '## Gambaran Umum\n' + e.ov + '\n\n' : '') +
-            '> Ringkasan lengkap tidak dapat dimuat. Halaman ini memerlukan sambungan ke situs; ' +
-            'berkas sumbernya ada di `' + e.lazy + '`.\n\n[Buka PDF](' + M6_BASE + 'pdf/' + e.id + '.pdf)\n';
-        })
-        .then(function () {
-          if (state.path === e.id) { viewEntry(e); if (state.heading) scrollToHeading(state.heading); }
-          if (failed) e.md = '';
-        });
+      var tasks = [];
+      tasks.push(
+        fetch(e.lazy).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+          .then(function (t) { e.md = lazyMd(t); })
+          .catch(function () {
+            failed = true;
+            e.md = (e.ov ? '## Gambaran Umum\n' + e.ov + '\n\n' : '') +
+              '> Ringkasan lengkap tidak dapat dimuat. Halaman ini memerlukan sambungan ke situs; ' +
+              'berkas sumbernya ada di `' + e.lazy + '`.\n\n[Buka PDF](' + M6_BASE + 'pdf/' + e.id + '.pdf)\n';
+          })
+      );
+      if (e.srcLazy) {
+        tasks.push(
+          fetch(e.srcLazy).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+            .then(function (t) { e.srcFull = t; })
+            .catch(function () { e.srcFull = null; })
+        );
+      }
+      Promise.all(tasks).then(function () {
+        if (state.path === e.id) { viewEntry(e); if (state.heading) scrollToHeading(state.heading); }
+        if (failed) e.md = '';
+      });
       return;
     }
     var art = doc.createElement('div'); art.className = 'article';
@@ -1496,6 +1508,21 @@ function RUNTIME() {
       pre.textContent = e.src;
       det.appendChild(sm); det.appendChild(pre);
       art.appendChild(det);
+    }
+    if (e.srcLazy) {
+      var detSrc = doc.createElement('details'); detSrc.className = 'srcfull';
+      var smSrc = doc.createElement('summary');
+      smSrc.textContent = 'Buka teks sumber lengkap — ekstraksi PDF, baris per baris';
+      if (e.srcFull != null && e.srcFull !== '') {
+        var preSrc = doc.createElement('pre'); preSrc.className = 'srctext';
+        preSrc.textContent = e.srcFull;
+        detSrc.appendChild(smSrc); detSrc.appendChild(preSrc);
+      } else {
+        var note = doc.createElement('p'); note.className = 'empty';
+        note.textContent = 'Teks lengkap tidak dapat dimuat dari ' + e.srcLazy + '.';
+        detSrc.appendChild(smSrc); detSrc.appendChild(note);
+      }
+      art.appendChild(detSrc);
     }
     var heads = enhance(art, e);
     main.innerHTML = '<div class="wrap"></div>';

@@ -1,0 +1,29 @@
+# Vineyard yield estimation, prediction, and forecasting: A systematic literature review
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `barriguinha2021vineyard` |
+| Judul asli | Vineyard yield estimation, prediction, and forecasting: A systematic literature review |
+| Penulis | Barriguinha, Andr\'e; de Castro Neto, Miguel; Gil, Artur |
+| Tahun | 2021 |
+| Venue | Agronomy |
+| Kode | R (Tinjauan terdahulu) |
+| Tanaman | grape |
+
+## Tautan Akses
+- PDF: [barriguinha2021vineyard.pdf](../pdf/barriguinha2021vineyard.pdf)
+- DOI resmi: https://doi.org/10.3390/agronomy11091789
+
+## Gambaran Umum
+
+Tinjauan sistematis ini membahas metode estimasi, prediksi, dan ramalan hasil kebun anggur sebagai alternatif penghitungan manual tradisional. Menurut penulis, mengetahui hasil lebih awal penting untuk menyeimbangkan pertumbuhan vegetatif dan reproduktif, mengatur penipisan, irigasi, dan pemupukan, menjadwalkan panen, serta perencanaan pemasaran dan asuransi. Metode tradisional dianggap destruktif, memakan tenaga dan waktu, serta kurang akurat karena galat operator dan sampel yang jarang dibandingkan variabilitas ruang kebun. Penulis menyatakan tiga komponen hasil—jumlah tandan per pohon, jumlah buah per tandan, dan bobot buah—menyumbang sekitar 60%, 30%, dan 10% dari hasil, dan galat metode tradisional berkisar sekitar 10% dengan R² antara 0,58 dan 0,75. Tinjauan ini mengklaim sebagai tinjauan sistematis pertama yang dikhususkan untuk estimasi hasil kebun anggur.
+
+Data dan metode tinjauan mengikuti pedoman PRISMA. Penelusuran dilakukan pada judul, abstrak, dan kata kunci dengan kombinasi "yield" atau "production" serta "estimation", "prediction", atau "forecasting" dan "vineyard" atau "grapevine", pada basis data Scopus, Web of Science, ScienceDirect, IEEE, MDPI, dan PubMed; Google Scholar dan ResearchGate tidak dipakai karena hanya menambah duplikasi. Dari 455 artikel terbitan 1981–2021, 239 diperoleh setelah penyaringan judul dan abstrak, dan 82 rekaman akhirnya dianalisis; hanya artikel sebelum Juni 2021 yang masuk. Rekaman dikelompokkan menjadi sepuluh pendekatan, yaitu model berbasis penglihatan komputer dan pengolahan citra (A, n = 50), indeks vegetasi (B, n = 7), serbuk sari (C, n = 7), model simulasi tanaman (D, n = 4), tegangan kawat penopang (E, n = 4), laser (F, n = 1), radar (G, n = 2), frekuensi radio (H, n = 1), ultrasonik (I, n = 1), dan model lain (J, n = 6); kesemuanya merupakan metode tak langsung, baik model simulasi dinamis maupun model berbasis data.
+
+Mekanisme deteksi dan asosiasi yang diuraikan beragam. Pendekatan penglihatan komputer mengekstrak ciri seperti jumlah buah atau tandan, luas tandan, luas daun, jumlah bunga, dan volume kanopi dari citra RGB, RGB-D, stereo, atau multispektral yang diambil dengan kamera diam, kendaraan segala medan, robot, UAV, atau ponsel, lalu memakai jaringan saraf konvolusional atau rekonstruksi tiga dimensi; hambatan utamanya adalah oklusi buah oleh buah lain, tandan lain, atau daun, serta pencahayaan dan pergerakan daun. Pendekatan indeks vegetasi memakai NDVI, LAI, WI, GNDVI, dan MTVI dari spektrometer, UAV, atau satelit sebagai prediktor variabilitas hasil. Pendekatan serbuk sari bertumpu pada asumsi bahwa tahun dengan lebih banyak bunga menghasilkan konsentrasi serbuk sari udara lebih tinggi. Pendekatan simulasi tanaman seperti STICS mengintegrasikan data cuaca, tanah, dan pengelolaan; pendekatan tegangan kawat memakai sel beban pada kawat cordon dengan koreksi suhu berbasis rata-rata bergerak 48 jam; radar, laser, dan ultrasonik mencoba menembus oklusi daun.
+
+Berikut sejumlah angka hasil beserta metrik dan acuan hitungnya. Pada pendekatan citra, rekonstruksi tiga dimensi menghasilkan R² = 0,99 untuk hitungan buah, sistem RGB-D menghasilkan R² = 0,95 untuk hasil berbanding 0,89 untuk RGB, pencacahan buah dengan ponsel mencapai galat uji rata-rata di bawah 5%, pencitraan malam menghasilkan galat rata-rata −14% untuk jumlah buah, dan prediksi hasil per baris memiliki selisih 9,8% terhadap bobot panen aktual. Pada indeks vegetasi, model regresi hutan acak mencapai R² = 0,86 saat kalibrasi dan model WRELM-TanhRe mencapai R² = 0,62 saat validasi; model NDVI dan cuaca regional menghasilkan R² = 0,62 untuk estimasi awal musim dan 0,90 untuk pertengahan musim, sedangkan NDVI dari citra SPOT menghasilkan R² = 0,73–0,84 dan penggunaan NDVI untuk memperbaiki sampel manual menaikkan estimasi sekitar 10%. Pendekatan serbuk sari menghasilkan R² antara 0,92 dan 0,99 pada sejumlah kajian, dengan indeks serbuk sari regional mencapai R² = 0,86. Model simulasi menghasilkan R² = 0,96 untuk kanopi kerapatan rendah dan 0,94 untuk kerapatan tinggi, sedangkan STICS menghasilkan R² = 0,85–0,86 dengan RRMSE 24,2–28,6%. Tegangan kawat menghasilkan R² = 0,81–0,99, laser R² = 0,98, dan radar R² = 0,79–0,97; sebagian besar angka dihitung terhadap hitungan manual, bobot panen, atau data produksi historis sebagai acuan.
+
+Penulis menyatakan sejumlah batasan. Sebagian besar pendekatan masih berada di ranah penelitian dan belum terpakai secara komersial oleh petani, meskipun beberapa sudah berupa aplikasi ponsel. Banyak kajian citra dilakukan di laboratorium atau skala kecil dan hasilnya perlu divalidasi di lapangan; model umumnya bergantung pada kultivar, rentan terhadap oklusi dan dinamika lingkungan, serta terkendali oleh daya komputasi bila diterapkan skala besar. Indeks vegetasi memerlukan keahlian radiometrik dan kalibrasi tiap musim, model serbuk sari memerlukan penempatan jebak, data historis bertahun-tahun, dan proses laboratorium yang mahal, sedangkan model simulasi sulit dipindahkan ke lingkungan, kultivar, dan sistem penopang baru. Selain itu, tinjauan ini hanya mencakup artikel sebelum Juni 2021, peta hasil prediktif jarang dijadikan keluaran, dan kurangnya solusi pada skala regional masih menjadi celah penelitian.
+

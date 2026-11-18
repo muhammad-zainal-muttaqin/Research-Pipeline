@@ -1,0 +1,28 @@
+# A Survey of 3D Reconstruction: The Evolution from Multi-View Geometry to NeRF and 3DGS
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `liu2025survey` |
+| Judul asli | A Survey of 3D Reconstruction: The Evolution from Multi-View Geometry to NeRF and 3DGS |
+| Penulis | Liu, Shuai; Yang, Mengmeng; Xing, Tingyan; Yang, Ran |
+| Tahun | 2025 |
+| Venue | Sensors |
+| Kode | T (Metode dari luar pertanian) |
+
+## Tautan Akses
+- PDF: [liu2025survey.pdf](../pdf/liu2025survey.pdf)
+- DOI resmi: https://doi.org/10.3390/s25185748
+
+## Gambaran Umum
+
+Artikel tinjauan ini mengkaji evolusi teknik rekonstruksi tiga dimensi (3D) dari geometri multi-pandang konvensional menuju *Neural Radiance Field* (NeRF) dan *3D Gaussian Splatting* (3DGS). Masalah yang diangkat adalah masih terpisahnya tinjauan terdahulu: sebagian besar hanya membahas satu kelompok metode, sehingga kurang memberi perbandingan lintas generasi, analisis multidimensi atas mutu render, efisiensi komputasi, dukungan pandang jarang, dan penyesuaian terhadap adegan dinamis, serta bahasan prospek pengembangan yang masih terbatas. Kebaruan yang diklaim penulis terdiri atas tiga bagian, yaitu tinjauan sistematis atas lintasan teknologi, perbandingan multidimensi, dan identifikasi tantangan beserta arah penelitian masa depan.
+
+Pada metode tradisional, *Structure from Motion* (SfM) menghasilkan awan titik jarang dan mengestimasi pose kamera melalui pencocokan titik fitur, sedangkan *Multi-View Stereo* (MVS) menghitung awan titik rapat lewat pencocokan padat dan membangun mesh dengan rekonstruksi permukaan Poisson atau triangulasi Delaunay. Algoritma pencocokan fitur yang dipakai mencakup SIFT, SURF, dan ORB. Kajian awal bergantung pada kamera terkalibrasi atau lintasan tertentu, sehingga hanya efektif pada lingkungan statis yang sudah diketahui. Pendekatan pembelajaran mendalam kemudian muncul, misalnya MVSNet yang meregresi peta kedalaman rapat secara ujung-ke-ujung, Fast-MVSNet dengan kerangka jarang-ke-rapat, dan metode volume biaya dinamis yang menyesuaikan rentang sampel pada tiap iterasi. Penulis mencatat lima kelemahan metode tradisional, yaitu efisiensi rendah, biaya penyuntingan tinggi, kemampuan lemah merekonstruksi struktur kompleks dan daerah bertekstur lemah, sensitivitas terhadap pencahayaan, serta ketidakmampuan mengikuti perubahan dinamis.
+
+NeRF memodelkan adegan sebagai fungsi kontinu lima dimensi—koordinat ruang x, y, z dan arah pandang θ, ϕ—menggunakan *multilayer perceptron* (MLP), lalu menyintesiskan citra pandang baru melalui *volume rendering* tanpa membangun awan titik atau mesh eksplisit. Mekanisme perbaikannya mencakup Mip-NeRF (penyandian posisi terintegrasi dan pelacakan kerucut untuk menekan aliasing), NeRF-W dan NeRF++ (model pencahayaan variabel serta representasi latar-depan), NeRFLiX dan BAD-NeRF (penanganan degradasi citra dan kabur gerak), serta UHDNeRF (gabungan representasi eksplisit dan implisit lewat awan titik jarang). Untuk pandang jarang, FreeNeRF, FlipNeRF, MixNeRF, dan HG3-NeRF diuji pada dataset DTU dengan metrik PSNR, SSIM, dan LPIPS pada 3, 6, dan 9 pandang. Sebagai acuan, HG3-NeRF pada 9 pandang mencatat PSNR 25,87; SSIM 0,891; dan LPIPS 0,061, sementara PixelNeRF mencatat 20,40; 0,768; dan 0,220 (Tabel 3; angka diambil dari makalah asli). Penulis menyebut keterbatasan NeRF, antara lain ketergantungan pada banyak citra, pelatihan lambat dengan kebutuhan GPU tinggi, generalisasi rendah karena model hanya berlaku untuk satu adegan, serta hasil render yang menyerupai citra pandang baru bukan model 3D terstruktur.
+
+3DGS memakai representasi eksplisit berupa primitif Gaussian dengan parameter opasitas, warna, kovarians, dan harmonik bola, lalu melakukan rasterisasi berbasis ubin untuk sintesis waktu nyata. Kerangka kerja Kerbl dkk. terdiri atas inisialisasi, densifikasi, proyeksi, dan rasterisasi terdiferensiasi, dengan masukan awan titik 3D dan citra multi-pandang serta perhitungan warna pada persamaan (2). Perbaikan mutu mencakup MS3D dan Mip-Splatting (strategi multi-skala dan penyaringan anti-aliasing), Scaffold-GS (titik jangkar), GaussianPro (propagasi berbasis MVS), GSDF (cabang ganda GS dan SDF), serta SuperGS (pelatihan kasar-ke-halus). Pada dataset MipNeRF 360 (Tabel 4; angka dari makalah asli), 3DGS mencatat PSNR 27,21; SSIM 0,815; LPIPS 0,214; 134 FPS; dan memori 734, sedangkan SuperGS mencatat 29,44; 0,865; 0,130; 47 FPS; dan 123. Untuk adegan dinamis pada dataset D-NeRF dan HyperNeRF (Tabel 5; angka dari makalah asli), Deformable 3D-GS mencatat PSNR 39,51; SSIM 0,99; dan LPIPS 0,01 pada D-NeRF, sedangkan DN-4DGS mencatat PSNR 25,59 dan MS-SSIM 0,863 pada HyperNeRF. Mekanisme dinamis memakai deformasi Gaussian dan pemodelan waktu, misalnya Gaussian-Flow dengan model deformasi dua domain serta 4D-GS berdasarkan medan deformasi.
+
+Sebagai tinjauan pustaka, artikel ini tidak menghasilkan atau menganalisis data baru, sehingga tanaman, data pertanian, serta mekanisme deteksi atau asosiasi tidak dinyatakan; angka di atas merupakan ringkasan dari makalah asli dan bukan hasil percobaan penulis. Batasan yang ditekankan penulis meliputi kebutuhan 3DGS akan ruang penyimpanan dan memori besar pada adegan berskala luas, ketergantungan akurasi pose kamera pada hasil SfM, ketidakstabilan pada adegan dinamis, dan perpindahan pengetahuan lintas adegan. Arah masa depan yang diusulkan mencakup peningkatan ketahanan (*robustness*), penurunan kompleksitas komputasi, perluasan generalisasi, serta integrasi model difusi generatif dan DepthSplat yang menggabungkan 3DGS dengan estimasi kedalaman multi-pandang.
+

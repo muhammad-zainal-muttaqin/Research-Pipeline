@@ -1,0 +1,29 @@
+# YOLOv11-IMP: Anchor-Free Multiscale Detection Model for Accurate Grape Yield Estimation in Precision Viticulture
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `zheng2026yolov11` |
+| Judul asli | YOLOv11-IMP: Anchor-Free Multiscale Detection Model for Accurate Grape Yield Estimation in Precision Viticulture |
+| Penulis | Zheng, Shaoxiong; Yang, Xiaopei; Gao, Peng; Guo, Qingwen; Zhang, Jiahong; Chen, Shihong; Tang, Yunchao |
+| Tahun | 2026 |
+| Venue | Agronomy |
+| Kode | C2 (Pencacahan satu pandang) |
+| Tanaman | grape |
+
+## Tautan Akses
+- PDF: [zheng2026yolov11.pdf](../pdf/zheng2026yolov11.pdf)
+- DOI resmi: https://doi.org/10.3390/agronomy16030370
+
+## Gambaran Umum
+
+Kajian ini mengatasi pendugaan hasil panen anggur, yang terhambat oleh oklusi kuat antartandan, bentuk tandan yang tidak beraturan, dan perubahan pencahayaan sepanjang musim tanam. Penghitungan manual dan penilaian visual memerlukan banyak tenaga, bias manusia, dan sulit diperluas. Model pembelajaran mesin yang ada umumnya hanya mendeteksi dan menghitung tandan yang tampak, tetapi gagal mengestimasi berat buah yang tertutup tanpa informasi kedalaman atau pengetahuan semantik. Tujuannya adalah membangun YOLOv11-IMP, kerangka deteksi anchor-free multiskala yang dipadukan dengan penalaran lintas modal memakai model bahasa-vision Kimi-VL untuk menduga hasil per pohon. Penulis menguji hipotesis bahwa penggabungan deteksi visual dan penalaran lintas modal meningkatkan akurasi estimasi berat dibandingkan pendekatan satu modal.
+
+Tanaman yang dikaji adalah anggur dengan lima kultivar, yaitu Cabernet Sauvignon, Pinot Noir, Chardonnay, Merlot, dan Sauvignon Blanc. Citra dikumpulkan dari kebun komersial di Provinsi Guangdong, Tiongkok, pada musim tanam 2025 memakai kamera DSLR Canon EOS 80D dengan lensa EF-S 18–135 mm pada resolusi asli 6000 × 4000 piksel, lalu diturunkan menjadi 640 × 640 piksel. Jarak kamera ke tandan 0,8–2,0 m dengan zoom optik 18–70 mm. Akuisisi mencakup cahaya matahari langsung, naungan sebagian, langit mendung, serta pencahayaan pagi dan sore hari, dengan frekuensi mingguan pada awal pertumbuhan dan setiap 3–5 hari saat pemasakan. Anotasi semi-otomatis dilakukan pada tingkat buah dan tandan; 5.783 tandan beranotasi dipakai sebagai pria statistik ukuran dan rasio aspek, sedangkan 2.371 sampel lapang dipakai untuk faktor koreksi spesifik kultivar. Jumlah total citra tidak dinyatakan. Validasi memakai 20% citra yang disisihkan secara acak. Himpunan uji terdiri atas 5.000 citra, dengan 4.200 citra memuat tandan kelima kultivar dalam berbagai kondisi pencahayaan dan 800 citra latar tanpa tandan tampak. Pelatihan memakai RTX 3090, batch 16, laju pembelajaran awal 0,001 yang dikurangi menjadi sepersepuluh setiap 10 epoch selama 100 epoch.
+
+YOLOv11-IMP terdiri atas lima bagian. Backbone memakai C2f dan GrapeConv, konvolusi depthwise-separable dengan inisialisasi khusus anggur, aktivasi PReLU, serta SPPF dengan k = 5. Neck berbentuk bifurkasi memakai PAN, CSP2AS, C2f dengan large-kernel attention, konvolusi atrous dengan laju dilasi 1, 2, 3, dan 5, serta DySample untuk upsampling adaptif berdasarkan entropi kanopi. Head anchor-free bekerja pada tiga skala, yaitu P3 (80 × 80) untuk tandan kecil, P4 (40 × 40) untuk tandan sedang, dan P5 (20 × 20) untuk tandan besar. Modul lintas modal membangun kamus eksternal dari rata-rata berat tandan historis menurut tahap tumbuh dan pencahayaan serta kamus internal dari volume elipsoid 2D, kultivar, indeks kepadatan, dan tahap tumbuh; Citra ROI dan prompt teks dikirim ke Kimi-VL melalui API untuk menghasilkan estimasi berat per tandan. Estimasi hasil dihitung sebagai penjumlahan over citra dari jumlah tandan dikali berat rata-rata, faktor kepadatan, dan penyesuaian tahap tumbuh, dengan koreksi oklusi hingga 67% dan agregasi berjenjang dari tandan ke pohon, baris, dan blok.
+
+Pada himpunan uji 5.000 citra, deteksi tandan mencapai presisi 94,3%, recall 93,5%, F1 93,9%, dan mAP 94,1%; YOLOv11 sebagai acuan menghasilkan presisi 92,8%, sehingga model usulan unggul 1,5 poin persentase dalam presisi dan 1,8 poin dalam recall. Estimasi hasil dibandingkan dengan panen destruktif dan timbangan pada 763 sampel kelima kultivar. Rata-rata hasil manual 8,56 kg per pohon (7,63–9,34 kg per pohon), estimasi rata-rata 8,28 kg per pohon, MAE per kultivar 0,43 kg per pohon, RMSE 0,55 kg per pohon, galat relatif rata-rata 6,06%, dan korelasi Pearson rata-rata 0,936; galat relatif terendah Pinot Noir 5,3% dan tertinggi Chardonnay 6,7%. Tabel perbandingan metode melaporkan MAE 0,46 kg per pohon, RMSE 0,62 kg per pohon, akurasi 91,2%, waktu 28,9 ms, dan memori GPU 3,8 GB, dibandingkan YOLOv11 dengan 0,61 kg per pohon, 0,79 kg per pohon, 87,3%, 32,4 ms, dan 4,5 GB. Uji ketahanan menunjukkan MAE 0,44–0,52 kg per pohon dan variasi akurasi 3,1% sampai 3,4% pada kondisi pencahayaan, kerapatan kanopi, dan tahap tumbuh berbeda. Studi ablasi menunjukkan penambahan bertahap modul perhatian spasial, fusi multiskala, konvolusi dilatasi, head anchor-free, dan loss sadar skala menaikkan mAP dari 87,5% menjadi 91,2% serta menurunkan MAE menjadi 0,38 kg per pohon. Naskah juga mencantumkan mAP 94,1% pada Figure 7 dan 91,2% pada ablasi serta simpulan untuk metrik yang sama.
+
+Penulis menyatakan kinerja menurun pada kondisi ekstrem seperti hujan lebat dan pantulan spekular kuat. Himpunan data hanya mencakup lima kultivar dari satu wilayah, sehingga perluasan data dan adaptasi domain terhadap sistem penopang serta iklim lain masih diperlukan. Selain itu, penulis menyatakan tidak memakai generative AI untuk rancangan kajian, pengumpulan data, analisis, atau interpretasi; Kimi-VL dipakai hanya untuk estimasi berat tandan. Split dan prosedur penghitungan untuk metrik akurasi 91,2% tidak dinyatakan secara rinci di luar tabel perbandingan.
+

@@ -1,0 +1,28 @@
+# Research Progress and Development Trend of Visual Detection Methods for Selective Fruit Harvesting Robots
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `wang2025research` |
+| Judul asli | Research Progress and Development Trend of Visual Detection Methods for Selective Fruit Harvesting Robots |
+| Penulis | Wang, Wenbo; Li, Chenshuo; Xi, Yidan; Gu, Jinan; Zhang, Xinzhou; Zhou, Man; Peng, Yuchun |
+| Tahun | 2025 |
+| Venue | Agronomy |
+| Kode | R (Tinjauan terdahulu) |
+
+## Tautan Akses
+- PDF: [wang2025research.pdf](../pdf/wang2025research.pdf)
+- DOI resmi: https://doi.org/10.3390/agronomy15081926
+
+## Gambaran Umum
+
+Tinjauan ini membahas metode deteksi visual untuk robot pemanen buah selektif dalam kerangka Pertanian 4.0. Buah bersifat rapuh, tumbuh tidak teratur, dan masak tidak serentak, sehingga petani harus menyelesaikan banyak pekerjaan dalam waktu singkat. Penulis membedakan pemanenan massal, yang menggetarkan pohon tetapi sering merusak buah dan tidak dapat memisahkan tingkat kematangan, dari pemanenan selektif yang memetik buah satu per satu. Deteksi visual merupakan langkah awal yang menentukan keberhasilan sistem visi robot. Tinjauan ini berfokus pada kamera, metode deteksi berbasis ciri buatan, metode deteksi berbasis pembelajaran mendalam, dan deteksi ranting, lalu mengkaji tantangan serta arah pengembangannya.
+
+Sumber dikumpulkan dari satu basis data, yaitu Web of Science, dengan pencarian dibatasi pada publikasi tahun 2016 hingga 2025. Penggunaan satu basis data tepercaya dipilih untuk meningkatkan kemampuan pengulangan, mengurangi duplikasi rekaman, dan menyederhanakan proses tinjauan. Tinjauan ini menjawab tiga pertanyaan, yaitu komponen utama robot pemanen buah dan peran deteksi visual, perangkat serta algoritma yang umum dipakai dalam pengenalan berbasis visi, serta tantangan dan tren penerapannya. Alur sistem deteksi visual terdiri atas pengumpulan citra, pengolahan data, pelatihan model, dan pelaksanaan tugas. Pengumpulan citra dilakukan pada berbagai kondisi cahaya dan sudut, sedangkan pengolahan data memakai pelabelan, augmentasi, dan dataset publik seperti dataset kurma serta CitDet untuk jeruk. Kamera dikelompokkan menjadi tiga jenis: stereo binokular (misalnya ZED 2K dan BumbleBee) yang menghitung kedalaman dari disiparitas tanpa memancarkan cahaya, cahaya terstruktur (misalnya Orbbec Astra S dan Intel RealSense D435i), serta ToF (misalnya Kinect V2 dan Kinect Azure). Mekanisme stereo binokular meliputi kalibrasi, rektifikasi, pencocokan stereo dalam wilayah yang terdeteksi, triangulasi, dan penentuan titik petik.
+
+Pada metode tradisional, deteksi memakai ciri warna, bentuk, dan tekstur yang dirancang manual, atau rangkaian pemilihan wilayah, ekstraksi ciri (Gabor, HOG), dan klasifikasi (SVM, K-NN, AdaBoost, K-means, Bayes). Metode ini membutuhkan daya komputasi rendah dan sedikit data latih, tetapi ketahanannya rendah terhadap perubahan cahaya, naungan, dan latar. Angka yang dikutip dari kajian sumber meliputi segmentasi apel dengan cembung dan rantai Markov absorbent ber-IoU 95,65% pada waktu 1,02 s, klasifikasi stroberi berakurasi 94–97% dengan waktu kurang dari 0,5 s per buah, serta deteksi tomat dengan AdaBoost yang benar pada lebih dari 96% target pada kecepatan sekitar 10 fps dan kesalahan penentuan posisi ujung robot kurang dari 10 mm. Sebagai acuan pemanenan massal, pengocok jeruk menghasilkan buah jatuh ke tanah sebesar 5,9–10,4%.
+
+Pada metode pembelajaran mendalam, model dua tahap (R-CNN, Faster R-CNN, Mask R-CNN) menggunakan jaringan usulan wilayah lalu mengklasifikasikannya, sehingga akurat tetapi lambat. Model satu tahap (seri YOLO, SSD, DETR, EfficientDet) memprediksi langsung kotak dan kelas, sehingga lebih sesuai untuk aplikasi waktu nyata. Penulis juga mengkaji deteksi ranting berbasis citra dan awan titik karena ranting menutup buah dan menjadi risiko tabrakan lengan robot. Angka yang dikutip mencakup DY3TNet untuk kiwi mAP 90,05% pada 0,034 s per citra, YOLOv4 apel merah 93,42% pada 0,0158 s, YOLOv5 apel merah RGB-D 96,4% pada 0,01724 s, YOLOX apel Fuji 94,09% pada 0,006 s, YOLOv7 jeruk 96,98% pada 0,0059 s, YOLOv8 apel 91,4% pada 0,0254 s, dan Olive-EfficientDet untuk empat varietas zaitun mAP 94,60%, 95,45%, 93,75%, dan 96,05% pada waktu rata-rata 337 ms per citra. Deteksi ranting dengan CNN pada delima menghasilkan presisi 90,7%, recall 89%, dan F1 90%, sedangkan segmentasi ranting jujube berbasis awan titik menghasilkan akurasi 0,83 dan IoU 0,75. Metrik yang dipakai adalah mAP, presisi, recall, F1, IoU, akurasi, dan waktu inferensi; seluruh angka merupakan hasil yang dilaporkan kajian yang dikutip, bukan dihitung ulang oleh tinjauan ini.
+
+Penulis menyatakan lima tantangan utama. Dataset biasanya hanya mencakup satu jenis buah sehingga model yang dihasilkan kurang universal. Kompleksitas model menghalangi penerapan pada perangkat tertanam berkapasitas terbatas dan memperlambat respons dari deteksi hingga pemanenan. Occlusion atau tertutupnya buah oleh ranting dan daun menyebabkan salah kenal, terlewat, atau penentuan posisi yang tidak tepat, sementara buah dan ranting sering dideteksi oleh model terpisah. Sistem juga sulit dipakai petani karena perangkat mahal, memerlukan pengetahuan komputer dan kecerdasan buatan, serta menuntut pasokan listrik, internet, dan kalibrasi yang sulit dijaga di lapangan. Sensor visual tunggal belum cukup stabil di kebun alami, sehingga diperlukan fusi data multimodal. Arah pengembangan yang diusulkan adalah dataset universal, pembelajaran berkelanjutan dan terdistribusi seperti federated learning, model yang akurat sekaligus ringan, fusi data multimodal, serta pemanfaatan kecerdasan buatan generatif, model bahasa besar, dan model bahasa-visi.
+

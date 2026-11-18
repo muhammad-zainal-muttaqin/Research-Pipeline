@@ -1,0 +1,28 @@
+# Intelligent Fruit Yield Estimation for Orchards Using Deep Learning Based Semantic Segmentation Techniques—A Review
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `maheswari2021intelligent` |
+| Judul asli | Intelligent Fruit Yield Estimation for Orchards Using Deep Learning Based Semantic Segmentation Techniques—A Review |
+| Penulis | Maheswari, Prabhakar; Raja, Purushothaman; Apolo-Apolo, Orly Enrique; P\'erez-Ruiz, Manuel |
+| Tahun | 2021 |
+| Venue | Frontiers in Plant Science |
+| Kode | R (Tinjauan terdahulu) |
+
+## Tautan Akses
+- PDF: [maheswari2021intelligent.pdf](../pdf/maheswari2021intelligent.pdf)
+- DOI resmi: https://doi.org/10.3389/fpls.2021.684328
+
+## Gambaran Umum
+
+Tinjauan ini membahas estimasi hasil buah secara cerdas pada kebun menggunakan segmentasi semantik berbasis pembelajaran mendalam. Penulis menyatakan estimasi hasil manual bersifat padat karya, memakan waktu, mahal karena memerlukan pengamat ahli, serta kurang tepat, sehingga menyulitkan pengambilan keputusan pemasaran dan pemanenan. Metode pembelajaran mesin konvensional yang mengandalkan ciri warna, bentuk, dan ukuran gagal pada kondisi oklusi, tumpang tindih, dan perubahan pencahayaan; pembelajaran mendalam mengatasi sebagian masalah itu, tetapi operasi pooling menurunkan resolusi spasial sehingga lokalisasi buah menjadi buruk. Karena itu, tinjauan ini memfokuskan pada segmentasi semantik yang melakukan prediksi tingkat piksel untuk deteksi dan lokalisasi buah.
+
+Lingkup tinjauan mencakup lima tahap sistem estimasi hasil, yaitu pengambilan sampel pohon, akuisisi citra dengan berbagai teknologi penginderaan, augmentasi data, deteksi dan penghitungan buah dengan arsitektur segmentasi semantik, serta evaluasi kinerja. Untuk pengambilan sampel, penulis membedakan pendekatan berbasis rancangan dan berbasis model, dengan prosedur seperti sampel acak sederhana, sampel sistematis, sampel berlapis, smooth fractionator, sampel klaster, sampel bertahap, dan sampling proporsional terhadap ukuran; penggunaan NDVI dan konduktivitas listrik tampak untuk sampel berlapis dilaporkan mengurangi ukuran sampel plot 17% dibanding sampel acak sederhana. Teknologi akuisisi mencakup kamera hitam-putih, RGB dengan sensor CMOS atau CCD, termal, multispektral dengan 3–15 pita, dan hiperspektral dengan 20–250 pita; contohnya Landsat-8 dengan 11 pita pada resolusi 30 m dan AVIRIS dengan 224 pita pada 0,4–2,5 µm.
+
+Mekanisme inti adalah segmentasi semantik yang memberi label pada setiap piksel sebagai buah atau bukan buah, lalu pasca-pemrosesan mengelompokkan piksel bertetangga menjadi satu buah. Arsitektur yang dirangkum dibagi menjadi CNN dengan prediksi per piksel, fully convolutional network, arsitektur encoder-decoder seperti SegNet, DeconvNet, dan U-Net, konvolusi terdilasi dengan pyramid scene parsing network, RefineNet, pendekatan berbasis region seperti R-CNN, faster R-CNN, dan mask R-CNN, detektor sekali jalan seperti YOLO, serta metode lemah dan semi-terawasi seperti multiple instance learning dan algoritma expectation-maximization. Penulis menjelaskan bahwa CNN dengan prediksi per piksel memakai patch citra, FCN memakai peta skor pada citra utuh, dan metode berbasis region memberi label pada wilayah yang diekstrak.
+
+Berikut angka hasil beserta metrik dan acuan hitungnya. Pada metode awal, segmentasi mangga dengan RGB dan YCbCr menghasilkan R² = 0,91 untuk pencitraan empat sisi dan 0,74 untuk satu sisi; segmentasi jeruk dengan watershed menghasilkan R² = 0,93; dan deteksi buah jeruk dengan ANN mencapai 89,80%. MangoNet dengan augmentasi menghasilkan akurasi piksel 73,60% dan F1 0,84 dari 11.096 patch latih dan 1.500 patch uji, sedangkan Faster R-CNN pada 71.609 buah mangga dari 522 pohon menghasilkan F1 0,881. FCN pada buah guava mencapai presisi 0,983, recall 0,948, akurasi rata-rata 0,893, dan IoU 0,806. Faster R-CNN yang ditingkatkan menghasilkan presisi 92,51% untuk apel, 88,94% untuk mangga, dan 90,73% untuk jeruk dengan kecepatan 50 ms per citra. Pada jeruk yang dicitrakan dengan UAV, model faster R-CNN menghasilkan presisi di atas 90%, F1 di atas 89%, galat baku hitungan buah 6,59% terhadap hitungan visual, dan galat baku estimasi hasil 4,53% terhadap hasil panen aktual. Metrik yang dipakai mencakup RMSE, R², akurasi piksel, presisi, recall, F1-score, dan IoU, dengan ground truth berupa citra berlabel maupun hitungan dan hasil panen lapang.
+
+Penulis menyatakan sejumlah batasan. Pengambilan sampel menghadapi tarik-ulur antara biaya waktu dan presisi; pada 14 kebun kiwi, apel, dan anggur, galat di bawah 5% dicapai pada enam kebun, 5–10% pada lima kebun, dan 13–20% pada tiga kebun lainnya, dengan waktu pengambilan sampel 85–150 menit untuk kiwi, 10–100 menit untuk apel, dan 85 menit untuk anggur. Pengumpulan dan pelabelan citra bersifat melelahkan karena setiap piksel harus diberi label, dan augmentasi harus memperhatikan sudut pandang, oklusi, pencahayaan, latar, serta ketidakseimbangan kelas. Oklusi, tumpang tindih, dan variasi pencahayaan tetap menyebabkan prediksi keliru, sementara jaringan yang lebih dalam memerlukan memori dan waktu komputasi besar. Penulis mencatat U-Net memproses patch 224 × 224 dalam waktu kurang dari 100 ms dan citra 1.920 × 1.080 dalam kurang dari 4,5 detik, sedangkan faster R-CNN memerlukan 120 ms per patch dan 46 detik per frame. Arah pengembangan yang diusulkan mencakup penyesuaian arsitektur untuk aplikasi ponsel dan model yang lebih tangguh terhadap oklusi, tumpang tindih, dan perubahan pencahayaan.
+

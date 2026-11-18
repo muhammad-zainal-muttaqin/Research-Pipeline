@@ -1,0 +1,29 @@
+# Tomato Health Monitoring System: Tomato Classification, Detection, and Counting System Based on YOLOv8 Model With Explainable MobileNet Models Using Grad-CAM++
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `quach2024tomato` |
+| Judul asli | Tomato Health Monitoring System: Tomato Classification, Detection, and Counting System Based on YOLOv8 Model With Explainable MobileNet Models Using Grad-CAM++ |
+| Penulis | Quach, Luyl-Da; Quoc, Khang Nguyen; Quynh, Anh Nguyen; Ngoc, Hoang Tran; Thai-Nghe, Nguyen |
+| Tahun | 2024 |
+| Venue | IEEE Access |
+| Kode | C4 (Atribut kelas dan pencacahan) |
+| Tanaman | tomato |
+
+## Tautan Akses
+- PDF: [quach2024tomato.pdf](../pdf/quach2024tomato.pdf)
+- DOI resmi: https://doi.org/10.1109/access.2024.3351805
+
+## Gambaran Umum
+
+Penelitian ini bertujuan membangun sistem pemeriksaan kesehatan tomat yang mampu mendeteksi, mengklasifikasikan, dan menghitung buah berdasarkan keadaan fisiologisnya, sekaligus menjelaskan keputusan model. Penulis mencatat bahwa kajian deteksi tomat sudah banyak, tetapi kajian yang memakai kecerdasan buatan dapat dijelaskan (*explainable AI*) untuk mendeteksi, mengklasifikasi, dan menghitung status buah masih sedikit. Model keluarga MobileNet dipilih karena dirancang untuk perangkat seluler dan sumber daya komputasi terbatas, sehingga keakuratan dan keandalannya perlu diuji dengan Grad-CAM++. Tujuan akhirnya adalah menggabungkan YOLOv8 dan MobileNetV2 dalam sistem penghitungan berbasis video serta menyediakan aplikasi yang dapat dipakai petani.
+
+Data klasifikasi berisi 7.200 citra tomat dalam empat kelas, yaitu *Unripe*, *Ripe*, *Old*, dan *Damaged*. Sumbernya terdiri atas VegNet 35%, Kaggle 30%, hasil pemotongan dari himpunan data deteksi 25%, dan sumber lain 10%. Citra disamakan menjadi 256×256 piksel lalu dibagi dengan rasio 6:2:2; jumlah tiap kelas berturut-turut adalah 1.762, 2.195, 2.214, dan 1.043 citra. Pra-pemrosesan mengubah citra menjadi larik RGB berukuran 224×224 piksel dan menormalkan nilai dari [0; 255] menjadi [−1; 1]. Pelatihan memakai *fine-tuning* dari bobot ImageNet dengan lapisan dibekukan sampai Flatten, lalu ditambah lapisan Dense, Dropout, dan *Global Average*. Hyperparameter yang dipakai adalah laju pembelajar 0,0001, optimisator Adam, 100 epoch, dan *batch* 32. Untuk deteksi, himpunan data berisi lebih dari 1.287 citra, sebagian besar diambil dari video CanThoFarm dan sisanya dari Kaggle, VegNet, serta platform lain. Citra diubah menjadi 640×640 piksel, dianotasi dengan RoboFlow dalam format YOLO, lalu dibagi menjadi 2.460 citra latih, 220 validasi, dan 177 uji; terdapat lebih dari 7.000 instance pada data latih. Augmentasi meliputi pembalikan horizontal dan rotasi dalam rentang [−15; 15] derajat. Video uji berdurasi enam detik dan memuat 48 objek.
+
+Mekanisme klasifikasi membandingkan MobileNets, MobileNetV2, dan MobileNetV3 Small. MobileNets memakai konvolusi *depthwise separable*, MobileNetV2 menambah blok residual terbalik, dan MobileNetV3 memasukkan blok *Squeeze-and-Excitation*. Jumlah parameter dan ukuran model berturut-turut adalah 4,28 juta dan 24,6 MB untuk MobileNets, 3,57 juta dan 24,1 MB untuk MobileNetV2, serta 1,53 juta dan 18,4 MB untuk MobileNetV3. Grad-CAM++ menghasilkan peta panas dari bobot gradian turunan kedua dan ketiga untuk menunjukkan wilayah fitur yang memengaruhi prediksi, sekaligus mengatasi nilai negatif dan pembagian oleh ukuran peta fitur. Keandalan penjelasan diukur dengan IoU antara wilayah Grad-CAM++ dan kebenaran, pada ambang δ = 0, 0,25, dan 0,5, lalu dirangkum sebagai *Match Ratio by IoU* (MRIoU). Untuk penghitungan, YOLOv8m diekspor ke ONNX dan dipakai OpenCV untuk mendeteksi buah per frame. Kotak hasil deteksi dipotong lalu diklasifikasikan oleh MobileNetV2. Algoritma SORT berbasis Kalman filter dan Hungarian algorithm menghubungkan kotak antarframe memakai status pusat, luas, rasio sisi, dan kecepatannya; IoU dipakai untuk asosiasi, dan hitungan bertambah hanya bila ID objek belum terkonfirmasi. Sistem Tomatoes Health Check System dibangun dengan Streamlit, SQLite, TensorFlow, dan OpenCV, dengan fungsi citra, video, webcam waktu nyata, pelacakan dan penghitungan, serta berita pertanian dan umpan balik pengguna.
+
+Pada himpunan uji, MobileNetV3 mencatat akurasi 96,69%, presisi 96,68%, *recall* 96,69%, dan F1 96,68%, mengungguli MobileNets yang mencatat 96,54% pada semua metrik dan MobileNetV2 yang mencatat 95,16% untuk akurasi serta 95,13% untuk F1. Sebaliknya, MRIoU MobileNetV2 mencapai 100,00% pada δ = 0 dan δ = 0,25 serta 98,89% pada δ = 0,5, lebih tinggi daripada MobileNetV3 yang mencatat 100,00%, 88,95%, dan 86,18%, serta MobileNets yang mencatat 99,30%, 98,20%, dan 92,67%. YOLOv8m mencatat presisi 89,91%, *recall* 90,61%, dan mAP 91,02% pada data uji. Pada video sampel, 47 dari 48 objek terhitung tanpa duplikasi, atau 97,91%. Model gabungan YOLOv8 dan MobileNetV2 mencatat presisi 95,76%, *recall* 95,74%, dan F1 95,75%, dengan waktu pemrosesan sekitar 70 ms ditambah 2–4 ms per objek, atau lebih dari 80 ms per frame. Akurasi, presisi, *recall*, dan F1 dihitung dari TP, TN, FP, dan FN, sedangkan mAP adalah rata-rata AP lintas kelas.
+
+Penulis menyatakan bahwa akurasi tertinggi tidak serta-merta berarti keandalan tertinggi: MobileNetV3 memiliki skor akurasi terbaik, tetapi kepercayaannya lebih rendah pada sebagian besar kelas saat dinilai dengan XAI. Kelas *Damaged* paling sering tertukar dengan *Old*. Sebagian objek berada di tengah citra dan berukuran kecil sehingga sulit dideteksi. Saat sistem dijalankan di awan, keterbatasan waktu pemrosesan GPU membuat tiap frame membutuhkan lebih dari 80 ms untuk deteksi, klasifikasi, dan pembaruan hitungan. Penulis menyarankan kerja lanjutan berupa pengembangan alat evaluasi teknik XAI, khususnya CAM, serta pergeseran dari penjelasan lokal menuju penjelasan global agar model dapat dinilai secara menyeluruh, bukan hanya dari hasil pengenalan tunggal.
+

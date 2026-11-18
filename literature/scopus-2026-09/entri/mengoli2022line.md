@@ -1,0 +1,28 @@
+# On-line real-time fruit size estimation using a depth-camera sensor
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `mengoli2022line` |
+| Judul asli | On-line real-time fruit size estimation using a depth-camera sensor |
+| Penulis | Mengoli, Dario; Bortolotti, Gianmarco; Piani, Mirko; Manfrini, Luigi |
+| Tahun | 2022 |
+| Venue | 2022 IEEE Workshop on Metrology for Agriculture and Forestry Metroagrifor 2022 Proceedings |
+| Kode | C5 (Depth, 3D, dan non-RGB) |
+
+## Tautan Akses
+- PDF: [mengoli2022line.pdf](../pdf/mengoli2022line.pdf)
+- DOI resmi: https://doi.org/10.1109/metroagrifor55389.2022.9964960
+
+## Gambaran Umum
+
+Penelitian ini bertujuan memperbaiki pendugaan hasil panen dengan memperbesar jumlah buah yang diukur. Praktik yang ada menghitung dan mengukur buah secara manual pada petak contoh, lalu mengalikan hasil rata-ratanya dengan luas lahan. Cara ini memakan waktu, memerlukan tenaga kerja, dan rawan salah karena bersifat berulang. Pengukur buah digital berbasis sensor IoT juga masih terbatas pada pendugaan tingkat petak karena posisinya tetap, dengan sampel hanya 20–200 buah per hektare. Penulis mengusulkan sistem penglihatan yang mendeteksi buah, lalu mengukur ukurannya secara langsung di lapangan dan secara waktu nyata, sehingga sampel dapat diperbesar dan keandalan pendugaan hasil meningkat.
+
+Data dikumpulkan di kebun apel berarsitektur planar dan ramah robot di Cadriano, Italia. Kamera RGB-D Intel RealSense D435i dipilih karena uji pendahuluan menghasilkan lebih banyak titik kedalaman dibanding kamera D455 dan L515. Rekaman video RGB-D diambil dengan kamera sejajar dan berjarak sekitar 1 m dari barisan pohon, pada lima waktu berbeda dalam musim tanam (17 Juni, 7 Juli, 1 Agustus, 30 Agustus, dan 12 Oktober) agar mencakap beragam ukuran dan warna buah. Resolusi RGB ditetapkan 1920×1080 piksel dan kedalaman 848×480 piksel, dengan laju 30 frame per detik. Bola tenis dimasukkan ke dalam adegan sebagai acuan ukuran karena variasi ukurannya kurang dari 1 mm. Model YOLOv5 varian "l" dilatih pada 123 citra pohon apel yang memuat sekitar 5.000 buah, dengan pembagian latih-validasi-uji 70–20–10%, augmentasi sekitar enam kali lipat, dan 500 epoch pada dua kartu Nvidia RTX2080super; model ini mencapai skor F1 0,85 pada data uji, sedangkan model khusus bola tenis mencapai 0,93.
+
+Mekanisme deteksi dan pengukuran bekerja dalam dua tahap. YOLOv5 mendeteksi buah pada citra warna, lalu algoritma lingkaran kustom berbasis fungsi `HoughCircles` OpenCV diterapkan pada citra warna yang diubah menjadi skala abu-abu untuk memperoleh pusat dan jari-jari lingkaran dalam piksel. Peta kedalaman diubah ukurannya dan disejajarkan dengan citra warna sebelum pengukuran. Dua metode diuji. Metode kotak-bbox (squared-bbox) mengambil jarak rata-rata buah dari kamera sebagai rata-rata titik kedalaman nonzero di dalam daerah minat berbentuk bujur sangkar di tengah bbox yang ukurannya setengah dari bbox; ukuran adegan dihitung secara trigonometri dari sudut pandang kamera dan jarak, lalu dibagi resolusi citra untuk memperoleh resolusi objek dalam mm per piksel. Metode lingkaran-bbox (circle-bbox) mengambil kedalaman dari proyeksi daerah setengah jari-jari lingkaran dan menghitung resolusi objek memakai parameter intrinsik fx dan fy. Diameter buah dihitung sebagai diameter lingkaran dalam piksel dikali resolusi objek, lalu dibandingkan dengan ukuran yang diukur manual memakai jangka sorong; metrik yang dipakai adalah RMSE absolut dan RMSE relatif (RMSE%).
+
+Hasil berasal dari data awal yang terdiri dari 156 apel dan 73 bola tenis yang direkam dengan kendaraan darat tak berawak. Metode kotak-bbox menghasilkan RMSE 7,2 mm untuk apel dan 7,9 mm untuk bola tenis, lebih rendah daripada metode lingkaran-bbox yang masing-masing 8,6 mm dan 9,4 mm; nilai RMSE% adalah 12% untuk metode 1 dan 14% untuk metode 2. Dari 156 buah berlabel manual, hanya satu yang tidak terdeteksi dan seluruh bola tenis terdeteksi; algoritma lingkaran berhasil menemukan lingkaran terbaik pada 141 dari 155 apel (90%) dan pada seluruh 73 bola tenis. Kesalahan maksimum pengukuran apel berkisar dari −9,2 mm hingga +24,4 mm pada metode 1 dan dari −10,4 mm hingga +26,9 mm pada metode 2. Waktu pemrosesan rata-rata adalah 0,55 s per citra pada CPU Intel i7-9750H dengan RAM 16 GB (0,34 s untuk YOLOv5 dan 0,21 s untuk pengukuran), sedangkan percobaan awal pada Nvidia RTX-A2000 menghasilkan 20 ms per frame atau lebih dari 30 frame per detik (sekitar 50 FPS).
+
+Penulis mencatat sejumlah batasan. Kesalahan sering berasal dari bbox deteksi yang ukurannya keliru, yang membuat algoritma lingkaran bekerja tidak tepat atau gagal; algoritma `HoughCircles` cenderung menghasilkan lingkaran yang terlalu besar, dan usaha memperkecil bbox hanya menurunkan kesalahan secara negligible. Sensor RGB-D jenuh pada radiasi tinggi sehingga objek terlalu terang untuk dideteksi CNN, sementara sensor inframerah terpengaruh radiasi pada pita gelombangnya sehingga mengubah estimasi kedalaman; iluminasi tinggi juga mengganggu deteksi lingkaran. Penulis menyarankan akuisisi pada pagi atau sore hari, peneduhan intensif, atau perekaman malam dengan pencahayaan buatan. Sistem saat ini cenderung melebihkan ukuran dan belum memenuhi rentang galat yang layak untuk aplikasi lapangan, yaitu 1–2 mm, serta seluruh data yang terkumpul masih dalam tahap evaluasi karena proses pencocokan buah hasil deteksi dengan buah berlabel manual memerlukan waktu.
+

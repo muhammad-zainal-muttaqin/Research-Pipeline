@@ -1,0 +1,29 @@
+# Apple Counting using Convolutional Neural Networks
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `hani2018apple` |
+| Judul asli | Apple Counting using Convolutional Neural Networks |
+| Penulis | Hani, Nicolai; Roy, Pravakar; Isler, Volkan |
+| Tahun | 2018 |
+| Venue | IEEE International Conference on Intelligent Robots and Systems |
+| Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [hani2018apple.pdf](../pdf/hani2018apple.pdf)
+- DOI resmi: https://doi.org/10.1109/iros.2018.8594304
+
+## Gambaran Umum
+
+Estimasi jumlah buah dari citra di kebun nyata sulit karena apel tumbuh berumpun dengan ukuran dan bentuk yang beragam serta sering tertutup buah lain, cabang, atau daun. Metode yang hanya mendeteksi buah tunggal cenderung meleset ketika satu buah menutup buah lain, sedangkan pendekatan berbasis deteksi memerlukan segmentasi yang tepat dan penyesuaian parameter. Penelitian ini mengajukan penghitungan buah berumpun sebagai masalah klasifikasi banyak kelas, sehingga satu tambalan citra dipetakan langsung ke satu angka jumlah apel tanpa segmentasi awal atau algoritma penghitungan lanjutan. Selain estimasi hasil, penulis juga ingin memperoleh informasi yang lebih rinci berupa sebaran jumlah apel per tandan.
+
+Data latih berasal dari beberapa kebun apel di Minnesota dan Washington, terdiri atas apel hijau dan merah dari sisi baris pohon yang terkena matahari. Dari data itu diekstrak 13.000 tambalan yang diberi label manual dan 4.500 tambalan acak tanpa apel, lalu di-upsample dengan rotasi ±5 derajat dan augmentasi menjadi 64.000 tambalan. Seluruh data evaluasi dikumpulkan di University of Minnesota Horticultural Research Center, Eden Prairie, Minnesota, antara 2015 dan 2016, menggunakan rekaman video dari ponsel Samsung Galaxy S4. Pengujian penghitungan memakai empat himpunan: 5.054 tambalan apel merah dari kedua sisi baris pada test set 1, 599 tambalan apel kuning dan oranye pada fase pertumbuhan awal pada test set 2, 574 citra apel hijau dalam kondisi teduh dan terang pada test set 3, serta 704 tambalan apel merah yang diambil dari jarak lebih jauh dengan resolusi lebih rendah pada test set 4. Pengujian estimasi hasil memakai dua baris pohon, masing-masing terdiri atas enam pohon dengan 270 apel dan delapan pohon dengan 274 apel; untuk setiap baris direkam video dari sisi depan dan belakang, dan jumlah apel hasil panen dipakai sebagai acuan.
+
+Deteksi tandan dilakukan dengan segmentasi warna. Citra dibagi menjadi superpiksel dalam ruang warna LAB, tiap superpiksel diwakili warna rata-ratanya, dan seluruh superpiksel dikelompokkan ke dalam 25 kelas warna. Kelas yang sesuai dengan apel dipilih melalui pelatihan tersupervisi, lalu setiap superpiksel diklasifikasikan sebagai apel atau latar dengan divergensi Kullback–Leibler. Topeng biner yang dihasilkan menghasilkan kotak pembatas kandidat tandan. Karena ukuran tandan umumnya satu hingga enam apel, penulis menetapkan tujuh kelas keluaran termasuk kelas nol. Jaringan penghitung memakai lapisan konvolusi AlexNet yang diinisialisasi dengan bobot ImageNet; lapisan terhubung penuh aslinya dibuang dan diganti tiga lapisan baru, dengan dropout untuk mencegah overfitting. Citra di-upsample menjadi 227 × 227 piksel. Pelatihan dilakukan dengan transfer learning: lapisan baru dilatih selama lima epoch, kemudian seluruh lapisan konvolusi ikut dilatih dengan laju pembelajaran per lapisan 0,0001 hingga maksimal 30 epoch. Pengoptimal memakai stochastic gradient descent dengan laju awal 0,001, momentum 0,9, dan penurunan laju 0,2 setiap lima epoch. Augmentasi hanya memakai pembalikan dan perubahan warna karena pemotongan acak mengubah label. Implementasi memakai Matlab pada satu GPU NVIDIA GTX 1080 berkapasitas 8 GB.
+
+Pada pengujian tambalan, CNN mencapai akurasi 80,21% pada test set 1, 93,32% pada test set 2, 94,3% pada test set 3, dan 86,1% pada test set 4. Metode pembanding berbasis Gaussian Mixture Model berturut-turut menghasilkan 89,8%, 81,8%, 79,9%, dan 76,7%, sehingga CNN mengungguli pembanding pada tiga dari empat himpunan. Untuk estimasi hasil, hitungan per frame diintegrasikan lintas tampilan dengan melacak tandan dan menggabungkan sisi depan serta belakang baris. Rekonstruksi tiga dimensi dibuat dengan Agisoft, deteksi buah dipetakan balik ke rekonstruksi, komponen terhubung tiga dimensi dipakai untuk membentuk tandan, tiga prediksi tertinggi diambil dan dirata-ratakan, lalu apel di tanah dibuang memakai ambang ketinggian. Akurasi terhadap jumlah apel hasil panen adalah 96,97% pada baris enam pohon dan 96,72% pada baris delapan pohon, dibandingkan 94,81% dan 91,97% untuk metode GMM. Acuan hitung adalah anotasi manual pada tambalan untuk klasifikasi dan hitungan apel hasil panen untuk estimasi hasil; split pengujian terdiri atas empat test set penghitungan tambalan dan dua himpunan validasi estimasi hasil.
+
+Penulis melaporkan bahwa pada kandidat tanpa apel metode menghitung berlebih pada 36% kasus, sedangkan pada tandan enam apel jumlahnya merendah hingga 34%. Penurunan kinerja pada test set 1 dikaitkan dengan banyaknya apel di tanah yang tidak mirip dengan data latih, dan penulis menyarankan agar apel di tanah dibuang saat deteksi atau dimasukkan ke dalam data latih. Oklusi oleh buah dan daun membuat sebagian apel hanya tampak sebagian atau sama sekali tidak terlihat, sementara tandan yang sangat rapat sulit dihitung bahkan oleh pemberi label manusia. Penulis juga menemukan beberapa label acuan yang salah dan mengusulkan penggunaan data sintetis untuk mengurangi ketergantungan pada citra latih hasil upsampling. Prosedur penggabungan lintas frame dinyatakan hanya sebagai validasi empiris, bukan solusi lengkap untuk pemetaan hasil, dan metode ini baru diuji pada apel; penulis mengusulkan pengujian pada buah berumpun lain seperti stroberi.
+

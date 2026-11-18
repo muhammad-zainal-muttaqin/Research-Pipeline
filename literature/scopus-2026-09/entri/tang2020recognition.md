@@ -1,0 +1,28 @@
+# Recognition and Localization Methods for Vision-Based Fruit Picking Robots: A Review
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `tang2020recognition` |
+| Judul asli | Recognition and Localization Methods for Vision-Based Fruit Picking Robots: A Review |
+| Penulis | Tang, Yunchao; Chen, Mingyou; Wang, Chenglin; Luo, Lufeng; Li, Jinhui; Lian, Guoping; Zou, Xiangjun |
+| Tahun | 2020 |
+| Venue | Frontiers in Plant Science |
+| Kode | R (Tinjauan terdahulu) |
+
+## Tautan Akses
+- PDF: [tang2020recognition.pdf](../pdf/tang2020recognition.pdf)
+- DOI resmi: https://doi.org/10.3389/fpls.2020.00510
+
+## Gambaran Umum
+
+Tinjauan ini mengkaji metode pengenalan dan lokalisasi pada robot pemanen buah berbasis visi. Penulis menyatakan bahwa penglihatan mesin meningkatkan efisiensi, fungsionalitas, inteligensi, dan interaktivitas jarak jauh robot pemanen, tetapi pengenalan dan penentuan posisi yang presisi masih menyulitkan sebagian besar robot mencapai aplikasi komersial. Kajian difokuskan pada tiga aspek, yaitu teknologi penginderaan visual beserta algoritma pengenalan dan lokalisasi stereo, teknik stereo vision dalam berbagai kondisi lingkungan, serta algoritma rekonstruksi tiga dimensi yang menghasilkan koordinat spasial buah bagi robot. Toleransi gangguan sistem visi juga dibahas karena jarang dibahas dalam tinjauan sebelumnya, terutama pada medan kebun yang bergelombang dan menyebabkan getaran. Objek yang dikaji meliputi apel, litchi, jeruk, anggur, strawberi, dan paprika. Strategi pencarian dan jumlah artikel yang ditinjau tidak dinyatakan secara eksplisit.
+
+Penulis menyusun Tabel 1 berisi empat indikator kinerja dari studi yang dikumpulkan, yaitu akurasi pengenalan, waktu pengenalan, tingkat keberhasilan panen, dan waktu panen per buah. Simbol "/" menandakan indikator tidak disediakan atau tidak dapat disimpulkan dari literatur. Tinjauan membedakan dua kelompok metode utama, yaitu teknik pengolahan citra digital dan algoritma berbasis pembelajaran mendalam. Sistem robot yang diuraikan umumnya terdiri dari platform seluler otonom, lengan mekanik ringan dengan banyak derajat kebebasan, sistem uji balik gaya dengan ujung efektor fleksibel, sistem visi multi-sensor, sistem kendali gerak, sistem keputusan inteligen, serta perangkat lunak pendukung.
+
+Mekanisme pengenalan dengan pengolahan citra digital memakai segmentasi warna pada ruang warna HIS, L*a*b*, dan LCD, algoritma OSTU yang dimodifikasi, analisis bentuk, dan pencocokan ciri. Mekanisme berbasis pembelajaran mendalam memakai jaringan konvolusional, *Faster R-CNN* dengan ZFNet atau VGG, dan detektor kotak jamak. Lokalisasi mengandalkan stereo vision binokular, sensor RGB-D, cahaya terstruktur, pencitraan multispektral, serta pencocokan stereo yang terdiri dari kalibrasi kamera, akuisisi citra, ekstraksi ciri titik atau garis, pencocokan pasangan citra, dan rekonstruksi tiga dimensi memakai parameter dalam dan luar kamera. Toleransi gangguan diterapkan lewat model kesalahan koordinat spasial dan model kompensasi untuk getaran akibat medan, angin, atau pergerakan lengan, dengan pengujian pada robot virtual dan fisik.
+
+Tabel 1 menunjukkan akurasi pengenalan antara 55% pada studi Ehud dkk. (2016) hingga 81,1–100% pada studi Wang Z. dkk. (2017), dengan sebagian besar studi berada pada kisaran 80–98%. Waktu pengenalan tercatat 0,19–0,27 detik pada Kong dkk. (2010), 0,3 detik pada Sa dkk. (2016), 0,5 detik pada Xiang dkk. (2014), 0,53–0,69 detik pada Luo dkk. (2018), 0,59 detik pada Lin dkk. (2019), 0,8 detik pada Zou dkk. (2016), 1,5 detik pada Reis dkk. (2012), 3 detik pada Williams dkk. (2019), dan 43,2 detik pada Hayashi dkk. (2005). Tingkat keberhasilan panen berkisar dari 29,1% pada Hayashi dkk. (2005), 51% pada Williams dkk. (2019), 52% pada Barth dkk. (2019), 66,7% pada Tanigaki dkk. (2008), 77% pada Zhao dkk. (2011), hingga 84–88% pada Zou dkk. (2016); waktu panen per buah berkisar 5,5 detik hingga 15,5 detik. Studi lain melaporkan peningkatan *mean average precision* dari 0,52 menjadi 0,55 lewat fitur bentuk tiga dimensi, lebih dari 90% target buah terdeteksi dengan waktu panen sekitar 16 detik per buah, 10 dari 12 buah teridentifikasi dengan cahaya terstruktur, dan 51% buah kiwi di kebun berhasil dipanen dengan rata-rata 5,5 detik per buah. Angka-angka ini dihitung dari percobaan pengenalan atau panen pada masing-masing studi, dengan indikator sebagaimana didefinisikan di Tabel 1.
+
+Penulis mengidentifikasi sejumlah tantangan. Pengenalan dan lokalisasi terpengaruh perubahan pencahayaan, oklusi, dan gangguan dinamis di lingkungan kebun. Meskipun pembelajaran mendalam meningkatkan laju pengenalan, kesalahan posisi masih besar karena kompleksitas dan ketidakpastian lingkungan, sehingga diperlukan penggabungan sistem kendali robot, desain mekanisme, dan teknologi toleransi kesalahan. Algoritma pembelajaran mendalam memerlukan banyak sampel, sedangkan data buah mentah atau tanaman terserang hama terkadang hanya sedikit. Pelacakan dinamis pada permukaan melengkung dari buah berbentuk tidak beraturan masih menjadi masalah yang belum teratasi. Cahaya terstruktur memiliki kelemahan berupa instalasi peralatan yang kompleks, oklusi yang tidak dapat diprediksi, pengukuran tidak langsung, serta kemungkinan laser tertutup rintangan atau kehilangan fokus pada jarak jauh. Kamera multispektral juga mewarisi kelemahan kamera RGB karena mutu sampling dipengaruhi pencahayaan yang berubah dan tidak merata.
+

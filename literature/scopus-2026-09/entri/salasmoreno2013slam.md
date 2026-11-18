@@ -1,0 +1,27 @@
+# SLAM++: Simultaneous localisation and mapping at the level of objects
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `salasmoreno2013slam` |
+| Judul asli | SLAM++: Simultaneous localisation and mapping at the level of objects |
+| Penulis | Salas-Moreno, Renato F.; Newcombe, Richard A.; Strasdat, Hauke; Kelly, Paul H.J.; Davison, Andrew J. |
+| Tahun | 2013 |
+| Venue | Proceedings of the IEEE Computer Society Conference on Computer Vision and Pattern Recognition |
+| Kode | T (Metode dari luar pertanian) |
+
+## Tautan Akses
+- PDF: [salasmoreno2013slam.pdf](../pdf/salasmoreno2013slam.pdf)
+- DOI resmi: https://doi.org/10.1109/cvpr.2013.178
+
+## Gambaran Umum
+Makalah ini mengusulkan SLAM++, paradigma SLAM yang memetakan lingkungan pada tingkat objek, bukan pada tingkat titik, garis, atau permukaan. Masalah yang diatasi adalah borosnya komputasi dan penyimpanan pada SLAM padat berbasis permukaan nonparametrik, yang tetap sulit diskalakan dan belum memiliki penutupan loop yang andal. Penulis memanfaatkan pengetahuan awal bahwa banyak lingkungan, khususnya interior gedung publik, memuat objek berulang yang identik. Dengan mengenali objek secara langsung di dalam putaran SLAM, sistem memperoleh deskripsi adegan bersemantik, kompresi peta besar, serta kemampuan menutup loop dan melakukan relokalisasi hanya dari beberapa pengukuran objek yang sangat khas. Kajian ini tidak melibatkan tanaman atau pertanian; mekanisme yang dapat ditransfer adalah pengenalan objek berulang dan asosiasi antarpandangan melalui graf pose.
+
+Data dan metode: objek yang diharapkan muncul dibuat lebih dulu sebagai model tiga dimensi berkualitas tinggi. Penulis memindai tiap objek secara interaktif dengan KinectFusion dalam setting terkontrol, mengekstrak mesh dari volume *truncated signed distance* memakai *marching cubes*, lalu menyunting mesh secara manual untuk memisahkan objek dari lantai dan menandai kerangka koordinatnya sebelum disimpan dalam basis data. Percobaan memakai kamera depth genggam pada dua ruangan dalam, yaitu ruang bersama berukuran 15×10×3 m yang memuat dua jenis kursi dan dua jenis meja bundar, dipetakan selama sekitar 10 menit dengan 34 objek, serta ruangan 10×6×3 m untuk statistik sistem. Tidak ada akuisisi lapangan pertanian maupun data tanaman.
+
+Mekanisme deteksi dan asosiasi terdiri dari beberapa bagian yang saling menguatkan. Pengenalan objek mengikuti metode Drost dkk. berbasis *point-pair feature* (PPF), yaitu deskriptor empat dimensi dari posisi relatif dan normal pasangan titik berorientasi pada permukaan; pencocokan PPF menghasilkan voting pada ruang parameter 6 derajat kebebasan seperti *generalized Hough transform*. Implementasi GPU memakai kode voting 64 bit yang diurutkan dan direduksi secara paralel, dengan pembentukan struktur pencarian untuk 160.000 PPF biasanya memakan waktu kurang dari 5 ms. Deteksi dibatasi pada wilayah yang belum dijelaskan oleh objek di graf: sistem merender kedalaman dan peta normal prediksi, lalu menyaring piksel yang sudah tercakup agar sampel pengenalan diambil hanya pada wilayah tersembunyi atau belum terpetakan. Kandidat deteksi disempurnakan atau ditolak dengan ICP 6 derajat kebebasan terhadap model; penulis melaporkan hasil detektor untuk objek yang benar menyimpang kurang lebih ±30° pada rotasi dan ±50 cm pada translasi, sehingga ambang penolakan dapat ditetapkan konservatif. Pelacakan kamera memakai ICP padat berbasis jarak titik-bidang terhadap prediksi multiobjek dari graf, dengan penalti Huber dan maksimal 10 iterasi; pelacakan tidak dijalankan bila cakupan piksel prediksi kurang dari seperdelapan citra. Peta berupa graf yang simpulnya adalah posisi kamera historis dan posisi objek statis dalam SE(3), dengan faktor berupa pengukuran kamera–objek 6 derajat kebebasan, batasan ICP kamera–kamera, dan prior struktural berupa bidang lantai bersama. Optimasi memakai Levenberg–Marquardt dengan penyelesai Cholesky jarang pada persamaan normal. Loop besar dan relokalisasi memakai pencocokan fragmen graf dengan prosedur pengenalan PPF yang sama; objek yang tidak lolos gerbang ICP ditandai tidak valid agar tidak merusak graf.
+
+Angka hasil terutama berupa statistik sistem, bukan akurasi lintasan. Pada ruangan 10×6×3 m dengan laptop gaming, sistem berjalan 20 fps dengan 132 posisi kamera, 35 objek, 5 kelas objek, dan 338 tepi graf; memori graf 350 KB dan memori basis data 20 MB, dibandingkan 1,4 GB untuk KinectFusion pada volume yang sama dengan asumsi 4 byte per voksel dan 128 voksel per meter, sehingga rasio kompresi sekitar 1/70. Pembentukan struktur pencarian untuk 160.000 PPF memakan waktu kurang dari 5 ms. Penulis tidak melaporkan RMSE lintasan, tingkat deteksi, atau presisi identitas objek dalam bentuk angka, dan menyatakan keunggulan sistem lebih mudah ditunjukkan melalui video daripada pada teks.
+
+Batasan yang dinyatakan penulis: objek yang diharapkan harus ditentukan lebih dulu dan dimasukkan ke basis data; penyuntingan mesh dan pemberian kerangka koordinat masih manual; metode saat ini cocok untuk lokasi dengan banyak elemen identik yang berulang dan belum generik untuk objek dengan variasi bentuk; pengenalan tanpa pencarian aktif buruk pada objek jauh atau tertutup sebagian; citra mentah tidak disimpan dalam operasi normal, sehingga awan titik pada gambar hanya untuk visualisasi. Penulis menyebut pekerjaan lanjutan berupa objek dengan variasi bentuk berdimensi rendah serta segmentasi dan pembentukan kelas objek otomatis.
+

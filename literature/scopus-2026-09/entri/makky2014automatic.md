@@ -1,0 +1,29 @@
+# Automatic non-destructive quality inspection system for oil palm fruits
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `makky2014automatic` |
+| Judul asli | Automatic non-destructive quality inspection system for oil palm fruits |
+| Penulis | Makky, Muhammad; Soni, Peeyush; Salokhe, Vilas M. |
+| Tahun | 2014 |
+| Venue | International Agrophysics |
+| Kode | C3 (Pencitraan TBS kelapa sawit) |
+| Tanaman | oil palm |
+
+## Tautan Akses
+- PDF: [makky2014automatic.pdf](../pdf/makky2014automatic.pdf)
+- DOI resmi: https://doi.org/10.2478/intag-2014-0022
+
+## Gambaran Umum
+
+Penelitian ini mengembangkan mesin inspeksi otomatis berbasis penglihatan mesin (*machine vision*) untuk menilai tiga mutu tandan buah segar (TBS) kelapa sawit secara nondestruktif, yaitu fraksi kematangan, kandungan minyak (*oil content*, OC), dan kadar asam lemak bebas (*free fatty acid*, FFA). Nilai beli TBS seharusnya mencerminkan penampilan dan perkiraan jumlah serta mutu minyak yang dapat diekstraksi. Tandan matang memiliki lebih banyak minyak dan FFA lebih rendah daripada tandan terlalu matang, tetapi di pabrik hanya kematangan yang dapat dinilai secara visual. Kandungan minyak dan FFA baru diketahui setelah proses penggilingan, sementara analisis laboratorium mahal, tidak layak untuk setiap tandan, dan berisiko merusak buah sehingga FFA meningkat. Penulis menyatakan kajian sebelumnya hanya berfokus pada kematangan berdasarkan penampilan fisik atau dilakukan di laboratorium tanpa penglihatan mesin dan otomasi. Tujuan penelitian ini adalah menyempurnakan mesin buatan sebelumnya agar mampu menilai ketiga sifat itu secara cepat, konsisten, dan tanpa merusak TBS, lalu membandingkan hasilnya dengan penilaian manual dan laboratorium dalam kondisi lapangan.
+
+Mesin hasil pengembangan sebelumnya ditingkatkan pada sistem mekanik, kontrol, dan penglihatan mesin. Konveyor dicat putih agar kontras dengan TBS dan cahaya tersebar sehingga mengurangi pantulan; pemancar laser dan sensor *light dependent resistor* dipindah ke arah keluar ruang inspeksi supaya seluruh tandan, termasuk yang berukuran besar, masuk ke dalam citra. Kecepatan konveyor ditetapkan 110 mm/s dan gerbang pemisah dibatasi hanya 45°. Perangkat lunak pengolahan citra ditulis dengan C# SharpDevelop 3.2 dan Visual Basic 6.0 memakai Win32 API. Citra TBS disegmentasi dengan ambang adaptif, lalu diekstrak fitur berupa jumlah piksel objek, nilai digital merah-hijau-biru (R, G, B), komponen *hue-saturation-intensity* (H, S, I), RGB ternormalisasi (r, g, b), dan indeks kematangan (RI). Analisis tekstur dipakai untuk membedakan buah, spikelet, dan bagian lain. Sebanyak 180 TBS kultivar Tenera dari pohon berusia 7–20 tahun di perkebunan Cimulang, Bogor, Indonesia, dikumpulkan pada November–Desember 2011. Panel tiga grader berpengalaman menilai kematangan. Di laboratorium, 25 buah per tandan diambil dari bagian atas, tengah, dan bawah serta dari bagian dalam, tengah, dan luar; kandungan minyak diukur dengan ekstraksi Soxhlet memakai heksana, sedangkan FFA diukur dengan titrasi menurut metode IOPRI 1997, SNI 01-2901-2006, dan AOCS Ca 5a-40. Data dibagi menjadi tiga bagian sama, dua bagian untuk melatih model dan satu bagian untuk validasi silang.
+
+Mekanisme deteksi memakai dua pendekatan pemodelan, yaitu regresi linier berganda bertahap maju (*forward stepwise multiple linear regression*, FS-MLR) dan jaringan saraf tiruan *multilayer-perceptron* (MP-ANN), dengan tingkat kepercayaan 99,99% (p < 0,01). Fitur citra menjadi peubah bebas, sedangkan hasil penilaian manual dan laboratorium menjadi acuan. Model FS-MLR menghasilkan persamaan linier untuk fraksi kematangan, OC, dan FFA; peubah yang tidak berpengaruh dibuang berdasarkan statistik F. Model MP-ANN dibangun dengan lapis masukan, lapis tersembunyi, dan lapis keluaran yang jumlah unitnya diatur otomatis untuk menghindari *over-fitting*. Selama inspeksi, mesin menangkap citra satu tandan, menghitung fraksi kematangan, OC, dan FFA, lalu mengarahkan tandan yang tidak memenuhi mutu ke gerbang pemisah. Mesin menguji seluruh tandan sehingga tidak perlu mengambil sampel buah satu per satu.
+
+Kinerja model diukur dengan koefisien determinasi (R²), galat baku kalibrasi (SEC), dan galat baku prediksi (SEP) terhadap hasil laboratorium; untuk klasifikasi kematangan juga dipakai kurva *receiver operating characteristic* dan luas di bawah kurva (AUC). Model MP-ANN lebih baik untuk kematangan dan OC, sedangkan FS-MLR lebih baik untuk FFA. Nilai R² validasi MP-ANN adalah 0,935 untuk kematangan (SEP 0,065) dan 0,964 untuk OC (SEP 0,044); nilai R² validasi FS-MLR untuk FFA adalah 0,893 (SEP 0,068). Akurasi prediksi terbaik berturut-turut untuk kematangan, OC, dan FFA adalah 93,5%, 96,41%, dan 89,32%, dengan SEP masing-masing 0,065, 0,044, dan 0,068. AUC klasifikasi kematangan sebesar 0,846 untuk FS-MLR dan 0,935 untuk MP-ANN; nilai terakhir berbeda secara nyata dari kebetulan pada tingkat kepercayaan 99,99% (p = 0,000). Analisis laboratorium menunjukkan tandan pada fraksi 1–3 memiliki OC lebih tinggi dan FFA lebih rendah daripada fraksi 4–6 karena banyak buah lepas yang tidak dapat dikumpulkan. Dalam uji lapangan, mesin memproses satu tandan dalam waktu kurang dari 5 s, berkapasitas lebih dari 12 t TBS per jam, dan tidak menimbulkan memar besar.
+
+Penulis menyatakan analisis laboratorium sebagai acuan rawan galat karena faktor manusia, sehingga hasilnya tidak dapat dijamin bebas kesalahan 100%. Orientasi tandan di konveyor tidak diatur dan menghasilkan posisi yang berbeda-beda, tetapi penulis melaporkan hal itu tidak memengaruhi akurasi. Satu pekerja masih diperlukan untuk memasukkan TBS ke konveyor. Mesin ini memang dirancang bekerja otomatis setelah tandan masuk, dan penulis mengusulkan pengembangan lanjutan agar sistem sejenis dapat dipakai di sektor pertanian maupun sektor lain.
+

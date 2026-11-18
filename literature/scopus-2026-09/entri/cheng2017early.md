@@ -1,0 +1,29 @@
+# Early yield prediction using image analysis of apple fruit and tree canopy features with neural networks
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `cheng2017early` |
+| Judul asli | Early yield prediction using image analysis of apple fruit and tree canopy features with neural networks |
+| Penulis | Cheng, Hong; Damerow, Lutz; Sun, Yurui; Blanke, Michael |
+| Tahun | 2017 |
+| Venue | Journal of Imaging |
+| Kode | C2 (Pencacahan satu pandang) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [cheng2017early.pdf](../pdf/cheng2017early.pdf)
+- DOI resmi: https://doi.org/10.3390/jimaging3010006
+
+## Gambaran Umum
+
+Penelitian ini bertujuan meningkatkan akurasi perkiraan awal hasil apel dengan memasukkan fitur struktur kanopi pohon, bukan hanya jumlah buah. Penulis menyatakan prediksi awal diperlukan industri buah untuk merencanakan tenaga kerja, wadah, pengangkutan, pengemasan, dan penyimpanan, serta prediksi pertama yang dapat diandalkan diperoleh setelah gugur buah alami pada Juni, ketika buah masih kecil, hijau, dan sering tertutup daun. Kajian menguji hipotesis bahwa keterbatasan deteksi buah pada awal musim dapat diatasi dengan menggabungkan ciri kanopi ke dalam jaringan saraf tiruan. Tujuan kajiannya adalah mengekstrak fitur kanopi, mempelajari hubungannya dengan hasil aktual per pohon memakai *back propagation neural network* (BPNN), mengevaluasi model, dan menguji model pada sampel tahun berikutnya.
+
+Kajian berlangsung di kebun apel Campus Klein-Altendorf, Universitas Bonn, Jerman, pada 50,6° LU dan 6,97° BT di ketinggian 180 m. Pohon apel kultivar Gala dan Pinova dibentuk sebagai *slender spindle* dengan jarak antarpohon 1,5 m dan antarbaris 3,5 m berarah utara–selatan. Sebanyak 180 citra diambil pada ketinggian 1,5 m dan jarak 1,4 m tegak lurus baris menggunakan kamera digital Samsung VB 2000 berlensa Schneider, 3 megapiksel, cahaya alami, dan fokus otomatis tanpa zoom. Bola kalibrasi putih dan merah berdiameter 50 mm menentukan ukuran buah, dan kain putih 2 m × 3 m diletakkan di belakang pohon untuk memisahkan buah dari baris lain. Citra diambil pada dua masa, yaitu periode 1 sekitar tiga bulan sebelum panen setelah gugur buah Juni ketika buah hijau muda dengan penyinaran sekitar 800 µmol PAR, dan periode 2 sekitar 15 hari sebelum panen ketika buah merah dengan penyinaran sekitar 600 µmol PAR, antara pukul 15.00–17.00 pada hari berawan tanpa silau. Data terdiri atas 60 pohon pada 2009 dan 90 pohon pada 2010, masing-masing dengan 60 dan 90 citra per periode, sehingga tiap himpunan berisi 150 sampel. Sebanyak 30 pohon pada 2011 dipakai sebagai uji tahun berikutnya; kultivar Pinova dengan 90 pohon pada 2012 dipakai untuk model terpisah dan 34 pohon pada 2013 untuk uji lanjutan. Acuan hitung berupa jumlah buah, ukuran buah, dan hasil per pohon dari mesin pemilah komersial MSE2000 Greefa. Citra diubah ukurannya menjadi 512 × 683 piksel.
+
+Ekstraksi ciri diawali dengan mengubah citra RGB menjadi citra biner untuk menghitung jumlah buah (FN) dan menjumlahkan piksel setiap daerah terhubung sebagai luas buah (FA). Daerah buah yang luasnya lebih dari tiga kali bola kalibrasi dianggap sebagai gugus buah (FCA). Untuk daun, daerah buah terlebih dahulu dihapus, lalu piksel dengan selisih hijau dikurangi biru di bawah 10 dinolkan, dan ambang Otsu pada komponen hue membuang cabang serta batang; jumlah piksel daun menjadi luas kanopi (LA). Fitur yang dipakai sebagai masukan adalah F1 = FA/IA, F2 = FN/200, F3 = (FA − FCA)/IA, dan F4 = LA/IA, dengan IA jumlah seluruh piksel citra. Sasaran jaringan adalah F5 = YA/50, dengan YA hasil aktual per pohon. BPNN tiga lapis memakai fungsi transfer log-sigmoid pada lapis tersembunyi, linear pada keluaran, pelatihan *gradient descent* dengan *Levenberg-Marquardt*, dan fungsi kinerja MSE; jumlah neuron tersembunyi ditentukan dari akar jumlah neuron masukan dan keluaran ditambah nilai 0–10 yang dipilih berdasarkan MSE. Pembagian data 90% latih dan 10% uji dilakukan secara acak. Model 1 untuk periode awal berarsitektur 4-12-1, Model 2 untuk periode pemasakan 4-11-1, dan model Pinova 4-10-1. Kinerja dinilai dengan R², *mean forecast error* (MFE), *mean absolute percentage error* (MAPE), dan RMSE.
+
+Pada kultivar Gala, Model 1 menghasilkan R² = 0,81, RMSE 2,34 kg/pohon, MAPE 10,67%, dan MFE −0,05 pada data latih, serta R² = 0,80 dan RMSE 2,53 kg/pohon pada 15 sampel uji. Model 2 menghasilkan R² = 0,83, RMSE 2,27 kg/pohon, MAPE 8,9%, dan MFE −0,03 pada data latih, serta R² = 0,82 dan RMSE 2,31 kg/pohon pada data uji. Total hasil aktual 2736 kg untuk 150 pohon diperkirakan 2744 kg oleh Model 1 dan 2740 kg oleh Model 2. Pengujian pada 30 pohon tahun 2011 menghasilkan R² = 0,6166, RMSE 2,59 kg/pohon, dan MAPE 11,51% untuk Model 1, serta R² = 0,7506, RMSE 2,54 kg/pohon, dan MAPE 10,77% untuk Model 2. Model Pinova menghasilkan R² = 0,89 pada data latih dan 0,88 pada data uji dengan RMSE 2,24 dan 2,53 kg/pohon; pengujian pada 34 pohon tahun 2013 menghasilkan R² = 0,7812, RMSE 2,53 kg/pohon, dan MAPE 7,10%.
+
+Penulis menyatakan deteksi buah pada periode awal hampir mustahil hanya dengan analisis citra karena buah kecil, hijau, dan tertutup kanopi, sehingga fitur luas daun dan luas gugus buah diperlukan untuk mengurangi pengaruh daun. Model Gala lebih akurat menjelang panen daripada setelah gugur buah Juni, dengan R² naik dari 0,81 menjadi 0,83, dan penulis menyatakan selisih kedua model kecil. Penulis menyatakan perlu penelitian lanjutan untuk mengetahui sebab perkiraan lebih rendah atau lebih tinggi daripada hasil aktual per pohon. Model dibangun pada kebun sendiri dengan satu bentuk pohon, sehingga penulis menyatakan model spesifik lokasi perlu dipisahkan dari model umum dan diuji pada bentuk kanopi serta jenis buah lain. Penulis juga menyatakan prediksi sebelum gugur buah Juni tidak dapat diandalkan di Eropa barat laut karena embun beku dan gugur buah yang tidak menentu.
+

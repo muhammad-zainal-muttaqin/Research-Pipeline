@@ -1,0 +1,26 @@
+# A comprehensive review on acquisition of phenotypic information of Prunoideae fruits: Image technology
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `liu2023comprehensive` |
+| Judul asli | A comprehensive review on acquisition of phenotypic information of Prunoideae fruits: Image technology |
+| Penulis | Liu, Xuan; Li, Na; Huang, Yirui; Lin, Xiujun; Ren, Zhenhui |
+| Tahun | 2023 |
+| Venue | Frontiers in Plant Science |
+| Kode | R (Tinjauan terdahulu) |
+
+## Tautan Akses
+- PDF: [liu2023comprehensive.pdf](../pdf/liu2023comprehensive.pdf)
+- DOI resmi: https://doi.org/10.3389/fpls.2022.1084847
+
+## Gambaran Umum
+
+Tinjauan ini membahas cara memperoleh informasi fenotipe buah Prunoideae—ceri, prem, aprikot, persik, dan nektarin—melalui teknologi citra. Informasi fenotipe mencakup ukuran geometris, biomassa, kadar air, dan warna kulit, yang menentukan nilai pasar, waktu panen, penyimpanan pascapanen, serta penilaian mutu dan kerusakan. Cara konvensional memakai jangka sorong, timbangan, metode Folin-Ciocalteu, dan refraktometer genggam diakumi memakan waktu dan merusak integritas buah. Penulis mengumpulkan kajian berdasarkan jenis citra, yaitu RGB, hiperspektral, dan multispektral, lalu merangkumannya menurut tujuan deteksi kematangan, klasifikasi mutu, dan identifikasi penyakit atau kerusakan. Selain itu, tinjauan menyentuh citra termal, tomografi terkomputasi (CT), dan pencitraan hamburan balik laser yang pemakaiannya masih terbatas.
+
+Data berupa buah utuh maupun irisan dari laboratorium, ruang gelap tertutup, kebun, dan platform pesawat tanpa awak. Citra RGB diperoleh dengan kamera digital, kamera CCD, dan telepon genggam, sehingga menghasilkan fitur warna, tekstur, dan bentuk geometris tanpa data spektral. Sistem hiperspektral memakai sumber halogen, lensa, meja dan motor translasi, serta ratusan hingga ribuan panjang gelombang pada resolusi skala nanometer; pemilihan panjang gelombang memakai PCA, PLS, VIP, SPA, CARS, GA, atau UVE sebelum pemodelan. Citra multispektral memuat beberapa hingga belasan pita dan bekerja dengan pencitraan pantulan maupun transmisi, karena gugus C-H, O-H, dan N-H menyerap energi pada pita tersebut. Mekanisme deteksi memanfaatkan perubahan klorofil, karotenoid, antosianin, kandungan air, padatan terlarut (SSC), kekerasan, dan jaringan busuk, lalu memetakannya ke model regresi atau klasifikasi, termasuk ANN, CNN, PLSR, LDA, dan random forest.
+
+Hasil yang dikutip penulis meliputi deteksi kematangan ceri dengan ANN berarsitektur 7-14-11-3 pada fitur L*a*b* sebesar R² = 0,9999, aprikot dengan LDA dan QDA masing-masing R² = 0,904 dan 0,923, serta prem dengan pembelajaran dalam yang tetap mencapai akurasi di atas 94% meski pencahayaan dan fokus berbeda. Pada pemeriksaan mutu, deteksi bercak putih dan cokelat persik berturut-turut 96,7% dan 85%, klasifikasi bentuk ceri dengan CNN 99,4% setelah augmentasi menjadi 14.380 citra, sedangkan Faster R-CNN atas 15.000 citra mencapai tingkat pengenalan 85% dan gagal pada buah tertutup yang pikselnya kurang dari 20. Identifikasi penyakit memakai Inception-V3 pada prem mencapai 92%, Mask R-CNN dengan VGG-19 menghasilkan mAP = 94% pada penyakit persik, dan L2MXception mencapai 93,85% atau 28,48% lebih tinggi daripada Xception. Pada citra hiperspektral, model SAE-PLSR memprediksi SSC prem hijau dengan rp = 0,938 dan RMSEP = 0,654; prediksi SSC persik dengan CARS-MLR menghasilkan R²V = 0,841, sedangkan deteksi sembilan cacat persik memakai citra rasio dua panjang gelombang mencapai 96,6%. Citra multispektral menghasilkan R² = 0,78 untuk hubungan pantulan 450 dan 680 nm dengan kekerasan persik, dan segmentasi ambang segitiga menaikkan variansi terjelaskan dari 90% menjadi 96% dibanding Otsu. Seluruh angka tersebut adalah hasil kajian yang ditinjau, bukan percobaan penulis sendiri, dan dihubungkan langsung dengan dataset, panjang gelombang, atau model yang disebutkan.
+
+Batasan yang dinyatakan penulis mencakup keterbatasan citra RGB yang hanya membawa informasi permukaan, perbedaan resolusi dan ukuran citra dari berbagai perangkat, serta penyesuaian otomatis paparan dan kontras pada telepon genggam yang mengganggu representasi warna. Data hiperspektral mengandung banyak redundansi sehingga memerlukan pemilihan panjang gelombang, sebagian besar masih dipakai di laboratorium, dan masih perlu menyeimbangkan mutu citra dengan biaya; tidak ada kriteria evaluasi tunggal untuk membandingkan model tradisional dan model berbasis pembelajaran mesin. Citra multispektral memiliki data spektral yang tidak lengkap karena jumlah pitanya sedikit, meski keuntungannya proses reduksi data lebih ringan dan perangkatnya murah serta portabel; cahaya matahari di luar ruangan mengganggu citra sehingga resolusi dan ketahanan terhadap gangguan perlu ditingkatkan. Citra termal dipengaruhi cahaya kuat di luar ruangan, dan algoritma yang ada memiliki universalitas rendah karena sangat bergantung pada perangkat dan lingkungan pengambilan citra. Penulis menyimpulkan bahwa penerapan di lapang memerlukan perangkat yang lebih portabel, biaya yang terkoordinasi, dan algoritma baru yang efisien, akurat, serta adaptif; pembahasan mendalam tentang algoritma tidak dilakukan dalam tinjauan ini.
+

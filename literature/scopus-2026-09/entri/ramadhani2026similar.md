@@ -1,0 +1,29 @@
+# Similar Accuracy, Different Explanations in YOLO-Based Palm Fruit Ripeness Detection
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `ramadhani2026similar` |
+| Judul asli | Similar Accuracy, Different Explanations in YOLO-Based Palm Fruit Ripeness Detection |
+| Penulis | Ramadhani, Queenta Paradissa; Dewanta, Favian; Gunawan, Teddy Surya; Kartiwi, Mira; Nugroho, Bambang Setia |
+| Tahun | 2026 |
+| Venue | Iium Engineering Journal |
+| Kode | C3 (Pencitraan TBS kelapa sawit) |
+| Tanaman | oil palm |
+
+## Tautan Akses
+- PDF: [ramadhani2026similar.pdf](../pdf/ramadhani2026similar.pdf)
+- DOI resmi: https://doi.org/10.31436/iiumej.v27i3.4693
+
+## Gambaran Umum
+
+Kajian ini menguji apakah detektor buah sawit dengan akurasi yang hampir sama menghasilkan perilaku penjelasan yang juga sama. Penulis menyatakan bahwa metode *class activation mapping* (CAM) sering diterapkan tanpa memeriksa apakah perilaku penjelasannya dapat dipindahkan antarkonfigurasi detektor. Dua detektor bisa mencapai akurasi hampir identik tetapi bertumpu pada fitur spasial yang berbeda, dan peta panas yang tampak meyakinkan belum membuktikan bahwa penjelasannya informatif atau dapat ditransfer. Tujuan kajian adalah membandingkan perilaku CAM pada tingkat *backbone* di tiga detektor YOLO yang kinerja prediksinya saling dekat, dengan protokol latih yang sama.
+
+Tanaman yang dikaji adalah kelapa sawit. Dataset publik berisi 4.160 citra dengan enam kelas menurut skema Malaysian Palm Oil Board: *abnormal*, *empty bunch*, *overripe*, *ripe*, *underripe*, dan *unripe*. Karena kelas *empty bunch* kurang terwakili di latih (266 citra dominan), augmentasi luring diterapkan hanya pada citra latih yang didominasi kelas tersebut, meliputi pembalikan horizontal dan vertikal, rotasi 90°, penyesuaian hue–saturation–value, kecerahan dan kontras, blur, derau aditif, bayangan sintetis, serta *contrast-limited adaptive histogram equalization*. Jumlahnya menjadi 990 citra dominan dan total dataset 4.884 citra unik dengan 16.921 kotak anotasi. Cawat uji tidak diubah dan berisi 416 citra dengan 1.493 tandan beranotasi. Sebanyak 15 konfigurasi diuji, yaitu YOLOv8, YOLO11, dan YOLO26 pada lima skala (n, s, m, l, x). Semua dilatih dari bobot COCO selama 100 epoch dengan AdamW, laju pembelajaran awal 0,001, batch 16, masukan 640 × 640, dan seed awal 0; tiga model sedang juga dilatih ulang dengan seed 42 dan 123 pada GPU NVIDIA A100-SXM4-40GB.
+
+Mekanisme deteksi memakai detektor satu tahap yang memprediksi kotak, kelas, dan keyakinan. Mekanisme penjelasan dibatasi pada representasi *backbone* sebelum *neck*, bukan atribusi kotak–kelas akhir. Penulis memotong jaringan setelah lapisan 8 agar ketiga detektor memiliki titik evaluasi sekuensial yang sama. EigenCAM diterapkan apa adanya secara bebas kelas, sedangkan Grad-CAM++ dan Score-CAM diadaptasi menjadi bGrad-CAM++ dan bScore-CAM dengan target skalar dan vektor yang berasal dari *backbone*. Peta saliensi dinilai dengan CAM-box IoU dan Pointing Game untuk lokalisasi, serta *Mean Absolute Confidence Drop* (MACD) dan *Increase in Confidence* (IC) sebagai diagnostik retensi keyakinan pada citra. Ambang saliensi tetap 0,5. Uji Wilcoxon berpasangan dengan penyesuaian Holm membandingkan EigenCAM dan bScore-CAM, dan interval kepercayaan 95 persen bootstrap 10.000 ulangan melengkapi analisis.
+
+Evaluasi menunjukkan seluruh 15 varian memiliki mAP50 di atas 0,993, sementara mAP50–95 berkisar 0,8860–0,9048. Model sedang mencapai nilai tertinggi dalam keluarganya: YOLOv8m 0,9048, YOLO11m 0,8998, dan YOLO26m 0,9043. Rerata tiga seed untuk mAP50–95 berturut-turut adalah 0,903 ± 0,002, 0,899 ± 0,002, dan 0,901 ± 0,003, dengan jarak maksimum hanya 0,004. Sebaliknya, Pointing Game menyebar 68,03 poin persentase dan MACD 48,62 poin persentase di sembilan konfigurasi model–penjelas. Pada YOLOv8m, EigenCAM memberi Pointing Game 71,39 persen dan MACD 32,68 persen, sedangkan pada YOLO11m bScore-CAM memberi IoU 22,83 persen, Pointing Game 75,72 persen, dan MACD 41,89 persen; perbedaan IoU EigenCAM–bScore-CAM pada YOLO11m signifikan setelah Holm (p < 0,001). YOLO26m lemah di semua konfigurasi lapisan 8, dengan Pointing Game 7,69–19,71 persen. IoU tertinggi hanya 22,83 persen dan IC berkisar 0–0,72 persen. Pencarian lapisan 6–10 menempatkan lapisan 8 sebagai titik *backbone* kompatibel terkuat pada ketiga detektor. Pada tingkat kelas, *abnormal* terendah (0,851–0,854) dan *unripe* tertinggi (0,929–0,935), sedangkan *overripe* terlemah di antara tiga tahap kematangan berdekatan (0,876–0,893).
+
+Penulis menyatakan empat batasan utama. Pemilihan skala model dan lapisan target memakai cawat uji yang sama dengan evaluasi CAM akhir, sehingga hasilnya mengandung optimisme seleksi dan hanya merupakan perbandingan eksploratorik dalam satu dataset, bukan estimasi independen generalisasi penjelasan. Ruang penjelasan hanya mencakup saliensi *backbone* sebelum *neck*, tidak melakukan atribusi pada keputusan kotak–kelas individu, dan analisis CAM hanya memakai checkpoint seed 0. Lokalisasi memakai gabungan semua kotak anotasi, bukan penetapan per instance, dengan satu ambang 0,5 yang tidak didaftarkan sebelumnya dan tanpa sapuan ambang; MACD dan IC juga dihitung dari keyakinan maksimum tingkat citra yang tidak dipasangkan sebelum dan sesudah penutupan citra. Validasi eksternal terbatas pada satu dataset publik tanpa uji lapangan independen, pengulangan CAM lintas seed, pengukuran waktu penjelasan, atau penilaian oleh operator; latensi yang dilaporkan berasal dari PyTorch asli pada A100, bukan TensorRT atau perangkat tepi terkuantisasi. Penulis menyimpulkan bahwa akurasi yang hampir sama tidak berarti perilaku penjelasan dapat dipindahkan, dan konfigurasi penjelas–target–lapisan–model yang harus dinilai, bukan penjelasnya saja.
+

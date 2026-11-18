@@ -1,0 +1,28 @@
+# Orchard management with small unmanned aerial vehicles: a survey of sensing and analysis approaches
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `zhang2021orchard` |
+| Judul asli | Orchard management with small unmanned aerial vehicles: a survey of sensing and analysis approaches |
+| Penulis | Zhang, Chenglong; Valente, Jo\~ao; Kooistra, Lammert; Guo, Leifeng; Wang, Wensheng |
+| Tahun | 2021 |
+| Venue | Precision Agriculture |
+| Kode | R (Tinjauan terdahulu) |
+
+## Tautan Akses
+- PDF: [zhang2021orchard.pdf](../pdf/zhang2021orchard.pdf)
+- DOI resmi: https://doi.org/10.1007/s11119-021-09813-y
+
+## Gambaran Umum
+
+Tinjauan ini mengkaji penggunaan pesawat nirawak kecil (*unmanned aerial vehicle*, UAV) untuk manajemen kebun buah presisi. Kebun buah memerlukan pengelolaan yang spesifik per lokasi, bahkan per pohon, sepanjang siklus tanaman mulai dari pembungaan, pembentukan dan pemasakan buah, panen, hingga dormansi. Penulis menyatakan bahwa belum ada alur kerja baku untuk menerapkan UAV pada manajemen kebun, sehingga pilihan metode pemrosesan citra masih menjadi hambatan adopsi. Kajian ini bertujuan merangkum arsitektur sistem penginderaan, menginventarisasi aplikasi serta teknik pemrosesan data, dan mengidentifikasi kesenjangan serta peluang pengembangan.
+
+Penulis meninjau 84 makalah dari *Web of Science Core Collection* yang diterbitkan atau tersedia daring sebelum 1 Januari 2020, dengan rentang pencarian 1945–2019 dan bahasa Inggris. Pencarian dua komponen, yaitu platform pemantauan (UAV, UAS, *drone*) dan objek yang dipantau (kebun buah serta spesies seperti apel, jeruk, zaitun, pir, persik, pisang, dan mangga), menghasilkan 155 artikel. Setelah penyaringan tersisa 79 artikel, lalu ditambah 4 artikel sitiran relevan menjadi 84. Makalah dikelompokkan ke dalam lima kategori, yaitu efisiensi sumber daya, sifat geometris, produktivitas, penyakit, dan aplikasi lain; tiga kategori pertama menyumbang 67% dari keseluruhan penelitian. Tinjauan ini bersifat kualitatif dan melakukan perbandingan kuantitatif terbatas, bukan meta-analisis.
+
+Mekanisme penginderaan memakai UAV rotor ganda, sayap tetap, atau lepas landas dan mendarat vertikal (*vertical take-off and landing*, VTOL) yang membawa sensor RGB, multispektral, hiperspektral, termal, dan LiDAR. Sensor RGB paling luas dipakai karena murah dan menghasilkan ortofoto serta model permukaan digital; sensor multispektral dan hiperspektral membedakan objek lewat sifat absorpsi dan refleksi spektral; sensor termal menduga status air lewat suhu tajuk; LiDAR dipakai sekali untuk pengukuran geometri apel. Rangkaian pemrosesan memadukan analisis citra berbasis objek geografis (*geographic object-based image analysis*, GEOBIA) dan rekonstruksi tiga dimensi *structure from motion* (SfM), ditambah teknik seperti transformasi simetri radial berbasis orientasi (OBRS), transformasi Hough, segmentasi ambang adaptif dan *watershed*, *extreme learning machine* (ELM), K-means, dan *random forest*. Deteksi hasil panen dilakukan langsung dengan menghitung bunga atau buah, atau tidak langsung lewat sifat geometris dan indeks vegetasi. Sejumlah indeks diajukan, antara lain *enhanced bloom index* (EBI) untuk fenologi bunga, *crop water stress index* (CWSI) untuk stres air, serta NDVI, TCARI/OSAVI, PRI570, dan *modified canopy chlorophyll content index* (M3CI) untuk kandungan nitrogen dan fotosintesis.
+
+Sejumlah angka dilaporkan dari studi yang ditinjau. Korelasi lebar tajuk yang diturunkan dari citra UAV dengan ukuran lapangan mencapai R² = 0,91; delineasi tajuk jeruk dengan OBRS menghasilkan skor-F1 91,2%, sedangkan kombinasi transformasi Hough, ambang berurutan, dan deteksi tepi Canny memberi akurasi lebih dari 80%. Klasifikasi tajuk pisang, mangga, dan kelapa dengan ELM mencapai 96,0% berbanding 85,5% untuk K-means. Estimasi tinggi pohon dengan GEOBIA memberi R² = 0,94; *random forest* berbasis GEOBIA memberi R² = 0,65 untuk tinggi tajuk dan 0,62 untuk penutup proyektif tanaman. Konfigurasi penerbangan dengan tumpang tindih depan 95% dan samping 60% pada ketinggian 100 m serta GSD 0,038 m/piksel menghasilkan akurasi volume zaitun 95% sekaligus menghemat 85% waktu komputasi; kenaikan GSD dari 16 menjadi 3 cm mengubah R² estimasi tinggi dari 0,79 menjadi 0,86. EBI berkorelasi dengan cakupan bunga pada R² = 0,72, luas proyeksi tajuk terhadap beban buah persik mencapai R = 0,85, model hasil mangga berbasis GEOBIA memberi R² lebih dari 0,77, dan indeks TCARI/OSAVI, PRI570, serta fluoresensi klorofil memberi R² 0,75–0,84 untuk produksi primer bruto. CWSI adaptif menghasilkan R² = 0,72 terhadap potensial air batang dan 0,82 terhadap konduktansi stomata, jauh di atas CWSI konvensional yang hanya 0,27 dan 0,34. Probabilitas akuisisi data UAV di wilayah berawan mencapai 45–70%, sedangkan satelit hanya sekitar 20%.
+
+Penulis mencatat beberapa batasan. Meta-analisis tidak dapat dilakukan karena desain eksperimen antarstudi terlalu berbeda untuk digabungkan, dan tinjauan ini tidak mengikuti kriteria ketat tinjauan sistematis. Sebagian besar penelitian dilakukan pada satu periode waktu tertentu dan hanya sedikit studi perbandingan yang meliputi berbagai tahap pertumbuhan buah. Generalisasi model, efisiensi pemrosesan data, dan otomatisasi masih menjadi tantangan. Masa terbang UAV dibatasi kapasitas baterai, sensor LiDAR mahal dan boros daya, serta dataset publik yang tersedia masih langka. Algoritma yang dikembangkan untuk kondisi tertentu sering tidak sesuai saat diuji pada kondisi tak beraturan, dan kinerja klasifikasi mudah terganggu oleh objek latar yang memiliki ciri serupa dengan target. Integrasi sensor dengan kendali UAV serta pemanfaatan pembelajaran mesin dan pembelajaran mendalam belum optimal.
+

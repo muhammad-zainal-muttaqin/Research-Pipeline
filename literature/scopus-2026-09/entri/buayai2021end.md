@@ -1,0 +1,28 @@
+# End-to-End Automatic Berry Counting for Table Grape Thinning
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `buayai2021end` |
+| Judul asli | End-to-End Automatic Berry Counting for Table Grape Thinning |
+| Penulis | Buayai, Prawit; Saikaew, Kanda Runapongsa; Mao, Xiaoyang |
+| Tahun | 2021 |
+| Venue | IEEE Access |
+| Kode | C2 (Pencacahan satu pandang) |
+| Tanaman | grape |
+
+## Tautan Akses
+- PDF: [buayai2021end.pdf](../pdf/buayai2021end.pdf)
+- DOI resmi: https://doi.org/10.1109/access.2020.3048374
+
+## Gambaran Umum
+
+Penipisan buah (berry thinning) pada anggur meja menentukan bentuk tandan dan ruang tumbuh tiap buah. Petani berpengalaman di Jepang memakai jumlah buah dalam tandan yang sedang dikerjakan sebagai penentu apakah ruang yang tersedia sudah cukup. Penelitian ini bertujuan membangun teknik penghitungan buah otomatis dari satu citra dua dimensi yang dipakai petani saat bekerja, sehingga jumlah buah pada tandan kerja dapat diketahui tanpa penghitungan manual. Penulis menyatakan masa penipisan hanya berlangsung satu sampai dua minggu sebelum buah mulai mengumpulkan gula, sehingga pengumpulan data latih dan penghitungan manual menyulitkan petani. Sistem yang diusulkan memakai kaca mata pintar Epson Moverio BT-2000 untuk menangkap citra dan menampilkan hasil; citra dikirim ke peladen melalui WiFi saku, lalu hasil penghitungan dikirim kembali ke petani.
+
+Tanaman yang dipelajari adalah anggur meja. Dua petani memakai kamera yang dipasang di kepala saat melakukan penipisan. Peneliti memberi anotasi manual pada 2.701 buah dalam 60 citra dari 10 tandan. Citra beresolusi 1.920 × 1.080 piksel lalu diskalakan sehingga sisi terpendek 800 piksel dan sisi terpanjang 1.333 piksel. Model dilatih dan dievaluasi pada satu GPU Titan RTX lebih dari 10 jam memakai stochastic gradient descent, weight decay 0,0001, momentum 0,9, ukuran batch 1, dan learning rate 0,00125. Untuk mengatasi sedikitnya data, peneliti menyintesiskan citra dengan menghapus buah yang tertutup sebagian, ditentukan dari sirkularitas di bawah suatu ambang, lalu mengisi area yang kosong dengan teknik inpainting berbasis jaringan saraf konvolusional. Ambang sirkularitas 0,6 menghasilkan 956 citra sintetis dari 60 citra beranotasi. Pengujian augmentasi memakai validasi silang enam lipat: 50 citra asli dari lima lipat berikut citra sintetisnya dipakai untuk latih dan 10 citra asli untuk validasi.
+
+Deteksi memakai model Hybrid Task Cascade (HTC) mask R-CNN yang diperluas dengan fitur lokasi eksplisit dari region proposal network dan kotak pembatas, serta sebuah cabang klasifikasi tambahan (supplementary classification, SCLASS) yang menerima fitur lokasi dan fitur dari lapisan fully connected. Cabang segmentasi semantik dari HTC asli dihilangkan. Fungsi rugi berbentuk L = Σ λ_t (L_bbox + L_cls + L_scls + L_mask) dengan λ = [1, 0,5, 0,25] dan T = 3. Akurasi deteksi diukur dari IoU antara mask hasil deteksi dan mask ground truth dengan ambang 0,5, mengikuti Pascal VOC; metriknya adalah Correctly Detect, CD = (Ncd/Ngt) × 100 persen, dan Miss-Classification, MC = (Nid/Nad) × 100 persen, berturut-turut untuk persentase buah terdeteksi benar terhadap buah beranotasi dan persentase deteksi salah terhadap semua deteksi. Augmentasi menurunkan MC sebesar 51,38 persen dengan penurunan CD sebesar 2,17 persen. Fitur lokasi menurunkan rata-rata jumlah buah yang terdeteksi dari tandan bukan kerja (AvgNWB) dari 5,33 menjadi 0,33. Penyaringan pasca pemrosesan membuang tandan berprobabilitas rendah, mengurutkan luas kotak pembatas, memakai IoU, lalu memilih kotak terdekat ke pusat citra; pada 2.535 citra buah, pemilihan tandan kerja mencapai akurasi 100 persen. Waktu pemrosesan rata-rata sekitar 0,9 detik per citra pada Titan RTX.
+
+Untuk memperkirakan jumlah buah di seluruh tandan tiga dimensi dari satu citra, peneliti memakai lima fitur: jumlah buah terdeteksi, diameter rata-rata yang dinormalisasi terhadap luas buah, proporsi buah dengan sirkularitas di bawah 0,7, kerapatan luas buah terhadap luas tandan, dan homogenitas sebaran buah yang dihitung dari selisih citra setelah satu dan sebelas kali perhalusan Gaussian. Enam model regresi diuji, yaitu kernel ridge regression, support vector regression, random forest regression, gradient boosting, stochastic gradient descent, dan artificial neural network. Data pengujian regresi berasal dari citra yang diambil sembari petani menipiskan buah dari awal sampai akhir, dengan tandan diputar agar mencakup banyak sudut pandang; jumlah buah sebenarnya dihitung manual. Dari total 16.607 citra, 13.285 citra dipakai sebagai data latih dan 3.322 citra sebagai data uji. Metriknya adalah mean absolute error (MAE). Random forest regression memberi MAE terendah, 3,79. MAE turun dari 6,17 untuk kisaran jumlah buah 82-91 menjadi 2,70 untuk kisaran 42-51.
+
+Batasan yang dinyatakan penulis mencakup diferentesi sudut pandang: jumlah buah yang tampak pada satu citra untuk tandan yang sama dapat berbeda lebih dari 10 buah, sehingga prediksi jumlah buah tiga dimensi sulit. Model DNN yang dipakai berukuran besar, sehingga penulis menyarankan penerapan sebagai aplikasi di sisi peladen yang diakses melalui application programming interface dari ponsel, kaca mata pintar, atau headset realitas tambahan. Penulis juga menyatakan petani tidak perlu memastikan jumlah buah pada setiap frame, sehingga komputasi dan tampilan hasil dapat dibatasi pada saat ada buah yang dibuang. Selain itu, penulis menyatakan model location-sensitive HTC dapat dipakai untuk mendeteksi satu objek tertentu di antara objek sejenis, dan fitur penghitungan buah dapat diterapkan pada buah atau sayur lain; pernyataan ini tidak disertai pengujian lebih lanjut dalam naskah.

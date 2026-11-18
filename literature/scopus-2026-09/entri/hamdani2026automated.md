@@ -1,0 +1,29 @@
+# Automated oil palm fruit counting using deep learning for reliable yield estimation in natural background
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `hamdani2026automated` |
+| Judul asli | Automated oil palm fruit counting using deep learning for reliable yield estimation in natural background |
+| Penulis | Hamdani, Hamdani; Septiarini, Anindita; Syaifudin, Encik Akhmad; Nor Gading, Fazri Rahmad; Winarno, Edy |
+| Tahun | 2026 |
+| Venue | Smart Agricultural Technology |
+| Kode | C3 (Pencitraan TBS kelapa sawit) |
+| Tanaman | oil palm |
+
+## Tautan Akses
+- PDF: [hamdani2026automated.pdf](../pdf/hamdani2026automated.pdf)
+- DOI resmi: https://doi.org/10.1016/j.atech.2026.102376
+
+## Gambaran Umum
+
+Penelitian ini mengatasi penghitungan buah sawit secara manual yang padat karya dan tidak andal akibat tandan yang rapat, oklusi, dan variasi pencahayaan di lapangan. Tujuannya adalah menyediakan data patokan (benchmark) sadar kerapatan berisi 539 citra RGB beresolusi tinggi dari kebun sawit di Kalimantan Timur, Indonesia, serta mengevaluasi tiga arsitektur pembelajaran mendalam, yaitu YOLOv5, YOLOv8, dan Mask R-CNN, dalam satu protokol perbandingan yang sama. Selain metrik deteksi berupa presisi, recall, dan mAP, penulis menambahkan analisis penghitungan berdasarkan Mean Absolute Error (MAE) pada skenario kerapatan rendah, sedang, dan tinggi, karena deteksi yang akurat belum tentu menghasilkan hitungan yang akurat.
+
+Datanya adalah 539 citra RGB tandan buah segar sawit yang diambil di Kabupaten Kutai Timur, Kalimantan Timur (0,5607° LU, 117,4245° BT) pada musim panen awal 2025. Pengambilan memakai ponsel Xiaomi 12 Pro (50 MP, bukaan f/1.9) di bawah cahaya siang alami tanpa pencahayaan atau flash buatan, pada jarak 1,0–1,5 m dan berbagai sudut, yaitu dari atas, samping, dan miring. Citra mencakup berbagai tahap kematangan, kerapatan buah, dan tingkat oklusi serat. Setiap citra diubah ke ukuran 640 × 640 piksel; tidak digunakan pemotongan jendela geser atau pembagian berbasis patch. Anotasi manual dengan LabelImg memberi kotak pembatas pada setiap buah yang terlihat dengan label 'oil_palm', disimpan dalam format PASCAL VOC XML lalu diubah ke format YOLO; jumlah kotak pada setiap citra menjadi acuan hitungan. Pembagian data dilakukan pada tingkat citra dengan benih acak tetap, yaitu 431 citra latih (80%) dan 108 citra validasi/uji (20%), sehingga satu citra tidak muncul di dua subset. Augmentasi diterapkan hanya pada data latih berupa pembalikan horizontal dan vertikal, penyesuaian kecerahan ±20%, Gaussian blur, dan rotasi ringan.
+
+Mekanisme deteksi memakai YOLOv5s dan YOLOv8n sebagai detektor satu tahap serta Mask R-CNN dengan backbone ResNet-50 dan FPN sebagai model dua tahap. Pelatihan dilakukan di Google Colaboratory dengan GPU NVIDIA A100 40 GB, Python 3.10, PyTorch 2.0, CUDA 11.8, dan cuDNN 8.7, selama 100 epoch dengan bobot awal COCO atau ImageNet. YOLO memakai SGD dengan momentum 0,937, peluruhan bobot 5 × 10⁻⁴, laju awal 0,01, dan cosine annealing, serta ukuran batch 16; Mask R-CNN memakai AdamW dengan laju 2,5 × 10⁻⁴, peluruhan bobot 10⁻⁴, dan ukuran batch 8. Early stopping memakai patience 10, dengan penyimpanan bobot terbaik menurut mAP validasi. Hitungan hasil deteksi diambil langsung dari jumlah kotak pembatas yang tersisa setelah penyaringan ambang keyakinan dan Non-Maximum Suppression untuk YOLO, atau dari jumlah instan valid setelah penyaringan keyakinan untuk Mask R-CNN; tidak ada model regresi hitungan terpisah maupun koreksi manual. MAE dihitung sebagai rata-rata selisih mutlak antara hitungan prediksi dan hitungan anotasi, dengan interval kepercayaan 95% dari bootstrap pada error tingkat citra, serta uji Wilcoxon signed-rank berpasangan.
+
+Pada subset validasi, YOLOv5s menghasilkan presisi 0,963, recall 0,946, mAP50 0,971, dan mAP50:95 0,551; YOLOv8n menghasilkan 0,911, 0,916, 0,958, dan 0,556; Mask R-CNN menghasilkan presisi 0,925 dan recall 0,913 tanpa nilai mAP yang dilaporkan. Nilai F1-score berturut-turut adalah 0,954, 0,913, dan 0,919. MAE global YOLOv5s adalah 4,96 buah per citra dengan interval kepercayaan 95% 4,33–5,66, dibandingkan 6,87 untuk YOLOv8n dan 6,08 untuk Mask R-CNN; abstrak dan simpulan menyebut YOLOv5s sebagai yang terendah, meskipun satu paragraf pada bagian hasil menyebut YOLOv8n sebagai model dengan MAE global terendah. Analisis kerapatan menunjukkan galat hitungan meningkat pada semua model seiring kerapatan, dengan Mask R-CNN mengalami kenaikan galat paling jelas pada tandan padat. Matriks konfusi menunjukkan tingkat deteksi benar sekitar 95% untuk YOLOv8n, 98% untuk YOLOv5s, dan 93% untuk Mask R-CNN.
+
+Batasan yang dinyatakan penulis mencakup pengumpulan data dari satu wilayah perkebunan di Kalimantan Timur sehingga mungkin tidak mewakili wilayah, kultivar, musim, perangkat kamera, dan praktik pengelolaan lain; perlunya uji eksternal atau validasi lintas lokasi dengan himpunan uji yang lebih besar dan independen; serta hitungan yang masih diambil langsung dari keluaran deteksi, sehingga galat tetap muncul pada buah yang saling bertumpang tindih, tertutup serat, atau menyatu secara visual. Penelitian ini juga hanya memakai citra RGB statis dan belum menguji penerapan waktu nyata pada drone, ponsel, atau perangkat tertanam, termasuk kecepatan inferensi, penggunaan memori, dan konsumsi daya. Penulis menyatakan belum ada perbandingan langsung dengan penelitian sebelumnya pada himpunan data yang sama, serta perlunya menggabungkan hitungan buah dengan berat tandan, penilaian kematangan, pemetaan per pohon, dan pemantauan waktu. Tidak dinyatakan mekanisme penghitungan lintas pandang atau penghilangan duplikat buah.
+

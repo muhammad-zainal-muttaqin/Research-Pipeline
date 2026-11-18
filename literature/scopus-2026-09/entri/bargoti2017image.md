@@ -1,0 +1,29 @@
+# Image Segmentation for Fruit Detection and Yield Estimation in Apple Orchards
+
+## Metadata Ringkas
+| Field | Nilai |
+|---|---|
+| Kunci BibTeX | `bargoti2017image` |
+| Judul asli | Image Segmentation for Fruit Detection and Yield Estimation in Apple Orchards |
+| Penulis | Bargoti, Suchet; Underwood, James P. |
+| Tahun | 2017 |
+| Venue | Journal of Field Robotics |
+| Kode | C2 (Pencacahan satu pandang) |
+| Tanaman | apple |
+
+## Tautan Akses
+- PDF: [bargoti2017image.pdf](../pdf/bargoti2017image.pdf)
+- DOI resmi: https://doi.org/10.1002/rob.21699
+
+## Gambaran Umum
+
+Penelitian ini bertujuan membangun kerangka pengolahan citra untuk mendeteksi dan menghitung buah apel serta memperkirakan hasil di kebun. Penulis menyatakan pengambilan contoh manual mahal, memakan tenaga kerja, sering merusak tanaman, dan menghasilkan perkiraan yang tidak tepat karena jumlah sampel sedikit dan bias pengamat. Kajian menguji dua arsitektur segmentasi berbasis pembelajaran fitur, yaitu *multi-scale Multi-Layered Perceptron* (ms-MLP) dan *Convolutional Neural Network* (CNN), serta menambahkan metadata tentang cara citra diambil. Pengaruh segmentasi terhadap deteksi buah dan perkiraan hasil diukur dengan membandingkan hitungan citra terhadap hitungan buah pascapanen.
+
+Data dikumpulkan di blok kebun apel seluas 0,5 ha dekat Melbourne, Australia, dengan sistem teralis Göttingen berbentuk V dan varietas Kanzi serta Pink Lady. Warna buah mencakup merah, merah muda kehijauan, dan hijau; pengambilan dilakukan satu minggu sebelum panen pada Maret 2013 dengan diameter buah 70–76 mm. Platform darat Shrimp membawa kamera Point Grey Ladybug3 dengan enam kamera 2 MP untuk pandangan panorama 360°, dioperasikan manual di antara 15 baris dengan kecepatan 1,5–2 m/s dan jarak baris 4 m. Citra berukuran 1232 × 1616 piksel diambil pada 5 Hz di bawah cahaya alami, dan sistem GPS/INS Novatel SPAN menentukan posisi setiap citra. Dari lebih dari 8000 citra, 1100 citra dipilih secara acak dan diberi label biner piksel buah atau bukan buah setelah dibagi menjadi 32 subcitra 308 × 202 piksel; diameter buah dalam citra berkisar 25–50 piksel. Label dibagi secara acak menjadi 80% latih, 10% validasi, dan 10% uji, dengan 10 pengulangan dan pengacakan pembagian.
+
+Segmentasi menghasilkan peta probabilitas piksel buah atau bukan buah. ms-MLP memakai tampalan kontekstual 8 × 8 × 3 pada empat skala [1, 1/2, 1/4, 1/8], tiga lapis tersembunyi dengan 200 unit per lapis, dan pralatihan *denoising autoencoder* dengan ZCA whitening. CNN memakai tampalan 48 × 48 × 3, dua lapis konvolusi dengan 64 filter 7 × 7 dan 128 filter 6 × 6, dua lapis penuh 256 simpul, serta *dropout*. Metadata berupa posisi piksel, nomor baris, dan azimut matahari ditambahkan pada lapis masukan ms-MLP dan lapis penuh CNN. Deteksi buah per individu dilakukan dari topeng biner dengan *Watershed Segmentation* (WS) yang memisahkan buah yang saling menempel memakai maksimum lokal jarak ke latar, serta *Circular Hough Transform* (CHT) yang mencari daerah melingkar untuk menyatukan bagian buah yang terputus; keduanya didahului erosi dan dilasi. Acuan hitung deteksi berupa penanda lingkaran pada buah yang dicocokkan satu lawan satu dengan deteksi memakai nearest neighbour. Untuk hasil panen, citra dijarangkan setiap 0,5 m sepanjang baris, hitungan buah diakumulasi per baris, lalu dikalibrasi terhadap hitungan dan timbangan pascapanen dari mesin pemilah yang disediakan petani untuk 15 baris dengan 3000–12000 buah per baris, dengan asumsi rasio buah tampak terhadap buah tertutup konstan.
+
+Nilai F1 piksel buah berturut-turut sebesar 0,683 untuk ms-MLP-2, 0,725 setelah metadata ditambahkan, 0,728 untuk ms-MLP-3* yang dioptimasi, 0,751 untuk ms-MLP-3* dengan metadata, 0,791 untuk CNN*, dan 0,797 untuk CNN* dengan metadata. Nilai F1 deteksi buah terbaik sebesar 0,858 dengan CNN* dan WS, sedangkan CHT pada konfigurasi sama menghasilkan 0,857; untuk ms-MLP-3* tanpa metadata, WS menghasilkan 0,853 dan CHT 0,818. Koefisien determinasi hitungan per citra terbaik sebesar 0,770 pada CNN* dengan WS. Pada perkiraan hasil per baris, CNN* dengan WS menghasilkan r² = 0,826 ± 0,021 dan kesalahan absolut rata-rata 10,84% ± 0,62%; ms-MLP-3* dengan metadata dan WS menghasilkan r² = 0,771 dan kesalahan 12,2%, sedangkan tanpa metadata r² = 0,753 dan kesalahan 13,3%. Kombinasi CHT lebih rendah, dengan r² = 0,763 dan kesalahan 14,15% pada CNN*. Penulis melaporkan waktu segmentasi 0,60 detik per subcitra untuk ms-MLP dan 0,24 detik untuk CNN, waktu latih sekitar 5 menit berbanding 3 jam, serta waktu prediksi sekitar 7 detik untuk citra 1232 × 1616.
+
+Penulis menyatakan kesalahan segmentasi paling sering terjadi pada pencahayaan buruk, seperti silau matahari dan daerah bayang yang gelap, serta pada buah yang tertutup daun hijau. Label manual juga tidak konsisten, sehingga membatasi penilaian. WS dan CHT mampu memisahkan gugus dua atau tiga buah tetapi gagal membedakan buah dalam gugus besar, dan CHT juga gagal pada buah tertutup yang bentuknya tidak melingkar. Kesalahan perkiraan hasil berasal dari deteksi buah baris belakang ketika kanopi jarang, penghitungan ganda, dan terlewatnya buah karena tidak ada pendaftaran antarframe; penulis menyatakan hal ini memerlukan estimasi kedalaman atau konfigurasi stereo. Keluaran harus dikalibrasi terhadap acuan lapang karena sebagian buah tidak tampak. Sistem masih berjalan di luar talian dan pemberian label piksel memakan waktu sekitar 1,5 jam per 100 subcitra. Penulis menyatakan arsitektur dan kerangka deteksi dapat dipakai untuk buah bulat lain, tetapi memerlukan pelabelan ulang dan penyesuaian hyperparameter serta pengujian pada musim dan kebun lain.
+
