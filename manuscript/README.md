@@ -12,7 +12,7 @@ eksperimen, dan keluaran kompilasi (PDF dan presentasi).
 | Mengunduh PDF jadi | [`output/papers/main6.pdf`](output/papers/main6.pdf); bahan tambahan [`output/papers/main6-supplementary.pdf`](output/papers/main6-supplementary.pdf) (sumber `source/main6-supplementary.tex`, kompilasi dengan cara yang sama) |
 | Melihat gambar `main6` | [`figures/main6/`](figures/main6/) — F01–F10 (PDF + PNG), dibuat `tools/scopus/gambar_tinjauan.py`; simulator interaktif di `figures/main6/interaktif/` |
 | Melihat figur naskah 182 sumber dan laporan eksperimen | [`figures/`](figures/) — F01–F08, C01–C02, seri H/N/R yang dipakai `reports/*.tex` |
-| Membaca aturan gaya `main6` dan bentuk entri korpus lama | [`../AGENTS.md`](../AGENTS.md) §12 dan §6 |
+| Membaca aturan gaya `main6` dan bentuk entri korpus lama | [`../AGENTS.md`](../AGENTS.md) §12 dan §14 |
 | Memeriksa asal angka `main6` | [`../literature/scopus-2026-09/`](../literature/scopus-2026-09/README.md) |
 | Melihat dek presentasi | [`output/presentation/`](output/presentation/) |
 

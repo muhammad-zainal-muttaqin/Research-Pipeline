@@ -60,20 +60,34 @@ agen.
 **Larangan tulisan agen.** Berlaku untuk dokumen, komentar kode, docstring,
 pesan commit, dan naskah.
 
-- **Dilarang membuat berkas `.md` atau `.py` yang tidak dibutuhkan naskah**,
-  di repo maupun di scratchpad (diminta pengguna). Yang dilarang adalah berkas
-  yang menjelaskan, membela, memeriksa, atau merangkum pekerjaan agen sendiri:
-  laporan sesi, catatan keputusan, rencana, ringkasan perubahan, berkas aturan
-  baru, skrip audit sekali pakai, pemeriksa hasil, dan pembuat paket untuk
-  subagen. Penjelasan ditulis di percakapan atau pesan commit; pemeriksaan
-  sekali pakai dijalankan langsung (`python - <<'EOF' ... EOF`) tanpa
-  disimpan. Yang boleh: skrip yang membuat atau membuat ulang isi naskah dan
-  data (misalnya `kode_bukti.py`, `angka_naskah.py`, `gambar_tinjauan.py`),
-  entri korpus, teks terekstrak, laporan `experiments/SR/SR-NNN-*`, dan
-  `README.md`. `.githooks/pre-commit` menolak `.md` baru di luar jalur itu
-  dan `.py` baru di luar `tools/`, `experiments/code/`, dan `pipeline/`.
-  `IZINKAN_MD=1` atau `IZINKAN_PY=1` hanya dipakai bila pengguna memintanya;
-  `--no-verify` tidak dipakai.
+- **Dilarang membuat berkas `.md` atau `.py` tentang pekerjaan agen sendiri**,
+  di repo maupun di scratchpad. Berkas seperti itu menjelaskan, membela,
+  memeriksa, atau merangkum pekerjaan agen, dan tidak dibaca naskah, skrip
+  lain, atau peninjau.
+  - Contoh `.md` yang dilarang: laporan sesi, catatan keputusan, rencana
+    kerja, ringkasan perubahan, daftar kemajuan, berkas aturan baru, dan
+    berkas yang hanya menerangkan berkas lain (`ISTILAH`, `PANDUAN`,
+    `SERAH-TERIMA`, `RINGKASAN`, `KEMAJUAN`).
+  - Contoh `.py` yang dilarang: pemeriksa hasil kerja agen (misalnya skrip
+    yang mencocokkan setiap PDF dengan judulnya), pembuat paket bacaan untuk
+    subagen, skrip audit atau pembanding sekali pakai, dan skrip yang dibuat
+    hanya untuk membuktikan klaim kepada pengguna.
+  - Penggantinya: penjelasan ditulis di percakapan atau pesan commit;
+    pemeriksaan sekali pakai dijalankan langsung (`python - <<'EOF' ... EOF`)
+    tanpa disimpan.
+  - Yang boleh dibuat atau diubah: skrip `tools/scopus/` yang menghasilkan
+    berkas yang dibaca naskah, skrip lain, atau lembar peninjau (misalnya
+    `kode_bukti.py`, `angka_naskah.py`, `gambar_tinjauan.py`,
+    `tabel_lampiran.py`, `verifikasi_log_manusia.py`); skrip
+    `experiments/code/` yang menghasilkan angka di `experiments/EKSPERIMEN.md`;
+    kode `pipeline/`; entri korpus; teks terekstrak; laporan
+    `experiments/SR/SR-NNN-*`; `README.md`; dan `.md` yang menggantikan
+    berkas yang ada sehingga jumlah berkas tidak bertambah. Berkas lain dibuat
+    hanya bila pengguna memintanya.
+  - Penegakan: `.githooks/pre-commit` menolak `.md` baru di luar jalur yang
+    boleh dan `.py` baru di luar `tools/`, `experiments/code/`, dan
+    `pipeline/`. `IZINKAN_MD=1` atau `IZINKAN_PY=1` hanya dipakai bila
+    pengguna memintanya; `--no-verify` tidak dipakai.
 - **Dilarang menimbun aturan.** Agen tidak menambah aturan atas inisiatif
   sendiri. Aturan baru hanya ditulis bila pengguna memintanya atau bila ada
   kesalahan nyata yang perlu dicegah, dalam satu butir pendek di bagian yang
@@ -218,20 +232,26 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
 ## 6. Kontrak Berkas Entri (melanggar = build web rusak)
 
 - Nama berkas `NNN - YYYY - Judul singkat - Tema.md` dan baris pertama
-  `# NNN - Judul` tidak boleh diubah.
-- Tabel metadata wajib memuat `| Kunci BibTeX | \`kunci\` |`.
-- Heading hanya `##` dan `###`. Tidak ada gambar; diagram ASCII ≤78 kolom.
-- Tautan antar-entri relatif, spasi di-encode `%20`.
+  `# NNN - Judul` (misalnya `# 003 - YOLOv3: An Incremental Improvement`)
+  tidak boleh diubah.
+- Tabel metadata wajib memuat `| Kunci BibTeX | \`kunci\` |`; baris ini
+  di-*parse* `build.js`.
+- Heading hanya `##` dan `###` (dipakai untuk daftar isi web); `#` hanya untuk
+  baris judul pertama.
+- Gambar dan foto dilarang: repo tidak memuat berkas gambar entri dan aplikasi
+  web tidak merendernya.
+- Diagram ASCII dianjurkan untuk arsitektur atau mekanisme yang sulit
+  dipahami dari teks saja, paling banyak dua per bab, dalam *fenced code block*
+  tanpa tag bahasa. Lebar paling banyak ±78 kolom; karakter ASCII dan kotak
+  sederhana (─ │ ┌ ┐ └ ┘ ├ ┤ ▼ ▲ ●). Isinya faktual (alur data, ukuran
+  tensor, perbandingan *pipeline*), bukan dekorasi; setiap diagram diawali
+  satu kalimat pengantar dan dijelaskan di teks sesudahnya.
+- Tabel GFM paling banyak satu per bab, bila benar-benar diperlukan.
+- Tautan antar-entri relatif dengan spasi di-encode `%20`, misalnya
+  `./003%20-%202018%20-%20YOLOv3%20-%20Fondasi%20RGB.md`.
+- Penulis entri tidak menyentuh berkas lain selain berkas yang ditugaskan.
 - **Jangan mengarang angka.** Setiap klaim numerik terlacak ke sumber primer.
-- Entri korpus lama (`literature/entries/`) memakai sepuluh bagian `##` ini,
-  berurutan: Metadata Ringkas, Tautan Akses, Gambaran Umum, Latar Belakang:
-  Masalah yang Ingin Dipecahkan, Ide Utama, Cara Kerja Langkah demi Langkah
-  (±40–50% isi), Eksperimen dan Hasil, Kelebihan dan Keterbatasan, Kaitan
-  dengan Bab Lain, Poin untuk Sitasi. Panjang 1.200–1.800 kata. Setiap istilah
-  teknis dijelaskan saat pertama muncul, setiap angka hasil diberi
-  pembanding, dan klaim yang belum terverifikasi ditandai di Poin untuk Sitasi.
-  Paling banyak satu tabel dan dua diagram ASCII. Contoh bentuk jadi:
-  `literature/entries/001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB.md`.
+- Struktur dan kaidah isi entri korpus lama ada di §14.
 - Kunci BibTeX `sapkota2024yoloagri` (penulis sebenarnya Alif & Hussain) dan
   `alif2024yoloevolution` (penulis sebenarnya Jegham dkk.) sengaja tidak diganti;
   di teks naskah, sebut nama penulis sebenarnya.
@@ -414,120 +434,565 @@ plafon.
 
 ## 12. Gaya Naskah `main6`
 
-Berlaku untuk `main6.tex`, `main6-body.tex`, dan bahan tambahannya (bahasa
-Inggris). Acuan bentuk: Xiao dkk., *Computers and Electronics in Agriculture*
-253 (2026) 112078 (`literature/example/autonomousnavigation.pdf`). Dasar
-metodologisnya: tinjauan adalah penelitian yang menambah nilai di atas
-kajian-kajiannya, bukan daftar ringkasan (van Wee & Banister 2016; Baumeister
-& Leary 1997; Kraus dkk. 2022; PRISMA 2020).
+Aturan gaya yang mengikat untuk `manuscript/source/main6.tex`,
+`main6-body.tex`, dan `main6-supplementary.tex`. Naskah ditulis dalam bahasa Inggris. Acuan bentuknya adalah
+artikel contoh Xiao dkk., *Computers and Electronics in Agriculture* 253 (2026)
+112078 (`literature/example/autonomousnavigation.pdf`). Dasar metodologisnya ada
+di §13. Kontrak data dan angka naskah ada di §7; bagian ini hanya mengatur
+cara menulis.
 
-**Tata letak.** Kelas `cas-dc`, dua kolom, `tectonic`; "Review Article" di
-dalam `\title`. Sitasi `natbib` `authoryear`, gaya `cas-model2-names`, tautan
-`#1A6FB5`. "Fig. N." dan "Table N" tebal; tabel `booktabs` tanpa garis
-tegak. Rujukan `Fig.~\ref`, `Table~\ref`, `Section~\ref`. Lampiran A
-(matriks C1) dan B (kueri) satu kolom sesudah daftar pustaka, tabel A1 dst.
+### 12.1 Tata letak
 
-**Nama, bukan kode.** Kode internal tidak tampil di naskah. Nama tetap:
+- Kelas `cas-dc` (templat CAS Elsevier), dua kolom, dikompilasi dengan
+  `tectonic`. Baris "Review Article" ditulis di dalam `\title`.
+- Sitasi penulis-tahun (`natbib` `authoryear`, gaya `cas-model2-names`).
+  Tautan berwarna `#1A6FB5`.
+- Judul gambar "Fig. N." dan judul tabel "Table N" tebal; tabel memakai
+  `booktabs` dengan garis horizontal saja.
+- Rujukan dalam teks ditulis `Fig.~\ref`, `Table~\ref`, `Section~\ref`.
+- Lampiran A (matriks C1) dan B (string kueri) satu kolom, sesudah daftar
+  pustaka, tabel dinomori A1.
 
-| Kode | Definisi dan judul | Prosa | Sel tabel atau gambar |
+### 12.2 Nama, bukan kode
+
+Kode internal repo tidak pernah tampil di naskah. Setiap kategori punya nama
+tetap dalam tiga panjang.
+
+| Kode internal | Nama di definisi dan judul | Bentuk pendek dalam prosa | Label sel tabel atau gambar |
 |---|---|---|---|
 | M0 | No association | no association | No association |
 | M1 | Statistical correction | statistical correction | Statistical |
 | M2 | Appearance matching | appearance matching | Appearance |
-| M3 | Temporal tracking | tracking (sesudah nama lengkap) | Tracking |
+| M3 | Temporal tracking | tracking (sesudah nama lengkap muncul) | Tracking |
 | M4 | Geometric or 3D association | geometric association | Geometric |
 | M5 | Learned association | learned association | Learned |
 | V, D, S, T, 1 | acquisition design | video along a path; discrete views; 3D scan; revisits over time; a single view | Video; Discrete views; 3D scan; Revisits; Single view |
 | C1–C5, R, T | tujuh kelompok | multi-observation studies; single-view counting studies; oil-palm studies; single-image class-wise counting studies; depth and 3D sensing studies; earlier reviews; methods papers from outside agriculture | sama |
-| RQ1–RQ4, G1–G5 | (1)–(4), (i)–(v) | dirujuk dengan isinya | — |
+| RQ1–RQ4, G1–G5 | (1)–(4) dan (i)–(v) | dirujuk dengan isinya | — |
 
-Q1–Q9 hanya penghubung tabel kueri dan Lampiran B. Satu istilah per konsep;
-keluarga kategori selalu "association mechanism". Label gambar dan lampiran
-diubah di `gambar_tinjauan.py`, `tabel_lampiran.py`, atau `lampiran_kueri.py`.
-Setiap akronim dijabarkan saat pertama muncul (termasuk SfM, SLAM, MOT,
-RGB-D, LiDAR, UAV, MAE, MAPE, MOTA, IDF1, HOTA, PRISMA); akronim yang muncul
-sekali ditulis dengan kata; tidak ada daftar singkatan.
+- Kunci kueri Q1–Q9 hanya dipakai sebagai penghubung tabel kueri dan Lampiran B.
+- Satu istilah untuk satu konsep. Keluarga kategori selalu "association
+  mechanism".
+- Label pada gambar dan lampiran adalah keluaran skrip. Label diubah di
+  `tools/scopus/gambar_tinjauan.py`, `tabel_lampiran.py`, atau
+  `lampiran_kueri.py`, bukan di berkas data.
+- Setiap akronim dijabarkan saat pertama muncul, termasuk yang umum (SfM,
+  SLAM, MOT, RGB-D, LiDAR, UAV, MAE, MAPE, MOTA, IDF1, HOTA, PRISMA). Akronim
+  yang hanya muncul sekali ditulis dengan kata. Tidak ada daftar singkatan.
 
-**Arsitektur.**
+### 12.3 Arsitektur seksi
 
-- Jenis tinjauan (systematic mapping review, sintesis konfiguratif, tanpa
-  penggabungan efek) dinyatakan di awal metode; kesimpulan tidak ditulis
-  seolah hasil meta-analisis.
 - Kerangka lima tahap diumumkan di pendahuluan, diberi aturan di metode,
-  dihitung di lanskap kuantitatif (3.4), lalu menata seksi bukti: 4
-  akuisisi, 5 asosiasi, 6 atribut kelas, 7 depth, 8 sawit.
-- Pendahuluan satu fungsi per paragraf: masalah terukur, kasus, keterbatasan
-  tinjauan terdahulu (pemosisian eksplisit), tujuan, kontribusi, pertanyaan;
-  ditutup "The remainder of this article is organized as follows."
-- Seksi 5 dibuka dengan tabel sintesis mekanisme: asumsi, sumber hitung ganda
-  yang dihilangkan, kondisi gagal, bukti pada data yang sama, kecocokan untuk
-  pandang diskret. Seksi 8: mengapa sensus menantang setiap mekanisme, cara
-  deteksi berkembang, yang belum ada. Subseksi padat dipecah menjadi isu
-  berlabel miring ("*(1) Background removal.*").
-- Setiap subseksi bukti merujuk Seksi 3 minimal sekali; setiap keterbatasan
-  di Seksi 4–8 menunjuk ke Seksi 10. Bukti dari luar pertanian disertai
-  alasan mengapa berlaku di kebun dan batasnya.
-- Diskusi (9): lintasan mekanisme, jawaban empat pertanyaan sebagai argumen,
-  posisi terhadap tinjauan terdahulu, celah (i)–(v), set pelaporan minimum;
-  tidak mengulang uraian kajian. Agenda menyebut apa yang diukur, pada data
-  apa, dengan metrik apa.
+  dihitung di lanskap kuantitatif (Seksi 3.4), lalu menata seksi bukti: Seksi 4
+  akuisisi, Seksi 5 asosiasi, Seksi 6 atribut kelas, Seksi 7 depth, Seksi 8
+  sawit.
+- Pendahuluan: satu fungsi per paragraf (masalah terukur, kasus, keterbatasan
+  tinjauan terdahulu, tujuan, kontribusi, pertanyaan), ditutup peta isi "The
+  remainder of this article is organized as follows."
+- Setiap seksi bukti dibuka dengan klaim tentang isinya (asumsi, galat yang
+  dikendalikan, atau kondisi gagal), lalu ditutup dengan sintesis, batas, dan
+  penunjuk ke seksi berikutnya. Seksi 5 dibuka dengan tabel sintesis
+  mekanisme (asumsi, sumber hitung ganda yang dihilangkan, kondisi gagal,
+  bukti pada data yang sama, kecocokan untuk pandang diskret).
+- Subseksi padat dipecah menjadi aliran atau isu berlabel miring, misalnya
+  "*(1) Background removal.*"
+- Diskusi (Seksi 9) adalah lapisan tersendiri: lintasan mekanisme, jawaban
+  empat pertanyaan sebagai argumen, posisi terhadap tinjauan terdahulu, celah
+  (i)–(v), dan set pelaporan minimum. Diskusi tidak mengulang uraian kajian.
+- Seksi 8 (sawit) disusun: mengapa sensus menantang setiap mekanisme, cara
+  deteksi berkembang, lalu yang belum ada.
+- Setiap subseksi bukti merujuk Seksi 3 setidaknya sekali, dan setiap
+  keterbatasan di Seksi 4–8 menunjuk ke Seksi 10.
 
-**Metode.** Subseksi *Search strategy*, *Inclusion and exclusion criteria*,
-*Study selection*, *Data extraction and coding*, *Appraisal and synthesis*;
-rincian prosedur di `main6-supplementary.tex`. Kriteria bernomor; alasan
-eksklusi memakai kata dan urutan kotak diagram alur. Penyaringan tiga tahap
-(judul, judul dan abstrak, teks lengkap). Aturan pengodean berpola "A study
-was coded as X when ...". Lanskap kuantitatif ditulis sebagai butir
-(i)–(iii), satu gambar per butir; cara hitung (kemunculan, bukan eksklusif)
-di teks. Peta istilah dinyatakan tidak memengaruhi inklusi.
+### 12.4 Paragraf dan kalimat
 
-**Paragraf bukti.** Empat langkah: pembuka tanpa kajian; dua sampai empat
-kajian dengan nama dan tahun; pernyataan lintas kajian ("Taken together,
-..."); batasnya.
+Paragraf bukti mengikuti empat langkah:
 
-1. Kajian yang diuraikan disitasi `\citet` sekali, kata kerja lampau;
-   pernyataan atas beberapa kajian `\citep` di akhir kalimat. Nama penulis
-   tidak diketik tangan.
-2. Satu kajian per kalimat; kontras dengan "whereas"; rantai titik koma
-   dipecah.
-3. Bukti ditulis operasional: data, metode, angka, lalu kesimpulan ("on
-   dataset A, method B gave C"), bukan "X causes Y (ref)". Setiap angka
-   disertai data, split atau acuan hitung, dan metrik. Angka antarkajian tidak
-   dirata-ratakan; tabel perbandingan dibaca per baris.
-4. Kesimpulan penulis asli dipisahkan dari tafsiran tinjauan. Kajian tidak
-   dikritik atas hal di luar cakupannya. Batas ditulis dengan fakta yang
-   dapat diperiksa, bukan kata penilaian.
-5. Lampau untuk kajian, kini untuk himpunan bukti; "this review", tanpa "we".
-6. Paragraf di atas ±150 kata atau lima kajian bernama dipecah.
-7. Kebaruan dibatasi pada pencarian: "not found in the search reported in
-   Section 2".
-8. Tanpa slogan, kata sifat kosong ("revolutionary", "plays a crucial
-   role", "promising"), pembuka generik ("In recent years ..."), daftar tiga
-   kata sifat, atau peringatan yang diulang (sekali saat tabel diperkenalkan,
-   sekali di keterbatasan). Kalimat yang dapat dipindah ke topik lain tanpa
-   kehilangan makna dihapus.
+1. pembuka tanpa kajian,
+2. dua sampai empat kajian dengan nama dan tahun,
+3. pernyataan lintas kajian,
+4. batasnya.
 
-**Gambar, tabel, abstrak, simpulan.** Gambar atau tabel menjadi subjek
-kalimat; judulnya hanya isi, pengodean visual, dan n. Tabel perbandingan
-diberi catatan: nilai seperti dilaporkan, dibandingkan dalam satu baris,
-jabaran akronim; "Not stated", bukan "NR". Abstrak satu paragraf: konteks,
-celah, cakupan dan periode, metode dan alur rekaman, pengodean, temuan,
-kontribusi. Simpulan 350–450 kata, empat paragraf: yang dikerjakan; yang
-mapan dan yang belum; panduan menurut desain akuisisi; prioritas (i)–(v);
-tanpa mengulang abstrak. Penutup: CRediT, kepentingan, pendanaan, terima
-kasih, ketersediaan data, deklarasi AI.
+Aturannya:
 
-**Daftar periksa sebelum dikirim.**
+1. Kajian yang diuraikan disitasi dengan `\citet`, satu kali, dengan kata kerja
+   lampau. Pernyataan tentang beberapa kajian disitasi dengan `\citep` di akhir
+   kalimat. Nama penulis tidak diketik tangan.
+2. Satu kajian per kalimat. Kontras ditulis dengan "whereas", dan rantai titik
+   koma dipecah.
+3. Subseksi mekanisme dibuka dengan klaim tentang mekanismenya: asumsi, galat
+   yang dikendalikan, dan kondisi gagalnya. Jumlah kajian dan penunjuk ke gambar
+   atau lampiran menyusul sebagai pendukung (§7, "Isi lebih dahulu").
+4. Rangkaian kajian ditutup dengan pola dan batasnya ("Taken together, ...").
+5. Batas ditulis dengan fakta yang dapat diperiksa (kajian yang tidak
+   mengukurnya, atau hitungan dari kode teks lengkap), bukan kata penilaian.
+6. Setiap angka disertai data, split atau rujukan hitung, dan metriknya. Angka
+   antarkajian tidak dirata-ratakan, dan tabel perbandingan dibaca per baris.
+7. Kala dan persona: lampau untuk kajian, kini untuk himpunan bukti, "this
+   review" tanpa "we".
+8. Paragraf yang melewati sekitar 150 kata atau lima kajian bernama dipecah di
+   pergantian topik.
+9. Klaim kebaruan dibatasi pada pencarian: "not found in the search reported in
+   Section 2", bukan "no review has addressed".
+10. Hindari slogan dan kata sifat kosong ("revolutionary", "plays a crucial
+    role", "promising"), pembuka generik ("In recent years ..."), dan daftar
+    tiga kata sifat. Kalimat yang dapat dipindah ke topik lain tanpa kehilangan
+    makna dihapus.
+
+### 12.5 Metode dan lanskap kuantitatif
+
+- Seksi metode dibuka dengan jenis tinjauan (systematic mapping review,
+  sintesis konfiguratif, tanpa penggabungan efek), PRISMA 2020, dan alur kerja.
+  Subseksinya: *Search strategy*, *Inclusion and exclusion criteria*, *Study
+  selection*, *Data extraction and coding*, *Appraisal and synthesis*.
+  Rincian prosedur (lintasan kedua, pemeriksaan ulang tahap judul, aturan
+  pengodean lengkap, peta istilah, gambar tanaman dan sensor) ada di
+  `main6-supplementary.tex`.
+- Kriteria ditulis bernomor. Alasan eksklusi memakai kata dan urutan yang sama
+  dengan kotak diagram alur.
+- Penyaringan ditulis tiga tahap: judul, judul dan abstrak, teks lengkap.
+  Pernyataan "satu peninjau dibantu model bahasa besar" ditulis sekali di
+  metode, keterbatasan, dan deklarasi AI.
+- Aturan keputusan pengodean ditulis dalam pola "A study was coded as X when
+  ...".
+- Lanskap kuantitatif ditulis sebagai butir berlabel (i)–(iii), satu gambar per
+  butir. Cara hitung (kemunculan, bukan hitungan eksklusif) dinyatakan di
+  teks, bukan di judul gambar.
+- Peta istilah dinyatakan sebagai alat orientasi yang tidak memengaruhi
+  inklusi.
+
+### 12.6 Gambar, tabel, abstrak, simpulan
+
+- Gambar atau tabel menjadi subjek kalimat. Judulnya hanya menyebut isi,
+  pengodean visual, dan n; temuan ditulis di teks.
+- Tabel perbandingan diberi catatan bawah: nilai seperti dilaporkan,
+  dibandingkan hanya dalam satu baris, dan jabaran akronim. "Not stated"
+  dipakai, bukan "NR".
+- Abstrak satu paragraf dengan urutan: konteks, celah, cakupan dan periode,
+  metode dan alur rekaman, cara pengodean, temuan, kontribusi.
+- Simpulan 350–450 kata dalam empat paragraf: yang dikerjakan; yang mapan dan
+  yang belum; panduan menurut desain akuisisi; lima prioritas (i)–(v). Kalimat
+  abstrak tidak diulang.
+- Bagian penutup: CRediT, deklarasi kepentingan, pendanaan, ucapan terima
+  kasih, ketersediaan data, dan deklarasi AI.
+
+### 12.7 Yang tidak ditiru dari contoh
+
+- Peringatan yang diulang. Setiap peringatan ditulis satu kali saat tabel
+  diperkenalkan, dan satu kali lagi di keterbatasan.
+- Kata penilaian tanpa angka dan besaran kabur.
+- Klaim pemeriksaan silang oleh penulis kedua (naskah ini satu peninjau).
+- Persona bercampur ("we" dan "this review").
+- Simpulan yang tumpang tindih dengan diskusi, dan tinjauan tanpa seksi
+  keterbatasan.
+
+### 12.8 Daftar periksa sebelum naskah dikirim
 
 - [ ] Satu kalimat nilai tambah muncul di abstrak dan pendahuluan.
 - [ ] Setiap seksi sintesis menjawab salah satu dari empat pertanyaan.
 - [ ] Semua kueri lengkap dengan tanggal dan jumlah hasil (Lampiran B).
 - [ ] Diagram alur memuat angka setiap tahap dan alasan eksklusi.
-- [ ] Penyaring dan alat bantu AI disebut; tidak ada klaim pemeriksaan
-      silang oleh penulis kedua.
+- [ ] Penyaring dan alat bantu AI disebut.
 - [ ] Setiap klaim sintesis menyebut kajian, data, metode, dan angka.
-- [ ] Ada seksi keterbatasan: basis data yang tidak dicari, bahasa, satu
-      peninjau, akses teks lengkap.
-- [ ] Tidak ada kode internal, jalur folder, atau `\authorcheck`.
+- [ ] Tidak ada kode internal, jalur folder, atau `\authorcheck` yang tersisa.
 - [ ] Semua angka korpus berupa makro dari `main6-angka.tex`.
 - [ ] Ejaan Inggris konsisten memakai -ize.
+
+## 13. Pola Tinjauan Pustaka
+
+Bagian ini merangkum cara menulis tinjauan pustaka (*literature review*) menurut
+panduan metodologi dan contoh review yang terindeks Scopus. Isinya menjadi dasar
+metodologis aturan gaya di §12.
+
+### 13.1 Cara bagian ini disusun
+
+Sumber dicari hanya melalui Scopus Search API pada 28 September 2026. Tujuh query
+(MA1–MA7) dijalankan; string lengkap, waktu eksekusi, dan jumlah hasilnya ada di
+`literature/scopus-2026-09/QUERY.md`.
+
+| Query | Sasaran | Hasil Scopus | Diambil |
+|---|---|---:|---:|
+| MA1 | Panduan menulis *literature review* (judul) | 2.592 | 150 teratas menurut sitasi |
+| MA2 | Panduan *systematic review*, *mapping*, *scoping*, *snowballing* | 859 | 100 teratas |
+| MA3 | Standar pelaporan PRISMA | 2.470 | 75 teratas |
+| MA4 | Review visi komputer untuk buah dan tanaman | 1.052 | 125 teratas |
+| MA5 | Review deteksi objek, RGB-D, *multi-view*, MOT, re-ID, SfM | 373 | 100 teratas |
+| MA6 | Review kelapa sawit berbasis citra atau pembelajaran mesin | 50 | 50 |
+| MA7 | Artikel metodologi klasik yang dicari berdasarkan judul | 37 | 37 |
+
+Dari hasil itu dipilih 60 artikel (`literature/scopus-2026-09/metodologi/terpilih.csv`):
+36 panduan metodologi dan 24 contoh review domain. Pemilihan berdasarkan dua hal:
+jumlah sitasi di Scopus dan relevansi langsung dengan pertanyaan "bagaimana menulis
+tinjauan yang benar" atau dengan topik naskah. PDF akses terbuka berhasil diperoleh
+untuk 25 artikel (`metodologi/pdf/`); teksnya diekstrak ke `metodologi/teks/`
+(keduanya di `literature/scopus-2026-09/`).
+Artikel lain dibaca dari abstraknya. Tabel di 13.6 menandai mana yang dibaca
+penuh dan mana yang hanya abstrak. Klaim di bagian ini yang bersumber dari abstrak
+saja ditulis lebih hati-hati.
+
+Sebagai pembanding, dipakai juga laporan dosen pembimbing tentang delapan review di
+*Computers and Electronics in Agriculture* (CEA) tahun 2026
+(`literature/references/revisi-dosen-2026-07-23/CEA_review_conventions_report.md`).
+
+### 13.2 Apa yang membedakan tinjauan yang baik
+
+Panduan yang dibaca sepakat pada satu hal: tinjauan pustaka adalah penelitian, bukan
+daftar ringkasan. Van Wee dan Banister (2016) membedakan makalah *overview*, yang
+cukup merangkum, dari makalah *review*, yang harus menambah nilai. Mereka memberi
+enam bentuk nilai tambah: sintesis bukti empiris, analisis metode, analisis teori,
+peta celah beserta agenda riset, relevansi untuk praktik, dan model konseptual.
+Kraus dkk. (2022) menyatakan syarat serupa: metode yang jelas, pemilihan artikel yang
+sistematis, dan hasil yang dapat diulang. Snyder (2019, dari abstrak) menyebut review
+tradisional sering "ad hoc" dan tidak mengikuti metode tertentu, sehingga mutunya
+diragukan.
+
+Artinya, sebelum menulis, penulis harus bisa menjawab satu kalimat: apa yang pembaca
+ketahui setelah membaca tinjauan ini yang tidak dapat mereka peroleh dari membaca
+studi-studinya satu per satu.
+
+### 13.3 Pola yang ditemukan
+
+#### P1. Jenis dan fokus tinjauan dinyatakan sejak awal
+
+Kraus dkk. (2022) membagi tinjauan mandiri menjadi dua tipe, sistematis dan
+non-sistematis, lalu tiga fokus: ranah (*domain*), teori, dan metode. Grant dan
+Booth (2009, dari abstrak) memetakan 14 tipe review dengan kerangka SALSA (*search,
+appraisal, synthesis, analysis*) dan mencatat bahwa banyak tipe tidak punya metode
+baku dan saling tumpang tindih. Arksey dan O'Malley (2005) memberi lima tahap
+*scoping study*: pertanyaan, pencarian, seleksi, pencatatan data (*charting*), dan
+pelaporan. Petersen dkk. (2015) memberi panduan *systematic mapping* untuk rekayasa
+perangkat lunak.
+
+Konsekuensinya: naskah harus menyebut tipe yang dipakai dan alasannya. Jika tinjauan
+memetakan bukti dan membangun kerangka, bukan menghitung efek gabungan, sebutkan
+itu, lalu jangan menulis kesimpulan seolah-olah hasil meta-analisis.
+
+#### P2. Pertanyaan tinjauan dan kerangka diletakkan di depan
+
+Baumeister dan Leary (1997) mencatat kesalahan yang paling sering pada naskah yang
+ditolak: pengantar yang lemah. Penulis menunda gagasan pengikatnya sampai bagian
+diskusi, sehingga pembaca harus membaca puluhan halaman tanpa tahu arah. Saran
+mereka: sajikan kerangka konseptual lengkap di depan, atau setidaknya pratinjau
+singkat "pesan utama" sebelum bukti dibahas. Sauer dan Seuring (2023) menempatkan
+tiga keputusan pertama dari 14 keputusan SLR di tahap ini: merumuskan celah dan
+pertanyaan, memilih pendekatan (induktif, deduktif, abduktif), dan menetapkan
+kerangka serta konstruk yang akan dipakai untuk mengode studi.
+
+#### P3. Metode pencarian ditulis sampai dapat diulang
+
+Tiga sumber memberi daftar isi yang hampir sama:
+
+- Kraus dkk. (2022): basis data, kata kunci, operator Boolean dan tanda kutip,
+  periode, bidang pencarian (judul-abstrak-kata kunci), bidang subjek, tahap
+  publikasi, tipe dokumen, tipe sumber, bahasa, dan filter mutu. Tiap pilihan harus
+  disertai alasan.
+- Van Wee dan Banister (2016): sebutkan basis data, kata kunci termasuk *truncation*,
+  operator Boolean, bahasa, rentang waktu beserta alasannya, dan apakah *snowballing*
+  dipakai. Mereka menyebut bagian metode sebagai salah satu kelemahan terbesar
+  makalah review.
+- PRISMA 2020 (Page dkk., 2021), butir 6 dan 7: sebutkan semua sumber dan tanggal
+  terakhir pencarian, lalu tampilkan strategi pencarian lengkap untuk semua basis
+  data, termasuk filter dan batasan.
+
+Wohlin (2014) menjelaskan *snowballing*: mulai dari himpunan awal, lalu telusuri
+daftar pustaka (*backward*) dan artikel yang mengutip (*forward*) secara berulang.
+Wohlin dkk. (2020) menunjukkan bahwa untuk memperbarui SLR, satu iterasi *forward
+snowballing* dari himpunan studi lama adalah cara paling hemat. Garousi dkk. (2019)
+menjelaskan kapan literatur abu-abu layak dimasukkan (*multivocal review*).
+
+#### P4. Seleksi dilaporkan dengan angka dan alasan eksklusi
+
+PRISMA 2020 butir 8 meminta penulis menjelaskan cara memutuskan inklusi: berapa
+penyaring, apakah bekerja independen, dan alat otomatis apa yang dipakai. Butir 16a
+meminta alur angka dari rekaman teridentifikasi sampai studi terinklusi, sebaiknya
+dengan diagram alir; butir 16b meminta contoh studi yang tampak memenuhi syarat
+tetapi dikeluarkan, beserta alasannya. Dalam sampel CEA, tujuh dari delapan review
+memuat diagram alir, dan enam memberi angka lengkap tiap tahap.
+
+#### P5. Sintesis disusun per konsep, bukan per penulis
+
+Baumeister dan Leary (1997) menyebut "kurangnya integrasi" sebagai kesalahan kedua
+yang sama merusaknya: penulis menguraikan studi satu per satu tanpa mengaitkannya
+dengan pertanyaan. Pembaca, kata mereka, lebih membutuhkan bagaimana studi-studi itu
+saling berhubungan daripada daftar lengkapnya. Van Wee dan Banister (2016) memberi
+dua cara menyusun hasil: per sumber (baris = studi) atau per isi (baris = metode,
+temuan, atau klaster). Untuk tinjauan yang ingin membangun kerangka, susunan per isi
+lebih tepat. Torraco (2016, dari abstrak) menyebut tinjauan integratif yang baik
+bersifat integratif, definitif, dan provokatif, dan menganjurkan representasi visual.
+
+#### P6. Bukti ditulis pada tingkat operasional
+
+Ini pola yang paling praktis. Baumeister dan Leary (1997) memberi contoh: kalimat
+"X menyebabkan Y (Rujukan)" tidak cukup. Tulislah "pada sampel A, metode B memberi
+hasil C (Rujukan), sehingga mendukung pandangan bahwa X menyebabkan Y". Dengan begitu
+pembaca bisa menilai sendiri apakah kesimpulan sesuai dengan bukti. Van Wee dan
+Banister (2016) menambahkan tiga aturan:
+
+1. Jangan merata-ratakan hasil studi dengan ukuran sampel berbeda secara naif;
+   tampilkan hasil tiap studi bersama jumlah kasusnya, dan tampilkan rentangnya.
+2. Pisahkan dengan jelas kesimpulan penulis asli dari tafsiran penulis review.
+3. Jangan mengkritik studi karena tidak melakukan hal di luar ruang lingkupnya.
+
+#### P7. Mutu bukti dinilai, bukan hanya dicatat
+
+Baumeister dan Leary (1997) menyebut "kurangnya penilaian kritis" sebagai kesalahan
+berikutnya: kesimpulan tinjauan dibatasi oleh kelemahan studi yang ditinjau, jadi
+kelemahan itu harus dinyatakan. Tranfield dkk. (2003), seperti dirangkum Kraus dkk.
+(2022), memasukkan penilaian mutu studi sebagai fase tersendiri, di antara seleksi
+studi dan ekstraksi data. Untuk topik teknik, penilaian ini bisa berupa pertanyaan tetap
+yang diajukan ke tiap studi: apakah ada data acuan yang independen, apakah uji
+dilakukan di data yang tidak dipakai melatih, apakah metrik yang dilaporkan sesuai
+dengan klaim.
+
+#### P8. Tabel ringkasan dan tabel sintesis
+
+Van Wee dan Banister (2016) menyarankan tabel deskriptif (penulis, tahun, konteks,
+ukuran sampel) terpisah dari tabel hasil, dan memindahkan tabel yang sangat panjang
+ke lampiran. Dalam sampel CEA, tujuh dari delapan review memuat setidaknya satu
+tabel sintesis besar, satu baris per studi. Revisi dosen butir 8 meminta hal yang
+sama: matriks bukti masuk ke naskah sebagai tabel, bukan hanya berkas CSV terpisah.
+
+#### P9. Posisi terhadap review terdahulu dinyatakan eksplisit
+
+Van Wee dan Banister (2016) meminta penulis menyebut review yang sudah ada dan
+menjelaskan posisi tinjauannya. Contoh review domain melakukannya dengan kalimat
+yang spesifik. Zhou dkk. (2021) menulis bahwa review SOD sebelumnya membahas model
+berbasis RGB, sedangkan mereka membahas model RGB-D dan dataset-nya. Naranjo-Torres
+dkk. (2020) membuat daftar kontribusi "dibandingkan review sebelumnya". Dalam sampel
+CEA, enam dari delapan review melakukan pemosisian eksplisit. Revisi dosen butir 3
+meminta pemosisian terhadap review kelapa sawit dan penghitungan buah.
+
+#### P10. Kontribusi konseptual berupa taksonomi atau kerangka keputusan
+
+Dalam sampel CEA, enam atau tujuh dari delapan review mengusulkan taksonomi. Luo
+dkk. (2021) membuka review MOT dengan formulasi masalah yang menyatukan sebagian besar
+metode, lalu dua cara mengelompokkan metode. Post dkk. (2020, dari abstrak) memberi
+beberapa jalan kontribusi teoretis dari review: menyingkap perspektif baru, menguji
+asumsi, memperjelas konstruk, menetapkan batas berlaku, dan berteori dengan
+mekanisme. Breslin dan Gatrell (2023) membedakan review "penambang" yang bekerja di
+dalam satu ranah dari review "pencari" yang mengambil gagasan dari ranah lain.
+Tinjauan yang mengambil mekanisme pelacakan, re-ID, dan SfM dari luar pertanian untuk
+masalah penghitungan buah termasuk jenis kedua, sehingga harus menjelaskan mengapa
+bukti dari ranah lain berlaku di kebun dan di mana batasnya.
+
+#### P11. Penutup: tantangan, agenda, dan keterbatasan tinjauan itu sendiri
+
+Semua review dalam sampel CEA ditutup dengan bagian tantangan dan arah riset, lalu
+kesimpulan singkat. Agenda yang berguna menyebut apa yang harus diukur, di data apa,
+dan dengan metrik apa, bukan sekadar "perlu penelitian lebih lanjut". Tinjauan juga
+harus menyebut keterbatasannya sendiri: basis data yang tidak dicari, bahasa,
+penyaringan oleh satu orang, dan akses teks lengkap.
+
+#### P12. Kebiasaan pada contoh review domain
+
+Dua belas contoh review domain yang teksnya tersedia dicek dengan penghitungan kata
+kunci sederhana (`literature/scopus-2026-09/metodologi/fitur_contoh.csv`). Hasilnya:
+
+- Review naratif yang banyak disitasi sering tidak melaporkan cara pencarian sama
+  sekali. Tang dkk. (2020), Zhao dkk. (2019), Zhou dkk. (2021), dan Sharma dkk. (2021)
+  tidak menyebut basis data maupun kriteria inklusi.
+- Review yang menyebut dirinya sistematis melaporkan metode. Khan dkk. (2021) memakai
+  pertanyaan penelitian, PRISMA, dan kriteria inklusi; Abade dkk. (2021) juga;
+  Hasan dkk. (2021) memberi string Boolean dan daftar sumber pencarian, termasuk Scopus
+  dan Web of Science.
+- Review CEA tahun 2026 hampir semuanya melaporkan metode pencarian. Standar jurnal
+  bergeser; jumlah sitasi review lama tidak berarti metodenya masih cukup.
+
+Kesimpulannya, contoh review yang terkenal berguna untuk melihat susunan dan cara
+membahas bukti, tetapi tidak untuk meniru bagian metodenya.
+
+### 13.4 Kesalahan umum
+
+Dikumpulkan dari Baumeister dan Leary (1997), van Wee dan Banister (2016), dan
+Kraus dkk. (2022):
+
+1. Pengantar hanya meyakinkan bahwa topik penting, tanpa kerangka dan tanpa pesan
+   utama.
+2. Cakupan bukti tidak seimbang: beberapa studi favorit dibahas panjang, sisanya
+   sekilas.
+3. Mengutip kesimpulan studi tanpa menyebut data, metode, dan hasilnya.
+4. Menguraikan studi satu per satu tanpa integrasi.
+5. Tidak menilai kelemahan bukti.
+6. Bagian metode terlalu pendek atau tidak ada, atau sebaliknya mengulang semua
+   tahapan protokol secara bertele-tele (Kraus dkk. menyebut ini pelaporan yang tidak
+   hemat).
+7. Merata-ratakan angka dari studi yang tidak sebanding.
+8. Mencampur kesimpulan penulis asli dengan tafsiran sendiri.
+9. Tidak menyebut review terdahulu, sehingga kebaruan tidak dapat dinilai.
+
+### 13.5 Penerapan
+
+Aturan gaya yang diturunkan dari pola di atas, termasuk daftar periksa
+sebelum naskah dikirim, ada di §12.
+
+### 13.6 Sumber
+
+Semua sumber ditemukan melalui Scopus. Kolom "Teks" menunjukkan apakah artikel
+dibaca dari teks lengkap (penuh) atau hanya abstrak.
+
+| Rujukan | Sumber | DOI | Sitasi Scopus* | Teks |
+|---|---|---|---:|---|
+| Arksey & O'Malley (2005) | Int. J. Social Research Methodology | 10.1080/1364557032000119616 | 30.332 | penuh |
+| Baumeister & Leary (1997) | Review of General Psychology | 10.1037/1089-2680.1.3.311 | 1.091 | penuh |
+| Breslin & Gatrell (2023) | Organizational Research Methods | 10.1177/1094428120943288 | 242 | penuh |
+| Garousi dkk. (2019) | Information and Software Technology | 10.1016/j.infsof.2018.09.006 | 713 | penuh |
+| Grant & Booth (2009) | Health Information and Libraries Journal | 10.1111/j.1471-1842.2009.00848.x | 8.771 | abstrak |
+| Kraus dkk. (2022) | Review of Managerial Science | 10.1007/s11846-022-00588-8 | 977 | penuh |
+| Kunisch dkk. (2023) | Organizational Research Methods | 10.1177/10944281221127292 | 212 | penuh |
+| Marzi dkk. (2025) | Int. J. Management Reviews | 10.1111/ijmr.12381 | 490 | penuh |
+| Page dkk. (2021), PRISMA 2020 | BMJ | 10.1136/bmj.n71 | 99.709 | penuh |
+| Page dkk. (2021), penjelasan PRISMA | BMJ | 10.1136/bmj.n160 | 11.065 | penuh |
+| Petersen dkk. (2015) | Information and Software Technology | 10.1016/j.infsof.2015.03.007 | 2.246 | abstrak |
+| Post dkk. (2020) | Journal of Management Studies | 10.1111/joms.12549 | 485 | abstrak |
+| Sauer & Seuring (2023) | Review of Managerial Science | 10.1007/s11846-023-00668-3 | 443 | penuh |
+| Snyder (2019) | Journal of Business Research | 10.1016/j.jbusres.2019.07.039 | 7.503 | abstrak |
+| Torraco (2016) | Human Resource Development Review | 10.1177/1534484316671606 | 1.090 | abstrak |
+| Tranfield dkk. (2003) | British Journal of Management | 10.1111/1467-8551.00375 | 12.934 | abstrak |
+| Tricco dkk. (2018), PRISMA-ScR | Annals of Internal Medicine | 10.7326/m18-0850 | 35.758 | penuh |
+| van Wee & Banister (2016) | Transport Reviews | 10.1080/01441647.2015.1065456 | 486 | penuh |
+| Wohlin (2014) | Proc. EASE (ACM) | 10.1145/2601248.2601268 | 1.864 | penuh |
+| Wohlin dkk. (2020) | Information and Software Technology | 10.1016/j.infsof.2020.106366 | 121 | penuh |
+| Abade dkk. (2021) | Computers and Electronics in Agriculture | 10.1016/j.compag.2021.106125 | 316 | penuh |
+| Hasan dkk. (2021) | Computers and Electronics in Agriculture | 10.1016/j.compag.2021.106067 | 481 | penuh |
+| Khan dkk. (2021) | Agriculture | 10.3390/agriculture11090832 | 62 | penuh |
+| Koirala dkk. (2019) | Computers and Electronics in Agriculture | 10.1016/j.compag.2019.04.017 | 574 | abstrak |
+| Lai dkk. (2023) | Agriculture | 10.3390/agriculture13010156 | 47 | penuh |
+| Luo dkk. (2021) | Artificial Intelligence | 10.1016/j.artint.2020.103448 | 883 | penuh |
+| Naranjo-Torres dkk. (2020) | Applied Sciences | 10.3390/app10103443 | 401 | penuh |
+| Patrício & Rieder (2018) | Computers and Electronics in Agriculture | 10.1016/j.compag.2018.08.001 | 923 | penuh |
+| Sharma dkk. (2021) | IEEE Access | 10.1109/access.2020.3048415 | 1.045 | penuh |
+| Tang dkk. (2020) | Frontiers in Plant Science | 10.3389/fpls.2020.00510 | 605 | penuh |
+| Zhao dkk. (2019) | IEEE Trans. Neural Networks and Learning Systems | 10.1109/tnnls.2018.2876865 | 5.085 | penuh |
+| Zhou dkk. (2021) | Computational Visual Media | 10.1007/s41095-020-0199-z | 318 | penuh |
+
+\* Jumlah sitasi pada saat pengambilan (28 September 2026).
+
+## 14. Penulisan Entri Korpus Lama
+
+Bagian ini adalah acuan gaya untuk menulis ulang setiap berkas di
+`literature/entries/` (korpus lama 182). Setiap penulis, termasuk subagen, membaca
+§6 dan bagian ini sampai selesai sebelum menulis. Tujuan penulisan ulang: mengubah lembar telaah yang telegrafik
+menjadi **bab bergaya buku teks** — runtut, lengkap, dan dapat dipahami pembaca yang
+belum mengenal topiknya.
+
+### 14.1 Peran dan Alur Kerja
+
+Satu penulis menangani **satu berkas entri** (satu makalah). Urutan kerja wajib:
+
+1. Baca §6 dan bagian ini sampai selesai.
+2. Baca berkas entri lama yang ditugaskan. Ambil darinya: kunci BibTeX, identitas
+   makalah (judul, penulis, tahun, venue), tema klaster, dan tautan akses. **Isi
+   pembahasannya jangan dipertahankan** — tulis ulang sepenuhnya.
+3. Riset sumber primer:
+   - Buka tautan arXiv/DOI pada berkas lama; baca abstrak dan, bila
+     tersedia, halaman HTML makalah.
+   - Bila klaim/angka penting belum jelas, cari dengan WebSearch (situs resmi,
+     repositori kode, halaman proyek, dokumentasi model).
+   - Catat hanya fakta yang terverifikasi dari sumber; jangan mengarang angka.
+4. Distil: tentukan masalah, gagasan inti, mekanisme kerja, hasil utama, dan
+   keterbatasan makalah.
+5. Tulis ulang berkas (overwrite penuh) mengikuti struktur dan kaidah di bawah.
+6. Laporkan ke pemanggil: jumlah kata, bagian yang tidak dapat diverifikasi dari
+   sumber, dan penyimpangan dari panduan (bila ada).
+
+### 14.2 Struktur Bab (wajib, urut)
+
+Sepuluh bagian `##` berikut, dengan judul persis seperti tertulis:
+
+1. `## Metadata Ringkas` — tabel dua kolom: Kunci BibTeX, Judul asli, Penulis,
+   Tahun, Venue, Tema.
+2. `## Tautan Akses` — bullet tautan (arXiv/DOI/Scholar) dari berkas lama.
+3. `## Gambaran Umum` — 1–2 paragraf: apa makalah ini, masalah apa yang dipecahkan,
+   apa hasil utamanya. Ditulis sehingga pembaca yang hanya membaca bagian ini tetap
+   mendapat inti bab.
+4. `## Latar Belakang: Masalah yang Ingin Dipecahkan` — kondisi bidang sebelum
+   makalah ini ada; kekurangan pendekatan sebelumnya yang spesifik; mengapa masalah
+   itu penting. Rujuk bab terdahulu bila relevan.
+5. `## Ide Utama` — gagasan inti makalah dalam bentuk paling sederhana yang benar
+   secara teknis. Jelaskan intuisi mekanis (apa masuk, apa keluar, apa yang berubah),
+   bukan metafora.
+6. `## Cara Kerja Langkah demi Langkah` — bagian terpanjang (±40–50% isi bab).
+   Uraikan mekanisme secara berurutan; gunakan `###` per komponen/tahap. Setiap
+   istilah teknis dijelaskan saat pertama muncul. Gunakan contoh numerik konkret.
+   Bila arsitekturnya sukar dipahami dari teks (mis. aliran data antar-komponen,
+   perbandingan dengan pipeline pendahulu), sertakan satu diagram ASCII.
+7. `## Eksperimen dan Hasil` — apa yang diuji, pada data apa, dibandingkan dengan
+   apa; angka hasil utama beserta interpretasinya.
+8. `## Kelebihan dan Keterbatasan` — prosa seimbang; keterbatasan yang merupakan
+   analisis penulis bab (bukan pernyataan penulis makalah) ditandai dengan frasa
+   seperti "dari sisi rekayasa, ..." atau "secara konseptual, ...".
+9. `## Kaitan dengan Bab Lain` — narasi kesinambungan: bab ini mewarisi apa dari
+   bab mana, dan memengaruhi bab mana; sertakan tautan relatif. Minimal merujuk
+   satu bab sebelumnya dalam silsilahnya bila ada.
+10. `## Poin untuk Sitasi` — kunci BibTeX; ringkasan 2–3 kalimat yang aman dikutip
+    dalam tinjauan pustaka; catatan angka/klaim yang perlu diverifikasi ke naskah
+    asli sebelum sitasi formal (wajib untuk makalah sangat baru).
+
+### 14.3 Kaidah Bahasa (syarat utama)
+
+- **Bahasa Indonesia baku sesuai EYD V.** Perhatikan: penulisan imbuhan
+  (`di-` awalan pasif vs `di` kata depan), kata baku (sistem, metode, praktik,
+  hingga→sampai), dan tanda baca. Angka desimal memakai koma (`63,4%`).
+- **Istilah asing dicetak miring** pada kemunculan pertama dan selanjutnya boleh
+  tetap miring: *bounding box*, *confidence*, *backbone*. Istilah yang sudah
+  diserap ditulis sesuai kaidah serapan (mis. *citra*, *piksel*, *filter* →
+  *tapis* bila konteksnya pemrosesan citra; boleh tetap *filter* bila merujuk
+  nama teknis baku).
+- **Dilarang metafora, perumpamaan, dan kalimat mewah.** Tidak ada "ibarat",
+  "bagaikan", "bak", "laksana". Kejelasan dicapai melalui struktur penjelasan:
+  definisi → mekanisme → contoh numerik → interpretasi.
+- **Dilarang frasa pengisi dan hiperbola ("AI slop")**, antara lain: "di era
+  modern ini", "perkembangan pesat", "revolusioner", "terobosan", "menariknya",
+  "perlu dicatat bahwa", "penting untuk dipahami", "dunia deteksi objek",
+  "seperti yang kita ketahui", pujian kosong pada makalah. Setiap kalimat wajib
+  memuat informasi.
+- Nada buku teks: impersonal, langsung, tepat. Tidak memakai "kita"/"Anda"
+  kecuali sangat terpaksa; gunakan konstruksi pasif atau nominal ("model ini
+  memprediksi...", bukan "kita akan melihat model memprediksi...").
+- Kalimat efektif: satu gagasan per kalimat; hindari kalimat majemuk lebih dari
+  dua anak kalimat.
+
+### 14.4 Kaidah Isi
+
+- Panjang **1200–1800 kata** (tidak termasuk tabel metadata dan tautan).
+- Alur naratif runtut: masalah → gagasan → cara kerja → bukti → penilaian.
+  Bullet hanya untuk enumerasi murni (daftar komponen, daftar hasil); penjelasan
+  konsep wajib berbentuk paragraf.
+- **Setiap istilah teknis dijelaskan saat pertama muncul**, dalam 1–2 kalimat
+  definisi langsung. Tidak boleh ada jargon yang dipakai tanpa penjelasan —
+  termasuk nama metode lain yang dirujuk (mis. bila menyebut FPN, jelaskan satu
+  kalimat apa itu FPN).
+- **Contoh numerik konkret** untuk memperjelas mekanisme, misalnya: "pada citra
+  448×448 dan grid 7×7, setiap sel mencakup wilayah 64×64 piksel".
+- **Setiap angka hasil diberi interpretasi**, misalnya: "63,4% mAP berada di bawah
+  Fast R-CNN (70,0%), tetapi kecepatannya 45 FPS dibandingkan ±0,5 FPS".
+- **Tidak ada pengulangan**: satu fakta dibahas sekali di satu bagian; bagian lain
+  cukup merujuknya secara singkat.
+- Bab harus **mandiri** (semua istilah dijelaskan di tempat) **tetapi terhubung**
+  (bagian 4 dan 9 merujuk bab lain secara naratif dengan tautan).
+- Kejujuran akademik: klaim yang tidak berhasil diverifikasi dari sumber primer
+  diberi tanda di bagian *Poin untuk Sitasi*; narasi utama hanya memuat hal yang
+  diyakini benar. Jangan mengarang angka, nama dataset, atau hasil.
+
+### 14.5 Checklist Sebelum Melapor
+
+- [ ] Baris pertama dan nama berkas tidak berubah; baris `| Kunci BibTeX |` ada.
+- [ ] Sepuluh bagian `##` lengkap dan urut; heading hanya `##`/`###`.
+- [ ] 1200–1800 kata.
+- [ ] Tidak ada boilerplate administratif lama (checklist verifikasi, glosarium
+      generik, catatan integritas, daftar isi panjang).
+- [ ] Semua istilah teknis terjelaskan saat pertama muncul; tidak ada jargon telanjang.
+- [ ] Tidak ada metafora/perumpamaan; tidak ada frasa pengisi; ejaan EYD V.
+- [ ] Setiap angka hasil memiliki interpretasi; tidak ada fakta diulang antar-bagian.
+- [ ] Bagian *Kaitan dengan Bab Lain* berisi narasi + tautan relatif yang benar.
+- [ ] Bagian arsitektur/mekanisme yang kompleks dibantu diagram ASCII yang faktual.
+- [ ] Tanpa gambar/foto; diagram ASCII dalam fenced code block, lebar ≤78 kolom.
+- [ ] Laporan akhir menyebut jumlah kata dan klaim yang belum terverifikasi.
+
+### 14.6 Contoh Bab Jadi
+
+Contoh bab yang sudah memenuhi seluruh kaidah: `literature/entries/001 - 2016 - You Only Look
+Once (YOLOv1) - Fondasi RGB.md`. Baca berkas tersebut sebagai acuan bentuk akhir —
+perhatikan panjang bagian, cara istilah diperkenalkan, dan cara angka diinterpretasi.
+Tirukan polanya pada bab yang ditugaskan, dengan isi yang sepenuhnya dari makalah
+tugas Anda.
