@@ -9,6 +9,7 @@ alasan memuat alasan sebenarnya, bukan nama proses.
 import csv, re
 from pathlib import Path
 
+from kode_bukti import KODE, muat_keputusan
 from verifikasi_istilah import AKU, EKS, KEL, KLS, LOK, MEK, MET, REF, TUGAS, YN, kelompok
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -208,9 +209,24 @@ KINI = {r['idx']: r['kode'] for r in matriks} | {r['key']: r['kode'] for r in ma
     | {k: r['kode'] for k, r in tamb.items()}
 
 
+ABSTRAK, _ = muat_keputusan(B / 'topik/penyaringan')
+DINILAI_TL = {int(m.group(1)) for line in open(B / 'topik/penyaringan/teks_lengkap.txt', encoding='utf-8')
+              if (m := KODE.match(line.strip()))}
+IDX = {r['key']: int(r['idx']) for r in baca(B / 'topik/penyaringan/kandidat_abstrak.csv')}
+KUNCI_IDX = {i: k for k, i in IDX.items()}
+
+
 def kelompok_sekarang(key):
     k = KINI.get(key)
-    return KEL[k] if k else 'dikeluarkan'
+    if k:
+        return KEL[k]
+    i = int(key) if key.isdigit() else IDX.get(key)
+    kode = ABSTRAK.get(i, ('X',))[0]
+    if kode in KEL and i not in DINILAI_TL:
+        ada_pdf = (B / 'pdf' / f'{KUNCI_IDX.get(i, "")}.pdf').exists()
+        status = 'belum dinilai dari teks lengkap' if ada_pdf else 'PDF belum diperoleh'
+        return f'{status}; tahap abstrak {KEL[kode]}'
+    return 'dikeluarkan'
 
 
 # Baris yang menentukan masuk-tidaknya artikel atau kelompoknya; ditaruh paling atas.

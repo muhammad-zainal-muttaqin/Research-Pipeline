@@ -1,7 +1,31 @@
 # Tugas Peninjau
 
-Diperbarui 18 November 2026. Ini satu-satunya daftar keputusan yang menunggu
+Diperbarui 19 November 2026. Ini satu-satunya daftar keputusan yang menunggu
 Anda.
+
+- [ ] **4.5 Empat PDF berisi versi lain dari dokumen yang tercatat di
+  Scopus.** Apakah versi ini diterima sebagai teks lengkap kajian yang sama,
+  atau versi terbitnya dicari dulu? Isi dan penulisnya sama, tetapi
+  dokumennya berbeda:
+  - Bolouri dkk. 2024, *CottonSense* (C1): PDF adalah tesis magister Texas
+    Tech 2023, bukan artikel *Computers and Electronics in Agriculture*.
+    Buka [bolouri2024cottonsense.pdf](../pdf/bolouri2024cottonsense.pdf).
+  - Si dkk. 2026, *Citrus yield estimation ... video streams* (C1): PDF
+    adalah pracetak SSRN berbahasa Inggris dengan judul lain, bukan artikel
+    *Journal of Fruit Science*. Buka [si2026citrus.pdf](../pdf/si2026citrus.pdf).
+  - Yamamoto dkk. 2013, *Detection and counting of intact tomato fruits*
+    (calon C2): Scopus mencatat makalah konferensi 2013; PDF adalah artikel
+    *Sensors* 2014 berjudul *On Plant Detection of Intact Tomato Fruits*.
+    Buka [yamamoto2013detection.pdf](../pdf/yamamoto2013detection.pdf).
+  - Silwal dkk. 2015, *A hierarchical approach of apple identification*
+    (calon C2): Scopus mencatat makalah konferensi ASABE 2015; PDF adalah
+    artikel *Trans. ASABE* 2016. Buka
+    [silwal2015hierarchical.pdf](../pdf/silwal2015hierarchical.pdf).
+
+  Dampak bila versi ini ditolak: Bolouri dan Si keluar dari 214 kajian C1
+  sampai versi terbitnya diperoleh, sehingga angka naskah berubah; Yamamoto
+  dan Silwal kembali ke daftar
+  [pdf_belum_ada.csv](../unduhan/pdf_belum_ada.csv).
 
 - [ ] **5.7 Bagian naskah yang hanya dapat diisi penulis.** Apakah peran
   penulis, sumber dana, deklarasi kepentingan, dan ucapan terima kasih sudah
