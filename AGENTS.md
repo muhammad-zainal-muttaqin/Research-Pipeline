@@ -4,17 +4,13 @@ Berlaku untuk semua agen (Claude Code, Codex, dan lainnya). `CLAUDE.md` hanya
 mengimpor berkas ini. Nomor bagian dirujuk berkas lain (terutama §3, §7, dan
 §11); jangan diubah.
 
-Berkas ini adalah satu-satunya pusat aturan repo. Aturan yang terlalu rinci
-untuk ditaruh di sini ditulis di berkas khusus berikut, dan hanya di sana.
-Aturan baru ditulis di berkas ini. Berkas aturan baru hanya dibuat bila
-pengguna memintanya, lalu didaftarkan di tabel ini.
+Berkas ini adalah satu-satunya berkas aturan agen. Aturan baru ditulis di sini,
+dan berkas aturan terpisah tidak dibuat. Empat berkas berikut bukan aturan
+agen, tetapi dokumen riset yang menjadi acuan isi:
 
-| Bidang | Berkas aturan rinci |
+| Isi | Berkas |
 |---|---|
-| Gaya tulis naskah `main6` (nama kategori, paragraf bukti, gambar, abstrak, simpulan, daftar periksa sebelum dikirim) | `manuscript/guides/GAYA-NASKAH-MAIN6.md` |
-| Pola tinjauan pustaka yang baik (dasar metodologis gaya `main6`) | `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md` |
 | Protokol tinjauan `main6`: kriteria, kode kelompok, tahap penyaringan | `literature/scopus-2026-09/PROTOKOL.md` |
-| Penulisan entri korpus lama 182 | `manuscript/guides/PANDUAN-PENULISAN.md` (kontrak bentuk di §6) |
 | Kontrak kanal ke-4 (depth) untuk model produksi | `pipeline/README.md` |
 | Reproduksi E-021: data, split, lingkungan | `experiments/code/REPRODUCE.md` |
 | Keputusan verifikasi yang menunggu peninjau | `literature/scopus-2026-09/verifikasi/TUGAS.md` |
@@ -55,29 +51,29 @@ agen.
   yang dibaca manusia dan data minimum yang dibaca skrip (di `literature/scopus-2026-09/verifikasi/.teknis/`).
   Pengecualian: hasil ekstraksi teks lengkap per kajian oleh agen disimpan di
   `literature/scopus-2026-09/ekstraksi/` agar tidak dibaca ulang tiap sesi
-  (diminta pengguna, 18 November 2026); folder itu tidak diisi bahan lain. Pada
-  19 Oktober 2026 folder `verifikasi` harus dibersihkan dari 667 menjadi 24
-  berkas karena aturan ini dilanggar.
-- Berkas usang dihapus, bukan dipindah ke folder arsip. Pada 18 November 2026
-  naskah `main2`–`main5v3`, folder `audit/` dan `legacy/`, bahan pencarian
-  OpenAlex Agustus, laporan *deep research*, serta brief gambar dihapus.
-  Keadaan sebelumnya tersimpan di tag Git `arsip-pra-rapi-2026-11-18`
-  (`git show arsip-pra-rapi-2026-11-18:<jalur>`). Jangan memulihkannya ke
-  pohon kerja kecuali diminta.
+  (diminta pengguna, 18 November 2026); folder itu tidak diisi bahan lain.
+- Berkas usang dihapus, bukan dipindah ke folder arsip. Berkas yang sudah
+  dihapus dibaca dari Git (`git show <tag-atau-commit>:<jalur>`, misalnya tag
+  `arsip-pra-rapi-2026-11-18`) dan tidak dipulihkan ke pohon kerja kecuali
+  diminta.
 
 **Larangan tulisan agen.** Berlaku untuk dokumen, komentar kode, docstring,
 pesan commit, dan naskah.
 
-- **Dilarang membuat berkas Markdown yang tidak diminta.** Agen tidak membuat
-  `.md` untuk menjelaskan, membela, atau merangkum pekerjaannya sendiri. Contoh
-  yang dilarang: laporan sesi, catatan keputusan, rencana, ringkasan
-  perubahan, dan berkas aturan baru. Penjelasan ditulis di jawaban percakapan
-  atau pesan commit. Berkas `.md` baru hanya boleh dibuat bila pengguna
-  memintanya, atau bila berkas itu menggantikan berkas yang ada sehingga jumlah
-  berkas tidak bertambah. Larangan ini ditegakkan `.githooks/pre-commit`: commit
-  yang menambah `.md` di luar entri korpus, teks terekstrak, laporan
-  `experiments/SR/SR-NNN-*`, dan `README.md` ditolak. `IZINKAN_MD=1` hanya
-  dipakai bila pengguna memintanya, dan `--no-verify` tidak dipakai.
+- **Dilarang membuat berkas `.md` atau `.py` yang tidak dibutuhkan naskah**,
+  di repo maupun di scratchpad (diminta pengguna). Yang dilarang adalah berkas
+  yang menjelaskan, membela, memeriksa, atau merangkum pekerjaan agen sendiri:
+  laporan sesi, catatan keputusan, rencana, ringkasan perubahan, berkas aturan
+  baru, skrip audit sekali pakai, pemeriksa hasil, dan pembuat paket untuk
+  subagen. Penjelasan ditulis di percakapan atau pesan commit; pemeriksaan
+  sekali pakai dijalankan langsung (`python - <<'EOF' ... EOF`) tanpa
+  disimpan. Yang boleh: skrip yang membuat atau membuat ulang isi naskah dan
+  data (misalnya `kode_bukti.py`, `angka_naskah.py`, `gambar_tinjauan.py`),
+  entri korpus, teks terekstrak, laporan `experiments/SR/SR-NNN-*`, dan
+  `README.md`. `.githooks/pre-commit` menolak `.md` baru di luar jalur itu
+  dan `.py` baru di luar `tools/`, `experiments/code/`, dan `pipeline/`.
+  `IZINKAN_MD=1` atau `IZINKAN_PY=1` hanya dipakai bila pengguna memintanya;
+  `--no-verify` tidak dipakai.
 - **Dilarang menimbun aturan.** Agen tidak menambah aturan atas inisiatif
   sendiri. Aturan baru hanya ditulis bila pengguna memintanya atau bila ada
   kesalahan nyata yang perlu dicegah, dalam satu butir pendek di bagian yang
@@ -175,7 +171,7 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 | `manuscript/source/` | `main6.tex`, `main6-body.tex`, `main6-supplementary.tex` (bahan tambahan), `main6-angka.tex` (keluaran `angka_naskah.py`), lampiran, `references6.bib`; naskah 182 sumber (`main.tex`, `main-elsarticle.tex`, `evidence-body.tex`, `references.bib`) dan `experiment-ledgers.tex` untuk laporan eksperimen |
 | `manuscript/figures/main6/` | Gambar F01–F12 (keluaran skrip) |
 | `manuscript/templates/els-cas-templates/` | Bundel CAS Elsevier 2.4 (`cas-dc.cls`, `cas-common.sty`, `cas-model2-names.bst`) yang dipakai `main6.tex`; `main6.tex` berhenti bila kelas yang terbaca lebih tua |
-| `manuscript/guides/` | `GAYA-NASKAH-MAIN6.md`, `POLA-TINJAUAN-PUSTAKA.md`, `PANDUAN-PENULISAN.md`; artikel contoh yang dirujuk panduan ada di `literature/example/` |
+| `literature/example/` | Artikel contoh bentuk naskah `main6` (§12) |
 | `manuscript/reports/` | Laporan hasil eksperimen (`reports.tex` dan versi ringkas); figur rasternya di `manuscript/figures/` |
 | `manuscript/output/papers/` | PDF hasil kompilasi |
 | `experiments/` | `STATUS.md`, `EKSPERIMEN.md` (log), `METRICS.md`, `SERI-F.md`, `SR/`, `code/` (peta: `PETA-SKRIP.md`) |
@@ -227,6 +223,15 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
 - Heading hanya `##` dan `###`. Tidak ada gambar; diagram ASCII ≤78 kolom.
 - Tautan antar-entri relatif, spasi di-encode `%20`.
 - **Jangan mengarang angka.** Setiap klaim numerik terlacak ke sumber primer.
+- Entri korpus lama (`literature/entries/`) memakai sepuluh bagian `##` ini,
+  berurutan: Metadata Ringkas, Tautan Akses, Gambaran Umum, Latar Belakang:
+  Masalah yang Ingin Dipecahkan, Ide Utama, Cara Kerja Langkah demi Langkah
+  (±40–50% isi), Eksperimen dan Hasil, Kelebihan dan Keterbatasan, Kaitan
+  dengan Bab Lain, Poin untuk Sitasi. Panjang 1.200–1.800 kata. Setiap istilah
+  teknis dijelaskan saat pertama muncul, setiap angka hasil diberi
+  pembanding, dan klaim yang belum terverifikasi ditandai di Poin untuk Sitasi.
+  Paling banyak satu tabel dan dua diagram ASCII. Contoh bentuk jadi:
+  `literature/entries/001 - 2016 - You Only Look Once (YOLOv1) - Fondasi RGB.md`.
 - Kunci BibTeX `sapkota2024yoloagri` (penulis sebenarnya Alif & Hussain) dan
   `alif2024yoloevolution` (penulis sebenarnya Jegham dkk.) sengaja tidak diganti;
   di teks naskah, sebut nama penulis sebenarnya.
@@ -271,10 +276,8 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
   jurnal; jangan diklaim sebagai dua peninjau independen.
 - Hasil eksperimen SawitMVC (E-/F-) bukan bagian korpus `main6`; bila dikutip,
   angkanya dari `experiments/METRICS.md`.
-- Klaim kebaruan dibatasi pada pencarian yang dilaporkan ("not found in the
-  search reported in Section 2"), bukan "belum ada tinjauan yang membahas".
-- Gaya tulis mengikuti `manuscript/guides/GAYA-NASKAH-MAIN6.md`. Daftar
-  periksanya dijalankan sebelum naskah dikirim.
+- Gaya tulis mengikuti §12. Daftar periksanya dijalankan sebelum naskah
+  dikirim.
 - Arah naskah ditetapkan delapan permintaan revisi dosen pembimbing
   (`literature/references/revisi-dosen-2026-07-23/Chat.txt`, 23 Juli 2026);
   jangan diubah tanpa persetujuan penulis:
@@ -408,3 +411,123 @@ plafon.
 - Klaim tentang depth berstatus hipotesis yang dapat dipalsukan.
 - Temuan yang mengubah cara kerja jangka panjang dicatat di berkas ini, bukan di
   log eksperimen.
+
+## 12. Gaya Naskah `main6`
+
+Berlaku untuk `main6.tex`, `main6-body.tex`, dan bahan tambahannya (bahasa
+Inggris). Acuan bentuk: Xiao dkk., *Computers and Electronics in Agriculture*
+253 (2026) 112078 (`literature/example/autonomousnavigation.pdf`). Dasar
+metodologisnya: tinjauan adalah penelitian yang menambah nilai di atas
+kajian-kajiannya, bukan daftar ringkasan (van Wee & Banister 2016; Baumeister
+& Leary 1997; Kraus dkk. 2022; PRISMA 2020).
+
+**Tata letak.** Kelas `cas-dc`, dua kolom, `tectonic`; "Review Article" di
+dalam `\title`. Sitasi `natbib` `authoryear`, gaya `cas-model2-names`, tautan
+`#1A6FB5`. "Fig. N." dan "Table N" tebal; tabel `booktabs` tanpa garis
+tegak. Rujukan `Fig.~\ref`, `Table~\ref`, `Section~\ref`. Lampiran A
+(matriks C1) dan B (kueri) satu kolom sesudah daftar pustaka, tabel A1 dst.
+
+**Nama, bukan kode.** Kode internal tidak tampil di naskah. Nama tetap:
+
+| Kode | Definisi dan judul | Prosa | Sel tabel atau gambar |
+|---|---|---|---|
+| M0 | No association | no association | No association |
+| M1 | Statistical correction | statistical correction | Statistical |
+| M2 | Appearance matching | appearance matching | Appearance |
+| M3 | Temporal tracking | tracking (sesudah nama lengkap) | Tracking |
+| M4 | Geometric or 3D association | geometric association | Geometric |
+| M5 | Learned association | learned association | Learned |
+| V, D, S, T, 1 | acquisition design | video along a path; discrete views; 3D scan; revisits over time; a single view | Video; Discrete views; 3D scan; Revisits; Single view |
+| C1–C5, R, T | tujuh kelompok | multi-observation studies; single-view counting studies; oil-palm studies; single-image class-wise counting studies; depth and 3D sensing studies; earlier reviews; methods papers from outside agriculture | sama |
+| RQ1–RQ4, G1–G5 | (1)–(4), (i)–(v) | dirujuk dengan isinya | — |
+
+Q1–Q9 hanya penghubung tabel kueri dan Lampiran B. Satu istilah per konsep;
+keluarga kategori selalu "association mechanism". Label gambar dan lampiran
+diubah di `gambar_tinjauan.py`, `tabel_lampiran.py`, atau `lampiran_kueri.py`.
+Setiap akronim dijabarkan saat pertama muncul (termasuk SfM, SLAM, MOT,
+RGB-D, LiDAR, UAV, MAE, MAPE, MOTA, IDF1, HOTA, PRISMA); akronim yang muncul
+sekali ditulis dengan kata; tidak ada daftar singkatan.
+
+**Arsitektur.**
+
+- Jenis tinjauan (systematic mapping review, sintesis konfiguratif, tanpa
+  penggabungan efek) dinyatakan di awal metode; kesimpulan tidak ditulis
+  seolah hasil meta-analisis.
+- Kerangka lima tahap diumumkan di pendahuluan, diberi aturan di metode,
+  dihitung di lanskap kuantitatif (3.4), lalu menata seksi bukti: 4
+  akuisisi, 5 asosiasi, 6 atribut kelas, 7 depth, 8 sawit.
+- Pendahuluan satu fungsi per paragraf: masalah terukur, kasus, keterbatasan
+  tinjauan terdahulu (pemosisian eksplisit), tujuan, kontribusi, pertanyaan;
+  ditutup "The remainder of this article is organized as follows."
+- Seksi 5 dibuka dengan tabel sintesis mekanisme: asumsi, sumber hitung ganda
+  yang dihilangkan, kondisi gagal, bukti pada data yang sama, kecocokan untuk
+  pandang diskret. Seksi 8: mengapa sensus menantang setiap mekanisme, cara
+  deteksi berkembang, yang belum ada. Subseksi padat dipecah menjadi isu
+  berlabel miring ("*(1) Background removal.*").
+- Setiap subseksi bukti merujuk Seksi 3 minimal sekali; setiap keterbatasan
+  di Seksi 4–8 menunjuk ke Seksi 10. Bukti dari luar pertanian disertai
+  alasan mengapa berlaku di kebun dan batasnya.
+- Diskusi (9): lintasan mekanisme, jawaban empat pertanyaan sebagai argumen,
+  posisi terhadap tinjauan terdahulu, celah (i)–(v), set pelaporan minimum;
+  tidak mengulang uraian kajian. Agenda menyebut apa yang diukur, pada data
+  apa, dengan metrik apa.
+
+**Metode.** Subseksi *Search strategy*, *Inclusion and exclusion criteria*,
+*Study selection*, *Data extraction and coding*, *Appraisal and synthesis*;
+rincian prosedur di `main6-supplementary.tex`. Kriteria bernomor; alasan
+eksklusi memakai kata dan urutan kotak diagram alur. Penyaringan tiga tahap
+(judul, judul dan abstrak, teks lengkap). Aturan pengodean berpola "A study
+was coded as X when ...". Lanskap kuantitatif ditulis sebagai butir
+(i)–(iii), satu gambar per butir; cara hitung (kemunculan, bukan eksklusif)
+di teks. Peta istilah dinyatakan tidak memengaruhi inklusi.
+
+**Paragraf bukti.** Empat langkah: pembuka tanpa kajian; dua sampai empat
+kajian dengan nama dan tahun; pernyataan lintas kajian ("Taken together,
+..."); batasnya.
+
+1. Kajian yang diuraikan disitasi `\citet` sekali, kata kerja lampau;
+   pernyataan atas beberapa kajian `\citep` di akhir kalimat. Nama penulis
+   tidak diketik tangan.
+2. Satu kajian per kalimat; kontras dengan "whereas"; rantai titik koma
+   dipecah.
+3. Bukti ditulis operasional: data, metode, angka, lalu kesimpulan ("on
+   dataset A, method B gave C"), bukan "X causes Y (ref)". Setiap angka
+   disertai data, split atau acuan hitung, dan metrik. Angka antarkajian tidak
+   dirata-ratakan; tabel perbandingan dibaca per baris.
+4. Kesimpulan penulis asli dipisahkan dari tafsiran tinjauan. Kajian tidak
+   dikritik atas hal di luar cakupannya. Batas ditulis dengan fakta yang
+   dapat diperiksa, bukan kata penilaian.
+5. Lampau untuk kajian, kini untuk himpunan bukti; "this review", tanpa "we".
+6. Paragraf di atas ±150 kata atau lima kajian bernama dipecah.
+7. Kebaruan dibatasi pada pencarian: "not found in the search reported in
+   Section 2".
+8. Tanpa slogan, kata sifat kosong ("revolutionary", "plays a crucial
+   role", "promising"), pembuka generik ("In recent years ..."), daftar tiga
+   kata sifat, atau peringatan yang diulang (sekali saat tabel diperkenalkan,
+   sekali di keterbatasan). Kalimat yang dapat dipindah ke topik lain tanpa
+   kehilangan makna dihapus.
+
+**Gambar, tabel, abstrak, simpulan.** Gambar atau tabel menjadi subjek
+kalimat; judulnya hanya isi, pengodean visual, dan n. Tabel perbandingan
+diberi catatan: nilai seperti dilaporkan, dibandingkan dalam satu baris,
+jabaran akronim; "Not stated", bukan "NR". Abstrak satu paragraf: konteks,
+celah, cakupan dan periode, metode dan alur rekaman, pengodean, temuan,
+kontribusi. Simpulan 350–450 kata, empat paragraf: yang dikerjakan; yang
+mapan dan yang belum; panduan menurut desain akuisisi; prioritas (i)–(v);
+tanpa mengulang abstrak. Penutup: CRediT, kepentingan, pendanaan, terima
+kasih, ketersediaan data, deklarasi AI.
+
+**Daftar periksa sebelum dikirim.**
+
+- [ ] Satu kalimat nilai tambah muncul di abstrak dan pendahuluan.
+- [ ] Setiap seksi sintesis menjawab salah satu dari empat pertanyaan.
+- [ ] Semua kueri lengkap dengan tanggal dan jumlah hasil (Lampiran B).
+- [ ] Diagram alur memuat angka setiap tahap dan alasan eksklusi.
+- [ ] Penyaring dan alat bantu AI disebut; tidak ada klaim pemeriksaan
+      silang oleh penulis kedua.
+- [ ] Setiap klaim sintesis menyebut kajian, data, metode, dan angka.
+- [ ] Ada seksi keterbatasan: basis data yang tidak dicari, bahasa, satu
+      peninjau, akses teks lengkap.
+- [ ] Tidak ada kode internal, jalur folder, atau `\authorcheck`.
+- [ ] Semua angka korpus berupa makro dari `main6-angka.tex`.
+- [ ] Ejaan Inggris konsisten memakai -ize.

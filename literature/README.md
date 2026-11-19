@@ -24,7 +24,7 @@ korpus:
 | Mencari teks lengkap korpus lama | [`extracted/`](extracted/) — satu berkas `.md` per makalah |
 | Melihat entri yang ditahan | [`withheld/`](withheld/) — 20 entri tanpa PDF sumber |
 | Melihat bahan rujukan luar | [`references/`](references/) — PDF baseline SawitMVC dan permintaan revisi dosen pembimbing |
-| Melihat artikel contoh gaya tinjauan | [`example/`](example/) — dirujuk `manuscript/guides/GAYA-NASKAH-MAIN6.md` |
+| Melihat artikel contoh gaya tinjauan | [`example/`](example/) — dirujuk `AGENTS.md` §12 |
 
 ## Isi folder
 
