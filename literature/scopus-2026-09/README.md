@@ -14,7 +14,7 @@ dengan skrip di `tools/scopus/`.
 | Melihat keputusan per rekaman | `topik/penyaringan/` |
 | Membuka matriks bukti (satu baris per kajian) | `topik/bukti/matriks_bukti.csv` |
 | Membaca PDF akses terbuka | `pdf/` (487 berkas, gambar sudah diperkecil); teks 487 berkas di `teks/`; daftar menurut kode di [`KATALOG-PDF.md`](KATALOG-PDF.md) |
-| Mengetahui PDF yang belum ada | `unduhan/pdf_belum_ada.csv` (daftar 28 September 2026, 640 kajian; per 5 Oktober 2026 tersisa 522 dari 1.001 kajian); untuk kajian inti lihat `verifikasi/cek-4-teks-lengkap/teks_lengkap.csv` (kolom `pdf_ada`) |
+| Mengetahui PDF yang belum ada | `unduhan/pdf_belum_ada.csv` (536 laporan per 19 November 2026: 531 dari Scopus dan 5 dari luar pencarian, dengan alasan gagal unduh); untuk kajian inti lihat `verifikasi/cek-4-teks-lengkap/teks_lengkap.csv` (kolom `pdf_ada`) |
 | Melihat kajian metodologi tinjauan pustaka | `metodologi/` dan `manuscript/guides/POLA-TINJAUAN-PUSTAKA.md` |
 
 ## Isi folder
