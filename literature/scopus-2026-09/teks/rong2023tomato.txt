@@ -1,0 +1,1083 @@
+Computers and Electronics in Agriculture 207 (2023) 107741
+Available online 4 March 2023
+0168-1699/© 2023 Elsevier B.V. All rights reserved.
+Tomato cluster detection and counting using improved YOLOv5 based on 
+RGB-D fusion 
+Jiacheng Rong a,b, Hui Zhou b, Fan Zhang a, Ting Yuan a,*, Pengbo Wang b,** 
+a College of Engineering, China Agricultural University, Beijing 100083, China 
+b School of Mechanical and Electric Engineering, Jiangsu Provincial Key Laboratory of Advanced Robotics, Soochow University, Suzhou 215123, China   
+A R T I C L E I N F O  
+Keywords: 
+Multi-model fusion 
+Multiple object tracking 
+Deep learning 
+Inspection robot 
+Tomato yield estimation 
+A B S T R A C T  
+Accurate estimation of tomato cluster yields is critical to the advancement of intelligent and unmanned green­
+houses, guiding horticultural management and adjusting sales and marketing strategies. However, due to the 
+complex natural environment and tracking stability, there are still considerable challenges for automated yield 
+estimation to be deployed in practice. Therefore, this paper presents an improved tomato cluster counting 
+method that combines object detection, multiple object tracking, and specific tracking region counting. To 
+reduce background tomato misidentification, we proposed the YOLOv5-4D that fuses RGB images and depth 
+images as input. Next, we adopted ByteTrack to track tomato clusters in continuous frames and designed a 
+specific tracking region counting method to overcome the problem of tracked tomato cluster ID shift. In the test 
+set, the improved YOLOv5-4D had a detection accuracy of 97.9 % and a mAP@0.5:0.95 of 0.748. Field exper­
+iments showed that the counting method achieved a statistical average counting accuracy of 95.1 % and the 
+integrated algorithm ran at more than 40 FPS, enabling stable real-time yield estimation.   
+1. Introduction 
+Crop yield information is a critical role in the management of crop 
+production, guiding agricultural planting practices and assisting farmers 
+in fruit market strategy layout such as selling their crops earlier (Alwis 
+et al., 2022; Koirala et al., 2019a; Maheswari et al., 2021). Stakeholders 
+across the agricultural supply chain can gain from this reduction in 
+production process uncertainty by forecasting crop yield. Worldwide 
+production of tomatoes had reached 187 million tons by 2020, with 
+China accounting for more than 30 % of that total (Sun et al., 2022). 
+With the spread of the smart greenhouse tomato growing model in 
+China, total tomato production and unit yield will continue to rise in the 
+future. This means, in contrast to the declining labour force in agricul­
+tural production, a growing amount of labour is required to manually 
+count tomato yields. Therefore, it is significant and urgent to realize the 
+automatic counting of tomatoes in greenhouses by inspection robots 
+(Saleem et al., 2021). 
+Tomatoes are grown at a high density in production greenhouses, 
+with small spacing between tomatoes on adjacent ridges, as shown in 
+Fig. 1. When the camera acquires images at the current ridge, tomato 
+clusters growing at the opposite ridge can appear in the field of view. 
+Except for differences in pixel area between tomatoes, the tomatoes on 
+both the opposite ridge and current ridge have similar colour and 
+morphological characteristics, which complicates the task of dis­
+tinguishing between foreground and background tomatoes. In our pre­
+vious work, we also encountered the problem of background tomato 
+misidentification (Rong et al., 2021), which is a challenge in the tomato 
+counting task, over-estimating yields. Another issue is that the unripe 
+tomatoes are similar in colour to the green background, which allows 
+the detector to miss some tomatoes and affects counting accuracy. 
+Further, variations in fruit colour, shape, or brightness can be encoun­
+tered over different plants of the same tomato crop, and over images of 
+the same tomato cluster from different perspectives (Afonso et al., 2020; 
+Bac et al., 2017). These mentioned problems will affect the accuracy of 
+yield estimation in terms of repeated counts, over-counting, etc. 
+In recent years, many studies have been done on fruit identification 
+and counting (Liu et al., 2018a; Wang et al., 2022a; Zheng et al., 2022). 
+Compared with the traditional image processing methods based on 
+manual feature extraction (Lin et al., 2019; Rakun et al., 2011; Yama­
+moto et al., 2014), object detection algorithms based on deep 
+* Corresponding author. 
+** Corresponding author. 
+E-mail addresses: yuanting122@cau.edu.cn (T. Yuan), pbwang@suda.edu.cn (P. Wang).  
+Contents lists available at ScienceDirect 
+Computers and Electronics in Agriculture 
+journal homepage: www.elsevier.com/locate/compag 
+https://doi.org/10.1016/j.compag.2023.107741 
+Received 26 October 2022; Received in revised form 24 February 2023; Accepted 25 February 2023   
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+2
+convolutional networks have been able to easily perform the task of 
+detecting crops (Liu et al., 2020; Liu et al., 2018b; Tian et al., 2019). 
+Many of these works in fruit detection focused on the application of 
+mainstream visual algorithms based on deep learning in agricultural 
+scenarios or adjusting the partial structure of the network to improve the 
+detection performance for specific crops (Saleem et al., 2021; Wang 
+et al., 2022b). An improved YOLOv3 detector with a backbone network 
+of DenseNet was proposed, which could be used to detect apples at 
+different growth stages in orchards, including those apples under oc­
+clusion and overlap conditions (Tian et al., 2019). Hu et al. (2019) used 
+the Faster R-CNN model to realize fast and accurate detection of ripe 
+tomatoes on the ridges. First, Faster RCNN was deployed to locate to­
+matoes, and then the Gaussian density function of H and S in the HSV 
+colour space was used to segment the tomato regions for removing 
+background pixels. The detection accuracy of separate, adjacent, over­
+lapped and shaded tomatoes were 95.5 %, 93.8 %, 78.4 % and 81.9 %, 
+respectively. Liu et al. (2020) proposed an improved tomato detection 
+model based on YOLOv3 with an accuracy of 94.75 % and a recall of 
+93.09 %, which replaced the traditional rectangular bounding box with 
+a circular bounding box for better tomato localization. To locate the 
+tomato shearing point more precisely, Yu et al. (2020) proposed a novel 
+object detector called rotated YOLO (R-YOLO). Except for the output of 
+the bounding box corresponding to the strawberry, R-YOLO additionally 
+provided an angle to make the bounding box fit the target better. In the 
+field test, R-YOLO could achieve a precision of 97.17 % and a recall of 
+95.81 %. In contrast to laboratory conditions, the equipment used in 
+actual agricultural production had to face hardware limitations. In an 
+attempt to achieve real-time recognition for the stem/ calyx of apples 
+under CPU conditions, Wang et al. (2022c) optimized the YOLOv5 
+model by using detection head searching, layer pruning, and channel 
+pruning. The model parameters and weights volumes decreased by 
+about 71 % while the detection performance decreased slightly. 
+Based on crop identification research, some scholars have further 
+studied crop counting to estimate crop yield in future periods. Liu et al. 
+(2018a) proposed a fruit-counting method that combined deep seg­
+mentation, frame-to-frame tracking, and 3D localization. The FCN 
+model was first trained to segment fruit pixels from video frame images, 
+and subsequently, the Hungarian algorithm was used to track fruits 
+across frames. In order to correct outliers and double-counted fruit 
+tracks, they combined tracking results with the Structure from Motion 
+(SFM) algorithm. As compared to previous tracking algorithms, Deep­
+SORT has been proven to be a capable tracker, and Parico and Ahamed 
+(2021) used the method to count pear fruit. The counting task was 
+divided into two parts. The first part was to recognize the pears using 
+YOLOv4, and later to track the fruits between multiple frames using the 
+DeepSORT algorithm. Similarly, Lyu et al. (2022) and Ge et al. (2022) 
+also made some progress in yield estimation for green citrus and tomato 
+using the DeepSORT algorithm. Furthermore, Zhang et al. (2022) pro­
+posed an improved DeepSORT algorithm, called OrangeSort, to track 
+and count citrus fruit. This method tracked citrus based on motion 
+displacement estimation, which effectively alleviated the problem of 
+repeated counting of obscured fruit. 
+Most of the aforementioned fruit counting was implemented based 
+on multiple object tracking (MOT) algorithms, which generally include a 
+detection module and a tracking module. Earlier, we discussed the 
+challenge of misidentifying background tomatoes, which can lead to 
+inflated yield estimates. Although object detection algorithms based on 
+deep convolutional networks (Bochkovskiy et al., 2020; Ge et al., 2021) 
+have been able to easily perform the task of detecting tomato clusters 
+and fruits, the lack of depth information can make it possible to detect 
+tomatoes growing on the opposite side as well. One way to reduce the 
+background interface is to perform image acquisition at night (Afonso 
+et al., 2020; Koirala et al., 2019b; Liang et al., 2020). 
+In this paper, a method for detecting and counting tomato clusters in 
+the production greenhouse was presented. In the detection task, the 
+improved YOLOv5 was proposed to increase the detection accuracy by 
+fusing RGB images and depth images. In the counting task, the tomato 
+clusters across multiple frames were tracked using the ByteTrack mul­
+tiple object tracking algorithm. Finally, a specific tracking region 
+counting method was designed to reduce the effect of repeated counting 
+of the same tomato cluster due to the ID switch. After reviewing the 
+challenges and progress of fruit detection and counting, the rest of this 
+paper is structured as follows: Section 2 presents the image acquisition 
+and dataset creation, the improved YOLOv5 based on RGB-D fusion, and 
+the tomato cluster tracking and counting method; Section 3 shows the 
+evaluation of the improved YOLOv5, provides the results and discussion 
+of the tracking and counting methods; finally, Section5 concludes the 
+research work. 
+2. Materials and methods 
+2.1. Image acquisition and dataset creation 
+The inspection robot was deployed at the Nihui agricultural green­
+house site in Suzhou, China, for image data collection and vision system 
+testing. As shown in Fig. 2, this is a 3D view of our deployed inspection 
+robot, consisting of a mobile robotic platform and a vision system. The 
+mobile robotic platform can move both on the ground and the orbit, 
+depending on Radio Frequency Identification (RFID) and navigation line 
+identification for autonomous moving and switching orbits in the 
+Fig. 1. Production greenhouse scenarios with complex backgrounds.  
+Fig. 2. Our tomato inspection robot: (a) the 3D view of the inspection robot; 
+(b) the robot prototype. 
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+3
+greenhouse. As a result of our manual statistics, the cameras were at a 
+distance of 500–700 mm from the tomatoes in the growing area. Thus, 
+the cameras were placed at heights of 1050 mm, and 1550 mm from the 
+ground in order to provide a field of view that covered the ripe tomato 
+growing region without excessive image overlap. 
+In our experiments, we used the Intel RealSense D435i camera and 
+the Microsoft Azure Kinect DK camera for RGB image and Depth Image 
+acquisition. These RGB-D cameras were configured to output aligned 
+RGB and depth images with the resolution of 1280 × 720, as shown in 
+Fig. 3. And in some cases, images and videos were taken with the camera 
+placed directly on the shooting stand. In these cases, the depth image 
+(see Fig. 3(b)) was mapped from float values in the range of 0 to 1500 
+(distance in millimetres) to an integer value in the range of 0 to 255 (the 
+image data type is uint8), and the distance over 1500 mm was set to 0. 
+Therefore, the depth image is a depiction of distances in the form of a 
+grey-scale map. 
+The images were acquired with full consideration of environmental 
+factors. Images were collected under a variety of lighting conditions, 
+including sunny and cloudy days, and a total of 574 sets of RGB and 
+depth images were acquired and manually labelled using the labelImg 
+annotation tool (https://github.com/tzutalin/labelImg). This tool al­
+lows enveloping the tomato cluster with a rectangular bounding box. 
+Finally, the labelling guidelines were as follows:  
+(1) Only foreground tomatoes were marked without doing anything 
+with the background tomatoes (growing on the next monopoly), 
+which were defined as those more than 0.8 m away from the 
+camera (corresponding to a value greater than 140 on the depth 
+image).  
+(2) As the field of view of the camera was not sufficient to cover the 
+entire tomato growing area, we labelled only tomato clusters 
+with more than four fruits that could be observed in the image. 
+2.2. Improved YOLOv5 detector 
+As one of the most widespread single-stage object detection algo­
+rithms, YOLO has been commonly employed in industry and agriculture 
+with its outstanding performance and fast detection speed after several 
+version iterations and module upgrades (Bochkovskiy et al., 2020; 
+Redmon et al., 2016; Redmon and Farhadi, 2017; Redmon and Farhadi, 
+2018). YOLOv5 was released on the GitHub website by Ultralytics LLC 
+(https://github.com/ultralytics/yolov5) and provided four different 
+scale versions (S, M, L and X, in which different network depths and 
+widths were set), improving and upgrading on YOLOv3. Compared to 
+YOLOv3 and YOLOv4, YOLOv5 uses various data enhancement tech­
+niques and has a clean network structure design. Additionally, it was 
+fully written in the PyTorch framework rather than using the Darknet 
+framework, resulting in better accessibility and easy deployment. For 
+these reasons, we chose YOLOv5 as the benchmark for improvements 
+and performance comparison. 
+In this paper, we apply multi-modal (RGB image and Depth Image) 
+data fusion to optimize the input of YOLOv5, with the goal of reducing 
+false detection of background tomatoes and improving the recall of 
+immature tomatoes. The original structure of YOLOv5 is given in Fig. 4, 
+with the difference that only the RGB image is used as input. Like the 
+current state-of-the-art object detection algorithms, YOLOv5 is made of 
+the backbone network, the neck network and the detection head. 
+The backbone network of YOLOv5 mainly includes Focus module, 
+CBS module, SPP module and C3 module. In deep learning, the back­
+bone network is used to extract features at different scales of the image, 
+including low-level features (textures, boundaries, etc.) extracted at 
+shallower layers, and high-level semantic features extracted at deeper 
+layers. Firstly, the Focus module performs a slicing operation on the 
+input image (see Fig. 5(a)), which expands the input channel to four 
+times its original channel while reducing the width and height of the 
+image to half its original size. In the case of no information loss, the 
+Focus module performs two-fold downsampling, which helps reduce the 
+number of model parameters and speed up inference. The basis module 
+for other modules in YOLOv5 is the CBS module (see Fig. 5(b)), which 
+combines the 2D convolution (Conv), batch normalization (BN), and 
+SiLU activation function (SiLU). As shown in Fig. 5(c), it’s the Spatial 
+Pyramid Pooling (SPP) module. The SPP module is typically used to 
+solve problems of the non-uniform size of input images and enormous 
+variations in object sizes in images by employing kernels of various sizes 
+for performing maximum pooling on feature maps. The C3 module is 
+crucial for building the backbone of YOLOv5, as given in Fig. 5(d). It’s 
+composed of multiple CBS modules to form residual connections, 
+Fig. 3. The aligned RGB and depth images: (a) RGB Image; (b) Depth Image.  
+Fig. 4. The structure of the improved YOLOv5 detector.  
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+4
+whereas the input feature maps are concatenated with the results of 
+multiple residual connections, making this sub-network (C3) a Cross 
+Stage Partial (CSP) module. 
+After image features are extracted by the backbone network, the 
+neck network is then applied to connect the backbone and the detection 
+head. This step is to extract information for fusion on feature maps at 
+different scales aiming to increase feature reuse. In this model, the neck 
+uses a combination of Feature Pyramid Network (FPN) and Pixel Ag­
+gregation Network (PAN), integrating the regular top-down FPN with 
+the bottom-up PAN to fuse the extracted semantic features with fine- 
+grained positional features. Finally, the detection head performs the 
+prediction on three different scales of feature maps for detecting target 
+objects of various sizes, which outputs vectors containing information 
+about the probability of the target object categories, the confidence level 
+and the locations of the bounding boxes. 
+In contrast to the original YOLOv5, the input information of the 
+object detector is added in this paper. As shown in Fig. 4, the 3-channel 
+RGB image (1280 × 720 × 3) and the single-channel depth image 
+(1280 × 720 × 1) are fused into 4-channel input data (1280 × 720 × 4) 
+using the Concat module. The addition of the depth image can increase 
+more features (the distance information), which is beneficial for the 
+detector to learn the difference between the target tomatoes and the 
+background tomatoes, hence lowering the rate of tomato misidentifi­
+cation. Simultaneously, the available depth features effectively distin­
+guish tomatoes in the foreground and background and increase the 
+saliency of green tomatoes, which can reduce the missed detection of 
+immature tomatoes. In this paper, only the first layer of the network is 
+modified, and the increased model parameters are negligible compared 
+to those of the whole network, which hardly affects the inference speed 
+of the model. In the training process, we can still train a new model using 
+pre-trained weights, and only need to load the parameters of the first 
+convolutional layer using random initialization. 
+2.3. Tomato cluster tracking and counting 
+Multiple object tracking, abbreviated as MOT, allows detecting and 
+assigning IDs to multiple objects in a video (consecutive frames) for 
+trajectory tracking without knowing the number of targets in advance. 
+Most of the current MOT algorithms are based on the Tracking-by- 
+Detection strategy. After the original consecutive frames are given, an 
+object detector is run to obtain the bounding box of the object. Then, 
+different features (visual and motion features) are computed for each 
+detected object. After that, the similarity is computed for the neigh­
+bouring frame objects. Finally, each object is associated and assigned an 
+ID. 
+Compared to the pedestrian tracking task, the feature variations 
+between different tomatoes are not substantial. In contrast, the same 
+tomato cluster from different perspectives presents diverse appearance 
+characteristics, as shown in Fig. 6. Moreover, computing appearance 
+similarity using the Re-Identification features in the DeepSort has been 
+proven to be a time-consuming task. Therefore, considering both the 
+similarity of tomato appearance and real-time detection, the ByteTrack 
+multi-object tracking algorithm (Zhang et al., 2021) is used to track and 
+count the tomato cluster objects detected by YOLOv5 in this paper. 
+The ByteTrack method is simple and efficient, using only Kalman 
+filtering to predict trajectories of the current frame in the next frame. 
+Then, the IoU between the predicted boxes and the detected boxes is 
+used as the similarity between the two matches, and the matching is 
+completed by the Hungarian algorithm. The specific workflow of the 
+ByteTrack data association method is shown in Fig. 7. First, the 
+Fig. 5. The component modules of the YOLOv5 detector: (a) Focus module; (b) CBS module; (c) SPP module; (d) C3 module.  
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+5
+Fig. 6. The same tomato cluster from different perspectives.  
+Fig. 7. The flowchart of the ByteTrack tracking algorithm.  
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+6
+detection boxes are divided into the high-score and the low-score 
+detection boxes according to the detection box scores. For the first 
+time, ByteTrack matches the previous tracking trajectories using the 
+high-score detection boxes. In the second match, the low score boxes are 
+matched with the unmatched tracking trajectories. Then, the tracking 
+trajectories that do not match twice are kept for 30 frames. Finally, a 
+new tracking trajectory is created for the high-score detection boxes that 
+do not match any existing trajectory. 
+When using ByteTrack for tomato cluster tracking, there are still 
+cases where the IDs of the same tomato clusters tracked change. In 
+particular, as the inspection robot moves, the tomato clusters shift from 
+the edge of the image to the middle position with large changes in the 
+bounding box ratio, which can make it difficult to match the same to­
+mato cluster in consecutive frames. Also, the ID of the tomato cluster is 
+prone to shift when the blocked tomato cluster reappears in view. 
+Therefore, the total number of tomato clusters is not directly counted 
+using the tomato cluster IDs generated by the ByteTrack algorithm. 
+To reduce the aforementioned problem of repeated counting, we 
+design a specific tracking region counting method. The detailed steps are 
+described as follows.  
+Algorithm 1: The specific tracking region counting method 
+Input:idc
+i ;
+(
+xc
+i , yc
+i
+)
+;
+(
+xa, ya
+)
+;
+(
+xb, yb
+)
+;Arrayout;Arrayin;Numtotal 
+Output:Arrayout;Arrayin;Numtotal 
+1:
+if 0⩽xc
+i ⩽xa and ya⩽yc
+i ⩽yb then 
+2: 
+if idc
+i not in Arrayout then 
+3: 
+Add idc
+i into Arrayout 
+4: 
+if idc
+i in Arrayin then 
+5: 
+Numtotal←Numtotal + 1 
+6: 
+end if 
+7: 
+end if 
+8: 
+else if xb⩽xc
+i and ya⩽yc
+i ⩽yb then 
+9: 
+if idc
+i not in Arrayout then 
+10:  
+Add idc
+i into Arrayout 
+11: 
+if idc
+i in Arrayin then 
+12: 
+Numtotal←Numtotal + 1 
+13: 
+end if 
+14: 
+end if 
+15: 
+else if xa⩽xc
+i ⩽xb and ya⩽yc
+i ⩽yb then 
+(continued on next column)  
+(continued) 
+Algorithm 1: The specific tracking region counting method 
+16: 
+if idc
+i not in Arrayin then 
+17: 
+Add idc
+i into Arrayin 
+18: 
+if idc
+i in Arrayout then 
+19: 
+Numtotal←Numtotal + 1 
+20: 
+end if 
+21: 
+end if 
+22: 
+end if 
+23: returnArrayout,Arrayin,Numtotal   
+(1) Firstly, the generated outputs (locations and IDs of tracked to­
+mato clusters) of ByteTrack in the current frame are divided into 
+two categories. As shown in Fig. 8, the first category is tomato 
+clusters with centroids 
+(
+xc
+i , yc
+i
+)
+in a specific region (the red 
+transparent rectangular area formed by 
+(
+xa, ya
+)
+and 
+(
+xb, yb
+)
+), and 
+another category is tomato clusters that are not in the specific 
+region.  
+(2) Next, the IDs of the tomato clusters outside the specific region and 
+the IDs in the specific region are recorded separately. If a new 
+tomato cluster ID enters the region from outside the region, the 
+total is added by one. Also, if a tomato cluster ID that has never 
+been outside the area goes out of the counting area, the total 
+number needs to be added. 
+3. Experiments and results 
+This section describes the experimental procedures and evaluation 
+metrics, and provides a comparative analysis and discussion of the 
+proposed method. The experiments conducted included the perfor­
+mance validation of the improved YOLOv5 (YOLOv5-4D) on the tomato 
+image dataset and the effectiveness of the tomato cluster tracking and 
+counting method on the video dataset. 
+The video data used was collected at the Nihui agricultural site in 
+Suzhou, China, and detailed operations can be found in the description 
+of the image data acquisition in Section 2.1. All experiments in this 
+Fig. 8. The tracking region for filtering duplicate counts in the tomato cluster count.  
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+7
+paper were run on a laptop computer configured with AMD Ryzen 
+5800H CPU, NVIDIA Geforce RTX 3070 GPU, and the Ubuntu 20.04 
+operating system. 
+3.1. Evaluation of the improved YOLOv5-4D 
+3.1.1. Model training 
+In the detection model evaluation experiments, the native YOLOv5 
+and the improved YOLOv5 based on RGB-D fusion (YOLOv5-4D) were 
+trained and evaluated respectively, and the effect of depth information 
+(distance information) on model performance improvement was illus­
+trated by analyzing the evaluation metrics of several models. 
+In the model training, the image input size was set to 640, and the 
+maximum batch size was only set to 3 due to the limitation of GPU 
+memory capacity. Referring to the experience, it was difficult to 
+converge the training data if the batch size was too small, and eventu­
+ally, the model would be under-fitted. Thus, all models undertook a 
+back-propagation after accumulating the batch size a specified number 
+of times (32 times). Furthermore, the initial learning rate and the cycle 
+learning rate were set to 0.01 and 0.2 (the learning rate decayed 
+sequentially after 200, 1000, and 1500 iterations), and an SGD optimizer 
+with 0.937 momenta and 0.0005 wt decay was adopted. 
+A total of 574 sets of aligned RGB images and depth images were 
+manually labelled and divided into training, validation, and test sets in 
+the ratio of 6:2:2. In the data preprocessing, data augmentation methods 
+such as scaling, panning, rotation, colour transformation, and Mosaic 
+were used in YOLOv5, which significantly increased the number of 
+training samples and improved the model generalization ability. The 
+improved YOLOv5-4D also inherited the data augmentation methods of 
+the original YOLOv5. It is required to distinguish if a geometric trans­
+formation was done on the RGB image, a corresponding operation was 
+also performed on the depth image so that the two images remained 
+pixel-aligned. In contrast, when a colour transformation is done on the 
+colour image, no colour change was made to the depth image, to ensure 
+that the distance features are accurate. 
+Considering the effects of loading pre-trained weights on detection 
+results, we trained each model twice separately, once from scratch and 
+the other time using pre-trained weights. All pre-trained weights were 
+downloaded from the official website and obtained from training on the 
+COCO dataset by the original authors. We trained each model for 2000 
+epochs and evaluated the model on the validation set after an epoch was 
+completed. The principal metrics for evaluation included precision, 
+recall, mAP@0.5, and mAP@0.5:0.95. The precision indicates the ratio 
+of the correct detection results to the total detection results, and the 
+recall is defined as the proportion of the correct detection results in all 
+true results, as expressed in Equations (1) and (2). Compared with the 
+precision and the recall, the mean average precision (mAP) can provide 
+a more balanced reflection of the global detection performance of the 
+model. The mAP is the average value of each category (c) of AP, and the 
+AP is defined as the area under the precision-recall curve (Zheng et al., 
+2015). The mAP@0.5 represents the mAP value with the intersection- 
+over-union (IoU) threshold of 0.5. The mAP@0.5:0.95 indicates the 
+average mAP on different IoU thresholds, moving from 0.5 to 0.95 in 
+intervals of 0.05. 
+precision =
+TP
+TP + FP
+(1)  
+recall =
+TP
+TP + FN
+(2)  
+AP =
+∫1
+0
+p⋅r⋅dr
+(3)  
+mAP = 1
+c
+∑
+c
+i=1
+APi
+(4) 
+After the 2000 epochs, the evaluation metrics of each model on the 
+validation set plateaued, indicating that these models had converged on 
+the data set, as shown in Figs. 9 and 10. Compared with the original 
+YOLOv5 and YOLOv5-4D, it was found that the improved models using 
+RGB images and depth images fusion were able to perform better on our 
+dataset, and their detection accuracy was most significantly improved, 
+able to obtain a 2 % to 4 % increase. Also, the models trained using pre- 
+trained weights showed better overall performance than the models 
+trained from scratch, with all metrics increasing. 
+Fig. 9. Training results of different models trained from scratch.  
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+8
+3.1.2. Performance on the test dataset 
+To further demonstrate the superiority of improved YOLOv5 based 
+on RGB-D fusion in tomato cluster detection, we compared the accuracy, 
+recall, mAP@0.5, and mAP@0.5:0.95 of each trained model on the test 
+set. To further bolster the credibility of our results, we introduced two 
+popular object detection algorithms, YOLOX-s and CenterNet, in our 
+comparison study on the tomato cluster dataset. As compared to 
+YOLOv5, which employs an anchor-based approach, both anchor-free 
+YOLOX-s and CenterNet present a greater challenge in terms of 
+training, necessitating a greater number of epochs to achieve conver­
+gence. In light of the many training sessions, we deemed it appropriate 
+to conduct training for 12,000 epochs for both YOLOX-s and CenterNet, 
+in order to ensure robust and accurate results. 
+Table 1 presented the test results of different models trained from 
+scratch. Compared with the native YOLOv5, the improved YOLOv5-4D 
+significantly improved precision and recall, with a 2.1 % to 3.2 % in­
+crease in accuracy and a 1.9 % to 3.6 % increase in recall. Meanwhile, 
+the mAP@0.5 and the mAP@0.5:0.95 also increased by 4.0 % to 4.6 % 
+and 2.8 % to 5.3 % respectively. In contrast, the results of YOLOX-s were 
+much lower than the other models. Further analysis of the model’s 
+predictions through visualization indicated that the YOLOX-s model 
+frequently misidentified background regions as foreground targets, 
+resulting in a high number of false positive detections. This also led to a 
+similar reduction in recall as the model fought against the dataset. And it 
+could be seen that the mAP@0.5 of both CenterNet and YOLOv5m may 
+converge towards similar levels. However, the detection speed of Cen­
+terNet was significantly slower in comparison to other models. These 
+were sufficient to prove that the method of improving the model by 
+fusing RGB images and depth images was effective. In addition, we 
+separately assessed the models trained from scratch and the models 
+trained using pre-trained weights (see Table 1 and Table 2) and found 
+that loading the pre-trained weights for training could obtain better 
+results (the mAP@0.5:0.95 of YOLOv5-4D could be increased to 0.769), 
+which matched the findings of other scholars (Duong et al., 2020). 
+Further, test results using different scale versions of YOLOv5-4D did not 
+show significant metric variations, suggesting that using the smallest 
+version (YOLOv5s-4D) was enough to obtain excellent performance on 
+the tomato cluster dataset in edge devices, instead enabling significant 
+computational time savings. 
+As shown in Fig. 11 and Fig. 12, the tomato clusters were detected on 
+two test images using different models trained with pre-trained weights, 
+and the results were visualized. In scenarios 1, there were 6 foreground 
+tomato clusters, in combination with a distinct background tomato 
+cluster interference. The native YOLOv5 and YOLOX-s misidentified the 
+Fig. 10. Training results of different models trained using pre-trained weights.  
+Table 1 
+Test results of different models trained from scratch.   
+Speed /ms 
+Precision 
+Recall 
+mAP@0.5 
+mAP@0.5:0.95 
+YOLOv5s-4D  
+9.6  
+0.975  
+0.882  
+0.884 
+0.743 
+YOLOv5m- 
+4D  
+12.9  
+0.979  
+0.886  
+0.890 
+0.748 
+YOLOX-s  
+16.0  
+0.825  
+0.798  
+0.738 
+0.579 
+CenterNet  
+22.1  
+0.967  
+0.829  
+0.857 
+/ 
+YOLOv5s  
+9.4  
+0.954  
+0.846  
+0.838 
+0.690 
+YOLOv5m  
+12.5  
+0.947  
+0.867  
+0.858 
+0.720 
+Bold values indicate better results than other methods under the current index. 
+Table 2 
+Test results of different models trained using pre-trained weights.   
+Speed /ms 
+Precision 
+Recall 
+mAP@0.5 
+mAP@0.5:0.95 
+YOLOv5s-4D  
+9.6  
+0.986  
+0.892  
+0.895 
+0.769 
+YOLOv5m- 
+4D  
+12.9  
+0.989  
+0.882  
+0.884 
+0.761 
+YOLOX-s  
+16.0  
+0.914  
+0.868  
+0.826 
+0.699 
+CenterNet  
+22.1  
+0.964  
+0.827  
+0.852 
+/ 
+YOLOv5s  
+9.4  
+0.943  
+0.889  
+0.879 
+0.755 
+YOLOv5m  
+12.5  
+0.962  
+0.869  
+0.864 
+0.756 
+Bold values indicate better results than other methods under the current index. 
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+9
+tomato clusters in the background (see Fig. 11€, Fig. 11(d), and 
+Fig. 11€). And the improved YOLOv5 and CenterNet avoided misiden­
+tification. Besides, only CenterNet misidentified a background tomato 
+cluster in the lower right and missed detection of target 6. In previous 
+tomato detection tasks, it is easy to ignore the input of depth images, 
+which could significantly distinguish target tomatoes from background 
+tomatoes, as shown in Fig. 11(b) and Fig. 12(b). After using the 
+improved YOLOv5-4D, the detection results were greatly enhanced and 
+the false detection of background tomatoes was reduced. This is like 
+human binocular vision, which easily distinguishes between front and 
+rear views by perceiving the distance of an object as one of the recog­
+nition features, without relying on pixel area. In scenario 2 (see Fig. 12), 
+there were also 6 foreground tomato clusters that needed to be identi­
+fied, with all being immature tomatoes that were difficult to distinguish 
+from the background. YOLOv5s, YOLOv5m and CenterNet were rela­
+tively badly missed, with 3, 4 and 3 missed detections respectively. And 
+Fig. 11. Visualization of the effect on the tomato cluster detection using different models in Scenario 1: (a) The original image; (b) The depth image; (c) The output 
+from YOLOv5s; (d) The output from YOLOv5m; (e) The output from YOLOX-s (f) The output from CenterNet; (g) The output from YOLOv5s-4D; (h) The output from 
+YOLOv5m-4D. 
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+10
+Although all foreground tomato clusters were detected by YOLOX-s, one 
+tomato cluster was detected by mistake. Furthermore, YOLOv5s-4D 
+successfully detected 4 tomato clusters. In this scenario, only 
+YOLOv5m-4D detected all tomato clusters without misidentification. 
+This can prove our assertion that distance information in the depth 
+image could compensate for the unripe tomatoes in the foreground and 
+increase the probability of being recognized by the improved object 
+detector. The above results demonstrated that for object detectors such 
+as YOLOv5, the improvement by fusing RGB images and depth images as 
+new inputs was effective. 
+3.2. Evaluation of the tomato cluster counting method 
+To verify the effectiveness of the tomato cluster counting method, we 
+collected several videos in a real greenhouse and tested them with 
+different detectors. The mobile robotic platform moves in orbit at a 
+speed of 0.15 m/s during the multiple video data acquisitions. The 
+camera acquires data dynamically in real-time at 30 FPS and saves it in 
+Fig. 12. Visualization of the effect on the tomato cluster detection using different models in Scenario 2: (a) The original image; (b) The depth image; (c) The output 
+from YOLOv5s; (d) The output from YOLOv5m; (e) The output from YOLOX-s (f) The output from CenterNet; (g) The output from YOLOv5s-4D; (h) The output from 
+YOLOv5m-4D. 
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+11
+video format, including colour images and depth images. In this 
+experiment, we statistic the average FPS, maximum ID, MOTA and the 
+total counting number given by counting algorithms, and manually 
+counted the number of tomato clusters in the videos. The maximum ID 
+was the number of last tracked tomato clusters given by the ByteTrack 
+tracker. The maximum ID was related to the ID misconversions (ID 
+switch) and was used to evaluate the tracking stability of ByteTrack. The 
+MOTA was then used to evaluate the performance of the tracking al­
+gorithm and was negatively correlated with the number of FNs, FPs, and 
+IDSWs. 
+MOTA = 1 −
+∑
+t(FNt + FPt + IDSWt)
+∑
+tGTt
+(5) 
+As shown in Fig. 12, a visual image was presented when running the 
+tomato cluster tracking counting algorithm. When a tomato appeared 
+outside the specific tracking region (the area inside the pink rectangle), 
+the tracking algorithm matched the newly appearing tomato with the 
+corresponding ID, and the total counting number did not increase at this 
+time (see Fig. 13(a)). The total counting number was increased only 
+when tomato clusters that were continuously tracked entered the region 
+for the first time, as seen in Fig. 13(b), Fig. 13(c), and Fig. 13(d). 
+As given in Table 3, 529 tomato clusters were counted manually in 
+multiple videos. We select YOLOv5m-4D, YOLOv5m and CenterNet for 
+the tomato cluster counting experiment. YOLOX-s and YOLOv5s-4D did 
+not participate in this round as the YOLOX-s was too poor in terms of 
+accuracy and the performance of YOLOv5m-4D on accuracy and recall 
+metric was close to the YOLOv5m-4D. Compared with the native 
+YOLOv5m and CenterNet, YOLOv5m-4D could greatly reduce the 
+number of background false detections, which was reflected in the 
+number of IDs tracked. Max IDs (it is 290, 318, 145, and 324 respectively 
+in the videos) tracked by ByteTrack using YOLOv5m-4D as a detector 
+was less than max IDs (it is 313, 339, 155, and 357 respectively in the 
+videos) tracked using YOLOv5 as a detector or max IDs (it is 324, 347, 
+151, and 361 respectively in the videos) tracked by CenterNet. In these 
+tests, the two main reasons for the ID shift were the large variation in 
+features observed from different viewpoints and the presence of false 
+positive tomato clusters in a particular frame. From the results, it 
+appeared that YOLOv5 with increased distance information input is 
+effective in reducing the probability of false detection and thus the least 
+ID shift among these algorithms. However, the MOTA metric results 
+showed that neither the usage of ByteTrack nor other more advanced 
+tracking algorithms could solve the ID shift problem. Therefore, it was 
+inaccurate to adopt max IDs counted as the yield result. In this paper, we 
+used the designed specific tracking region counting method to auto­
+matically count tomato clusters, and these results were more rigorous 
+and used as the final statistical yield. The counting effect of the overall 
+algorithm was expressed in terms of counting accuracy, which was 
+defined as shown in Equation (6). The statistical results of the counting 
+algorithm using YOLOv5m-4D as a detector differed from the true values 
+by 3.6 %, 3.1 %, 5.5 %, and 7.7 % in the four tests, respectively. In 
+comparison, the statistics of the counting results using YOLOv5m as a 
+detector deviated by 10.2 %, 2.3 %, 12.1 % and 5.6 %, respectively, and 
+the counting results using CenterNet deviated by 12.0 %, 7.0 %, 9.9 % 
+and 8.4 %. Statistical average counting accuracy (see Equation (7)) for 
+four tests was 95.1 % using YOLOv5m-4D, higher than 92.6 % using 
+Fig. 13. Tomato cluster tracking and counting process: (a) The total estimated production for the moment 1 was 16; (b) The total estimated production for the 
+moment 2 was 17; (c) The total estimated production for the moment 3 was 18; (d) The total estimated production for the moment 4 was 18. 
+Table 3 
+Comparison of counting methods using different object detectors.  
+Detector 
+FPS 
+True 
+Number 
+Max 
+ID 
+MOTA 
+Counting 
+Number 
+Counting 
+Precision 
+(%) 
+YOLOv5m- 
+4D 
+44.8 
+167 
+290  
+0.84 
+173  
+96.4 
+128 
+318  
+0.79 
+124  
+96.9 
+91 
+145  
+0.89 
+96  
+94.5 
+143 
+324  
+0.81 
+132  
+92.3 
+YOLOv5m 
+47.4 
+167 
+313  
+0.76 
+184  
+89.8 
+128 
+339  
+0.74 
+131  
+97.7 
+91 
+155  
+0.85 
+102  
+87.9 
+143 
+357  
+0.73 
+151  
+94.4 
+CenterNet 
+31.6 
+167 
+324  
+0.73 
+187  
+88.0 
+128 
+347  
+0.69 
+137  
+93.0 
+91 
+151  
+0.86 
+100  
+90.1 
+143 
+361  
+0.71 
+155  
+91.6  
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+12
+YOLOv5m and 90.6 % using CenterNet. In the second and fourth 
+abnormal results, it was found that the presence of repeated counts with 
+missed detections brought the total count number closer to the true 
+number. However, the overall results showed that the adoption of the 
+YOLOv5-4D provided better identification of tomato clusters, and the 
+reduction of background misidentification enables better tracking tasks. 
+Overall, the specific region tracking counting method enabled better 
+counting of tomato clusters in practice, minimizing the impact of 
+frequent changes in tomato cluster IDs. 
+precisioncounting = 1 −⃒⃒
+Numcounting −Numtrue⃒⃒
+Numtrue
+(6)  
+accuracycounting = 1 −
+∑
+i⃒⃒Numcounting −Numtrue⃒⃒
+∑
+iNumtrue
+(7)  
+3.3. Discussion 
+The current work showed that the entire tomato cluster detection 
+and counting algorithm could work well in the greenhouse. In the to­
+mato detection task, the improved YOLOv5-4D can significantly in­
+crease detection accuracy and recall metrics. In this paper, we only tried 
+to build a simple multi-model fusion model, and future attempts can be 
+made to fuse in the Neck module or to additionally add NIR images. 
+Also, the input used for model training and testing consisted of RGB 
+images and corresponding depth images, thus increasing the cost of 
+reacquiring the data. Therefore, we need to re-perform the complete 
+data acquisition in future work, which increases the cost of re-acquiring 
+data. 
+When tracking each identified tomato cluster using the MOT algo­
+rithm such as ByteTrack and DeepSORT, the ID shift can lead to inac­
+curate counting if the total number of tomato clusters is counted directly 
+by the ID number. Therefore, we handle the tracking and counting tasks 
+separately and propose a specific tracking region counting method to 
+strictly limit the repeated counting behaviour. Experiments have 
+demonstrated the effectiveness of this method. In the experiments, there 
+were still a few missed detections, and if a tomato cluster was missed in 
+the middle counting region, it would result in an undercount. Another 
+remaining issue was the shift of IDs after tomato clusters entered the 
+counting area, which led to repeated counting. These are the reasons 
+why there is still a 4.9 % counting error and also are issues that need to 
+be improved in the future. 
+Although we have been able to identify and localize tomato clusters, 
+we only detect a mixture of all tomato clusters with different maturities. 
+Before it is truly implemented to guide farmers’ production activities, 
+we need to further count tomato clusters of different maturity levels 
+separately (at least distinguishing between ripe and unripe tomatoes). 
+Through the collection and analysis of data on tomato ripeness, farmers 
+can optimize their harvesting and processing operations. By gaining 
+insights into the expected quantity of tomatoes that will be available for 
+harvest on any given day, they can more effectively allocate their re­
+sources and streamline their production processes. In addition, suppliers 
+can leverage this data to enhance their transportation and distribution 
+logistics by proactively scheduling the necessary resources to move large 
+quantities of produce to market. However, the maturity classification of 
+tomato clusters is a daunting challenge, as either the tomato fruit tip or 
+light can interfere with the accuracy of ripeness detection. Only when 
+such problems are solved can the inspection robot better serve farmers 
+and genuinely automate yield estimation. 
+4. Conclusion 
+This paper presents the improvements in detection, tracking, and 
+counting methods to achieve tomato cluster yield estimation in a 
+greenhouse scenario. To reduce background tomato misidentification, 
+we proposed the improved YOLOv5-4D based on RGB-D fusion, which 
+achieved an accuracy of 97.9 % and a mAP@0.5:0.95 of 0.748. We 
+adopted the ByteTrack MOT method to track tomato clusters and 
+designed a specific tracking region counting method to overcome the 
+problem of tracked tomato cluster ID shift in consecutive greenhouse 
+scenarios, which effectively reduced the duplicate counts. Field test re­
+sults showed that the statistical average counting accuracy of this 
+method reached 95.1 % and the integrated algorithm ran faster than 40 
+FPS, enabling stable and real-time yield estimation. Experiments clarify 
+the effectiveness of machine counting tomato clusters. In the future, 
+after further classification of tomato maturity, the yield prediction 
+technology will have a positive impact on both the supply chain and the 
+market. 
+CRediT authorship contribution statement 
+Jiacheng Rong: Formal analysis, Investigation, Methodology, Soft­
+ware, Writing – original draft. Hui Zhou: Investigation, Validation. Fan 
+Zhang: Investigation, Validation. Ting Yuan: Conceptualization, 
+Funding acquisition, Resources, Supervision, Writing – review & editing. 
+Pengbo Wang: Resources, Supervision, Writing – review & editing. 
+Declaration of Competing Interest 
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper. 
+Data availability 
+Data will be made available on request. 
+Acknowledgments 
+This work received funding support from Science and Technology 
+Program of Suzhou (SNG2022055) and National Key Research and 
+Development Program of China (2016YFD0701501). 
+The greenhouse was provided by Nihui agricultural greenhouse site 
+in Suzhou, China. All authors contributed to the work. Jiacheng Rong 
+collected the dataset, proposed the algorithm, performed the experi­
+ments, analyzed the results, and wrote the first draft. Hui Zhou and Fang 
+Zhang labeled images and assisted in conducting experiments. Ting 
+Yuan and Pengbo Wang guided the research work and helped to revise 
+the paper. 
+We declare that we have no financial and personal relationships with 
+other people or organizations that inappropriately influence our work, 
+there is no professional or other personal interest of any nature or kind in 
+any product, or service. 
+Appendix A. Supplementary data 
+Supplementary data to this article can be found online at https://doi. 
+org/10.1016/j.compag.2023.107741. 
+References 
+Afonso, M., Fonteijn, H., Fiorentin, F.S., Lensink, D., Mooij, M., Faber, N., Polder, G., 
+Wehrens, R., 2020. Tomato Fruit Detection and Counting in Greenhouses Using Deep 
+Learning. Frontiers in Plant Science 11. 
+Alwis, S.D., Hou, Z., Zhang, Y., Na, M.H., Ofoghi, B., Sajjanhar, A., 2022. A survey on 
+smart farming data, applications and techniques. Comput. Ind. 138, 103624. 
+Bac, C.W., Hemming, J., van Tuijl, B.A.J., Barth, R., Wais, E., van Henten, E.J., 2017. 
+Performance Evaluation of a Harvesting Robot for Sweet Pepper. J. Field Rob. 34, 
+1123–1139. 
+Bochkovskiy, A., Wang, C.-Y., Liao, H.-Y.M., 2020. YOLOv4: Optimal Speed and 
+Accuracy of Object Detection. arXiv e-prints, arXiv:2004.10934. 
+Duong, L.T., Nguyen, P.T., Di Sipio, C., Di Ruscio, D., 2020. Automated fruit recognition 
+using EfficientNet and MixNet. Comput. Electron. Agric. 171, 105326. 
+Ge, Z., Liu, S., Wang, F., Li, Z., Sun, J., 2021. YOLOX: Exceeding YOLO Series in 2021. 
+arXiv e-prints, arXiv:2107.08430. 
+J. Rong et al.                                                                                                                                                                                                                                     
+
+Computers and Electronics in Agriculture 207 (2023) 107741
+13
+Ge, Y., Lin, S., Zhang, Y., Li, Z., Cheng, H., Dong, J., Shao, S., Zhang, J., Qi, X., Wu, Z., 
+2022. Tracking and Counting of Tomato at Different Growth Period Using an 
+Improving YOLO-Deepsort Network for Inspection Robot. Machines 10. 
+Hu, C., Liu, X., Pan, Z., Li, P., 2019. Automatic Detection of Single Ripe Tomato on Plant 
+Combining Faster R-CNN and Intuitionistic Fuzzy Set. IEEE Access 7, 
+154683–154696. 
+Koirala, A., Walsh, K.B., Wang, Z., McCarthy, C., 2019a. Deep learning – Method 
+overview and review of use for fruit detection and yield estimation. Comput. 
+Electron. Agric. 162, 219–234. 
+Koirala, A., Walsh, K.B., Wang, Z., McCarthy, C., 2019b. Deep learning for real-time fruit 
+detection and orchard fruit load estimation: benchmarking of ‘MangoYOLO’. Precis. 
+Agric. 20, 1107–1135. 
+Liang, C., Xiong, J., Zheng, Z., Zhong, Z., Li, Z., Chen, S., Yang, Z., 2020. A visual 
+detection method for nighttime litchi fruits and fruiting stems. Comput. Electron. 
+Agric. 169, 105192. 
+Lin, G., Tang, Y., Zou, X., Li, J., Xiong, J., 2019. In-field citrus detection and localisation 
+based on RGB-D image analysis. Biosyst. Eng. 186, 34–44. 
+Liu, X., Chen, S.W., Aditya, S., Sivakumar, N., Dcunha, S., Qu, C., Taylor, C.J., Das, J., 
+Kumar, V., 2018a. Robust Fruit Counting: Combining Deep Learning, Tracking. In: 
+and Structure from Motion, 2018 IEEE/RSJ International Conference on Intelligent 
+Robots and Systems (IROS), pp. 1045–1052. 
+Liu, Y., Yang, C., Ling, H., Mabu, S., Kuremoto, T., 2018b. A Visual System of Citrus 
+Picking Robot Using Convolutional Neural Networks, 2018 5th International 
+Conference on Systems and Informatics (ICSAI), pp. 344-349. 
+Liu, G., Nouaze, J.C., Touko Mbouembe, P.L., Kim, J.H., 2020. YOLO-Tomato: A Robust 
+Algorithm for Tomato Detection Based on YOLOv3. Sensors 20. 
+Lyu, S., Li, R., Zhao, Y., Li, Z., Fan, R., Liu, S., 2022. Green Citrus Detection and Counting 
+in Orchards Based on YOLOv5-CS and AI Edge System. Sensors 22. 
+Maheswari, P., Raja, P., Apolo-Apolo, O.E., P´erez-Ruiz, M., 2021. Intelligent Fruit Yield 
+Estimation for Orchards Using Deep Learning Based Semantic Segmentation 
+Techniques—A Review. Frontiers in Plant Science 12. 
+Parico, A.I., Ahamed, T., 2021. Real Time Pear Fruit Detection and Counting Using 
+YOLOv4 Models and Deep SORT. Sensors 21. 
+Rakun, J., Stajnko, D., Zazula, D., 2011. Detecting fruits in natural scenes by using 
+spatial-frequency based texture analysis and multiview geometry. Comput. Electron. 
+Agric. 76, 80–88. 
+Redmon, J., Farhadi, A., 2017. YOLO9000: better, faster, stronger, Proceedings of the 
+IEEE conference on computer vision and pattern recognition, pp. 7263-7271. 
+Redmon, J., Farhadi, A.J.a.p.a., 2018. Yolov3: An incremental improvement. 
+Redmon, J., Divvala, S., Girshick, R., Farhadi, A., 2016. You only look once: Unified, 
+real-time object detection. In: Proceedings of the IEEE conference on computer 
+vision and pattern recognition, pp. 779–788. 
+Rong, J., Dai, G., Wang, P., 2021. A peduncle detection method of tomato for 
+autonomous harvesting. Complex Intell. Syst. 
+Saleem, M.H., Potgieter, J., Arif, K.M., 2021. Automation in Agriculture by Machine and 
+Deep Learning Techniques: A Review of Recent Developments. Precis. Agric. 22, 
+2053–2091. 
+Sun, H., Ren, M., Zhang, J., 2022. Genome-wide identification and expression analysis of 
+fibrillin (FBN) gene family in tomato (Solanum lycopersicum L.). PeerJ 10, e13414. 
+Tian, Y., Yang, G., Wang, Z., Wang, H., Li, E., Liang, Z., 2019. Apple detection during 
+different growth stages in orchards using the improved YOLO-V3 model. Comput. 
+Electron. Agric. 157, 417–426. 
+Wang, D., Cao, W., Zhang, F., Li, Z., Xu, S., Wu, X., 2022b. A Review of Deep Learning in 
+Multiscale Agricultural Sensing. Remote Sens. (Basel) 14. 
+Wang, Z., Jin, L., Wang, S., Xu, H., 2022c. Apple stem/calyx real-time recognition using 
+YOLO-v5 algorithm for fruit automatic loading system. Postharvest Biol. Technol. 
+185, 111808. 
+Wang, C., Wang, Y., Liu, S., Lin, G., He, P., Zhang, Z., Zhou, Y., 2022a. Study on Pear 
+Flowers Detection Performance of YOLO-PEFL Model Trained With Synthetic Target 
+Images. Frontiers in Plant Science 13. 
+Yamamoto, K., Guo, W., Yoshioka, Y., Ninomiya, S., 2014. On Plant Detection of Intact 
+Tomato Fruits Using Image Analysis and Machine Learning Methods. Sensors 14. 
+Yu, Y., Zhang, K., Liu, H., Yang, L., Zhang, D., 2020. Real-Time Visual Localization of the 
+Picking Points for a Ridge-Planting Strawberry Harvesting Robot. IEEE Access 8, 
+116556–116568. 
+Zhang, Y., Sun, P., Jiang, Y., Yu, D., Yuan, Z., Luo, P., Liu, W., Wang, X.J.A., 2021. 
+ByteTrack: Multi-Object Tracking by Associating Every Detection Box. abs/ 
+2110.06864. 
+Zhang, W., Wang, J., Liu, Y., Chen, K., Li, H., Duan, Y., Wu, W., Shi, Y., Guo, W., 2022. 
+Deep-learning-based in-field citrus fruit detection and tracking. Hortic. Res. 9, 
+uhac003. 
+Zheng, T., Jiang, M., Li, Y., Feng, M., 2022. Research on tomato detection in natural 
+environment based on RC-YOLOv4. Comput. Electron. Agric. 198, 107029. 
+Zheng, L., Shen, L., Tian, L., Wang, S., Wang, J., Tian, Q., 2015. Scalable person re- 
+identification: A benchmark. In: Proceedings of the IEEE international conference on 
+computer vision, pp. 1116–1124. 
+J. Rong et al.                                                                                                                                                                                                                                     

@@ -1,0 +1,1633 @@
+Received 19 February 2026, accepted 15 March 2026, date of publication 18 March 2026, date of current version 23 March 2026.
+Digital Object Identifier 10.1109/ACCESS.2026.3675310
+Multimodal Radar-Vision for Oil Palm
+Fresh Fruit Bunch Ripeness Classification
+FIRDAUSA SONNA ANGGARA RESTA
+1, RACHMAD SETIAWAN2,
+MUHAMMAD RIVAI1, (Member, IEEE), REZKI EL ARIF
+2, (Member, IEEE),
+AZIS NATAWIJAYA3, AND AFAN GHAFAR AL HADAD
+1
+1Electrical Engineering Department, Institut Teknologi Sepuluh Nopember, Surabaya 60111, Indonesia
+2Biomedical Engineering Department, Institut Teknologi Sepuluh Nopember, Surabaya 60111, Indonesia
+3Innovation Center, Corporate Development, PT Bumitama Gunajaya Agro, Jakarta 12160, Indonesia
+Corresponding author: Rezki El Arif (rezki.arif@its.ac.id)
+This work was supported by the Grant Riset Sawit (GRS) 2023 and in part by the Indonesian Endowment Fund for Education (LPDP)
+on behalf of Indonesian Ministry of Higher Education, Science and Technology, and managed through the EQUITY Program for the
+Article Processing Charge under Contract No. 4299/B3/DT.03.08/2025 and Contract No. 3029/PKS/ITS/2025.
+ABSTRACT
+This work presents a multimodal radar-vision framework for non-destructive ripeness
+classification of oil palm fresh fruit bunches (FFBs) under field conditions. A continuous wave 2.4 GHz radar
+and a digital scale capture backscattered power and bunch mass as internal cues related to dielectric properties
+and growth, while RGB images provide external color and texture information. Radar-weight features
+(power, weight, and power-to-weight ratio) are modeled using an extreme gradient boosting (XGBoost)
+classifier, and a YOLOv8-Nano detector is trained using an expert-annotated RGB dataset to localize and
+classify bunches into four maturity stages (Unripe, Underripe, Ripe, Overripe). Decision-level late fusion
+combines the class-probability outputs of both branches through mean, weighted, and stacking schemes.
+Experiments on radar-weight data (255 samples per class) acquired at a commercial loading ramp show that
+the unimodal radar-weight and vision models reach 89.9% and 94.3% accuracy, respectively, with YOLOv8-
+Nano achieving mAP@0.5 of 0.99. The best fusion configuration, based on stacking, attains 96.9% accuracy
+and 97.3% F1-macro, demonstrating that radar-weight information provides complementary evidence that
+stabilizes vision-based grading and supports more consistent harvest decisions.
+INDEX TERMS Oil palm fresh fruit bunch (FFB), radar sensing, YOLOv8, multimodal fusion, XGBoost,
+ripeness classification, non-destructive testing.
+I. INTRODUCTION
+Indonesia possesses a well-established palm oil industry, with
+crude palm oil (CPO) serving as one of the nation’s most
+significant export commodities and a substantial contributor
+to the national economy [1]. However, the overall productiv-
+ity and quality of palm oil are strongly influenced by how
+accurately the ripeness of oil palm fresh fruit bunches (FFBs)
+is assessed before harvest. In many plantations, workers
+still determine harvest readiness by visually inspecting
+the color of the fruitlets and counting the loose fruits
+that have fallen to the ground. This manual method is
+The associate editor coordinating the review of this manuscript and
+approving it for publication was Ajit Khosla
+.
+labor-intensive and highly dependent on the worker’s expe-
+rience. As a result, grading can be inconsistent and may
+lead to suboptimal harvest timing and reduced oil extraction
+efficiency [2].
+The free fatty acid (FFA) content and the amount of oil
+obtained from palm fruit are strongly influenced by maturity
+stage and post-harvest handling [3]. Bunches harvested too
+early tend to produce less oil, whereas overripe bunches
+are more prone to elevated FFA levels due to enzymatic
+degradation in the mesocarp [4], [5]. A method that can
+estimate FFB ripeness more objectively and rapidly is,
+therefore, needed to help keep oil quality within specification
+and to support gradual automation of harvesting and grading
+operations [6].
+VOLUME 14, 2026
+ 2026 The Authors. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 License.
+For more information, see https://creativecommons.org/licenses/by-nc-nd/4.0/
+42975
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+Image-based approaches have been widely explored to
+address this need. Early studies relied on RGB image
+processing and simple statistical features to perform color-
+based grading of bunches [7], [8]. Later, convolutional neural
+networks (CNNs) and object-detection frameworks such as
+YOLOv4 and YOLOv5 were applied to detect and classify
+fruits directly from field imagery in near real-time [9], [10],
+[11]. These methods can reach high accuracy and have
+been implemented on mobile or embedded platforms for
+autonomous fruit monitoring. However, their performance
+is still sensitive to changes in illumination, occlusions, and
+background clutter. Tan et al. [12] conducted their imaging
+experiments in a dedicated chamber with carefully controlled
+lighting to ensure a consistent visual appearance of the
+fruit. This reliance on controlled illumination indicates that
+vision-based approaches can be strongly affected by lighting
+variability, so their predictions may become less stable under
+typical outdoor plantation conditions.
+Microwave and radar-based sensing offer a complementary
+way to assess the ripeness of oil palm fruit. During
+ripening, the mesocarp composition changes as the relative
+fractions of oil, water, and kernel evolve with maturity [13].
+At microwave frequencies, liquid water exhibits a much
+higher relative permittivity and dielectric loss than vegetable
+oils such as palm oil [14], [15]. Prior work has shown that
+free-space microwave measurements can capture ripeness-
+dependent variations in the transmission coefficient of oil
+palm fruits that are associated with changes in moisture
+content, oil content, and free fatty acid levels [16]. These
+observations suggest that radar measurements can be used as
+a non-contact dielectric probe for internal characterization of
+fruit maturity, while remaining insensitive to ambient lighting
+conditions.
+Based on these insights, this work proposes a multimodal
+ripeness classification framework that combines radar-
+derived features with computer-vision outputs. A compact
+microwave radar is used to capture non-contact measure-
+ments related to the internal dielectric response and mass
+of each bunch, while RGB images are processed to capture
+external visual cues. The two information sources are then
+combined through late fusion strategies to improve the
+reliability of FFB ripeness classification into four maturity
+classes (Unripe, Underripe, Ripe, and Overripe). The result-
+ing framework is intended as a step toward practical tools
+for precision agriculture and semi-autonomous harvesting
+in oil palm plantations. The contributions of this paper lie
+in the end-to-end design and experimental validation of a
+practical multimodal ripeness-assessment system, leveraging
+established radar sensing, imaging, and machine-learning
+components in a realistic plantation setting.
+II. RELATED WORK
+A range of non-destructive sensing and machine-learning
+techniques has been proposed for automated grading of
+oil palm FFBs. Representative methods are summarized
+in Table 1. Existing studies can be grouped into three
+main categories: vision-based approaches, dielectric-based
+approaches, and multi-sensor fusion. Each group offers
+particular strengths but also exhibits limitations, which
+motivates the use of hybrid multimodal systems.
+A. VISION-BASED CLASSIFICATION
+Vision-based approaches infer FFB maturity by analyzing
+surface color and texture patterns. Earlier studies predom-
+inantly employed handcrafted descriptors computed from
+RGB images. For example, Pamornnak et al. [8] proposed
+a mobile image-analysis application that calculates color
+moments to approximate oil content, offering a compact
+feature-based solution that can be deployed on portable
+devices.
+With the advancement of deep learning, object detection
+frameworks based on the YOLO family have become increas-
+ingly popular for agricultural inspection tasks. Suharjito et al.
+[9] implemented a smartphone-based grading system using a
+modified YOLOv4 detector and reported mean average pre-
+cision (mAP) above 95% under daylight conditions, demon-
+strating the feasibility of deploying lightweight detection
+models on resource-constrained mobile platforms. Beyond
+application-specific implementations, recent methodological
+developments have focused on enhancing YOLO architec-
+tures through attention mechanisms and transformer-based
+modules while maintaining computational efficiency. For
+instance, TGC-YOLOv5 integrates transformer blocks and
+coordinate attention modules to improve detection accu-
+racy without significantly increasing complexity [17]. Such
+efforts reflect a broader research trend toward balancing
+accuracy and efficiency in embedded visual detection
+systems.
+Other vision-based ripeness assessment methods have also
+been explored. Hazir et al. [18] used fluorescence measure-
+ments to derive anthocyanin and flavonoid indices, followed
+by stochastic gradient boosting classification, achieving a
+maximum accuracy of 87.7%. Rosbi et al. [19] applied fuzzy
+C-means segmentation and texture feature extraction prior
+to conventional classification, reporting 93.68% accuracy on
+outdoor images.
+Overall, vision-based techniques can perform well when
+lighting and viewpoint are reasonably controlled. However,
+their accuracy remains sensitive to changes in illumination,
+occlusions, and heterogeneous fruit surface appearance.
+In addition, RGB images mainly capture external visual cues
+and do not directly reflect the internal moisture and oil
+composition that determine ripeness.
+B. DIELECTRIC-BASED CLASSIFICATION
+Dielectric and microwave-based methods aim to probe
+internal fruit composition by measuring the electromagnetic
+properties of the mesocarp and related tissues. Earlier studies
+reported strong relationships between electrical parameters
+such as resistivity and permittivity and the moisture content
+42976
+VOLUME 14, 2026
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+TABLE 1. Comparison of prior non-destructive FFB ripeness assessment methods across different sensing modalities, including RGB vision, multimodal
+visual-infrared integration, and dielectric characterization.
+of palm-oil-related materials, which motivated the use of
+microwave sensing for monitoring ripening.
+Rahmawati et al. [16] proposed a non-destructive free-
+space measurement configuration using horn antennas and a
+vector network analyzer operated in the 9-12 GHz band. Their
+experiments showed that the S21 transmission responses
+differed systematically between unripe, ripe, and overripe
+fruits, which they attributed to shifts in internal moisture, oil
+content, and free fatty acid formation. Similar trends have
+been reported in other microwave studies: materials related
+to palm oil generally behave as relatively low-loss dielectrics,
+whereas liquid water exhibits much higher permittivity and
+dielectric loss [14], [20]. The difference between water-
+rich and oil-rich regions explains why microwave and radar
+measurements can be used to track changes in moisture and
+oil content during ripening.
+From a radar sensing perspective, the received backscat-
+tered power is governed by the reflection coefficient at
+the air-fruit interface, whose magnitude depends on the
+effective relative permittivity of the fruit tissue. The dielectric
+contrast between air and fruit determines the strength of this
+reflection. At microwave frequencies around 2.4 GHz, water-
+rich biological tissues exhibit high relative permittivity due
+to dipolar relaxation of water molecules [21], whereas oil-
+dominated materials exhibit substantially lower permittivity
+values, typically in the range of 2-3 [14].
+During ripening, the gradual decrease in moisture con-
+tent and corresponding increase in oil content reduce
+the effective permittivity of the mesocarp. This reduction
+decreases the dielectric contrast at the air-fruit interface and
+consequently lowers the reflected radar power. Although
+absolute dielectric parameters are not directly measured in
+this study, this sensitivity-based interpretation helps explain
+the general trend in reflected power observed across ripeness
+stages.
+It is important to note that dielectric properties of
+biological tissues are inherently frequency-dependent [21]
+The present study employs a single-frequency 2.4 GHz
+continuous-wave radar and therefore does not explicitly
+characterize dielectric dispersion across bands. However,
+within the microwave regime, water remains the dom-
+inant contributor to dielectric contrast relative to lipid
+components, which exhibit comparatively low permittivity
+values [14]. Consequently, while the absolute magnitude
+and sensitivity of the backscattered response may vary
+with operating frequency, the qualitative monotonic trend
+associated with the moisture-to-oil transition during ripening
+is expected to remain preserved across typical microwave
+bands.
+Dielectric studies operating in the 9-12 GHz range
+are primarily intended for laboratory-scale characterization
+and typically involve small samples, thin fruit sections,
+or controlled free-space measurement setups. At higher
+microwave frequencies, increased dielectric loss in moisture-
+rich biological tissues leads to stronger electromagnetic
+attenuation and reduced penetration depth, causing the
+measured response to be dominated by near-surface lay-
+ers [21]. While this characteristic is advantageous for precise
+dielectric spectroscopy, it limits the suitability of such
+frequencies for sensing the bulk internal properties of large
+and heterogeneous targets such as intact oil palm fresh fruit
+bunches. For whole-bunch sensing under field conditions,
+lower microwave frequencies provide improved volumetric
+penetration into the fruit and yield responses that are more
+VOLUME 14, 2026
+42977
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+representative of internal moisture and oil distribution rather
+than surface-localized effects [21].
+In summary, dielectric sensing provides direct access to
+internal physicochemical changes, but most reported systems
+are restricted to laboratory characterization, probe-based
+measurements, or small-scale binary or ternary separation.
+To the best of our knowledge, no prior work has integrated
+dielectric information into a data-driven four-class ripeness
+classifier or combined it with vision-based features.
+C. MULTI-SENSOR AND FUSION APPROACHES
+An increasing number of studies has investigated multimodal
+sensing to make fruit grading more robust under varying
+field conditions. Pamornnak et al. [22] designed a fast
+grading system that jointly extracts features from RGB,
+near-infrared (NIR), and depth images to assess oil palm
+fruit quality and ripeness, showing how multi-channel visual
+information can enhance discrimination. Building on this
+idea, Pipitsunthonsan et al. [23] introduced a multi-input
+convolutional neural network (CNN) that fuses RGB camera
+images, infrared sensor signals, and load-cell measurements;
+their model achieved an accuracy of about 90.26% on field
+data, highlighting the benefit of combining color, texture,
+infrared response, and mass. On the dataset side, Goh et al.
+[24] released a multimodal field dataset comprising RGB,
+depth, and point-cloud measurements for FFB classifica-
+tion and localization, which supports systematic evaluation
+of both early- and late-fusion strategies under realistic
+variability.
+FIGURE 1. Block diagram of the proposed multimodal oil palm fruit
+ripeness detection system.
+While vision-based methods provide strong surface-level
+discrimination, they remain sensitive to illumination variabil-
+ity, occlusion, and appearance ambiguity near transitional
+ripeness stages. In contrast, dielectric and microwave-
+based approaches directly probe internal physicochemical
+properties related to moisture and oil content but often
+lack spatial and contextual information and are typically
+evaluated under laboratory-scale conditions. Recent multi-
+modal systems attempt to combine complementary sensing
+modalities to enhance robustness; however, such approaches
+may introduce increased hardware complexity, higher com-
+putational demand, or limited portability in field deploy-
+ment. These trade-offs highlight the need for a practically
+deployable multimodal framework that balances internal
+sensing capability, visual discrimination, and embedded
+feasibility.
+Building on prior FFB grading studies, we present
+a radar–vision sensing prototype and late-fusion pipeline
+for four-class ripeness assessment, and evaluate it under
+plantation-style acquisition conditions.
+III. METHODOLOGY
+This section presents the design of the multimodal ripeness-
+classification system for oil palm FFBs. The system has
+two branches: a radar-weight branch modeled with extreme
+gradient boosting (XGBoost) and a vision branch that
+applies YOLOv8-Nano to RGB images. Each branch outputs
+class probabilities for the four ripeness levels, and these
+probabilities are later combined using late-fusion to obtain
+the final prediction. Figure 1 shows the overall workflow,
+including the sensor modules, processing steps, learning
+models, and decision stage.
+A. SYSTEM OVERVIEW
+The proposed system is divided into four parts: sensing,
+processing, modeling, and fusion. In the sensing part,
+an SDR-based radar, a digital scale, and a camera collect
+measurements from each FFB. The processing part converts
+the radar and weight readings into tabular features, and
+the modeling part uses XGBoost and YOLOv8-Nano to
+produce class probabilities for both the radar-weight and
+vision branches. In the final step, the fusion part combines
+these probabilities to obtain a single ripeness label for each
+sample.
+1) SENSING STAGE
+The hardware platform comprises three input sources: (i) a
+continuous wave radar module operating at 2.4 GHz, (ii) a
+digital scale, and (iii) an RGB camera (webcam). The radar
+measures the backscattered signal from the FFB and provides
+information related to its internal dielectric properties. The
+digital scale records the mass of each bunch, and the camera
+captures external visual appearance such as fruitlet color and
+surface texture.
+2) PROCESSING STAGE
+Data from the radar and digital scale are transformed
+into tabular features, namely the average radar power
+magnitude in decibel (dB), the bunch weight in kilograms,
+and a normalized power-to-weight ratio. These features
+form the input to the XGBoost classifier. The RGB images
+are preprocessed and directly fed to the YOLOv8-Nano
+model, which learns visual patterns related to ripeness,
+such as changes in fruitlet color and the presence of loose
+fruits.
+42978
+VOLUME 14, 2026
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+3) MODELING STAGE
+The tabular and visual features are handled by two separate
+classifiers. The radar-weight features are modeled using
+XGBoost, which outputs a probability distribution over the
+four ripeness classes for each sample. In parallel, YOLOv8-
+Nano processes each image and returns bounding boxes,
+class labels, and associated probabilities for the same set
+of classes.
+4) FUSION AND DECISION STAGE
+At the decision stage, three decision-level late-fusion strate-
+gies are investigated to combine the class-probability vectors
+from the radar-weight and vision branches. In mean and
+weighted averaging, the two probability vectors are merged
+directly, with the weighted scheme assigning different
+importance to each modality. In the stacking approach, the
+concatenated probability vectors are used as inputs to a
+meta-classifier that learns how to exploit complementary
+evidence from both branches. In all cases, the fused
+probabilities are finally used to assign the ripeness label for
+each FFB.
+B. RADAR RECEIVED POWER
+The radar-weight modality relies on the sensitivity of a con-
+tinuous wave radar to variations in the dielectric properties
+of the fruit. The interaction between the transmitted wave
+and the fruit can be described by the bistatic radar range
+equation. The received power (Pr) is expressed in (1) [25]:
+Pr = PtGtGrσbλ2
+(4π)3 R2t R2r
+(1)
+where Pt is transmitted power, Gt and Gr are the gains of
+the transmitting and receiving antennas, respectively, λ is the
+wavelength, Rt and Rr are the distances from the target to
+the Tx and Rx antennas, and σb denotes the bistatic Radar
+Cross Section (RCS). Since the geometry, antenna gains,
+and distances are fixed during the experiment, variations in
+Pr mainly originate from changes in σb, which reflect the
+dielectric properties of the fruit.
+The RCS characterizes how effectively a target reflects
+electromagnetic energy back toward the receiver and can
+be related to the scattered (Es) and incident electric
+field (Ei) (2) [25]:
+σb= 4πR2
+t R2
+r
+|Es|2
+|Ei|2
+(2)
+The scattered field (Es) depends on the reflection coefficient
+(0), which quantifies the fraction of incident wave reflected
+at the air-material interface, as given in (3) and (4) [26]:
+0 = Es
+Ei
+= 1 −√ε∗
+r
+1 + √ε∗
+r
+(3)
+ε∗
+r = ε′
+r −jε
+′′
+r
+(4)
+where ε∗
+r is the complex relative permittivity of the fruit,
+as described in (4). The real part ε′
+r represents the material’s
+ability to store electromagnetic energy, and the imaginary part
+ε
+′′
+r represents the dielectric losses due to molecular relaxation
+and ionic conduction.
+Materials with a larger permittivity contrast relative to air
+generally produce stronger reflections at the interface. In oil
+palm fruit, the mesocarp permittivity is primarily governed
+by its water and oil content. As the bunch ripens, the tissue
+gradually loses moisture while more oil is accumulated,
+causing the effective permittivity to decrease. This reduction
+lowers the reflection coefficient at the air-fruit boundary and,
+in turn, reduces the amplitude of the backscattered radar
+signal. In this sense, changes in radar-return power can be
+interpreted as a shift from a water-dominated to a more oil-
+dominated internal composition [5], [13].
+C. RADAR AND WEIGHT FEATURE EXTRACTION
+The radar-sensing unit employs an ADALM-Pluto SDR
+covering 325 MHz-3.8 GHz. In the experimental configura-
+tion, the device operates at a center frequency of 2.4 GHz
+with a 1 MS/s sampling rate and a buffer size of 1024.
+A continuous-wave excitation is directed toward the FFB, and
+the backscattered response is sampled at baseband, encoding
+variations related to the internal moisture and oil content of
+the bunch.
+For each measurement, the radar module records the
+backscattered signal from a single fruit bunch. This time-
+domain sequence is transformed to the frequency domain
+using a Fast Fourier Transform (FFT) [27]. The magnitude of
+the resulting spectrum around the transmitted carrier is then
+converted to a logarithmic scale and expressed in decibels
+(dB) [28]. The mean value of these spectral power samples
+is used as the radar feature, because it summarizes the overall
+backscattered power and changes with the dielectric contrast
+of the fruit.
+Each FFB was also weighed using a digital scale to obtain
+its mass in kilograms. Because ripening affects fruit density
+and oil concentration, the weight provides a complementary
+physical attribute to the radar measurements. To reduce the
+influence of size variation among bunches, a normalized
+feature was derived by computing the ratio between the
+average radar power magnitude and the corresponding bunch
+weight, as expressed in (5):
+Fratio = P(dB)
+W(kg)
+(5)
+where P(dB) is the power magnitude (dB) and W is the
+measured bunch weight in kilograms.
+Combining these measurements yielded a structured
+dataset with three features per FFB: (i) average radar
+reflection strength (dB), (ii) bunch weight (kg), and
+(iii) power-to-weight ratio (dB/kg). These features were
+used as inputs to the XGBoost classifier, which is
+well suited for modeling non-linear decision boundaries
+and handling mixed-scale features in multiclass ripeness
+prediction.
+VOLUME 14, 2026
+42979
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+D. VISION-BASED DETECTION
+Besides the radar and weight measurements, the acquisition
+platform included a camera unit to capture RGB images
+of each FFB. All three types of measurements (weight,
+radar, and vision) were acquired sequentially within the
+same handling session to keep environmental and geometric
+conditions as consistent as possible across samples.
+The
+visual
+classification
+used
+YOLOv8-Nano,
+a lightweight member of the YOLO family. This model
+was chosen because it offers a balance between detection
+accuracy and computational load, so it can run in real-time
+on embedded hardware [29]. Each FFB image was labeled
+by experts as Unripe, Underripe, Ripe, or Overripe using
+common field criteria, mainly fruitlet color and the number
+of loose fruits.
+Data augmentation was applied during training using
+simple geometric and photometric transformations, including
+random flips, rotation, scaling, shear, and changes in bright-
+ness and saturation. These operations increase the diversity of
+the training images while preserving the overall appearance
+of the bunches.
+When the model is run, YOLOv8-Nano returns bounding
+boxes, class labels, and class probabilities for each detected
+bunch. For each bunch, this probability vector is sent
+to the fusion stage and combined with the radar-weight
+probabilities.
+E. DATA FUSION STRATEGY
+To integrate complementary information from the radar-
+weight and vision branches, fusion is performed at the
+probability level. Each modality independently produces a
+four dimensional class-probability vector corresponding to
+the four ripeness categories. Three decision-level late fusion
+schemes are considered: mean fusion, weighted fusion, and
+stacking fusion.
+In mean fusion, the fused probability vector is obtained
+by averaging the radar-weight and vision probability vectors
+element-wise, assigning equal importance to both modal-
+ities. In weighted fusion, the class-posterior vectors from
+the radar-weight and vision branches are combined using
+modality-specific weights. The radar-weight coefficient,
+αradar, is selected in a data-driven and reproducible manner
+via a validation-based grid search performed independently
+in each outer cross-validation fold. Specifically, αradar is
+swept from 0 to 1 with a step size of 0.01, and the optimal
+value is chosen by minimizing a validation objective on the
+fold’s tuning subset from the non-held-out folds, with macro-
+averaged F1-score used as a tie-breaker. The vision weight is
+defined as 1 −αradar. The sensitivity of weighted fusion to
+αradar is examined in Sec. V.
+For stacking fusion, a more flexible meta-classifier is
+trained on paired class-probability vectors from the radar-
+weight and vision branches. For each paired sample, the
+radar-weight and vision probability vectors are concatenated
+to form a single feature vector, which is then fed to a
+logistic regression classifier that produces the final fused
+probabilities, as in (6) [30]:
+yfusion = softmax (WZ + b)
+(6)
+where Z represents the concatenated probability vector, W is
+a learnable weight matrix that determines the contribution of
+each modality and class, and b is a bias vector that adjusts
+the decision boundary. The softmax function ensures that
+the resulting vector yfusion forms a normalized probability
+distribution across all ripeness classes. This stacking scheme
+allows the meta-classifier to exploit systematic patterns in
+how the two modalities agree or disagree, beyond what can
+be captured by simple averaging.
+To mitigate information leakage in stacking fusion, the
+meta-classifier was evaluated using stratified five-fold cross-
+validation with an explicit out-of-fold (OOF) protocol. The
+vision branch (YOLOv8-Nano) was trained once using the
+fixed train/validation/test split and then kept fixed, serving
+as a fixed probability generator during fusion evaluation,
+while the radar-weight branch (XGBoost) provides fold-wise
+probability outputs under stratified five-fold cross-validation.
+For each fold in the fusion evaluation, the meta-classifier
+was trained exclusively on the four training folds using
+concatenated class-probability outputs from both branches,
+and fusion predictions were generated only for the held-out
+fold. This ensures that each fusion prediction is produced by
+a meta-classifier that has not been trained on that sample,
+preventing information leakage at the fusion stage.
+Although feature-level early fusion and model-level
+middle fusion represent alternative multimodal integration
+strategies, they were not adopted in this study due to
+structural and data-related considerations. Early fusion would
+require concatenating low-dimensional radar-weight features
+with high-dimensional visual representations, necessitating
+additional cross-modal normalization and joint retraining
+of the vision network, which would substantially increase
+model complexity. Model-level middle fusion would require
+defining a shared intermediate representation and performing
+tightly coupled end-to-end training between radar and
+vision encoders. Given the limited dataset size and the
+heterogeneous nature of the two modalities, such tightly
+integrated approaches may introduce optimization instability
+and overfitting risks. In contrast, decision-level late fusion
+provides a modular and robust integration mechanism by
+combining modality outputs within a common probability
+space [31]. This choice is consistent with prior comparative
+analyses indicating that late fusion tends to offer more stable
+performance than early fusion when modalities differ sub-
+stantially in feature dimensionality and training requirements.
+F. PERFORMANCE METRICS PER MODALITY
+To evaluate the performance of each modality and the
+proposed fusion schemes, metrics were chosen according
+to the type of model output. The radar-weight classifier
+and the fusion models output class labels for each sample,
+42980
+VOLUME 14, 2026
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+whereas the vision-based detector outputs bounding boxes
+with associated class probabilities.
+1) RADAR-WEIGHT CLASSIFICATION METRICS
+The radar-weight branch predicts one of four ripeness classes
+for each FFB. Standard metrics derived from the confusion
+matrix were used, including accuracy, precision, recall, and
+F1-score, defined in (7)-(10) [9]:
+Accuracy =
+TP + TN
+TP + TN + FP + FN
+(7)
+Precision =
+TP
+TP + FP
+(8)
+Recall =
+TP
+TP + FN
+(9)
+F1 −score = 2 × Precision × Recall
+Precision + Recall
+(10)
+where TP, TN, FP, and FN denote true positive, true
+negative, false positive, and false negative respectively.
+Macro-averaged precision, recall, and F1-score were reported
+to provide a balanced view across all ripeness categories by
+assigning equal importance to each class.
+FIGURE 2. Assembled prototype of the multimodal sensing system (radar
+and camera).
+2) VISION-BASED CLASSIFICATION METRICS
+For the YOLOv8-Nano model, performance was evaluated
+using precision, recall, and mean average precision (mAP)
+at different intersection-over-union (IoU) thresholds. A pre-
+dicted bounding box is considered correct if its IoU with the
+ground-truth box exceeds a specified threshold [9]:
+IoU =
+ Bpred ∩Bgt
+
+ Bpred ∪Bgt
+.
+(11)
+where Bpred denotes the predicted bounding box generated
+by the detection model, and Bgt represents the corresponding
+ground-truth bounding box annotated in the dataset.
+The mean average precision (mAP) at an Intersection-over-
+Union (IoU) threshold τ was computed as the mean of the
+average precision (AP) values over all classes, where APi (τ)
+corresponds to the area under the precision-recall curve for
+class i. Mathematically, it is expressed as [9] and [32]:
+mAPτ = 1
+Nc
+Nc
+X
+i=1
+Z 1
+0
+Precisioni (r;τ) dr
+(12)
+In this work, both mAP@0.5 and mAP@0.5:0.95 were used
+to summarize detection performance at a single IoU threshold
+and over a range of thresholds, respectively. These metrics
+provide a standard way to compare the vision-based model
+with related object-detection methods.
+IV. EXPERIMENTAL SETUP
+This section describes the experimental configuration used
+to validate the proposed multimodal ripeness classification
+system. It describes the sensing hardware, the FFB data
+collection procedure, and the resulting dataset composition.
+Because the system was developed in multiple stages,
+a distinction is made between the initial setup used for dataset
+acquisition and the final integrated prototype.
+A. HARDWARE SETUP
+The hardware system was designed to capture three types
+of data from each FFB: radar backscatter, RGB images, and
+bunch weight. A continuous wave radar module operating at
+2.4 GHz measured the backscattered signal from the bunch to
+sense internal dielectric changes, a camera unit captured RGB
+images to record external visual cues, such as fruitlet color
+and surface texture, and a digital scale recorded the weight of
+each bunch as an indicator of its mass and overall size. In the
+subsequent analysis, the radar backscatter and bunch weight
+are treated jointly as a radar-weight modality, since they are
+always acquired together and processed by the same tabular
+classifier, whereas the RGB images constitute the vision
+modality. The frequency selection is guided by application
+constraints for whole-bunch sensing, and the trade-offs are
+discussed in Section II-B.
+FIGURE 3. Experimental setup showing the radar measurement process
+with the FFB placed on a digital scale and connected to a laptop for data
+acquisition.
+Figure 2 shows the assembled prototype of the multimodal
+sensing system (without fruit), where the radar and camera
+modules are mounted on a common platform so that both
+VOLUME 14, 2026
+42981
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+sensors can view the same side of the bunch. Figure 3 shows
+the actual experimental setup during radar measurement,
+including the 2.4 GHz radar unit, the digital scale used to
+support the FFB, and the laptop used for data logging and
+system control. During data acquisition, the radar module was
+placed facing the FFB, which was positioned on the digital
+scale and connected to the laptop for real-time logging. The
+camera was positioned to obtain a clear view of the bunch;
+no special mechanical fixture was required beyond ensuring
+that the fruit was clearly visible in the frame. For each bunch,
+radar, image, and weight measurements were collected in a
+single session so that, at acquisition time, all three signals
+referred to the same physical sample.
+B. DATA ACQUISITION PROCEDURE
+For the primary Tenera dataset, FFB samples were collected
+at a commercial loading ramp that receives bunches from
+multiple estates using a continuous-wave radar, a digital
+scale, and an RGB camera. Measurements were taken in
+a quiet corner of the ramp to reduce motion and clutter
+from nearby activity while still representing normal field
+operation. The radar operated at 2.4 GHz with separate
+transmit and receive antennas connected to the SDR. Both
+antennas were mounted side by side and aimed toward the
+bunch at a stand-off distance of approximately 10 cm from
+the front surface of the fruit, and this configuration was kept
+fixed for all measurements.
+FIGURE 4. Multimodal data acquisition workflow for each oil palm fresh
+fruit bunch (FFB).
+Before recording the FFB measurements, a background-
+based calibration of the radar channel was performed to
+mitigate static reflections and constant receiver baseline
+offsets. With no bunch placed in front of the antennas,
+a short segment of the baseband I-signal was recorded
+and processed using the same FFT-based pipeline as in
+the subsequent measurements. The resulting spectral power
+over the frequency bins of interest was then converted to
+the dB scale to obtain a background reference level. For
+each FFB measurement, the spectral power was computed
+and converted to dB in the same manner, and background
+compensation was applied by subtracting the background
+reference in the dB domain. Accordingly, the compen-
+sated radar feature represents the relative (background-
+suppressed) scattering contribution of the fruit bunch, while
+reducing fixed clutter from the environment and receiver
+offsets.
+This calibration procedure mitigates the influence of static
+environmental factors, such as nearby metallic structures,
+antenna coupling, and stationary reflectors that remain
+constant throughout the measurement session. During data
+collection, ambient temperature variations remained within
+typical outdoor ranges and are not expected to introduce
+significant variation in SDR front-end response or tissue
+dielectric behavior within the duration of each measurement
+session. Surface moisture was observed to influence the
+absolute magnitude of the backscattered signal; however,
+this effect predominantly introduces a scale shift and does
+not alter the relative separation trends between ripeness
+classes. Furthermore, the use of background subtraction and
+relative power-based features reduces sensitivity to residual
+environmental variations.
+The three sensing measurements were then acquired
+sequentially within a single handling session. First, the bunch
+was placed on a digital scale and its mass (kg) was recorded.
+Next, an RGB image of the same FFB was captured using
+a fixed camera arrangement under natural lighting. Finally,
+a single radar measurement was acquired for each FFB; each
+recording lasted approximately 5 s, which was sufficient to
+obtain a stable estimate of the backscattered power while
+keeping the acquisition time per sample practical for offline
+processing. The overall acquisition workflow is summarized
+in Figure 4, which illustrates how radar, weight, and image
+measurements are collected for each FFB in an integrated
+manner.
+During data collection, trained field technicians visually
+graded each FFB into one of four ripeness classes using
+surface color and fruitlet condition as the main criteria.
+The assigned label was recorded together with the corre-
+sponding radar, weight, and image measurements for that
+bunch.
+C. DATASET COMPOSITION
+The dataset used in this study was organized into two
+sensing modalities: a tabular radar-weight modality and a
+vision modality based on RGB images. Both modalities were
+collected with the integrated multimodal platform described
+previously and originate from the same population of fresh
+fruit bunches, providing complementary internal and external
+information about the ripeness state.
+For the radar-weight modality, each sample corresponded
+to one measurement session that included a radar acquisition
+42982
+VOLUME 14, 2026
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+and the associated bunch weight. The resulting tabular
+dataset covered four expert-labeled ripeness categories with
+255 samples per class, yielding 1,020 radar-weight instances
+in total.
+The raw RGB images for the vision modality were
+captured at the loading ramp using an RGB camera under
+natural lighting. One representative image was retained per
+bunch so that the image dataset mirrors the composition of
+the radar-weight data, resulting in 255 images per ripeness
+class and 1,020 images in total. Because each radar-weight
+record has a corresponding RGB image from the same bunch,
+the two modalities form a paired multimodal dataset that
+can be exploited for instance-level fusion in the subsequent
+analysis.
+D. TRAINING AND EVALUATION PROTOCOLS
+All models were evaluated under a consistent study design,
+with modality-specific dataset partitions and reporting pro-
+tocols described below. Each modality was first trained
+separately to evaluate its ability to discriminate between
+ripeness classes before multimodal fusion was applied. The
+next subsections summarize the training settings, dataset
+splits, and evaluation metrics used for each model. The
+datasets were partitioned in a way that matched the prediction
+output of each model.
+1) RADAR-WEIGHT (XGBOOST)
+The tabular radar-weight dataset was evaluated using strati-
+fied five-fold cross-validation. In each fold, the model was
+trained on four folds (80% of the samples) and evaluated on
+the remaining fold (20%). The input feature vector consisted
+of (i) average radar power magnitude (dB), (ii) bunch weight
+(kg), and (iii) normalized power-to-weight ratio (dB/kg).
+Hyperparameters were tuned using stratified five-fold
+cross-validation on the radar-weight dataset via a grid search
+over maximum tree depth {3, 5, 7}, learning rate {0.1,
+0.2}, number of estimators {100, 200}, and subsample
+ratio {0.7, 0.9}. In each split, the model was trained on
+four folds and evaluated on the held-out fold. This process
+was repeated such that each fold served once as the held-
+out fold. The configuration with the highest mean macro
+F1-score across the five held-out folds was selected. All
+reported accuracy and F1-score values for the radar-weight
+branch were computed by aggregating the out-of-fold predic-
+tions from the held-out folds, ensuring that each sample is
+predicted exactly once by a model that was not trained on
+that sample. The overall confusion matrix was constructed
+by aggregating these held-out (out-of-fold) predictions across
+all splits.
+2) VISION (YOLOV8-NANO).
+The image dataset was partitioned at the image level into
+70% training, 10% validation, and 20% testing subsets.
+Each image was assigned exclusively to one subset to
+prevent overlap between training, validation, and testing data.
+Model performance was evaluated solely on the held-out
+test set.
+All images were resized to 640 × 640 pixels. During
+training, online data augmentation was applied using standard
+geometric and photometric transforms (random horizon-
+tal flips, rotation, scaling, shear, and brightness/saturation
+adjustments) to improve robustness to viewpoint and illu-
+mination variation at the loading ramp. YOLOv8-Nano was
+trained for 50 epochs with batch size 16 using the Adam
+optimizer and a cosine learning-rate schedule initialized at
+0.01. Cross-validation was not applied to the visual model
+due to its higher computational cost and common practice
+in object detection benchmarks, where fixed train-validation-
+test splits are typically adopted.
+3) EVALUATION METRICS
+For classification outputs from the radar-weight branch and
+the late fusion models, Accuracy, Precision, Recall, and
+macro-averaged F1-score are reported. The macro-averaged
+scores assign equal importance to each ripeness category,
+providing a balanced view of performance across classes.
+For the vision model, mAP@0.5 and mAP@0.5:0.95 are
+additionally reported to quantify detection and localization
+performance. For the radar-weight and fusion models, all
+metrics correspond to averages over the validation folds
+in the stratified 5-fold cross-validation. For the vision
+model, all metrics are computed on the held-out test
+set. The experimental results for the unimodal baselines
+and the proposed late fusion strategies are presented
+in Section V.
+V. RESULTS AND DISCUSSION
+This section presents the experimental results obtained
+with the proposed multimodal framework. The analysis is
+divided into four parts: (i) preliminary validation of the
+radar response using reference materials, (ii) unimodal radar-
+weight classification with XGBoost, (iii) unimodal vision-
+based classification with YOLOv8-Nano, and (iv) late fusion
+of both modalities. Unless stated otherwise, performance
+figures for the radar-weight and fusion models correspond to
+averages over the stratified 5-fold cross-validation, whereas
+vision results are reported on the held-out test set defined in
+Section IV.
+A. PRELIMINARY VALIDATION
+A simple validation experiment was first carried out to
+confirm that the radar front-end responds consistently to
+targets with different dielectric properties. Two reference
+materials were measured: a container filled with water and
+a container filled with refined palm oil, each placed at the
+same position that would later be occupied by the fruit
+bunch. For each material, the radar module recorded a
+block of in-phase samples corresponding to the backscattered
+continuous-wave signal, and the average received power was
+computed using the same FFT-based mean spectral power
+estimation procedure described in Sec. III-C. As shown in
+VOLUME 14, 2026
+42983
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+Figure 5(a), the mean power obtained for water is clearly
+higher than for palm oil, which is consistent with the much
+higher permittivity and dielectric loss of water compared with
+vegetable oils.
+This behavior aligns with the radar equation (1), where
+the radar cross section depends on the dielectric contrast
+between the target and the surrounding air. Because water
+has a much higher relative permittivity (εr
+≈
+79)
+[15] than palm oil (εr
+≈
+2 −3) [14], the reflection
+coefficient |0| at the interface is larger, resulting in a stronger
+effective radar return. In contrast, the lower permittivity
+of palm oil leads to a smaller impedance mismatch and
+weaker backscatter. These measurements confirm that the
+radar system responds in a physically meaningful way to
+variations in dielectric properties, supporting its use for
+probing oil content and ripeness-related changes in oil
+palm FFBs.
+Figure 5(b) further shows the distribution of radar power
+magnitude for the four ripeness categories. A decreasing
+trend is observed from Unripe to Ripe, consistent with the
+reduction in moisture content and dielectric constant as
+oil accumulates in the mesocarp. A slight increase at the
+Overripe stage is attributed to additional scattering from
+rougher surfaces and loosened fruitlets. This trend agrees
+with the contrast observed between water and palm oil,
+indicating that radar backscatter intensity in the FFBs is
+mainly governed by internal moisture and the dielectric
+properties of the fruit tissues.
+B. UNIMODAL RADAR-WEIGHT RESULTS
+The unimodal radar-weight experiment evaluates how effec-
+tively the combination of radar power magnitude and bunch
+weight can represent the ripeness level of FFB. Radar
+power reflects the dielectric response linked to moisture
+and oil content, while bunch weight describes the physical
+development of the bunch. Both evolve during maturation,
+so together they form a compact description of the internal
+state of the fruit.
+The analysis is presented in two steps. First, the distribu-
+tions of the radar-weight features are examined to understand
+their physical behavior across ripeness classes. Second,
+several classifiers are trained to quantify how well these
+features can separate the four categories.
+The results indicate that radar-weight information already
+carries clear ripeness-related patterns. This single-modality
+performance later serves as a baseline and physical reference
+for the multimodal fusion experiments.
+1) FEATURE DISTRIBUTION ANALYSIS
+Three main features were used for the radar-weight modality:
+radar power magnitude, bunch weight, and the power-to-
+weight ratio. Their statistics for each ripeness category are
+listed in Table 2 and provide insight into the physical
+variability of FFBs under field conditions.
+As shown in Table 2, substantial variability in bunch
+weight is observed both within and across ripeness classes,
+FIGURE 5. Radar power magnitude distributions. (a) Average received
+power magnitude (dB) for palm oil and water reference samples.
+(b) Boxplots of raw radar power magnitude for fresh fruit bunch
+measurements across four ripeness classes: Unripe, Underripe, Ripe, and
+Overripe.
+reflecting the inherent diversity in FFB size and mass at
+harvest. The mean bunch weight increases from the Unripe
+to the Ripe stage, consistent with normal fruit development,
+and decreases markedly at the Overripe stage due to fruitlet
+detachment. However, the relatively large standard deviations
+indicate that bunch size varies considerably even within the
+same ripeness category.
+Raw radar power measurements also exhibit class-
+dependent trends, with unripe bunches showing the highest
+mean reflected power. This behavior is physically con-
+sistent with their higher moisture content, which leads
+to increased permittivity and stronger electromagnetic
+reflection. As ripeness progresses toward the ripe stage,
+moisture content decreases while oil content increases,
+resulting in a lower average reflected power. A modest
+increase in mean radar power is again observed for
+overripe bunches, which may be attributed to additional
+scattering effects caused by surface roughness and loosened
+fruitlets.
+Importantly, Table 2 reveals that the distributions of raw
+radar power overlap substantially across ripeness classes, par-
+ticularly between neighboring stages. This overlap indicates
+that radar power alone is influenced not only by internal
+dielectric properties but also by the physical scale of the
+bunch, such as its overall size and mass. Consequently,
+42984
+VOLUME 14, 2026
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+TABLE 2. Statistical summary of radar and weight features across ripeness classes.
+size-related effects can obscure ripeness-related dielectric
+variations when raw power is used directly.
+Normalizing radar power by bunch weight mitigates
+this limitation. The resulting power-to-weight ratio exhibits
+more distinct mean values across ripeness classes, effec-
+tively reducing the influence of FFB size variability and
+emphasizing differences associated with internal moisture
+and oil distribution. This normalization suppresses scale-
+dependent effects while preserving sensitivity to ripeness-
+related dielectric changes, thereby improving the physical
+interpretability and discriminative capability of the radar-
+weight features.
+Overall, the statistical trends in Table 2 demonstrate
+that FFB size variability plays a significant role in radar
+measurements, and that the power-to-weight ratio provides
+a physically meaningful mechanism to account for this
+variability. This analysis explains why the normalized
+feature yields improved class separability compared to raw
+radar power and motivates its inclusion in the subsequent
+classification experiments.
+2) CLASSIFICATION PERFORMANCE (XGBOOST)
+The radar-weight feature set was then used to train an
+XGBoost classifier. XGBoost implements an ensemble of
+shallow decision trees with gradient boosting and reg-
+ularization, which is well suited for tabular data with
+nonlinear feature interactions such as radar power, bunch
+weight, and their ratio [33]. To evaluate the individual
+contribution of each radar-weight feature, an ablation study
+was conducted using XGBoost under the same stratified
+five-fold cross-validation protocol. The results are summa-
+rized in Table 3, where different combinations of radar
+power, bunch weight, and the power-to-weight ratio are
+compared.
+When radar power is used alone, the classifier exhibits
+very poor performance (F1-score ≈0.37), indicating that raw
+backscattered power from a single-frequency continuous-
+wave radar is insufficient for reliable ripeness classification
+when used in isolation. This behavior reflects the strong
+influence of physical scale, target orientation, and inter-
+nal heterogeneity on the measured radar signal. Using
+bunch weight alone substantially improves performance
+(F1-score ≈0.75), demonstrating that weight provides a
+strong baseline due to its global correlation with ripeness-
+related structural changes. However, weight is an external
+TABLE 3. Performance of XGBoost with different radar-weight feature
+configurations evaluated using five-fold stratified cross-validation.
+physical measurement and does not directly encode internal
+dielectric properties.
+FIGURE 6. Confusion Matrix of XGBoost Result.
+Combining radar power with bunch weight further
+increases performance (F1-score ≈0.83), confirming that
+radar measurements contribute complementary informa-
+tion beyond physical scale alone. A further improve-
+ment is observed when the power-to-weight ratio is
+incorporated together with weight (F1-score ≈0.84).
+This result highlights the importance of the power-to-
+weight ratio as a physically motivated normalization,
+which suppresses size-related bias in radar power and
+enhances sensitivity to internal dielectric variations associ-
+ated with moisture reduction and oil accumulation during
+ripening.
+VOLUME 14, 2026
+42985
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+FIGURE 7. Comparison of average classification accuracy across five
+machine-learning models trained on radar-weight features.
+The highest and most stable performance is achieved
+when all three features are combined, yielding a mean
+accuracy and F1-score of 0.899. This confirms that radar
+power, bunch weight, and their ratio provide distinct and
+complementary information, and that removing any one
+of these features leads to a noticeable degradation in
+classification performance.
+The confusion matrix in Figure 6 illustrates how the errors
+are distributed. Most samples fall on the main diagonal,
+which means they are assigned to the correct ripeness class.
+Overripe and Unripe bunches are recognized most reliably:
+235 out of 255 overripe and 231 out of 255 unripe samples are
+correctly classified. This agrees with Table 2, where these two
+classes show the most distinct combinations of mean power,
+weight, and power-to-weight ratio.
+The remaining mistakes mainly involve neighboring
+classes. Several Ripe bunches are predicted as Underripe
+(26 samples), and some Underripe bunches appear as Ripe
+(29 samples). Their statistics in Table 2 are close, so this
+type of confusion is not surprising and reflects the gradual
+and continuous nature of oil accumulation and moisture
+reduction during ripening rather than sharply separated
+class boundaries. In particular, the underripe and ripe
+stages represent transitional maturity phases in which visual
+appearance, physical mass, and internal dielectric properties
+overlap. Given the relatively limited number of samples per
+class, such overlapping feature distributions near maturity
+transition points may affect scalability and generalization
+when extending the model to larger or more diverse field
+populations. A smaller number of errors occurs between
+unripe and overripe (23 and 18 samples, respectively),
+indicating that some bunches at extreme stages can still
+exhibit similar radar-weight characteristics due to natural
+biological variability, bunch compactness, or structural
+heterogeneity.
+For comparison, several alternative classifiers were trained
+with the same features and data split, namely Random Forest
+(RF), Support Vector Machine (SVM), LightGBM, and a
+fully connected neural network (NN). As summarized in
+Figure 7, XGBoost attains the best mean accuracy across
+the five validation folds (0.899), followed by LightGBM at
+0.881. Random Forest reaches roughly 0.805, while the NN
+and SVM trail behind at 0.634 and 0.590.
+The boosted tree models (XGBoost and LightGBM)
+benefit from the step-by-step refinement of decision trees,
+which helps them capture interactions between radar power,
+bunch weight, and the power-to-weight ratio. RF, which uses
+bagging without boosting, gives a reasonable but weaker
+result, while the SVM and NN perform worse and seem
+more sensitive to class similarity and to the choice of
+hyperparameters for this tabular dataset.
+Based on these observations, XGBoost is adopted as the
+main unimodal classifier for the radar-weight branch and used
+as the reference model when assessing the multimodal fusion
+results in the next sections.
+C. VISION-BASED CLASSIFICATION
+The vision-based analysis uses the YOLOv8-Nano object
+detection
+model
+to
+classify
+oil
+palm
+FFB
+ripeness
+directly from RGB images. This compact network was
+chosen because it can run close to real time while
+still providing reasonable detection accuracy on modest
+hardware.
+Figure 8 shows the training and validation curves for
+precision, recall, and mean average precision (mAP). All
+three metrics increase rapidly during roughly the first
+15 epochs and then gradually level off. By the final epoch,
+the detector attains a precision of about 0.961 and a recall
+of 0.99, with an mAP of 0.993 at IoU = 0.5 and 0.857 at
+IoU = 0.5:0.95. These values suggest that the model can
+both localize and classify the bunches reliably over a range of
+overlap thresholds on this dataset. Moreover, the training and
+validation curves follow similar trends without a pronounced
+gap, providing no clear evidence of severe overfitting during
+training
+Figure 9 shows the confusion matrix for the four ripeness
+classes on the test set, with an additional background column
+corresponding to missed detections. This background entry is
+produced by the detection evaluation procedure and does not
+represent a background-only class in our dataset. YOLOv8-
+Nano reaches an overall accuracy of about 94.3% when these
+missed detections are treated as misclassifications. Most
+samples lie on the diagonal of the matrix, which means that
+the predicted label usually matches the ground-truth class.
+The main mistakes occur between the Underripe and Ripe
+classes, and to a lesser extent between Underripe and Unripe,
+because their fruitlets can have similar reddish-orange colors
+in the middle of the ripening process. Unripe bunches are
+mostly dark green, and Overripe bunches often show many
+exposed or detached fruitlets, so these two classes are rarely
+confused with the others. This behavior is also visible in the
+field images.
+To provide a more detailed per-class evaluation beyond
+global mAP metrics, Table 4 reports individual class preci-
+sion, recall, false detection rate (FDR), and missed detection
+rate (MDR) under the single-object-per-image evaluation
+42986
+VOLUME 14, 2026
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+FIGURE 8. Training performance of YOLOv8-Nano showing convergence of
+precision, recall, and mean average precision (mAP)across epochs (final
+values: Prec=0.961, Rec=0.990, mAP@0.5=0.993, mAP@0.5:0.95= 0.857).
+protocol. Across all ripeness categories, FDR values remain
+consistently low (≤6.3%), indicating that spurious detections
+are rare. MDR values are close to zero for most classes,
+with a slightly higher value observed for the Underripe class
+(0.04), consistent with its comparatively lower recall and
+greater visual ambiguity. These per-class indicators suggest
+that most errors occur in the visually more ambiguous
+Underripe class, while false detections remain low across
+all categories. This pattern does not indicate widespread
+spurious
+detections
+under
+the
+single-object-per-image
+protocol.
+Figure 10 shows example detections for the four ripeness
+classes. In these images, YOLOv8-Nano detects the bunches
+even under uneven lighting and with other objects in
+the background, which resembles the conditions in the
+plantation.
+Overall, YOLOv8-Nano provides reliable performance
+for vision-based ripeness classification while keeping the
+model compact enough for use on modest hardware.
+The vision branch therefore offers useful complementary
+information to the radar-weight sensing in the multimodal
+system.
+D. FUSION RESULTS AND DEPLOYMENT PERFORMANCE
+To evaluate the complementary contribution of the radar
+and vision modalities, three late fusion schemes were
+evaluated: mean, weighted, and stacking fusion. Each scheme
+FIGURE 9. Confusion matrix of YOLOv8-Nano on the test set
+demonstrating minimal inter-class confusion.
+TABLE 4. Per-class visual detection statistics under
+single-object-per-image evaluation, including precision, recall, false
+detection rate (FDR), and missed detection rate (MDR).
+TABLE 5. Comparison of Radar-weight only, Vision only (YOLOv8-Nano),
+and fusion-based classifiers Results.
+merges the class-probability vectors from the radar-weight
+(XGBoost) and vision (YOLOv8-Nano) classifiers and is
+evaluated using the same stratified five-fold cross-validation
+as the radar-weight model, with results averaged over the five
+folds.
+1) OVERALL PERFORMANCE
+Table 5 summarizes the performance of the unimodal
+baselines and the proposed fusion strategies. The radar-
+weight-only model achieves an accuracy and F1-macro of
+0.899, while the vision-only model reaches 0.943 accu-
+racy and 0.962 F1-macro, confirming that RGB imagery
+already
+provides
+strong
+external
+cues
+for
+ripeness
+discrimination.
+All fusion strategies outperform their corresponding
+single-modality counterparts, demonstrating the benefit
+of combining internal dielectric-related information with
+VOLUME 14, 2026
+42987
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+external visual appearance. Mean fusion improves the
+accuracy to 0.963 and the F1-macro to 0.965 by equally
+weighting both modalities.
+For weighted fusion, the radar weight αradar is tuned
+separately in each cross-validation fold using the validation-
+based grid search described in Section III. Across folds, the
+selected weights show some variability, with an average value
+of 0.362, indicating that the weight is obtained empirically
+rather than set heuristically. With these fold-specific weights,
+weighted fusion attains an aggregated accuracy of 0.963 and
+a macro-averaged F1-score of 0.965.
+To further assess the robustness of the weighted fusion
+scheme with respect to the choice of fusion weight, a sen-
+sitivity analysis was conducted by evaluating classification
+accuracy at representative values of αradar spanning the
+operating range observed across the cross-validation folds.
+Figure 11 illustrates the resulting accuracy trends as the radar
+fusion weight is varied.
+FIGURE 10. Detection results of YOLOv8-Nano for (a)Unripe,
+(b) Underripe, (c) Ripe, and (d) Overripe fruit bunches; bounding boxes
+indicate class labels and confidence scores.
+As shown in Figure 11, the classification accuracy remains
+high for moderate αradar values, particularly within the
+tested range of approximately 0.28-0.34 (corresponding to
+three fold-specific weights selected by the validation-based
+grid search: 0.28, 0.33, and 0.34). The observed accuracy
+differences within this interval are small. Two folds selected
+higher weights (0.41 and 0.45), where accuracy decreases,
+indicating that performance can degrade when the radar-
+weight modality is emphasized too strongly, especially
+for αradar0.40. Importantly, no sharp performance peak is
+observed, suggesting that good performance can be achieved
+without fine-grained manual tuning within this moderate
+operating range. Overall, this sensitivity analysis indicates
+that the weighted fusion approach is reliable for αradar values
+around 0.28-0.34, while overly large weights may reduce
+classification performance.
+Among all evaluated fusion strategies, stacking fusion
+delivers the best overall performance, achieving an accuracy
+of 0.969 and an F1-macro of 0.973. This improvement
+suggests that the meta-classifier can exploit systematic
+patterns in the agreement and disagreement between radar-
+weight and vision probability outputs that are not captured by
+fixed-weight averaging schemes. Consequently, the stacking-
+based configuration is adopted as the main multimodal
+classifier in this work.
+2) INFERENCE LATENCY AND COMPUTATIONAL
+COMPLEXITY
+To assess the deployment performance of the proposed
+multimodal system, inference latency was measured on a
+Raspberry Pi 5 equipped with a Quad-core Arm Cortex-A76
+CPU (2.4 GHz) and 8 GB RAM using a headless python
+deployment script. All measurements were conducted using
+pretrained models, and sensor acquisition was excluded to
+isolate computational overhead.
+The radar-weight branch based on XGBoost incurs a mean
+inference latency of 3.42 ms per sample. The stacking-based
+fusion stage introduces a negligible additional overhead of
+0.37 ms. In contrast, the vision branch implemented using
+YOLOv8-Nano constitutes the dominant computational cost,
+with a mean inference time of 333.4 ms per image. These
+results indicate that the fusion stage does not represent a
+computational bottleneck, and that overall system latency is
+primarily determined by visual processing.
+From a computational complexity perspective, both the
+radar-weight and fusion branches operate on fixed-size, low-
+dimensional feature vectors, resulting in bounded inference
+cost independent of input resolution or environmental condi-
+tions. The vision branch employs a lightweight convolutional
+neural network with fixed input resolution, leading to
+constant per-sample complexity with higher computational
+demand. Overall, the proposed system remains compatible
+with near-real-time decision making on embedded platforms
+under practical deployment constraints.
+From an operational standpoint, the proposed system
+targets single-bunch, decision-based inspection rather than
+continuous high-frame-rate video processing. In typical
+plantation loading-ramp scenarios, fresh fruit bunches
+are static or semi-static, and per-sample inference on
+the order of hundreds of milliseconds is operationally
+acceptable.
+Deployment experiments on a Raspberry Pi-class platform
+confirm the computational feasibility of the multimodal
+algorithm at the inference level. The radar-weight, vision,
+and fusion modules are independently trained and interact
+only through class probability outputs, resulting in bounded
+and predictable computational cost suitable for embedded
+hardware. However, this validation is limited to inference
+42988
+VOLUME 14, 2026
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+FIGURE 11. Sensitivity analysis of the weighted fusion strategy with
+respect to the radar fusion weight.
+using recorded data; full integration in conveyor-based
+or field-mounted systems remains future work to assess
+robustness and operational stability under real conditions.
+3) PRACTICAL IMPLICATIONS
+The experimental results suggest that the multimodal radar-
+vision system can be used to assist grading of oil palm
+fresh fruit bunches at loading ramps or mill intake points.
+By combining radar-weight measurements and RGB images,
+the fusion model produces ripeness estimates that are more
+stable than those from any single sensor, so fewer underripe
+and overripe bunches are likely to enter the production line.
+Fewer grading errors can help keep oil quality more uniform
+and improve extraction efficiency, while also reducing the
+dependence on fully manual visual checks. The use of
+low-cost SDR hardware and a compact YOLOv8-based
+detector means that the system is compatible with embedded
+platforms and can be adapted for near real-time operation in
+plantation or mill environments.
+E. CROSS-VARIETAL AND ENVIRONMENT ROBUSTNESS
+ANALYSIS
+To provide preliminary insight into cross-varietal robustness,
+we performed an auxiliary external evaluation on Dura
+FFBs collected from a different plantation environment. The
+radar-weight XGBoost model was trained and tuned on
+the Tenera dataset, and then applied to the Dura samples
+without retraining. On this external Dura evaluation set,
+the model achieved an accuracy of 0.857 and an F1-macro
+of 0.858. Relative to the Tenera results, this indicates a
+moderate performance degradation, consistent with increased
+inter-class overlap induced by varietal and plantation
+differences.
+Environmental robustness was further examined under
+wet and dry surface conditions using representative Tenera
+samples. While surface moisture introduced shifts in the
+absolute magnitude of radar backscattered power, the relative
+ordering and separability of ripeness classes remained con-
+sistent. This suggests that environmental moisture primarily
+affects signal scale rather than the underlying discriminative
+trend.
+These findings indicate that while radar-weight features
+exhibit reasonable robustness across varieties and envi-
+ronmental variations, some degradation may occur under
+heterogeneous deployment scenarios. This further motivates
+the use of multimodal fusion to enhance generalization across
+plantation conditions.
+VI. CONCLUSION
+This paper presented a multimodal ripeness classification
+framework for oil palm FFBs that combines radar-weight
+measurements and vision-based sensing through decision-
+level late fusion. The radar branch uses backscattered
+power and bunch weight to capture changes in internal
+dielectric properties and mass, while the vision branch relies
+on YOLOv8-Nano to extract external color and texture
+cues. Together, these two views provide a more complete
+description of fruit maturity under field conditions.
+Experimental results show that both unimodal branches
+already reach competitive performance. The radar-weight
+classifier attains an accuracy of 89.9%, and the YOLOv8-
+Nano model reaches 94.3% accuracy on the test set. When
+the outputs are combined through late fusion schemes, all
+multimodal configurations outperform their single-modality
+counterparts. The best fusion setting achieves 96.9% accu-
+racy and an F1-macro of 97.3%. These results indicate that
+combining internal radar-weight information with external
+visual evidence yields more reliable and physically inter-
+pretable ripeness decisions, especially in situations where
+illumination, occlusion, or fruit variability can limit purely
+optical methods. The proposed framework therefore offers
+a practical step toward smart-harvesting and inline quality-
+control tools for the palm-oil industry and illustrates how
+multimodal sensing can be applied to other agricultural
+monitoring tasks.
+Despite these promising results, several aspects still merit
+further work. First, the number of samples, in particular for
+the intermediate ripeness classes, is modest and may limit
+the generalization of the fusion model. Second, the radar
+front-end was operated at a single frequency of 2.4 GHz;
+extending the study to multi-band or polarimetric configu-
+rations could reveal additional dielectric contrast related to
+internal moisture and oil gradients. Third, while inference
+latency was benchmarked on an embedded device (Rasp-
+berry Pi 5), all classification experiments were conducted
+offline using recorded data. As a next step, the proposed
+system should be integrated into a real-time pipeline with
+synchronized radar and camera acquisition and evaluated in
+conveyor-based or field-mounted setups to assess end-to-end
+throughput, latency, and robustness under practical operating
+conditions. Addressing these points would help translate
+the current proof-of-concept into a more mature multi-
+modal ripeness-assessment system with stronger practical
+impact.
+VOLUME 14, 2026
+42989
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+ACKNOWLEDGMENT
+The authors would like to thank PT Bumitama Gunajaya Agro
+(PTBGA), Central Kalimantan, Indonesia, for providing field
+access, fresh fruit bunch samples, and technical assistance
+during the data collection campaign.
+REFERENCES
+[1] GAPKI. (Apr. 1, 2024). Ekspor Tertinggi Ke Uni Eropa! Naik 14,63 Persen
+Pada Januari 2024. [Online]. Available: https://gapki.id/news/2024/04/01/
+ekspor-tertinggi-ke-uni-eropa-naik-1463-persen-pada-januari-2024/
+[2] J. Y. Goh, Y. Md Yunos, and M. S. Mohamed Ali, ‘‘Fresh fruit
+bunch ripeness classification methods: A review,’’ Food Bioprocess
+Technol., vol. 18, no. 1, pp. 183–206, Jan. 2025, doi: 10.1007/s11947-024-
+03483-0.
+[3] F. K. Sani, F. Fahmi, and Y. Siregar, ‘‘Shelf-life prediction of oil palm
+fresh fruit bunches using artificial neural networks,’’ in Proc. 7th Int.
+Conf. Electr., Telecommun. Comput. Eng. (ELTICOM), Medan, Indonesia,
+Dec. 2023, pp. 162–166, doi: 10.1109/ELTICOM61905.2023.10443133.
+[4] M. Basyuni, N. Amri, L. A. P. Putri, I. Syahputra, and D. Arifiyanto,
+‘‘Characteristics of fresh fruit bunch yield and the physicochemical
+qualities of palm oil during storage in North Sumatra, Indonesia,’’
+Indonesian J. Chem., vol. 17, no. 2, pp. 182–190, Jul. 2017, doi:
+10.22146/ijc.24910.
+[5] R. Sinambela, ‘‘A ripeness study of oil palm fresh fruit at the bunch
+different positions,’’ Jurnal Keteknikan Pertanian, vol. 8, no. 1, pp. 9–14,
+Aug. 2020, doi: 10.19028/jtep.08.1.9-14.
+[6] J. W. Lai, H. R. Ramli, L. I. Ismail, and W. Z. Wan Hasan, ‘‘Oil palm fresh
+fruit bunch ripeness detection methods: A systematic review,’’ Agriculture,
+vol. 13, no. 1, p. 156, Jan. 2023, doi: 10.3390/agriculture13010156.
+[7] M. Shiddiq, F. Candra, B. Anand, and M. F. Rabin, ‘‘Neural network
+with k-fold cross validation for oil palm fruit ripeness prediction,’’
+TELKOMNIKA (Telecommunication Comput. Electron. Control), vol. 22,
+no. 1, pp. 164–174, Oct. 2023, doi: 10.12928/telkomnika.v22i1.24845.
+[8] B. Pamornnak, S. Limsiroratana, and M. Chongcheawchamnan, ‘‘Oil
+content determination scheme of postharvest oil palm for mobile
+devices,’’
+Biosystems
+Eng.,
+vol.
+134,
+pp. 8–19,
+Jun.
+2015,
+doi:
+10.1016/j.biosystemseng.2015.03.010.
+[9] Suharjito, M. Asrol, D. N. Utama, F. A. Junior, and Marimin, ‘‘Real-
+time oil palm fruit grading system using smartphone and modi-
+fied YOLOv4,’’ IEEE Access, vol. 11, pp. 59758–59773, 2023, doi:
+10.1109/ACCESS.2023.3285537.
+[10] E. Warni, Indrabayu, A. Achmad, and A. R. R. Syahsir, ‘‘Harnessing
+YOLO
+for
+loose
+fruits
+detection:
+Boosting
+productivity
+in
+palm
+oil
+plantations,’’
+in
+Proc.
+Int.
+Conf.
+Advancement
+Data
+Sci.,
+E-learning
+Inf.
+Syst.
+(ICADEIS),
+Feb.
+2025,
+pp. 1–6,
+doi:
+10.1109/ICADEIS65852.2025.10933352.
+[11] R. Kurniawan, A. T. Martadinata, and S. D. Cahyo, ‘‘Klasifikasi tingkat
+kematangan buah sawit berbasis deep learning dengan menggunakan
+arsitektur YOLOv5,’’ J. Inf. Syst. Res. (JOSH), vol. 5, no. 1, pp. 302–309,
+Oct. 2023, doi: 10.47065/josh.v5i1.4408.
+[12] Y. A. Tan, K. W. Low, C. K. Lee, and K. S. Low, ‘‘Imaging technique
+for quantification of oil palm fruit ripeness and oil content,’’ Eur. J.
+Lipid Sci. Technol., vol. 112, no. 8, pp. 838–843, Aug. 2010, doi:
+10.1002/ejlt.201000020.
+[13] K. Suresh and S. K. Behera, ‘‘Variations in fatty acid profiles, oil and
+moisture content during fruit ripening in oil palm crosses grown in
+India under sub-tropical environment,’’ J. Oil Palm Res., vol. 32, no. 1,
+pp. 50–56, Mar. 2020, doi: 10.21894/jopr.2020.0017.
+[14] N. A. Mohamad, N. Azis, J. Jasni, M. Z. A. Ab Kadir, R. Yunus,
+M. T. Ishak, and Z. Yaakub, ‘‘A study on the dielectric properties of palm
+oil and coconut oil,’’ in Proc. IEEE Int. Conf. Power Energy (PECon),
+Kuala Lumpur, Malaysia, Dec. 2014, pp. 109–112.
+[15] R. Vijay, R. Jain, and K. S. Sharma, ‘‘Dielectric properties of water at
+microwave frequencies,’’ Int. J. Eng. Res. Technol. (IJERT), vol. 3, no. 3,
+pp. 1–3, 2018.
+[16] Y. Rahmawati, M. Rizkinia, and F. Y. Zulkifli, ‘‘Palm fruit ripeness
+characteristics specification using free space measurement method,’’
+in Proc. Int. Conf. Radar, Antenna, Microw., Electron., Telecom-
+mun. (ICRAMET), Bandung, Indonesia, Nov. 2023, pp. 386–389, doi:
+10.1109/ICRAMET60171.2023.10366605.
+[17] Y. Zhao, Z. Ju, T. Sun, F. Dong, J. Li, R. Yang, Q. Fu, C. Lian, and P. Shan,
+‘‘TGC-YOLOv5: An enhanced YOLOv5 drone detection model based on
+transformer, GAM & CA attention mechanism,’’ Drones, vol. 7, no. 7,
+p. 446, Jul. 2023, doi: 10.3390/drones7070446.
+[18] M. H. M. Hazir, A. R. M. Shariff, and M. D. Amiruddin, ‘‘Determination of
+oil palm fresh fruit bunch ripeness—Based on flavonoids and anthocyanin
+content,’’ Ind. Crops Products, vol. 36, no. 1, pp. 466–475, Mar. 2012, doi:
+10.1016/j.indcrop.2011.10.020.
+[19] M. Rosbi, Z. Omar, U. Khairuddin, A. P. P. A. Majeed, and
+S. A. R. S. A. Bakar, ‘‘Machine learning for automated oil palm fruit
+grading: The role of fuzzy C-means segmentation and textural features,’’
+Smart Agricult. Technol., vol. 9, Dec. 2024, Art. no. 100691, doi:
+10.1016/j.atech.2024.100691.
+[20] V. V. Yakovlev, ‘‘Efficient electromagnetic models for systems and
+processes of microwave heating,’’ in Proc. Int. Seminar Heating by Internal
+Sources (HIS), Padova, Italy, Sep. 2001, pp. 285–292.
+[21] C. Gabriel, S. Gabriel, and E. Corthout, ‘‘The dielectric properties of
+biological tissues: I. literature survey,’’ Phys. Med. Biol., vol. 41, no. 11,
+pp. 2231–2249, Nov. 1996, doi: 10.1088/0031-9155/41/11/001.
+[22] B. Pamornnak, S. Limsiroratana, T. Khaorapapong, M. Chongcheawcham-
+nan, and A. Ruckelshausen, ‘‘An automatic and rapid system for grading
+palm bunch using a Kinect camera,’’ Comput. Electron. Agricult., vol. 143,
+pp. 227–237, Dec. 2017, doi: 10.1016/j.compag.2017.10.020.
+[23] P. Pipitsunthonsan, L. Pan, S. Peng, T. Khaorapapong, S. Nakasathien,
+S. Channumsin, and M. Chongcheawchamnan, ‘‘Palm bunch grading tech-
+nique using a multi-input and multi-label convolutional neural network,’’
+Comput. Electron. Agricult., vol. 210, Jul. 2023, Art. no. 107864, doi:
+10.1016/j.compag.2023.107864.
+[24] J. Y. Goh, M. S. Mohamed Ali, Y. Md Yunos, U. U. Sheikh, and M. S. Khan,
+‘‘Outdoor RGB and point cloud depth dataset for palm oil fresh fruit bunch
+ripeness classification and localization,’’ Scientific Data, vol. 12, no. 1,
+pp. 1–10, Apr. 2025, doi: 10.1038/s41597-025-04953-6.
+[25] W.-K. Chen, Ed., The Electrical Engineering Handbook, 2nd ed.,
+Burlington, MA, USA: Elsevier Academic, 2005.
+[26] M. A. Richards, J. A. Scheer, and W. A. Holm, Principles of Modern
+Radar: Basic Principles, vol. 1. Edison, NJ, USA: SciTech Publ., 2010.
+[27] F. W. Isen, DSP for MATLABTM and LabVIEWTM I: Fundamentals
+of Discrete Signal Processing. San Rafael, CA: Morgan & Claypool
+Publishers, 2008, doi: 10.2200/S000161ED1V01Y200811SPR004.
+[28] R. G. Lyons, Understanding Digital Signal Processing, 3rd ed.,
+Upper Saddle River, NJ, USA: Prentice-Hall, 2011.
+[29] J. Terven, D.-M. Córdova-Esparza, and J.-A. Romero-González, ‘‘A
+comprehensive review of YOLO architectures in computer vision: From
+YOLOv1 to YOLOv8 and YOLO-NAS,’’ Mach. Learn. Knowl. Extraction,
+vol. 5, no. 4, pp. 1680–1716, Nov. 2023, doi: 10.3390/make5040083.
+[30] Y. Lu, Y. Wu, L. Zhang, J. Huang, G. Sun, and J. Liu, ‘‘Bayesian-
+optimized stacking ensemble with multimodal feature selection for tobacco
+leaf maturity classification,’’ Smart Agricult. Technol., vol. 12, Dec. 2025,
+Art. no. 101217, doi: 10.1016/j.atech.2025.101217.
+[31] L. M. Pereira, A. Salazar, and L. Vergara, ‘‘A comparative analysis of
+early and late fusion for the multimodal two-class problem,’’ IEEE Access,
+vol. 11, pp. 84283–84300, 2023, doi: 10.1109/ACCESS.2023.3296098.
+[32] M. Everingham, L. Van Gool, C. K. I. Williams, J. Winn, and A. Zisserman,
+‘‘The Pascal visual object classes (VOC) challenge,’’ Int. J. Comput. Vis.,
+vol. 88, no. 2, pp. 303–338, Jun. 2010, doi: 10.1007/s11263-009-0275-4.
+[33] M. Ryan and L. Massaron, Machine Learning for Tabular Data: XGBoost,
+Deep Learning, and AI. Shelter Island, NY, USA: Manning Publ., 2025.
+FIRDAUSA SONNA ANGGARA RESTA received
+the B.Eng. degree in biomedical engineering
+from the Institut Teknologi Sepuluh Nopember
+(ITS), Surabaya, Indonesia, in 2023, where he is
+currently pursuing the M.Eng. degree in electrical
+engineering, with a concentration in electronics
+engineering. His research interests include embed-
+ded systems and signal processing.
+42990
+VOLUME 14, 2026
+
+F. S. A. Resta et al.: Multimodal Radar-Vision for Oil Palm FFB Ripeness Classification
+RACHMAD SETIAWAN received the bachelor’s
+degree in electronics from the Institut Teknologi
+Sepuluh Nopember (ITS), Surabaya, Indonesia,
+in 1995, and the master’s degree in instrumen-
+tation and control from the Institut Teknologi
+Bandung (ITB), Bandung, Indonesia, in 1999.
+From 2013 to 2014, his research focused on
+the development of closed-loop functional electri-
+cal stimulation (FES) systems, including system
+infrastructure, joint-angle sensors, and wearable
+wireless controllers. He has been the Head of the Biomedical Instrumentation
+and Signal Processing Laboratory, since 2015, and is currently a Lecturer
+with the Department of Biomedical Engineering, Faculty of Intelligent
+Electrical and Informatics Technology, ITS.
+MUHAMMAD RIVAI (Member, IEEE) received
+the Ph.D. degree, in 2006. He is currently a
+Lecturer with the Department of Electrical Engi-
+neering, Institut Teknologi Sepuluh Nopember,
+Surabaya, Indonesia. His research interests include
+sensors, chemical sensors, gas sensors, electronics,
+robotics, and artificial intelligence applications.
+REZKI EL ARIF (Member, IEEE) was born
+in Sidoarjo, East Java, Indonesia, in 1992.
+He received the B.S. degree in electrical engineer-
+ing from Universitas Brawijaya, Malang, Indone-
+sia, in 2015, and the M.S. and Ph.D. degrees in
+electrical engineering from National Sun Yat-sen
+University, Kaohsiung, Taiwan, in 2017 and 2023,
+respectively. He is currently an Assistant Professor
+with the Department of Biomedical Engineering,
+Institut Teknologi Sepuluh Nopember, Surabaya,
+Indonesia. His research focuses on radar systems for biomedical applica-
+tions, metamaterial-based antenna design, and signal processing for wearable
+vital-sign monitoring systems.
+AZIS NATAWIJAYA received the Bachelor of
+Agriculture degree in plant breeding from Uni-
+versitas Padjadjaran, Bandung, Indonesia, in 2010,
+and the M.S. degree in plant breeding and biotech-
+nology and the Ph.D. degree in agricultural and
+horticultural plant breeding from Institut Pertanian
+Bogor (IPB), Bogor, Indonesia, in 2012 and
+2018, respectively. He is currently the Head of
+Innovation with PT Bumitama Gunajaya Agro. His
+research interests include plant breeding, genetic
+resources, and biotechnology applications for improving productivity and
+sustainability in oil palm plantations.
+AFAN GHAFAR AL HADAD received the bache-
+lor’s degree in biomedical engineering from Insti-
+tut Teknologi Sepuluh Nopember (ITS), Surabaya,
+Indonesia, in 2023, where he is currently pursu-
+ing the master’s degree in electrical engineering
+(electronics) with the Department of Electri-
+cal Engineering, Faculty of Intelligent Electrical
+and Informatics Technology. His research inter-
+ests include embedded electronics and sensing
+systems.
+VOLUME 14, 2026
+42991

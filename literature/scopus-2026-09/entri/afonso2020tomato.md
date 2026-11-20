@@ -68,5 +68,3 @@ menyebabkan lebih banyak positif palsu pada kelas matang, sehingga penulis
 menyarankan deteksi satu kelas lalu pemberian skor kematangan. Registrasi
 citra antar ketinggian kamera tidak dibahas, dan penyusunan hasil deteksi
 per citra menjadi inventaris tingkat petak masih menjadi pekerjaan berikutnya.
-
-

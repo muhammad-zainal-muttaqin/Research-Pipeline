@@ -1,0 +1,1679 @@
+FGfuse-Net: A frequency guided dual-branch fusion model for multi-stage 
+maturity tomato detection and counting
+Qiang Tang a
+, Siqi Chen a, Wenhao Cao a, Ye Wei b, Yuwei Wang a, Yuan Rao a, Lu Liu a,  
+Wenhui Hou a,*
+a Anhui Provincial Engineering Laboratory of Intelligent Agricultural Machinery, School of Engineering, Anhui Agricultural University, Hefei, Anhui, China
+b The School of Engineering Science, University of Science and Technology of China, Hefei, Anhui, China
+A R T I C L E I N F O
+Keywords:
+Tomato detection
+Fourier transform
+Frequency guided
+Multi-stage maturity
+Feature fusion
+A B S T R A C T
+In greenhouse tomato cultivation, fruit detection and counting are critical tasks for yield prediction and auto­
+mated harvesting. However, actual greenhouse environments often present challenges such as illumination 
+variations, dense leaf occlusion, and complex background interference. To address these issues, this study pro­
+poses a dual-branch fusion detection model guided by high-frequency information (FGfuse-Net). The model 
+introduces high frequency image information through Fourier transform and designs a frequency guided feature 
+fusion module (FGFF) to effectively integrate spatial domain enhanced features, thereby improving the model's 
+adaptability to illumination variations. Meanwhile, a multi-scale wavelet extractor (MSWE) module is introduced 
+to enhance fine-grained texture representation in complex backgrounds via wavelet transform, thus improving 
+detection performance for small and occluded fruits. Furthermore, a Unified-IoU loss function is adopted to 
+optimize bounding box regression, alleviating the gradient imbalance problem in dense scenes and further 
+enhancing detection stability. The model was trained and evaluated on a self-constructed greenhouse tomato 
+dataset. Experimental results demonstrate that it achieves 96.4% mAP@0.5 and stable counting performance. 
+Moreover, it maintains robust performance even under low light conditions, effectively addressing multiple 
+detection challenges in complex greenhouse environments.
+1. Introduction
+Tomato, one of the world’s most important vegetable crops [1], 
+continues to experience growing market demand, which has exacer­
+bated the reliance on manual labor in greenhouse production, especially 
+during harvesting. Under the long-cycle, high-density cultivation model 
+[2], current manual-dependent fruit detection techniques are not only 
+inefficient but also prone to misjudgment and missed detection due to 
+factors such as worker fatigue and distraction. Faced with labor short­
+ages and rising harvesting costs, automated detection has become an 
+inevitable choice for the transformation of the tomato industry. With the 
+continuous advancement of machine vision and artificial intelligence 
+technologies, object detection has been deeply integrated into agricul­
+tural production practices [3]. This technology can assist in monitoring 
+the growth status of tomatoes and identifying the maturity stage, 
+thereby providing crucial support for yield estimation, precise fertil­
+ization, and automated harvesting. This, in turn, promotes the 
+optimization of production methods and resource allocation, and en­
+hances the sustainability of the agricultural system [4,5].
+Traditional object detection algorithms typically rely on handcrafted 
+features such as texture, shape and color, and combine these features 
+with classifiers to perform detection and classification. Such approaches 
+have been widely applied in fruit and vegetable detection, including 
+apple [6], pear [7], tomato [8], peach [9], and grape [10]. Rakun et al. 
+further integrated color, texture, and three dimensional morphological 
+features to achieve fruit detection and counting [11]. However, models 
+that rely solely on RGB information exhibit extremely low robustness, 
+especially in low-light conditions. In such scenarios, the amount of color 
+information captured by the camera significantly decreases, resulting in 
+a decline in detection accuracy. Some researchers have addressed the 
+detection challenges in low light conditions by combining different color 
+spaces [12,13]. However, such traditional machine vision techniques 
+rely heavily on experienced feature engineering and struggle to effec­
+tively capture the subtle distinctions necessary for maturity 
+* Corresponding author.
+E-mail address: hwh303@ahau.edu.cn (W. Hou). 
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+https://doi.org/10.1016/j.atech.2026.102194
+Received 11 February 2026; Received in revised form 11 April 2026; Accepted 6 May 2026  
+Smart Agricultural Technology 14 (2026) 102194 
+Available online 7 May 2026 
+2772-3755/© 2026 The Author(s). Published by Elsevier B.V. This is an open access article under the CC BY-NC license ( http://creativecommons.org/licenses/by- 
+nc/4.0/ ). 
+
+differentiation, making it difficult for them to simultaneously handle 
+influencing factors such as occlusion and scene variations. Conse­
+quently, their adaptability and generalization capabilities remain 
+limited.
+In contrast, deep learning methods leverage their powerful capability 
+for automatic feature learning to extract discriminative features directly 
+from data, thereby achieving higher accuracy and stronger robustness in 
+object detection tasks [14]. These methods have now been widely 
+adopted in the field of intelligent agricultural detection [15–17]. Zhao 
+et al. developed an enhanced Faster-R-CNN framework for apple 
+recognition. This model optimizes the Region Proposal Network struc­
+ture and introduces two new windows, achieving an accuracy rate of 
+89.10% [18]. Zhong et al. presented an improved Faster R-CNN algo­
+rithm for detecting and localizing clustered pod peppers. Their method 
+uses more high-resolution anchors, RoI Align instead of RoI Pooling, and 
+ResNet+FPN as the feature extractor, achieving an AP@0.5 accuracy of 
+87.30% [19].
+The complexity of these two-stage architecture results in high 
+computational latency, which fails to meet real-time detection re­
+quirements. In response, single-stage models such as SSD [20,21] and 
+the subsequent YOLO series have been proposed. Zhang et al. enhanced 
+YOLOv5s with RepVGG and Focal EIoU loss function for simultaneous 
+detection and segmentation of mango fruits and stems, with a recogni­
+tion accuracy of 92.19% and a stem picking point success rate of 89.84% 
+[22]. Wang et al. presents Jujube-YOLO, an enhanced YOLOv11 model 
+for detecting and recognizing jujube fruits in complex environments. It 
+integrates DCSE, RCM, and MBCA modules, achieving an mAP of 0.905 
+[23]. Liu et al. introduced a multi-scale attention (EMA) module into the 
+YOLOv8 backbone network to perform pixel-level attention allocation, 
+enabling the detection of green plums in real orchard environments 
+[24]. Qi et al. proposed a lightweight network combining YOLOv8 
+detection and Deep SORT tracking, which can simultaneously achieve 
+maturity assessment of cherry tomato clusters [25]. Based on YOLOv8, 
+Fan et al. developed a novel, lightweight, and efficient algorithm for 
+unripe pomegranate detection and counting. By employing GhostConv 
+convolution for downsampling, their method mitigates the potential loss 
+of detailed information during feature extraction, significantly 
+improving detection speed while maintaining high accuracy [26].
+When facing illumination variations, conventional object detection 
+networks typically enhance model adaptability by increasing the di­
+versity of training samples [27,28]. However, such approaches fail to 
+fundamentally analyze the impact of illumination changes on image 
+features. In fact, although images captured under different exposure 
+conditions exhibit significant differences in brightness, they often retain 
+similar structural information. Based on this observation, numerous 
+studies have adopted multi-scale decomposition strategies [29,30] to 
+progressively separate and reconstruct the coarse-scale luminance 
+components and fine-scale structural information of images.
+Nevertheless, the accurate detection of multi-stage tomato maturity 
+still faces numerous challenges. From the perspective of color charac­
+teristics, tomatoes at different maturity stages often exhibit a continuous 
+spectral gradient, while the high color similarity between immature 
+fruits and the background foliage can easily lead to model confusion. 
+Under uneven illumination conditions, the edge regions of fruits are 
+often cast in shadow, making their fine structures difficult to capture 
+effectively. It is worth noting that the edge and texture information 
+crucial for detection is typically embedded in the high-frequency com­
+ponents of an image, which are relatively less affected by illumination 
+variations. Consequently, frequency-domain correction has become a 
+key approach for enhancing image quality [31–33]. For instance, Huang 
+et al. analyzed the frequency characteristics of images captured under 
+different exposure conditions and constructed a deep Fourier exposure 
+correction network. By leveraging information interaction between the 
+spatial and frequency domains, their method achieves collaborative 
+reconstruction of brightness and structure, effectively enhancing 
+underexposed images [34].
+Such studies provide theoretical support for improving the quality of 
+underexposed images; however, in the agricultural domain, there is a 
+lack of research exploring their application in downstream detection 
+tasks. Based on the observations and analyses above, this paper proposes 
+a frequency-guided dual-branch fusion network for multi-stage maturity 
+tomato detection. First, frequency analysis is employed to extract high- 
+frequency information that is less affected by underexposure, which is 
+then used to enhance spatial-domain image features. Second, a dual- 
+branch network is constructed to simultaneously extract RGB features 
+and frequency-enhanced features. Meanwhile, a dual-channel informa­
+tion interaction module is designed to compensate for the degradation of 
+subtle RGB features caused by insufficient illumination, thereby 
+enhancing the model's capability to detect edge details. The main con­
+tributions of this study are as follows: 
+(1) A comprehensive tomato image dataset for complex greenhouse 
+environments is constructed, covering diverse lighting condi­
+tions, maturity stages and occlusion scenarios, which provides a 
+rich and challenging sample set for tomato detection tasks.
+(2) A multi-stage maturity tomato detection method based on fre­
+quency guided feature fusion was proposed. Specifically, a dual- 
+branch feature extraction architecture and an information fusion 
+module are designed to enhance the model’s ability to charac­
+terize subtle features, thus improving its discrimination of green 
+tomatoes against similar backgrounds. A multi-scale wavelet 
+extraction module is introduced to capture global contours and 
+local details simultaneously via multi-band decomposition, 
+which effectively alleviates blurred fruit edges and texture loss. 
+The Unified-IoU loss function is adopted to tackle the gradient 
+imbalance in dense fruit scenes, further boosting detection 
+accuracy.
+(3) The effectiveness of the proposed model was validated on the self- 
+built tomato dataset. Experimental results show that the pro­
+posed model significantly outperforms current mainstream object 
+detection networks and can robustly handle challenges such as 
+varying lighting conditions, complex backgrounds, and branch/ 
+leaf occlusion. This study not only provides a technical reference 
+for the design of multi-branch architectures in detection tasks but 
+also offers empirical evidence for the application expansion of the 
+high-frequency 
+guidance 
+concept 
+through 
+scene-specific 
+verification.
+2. Materials and methods
+2.1. Materials
+2.1.1. Data acquisition and splitting
+In this study, images of tomato fruits were collected in June 2024 
+from the tomato greenhouse (166.98 E, 31.05 N, 16 m above sea level) at 
+the Agricultural Science Research Center in Shucheng County, Anhui 
+Province, China, as illustrated in Fig. 1. A manually operated remote 
+control four-wheel differential speed intelligent vehicle was utilized for 
+data collection; it was equipped with an Intel RealSense D455 camera 
+and traveled at a constant speed of 1 m/s along the rows. The video data 
+were recorded in real time on an onboard industrial computer. The 
+camera was mounted on the upper cover of the chassis, oriented forward 
+at a height of 0.75 m above ground level, with a shooting distance 
+ranging from 0.1 to 1.5 m and an image resolution of 1280 × 720 pixels 
+at a frame rate of 30 frames per second.
+To take into account the variations in environmental lighting, we 
+collected images of tomato fruits at different stages of maturity during 
+different time periods. The collected images underwent normalization 
+and cropping to achieve dimensions of 640 × 640 pixels each. Ulti­
+mately, a total of 800 images were randomly divided into training set, 
+validation set, and test set according to a ratio of 7:2:1 for model training 
+and evaluation purposes.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+2 
+
+2.1.2. Data augmentation and labeling
+To enhance the model’s generalization ability, we apply standard 
+data augmentation to the dataset, including brightness adjustment 
+(increased by 1.3 times during augmentation and decreased by 0.7 times 
+during reduction), flipping, and Gaussian noise addition (mean = 0, 
+standard deviation = 15), as shown in Fig. 2. The dataset is expanded to 
+2142 images, consisting of 1500 training, 428 test, and 214 validation 
+images. Finally, we use LabelImg to annotate each tomato with a 
+bounding box, generating label files that record the location and class 
+information with filenames consistent with the corresponding images.
+2.2. Methods
+2.2.1. Motivation and ideas
+In complex greenhouse environments, traditional models struggle to 
+distinguish unripe green tomatoes from leaves due to color overlap and 
+similar low-frequency textures. This problem is aggravated under low- 
+light conditions, where color and fine texture features degrade 
+severely, causing frequent false positives and missed detections. To 
+address this, we propose a frequency guided fusion mechanism based on 
+Fourier transform and Gaussian high-pass filtering (see Fig. 3), and 
+applied it in the preprocessing stage. Fourier transform decomposes 
+images across all channels into illumination-sensitive low-frequency 
+components (global structure, illumination trends) and illumination- 
+stable high-frequency components (textures, contours), capturing the 
+intrinsic spatial-domain-invisible differences between green tomatoes 
+(dense texture, regular contours) and leaves (sparse veins, irregular 
+edges). Gaussian high-pass filtering adaptively retains these high- 
+frequency features and suppresses low-frequency illumination noise, 
+with its function defined as: 
+G(u, v) = 1 −e−u2+v2
+2σ2
+(1) 
+Where (u, v) are frequency-domain coordinates, and σ = 2.5(a 
+moderate value balancing target feature retention and noise suppres­
+sion). The implementation process is as follows: (1) Perform 2D FFT on 
+each RGB channel and center the spectrum to separate illumination- 
+related zero-frequency components; (2) Multiply the spectrum by 
+G(u, v) to enhance high-frequency structural features and suppress low- 
+frequency redundancy; (3) Apply inverse FFT to reconstruct a grayscale 
+high-frequency feature map encoding intrinsic target information; (4) 
+Normalize and fuse the high-frequency map with the original RGB image 
+at a 1:1 ratio, forming a frequency guided spatial-domain enhanced 
+representation. (5) Construct a dual-branch encoder network for feature 
+extraction, and design a frequency guided feature fusion (FGFF) module 
+to facilitate further information interaction, thereby generating fused 
+features for downstream detection tasks.
+2.2.2. The FGfuse-Net model’s overall architecture
+To address the challenges of ambiguous feature characterization, 
+scale variation, and illumination-induced robustness degradation in 
+greenhouse tomato detection, the FGfuse-Net model is based on the core 
+concept of high-frequency guidance and adopts a dual-branch feature 
+fusion design, which overcomes the limitations of single-branch feature 
+extraction. Its overall architecture is shown in Fig. 4. This architecture is 
+built based on the YOLOv8n base model and integrates the frequency 
+Fig. 1. Location and type of data collection.
+Fig. 2. Image augmentation. (a) Brightness enhancement, (b) Brightness reduction, (c) Flipping, (d) Noise addition.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+3 
+
+guided feature fusion module (FGFF), the multi-scale wavelet extractor 
+(MSWE), and the Unified-IoU loss function. Its design concept focuses on 
+high-frequency information guidance, multi-scale detail enhancement, 
+and dense scene regression optimization. Specifically, through the FGFF 
+module, the color features in the spatial domain and the frequency- 
+guided enhanced features are fused to compensate for the degradation 
+of features under low-light conditions. The MSWE module is used to 
+enhance multi-scale feature capture, and the Unified-IoU loss function is 
+adopted to optimize the bounding box regression in dense scenes.
+2.2.3. The frequency guided feature fusion module
+To fully leverage the complementary advantages of spatial-domain 
+color semantics and high frequency structural details, this study de­
+signs a feature fusion module guided by high frequency information. 
+Based on the Transformer architecture [35], which excels at capturing 
+long-range dependencies between heterogeneous features, this module 
+Fig. 3. Conceptual framework of the frequency guided dual-branch model for feature fusion.
+Fig. 4. The structure of the FGfuse-Net model. Note: The contents of the red dashed box in the figure are the improvement of the paper. The FGFF is the frequency 
+guided feature fusion module. The MSWE is the multi-scale wavelet extractor module.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+4 
+
+is termed the frequency guided feature fusion (FGFF) module. Its core 
+logic is to utilize high-frequency information to guide the effective 
+fusion of spatial-domain and enhanced features, thereby improving the 
+model's ability to distinguish targets from backgrounds and compen­
+sating for feature degradation caused by low illumination and other 
+adverse factors. The detailed structure of the FGFF module is illustrated 
+in Fig. 5.
+Feature maps F1 and F2 are extracted from two distinct backbones, 
+where B, C, H, W denote batch size, channels, height, and width, 
+respectively. These are flattened into sequential form to yield Fʹ1 and Fʹ2. 
+Subsequently, they are concatenated into Fconcat. To enable the Trans­
+former to distinguish modality-specific features, learnable positional 
+encoding P (providing spatial position information) is added to form Fpos 
+= Fconcat + P. P can be randomly initialized or fixed via sine or cosine 
+functions. Fpos is projected into Query, Key, and Value spaces: Q =
+FposWQ, K = FposWK, V = FposWV, where WQ, WK and WV are learnable 
+weight matrices and D denotes the embedding dimension. Attention 
+weights α are computed via Eq. (2), where ̅̅̅̅
+D
+√
+scales dot products to 
+avoid softmax gradient vanishing. The Transformer output Z is obtained 
+by weighted summation (Eq. (3)): 
+α = softmax
+(QKT̅̅̅̅
+D
+√
+)
+(2) 
+Z = αV
+(3) 
+To further enhance the ability of feature fusion, we stack eight 
+Transformer layers together. The output of each Transformer layer is 
+used as the input of the next Transformer layer, and the number of heads 
+h of each multi-head self-attention mechanism is set to 8 to fully exploit 
+the complex relationship between features. Specifically, let the output of 
+the i th Transformer layer be Oi, then the input of the i +1 Transformer 
+layer be Oi. The final output Ofinal is the output of the eighth Transformer 
+layer, as shown in Eq. (4). 
+Ofinal = Transformer8
+(
+Transformer7
+(
+⋅⋅⋅Transformer1
+(
+Fpos
+)
+⋅⋅⋅
+))
+(4) 
+Finally, by applying the inverse operation of the initial step, the 
+output sequence Ofinal is restored to its original feature map form and 
+subsequently integrated with the original backbone as supplementary 
+information.
+2.2.4. The multi-scale wavelet extractor module
+YOLOv8’s C2f module offers competent feature extraction but 
+struggles with small, occluded targets, limited by insufficient receptive 
+field expansion and fine-grained detail capture in cluttered environ­
+ments. To address this limitation, the multi-scale wavelet extractor 
+(MSWE) module is proposed, integrating wavelet transform [36] 
+multi-scale analysis with convolutional feature modeling. Centered on 
+wavelet convolution (WTConv) [37], it embeds wavelet-based multi-­
+resolution decomposition into feature extraction, enabling adaptive 
+parsing of target contours, textures, and contextual relationships across 
+scales to enhance subtle feature perception and background suppression. 
+Its structure is illustrated in Fig. 6. For each input channel, the con­
+volutional output is defined in terms of the respective input as follows: 
+fLL = 1
+2
+[
+1
+1
+1
+1
+]
+, fLH = 1
+2
+[
+1
+−1
+1
+−1
+]
+, fHL = 1
+2
+[
+1
+1
+−1
+−1
+]
+, fHH
+= 1
+2
+[
+1
+−1
+−1
+1
+]
+(5) 
+[XLL, XLH, XHL, XHH] = Conv([fLL, fLH, fHL, fHH], X)
+(6) 
+X = Conv −transposed([fLL, fLH, fHL, fHH][XLL, XLH, XHL, XHH])
+(7) 
+Here, fLL denotes a low-pass filter, while fLH, fHL, fHH form a set of 
+high-pass filters. "Conv-transposed" refers to the transposed convolution 
+operation, yielding four channels XLL, XLH, XHL, XHH with half the reso­
+lution of X. Specifically, XLL corresponds to the low-frequency compo­
+nent, and XLH, XHH represent high-frequency components in horizontal, 
+vertical, and diagonal orientations. Thus, multilevel WTConv decom­
+position is described as: 
+X(i)
+LL, X(i)
+LH, X(i)
+HL, X(i)
+HH = WT
+(
+X(i−1)
+LL
+)
+(8) 
+Where X(0)
+LL = X, and i denotes the cascading level of WTConv. In 
+MSWE, a 3 × 3 convolution is applied to the second-level low-frequency 
+band X(2)
+LL , generating a 9-parameter convolution that captures lower 
+frequencies within a 12 × 12 receptive field of input X. A small-kernel 
+depth convolution is then applied to all frequency maps to cover a 
+broad spectrum of receptive fields, ensuring the model effectively pro­
+cesses both low and high-frequency information (Eq. (9)). Finally, an 
+inverse wavelet transform (IWT) constructs the output (Eq. (10)): 
+Y(i)
+LL, Y(i)
+H = Conv
+(
+W(i),
+(
+X(i)
+LL, X(i)
+H
+))
+(9) 
+Fig. 5. The frequency guided feature fusion module.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+5 
+
+Y = IWT(Conv(W, WT(X)))
+(10) 
+Here, Y denotes the final output and IWT represents the inverse 
+wavelet transform. Leveraging wavelet transform’s multi-scale analysis, 
+the MSWE module refines feature extraction, enhances small target 
+characterization, and mitigates complex scene and background inter­
+ference, adapting to greenhouse tomato detection tasks.
+2.2.5. The unified-IoU loss function
+To improve bounding box regression accuracy for tomato detection 
+and mitigate gradient imbalance in traditional Intersection over Union 
+(IoU) for dense fruit distributions, the Unified-IoU loss function [38] is 
+adopted as the regression loss. This approach shifts the model’s focus 
+from low-quality to high-quality prediction boxes, optimizing detection 
+accuracy.
+Unified-IoU incorporates the Focal Box method to dynamically 
+assign weights by scaling predicted and ground truth boxes, with the 
+scaling ratio controlled by a hyperparameter ratio. Three adjustment 
+strategies are defined: Linear descent, Cosine descent, and Fractional 
+descent. In early training (ratio > 1), boxes are enlarged to prioritize 
+low-quality predictions and accelerate convergence; as training pro­
+ceeds, ratio is gradually reduced (ratio < 1) to focus on high-quality 
+boxes. The hyperparameter ratio is initialized to 2 for early accuracy 
+and set to 0.5 in later stages to emphasize high-quality predictions, ul­
+timately enhancing overall detection quality. The relationships between 
+ratio and training epoch are:
+Linear descent strategy: 
+ratio = −0.005 × epoch + 2
+(11) 
+Cosine descent strategy: 
+ratio = 0.75 × cos
+(π × epoch
+300
+)
++ 1.25
+(12) 
+Fractional descent strategy: 
+ratio =
+200
+epoch + 100
+(13) 
+Unified-IoU further integrates Focal Loss for weight optimization: it 
+assigns higher weights to low-confidence boxes (prioritizing hard sam­
+ples) and extra weights to high-IoU boxes (boosting dense-scene per­
+formance). Its formulation is: 
+UIoUloss = (1 −p) × IoUloss
+(14) 
+IoUloss = 1 −P ∩Pgt
+P ∪Pgt
+(15) 
+Where p is the confidence of the predicted box, and IoUloss is the 
+original IoUloss. P is the predicted box, and Pgt is the Ground Truth.
+2.3. Experimental environments
+To ensure the fairness of tomato detection experiments, all tests were 
+conducted under a consistent hardware and software environment. The 
+hardware configuration includes an AMD Ryzen 9 7940H processor 
+(4.00 GHz, integrated with Radeon 780 M Graphics) and an NVIDIA 
+GeForce RTX 4060 GPU with 16 GB of RAM. For the software, the ex­
+periments were built on Python 3.8 and the PyTorch 2.2.0 deep learning 
+framework, accelerated by CUDA 12.1, with PyCharm 2023 as the in­
+tegrated development environment. Notably, the FGfuse-Net model does 
+not utilize any pre-trained weights. The input image size is set to 640 ×
+640 pixels, and the model is trained on a single GPU for 200 epochs with 
+a batch size of 16 and 4 worker threads.
+2.4. Evaluation metrics
+For tomato detection, the primary model evaluation metrics include 
+Precision (P), Recall (R), F1 score, Average Precision at 50% IoU 
+(AP@0.5), mean Average Precision at 50% IoU (mAP@0.5), giga 
+floating-point operations per second (GFLOPs), and frames per second 
+(FPS). Their calculation formulas are provided below: 
+F1 = 2 ×
+PR
+P + R
+(16) 
+P =
+TP
+TP + FP × 100%
+(17) 
+R =
+TP
+TP + FN × 100%
+(18) 
+AP@0.5 =
+∫1
+0
+P(R)dR
+(19) 
+Fig. 6. The structure of the multi-scale wavelet extractor module.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+6 
+
+mAP@0.5 = 1
+N
+∑
+N
+i=1
+AP(i)
+50
+(20) 
+GFLOPs = 1
+109 ×
+∑
+L
+l=1
+(Kh × Kw × Cin × Cout × Hout × Wout)
+(21) 
+FPS =
+1
+perframe = preprocess + inf + NMS
+(22) 
+3. Experimental results
+3.1. Data augmentation validity analysis
+We evaluated the impact of data augmentation on model perfor­
+mance by comparing mainstream models’ detection results on original 
+and augmented datasets. As shown in Table 1, all compared models 
+exhibit better performance on the augmented dataset. Specifically, 
+FGfuse-Net achieves the most notable improvement: its mAP@0.5 and 
+F1 score rise from 92.3% and 90.6% (original dataset) to 96.4% and 
+94.5% (augmented dataset), with increments of 4.1% and 3.9%, 
+respectively. And other models follow a similar trend. Data augmenta­
+tion expands sample coverage, allowing models to better learn tomato 
+features under diverse lighting and poses. Meanwhile, FGfuse-Net fully 
+leverages edge details and diverse scene information in the augmented 
+data, further enhancing the effect of data augmentation.
+3.2. Ablation experiment
+To verify the effectiveness of FGfuse-Net’s core improved modules 
+(FGFF, MSWE, Unified-IoU), ablation experiments were conducted on 
+the augmented dataset using YOLOv8n as the baseline, analyzing the 
+impacts of individual modules and their combinations on key metrics 
+and detection performance across tomato maturity stages, shown in 
+Table 2.
+The FGFF module integrates spatial domain enhanced features via 
+the 
+Transformer 
+architecture. 
+Compared 
+with 
+the 
+baseline, 
+YOLOv8n+FGFF improves mAP@0.5 (+1.7%), Recall (+3.3%), and 
+notably boosts unripe tomato AP@0.5 by 2.3%, effectively mitigating 
+spatial-domain feature loss for unripe tomatoes. The MSWE module 
+adopts wavelet convolution instead of traditional convolution to 
+strengthen multi-scale and occluded object feature extraction. 
+YOLOv8n+MSWE delivers a substantial Recall increase (+4.9%) and 
+mAP@0.5 improvement (+0.8%), capturing contour features of small or 
+partially occluded fruits overlooked by the baseline’s C2f module. The 
+Unified-IoU loss function optimizes bounding box regression by 
+addressing 
+gradient 
+imbalance 
+in 
+dense 
+scenes, 
+enabling 
+YOLOv8n+Unified-IoU to improve Recall (+4.7%) and mAP@0.5 
+(+1.0%) while reducing localization errors for overlapping tomatoes. 
+Combining all three modules, FGfuse-Net outperforms the baseline with 
+an mAP@0.5 of 96.4% (+3.0%), a Recall of 94.6% (+6.8%), and an F1 
+of 94.5% (+4.6%). It achieves an inference speed of 84.85 FPS on an 
+RTX 4060 GPU with sufficient real-time inference capability, and en­
+ables high-precision detection of tomatoes across all maturity stages and 
+lighting conditions.
+This study also analyzed the performance of AP@0.5 in the ablation 
+test by radar plots, as shown in Fig. 7(a). The baseline is less sensitive to 
+unripe tomato features, with an unripe tomato AP@0.5 of 92.3%. Via its 
+dual-backbone feature fusion architecture, FGfuse-Net enhances 
+AP@0.5 across all maturity stages relative to the baseline: Ripe (+2.3%), 
+Halfripe (+2.9%), and notably Unripe (+3.8%), resulting in a regular 
+triangular distribution in the radar plot.
+3.3. Hyperparametric experiment
+3.3.1. Hyperparametric experiment with Kernel_Size
+To evaluate the impact of MSWE’s Kernel_Size hyperparameter on 
+detection performance, we set it to values ranging from 3 to 7. Table 3
+results show that Kernel_Size = 5 achieves the best performance: Pre­
+cision=94.4%, Recall=94.6%, mAP@0.5 = 96.4%, F1=94.5%. Smaller 
+kernels have fewer parameters but limited receptive fields, hindering 
+fruit contour/texture capture and reducing accuracy. At Kernel_Size=5, 
+the wavelet basis covers more frequency bands, significantly enhancing 
+fruit edge and occluded target discrimination and boosting detection 
+accuracy. However, further increasing Kernel_Size to 6 or 7 causes 
+mAP@0.5 to decline, due to two factors: (1) Overly large kernels 
+introduce redundant high-frequency noise, weakening key features. (2) 
+Increased parameters and computation raise overfitting risk on limited 
+data, reducing generalization. Thus, we set Kernel_Size=5 in the MSWE 
+module to optimize tomato detection.
+3.3.2. Hyperparametric experiment with Transformer layers
+To verify the impact of Transformer layer count in the FGFF module 
+on model detection performance and computational complexity, ex­
+periments were performed to identify the optimal layer configuration. 
+With the MSWE module and Unified-IoU loss fixed, we only adjusted the 
+stacked Transformer layers of the FGFF module, and tested the model’s 
+core detection metrics and computational complexity under identical 
+experimental settings. The results are summarized in Table 4. The 
+number of Transformer layers significantly affects model performance: 
+from 4 to 8 layers, detection performance improves gradually with a 
+slight increase in parameters, verifying that the multi-layer Transformer 
+can fully capture the long-range dependence of heterogeneous features 
+in spatial and frequency domains. When layers increase from 8 to 10, 
+accuracy plateaus or even slightly declines, accompanied by rising 
+computation and parameter costs, resulting in feature extraction and 
+computational redundancy. Considering the trade-off between detection 
+accuracy and computational complexity, the 8-layer Transformer is 
+determined as the optimal setting for the FGFF module.
+3.3.3. Hyperparametric experiment with σ in gaussian high-pass filtering
+In this study, the sensitivity analysis experiment of univariate control 
+Table 1 
+Comparison of recognition results of FGfuse-Net on the original and enhanced datasets.
+Dataset
+Model
+AP@0.5(%)
+P(%)
+R(%)
+mAP@0.5(%)
+F1(%)
+Ripe
+Halfripe
+Unripe
+Original 
+Dataset
+YOLOv5n
+73.0
+71.1
+69.2
+84.2
+51.5
+71.4
+64.0
+YOLOv8n
+89.5
+88.7
+87.9
+89.6
+82.9
+88.7
+86.1
+YOLOv11n
+88.6
+87.9
+86.8
+90.3
+80.7
+87.7
+85.2
+Faster-R-CNN
+76.2
+81.3
+70.4
+62.5
+79.3
+76.6
+69.9
+FGfuse-Net
+93.2
+92.4
+91.3
+91.2
+90.0
+92.3
+90.6
+Augmented 
+Dataset
+YOLOv5n
+81.4
+79.2
+76.4
+87.37
+59.7
+79.0
+70.8
+YOLOv8n
+94.4
+93.5
+92.3
+92.1
+87.8
+93.4
+89.9
+YOLOv11n
+93.4
+92.8
+91.9
+92.9
+86.3
+92.7
+89.5
+Faster-R-CNN
+83.1
+88.2
+77.1
+66.97
+84.46
+82.8
+74.7
+FGfuse-Net
+96.7
+96.4
+96.1
+94.4
+94.6
+96.4
+94.5
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+7 
+
+was carried out for the σ parameter. With all experimental conditions 
+fixed, we tested σ values of 1.0, 2.0, 2.5, 3.0, and 4.0, with the results 
+summarized in Table 5. The model’s detection performance exhibits a 
+first-increasing then-decreasing trend with changing σ, achieving 
+optimal performance at σ=2.5. For σ<2.5, the Gaussian kernel band­
+width narrows and the high-pass filter cut-off frequency rises, resulting 
+in the loss of effective high-frequency features (fruit contours and tex­
+tures). For σ>2.5, the suppression effect of high-pass filtering is weak­
+ened, leaving abundant illumination-related low-frequency interference 
+information. In conclusion, σ=2.5 is determined as the optimal value, 
+striking the best balance between low-frequency interference suppres­
+sion and effective high-frequency feature preservation.
+3.4. Comparative experiments on loss function
+To verify the superiority of the Unified-IoU loss function in 
+addressing gradient imbalance and bounding box regression errors for 
+dense and occluded tomatoes, we conducted comparative experiments 
+on the augmented dataset. Using the FGfuse-Net architecture, core 
+metrics (Precision, Recall, mAP@0.5, F1) were used to compare Unified- 
+IoU against six mainstream IoU-based losses: SIoU [39], WIoU [40], 
+GIoU [41], DIoU and CIoU [42], and EIoU [43]. The comparative results 
+are presented in Fig. 8.
+Results demonstrate that Unified-IoU achieves the best comprehen­
+sive performance (Precision 94.4%, Recall 94.6%, mAP@0.5 96.4%, F1 
+94.5%), outperforming all compared losses. Unlike GIoU/DIoU (with 
+simple bounding box/center distance penalties, limited in mitigating 
+occlusion-induced localization errors) and EIoU/CIoU (insufficient for 
+high IoU thresholds with extreme aspect ratios), Unified-IoU integrates 
+FocalBox dynamic scaling and annealing ratio adjustment. This design 
+shifts the model’s optimization focus from low-quality to high-quality 
+prediction boxes during training, fundamentally addressing gradient 
+imbalance from dense tomato clusters and reducing overlapping sample 
+interference. Compared to SIoU (optimizing gradient direction through 
+Angle penalty but fails to correct occluded edge localization) and WIoU 
+Table 2 
+Ablation experiment of each module in the proposed method.
+Model
+FGFF
+MSWE
+Unified-IoU
+AP@0.5(%)
+GFLOPs
+FPS
+P(%)
+R(%)
+mAP@0.5(%)
+F1(%)
+Ripe
+Halfripe
+Unripe
+YOLOv8n
+×
+×
+×
+9 4.4
+93.5
+92.3
+8.7
+105.18
+92.1
+87.8
+93.4
+89.9
+​
+√
+×
+×
+95.4
+95.2
+94.6
+14.7
+92.85
+92.6
+91.1
+95.1
+91.8
+​
+×
+√
+×
+9 5.0
+94.4
+93.1
+12.6
+97.18
+92.8
+92.7
+94.2
+92.8
+​
+×
+×
+√
+94.8
+94.5
+93.9
+8.7
+105.18
+93.1
+92.5
+94.4
+92.8
+​
+√
+√
+×
+9 5.8
+95.2
+94.6
+18.6
+84.85
+93.2
+93.9
+95.2
+93.5
+​
+×
+√
+√
+95.3
+95.0
+94.2
+12.6
+97.18
+93.1
+93.0
+94.8
+93.1
+​
+√
+×
+√
+95.5
+95.2
+94.3
+14.7
+92.85
+93.3
+92.9
+95.0
+93.1
+​
+√
+√
+√
+96.7
+96.4
+96.1
+18.6
+84.85
+94.4
+94.6
+96.4
+94.5
+Fig. 7. Performance comparison graph for the three maturity stages. (a) Performance comparison chart of the ablation experiment. (b) Performance comparison 
+charts of different mainstream models.
+Table 3 
+Comparison experiment results of different Kernel_Size number setting.
+Kernel_Size
+P(%)
+R(%)
+mAP@0.5(%)
+F1(%)
+3
+93.0
+92.3
+94.9
+92.6
+4
+93.5
+93.7
+95.2
+93.6
+5
+94.4
+94.6
+96.4
+94.5
+6
+93.2
+92.8
+95.1
+93.0
+7
+92.8
+91.1
+95.0
+91.9
+Table 4 
+Hyperparameter experimental results of Transformer layer number of FGFF 
+module.
+Transformer layers
+P(%)
+R(%)
+GFLOPs
+FPS
+mAP@0.5(%)
+4
+93.3
+93.2
+15.2
+92.62
+95.7
+6
+93.8
+93.6
+16.8
+89.20
+96.0
+8
+94.4
+94.6
+18.6
+84.85
+96.4
+10
+94.2
+94.5
+20.3
+78.56
+96.4
+Table 5 
+Hyperparameter experimental results of σ in Gaussian high-pass filtering.
+σ
+P(%)
+R(%)
+mAP@0.5(%)
+F1(%)
+1.0
+92.2
+91.7
+93.9
+91.9
+2.0
+93.6
+93.4
+95.5
+93.5
+2.5
+94.4
+94.6
+96.4
+94.5
+3.0
+93.9
+93.8
+95.8
+93.9
+4.0
+92.7
+92.2
+94.6
+92.4
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+8 
+
+(lacking a progressive annealing mechanism and prone to low-IoU box 
+interference in late training), Unified-IoU’s dual-strategy optimization 
+delivers high regression accuracy and robust convergence, effectively 
+overcoming the limitations of traditional IoU-based losses in dense, 
+occluded agricultural scenarios.
+Moreover, regarding the training dynamics, the mAP@0.5 curve of 
+Unified-IoU is shown in Fig. 9, which exhibits faster convergence and 
+higher final plateau, indicating that its adaptive attention adjustment 
+accelerates the learning of the model for effective bounding box 
+regression rules. This is particularly critical for tomato detection, as 
+dense clustering and leaf occlusions require the model to quickly 
+distinguish valid objects and optimize localization, rather than getting 
+stuck in low-quality box iterations.
+3.5. Performance comparison of different object detection models
+To verify FGfuse-Net’s comprehensive performance in tomato 
+detection under complex greenhouse conditions, we compared it with 
+10 mainstream object detection models (YOLOv5n, YOLOv7-tiny, 
+YOLOv8n, YOLOv9n, YOLOv10n, YOLOv11n, YOLOv12n, RT-DETR- 
+Fig. 8. Comparison experiment results of different IOU.
+Fig. 9. The mAP@0.5 curves of the model when using different loss functions.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+9 
+
+R18, SSD, Faster R-CNN) under consistent settings (same dataset, 
+hardware, training hyperparameters, etc.). For comparison with main­
+stream spatial-domain image enhancement preprocessing methods, we 
+replace FFT with Sobel edge detection and denote the resulting model as 
+Model-Sobel. Key evaluation metrics include mAP@0.5, Precision (P), 
+Recall (R), F1 score, GFLOPs, and FPS, with detailed results in Table 6. 
+Results indicate FGfuse-Net achieves the best overall performance 
+(mAP@0.5 = 96.4%, P = 94.4%, R = 94.6%, F1=94.5%), outperforming 
+all comparative methods. Compared with the YOLOv8n baseline, it 
+yields 3.0% higher mAP@0.5 and 4.6% higher F1 score with only 18.6 
+GFLOPs, while maintaining 84.85 FPS real-time inference, thus striking 
+a favorable balance between accuracy and efficiency. In contrast, 
+traditional two-stage models like Faster R-CNN suffer from low effi­
+ciency (15.23 FPS) and poor dense-target adaptability (mAP@0.5 =
+82.8%), while SSD lacks robustness to complex backgrounds (mAP@0.5 
+= 87.09%). Other YOLO variants trail by 3%−17.4% in mAP@0.5, as 
+they rely solely on spatial-domain feature extraction and insufficiently 
+address occlusion and small objects.
+Fig. 7(b) Radar plot shows the performance of each model for multi- 
+stage maturity tomato: FasterR-CNN is sensitive to sample imbalance 
+due to the two-stage mechanism, and the difference between ripe and 
+unripe tomatoes AP@0.5 is 6%. The YOLO family and SSD are more 
+robust with single-stage or multi-scale mechanisms, but challenges 
+remain; FGfuse-Net not only achieved the highest mAP@0.5, but also 
+reduced the AP@0.5 difference between different maturity stages to 
+0.6%.
+We performed a 10-fold cross-validation comparison test for each 
+model, and the entire data set was evenly divided into 10 samples. One 
+of the samples is used as the test set, and the remaining nine samples are 
+further divided into training and validation sets with a ratio of 7:2. The 
+average results of 10 independent experiments are used as the final re­
+sults to effectively alleviate the randomness bias introduced by arbitrary 
+partitioning of the dataset. The experimental results of the core perfor­
+mance index (mAP@0.5) of each model under 10-fold cross validation 
+are shown in Fig. 10. Experimental results show that compared with 
+other models in ten experiments, FGfuse-Net’s mAP@0.5 remains 
+ahead, which proves its consistency and reliability of indicators on 
+different data subsets.
+To analyze the model convergence behavior, Fig. 11. shows the 
+average validation loss (val_loss) curve of each architecture: the val_loss 
+of FGfuse-Net decreases rapidly and stabilizes around the 60th epoch, 
+and finally maintains the lowest level; YOLOv8n is next; However, 
+YOLOv5n, YOLOv7-tiny and YOLOv11n declined slowly and had poor 
+convergence effect. The val_loss of SSD and FasterR-CNN is always high, 
+and the risk of overfitting is significant in complex scenes with small 
+samples.
+3.6. Improvement effect of the FGFF module on unripe tomato detection
+Ablation experiments (Section 3.2) verify that the FGFF module 
+remarkably enhances the model’s ability to distinguish green unripe and 
+halfripe tomatoes from green leaves. Specifically, integrating the FGFF 
+module leads to increases of 0.5% in Precision (P), 3.3% in Recall (R), 
+1.7% in mAP@0.5, and 1.9% in F1 score. For tomatoes at different 
+maturity stages, their AP@0.5 values rise by 1.0% for ripe ones, 1.7% for 
+halfripe ones, and 2.3% for unripe ones, with the most prominent 
+improvement observed in the detection of unripe and halfripe tomatoes. 
+To visually demonstrate the module’s effect in reducing missed de­
+tections caused by color similarity between green tomatoes and leaves, 
+Fig. 12 presents detection results under complex occlusion scenarios 
+(blue circles mark missed detection areas in the baseline). The results 
+confirm that the FGFF module effectively mitigates missed detections, 
+particularly those induced by the color confusion between green to­
+matoes and leaves.
+3.7. Visualization of detection results
+To visually illustrate FGfuse-Net’s advantages against the baseline 
+and mainstream networks for tomato detection, Fig. 13 presents the 
+detection box outputs of FGfuse-Net, YOLOv5n, YOLOv7-tiny, 
+YOLOv8n, YOLOv11n, SSD, and Faster R-CNN under identical imaging 
+conditions. The figure shows that the comparative networks exhibit poor 
+adaptability to complex scenes and generate numerous false detections 
+(red boxes), missed detections (yellow boxes), and re-detections (blue 
+boxes). In contrast, FGfuse-Net’s detection boxes closely fit fruit con­
+tours, with no frame boundary drift in overlapping occlusion areas and 
+significant suppression of leaf background interference, which greatly 
+reduces missed and false detections. These results demonstrate that 
+FGfuse-Net achieves superior accuracy and robustness in recognizing 
+tomato maturity under complex greenhouse conditions.
+To visually demonstrate FGfuse-Net’s advantages in tomato detec­
+tion under complex backgrounds, Fig. 14 presents Grad-CAM [44] heat 
+map visualizations (from randomly selected validation set images) for 
+YOLOv8n and FGfuse-Net, displaying results from the network’s layer 2, 
+layer 4, and layer 8—where darker warm colors denote greater contri­
+bution to detection. As shown, YOLOv8n suffers from severe background 
+interference in natural greenhouse settings, leading to insufficient focus 
+on fruits and missed detections during maturity assessment. In contrast, 
+FGfuse-Net improves target-background discrimination: its heat maps 
+emphasize edge information, effectively suppress leaf backgrounds, and 
+enhance attention to occluded fruits across all layers, yielding clearer 
+target-background boundaries and sustained, prominent warm-color 
+activation in fruit regions.
+Table 6 
+Comparison results of different object detection networks.
+Model
+AP@0.5(%)
+GFLOPs
+FPS
+P(%)
+R(%)
+mAP@0.5(%)
+F1(%)
+Ripe
+Halfripe
+Unripe
+SSD
+90.1
+87.4
+83.77
+12.2
+44.62
+85.11
+79.5
+87.09
+82.2
+Faster-R-CNN
+83.1
+88.2
+77.1
+236.5
+15.23
+66.97
+84.46
+82.8
+74.7
+YOLOv5n
+81.4
+79.2
+76.4
+8.9
+102.25
+87.37
+59.7
+79.0
+70.8
+YOLOv7-tiny
+93.0
+92.2
+91.43
+7.3
+121.70
+92.5
+85.6
+92.21
+88.9
+YOLOv8n
+94.4
+93.5
+92.3
+8.7
+105.18
+92.1
+87.8
+93.4
+89.9
+YOLOv9n
+93.2
+92.7
+91.8
+7.1
+128.33
+92.8
+86.1
+92.6
+89.1
+YOLOv10n
+92.9
+92.1
+91.5
+6.7
+135.15
+92.2
+85.5
+92.2
+88.7
+YOLOv11n
+93.4
+92.8
+91.9
+6.3
+143.52
+92.9
+86.3
+92.7
+89.5
+YOLOv12n
+94.2
+93.4
+92.1
+6.5
+138.47
+92.4
+87.1
+93.2
+89.7
+RT-DETR-R18
+93.0
+92.5
+91.9
+58.3
+94.56
+92.3
+86.1
+92.5
+89.2
+Model-Sobel
+95.8
+95.5
+94.2
+18.6
+84.50
+93.1
+93.3
+95.2
+93.2
+FGfuse-Net
+96.7
+96.4
+96.1
+18.6
+84.85
+94.4
+94.6
+96.4
+94.5
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+10 
+
+Fig. 10. Comparison of mAP@0.5 values of different models in 10-fold cross-validation.
+Fig. 11. The Val_loss curves for different detection models.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+11 
+
+3.8. Counting experimental results
+To evaluate the accuracy and stability of FGfuse-Net in counting 
+tomatoes of different maturity stages, 600 images (covering various 
+lighting conditions and ripe/halfripe/unripe samples) were randomly 
+selected from the test and validation sets. To avoid invalid relative error 
+calculations caused by 0 or 1 fruit per maturity class in single image, we 
+conducted the statistics based on a group of 5 images. FGfuse-Net was 
+compared with YOLOv8n using manual counts as the ground truth, with 
+R², RMSE, MAPE and RRMSE [45] as evaluation metrics (Table 7). 
+Counting regression curves for both models are shown in Fig. 15. 
+FGfuse-Net outperforms YOLOv8n across all maturity stages with higher 
+Fig. 12. Visualization of improved unripe tomato detection via the FGFF module.
+Fig. 13. Visualization of the detection results of different detection models.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+12 
+
+fitting accuracy and lower errors. For ripe tomatoes, it raises R² to 0.98 
+and reduces RMSE, MAPE and RRMSE by over 30%. For halfripe to­
+matoes, R² remains stable at 0.93 with error reductions above 20%. For 
+unripe tomatoes, R² increases from 0.85 to 0.93, while MAPE and 
+RRMSE decrease by 47.1% and 31.5% respectively, mitigating counting 
+bias for weakly recognizable targets. Overall, the stable performance of 
+FGfuse-Net provides reliable technical support for greenhouse robot 
+picking and full-cycle yield estimation.
+To further verify the consistency between automatic and manual 
+counting results, Bland‑Altman analysis and paired t‑tests were per­
+formed. Detailed statistics are shown in Table 8, and the corresponding 
+Bland‑Altman plots are presented in Fig. 16. The plots reveal that 
+counting differences for YOLOv8n are considerably more scattered and 
+deviate further from the zero line. In comparison, FGfuse‑Net yields 
+stable counts with differences tightly clustered near the zero line, and all 
+paired t‑test p‑values are greater than 0.05, confirming no significant 
+statistical difference from manual counts. Combined with quantitative 
+results, FGfuse‑Net achieves narrower 95% limits of agreement across 
+all maturity stages, indicating higher reliability. Overall, the stable 
+performance of FGfuse‑Net offers reliable technical support for green­
+house robot picking and full‑cycle yield estimation.
+3.9. Generalizability experiments
+To verify the robustness and adaptability of FGfuse-Net, experiments 
+were conducted on five public datasets covering agricultural crops 
+(PlantVillage-Grape, Fruits-360-Apple, ACFR Orchard Fruit-Mango) and 
+general objects (Stanford Cars, CUB-200–2011-Birds), without addi­
+tional data augmentation or preprocessing to simulate direct application 
+in unfamiliar scenes, with mAP@0.5 as the core evaluation metric (re­
+sults shown in Table 9). FGfuse-Net achieved stable and significant 
+improvements over the baseline YOLOv8n across all datasets: for agri­
+cultural crops, mAP@0.5 reached 93.4% (+3.2%) for Grape, 89.2% 
+(+4.5%) for Apple, and 94.3% (+2.5%) for Mango, as the FGFF module 
+enhanced target-background discrimination and the MSWE module’s 
+multi-scale extraction adapted to crop size variations to offset cross- 
+domain performance loss; for general objects, it achieved 87.1% 
+(+5.6%) on Stanford Cars and 84.6% (+7.7%) on CUB-200–2011, with 
+the larger gap for birds attributed to their small size, complex textures, 
+and the model’s tomato-detection-focused training (inherent domain 
+gap), while its consistent superiority over YOLOv8n confirms FGfuse- 
+Net’s balanced design between specialization and generalization.
+4. Conclusion
+In this study, a frequency guided dual-branch fusion model named 
+FGfuse-Net is designed to solve the challenge of low recognition accu­
+racy of multi-stage maturity tomato caused by light fluctuation, leaf 
+occlusion, background clutter and low light feature degradation in 
+complex greenhouse environment. The model incorporates three syn­
+ergistic innovations, the first of which is the FGFF module that effec­
+tively integrates spatial domain enhanced features, thereby improving 
+the model's adaptability to illumination variations and its ability to 
+distinguish backgrounds. The MSWE module replaces traditional 
+Fig. 14. Visualization of gradient-weighted class activation mapping results.
+Table 7 
+Comparison of counting performance between YOLOv8n and FGfuse-Net.
+Model
+Ripe
+Halfripe
+Unripe
+R2
+RMSE
+MAPE
+RRMSE
+R2
+RMSE
+MAPE
+RRMSE
+R2
+RMSE
+MAPE
+RRMSE
+YOLOv8n
+0.94
+1.64
+9.4
+10.0
+0.89
+1.71
+13.2
+15.3
+0.85
+1.87
+14.0
+14.3
+FGfuse-Net
+0.98
+1.09
+5.7
+6.7
+0.93
+1.33
+9.1
+11.9
+0.93
+1.29
+7.4
+9.8
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+13 
+
+convolutions to enhance fine-grained texture capture for small and 
+occluded targets. And a Unified-IoU loss function that mitigates gradient 
+imbalance in dense scenes with dynamic bounding box scaling and 
+adaptive weighting. Experimental validation on a self-built dataset 
+shows that FGfuse-Net achieves 96.4% mAP@0.5, 94.6% Recall, and 
+94.4% Precision, outperforming ten mainstream models while deliv­
+ering inference speed of 84.85 FPS and robust generalization across five 
+public datasets (2.5–7.7% mAP@0.5 gains over YOLOv8n), with reliable 
+counting performance (R² ≥0.93 for all maturity stages) and robustness 
+to illumination changes.
+The proposed method offers valuable decision support for tomato 
+harvesting robots and yield estimation. However, FGfuse-Net was only 
+evaluated on an RTX 4060 GPU, without testing inference latency, 
+memory footprint, and energy consumption on real edge devices. 
+Additionally, the data collection protocol, which mainly focuses on 
+image acquisition, may not adequately align with the needs of practical 
+Fig. 15. Fitting curves of model counting results and manual counting results.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+14 
+
+harvesting robot configurations. Future work will focus on lightweight 
+optimization via compact transformers, pruning or quantization, vali­
+dation on real edge devices, and dataset expansion with diverse vari­
+eties, greenhouse structures, and seasonal variations for better 
+environmental robustness.
+Table 8 
+Bland-Altman and paired t-test analysis results for tomato counting consistency.
+Model
+Maturity Stage
+Mean Difference
+95% LoA (Lower)
+95% LoA (Upper)
+t-value
+p-value
+YOLOv8n
+Ripe
+−0.2525
+−3.4615
+2.9564
+−1.5347
+0.1281
+Halfripe
+−0.4432
+−3.7237
+2.8373
+−0.4432
+0.0149
+Unripe
+−0.0978
+−3.8083
+3.6126
+−0.4957
+0.6213
+FGfuse-Net
+Ripe
+0.3636
+−1.6835
+2.4108
+1.6372
+0.1042
+Halfripe
+−0.2386
+−2.8292
+2.3520
+−1.6937
+0.0939
+Unripe
+−0.1630
+−2.7008
+2.3747
+−1.2078
+0.2302
+Fig. 16. Bland-Altman plots for the consistency between automatic and manual tomato counting.
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+15 
+
+Ethical statement
+The authors declare that this study was conducted in accordance 
+with ethical standards for scientific research. It did not involve human 
+participants, clinical trials, or animal testing. The protocol for green­
+house tomato image data collection was reviewed and approved by the 
+management department of the Agricultural Science Research Center in 
+Shucheng County, Anhui Province. Data were collected via non- 
+destructive shooting, without damaging tomato plants/fruits, inter­
+fering with normal agricultural production, or disturbing endangered 
+species. This study does not disclose sensitive or personal information 
+and complies with institutional, national, and international guidelines 
+on ethical scientific conduct. Focusing on algorithmic validation for 
+greenhouse tomato detection, we acknowledge potential limitations: 
+biases across tomato varieties or greenhouse management patterns, 
+performance degradation under extreme conditions (e.g., high humidi­
+ty, dust), model training energy costs, and potential labor impacts of 
+automation, which will be taken into account in future research and 
+practical applications. All authors have approved the final manuscript 
+and agree to its submission to Smart Agricultural Technology.
+CRediT authorship contribution statement
+Qiang Tang: Writing – original draft, Software, Investigation, 
+Formal analysis. Siqi Chen: Methodology, Investigation, Data curation. 
+Wenhao Cao: Software, Formal analysis, Data curation. Ye Wei: 
+Investigation, Data curation. Yuwei Wang: Visualization, Supervision, 
+Methodology. Yuan Rao: Project administration, Funding acquisition. 
+Lu Liu: Supervision. Wenhui Hou: Writing – review & editing, Vali­
+dation, Supervision, Conceptualization.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Acknowledgment
+This work was funded by Key Laboratory of Agricultural Sensors, 
+Ministry of Agriculture and Rural Affairs, Anhui Agricultural University 
+(No.: KLAS2023KF004), National Natural Science Foundation of China 
+(No.: 32371993), the Anhui Province Key Laboratory of Advanced Nu­
+merical Control & Servo Technology (No.: XJSK202306) and Anhui 
+Provincial Natural Science Foundation (No.: 2308085ME169)
+Data availability
+Data will be made available on request.
+References
+[1] I. Simko, M. Jia, J. Venkatesh, et al., Genomics and marker-assisted improvement 
+of vegetable crops, CRC. Crit. Rev. Plant Sci. 40 (2021) 303–365.
+[2] J. Yu, J. Liu, C. Sun, et al., Sensing technology for greenhouse tomato production: a 
+systematic review, Smart Agricult. Technol. 11 (2025) 101020.
+[3] N. Bessaad, S. Atsyo, D. Hanjie, et al., Autonomous mowing in agriculture: current 
+status, needs, and future opportunities, Smart Agricult. Technol. 13 (2026) 
+101796.
+[4] Y. Yang, Y. Han, S. Li, et al., Vision based fruit recognition and positioning 
+technology for harvesting robots, Comput. Electron. Agric. 213 (2023) 108258.
+[5] B. Jin, X. Xu, Forecasts of wholesale food price indices through Gaussian process 
+regressions, Int. J. Mathem. Industry 17 (01) (2025) 2550003.
+[6] A.K. Bhatt, D. Pant, Automatic apple grading model development based on back 
+propagation neural network and machine vision, and its performance evaluation, 
+AI. Soc. 30 (2015) 45–56.
+[7] A. Pratondo, A. Novianty, Pear classification using machine learning[C], //, in: 
+2022 IEEE 10th Conference on Systems, Process & Control ICSPC, IEEE, 2022, 
+pp. 186–190.
+[8] Y. Bai, S. Mao, J. Zhou, et al., Clustered tomato detection and picking point 
+location using machine learning-aided image analysis for automatic robotic 
+harvesting, Precis. Agric. 24 (2023) 727–743.
+[9] E. Ropelewska, K.P Rutkowski, The classification of peaches at different ripening 
+stages using machine learning models based on texture parameters of flesh images, 
+Agriculture 13 (2023) 498.
+[10] V. Bruni, G. Dominijanni, D. Vitulano, A machine-learning approach for automatic 
+grape-bunch detection based on opponent colors, Sustainability 15 (2023) 4341.
+[11] J. Rakun, D. Stajnko, D. Zazula, Detecting fruits in natural scenes by using spatial- 
+frequency based texture analysis and multiview geometry, Comput. Electron. 
+Agric. 76 (1) (2011) 80–88.
+[12] S. Nuske, K. Wilshusen, S. Achar, L. Yoder, S. Narasimhan, S. Singh, Automated 
+visual yield estimation in vineyards, J. Field. Robot. 31 (5) (2014) 837–860.
+[13] X. Liu, D. Zhao, W. Jia, C. Ruan, S. Tang, T. Shen, A method of segmenting apples 
+at night based on color and position information, Comput. Electron. Agric. 122 
+(2016) 118–123, 1.
+[14] N. Bessaad, B. Qilian, Z. Jiankang, et al., TrashInst: real-time floating litter instance 
+segmentation model, Eng. Res. Express 6 (1) (2024) 015062.
+[15] J. Qin, Z. Chen, Y. Zhang, et al., YOLO-CT: a method based on improved YOLOv8n- 
+pose for detecting multi-species mature cherry tomatoes and locating picking 
+points in complex environments, Measurement 254 (2025) 117954.
+[16] D. Xu, X. Huang, Z. Zhao, et al., Pha-YOLO: a multi-view phalaenopsis flower 
+detection and counting method based on improved YOLO11 with dynamic 
+reference selection and adaptive thresholding, Comput. Electron. Agric. 243 (2026) 
+111446.
+[17] Y. Zhang, Z. Cai, S. Zhou, et al., Detection of early decay in dynamic oranges by 
+structured-illumination reflectance imaging combined with Hough gradient 
+method and YOLO v10 model, Postharvest Biol. Technol. 234 (2026) 114177.
+[18] Q. Zhao, Y. Liu, Design of apple recognition model based on improved deep 
+learning object detection framework faster-RCNN, Adv. Contin. Discret. Model. 
+20241 (2024) 49.
+[19] S. Zhong, W. Xu, T. Zhang, et al., Identification and depth localization of clustered 
+pod pepper based on improved faster R-CNN, IEEe Access. 10 (2022) 
+93615–93625.
+[20] W. Liu, D. Anguelov, D. Erhan, et al., Ssd: single shot multibox detector[C], //, in: 
+European conference on computer vision, Springer International Publishing, Cham, 
+2016, pp. 21–37.
+[21] Y. Wang, Z. Xing, L. Ma, et al., Object detection algorithm for lingwu long jujubes 
+based on the improved SSD, Agriculture 12 (2022) 1456.
+[22] B. Zhang, Y. Xia, R. Wang, et al., Recognition of mango and location of picking 
+point on stem based on a multi-task CNN model named YOLOMS, Precis. Agric. 253 
+(2024) 1454–1476.
+[23] L. Wang, S. Wang, B. Wang, et al., Jujube-YOLO: a precise jujube fruit recognition 
+model in unstructured environments, Expert. Syst. Appl. 291 (2025) 128530.
+[24] Q. Liu, J. Lv, C. Zhang, MAE-YOLOv8-based small object detection of green crisp 
+plum in real complex orchard environments, Comput. Electron. Agric. 226 (2024) 
+109458.
+Table 9 
+Data statistics of five public datasets in generalizability experiments.
+Dataset
+Category
+Train set
+Valid set
+Test set
+Input size
+Model
+mAP@0.5(%)
+PlantVillage (Grape)
+4
+2890
+826
+413
+640 £ 640
+YOLOv8n
+90.2
+FGfuse-Net
+93.4
+Fruits-360 (Apple)
+7
+2450
+650
+325
+640 £ 640
+YOLOv8n
+84.7
+FGfuse-Net
+89.2
+ACFR Orchard Fruit Dataset (Mango)
+1
+5478
+1657
+828
+640 £ 640
+YOLOv8n
+91.8
+FGfuse-Net
+94.3
+Stanford Cars (Car)
+196
+8144
+2680
+1340
+640 £ 640
+YOLOv8n
+81.5
+FGfuse-Net
+87.1
+CUB–200–2011 (Bird)
+200
+5994
+1831
+916
+640 £ 640
+YOLOv8n
+76.9
+FGfuse-Net
+84.6
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+16 
+
+[25] Z. Qi, W. Zhang, T. Yuan, et al., An improved framework based on tracking-by- 
+detection for simultaneous estimation of yield and maturity level in cherry 
+tomatoes, Measurement 226 (2024) 114117.
+[26] Z. Fan, D. Lu, M. Liu, Z. Liu, Q. Dong, H. Zou, H. Hao, Y. Su, YOLO-PDGT: a 
+lightweight and efficient algorithm for unripe pomegranate detection and 
+counting, Measurement 16 (2025) 117852.
+[27] X. Ma, J. Lei, C. Pei, C. Wu, APPLE_YOLO: apple detection method based on 
+channel pruning and knowledge distillation in complicated environments, 
+Comput., Mater. Continua. 86 (2) (2025) 1–7.
+[28] M. Li, X. Ding, J. Wang, CMD-YOLO: a lightweight model for cherry maturity 
+detection targeting small object, Smart Agricult. Technol. (2025) 101513.
+[29] S. Lim, W. Kim, DSLR: deep stacked laplacian restorer for low-light image 
+enhancement, IEEe Trans. Multimedia 23 (2020) 4272–4284.
+[30] M. Afifi, K.G. Derpanis, B. Ommer, M.S. Brown, Learning multi-scale photo 
+exposure correction, in: In Proceedings of the IEEE/CVF conference on computer 
+vision and pattern recognition, 2021, pp. 9157–9167.
+[31] D. Fuoli, L. Van Gool, R. Timofte, Fourier space losses for efficient perceptual 
+image super-resolution, in: Proceedings of the IEEE/CVF international conference 
+on computer vision, 2021, pp. 2360–2369.
+[32] Y. Yang, S. Soatto, Fda: Fourier domain adaptation for semantic segmentation, in: 
+InProceedings of the IEEE/CVF conference on computer vision and pattern 
+recognition, 2020, pp. 4085–4095.
+[33] Q. Xu, R. Zhang, Y. Zhang, Y. Wang, Q. Tian, A fourier-based framework for 
+domain generalization, in: Proceedings of the IEEE/CVF conference on computer 
+vision and pattern recognition, 2021, pp. 14383–14392.
+[34] J. Huang, Y. Liu, F. Zhao, K. Yan, J. Zhang, Y. Huang, M. Zhou, Z. Xiong, Deep 
+Fourier-based exposure correction network with spatial-frequency interaction, in: 
+European Conference on Computer Vision, Springer Nature Switzerland, Cham, 
+2022, pp. 163–180.
+[35] A. Vaswani, N. Shazeer, N. Parmar, et al., Attention is all you need, Adv. Neural Inf. 
+Process. Syst. (2017) 30.
+[36] S. Mallat, Group invariant scattering, Commun. Pure Appl. Math. 65 (10) (2012) 
+1331–1398.
+[37] S.E. Finder, R. Amoyal, E. Treister, et al., Wavelet convolutions for large receptive 
+fields[C], //, in: European Conference on Computer Vision, Springer Nature 
+Switzerland, Cham, 2024, pp. 363–380.
+[38] Luo X., Cai Z., Shao B., et al. Unified-IoU: for high-quality object detection. arXiv 
+preprint arXiv:2408.06636, 2024.
+[39] Gevorgyan Z. SIoU loss: more powerful learning for bounding box regression. arXiv 
+preprint arXiv:2205.12740, 2022.
+[40] Tong Z., Chen Y., Xu Z., et al. Wise-IoU: bounding box regression loss with dynamic 
+focusing mechanism. arXiv preprint arXiv:2301.10051, 2023.
+[41] H. Rezatofighi, N. Tsoi, J.Y. Gwak, et al., Generalized intersection over union: a 
+metric and a loss for bounding box regression[C], //, in: Proceedings of the IEEE/ 
+CVF conference on computer vision and pattern recognition, 2019, pp. 658–666.
+[42] Z. Zheng, P. Wang, W. Liu, et al., Distance-IoU loss: faster and better learning for 
+bounding box regression[C], //, Proceed. AAAI Conf. Artific. Intellig. 34 (2020) 
+12993–13000.
+[43] Y.F. Zhang, W. Ren, Z. Zhang, et al., Focal and efficient IOU loss for accurate 
+bounding box regression, Neurocomputing 506 (2022) 146–157.
+[44] R.R. Selvaraju, M. Cogswell, A. Das, et al., Grad-cam: visual explanations from deep 
+networks via gradient-based localization[C], //, in: Proceedings of the IEEE 
+international conference on computer vision, 2017, pp. 618–626.
+[45] B. Jin, X. Xu, Predictive modeling of peanut oil prices utilizing a Gaussian process 
+regression-based machine learning framework, Adv. Data Sci. Adapt. Anal. 17 (3) 
+(2025).
+Q. Tang et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 14 (2026) 102194 
+17 

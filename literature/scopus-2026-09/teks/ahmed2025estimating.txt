@@ -1,0 +1,1087 @@
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+Estimating optimal crop-load for individual branches in apple tree canopies
+using YOLOv8
+Dawood Ahmed
+, Ranjan Sapkota, Martin Churuvija, Manoj Karkee ∗
+Center for Precision and Automated Agricultural Systems, Department of Biological Systems Engineering, Washington State University, Prosser, WA, United States
+A R T I C L E
+I N F O
+Keywords:
+Computer vision
+Precision agriculture
+Robotics
+Yolov8
+Cropload
+Segmentation
+A B S T R A C T
+Shortage of labor in fruit crop production has become a significant challenge in recent years. Therefore,
+mechanized and automated machines have emerged as promising alternatives to labor-intensive orchard
+operations such as harvesting, pruning, and thinning. One of the key aspects of the automated machines in
+accomplishing these tasks is their ability to identify tree canopy parts such as trunk and branches and estimate
+their geometric and topological parameters such as branch diameter, branch length, branch angles, and
+spacing between branches. By utilizing geometric parameters such as branch diameter, length, and orientation,
+researchers then can develop automated pruning and thinning systems that make more effective decisions
+to achieve optimal fruit yield and quality by accurately estimating the desired crop-load. In this study, we
+propose a machine vision system for estimating one of the canopy parameters in apple orchards: branch
+diameter. This parameter was used to estimate the optimal number of fruit that individual branches could bear
+in a commercial orchard, which provides a basis for robotic pruning, flower thinning, and fruitlet thinning
+so that desired fruit yield and quality could be achieved. Utilizing color and depth information collected
+with an RGB-D sensor (Azure Kinect DK, Microsoft, Redmond, WA), a YOLOv8-based instance segmentation
+technique was developed to identify trunks and branches of apple trees in the dormant season. We then applied
+a Principal Component Analysis (PCA) technique to estimate branch orientation, which was subsequently
+utilized to estimate branch diameter. The estimated branch diameter was used to calculate the Limb Cross
+Sectional Area (LCSA), which was then used to estimate optimal crop-load, as a larger LCSA indicates a
+higher potential fruit-bearing capacity of the branch. With this approach, Root Mean Squared Error (RMSE)
+for branch diameter estimation was calculated to be 2.06 mm (relative RMSE 10.82%) and the same for crop-
+load estimation (Number of fruits per branch) to be 3.93 (relative RMSE 22.25%). Our study demonstrated
+a promising workflow with a high level of performance in identifying and sizing branches of apple trees in
+a dynamic orchard environment and integrating farm management practices into automated decision-making
+for optimizing crop-load in apple orchards.
+1. Introduction
+Specialty crops account for around 30%–40% of the total value of
+the United States (U.S.) crop production (Fuchs et al., 2021). In the
+U.S., more than 200 thousand seasonal workers are invited each year
+from other countries to work in the tree fruit orchards, one of the most
+important specialty crop industries. These workers are employed in
+performing field operations such as tree pruning, flower thinning, green
+fruit thinning, and harvesting. However, in recent decades, growers
+have faced challenges in finding enough farm labor to complete field
+operations in various specialty crops (Bogue, 2020). Recently, the farm
+labor crisis has become worse because of the COVID-19 pandemic
+causing a reduction in agricultural labor, which has resulted in an
+∗Corresponding author.
+E-mail address: manoj.karkee@wsu.edu (M. Karkee).
+estimated loss of $309 million in agricultural production over the first
+year of the Pandemic (March, 2020 to March, 2021) (Bochtis et al.,
+2020; Lusk and Chandra, 2021). Thus, the specialty crop industry is in
+critical need of automated and robotic machines that could operate in
+field environments to perform various crop and canopy-management
+operations (Marinoudi et al., 2019; Zhang et al., 2019).
+Robots, with robust machine vision and manipulation systems, have
+the potential to reduce human labor by making decisions and act-
+ing in real-time to perform specific tasks requiring repeatable accu-
+racy (Bechar, 2021). Researchers and engineers, since the last two
+decades, have been investigating the development of mechanized and
+automated platforms that could mimic human operation in the or-
+chard environment such as automated fruit picking (Hua et al., 2019;
+https://doi.org/10.1016/j.compag.2024.109697
+Received 26 September 2023; Received in revised form 16 November 2024; Accepted 21 November 2024
+Computers and Electronics in Agriculture 229 (2025) 109697 
+Available online 14 December 2024 
+0168-1699/© 2024 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+
+D. Ahmed et al.
+Huang et al., 2020; Kondo et al., 1996; Verbiest et al., 2021), auto-
+mated tree pruning (He and Schupp, 2018; Liu et al., 2012), robotic
+shoot thinning (Majeed et al., 2020, 2021) and automated flower
+thinning (Nielsen et al., 2011; Zhang et al., 2022).
+Despite the tremendous research and development efforts in re-
+cent years, there have been no reported automated machines com-
+mercially adopted so far for crop-load management operations such
+as selective tree pruning and fruit thinning in the outdoor orchard
+environment. Automating crop-load management in a complex and
+unstructured/uncontrolled environment with unpredictable variabil-
+ity in lighting, landscape, and atmospheric conditions, is particularly
+challenging. This complexity is further compounded by the temporal
+and spatial limitations inherent to physical robots necessitating the
+development of precise perception and manipulation systems (Bechar
+and Vigneault, 2016). Crop-load management in U.S. orchards follows
+a specific set of operations, such as tree pruning, flower thinning, and
+fruitlet thinning (Zhang et al., 2019). Nonetheless, developing a robust
+and reliable automated decision system for robots to effectively manage
+crop-load using these operations remains a significant challenge for
+researchers and engineers.
+Fruit tree pruning involves selectively cutting certain branches of
+a tree following specific guidelines or strategies (developed by re-
+searchers and experienced growers) that allow the fruits to grow uni-
+formly at desired locations. Additionally, tree pruning ensures proper
+penetration of sunlight and air circulation into the canopies and reg-
+ulates enough fruiting sites to achieve better yield and crop quality.
+The thinning operation, on the other hand, involves the removal of
+a portion of flowers and/or immature fruits (fruitlets) to ensure the
+desired quality (including size) of the remaining fruit. These crop-load
+management operations in tree fruit production are a balancing act
+between maximizing yield (crop-load) while optimizing fruit quality
+and ensuring adequate return bloom (Robinson et al., 2014). Thus,
+to effectively perform most of these crop-load management operations
+using a robotic system, it is critical to estimate the target crop-load
+in each of these branches, which is determined based on tree traits
+such as trunk size, branch diameter, branch length, and branch spac-
+ing. The branches support the growth of leaves, fruits, flowers, and
+buds, whose geometric properties can provide insights about normal
+growth, and fruiting and flowering information because they are the
+substantial indicator of crop growth and yield (Nyambati and Kioko,
+2018). Therefore, automated estimation of geometric parameters/traits
+(e.g., diameter and length) of fruit tree branches could provide crucial
+information to further advance robotic systems for various crop-load
+management operations.
+Over the past decade, various 3D reconstruction and branch recog-
+nition techniques have been proposed and tested in commercial or-
+chards. Karkee et al. (2014) used a time-of-flight-based 3D camera for
+the 3D reconstruction of apple trees and showed how such a geomet-
+rical representation could be useful in developing pruning rules. Tabb
+and Medeiros (2017) used a robot vision system RoTSE (Robotic System
+for Tree Shape Estimation) to reconstruct apple trees in the dormant
+season using a shape-from-silhouette method and used the structure to
+measure geometric attributes of apple trees such as branch structure,
+diameters, lengths, and branch angles. Likewise, Borrenpohl and Karkee
+(2023), Tong et al. (2022) and Zhang et al. (2017, 2020) are some
+recent studies in detecting branches in trees using deep learning tech-
+niques such as Regions-Convolutional Neural Network (R-CNN), Faster
+R-CNN, Mask R-CNN, and Cascade Mask R-CNN respectively. Song
+et al. (2021) have recently developed a handheld device for mea-
+suring the diameter at breast height (DBH) of a tree using a digital
+camera, laser ranging, and image recognition. The handheld device
+was designed to perform instant, automated, and non-contact DBH
+measurements, which achieved an RMSE of 6.36 mm and measurement
+BIAS of −1.78mm. Likewise, Yuan et al. (2021) developed an Intelligent
+Electronic Device (IED) to measure DBH and tree height through high-
+precision hall angle sensors and a dual in-line package (DIP) sensor.
+This study reported an estimation bias of 1.6 mm and RMSE of 4.6 mm
+compared with the caliper reading. Similarly, to measure tree DBH
+remotely, Fan et al. (2018) used RGB-D images collected using a
+mobile phone and simultaneous localization and mapping (SLAM) and
+reported an RMSE of 12.6 mm and a measurement bias of 3.3 mm.
+Likewise, McGlade et al. (2020) recently used an RGB-D sensor (Kinect
+V2, Microsoft, Redmond, WA) to estimate tree stem DBH in an outdoor
+environment. This study recorded 51 individual urban trees from one
+viewing angle at a distance of 1 m to 5 m using various Field of View
+(FOV) settings on the depth sensor. A circle-fitting approach was then
+implemented on resultant point clouds to estimate the DBH. The study
+reported an RMSE of 3.53 cm (relative RMSE of 0.11) and was not
+applicable to those trees with non-circular and irregular stems.
+Despite all these studies, extracting accurate 3D attributes of tree
+structures in unstructured and dynamic orchard environments remains
+challenging due to numerous obstacles such as occlusions, lighting vari-
+ations, background noise, and inherent limitations of sensors (Akbar
+et al., 2016). Additionally, the existing studies on tree traits identifi-
+cation (e.g. branch and trunk detection), have primarily concentrated
+on detecting larger trunks and extracting tree diameter at breast height
+(DBH), which did not provide any insights on how to use that detected
+branch/trunk information for an automated crop-load management in
+commercial agriculture. Although studies were reported on estimating
+existing crop-load in apple trees using machine vision-based apple de-
+tection and counting in growing and harvesting seasons (Aggelopoulou
+et al., 2011; Gongal et al., 2016; Ji et al., 2012; Linker et al., 2012),
+previous studies had overlooked the utilization of branch size informa-
+tion for crop-load management in commercial orchards. Our research,
+therefore, focused on incorporating the diameter of branches to esti-
+mate the crop-load capacity of individual branches, enabling a targeted
+assessment of each branch’s ability to bear fruit.
+This study aims at developing a robot vision system capable of
+estimating the target crop-load for individual branches in a commercial
+apple orchard during the dormant season. This estimation will not only
+provide insights into the potential fruit-bearing capacity of individual
+branches but also assist in making informed automated pruning deci-
+sions, as farmers typically prune commercial trees during this period.
+By bridging the gap between theoretical understanding and practical
+application, this research aims to contribute to the development of
+efficient and accurate crop-load management strategies, enabling im-
+proved decision-making in commercial apple orchards. The specific
+objectives of this study are:
+• To train an instance segmentation model for accurately segment-
+ing trunks and branches in apple orchards.
+• To estimate branch size/diameter using the segmentation results
+and RGB-D sensor data and, estimate the crop-load capacity of
+individual branches based on their diameters.
+2. Materials and methods
+This study broadly included four steps (Fig. 1); i) Acquire image
+data; ii) Detect and segment the branches and trunks of apple trees
+using a deep learning approach; iii) Extract the 3D point clouds from
+the segmented branch mask and estimate the limb cross-section area
+(LCSA); iv) Estimate the desired crop-load (number of fruits) on a
+particular branch section by integrating a commercial management
+approach.
+2.1. Study site and data acquisition
+This study was carried out in a commercial apple orchard (Allan
+Brothers Orchard, Fig. 2a) located in Prosser, Washington, United
+States. The orchard was planted with an Envy variety trained to a V-
+trellis architecture. Trees were planted in 2009 with a row spacing
+of 9.0 ft and a plant spacing of 3.0 ft. A set of RGB-D images were
+Computers and Electronics in Agriculture 229 (2025) 109697 
+2 
+
+D. Ahmed et al.
+Fig. 1. Workflow diagram illustrating the process of trunk and branch segmentation and point cloud extraction in an orchard environment using an RGBD sensor. The captured
+data is used to estimate the maximum fruit-bearing capacity of each branch based on its size (cross-sectional area).
+Table 1
+Specification of the sensors/cameras used in this study (SL: Structured light; SC: Stereo Camera).
+Camera
+Principle
+Measuring Range (m)
+Depth Resolution
+RGB Max Resolution
+Frame rate (FPS)
+FoV Depth
+Price ($)
+Realsense D435
+SL+SC
+0.11–10
+1280 × 720
+1920 × 1080
+90
+85.2◦× 58◦
+314
+Microsoft Azure
+ToF
+0.5–5.4
+640 × 576
+4000 × 3000
+30
+120◦× 120◦
+399
+acquired using an Intel RealSense 435i camera (Fig. 2b) (Intel, Cal-
+ifornia, USA) and a Microsoft Azure Kinect DK AI camera (Fig. 2c)
+(Microsoft, Redmond, Washington) in December, 2021 and November,
+2022 respectively. The Intel RealSense camera was selected for cap-
+turing RGB images during data collection due to its SDK’s ability to
+adjust parameters and capture high-quality images. To ensure accurate
+depth sensing, the Microsoft Azure camera with RGB-D capabilities was
+chosen for testing. By leveraging Azure’s depth sensing capabilities,
+we estimate branch diameter and limb cross-sectional area (LCSA) to
+facilitate estimating target crop-load in individual branches. To assess
+its robustness, the model was evaluated on a multi-sensor dataset
+comprising both Intel RealSense and Microsoft Azure data. Structured
+light (SL) and stereoscopy (SC) techniques were used by the Intel Re-
+alsenseD435i camera to estimate 3D information of the scene whereas
+the Microsoft Azure AI camera was based on the principle of Time-of-
+Flight (ToF) of light. Table 1 presents the additional specifications of
+the vision sensors used in this study.
+Cameras were positioned at 1 m distance from the tree trunk, and
+images were captured from various camera heights above the ground
+under both sunny and cloudy conditions.
+2.2. Segmentation of tree trunks and branches using YOLOv8 model
+YOLO (You Only Look Once) is a widely used object detection
+framework that is known for its high accuracy and performance
+(Redmon et al., 2016). YOLO was first introduced by Redmon et al.
+(2016) in the paper "You Only Look Once: Unified, Real-Time Object
+Detection", which is called a single-stage detector because it performs
+all the necessary steps for object detection in a single pass (Jiang
+et al., 2022). YOLO works by dividing an image into a grid of smaller
+regions and then predicting a bounding box and class probabilities
+for each object that is present in each region. YOLOv8 is the latest
+version of this framework created in January, 2023 by Ultralytics
+(Ultralytics, Maryland, USA). It also provides a segmentation model
+that uses the CSPDarknet53 feature extractor as a backbone, followed
+by a C2f module instead of the traditional YOLO neck architecture.
+C2f is a faster and lighter implementation of Cross Stage Partial (CSP)
+bottleneck. CSP bottleneck works by splitting the feature map into two
+parts, processing one part through a series of convolutional layers, and
+then concatenating both parts. The C2f module is faster and lighter
+because it uses two convolutional layers instead of three, optimizing
+feature map processing for better performance.
+Fig. 3 shows the YOLOv8 architecture implemented in this study
+for the segmentation of branches and trunks in apple tree images. The
+backbone consists of layers P1 to P5, where each layer progressively
+extracts more complex features from the input image. U (Upsample)
+blocks increase the feature map’s spatial resolution, helping detect
+objects of various sizes. In the head, layers P3, P4, and P5 combine
+features from different backbone stages. C (Concatenate) blocks merge
+feature maps from different layers, while Con (Convolution) layers re-
+fine these features. The final detection head, labeled as Head, processes
+these features to output detected objects’ bounding boxes, class labels,
+and confidence scores.
+YOLOv8 also introduces an anchor-less approach, eliminating the
+need for predefined anchor boxes and simplifying the detection
+pipeline. YOLOv8 also provides five scaled versions, ranging from
+lightweight models for low-resource devices to high-performance mod-
+els optimized for speed and accuracy: YOLOv8n-seg (nano), YOLOv8s-
+seg (small), YOLOv8m-seg (medium), YOLOv8l-seg (large), and
+YOLOv8x-seg (extra large).
+In this study, we utilized all five scaled versions of the YOLOv8-
+based deep learning architecture for trunk and branch segmentation.
+The selection of the YOLOv8 model was based on its reputation as
+the new state-of-the-art model, known for its combination of low
+inference time and high accuracies on the COCO dataset (Reis et al.,
+2023). By employing these various scaled versions of the YOLOv8
+model, we aimed to determine the optimal model that achieves a
+favorable trade-off between inference speed and accuracy. Extensive
+training and debugging trials were conducted to carefully determine
+the optimal model parameters, including the learning rate and batch
+Computers and Electronics in Agriculture 229 (2025) 109697 
+3 
+
+D. Ahmed et al.
+Fig. 2. (a) Commercial apple orchard used in this study (Prosser, Washington). (b) Intel Realsense D435i RGB-D camera, (c) Microsoft Azure Kinect DK camera; and (d) Example
+image of apple trees used in the study.
+Fig. 3. YOLOv8 framework used to identify apple tree trunks and branches in a commercial orchard environment.
+size, to maximize the model performance in terms of model accuracy
+and computational efficiency. For instance, a batch size of 4 allowed
+for faster convergence and better model generalization, and an initial
+learning rate of 0.001 contributed to smoother optimization and en-
+hanced stability throughout the training process. To prevent overfitting
+and enhance training efficiency, an early stopping callback was utilized,
+halting the training process if the validation accuracy failed to improve
+for a specified number of epochs (Patience). Moreover, YOLOv8 incor-
+porates Mosaic Augmentation, a technique that combines four images
+into a single mosaic image. This augmentation approach improved the
+model’s ability to detect objects in complex scenes, further enhancing
+its performance.
+The input data consisted of 474 annotated images, partitioned into
+training, validation, and test sets in an 8:1:1 ratio. There were 1,141
+labels for the tree trunk and 2,369 labels for the tree branches con-
+nected to the trunk created in the format of the COCO dataset generated
+using Labelbox (San Francisco, US). In our dataset, the proportion of
+trunk pixels to background pixels was approximately 6.66%, while
+the proportion of branch pixels was about 2.82%. Given this class
+imbalance, we augmented our dataset using Albumentations (Buslaev
+et al., 2020) while targeting the less frequent classes, ensuring that
+the dataset became more balanced. This approach included various
+augmentation techniques such as flipping, rotation, cropping, scaling,
+and color adjustments to create a more diverse and representative set
+of images. As a result of this augmentation process, the total number
+of images increased to 2,842, significantly enhancing the dataset’s
+balance and robustness for training the model. The implementation of
+this deep learning framework relied on the PyTorch backend and was
+trained on a Linux System featuring an eight-core Intel i7 CPU and
+an RTX 3070 graphics card. By employing this state-of-the-art object
+detection method, we were able to accurately identify and segment
+trunks and branches of apple trees, which served as a crucial step
+Computers and Electronics in Agriculture 229 (2025) 109697 
+4 
+
+D. Ahmed et al.
+towards estimating limb cross-section area and determining the desired
+crop-load on individual branch sections.
+2.3. Principal component analysis for 3D branch orientation
+Principal Component Analysis (PCA) is an unsupervised machine
+learning technique that identifies patterns while maintaining inter-
+pretability (Abdi and Williams, 2010). It is instrumental in identify-
+ing the most significant features in datasets. In this study, PCA was
+employed to determine the principal components with the highest
+variation in the 3D point clouds extracted from the branch masks
+detected by the YOLOv8 model in RGB images. The 3D point clouds
+extracted from the branch masks were represented by the direction
+and magnitude of variation. For this analysis, data normalization was
+necessary, as unscaled data with different measurement units could
+distort the comparison of the magnitude of variance among various
+features. Data normalization was achieved using:
+𝑧= 𝑥−𝜇
+𝜎
+(1)
+where 𝑥represents the value of a point in one of the dimensions (X,
+Y, or Z), 𝜇is the mean value of the points in that dimension, 𝜎is
+the standard deviation of the points in that dimension and 𝑧is the
+standardized value.
+Following data standardization, the covariance matrix is computed.
+This computation estimates how data deviates from the mean across
+multiple dimensions. In this study, three dimensions of point clouds
+are considered as three unique characteristics, and a 3 𝑥3 covariance
+matrix is constructed to analyze the correlation between different
+dimensions. The diagonal elements of the matrix reflect the variance
+of each feature, while the non-diagonal elements represent the variance
+between two distinct features. This information is vital for feature set
+reduction, as it enables the detection of redundant features and the
+assessment of the cumulative proportion of variance contributed by
+each feature.
+𝑋= Point Values in X-axis
+𝑌= Point Values in Y-axis
+𝑍= Point Values in Z-axis
+𝐶 𝑜𝑣𝑎𝑟𝑖𝑎𝑛𝑐 𝑒=
+⎡
+⎢
+⎢⎣
+𝑐 𝑜𝑣(𝑋 , 𝑋)
+𝑐 𝑜𝑣(𝑋 , 𝑌)
+𝑐 𝑜𝑣(𝑋 , 𝑍)
+𝑐 𝑜𝑣(𝑌 , 𝑋)
+𝑐 𝑜𝑣(𝑌 , 𝑌)
+𝑐 𝑜𝑣(𝑌 , 𝑍)
+𝑐 𝑜𝑣(𝑍 , 𝑋)
+𝑐 𝑜𝑣(𝑍 , 𝑌)
+𝑐 𝑜𝑣(𝑍 , 𝑍)
+⎤
+⎥
+⎥⎦
+(2)
+To identify the principal components, the covariance matrix was
+computed, followed by the calculation of eigenvalues and eigenvectors.
+Principal components are uncorrelated new variables that account for
+varying proportions of the variance. Three principal components were
+obtained from the three-dimensional data, with each principal compo-
+nent having one eigenvector representing direction and one eigenvalue
+representing variance magnitude. Since only the most significant di-
+rection vector for each branch was required, only the first principal
+component was utilized in this study, as shown by the arrow in Fig. 4.
+2.4. Branch diameter estimation
+The point cloud of each segmented branch was processed using PCA,
+which helped identify the axis or direction along which the branch
+extends. Using this information, the diameter of the corresponding
+branch was estimated in 3D space. To minimize the variation, a com-
+mon practice in commercial orchards is to measure the diameter at
+a region approximately 3 cm away from the trunk–branch boundary.
+This approach is based on the understanding that taking measurements
+less than 3 cm away from the trunk boundary yields more accurate
+results for the associated branch. Using this guideline, branch diam-
+eters (ground truth data) were collected using a digital caliper, as
+demonstrated in Fig. 5.
+Using the 3D point clouds and the branch orientation information, a
+cross-sectional plane (a plane perpendicular to branch orientation) was
+established approximately 3 cm away from the trunk–branch junction.
+Once the cross-sectional plane was established, points where the branch
+intersected with the plane were identified, as shown in Fig. 6. These
+intersection points exhibited circular arc shapes for cylindrical branch
+structures and were used to extract geometric properties (like diameter
+and cross-sectional area) of the branches. The diameter of this circular
+arc represented the extent of points along the direction of the plane. By
+analyzing this sliced geometry, an approximation of branch diameter
+was obtained which was used to calculate the cross-sectional area of
+the branches.
+2.5. Crop-load estimation
+Recently reported studies recommended that keeping 6 fruits per
+𝑐 𝑚2 limb cross-sectional area (LCSA) would be optimal for many apple
+varieties in terms of improved fruit set, fruit weight, mineral composi-
+tion, and return bloom. Sidhu et al. recently compared the efficacy of
+thinning based on artificial bud extinction (ABE) by keeping 3, 6, and
+12 fruits per cm square LCSA on ‘scilate’ apples and found 6 fruit per
+cm square to be the optimal approach (Sidhu et al. 2022a). Based on
+this study, an optimal number of apples in each limb was estimated as,
+Desired Crop Load = 6 × 𝐿𝐶 𝑆 𝐴
+(3)
+Where the LCSA of the branch section was calculated using the
+estimated branch diameter as,
+𝐿𝐶 𝑆 𝐴= 𝜋× 𝑑2
+4
+(4)
+2.6. System evaluation
+To assess the performance of the segmentation technique, we uti-
+lized several widely adopted evaluation metrics, including precision,
+recall, F1 score, and average precision at different Intersection-over-
+Union (IoU) thresholds. We also use k-fold cross-validation with 5
+folds, reporting the average and standard deviation of the metric mAP,
+to present a concise evaluation of our model’s performance and its
+consistency across the dataset. These metrics are calculated as follows:
+Precision =
+𝑇 𝑃
+𝑇 𝑃+ 𝐹 𝑃
+(5)
+Recall =
+𝑇 𝑃
+𝑇 𝑃+ 𝐹 𝑁
+(6)
+F1-Score = 2 × (Precision × Recall)
+Precision + Recall
+(7)
+𝐴𝑃= ∫
+1
+0
+𝑝(𝑟) 𝑑 𝑟
+(8)
+𝑚𝐴𝑃= 1
+𝑘
+𝑘
+∑
+𝑖=1
+𝐴𝑃𝑖
+(9)
+where 𝑝(𝑟) is the precision at a given recall 𝑟. TP, TN, FP, and FN are
+true positive, true negative, false positive, and false negative respec-
+tively. Root Mean Squared Error (RMSE) and relative RMSE (relRMSE)
+are used for evaluating the methods for branch diameter estimation and
+optimal crop-load estimation, which are given by:
+RMSE =
+√
+1
+𝑛
+∑
+(estimated𝑖−actual𝑖)2
+(10)
+relRMSE =
+√
+1
+𝑛
+∑(estimated𝑖
+actual𝑖
+− 1
+)2
+× 100
+(11)
+In these equations, 𝑛represents the total number of samples, while
+estimated𝑖and actual𝑖denote the estimated and actual diameter, re-
+spectively, for each sample 𝑖. The actual diameter in this case refers
+to the ground truth of branch diameter, and the desired crop-load is
+derived from the actual branch diameter.
+Computers and Electronics in Agriculture 229 (2025) 109697 
+5 
+
+D. Ahmed et al.
+Fig. 4. 3D plot of a sample point cloud representing a branch structure, colored in green. The red arrow indicates the direction of the first principal component, representing the
+most significant variation, i.e. along the length of the branch.
+3. Results and discussion
+3.1. Trunk and branch segmentation
+Fig. 7 presents representative examples of the tree trunk and branch
+detection and segmentation results achieved using the YOLOv8-based
+model. These results demonstrated the effectiveness of the model in
+accurately identifying and delineating the tree structures within the
+images acquired in complex orchard settings. Table 2 lists the k-
+fold validation results average and standard deviation of the preci-
+sion, recall, F1-score, AP0.5 (average precision at IoU threshold of
+0.5), and AP0.5:0.95 (average precision at IoU threshold from 0.5 to
+0.95) achieved by the model in segmenting tree trunks and branches
+respectively.
+As can be seen from Table 2, YOLOv8x-seg demonstrated the high-
+est precision (92.7%), recall (95.5%), F1-score (94.1%) and average
+precision (AP0.5 achieving 96.9% and AP0.5:0.95 achieving 65.7%) in
+segmenting trunks. For branch segmentation, YOLOv8m-seg achieved
+the highest recall (72.4%), F1-score (74.3%) and average precision
+(AP0.5 achieving 76.2%), while YOLOv8x-seg obtained the highest
+precision (77.1%) and average precision (AP0.5:0.95 achieving 30.5%).
+It was noted that all models performed relatively worse for branch
+segmentation, which was expected due to the challenging nature of this
+task with thinner structures and complex environment in the image
+space. The outcomes deemed as suboptimal encompassed instances
+where a model either failed to detect branches or exhibited issues
+of over-masking or under-masking the branch regions. Comparing the
+overall performance of the models, YOLOv8x-seg showed the high-
+est precision (84.9%) and average precision (AP0.5:0.95 achieving
+48.7%), while YOLOv8m-seg achieved the highest recall (83.6%), F1-
+score (84.1%), and AP0.5 (86.4%). By averaging the accuracy metrics
+across all categories, YOLOv8m-seg scored the highest overall with a
+score of 77.3. This averaging of accuracy metrics takes into account
+precision, recall, F1-score, and average precision across both trunk
+and branch segmentation tasks, providing a comprehensive measure
+of the model’s performance. These findings suggest that YOLOv8m-seg
+exhibits strong performance in both trunk and branch segmentation
+tasks. Although these findings indicate the superiority of one particular
+model, it should be noted that most of these models have perfor-
+mance differences within +/- 1 standard deviation, suggesting that
+their performances are quite similar. However, given our focus on
+branch segmentation, YOLOv8m-seg emerges as the preferred choice
+due to its superior performance in this specific task. Additionally,
+the confidence threshold, which represents the probability at which
+the model considers a detection to be positive, was optimally set
+based on the F1-confidence curve analysis (Fig. 9). By adjusting this
+threshold, one can balance precision and recall. A higher confidence
+threshold reduces false positives but may increase false negatives, while
+Computers and Electronics in Agriculture 229 (2025) 109697 
+6 
+
+D. Ahmed et al.
+Fig. 5. Ground truth data collection for the diameter of the primary branch using a digital caliper. All the measurements were taken at a region approximately 3 cm away from
+the trunk.
+Fig. 6. A slicing plane created orthogonal to the direction of a branch positioned 3 cm away from the trunk. A set of 3D Cross-sectional Points intersecting with the slicing plane
+was extracted and the diameter was estimated by calculating the extent in the direction of the plane.
+a lower threshold does the opposite. This careful calibration ensured
+the robustness and reliability of the chosen model.
+When considering the final selection of the segmentation model,
+it was crucial to consider the computational speed (inference time
+in milliseconds) as a practical factor for field applications. To select
+the most suitable model based on a trade-off between speed and
+accuracy, we conducted a comparative analysis by plotting the pro-
+cessing time against mean average precision at IoU threshold 0.5
+(mAP@0.5) for all five models and both trunk and branch segmentation
+(Fig. 8). It was found that while for trunk segmentation all the models
+Computers and Electronics in Agriculture 229 (2025) 109697 
+7 
+
+D. Ahmed et al.
+Fig. 7. Example images showing the robustness of the YOLOv8 model in segmentation of tree trunks and branches in diverse and intricate surroundings; (a) complex orchard
+canopy conditions; (b) orchard ground visible; (c) against a backdrop of the cloudy sky; (d, f) sky and canopy in the background; and (e) captured under low-light conditions,
+featuring both orchard canopy and ground as the surroundings.
+Table 2
+Evaluation metrics (in %) with 5-fold cross-validation for trunk and branch segmentation with the YOLOv8-based models.
+Model
+Conf. Thresh. (%)
+Category
+Precision (%)
+Recall (%)
+F1-Score (%)
+AP0.5 (%)
+AP0.5:0.95 (%)
+mean
+std
+mean
+std
+mean
+std
+mean
+std
+mean
+std
+YOLOv8n-seg
+38.3
+All
+83.3
+1.2
+82.7
+1.4
+82.9
+0.8
+85.7
+0.9
+46.4
+0.9
+Trunk
+90.7
+1.8
+95.3
+0.9
+92.9
+1.1
+96.7
+0.7
+62.9
+1.5
+Branch
+75.9
+2.7
+70.0
+2.8
+72.8
+1.1
+74.6
+1.9
+29.8
+1.0
+YOLOv8s-seg
+46.8
+All
+83.8
+0.9
+82.2
+0.7
+82.9
+0.7
+85.5
+0.7
+47.5
+0.7
+Trunk
+91.6
+3.2
+94.8
+1.2
+93.2
+1.8
+96.5
+0.8
+64.1
+1.0
+Branch
+75.9
+1.7
+69.6
+0.7
+72.6
+0.3
+74.6
+1.1
+31.0
+0.8
+YOLOv8m-seg
+53.1
+All
+84.5
+1.6
+83.6
+1.1
+84.1
+0.3
+86.4
+0.9
+48.1
+0.6
+Trunk
+92.6
+1.15
+94.9
+1.1
+93.7
+0.9
+96.7
+0.8
+64.7
+1.1
+Branch
+76.4
+2.5
+72.4
+2.2
+74.3
+0.8
+76.2
+1.5
+31.4
+0.9
+YOLOv8l-seg
+55.3
+All
+84.2
+1.6
+83.5
+2.1
+83.8
+0.5
+85.6
+0.5
+48.5
+0.8
+Trunk
+92.7
+1.2
+95.5
+1.2
+94.1
+0.8
+96.6
+0.9
+65.5
+0.8
+Branch
+75.7
+2.7
+71.5
+3.1
+73.5
+1.1
+74.7
+0.5
+31.5
+1.1
+YOLOv8x-seg
+41.4
+All
+84.9
+2.5
+81.8
+0.9
+83.2
+0.8
+85.7
+0.9
+48.7
+0.9
+Trunk
+92.7
+2.2
+95.5
+0.9
+94.1
+1.1
+96.9
+0.3
+65.7
+0.7
+Branch
+77.1
+2.8
+68.0
+1.9
+72.2
+1.0
+74.6
+1.7
+31.7
+1.7
+performed equally well with YOLOv8x performing marginally better,
+YOLOv8 m was a preferred choice due to better performance in branch
+segmentation and low processing speed of 10.9 ms.
+After finalizing the model based on the inference time and accuracy,
+the F1-confidence curve (Fig. 9) was analyzed for deeper insights into
+the model. This plot provided valuable information on the trade-off
+between accuracy across different confidence thresholds. By analyzing
+these curves, it was possible to identify the optimal confidence thresh-
+old for maximizing F1-score. This analysis allowed for determining
+the optimal confidence threshold for utilization during the prediction
+stage. Use of optimal confidence threshold aimed at minimizing false
+detections by setting a reasonably high confidence threshold while
+maintaining an acceptable level of model validation accuracy. In this
+case, an F1-score (harmonic mean of precision and recall) of 84% was
+achieved at 53.1% confidence threshold.
+Despite good performance in varying orchard and environmental
+conditions, the model faced a few challenges as well. Figs. 10c and 10d
+show the over-masking (false detection of regions beyond the branch
+boundaries) and under-masking (falsely leaving out some parts of the
+branches) in branch segmentation results respectively. Figs. 10a and
+10b illustrate a case where the model completely failed to identify a
+branch segment, indicated by the yellow circle.
+To address these challenges and enhance the accuracy of branch
+segmentation, the segmentation model will be trained in the future with
+a larger dataset covering more diverse and variable practical situations.
+This expanded dataset should include images captured from diverse an-
+gles and under various lighting conditions. This process is expected to
+improve the model generality and minimize such errors. Additionally,
+a larger dataset facilitates the model’s capacity to capture the subtle
+differences in branch structures, including those found among different
+tree varieties, and minimizes the risk of overfitting the training dataset.
+Computers and Electronics in Agriculture 229 (2025) 109697 
+8 
+
+D. Ahmed et al.
+Fig. 8. Processing time (ms) vs Average Precision at IoU threshold 0.5.
+Fig. 9. F1-Confidence curve for Trunk and branch segmentation results achieved with YOLOv8m-seg model.
+3.2. Branch diameter estimation
+The approach of applying PCA on 3D point clouds of the segmented
+branch mask to find its orientation, filtering a cross-sectional plane, and
+finding its length in the normal axis proved to be an effective method to
+estimate branch diameter in a natural orchard environment. Accuracy
+assessment with 43 sample branches showed an RMSE of 2.06 mm
+and a relRMSE of 10.82%. Furthermore, a correlation coefficient of
+0.83 was achieved between the estimated and actual branch diameter,
+which indicated a strong positive linear relationship between them.
+In comparison, our methodology for estimating diameter demonstrated
+improved performance, achieving 97.67% accuracy within a 5 mm tol-
+erance, as opposed to the 89.4% accuracy reported by Chattopadhyay
+et al. (2016) for the same 5 mm tolerance (see Fig. 11).
+Accuracy in estimating branch diameter depended on the model’s
+ability 
+to 
+accurately 
+segment 
+branches. 
+Over-masking 
+and
+under-masking, as depicted in Fig. 10, were the major reasons impact-
+ing the accuracy in estimating the branch diameter. When a branch
+region was over-masked, it included regions beyond the actual branch
+boundaries, potentially including portions of the secondary branches,
+as shown in Fig. 12. This over-masking of branch regions led to
+an over-estimation of the branch diameter since the measurement
+included non-branch pixels. On the other hand, under-masking resulted
+Computers and Electronics in Agriculture 229 (2025) 109697 
+9 
+
+D. Ahmed et al.
+Fig. 10. Examples of unsuccessful branch segmentation. This limitation may be minimized by training a model on a more diverse set of images captured at various angles and
+lightening conditions; (a, b) missing branch detections; (c) under-masking and (d) over-masking of branch region.
+Fig. 11. Scatter plot between actual and estimated branch diameter for 43 branch
+samples. Histograms show the distribution of actual and estimated diameters across
+these samples.
+in missing or partially excluded regions leading to an under-estimation
+of the branch diameter.
+3.3. Optimal crop-load estimation
+The estimated limb diameter was used to calculate limb cross-
+sectional area (LCSA) using Eq. (4), which was then used to estimate
+optimal crop-load using Eq. (3). Fig. 13 shows the estimated vs actual
+target crop-load in 43 branch samples used in this study. The proposed
+method achieved an RMSE of 3.93 apples and a relRMSE of 22.25%.
+The results suggest that the machine vision system-based approach
+is applicable in estimating optimal/target crop-load for individual apple
+tree branches. However, it is noted that the estimated target crop-load
+should be used as a guide, and farmers should also utilize their expertise
+and experience to make appropriate management decisions. For exam-
+ple, slightly more than the suggested target crop-load could be left in
+early crop management operations such as branch pruning to account
+for potential under-estimation by the proposed algorithm as well as
+for adjusting the impact of inefficient pollination and natural thinning.
+Downstream operations such as flower and green fruit thinning could
+take care of the impact of over-estimation of the target crop-load with
+the proposed system. It is also important to note that the ‘‘6 apples per
+cm limb cross-section area’’ guideline is based on the studies conducted
+in specific regions and varieties as discussed in Section 2.5. Growers
+may need to adjust the ‘‘number of apples per unit limb area’’ based on
+their specific farming operations and practices including the variety of
+apples, the age, and the health of the tree.
+Computers and Electronics in Agriculture 229 (2025) 109697 
+10 
+
+D. Ahmed et al.
+Fig. 12. Illustration of potential errors in b) point cloud data due to a) over-masking of a primary tree branch. This point cloud is a direct result of the branch segmentation
+input. The red circle highlights the inclusion of secondary branch points, which may result in inaccurate diameter measurements.
+Fig. 13. Comparison of estimated target crop-load with the ground truth crop-load for 43 sample branches.
+3.4. General discussion
+Estimating optimal crop-load at the individual branch level is cru-
+cial for helping orchard managers optimize various canopy and crop-
+load management operations and achieve a high yield of quality fruit.
+Manual estimation methods are time-consuming, labor-intensive, and
+prone to errors. The proposed machine vision system offers an efficient
+and accurate alternative, automating the process and providing timely
+information for orchard management. The approach, when commer-
+cially adopted, is expected to reduce labor costs, improve productivity,
+and advance agricultural technology, enhancing the profitability and
+sustainability of commercial orchards.
+Additionally, the machine vision system has the potential to revo-
+lutionize pruning and green fruit thinning practices. It estimates the
+number of fruit in each branch based on the corresponding branch
+cross-sectional area, enabling selective pruning and thinning. This opti-
+mization technique has the potential to help improve fruit size, reduce
+biennial bearing, and increase overall orchard productivity. By mini-
+mizing resource usage, such as water, fertilizer, and labor, the system
+promotes resource efficiency and environmental sustainability. The
+combination of machine vision-based crop-load estimation and auto-
+mated pruning has the potential to transform tree fruit production
+systems.
+4. Conclusion
+The primary objective of this study was to develop a machine
+vision system that could estimate the target crop-load for individual
+branches in a commercial apple orchard during the dormant season.
+To achieve this objective, an instance segmentation model was trained
+using the YOLOv8 architecture for trunk and branch segmentation.
+Our finding revealed that the YOLOv8 m model was overall the most
+accurate in branch and trunk segmentation. Our machine vision sys-
+tem evaluated branch diameter estimation accuracy against 43 branch
+samples, yielding an average accuracy of 97.67% on the tolerance of
+5 mm, demonstrating that the system was accurate in the estimation
+of branches. We also found that the accuracy of our branch diameter
+estimation was dependent on how accurate the depth profile was and
+how correct the image masks were. For crop-load estimation, we did a
+careful review of existing literature and proposed a farm management
+approach of ‘‘6 fruits per cm square LCSA’’ for crop-load estimation.
+Computers and Electronics in Agriculture 229 (2025) 109697 
+11 
+
+D. Ahmed et al.
+Our system using this approach of ‘‘6 fruits per cm square LCSA’’
+and estimated diameter, was able to estimate the desired number of
+fruits per branch with a relative RMSE of 22.25%. Thus, the proposed
+machine vision system provides a promising solution for efficient and
+accurate crop-load estimation in commercial orchards.
+The accuracy of branch diameter estimation relies on the quality
+of the segmentation output and the performance of the depth sensor.
+Therefore, it would be beneficial, in the future, to focus on developing
+deep learning models with larger datasets and explore various image
+processing techniques. Additionally, improving the robustness of the
+depth-sensing tool would enhance the overall system performance. Fur-
+thermore, future research could investigate the feasibility of integrating
+this machine vision system with automated pruning and green fruit
+thinning systems to assist in the automated decision-making process for
+orchard operations. Ultimately, applying this machine vision technol-
+ogy in orchard operations has the potential to lead to more efficient
+and sustainable orchard management practices.
+CRediT authorship contribution statement
+Dawood Ahmed: Writing – original draft, Software, Methodology,
+Formal analysis, Conceptualization. Ranjan Sapkota: Writing – re-
+view & editing, Methodology, Conceptualization. Martin Churuvija:
+Writing – review & editing, Formal analysis. Manoj Karkee: Writing
+– review & editing, Supervision, Methodology, Funding acquisition,
+Conceptualization.
+Declaration of competing interest
+The authors declare that they have no known competing finan-
+cial interests or personal relationships that could have appeared to
+influence the work reported in this paper.
+Acknowledgments
+This research is funded by the National Science Foundation and
+United States Department of Agriculture, National Institute of Food and
+Agriculture, United States through the following grants: AWD003473 as
+part of the ‘‘AI Institute for Agriculture (AgAID)’’ Program and 2023-
+67021-38908 under the International Collaboration Grant. The authors
+gratefully acknowledge Dave Allan (Allan Bros., Inc.) for providing
+access to the orchard during the data collection and field evaluation.
+Data availability
+Data will be made available on request.
+References
+Abdi, H., Williams, L.J., 2010. Principal component analysis. WIREs Comput. Stat. 2
+(4), 433–459. http://dx.doi.org/10.1002/wics.101.
+Aggelopoulou, A., Bochtis, D., Fountas, S., Swain, K.C., Gemtos, T., Nanos, G., 2011.
+Yield prediction in apple orchards based on image processing. Precis. Agric. 12 (3),
+448–456.
+Akbar, S.A., Elfiky, N.M., Kak, A., 2016. A novel framework for modeling dormant
+apple trees using single depth image for robotic pruning application. In: 2016 IEEE
+International Conference on Robotics and Automation. ICRA, IEEE, pp. 5136–5142.
+Bechar, A., 2021. Agricultural robotics for precision agriculture tasks: concepts and prin-
+ciples. In: Innovation in Agricultural Robotics for Precision Agriculture. Springer,
+pp. 17–30.
+Bechar, A., Vigneault, C., 2016. Agricultural robots for field operations: Concepts and
+components. Biosyst. Eng. 149, 94–111.
+Bochtis, D., Benos, L., Lampridi, M., Marinoudi, V., Pearson, S., Sø rensen, C.G., 2020.
+Agricultural workforce crisis in light of the COVID-19 pandemic. Sustainability 12
+(19), 8212.
+Bogue, R., 2020. Fruit picking robots: has their time come? Ind. Robot: Int. J. Robot.
+Res. Appl. 47 (2), 141–145.
+Borrenpohl, D., Karkee, M., 2023. Automated pruning decisions in dormant sweet cherry
+canopies using instance segmentation. Comput. Electron. Agric. 207, 107716.
+Buslaev, A., Iglovikov, V.I., Khvedchenya, E., Parinov, A., Druzhinin, M., Kalinin, A.A.,
+2020. Albumentations: fast and flexible image augmentations. Information 11
+(2), http://dx.doi.org/10.3390/info11020125, URL: https://www.mdpi.com/2078-
+2489/11/2/125.
+Chattopadhyay, S., Akbar, S.A., Elfiky, N.M., Medeiros, H., Kak, A., 2016. Measuring
+and modeling apple trees using time-of-flight data for automation of dormant
+pruning applications. In: 2016 IEEE Winter Conference on Applications of Computer
+Vision. WACV, IEEE, pp. 1–9.
+Fan, Y., Feng, Z., Mannan, A., Khan, T.U., Shen, C., Saeed, S., 2018. Estimating tree
+position, diameter at breast height, and tree height in real-time using a mobile
+phone with RGB-D SLAM. Remote Sens. 10 (11), 1845.
+Fuchs, M., Almeyda, C.V., Al Rwahnih, M., Atallah, S., Cieniewicz, E., Farrar, K.,
+Foote, W., Golino, D.A., Gómez, M., Harper, S., et al., 2021. Economic studies
+reinforce efforts to safeguard specialty crops in the United States. Plant Dis. 105
+(1), 14–26.
+Gongal, A., Silwal, A., Amatya, S., Karkee, M., Zhang, Q., Lewis, K., 2016. Apple crop-
+load estimation with over-the-row machine vision system. Comput. Electron. Agric.
+120, 26–35.
+He, L., Schupp, J., 2018. Sensing and automation in pruning of apple trees: A review.
+Agronomy 8 (10), 211.
+Hua, Y., Zhang, N., Yuan, X., Quan, L., Yang, J., Nagasaka, K., Zhou, X.-G., 2019.
+Recent advances in intelligent automated fruit harvesting robots. Open Agric. J.
+13 (1).
+Huang, Z., Sklar, E., Parsons, S., 2020. Design of automatic strawberry harvest
+robot suitable in complex environments. In: Companion of the 2020 ACM/IEEE
+International Conference on Human-Robot Interaction. pp. 567–569.
+Ji, W., Zhao, D., Cheng, F., Xu, B., Zhang, Y., Wang, J., 2012. Automatic recognition
+vision system guided for apple harvesting robot. Comput. Electr. Eng. 38 (5),
+1186–1195.
+Jiang, P., Ergu, D., Liu, F., Cai, Y., Ma, B., 2022. A Review of Yolo algorithm
+developments. Procedia Comput. Sci. 199, 1066–1073.
+Karkee, M., Adhikari, B., Amatya, S., Zhang, Q., 2014. Identification of pruning
+branches in tall spindle apple trees for automated pruning. Comput. Electron. Agric.
+103, 127–135. http://dx.doi.org/10.1016/j.compag.2014.02.013.
+Kondo, N., Monta, M., Fujiura, T., 1996. Fruit harvesting robots in Japan. Adv. Space
+Res. 18 (1–2), 181–184.
+Linker, R., Cohen, O., Naor, A., 2012. Determination of the number of green apples in
+RGB images recorded in orchards. Comput. Electron. Agric. 81, 45–57.
+Liu, W., Kantor, G., De la Torre, F., Zheng, N., 2012. Image-based tree pruning. In:
+2012 IEEE International Conference on Robotics and Biomimetics. ROBIO, IEEE,
+pp. 2072–2077.
+Lusk, J.L., Chandra, R., 2021. Farmer and farm worker illnesses and deaths from
+COVID-19 and impacts on agricultural output. PLoS One 16 (4), e0250621.
+Majeed, Y., Karkee, M., Zhang, Q., 2020. Estimating the trajectories of vine cordons
+in full foliage canopies for automated green shoot thinning in vineyards. Comput.
+Electron. Agric. 176, 105671.
+Majeed, Y., Karkee, M., Zhang, Q., Fu, L., Whiting, M.D., 2021. Development and
+performance evaluation of a machine vision system and an integrated prototype for
+automated green shoot thinning in vineyards. J. Field Robotics 38 (6), 898–916.
+Marinoudi, V., Sø rensen, C.G., Pearson, S., Bochtis, D., 2019. Robotics and labour in
+agriculture. A context consideration. Biosyst. Eng. 184, 111–121.
+McGlade, J., Wallace, L., Hally, B., White, A., Reinke, K., Jones, S., 2020. An early
+exploration of the use of the Microsoft Azure Kinect for estimation of urban tree
+Diameter at Breast Height. Remote Sens. Lett. 11 (11), 963–972.
+Nielsen, M., Slaughter, D.C., Gliever, C., 2011. Vision-based 3D peach tree re-
+construction for automated blossom thinning. IEEE Trans. Ind. Inform. 8 (1),
+188–196.
+Nyambati, R., Kioko, S., 2018. Production and utilization of fruit, fodder and bio-
+energy trees. In: Kenya’s water towers protection and climate change mitigation
+and adaptation (water) programme.
+Redmon, J., Divvala, S., Girshick, R., Farhadi, A., 2016. You only look once: Unified,
+real-time object detection. In: Proceedings of the IEEE Conference on Computer
+Vision and Pattern Recognition. pp. 779–788.
+Reis, D., Kupec, J., Hong, J., Daoudi, A., 2023. Real-time flying object detection with
+YOLOv8. arXiv preprint arXiv:2305.09972.
+Robinson, T., Hoying, S., Sazo, M.M., RUFATO, A.d.R., 2014. Precision crop load
+management part 2. pp. 09–13, New York Fruit Quarterly, v. 22, n. 1.
+Song, C., Yang, B., Zhang, L., Wu, D., 2021. A handheld device for measuring the
+diameter at breast height of individual trees using laser ranging and deep-learning
+based image recognition. Plant Methods 17 (1), 1–15.
+Tabb, A., Medeiros, H., 2017. A robotic vision system to measure tree traits. In: 2017
+IEEE/RSJ International Conference on Intelligent Robots and Systems. IROS, IEEE,
+http://dx.doi.org/10.1109/iros.2017.8206497.
+Tong, S., Yue, Y., Li, W., Wang, Y., Kang, F., Feng, C., 2022. Branch identification and
+junction points location for apple trees based on deep learning. Remote Sens. 14
+(18), 4495.
+Verbiest, R., Ruysen, K., Vanwalleghem, T., Demeester, E., Kellens, K., 2021. Automa-
+tion and robotics in the cultivation of pome fruit: Where do we stand today? J.
+Field Robotics 38 (4), 513–531.
+Computers and Electronics in Agriculture 229 (2025) 109697 
+12 
+
+D. Ahmed et al.
+Yuan, F., Fang, L., Sun, L., Zheng, S., Zheng, X., 2021. Development of a portable
+measuring device for diameter at breast height and tree height Entwicklung eines
+tragbaren Messgerätes für Durchmesser in Brusthöhe und Baumhöhe. Aust. J.
+Forensic Sci. 138, 25–50.
+Zhang, J., He, L., Karkee, M., Zhang, Q., Zhang, X., Gao, Z., 2017. Branch detection
+with apple trees trained in fruiting wall architecture using stereo vision and regions-
+convolutional neural network (R-CNN). In: 2017 ASABE Annual International
+Meeting. American Society of Agricultural and Biological Engineers, p. 1.
+Zhang, Q., Karkee, M., Tabb, A., 2019. The use of agricultural robots in orchard
+management. In: Billingsley, J. (Ed.), Robotics and automation for improving
+agriculture. Burleigh Dodds Science Publishing, http://dx.doi.org/10.19103/AS.
+2019.0056.14.
+Zhang, J., Karkee, M., Zhang, Q., Zhang, X., Yaqoob, M., Fu, L., Wang, S., 2020. Multi-
+class object detection using faster R-CNN and estimation of shaking locations for
+automated shake-and-catch apple harvesting. Comput. Electron. Agric. 173, 105384.
+Zhang, C., Mouton, C., Valente, J., Kooistra, L., van Ooteghem, R., de Hoog, D., van
+Dalfsen, P., de Jong, P.F., 2022. Automatic flower cluster estimation in apple
+orchards using aerial and ground based point clouds. Biosyst. Eng. 221, 164–180.
+Computers and Electronics in Agriculture 229 (2025) 109697 
+13 

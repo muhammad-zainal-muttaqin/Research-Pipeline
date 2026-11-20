@@ -26,4 +26,3 @@ Pendaftaran awan titik dilakukan dua tahap. Tahap awal memakai RANSAC untuk meng
 Uji coba dilakukan pada sembilan tanaman pot dengan total 149 buah pada tahap pertumbuhan. Abstrak melaporkan recall total 85,91%, presisi 79,01%, nilai F1 82,32%, koefisien determinasi 0,97 antara jumlah buah prediksi dan jumlah sebenarnya, serta galat absolut persentase rata-rata 16,02%. Metode ini tidak bergantung pada informasi warna sehingga tetap mengenali buah hijau yang belum matang.
 
 Pendahuluan menyebut GONGAL dkk. memasang kamera warna dan kamera kedalaman dalam jumlah sama pada kedua sisi pohon apel, lalu mendaftarkan awan titik dari kedua sisi untuk mengenali buah yang terhitung dua kali. Penulis mengutipnya sebagai contoh penanganan duplikasi lintas pandang, sedangkan metode yang diusulkan sendiri memakai meja putar dan satu kamera.
-

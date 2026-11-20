@@ -1,0 +1,796 @@
+Mass Estimation of Soft Fruit via Oscillatory Plant Dynamics
+Nikolaus Wagner and Grzegorz Cielniak1
+Abstract— Yield forecasting is an essential task in modern
+agriculture, as it enables farmers and food economists to
+manage crop and its distribution precisely and effectively.
+Traditionally, most methods for yield forecasting are based on
+historical data and yield estimates from manually collected
+samples. More modern approaches often rely on computer
+vision-based fruit counting algorithms, which do not take
+individual crop weights into account.
+In this paper, we propose a novel, non-destructive method to
+estimate the mass of individual pieces of fruit by exploiting the
+dynamic properties of plants. By observing short-term oscilla-
+tory plant motion through RGB-D video data, we formulate
+an approach for mass estimation based on determining the
+parameters of a damped harmonic oscillator model.
+We test the proposed algorithm by collecting a dataset of
+around 300 video samples of strawberries on a real strawberry
+farm and apply our method. With a semi-automated toolchain,
+capable of inferring the key parameters from video data and
+calculating the mass of individual berries from those, we were
+able to estimate the mass of all berries in our dataset with a
+median error of 1.16 g, outperforming a baseline utilising vision-
+based volume estimation to infer the mass. These insights hold
+valuable improvements for the development of yield forecasting
+systems and selective harvesters, which help to address the
+sustainability of food production and labour shortages.
+I. INTRODUCTION
+Strawberries are an increasingly important crop, with
+426,000 tons produced in the UK alone in 2022. At an
+average farm gate price of 2,600 £ per ton this equals a total
+value of roughly 1.1 billion pounds for UK farmers per year,
+with further growth expected [1]. This amount of produce re-
+quires fast and precise handling, as strawberries are soft fruit
+which spoil quickly. In order to manage the complex tasks of
+storing, shipping, pricing, stocking and selling the crop it is
+therefore essential to have an accurate model of the expected
+amount of harvest per day. Automated yield forecasting of
+strawberries has been addressed previously, e.g. at a larger
+scale through satellite imagery [2] or more precisely at the
+individual plant level [3]. The latter approaches generally
+rely on mass measurements of individual fruits, which are
+usually inferred indirectly through automated vision-based
+detectors and volumetric approximations.
+In many cooler climates such as the UK’s, the preferred
+method for growing strawberries at scale is by using tabletop
+systems in polytunnels (see Fig. 1), which provide protection
+against the elements and cooler nights. In these growing
+systems the strawberries hang down the sides of the beds,
+where they ripen and can be picked more easily, speeding up
+harvesting processes. This system gives the hanging berries
+The authors are with the Lincoln Centre for Autonomous Systems,
+University of Lincoln, LN6 7TS Lincoln, United Kingdom.
+Email: {nwagner,gcielniak}@lincoln.ac.uk
+Fig. 1: Strawberries being grown in a tabletop environment.
+The freely hanging fruit are capable of oscillatory motion,
+enabling an analysis of their dynamic parameters.
+freedom of motion, which allows them to swing back and
+forth. These dynamic motion patterns have however not been
+utilised for gaining insights into the internal state of plants.
+In this paper, therefore, we specifically address the issue of
+yield forecasting in strawberry production with an approach
+based on these plant dynamics.
+When exposed to wind or rain, plants experience various
+kinds of movement. They sway or shake under external
+influences, leaves flutter in the wind and branches bend under
+the strain of rain or snow. This type of oscillatory motion can
+be exploited in order to infer internal mechanical properties
+of plants [4], which is impossible with classical vision-based
+systems alone. With our approach, we intend to bridge this
+gap by exploiting the dynamic motion of plants with the help
+of state-of-the-art (SOTA) machine vision solutions in order
+to gain a better understanding of the internal mechanical
+parameters of plants. We thus aim to improve upon existing
+solutions, gaining deeper insights into plant health, irrigation
+and crop state with the help of modern machine vision
+systems. Specifically, the previously mentioned swinging
+motion is what we exploit to analyse the internal properties
+like the mass of the fruit. To this end, we introduce the
+following key contributions in this paper:
+1) an application of estimating the mass of soft fruit from
+dynamic plant behaviour, observed with a video-based
+position tracking system, in a non-destructive manner;
+2) an approach of using Harmonic Inversion to deduce the
+key oscillatory parameters needed for this application;
+3) a dataset containing around 300 annotated video sam-
+ples of strawberries exhibiting the relevant dynamic
+behaviours with an evaluation of our approach on this
+dataset, compared to an established baseline.
+
+II. RELATED WORK
+Robotics and computer vision-based applications in agri-
+culture have grown rapidly over the last decade. Robotics-
+assisted monitoring of plants [5], selective spraying of in-
+secticides [6], selective harvesting [7] and also more general
+precision crop care [8] are all fields that have benefited from
+recent technological advancements massively. Furthermore,
+not only areas directly linked to in-the-field plant care utilise
+these emerging technologies, but botanists and horticulturists
+increasingly also employ modern technologies for things like
+phenotyping and breeding as well [9][10][3][11][12]. Most
+of the features considered for these applications are how-
+ever solely geometric or colour-based measurements [10].
+Dynamic behaviours however, especially those exhibiting
+movement in the range of seconds instead of minutes or
+hours, are closely related to the internal mechanical parame-
+ters of plants, hence studying those enables an estimation of
+characteristics not accessible by vision sensors alone. Due
+to the static but motile nature of plants, most of their move-
+ments are oscillatory, leading us to identify key parameters
+defining these motions [13]. Some recent work in this area
+has already highlighted the significance of motion parameters
+for plant health [14], irrigation state [15] and specifically
+also for automated phenotyping [16]. In this paper, we utilise
+these insights into automated weight estimation for tasks like
+crop mass estimation and therefore also yield forecasting, an
+increasingly important area in modern agriculture [17].
+The significance of having an understanding of the amount
+and mass of your crop is essential for planning harvesting
+tasks, storage logistics as well as financial and economic
+strategies. Estimating the mass of crop which can be har-
+vested at a certain point in time needs to be automated,
+preferably in a non-destructive manner. This currently does
+not align with the SOTA, which is why new methods
+to improve upon this are in huge demand. Most existing
+methods rely on single-image-based analyses [3] or other
+more empirical methods [18]. Plants however are dynamic
+structures and exhibit various kinds of motion, which we
+can exploit to gain an understanding of the mass of the
+harvestable crop. Furthermore, purely vision-based meth-
+ods suffer from another significant downside: Even if very
+precise volume estimates can be obtained, one still needs
+accurate density information to be able to effectively use the
+data for mass estimation, which is virtually impossible to
+obtain in a quick and non-destructive manner. It becomes
+apparent that a non-destructive method, utilising vision data,
+enhanced with a minimal amount of interactive perception,
+capable of estimating the mass of crop in the field is required.
+III. MATERIALS AND METHODS
+A. Scenario
+In our method, we make use of the oscillatory motion of
+free-standing or hanging plant parts. We exploit this motion
+to infer the mass of strawberries, although the same princi-
+ples apply to many similar scenarios. This process, utilising
+techniques from classical mechanics, signal processing &
+computer vision, consists of the following general steps:
+1) Applying a controlled stimulus to the berries to induce
+motion, monitoring the resulting behaviour with a
+semi-automated vision system;
+2) Extracting the dynamic characteristics from the ob-
+served movement;
+3) Calculating mechanical parameters like mass, damping
+and compliance from the obtained characteristics.
+B. Plant Dynamics
+The oscillatory motion of plants can be described quantita-
+tively with the Newtonian equations of motion, giving us an
+insight into how different mechanical parameters influence
+characteristics like eigenfrequency, i. e. the frequency at
+which an excited system capable of oscillation with no
+external disturbances will swing. Assuming small damping
+values, this eigenfrequency ω (in rad / s) of such a system
+can then be approximated with Eq. (1):
+ω =
+r
+k
+m,
+(1)
+with k being the stiffness and m the mass of the system.
+The stiffness k in turn, equal to the inverse of the system’s
+compliance, is further defined as per Eq. (2):
+k = F
+x0
+.
+(2)
+Herein, F is the initial excitation force used to induce the
+movement in the system and x0 is the initial displacement
+achieved by that stimulus. Therefore by exciting a plant
+part with a known stimulus and observing the oscillatory
+motion during its return to the original static position, the
+so-called ringdown behaviour, we obtain information about
+the eigenfrequency and hence an estimate of the mass as
+m =
+F
+x0ω2 =
+F
+x0(2πf)2 ,
+(3)
+with f being the observed eigenfrequency, as ω = 2πf.
+In order to use these methods of inferring mass from oscil-
+latory motion in practice, we need to collect several pieces
+of information. Firstly, we need to excite plant parts with
+a known stimulus, measuring F and x0 quantitatively with
+adequate sensors. Secondly, we need to obtain a measure of
+the eigenfrequency of the oscillatory motions which these
+parts exhibit after said excitation. In order to automate this,
+we require a machine vision solution capable of recording
+the movement at a sufficiently high frame rate which also
+provides tracking information of the plant part of interest.
+C. Motion Tracking
+To obtain the raw motion information itself, we use visual
+data recorded with the help of an RGB & depth (RGB-D)
+camera, providing high-resolution images at sufficiently high
+frame rates of 30 Hz. We then detect and track the individual
+pieces of fruit utilising a strawberry detection and tracking
+framework, consisting of a custom implementation of Mask
+R-CNN [19] trained on segmentation-annotated strawberry
+
+Fig. 2: Ringdown behaviour of a strawberry. A damped
+harmonic oscillator has been modelled to fit the position data
+obtained from the tracking algorithm.
+data across all ripeness stages for detection and Simple
+Online Realtime Tracking (SORT) in default configuration
+for tracking [20]. We annotate the motion as signed euclidean
+distances to the idle position in 3D space, reducing the
+problem to a single dimension. By aligning the plane of
+motion with the camera’s image plane, this simplification
+holds for all our practical purposes and greatly reduces the
+complexity of all computations. We then use the centre of
+the 2D-detections obtained from SORT reprojected into 3D-
+space as positional data of the berries. We thus obtain precise
+location, motion and size information of all pieces of fruit
+of interest, enabling us to model the oscillatory behaviour as
+a damped harmonic oscillator from the visual data alone.
+D. Oscillation Modelling
+All oscillating systems in the real world lose energy during
+oscillation. This energy loss can be expressed through the
+damping ratio ζ or similarly the decay rate β of a system.
+This influences the amplitude x of the motion as per the
+equation of motion for the damped harmonic oscillator:
+x(t) = x−βt
+0
+· cos(ωt + ϕ)
+(4)
+with the damping ratio ζ expressed as a function of decay
+rate β and eigenfrequency ω
+ζ = β
+ω ,
+(5)
+furthermore x0 the initial amplitude as above, the time t in
+seconds and the phase shift ϕ in radians.
+We model the plant part of interest as a one-dimensional
+oscillator and track its movement with a machine vision
+solution. This way, we can obtain the ringdown behaviour
+of the plant part. An example of this is given in Fig. 2.
+In order to obtain the characteristic motion parameters
+required for the calculation of dynamic plant parameters,
+we need to perform a spectral analysis, which provides the
+required oscillatory parameters mentioned, such as amplitude
+and frequency. For these analyses, Fourier-based methods
+like Fast Fourier Transform (FFT) have traditionally been
+preferred. However, as demonstrated in [13], especially for
+quickly decaying oscillations in plant structures, Harmonic
+Inversion (HI) is a more useful approach, simultaneously
+providing information about frequency, amplitude, decay and
+phase information, and therefore enabling a quick, easy and
+complete analysis of all necessary signal parameters.
+1) Harmonic Inversion: For the Harmonic Inversion of
+time signals, we perform a non-linear fit of K parameter sets
+to determine the presence of various frequency components
+in an input signal C equidistantly sampled at τ intervals:
+C(nτ) =
+K
+X
+k=1
+dke−inτωk,
+n = 0, 1, 2, ..., N
+(6)
+The parameter sets consist of the amplitude dk and the
+frequency ωk for one signal component. By analysing the
+imaginary part of ωk, we can furthermore deduce the fre-
+quency width and thus calculate decay rates directly [21][22].
+The parameter sets have no formal restrictions on spacing,
+which theoretically allows for an arbitrarily high resolution
+of the results. A minimum amount of N = 2K points are
+necessary to identify a solution for the nonlinear fit, and in
+practice a frequency range of interest should be specified
+to accelerate computations, with most of our frequencies of
+interest occurring between 0.5 Hz and 10 Hz. A complete
+evaluation of HI for this application is available in [13]
+2) Fourier Transform: The Fourier transform for discrete
+time series of complex numbers xn on the other hand is
+defined as follows:
+X(k) =
+N −1
+X
+n=0
+xne
+−i2πkn
+N
+(7)
+In this equation, X(k) represents the magnitude of each
+individual frequency component k found in the input signal
+x, with k = 0, 1, 2, ..., N −1. It is thus a discrete analysis,
+providing information about frequency components at a fixed
+resolution. The granularity depends on the length of the input
+sequence provided to the analysis. This granularity is not
+only dependent on the sampling rate fs, but also the number
+of samples N present in the sequence and is thus defined as
+∆f = fs
+N = 1
+T
+(8)
+for a sequence of length T, highlighting the dependence on
+the length of the sample. For sequences with a length of 10 s
+for example this therefore equates to a resolution of 0.1 Hz.
+Due to HI not suffering from specific resolution con-
+straints, as the parameter fit theoretically allows for arbi-
+trarily high resolutions, as well as the additional oscillation
+decay parameters which can be obtained implicitly, we utilise
+HI for every spectral analysis performed in this paper. For
+comparison, we also provide an evaluation of the use of FFT
+for our method and the associated trade-offs in Section IV.
+E. Baseline
+Previous work has already been done on estimating the
+mass of soft fruit for the purpose of yield forecasting. In
+[3], the authors introduce various methods of estimating fruit
+volume through image analysis and then use an average
+density of fruit known a priori to infer the expected mass.
+We use a variant of this method as a baseline and model the
+
+Fig. 3: Various ripeness stages of strawberries, from left to
+right: 1) Unripe, small berry 2) Unripe full sized berry 3)
+Half ripe berry 4) Fully ripe berry.
+berries as roughly spherical objects, using the equation for
+the volume of a sphere which is defined as
+V = 4
+3πr3.
+(9)
+Using the image data from our strawberry detection al-
+gorithm introduced in Section III-C, we deduce the average
+radius of the berries and reproject it from image space into
+3D space by utilising depth information. This way, we obtain
+a good estimate of r and thus calculate an approximate
+volume for each fruit under investigation.
+Due to a lack of ground truth (GT) fruit volume data we
+use a least square fit to approximate the average density ρ
+of all samples by comparing the estimated volumes against
+the manually collected GT mass measurements. Using this
+approach, we obtain ρ = 0.747 g / cm3 for fresh strawberries,
+which is roughly in line with what the authors in [3] provide.
+F. Dataset
+To evaluate the performance of our method, we collect a
+dataset of strawberries in motion to estimate the mass of each
+fruit based on oscillatory behaviour. We record data samples
+of the oscillatory reaction obtained by applying a controlled
+stimulus onto individual strawberries. These data samples
+combine video and manually obtained sensor measurements,
+which were performed destructively to obtain GT values after
+acquiring the non-destructive motion samples for the dataset.
+Each sample thus contains the excitation force applied to
+the berry, a 10 s long RGB-D video monitoring its ringdown
+behaviour, the mass and length of the pedicel (i.e. the directly
+connected stem) of each berry. Furthermore, we classify the
+ripeness into one of four stages: unripe-small, unripe-fullsize,
+half-ripe and fully-ripe berries (see Fig. 3 for illustration).
+We then evaluate the motion obtained from the video sam-
+ples as described in Section III-C with the tools introduced in
+Section III-D to furthermore obtain eigenfrequency f, decay
+rate β, initial amplitude x0 and phase information ϕ. For this
+dataset, this annotation step was semi-automated with manual
+augmentations and corrections to ensure consistent data
+quality for evaluation, however, this can be fully automated
+to work in a completely autonomous system.
+We collect 295 such samples from 2 varieties (Driscoll’s
+Zara & Driscoll’s Katrina) using a Pasco PS-2189 force
+sensor with a resolution of 0.002 N [23], a Precision Scale
+G&G LS200 with a resolution of 0.01 g [24] and a Microsoft
+Azure Kinect RGB-D camera with an image resolution
+of 1920 x 1080 pixels, a frame rate of 30 Hz and a depth
+resolution of 1 mm provided by the camera’s time-of-flight
+(TOF)-sensor [25]. We place the camera roughly 1 m away
+Fig. 4: Acquisition of one sample in the dataset. The initial
+stimulus is being applied to a strawberry with a force sensor.
+Fig. 5: Distribution of various parameters across the dataset.
+From left to right: 1) mass 2) stiffness 3) eigenfrequency.
+from the observed fruit with the image plane parallel to
+the direction of oscillation, furthermore, we observe mostly
+isolated berries, as these have the highest freedom of mo-
+tion and hence exhibit the best oscillation capabilities. The
+eigenfrequency is not theoretically limited in resolution due
+to the annotation with HI, which allows for an arbitrarily
+close selection of signal parameters.
+The data was collected in August 2023 at the University
+of Lincoln’s Riseholme campus in Lincolnshire, UK. Fig. 4
+shows the acquisition of one entry in the dataset. The
+dataset contains berries with masses ranging from 0.75 g to
+35.57 g, stiffnesses ranging from 0.25 N/m to 5.86 N/m and
+eigenfrequencies ranging from 1.23 Hz up to 6.06 Hz. The
+distribution of these values is shown in Fig. 5.
+IV. EVALUATION
+Based on the data presented in Section III-F, we perform
+a study on the inference of the mass of individual pieces of
+fruit as per Section III-B. We utilise Eq. (3), expressing mass
+as a function of the excitation stimulus applied to the fruit
+and the responding eigenfrequency exhibited by the system.
+The results of the estimates obtained using this method,
+relative to the GT masses, are given in Fig. 6 on the left.
+We observe a strong correlation between the GT masses
+and the estimate obtained through our method. We quantify
+this correlation using the coefficient of determination R2.
+This value is calculated by putting the sum of squared errors
+SSerror (the unexplained variance) and the total sum of
+squares SStotal (the variance of the data) in perspective:
+R2 = 1 −SSerror
+SStotal
+,
+(10)
+wherein
+SSerror =
+X
+i
+(yi −fi)2
+(11)
+
+Fig. 6: Mass estimates of individual strawberries. Ripeness
+stages are indicated by different colours. Mass estimates
+based on oscillatory behaviour (our method) are shown on
+the left, volume-based estimates (baseline) on the right.
+and
+SStotal =
+X
+i
+(yi −y)2,
+(12)
+with yi as the GT value of one sample, fi as the predicted
+value and y as the average GT of all samples. For the data
+shown in Fig. 6 on the left, this value becomes R2 = 0.87.
+We further calculate the error for each sample and compare
+it to the GT median and mean masses of all berries, illustrat-
+ing the total and relative variance. These results, separated
+by ripeness, are provided in Table I.
+TABLE I: Error values obtained for estimating the mass of
+strawberries through analysing their oscillatory behaviour.
+Categories
+All
+Unripe
+Unripe
+Half
+Ripe
+small
+fullsize
+ripe
+GT median mass [g]
+11.31
+3.58
+8.74
+11.23
+14.85
+median error [g]
+1.16
+0.68
+1.52
+0.97
+1.98
+median error [%]
+10.34
+18.93
+17.36
+8.67
+13.35
+GT mean mass [g]
+10.51
+3.87
+9.23
+11.81
+15.78
+mean error [g]
+1.69
+0.98
+1.78
+1.42
+2.32
+mean error [%]
+16.07
+16.07
+19.27
+12.00
+14.68
+Our method is accurate in inferring mass from oscilla-
+tory behaviour with a comparatively small median error of
+1.16 g across all samples. To put these results into context
+we perform volume-based mass estimation as explained in
+Section III-E. The correlation for this is significantly worse,
+with R2 = 0.56. These results are shown in Fig. 6 on the right,
+the corresponding errors are given in Table II.
+TABLE II: Error values obtained for estimating the mass
+of strawberries through estimating their volume via RGB-D
+images and a least-square fit to obtain average density.
+Categories
+All
+Unripe
+Unripe
+Half
+Ripe
+small
+fullsize
+ripe
+GT median mass [g]
+11.31
+3.58
+8.74
+11.23
+14.85
+median error [g]
+1.28
+0.76
+1.95
+1.53
+1.89
+median error [%]
+10.51
+21.17
+22.29
+13.66
+12.77
+GT mean mass [g]
+10.51
+3.87
+9.23
+11.81
+15.78
+mean error [g]
+2.29
+2.10
+2.47
+1.87
+2.52
+mean error [%]
+21.80
+54.32
+26.71
+15.82
+15.98
+This table shows that results obtained through purely
+visual and volume-based methods perform worse than our
+motion-based approach. The only exception is the median
+error among ripe berries, where the volume-based method
+performs equally well, however, the mean error is worse
+than that for our method. Furthermore, knowledge of the
+density of the berries is needed as a prior. Since this density
+is expected to become more uniform as the berries ripen, we
+would expect the volume-based method to perform better on
+larger berries, which aligns with Table II. This is a downside
+to using purely visual methods, as our method does not rely
+on such priors. Our method however does rely on defined,
+observable motion. If tracking fails due to occlusions or mid-
+motion collisions, the results from our method suffer. For
+best performance, it is thus ideal to have isolated pieces of
+fruit in clear view with no obstructions from foliage.
+The derivation of mass from dynamic behaviours is influ-
+enced by various parameters, determining the accuracy of the
+final results. It is therefore essential to obtain accurate sensor
+data for the initial stimulus as well as precise frequency
+information. The influence of each parameter is dependent
+on the magnitude of the other parameters, so it is essential to
+understand their typical range. Across all samples, the mean
+and standard deviation (STD) are given in Table III.
+TABLE III: Mean and standard deviation of all parameters
+influencing the mass estimation results.
+Parameter
+Mean
+STD
+F [N]
+0.092
+0.049
+x0 [m]
+0.062
+0.017
+f [Hz]
+2.123
+0.713
+Using these average values, we can obtain a measure of
+how strongly the resolution of each parameter influences
+the mass estimates. Assuming a resolution of 0.002 N for
+force readings and 1 mm for amplitude (as per Section III-F),
+Table IV shows the results of the calculations by varying the
+individual parameters by 1 unit of resolution. For reference
+we also provide the effect that varying the frequency by
+0.1 Hz has, as this is the granularity of frequency estimates
+obtained from FFT for samples with a length of 10 s.
+TABLE IV: Mass estimates by using the mean of each
+parameter and varying it by ±1 unit of resolution.
+Parameter
+Resolution
+Resolution as
+Estimates by varying
+% of mean
+±1 unit of resolution
+F
+0.002 N
+2.17 %
+8.09 - 8.45 g
+x0
+0.001 m
+1.61 %
+8.41 - 8.15 g
+f (FFT)
+0.1 Hz
+4.71 %
+9.11 - 7.55 g
+Table IV highlights the importance of accurate sensor data
+for mass analysis, as even fluctuations caused by sensor
+resolution influence the outcome significantly. Furthermore,
+accurate frequency estimates are essential, highlighting the
+benefits of HI over FFT, as the granularity of FFT can cause
+uncertainties of ±0.8 g. HI is not limited regarding frequency
+resolution in the same way and is, therefore, a much more
+suitable choice for our use case than FFT based methods.
+
+V. DISCUSSION
+Our method outperforms purely vision-based approaches
+due to not relying on prior knowledge like fruit density.
+This makes it transferable to any plant of similar structure,
+regardless of size or shape of fruit. We require an interaction,
+which is often undesirable since it might damage the crop,
+but this can be mitigated by using a combined approach
+of our method to infer the mass and a purely vision-based
+approach to estimate fruit volume. That way, an estimate of
+density can be obtained from small sample sets, allowing for
+knowledge transfer without needing further interactions. This
+improves the scalability of our method and could make its
+performance comparable to purely vision-based approaches.
+Furthermore, if no interactions with the plant are possible,
+we can utilise known average values for the stiffness k,
+eliminating the need to collect force and displacement data
+(see Eq. (2)). This reduces accuracy, as the stiffness varies
+greatly across different plants (cf. Fig. 5), however by using
+a mean value for k across all samples, the mean error for
+all mass estimates is still below 25 %. External factors like
+wind or rain may affect data collection in outdoor settings,
+however this offers the potential for collecting motion data
+without interactions, relying on the natural movement of
+plants, which we aim to explore in future research.
+VI. CONCLUSIONS
+We have successfully demonstrated a semi-automated ap-
+proach for obtaining dynamic motion parameters of plants
+from RGB-D vision data and minimal interactions. We have
+shown how these parameters can be used for mass estimation
+of strawberries and thus how the method applies to modern-
+day problems like yield forecasting in fruit production. We
+have introduced a dataset consisting of around 300 video
+samples which have been used to test the method and
+compare it to a purely vision-based, volumetric baseline. Our
+method performs consistently better, reaching median errors
+of 1.16 g across all samples. Our method is not yet fully
+automated, as precise and delicate manipulation of soft fruit
+is needed, however this can be achieved using SOTA robotics
+easily. For the data discussed in this paper, we utilised
+isolated pieces of fruit, although in real-world environments
+strawberries often appear in clusters. In future work, this
+needs to be taken into account and modelled appropriately.
+It is also not yet fully clear how well the method generalises
+in other scenarios as it has only been tested in this specific
+setting, however, the same principles apply and we look
+forward to experimenting with another crop in the future.
+REFERENCES
+[1] UK
+Department
+for
+Environment,
+Food
+&
+Rural
+Affairs.
+(2023)
+Agriculture
+in
+the
+United
+Kingdom
+2022.
+[On-
+line]. Available: https://www.gov.uk/government/statistics/agriculture-
+in-the-united-kingdom-2022/chapter-7-crops
+[2] M. S. Gastli, L. Nassar, and F. Karray, “Deep learning models for
+strawberry yield and price forecasting using satellite images,” in 2021
+IEEE International Conference on Systems, Man, and Cybernetics
+(SMC), 2021, pp. 1790–1796.
+[3] R. Kirk, M. Mangan, and G. Cielniak, “Non-destructive soft fruit mass
+and volume estimation for phenotyping in horticulture,” in Computer
+Vision Systems. Springer International Publishing, 2021, pp. 223–233.
+[4] E. de Langre, “Plant vibrations at all scales: a review,” Journal of
+Experimental Botany, vol. 70, no. 14, pp. 3521–3531, 05 2019.
+[5] G. Chen, H. Muriki, A. Sharkey, C. Pradalier, Y. Chen, and F. Dellaert,
+“A hybrid cable-driven robot for non-destructive leafy plant monitoring
+and mass estimation using structure from motion,” in 2023 IEEE
+International Conference on Robotics and Automation (ICRA), 2023,
+pp. 11 809–11 816.
+[6] M. Darbyshire, A. Salazar Gomez, J. Gao, E. Sklar, and S. Parsons,
+“Towards practical object detection for weed spraying in precision
+agriculture,” Frontiers in Plant Science, vol. 14, 11 2023.
+[7] V. R. S, B. Debnath, B. Debnath, S. Mghames, W. Mandil, S. Parsa,
+S. Parsons, and A. Ghalamzan-E, “Towards autonomous selective har-
+vesting: A review of robot perception, robot design, motion planning
+and control,” 2023.
+[8] V.
+Balaska,
+Z.
+Adamidou,
+Z.
+Vryzas,
+and
+A.
+Gasteratos,
+“Sustainable crop protection via robotics and artificial intelligence
+solutions,” Machines, vol. 11, no. 8, 2023. [Online]. Available:
+https://www.mdpi.com/2075-1702/11/8/774
+[9] F. Magistri, N. Chebrolu, and C. Stachniss, “Segmentation-based 4d
+registration of plants point clouds for phenotyping,” in 2020 IEEE/RSJ
+International Conference on Intelligent Robots and Systems (IROS),
+2020, pp. 2433–2439.
+[10] K. James, D. Sargent, A. Whitehouse, and G. Cielniak, “High-
+throughput phenotyping for breeding targets—current status and future
+directions of strawberry trait automation,” Plants, People, Planet,
+vol. 4, 06 2022.
+[11] M. Mathey, S. Mookerjee, K. Gunduz, J. Hancock, A. Iezzoni,
+L. Mahoney, T. Davis, N. Bassil, K. Hummer, P. Stewart, V. Whitaker,
+D. Sargent, B. Denoyes, I. Amaya, E. Van de Weg, and C. Finn,
+“Large-Scale Standardized Phenotyping of Strawberry in RosBREED,”
+Journal-American Pomological Society, vol. 67, pp. 205–216, 10 2013.
+[12] W. Yang, H. Feng, X. Zhang, J. Zhang, J. H. Doonan, W. D. Batchelor,
+L. Xiong, and J. Yan, “Crop phenomics and high-throughput phe-
+notyping: Past decades, current challenges, and future perspectives,”
+Molecular Plant, vol. 13, no. 2, pp. 187–214, 2020.
+[13] N. Wagner and G. Cielniak, “Vision-based monitoring of the short-
+term dynamic behaviour of plants for automated phenotyping,” in
+Proceedings of the IEEE/CVF International Conference on Computer
+Vision (ICCV) Workshops, October 2023, pp. 624–633.
+[14] Y. Bhosale, E. Esmaili, K. Bhar, and S. Jung, “Bending, twisting and
+flapping leaf upon raindrop impact,” Bioinspiration & Biomimetics,
+vol. 15, 01 2020.
+[15] S. Jung, J. Yuk, and M. Fuchs, “Measuring fluttering frequency of a
+leaf under water stress,” Authorea Preprints, 11 2021.
+[16] E. de Langre, O. Penalver, P. H´emon, J.-M. Frachisse, M.-B. Bogeat-
+Triboulot, B. Niez, ´E. Badel, and B. Moulia, “Nondestructive and fast
+vibration phenotyping of plants,” Plant Phenomics, vol. 2019, 2019.
+[17] S. Khaki and L. Wang, “Crop yield prediction using deep neural
+networks,” Frontiers in Plant Science, vol. 10, 2019.
+[18] Y. Zhao, N. Vergopolan, K. Baylis, J. Blekking, K. Caylor, T. Evans,
+S. Giroux, J. Sheffield, and L. Estes, “Comparing empirical and
+survey-based yield forecasts in a dryland agro-ecosystem,” Agricul-
+tural and Forest Meteorology, vol. 262, pp. 147–156, 11 2018.
+[19] K. He, G. Gkioxari, P. Doll´ar, and R. Girshick, “Mask R-CNN,” 2018.
+[20] A. Bewley, Z. Ge, L. Ott, F. Ramos, and B. Upcroft, “Simple online
+and realtime tracking,” in 2016 IEEE International Conference on
+Image Processing (ICIP), 2016, pp. 3464–3468.
+[21] V. A. Mandelshtam and H. S. Taylor, “Harmonic inversion of time
+signals and its applications,” The Journal of Chemical Physics, vol.
+107, no. 17, pp. 6756–6769, 1997.
+[22] V. A. Mandelshtam, “On harmonic inversion of cross-correlation
+functions by the filter diagonalization method,” Journal of Theoretical
+and Computational Chemistry, vol. 02, pp. 497–505, 2003.
+[23] Pasco
+Scientific.
+(2024)
+PASPORT
+High
+Resolu-
+tion
+Force
+Sensor
+PS-2189.
+[Online].
+Available:
+https://www.pasco.com/products/sensors/pasport/ps-2189
+[24] G&G
+Scales
+Electronic
+Balance
+Store.
+(2024)
+G&G
+LS200
+200g/0.01g
+electronic
+balance
+scale
+LS
+series
+pocket
+scale.
+[Online].
+Available:
+https://www.ggscales.com/product/gg-ls200-
+200g-0-01g-electronic-balance-scale-ls-series-pocket-scale/
+[25] Azure
+Kinect
+DK
+Fact
+Sheet,
+Microsoft
+Corporation,
+2
+2018, Rev. 1. [Online]. Available: https://news.microsoft.com/wp-
+content/uploads/prod/2019/06/Factsheet-Azure-Kinect-DK.pdf
+View publication stats

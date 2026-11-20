@@ -1,0 +1,562 @@
+Highly Accurate Tomato Maturity Recognition: Combining Deep
+Instance Segmentation, Data Synthesis and Color Analysis
+Umme Fawzia Rahim∗
+Graduate School of Integrated Science and Technology,
+Shizuoka University, 3-5-1 Johoku, Naka-ku, Hamamatsu,
+Shizuoka 432-8081, Japan
+Hiroshi Mineno
+Graduate School of Integrated Science and Technology,
+Shizuoka University, 3-5-1 Johoku, Naka-ku, Hamamatsu,
+Shizuoka 432-8081, Japan
+ABSTRACT
+Automatic maturity recognition and counting of tomatoes during
+different growth stages from images is of great significance for
+optimal management in tomato farming, long-term yield prediction
+and robotic harvesting. In this study, we present a novel method
+that combines deep instance segmentation, data synthesis and color
+analysis to accurately recognize and count tomatoes during differ-
+ent growth stages. In our approach, we trained the Mask R-CNN
+instance segmentation neural network with synthetically gener-
+ated dataset to accurately segment all tomato instances in an image,
+then color-based thresholding was applied to identify their growth
+stage and count the tomato number accordingly. The synthetic
+data generation algorithm preserved the physical structure of the
+data objects, thus produced photorealistic synthesized cultivation
+scenes. The trained model demonstrated substantial performance
+with maximum 92.1% average precision and 91.4% recall against
+the real-world test datasets for tomato segmentation. The tomato
+maturity recognition accuracy of the color-analysis method was
+evaluated by comparing estimated count with ground-truth manual
+counts. Our experimental results demonstrated high accuracy of
+tomato counting during three different growth stages: green, half
+ripened and fully ripened.
+CCS CONCEPTS
+• Applied computing; • Computers in other domains; • Agri-
+culture;
+KEYWORDS
+Deep learning, Instance segmentation, Data synthesis, Fruit count-
+ing, Fruit maturity recognition, Color thresholding
+ACM Reference Format:
+Umme Fawzia Rahim and Hiroshi Mineno. 2021. Highly Accurate Tomato
+Maturity Recognition: Combining Deep Instance Segmentation, Data Syn-
+thesis and Color Analysis. In 2021 4th Artificial Intelligence and Cloud Com-
+puting Conference (AICCC ’21), December 17–19, 2021, Kyoto, Japan. ACM,
+New York, NY, USA, 8 pages. https://doi.org/10.1145/3508259.3508262
+∗Corresponding author
+Permission to make digital or hard copies of all or part of this work for personal or
+classroom use is granted without fee provided that copies are not made or distributed
+for profit or commercial advantage and that copies bear this notice and the full citation
+on the first page. Copyrights for components of this work owned by others than ACM
+must be honored. Abstracting with credit is permitted. To copy otherwise, or republish,
+to post on servers or to redistribute to lists, requires prior specific permission and/or a
+fee. Request permissions from permissions@acm.org.
+AICCC ’21, December 17–19, 2021, Kyoto, Japan
+© 2021 Association for Computing Machinery.
+ACM ISBN 978-1-4503-8416-2/21/12...$15.00
+https://doi.org/10.1145/3508259.3508262
+1
+INTRODUCTION
+Deep learning-based computer vision techniques using convolu-
+tional neural network (CNN) present a great potential for automatic
+recognition of targets in non-structured agricultural scenes as the
+networks have the ability to learn complex models that can be in-
+variant to different types of variations in the image data. In the past
+decade, computer vision methods using deep learning made signifi-
+cant progress in image classification, object localization, semantic
+and instance segmentation and consecutively was successfully ap-
+plied in many domains. However, training the neural networks for
+high-end performance requires availability of sufficient number
+of labeled datasets. Data collection and annotation is a laborious,
+costly and time-consuming process, and represents a major draw-
+back in most current deep learning pipeline.
+A promising solution to this bottleneck is to learn from synthetic
+images since all ground-truth annotations can be automatically
+obtained without the need for human labor. Many researchers
+have employed several synthetic content generation approaches for
+the preparation of training dataset for various image-based plant
+phenotyping tasks. Isokane et al. [7] used the artificial plant models
+for rendering synthetic images, and for creating dataset to train
+deep neural networks for the estimation of branching pattern, while
+Ward et al. generated synthetic images of Arabidopsis rendered
+from 3D models and used them for the task of leaf segmentation
+[15]. In [12], a modified version of the Inception-Resnet architecture
+was trained with a synthetic dataset of red circular blobs, and was
+able to obtain tomato detection accuracy of 91% on a dataset of
+cherry tomato plants images collected from Google images.
+Unfortunately, an important performance issue emerges due to
+the gaps between the synthetic and real-world domains. To address
+the domain gap issue, many studies attempted to generate realistic
+images, such as by using generative adversarial networks (GAN)
+[5] and introduced synthetic-to-real domain adaptation. Giuffrida
+et al. [14] used GAN-generated images to train a neural network
+and employed domain adaptation for Arabidopsis leaf counting.
+Similarly, Arsenovic et al. used StyleGAN [8] to generate training
+images for the plant disease image classification [2].
+On the other side of the coin, an advantage of utilizing synthetic
+dataset is the capability of creating (nearly) infinite number of train-
+ing data. Techniques that are bridging the synthetic and real-world
+gaps by leveraging the advantage is domain randomization, which
+train the neural networks to learn essential features using large
+variations of synthetic images with randomly sampled physical
+parameters. In [13], the researchers adopted domain randomization
+to synthesize barley seed images which were used to train Mask
+R-CNN for the task of phenotyping barley seed morphology of
+several cultivars. Collectively, the use of synthesized images has a
+16
+
+AICCC ’21, December 17–19, 2021, Kyoto, Japan
+Umme Rahim and Hiroshi Mineno
+Figure 1: Overall workflow of the proposed image analysis pipeline. Description of each dashed box is presented in a section
+as referred by its top left number.
+huge potential for deployment of deep learning-based analysis in
+agricultural domain.
+The ability to automatically recognize tomato maturity and count
+tomato number during different growth stages from images enable
+growers to better optimize management in tomato farming such as
+irrigation, temperature control in greenhouse according to ripening
+stage and harvest decisions based on tomato maturity such as labor
+allocation, storage, packaging, and harvest scheduling and to esti-
+mate long-term tomato yield [9, 16]. Automatic tomato counting
+and maturity recognition during different growth stages in their
+life cycle remain a challenge, due to diverse tomato shapes, size and
+color variability during growth stages, and also due to unstructured
+complex agricultural environment that includes overlapping and
+occlusions.
+In this study, we propose a novel image analysis pipeline that
+combines deep learning, data synthesis and color analysis, by pre-
+senting a method of synthetic cultivation scene generation mim-
+icking the physical appearance of tomato bunches, and utilizing
+the rendered images as training set for MASK R-CNN [6] instance
+segmentation network, and finally applying color-based threshold-
+ing to network produced outputs to recognize tomato growth stage.
+The evaluation results against two real-world datasets demonstrate
+significant average precision and recall in tomato segmentation
+and high accuracy in tomato counting according to their growth
+stage.
+2
+MATERIALS AND METHODS
+Figure 1 illustrates the summary of the entire image analysis ap-
+proach presented in this study for tomato maturity recognition and
+counting during different growth stages.
+2.1
+Experimental Reference Dataset
+The experimental reference dataset was utilized as a source of seg-
+mented tomato images and a reference set to create conditions
+and scene grammars for generating realistic synthetic dataset. Our
+reference dataset consisted of 100 photographic high resolution
+RGB images of tomatoes under cultivation in greenhouses, supple-
+mented with high quality manual annotations (per pixel class labels)
+of most visible tomatoes collected from Laboro Tomato dataset [17].
+We carefully selected 60 images of big size tomatoes and another
+40 images of small size tomatoes during different growth states in
+order to ensure balance in reference set.
+2.2
+Structural Tomato Cultivation Scene
+Generation
+2.2.1
+Extracting Tomatoes from Reference Set. At first, all tomato
+instances were cut from the reference set (described above in section
+2.1) images according to their per pixel annotations. The original
+set contained ∼1100 extracted tomato images. However, many of
+these tomatoes were not suitable for generating realistic synthetic
+images, therefore, we selected images where tomato appears fully
+(or almost) with minimal occlusion. The reasoning behind removing
+occulated tomatoes is that in the agricultural scene it is uncommon
+to see cut tomatoes and the appearance of partially occulated toma-
+toes is a side effect of the image generation algorithm described
+below in section 2.2.3. After removal, rescaling in a random range
+between 48 and 200 pixels (determine empirically) was applied on
+the selected set in order to increase variability and tomato numbers
+until a set of 2000 images was obtained. Then all tomato images
+17
+
+Highly Accurate Tomato Maturity Recognition: Combining Deep Instance Segmentation, Data Synthesis and Color Analysis
+AICCC ’21, December 17–19, 2021, Kyoto, Japan
+Table 1: Description of foreground tomato image sets. Images are grouped into five categories according to size.
+Category
+Size (pixel)
+No. of samples
+Category
+Size (pixel)
+No. of samples
+Big
+Larger side >= 14
+250
+Little (L)
+95 > Larger side >= 75
+450
+Small (L)
+145 > Larger side >= 120
+400
+Little (S)
+Larger side < 75
+450
+Small (S)
+120 > Larger side >= 95
+450
+All
+200 >= Larger side >= 48
+2000
+Figure 2: Different tomato maturity stages.
+were divided into five categories i.e., Big, Small(L), Small(S), Lit-
+tle(L), Little(S) and stored in five separate folders (see Figure 1 top
+left and Table 1).
+2.2.2
+Scene Backgrounds. Like [11], in order to simulate green-
+house environment, we used images of tomato plants under culti-
+vation in greenhouses as background. 100 images of tomato plants
+without any clearly visible tomatoes were photographed in green-
+houses owned by Sun Farm Nakayama Co., Inc., Japan. All back-
+ground images were resized to 600 × 800 pixels and then mirrored
+to increase image numbers.
+2.2.3
+Synthetic Scene Generation Algorithm. We observed the ge-
+ometrical structure and topological distribution of tomatoes in
+photographed tomatoes from reference set (described in section
+2.1) and developed tomato cultivation scene generation algorithm
+consisted of following criteria: i) tomatoes grow on tomato plants in
+groups called tomato bunch, ii) tomato size and number of tomatoes
+in a bunch are correlated, iii) in a bunch, bigger tomatoes appear at
+top while the smaller ones appear at bottom of the bunch, iv) distri-
+bution of tomatoes in a bunch follow some patterns. We generated
+tomato cultivation images automatically based on the set of rules
+such as detailed in Algorithm 1.
+2.3
+Color-based Maturity Recognition
+We introduced post-processing step to the raw outputs obtained
+from Mask R-CNN model to identify growth stage of each seg-
+mented tomato instance. We aimed to recognize tomato maturity
+during three different growth stages: fully ripened, half ripened
+and green (Figure 2). The growth stages of tomatoes were defined
+based on their color pixel percentage: i) fully ripened: filled with
+90% or more red color shade; ii) half ripened: filled with 30 - 89%
+red or orange color shade; iii) green: filled with red or orange color
+less than 30%.
+For each segmented object, pixels corresponding to its mask
+were transformed into HSV color space and thresholding based
+on color analysis was applied over three sets of six parameters
+(two sets for fully ripened category and one set for half ripened
+category). The threshold parameters were determined empirically
+using OpenCV 3.4 by analyzing the hue, saturation and value his-
+togram of 200 samples (collected from segmented tomatoes used
+to generate synthetic dataset) for each maturity category. For fully
+ripened category the minimum threshold values of hue, saturation
+and value components for first set are 0, 140 and 145, respectively
+and maximum threshold values are 5, 255 and 255, respectively and
+the second set of threshold parameters for fully ripened category
+are determined as minimum hue, saturation and value are 174, 120
+and 135, respectively and maximum values are 179, 255 and 255,
+respectively. The two parameter sets were combined using OR op-
+erator for convenience. For half ripened category, the minimum
+threshold values of hue, saturation and value components are 3, 144
+and 155, respectively and maximum threshold values are 18, 255
+and 255, respectively. Detected raw tomato instances that did not
+fall within these three sets of parameters are considered as green.
+2.4
+Metrics for Model Evaluation
+To evaluate the performance of segmentation using Mask R-CNN
+we used two metrics recall and average precision. A detection is de-
+termined as correct when the detection threshold of the intersection-
+over-union (IoU) [4] between the ground-truth and predicted mask
+is over 0.5. Then, recall (r) can be measured as the ratio of true pos-
+itive matches (correct detections) over the total number of ground-
+truth objects and precision (p) can be obtained as the ratio of correct
+detections (true positive) over the total number object detections.
+IoU = Area (дround truth mask ∩detected mask)
+Area (дround truth mask ∪detected mask)
+Finally, according to [3], average precision can be calculated as
+the arithmetic mean of the precision-recall curve:
+pinterp (r) =
+max
+˜r : ˜r ≥rp (˜r) .wherer ∈{0, 0.1, 0.2, . . . , 1} .
+18
+
+AICCC ’21, December 17–19, 2021, Kyoto, Japan
+Umme Rahim and Hiroshi Mineno
+Algorithm 1 Synthetic Scene Generation
+Input: Tomato category, C
+Output: A synthetic image and its corresponding mask consists of
+many regions of different colors where each region corresponds to
+a tomato instance.
+1.
+Choose a background image randomly from the background
+images set.
+2.
+If C==’Big’ then choose 2-4(random) tomatoes randomly from
+folder Big.
+3.
+If C==’Big_Small_L’ then choose 2-4(random) and
+1-4(random) tomatoes randomly from folder Big and Small(L),
+respectively.
+4.
+If C==’Small_L_S’ then choose 4-6(random) and 2-4(random)
+tomatoes randomly from folder Small(L) and Small(S), respectively.
+5.
+If C==’Small_S’ then choose 8-12(random) tomatoes randomly
+from folder Small(S).
+6.
+If C==’Little_L’ then choose 12-18(random) tomatoes
+randomly from folder Little(L).
+7.
+If C==’Little_L_S’ then choose 8-12(random) and 6-12(random)
+tomatoes randomly from folder Little(L) and Little(S), respectively.
+8.
+For all selected tomatoes
+9.
+If C == ’Big’ or C==’Big_Small_L’ then paste each tomato one
+by one on the background image in 1 or 2 (random) columns and
+multiple rows.
+10.
+Else if or C==’Small_L_S’ or C==’Small_S’ then paste each
+tomato one by one on the background image in 2 or 3 (random)
+columns and multiple rows.
+11.
+Else if C==’Little_L’ then paste each tomato one by one on
+the background image in 2, 3 or 4 (random) columns and multiple
+rows.
+12.
+Else if C==’Little_L_S’ then paste each tomato one by one on
+the background image in 3, 4 or 5 (random) columns and multiple
+rows.
+13.
+If column number > 2, decrease column by 1 after every 1 or
+2 rows.
+14.
+For a set of selected tomatoes, paste first tomato at a random
+position, select remaining positions at nearby locations in same
+row or column compared to previously pasted tomato position.
+15.
+Each tomato paste position must be inside the background
+boundary and maximum allowed overlapping with previously
+pasted tomato is 50%.
+Note that because of this procedure, the bigger tomatoes are
+naturally positioned on top above the smaller ones.
+3
+EXPERIMENTAL RESULTS AND
+DISCUSSION
+Segmentation was performed with the publicly available tensor-
+flow/keras based Matterport implementation [1] of mask R-CNN,
+pre-trained with the COCO dataset [10] on a machine with an
+NVIDIA GeForce GTX 1080 Ti 11GB GPU, Intel ®core i7-9700k
+3.60 GHz processor and 64GB RAM, running Linux Ubuntu 18.0,
+supported by CUDA 9.0.
+3.1
+Datasets
+A dataset of total 6000 synthetic images were generated with 1000
+images for each six categories (see Algorithm 1). These images
+were used to train Mask R-CNN model for single class tomato seg-
+mentation. The trained segmentation model then evaluated against
+two real-world test sets; TomatoA, consisted of 160 images col-
+lected from Laboro Tomato dataset and TomatoB, consisted of 60
+images of tomatoes captured by smartphone camera in commercial
+greenhouses. Table 2 presents detail of two test sets.
+3.2
+Quality of Generated Images and Model
+Evaluation
+We assessed the quality of the synthetically generated images by
+evaluating the tomato instance segmentation performance of the
+Mask R-CNN model trained purely on our synthetic dataset. Table
+3 presents the average precision and recall metrics on the two real-
+world test sets for single class tomato segmentation by Mask R-CNN
+models. The tomato_synthetic model which was trained on syn-
+thetic tomato images obtained considerably higher values of aver-
+age precision and recall compared to the model trained on reference
+set containing 100 real images. Figure 4 (top row) shows some ex-
+amples of visual results of tomato segmentation on images from our
+two test sets. From the visual results it can be observed that the syn-
+thetic model produced both few false positives and false negatives. It
+can be seen in Table 3 that segmentation performance of the model
+on TomatoB test set, which consists of images with tomatoes of
+different shape, color and texture than that of the tomatoes used for
+generating synthetic training set was lower (average precision and
+recall < 90%) than performance on TomatoA test set (average preci-
+sion and recall >=91%). These results indicate that shape, color and
+texture variability of the target object influenced model’s detection
+performance. Another reason of high performance for TomatoA test
+set is that it has identical tomato distribution pattern as the synthetic
+training set.
+3.3
+Maturity Recognition and Counting
+The tomato segmentations produced by Mask R-CNN model
+(tomato_synthetic) were color-analyzed to recognize their matu-
+rity stages: fully ripened, half ripened and green. Table 4 presents
+the accuracy of estimated count of tomatoes obtained using our
+image analysis pipeline for each image in our two test sets during
+three different growth stages. The recognition and counting accu-
+racy for fully ripened and green tomatoes were higher (R2>0.92
+and R2>0.90 for TomatoA and TomatoB test set, respectively) than
+that of half ripened tomatoes (R2<0.76), which can be explained
+by the ambiguity in defining color cutoff for ground truth and
+small number of half ripened tomato instances in test sets as
+data size highly influence R2 value. From Figure 3 it can be ob-
+served that in most cases, the counts estimated by our approach
+was close to ground truth counts. Figure 5 (bottom rows) illus-
+trates some examples of maturity recognition on images from our
+test sets.
+19
+
+Highly Accurate Tomato Maturity Recognition: Combining Deep Instance Segmentation, Data Synthesis and Color Analysis
+AICCC ’21, December 17–19, 2021, Kyoto, Japan
+Table 2: Description of test datasets.
+Test set
+Location
+Date
+No. of images
+Image size (pixels)
+Resized image (pixels)
+Camera view
+TomatoA
+Laboro Tomato [17]
+12/15/2019
+160
+3024×4023
+3120×4160
+600×800
+Side view
+TomatoB
+Sun Farm Nakayama
+Co., Inc., Shizuoka,
+Japan
+12/16/2018
+08/05/2020
+12/22/2020
+60
+1773×2364
+2268×4032
+3456×4608
+Table 3: Performance of tomato segmentation by different models.
+Model
+Test set
+Average precision (IOU 0.5)
+Recall
+Tomato_synthetica
+TomatoA
+92.1%
+91.4%
+Tomato_realb
+67.2%
+78.9%
+Tomato_synthetic
+TomatoB
+86.0%
+88.7%
+Tomato_real
+56.30%
+73.0%
+aMask-RCNN model trained purely on 6000 synthetic tomato cultivation images. bMask R-CNN model trained on 100 real reference tomato
+cultivation images.
+Figure 3: Estimated tomato counting errors during different growth stages obtained by the developed approach for test set
+TomatoA (top) and TomatoB (bottom). Counting error ranges between -4 and 3.
+Table 4: Tomato maturity recognition performance by the developed image analysis pipeline. R2, coefficients of correlation.
+Metrics
+TomatoA
+TomatoB
+Fully ripened
+Half ripened
+Green
+Fully ripened
+Half ripened
+Green
+R2
+0.92
+0.75
+0.94
+0.91
+0.74
+0.90
+20
+
+AICCC ’21, December 17–19, 2021, Kyoto, Japan
+Umme Rahim and Hiroshi Mineno
+Figure 4: Some examples of tomato segmentation (top) and growth stage recognition (bottom) on images from our test set
+TomatoA.
+21
+
+Highly Accurate Tomato Maturity Recognition: Combining Deep Instance Segmentation, Data Synthesis and Color Analysis
+AICCC ’21, December 17–19, 2021, Kyoto, Japan
+Figure 5: Some examples of tomato segmentation (top) and growth stage recognition (bottom) on images from test set TomatoB.
+4
+CONCLUSIONS
+In this study, we presented a novel approach of fruit maturity
+recognition during different growth stages by combining deep in-
+stance segmentation, data synthesis and color-based analysis. We
+showed that an instance segmentation neural network intent on
+accurately segmenting tomato instances, can be effectively trained
+with synthetic scenes generated by preserving object’s physical
+structure and distribution. Experimental results against two real-
+world datasets showed that the segmentation model obtained signif-
+icant average precision and recall. We subsequently evaluated the
+22
+
+AICCC ’21, December 17–19, 2021, Kyoto, Japan
+Umme Rahim and Hiroshi Mineno
+tomato maturity recognition accuracy of the color-analysis method
+by comparing estimated tomato count with manual count. Our
+quantitative experiments showed highly accurate tomato counting
+during three different growth stages (green, half ripened and fully
+ripened). By producing highly accurate identification of tomato
+growth states and counting our approach showed a great potential
+for low-cost optimal tomato farm management, yield estimation
+and robotic harvesting. Moreover, presented synthetic scene gen-
+eration method can effectively address the labeled data scarcity
+problem encountered when deploying deep learning-based analysis
+in agricultural domain.
+ACKNOWLEDGMENTS
+This work was supported by Japan Science and Technology Agency
+(JST), FOREST Grant Number JPMJFR201B and Cooperative Re-
+search Project Program of the Research Institute of Electrical Com-
+munication, Tohoku University. We greatly appreciate Mr. Makoto
+Miyachi (Happy Quality Co., Ltd., Japan) and Mr. Daigo Tamai (Sun
+Farm Nakayama Co., Ltd., Japan) for providing an environment for
+data collection.
+REFERENCES
+[1] Waleed Abdulla. 2017. Mask R-CNN for object detection and instance segmenta-
+tion on Keras and TensorFlow; 2017. Avaiblable at https://github.com/matterport/
+Mask_RCNN (2017).
+[2] Marko Arsenovic, Mirjana Karanovic, Srdjan Sladojevic, Andras Anderla, and
+Darko Stefanovic. 2019. Solving current limitations of deep learning based ap-
+proaches for plant disease detection. Symmetry (Basel).11, 7 (2019), 939.
+[3] Mark Everingham, Luc Van Gool, Christopher K I Williams, John Winn, and
+Andrew Zisserman. 2010. The pascal visual object classes (voc) challenge. Int. J.
+Comput. Vis.88, 2 (2010), 303–338.
+[4] Ross Girshick, Jeff Donahue, Trevor Darrell, and Jitendra Malik. 2015. Region-
+based convolutional networks for accurate object detection and segmentation.
+IEEE Trans. Pattern Anal. Mach. Intell.38, 1 (2015), 142–158.
+[5] Ian J Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley,
+Sherjil Ozair, Aaron Courville, and Yoshua Bengio. 2014. Generative adversarial
+networks. arXiv Prepr. arXiv1406.2661 (2014).
+[6] Kaiming He, Georgia Gkioxari, Piotr Dollár, and Ross Girshick. 2017. Mask r-cnn.
+In Proceedings of the IEEE international conference on computer vision, 2961–2969.
+[7] Takahiro Isokane, Fumio Okura, Ayaka Ide, Yasuyuki Matsushita, and Yasushi
+Yagi. 2018. Probabilistic plant modeling via multi-view image-to-image trans-
+lation. In Proceedings of the IEEE Conference on Computer Vision and Pattern
+Recognition, 2906–2915.
+[8] Tero Karras, Samuli Laine, and Timo Aila. 2019. A style-based generator ar-
+chitecture for generative adversarial networks. In Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition, 4401–4410.
+[9] Anand Koirala, Kerry B Walsh, Zhenglin Wang, and Cheryl McCarthy. 2019.
+Deep learning–Method overview and review of use for fruit detection and yield
+estimation. Comput. Electron. Agric.162, (2019), 219–234.
+[10] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva
+Ramanan, Piotr Dollár, and C Lawrence Zitnick. 2014. Microsoft coco: Common
+objects in context. In European conference on computer vision, Springer, 740–755.
+[11] Umme Fawzia Rahim and Hiroshi Mineno. 2020. Data augmentation method for
+strawberry flower detection in non-structured environment using convolutional
+object detection networks. J. Agric. Crop Res.8, 11 (2020), 260–271.
+[12] Maryam Rahnemoonfar and Clay Sheppard. 2017. Deep count: fruit counting
+based on deep simulated learning. Sensors 17, 4 (2017), 905.
+[13] Yosuke Toda, Fumio Okura, Jun Ito, Satoshi Okada, Toshinori Kinoshita, Hiroyuki
+Tsuji, and Daisuke Saisho. 2020. Training instance segmentation neural network
+with synthetic datasets for crop seed phenotyping. Commun. Biol.3, 1 (2020),
+1–12.
+[14] Mario Valerio Giuffrida, Hanno Scharr, and Sotirios A Tsaftaris. 2017. Arigan:
+Synthetic arabidopsis plants using generative adversarial network. In Proceedings
+of the IEEE International Conference on Computer Vision Workshops, 2064–2071.
+[15] Daniel Ward, Peyman Moghadam, and Nicolas Hudson. 2018. Deep leaf segmen-
+tation using synthetic data. arXiv Prepr. arXiv1807.10931 (2018).
+[16] Alvin D. Rutledge. Commercial Greenhouse Tomato Production. Retrieved De-
+cember 12, 2020 from https://extension.tennessee.edu/publications/Documents/
+pb1609.pdf
+[17] Laboro Tomato: Instance segmentation dataset. Retrieved September 15, 2020
+from https://github.com/laboroai/LaboroTomato.
+23

@@ -78,4 +78,3 @@ pemeriksaan bentuk, dan pelacakan masih memerlukan campur tangan manual. Penulis
 juga menyatakan galat dapat berasal dari pengukuran jangka sorong karena buah
 berkulit lunak dapat penyok, dan mengusulkan perbandingan dengan LiDAR serta
 penguatan sistem terhadap kondisi lapang.
-

@@ -80,5 +80,3 @@ daun penuh tidak praktis secara komersial di sebagian wilayah karena
 risiko sunburn, sehingga hasil FC lebih mencerminkan kesiapan operasional.
 Penulis menganjurkan metode RGB yang lebih otomatis dan penggunaan Kinect
 V2 dengan pencahayaan yang sesuai.
-
-

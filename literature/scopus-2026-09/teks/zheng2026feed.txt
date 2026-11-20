@@ -1,0 +1,974 @@
+Virtual Reality & Intelligent Hardware
+Peer review under the responsibility of Beijing Zhongke Journal Publishing Co. Ltd. 
+2096-5796/©Copyright 2026 Beijing Zhongke Journal Publishing Co. Ltd., Publishing services by Elsevier B.V. on behalf of KeAi Communication Co. Ltd. This is 
+an open access article under the CC BY-NC-ND license (http://creativecommons.org/licenses/by/4.0/).
+Feed-forward 3D reconstruction with point-cloud 
+representations: From DUSt3R to VGGT and beyond
+Zeyi ZHENG, Xiong YANG, Ran YI*, Lizhuang MA
+School of Computer Science, Shanghai Jiao Tong University, Shanghai 200240, China
+Received 28 November 2025; Revised 12 March 2026; Accepted 26 March 2026
+Abstract: This survey reviews feed-forward, point-cloud 3D reconstruction methods from DUSt3R to VGGT and 
+their recent variants. Here, feed-forward primarily refers to predicting dense geometry and, when applicable, 
+camera poses through learned network inference, without relying on classical per-scene SfM + MVS optimization 
+as the main inference mechanism. We first formalize the reconstruction task in pose-aware and pose-free settings, 
+and contrast feed-forward point-map regression with classical Structure-from-Motion and Multi-View Stereo 
+pipelines. Building on this, we organize existing methods into three stages: early pairwise models typified by 
+DUSt3R, DUSt3R-style extensions that enhance multi-view consistency, streaming, efficiency, and dynamic-scene 
+handling, and large unified transformers such as VGGT that process tens to hundreds of views jointly, while noting 
+differences in their inference paradigms. We analyze these models along shared axes, including scene 
+representation, correspondence reasoning, pose regression, fusion strategies, and the role of large-scale training 
+data. We summarize widely used 3D datasets and evaluation metrics, and provide a case study on the DTU 
+benchmark for multi-view depth and point map estimation, highlighting accuracy-efficiency trade-offs between 
+optimization-based and feed-forward approaches. Finally, we discuss open challenges in data scarcity, sparse-view 
+reconstruction, non-Lambertian structures, dynamic scenes, long-context processing, and resource-efficient 
+deployment, and outline future directions that combine feed-forward architectures with differentiable rendering, 
+generative priors, and safety mechanisms to enable scalable and trustworthy 3D reconstruction systems.
+Keywords: Feed-forward 3D reconstruction; Point cloud; Point-map; Vision Transformer; Multi-view depth 
+estimation; Dynamic scene reconstruction; Virtual reality
+Supported by the National Natural Science Foundation of China (Grant Nos. 62595774, 62302297, 72192821, 62272447, 62472285, 62472282), 
+the Fundamental Research Funds for the Central Universities (Grant Nos. YG2023QNB17, YG2024QNA44), the National Key R&D Program of 
+China (Grant No. 2024YFE0115500), and the Beijing Natural Science Foundation (Grant No. L222117).
+Citation: Zeyi ZHENG, Xiong YANG, Ran YI, Lizhuang MA. Feed-forward 3D reconstruction with point-cloud representations: From DUSt3R 
+to VGGT and beyond. Virtual Reality & Intelligent Hardware, 2026, 8(3): 265–282.
+· Review ·
+June 2026  Vol. 8  No. 3: 265–282
+DOI: 10.1016/j.vrih.2026.03.005
+Corresponding author, ranyi@sjtu.edu.cn
+
+Virtual Reality & Intelligent Hardware June (2026) Vol. 8 No. 3 
+1 Introduction
+1.1 Background & motivation
+3D reconstruction supports AR/VR, robotics, and autonomous driving by estimating camera poses and dense 
+scene geometry from images. Classical optimization pipelines—Structure-from-Motion (SfM) followed by 
+Multi-View Stereo (MVS) —remain strong in accuracy but rely on complex workflows and per-scene 
+optimization, which leads to high latency and limited scalability; they also struggle with wide baselines, low 
+texture, non-Lambertian surfaces, and occlusions [1–3]. Recent feed-forward methods (e.g., DUSt3R [1] and 
+VGGT [2]) use learned inference to predict poses and dense geometry without treating classical per-scene 
+optimization as the primary reconstruction mechanism. Many representative methods remain close to single-
+pass prediction, while others augment it with lightweight alignment, memory, or test-time adaptation. 
+Together, they combine global correspondence reasoning with Transformer backbones [3] and confidence-
+guided fusion to achieve faster inference with competitive accuracy. These developments call for a 
+systematic review of DUSt3R®VGGT models, their common design patterns, and their practical 
+limitations, which we discuss in the following sections.
+1.2 Scope
+This survey covers feed-forward 3D reconstruction methods from DUSt3R (CVPR 2024) to VGGT (CVPR 
+2025) and subsequent VGGT-family variants published up to October 2025. Our focus is on models that 
+(i) predict dense geometry and, when applicable, camera poses primarily through learned feed-forward 
+inference rather than classical per-scene iterative SfM + MVS optimization, and (ii) use explicit point-cloud/
+pointmap representations for geometry.
+We include two-view and multi-view settings, and distinguish strictly single-pass models from methods 
+that additionally rely on lightweight alignment, persistent state, or limited test-time adaptation at inference 
+time. For dynamic scenes, we include methods whose core geometry prediction remains feed-forward, while 
+explicitly noting when temporal state or inference-time adaptation is introduced. Out of scope are 
+optimization-based pipelines (SfM + MVS) and rendering-oriented methods (e.g., NeRF [4], 3D Gaussian 
+splatting [5]) whose primary objective is view synthesis; when geometry-grounded renderable systems are 
+briefly mentioned, they are treated only as downstream extensions or boundary cases rather than the main 
+focus of this survey. Datasets, metrics, and evaluation protocols used for comparison are defined in 
+Section 2.4.
+1.3 Contributions
+This survey makes the following contributions.
+• Problem clarification. We formalize feed-forward 3D reconstruction in pose-aware and pose-free 
+settings, and clearly define the pointmap/point-cloud-centric scope from DUSt3R to VGGT and their 
+variants.
+• Method taxonomy. We organize recent methods into three stages: early pairwise DUSt3R, DUSt3R-
+style extensions (multi-view, streaming, efficiency, dynamic scenes), and unified VGGT-based frameworks.
+• Unified comparison. We summarize representative 3D datasets and metrics, and adopt a DTU-based 
+protocol to compare classical SfM + MVS and feed-forward models on multi-view depth and point map 
+estimation.
+• Insights and outlook. We distill common design patterns and discuss open problems in data scarcity, 
+sparse views, challenging materials, long-context processing, deployment efficiency, and safety.
+266
+
+Zeyi ZHENG, et al. Feed-forward 3D reconstruction with point-cloud representations: From DUSt3R to VGGT and beyond
+2 Preliminaries
+2.1 Task formulation
+We consider 3D reconstruction from an image set I ={Ii}N
+i = 1, where the goal is to predict per-pixel scene 
+geometry—depth maps or pixel-aligned pointmaps for one or multiple views. Inputs may be pose-aware 
+(camera intrinsics/extrinsics are provided) or pose-free (camera parameters are estimated at test time). 
+Outputs are pixelwise depth or 3D points, which can be transformed via extrinsics into a global point cloud 
+for downstream use. In this survey, we use feed-forward to denote methods whose primary reconstruction 
+signal is produced by learned network inference rather than classical per-scene SfM + MVS optimization. 
+We further distinguish strictly single-pass models from methods that additionally introduce lightweight 
+alignment, persistent state, or limited test-time adaptation during inference.
+2.2 Traditional pipelines
+As shown in Figure 1, classical 3D reconstruction follows a two-stage, optimization-based pipeline: SfM 
+first estimates camera intrinsics/extrinsics and a sparse 3D structure from feature matching, geometric 
+verification (e.g., RANSAC [6]), and global or incremental bundle adjustment (BA) [7]; MVS then computes 
+dense depth for each view by multi-view photometric/geometry consistency and fuses the results into a point 
+cloud or surface (e.g., [8]). These methods remain the solution of choice for applications that demand very 
+high accuracy and strict geometric consistency. However, they rely on per-scene optimization and complex 
+toolchains, which raise end-to-end latency and deployment complexity; they are also sensitive to wide 
+baselines, low or repetitive texture, non-Lambertian materials, and occlusions, where errors can accumulate 
+across stages.
+Figure 1　Reconstruction pipelines of different methods.
+267
+
+Virtual Reality & Intelligent Hardware June (2026) Vol. 8 No. 3 
+2.3 Neural reconstruction evolution
+Early learning-based methods such as MVSNet [9], DPSNet [10], and CasMVSNet [11] introduced learned 
+features and cost volumes on top of the traditional pipeline, improving matching quality and depth 
+estimation under moderate baselines. Compared with purely hand-crafted MVS, these methods learned 
+stronger image representations and more robust matching costs, but they still largely operated in a pose-
+aware setting and inherited the core logic of classical Multi-View Stereo: camera geometry was assumed to 
+be known or pre-estimated, and scene structure was recovered through staged cost-volume construction, 
+regularization, and depth regression. Although explicitly constructed cost volumes offer strong 
+controllability and interpretability, these systems remain modular and sequential: feature extraction, cost-
+volume aggregation, depth/pose estimation, and post-fusion are implemented as separate stages, and many 
+methods still rely on explicit multi-view aggregation or test-time refinement. Consequently, latency and 
+memory usage remain high, and the robustness issues of traditional pipelines are not fundamentally 
+resolved. In this sense, MVSNet-style methods can be viewed as learned extensions of the classical SfM + 
+MVS pipeline rather than a departure from it. Their main limitation is not only computational cost, but also 
+the fact that multi-view reasoning remains tightly tied to explicit geometric conditioning and staged depth 
+inference.
+The emergence of feed-forward models, exemplified by DUSt3R, VGGT, and their variants, marks a shift 
+from optimization-centered reconstruction to primarily feed-forward inference. In these models, Vision 
+Transformers [3] enable global correspondence reasoning across views without making classical per-scene 
+SfM + MVS optimization the dominant inference procedure. The key methodological shift is that recent 
+pointmap-based models move away from pose-conditioned cost-volume inference toward more direct 
+geometric prediction: DUSt3R regresses pointmaps from unposed image pairs and recovers pose and 
+correspondences from the predicted geometry, while later multi-view models strengthen scene-level 
+consistency and broader cross-view reasoning. VGGT pushes this trend further by processing many views 
+jointly within a unified transformer backbone, thereby integrating geometry, pose, and tracking into a single 
+multi-view prediction framework. This evolution improves the trade-off between accuracy and efficiency 
+and simplifies deployment, making these methods suitable for real-time or large-batch processing in AR/VR 
+and robotics.
+2.4 Datasets & evaluation metrics
+Datasets. Feed-forward 3D reconstruction models are highly data-driven, and their performance depends 
+strongly on the scale, diversity, and quality of the training data. However, compared with large-scale 2D 
+image datasets, existing 3D benchmarks are still relatively limited in number, coverage, and annotation 
+richness. In this survey, we therefore consider widely used indoor/outdoor and object/scene datasets, 
+combining real-world and synthetic sources [12] to probe robustness across texture, lighting, motion, and 
+viewpoint changes; their main characteristics are summarized in Table 1 [13–33]. For quantitative experiments 
+in Section 4, we focus on the DTU dataset [19], which provides calibrated multi-view scans and high-
+quality ground-truth geometry, and is one of the standard benchmarks for multi-view depth and point map 
+evaluation.
+Evaluation metrics. For multi-view depth and point map estimation on DTU, we report the three 
+standard metrics: accuracy (Acc.), completeness (Comp.), and their average Overall. Acc. is defined as the 
+mean distance from the predicted surface to the ground-truth surface, Comp. as the mean distance from the 
+ground truth to the prediction, and Overall as their symmetric average, i.e., a Chamfer-L2 distance between 
+268
+
+Zeyi ZHENG, et al. Feed-forward 3D reconstruction with point-cloud representations: From DUSt3R to VGGT and beyond
+the two point sets. Formally, let P̂ and P denote the predicted and ground-truth point sets, respectively. We 
+compute
+Acc. = 1
+|P̂| ∑
+X̂ Î P̂
+min
+X Î P 
+
+X̂ - X
+2 Comp. = 1
+|P| ∑
+X Î P
+min
+X̂ Î P̂ 
+
+X - X̂
+2
+and define
+Overall = Acc.+Comp.
+2
+.
+For point map estimation, we additionally report the average inference time per scene to highlight the 
+efficiency of different methods. For pose-related evaluation on ScanNet [14], we report the area under the 
+cumulative error curve (AUC) at angular thresholds of 5°, 10°, and 20°, which measures the accuracy of 
+relative camera pose estimation under different error tolerances.
+Protocol. For methods that assume known cameras, we use the ground-truth intrinsics and extrinsics 
+provided by each dataset (DTU in our geometry experiments). For pose-free feed-forward models, camera 
+parameters are estimated by the network and used to back-project depth maps into point clouds. All 
+predicted point clouds are rigidly aligned to the ground truth using a Sim(3) Umeyama alignment [34] 
+before computing Acc., Comp., and Overall. We follow the official evaluation code, masks, and valid depth 
+ranges of each dataset, and run all methods at the same image resolution under their standard inference 
+settings, without additional test-time finetuning beyond the reported pipeline.
+For pose-related evaluation, we use the ScanNet [14] test set and randomly sample 8 frames from each 
+Table 1　Representative 3D reconstruction datasets. GT = ground truth
+Dataset
+MegaDepth [13]
+ScanNet [14]/ScanNet++ [15]
+CO3Dv2 [16]
+Replica [17]
+ARKitScenes [18]
+DTU [19]
+ETH3D (Stereo) [20]
+BlendedMVS [21]
+Scene Flow [22]
+MVS-Synth [23]
+Waymo [24]
+DL3DV-10K [25]
+Kubric [26]
+WildRGB-D [27]
+Hypersim [28]
+Mapillary SLS [29]
+Virtual KITTI 2 [30]
+Aria Synthetic Environments 
+(ASE) [31]
+Aria Digital Twin (ADT) [32]
+Spatial-VID [33]
+Domain
+Outdoor
+Indoor
+Objects
+Indoor
+Indoor
+Objects (lab)
+Indoor/outdoor
+Indoor/outdoor 
+objects
+Indoor/outdoor
+Outdoor (urban)
+Outdoor (driving)
+Indoor/outdoor
+Objects
+Objects
+Indoor
+Outdoor
+Outdoor (driving)
+Indoor 
+(synthetic)
+Indoor
+Outdoor
+Scale
+196 scenes
+1006 scenes, 1.1M DSLR frames, 10M 
+iPhone frames
+19k videos, 1.5M frames, 50 categories
+18 scenes
+5k+ captures, 1.6k+ scenes
+124 scenes, 49/64 views each
+25 scenes
+113 scenes, 17k images
+35k+ stereo frames
+120 sequences, 12k frames
+1150 scenes, 20s @10Hz
+10510 videos, 51.2M frames
+Configurable generator
+8.5k objects, 20k RGB-D videos, 46 
+categories
+461 scenes, 77k images
+1.6M images in short sequences, 30 cities
+5 cloned sequences, 21k stereo pairs
+100k procedurally-generated apartment 
+scenes
+200 sequences in 2 scenes
+2.7M clips (7089 h)
+GT/Calib
+Poses, depth
+RGB-D, poses, semantics
+Poses, sparse point clouds
+Dense mesh, HDR textures, semantics
+RGB-D, poses, 3D boxes
+Poses, point clouds
+Poses, depth
+Rendered RGB + depth
+Flow, depth, poses
+Poses, depth
+Poses, 2D/3D boxes
+Poses, depth
+Poses, depth, flow, segmentation
+RGB-D, poses, masks, point clouds
+Poses, depth, normals, semantics, 
+materials/lighting
+GPS, compass heading, poses
+Poses, depth, flow, segmentation
+Poses, semi-dense maps, floorplans, 
+instance masks
+Poses, depth, 3D human/object poses, 
+segmentations
+Poses, depth, masks, captions, motions
+269
+
+Virtual Reality & Intelligent Hardware June (2026) Vol. 8 No. 3 
+scene for reconstruction. We then evaluate relative camera pose estimation using AUC@5°, AUC@10°, and 
+AUC@20°. For runtime comparison, we report average inference time under different input lengths (1, 2, 4, 
+and 8 frames). We note that some streaming-oriented methods, such as CUT3R, are not primarily optimized 
+for the 8-frame plus global-alignment setting used here, which should be taken into account when 
+interpreting their performance.
+3 Methodology review
+3.1 Stage I: early feed-forward models—DUSt3R
+Overview & architecture. As shown in Figure 1, DUSt3R [1] formulates pairwise reconstruction from 
+uncalibrated, unposed image pairs as pointmap regression: given (I1I2 ), a weight-sharing ViT encoder and 
+dual-branch Transformer decoder (self-attention per view, cross-attention across views) predict two pixel-
+aligned pointmaps in the first-view frame together with a dense confidence map. These outputs directly 
+provide per-pixel 3D geometry; camera intrinsics/extrinsics, depth, and correspondences are then recovered 
+from the pointmaps via standard estimators or the global alignment step, without bundle adjustment or test-
+time refinement. Moreover, the Transformer backbone can encode strong priors from large-scale training 
+data, giving DUSt3R a natural advantage in challenging cases such as sparse viewpoints, where classical 
+matching-based pipelines often fail.
+From pairs to multi-view. For N > 2 images, DUSt3R performs a lightweight global 3D alignment over 
+the connectivity graph: per-pair pointmaps with confidences are aligned to a common world frame using a 
+rigid transform and scale per edge. The objective minimizes confidence-weighted 3D point distances rather 
+than 2D reprojection errors. It is optimized by simple gradient descent, converging in seconds on a GPU to 
+yield globally consistent pointmaps and poses, without global bundle adjustment. This design preserves the 
+flexibility of pairwise prediction, but as the number of views grows, pair enumeration and post-hoc 
+alignment can become a bottleneck for both efficiency and global scene-level consistency.
+3.2 Stage II: 3R enhanced feature aggregation
+Rationale. While DUSt3R demonstrates that pairwise pointmap regression can replace multi-stage 
+optimization, it still aggregates information pairwise with post-fusion, which accumulates errors across 
+views, and treats pose and geometry largely in a serial manner. This motivates a broad family of DUSt3R-
+style extensions that improve representation quality, multi-view consistency, streaming capability, 
+efficiency, and adaptation to more challenging settings.
+Direction. Subsequent feed-forward methods address these issues by (i) raising representation quality for 
+stronger correspondences, (ii) cross-view reasoning via multi-view fusion or global 3D alignment inside the 
+network, and (iii) leveraging geometric regularization to stabilize aggregation. Beyond core accuracy, they 
+introduce specializations for multi-view inputs and streaming/long-context operation, efficiency-oriented 
+designs (distillation, sparse attention), and task/domain adaptations (e.g., autonomous driving, relocalization). 
+We emphasize that the following Stage II taxonomy is not strictly exclusive: it groups methods by their 
+primary functional emphasis, and several representative methods naturally span multiple categories. As 
+illustrated in Figure 2, the following subsections organize these developments by two-view strengthening, 
+multi-view/global consistency, streaming/long-context, efficiency, and dynamic-scene handling.
+3.2.1 Two-view strengthening: reconstruction quality
+Two-view strengthening keeps the DUSt3R-style pairwise setting but targets within-pair reliability: the aim 
+270
+
+Zeyi ZHENG, et al. Feed-forward 3D reconstruction with point-cloud representations: From DUSt3R to VGGT and beyond
+is to obtain denser, more accurate correspondences and higher-fidelity pointmaps for a given image pair.
+Specifically, MASt3R [35] augments the DUSt3R backbone with a dense descriptor head that outputs per-
+pixel feature maps and thereby sharpening pixel-level matching. It also introduces a fast reciprocal nearest-
+neighbor procedure that iteratively sub-samples and back-and-forth maps features to extract reliable 
+correspondences at much lower cost, and then couples these matches with pointmap regression for two-view 
+reconstruction. Building on these predictors, MASt3R-SfM [36] forms a training-free SfM pipeline that uses 
+MASt3R features for scalable retrieval and replaces RANSAC with a global 3D matching objective plus a 
+light 2D reprojection refinement, achieving near-linear complexity and robustness under few-view or pure-
+rotation cases.
+3.2.2 Multi-view/global consistency
+This line of work goes beyond pairwise fusion by enforcing cross-view coherence either through multi-view 
+fusion inside the network or via explicit global 3D alignment/registration, so that all inputs share a 
+consistent world frame without heavy BA. The goal is to reduce error accumulation across views and 
+improve scene-level consistency under larger multi-view inputs.
+Specifically, MV-DUSt3R+ [37] ingests many views in a single pass with multi-view decoder blocks and 
+cross-reference-view attention, removing the second-stage alignment and delivering large accuracy/runtime 
+gains for sparse inputs. MUSt3R [38] extends DUSt3R from pairwise prediction to a symmetric multi-view 
+architecture that predicts all views in a shared coordinate frame, replacing asymmetric pairwise decoding 
+with joint cross-view reasoning and introducing memory mechanisms to improve scalability beyond 
+quadratic pair enumeration. Regist3R [39] adopts an incremental strategy: given a reference image and its 
+world-frame pointmap, it predicts each target view’s pointmap in the same frame and schedules views with 
+a lightweight graph policy, enabling scalable autoregressive reconstruction across large, unordered 
+collections. Pow3R [40] injects versatile priors at test time—intrinsics, relative pose, and sparse/dense depth
+—through lightweight conditioning, enabling high-resolution sliding-window inference, and accelerating 
+pose via dual-coordinate pointmaps with Procrustes alignment [41].
+3.2.3 Streaming/long-context
+This thread targets online operation and long sequences, emphasizing constant-memory updates, stable 
+poses across thousands of frames, and real-time throughput. Compared with early strictly single-pass feed-
+forward models, methods in this category often introduce persistent state, recurrent updates, or lightweight 
+test-time adaptation to maintain consistency over long sequences. SLAM3R [42] integrates a sliding-
+window image-to-points module with a local-to-world registration network to incrementally fuse local 
+pointmaps into a globally consistent scene without explicitly solving camera parameters. Reloc3r [43] 
+complements reconstruction with a large-scale trained relative pose regression backbone and a minimalist 
+Figure 2　Taxonomy of stage II DUSt3R-style variants.
+271
+
+Virtual Reality & Intelligent Hardware June (2026) Vol. 8 No. 3 
+motion-averaging module, delivering fast, generalizable 6-DoF poses that can be plugged into streaming 
+pipelines. CUT3R [44] maintains a learnable persistent state for fully online 3D perception: for each frame it 
+predicts world-frame pointmaps and 6-DoF camera parameters, and exposes a raymap query to return 
+geometry from virtual unseen viewpoints; it runs on video streams or sparse photo sets and handles both 
+static and dynamic scenes. TTT3R [45] views recurrent 3D reconstruction as test-time training: it introduces 
+a confidence-guided, closed-form state update that improves length generalization and mitigates forgetting 
+in RNN-style models (e.g., CUT3R), yielding 20 FPS operation with low, nearly constant memory while 
+scaling to thousands of views.
+3.2.4 Efficiency
+This thread targets throughput and memory, aiming at scaling feed-forward reconstruction to hundreds or 
+thousands of images with seconds-level latency. Fast3R [46] processes many unposed views in one forward 
+pass via a ViT encoder and an all-to-all fusion transformer. It eliminates pairwise enumeration and global 
+alignment, scaling to 1000 + images while improving pose and geometry accuracy at much higher speed. 
+Light3R-SfM [47] replaces optimization-based global alignment with a latent global alignment attention 
+module and builds a sparse shortest-path scene graph for decoding, achieving competitive accuracy with 
+major runtime gains. Spann3R [48] enables online, incremental reconstruction by regressing each frame’s 
+pointmap directly in a global coordinate system using an external spatial memory.
+3.2.5 Dynamic scenes
+Dynamic scenes introduce additional ambiguity for feed-forward 3D reconstruction: object motion violates 
+the rigid-scene assumption behind pairwise pointmaps, breaks epipolar consistency, and makes it harder to 
+jointly estimate geometry and camera motion from videos. Recent DUSt3R-style methods have started to 
+address this setting while preserving the pointmap/point-cloud representation and mostly feed-forward 
+inference.
+At the representation level, recent work such as dynamic point maps (DPM) [49] reflects an important 
+extension from static pointmaps to dynamic or 4D pointmaps. Dynamic point maps explicitly models both 
+viewpoint and time, providing a more natural representation for jointly capturing geometry, motion, and 
+time-varying visibility in dynamic scenes.
+From the perspective of inference paradigm, most works adapt DUSt3R by finetuning on dynamic video 
+datasets with additional priors. MonST3R [50] extends the original pointmap formulation to per-timestep 
+geometry on dynamic videos and uses small-scale supervised finetuning for video depth and pose. Align3R 
+[51] couples a monocular depth estimator with a DUSt3R backbone, using pairwise pointmaps to align per-
+frame depth and recover temporally consistent video depth and camera trajectories. D2USt3R [52] keeps the 
+D2USt3R architecture but introduces motion-aware supervision to regress 4D pointmaps that align static and 
+dynamic regions jointly. Point3R [53] focuses on streaming reconstruction and maintains an explicit spatial 
+memory of 3D pointers, which can integrate information from dynamic sequences in a single pass. Driv3R 
+[54] targets at large-scale autonomous driving scenes: it predicts per-frame pointmaps from multi-view 
+camera rigs, augments DUSt3R with a temporal–spatial memory pool and a 4D flow predictor for dynamic-
+object focusing, and aligns per-frame pointmaps into a global coordinate frame in an optimization-free 
+manner, enabling real-time dense 4D reconstruction in driving scenarios. In contrast, Easi3R [55] follows a 
+training-free paradigm: it analyzes and reweights DUSt3R’s attention maps at inference time to decouple 
+camera and object motion, obtaining dynamic masks, camera poses, and 4D pointmaps without additional 
+finetuning. These methods therefore differ in inference behavior: MonST3R, Align3R, and D2USt3R remain 
+closer to feed-forward per-frame prediction, whereas Point3R and Driv3R rely more explicitly on spatial or 
+272
+
+Zeyi ZHENG, et al. Feed-forward 3D reconstruction with point-cloud representations: From DUSt3R to VGGT and beyond
+temporal memory, and Easi3R introduces inference-time attention reweighting to better disentangle camera 
+and object motion.
+3.3 Stage III: advanced frameworks—VGGT
+From DUSt3R to VGGT. Although DUSt3R is the first widely adopted model to demonstrate that a purely 
+data-driven, feed-forward paradigm can dramatically improve 3D reconstruction, its pairwise design makes 
+it difficult to train on and reason about an entire scene jointly. During training, the model only observes 
+image pairs; even if multi-view fusion is performed at test time, this fusion happens outside the network, so 
+the backbone itself never sees the full scene context. Incorporating fusion inside training would require 
+keeping many views and pointmaps in memory simultaneously, leading to huge GPU cost. In practice, this 
+also creates a characteristic trade-off: DUSt3R remains flexible for sparse or modular pairwise reasoning, 
+but its computation and post-hoc alignment cost grow unfavorably as the number of views increases.
+Unlike DUSt3R’s pairwise encoder-decoder with explicit cross-attention and a post-hoc global alignment 
+stage, VGGT [2] is a single, large transformer that ingests images at once and predicts cameras (intrinsics/
+extrinsics), depth maps, point maps, and dense tracking features in a single forward pass, as shown in Figure 
+1. The backbone alternates frame-wise and global self-attention layers (without cross-attention), balancing 
+per-frame normalization with cross-view information exchange. Special camera tokens and register tokens 
+are appended per frame, with the first frame marked by distinct learnable tokens so that all dense outputs are 
+expressed in the first-camera coordinate frame; dense heads (a DPT head [3]) map image tokens to depth, 
+point maps, uncertainties, and tracking features, while a dedicated camera head predicts intrinsics and 
+extrinsics.
+This design uses minimal hand-crafted 3D inductive biases, relying instead on scale and supervision from 
+diverse 3D-annotated data. Optional BA can further refine results, but the feed-forward predictions are 
+already competitive and typically run in sub-second for tens to hundreds of views. Compared with DUSt3R, 
+VGGT shifts more of the multi-view reasoning into the backbone itself, which improves scene-level 
+consistency and unifies geometry, pose, and tracking predictions, but also comes with a different systems 
+trade-off: stronger joint reasoning at the cost of higher memory pressure for large-scale inputs and long 
+sequences. Building on VGGT, recent variants target architecture, efficiency, and deployability in 
+complementary ways, which are summarized in Figure 3.
+π3 [56] enforces permutation equivariance by discarding reference-view camera tokens and predicting 
+affine-invariant cameras with scale-invariant per-view pointmaps under alternating view-wise/global self-
+attention, making performance robust to input ordering and improving convergence.
+Faster VGGT [57] replaces dense global attention with an adaptive block-sparse kernel, yielding up to 4´ 
+training-free inference speedups with minimal accuracy loss; FastVGGT [58] applies geometry-aware, 
+training-free token merging—preserving reference-frame and salient tokens while merging the rest—to 
+Figure 3　Taxonomy of stage III VGGT-based frameworks.
+273
+
+Virtual Reality & Intelligent Hardware June (2026) Vol. 8 No. 3 
+extend VRAM limits and deliver ≥4´ speedups on long sequences; and Quantized VGGT [59] uses post-
+training 4-bit quantization with rotation/smoothing and frame-aware calibration to cut memory by 3.7´ and 
+accelerate inference while retaining ≳98% of full-precision accuracy.
+VGGT-SLAM [60] builds a dense RGB SLAM system on top of VGGT by producing overlapping 
+submaps and aligning them on the SL(4) manifold to resolve the projective ambiguity that arises with 
+uncalibrated monocular cameras; loop closures and a global SL(4) factor-graph optimization yield consistent 
+large-scale maps beyond VGGT’s single-pass memory limits. VGGT-Long [61] extends VGGT to kilometer-
+scale streams by overlapping chunking, confidence-weighted Sim(3) alignment between adjacent chunks, and 
+lightweight loop detection with LM-based global optimization, all without retraining or calibration, 
+delivering competitive ATE and reconstruction on Waymo [24]/Virtual KITTI [30]. Streaming 4D visual 
+geometry transformer (StreamVGGT) [62] replaces offline global attention with a causal spatio-temporal 
+transformer and cached token memory, enabling incremental per-frame pose/depth/point-map outputs at 
+short latency; distilled from bidirectional VGGT and compatible with efficient attention operators (e.g., 
+FlashAttention [63]), it preserves accuracy while reducing online inference cost. These variants therefore 
+extend VGGT beyond strict single-pass inference in different ways: VGGT-SLAM and VGGT-Long rely on 
+downstream alignment and global optimization for long-range consistency, whereas StreamVGGT moves 
+toward stateful online inference with cached memory.
+Although rendering-oriented methods are outside the main scope of this survey, we briefly mention two 
+representative boundary extensions that reuse VGGT’s geometry priors for renderable scene representations. 
+MoVieS [64] adopts VGGT’s backbone and decoupled heads to jointly predict depth, per-pixel 3D Gaussian 
+attributes, and time-conditioned motion, enabling one-second feed-forward 4D novel-view synthesis and 
+dense 3D point tracking from monocular videos. AnySplat [65] trains a feed-forward 3DGS pipeline on 
+uncalibrated multi-view images, distilling camera and geometry priors from VGGT while introducing 
+differentiable voxelization to prune redundant Gaussians; a single pass outputs both camera intrinsics/
+extrinsics and voxelized Gaussians, delivering fast, pose-free novel-view synthesis.
+4 Experiments
+We evaluate representative methods on four aspects: (i) multi-view depth estimation on DTU, (ii) point map 
+estimation on DTU [19], (iii) runtime comparison under different input lengths, and (iv) pose-related 
+evaluation on ScanNet [14]. Since feed-forward reconstruction is highly data-driven, we focus on the DTU 
+benchmark, which provides calibrated multi-view scans and high-quality ground-truth geometry for 
+controlled comparison, while using ScanNet to complement the geometry analysis with pose-related 
+evaluation under a multi-frame reconstruction setting.
+4.1 Multi-view depth estimation on DTU
+We evaluate dense multi-view depth estimation on the DTU dataset. Following the official protocol, we use 
+the released evaluation code and report the three DTU metrics: Acc., Comp., and their average Overall 
+(symmetric Chamfer-L2). For pose-aware baselines, we supply the ground-truth intrinsics/extrinsics; for 
+pose-free feed-forward methods, camera parameters are estimated by the model and used to back-project 
+predicted depths before evaluation.
+Table 2 compares classical MVS pipelines and recent feed-forward approaches. Numbers are partially 
+quoted from the VGGT paper [2]. The upper block lists methods evaluated with known ground-truth 
+cameras; the lower block lists methods that do not assume known cameras. We note that the substantially 
+worse Acc. of DUSt3R should be interpreted with care, since it is evaluated in a pose-free setting and is 
+274
+
+Zeyi ZHENG, et al. Feed-forward 3D reconstruction with point-cloud representations: From DUSt3R to VGGT and beyond
+therefore not directly comparable to the pose-aware baselines in the upper block; the gap is also likely 
+amplified by scale ambiguity.
+4.2 Point map estimation on DTU
+We evaluate point map quality on DTU following the evaluation setup of π3 [56]: keyframes are selected 
+every 5 images, predicted point clouds are rigidly aligned to the ground truth using the Umeyama algorithm 
+in Sim(3) space, and we report Acc. and Comp., each with mean and median statistics. Numbers in Table 3 
+are partially quoted from π3 to ensure comparability. Qualitative reconstructions for selected scenes are 
+shown in Figure 4.
+4.3 Runtime comparison
+To complement the geometry evaluation, we compare the inference efficiency of representative methods 
+under different input lengths. All runtime measurements are conducted on a single NVIDIA L40 GPU with 
+46 GB memory, and all inputs are resized to 512 ´ 512. Specifically, we report the average inference time for 
+1, 2, 4, and 8 input frames, which reflects how well different architectures scale from short-context settings 
+to larger multi-view reconstruction problems. The results are summarized in Table 4. For pair-based 
+methods such as DUSt3R and FLARE, the 1-frame setting is not applicable because their inference pipeline 
+requires at least an image pair as input.
+As the number of input frames increases, unified feed-forward models such as VGGT and π3 show 
+substantially better scalability than pairwise DUSt3R-style reconstruction. In particular, DUSt3R remains 
+competitive at very small input sizes, but its runtime grows sharply from 0.169  s at 2 frames to 4.826  s at 8 
+frames, reflecting the cost of pairwise enumeration and post-hoc alignment. By contrast, VGGT and π3 
+increase much more gradually, indicating stronger efficiency under larger multi-view inputs. CUT3R is 
+particularly fast in the single-frame setting, but its advantage becomes less pronounced under the 8-frame 
+Table 2　Multi-view depth estimation on the DTU dataset. Data are quoted from VGGT [2]. Top block: methods with known ground-truth 
+cameras. Bottom block: methods that estimate cameras at test time. We report accuracy (Acc.), completeness (Comp.), and their average 
+Overall. Bold indicates the best result in each block
+Known GT camera
+√
+√
+√
+√
+√
+×
+×
+Method
+MVSNet [9]
+CIDER [66]
+PatchmatchNet [67]
+MASt3R [35]
+GeoMVSNet [68]
+DUSt3R [1]
+VGGT [2]
+Acc.¯
+0.396
+0.417
+0.427
+0.403
+0.331
+2.677
+0.389
+Comp.¯
+0.527
+0.437
+0.377
+0.344
+0.259
+0.805
+0.374
+Overall¯
+0.462
+0.427
+0.417
+0.374
+0.295
+1.741
+0.382
+Table 3　Point map estimation on DTU. Keyframes are selected every 5 images; predicted point clouds are aligned via Sim(3) Umeyama. We 
+report mean/median accuracy (Acc.) and completeness (Comp.). Baseline numbers are partially quoted from π3 [56]. Bold indicates the best 
+result
+Method
+Fast3R [46]
+CUT3R [44]
+FLARE [69]
+VGGT [2]
+π3 [56]
+Acc.¯
+Mean
+3.340
+4.742
+2.541
+1.338
+1.198
+Med.
+1.919
+2.600
+1.468
+0.779
+0.646
+Comp.¯
+Mean
+2.929
+3.400
+3.174
+1.896
+1.849
+Med.
+1.125
+1.316
+1.420
+0.992
+0.607
+275
+
+Virtual Reality & Intelligent Hardware June (2026) Vol. 8 No. 3 
+evaluation protocol used here, which is consistent with its design emphasis on long-sequence streaming 
+rather than short multi-frame reconstruction with global alignment.
+4.4 Pose-related evaluation on ScanNet [14]
+We further evaluate pose-related performance on the ScanNet [14] test set. For each scene, we randomly 
+sample 8 frames for multi-view reconstruction and report AUC@5°, AUC@10°, and AUC@20°, which 
+summarize the accuracy of relative camera pose estimation under different angular tolerances. The results 
+are shown in Table 5.
+Under this 8-frame multi-view setting, π3 achieves the best performance at all angular thresholds, followed 
+closely by VGGT, while both substantially outperform DUSt3R and FLARE. CUT3R performs worst in this 
+protocol, which is likely because its design is better matched to long-sequence streaming inference, whereas 
+the 8-frame reconstruction with global alignment used here is not its most favorable setting. Overall, the 
+results suggest that stronger joint multi-view reasoning improves not only depth and pointmap quality but 
+Figure 4　Qualitative comparison of point map reconstruction.
+Table 4　Average inference time (s) under different input lengths. All measurements are conducted on a single NVIDIA L40 GPU with 46 
+GB memory, and all input images are resized to 512 ´ 512. Lower is better
+Method
+VGGT [2]
+π3 [56]
+DUSt3R [1]
+FLARE [69]
+CUT3R [44]
+1 frame
+0.1840
+0.1540
+–
+–
+0.1066
+2 frames
+0.2030
+0.1540
+0.1690
+0.4330
+0.1812
+4 frames
+0.2460
+0.2010
+1.0310
+0.4660
+0.3500
+8 frames
+0.4340
+0.3780
+4.8260
+0.5760
+0.7285
+Table 5　Pose-related evaluation on the ScanNet [14] test set. For each scene, 8 frames are randomly sampled for multi-view reconstruction. 
+We report AUC@5°, AUC@10°, and AUC@20° for relative camera pose estimation. Higher is better. Bold indicates the best result
+Metric
+AUC@5°
+AUC@10°
+AUC@20°
+VGGT [2]
+0.2852
+0.5424
+0.7393
+π3 [56]
+0.3025
+0.5650
+0.7585
+DUSt3R [1]
+0.1251
+0.3360
+0.5479
+FLARE [69]
+0.1133
+0.2919
+0.5005
+CUT3R [44]
+0.0949
+0.2597
+0.4550
+276
+
+Zeyi ZHENG, et al. Feed-forward 3D reconstruction with point-cloud representations: From DUSt3R to VGGT and beyond
+also the recovery of consistent camera geometry.
+5 Analysis and discussion
+From the DTU tables and the qualitative figure above, the DTU results highlight the benefits of a unified 
+feed-forward architecture such as VGGT over both traditional SfM + MVS pipelines and earlier DUSt3R-
+style models. Classical pipelines decompose reconstruction into sparse SfM, dense MVS, and post-fusion, 
+which leads to high end-to-end latency and complex engineering. DUSt3R already simplifies this workflow 
+by replacing multi-stage optimization with pairwise pointmap regression followed by a lightweight global 
+alignment, but its pairwise design restricts the model to local context during training, and multi-view 
+consistency is only enforced post-hoc.
+In contrast, VGGT treats multi-view reconstruction as a single feed-forward prediction problem: a single 
+transformer ingests all views jointly and outputs cameras, depth, and pointmaps in one pass. Empirically, 
+this translates into higher Overall scores on DTU, strong pose-related performance on ScanNet [14], and 
+more favorable runtime scaling as the number of input frames increases. The runtime comparison shows that 
+unified models such as VGGT and π3 scale substantially better than pairwise DUSt3R-style reconstruction, 
+whereas CUT3R is most advantageous in settings closer to its intended streaming usage. Meanwhile, the 
+ScanNet pose evaluation suggests that stronger scene-level aggregation benefits not only depth and 
+pointmap prediction but also the recovery of consistent camera geometry. At the same time, these 
+comparisons also reveal a more nuanced systems trade-off: DUSt3R-style methods remain flexible under 
+sparse or modular settings, whereas VGGT-style models push more reasoning into the backbone itself, 
+improving scene-level consistency at the cost of higher memory pressure for larger inputs and longer 
+sequences.
+5.1 Existing challenges
+Despite the progress of DUSt3R-VGGT style models, several challenges remain. First, current feed-forward 
+reconstruction is strongly limited by data: large-scale 3D datasets with accurate poses, depth, semantics, and 
+material labels are still scarce compared to 2D image collections. As a result, models are often trained on a 
+relatively small set of benchmarks or rely on pseudo ground truth from SfM + MVS, which constrains 
+diversity and may propagate biases and noise from the teacher pipelines.
+Second, sparse-view reconstruction and novel-view synthesis remain difficult. Most pointmap-based 
+models are discriminative: they estimate geometry only for observed views and do not explicitly model the 
+full radiance field or shape distribution. Under very sparse viewpoints, the network cannot reliably infer 
+occluded or back-facing geometry, and there is no principled way to hallucinate plausible structure for 
+completely unseen regions, in contrast to generative NeRF- or diffusion-based approaches.
+Third, non-ideal materials and complex radiometry are still poorly handled. Semi-transparent and 
+reflective objects exhibit strong view-dependent effects that violate simple Lambertian assumptions; thin-
+shell structures (wires, fences, foliage) are close to or below pixel resolution; and very distant content such 
+as sky or horizon lies effectively at infinity. These factors challenge both the pointmap representation and 
+standard depth-based losses, leading to incomplete geometry, floaters, or over-smoothed reconstructions in 
+such regions.
+5.2 Future directions
+Looking ahead, a major frontier for feed-forward 3D reconstruction lies in extending current models to 
+dynamic scenes and in scaling training beyond the limited pool of curated 3D datasets. Truly annotated 3D 
+277
+
+Virtual Reality & Intelligent Hardware June (2026) Vol. 8 No. 3 
+data remain orders of magnitude scarcer than 2D images and videos; in practice, many recent models 
+already exhaust most publicly available 3D benchmarks plus sizable proprietary collections, yet are still far 
+from saturating Internet-scale data. Bridging this gap will likely require tighter integration between feed-
+forward architectures and differentiable rendering, so that rich 3D representations can be learned from 2D-
+level supervision at scale.
+Another emerging trend is the interaction with generative models. On the one hand, generative models of 
+3D or 4D content can provide high-quality synthetic datasets with controllable coverage of viewpoints, 
+materials, and motion, alleviating some of the data scarcity for supervised training. On the other hand, 
+generative priors can be used at inference time to hallucinate geometry for unseen viewpoints or occluded 
+regions, complementing the purely discriminative nature of current pointmap-based models.
+Efficiency and deployment are another key axis. Current VGGT-style architectures rely on dense per-pixel 
+pointmap prediction and full attention over tens of frames, which leads to high memory usage and energy 
+cost, and limits training to relatively small view counts (e.g., 24 images per batch). For mobile and edge 
+devices such as VR, lighter-weight representations and tokenization schemes are needed, such as 
+hierarchical or patch-wise 3D outputs, sparse or low-rank attention.
+Finally, safety and security considerations will become increasingly important as feed-forward 3D 
+reconstruction and view synthesis mature. High-quality 3D reconstructions and 4D scene models can be 
+abused for realistic forgeries, privacy-invasive content, or misleading digital twins. Future work should 
+therefore also address provenance tracking, robust watermarking for generated content, and mechanisms to 
+detect or limit malicious use, ensuring that advances in DUSt3R/VGGT-style models translate into 
+trustworthy and responsible 3D systems.
+Declaration of competing interest
+The authors declare that they have no conflict of interest.
+CRediT author statement
+Zeyi ZHENG: Investigation, Writing-Original draft. Xiong YANG: Investigation, Visualization. Ran YI: Conceptualization, 
+Supervision, Validation. Lizhuang MA: Supervision.
+References
+1 Wang S Z, Leroy V, Cabon Y, Chidlovskii B, Revaud J. DUSt3R: geometric 3D vision made easy. 2023, arXiv: 2312.14132 
+https://arxiv.org/abs/2312.14132
+2 Wang J Y, Chen M H, Karaev N, Vedaldi A, Rupprecht C, Novotny D. VGGT: visual geometry grounded transformer. 2025, arXiv: 2503.
+11651 
+https://arxiv.org/abs/2503.11651
+3 Ranftl R, Bochkovskiy A, Koltun V. Vision transformers for dense prediction. In: 2021 IEEE/CVF International Conference on Computer 
+Vision (ICCV). Montreal, QC, Canada, IEEE, 2021. 12159–12168 
+DOI: 10.1109/iccv48922.2021.01196
+4 Mildenhall B, Srinivasan P P, Tancik M, Barron J T, Ramamoorthi R, Ng R. NeRF: representing scenes as neural radiance fields for view 
+synthesis. In: Computer Vision–ECCV 2020. Cham: Springer International Publishing, 2020. 405–421 
+DOI: 10.1007/978-3-030-58452-8_24
+5 Kerbl B, Kopanas G, Leimkuehler T, Drettakis G. 3D Gaussian splatting for real-time radiance field rendering. ACM Transactions on 
+Graphics, 2023, 42(4): 1–14 
+DOI: 10.1145/3592433
+6 Fischler M A, Bolles R C. Random sample consensus: a paradigm for model fitting with applications to image analysis and automated 
+cartography. Communications of the ACM, 1981, 24(6): 381–395 
+DOI: 10.1145/358669.358692
+7 Triggs B, McLauchlan P F, Hartley R I, Fitzgibbon A W. Bundle adjustment: a modern synthesis. In: Vision Algorithms: Theory and 
+Practice. Berlin, Heidelberg: Springer, 2000. 298–372 
+278
+
+Zeyi ZHENG, et al. Feed-forward 3D reconstruction with point-cloud representations: From DUSt3R to VGGT and beyond
+DOI: 10.1007/3-540-44480-7_21
+8 Schönberger J L, Zheng E L, Frahm J M, Pollefeys M. Pixelwise view selection for unstructured multi-view stereo. In: Computer Vision–
+ECCV 2016. Cham: Springer International Publishing, 2016. 501–518 
+DOI: 10.1007/978-3-319-46487-9_31
+9 Yao Y, Luo Z X, Li S W, Fang T, Quan L. MVSNet: depth inference for unstructured multi-view stereo. In: Computer Vision–ECCV 
+2018. Cham: Springer International Publishing, 2018. 785–801 
+DOI: 10.1007/978-3-030-01237-3_47
+10 Im S, Jeon H G, Lin S, Kweon I S. DPSNet: end-to-end deep plane sweep stereo. 2019, arXiv: 1905.00538 
+https://arxiv.org/abs/1905.00538
+11 Gu X D, Fan Z W, Zhu S Y, Dai Z Z, Tan F T, Tan P. Cascade cost volume for high-resolution multi-view stereo and stereo matching. In: 
+2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Seattle, WA, USA, IEEE, 2020. 2492–2501 
+DOI: 10.1109/cvpr42600.2020.00257
+12 Gaidon A, Wang Q, Cabon Y, Vig E. VirtualWorlds as proxy for multi-object tracking analysis. In: 2016 IEEE Conference on Computer 
+Vision and Pattern Recognition (CVPR). Las Vegas, NV, USA, IEEE, 2016. 4340–4349 
+DOI: 10.1109/cvpr.2016.470
+13 Li Z Q, Snavely N. MegaDepth: learning single-view depth prediction from Internet photos. In: 2018 IEEE/CVF Conference on Computer 
+Vision and Pattern Recognition. Salt Lake City, UT, USA, IEEE, 2018. 2041–2050 
+DOI: 10.1109/cvpr.2018.00218
+14 Dai A, Chang A X, Savva M, Halber M, Funkhouser T, Nießner M. ScanNet: richly-annotated 3D reconstructions of indoor scenes. In: 
+2017 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Honolulu, HI, USA, IEEE, 2017. 2432–2443 
+DOI: 10.1109/cvpr.2017.261
+15 Yeshwanth C, Liu Y C, Nießner M, Dai A. ScanNet++: a high-fidelity dataset of 3D indoor scenes. In: 2023 IEEE/CVF International 
+Conference on Computer Vision (ICCV). Paris, France, IEEE, 2023. 12–22 
+DOI: 10.1109/iccv51070.2023.00008
+16 Reizenstein J, Shapovalov R, Henzler P, Sbordone L, Labatut P, Novotny D. Common objects in 3D: large-scale learning and evaluation 
+of real-life 3D category reconstruction. In: 2021 IEEE/CVF International Conference on Computer Vision (ICCV). Montreal, QC, 
+Canada, IEEE, 2021. 10881–10891 
+DOI: 10.1109/iccv48922.2021.01072
+17 Straub J, Whelan T, Ma L N, Chen Y F, Wijmans E, Green S, Engel J J, Mur-Artal R, Ren C, Verma S, Clarkson A, Yan M F, Budge B, 
+Yan Y J, Pan X Q, Yon J, Zou Y Y, Leon K, Carter N, Briales J, Gillingham T, Mueggler E, Pesqueira L, Savva M, Batra D, Strasdat H M, 
+De Nardi R, Goesele M, Lovegrove S, Newcombe R. The replica dataset: a digital replica of indoor spaces. 2019, arXiv: 1906.05797 
+https://arxiv.org/abs/1906.05797
+18 Baruch G, Chen Z Y, Dehghan A, Dimry T, Feigin Y, Fu P, Gebauer T, Joffe B, Kurz D, Schwartz A, Shulman E. ARKitScenes: a diverse 
+real-world dataset for 3D indoor scene understanding using mobile RGB-D data. 2021, arXiv: 2111.08897 
+https://arxiv.org/abs/2111.08897
+19 Jensen R, Dahl A, Vogiatzis G, Tola E, Aanaes H. Large scale multi-view stereopsis evaluation. In: 2014 IEEE Conference on Computer 
+Vision and Pattern Recognition. Columbus, OH, USA, IEEE, 2014. 406–413 
+DOI: 10.1109/cvpr.2014.59
+20 Schöps T, Schönberger J L, Galliani S, Sattler T, Schindler K, Pollefeys M, Geiger A. A multi-view stereo benchmark with high-resolution 
+images and multi-camera videos. In: 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). Honolulu, HI, USA, 
+IEEE, 2017. 2538–2547 
+DOI: 10.1109/cvpr.2017.272
+21 Yao Y, Luo Z X, Li S W, Zhang J Y, Ren Y F, Zhou L, Fang T, Quan L. BlendedMVS: a large-scale dataset for generalized multi-view 
+stereo networks. In: 2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Seattle, WA, USA, IEEE, 2020. 
+1787–1796 
+DOI: 10.1109/cvpr42600.2020.00186
+22 Mayer N, Ilg E, Häusser P, Fischer P, Cremers D, Dosovitskiy A, Brox T. A large dataset to train convolutional networks for disparity, 
+optical flow, and scene flow estimation. In: 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). Las Vegas, NV, 
+USA, IEEE, 2016. 4040–4048 
+DOI: 10.1109/cvpr.2016.438
+23 Huang P H, Matzen K, Kopf J, Ahuja N, Huang J B. DeepMVS: learning multi-view stereopsis. 2018, arXiv: 1804.00650 
+https://arxiv.org/abs/1804.00650
+24 Sun P, Kretzschmar H, Dotiwalla X, Chouard A, Patnaik V, Tsui P, Guo J, Zhou Y, Chai Y, Caine B, Vasudevan V, Han W, Ngiam J, Zhao 
+H, Timofeev A, Ettinger S, Krivokon M, Gao A, Joshi A, Zhao S, Cheng S, Zhang Y, Shlens J, Chen Z, Anguelov D. Scalability in 
+perception for autonomous driving: Waymo Open Dataset. 2019, arXiv: 1912.04838 
+https://arxiv.org/abs/1912.04838
+279
+
+Virtual Reality & Intelligent Hardware June (2026) Vol. 8 No. 3 
+25 Ling L, Sheng Y C, Tu Z, Zhao W T, Xin C, Wan K, Yu L T, Guo Q Y, Yu Z X, Lu Y W, Li X M, Sun X P, Ashok R, Mukherjee A, Kang 
+H, Kong X R, Hua G, Zhang T Y, Benes B, Bera A. DL3DV-10K: a large-scale scene dataset for deep learning-based 3D vision. 2023, 
+arXiv: 2312.16256 
+https://arxiv.org/abs/2312.16256
+26 Greff K, Belletti F, Beyer L, Doersch C, Du Y L, Duckworth D, Fleet D J, Gnanapragasam D, Golemo F, Herrmann C, Kipf T, Kundu A, 
+Lagun D, Laradji I, Liu H T, Meyer H, Miao Y S, Nowrouzezahrai D, Oztireli C, Pot E, Radwan N, Rebain D, Sabour S, Sajjadi M S M, 
+Sela M, Sitzmann V, Stone A, Sun D Q, Vora S, Wang Z Y, Wu T H, Yi K M, Zhong F C, Tagliasacchi A. Kubric: a scalable dataset 
+generator. 2022, arXiv: 2203.03570 
+https://arxiv.org/abs/2203.03570
+27 Xia H C, Fu Y, Liu S F, Wang X L. RGBD objects in the wild: scaling real-world 3D object learning from RGB-D videos. In: 2024 IEEE/
+CVF Conference on Computer Vision and Pattern Recognition (CVPR). Seattle, WA, USA, IEEE, 2024. 22378–22389 
+DOI: 10.1109/cvpr52733.2024.02112
+28 Roberts M, Ramapuram J, Ranjan A, Kumar A, Bautista M A, Paczan N, Webb R, Susskind J M. Hypersim: a photorealistic synthetic 
+dataset for holistic indoor scene understanding. In: 2021 IEEE/CVF International Conference on Computer Vision (ICCV). Montreal, QC, 
+Canada, IEEE, 2021. 10892–10902 
+DOI: 10.1109/iccv48922.2021.01073
+29 Warburg F, Hauberg S, Lopez-Antequera M, Gargallo P, Kuang Y B, Civera J. Mapillary street-level sequences: a dataset for lifelong 
+place recognition. In: 2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Seattle, WA, USA, IEEE, 2020. 
+2623–2632 
+DOI: 10.1109/cvpr42600.2020.00270
+30 Cabon Y, Murray N, Humenberger M. Virtual KITTI 2. 2020, arXiv: 2001.10773 
+https://arxiv.org/abs/2001.10773
+31 Engel J, Somasundaram K, Goesele M, Sun A, Gamino A, Turner A, Talattof A, Yuan A, Souti B, Meredith B, Peng C, Sweeney C, Wilson 
+C, Barnes D, DeTone D, Caruso D, Valleroy D, Ginjupalli D, Frost D, Miller E, Mueggler E, Oleinik E, Zhang F, Somasundaram G, 
+Solaira G, Lanaras H, Howard-Jenkins H, Tang H, Kim H J, Rivera J, Luo J, Dong J, Straub J, Bailey K, Eckenhoff K, Ma L N, Pesqueira 
+L, Schwesinger M, Monge M, Yang N, Charron N, Raina N, Parkhi O, Borschowa P, Moulon P, Gupta P, Mur-Artal R, Pennington R, 
+Kulkarni S, Miglani S, Gondi S, Solanki S, Diener S, Cheng S Y, Green S, Saarinen S, Patra S, Mourikis T, Whelan T, Singh T, Balntas V, 
+Baiyya V, Dreewes W, Pan X Q, Lou Y, Zhao Y P, Mansour Y, Zou Y Y, Lv Z Y, Wang Z J, Yan M F, Ren C, De Nardi R, Newcombe R. 
+Project aria: a new tool for egocentric multi-modal AI research. 2023, arXiv: 2308.13561 
+https://arxiv.org/abs/2308.13561
+32 Pan X Q, Charron N, Yang Y Q, Peters S, Whelan T, Kong C, Parkhi O, Newcombe R, Ren Y C. Aria digital twin: a new benchmark 
+dataset for egocentric 3D machine perception. In: 2023 IEEE/CVF International Conference on Computer Vision (ICCV). Paris, France, 
+IEEE, 2023. 20076–20086 
+DOI: 10.1109/iccv51070.2023.01842
+33 Wang J H, Yuan Y F, Zheng R J, Lin Y T, Gao J, Chen L Z, Bao Y J, Zhang Y, Zeng C, Zhou Y X, Long X X, Zhu H, Zhang Z X, Cao X, 
+Yao Y. SpatialVID: a large-scale video dataset with spatial annotations. 2025, arXiv: 2509.09676 
+https://arxiv.org/abs/2509.09676
+34 Umeyama S. Least-squares estimation of transformation parameters between two point patterns. IEEE Transactions on Pattern Analysis 
+and Machine Intelligence, 1991, 13(4): 376–380 
+DOI: 10.1109/34.88573
+35 Leroy V, Cabon Y, Revaud J. Grounding image matching in 3D with MASt3R. In: Computer Vision–ECCV 2024. Cham: Springer Nature 
+Switzerland, 2024. 71–91 
+DOI: 10.1007/978-3-031-73220-1_5
+36 Duisterhof B P, Zust L, Weinzaepfel P, Leroy V, Cabon Y, Revaud J. MASt3R-SfM: a fully-integrated solution for unconstrained structure-
+from-motion. In: 2025 International Conference on 3D Vision (3DV). Singapore, IEEE, 2025. 1–10 
+DOI: 10.1109/3dv66043.2025.00008
+37 Tang Z G, Fan Y C, Wang D L, Xu H Y, Ranjan R, Schwing A, Yan Z C. MV-DUSt3R+: single-stage scene reconstruction from sparse 
+views in 2 seconds. In: 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Nashville, TN, USA, IEEE, 
+2025. 5283–5293 
+DOI: 10.1109/cvpr52734.2025.00498
+38 Cabon Y, Stoffl L, Antsfeld L, Csurka G, Chidlovskii B, Revaud J, Leroy V. MUSt3R: multi-view network for stereo 3D reconstruction. 
+In: 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Nashville, TN, USA, IEEE, 2025. 1050–1060 
+DOI: 10.1109/cvpr52734.2025.00106
+39 Liu S D, Li W Y, Qiao P, Dou Y. Regist3R: incremental registration with stereo foundation model. In: Proceedings of the 33rd ACM 
+International Conference on Multimedia. Dublin Ireland, ACM, 2025. 4484–4493 
+DOI: 10.1145/3746027.3755466
+280
+
+Zeyi ZHENG, et al. Feed-forward 3D reconstruction with point-cloud representations: From DUSt3R to VGGT and beyond
+40 Jang W, Weinzaepfel P, Leroy V, Agapito L, Revaud J. Pow3R: empowering unconstrained 3D reconstruction with camera and scene 
+priors. In: 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Nashville, TN, USA, IEEE, 2025. 1071–
+1081 
+DOI: 10.1109/cvpr52734.2025.00108
+41 Luo B, Hancock E R. Procrustes alignment with the EM algorithm. In: Computer Analysis of Images and Patterns. Berlin, Heidelberg: 
+Springer, 1999. 623–631 
+DOI: 10.1007/3-540-48375-6_74
+42 Liu Y Z, Dong S Y, Wang S Z, Yin Y D, Yang Y C, Fan Q N, Chen B Q. SLAM3R: real-time dense scene reconstruction from monocular 
+RGB videos. In: 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Nashville, TN, USA, IEEE, 2025. 
+16651–16662 
+DOI: 10.1109/cvpr52734.2025.01552
+43 Dong S Y, Wang S Z, Liu S H, Cai L L, Fan Q N, Kannala J, Yang Y C. Reloc3r: large-scale training of relative camera pose regression for 
+generalizable, fast, and accurate visual localization. In: 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition 
+(CVPR). Nashville, TN, USA, IEEE, 2025. 16739–16752 
+DOI: 10.1109/cvpr52734.2025.01560
+44 Wang Q Q, Zhang Y F, Holynski A, Efros A A, Kanazawa A. Continuous 3D perception model with persistent state. In: 2025 IEEE/CVF 
+Conference on Computer Vision and Pattern Recognition (CVPR). Nashville, TN, USA, IEEE, 2025. 10510–10522 
+DOI: 10.1109/cvpr52734.2025.00983
+45 Chen X Y, Chen Y, Xiu Y L, Geiger A, Chen A P. TTT3R: 3D reconstruction as test-time training. 2025, arXiv: 2509.26645 
+https://arxiv.org/abs/2509.26645
+46 Yang J N, Sax A, Liang K J, Henaff M, Tang H, Cao A, Chai J, Meier F, Feiszli M. Fast3R: towards 3D reconstruction of 1000+ images in 
+one forward pass. In: 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Nashville, TN, USA, IEEE, 
+2025. 21924–21935 
+DOI: 10.1109/cvpr52734.2025.02042
+47 Elflein S, Zhou Q J, Leal-Taixé L. Light3R-SfM: towards feed-forward structure-from-motion. In: 2025 IEEE/CVF Conference on 
+Computer Vision and Pattern Recognition (CVPR). Nashville, TN, USA, IEEE, 2025. 16774–16784 
+DOI: 10.1109/cvpr52734.2025.01563
+48 Wang H Y, Agapito L. 3D reconstruction with spatial memory. In: 2025 International Conference on 3D Vision (3DV). Singapore, IEEE, 
+2025. 78–89 
+DOI: 10.1109/3dv66043.2025.00013
+49 Sucar E, Lai Z H, Insafutdinov E, Vedaldi A. Dynamic point maps: a versatile representation for dynamic 3D reconstruction. In: 2025 
+IEEE/CVF International Conference on Computer Vision (ICCV). Honolulu, HI, USA, IEEE, 2025. 7295–7305 
+DOI: 10.1109/iccv51701.2025.00685
+50 Zhang J Y, Herrmann C, Hur J, Jampani V, Darrell T, Cole F, Sun D Q, Yang M H. MonST3R: a simple approach for estimating geometry 
+in the presence of motion. 2024, arXiv: 2410.03825 
+https://arxiv.org/abs/2410.03825
+51 Lu J H, Huang T Y, Li P, Dou Z Y, Lin C, Cui Z M, Dong Z, Yeung S K, Wang W P, Liu Y. Align3R: aligned monocular depth estimation 
+for dynamic videos. 2024, arXiv: 2412.03079 
+https://arxiv.org/abs/2412.03079
+52 Han J S, An H G, Jung J W, Narihira T, Seo J Y, Fukuda K, Kim C H, Hong S H, Mitsufuji Y, Kim S R. D2USt3R: enhancing 3D 
+reconstruction with 4D pointmaps for dynamic scenes. 2025, arXiv: 2504.06264v1 
+https://arxiv.org/abs/2504.06264v1
+53 Wu Y Q, Zheng W Z, Zhou J, Lu J W. Point3R: streaming 3D reconstruction with explicit spatial pointer memory. 2025, arXiv: 2507.
+02863 
+https://arxiv.org/abs/2507.02863
+54 Fei X, Zheng W Z, Duan Y Q, Zhan W, Tomizuka M, Keutzer K, Lu J W. Driv3R: learning dense 4D reconstruction for autonomous 
+driving. 2024, arXiv: 2412.06777 
+https://arxiv.org/abs/2412.06777
+55 Chen X Y, Chen Y, Xiu Y L, Geiger A, Chen A P. Easi3R: estimating disentangled motion from DUSt3R without training. In: 2025 IEEE/
+CVF International Conference on Computer Vision (ICCV). Honolulu, HI, USA, IEEE, 2025. 9158–9168 
+DOI: 10.1109/iccv51701.2025.00856
+56 Wang Y F, Zhou J J, Zhu H Y, Chang W Z, Zhou Y, Li Z Z, Chen J Y, Pang J M, Shen C H, He T. π3: permutation-equivariant visual 
+geometry learning. 2025, arXiv: 2507.13347 
+https://arxiv.org/abs/2507.13347
+57 Wang C B, Schmidt C, Piekenbrinck J, Leibe B. Faster VGGT with block-sparse global attention. 2025, arXiv: 2509.07120 
+https://arxiv.org/abs/2509.07120
+281
+
+Virtual Reality & Intelligent Hardware June (2026) Vol. 8 No. 3 
+58 Shen Y, Zhang Z P, Qu Y S, Zheng X W, Ji J Y, Zhang S C, Cao L J. FastVGGT: training-free acceleration of visual geometry transformer. 
+2025, arXiv: 2509.02560 
+https://arxiv.org/abs/2509.02560
+59 Feng W L, Qin H T, Wu M Q, Yang C G, Li Y Q, Li X Q, An Z L, Huang L B, Zhang Y L, Magno M, Xu Y J. Quantized visual geometry 
+grounded transformer. 2025, arXiv: 2509.21302 
+https://arxiv.org/abs/2509.21302
+60 Maggio D, Lim H, Carlone L. VGGT-SLAM: dense RGB SLAM optimized on the SL(4) manifold. 2025, arXiv: 2505.12549 
+https://arxiv.org/abs/2505.12549
+61 Deng K, Ti Z X, Xu J W, Yang J, Xie J. VGGT-Long: chunk it, loop it, align it—pushing VGGT’s limits on kilometer-scale long RGB 
+sequences. 2025, arXiv: 2507.16443 
+https://arxiv.org/abs/2507.16443
+62 Zhuo D, Zheng W Z, Guo J H, Wu Y Q, Zhou J, Lu J W. Streaming 4D visual geometry transformer. 2025, arXiv: 2507.11539 
+https://arxiv.org/abs/2507.11539
+63 Dao T, Fu D Y, Ermon S, Rudra A, Ré C. FlashAttention: fast and memory-efficient exact attention with IO-awareness. 2022, arXiv: 2205.
+14135 
+https://arxiv.org/abs/2205.14135
+64 Lin C G, Lin Y C, Pan P W, Yu Y F, Hu T, Yan H L, Fragkiadaki K, Mu Y D. MoVieS: motion-aware 4D dynamic view synthesis in one 
+second. 2025, arXiv: 2507.10065 
+https://arxiv.org/abs/2507.10065
+65 Jiang L H, Mao Y C, Xu L N, Lu T, Ren K R, Jin Y C, Xu X D, Yu M L, Pang J M, Zhao F, Lin D H, Dai B. AnySplat: feed-forward 3D 
+Gaussian splatting from unconstrained views. ACM Transactions on Graphics, 2025, 44(6): 1–16 
+DOI: 10.1145/3763326
+66 Xu Q S, Tao W B. Learning inverse depth regression for multi-view stereo with correlation cost volume. Proceedings of the AAAI 
+Conference on Artificial Intelligence, 2020, 34(7): 12508–12515 
+DOI: 10.1609/aaai.v34i07.6939
+67 Wang F, Galliani S, Vogel C, Speciale P, Pollefeys M. PatchmatchNet: learned multi-view patchmatch stereo. In: 2021 IEEE/CVF 
+Conference on Computer Vision and Pattern Recognition (CVPR). Nashville, TN, USA, IEEE, 2021. 14189–14198 
+DOI: 10.1109/cvpr46437.2021.01397
+68 Zhang Z, Peng R, Hu Y X, Wang R G. GeoMVSNet: learning multi-view stereo with geometry perception. In: 2023 IEEE/CVF 
+Conference on Computer Vision and Pattern Recognition (CVPR). Vancouver, BC, Canada, IEEE, 2023. 21508–21518 
+DOI: 10.1109/cvpr52729.2023.02060
+69 Zhang S Z, Wang J Y, Xu Y H, Xue N, Rupprecht C, Zhou X W, Shen Y J, Wetzstein G. FLARE: feed-forward geometry, appearance and 
+camera estimation from uncalibrated sparse views. In: 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). 
+Nashville, TN, USA, IEEE, 2025. 21936–21947 
+DOI: 10.1109/cvpr52734.2025.02043
+282

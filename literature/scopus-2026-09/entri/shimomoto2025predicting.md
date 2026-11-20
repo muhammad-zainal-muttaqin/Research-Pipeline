@@ -71,4 +71,3 @@ mencakup enam baris dan dilakukan pada musim dingin, sehingga pengaruh musim
 panas serta keragaman hasil di seluruh area perlu dinilai. Penulis juga
 menyatakan WAPE 21,35% belum tinggi dan dapat ditingkatkan dengan memasukkan
 cuaca, kecepatan pematangan, dan lebih banyak baris pantauan.
-

@@ -66,4 +66,3 @@ karena deteksi positif palsu diperkuat oleh pelacak. Penulis menyatakan
 penerapan pada morfologi tanaman lain memerlukan kalibrasi ulang, dan
 mengusulkan pelacakan berbasis pembelajaran mendalam serta metode asosiasi
 seperti StrongSORT untuk pekerjaan berikutnya.
-

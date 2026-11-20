@@ -1,0 +1,1906 @@
+Computers and Electronics in Agriculture 224 (2024) 109175
+Available online 1 July 2024
+0168-1699/© 2024 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies.
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+Original papers
+Probability map-based grape detection and counting✩
+Canchen Yang a, Tianyu Geng a,∗, Jian Peng a, Zichen Song b
+a College of Computer Science, Sichuan University, No. 24, Section 1, South First Ring Road, Chengdu, 610065, China
+b College of Electronics and Information Engineering, Sichuan University, No. 24, Section 1, South First Ring Road, Chengdu, 610065, China
+A R T I C L E
+I N F O
+Keywords:
+Digital viticulture
+Grape phenotyping
+Grape detection and counting
+Deep learning
+Probability map
+A B S T R A C T
+Grape-cluster detection, grape-berry counting, and berry-per-grape-cluster counting are the three major tasks
+in digital viticulture. Although the detection of clusters and berries was treated as separate tasks in previous
+studies, due to the clustered nature of the grape phenotype and the close hierarchical spatial distribution
+relationship between grape clusters and berries, those three tasks should be considered at the same time in
+our view; further, we define these tasks as subtasks of the grape detection and counting task. The major
+challenge of combining the three subtasks of grape detection and counting together is how to obtain the
+detection results of those subtasks from the output of a single neural network. To address this issue, we
+propose a Probability Map-based Grape Detection and Counting framework that first detects two intermediate
+probability maps through a neural network and utilizes three postprocessing stages to finish the three grape
+detection and counting subtasks sequentially. After being trained and validated on the trainval set of WGISD,
+combining 100 extra images collected in Chengdu by our team, the proposed framework is tested on the test set
+of WGISD to verify its performance. The proposed framework achieves a localization performance of average
+precision (AP)(iou0.5) 0.851 and a counting performance of MAE 1.845, RMSE 2.142 for grape clusters, a
+counting performance of MAE 23.414, RMSE 31.391 for grape berries, and a counting performance of MRD
+0.142, 1-FVU 0.865 for berries per grape cluster on the test set of WGISD. Our source code will be publicly
+available at https://github.com/volcanoYcc/Probability-Map-based-Grape-Detection-and-Counting.
+1. Introduction
+Digital viticulture, which combines computer technology with grape
+production and deploys various sensors in the vineyard to monitor the
+environmental information and growth conditions of grapes in real
+time, can provide a series of reference bases for grape production
+management activities (Mohimont et al., 2022). Many previous studies
+have focused on using computer vision technology to address practical
+issues in vineyards, and the main research tasks include predicting
+grape yield (Parr et al., 2023), analyzing grape maturity (Rahman and
+Hellicar, 2014), detecting grape diseases and pests (Bömer et al., 2020),
+determining grape picking point locations (Zhao et al., 2022), and
+judging whether pruning is needed (Buayai et al., 2023). In particular,
+the detection and counting of grape clusters and berries is the most
+basic and common computer vision task in digital viticulture.
+The fruit detection and counting task is clear for common non-
+clustered fruits such as mangoes (Liu et al., 2019), strawberries (Yu
+et al., 2019), apples (Kang and Chen, 2020), and blueberries (Ni et al.,
+2020). However, since grapes are clustered fruits, they have grape
+clusters, grape berries, and berries per grape cluster as phenotype
+✩This document is the results of the research project funded by the Nation Natural Science Foundation of China (No. 61906126).
+∗Corresponding author.
+E-mail address: tygeng@scu.edu.cn (T. Geng).
+characteristics, which brings more challenges to grape detection tasks.
+Therefore, how to correctly utilize these three phenotype characteristics
+to describe the grape phenotype more comprehensively and accurately
+achieve the specific grape detection task is the key issue that needs
+to be addressed in digital viticulture. Previous studies divided the
+detection and counting of grapes into three independent tasks: (1) the
+grape-cluster detection task; (2) the grape-berry counting task; and
+(3) the berry-per-grape-cluster counting task. Furthermore, the studies
+proposed many methods for achieving them separately.
+We notice that since grape clusters are composed of multiple grape
+berries, the process of detecting the bounding boxes of each cluster
+can also be equivalent to detecting all the grape berries contained in
+each cluster. Moreover, after locating all the berries in a cluster, the
+bounding box of that cluster can be easily determined using the location
+of these berries. In addition, without producing duplicate detection,
+missed detection, and false detection, the location and counting results
+of grape berries in the whole image, after removing the interference of
+discrete berries, are equivalent to the union of berry detection results
+in all grape clusters. Considering those relevance and existing studies
+https://doi.org/10.1016/j.compag.2024.109175
+Received 25 October 2023; Received in revised form 26 April 2024; Accepted 11 June 2024
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+2
+C. Yang et al.
+Fig. 1. Grape detection and counting subtasks. (a) Grape-cluster detection task. (b) Grape-berry counting task. (c) Berry-per-grape-cluster counting task.
+comprehensively, grape berries, grape clusters, and grape berries con-
+tained in each cluster have strong correlations in spatial distribution,
+visual features, and even features extracted by neural networks. There-
+fore, compared with finishing the three visual grape detection tasks
+separately, it should be better to regard them as a closely related whole
+and complete them at the same time.
+In the present study, we define the grape-cluster detection task,
+the grape-berry counting task, and the berry-per-grape-cluster counting
+task as subtasks of the grape detection and counting task, as shown in
+Fig. 1. Although the grape-cluster detection task and the grape-berry
+counting task can easily be achieved with a general neural network,
+due to the difficulty of simultaneously expressing the two uncertain
+quantities of ‘‘clusters’’ and ‘‘berries contained in each cluster’’, the
+berry-per-grape-cluster counting task is challenging to directly abstract
+as output for end-to-end neural networks. Thus, to combine the three
+subtasks of the grape detection and counting task together and improve
+the interpretability of the framework, we decouple the grape detection
+and counting task into three postprocessing stages of a neural network
+to propose a comprehensive detection framework named Probability
+Map-based Grape Detection and Counting (PMGDC). PMGDC first uti-
+lizes a neural network to predict intermediate probability maps of grape
+clusters and grape berries. Subsequently, in three postprocessing stages,
+PMGDC uses the local peak method and the newly proposed Up-Hill and
+Down-Hill methods to extract the detection results of grape clusters,
+grape berries, and grape berries contained in each cluster from the
+probability maps, completing the grape detection and counting task
+with only one detection.
+The main contributions of this paper are as follows:
+1. For the first time, a systematic analysis of the detection and
+counting of grapes is conducted, and the grape detection and
+counting task is defined as the aggregation of the grape-cluster
+detection task, the grape-berry counting task, and the berry-per-
+grape-cluster counting task.
+2. For the first time, while representing the location of grape
+clusters and grape berries, probability maps are used to represent
+the spatial containment correlation between grape clusters and
+grape berries.
+3. Two postprocessing algorithms for the probability maps of grape
+clusters and grape berries are proposed to address the issue of
+completing multiple grape detection tasks with a single neural
+network. These methods obtain the grape berries contained in
+each grape cluster and the bounding boxes of grape clusters by
+analyzing the gradient of the grape probability maps.
+4. A grape detection and counting framework named PMGDC is
+designed to complete three subtasks of the grape detection and
+counting task simultaneously. This framework achieves a local-
+ization performance of average precision (AP) (iou0.5) 0.851
+and a counting performance of MAE 1.845, RMSE 2.142 for
+grape clusters, a counting performance of MAE 23.414, RMSE
+31.391 for grape berries, and a counting performance of MRD
+0.142, 1-FVU 0.865 for berries per grape cluster on the test set
+of WGISD.
+2. Related studies
+Grape-cluster detection task, that is, detecting grape clusters in
+the image and counting their number. Grape-cluster detection has
+multiple applications, such as combining the counting results with the
+average weight of grape clusters obtained from historical sampling
+surveys to predict the total grape production in a specified area. By
+determining the location of grape clusters, it can help picking robots
+infer the picking point of each grape cluster and improve the efficiency
+of grape picking. The detection of grape clusters started with machine
+learning methods that distinguish grape clusters from the background
+based on the difference in light and color between grape clusters and
+the background (Luo et al., 2016). However, these detection methods
+are limited by color changes caused by different grape varieties and
+differences in light conditions at different times. After the rapid devel-
+opment of deep learning technology, many researchers have migrated
+object detection (Akai et al., 2021) and instance segmentation (Santos
+et al., 2020) techniques to the field of grape-cluster detection, obtaining
+more accurate detection and counting results. Other researchers have
+combined the semantic segmentation technique with 3D reconstruction
+of grape clusters (Hacking et al., 2019) to model the vineyard scene
+while detecting grape clusters in a three-dimensional space.
+Grape-berry counting task, which is to detect the number of grape
+berries in the image. Compared with grape clusters, grape berries are
+smaller in volume and are more dense targets. Since the volume and
+weight differences between each grape berry are often significantly
+smaller than those between different grape clusters, the grape-berry
+count can be used to obtain a more accurate grape yield estimation
+after combining the average weight of grape berries obtained from
+historical sampling surveys. Furthermore, some studies have shown
+that grape berries contribute approximately 60% to the estimation
+of grape yield, while grape clusters contribute only approximately
+30% (Nuske et al., 2014). Studies using machine learning methods to
+detect grape berries utilize Hough circle detection and other methods
+to identify the ‘‘circular’’ shape of grape berries and locate them (Nuske
+et al., 2014). The performance of the method is affected by occlusion
+between berries and cannot recognize nonspherical grape varieties. On
+the one hand, studies of detecting grape berries with deep learning
+methods regard grape berries as instance objects, similar to the stud-
+ies of detecting grape clusters, and use object detection (Śkrabánek,
+2018) and instance segmentation (Aquino et al., 2017; Zabawa et al.,
+2020) methods to identify them. On the other hand, many studies
+also regard grape berries as dense objects, ignoring their shape and
+migrating crowd counting methods to the detection and counting of
+them (Coviello et al., 2020). Since the berries of most grape varieties
+are approximately spherical, some studies also model grape berries as
+spheres and complete berry counting through 3D reconstruction (Liu
+et al., 2020).
+Berry-per-grape-cluster counting task, which is to count grape
+berries in each grape cluster in the image, is a relatively novel research
+topic. In the actual grape production process, the excessive number of
+grape berries growing in a cluster not only increases grape yield but
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+3
+C. Yang et al.
+also causes issues such as insufficient plumpness and sweetness of the
+berries due to nutrient competition between too many berries (Karoglan
+et al., 2014), reducing the quality of the grapes. Therefore, by detecting
+the number of berries contained in each cluster, a reference can be
+provided for farmers to prune the grape clusters. Some previous studies
+completed the berry-per-grape-cluster counting task by first detecting
+the grape clusters, then cropping the regions of the clusters, and de-
+tecting grape berries in these regions (Khoroshevsky et al., 2021; Deng
+et al., 2020). However, the performance of these methods is largely
+limited by the accuracy of grape-cluster detection.
+3. Materials and methods
+In this section, we first introduce the method of using probability
+maps to represent grape phenotype characteristics and then introduce
+the proposed Probability Map-based Grape Detection Framework and
+its process of completing three subtasks of the grape detection and
+counting task in detail. Finally, we introduce the acquisition of datasets
+used in our experiments.
+3.1. Probability map for grape phenotyping
+3.1.1. What is a probability map?
+Probability maps represent objects using two-dimensional Gaussian
+kernels with values between 0 and 1, in which the higher value of
+a point has a higher probability of being the center point of the
+object (Baek et al., 2020; Cheng et al., 2021). Points in Gaussian kernels
+obey the probability density function shown in Eq. (1) as follows:
+𝑓(𝑥, 𝑦) = 𝐴exp
+[
+−
+((𝑥−𝜇1
+)2
+2𝜎2
+1
++
+(𝑦−𝜇2
+)2
+2𝜎2
+2
+)]
+(1)
+where 𝐴is the peak value of the Gaussian kernel equal to 1, (𝜇1, 𝜇2
+) is
+the center coordinate, and 𝜎1 and 𝜎2 are variances. Since each object is
+converted into a Gaussian kernel in probability maps, where the peaks
+of the Gaussian kernels are the locations of the objects, probability
+maps can better express the spatial features of objects than density
+maps (Li et al., 2018), which express the count of objects with the sum
+of elements in matrices and blur the position of them. Therefore, in
+previous studies, probability maps have been widely used to address
+issues related to object localization, such as pose estimation, object
+detection, and dense object counting.
+3.1.2. How do we generate probability maps?
+Generate probability maps for grape clusters. Since existing
+grape-cluster annotations in datasets (see Section 3.3.1 for details)
+contain the shape information of clusters, we can directly use these data
+to generate two-dimensional Gaussian kernels with the same length
+and width as grape clusters in cluster probability maps. Notably, since
+mosaic data augmentation is used in model training, if probability
+maps of grape clusters are pregenerated before training, Gaussian
+kernels will become incomplete due to crop operations in mosaic data
+augmentation. To address this issue, we dynamically generate cluster
+probability maps in training based on the grape-cluster bounding boxes
+after data augmentation. Considering that the process of generating
+two-dimensional rectangular Gaussian kernels may consume a lot of
+time, we adopt the strategy proposed in Baek et al. (2020), which is
+to first generate square Gaussian kernels whose side length is equal
+to the length of rectangular grape-cluster bounding boxes, then use
+perspective transformation to switch them to the same size as grape
+clusters.
+Generate probability maps for grape berries. Existing point-level
+grape-berry annotations in datasets (see Section 3.3.1 for details) are
+not sufficient for determining the size of two-dimensional Gaussian ker-
+nels. To address this issue, we use the method described in Cheng et al.
+(2021), which determines the size of Gaussian kernels in probability
+maps based on the distance between point-level annotations. Specifi-
+cally, for each grape berry, we search for the three closest berries to it
+and calculate their distance to that berry. Subsequently, we manually
+set the size of the Gaussian kernel representing that berry based on
+the sum of those distances. Since images in datasets contain hundreds
+of grape berries, generating grape-berry probability maps in training
+will be substantially time consuming. Moreover, the impact of crop
+operations on the Gaussian kernels of grape berries is far less than that
+of grape clusters. Thus, different from the strategy of generating the
+probability maps of grape clusters, we pregenerate all the probability
+maps of grape berries before training.
+3.1.3. How do we extract grape phenotype characteristics from probability
+maps?
+Locating grape clusters and berries. Probability maps represent
+objects with Gaussian kernels. For the probability maps of grape clus-
+ters and berries predicted by the neural network, the detected grape
+locations can be obtained in reverse by finding local peaks composed
+of predicted Gaussian kernels in the probability maps. The coordinates
+of the peaks in each Gaussian kernel are the localization results of the
+network for the grape clusters and berries. For the probability maps of
+grape berries, these peak points directly represent the position of grape
+berries. For the probability maps of grape clusters, on the one hand, the
+peaks of the Gaussian kernels represent the center points of the clusters.
+On the other hand, the sizes of the Gaussian kernels can also reflect the
+sizes of the grape clusters.
+Determining containment relationship between grape clusters
+and berries. Probability maps have been widely used in previous
+studies, addressing issues related to object localization. We also use
+probability maps predicted by the neural network to localize grape
+berries and the center points of grape clusters. However, we believe that
+probability maps can express richer object features while represent-
+ing their locations. Probability maps represent objects with Gaussian
+kernels; further, a basic characteristic of Gaussian kernels is that their
+values gradually decrease from the center to the periphery. Concur-
+rently, when generating probability maps for grape clusters, we use
+Gaussian kernels with the same length and width as the grape clusters.
+Therefore, in grape-cluster probability maps, for any point located in
+any Gaussian kernel representing a grape cluster, we can detect the
+difference in values between that point and its surrounding points, look-
+ing for points with greater values around the given point to determine
+the orientation of the grape-cluster center to that point. Based on this
+idea, we can use the gradient in the grape-cluster probability maps
+to uniquely determine the containment relationship between all grape
+berries and grape clusters without repetition.
+Detecting bounding boxes of grape clusters. After extracting the
+location and containment relationships of grape clusters and grape
+berries from the grape probability maps, we hope to further obtain
+the edges of grape clusters, that is, the bounding boxes of grape
+clusters. Previous research (Baek et al., 2020) obtained the locations of
+objects from the object probability maps with the watershed algorithm.
+However, since the values at the periphery of Gaussian kernels are
+relatively low, the accuracy of determining the bounding boxes of
+grape clusters with the watershed algorithm will be greatly affected
+by the neural network’s incorrect prediction of the Gaussian kernel
+boundaries. To address this issue, we propose locating bounding boxes
+of grape clusters with the grape berries contained in each cluster. As
+considerably smaller objects compared with grape clusters, the proba-
+bility maps of grape berries are less likely to be affected by the neural
+network’s incorrect predictions than those of grape clusters. Therefore,
+after locating the areas of grape berries contained in each grape cluster,
+we combine the probability maps of grape berries to determine more
+accurate bounding box boundaries for grape clusters.
+A visualization of the process of obtaining grape phenotype charac-
+teristics from probability maps is shown in Fig. 2. The detailed methods
+of extracting grape phenotype characteristics from probability maps to
+finish the three subtasks of the grape detection and counting task are
+introduced in Section 3.2.3.
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+4
+C. Yang et al.
+Fig. 2. Obtaining grape phenotype characteristics from probability maps. (a) Original grape image. (b) Detected grape-cluster probability map. (c) Detected grape-berry probability
+map. (d) Localized grape berries. (e) Detected grape berries contained in each cluster. (f) Left: Areas of grape berries contained in each cluster. Right: Grape-cluster bounding
+boxes obtained with the areas of grape berries and the grape-berry probability map.
+Fig. 3. The proposed grape detection and counting framework PMGDC.
+3.2. PMGDC
+3.2.1. Framework overview
+The architecture of the proposed PMGDC framework is shown in
+Fig. 3, which can be divided into the upstream stage and the down-
+stream stage. In the upstream stage, the grape image is inputted into
+a neural network, which detects the intermediate probability maps of
+grape clusters and berries separately. While in the downstream stage,
+three postprocessing modules are applied to obtain the detection results
+of three subtasks of the grape detection and counting task from the
+intermediate probability maps.
+In the downstream stage, the local peak method is first applied
+to the grape-berry probability map, obtaining grape-berry locations
+to complete the grape-berry counting task. Subsequently, the Up-Hill
+method is applied to the grape-cluster probability maps and the grape-
+berry locations, obtaining grape berries contained in each cluster to
+complete the berry-per-grape-cluster counting task. Finally, the Down-
+Hill method is applied to the grape berries contained in each cluster
+and the grape-berry probability map, obtaining grape-cluster bounding
+boxes to finish the grape-cluster detection task.
+The detailed architecture and detection process of PMGDC are
+introduced in the remaining content of Section 3.2.
+3.2.2. Generate intermediate grape probability maps with a neural network
+The architecture of the neural network used to detect the probability
+maps of grape clusters and berries is shown in Fig. 4. Compared with
+networks used in previous studies, we utilize a simple but effective U-
+Net architecture network with Resnet50 as the backbone to detect grape
+berries and clusters in grape images. This neural network first extracts
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+5
+C. Yang et al.
+Fig. 4. Neural network used to detect intermediate grape probability maps.
+Fig. 5. Process of detecting grape-berry locations with the local peak method.
+features from grape images with five groups of convolutional modules
+and restores the high-dimensional feature to the same size as the input
+image using five groups of upsampling modules. Finally, two groups of
+identical parallel convolutional layers are used as detection heads to
+output the intermediate probability maps of grape clusters and berries,
+respectively.
+3.2.3. Obtain grape detection and counting results from grape probability
+maps
+Grape-berry counting:
+To solve the grape-berry counting task, we use the local peak
+method to detect grape-berry locations from grape-berry probability
+maps, as shown in Fig. 5. We adopt the local peak postprocessing
+method for probability maps from Cheng et al. (2021). First, we per-
+form a 3 × 3 average pooling operation with a stride of 1 on the
+grape-berry probability map to reduce noise. Subsequently, we perform
+a 3 × 3 max pooling operation with a stride of 1 on the average pooled
+probability map. The points in the max pooled probability map that
+have the same value as those in the averaged pooled probability map
+are local peaks, which are the candidate points of grape berries. The
+value of each candidate point represents its probability of being a grape
+berry. We keep the points with a probability greater than 0.5 as the
+detected grape berries.
+Berry-per-grape-cluster counting:
+After obtaining the grape-berry locations, to solve the berry-per-
+grape-cluster counting task, we use the Up-Hill method to detect the
+grape berries contained in each cluster from the grape-berry locations
+and the grape-cluster probability map, as shown in Fig. 6. First, we
+perform a 3 × 3 average pooling operation with a stride of 1 on the
+probability map of grape clusters to reduce noise. Subsequently, we
+use the proposed Up-Hill method to divide the grape berries contained
+in each cluster. For each grape berry, we find the point in the grape-
+cluster probability map at the same coordinate as that berry, regarding
+that point as the start point and the value of that point as the start
+value. Subsequently, find the point with the largest value within a
+certain range around the start point in the grape-cluster probability
+map, regarding that point as the end point and the value of that point
+as the end value. Using the newly found point as the start point,
+we iterate through the previous search process until the end point
+is exactly the same as the start point. Finally, we divide the grape
+berries with the same final end point into the same cluster to solve
+the berry-per-grape-cluster counting task.
+As for the selection of search ranges in the Up-Hill method, we
+take into account two aspects of factors. First, considering the possible
+incorrect predictions of the neural network in grape-cluster probability
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+6
+C. Yang et al.
+Fig. 6. The process of detecting grape berries contained in each cluster with the Up-Hill method.
+Fig. 7. Iterative process of searching for the point with the largest value around the start point in the Up-Hill method.
+maps, such as false local peaks and detecting a single peak as multiple
+peaks, we should tangibly enlarge the search range to offset the impact
+of those errors. Second, in early search iterations of grape berries
+located at the edge of grape clusters, a large search range can cover the
+area of other grape clusters, causing incorrect detection. Thus, we select
+to start the search process with a small search range and gradually
+enlarge it in the following iterations.
+The example iterative search process is shown in Fig. 7. In the
+initial iterations, we sequentially search the point with the largest value
+around the start point within a square area centered at the start point,
+with a side length of 3 = (21 + 1), 5 = (22 + 1), 9 = (23 + 1), and
+17 = (24 + 1) … , and gradually expand the search range until it reaches
+the maximum preset side length.
+Notably, although the Up-Hill method can also be replaced by
+the traditional floodfill and watershed algorithms, it is more suitable
+for detecting the grape berries contained in each cluster. On the one
+hand, traditional methods are not available to accurately predict grape
+clusters when the neural network incorrectly predicts a single peak as
+multiple peaks in grape-cluster probability maps, where the false start
+points of the floodfill algorithm can lead to deviation in locating grape
+clusters. On the other hand, the uneven gradients at different edges of a
+single Gaussian kernel in predicted grape-cluster probability maps also
+make it hard to correctly classify grape berries located at the edges of
+grape clusters through traditional threshold-based methods.
+Grape-cluster detection:
+Finally, to solve the grape-cluster detection task, we use the Down-
+Hill method to detect grape-cluster bounding boxes from the grape-
+berry probability map and the grape berries contained in each cluster,
+as shown in Fig. 8. In the proposed Down-Hill method, we first perform
+a 3 × 3 average pooling operation with a stride of 1 on the probability
+map of grape berries to reduce noise. Subsequently, for the grape
+berries contained in the same cluster, we find the four grape berries
+with the maximum and minimum x-coordinates and y-coordinates,
+which are the four Gaussian kernel peaks in the grape-berry proba-
+bility map. After recording the values of the topmost, bottommost,
+leftmost, and rightmost peaks, we then perform an iterative search
+process for those four peak points along the directions of decreasing
+y-coordinate, increasing y-coordinate, decreasing x-coordinate, and in-
+creasing x-coordinate, respectively, in the grape-berry probability map.
+When we find a point whose value is less than 0.4 times the peak
+value or whose value starts to increase compared with the point in
+the previous iteration, we determine that point as the boundary of the
+grape-cluster bounding box.
+Notably, compared with determining grape-cluster bounding boxes
+using 0.4 times the peak value of grape-berry Gaussian kernels as
+thresholds, another feasible strategy is using a fixed threshold to stop
+the search iterations. However, we notice in experiments that, although
+the peak value of a Gaussian kernel in a grape-berry probability map
+should simply represent the probability of that Gaussian kernel being
+a berry, when using a fixed threshold to determine the bounding box
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+7
+C. Yang et al.
+Fig. 8. Process of detecting grape-cluster bounding boxes with the Down-Hill method.
+Fig. 9. Visualization of the grape datasets used in the experiments. (a) WGISD. (b) Chengdu dataset. (c) BpGC dataset.
+boundaries, berries with lower peak values will stop the search iteration
+relatively earlier, resulting in deviations in detected boundaries. Since
+determining the cluster bounding box boundaries with multiple of the
+berry peak values as thresholds can better avoid this issue, we adopt
+this strategy in the proposed Down-Hill method.
+3.3. Datasets
+3.3.1. Dataset acquisition
+We use three different datasets to train and validate the proposed
+PMGDC framework, including WGISD, the Chengdu dataset, and the
+BpGC dataset, as shown in Fig. 9.
+WGISD. WGISD (Santos et al., 2020) was captured between 2017
+and 2018 in the vineyards of the Guaspari Winery in Brazil, containing
+a total of 300 RGB images of five different grape varieties. All images
+have grape-cluster bounding box annotations, and 137 images addi-
+tionally provide grape-cluster instance-level mask annotations. For this
+dataset, we supplemented point-level location annotations for a total
+of 187,306 grape berries in all the images in our previous study (Deng
+et al., 2020).
+Chengdu dataset. The Chengdu dataset was captured by us in a
+vineyard in Longquanyi District, Chengdu, China, in July 2023. The
+dataset contains a total of 100 RGB images of two grape varieties: Shine
+Muscat and Summer Black. We add bounding box annotations for 772
+grape clusters and point-level location annotations for 30,601 grape
+berries in these images. We use this dataset together with the trainval
+set of WGISD to train the neural network to compensate for the lower
+data volume of WGISD.
+BpGC dataset (berry-per-grape-cluster dataset). To validate and test
+the performance of PMGDC for the berry-per-grape-cluster counting
+task, we combine the grape-cluster mask annotations in WGISD with
+our supplementary grape-berry location annotations to obtain the BpGC
+dataset. For the grape-cluster annotations in 137 images (110 trainval,
+27 tests) in WGISD, we find the grape-berry annotations contained in
+each grape cluster, that is, covered by the mask of each grape cluster,
+and regard those berries and that cluster as an integral berry-per-
+grape-cluster annotation. We use 110 images from the trainval set of
+WGISD as the validation data for the berry-per-grape-cluster counting
+task in training and 27 images from the test set of WGISD to test the
+performance of PMGDC after training.
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+8
+C. Yang et al.
+Table 1
+Details of the grape datasets used in the experiments.
+Data split
+Dataset
+Task
+Images
+Annotated clusters
+Annotated berries
+Train
+WGISD trainval
+Grape-cluster detection,
+grape-berry counting
+242
+3581
+152 911
+Chengdu dataset
+100
+772
+30 601
+Val
+WGISD trainval
+Grape-cluster detection,
+grape-berry counting
+242
+3581
+152 911
+Chengdu dataset
+100
+772
+30 601
+BpGC dataset val
+Berry-per-grape-cluster counting
+110
+1598
+63 692
+Test
+WGISD test
+Grape-cluster
+detection,
+grape-berry
+counting
+58
+850
+34 395
+BpGC dataset test
+Berry-per-grape-cluster counting
+27
+406
+16 232
+Fig. 10. Visualization of data augmentation methods. (a) Augmented grape image. (b) Augmented grape-cluster probability map. (c) Augmented grape-berry probability map.
+(d) Original grape-cluster bounding box after crop operation; the dashed lines represent the bounding box before cropping, and the solid lines represent the bounding box after
+cropping. (e) Cropped grape-cluster bounding box after adjustment by the proposed method with grape berries; the solid lines represent the bounding box after adjustment.
+The detailed annotation information and data split of the datasets
+used in our experiments are shown in Table 1.
+3.3.2. Data augmentation
+In model training, we adopt the mosaic data augmentation method
+proposed in Yolov4 (Bochkovskiy et al., 2020), which augments the
+training data by stitching four images together, and transfer this data
+augmentation method to probability maps. We also use random flip-
+ping, blurring, and HSV enhancement to improve the quality of the
+training data, as shown in Fig. 10(a)(b)(c).
+By the way, to address the issue of edge deviation caused by
+crop operations in the mosaic data augmentation method as shown
+in Fig. 10(d), we propose a grape-cluster bounding box adjustment
+strategy based on grape-berry annotations. That is, for each cropped
+grape cluster, we find the remaining grape berries contained within
+that cluster after cropping and determine the maximum and minimum
+x- and y-coordinates (𝑥max, 𝑥min, 𝑦max, 𝑎𝑛𝑑𝑦min) of those grape berries.
+We reset the rightmost, leftmost, bottommost, and topmost boundaries
+of the grape-cluster bounding box according to those coordinates,
+respectively, as 𝑥max + 12×𝑙
+1280 , 𝑥min −12×𝑙
+1280 , 𝑦max + 12×𝑙
+1280, and 𝑦min −12×𝑙
+1280 ,
+where 𝑙is the length of the long side of the training image. Fig. 10(e)
+shows an example of the adjusted grape-cluster bounding box.
+In experiments, unless otherwise specified, all the input images are
+resized to 1280 × 960 before testing and before data augmentation in
+training.
+4. Experiments and results
+4.1. Experimental settings
+All the experiments in this study are conducted on the same server
+with the following configuration: 80-core Intel Xeon Processor (Sky-
+lake, IBRS) 3.0 GHz CPU, one NVIDIA Tesla V100 PCIe 32 GB GPU,
+Ubuntu 20.04 operating system, and CUDA 11.3. All the network mod-
+els are compiled using PyTorch 1.10 in the Python 3.8 environment.
+In the training of PMGDC, the batch size is set to 1, and the number
+of workers is set to 8. AdamW with eps of 1e−8 and weight decay of
+1e−2 is used as the optimizer, and the learning rate is adjusted using
+the cosine annealing strategy with the initial learning rate of 2e−4 and
+the end learning rate of 1e−6. MSE loss is used to calculate the loss
+between the predicted probability maps and the ground truth.
+The framework proposed in this study and all the compared pre-
+vious methods are trained for 200 epochs in each training process;
+further, after each training epoch of those methods on the train set,
+we evaluate their performance on the val set, saving the model weight
+files with the optimal performance among all the training epochs. After
+training, all the models are tested on the test set, obtaining their final
+grape detection and counting performance.
+Notably, it is difficult to define a joint evaluation metric for the
+three subtasks of the grape detection and counting task completed by
+our proposed PMGDC framework. Thus, we evaluate the performance
+of PMGDC for those tasks after each training epoch and save three
+model weight files with the optimal grape-cluster detection, grape-
+berry counting, and berry-per-grape-cluster counting performances sep-
+arately, denoted as BGC, BGB, and BGBC in the experimental results.
+While other methods compared in our experiments are available to
+solve only one subtask of the grape detection and counting task, we
+save one optimal model weight file in each training process.
+4.2. Evaluation metrics
+4.2.1. Grape-berry and grape-cluster counting
+We use MAE and RMSE as shown in Eqs. (2) and (3) to evaluate
+the performance of PMGDC and compare methods for counting grape
+clusters and grape berries, where 𝑁is the number of images and 𝐶𝑖and
+𝐶𝐺𝑇
+𝑖
+are the detected and ground-truth object counts in each image,
+respectively.
+𝑀𝐴𝐸= 1
+𝑁
+𝑁
+∑
+𝑖=1
+|||𝐶𝑖−𝐶𝐺𝑇
+𝑖
+|||
+(2)
+𝑅𝑀𝑆𝐸=
+√
+√
+√
+√1
+𝑁
+𝑁
+∑
+𝑖=1
+|||𝐶𝑖−𝐶𝐺𝑇
+𝑖
+|||
+2
+(3)
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+9
+C. Yang et al.
+Fig. 11. Visualization of detection results of the proposed PMGDC framework.
+4.2.2. Grape-cluster detection
+To evaluate the performance of PMGDC and compare methods for
+detecting grape clusters, we test their accuracy in detecting grape-
+cluster bounding boxes with AP, average recall, and the F1-score shown
+in Eq. (4) as evaluation metrics.
+𝐹1 = 2𝐴𝑃× 𝐴𝑅
+𝐴𝑅+ 𝐴𝑅
+(4)
+By the way, for each grape-cluster ground-truth label, we detect
+among all the predicted grape clusters whether there exists a predicted
+cluster with iou greater than 0.5 between its bounding box and that
+ground-truth grape-cluster label. That is, there exists a matched de-
+tected grape cluster for that grape-cluster ground-truth label. We count
+the number of grape-cluster ground-truth labels with matched detected
+grape clusters to evaluate whether grape-cluster detection methods
+can recognize as many real grape clusters as possible. The proportion
+of matched grape-cluster quantity to the ground-truth grape-cluster
+quantity is denoted as ‘‘matched cluster’’ in experiments.
+4.2.3. Berry-per-grape-cluster counting
+To evaluate the performance of PMGDC for the berry-per-grape-
+cluster counting task, we use MRD and 1-FVU as evaluation metrics,
+as shown in Eqs. (5) and (6), wherê 𝐶𝑖and̂ 𝐶𝐺𝑇
+𝑖
+are the detected and
+ground-truth berry counts in each cluster, and̂ 𝐶𝐺𝑇is the average count
+of ground-truth grape berries contained in each grape cluster. MRD and
+1-FVU were first proposed in Khoroshevsky et al. (2021); further, this
+study believes that those two evaluation metrics can better reflect the
+detection accuracy of the berry-per-grape-cluster counting task.
+𝑀𝑅𝐷= 1
+𝑁
+𝑁
+∑
+𝑖=1
+|||̂𝐶𝑖−̂ 𝐶𝐺𝑇
+𝑖
+|||̂
+𝐶𝐺𝑇
+𝑖
+(5)
+1 −𝐹𝑉𝑈= 1 −
+∑𝑁
+𝑖=1
+|||̂𝐶𝑖−̂ 𝐶𝐺𝑇
+𝑖
+|||
+2
+∑𝑁
+𝑖=1
+|||̂𝐶𝐺𝑇
+𝑖
+−̂ 𝐶𝐺𝑇|||
+2
+(6)
+4.2.4. Detection efficiency
+We also calculate the average time cost of different detection meth-
+ods on the test set of WGISD to evaluate their detection efficiencies.
+For the compared previous methods, we detect their time cost from
+entering the images to obtain the final detection results, while for the
+proposed PMGDC framework, we further detect its time cost in the
+network prediction stage and postprocessing stage separately.
+4.3. Ablation experiments
+In this section, we comprehensively compare the performance of
+the PMGDC framework proposed in this study with different parameter
+settings, and some visualized detection results of PMGDC are shown in
+Fig. 11.
+4.3.1. Parameter selection of the Up-Hill method
+In Section 3.2.3 (2), we introduce the Up-Hill method for detecting
+grape berries contained in each cluster and the strategy of gradually
+expanding the search range of the point with the largest value around
+the start point in each iteration. In the current study, we compare
+the grape detection performance of PMGDC when utilizing the Up-Hill
+method with different maximum search ranges of the largest end point.
+Experimental results are shown in Table 2. Notably, since the grape-
+berry counting task is not affected by the parameters of the Up-Hill
+method, it is not compared in this section.
+It can be observed that, when the maximum search range is 3 × 3,
+PMGDC does not perform well in grape-cluster detection and berry-
+per-grape-cluster counting tasks. As the maximum largest end point
+search range increases, the performance of PMGDC first shows an
+increasing trend and achieves optimal grape detection and counting
+performance around the 17 × 17 search range, then starts to get worse
+after the maximum search range exceeds 25 × 25. This is because, as the
+maximum search range increases, the incorrect detection of Gaussian
+kernels such as false detected peaks and detecting single peak as
+multiple peaks in grape-cluster probability maps will first be gradually
+offset by the larger peak search range. As the maximum search range
+becomes even larger, it starts to extend from the current grape cluster
+into adjacent grape clusters, resulting in the issue of detecting more
+than one grape cluster as one cluster. To maximize the grape detection
+and counting performance of PMGDC, in subsequent experiments, the
+maximum search range side length in the Up-Hill method is fixed as
+12×𝑙
+1280 × 2 + 1, where 𝑙is the length of the long side of the input image.
+4.3.2. Types of Gaussian kernels in grape-cluster probability maps
+We use rectangular Gaussian kernels of the same size as grape
+clusters to generate ground-truth grape-cluster probability maps in the
+training of PMGDC, which actually takes more time than generating
+square Gaussian kernels. To prove the necessity of generating Gaussian
+kernels of the same size as grape clusters, we compare the detection
+performance of PMGDC when the grape-cluster probability maps are
+generated with rectangular Gaussian kernels or square Gaussian kernels
+whose side length is equal to the average length and width of grape
+clusters. Experimental results are shown in Table 3.
+It is apparent that, although the two strategies for generating grape-
+cluster probability maps have no significant difference in the perfor-
+mance of grape-berry counting and berry-per-grape-cluster counting,
+training PMGDC with grape-cluster probability maps generated with
+rectangular Gaussian kernels of the same size as grape clusters can
+greatly improve the accuracy of grape-cluster detection. Experimental
+results in Table 3 can verify the necessity of generating Gaussian
+kernels of the same size as grape clusters in the training of PMGDC.
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+10
+C. Yang et al.
+Table 2
+Grape detection and counting performance of PMGDC with different maximum search ranges of the Up-Hill method.
+Max search
+range
+Saved
+model
+Grape-cluster detection
+Berry-per-grape-cluster counting
+Detection
+efficiency
+AP0.50
+AP0.50:0.95
+AR0.50:0.95
+F1-score
+Matched
+cluster
+MRD
+1-FVU
+Post-processing
+time cost (s)
+3 × 3
+BGC
+0.595
+0.302
+0.485
+0.372
+0.793
+0.170
+0.678
+0.13992
+BGB
+0.551
+0.263
+0.480
+0.340
+0.801
+0.184
+0.652
+BGBC
+0.610
+0.303
+0.501
+0.378
+0.818
+0.181
+0.671
+5 × 5
+BGC
+0.795
+0.452
+0.547
+0.495
+0.845
+0.151
+0.822
+0.13344
+BGB
+0.800
+0.442
+0.547
+0.488
+0.855
+0.153
+0.834
+BGBC
+0.799
+0.456
+0.557
+0.501
+0.859
+0.160
+0.778
+9 × 9
+BGC
+0.797
+0.458
+0.549
+0.499
+0.840
+0.150③
+0.829
+0.13252
+BGB
+0.827
+0.463
+0.552
+0.504
+0.864③
+0.161
+0.842
+BGBC
+0.814
+0.471
+0.564①
+0.514③
+0.861
+0.158
+0.780
+17 × 17
+BGC
+0.814
+0.479①
+0.562②
+0.517①
+0.844
+0.145①
+0.851②
+0.13380
+BGB
+0.823
+0.467
+0.555
+0.507
+0.861
+0.163
+0.843
+BGBC
+0.830②
+0.478②
+0.561③
+0.516②
+0.865②
+0.155
+0.844
+25 × 25
+BGC
+0.814
+0.475③
+0.560
+0.514③
+0.842
+0.147②
+0.854①
+0.13624
+BGB
+0.832①
+0.467
+0.555
+0.507
+0.862
+0.167
+0.839
+BGBC
+0.832①
+0.473
+0.560
+0.513
+0.866①
+0.160
+0.850③
+33 × 33
+BGC
+0.803
+0.465
+0.554
+0.506
+0.836
+0.151
+0.846
+0.13616
+BGB
+0.821
+0.460
+0.550
+0.501
+0.854
+0.170
+0.837
+BGBC
+0.829③
+0.466
+0.556
+0.507
+0.862
+0.159
+0.847
+65 × 65
+BGC
+0.791
+0.449
+0.542
+0.491
+0.822
+0.158
+0.834
+0.14357
+BGB
+0.801
+0.442
+0.537
+0.485
+0.839
+0.176
+0.821
+BGBC
+0.810
+0.451
+0.545
+0.494
+0.846
+0.166
+0.833
+129 × 129
+BGC
+0.603
+0.316
+0.423
+0.362
+0.669
+0.184
+0.754
+0.16594
+BGB
+0.601
+0.314
+0.415
+0.358
+0.668
+0.192
+0.730
+BGBC
+0.598
+0.318
+0.421
+0.362
+0.669
+0.178
+0.770
+Table 3
+Grape detection and counting performance of PMGDC with grape-cluster probability maps using different types of Gaussian kernels.
+Gaussian
+kernel
+type
+Saved
+model
+Grape-cluster detection
+Grape-berry
+counting
+Berry-per-grape-cluster counting
+AP0.50
+AP0.50:
+0.95
+AR0.50:
+0.95
+F1-score
+Matched
+cluster
+MAE
+RMSE
+MRD
+1-FVU
+Rectangle
+BGC
+0.814
+0.475
+0.560
+0.514
+0.842
+25.759
+36.257
+0.147
+0.854
+BGB
+0.832
+0.467
+0.555
+0.507
+0.862
+24.966
+34.038
+0.167
+0.839
+BGBC
+0.832
+0.473
+0.560
+0.513
+0.866
+26.414
+37.047
+0.160
+0.850
+Square
+BGC
+0.756
+0.359
+0.466
+0.406
+0.801
+25.172
+36.678
+0.166
+0.845
+BGB
+0.755
+0.329
+0.465
+0.386
+0.824
+23.897
+33.558
+0.144
+0.872
+BGBC
+0.743
+0.329
+0.452
+0.380
+0.805
+27.328
+38.739
+0.146
+0.864
+4.3.3. Influence of image size on grape detection performance
+While many previous dense object counting methods conducted
+model training and testing without image scaling (Li et al., 2018;
+Cheng et al., 2021), most object detection methods rescaled images to
+a fixed and relatively small size before inputting them into a neural
+network (Ren et al., 2015; Duan et al., 2019; Bochkovskiy et al., 2020).
+Since PMGDC combines object detection of grape clusters and dense
+object counting of grape berries in a single framework, to test the
+grape detection and counting performance of this framework under
+different image sizes, we resize the input grape images to multiple
+sizes in training and testing, and the experimental results are shown
+in Tables 4 and 5.
+Overall, for the grape images with an original length of 2,048, the
+detection performance of PMGDC for three subtasks of the grape de-
+tection and counting task is better when the rescaled input images are
+relatively larger. When the input image size is smaller than 1024 × 768,
+the grape detection and counting performance of PMGDC drops off
+a cliff. Since PMGDC detects grape clusters based on the localized
+grape berries and the small image size makes it difficult for the neural
+network to identify dense and small grape berries, the grape detection
+and counting performance of PMGDC becomes worse when the input
+image size is small. Experimental results in Tables 4 and 5 prove
+the necessity of utilizing input images with relatively larger sizes in
+PMGDC’s training and testing stages, while the detection performance
+and time cost of PMGDC when detecting images with different sizes can
+provide parameter setting references for the actual deployment and the
+subsequent dataset migration of the proposed PMGDC framework.
+4.4. Grape-cluster detection performance comparison with previous methods
+In this section, we compare the grape-cluster detection performance
+between the proposed PMGDC framework and previous object detec-
+tion methods. The utilized codes of all the compared methods are
+reproduced by mmdetection and mmyolo on github and are trained and
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+11
+C. Yang et al.
+Table 4
+Grape detection and counting performance of PMGDC with different image sizes (part 1).
+Image size
+Saved model
+Grape-cluster detection
+AP0.50
+AP0.50: 0.95
+AR0.50: 0.95
+F1-score
+MAE
+RMSE
+Matched
+cluster
+2048 × 1536
+BGC
+0.804
+0.475
+0.569③
+0.518
+2.069
+2.560
+0.858
+BGB
+0.802
+0.468
+0.568
+0.513
+2.121
+2.789
+0.855
+BGBC
+0.813
+0.480③
+0.566
+0.519③
+2.000
+2.498
+0.858
+1792 × 1344
+BGC
+0.815
+0.482②
+0.571②
+0.522②
+2.000
+2.526
+0.860
+BGB
+0.798
+0.460
+0.556
+0.503
+2.000
+2.421
+0.845
+BGBC
+0.784
+0.455
+0.545
+0.496
+1.724①
+2.142①
+0.826
+1536 × 1152
+BGC
+0.851①
+0.491①
+0.577①
+0.531①
+1.966
+2.593
+0.882①
+BGB
+0.831③
+0.464
+0.562
+0.508
+2.069
+2.883
+0.871②
+BGBC
+0.812
+0.458
+0.563
+0.505
+1.862③
+2.526
+0.866③
+1280 × 960
+BGC
+0.814
+0.475
+0.560
+0.514
+1.845②
+2.382③
+0.842
+BGB
+0.832②
+0.467
+0.555
+0.507
+1.914
+2.382③
+0.862
+BGBC
+0.832②
+0.473
+0.560
+0.513
+1.879
+2.330②
+0.866③
+1024 × 768
+BGC
+0.817
+0.464
+0.559
+0.507
+2.207
+2.810
+0.858
+BGB
+0.810
+0.448
+0.550
+0.494
+2.034
+2.620
+0.854
+BGBC
+0.810
+0.468
+0.556
+0.508
+1.897
+2.471
+0.844
+768 × 576
+BGC
+0.807
+0.440
+0.539
+0.484
+2.328
+2.933
+0.858
+BGB
+0.797
+0.437
+0.535
+0.481
+2.172
+2.871
+0.848
+BGBC
+0.802
+0.437
+0.536
+0.481
+1.983
+2.629
+0.848
+512 × 384
+BGC
+0.765
+0.402
+0.503
+0.447
+1.931
+2.560
+0.821
+BGB
+0.788
+0.412
+0.507
+0.454
+2.155
+2.980
+0.838
+BGBC
+0.788
+0.412
+0.507
+0.454
+2.155
+2.980
+0.838
+Table 5
+Grape detection and counting performance of PMGDC with different image sizes (part 2).
+Image size
+Saved model
+Grape-berry
+counting
+Berry-per-grape-cluster counting
+Detection efficiency
+MAE
+RMSE
+MRD
+1-FVU
+Network predictiontime cost (s)
+Post-processing
+time cost (s)
+2048 × 1536
+BGC
+23.448②
+31.889②
+0.142①
+0.841
+0.01237
+0.37583
+BGB
+23.414①
+31.391①
+0.151
+0.850
+BGBC
+28.138
+38.164
+0.145②
+0.832
+1792 × 1344
+BGC
+24.138
+32.755
+0.150
+0.855
+0.01297
+0.28773
+BGB
+23.466③
+32.366③
+0.152
+0.854
+BGBC
+30.069
+40.826
+0.147
+0.856③
+1536 × 1152
+BGC
+25.897
+36.999
+0.161
+0.810
+0.01165
+0.19867
+BGB
+24.586
+34.392
+0.158
+0.813
+BGBC
+26.638
+36.826
+0.148
+0.831
+1280 × 960
+BGC
+25.759
+36.257
+0.147
+0.854
+0.01210
+0.13662
+BGB
+24.966
+34.038
+0.167
+0.839
+BGBC
+26.414
+37.047
+0.160
+0.850
+1024 × 768
+BGC
+26.328
+38.111
+0.146③
+0.857②
+0.01147
+0.08678
+BGB
+26.397
+36.035
+0.158
+0.842
+BGBC
+27.741
+40.596
+0.150
+0.865①
+768 × 576
+BGC
+41.724
+58.045
+0.148
+0.840
+0.01163
+0.04957
+BGB
+30.655
+46.103
+0.159
+0.828
+BGBC
+39.431
+54.563
+0.150
+0.810
+512 × 384
+BGC
+88.207
+114.759
+0.173
+0.773
+0.01117
+0.02307
+BGB
+76.776
+103.994
+0.177
+0.777
+BGBC
+76.776
+103.994
+0.177
+0.777
+tested with the same image size, max train epoch, and dataset split as
+PMGDC. Among the three saved model weight files of PMGDC when
+the input image size is 1280 × 960 that have the optimal grape-cluster
+detection, grape-berry counting, and berry-per-grape-cluster counting
+performances on the val set, we select the weight file with the optimal
+grape-cluster detection performance on the test set to compare with
+previous methods. That is, the BGBC model weight file is displayed in
+Tables 4 and 5. The experimental results are shown in Table 6.
+Notably, compared with most object detection frameworks that
+need to utilize the NMS postprocessing method after network prediction
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+12
+C. Yang et al.
+Table 6
+Grape-cluster detection performance comparison between PMGDC and previous object detection methods.
+Method
+AP0.50
+AP0.50: 0.95
+AR0.50: 0.95
+F1-score
+MAE
+RMSE
+Matched
+cluster
+Total
+time cost (s)
+PMGDC
+0.832
+0.473
+0.560
+0.513
+1.879
+2.330
+0.866
+0.1487
+PMGDC with
+threshold score 0.5
+0.824
+0.471
+0.555
+0.509
+1.448
+2.043
+0.852
+Dino (2022)
+0.710
+0.454
+0.530
+0.489
+2.879
+3.702
+0.740
+0.0981
+DiffusionDet (2023)
+0.809
+0.510
+0.592
+0.548
+1.259
+1.697
+0.840
+0.0646
+YoloX (2021)
+0.784
+0.494
+0.556
+0.523
+1.448
+2.213
+0.811
+0.1084
+Yolov7 (2023)
+0.793
+0.514
+0.568
+0.540
+1.673
+2.071
+0.779
+0.0489
+Yolov8 (2023)
+0.796
+0.563
+0.628
+0.594
+1.636
+2.063
+0.794
+0.0487
+ppyoloe (2022)
+0.806
+0.547
+0.624
+0.583
+1.473
+1.902
+0.806
+0.0421
+CenterNet (2019)
+0.763
+0.448
+0.518
+0.480
+2.172
+2.913
+0.796
+0.0393
+FasterRCNN (2015)
+0.803
+0.490
+0.562
+0.524
+1.655
+2.289
+0.841
+0.0440
+Table 7
+Grape-berry counting performance comparison between PMGDC and previous dense object counting methods.
+Method
+MAE
+RMSE
+Location
+Total detection time (s)
+PMGDC
+24.966
+34.038
+✔
+0.1487
+D2CNet (Cheng et al., 2021)
+25.711
+33.526
+✔
+0.1063
+GBCNet (Coviello et al., 2020)
+25.603
+33.118
+✗
+0.0579
+Bayesian loss method (Ma et al., 2019)
+22.702
+30.831
+✗
+0.0376
+to filter out overlapped bounding boxes, PMGDC obtains grape-cluster
+bounding boxes from grape berries uniquely contained in each cluster,
+for which there is also no duplication in the grape clusters detected
+by PMGDC. Thus, PMGDC does not need to postprocess the detected
+grape clusters with the NMS method or filter out clusters below a fixed
+threshold score, which often removes more correctly detected clusters
+than incorrect clusters in our framework. However, to compare more
+fairly with other object detection methods that use a threshold score of
+0.5 to filter out incorrect objects, we also test the grape-cluster detec-
+tion performance of PMGDC after filtering out grape clusters with the
+same threshold score of 0.5 by using the peak values of grape-cluster
+Gaussian kernels as confidence scores.
+From the experimental results in Table 6, it can be seen that while
+the proposed PMGDC framework can simultaneously complete three
+subtasks of the grape detection and counting task, its performance in
+the single task of grape-cluster detection is also not inferior to either
+the classic object detection methods such as FasterRCNN and CenterNet
+or the latest research achievements such as Yolov8 and DiffusionDet,
+especially in the evaluation metrics of AP0.50 and matched cluster.
+These experimental results demonstrate the superiority of PMGDC in
+the grape-cluster detection task.
+4.5. Grape-berry counting performance comparison with previous methods
+In this section, we compare the grape-berry counting performance
+between the proposed PMGDC framework and previous dense object
+counting methods. All the compared methods are trained and tested
+with the same image size, max train epoch, and dataset split as PMGDC.
+The BGB model weight file displayed in Tables 4 and 5 with the
+optimal grape-berry counting performance when the input image size is
+1280 × 960 is used to compare with previous methods. The experimen-
+tal results are shown in Table 7, and there is also no significant counting
+performance difference between PMGDC and localization methods such
+as D2CNet or pure counting methods such as GBCNet.
+4.6. Berry-per-grape-cluster counting performance analysis
+In the current study, we analyze the detection performance of
+PMGDC for the berry-per-grape-cluster counting task. Notably, com-
+pared with the other two subtasks of the grape detection and counting
+task, there is considerably little research related to berry-per-grape-
+cluster counting due to the lack of a publicly available dataset. More-
+over, it is impossible to directly compare the detection performance
+of PMGDC with other methods because, on the one hand, there is
+no open source code for testing and, on the other hand, the datasets
+used in different studies are not consistent. Thus, in this section, we
+only analyze the performance of the proposed PMGDC framework with
+different parameter settings and its grape detection performance in real
+scenes.
+As shown in Table 2, when the image size is fixed at 1280 × 960,
+PMGDC achieves the optimal berry-per-grape-cluster counting perfor-
+mance when the maximum search range of the Up-Hill method is
+less than 25 × 25, obtaining the optimal MRD of 0.145 when the
+maximum search range is 17 × 17 and the optimal 1-FVU of 0.854
+when the maximum search range is 25 × 25. Meanwhile, according to
+the experimental results in Tables 4 and 5, PMGDC performs better for
+the berry-per-grape-cluster counting task when the input image size is
+larger than 1024 × 768, obtaining the optimal MRD of 0.142 when the
+input image size is 2048 × 1536 and the optimal 1-FVU of 0.865 when
+the input image size is 1024 × 768.
+Fig. 12 shows the visualized detection results of PMGDC in open-
+world scenes. All images are only resized to have a length of 1,280,
+which corresponds to the training image size of PMGDC before de-
+tection. It can be seen that the proposed PMGDC framework performs
+equally well for grape images in open-world scenes.
+4.7. Failure cases of adjacent grape clusters
+PMGDC can finish the three subtasks of the grape detection and
+counting task with a single neural network while avoiding duplicate
+detection of grape clusters and grape berries contained in each cluster
+by finding the unique containment relationship between the berries and
+clusters. However, we also witness some limitations of this framework,
+as shown in Fig. 13. Gaussian kernels in grape-cluster probability maps
+used in the training stage of PMGDC are generated with the bounding
+boxes of grape clusters, which cannot represent the actual containment
+relationship between the grape berries and the grape clusters correctly.
+Thus, for some adjacent grape clusters that cover each other seriously,
+while PMGDC can predict the Gaussian kernels of them accurately,
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+13
+C. Yang et al.
+Fig. 12. Visualized detection results of PMGDC in open-world scenes.
+Fig. 13. Failure cases of PMGDC for adjacent grape clusters.
+grape berries still cannot be correctly divided into each grape clus-
+ter. In our view, this issue should be alleviated by completing the
+instance segmentation annotations of all the grape clusters in WGISD
+and generating Gaussian kernels of grape clusters with cluster mask
+annotations.
+5. Discussion
+In the current study, grape detection and counting are systemati-
+cally analyzed, and the grape detection and counting task is defined as
+the aggregation of grape-cluster detection tasks, grape-berry counting
+tasks, and berry-per-grape-cluster counting tasks. We propose that the
+three subtasks of grape detection and counting be performed simulta-
+neously, which can fully utilize the close spatial distribution correlation
+between grape clusters and grape berries. Based on this idea, to simulta-
+neously accomplish the three subtasks of the grape detection and count-
+ing task, we propose a method that utilizes probability maps to repre-
+sent the spatial correlation between grape clusters and grape berries.
+Based on this novel representation method, we design a PMGDC frame-
+work that can simultaneously accomplish the tasks of grape-cluster
+detection, grape-berry counting, and berry-per-grape-cluster counting.
+Previous methods first detected grape clusters and then detected
+grape berries within cluster regions to associate cluster and berry
+features (Deng et al., 2020; Khoroshevsky et al., 2021). However, when
+handling adjacent grape clusters, such methods detect grape berries
+simultaneously contained within the bounding boxes of multiple grape
+clusters multiple times, causing duplicate detection. Additionally, grape
+berries not contained within any grape-cluster bounding box cannot
+be detected. In contrast, the proposed PMGDC framework first detects
+grape berries and then identifies which specific grape cluster each grape
+berry uniquely belongs to. Subsequently, the framework further deter-
+mines the region of each grape cluster, which can effectively eliminate
+the issue of duplicate detection for grape berries. Furthermore, PMGDC
+detects grape clusters based on grape-berry localization results, and
+previous research has shown that computerized sensing methods often
+perform better in predicting grape berries than in predicting grape
+clusters (Nuske et al., 2014). Therefore, even without complex attention
+and transformer modules, PMGDC’s performance in detecting grape
+clusters is still not inferior to state-of-the-art methods.
+While PMGDC can simultaneously complete three grape detection
+tasks, it is not inferior to widely used object detection and dense
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+14
+C. Yang et al.
+object counting methods even in single grape detection tasks, achieving
+a localization performance of AP(iou0.5) 0.851 and a counting per-
+formance of MAE 1.845, RMSE 2.142 for grape clusters, a counting
+performance of MAE 23.414, RMSE 31.391 for grape berries, and a
+counting performance of MRD 0.142, 1-FVU 0.865 for berries per grape
+clusters on the test set of WGISD. The test results in open-world scenes
+also corroborate the detection accuracy of PMGDC, demonstrating its
+effectiveness in three subtasks of the grape detection and counting task
+and the feasibility of integrating grape phenotype analysis from the
+original three independent tasks into the unified grape detection and
+counting task.
+However, we have also noticed some issues with PMGDC. For
+some adjacent grape clusters, PMGDC cannot accurately classify the
+berries at the edges of the grape clusters into their actual clusters.
+This is because WGISD does not provide instance segmentation anno-
+tations for all grape clusters. Therefore, during the training process
+of PMGDC, Gaussian kernels in ground-truth grape-cluster probability
+maps used to represent the containment relationship between grape
+clusters and grape berries are generated based on the bounding boxes
+of the grape clusters. However, those ground-truth probability maps
+cannot perfectly represent the containment relationship between grape
+clusters and berries. In subsequent research, completing the grape-
+cluster instance segmentation annotations in WGISD and generating
+grape-cluster ground-truth probability maps based on those mask an-
+notations, providing a more accurate representation of the containment
+relationship between clusters and berries, may help alleviate such an
+issue.
+6. Conclusion
+Previous studies treated the detection of grape clusters, grape berr-
+ies, and berries contained in each grape cluster as separate tasks. How-
+ever, considering the clustered phenotype feature of grapes, there is a
+close spatial distribution correlation between grape clusters and grape
+berries. In the present study, we propose integrating the grape-cluster
+detection task, the grape-berry counting task, and the berry-per-grape-
+cluster counting task as subtasks of the grape detection and counting
+task, considering them simultaneously in grape detection. Based on this
+idea, we propose a PMGDC framework. Experimental results demon-
+strate that this framework can effectively complete the three subtasks
+of the grape detection and counting task simultaneously.
+However, this study also has certain limitations. First, our method
+detects only visible grape clusters and grape berries, while occluded,
+invisible grape berries are not discussed. Second, our research only
+focuses on grape detection and counting, which are upstream tasks in
+the field of digital viticulture. However, we do not apply the grape
+detection results to downstream tasks such as predicting grape pick-
+ing points and actual grape productions, which are more relevant to
+practical production activities.
+In future research, we will attempt to construct a larger grape
+image dataset that can better meet the training requirements of the
+grape-cluster detection task, the grape-berry counting task, and the
+berry-per-grape-cluster counting task. Additionally, we will explore the
+possibility of using a single neural network to simultaneously detect
+three subtasks of the grape detection and counting tasks and to achieve
+end-to-end simultaneous detection for those three tasks. Finally, we will
+attempt to integrate the proposed PMGDC method with more practical
+production tasks in the vineyard, truly achieving the goal of improving
+grape production efficiency.
+CRediT authorship contribution statement
+Canchen Yang: Writing – review & editing, Writing – original draft,
+Visualization, Software, Resources, Methodology, Investigation, Formal
+analysis, Data curation, Conceptualization. Tianyu Geng: Writing –
+review & editing, Writing – original draft, Validation, Project adminis-
+tration, Methodology, Funding acquisition, Data curation, Conceptual-
+ization. Jian Peng: Writing – review & editing, Validation, Supervision,
+Project administration. Zichen Song: Visualization, Software, Data
+curation.
+Declaration of competing interest
+The authors declare that they have no known competing finan-
+cial interests or personal relationships that could have appeared to
+influence the work reported in this paper.
+Data availability
+Our source code will soon be publicly available on Github after
+publication.
+References
+Akai, R., Utsumi, Y., Miwa, Y., Iwamura, M., Kise, K., 2021. Distortion-adaptive grape
+bunch counting for omnidirectional images. In: 2020 25th International Conference
+on Pattern Recognition. ICPR, IEEE, pp. 599–606.
+Aquino, A., Diago, M.P., Millan, B., Tardáguila, J., 2017. A new methodology for
+estimating the grapevine-berry number per cluster using image analysis. Biosyst.
+Eng. 156, 80–95.
+Baek, Y., Shin, S., Baek, J., Park, S., Lee, J., Nam, D., Lee, H., 2020. Character region
+attention for text spotting. In: Computer Vision–ECCV 2020: 16th European Con-
+ference, Glasgow, UK, August 23–28, 2020, Proceedings, Part XXIX 16. Springer,
+pp. 504–521.
+Bochkovskiy, A., Wang, C.-Y., Liao, H.-Y.M., 2020. Yolov4: Optimal speed and accuracy
+of object detection. arXiv preprint arXiv:2004.10934.
+Bömer, J., Zabawa, L., Sieren, P., Kicherer, A., Klingbeil, L., Rascher, U., Muller, O.,
+Kuhlmann, H., Roscher, R., 2020. Automatic differentiation of damaged and un-
+harmed grapes using rgb images and convolutional neural networks. In: Computer
+Vision–ECCV 2020 Workshops: Glasgow, UK, August 23–28, 2020, Proceedings,
+Part VI 16. Springer, pp. 347–359.
+Buayai, P., Yok-In, K., Inoue, D., Nishizaki, H., Makino, K., Mao, X., 2023. Supporting
+table grape berry thinning with deep neural network and augmented reality
+technologies. Comput. Electron. Agric. 213, 108194.
+Chen, S., Sun, P., Song, Y., Luo, P., 2023. Diffusiondet: Diffusion model for object
+detection. In: Proceedings of the IEEE/CVF International Conference on Computer
+Vision. pp. 19830–19843.
+Cheng, J., Xiong, H., Cao, Z., Lu, H., 2021. Decoupled two-stage crowd counting and
+beyond. IEEE Trans. Image Process. 30, 2862–2875.
+Coviello, L., Cristoforetti, M., Jurman, G., Furlanello, C., 2020. GBCNet: In-field grape
+berries counting for yield estimation by dilated CNNs. Appl. Sci. 10 (14), 4870.
+Deng, G., Geng, T., He, C., Wang, X., He, B., Duan, L., 2020. TSGYE: Two-stage grape
+yield estimation. In: Neural Information Processing: 27th International Conference,
+ICONIP 2020, Bangkok, Thailand, November 18–22, 2020, Proceedings, Part IV 27.
+Springer, pp. 580–588.
+Duan, K., Bai, S., Xie, L., Qi, H., Huang, Q., Tian, Q., 2019. Centernet: Keypoint triplets
+for object detection. In: Proceedings of the IEEE/CVF International Conference on
+Computer Vision. pp. 6569–6578.
+Ge, Z., Liu, S., Wang, F., Li, Z., Sun, J., 2021. Yolox: Exceeding yolo series in 2021.
+arXiv preprint arXiv:2107.08430.
+Hacking, C., Poona, N., Manzan, N., Poblete-Echeverría, C., 2019. Investigating 2-D and
+3-D proximal remote sensing techniques for vineyard yield estimation. Sensors 19
+(17), 3652.
+Jocher, G., Chaurasia, A., Qiu, 2023. YOLO by ultralytics. https://github.com/
+ultralytics/ultralytics.
+Kang, H., Chen, C., 2020. Fast implementation of real-time fruit detection in apple
+orchards using deep learning. Comput. Electron. Agric. 168, 105108.
+Karoglan, M., Osrecak, M., Maslov, L., Kozina, B., 2014. Effect of cluster and berry
+thinning on merlot and cabernet sauvignon wines composition. Czech J. Food Sci.
+32 (5).
+Khoroshevsky, F., Khoroshevsky, S., Bar-Hillel, A., 2021. Parts-per-object count in agri-
+cultural images: Solving phenotyping problems via a single deep neural network.
+Remote Sens. 13 (13), 2496.
+Li, Y., Zhang, X., Chen, D., 2018. Csrnet: Dilated convolutional neural networks for
+understanding the highly congested scenes. In: Proceedings of the IEEE Conference
+on Computer Vision and Pattern Recognition. pp. 1091–1100.
+Liu, X., Chen, S.W., Liu, C., Shivakumar, S.S., Das, J., Taylor, C.J., Underwood, J.,
+Kumar, V., 2019. Monocular camera based fruit counting and mapping with
+semantic data association. IEEE Robot. Autom. Lett. 4 (3), 2296–2303.
+Liu, S., Zeng, X., Whitty, M., 2020. A vision-based robust grape berry counting
+algorithm for fast calibration-free bunch weight estimation in the field. Comput.
+Electron. Agric. 173, 105360.
+
+Computers and Electronics in Agriculture 224 (2024) 109175
+15
+C. Yang et al.
+Luo, L., Tang, Y., Zou, X., Wang, C., Zhang, P., Feng, W., 2016. Robust grape cluster
+detection in a vineyard by combining the AdaBoost framework and multiple color
+components. Sensors 16 (12), 2098.
+Ma, Z., Wei, X., Hong, X., Gong, Y., 2019. Bayesian loss for crowd count estimation
+with point supervision. In: Proceedings of the IEEE/CVF International Conference
+on Computer Vision. pp. 6142–6151.
+Mohimont, L., Alin, F., Rondeau, M., Gaveau, N., Steffenel, L.A., 2022. Computer vision
+and deep learning for precision viticulture. Agronomy 12 (10), 2463.
+Ni, X., Li, C., Jiang, H., Takeda, F., 2020. Deep learning image segmentation and extrac-
+tion of blueberry fruit traits associated with harvestability and yield. Horticulture
+Res. 7.
+Nuske, S., Wilshusen, K., Achar, S., Yoder, L., Narasimhan, S., Singh, S., 2014.
+Automated visual yield estimation in vineyards. J. Field Robotics 31 (5), 837–860.
+Parr, B., Legg, M., Alam, F., 2023. Grape yield estimation with a smartphone’s
+colour and depth cameras using machine learning and computer vision techniques.
+Comput. Electron. Agric. 213, 108174.
+Rahman, A., Hellicar, A., 2014. Identification of mature grape bunches using image
+processing and computational intelligence methods. In: 2014 IEEE Symposium on
+Computational Intelligence for Multimedia, Signal and Vision Processing. CIMSIVP,
+IEEE, pp. 1–6.
+Ren, S., He, K., Girshick, R., Sun, J., 2015. Faster r-cnn: Towards real-time object
+detection with region proposal networks. Adv. Neural Inf. Process. Syst. 28.
+Santos, T.T., de Souza, L.L., dos Santos, A.A., Avila, S., 2020. Grape detection,
+segmentation, and tracking using deep neural networks and three-dimensional
+association. Comput. Electron. Agric. 170, 105247.
+Śkrabánek, P., 2018. DeepGrapes: Precise detection of grapes in low-resolution images.
+IFAC-PapersOnLine 51 (6), 185–189.
+Wang, C.-Y., Bochkovskiy, A., Liao, H.-Y.M., 2023. YOLOv7: Trainable bag-of-freebies
+sets new state-of-the-art for real-time object detectors. In: Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 7464–7475.
+Xu, S., Wang, X., Lv, W., Chang, Q., Cui, C., Deng, K., Wang, G., Dang, Q., Wei, S.,
+Du, Y., Lai, B., 2022. PP-YOLOE: An evolved version of YOLO. arXiv preprint
+arXiv:2203.16250.
+Yu, Y., Zhang, K., Yang, L., Zhang, D., 2019. Fruit detection for strawberry harvesting
+robot in non-structural environment based on mask-RCNN. Comput. Electron. Agric.
+163, 104846.
+Zabawa, L., Kicherer, A., Klingbeil, L., Töpfer, R., Kuhlmann, H., Roscher, R.,
+2020. Counting of grapevine berries in images via semantic segmentation using
+convolutional neural networks. ISPRS J. Photogramm. Remote Sens. 164, 73–83.
+Zhang, H., Li, F., Liu, S., Zhang, L., Su, H., Zhu, J., Ni, L.M., Shum, H.-Y., 2022. Dino:
+Detr with improved denoising anchor boxes for end-to-end object detection. arXiv
+preprint arXiv:2203.03605.
+Zhao, R., Zhu, Y., Li, Y., 2022. An end-to-end lightweight model for grape and picking
+point simultaneous detection. Biosyst. Eng. 223, 174–188.

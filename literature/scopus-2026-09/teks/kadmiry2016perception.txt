@@ -1,0 +1,920 @@
+Perception Scheme for Fruits Detection in Trees for
+Autonomous Agricultural Robot Applications
+Bourhane Kadmiry1;
+Chee Kit Wong;
+Christoph Burger
+Callaghan Innovation – Sensors & Automation Group – Auckland, N.Z
+bourhane.kadmiry / kit.wong / christoph.burger@callaghaninnovation.govt.nz
+Abstract—This article describes an approach to autonomous
+robotic perception for farm-based applications. The technological
+setup aims at extracting information about fruits in a tree;
+based on estimation of their position and visual and features,
+through a color/depth vision system; and further robustly assert
+this information for localization and manipulation, through the
+build of a graph-based model. The scientiﬁc contribution is
+the implementation of a detection/extraction algorithm, using 2
+cameras (monocular-color and time-of-ﬂight) for data acquisition,
+GPS and IMU for global localization; and a set of Machine
+Vision (MV) (detection, extraction,. . . ). The algorithm fuses the
+sensors’ data, and Machine Learning (ML) for point-matching
+and tracking features. The extracted features are stored in
+a graph representation for fast search/traversal/retrieval and
+update purposes. This in turn will feed learning and recognition
+schemes promoting dynamic monitoring and ofﬂine manipulation
+processes (separately). Global tree-mapping is performed using
+NAV-sensor data, and locally made using color/depth images
+superposition and feature localization. Whilst the preliminary
+experimental results in- and outdoors –based on a ﬁxed platform–
+demonstrated the usefulness and simplicity of this approach,
+further outdoors testing with the mobile platform is required
+to determine the system ability to cope with different scenarios
+in the naturally uncertain and varying environment.
+I. INTRODUCTION
+Economic, environmental and food safety pressures neces-
+sitate the adoption of spatially variable crop management, aka
+precision agriculture. Among precision farming technologies,
+yield estimation (Y.E.) and mapping (Y.M.) are of prime
+importance [1]. The higher end of our project is to develop
+an intelligent perception system, for an outdoor mobile robot;
+so that it interprets a scene and deﬁne objects of interest with
+their attributes, then determine how each object is linked with
+other objects. To achieve this goal, a biologically-inspired per-
+ception system augmented with Cognition an A.I. paradigms
+is necessary to identify, locate and map objects in a scene. The
+objects are discriminated from the background and assigned
+individual attributes and linkages with other objects.
+The characteristics for such a system are it capabilities to:
+• detect and extract features (image/ ﬂow processing, com-
+puter vision (CV) →dicriminate objects and background)
+• separate, characterize, and model objects (MV, ML →
+model and optimize models for each potential object/
+agent in the environment)
+1B.Kadmiry is main scientist/author and corresponding author.
+• characterize a scene through objects/agents and their re-
+lations (learning, heuristics, algebra →abstract concepts
+and layout of the vocabulary for the semantics)
+The ﬁrst phase of this work is to address the MV and ML
+aspects of objects detection, extraction, characterization and
+tracking. We use tangerines Y.E/M. as a base scenario for
+this research: The problem of identifying the total number of
+fruits on trees has long been of interest in crop estimation
+work. Yield prediction of fruits and vegetables in practical
+environment is one of the hard and signiﬁcant tasks to obtain
+better results in crop management systems to achieve more
+productivity w.r.t moderate cost [2]. Early Y.E. is necessary
+for efﬁcient resource allocation during the growth season and
+harvest [3]. Proper dilution during growth results in bigger
+fruits , which usually have a higher price [4].
+High-value horticultural crops have also been investigated;
+among which ﬁgure:
+1. Citrus [4], [5]: where color MV system (MVS) to identify
+citrus fruits and estimate yield of the citrus grove in real-
+time was presented in [6], whereas [7] presented an automatic
+MVS, and estimated citrus yield.
+2. Apples [8]: recognition algorithms based on color features
+to estimate the number of fruits and models for early yield
+prediction were introduced in [9]. [10] described a CV-based
+model to estimate diameter and number of apples on a tree.
+3. Grapes [12]–[14]; or cranberries, olives and tomatoes.
+For most of those -excluding [3] where an automated Y.E.
+system was developed for apples based on stereo-vision; [1]
+where mobile platform is used to yield-map manual fruit
+picking, and [15] where spatio-temporal variation in yield was
+directed dynamically, based on features (mass, color,ﬁrmness)
+manual determination– Y.E. has ben carried out in a static
+manner; through manual tagging of fruits; based on a set of
+images, versus automatic estimation and a statistical approach
+to determine the yield. Current efforts on tangerine Y.E.
+using CV solely explored two avenues: (1) detecting tangerine
+ﬂowers (thresholded image-based statistical approach), and (2)
+counting the number of tangerines in orchards (manual fruit
+labelling vs. automatic matching, on image). Both methods are
+described in [2], [11].
+Important to this work is the requirement for combined
+point-cloud data with RGB images. Whilst RGB-D devices
+such as the MS Kinect exists; and have been used for various
+applications (people detection, gesture recognition,. . . ) [16],
+mobile robot navigation [17] and industrial processing [18];
+
+these devices’ main limitation is their unability to operate
+in outdoor environment; more speciﬁcally when not sheltered
+from sunlight [17]. Whilst stereo cameras remain a feasible
+alternative; and have been used in numerous outdoor appli-
+cations [19], its applications are limited by variable lighting
+conditions, high computing complexity, and the need for tex-
+ture for computing depth. ToF cameras measure the distance
+to objects by measuring the phase shift of the reﬂected light
+signal to the phase of the near-IR light source, for every
+pixel of the camera. It provides three signiﬁcant advantages:
+works without textured surfaces, does not required complex
+calculations and is not affected by variable lighting conditions.
+A detailed review on ToF cameras, as well as comparisons
+to camera and laser based systems are described in [20].
+However, a ToF camera drawback is low resolution and lack of
+colour information of the environment. As such, it makes sense
+to merge depth and color cameras to provide richer information
+in outdoor environment. Though some works have used an
+integrated ToF-RGB system [21], limited studies apply such
+conﬁgurations outdoors [22].
+Fig. 1. Robot Navigation using GoogleEarth, a WP-trajectory plan and NAV
+Our research’s goal is to revisit automatic fruit detec-
+tion/extraction for Y.E. and localization, through the develop-
+ment of a dynamic algorithm for detecting tangerines on a tree,
+while a robot is in motion around/along trees. Additional abil-
+ity to our perception system is the extraction of relevant data
+and its storage in a proper data-structure model (graph); in the
+view of further localization for manipulation task (automatic
+fruit picking) or dynamic yield monitoring. That is different
+from the purely automated CV approach presented in [3],
+where the main weakness was the recount of alredy detected
+apples. Our system uses a fruit labelling –based on pattern
+recognition in the adopted graph representation of the fruits
+information– to retrieve and reduce fruit recount occurring
+with the CV-based system. For this objective to be met,
+perception (MV/ML system) is substituting to vision, as part of
+a larger framework including learning and planing; thus, going
+from an (a ﬂow of) image(s) to a set of abstractions ﬁt with
+the visual contents; in the scope of using these abstractions
+in planning robot motion and manipulation tasks. Though we
+focus on tangerine trees, the approach with this methodology
+should be tunable to varieties of fruits (oranges,apples,.. . ).
+Fig. 2. Robot Monitoring a Tree: From Image ﬂow to graph representation
+II. ROBOTIC PLATFORM
+A. Scenario
+In an orchard monitoring scenario, the robot traverses the
+orchard, using its NAV system and a manually designed plan
+(Fig.1) which trajectory is a set of waypoints around individual
+trees (Fig.2) or along the tree-rows (Fig.3). While performing
+this task, the robot uses its MV platform to direct its gaze at
+the trees. Doing this, the MV-ML system extracts information
+relating to the fruits in the tree, in terms of location, number,
+size, color, texture,.. . and estimates, the tree yield and deliver
+positions of each labeled fruit. Additional applications poten-
+tially beneﬁting of this result are statistical engines capable of
+fusing the information and deliver qualitative data about the
+full orchard yield, such as percentage of ripe fruits, size/class-
+wise sorting information, and labeling of the fruits for quality
+and tracability purposes. It can furthermore serve determining
+quantities (trees load along the seasons) and hint about time
+to harvest based on fruit ripeness, load variations,.. .
+Fig. 3. Robot Monitoring Organized-Orchard Trees
+This exercise is very challenging due to the uncertain en-
+vironment conditions (light, operating distance, terrain topol-
+ogy,..), but also to the difﬁculty for sensors to operate properly
+in a noisy environment (perturbed navigation, NAV drifts,
+Cameras efﬁciency,. . . ). CV has proven to be very useful
+for such robotic tasks, because non-invasive. Yet, monocular
+visual information alone is unsufﬁcient, while stereo-vision is
+easily impaired due to its dependancy to operating distance.
+ToF cameras are now a mature technology that is widely
+being in robotic applications, giving location information vital
+to manipulation and spacial representation [23]. Using the
+superposition of monocular RGB and ToF cameras allows to
+extract both position and features. The problem of incorpo-
+rating elaborate vision systems –for artiﬁcial perception to be
+
+viable in agricultural applications– is yet widely a problem to
+solve.
+B. System Overview
+In our architecture, the vision system is an eye-in-hand
+conﬁguration, based on a camera-rig mounted on a manip-
+ulator solidary to the mobile platform (Fig.4-b). This will in
+term serve to gaze at the tree from different angles to assert
+fruits partially detected due to folliage occlusion. The latter
+capability is out of the scope of this article, to the beneﬁt
+of the detection/extraction algorithm developement. Additional
+efforts need to be made in the stabilizatin of the manipulators’-
+end-effector, for the robot in motion.
+For simpliﬁcation purposes, this article describes a ﬁxed
+conﬁguration, so to focus on the perception algorithm. The
+MV is preforming the data acquisition, segmentation, feature
+extraction of the image ﬂow. The perception next operation
+relies on the algorithm to extend from signal acquisition to
+determination of the fruits position and features, through data
+fusion and characterization. Further MV component of the
+algorithm uses a mathematical graph as a data structure to
+store fruit information and a simple agebra aims at asserting a
+basic understanding of the fused data into useful information.
+The estimation of the yield of fruits in a tree, is determined
+by implementing and updating the graph through updating
+its nodes, to assert existing fruits information, and adding
+new nodes for newly detected fruits, if these appear along
+the scrutiny around the tree. Partially appearing fruits are
+checked through change of perspective along motion, and
+the graph is upadated accordingly to correct/complete the
+partial information due to occlusions by folliage/branches.
+Fig.2 illustrates the simpliﬁed scenario here-above described.
+(a)
+(b)
+Fig. 4. (a)Camera Rig; (b)Rig Mounted on Husky Robot
+1) Hardware: The system HW consists of 2 major parts:
+1.1. A color/depth camera-rig composed of a Basler ACE
+acA1300-30gc RGB camera, and a PDM CamCube3.0 ToF
+camera (Fig.4-a). The ToF camera is an all-solid-state 200x200
+pixels Time-of-Flight 3D camera. The device has an operating
+range of 0.3m to 7.5m and provides real-time distance and
+grayscale information at 40fps, through USB 2.0 connection.
+Detailed discussion on the camera can be found in [27]. The
+CamCube 3.0 system provides three pieces of information
+for every image pixel: intensity, depth and amplitude. The
+intensity image is similar to grayscale image from a tradi-
+tional 2D-camera. The amplitude data indicates the amount of
+modulated light reaching the sensor and hence, it can be used
+to measure the reliability of its corresponding distance reading.
+In the depth image, the values in each pixel correspond to the
+distance between the ToF camera to an observed objects. Using
+the cameras intrinsic properties, the 3D point cloud data can be
+computed. The RGB camera is a high-resolution 1.3MP (1294
+pixels x 964 pixels) monocular color camera with a frame
+rate of 30fps. It is powered by 12VDC and connects to a PC
+via GigE Ethernet connection. The camera is equipped with a
+6mm Fujinon DF6HA-1B lens. Both video stream and rafale-
+like image acquisition are possible. While both need global
+trigger to synchronise RGB and ToF, the latter is synchronized
+through software. The RGB camera is rigidly mounted on top
+of the ToF camera, and both are triggered synchronously at
+1 Hz. The system is designed for day use. Yet, experiments
+performed in- and outdoors helped to appreciate the impacts
+of unpredictable natural illumination on the fruit detection and
+characterization. For an optimal exposure, the rig is about 2
+meter distance from the target.
+1.2. A support vehicle Husky A200 from Clearpath
+Robotics. An autonomous vehicle developed at Callaghan
+Innovation will be used as the carrying platform. The platform
+on its own is able to travel around a tree, or through orchard
+aisles, at preset constant speed by following fruit tree-rows;
+given a waypoints set plan for the desired trajectory. The speed
+is set up to 1 m/s but can be reduced for data acquisition
+improved stability. The camera rig will be attached to the
+end-effector of a manipulator, ﬁxed at the front of the vehicle
+(Fig.4-b).
+2) Software: The system SW is also deviced as 2 compo-
+nents, both develloped at Callaghan Innovation:
+2.1. The crop yield estimation system, which has two major
+parts: (1) online centering of the image and image/ﬂow ac-
+quisition, and (2) ofﬂine, signal processing, feature extraction,
+data fusion, feature characterization and data storage in a graph
+representation. The online processing controls the start and the
+stop of data acquisition, it is implemented in C++ / Python.
+The ofﬂine software processes the acquired data and images
+for detection, registration, and ﬁnal fruit count. This part is
+implemented in Python / OpenCv.
+2.2. The navigation system for the robot platform, responsible
+for generating a trajectory plan and guiding the platform
+accordingly along the designed plan (Fig.1). The system is
+basd on ROS architecture and is implemented in C++ / Python.
+C. Calibration
+As with any camera system, the cameras have to be cali-
+brated before utilization. To obtain the intrinsic properties of
+both cameras as well as the extrinsic characteristics between
+them, classical stereo calibration algorithms based on the
+intensity image of the ToF and the color image of the RGB
+camera can be performed [24] [25]. Unfortunately, due to the
+low resolution of the ToF camera, the calibration target can
+usually only be localized poorly which leads to erroneous,
+
+non optimal parameters [20]. Previous work has been done to
+reﬁne the calibration by also using the depth information with
+the intensity image to obtain better results [26].
+In this work, we use the calibration procedure introduced
+in [29]. A SW to calibrate a ToF camera together with one or
+more color cameras following this method is available [28].
+The algorithms also include a polynomial depth correction
+model to compensate for systematical depth errors. For our
+speciﬁc conﬁguration, the generated polynomial function
+is shown in Eq.1 where d∗is the corrected depth, d is
+the measured depth, (x, y) are the image coordinates, and
+λ0 . . . λ5 are estimated parameters.
+d∗= λ0 + (1.0 + λ1) ∗d + λ2 ∗x + λ3 ∗y + λ4 ∗d2 + λ5 ∗d3
+(1)
+For the calibration, 30 images of a planar checkerboard pattern
+with varying distances, orientation in yaw, pitch and roll
+were captured (Fig.5). Within the calibration sample it is
+important to ensure that the whole image area is cover by
+the calibration target. In particular, the corners and border
+regions are important for representative radial and tangential
+lens distortion parameters. There are multiple considerations
+in selecting the size of the calibration target, namely the
+checkerboard must be visible and detectable by both sensing
+devices at varying distances.
+(a)
+(b)
+Fig. 5. Calibration images: (a)RGB image; (b)Intensity image
+1) Assigning depth values to the color image: The cal-
+ibration procedure described above determines the intrinsic
+parameters (focal length {fx, fy}, location of the principal
+point {cx,cy}, the radial and tangential lens distortion coefﬁ-
+cients) as well as the external parameters (rotation matrix R,
+translation vector t) for the two cameras. These parameters
+determination allows the transformation between the ToF and
+RGB coordinate systems. It is important to note that, in order
+to prevent false mapping due to radial and tangential lens
+distortions, both images were undistorted ﬁrst.
+The pinhole model for the ToF camera is shown in Eq.2
+sT oF
+
+
+uT oF
+vT oF
+1
+
+=
+
+
+f T oF
+x
+0
+cT oF
+x
+0
+f T oF
+y
+cT oF
+y
+0
+0
+1
+
+
+
+
+XT oF
+Y T oF
+ZT oF
+
+
+(2)
+where sT oF is a scaling factor, uT oF , vT oF are discrete pixel
+coordinates on the image plane and XT oF , Y T oF , ZT oF are
+the coordinates of the 3D point with respect to the ToF
+coordinate system. Using the relationship 3 and the depth
+of each pixel uT oF , vT oF the components of the 3D point
+XT oF , Y T oF , ZT oF can be reconstructed with Eqs.4, 5
+d =
+q
+XT oF 2 + Y T oF 2 + ZT oF 2
+(3)
+ZT oF = d ∗
+1
+s
+(
+uT oF −cT oF
+x
+fT oF
+x
+)
+2
++ (
+vT oF −cT oF
+y
+fT oF
+y
+)
+2
++ 1
+(4)
+XT oF = uT oF −cT oF
+x
+f T oF
+x
+∗ZT oF ;
+Y T oF =
+vT oF −cT oF
+y
+f T oF
+y
+∗ZT oF
+(5)
+The coordinates in the RGB image (uRGB,vRGB) can be
+computed by transforming the 3D points into the RGB camera
+coordinate system and using a pinhole camera perspective
+projection model as shown in Eq.6 . Hence any depth value can
+be assigned correctly to the corresponding RGB coordinates.
+sRGB
+
+
+uRGB
+vRGB
+1
+
+=
+
+
+f RGB
+x
+0
+cRGB
+x
+0
+f RGB
+y
+cRGB
+y
+0
+0
+1
+
+
+R
+t
+
+
+XT oF
+Y T oF
+ZT oF
+1
+
+
+(6)
+D. Perception System
+1) MV-ML Perception Algorithm at a glance: The general
+algorithm for MV-ML, incorporating the mobile platform, is
+developed as follows:
+Initialconditions:
+k=0;
+SuperGraphG={}
+CalibrationColorCam:
+⇒(fx,fy,Mx,My,D)c;
+CalibrationDepthCam:
+⇒[R,t]c
+d,(fx,fy,Mx,My,D)d;
+F OR every T ree (Tk): k=1..n
+Gk
+←InitGraph();
+Xrk
+←GetRobotP ose(GP S,IMU);
+Xtk
+←GetT reeP ose(Xrk);
+Fk
+←GazeAtT ree(Xtk);
+Gk
+←StoreT reeF eatures(Fk);
+G
+←AddGraph(Gk);
+Return:G
+(7)
+This algorithm services tree-monitoring in an orchard. The
+trees are sufﬁciently spaced allowing a robot to navigate
+around them (Fig-2). This is not the best conﬁguration, but
+it aims at more autonomous behavior on natural terrain. In
+the case of organized orchards with allined trees (Fig-3),
+the exercice become slightly easier. Though the problem of
+occlusion by folliage persists, it is reduced, and the evaluation
+of the yield is better estimated. Also, the use of a super-
+graph –as deﬁned primarily– becomes redundant since the
+unit graph corresponded to one tree. In the tree-rows case,
+the trees are not separable. So, the scrutiny of the fruits is
+done in a continuous-scan and registration manner. The unit
+graph is then adopted for a tree-row or one row side at a time.
+In any case, the super-graph gives a possibility to statistical
+evaluation of the orchard yield w.r.t to the results within each
+unit graph in the super graph.
+The routine GetRobotP ose(GP S,IMU) is responsible to extract
+position information of the robot in the orchard. This can be
+done by use of the NAV system and/or triangulation by using
+beacons in the orchard (trees markers). Kalman ﬁltering [30]
+is appropriate for estimating the position in case of failure
+of any of the sensors involved in navigation. The routine
+GetT reeP ose(Xrk) uses the MV system in order to locate the
+marker (Tree-frame) w.r.t the robot reference frame. This
+allows global positioning of the features for further recovery
+(in case of instable motion of the robot/camera system) and
+
+retrieval (of exisiting/stored fruits). More precise measurement
+consists in using local distances between features in the depth
+image. But these also are subjected to sensors’ accuracy
+limitations, which motivates a proper choice of the gaze
+(operating) distance. StoreT reeF eatures(Fk) routine consists in
+deriving the proper desired data (color, size, position, close
+neighbors,. . . ) after the use of feature detection extraction in
+GazeAtT ree(Xtk). This is the ﬁltered information permitting
+the evaluation operation –to release data to the farmer about
+orchard yield in term of percentage of yield ripness, yield
+dynamical evolution along the year (periodic monitoring), and
+the like. The qualitative data is moreover the desired feature,
+since it is part of the farmer traditional appreciation of his
+cultures, along the year. . . GazeAtT ree(Xtk) is the perception
+main routine, and is developed in the next section.
+2) GazeAtTree(): From image ﬂow to graph representation:
+For a ﬁxed conﬁguration, with known cameras pose w.r.t the
+tree; the MV-ML algorithm, GazeAtT ree(Xtk) –for one tree (see
+experimental setup)– is developed as follows:
+Initial motion pattern conditions:
+k=0;
+GraphGk={};
+P osek=W ayP oints(k);
+Init Capture Color:
+⇒Cc
+←InitCaptureColor();
+Init Capture Depth:
+⇒Cd
+←InitCaptureDepth();
+Initiate motion pattern around tree
+Tk=f(Xk)
+W HILE (F lag==T rue):
+F OR every frame (Fk): k=1..m
+Ick,Idk
+←CaptureF rames(Cc,Cd);
+IcN
+←DenoiseColor(Ick);
+IcE ,[Colmin,Colmax]
+←EqualizeColor(IcN );
+IcF
+←F ilterColor(IcN ,[Colmin,Colmax]);
+IcD
+←F eatureDetect(IcF );
+fk=(a,m,h,s)j ,j=1..m
+←F eatureExtract(IcD);
+Ik,RoI
+←SuperposeColor&Depth(Ick,Idk);
+Ek
+←DeriveF eatureData(Ik,fk);
+fkF
+←F ilterF eatures(fk,Ek);
+mk
+←P ointMatchF eatures(Ik,Ik−1);
+[Rk,tk]
+←T rackF eatures(Ik,Ik−1,mk);
+F OR every feature (fi) ∈fkF : i=1..l
+IF fi ∈Gk:
+T HEN
+Gk
+←UpdateF eature(fi,Gk−1,mk,Rk,tk);
+ELSE
+Gk
+←UpdateGraph(fi,Gk−1);
+IF Gk==Gk−1: F lag==F alse; BREAK(F OR−loop);
+P osek+1
+←MoveRobot(W ayP oints);
+Return:Gk
+(8)
+More development of the algorithm will be made in the
+analysis part, in the next section.
+III. EXPERIMENTS AND ANALYSIS
+A. Experimental setup
+To simulate the platform’s travel, we used –indoors– a
+robot-arm to move a moc-up tree, simulating appearant robot
+velocity in circular- (scenario sc-1-1) and rectangular-shape
+(sc-1-2) patterns around the tree (Fig-6-a). Outdoors, we
+simulated the platform motion by carrying the camera at
+constant height and known positions around the moc-up tree,
+in circular(sc-2-1) and rectangular (sc-2-2) shape patterns (Fig-
+6-b). The circular patterns are performed in order to appreciate
+pure rotation transformation and corelate computed estimation
+of the objects with data sensors-derived information. The
+rectangular shape scenarios introduce the additional translation
+to the rotation transformation. This helps estimating positions
+of features extracted, asserting the adequation of the matched
+features and further their proper and robust labeling.
+In the experiments, the vision system is mounted on a
+tripod and positioned manually. The geographic coordinates
+of the camera-rig are known through direct measurement. This
+location is used by the software to calculate the geographic
+position of every fruit detected on the tree: We use the global
+(optical center) coordinates to register the location of fruits,
+and by that, avoid node (fruit) redundancy in the graph; and
+we use local (image) coordinates (distance between fruits in
+the tree) to service faster graph traversal (pick closest fruit,
+next, in a potential manipulation task) and retrival for labelling
+(elimination of recount in monitoring task). The acquired
+sequential images provide multiple views of the tree from
+different perspectives, to reduce fruit occlusion and assert
+fruits already detected (continuity).
+(a)
+(b)
+Fig. 6. Experiments: (a)Indoors; (b)Outdoors
+B. Analysis and Discussion
+The routine CaptureF rames(Cc,Cd) is responsible to synchro-
+nize acquisition of the RGB and ToF images. These images
+are unequal in size and their optical centers are different.
+An alignment of the two frames acquired is insured by the
+routine SuperposeColor&Depth(Ick,Idk). This routine provides
+the RGB/Depth data and the region of interest (RoI) illustrated
+by the rectangle in Fig.9 for instance. The RoI serves, later
+on, to reject objects detected out of its region. The routine
+DenoiseColor(Ick) is responsible , through segmentation opera-
+tions, to blur and operate an opening operation on the original
+color image. Tuning of the parameters for threshholding,
+erosion, dilation; and the size of the ﬁlters utilized is manulally
+determined. It is very difﬁcult to automate this process, as
+the level of noise depends on the background and light levels
+the camera is subjected to; but the high-size (7x7) Sobel-like
+kernels for ﬁltering help to both remove noise and detect sure
+back- and foregrounds, to separate bjects in the image. Fig.8-b
+and Fig.13-b shows how such a separation between fore- and
+backgorund is successful n both in- and outfoors conditions;
+while Fig.12 show the difﬁculty in ﬁltering outdoor images.
+The routine
+EqualizeColor(IcN) helps ﬁlter by color: we
+need to determine which color band we are interested in. For
+that, we explore the bands in RGB through historgrams of
+
+(a)
+(b)
+Fig. 7. Equalization Histograms: (a)Indoors; (b)Outdoors
+the original image (Fig.7-a upper proﬁle) and proceed with
+extending the histograms along the whole spectrum (Fig.7-a
+lower proﬁle). We can also see how the histograms are altered
+by ambiant light: in (Fig.7-a) the separation of the R,G and B
+bands is clear but located in the lower-half of the histogram
+bins, while in (Fig.7-b) the distribution is quasi-linear, but the
+histograms show a very low-amplitude of the proﬁles for R,G
+abd B. The equalization ampliﬁes these values –as seen from
+both lower parts of images (Fig.7-a and -b)– and averages
+their spread along the whole bins’ set; linearizing by that the
+distribution proﬁles for the 3 colors.
+(a)
+(b)
+Fig. 8. Color Filtering: (a)HSV Saturation image; (b)color-band ﬁltering
+The routine F ilterColor(IcN,[Colmin,Colmax]) is responsible
+for ﬁltering the image of interest in order to determine the
+objects seeked for in the image. In the case of tangerines,
+we need to cut a band in the green-yellow to the orange-
+red band. A transformation into HSV color referencial helps
+extracting the saturation image, which is light-invariant (See
+Fig.8-a). A mask is created using the color band chosen, and
+the mask helps extracting the color shades from the equalized
+image (Fig.8-b). Similar results from the outdoors experiment
+(Fig.13-b) shows similar results: thanks to the equalization,
+the features desired are not deteriorated.
+(a)
+(b)
+(c)
+Fig. 9. Feature Extraction: (a)Blobs; (b)Hough Transf; (c) Contours.
+F eatureDetect(IcF ) is the feature detection routine. Here,
+3 kinds of detection mechanisms are utilized(Fig.9): (a)blob
+detection (BD), (b)circular Hough Transform (HT) and
+(c)contours detection (CD). Each of which gives a certain
+number of detected features. The reason to that, is a need
+to generate reliable inliers, by superposing adequately the
+results given by each method. For instance, HT is very stable
+feature detector, but is unﬂexible in determining patterns of
+different shapes/sizes due to its preliminarily ﬁxed parameters.
+But, it can detect circularity and give objects’ radius even if
+the shape of the object is deteriorated by light over-exposure
+or noise cancellation. BD is very useful to cut-off outliers
+using convexity, circularity and area intervals, but fails with
+noisy images, or if the thresholding is not adequate. CD is
+very accurate and delivers a hierarchy of objects, useful to
+deliberate on in- and outliers, but it returns unsorted contours,
+and many outliers, due to its sensitivity to ﬁne details.
+(a)
+(b)
+Fig. 10. Image equalization: (a)RGB image; (b)equilized image
+The routine F eatureExtract(IcD) is where feature extraction
+is made. The graph is initiated, and different immediatly
+vision-derivable features for the detected objects are stored in
+the graph nodes. The unit graph generated from this routine
+contains a number of objects, with their moments, area,
+perimeter and hull. At this stage, one can already implement a
+ﬁltering of this data such as removing all data with very small
+area (noise outliers), or all objects with hull points less than
+4 points (non-circular/polygonal).
+(a)
+(b)
+Fig. 11. Histograms: (a)RGB image; (b)equilized image
+This graph will be further optimized using the routine
+DeriveF eatureData(Ik,fk), where objetcs size, convexity, solid-
+ity, centroid coordinates (in the RGB-frame) derived from
+the image moments; and spatial coordinates by matching
+the RGB centroids to their projection in the depth image.
+The routine F ilterF eatures(fk,Ek) is responsible for eliminating
+every object that does not ﬁt with the heuristics chosen: for
+instance, non-circularity, small contours and objects which
+coordinates are out of the RoI will be eliminated from the set
+of nodes. Further objects whose coordinates go beyong the
+separation made by k-means method will be also eliminated:
+Thanks to the knowledge of the tree position, this operation
+
+can be performed rather accurately. A simple check with the
+(a)
+(b)
+Fig. 12. Filtering: (a)RGB image; (b)equilized image
+CD result, through the number of points for each contour,
+helps determine the geometry of the object, asserting this
+results with HT one’s. Contours moreover derive the hull and
+the area of the objects: if both are similar, the object is convex,
+otherwise, it could be expect that two or more objects are
+occluding eachother, which the segmentation operation failed
+to seprarate. An invariant point in the image is recognized as a
+background point, and if detected as object in two successive
+feature extractions (Gk−1→Gk), it will be rejected from the
+graph. Such an approach helps optimizing the number of
+objects determined, and help stabilizing the graph generated
+with the number of objects which are inliers.
+(a)
+(b)
+Fig. 13. Color Filtering: (a)HSV Saturation image; (b)color-band ﬁltering
+Yet, P ointMatchF eatures(Ik,Ik−1) will use invariant-points in
+order to retrieve and match the successive images components.
+This routine serves to determine the rotation of the tree in the
+camera frame, which translates to the robot rotation around the
+tree; using the Iterative Closest Point (ICP) algorithm. The
+determination of [R,t] for the transformation helps estimate
+where the features are placed and determine the invariance of
+their relative positions to eachother in the geometric graph.
+The routine T rackF eatures(Ik,Ik−1,mk) is mostly utilised when
+the time between two consecutive frames is very small;
+allowing by this to detect the motion of the features in the
+image and the estimation of their next possible position(s).
+This last routine helps recognizing features that are already in
+the graph, and helps avoiding a recount in the new graph.
+UpdateF eature(fi,Gk−1,mk,Rk,tk) and
+UpdateGraph(fi,Gk−1)
+are self explanatory: the former is checking the pre-existing
+features in the graph and assert their label (number) in the
+graph. The later introduces the new node with its accompany-
+ing data, whence it is not in the graph. The [R,t] transformation
+supports the recognition of the objects in the graph Gk by
+projecting them accordingly using the reverse transform in
+(a)
+(b)
+Fig. 14. Feature Detection: (a)Without Equalization; (b)With Equalization
+the previous graph Gk−1. This eliminates recounts and helps
+determine the new nodes to add to the graph Gk. The process
+ﬁnishes once the test Gk==Gk−1 is true: This translates in an
+isomorphism between the newly built graph and the apperant
+side of the buffer graph
+Gk−1. In this case, there is no
+more fruits to be detected but the ones already in the graph
+Gk−1. The process GazeAtT ree(Xtk) is suspended and the robot
+reinitiate its state and unit graph, for the next tree to map.. .
+(a)
+(b)
+Fig. 15. Extraction Techniques: (a)Hough Transform; (b)Blobs
+Utilizing this algorithm indoors gave very good results,
+since the environment, lighting and operating conditions are
+optimized (less noise, no perturbation in the objects motion,...).
+Outdoors, the problem of light was tackled with appropriate
+equalization of the RGB (Fig.10) and ﬁltering (denoizing)
+operation (Fig.12). Results are shown in the histograms for
+outdoors experiments (Fig.11). The detection of the desired
+color was performed using a chosen color band, by converting
+the RGB image into HSV (Fig.13-a) and masking by the
+desired color (Fig.13-b).
+(a)
+(b)
+Fig. 16. Extraction & Characterization: (a)Contours; (b)Characterized Graph
+Feature detection is illustrated in (Fig.14-a,b) and shows
+the usefulness of equalization on light saturation invariance
+image and further image ﬁltering. Features extraction using
+3 methods in (Fig.15-a,b) where blob, Hough and (Fig.16-a)
+Contour detection methods show different numbers of nodes
+
+(candidates). Further graph ﬁltering, reduces the set of objects
+detected to the number of inliers solely, and a ﬁx point at
+the base of the tree, used for reference (Fig.16-b). Finally
+(Fig.17-a,b show resectively the tree graph reconstruction:
+(a) illustrates the Delauney graph, which simplices are used
+to trace node patterns, thanks to the simplex edges lengths
+and adjacent areas. Results show –for indoor experiments– a
+graph construction oscilating between 90 and 100%, using one
+to two revolutions around the tree. For outdoor experiments,
+the operation needs more scrutiny time, and the assertion of
+inliers in the graph is obtained more accurately after 3 to 5
+circumvolutions around the tree. The graph number of nodes
+reaches 75 to 90%. The nodes’ assertion is slower, due mainly
+to working distance, background noise and light variation.
+(a)
+(b)
+Fig. 17. Graph conﬁgurations: (a)Delauney; (b)Convex Hull
+IV. CONCLUSION
+This work presents an algorithm aiming at determining yield
+estimation and mapping in a tangerine tree. The process is
+performed by the use of RGB/Tof camera-rig mounted on
+a mobile platform. The algorithm uses image acquisition,
+superposition and data fusion to determine objects and their
+characteritics. Furthermore, results on indoor and outdoor ex-
+periments showed feasibility. The determination of the objects
+of interest was estimated after a number of revolutions around
+the tree and established proper count with a variance of
+about 15%. Further robustiﬁcation of the algorithm have to
+be implemented in order to insure proper and more accurate
+estimation. This can be done by automatically determining
+optimal parameters for thresholding, color-band selection, op-
+timal equalization and further enhancement of the heuristics
+used to exclude outliers and avoid recounts in the graph.
+Paradigms of inductive learning and reinforcement learning
+will be explored to check feasibility. Pattern matching of
+feature in graphs will be revisited in order to optimize the
+search to more precise estimation of the yield through a better
+mapping of the tree contents.
+ACKNOWLEDGMENT
+The authors would like to thank Callaghan Innovation for
+its support to this work, and the Crown-funded budget (SiF)
+promoting the Intelligent Mobile Robotics R&D program.
+REFERENCES
+[1] Y. Ampatzidis, S. Vougioukas, D. Bochtis and C. Tsatsarelis, A yield
+mapping system for hand-harvested fruits based on RFID and GPS
+location technologies.
+Precision Agriculture,Vol.10:63-72, 2009.
+[2] U.O. Dorj, M. Lee, and S. Han, A Counting Algorithm for Tangerine
+Yield Estimation.
+SERSC, ISA 2013, ASTL Vol.21:279- 282, 2013.
+[3] Q. Wang, S. Nuske, M. Bergerman, and S. Singh, Automated Crop Yield
+Estimation for Apple Orchards.
+Proc. Int. Symposium on Experimental
+Robotics, Quebec City, Quebec, June2012.
+[4] Q. Zaman, and A.W. Schuman, Nutrient management zones for citrus
+based on variation in soil properties and tree performance.
+Precision
+Agriculture, Vol.7:45-63, 2006.
+[5] X. Ye, K. Sakai,, M. Manago, S. Asada, and A. Sasao, Prediction of
+citrus yield from airborne hyperspectral imagery.
+Precision Agriculture,
+Vol.8:111-125, 2007.
+[6] Palaniappan Annamalai., W.S. Lee and T.F. Burks, Color Vision System
+for Estimating Citrus Yield in Real-time.
+An ASABE International
+Meeting Paper (No 043054), 2004.
+[7] R. Chinchuluun, W.S. Lee and T.F. Burks, Machine Vision-Based citrus
+yield mapping system.
+Proc. Florida State Horticulture Society,
+Vol.119:142-147, 2006.
+[8] S. Best, F. Salazar, R. Bastas,and L. Leon, Crop load estimation model to
+optimize yield-quality ratio in apple orchards.
+Journal of Information
+Technology in Agriculture, Vol.3:11-18 (www.jitag.org), 2008.
+[9] R. Zhou, L. Damerow, Y. Sun and M.M. Blanke, Using colour features of
+cv. Gala apple fruits in an orchard in image processing to predict yield.
+Precision Agriculture, Vol.13:568-580, 2012.
+[10] D. Stajnko, J. Rakun, and M.M. Blanke, Modelling Apple Fruit Yield
+Using Image Analysis forFruit Colour, Shape and Texture.
+European
+Journal of Horticulture Science, Vol.74(6):260-267, 2009.
+[11] U.O. Dorj, M. Lee, and Diyan-ul-Imaan, A New Method for Tangerine
+Tree Flower Recognition.
+Int. Conf. on Multimedia, Computer Graphics
+and Broadcasting CCIS Vol.353:49-56, 2012.
+[12] R.G.V. Bramley, and R. P. Hamilton,
+Understanding variability in
+winegrape production systems- 1.Within vineyard variation in yield over
+several vintages.
+Australian J. of Grape&Wine Research, Vol.10:32-45,
+2003.
+[13] J.A. Taylor, Digital terroirs and precision viticulture: Investigations into
+the application of information technology in Australian vineyards.
+PhD
+dissertation, University of Sydney, New South Wales, AU, 2004.
+[14] R.G.V. Bramley, Understanding variability in winegrape production
+systems- 2. Within vineyard variation in quality over several vintages.
+Australian J. of Grape&Wine Research, Vol.11:3342, 2005.
+[15] K.D. Aggelopoulou, D. Wulfsohn, S. Fountas, T.A. Gemtos, G.D. Nanos,
+S. Blackmore, Spatial variation in yield and quality in a small apple
+orchard.
+Precision Agriculture, DOI 10.1007/s11119-009-9146-9.
+[16] L. Spinello and K.O. Arras, People Detection in RGB-D Data,
+IEEE/RSJ Int. Conf. on Intelligent Robots &S ystems (IROS), 2011.
+[17] C. Rasmussen, Kinects for Low- and No-Sunlight Outdoor Trail-
+Following,
+Workshop on Advanced Reasoning with Depth Cameras
+at Robotics: Science&Systems, 2012.
+[18] D. Cheng, C.K. Wong and P.P.K. Lim, Vision system for the automation
+of ovine carcass processing,
+Proc. of Australasian Conf. on Robotics
+& Automation (ACRA), 2014.
+[19] B.H. Schafer, M. Proetzsch and K. Berns, Stereo-Vision-Based Obstacle
+Avoidance in Rough Outdoor Terrain.
+Int. Symposium on Motor Control
+& Robotics (ISMCR), 2005
+[20] S. Foix, G. Aleny and C. Torras, Lock-in Time-of-Flight (ToF) cameras:
+A survey.
+IEEE Sensors Journal, vol.11(9):1917-1926, 2011.
+[21] M. Lindner, A. Kolb and K. Hartmann, Data-Fusion of PMD-Based
+Distance-Information and High-Resolution RGB-Images.
+Int. Sympo-
+sium on Signals, Circuits & Systems, 2007.
+[22] X. Zhu, S. Tang, A Novel Method To Collect Kinect-Comparable RGB-D
+Outdoor Image.
+Global Perspectives on A.I. (GPAI) Vol.3, 2015.
+[23] G. Aleny, S. Foix, C. Torras, ToF cameras for active vision in robotics.
+Sensors and Actuators-Physical:A, Vol.218:1022, 2014.
+[24] J. Fischer, B. Huhle and A. Schilling, Using time-of-ﬂight range data
+for occlusion handling in augmented reality.
+In Proc.13th Eurographics
+Conf. on Virtual Environments, EGVE07, p:109116, Switzerland, 2007.
+[25] S.A. Gudmundsson, H. Aanaes, and Rasmus Larsen. Fusion of stereo
+vision and time-of-ﬂight imaging for improved 3d estimation.
+Int.J.
+Intell. Syst. Technol. Appl., Vol.5(3/4):425433, 2008.
+
+[26] M. Lindner, I. Schiller, A. Kolb and R. Koch, ToF sensor calibration for
+accurate range sensing.
+Computer Vision and Image Understanding,
+Vol.114(12):1318 1328, 2010.
+[27] T. Ringbeck and B. Hagebeuker. A 3d time of ﬂight camera for object
+detection.
+Optical 3-D Measurement Techniques, 5(3/4), July 2007.
+[28] I.
+Schiller.
+Mip:
+multi-camera
+calibration.
+http://www.mip.informatik.uni-kiel.de/tiki-index.php?page=Calibration.
+[29] I. Schiller, C. Beder, and R. Koch. Calibration of a pmd-camera using
+a planar calibration pattern together with a multi-camera setup.
+11th
+ISPRS Congress, 2008.
+[30] B. Kadmiry, F.G.S EKF for Model-Based Skid-Steered Mobile Robot.
+The 6th International Conf. on Automation, Robotics & Applications
+(ICARA), 2015.

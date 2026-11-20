@@ -1,0 +1,499 @@
+1 
+ 
+An ASABE Meeting Presentation 
+DOI: https://doi.org/10.13031/aim.202200240 
+Paper Number: 2200240 
+Real-time counting of strawberry using cost-effective 
+embedded GPU and YOLOv4-tiny 
+Amritha Immaneni1, Young K. Chang2 
+1Department of Electronics and Communication Engineering, Birla Institute of Technology and Science, Hyderabad, 
+India 
+2Department of Engineering, Faculty of Agriculture, Dalhousie University, Truro, NS, Canada. 
+ 
+Written for presentation at the 
+2022 ASABE Annual International Meeting 
+Sponsored by ASABE 
+Houston, Texas 
+July 17–20, 2022 
+ABSTRACT. Recent years have seen an increase in demand for strawberries, which necessitates automation in the relevant 
+agricultural processes. Multiple object detection models have been proposed previously in order to automate agricultural 
+processes, through applications such as fruit and disease detection. However, in integrating these improvements, it is 
+essential that the deployment costs and weight are not increased significantly. This paper presents an analysis of the 
+performance and accuracy of YOLOv4 and YOLOv4-tiny on real-time strawberry detection when inference is carried out 
+on an embedded GPU device such as an NVIDIA Jetson Nano. Three frameworks (Darknet, TensorRT, and TensorFlow Lite) 
+and three different resolutions (416×416 pixels, 480×480 pixels, and 640×640 pixels) were compared to obtain an optimal 
+mAP and inference speed trade-off. The proposed setup is cost-effective and lightweight, which is good for small, unmanned 
+ground vehicles and/or drones, and can achieve an accuracy of 91.95% at an FPS rate of 14.6, which makes it a viable 
+option for deployment in strawberry fields. 
+Keywords.  Image processing, Object detection, Real-time, YOLO   
+ 
+ 
+ 
+The authors are solely responsible for the content of this meeting presentation. The presentation does not necessarily reflect the official position of the 
+American Society of Agricultural and Biological Engineers (ASABE), and its printing and distribution does not constitute an endorsement of views 
+which may be expressed. Meeting presentations are not subject to the formal peer review process by ASABE editorial committees; therefore, they are 
+not to be presented as refereed publications. Publish your paper in our journal after successfully completing the peer review process. See 
+www.asabe.org/JournalSubmission for details. Citation of this work should state that it is from an ASABE meeting paper. EXAMPLE: Author’s Last 
+Name, Initials. 2022. Title of presentation. ASABE Paper No. ---. St. Joseph, MI.: ASABE. For information about securing permission to reprint or 
+reproduce a meeting presentation, please contact ASABE at www.asabe.org/copyright (2950 Niles Road, St. Joseph, MI 49085-9659 USA). 
+
+2 
+ 
+Introduction 
+Cultivated strawberries, which are a member of the Rosaceae family, have been grown in North America since 1835. In 
+Canada, day-neutral strawberries (which can produce for more than one season) are seeing an increase in acreage year to 
+year. In 2019, strawberries achieved the fifth highest farm gate value in Canadian fruit, at 123.7 million dollars. Moreover, 
+fresh strawberry exports have seen a steady increase from $2.3 million in 2016 to $10.8 million in 2019. (Canada & Centre, 
+2019) 
+The steady increase in demand for strawberries necessitates the integration of modern resources with agricultural 
+processes. The productivity of advanced agriculture could be significantly improved by reducing the use of manual labor 
+and increasing yield. The most extensive application of computer vision so far has been in fruit detection, that is, to detect, 
+discriminate and localize individual fruits from the surroundings (Kapach & Barnea, 2012). Such detection allows the 
+interaction of the relevant object and robotic manipulators. 
+Advances in deep learning have brought about networks and systems which automatically preprocess data and help 
+generalize distributions. For example, the You Only Look Once (YOLO) version 4 network utilizes data augmentation 
+techniques such as photometric distortion to increase variability in images (Bochkovskiy, Wang, & Liao, 2020). The 
+inclusion of these properties in the network simplifies the training process. 
+Various techniques have been utilized for fruit detection in the literature. In Bargoti and Underwood (2017), a Faster 
+Regional Convoluted Neural Network (Faster-RCNN) was utilized with non-maximum suppression as well as transfer 
+learning and a 16-layer Visual Geometry Group (VGG16) network. F1-scores of around 0.9 were obtained with VGG16. 
+The work in Sa, Ge, and Dayoub (2016) presented a real time fruit detection system termed DeepFruits which is also based 
+on Faster-RCNN, utilizing multi-spectral imaging. Multiple techniques were used to combine Red Green Blue (RGB) and 
+Near-Infrared (NIR) imagery, achieving an F1-score of 0.883 at an Intersection over Union (IoU) threshold of 0.4. In Lawal 
+(2021), a modified version of Yolov3 (YOLO-Tomato), which is similar to YOLOv4, was utilized to detect tomatoes. 
+Training data is assembled using the “Label what you see” technique. The model performed best with a combination of Mish 
+activation function and Spatial Pyramid Pooling (SPP) with an F1-score of 98%. Mature tomato detection is also 
+implemented in Liu, Mao, and Kim (2019), using Histogram of Oriented Gradients (HOG) descriptors which were utilized 
+to train a Support Vector Machine along with False Colour Removal (FCR) followed by coarse to fine scanning method for 
+detection. An F1-score of 92% was reported in the work; however this method did not perform well for overlapping and 
+blocked tomatoes.  The advantage with Deep Neural Networks as described in Bargoti and Underwood (2017), Sa et al. 
+(2016), and Lawal (2021) is that these methods automatically learn feature representations and avoid the need for manual 
+extraction of features. Going further, multiple works run a comparison of some of these individual networks. The work in 
+Wan & Goudos (2019) proposed an improved RCNN for fruit detection which shows a higher accuracy than Faster-RCNN 
+and YOLOv3. However, this network is much slower than YOLOv3 and requires a much larger dataset to train (a mean 
+Average Precision or mAP of 86% was achieved with 4000 training images). A comparison of the Faster-RCNN, YOLOv4 
+and MobileNet1 SingleShot multibox Detection (SSD) models was observed in Kim, Sung, and Park (2020) in the context 
+of real-time vehicle type recognition. The three networks were trained with the same data. The results showed that while 
+RCNN achieved the highest accuracy and SSD MobileNet is the fastest, YOLO achieved a suitable balance of speed and 
+accuracy, with the highest F1-score. The chief difference between YOLO and RCNN, as described in Yang and Jiachun 
+(2018), is that YOLO is a single stage detector, and it approaches object detection as a regression problem. While the 
+accuracy is comparable, the speed achieved by YOLOv4 is certainly higher than RCNN, which makes it suitable to smaller 
+devices. 
+Furthermore, in all of the mentioned works, inference is carried out on desktop or laptop devices with high memory 
+specifications. The inherent advantage of YOLOv4 is its support for edge-based devices with the introduction of scaled 
+versions (Wang, Bochkovskiy, & Liao, 2021). For example, YOLOv4-tiny was designed for low-end GPU devices and was 
+demonstrated to have a higher framerate than other state-of-the-art tiny models. Previous edge-optimized models include 
+ResNet-10, ResNet-18, and SSD. The analysis in Langis, Fulton, and Sattar (2020) which ran inferences on various deep 
+object detectors including the SSD MobileNet versions showed that YOLOv4-tiny achieved a comparable accuracy along 
+with the best efficiency (inference time). Similarly, the work in Magalhães et al. (2021) sought to compare YOLOv4-tiny 
+with SSD MobileNet, Res-Net, and a few other models. However, they utilized an integer quantized (INT8) model for 
+YOLOv4-tiny which compromised the accuracy. According to the results, the quantized version still achieved a comparable 
+F1-score of 85% at a balanced confidence threshold of 49% and also the lowest inference time (4.87 milliseconds) among 
+all the models. While Langis, Fulton, and Sattar (2020) and Magalhães et al. (2021) can attest to the efficiency and accuracy 
+of YOLOv4-tiny in comparison to other lightweight networks, the results in Fernandes, Rodrigues, and Barros (2021), which 
+benchmarked various models (namely the MobileNet versions and YOLOv4-tiny) on a dataset of over 4000 images, showed 
+that YOLOv4-tiny had the highest average precision (AP) when detecting smaller objects. This would be beneficial in 
+applications such as fruit detection given that the objects can be small and sometimes hidden. The framerate, however, was 
+relatively lower in this case as the selected hardware utilized a Tensor Processing Unit (TPU) accelerator whereas the support 
+
+3 
+ 
+for Darknet primarily lies with GPU hardware. Based on this, YOLOv4-tiny seems to be the most suitable network for fruit 
+detection on edge devices. 
+The article in Shi, Pallis, and Xhu (2019) described edge computing as a system in which devices are placed in close 
+proximity to sensors, mobile devices, and end-users. One such edge device is the NVIDIA® Jetson Nano ™ Developer Kit 
+(NVIDIA, n.d.) which will be described in the next section. It is a compact and cost-effective option to deploy in an IoT 
+system. 
+The focus of this paper is to observe the performance of YOLOv4 and YOLOv4-tiny on Jetson Nano in detecting three 
+classes in images and videos of strawberry fields. The three classes are flowers, unripe strawberries, and ripe strawberries. 
+The two networks will be compared on the basis of metrics such as precision, recall, mAP and frame per second (FPS) rate. 
+Further, the performance of YOLOv4-tiny will be observed on three frameworks (Darknet, TensorRT (FP16), and 
+TensorFlow Lite) in order to deduce the most suitable one for edge-based computing 
+ 
+Materials and Methodology 
+The dataset consists of images and videos which were collected during the summer of 2018 and 2019 from Balamore 
+Farm Ltd. (45°24'35.4"N, 63°34'26.3"W) and Millen Farms Ltd. (45°23'57.6"N, 63°33'31.1"W). 
+The inference was carried out on NVIDIA® Jetson™ Nano (NVIDIA, n.d.) with a 128-Core Maxwell GPU, Quad-core 
+ARM Processor and a 2GB 64-bit LPDDR4 RAM all operating on Ubuntu 18.4. It uses a 5V/3-A power supply through 
+USB-C. The GPU features CUDA-enabled parallel computing. For the purpose of testing real-time detection, a Raspberry 
+Pi v2 (Pi, n.d.) Camera Serial Interface (CSI) camera was connected to the Jetson Nano via a Mobile Industry Processor 
+Interface (MIPI) connector (Figure 1). 
+Both YOLOv4 and YOLOv4-tiny were trained for the detection of three classes as mentioned above. Both models can 
+be optimized with NVIDIA CUDA® (B, n.d.) and are suitable for inference on the Jetson Nano.  
+ 
+ 
+Figure 1. Experimental setup: NVIDIA® Jetson™ Nano with Raspberry Pi Camera v2 
+ 
+YOLO 
+The YOLO models were originally proposed by Redmon et al. (2016), Redmon and Farhad (2018), and Redmon and 
+Farhad (2018) and are classified as single-stage detectors. The model, which is based on Darknet (Redmon & Farhadi, 
+Darknet: Open Source Neural Networks in C, n.d.), predicts across all bounding boxes and classes on an image 
+simultaneously. Improvements came along with YOLOv2 and YOLOv3, where anchor boxes were used instead of fully 
+connected layers on top of the convolutional feature extractors, to predict bounding boxes. 
+A large improvement came forth in 2020 when (Bochkovskiy, Wang, & Liao, 2020) proposed YOLOv4 with a number 
+of new features such as Cross-Stage-Partial-connections (CSP), Cross mini-Batch Normalization (CmBN), Self-adversarial-
+training (SAT) and Mish activation. A modern object detection network (Figure 2) consists of a backbone which is pre-
+trained on another network, and a head which predicts the classes and bounding boxes. Additional layers, which make up 
+the neck, are added between the backbone and head in order to collect feature maps.  
+
+4 
+ 
+ 
+Figure 2. One-stage Object Detector 
+In case of YOLOv4, CSPDarknet53 was selected as the backbone due to its large number of convolutional layers. 
+Additionally, the backbone includes a Bag of Freebies (BoF) and Bag of Specials (BoS). BoF consists of methods such as 
+Data Augmentation, DropBlock regularization and Class label smoothing to improve accuracy while training without 
+affecting the inference cost. Data Augmentation utilizes methods such as photometric and geometric distortion to make the 
+model robust to images obtained from new environments, whereas focal loss helps the model deal with distribution bias in 
+the dataset. BoS is a bundle of methods which seeks to increase accuracy with a slight increase in inference cost. This 
+includes the Mish activation function, CSP and Multi-input weighted residual connections (MiWRC). 
+For the neck, an SPP block is added over the CSPDarknet backbone as it significantly increases receptive field. The SPP 
+block returns a fixed size of feature map regardless of the image size. This is integrated with a Path Aggregation Network 
+(PAN) for parameter aggregation. For the head, YOLOv3 was selected, which includes Spatial Attention Module (SAM) 
+and Non-maximum Suppression (NMS) for filtering badly predicted bounding boxes. 
+The Scaled YOLOv4 models were introduced in 2021 by Wang, Bochkovskiy, and Liao (2021) in order to fit applications 
+utilizing both low-end and high-end GPUs. This is done by changing the number of layers (YOLOv4-tiny has 38 layers 
+while YOLOv4 has 162 layers) or applying other networks. The YOLOv4-tiny architecture is similar to that of YOLOv4, 
+but with changes that bring about computational efficiency. The model integrates One-Shot Aggregation (OSANet) which 
+is an energy-efficient backbone with smaller computational complexity, as described by (Lee, Hwang, Lee, Bae, & Park, 
+2019). Gradient truncation is utilized for the best speed trade-off. For the neck, the design of YOLOv3-tiny is followed. 
+Additionally, the tiny model uses only two YOLO layers as opposed to three. The above-described scaling down of the 
+original model to YOLOv4-tiny makes it suitable for real-time object detection. 
+ 
+Training 
+In order to train both YOLOv4 and YOLOv4-tiny, around 200 images were obtained from the dataset as mentioned, 
+including snapshots from videos of the strawberry fields. These images were then annotated using LabelImg (tzutalin, n.d.) 
+which is graphical annotation tool (Figure 3). The annotations were of three classes: flower, unripe strawberry and ripe 
+strawberry. The training images had on an average 10-20 annotations. 
+Parameters play an important role in any deep learning model, and to varied degrees they dictate the robustness and 
+accuracy of the final weights which will be utilized for inference. The main parameters and values utilized to train YOLOv4 
+and YOLOv4-tiny are listed in Table 1. 
+Table 1. Parameters used for training YOLOv4-tiny and YOLOv4 
+Parameter 
+YOLOv4-tiny 
+YOLOv4 
+Batch 
+64 
+64 
+Subdivisions 
+16 
+16 
+Width 
+416 
+416 
+Height 
+416 
+416 
+Learning Rate 
+0.00261 
+0.001 
+Momentum 
+0.9 
+0.949 
+ 
+
+5 
+ 
+ 
+Figure 3. Training: Applying annotations using LabelImg 
+ 
+The width and height of 416 in both cases was found to be most suitable for inference. A higher resolution would make 
+the model more accurate but not without compromising the inference speed, whereas a lower resolution would make the 
+model less accurate. Batch and subdivisions were set to 64 and 16 respectively, in order to reduce memory usage. The 
+learning rate and momentum were left as default values mentioned in Table 1. The models were trained online on NVIDIA® 
+Tesla® P100 GPU. Training was done for close to 3000 iterations in both cases, until a mAP of over 95% was achieved, as 
+seen in Figure 4. 
+ 
+Figure 4. Loss chart of YOLOv4-tiny during training 
+ 
+ Evaluation 
+In order to compare the two models it is essential that metrics are defined for the purpose. Standard object detection 
+
+6 
+ 
+metrics include Precision, Recall, F1-score and mAP. 
+Precision is a measure of the model’s accuracy in classifying a sample correctly. Recall is a measure of the model’s ability 
+to detect samples in a certain category. The equations (1) and (2) describe the same, where TP stands for True Positive, FP 
+for False Positive and FN for False Negative. 
+ 
+𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃=  𝑇𝑇𝑇𝑇/(𝑇𝑇𝑇𝑇+ 𝐹𝐹𝐹𝐹)  
+(1) 
+ 
+ 
+𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅=  𝑇𝑇𝑇𝑇/(𝑇𝑇𝑇𝑇+ 𝐹𝐹𝐹𝐹)  
+(2) 
+ 
+The F1-score measures a balance between Precision and Recall. The equation (3) describes the same: 
+ 
+ 
+𝐹𝐹1 = 2 (𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃∗𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅)/(𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃𝑃+ 𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅𝑅)  
+(3) 
+ 
+Different methods to calculate mAP have been defined, as in the Pascal Visual Objects Challenge (VOC2007) (PASCAL 
+Visual Objects Challenge 2007, n.d.) and Microsoft Common Objects in Context (MS-COCO) (Common Objects in Context 
+Evaluation, n.d.). The concept of Average Precision or “AP” was first introduced with VOC2007. In contrast to VOC2007 
+which utilizes a single IoU threshold to calculate mAP, MS-COCO mAP is averaged over a range of IoU thresholds, which 
+has motivated better object localization. Recently a multitude of other methods have been proposed as well, however, MS-
+COCO and VOC continue to dominate as popular metrics, as described by Zou, Shi, Guo, and Ye (n.d.). In this study, we 
+have utilized the MS-COCO convention to evaluate mAP. 
+Using these metrics, the trained YOLOv4 and YOLOv4-tiny models are compared in the next section. 
+ 
+Other Frameworks 
+The benchmark inference speed of YOLOv4-tiny on NVIDIA Jetson Nano has been found to be 16 (in case of images). 
+In the recent years, various frameworks have been introduced to speed up deep learning inference. One such framework is 
+NVIDIA® TensorRT (NVIDIA, TensorRT, n.d.) which has been shown to deliver low latency and high throughput. The work 
+in Jeong, Kim, Tan, Lee, and Ha (2021) presents a parallelization technique which shows that TensorRT can provide a 41% 
+improvement in throughput while saving 20% of the energy consumption, which is particularly favorable for edge devices. 
+TensorRT provides quantization optimizations of INT8 and FP16 for deployment as well. Another framework which 
+allows for such optimization is TensorFlow Lite (TensorFlow, n.d.) which has been built for on-device inference. It is slated 
+for inference on mobile GPUs.  
+In this study, the YOLOv4-tiny model which was trained to detect flowers, unripe strawberries and ripe strawberries is 
+integrated with TensorRT and TensorFlow Lite separately and the consequent change in FPS is observed. The best 
+combination is thus chosen to obtain an optimal mAP and inference speed trade-off. 
+ 
+Results and Discussion 
+The trained models of YOLOv4 and YOLOv4-tiny were tested on images of strawberry fields using resolution 416×416, 
+set at a batch size of 1. Both models achieved a mAP over 90%, with YOLOv4 having a much higher accuracy owing to its 
+complexity. The mAP results at an IoU threshold of 0.5 for 39 images at three different resolutions are shown in Table 2.  
+Table 2. Results of mAP at IoU 0.5 using MS-COCO when the model was trained at resolution 416×416 
+Size 
+YOLOv4 
+YOLOv4-tiny 
+416×416 
+98.87% 
+91.95% 
+480×480 
+98.52% 
+93.55% 
+640×640 
+96.73% 
+88.56% 
+ 
+The results show that in case of YOLOv4, the best mAP is obtained at a resolution of 416×416 whereas in YOLOv4-tiny 
+it is at a resolution of 480×480. The reason for a decrease in mAP at a resolution of 640×640 is that the model was trained 
+at a lower resolution. This is confirmed in the results in Table 3, which illustrates the mAP obtained when weights were 
+trained at a resolution of 640×640. It is evident that the mAP obtained at a resolution of 416×416 is much lower when the 
+model is trained at a higher resolution. 
+Table 3. Results of mAP at IoU 0.5 using MS-COCO when the model was trained at resolution 640×640 
+Size 
+YOLOv4-tiny 
+416×416 
+84.05% 
+480×480 
+92.43% 
+
+7 
+ 
+640×640 
+98.05% 
+ 
+Table 4 illustrates the FPS obtained when inference was run on videos. The results show that the best FPS is obtained at 
+resolution of 416×416. The FPS reduces as resolution increases.  
+Table 4. FPS of YOLOv4 and YOLOv4-tiny when inference is run on videos 
+Size 
+YOLOv4 
+YOLOv4-tiny 
+416×416 
+1.6 
+14.6 
+480×480 
+1.3 
+12.7 
+640×640 
+- 
+7.1 
+ 
+The FPS of YOLOv4 at 416×416 is only 1.6 which is too low for real-time detection. Although the accuracy of YOLOv4 
+is much higher, the low FPS as well as high memory consumption make it less suitable for edge detection compared to 
+YOLOv4-tiny. Therefore, YOLOv4-tiny, which is a lighter model (with less than half the number of layers as in YOLOv4) 
+and has a much higher inference speed, is a better model to utilize when dealing with object detection on an edge device. 
+Further, in the case of YOLOv4-tiny the FPS is reduced by 50% when the resolution is increased from 416×416 to 
+640×640, which is not desirable for real-time detection. The mAP results in Table 5 show that the best accuracy is obtained 
+at a resolution of 480. However, since the FPS at 416 is higher with only a slight reduction in mAP, the most ideal resolution 
+is 416.  
+The overall results for Precision, Recall, and F1-score at a confidence of 0.25 for YOLOv4-tiny are presented in Table 5. 
+An F1-score of 87% is obtained at 416×416, which is not much lower than 89% at 480×480. 
+Table 5. Results for YOLOv4-tiny at a confidence of 0.25 
+Size 
+mAP@0.5 
+F1 
+Precision 
+recall 
+416 
+91.95% 
+87% 
+82% 
+93% 
+480 
+93.55% 
+89% 
+84% 
+95% 
+640 
+88.56% 
+81% 
+75% 
+89% 
+ 
+The graph in Figure 5 shows a count of the True Positive and False Negative instances in inference run using YOLOv4-
+tiny. All classes have a precision of 0.8 approximately. 
+ 
+Figure 5. Class-wise True Positive and False Positive Count of YOLOv4-tiny 
+In object detection, a false positive is also possible if the model manages to detect objects around the edges and corners 
+of the image which were not previously annotated. From the figure, it can be seen that the largest number of data points 
+were those of unripe strawberries, and many false positives were obtained for the same class. Although the overall precision 
+is approximately equal (~0.81) for all three classes, the large number of false positives in case of unripe strawberries can be 
+construed to be due to the similarity if hues with leaves, as well as in-between cases in which the object is neither fully a 
+flower nor fully a strawberry.  
+For example, the highlighted objects in Figure 6 could be interpreted as flowers or unripe strawberries, depending on the 
+stage. Unless further classes are added to contextualize to these examples, they could be erroneously included in either 
+group. Possible contributions to misclassified objects could therefore arrive from cases like this, apart from the general errors 
+presented by the model. 
+0
+20
+40
+60
+80
+100
+120
+140
+160
+flower
+unripe
+ripe
+Class-wise True Positive and False Positive count
+TP
+FP
+
+8 
+ 
+ 
+Figure 6. In-between cases examples 
+Similarly, false negative cases can be obtained when objects are missed in detection, which is more likely to occur with 
+smaller objects.   
+In context of the FPS rate, Table 6 illustrates the FPS rates of three frameworks: Darknet, TensorRT (FP16), and 
+TensorFlow Lite. The results show a higher FPS for YOLOv4-tiny utilizing the TensorRT framework as compared to the 
+original Darknet. However TensorFlow Lite exhibits a particularly low FPS (less than 1). 
+Table 6. FPS of 3 frameworks: Darknet, TensorRT, and TensorFlow Lite 
+Framework 
+Darknet 
+TensorRT 
+TensorFlow Lite 
+FPS 
+14.6 
+19.86 
+0.96 
+ 
+The higher FPS of TensorRT (also visible in Figure 7) indicates that it is most suitable for the deployment of YOLOv4-
+tiny. Given that the model is FP16 quantized, there is a possibility for reduction in accuracy; however, the trade-off depends 
+entirely on the dataset and type of detection: if smaller objects are to be detected then it is desirable to use the more accurate 
+model. 
+ 
+Figure 7. YOLOv4-tiny with TensorRT 
+The usage of Tensorflow Lite is not entirely suitable in this case given the low speed (Figure 8). However, the robustness 
+of the framework warrants its use in mobile devices; if the same model were to be deployed to a mobile application for 
+inference Tensorflow Lite would be an appropriate model. 
+ 
+
+9 
+ 
+ 
+Figure 8. Inference of YOLOv4-tiny using Tensorflow Lite 
+To test out real-time detection, the same testing images were displayed on another screen and the Raspberry Pi v2 camera 
+was used for detection. As seen in Figure 9, the model manages detections even for blurred images due to screen proximity. 
+Further, there is no significant change in FPS from video (averagely 13.9 FPS) to real-time, thus confirming that this model 
+is not only robust but also well suited for real-time fruit detection. 
+ 
+ 
+Figure 9. Real-time detection 
+Conclusion 
+In this study we have utilized YOLOv4-tiny in combination with an embedded GPU to implement real-time detection in 
+strawberry fields. The results presented above indicate that YOLOv4-tiny is most ideal for real-time applications with an 
+FPS of 14 obtained on the smallest Jetson™ device. A higher inference speed can be obtained by integrating it with TensorRT. 
+From the literature it can be inferred that YOLOv4-tiny is comparable to SSD MobileNet and other lightweight networks in 
+terms of accuracy. These factors make it a highly valuable object-detection model. Further, the real-time object detection 
+system consisting of NVIDIA® Jetson™ Nano and Raspberry Pi Camera v2 is a highly cost-effective option for deployment 
+in strawberry fields. 
+The visible drawbacks include smaller objects being missed during detection, which could reduce accuracy while 
+counting or tracking fruits. Improvements can be made by training on a larger and more diverse dataset. A global-shutter 
+camera can be integrated for more powerful real-time detection. Further applications could include real-time disease 
+detection and real-time pest detection. 
+Acknowledgement 
+This study was funded through an internship program from MITACS Globalink 2021 Research Internship program (Project 
+ID 26198) and Natural Science and Engineering Research Council of Canada (NSERC) Discovery Grants Program (RGPIN-
+2017-05815). 
+
+10 
+ 
+References 
+B, A. (n.d.). darknet. Retrieved from github: https://github.com/AlexeyAB/darknet/ 
+Bargoti, S., & Underwood, J. (2017). Deep Fruit Detection in Orchards. IEEE International Conference on Robotics and 
+Automation (ICRA). 
+Bochkovskiy, A., Wang, C.-Y., & Liao, H.-Y. M. (2020). YOLOv4: Optimal Speed and Accuracy of Object Detection. 
+Canada, A. a.-F., & Centre, P. M. (2019). Crop profile for strawberry in Canada, 2019. Ottawa: Ottawa, ON, Canada : 
+Agriculture and Agri-Food Canada. 
+Common Objects in Context Evaluation. (n.d.). Retrieved from https://cocodataset.org/#detection-eval 
+Fernandes, R., Rodrigues, W. M., & Barros, E. (2021, June 28). Dataset and Benchmarking of Real-Time Embedded Object 
+Detection for RoboCup SSL. Retrieved from arXiv.org: arXiv:2106.14597 
+Jeong, E., Kim, J., Tan, S., Lee, J., & Ha, S. (2021). Deep Learning Inference Parallelization on Heterogeneous Processors 
+with TensorRT. IEEE Embedded Systems Letters , 1-1. 
+Kapach, K., & Barnea, E. (2012). Computer vision for fruit harvesting robots—State of the art and challenges ahead. 
+International Journal of Computational Vision and Robotics. 
+Kim, J.-a., Sung, J.-Y., & Park, S.-h. (2020). Comparison of Faster-RCNN, YOLO, and SSD for Real-Time Vehicle Type 
+Recognition. IEEE International Conference on Consumer Electronics - Asia (ICCE-Asia).  
+Langis, K. d., Fulton, M., & Sattar, J. (2020, November 25). An Analysis of Deep Object Detectors For Diver Detection. 
+Retrieved from arXiv.org: arXiv:2012.05701 
+Lawal, M. O. (2021). Tomato detection based on modified YOLOv3 framework. Scientific reports. 
+Lee, Y., Hwang, J.-w., Lee, S., Bae, Y., & Park, J. (2019). An Energy and GPU-Computation Efficient Backbone Network 
+for Real-Time Object Detection. 2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition 
+Workshops (CVPRW). Long Beach: IEEE. 
+Liu, G., Mao, S., & Kim, J. H. (2019). A Mature-Tomato Detection Algorithm Using Machine Learning and Color Analysis. 
+Sensors. 
+Magalhães, S. A., Castro, L., Moreira, G., Santos, F. N., Cunha, M., Dias, J., & Moreira, A. P. (2021). Evaluating the Single-
+Shot MultiBox Detector and YOLO Deep Learning Models for the Detection of Tomatoes in a Greenhouse . 
+Sensors. 
+NVIDIA. (n.d.). Getting Started with the NVIDIA Jetson Nano 2GB Developer kit. Retrieved from NVIDIA developer: 
+https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-2gb-devkit 
+NVIDIA. (n.d.). TensorRT. Retrieved from NVIDIA: https://developer.nvidia.com/tensorrt 
+PASCAL Visual Objects Challenge 2007. (n.d.). Retrieved from http://host.robots.ox.ac.uk/pascal/VOC/voc2007/index.html 
+Pi, 
+R. 
+(n.d.). 
+Camera. 
+Retrieved 
+from 
+Raspberry 
+Pi 
+Documentation: 
+https://www.raspberrypi.org/documentation/hardware/camera/ 
+Redmon, J., & Farhadi, A. (n.d.). Retrieved from Darknet: Open Source Neural Networks in C: https://pjreddie.com/darknet/ 
+Redmon, J., & Farhadi, A. (2017). YOLO9000: Better, Faster, Stronger. 2017 IEEE Conference on Computer Vision and 
+Pattern Recognition (CVPR). Honolulu: IEEE. 
+Redmon, 
+J., 
+& 
+Farhadi, A. 
+(2018). 
+YOLOv3: 
+An 
+Incremental 
+Improvement. 
+Retrieved 
+from 
+arXiv: 
+https://arxiv.org/pdf/1804.02767.pdf 
+Redmon, J., Divvala, S., Girshick, R., & Farhadi, A. (2016). You Only Look Once: Unified, Real-Time Object Detection. 
+2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR). Las Vegas: IEEE. 
+Sa, I., Ge, Z., & Dayoub, F. (2016). DeepFruits: A Fruit Detection System Using Deep Neural Networks . Sensors. 
+Shi, W., Pallis, G., & Xhu, Z. (2019). Edge Computing. Proceedings of the IEEE. 
+TensorFlow. (n.d.). TensorFlow Lite. Retrieved from TensorFlow: https://www.tensorflow.org/lite 
+tzutalin. (n.d.). LabelImg. Retrieved from GitHub: https://github.com/tzutalin/labelImg 
+Wan, S., & Goudos, S. (2019). Faster R-CNN for Multi-class Fruit Detection using a Robotic Vision System. Computer 
+Networks. 
+Wang, C.-Y., Bochkovskiy, A., & Liao, H.-Y. M. (2021). Scaled-YOLOv4: Scaling Cross Stage Partial Network . IEEE/CVF 
+Conference on Computer Vision and Pattern Recognition (CVPR), (pp. 13029-13038 ). 
+Yang, W., & Jiachun, Z. (2018). Real-time face detection based on YOLO. IEEE International Conference on Knowledge 
+Innovation and Invention. IEEE. 
+Zou, Z., Shi, Z., Guo, Y., & Ye, J. (n.d.). Object Detection in 20 Years: A Survey. Retrieved from arXiv: 
+https://arxiv.org/abs/1905.05055 
+ 

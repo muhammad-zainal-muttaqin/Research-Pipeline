@@ -26,4 +26,3 @@ Mekanisme pengukuran memakai kamera termal bersensor mikrobolometer vanadium oks
 Hasil menunjukkan model kamera termal dapat memprediksi suhu buah dengan koefisien determinasi R² sebesar 0,979 untuk 120 DAA, 0,973 untuk 140 DAA, 0,976 untuk 160 DAA, 0,976 untuk 180 DAA, dan 0,973 untuk 200 DAA. Korelasi warna semu tertinggi diperoleh pada indeks kemerahan (redness), dengan R² berkisar 0,7677–0,8037, sedangkan indeks kebiruan (bluish) terendah, dengan R² berkisar 0,1101–0,561. Buah yang dipanen pada 180 DAA memiliki korelasi suhu terkuat menurut pencitraan termal. Nilai R² dihitung dari persamaan regresi polinomial kuadratik untuk model suhu kamera dan dari regresi linear untuk hubungan kanal warna dengan suhu.
 
 Penulis menyebut histeresis dan ketidaklinieran selama proses pemanasan serta sulitnya pengukuran suhu buah secara terus-menerus sebagai tantangan yang dihadapi. Batasan lain tidak dinyatakan.
-

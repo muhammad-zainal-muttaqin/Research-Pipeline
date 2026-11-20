@@ -1,0 +1,1601 @@
+Noname manuscript No.
+(will be inserted by the editor)
+Automatic Visual Estimation of Tomato Cluster
+Maturity in Plant Rows
+Gabriel Lins Tenorio · Wouter Caarls
+Received: date / Accepted: date
+Abstract The present paper aims to study image processing algorithms to ac-
+celerate and facilitate the evaluation of the harvest condition in tomato farms.
+In order to achieve this, two diﬀerent Deep Learning models are trained and
+combined with counting methods to produce a harvest monitoring system for
+embedded applications using an Intel® Movidius
+TM and an aﬀordable RGB
+camera. The ﬁrst model detects the location of cherry tomato clusters, while
+the second estimates the fruit’s maturity. The results are compared to a base-
+line implementation based on segmentation. Next, a multiple counting method
+based on regions of interest is applied to the detected clusters in videos to count
+the tomatoes at diﬀerent maturity stages. In order to produce a more robust
+counting, a tracking system is implemented which uses temporal information to
+ﬁnd the unique tomato clusters in videos. In the evaluation stage, the obtained
+location results indicate an Intersection over Union (IoU ) of about 89% when
+using the MobileNetV1 as a feature extractor and choosing the appropriate
+location anchors. The maturity estimation results indicate better performance
+for the trained algorithm as compared to the baseline, providing a root mean
+square error of 7.7%. The best results were obtained when combining the fully
+learned solution with the tracking system, correctly counting the majority of
+the tomato clusters at multiple maturity stages.
+Gabriel Lins Tenorio
+Electrical Engineering Department (DEE), Pontiﬁcal Catholic University of Rio de Janeiro
+- PUC-Rio, Rua Marquˆes de S˜ao Vicente 255, G´avea 22451-900 Rio de Janeiro, RJ, Brazil
+Tel.: +55-21-3527-1202
+Fax: +55-21-3527-1232
+E-mail: gbrtenorio@ele.puc-rio.br
+Wouter Caarls
+Electrical Engineering Department (DEE), Pontiﬁcal Catholic University of Rio de Janeiro
+- PUC-Rio, Rua Marquˆes de S˜ao Vicente 255, G´avea 22451-900 Rio de Janeiro, RJ, Brazil
+Tel.: +55-21-3527-1202
+Fax: +55-21-3527-1232
+E-mail: wouter@ele.puc-rio.br
+
+2
+Gabriel Lins Tenorio, Wouter Caarls
+Keywords Deep Learning · Convolutional Neural Networks · Object
+Detection · Image Analysis · Tracking · Precision Agriculture
+1 Introduction
+The large demand and competitive market for fruits brings challenges to farm-
+ers, such as optimizing the costs and eﬀectiveness of manual labor for harvest-
+ing and reducing the percentage of fruit loss [23]. Hiring more seasonal manual
+workers or paying overtime may improve the production, but increases the
+costs or aﬀects the worker’s health at the farm when working for extended
+hours [30]. The eﬀectiveness of manual harvesting and the percentage of fruit
+loss are linked to the monitoring and control of the fruit maturation during
+harvest [23].
+Fruit harvesting is a time-consuming task because each worker needs to
+observe and touch the fruits in order to evaluate their maturity and decide
+whether to harvest on the current or next days. Some technological methods
+use custom non-destructive crop monitoring sensors aiming to solve this prob-
+lem by measuring the fruit ripeness [7,36]. The detection is based on fruit
+reactions that take time to take eﬀect and is aﬀected by other variables (e.g.
+climate and fruit variety) that lower the robustness. Some variety of cherry
+tomatoes are considered ready for harvest when the skin changes its color from
+greenish to reddish or the tomato closest to the stem comes out in hand. How-
+ever, in some farms (e.g. Dutch style greenhouses), these fruits may not be
+harvested individually, being necessary to harvest the entire cluster. The har-
+vest decision is made after manually estimating the ripeness that takes into
+account all the tomatoes on that cluster, which can be demanding in large
+farms. Each cluster is packed to be sold in the supermarket even when the
+maturities are mixed.
+Relevant approaches that estimate the maturity of fruits [2,9,12,19], which
+can produce immediate results, involve vision systems with image processing
+or machine learning techniques. A vision system applied in real agricultural
+environments can provide useful fruit information to improve the harvesting
+decision. For single images, the system needs to be able to handle problems
+such as occlusion, stability of light source, agricultural background clutter and
+fruit scale variation to detect the fruits and estimate their maturity accurately.
+A recent practical application concerns a vision system, which works day and
+night on plant rows, to estimate the maturity in tomatoes and harvest individ-
+ually each tomato with a robot-arm1. In related work [21], a machine vision
+system was developed for identifying tomato clusters in sets of three stereo
+images (aiming to reduce occlusion), captured by special sensors. The vision
+system was able to identify the tomato clusters ready for harvest. In order for
+the system to work properly, the images were captured during night (being
+sensitive to inﬂuence of sun-light) and the sensors needed to be close to the
+1 Root AI, ”Join the future of farming”, 2019. Available: https://root-ai.com/ [November
+5, 2020].
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+3
+fruits. Therefore, only a few tomato clusters may be visualized in each of the
+image sets collected.
+We implemented an automatic visual system to monitor the maturity in
+cherry tomato clusters on plant rows, that only requires a common RGB cam-
+era and an embedded computer, being relatively cheap and easily attached to
+embedded systems for statistical data collection or even automatic harvest.
+For harvesting robots, a single operation may be suﬃcient for harvesting a
+tomato cluster [22]. The camera can stay relatively far to the fruits and cap-
+ture images containing many fruits. Our system is robust to occlusion and
+works in diﬀerent conditions of illumination, being able to monitor many clus-
+ters simultaneously in sequences of images. The system is based on supervised
+Deep Learning (DL) techniques, being able to generalize its response to diﬀer-
+ent fruits when feeding the system with new labeled data. The dataset used in
+this work was collected from scenes captured on a tomato farm (greenhouse),
+located in Vestfold county in Norway, covering three plant rows.
+Our system is composed of three parts: fruit detection, maturity estimation
+and counting subsystems. The detection and the maturity estimation subsys-
+tems are combined to provide the cluster’s locations and maturation rates in
+videos for the application of the counting subsystem, implemented using a
+tracking algorithm that separates the diﬀerent clusters using their coordinates
+in the image and their maturity information in multiple frames. Because the
+tracking algorithm monitors the clusters in diﬀerent positions, the ﬁnal matu-
+rity estimate is improved. Based on the information collected by the system,
+it is possible to quickly identify the best tomato plantation row for the har-
+vest in a given day. Additionally, due to the possibility of fast data collection,
+continual data collection can be used in the analysis for harvest prediction in
+the following days and to identify possible tomato growing problems.
+The system can automatically monitor multiple tomato clusters on plant
+rows at the same time, using any conventional RGB camera and a vision pro-
+cessing unit. It is able to monitor the continuous maturity in tomato clusters
+and quantify the clusters in real conditions, handling occlusion phenomena.
+The fruit’s continuous maturity is updated during tracking, increasing its ro-
+bustness. We show that the vision system is fast enough for real-time pro-
+cessing in an embedded solution. The self-collected video samples and the
+datasets on three plant rows for tomato cluster detection, maturity estimate
+and counting will be made publicly available.
+The next section presents background information and preliminary dis-
+cussions. Section 3 presents the methods to obtain and label the agricultural
+dataset used in this work and the diﬀerent approaches to locate, rank and
+quantify the clustered fruits. Section 4 describes our experiments and section
+5 evaluates the results. The last Section 6 presents conclusions and motivates
+future work. The Appendix A shows additional results related to tracking with
+occlusion.
+
+4
+Gabriel Lins Tenorio, Wouter Caarls
+2 Background
+Deep convolutional neural networks are learning algorithms, relevant in the
+ﬁeld of Deep Learning, predominantly applied to images and have been widely
+used since the advances in GPU technology enabled their success at the Ima-
+geNet Large Scale Visual Recognition Challenge [24]. They have been devel-
+oped for many image recognition tasks (e.g. classify, locate or even segment
+the images) with outstanding results. Compared to classical image processing
+methods for image recognition [49,50], CNNs do not need heavy pre-processing
+speciﬁc to the dataset (instead, they use e.g. convolutions and max-pooling
+operators) because they learn how to process the image and generalize to new
+data. Convolution is a parallel operation that uses multiple kernels (trainable
+ﬁlters) that learn how to extract images features. Subsequently, max-pooling
+simpliﬁes the image by calculating the image max response using predeﬁned
+square-cell grids. Commonly, CNNs are divided into many convolutional lay-
+ers followed by downsampling operations (e.g. max-pooling) in which the ﬁrst
+layers extract low-level features such as edges and blobs. The next layers ex-
+tract mid-level features such as texture, up to high level-features (speciﬁc
+features to the dataset). The number of feature maps generated in each layer
+is proportional to the (predeﬁned) number of kernels for that layer. After the
+last convolutional layer, a conventional neural network is usually attached by
+means of a fully connected layer. The neural network is composed of neurons,
+which each have trainable parameters, that learns how to combine the fea-
+tures maps of the last convolutional layer to predict results (e.g. classiﬁcation,
+regression or both).
+The following subsections present the background information related to
+our research for object detection, maturity level as well as tracking and count-
+ing.
+2.1 Object Detection
+Standalone CNNs can robustly solve the image recognition problem, but the
+machine intelligence, in this case, does not learn how to understand scenes.
+In other words, the machine is not able to classify and locate diﬀerent ob-
+jects in the same scene by itself as humans do. Researchers have developed
+methods based on CNNs (i.e. Regions with CNN features [11]) to improve
+the scene understanding issue in machines, aiming at real-time applications
+(R-CNN [11], Fast-RCNN [10] and Faster-RCNN [38]). These methods can
+detect objects reasonably well, but the inference time in videos is still too slow
+in usual GPUs (around 5 frames per second for the fastest method) for real-
+time applications. Important algorithms in the research area were developed
+to solve these problems, such as ”You Only Look Once” (YOLO) and ”Single
+Shot MultiBox Detector” (SSD) [37,27]. The ﬁrst algorithm can increase the
+frames per second (FPS) on inference up to 150, but compromises the accu-
+racy of the results. The second algorithm highly improves the accuracy, but
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+5
+inferring at 22 −60 FPS which is enough for real-time applications. In the
+SSD algorithm, starting from the ﬁrst convolutional block and following to
+the last block, the feature maps decrease in terms of resolution, but increase
+in terms of depth. For each feature map extracted from the convolutions at
+diﬀerent layers, the algorithm uses a shared regressor and a layer dedicated
+classiﬁer. Consequently, the object detection is done at multiple scales being
+able to handle objects at diﬀerent sizes [27]. In order to label a dataset for the
+SSD model, each object to be detected must have a class identiﬁcation and its
+coordinates position in the image. As with the other methods, in the training
+stage, SSD also uses anchors to learn the bounding box coordinate oﬀsets at
+multiple scales, based initially on which anchors correspond to a given label
+object (i.e. ground truth information). The SSD architecture is explained in
+more detail in Sec. 3.2.
+In a recent paper, Santos et al. [42], discussed the scene understanding
+problem and implemented YOLO-based object detection algorithms to de-
+tect ﬁve diﬀerent grape varieties in images. In the same paper, an instance
+segmentation algorithm is evaluated for detection purposes. The instance seg-
+mentation fulﬁlls the same role as object detection, but additionally classiﬁes
+each pixel of the image for each instance. This brings advantages such as the
+exact location of a grape’s pixels in an image, but also disadvantages such
+as the time-consuming labeling and high processing required (i.e. advanced
+GPUs). Similarly, Liu et al. [28] implemented a deep learning algorithm to de-
+tect oranges and apples. Instead of object detection, a Fully-CNN (FCNN) was
+used to segment fruit pixels. FCNNs have the advantage of being extremely
+fast, but they are not able to detect the objects as instances, being necessary
+to apply additional methods to separate the objects into instances. Another
+approach for fruit detection, Halstead et al. [12], adapted the Faster-RCNN
+(FRCNN) to detect sweet peppers. Sun et al. [45] proposed a method based
+on a Feature Pyramid Network [25] to localize tomato organs in images that
+outperformed the traditional FRCNN. In the present work the SSD algorithm
+is used to eﬃciently detect tomato clusters in images, taking advantage of its
+well-performing architecture for real-time applications.
+2.2 Maturity Level
+In the literature, fruit maturity estimation is commonly treated as image clas-
+siﬁcation and trained with Machine Learning (ML) models. Kaur et al. [19]
+trained classical ML algorithms (e.g. SVM [16]; Random Forest [6]) to identify
+ﬁve maturity stages of tomatoes (i.e. green mature, turning, pink, light red and
+red). Training classical models is faster than DL and does not require a GPU,
+but image pre-processing (e.g. feature extraction) is highly recommended for
+the models to produce reasonable results.
+Many authors implemented standalone CNNs as a solution for maturity
+level identiﬁcation. Faisal et al. [9] implemented DL models (e.g. ResNet [14];
+VGG-19 [44]) to identify ﬁve maturity levels on date fruits (i.e. immature,
+
+6
+Gabriel Lins Tenorio, Wouter Caarls
+khalal, khalal with rutab, pre-tamar and tamar). Similarly, Behera at al. [2]
+applied transfer learning to these models in order to classify papaya fruits
+into immature, partially mature and mature levels. Halstead et al. [12] (men-
+tioned in subsec. 2.1) proposed a modiﬁcation for the FRCNN model by adding
+parallel layers to, in addition to detecting sweet peppers, also measure their
+ripeness. Their compact network estimates the ripeness by classifying the fruits
+into three quality values (i.e. green, mixed and red). Classiﬁcation tasks can
+split the maturity into N diﬀerent classes, but if there is a need to increase
+N the data must be relabelled and the model retrained. In the present work
+we modiﬁed standalone CNNs (explained in detail in Sec. 3.1.2) to produce
+continuous maturity values (between 0% and 100%) for the detected tomato
+clusters. Therefore, the maturity levels can be used as continuous values or
+can be easily adjusted by discretization into N levels after their estimation by
+the CNN.
+2.3 Tracking and Counting
+In a single scene, where multiple objects are present, the inference of the
+detection models described in subsec. 2.1 generates a single identiﬁcation for all
+the objects in the scene (i.e. standalone CNNs), or diﬀerent identities for each
+static object (i.e standalone object detection algorithms). In dynamic scenes,
+the standalone detectors are not able to generate a unique identiﬁcation for
+each object due to the inability to perform tracking (which would not permit
+the application of fruit counting and monitoring).
+A few authors mentioned in subsec. 2.1 implemented tracking methods
+to add functionality for dealing with objects in dynamic scenes to their re-
+spective detectors and, consequently, perform counting tasks. Santos et al.
+[42] implemented a tracking method that used the detectors as a base. Their
+tracking method uses a three-dimensional (3D) association technique (based
+on Structure-from-Motion (SfM) [13]) for tracking and counting the grape va-
+rieties in sequences of images on orchards rows. Starting with a similar 3D
+reconstruction approach, Liu et al. [28] implemented a frame-to-frame track-
+ing solution based on the combination of the Hungarian Algorithm [31] and
+SfM to track and count oranges and apples on diﬀerent rows. SfM is a com-
+puter vision technique that uses a decent amount of computational processing
+and, when combined with a detector model for tracking, should considerably
+decrease the FPS. Halstead et al. [12] proposed a tracking via detection ap-
+proach that uses the intersection over union (IoU) of the bounding boxes as
+well as the quality estimation to track and count the sweet peppers.
+Our counting subsystem takes into account the two-dimensional position of
+each tomato cluster in the image and the continuous maturity information ex-
+tracted from the detection and maturity subsystems. The maturity is updated
+by our system at each image in a sequence which provides a smooth, unique
+identiﬁcation for each cluster and a precise ﬁnal maturity. The combination of
+our subsystems results in a fast-processing vision system that can also work
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+7
+with CPUs or small VPUs and aﬀordable cameras, without the need for GPUs
+to perform the monitoring task. As far as we know, this is the ﬁrst approach
+in the literature based on deep learning models for monitoring the maturity
+in tomato clusters and counting them at predeﬁned (and easily adjustable)
+maturity stages.
+3 Method
+In this section, we begin by describing how the data were collected and labelled
+to be used in our diﬀerent approaches for tomato clusters localization and their
+maturity estimation. Subsequently, we describe the model for object detection
+and the baseline for the estimation followed by the main regression model.
+Next, we discuss the implementations for counting the clusters in videos.
+3.1 Preparing and Labeling the Dataset
+A color camera was coupled to a pipe rail trolley in order to continuously
+capture scenes on the farm by following a unidirectional horizontal movement,
+covering three diﬀerent plant rows. A portion of the scenes is used to create
+a dataset consisting of 254 images (containing multiple tomato clusters in
+each image) which are used to train supervised deep learning algorithms and
+measure their performance. The images obtained are labelled for the learning
+methods for fruit detection and the maturity estimate, resulting in two datasets
+presented in the following subsections. An example scene, which illustrates
+some diﬀerences between tomato clusters that must be dealt with is shown in
+Fig. 1.
+3.1.1 Fruit Detection
+The labeling of images for object detection was done with a graphical im-
+age annotation tool2, which was used to pack each object inside a rectangle
+(bounding box). A rectangle is manually drawn around each cherry tomato
+cluster. Each annotation made generates a new instance, and the dataset size
+is the number of all instances. After labeling all the clusters separately, the
+dataset was divided into training, validation and testing sets (Table 1.)
+2 Tzutalin. LabelImg. Git code (2015).
+Available: https://github.com/tzutalin/labelImg [August 3, 2018]
+Table 1 Dataset separated into training, validation and testing sets for object detection.
+The average of tomato clusters per image is ten.
+#Images
+#Training
+#Validation
+#Testing
+Images
+Images
+Images
+254
+203 (79.92%)
+26 (10.24%)
+25 (9.84%)
+
+8
+Gabriel Lins Tenorio, Wouter Caarls
+Fig. 1 Example of a scene taken in the working environment. It can be seen that on the
+left half of the snapshot the plant row is illuminated by ambient light, while on the right
+half of the snapshot the sunlight aﬀects the plant row directly. In general, it can be observed
+that there are tomato clusters, located in various positions, with diﬀerent quantities of
+tomatoes and maturity. Other speciﬁc conditions can also be noticed: (1) tomato cluster
+facing backwards, (2) tomato cluster turned to one side, (3) occluded tomato cluster, (4)
+tomatoes scattered on the ﬂoor and (5) tomato cluster facing forward and partially cropped
+in the image.
+It is important to mention that in the dataset presented in Table 1, the
+number of samples seems small, but there is an average of ten tomato clusters
+per image. Therefore, it is appropriate for training an algorithm for object
+detection capable of learning multiple objects at the same time in an image.
+The model to be described in Sec. 3.2 is a multibox detector which is able to
+handle a dataset in this conﬁguration well.
+3.1.2 Fruit Maturity Estimate
+For each tomato cluster labelled as an object to be detected (i.e. instance)
+speciﬁed in subsec. 3.1.1, we give a rank score between 0 and 1. The rank is
+related to the level of maturity for a cluster, calculated by Equation 1.
+rank =
+NRT
+NRT + NGT
+(1)
+Where NRT and NGT are the number of, respectively, Reddish and Greenish
+Tomatoes in a cluster, manually counted. A continuous value for the level of
+maturity is useful and easily tunable, so the farmer can choose thresholds to
+classify the clusters into n diﬀerent maturity stages (e.g. red, mixed and green
+tomato clusters).
+After labeling all the instances extracted by cropping each tomato cluster
+in the images, resulting in 2550 sub-images derived from the 254 images, the
+dataset is divided into training, validation and testing sets as shown in Table
+2.
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+9
+Table 2 Dataset separated into training, validation and testing sets for rank estimate
+#Clusters
+#Training
+#Validation
+#Testing
+Clusters
+Clusters
+Clusters
+2550
+2046 (80.23%)
+255 (10.00%)
+249 (9.77%)
+3.1.3 Tracking and Counting
+The scenes mentioned in subsec. 3.1 were obtained from three diﬀerent videos
+(Table 3), in which each video is related to a plant row. The videos are used
+in the tracking and counting algorithms to dynamically count the fruits. In
+order to obtain a ground truth, we counted the unique tomato clusters for each
+video at pre-deﬁned maturity stages (speciﬁed in subsec. 3.5), corresponding
+to a total of 328 unique tomato clusters.
+3.2 Learning Algorithm for Cluster Detection
+In order to locate and detect multiple tomato clusters in the same image, tak-
+ing into account the processing speed and accuracy, we trained the SSD [27]
+object detection algorithm. This model is capable of real-time detection, being
+able to eﬃciently detect completely or partially occluded objects. The SSD al-
+lows the use of pre-trained networks to form the convolutional base. There is
+a trade-oﬀbetween speed and accuracy depending on which pre-trained archi-
+tecture (e.g. VGGNet [43], ResNet [15], MobileNet [18] and AlexNet [24]) is
+used. We opted to use the MobileNet V1 [18] architecture as the base of the
+SSD because it has optimized convolution operations in order to achieve good
+performance in real-time applications. The MobileNet V1 has 28 layers formed
+by 13 convolution alternate blocks, being the main operations in the block the
+Depthwise Separable Convolutions (DSC). The basic idea of this convolution
+is to mitigate the computational cost required by full 3D convolution by sepa-
+rating the spatial and feature-wise convolutions. The DSC is thus divided into
+two diﬀerent convolution layers: Depthwise Convolution (used for ﬁltering)
+and Pointwise Convolution (used to combine features). Instead of applying
+convolutions to whole images and feature maps channels at the same time,
+the depthwise convolutions layer applies smaller convolutions in each channel
+separately, producing features with the same number of channels as its input
+which are then stacked together. The pointwise convolution layer takes the
+Table 3 Videos taken at 30 FPS in the working environment. For the three videos, there
+is an average of ten tomato clusters per snapshot taken. Each video represents a diﬀerent
+plant row.
+Video Name
+Length
+Video 1
+2 min 44 s
+Video 2
+1 min 28 s
+Video 3
+1 min 43 s
+
+10
+Gabriel Lins Tenorio, Wouter Caarls
+pile of features and applies convolutions with kernels 1x1 (i.e. ﬁltering pixel
+by pixel) for all the channels at once, creating linear combinations between the
+feature maps [18]. These operations are not only faster, but also signiﬁcantly
+reduce the quantity of trainable parameters of the model.
+As mentioned before, the SSD model uses a shared regressor and layer
+dedicated classiﬁers to accomplish the object detection task. In order to train
+the algorithm for this task, the model needs to minimize a weighted combined
+loss function (i.e. multibox loss) that is divided into a location loss and a
+conﬁdence loss. The multibox loss function is minimized by updating the SSD
+trainable parameters using an optimizer (e.g. (Adam [20] or RMSprop [3]). The
+ﬁrst loss function measures how close the predicted bounding box coordinates
+(based on the set of anchors) are to the ground truth. The second loss function
+computes how conﬁdent the model is in relation to the predicted class, given
+the ground truth, in a predicted bounding box [27]. In this paper we used
+the detector to ﬁnd a single class, therefore the conﬁdence loss function is
+simpler. During the training phase, the SSD uses initially a matching strategy
+that ﬁnds the best set of anchors to be used for each ground truth to train
+the network [27]. The regression part of the model predicts the bounding
+box oﬀset coordinates (∆(cx, cy, w, h)) based on the best anchors found. For
+multiple bounding boxes in the same image, the anchors are handled based on
+a matching approach [47].
+The pre-trained network to be used as a base for the feature extraction is
+usually split in two parts and the layer depth of each part is chosen manually.
+After obtaining the feature maps generated by the ﬁrst part, a layer that
+contains the regressor and a convolutional classiﬁer is applied. The same logic
+is applied to the second part and consecutively to auxiliary convolutional layers
+as shown in Fig. 2. As a consequence, multiple bounding boxes pointing to the
+same object, at diﬀerent scales, are generated for each predicted class. The
+results are combined using non-maximum suppression to remove the detections
+with location and conﬁdence scores lower than predeﬁned thresholds.
+3.3 Cluster Evaluation
+After obtaining the bounding boxes for each cluster of tomatoes, it is intended
+to identify how ripe the clusters are. In order to complete this task, two dif-
+ferent approaches were implemented and tested. The ﬁrst approach (baseline)
+consists of implementing a segmentation algorithm, based on the Ohta and
+Otsu algorithms with color space transformation [32,33,52] to calculate the
+level of maturation using the segmented pixel areas. The second approach is
+related to the use of CNNs adapted to provide a regression output which role
+is to estimate the level of maturation. In both cases, the methods are applied
+to each cluster sub-image inside the bounding boxes.
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+11
+Fig. 2 SSD architecture for generic pre-trained network used as base (feature extractor).
+The schematic illustrates multiple levels of feature maps generated from both pre-trained
+network and auxiliary convolutional layers. At each level of feature maps generated (ﬂowing
+from the left to the right), the features become less generic and more speciﬁc to a dataset in
+terms of image. These feature maps are passed to classiﬁers and regressors, which outputs
+are them combined with Non-Maximum Suppression to obtain the ﬁnal detections (objects
+coordinates in the image).
+3.3.1 Baseline: Image Analysis Method
+The main idea to use image analysis algorithms is to separate by image seg-
+mentation the reddish and greenish tomatoes in a real environment, taking
+advantage of their colors and ﬁltering out the agricultural background. The
+major advantages of these algorithms are the processing speed and the pos-
+sibility of their direct application without the need for labeling, training the
+data and availability of GPUs.
+Some challenging factors of segmenting tomatoes in images are conditions
+of illumination and variations in object color. Another considerable problem
+concerns the complex background of a tomato farm, with color intensities
+(green leaves colors) close to the color of the green tomatoes. A practical and
+eﬃcient solution was introduced by Wei et al. [52] and has been used in practice
+on agricultural environments [26,29] as well as in this paper as a baseline. The
+solution consists in segmenting red and green fruits under complex agricul-
+tural background. The method initially applies a color space transformation,
+converting a RGB image into Ohta and Wei [32,52], which highlights fruit
+objects and mitigates the agricultural background. Subsequently, the method
+segments reddish and greenish fruits by applying an adaptive threshold color
+segmentation algorithm [33]. As discussed by the authors, the best Ohta and
+Wei features for fruit extraction are I′
+2 and IW [52]. The equations 2 and 3
+represent the features IW and I′
+2 that combine the Red (R), Green (G) and
+Blue (B) channels of the RGB color space. The equations are applied to the
+tomato clusters sub-images inside the bounding boxes.
+IW = R −G
+(2)
+
+12
+Gabriel Lins Tenorio, Wouter Caarls
+Subtracting the R and G channels results in an image with only reddish toma-
+toes and low background noise.
+I′
+2 = R −B
+(3)
+Subtracting the R and B channels maintains the reddish and greenish toma-
+toes and removes part of the background. For this feature, the contrast level
+between the green tomatoes and the background is highly noticeable.
+As the image analysis method may be sensitive to illumination change
+and the videos obtained were aﬀected by diﬀerent environmental conditions of
+illumination, we pre-processed the video frames aiming to enhance the images
+and correct illumination inhomogeneity. In order to accomplish this, we applied
+the Contrast Limited Adaptive Histogram Equalization algorithm (CLAHE)
+[54] to all frames before applying the baseline segmentation method.
+After changing the color space, the Otsu adaptive threshold is applied to
+the features IW and I′
+2. It is relevant to notice that the adaptive thresholds
+have improved results when applied to smaller areas, as the ones cropped using
+the bounding box coordinates, because the intra-class variance, used to ﬁnd
+the best thresholds, becomes a well behaved function facilitating the search of
+the optimal thresholds for the color segmentation. We applied to the features
+IW and I′
+2 a Gaussian ﬁlter before segmentation and morphological opening
+afterwards aiming to remove high-frequency noise from the features and their
+backgrounds. In the end, the ﬁrst feature IW provides a mask of the reddish
+tomatoes, while the feature I′
+2 provides a mask of the whole tomato cluster.
+Subtracting both results in a mask of the greenish tomatoes as shown in Fig.
+3.
+After obtaining the masks for the reddish and greenish tomatoes, the ma-
+turity level (rank) can be calculated by Equation 4.
+rank =
+NRT P
+NRT P + NGT P
+(4)
+where NRT P and NGT P are the number of, respectively, Reddish and
+Greenish Tomato Pixels.
+3.3.2 Learning Method
+In order to estimate the maturation levels more robustly, we use CNNs that,
+in simple words, learns how to ﬁlter eﬃciently the images contained inside
+the bounding boxes extracting features that it considers important. Instead of
+training the CNN from scratch, we use the VGG-16 and MobileNet pre-trained
+networks [43,18]. The VGG-16 and MobileNet architectures diﬀer mainly in
+terms of convolutional operations, number of convolutional layers and number
+of trainable parameters which results in a trade-oﬀbetween performance and
+training/inference speed. The VGG-16 usually provides better generalization
+compared to MobileNet, but takes much more time training and processing
+images [4].
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+13
+(a) Im
+(b) IW
+(c) IW mask
+(d) I′
+2
+(e) I′
+2mask
+(f)
+I′
+2mask
+−
+IW mask
+Fig. 3 Intermediate images generated applying the mathematical equations (Eq. 2 - 3) and
+the auxiliary operations. The ﬁrst image (a) is the original image used in this example. The
+second (b) and fourth (d) images are the IW and I′
+2 outputs. The third (c) and ﬁfth (e)
+images are the masks of each output after applying the segmentation algorithm. The last
+image (f) shows the masks subtracted.
+Also, a transfer learning [35] technique is used, which allows the transfer-
+ring of pre-trained parameters learned on the ﬁrst ”Y” layers. Next, we use a
+ﬁne tuning method that permits the freezing of layers, marking the ”Y” layers
+as non-trainable (frozen) and the next layers are marked as trainable during
+model learning. Similar to Tenorio et al. [48], we used a statistical dispersion
+method in order to choose the best ”Y” layers to be frozen. The advantages
+of using transfer learning and freezing only the ﬁrst ”Y” layers are the faster
+training time and the signiﬁcant lower number of trainable parameters which
+also prevents overﬁtting, thereby allowing us to train on our relatively small
+regression dataset.
+The original pre-trained networks were trained using the ImageNet dataset
+for the Large Scale Visual Recognition Challenge [41] which contains a thou-
+sand classes used for binary classiﬁcation. The pre-trained output layer con-
+tains a number of neurons equal to the number of classes and uses the softmax
+activation function, therefore the classiﬁcation of a given input image is made
+choosing the neuron with higher activation. As mentioned before, for the ma-
+turity estimate, we are looking for a continuous value instead of a binary value.
+Thus, we modiﬁed the output layer for regression, keeping a single neuron and
+changing the activation function to sigmoid. Consequently, the output value
+of this neuron varies between 0 and 1 according to the maturation rate range.
+Fig. 4 shows the pre-trained models adapted for regression.
+
+14
+Gabriel Lins Tenorio, Wouter Caarls
+(a)
+(b)
+Fig. 4 Pre-trained architecture adapted as a regression model: (a) represents the original
+pre-trained architecture and (b) represents the adaptation. The pre-trained network blocks
+represent the convolutional layers of a pre-trained network, while the red box in (a) illustrates
+the original neurons for a classiﬁcation task and the blue box in (b) illustrates a single neuron
+that is used for the regression.
+Other modiﬁcations that need to be done to convert the classiﬁcation model
+into a regression model are the loss function and the metric. The loss function
+is optimized during training to decrease the errors between the maturity values
+predicted by the model and the ground truth values. The metric is used to
+measure the model’s performance for the training, validation and testing sets.
+For the loss function, we used the Mean Square Error (MSE) while the metric
+we use for evaluation (visualizing the results in Sec. 5.2) in this regression task
+is the Root Mean Square Error (RMSE).
+3.4 Tracking Clusters in Videos
+For a static image, the cluster detection algorithm can identify each tomato
+cluster separately. However, when using a video (i.e. multiple frames), the
+same algorithm may switch their identiﬁcation at each frame depending on
+which cluster it identiﬁes ﬁrst. In other words, the detection algorithm allows
+to count the clusters in a static image, but it is not possible to count them in
+a video, thus a tracking system is necessary.
+In order to track individually each tomato cluster in videos, we have im-
+plemented a logic algorithm that takes advantage of each cluster’s centroid
+coordinates (x, y) related to the image and its rank (r) computed in the last
+N frames of video. Our tracking algorithm, based on multiple frames, brings
+advantages, such as occlusion robustness and multiple counting avoidance for
+the same cluster.
+We use a Degree of Compatibility (DoC) computed using a weighted Eu-
+clidean Distance, as shown is Eq. 5, to measure how closely matched the clus-
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+15
+ters in the current frame (IC) are to all the clusters being tracked in the last
+N frames (CC).
+DoCij = ||([CC i.x, CC i.y, CC i.r] −[IC j.x, IC j.y, IC j.r]) · aw|| =
+q
+[(CC i.x −IC j.x) · ax]2 + [(CC i.y −IC j.y) · ay]2 + [(CC i.r −IC j.r) · ar]2 ,
+(5)
+where ax, ay and ar are weighted values (between 0 and 1) that are manually
+chosen in the counting experiments (sec. 4.3) to give more emphasis to the
+clusters chosen elements and aw = [ax, ay, ar]. The centroids and rank elements
+are normalized to provide values between 0 and 1. The IC with the lowest DoC
+values (BestCluster) are recognized in the CC list and receive a pre-existing
+identiﬁcation (id). Also, the number of times (nTimes) that each IC was found
+in CC is counted and the referent CC centroid and rank (r) are updated. The
+rank update, which improves the maturity estimate at each frame, is based on
+the average of all times that a cluster was found in the image. The clusters in
+the current frame (IC) are added to the CC list and receive new identiﬁcation
+whenever they appear in the right three quarter of the image and have a high
+DoC. In order to save all the diﬀerent clusters tracked in the video, the tracking
+system saves each unique cluster of the CC list when it is matched over N/2
+times in the last N frames. Algorithm 1 shows a pseudo code for the tracking
+system.
+3.5 Counting Clusters in Videos
+In order to count quantitatively the number of tomato clusters in videos at
+diﬀerent maturity stages, we established thresholds for the maturation levels
+to divide it into the following stages: Red, Mixed and Green Clusters. The Red
+and Mixed Clusters are considered ripe while the Green Cluster is not ready
+for harvest. Table 4 shows the thresholds chosen in the division. The three
+stages criteria represents an approximation of how the harvesting evaluation
+was done in practice by the farmer in the greenhouse, where the data was
+obtained.
+We implemented two diﬀerent methods to count the tomato clusters. The
+ﬁrst method counts the clusters using a Region of Interest (ROI) while the
+second method uses the tracking system (TRK). Both methods uses the cluster
+detection algorithm to locate and extract each cluster from the image and the
+cluster evaluation algorithms to estimate the ripeness.
+3.5.1 Baseline: Region of Interest
+As mentioned before, the clusters image sequence from the videos are con-
+stantly moving to the left which facilitates the application of methods based
+on region of interest to count the objects at each frame. The ﬁrst method
+uses an object counting API, proposed by [34] and applied in real tasks (e.g.
+
+16
+Gabriel Lins Tenorio, Wouter Caarls
+Algorithm 1: Tracking algorithm implemented
+1 function Cluster Tracking (IC, CC);
+Inputs : ImageClusters (IC- Clusters in the Current Image);
+CurrentClusters (CC- Clusters tracked in the Current N frames)
+Output: Clusters Tracked (CT- All the clusters tracked)
+2 for all CC do
+3
+BestDoC =
+8
+4
+BestCluster = [ ]
+5
+for all IC do
+6
+DoC = ||([CC i.x, CC i.y, CC i.r] −[IC j.x, IC j.y, IC j.r]) · aw||
+7
+if DoC < BestDoC then
+8
+BestDoC = DoC
+9
+BestCluster = CC i
+10
+end
+11
+end
+12
+if BestDoC < threshold1 then
+13
+BestCluster.id = CC i.id
+14
+Increment the nTimes (number of times) the CC i was found
+15
+CC i.centroid ←BestCluster.centroid
+16
+CC i.r ←IncrementalAverage(CC i.r, BestCluster.r, CC i.nTimes)
+17
+Remove BestCluster from the IC list
+18
+end
+19 end
+20 for all IC do
+21
+if IC j appears in the right three quarter of the image then
+22
+for all CC do
+23
+DoC = ||([CC i.x, CC i.y, CC i.r] −[IC j.x, IC j.y, IC j.r]) · aw||
+24
+if DoC > threshold2 then
+25
+ICj gets a new id
+26
+add ICj to the CC list
+27
+break
+28
+end
+29
+end
+30
+end
+31 end
+32 for all CC do
+33
+if CCi was matched in the last N frames then
+34
+Remove the CC i from the CC list
+35
+if CC i.nTimes > N/2 then
+36
+add CC i to the CT list
+37
+end
+38
+end
+39 end
+40 return CT;
+vehicle counting and tracking [17]), in which the cumulative counting mode
+uses a vertical line of interest to count one or more objects whenever they
+pass between a region around the line (i.e. Region Of Interest (ROI)). Mathe-
+matically, the method considers an object to be counted when the center line
+of the bounding box is aligned with the line of interest around an arbitrary
+deviation (∆R) as shown in Fig. 5.
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+17
+Table 4 Range of values to separate the maturation rates into three maturity stages.
+Condition
+Cluster Classiﬁcation
+rank ≥70%
+Red Cluster
+30% ≤rank < 70%
+Mixed Cluster
+rank < 30%
+Green Cluster
+Fig. 5 Example of the TensorFlow Object Counting API in Cumulative Counting Mode.
+The line of interest is ﬁxed in the vertical and horizontal positions while the bounding box
+center line moves according to the objects centroid.
+3.5.2 Tracking System
+The second method takes advantage of the tracking system using the clusters
+id information to count the number of unique tomato clusters at the mentioned
+maturity stages.
+3.5.3 Ratio of Ripe Clusters
+In order to evaluate the maturity of an entire row, we calculate the average
+continuous maturity (rT) as expressed in Equation 6.
+rT = ΣNC
+k=1rk
+NC
+,
+(6)
+where rk is the rank of a tomato cluster k and NC is the total number of
+clusters obtained in an entire row.
+4 Experiments
+The color camera (RGB) applied in this work has a Field of View (FOV) of
+(H×V): 69.4◦×42.5◦and produces videos with a resolution of 1920×1080 at
+30 FPS. The distance between the camera and the fruits was the same as
+the closest edge of the pipe rail trolley to the fruits (around one meter). The
+
+18
+Gabriel Lins Tenorio, Wouter Caarls
+videos, which covered three diﬀerent plant rows, were captured in a single day
+and resized to 1280x720.
+The deep learning experiments performed in this work were carried out on
+the NVIDIA® Geforce P100
+TM GPU, that made possible the parallelization
+of CNN’s operations, considerably increasing the speed at which the training
+was done. For the neural network inference stage on the test set and on the
+videos we used Intel® Core
+TM i7 CPU for post-processing purposes and Intel®
+Movidius Compute Stick
+TM 3.
+The experiments are divided into location, level of maturation estimate
+and cluster counting. The ﬁrst two kinds of experiments were done separately
+while the last kind combines both.
+4.1 Object Detection Experiments
+The detection experiments were based on the TensorFlow API for object de-
+tection. We analyzed the impacts of two CNNs and their feature extractors
+(CNN layers) used as a base of the localization algorithm. Also, we tested
+diﬀerent values for the training hyperparameters which led to better detection
+results. The default bounding box generator (anchor generator) hyperparam-
+eters were chosen properly to allow the algorithm to learn to detect tomato
+clusters of diﬀerent shapes and in partial occlusion. We prioritize the choice
+of anchors with higher relevant vertical ratio (≥1), due to the most common
+cluster’s shape (height greater than width). However, for partial occlusion
+cases the algorithm should be able to detect the larger part of the clusters,
+so we also chose lower vertical ratio values (≤0.5). The two best performing
+conﬁgurations are presented on Table 5.
+In order to reduce the oscillation of errors during training given the high
+quantity of tomato clusters per image (around 10) we chose lower values for
+the batch size. The same eﬀect occurs for the learning rate, being necessary
+for the algorithm to converge by taking smaller steps. As a consequence, a
+greater number of training epochs is required.
+3 Intel® Movidius Compute Stick
+TMAvailable: https://software.intel.com/en-us/neural-compute-stick [January 1, 2019]
+as an embedded solution for real-time processing
+Table 5 Best two conﬁgurations for the detection model.
+Conﬁguration
+Experiment
+E1
+E2
+Base CNN
+VGG16
+MobileNet V1
+Base CNN Layers (First Part)
+1 −4th Conv.
+1 −6th DSC
+Base CNN Layers (Second Part)
+4 −5th Conv.
+None
+Anchor generator aspect ratios
+0.33; 0.5; 1.0; 2.0; 3.0
+0.33; 0.5; 1.0; 2.0; 3.0
+Batch size
+1
+1
+Initial LR (η)
+10−5
+10−4
+Epochs
+120
+100
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+19
+Additionally, we applied data augmentation algorithms to the training set
+to avoid overﬁtting at the training phase by increasing the amount of trainable
+data, which improves the network’s ability to locate objects in the test set. The
+two transformations used were horizontal ﬂip and random crop. The second
+transformation was also helpful to detect smaller tomato clusters in images.
+4.2 Level of Maturation Experiments
+The image analysis experiments followed a tuning of the Gaussian ﬁlter hy-
+perparameters and the structure element kernels sizes for the morphological
+opening, aiming to obtain suitable segmentation for the IW and I′
+2 features.
+For the learning method, the VGG-16 [43] and MobileNet [18] networks
+were used in our experiments by transferring their pre-trained parameters
+and keeping some layers frozen (non-trainable) to train the regression model.
+Similar to [48], we veriﬁed and chose the suitable number of layers to be
+frozen (”Y”) for each pre-trained model. All the learning experiments were
+made using the sigmoid function for the output neuron that is attached to the
+last regression layer.
+4.3 Counting Experiments
+The counting experiments rely on the previously trained learning algorithms,
+as well as the sequential nature of the plant row videos. In order to avoid
+mixing training and testing sets, we adopted the following strategy: for a given
+video, we trained the algorithms with scenes from the two remaining videos to
+test the given one (as shown in Table 6). The data depends on the detection
+algorithm to ﬁnd the tomato clusters so the maturity can be estimated. The
+ground truth in this case is obtained by manually counting the number of
+tomato clusters in each video at the three maturity stages.
+The number of counting experiments for each video is given by the com-
+bination of the detection algorithm, the level of maturation algorithms and
+counting method as shown in Table 7.
+Also, for the counting methods, we made preliminary experiments varying
+some of their hyperparameters. The tracking DoC hyperparameters (ax, ay,
+ar) were tuned suﬃciently so the tracking system provides satisfactory visual
+results in the videos. The most representative cluster information evaluated
+when using the fully learned algorithm was the maturation rate while for the
+image analysis method was the vertical component of the centroid. This is
+Table 6 Training and testing conﬁguration for the counting experiments.
+Training Videos
+Testing Video
+Video 1 & Video 2
+Video 3
+Video 1 & Video 3
+Video 2
+Video 2 & Video 3
+Video 1
+
+20
+Gabriel Lins Tenorio, Wouter Caarls
+Table 7 Experiments for each video.
+Object Detection
+Level of Maturation
+Counting Method Base
+# Experiment
+Deep Learning (DL)
+Image Analysis (IA)
+ROI
+DIR: (DL+IA+ROI)
+Tracking (TRK)
+DIT: (DL+IA+TRK)
+Deep Learning (DL)
+ROI
+DDR: (DL+DL+ROI)
+Tracking (TRK)
+DDT: (DL+DL+TRK)
+due to the higher robustness of the regression model to evaluate the cluster’s
+maturity. We veriﬁed that the deviation values (∆R) for the ROI method
+must not be low because the algorithm would miss a signiﬁcant amount of
+bounding boxes due to the pixel shift between frames that may be larger
+than the deviation. The opposite eﬀect occurs when using a larger value for
+the deviation, leading to multiple counting for the same object. The Table 8
+shows the range of values for the base counting pre-experiments.
+5 Results and Discussions
+In the results section, we present the partial results for cluster location and
+level of maturation estimate. Then, for the combined approaches, we show
+the complete results. The processing time for embedded applications and the
+additional results are presented and discussed.
+5.1 Object Detection Results
+In order to evaluate the object detection algorithm performance on the test
+set, we used the Intersection over Union (IoU ) metric. The IoU i calculates
+how close a predicted bounding box i is to the ground truth, using Eq.7. The
+method is illustrated in Fig. 6. When the boxes are closely matched, the IoU i
+assumes values close to 1, but when they are largely unmatched it assumes
+values close to 0. Also, whether the model predicts part of the image that is
+not correctly a pre-determined class, the IoU i assumes value 0.
+IoU i = Area of Overlap
+Area of Union ,
+IoU i ∈R : 0 ≤IoU i ≤1 ,
+(7)
+Table 8 Range of values for the hyperparameters in the preliminary experiments on video
+1.
+Counting
+Hyperparameter
+Range of Values
+Method Base
+Min
+Max
+Optimal*
+Tracking
+ax
+0
+0.6
+0.2
+(for DL)
+ay
+0
+0.6
+0.5
+ar
+0
+1
+0.8
+Tracking
+ax
+0
+0.8
+0.3
+(for IA)
+ay
+0
+1
+0.5
+ar
+0
+1
+0.4
+ROI
+∆R (pixels)
+1
+50
+3
+*The optimal value is the best estimate found for the hyperparameters
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+21
+Fig. 6 Intersection over Union (IoU ) for bounding boxes. The green color on the left image
+represents the area of overlap, while on the right image it represents the area of union.
+The ﬁnal IoU value for the test set is given by the mean of all the IoU i as
+shown in Eq. 8.
+IoU ﬁnal =
+PNpred
+i=1 IoU i
+Npred
+,
+IoU ﬁnal ∈R : 0 ≤IoU ﬁnal ≤1 ,
+(8)
+where Npred is the number of predicted objects.
+We also checked the sensitivity (i.e. true prediction evaluation) of the ob-
+ject predictions for the test set (excluding the non-object predictions because
+this penalty is already calculated by the IoU ). The location results for each
+experiment are shown on Table 9.
+The results show that the performance for the location algorithm using the
+initial layers of the MobileNetV1 CNN as a feature extractor was better than
+the VGG-16. The VGG-16 has much more trainable parameters, more eﬀective
+convolutions and usually provides better results, but in this application Mo-
+bileNet has excellent results even with its faster convolutions. As mentioned,
+the object detection algorithm was only used to locate a single class (cluster
+or non-cluster) which seems to have helped MobileNet to extract features.
+5.2 Level of Maturation Results
+Firstly, we evaluate some examples of the image analysis visual results for com-
+mon and extreme cases of the segmentation algorithm performance. Figures 7
+and 8 display relevant results to be analyzed.
+It can be observed that for all the examples of both ﬁgures, the red toma-
+toes were correctly segmented by the algorithm with very little amount of false
+positive pixels. The segmentation for the greenish tomatoes in the examples of
+Fig. 7 performed less well due to the complex background, but still suﬃcient
+Table 9 Location results for the test set which contains 249 samples.
+Experiment
+Correct Matches
+IoU
+VGG-16
+223 (89.55%)
+0.776
+MobileNetV1 CNN
+239 (95.98%)
+0.892
+
+22
+Gabriel Lins Tenorio, Wouter Caarls
+(a)
+(b)
+(c)
+Fig. 7 Segmentation visual results: (a) Original Image; (b) Red and (c) Green Tomatoes
+Segmentation with Overlay.
+Fig. 8 Examples of unsatisfactory segmentation results for red and green tomatoes.
+for analysis purposes. In the examples of Fig. 8, we can observe that the green
+tomatoes segmentation on the darker images was not satisfactory.
+In order to evaluate quantitatively the trained and image analysis methods
+we use the Root Mean Square Error (RMSE) metric to verify the maturity
+errors on the test set. The RMSE is calculated by
+RMSE =
+r
+1
+nΣn
+i=1(rankest −rankgt)2 ,
+RMSE ∈R≥0 ,
+(9)
+where rankest and rankgt are the estimated and ground truth maturation rates.
+The metric is applied to all the n clusters in the test set. The comparative
+RMSE results are shown in Table 10
+Table 10 Level of maturation comparative results.
+Method
+RMSE
+Image Analysis
+2.153 · 10−1
+Trained (DL)
+MobileNetV1
+2.522 · 10−1
+VGG16
+7.709 · 10−2
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+23
+The table shows that the image analysis performance for maturity estima-
+tion was slightly better than the deep learning result involving the Mobilenet
+pre-trained CNN. This is possibly linked to two factors: ﬁrstly as discussed
+earlier, the image analysis method can segment very well the red tomatoes
+and reasonably well the green tomatoes. Secondly the use of the faster CNN
+in exchange for accuracy may not have been convenient to solve this task eﬃ-
+ciently. On the other hand, the RMSE value for the VGG16 pre-trained results
+was about 3 times smaller than the image analysis method, showing that this
+trained model is much more robust in adverse image conditions.
+We also compare the maturity estimate (rank) distribution for the test set
+between the image analysis method and the VGG16 model, providing a scatter
+plot graph (Fig. 9).
+The blue straight line indicates the linear relationship between the two
+methods. The vertical green lines represent their standard deviations. It can
+be noticed that the rank values for the trained algorithm are more distributed
+while the values for image analysis are more concentrated to rank values above
+0.8 (rankIA > 0.8). Also, for low rank values (ranksup < 0.4) the standard
+deviation is high because the image analysis does not segment precisely all the
+green tomatoes and consequently, in most cases, the estimate tends to higher
+values. The results are similar for both methods when the rank is between 0.7
+and 0.9 (0.7 < ranksup < 0.9) with low deviation.
+5.3 Counting Results
+In order to evaluate the experimental results, we ﬁrst discuss the individual
+tomato clusters counting at the three denominated stages for each video pre-
+Fig. 9 Scatter plot for maturity estimate. The x-axis represents the trained rank estimate
+(ranksup) and the y-axis represents the rank using image analysis (rankIA).
+
+24
+Gabriel Lins Tenorio, Wouter Caarls
+sented in Tables 11 to 14. Then, we analyze the continuous maturity estimate
+using the best counting method.
+The DIR results show that the individual clusters counting errors were very
+high. In the worst case for video 1 the algorithm missed 44 mixed and 11 green
+clusters. The combined algorithm could only provide good counting results for
+the red clusters in video 1 and green clusters in video 2. After changing the
+counting method from ROI to Tracking (TRK), the individual counting results
+seem to be worse. On the other hand, the DIT sum of all individual clusters is
+much closer to the ground truth for all the videos than DIR. It indicates that
+the tracking algorithms loses less tomatoes in general, but the segmentation
+was not enough to separate the maturity stages correctly.
+In general, the DDR counting results seems to be better than the DIT and
+worse than DIR. However, the DDR results are more distributed along the
+maturity stages providing better counting for the mixed and green clusters.
+When comparing the last counting results (DDT) to DIR, it can be noticed
+the individual counting was very precise, providing superior results to all the
+other experiments. Table 14 also shows that DDT had a per-class error lower
+than 3 on video 3 and zero counting for the red clusters on video 2. In the
+worst case, on video 1 (the longest video), the system had four counting errors
+for mixed clusters).
+In order to decide precisely which plant row the harvest should start or
+which should be skipped, we can calculate and verify the average of the row
+continuous maturity (as expressed in the previous Equation 6) for the two
+tracking conﬁgurations (DIT and DDT) as shown in Table 15.
+Based on the results using the DIT conﬁguration, the decision is not clearly
+highlighted because this conﬁguration leads to high ranking values which aﬀect
+negatively the average continuous maturity. On the other hand, when analysing
+the best conﬁguration results (DDT) we can infer that the harvest should
+follow the row sequence 2, 1 to 3.
+Table 11 DIR results (DL+IA+ROI).
+Video
+Ground
+Truth
+Predicted
+Red
+Mixed
+Green
+#Clusters
+Red
+Mixed
+Green
+#Clusters
+1
+98
+48
+18
+164
+94 (-4)
+4 (-44)
+7 (-11)
+105 (-59)
+2
+51
+17
+10
+78
+39 (-12)
+3 (-14)
+6 (-4)
+48 (-30)
+3
+50
+25
+11
+86
+32 (-18)
+8 (-17)
+3 (-8)
+43 (-43)
+Table 12 DIT results (DL+IA+TRK).
+Video
+Ground
+Truth
+Predicted
+Red
+Mixed
+Green
+#Clusters
+Red
+Mixed
+Green
+#Clusters
+1
+98
+48
+18
+164
+139 (+41)
+10 (-38)
+10 (-8)
+159 (-5)
+2
+51
+17
+10
+78
+67 (+16)
+4 (-13)
+5 (-5)
+76 (-2)
+3
+50
+25
+11
+86
+71 (+21)
+10 (-15)
+4 (-7)
+85 (-1)
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+25
+Table 13 DDR results (DL+DL+ROI).
+Video
+Ground
+Truth
+Predicted
+Red
+Mixed
+Green
+#Clusters
+Red
+Mixed
+Green
+#Clusters
+1
+98
+48
+18
+164
+69 (-29)
+24 (-24)
+17 (-1)
+110 (-54)
+2
+51
+17
+10
+78
+29 (-22)
+11 (-6)
+7 (-3)
+47 (-31)
+3
+50
+25
+11
+86
+26 (-24)
+8 (-17)
+10 (-1)
+44 (-42)
+Table 14 DDT results (DL+DL+TRK).
+Video
+Ground
+Truth
+Predicted
+Red
+Mixed
+Green
+#Clusters
+Red
+Mixed
+Green
+#Clusters
+1
+98
+48
+18
+164
+99 (+1)
+44 (-4)
+16 (-2)
+159 (-5)
+2
+51
+17
+10
+78
+51 (0)
+18 (+1)
+7 (-3)
+76 (-2)
+3
+50
+25
+11
+86
+52 (+2)
+24 (-1)
+10 (-1)
+86 (0)
+Table 15 Average Continuous Maturity (rT) for the DIT and DDT conﬁgurations for each
+video.
+Video
+Average Continuous
+Maturity (rT)
+DIT
+DDT
+1
+82.83%
+69.24%
+2
+83.28%
+72.17%
+3
+81.98%
+67.73%
+5.4 Processing Time Results
+To verify the possibility of employing the model with the best conﬁguration
+(DDT) in embedded applications, we evaluated the inference time when using
+a desktop with CPU compared to the Neural Compute Stick. The processing
+results are shown in Table 16.
+It can be noticed that the performance for the neural stick is reasonable
+for the object detection, but a bit slow for the combined model. This eﬀect is a
+consequence of the regression model which has a large number of parameters
+that limits the processing FPS even for the Desktop CPU. To improve the
+FPS, a parallelization of neural compute sticks could be made which should
+increase the inference speed or another embedded solution could be used (e.g.
+Movidius Compute Stick 2
+TM, NVIDIA® Jetson AGX Xavier
+TM4).
+4 NVIDIA®
+Jetson
+AGX
+Xavier
+TM.
+Available:
+https://www.nvidia.com/en-
+us/autonomous-machines/embedded-systems/jetson-agx-xavier/ [November 5, 2020]
+Table 16 Average inference time results. The frame per second (FPS) shown is the frame
+processing average of all the three videos. For the regression model inference, the FPS is
+calculated by dividing the time processing of Clusters Per Second (CPS) and the average of
+the Clusters Per Frame (CPF). The average of CPF calculated is 4.5.
+Model
+Average Inference Ratios
+Desktop CPU
+Movidius
+Object Detection
+15.29 FPS
+4.53 FPS
+Regression
+18 CPS [4 FPS]
+6 CPS [1.33 FPS]
+Combined
+3.47 FPS
+1.12 FPS
+
+26
+Gabriel Lins Tenorio, Wouter Caarls
+6 Conclusions and Future Work
+In this paper, diﬀerent approaches for fruit monitoring were implemented and
+tested proving their eﬀectiveness. The learning techniques showed the robust-
+ness to adverse conditions as well as the precision of the convolutional neural
+networks for object detection and regression, when tuned properly. The ob-
+ject detection model could locate precisely the majority of tomato clusters on
+the test set. The baseline implementation based on segmentation was relevant
+to identify the tomato ripeness based on their appearance for clusters that
+contain mostly red tomatoes, but not so accurate for some mixed and green
+clusters. However, when using a CNN as a regressor for the same task, the
+maturity estimation was quite precise.
+The counting system in videos based on region of interest is a simple and
+fast method to count objects, but it has limitations which lowers its precision.
+On the other hand, when the system was based on tracking, the algorithm was
+able to successfully identify the diﬀerent clusters and consequently perform the
+counting with higher precision.
+The processing speed, in general, is suﬃcient and to help the farmer to
+quickly identify the maturity using common CPUs, improving the harvest
+eﬃciency. The embedded solution using Movidius was slower, but still useful in
+resource-constrained environments. If more performance is required, (desktop)
+GPUs provide an easy upgrade path.
+Training two separate learning models (a detector and a regressor) has the
+advantage of being able to combine diﬀerent architectures and easily observe
+the individual results as well as the possibility to tune each one more precisely,
+but it is less eﬃcient in terms of computational cost compared to a single
+model that performs both tasks. Besides the object location and class, the
+object detection algorithm can be adapted to provide the maturation rate
+by substituting the multiple classiﬁcation layers for regression layers and also
+changing the loss function and the metrics. This approach was not considered
+in this paper because the VGG16 performed better for maturity estimation
+and MobileNetV1 performed better for cluster location, but the approach can
+be considered for other diﬀerent CNN architetures [46,15,24].
+Also, the use of recurrent networks for instance segmentation could be
+tested for detection and tracking. Using trained instance segmentation algo-
+rithms, it is possible to detect and segment each object sequentially being also
+robust to occlusion [39].
+Instead of using regression or segmentation to estimate the maturity, pixel-
+wise semantic segmentation deep learning algorithms could be used for this
+task, being robust to image adverse conditions (e.g. SegNet[1], U-Net [40] and
+DeepLab [8] )
+For future work, the tracking system could also be improved by using
+additional information to identify unique clusters such as the prediction of the
+next position of a given cluster based on adaptive Kalman ﬁlters, similar to
+the object tracking implementation by Weng et al. [53].
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+27
+If there is a need for locating and estimating other kind of fruits, vegetables
+or fruits with similar shape the learning algorithms for cluster detection and
+evaluation can be retrained (after the labeling procedure) and the tracking
+algorithm can be tuned for counting. However, the baseline method for fruit
+maturity is speciﬁc to red, green, reddish and greenish fruits.
+In further work, more classes besides the maturation classes can be added
+to identify overripe tomatoes as well as diseases and plagues, similar to Brahimi
+et al. [5] and Wang et al. [51]. The tomato clusters in these conditions can be
+automatically skipped for counting and this information can be provided to
+farmers.
+Acknowledgement
+This work was partially funded by a Masters Scholarship supported by the
+National Council for Scientiﬁc and Technological Development (CNPq) at the
+Pontiﬁcal University Catholic of Rio de Janeiro, Brazil.
+This study was ﬁnanced in part by the Coordena¸c˜ao de Aperfei¸coamento
+de Pessoal de N´ıvel Superior - Brasil (CAPES) - Finance Code 001
+This work was partially supported by the UTFORSK Partnership Pro-
+gramme from The Norwegian Centre for International Cooperation in Educa-
+tion (SIU), project number UTF-2016-long-term/10097.
+We thank the Applied Computational Intelligence Laboratory at the Pon-
+tiﬁcal University Catholic of Rio de Janeiro, Brazil for providing the Nvidia
+® GPUs used for training and the Intel® Neural Compute Stick device used
+for inference.
+Conﬂicts of Interest
+The authors declare that they have no conﬂicts of interest.
+References
+1. Badrinarayanan, V., Kendall, A., Cipolla, R.: Segnet: A deep convolutional encoder-
+decoder architecture for image segmentation. IEEE transactions on pattern analysis
+and machine intelligence 39(12), 2481–2495 (2017). DOI 10.1109/TPAMI.2016.2644615
+2. Behera, S.K., Rath, A.K., Sethy, P.K.: Maturity status classiﬁcation of papaya fruits
+based on machine learning and transfer learning approach. Information Processing in
+Agriculture (2020)
+3. Bengio, Y.: Rmsprop and equilibrated adaptive learning rates for nonconvex optimiza-
+tion. corr abs/1502.04390 (2015)
+4. Bianco, S., Cadene, R., Celona, L., Napoletano, P.: Benchmark analysis of representative
+deep neural network architectures. IEEE Access 6, 64270–64277 (2018). DOI 10.1109/
+ACCESS.2018.2877890
+5. Brahimi, M., Boukhalfa, K., Moussaoui, A.: Deep learning for tomato diseases: clas-
+siﬁcation and symptoms visualization. Applied Artiﬁcial Intelligence 31(4), 299–315
+(2017)
+6. Breiman, L.: Random forests. Machine learning 45(1), 5–32 (2001)
+
+28
+Gabriel Lins Tenorio, Wouter Caarls
+7. Brezmes, J., Llobet, E., Vilanova, X., Saiz, G., Correig, X.: Fruit ripeness monitoring
+using an electronic nose. Sensors and Actuators B: Chemical 69(3), 223–229 (2000).
+DOI 10.1016/S0925-4005(00)00494-9
+8. Chen, L.C., Papandreou, G., Kokkinos, I., Murphy, K., Yuille, A.L.: Deeplab: Semantic
+image segmentation with deep convolutional nets, atrous convolution, and fully con-
+nected crfs.
+IEEE transactions on pattern analysis and machine intelligence 40(4),
+834–848 (2018). DOI 10.1109/TPAMI.2017.2699184
+9. Faisal, M., Albogamy, F., Elgibreen, H., Algabri, M., Alqershi, F.A.: Deep learning and
+computer vision for estimating date fruits type, maturity level, and weight. IEEE Access
+8, 206770–206782 (2020)
+10. Girshick, R.: Fast R-CNN. In: Proceedings of the IEEE international conference on
+computer vision, pp. 1440–1448 (2015). DOI 10.1109/ICCV.2015.169
+11. Girshick, R., Donahue, J., Darrell, T., Malik, J.: Rich feature hierarchies for accurate
+object detection and semantic segmentation. In: Proceedings of the IEEE conference
+on computer vision and pattern recognition, pp. 580–587 (2014). DOI 10.1109/CVPR.
+2014.81
+12. Halstead, M., McCool, C., Denman, S., Perez, T., Fookes, C.: Fruit quantity and ripeness
+estimation using a robotic vision system. IEEE Robotics and Automation Letters 3(4),
+2995–3002 (2018). DOI 10.1109/LRA.2018.2849514
+13. Hartley, R., Zisserman, A.: Multiple view geometry in computer vision.
+Cambridge
+university press (2003)
+14. He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image recognition. In:
+2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 770–
+778 (2016). DOI 10.1109/CVPR.2016.90
+15. He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image recognition. In:
+Proceedings of the IEEE conference on computer vision and pattern recognition, pp.
+770–778 (2016). DOI 10.1109/CVPR.2016.90
+16. Hearst, M.A., Dumais, S.T., Osuna, E., Platt, J., Scholkopf, B.: Support vector ma-
+chines. IEEE Intelligent Systems and their applications 13(4), 18–28 (1998)
+17. Herteno, R., Faisal, M.R., Nugroho, R.A., Abadi, F., Ramadhani, R.: Object count-
+ing pada data video. KLIK-KUMPULAN JURNAL ILMU KOMPUTER 7(1), 92–102
+(2020)
+18. Howard, A.G., Zhu, M., Chen, B., Kalenichenko, D., Wang, W., Weyand, T., Andreetto,
+M., Adam, H.: Mobilenets: Eﬃcient convolutional neural networks for mobile vision
+applications. arXiv preprint arXiv:1704.04861 (2017)
+19. Kaur, K., Gupta, O.: A machine learning approach to determine maturity stages of
+tomatoes. Oriental journal of computer science and technology 10(3), 683–690 (2017)
+20. Kingma, D.P., Ba, J.: Adam: a method for stochastic optimization. corr abs/1412.6980
+(2014) (2014)
+21. Kondo, N., Yamamoto, K., Shimizu, H., Yata, K., Kurita, M., Shiigi, T., Monta, M.,
+Nishizu, T.: A machine vision system for tomato cluster harvesting robot. Engineering
+in Agriculture, Environment and Food 2(2), 60–65 (2009). DOI 10.1016/S1881-8366(09)
+80017-7
+22. Kondo, N., Yata, K., Iida, M., Shiigi, T., Monta, M., Kurita, M., Omori, H.: Develop-
+ment of an end-eﬀector for a tomato cluster harvesting robot. Engineering in Agricul-
+ture, Environment and Food 3(1), 20–24 (2010). DOI 10.1016/S1881-8366(10)80007-2
+23. Kress-Rogers, E., Brimelow, C.J.: Instrumentation and sensors for the food industry,
+vol. 65. Woodhead Publishing (2001)
+24. Krizhevsky, A., Sutskever, I., Hinton, G.E.: Imagenet classiﬁcation with deep convo-
+lutional neural networks. In: Advances in neural information processing systems, pp.
+1097–1105 (2012). DOI 10.1145/3065386
+25. Lin, T.Y., Doll´ar, P., Girshick, R., He, K., Hariharan, B., Belongie, S.: Feature pyramid
+networks for object detection.
+In: Proceedings of the IEEE conference on computer
+vision and pattern recognition, pp. 2117–2125 (2017)
+26. Liu, G., Mao, S., Jin, H., Kim, J.H.: A robust mature tomato detection in greenhouse
+scenes using machine learning and color analysis.
+In: Proceedings of the 2019 11th
+International Conference on Machine Learning and Computing, pp. 17–21 (2019)
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+29
+27. Liu, W., Anguelov, D., Erhan, D., Szegedy, C., Reed, S., Fu, C.Y., Berg, A.C.: Ssd:
+Single shot multibox detector. In: European conference on computer vision, pp. 21–37.
+Springer (2016). DOI 10.1007/978-3-319-46448-0 2
+28. Liu, X., Chen, S.W., Aditya, S., Sivakumar, N., Dcunha, S., Qu, C., Taylor, C.J., Das,
+J., Kumar, V.: Robust fruit counting: Combining deep learning, tracking, and structure
+from motion. In: 2018 IEEE/RSJ International Conference on Intelligent Robots and
+Systems (IROS), pp. 1045–1052 (2018). DOI 10.1109/IROS.2018.8594239
+29. Luo, L., Tang, Y., Zou, X., Wang, C., Zhang, P., Feng, W.: Robust grape cluster detec-
+tion in a vineyard by combining the adaboost framework and multiple color components.
+Sensors 16(12), 2098 (2016)
+30. M lotek, M., Kuta, L., Stopa, R., Komarnicki, P.: The eﬀect of manual harvesting of
+fruit on the health of workers and the quality of the obtained produce. Procedia Man-
+ufacturing 3, 1712–1719 (2015). DOI 10.1016/j.promfg.2015.07.494
+31. Munkres, J.: Algorithms for the assignment and transportation problems. Journal of
+the society for industrial and applied mathematics 5(1), 32–38 (1957)
+32. Ohta, Y.I., Kanade, T., Sakai, T.: Color information for region segmentation. Computer
+graphics and image processing 13(3), 222–241 (1980).
+DOI 10.1016/0146-664X(80)
+90047-7
+33. Otsu, N.: A threshold selection method from gray-level histograms. IEEE transactions
+on systems, man, and cybernetics 9(1), 62–66 (1979). DOI 10.1109/TSMC.1979.4310076
+34. ¨Ozl¨u, A.: Tensorﬂow object counting api (2018).
+https://github.com/ahmetozlu/
+tensorflow_object_counting_api
+35. Pan, S.J., Yang, Q.: A survey on transfer learning. IEEE Transactions on knowledge
+and data engineering 22(10), 1345–1359 (2009). DOI 10.1109/TKDE.2009.191
+36. Povey, M.: Ultrasonics in food engineering part ii: Applications. Journal of Food Engi-
+neering 9(1), 1–20 (1989). DOI 10.1016/0260-8774(89)90047-2
+37. Redmon, J., Divvala, S., Girshick, R., Farhadi, A.: You only look once: Uniﬁed, real-
+time object detection. In: Proceedings of the IEEE conference on computer vision and
+pattern recognition, pp. 779–788 (2016). DOI 10.1109/CVPR.2016.91
+38. Ren, S., He, K., Girshick, R., Sun, J.: Faster R-CNN: Towards real-time object detection
+with region proposal networks. In: Advances in neural information processing systems,
+pp. 91–99 (2015). DOI 10.1109/TPAMI.2016.2577031
+39. Romera-Paredes, B., Torr, P.H.S.: Recurrent instance segmentation.
+In: European
+Conference on Computer Vision, pp. 312–329. Springer (2016).
+DOI 10.1007/
+978-3-319-46466-4 19
+40. Ronneberger, O., Fischer, P., Brox, T.: U-net: Convolutional networks for biomed-
+ical image segmentation.
+In: International Conference on Medical image comput-
+ing and computer-assisted intervention, pp. 234–241. Springer (2015). DOI 10.1007/
+978-3-319-24574-4 28
+41. Russakovsky, O., Deng, J., Su, H., Krause, J., Satheesh, S., Ma, S., Huang, Z., Karpa-
+thy, A., Khosla, A., Bernstein, M., et al.: Imagenet large scale visual recognition
+challenge. International Journal of Computer Vision 115(3), 211–252 (2015). DOI
+10.1007/s11263-015-0816-y
+42. Santos, T.T., de Souza, L.L., dos Santos, A.A., Avila, S.: Grape detection, segmentation,
+and tracking using deep neural networks and three-dimensional association. Computers
+and Electronics in Agriculture 170, 105247 (2020)
+43. Simonyan, K., Vedaldi, A., Zisserman, A.: Deep inside convolutional networks: Visu-
+alising image classiﬁcation models and saliency maps. arXiv preprint arXiv:1312.6034
+(2013)
+44. Simonyan, K., Zisserman, A.: Very deep convolutional networks for large-scale image
+recognition. arXiv preprint arXiv:1409.1556 (2014)
+45. Sun, J., He, X., Wu, M., Wu, X., Shen, J., Lu, B.: Detection of tomato organs based on
+convolutional neural network under the overlap and occlusion backgrounds. Machine
+Vision and Applications 31 (2020). DOI 10.1007/s00138-020-01081-6
+46. Szegedy, C., Liu, W., Jia, Y., Sermanet, P., Reed, S., Anguelov, D., Erhan, D., Van-
+houcke, V., Rabinovich, A.: Going deeper with convolutions.
+In: Proceedings of the
+IEEE conference on computer vision and pattern recognition, pp. 1–9 (2015). DOI
+10.1109/CVPR.2015.7298594
+
+30
+Gabriel Lins Tenorio, Wouter Caarls
+47. Szegedy, C., Reed, S., Erhan, D., Anguelov, D., Ioﬀe, S.: Scalable, high-quality object
+detection. arXiv preprint arXiv:1412.1441 (2014)
+48. Tenorio, G., Villalobos, C., Mendoza, L., Costa da Silva, E., Caarls, W.: Improving
+transfer learning performance: An application in the classiﬁcation of remote sensing
+data.
+In: Proceedings of the 11th International Conference on Agents and Artiﬁcial
+Intelligence - Volume 2: ICAART,, pp. 174–183. INSTICC, SciTePress (2019). DOI
+10.5220/0007372201740183
+49. Viola, P., Jones, M.: Robust real-time face detection. In: null, p. 747. IEEE (2001).
+DOI 10.1109/ICCV.2001.937709
+50. Viola, P., Jones, M.J., Snow, D.: Detecting pedestrians using patterns of motion and
+appearance. In: null, p. 734. IEEE (2003). DOI 10.1109/ICCV.2003.1238422
+51. Wang, C., Li, X., Wang, W., Feng, Y., Zhou, Z., Zhan, H.: Recognition of worm-eaten
+chestnuts based on machine vision.
+Mathematical and computer modelling 54(3-4),
+888–894 (2011)
+52. Wei, X., Jia, K., Lan, J., Li, Y., Zeng, Y., Wang, C.: Automatic method of fruit object
+extraction under complex agricultural background for vision system of fruit picking
+robot. Optik-International Journal for Light and Electron Optics 125(19), 5684–5689
+(2014). DOI 10.1016/j.ijleo.2014.07.001
+53. Weng, S.K., Kuo, C.M., Tu, S.K.: Video object tracking using adaptive kalman ﬁlter.
+Journal of Visual Communication and Image Representation 17(6), 1190–1208 (2006).
+DOI 10.1016/j.jvcir.2006.03.004
+54. Yadav, G., Maheshwari, S., Agarwal, A.: Contrast limited adaptive histogram equaliza-
+tion based enhancement for real time video system. In: 2014 International Conference on
+Advances in Computing, Communications and Informatics (ICACCI), pp. 2392–2397.
+IEEE (2014)
+A Additional Results
+We also veriﬁed some tracking results for occlusion cases in the videos and their impacts
+on maturation rate when using the DDT conﬁguration. The results are shown in the ﬁgures
+A.10-A.12.
+It can be noticed that the object detection algorithm on Fig. A.10 predicted the bound-
+ing boxes even with occlusion, but the maturation rank was aﬀected when the occlusion
+was occurring which decreased the rank value for a while. On the other hand, our tracking
+algorithm uses the rank information between 20 frames and calculates a smoothed maturity
+function which mitigates this rank discrepancy.
+The same eﬀect happens in Fig. A.11, the rank estimate was higher in the ﬁrst image
+because of the cluster behind, but the rank discrepancy is also mitgated by the tracking
+algorithm.
+The Fig. A.12 results shows a moment when the object detection algorithm loses the
+detection due to occlusion, then detects the cluster again. The tracking system could identify
+correctly the two detections as the same cluster. An important point is that in the uncropped
+image, ﬁve other clusters were being tracked.
+Fig. A.10 DDT results showing correct cluster detection in the presence of occlusion.
+
+Automatic Visual Estimation of Tomato Cluster Maturity in Plant Rows
+31
+Fig. A.11 DDT results showing cluster rank discrepancy mitigation through the tracking
+algorithm.
+Fig. A.12 DDT results showing loss and re-acquisition of a cluster by the tracking algo-
+rithm.

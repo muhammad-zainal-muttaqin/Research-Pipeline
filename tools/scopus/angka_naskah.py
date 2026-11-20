@@ -89,18 +89,21 @@ def main():
     tl = muat_teks_lengkap(TOPIK)
     tidak_diperoleh = Counter(k for s, k, _ in tl.values() if s == "tidak diperoleh")
     dinilai = [v for v in tl.values() if v[0] == "dinilai"]
+    menunggu = Counter(k for s, k, _ in tl.values() if s == "menunggu")
     xt = Counter(e for _, k, e in dinilai if k == "X")
-    inc = Counter(r["kode"] for r in mat)
+    inc = Counter(r["kode"] for r in mat if r["idx"].isdigit())
     p_lain = TOPIK / "tambahan_metode_lain.csv"
     lain_semua = baca(p_lain) if p_lain.exists() else []
     lain = [r for r in lain_semua if (KORPUS / "pdf" / (r["key"] + ".pdf")).exists()]
-    n_scopus = len(mat)
+    n_scopus = sum(inc.values())
     assert n_scopus == len(dinilai) - sum(xt.values()), "matriks_bukti.csv tidak sesuai tahap teks lengkap"
+    assert len(mat) == n_scopus + sum(1 for r in lain if r["kode"] != "X"), "matriks_bukti.csv tidak sesuai rekaman metode lain"
     alasan = {f"E{i}" for i in range(1, 8)}
     assert set(xa) <= alasan and set(xt) <= alasan, "alasan eksklusi di luar E1-E7"
     assert unik - x0 - xj == len(dec), "diagram alur: judul disaring - eksklusi judul != dinilai dari abstrak"
     assert len(dec) - sum(xa.values()) == len(tl), "diagram alur: lolos abstrak != laporan dicari teks lengkapnya"
-    assert len(tl) == sum(tidak_diperoleh.values()) + len(dinilai), "diagram alur: dicari != tidak diperoleh + dinilai"
+    assert len(tl) == sum(tidak_diperoleh.values()) + sum(menunggu.values()) + len(dinilai), \
+        "diagram alur: dicari != tidak diperoleh + menunggu + dinilai"
     tulis("## Seksi 2: alur rekaman\n")
     tulis(f"- Rekaman diambil {diambil:,}; unik {unik:,}; duplikat {diambil - unik:,}")
     tulis(f"- Dibuang menurut tipe dokumen {x0}; judul disaring {unik - x0:,}; dikeluarkan di tahap judul {xj:,}")
@@ -108,6 +111,8 @@ def main():
     tulis(f"- Dikeluarkan di tahap kelayakan abstrak {sum(xa.values())}: " + ", ".join(f"{k} {xa[k]}" for k in sorted(xa)))
     tulis(f"- Laporan dicari teks lengkapnya {len(tl)}; tidak diperoleh {sum(tidak_diperoleh.values())} ("
           + ", ".join(f"{k} {tidak_diperoleh[k]}" for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"]) + ")")
+    tulis(f"- PDF ada, menunggu penilaian teks lengkap {sum(menunggu.values())} ("
+          + ", ".join(f"{k} {menunggu[k]}" for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"]) + ")")
     tulis(f"- Dinilai dari teks lengkap {len(dinilai)}; dikeluarkan {sum(xt.values())}: "
           + ", ".join(f"{k} {xt[k]}" for k in sorted(xt)))
     tulis(f"- Masuk dari Scopus {n_scopus}: " + ", ".join(f"{k} {inc[k]}" for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"]))
@@ -118,6 +123,7 @@ def main():
     m("nSought", len(tl) + len(lain_semua))
     m("nNotRetrieved", sum(tidak_diperoleh.values()) + len(lain_semua) - len(lain))
     m("nFTAssessed", len(dinilai) + len(lain))
+    m("nAwaiting", sum(menunggu.values()))
     m("nFTExcl", sum(xt.values()))
     for i, nama in enumerate(["One", "Two", "Three", "Four", "Five", "Six", "Seven"], 1):
         m(f"nFTExcl{nama}", xt[f"E{i}"])
@@ -334,7 +340,7 @@ def main():
     tulis("- Modalitas: " + ", ".join(f"{k} {v}" for k, v in Counter(v[2] for v in c3.values()).most_common()))
     n_mv, n_pk = sum(1 for v in c3.values() if v[3] == "Y"), sum(1 for v in c3.values() if v[4] == "Y")
     tulis(f"- Multipandang Y: {n_mv}; kelas per instans Y: {n_pk}")
-    key = {int(r["idx"]): r["key"] for r in mat}
+    key = {int(r["idx"]): r["key"] for r in mat if r["idx"].isdigit()}
     tulis("- Kajian pencacahan (HIT): " + ", ".join(sorted(key.get(i, str(i)) for i, v in c3.items() if v[0] == "HIT")))
     tulis("- Kajian multipandang: " + ", ".join(sorted(key.get(i, str(i)) for i, v in c3.items() if v[3] == "Y")))
     for k, nama in [("KLS", "PalmCls"), ("DET", "PalmDet"), ("SENSOR", "PalmSensor"), ("MUTU", "PalmQual"),

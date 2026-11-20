@@ -166,9 +166,9 @@ def gambar_prisma():
     dicari = len(tl)
     tak = sum(1 for s, _, _ in tl.values() if s == "tidak diperoleh")
     dinilai = [v for v in tl.values() if v[0] == "dinilai"]
+    menunggu = sum(1 for s, _, _ in tl.values() if s == "menunggu")
     xt = Counter(e for _, k, e in dinilai if k == "X")
     inc = Counter(k for _, k, _ in dinilai if k != "X")
-    n_inc = sum(inc.values())
     lain = muat_tambahan()
     lain_ada = [r for r in lain if (KORPUS / "pdf" / (r["key"] + ".pdf")).exists()]
 
@@ -209,7 +209,10 @@ def gambar_prisma():
     panah(52, 72, 56, 72)
     kotak(8, 49, 44, 10, f"Reports sought for retrieval\nn = {dicari:,}")
     panah(30, 66, 30, 59)
-    kotak(60, 49, 36, 10, f"Reports not retrieved\nn = {tak:,}", abu)
+    if menunggu:
+        kotak(60, 47, 36, 14, f"Reports not retrieved\nn = {tak:,}\nRetrieved, awaiting full-text\nassessment, n = {menunggu:,}", abu)
+    else:
+        kotak(60, 49, 36, 10, f"Reports not retrieved\nn = {tak:,}", abu)
     panah(52, 54, 60, 54)
     kotak(8, 30, 44, 10, f"Reports assessed for eligibility\nn = {len(dinilai)}")
     panah(30, 49, 30, 40)
@@ -219,10 +222,11 @@ def gambar_prisma():
     nama = {"C1": "multi-observation", "C2": "single-view counting", "C3": "oil palm",
             "C4": "single-image class-wise counting", "C5": "depth and 3D sensing",
             "R": "earlier reviews", "T": "methods outside agriculture"}
-    b1 = ", ".join(f"{nama[k]} {inc[k]}" for k in ["C1", "C2", "C3", "C4"])
-    b2 = ", ".join(f"{nama[k]} {inc[k]}" for k in ["C5", "R", "T"])
+    semua = inc + Counter(r["kode"] for r in lain_ada if r["kode"] != "X")
+    b1 = ", ".join(f"{nama[k]} {semua[k]}" for k in ["C1", "C2", "C3", "C4"])
+    b2 = ", ".join(f"{nama[k]} {semua[k]}" for k in ["C5", "R", "T"])
     lebar = 118 if lain else 90
-    kotak(8, 1, lebar, 13, f"Studies included, n = {n_inc + len(lain_ada)}\n{b1},\n{b2}", "#EAF2FA")
+    kotak(8, 1, lebar, 13, f"Studies included, n = {sum(semua.values())}\n{b1},\n{b2}", "#EAF2FA")
     panah(30, 30, 30, 14)
     if lain:
         ax.text(30, 130, "Identification of studies via Scopus", ha="center", fontsize=7.2, style="italic")
@@ -230,11 +234,15 @@ def gambar_prisma():
         kotak(103, 115, 23, 11, f"Records identified from\nreference lists and\nknown papers\nn = {len(lain)}")
         kotak(103, 49, 23, 10, f"Reports sought\nfor retrieval\nn = {len(lain)}")
         panah(114.5, 115, 114.5, 59)
-        kotak(103, 30, 23, 10, f"Reports not retrieved\nn = {len(lain) - len(lain_ada)}", abu)
+        tak_lain = len(lain) - len(lain_ada)
+        kotak(103, 30, 23, 10, f"Reports assessed\nfor eligibility\nn = {len(lain_ada)}"
+              + (f"\nnot retrieved, n = {tak_lain}" if tak_lain else ""))
         panah(114.5, 49, 114.5, 40)
+        if lain_ada:
+            panah(114.5, 30, 114.5, 14)
     simpan(fig, "F01_prisma")
     return {"diambil": diambil, "unik": unik, "x0": x0, "xj": xj, "kand": kand, "judul_saja": judul_saja,
-            "xa": xa, "dicari": dicari, "tidak_diperoleh": tak, "dinilai": len(dinilai), "xt": xt, "inc": inc,
+            "xa": xa, "dicari": dicari, "tidak_diperoleh": tak, "dinilai": len(dinilai), "menunggu": menunggu, "xt": xt, "inc": inc,
             "metode_lain": len(lain), "metode_lain_diperoleh": len(lain_ada)}
 
 
@@ -409,7 +417,7 @@ def gambar_peta_tanaman(mat):
 def gambar_sawit(mat):
     masuk = {int(r["idx"]) for r in mat if r["kode"] == "C3"}
     c3 = {i: v for i, v in muat_c3().items() if i in masuk}
-    tahun = {int(r["idx"]): int(r["year"]) for r in mat}
+    tahun = {int(r["idx"]): int(r["year"]) for r in mat if r["idx"].isdigit()}
     tugas = ["KLS", "DET", "HIT", "LF", "MUTU", "SENSOR", "DATA"]
     nama_t = {"KLS": "Ripeness classification\nof bunch images", "DET": "Bunch detection\nin a scene",
               "HIT": "Bunch counting", "LF": "Loose fruit\ndetection", "MUTU": "Quality, defect,\nmass, or pose",

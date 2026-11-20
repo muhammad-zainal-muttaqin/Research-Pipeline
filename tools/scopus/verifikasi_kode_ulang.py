@@ -104,7 +104,7 @@ def bangun_lembar():
     manual = muat_manual()
     mat = {r["idx"]: r for r in baca(MAT) if r["kode"] == "C1"}
     baris = []
-    for idx in sorted(set(manual) & set(mat), key=int):
+    for idx in sorted(set(manual) & set(mat), key=lambda i: (not i.isdigit(), int(i.lstrip("L")))):
         k, r, l = manual[idx], mat.get(idx, {}), lama.get(idx, {})
         baris.append({
             "idx": idx, "key": r.get("key", ""), "tahun": r.get("year", ""), "judul": r.get("title", ""),

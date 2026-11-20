@@ -1,0 +1,1450 @@
+Agrosense v2: An AI-enabled system for precision orchard sensing and 
+tree-level monitoring
+Shiyu Liu a, Yiannis Ampatzidis a,*
+, Hengyue Guan a, Wenhao Liu a, Congliang Zhou b,  
+Daeun Choi c, Won Suk Lee d
+a Agricultural and Biological Engineering Department, Southwest Florida Research and Education Center, IFAS, University of Florida, Immokalee, FL 34142, USA
+b School of Plant, Environmental and Soil Sciences, Louisiana State University, Baton Rouge, LA 70803, USA
+c Agricultural and Biological Engineering Department, Gulf Coast Research and Education Center, IFAS, University of Florida, Wimauma, FL 33598, USA
+d Agricultural and Biological Engineering Department, IFAS, University of Florida, Gainesville, FL 32611, USA
+A R T I C L E I N F O
+Keywords:
+Artificial intelligence
+Computer vision
+Fruit detection
+Orchard sensing
+Precision agriculture
+Tree-level monitoring
+A B S T R A C T
+Precision orchard management requires robust sensing systems that operate reliably under unstructured field 
+conditions while providing actionable, tree-level information. Despite advances in computer vision and edge 
+computing, most approaches focus on isolated tasks and lack integration into deployable, orchard-scale systems. 
+This study presents Next-Generation Agrosense (Agrosense v2), an AI-enabled, system-oriented framework for 
+real-time orchard sensing and tree-level monitoring. Agrosense v2 integrates tree detection and counting, canopy 
+density classification, tree height estimation (inherited from Agrosense v1, not validated in detail in this study), 
+and detection-based fruit counting on both the tree and the ground into a unified pipeline. Compared with the 
+previous version (Agrosense v1), Agrosense v2 improves tree identification through temporal tracking, 
+strengthens canopy density classification by leveraging image sequences, and adds fruit counting via image-level 
+detection, with all outputs aggregated into tree-level spatiotemporal summaries, presented by a self-developed 
+tree-level visualization tool. Field experiments in three citrus orchards with contrasting management condi­
+tions totaled 3,696 trees across two commercial orchards (Field A&B) and a research station (SWFREC). Tree 
+counting accuracies were 95.96% (SWFREC), 92.73% (Field A), and 97.79% (Field B), and canopy density 
+classification accuracies were 94.1% to 96.8%. For fruit detection, the transformer-based RT-DETR model ach­
+ieved the highest mAP@0.5 up to 0.837 and 0.722 for fruits on the tree and ground, respectively, demonstrating 
+robustness under dense canopy and cluttered ground conditions. To our knowledge, Agrosense v2 is the first real- 
+time, field-deployable orchard sensing system that delivers multiple tree-level attributes within a single frame­
+work. By unifying perception, inference, and geo-referenced aggregation, Agrosense v2 provides a scalable 
+foundation for data-driven precision orchard management.
+1. Introduction
+Precision orchard management increasingly relies on accurate, 
+timely, and scalable sensing systems to support tree-level monitoring, 
+yield estimation, and data-driven field operations (El-Ansary, 2025; 
+Sishodia et al., 2020; Zhang et al., 2024). Among tree crops, citrus or­
+chards represent a particularly challenging production environment due 
+to dense canopies, complex branch structures, and highly variable fruit 
+visibility. These characteristics make citrus orchards an ideal testbed for 
+evaluating next-generation orchard sensing systems under real-world 
+conditions (Costa et al., 2021; Dian et al., 2025; Tang et al., 2023). 
+Recent advances in sensing hardware and artificial intelligence (AI) 
+have enabled the collection and analysis of large volumes of orchard 
+data using vision-based (Bulanon et al., 2025; Longchamps et al., 2022) 
+and edge-computing platforms (Jiao et al., 2025; Rui et al., 2024), 
+creating new opportunities for precision agriculture applications.
+Despite this progress, robust orchard-scale deployment remains 
+challenging. Visual sensing in orchards is affected by occlusions (Lu and 
+Sang, 2015), illumination variability (Choi et al., 2016), motion-induced 
+blur (Huang et al., 2025), and spatial variation across trees and rows 
+(Perry et al., 2010). In traditional citrus orchards, these challenges are 
+further compounded by complex three-dimensional canopy structures, 
+* Corresponding author.
+E-mail address: i.ampatzidis@ufl.edu (Y. Ampatzidis). 
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+https://doi.org/10.1016/j.compag.2026.111797
+Received 17 February 2026; Received in revised form 14 April 2026; Accepted 20 April 2026  
+Computers and Electronics in Agriculture 248 (2026) 111797 
+Available online 24 April 2026 
+0168-1699/© 2026 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+
+which make side-view observations inherently partial under field con­
+ditions. These factors impose strict requirements on sensing systems, 
+which must not only achieve acceptable accuracy but also operate 
+reliably, efficiently, and continuously in unstructured outdoor envi­
+ronments (Lacerda et al., 2025; Trentin and Ampatzidis, 2024). As a 
+result, performance demonstrated in controlled experimental settings 
+often degrades when systems are deployed in real orchards, highlighting 
+the gap between algorithm development and practical application (Liu 
+et al., 2025).
+Existing research has largely focused on individual components of 
+orchard sensing and analysis pipelines. Representative studies have 
+investigated fruit detection using deep learning-based object detection 
+models (Zhang et al., 2022; Chen et al., 2021), image- or video-based 
+fruit counting (Wang et al., 2018; Gan et al., 2018; Malik et al., 2016), 
+and yield estimation at the tree or plot level (Dorj et al., 2017, Trentin 
+et al., 2024; Vijayakumar et al., 2023), as well as sensor-driven or vision- 
+guided systems for orchard operations such as precision spraying (Partel 
+et al., 2021; Khot et al., 2012). While these approaches have demon­
+strated promising results within their respective scopes, above 70% of 
+these studies were typically developed as independent solutions tar­
+geting only one or two components of the orchard sensing pipeline 
+instead of an overall monitoring. The lack of integration across 
+perception, inference, and downstream deployment limits their scal­
+ability and hinders adoption in operational orchard environments (Liu 
+and Ampatzidis, 2026; Rial-Lovera, 2018).
+From a system perspective, effective orchard management requires 
+more than isolated algorithmic advances. Practical deployment de­
+mands a unified framework capable of supporting continuous sensing, 
+aggregating information at the tree-level, and interfacing with down­
+stream decision-making and actuation processes. In such systems, 
+perception modules must generate reliable and interpretable outputs 
+that can be consumed by higher-level inference components, while 
+satisfying real-time constraints and hardware limitations imposed by 
+field-deployable sensing platforms (Duckett et al., 2018; Oliveira et al., 
+2021). These requirements motivate a modular and extensible system 
+design that explicitly bridges algorithm development and real-world 
+orchard deployment.
+To address these needs, the primary objective of this study is to 
+develop and evaluate Next-Generation Agrosense (Agrosense v2), an AI- 
+enabled, field-deployable sensing system that integrates perception, 
+inference, and spatial aggregation into a unified real-time framework for 
+tree-level orchard monitoring. Specifically, this study aims to: (1) sup­
+port reliable perception of orchard features, including tree counting, 
+canopy density classification, and visible fruit detection under real or­
+chard conditions; (2) enable tree-level inference through stable tree 
+identification and aggregation of frame-level observations during field 
+traversal; and (3) generate geo-referenced tree-level representations for 
+orchard monitoring and management. While a complete orchard auto­
+mation pipeline would also include actuation, this study focuses on the 
+perception and inference as the critical foundation for scalable, data- 
+driven orchard decision-making. To the best of our knowledge at the 
+time of this publication, this study introduces the first citrus orchard 
+sensing system using a side-view mobile platform capable of simulta­
+neously and in real time collecting multiple forms of tree-level, practi­
+cally actionable information within a single framework. Here, a unified 
+framework refers to a sensing pipeline that integrates data acquisition, 
+preprocessing, and inference from onboard vision without separate 
+sensing systems or offline post-processing. These objectives are directly 
+motivated by practical orchard-management needs. Stable tree-level 
+identification supports orchard inventory and longitudinal monitoring, 
+canopy density classification supports assessment of tree condition and 
+structure, fruit detection contributes to yield-related assessment, and 
+geo-referenced aggregation enables spatial inspection of orchard 
+variability.
+Building upon earlier orchard sensing efforts (Zhou et al., 2025), 
+Agrosense v2 extends prior work toward a more integrated orchard 
+sensing framework. Compared with Agrosense v1, which relied pri­
+marily on frame-level outputs and did not integrate fruit counting or a 
+real-time tree-level visualization, Agrosense v2 introduces four key ad­
+vances: (1) temporal trunk tracking for stable tree identification across 
+frames; (2) sequence-based canopy density inference rather than single- 
+image classification; (3) integrated fruit detection with tree-level ag­
+gregation of on-tree and on-ground fruit observations; and (4) a user- 
+friendly geo-referenced visualization workflow for real-time tree-level 
+orchard monitoring. The system explicitly accounts for partial canopy 
+visibility, viewpoint variation, and operational constraints inherent to 
+mobile orchard sensing platforms (Azizi et al., 2024; Mena et al., 2024; 
+Porwollik et al., 2010). By unifying multiple tree-level measurements 
+within a single, real-time system, Agrosense v2 moves beyond 
+algorithm-centric evaluations and demonstrates a practical sensing 
+framework that directly supports orchard-scale situational awareness 
+and precision management. This paper presents the Agrosense v2 system 
+design and core sensing modules, then evaluates system performance in 
+real citrus orchards, and finally discusses the limitations of the current 
+study and future directions for scalable orchard deployment. Fig. 1
+shows the overall workflow of Agrosense v2.
+2. Materials and methods
+2.1. Agrosense v2 mechanical design and workflow
+The Agrosense v2 system is a fully integrated, portable sensing 
+platform designed for tree crop monitoring. Its core hardware compo­
+nents include an embedded edge computing module Jetson AGX Orin 
+(NVIDIA Corporation, Santa Clara, California, USA); a depth-sensing 
+unit consisting of two RGB-D cameras, one mounted on each side of 
+the platform, using either Intel RealSense D435i (Intel Corporation, 
+Santa Clara, California, USA) or ZED X (StereoLabs Inc., San Francisco, 
+California, USA) with the 2.2mm lens, for acquiring synchronized 
+RGB–depth image pairs based on different field conditions and tasks; 
+and a global positioning and inertial sensing unit composed of an RTK- 
+enabled GNSS receiver SparkFun GPS-RTK Board (u-blox ZED-F9P, 
+SparkFun Electronics, Niwot, Colorado, USA), and 9-axis IMU BNO055 
+(Bosch Sensortec GmbH, Reutlingen, Germany) for real-time localiza­
+tion. Additional components include a capacitive touch display (Wave­
+share Electronics, Shenzhen, China) for user interaction, an extra 
+Samsung 990 Pro NVMe M.2 SSD (4 TB; Samsung Electronics Co., Ltd., 
+Suwon, South Korea) for high-throughput data storage, and a 
+rechargeable lithium battery that enables field operation without 
+external power. The device enclosure is custom-designed and fabricated 
+using 3D-printed materials to reduce weight while maintaining struc­
+tural durability (Fig. 2). The software stack is built on Linux Ubuntu 
+22.04 and integrates drivers, data acquisition modules, and our custom 
+Agrosense v2 data-collection interface. During field operations, the 
+Agrosense v2 unit is mounted at the distal end of an adjustable height 
+trunk-extension rack at a height of 1.7 m and oriented laterally toward 
+the tree rows, which provides a rigid forward extension from the vehicle 
+to position the sensors at a stable, optimal viewpoint relative to the tree 
+canopy. At a typical stand-off distance of 2–4 m, the ZED X camera 
+covers approximately 5.7–11.4 m in width and 3.4–6.8 m in height, 
+allowing a single camera to capture the entire tree. RGB-D image 
+acquisition and localization data collection were executed continuously 
+using timestamp-based synchronization. Each incoming frame was 
+processed online through depth-based preprocessing, tree trunk detec­
+tion, bounding-box refinement, and tracking update. Sequence-based 
+canopy density inference and tree-level fruit-count aggregation were 
+then updated incrementally as tracked observations became available. 
+The system was deployed on the Jetson AGX Orin using batch size 1 for 
+frame-by-frame inference and was able to keep pace with the 15 FPS 
+image acquisition rate used in this study. Fig. 2 presents the Agrosense 
+v2 use case in the field and the hardware components.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+2 
+
+2.2. Tree detection, processing, and counting
+2.2.1. Tree trunk detection
+The YOLO series of models was chosen for this sensing system due to 
+its end-to-end single-stage detection capabilities. It can simultaneously 
+locate and classify targets in a single forward pass, balancing detection 
+speed and accuracy. This makes it ideal for tree trunk detection tasks 
+that require real-time processing. Furthermore, YOLO has continuously 
+optimized its network structure and feature extraction capabilities over 
+multiple iterations. It is highly adaptable to small targets, complex 
+backgrounds, and occluded scenes (Ali & Zhang, 2024). Its mature open- 
+source implementation and extensive deployment solutions facilitate 
+Fig. 1. High-level workflow of Agrosense v2, showing data flow from RGB-D cameras and localization sensors to the Jetson AGX Orin and the downstream software 
+modules for detection, tracking, classification, tree-level aggregation, geo-referenced integration, and real-time visualization. Note: tree height estimation is an 
+inherited component from Agrosense v1 and is not included in the figure because it is not evaluated or discussed in this paper; readers should refer to Zhou et al. 
+(2025) for details.
+Fig. 2. Hardware components in Agrosense v2 (multiple views).
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+3 
+
+rapid integration and application on agricultural robots or edge 
+computing devices (Cao et al., 2026; Vijayakumar et al., 2026). Within 
+the YOLO family, YOLOv11-Nano (YOLOv11n) was selected for Agro­
+sense v2 for the following reasons: First, real-time requirements. Tree 
+trunk detection requires low-latency online output on field equipment 
+(such as Jetson AGX Orin) to support downstream tasks such as posi­
+tioning, tree height calculation, and canopy density classification. Sec­
+ond, computing power and energy consumption constraints. The Nano 
+version's lightweight model structure and low inference power con­
+sumption help extend battery life on battery-powered mobile platforms. 
+Third, given the relatively regular visual structure of tree trunks and the 
+deployment requirement on a battery-powered embedded platform, a 
+lightweight model was considered sufficient for this task, while larger 
+variants would increase computational cost and deployment burden.
+The trunk detector operated on depth-filtered RGB images in which 
+non-target-row regions were masked before training and inference. 
+Model training was conducted on a MacBook Pro (Apple Inc., Cupertino, 
+California, USA) equipped with an M3 Pro chip featuring a 14-core GPU, 
+using Metal Performance Shaders (MPS) as the hardware acceleration 
+backend. Training was performed using default hyperparameters with 
+an early stop mechanism, and an input image resolution of 640 × 640 
+pixels. During deployment, inference was executed on the NVIDIA Jet­
+son AGX Orin in batch size = 1 mode as part of the online field- 
+processing pipeline. The model performance was evaluated using stan­
+dard object detection metrics, including precision, recall, mean Average 
+Precision at IoU 0.5 (mAP@0.5), and mean Average Precision across IoU 
+thresholds from 0.5 to 0.95 (mAP@0.5:0.95) (Chen et al., 2015).
+2.2.2. Detection bounding box selection
+The detection outputs from the YOLOv11n model are subsequently 
+processed by a counting algorithm, which calculates the total number of 
+trees and generates an identity image for each tree to support down­
+stream processing. However, because of the structural complexity and 
+visual similarity within citrus orchards, the detector may occasionally 
+misidentify non-trunk objects, such as branches, ground shadows, or 
+other background artifacts, as tree trunks (Fig. 3). To improve the ac­
+curacy and efficiency of the counting algorithm, detected bounding 
+boxes are refined using a bounding box selection criterion, designed to 
+retain the most probable trunk detection while removing false positives. 
+This process consists of three main filtering steps. First, only bounding 
+boxes whose normalized vertical center satisfied ycenter < thresholdnorm 
+and whose normalized area satisfied A = w × h ≥thresholdarea were 
+retained, where w and h denote the normalized width and height of the 
+bounding box, respectively (Fig. 3a-b). In this study, thresholdnorm = 0.3 
+and thresholdarea = 0.005 were selected empirically based on pre­
+liminary inspection of detection results from a validation run. These 
+thresholds were then fixed for all orchards evaluated in this study. 
+Because they are heuristic parameters related to orchard geometry and 
+visual appearance, some recalibration may be required when applying 
+the system to orchards with substantially different tree sizes, planting 
+densities, or ground conditions. This assumes that tree trunks are 
+physically connected to the ground and that very small bounding boxes 
+are unlikely to correspond to trunk structures. Second, among the 
+remaining candidates, only one bounding box that is closest to being 
+vertically aligned with the ground is retained (Fig. 3c). This constraint 
+reflects the orchard geometry, where only one tree trunk is expected 
+along the vertical axis perpendicular to the ground plane within the field 
+of view. Third, for the remaining bounding box candidates, a non-black 
+pixel ratio is calculated in a predefined region directly above each 
+bounding box (Fig. 3d). As shown below, the non-black pixel ratio rt is 
+defined as the proportion of pixels with non-zero intensity values within 
+this region. 
+rt =
+1
+|Ωc|
+∑
+p∈Ωc
+1[It(p) ∕=0]
+(1) 
+where t is the frame index, It is the RGB image at frame t, p is the pixel 
+location, Ωc is a predefined central region of interest, and 1[⋅] is the 
+indicator function. Pixels masked out by the distance-based filtering are 
+set to black, so rt ∈[0, 1] (dimensionless) measures the fraction of 
+unmasked (non-black) pixels near the image center.
+Because this region typically corresponds to tree canopy, it is ex­
+pected to contain a high density of non-black pixels due to foliage, in 
+contrast to background sky or ground regions. This step further filters 
+trunk candidates by removing detections that are unlikely to be asso­
+ciated with canopy structures. An overview of the bounding box selec­
+tion process is shown in Fig. 3. Following this refinement stage, only the 
+bounding box most likely representing a tree trunk is passed to the 
+tracking algorithm. If multiple bounding boxes remain, they are 
+resolved during tracking. This refinement step reduces tracking 
+complexity and improves the accuracy and robustness of tree counting 
+and tracking results.
+2.2.3. Tree tracking algorithm
+Following YOLOv11n detection and bounding box selection, a new 
+tracking algorithm was developed to estimate the total number of trees 
+in the orchard and to extract a front-view identity image for each tree. 
+Tracking is necessary because trees appear across multiple frames dur­
+ing vehicle motion, and frame-level detections alone can cause double- 
+counting or missed trees under occlusion and viewpoint changes. The 
+algorithm incorporates the non-black pixel ratio as an auxiliary feature 
+to support robust tracking. In Agrosense v1 (Zhou et al., 2025), the 
+Fig. 3. Overview of the bounding box selection criteria. (a) Only bounding boxes with a vertical center coordinate (ycenter) below a predefined threshold (0.3) are 
+retained, where the y-center is normalized by the image height (0 = top of image, 1 = bottom of image). (b) Only bounding boxes with an area greater than 0.005 of 
+the normalized total image area are retained. (c) Among the remaining candidates, when evaluated along the direction perpendicular to the ground, only the 
+bounding box closest to the ground is retained. (d) The final selection retains the bounding box with the highest non-black pixel ratio in the canopy region above the 
+detected trunk.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+4 
+
+tracking module used a center-based counting strategy, in which a tree 
+was recorded only when its detection aligned with the image's central 
+region. The proposed tracking algorithm extends this approach by 
+introducing temporal associations across consecutive frames. By con­
+straining detection motion between frames and validating detection 
+persistence, the algorithm enables consistent tracking and reliable 
+identification of individual trees. The workflow of the proposed tracking 
+algorithm is shown in Fig. 4.
+To achieve stable cross-frame tree identification and representative 
+frame selection, the algorithm first filters detection candidates within 
+each frame by extracting the normalized horizontal center coordinate 
+(xcenter ∈[0,1], where 0 = left edge and 1 = right edge of the image) of 
+every detected object. If only one candidate is detected, its xcenter value is 
+directly recorded. If multiple candidates are present, the detection 
+whose xcenter is closest to the xcenter of the retained detection in the 
+previous frame is selected. This step assumes that trees move gradually 
+across the image in small, consistent steps as the platform advances. An 
+active tracking list (activetrack) is then maintained to store the contin­
+uous trajectory associated with a single tree. Two detections are 
+considered to belong to the same tree if the difference in normalized 
+horizontal bounding box center between consecutive frames satisfied 
+Δxt = |xt −xt−1| < xgap where Δxt is the normal horizontal displacement 
+between consecutive frames (dimensionless, Δxt ∈[0, 1]), and xgap =
+0.25 (dimensionless, xgap ∈[0, 1]). This threshold was determined 
+empirically from validation videos by examining Δxt values for correctly 
+matched detections. In addition, the non-black pixel ratio at the image 
+center, rt, was required to follow an increasing-then-decreasing trend, 
+consistent with a new tree entering and exiting the field of view. This 
+pattern is expected because distance-based masking suppresses 
+adjacent-row trees, causing the non-black ratio in the image center to 
+increase as a tree enters the field of view and decreases as it exits. If these 
+conditions are not met, a new tree tracking sequence is initiated. When 
+the observation sequence for a tree ends, the representative frame is 
+selected from the activetrack as the frame whose xcenter is closest to the 
+image center (0.5). This frame is saved as the tree’s identity image. A 
+valid tree was defined only when detections persisted for at least five 
+consecutive frames, corresponding to approximately 0.33s at the 15 FPS 
+acquisition rate used in this study. This criterion was selected empiri­
+cally to suppress transient false detections while retaining stable tree 
+observations. This threshold was calibrated for the 15 FPS acquisition 
+rate and approximately 8 km/h vehicle speed used in this study, 
+corresponding to approximately 0.33 s of continuous detection. If the 
+frame rate or vehicle speed changes substantially, this parameter should 
+be re-tuned to maintain a consistent temporal window of approximately 
+0.3–0.5 s; for example, at 30 FPS and the same speed, a threshold of 
+approximately 9–10 consecutive frames would be appropriate. Other­
+wise, it is discarded as noise or a transient detection. Finally, if any 
+tracking data remain unprocessed at the end of the image sequence, the 
+same validation and representative frame selection procedure is applied 
+to finalize the last tracked tree. After tracking, the frame in which the 
+tree is closest to the image center is saved as the tree’s identity image.
+2.3. Tree canopy classification algorithm
+Based on the result from Agrosense v1, the tree canopy density is 
+classified into three classes: Low, medium, and high. Image sequences 
+are first obtained through detection and tracking. Canopy density is then 
+classified using the YOLOv11 classification model, which reuses the 
+YOLOv11 backbone and replaces the detection neck and head with 
+global average pooling and a classifier to output image-level canopy 
+density probabilities. In Agrosense v1, only the identity image was uti­
+lized as input for canopy density classification. To better utilize the 
+temporal sequence of each tree in Agrosense v2, canopy density is 
+estimated as a weighted average across all frames in the sequence. 
+Specifically, for a sequence of T frames (in units of frames; typically, 30- 
+50 frames in this study) with per-frame canopy density predictions 
+di(i = 1, ⋯, T), and the central identity frame index m (m ∈[1, T], 
+integer), the final sequence-level canopy density prediction D, is defined 
+as: 
+D =
+∑T
+i=1aidi
+(2) 
+ai =
+exp
+(
+−(i −m)2
+2σ2
+)
+∑T
+j=1exp
+(
+−(j −m)2
+2σ2
+)
+(3) 
+Here, the weights ai follow a Gaussian distribution centered at the 
+identity frame m, with standard deviation σ controlling how quickly the 
+weight decreases as frames move away from the center. In this study, the 
+Gaussian standard deviation was set to σ = 15 frames (dimensionless, 
+representing the temporal spread in frame units), which was selected 
+Fig. 4. Flowchart of the proposed tree tracking and identification algorithm.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+5 
+
+based on the typical temporal extent of a single tree sequence in our 
+dataset. This value was chosen empirically to match the typical half- 
+length of a tree observation sequence at 15 FPS and approximately 8 
+km/h, where most trees remained visible for approximately 30–50 
+frames. The σ parameter is not directly tied to an absolute physical speed 
+but rather to the ratio of the observation sequence length; if the frame 
+rate, vehicle speed, or tree spacing changes significantly, σ should be re- 
+calibrated to remain proportional to the expected half-length of the tree 
+sequence (e.g., approximately one-third to one-half of the mean 
+sequence length). Fig. 5 shows the tree canopy density classification 
+over time. As the platform moves, the apparent canopy coverage 
+changes due to viewpoint variations and partial occlusions, leading to 
+transitions between sparse, medium, and dense canopy states.
+2.4. Fruit counting framework
+Fruit detection and counting in orchards are challenging due to 
+several real-world factors. Fruits are often small and exhibit colors 
+similar to surrounding leaves, causing weak visual contrast (Azizi et al., 
+2024; Júnior et al., 2024). Dense and irregular canopies lead to frequent 
+partial occlusion, and fruits may appear both on the tree and on the 
+ground, introducing large variations in scale and spatial distribution. In 
+addition, orchard illumination varies substantially across frames, from 
+strong backlighting to diffuse cloudy conditions, making detection 
+sensitive to exposure changes and shadows. These characteristics 
+necessitate evaluating detectors with different capacities and architec­
+tural designs to assess robustness under diverse orchard conditions.
+To establish comprehensive baseline performance, five representa­
+tive object detection models were selected: YOLOv11n, YOLOv11s, 
+YOLOv11m, YOLOv11l, and Real-Time Detection Transformer (RT- 
+DETR) (Zhao et al., 2024). The YOLOv11 family provides a structured 
+progression of convolutional architectures with increasing model ca­
+pacity, ranging from the lightweight n variant to the large-scale l model. 
+This allows a systematic analysis of how network size influences 
+detection accuracy and generalization under varying canopy densities 
+and occlusion levels. Smaller models (YOLOv11n/s) offer insight into 
+the feasibility of running fruit detection on edge devices, while larger 
+models (YOLOv11m/l) approximate upper-bound performance under 
+high-capacity settings. In contrast, RT-DETR represents a transformer- 
+based real-time detection architecture, incorporating global attention 
+mechanisms that are designed to improve robustness in cluttered envi­
+ronments. Including RT-DETR enables direct comparison between con­
+volutional and transformer-based paradigms, particularly in scenarios 
+where fruits are embedded in dense foliage or distributed irregularly 
+across the canopy. Together, these five models provide a balanced and 
+complementary set of baselines for evaluating fruit detection perfor­
+mance across complex orchard conditions. All the models were trained 
+using default hyperparameters, with an input resolution of 1,024 ×
+1,024 pixels. Early stopping was applied based on validation loss. 
+Inference was performed using default confidence and Non-Maximum 
+Suppression (NMS) thresholds for each model.
+Although the detectors operate at the image level, the objective of 
+this study is to estimate fruit counts for individual trees. For each or­
+chard row, the continuous image frames were associated with individual 
+trees based on the estimated tree trajectories, obtained from the tree 
+counting module. When multiple trees appear in a single frame, fruit 
+detections are assigned to individual trees based on their spatial prox­
+imity to the estimated tree centers in the image plane. All frames in 
+which tree k was visible were grouped into a frame set Fk (a set of integer 
+frame indices, |Fk| ≥1). For each frame t ∈Fk, let ck,t denote the number 
+of detected fruits within the visible portion of the tree canopy and let 
+vk,t∈[0, 1
+]
+(dimensionless) denote the visibility factor, i.e., the esti­
+mated fraction of the canopy visible in frame t. In the current imple­
+mentation, vk,t was assigned heuristically based on the relative position 
+of frame t within the tree sequence Fk. Let m denote the identity frame 
+index and let Lk = maxt∈Fk⃒⃒t −m⃒⃒denote the maximum temporal dis­
+tance from the identity frame within the sequence (in units of frames, 
+Lk ≥0). The visibility factor was then defined as: 
+vk, t = 1 −|t −m|
+Lk + ∊
+(4) 
+where ∊ is a small positive constant to avoid division by zero (set to ∊=
+1 in this study, in units of frames). Thus, frames near the identity frame 
+capture a larger visible fraction of the canopy than frames near the 
+beginning or end of the sequence. The frame-level estimate of the total 
+fruit count for tree k is then defined as: ̂
+Nk,t = ck,t
+vk,t
+(5) 
+The tree-level fruit count estimate is obtained by weighted aggre­
+gation over all frames in Fk: ̂
+Nk =
+∑
+t∈Fkvk,t̂Nk,t
+∑
+t∈Fkvk,t
+(6) 
+This approach interprets each frame as a partial observation of the 
+same tree and aggregates them into a consistent tree-level fruit estimate. 
+A similar procedure can be applied to on-ground fruit detections to 
+support tree-level fruit drop analysis. Because successive frames overlap 
+substantially, detections are not accumulated across time. Instead, each 
+frame provides a total-count estimate ̂Nk,t, and the final ̂Nk is obtained 
+by weighted aggregation over Fk, which avoids double counting the 
+same fruits across adjacent frames. Fig. 6 shows the flowchart of the 
+tree-level fruit detection and counting.
+Detection performance was assessed using standard object detection 
+metrics, including precision, recall, mAP@0.5, and mAP@0.5:0.95. For 
+tree-level fruit counting analysis, ground-truth tree-level fruit counts 
+were not available because exhaustive manual field counting was not 
+conducted. Instead, reference counts were obtained through manual 
+visual counting of fruits in the images, which is a commonly used proxy 
+for evaluating detection-based fruit counting methods in orchard 
+sensing studies.
+Fig. 5. Time-sequential classification of citrus tree canopy density along the platform trajectory. From left to right, the frames show representative views of target 
+trees with varying canopy densities, where the yellow contours indicate the segmented canopy regions used for density estimation.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+6 
+
+2.5. Tree-level geospatial visualization for monitoring
+Each image collected by the Agrosense v2 platform was associated 
+with geographic coordinates using timestamp-based synchronization 
+with onboard GPS measurements. Tree-level attributes obtained from 
+previous processing steps, including tree identifier, canopy density class 
+(low, medium, high), tree height (not described in this study), fruit 
+counts on the tree, and fruit counts on the ground, were aggregated to 
+Fig. 6. Tree-level detection-based fruit counting pipeline.
+Fig. 7. Workflow of geo-referenced visualization in Agrosense v2.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+7 
+
+construct a tree-level spatial layer. Each tree was represented as point 
+features corresponding to an approximate tree location. This location 
+was estimated using the platform GPS position at the tree’s identity 
+frame together with the depth-based relative position of the tree with 
+respect to the camera. For visualization, a UAV-derived georeferenced 
+orthomosaic was used as the orchard background layer. The Agrosense 
+v2 tree-level dataset was spatially mapped to the orchard using the 
+estimated geographic coordinates and exported in GeoJSON format and 
+reprojected to the WGS 84 coordinate system (EPSG:4326) for spatial 
+alignment with the orthomosaic using QGIS. Fig. 7 shows the workflow 
+of the geospatial visualization process. A Python-based interactive map 
+interface was developed to display the resulting spatial layer. In visu­
+alization, tree points were overlaid on the orthomosaic as circular 
+markers. Marker color encoded canopy density class, and marker size 
+was scaled according to the number of fruits detected on each tree. 
+Selecting a marker displayed detailed tree-level attributes, enabling in­
+spection of individual tree conditions.
+To facilitate exploratory analysis, the inference provided interactive 
+filtering based on canopy class and user-defined thresholds for tree 
+height and fruit counts. Summary statistics, including average tree 
+height, total fruit counts, and the proportion of high-canopy trees, were 
+updated dynamically for the selected subset. This geospatial visualiza­
+tion enabled efficient assessment of spatial variability and orchard-scale 
+patterns, supporting data-driven monitoring and decision-making in 
+citrus orchards.
+3. Experimental design
+3.1. Data collection
+Data collection was conducted at three locations with distinct man­
+agement conditions: (i) an experimental orchard with controlled 
+experimental blocks at the Southwest Florida Research and Education 
+Center (SWFREC); (ii) Field A, a poorly managed commercial orchard; 
+and (iii) Field B, a well-maintained commercial orchard. Fig. 8 presents 
+the satellite overview and target collection areas of each field.
+All data from all orchards were acquired under natural illumination, 
+covering both sunny and cloudy conditions, with a mixture of front-lit 
+and back-lit scenarios to capture diverse lighting variations. The Agro­
+sense v2 system was mounted on a truck traveling at approximately 8 
+km/h (5 mph) between the citrus tree rows. A camera was utilized on 
+each side of the Agrosense v2 to capture side-view RGB and depth im­
+ages at 15 FPS. At SWFREC, the Intel RealSense D435i was used for RGB- 
+D acquisition, with a resolution of 640 × 480. The later collections at 
+field A and field B employed the StereoLabs ZED X, whose higher- 
+resolution 1,920 × 1,200 images, higher mounting viewpoint, and 
+wider field-of-view enable the entire tree canopy to be covered in a 
+single frame, which is beneficial for consistent fruit detection and can­
+opy analysis. Both cameras were used with the factory- or SDK-provided 
+calibration parameters available at runtime. Both data collection plat­
+forms were equipped with an RTK-enabled GNSS receiver and an IMU 
+for real-time localization. The IMU and GPS signals were synchronized 
+using timestamps. Because the current implementation did not rely on 
+explicit cross-camera geometric fusion between the two side-mounted 
+cameras, additional project-specific inter-camera extrinsic calibration 
+parameters were not used as core inputs in the present study. The total 
+number of collected RGB-D frames across the three orchards is in the 
+order of tens of thousands per field and exceeds several hundred thou­
+sand frames in total.
+Data at the SWFREC were collected on May 27 and July 22, 2025, 
+covering 32 rows and 1,884 trees. The first collection occurred before 
+fruiting, and no further collection could be performed later due to 
+disease-induced tree removal. Data from Field A was collected on 
+October 30, 2025 (ten rows, 948 trees), and data from Field B was 
+collected on November 19, 2025 (ten rows, 864 trees).
+3.2. Data labeling and dataset creation
+The labeling process was performed using the open-source software 
+LabelMe (MIT, Cambridge, Massachusetts, USA). For the tree trunk 
+Fig. 8. Data collection areas and row layout. Each yellow triangle represents one orchard row. (a) Google satellite image showing the three study fields and their 
+geographic coordinates (longitude and latitude). (b) Field B, containing ten rows. (c) SWFREC field, containing 32 rows. (d) Field A, containing ten rows.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+8 
+
+counting task, six rows from SWFREC were used as the training and 
+validation set, as preliminary experiments indicated that performance 
+saturated with this amount of data, and the remaining data from all 
+three fields were used for testing. The RGB images were first processed 
+using an estimated camera-to-tree distance to retain only the target row. 
+Trees beyond a 5.5 m threshold and the remaining background pixels 
+were masked and set to black. This threshold was selected based on the 
+typical orchard row geometry and empirical tuning, so that trees in the 
+target row were retained while trees and background structures from 
+adjacent rows were largely excluded. The filtered images were then 
+manually annotated to label tree trunks, and annotations were saved in 
+YOLO format (.txt) corresponding to each image. To further enhance the 
+model’s robustness to variations in lighting, viewing perspective, and 
+background complexity, data augmentation techniques, including 
+random flipping, scaling, and brightness adjustments, were applied 
+during training.
+For the canopy density classification task, a previous dataset from the 
+Agrosense v1 collected in 2024 from the SWFREC (Zhou et al., 2025), 
+together with additional images from the three field datasets used for 
+fine-tuning were used as training and validation set, while the remaining 
+images were reserved as the test set. Following the conclusion of 
+Agrosense v1 evaluation study (Zhou et al., 2025), three canopy density 
+classes were defined: low, medium, and high, corresponding to 1-40%, 
+41-80%, and 81-100% canopy coverage, respectively. These classifica­
+tion criteria were derived from prior field observations and expert- 
+defined labeling rules, ensuring consistency and interpretability across 
+datasets.
+For the fruit-counting task, the dataset was randomly sampled from 
+field A and field B and split into training, validation, and test sets using 
+an 8:1:1 ratio at the image level. The original RGB images were anno­
+tated using two labels: “fruit on the tree” and “fruit on the ground”, to 
+support future analysis of fruit drop. All visible fruits, including partially 
+occluded ones, were annotated following consistent guidelines. Stan­
+dard data augmentation was operated, including random horizontal 
+flipping, scaling, and brightness adjustment. Fig. 9 shows representative 
+example images and the corresponding label criteria for tree trunk 
+detection, canopy density classification, and fruit detection. The 
+detailed summary of the dataset split, labels, and resolution is shown in 
+Table 1.
+4. Results and discussion
+4.1. Tree trunk detection and bounding box filtering
+The YOLOv11n detector demonstrated strong performance on tree 
+trunk detection across the three test orchards, achieving an average 
+mAP@0.5 of 0.973 (Table 2). The optimal confidence threshold was 
+determined to be 0.513, at which the average F1-score reached 0.98, 
+reflecting a well-balanced trade-off between precision and recall. Most 
+missed detections (representative examples in Fig. 10) occurred when 
+Fig. 9. Dataset and labeling examples. (a) Representative images collected using different devices, from different fields, and at different collection dates, illustrating 
+the canopy density labeling criteria. (b) Example fruit count dataset image with annotations shown at original resolution and at 2× zoom. (c) Example tree trunk 
+detection dataset image with corresponding annotation labels.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+9 
+
+the tree trunk was heavily covered by grass or foliage, or when the depth 
+filter masked parts of the trunk, rendering it invisible in the RGB image 
+(Fig. 10d).
+False positives were the second major source of error. Typical cases 
+include shadows projected on the ground and upright branches mis­
+identified as trunks, as these structures share similar texture and geo­
+metric features, with only subtle differences in location and thickness. 
+As shown in Fig. 10a-c, the detector sometimes produces false positives 
+on shadows, branches, and other vertical farm objects. In some cases, the 
+trunk is not detected at all (Fig. 10d). To mitigate these errors, a 
+bounding box selection filter was applied after detection. The filter 
+removes boxes that are too small, retains only the vertical bounding box 
+closest to the ground when multiple candidates appear (Fig. 10e), and 
+rejects bounding boxes with a low non-black pixel ratio (Fig. 10f). In 
+practice, this filtering step reduced false positives by approximately 
+85%, significantly simplifying the subsequent tracking stage. However, 
+certain challenging false positives (e.g., Fig. 10g) remain, particularly 
+when a vertical branch satisfies all filter criteria. These cases are 
+resolved later by the tracking algorithm to avoid double-counting. When 
+no bounding box is produced by the detector (Fig. 10h), the selection 
+filter is not applied.
+4.2. Tree counting results
+The tree counting algorithm’s performance was evaluated in the field 
+by comparing Agrosense v1 (Zhou et al., 2025) with multiple configu­
+rations of the Agrosense v2 pipeline. The evaluated Agrosense v2 con­
+figurations included trunk detection alone, detection with bounding box 
+selection criteria, and the full pipeline with both bounding box selection 
+criteria and tracking. Table 3 summarizes the counting results and ac­
+curacies across the three test fields.
+As shown in Table 3, Agrosense v1 achieved an average counting 
+accuracy of 79.98%. This performance is primarily attributable to its 
+reliance on a single-frame detection criterion, in which a tree is counted 
+only when its trunk appears near the center of the image. While this 
+strategy performed reasonably well in earlier and less complex test en­
+vironments (Zhou et al., 2025), it proved sensitive to challenging field 
+conditions, including canopy shadows, trunk occlusion by foliage or 
+grass, and occasional frame skipping. These limitations were 
+Table 1 
+Summary of dataset splits, sample counts, class distribution, and image resolution.
+Task
+Split
+Tree Samples
+Supporting images
+Class/ distribution
+Resolution
+Tree trunk detection
+Train + Val
+283 tree samples
+2145 images
+trunk
+640 × 480
+Test
+3413 tree samples
+All remaining images
+trunk
+640 × 480,1920 × 1200
+Canopy density classification
+Pretrain
+337 tree samples
+3634 images
+Low = 20, medium = 144, high = 173
+640 × 480
+Fine-tuning
+300 tree samples
+26435 images
+Low = 17, medium = 119, high = 164
+640 × 480,1920 × 1200
+Test
+3396 tree samples
+All remaining images
+Low = 87, medium = 1125, high = 2184
+640 × 480,1920 × 1200
+Fruit detection
+Train
+1132 images
+1132 images
+on-tree/on-ground
+1920 × 1200
+Val
+142 images
+142 images
+on-tree/on-ground
+1920 × 1200
+Test
+141 images
+141 images
+on-tree/on-ground
+1920 × 1200
+Table 2 
+Tree detection performance across three test fields.
+Field
+SWFREC Field
+Field A
+Field B
+All
+mAP@0.5
+0.989
+0.941
+0.991
+0.973
+mAP@0.5:0.95
+0.563
+0.495
+0.564
+0.541
+Fig. 10. Representative raw tree trunk detection results by YOLOv11n, and the results after the bounding box selection filter. (a-c) Typical false positives where 
+shadows, branches, or other vertical farm objects are detected as trunks. (d) A failure case where the trunk is missed. (e) Small bounding boxes are removed; when 
+multiple candidates are present, only the vertical bounding boxes closest to the ground is retained. (f) Bounding boxes with a low non-black ratio are removed. (g) 
+The selection filter did not remove the bounding box. It will be removed during the tracking algorithm. (h) No detection case; the selection filter is not applied.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+10 
+
+exacerbated in the current study, as the test fields were more complex 
+and contained a larger number of trees. Consequently, missed detections 
+in critical frames resulted in irreversible undercounting.
+In contrast, Agrosense v2, when relying on trunk detection alone, 
+substantially overcounted trees across all test fields, with predicted tree 
+counts averaging 130% of the ground-truth values. Although the de­
+tector achieved high per-frame detection accuracy, duplicated de­
+tections and false positive bounding boxes caused the same tree to be 
+counted multiple times across adjacent frames. This outcome highlights 
+that strong detection performance alone is insufficient for reliable tree 
+enumeration in continuous field traversal scenarios. By incorporating 
+the bounding box selection criteria, the overall tree count accuracy 
+improved to an average of 87.57%. However, this approach remained 
+sensitive to detection-level errors, including frame skipping and dupli­
+cated bounding boxes that persisted after filtering. By further inte­
+grating the tracking algorithm, Agrosense v2 achieved an average 
+accuracy of 95.49%, the highest among all tested configurations. The 
+tracking mechanism associates detections across consecutive frames and 
+evaluates the full temporal trajectory of each tree, effectively reducing 
+the impact of local detection errors and improving system robustness. 
+This approach addresses duplicate counting, mitigates the effects of 
+frame skipping, and enables reliable tree counting based on multiple 
+observations rather than a single frame. In addition, the use of the non- 
+black ratio metric helps alleviate cases where trunks are partially 
+obscured by large canopies or shadows, supporting more stable counting 
+under real-world outdoor conditions. Overall, the addition of temporal 
+tracking significantly reduces both overcounting and undercounting 
+caused by detection uncertainties.
+Although performance varied across the three fields, similar trends 
+were observed. These differences were primarily driven by variations in 
+canopy structure, ground conditions, and orchard management prac­
+tices. Agrosense v2 achieved the highest accuracy in Field B, which 
+featured more regular tree spacing and a more uniform canopy struc­
+ture, improving trunk visibility and supporting both spatial filtering and 
+temporal tracking. In contrast, Field A presented more challenging 
+conditions, including irregular canopy shapes, excessive foliage growth, 
+and dense tree spacing, which reduced trunk visibility and resulted in 
+more fragmented detection trajectories. Agrosense v2 exhibited inter­
+mediate performance in the SWFREC field, where trunk visibility was 
+intermittently affected by grass coverage and depth filtering, leading to 
+occasional detection discontinuities. It should be noted that this study 
+does not quantitatively measure the occlusion rate or the coefficient of 
+variation in tree spacing across the three fields. Controlled experiments 
+could be conducted in future work to quantify these influencing factors 
+and establish more rigorous performance predictors.
+Agrosense v2 still encounters challenges when trees are not consis­
+tently detected throughout their full appearance in the image sequence. 
+This includes cases involving very small trees that are difficult to detect, 
+trees with extremely dense canopies where the trunk is never visible, 
+and trees located very close to adjacent trees with overlapping canopies 
+that appear as a single merged region. In these cases, both the tracking 
+algorithm and the non-black pixel ratio metric may fail to fully resolve 
+counting errors. Future work could incorporate orchard planting priors, 
+such as expected within-row tree spacing, to infer potentially missed 
+trees when a tracking gap exceeds the nominal spacing.
+4.3. Tree canopy density classification
+The tree canopy density classification was evaluated on the test 
+dataset from the three orchards and shows strong performance across all 
+cases, as presented in Table 4. Overall, Agrosense v2 consistently out­
+performs Agrosense v1 in all fields, indicating a clear improvement in 
+classification robustness. The performance gain is especially noticeable 
+in more challenging fields, such as field A, where dense foliage and 
+complex canopy structures increase class ambiguity. Compared with 
+Agrosense v1, the improved performance of Agrosense v2 highlights the 
+benefit of utilizing global observations along the moving path rather 
+than relying on a single frontal view. By incorporating information from 
+the full sequence, Agrosense v2 achieves more stable canopy density 
+estimation, reducing sensitivity to local visual variability, including 
+residual visual interference from background vegetation. However, this 
+interference is mitigated rather than fully eliminated, particularly in 
+low-density canopies where ground vegetation remains partially visible 
+(Figs. 11a and b).
+Despite the overall improvement, some limitations remain. Because 
+canopy density estimation relies on sequence-level observations, 
+extremely dense foliage or very small tree spacing can cause adjacent 
+canopies to visually merge across consecutive frames, reducing the 
+clarity of individual canopy boundaries. In addition, excessive branch 
+growth within dense canopies can introduce ambiguity between me­
+dium and high-density classes (Fig. 11c and d). Under such conditions, 
+sequence-based aggregation may lead to reduced classification accuracy 
+when canopy structures extend beyond the image field of view.
+4.4. Fruit detection and counting
+Five representative object detection models, including four 
+YOLOv11 variants (YOLOv11n, YOLOv11s, YOLOv11m, and YOLOv11l) 
+and RT-DETR, were evaluated for detecting fruits on the tree and fruits 
+on the ground in Field A and Field B. Detection performance was 
+quantified using mAP@0.5 and mAP@0.5:0.95 to assess both coarse 
+localization accuracy and sensitivity to bounding box quality. Across 
+both fields and fruit categories (on the tree and on the ground), RT-DETR 
+consistently achieved the highest detection accuracy, particularly in 
+terms of mAP@0.5:0.95 (Tables 5a and 5b). This suggests that 
+transformer-based detectors with global context modeling are more 
+effective for fruit detection under complex orchard conditions. In dense 
+canopies and cluttered ground scenes, RT-DETR can leverage long-range 
+contextual information to better distinguish fruits from surrounding 
+foliage, shadows, and background elements. This advantage is especially 
+evident for ground-level fruits, where background interference is more 
+Table 3 
+Tree counting algorithm’s performance of Agrosense v1 and Agrosense v2 with multiple configurations.
+Field
+GT
+V1
+V2-D
+V2-DþB
+V2-DþBþT
+Count
+Acc. (%)
+Count
+Acc. (%)
+Count
+Acc. (%)
+Count
+Acc. (%)
+SWFREC
+1,601
+1,290
+80.63%
+2,318
+144.80%
+1,390
+86.84%
+1,536
+95.96%
+Field A
+948
+701
+73.98%
+1,018
+107.38%
+824
+86.92%
+879
+92.73%
+Field B
+864
+737
+85.34%
+1,191
+137.87%
+768
+88.94%
+844
+97.79%
+Note: GT = ground truth (tree numbers); V1 = Agrosense v1; V2-D = Agrosense v2 with detection only; V2-D+B = Agrosense v2 with detection and bounding box 
+selection; V2-D+B+T = Agrosense v2 with detection, bounding box selection, and tracking. Count denotes the estimated number of trees for each configuration. Acc. =
+accuracy (%) calculated as estimated count / ground truth × 100.
+Table 4 
+Tree canopy density classification performance across Agrosense v1 and Agro­
+sense v2 in the tree test orchards (SWFREC, Field A, and Field B).
+Field
+SWFREC
+Field A
+Field B
+Agrosense v1
+94.1%
+90.7%
+94.9%
+Agrosense v2
+95.7%
+94.1%
+96.8%
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+11 
+
+severe.
+Within the YOLOv11 family, detection performance generally 
+improved as the model size increased from YOLOv11n to YOLOv11m, 
+indicating that fruit detection is a visually complex task that benefits 
+from higher model capacity. However, a performance drop was 
+observed for YOLOv11l, the largest model, particularly in Field A. This 
+degradation is not caused by the model architecture itself, but rather by 
+the fact that the current dataset size and complexity are insufficient to 
+support such a large-capacity model. With limited training data, the 
+model overfits to the training distribution and generalizes less effec­
+tively to new orchard conditions. These results highlight the importance 
+of balancing model complexity with dataset scale in orchard-based 
+detection tasks.
+For both Field A and Field B, detecting fruits on the ground remained 
+significantly more challenging than detecting fruits on the tree. Ground 
+fruits typically exhibit smaller object sizes, stronger illumination vari­
+ation, and frequent occlusion by shadows, soil textures, or plant debris. 
+These factors contribute to a higher rate of false negatives, as confirmed 
+by the confusion matrix analysis and recall–confidence trends. In 
+contrast, fruits on the tree are more visually salient and exhibit more 
+consistent appearance patterns, resulting in higher detection accuracy 
+across all models. Detection performance in Field B was consistently 
+higher than in Field A for both fruit categories (on the tree and ground). 
+This improvement is likely attributed to the more organized planting 
+structure in Field B, which reduces fruit occlusion and background 
+clutter caused by grass or weeds. As a result, Field B provides a more 
+favorable visual environment for fruit detection, benefiting both YOLO- 
+based and transformer-based models. Fig. 12 presents qualitative 
+detection results for representative orchard scenes, illustrating the dif­
+ferences in detection behavior across models. RT-DETR produces denser 
+and more complete detections, particularly in cluttered regions, while 
+YOLO-based models tend to miss small fruits under strong shadows, 
+fruits clustered in proximity, and ground fruits partially covered by 
+leaves. To further analyze failure modes, Fig. 13 highlights typical error 
+cases, including missed ground fruits and hard background negatives, 
+providing visual evidence that supports the quantitative findings. YOLO- 
+based detectors primarily exhibit false negatives in these challenging 
+conditions, whereas RT-DETR reduces misses but can introduce occa­
+sional false positives on hard background negatives, such as specular 
+highlights, bright leaf patches, or fruit-like foliage textures.
+It is important to note that the fruit counting performance reported in 
+this study is based on images capturing the full tree canopy from a field 
+traversal perspective. Therefore, these results should not be directly 
+compared with studies that perform fruit counting using close-range 
+images of localized canopy regions, which typically enable higher 
+counting accuracy under controlled viewing conditions.
+4.5. Tree-level geospatial visualization and analysis
+The proposed framework enables aggregation of image-based 
+detection and calculation results into a geo-referenced, tree-level rep­
+resentation of orchard conditions. By associating individual detections 
+with persistent tree identities and GPS-aligned locations, the system 
+produces tree-level attributes, including fruit counts, canopy density 
+classification, and tree height estimation (not discussed in this study), 
+that can be consistently mapped at the orchard scale.
+A key advantage of this representation is its high spatial resolution at 
+the tree-level. Unlike conventional orchard monitoring approaches that 
+rely on row- or block-level summaries (Wang et al., 2028; Zhang et al, 
+2022), the proposed system preserves fine-grained variability among 
+individual trees. When projected onto the orchard map, tree-level fruit 
+counts exhibit clear spatial structure aligned with orchard geometry, 
+indicating that the detection and aggregation pipeline maintains spatial 
+coherence rather than producing noisy or fragmented outputs. This 
+spatial consistency is particularly important for practical orchard 
+monitoring, as it enables interpretable inspection of tree-to-tree 
+Fig. 11. Representative examples of the canopy density classification results. (a-b) Low-density trees were misclassified as medium-density trees due to the back­
+ground leaves. (c-d) Medium-density trees were misclassified as high-density trees due to the branches on the trees.
+Table 5a 
+Fruit detection results across five methods in Field A.
+Methods
+Fruit on the tree
+Fruit on the ground
+mAP@0.5
+mAP@0.5:0.95
+mAP@0.5
+mAP@0.5:0.95
+YOLOv11n
+0.621
+0.272
+0.601
+0.305
+YOLOv11s
+0.685
+0.299
+0.576
+0.277
+YOLOv11m
+0.801
+0.390
+0.534
+0.252
+YOLOv11l
+0.724
+0.321
+0.552
+0.258
+RT-DETR
+0.814
+0.435
+0.695
+0.360
+Table 5b 
+Fruit detection results across five methods in Field B.
+Methods
+Fruit on the tree
+Fruit on the ground
+mAP@0.5
+mAP@0.5:0.95
+mAP@0.5
+mAP@0.5:0.95
+YOLOv11n
+0.692
+0.374
+0.652
+0.410
+YOLOv11s
+0.709
+0.357
+0.623
+0.403
+YOLOv11m
+0.832
+0.453
+0.598
+0.387
+YOLOv11l
+0.819
+0.422
+0.637
+0.388
+RT-DETR
+0.837
+0.509
+0.722
+0.420
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+12 
+
+variability while retaining geographic context. The resulting visualiza­
+tion supports intuitive assessment of localized differences in fruit load 
+and canopy characteristics, bridging the gap between image-level 
+computer vision outputs and orchard-scale decision-making. In addi­
+tion, the system supports interactive exploration of tree-level attributes, 
+allowing users to filter, query, and inspect individual trees within the 
+spatial framework (Fig. 14). Although the visualization is not intended 
+to characterize long-term yield trends or perform agronomic analysis, it 
+serves as a qualitative validation of system outputs and demonstrates the 
+practicality of integrating detection-based fruit counting with geo- 
+referenced orchard representations. In the future, this information 
+would be seamlessly integrated and presented through a cloud- and AI- 
+based platform such as Agroview (Ampatzidis et al., 2024; Ampatzidis 
+et al., 2020), enabling scalable visualization, data management, and 
+user-friendly interaction with tree-level orchard intelligence.
+5. Limitations and future work
+While Agrosense v2 demonstrates strong performance across multi­
+ple orchard sensing tasks and field conditions, several limitations remain 
+that motivate future research and system refinement. These limitations 
+fall into two categories: inherent challenges of visual sensing in un­
+structured orchards and algorithm-specific failure modes of our current 
+detection and tracking pipeline. First, visual sensing becomes difficult 
+under severe occlusion and complex canopy interactions. Dense foliage, 
+tall grass, strong illumination variability, and overlapping canopies can 
+reduce visible cues and destabilize image-based perception, especially 
+when fruit or structural features are partially or fully obscured. In the 
+current framework, when tree trunks are consistently not visible, trunk 
+detection and subsequent temporal tracking may fail to establish 
+persistent tree identities, and very small or irregularly shaped trees or 
+merged canopies in tightly spaced orchards can lead to fragmented or 
+ambiguous trajectories. In addition, adjacent-tree separation relies 
+mainly on trunk-based temporal tracking rather than explicit canopy- 
+boundary segmentation and therefore becomes less robust when 
+neighboring canopies are visually merged, and trunk cues are weak or 
+intermittently missing. Prior knowledge of orchard geometry, such as 
+row orientation and approximate tree spacing, could be incorporated as 
+Fig. 12. Fruit detection results across the five models, including ground truth.
+Fig. 13. Representative false detection. (a) Dense small fruits on the tree with 
+partial occlusions, leading to missed detections. (b) Missed detection of ground 
+fruits under strong shadow and a cluttered background. Colored bounding 
+boxes are used for visualization only to distinguish different detections and 
+have no additional semantic meaning.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+13 
+
+a tracking step before constraining feasible inter-frame associations and 
+reducing identity switches or trajectory fragmentation. Future work will 
+investigate multi-view sensing strategies, including front–rear or multi- 
+angle camera configurations, to increase canopy coverage and reduce 
+blind regions caused by side-view occlusion. Observations of the same 
+tree from multiple viewpoints could improve recovery of partially hid­
+den fruits and help maintain tree identity when trunk cues are inter­
+mittently missing. In addition, complementary sensing modalities such 
+as LiDAR or radar could provide more stable structural information on 
+canopy geometry and tree boundaries under challenging visual condi­
+tions, thereby improving robustness under severe occlusion.
+Second, tree-level visible fruit counts produced by Agrosense v2 are 
+derived from detection-based estimates and not evaluated against 
+exhaustive ground-truth measurements. In this study, manual counting 
+of all fruits on each tree and on the ground was not conducted due to 
+labor and time constraints, limiting the ability to perform a full quan­
+titative validation of yield estimation accuracy (which is out of the scope 
+of this study). Moreover, because Agrosense v2 relies on side-view 
+sensing in traditional citrus orchards with complex three-dimensional 
+canopies, the system captures only the visible portion of the fruit pop­
+ulation along the platform trajectory. As a result, whole-canopy fruit 
+enumeration remains difficult under practical field conditions, which is 
+more suitable for relative tree-to-tree comparison and spatial mapping 
+than for direct whole-tree yield estimation. Future efforts will focus on 
+targeted ground-truth campaigns at selected trees or plots to enable 
+more rigorous validation and calibration of tree-level fruit count 
+estimates.
+Third, fruit detection performance remains sensitive to challenging 
+illumination conditions and background clutter, particularly for fruits 
+on the ground. Shadows, soil texture, fallen leaves, and partial occlusion 
+can lead to missed detections or false negatives, even with transformer- 
+based models. Although RT-DETR demonstrated superior robustness 
+compared with convolutional detectors, further improvements may be 
+achieved through task-specific image pre-processing, data augmenta­
+tion, domain adaptation across orchards and seasons, and the incorpo­
+ration of temporal consistency constraints at the detection level.
+From a system perspective, Agrosense v2 currently focuses on 
+perception and inference, serving as a sensing foundation rather than a 
+complete decision-support or actuation system. In addition, the present 
+study was conducted only in citrus orchards, and the adaptability of the 
+framework to other fruit tree species remains to be validated. Different 
+orchard architectures and tree species may require different sensing 
+configurations, threshold settings, or interpretation of tree-level out­
+puts. For example, in orchards with stronger inter-tree overlap, less 
+regular canopy structure, or different fruit size and distribution patterns, 
+visible fruit counts may be more appropriately interpreted as partial- 
+observation indicators rather than direct whole-tree totals unless addi­
+tional viewpoints or structural priors are introduced. Although RT-DETR 
+provided strong detection performance in this study, its computational 
+complexity imposes relatively high demands on edge devices, and the 
+current hardware configuration may increase deployment cost and limit 
+large-scale adoption. Future work will therefore extend the framework 
+to additional orchard systems and fruit tree species, investigate model- 
+lightweighting strategies, and lower-cost hardware configurations. In 
+addition, although temporal information is already used for sequence- 
+based canopy inference and fruit counting, the current framework 
+does not yet fully exploit multi-temporal data collected across repeated 
+field campaigns or different growth stages. Extending the system toward 
+multi-temporal analysis could support advanced applications such as 
+growth trend prediction, canopy-change monitoring, and anomaly early 
+warning. It will also support downstream applications, including yield 
+forecasting, stress detection, and variable-rate management actions such 
+as precision spraying or harvesting support. Integration with cloud- and 
+AI-based platforms, such as Agroview (Ampatzidis et al., 2020; https 
+://agintel.ai/products/agroview), will enable scalable data storage, 
+multi-temporal analysis, and user-friendly interaction with tree-level 
+orchard intelligence.
+Overall, these limitations point to clear opportunities for advancing 
+Agrosense v2 from a robust orchard sensing system toward a fully in­
+tegrated, adaptive, and autonomous orchard management framework 
+capable of long-term deployment across diverse tree crop systems. For 
+full deployment, the most critical limitations to address are robust tree 
+identity maintenance under severe occlusion and merged canopies, 
+along with improved reliability of tracking when trunk cues are absent. 
+Fig. 14. Visualization dashboard examples. (a) Applying filter settings for canopy density, fruit counts, and tree height ranges to explore spatial variability at the tree 
+level. (b) Tree-level search function enabling direct inspection of individual trees by unique identifier.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+14 
+
+In contrast, limitations such as occasional missed fruits under heavy 
+shadow or dense clusters primarily affect absolute counting accuracy, 
+although the system can still remain useful for relative monitoring, trend 
+tracking, and spatial mapping.
+6. Conclusion
+This study introduced Agrosense v2, a unified, AI-enabled orchard 
+sensing system designed to deliver multiple practical tree-level infor­
+mation, including tree count, canopy density and visible fruit counts in 
+real time during field traversal. Moving beyond task-specific perception 
+pipelines and improving upon Agrosense v1, which relied largely on 
+frame-level detections and a center-based counting strategy without 
+persistent tree identities or unified tree-level aggregation, Agrosense v2 
+integrates trunk detection, a new temporal tracking algorithm for stable 
+cross-frame tree identification, canopy density classification, fruit 
+detection, and tree-level spatial aggregation within a single operational 
+framework, enabling consistent tree-level monitoring under realistic 
+orchard conditions. Field experiments conducted across three commer­
+cial citrus orchards demonstrated that incorporating spatial filtering and 
+temporal tracking substantially improves tree counting reliability. While 
+trunk detection alone resulted in significant overcounting, the addition 
+of bounding box selection increased average counting accuracy to 
+87.57%, and further integration of temporal tracking improved accuracy 
+to 95.49%, highlighting the importance of sequence-aware reasoning for 
+orchard-scale enumeration. These results confirm that robust tree 
+counting in continuous field operation cannot rely on single-frame 
+detection alone.
+For fruit detection, transformer-based models (RT-DETR) showed 
+improved robustness under dense canopies and cluttered ground con­
+ditions, whereas lightweight YOLO-based models provided competitive 
+performance with lower computational cost, supporting flexible 
+deployment across hardware platforms. Canopy density classification 
+benefited from sequence-based inference, reducing sensitivity to local­
+ized occlusions and illumination variability. Importantly, aggregating 
+image-level detections into persistent, geo-referenced tree identities 
+enabled stable monitoring despite partial visibility and viewpoint 
+changes.
+To the best of our knowledge, Agrosense v2 represents the first in­
+tegrated sensing framework for citrus orchards using a side-view mobile 
+platform capable of simultaneously estimating tree count, canopy den­
+sity, tree height, and visible fruit counts (on-tree and on-ground) in real 
+time within a single system. By bridging image-level perception and 
+orchard-scale spatial representation, Agrosense v2 provides a practical 
+foundation for scalable orchard monitoring and serves as a critical 
+sensing layer for future decision-support and autonomous orchard 
+management systems. Although the current study demonstrates the 
+feasibility of Agrosense v2 in real citrus orchards, further work is needed 
+to improve robustness under severe occlusion and to validate the system 
+across more diverse orchard conditions. As a practical tree-level sensing 
+framework, Agrosense v2 has strong potential to support precision 
+agriculture applications such as yield forecasting, stress detection, and 
+precision spraying.
+CRediT authorship contribution statement
+Shiyu Liu: Writing – original draft, Visualization, Methodology, 
+Investigation, Formal analysis, Data curation, Conceptualization. 
+Yiannis Ampatzidis: Writing – review & editing, Validation, Supervi­
+sion, Resources, Project administration, Methodology, Investigation, 
+Funding acquisition. Hengyue Guan: Writing – review & editing, 
+Visualization, Methodology, Investigation, Formal analysis, Data cura­
+tion. Wenhao Liu: Visualization, Formal analysis, Data curation. Con­
+gliang Zhou: Writing – review & editing, Validation, Methodology, 
+Investigation. Daeun Choi: Writing – review & editing, Supervision, 
+Methodology. Won Suk Lee: Writing – review & editing, Supervision, 
+Methodology.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Acknowledgements
+This material was made possible, in part, by a Cooperative Agree­
+ment from the U.S. Department of Agriculture and the Florida Specialty 
+Crop Block Grant program (project number AM200100XXXXG037). Its 
+contents are solely the responsibility of the authors and do not neces­
+sarily represent the official views of the USDA.
+Data availability
+Data will be made available on request.
+References
+Ali, M.L., Zhang, Z., 2024. The YOLO framework: A comprehensive review of evolution, 
+applications, and benchmarks in object detection. Computers 13 (12), 336. https:// 
+doi.org/10.3390/computers13120336.
+Ampatzidis, Y., Partel, V.H., Costa, L., 2024. Cloud-based framework for processing, 
+analyzing, and visualizing imaging data. U.S. Patent No. 12,008,730, issued June 11, 
+2024.
+Ampatzidis, Y., Partel, V., Costa, L., 2020. Agroview: cloud-based application to process, 
+analyze and visualize UAV-collected data for precision agriculture applications 
+utilizing artificial intelligence. Comput. Electron. Agric. 174, 105157. https://doi. 
+org/10.1016/j.compag.2020.105457.
+Azizi, A., Zhang, Z., Hua, W., Li, M., Igathinathane, C., Yang, L., Ampatzidis, Y., Ghasemi- 
+Varnamkhasti, M., Radi, S.T.P., Zhang, M., Li, H., 2024. Image processing and 
+artificial intelligence for apple detection and localization: A comprehensive review. 
+Comput. Sci. Rev. 54, 100690. https://doi.org/10.1016/j.cosrev.2024.100690.
+Bulanon, D.M., Hestand, T., Nogales, C., Allen, B., Colwell, J., 2019. Machine vision 
+system for orchard management. In Machine Vision and Navigation (pp. 197-240). 
+Springer International Publishing. https://doi.org/10.1007/978-3-030-22587-2_7.
+Cao, W., Zhang, Z., Wang, Z., Wei, A., Chen, Q., Igathinathane, C., Zhang, F., 
+Abdelhamid, M.A., Ye, D., Ampatzidis, Y., 2026. GLS-YOLOv8n: A lightweight 
+‘Guiqi’ mango detection model via RGB-depth-thermal image fusion. Comput. 
+Electron. Agric. 242, 111355. https://doi.org/10.1016/j.compag.2025.111355.
+Chen, X., Fang, H., Lin, T.Y., Vedantam, R., Gupta, S., Doll´ar, P., Zitnick, C.L., 2015. 
+Microsoft coco captions: Data collection and evaluation server. arXiv preprint arXiv: 
+1504.00325. https://doi.org/10.48550/arXiv.1504.00325.
+Chen, Y., An, X., Gao, S., Li, S., Kang, H., 2021. A deep learning-based vision system 
+combining detection and tracking for fast on-line citrus sorting. Front. Plant Sci. 12, 
+622062. https://doi.org/10.3389/fpls.2021.622062.
+Choi, D., Lee, W.S., Ehsani, R., Schueller, J., Roka, F.M., 2016. Detection of dropped 
+citrus fruit on the ground and evaluation of decay stages in varying illumination 
+conditions. Comput. Electron. Agric. 127, 109–119. https://doi.org/10.1016/j. 
+compag.2016.05.020.
+Costa, L., Archer, L., Ampatzidis, Y., Casteluci, L., Caurin, G.A.P., Albrecht, U., 2021. 
+Determining leaf stomatal properties in citrus trees utilizing machine vision and 
+artificial intelligence. Precis. Agric. 22, 1107–1119. https://doi.org/10.1007/ 
+s11119-020-09771-x.
+Dian, Y., Liu, X., Hu, L., Zhang, J., Hu, C., Liu, Y., Zhang, J., Zang, W., Hu, Q., Zhang, Y., 
+Fang, Y., Zhou, J., 2023. Characteristics of photosynthesis and vertical canopy 
+architecture of citrus trees under two labor-saving cultivation modes using 
+unmanned aerial vehicle (UAV)-based LiDAR data in citrus orchards. Hortic. Res. 10 
+(3), uhad018. https://doi.org/10.1093/hr/uhad018.
+Dorj, U.O., Lee, M., Yun, S.S., 2017. A yield estimation in citrus orchards via fruit 
+detection and counting using image processing. Comput. Electron. Agric. 140, 
+103–112. https://doi.org/10.1016/j.compag.2017.05.019.
+Duckett, T., Pearson, S., Blackmore, S., Grieve, B., Chen, W. H., Cielniak, G., 
+Cleaversmith, J., Dai, J., Davis, S., Fox, C., From, P., Georgilas, I., Gill, R., Gould, I., 
+Hanheide, M., Hunter, A., Iida, F., Mihalyova, L., Nefti-Meziani, S., Neumann, G., 
+Paoletti, P., Pridmore, T., Ross, D., Smith, M., Stoelen, M., Swainson, M., Wane, S., 
+Wilson, P., Wright, I., Yang, G.Z., 2018. Agricultural robotics: the future of robotic 
+agriculture. arXiv preprint arXiv:1806.06762. https://doi.org/10.48550/ 
+arXiv.1806.06762.
+El-Ansary, D.O., 2025. Smart farming and orchard management: insights and 
+innovations. Curr. Food Sci. Technol. Rep. 3 (1), 10. https://doi.org/10.1007/ 
+s43555-025-00055-x.
+Gan, H., Lee, W.S., Alchanatis, V., Ehsani, R., Schueller, J.K., 2018. Immature green 
+citrus fruit detection using color and thermal images. Comput. Electron. Agric. 152, 
+117–125. https://doi.org/10.1016/j.compag.2018.07.011.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+15 
+
+Huang, Y., Li, H., Yang, Y., Li, C., Wang, L., Wang, P., 2025. Lightweight GAN for 
+restoring blurred images to enhance citrus detection. Plants 14 (19), 3085. https:// 
+doi.org/10.3390/plants14193085.
+Jiao, Z., Huang, K., Wang, Q., Zhong, Z., Cai, Y., 2024. Real-time litchi detection in 
+complex orchard environments: a portable, low-energy edge computing approach for 
+enhanced automated harvesting. Artif. Intell. Agric. 11, 13–22. https://doi.org/ 
+10.1016/j.aiia.2023.12.002.
+Júnior, B.M.D., Moreira, B.R.A., Carreira, V.S., Brito Filho, A.L., Trentin, C., Souza, F.L. 
+P., Tedesco, D., Setiyono, T., Flores, J.P., Ampatzidis, Y., Silva, R.P., Shiratsuchi, L. 
+S., 2024. Precision agriculture in the United States: A comprehensive meta-review 
+inspiring further research, innovation, and adoption. Comput. Electron. Agric. 221, 
+108993. https://doi.org/10.1016/j.compag.2024.108993.
+Khot, L.R., Ehsani, R., Albrigo, G., Larbi, P.A., Landers, A., Campoy, J., Wellington, C., 
+2012. Air-assisted sprayer adapted for precision horticulture: Spray patterns and 
+deposition assessments in small-sized citrus canopies. Biosyst. Eng. 113 (1), 76–85. 
+https://doi.org/10.1016/j.biosystemseng.2012.06.008.
+Lacerda, C.F., Ampatzidis, Y., Neto, A.D.C., Partel, V., 2025. Cost-efficient high- 
+resolution monitoring for specialty crops using AgI-GAN and AI-driven analytics. 
+Comput. Electron. Agric. 237, 110678. https://doi.org/10.1016/j. 
+compag.2025.110678.
+Liu, S., Ampatzidis, Y., 2026. Shaping the future of citrus yield prediction with 
+multimodal data fusion and machine learning: a systematic review. Computers and 
+Electronics in Agriculture (under review).
+Liu, X., He, L., Niu, S., Li, R., Majeed, Y., Sun, X., Chen, J., Li, X., Walsh, K.B., Fu, L., 
+2025. Opportunities and challenges in the application of digital twins for orchard 
+management. Comput. Electron. Agric. 239, 111104. https://doi.org/10.1016/j. 
+compag.2025.111104.
+Longchamps, L., Tisseyre, B., Taylor, J., Sagoo, L., Momin, M.A., Fountas, S., Manfrini, L., 
+Ampatzidis, Y., Schueller, K.J., Khosla, R., 2022. Yield sensing technologies for 
+perennial and annual horticultural crops: a review. Precis. Agric. 23, 2407–2448. 
+https://doi.org/10.1007/s11119-022-09906-2.
+Lu, J., Sang, N., 2015. Detecting citrus fruits and occlusion recovery under natural 
+illumination conditions. Comput. Electron. Agric. 110, 121–130. https://doi.org/ 
+10.1016/j.compag.2014.10.016.
+Malik, Z., Ziauddin, S., Shahid, A.R., Safi, A., 2016. Detection and counting of on-tree 
+citrus fruit for crop yield estimation. Int. J. Adv. Comput. Sci. Appl. 7 (5), 519–523. 
+https://doi.org/10.14569/IJACSA.2016.070569.
+Mena, F., Pathak, D., Najjar, H., Sanchez, C., Helber, P., Bischke, B., Habelitz, P., 
+Miranda, M., Siddamsetty, J., Nuske, M., Charfuelan, M., Arenas, D., Vollmer, M., 
+Dengel, A., 2024. Adaptive fusion of multi-view remote sensing data for optimal sub- 
+field crop yield prediction. arXiv preprint arXiv:2401.11844. https://doi.org/ 
+10.48550/arXiv.2401.11844.
+Oliveira, L.F., Moreira, A.P., Silva, M.F., 2021. Advances in agriculture robotics: A state- 
+of-the-art review and challenges ahead. Robotics 10 (2), 52. https://doi.org/ 
+10.3390/robotics10020052.
+Partel, V., Costa, L., Ampatzidis, Y., 2021. Smart tree crop sprayer utilizing sensor fusion 
+and artificial intelligence. Comput. Electron. Agric. 191, 106556. https://doi.org/ 
+10.1016/j.compag.2021.106556.
+Perry, E.M., Dezzani, R.J., Seavert, C.F., Pierce, F.J., 2010. Spatial variation in tree 
+characteristics and yield in a pear orchard. Precis. Agric. 11 (1), 42–60. https://doi. 
+org/10.1007/s11119-009-9113-5.
+Porwollik, V., Müller, C., Elliott, J., Chryssanthacopoulos, J., Iizumi, T., Ray, D.K., 
+Ruane, A.C., Arneth, A., Balkoviˇc, J., Ciais, P., Deryng, D., Folberth, C., Izaurralde, R. 
+C., Jones, C.D., Khabarov, N., Lawrence, P.J., Liu, W., Pugh, T.A.M., Reddy, A., 
+Sakurai, G., Schmid, E., Wang, X., de Wit, A., Wu, X., 2017. Spatial and temporal 
+uncertainty of crop yield aggregations. Eur. J. Agron. 88, 10–21. https://doi.org/ 
+10.1016/j.eja.2016.08.006.
+Rial-Lovera, K., 2018, June. Agricultural Robots: Drivers, barriers and opportunities for 
+adoption. In Proceedings of the 14th International Conference on Precision 
+Agriculture, (Vol. 24, No. 27.06, p. 2018). Monticello, IL, USA: The International 
+Society of Precision Agriculture.
+Rui, Z., Zhang, Z., Zhang, M., Azizi, A., Igathinathane, C., Cen, H., Vougioukas, S., Li, H., 
+Zhang, J., Jiang, Y., Jiao, X., Wang, M., Ampatzidis, Y., Oladele, O.I., Ghasemi- 
+Varnamkhasti, M., Raid, R., 2024. High-throughput proximal ground crop 
+phenotyping systems – A comprehensive review. Comput. Electron. Agric. 224, 
+109108. https://doi.org/10.1016/j.compag.2024.109108.
+Sishodia, R.P., Ray, R.L., Singh, S.K., 2020. Applications of remote sensing in precision 
+agriculture: A review. Remote Sens. (Basel) 12 (19), 3136. https://doi.org/10.3390/ 
+rs12193136.
+Tang, Y., Qiu, J., Zhang, Y., Wu, D., Cao, Y., Zhao, K., Zhu, L., 2023. Optimization 
+strategies of fruit detection to overcome the challenge of unstructured background in 
+field orchard environment: A review. Precis. Agric. 24 (4), 1183–1219. https://doi. 
+org/10.1007/s11119-023-10009-9.
+Trentin, C., Ampatzidis, Y., 2024. Assessing the precision and consistency of Agroview in 
+orchard management: A multi-temporal analysis. Smart Agric. Technol. 9, 100693. 
+https://doi.org/10.1016/j.atech.2024.100693.
+Trentin, C., Ampatzidis, Y., Lacerda, C., Shiratsuchi, L., 2024. Tree crop yield estimation 
+and prediction using remote sensing and machine learning: A systematic review. 
+Smart Agric. Technol. 9, 100556. https://doi.org/10.1016/j.atech.2024.100556.
+Vijayakumar, V., Ampatzidis, Y., Costa, L., 2023. Tree-level citrus yield prediction 
+utilizing ground and aerial machine vision and machine learning. Smart Agric. 
+Technol. 3, 100077. https://doi.org/10.1016/j.atech.2022.100077.
+Vijayakumar, V., Ampatzidis, Y., Lacerda, C., Burks, T., Lee, W.S., Schueller, J.K., 2025. 
+AI-driven real-time weed detection and robotic smart spraying for optimized 
+performance and operational speed in vegetable production. Biosyst. Eng. 259, 
+104288. https://doi.org/10.1016/j.biosystemseng.2025.104288.
+Wang, C., Lee, W.S., Zou, X., Choi, D., Diamond, J., 2018. Detection and counting of 
+immature green citrus fruit based on the Local Binary Patterns (LBP) feature using 
+illumination-normalized images. Precision Agric. 19, 1062–1083. https://doi.org/ 
+10.1007/s11119-018-9574-5.
+Zhang, L., Ferguson, L., Ying, L., Lyons, A., Laca, E., Ampatzidis, Y., 2024. Developing a 
+web-based pistachio nut growth prediction system for orchard management. 
+HortTechnology 34 (1), 1–7. https://doi.org/10.21273/HORTTECH05270-23.
+Zhang, W., Wang, J., Liu, Y., Chen, K., Li, H., Duan, Y., Wu, W., Shi, Y., Guo, W., 2022. 
+Deep-learning-based in-field citrus fruit detection and tracking. Hortic. Res. 9, 
+uhac003. https://doi.org/10.1093/hr/uhac003.
+Zhao, Y., Lv, W., Xu, S., Wei, J., Wang, G., Dang, Q., Liu, Y., Chen, J., 2024. Detrs beat 
+yolos on real-time object detection. Proceedings of the IEEE/CVF conference on 
+computer vision and pattern recognition (pp. 16965-16974). https://doi.org/ 
+10.48550/arXiv.2304.08069.
+Zhou, C., Ampatzidis, Y., Guan, H., Liu, S., Liu, W., Neto, A.D.C., Kunwar, S., 
+Batuman, O., 2025. Agrosense: Accelerating precision orchard management through 
+an AI-enabled monitoring system. Precis. Agric. 26 (4), 73. https://doi.org/10.1007/ 
+s11119-025-10268-8.
+S. Liu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 248 (2026) 111797 
+16 

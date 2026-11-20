@@ -1,0 +1,1560 @@
+Development of a smartphone application for rapid blueberry detection and 
+yield estimation
+Puranjit Singh a
+, Nariman Niknejad b,e
+, James D. Spiers d, Yin Bao a,c,*, Sushan Ru d,*
+a Plant and Soil Sciences, University of Delaware, Newark, DE, USA
+b Biosystems Engineering, Auburn University, Auburn, AL, USA
+c Mechanical Engineering, University of Delaware, Newark, DE, USA
+d Horticulture, Auburn University, Auburn, AL, USA
+e Current address: Mechanical Engineering, Michigan State University, East Lansing, MI, USA
+A R T I C L E I N F O
+Keywords:
+Blueberry
+Machine learning
+Object detection
+Yield prediction
+Smartphone application
+A B S T R A C T
+Timely blueberry yield monitoring is critical to guide harvest planning, optimize marketing, and support 
+breeding programs. Traditional yield assessment methods, either through hand harvesting or visual assessment, 
+are often labor intensive or error prone. This study developed and evaluated a pipeline to predict individual 
+blueberry plant yield from smartphone images by combining deep learning-based fruit detection with key crop 
+data. YOLOv8 models were fine-tuned to detect ripe and unripe berries in side-view field images of southern 
+highbush and rabbiteye genotypes, with the best model (YOLOv8-x) achieving a mean average precision (mAP50) 
+of 0.708. The YOLO-derived visible ripe berry counts, along with manually measured average berry weight and 
+genotype data, were used to train 42 machine learning regression models. Additionally, three strategies for using 
+the two-side ripe berry counting data were explored. A histogram-based gradient boosting regressor performed 
+best, predicting yield with an R2 of 0.80, a bias of 16.48 g, and limits of agreement of [−440.28 g, 473.24 g]. 
+Notably, excluding genotype from model inputs substantially decreased prediction accuracy (R2 = 0.47). Sig­
+nificant variations in plant architecture and mean ripe berry occlusion were observed across genotypes. This 
+suggests that image-derived architectural features could serve as a practical proxy for genotype in future yield 
+prediction models. To make this developed tool accessible, the image processing and modeling pipeline was 
+packaged into the "Blueberry Yield Analyzer," a user-friendly Android app on the Google Play Store that enables 
+real-time yield monitoring for growers and researchers.
+1. Introduction
+Blueberry is often considered a “super-fruit” for its high nutritional 
+content and anti-inflammatory actions [1]. The United States is a lead­
+ing blueberry producer in the world, which contributes around 322,000 
+t of blueberries annually to the global market [2]. The primary regions 
+for blueberry production in the United States include the Northeast, 
+Southeast, Northwest, West, and the Midwest, owing to their favorable 
+growing conditions that support large-scale blueberry cultivation [3]. 
+Three major types of blueberries are commercially produced for the 
+fresh fruit market in the United States [4]. The northern highbush 
+blueberry (Vaccinium corymbosum L.) is mainly produced in the northern 
+region due to its requirement for long chilling hours [4]. On the other 
+hand, southern highbush (V. corymbosum interspecific hybrids) and 
+rabbiteye blueberry (V. virgatum Ait.) are commonly produced in the 
+southern region for their lower chilling requirement and adaptation to a 
+warmer climate [4].
+Accurate yield and maturity estimation before harvest is important 
+for blueberry growers to plan harvesting operations and optimize mar­
+keting strategies. Moreover, accurate yield data is critical for breeders 
+and researchers to evaluate blueberry germplasm and conduct various 
+research initiatives to improve crop management and other related 
+areas. Traditionally, blueberry yield is measured by manually or me­
+chanically harvesting and weighing berries, which is labor intensive and 
+time consuming. Pre-harvest estimation relying on visual assessment is 
+largely inaccurate due to difficulties of counting numerous berries on 
+mature plants. Image-based plant analysis assisted with deep learning 
+(DL) methodologies emerged as a promising tool for accurate blueberry 
+* Corresponding authors.
+E-mail addresses: yinbao@udel.edu (Y. Bao), szr0099@auburn.edu (S. Ru). 
+Contents lists available at ScienceDirect
+Smart Agricultural Technology
+journal homepage: www.journals.elsevier.com/smart-agricultural-technology
+https://doi.org/10.1016/j.atech.2025.101361
+Received 15 July 2025; Received in revised form 22 August 2025; Accepted 22 August 2025  
+Smart Agricultural Technology 12 (2025) 101361 
+Available online 23 August 2025 
+2772-3755/© 2025 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY-NC license ( http://creativecommons.org/licenses/by- 
+nc/4.0/ ). 
+
+detection [5]. DL is a computational approach that imitates human brain 
+learning through examples. DL has become instrumental in diverse ap­
+plications such as self-driving cars, facial recognition, and various 
+classification/detection tasks, owing to its ability to glean meaningful 
+insights from large datasets [6]. In agriculture, computer vision-based 
+DL techniques have been applied in disease detection, weed identifica­
+tion, land cover classification, vegetation composition assessment, 
+weather forecasting, and the estimation of crop height and yield [7–10]. 
+As a standard for real-time object detection, YOLO models have been 
+extensively used in various real-time object detection tasks, such as 
+autonomous vehicles and unmanned aerial vehicles (UAV)-based sur­
+veillance systems [11]. Unlike Region-based Convolutional Neural 
+Networks (R-CNNs) which use a two-stage detection pipeline, YOLO 
+models predict bounding boxes and class probabilities in a single pass, 
+making them faster and more efficient for real-time applications [12].
+The distinctive color and shape of blueberries make them prime 
+candidates for image-based analysis for yield prediction and maturity 
+estimation. Previous studies, although limited, have exhibited prom­
+ising outcomes in both wild and cultivated blueberries. Based on the 
+percentage of blue pixels in field images, Swain et al. [13] employed 
+linear regression models in an automated yield monitoring system for 
+wild blueberries (V. angustifolium Ait.), which achieved R2 = 0.967 be­
+tween predicted and actual fruit yield. Qu et al. [14] developed XGBoost 
+models to accurately predict wild blueberry yield (R² = 0.89) based on 
+UAV images. MacEachern et al. [15] evaluated six YOLO CNN models 
+for wild blueberry detection across three maturity stages, with the best 
+performing model achieving 79.79 % mAP50. For cultivated blueberries, 
+Ni et al. [16] trained Mask R-CNN for southern highbush blueberries, 
+demonstrating higher accuracy than manual counting (R² = 0.886) and 
+strong correlation for maturity estimation (R² = 0.908). Additionally, 
+Deng et al. [5] developed the first open-access image dataset for rab­
+biteye and highbush blueberries, containing 17,955 manually annotated 
+berries. The YOLOv8l model developed by [5] achieved approximately 
+93 % mAP50 score in distinguishing between ripe and unripe blueberry 
+fruits.
+In addition to the fruit detection approaches, other yield estimation 
+methods have been developed that leverage remote sensing-derived 
+canopy structure metrics. Bai et al. [17] integrated multi-temporal 
+remotely sensed leaf area index (LAI) observations into the WOFOST 
+crop growth model using the SUBPLEX optimization algorithm, 
+enhancing the accuracy of jujube yield forecasts at the field scale. More 
+recently, Chen et al. [18] combined UAV multispectral imagery with 
+light detection and ranging (LiDAR) data to extract detailed spectral and 
+morphological traits of individual apple trees, which were then used to 
+train ensemble learning models for yield prediction tasks. By integrating 
+vegetation indices with structural parameters such as crown projection 
+area and crown volume, this method achieved high prediction accuracy 
+at the individual-tree level. These methods show the promise of 
+combining spectral, structural, and phenological data for yield predic­
+tion but often rely on specialized sensors, repeated seasonal data 
+collection, and complex processing. The integration of remote sensing 
+and crop modeling also demands extensive calibration for specific cul­
+tivars, is sensitive to field-scale variability, and typically yields 
+coarser-resolution estimates.
+Despite these advances, significant gaps persist in field-based appli­
+cations for yield prediction for cultivated blueberries. Blueberries pre­
+sent unique challenges for yield prediction due to their small berry size, 
+dense clustering, complex canopy structure, and the presence of multi­
+ple maturation stages within the same plant. Furthermore, even the deep 
+blue to purple hues of mature berries can be easily mistaken for foliage 
+shadows, which reduces the accuracy of berry detection [19]. While 
+YOLO models have proven effective for large fruits like mango [20,21], 
+their transferability to blueberry yield prediction remains sparsely 
+documented, primarily due to challenges mentioned above. Addition­
+ally, large DL models that require substantial computational capacity are 
+not accessible for growers, and currently, no user-friendly applications 
+allow growers to easily estimate yield in the field setting. To address 
+existing research gaps, the objectives of this study were to: 
+1) Evaluate the performance of YOLOv8 models for image-based blue­
+berry detection of multiple cultivars under field conditions,
+2) Assess the feasibility of ML-based blueberry yield estimation using 
+image-derived berry count, average berry weight, and genotype in­
+formation, and
+3) Develop a user-friendly smartphone application that facilitates real- 
+time yield and maturity monitoring in the field setting, serving both 
+growers and researchers.
+2. Materials and methods
+2.1. Data collection
+Field data was collected in 2022 and 2023 from three blueberry 
+farms in Georgia and Alabama in the United States, including the Blue 
+River Legacy Farms in Lake Park, GA; Bartley Blueberry Farm in Auburn, 
+AL; and the Gulf Coast Research and Extension Center of Auburn Uni­
+versity, Fairhope, AL (30.54574, −87.88099). The dataset includes 178 
+images of 89 blueberry plants. The plants consisted of 17 genotypes, 
+including 9 cultivars (southern highbush: ‘Cielo’, ‘Farthing’, ‘Jewel’, 
+‘Meadowlark’, ‘Star’, ‘Springhigh’; rabbiteye: ‘Alapaha’, ‘Premier’, 
+‘Powderblue’) and 8 advanced selections (Table 1). Farms in Lake Park, 
+GA and Fairhope, AL were managed following standard practices. Plants 
+were grown on raised beds amended with pine barks. Space between 
+plants was around 0.91 m. The Bartley Farm in Auburn, AL was 
+managed with less intensity, with less fertilization and forgoing drip 
+irrigation. Space between plants was approximately 1.8 m, allowing 
+individual plants to develop into larger bushes.
+Phenotypic data collection for each location was performed in 
+following steps. First, three to twelve healthy blueberry plants were 
+chosen for each cultivar or genotype. Second, parking sticks with 
+AprilTags were used to mark the edges of each plant, ensuring consis­
+tency in image framing. Additionally, plant labels were included in each 
+image to correctly identify individual plants. The AprilTags on the 
+parking sticks enable automated processing, linking plant IDs to the 
+labels for efficient identification during data analysis. Plant height and 
+width were manually measured with a tape measure for data collected in 
+2023. Prior to harvesting, two images were captured from the sides of 
+each plant. Images were taken using a 50-megapixel camera on a 
+smartphone (Pixel 6 Pro, Google, Mountain View, CA, USA). The images 
+were captured from a height of around 1 m above the ground and at a 
+distance of approximately 2 m from the plant ensuring the entire plant 
+was captured in each frame. Images were saved on the smartphone in . 
+JPG format with dimensions of 3024 × 4032 pixels each. After image 
+collection, ripe berries were manually harvested from each side of the 
+plant. Berries harvested from each side were manually counted and 
+weighted separately to obtain average berry weight and yield for each 
+side. Yield from two sides were summed to obtain the total yield of each 
+plant.
+2.1.1. Data pre-processing
+Original images were cropped prior to analysis to remove back­
+ground and neighboring plants. The preprocessed images were further 
+tiled into sub-images to preserve the original spatial resolution, as the 
+berries are small and require finer detail for accurate training of the DL 
+models. The edited images were divided into smaller sub-images 
+measuring 224 × 224 pixels each, which resulted in a dataset contain­
+ing a total of 17,432 images. Images were manually annotated using the 
+“Smart Polygon” tool available on Roboflow [22]. Berries were classified 
+into two maturity groups, ripe and unripe based on berry colors (Fig. 1). 
+The annotation files in .txt format and the corresponding YAML 
+configuration file, compatible with YOLOv8, exported from the Robo­
+flow software were used for model training.
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+2 
+
+The annotated images were split into three groups for training, 
+validation, and testing at a ratio of 70 %, 15 %, and 15 %, respectively. 
+As a result, the training dataset comprises 12,202 images, whereas the 
+validation and testing datasets each consist of 2615 images. The per­
+formance of the DL model was assessed for each maturity group, to 
+evaluate the impact of maturity level on berry detection and ripeness 
+estimation.
+2.2. Blueberry detection using YOLOv8 models
+Over time, researchers have continued to refine and enhance the 
+YOLO methodology, introducing various model iterations with 
+improved performance and capabilities. The recent versions released 
+under the YOLO family have focused more on detection of smaller ob­
+jects with higher accuracy [23]. The YOLOv8 model released by 
+‘Ultralytics’ boasts superior detection accuracy and speed, further so­
+lidifying the YOLO series. This balance of speed and precision has made 
+YOLO increasingly versatile, and applicable in diverse fields like ro­
+botics, surveillance, and precision agriculture, where quick and accurate 
+detections are crucial for effective decision-making [12].
+The YOLOv8 network architecture comprises three main compo­
+nents: the backbone, the neck, and the head. To extract features from 
+images, the YOLOv8 model utilizes a modified CSP Darknet architecture 
+as its backbone [24]. Within the backbone, the CBS module conducts 
+convolutional operations on the input data, the C2f module enhances the 
+flow of feature extraction, and the SPFF layer connects the max pooling 
+layers to reduce latency. The Neck layer is structured with a PAN-FPN 
+(Path Aggregation Network-Feature Pyramid Network) design, con­
+structing both top-down and bottom-up networks to generate a more 
+diverse and comprehensive feature representation. This enhanced 
+feature representation facilitates the model’s ability to interpret visual 
+data, resulting in improved performance in object detection-related 
+tasks. The multi-scale feature fusion in the PAN-FPN, combined with 
+the C2f module’s richer gradient flow, enables YOLOv8 to capture 
+fine-grained details, making it particularly effective for detecting 
+smaller objects in complex plant images. For the detection component, 
+YOLOv8 employs a decoupled head structure. This structure utilizes 
+binary cross-entropy loss for classification tasks and employs distribu­
+tion focal loss and class Intersection over Union (IoU) loss for predicting 
+bounding box regression tasks [25,26]. These components collectively 
+Table 1 
+Summary of blueberry plant data.
+Genotype
+Traits measured
+Avg. berry 
+weight (g)
+Avg. 
+Yield (g)
+Std. Dev. 
+Yield (g)
+Number of plants 
+(Training, Testing)
+Year planted 
+(plant age)
+Location and Data 
+collection date
+Star
+Yield (g), average berry weight (g), total berry 
+count for each side, plant height (cm), plant 
+width (cm)
+2.04
+330.00
+122
+9 (6, 3)
+2009 (14)
+Lake Park, GA (04/ 
+18/2023)
+Jewel
+2.23
+939.25
+229.50
+6 (4, 2)
+2009 (14)
+Springhigh
+2.20
+543.50
+173.04
+6 (4, 2)
+2009 (14)
+Meadowlark
+2.31
+522.75
+229.97
+6 (4, 2)
+2015 (8)
+Cielo
+1.79
+191.25
+56.16
+6 (5, 1)
+2015 (8)
+Farthing
+1.84
+718.83
+135.77
+6 (4, 2)
+2015 (8)
+AU 1
+Yield (g), average berry weight (g) for each side
+2.16
+99.91
+67.65
+3 (2, 1)
+2014 (8)
+Fairhope, AL (05/ 
+20/2022)
+AU 2
+1.46
+149.51
+59.20
+3 (2, 1)
+2014 (8)
+AU 3
+2.61
+248.48
+209.70
+3 (2, 1)
+2014 (8)
+AU 4
+2.29
+419.84
+184.02
+3 (2, 1)
+2014 (8)
+AU 5
+1.81
+534.61
+136.97
+3 (3, 0)
+2014 (8)
+AU 6
+2.31
+546.18
+128.28
+3 (2, 1)
+2014 (8)
+AU 7
+2.53
+662.68
+160.27
+3 (2, 1)
+2014 (8)
+AU 8
+2.93
+694.50
+189.86
+3 (2, 1)
+2014 (8)
+Alapaha
+Yield (g), average berry weight (g) for each side
+1.68
+214.90
+151.31
+5 (4, 1)
+2013 (9)
+Auburn, AL (06/20/ 
+2022)
+Premier
+1.27
+492.16
+217.64
+9 (6, 3)
+2013 (9)
+Powderblue
+1.29
+326.66
+221.36
+12 (8, 4)
+2013 (9)
+Total
+​
+​
+​
+89 (62,27)
+​
+Fig. 1. Image annotation process. An image of a blueberry plant (left) is tiled into of 224 × 224 pixel sub-images (middle). Individual blueberries are then annotated 
+with colored polygons indicating contour and maturity (right).
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+3 
+
+contribute to the YOLOv8 model’s efficacy in object detection tasks 
+[11]. There exists a trade-off between model performance and execution 
+time across the different YOLOv8 versions. The lightweight YOLOv8-n 
+model, with the minimum number of trainable parameters, achieves 
+real-time predictions but compromises accuracy. Conversely, the 
+YOLOv8-x model, with the maximum number of trainable parameters, 
+exhibits higher accuracy in object detection but requires more time for 
+predictions. The users can choose a model based on their specific re­
+quirements regarding accuracy and real-time prediction capabilities.
+The YOLOv8 model versions were trained on a Dell Precision 5680 
+laptop (Dell, Round Rock, TX, USA) computer with a Windows 11 En­
+terprise operating system (Windows, Redmond, CA, USA). The laptop 
+was equipped with 32 GB of LPDDR5 RAM, 1 TB NVMe SSD storage, an 
+Intel Core i9–12900H CPU (Intel, Santa Clara, CA, USA), a 1 TB NVMe 
+SSD, and a Nvidia GeForce RTX 4090 16 GB GDDR6 GPU (Nvidia, Santa 
+Clara, CA, USA). The CSPDarkNet53 framework of the YOLOv8 models 
+within the ‘Ultralytics’ library was compiled using Nvidia CUDA 11.8 
+and OpenCV 4.8.0 to train images on the GPU. The DL and ML models 
+were developed and trained within the Spyder IDE environment, using a 
+dataset of 17,432 images, each measuring 224 × 224 pixels. A detailed 
+description of the hyperparameters used while training the different 
+versions of the YOLOv8 models is provided in Table 2.
+The performance of the YOLOv8 models was evaluated using several 
+key metrics: Precision, Recall, and mean Average Precision (mAP). 
+Precision measures the proportion of true positive detections among all 
+positive predictions. Recall quantifies the ratio of true positive de­
+tections to the total number of ground truth objects, and mAP assesses 
+the average precision across all classes at specific Intersection over 
+Union (IoU) thresholds, including mAP50 (considering an IoU threshold 
+of 0.50) and mAP50–95 (considering a range of IoU thresholds from 0.50 
+to 0.95) [5,15]. These evaluation metrics provide insights into the 
+model’s ability to accurately detect and classify objects within the given 
+dataset. Precision measures the correctness of the positive predictions, 
+while recall measures the completeness of the model’s detections. The 
+mAP metrics assess the model’s overall performance, considering both 
+the accuracy and the localization of the detections.
+2.3. Machine learning-based yield prediction
+Occlusion was the major obstacle for yield prediction, as a substan­
+tial number of berries were concealed by branches, foliage, and clusters 
+(Fig. 2). Performance of the berry detection model was evaluated based 
+on its capacity to identify visible berries, rather than providing an 
+exhaustive count of all berries on each plant. To account for obscured 
+berries and other factors for yield prediction, we constructed several ML 
+models to predict the total yield for blueberry plants. ML-based regres­
+sion models were trained to predict yield by understanding the re­
+lationships between input features and the continuous target yield 
+variable. These models employ optimization algorithms to fine-tune 
+their parameters, aiming to minimize the discrepancy between the 
+predicted and actual yields during training. A correlation matrix was 
+utilized to identify the features most directly linked to yield to improve 
+the models’ performance and interpretability. This feature selection 
+method ensures that only the most relevant predictors are included in 
+the final models.
+Two types of yield prediction models were developed and evaluated. 
+The full prediction models used three parameters for yield prediction: 
+average berry weight, image-derived ripe berry count, and genotype to 
+predict yield. Simplified models used only the average berry weight and 
+DL-detected ripe berry count for yield prediction, making it more 
+practical for applications where prior knowledge on the cultivar or ge­
+notype is not available. To maintain data integrity and avoid overfitting, 
+consistency was maintained throughout the evaluation process by 
+ensuring that images from the same plants were used either in the 
+training or the testing datasets.
+We assessed three distinct yield prediction approaches for both types 
+of yield prediction models, utilizing images captured from one side of 
+the plant as well as from both sides. The Single Image – Single Side 
+(SISS) strategy predicts yield from one side of the plant based on 
+detected ripe berry count from the image taken from one side of the 
+plant, alongside other traits. The total yield for the plant was then 
+calculated by adding the yields predicted from each side. The Single 
+Image – Whole Plant (SIWP) strategy predicted the yield based on ripe 
+berry count from the image taken from only one side of the plant. This 
+approach was applied to both sides of each plant individually, resulting 
+in two separate yield estimates per plant, which were then averaged to 
+approximate the yield. The third strategy, Dual Image – Whole Plant 
+(DIWP) used the combined count of ripe berries from both sides of the 
+plant, based on images taken from two sides, to predict the yield per 
+plant. A schematic representation of this methodology is presented in 
+Fig. 3, which outlines the step-by-step process of yield prediction model 
+development, evaluation, training, and statistical analyses.
+ML-model training was facilitated by the ’LazyPredict’ library in 
+Python [27], designed to utilize both the phenotypic characteristics of 
+blueberry plants and DL-detected ripe berry counts. LazyPredict auto­
+mates training 42 different ML models spanning multiple categories 
+such as linear models (Linear Regression, Ridge Regression, Lasso 
+Regression), ensemble methods (Random Forest, Gradient Boosting, 
+HistGradientBoosting, Extra Trees), tree-based models (Decision Tree 
+Regressor, XGBoost, LightGBM, CatBoost), support vector machines, 
+k-nearest neighbors, and neural network-based regressors. Once the 
+top-performing model was identified, it was optimized using the Grid­
+Search algorithm. This additional step helped to verify and potentially 
+enhance the model’s performance while also identifying the optimal set 
+of hyperparameters that produce the best results. By combining ML and 
+DL techniques, this integrated approach seeks to accurately estimate 
+blueberry yields from a range of input variables.
+The performance of the ML models was assessed using several 
+evaluation metrics, including Mean Squared Error (MSE), Root Mean 
+Square Error (RMSE), Mean Absolute Percentage Error (MAPE) and 
+Coefficient of Determination (R²), on the test dataset. Cross-validation 
+techniques were employed to compare the performance of different 
+regression-based ML models. These metrics provide insights into the 
+accuracy, precision, and overall performance of the ML models in pre­
+dicting the blueberry yield. The MSE, RMSE, MAPE, and R² were eval­
+uated using the following equations: 
+MSE = 1
+N
+∑
+N−1
+i=0
+(
+yi −ypred
+i
+)2
+(1) 
+RMSE =̅̅̅̅̅̅̅̅̅̅
+MSE
+2√
+(2) 
+MAPE = 1
+N
+( ∑
+N−1
+i=0⃒⃒⃒
+yi −ypred
+i⃒⃒⃒
+yi
+× 100
+)
+(3) 
+R2 = 1 −
+∑N−1
+i=0
+(
+yi −ypred
+i
+)2
+∑N−1
+i=0 (yi −ymean)2
+(4) 
+To assess the agreement between the actual and predicted yields, a 
+Bland-Altman (B-A) analysis was conducted [28]. B-A analysis is a 
+Table 2 
+Hyperparameters for training YOLOv8 models.
+Hyperparameters
+Values
+Optimizer
+Adam
+Learning rate
+1e-3
+Epochs
+100
+Batch size
+32
+Finetuning-pretrained model
+True
+Image size
+224 × 224
+Dropout
+True
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+4 
+
+statistical approach to assess the agreement between the actual and 
+predicted yields. The mean difference or bias, calculated as the mean of 
+the differences, indicates the average discrepancy between the actual 
+and predicted values. The Limits of Agreement (LoA), defined as the bias 
+± 1.96 standard deviation, represents the range within which 95 % of the 
+differences are expected to fall. A narrow range of LoA and a bias close to 
+zero would indicate a high level of agreement between the actual and 
+predicted yields, validating the performance of the developed yield 
+prediction models. This analysis is particularly beneficial as it provides a 
+visual representation of the difference between the two measurements 
+against their average, offering insights into any potential systematic bias 
+or LoA, which are essential for evaluating the performance and reli­
+ability of our predictive models. In addition to bias, the analysis also 
+Fig. 2. Examples of occlusion challenges in blueberry detection, where blueberries are partially or fully hidden by branches, foliage, or tightly packed clusters, 
+reducing visibility.
+Fig. 3. Flowchart of the Yield Prediction Framework.
+Fig. 4. Box plots for yield (top) and average berry weight (bottom) among 
+rabbiteye (blue) and southern highbush blueberry genotypes (gray).
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+5 
+
+considers proportional bias, which occurs when prediction errors vary 
+according to yield magnitude. Proportional bias indicates that agree­
+ment between methods is not consistent across the measurement range, 
+with one method systematically over- or under-estimating at higher or 
+lower yield levels. A paired t-test (α = 0.05) was conducted to assess 
+whether the mean difference between the predicted and actual yields 
+was statistically significant at the 95 % confidence level [29].
+2.4. Quantification of ripe berry occlusion patterns
+In many cases, multiple ripe berries within the plant canopy are 
+occluded by overlapping foliage, berry clusters, or structural compo­
+nents of the plant, making them invisible to detection algorithms. This 
+occlusion presents a significant challenge in accurately identifying and 
+counting ripe berries, as the extent of occlusion can vary due to differ­
+ences in plant architecture, foliage density, and berry arrangement. 
+These variations are further influenced by the specific genotype of the 
+plant, as each genotype exhibits unique structural characteristics. To 
+better understand the extent and variability of occlusion across different 
+cultivars, the Ripe Berry Occlusion Ratio was calculated using Eq. (5).  
+This metric provided a quantitative measure of the proportion of ripe 
+berries that were occluded and, therefore, not visible in the captured 
+images. The ripe berry occlusion ratio was determined for plants rep­
+resenting six southern highbush blueberry cultivars, using image data 
+collected during the 2023 growing season. This exploration aimed to 
+systematically assess occlusion trends and establish a baseline for un­
+derstanding how different genotypes influence the visibility of ripe 
+berries under natural field conditions.
+2.5. Android application development
+An Android application was developed using the Android Studio 
+software (version 2023.1.1) with Kotlin to allow timely yield and 
+maturity monitoring under field conditions. The trained YOLOv8 model 
+was first exported to ONNX format and subsequently converted to 
+TensorFlow Lite (.tflite) using the TensorFlow converter to reduce model 
+size and improve inference efficiency on mobile devices. The ‘.tflite’ 
+model was integrated into the app using the TensorFlow Lite Interpreter, 
+allowing on-device inference without internet connectivity. For optimal 
+performance during real-world use, users are advised to capture images 
+such that each frame contains only a single plant, which improves 
+detection accuracy for estimating blueberries per plant. The app was 
+tested on multiple Android smartphones (API level 24 and above). This 
+mobile deployment supports in-field decision-making by providing 
+rapid, accessible, and cultivar-independent yield insights.
+3. Results
+3.1. Key phenotypic data across datasets and genotypes
+Phenotypic data exhibited large variability across different datasets 
+and genotypes. Average plant yield ranged from 99.9 g (AU1, collected 
+from Fairhope, AL in 2022) to 939.25 g (Jewel, collected from Lake 
+Park, GA in 2023) (Table 1, Fig. 4). Average berry weight ranged from 
+1.27 g (Premier, collected from Auburn, AL in 2022) to 2.9 g (AU8, 
+collected from Fairhope, AL in 2022) (Table 1, Fig. 4). The substantial 
+variability within this dataset, stemming from differences in genotype, 
+plant age, management practices, and environmental conditions, is 
+intentionally selected to facilitate the development of a robust yield 
+prediction model applicable to various scenarios. Variations in yield and 
+average berry weight may be influenced by both genotypic differences 
+and environmental factors. For instance, the ‘Alapaha’, ‘Premier’, and 
+‘Powderblue’ plants in Auburn, AL faced drought stress in 2022, 
+resulting in lower yields and smaller berries compared to regular sea­
+sons. Additionally, plants grown in Fairhope, AL were affected by a 
+spring frost in 2022, resulting in a substantial decrease in yield. There­
+fore, the focus of this study is not to compare the performance of 
+different genotypes but rather to evaluate the accuracy of the yield 
+prediction model across a variety of conditions.
+3.2. Blueberry detection and counting
+Table 3 shows the performance of different YOLOv8 models for 
+blueberry detection in terms of mAP50, mAP50–95, and Class-wise mAP50 
+scores. Among the various YOLOv8 models trained with the berry 
+detection dataset, the YOLOv8-x model, which has the largest number of 
+trainable parameters, emerged as the top performer on the validation 
+dataset. It achieved a mAP at an IoU threshold of 0.5 (mAP50) of 0.708. 
+In contrast, with fewer parameters, the lightweight YOLOv8-n model 
+achieved a slightly lower mAP50 score of 0.636. This trend illustrates 
+that larger models generally result in better detection accuracy. How­
+ever, the increase in accuracy is not strictly proportional to the model 
+size, as the performance gains taper off with larger models. The model 
+size increased significantly between YOLOv8-m (53 MB) and YOLOv8-x 
+(140 MB), the mAP50 improvement was relatively modest (0.681 to 
+0.708). For real-time applications where execution time is crucial, 
+deploying the YOLOv8-s or YOLOv8-m models would be advantageous 
+due to their faster inference times. However, for scenarios where 
+achieving higher or more accurate blueberry detections is paramount, 
+deploying the YOLOv8-l or YOLOv8-x models would be beneficial. The 
+top-performing DL model, likely the YOLOv8-x, achieved an overall 
+blueberry detection accuracy of 70.8 %. The model performed better in 
+accurately detecting ripe berries, with an accuracy of 77 %, compared to 
+64 % for unripe berries. The better performance in detecting ripe berries 
+is potentially due to their distinct blue or black color in contrast with the 
+background of leaves and soil, which the DL model could learn more 
+easily. The similarity in color between green berries and leaves could 
+have contributed to potential confusion for the DL models in detecting 
+green berries accurately during testing. In the subsequent sections of the 
+results, the YOLOv8-x model was utilized to generate predictions for 
+visible berry counts and yield estimates, leveraging its superior perfor­
+mance among the evaluated YOLOv8 versions.
+Table 3 
+Mean Average Precision scores of YOLOv8 models on the blueberry detection 
+dataset.
+YOLOv8 
+model
+mAP50
+mAP50–95
+Class-wise IoU
+Model size
+Unripe 
+Berry
+Ripe Berry
+YOLOv8-n
+0.636
+0.321
+0.578
+0.693
+6.5 MB
+YOLOv8-s
+0.669
+0.343
+0.619
+0.72
+23 MB
+YOLOv8-m
+0.681
+0.355
+0.632
+0.73
+53 MB
+YOLOv8-l
+0.686
+0.357
+0.639
+0.734
+90 MB
+YOLOv8-x
+0.708
+0.372
+0.644
+0.772
+140 MB
+Ripe Berry Occlusion Ratio = Total Ripe Berry Count −
+Annotated Ripe Berry Count
+Total Ripe Berry Count
+(5) 
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+6 
+
+The results in Table 4 show the performance of different YOLOv8 
+models for blueberry detection in terms of Precision, Recall, and F1- 
+score. As the model size increases from YOLOv8-n to YOLOv8-x, there 
+is a clear improvement in these metrics. YOLOv8-x, the largest model, 
+achieved the highest precision (0.797), recall (0.663), and F1-score 
+(0.724), indicating its superior ability to detect blueberries accurately 
+while minimizing false positives and false negatives. In comparison, the 
+smaller YOLOv8-n model, with fewer trainable parameters, showed the 
+lowest scores, with a Precision of 0.762, Recall of 0.574, and F1-score of 
+0.655. These metrics reflect that its detection performance improves as 
+the model complexity increases. However, the gains in precision and 
+recall are not perfectly linear with model size, as the improvements tend 
+to level off with larger models like YOLOv8-l and YOLOv8-x. Overall, 
+YOLOv8-x offers the best balance between precision and recall, making 
+it the most effective model for detecting blueberries in this dataset.
+The YOLOv8 model performed commendably in detecting blue­
+berries at different stages of maturity, distinguishing effectively between 
+ripe and unripe berries. Specifically, the YOLOv8-x model, which has 
+more parameters, achieved mAP50 scores of 0.772 for ripe berries and 
+0.664 for unripe berries. In comparison, the lightweight YOLOv8-n 
+model showed mAP50 scores of 0.693 for ripe and 0.578 for unripe 
+berries, while the YOLOv8-m, with fewer parameters than the YOLOv8- 
+x, recorded scores of 0.73 and 0.632, respectively. The model’s 
+enhanced performance in detecting ripe berries can be attributed to their 
+distinct black/violet color, which contrasts with the green or red/pink 
+color of the unripe berries. However, detecting unripe berries is often 
+less accurate due to their color similarity to the leaves. There is a notable 
+trade-off between the lightweight and the DL model, which is comprised 
+of higher parameters leading to a larger model size than the prior model. 
+While lighter models like the YOLOv8-n offer faster processing speeds, 
+which is beneficial for real-time applications requiring lower latency, 
+they often achieve lower accuracy than their heavier counterparts like 
+the YOLOv8-x. Thus, the model choice depends on specific application 
+needs, balancing accuracy and speed. Although slower, models 
+requiring a higher number of trainable parameters tend to deliver more 
+accurate results, making them suitable for applications where precision 
+is prioritized over speed. This trade-off between speed and accuracy is 
+crucial in deploying models in different operational contexts, especially 
+when timely data processing is as important as detection accuracy. To 
+develop reliable ML models for yield prediction tasks, we used the 
+trained YOLOv8-x model to generate the count of ripe blueberries 
+detected in the images which is used as one of the features to train the 
+ML models as discussed in the earlier section.
+The YOLOv8-x model shows strong performance in detecting visible 
+ripe blueberries on individual plants. Fig. 5 illustrates the scatterplot 
+between predicted and annotated ripe blueberry counts on plants from 
+the test dataset. As shown in Fig. 6, the trained DL model distinguishes 
+berries based on maturity stage. The model’s effectiveness is demon­
+strated by key metrics, including an R² score of 0.88 and a MAPE of 
+22.42 %, highlighting the YOLOv8-x model’s capability to accurately 
+identify ripe blueberries from field-acquired images. Importantly, these 
+predictions were made on a dataset the model had not encountered 
+during training, confirming its ability to generalize well to unseen data. 
+This accomplishment is noteworthy, given the complexity of detecting 
+blueberries in natural environments. Despite the small size of the 
+berries, the model effectively identifies them, aided by an IoU threshold 
+of 0.2, allowing for more flexible detection of smaller objects during 
+analysis.
+3.3. Feature selection
+A correlation matrix for multiple traits was generated to better select 
+traits to be included for yield prediction (Fig. 7, Table 5). This approach 
+facilitated the identification of the correlation of independent features 
+with the target variable. Features exhibiting high correlations likely 
+offer valuable information for predicting the target variable. In contrast, 
+Table 4 
+Precision, Recall, and F1-scores of YOLOv8 models on the blueberry detection 
+dataset.
+YOLOV8 model
+Precision
+Recall
+F1-score
+YOLOv8-n
+0.762
+0.574
+0.655
+YOLOv8-s
+0.778
+0.611
+0.683
+YOLOv8-m
+0.79
+0.633
+0.703
+YOLOv8-l
+0.789
+0.623
+0.696
+YOLOv8-x
+0.797
+0.663
+0.724
+Fig. 5. YOLOv8-x model performance in visible ripe blueberry counting.
+Fig. 6. Examples of DL-based blueberry detection and maturity classification. 
+Top left: Original image of a blueberry plant. Top right: DL model predictions 
+overlaid on the original image. Bottom: Two additional blueberry plant images 
+(left and right) with corresponding zoomed-in regions (middle) highlighting 
+detailed DL detection outputs, showing detected blueberries with red bounding 
+boxes for ripe blueberries and green for unripe blueberries.
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+7 
+
+those with low correlations may have lesser predictive power and could 
+be excluded from the model.
+Average berry weight, ripe berry count, and genotype positively 
+correlated with yield, displaying correlation coefficients of 0.29, 0.77, 
+and 0.87, respectively. The statistical significance of these relationships 
+is supported by p-values < 0.05 for average berry weight, ripe berry 
+count, and genotype (Table 5), suggesting the importance of including 
+these parameters for yield prediction. In contrast, plant height and plant 
+width exhibited weak correlations with yield, with p-values of 0.064 and 
+0.063, respectively, leading to their exclusion from the yield prediction 
+model. The weak correlations between plant size and yield can be 
+attributed to the uniformity of plant sizes across most farms, a result of 
+standardized management practices and the use of mature plants.
+3.4. Yield prediction
+Table 6 presents the results of the best-performing ML models 
+developed for both full and simplified yield prediction approaches under 
+the three strategies (SISS, SIWP, and DIWP). For each case, the table 
+reports results of B-A analysis and the evaluation metrics (RMSE, R2, and 
+MAPE). Notably, across all yield prediction models, the SIWP strategy 
+consistently achieved the best overall performance. For the full model, 
+SIWP strategy yielded the lowest error rates and highest R² score (0.80), 
+outperforming SISS and DIWP. Additionally, all three strategies 
+exhibited statistically insignificant biases. Only DIWP showed a pro­
+portional bias due to a statistically significant negative slope of the 
+regression line in the B-A analysis indicating that the strategy system­
+atically overestimated low yields and underestimated high yields. For 
+the simplified models, the prediction accuracies significantly decreased 
+compared to the full models. In terms of relative performance among the 
+simplified models, SIWP strategy also performed better than the other 
+two strategies. Although the prediction biases remained statistically 
+Fig. 7. Correlation matrix for measured phenotypic traits.
+Table 5 
+The p-values for the correlation between four phenotypic traits, genotype, and 
+yield.
+Feature
+p-value with respect to Yield
+Average Berry Weight
+< 0.05
+Plant Height
+0.064
+Plant Width
+0.063
+Image-derived Ripe Berry Count
+< 0.05
+Genotype
+< 0.05
+Table 6 
+Quantitative results of best performing full and simplified yield prediction models.
+Yield prediction model
+Yield prediction strategy
+Best performing ML 
+model
+Statistical evaluation metric scores
+B-A analysis
+Error metrics
+Bias (p-value), 
+Standard deviation
+LoA
+Slope of regression line 
+(p-value)
+Full model (with 
+genotype)
+Single Image Single Side 
+(SISS)
+LGBM Regressor
+37.92 g (0.777), 
+239.10 g
+[¡430.70 g, 
+506.55 g]
+Slope: ¡0.13 
+(0.185)
+RMSE: 
+237.67 g 
+R2: 0.78 
+MAPE: 29.23 
+%
+Single Image Whole 
+Plant (SIWP)
+HistGradient Boosting 
+Regressor
+16.48 g (0.865), 
+233.04 g
+[¡440.28 g, 
+473.24 g]
+Slope: ¡0.16 
+(0.115)
+RMSE: 
+229.28 g 
+R2: 0.80 
+MAPE: 
+26.17 %
+Dual Image Whole Plant 
+(DIWP)
+Extra Tree Regressor
+26.11 g (0.903), 
+280.12 g
+[−522.93 g, 
+575.15 g]
+Slope: ¡0.23 
+(0.043)
+RMSE: 
+276.12 g 
+R2: 0.71 
+MAPE: 36.50 
+%
+Simplified model 
+(without genotype)
+Single Image Single Side 
+(SISS)
+Bagging Regressor
+17.78 g (0.836), 
+388.24 g
+[−743.17 g, 
+778.73 g]
+Slope: ¡0.53 
+(0.005)
+RMSE: 
+381.40 g 
+R2: 0.45 
+MAPE: 52.41 
+%
+Single Image Whole 
+Plant (SIWP)
+LGBM Regressor
+23.90 g (0.849), 
+379.94 g
+[−720.78 g, 
+768.58 g]
+Slope: ¡0.51 
+(0.009)
+RMSE: 
+373.60 g 
+R2: 0.47 
+MAPE: 
+53.19 %
+Dual Image Whole Plant 
+(DIWP)
+Random Forest Regressor
+7.44 g (0.982), 
+418.99 g
+[−813.78 g, 
+828.66 g]
+Slope: ¡0.53 
+(0.009)
+RMSE: 
+411.22 g 
+R2: 0.36 
+MAPE: 52.52 
+%
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+8 
+
+insignificant, all three strategies of the simplified model exhibited pro­
+portional biases, with negative slopes steeper than that of DIWP strategy 
+of the full model, highlighting the limitations of the simplified models. 
+Overall, the results show that while prediction bias was minimal across 
+all strategies, the main challenges were proportional bias and higher 
+uncertainty levels, particularly when genotype was excluded from 
+model.
+3.4.1. Yield prediction using the full models
+The hyperparameters for the best-performing model of LGBM Re­
+gressor for the SISS strategy were: n_estimators = 100, learning_rate =
+0.10, max_leaf_nodes = 30, and random_state = None. Fig. 8 displays the 
+B-A plot and scatterplot of the SISS strategy using the full model. The B-A 
+plot indicates a mean difference or bias of 37.92 g and a standard de­
+viation of 239.10 g with the LoA spanning from −430.70 g to 506.55 g, 
+reflecting the model’s ability to perform well across a wide yield range 
+while maintaining high yield prediction accuracy. In addition, no pro­
+portional bias was observed with a p-value greater than 0.05 for the 
+slope of the regression line. The scatterplot on the right corresponds to a 
+RMSE score of 237.67 g, an R² of 0.78, and a MAPE of 29.23 %.
+For the SIWP strategy, the HistGradientBoosting Regressor was iden­
+tified as the best-performing model with the following hyperparameters: 
+max_iter = 100, learning_rate = 0.10, max_leaf_nodes = 30, and min_­
+sample_leaf = 30. The B-A plot on the left of Fig. 9 shows a mean dif­
+ference or bias of 16.48 g and a standard deviation of 233.04 g with the 
+LoA spanning from −440.28 g to 473.24 g. The regression of differences 
+against means in the B-A analysis showed no significant proportional 
+bias (p-value > 0.05), indicating that the bias remains constant across 
+the range of measurements. The scatterplot on the right corresponds to a 
+RMSE score of 229.28 g, an R² value of 0.80, and a MAPE of 26.17 %. The 
+SIWP strategy using the full model achieved the highest overall pre­
+diction accuracy among all models.
+Extra Tree Regressor produced the best results for the DIWP strategy, 
+with optimized hyperparameters: n_estimators: 100, min_samples_split: 2, 
+criterion: squared error, max_features: ‘auto’. Fig. 10 summarizes the re­
+sults of this approach, the B-A analysis reported a mean difference or 
+bias of 26.11 g, suggesting close agreement between predicted and 
+actual yields on average. The standard deviation of 280.12 g reflected 
+greater dispersion in the prediction errors compared to the SISS and 
+SIWP strategies, with LoA spanning from −522.93 g to 575.15 g. The 
+slope of the regression line was estimated at −0.23 (p-value = 0.043), 
+indicating the presence of a statistically significant proportional bias. 
+This depicted that the model underestimated yield predictions at lower 
+yields, and overestimated yield predictions at higher yields. In addition, 
+the DIWP approach produced an RMSE of 276.12 g, an R² value of 0.71, 
+and a MAPE of 36.50 %.
+3.4.2. Yield prediction using the simplified models
+The optimal hyperparameters for the top-performing Bagging Re­
+gressor ML model using the SISS strategy of the simplified model were: 
+bootstrap: True, n_estimators: 15, max_features: 5, max_samples: 1.0. The B- 
+A plot on left in Fig. 11 for the SISS approach, indicates a mean differ­
+ence or bias of 17.78 g with a standard deviation of 388.24 g. The LoA 
+extended widely, from −743.17 g to 778.73 g, reflecting considerable 
+uncertainty in prediction across the measurement range. The slope of 
+the regression line was estimated at −0.53 (p-value = 0.005), indicating 
+a statistically significant proportional bias. The presence of proportional 
+bias and negative slope indicates that yields were generally over­
+estimated when average values were low, while higher-yield plants were 
+underestimated. The regression analysis depicted in the scatterplot on 
+the right in Fig. 11 for this approach shows a RMSE of 381.40 g, an R² 
+score of 0.45, and a MAPE score of 52.41 %, reflecting low predictive 
+accuracy of this approach.
+For the SIWP strategy, the best-performing model was the LGBM 
+Regressor, with optimized hyperparameters: n_estimators: 100, learnin­
+g_rate: 0.10, max_leaf_nodes: 30, random_state: None. The B-A plot on the 
+left in Fig. 12 for the SIWP approach shows a mean difference or bias of 
+23.90 g and a standard deviation of 379.94 g. The LoA ranged from 
+−720.78 g to 768.58 g, indicating a wide distribution of differences 
+between predicted and actual yields. The regression of differences 
+against the means revealed a slope of −0.51 (p-value = 0.009), 
+demonstrating a significant proportional bias. The negative slope in­
+dicates that the model exhibited a tendency to overestimate yield values 
+for plants at the lower yield range, while systematically underestimating 
+predictions for plants with higher average yields. The regression analysis 
+reported in the scatterplot on right achieves a RMSE of 373.60 g, an R² of 
+0.47, and a MAPE of 53.19 %, reflecting limited predictive precision 
+compared to the full model.
+In the DIWP strategy, the Random Forest Regressor was found to be the 
+best-performing model with optimized hyperparameters: n_estimators: 
+100, min_sample_leaf: 5, learning_rate: 0.10, criterion: squared_error. The B- 
+A plot on the left in Fig. 13 for the DIWP approach, reveals a mean 
+difference of 7.44 g and a standard deviation of 418.99 g. The LoA, 
+spanning from −813.78 g to 828.66 g, were the widest among the three 
+simplified strategies, showing high prediction uncertainty. The slope of 
+the regression line was −0.53 (p-value = 0.009), again highlighting the 
+presence of proportional bias. This relationship showed a consistent 
+tendency to overpredict yields at the lower average yield levels, while 
+underpredicting when yields were higher. The scatterplot on the right 
+corresponds to a RMSE of 411.22 g, an R² of 0.36, and a MAPE of 52.52 
+%, represent the lowest predictive accuracy among all models.
+Fig. 8. Yield prediction performance for the SISS approach using three features. In the Bland-Altman (B-A) plot on the left, the solid blue line and dotted red lines 
+represent the mean difference (bias) and the 95 % limits of agreement, respectively.
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+9 
+
+3.5. Ripe berry occlusion patterns
+The boxplot of Ripe Berry Occlusion Ratio (Fig. 14) reveals signifi­
+cant variability in occlusion ratios across six southern highbush blue­
+berry cultivars in the GA dataset. Among the six cultivars, ‘Cielo’ 
+displayed the lowest median occlusion ratio of 0.33, indicating better 
+fruit visibility with relatively consistent values, as evidenced by the 
+narrow interquartile range (IQR). In contrast, ‘Star’ exhibited a mod­
+erate median occlusion ratio of 0.47 with a wider IQR, suggesting more 
+variability in berry visibility. ‘Meadowlark’ showed a higher degree of 
+variability with the widest IQR and a lower median of 0.39, reflecting 
+inconsistent occlusion trends. ‘Jewel’ and ‘Springhigh’ had the highest 
+Fig. 9. Yield prediction performance for the SIWP approach using three features. In the Bland-Altman (B-A) plot on the left, the solid blue line and dotted red lines 
+represent the mean difference (bias) and the 95 % limits of agreement, respectively.
+Fig. 10. Yield prediction performance for the DIWP approach using three features. In the Bland-Altman (B-A) plot on the left, the solid blue line and dotted red lines 
+represent the mean difference (bias) and the 95 % limits of agreement, respectively.
+Fig. 11. Yield prediction performance for the SISS approach using two features. In the Bland-Altman (B-A) plot on the left, the solid blue line and dotted red lines 
+represent the mean difference (bias) and the 95 % limits of agreement, respectively.
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+10 
+
+median occlusion ratios of 0.61 and 0.62 with compact IQRs, indicating 
+consistently higher levels of occlusion. Example canopy architectures for 
+‘Cielo’ (Fig. 15– left), ‘Star’ (Fig. 15– middle), and ‘Farthing’ (Fig. 15– 
+right) illustrate visual differences among cultivars.
+3.6. Smartphone android application
+The Android application (app) was designed with a focus on user- 
+friendliness. It guides the user through the process of selecting an 
+image, which the integrated DL model then analyzes to detect blue­
+berries and predict yield. The app interface is intuitive, allowing users, 
+including farmers and agricultural professionals, to navigate and use the 
+app’s features without needing technical expertise. The app’s workflow 
+is detailed below with Fig. 16 showing the screenshot of each step: 
+1. The user interface includes a button to "Select Image from gallery".
+2. Users can choose an image from the smartphone’s camera gallery or 
+import images from cloud platforms like Google Drive or Google 
+Photos. Upon image selection, the embedded DL model runs in the 
+background to detect the ripe and unripe (green and half) blueberries 
+in the image, and the following steps are followed – 
+• The original image is divided into sub-images of 224 × 224 pixels.
+• The DL model performs predictions on all the sub-images. The ripe 
+and unripe blueberries are detected, and the counts are accumu­
+lated during the process.
+3. The berry counts from all the sub-images are added and displayed to 
+the user, along with a maturity index based on the ripe to unripe 
+berry ratio.
+4. The app features an "Enter average blueberry weight" button, 
+allowing users to input the approximate/actual average berry weight 
+for further analysis.
+5. After inserting the average berry weight and receiving the berry 
+count results, users can click "Calculate Yield" to view the yield 
+prediction estimate generated by the ML model, based on the ripe 
+berry count and the provided average berry weight. 
+• The coefficients of the average berry weight and ripe berry count 
+from the best-performing ML model were used in the smartphone 
+app to calculate the final yield.
+• This method ensures that the app’s predictions are reliable and 
+based on real data and insights from the ML model’s analysis, of­
+fering reliable yield estimates.
+The Android application “Blueberry Yield Analyzer” is publicly 
+available on the Google Play Store.
+4. Discussion
+Our research demonstrates the development of DL and ML models for 
+blueberry detection, maturity estimation, and yield prediction in the 
+field setting. YOLOv8 models were trained to detect ripe and unripe 
+berries, while ML models were developed to estimate yield using DL- 
+Fig. 12. Yield prediction performance for the SIWP approach using two features. In the Bland-Altman (B-A) plot on the left, the solid blue line and dotted red lines 
+represent the mean difference (bias) and the 95 % limits of agreement, respectively.
+Fig. 13. Yield prediction performance for the DIWP approach using two features. In the Bland-Altman (B-A) plot on the left, the solid blue line and dotted red lines 
+represent the mean difference (bias) and the 95 % limits of agreement, respectively.
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+11 
+
+derived ripe berry counts and other phenotypic information of the 
+plants. As a key component of this study, a smartphone Android appli­
+cation was designed to provide real-time yield estimations. This app 
+enables blueberry growers and researchers to monitor blueberry yield in 
+a timely manner, allowing them to make informed decisions regarding 
+crop management and harvesting.
+The YOLOv8 models, particularly the YOLOv8-x version, demon­
+strated superior performance detecting blueberries at various maturity 
+stages. With a mAP of 0.708 at 50 % overlap, this model effectively 
+distinguished between ripe and unripe berries. The enhanced perfor­
+mance in detecting ripe berries, characterized by distinct color differ­
+ences compared to their unripe counterparts, highlights the potential of 
+DL models in managing complex agricultural tasks. However, the ac­
+curacy in detecting unripe berries was lower, likely due to the color 
+similarity between green berries and the surrounding foliage. This lim­
+itation indicates that further refinement in the model’s training process 
+or additional image preprocessing techniques could enhance detection 
+accuracy for less visually distinct blueberries. Additionally, occlusion 
+remains a significant challenge in detecting blueberries. Blueberries 
+hidden under the canopy, obscured by leaves and branches, pose a major 
+obstacle, and their small size makes them difficult for the DL model to 
+detect. Addressing these challenges is crucial for improving the model’s 
+overall performance in real-world scenarios [30].
+Yield prediction models based on genotype, average berry weight, 
+and DL-derived berry count exhibited the highest accuracy, with R² 
+values of up to 0.80 and a MAPE as low as 26.17 % compared to 
+simplified models not considering genotype with R² values ranging from 
+0.47 and a MAPE score of 53.19 %. The higher prediction accuracy of the 
+full models can be attributed to the strong correlation between genotype 
+and total yield in this dataset (r = 0.87), likely for two reasons. First, 
+plants of the same genotype possess identical genomes, which contribute 
+to their similar yield potential. Second, individuals of the same genotype 
+were cultivated and managed under the same environmental conditions 
+in this study, contributing to similar performance. The reliability of 
+genotype as an indicator of yield may be somewhat limited when plants 
+are cultivated under varying conditions or at different ages. However, 
+our dataset presents limitations to assess genotype and environment 
+interactions because of the lack of overlapping genotypes across the 
+different environments. Future development genotype-specific yield 
+prediction models will benefit from including phenotypic data from a 
+wide range of environmental conditions and different growth stages.
+ML models trained without genotype information provides a more 
+practical solution for yield prediction when prior knowledge of the 
+cultivar or genotype is not available. However, the limited accuracy of 
+these simplified models presents a challenge for precise yield prediction. 
+This limitation is primarily due to difficulties of accurately estimating 
+the occlusion ratio. The degree of occlusion varied greatly across culti­
+vars, which might be influenced by plant architecture, berry cluster 
+type, plant age, maturity level, and environmental conditions. Plants 
+with dense foliage and tighter clusters could lead to greater occlusion, 
+while those with fewer leaves and/or more exposed clusters allow for 
+better detection. To better estimate occlusion ratios, future studies 
+should incorporate a broader range of genotypes and maturity levels, 
+along with a more in-depth analysis of plant architecture affecting berry 
+occlusion. Additionally, it would be beneficial to investigate if addi­
+tional features such as bush density and berry distribution can be 
+extracted from the images to better predict occlusion ratios.
+Berry detection models developed in this study also allowed maturity 
+estimation, which showed a similar but slightly lower mAP50 score 
+compared to a previous study on wild blueberry maturity estimation. 
+MacEachern et al. [15] trained multiple YOLOv4 versions to assess the 
+maturity stages of wild blueberries, where yield was determined based 
+on the weight in kilograms per hectare. The research primarily focused 
+on detecting ripeness stages and estimating yield on a smaller scale, 
+targeting individual quadrants within fields. Their best model, 
+YOLOv4-small, achieved a mAP50 of 79.79 % for the three-class model 
+Fig. 15. Images of blueberry plants showing various levels of berry occlusion (Left) a plant of the cultivar ‘Cielo’, (Center) ‘Star’, and (Right) ‘Farthing’.
+Fig. 14. Box plot for ripe berry occlusion ratio across six southern highbush 
+cultivars in the GA dataset.
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+12 
+
+and a yield estimation accuracy with a mean absolute error of 24.1 %. 
+The slightly lower mAP50 score of 70 % from the YOLOv8 model in this 
+study can be attributed to the larger plant size and higher occlusion ratio 
+of cultivated blueberries compared to wild blueberries. Additionally, 
+images collected using a smartphone camera might have lower resolu­
+tion than the high-resolution cameras used in MacEachern et al. [15]. 
+Our best-performing yield prediction model for blueberry cultivars 
+achieved an R² of 0.8 and a MAPE of 26.17 %, performing similarly to 
+MacEachern et al. [15]. Deng et al. [5] achieved high detection accuracy 
+(mAP50 of 92.7 %) using YOLOv8l on high-resolution canopy images, 
+while our approach prioritized mobile deployment using smartphone 
+imagery, enabling real-time yield prediction through an android app 
+with a practical balance between accuracy and usability
+Feng et al. [31] focused on enhancing blueberry maturity detection 
+in dense occlusion scenarios using an improved YOLOv9 model. They 
+introduced a modified YOLOv9-c model incorporating SCConv convo­
+lution, SE attention modules, and the MDPIoU loss function to boost 
+detection accuracy while reducing computational complexity in 
+occluded environments. The model developed by Feng et al. [31] ach­
+ieved a high mAP50 score of 0.98, using close-up images of blueberry 
+clusters to minimize occlusion from leaves and stems. The study by Li 
+et al. [30] trained a linear regression model using the multi-view im­
+agery system for blueberry detection, achieving a MAPE of 24.6 %, and 
+an R² of 0.77. Additionally, their best-performing DL model of YOLOv8-x 
+attained a mAP50 score 77.3. While this approach somewhat addresses 
+occlusion through multi-angle imaging, it focuses on sparse genotypes, 
+limiting its generalizability to denser genotypes. Though enhancing 
+image quality, the use of high-resolution cameras adds complexity to 
+field deployment, especially in large-scale operations. In contrast, our 
+research adopts a more accessible single-view approach using smart­
+phone cameras, making it practical for real-world applications. 
+Although our model’s mAP50 score is slightly lower at 70 %, it differ­
+entiates between ripe and unripe berries, providing clearer insights into 
+yield prediction and plant maturity. By integrating genotype informa­
+tion, which strongly correlates with yield (R² of 0.80), and specifically 
+targeting ripe berries, our model provides more accurate yield pre­
+dictions and clearer maturity assessments. Our model balances accuracy 
+with practicality by leveraging DL-derived berry counts and simple 
+phenotypic traits like average berry weight to offer a scalable and easily 
+deployable solution for blueberry yield prediction through an Android 
+application, making it suitable for diverse agricultural settings.
+Several yield prediction models for wild blueberries have been 
+developed, often relying on simulated data to train ML algorithms. A 
+study conducted by Seireg et al. [32], utilized ensemble ML techniques 
+like stacking and cascading regression combined with computer simu­
+lation data to predict wild blueberry yield. Their research demonstrates 
+a high predictive accuracy (R² of 0.985) using simulation data combined 
+with various meteorological and biological factors, achieving high per­
+formance through advanced ML models. In another research conducted 
+by Obsie et al. [33], bee species composition and weather information 
+were used to train ensemble ML algorithms for wild blueberry yield 
+prediction using simulated data, which also achieved a high prediction 
+accuracy (R² of 0.938). However, model validation with real data would 
+be helpful to ensure its effectiveness in field applications.
+Investigation of blueberry detection patterns exposed notable 
+genotype-dependent variations in occlusion and fruit visibility, 
+emphasizing the influence of cultivar-specific plant architecture on 
+detection accuracy. The relationship between occlusion ratio and visible 
+berry count showed distinct negative correlations across cultivars, 
+indicating that increased plant foliage affects berry visibility differently 
+among cultivars especially in mature plants. These cultivar-specific oc­
+clusion patterns proved vital for yield estimation, as demonstrated by 
+our prediction models: incorporating genotype as a feature significantly 
+improved model performance (R² = 0.80) compared to models based 
+solely on visible berry count and average berry weight (R² = 0.47). This 
+substantial improvement highlights how architectural traits unique to 
+each cultivar influence berry occlusion and, consequently, the accuracy 
+of computer vision-based yield estimation systems. Interestingly, the 
+simplified models that excluded genotype underperformed relative to 
+using the image-derived ripe berry count alone r = 0.77 (Fig. 7), which 
+would yield an expected R² ≈0.59. This finding further reinforces the 
+critical role of genotype in capturing underlying structural traits such as 
+occlusion, density, and fruiting patterns, which strongly determine yield 
+outcomes. For practical yield prediction systems, however, end-users 
+often lack prior knowledge of cultivar identity. Thus, developing tools 
+to automate genotype prediction becomes essential for broader appli­
+cability of such models. Future research could incorporate depth esti­
+mation approaches, as proposed by [34,35] to better characterize 
+canopy structure and occlusion patterns, potentially enabling automated 
+genotype identification and further improving yield prediction accuracy 
+across different blueberry cultivars.
+The trained DL models using YOLOv8 demonstrate strong perfor­
+mance in detecting blueberries, but several challenges were encountered 
+while deploying it on an Android app. The necessary conversion to a ‘. 
+Fig. 16. Screenshots of using the Blueberry Yield Analyzer Android application.
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+13 
+
+tflite’ model, while reducing memory requirements, decreased detection 
+accuracy. This trade-off between model size and performance highlights 
+the complexities of deploying sophisticated DL models on mobile de­
+vices. A systematic evaluation of performance differences between the 
+original YOLOv8 models and their converted ‘.tflite’ counterparts will be 
+an important direction for future work to better understand and mitigate 
+the losses introduced during model compression and deployment. 
+Furthermore, our initial ML models for yield prediction incorporated 
+genotype as a key feature alongside other phenotypic traits, leading to 
+high accuracy. However, recognizing that genotype information is often 
+unavailable in practical scenarios, we developed an alternative model 
+using only two features: ‘average berry weight’ and ‘DL-derived berry 
+count’. This model, trained using the SIWP strategy, was ultimately 
+deployed on the Android app. The ‘LGBM Regressor’ emerged as the best 
+performer among the various ML models trained using this strategy. Its 
+ability to capture non-linear relationships between berry weight, berry 
+count, and yield made it particularly well-suited to the problem. This 
+deployment illustrates how advanced ML models can be effectively 
+translated into real-world tools, ensuring growers benefit from accurate 
+yield predictions in practical field conditions.
+The visual differences across blueberry cultivars align with the 
+cultivar-specific patterns of berry occlusion observed in our study. 
+Various occlusion ratios could be due to plant architecture, berry cluster 
+structure, leaf density, and maturity level. ‘Cielo’ plants displayed an 
+open, uniform canopy structure, contributing to its lower occlusion 
+ratio. In contrast, ‘Springhigh’, ‘Farthing’ and ‘Jewel’ plants had denser, 
+more complex canopies, corresponding to their higher occlusion levels. 
+These architectural variations directly impact berry visibility, posing 
+challenges for automated detection using DL-based blueberry detection 
+models. Cultivars with higher occlusion, present increased difficulty in 
+accurately identifying and counting berries, as many may be obscured. 
+This finding underscores the importance of incorporating genotypic 
+differences in plant architecture when developing yield prediction 
+models. Understanding the relationships between genotype, architec­
+ture, and occlusion, researchers and growers can optimize yield esti­
+mation systems to the unique traits of each cultivar. This knowledge can 
+lead to more reliable predictions, supporting informed decision-making 
+and improving blueberry production efficiency.
+Expanding the dataset with images from different blueberry cultivars 
+could enhance the training process by exposing the DL model to a wider 
+variety of data scenarios. This exposure is crucial because it trains the 
+model to recognize and adapt to the natural variations within the spe­
+cies, such as variations due to geographic, climatic, or genetic differ­
+ences. Each cultivar may present unique challenges in terms of berry 
+appearance some might be clustered more closely, others might have 
+varying hues at maturity, and some might be obscured by foliage 
+differently based on their growth habits. Furthermore, a diverse dataset 
+also helps mitigate the risk of overfitting, which occurs when a model 
+becomes too finely tuned to the specific characteristics of its training 
+data. By training on a broader set of examples, the model learns to 
+identify the essential features that truly matter for detection and clas­
+sification, making it more reliable [8]. Enhancing the dataset’s diversity 
+can improve the model’s utility across agricultural practices and man­
+agement scenarios. For instance, blueberry farmers worldwide could 
+confidently utilize such a model, knowing it has been validated across 
+various conditions and cultivar characteristics.
+In reference to the smartphone application development, expanding 
+the app’s availability to iOS users by creating a similar application for 
+Apple devices like iPhone and iPad can significantly increase its acces­
+sibility and usability. This move would allow a wider audience to benefit 
+from the technology, potentially reaching more farmers and agricultural 
+professionals who use Apple devices. Developing an iOS version of the 
+app could also open additional market opportunities and enhance user 
+engagement by providing a platform-specific user experience that caters 
+to the iOS ecosystem.
+5. Conclusion
+Rapid blueberry yield monitoring is essential for growers seeking to 
+optimize production and marketing strategies and for breeders to 
+improve selection efficiency. The complexity of yield prediction arises 
+from challenges such as occlusion, small berry size, and variability in 
+berry shape and color. This study demonstrates the potential of inte­
+grating DL-based blueberry detection with key crop traits for improved 
+yield prediction modeling. Although occlusion remains a significant 
+challenge for image-based berry detection, our findings provide insights 
+into how cultivar-specific characteristics influence blueberry yield pre­
+diction accuracy. To enhance prediction performance beyond computer 
+vision alone, ML algorithms were trained using the berry count pre­
+dicted by the DL model, along with average berry weight, and/or ge­
+notype, to further improve the accuracy of yield under real-world field 
+conditions. While genotype was found to be a critical feature for accu­
+rate yield prediction, future research will explore image-derived plant 
+architectural features to estimate berry occlusion and substitute geno­
+type for better generalizability. Finally, the trained DL model was 
+deployed on a custom-built, user-friendly Android application, serving 
+as a practical tool for end-users, including growers and breeders, to 
+streamline tasks related to yield prediction and maturity assessment in 
+blueberry.
+Declaration of generative AI and AI-assisted technologies in the 
+writing process
+During the preparation of this work the author(s) used Grammarly 
+and ChatGPT 4.0 to correct grammar, enhance readability, and ensure a 
+smooth flow of information. After using this tool/service, the author(s) 
+reviewed and edited the content as needed and took full responsibility 
+for the content of the publication.
+CRediT authorship contribution statement
+Puranjit Singh: Writing – review & editing, Writing – original draft, 
+Visualization, Validation, Software, Methodology, Investigation, Formal 
+analysis, Data curation. Nariman Niknejad: Writing – review & editing, 
+Data curation. James D. Spiers: Writing – review & editing, Resources. 
+Yin Bao: Writing – review & editing, Validation, Supervision, Re­
+sources, Methodology, Investigation, Funding acquisition, Data cura­
+tion, Conceptualization. Sushan Ru: Writing – review & editing, 
+Validation, Supervision, Resources, Project administration, Methodol­
+ogy, 
+Investigation, 
+Funding 
+acquisition, 
+Data 
+curation, 
+Conceptualization.
+Declaration of competing interest
+The authors declare the following financial interests/personal re­
+lationships which may be considered as potential competing interests:
+Yin Bao, Sushan Ru reports financial support was provided by USDA- 
+NIFA. Yin Bao, Sushan Ru reports financial support was provided by 
+California Blueberry Commission. Yin Bao, Sushan Ru reports financial 
+support was provided by Southern Region Small Fruit Consortium. If 
+there are other authors, they declare that they have no known 
+competing financial interests or personal relationships that could have 
+appeared to influence the work reported in this paper.
+Acknowledgements
+The authors thank the California Blueberry Commission, Southern 
+Region Small Fruit Consortium (RESCH GRNT-2022-R-15) and the 
+USDA-National Institute of Food and Agriculture (NIFA), Agriculture 
+and Food Research Initiative (AFRI) (2023–67014–40545) for spon­
+soring this research work. Any opinions, findings, conclusions, or rec­
+ommendations expressed in this publication are those of the author(s) 
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+14 
+
+and should not be construed to represent any official USDA or U.S. 
+Government determination or policy. We also thank Dr. Paul Bartley at 
+Auburn University and Mr. Chip Martin at the Blue River Legacy Farms 
+GA LLC for providing access to plant materials.
+Data availability
+Data will be made available on request.
+References
+[1] S. Silva, E.M. Costa, M. Veiga, R.M. Morais, C. Calhau, M. Pintado, Health 
+promoting properties of blueberries: a review, Crit. Rev. Food Sci. Nutr. 60 (2) 
+(2020) 181–200, https://doi.org/10.1080/10408398.2018.1518895.
+[2] K.L. Morgan, Market trends for U.S. Berry crops: Implications for Florida blueberry, 
+blackberry, and Raspberry Producers (Publication No. FE1123), University of 
+Florida, IFAS Extension, 2022. https://edis.ifas.ufl.edu/publication/FE1123.
+[3] N.W Gauthier, C. Kaiser, Commercial Blueberry Production (ID-210), University of 
+Kentucky, Department of Plant Pathology, 2021. https://publications.ca.uky.edu/ 
+files/ID210.pdf.
+[4] J. Hancock, P. Lyrene, C. Finn, N. Vorsa, G. Lobos, Blueberries and cranberries, in: 
+J.F. Hancock (Ed.), Temperate Fruit Crop Breeding, Springer, Dordrecht, 2008, 
+https://doi.org/10.1007/978-1-4020-6907-9_4.
+[5] B. Deng, Y. Lu, Z. Li, Detection, counting, and maturity assessment of blueberries in 
+canopy images using YOLOv8 and YOLOv9, Smart Agric. Technol. 9 (2024) 
+100620, https://doi.org/10.1016/j.atech.2024.100620.
+[6] Y. LeCun, Y. Bengio, G. Hinton, Deep learning, Nature 521 (7553) (2015) 436–444, 
+https://doi.org/10.1038/nature14539.
+[7] M.D. Islam, W. Liu, P. Izere, P. Singh, C. Yu, B. Riggan, K. Zhang, A.J. Jhala, 
+S. Knezevic, Y. Ge, S. Pitla, J. Luck, Y. Shi, Towards real-time weed detection and 
+segmentation with lightweight CNN models on edge devices, Comput. Electron. 
+Agric. 237 (2025) 110600, https://doi.org/10.1016/j.compag.2025.110600.
+[8] A. Kamilaris, F.X. Prenafeta-Boldú, Deep learning in agriculture: a survey, Comput. 
+Electron. Agric. 147 (2018) 70–90, https://doi.org/10.1016/j. 
+compag.2018.02.016.
+[9] A. Voulodimos, N. Doulamis, A. Doulamis, E. Protopapadakis, Deep learning for 
+computer vision: a brief review, Comput. Intell. Neurosci. 2018 (1) (2018) 
+7068349, https://doi.org/10.1155/2018/7068349.
+[10] P. Singh, M.A. Perez, W.N. Donald, Y. Bao, A comparative study of deep semantic 
+segmentation and UAV-based multispectral imaging for enhanced roadside 
+vegetation composition assessment, Remote Sens. (Basel) 17 (12) (2025) 1991, 
+https://doi.org/10.3390/rs17121991.
+[11] Reis, D., Kupec, J., Hong, J., & Daoudi, A. (2023). Real-time flying object detection 
+with YOLOv8. arXiv preprint arXiv:2305.09972. https://doi.org/10.48550/arXiv.2 
+305.09972.
+[12] P. Jiang, D. Ergu, F. Liu, Y. Cai, B. Ma, A review of Yolo algorithm developments, 
+Procedia Comput. Sci. 199 (2022) 1066–1073, https://doi.org/10.1016/j. 
+procs.2022.01.135.
+[13] K.C. Swain, Q.U. Zaman, A.W. Schumann, D.C. Percival, D.D. Bochtis, Computer 
+vision system for wild blueberry fruit yield mapping, Biosyst. Eng. 106 (4) (2010) 
+389–394, https://doi.org/10.1016/j.biosystemseng.2010.05.001.
+[14] H. Qu, C. Zheng, H. Ji, K. Barai, Y.J. Zhang, A fast and efficient approach to 
+estimate wild blueberry yield using machine learning with drone photography: 
+flight altitude, sampling method and model effects, Comput. Electron. Agric. 216 
+(2024) 108543, https://doi.org/10.1016/j.compag.2023.108543.
+[15] C.B. MacEachern, T.J. Esau, A.W. Schumann, P.J. Hennessy, Q.U. Zaman, 
+Detection of fruit maturity stage and yield estimation in wild blueberry using deep 
+learning convolutional neural networks, Smart Agric. Technol. 3 (2023) 100099, 
+https://doi.org/10.1016/j.atech.2022.100099.
+[16] X. Ni, C. Li, H. Jiang, F. Takeda, Three-dimensional photogrammetry with deep 
+learning instance segmentation to extract berry fruit harvestability traits, ISPRS 
+Journal of Photogrammetry and Remote Sensing 171 (2021) 297–309, https://doi. 
+org/10.1016/j.isprsjprs.2020.11.010.
+[17] T. Bai, S. Wang, W. Meng, N. Zhang, T. Wang, Y. Chen, B. Mercatoris, Assimilation 
+of remotely-sensed LAI into WOFOST model with the SUBPLEX algorithm for 
+improving the field-scale jujube yield forecasts, Remote Sens. (Basel) 11 (16) 
+(2019) 1945, https://doi.org/10.3390/rs11161945.
+[18] R. Chen, C. Zhang, B. Xu, Y. Zhu, F. Zhao, S. Han, G. Yang, H. Yang, Predicting 
+individual apple tree yield using UAV multi-source remote sensing data and 
+ensemble learning, Comput. Electron. Agric. 201 (2022) 107275, https://doi.org/ 
+10.1016/j.compag.2022.107275.
+[19] P. Singh, N. Niknejad, S. Ru, Y. Bao, A deep learning-based smartphone app for 
+field-based blueberry yield prediction [Abstract]. ASA, CSSA, SSSA International 
+Annual Meeting, St. Louis, MO, 2023. https://scisoc.confex.com/scisoc/2023am/ 
+meetingapp.cgi/Paper/152203.
+[20] A. Koirala, K.B. Walsh, Z. Wang, C. McCarthy, Deep learning for real-time fruit 
+detection and orchard fruit load estimation: benchmarking of ‘MangoYOLO’, 
+Precis. Agric. 20 (6) (2019) 1107–1135, https://doi.org/10.1007/s11119-019- 
+09642-0.
+[21] W. Zhang, J. Wang, Y. Liu, K. Chen, H. Li, Y. Duan, W. Wu, Y. Shi, W. Guo, Deep- 
+learning-based in-field citrus fruit detection and tracking, Hortic. Res. 9 (2022) 
+uhac003, https://doi.org/10.1093/hr/uhac003.
+[22] ..T Lynn, Launch: Label Data With Segment Anything in Roboflow, Roboflow Blog, 
+2023. https://blog.roboflow.com/label-data-segment-anything-model-sam/.
+[23] Wang, C.Y., Yeh, I.H., & Liao, H.Y.M. (2024). YOLOv9: learning what you want to 
+learn using programmable gradient information. arXiv preprint arXiv:2402.13616. 
+https://doi.org/10.48550/arXiv.2402.13616.
+[24] J. Li, X. Liang, S. Shen, T. Xu, J. Feng, S. Yan, Scale-aware fast R-CNN for 
+pedestrian detection, IEEe Trans. Multimedia 20 (4) (2017) 985–996, https://doi. 
+org/10.1109/TMM.2017.2759508.
+[25] T.Y. Lin, P. Goyal, R. Girshick, K. He, P. Doll´ar, Focal loss for dense object 
+detection, in: Proceedings of the IEEE international conference on computer vision, 
+2017, pp. 2980–2988, https://doi.org/10.48550/arXiv.1708.02002.
+[26] P. Singh, Semantic Segmentation Based Deep Learning Approaches for Weed 
+Detection, Master’s Thesis, University of Nebraska-Lincoln, Lincoln, NE, USA, 
+2022, 16 DecemberAvailable online: https://digitalcommons.unl.edu/biosysengdi 
+ss/137/.
+[27] R. Gamage, H. Rajapaksa, A. Sangeeth, G. Hemachandra, J. Wijekoon, D. Nawinna, 
+Smart agriculture prediction system for vegetables grown in Sri Lanka. 2021 IEEE 
+12th Annual Information Technology, Electronics and Mobile Communication 
+Conference (IEMCON), IEEE, 2021, pp. 0246–0251. https://doi:10.1109/IEMCO 
+N53756.2021.9623259.
+[28] D. Giavarina, Understanding bland altman analysis, Biochem. Med. (Zagreb) 25 (2) 
+(2015) 141–151, https://doi.org/10.11613/BM.2015.015.
+[29] N. Niknejad, R. Bidese-Puhl, Y. Bao, K.G. Payn, J. Zheng, Phenotyping of 
+architecture traits of loblolly pine trees using stereo machine vision and deep 
+learning: stem diameter, branch angle, and branch diameter, Comput. Electron. 
+Agric. 211 (2023) 107999, https://doi.org/10.1016/j.compag.2023.107999.
+[30] Z. Li, C. Li, P. Munoz, Blueberry yield estimation through multi-view imagery with 
+YOLOv8 object detection. 2023 ASABE Annual International Meeting (p. 1), 
+American Society of Agricultural and Biological Engineers, 2023. https://elibrary. 
+asabe.org/abstract.asp?aid=54189.
+[31] W. Feng, M. Liu, Y. Sun, S. Wang, J. Wang, The use of a blueberry ripeness 
+detection model in dense occlusion scenarios based on the improved YOLOv9, 
+Agronomy 14 (8) (2024) 1860, https://doi.org/10.3390/agronomy14081860.
+[32] H.R. Seireg, Y.M. Omar, F.E. Abd El-Samie, A.S. El-Fishawy, A. Elmahalawy, 
+Ensemble machine learning techniques using computer simulation data for wild 
+blueberry yield prediction, IEEe Access. 10 (2022) 64671–64687, https://doi.org/ 
+10.1109/ACCESS.2022.3181970.
+[33] E.Y. Obsie, H. Qu, F. Drummond, Wild blueberry yield prediction using a 
+combination of computer simulation and machine learning algorithms, Comput. 
+Electron. Agric. 178 (2020) 105778, https://doi.org/10.1016/j. 
+compag.2020.105778.
+[34] Sim´eoni, O., Vo, H.V., Seitzer, M., Baldassarre, F., Oquab, M., Jose, C., Khalidov, 
+V., Szafraniec, M., Seungeun, Y., Ramamonjisoa, M., Massa, F., Haziza, D., 
+Wehrstedt, L., Wang, J., Darcet, T., Moutakanni, T., Sentana, L., Roberts, C., 
+Vedaldi, A., Tolan, J., Brandt, J., Couprie, C., Mairal, J., J´egou, H., Labatut, P., & 
+Bojanowski, P. (2025). DINOv3. arXiv preprint arXiv:2508.10104. https://doi. 
+org/10.48550/arXiv.2508.10104.
+[35] L. Yang, B. Kang, Z. Huang, X. Xu, J. Feng, H. Zhao, Depth anything: unleashing the 
+power of large-scale unlabeled data, in: Proceedings of the IEEE/CVF conference 
+on computer vision and pattern recognition, 2024, pp. 10371–10381, https://doi. 
+org/10.48550/arXiv.2401.10891.
+P. Singh et al.                                                                                                                                                                                                                                    
+Smart Agricultural Technology 12 (2025) 101361 
+15 

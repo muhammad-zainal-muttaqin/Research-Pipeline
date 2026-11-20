@@ -1,0 +1,1197 @@
+Biosystems Engineering 252 (2025) 47–60
+Available online 27 February 2025
+1537-5110/© 2025 IAgrE. Published by Elsevier Ltd. All rights are reserved, including those for text and data mining, AI training, and similar technologies.
+Research Paper
+Citrus fruit diameter estimation in the field using monocular camera
+Hongchun Qu a,b,*
+, Haitong Du a,b, Xiaoming Tang a
+, Shidong Zhai a,b
+a College of Automation, Chongqing University of Posts and Telecommunications, Chongqing, 400065, China
+b Institute of Ecological Safety, Chongqing University of Posts and Telecommunications, Chongqing, 400065, China
+A R T I C L E I N F O
+Keywords:
+Citrus size estimation
+Leaf as reference
+Deep learning
+Object detection
+Yield prediction
+A B S T R A C T
+Accurate and efficient measurement of citrus fruit size is essential for managing tree form and estimating yields. 
+Conventional manual methods are reliable but highly labour-intensive, while existing machine vision solutions 
+often require specialised setups (e.g., distance calibration or 3D sensors). In this study, a low-cost, monocular- 
+based framework that uses mature and healthy leaves as natural reference objects was proposed, eliminating the 
+need for manual markers or complex camera parameter calibration. By compiling an offline leaf-size distribution 
+from multiple citrus varieties, this method automatically converts fruit pixels to real-world diameters using the 
+largest near-frontal leaf in each image. Further, the work integrates the deformable convolution (DNCv2) and 
+shuffle attention (SA) into a YOLOv8 detector to improve occlusion handling, ensuring robust detection even 
+when fruits are partially obscured by foliage. Extensive validation on three different citrus cultivars shows that 
+leaf-size variability contributes less than 3.2% relative error in diameter estimation, while the overall approach 
+achieves 93.14% accuracy and R2 = 0.76. Key contributions include: (1) a novel monocular technique leveraging 
+inherent orchard elements (leaves) as references, (2) advanced detection modules to tackle partial occlusion, (3) 
+cross-variety validation demonstrating consistent performance, and (4) a fast, user-friendly workflow suitable for 
+real-world orchard applications. Future work will explore multi-frame or multi-view strategies to further refine 
+diameter measurement under heavy occlusion.
+1. Introduction
+Citrus is one of the fruits with the largest cultivated area, highest 
+yield, and greatest consumption worldwide (Joshi et al., 2023). 
+Measuring fruit size and estimating the distribution of fruit diameter in 
+citrus trees are valuable for orchard management and yield estimation 
+(Islam et al., 2022). Traditional manual measurement methods not only 
+require operators to minimise measurement errors but are also 
+cumbersome and time-consuming (Neupane et al., 2023). With the 
+advancement of science and technology, these tasks have been partially 
+automated. Computer vision-based techniques for fruit diameter mea­
+surement have gradually attracted widespread attention from re­
+searchers (Mohimont et al., 2022; Neupane et al., 2023).
+Several methods based on 2D and 3D technologies have achieved 
+notable success in fruit diameter measurement (Neupane et al., 2023). 
+Some studies have utilised traditional image processing and machine 
+learning techniques, such as fitting algorithms for ellipsoids and spheres, 
+to extract the size of fruits from images (Akin et al., 2012; Behera et al., 
+2021; Chen et al., 2021; Gen´e-Mola et al., 2023; Neupane et al., 2022). 
+Other studies have employed colour threshold-based methods for esti­
+mating fruit size (Huynh et al., 2022). However, these methods are 
+negatively influenced by the quality of image segmentation and fruit 
+occlusion (Ferrer-Ferrer et al., 2023), and typically require manual 
+placement of reference objects (Wang et al., 2018). In addition, some 
+studies have estimated fruit size by pre-determining the distance be­
+tween the camera and the fruit, thereby eliminating the need for refer­
+ence objects (Huynh et al., 2020; Li et al., 2018; Ponce et al., 2019; Rizzo 
+et al., 2023). Shao et al. (2022) measured tree diameter at breast height 
+(DBH) using a smartphone, although a laser rangefinder was employed 
+for distance measurement.
+However, these methods require transporting the fruit to a desig­
+nated location for measurement or necessitate prior measurement of 
+distance information, which presents significant limitations. To address 
+these challenges, researchers have explored 3D methods for fruit 
+diameter measurement, such as depth camera and point cloud mea­
+surement technologies (Neupane et al., 2022). These approaches utilise 
+depth cameras to acquire depth information for fruit size estimation (Fu 
+et al., 2020; Zaenker et al., 2021; Zheng et al., 2022). Related studies 
+suggest that the Kinect v2 ToF camera is preferable over the ZED stereo 
+* Corresponding author. College of Automation, Chongqing University of Posts and Telecommunications, Chongqing, 400065, China.
+E-mail address: hcchyu@gmail.com (H. Qu). 
+Contents lists available at ScienceDirect
+Biosystems Engineering
+journal homepage: www.elsevier.com/locate/issn/15375110
+https://doi.org/10.1016/j.biosystemseng.2025.02.012
+Received 3 August 2024; Received in revised form 28 January 2025; Accepted 23 February 2025  
+
+Biosystems Engineering 252 (2025) 47–60
+48
+camera for fruit size measurement applications (Neupane et al., 2021). 
+However, depth measurements are influenced by lighting conditions 
+(Kuan et al., 2019; Wang et al., 2017). Some methods utilise point cloud 
+data of the fruit and its surrounding environment for 3D reconstruction 
+to estimate size (Hartley et al., 2021; Wang & Chen, 2020; Yu et al., 
+2022). LiDAR point cloud data, acquired using laser scanners, is unaf­
+fected by lighting conditions; however, it suffers from low spatial reso­
+lution at high speeds and is costly (Wang et al., 2017). The quality of 
+point clouds is also influenced by factors such as distance and the per­
+formance of the sensor (Tapia-Zapata et al., 2024). Although these 
+3D-based fruit diameter measurement methods have shown some suc­
+cess, the high cost and operational complexity of the equipment limit 
+their widespread application in practical scenarios.
+Although a few monocular cameras, such as certain iPhone models, 
+are capable of automatically measuring the sizes of objects in different 
+spatial planes, they are equipped with an integrated LiDAR sensor 
+(Tatsumi et al., 2023). Most monocular cameras (e.g., smartphones) do 
+not capture depth information in their images, which makes it chal­
+lenging to accurately measure the sizes of fruits located at varying 
+spatial positions within a field taken image. Therefore, addressing the 
+challenge of inconsistent distances between tree-hanging fruits and the 
+monocular camera is essential for overcoming these limitations.
+The size of mature leaves is relative stable and measurable statisti­
+cally, leveraging this information to infer the size of nearby fruit is 
+helpful. However, leaves are usually tilted away from camera and fruits 
+are likely to be partially occluded in the fields. An increasing number of 
+researchers are beginning to employ deep learning algorithms to address 
+fruit detection and segmentation tasks (Gen´e-Mola et al., 2023; Tian 
+et al., 2019; Wang et al., 2022; Wang & He, 2022). Lu et al. (2022)
+measured apple sizes using an improved YOLOv4 model; Hu et al. 
+(2023) estimated crop internode lengths with an enhanced YOLOv5 
+model; Nenavath and Perumal (2024) used a YOLOv7 model to measure 
+mango sizes. Sapkota et al. (2024) achieved excellent results in 
+measuring the diameter of unripe apples using the YOLOv8 model, with 
+a mAP@0.5 value of 0.94. Compared to other models in the YOLO series, 
+YOLOv8 offers significant advantages in terms of speed, prediction ac­
+curacy, and robustness. Compared to other models in the YOLO series, 
+YOLOv8 offers significant advantages in terms of speed, prediction ac­
+curacy, and robustness. However, in field conditions with various leaf 
+density and possibly occludes with each other, accurately detecting, 
+segmenting and measuring leaf and fruit is difficult.
+Gim´enez-Gallego et al. (2024) attempted to address the occlusion 
+issue by elliptically fitting the pomegranate using a custom segmenta­
+tion method. While this approach is effective in handling occlusion, it is 
+difficult to eliminate the dependence on parameters. In their setup, they 
+extracted the fruit mask from the full mask, leaving a 30-pixel margin on 
+each side, and then scaled the cropped mask by a factor of four. The use 
+of custom methods to solve real-world problems can lead to varying 
+results depending on different parameter settings. This is particularly 
+important to field applications, where impact factors are multiple and 
+usually interacted with each other. For instance, if using nearby leaves 
+as a reference to fruit size, how to choose cropping box size in each 
+image could significantly affect the number of available leaves and 
+consequently the statistical plausible inference to fruit size.
+In summary, automatic measuring citrus fruit size in the field faces 
+several critical challenges. While traditional 2D methods often need 
+external markers or measured reference objects before applying, 3D 
+methods usually lead to high cost and complex calibration. In field 
+conditions, fruit can be partially hidden by leaves, branches, or other 
+fruits, resulting in missed detections or incorrect size estimates. There­
+fore, this research proposed a novel monocular-based computer vision 
+framework that streamlines fruit diameter measurement by leveraging 
+readily available orchard elements (leaves), employing a robust detec­
+tion model for occlusions, and avoiding costly or labour-intensive cali­
+bration procedures. With thorough and additional tests on model 
+parameters, such as the effect of leaf density, sizes of cropping boxes, 
+etc., this work aims to provide a fast, user-friendly workflow suitable for 
+real-world orchard applications. The key features of the method are 
+four-fold: 
+1) Leveraging mature and healthy leaves as “built-in” references, which 
+removes the need to place and measure physical objects around each 
+fruit;
+2) Cropping image around each fruit (and its nearby leaves) to reduce 
+large portion of differences in fruit-leaf distance to the camera, which 
+significantly mitigate the issues of inhomogeneous distances be­
+tween tree-hanging fruits and the monocular camera;
+3) Bypassing explicit calibration by using statistics of an offline leaf-size 
+distribution to scale fruit pixels to real-world measurements, enables 
+handling cross-variety differences without separate calibrations in 
+the field;
+4) Integrating deformable convolution (DNCv2) and shuffle attention 
+(SA) within YOLOv8 improves detection robustness, helping the 
+system locate partially occluded fruits and enhance robustness.
+2. Materials and methods
+2.1. Overview
+This study aimed to develop a deep learning model for measuring 
+fruit diameters on citrus trees in real-world scenarios, which will be 
+eventually used to estimate the distribution of fruit size of the entire 
+tree. Initially, images of citrus fruits at various stages of maturity were 
+collected and annotated. Subsequently, the actual lengths of the leaves 
+surrounding the fruits from three common citrus varieties were recor­
+ded, and a leaf dimension dataset was then established and the best 
+statistical distribution was fitted to determine the size of the reference 
+objects. The estimation of fruit diameters is carried out in three stages. In 
+the first stage, the positioning and cropping of the fruits were achieved 
+using object detection algorithms. In the second stage, the reference 
+objects were further positioned by identifying the leaves within the 
+cropping boxes around each target fruit, with a set of strategies filtering 
+out uncharacteristically large blob or irregular leaf shape. In the third 
+stage, the fruit diameters were estimated using triangulation algorithms 
+based on the positioned reference leaf. Finally, the measured fruit di­
+ameters across the entire tree were statistically analysed, and the 
+diameter distribution was fitted. The accuracy of the measurements was 
+then evaluated. The overall workflow is illustrated in Fig. 1.
+2.2. Dataset acquisition
+Experimental images were acquired at three distinct locations in 
+Chongqing, China. A total of 1060 images were captured in three field 
+Nomenclature
+Symbols
+D
+The actual distance from the fruit to the camera, m.
+F
+The focal length, mm
+Ps
+The pixel size of the object, pixels
+Psc
+The pixel length of the fruit, pixels
+Psl
+The pixel length of the leaf with the maximum pixel 
+size, pixels
+Rs
+The actual size of the object, mm
+Rsl
+The actual length of the leaf with the maximum pixel 
+length, mm
+Xi
+The actual value of the fruit diameter, mm̂
+Xi
+The predicted value of the fruit diameter, mm
+Xi
+The mean of the actual fruit diameter values, mm
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+49
+observations respectively for the citrus varieties, which are: Navel Or­
+anges (Citrus sinensis var. navel), Chunjian Citrus (Citrus reticulata ’Chun 
+Jian’), and Blood Oranges (Citrus sinensis var. sanguinea). The first 
+observation was obtained on September 23, 2023, at Zhonghe Village, 
+Yubei District, Chongqing (29◦49′11.0″N, 106◦50′11.4″E), comprising 
+200 images of immature Navel Oranges. These images were captured 
+using Apple 12 and Vivo smartphones, stored in JPG format, with res­
+olutions of 1575 × 2100 and 3024 × 4032 pixels, respectively. The 
+second observation was done on October 31, 2023, at Chunjian Orchard, 
+Nanan District, Chongqing (29◦32′05.1″N, 106◦43′21.7″E), consisting of 
+300 images of mature Chunjian Citrus. These images were taken with 
+OPPO and Redmi smartphones, stored in JPG format, with resolutions of 
+3072 × 4096 and 3000 × 4000 pixels, respectively. The third observa­
+tion was conducted on November 22, 2023, at Ziyou Village, Banan 
+District, Chongqing (29◦24′47.7″N, 106◦33′48.3″E), comprising 560 
+images of mature Blood Oranges and Navel Oranges. These images were 
+captured using an OPPO smartphone and stored in JPG format, with a 
+resolution of 3072 × 4096 pixels (Fig. 2).
+2.3. Data labelling
+This step prepares data annotations for subsequent steps such as the 
+fruit positioning and cropping stage, in which the aim is to locate and 
+crop the fruit within the images. To this end, a dataset of 700 citrus 
+images was selected, and bounding boxes were manually annotated for 
+each citrus fruit in the images. In the subsequent reference object 
+positioning stage, in addition to continuing the identification of the 
+fruits, it is also necessary to locate leaves surrounding the fruits. Based 
+on the detection results from the previous stage, 600 cropped images 
+were selected for further annotation, with all fruits and their sur­
+rounding leaves manually labelled in the images.
+2.4. Reference statistics
+Our key insight is to exploit mature and healthy citrus leaves as 
+natural reference objects, effectively turning the orchard’s own foliage 
+into scale markers. Specifically, leaves around each fruit were measured, 
+then compiled an offline distribution of all leaf lengths from multiple 
+citrus varieties, allowing any sufficiently large, near-frontal leaf in an 
+image to serve as a standard measurement unit.
+To reduce the discrepancy between the offline leaf length data and 
+the actual field conditions, the method for collecting leaf length data was 
+optimised. Specifically, during the offline data collection, only six leaves 
+near the fruit were measured, while those further from the fruit were not 
+included. Additionally, measurements were taken only for nearby leaves 
+that appeared larger, healthy, intact, and fully expanded. To avoid 
+dehydration and curling of the leaves due to harvesting, the larger, 
+easily accessible, fully expanded leaves on the tree were directly 
+measured using callipers. In total, 485 leaves directly on the citrus trees 
+were measured. Because the measurement process involved aligning the 
+calliper tip from leaf base to apex, slight differences in angle or curva­
+ture were effectively “flattened out” for length measurements. In other 
+words, the true physical length of each leaf rather was measured than its 
+apparent length from a particular camera perspective. This ensures that 
+the 485 samples capture the biological variability of real-world leaves.
+Based on the 485 leaves measured from three different citrus vari­
+eties: Chun Jian, Navel Oranges, and Blood Oranges, the distribution for 
+the combined dataset was fitted and also for each variety separately 
+(using statistical analysis tools JMP Pro based on the goodness-of-fit), 
+reflecting observed morphological differences (Fig. 3). The combined 
+dataset is best fitted as a normal distribution with mean = 7.48 cm and 
+standard deviation = 0.98 cm (model fit: AICc = 1363.09 and BIC =
+1371.44, see Fig. 3A).
+Fig. 1. Overall workflow for fruit diameter distribution estimation: Citrus images from real-world scenarios were collected and annotated; leaf length data were 
+statistically analysed; fruit diameter distribution statistics were completed through three stages of fruit diameter estimation (fruit positioning and cropping stage, 
+reference object positioning stage, and fruit diameter estimation stage).
+Fig. 2. Citrus images were captured at three different locations: mature Blood Oranges and Navel Oranges from Ziyou Village, Banan District, Chongqing (A and B); 
+immature Navel Oranges from Zhonghe Village, Yubei District, Chongqing (C); and mature Chunjian Citrus from Chunjian Orchard, Nan’an District, Chongqing (D).
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+50
+For Blood Oranges, the best fitted distribution is Weibull with pa­
+rameters scale = 6.91 and shape = 9.92 (model fit: AICc = 252.55, BIC 
+= 257.80, Fig. 3B). A Weibull distribution captures the slightly smaller 
+and more uniform leaf size of Blood Oranges, for which mean length is 
+around ~6.6 cm. The high shape parameter (9.92) indicates the distri­
+bution is tightly clustered, so the range of leaf lengths is narrower 
+compared to Chun Jian.
+For Navel Oranges, the best fitted distribution is Lognormal with 
+parameters scale = 2.03 and shape = 0.13 (model fit: AICc = 501.59, 
+BIC = 507.84, Fig. 3C). In a lognormal model, leaf lengths (in cm) are 
+log-transformed to a roughly normal distribution. These parameters 
+suggest that while most leaves are near the typical size range (often 
+around 7–8 cm), there is a slight right-skew, meaning occasionally some 
+leaves are noticeably larger but still within reasonable biological vari­
+ation for this variety.
+For Chun Jian, the best fit as a normal distribution with mean = 7.78 
+cm and standard deviation = 0.69 cm (model fit: AICc = 436.13, BIC =
+442.71, Fig. 3D). This implies that most Chun Jian leaves cluster around 
+~7.8 cm, with moderate variation. A normal distribution captures the 
+symmetric spread of their lengths well.
+In our implementation, a single average leaf length (e.g., ~7.48 cm 
+from the combined sample distribution) was used to estimate fruit 
+diameter. However, each variety’s true leaf-size distribution can differ 
+from that single mean, either being larger, smaller, or more/less vari­
+able, which may pose negative effects to the final estimation, so it will be 
+further tested and discussed.
+2.5. Three stages of fruit diameter estimation
+The fundamental principle of citrus fruit diameter estimation in­
+volves that based on the combined offline statistical data on the lengths 
+of three common citrus leaves, converts fruit pixels to real-world di­
+ameters using the largest near-frontal leaf adjacent to the fruit. The 
+process consists of three stages: the fruit positioning and cropping, the 
+reference positioning, and the fruit diameter estimation (Fig. 4). The 
+entire process was implemented based on the YOLOv8 model.
+2.5.1. Network preparing and optimising
+This research implements fruit diameter estimation functionality 
+within the YOLOv8 framework. Furthermore, to enhance the detection 
+accuracy of fruits and leaves within the cropping boxes and improve 
+performance under occlusion, the model’s ability to learn input features 
+has been strengthened by introducing Deformable Convolution (DNCv2) 
+with module Shuffle Attention (SA). The network architecture of DS- 
+YOLOv8 is illustrated in Fig. 5.
+2.5.1.1. DCNv2. In the YOLOv8 backbone network, the fixed nature of 
+the standard convolution kernels in the C2f module limits the network’s 
+receptive field, restricting it to capturing only local information about 
+objects and making it more susceptible to occlusion and other factors 
+Fig. 3. The histogram and normal quantile plot of the all the 485 leaves of citrus trees combined showing it follows normal distribution (A). The Blood Orange leaves 
+follows Weibull distribution (B); Navel Orange leaves follows lognormal distribution(C); Chun Jian leaves follows normal distribution (D). (For interpretation of the 
+references to colour in this figure legend, the reader is referred to the Web version of this article.)
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+51
+(Shen et al., 2023). To overcome this limitation, this study replaced 
+certain original convolution kernels in the YOLOv8 backbone with 
+Deformable Convolutions (DNCv2), enhancing the model’s adaptability 
+to complex geometric transformations (Zhu et al., 2019).
+Deformable Convolutions enhance the adaptability of convolutional 
+neural networks to spatial transformations in images by introducing 
+learnable offsets (Eq. (1)), making them suitable for addressing occlu­
+sion issues in citrus images. Under occlusion, traditional convolutions 
+with fixed sampling positions often fail to capture the complete features 
+of occluded objects, negatively impacting recognition and classification 
+accuracy. In contrast, deformable convolution can dynamically adjust 
+the sampling positions of the convolutional kernels to "bypass" occluded 
+areas, focusing on capturing information-rich regions that are not 
+occluded, thereby enhancing the ability to predict fruit bounding boxes. 
+Additionally, DNCv2 incorporates a modulation mechanism that adjusts 
+the amplitude (intensity) of the input features, controlling the signal 
+strength received from different spatial locations, which further im­
+proves its ability to handle occlusion (Zhu et al., 2019). This adaptive 
+receptive field adjustment enables the model to more accurately locate 
+and identify partially occluded fruits or leaves, improving the network’s 
+robustness in complex environments. 
+y(q0) =
+∑
+N
+n=1
+wk ⋅x(q0 + qk + Δqk)⋅Δmk
+(1) 
+Here, x(q0) represents the input feature, and y(q0) represents the output 
+feature. Δqk denotes the learnable offset at position k with an uncon­
+strained range and an initial value of 0. Δmk represents the modulation 
+scalar at position k, with a range of [0,1] and an initial value of 0.5. wk 
+denotes the weight at position k. The points on the feature map in 
+DNCv2 are calculated using bilinear interpolation.
+2.5.1.2. SA. The spatial and channel attention mechanisms capture 
+pixel-level and inter-channel dependencies, respectively, and their 
+integration can enhance network performance. The YOLOv8 framework 
+introduces the concept of multi-scale feature fusion, where features 
+extracted from the backbone are passed to the neck and effectively fused 
+across scales using a bottom-up and top-down architectural strategy 
+(Shen et al., 2023). To address the occlusion problem, this study 
+incorporated a lightweight Shuffle Attention (SA) mechanism between 
+the backbone and neck layers (Zhang & Yang, 2021). It integrates both 
+spatial and channel attention mechanisms, enhancing the network’s 
+Fig. 4. Fruit diameter estimation flowchart. A: Overall flowchart of fruit diameter estimation. B: Schematic diagram of the core part of fruit diameter estimation 
+(three stages of fruit diameter estimation). Panel (a) illustrates the process of fruit positioning and cropping is shown; (b) shows the positioning process of the 
+reference, and a comparison is made between two leaves with different features used as references: the leaf with the maximum pixel length (red box) and the leaf with 
+the average pixel length (yellow box); Panel (c) details the method of fruit diameter estimation. (For interpretation of the references to colour in this figure legend, 
+the reader is referred to the Web version of this article.)
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+52
+feature fusion capabilities. Specifically, in addressing occlusion issues, it 
+facilitates more precise identification of the object’s boundaries.
+The Shuffle Attention (SA) mechanism effectively addresses occlu­
+sion through its unique strategy of channel and spatial mixing (Eqs. (2)– 
+(4)). This mechanism divides the input channel dimension into multiple 
+sub-feature groups, processing them in parallel. Within each sub-feature 
+group, a shuffle unit captures both spatial and channel dependencies, 
+thereby enhancing feature representation.
+Moreover, SA dynamically adjusts the attention weights of different 
+channels, thereby enhancing the integration of global and local features. 
+In cases of occlusion, local information may be compromised; however, 
+the shuffle attention mechanism is capable of acquiring global contex­
+tual information from unobstructed areas, facilitating effective feature 
+integration(Zhang & Yang, 2021). 
+m1 = Fgp(Xk1) =
+1
+W × H
+∑
+W
+i=1
+∑
+H
+j=1
+Xk1(i, j)
+(2) 
+fc = σ(W1m1 + b1)⋅Xk1
+(3) 
+fs = σ(W2 ⋅GN(Xk2) + b2)⋅Xk2
+(4) 
+Here, Eq. (2) generates channel statistics and captures inter-channel 
+correlations; Eq. (3) delineates the channel attention mechanism; and 
+Eq. (4) describes the spatial attention mechanism. In these equations, W 
+and H denote the width and height of the spatial dimensions, respec­
+tively. Xk1 and Xk2 represent two different feature branches. The pa­
+rameters of the network are denoted by W1, b1, W2, b2. GN( ⋅) refers to 
+the normalisation operation that extracts spatial weight information.
+2.5.2. Fruit positioning and cropping
+In this stage, the fruits within the images are located and cropped 
+using YOLOv8 (Fig. 4a). By enlarging the fruit detection boxes by a 
+constant factor (e.g., 2x, 2.5x, or 3x) and cropping the expanded 
+detection boxes, this method ensures a high chance that the resulting 
+cropped images contain several complete leaves adjacent to the fruits. 
+This cropping approach allows only nearby leaves can be considered as 
+the reference to the target fruit, addressing the measurement challenges 
+arising from the inhomogeneous distances between the hanging fruits 
+and the monocular camera. The effectiveness of this effort has been 
+confirmed by our previous experiments, which showed that when the 
+distance between the leaf and the fruit is relatively small, the distance 
+from the leaf to the camera can be considered equivalent to the distance 
+from the fruit to the camera. Different sizes of cropping boxes might 
+yield varying measurement results. This uncertainty will be tested and 
+analysed in Section 2.6.2.
+2.5.3. Reference positioning
+After images around each fruit are cropped, in addition to re- 
+detecting the fruits, it is necessary to locate and choose suitable leaves 
+around as the candidate of reference and obtain the pixel values of both 
+the fruits and the reference leaves.
+Leaf pose, maturity and position in field conditions can significantly 
+affect the detected dimension. Leaves around a fruit might be tilted 
+away from camera, or resemble a single leaf which often have an un­
+characteristically large blob or irregular shape. A leaf that is tilted away 
+from the camera or partially occluded can appear smaller in the image, 
+causing potential underestimation if used directly as a reference. Vari­
+ability in leaf growth and conditions can also have potential effect on 
+dimensions of the detected leaves, because differences in cultivar, 
+Fig. 5. DS-YOLOv8 model network structure. a: The second, third, and last C2f modules in the original YOLOv8n backbone were replaced with Deformable 
+Convolution (C2f_DCN) modules (Refer to the yellow box in Fig. 5), and the Shuffle Attention (SA) mechanism module is added after the SPPF layer (Refer to the red 
+box in Fig. 5), enhancing the model’s accuracy under occlusion; b: Network structure of the Shuffle Attention mechanism; c: Network structure of the Deformable 
+Convolution. (For interpretation of the references to colour in this figure legend, the reader is referred to the Web version of this article.)
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+53
+orchard conditions and phenological stages can alter leaf size, creating 
+discrepancies between assumed and actual leaf dimensions, as shown in 
+Fig. 6. In addition, if multiple leaves overlap, or if the combined features 
+of several leaves resemble the features of a single complete leaf, it might 
+lead to an uncharacteristically large blob or irregular shape.
+To solve these issues, a three-step solution is utilised to filter out 
+irregular shapes and choose suitable leaf as reference. Firstly, the leaf 
+shape is validated by analysing candidate regions for typical citrus leaf 
+profiles, e.g., bounding box dimension, aspect ratio and contour 
+smoothness. Heavily tilted, overlapped and immature leaves often form 
+irregular shapes or dimension that depart from these expected metrics, 
+so they are filtered out. The expected metrics are established from the 
+dataset of actual citrus leaf lengths and shapes under various orchard 
+conditions. In the filtering inference, any candidate “leaf” whose pixel 
+dimensions exceeds the known maximum or fall outside a plausible 
+aspect ratio is flagged as invalid. This process treats invalid leaves as 
+outliers that are two standard deviations away from the mean of the 
+offline leaf-size distribution. Finally, the largest valid leaf within each 
+cropped image is selected. In addition to the maximum leaf length, the 
+average length of the valid leaves is also considered as comparison, 
+which has been demonstrated as part of the experiments.
+2.5.4. Fruit diameter estimating
+In this stage, the actual length of the fruit is calculated using the 
+proportional relationship between the actual length and pixel length of 
+the reference object (Fig. 4c). By employing the trigonometric distance 
+formula (Eq. (5)) (Gen´e-Mola et al., 2023), the fruit diameter estimation 
+algorithm (Eq. (9)) has been derived. The derivation process of the 
+formulas is as follows. 
+D
+Rs
+= F
+Ps
+(5) 
+where D, F, Rs and Ps represent the actual distance from the object to the 
+camera, the focal length, the actual size of the object, and the pixel size 
+of the object, respectively.
+Since fruit in the cropped images is adjacent to leaves, it is reason­
+able to assume that the actual distance from the leaf to the camera is 
+equivalent to the distance from the fruit to the camera. By using Equa­
+tion Eq. (6), the distance from the leaf to the camera (which is equivalent 
+to the distance from the fruit to the camera) can be calculated. 
+D = F × Rsl
+Psl
+(6) 
+D is the actual distance from the leaf to the camera; F is the focal length; 
+Rsl is the actual length of the leaf with the maximum pixel length; Psl is 
+the pixel length of the leaf with the maximum pixel size. Here, Rsl equals 
+74.8 mm, which is the mean leaf length of the 485 leaves previously 
+measured. Psl is the diagonal pixel length of the bounding box for the 
+leaf.
+After obtaining the distance from the leaf (fruit) to the camera, the 
+actual fruit diameter in the cropped image can be calculated using Eq. 
+(7). 
+Rsc = D × Psc
+F
+(7) 
+Rsc is the actual fruit diameter; D is the actual distance from the leaf to 
+the camera; Psc is the pixel length of the fruit; F is the focal length.
+Further derivation of the above formula gets Eq. (8), where it is 
+observed that F (camera focal length) is eliminated, as shown in Eq. (9). 
+Rsc = F × Rsl × Psc
+F × Psl
+(8) 
+Rsc = Rsl × Psc
+Psl
+(9) 
+Formula 9 presents the most concise algorithm for fruit diameter 
+estimation. This algorithm converts the ratio of the reference object’s 
+actual length to its pixel length into the measured fruit diameter. This 
+approach eliminates the reliance on depth information and camera pa­
+rameters, thus achieving the goal of fruit diameter estimation. Finally, 
+all calculated fruit diameter values across the entire tree are statistically 
+analysed to generate a diameter distribution plot.
+Fig. 6. Extraction of different types of leaves: A: Extraction of curled leaf; B: Extraction of underdeveloped leaf; C: Extraction of tilted leaf not directly facing the 
+camera; D: Extraction of leaf with the largest pixel length.
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+54
+2.6. Experiments
+2.6.1. Evaluation metrics
+Mean Average Precision (mAP), Precision, and Recall can be used to 
+evaluate the performance of the YOLOv8n model, as shown in Eqs. (10)– 
+(12). 
+mAP = 1
+c
+∑
+c
+i=1
+APi
+(10) 
+P =
+TP
+TP + FP
+(11) 
+R =
+TP
+TP + FN
+(12) 
+In the above formulas, APi is the average precision for each category, 
+which can be obtained by calculating the area under the Precision-Recall 
+curve. When there is only one category (c = 1), mAP equals AP. In the 
+ablation experiments, this study used mAP@50 and mAP@50 : 95 for 
+model comparison. P is Precision. R is Recall. TP is the total number of 
+correctly identified individuals of a particular category; FP is the total 
+number of individuals incorrectly identified as that category; FN is the 
+total number of individuals in a category that was not correctly identi­
+fied. The higher the values of mAP, P, and R, the better the model’s 
+performance.
+The R-square (R2), mean absolute error (MAE), mean absolute per­
+centage error (MAPE), and root mean square error (RMSE) are used to 
+estimate the accuracy of the model’s predictions. They are defined by 
+Eqs. (13)–(16). 
+R2 = 1 −
+∑
+n
+i=1
+(Xi −̂ Xi)2
+∑
+n
+i=1
+(Xi −Xi)2
+(13) 
+MAE = 1
+n
+∑
+n
+i=1
+|Xi −̂ Xi|
+(14) 
+MAPE = 100%
+n
+∑
+n
+i=1⃒⃒⃒⃒
+Xi −̂ Xi
+Xi⃒⃒⃒⃒
+(15) 
+RMSE =̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅̅
+1
+n
+∑
+n
+i=1
+(Xi −̂ Xi)2
+√
+(16) 
+In the above formulas, Xi is the actual value of the fruit diameter; ̂Xi is 
+the predicted value of the fruit diameter; Xi is the mean of the actual fruit 
+diameter values. The closer the r-square (R2) is to 1, and the smaller the 
+values of the Mean Absolute Error (MAE), Mean Absolute Percentage 
+Error (MAPE), and Root Mean Square Error (RMSE), the more accurate 
+the fruit diameter predictions are.
+2.6.2. Parameter selection
+During the process of fruit diameter estimation, the use of cropping 
+boxes with different sizes and the selection of maximum or average of 
+candidate leaves as reference objects may both influence the accuracy of 
+the estimation results.
+Directly using the detection bounding boxes of the fruits to crop often 
+excludes leaves, which are crucial reference objects for estimating fruit 
+diameter. Therefore, it becomes necessary to expand the size of the 
+cropping box. In this experiment, three different expansion ratios, spe­
+cifically, 2 times, 2.5 times, and 3 times the size of the fruit prediction 
+box, were selected as the tentative size of the cropping box. For instance, 
+if the prediction box of the fruit is 100 × 100 pixels, the corresponding 
+cropping box sizes should be 200 × 200 pixels, 250 × 250 pixels, and 
+300 × 300 pixels, respectively. This approach aims to investigate the 
+impact of different cropping box sizes on the accuracy of fruit diameter 
+estimation.
+Subsequently, the method outlined in Section 2.5.3 was employed to 
+determine the pixel length of the valid leaves. These data were used in 
+two distinct calculations: the calculation of the maximum pixel length 
+and the calculation of the average pixel length. The leaf with the 
+maximum pixel length and the leaf with the average pixel length were 
+identified by calculating the pixel length of the diagonals of all leaf 
+detection boxes. This study explored the accuracy of fruit diameter 
+estimation using leaves with these two distinct features as references, 
+respectively.
+2.6.3. Handling leaf sparsity and occlusion
+When using leaves as reference objects to estimate fruit diameter, 
+high leaf density may cause occlusion, while low leaf density might 
+cause reference unavailability and consequently affect the positioning of 
+the reference objects. This experiment tested the effect of high leaf 
+density (Fig. 7A) and low leaf density (Fig. 7B) on the accuracy of fruit 
+diameter measurement.
+In addition, an ablation experiment was also included in this section 
+to examine the accuracy of the DS-YOLOv8 model under occlusion. The 
+performance of the DS-YOLOv8 model was compared with that of the 
+original model, the model with only deformable convolutions added, 
+and the model with only the shuffle attention mechanism added, to 
+analyse the effectiveness of DS-YOLOv8 under occlusion.
+2.6.4. Accuracy and robustness
+To validate the accuracy and robustness of the model, three citrus 
+varieties with distinct appearances were selected for fruit diameter 
+measurement: Chun Jian (Citrus reticulata ’Chun Jian’), Navel Oranges 
+(Citrus sinensis var. navel), and Blood Oranges (Citrus sinensis var. 
+sanguinea).
+3. Results
+3.1. Model training assessment
+The model’s training performance was evaluated using various 
+metrics. After 300 epochs of training, the model achieved a mAP of 
+91.28%. To visualise the training effect, the mAP and P–R curves (Fig. 8) 
+were plotted.
+3.2. Parameter selection
+In this experiment, fruit diameter estimation was conducted to test 
+different size of cropping boxes and selecting maximum or average 
+leaves as reference objects. A relative error plot (Fig. 9) and a summary 
+table of error metrics (Table 1) were generated.
+The fruit diameter estimation is most accurate when the cropping 
+box is 2.5 times the size of the prediction box and the leaf with the 
+maximum pixel length is used as a reference object, achieving R2 = 0.75 
+(Table 1).
+When the cropping box size is equal to that of the prediction box, the 
+method often becomes ineffective as it may fail to include any leaves. 
+When the cropping box is 2x or 3x the size of the prediction box, the 
+estimation accuracy is affected due to either an insufficient or excessive 
+number of leaves in the cropped image, resulting in the failure to detect 
+a complete leaf with the maximum size or the detected leaf being too 
+distant from the fruit. Using leaves with average pixel length as refer­
+ence objects accounts for the size distribution of all leaves in the cropped 
+image but is more susceptible to occlusion or cropping, leading to 
+reduced performance. In contrast, using leaves with the maximum pixel 
+length as reference objects is less affected by external factors such as 
+angle deviations and partial occlusions, thereby yielding the best esti­
+mation accuracy.
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+55
+3.3. Handling leaf sparsity and occlusion
+This experiment compared the fruit diameter estimation results 
+under conditions of low and high leaf density. A relative error plot 
+(Fig. 10) and a summary table of error metrics (Table 2) were generated. 
+To address the occlusion issue, the DS-YOLOv8 model was developed, 
+and ablation experiments were conducted. Fig. 11 presents a compari­
+son of the metrics between the original YOLOv8 model and the DS- 
+YOLOv8 model. Table 3 displays the results of the ablation experi­
+ments. Fig. 12 compares the detection results from four scenarios be­
+tween the original YOLOv8 model and the DS-YOLOv8 model.
+When the leaf density of citrus trees is low, it can affect the accuracy 
+of fruit diameter measurements. Under high leaf density, the R2 value for 
+fruit diameter prediction is 0.81 (Table 2), indicating higher accuracy. In 
+contrast, under low leaf density, the distance between the reference 
+leaves and the fruit in the cropped images increases, or the leaves may 
+Fig. 7. Two types of citrus images with different leaf densities. A: Citrus tree with high leaf density; B: Citrus tree with low leaf density.
+Fig. 8. mAP curve (A) and P–R curve (B) after YOLOv8 training in the fruit positioning and cropping stage.
+Fig. 9. Relative errors about fruit diameter estimation caused by different parameters. A: Relative errors caused by different cropping sizes. B: Relative errors caused 
+by choosing maximum or average valid leave length as reference objects.
+Table 1 
+Summary table of error metrics for fruit diameter prediction caused by different 
+parameters.
+Experiment
+Parameter
+R2
+MAE 
+(mm)
+MAPE 
+(%)
+RMSE 
+(mm)
+Cropping size 
+selection
+2
+0.16
+13.06
+13.24
+17.72
+2.5
+0.75
+5.9
+6.01
+7.36
+Reference selection
+3 
+Average 
+length 
+Max length
+0.63 
+0.42 
+0.75
+9.3 
+57.62 
+5.9
+9.48 
+59.15 
+6.01
+11.52 
+60.72 
+7.36
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+56
+not be available at all. In such cases, the distance from the leaves to the 
+camera should not be treated as equivalent to the distance from the fruits 
+to the camera, leading to inaccurate measurements. Conversely, 
+although high leaf density can cause some occlusion, the data in Table 2
+indicates that the negative impact of low leaf density on accuracy is 
+more significant than that of occlusion.
+Table 3 shows that compared to the original YOLOv8 model, DS- 
+YOLOv8 improved in mAP@50, mAP@50:95, Precision, and Recall by 
+1.2%, 1.7%, 0.92%, and 3.29%, respectively.
+In the backbone network, deformable convolutions were introduced 
+in the second, third, and final C2f modules to enhance the model’s 
+ability to capture local features. A shuffle attention mechanism was 
+incorporated after the SPPF layer to leverage global feature information. 
+This integration improved the model’s recognition accuracy under oc­
+clusion, enhancing feature extraction from local to global. As shown in 
+Fig. 12, the DS-YOLOv8 model demonstrates improved accuracy in 
+handling leaf occlusion and fruit overlap (A, B, C), with more precise and 
+reasonable bounding boxes for the fruits (D), effectively reducing errors 
+in fruit diameter measurement.
+3.4. Verification of accuracy and robustness
+As described in Section 2.6.4, this study calculated the fruit sizes of 
+249 citrus fruits including three varieties: Chun Jian, Navel Oranges, 
+and Blood Oranges (Fig. 13A). For each type of citrus, 80 samples were 
+Fig. 10. Comparison of relative errors in fruit diameter estimation under low 
+and high leaf density conditions.
+Table 2 
+Summary table of error metrics for fruit diameter estimation caused by different 
+leaf densities.
+Experiment
+Parameter
+R2
+MAE(mm)
+MAPE(%)
+RMSE(mm)
+Density effects
+Low
+0.68
+9.92
+11.42
+10.48
+High
+0.81
+5.41
+5.78
+6.2
+Fig. 11. Comparison of metrics between the original YOLOv8 model and the DS-YOLOv8 model.
+Table 3 
+Ablation Experiment Results. DNCv2 + YOLOv8: Only the deformable convo­
+lution (DNCv2) was introduced into the YOLOv8 model. SA + YOLOv8: Only the 
+shuffle attention mechanism (SA) was introduced into the YOLOv8 model. 
+DNCv2 + SA + YOLOv8: Both the deformable convolution (DNCv2) and the 
+shuffle attention mechanism (SA) were introduced into the YOLOv8 model.
+Model
+mAP@50 
+(%)
+mAP@50:95 
+(%)
+Precision 
+(%)
+Recall 
+(%)
+Original YOLOv8 
+DNCv2 + YOLOv8 
+SA + YOLOv8 
+DNCv2 + SA +
+YOLOv8
+87 
+87.5 
+86.8 
+88.2
+67.1 
+68.4 
+67.5 
+68.8
+84.88 
+85.4 
+88.11 
+85.8
+77.24 
+79.39 
+75.22 
+80.53
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+57
+used to compare the relative error in diameter measurement (Fig. 13B). 
+Scatter plots with regression lines were generated to visualise the rela­
+tionship between the actual fruit diameters and the model’s predictions 
+for each type (Fig. 14).
+The R2 = 0.76 effectively validates the model’s overall accuracy for 
+all the varieties, as shown in Fig. 13A. Fig. 14 illustrates the estimation 
+accuracy for the fruit diameters of different citrus varieties, with Navel 
+Oranges showing the highest precision in measurement, achieving R2 =
+0.81. The lowest precision is Blood Oranges which has R2 = 0.55 (still 
+acceptable). Overall, under current technical framework, the fruit size 
+estimation accuracy is 93.14% with R2 = 0.76 across three citrus vari­
+eties (Chun Jian, Navel Oranges, Blood Oranges). These results confirm 
+that leaf orientation and growth variability have limited impact on the 
+final measurement.
+The mean of the combined offline leaf size distribution, 7.48 cm was 
+used to calculate the fruit diameter. In this study, the mean length of 
+blood orange leaves was 6.58 cm, which differs by 0.9 cm from the 
+reference length, resulting in an average relative error of 8.91%. The 
+mean length of navel orange leaves was 7.68 cm, differing by 0.2 cm 
+from the reference length, leading to an average relative error of 5.71%. 
+Although the mean length of blood orange leaves was 1.1 cm shorter 
+than that of navel orange leaves, the accuracy only decreased by 3.2%. 
+This demonstrates that while the length differences between the leaves 
+surrounding the measured fruit and the reference leaf do affect mea­
+surement accuracy, the error is relatively minor, thereby validating the 
+robustness of the model.
+4. Discussion
+This work proposes a practical approach to estimating citrus fruit 
+diameter by using mature and healthy leaves as natural reference objects 
+within single-frame images. By leveraging an offline leaf-size dataset 
+gathered from multiple varieties, the need for external calibration ob­
+jects or specialised camera parameters is avoided. The ability to measure 
+Fig. 12. Comparison of four detection results from the original YOLOv8 model and the DS-YOLOv8 model: The top row shows the detection results from the original 
+YOLOv8 model, while the bottom row shows the detection results from the DS-YOLOv8 model. The red prediction box illustrates several scenarios in fruit detection 
+using the original model, including false negatives (A, B), multiple detections (C), and inaccurate bounding boxes (D), with the correct detections provided by DS- 
+YOLOv8 for comparison. (For interpretation of the references to colour in this figure legend, the reader is referred to the Web version of this article.)
+Fig. 13. Analysis of fruit diameter prediction accuracy and robustness. A: Scatter plot of actual versus predicted fruit diameter values for all the 249 fruits; B: 
+Comparison of relative errors in fruit diameter estimation for three different variety of citrus.
+Fig. 14. Scatter plots of predicted versus actual fruit diameters for three different types of citrus fruits (A: Chun Jian, B: Navel Oranges, C: Blood oranges).
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+58
+citrus size with a standard camera is especially appealing for large-scale 
+orchards, where efficiency and ease of use are paramount. Below the 
+model’s advantages are analysed and its limitations for directing future 
+research are discussed.
+4.1. Model advantages
+In the framework proposed in this work, manual references or 
+camera parameters are no longer needed. Previous methods often placed 
+rulers or known objects in the scene, or required knowledge of smart­
+phone/camera parameters for scaling. Apolo-Apolo et al. (2020)
+measured citrus sizes by placing a wooden ruler of known dimensions. 
+Zhao et al. (2023) used a multi-camera smartphone to predict the phe­
+notypes of an apple tree, but it is necessary to know the parameters of 
+the phone, such as focal length, etc. Our method sidesteps these re­
+quirements by using mature and healthy leaves as natural references. 
+This not only removes the need for manual setup but also simplifies fruit 
+diameter measurement, since focal length or other camera parameters 
+become unnecessary.
+A a computer vision solution with minimal cost and fast runtime is 
+provided. Unlike approaches relying on depth sensors or LiDAR (e.g., 
+Kinect, time-of-flight, or laser scanning), this study requires no speci­
+alised equipment beyond a basic camera, thereby eliminating extra costs 
+and logistics. Wang et al. (2017) utilised a Kinect RGB-D depth camera 
+to obtain depth information between the camera and the fruits, applying 
+the thin lens formula to measure the diameters of mangoes in an or­
+chard. The RMSE values of mangoes’ width and length were 4.3 mm and 
+4.9 mm, respectively. Gongal et al. (2018) used a time-of-flight (ToF) 
+camera to measure the distance between apples and the camera and 
+estimated apples diameters based on pixel measurements, achieving an 
+accuracy of 84.8% (MAPE = 15.2%). Moreover, past work with 3D 
+scanning has often been time-consuming, requiring hours to process 
+each orchard section. M´endez et al. (2019) utilised LiDAR to obtain 
+point cloud data and combined it with the K-Means algorithm to esti­
+mate citrus fruit diameters. However, acquiring point cloud data with 
+laser scanning is time-consuming, requiring an average of 8 h to measure 
+each study area as reported. Here, the diameters of all fruits on a single 
+tree can be measured in about a minute, which is a significant 
+improvement in efficiency.
+This method improved performance by handling occlusion and depth 
+variation. The experiments confirm that the proposed method accu­
+rately measures citrus fruit diameters in real-world orchard settings. By 
+embedding deformable convolution (DNCv2) and shuffle attention (SA) 
+into YOLOv8, detection performance under partial occlusion improves 
+over the original network. This allows the system to detect and measure 
+more fruits, which are often obscured by foliage, while keeping costs and 
+complexity low. In practical terms, the method achieves overall high 
+measurement accuracy cross all three varieties (MAPE = 6.86%) using 
+only a monocular camera, making it accessible for large-scale orchard 
+deployments without additional hardware. Unlike other studies that 
+largely ignore occluded fruits, our DNCv2 + SA-enhanced YOLOv8 helps 
+detect partially hidden citrus. Ferrer-Ferrer et al. (2023) used instance 
+segmentation and size regression methods to calculate apple sizes, 
+achieving MAE = 5.64 mm. However, as they mentioned, they did not 
+account for measuring occluded fruits. To further reduce errors, images 
+of fruit trees are taken from multiple angles, consolidating diameter 
+measurements across different viewpoints. This mitigates cases where 
+leaves and fruit are at very different depths, which can skew the 
+pixel-to-real-world ratio if relying on a single vantage point.
+4.2. Limitations and future directions
+Although this study achieved high accuracy in estimating citrus fruit 
+diameters, it has two main limitations. First, difficulties in some extreme 
+conditions. In some scenarios, measurement errors arise from sparse leaf 
+coverage or large depth gaps between the chosen reference leaf and the 
+fruit, as shown in Fig. 15. By contrast, the method excels in frames where 
+the fruit is clearly visible, leaves are well aligned to the camera, and 
+distances are relatively uniform. This highlights the importance of leaf 
+positioning and distribution: when leaves are oriented toward the 
+camera and near the fruit, measurement accuracy is at its best. The 
+difficulties can be low density of leaves or high chance of heavy occlu­
+sion, high tilt angles, obvious deformation, or multi-leaf resembling, 
+where less or even no suitable leaf can be found in a certain angle 
+(image) as candidate of reference.
+This issue might be addressed by a multi-frame approach that could 
+further reduce confusion in situations where overlapping leaves appear 
+in one frame. Therefore, for future work it is suggested adding a Multi- 
+frame Enhancement approach to mitigate this issue. If a particular frame 
+lacks any viable reference leaf (e.g., only partially visible leaves or none 
+at all), that frame’s measurement is skipped. In video clips with a 
+consequence of frames, it is highly likely that a subsequent frame with a 
+clearer view of the fruit and its surrounding leaves will appear. Ana­
+lysing additional frames could find a clearer view of the same area. 
+Assuming an implementation captures multiple frames (e.g., in a video), 
+we can filter out leaves that show extreme angles or shapes in some 
+frames, but find clear and suitable leaves in others, ensuring that only 
+representative (near-frontal) leaves are used for reference. This 
+enhancement is not yet implemented but is a promising avenue for 
+boosting robustness, especially when a single frame has substantial oc­
+clusion or overlapping foliage.
+Second, leaf and fruit dimension varying across varieties could be a 
+major source of accuracy decline. In our implementation, a single 
+average leaf length (e.g., ~7.48 cm from the combined sample distri­
+bution) was used to estimate fruit diameter. However, each variety’s 
+true leaf-size distribution can differ from that single mean, either being 
+larger, smaller, or more/less variable. Although the unified mean 
+approach keeps overall errors acceptable (under about 9% MAPE), sta­
+tistically difference in each variety’s leaf size distribution can degrade 
+prediction accuracy. For the least accurate prediction, e.g., Blood Or­
+anges, the relatively high shape parameter (9.92) suggests the Weibull 
+distribution is quite peaked around its scale (~6.9 cm). However, the 
+Fig. 15. Fruit diameter measurement results: A: Poor performance case with an error of 13.67%; B: Moderate performance case with an error of 7.34%; C: Good 
+performance case with an error of 3.3%.
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+59
+average leaf size for Blood Oranges is notably smaller than the global 
+mean. When using a universal reference (~7.48 cm) that’s larger than 
+their typical leaf length, the model then may over-corrected fruit di­
+ameters, partially explaining the higher MAPE (8.91%) and lower R2 
+(0.55). Additionally, Blood Oranges themselves may have more 
+morphological variability in fruit shape, which is also a consideration for 
+explaining the error. Because differences in fruit geometry (e.g., oblong 
+vs. round) also factor into final diameter predictions. Varieties with 
+more uniform or round fruits may inherently yield higher R2 values, 
+while those with elongated or variable shapes can reduce model fit. 
+Future research could enhance the model’s accuracy and robustness by 
+developing strategies that automatically adapt to variations in leaf 
+density and leaf size discrepancies.
+5. Conclusion
+This research underscores the potential of leveraging natural orchard 
+elements to simplify and reduce the cost of fruit diameter measurement. 
+By combining a leaf-based reference approach with an advanced 
+detection model with input from a monocular camera, a scalable, ac­
+curate, and user-friendly solution can be provided that can be readily 
+adopted in commercial citrus orchards. As machine vision continues to 
+evolve, refining this method through additional viewpoints and so­
+phisticated occlusion-handling mechanisms will further advance auto­
+mated yield estimation and precision agriculture practices.
+Statement on the use of generative AI and AI assisted 
+technologies in the writing process
+No generative AI or AI-assisted technologies were used during the 
+preparation of this work.
+CRediT authorship contribution statement
+Hongchun Qu: Writing – review & editing, Writing – original draft, 
+Supervision, Project administration, Methodology, Investigation, 
+Formal analysis, Conceptualization. Haitong Du: Writing – original 
+draft, Visualization, Validation, Software, Methodology, Investigation, 
+Formal analysis, Data curation. Xiaoming Tang: Writing – review & 
+editing, Supervision, Resources, Conceptualization. Shidong Zhai: 
+Writing – review & editing, Supervision, Resources, Project adminis­
+tration, Formal analysis, Conceptualization.
+Declaration of competing interest
+The authors declare that no known competing financial interests or 
+personal relationships that could have appeared to influence the work 
+reported in this paper. No conflict of interest exits in the submission of 
+this manuscript, and manuscript is approved by all authors for publi­
+cation. I would like to declare on behalf of my co-authors that the work 
+described was original research that has not been published previously, 
+and not under consideration for publication elsewhere, in whole or in 
+part. All the authors listed have approved the manuscript that is 
+enclosed.
+Acknowledgement
+Funding received from the Chongqing Science and Technology 
+Commission under the 2024 Sichuan-Chongqing Science and Technol­
+ogy Innovation Cooperation Program (CSTB2024TIAD-CYKJCXX0026) 
+and the Project of Advanced Scientific Research Institute of CQUPT 
+(E011A2022329).
+Appendix A. Supplementary data
+Supplementary data to this article can be found online at https://doi. 
+org/10.1016/j.biosystemseng.2025.02.012.
+References
+Akin, C., Kirci, M., Gunes, E. O., & Cakir, Y. (2012). Detection of the pomegranate fruits 
+on tree using image processing. In 2012 first international conference on agro- 
+geoinformatics (Agro-Geoinformatics) (pp. 1–4). https://doi.org/10.1109/Agro- 
+Geoinformatics.2012.6311724
+Apolo-Apolo, O. E., Martínez-Guanter, J., Egea, G., Raja, P., & P´erez-Ruiz, M. (2020). 
+Deep learning techniques for estimation of the yield and size of citrus fruits using a 
+UAV. European Journal of Agronomy, 115, Article 126030. https://doi.org/10.1016/j. 
+eja.2020.126030
+Behera, S. K., Sethy, P. K., Sahoo, S. K., Panigrahi, S., & Rajpoot, S. C. (2021). On-tree 
+fruit monitoring system using IoT and image analysis. Concurrent Engineering, 29(1), 
+6–15. https://doi.org/10.1177/1063293X20988395
+Chen, J., Wu, J., Wang, Z., Qiang, H., Cai, G., Tan, C., & Zhao, C. (2021). Detecting ripe 
+fruits under natural occlusion and illumination conditions. Computers and Electronics 
+in Agriculture, 190, Article 106450. https://doi.org/10.1016/j.compag.2021.106450
+Ferrer-Ferrer, M., Ruiz-Hidalgo, J., Gregorio, E., Vilaplana, V., Morros, J. R., & Gen´e- 
+Mola, J. (2023). Simultaneous fruit detection and size estimation using multitask 
+deep neural networks. Biosystems Engineering, 233, 63–75. https://doi.org/10.1016/ 
+j.biosystemseng.2023.07.010
+Fu, L., Gao, F., Wu, J., Li, R., Karkee, M., & Zhang, Q. (2020). Application of consumer 
+RGB-D cameras for fruit detection and localization in field: A critical review. 
+Computers and Electronics in Agriculture, 177, Article 105687. https://doi.org/ 
+10.1016/j.compag.2020.105687
+Gen´e-Mola, J., Ferrer-Ferrer, M., Gregorio, E., Blok, P. M., Hemming, J., Morros, J. R., … 
+Ruiz-Hidalgo, J. (2023). Looking behind occlusions: A study on amodal 
+segmentation for robust on-tree apple fruit size estimation. Computers and Electronics 
+in Agriculture, 209, Article 107854. https://doi.org/10.1016/j.compag.2023.107854
+Gim´enez-Gallego, J., Martinez-del-Rincon, J., Gonz´alez-Teruel, J. D., Navarro-Hellín, H., 
+Navarro, P. J., & Torres-S´anchez, R. (2024). On-tree fruit image segmentation 
+comparing Mask R-CNN and Vision Transformer models. Application in a novel 
+algorithm for pixel-based fruit size estimation. Computers and Electronics in 
+Agriculture, 222, Article 109077. https://doi.org/10.1016/j.compag.2024.109077
+Gongal, A., Karkee, M., & Amatya, S. (2018). Apple fruit size estimation using a 3D 
+machine vision system. Information Processing in Agriculture, 5(4), 498–503. https:// 
+doi.org/10.1016/j.inpa.2018.06.002
+Hartley, Z. K., Jackson, A. S., Pound, M., & French, A. P. (2021). GANana: Unsupervised 
+domain adaptation for volumetric regression of fruit. Plant Phenomics. https://doi. 
+org/10.34133/2021/9874597. Article 9874597.
+Hu, J., Li, G., Mo, H., Lv, Y., Qian, T., Chen, M., & Lu, S. (2023). Crop node detection and 
+internode length estimation using an improved YOLOv5 model. Agriculture, 13(2). 
+https://doi.org/10.3390/agriculture13020473. Article 473.
+Huynh, T. T., TonThat, L., & Dao, S. V. (2022). A vision-based method to estimate volume 
+and mass of fruit/vegetable: Case study of sweet potato. International Journal of Food 
+Properties, 25(1), 717–732. https://doi.org/10.1080/10942912.2022.2057528
+Huynh, T., Tran, L., & Dao, S. (2020). Real-time size and mass estimation of slender axi- 
+symmetric fruit/vegetable using a single top view image. Sensors, 20(18). https:// 
+doi.org/10.3390/s20185406. Article 5406.
+Islam, M. S., Scalisi, A., O’Connell, M. G., Morton, P., Scheding, S., Underwood, J., & 
+Goodwin, I. (2022). A ground-based platform for reliable estimates of fruit number, 
+size, and color in stone fruit orchards. HortTechnology, 32(6), 510–522. https://doi. 
+org/10.21273/HORTTECH05098-22
+Joshi, A., Pradhan, B., Gite, S., & Chakraborty, S. (2023). Remote-sensing data and deep- 
+learning techniques in crop mapping and yield prediction: A systematic review. 
+Remote Sensing, 15(8). https://doi.org/10.3390/rs15082014. Article 2014.
+Kuan, Y. W., Ee, N. O., & Wei, L. S. (2019). Comparative study of intel R200, Kinect v2, 
+and primesense RGB-D sensors performance outdoors. IEEE Sensors Journal, 19(19), 
+8741–8750. https://doi.org/10.1109/JSEN.2019.2920976
+Li, B., Lecourt, J., & Bishop, G. (2018). Advances in non-destructive early assessment of 
+fruit ripeness towards defining optimal time of harvest and yield prediction—a 
+review. Plants, 7(1). https://doi.org/10.3390/plants7010003. Article 3.
+Lu, S., Chen, W., Zhang, X., & Karkee, M. (2022). Canopy-attention-YOLOv4-based 
+immature/mature apple fruit detection on dense-foliage tree architectures for early 
+crop load estimation. Computers and Electronics in Agriculture, 193, Article 106696. 
+https://doi.org/10.1016/j.compag.2022.106696
+M´endez, V., P´erez-Romero, A., Sola-Guirado, R., Miranda-Fuentes, A., Manzano- 
+Agugliaro, F., Zapata-Sierra, A., & Rodríguez-Lizana, A. (2019). In-field estimation of 
+orange number and size by 3D laser scanning. Agronomy, 9(12). https://doi.org/ 
+10.3390/agronomy9120885. Article 885.
+Mohimont, L., Alin, F., Rondeau, M., Gaveau, N., & Steffenel, L. A. (2022). Computer 
+vision and deep learning for precision viticulture. Agronomy, 12(10). https://doi. 
+org/10.3390/agronomy12102463. Article 2463.
+Nenavath, D. N., & Perumal, B. (2024). Artificial marker to predict (Banganapalle) 
+mango fruit size at multi-targets of an image using semantic segmentation. IEEE 
+Access, 12, 6914–6925. https://doi.org/10.1109/ACCESS.2024.3351210
+Neupane, C., Koirala, A., & Walsh, K. B. (2022). In-orchard sizing of mango fruit: 1. 
+Comparison of machine vision based methods for on-the-go estimation. Horticulturae, 
+8(12), Article 1223. https://doi.org/10.3390/horticulturae8121223
+Neupane, C., Koirala, A., Wang, Z., & Walsh, K. B. (2021). Evaluation of depth cameras 
+for use in fruit localization and sizing: Finding a successor to kinect v2. Agronomy, 11 
+(9), Article 1780. https://doi.org/10.3390/agronomy11091780
+H. Qu et al.                                                                                                                                                                                                                                      
+
+Biosystems Engineering 252 (2025) 47–60
+60
+Neupane, C., Pereira, M., Koirala, A., & Walsh, K. B. (2023). Fruit sizing in orchard: A 
+review from caliper to machine vision with deep learning. Sensors, 23(8). https:// 
+doi.org/10.3390/s23083868. Article 3868.
+Ponce, J. M., Aquino, A., Millan, B., & Andujar, J. M. (2019). Automatic counting and 
+individual size and mass estimation of olive-fruits through computer vision 
+techniques. IEEE Access, 7, 59451–59465. https://doi.org/10.1109/ 
+ACCESS.2019.2915169
+Rizzo, M., Marcuzzo, M., Zangari, A., Gasparetto, A., & Albarelli, A. (2023). Fruit 
+ripeness classification: A survey. Artificial Intelligence in Agriculture, 7, 44–57. https:// 
+doi.org/10.1016/j.aiia.2023.02.004
+Sapkota, R., Ahmed, D., Churuvija, M., & Karkee, M. (2024). Immature green apple 
+detection and sizing in commercial orchards using YOLOv8 and shape fitting 
+techniques. IEEE Access, 12, 43436–43452. https://doi.org/10.1109/ 
+ACCESS.2024.3378261
+Shao, T., Qu, Y., & Du, J. (2022). A low-cost integrated sensor for measuring tree 
+diameter at breast height (DBH). Computers and Electronics in Agriculture, 199, Article 
+107140. https://doi.org/10.1016/j.compag.2022.107140
+Shen, L., Lang, B., & Song, Z. (2023). DS-YOLOv8-Based object detection method for 
+remote sensing images. IEEE Access, 11, 125122–125137. https://doi.org/10.1109/ 
+ACCESS.2023.3330844
+Tapia-Zapata, N., Saha, K. K., Tsoulias, N., & Zude-Sasse, M. (2024). A geometric 
+modelling approach to estimate apple fruit size by means of LiDAR 3D point clouds. 
+International Journal of Food Properties, 27(1), 566–583. https://doi.org/10.1080/ 
+10942912.2024.2330494
+Tatsumi, S., Yamaguchi, K., & Furuya, N. (2023). ForestScanner: A mobile application for 
+measuring and mapping trees with LiDAR-equipped iPhone and iPad. Methods in 
+Ecology and Evolution, 14(7), 1603–1609. https://doi.org/10.1111/2041- 
+210X.13900
+Tian, Y., Yang, G., Wang, Z., Wang, H., Li, E., & Liang, Z. (2019). Apple detection during 
+different growth stages in orchards using the improved YOLO-V3 model. Computers 
+and Electronics in Agriculture, 157, 417–426. https://doi.org/10.1016/j. 
+compag.2019.01.012
+Wang, Y., & Chen, Y. (2020). Fruit morphological measurement based on three- 
+dimensional reconstruction. Agronomy, 10(4). https://doi.org/10.3390/ 
+agronomy10040455. Article 455.
+Wang, D., & He, D. (2022). Fusion of Mask RCNN and attention mechanism for instance 
+segmentation of apples under complex background. Computers and Electronics in 
+Agriculture, 196, Article 106864. https://doi.org/10.1016/j.compag.2022.106864
+Wang, Z., Koirala, A., Walsh, K., Anderson, N., & Verma, B. (2018). In field fruit sizing 
+using a smart phone application. Sensors, 18(10). https://doi.org/10.3390/ 
+s18103331. Article 3331.
+Wang, C., Liu, S., Wang, Y., Xiong, J., Zhang, Z., Zhao, B., … He, P. (2022). Application 
+of convolutional neural network-based detection methods in fresh fruit production: 
+A comprehensive review. Frontiers of Plant Science, 13. https://doi.org/10.3389/ 
+fpls.2022.868745. Article 868745.
+Wang, Z., Walsh, K. B., & Verma, B. (2017). On-tree mango fruit size estimation using 
+RGB-D images. Sensors, 17(12). https://doi.org/10.3390/s17122738. Article 2738.
+Yu, T., Hu, C., Xie, Y., Liu, J., & Li, P. (2022). Mature pomegranate fruit detection and 
+location combining improved F-PointNet with 3D point cloud clustering in orchard. 
+Computers and Electronics in Agriculture, 200, Article 107233. https://doi.org/ 
+10.1016/j.compag.2022.107233
+Zaenker, T., Smitt, C., McCool, C., & Bennewitz, M. (2021). Viewpoint planning for fruit 
+size and position estimation. In 2021 IEEE/RSJ international conference on intelligent 
+robots and systems (IROS) (pp. 3271–3277). https://doi.org/10.1109/ 
+IROS51168.2021.9636701
+Zhang, Q. L., & Yang, Y. B. (2021). Sa-net: Shuffle attention for deep convolutional 
+neural networks. In ICASSP 2021-2021 IEEE international conference on acoustics, 
+speech and signal processing (ICASSP) (pp. 2235–2239). https://doi.org/10.1109/ 
+ICASSP39728.2021.9414568
+Zhao, G., Yang, R., Jing, X., Zhang, H., Wu, Z., Sun, X., … Fu, L. (2023). Phenotyping of 
+individual apple tree in modern orchard with novel smartphone-based 
+heterogeneous binocular vision and YOLOv5s. Computers and Electronics in 
+Agriculture, 209, Article 107814. https://doi.org/10.1016/j.compag.2023.107814
+Zheng, B., Sun, G., Meng, Z., & Nan, R. (2022). Vegetable size measurement based on 
+stereo camera and keypoints detection. Sensors, 22(4), Article 1617. https://doi.org/ 
+10.3390/s22041617
+Zhu, X., Hu, H., Lin, S., & Dai, J. (2019). Deformable convnets v2: More deformable, 
+better results. In Proceedings of the IEEE/CVF conference on computer vision and pattern 
+recognition (pp. 9308–9316). https://doi.org/10.48550/arXiv.1811.11168
+H. Qu et al.                                                                                                                                                                                                                                      

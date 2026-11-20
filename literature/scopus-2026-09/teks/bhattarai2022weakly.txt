@@ -1,0 +1,1227 @@
+Contents lists available at ScienceDirect
+Computers in Industry
+journal homepage: www.elsevier.com/locate/compind
+A weakly-supervised approach for flower/fruit counting in apple
+orchards
+Uddhav Bhattaraia, Manoj Karkeea,⁎
+a Center for Precision and Automated Agricultural Systems, Department of Biological Systems Engineering, Washington State University, Prosser, WA 99350, USA
+a r t i c l e i n f o
+Article history:
+Received 9 July 2021
+Received in revised form 18 December 2021
+Accepted 14 February 2022
+Available online 3 March 2022
+Keywords:
+Flower/Fruit counting
+Weakly supervised learning
+Activation map
+Regression-based counting
+Deep learning
+Agriculture Automation
+a b s t r a c t
+Flower and fruit count is a critical metric in developing crop-load management and harvesting strategies
+during flower/fruit development and harvest seasons. Growers currently rely on their prior experience and/
+or manual count in sample areas/trees to estimate the number of flowers/fruits in orchards. In this work, we
+propose a simplified yet robust deep learning-based weakly-supervised flower/fruit Counting Network
+(CountNet) and investigate its accuracy in commercial orchard images. Unlike detection-based counting
+methods, which require individual object detection, CountNet learns from image-level annotation with the
+number of objects (flowers or fruits) as input without explicitly specifying the object’s signature and lo-
+cation. Experiments were conducted in images acquired in an unstructured commercial orchard environ-
+ment. Results showed a minimum Mean Absolute Error (MAE)/Root Mean Square Error (RMSE) of 12.0/18.4
+and 2.9/4.3 for the apple flower and fruit dataset respectively. Activated region/feature visualization
+techniques revealed that CountNet is looking into different apple flower/fruit edges and features to make
+the count decisions. The results are promising in simplifying the automated methods for flower/fruit
+counting which can lead to reduced manual counting in the field, manual image annotation, and compu-
+tational complexity and memory requirement of the object counting system.
+© 2022 Elsevier B.V. All rights reserved.
+1. Introduction
+Flower and fruit counting in apple orchards is crucial for flower
+density estimation, crop-load estimation, and yield prediction,
+which helps to optimize crop-load management and harvesting
+strategies and resources (e.g. machines and human workers). Fruit
+trees often bloom more flowers and set more fruits (also called over-
+cropping) than the amount necessary for commercially desired yield
+and quality (e.g. fruit size, shape, color, sugar content). Crop-load
+management is a balancing act between reducing the number of
+fruits adequately to accomplish optimal fruit size and quality, and
+satisfactory return bloom without reducing current season yield
+unreasonably (Embree et al., 2007; Robinson et al., 2013). Every year,
+growers remove excess flowers and immature fruitlets (manually -
+using human hands/chemically/mechanically) to minimize over-
+bearing and biennial bearing. Flower/blossom density estimation
+aids in optimizing and customizing the application of chemical
+thinning agents and operation specifications of mechanical thinners.
+Furthermore, flower density estimation is considered one of the
+earliest indicators of fruit-set/crop-load in orchards. Yield estimation
+helps streamline the harvesting labor force, other resources (e.g.
+orchard platform), and post-harvest processing strategies. Most of
+the field operations, including yield estimation and flower density
+estimation, in various tree fruit crops such as apples and cherries,
+lack automation. Growers still heavily rely on prior experience and/
+or manual fruit counting in sample areas, followed by extrapolation
+to estimate count in entire orchards (Marini, 2017; Lacey, 2019;
+Gongal et al., 2016). Manual approaches are highly labor-intensive,
+laborious, and incur additional costs to the growers. Furthermore,
+with decreasing labor availability, the fruit crop industry has been
+facing increasingly critical challenges for sustainable crop produc-
+tion. There have been reports that farmers are leaving some portion
+of their crops in the field due to a lack of farm labor (Mohan, 2017;
+Estabrook, 2019). In this context, developing automated solutions
+that aid in different aspects of orchard operations such as crop/yield
+estimation, harvesting, thinning, and pruning is crucial to reduce
+cost and increase productivity and profitability of the tree fruit in-
+dustry.
+Integration of computer vision in flower/fruit counting has the
+potential to automate and simplify the painstaking manual counting
+process. However, automation in agriculture has unique challenges
+https://doi.org/10.1016/j.compind.2022.103635
+0166-3615/© 2022 Elsevier B.V. All rights reserved.
+]]]]
+]]]]]]
+⁎ Corresponding author.
+E-mail addresses: uddhav.bhattarai@wsu.edu (U. Bhattarai),
+manoj.karkee@wsu.edu (M. Karkee).
+Computers in Industry 138 (2022) 103635
+
+because of the intricate, biologically driven, and highly unstructured
+orchard environment. Such an environment often involves variable
+and uncertain canopy structure, varietal differences, flower/fruit
+clusters, occlusion of target objects (e.g. fruit or flower), wind, and
+variation in lighting conditions. Conventional machine vision sys-
+tems utilizing hand-crafted feature extraction methods show poor
+performance in such an unstructured orchard environment. Recently
+various deep learning-based techniques have shown promising re-
+sults in the detection and segmentation of fruit (Gao et al., 2020; Liu
+et al., 2019; Gené-Mola et al., 2020), and flower clusters (Bhattarai
+et al., 2020; Dias et al., 2018a, 2018b). Deep learning approaches
+perform hierarchical feature extraction and learn from examples,
+which has shown robust performance when sufficiently large
+training samples can be acquired.
+Unlike robotic picking (or other applications requiring object
+manipulation) that requires precise fruit detection and segmenta-
+tion, crop-load estimation does not require fruit location as long as
+total number of fruit can be counted/estimated in each tree canopy.
+Hence, a system directly providing the total fruit count without
+explicit detection is sufficient for such applications. On the other
+hand, individual flower annotation and detection in challenging and
+painstaking task. Chemical/Mechanical apple flower thinning is
+performed when around 60–80% of flowers are fully open resulting
+in dense flower clusters with substantial occlusions among flowers
+in addition to occlusions due to other canopy objects such as tree
+trunk, branches, and leaves. Furthermore, detection-based counting
+approaches may require intermediate computation blocks including,
+but not limited to, region proposal estimation, region of interest
+pooling, and non-maximal suppression adding the computational
+complexity and memory requirement. Furthermore, object-level
+annotation (whether that be for individual fruit or flower) using a
+polygon/ bounding box takes a substantial amount of manual an-
+notation hours.
+This article investigates a regression-based flower/fruit counting
+approach in commercial apple orchards (see Fig. 1). The proposed
+system leverages image-level annotation and takes a total number of
+flowers/fruits in a given image as ground truth to train the neural
+network to estimate count. The counting process is weakly su-
+pervised in the sense that the neural network learns based only on
+the count information without any explicit information on the object
+of interest (flowers/fruits) and their location. Based on the given
+total flower/fruit count, the network needs to learn to discriminate
+and highlight the relevant flower/fruit features while discarding
+unnecessary background information. Since the network is weakly
+supervised, it makes fewer assumptions about the operating en-
+vironment, making it useful for counting applications in different
+crop types and cultivars (e.g. green and red apple cultivars). Fur-
+thermore, the network looks into highly probable flower/fruit re-
+gions irrespective of their spatial footprint (number of pixels
+occupied by the object in image space), making the proposed ap-
+proach useful for the environment with high level of occlusions
+often seen in agriculture (see Fig. 1). To summarize, the following are
+the key contributions of this article.
+• A
+simple
+regression-based
+flower/fruit
+Counting
+Network
+(CountNet) is proposed. The proposed network can estimate
+flower/fruit count by learning from minimal feature information
+on the object of interest (flower/fruit) without explicit detection
+and localization. The accuracy of the proposed approach was
+assessed using apple canopy images acquired during both flow-
+ering and harvest seasons from commercial apple orchards.
+• To demonstrate that the network is indeed looking into flower/
+fruit features to make specific count decisions, two deep learning
+visualization techniques Score-CAM (Wang et al., 2020) and
+Guided
+Backpropagation
+(Springenberg
+et
+al.,
+2014)
+were
+adopted and investigated for the proposed regression-based
+CountNet.
+The remaining part of the paper is summarized as follows. Computer
+vision-based flower and fruit counting approaches are presented in
+section 2. The technical details of the proposed method are dis-
+cussed in Section 3. In section 4, experimental details are presented
+along with results and discussion. Finally, conclusions and future
+directions are presented in section 5.
+Fig. 1. Example apple canopy images used in the experiment. Images represent canopies near harvest ready fruit development and full bloom flower development season.
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+2
+
+2. Related work
+2.1. Flower/Fruit detection and counting
+In this section different flower/fruit detection approaches that
+have the potential to be extended for the counting problems are
+discussed, followed by approaches for direct fruit counting. Machine
+vision research in apple orchards during full bloom is almost entirely
+focused on flower cluster detection. Dias et al. (2018a) performed
+semantic segmentation of flower clusters using region proposal es-
+timation followed by CNN-based feature extraction and Support
+Vector Machine (SVM) for classification. Improving their previous
+work in terms of generalizability, Dias et al. (2018b) proposed CNN-
+based feature extraction followed by region refinement to achieve
+improved cluster segmentation. Farjon et al. (2019) implemented
+Faster R-CNN (FRCNN) to detect flower clusters. Recently, Mask R-
+CNN (MRCNN) and MaskScoring RCNN capable of simultaneous
+detection and instance-level segmentation have been adopted for
+individual apple flower and flower cluster segmentation in early and
+full bloom (Tian et al., 2020; Bhattarai et al., 2020). Unlike stone
+fruits (e.g., cherries) that develop one flower per flowering bud, each
+flowering bud in pome fruits (e.g., apples) can develop 5–7 flowers
+in a cluster, making the individual flower detection highly challen-
+ging during full bloom.
+Fruit detection, segmentation, and localization have received
+significant attention from the research community, specifically for
+robotic harvesting. Before the widespread adoption of deep learning,
+fruit detection involved handcrafted extraction of color, geometry,
+and texture features followed by classification/clustering approaches
+(Gongal et al., 2015). Recently, using 3D point cloud, Ge et al. (2021)
+leveraged fusion of shape and color features followed by a sSVM to
+classify and segment fruits, branches, and foliage in apple canopies.
+The use of CNN-based feature extractors is currently becoming in-
+creasingly popular with improved detection and segmentation ac-
+curacy. Implementation of FRCNN/improved versions of FRCNN
+ranges from single- to multi-class classification, and detection of
+various fruits including apples, kiwis, oranges, mangoes, strawber-
+ries (Fu et al., 2020; Gené-Mola et al., 2019; Gao et al., 2020; Liu
+et al., 2019; Sa et al., 2016; Wan and Goudos, 2020; Bargoti and
+Underwood, 2017). In addition to FRCNN other approaches such as
+YOLO and MRCNN have also been implemented and shown im-
+proved results in fruit detections (Tian et al., 2019; Gené-Mola et al.,
+2020; Liu et al., 2018). Hani et al. (2020) performed U-Net-based
+semantic segmentation of apples using pixel-wise classification.
+Once the individual fruits are detected, counting is achieved by
+simply summing up the individual detection. With the integration of
+a CNN-based feature extractor, the detection and segmentation
+performance improved substantially compared to hand-crafted fea-
+ture extraction methods. However, the increased accuracy comes
+with the expense of increased computational complexity, larger
+memory utilization, and labor-intensive manual annotation.
+To improve and simplify the fruit counting and yield estimation
+in orchards, a few approaches have been studied in the past. Given
+the segmented and registered image patches, Roy and Isler (2016)
+and Roy et al. (2019) used classical Gaussian Mixture model (GMM)
+based clustering to count the number of apples in the image. Since
+counting was based on the possible fruit segmentation, incorrect
+segmentation can compound to the incorrect fruit count. Hani et al.
+(2020), and Liu et al. (2018) reported an yield estimation pipeline
+involving fruit detection, localization, and counting. While Liu et al.
+(2018) detected individual fruit, Hani et al. (2020) solved fruit
+counting as an image patch classification problem such that the final
+count is the summation of the count in each image patch (Hani et al.,
+2018, 2020; Liu et al., 2018). Chen et al. (2017) combined Fully
+Convolution Network (FCN) and count convolution network for fruit
+blob detection and counting. Given the detected fruit blob from FCN,
+a count convolution network was used to extract bounding boxes
+around each blob and estimate the intermediate fruit count. Finally,
+a linear regression model was used to map intermediate fruit count
+estimates within each blob to human-generated ground truth count.
+Although there have been some efforts to implement regression-
+based counting in other areas, such as tomato counting, tobacco leaf
+counting, and banana leaf counting (Rahnemoonfar and Sheppard,
+2017; Dobrescu et al., 2019; Farjon et al., 2021), study of regression-
+based
+flower/fruit
+counting
+in
+tree
+fruit
+is
+still
+unexplored.
+Rahnemoonfar and Sheppard (2017) developed a modified Inception-
+ResNet trained with synthetic images for direct counting of tomatoes
+without explicit detection. Farjon et al. (2021) developed a counting
+network using ResNet-50 as the backbone followed by feature pyr-
+amid network to incorporate feature information and estimate count
+at each feature scale. Final count was obtained by combining the es-
+timation of each feature scales estimated via independent regression
+networks. The approaches proposed by Rahnemoonfar and Sheppard
+(2017) and Farjon et al. (2021), although provided direct object count
+via regression, they lack investigations and insights on whether the
+network is looking into correct object (flower/fruit) features to come
+up with specific count decision. Dobrescu et al. (2019) replaced the
+classification layer of VGG16 with two fully connected layers to ac-
+commodate regression-based Tobacco leaf counting and activation
+map visualization. The network requires input image size of 224×224.
+For the larger input images covering broader areas like an apple tree
+canopy, if the feature maps from VGG16 output were flattened and
+directly fed to fully connected network, the model size, memory re-
+quirement increases substantially (see Section 4.2). Furthermore, this
+could result in substantial number of un-activated neurons making the
+network unnecessarily bulky (Dobrescu et al., 2019). In this work
+VGG16 was used as a backbone to extract features but the inter-
+mediate, and backend layers were added to minimize the model size,
+improve counting accuracy and training speed by leveraging adaptive
+global average pooling.
+Counting in commercial tree fruit crops involve various image
+processing challenges due to factors such as occlusions, varying
+background, changing lighting exposure, unstructured canopies, and
+variable crop-load level. Most of the reported work estimates the
+object count with some form of detection/segmentation of in-
+dividual fruit/blob/image patch providing a multi-stage counting.
+Such multistage approaches are complex, time-consuming to pro-
+cess, and require substantial computational memory. Algorithms
+such as FRCNN and MRCNN also require intermediate processing
+such as region proposal estimation, region of interest (ROI) pooling,
+and ROI alignment adding the computational complexity. The pro-
+posed approach performs direct regression on input images, making
+it lightweight, and fast requiring low computational resources. Since
+the network is lightweight and computationally simple, it has the
+potential to be implemented and operated in hardware systems with
+low computational capacity such as cellphones without requiring
+cloud computation. For the given count estimation, the experiments
+were extended to investigate the highlighted regions and features
+contributing to the count estimation. Two popular activation map
+visualization techniques: Score-CAM (Wang et al., 2020) and Guided
+Backpropagation (Springenberg et al., 2014) were adopted to un-
+derstand the functionality of the network. Activation map visuali-
+zation helped to understand the activated regions and underlying
+features contributing to the final flower/fruit count allowing users to
+better understand the results and improve the reliability of the ob-
+tained results. The evaluated dataset in this work involves apple
+canopy images during bloom and harvesting seasons in the com-
+mercial apple orchards. This study opens the possibility to apply
+regression-based counting approaches in other commercial fruit
+production such as mangoes, oranges, kiwis, pears, and peaches.
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+3
+
+2.2. Deep visualization techniques
+While the deep neural networks have shown incredible perfor-
+mance improvement in a multitude of vision tasks, they are often
+criticized for being a Blackbox with a lack of interpretability, and
+explainability (Gilpin et al., 2018). In one of the early efforts, Zeilner
+and Fergus proposed a multi-layer deconvolutional network that
+uses the activation in the feature maps and reverts back to the input
+image to determine the parts of images that are responsible for the
+activations (Zeiler and Fergus, 2014). Class Activation Map (CAM)
+helped solve the visualization with weighted feature maps to obtain
+activation in the input image; however, its application is limited to
+the neural network architecture with global average pooling and
+requires retraining of the classification layer (Zhou et al., 2016).
+Grad-CAM (Selvaraju et al., 2017) and Grad-CAM++ (Chattopadhay
+et al., 2018) generalized the CAM and computed weights for the
+activation maps using the gradients flowing into the last convolution
+layer and are applicable irrespective of CNN architectures. Grad-CAM
+++ improved the Grad-CAM by introducing pixel-wise weights in
+each activation map to compute final weights for developing the
+saliency map (Chattopadhay et al., 2018). In this work Score-CAM
+(Wang et al., 2020) to highlight activated regions and Guided Back-
+propagation (Springenberg et al., 2014) to highlight activated fea-
+tures were implemented to investigate the final count. Score-CAM
+uses flower/fruit count value to highlight the regions while Guided
+Backpropagation leverages positive gradients flowing during the
+backpropagation step.
+3. Proposed approach
+3.1. Network architecture
+The proposed fruit Count Network (CountNet) consists of three
+computational blocks: feature extraction block, feature reduction
+block, and count computation block connected sequentially (see
+Fig. 2). CountNet is capable to processes three-channel RGB images
+irrespective of size.
+3.1.1. Feature extraction block
+The feature extraction block of the proposed CountNet consists of
+a pre-trained VGG16 (Simonyan and Zisserman, 2014) network as
+the backbone. Although different backbone architectures such as
+ResNet, ResNeXt, DenseNet are available, VGG16 was selected be-
+cause of the simple network architecture. VGG16 is a sequential
+network, without skip connections, which helped to simplify and
+better understand the network activation via activation map
+visualization techniques (discussed in Section 4.3). For the proposed
+CountNet, the classification block of the original VGG16 was re-
+moved, and new layers were added to estimate flower/fruit count.
+3.1.2. Feature reduction block
+The feature reduction block consists Global Average Pooling
+(GAP) layer. Inspired by the advantages of the GAP in computing
+channel attention weights in
+squeeze-and-excitation networks
+(SENet) (Hu et al., 2018), GAP was used to reduce feature dimensions
+by averaging over each feature map. In this work, an adaptive
+average pooling method was used which adaptively computes the
+kernel size and stride while computing the channel average value.
+Since the number of output features from GAP is equal to a number
+of input planes, and the Conv5 block of the VGG16 network outputs
+constant 512 channel feature map (see Fig. 2), the proposed
+CountNet is able to operate on the input image of any size. Fur-
+thermore, implementation of GAP after Conv5 feature extraction
+block over direct use of fully connected network minimizes model
+size, training time, number of training images, and over-fitting by
+substantially minimizing the number of optimizable parameters. Let
+×
+×
+x
+C H W be the input image with number of channels (C = 3),
+height (H), and width (W). After the series of convolutions and max-
+pools, the output of the VGG16 backbone would be
+×
+×
+y
+C
+H
+W,
+Where
+=
+=
+C
+H
+512,
+H
+32 and
+=
+W
+W
+32. The output feature map was fed
+to the GAP layer defined as in (1).
+=
+=
+=
+=
+z
+y
+g
+HW
+y
+( )
+1
+i
+H
+j
+W
+ij
+1
+1
+(1)
+Where,
+y
+g ( )
+C, g is the mapping function, z is the output of the
+GAP layer.
+3.1.3. Count computation block
+For the given reduced feature information from GAP layer, the count
+convolution block computes the final flower/fruit count value. Count
+computation block consists of a set of fully connected layers with
+dropout regularization. The count computation block is defined as
+C
+ReLU
+d
+ReLU
+d
+ReLU
+d
+[( , 256)
+(0.4), (256, 128)
+(0.4), (128, 1)
+(0.4)].
+Here, [(Ni, No) −ReLU −d(p)] represents input neuron Ni, output neuron
+No with probability of neurons to be deactivated via dropout p.
+3.2. Network activation visualization
+For activation map visualization, the Score-CAM activation map
+visualization technique was implemented. Unlike CAM, which re-
+quires network retraining and specifically global average pooling,
+Score-CAM is generalizable, does not require re-training, and can
+pass through both the convolution and fully connected layers (Wang
+et al., 2020). Furthermore, Score-CAM has shown superior activation
+map visualization compared to Grad-CAM and Grad-CAM++ irre-
+spective of objects’ spatial footprint. In this work, Score-CAM used
+for classification tasks was modified for the proposed regression-
+based CountNet (Ozbulak, 2019; Wang et al., 2020). Score-CAM does
+not depend on the gradients.The weights for the activation maps
+were obtained using each activation map’s contribution in com-
+puting the final flower/fruit count. The computed weight value
+highlighted the activated regions in each feature map identifying the
+highly probable flower/fruit regions. However, the activation map
+did not provide information on the activated region’s particular
+features contributing to the count. To understand which part/feature
+of the activated regions contributed to the final count, Guided
+Backpropagation (GB) (Springenberg et al., 2014) method was
+adopted. GB uses the backpropagation to visualize the gradients
+with respect to the input image, allowing positive gradients flow
+while suppressing the negative gradients. Normal backpropagation
+allows the flow of gradients even if they are negatively correlated
+Fig. 2. Proposed flower/fruit count network (CountNet). Output of frontend VGG16
+backbone is fed to global average pooling followed by count computation block with
+fully connected layers.
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+4
+
+with the neuron outcome. As GB retains only the positively corre-
+lated gradients, it results in clear visualization of the reconstructed
+features
+compared
+to
+normal
+backpropagation
+(Springenberg
+et al., 2014).
+3.3. Network training
+The feature extraction block (first 13 layers) of VGG16 was in-
+itialized using pre-trained weights from ImageNet dataset classifi-
+cation.
+The
+remaining
+layers
+were
+initialized
+using
+Gaussian
+distribution with a mean of 0 and a standard deviation of 1. The
+network was trained up to 200 epochs using Adam Optimizer with a
+learning rate of 0.000001 and a learning rate decay factor of 0.995.
+The network was trained separately to optimize the learnable
+parameters for different datasets. Learnable parameters were opti-
+mized using the mean squared error (squared L2 norm) loss function
+as in (2). The network was trained in two Nvidia Titan X 12 GB GPU
+with PyTorch Library.
+=
+=
+MSELoss
+N
+y
+y
+1
+(
+)
+i
+N
+i
+i
+p
+0
+2
+(2)
+Where yi and yi
+p are the ground truth and predicted count values
+for data size N.
+3.4. Dataset
+The datasets used in this experiment consisted of a set of apple
+canopy images during the flowering season and two sets of canopy
+images close to harvesting (with mature fruit; Table 1). Flower ca-
+nopy images (Flower-A) were collected over two growing seasons
+from commercial apple orchards during the early to full bloom
+period in Washington, USA. Flowers from different apple varieties,
+including Scifresh, Honeycrisp, Envy, and Gala grown in four dif-
+ferent orchard locations, and two fruiting wall architectures (2D
+vertical and V-trellised) were incorporated. Data collection was
+performed in daylight conditions without any background manip-
+ulation. In order to increase the variability in the dataset, images
+were collected using three imaging sensors: Microsoft Kinect v2
+Time of Flight (TOF) sensor (1920 × 1080), Stereolab’s ZED2 stereo
+camera (1920 × 1080), and Sony RX100 digital camera (5472 × 3648)
+in commercial apple orcahrds in Washington, USA. Microsoft Kinect
+V2 has a horizontal and vertical field of view of 84.1∘and 53.8∘while
+the ZED2 sensor has a larger viewing space with 110∘horizontal and
+70∘vertical field of view. Both sensors provide images at a the rate of
+30 frames/sec. Images were also collected with Sony RX100 digital
+camera that used a 20.2 MP CMOS sensor. Imaging sensors were
+positioned in such a way that majority of the canopy space was
+covered by the sensor field of view without substantially decreasing
+the spatial footprint (area in terms of number of pixels) of the object
+of interest (flower/fruit). To achieve this goal, sensors were placed at
+~ 0.9 m from tree trunks and ~ 1 m above the ground. Fruit canopy
+images (Fruit-A) were also collected over two growing seasons, using
+an LG G4 cellphone (1494 × 1992) in three commercial apple orch-
+ards in Washington, USA, with multiple varieties grown in fruiting
+wall architectures. The images were originally captured for detec-
+tion-based crop-load estimation purposes and are publicly available
+.1 The images acquired with cellphone have higher resolution com-
+pared to both ZED2 and Kinect V2 cameras and have shown the
+capability to provide enough detail in object detection tasks that
+require more resolution compared to the proposed approach. Ad-
+ditionally, the apple fruit dataset publicly released by Gao et al.
+(2020) as a part of a multi-class fruit classification experiment was
+annotated and used. The dataset consists of images of 800 harvest-
+ready apple canopies in 2D fruiting wall architecture (Gao et al.,
+2020).2 A set of 630 unique canopy images were extracted by re-
+moving similar images with Structural Similarity Index Measure
+(SSIM) greater than 95% followed by human verification. The fruit
+dataset consisted of 31 and 48 apples on average for Fruit - A and
+Gao et al. datasets while the flower dataset consisted of 69 flowers
+on average. The ground truth counts were collected using image-
+level annotation, specifying the number of flowers/fruits in each
+image without identifying the object location and feature informa-
+tion. The overall dataset was split into training and test set with 75%
+data for training and 25% for testing with a resolution of 1024 (H/W)
+x 768(W/H). Validation datasets were obtained by randomly crop-
+ping 768 (H/W) x 576 (W/H) size regions from the test set.
+3.5. Performance metrics
+The object (flower or fruit) count estimation accuracy was eval-
+uated using Mean Absolute Error (MAE), and Root Mean Squared
+Error (RMSE). Both MAE and RMSE consider object count estimated
+over the whole image.
+=
+=
+MAE
+N
+C
+C
+1
+i
+N
+i
+pred
+i
+gt
+1
+(3)
+=
+=
+RMSE
+N
+C
+C
+1
+i
+N
+i
+pred
+i
+gt
+1
+2
+(4)
+Where N is the total number of images in the test set. Ci
+pred is
+predicted count, and Ci
+gt is ground truth count.
+4. Results and discussion
+4.1. Flower/Fruit count
+To evaluate the performance of the proposed CountNet in rela-
+tion to models developed in the past, the results obtained with the
+proposed model were compared with the same obtained from dif-
+ferent approaches utilizing classical and CNN-based hierarchical
+feature extraction. All the models used image-level level annotation
+that require a total number of objects of interest in a particular
+image.
+Local Binary Pattern+Kernel Ridge Regression (LBP+KRR): LBP
+is a popular texture descriptor that extracts the object features
+modifying the neighboring pixel values by comparing them with the
+pixel of interest (Wang et al., 2009). The feature vector from LBP was
+fed to KRR to estimate the count.
+Modified Inception-Resnet (Rahnemoonfar and Sheppard, 2017):
+Modified Inception-ResNet is an end-to-end tomato counting net-
+work utilizing CNN feature extractor that can provide object count in
+a single pass. It consisted of various convolution and pooling layers
+along with a stack of modified Inception-ResNet-A and reduction
+modules. Modified Inception-ResNet has shown improved perfor-
+mance
+compared to the
+morphological
+area-based
+traditional
+counting method (Rahnemoonfar and Sheppard, 2017).
+Multiple Scale Regression (MSR) (Farjon et al., 2021): MSR uses
+ResNet-50 as a backbone followed by a feature pyramid network to
+extract features in five different feature scales/resolutions.3 The
+output at each feature scale in the pyramid was fed to an in-
+dependent regression sub-model to estimate intermediate count
+which was later combined together to estimate the final count.
+[Among the two approaches proposed by Farjon et al. (2021) only
+1 https://research.libraries.wsu.edu/xmlui/handle/2376/17721
+2 https://github.com/fu3lab/Scifresh-apple-RGB-images-with-multi-class-label
+3 https://github.com/farjon/Leaf-Counting
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+5
+
+MSR was used in the evaluation, the second approach Detection with
+Regression Network (DRN) requires dot point annotation of each
+object].
+Table 2 shows the MAE and RMSE comparison of the CountNet
+and other deep and non-deep learning-based feature extraction al-
+gorithms in apple flower and fruit counting. CountNet showed better
+count estimation with smaller MAE and RMSE values in all three
+datasets compared to LBP + KRR and Modified Inception-ResNet
+while showing competitive performance with MSR. When compared
+with MSR, CountNet showedlowest MAE in three datasets even with
+a substantially simpler network that uses less number of optimiz-
+able parameters. CountNet has 14.9 Million trainable parameters
+compared to MSR with 32.6 Million parameters: a ~ 54% (17.7 Mil-
+lion) less trainable parameters indicating the potential of improved
+performance even for a small dataset. For the apple flower dataset,
+the proposed CountNet achieved a mean absolute error of 12.0
+( ~ 17% of average # of flower/image). Moving from flower to fruit
+counting, a substantial decrease in error (MAE and RMSE) was ob-
+served with all four models. CountNet achieved the lowest MAE of
+2.9 ( ~ 9% of # of average fruit/image) in the Fruit-A dataset and 3.9
+( ~ 8% of average # of fruit/image) in the Gao et al. (2020) dataset.
+From Table 2, it was also observed that the MAE and MSE slightly
+increased in Gao et al. (2020) dataset compared to the Fruit-A da-
+taset with all the networks. This might be because Gao et al. (2020)
+dataset (average: ~ 48apples/image) consists a large number of ap-
+ples compared to the Fruit-A dataset (average: ~ 31 apples/image).
+A scatter plot of predicted count vs ground truth, both as con-
+tinuous variables, were plotted to compare the count estimation
+provided by the proposed CountNet, LBP+KRR, Modified Inception-
+ResNet, and MSR. (see Fig. 3). Additionally, a first-order polynomial
+trend-line was fitted to evaluate the estimation quality. Ideally, if the
+neural network could perfectly estimate the count, the trend-line
+slope would be unity with a null intercept. For practical purposes, it
+is desirable to have the trend-line with a slope close to unity and
+intercept close to zero. The proposed CountNet performed superior
+with larger slope and smaller intercept (smaller over-count) with all
+three datasets when compared to the same achieved with LBP+KRR,
+Modified Inception-ResNet, and MSR (except overcount in Flower-A
+dataset). Observing the trend-line intercept, all the compared algo-
+rithms tend to overestimate the flower/fruit counts. We believe all
+the models tended to incorporate some of the visible flowers/fruits
+in the background tree rows, which were not considered in the
+ground truth count.
+Additionally correlation coefficient (Pearson’s r-value) was com-
+puted to estimate the correlation (count agreement) between the
+ground truth and estimated count for all four algorithms (see
+Table 3). CountNet performed substantially better compared to LBP
++KRR and Modified Inception-ResNet with higher count agreement
+with the ground truth data while showing competitive performance
+with MSR. As illustrated in Table 2, Table 3, and Fig. 3, all the com-
+pared networks performed better in the fruit dataset than the flower
+dataset. For flower counting, the networks showed larger MAE,
+RMSE, and over-count and smaller slope values reflecting the added
+complexity in flower counting. Although all networks were trained
+with a similar number of objects for flower and fruit count (75% of
+30936 for flower and 75% of 29753 for fruit), the r-value of the trend-
+line for the flower dataset was lower compared to Gao et al. (2020)
+dataset. Flower and fruit counting in tree fruit is challenging because
+of the inherent complexity due to the biologically driven unique
+orchard characteristics and external variability due to weather,
+temperature, wind, and lighting conditions. Additionally, flower
+counting has added complexity because of the random shape, po-
+sition, and orientation of flowers. Unlike fruits with round shapes
+irrespective of maturity, flowers exist in early to full bloom stages in
+the same canopy, which can have a wide range of shape, texture, and
+color features. Furthermore, flowers are densely located in clusters
+with a large number of flowers in constrained spaces with a sub-
+stantial flower to flower occlusions resulting in random cluster
+structures. Oftentimes, multiple clusters are also closely spaced,
+resulting in super-clusters thus adding complexity to an already
+complex problem. The proposed CountNet even with such a complex
+scenarios achieved good results and have promising practical ben-
+efits.
+4.2. Ablation studies
+To investigate the contribution of different modules in the final
+fruit count, ablation studies were conducted in apple fruit datasets
+in two scenarios.
+• ResNet-50 backbone (ResNet50+GAP+Fully Connected Layers
+(FCL)): ResNet-50 was modified in a similar manner VGG16 was
+modified to design CountNet. The final average pooling and fully
+connected layers were replaced by new adaptive average pooling
+and a set of fully connected layers (see Section 3.1). ResNet-50
+was selected since it showed improved counting accuracy com-
+pared to GMM and AlexNet (Hani et al., 2018, 2020).
+• VGG16+FCL: Adaptive average pooling layer was replaced by FCL
+while keeping VGG16 as the backbone. The FCL was defined as
+×
+×
+C
+H
+W
+ReLU
+d
+ReLU
+d
+ReLU
+d
+[(
+, 256)
+(0.4), (256, 128)
+(0.4), (128, 1)
+(0.4)].
+Here, [(Ni, No) −ReLU −d(p)] represents input neuron Ni, output
+neuron No with probability of neurons to be deactivated via
+dropout p.
+As shown in Table 4, implementation of VGG16 as a backbone
+resulted in increased count accuracy compared to ResNet-50. Re-
+sNet-50 is a deeper network with larger model size and number of
+parameters. CountNet is a lightweight network, resulting in ~ 38%
+decrease in learnable parameters and model weight compared to the
+modified ResNet-50 with GAP. Implementation of a fully connected
+network directly with the VGG16 backbone adversely affected the
+counting accuracy while also making the model bulky. Since the
+output feature maps from the VGG16 backbone were flattened and
+fed to the fully connected layers directly, the VGG16 +FCL model
+Table 1
+Details of Apple flower and fruit canopy images (datasets) used in the experiment.
+Dataset
+#Images
+# Objects
+#Train
+#Test
+Sensors (Resolution)
+Flower - A (Apple)
+449
+30,936
+336
+113
+ZED2, Kinect V2 , Sony RX100
+Fruit - A (Apple)
+238
+7463
+178
+60
+LG G4
+Gao et al. (2020)
+630
+29,753
+472
+158
+Kinect V2
+Table 2
+MAE and RMSE of the proposed CountNet and other (deep/non-deep learning) ap-
+proach on flower/fruit count.
+Method
+Flower-A
+Fruit - A
+Gao et al. (2020)
+MAE
+RMSE
+MAE
+RMSE
+MAE
+RMSE
+LBP+KRR
+20.3
+26.5
+10.3
+13.2
+9.4
+11.7
+Mod. Inception-ResNet
+16.5
+22.5
+4.8
+6.9
+6.1
+7.8
+MSR
+12.1
+17.9
+3.1
+3.9
+4.2
+5.7
+CountNet
+12.0
+18.4
+2.9
+4.3
+3.9
+5.5
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+6
+
+resulted in a network with a substantially larger number of opti-
+mizable parameters increasing the chances of overfitting.
+4.3. What did the network look for?
+As discussed in Section 4.1 the proposed CountNet performed
+reasonably well in learning to count flowers and fruits based only on
+information on number of objects without explicit feature in-
+formation. This is the power of using hierarchical feature learning
+and backpropagation. The different layers of VGG16 were instru-
+mental in extracting the relevant features which were followed by
+global average pooling and fully connected networks to transform
+the extracted features into meaningful count estimation.
+Once the count results are obtained it is critically important to
+analyze and understand if the network is actually looking into the
+relevant features to make specific count decision. To further eluci-
+date the functionality of the CountNet, two activation map visuali-
+zation techniques: one that highlights the activated regions (Score-
+CAM) and another that highlights the relevant features within the
+activated regions (Guided Backpropagation) were adopted and im-
+plemented. Fig. 4 illustrates the qualitative results of the count es-
+timation from CountNet (column 1), as well as the activation map
+visualization using Score-CAM and Guided Backpropagation for
+CountNet (column 2 to column 4). As shown in Fig. 4b, the Score-
+CAM heatmap shows that the network was highly activated in the
+regions corresponding to the apple flower/fruit locations. The net-
+work primarily focused on the front row canopy and learned to
+exclude most of the flower/fruit in the background row as well as
+other orchard artifacts such as leaves, branches, trellis wire, and the
+background sky. Since Score-CAM only visualized the most active
+region, Guided Backpropagation was implemented to understand
+which part of the apple flower/fruit was activated to contribute to
+the final count estimation. Fig. 4d shows some of the critical features
+in apple flowers and fruits within the activated regions that con-
+tribute to the final count.
+As shown in Fig. 4d (row 1 and row 2) and Fig. 5a, the proposed
+CountNet processed early and full bloom flowers in distinctive ways
+incorporating different feature information to estimate the count.
+Fig. 5a shows the close-up view of an apple canopy image, including
+a proportion of full bloom and unopened flowers in a cluster. If the
+flowers were in early bloom, the most activated features were the
+small flower blobs representing unopened flowers. On the other
+hand, when the flowers start to bloom, the network looked into
+flower edge features. Looking into the Guided Backpropagation re-
+sults, it is evident that even if a cluster has both unopened and full
+bloom flowers together, unopened buds were activated as blobs
+while full bloom flowers were activated with edge features. It is
+interesting to see that the network, without any information on
+what to look into in such a complicated environment, looked into
+some of the crucial features to differentiate flowers from background
+objects (e.g. branches, trellis wires. trunk, leaves, sky, canopies in
+consecutive rows) in orchards.
+As shown in Fig. 4d (row 3 and row 4), for apple fruit images, the
+most active details were apple fruit edges(mostly circular) and the
+feature information included by those edges. It is also interesting to
+see that another non-obvious apple part, the calyx, was activated
+when visible, and contributed the final count (see Fig. 5c). For the
+given activated region, even if the fruits were partially or sub-
+stantially occluded due to leaves, branches, and other orchard arti-
+facts, the network learned to exclude those features and activate the
+visible fruit regions irrespective of their spatial footprint. Slightly
+underexposed/shadowed fruit regions were also activated; however,
+the overexposed fruit features were suppressed, which happened to
+have a similar appearance as the background sky and the plastic
+reflectors.
+The apple flower/fruit count and the visualization results from
+CountNet are promising for practical applications in agriculture.
+Although experiments in apple flowers showed higher MAE and
+RMSE, the achieved results are promising, especially for the highly
+complicated flower counting problem where individual flower de-
+tection is a great challenge. The proposed network, trained with
+limited training examples, estimated the count, irrespective of the
+object’s spatial footprint, even when the flower/fruits were heavily
+occluded. CountNet could be employed in flower/fruit counting ap-
+plications that do not require precise detection, segmentation, and
+Fig. 3. Scatter plot and first-order trend-line between estimated count and ground truth count obtained from CountNet and other approaches for flower and fruit datasets.
+Table 3
+Correlation coefficient (Pearson’s r value) comparison of proposed CountNet with
+other (deep/non-deep learning) approaches on flower/fruit count.
+Method
+Flower-A
+Fruit-A
+Gao et al. (2020)
+LBP+KRR
+0.722
+0.585
+0.469
+Mod. Inception-ResNet
+0.808
+0.894
+0.808
+MSR
+0.880
+0.967
+0.898
+CountNet
+0.871
+0.962
+0.911
+Table 4
+Ablation Study on apple fruit image datasets.
+Method
+Fruit - A
+Gao et al. (2020)
+Params.
+MAE
+RMSE
+MAE
+RMSE
+(Millions)
+ResNet50 +GAP+FCL
+4.2
+5.7
+4.6
+6.5
+24.1
+VGG16 +FCL
+3.8
+5.3
+5.8
+7.8
+128.1
+VGG16 +GAP+FCL
+(CountNet)
+2.9
+4.3
+3.9
+5.5
+14.9
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+7
+
+localization. Such applications include flower density estimation,
+crop-load estimation, and yield estimation. Flower density, the ratio
+of the total number of flowers in a tree and trunk cross-sectional
+area (Embree et al., 2007), can be used to customize chemical and
+mechanical thinning applications for individual trees. The proposed
+approach is simpler with low computational overhead and a highly
+efficient image level annotation process compared to the detection-
+based approaches requiring bounding box or polygon annotations,
+region proposal estimation, and non-maximal suppression. Unlike
+fully supervised methods that expect precise annotation of the ob-
+ject of interest, the proposed approach was able to distinguish the
+relevant objects (early unopened, full bloom flowers and fruits) ir-
+respective of their shape, color, texture solely based on total object
+count in the image. We believe this is one of the critical findings that
+help understand the power of generalizability of the weakly su-
+pervised methods.
+CountNet does not require extensive computational require-
+ments; it has potential to be integrated into low computation de-
+vices such as growers’ cellphones and embedded systems utilizing
+the system’s in-house computation capability without cloud com-
+putation and high-end GPUs. The proposed system, when adopted,
+has the potential to help growers efficiently conduct varieties of
+Fig. 4. [Best viewed in color] Count estimation and activation map visualization for CountNet using Score-CAM and Guided Backpropagation [Guided Backpropagation result
+might require additional zoom in to visualize].
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+8
+
+orchard applications such as fruit crop-load/yield estimation, bloom
+density estimation, or any other applications that require object
+count information. Crop-load estimation helps growers to optimize
+harvesting workers and resources, and conduct post-harvesting
+management operations more efficiently. Bloom density measure-
+ment is useful to customize the chemical and mechanical bloom
+thinning applications. Furthermore, bloom density is one of the
+earliest indicators of crop-load in tree fruit orchards using which the
+growers can estimate the anticipated yield in a particular year before
+the fruits are set. Integrating the proposed method into a cellphone-
+based system would be valuable for commercial apple fruit growers
+to strategize crop-load management and harvesting operations ef-
+ficiently.
+4.4. Failures/Limitations and improvement
+The proposed system also has some limitations, reduction/
+elimination of which would improve the counting performance
+further. Although it was not the common case for apple fruits and
+apple flowers in vertical fruiting wall architecture, the network
+incorporated flower count contribution from background row in
+some instances in V-trellised orchard architecture (see Fig. 6a). In a
+V-trellised architecture, canopies are closely spaced and trained in
+an inverted pyramid shape, making the background canopy much
+closer than in the vertical fruiting wall canopy architecture. We
+expect that the implementation of background modeling and re-
+moval algorithms and/or an active lighting-based illumination-
+invariant imaging system (Silwal et al., 2021) will benefit the
+model. Furthermore, the network substantially underestimated
+the fruit count in heavily underexposed images (see Fig. 6b).
+Through the examination of the dataset, it was found that the
+training set constituted limited underexposed images for the
+network to learn. The network also incorporated the counts from
+apples present on the ground (see Fig. 6c). Deep learning methods
+are “dataset hungry” and have the potential to improve perfor-
+mance with increased training examples. Furthermore, integration
+of the proposed method into a cellphone-based system would be
+valuable for commercial apple fruit growers to easily access
+technology and strategize crop-load management and harvesting
+operations efficiently.
+Fig. 5. [Best viewed in color] Close-up view of some example cases where the CountNet was able to highlight flower fruit features irrespective of maturity, lighting condition,
+occlusion, and object spatial footprint. [Guided Backpropagation result might require additional zoom in to visualize].
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+9
+
+5. Conclusion
+In this article, a regression-based network for object counting in
+agriculture was proposed. Experiments were conducted to estimate
+flower, fruit count, and visualize activated regions and features in
+images acquired in an unstructured orchard environment. The pro-
+posed method is expected to be an essential step towards auto-
+mating applications such as bloom density estimation, crop-load
+estimation, and yield prediction in the specialty crop (e.g., tree fruit
+crops) industry. Through this study, the following conclusions were
+drawn.
+• Flower/fruit counting in tree fruit (e.g., apples) could be achieved
+using a regression-based convolution neural network with
+image-level annotation (e.g. total count of fruit). The regression-
+based method simplified the counting process by directly esti-
+mating the flower/fruit count without using complex polygon
+annotation, explicit detection, non-maximal suppression, and
+region proposal computations.
+• Incorporation of activation visualization using Score-CAM and
+Guided Backpropagation showed that the network was able to
+suppress the majority of background information while fo-
+cusing on fruit/flower features irrespective of their shape, size,
+and texture in a highly occluded environment. The apple
+flower/fruit edges and feature information within those edges
+were some of the critical information that contributed to the
+final count.
+In the future, yield estimation using regression-based counting
+will be investigated. Furthermore, different approaches will be
+investigated to integrate the proposed approach in cellphone app
+so that growers would be able to easily access the technology. The
+system will also be investigated for improving the performance
+algorithmically and tested for wider varieties of fruit and vege-
+tables.
+Declaration of Competing Interest
+The authors declare that they have no known competing fi-
+nancial interests or personal relationships that could have appeared
+to influence the work reported in this paper.
+Acknowledgements
+This work was financially supported by the USDA National
+Institute of Food and Agriculture (NIFA), Washington D.C., USA
+(Grant No. AWD001664).
+References
+Bargoti, S., Underwood, J., 2017. Deep fruit detection in orchards. 2017 IEEE
+International
+Conference
+on
+Robotics
+and
+Automation
+(ICRA).
+IEEE,
+pp.
+3626–3633.
+Bhattarai, U., Bhusal, S., Majeed, Y., Karkee, M., 2020. Automatic blossom detection in
+apple trees using deep learning. IFAC-Pap. 53 (2), 15810–15815.
+Chattopadhay, A., Sarkar, A., Howlader, P., Balasubramanian, V.N., 2018. Grad-cam.:
+Generalized gradient-based visual explanations for deep convolutional networks.
+2018 IEEE Winter Conference on Applications of Computer Vision (WACV). IEEE,
+pp. 839–847.
+Chen, S.W., Shivakumar, S.S., Dcunha, S., Das, J., Okon, E., Qu, C., Taylor, C.J., Kumar, V.,
+2017. Counting apples and oranges with deep learning: A data-driven approach.
+IEEE Robot. Autom. Lett. 2 (2), 781–788.
+Dias, P.A., Tabb, A., Medeiros, H., 2018a. Apple flower detection using deep convolu-
+tional networks. Comput. Ind. 99, 17–28.
+Dias, P.A., Tabb, A., Medeiros, H., 2018b. Multispecies fruit flower detection using a
+refined
+semantic
+segmentation
+network.
+Ieee
+Robot.
+Autom.
+Lett.
+3
+(4),
+3003–3010.
+Dobrescu, A., ValerioGiuffrida, M., Tsaftaris, S.A., 2019. Understanding deep neural
+networks for regression in leaf counting. Proc. IEEE/CVF Conf. Comput. Vis. Pattern
+Recognit. Workshops 0-0.
+Embree, C.G., Myra, M.T., Nichols, D.S., Wright, A.H., 2007. Effect of blossom density
+and crop load on growth, fruit quality, and return bloom in ‘honeycrisp’apple.
+HortScience 42 (7), 1622–1625.
+Estabrook, B., 2019. Farmers can’t Find. enough Work. Harvest Crops- fruits Veg. are
+literally
+rotting
+Fields.
+〈https://www.eatingwell.com/article/291645/farmers-
+cant-find-enough-workers-to-harvest-crops-and-fruits-and-vegetables-are-
+literally-rotting-in-fields/〉Accessed: July, 2021.
+Fig. 6. [Best viewed in color] Examples of some failure cases involving the inclusion of background flowers, undercounted underexposed images, and falsely counted ground
+apples. [Guided Backpropagation result might require additional zoom in to visualize].
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+10
+
+Farjon, G., Itzhaky, Y., Khoroshevsky, F., Bar-Hillel, A., 2021. Leaf counting: Fusing
+network components for improved accuracy. Front. Plant Sci. 12, 1063.
+Farjon, G., Krikeb, O., Hillel, A.B., Alchanatis, V., 2019. Detection and counting of
+flowers on apple trees for better chemical thinning decisions. Precis. Agric. 1–19.
+Fu, L., Majeed, Y., Zhang, X., Karkee, M., Zhang, Q., 2020. Faster r-cnn-based apple
+detection in dense-foliage fruiting-wall trees using rgb and depth features for
+robotic harvesting. Biosyst. Eng. 197, 245–256.
+Gao, F., Fu, L., Zhang, X., Majeed, Y., Li, R., Karkee, M., Zhang, Q., 2020. Multi-class fruit-
+on-plant detection for apple in snap system using faster r-cnn. Comput. Electron.
+Agric. 176, 105634.
+Ge, L., Zhou, K., Zhou, H., Yu, X., Tan, Y., Zhang, C., Li, W., 2021. Three dimensional apple
+tree organs classification and yield estimation algorithm based on multi-features
+fusion and support vector machine. Inf. Process. Agric.
+Gené-Mola, J., Sanz-Cortiella, R., Rosell-Polo, J.R., Morros, J.-R., Ruiz-Hidalgo, J.,
+Vilaplana, V., Gregorio, E., 2020. Fruit detection and 3d location using instance
+segmentation neural networks and structure-from-motion photogrammetry.
+Comput. Electron. Agric. 169, 105165.
+Gené-Mola, J., Vilaplana, V., Rosell-Polo, J.R., Morros, J.-R., Ruiz-Hidalgo, J., Gregorio, E.,
+2019. Multi-modal deep learning for fuji apple detection using rgb-d cameras and
+their radiometric capabilities. Comput. Electron. Agric. 162, 689–698.
+Gilpin, L.H., Bau, D., Yuan, B.Z., Bajwa, A., Specter, M., Kagal, L., 2018. Explaining ex-
+planations: An overview of interpretability of machine learning. 2018 IEEE 5th
+International Conference on data science and advanced analytics (DSAA). IEEE, pp.
+80–89.
+Gongal, A., Amatya, S., Karkee, M., Zhang, Q., Lewis, K., 2015. Sensors and systems for
+fruit detection and localization: A review. Comput. Electron. Agric. 116, 8–19.
+Gongal, A., Silwal, A., Amatya, S., Karkee, M., Zhang, Q., Lewis, K., 2016. Apple crop-
+load estimation with over-the-row machine vision system. Comput. Electron.
+Agric. 120, 26–35.
+Häni, N., Roy, P., Isler, V., 2018. Apple counting using convolutional neural networks.
+2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS).
+IEEE, pp. 2559–2565.
+Häni, N., Roy, P., Isler, V., 2020. A comparative study of fruit detection and counting
+methods for yield mapping in apple orchards. J. Field Robot. 37 (2), 263–282.
+Hu, J., Shen, L., Sun, G., 2018. Squeeze-and-excitation networks. Proc. IEEE Conf.
+Comput. Vis. Pattern Recognit. 7132–7141.
+Lacey, K., 2019. Estim. your Citrus Crop Load. 〈https://www.agric.wa.gov.au/citrus/
+estimating-your-citrus-crop-load?page=0%2C0〉Accessed: July, 2021.
+Liu, X., Chen, S.W., Aditya, S., Sivakumar, N., Dcunha, S., Qu, C., Taylor, C.J., Das, J.,
+Kumar, V., 2018. Robust fruit counting: Combining deep learning, tracking, and
+structure from motion. 2018 IEEE/RSJ International Conference on Intelligent
+Robots and Systems (IROS). IEEE, pp. 1045–1052.
+Liu, Z., Wu, J., Fu, L., Majeed, Y., Feng, Y., Li, R., Cui, Y., 2019. Improved kiwifruit de-
+tection using pre-trained vgg16 with rgb and nir. Inf. Fusion. IEEE Access 8,
+2327–2336.
+Marini, R., 2017, Fruit harvest - estimating apple yield and fruit size. < https://
+extension.psu.edu/fruit-harvest-estimating-apple-yield-and-fruit-size > .
+Accessed: July, 2021.
+Mohan, G., 2017, To keep crops from rotting in the field, farmers say they need trump
+to let in more temporary workers. < https://www.latimes.com/projects/la-fi-farm-
+labor-guestworkers/ > .Accessed: July 2021.
+Ozbulak, U. (2019). Pytorch cnn visualizations.〈https://github.com/utkuozbulak/py-
+torch-cnn-visualizations〉.
+Rahnemoonfar, M., Sheppard, C., 2017. Deep count: fruit counting based on deep si-
+mulated learning. Sensors 17 (4), 905.
+Robinson, T., Lakso, A., Greene, D., Hoying, S., 2013. Precision crop load management.
+NY Fruit. Q. 21 (2), 3–9.
+Roy, P., Isler, V., 2016. Vision-based apple counting and yield estimation. International
+Symposium on Experimental Robotics 478–487 Springer,.
+Roy, P., Kislay, A., Plonski, P.A., Luby, J., Isler, V., 2019. Vision-based preharvest yield
+mapping for apple orchards. Comput. Electron. Agric. 164, 104897.
+Sa, I., Ge, Z., Dayoub, F., Upcroft, B., Perez, T., McCool, C., 2016. Deepfruits: A fruit
+detection system using deep neural networks. Sensors 16 (8), 1222.
+Selvaraju, R.R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., Batra, D., 2017. Grad-
+cam: Visual explanations from deep networks via gradient-based localization. In.
+Proc. IEEE Int. Conf. Comput. Vis. 618–626.
+Silwal, A., Parhar, T., Yandun, F., and Kantor, G., 2021, A robust illumination-invariant
+camera system for agricultural applications.arXiv:2101.02190.
+Simonyan, K. and Zisserman, A., 2014, Very deep convolutional networks for large-
+scale image recognition.arXiv:1409.1556.
+Springenberg, J.T., Dosovitskiy, A., Brox, T., Riedmiller, M., 2014. Striving simplicity: all
+convolutional Net arXiv:1412.6806.
+Tian, Y., Yang, G., Wang, Z., Li, E., Liang, Z., 2020. Instance segmentation of apple
+flowers using the improved mask r-cnn model. Biosyst. Eng. 193, 264–278.
+Tian, Y., Yang, G., Wang, Z., Wang, H., Li, E., Liang, Z., 2019. Apple detection during
+different growth stages in orchards using the improved yolo-v3 model. Comput.
+Electron. Agric. 157, 417–426.
+Wan, S., Goudos, S., 2020. Faster r-cnn for multi-class fruit detection using a robotic
+vision system. Comput. Netw. 168, 107036.
+Wang, H., Wang, Z., Du, M., Yang, F., Zhang, Z., Ding, S., Mardziel, P., Hu, X., 2020. Score-
+cam: Score-weighted visual explanations for convolutional neural networks. Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. Workshops 24–25.
+Wang, X., Han, T.X., Yan, S., 2009. An hog-lbp human detector with partial occlusion
+handling. 2009 IEEE 12th international conference on computer vision. IEEE, pp.
+32–39.
+Zeiler, M.D., Fergus, R., 2014. Visualizing and understanding convolutional networks.
+European Conference on Computer Vision. Springer, pp. 818–833.
+Zhou, B., Khosla, A., Lapedriza, A., Oliva, A., Torralba, A., 2016. Learning deep features
+for discriminative localization. Proc. IEEE Conf. Comput. Vis. Pattern Recognit.
+2921–2929.
+U. Bhattarai and M. Karkee
+Computers in Industry 138 (2022) 103635
+11

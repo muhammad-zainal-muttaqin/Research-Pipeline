@@ -1,0 +1,1282 @@
+ 
+Contents lists available at ScienceDirect
+ICT Express
+journal homepage: www.elsevier.com/locate/icte
+ 
+Multiple object detection and tracking in autonomous vehicles: A survey on 
+enhanced affinity computation and its multimodal applications$
+Muhammad Adeel Altaf a
+, Min Young Kim a,b,c
+,∗
+a School of Electronic and Electrical Engineering, Kyungpook National University, 80 Daehakro, Buk-gu, Daegu, 41566, South Korea
+b Research Center for Neurosurgical Robotic System, Kyungpook National University, 80 Daehakro, Buk-gu, Daegu, 41566, South Korea
+c KNU-LG Electronics Convergence Research Center, Kyungpook National University, 80 Daehakro, Buk-gu, Daegu, 41566, South Korea
+A R T I C L E  I N F O
+Keywords:
+Deep neural network
+Gaussian mixture model-based data association
+Affinity computation
+Autonomous driving
+Multi-object tracking
+ 
+A B S T R A C T
+Three-dimensional (3D) object tracking is crucial in computer vision applications, particularly in autonomous 
+driving, robotics, and surveillance. Despite advancements, effectively utilizing multimodal data to improve 
+multi-object detection and tracking (MODT) remains challenging. This study introduces ACMODT, an affinity 
+computation-based multi-object detection and tracking framework that integrates camera (2D) and LiDAR (3D) 
+data for enhanced MODT performance in autonomous driving. This approach leverages EPNet as a backbone, 
+utilizing 2D–3D feature fusion for accurate proposal generation. A deep neural network (DNN) extracts robust 
+appearance and geometric features, while an improved affinity computation module combines Refined Boost 
+Correlation Features (RBCF) and 3D-Extended Geometric IoU (3D-XGIoU) for precise object association. Motion 
+prediction is refined using a Kalman filter (KF), and Gaussian Mixture Model (GMM)-based data association 
+ensures consistent tracking. Experiments on the KITTI car tracking benchmark for quantitative analysis and 
+the RADIATE dataset for visualization demonstrate that our method achieves superior tracking accuracy and 
+precision compared to state-of-the-art multi-object tracking (MOT) approaches, proving its effectiveness for 
+real-time object tracking.
+1. Introduction
+As autonomous driving technology progresses and gains broader 
+adoption, the demand for advanced perception and precise three-
+dimensional multiple object tracking (3D MOT) frameworks [1–3] has 
+increased significantly. These systems play a crucial role in understand-
+ing the surrounding environment by continuously tracking multiple 
+objects, including near or distant vehicles, in real-time, harsh weather 
+conditions. This capability is fundamental in enhancing situational 
+awareness, thereby improving the overall safety and dependability 
+of self-driving systems [4,5]. Despite the significant advancements in 
+MOT methodologies, existing approaches still encounter difficulties 
+in highly dynamic and complex traffic conditions. Techniques that 
+rely solely on camera-based tracking [6,7] are constrained by the 
+limitations of visual sensors, leading to reduced accuracy under intense 
+sunlight exposure or poor lighting conditions. Conversely, LiDAR-based 
+tracking [8,9] provides precise spatial data. Still, they often generate 
+$ The Basic Science Research Program supported this work through the National Research Institute Foundation of Korea (NRF) funded by the Ministry of 
+Education (2021R1A6A1A03043144) and the Korea Institute for Advancement of Technology (KIAT) grant funded by the Ministry of Trade, Industry and Energy 
+(MOTIE) (P0020536, The Competency Development Program for Industry Specialist). This work was also supported by the National Research Foundation of Korea 
+(NRF) grant funded by the Ministry of Science and ICT (MSIT) (No. 2022R1A2C2008133).
+∗Corresponding author at: School of Electronic and Electrical Engineering, Kyungpook National University, 80 Daehakro, Buk-gu, Daegu, 41566, South Korea.
+E-mail addresses: adeel.altaf88@knu.ac.kr (M.A. Altaf), minykim@knu.ac.kr (M.Y. Kim).
+false detections or struggle to differentiate between distinct objects 
+due to their inability to capture visual characteristics such as texture 
+and color. Additionally, LiDAR-generated point clouds can be disrupted 
+by environmental elements like airborne particles and water mist, 
+introducing uncertainty and noise that compromise the reliability and 
+consistency of object tracking results.
+To overcome these challenges, multisensor fusion has emerged as a 
+crucial strategy, integrating image data from cameras and point cloud 
+data from LiDARs to offset the weaknesses of individual sensors. By 
+combining these complementary sources of information, tracking accu-
+racy and robustness can be improved. Several studies have explored the 
+advantages of multi-sensor fusion in MOT. For instance, Kim et al. [10] 
+proposed EagerMOT, a multi-order data association framework that 
+efficiently merges outputs from various object detection sources and 
+sensor modalities. Similarly, Shenoi et al. introduced JRMOT [11], 
+which integrates 2D camera images with 3D LiDAR point clouds to 
+https://doi.org/10.1016/j.icte.2025.06.005
+Received 18 March 2025; Received in revised form 10 May 2025; Accepted 9 June 2025
+ICT Express 11 (2025) 809–818 
+Available online 21 June 2025 
+2405-9595/© 2025 The Authors. Published by Elsevier B.V. on behalf of The Korean Institute of Communications and Information Sciences. This is an open access 
+article under the CC BY-NC-ND license ( http://creativecommons.org/licenses/by-nc-nd/4.0/ ). 
+
+M.A. Altaf and M.Y. Kim
+enable real-time tracking. Zhang et al. [12] developed mmMOT, which 
+was among the first to incorporate deep feature extraction from point 
+clouds for tracking applications. Their results highlight that combining 
+data from multiple sensors significantly improves tracking accuracy 
+compared to relying on a single sensor. However, despite the advan-
+tages of sensor fusion, 3D MOT in autonomous vehicles still encounters 
+significant hurdles, including sensor-induced noise, rapidly shifting en-
+vironmental conditions, and detection uncertainties. Addressing these 
+issues necessitates the adoption of sophisticated filtering techniques 
+that can effectively refine incoming data and ensure stable tracking 
+performance across multiple objects. Among the various filtering meth-
+ods, KFs are widely employed in 3D MOT due to their ability to reduce 
+sensor noise and provide real-time estimations of object states [13–16].
+One of the key challenges in 3D MOT lies in enhancing detection 
+accuracy when processing multimodal data from various sensors. A typ-
+ical MOT pipeline consists of several steps, including object detection, 
+feature correlation, affinity-based data association, and track manage-
+ment. Given the complex nature of tracking tasks, effective affinity 
+metrics are essential, requiring a combination of appearance-based 
+and geometric features to differentiate between visually similar objects 
+and handle complex motion patterns. Although fusion-based tracking 
+approaches have been explored, the influence of multimodal feature 
+integration on multi-object detection remains an understudied area. 
+Many existing 3D MOT frameworks primarily focus on feature distance 
+correlation, often neglecting the directional relationships between fea-
+tures, which can impact tracking robustness and accuracy. To address 
+these limitations, this study introduces a unified affinity computation 
+approach that integrates appearance and geometric relationships more 
+comprehensively than previous methods. Specifically, the proposed AC-
+MODT framework incorporates an RBCF, which evaluates both spatial 
+distance and directional similarity across frames, and a novel 3D-
+XGIoU, which goes beyond standard IoU by including object orientation 
+and aspect ratio alignment in 3D space. These elements, along with a 
+GMM-based data association scheme, distinguish ACMODT from earlier 
+works such as mmMOT [12], JMODT [17], and BcMODT [18].
+Key contributions of this study
+1. This research presents a comprehensive end-to-end framework, 
+termed ACMODT, that efficiently generates 3D bounding boxes 
+(BBs) and optimal association scores in real-time by integrating 
+LiDAR and camera data with the RBCF.
+2. To enhance geometric affinity estimation, the proposed ap-
+proach substitutes the conventional 3D mean Intersection over 
+Union (3D-IoU) [19] with the proposed 3D-XGIoU, offering a 
+more accurate depiction of spatial relationships between de-
+tected objects.
+3. In this approach, RBCF models both spatial and directional fea-
+ture dependencies to enhance re-identification robustness, while 
+3D-XGIoU extends traditional IoU by incorporating box orien-
+tation, aspect ratio, and volumetric penalties. Together, these 
+metrics form a unified affinity estimation framework that ad-
+dresses critical challenges like object overlap, misalignment, and 
+occlusions more effectively than existing 3D MOT techniques.
+4. The effectiveness of the method is validated using two well-
+known datasets: the KITTI car tracking benchmark [20] and 
+RADIATE [21]. The experimental results indicate substantial 
+improvements in tracking precision, accuracy, reduced ID-SW, 
+and overall performance metrics compared to existing method-
+ologies, with enhanced visual representations in the form of 2D 
+image outputs.
+The remainder of this paper is organized as follows: Section 2 provides 
+a comprehensive survey of existing MOT methodologies. Section 3 
+details the architecture of the proposed system. Section 4 elaborates on 
+the affinity computation framework, including its associated metrics. 
+Section 5 discusses the experimental results and evaluates the system’s 
+performance. Finally, Sections 6 and 7 summarize the key conclu-
+sion, highlight current limitations, and propose potential directions for 
+future research.
+2. Literature survey
+2.1. Survey on multi-object tracking
+MOT is typically approached using two primary paradigms. The first 
+is the tracking-by-detection (TBD) framework [12,22], which processes 
+detection and tracking as separate tasks. In Fig. 1, the detection and 
+tracking are treated as distinct processes in TBD. Initially, the detection 
+network identifies objects by producing their classification and BB 
+coordinates. Subsequently, a separate tracking network extracts motion 
+and appearance features to facilitate data association. It also introduces 
+𝐷𝑡
+1, which signifies the detected object at time 𝑡, and 𝐹𝑡
+𝑡𝑟𝑘,1, representing 
+the extracted tracking feature for the corresponding detection. Further-
+more, 𝑇𝑡−1
+1 denotes the tracking state of the object from the previous 
+frame at time 𝑡−1. These variables collectively facilitate accurate object 
+association and continuity in MOT across frames. Most existing MOT 
+models follow this paradigm; however, their effectiveness is hindered 
+by issues such as slower processing speeds and error propagation, stem-
+ming from the sequential nature of object detection, data association, 
+and track assignment. To mitigate these drawbacks, the joint detection 
+and tracking (JDT) paradigm [23–25] was introduced, integrating both 
+tasks within a unified end-to-end learning-based framework as shown 
+in Fig. 1.
+One notable contribution is the Track-to-Detect and Segment
+(TraDeS) tracking model by Wu et al. [2], which improves MOT 
+performance by feeding tracking information back into the detection 
+process. Additionally, TraDeS incorporates a re-identification (Re-ID) 
+loss function, aligning it more effectively with the detection loss. 
+Several JDT-based approaches have since been proposed, including 
+RetinaTrack [25], CenterTrack [7], ChainedTracker [26], JDE [27], 
+JMODT [17], and BcMODT [18]. Conversely, the JDT approach em-
+ploys a unified network that simultaneously extracts features for de-
+tection and tracking tasks. This integrated strategy enhances computa-
+tional efficiency and reduces overall processing costs.
+For example, ChainedTracker [26] constructs tracklets by link-
+ing bounding boxes between consecutive frames. Similarly, Zhang 
+et al. [12] demonstrated that leveraging relationships between de-
+tected object pairs can enhance overall tracking accuracy. While the 
+JDT paradigm offers notable performance improvements, developing 
+effective models remains a complex challenge. The success of this 
+approach is highly dependent on the ability to incorporate and process 
+multi-sensor data efficiently. Existing studies on 3D MOT with multi-
+sensor fusion emphasize the importance of precise sensor calibration 
+for achieving optimal tracking performance. However, a significant 
+gap remains in understanding the attribute-based relationships between 
+objects, which many current methods fail to address. To overcome 
+these limitations, the proposed ACMODT framework adopts the JDT 
+paradigm, aiming to enhance tracking accuracy and robustness through 
+improved sensor fusion techniques.
+2.2. Affinity estimation techniques for MOT
+Determining object affinity is a crucial aspect of MOT, relying 
+on appearance features, motion trajectory predictions, and geometric 
+overlap. Unlike traditional fluoroscopy-based data fusion methods [28], 
+modern approaches utilize feature fusion techniques that incorporate 
+both camera images and LiDAR point clouds. These techniques typi-
+cally process sensor modalities either independently or by integrating 
+them using attention-based mechanisms [11]. Several existing affin-
+ity computation models rely solely on camera-derived features, such 
+as ODESA [29], SMAT [19], CenterTrack [7], ChainedTrack [26], 
+JDE [27], and RetinaTrack [25]. Some methods extend affinity compu-
+tation by incorporating both camera and LiDAR-based fusion strategies, 
+such as JRMOT [11], which employs batch fusion, or JMODT [17], 
+which performs point-wise feature fusion to align image pixels with 
+corresponding LiDAR points. However, most of these models do not 
+ICT Express 11 (2025) 809–818 
+810 
+
+M.A. Altaf and M.Y. Kim
+Fig. 1. Illustration of two detection-based MOT paradigms: The TBD approach treats detection and tracking as separate processes, whereas the JDT approach integrates feature 
+sharing between tasks. In the network output, ‘C’ denotes the object class, ‘B’ represents the bounding box, and ‘T’ indicates the tracking information.
+fully explore the relationships between different modalities, as they 
+primarily process each feature set independently rather than integrating 
+them into a unified framework.
+Despite advances in affinity computation, challenges persist in ef-
+fectively integrating geometric relationships for improved object as-
+sociation. To address this, the proposed framework incorporates an 
+advanced geometric affinity metric, 3D-XGIoU, aimed at enhancing 
+spatial consistency and reducing false associations in dynamic envi-
+ronments. This approach, when combined with refined appearance 
+features, offers a more robust solution for accurate multi-object de-
+tection and tracking. These advancements underscore the need for 
+a comprehensive affinity computation approach that simultaneously 
+considers geometric, contextual, and appearance relationships while 
+ensuring real-time efficiency.
+2.3. Feature representation and similarity measures
+Enhancing the accuracy of MOT requires refining the shared fea-
+ture maps generated by the Region Proposal Network (RPN) [30,31], 
+ensuring that only the most relevant features contribute to object de-
+tection and association. The JMODT framework [17] improves feature 
+representation by applying 3D-distance Intersection over Union (3D 
+DIoU)-based filtering to eliminate irrelevant candidate features, fol-
+lowed by absolute subtraction-based correlation computations [12] to 
+measure similarities between detected objects across frames. Similarly, 
+mmMOT utilizes a combination of dot product operations, subtraction, 
+and absolute difference calculations to quantify the similarity between 
+object features. However, these methods primarily focus on measuring 
+the spatial distance between features across adjacent frames while 
+failing to account for directional consistency, which plays a crucial role 
+in maintaining reliable object associations.
+To overcome these limitations in geometric affinity calculation, 
+the 3D-XGIoU metric is utilized. Unlike conventional IoU approaches, 
+3D-XGIoU enhances geometric affinity by considering not only the 
+overlapping area but also the spatial alignment, aspect ratios, and 
+orientation of 3D BBs. This refined approach helps minimize false 
+associations, especially in cluttered or dynamic scenarios, and en-
+sures consistent tracking accuracy across frames. Additionally, the 
+proposed framework incorporates an RBCF module that simultane-
+ously evaluates spatial distance-based similarity and directional feature 
+alignment across frames. By integrating these components, the frame-
+work significantly enhances the accuracy of object affinity computation 
+derived from camera and LiDAR fusion. The refined representation re-
+duces ID switches and incorrect associations in complex environments. 
+Furthermore, the combined evaluation of spatial and directional fea-
+ture domains strengthens the robustness of data association, enabling 
+reliable tracking even under occlusions and rapid motion changes.
+2.4. Methodological taxonomy of MOT approaches
+To better contextualize our proposed ACMODT framework, Table 1 
+presents a structured taxonomy of recent 3D MOT methods, highlight-
+ing their strategies for object detection, correlation, affinity modeling, 
+motion prediction, and data association techniques. These methods 
+range from utilizing 2D image data to advanced 3D spatial fusion 
+for object detection. For object correlation, some approaches focus 
+on appearance-based re-identification (Re-ID), while others incorpo-
+rate start-end probability estimation to enhance detection accuracy 
+across frames. The appearance modality is also diversified, with some 
+methods relying exclusively on camera data, while others employ multi-
+modal fusion using LiDAR and camera inputs for improved object 
+identification.
+Motion prediction mechanisms vary across methods. KF is widely 
+used for motion estimation due to its efficiency in linear motion mod-
+eling. In contrast, some methods focus on 2D or 3D distance measures, 
+or Intersection over Union (IoU), to assess geometric relationships. Ad-
+ditionally, the strategies for data association include the Hungarian Al-
+gorithm (HA), Mixed-Integer Programming (MIP), and GMM, ensuring 
+effective matching of detected and tracked objects. The proposed AC-
+MODT method integrates 3D detection, GMM-based data association, 
+and robust affinity computation. This combination ensures reliable and 
+consistent tracking performance, particularly suited for autonomous 
+driving scenarios where precise object detection and trajectory man-
+agement are crucial.
+ICT Express 11 (2025) 809–818 
+811 
+
+M.A. Altaf and M.Y. Kim
+Table 1
+A comparative taxonomy of recent 3D MOT methods based on fusion type, affinity metric, motion model, and data association.
+ Type
+Method
+Object detection
+Object correlation
+Sensor fusion
+Motion 
+model
+Affinity metric
+Data 
+association
+ 
+ TBD
+ODESA [29]
+2D
+Re-ID
+Camera
+KF
+2D IoU
+HA
+ 
+ TBD
+JRMOT [11]
+3D
+Re-ID
+LiDAR+camera (batch fusion)
+KF
+3D IoU
+JPDA
+ 
+ TBD
+SMAT [19]
+2D
+Re-ID+optical flow
+Camera
+N/A
+2D IoU
+HA
+ 
+ TBD
+mmMOT [12]
+3D
+Re-ID+start-end probability
+LiDAR+camera
+N/A
+N/A
+MIP
+ 
+ JDT
+RetinaTrack [25]
+2D
+Parallel Re-ID
+Camera
+KF
+2D IoU
+HA
+ 
+ JDT
+CenterTrack [7]
+2D/3D
+Paired detection
+Camera
+Offset
+2D distance
+Greedy
+ 
+ JDT
+JDE [27]
+2D
+Parallel Re-ID
+Camera
+KF
+2D distance
+HA
+ 
+ JDT
+ChainedTracker [26]
+2D
+Parallel Re-ID
+Camera
+N/A
+2D IoU
+HA
+ 
+ JDT
+JMODT [17]
+3D
+Parallel Re-ID and start-end prob.
+LiDAR+camera (point-wise fusion)
+KF
+3D DIoU
+MIP
+ 
+ JDT
+BcMODT [18]
+3D
+Parallel Re-ID and start-end BcF
+LiDAR+camera (point-wise fusion +BcF)
+KF
+3D MiIoU
+MIP
+ 
+ JDT
+ACMODT (Ours)
+3D
+Parallel Re-ID and start-end prob.
+LiDAR+camera (point-wise fusion)
+KF
+3D-XGIoU
+GMM
+ 
+Abbreviations and Descriptions: Offset = Prediction of spatial displacement between frames; DIoU = Distance IoU Affinity; MiIoU = Mixed-IoU Affinity; JPDA = Joint Probabilistic 
+Data Association; BcF = Boost Correlation Feature; prob. = probability.
+Fig. 2. Structure diagram of the enhanced affinity computation-based multi-object detection and tracking workflow using GMM-based data association with affinity metrics of 
+Refined Boost Correlation Features and 3D-extended geometric IoU.
+3. System architecture
+The proposed system is designed to perform MOT by leveraging 
+multi-sensor fusion and advanced affinity computation techniques. The 
+architecture consists of multiple interconnected modules that work 
+together to extract features, detect objects, compute affinities, and 
+manage object tracks over time. A high-level overview of the frame-
+work is illustrated in Fig. 2. The system begins with the input data 
+and sensor calibration module, where data is acquired from two pri-
+mary sensors: 2D images from cameras and 3D point clouds from 
+LiDAR. To ensure accurate spatial alignment between these two data 
+sources, a sensor calibration process is applied. Following data ac-
+quisition, the RPN and feature encoding module processes the sensor 
+data. EPNet serves as the backbone network by extracting deep 3D 
+point features while incorporating image-based semantics. This module 
+consists of three key components: a 2D Feature encoder and decoder, 
+which extracts visual representations from images; a 3D feature en-
+coder and decoder, responsible for processing geometric information 
+from LiDAR point clouds; and a 2D–3D feature fusion module, which 
+integrates these features to create more robust object representations. 
+The RPN generates object proposals, which are then refined through 
+subsequent processing stages. Once object proposals are generated, the 
+object detection network classifies and refines these detections. The 
+object classification module identifies object categories such as vehicles 
+and pedestrians, while the box regression module optimizes the 3D 
+bounding boxes (predicted by EPNet). A correlation network extracts 
+appearance-based features to facilitate object association across frames. 
+The re-identification (Re-ID) module ensures that previously tracked 
+objects can be recognized if they temporarily disappear due to oc-
+clusion or motion blur. Additionally, a start-end estimation module 
+determines the initial and final positions of each tracked object.
+To establish correspondences between detections across frames, the 
+system employs affinity calculation and data association. This mod-
+ule constructs an affinity matrix (cost matrix) where each element 
+represents the similarity score between a detected object and an exist-
+ing track. The matrix incorporates multiple affinity metrics, including 
+classification confidence scores, IoU, Euclidean distance, and feature 
+correlation scores from the Re-ID network. Additionally, the RBCF and 
+3D-XGIoU further refine the affinity calculations by improving spatial 
+and appearance-based similarity measures. To enhance tracking con-
+sistency, the motion prediction module applies a KF to estimate object 
+trajectories over time. The GMM-based data association method is then 
+used to improve the matching of detections across frames by mod-
+eling the feature distributions of detected and predicted objects. The 
+match score ranking module prioritizes the most reliable associations, 
+ensuring robust track continuity.
+Finally, the track management Module oversees the state of tracked 
+objects using a state estimation process. Each object follows a well-
+defined lifecycle, transitioning through four possible states: Birth, when 
+a new object is detected and initialized as a track; Tracking, when 
+an object is actively followed across frames; Miss, when a temporary 
+loss of detection occurs due to occlusion or sensor noise; and Death, 
+when an object is permanently removed from the tracking system. 
+This structured approach ensures a reliable affinity-based framework 
+for multi-object detection and tracking, even in complex and dynamic 
+environments.
+4. Affinity computation approach
+The shared feature representations generated by the RPN undergo 
+further refinement to improve 3D BB predictions and enhance asso-
+ciation scores using data from both camera and LiDAR sensors. This 
+ICT Express 11 (2025) 809–818 
+812 
+
+M.A. Altaf and M.Y. Kim
+process does not modify the original 2D or 3D encoding structures but 
+instead applies a thresholding mechanism to ensure that object features 
+corresponding to the same identity are standardized. To achieve a 
+more effective affinity estimation, this study introduces a hybrid metric 
+that combines the RBCF with a 3D-XGIoU to jointly model appearance 
+consistency and spatial alignment. The affinity measure is defined as: 
+𝐴𝑟𝑒𝑙
+𝑚,𝑛= 𝛼⋅𝐶app
+𝑚,𝑛+ 𝛽⋅𝐶3D-XGIoU
+𝑚,𝑛
+(1)
+where:
+• 𝐶app
+𝑚,𝑛 represents the affinity score derived from the RBCF.
+• 𝐶3D-XGIoU
+𝑚,𝑛
+ is the geometric similarity score computed using the 
+3D-XGIoU metric.
+• 𝛼 and 𝛽 are weighting parameters that satisfy 𝛼+ 𝛽= 1.
+Compared to conventional methods that separately consider appear-
+ance or geometry, our formulation leverages a more holistic affinity 
+model. The RBCF captures inter-frame dependencies using a direction-
+aware similarity function, while the 3D-XGIoU metric enhances spatial 
+alignment by penalizing inconsistencies in orientation, overlap, and 
+shape. This dual-channel affinity formulation is uniquely integrated 
+with a GMM-based association strategy, providing a robust mechanism 
+for handling noisy detections, occlusions, and overlapping trajectories, 
+capabilities not fully addressed in prior multimodal MOT frameworks.
+4.1. Refined boost correlation feature for appearance matching
+Traditional object tracking models, such as mmMOT [12], utilize 
+absolute differences, element-wise subtraction, and multiplication to 
+determine feature correlations between detected objects. The adjacency 
+relationship between feature pairs is estimated to facilitate MOT, allow-
+ing feature extraction to be performed independently of batch size and 
+across multiple sensor modalities. In JMODT [17], an IoU-based filter-
+ing approach is applied to remove irrelevant feature embeddings, while 
+an absolute subtraction operation is used to measure feature differ-
+ences across consecutive frames. However, these techniques overlook 
+directional consistency in feature representation, which can negatively 
+impact object association in dynamic environments.
+To address these challenges, the RBCF method is introduced, which 
+enhances object-level dependencies across frames by incorporating 
+temporal smoothness and feature variation modeling. Unlike conven-
+tional cosine similarity approaches [32], this technique integrates a 
+temporal consistency factor to minimize fluctuations in feature repre-
+sentations across frames. The modified correlation function is formu-
+lated as: 
+𝑅𝐵𝐶𝐹𝑚,𝑛= (1 −𝜃) ‖‖𝐹𝑚−𝐹𝑛‖‖ + 𝜃⋅
+𝐹𝑚⋅𝐹𝑛
+‖𝐹𝑚‖‖𝐹𝑛‖
+(2)
+where:
+• 𝐹𝑚 and 𝐹𝑛 denote the extracted feature embeddings of the BBs.
+• 𝐹𝑚⋅𝐹𝑛 represents the dot product between the two feature vectors.
+• ‖𝐹𝑚‖ and ‖𝐹𝑛‖ are the magnitude values of the feature embed-
+dings.
+• 𝜃 is a temporal adjustment parameter that smooths feature vari-
+ations across frames.
+By combining spatial feature difference modeling with temporal co-
+herence, the proposed method significantly enhances object tracking 
+robustness, leading to improved affinity calculation and more reliable 
+object association.
+4.2. 3D-extended geometric IoU for spatial similarity
+A novel 3D-XGIoU metric is proposed to enhance geometric affinity 
+estimation. Unlike traditional IoU-based similarity measures, this ap-
+proach introduces additional penalties for BB misalignment, orientation 
+disparities, and aspect ratio inconsistencies, providing a more robust 
+measure of spatial overlap in 3D environments. The formulation of 
+3D-XGIoU is given by: 
+3𝐷−𝑋𝐺𝐼𝑜𝑈𝑚,𝑛= Mean (𝐼𝑜𝑈3𝐷+ 𝐺𝐼𝑜𝑈3𝐷+ 𝑋𝐼𝑜𝑈3𝐷
+)
+(3)
+where:
+• 𝐼𝑜𝑈3𝐷 represents the standard 3D IoU metric for BB overlap.
+• 𝐺𝐼𝑜𝑈3𝐷 is the Generalized 3D IoU, which incorporates a penalty 
+for BBs that are spatially close but do not overlap.
+• 𝑋𝐼𝑜𝑈3𝐷 introduces aspect-ratio adjustments and orientation cor-
+rections, ensuring a more refined similarity estimation between 
+bounding boxes.
+This improved similarity metric accounts for a variety of overlapping 
+conditions, considering object orientation, aspect ratio, and spatial 
+alignment, making it more comprehensive than traditional IoU-based 
+methods. The proposed 3D-XGIoU provides higher tracking accuracy 
+and better association performance in multi-object tracking scenarios 
+where objects are dynamically moving in a 3D space.
+4.3. Optimized affinity computation
+Traditional affinity estimation approaches primarily rely on the 
+distance between fused camera-LiDAR features to calculate appearance-
+based similarity. In contrast, the proposed method integrates the RBCF 
+into the affinity computation process. This enhancement improves 
+the accuracy and robustness of MOT by incorporating richer appear-
+ance information through RBCF while simultaneously leveraging a 
+more comprehensive spatial similarity metric using the XGIoU. By 
+utilizing both appearance-based and geometric affinity measures, the 
+proposed framework significantly enhances object association accu-
+racy. The pseudocode for affinity computation is provided in Algorithm 
+1.
+Algorithm 1 Optimized Affinity Computation using RBCF and XGIoU
+Require: Detection set 𝐷, active tracks 𝑇, and proposal features 𝐻= {𝐻𝑖, 𝑖∈
+𝐷∩𝑇}
+Ensure: Computed affinity scores 𝐴𝑟𝑒𝑙
+𝑚,𝑛, 𝑚∈𝐷, 𝑛∈𝑇
+1: for each track 𝑛∈𝑇 do
+2: 
+Predict the 3D bounding box 𝐵𝑛 for track 𝑛 using KF
+3: 
+for each detection 𝑚∈𝐷 do
+4: 
+Compute feature correlation: 𝑆𝑚,𝑛←|𝐹𝑚−𝐹𝑛|
+5: 
+Compute appearance affinity: 𝐶app
+𝑚,𝑛←Re-ID(𝑆𝑚,𝑛)
+6: 
+Extract 3D bounding box: 𝐵𝑚
+7: 
+Compute geometry: 𝐶XGIoU
+𝑚,𝑛
+←XGIoU(𝐵𝑚, 𝐵𝑛)
+8: 
+end for
+9: end for
+10: Compute matrices 𝐶app and 𝐶XGIoU
+11: Normalize appearance affinity: 𝑃←Softmax(𝐶app) along columns
+12: 𝑄←Softmax(𝐶app) along rows
+13: Refine appearance affinity: 𝐶app ←1
+2 (𝑃+ 𝑄)
+14: Compute affinity score: 𝐴𝑟𝑒𝑙
+𝑚,𝑛←𝛼𝐶app + 𝛽𝐶XGIoU
+5. Implementation details
+To evaluate the real-time capability of the proposed ACMODT 
+framework and the other state-of-the-art methods, the experimental 
+study was conducted for runtime benchmarking on the same system 
+hardware equipped with an Intel Core i7-8700K CPU, 32 GB RAM, and 
+an NVIDIA TITAN RTX GPU with 24 GB memory. The implementation 
+was performed using Python and PyTorch. For object detection, a pre-
+trained EPNet model [33] was employed, while the correlation network 
+underwent training for 40 epochs with a batch size of 4. The training 
+process utilized the AdamW optimizer [34], incorporating a cosine 
+annealing learning rate schedule, initialized at 2 × 10−4.
+For data association, a GMM-based approach was adopted, and its 
+parameters were fine-tuned and compared against the MIP-based data 
+ICT Express 11 (2025) 809–818 
+813 
+
+M.A. Altaf and M.Y. Kim
+Table 2
+Comparison of car tracking performance on the KITTI dataset based on reported results 
+in previous studies and data obtained from the KITTI public leaderboards.
+ Method
+AB3DMOT
+mmMOT
+JRMOT
+JMODT
+BcMODT
+Ours
+ 
+ TBD
+✓
+✓
+✓
+
+
+
+ 
+ JDT
+
+
+
+✓
+✓
+✓
+ 
+ MOTA ↑
+83.92%
+84.77%
+85.70%
+86.27%
+86.53%
+88.56% 
+ MOTP ↑
+85.30%
+85.21%
+85.48%
+85.41%
+85.37%
+89.61% 
+ MODA ↑
+83.95%
+85.60%
+85.98%
+86.40%
+86.66%
+88.73% 
+ MODP ↑
+88.21%
+88.28%
+88.42%
+88.32%
+88.29%
+90.18% 
+ FP ↓
+978
+711
+772
+772
+1,248
+589
+ 
+ FN ↓
+4,542
+4,243
+4,049
+3,433
+3,341
+962
+ 
+ MT ↑
+66.77%
+73.23%
+71.85%
+77.38%
+78.31%
+86.57% 
+ ML ↓
+9.08%
+2.77%
+4.00%
+2.92%
+2.62%
+1.38% 
+ IDSW ↓
+10
+284
+98
+45
+45
+2
+ 
+ Frag ↓
+199
+753
+372
+585
+626
+130
+ 
+ Runtime ↓
+0.05 s
+0.02 s
+0.07 s
+0.01 s
+0.01 s
+0.01 s 
+association method implemented in JMODT [17]. The affinity com-
+putation parameters were optimized through empirical evaluation to 
+maximize performance. The appearance score weight was set to 2, the 
+classification score weight was assigned a value of 100, the IoU score 
+weight was defined as 10, the distance measure weight was adjusted 
+to 10, and the start-end probability weight was configured as 1. In 
+the context of data association, the weighting factors for classification, 
+affinity, and spatial embedding were set to 100, 22, and 1, respectively, 
+and these values were fine-tuned through cross-validation. To enhance 
+detection reliability, a classification threshold of 0.80 was established, 
+ensuring the elimination of low-confidence detections.
+5.1. Benchmark dataset and performance metrics
+The effectiveness of the proposed ACMODT framework was assessed 
+using the KITTI car tracking dataset [20], which consists of 29 test 
+sequences and 21 training sequences captured through a forward-
+facing camera and LiDAR sensors. Each labeled object in the dataset 
+was assigned a unique identification number associated with a 3D 
+BB. An object detection was classified as a true positive (TP) if its 
+2D IoU [35] exceeded 0.5. To evaluate the MOT performance, the 
+experimental setup adhered to the standard KITTI evaluation criteria, 
+utilizing key performance indicators such as Multiple Object Tracking 
+Precision (MOTP), Multiple Object Tracking Accuracy (MOTA), Multi-
+ple Object Detection Accuracy (MODP), and Multiple Object Detection 
+Accuracy (MODA). Additionally, False Negatives (FN), False Positives 
+(FP), Mostly Tracked (MT), Mostly Lost (ML), fragmentation (Frag), 
+and IDSW were recorded to quantify tracking consistency and overall 
+system reliability [36].
+5.2. Quantitative analysis
+The proposed ACMODT framework was evaluated against existing 
+tracking methods, including AB3DMOT, mmMOT, JRMOT, JMODT, 
+and BcMODT, using the KITTI dataset. As shown in Table 2, AC-
+MODT achieved superior accuracy and precision across all evaluated 
+metrics, demonstrating its effectiveness in MOT. The evaluation fol-
+lows the MOTA metric [36], ensuring consistency with benchmark 
+methodologies.
+The results indicate that ACMODT achieves the highest MOTA 
+score of 88.56%, surpassing the second-best approach, BcMODT, which 
+records 86.53%. This improvement highlights the enhanced track-
+ing accuracy achieved by the proposed framework. Additionally, the 
+model attains the best MOTP score of 89.61%, outperforming JR-
+MOT’s 85.48%, demonstrating superior object localization precision. 
+The MODA metric also confirms the effectiveness of ACMODT, with 
+a score of 88.73%, exceeding BcMODT’s 86.66%, which signifies the 
+framework’s high detection accuracy. In terms of BB alignment, the 
+Table 3
+Comparison of model complexity and runtime across different MOT frameworks.
+ Method
+Parameter count (Millions)
+Runtime (ms/frame) 
+ JRMOT [11]
+∼22.9M
+70.0
+ 
+ mmMOT [12]
+∼21.7M
+50.0
+ 
+ JMODT [17]
+∼19.8M
+10.0
+ 
+ BcMODT [18]
+∼20.4M
+10.0
+ 
+ ACMODT (Ours)
+∼46.5M
+9.7
+ 
+MODP score of 90.18% is the highest among all compared methods, 
+indicating better precision in detecting and localizing objects. The 
+model also minimizes FP detections (589), which is significantly lower 
+than BcMODT’s 1,248, highlighting its improved detection reliability. 
+The method further reduces errors, with the lowest number of FN (962), 
+IDSW (2), and frag errors (130), which reinforces its robust tracking 
+stability.
+Moreover, ACMODT achieves the highest percentage of MT objects 
+at 86.57% and the lowest percentage of ML objects at 1.38%, demon-
+strating its ability to maintain accurate trajectories. It also achieves a 
+processing speed of approximately 0.01 s per frame, including feature 
+extraction, detection, and tracking. This runtime performance is com-
+parable to other state-of-the-art methods such as JMODT (0.01 s/frame) 
+and BcMODT (0.01 s/frame), and significantly faster than mmMOT 
+(0.02 s/frame) and JRMOT (0.07 s/frame). These results confirm that 
+ACMODT is suitable for real-time deployment in autonomous driving 
+scenarios.
+5.3. Model complexity
+To evaluate ACMODT’s computational practicality, it is important 
+to compare its model complexity and runtime efficiency with sev-
+eral state-of-the-art MOT frameworks in Table 3. Despite having a 
+higher parameter count due to the integration of multimodal features 
+and refined correlation modules, ACMODT achieves a faster inference 
+speed of 9.7 ms/frame, outperforming many lighter models in terms of 
+real-time performance.
+To assess the resilience of ACMODT under adverse weather condi-
+tions, it is needed to compare its performance against standard back-
+bones trained on both limited and extended weather data from the 
+RADIATE dataset. As shown in Table 4, conventional methods such 
+as ResNet-50 and ResNet-101 exhibit sharp declines in accuracy in 
+rain, fog, snow, and nighttime scenarios, often achieving less than 
+35% precision in extreme conditions. In contrast, ACMODT maintains 
+significantly higher scores across all environments, with over 66% 
+in rain, 71% in fog, 63% in snow, and 69% in nighttime settings. 
+This superior performance is primarily due to the robust multimodal 
+fusion of LiDAR and camera data, and the integration of RBCF and 
+the 3D-XGIoU metric, which enhances spatial alignment and feature 
+consistency under sensor degradation.
+5.4. Visual analysis of tracking performance
+MODT in urban environments presents significant challenges, par-
+ticularly due to occlusion. Objects in both 2D image sequences and 
+3D point cloud data may be partially or completely obscured for 
+varying durations, complicating detection and tracking. A sequence 
+(0001) from the KITTI car tracking dataset was selected for evaluation 
+to assess the proposed tracking method’s effectiveness. The tracking 
+framework is designed to handle urban traffic complexities, particularly 
+scenarios where objects undergo full occlusion. The visualization in Fig. 
+3 demonstrates how the model successfully detects and tracks multiple 
+vehicles, ensuring continuity even in challenging situations, such as 
+overlapping trajectories and frequent occlusions.
+The algorithm assigns unique IDs to track the vehicles (e.g., IDs 15, 
+16, 2, 5, 6, and 17), maintaining their trajectories across frames. The 
+ICT Express 11 (2025) 809–818 
+814 
+
+M.A. Altaf and M.Y. Kim
+Table 4
+Performance comparison of ACMODT with standard backbones under adverse weather conditions using the RADIATE dataset. ACMODT 
+outperforms prior architectures in rain, fog, snow, and nighttime conditions.
+ Method
+Training condition
+Rain (%)
+Fog (%)
+Snow (%)
+Nighttime (%) 
+ ResNet-50
+Good Weather
+26.45
+47.25
+5.47
+33.53
+ 
+ ResNet-50
+Good + Bad Weather
+33.53
+48.24
+12.81
+35.63
+ 
+ ResNet-101
+Good Weather
+29.18
+48.30
+11.16
+34.07
+ 
+ ResNet-101
+Good + Bad Weather
+31.96
+51.22
+8.14
+36.49
+ 
+ ACMODT (Ours)
+All Weather
+66.71
+71.25
+63.54
+69.47
+ 
+Fig. 3. Vehicle tracking consistency across multiple frames of the KITTI dataset in 
+urban environments, demonstrating the system’s ability to handle frequent occlusions 
+and overlapping objects.
+BBs encapsulate spatial positioning, direction, and motion flow within 
+the scene. For example, ID 6 represents a vehicle on the right side of 
+the scene, which remains consistently tracked, illustrating the method’s 
+ability to sustain detection across time. Different colors (e.g., red, green, 
+yellow, and cyan) are utilized to differentiate objects, enhancing visual 
+interpretability. Additionally, the system integrates motion prediction 
+and re-identification mechanisms, allowing objects that are temporarily 
+occluded or re-entering the scene to be accurately reassociated with 
+their previous tracking identities.
+To highlight the performance improvements of the proposed AC-
+MODT framework, Fig. 4 presents side-by-side comparisons between 
+ACMODT and a baseline method, JMODT [17]. Two consecutive frames 
+(000115, 000116) were selected from a sequence 0001 in the KITTI 
+dataset that includes multiple occlusions and dense traffic scenarios. 
+ACMODT consistently tracks vehicles with better BB alignment across 
+frames. However, JMODT misses BB detections and tracking with the 
+tracking IDs 16 and 17 in both frames compared to the ACMODT. 
+Whereas ACMODT shows better continuity in tracking, especially when 
+objects temporarily leave and re-enter the field of view.
+5.5. 3D visualization
+Fig. 5 illustrates a 3D representation of the tracking results cor-
+responding to Frame 000108 from the KITTI dataset. Each detected 
+vehicle is enclosed within a 3D BB, uniquely identified by an assigned 
+tracking ID. The labels indicate both the object class (car) and the 
+corresponding ID number for each tracked vehicle. This visualiza-
+tion effectively demonstrates the capability of the proposed tracking 
+framework in accurately projecting detected objects into a 3D space 
+using LiDAR point cloud data. The system effectively captures object 
+localization, orientation, and motion patterns, reinforcing its precision 
+in real-world scenarios.
+5.6. Tracking performance under adverse weather conditions
+To evaluate the robustness of the proposed tracking framework, 
+Fig. 6 presents selected frames from the RADIATE dataset, demon-
+strating MOT under various challenging weather conditions, including 
+fog, rain, and nighttime scenarios. This visualization highlights the 
+system’s capability to adapt to adverse environmental conditions, en-
+suring reliable vehicle detection and tracking. The algorithm effectively 
+maintains object tracking despite significant visibility limitations in 
+(a) and (b), foggy conditions. Vehicles are successfully detected using 
+3D BBs (blue), ensuring continuity of object identities, even when fog 
+heavily obscures the scene. The integration of the camera and LiDAR 
+data fusion allows for stable object localization, mitigating the effects 
+of reduced visibility. For (c) and (d), rainy conditions, the tracking 
+model demonstrates its resilience against water reflections and motion 
+blur. Despite the presence of wet surfaces and reduced contrast, vehi-
+cles are consistently detected with precisely aligned BBs, maintaining 
+smooth trajectory estimations across frames. The system adapts to 
+environmental changes while preserving unique object IDs. In (e) and 
+(f), nighttime conditions, the algorithm efficiently tracks vehicles in 
+low-light environments, leveraging LiDAR data for depth perception. 
+Even under poor illumination, detected vehicles are assigned accurate 
+tracking IDs (red and blue BBs), ensuring that object trajectories remain 
+stable. The model successfully compensates for motion blur and dark 
+surroundings, reinforcing its effectiveness in real-world autonomous 
+navigation.
+5.7. Ablation study
+To assess the impact of different motion prediction models, this 
+study conducted a comparative evaluation of the KF and Extended 
+Kalman Filter (EKF) within the proposed tracking framework. The 
+primary objective was to analyze their effectiveness in improving MOT 
+accuracy and precision. KF efficiently predicts the state of an object 
+based on previous measurements while minimizing estimation errors. 
+In contrast, the EKF extends KF to handle non-linear motion models 
+by linearizing the state transition equations through first-order Taylor 
+series approximations. Our evaluation reveals that while EKF accounts 
+for more complex motion patterns, it introduces additional uncertainty 
+ICT Express 11 (2025) 809–818 
+815 
+
+M.A. Altaf and M.Y. Kim
+Fig. 4. Qualitative comparison of tracking performance between the proposed method ACMODT and the baseline method (JMODT) on challenging urban sequences from the KITTI 
+dataset. ACMODT demonstrates superior ID consistency and bounding box precision.
+and linearization errors, leading to a slight reduction in tracking per-
+formance compared to KF. As shown in Table 5, the KF-based method 
+achieves a MOTA of 86.02% and MOTP of 87.11%, outperforming the 
+EKF-based model, which results in a MOTA of 81.71% and MOTP of 
+87.40%. The IDSW is significantly lower, i.e., 2 in KF and 408 in EKF, 
+indicating better object trajectory continuity. The frag count (130 in 
+KF vs. 572 in EKF) further highlights the increased consistency in KF-
+based tracking. Additionally, KF achieves a higher recall (92.82% vs. 
+91.42%) and precision (95.47% vs. 96.20%). However, EKF shows a 
+slightly improved MOTP, indicating better localization accuracy for 
+complex movements, but at the cost of overall tracking performance. 
+The results suggest that while EKF improves localization precision 
+(MOTP), it introduces more IDSW and frag, leading to reduced overall 
+tracking accuracy (MOTA). The KF-based tracking approach provides 
+more stable tracking, achieving higher MOTA and recall, making it 
+more suitable for real-time autonomous vehicle tracking applications.
+To evaluate the individual impact of the proposed RBCF and 3D-
+XGIoU components, we conducted a series of ablation experiments on 
+the KITTI tracking dataset. As shown in Table 6, we systematically 
+disabled each component while keeping the rest of the ACMODT frame-
+work unchanged to isolate their contributions. When RBCF was re-
+moved, the MOTA dropped from 88.56% to 85.74%, indicating reduced 
+ICT Express 11 (2025) 809–818 
+816 
+
+M.A. Altaf and M.Y. Kim
+Fig. 5. Three-dimensional tracking visualization for Frame 000108 in the KITTI dataset.
+Fig. 6. Selected frames illustrating vehicle tracking performance under diverse weather 
+conditions, including fog, rain, and nighttime environments. Bounding boxes indicate 
+detected vehicles, with assigned unique tracking IDs across frames.  (For interpretation 
+of the references to color in this figure legend, the reader is referred to the web version 
+of this article.)
+Table 5
+Comparison of tracking performance between Kalman Filter and Extended Kalman Filter 
+using the KITTI tracking dataset.
+ Metric
+KF-based tracking (%)
+EKF-based tracking (%) 
+ MOTA ↑
+86.02
+81.71
+ 
+ MOTP ↑
+87.11
+87.40
+ 
+ MODA ↑
+86.04
+85.33
+ 
+ MODP ↑
+90.13
+90.32
+ 
+ Recall ↑
+92.82
+91.42
+ 
+ Precision ↑
+95.47
+96.20
+ 
+ F1 Score ↑
+94.14
+93.75
+ 
+accuracy in appearance-based affinity matching. Similarly, replacing 
+the 3D-XGIoU with conventional 3D-IoU resulted in a decrease in 
+MOTA to 86.19% and an increase in ID switches to 50, highlighting the 
+importance of precise geometric modeling. When both modules were 
+disabled, the performance declined further to 83.81% MOTA, along 
+with the highest IDSW and FP values among all configurations. These 
+results confirm that both components significantly enhance tracking 
+performance independently, while their combination provides comple-
+mentary benefits, particularly in minimizing FP and IDSW in complex 
+driving environments.
+Table 6
+Evaluating the contribution of RBCF and 3D-XGIoU to the ACMODT framework on the 
+KITTI tracking dataset.
+ ACMODT configuration
+MOTA (%)
+MOTP (%)
+IDSW
+FP 
+ w/o RBCF
+85.74
+86.91
+19
+623 
+ w/o 3D-XGIoU
+86.19
+87.33
+50
+548 
+ w/o RBCF & 3D-XGIoU
+83.81
+85.94
+71
+823 
+ ACMODT (Ours)
+88.56
+89.61
+2
+589 
+6. Conclusion
+This study presents a robust MOT framework specifically designed 
+for vehicle detection in complex real-world scenarios. The proposed 
+method achieves enhanced tracking accuracy and reliability, even in 
+challenging environmental conditions, by leveraging a multimodal fu-
+sion approach that integrates both 2D image data and 3D LiDAR 
+point cloud data. The system effectively handles occlusions, motion 
+variations, and real-time updates, demonstrating adaptability to dy-
+namic traffic environments. The method has shown superior detection 
+accuracy, precise object re-identification, and trajectory stability across 
+various weather conditions through extensive experimental evalua-
+tions. The ability to maintain consistent tracking IDs and generate 
+reliable motion predictions underscores its potential for autonomous 
+vehicle applications. The results confirm that the proposed frame-
+work offers state-of-the-art performance, reinforcing its suitability for 
+real-time deployment in intelligent transportation systems.
+7. Challenges and prospective enhancements
+Despite the effectiveness of the proposed tracking framework, cer-
+tain limitations remain. One primary constraint is its focus on vehi-
+cle tracking, excluding other critical road users such as pedestrians, 
+cyclists, and motorbikes. This limitation may impact overall track-
+ing performance in complex urban environments, where diverse road 
+users interact dynamically. Additionally, while the system operates in 
+real-time, its computational demands are relatively high, potentially 
+limiting deployment on low-power embedded systems or devices with 
+restricted processing capabilities.
+To address these limitations, future research can extend the track-
+ing framework to accommodate a broader range of road participants, 
+ensuring a more comprehensive multi-object detection and tracking sys-
+tem. Further optimization strategies can be explored to enhance com-
+putational efficiency, making the method more suitable for resource-
+constrained hardware and low-cost sensors. Moreover, expanding the 
+evaluation across larger and more diverse datasets will help vali-
+date the framework’s adaptability and scalability. Another promising 
+direction is refining the RPN to improve detection performance for 
+non-vehicle objects. Adjusting the anchor box dimensions and aspect 
+ratios to match the sizes of pedestrians and cyclists can significantly 
+improve tracking accuracy. Additionally, integrating multi-scale fea-
+ture fusion techniques will enhance the detection of smaller, highly 
+dynamic objects, ensuring greater robustness in autonomous driving 
+applications.
+CRediT authorship contribution statement
+Muhammad Adeel Altaf: Writing – original draft, Visualization, 
+Validation, Software, Methodology, Data curation. Min Young Kim: 
+Writing – review & editing, Supervision, Resources, Project administra-
+tion, Investigation, Funding acquisition, Formal analysis, Conceptual-
+ization.
+Declaration of competing interest
+The authors declare that they have no known competing finan-
+cial interests or personal relationships that could have appeared to 
+influence the work reported in this paper.
+ICT Express 11 (2025) 809–818 
+817 
+
+M.A. Altaf and M.Y. Kim
+Acknowledgments
+The Basic Science Research Program supported this work through 
+the National Research Institute Foundation of Korea (NRF) funded by 
+the Ministry of Education (2021R1-A6A1A03043144) and the Korea 
+Institute for Advancement of Technology (KIAT) grant funded by the 
+the Ministry of Trade, Industry and Energy (MOTIE) (P0020536; The 
+Competency Development Program for Industry Specialist). This work 
+was also supported by the National Research Foundation of Korea 
+(NRF) grant funded by the the Ministry of Science and ICT (MSIT) (No. 
+2022R1A2C2008133).
+References
+[1] X. Weng, Y. Wang, Y. Man, K.M. Kitani, Gnn3dmot: Graph neural network for 
+3d multi-object tracking with 2d-3d multi-feature learning, in: Proceedings of 
+the IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2020, 
+pp. 6499–6508.
+[2] J. Wu, J. Cao, L. Song, Y. Wang, M. Yang, J. Yuan, Track to detect and segment: 
+An online multi-object tracker, in: Proceedings of the IEEE/CVF Conference on 
+Computer Vision and Pattern Recognition, 2021, pp. 12352–12361.
+[3] L. Qiao, P. Zhang, Y. Liang, X. Yan, L. Huangfu, X. Zheng, Z. Yu, Cross-modality 
+3d multi-object tracking under adverse weather via adaptive hard sample mining, 
+IEEE Internet Things J. (2024).
+[4] X. Liu, G. Chen, X. Sun, A. Knoll, Ground moving vehicle detection and 
+movement tracking based on the neuromorphic vision sensor, IEEE Internet 
+Things J. 7 (9) (2020) 9026–9039.
+[5] Z. Liu, Y. Cai, H. Wang, L. Chen, H. Gao, Y. Jia, Y. Li, Robust target recognition 
+and tracking of self-driving cars with radar and camera information fusion 
+under severe weather conditions, IEEE Trans. Intell. Transp. Syst. 23 (7) (2021) 
+6640–6653.
+[6] J. Pang, L. Qiu, X. Li, H. Chen, Q. Li, T. Darrell, F. Yu, Quasi-dense similarity 
+learning for multiple object tracking, in: Proceedings of the IEEE/CVF Conference 
+on Computer Vision and Pattern Recognition, 2021, pp. 164–173.
+[7] X. Zhou, V. Koltun, P. Krähenbühl, Tracking objects as points, in: European 
+Conference on Computer Vision, Springer, 2020, pp. 474–490.
+[8] A. Kim, G. Brasó, A. Ošep, L. Leal-Taixé, Polarmot: How far can geometric 
+relations take us in 3d multi-object tracking? in: European Conference on 
+Computer Vision, Springer, 2022, pp. 41–58.
+[9] X. Weng, J. Wang, D. Held, K. Kitani, 3D multi-object tracking: A baseline 
+and new evaluation metrics, in: 2020 IEEE/RSJ International Conference on 
+Intelligent Robots and Systems, IROS, IEEE, 2020, pp. 10359–10366.
+[10] A. Kim, A. Ošep, L. Leal-Taixé, Eagermot: 3d multi-object tracking via sensor 
+fusion, in: 2021 IEEE International Conference on Robotics and Automation, 
+ICRA, IEEE, 2021, pp. 11315–11321.
+[11] A. Shenoi, M. Patel, J. Gwak, P. Goebel, A. Sadeghian, H. Rezatofighi, R. Martin-
+Martin, S. Savarese, Jrmot: A real-time 3d multi-object tracker and a new 
+large-scale dataset, in: 2020 IEEE/RSJ International Conference on Intelligent 
+Robots and Systems, IROS, IEEE, 2020, pp. 10335–10342.
+[12] W. Zhang, H. Zhou, S. Sun, Z. Wang, J. Shi, C.C. Loy, Robust multi-modality 
+multi-object tracking, in: Proceedings of the IEEE/CVF International Conference 
+on Computer Vision, 2019, pp. 2365–2374.
+[13] G. Guo, S. Zhao, 3D multi-object tracking with adaptive cubature Kalman filter 
+for autonomous driving, IEEE Trans. Intell. Veh. 8 (1) (2022) 512–519.
+[14] J. Liu, D. Liu, W. Ji, C. Cai, Z. Liu, Adaptive multi-object tracking based on 
+sensors fusion with confidence updating, Int. J. Appl. Earth Obs. Geoinf. 125 
+(2023) 103577.
+[15] C. Jiang, Z. Wang, H. Liang, Y. Wang, A novel adaptive noise covariance matrix 
+estimation and filtering method: Application to multiobject tracking, IEEE Trans. 
+Intell. Veh. 9 (1) (2023) 626–641.
+[16] T. Luan, F. Lv, M. Sun, X. Ban, Z. Zhou, Multi object tracking algorithm with 
+adaptive noise calculation and information fusion in crowded environments, IEEE 
+Sens. J. (2024).
+[17] K. Huang, Q. Hao, Joint multi-object detection and tracking with camera-LiDAR 
+fusion for autonomous driving, in: 2021 IEEE/RSJ International Conference on 
+Intelligent Robots and Systems, IROS, IEEE, 2021, pp. 6983–6989.
+[18] K. Zhang, Y. Liu, F. Mei, J. Jin, Y. Wang, Boost correlation features with 3D-
+MiIoU-based camera-LiDAR fusion for MODT in autonomous driving, Remote. 
+Sens. 15 (4) (2023) 874.
+[19] N.F. Gonzalez, A. Ospina, P. Calvez, Smat: Smart multiple affinity metrics for 
+multiple object tracking, in: Image Analysis and Recognition: 17th Interna-
+tional Conference, ICIAR 2020, PÓvoa de Varzim, Portugal, June 24–26, 2020, 
+Proceedings, Part II 17, Springer, 2020, pp. 48–62.
+[20] A. Geiger, P. Lenz, R. Urtasun, Are we ready for autonomous driving? the 
+kitti vision benchmark suite, in: 2012 IEEE Conference on Computer Vision and 
+Pattern Recognition, IEEE, 2012, pp. 3354–3361.
+[21] M. Sheeny, E. De Pellegrin, S. Mukherjee, A. Ahrabian, S. Wang, A. Wallace, 
+Radiate: A radar dataset for automotive perception in bad weather, in: 2021 
+IEEE International Conference on Robotics and Automation, ICRA, IEEE, 2021, 
+pp. 1–7.
+[22] M.D. Breitenstein, F. Reichlin, B. Leibe, E. Koller-Meier, L. Van Gool, Online 
+multiperson tracking-by-detection from a single, uncalibrated camera, IEEE 
+Trans. Pattern Anal. Mach. Intell. 33 (9) (2010) 1820–1833.
+[23] C. Feichtenhofer, A. Pinz, A. Zisserman, Detect to track and track to detect, in: 
+Proceedings of the IEEE International Conference on Computer Vision, 2017, pp. 
+3038–3046.
+[24] P. Voigtlaender, M. Krause, A. Osep, J. Luiten, B.B.G. Sekar, A. Geiger, B. Leibe, 
+Mots: Multi-object tracking and segmentation, in: Proceedings of the Ieee/Cvf 
+Conference on Computer Vision and Pattern Recognition, 2019, pp. 7942–7951.
+[25] Z. Lu, V. Rathod, R. Votel, J. Huang, Retinatrack: Online single stage joint 
+detection and tracking, in: Proceedings of the IEEE/CVF Conference on Computer 
+Vision and Pattern Recognition, 2020, pp. 14668–14678.
+[26] J. Peng, C. Wang, F. Wan, Y. Wu, Y. Wang, Y. Tai, C. Wang, J. Li, F. Huang, Y. 
+Fu, Chained-tracker: Chaining paired attentive regression results for end-to-end 
+joint multiple-object detection and tracking, in: Computer Vision–ECCV 2020: 
+16th European Conference, Glasgow, UK, August 23–28, 2020, Proceedings, Part 
+IV 16, Springer, 2020, pp. 145–161.
+[27] Z. Wang, L. Zheng, Y. Liu, Y. Li, S. Wang, Towards real-time multi-object 
+tracking, in: European Conference on Computer Vision, Springer, 2020, pp. 
+107–122.
+[28] C.R. Qi, W. Liu, C. Wu, H. Su, L.J. Guibas, Frustum pointnets for 3d object 
+detection from rgb-d data, in: Proceedings of the IEEE Conference on Computer 
+Vision and Pattern Recognition, 2018, pp. 918–927.
+[29] D. Mykheievskyi, D. Borysenko, V. Porokhonskyy, Learning local feature descrip-
+tors for multiple object tracking, in: Proceedings of the Asian Conference on 
+Computer Vision, 2020.
+[30] Y. Wu, Z. Liu, Y. Chen, X. Zheng, Q. Zhang, M. Yang, G. Tang, FCNet: Stereo 3D 
+object detection with feature correlation networks, Entropy 24 (8) (2022) 1121.
+[31] M. Zhao, A. Jha, Q. Liu, B.A. Millis, A. Mahadevan-Jansen, L. Lu, B.A. Landman, 
+M.J. Tyska, Y. Huo, Faster Mean-shift: GPU-accelerated clustering for cosine 
+embedding-based cell segmentation and tracking, Med. Image Anal. 71 (2021) 
+102048.
+[32] H.V. Nguyen, L. Bai, Cosine similarity metric learning for face verification, in: 
+Asian Conference on Computer Vision, Springer, 2010, pp. 709–720.
+[33] T. Huang, Z. Liu, X. Chen, X. Bai, Epnet: Enhancing point features with 
+image semantics for 3d object detection, in: Computer Vision–ECCV 2020: 16th 
+European Conference, Glasgow, UK, August 23–28, 2020, Proceedings, Part XV 
+16, Springer, 2020, pp. 35–52.
+[34] I. Loshchilov, Decoupled weight decay regularization, 2017, arXiv preprint arXiv:
+1711.05101.
+[35] B. Jiang, R. Luo, J. Mao, T. Xiao, Y. Jiang, Acquisition of localization confidence 
+for accurate object detection, in: Proceedings of the European Conference on 
+Computer Vision, ECCV, 2018, pp. 784–799.
+[36] K. Bernardin, R. Stiefelhagen, Evaluating multiple object tracking performance: 
+the clear mot metrics, EURASIP J. Image Video Process. 2008 (2008) 1–10.
+Muhammad Adeel Altaf received a B.Sc. degree in 
+Computer Systems Engineering from Bahauddin Zakariya 
+University, Multan, Pakistan, in 2011, and an M.S. de-
+gree in Electronic Engineering from International Islamic 
+University, Islamabad, Pakistan, in 2016. He is currently 
+pursuing a Ph.D. degree in the School of Electronic and 
+Electrical Engineering at Kyungpook National University, 
+Daegu, South Korea. His research interests include Digital 
+Image Processing, Computer Vision, and 3D object detection 
+and tracking.
+Min Young Kim received a BS. M.S. and Ph.D. degrees from 
+the Korea Advanced Institute of Science and Technology, 
+South Korea, in 1996, 1998, and 2004, respectively. He was 
+a Senior Researcher with Mirae Corporation from 2004 to 
+2005. He was also a Chief Research Engineer in artificial 
+vision systems for intelligent machines and robots with 
+Kohyoung Corporation, from 2005 to 2009. Since 2009, 
+he has been with the School of Electronic and Electri-
+cal Engineering, Computer Science, Kyungpook National 
+University, as an Assistant Professor. He was a Visiting 
+Associate Professor with the Department of Electrical and 
+Computer Engineering and the School of Medicine, Johns 
+Hopkins University, from 2014 to 2015. Currently, he is 
+serving as a full professor at the School of Electronics 
+Engineering at Kyungpook National University. He is also 
+a Director of the KNU-LG Electronics Convergence Research 
+Center and the Director of the Research Center for Neu-
+rosurgical Robotic Systems. His research interests include 
+visual intelligence for robotic perception, the recognition of 
+autonomous unmanned ground vehicles, and aerial vehicles.
+ICT Express 11 (2025) 809–818 
+818 

@@ -1,0 +1,1577 @@
+ 
+ 
+基于改进YOLOv8s-seg 和半截锥模型的草莓尺寸估计方法
+刘旭赞1 ，宋正河1,2※ ，杨朔飞1 ，崔　浩1 ，马于雯1
+（1.   中国农业大学工学院，北京 100083；2.   中国农业大学现代农业装备优化设计北京市重点实验室，北京 100083）
+摘　要：为在线估计垄作类锥型草莓果实的三维尺寸，该研究提出一种基于单视角RGB-D 的“改进YOLOv8s-seg+半截
+锥模型”轻量级框架。YOLOv8s-seg 主干嵌入C2f_Faster_EMA 模块，在参数量仅增加0.3M，mAP0.5 由94.1% 提升至
+96.9%，成熟果分割精度达到98.3%，推理速度仍保持159.3 帧/s。根据获取的点云数据，经点云匹配-滤波-下采样-
+RANSAC-PCA 级联处理，完成主轴线及质心估计。进而以纵径、顶径、底径构建半截锥模型，通过优化实现点云-模型
+亚毫米匹配。试验表明，经统计滤波与体素下采样预处理，点云数量从数千被规整化为百余量级的同时，其主体几何特
+征得以完整保留。不同视角下纵径、顶径、底径估计与实测差异分别为1.2%、0.7%、1.7%；不同高度下差异1.8%、
+1.2%、4.8%；多样本试验总体平均估计误差为在亚毫米级；全流程平均耗时3.3s/帧。在系统对比中优于单帧截断符号
+距离函数与半椭圆模型，且弥补了半椭圆模型对底径估计不足的问题，实现了草莓三维尺寸完整、精确的表征，满足田
+间事实尺寸估计需求。
+关键词：草莓；尺寸估计；表型解析；语义分割；RANSAC-PCA；半截锥模型
+doi：10.11975/j.issn.1002-6819.202508046
+中图分类号：S24　　　　文献标志码：A　　　　文章编号：1002-6819(2026)-06-0243-11
+刘旭赞，宋正河，杨朔飞，等. 基于改进YOLOv8s-seg 和半截锥模型的草莓尺寸估计方法[J]. 农业工程学报，2026，
+42(6)：243-253. doi: 10.11975/j.issn.1002-6819.202508046　　http://www.tcsae.org
+LIU Xuzan, SONG Zhenghe, YANG Shuofei, et al. Estimating strawberry size using improved YOLOv8s-seg and semi-truncated
+cone models[J]. Transactions of the Chinese Society of Agricultural Engineering (Transactions of the CSAE), 2026, 42(6): 243-
+253. (in Chinese with English abstract)　　doi: 10.11975/j.issn.1002-6819.202508046　　http://www.tcsae.org
+ 0　引　言
+草莓风味与营养俱佳，享有“水果皇后”美誉，是
+高利润的经济作物[1-3]。其果实外观尺寸作为评估商品价
+值的关键指标，更是农业自动化分级与产量预测的重要
+依据[4-5]。
+通过图像分割技术从复杂背景中准确提取轮廓是实
+现精准尺寸估计的关键。近年来，YOLO 系列算法凭借
+端到端的回归框架，在移动端设备上表现优异[6-7]，并在
+草莓识别与采摘点定位中展现出多样化的应用思路。例
+如，HU 等[8] 结合Mask R-CNN 与YOLOv3，实现对成
+熟与未成熟草莓的初步分类；MA 等[9] 基于 YOLOv8-
+pose 模型，在复杂田间环境中快速定位果实茎部采摘点，
+为自动化采摘提供了关键技术支撑。
+然而，基于YOLOv8 的草莓识别方法仍面临小
+目标检测能力不足与模型轻量化设计的双重挑战。针对
+小目标识别，WANG 等[10] 提出DSE-YOLO 算法，提
+升了多生长阶段草莓的检测精度；LUO 等[11] 通过改进
+YOLOv8n 缓解了小目标漏检与误检问题；SHEN 等[12] 在
+YOLOv8n-seg 中引入高效多尺度注意力机制（efficient
+multi-scale  attention,  EMA），显著增强了对小目标边
+缘特征的捕捉能力，但模型计算复杂度较高，不利
+于移动端部署。尽管上述方法在小目标检测方面取得
+了一定进展，模型轻量化问题仍待深入优化。为此，部
+分研究从网络结构层面入手推进轻量化。黄家才等[6] 采
+用MobileNetV3 替换YOLOv5s 主干网络，并结合K-
+Means++与Alpha-IoU，在保证精度的同时压缩模型规模；
+CONG 等[13] 则借助K-Means 优化锚框并引入MobileNet
+V3 实现了高精度的轻量级实例分割，为模型压缩提供了
+可行的轻量化路径，但其改进多集中于整体结构替换。
+在尺寸估计方面，现有方法在获取草莓掩码后多沿
+用“上表面主轴”近似果实姿态的策略，如董乃深等[14]
+通过三关键点识别姿态，毕松等[15] 和YU 等[16] 分别借助
+点云法向量和分界线面积比估算主轴，但这些方法均将
+“可见主轴”等同于“真实主轴”，导致角度误差被放
+大。张青等[17] 基于二维图像回归果径与质量，因缺乏深
+度信息而误差较大；多视角三维重建方法[18-20] 虽能提升
+重建完整性，但效率低且硬件成本高。JEONG 等[21] 采
+用轻量CNN 在RGB-D 图像将果实建模为椭圆体，WANG
+等[22] 结合MSA-Net 与Hough 椭圆补偿实现多果实时识
+别，但椭圆体模型基于“两端对称”假设，与草莓“萼
+端平截、尖端渐尖”的真实几何形态不符，导致体积误
+差显著。相比之下，“半截锥”模型更贴合草莓的实际
+几何形状。毕松等[15] 在点云空间中把草莓曲面建模为半
+圆锥面，WANG 等[23] 将该模型用于番茄果形拟合，误
+差降至3.2%，OO 等[24] 也采用半截锥体拟合草莓，平均
+体积误差为3.4%，验证了该几何假设在果实类作物中的
+  
+收稿日期：2025-08-06　　修订日期： 2025-12-20
+基金项目：山东省重点研发计划-设施种植专用机械装备研发
+（2023CXGC010715）
+作者简介：刘旭赞，博士生，研究方向为农机装备设计。
+Email：BS20213070598@cau.edu.cn
+※通信作者：宋正河，教授，博士生导师，研究方向为农机装备设计与试
+验。Email：songzhenghe@cau.edu.cn
+ 
+第 42 卷 　 第 6 期
+农 业 工 程 学 报　
+Vol.42　No.6
+2026 年 　　 3 月
+Transactions of the Chinese Society of Agricultural Engineering
+Mar. 2026
+243
+
+有效性与适用性。
+在实际田间垄作环境中，草莓果实通常仅能从单一
+视角观测，导致视觉系统难以获取完整果形信息，一般
+只能采集到果实上表面的局部点云。此外，草莓的几何
+形态呈现“萼端平截、尖端渐尖”的圆锥状特征，这与
+常规拟合方法中采用的对称椭圆或球体模型存在显著差
+异，容易引入较大估计误差。针对上述单视角点云不完
+整、几何模型与真实果形契合度低的问题，本文提出一
+种基于改进YOLOv8s-seg 与半截锥模型的草莓尺寸估计
+方法。通过嵌入轻量化的C2f_Faster_EMA 模块，增强
+网络对果实轮廓的分割能力；进而利用RANSAC-PCA
+算法从局部点云中稳健估计果实主轴与质心；最后，构
+建贴合真实形态的半截锥模型，并通过优化完成模型与
+点云的高精度匹配，从而实现草莓纵径、顶径与底径的
+非接触快速测量。
+ 1　材料与方法
+试验于2025 年8 月1 日在天津津南区天津万园机器
+人草莓基地完成。计算平台为 Intel® Core™ i7-12650H@
+2.30 GHz，搭配 NVIDIA GeForce RTX 4 060 Laptop GPU，
+8GB  RAM。软件环境为Python3.8、PyTorch  1.13.1 与
+CUDA 11.7。 YOLOV8 训练采用PyTorch 框架，为保障
+试验的可复现性，固定所有随机种子并设置为42。训练
+采用随机梯度下降优化器，初始学习率设置为0.001，动
+量因子为0.937，权重衰减系数为0.000 5。模型共训练
+150epoch，批次大小（batch size）为8。图像采集与点云
+获取选用如图1 所示的RealSense D435i 相机，其外观尺
+寸为90 mm×25 mm×25 mm，便于集成于各类视觉系统
+中。深度感知方面，该相机采用主动立体红外成像技术，
+有效测量范围为0.3～3.0 m。
+ 
+ 
+图1　RealSense D435i 相机
+Fig.1    RealSense D435i camera
+ 
+本文方法主要包括4 部分：草莓果实语义分割、草
+莓姿态粗估计、草莓质心与主轴线精细估计和草莓尺寸
+估计，方法结构如图2 所示。
+首先，RGB-D 相机并行捕获草莓的彩色与深度数据，
+对于彩色信息，利用改进YOLOv8s-seg 对草莓进行语义
+分割，输出目标掩码。掩码与深度图精确对准后，生成
+初始点云，随后通过统计滤波剔除离群点。为兼顾实时
+性，采用体素下采样将数千点云压缩至百余规模而不失
+几何特征。接着，利用随机抽样一致性(random sample
+consensus，RANSAC) 进行草莓主轴线的粗估计。主成
+分分析法(principal components analysis, PCA)，在降维空
+间快速锁定草莓主轴与质心。考虑到草莓“萼端平截、
+尖端渐尖”的自然形态，本研究摒弃传统的旋转椭球或
+完整圆锥假设，构建“半截锥”参数化模型，仅用纵径、
+顶径、底径三自由度即可刻画真实渐变曲面；最后，以带
+物理边界约束的 L-BFGS-B 拟牛顿法完成模型-点云匹配。
+ 
+ 
+RGB通道
+深度通道
+RGB-D相机
+目标点云获取
+滤波与下采样
+草莓果实识别
+语义分割
+草莓姿态粗估计
+草莓质心和主轴线精细估计
+半截锥模型匹配
+草莓尺寸估计
+图2　草莓尺寸估计方法流程
+Fig.2    Strawberry size estimating process
+ 
+ 1.1　数据集构建与增强
+本文试验以地面一畦双行栽培模式下的草莓为研究
+对象。图像采集设备为Intel RealSense D435i 相机，采集
+过程中将图像尺寸设置为640×480 像素，视场为69°×
+42°，以每秒30 帧的速度采集图像。图像于2024 年2 月
+8:00～11:00 和14:00～17:00 在中国北京朝阳区金盏乡的
+几个草莓园内采集，光照充足，草莓品种主要为“红颜”。
+为保障算法训练的可靠性与评估的公正性，在去除
+模糊等不可用图像后，从采集的代表性图像中选取1 109
+张图像按8∶1∶1 的比例随机划分为训练集（889 张）、
+验证集（110 张）和测试集（110 张），以确保模型训练、
+调参和最终性能评估的数据相互独立。
+为对应采摘机器人的不同采摘策略，依据草莓表面
+红色程度，将每个草莓标注为以下两类：成熟草莓：
+80% 以上表面颜色呈深红色。不成熟草莓：80% 以下表
+面颜色呈深红色。使用Labelme 软件进行精细的多边形
+标注（格式为.json），如图3 所示：
+ 
+ 
+图3　labelme 标注格式
+Fig.3    Labelme mask format
+ 
+为提升模型在复杂田间环境下的鲁棒性与泛化能力，
+本研究采用了在线数据增强方式，如图4 所示，主要包
+括：随机雾化（random atomization）：模拟相机刚进入
+温室大棚时的雾化效果，扩充比例10%。图像混合
+（mixup）：将两幅图像及其标注按比例混合，扩充比
+例10%。图像拼接（mosaic）：随机缩放并拼接四张图
+像，扩充比例10%。复制粘贴（copy-paste）：随机复制
+粘贴草莓实例至其他图像，扩充比例10%。高斯噪声
+（Gauss noise）：添加均值为0、方差为0.02 的高斯噪
+　 244
+农业工程学报（http://www.tcsae.org）
+2026 年
+
+声，模拟图像模糊，扩充比例10%。
+ 
+a. 原始图像
+a. Original image
+b. 随机雾化
+b. Random atomization
+c. Mixup
+d. Mosic
+e. 复制粘贴
+e. Copy-paste
+f. 高斯噪声
+f. Gauss noise
+c. 混合
+d. 拼接
+图4　数据增强策略
+Fig.4    Data enhancement strategy
+ 
+ 1.2　基于改进YOLOv8s-seg 的草莓语义分割
+本研究采用改进的YOLOv8s-seg 网络对草莓进行实
+例分割，将其轮廓从复杂背景中剥离。获得的精确掩码
+为三维点云的对应匹配提供了关键依据，进而支撑后续
+的果实姿态估计与截圆锥模型几何拟合。
+以YOLOv8s-seg 网络为基础框架，将标准 C2f 模块
+替换为轻量化的 C2f_Faster_EMA，在不明显增加参数量
+和计算复杂度的同时，强化边缘细节恢复能力并捕捉空
+间关联，突出小目标特征。改进后的网络仍遵循端到端
+的“主干-颈部-头部”范式。整体架构如图5 所示。
+为缓解原YOLOv8s-seg 中C2f 模块参数量大、计算
+开销高的问题，本研究引入轻量化的C2f_Faster 模块，
+通过部分卷积与通道混洗替换常规卷积，在不损失精度
+的前提下提高识别速度。如图6 所示，其结构以倒置残
+差形式构建。通过PConv 对部分通道进行卷积以大幅削
+减计算量，并通过PWConv 维持通道交互能力，BN 层与
+ReLU 函数则分别用于稳定训练和增强非线性。该设计
+在维持性能的同时，有效解决了原模块的计算负担问题。
+在C2f_Faster 的输出端引入EMA 模块，增强对小
+目标边缘特征的捕捉能力并补偿因参数量下降而可能导
+致的精度损失。EMA 采用了三重态并行分支结构，用于
+捕获平行分支之间的跨纬相互作用，在不增加通道数的
+前提下捕捉空间关联，滤除背景干扰并凸出小目标特征。
+其主体结构如图7 所示。
+EMA 模块通过共享的1×1 卷积与因式分解操作构建
+轻量级通道注意力，同时利用3×3 卷积提取局部多尺度
+特征，并借助跨空间信息聚合与基于二维高斯映射的
+Softmax 函数进行融合，生成第一张空间注意力图。另
+一分支通过二维全局平均池化保留完整空间位置信息，
+形成第二张空间注意力图。最终，通过对两组注意力权
+重进行聚合与Sigmoid 归一化，完成对输入特征的逐点
+重标定，在维持输入输出维度一致的前提下，显著增强
+模型对关键特征的表示能力。
+ 
+ 
+Conv
+Conv
+C2f
+C2f
+C2f
+C2f
+C2f
+C2f
+C2f
+C2f
+Conv
+Conv
+Conv
+Conv
+Conv
+Concat
+Concat
+Concat
+Concat
+Conv
+Conv
+Conv2d
+Conv2d
+Upsample
+Upsample
+SPPF
+Conv2d
+Conv2d
+Conv2d
+Conv2d
+BboxLoss
+BboxLoss
+BboxLoss
+ClsLoss
+ClsLoss
+ClsLoss
+Conv
+Conv
+Conv
+Conv
+主干网络Backbone
+输入Input
+颈部网络
+Neck
+头部网络
+Head
+PConv
+PWConv
+PWConv
+EMA
+C2f_faster_EMA
+RN
+ReLU
+预测结果
+Predicted results
+图5　改进YOLOv8s-seg 结构
+Fig.5    Improved YOLOv8s-seg structure
+第 6 期
+刘旭赞等：基于改进YOLOv8s-seg 和半截锥模型的草莓尺寸估计方法
+245 　
+
+ 
+PConv
+PWConv
+BN
+ReLU
+PWConv
+图6　C2f_Faster 结构
+Fig.6    C2f_Faster structure
+ 
+ 
+X Avgpool
+X Avgpool
+Conv
+Concat+Conv
+Sigmoid
+Sigmoid
+Avgpool
+Re-weight
+GroupNorm
+Avgpool
+Softmax
+Matmul
+Sigmoid
+Re-weight
+Matmul
+Softmax
+Groups
+输出Output
+输入
+Input
+图7　EMA 模块
+Fig.7    EMA module
+ 
+EMA 模块是一个智能的图像特征增强器，同时拥有
+“局部显微镜”和“全局俯瞰镜”，并行分析图像的细
+节与整体布局，自动判断出画面中重要区域和特征。随
+后，生成对应的“重要性权重图”，并用这些图对原始
+特征进行智能加权，从而显著增强关键信息、弱化次要
+内容。整个过程结束后，图像尺寸保持不变，但其包含
+的信息被提炼得更加突出和有效。
+ 1.3　统计滤波与下采样
+通过语义分割与深度图对齐获得的初始草莓点云通
+常包含噪声且数据量大。为提高后续处理的稳健性与效
+率，本研究依次采用统计离群点去除（statistical outlier
+removal）与体素下采样（voxel downsampling）进行预处理。
+Q = {qi ∈R3}Nr
+i=1
+qi
+i
+Nr
+经对齐后，按所识别到的mask 图提取初始草莓点云
+集为
+，其中
+代表深度图与草莓语义分割
+图对齐后的第个点，
+代表草莓点云总数。
+qi
+µi
+统计滤波旨在剔除噪声点。首先，基于 KD-Tree 检
+索点云中每个点
+的K（本研究取50）个最近邻，计算
+其邻域距离均值
+。
+µi = 1
+k
+∑
+qj∈Nk(i)
+
+q j −qi
+
+2
+（1）
+Nk(i)
+qi
+q j
+qi
+式中
+代表由KD-Tree 确定的
+的K 邻域。
+表示初
+始点云中与
+不同的点。将距离均值超出 0.8 倍标准差的
+点判定为离群点并剔除。定义离群点判定式如式（2）所示。
+d(qi )> µ+0.8σ
+（2）
+d(qi )
+qi
+µ
+σ
+式中
+为点
+到其邻域点集的距离，为距离均值，
+为距离标准差。
+P = {pi ∈R3}N
+i=1
+pi
+i
+N
+为保留几何特征的前提下降低数据规模，采用体素
+下采样方法将空间划分为边长3 mm 的体素网格，每个
+体素内仅保留其所有点的重心，将点云规模从数千规整
+压缩至百余量级，在确保后续主轴估计与模型拟合精度
+的同时，显著提升计算效率。最终得到经过预处理之后
+的点云数据为
+。其中
+代表预处理后的第
+个点的三维坐标，
+代表预处理后点云的总数。
+ 1.4　基于RANSAC-PCA 算法的草莓姿态估计
+鉴于草莓果实外形近似圆锥体[25]，其主轴（纵轴）
+方向是后续尺寸估计的几何基准。本研究采用RANSAC
+与PCA 相结合的级联算法，从单视角上表面点云中稳
+健、精确地估计草莓的主轴方向与质心。
+{pα, pβ, pγ
+} ⊂P
+cp
+如图8 所示，首先在预处理后的点云中随机采样三
+个点
+。这三个点形成了一个平面，可确定
+该平面的几何中心为
+。
+ 
+ 
+pα
+pγ
+pβ
+pi
+di
+Cp
+n
+pα pβ pγ
+cp
+pαpβpγ
+−→n
+di pi
+注：
+, 
+, 
+：点云中的随机三个点；
+: 
+的平面几何中心；pi
+所获取的草莓点云中的第i 个点；cp 为几何中心的位置；
+：草莓候选主
+轴线；
+:
+到候选主轴为线的投影距离。
+pα pβ pγ
+cp
+pαpβpγ
+−→n
+di
+pi
+Note: 
+,
+, 
+: The random points in the point cloud; 
+: Center of 
+geometry; the i-th point in the strawberry point cloud obtained by pi; cp is the
+position of the geometric center；
+: The strawberry candidate main axis; 
+:
+The projection distance from point 
+ to the candidate main axis distance.
+图8　草莓候选主轴线
+Fig.8    Candidate main axis of the strawberry
+ 
+−→n
+单位法向量
+如式（3）所示：
+−→n =
+(pα −pβ
+)×(pγ −pα
+)
+
+(pα −pβ
+)×(pγ −pα
+)
+
+（3）
+过几何中心的法线方程如式（4）所示，并将该法线
+设为候选主轴。
+y = cp +t ·−→n
+（4）
+y
+t
+式中代表法线上的点，为实数参数。
+pi
+pi
+di
+对于点云中的每个点
+，根据式（5）计算点
+到当
+前候选轴线的距离
+。
+di =
+
+(pi −cp
+)·⃗n
+
+
+
+⃗n
+
+
+（5）
+di
+d
+将距离
+与设定的距离阈值进行比较，统计距离小
+于阈值的点的数量，设为候选主轴（4）的内点。
+经多次迭代后，选取内点数量最多的方向作为粗估
+　 246
+农业工程学报（http://www.tcsae.org）
+2026 年
+
+c
+计主轴，有效抵抗了离群点干扰。当RANSAC 迭代结束
+后，只能粗略估计出草莓的主轴，而如果想获取较为精
+确的主轴线，则需进一步利用全部内点信息进行估计。
+本研究采用PCA 算法对高纯度内点集合进行二次精修，
+首先计算内点集的质心：
+c =
+
+1
+N
+N
+∑
+i=1
+xi, 1
+N
+N
+∑
+i=1
+yi, 1
+N
+N
+∑
+i=1
+zi
+
+（6）
+N
+pi = [xi,yi,zi
+]T
+i
+C
+式中
+为内点集内点的总个数，
+为第个点
+的三维坐标。通过去中心化构建协方差矩阵：
+C =
+1
+N −1
+N
+∑
+i=1
+(pi −c)(pi −c) T
+（7）
+对协方差矩阵进行特征值分解：
+C−→v k = λk−→v k(k = 1,2,3)
+（8）
+λk
+k
+−→v k
+λk
+λ1
+λ2
+λ3⃗
+v1⃗
+v2⃗
+v3
+式中
+代表第个特征值，
+代表
+对应的特征向量，3
+个特征值分别代表点云数据变化最大的3 个方向，其中，
+代表草莓长度方向的方差，
+代表草莓宽度方向的方
+差，
+代表草莓厚度方向的方差。
+代表主轴方向（从
+茎部指向尖端）的特征向量，
+代表草莓的宽度方向的
+特征向量，
+代表草莓的厚度度方向的特征向量。
+−→a = −→v max
+−→a
+−→v max
+−→a
+选取最大特征值对应特征向量
+作为草莓主轴。
+其中
+代表的是经过RANSAC-PCA 两重估计后的草莓
+主轴线方向，
+代表的是协方差矩阵分解后的最大主
+轴线。在草莓姿态估计中，方向一致性校正的目的是确
+保主轴向量始终从茎部指向尖端。首先将RANSAC-PCA
+得到的内点沿主轴
+投影到一维。
+zi = (pi −c)T−→a
+（9）⃗
+a
+pmin = pargminzi
+pmax = pargmaxzi
+pmin
+pmax
+pargminzi
+pargmaxzi
+−→a (pmin −pmax) > 0
+−→a
+−→n
+式中pi 代表所获取的草莓点云中的第i 个点，c 代表公
+式（6）的内点集的质心。代表经过RANSAC-PCA 算
+法得到的草莓主轴线，zi 代表点pi 沿草莓主轴方向投影
+到一维坐标上的有向距离值，投影最小点
+和
+投影最大点
+分别为草莓的尖端和底径中心
+点，
+和
+分别代表了草莓点云中距离主轴线最近的
+点和最远的点，
+和
+分别代表了经过筛选后
+的点云中的点利用公式（9）投影到主轴线上的距离的最
+大值和最小值。若
+，说明所估计出的主
+轴方向与草莓实际主轴方向相反，则对
+取反，否则不
+做任何变化。至此，得到了目标草莓的质心及其方向一
+致主轴线
+。
+ 1.5　基于半截锥模型的草莓尺寸估计
+L
+rt
+rb
+为解决垄作草莓仅能获取单视角上表面点云的限制，并
+准确刻画其“萼端平截、尖端渐尖”的几何特征，本研究
+采用如图9 所示参数化的“半截锥”模型进行尺寸估计。
+该模型以纵径、顶径和底径
+为核心参数，在保留果
+实主体渐变轮廓的同时，兼顾了模型的可解性与计算效率。
+圆锥表面的参数化方程如式（10）所示。
+
+x = r(z)cosθ
+y = r(z)sinθ
+r(z) = rb −(rb −rt) z
+h
+z = z
+（10）
+z ∈[0,h]
+h
+θ ∈[0,π]
+r(z)
+rb
+rt < rb
+式中
+表示从圆锥底面圆心到尖端的高度，mm，
+表示圆锥体的高度，mm。
+表示圆锥的半个侧
+表面上的角度对应值，°。
+代表半径随高度的线性变
+化，mm。
+表示截圆锥底面的半径，mm，
+表示截
+圆锥顶面的半径，mm。
+ 
+ 
+顶径
+Top 
+diameter
+纵径
+Longitudinal 
+diameter
+底径
+Bottom 
+dimeter
+图9　草莓半截锥模型
+Fig.9    Strawberry semi-truncated cone model
+ 
+−→n
+z
+−→n
+c
+基于前序步骤获得的草莓质心与校正后的主轴方向
+，首先通过 Rodgrigues 旋转公式[26] 将模型的局部坐标
+系轴与
+对齐，实现模型姿态的初始配准。对齐后，通
+过平移将模型底面圆心置于质心。
+P = {pi}
+−→n
+{z′
+i}
+L0
+max(z′
+i)−min(z′
+i)
+rt.0
+rb.0
+将滤波后的草莓点云
+沿主轴方向
+投影，得到
+投影值集合
+。纵径初值
+取为
+。为分
+别估计顶径与底径，提取投影值最高与最低的20% 点云子
+集，计算各子集中点到主轴距离的90 百分位数，分别作
+为顶径
+与底径
+的初始估计，此策略能有效抑制离群
+点影响。
+x0=[L0,rt,0,rb,0]T
+M(x)
+P
+M(x)
+以上述粗估计值
+为初值，构建非线性
+优化问题。优化目标是最小化模型生成点云
+与真实
+点云之间的双向倒角距离（chamfer distance, CD），该
+距离能均衡评估两个点集间的相互逼近程度。模型点云
+通过对半截锥参数曲面进行规则网格离散化得到。
+采用带边界约束（如参数为正）的L-BFGS-B 拟牛顿法
+求解该优化问题。
+x∗= argmin
+x CD(M(x),P)
+（11）
+x∗= [L∗,r∗
+t ,r∗
+b
+] T
+式中
+为优化收敛后得到的纵径、顶径与底
+径的精确估计值。
+ 2　结果与分析
+ 2.1　改进YOLOv8s-seg 语义分割结果
+在本文中，通过YOLOv8s-seg 自带的精度检测、参
+数量和识别速度检测模块建立草莓语义分割的评价指标，
+包括：平均精度mAP0.5, 参数量和每秒识别帧率（FPS，
+帧/s）。表1 展示了不同算法在自建草莓数据集上的语
+义分割结果。
+试验表明，YOLOv8s-seg 主干嵌入 C2f-Faster-EMA
+模块仅增加0.3 M 参数，却使 mAP0.5 由 94.1% 提升至 96.9%，
+成熟果的AP0.5 提高至 98.3%，同时保持 159.3 帧/s 的实
+时推理速度。模型参数量仅为10.9 M，显著低于Mask R-
+CNN 的43.8 M 和Mask2Former的44.0 M 的同时，其mAP0.5
+全面超越了U-Net、SOLOv2 及轻量级YOLOv8n-seg 等
+所有对比模型，展现出最优的精度-速度平衡特性，完全
+满足边缘计算平台的部署需求。
+第 6 期
+刘旭赞等：基于改进YOLOv8s-seg 和半截锥模型的草莓尺寸估计方法
+247 　
+
+ 
+表 1    不同算法下果实检测结果对比
+Table 1    Comparison of fruit segment results under different
+models
+方法
+Method
+AP0.5
+mAP0.5/%
+参数量
+Parameters
+numbe/M
+(
+帧·s−1)
+FPS/
+成熟
+Ripe/%
+未成熟
+Raw/%
+Mask R-CNN
+87.6
+76.4
+82.0
+43.8
+11.5
+UNet
+89.4
+71.3
+80.4
+24.9
+3.4
+Mask2Former
+85.8
+67.3
+76.6
+44.0
+18.6
+SOLOv2
+64.5
+10.8
+37.7
+46.2
+46.5
+YOLOv8n
+85.5
+85.0
+85.3
+3.3
+184.6
+YOLOv8s-seg
+94.4
+93.8
+94.1
+10.6
+164.8
+Improved YOLOv8s-seg
+98.3
+95.5
+96.9
+10.9
+159.3
+ 
+为更近一步地验证算法的识别效果，在自建草莓数
+据集上使用不同算法进行对比，其中明显存在分割错误
+的情况，如图10 所示。可以看出，图10 位于中心位置
+的草莓实际上是未成熟草莓，然而Mask R-CNN，U-net
+和YOLOv8s-seg 均错误地将其检测为熟草莓。另外，
+Mask2Former 和SOLOv2 的识别效果也出现了极大的错
+误。基于这样的错误识别结果进行后续的尺寸估计操作，
+显然无法获得准确的结果。
+ 2.2　点云预处理结果
+点云预处理是保证后续主轴估计与模型拟合精度和
+效率的关键环节。统计滤波中设定50 个邻域点能较好地
+反映局部点云分布，0.8 的阈值在保留主体结构的同时能
+有效去除噪声。体素下采样的体素大小设置为3 mm。该
+值的设定基于草莓果实尺寸（通常为30～50 mm）与
+RealSense D435i 的深度精度（±2%），能够在保留几何
+细节的同时将点云数量从千级压缩至百级，兼顾计算效
+率与几何保真度。
+为验证点云预处理流程的效果，本研究以同一颗草
+莓为对象，在30～60 cm 的典型采摘高度范围内，从固
+定视角进行了多组试验。该设置模拟了真实采摘环境中
+相机与果实的相对距离。试验数据显示，原始点云数量
+约在3 000～7 000 个点之间波动，而经过滤波与体素下采
+样处理后，点云规模被稳定压缩至100～150 个范围内。这
+一结果证实了体素下采样不仅显著降低了数据量，更有效
+消除了因拍摄距离变化引起的数据规模差异，为后续三
+维分析提供了规模统一、特征保留完整的点云基础。图11
+直观展示了一个典型样本在预处理各阶段的点云状态。
+ 
+ 
+e. SOLOV2
+f. YOLOv8-n
+g. YOLOv8s-seg
+h. 改进YOLOv8s-seg
+a. 原始图像
+b. Mask R-CNN
+c. U-Net 模型
+d. Mask2Former
+图10　不同模型下的测试对比结果
+Fig.10    Comparison results under different models
+ 
+ 
+滤波
+Filter
+下采样
+Downsampling
+初始点云有4 122个点
+滤波后的点云有3 392个点
+下采样后的点云有121个点
+图11　点云预处理流程可视化
+Fig.11    Visualization of the point cloud preprocessing pipeline
+ 
+ 2.3　不同视角下草莓尺寸估计结果
+在本研究中首先对单一样本在不同角度拍摄时进行
+尺寸估计试验。重点测量了其纵径、顶径和底径。其中，
+草莓的顶径的测量值定义为草莓横向距离的最大直径，
+而底径则定义为距离草莓最底部10% 位置处的直径。另
+外，在后续的所有草莓尺寸估计试验中，对于参数统一
+确定：RANSAC 主轴线的距离阈值设定为2.5 mm，能容
+纳草莓表面的轻微起伏，避免将真实表面点误判为离群
+点；迭代次数设定为1 000 次，保证算法在高噪声环境
+下仍能稳定收敛；最小内点数设定为100，确保主轴估
+计具备足够的统计显著性。
+通过5 次重复测量，计算了各项统计指标以评估估
+计的准确性。随后依据半截锥模型完成草莓尺寸的估计，
+相关结果如表2 和图12 所示，视角表示相机与草莓中心
+线的夹角。
+结果显示，在不同视角下，纵径估计的平均值与
+实际测量值相比差距为1.2%，顶径差距为0.7%，底径
+差距为1.7%。估计结果的标准差和方差均较小，表明
+　 248
+农业工程学报（http://www.tcsae.org）
+2026 年
+
+测量值较为集中且离散程度低。此外，估计误差的极
+差分别为纵径2 mm、顶径1 mm 和底径0.5 mm，进一
+步说明了测量结果的波动范围。尽管测量值与实际值
+之间存在一定误差，但整体误差范围较小，且平均值
+与实际值极为接近，差距在毫米级，表明所设计的估计
+方法具有较高的准确性，显示出良好的估计效果。因
+此，可以认为在不同视角下对草莓尺寸的估计是可靠且
+准确的。
+ 
+ 
+表 2    不同视角下草莓尺寸估计结果
+Table 2    Strawberry size estimation results under different capture angles
+指标
+Indicators
+实测值
+Real value/mm
+估计值Estimation value/mm
+估计误差Estimation error/mm
+平均值
+Average/mm
+标准差
+Standard deviation/mm
+方差
+Variance/mm2
+50°
+20°
+10°
+−30°
+−50°
+极大值
+极小值
+极差
+纵径
+Longitudinal diameter
+36.43
+36.80 36.80 38.00 36.00 36.70
+1.57
+−0.43
+2.00
+36.86
+0.64
+0.41
+顶径
+Top diameter
+31.38
+31.20 31.00 31.40 31.60 30.60
+0.22
+−0.78
+1.00
+31.16
+0.34
+0.12
+底径
+Bottom diameter
+7.81
+7.70
+8.00
+7.80
+8.20
+8.00
+0.39
+−0.11
+0.50
+7.94
+0.17
+0.03
+ 
+ 
+原始图
+Original
+image
+分割图
+Segmentation
+image
+对齐图
+Aligned
+image
+预处理点云
+Preprocessed point
+cloud
+尺寸估计
+Size
+estimation
+50°
+20°
+10°
+−30°
+−50°
+图12　不同视角下草莓半截锥模型匹配结果
+Fig.12    Strawberry semi-truncated cone model matching results
+under different capture angles
+ 2.4　不同拍摄高度估计结果
+为评估方法的距离适应性，本研究对同一草莓样本
+在30～70 cm 的范围内，以10 cm 为间隔进行了多组测
+量。在获取点云数据并完成预处理后，基于半截锥模型
+完成了草莓尺寸的估计，具体结果见表3 与图13。
+结果显示，在不同拍摄高度下，纵径估计的平均值
+与实际测量值相比差距为1.8%，顶径差距为1.2%，底
+径差距为4.8%。估计结果的标准差和方差均较小，表明
+测量值较为集中且离散程度低。此外，估计误差的极差
+分别为纵径1.00 mm、顶径1.60 mm 和底径1.20 mm，
+进一步说明了测量结果的波动范围。尽管测量值与实际
+值之间存在一定误差，但整体误差范围较小，且平均值
+与实际值极为接近，差距在亚毫米级，表明所设计的估
+计方法具有极高的准确性，显示出良好的估计效果。因
+此，可以认为在不同高度下对草莓尺寸的估计是可靠且
+准确的。
+ 
+ 
+表 3    不同拍摄高度下草莓尺寸估计结果
+Table 3     Strawberry size estimation results under different capture heights
+指标
+Indicators
+实测值
+Real value/mm
+估计值Estimation value/mm
+估计误差Estimation error/mm
+平均值
+Average/mm
+标准差
+Standard deviation/mm
+方差
+Variance/
+mm2
+70cm
+60cm
+50cm
+40cm
+30cm
+极大值
+极小值
+极差
+纵径
+Longitudinal diameter
+38.91
+38.50
+37.60
+38.20
+38.20
+38.60
+−0.31
+−1.31
+1.00
+38.22
+0.35
+0.12
+顶径
+Top diameter
+30.80
+32.00
+31.40
+30.40
+30.60
+31.40
+1.20
+−0.40
+1.60
+31.16
+0.59
+0.34
+底径
+Bottom diameter
+9.12
+9.70
+9.80
+9.70
+9.90
+8.70
+0.78
+−0.42
+1.20
+9.56
+0.44
+0.19
+ 
+ 
+ 
+原始图
+Original
+image
+分割图
+Segmentation
+image
+对齐图
+Aligned
+image
+预处理点云
+Preprocessed 
+point cloud
+尺寸估计
+Size
+estimation
+70 cm
+60 cm
+50 cm
+40 cm
+30 cm
+图13　不同拍摄高度下距离目标的草莓半截锥模型匹配结果
+Fig.13    Strawberry semi-truncated cone model matching results
+under different capture heights from the target
+ 2.5　多样本尺寸估计结果
+为进一步提升试验的代表性与科学性，开展了多样
+本估计试验。为了确保样本的科学性和代表性，本研究
+从草莓种植区域随机抽取了5 个标准草莓样本，并从当
+地商城购置了20 个草莓样本。在对样本进行初步筛选
+时，剔除了方形、双峰形等形态异常的草莓个体，最终
+筛选出22 个形态规整的标准草莓样本作为研究对象。采
+用游标卡尺，分别对这些样本的纵径、顶径及底径进行
+精确测量，并基于半截锥模型完成尺寸估计，以不同角
+度测量10 次的平均值作为估计结果，估计误差的统计结
+果如表4 所示。
+从表4 可以看出，纵径、顶径和底径的估计误差平
+均值分别为−0.13、0.03 和−0.03 mm，这些误差值都非常
+小，表明估计值与测量值之间的差异微乎其微。此外，
+纵径的估计误差标准差为1.64 mm，方差为2.67 mm2；
+第 6 期
+刘旭赞等：基于改进YOLOv8s-seg 和半截锥模型的草莓尺寸估计方法
+249 　
+
+顶径的估计误差标准差为1.84 mm，方差为3.39 mm2；
+底径的估计误差标准差为1.47 mm，方差为2.15 mm2。
+表明测量值波动水平较低。总体而言，这些统计量表明
+所提出的草莓尺寸估计方法在纵径、顶径和底径的估计
+上均表现出较高的稳定性和准确性。
+ 
+ 
+表 4    多样本尺寸估计试验统计结果
+Table 4    Statistical result of multi- sample size estimation
+统计量
+Statistic
+尺寸特征
+Size characteristics
+数值
+Value
+误差平均值
+Average value of error/mm
+纵径
+−0.13
+顶径
+0.03
+底径
+−0.03
+标准差
+Standard deviation of error/mm
+纵径
+1.64
+顶径
+1.84
+底径
+1.47
+误差方差
+Variance of estimation error/mm2
+纵径
+2.67
+顶径
+3.39
+底径
+2.15
+ 
+最后，对于草莓尺寸估计而言，其估计速度是实现
+高效生产和质量控制的关键因素之一，经测试，所提出
+的算法在草莓尺寸估计任务中展现了卓越的性能，平均
+识别速度为3.3 s/帧。
+ 2.6　三维拟合算法对比
+x2
+a2 + y2
+b2 + z2
+c2 = 1,z≥0
+a,b,c
+为验证本文算法的综合性能，本节将其与典型的三
+维重建与拟合方法进行系统对比。所选对比方法包括：
+（1）基于单张图片的截断符号距离函数（truncated
+signed distance function, TSDF）的三维体素重建方法。
+一般来说TSDF 是基于多帧图片进行三维重建的方法，
+然而为了保证对比的有效性，对TSDF 算法进行了适应
+性改进使其能够利用单帧图片进行三维重建。首先，定
+义一个三维体素网格，每个体素存储TSDF 值和权重。
+对于每个体素，将其转换到相机坐标系，然后投影到深
+度图，获取对应的深度值，计算该体素到相机平面的距
+离，然后与深度图对应的深度值比较，得到符号距离，
+并截断到一定范围。（2）基于半椭圆模型的几何拟合方
+法。半椭圆模型表示为：
+，其中
+分别代表三个半轴长度。为保障对比的公平性与一
+致性，所有方法均在同一视角、相同高度下对同一草莓
+样本进行数据采集与处理，并分别进行10 次重复试验以
+获取统计结果。各方法尺寸估计的对比结果如表5 所示。
+对于半椭圆模型只有一个顶径，不存在底径，因此只统
+计其底径的误差情况。
+ 
+ 
+表 5    不同三维重建方法在草莓尺寸估计上的性能对比
+Table 5    Performance comparison of different 3D reconstruction
+methods for strawberry size estimation
+方法
+Method
+纵径平均误差
+Longitudinal average
+error/mm
+顶径平均误差
+Top average
+error/mm
+底径平均误差
+Bottom average
+error/mm
+单帧TSDF
+Single-view
+TSDF
+-0.34
+0.08
+0.14
+半椭圆模型
+Semi-elliptical
+model
+1.96
+−1.22
+0.03
+本文
+Ours
+−0.17
+-
+-0.04
+试验结果表明，本文所提出的方法在关键尺寸估计
+误差上优于对照方法。相较于单帧 TSDF 方法，本文所
+提模型在顶径与底径估计中的绝对误差分别缩减 50% 与
+70%。进一步对比半椭圆模型：后者仅可区分纵径与横
+径，其数学框架先天缺失底径自由度，导致该参数完全
+不可观测。
+图14 展示了3 种方法在典型样本上的三维重建与尺
+寸估计效果对比。直观可见，不同算法与草莓点云的吻
+合程度差异显著：单帧 TSDF 截圆锥拟合（图14a 蓝色
+点云）相对于滤波后的真值点云（图14a 红色点云）不
+仅存在位置偏移，且其底部半径系统性地大于原始底部
+半径，导致宏观几何偏差。基于椭圆拟合的方法（图14b
+红色点云）在纵径方向上过度延伸，超出真值边界；横
+径方向则出现低估，造成长短轴比例失真，几何保真度
+下降。而基于半截圆锥模型的拟合（图14c 蓝色点云）
+在底部与顶部半径上均与滤波后的真值点云（图14c 红
+色点云）长度一致，且纵径方向及长度实现精确匹配，
+整体形貌误差最小，充分验证了前述分析框架的有效性。
+ 
+ 
+a. 单帧TSDF
+a. Single frame TSDF
+b. 椭圆拟合
+b. Elliptical fitting
+c. 半截锥拟合
+c. Half truncated cone fitting
+TSDF模型点云TSDF model point cloud
+真实点云Real point cloud
+模型点云Model point cloud
+几何中心Geometric center
+真实点云Real point cloud
+TSDF模型点云TSDF model point cloud
+真实点云Real point cloud
+拟合的草莓尖端
+Fitting strawberry 
+tips
+拟合的草莓萼端中心
+Fitting the center of 
+strawberry calyx tip
+拟合的草莓主轴线
+Fitting the main 
+axis of strawberry
+图14　不同方法在典型样本上的尺寸估计效果对比
+Fig.14    Comparison of size estimation results by different methods
+on a typical sample
+ 3　讨　论
+本研究提出了一种适用于垄作草莓的单视角三维尺
+寸估计方法，该方法基于轻量化模型架构与半截锥几何
+假设，在估计精度与处理速度方面均取得了较好结果。
+与现有方法的比较及本文具有如下优势。
+1）在语义分割方面，不同于直接替换主干网络的轻
+量化策略（如采用MobileNetV3）或仅通过添加复杂注
+意力机制来提升性能的方法，本研究通过嵌入轻量化的
+C2f_Faster_EMA 模块，在模型参数量与计算开销仅轻微
+增加（分别为0.3M 和不足3%）的情况下，增强了对小
+目标边缘特征的提取能力，并将mAP0.5 提升至96.9%，
+在精度与速度之间取得了良好平衡。在模型性能已进入
+高原期的背景下，与通过单纯增加大量高质量标注数据
+（成本高昂且存在性能提升的边际效应）的方式相比，
+结构优化方法以极低代价实现了可比拟的精度提升，为
+在资源受限的实际应用中挖掘模型潜能提供了更具性价
+比的高效路径。
+2）在尺寸估计模型方面，与常用的“上表面主轴”
+近似法或基于“两端对称”假设的半椭圆/椭球模型相比，
+本研究提出的“半截锥模型”更贴合草莓“萼端平截、
+尖端渐尖”的真实几何形态。试验结果表明，该模型不
+　 250
+农业工程学报（http://www.tcsae.org）
+2026 年
+
+仅将纵径与顶径的估计误差控制在亚毫米级，而且有效
+解决了半椭圆模型在底径估计上的结构局限性，实现了
+对草莓三维尺寸更为完整、精确的表征。
+相对而言，本研究也存在一些局限性与不足之处。
+1）环境鲁棒性有待提升：本方法在受控光照条件下
+表现良好，然而田间自然光照多变，如强光过曝、低照
+度或长阴影等条件，可能影响RGB 图像的分割效果与深
+度点云的质量，进而降低系统稳定性。
+2）模型对异形果的泛化能力有限：半截锥模型主要
+适用于形态相对规整的“单峰锥形”草莓，对形态规整
+的锥形草莓拟合效果较好，但对双峰、弯曲等复杂异形
+果的表征能力不足。尽管该设定符合商品果分级中剔除
+异形果的实际需求，但仍限制了方法在全部果实样本上
+的适用性。
+3）处理速度尚未满足高速分级要求：目前系统平均
+处理时间为3.3 s/帧，虽可满足一般田间实时监测需求，
+但距离高速自动化分级线的工业级实时标准仍有差距。
+4）跨物种适用性需进一步验证：本方法仅在草莓上
+进行验证，尚未应用于其他形态相似的果蔬（如番茄、
+辣椒等）。由于不同作物在几何形态、表面纹理等方面
+存在差异，方法的跨物种泛化能力仍需通过针对性的调
+优与验证来进一步确立。
+ 4　结　论
+本文成功开发了一套面向田间类锥形草莓的三维尺
+寸在线获取方案：在硬件上，利用RealSense D435i 相机
+体积小、成本低的特点，实现了系统的便捷部署与低成
+本构建；在方法上，形成了“改进YOLOv8s-seg 语义分
+割→主轴方向与质心估计→半截锥模型匹配”的完整技
+术路线。试验结果表明：
+1）改进的YOLOv8s-seg 模型在草莓语义分割任务
+中表现出优异的精度-速度平衡：通过嵌入C2f_Faster_EMA
+模块，在仅增加0.3M 参数情况下，mAP0.5 从94.1% 提升
+至96.9%，成熟果分割精度达98.3%，同时保持159.3 帧/s
+的实时推理速度，满足边缘计算部署需求。
+2）点云预处理流程有效规整了数据：通过统计滤波
+与体素下采样，点云数量从数千点压缩至百余级，在显
+著降低计算负担的同时完整保留了草莓的主体几何特征，
+为后续姿态估计与模型拟合提供了高质量数据基础。
+3）半截锥模型在不同视角与拍摄高度下均能实现稳
+定、高精度的尺寸估计：在不同视角下，纵径、顶径、
+底径的估计误差分别为1.2%、0.7%、1.7%；在不同高度
+下，误差分别为1.8%、1.2%、4.8%；多样本试验的平均
+估计误差为亚毫米级，验证了模型对草莓几何形态的良
+好拟合能力。
+4）本文方法在三维尺寸估计中优于传统单帧截断符
+号距离函数与半椭圆模型：相较于单帧TSDF，顶径与
+底径估计误差分别降低50% 与70%；与半椭圆模型相比，
+不仅提升了纵径与顶径的估计精度，更弥补了其无法估
+计底径的结构性缺陷，实现了对草莓三维尺寸更完整、
+精确的表征。
+5）系统整体满足田间实时处理需求：从图像采集到
+尺寸估计的全流程平均耗时为3.3 s/帧，在保证毫米级精
+度的同时具备了田间实时处理的潜力，为类锥形果蔬的
+在线表型解析提供了可行的技术方案。
+[ 参    考    文    献]
+ 
+ REN  G,  WU  T,  LIN  T,  et  al.  Mobile  robotics  platform  for
+strawberry  sensing  and  harvesting  within  precision  indoor
+farming  systems[J].  Journal  of  Field  Robotics,  2024,  41(7):
+2047-2065.
+[1]
+ 张樱飘. 基于深度学习的草莓采摘机器人果实识别定位与
+采后自动分级技术研究[D]. 天津：天津理工大学，2023.
+ZHANG
+ Yingpiao.
+ Study
+ on
+ Fruit
+ Recognition
+ and
+Localization and Post-harvest Automatic Grading Technology
+of  Strawberry  Picking  Robot  Based  on  Deep  Learning[D].
+Tianjin: Tianjin University of Technology, 2023. (in Chinese
+with English abstract)
+[2]
+ 杨珍，龚惟新，李凯，等. 高架草莓的果实识别与果梗分
+割[J]. 农业工程学报，2023，39(17)：172-181.
+YANG Zhen, GONG Weixin, LI Kai, et al. Fruit recognition
+and  stem  segmentation  of  the  elevated  planting  of
+strawberries[J].  Transactions  of  the  Chinese  Society  of
+Agricultural  Engineering  (Transactions  of  the  CSAE),  2023,
+39(17): 172-181. (in Chinese with English abstract)
+[3]
+ OCA  A  M  D,  MAGNEY  T,  VOUGIOUKAS  S  G,  et  al.
+Strawberry  fruit  yield  forecasting  using  image-based  time-
+series  plant  phenological  stages  sequences[J].  Computers  and
+Electronics in Agriculture, 2025, 237(PartB): 110516.
+[4]
+ CHEN Y, LEE W S, GAN H, et al. Strawberry yield prediction
+based  on  a  deep  neural  network  using  high-resolution  aerial
+orthoimages[J]. Remote Sensing, 2019, 11(13): 1584.
+[5]
+ 黄家才，赵雪迪，高芳征，等. 基于改进 YOLOv5s 的草莓
+多阶段识别检测轻量化算法[J]. 农业工程学报，2023，
+39(21)：181-187.
+HUANG  Jiacai,  ZHAO  Xuedi,  GAO  Fangzheng,  et  al.
+Recognizing and detecting the strawberry at multi-stages using
+improved  lightweight  YOLOv5s[J].  Transactions  of  the
+Chinese Society of Agricultural Engineering (Transactions of
+the CSAE), 2023, 39(21): 181-187. (in Chinese with English
+abstract)
+[6]
+ 杨震宇，汪小旵，祁子涵，等. 基于改进 YOLOv8 的草莓
+识别与果梗采摘关键点检测[J]. 农业工程学报，2024，
+40(18)：167-175.
+YANG  Zhenyu,  WANG  Xiaochan,  QI  Zihan,  et  al.
+Recognizing strawberry to detect the key points for peduncle
+picking  using  improved  YOLOv8  model[J].  Transactions  of
+the Chinese Society of Agricultural Engineering (Transactions
+of the CSAE), 2024, 40(18): 167-175. (in Chinese with English
+abstract)
+[7]
+第 6 期
+刘旭赞等：基于改进YOLOv8s-seg 和半截锥模型的草莓尺寸估计方法
+251 　
+
+ HU  H,  KAIZU  Y,  ZHANG  H,  et  al.  Recognition  and
+localization  of  strawberries  from  3d  binocular  cameras  for  a
+strawberry picking robot using coupled YOLO/Mask R-CNN[J].
+International
+ Journal
+ of
+ Agricultural
+ and
+ Biological
+Engineering, 2022, 15(6): 175-179.
+[8]
+ MA  Z,  DONG  N,  GU  J,  et  al.  STRAW-YOLO:  A  detection
+method  for  strawberry  fruits  targets  and  key  points[J].
+Computers and Electronics in Agriculture, 2025, 230: 109853.
+[9]
+ WANG Y, YAN G, MENG Q, et al. DSE-YOLO: DSE-YOLO:
+Detail
+ semantics
+ enhancement
+ YOLO
+ for
+ multi-stage
+strawberry
+ detection[J]. 
+Computer
+ and
+ Electronics
+ in
+Agriculture, 2022, 198: 107057.
+[10]
+ LUO  Q,  WU  C,  WU  G,  et  al.  A  small  target  strawberry
+recognition  method  based  on  improved  yolov8n  model[J].
+IEEE Access, 2024, 12: 14987-14995.
+[11]
+ SHEN  Q,  ZHANG  X,  SHEN  M,  et  al.  Multi-scale  adaptive
+YOLO  for  instance  segmentation  of  grape  pedicels[J].
+Computers and Electronics in Agriculture, 2025, 229: 109712.
+[12]
+ CONG P, XU Y, LI T, et al. KM-Mask RCNN: A lightweight
+instance segmentation algorithm for strawberries with multiple
+growth cycles[J]. IEEE Access, 2024, 12: 169291-169309.
+[13]
+ 董乃深，程泓超，应仇凯，等. 垄作草莓双臂采摘机器人
+设计与试验[J]. 农业机械学报，2024，55(S1)：29-40, 50.
+DONG  Naishen,  CHENG  Hongchao,  YING  Qiukai,  et  al.
+Design  and  experiment  of  picking  robot  with  dual  arms  for
+ground  planting  strawberrie[J].  Transactions  of  the  Chinese
+Society for Agricultural Machinery, 2024, 55(S1): 29-40, 50.
+(in Chinese with English abstract)
+[14]
+ 毕松，隗朋峻，刘仁学. 温室高架栽培草莓空间姿态识
+别与采摘点定位方法[J]. 农业机械学报，2023，54(9)：53-
+64, 84.
+BI  Song,  WEI  Pengjun,  LIU  Renxue.  Spatial  posture
+recognition and picking point location method for greenhouse
+raised-frame  strawberry  cultivation[J].  Transactions  of  the
+Chinese Society for Agricultural Machinery, 2023, 54(9): 53-64,
+84. (in Chinese with English abstract)
+[15]
+ YU  Y,  ZHANG  K,  YANG  L,  et  al.  Fruit  detection  for
+strawberry  harvesting  robot  in  non-structural  environment
+based  on  Mask-RCNN[J].  Computers  and  electronics  in
+agriculture, 2019, 163: 104846.
+[16]
+ 张青，邹湘军，林桂潮，等. 草莓重量和形状图像特征提
+取与在线分级方法[J]. 系统仿真学报，2019，31(1)：7-15.
+ZHANG  Qing,  ZOU  Xiangjun,  LIN  Guichao,  et  al.  Image
+feature  extraction  and  online  grading  method  for  weight  and
+[17]
+shape  of  strawberry[J].  Journal  of  System  Simulation,  2019,
+31(1): 7-15. (in Chinese with English abstract)
+ 高嘉正, 李文涛, 罗陈迪, 等. 基于语义分割和几何分析的火
+龙果果实与枝条的三维重建[J]. 农业工程学报，2024，
+40(12)：157-164.
+GAO  Jiazheng,  LI  Wentao,  LUO  Chendi,  et  al.  Three-
+dimensional  reconstruction  for  dragon  fruits  and  branches
+using  semantic  segmentation  and  geometric  analysis[J].
+Transactions
+ of
+ the
+ Chinese
+ Society
+ of
+ Agricultural
+Engineering(Transactions of the CSAE), 2024, 40(12): 157-164.
+(in Chinese with English abstract)
+[18]
+ 王昱，易振峰，谭文超，等. 遮挡条件下多视角甜椒果实
+点云三维重构方法[J]. 农业机械学报，2024，55(5)：218-
+225.
+WANG  Yu,  YI  Zhenfeng,  TAN  Wenchao,  et  al.  Multi
+perspective point cloud reconstruction method for sweet pepper
+fruit under occlusion conditions[J]. Transactions of the Chinese
+Society for Agricultural Machinery, 2024, 55(5): 218-225. (in
+Chinese with English abstract)
+[19]
+ LE L J, CIELNIAK G. 3D shape sensing and deep learning-
+based  segmentation  of  strawberries[J].  Computers  and
+Electronics in Agriculture, 2021, 190: 106374.
+[20]
+ JEONG  H  J,  MOON  H  J,  JEONG  Y  H,  et  al.  Automated
+technology  for  strawberry  size  measurement  and  weight
+prediction using AI[J]. IEEE Access, 2024, 12: 14157-14167.
+[21]
+ WANG  W,  LIN  C,  SHUI  H,  et  al.  Adaptive  symmetry  self-
+matching  for  3D  point  cloud  completion  of  occluded  tomato
+fruits in complex canopy environments[J]. Plants-BASEL, 2025,
+14(13): 2080.
+[22]
+ WANG S, LUO T. A multi-fruit recognition method for a fruit-
+harvesting robot using MSA-Net and hough transform elliptical
+detection compensation[J]. Horticulturae, 2024, 10(10): 1024.
+[23]
+ OO  L  M,  AUNG  N  Z.  A  simple  and  efficient  method  for
+automatic
+ strawberry
+ shape
+ and
+ size
+ estimation
+ and
+classification[J]. Biosystems Engineering, 2018, 170: 96-107.
+[24]
+ 肖树林，罗充，蒋晓霞，等. “红颜”草莓不同季节成熟
+果实品质及栽培技术要点[J]. 种子，2009，28(4)：109-112.
+XIAO  Shulin,  LUO  Chong,  JIANG  Xiaoxia,  et  al.  Different
+season  fruit  quality  and  cultivation  technique  points  of
+Hongyan  strawberry[J].  Seed,  2009,  28(4):  109-112.  (in
+Chinese with English abstract)
+[25]
+ CRIPPEN  G  M,  HAVEL  T  F.  Distance  Geometry  and
+Molecular Conformation[M]. Taunton: Research Studies Press,
+1988.
+[26]
+　 252
+农业工程学报（http://www.tcsae.org）
+2026 年
+
+ 
+Estimating strawberry size using improved YOLOv8s-seg and semi-
+truncated cone models
+LIU Xuzan1 , SONG Zhenghe1,2※ , YANG Shuofei1 , CUI Hao1 , MA Yuwen1
+(1. College of Engineering, China Agricultural University, Beijing 100083, China;　2. Beijing Key Laboratory of Optimized Design for
+Modern Agricultural Equipment, China Agricultural University, Beijing 100083, China)
+Abstract: Accurate and real-time three-dimensional size estimation is often required for strawberries under agricultural field
+environments. However, the vision systems are typically restricted to the data capture from a single, oblique viewpoint. Only a
+partial three-dimensional point cloud can be generated with the practical constraints in the ridge-planting systems. The visible
+upper surface of the fruit can be represented without the full geometric information. Concurrently, a fundamental modeling
+challenge can also exist, due mainly to the natural morphology of a strawberry. A conical shape can be characterized by a
+truncated calyx base and a tapered tip, which is deviated substantially from the simple symmetric shapes, such as the ellipsoids
+commonly used in the conventional fitting. This geometric mismatch has been one of the primary sources of the estimation
+inaccuracies. Particularly, the critical dimensions (like the bottom diameter) cannot be directly observed from the available data
+perspective.  In  this  study,  an  integrated  computational  framework  was  proposed  to  combine  a  lightweight  and  enhanced
+segmentation network with a purpose-specific geometric model designed to match the true morphology of the fruit. A four-
+stage  pipeline  was  constructed  for  data  completeness  and  model  accuracy.  1)  The  robust  instance  segmentation  was  first
+performed by an improved YOLOv8s-seg network. The backbone was augmented with a custom C2f_Faster_EMA module in
+order  to  enhance  the  multi-scale  feature  extraction  for  the  fine  details  with  minimal  computational  overhead.  2)  The  high-
+precision mask was fused with the synchronized depth data to generate an initial 3D point cloud. The critical preprocessing
+involved the statistical outlier removal and voxel grid downsampling. Several thousand raw points were efficiently condensed
+into a consistent set of approximately 100 to 150 representative points, thereby preserving the key geometric features to reduce
+the  computational  load.  3)  Subsequently,  the  hybrid  RANSAC-PCA  algorithm  was  operated  on  the  refined  point  cloud  to
+robustly estimate the strawberry's principal axis and 3D centroid. 4) The final stage employed a semi-truncated cone model,
+which  was  defined  by  the  height,  top  diameter,  and  bottom  diameter.  The  processed  point  cloud  was  used  to  fit  the  size
+estimation  after  optimization.  The  performance  of  the  framework  showed  that  the  segmentation  model  was  achieved  in  a
+mAP@0.5 of 96.9% and a ripe fruit segmentation accuracy of 98.3%, while there was a high inference speed of 159.3 frames
+per second. The size estimation shared high accuracy under varied conditions. Tests showed that the average relative errors of
+1.2%, 0.7%, and 1.7% were obtained for the longitudinal diameter, top diameter, and bottom diameter, respectively, under
+different viewing angles. The relative errors of 1.8%, 1.2%, and 4.8% were found over a practical range of the capture heights
+from 30 to 70 cm after evaluations, indicating the consistent robustness. A multi-sample test was also performed on 22 standard
+strawberry specimens. The precision was further validated by the average value of errors of -0.13, 0.03, and -0.03 mm for the
+three  dimensions,  respectively,  indicating  all  within  the  sub-millimeter  range.  Furthermore,  the  direct  comparative  analysis
+showed that the improved model significantly outperformed the baseline approaches. The absolute estimation error was also
+reduced  by  50%  and  70%,  respectively,  for  the  top  and  bottom  diameters,  compared  with  a  single-view  TSDF  method.
+Crucially, an accurate estimate was successfully provided for the bottom diameter, rather than in the semi-elliptical models. The
+end-to-end pipeline also required an average processing time of 3.3s per frame, indicating the feasibility and strong potential.
+The real-time field deployment can be extended to more applications, such as the strawberry phenotyping, in-field grading, and
+precision yield prediction. The finding can also offer a practical solution using affordable RGB-D sensing hardware.
+Keywords: strawberry;  size  estimation;  phenotypic  analysis;  semantic  segmentation;  RANSAC-PCA;  semi-truncated  cone
+model
+第 6 期
+刘旭赞等：基于改进YOLOv8s-seg 和半截锥模型的草莓尺寸估计方法
+253 　

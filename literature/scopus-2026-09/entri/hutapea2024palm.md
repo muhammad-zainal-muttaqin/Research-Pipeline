@@ -26,4 +26,3 @@ Model dilatih di Google Colab melalui API Roboflow selama 25 epoch dengan masuka
 Tabel II mencantumkan mAP50 dan mAP50-95 untuk dua kelas. Nilai untuk seluruh objek adalah 0,991 dan 0,662; kelas ripe mencatat 0,988 dan 0,606; kelas unripe mencatat 0,995 dan 0,717. Abstrak dan simpulan menyebut angka 0,991 sebagai akurasi 99,1% untuk ketiga kelas, sedangkan tabel mencantumkannya sebagai mAP50. Penulis tidak menyatakan secara eksplisit cawat yang dipakai untuk menghitung angka-angka itu.
 
 Penulis menyatakan bahwa hasil untuk kelas rotten tidak ditampilkan karena data untuk kelas itu tidak cukup untuk melatih model. Studi ini memakai set data dan jumlah epoch yang lebih kecil daripada kajian sebelumnya, sehingga penulis mengusulkan pengumpulan data yang lebih banyak dan jelas per tingkat kematangan serta penambahan epoch untuk meningkatkan generalisasi.
-

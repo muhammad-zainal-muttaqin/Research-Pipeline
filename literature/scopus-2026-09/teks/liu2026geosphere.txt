@@ -1,0 +1,1718 @@
+AIIA-00346; No of Pages 14
+journal homepage: http://www.keaipublishing.com/en/journals/artificial-
+Please cite this article as: S. Liu, Y. Ampatzidis, D. Choi, et al., GeoSphere-DETR: RGB-D citrus fruit detection in cluttered orchards via geometry-
+gated fusion and geo..., , https://doi.org/10.1016/j.aiia.2026.08.010
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Contents lists available at ScienceDirect
+Artiﬁcial Intelligence in Agriculture
+intelligence-in-agriculture/
+Research Paper
+GeoSphere-DETR: RGB-D citrus fruit detection in cluttered orchards via
+geometry-gated fusion and geometry-aware conﬁdence recalibration
+Shiyu Liu a,b,
+a Department of Agricultural and Biological Engineering, IFAS, University of Florida, Gainesville, FL, United States of America
+b Southwest Florida Research and Education Center, IFAS, University of Florida, Immokalee, FL 34142, United States of America
+Yiannis Ampatzidis a,b,⁎,
+⁎ Corresponding author at: Department of Agricultural and Biological Engineering, IFAS,
+University of Florida, Gainesville, FL, United States of America.
+E-mail address: i.ampatzidis@uﬂ.edu (Y. Ampatzidis).
+Daeun Choi a, Won Suk Lee a
+a r t i c l e
+i n f o
+Article history:
+Received 4 May 2026
+Received in revised form 14 August 2026
+Accepted 19 August 2026
+Available online xxxx
+Keywords:
+Fruit detection
+RGB-D sensing
+Transformer-based object detection
+Geometry-aware feature fusion
+False positive suppression
+Foundation model
+Precision agriculture
+a b s t r a c t
+Accurate fruit detection in cluttered orchard environments remains challenging due to visually similar back-
+ground elements such as foliage and specular highlights, which lead to high false positive rates in RGB-based de-
+tectors. In addition, conventional RGB-D fusion methods often degrade under real-world depth noise and domain
+shifts. To address these limitations, this study introduces GeoSphere-DETR, a geometry-aware extension of RT-
+DETR that leverages robust depth-derived cues for reliable fruit detection. A real-world RGB-D citrus dataset
+comprising 2200 images and 102,719 annotated instances was collected across multiple orchards and acquisition
+days, with a strict cross-ﬁeld and cross-day evaluation protocol to assess generalization. An efﬁcient annotation
+pipeline combining a foundation model (Grounding DINO) with human veriﬁcation was developed to reduce la-
+beling effort while maintaining annotation quality. GeoSphere-DETR integrates two key components. First, a
+neck-level geometry-gated fusion module incorporates curvature-based geometric cues (bumpiness and
+Laplacian-based convexity) into multi-scale visual features via learnable spatial gates, enabling selective use of
+reliable depth information. Second, a query-level geometry-aware recalibration head re-scores detection conﬁ-
+dence based on geometry-informed conﬁdence adjustment, suppressing geometrically inconsistent false posi-
+tives. Experimental results on the held-out test set show that GeoSphere-DETR achieves a mAP50 of 0.863 and
+3.286 FPPI, outperforming RGB-only RT-DETR (0.786 mAP50, 7.240 FPPI) and YOLOv11m (0.715 mAP50, 8.735
+FPPI), corresponding to a 9.8% improvement in mAP50 and a 54.6% reduction in FPPI over RT-DETR. Ablation
+studies conﬁrm the effectiveness of curvature-based cues and gated multimodal fusion. Overall, this work intro-
+duces a dual-level geometry-aware detection framework that combines feature-level reliability modeling with
+object-level shape consistency, providing a principled approach for reducing false positives in RGB-D agricultural
+perception systems and building a perception foundation for robotic harvesting, yield estimation, and precision
+orchard management. The dataset and code are publicly available at citrus-fruit-rgbd (https://huggingface.co/
+datasets/ariel0818/citrus-fruit-rgbd) and GeoSphere-DETR (https://github.com/Ariel0818/Geosphere-DETR),
+respectively.
+© 2026 The Authors. Publishing services by Elsevier B.V. on behalf of KeAi Communications Co., Ltd. This is an open
+access article under the CC BY-NC-ND license (http://creativecommons.org/licenses/by-nc-nd/4.0/).
+https://doi.org/10.1016/j.aiia.2026.08.010
+2589-7217/© 2026 The Authors. Publishing services by Elsevier B.V. on behalf of KeAi Communications Co., Ltd. This is an open access article under the CC BY-NC-ND license (http://
+creativecommons.org/licenses/by-nc-nd/4.0/).
+1. Introduction
+Citrus is one of the most widely cultivated fruit crops globally,
+with production exceeding 150 million tons annually and signiﬁcant
+economic
+importance
+across
+subtropical
+and
+tropical
+regions
+(Mukhametzyanov et al., 2024). Accurate and timely fruit detection in
+orchards is a foundational capability for a broad range of precision agri-
+culture applications, including yield estimation (Vijayakumar et al.,
+2023), precision spraying (Partel et al., 2021), and robotic harvesting
+(Abeyrathna et al., 2023). Reliable fruit localization at the instance
+level is a prerequisite for downstream yield prediction pipelines,
+where per-image fruit counts serve as inputs to forecasting models
+that support harvest planning and resource allocation (Dorj et al.,
+2017). For growers, improved fruit detection can reduce manual scout-
+ing effort and support more efﬁcient orchard operations. Despite its
+practical importance, robust fruit detection in outdoor orchard environ-
+ments remains an open problem due to the visual complexity of
+cluttered canopy scenes (Tang et al., 2023).
+In citrus orchards, fruits frequently share similar colour and texture
+characteristics with surrounding foliage, and specular highlights on
+leaves can produce appearance cues that closely mimic fruit surfaces.
+Combined with frequent occlusions and strong illumination variations
+across different times of day and ﬁeld conditions, these factors cause
+RGB-based detectors to generate excessive fruit-like false positives,
+
+which is a challenge that is particularly pronounced when fruits are
+small or partially occluded. Recent advances in deep learning-based ob-
+ject detection, including YOLO-style models (Redmon et al., 2016),
+R-CNN variants (Girshick et al., 2014), and transformer-based detectors
+such as DETR (Carion et al., 2020) and RT-DETR (Zhao et al., 2024), have
+demonstrated strong performance on general-purpose benchmarks.
+However, most existing detectors are RGB-only, and primarily rely on
+appearance cues, which can be insufﬁcient in orchards where fruits
+are easily confused with background clutter such as specular leaf high-
+lights and branch textures (Xiao et al., 2023). Moreover, they mainly op-
+timize standard accuracy metrics such as mAP, while explicit analysis
+and suppression of false-positive behavior under cluttered foliage and
+specular artifacts remain limited (Singh et al., 2021).
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+RGB-D sensing, which combines appearance and depth information,
+offers a natural avenue for addressing this limitation, as geometric cues
+can disambiguate fruit-like distractors that are visually plausible but
+geometrically inconsistent with a spherical fruit shape (Lin et al.,
+2020). RGB-D and multi-modal fusion approaches have been explored
+in agricultural perception for tasks such as tree height estimation
+(Zhou et al., 2025), canopy reconstruction (Zheng et al., 2026), and
+row-level mapping (Su et al., 2024). However, naive depth fusion strat-
+egies, such as early channel concatenation of raw depth with RGB, are
+fragile in practice: stereo depth in outdoor orchard scenes frequently
+contains missing values (Riegler et al., 2017), boundary noise
+(Petrović and Xydeas, 2003), and misalignment artifacts (Einecke
+et al., 2014), and performance degrades substantially under cross-ﬁeld
+and cross-day domain shifts (Cao et al., 2026; Zhang et al., 2023).
+Moreover, existing fusion approaches rarely integrate object-level geo-
+metric consistency explicitly, leaving an important gap in ﬁne-grained
+false positive suppression at the detection query level.
+A further practical challenge in developing orchard fruit detectors is
+the high cost of instance-level annotation. Fruits in cluttered canopy
+images are small, occluded, and visually ambiguous, making manual
+labeling labor-intensive and prone to inconsistency. Foundation
+model-based detectors, such as Grounding DINO (Liu et al., 2024),
+have recently demonstrated strong zero-shot object proposal capabili-
+ties across diverse visual domains, offering a promising mechanism for
+bootstrapping agricultural annotations at reduced cost while retaining
+human veriﬁcation for quality control.
+This study introduces a geometry-aware detection framework,
+GeoSphere-DETR, to address two key challenges in orchard fruit detec-
+tion: the susceptibility of RGB-based detectors to fruit-like false posi-
+tives, and the fragility of existing RGB-D fusion strategies under
+real-world depth noise and domain shifts. Speciﬁcally, GeoSphere-
+DETR is developed as an extension of RT-DETR tailored to RGB-D citrus
+fruit detection in cluttered orchard environments. The contributions of
+this study are fourfold and are positioned relative to current gaps in lit-
+erature. First, a neck-level geometry-gated fusion module is proposed to
+enable selective integration of depth-derived curvature cues into multi-
+scale visual features. Unlike conventional early or attention-based
+fusion approaches (Sun et al., 2022) that treat depth as uniformly reli-
+able, the proposed gating mechanism explicitly models spatial reliabil-
+ity, allowing robust use of geometry under missing or noisy depth
+conditions. Second, a geometry-aware recalibration head is introduced
+to enforce object-level conﬁdence adjustment. In contrast to existing
+multi-modal detectors that rely solely on feature-level fusion, this mod-
+ule operates at the detection query level and recalibrates conﬁdence
+scores based on geometric context encoded in the ﬁnal decoder embed-
+dings, providing an additional mechanism for suppressing false posi-
+tives arising from foliage clutter and specular artifacts. Third, a
+foundation model-assisted annotation pipeline is developed, leveraging
+Grounding DINO for zero-shot proposal generation followed by human
+veriﬁcation, substantially reducing labeling cost while maintaining
+high-quality instance-level labels in complex orchard scenes. Finally, a
+real-world RGB-D citrus dataset comprising 2200 annotated images
+and over 100,000 instances is constructed, with a strict cross-ﬁeld and
+cross-day evaluation protocol designed to assess generalization under
+realistic deployment conditions. Extensive ablation and robustness ex-
+periments are conducted to systematically analyze the role of geometry
+in improving detection reliability.
+Compared to existing RGB-D fruit detection methods, the proposed
+approach advances the state of the art by jointly addressing geometry
+reliability at the feature level and shape consistency at the object level,
+rather than relying on direct depth fusion alone. This dual-level design
+provides a principled framework for reducing false positives in unstruc-
+tured agricultural environments.
+2. Materials and methods
+2.1. Dataset and annotation pipeline
+2.1.1. Data collection
+As shown in Fig. 1, RGB-D data were collected at two commercial cit-
+rus orchards (Fields A & B) in Florida using the Agrosense v2 mobile
+sensing platform (Liu et al., 2026). The Agrosense v2 sensing system
+was mounted on a truck traveling at approximately 8 km/h between
+tree rows. Agrosense v2 includes two ZED X stereo cameras (StereoLabs
+Inc., San Francisco, CA, USA) with a 2.2 mm lens, mounted at a height of
+1.7 m above the ground and oriented laterally toward the tree canopy.
+At a typical stand-off distance of 2–4 m, the camera ﬁeld of view spans
+approximately 5.7–11.4 m in width and 3.4–6.8 m in height, allowing
+the full tree canopy to be captured in a single frame. Synchronized
+RGB and depth image pairs were acquired at 15 FPS at a resolution of
+1920 × 1200 pixels using the SDK-provided calibration parameters. All
+data were collected under natural illumination, encompassing both
+sunny and cloudy conditions and a mixture of front-lit and back-lit sce-
+narios to capture diverse lighting variations. Stereo depth quality is in-
+herently variable under these outdoor conditions, with missing values
+and boundary noise near occlusions and leaf edges. This variability di-
+rectly motivates the reliability-aware design of the proposed fusion
+module.
+Field A, with lower maintenance intensity (864 trees), served as the
+source for training and validation data, collected on December 8, 2025.
+Frames were sampled from 12 rows in total: the ﬁrst 10 rows were des-
+ignated for training and the remaining 2 rows for validation, ensuring
+that no row overlap exists between the two subsets. Field B, a better-
+maintained commercial orchard (855 trees), contributed 2 rows to the
+held-out test set, with data collected on November 19, 2025. Both ﬁelds
+are planted with Hamlin orange (Citrus sinensis), an early-season variety
+typically harvested from October through December in Florida, with an
+in-row tree spacing of approximately 3.5–4.0 m and a row spacing of
+approximately 7.0–7.5 m. The two orchards differ in canopy density
+and management condition, and data were collected on different
+dates during the active harvest window, capturing fruits across a
+range of maturity stages from partially green to fully orange, enabling
+a strict cross-ﬁeld, cross-day evaluation protocol that reﬂects realistic
+deployment variability.
+2.1.2. Frame sampling and annotation pipeline
+From the continuous RGB-D video streams, frames were uniformly
+sampled to reduce temporal redundancy while maintaining consistent
+spatial coverage across rows. Fig. 2 illustrates the complete annotation
+pipeline. For the train/validation ﬁeld, 150 frames per row were sam-
+pled from the 10 training rows and 100 frames per row from the 2 val-
+idation rows, yielding 1500 training and 200 validation images
+respectively. For the test ﬁeld, 250 frames per row were sampled from
+2 held-out rows of Field B, yielding 500 test images. Sampling was per-
+formed prior to annotation, and train/validation/test assignment was
+determined solely by row and ﬁeld identity, and no row appears in
+more than one split. The dataset contains two annotation categories:
+fruit-on-tree and fruit-on-ground, with a total of 102,719 annotated in-
+stances across 2200 images, summarized in Table 1. The fruit-on-tree
+2
+
+category dominates across all splits, reﬂecting the prevalence of canopy-
+level detections in side-view orchard imagery.
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Fig. 1. The Agrosense v2 mobile sensing platform used for RGB-D data collection in citrus orchards. The system is mounted on a truck traveling at approximately 8 km/h between tree rows
+(row spacing is around 7 m). Two ZED X stereo cameras (2.2 mm lens, 1920 × 1200 px, 15 FPS) are mounted laterally at 1.7 m height, directed toward the tree canopy at a standoff distance
+of 2–4 m, capturing synchronized RGB and depth image pairs under natural illumination.
+To efﬁciently obtain high-quality bounding-box annotations at
+scale, a foundation-model-assisted human-in-the-loop pipeline was
+adopted. Grounding DINO-L (Liu et al., 2024) was applied to each se-
+lected frame using the text prompts “fruit on tree” and “fruit on
+ground” to generate initial bounding-box proposals for the two detec-
+tion categories. These proposals were subsequently reviewed and re-
+ﬁned in LabelMe (Russell et al., 2008) by a single expert annotator
+with domain knowledge of citrus fruit morphology, who corrected
+box boundaries, removed false proposals arising from leaf highlights
+and specular reﬂections (approximately 20% of model-generated
+proposals were rejected), and added missed fruit instances to ensure
+complete
+coverage.
+Compared
+with
+fully
+manual
+annotation
+(approximately 3–5 min per image), this pipeline reduced labeling
+time to approximately 1–3 min per image, representing an estimated
+40–60% reduction in annotation effort across the full 2200-image
+dataset while preserving fully human-veriﬁed ground truth. Table 2
+shows that fruit instances are overwhelmingly small objects: over
+90% of bounding boxes fall below 322 pixels across all splits, with no
+instances exceeding 962 pixels, conﬁrming that citrus fruit detection
+in this dataset is primarily a small-object recognition problem under
+dense canopy clutter. The held-out test ﬁeld exhibits systematically
+lower stereo depth coverage (mean valid pixel ratio 52.8% ± 2.6%)
+compared to the training ﬁeld (67.4% ± 5.2%), primarily attributable
+to the denser canopy structure of Field B, which increases stereo occlu-
+sion, and to differences in ambient lighting conditions between the
+two collection dates. This indicates that cross-ﬁeld generalization
+in this benchmark is compounded by degraded depth quality at test
+time.
+Depth maps from the ZED X stereo camera are spatially aligned with
+the RGB frames using the SDK-provided intrinsic and extrinsic calibra-
+tion. From each aligned depth map, two compact geometry cues: sur-
+face bumpiness and Laplacian-based convexity, are derived on the
+same image grid to construct the two-channel geometry maps used
+by the proposed geometry branch, detailed in Section 2.3. The full
+dataset is publicly available at citrus-fruit-rgbd.
+2.2. Overall framework
+The proposed framework addresses false positive suppression at
+two complementary levels: a neck-level geometry-gated fusion mod-
+ule that selectively incorporates depth-derived curvature cues into
+multi-scale features, and a query-level geometry-aware recalibration
+head that enforces object-level conﬁdence adjustment at inference
+time. Together, these modules provide a dual-level defense against
+fruit-like distractors arising from foliage clutter and specular artifacts.
+RT-DETR builds on the DETR framework by adopting an end-to-end
+query-based formulation with global attention, allowing each object
+query to aggregate context from the entire image rather than relying
+on dense local predictions, which is particularly suited to orchard
+scenes with heavy clutter and occlusion (Wu et al., 2025; Zhang,
+2025). Its real-time inference capability further makes it a practical
+choice for ﬁeld deployment. However, existing RT-DETR-based fruit
+detectors remain predominantly appearance-driven and rarely incor-
+porate explicit geometric priors or false-positive suppression mecha-
+nisms, leaving an important gap for geometry-aware detection in
+cluttered orchard environments. RT-DETR is well suited to address
+this gap: its query-based global attention mechanism is particularly ro-
+bust to heavy clutter and occlusion, while its modular decoder
+3
+
+M
+(
+5
+5
+4
+architecture naturally accommodates auxiliary geometry branches and
+query-level shape supervision without modifying the core detection
+pipeline.
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Fig. 2. Annotation pipeline for RGB-D citrus images. The depth map is displayed as a grayscale image normalized to the 2nd–98th percentile range of valid measurements. Black regions
+indicate missing or invalid stereo values. Grounding DINO-L generated initial bounding-box proposals using text prompts, which are subsequently reviewed and corrected by human an-
+notators in LabelMe to produce fully veriﬁed instance-level labels.
+As shown in Fig. 3, GeoSphere-DETR is built on top of RT-DETR as the
+base detector. Given an input RGB image and its corresponding geome-
+try cues, the model follows a three-stage pipeline: geometry-aware
+feature fusion, transformer-based detection, and shape-consistency re-
+scoring. The RGB image is processed by the RT-DETR backbone and
+neck to extract multi-scale features. In parallel, geometry cues derived
+from depth (e.g., surface bumpiness and Laplacian-based convexity
+cues) are encoded by a lightweight geometry branch. Instead of early
+concatenation, a neck-level geometry-gated fusion injects geometry
+into intermediate feature maps via a learnable gating mechanism, en-
+abling adaptive use of geometric information under noisy and missing
+depth values.
+The fused features are fed into the RT-DETR decoder to produce ob-
+ject queries with classiﬁcation logits and bounding box predictions. A
+query-level geometry-aware recalibration head predicts a scalar
+shape-consistency score for each query using the ﬁnal decoder embed-
+dings. During inference, we adjust classiﬁcation logits with the
+predicted conﬁdence adjustment scores. This reﬁnes detection conﬁ-
+dence without modifying box regression, suppressing geometrically in-
+consistent false positives and improving precision, especially for small
+and occluded fruits.
+Table 1
+Summary of the RGB-D citrus dataset across train, validation, and test splits, including im-
+age counts, per-category instance counts, total instances, and mean instances per image.
+Split
+Images
+Fruit-on-tree
+Fruit-on-ground
+Total
+instances
+Instance/image
+Train
+1500
+71,382
+6384
+77,766
+51.8 ± 21.0
+Validation
+200
+8041
+664
+8705
+43.5 ± 19.1
+Test
+500
+14,780
+1468
+16,248
+32.5 ± 18.1
+2.3. Geometry representation
+Geometry cues are designed based on a key observation from the
+dataset: citrus fruits exhibit a consistent spherical and convex shape,
+while most background structures in orchard scenes, such as leaves,
+branches, and soil, are locally ﬂat, planar, or elongated. Raw stereo
+depth in outdoor orchard scenes is unsuitable as a direct geometry
+input: it contains large-scale range variation correlated with back-
+ground distance, missing values due to stereo failures, and boundary
+noise near occlusions. To encode a compact shape prior toward local
+convex structure, we instead derive two depth-based cues: surface
+bumpiness and Laplacian-based convexity, which emphasize locally
+protruding, spherical regions while suppressing planar and edge-like
+background structures. Fig. 4 presents examples of the RGB image,
+depth, bumpiness, and Laplacian-based convexity.
+Table 2
+Bounding box size distribution (small: < 322 px; medium: 322–962 px) and stereo depth
+coverage (mean valid pixel ratio) across dataset splits.
+Split
+Small
+(< 322 px)
+Medium
+(322 < 962 px)
+ean area
+px2)
+Valid depth
+ratio
+Train
+93.7%
+6.3%
+27
+67.4% ± 5.2%
+Validation
+90.1%
+9.9%
+84
+65.3% ± 5.8%
+Test
+96.6%
+3.4%
+83
+52.8% ± 2.6%
+4
+
+output is bounded to 0, 1 by the
+peration regardless of g, ensuring
+numerical stability
+controls the contrast of the bumpiness response,
+with larger values amplifying weak protrusions at the cost of saturation
+in high-curvature regions. The valu
+was selected empirically
+on the validation set as the smallest value that produced visually dis-
+tinct bumpiness responses for fruit-sized protrusions. The kernel size
+kB
+71 was selected by visual inspection of the resulting bumpiness
+maps across representative training images, choosing the smallest ker-
+nel that produced smooth, fruit-scale bumpiness responses while sup-
+pressing ﬁne-grained leaf texture noise. Larger kernels were found to
+blur the response across adjacent fruit instances, while smaller kernels
+retained high-frequency leaf texture artifac
+denotes
+Gaussian smoothing with kernel size k, with the standard deviation
+set automatically
+8 following
+the OpenCV convention (Bradski, 2000). The large smoothing kernel
+suppresses low-frequency background depth variation and retains
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Fig. 3. Overview of the proposed GeoSphere-DETR. RGB features extracted by the RT-DETR backbone and neck are fused with depth-derived geometry cues (bumpiness
+d Laplacian-
+based convexit
+via a neck-level geometry-gated fusion module. A query-level geometry-aware recalibration head predicts a geometry-informed conﬁdence score for each decoder
+query, which is used to re-score classiﬁcation logits during inference to suppress geometrically inconsistent false positives.
+B an
+y C)
+Given an aligned depth map D, invalid depth pixels (i.e., stereo fail-
+ures, out-of-range measurements, and boundary artifacts) are ﬁrst
+identiﬁed as zero or non-ﬁnite values in the raw disparity map and ex-
+plicitly masked. Robust percentile normalization is then applied using
+the 1st
+and 99th
+ercentiles of valid (ﬁnite) pixels only, map-
+ping valid measurements to 0, 1 and retaining masked pixels as zero
+throughout all subsequent geometry computations:
+p1
+p99 p
+D
+clip
+D −p1
+p99 −p1 , 0, 1
+1
+where
+denotes element-wise clamping to the range 0, 1 .
+clip ∙, 0, 1
+Bumpiness B is computed as a high-pass depth response by
+subtracting a Gaussian-smoothed version of D from itself and applying
+a gain factor as shown in Eq. (2). Intuitively, B acts like an embossing ﬁl-
+ter: by subtracting a blurred version of the depth map from itself, it
+highlights regions that protrude locally above their surroundings
+while suppressing large-scale background depth gradients.
+B
+clip 0 5
+g
+D −GaussBlur D, kB
+, 0, 1
+2
+where kB
+71 is the Gaussian kernel size and g
+2 0 is the gain. The
+Fig. 4. Examples of depth-derived geometry cues computed from aligned stereo depth maps. (a) RGB image, (b) raw depth map, (c) bumpiness ma
+(highlighting locally protruding
+structures), and (d) Laplacian-based convexity map
+capturing spherical surface curvature). Both cues emphasize citrus fruit regions while suppressing planar leaves and branches.
+p B
+C (
+clip o
+. g
+e g
+2 0
+ts. GaussBlur , k
+as σ
+0 3
+k −1
+0 5 −1
+0
+5
+
+cation. Using independent gate heads per level, rather than a shared
+head, allows each pyramid scale to learn distinct geometry-reliability
+patterns: coarser scales capture global fruit-background separation,
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+locally protruding structures that correspond to the convex fruit proﬁle.
+As shown in Eq. (3), Laplacian-based convexity C is computed by apply-
+ing a second-order Laplacian operator to a pre-smoothed depth map,
+followed by robust normalization. Intuitively, C acts like a curvature de-
+tector: the Laplacian responds strongly to locally convex regions where
+the depth surface curves outward consistently, which in practice corre-
+sponds to smooth, protruding structures such as fruit surfaces, while
+returning near-zero values on ﬂat planes and suppressing sharp
+discontinuities.
+C
+RobustNorm
+∇2 GaussBlur D, kC
+, p5, p99 5
+3
+where kC
+21 is the Gaussian kernel size, which was selected similarly
+by visual inspection, targeting local curvature responses at the scale of
+individual fruit surfaces. At this scale, the Laplacian reliably highlights
+the outward-curving geometry of fruit surfaces while returning near-
+zero values on ﬂat leaf planes
+denotes the discrete Laplacian opera-
+tor with kernel size 3, an
+clips the result to the 5th
+)
+and 99.5th (
+percentiles before mapping to
+The Laplacian re-
+sponds strongly to locally convex, outward-curving surface regions
+while suppressing planar backgrounds, making it complementary to
+bumpiness as a shape descriptor for protruding fruit.
+. ∇2
+d RobustNorm
+(p5
+0, 1 .
+p99 5)
+The two cues are stacked channel-wise to form a two-channel geom-
+etry ma
+W , which is precomputed ofﬂine
+and stored alongside the RGB frames. G is used as input to the geometry
+branch for neck-level fusion, described in Section 2.4. In summary, three
+geometry inputs are used in this study: the normalized depth map D
+(Eq. (1)), surface bumpiness B (Eq. (2)), and Laplacian-based convexity
+C (Eq. (3)). Their relative contributions are evaluated in the ablation
+study (Section 3.2.1), where D, B, C, and the combined two-channel
+map B
+C a
+pared as inputs to the geometry branch.
+p G
+B, C ∈R ^ 2
+H
+re com
+2.4. Neck-level geometry-gated fusion
+The geometry-gated fusion module serves as an active depth quality
+control mechanism. Rather than blindly injecting all available geometry
+into the visual features, it learns to selectively amplify reliable depth sig-
+nals and suppress contributions from noisy or missing regions on a per-
+location, per-scale basis. Directly concatenating depth or geometry with
+RGB at the input level is often unstable in orchard scenes, where stereo
+depth contains noise, missing values, and local misalignment under oc-
+clusions. Unlike early fusion approaches (Sun et al., 2022; Rong et al.,
+2023) that concatenate depth with RGB at the input level, or additive fu-
+sion that treats geometry as uniformly reliable, the proposed gating
+mechanism learns where geometry is trustworthy on a per-location,
+per-scale basis. To address this, we introduce a neck-level geometry-
+gated fusion module that injects geometry into multi-scale features in
+an adaptive manner, as illustrated in Fig. 5.
+B a
+C)
+G (
+Z,
+Ml,
+s Fl t
+Fig. 5. Neck-level geometry-gated fusion module. The two-channel geometry map
+bumpiness
+nd Laplacian-based convexity
+is encoded by a lightweight convolutional encoder
+into a shared feature
+which is interpolated to three FPN pyramid levels. Independent per-level gate heads predict spatial reliability maps
+which multiplicatively modulate the cor-
+responding RGB feature map
+o selectively amplify geometry contributions at reliable locations.
+t Fl ∈ℝC
+Hl
+Wl
+Le
+denote the RGB feature map at the pyramid level
+l ∈3, 4, 5 , andlet
+denote the two-channel geom-
+etry maps (bumpiness and Laplacian-based convexity). A lightweight
+geometry branch φ
+maps G into a compact feature representation:
+G ∈R ^ 2
+H
+W
+Z
+φ G ∈ℝCz H
+W
+4
+The encoder φ
+is a lightweight three-layer convolutional network
+(BN + SiLU after each layer) that maps the 2-channel geometry input to
+a
+32-channel
+feature
+map
+at
+1/4
+of
+the
+input
+resolution
+(
+, as detailed in Fig
+Z is then resized to
+each pyramid level via bilinear interpolation:
+. 5.
+H′
+H 4, and W′
+W 4)
+Zl
+Interpolate Z, Hl, Wl
+5
+By operating at 1/4 of the input resolution, the geometry branch
+scales quadratically with input image dimensions but remains compu-
+tationally lightweight relative to the backbone: at 1024 × 1024 input
+resolution, the geometry branch processes a 256 × 256 feature map,
+contributing negligible overhead as conﬁrmed by the measured infer-
+ence speed of 32.7 FPS (Section 3.1). Furthermore, the geometry maps
+G are precomputed ofﬂine and stored alongside the RGB frames, mean-
+ing the bumpiness and convexity computation does not contribute to
+online inference latency. For each pyramid level, an independent per-
+level gate head
+implemented as a 1 × 1 convolution followed by a
+sigmoid activation, predicts a spatial gate map:
+Kl,
+Ml
+σ Kl ∗Zl ∈R1 Hl
+Wl
+6
+where
+encodes the spatial reliability of geometry at each lo-
+Ml ∈0, 1
+6
+
+The overall training objective is:
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+while ﬁner scales respond to local convex protrusions. The gated fusion
+then modulates the RGB features as:
+F′
+l
+Fl⊙1
+αMl
+7
+where ⊙is element-wise multiplication a
+5, which was se-
+nd α
+0
+lected empirically, controls modulation strength. We adopt a multipli-
+cative gating formulation rather than additive fusion because it
+preserves the original RGB feature magnitude when geometry is unreli-
+able
+, avoiding feature contamination from noisy depth. When
+Ml ≈0 at a locatio
+Fl and geometry has no effect. Wh
+1,
+the RGB feature is scaled up by a factor of (1 + α) = 1.5, amplifying re-
+gions where geometry provides reliable convex shape cues. The geom-
+etry encoder φ
+and gate heads Kl
+are trained end-to-end with the
+detector. During training, geometry dropout is applied with probability
+p
+0 3, randomly masking blocks of geometry inputs to simulate miss-
+ing depth and improve robustness to depth failures at test time. The ge-
+ometry encoder
+nd gate heads
+ogether introduce only 14.4 K
+additional parameters (0.04% of the total model size of 32.89 M),
+conﬁrming that the proposed fusion module is computationally
+lightweight.
+Ml ≈0
+n, Fl ≈
+en Ml ≈
+φ
+a
+Kl t
+2.5. Query-level geometry-aware conﬁdence recalibration head
+In orchard scenes, many false positives arise from visually similar
+distractors, such as leaf highlights, specular reﬂections, and textured
+background regions that are visually plausible but lack the spherical ge-
+ometry of citrus fruits. Existing multi-modal fruit detectors (Kaukab
+et al., 2024; Mao et al., 2025) rely on feature-level fusion without explic-
+itly verifying whether a predicted detection is geometrically consistent
+with a spherical shape at the object level. To address this gap, we intro-
+duce a query-level geometry-aware recalibration head that predicts a
+conﬁdence adjustment score for each detection query and uses it to
+re-score classiﬁcation conﬁdence at inference time, thereby suppressing
+detections that are visually plausible but geometrically inconsistent
+with true fruit instances.
+hi ∈R ^ d d
+256
+Given the ﬁnal decoder query embeddings
+from
+the RT-DETR decoder, we attach an auxiliary head f sphere
+to predict a
+scalar sphere-consistency logit si per query:
+si
+f sphere hi
+8
+f sphere
+c
+As illustrated in Fig. 6, the head
+onsists of four operations in
+sequence: LayerNorm, Linear (256 →256), GELU activation, and Linear
+(256 →1). LayerNorm is applied ﬁrst to stabilize the distribution of de-
+coder embeddings before the linear projection, and GELU is used as the
+activation function for its smooth gradient properties. The head is
+jointly trained with the detection network using binary supervision de-
+rived from the Hungarian matching assignment: queries matched to
+any ground-truth fruit instance are treated as positives (label = 1),
+and all unmatched queries are treated as negatives (label = 0).
+Although this supervision does not provide explicit geometric labels, it
+serves as a weak object-level supervision signal that encourages the
+ﬁnal query representation to distinguish true fruit instances from false
+positives at the query level, complementing the feature-level geometric
+cues already incorporated via the gated fusion module. The sphere-
+consistency loss is deﬁned as a binary cross-entropy loss (BCE):
+Fig. 6. Query-level Geometry-Aware Recalibration Head. Given the ﬁnal decoder query embedding h
+e head f
+dicts a scalar conﬁdence adjustment logit si. During training, si is
+supervised with binary labels derived from Hungarian matching via a binary cross-entropy loss. During inference
+s used to re-score the classiﬁcation logits
+boosting geometrically
+consistent detections and suppressing false positives that lack spherical shape cues.
+i, th
+sphere
+pre
+, si i
+ci,
+sphere
+BCE si, yi
+9
+where
+s the binary label derived from Hungarian matching.
+yi ∈0, 1 i
+det
+γ
+sphere
+10
+where
+s the standard RT-DETR detection loss and
+alances
+det i
+γ
+1 0 b
+the auxiliary supervision. In all experiments, the auxiliary loss is applied
+only to the ﬁnal decoder queries, since they provide the most reﬁned
+instance-level representation for the ﬁnal prediction.
+During inference, the predicted sphere-consistency logit is used to
+bias the conﬁdence of each query by adjusting its classiﬁcation logits:
+c′
+i
+ci
+λ si 1
+11
+where
+denotes the original classiﬁcation log
+0 is the re-
+ci
+its, λ
+1
+scoring strength, and 1 is an all-ones vector. RT-DETR produces per-
+class conﬁdence scores via independent sigmoid activations applied to
+each class logit, rather than a shared softmax over classes. Under this
+formulation, adding the same scalar shif
+o all class logits increases
+the sigmoid probability of every class independently
+for each clas
+This uniformly raises the overall detection conﬁdence
+of geometrically consistent queries and lowers it for geometrically in-
+consistent ones, while preserving the relative log-odds between classes
+(i.e., the fruit-on-tree vs. fruit-on-ground preference is unchanged). A
+query is suppressed as a false positive when its post-NMS conﬁdence
+maxkp′
+k falls below the operating threshold τ = 0.603. The sphere-
+consistency shift thus acts as a geometry-conditioned objectness cali-
+bration that gates detection without altering class identity. Queries with
+high sphere-consistency scores are boosted in conﬁdence, while those
+t λsi t
+: p′
+k
+σ cik
+λsi
+s k.
+7
+
+resent dataset-speciﬁc over-tuning.
+(https://github.com/Ariel0818/Geosphere-DETR).
+with low
+are suppressed, effectively reducing false positives from fo-
+liage clutter and specular artifacts. Compared with feature-level fusion,
+the geometry-aware recalibration head operates at the query level and
+introduces minimal computational overhead, adding only 66.6 K pa-
+rameters (0.20% of the total model size). The sphere head is also evalu-
+ated in a train-only mode (without inference re-scoring) as an ablation
+variant, where it acts as an auxiliary regularization without modifying
+inference-time conﬁdence.
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+si
+h
+2.6. Training details and inference setup
+To systematically evaluate the contribution of each proposed com-
+ponent, ﬁve model conﬁgurations are compared throughout the exper-
+iments. E1 serves as the RGB-only RT-DETR baseline with no depth or
+geometry integration. E2 introduces naive early fusion by concatenating
+the normalized depth map
+with the RGB image at the input level as
+an additional channel. To enable direct comparison with existing RGB-
+D fusion approaches, we select NT-FFN (Sun et al., 2022) as the refer-
+ence method, as it represents the most closely related published work
+in terms of task setting (outdoor RGB-D fruit detection under
+real-world depth noise) and fusion design philosophy. Rather than re-
+implementing NT-FFN in its entirety, we transplant its core attention-
+based fusion mechanism into our RT-DETR framework, replacing only
+the fusion module while keeping the backbone, neck, and training con-
+ﬁguration identical across all ablation variants. This design isolates the
+contribution of the fusion strategy itself and ensures a controlled, fair
+comparison. Speciﬁcally, the two-channel geometry map G = [B, C] is
+processed by a lightweight SE (Squeeze-and-Excitation) block and
+added to the neck feature maps via channel-wise attention weighting.
+Unlike E3, which learns a spatial gating mask conditioned on local
+geometry reliability, E2b applies global channel recalibration without
+explicit spatial reliability modeling. This conﬁguration serves as a direct
+comparison point for evaluating whether the proposed spatial gating
+mechanism provides beneﬁts beyond standard attention-based fusion.
+E3 replaces early concatenation with the proposed neck-level
+geometry-gated fusion module (Section 2.4), which adaptively injects
+the two-channel geometry ma
+into multi-scale visual fea-
+tures. E4 (GeoSphere-DETR, full model) further extends E3 with the
+query-level geometry-aware recalibration head and inference-time re-
+scoring (Section 2.5). All conﬁgurations share the same backbone,
+neck, and training hyperparameters. In addition, YOLOv11m trained
+on RGB inputs is included as a reference baseline.
+D,
+p G
+B, C
+GeoSphere-DETR was trained end-to-end using the Ultralytics imple-
+mentation of RT-DETR-L (Zhao et al., 2024), initialized from the
+pretrained RT-DETR-l.pt weights. Each training sample consists of an
+RGB image and its corresponding two-channel geometry map
+precomputed from the aligned depth image, as described in Section 2.3.
+During training, standard image augmentations were applied to the
+RGB inputs, and the same spatial transformations were synchronously
+applied to the geometry maps to preserve alignment between
+appearance and geometry. The detailed training hyperparameters and
+augmentation settings are summarized in Table 3. The model was trained
+end-to-end on an NVIDIA L40S GPU with the standard RT-DETR detection
+objective together with the auxiliary supervision introduced for the
+geometry-aware recalibration head in Section 2.5. In addition, geometry
+dropout was applied during training to improve robustness to missing or
+degraded depthmeasurements. Unless otherwise speciﬁed, training used
+an input resolution of 1024, a batch size of 8, and a maximum of 300
+epochs with early stopping. Mixed-precision training was enabled to im-
+prove computational efﬁciency.
+Table 3
+Training hyperparameters and data augmentation settings used for all GeoSphere-DETR
+experiments.
+Hyperparameter
+Value
+Hyperparameter
+Value
+Backbone
+initialization
+Pretrained
+RT-DETR-l.pt
+HSV
+augmentation
+0 015, s
+0 7, v
+0 4
+Input size
+1024
+Translation
+0.1
+Batch size
+8
+Scale
+0.5
+Max epochs
+300
+Horizontal ﬂip
+0.5
+Early stopping
+patience
+100
+Vertical ﬂip
+0.0
+Initial learning
+rate (lr0)
+5 × 10−5
+Mosaic
+1.0
+Final learning rate
+ratio (lrf)
+0.01
+Auto
+augmentation
+RandAugment
+Warmup epochs
+10
+Random erasing
+0.4
+Warmup
+momentum
+0.8
+Optimizer
+Auto
+Warmup bias
+learning rate
+0.1
+Momentum
+0.937
+Close mosaic (last
+epochs)
+10
+Weight decay
+0.0005
+To assess the sensitivity of GeoSphere-DETR to key hyperparameters,
+we conducted a sensitivity analysis on the fusion modulation coefﬁcient
+α and the re-scoring strength λ by varying one parameter at a time while
+ﬁxing all others at their default values. The bumpiness kern
+1
+and convexity kerne
+were selected by visual inspection of ge-
+ometry maps across representative training images and are not subject
+to numerical optimization (see Section 2.3). Results are reported in
+Table 4. As shown in Table 4, performance remains stable across a rea-
+sonable range of both α and λ, with the default values (α = 0.5, λ =
+1.0) achieving the best or near-best results. For α, smaller values (α =
+0.3) marginally reduce performance by underutilizing geometric cues,
+while larger values (α = 0.7) introduce a modest degradation under
+cross-ﬁeld conditions where depth quality is lower than during training.
+For λ, smaller values (λ = 0.5) provide insufﬁcient re-scoring signal,
+while larger values (λ = 2.0) aggressively suppress low-conﬁdence
+queries and reduce recall. These results conﬁrm that the selected
+hyperparameters are not highly sensitive to exact values and do not rep-
+α
+el kB
+7
+λ
+l kC
+21
+Table 4
+Hyperparameter sensitivity analysis on the cross-ﬁeld, cross-day test set. One parameter is
+varied at a time. All others are ﬁxed at default values (Bold). The detailed deﬁnition of the
+evaluation matrics is described in Section 2.7.
+Parameter
+Value
+mAP50
+mAP50:95
+FP rate
+FPPI
+0.3
+0.858
+0.597
+0.168
+3.527
+0.5
+0.863
+0.642
+0.151
+3.286
+0.7
+0.860
+0.614
+0.161
+3.418
+0.5
+0.829
+0.555
+0.179
+3.976
+1.0
+0.863
+0.642
+0.151
+3.286
+2.0
+0.843
+0.579
+0.160
+3.314
+During inference, the RGB image and its corresponding geometry
+map were ﬁrst processed by the backbone, the geometry branch, and
+the neck-level fusion module, and the fused features were then passed
+to the RT-DETR decoder for object-query prediction. The geometry-
+aware recalibration head predicts a scalar score for each ﬁnal decoder
+query, which is used to re-score the classiﬁcation logits before the stan-
+dard RT-DETR post-processing. In this way, the proposed inference
+pipeline preserved the original box regression branch while reﬁning de-
+tection conﬁdence through query-level shape-consistency calibration.
+The implementation code is publicly available at GeoSphere-DETR
+2.7. Evaluation protocol
+All methods were evaluated on the held-out cross-ﬁeld, cross-day
+test set described in Section 2.1. Detection accuracy was measured by
+mAP50 and mAP50:95, following the COCO evaluation protocol (Lin
+et al., 2014). mAP50 reﬂects detection completeness at a lenient local-
+ization criterion and is widely adopted in agricultural detection bench-
+marks, while mAP50:95 provides a localization-sensitive assessment
+8
+
+p
+P
+ra
+YOLOv11m (RGB only)
+All
+0.715
+0.425
+0.
+8.735
+r
+G
+E1: RT-DETR (RGB only)
+A
+r
+G
+E2: RT-DETR + depth
+A
+r
+E2b: RT-DETR + Neck
+A
+r
+r
+E4: E3 + Sphere-Consistency
+A
+r
+better suited for evaluating box quality in downstream applications
+such as yield estimation and robotic harvesting.
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Because standard mAP metrics aggregate precision-recall behavior
+across all conﬁdence thresholds, they are insufﬁcient to characterize
+false-positive behavior at a speciﬁc operating point, which is a critical
+concern in orchard scenes where fruit-like false alarms from foliage
+clutter and specular highlights directly inﬂuence fruit counts. We there-
+fore additionally report the false positive rate (FP rate) and false posi-
+tives per image (FPPI), computed after conﬁdence thresholding and
+non-maximum suppression (NMS). A predicted box is counted as a
+true positive if it matches an unmatched ground-truth box at
+IoU ≥0.5. All remaining predictions are counted as false positives. FP
+rate is deﬁned as:
+FP rate
+FP
+TP
+FP
+12
+FPPI is the mean number of false positive detections per image
+across the test set. While FP rate captures the relative proportion of er-
+roneous predictions, FPPI provides an absolute count directly interpret-
+able in operational deployment.
+Since both metrics depend on a ﬁxed operating point, a single conﬁ-
+dence threshold τ is selected on the validation set by maximizing the
+macro-averaged F1 score and applying it uniformly to all methods at
+test time. The selected threshold is τ = 0.603. All methods share identi-
+cal NMS hyperparameters (IoU threshold 0.45) to ensure a controlled
+comparison. Per-class results are reported separately for fruit-on-tree
+and fruit-on-ground, alongside overall (All) aggregates.
+To evaluate sensitivity to depth corruption, we designed two test-
+time stress tests applied to the geometry inputs. For depth dropout, an
+i.i.d. Bernoulli mask with a rat
+is applied to the normalized depth
+map D and masked pixels are set to zero, simulating missing or invalid
+stereo measurements. For depth noise, additive Gaussian noise
+ε∼N 0, σ2 is added to
+nd values are clipped to [0, 1], simulating sen-
+sor noise and quantization errors. The corrupted depth is applied consis-
+tently across methods: E2 directly consumes the corrupted
+while E3
+and E4 derive geometry cues (B
+C) from the same corrupted depth.
+RGB inputs remain unchanged in all conditions.
+io r
+D a
+D,
+3. Results and discussion
+3.1. Quantitative evaluation of geometry-aware detection
+Table 5 summarizes the cross-ﬁeld, cross-day test performance for
+all methods. Consistent with our prior work (Liu et al., 2026),
+RT-DETR outperforms YOLOv11m under the same RGB-only setting,
+conﬁrming the choice of RT-DETR as the base detector and narrowing
+the comparison to the proposed geometry-aware extensions. In terms
+of computational efﬁciency, GeoSphere-DETR runs at 32.7 FPS on an
+NVIDIA L40S GPU at 1024 × 1024 input resolution, compared to 34.1
+FPS for the RGB-only RT-DETR baseline (E1), representing a 4.1% reduc-
+tion in throughput. This conﬁrms that the geometry-gated fusion and
+recalibration modules introduce negligible inference overhead relative
+to the substantial gains in detection quality.
+Table 5
+Detection performance on the cross-ﬁeld, cross-day test set. Results are reported per class
+(fruit-on-tree, fruit-on-ground) and overall (All) for mAP50, mAP50:95, FP rate, and FPPI.
+FPrate = FP/(TP + FP); FPPI= mean false positives per image; both at τ = 0.603, IoU ≥0.5.
+Bold values indicate the best performance per metric.
+Method
+S lit
+mAP50↑
+mAP50:95↑
+F
+te ↓
+297
+FPPI↓
+T ee
+0.832
+0.453
+0.315
+8.128
+round
+0.598
+0.387
+0.279
+0.607
+ll
+0.786
+0.562
+0.218
+7.240
+T ee
+0.873
+0.633
+0.219
+6.770
+round
+0.700
+0.491
+0.213
+0.468
+ll
+0.839
+0.605
+0.205
+6.716
+(early fusion)
+T
+G
+ee
+0.929
+0.679
+0.204
+6.226
+round
+0.749
+0.530
+0.220
+0.490
+ll
+0.848
+0.614
+0.197
+5.927
+Attention Fusion (inspired by
+NT-FFN, Sun et al., 2022)
+T
+G
+E3: RT-DETR +
+A
+ee
+0.931
+0.681
+0.173
+5.169
+round
+0.759
+0.539
+0.216
+0.758
+ll
+0.856
+0.623
+0.161
+4.596
+Geometry-Gated Fusion (ours)
+T
+G
+ee
+0.936
+0.695
+0.148
+3.826
+round
+0.777
+0.553
+0.194
+0.770
+ll
+0.863
+0.642
+0.151
+3.286
+re-score (ours)
+T
+G
+ee
+0.953
+0.710
+0.142
+2.702
+round
+0.773
+0.574
+0.183
+0.584
+Introducing naive depth concatenation (E2) improves detection ac-
+curacy over the RGB-only baseline (E1), conﬁrming that depth carries
+complementary discriminative cues beyond appearance. However, the
+reliability of this gain is limited. As demonstrated in Section 3.3, E2 is
+the most sensitive to depth corruption among all fusion variants,
+degrading rapidly under both dropout and Gaussian noise. This instabil-
+ity is physically intuitive: in outdoor orchard scenes, stereo depth is in-
+herently unreliable near leaf boundaries and occluded regions, precisely
+the locations where fruit-like false positives tend to arise. Injecting raw
+depth unconditionally into the shared representation means that
+corrupted geometry propagates through the network unﬁltered,
+degrading the features it was meant to improve. The neck-level
+attention fusion baseline (E2b), inspired by NT-FFN (Sun et al., 2022),
+demonstrates that attention-based feature recalibration provides
+meaningful improvement over naive early fusion, reducing FPPI from
+6.716 to 5.927 and FP rate from 0.205 to 0.197. However, the gap be-
+tween E2b and E3 (FPPI 5.927 vs. 4.596) reveals that global channel at-
+tention is insufﬁcient to address the spatial heterogeneity of outdoor
+depth reliability. Attention-based fusion recalibrates which channels
+to emphasize but does not model where in the spatial feature map the
+geometry signal is trustworthy.
+Geometry-Gated Fusion (E3) addresses this by learning to selec-
+tively trust geometry on a per-location basis. Rather than treating
+depth-derived cues as uniformly reliable, the gating mechanism sup-
+presses geometry contributions where depth is noisy or inconsistent
+and ampliﬁes them where local convex structure is conﬁdently de-
+tected. This selective modulation translates into substantially stronger
+FP suppression compared to E2, with FPPI dropping from 6.716 to
+4.596 and FP rate falling from 0.205 to 0.161. The key insight is that in
+cluttered orchard scenes, the value of geometry lies not in its average
+signal but in its reliable signal, and gating is the mechanism that sepa-
+rates the two. The Sphere-Consistency re-scoring (E4) provides a com-
+plementary and distinct form of FP suppression. While E3 operates at
+the feature level and ﬁlters regions where geometry is globally unreli-
+able, it remains limited against false positives where the depth signal
+is locally ambiguous. For example, partially occluded leaves whose
+depth values fall within the range of nearby fruits. The geometry-
+aware recalibration head addresses this residual failure mode by operat-
+ing at the query level, re-scoring each detection based on whether its
+ﬁnal decoder embedding is consistent with a spherical shape prior.
+This late-stage calibration captures geometric plausibility that feature-
+level gating cannot, explaining why E4 achieves further FPPI reduction
+on top of E3 (3.286 vs. 4.596) despite sharing the same fused feature
+representation. Together, E3 and E4 address FP suppression at two com-
+plementary levels of the detection pipeline.
+Per-class results reveal a clear asymmetry between the two detec-
+tion categories.
+On fruit-on-tree, the geometry-aware modules deliver the most pro-
+nounced gains, with FPPI falling substantially from E1 to E4, reﬂecting
+the strong alignment between the spherical shape prior and canopy
+fruits embedded in leaf clutter. The fruit-on-ground class, however, re-
+mains consistently more challenging across all methods. Three
+compounding factors explain this gap. First, severe class imbalance in
+9
+
+the training set (Table 1) limits the model's ability to learn robust
+ground-fruit representations. Second, fallen fruit shares visual and tex-
+tural similarity with soil and leaf litter, making appearance-based dis-
+crimination inherently harder. Third, and most critically for the
+geometry modules, ground fruit frequently exhibits shape degradation
+due to physical damage and desiccation. Deformed or desiccated fruit
+no longer conforms to the spherical prior that both E3 and E4 are de-
+signed to exploit. This means the geometry-based gains are structurally
+limited for this class, and the smaller improvements on fruit-on-ground
+reﬂect the boundary of the spherical shape assumption rather than a
+shortcoming of the proposed method. Beyond false positive suppres-
+sion, false negatives represent a complementary limitation. The domi-
+nant sources of missed detections include heavily occluded fruits
+where neither RGB appearance nor depth geometry provides sufﬁcient
+signal, small or distant instances that fall below the effective resolution
+of the geometry cues, and fruit-on-ground instances where shape defor-
+mation reduces convexity responses. In addition, the gating mechanism
+may suppress geometry contributions in stereo-unreliable regions such
+as canopy boundaries, which can inadvertently increase false negatives
+when some fruits are located precisely at such a boundary. These failure
+modes are consistent with the per-class results in Table 5, where fruit-
+on-ground consistently shows lower mAP50 and mAP50:95 across all
+methods. Beyond class-level differences, the effectiveness of the spher-
+ical prior is also inﬂuenced by instance-level factors that affect both cat-
+egories. Partially occluded fruits present incomplete depth proﬁles to
+the stereo camera, reducing the convexity response and weakening
+the geometric signal available to the gating and recalibration modules.
+Overlapping fruit clusters produce merged depth surfaces that deviate
+from the single-sphere assumption, potentially causing the gating mod-
+ule to underweight geometry in high-density canopy regions. These
+instance-level failure modes are consistent with the observation that
+geometry-based gains are most pronounced in sparse canopy condi-
+tions, where individual fruit instances are more spatially separated,
+and their spherical geometry is more completely captured by the
+depth sensor. Fig. 7 shows qualitative examples from E1 to E4 illustrat-
+ing the progressive reduction in false positives. Fig. 8 provides a qualita-
+tive comparison across canopy conditions, further illustrating the
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Fig. 7. Qualitative detection results on the cross-ﬁeld test set. (a) E1: RT-DETR (RGB only); (b) E2: RT-DETR + early depth fusion; (c) E2b: RT-DETR + attention fusion; (d) E3: RT-DETR +
+gated fusion;(e) E4: GeoSphere-DETR (full model).Green and redboxes indicate true positives andfalse positives respectively. Progressivefalse positive reduction isachieved from(a) to(e).
+Images are cropped from full-resolution predictions for clarity. (For interpretation of the references to colour in this ﬁgure legend, the reader is referred to the web version of this article.)
+consistent false positive suppression achieved by the proposed method.
+The cross-ﬁeld performance gap can be attributed to three contrib-
+uting factors. First, depth quality: Field B exhibits a mean valid pixel
+10
+
+ratio of 52.8% compared to 67.4% in Field A, a 14.6 percentage point re-
+duction due to denser canopy structure. The robustness analysis in
+Section 3.3 further quantiﬁes the effect of depth degradation on each fu-
+sion variant. Second, canopy density: Fig. 8 shows that GeoSphere-DETR
+maintains strong FP suppression under both dense and sparse canopy
+conditions, while RGB-only baselines degrade more severely under
+dense canopy. Third, lighting variation contributes to the domain gap
+but remains unquantiﬁed, as discussed in Section 4. To contextualize
+these results in operational terms, each false positive in a robotic har-
+vesting pipeline corresponds to a wasted grasping attempt, increasing
+cycle time and mechanical wear, and risking physical damage to neigh-
+boring fruits or branches. High FPPI also disrupts pick-path planning, re-
+ducing overall harvesting throughput. In yield estimation applications,
+excess false positives directly inﬂate predicted fruit counts, leading to
+overestimated harvest volumes, inefﬁcient labor allocation, and down-
+stream impacts on market pricing and inventory management. For pre-
+cision spraying, false positives may trigger unnecessary chemical
+application to non-fruit regions, increasing input costs and environmen-
+tal load. The 54.6% reduction in FPPI achieved by GeoSphere-DETR
+(from 7.24 to 3.29) thus translates to substantially fewer wasted grasp-
+ing attempts, cleaner per-image fruit detection signals for downstream
+counting pipelines, and more targeted spray decisions, with direct im-
+plications for harvest planning efﬁciency and sustainable orchard
+management.
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Fig. 8. Qualitative comparison on the cross-ﬁeld test set. Row 1 (dense canopy) and Row 2 (sparse canopy): (a) and (d) YOLOv11m; (b) and (e) RT-DETR (RGB only); (c) and
+(f) GeoSphere-DETR (ours). Green and red boxes indicate true positives and false positives respectively. (For interpretation of the references to colour in this ﬁgure legend, the reader
+is referred to the web version of this article.)
+D o
+3.2. Ablation study
+3.2.1. Ablation on geometry cues
+Table 6 compares the effect of different geometry inputs under the
+same neck-level gated fusion. Raw depth alone (D) yields the weakest
+performance (mAP50:95 = 0.611), which is expected: raw stereo
+depth in outdoor orchard scenes encodes large-scale range variation
+correlated with background distance rather than local fruit geometry,
+and its missing-value artifacts are particularly prevalent near the leaf
+boundaries where fruit-like false positives concentrate. Replac
+D
+with curvature-derived cues consistently improves performance, even
+though the absolute differences are modest, reﬂecting the inherent dif-
+ﬁculty of the cross-ﬁeld, cross-day evaluation setting.
+Table 6
+Ablation on geometry cue inputs under neck-level gated fusion: D: raw normalized depth;
+B: bumpiness (local protrusion); C: Laplacian-based convexity; B
+C: two-channel geom-
+etry map (default). All variants use the same gated fusion module.
+Geom. cue
+mAP50↑
+mAP50:95↑
+nly
+0.841
+0.611
+B only
+0.849
+0.619
+C only
+0.851
+0.620
+B
+C (default)
+0.856
+0.623
+ing
+11
+
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Bumpiness (B) and Laplacian-based convexity (C) each improve
+mAP50:95 from 0.611 to 0.619 and 0.620, respectively. Combining
+them
+yields the best performance (mAP50:95 = 0.623). The
+complementarity between B and C is grounded in the distinct geometric
+properties they capture
+responds to local protrusions relative to the
+surrounding surface, signaling that a region rises above its neighbor-
+hood, while C captures the second-order curvature of that protrusion,
+conﬁrming whether it bends smoothly like a sphere rather than termi-
+nating as a sharp edge. Neither cue alone is sufﬁcient. B without C can-
+not distinguish a smooth spherical bulge from a ridge or branch
+protrusion, whil
+withou
+may respond to any curved surface re-
+gardless of whether it forms a coherent convex structure. Together,
+they provide a compact description of the spherical shape prior: a lo-
+cally raised region with consistently curved surface geometry, which
+is precisely the signature that distinguishes citrus fruit from the planar
+leaves and elongated branches that dominate orchard backgrounds.
+(B
+C)
+. B
+t B
+e C
+3.2.2. Fusion and sphere design
+Table 7 compares fusion strategies and the two operating modes of
+the geometry-aware recalibration head.
+Table 7
+Ablation on fusion strategies and geometry-aware recalibration head conﬁgurations. ‘add’:
+additive fusion; ‘concat’: early concatenation; ‘gated’: proposed geometry-gated fusion.
+Sphere head modes: ‘off’ (disabled); ‘head (train only)’: auxiliary loss only, no inference
+re-scoring; ‘head + re-score’: full GeoSphere-DETR (default).
+Fusion
+Sphere
+mAP50 ↑
+mAP50:95 ↑
+FP rate ↓
+FPPI ↓
+add
+off
+0.849
+0.621
+0.264
+9.582
+concat
+off
+0.850
+0.619
+0.248
+8.864
+gated
+off
+0.856
+0.623
+0.161
+4.596
+gated
+head (train only)
+0.859
+0.631
+0.156
+3.973
+gated
+head + re-score
+0.863
+0.642
+0.151
+3.286
+From the result, both naive additive and concatenation fusion per-
+form worse than the RGB-only baseline in terms of FPPI (9.582 and
+8.864 vs. 7.240 for E1 (in Table 5)), despite having access to additional
+geometric information. This counter-intuitive result highlights a funda-
+mental risk of unconditional fusion: when noisy or missing depth is
+injected directly into the shared feature representation, it does not
+merely fail to help, but it actively introduces spurious signals that the
+network cannot distinguish from meaningful geometry, leading to
+more false positives than if depth had been ignored entirely. These ﬁnd-
+ings highlight that the value of geometric information in outdoor or-
+chard scenes is contingent on how reliably it can be incorporated, not
+simply on whether it is present. Gated fusion resolves this by condition-
+ing geometry injection on predicted spatial reliability, substantially re-
+ducing FPPI from 8.864 to 4.596 compared to naive concatenation
+while also improving mAP50:95. The contrast between gated and
+naive fusion isolates the contribution of the gating mechanism itself:
+the geometry cues are identical across all three fusion variants, and
+the performance gap is attributable entirely to whether the network
+learns to selectively trust them.
+The geometry-aware recalibration head ablation reveals two distinct
+but complementary roles for query-level shape consistency. In train-
+only mode, the sphere loss improves both mAP50:95 and FPPI without
+any modiﬁcation at inference, suggesting that the auxiliary supervision
+encourages the decoder queries to internalize a stronger geometric
+shape prior during training. The sphere loss effectively regularizes the
+ﬁnal query representations toward fruit-consistent geometry, produc-
+ing more discriminative embeddings even when the score itself is not
+used at test time. Enabling inference-time re-scoring further improves
+performance, conﬁrming that the predicted sphere consistency score
+carries useful signal beyond what is already captured in the classiﬁca-
+tion logits. Together, the two modes show that the geometry-aware re-
+calibration head contributes at two levels: shaping the learned
+representation during training and providing an explicit calibration sig-
+nal at inference.
+3.3. Sensitivity to missing and noisy geometry
+Fig. 9 evaluates robustness under two test-time stress conditions:
+depth dropout, where geometry pixels are randomly masked at increas-
+ing ratios, and additive Gaussian noise at increasing sigma levels. The
+RGB-only baseline (E1) remains ﬂat across all corruption severities by
+construction, serving as a stable reference that isolates the effect of ge-
+ometry corruption on the fusion variants. E2 exhibits the steepest deg-
+radation under both conditions. At mask ratio 0.7, mAP50:95 drops to
+0.553 while FPPI increases to 10.2. Most notably, at high corruption se-
+verities, E2's mAP50:95 falls below the RGB-only baseline, indicating
+that corrupted depth actively hurts performance relative to using no
+depth at all. Just as unconditional fusion of clean-but-noisy depth intro-
+duces spurious signals under normal conditions, it becomes increasingly
+harmful as corruption severity grows, with the network unable to dis-
+tinguish degraded geometry from meaningful signal.
+E3 and E4 degrade substantially more gracefully across both corrup-
+tion types. The performance gap between gated and naive fusion
+widens as severity increases, suggesting that the gating mechanism pro-
+vides the most beneﬁt precisely when depth quality is poorest. This be-
+havior provides implicit but quantitative evidence that the gating
+module has learned to model the spatial reliability of geometric infor-
+mation: rather than applying depth cues uniformly, it suppresses geom-
+etry contributions in regions where depth is corrupted or absent and
+preserves them where depth remains coherent. A module that treated
+geometry uniformly would be expected to degrade at least as severely
+as E2 under the same corruption conditions. The observed stability of
+E3 and E4 conﬁrms that selective reliability modeling is the operative
+mechanism. This is the most representative of real cross-ﬁeld deploy-
+ment conditions, where the test ﬁeld exhibits systematically lower
+depth coverage than the training ﬁeld. This asymmetry is encouraging
+from a practical standpoint: the proposed method is most robust
+when robustness matters most.
+E4 consistently maintains the lowest FPPI across all severity levels,
+conﬁrming that query-level sphere consistency provides an additional
+layer of resilience beyond feature-level gating. Even as depth corruption
+degrades the geometry features fed into the gating module, the
+geometry-aware recalibration head continues to suppress geometri-
+cally implausible detections based on the ﬁnal decoder embeddings,
+acting as a second line of defense when the upstream geometry signal
+is compromised.
+4. Conclusion and future work
+GeoSphere-DETR was introduced as a geometry-aware extension of
+RT-DETR to address the persistent false positive challenge in fruit detec-
+tion under cluttered orchard conditions. The framework advances be-
+yond existing RGB-D approaches by jointly modeling geometry
+reliability at the feature level and shape plausibility at the object level.
+This is achieved through two complementary modules: a neck-level
+geometry-gated
+fusion
+module
+that
+adaptively
+incorporates
+depth-derived curvature cues into multi-scale visual features, and a
+query-level geometry-aware recalibration head that re-scores detection
+conﬁdence based on a learned spherical shape prior. Under a strict
+cross-ﬁeld, cross-day evaluation protocol, GeoSphere-DETR improves
+mAP50:95 from 0.562 to 0.642 and reduces FPPI by 54.6% compared
+to the RGB-only RT-DETR baseline. In contrast to conventional early fu-
+sion strategies, which degrade under noisy or incomplete depth, the
+proposed approach demonstrates substantially improved robustness,
+maintaining stable performance under simulated depth dropout and
+noise. These results highlight that the effectiveness of RGB-D sensing
+in outdoor agricultural environments depends not only on the availabil-
+ity of depth information, but critically on how its reliability and geomet-
+ric relevance are modeled.
+The key contribution lies in establishing a dual-level geometry-
+aware detection paradigm, where conditional feature fusion and
+12
+
+query-level geometric validation operate in a complementary manner
+to suppress fruit-like false positives. This design departs from prior
+work that relies on direct or unconditional depth fusion, providing a
+more principled and robust framework for multi-modal perception in
+unstructured ﬁeld conditions. However, several limitations remain.
+The evaluation is conducted across two orchards and one cultivar
+(Hamlin orange) under Florida growing conditions. Generalization to
+other citrus varieties, growing regions, or sensor conﬁgurations has
+not been validated and remains an important direction for future
+work. The robustness experiments employ random depth masking
+and Gaussian noise as controlled stress tests. While the test set itself
+contains real structured stereo failures, explicitly simulating structured
+dropout patterns such as boundary-concentrated or specular-region
+depth loss remains a direction for future work. Per-lighting-condition
+performance breakdown was not collected, and the contribution of
+lighting variation to the observed cross-ﬁeld domain gap therefore re-
+mains unquantiﬁed. Detection performance is still inﬂuenced by stereo
+depth quality and RGB-D alignment, and severe degradation in depth
+coverage cannot be fully mitigated. In addition, the effectiveness of the
+geometric prior is reduced for fruit-on-ground instances, where shape
+deformation violates the spherical assumption. More broadly, the cur-
+rent formulation is tailored to spherical objects, and its applicability to
+crops with diverse morphologies requires further investigation. The
+query-level recalibration head is supervised by detection-level binary
+labels derived from Hungarian matching rather than explicit geometric
+annotations such as sphere-ﬁtting residuals. While ablation results con-
+ﬁrm its effectiveness in reducing FPPI, future work could investigate in-
+corporating explicit 3D shape supervision to more directly enforce
+spherical shape consistency at the query level. While the proposed
+framework is evaluated against representative RGB-D fusion strategies,
+broader comparison across heterogeneous architectures such as late fu-
+sion pipelines and RGB-D YOLO variants remains a direction for future
+work, as these approaches require substantially different training infra-
+structure and are architecturally incompatible with the single-stream
+RT-DETR decoder used in this study. Finally, while the proposed method
+demonstrates strong false positive suppression, missing fruit detection
+and absolute fruit count accuracy relative to physical ground truth
+were not evaluated, as the dataset does not include manual per-tree
+fruit counts. This represents an important direction for future work, par-
+ticularly for yield estimation applications.
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Fig. 9. Robustness under depth corruption. (a) mAP50:95 and (b) FPPI under increasing depth dropout ratio; (c) mAP50:95 and (d) FPPI under increasing Gaussian noise level (σ).
+RGB
+only) serves as a stable reference. E3 and E4 degrade substantially more gracefully than E2 under both corruption types, with E4 maintaining the lowest FPPI across all conditions.
+E1 (
+13
+
+S. Liu, Y. Ampatzidis, D. Choi et al.
+Artiﬁcial Intelligence in Agriculture xxx (xxxx) xxx
+Future work will pursue three directions. First, integrating depth
+completion or denoising as a preprocessing stage could reduce the
+method's sensitivity to stereo quality degradation and RGB-D misalign-
+ment, broadening its applicability to scenes with severe depth dropout
+or sensor noise. Second, replacing the ﬁxed spherical prior with a learn-
+able or crop-speciﬁc shape prior would generalize the consistency head
+beyond citrus to fruits and vegetables with more complex morphol-
+ogies. Third, validating the proposed detector as a perception module
+within a robotic harvesting pipeline, where detection outputs feed di-
+rectly into pick-point estimation and manipulation planning, would es-
+tablish its practical utility for integrated orchard automation and
+provide a more operationally grounded evaluation of its false positive
+suppression capability.
+CRediT authorship contribution statement
+Shiyu Liu: Writing – original draft, Visualization, Software, Method-
+ology, Investigation, Formal analysis, Data curation, Conceptualization.
+Yiannis Ampatzidis: Writing – review & editing, Validation, Supervi-
+sion, Resources, Project administration, Methodology, Investigation,
+Funding acquisition, Conceptualization. Daeun Choi: Writing – review
+& editing, Supervision, Methodology, Investigation. Won Suk Lee: Writ-
+ing – review & editing, Supervision, Methodology, Investigation.
+Declaration of competing interest
+The authors declare that they have no known competing ﬁnancial
+interests or personal relationships that could have appeared to inﬂu-
+ence the work reported in this paper.
+Acknowledgement
+This material was made possible, in part, by a Cooperative Agree-
+ment from the U.S. Department of Agriculture and the Florida Specialty
+Crop Block Grant program (project number AM200100XXXXG037). Its
+contents are solely the responsibility of the authors and do not necessar-
+ily represent the ofﬁcial views of the USDA.
+References
+Abeyrathna, R.R.D., Nakaguchi, V.M., Minn, A., Ahamed, T., 2023. Recognition and
+counting of apples in a dynamic state using a 3D camera and deep learning algo-
+rithms for robotic harvesting systems. Sensors 23 (8), 3810.
+Bradski, G., 2000. The opencv library. Dr. Dobb's Journal: Software Tools for the Profes-
+sional Programmer 25 (11), 120–123.
+Cao, W., Zhang, Z., Wang, Z., Wei, A., Chen, Q., Igathinathane, C., Zhang, F., Abdelhamid,
+M.A., Ye, D., Ampatzidis, Y., 2026. GLS-YOLOv8n: a lightweight ‘Guiqi’ mango detec-
+tion model via RGB-depth-thermal image fusion. Comput. Electron. Agric. 242,
+111355. https://doi.org/10.1016/j.compag.2025.111355.
+Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A., Zagoruyko, S., 2020. End-to-end
+object detection with transformers. European Conference on Computer Vision.
+Springer International Publishing, Cham, pp. 213–229, August.
+Dorj, U.O., Lee, M., Yun, S.S., 2017. An yield estimation in citrus orchards via fruit detection
+and counting using image processing. Computers and Electronics in Agriculture 140,
+103–112.
+Einecke, N., Gandhi, H., Deigmöller, J., 2014. Detection of camera artifacts from camera im-
+ages. 17th International IEEE Conference on Intelligent Transportation Systems
+(ITSC). IEEE, pp. 603–610.
+Girshick, R., Donahue, J., Darrell, T., Malik, J., 2014. Rich feature hierarchies for accurate ob-
+ject detection and semantic segmentation. Proceedings of the IEEE Conference on
+Computer Vision and Pattern Recognition, pp. 580–587.
+Kaukab, S., Ghodki, B.M., Ray, H., Kalnar, Y.B., Narsaiah, K., Brar, J.S., 2024. Improving real-
+time apple fruit detection: multi-modal data and depth fusion with non-targeted
+background removal. Eco. Inform. 82, 102691.
+Lin, T.Y., Maire, M., Belongie, S., Hays, J., Perona, P., Ramanan, D., ... Zitnick, C.L., 2014.
+Microsoft coco: Common objects in context. European Conference on Computer Vi-
+sion. Springer International Publishing, Cham, pp. 740–755.
+Lin, G., Tang, Y., Zou, X., Xiong, J., Fang, Y., 2020. Color-, depth-, and shape-based 3D fruit
+detection. Precision Agriculture 21 (1), 1–17.
+Liu, S., Ampatzidis, Y., Guan, H., Liu, W., Zhou, C., Choi, D., Lee, W.S., 2026. Agrosense v2:
+An AI-enabled system for precision orchard sensing and tree-level monitoring. Com-
+puters and Electronics in Agriculture 248, 111797.
+Liu, S., Zeng, Z., Ren, T., Li, F., Zhang, H., Yang, J., Jiang, Q., Li, C., Yang, J., Su, H., Zhu, J., Zhang,
+L., 2024. Grounding dino: Marrying dino with grounded pre-training for open-set ob-
+ject detection. European Conference on Computer Vision. Springer Nature
+Switzerland, Cham, pp. 38–55.
+Mao, L., Guo, Z., Liu, M., Li, Y., Wang, L., Li, J., 2025. A scalable multi-modal learning fruit
+detection algorithm for dynamic environments. Front. Neurorobot. 18, 1518878.
+Mukhametzyanov, R.R., Brusenko, S.V., Khezhev, A.M., Kelemetov, E.M., Kirillova, S.S.,
+2024. Changing the global production and trade of citrus fruits. Sustainable Develop-
+ment of the Agrarian Economy Based on Digital Technologies and Smart Innovations.
+Springer Nature Switzerland, Cham, pp. 19–24.
+Partel, V., Costa, L., Ampatzidis, Y., 2021. Smart tree crop sprayer utilizing sensor fusion
+and artiﬁcial intelligence. Computers and Electronics in Agriculture 191, 106556.
+Petrović, V.S., Xydeas, C.S., 2003. Sensor noise effects on signal-level image fusion perfor-
+mance. Inf. Fusion 4 (3), 167–183.
+Redmon, J., Divvala, S., Girshick, R., Farhadi, A., 2016. You only look once: uniﬁed, real-
+time object detection. Proceedings of the IEEE Conference on Computer Vision and
+Pattern Recognition, pp. 779–788.
+Riegler, G., Ulusoy, A.O., Bischof, H., Geiger, A., 2017. Octnetfusion: Learning depth fusion
+from data. 2017 International Conference on 3D Vision (3DV). IEEE, pp. 57–66.
+Rong, J., Zhou, H., Zhang, F., Yuan, T., Wang, P., 2023. Tomato cluster detection and
+counting using improved YOLOv5 based on RGB-D fusion. Computers and Electronics
+in Agriculture 207, 107741.
+Russell, B.C., Torralba, A., Murphy, K.P., Freeman, W.T., 2008. LabelMe: a database and
+web-based tool for image annotation. Int. J. Comput. Vis. 77 (1–3), 157–173.
+Singh, S., Mittal, N., Singh, H., 2021. Review of various image fusion algorithms and image
+fusion performance metric. Arch. Comput. Methods Eng. 28 (5), 3645–3659.
+Su, J., Fan, Y., Mannan, A., Wang, S., Long, L., Feng, Z., 2024. Real-time estimation of tree
+position, tree height, and tree diameter at breast height point, using smartphones
+based on monocular SLAM. Forests 15 (6), 939.
+Sun, Q., Chai, X., Zeng, Z., Zhou, G., Sun, T., 2022. Noise-tolerant RGB-D feature fusion net-
+work for outdoor fruit detection. Computers and Electronics in Agriculture 198,
+107034.
+Tang, Y., Qiu, J., Zhang, Y., Wu, D., Cao, Y., Zhao, K., Zhu, L., 2023. Optimization strategies of
+fruit detection to overcome the challenge of unstructured background in ﬁeld or-
+chard environment: a review. Precis. Agric. 24 (4), 1183–1219.
+Vijayakumar, V., Ampatzidis, Y., Costa, L., 2023. Tree-level citrus yield prediction utilizing
+ground and aerial machine vision and machine learning. Smart Agricultural Technol-
+ogy 3, 100077.
+Wu, M., Qiu, Y., Wang, W., Su, X., Cao, Y., Bai, Y., 2025. Improved RT-DETR and its applica-
+tion to fruit ripeness detection. Front. Plant Sci. 16, 1423682.
+Xiao, F., Wang, H., Xu, Y., Zhang, R., 2023. Fruit detection and recognition based on deep
+learning for automatic harvesting: an overview and review. Agronomy 13 (6), 1625.
+Zhang, X., 2025. PG-DETR: a lightweight and efﬁcient detection transformer for early
+stage pomegranate fruit detection. IEEE Access 13, 155547–155559. https://doi.org/
+10.1109/ACCESS.2025.3605887.
+Zhang, J., Huang, J., Luo, Z., Zhang, G., Zhang, X., Lu, S., 2023. Da-detr: domain adaptive de-
+tection transformer with information fusion. Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition, pp. 23787–23798.
+Zhao, Y., Lv, W., Xu, S., Wei, J., Wang, G., Dang, Q., Liu, Y., Chen, J., 2024. Detrs beat yolos on
+real-time object detection. Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition, pp. 16965–16974.
+Zheng, Y., Liu, A., Huang, A., Kim, D.H., Shen, Y., Lee, K.H., 2026. Realtime multi-RGBD
+SLAM framework for 3D reconstruction and phenotyping in large-scale apple or-
+chards. Comput. Electron. Agric. 240, 111170.
+Zhou, C., Ampatzidis, Y., Guan, H., Liu, S., Liu, W., de Oliveira Costa Neto, A., Kunwar, S.,
+Batuman, O., 2025. Agrosense: accelerating precision orchard management through
+an AI-enabled monitoring system. Precis. Agric. 26 (4), 73.
+14

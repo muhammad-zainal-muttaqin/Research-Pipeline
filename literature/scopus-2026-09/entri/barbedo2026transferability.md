@@ -78,5 +78,3 @@ yang lebih luas hanya disinggung bila relevan, sehingga simpulan tidak
 langsung dapat dipindahkan ke bidang tersebut. Kelima, pencarian dan
 pengodean dilakukan oleh penilai yang jumlahnya terbatas dan mengandung
 keputusan subjektif pada kasus tepi.
-
-

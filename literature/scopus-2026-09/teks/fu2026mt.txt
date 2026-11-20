@@ -1,0 +1,2205 @@
+MT-WavYOLO: bridging multi-task learning and 3D frustum fusion for 
+non-destructive robotic harvesting of occluded orchard fruits
+Heng Fu a,b
+, Tao Li a,*
+, Qingchun Feng a, Liping Chen a,b,*
+a Research Center of Information Technology, Beijing Academy of Agriculture and Forestry Sciences, Beijing 100097, China
+b College of Mechanical and Electronic Engineering, Northwest A&F University, Yangling 712100, China
+A R T I C L E I N F O
+Keywords:
+Multi-task learning
+Apple location
+Object detection
+Semantic segmentation
+Point cloud processing
+A B S T R A C T
+One of the key challenges in orchard robots is accurately localizing occluded fruits in complex environments, 
+especially when the fruit targets are split into multiple isolated regions within images. Traditional single-task 
+network models exhibit limited capability in discerning fragmented targets that belong to the same fruit but 
+are segmented into multiple spatially isolated regions within images. In addition, fruit localization largely relies 
+on high-cost sensors or additional 3-D localization algorithms. To address this issue, we propose a fruit detection 
+and centroid localization method based on a Multi-Task Wavelet-Enhanced YOLO (MT-WavYOLO) to enhance 
+the success rate of robotic operations on occluded fruit targets. Initially, a lightweight semantic segmentation 
+branch was integrated into the YOLOv8 backbone network to precisely segment exposed fruits, while retaining 
+the original object detection branch to fully identify occluded fruits. To address the diminished sensitivity of 
+conventional models to geometric profiles of heavily occluded fruits, a novel feature fusion module, 
+C2f_WTConv, was designed by incorporating wavelet transform convolution, leveraging the multi-frequency 
+robustness of wavelet representations to enhance the model’s feature extraction capabilities under complex 
+orchard occlusions. Subsequently, a 3D frustum-based point cloud processing method was proposed, combining 
+the detection results from MT-WavYOLO with the semantic segmentation masks to accurately localize occluded 
+fruits. MT-WavYOLO demonstrated a 2%, 1.5%, and 2.2% improvement in Precision, Recall, and mAP50, 
+respectively, on our custom-built dataset compared to the latest YOLOv10s model. Semantic segmentation 
+performance, measured by Intersection over Union (IoU) and Accuracy, was improved by 5.2% and 3.8%, 
+respectively, over the state-of-the-art Deeplabv3+ network. Compared to the adapted multi-task network 
+YOLOP, MT-WavYOLO achieved a 3.4% increase in mAP50 and a 2.7% improvement in IoU. In addition, MT- 
+WavYOLO has a compact footprint of 10.2 M parameters and achieves approximately 27 FPS in real-time 
+inference, thereby meeting the requirements of robotic harvesting operations. The proposed localization 
+method was evaluated through 600 fruit localization tests using six different RGB-D cameras in an orchard 
+environment. The average experimental results demonstrated that the centroid localization and radius estimation 
+errors were reduced by 42.5%, 73.7%, 16.17%, and 11.25%, respectively, compared to traditional 3D bounding 
+box methods and our previous approaches. These results indicate that the MT-WavYOLO combined with the 
+frustum-based method significantly enhances the accuracy of apple localization under complex orchard condi­
+tions using consumer-grade sensors, providing a strong practical foundation for non-destructive robotic 
+harvesting.
+1. Introduction
+Apples rank among the most extensively cultivated and agricultur­
+ally significant fruit crops globally. In recent years, with accelerating 
+population aging, advancing urbanization, and rising labor costs, or­
+chards have faced seasonal labor shortages and mismatches in labor 
+supply. Harvesting is highly time-sensitive, physically demanding, and 
+repetitive; traditional manual picking is time-consuming and labor- 
+intensive, and prolonged high-intensity work elevates health risks for 
+workers. Under the “dual-carbon” agenda and the rise of digital agri­
+culture, reliance on manual labor alone can no longer meet modern 
+orchards’ requirements for efficient and stable management, making 
+* Corresponding authors at: Beijing Academy of Agriculture and Forestry Sciences, No. 11 Shuguang Garden Middle Rd., Haidian District, 100097 Beijing, China.
+E-mail addresses: lit@nercita.org.cn (T. Li), chenlp@nercita.org.cn (L. Chen). 
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+https://doi.org/10.1016/j.compag.2025.111335
+Received 28 February 2025; Received in revised form 5 December 2025; Accepted 14 December 2025  
+Computers and Electronics in Agriculture 242 (2026) 111335 
+Available online 23 December 2025 
+0168-1699/© 2025 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+
+automated harvesting a practical necessity. Compared with traditional 
+hand picking, harvesting robots are expected to provide stable capacity 
+during peak seasons, reduce dependence on seasonal labor, and improve 
+operational consistency. However, the prerequisite for robotic apple 
+harvesting is accurate detection and localization of apples through 
+robust perception technologies, which is critical to ensuring picking 
+performance.
+Considerable progress has been made in fruit recognition, with 
+numerous studies focusing on the detection of fruits. Traditional com­
+puter vision methods based on color, texture, and shape features (Liu 
+et al., 2019; Zhou et al., 2021) have been replaced by deep learning- 
+based approaches (Elgazzar et al., 2024; Guo et al., 2023), which 
+exhibit higher robustness and adaptability under various complex con­
+ditions. In the field of deep learning-based apple fruit recognition, sig­
+nificant advancements have been made with object detection models 
+such as the YOLO series (Redmon et al., 2016; Wang et al., 2024) and 
+Faster R-CNN series (Ren et al., 2016), as well as segmentation models 
+such as Mask R-CNN (He et al., 2017) and YOLACT (Bolya et al., 2019). 
+These techniques, initially designed for general object detection (Guo 
+et al., 2024a), have been successfully adapted and optimized for the 
+specific challenges of fruit recognition, significantly improving 
+performance.
+YOLO-based detection models are renowned for their speed and real- 
+time processing capabilities, making them particularly effective for 
+apple detection in dynamic environments (Wu et al., 2024). Kang and 
+Chen (2020) developed a deep learning detector for apple detection, 
+“LedNet”, which achieved a recall rate of 0.821 and an accuracy of 0.853 
+with an inference time of 28 ms, enabling real-time and accurate apple 
+detection in orchards. Tian et al. (2019) proposed an improved YOLO- 
+V3 model using DenseNet, achieving real-time apple detection in or­
+chards with a model resolution of 3000×3000 pixels and a detection 
+time of only 0.304 s. Liu et al. (2024) designed the PDWFasterNet 
+module using a computationally efficient Partial Depthwise Convolution 
+(PDWConv), reducing the parameters and floating-point operations 
+(FLOPs) of Faster-YOLO-AP to 0.66 M and 2.29 G, while achieving 
+84.12% mAP@.50:.95. Segmentation models such as Mask R-CNN and 
+YOLACT have shown remarkable performance in accurately delineating 
+individual fruit contours, enabling precise localization and segmenta­
+tion. Chu et al. (2021) developed a novel Suppressive Mask R-CNN for 
+apple detection, adding a suppression branch to the standard Mask R- 
+CNN to filter out non-apple features, achieving an F1 score of 0.905 and 
+a detection time of 0.25 s per frame. Wang and He (2022) introduced an 
+enhanced Mask Scoring R-CNN, incorporating convolutional layers and 
+a dual-attention network to improve the accuracy of bounding box 
+detection (bbox_mAP) and instance segmentation (mask_mAP), 
+achieving bbox_mAP and mask_mAP scores of 0.932 and 0.920, 
+respectively, with an average processing time of 0.27 s per image.
+Although previous studies have made significant progress in 
+detecting unobstructed fruits, the recognition of occluded fruits has not 
+been thoroughly investigated. Precise localization of occluded fruits 
+remains a technical challenge in orchard environments, where fruits are 
+often partially obstructed by tree branches, leaves, and other fruits. This 
+issue has attracted considerable attention from researchers. Chu et al. 
+(2023) developed a new Occluder-Occludee Relationship Network 
+(O2RNet) to detect overlapping apples by embedding relationships be­
+tween occluders and occludees, significantly reducing false positives and 
+achieving a detection rate of 94%. Rathore et al. (2023) proposed a two- 
+stage deep learning-based method, using the state-of-the-art YOLOv7 
+model in the first stage to detect apples as a single class, followed by an 
+enhanced Convolutional Neural Network (CNN) network in the second 
+stage to classify the detected apples into non-occluded, leaf-occluded, 
+stem/branch-occluded, and apple-occluded categories, achieving F1 
+scores of 94.64%, 90.91%, 86.87%, and 90.25%, respectively. While 
+these studies have advanced the detection of occluded fruits in orchards, 
+obtaining multi-dimensional information of occluded fruits (estimating 
+the complete size and pixel-level segmentation of occluded fruits) using 
+a single network still poses significant challenges.
+In robot operations, detecting the target fruit solely at the image level 
+is insufficient, it is also necessary to extract fruit information from the 
+3D point cloud to achieve accurate localization. However, apples are 
+often hidden in cluttered branches and leaves, and occlusions caused by 
+branches, leaves, and other fruits can result in incomplete point cloud 
+data, negatively affecting visual localization accuracy and harvesting 
+efficiency. To address the degradation of point cloud quality under 
+occluded conditions, some researchers have employed multi-sensor 
+fusion methods for fruit localization, including the use of mobile 
+ground-based laser scanners (Gen´e-Mola et al., 2019) and LiDAR (Kang 
+et al., 2022). Although these methods achieve high localization accuracy 
+in orchards, their high costs and complex calibration procedures remain 
+bottlenecks for practical applications. More researchers have focused on 
+using stereo vision-based localization methods. Gen´e-Mola et al. (2020)
+combined 2D instance segmentation and Structure from Motion (SfM) 
+for 3D fruit localization, projecting the Mask R-CNN detection results 
+onto SfM-based 3D point clouds. Since SfM only generates 3D models for 
+objects appearing in at least two different images, false positives 
+detected in a single image are automatically discarded. The 3D locali­
+zation results reported an F1 score of 0.881. Yoshida et al. (2022) used 
+an RGB-D camera to identify fruits in 2D images and then fitted the fruits 
+to spheres in 3D space by setting the center and short side of the 
+bounding box as the center and diameter of the sphere, respectively, to 
+localize apples.
+However, due to sensor limitations and occlusions from branches and 
+leaves, the acquired point clouds are often fragmented and distorted. 
+Therefore, developing accurate localization methods for fruits with 
+limited point cloud information is crucial. Lin et al. (2019) proposed an 
+algorithm for citrus detection and RGB-D image localization, using 
+density clustering and SVM to filter images and detect and localize citrus 
+fruits. The average localization error across all directions was about 13 
+mm, but the method required 1.25 s to detect a single citrus fruit. Gong 
+et al. (2022) addressed the detection of occluded tomatoes in green­
+houses by designing an extended Mask-RCNN network to extract target 
+tomatoes, followed by a shape and position recovery method to restore 
+partially occluded tomatoes. This algorithm can directly extract tomato 
+radius and centroid coordinates from the recovered depth image, 
+achieving an Intersection over Union (IoU) of 0.895 and a centroid 
+localization error of 0.62 mm under conditions of less than 25% occlu­
+sion and illuminance between 1 and 12 KLux. However, its performance 
+is not ideal under severe occlusion and high illuminance conditions. In 
+our previous work (Li et al., 2022), we proposed a point cloud processing 
+method based on view frustum and DBSCAN clustering for occluded 
+apple localization. This method can estimate the 3D centroid co­
+ordinates and radius of occluded fruits even when point cloud data 
+generated by consumer-grade depth cameras is imperfect. Although 
+promising results were achieved in orchards, our experiments revealed 
+that the performance of fruit localization also depends on the precision 
+of the centerline extraction based on 2D bounding boxes and 2D masks, 
+which affects centroid localization along the XOY plane and perfor­
+mance along the Z-axis. Additionally, using DBSCAN clustering in­
+creases processing time.
+In summary, fruit detection under occlusion still faces challenges in 
+detecting occluded fruits (such as multiple detections, redundant de­
+tections, and the inability to predict the complete size of occluded 
+fruits); in addition, it is hindered by the complexities and long pro­
+cessing times associated with existing localization methods. These 
+problems often lead to missed picks during field operations, forcing 
+robots (or human workers) to perform secondary picking, which sub­
+stantially increases labor costs and results in significant resource waste. 
+To address these challenges, this paper proposes MT-WavYOLO, a multi- 
+task network that can simultaneously perform apple detection and 
+segmentation, generating precise masks and bounding boxes capable of 
+predicting the complete fruit size. Furthermore, we introduce a frustum- 
+based point-cloud processing method combined with the multi-task 
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+2 
+
+network, which enables accurate localization of occluded apples 
+without the need for additional 3-D localization algorithms.
+The main contributions of this paper are as follows: 
+(a) Proposes a multi-task learning network (MT-WavYOLO) for 
+simultaneous apple detection and segmentation in complex or­
+chard environments. This network integrates an object detection 
+model with a novel lightweight segmentation branch, enhancing 
+the extraction of multi-dimensional information, particularly for 
+occluded fruits.
+(b) Designs a novel feature fusion module, C2f_WTConv, utilizing 
+wavelet transform convolution (WTConv). This module replaces 
+standard convolutions to capture contextual information across 
+different frequency scales, significantly improving the multi-task 
+model’s multi-scale feature fusion capabilities while reducing 
+computational complexity.
+(c) Introduces a novel localization method for occluded apples by 
+combining frustum-based point cloud processing with the MT- 
+WavYOLO network. This approach enables accurate 3D locali­
+zation, even from fragmented point clouds of occluded fruits, 
+without requiring additional network structures, and its effec­
+tiveness was validated using multiple consumer-grade depth 
+cameras.
+Overall, contributions (a)–(c) are designed to address the core 
+challenges identified above, including robust detection and segmenta­
+tion of occluded fruits, exploitation of multi-frequency wavelet cues for 
+heavily occluded instances, and efficient 3D localization of fruits via 
+frustum-based centroid estimation from fragmented point clouds.
+2. Materials and methods
+2.1. Image acquisition
+An apple image dataset was collected from standardized orchards in 
+Beijing, Yan’an, and Yuncheng, China, using a mobile robotic platform 
+(Fig. 1). The platform, equipped with two RGB-D cameras (FOV: 
+69◦×42◦, max range: 3 m) positioned at 1.3 m and 2.0 m heights, 
+captured images from perspectives relevant to robotic harvesting. 
+Operating at 0.5 m/s, it acquired 15 fps video at resolutions of 640×480 
+and 1280×720 pixels. Data collection occurred between 08:00 and 
+19:00 to encompass diverse lighting (including front/backlight and 
+artificial light) and occlusion scenarios (non–, slight-, severe-occlusion), 
+as sampled in Fig. 2.
+Initially, 3,500 images featuring two apple varieties (’Magic Star’, 
+’Wageningen 29′) were gathered from 336 trees. The dataset was par­
+titioned into training, validation, and testing sets in an 8:1:1 ratio. To 
+enhance the robustness of the model and mitigate overfitting, standard 
+data augmentation techniques were applied exclusively to the training 
+set. These included salt-and-pepper noise (probability=0.02), horizontal 
+flipping (probability=0.5), brightness adjustment factor (0.8–1.2), 
+random translation (±10%), and random rotation (±15◦). Following 
+manual screening to remove augmented samples unsuitable for training 
+(e.g., images with excessive augmentation such as overexposure), the 
+training set was expanded to 6,300 images, comprising 2,800 original 
+images and 3,500 augmented images. In total, the final dataset consisted 
+of 7,000 images. All images were annotated with both bounding boxes 
+and segmentation masks, which were used for model development and 
+evaluation.
+During the annotation of apple fruits, the operational requirements 
+Fig. 1. The mobile platform automatically captures images.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+3 
+
+of harvesting robots and the tolerance capabilities of the end-effector 
+were taken into consideration. The collected images were categorized 
+into three types of fruit annotations, as illustrated in Fig. 3: (1) Obvious: 
+Fruits with less than approximately 50% occlusion by leaves or thin 
+branches and more than approximately 50% of their surface exposed 
+near the image edges were annotated as obvious. (2) Risky: Fruits 
+partially occluded by thick tree trunks or located near orchard wires 
+were annotated as risky. (3) Occluded: All other fruits that did not meet 
+the criteria for the above categories were annotated as occluded.
+2.2. Network architecture
+In this study, we propose a novel multi-task network, MT-WavYOLO, 
+designed for simultaneous fruit detection and segmentation in orchard 
+Fig. 2. The apple fruits under different illuminations and occlusions.
+Fig. 3. Schematic diagram of apple growth pattern classification.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+4 
+
+environments. This approach integrates object detection and semantic 
+segmentation tasks into a unified framework, effectively addressing 
+challenges such as occlusion and variability in natural orchard condi­
+tions. As illustrated in Fig. 4, the network architecture comprises five 
+key components: the backbone, detect-neck, segment-neck, detect-head, 
+and segment-head. The backbone serves as a shared feature extraction 
+network, enabling object detection at the image level and semantic 
+segmentation at the pixel level.
+To optimize feature integration, distinct neck networks were 
+designed specifically for the detection and segmentation heads. 
+Together, the backbone and necks form the encoder, while the detection 
+and segmentation heads act as decoders. Notably, the decoders avoid 
+redundant shared blocks to minimize computational overhead while 
+preserving the one-stage structure of the network.
+By combining the outputs of object detection and semantic seg­
+mentation, MT-WavYOLO achieves accurate detection of occluded 
+fruits, providing a robust foundation for precise localization by orchard 
+harvesting robots.
+2.2.1. Backbone and C2f_WTConv
+The backbone network consists of a series of convolutional layers 
+designed to extract features from input images. Given the outstanding 
+performance of YOLOv8 in detection tasks, the backbone of YOLOv8 was 
+adopted as the feature extraction network for MT-WavYOLO.
+To better extract features at different levels of abstraction and detail 
+from the input data, we propose a novel feature fusion module, 
+C2f_WTConv. Traditional convolutional layers achieve larger receptive 
+fields by increasing the kernel size, but this approach results in a 
+quadratic growth in the number of parameters and leads to performance 
+saturation or even degradation once the receptive field exceeds a certain 
+size. Furthermore, larger convolutional kernels are prone to over- 
+parameterization, reducing the generalization ability of the network. 
+In contrast, wavelet transforms decompose input signals into different 
+frequency components, enabling operations at multiple frequency scales 
+and effectively addressing these challenges (Ma et al., 2024). The pro­
+cessing flow of the wavelet transform is illustrated in the Appendix E.
+Finder et al. (2025) demonstrated that cascading wavelet decom­
+position with small-kernel convolutions achieves exponential growth in 
+receptive fields while effectively controlling the number of parameters 
+and computational cost. Fig. 6 illustrates a two-level wavelet-transform 
+convolution (WTConv). At each level, the low-frequency branch is 
+decomposed by DWT into four sub-bands (LL, LH, HL, HH), which are 
+concatenated and refined with a small-kernel depthwise convolution; 
+the features are then reconstructed top-down via IWT, and a base 
+depthwise-convolution branch is added as a residual to produce the final 
+output. By combining the advantages of wavelet-domain feature pro­
+cessing with the efficient feature aggregation mechanism of the C2f 
+module, as shown in Fig. 5, we integrate wavelet convolution into the 
+Bottleneck structure of the C2f module. This integration enables multi- 
+scale feature extraction and enhancement, significantly improving the 
+receptive field and overall performance of convolutional neural 
+networks.
+2.2.2. Neck
+The neck component enhances feature representation by fusing 
+feature maps at different scales extracted from the backbone (Guo et al., 
+2024b). In the MT-WavYOLO model, two necks were designed: one for 
+the fruit detection and another for the fruit semantic segmentation.
+For the detection neck, the path aggregation network (PAN) (Liu 
+et al., 2018) and feature pyramid network (FPN) (Lin et al., 2017) 
+combination method used in the YOLOv8 neck was not adopted. While 
+this method effectively integrates shallow and deep features, improving 
+the model’s ability to identify subtle details, it filters feature pathways 
+through FPN, discarding some typical feature information initially ob­
+tained from the backbone. To address this, we implemented a bidirec­
+tional feature pyramid network (BiFPN) (Zhu et al., 2018) structure 
+Fig. 4. MT-WavYOLO learning model.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+5 
+
+based on the PAN feature fusion path. This structure removes nodes with 
+single inputs and introduces new aggregation paths between original 
+input and output nodes. Through multi-layer stacking, it achieves effi­
+cient bidirectional cross-scale connections and weighted feature fusion, 
+enhancing the extraction of occluded fruit features. Fig. 7 highlights the 
+structural differences among the three necks: FPN uses a top-down 
+pathway with lateral connections to fuse multi-scale features; PANet 
+adds a bottom-up pathway to strengthen low-level semantics; BiFPN 
+prunes single-input nodes, adopts symmetric bidirectional cross-scale 
+connections in both top-down and bottom-up directions, and performs 
+multi-input fusion at each node using learnable normalized weights.
+In semantic segmentation tasks, architectures such as HRNet and 
+BiFPN are commonly employed as the neck of the segmentation branch 
+to facilitate effective multi-scale contextual feature fusion. However, the 
+segmentation of occluded fruits poses greater challenges: the target re­
+gions often occupy only a small portion of the image, with blurred 
+boundaries and low contrast, thereby placing higher demands on both 
+spatial detail preservation and semantic representation. To address 
+these challenges, this study adopts a Feature Pyramid Network (FPN) as 
+the segmentation neck. By employing a top-down hierarchical fusion 
+mechanism, FPN effectively integrates high-resolution low-level fea­
+tures with semantically rich high-level features, enhancing the model’s 
+capability to recognize small and partially occluded targets. This 
+structure is particularly well-suited for segmentation tasks involving 
+small fruit objects in complex natural orchard environments. Moreover, 
+FPN offers a compact architecture with high computational efficiency, 
+achieving a favorable balance between segmentation accuracy and real- 
+time performance, making it highly suitable for deployment on 
+resource-constrained edge devices.
+2.2.3. Head
+The head component processes feature maps from the neck to make 
+predictions for each task, including classification, corresponding 
+bounding boxes, and segmentation masks for the objects.
+Fig. 5. The network architecture of MT-WavYOLO.
+Fig. 6. An example of the operation of WTConv on a single channel (2-level wavelet decomposition and 3 × 3 convolution).
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+6 
+
+For the detection head, the decoupled head structure from the 
+YOLOv8 series model was employed. This structure utilizes an anchor- 
+free assigner for positive and negative sample classification, avoiding 
+reliance on predefined anchor boxes for target localization. The anchor- 
+free decoupled detection head adopts two parallel branches for object 
+classification and bounding box regression, as shown in the detect 
+module in Fig. 5. Both branches use two 3×3 convolutional modules to 
+extract contextual information and one 1×1 Conv2d modules for 
+dimensionality reduction. This decoupled design enables MT-WavYOLO 
+to perform efficient object detection without anchor boxes while 
+maintaining a relatively small model size and low computational cost.
+For the segmentation head, this study designed a lightweight seg­
+mentation head to process feature maps from the segmentation neck, as 
+illustrated in the segment module in Fig. 5. It consists of only three 
+convolutional modules for extracting contextual information and one 
+deconvolutional (DeConv) module to restore the resolution to the orig­
+inal image size. Thanks to the strong feature extraction capabilities of 
+the backbone and FPN, the computational burden of the decoder is 
+effectively reduced, resulting in a lightweight overall structure. Finally, 
+a pixel-level binary mask matching the size of the original image is 
+obtained.
+2.2.4. Loss function
+MT-WavYOLO trains the entire multi-task network by combining the 
+loss of the detection decoder and the loss of the semantic segmentation 
+decoder, as shown in the following equation: 
+Ltotal = Ldet + Lseg
+(1) 
+where Ltotal represents the total loss, Ldet is the loss for the object 
+detection task, and Lseg is the loss for the segmentation task.
+The classification branch and the bounding box branch in the 
+detection task use different loss functions. For the classification task, the 
+binary cross-entropy (BCE) loss is employed. For the bounding box 
+prediction task, a combination of distribution focal loss (DFL) and 
+complete IoU (CIoU) loss is adopted, which effectively addresses class 
+imbalance issues and enhances the detection performance for small 
+objects. The detection loss is defined as follows: 
+Ldet = λBCELBCE + λDFLLDFL + λCIoULCIoU
+(2) 
+where LBCE represents the classification loss BCE loss,LDFL and LCIoU 
+represent the bounding box regression loss DFL loss and CIoU loss. λBCE, 
+λDFL, λCIoU are corresponding coefficients.
+For the segmentation task, a combination of BCE loss and IoU loss is 
+used. In orchard scenarios, apples may be occluded by branches, leaves, 
+or other fruits, resulting in incomplete target regions. The BCE loss helps 
+ensure accurate classification of foreground pixels, while the IoU loss 
+optimizes the overlap between the predicted and ground truth regions. 
+This enables the model to maintain consistency and completeness when 
+predicting targets with occlusions or complex shapes. The segmentation 
+loss function is defined as: 
+Lseg = λBCELBCE + λIoULIoU
+(3) 
+where LIoU represents the IoU loss, and λIoU denotes the corresponding 
+coefficient.
+2.3. 3D fruit localization
+3D localization refers to the process by which a robot extracts three- 
+dimensional information of a target using vision sensors (Tang et al., 
+2020). In automated apple harvesting, 3D localization is essential for the 
+robot to obtain the spatial coordinates of the target fruit and estimate its 
+contour, thereby guiding the robot’s end-effector to approach the target. 
+However, due to the performance limitations of depth sensors, it is 
+challenging to acquire complete point clouds of the target fruit in 
+complex orchard environments with significant occlusions.
+MT-WavYOLO can accurately segment the exposed parts of apples 
+and estimate the two-dimensional size of the complete fruit. To address 
+the challenges of 3D localization, we propose a frustum method that 
+converts the 2D information obtained from the multi-task network into 
+3D centroid coordinates and fits a 3D model of the apple. This approach 
+facilitates precise harvesting by the robot, even in occluded and complex 
+orchard conditions.
+2.3.1. Fruit central line and frustum
+Accurate fruit centroid determination is critical for robotic harvest­
+ing. However, sensor limitations and segmentation inaccuracies often 
+result in fragmented or distorted point clouds, meaning the point cloud 
+subset corresponding to the 2D bounding box fails to represent the 
+complete fruit geometry. Consequently, direct centroid calculation from 
+such partial point clouds yields significant localization errors. To 
+address this limitation, we propose an enhanced frustum-based locali­
+zation method that integrates 2D bounding box information with depth 
+data to accurately determine the 3D fruit centroid.
+Initially, the 2D bounding box output by the MT-WavYOLO network 
+identifies the approximate location and extent of the target fruit in the 
+RGB image. Leveraging the quasi-spherical symmetry of apples, the 
+center of this bounding box serves as an approximation of the fruit’s 
+projected center. Crucially, the MT-WavYOLO detection box estimates 
+the full extent even for occluded fruits. Thus, the bounding box center 
+provides a reliable estimate of the fruit’s projected center (x, y 
+Fig. 7. Structural diagrams of FPN, PANet, and BiFPN.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+7 
+
+coordinates) in the image plane.
+To subsequently estimate the depth (z-coordinate), the 2D bounding 
+box region is projected into 3D space to define a view frustum proposal. 
+The frustum’s near and far clipping planes are determined by the min­
+imum and maximum depth values found within the corresponding re­
+gion of the depth image. Its central axis is defined as the ray connecting 
+the camera origin to the center of the far plane (as illustrated in Fig. 8). 
+This frustum construction delineates a bounded 3D search volume likely 
+containing the fruit and provides geometric constraints for subsequent 
+point cloud filtering and precise 3D centroid estimation.
+2.3.2. Centroid determination and radius estimation
+Given the near-spherical morphology of apples, the fruit is approx­
+imated as an ideal sphere during localisation. Under this assumption, the 
+estimated radius closely matches the major-axis radius and is slightly 
+larger than the minor-axis radius. In practical harvesting operations, the 
+robotic gripper must open sufficiently to encompass the fruit’s 
+maximum dimension; configuring the gripper according to the minor- 
+axis radius could result in an incomplete grasp and a failed pick.
+The centerline of the frustum is defined by the ray from the origin of 
+the camera coordinate system to the center of the far plane of the 
+frustum. After obtaining the centerline of the apple, the X-axis and Y- 
+axis coordinates of the apple’s centroid in the camera coordinate system 
+are already known. To fully acquire the 3D information of the target 
+fruit, it is only necessary to determine the Z-axis coordinate of the 
+centroid and the radius. The 3D centroid and radius of the fruit can be 
+calculated based on the geometric properties of the bounding box and 
+camera parameters. The detailed steps are as follows:
+By following these steps, this study directly calculates the centroid 
+and radius of the fruit using the 2D detection bounding box and depth 
+information predicted by the multi-task network. This approach avoids 
+the complex filtering processes caused by point cloud fragmentation in 
+traditional methods. Not only does this method simplify the computa­
+tional process, but it also accurately reconstructs the 3D spatial position 
+of the fruit under occlusion conditions, providing real-time and reliable 
+3D target information for robotic harvesting tasks. Fig. 9 illustrates the 
+complete process.
+3. Results and analysis
+To validate the effectiveness of the proposed method, this section 
+conducted ablation and comparative experiments on the MT-WavYOLO 
+model, analyzing the contribution of each component in the multi-task 
+learning framework to the final performance and comparing it with 
+other state-of-the-art models. Since harvesting robots typically rely on 
+stereo vision systems, we employed six different RGB-D cameras—util­
+izing either ToF or stereo vision technologies—to validate the frustum- 
+based localization method in a real orchard environment. The experi­
+mental results were compared with the bounding-box-based method and 
+our previously proposed method, demonstrating the effectiveness and 
+robustness of the proposed method in practical robotic harvesting 
+operations.
+3.1. Experimental details
+MT-WavYOLO was implemented using PyTorch (Python 3.7). Ex­
+periments ran on a system with an AMD Ryzen 9 7945HX CPU, Nvidia 
+GeForce GTX 4060 GPU, and 16 GB RAM. We evaluated object detection 
+using Precision (P), Recall (R), and mAP, and semantic segmentation 
+using Intersection over Union (IoU). Traditional accuracy-based evalu­
+ations tend to favor classes with larger sample sizes, which can lead to 
+biased results in segmentation tasks due to the significant difference in 
+the number of pixels between the background and the foreground. 
+Therefore, we adopt a more balanced metric for evaluation, which takes 
+into account the precision of each class. It is calculated using Eq. (4): 
+Accuracy = 1
+2
+(
+TP
+TP + FN +
+TN
+TN + FP
+)
+(4) 
+3.2. Ablation experiments
+To validate the effectiveness and generalization ability of the pro­
+posed method, three ablation experiments were conducted in this sub­
+section. These experiments separately evaluated the effectiveness of the 
+proposed feature fusion module, C2f_WTConv, and the impact of the two 
+independent branches on the overall model performance. Specifically, 
+during the training and evaluation of the independent branch models, 
+the other branch was frozen to eliminate interference from multiple 
+branches. The experimental results are presented in Table 1.
+Ablation studies confirmed the C2f_WTConv module’s significant 
+contribution. Its integration improved detection metrics (Precision from 
+91.5% to 93.2%, Recall from 91.3% to 92.6%, mAP50 from 92.7% to 
+93.1%) and segmentation metrics (IoU from 91.2% to 92.6%, Accuracy 
+from 81.0% to 82.5%). Concurrently, the multi-task model size 
+Fig. 8. The generating process of point clouds and frustum from RGBD images.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+8 
+
+decreased from 12.3 M to 10.2 M parameters. These improvements are 
+attributed to the module’s use of Haar wavelet decomposition, which 
+separates features into low-frequency structures and high-frequency 
+details. Thresholding is applied in the high-frequency branch to sup­
+press random noise and spurious edges, thereby improving IoU and 
+Accuracy. In addition, cascading the wavelet transform with small- 
+kernel convolutions enables exponential expansion of the receptive 
+field without excessive parameterization, capturing both global context 
+and local details, thus enhancing Precision and Recall. Finally, the step- 
+wise aggregation mechanism of the C2f block re-integrates this infor­
+mation, 
+resulting 
+in 
+richer 
+and 
+more 
+noise-robust 
+feature 
+representations.
+Performance benchmarks were established across different task 
+configurations. Specifically, for single-task detection, the model ach­
+ieved 91.5% Precision (P), 91.3% Recall (R), and 92.7% mAP50 with 
+5.3 M parameters. When configured for single-task segmentation (with 
+the detection branch frozen), it yielded 91.2% Intersection over Union 
+(IoU) and 81.0% Accuracy (Acc) using 5.7 M parameters. In the joint 
+multi-task setting, the model reached 94.3% mAP50, 93.1% IoU, and 
+84.9% Acc, utilizing 10.2 M parameters. These results indicate that the 
+model is capable of optimizing the performance of both tasks while 
+ensuring computational efficiency, achieving an effective balance be­
+tween object detection and semantic segmentation. This superior multi- 
+task performance can be attributed to the shared feature extraction 
+network, which allows both tasks to share low-level features while 
+avoiding interference between tasks. Through this mechanism, the 
+model enables parallel processing of multiple tasks without compro­
+mising accuracy, achieving a balance between performance and 
+efficiency.
+3.3. Comparative experiments
+In this section, we evaluate the performance of the proposed MT- 
+WavYOLO model in object detection, semantic segmentation, and 
+multi-task learning through a series of comparative experiments. Several 
+state-of-the-art single-task and multi-task models were selected as 
+Fig. 9. The overall workflow of the proposed method for occluded apple localization.
+Table 1 
+The results of the MT-WavYOLO on the ablation studies.
+Method
+Task loss weights
+Object detection
+Semantic segmentation
+Params (M)
+Detect
+Seg
+C2f_WTConv
+Precision 
+(%)
+Recall 
+(%)
+mAP50 
+(%)
+IoU 
+(%)
+Accuracy 
+(%)
+Detection
+1
+0
+0
+91.5
+91.3
+92.7
+−
+−
+5.3
+Detection add C2f_WTConv
+1
+0
+1
+93.2
+92.6
+93.1
+−
+−
+3.2
+Segmentation
+0
+1
+0
+−
+−
+−
+91.2
+81.0
+5.7
+Segmentation add C2f_WTConv
+0
+1
+1
+−
+−
+−
+92.6
+82.5
+3.3
+Detection and Segmentation
+1
+1
+0
+91.8
+91.5
+93.6
+91.9
+81.3
+12.3
+MT-WavYOLO
+1
+1
+1
+93.6
+93.1
+94.3
+93.1
+84.9
+10.2
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+9 
+
+references for comparison. These experiments aim to comprehensively 
+validate the applicability and advantages of MT-WavYOLO in real-time 
+operations of harvesting robots within complex orchard environments, 
+particularly its ability to balance detection accuracy and inference 
+efficiency.
+To evaluate the performance of the proposed MT-WavYOLO model, 
+it was benchmarked against various representative models for object 
+detection and semantic segmentation. The comparison included the two- 
+stage detector Faster R-CNN, single-stage detectors YOLOv8s, 
+YOLOv10s, and RT-DETR-L, as well as semantic segmentation networks 
+U-Net, E-Net, and Deeplabv3+ (MobileNet). Detailed quantitative re­
+sults are summarized in Table 2.
+For the object detection task, Faster R-CNN achieved 89.1% mAP50 
+but exhibited a lower inference speed (7.69 FPS). Single-stage models 
+generally offered better trade-offs: YOLOv10s (92.1% mAP50, 33.11 
+FPS) performed slightly better than YOLOv8s (91.5% mAP50, 30.31 
+FPS). While RT-DETR-L increased mAP50 by 1.9% compared to 
+YOLOv10s, its inference speed was considerably lower (15.70 FPS). In 
+comparison, the proposed MT-WavYOLO attained the highest values for 
+all detection metrics (94.3% mAP50, 93.6% P, 93.1% R). Furthermore, 
+its inference speed (27.01 FPS) was substantially higher than RT-DETR-L 
+and remained comparable to the YOLO series models.
+In the semantic segmentation comparison, baseline performance 
+ranged from U-Net (76.7% IoU) and E-Net (79.8% IoU) up to Deep­
+labv3+ (MobileNet) (87.9% IoU), which achieved the highest IoU 
+among the single-task segmentation baselines. Nevertheless, MT- 
+WavYOLO demonstrated superior performance, achieving 93.1% IoU 
+and 84.9% Accuracy, substantially outperforming all compared seg­
+mentation models. This suggests that the shared feature extraction 
+mechanism within the multi-task framework enhanced segmentation 
+capabilities without incurring a performance penalty from the concur­
+rent detection task.
+Regarding inference efficiency, MT-WavYOLO executed both tasks 
+concurrently at 27.01 FPS. This speed is competitive relative to the 
+single-task detection models and considerably higher than all bench­
+marked single-task semantic segmentation models, including U-Net 
+(4.41 FPS), E-Net (8.30 FPS), and Deeplabv3+ (12.4 FPS). In summary, 
+utilizing an optimized network architecture and task cooperation 
+strategy, MT-WavYOLO achieves high accuracy for both object detection 
+and semantic segmentation without a substantial increase in computa­
+tional cost, while maintaining high inference efficiency. These results 
+demonstrate its effectiveness and potential for applications demanding 
+both high accuracy and real-time processing capabilities.
+From a qualitative perspective (as shown in Fig. 10), the proposed 
+multi-task network demonstrates a fundamental difference in effec­
+tiveness compared to traditional instance segmentation networks. The 
+multi-task model not only accurately encapsulates multiple segmenta­
+tion masks for occluded targets and predicts the complete fruit size but 
+also performs a single computation for the entire target, avoiding the 
+repetitive processing of multiple bounding boxes inherent in instance 
+segmentation. This results in significantly higher inference efficiency. 
+Therefore, we did not include a comparison with traditional instance 
+segmentation networks.
+To evaluate the overall performance of MT-WavYOLO in orchard 
+scenarios, we compared it with YOLOP, a mainstream multi-task 
+learning model commonly used in autonomous driving. One semantic 
+segmentation branch of YOLOP was removed, leaving the drivable area 
+segmentation branch to perform the segmentation of apples. Compared 
+to YOLOP, MT-WavYOLO improved detection task metrics, with preci­
+sion, recall, and mAP50 increasing by 3.3%, 4.9%, and 3.4%, respec­
+tively. 
+For 
+the 
+segmentation 
+task, 
+MT-WavYOLO 
+achieved 
+improvements of 2.7% in IoU and 2.0% in accuracy. These performance 
+improvements are primarily attributed to the integration of wavelet 
+transform convolution in the backbone of MT-WavYOLO, which enables 
+the model to more effectively capture fine-grained textures and edge 
+details. In addition, task-specific neck modules are designed separately 
+for detection and segmentation to accommodate their heterogeneous 
+requirements, facilitating feature fusion that is better aligned with the 
+characteristics of each task. This makes it more suitable for the opera­
+tional requirements of robotic harvesting systems in complex orchard 
+environments.
+3.4. 3D localization results
+To validate the generalizability of the proposed detection and 
+localization method for occluded apples, we conducted tests in real or­
+chard environments using seven different sensors, including ToF-based 
+cameras (Azure, M4 Pro, RealSense L515), binocular cameras (ZED 2i, 
+RealSense D455, RealSense D435i), and the Mid-70 LiDAR. The pa­
+rameters of these sensors are listed in Table 3.
+Fig. 11 illustrates the mobile data acquisition platform, which inte­
+grated seven sensors. This platform consisted of an autonomous navi­
+gation vehicle base supporting a sensor mounting assembly positioned 
+1.5 m above it. All cameras were aligned parallel to the ground plane 
+(without a pitch angle) to ensure coverage of fruits located at different 
+heights. The relative positions of the cameras were fixed using a custom- 
+designed aluminum alloy support frame with a total height of approxi­
+mately 0.5 m. Among them, the five RGB-D cameras were vertically 
+spaced at 0.05 m intervals, while the Livox LiDAR and M4Pro module 
+were separated by a vertical baseline of 0.1 m and a horizontal offset of 
+0.1 m. Leveraging its high distance resolution and robustness to sun­
+light, the onboard LiDAR established the reference coordinate system 
+and provided the ground truth for fruit 3D position measurements. The 
+relative pose (position and orientation) between each camera and the 
+LiDAR was fixed on the platform. Consequently, this spatial relationship 
+could be described by constant rigid body transformation parameters: a 
+rotation matrix (R) and a translation vector (T). This framework enabled 
+the unified transformation of coordinates from each camera sensor into 
+the LiDAR’s reference frame using the following formula: 
+Pcamera = Z • K−1[u, v, 1]T
+(5) 
+Table 2 
+Comparison of the performance of different models.
+Task
+Network
+Object Detection
+Semantic segmentation
+FPS
+Precision 
+(%)
+Recall 
+(%)
+mAP50 
+(%)
+IoU 
+(%)
+Accuracy 
+(%)
+Detection
+Faster R-CNN
+81.3
+80.1
+89.1
+−
+−
+7.69
+YOLOv8s
+90.7
+90.3
+91.5
+−
+−
+30.31
+YOLOv10s
+91.1
+91.6
+92.1
+−
+−
+33.11
+RT-DETR-L
+93.1
+93.4
+94.0
+−
+−
+15.70
+Segmentation
+U-Net
+−
+−
+−
+76.7
+69.1
+4.41
+E-Net
+−
+−
+−
+79.8
+73.6
+8.30
+Deeplabv3plus_moblienet
+−
+−
+−
+87.9
+81.1
+12.40
+All
+YOLOP
+90.3
+88.2
+90.9
+90.4
+82.9
+26.60
+MT-WavYOLO
+93.6
+93.1
+94.3
+93.1
+84.9
+27.01
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+10 
+
+where (u, v) denotes the pixel coordinates in the image plane, Z is the 
+depth value of that pixel, and K is the intrinsic parameter matrix of the 
+camera. 
+Plidar = R⋅Pcamera + T
+(6) 
+where Pcamera represents the point cloud coordinates in the camera co­
+ordinate system, and Plidar represents the point cloud coordinates 
+transformed into the LiDAR coordinate system. R is the rotation matrix, 
+and T is the translation vector.
+Following coordinate transformation, RGB-D camera data were 
+mapped to the LiDAR’s reference coordinate system. To ensure consis­
+tent positioning during manual data acquisition, fixed points (Fig. 12) 
+were established at 0.8 m and 1.6 m from tree trunks. Processed fruit 
+point clouds (frustum method) are shown in Fig. 13. Localization was 
+tested on 216 apples across 21 trees, which MT-WavYOLO categorized 
+as Obvious (n=81, 37.5%), Occluded (n=116, 53.7%), or Risky (n=19, 
+8.8%). The localization experiment encompassed 600 test instances in 
+total (6 cameras×2 distances×50 apples each).
+3.4.1. Comparison with the 3D bounding-box method
+To validate the effectiveness of the proposed method, a 3D bounding 
+box-based method (bbx mtd.) (Sahin et al., 2020) was adopted as a 
+reference for comparison under the same conditions. Tables 4 and 5
+present the test results of six depth cameras using the two localization 
+methods at distances of 0.8 m and 1.6 m from the tree trunk, respec­
+tively. Each camera conducted 50 fruit localization tests under each 
+Fig. 10. Comparison between multi-task learning and traditional instance segmentation in apple recognition.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+11 
+
+distance condition. The results include the 3D centroid localization error 
+and spherical radius estimation error of the fruit. The error values were 
+calculated as the absolute differences between the ground-truth values 
+measured by LiDAR and the corresponding values obtained from the 
+cameras. For each method, evaluation metrics such as minimum error, 
+mean error, median error, and standard deviation were reported. Due to 
+a few extreme cases caused by severe depth noise, heavy occlusion, or 
+similar factors, some samples exhibited abnormally large errors, 
+meaning that the maximum error was heavily influenced by these out­
+liers and thus not representative of typical performance. Therefore, the 
+maximum error was excluded from the reported metrics.
+Experimental results demonstrate the superior performance of the 
+proposed localization method compared to a reference bounding box- 
+based approach (bbx mtd.), as detailed in Tables 4 (0.8 m distance) 
+and 5 (1.6 m distance). For centroid localization, the proposed method 
+achieved substantial error reductions. Averaged across the six cameras, 
+Table 3 
+Comparison of parameters across different sensors.
+Imaging 
+method
+Sensors
+Depth
+RGB
+FOV
+Resolution
+Accuracy
+FOV
+Resolution
+Frame 
+rate
+TOF
+Azure
+87.5◦× 59.6◦
+512 × 512 (VGA), 1024 × 1024 
+(HD)
+± 1 cm @ 0.5 m,  ± 2 cm @ 3 
+m
+87.5◦×
+59.6◦
+4 K (3840 ×
+2160)
+30 fps
+M4 pro
+137◦× 90◦
+640 × 480
+−
+110◦× 90◦
+1280 × 1024
+15 fps
+RealSense L515
+70◦× 55◦
+1024 × 768
+~5 mm to ~14 mm thru 9 m2
+70◦× 43◦
+1920 × 1080
+30 fps
+Mid −70 lidar
+70.4◦Circular
+−
+−
+−
+−
+−
+Stereo Vision
+RealSense 
+d435i
+87◦× 58◦
+1280 × 720
+<2 % at 4 m2
+69◦× 42◦
+1920 × 1080
+30 fps
+RealSense d455
+87◦× 58◦
+1280 × 720
+<2 % at 4 m2
+69◦× 42◦
+1920 × 1080
+30 fps
+ZED 2i
+110◦× 70◦
+1280 × 720
+< 1 % up to 3 m 
+<5 % up to 15 m
+110◦× 70◦
+3840 × 2160
+15–60 fps
+Fig. 11. Verification of Localization Methods on Mobile Platforms Equipped with Different Sensors.
+Fig. 12. Schematic Diagram of Sampling Point Division by the Mobile Collection Platform.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+12 
+
+the mean and median errors were reduced by 8.28 mm (49.5%) and 
+10.51 mm (68.9%) respectively at 0.8 m, and by 7.64 mm (35.5%) and 
+15.12 mm (62.5%) respectively at 1.6 m, relative to the reference 
+method. Significant improvements were also observed in radius esti­
+mation, with average mean/median error reductions of 3.47 mm 
+(81.9%)/2.64 mm (76.1%) at 0.8 m, and 2.93 mm (65.5%)/1.89 mm 
+Fig. 13. Results of point cloud processing using the frustum method for the same acquisition points at different distances. In Figures (a) and (b), the yellow box 
+encloses the same apple. In Figure (b), different colors represent different apples.
+Table 4 
+Performance comparison of two localization methods at a distance of 0.8 m.
+Sensors
+our mtd.
+bbx mtd.
+Center
+Radius
+Center
+Radius
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Azure
+0.04
+7.91
+4.21
+8.86
+0.37
+0.69
+0.75
+0.08
+1.87
+16.05
+14.81
+9.51
+0.03
+3.95
+3.15
+2.62
+M4 pro
+0.05
+8.07
+4.52
+9.03
+0.40
+0.74
+0.81
+0.10
+1.92
+16.23
+14.94
+9.65
+0.04
+4.02
+3.25
+2.71
+RealSense 
+L515
+0.06
+8.79
+5.04
+9.20
+0.45
+0.76
+0.88
+0.10
+1.94
+16.98
+15.10
+9.77
+0.05
+4.15
+3.56
+2.82
+RealSense 
+d435i
+0.07
+9.16
+5.36
+9.77
+0.54
+0.89
+0.91
+0.13
+2.04
+17.96
+16.33
+10.89
+0.06
+4.87
+3.98
+3.01
+RealSense 
+d455
+0.07
+8.91
+5.12
+9.53
+0.51
+0.82
+0.90
+0.12
+1.98
+17.12
+15.51
+9.98
+0.06
+4.52
+3.79
+2.91
+ZED 2i
+0.04
+7.92
+4.18
+8.83
+0.36
+0.70
+0.74
+0.08
+1.88
+16.08
+14.80
+9.49
+0.03
+3.90
+3.12
+2.60
+Table 5 
+Performance comparison of two localization methods at a distance of 1.6 m.
+Sensors
+our mtd.
+bbx mtd.
+Center
+Radius
+Center
+Radius
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Azure
+0.11
+12.53
+7.53
+12.51
+1.09
+1.29
+1.18
+0.43
+3.83
+19.86
+22.74
+12.13
+0.06
+3.84
+2.73
+4.01
+M4 pro
+0.14
+12.83
+7.74
+12.86
+1.12
+1.35
+1.23
+0.56
+4.12
+20.56
+23.01
+12.98
+0.08
+4.03
+3.00
+4.19
+RealSense 
+L515
+0.47
+19.12
+15.31
+18.83
+2.26
+2.45
+2.56
+1.28
+5.98
+26.77
+28.37
+19.32
+0.23
+5.97
+4.99
+7.02
+RealSense 
+d435i
+0.19
+13.76
+8.21
+13.45
+1.18
+1.47
+1.39
+0.68
+4.59
+21.51
+24.34
+13.55
+0.10
+4.78
+3.48
+4.89
+RealSense 
+d455
+0.17
+13.11
+8.08
+13.16
+1.16
+1.40
+1.30
+0.64
+4.32
+21.11
+23.85
+13.22
+0.09
+4.35
+3.19
+4.53
+ZED 2i
+0.10
+12.51
+7.51
+12.49
+1.09
+1.30
+1.19
+0.41
+3.86
+19.92
+22.76
+12.19
+0.05
+3.86
+2.80
+4.08
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+13 
+
+(56.2%) at 1.6 m. Lower standard deviations associated with the pro­
+posed method further indicate enhanced result stability. Notably, even 
+when faced with sparse point clouds from the RealSense L515 at 1.6 m, 
+the proposed frustum-based technique maintained mean localization 
+and radius errors below 20 mm and 2.5 mm, outperforming the refer­
+ence method by 28.58% and 58.96% respectively. This highlights the 
+method’s robustness to varying data quality and sensor characteristics.
+3.4.2. Comparison with our previous method
+Building upon our previous research involving a YOLOACT++ and 
+frustum-based method utilizing DBSCAN clustering (Li et al., 2022a), we 
+conducted a direct comparison to benchmark the newly proposed 
+technique. The performance evaluation results, using the same six depth 
+cameras at 0.8 m and 1.6 m distances, are presented in Tables 6 and 7, 
+respectively.
+The proposed method demonstrated superior performance in both 
+centroid localization and radius estimation compared to the 
+YOLOACT++-based method at distances of 0.8 m (Table 6) and 1.6 m 
+(Table 7) from the tree trunk. Across six cameras, it reduced the average 
+mean and median errors by approximately 2.19 mm, 0.67 mm, 1.86 mm, 
+and 0.94 mm, respectively, corresponding to error reductions of about 
+20.6%, 12.5%, 11.74%, and 9.39%. For radius estimation, the method 
+reduced the average mean and median errors by approximately 0.08 mm 
+and 0.046 mm, with error reductions of 11.27%, 5.27%, 9.23%, and 
+25.19%, respectively. For distance-sensitive sensors such as the Real­
+Sense L515, where point cloud data density and completeness are 
+limited, the method reduced mean errors in centroid localization and 
+radius estimation by 9.00% and 17.49%, respectively, compared to the 
+reference method.
+3.4.3. Overall analysis of the results
+To assess robustness under different distances and multi-sensor 
+conditions and to quantify the uncertainty of mean estimates, we 
+report 95% confidence intervals (CI) for all continuous measures. For 
+the 216 fruits included in the localization experiments, MT-WavYOLO 
+achieved a mean segmentation IoU of 93.1% (95% CI: 93.1% 
+±0.0133). Location method comparisons were performed using two- 
+sided paired t-tests with cameras as paired units (n=6); when the dif­
+ferences did not satisfy normality or symmetry assumptions, the Wil­
+coxon signed-rank test was applied as a non-parametric alternative (α =
+0.05).
+As shown in the figures, at both 0.8 m and 1.6 m, our method ach­
+ieved significantly lower centroid and radius errors than the 3D 
+bounding-box baseline (p<0.001); relative to the previous method, 
+centroid errors were significantly reduced at both distances (p<0.001), 
+while radius errors were significantly lower at 0.8 m (p≈0.026) and 
+showed a decreasing trend at 1.6 m (p≈0.08). At 0.8 m, the pooled SD 
+was approximately 9.15 mm with N=300, yielding a 95% CI half-width 
+of 1.04 mm; at 1.6 m, the pooled SD was approximately 14.14 mm with 
+N=300, yielding a half-width of 1.60 mm. These CI half-widths are 
+much smaller than the observed between-method mean differences (7–8 
+mm), indicating that N=300 per distance (600 in total) is sufficient to 
+support statistically robust and practically meaningful distinctions 
+(Figs. 14–18).
+The improvements achieved by the proposed method, which in­
+tegrates the multi-task network MT-WavYOLO and the frustum 
+approach, can be attributed to the network’s ability to predict the full 
+size of fruits through its detection boxes. This eliminates the need for 
+clustering, simplifying the processing workflow while significantly 
+enhancing the accuracy of 3D centroid and radius localization for target 
+objects.
+4. Discussion
+4.1. Accuracy vs efficiency
+The proposed apple 3D localization method in this study, utilizing 
+the multi-task network MT-WavYOLO and frustum projection, demon­
+strated significant performance advantages in experimental evaluations. 
+Compared to the baseline method based on bounding boxes (bbx mtd.), 
+the proposed method reduced the mean centroid localization error by 
+49.5% and 35.5% at distances of 0.8 m and 1.6 m, respectively, and 
+markedly decreased the mean radius estimation error by 81.9% and 
+65.5%. Furthermore, compared to our previous method employing 
+YOLOACT++ and DBSCAN clustering (previous mtd.), the new method 
+also achieved improvements in centroid (error reduced by 11.7%– 
+20.6%) and radius (error reduced by 9%–11%) localization accuracy, 
+and exhibited higher stability (lower standard deviation). These results 
+consistently demonstrate the effectiveness of the proposed method in 
+enhancing localization accuracy and reliability. In addition, cascading 
+the wavelet transform with small-kernel convolutions enables expo­
+nential expansion of the receptive field without excessive parameteri­
+zation, and can even reduce the parameter count, while capturing both 
+global context and local details, thus enhancing Precision and Recall.
+The performance gains of the proposed method primarily arise from 
+its mechanistic innovations and robust architectural design. First, MT- 
+WavYOLO’s multi-task framework couples a shared backbone with task- 
+specific necks, enabling cross-task feature interaction that strengthens 
+semantic constraints in occluded regions and improves global consis­
+tency for fragmented targets. Second, the proposed C2f_WTConv con­
+ducts joint frequency–spatial modeling, expanding the effective 
+receptive field without a substantial increase in parameters and miti­
+gating interpretation errors caused by mask fragmentation. Conse­
+quently, the model can directly infer parameters related to the fruit’s 
+overall size from the detection bounding box, thereby obviating explicit 
+point-cloud clustering (e.g., DBSCAN) and its attendant error propaga­
+tion and computational overhead. Furthermore, the proposed method 
+demonstrates good robustness when processing low-quality point cloud 
+Table 6 
+Performance comparison of two localization methods at a distance of 0.8 m.
+Sensors
+our mtd.
+previous mtd.
+Center
+Radius
+Center
+Radius
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Azure
+0.04
+7.91
+4.21
+8.86
+0.37
+0.69
+0.75
+0.08
+0.05
+10.19
+5.03
+9.48
+0.41
+0.70
+0.79
+0.09
+M4 pro
+0.05
+8.07
+4.52
+9.03
+0.40
+0.74
+0.81
+0.10
+0.07
+10.53
+5.12
+9.61
+0.47
+0.77
+0.84
+0.12
+RealSense 
+L515
+0.06
+8.79
+5.04
+9.20
+0.45
+0.76
+0.88
+0.10
+0.09
+10.76
+5.41
+9.87
+0.51
+0.81
+0.90
+0.14
+RealSense 
+d435i
+0.07
+9.16
+5.36
+9.77
+0.54
+0.89
+0.91
+0.13
+1.14
+11.23
+6.07
+10.18
+0.62
+0.99
+0.98
+0.17
+RealSense 
+d455
+0.07
+8.91
+5.12
+9.53
+0.51
+0.82
+0.90
+0.12
+1.11
+11.02
+5.79
+10.04
+0.57
+0.89
+0.96
+0.16
+ZED 2i
+0.04
+7.92
+4.18
+8.83
+0.36
+0.70
+0.74
+0.08
+0.05
+10.17
+5.05
+9.51
+0.43
+0.71
+0.80
+0.09
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+14 
+
+data. Even when facing sparse point clouds, such as those generated by 
+the RealSense L515 at long distances, the method maintains low average 
+localization errors (centroid<20 mm, radius<2.5 mm) and shows 
+marked improvements over comparison methods (e.g., error reductions 
+of 9.00% and 17.49% relative to the previous method). This highlights 
+the adaptability of the proposed method to varying sensor conditions 
+and data quality. Furthermore, (Beldek et al., 2025) reported that 
+reducing picking-point localization error from about 24 mm to 4 mm 
+increased harvesting success from 77.7% to 88.8%, indicating that 3D 
+errors well below the fruit diameter are compatible with high picking 
+success. In our study, the mean centroid errors are far smaller than the 
+typical apple diameter, and thus fall within an acceptable range for 
+practical robotic harvesting.
+In addition to localization accuracy, an important aspect of the 
+proposed method is the perception model MT-WavYOLO’s computa­
+tional efficiency and suitability for edge device deployment. While the 
+Table 7 
+Performance comparison of two localization methods at a distance of 1.6 m.
+Sensors
+our mtd.
+previous mtd.
+Center
+Radius
+Center
+Radius
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Min. 
+error 
+(mm)
+Mean. 
+error 
+(mm)
+Med. 
+error 
+(mm)
+Std. 
+error 
+(mm)
+Azure
+0.11
+12.53
+7.53
+12.51
+1.09
+1.29
+1.18
+0.43
+0.13
+14.08
+8.09
+13.74
+1.13
+1.33
+1.63
+0.59
+M4 pro
+0.14
+12.83
+7.74
+12.86
+1.12
+1.35
+1.23
+0.56
+0.16
+14.89
+8.63
+14.05
+1.18
+1.44
+1.75
+0.69
+RealSense 
+L515
+0.47
+19.12
+15.31
+18.83
+2.26
+2.45
+2.56
+1.28
+0.61
+21.01
+16.54
+21.14
+2.83
+2.97
+2.95
+1.84
+RealSense 
+d435i
+0.19
+13.76
+8.21
+13.45
+1.18
+1.47
+1.39
+0.68
+0.28
+15.56
+9.43
+14.86
+1.31
+1.59
+1.96
+0.81
+RealSense 
+d455
+0.17
+13.11
+8.08
+13.16
+1.16
+1.40
+1.30
+0.64
+0.24
+15.34
+9.17
+14.53
+1.26
+1.51
+1.87
+0.76
+ZED 2i
+0.10
+12.51
+7.51
+12.49
+1.09
+1.30
+1.19
+0.41
+0.12
+14.13
+8.13
+13.86
+1.17
+1.38
+1.67
+0.64
+Fig. 14. Comparison of the median localization error at a distance of 0.8 m between the proposed method (Our mtd.) and the bounding-box-based method (Bbx 
+mtd.). (a) Median centroid error. (b) Median radius error.
+Fig. 15. Comparison of the median localization error at a distance of 1.6 m between the proposed method (Our mtd.) and the bounding-box-based method (Bbx 
+mtd.). (a) Median centroid error. (b) Median radius error.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+15 
+
+MT-WavYOLO model has a larger parameter count compared to the 
+baseline YOLOv8, it achieves a high inference speed of 27.01 FPS, which 
+allows it to handle both detection and segmentation tasks simulta­
+neously without significant delays. This is particularly advantageous for 
+edge computing platforms where real-time processing is crucial. The 
+performance of MT-WavYOLO in this regard is competitive with single- 
+task detection models and far exceeds that of single-task semantic seg­
+mentation models such as U-Net (4.41 FPS), E-Net (8.30 FPS), and 
+DeepLabv3+ (12.4 FPS). Although the parameter count is higher, the 
+model’s efficient multi-task learning mechanism allows it to achieve a 
+good balance between high performance and computational cost.
+4.2. Remaining challenges
+Despite these positive results, this study has limitations. Under se­
+vere occlusion, the reduction in available point cloud data may lead to 
+deviations in the estimated Z-axis coordinate of the fruit centroid, 
+thereby affecting overall localization accuracy. This is particularly 
+evident when the target fruit is heavily occluded by others, causing the 
+segmentation mask within the 2D bounding box to include both the 
+occluding and occluded fruits, which interferes with frustum-based 
+point cloud processing. While the proposed method aligns with the 
+practical harvesting sequence—prioritizing the removal of occluding 
+fruits so that occluded ones become observable—future efforts to 
+address this limitation could further enhance the precision and robust­
+ness of robotic fruit localization. The practical deployment of deep 
+learning models on embedded platforms faces several challenges, 
+including limited memory capacity, resource contention in multi-task 
+processing, high computational overhead from preprocessing tasks, 
+power consumption and thermal constraints, as well as model compat­
+ibility issues.
+4.3. Future work
+To address the centroid localization deviations caused by severe 
+occlusion, future work will explore a multi-view fusion strategy. Spe­
+cifically targeting fruits occluded by others, this approach leverages 
+complementary information from different viewpoints to enable cross- 
+frustum point cloud reconstruction and joint localization. It is ex­
+pected to mitigate errors caused by incomplete point clouds from a 
+single view and improve the accuracy of Z-axis estimation under oc­
+clusion, thereby enhancing the system’s robustness and applicability in 
+complex orchard environments. Additionally, we plan to apply light­
+weight strategies such as model pruning and quantization in real-world 
+applications to reduce model complexity while maintaining accuracy. 
+This will facilitate the efficient deployment of MT-YOLO on low-power 
+platforms such as the Jetson Nano, thereby enhancing the adaptability 
+and robustness of multi-task vision systems in real-world agricultural 
+production. Recent studies have proposed end-to-end frameworks that 
+integrate multi-task learning with 3D vision to address more complex 
+perception tasks. In contrast to our proposed method, some end-to-end 
+frameworks unify 3D detection, semantic segmentation, and other 2D 
+Fig. 16. Comparison of the median localization error at a distance of 0.8 m between the proposed method (Our mtd.) and the previous proposed method (Previous 
+mtd.). (a) Median centroid error. (b) Median radius error.
+Fig. 17. Comparison of the median localization error at a distance of 1.6 m between the proposed method (Our mtd.) and the previous proposed method (Previous 
+mtd.). (a) Median centroid error. (b) Median radius error.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+16 
+
+tasks within a single network, which facilitates feature sharing but 
+inevitably increases computational and memory overhead.
+However, this study adopts a near-spherical prior for radius esti­
+mation and geometric constraints; when the target fruit deviates sub­
+stantially from sphericity (e.g., elongated or deformed cultivars), 
+systematic biases may arise in the estimated radius and centroid. Under 
+extreme occlusion (very low visible proportion) and in the presence of 
+depth distortions caused by backlighting/overexposure, the stability of 
+the multi-task network’s 2D perception and segmentation degrades, 
+thereby limiting overall localization accuracy. To address these issues, 
+future work will extend the multi-task pipeline to a hybrid 2D/3D 
+formulation that jointly learns cross-dimensional features and, where 
+appropriate, integrates multi-view cues and robust depth-completion 
+strategies, with the aim of further improving localization performance 
+under extreme conditions while preserving the computational efficiency 
+required for practical deployment.
+The dataset used in this study covers only two apple cultivars from 
+three orchards, which, although to some extent reflecting differences in 
+fruit characteristics and occlusion patterns across regions, is still insuf­
+ficient to represent the full variety of planting conditions in broader 
+areas and diverse cultivars. In future work, we plan to collect apple 
+datasets from more orchards, encompassing different cultivars, tree ar­
+chitectures, and cultivation modes, in order to further validate the 
+generalization ability and robustness of the proposed method and to 
+provide more comprehensive experimental support for subsequent 
+model optimization and cross-regional deployment.
+5. Conclusion
+This study provides a solution to the critical challenge of recognizing 
+and localizing occluded apples in robotic harvesting by proposing an 
+integrated system. Our approach combines MT-WavYOLO, a novel 
+multi-task deep learning network excelling at simultaneous detection 
+and segmentation under occlusion, with a robust, sensor-agnostic 3D 
+localization pipeline utilizing frustum projection. Experimental results 
+show that the system achieves state-of-the-art performance in 2D visual 
+perception, achieving 93.6% precision and 93.1% IoU, while main­
+taining only 10.2 M parameters and running at a real-time speed of 27 
+FPS, effectively balancing accuracy and efficiency. Crucially, the 3D 
+localization component achieved millimeter-level accuracy (e.g., mean 
+errors of 14.22 mm for centroid and 1.16 mm for radius) using various 
+consumer-grade depth cameras, significantly outperforming both con­
+ventional bounding box methods and our prior approach. The core 
+contribution of this work is a unified framework that delivers accurate 
+and robust perception in cluttered, real-world orchard environments, 
+while maintaining superior performance on consumer-grade depth 
+sensors, and effectively handling occlusion without reliance on complex 
+point cloud processing. Validated through field tests, this research pro­
+vides a practical, cost-effective, and feasible vision solution for agri­
+cultural robotics and offers valuable insights for other challenging fruit- 
+harvesting scenarios.
+CRediT authorship contribution statement
+Heng Fu: Writing – original draft, Software, Methodology, Investi­
+gation, Formal analysis, Data curation, Conceptualization. Tao Li: 
+Writing – review & editing, Methodology, Investigation, Conceptuali­
+zation. Qingchun Feng: Supervision, Resources. Liping Chen: Super­
+vision, Resources, Funding acquisition, Conceptualization.
+Fig. 18. Mean errors with 95% confidence intervals (CI) of different methods. (a) Comparison of the proposed method (Our mtd.) and the bounding-box-based 
+method (Bbx mtd.) at 0.8 m. (b) Comparison of the proposed method (Our mtd.) and the bounding-box-based method (Bbx mtd.) at 1.6 m. (c) Comparison of 
+the proposed method (Our mtd.) and the previous proposed method (Previous mtd.) at 0.8 m. (d) Comparison of the proposed method (Our mtd.) and the previous 
+proposed method (Previous mtd.) at 1.6 m.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+17 
+
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Acknowledgments
+This work was funded by Science and Technology Program of 
+Tianjin, China (23YFZCSN00290), the Youth Research Foundation of 
+Beijing Academy of Agriculture and Forestry Sciences, China 
+(QNJJ202318), and the Beijing Nova Program, China (20220484023).
+Appendix A. Training parameter settings for the multi-task network model.
+Training parameter settings
+Optimizer: SGD (momentum = 0.937, nesterov = True)
+Initial learning rate (lr_initial): 1×10−2
+Final learning rate (eta_min): 1×10−4
+Learning rate schedule: Cosine Annealing
+T_max (maximum number of epochs): 500
+Warm-up: enabled(linear warm-up over the first 3 epochs)
+Warm-up epochs: 3
+Batch size: 8
+Training epochs: 500 (for joint optimization of detection and segmentation tasks)
+Weight decay: 5×10−4
+Image size: (640, 640)
+Confidence threshold: 0.5
+Appendix B. Four representative scenarios of recognition failure
+Fig. 1. Four representative scenarios of recognition failure.
+Appendix C. Runtime of MT-WavYOLO inference and frustum-based localization
+Table 1 
+Runtime of mt-wavyolo inference and frustum-based localization.
+Frame
+Fruit amount
+Process-time
+Post-process
+Total
+1
+6
+0.039
+1.281
+1.320
+2
+8
+0.035
+1.965
+2.000
+3
+7
+0.040
+1.780
+1.820
+4
+5
+0.035
+1.165
+1.200
+5
+9
+0.041
+2.389
+2.430
+6
+4
+0.034
+0.886
+0.920
+7
+10
+0.041
+2.759
+2.800
+8
+6
+0.035
+1.225
+1.260
+9
+8
+0.037
+1.883
+1.920
+(continued on next page)
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+18 
+
+Table 1 (continued)
+Frame 
+Fruit amount 
+Process-time 
+Post-process 
+Total
+10
+7
+0.036 
+1.784 
+1.820 
+Appendix D. Joint calibration and synchronization
+Rig constraints
+All sensors were mounted on a rigid metal frame; all cameras were oriented parallel to the ground; geometry remained fixed during experiments. 
+Five RGB-D cameras were vertically spaced by 5 cm; the Livox LiDAR and M4Pro were separated by 10 cm vertically with a fixed 10 cm horizontal 
+offset; overall rig height was 50 cm.
+A1 Acquisition and pairing
+A large rectangular checkerboard served as the common target; paired images and point clouds were collected over multiple distances and poses. 
+To handle different sampling rates, each pose was recorded separately and the first frame of each recording was selected to form image–point-cloud 
+pairs; pairs were exported as matched image and point-cloud files for joint calibration.
+A2 Camera intrinsics and image-plane correction
+Paired data were imported into the joint-calibration tool; camera intrinsics were estimated with the checkerboard cell size specified; the check­
+erboard region was designated for every image; clustering thresholds and size tolerances were adjusted to complete detection and sample selection.
+A3 Camera–LiDAR joint calibration
+Joint calibration across poses was performed by minimizing image reprojection error together with point-cloud geometric consistency, yielding the 
+rigid transform from camera to LiDAR: 
+TC→L =
+[
+R
+T
+0T
+1
+]
+∈SE(3)
+Samples with large reprojection or rotation errors were discarded until global error met predefined tolerances; the calibration matrix was then 
+exported.
+A4 Coordinate unification
+Using TC→L any camera-frame 3-D point was mapped to the LiDAR frame by 
+Plidar = R • Pcamera + T 
+which provided a unified coordinate basis for subsequent 3-D localization and analysis.
+Appendix E. The processing flow of the wavelet transform
+Algorithm 1 wt_Conv
+Input: feature-map A, levels L, kernel k = 5, stride s, (frozen) DWT/IWT flt
+Output: feature-map B
+1: Initialozation: # Multi-level discrete wavelet decomposition (DWT)
+2: LL_stack ← [];
+HH_stack ← [];
+shape_stack ← []
+3: LL ← A
+4: for ℓ ← 1.L do
+5: 
+shape_stack.push(shape(LL))
+6: 
+if odd(H or W) pad LL by 1 pixel
+7:  
+(LL, LH, HL, HH) ← DWT(LL, DWT_flt)
+8: 
+Xℓ ← concat([LL,LH,HL,HH], ch)
+9: 
+X′ℓ ← DW-Conv_k × k(Xℓ) → ScaleParam(ℓ)(⋅)
+10: 
+(LL′,LH′,HL′,HH′) ← split(X′ℓ,4)
+# Partition the coefficients back into the four sub-band tensors
+11: 
+LL_stack.push(LL′); HH_stack.push([LH′,HL′,HH′])
+12: 
+LL ← LL′
+13: end for
+# Inverse wavelet transform (IWT) for hierarchical up-sampling reconstruction
+14: recon ← 0
+15: for ℓ ← L.1 step −1 do
+16: 
+(LL′, [LH′,HL′,HH′]) ← (LL_stack.pop(), HH_stack.pop())
+17: 
+LL′ ← LL′ + recon
+18: 
+Xℓ ← concat([LL′,LH′,HL′,HH′], axis = wave)
+19: 
+recon ← IWT(Xℓ, IWT_flt) # Cross-level residual connection
+20: 
+recon ← crop(recon, shape_stack.pop())
+21: end for
+22: base ← DW-Conv5×5(A) → ScaleParam0(⋅)
+23: B ← base + recon
+24: if stride s > 1 then B ← DW-Conv1×1(B, stride = s)
+25: return B
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+19 
+
+Appendix F. Processing flow for apple centroid and radius estimation
+Algorithm 2 Apple Centroid & Radius Estimation
+Input: point cloud Pc, width of the bounding box in the pixel coordinate system w, focal length scaling factor of the camera 
+fu, Bounding box vertex coordinates x1, x2, y1, y2
+Output: Centroid Coordinates P, Radius r
+1: Initialization:
+2:2d center point O ← (x1 + x2
+2
+,y1 + y2
+2 
+)
+3: Frustum Centerline d ← along the z-axis centered at O
+4: Centroid of Point Cloud P0 ← centroid(Pc)
+5: Forward:
+6: z ← P0(0, 0, z)
+7: r ←w
+2⋅fu
+⋅z
+8: Sphere(P0, r)
+9: intersections ← intersect: Frustum Centerline(d)-Sphere(P0, r)
+10: if distance(intersections[0]) > distance(intersections[1]) then
+11: 
+P← intersections[0]
+12: else
+13: 
+P← intersections[1]
+14: end if
+15: output ← (P, r)
+16: return output
+Data availability
+The authors do not have permission to share data.
+References
+Bolya, D., Zhou, C., Xiao, F., Lee, Y.J., 2019. Yolact: real-time instance segmentation. In: 
+Proceedings of the IEEE/CVF International Conference on Computer Vision, 
+pp. 9157–9166.
+Beldek, C., Dunn, A., Cunningham, J., et al. 2025. Multi-vision-based Picking Point 
+Localisation of Target Fruit for Harvesting Robots[C]//2025 IEEE International 
+Conference on Mechatronics (ICM). IEEE, 1–6.
+Chu, P., Li, Z., Lammers, K., Lu, R., Liu, X., 2021. Deep learning-based apple detection 
+using a suppression mask R-CNN. Pattern Recogn. Lett. 147, 206–211.
+Chu, P., Li, Z., Zhang, K., Chen, D., Lammers, K., Lu, R., 2023. O2RNet: Occluder- 
+occludee relational network for robust apple detection in clustered orchard 
+environments. Smart Agric. Technol. 5, 100284.
+Elgazzar, K., Mostafi, S., Dennis, R., Osman, Y., 2024. Quantitative Analysis of Deep 
+Learning-based Object Detection models. IEEE Access.
+Finder, S.E., Amoyal, R., Treister, E., Freifeld, O., 2025. Wavelet convolutions for large 
+receptive fields. Eur. Conf. Comput. Vis. 363–380.
+Gen´e-Mola, J., Gregorio, E., Guevara, J., Auat, F., Sanz-Cortiella, R., 2019. Fruit 
+detection in an apple orchard using a mobile terrestrial laser scanner. Biosyst. Eng. 
+187, 171–184.
+Gen´e-Mola, J., Sanz-Cortiella, R., Rosell-Polo, J.R., Morros, J.-R., Ruiz-Hidalgo, J., 2020. 
+Fruit detection and 3D location using instance segmentation neural networks and 
+structure-from-motion photogrammetry. Comput. Electron. Agric. 169, 105165.
+Gong, L., Wang, W., Wang, T., Liu, C., 2022. Robotic harvesting of the occluded fruits 
+with a precise shape and position reconstruction approach. J. Field Rob. 39, 69–84.
+Guo, Q., He, Z., Wang, Z., 2023. Prediction of monthly average and extreme atmospheric 
+temperatures in Zhengzhou based on artificial neural network and deep learning 
+models. Front. For. Global Change 6, 1249300.
+Guo, Q., He, Z., Wang, Z., 2024a. Monthly climate prediction using deep convolutional 
+neural network and long short-term memory. Sci. Rep. 14 (1), 17748.
+Guo, Q., He, Z., Wang, Z., Qiao, S., Zhu, J., Chen, J., 2024b. A performance comparison 
+study on climate prediction in Weifang City using different deep learning models. 
+Water 16, 2870.
+He, K., Gkioxari, G., Doll´ar, P., Girshick, R., 2017. Mask r-cnn. In: Proceedings of the 
+IEEE International Conference on Computer Vision, pp. 2961–2969.
+Kang, H., Chen, C., 2020. Fast implementation of real-time fruit detection in apple 
+orchards using deep learning. Comput. Electron. Agric. 168, 105108.
+Kang, H., Wang, X., Chen, C., 2022. Accurate fruit localisation using high resolution 
+LiDAR-camera fusion and instance segmentation. Comput. Electron. Agric. 203, 
+107450.
+Li, T., Feng, Q., Qiu, Q., Xie, F., Zhao, C., 2022. Occluded apple fruit detection and 
+localization with a frustum-based point-cloud-processing approach for robotic 
+harvesting. Remote Sens. (Basel) 14 (3), 482.
+Lin, T.-Y., Doll´ar, P., Girshick, R., He, K., Hariharan, B., 2017. Feature pyramid networks 
+for object detection. In: Proceedings of the IEEE Conference on Computer Vision and 
+Pattern Recognition, pp. 2117–2125.
+Lin, G., Tang, Y., Zou, X., Li, J., Xiong, J., 2019. In-field citrus detection and localisation 
+based on RGB-D image analysis. Biosyst. Eng. 186, 34–44.
+Liu, Z., Abeyrathna, R.R.D., Sampurno, R.M., Nakaguchi, V.M., Ahamed, T., 2024. Faster- 
+YOLO-AP: a lightweight apple detection algorithm based on improved YOLOv8 with 
+a new efficient PDWConv in orchard. Comput. Electron. Agric. 223, 109118.
+Liu, S., Qi, L., Qin, H., Shi, J., Jia, J., 2018. Path aggregation network for instance 
+segmentation. In: Proceedings of the IEEE Conference on Computer Vision and 
+Pattern Recognition, pp. 8759–8768.
+Liu, X., Zhao, D., Jia, W., Ji, W., Sun, Y., 2019. A detection method for apple fruits based 
+on color and shape features. IEEE Access 7, 67923–67933.
+Ma, R., Zhang, Y., Zhang, B., et al., 2024. Learning attention in the frequency domain for 
+flexible real photograph denoising. IEEE Trans. Image Process. 33, 3707–3721.
+Rathore, D., Divyanth, L.G., Reddy, K.L.S., Chawla, Y., Buragohain, M., Soni, P., 
+Machavaram, R., Hussain, S.Z., Ray, H., Ghosh, A., 2023. A two-stage deep-learning 
+model for detection and occlusion-based classification of Kashmiri orchard apples for 
+robotic harvesting. J. Biosyst. Eng. 48, 242–256.
+Redmon, J., Divvala, S., Girshick, R., Farhadi, A., 2016. You only look once: Unified, 
+real-time object detection. In: Proceedings of the IEEE Conference on Computer 
+Vision and Pattern Recognition, pp. 779–788.
+Ren, S., He, K., Girshick, R., Sun, J., 2016. Faster R-CNN: Towards real-time object 
+detection with region proposal networks. IEEE Trans. Pattern Anal. Mach. Intell. 39, 
+1137–1149.
+Sahin, C., Garcia-Hernando, G., Sock, J., Kim, T.-K., 2020. A review on object pose 
+recovery: from 3D bounding box detectors to full 6D pose estimators. Image Vis. 
+Comput. 96, 103898.
+Tang, Y., Chen, M., Wang, C., Luo, L., Li, J., 2020. Recognition and localization methods 
+for vision-based fruit picking robots: a review. Front. Plant Sci. 11, 510.
+Tian, Y., Yang, G., Wang, Z., et al., 2019. Apple detection during different growth stages 
+in orchards using the improved YOLO-V3 model. Comput. Electron. Agric. 157, 
+417–426.
+Wang, A., Chen, H., Liu, L., Chen, K., Lin, Z., Han, J., Ding, G., 2024. Yolov10: Real-time 
+end-to-end object detection. arXiv preprint arXiv:2405.14458.
+Wang, D., He, D., 2022. Apple detection and instance segmentation in natural 
+environments using an improved Mask Scoring R-CNN Model. Front. Plant Sci. 13, 
+1016470.
+Wu, H., Mo, X., Wen, S., Wu, K., Ye, Y., Wang, Y., Zhang, Y., 2024. DNE-YOLO: a method 
+for apple fruit detection in diverse natural environments. J. King Saud Univ.- 
+Comput. Inf. Sci. 36, 102220.
+Yoshida, T., Kawahara, T., Fukao, T., 2022. Fruit recognition method for a harvesting 
+robot with RGB-D cameras. ROBOMECH J. 9, 15.
+Zhou, F., Zhao, H., Nie, Z., 2021. Safety helmet detection based on YOLOv5. In: 2021 
+IEEE International Conference on Power Electronics, Computer Applications 
+(ICPECA), pp. 6–11.
+Zhu, L., Deng, Z., Hu, X., Fu, C.-W., Xu, X., 2018. Bidirectional feature pyramid network 
+with recurrent attention residual modules for shadow detection. In: Proceedings of 
+the European Conference on Computer Vision (ECCV), pp. 121–136.
+H. Fu et al.                                                                                                                                                                                                                                       
+Computers and Electronics in Agriculture 242 (2026) 111335 
+20 

@@ -79,5 +79,3 @@ memiliki tingkat kegagalan 12–18% per tahun. Dari sisi operasional, hanya
 menemukan sistem otomatis memenuhi toleransi ±5% hanya pada 67% skenario uji.
 Penulis juga mencatat keterbatasan integrasi data, kendala biaya bagi
 perkebunan skala 50–500 hektare, serta ketidakpastian regulasi data hasil AI.
-
-

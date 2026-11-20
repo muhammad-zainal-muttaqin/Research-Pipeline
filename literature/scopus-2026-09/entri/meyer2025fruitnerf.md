@@ -66,4 +66,3 @@ cakupan pohon yang baik dan menurun karena data bernoise, terutama pose tidak
 tepat yang mencemari penyematan buah tetangga. Segmen instance juga memisahkan
 satu buah menjadi dua ketika daun atau cabang menutupnya. Buah yang tumbuh
 dalam gugus, seperti pisang, beri, dan kurma, masih menjadi tantangan tersendiri.
-

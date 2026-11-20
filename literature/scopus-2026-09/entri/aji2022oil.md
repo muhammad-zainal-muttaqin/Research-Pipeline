@@ -26,4 +26,3 @@ Mekanisme deteksi memakai Faster R-CNN yang terdiri atas jaringan ekstraksi fitu
 Pada pengujian validasi, mAP detektor dengan VGG16 original sebesar 0,728, sedangkan detektor dengan VGG16 termodifikasi sebesar 0,782, atau naik 7,42% (selisih 0,054). Kecepatan inferensi meningkat dari 1,85 fps menjadi 3,7 fps, yaitu 100% lebih cepat. Selama pelatihan, sistem termodifikasi 58,9% lebih cepat, total loss lebih kecil 43,4% (0,103 berbanding 0,203), akurasi kelas terbaik 98% berbanding 93%, tetapi tumpang tindih kotak pembatas (bounding box) 23,91% lebih kecil. Metrik mAP dihitung sebagai rata-rata average precision (AP) per kelas menurut persamaan dalam naskah, sedangkan kecepatan dinyatakan dalam frame per detik (fps) yang diturunkan dari waktu deteksi per citra.
 
 Batasan penulis tidak dinyatakan.
-

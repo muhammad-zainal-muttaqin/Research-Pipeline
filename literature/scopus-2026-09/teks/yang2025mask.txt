@@ -1,0 +1,1337 @@
+ 
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+ 
+Original papers
+Mask-GK: An efficient method based on mask Gaussian kernel for 
+segmentation and counting of grape berries in field$
+Canchen Yang a
+, Tianyu Geng a
+,∗, Jian Peng a, Chun Xu b, Zichen Song c
+a College of Computer Science, Sichuan University, No. 24, Section 1, South First Ring Road, Chengdu, 610065, China
+b Information Construction and Management Office, Sichuan University, No. 24, Section 1, South First Ring Road, Chengdu, 610065, China
+c College of Electronics and Information Engineering, Sichuan University, No. 24, Section 1, South First Ring Road, Chengdu, 610065, China
+A R T I C L E  I N F O
+Dataset link: https://github.com/volcanoYcc/M
+ask-GK
+Keywords:
+Precision viticulture
+Plant phenotyping
+Gaussian kernel
+Grape berry counting
+Grape berry instance segmentation
+ 
+A B S T R A C T
+Segmentation and counting of grape berries provide crucial reference data for estimating grape yield, thinning, 
+and ripeness detection in grape production tasks, particularly in the context of precision viticulture. However, 
+conducting such analyses in field environments presents challenges due to the small size and large quantity 
+of grape berries, forcing researchers to make trade-offs between experimental conditions and algorithmic 
+approaches. Additionally, the absence of a publicly available benchmark for grape berry segmentation in field 
+conditions further compounds the challenge.
+To address these issues, we propose a novel mask Gaussian kernel representation for grape berries, as well 
+as an innovative solution for in-field grape berry segmentation and counting named Mask-GK. This method 
+trains neural networks with probability maps generated using berry mask Gaussian kernels and segments grape 
+berries by applying the watershed algorithm to probability maps predicted by the neural network. Furthermore, 
+we manually annotated the Sichuan Grape Berry Instance Segmentation and Counting Dataset (GBISC dataset). 
+This dataset comprises 150 images captured in field environments, featuring grape varieties such as Kyoho, 
+Shine Muscat, and Summer Black, including 50,718 labeled grape berry instances in total. In our experiments, 
+our proposed method demonstrates reliable performance in grape berry segmentation and counting, achieving 
+a MAE of 9.32 for grape berry counting and an AP of 0.665 (IoU threshold: 0.5 to 0.95) for grape berry 
+instance segmentation, comparison with previous instance segmentation methods proves its reliability in grape 
+berry segmentation and counting. Our source code and the GBISC dataset will be publicly available at
+https://github.com/volcanoYcc/Mask-GK.
+1. Introduction
+Precision viticulture (Mohimont et al., 2022; Farjon et al., 2023), 
+also known as precision farming or smart agriculture, employs ad-
+vanced technologies, data analysis methods, and scientific expertise to 
+monitor grape features and fine-tune grape cultivation practices, thus 
+improve grape yield, fruit quality, and wine production. As artificial 
+intelligence (AI) continues to advance, direct and automated extraction 
+of visual features from grape fruit has become feasible (Saleem et al., 
+2021). For instance, the study by Nuske et al. (2014) introduced 
+an automated visual yield estimation system that accurately predicts 
+grape orchard yields with high resolution. Several popular object de-
+tection models, including Faster R-CNN, Mask R-CNN, and multiple 
+YOLO models, have been tested for the task of grape detection and 
+counting (Santos et al., 2020; Deng et al., 2020). In summary, AI 
+$ This document is the results of the research project funded by the Nation Natural Science Foundation of China (No. 61906126).
+∗Corresponding author.
+E-mail address: tygeng@scu.edu.cn (T. Geng).
+technology can be effectively applied to grape detection tasks, aiding 
+in the extraction of grape features, achieving satisfactory performance.
+Due to the clustered nature of grapes, automated extraction of 
+grape berry features holds greater significance (Ni et al., 2020). Grape 
+berries possess several critical characteristics that directly influence 
+both grape quality and wine production. For example, the size of grape 
+berries plays an important role in shaping both the potential yield 
+of a vineyard and the ultimate alcohol content and flavor profile of 
+wines (Buayai et al., 2020). The ripeness level of grape berries can 
+influence their sugar content, acidity levels, and flavor profile (Shen 
+et al., 2022). The spatial arrangement of berries within a grape cluster 
+can influence wine quality, as densely packed clusters can lead to more 
+intricate and nuanced flavors due to the higher skin-to-flesh ratio of 
+individual berries (San Woo et al., 2023). Therefore, a comprehensive 
+https://doi.org/10.1016/j.compag.2025.110286
+Received 21 June 2024; Received in revised form 4 March 2025; Accepted 10 March 2025
+Computers and Electronics in Agriculture 234 (2025) 110286 
+Available online 22 March 2025 
+0168-1699/© 2025 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+
+C. Yang et al.
+Fig. 1. The grape berry segmentation and counting results of Mask-GK in field environment.
+grasp of grape berry features is vital for growers. It empowers them 
+to make well-informed choices regarding cultivar selection, vineyard 
+management, and harvest timing.
+In order to obtain a comprehensive understanding of grape berry 
+characteristics, it is crucial to accomplish instance segmentation and 
+counting of grape berries in natural field environment. This task can 
+provide richer feature information than mere counting, including the 
+size, shape, maturity, and color of each grape berry. However, com-
+pared to grape clusters, grape berries are smaller, more numerous, 
+and densely distributed, which poses significant challenges for instance 
+segmentation and counting. Several studies have investigated the in-
+stance segmentation or counting of grape berries. For instance, Shen 
+et al. (2022), Deng et al. (2020) and Buayai et al. (2020) employ a 
+two-stage approach: first, they detect or segment grape clusters, and 
+then they perform berry counting within the detected clusters. Coviello 
+et al. (2020) utilizes a crowd counting approach based on density 
+maps, where regions with higher density correspond to the positions of 
+the berries, achieving accurate grape berry counting. However, these 
+methods cannot be extended to obtain grape berry instance segmenta-
+tion results. Zabawa et al. (2020) introduced an innovative approach 
+for berry counting and segmentation in a laboratory environment. 
+They employed a semantic segmentation network that detects and 
+isolates individual berry objects using an ‘edge’ class. However, this 
+edge segmentation approach may introduce uncertainties when han-
+dling outdoor conditions, particularly in intricate and densely packed 
+vineyard settings. In summary, existing grape detection methods lack 
+research on simultaneous instance segmentation and counting of grape 
+berries in practical vineyard scenarios.
+Segmenting and counting grape berries in natural field environ-
+ments is an extremely challenging task due to the following reasons: 
+(1) Compared to laboratory settings, vineyard environments are more 
+complex, with grape berries often exhibiting colors and features similar 
+to the background, making detection more difficult; (2) The small size 
+and high quantity of grape berries limit the applicability of instance 
+segmentation methods designed for typical scenarios, such as Mask-
+RCNN. This is because most instance segmentation methods require 
+identifying the position of each target before segmenting them individ-
+ually, and the dense distribution of berry targets in vineyard scenarios 
+results in reduced detection accuracy and heavy computational burden 
+for such serial segmentation process (Nellithimaru and Kantor, 2019); 
+(3) Due to the high labor costs of annotation, the lack of a publicly 
+available benchmark for grape berry instance segmentation in field 
+settings is also a crucial factor. All these challenges have hindered 
+the progress of research on grape berry instance segmentation and 
+counting.
+Compared to traditional instance segmentation methods, probabil-
+ity map-based counting methods can detect all objects in an image 
+in parallel, utilizing global features for detecting each target. These 
+methods are more suitable for counting tasks in dense scenarios (Cheng 
+et al., 2021), and have also achieved excellent performance in grape 
+berry counting tasks in vineyard environments (Yang et al., 2024). 
+Traditional probability maps, representing targets by square or rectan-
+gular Gaussian kernels, cannot represent the segmentation information 
+of targets when used as ground truth for neural network training. 
+Therefore, they are only suitable for object counting and localization 
+tasks, but cannot be applied to instance segmentation tasks. We propose 
+a method to represent the instance segmentation information of targets 
+using mask Gaussian kernels to generate mask-based probability maps. 
+Using these probability maps as ground truth, we propose a novel 
+solution for in-field grape berry segmentation and counting named 
+Mask-GK, and segment grape berries by applying the watershed al-
+gorithm to probability maps predicted by the neural network. This 
+approach maintains compatibility with conventional probability map-
+based methods for detecting densely clustered grape berries in complex 
+field environments. Also, by implementing parallelized segmentation 
+of all berries, this approach effectively mitigates the prevalent issues 
+of redundant segmentation and mask overlap inherent to traditional 
+instance segmentation methods in high-density scenarios. Therefore, it 
+allows for accurate grape berry counting and instance segmentation si-
+multaneously, as shown in Fig. 1. Additionally, we manually annotated 
+a Sichuan Grape Berry Instance Segmentation and Counting Dataset 
+(GBISC dataset). This dataset comprises a total of 150 images in field 
+environments, including grape varieties of Kyoho, Shine Muscat, and 
+Summer Black, with a combined total of 50,718 grape berry instance 
+segmentation annotations.
+The main contributions of this paper are as follows:
+1. We propose a mask Gaussian kernel method to represent the in-
+stance segmentation information of targets, and generate mask-
+based probability maps using these Gaussian kernels.
+Computers and Electronics in Agriculture 234 (2025) 110286 
+2 
+
+C. Yang et al.
+2. We introduce a novel high-accuracy detection pipeline named 
+Mask-GK for in field grape berry segmentation and counting.
+3. For the first time, we publicly release the GBISC dataset, specif-
+ically designed for tasks related to grape berry instance segmen-
+tation and counting.
+4. In our experiments, our proposed Mask-GK method achieves a 
+grape berry counting performance of MAE 9.32 and an instance 
+segmentation performance of AP 0.665 (IoU threshold: 0.5 to 
+0.95). Comparison with previous instance segmentation meth-
+ods demonstrate its reliability in grape berry segmentation and 
+counting.
+2. Related works
+(1) Grape berry counting
+Detecting the number of grape berries provides crucial reference 
+data for grape production tasks such as yield estimation and controlling 
+the number of berries within each cluster (Mohimont et al., 2022). 
+Numerous studies have emerged to predict grape berry quantities, uti-
+lizing both traditional machine vision and deep learning methods. For 
+instance, Nuske et al. (2014) introduced an automated visual system for 
+yield estimation in vineyards. This system mounts cameras and lighting 
+equipment on vehicles, employing three main visual cues – texture, 
+color, and shape – to detect grape berry positions through a robust 
+classifier and examines three different methods for measuring grape 
+cluster size. Although this system uses handcrafted features in machine 
+learning and can detect visible berries, it suffers from significant count-
+ing errors. Research on grape berry counting based on deep learning has 
+advanced more rapidly in recent years compared to traditional machine 
+learning methods. For example, in Li et al. (2023), a semi-supervised 
+grape berry counting method, CDMENet, based on density mutual 
+exclusion, is proposed. This method utilizes VGG-16 as the backbone 
+network for extracting image features and introduces auxiliary tasks 
+based on density mutual exclusion. These tasks leverage the spatial 
+distribution patterns of grape berries, fully utilizing unlabeled data, and 
+design a density difference loss function to enhance feature represen-
+tation by amplifying differences between features of different density 
+levels. Another study, San Woo et al. (2023), proposed a lightweight 
+berry counting system based on YOLOv5, capable of running on the 
+Android operating system and automating the counting of grape berries 
+in grape clusters. This application identifies work clusters and visible 
+and partially occluded berries through a single 2D image. Addition-
+ally, Yang et al. (2024) innovatively integrates grape cluster detection, 
+grape berry counting, and berry counting within each cluster. This 
+study proposes a probability map-based grape detection and counting 
+framework, PMGDC. This framework predicts probability maps of grape 
+clusters and grape berries through an U-Net (Ronneberger et al., 2015) 
+architecture neural network and uses three post-processing stages to 
+extract detection results from the probability maps, thus completing 
+three different grape detection tasks simultaneously. In summary, there 
+are now many mature solutions for the task of grape berry counting, 
+and they have achieved good results in actual cultivation scenarios.
+(2) Grape berry instance segmentation
+Grape berry instance segmentation is a more complex detection 
+task compared to grape berry counting. This task provides richer fea-
+ture information, including the size, shape, maturity, and color of 
+each grape berry, making it more valuable for research than grape 
+berry counting. Several studies have been conducted on grape berry 
+instance segmentation. For instance, Chen et al. (2023) introduced a 
+deep learning-based method for grape berry instance segmentation and 
+counting. This method constructs a Red Globe grape sample dataset and 
+employs an improved Mask R-CNN model to effectively address missed 
+detections caused by occlusion. The improved Mask R-CNN model also 
+demonstrates good generalization performance on segmentation tasks 
+of new grape varieties that were not part of the training set. In Buayai 
+et al. (2023), a DNN-based instance segmentation technology is used 
+to identify berries within grape clusters. This method transforms the 
+problem of thinning single grape clusters into an image classification 
+problem through attention-enhanced imaging technology (Ma et al., 
+2022, 2024). However, the detection objects in the above studies are 
+grape berries within single clusters, and these methods cannot be 
+applied to instance segmentation tasks over larger areas in cultivation 
+scenarios. Some other research teams have focused on a unique detec-
+tion paradigm for grape berry instance segmentation (Zabawa et al., 
+2020; Palacios et al., 2022; Zabawa et al., 2022), detecting the edges of 
+grape berries through a semantic segmentation network to distinguish 
+individual berry instances. This method avoids the high computa-
+tional complexity of traditional instance segmentation algorithms in 
+dense grape berry detection scenarios, achieving faster inference speeds 
+and better results compared to Mask R-CNN. However, the stabil-
+ity of semantic segmentation for instance edges is relatively poor, 
+requiring multiple manual filtering steps to remove noise such as non-
+round berries and berries not fully enclosed by edges. Additionally, the 
+contour detection method cannot accurately provide size and shape in-
+formation for extremely small and dense grape berries, as the contours 
+occupy the space of the berries. Therefore, although these methods 
+focus on the detection of grape berries over larger field areas, they 
+are limited by the stability of the methods. They require specialized 
+machinery to remove background interference or detect targets under 
+artificial lighting at night, thus limiting their application scenarios.
+Overall, compared to grape berry counting methods, existing grape 
+berry instance segmentation methods are fewer in number and have 
+limited usage scenarios, making them inflexible for application in 
+grape berry segmentation tasks in cultivation environments. The slow 
+development of grape berry instance segmentation is influenced by 
+several factors. Due to the complexity of foreground and background 
+information in detection scenes, the small size, dense distribution, and 
+similarity of grape berries to background features, traditional instance 
+segmentation methods often perform poorly in field grape berry in-
+stance segmentation tasks. Additionally, the current publicly available 
+grape datasets lack berry instance segmentation information (Coviello 
+et al., 2020; Liu et al., 2020; Santos et al., 2020), making it difficult to 
+meet the training needs of instance segmentation methods. To address 
+these issues, this paper for the first time publicly releases a field 
+grape berry instance segmentation and counting dataset and proposes 
+a method suitable for grape berry instance segmentation and counting 
+tasks in complex field scenarios, filling a gap in this field.
+3. Materials and methods
+3.1. GBISC dataset
+The GBISC dataset was captured by us using an iPhone 12 smart-
+phone, an iPhone 13 smartphone, and an HUAWEI mate 40 pro 
+smartphone within vineyards in Longquanyi and Shuangliu districts in 
+Chengdu, Sichuan province, China, in July 2023. This dataset comprises 
+150 high-resolution RGB images of three distinct grape varieties: Ky-
+oho, Shine Muscat and Summer Black. All images were captured in a 
+frontal pose with approximately the same distance to the grape vines. 
+We add instance segmentation annotations for a total of 50 718 grape 
+berries in these images in COCO format. The original size of images 
+are 4032 × 3024 and 4096 × 3072, and are resized to 2048 × 1536 in 
+model training and testing.
+In our experiments, we use 100 images for training, 25 images for 
+validation, and the remaining 25 images for testing. Examples of images 
+and their corresponding annotations in the GBISC dataset are shown in 
+Fig. 2. Detailed information about the dataset is also available in Table 
+1.
+3.2. Mask-GK
+In this section, we introduce our proposed grape berry segmentation 
+and counting method Mask-GK. First, we introduce two crucial compo-
+nents of Mask-GK in Sections 3.2.1 and 3.2.2. Next, in Section 3.2.3, 
+we present the overall structure of our approach.
+Computers and Electronics in Agriculture 234 (2025) 110286 
+3 
+
+C. Yang et al.
+Fig. 2. Example of images and annotations in the GBISC dataset.
+Table 1
+Annotation details of the GBISC dataset.
+ Grape variety
+Train
+Validation
+Test
+ 
+Image number
+Masked berries
+Image number
+Masked berries
+Image number
+Masked berries
+ Kyoho
+34
+13 191
+8
+3039
+8
+3432
+ 
+ Shine Muscat
+33
+13 677
+9
+3989
+8
+2881
+ 
+ Summer Black
+33
+6604
+8
+1570
+9
+2335
+ 
+ Total
+100
+33 472
+25
+8598
+25
+8648
+ 
+3.2.1. Generate Gaussian kernels with instance segmentation annotations
+While previous research has widely utilized square or rectangular 
+Gaussian kernels to represent the bounding box or center point of 
+objects in probability maps, our paper is the first to propose the 
+mask Gaussian kernel to represent grape berry instance segmentation 
+information and to generate mask-based probability maps as ground 
+truth data for neural network training. The remainder of this section 
+will provide a detailed explanation of Gaussian kernels and the process 
+of generating mask Gaussian kernels.
+The Gaussian distribution is a commonly used weight allocation 
+strategy. It takes the form of a bell-shaped curve, where values are 
+larger near the center and decrease as you move away from it. Fol-
+lowing the one-dimensional Gaussian function shown in Eq. (1), the 
+Gaussian distribution curve allows to allocate the value of 1 in a one-
+dimensional space according to the Gaussian distribution form. Here, 𝜇
+represents the mean (center) of the Gaussian distribution, and 𝜎 denotes 
+the standard deviation. 
+𝑓(𝑥) =
+1
+𝜎
+√
+2𝜋
+exp −(𝑥−𝜇)2
+2𝜎2
+(1)
+In the field of computer vision, the Gaussian kernel employs the 
+form of a Gaussian distribution to represent the probability that dif-
+ferent positions in space correspond to the center point of an object. 
+Typically, the position of the object’s center point is set as the center 
+of the Gaussian kernel, with the value at that point being set to 1, sig-
+nifying a 100% probability that it is the object’s center. As the distance 
+from the Gaussian kernel center point increases, this value (probability) 
+gradually decreases following the shape of the Gaussian distribution. In 
+one-dimensional and two-dimensional Gaussian kernels within space, 
+the values at any arbitrary point conform to the probability density 
+functions depicted in Eqs. (2) and (3). It should be noted that since 
+the center values of these two probability density functions are set to 
+1, their prefactors are also set to 1, unlike in Eq. (1). 
+𝑓(𝑥) = exp −(𝑥−𝜇)2
+2𝜎2
+(2)
+𝑓(𝑥, 𝑦) = exp
+[
+−
+((𝑥−𝜇1
+)2
+2𝜎2
+1
++
+(𝑦−𝜇2
+)2
+2𝜎2
+2
+)]
+(3)
+Specifically, due to the fact that the sum of all elements within the 
+range 𝜇1 −3𝜎1 ≤𝑥≤𝜇1 + 3𝜎1 and 𝜇2 −3𝜎2 ≤𝑦≤𝜇2 + 3𝜎2 exceeds 
+99.7% of the total element sum of the Gaussian kernel in space, it is 
+common practice to set the side lengths of the Gaussian kernel along the 
+𝑥-axis and 𝑦-axis in two-dimensional space to 6𝜎1 and 6𝜎2, respectively. 
+Consequently, when representing bounding box annotation of objects 
+with a center point at (𝜇1, 𝜇2) using the probability density function 
+in Eq. (3), we can set 𝜎1 and 𝜎2 to one-sixth of the bounding box 
+length along the 𝑥-axis and y-axis (Baek et al., 2019). However, when 
+representing point annotation of objects, it is necessary to manually 
+specify the length of the Gaussian kernel beforehand (Cheng et al., 
+2021).
+Compared to point and bounding box annotations, instance seg-
+mentation annotations can better reflect the morphological information 
+of objects. Additionally, for small and densely packed targets like 
+grape berries, their individual instance segmentation masks can, in 
+most cases, be considered as a complete whole, allowing us to gener-
+ate Gaussian kernels from grape berry instance segmentation masks. 
+Unlike point and bounding box annotations, instance segmentation 
+annotations often have more complex shapes that cannot be adequately 
+represented by ordinary rectangular Gaussian kernels. To address this, 
+we propose an algorithm named mask Gaussian kernel that follows 
+three steps to assign values to each point in the object instance segmen-
+tation mask based on the Gaussian distribution, as illustrated in Fig. 3. 
+Firstly, for a single continuous object segmentation mask, we search for 
+the point within the mask that minimizes the sum of distances from that 
+Computers and Electronics in Agriculture 234 (2025) 110286 
+4 
+
+C. Yang et al.
+Fig. 3. Example of generating Gaussian kernel with object instance segmentation annotation. (a) Grape berry mask annotation; (b) Process of calculating 𝑑𝑐𝑒𝑛𝑡𝑒𝑟 and 𝑑𝑒𝑑𝑔𝑒; (c) 
+Generated mask Gaussian kernel; (d) Generated mask Gaussian kernel in grape image.
+Fig. 4. Process of finding the center point of the berry mask’s Gaussian kernel.
+point to all other points, while ensuring that the paths used to calculate 
+distances pass through only points within the mask. We consider this 
+point as the center of the mask’s Gaussian kernel. Next, under the same 
+condition of passing through only points within the mask, we calculate 
+the shortest distances from each point in the mask to the center point 
+𝑑𝑐𝑒𝑛𝑡𝑒𝑟 and to the mask boundary 𝑑𝑒𝑑𝑔𝑒. Finally, we set 𝜇 to 0, 𝜎 to 
+(𝑑𝑐𝑒𝑛𝑡𝑒𝑟+ 𝑑𝑒𝑑𝑔𝑒)∕3 and 𝑥 to 𝑑𝑐𝑒𝑛𝑡𝑒𝑟, and assign values to all points in the 
+mask according to Eq. (2).
+Specifically, to address the time-consuming problem of finding the 
+center point in large-sized object masks, we iteratively shrink the 
+object mask by a factor of two until the shorter side of the mask 
+is less than 10. We denote the number of shrinkage steps as 𝑛−1, 
+label the original mask as 𝑚𝑎𝑠𝑘𝑛, and the reduced masks are labeled 
+as 𝑚𝑎𝑠𝑘1, 𝑚𝑎𝑠𝑘2, … , 𝑚𝑎𝑠𝑘𝑛−1 in decreasing number of shrinkage steps. 
+Next, we start iterating from 𝑚𝑎𝑠𝑘1 with the most shrinkage steps 
+down to the initial mask, searching for the center point within each 
+mask. First, for 𝑚𝑎𝑠𝑘1, we locate the center point (𝑥1, 𝑦1) across the 
+entire mask. Then, we proceed to find the center points from 𝑚𝑎𝑠𝑘2
+to 𝑚𝑎𝑠𝑘𝑛, restricting the search range for the center point in 𝑚𝑎𝑠𝑘𝑚 to 
+2𝑥𝑚−1 −1 ≤𝑥≤2𝑥𝑚−1 +1 and 2𝑦𝑚−1 −1 ≤𝑦≤2𝑦𝑚−1 +1. The center point 
+(𝑥𝑛, 𝑦𝑛) obtained from 𝑚𝑎𝑠𝑘𝑛 is the final center point of the object mask. 
+The specific iterative search process is illustrated in Fig. 4. By the way, 
+Computers and Electronics in Agriculture 234 (2025) 110286 
+5 
+
+C. Yang et al.
+Fig. 5. The probability maps generated using grape berry point, bounding box and mask annotations.
+since it is also quite time consuming when computing values of every 
+single point contained in object masks, we use numpy to accelerate that 
+process and calculate the Chebyshev distance of 𝑑𝑐𝑒𝑛𝑡𝑒𝑟 and 𝑑𝑒𝑑𝑔𝑒.
+In this paper, we utilize the proposed mask Gaussian kernel method 
+to create mask-based probability maps with grape berry instance seg-
+mentation annotations in the GBISC dataset. Those probability maps 
+serve as ground truth data for neural network training in our pro-
+posed grape berry segmentation and counting method Mask-GK. Fig. 
+5 compares the probability maps generated using Gaussian kernels 
+based on grape berry center points, bounding boxes, and masks. When 
+generating probability maps with berry center points, we directly adopt 
+the method used in Cheng et al. (2021) to determine Gaussian kernel 
+sizes.
+3.2.2. Obtain instance segmentation result from predicted probability maps
+Previous methods generated Gaussian kernels based on object point 
+and bounding box annotations, and probability maps composed of those 
+Gaussian kernels were only used as ground truth data in model training 
+for counting and localization purposes. After training neural networks 
+with these probability maps, the probability maps predicted by neural 
+networks can only be used to localize objects. That is, the central peaks 
+of the Gaussian kernels are object centers. However, the correlation 
+between the Gaussian kernel regions and the object regions is not 
+significant.
+In contrast, the approach proposed in this paper generates Gaussian 
+kernels using object mask annotations directly. Therefore, when using 
+probability maps composed of these Gaussian kernels as ground truth to 
+train the neural network, the Gaussian kernels predicted by the network 
+also include shape information about the objects. Consequently, we 
+can reverse this process and use the probability maps predicted by 
+the network to generate instance segmentation results for all detected 
+objects.
+In Mask-GK, we employ the watershed algorithm to post-process the 
+probability maps predicted by the neural network. First, we identify 
+all Gaussian kernels in the probability map whose central peak values 
+exceed a given threshold with non-maxima suppression. These peaks 
+correspond to the predicted berry object centers, and the number of 
+Gaussian kernels represents the berry count. Next, we treat all the 
+central points of the Gaussian kernels as the starting points for the 
+watershed algorithm, applying the watershed algorithm to partition the 
+image into regions corresponding to each Gaussian kernel without rep-
+etition. Finally, we consider all points within Gaussian kernel regions 
+with values greater than 9e−3 as the instance segmentation results for 
+grape berries.
+3.2.3. Detection pipeline
+In our proposed Mask-GK method, we employ an U-Net (Ron-
+neberger et al., 2015) architecture neural network with ResNet as the 
+backbone. This network is used to predict the probability maps of 
+grape berries, utilizing the mask-based probability maps introduced in 
+Section 3.2.1 as ground truth data during model training. The detection 
+pipeline of our method is shown in Fig. 6. First, the neural network ex-
+tracts features from input images with five convolutional modules from 
+ResNet, then restores the high-dimensional features to the same size 
+as input images using five upsampling modules, while concatenating 
+the up-features and down-features together. Next, a head convolutional 
+module is applied to obtain the predicted grape berry probability 
+maps. Finally, after neural network prediction, we use non-maxima 
+suppression and the watershed algorithm on predicted probability maps 
+to get the grape berry counting and instance segmentation results. The 
+detection process of Mask-GK can be formulated as 𝑝= 𝑊(𝐻(𝐷(𝐵(𝑖)))), 
+where 𝑖 denotes the input image, 𝐵 and 𝐷 represent the backbone and 
+decoder, respectively. 𝐻 signifies the head convolutional module, 𝑊 is 
+the watershed algorithm, and 𝑝 represents the grape berry segmentation 
+and counting results.
+Computers and Electronics in Agriculture 234 (2025) 110286 
+6 
+
+C. Yang et al.
+Fig. 6. The detection pipeline of Mask-GK.
+4. Experiments and results
+4.1. Experimental settings
+In our paper, all the experiments were conducted on a consistent 
+server with the following specifications: an Intel(R) Xeon(R) Gold 6330 
+2.00 GHz CPU, a RTX 3090(24 GB) GPU, running the ubuntu 20.04 
+operating system, and utilizing Cuda 11.3. The codebase was compiled 
+using PyTorch 1.10.0 and Python 3.8.
+To validate the grape berry counting performance of our proposed 
+Mask-GK method, we evaluate the berry counting performance of the 
+same neural network trained with probability maps generated using 
+berry point, bounding box, and mask annotations, with backbones 
+including ResNet-18, ResNet-34, ResNet-50, and ResNet-101. To assess 
+the instance segmentation performance of Mask-GK, we compare the 
+grape berry instance segmentation accuracy of the model using dif-
+ferent types of backbones, while consistently training the model with 
+mask-based probability maps.
+In each training process, our neural network is trained for 100 
+epochs. The data loader batch size is set to 1, and the number of 
+workers is set to 4. We adopt random cropping, flipping, scaling, and 
+HSV enhancement to augment the training data. AdamW is utilized as 
+the optimizer, and the learning rate is dynamically adjusted using the 
+cosine annealing strategy with the initial learning rate of 1e−4 and the 
+end learning rate of 1e−5. MSE loss (Ma et al., 2020) is employed to 
+quantify the deviation between the ground truth and the probability 
+maps predicted by the neural network.
+After each training epoch on the training set, we evaluate the 
+model’s grape berry counting performance on the validation set. The 
+model weights with the best berry counting performance across all the 
+training epochs are saved as the final model weights. After training, 
+the models are tested on the test set to obtain their final grape berry 
+segmentation and counting performance. It should be noted that, the 
+berry counting results should be obtained from probability maps us-
+ing non-maxima suppression with a fixed threshold score. During our 
+experiments, we observed that the optimal threshold scores of models 
+trained with different ground truth data types were not consistent. 
+Consequently, for models trained with different types of probability 
+map, we select the threshold scores obtaining the best berry counting 
+performance on the validation set as their threshold scores on the test 
+set.
+In addition to comparing the performance of Mask-GK using dif-
+ferent ground truth data and backbones, we also compared the grape 
+berry counting and segmentation performance, along with the learn-
+able parameters and detection speed of Mask-GK, to methods pre-
+viously designed for general scene instance segmentation tasks. The 
+compared methods include Mask R-CNN (He et al., 2017), Cascade 
+Mask R-CNN (Cai and Vasconcelos, 2019), InstaBoost (Fang et al., 
+2019), PointRend (Kirillov et al., 2020), CondInst (Tian et al., 2020), 
+YOLOv8 (Jocher et al., 2023), YOLOv9 (Wang et al., 2024), and 
+YOLOv11 (Jocher et al., 2023). All three YOLO methods adopted 
+implementations from ultralytics, while other compared methods were 
+reproduced by mmdetection with ResNet-50 as the backbone. We 
+increased the maximum predicted object count in each image from 100 
+to 1000 for all compared methods, and set the number of regions of 
+interest generated by the RPN layer to 2000 for non-YOLO methods. 
+Besides these modifications, the training and testing parameters for all 
+methods remained the same as the original parameters provided by 
+mmdetection and ultralytics.
+4.2. Evaluation metrics
+We use MAE and RMSE as shown in Eqs. (4) and (5) to evaluate the 
+grape berry counting performance of the neural network, where 𝑁 is 
+Computers and Electronics in Agriculture 234 (2025) 110286 
+7 
+
+C. Yang et al.
+the number of images, 𝐶𝑖 and 𝐶𝐺𝑇
+𝑖
+ are the detected and ground truth 
+grape berry counts in each image, respectively. 
+𝑀𝐴𝐸= 1
+𝑁
+𝑁
+∑
+𝑖=1
+|||𝐶𝑖−𝐶𝐺𝑇
+𝑖
+|||
+(4)
+𝑅𝑀𝑆𝐸=
+√
+√
+√
+√1
+𝑁
+𝑁
+∑
+𝑖=1
+|||𝐶𝑖−𝐶𝐺𝑇
+𝑖
+|||
+2
+(5)
+As for the instance segmentation performance of the proposed 
+method, we use average precision (AP) and average recall (AR) with 
+IoU from 0.5 to 0.95, together with F1-score shown in Eq. (6) as 
+evaluation metrics. 
+𝐹1 = 2𝐴𝑃× 𝐴𝑅
+𝐴𝑅+ 𝐴𝑅
+(6)
+4.3. Experimental results
+In this section, we first evaluate the grape berry segmentation 
+and counting performance of Mask-GK when different ground truth 
+probability maps and backbones are used. Then, we compare the 
+performance of Mask-GK with previous instance segmentation methods 
+designed for general detection scenes. Finally, we test the capability of 
+Mask-GK in cross-dataset and open-world scenarios.
+4.3.1. Ablation experiments
+Here, we evaluate the grape berry counting and instance segmenta-
+tion performance of our proposed Mask-GK method trained with prob-
+ability maps generated using berry point, bounding box, and mask an-
+notations, when backbones including ResNet-18, ResNet-34, ResNet-50, 
+and ResNet-101 are used in the network.
+(1) Grape berry counting
+According to the experimental results presented in Table 2, it is 
+evident that the grape berry counting performance of Mask-GK exhibits 
+no significant difference across most backbone models when trained 
+with mask-based probability maps and bounding box-based probability 
+maps. However, when trained with point-based probability maps, the 
+neural network consistently performs relatively poorly in grape berry 
+counting. These experimental results prove the reliability of using the 
+proposed mask-based probability maps as ground truth data in grape 
+berry counting tasks. Additionally, the performance difference of the 
+network trained with point-based ground truth data and the other two 
+types of ground truth data emphasizes the necessity of incorporating 
+more berry shape features into ground truth labels when addressing 
+grape berry counting problems with neural networks.
+Although the mask-based probability maps provide richer grape 
+berry features compared to the bounding box-based probability maps 
+and theoretically should achieve better counting performance, the ex-
+perimental results showed that the counting performance of models 
+trained with these two types of probability maps was not significantly 
+different. This may be because the features provided by the bounding 
+box-based probability maps are already sufficient for the model to 
+make highly accurate counting predictions, with the main prediction 
+errors being concentrated on a small number of difficult-to-detect grape 
+berries. As a result, replacing the training ground truth with mask-based 
+probability maps offers limited improvements in the model’s counting 
+performance. Further parameter optimization of the mask Gaussian 
+kernels as training ground truth may enhance its counting performance.
+(2) Grape berry instance segmentation
+Visualized grape berry instance segmentation results of Mask-GK are 
+presented in Fig. 7, with each predicted grape berry mask displayed 
+in a distinct color. It can be seen that Mask-GK consistently achieves 
+accurate instance segmentation prediction of grape berries, even for 
+occluded and small berries. The experimental results, detailed in Table 
+3, also demonstrate the effectiveness of our approach in segmenting 
+grape berries across different neural network backbones.
+Table 2
+The grape berry counting performance of Mask-GK with different backbones trained 
+with different types of ground truth probability map.
+ Model 
+Point-based
+Bounding box-based
+Mask-based
+ backbone
+MAE
+RMSE
+MAE
+RMSE
+MAE
+RMSE 
+ ResNet-18
+11.76
+16.82
+9.60
+11.75
+9.52
+13.20 
+ ResNet-34
+10.92
+14.30
+9.80
+11.74
+9.84
+11.31 
+ ResNet-50
+11.20
+13.98
+9.44
+11.53
+9.40
+12.28 
+ ResNet-101
+11.24
+14.34
+11.00
+13.54
+9.32
+12.54 
+Table 3
+The grape berry instance segmentation performance of Mask-GK with different network 
+backbones.
+ Backbone
+AP (0.5:0.95)
+AP (0.5)
+AR (0.5:0.95)
+F1
+ 
+ ResNet-18
+0.662
+0.898
+0.679
+0.670 
+ ResNet-34
+0.665
+0.908
+0.683
+0.674 
+ ResNet-50
+0.664
+0.907
+0.684
+0.674 
+ ResNet-101
+0.664
+0.898
+0.680
+0.672 
+Table 4
+The grape berry counting performance comparison between Mask-GK and previous 
+instance segmentation methods.
+ Method
+MAE
+RMSE 
+ Mask R-CNN
+78.72
+89.25 
+ Cascade Mask R-CNN
+95.12
+107.71 
+ InstaBoost
+111.88
+127.09 
+ PointRend
+82.00
+92.78 
+ CondInst
+26.04
+32.73 
+ YOLOv8-l
+87.04
+98.36 
+ YOLOv9-c
+91.68
+103.69 
+ YOLOv11-l
+78.80
+89.77 
+ Mask-GK (ours)
+9.40
+12.28 
+4.3.2. Comparative experiment
+Here, we compare the grape berry counting and instance segmen-
+tation performance of Mask-GK with several previous instance seg-
+mentation methods. It should be noted that grape berry counting and 
+instance segmentation in grapevine scenes pose unique challenges due 
+to the dense targets and small object sizes, which result in many 
+instance segmentation methods designed for general detection scenes 
+being unable to produce any prediction results, or only producing 
+completely incorrect results. Therefore, we only present the detection 
+performance of methods capable of completing grape berry instance 
+segmentation and counting tasks on the GBISC dataset. Actually, we 
+also tested some other instance segmentation methods designed for 
+general scenes, including SOLO (Wang et al., 2020), YOLACT (Bolya 
+et al., 2019), SparseInst (Cheng et al., 2022), BoxInst (Tian et al., 2021), 
+and ConvNeXt-V2 (Woo et al., 2023). However, we observed that these 
+methods were unable to successfully complete the segmentation and 
+counting task for grape berries on the GBISC dataset.
+(1) Grape berry counting
+In Table 4, we compare the grape berry counting performance of 
+Mask-GK with other instance segmentation methods on the test set of 
+the GBISC dataset. Clearly, the grape berry counting performance of 
+our proposed method outperforms all other methods, achieving the best 
+counting results with an MAE of 9.40 and an RMSE of 12.28. Even when 
+compared to CondInst, which is the best-performing method able to 
+simultaneously segment and count grape berries, Mask-GK still exhibits 
+a significant counting performance advantage. This experiment demon-
+strates that our proposed method not only successfully accomplishes 
+grape berry segmentation but also provides reliable counting results.
+(2) Grape berry instance segmentation
+In Table 5, we compare the instance segmentation performance of 
+Mask-GK with other instance segmentation methods on the test set of 
+the GBISC dataset. Specifically, in addition to comparing the instance 
+segmentation performance for berries of all sizes, we further analyze 
+and compare the performance of different detection methods for grape 
+Computers and Electronics in Agriculture 234 (2025) 110286 
+8 
+
+C. Yang et al.
+Fig. 7. The grape berry instance segmentation results of our proposed Mask-GK method. The first row shows the original grape images, while the second row shows the predicted 
+grape berry masks.
+Table 5
+The grape berry segmentation performance comparison between Mask-GK and previous instance 
+segmentation methods.
+Berry size
+Model
+AP (0.5:0.95)
+AP (0.5)
+AR (0.5:0.95)
+F1-Score
+Mask R-CNN
+0.423
+0.618
+0.441
+0.432
+Cascade Mask R-CNN
+0.445
+0.640
+0.466
+0.455
+InstaBoost
+0.478
+0.632
+0.492
+0.485
+PointRend
+0.371
+0.603
+0.413
+0.391
+CondInst
+0.459
+0.733
+0.488
+0.473
+YOLOv8-l
+0.171
+0.491
+0.203
+0.185
+YOLOv9-c
+0.192
+0.527
+0.221
+0.205
+YOLOv11-l
+0.191
+0.536
+0.223
+0.206
+All
+Mask-GK (ours)
+0.664
+0.907
+0.684
+0.674
+Mask R-CNN
+0.415
+0.617
+0.432
+0.423
+Cascade Mask R-CNN
+0.436
+0.630
+0.457
+0.446
+InstaBoost
+0.470
+0.622
+0.483
+0.477
+PointRend
+0.364
+0.602
+0.406
+0.384
+CondInst
+0.451
+0.732
+0.480
+0.465
+YOLOv8-l
+0.163
+0.481
+0.194
+0.177
+YOLOv9-c
+0.184
+0.517
+0.212
+0.197
+YOLOv11-l
+0.182
+0.525
+0.215
+0.197
+Small
+Mask-GK (ours)
+0.659
+0.907
+0.678
+0.669
+Mask R-CNN
+0.837
+0.993
+0.868
+0.852
+Cascade Mask R-CNN
+0.841
+0.979
+0.874
+0.857
+InstaBoost
+0.864
+0.980
+0.898
+0.880
+PointRend
+0.707
+0.960
+0.755
+0.730
+CondInst
+0.812
+0.998
+0.866
+0.838
+YOLOv8-l
+0.524
+0.978
+0.623
+0.569
+YOLOv9-c
+0.571
+1.000
+0.642
+0.604
+YOLOv11-l
+0.581
+0.989
+0.639
+0.609
+Medium
+Mask-GK (ours)
+0.941
+0.980
+0.960
+0.950
+Mask R-CNN
+0.616
+0.916
+0.783
+0.690
+Cascade Mask R-CNN
+0.788
+1.000
+0.900
+0.940
+InstaBoost
+0.913
+1.000
+0.950
+0.931
+PointRend
+0.484
+0.803
+0.717
+0.577
+CondInst
+0.819
+1.000
+0.833
+0.826
+YOLOv8-l
+0.672
+1.000
+0.733
+0.701
+YOLOv9-c
+0.719
+1.000
+0.750
+0.734
+YOLOv11-l
+0.695
+1.000
+0.750
+0.722
+Large
+Mask-GK (ours)
+0.966
+1.000
+0.967
+0.967
+berries of varying sizes. To achieve this, we divide the area difference 
+range between the smallest and largest berries in the GBISC dataset’s 
+test set into three equal parts: small, medium, and large. We then sep-
+arately evaluated the segmentation performance of different detection 
+methods for grape berries belonging to different area intervals.
+Compared to other instance segmentation methods, Mask-GK also 
+exhibits superior detection performance in grape berry instance seg-
+mentation tasks. For berries of all sizes, our method achieves the best 
+instance segmentation performance with an AP (0.5:0.95) of 0.664, 
+AP (0.5) of 0.907, AR (0.5:0.95) of 0.684, and an F1-Score of 0.674. 
+Regarding segmentation performance for grape berries in different area 
+intervals, experimental results indicate that many compared meth-
+ods also perform well for medium and large-sized berries. However, 
+all compared methods show significant performance degradation for 
+small-sized berries. Only our proposed Mask-GK method consistently 
+maintains excellent instance segmentation performance across small, 
+medium, and large sized grape berries.
+In Fig. 8, we present the instance segmentation results of Mask-GK 
+compared to other instance segmentation methods on the same grape 
+image. Compared to other methods, our proposed approach can more 
+accurately detect grape berries, especially smaller ones and those under 
+weak lighting conditions. The occurrences of false positives and false 
+Computers and Electronics in Agriculture 234 (2025) 110286 
+9 
+
+C. Yang et al.
+Fig. 8. The visualized grape berry instance segmentation results of Mask-GK and previous instance segmentation methods. The blue boxes represent the incorrect berry segmentation 
+results produced by the compared methods.
+negatives are significantly reduced in our method compared to the 
+others. Additionally, our approach better identifies the region of each 
+grape berry, providing finer grape berry segmentation masks. Notably, 
+most previous instance segmentation methods require first determining 
+the bounding box for each grape berry during the detection process and 
+then predicting the masks within those bounding boxes, this approach 
+inevitably leads to overlapping masks due to the overlap between grape 
+berry bounding boxes. In contrast, our method directly determines 
+whether each pixel in the probability map belongs to a grape berry 
+and assigns it to the corresponding berry without repetition, completely 
+avoiding mask overlap issues. Therefore, unlike other instance segmen-
+tation methods, our approach also does not require post-processing 
+using non-maximum suppression (NMS) after segmentation. The exper-
+imental results in Table 5 and Fig. 8 provide evidence of the excellent 
+grape berry instance segmentation performance of Mask-GK.
+(3) Model size and detection efficiency
+In Table 6, we additionally compare the number of learnable pa-
+rameters and the average detection time on the GBISC dataset test set 
+between Mask-GK and other instance segmentation methods. Mask-GK 
+not only surpasses other methods in grape berry instance segmentation 
+and counting performance across all backbones, but also has fewer 
+learnable parameters when using ResNet-18. Furthermore, Mask-GK 
+exhibits faster detection speeds than other instance segmentation meth-
+ods, with the exception of three YOLO-based approaches. It should be 
+noted that while these YOLO methods achieve exceptionally fast detec-
+tion efficiency through state-of-the-art model optimization techniques 
+and reduced input image sizes, their intricate architectural designs 
+result in higher GPU memory consumption. This inherent constraint 
+limits the permissible sizes of both input images and predicted object 
+masks, ultimately leading to inferior segmentation performance on 
+small and densely distributed grape berries in the GBISC dataset even 
+when compared to early instance segmentation methods.
+Mask-GK’s advantages in model size and detection efficiency can 
+be attributed to its pure CNN architecture, which entirely avoids the 
+use of fully connected layers. In contrast, fully connected layers are 
+widely adopted in traditional instance segmentation methods, often 
+resulting in a significant increase in additional parameters and detec-
+tion time. Additionally, since Mask-GK can simultaneously accomplish 
+the instance segmentation of all grape berries in an image, it avoids 
+the repetitive detection process of segmenting each berry individually 
+based on detected bounding boxes. This confers a significant efficiency 
+advantage in densely packed vineyard scenarios.
+Computers and Electronics in Agriculture 234 (2025) 110286 
+10 
+
+C. Yang et al.
+Table 6
+Comparison of learnable parameters and detection speed between Mask-GK and previous instance 
+segmentation methods.
+ Method
+Learnable parameters (m)
+Mean detection time (ms) 
+ Mask R-CNN
+43.97
+78.1
+ 
+ CascadeMaskR-CNN
+77.02
+102.0
+ 
+ InstaBoost
+43.97
+68.5
+ 
+ PointRend
+55.76
+114.9
+ 
+ CondInst
+33.98
+95.2
+ 
+ YOLOv8-l
+45.94
+5.0
+ 
+ YOLOv9-c
+27.84
+4.3
+ 
+ YOLOv11-l
+27.59
+3.9
+ 
+ Mask-GK (ResNet-101)
+166.84
+80.7
+ 
+ Mask-GK (ResNet-50)
+147.85
+63.7
+ 
+ Mask-GK (ResNet-34)
+29.25
+57.4
+ 
+ Mask-GK (ResNet-18)
+19.14
+50.9
+ 
+Fig. 9. The grape berry instance segmentation and counting results of Mask-GK in open-world scenes. (a) Images sourced from the internet; (b) Images from WGISD.
+4.3.3. Novel scenarios
+We further evaluate the instance segmentation and counting capa-
+bilities of Mask-GK in open-world scenes. Visualized detection results 
+are shown in Fig. 9, where we utilize both grape images sourced 
+from the internet and another grape dataset called WGISD (Santos 
+et al., 2020). Remarkably, our method still performs well most of the 
+time across internet images and diverse dataset scenes. Experimental 
+results obtained from the GBISC dataset and open-world images can 
+substantiate the instance segmentation and counting efficacy of our 
+approach.
+5. Dicussion
+In this paper, we experimentally verified that adding more berry 
+shape information to the Gaussian kernels in probability maps can 
+significantly improve the counting accuracy of neural networks trained 
+Computers and Electronics in Agriculture 234 (2025) 110286 
+11 
+
+C. Yang et al.
+with these probability maps for grape berry counting tasks. Experi-
+mental results also demonstrate that the proposed Mask-GK method 
+achieves high detection accuracy in both grape berry instance segmen-
+tation and counting tasks. Notably, our method successfully addresses 
+the challenging problem of dense target instance segmentation, which 
+traditional methods struggle with. Compared to traditional instance 
+segmentation methods, our proposed approach not only achieves su-
+perior grape berry instance segmentation and counting performance 
+on the GBISC dataset but also reduces instances of missed and false 
+detections. Additionally, the predicted segmentation masks of Mask-
+GK are more precise and can successfully address the issue of mask 
+overlap that is challenging for traditional methods. Therefore, com-
+pared to general-purpose instance segmentation methods, our proposed 
+approach is better suited for grape berry segmentation and counting 
+tasks.
+However, the work presented in this paper still has certain limita-
+tions. For smaller objects like grape berries, where each segmentation 
+mask can be treated as a complete whole, the Mask-GK method, which 
+uses mask annotations to generate Gaussian kernels, can effectively 
+accomplish both instance segmentation and counting tasks. However, 
+in more common scenes with larger objects, many object segmentation 
+masks are not continuous or complete, making them less effectively 
+addressed by the proposed method. Additionally, the dataset collected 
+and annotated in this study only includes grape images captured dur-
+ing well lighting periods, excluding images taken under poor lighting 
+conditions such as dusk or nighttime. Finally, training the grape berry 
+segmentation and counting method proposed in this paper requires 
+expensive manual labor for instance segmentation annotation, which 
+presents certain challenges for further research and extension.
+6. Conclusion
+The segmentation and counting of grape berries provide crucial ref-
+erence data for estimating grape yield, thinning, and maturity detection 
+in grape production tasks. This holds significant importance for digi-
+tized precision viticulture. In our paper, we propose a mask Gaussian 
+kernel method to represent the instance segmentation information of 
+grape berries and generate mask-based probability maps using these 
+Gaussian kernels. We also introduce a novel solution named Mask-GK 
+for in-field grape berry segmentation and counting. This solution trains 
+neural networks with mask-based grape berry probability maps and 
+achieves grape berry instance segmentation by applying the watershed 
+algorithm to probability maps predicted by the neural network. We 
+publicly release a dataset named GBISC specifically designed for grape 
+berry instance segmentation and counting tasks, which is the first of 
+its kind in this field. Our experiments compare different methods of 
+instance segmentation, revealing that our proposed method not only 
+solves grape berry segmentation and counting tasks simultaneously 
+but also outperforms previous methods on the GBISC dataset. Moving 
+forward, we aim to expand the GBISC dataset by including additional 
+grape varieties and establish a benchmark for grape berry segmentation 
+and counting. Furthermore, we intend to design lightweight network 
+models for deployment on edge computing devices, applying our work 
+in real-world grape field environments.
+CRediT authorship contribution statement
+Canchen Yang: Writing – review & editing, Writing – original 
+draft, Visualization, Validation, Software, Resources, Methodology, In-
+vestigation, Formal analysis, Data curation, Conceptualization. Tianyu 
+Geng: Writing – review & editing, Writing – original draft, Supervi-
+sion, Project administration, Methodology, Funding acquisition, Formal 
+analysis, Conceptualization. Jian Peng: Supervision, Project adminis-
+tration, Conceptualization. Chun Xu: Visualization, Validation. Zichen 
+Song: Visualization, Software, Data curation.
+Declaration of competing interest
+The authors declare that they have no known competing finan-
+cial interests or personal relationships that could have appeared to 
+influence the work reported in this paper.
+Data availability
+Our source code and the GBISC dataset will be publicly available at 
+https://github.com/volcanoYcc/Mask-GK.
+References
+Baek, Y., Lee, B., Han, D., Yun, S., Lee, H., 2019. Character region awareness for text 
+detection. In: Proceedings of the IEEE/CVF Conference on Computer Vision and 
+Pattern Recognition. pp. 9365–9374.
+Bolya, D., Zhou, C., Xiao, F., Lee, Y.J., 2019. Yolact: Real-time instance segmentation. 
+In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 
+9157–9166.
+Buayai, P., Saikaew, K.R., Mao, X., 2020. End-to-end automatic berry counting for table 
+grape thinning. IEEE Access 9, 4829–4842.
+Buayai, P., Yok-In, K., Inoue, D., Nishizaki, H., Makino, K., Mao, X., 2023. Supporting 
+table grape berry thinning with deep neural network and augmented reality 
+technologies. Comput. Electron. Agric. 213, 108194.
+Cai, Z., Vasconcelos, N., 2019. Cascade R-CNN: High quality object detection and 
+instance segmentation. IEEE Trans. Pattern Anal. Mach. Intell. 43 (5), 1483–1498.
+Chen, Y., Li, X., Jia, M., Li, J., Hu, T., Luo, J., 2023. Instance segmentation and 
+number counting of grape berry images based on deep learning. Appl. Sci. 13 
+(11), http://dx.doi.org/10.3390/app13116751.
+Cheng, T., Wang, X., Chen, S., Zhang, W., Zhang, Q., Huang, C., Zhang, Z., Liu, W., 
+2022. Sparse instance activation for real-time instance segmentation. In: Proceed-
+ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 
+4433–4442.
+Cheng, J., Xiong, H., Cao, Z., Lu, H., 2021. Decoupled two-stage crowd counting and 
+beyond. IEEE Trans. Image Process. 30, 2862–2875.
+Coviello, L., Cristoforetti, M., Jurman, G., Furlanello, C., 2020. GBCNet: In-field grape 
+berries counting for yield estimation by dilated CNNs. Appl. Sci. 10 (14), 4870.
+Deng, G., Geng, T., He, C., Wang, X., He, B., Duan, L., 2020. TSGYE: Two-stage grape 
+yield estimation. In: Neural Information Processing: 27th International Conference, 
+ICONIP 2020, Bangkok, Thailand, November 18–22, 2020, Proceedings, Part IV 27. 
+Springer, pp. 580–588.
+Fang, H.-S., Sun, J., Wang, R., Gou, M., Li, Y.-L., Lu, C., 2019. Instaboost: Boosting 
+instance segmentation via probability map guided copy-pasting. In: Proceedings of 
+the IEEE/CVF International Conference on Computer Vision. pp. 682–691.
+Farjon, G., Huijun, L., Edan, Y., 2023. Deep-learning-based counting methods, datasets, 
+and applications in agriculture: A review. Precis. Agric. 24 (5), 1683–1711.
+He, K., Gkioxari, G., Dollár, P., Girshick, R., 2017. Mask r-cnn. In: Proceedings of the 
+IEEE International Conference on Computer Vision. pp. 2961–2969.
+Jocher, G., Qiu, J., Chaurasia, A., 2023. Ultralytics YOLO. URL: https://github.com/
+ultralytics/ultralytics.
+Kirillov, A., Wu, Y., He, K., Girshick, R., 2020. Pointrend: Image segmentation as 
+rendering. In: Proceedings of the IEEE/CVF Conference on Computer Vision and 
+Pattern Recognition. pp. 9799–9808.
+Li, Y., Tang, Y., Liu, Y., Zheng, D., 2023. Semi-supervised counting of grape berries 
+in the field based on density mutual exclusion. Plant Phenomics 5, 0115. http:
+//dx.doi.org/10.34133/plantphenomics.0115.
+Liu, S., Zeng, X., Whitty, M., 2020. A vision-based robust grape berry counting 
+algorithm for fast calibration-free bunch weight estimation in the field. Comput. 
+Electron. Agric. 173, 105360.
+Ma, R., Hu, H., Xing, S., Li, Z., 2020. Efficient and fast real-world noisy image denoising 
+by combining pyramid neural network and two-pathway unscented Kalman filter. 
+IEEE Trans. Image Process. 29, 3927–3940.
+Ma, R., Li, S., Zhang, B., Fang, L., Li, Z., 2022. Flexible and generalized real photograph 
+denoising exploiting dual meta attention. IEEE Trans. Cybern. 53 (10), 6395–6407.
+Ma, R., Zhang, Y., Zhang, B., Fang, L., Huang, D., Qi, L., 2024. Learning attention in 
+the frequency domain for flexible real photograph denoising. IEEE Trans. Image 
+Process..
+Mohimont, L., Alin, F., Rondeau, M., Gaveau, N., Steffenel, L.A., 2022. Computer vision 
+and deep learning for precision viticulture. Agronomy 12 (10), 2463.
+Nellithimaru, A.K., Kantor, G.A., 2019. Rols: Robust object-level slam for grape 
+counting. In: Proceedings of the IEEE/CVF Conference on Computer Vision and 
+Pattern Recognition Workshops.
+Ni, X., Li, C., Jiang, H., Takeda, F., 2020. Deep learning image segmentation and 
+extraction of blueberry fruit traits associated with harvestability and yield. Hortic. 
+Res. 7.
+Nuske, S., Wilshusen, K., Achar, S., Yoder, L., Narasimhan, S., Singh, S., 2014. 
+Automated visual yield estimation in vineyards. J. Field Robot. 31 (5), 837–860.
+Computers and Electronics in Agriculture 234 (2025) 110286 
+12 
+
+C. Yang et al.
+Palacios, F., Melo-Pinto, P., Diago, M.P., Tardaguila, J., 2022. Deep learning and 
+computer vision for assessing the number of actual berries in commercial vineyards. 
+Biosyst. Eng. 218, 175–188.
+Ronneberger, O., Fischer, P., Brox, T., 2015. U-net: Convolutional networks for 
+biomedical image segmentation. In: Medical Image Computing and Computer-
+Assisted Intervention – MICCAI 2015. Springer International Publishing, Cham, pp. 
+234–241.
+Saleem, M.H., Potgieter, J., Arif, K.M., 2021. Automation in agriculture by machine 
+and deep learning techniques: A review of recent developments. Precis. Agric. 22 
+(6), 2053–2091.
+San Woo, Y., Buayai, P., Nishizaki, H., Makino, K., Kamarudin, L.M., Mao, X., 
+2023. End-to-end lightweight berry number prediction for supporting table grape 
+cultivation. Comput. Electron. Agric. 213, 108203.
+Santos, T.T., de Souza, L.L., dos Santos, A.A., Avila, S., 2020. Grape detection, 
+segmentation, and tracking using deep neural networks and three-dimensional 
+association. Comput. Electron. Agric. 170, 105247.
+Shen, L., Chen, S., Mi, Z., Su, J., Huang, R., Song, Y., Fang, Y., Su, B., 2022. Identifying 
+veraison process of colored wine grapes in field conditions combining deep learning 
+and image analysis. Comput. Electron. Agric. 200, 107268.
+Tian, Z., Shen, C., Chen, H., 2020. Conditional convolutions for instance segmentation. 
+In: Computer Vision–ECCV 2020: 16th European Conference, Glasgow, UK, August 
+23–28, 2020, Proceedings, Part I 16. Springer, pp. 282–298.
+Tian, Z., Shen, C., Wang, X., Chen, H., 2021. Boxinst: High-performance instance 
+segmentation with box annotations. In: Proceedings of the IEEE/CVF Conference 
+on Computer Vision and Pattern Recognition. pp. 5443–5452.
+Wang, X., Kong, T., Shen, C., Jiang, Y., Li, L., 2020. Solo: Segmenting objects by 
+locations. In: Computer Vision–ECCV 2020: 16th European Conference, Glasgow, 
+UK, August 23–28, 2020, Proceedings, Part XVIII 16. Springer, pp. 649–665.
+Wang, C.-Y., Yeh, I.-H., Mark Liao, H.-Y., 2024. Yolov9: Learning what you want 
+to learn using programmable gradient information. In: European Conference on 
+Computer Vision. Springer, pp. 1–21.
+Woo, S., Debnath, S., Hu, R., Chen, X., Liu, Z., Kweon, I.S., Xie, S., 2023. Convnext 
+v2: Co-designing and scaling convnets with masked autoencoders. In: Proceedings 
+of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 
+16133–16142.
+Yang, C., Geng, T., Peng, J., Song, Z., 2024. Probability map-based grape detection and 
+counting. Comput. Electron. Agric. 224, 109175.
+Zabawa, L., Kicherer, A., Klingbeil, L., Töpfer, R., Kuhlmann, H., Roscher, R., 
+2020. Counting of grapevine berries in images via semantic segmentation using 
+convolutional neural networks. ISPRS J. Photogramm. Remote Sens. 164, 73–83.
+Zabawa, L., Kicherer, A., Klingbeil, L., Töpfer, R., Roscher, R., Kuhlmann, H., 2022. 
+Image-based analysis of yield parameters in viticulture. Biosyst. Eng. 218, 94–109.
+Computers and Electronics in Agriculture 234 (2025) 110286 
+13 

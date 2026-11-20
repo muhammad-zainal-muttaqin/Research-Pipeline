@@ -83,5 +83,3 @@ rancangan 4 mm untuk mengklasifikasikan buah kecil ke ukuran baki yang tepat,
 meski cukup untuk memantau kematangan dan penempatan dalam satu toleransi
 ukuran baki. Penulis juga menyatakan diperlukan paling sedikit 95 buah untuk
 estimasi ukuran rerata pada tingkat kepercayaan 95% dengan galat 4,9 mm.
-
-

@@ -66,4 +66,3 @@ panas perlu disesuaikan karena pematangan berlangsung lebih cepat. Prediksi
 juga belum memasukkan pengaruh suhu dan cahaya satu minggu ke depan. Penulis
 menyatakan ukuran dan volume belum berhasil diterapkan dalam prosedur pemanenan
 dan pengiriman petani, serta masih diperlukan peningkatan akurasi.
-

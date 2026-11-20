@@ -26,4 +26,3 @@ Tahap deteksi memakai YOLO11n-CLL, yaitu YOLO11n yang dimodifikasi dengan tiga p
 YOLO11n-CLL mencapai mAP@0,5 sebesar 87,0% dengan ukuran model 5,0 MB. BoT-SORT memperoleh HOTA 62,4% dan MOTA 68,4%. Pada delapan video uji, penghitungan berbasis wilayah mencapai akurasi rata-rata 92,8%, lebih tinggi 8,8 poin persentase daripada penghitungan garis (84,0%) dan 29,9 poin persentase daripada penjumlahan nomor identitas (62,9%) (Tabel 6, h. 216). Acuannya adalah jumlah buah pada video beranotasi.
 
 Pendahuluan menyebut hasil penulis sebelumnya untuk penghitungan wilayah pada markisa dengan akurasi 87,0% dan hasil AN dkk. dengan pendekatan wilayah ganda sebesar 90,43%. Makalah ini menguji kembali pendekatan wilayah pada empat kondisi kebun yang lebih beragam dan menyatakan bahwa penentuan wilayah hitung lebih dulu membantu menekan penghitungan ganda.
-

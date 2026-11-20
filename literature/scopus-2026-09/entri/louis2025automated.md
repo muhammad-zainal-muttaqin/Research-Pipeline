@@ -66,4 +66,3 @@ ukuran dataset yang kecil (392 citra latih). Penghitung garis dapat melewatkan
 melon yang tertutup saat melintasi garis. Penulis juga mencatat pertanyaan
 penerapan pemrosesan di perangkat, server, atau cloud, serta mengusulkan
 perbaikan pelacakan dan dataset yang lebih besar.
-

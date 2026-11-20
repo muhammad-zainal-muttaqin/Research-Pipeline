@@ -1,0 +1,1603 @@
+Precise Tomato Ripeness Estimation and Yield Prediction using 
+Transformer Based Segmentation-SegLoRA
+Sidharth N Pisharody a, Palmani Duraisamy a,*, Aravind Krishnaswamy Rangarajan b,  
+Rebecca L. Whetton c, Ana Herrero-Langreo d
+a Department of Artificial Intelligence, Amrita School of Artificial Intelligence, Amrita Vishwa Vidyapeetham, Coimbatore, India
+b Department of Bioscience Engineering, Ghent University, Ghent, Belgium
+c Proveye, UCD Research and Innovation, NovaUCD, Stillorgan, Dublin, Ireland
+d UCD School of Biosystems and Food Engineering, University College Dublin, Belfield, Ireland
+A R T I C L E I N F O
+Keywords:
+LoRA
+SegFormer
+Semantic segmentation
+Ripeness estimation
+Yield prediction
+Tomato harvesting
+A B S T R A C T
+Accurate assessment of tomato (Solanum lycopersicum) ripeness is essential for the preservation of quality, 
+meeting market demands and ensuring customer satisfaction. However, one of the key problems is accurately 
+assessing the maturity levels of fruit under varying field conditions. Conventional computer vision models such 
+as convolutional neural networks (CNN) demonstrate uneven performance under varying illumination condi­
+tions, particularly in arable farms. Further, it requires extensive training that involves fine-tuning entire model 
+parameters and lags in global context learning. To address these issues, this work introduces a novel segmen­
+tation framework that integrates the SegFormer architecture with the Low-Rank Adaptation (SegLoRA) module. 
+The proposed model attained significant performance improvement compared to state-of-the-art (SOTA) 
+methods with a mean Intersection over Union (mIoU) of 83.25 %, an F1-score of 90.07 %, a test accuracy of 
+99.19 %, and a balanced accuracy of 93.88 %. Additionally, the computational cost was reduced by 26.98 % 
+compared to existing SegFormer models. Further, the deployment on an edge computing device confirmed the 
+proposed model’s feasibility in real time, with a minimal prediction delay of 0.065 s per frame. Moreover, its 
+incorporation with an approximate yield estimation algorithm enables precise enumeration of harvestable to­
+matoes. These results demonstrate the scalability and efficiency of the SegLoRA, adding to the progress in 
+automated ripeness detection and agricultural automation for selective harvesting operations.
+1. Introduction
+Tomato crop is one of the most important crops worldwide and the 
+produce is one of the integral components of many cuisines 
+(Subramanian, 2016). Millions of people consume tomatoes across the 
+globe due to its rich nutritional benefits and taste. Hence, tomatoes are 
+an important resource in the agricultural and food industries (Ayvaz, 
+2024). Tomatoes are cultivated in arable farmlands as well as green­
+houses. Modern greenhouse farming enables higher productivity 
+compared to traditional open-field farming methods, but the high initial 
+investment, operating costs, limited financial support and lack of tech­
+nical expertise discourage small-hold farmers from adopting greenhouse 
+farming, leading them to opt for arable farming for tomato cultivation 
+(Francis et al., 2020).
+Being a climacteric fruit, ripeness level determines the evolution of 
+quality parameters of tomatoes throughout their shelf life, and thus, 
+their market value. Optimal ripeness ensures the balance of flavour, 
+colour and texture which in turn satisfies the consumer demands and 
+ensures the quality and freshness (Ge et al., 2024). Colour-based 
+detection is the primary approach in estimating the ripeness and is 
+considered the primary maturity index. As per the standard established 
+by the U.S. Department of Agriculture (USDA), there are six stages of 
+ripeness, namely green, breaker, turning, pink, light red, and red (USDA, 
+1991). Tomatoes harvested at the appropriate ripening stage result in 
+higher profitability and failure to harvest at the right maturity level 
+results in reduced quality, market value and in turn reduced profitability 
+(Meng et al., 2024). Therefore, the researchers explored modern agri­
+cultural technologies, including autonomous harvesting systems, which 
+utilize vision systems along with artificial intelligence algorithms to 
+estimate the ripeness of tomatoes and make decisions on harvesting 
+* Corresponding author.
+E-mail address: d_palmani@cb.amrita.edu (P. Duraisamy). 
+Contents lists available at ScienceDirect
+Computers and Electronics in Agriculture
+journal homepage: www.elsevier.com/locate/compag
+https://doi.org/10.1016/j.compag.2025.110172
+Received 23 September 2024; Received in revised form 30 January 2025; Accepted 21 February 2025  
+Computers and Electronics in Agriculture 233 (2025) 110172 
+Available online 3 March 2025 
+0168-1699/© 2025 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+
+(Zhang et al., 2018; Zhou et al., 2023).
+Recently, convolutional neural networks (CNNs) have been widely 
+adopted for various classification tasks. The basic types of problems 
+addressed using CNN include regression, classification, object detection 
+and segmentation (Chatterjee et al., 2022; Girshick et al., 2014; Siva­
+subramanian et al., 2024; Yadav et al., 2022; Younesi et al., 2024). This 
+work, however, narrows its focus to classification, object detection, and 
+segmentation. Classification models like AlexNet, VGG-Net, and ResNet 
+have been used for ripeness detection and plant health monitoring 
+(Halstead et al., 2018; Karthick et al., 2024; Sodjinou et al., 2022). 
+However, their reliance on assigning a single label to the entire image 
+limits their ability to process complex agricultural scenarios with mul­
+tiple objects in varying states or fruits at different ripeness stages. To 
+overcome this limitation, object detection-based architectures such as 
+YOLO variants, Faster R-CNN and DETR models are employed for 
+localizing and classifying multiple objects in an image (Sultana et al., 
+2019). For instance, the RT-DETR model is employed for grained ripe­
+ness detection of tomatoes. The model showcased improved precision 
+and speed addressing challenges such as the detection of small target 
+and sample imbalance (Wang et al., 2024a).
+Despite their effectiveness in improving speed and precision, these 
+models face notable challenges, including difficulty in handling occlu­
+sion, overlapping objects, and achieving finer localization (Gunawan 
+et al., 2023; Trinh & Nguyen, 2023; Z. Wang et al., 2022). Therefore, a 
+pixel-wise prediction is essential for precise detection of the boundary 
+and location of the object of interest. This has been addressed through 
+deep learning-based semantic segmentation approaches, which not only 
+analyse pixel-level information but also learn intricate spatial relation­
+ships between pixels.
+In semantic segmentation, the image is categorized into segments 
+which in turn are used to locate the object of interest and its features 
+(Diwan et al., 2023). For training, a pixel-wise annotation mask is 
+required along with the raw images.
+For instance, the TomatoDIFF model is a diffusion-based semantic 
+segmentation method developed for on-plant tomato segmentation. 
+While the model excels in varying lighting conditions (artificial light and 
+daylight settings) in the greenhouse, it occasionally fails in segmenting 
+tomatoes occluded in dense foliage (Ivanovska et al., 2023). Similarly, 
+SegNet with a VGG19 backbone was employed to estimate the ripeness 
+of tomatoes. Although the model successfully localizes and identifies 
+ripe and unripe tomatoes, it falls short when the tomatoes are partially 
+visible due to occlusions. Mask R-CNN, Deep Lab V3, and UNET are the 
+other common CNN-based segmentation algorithms that are widely 
+explored in the literature (L.-C. Chen et al., 2017; Shinoda et al., 2023; 
+Weng & Zhu, 2021).
+Though CNNs were the predominant approach in implementing se­
+mantic segmentation, it has significant limitations in understanding 
+global context-based information. This is because convolution opera­
+tions rely solely on the kernel dimension, limiting the neighbourhood 
+pixels considered in the input image.
+To mitigate this, transformer-based models have been recently 
+explored (Dosovitskiy et al., 2021; Rong et al., 2023; Strudel et al., 
+2021). Here, the input image is converted to patches for which global 
+attention is given using the self-attention mechanisms (Sajith Variyar 
+et al., 2024; Wen et al., 2023). Additionally, positional embeddings were 
+assigned along with the patches to achieve global attention. Segmenta­
+tion Transformer (SETR), Segmenter, UPerNet, and Swin transformer 
+are some of the models developed for segmentation (Liu et al., 2021; 
+Strudel et al., 2021; Xiao et al., 2018; Zheng et al., 2021).
+However, these models face limitations such as computational in­
+efficiency, dependency on resolution, reduced interpretability due to 
+large parameter sizes, and overfitting. To overcome the drawbacks of 
+these SOTA models, SegFormer architecture has been explored recently. 
+This model is designed to provide a blend of features that includes robust 
+performance, efficiency, flexibility and scalability (Xie et al., 2021). 
+SegFormer improves interpretability by using MLP layers that retain 
+spatial information and local context. This feature facilitates a simpler 
+comprehension of model outcomes and aids in the representation and 
+interpretation of segmentation outcomes. While the model has shown 
+exceptional SOTA performance for standard datasets such as ADE-20K, 
+and Cityscape, it has not been extensively explored in the agricultural 
+domain.
+This work mainly focuses on deploying SegFormer variants (MiT B0 – 
+MiT B5) to efficiently estimate the ripeness of tomatoes using a hybrid 
+dataset which consists of images from the greenhouse and arable farm 
+conditions. The models were able to achieve SOTA performance due to 
+the hierarchical transformer encoder, efficient attention mechanism, 
+and decoupled encoder-decoder architecture. Despite having the 
+increased performance, as the model scales from B0 to B5, the number of 
+parameters significantly increases, leading to higher computational 
+costs for fine-tuning.
+Hence, this work introduced a low-rank adaptation (LoRA) based 
+fine-tuning approach that incorporates two low-rank matrices to the pre- 
+trained SegFormer weights (SegLoRA). This enables task adaptation by 
+training only the two low-rank weights while keeping the SegFormer 
+weights frozen. By strategically freezing the pre-trained SegFormer 
+weights, the model can leverage its existing learned representations 
+while allowing minimal, targeted updates through the low-rank 
+matrices. 
+This 
+approach 
+significantly 
+reduces 
+computational 
+complexity, prevents overfitting, and enables efficient transfer learning 
+by introducing task-specific adaptations without disrupting the foun­
+dational knowledge embedded in the original model’s weights. Further, 
+the proposed SegLoRA variants were deployed on the edge computing 
+device to assess the feasibility in real-time field conditions.
+Additionally, to assess the approximate yield of harvestable to­
+matoes, a mIoU-based tracking algorithm has been implemented for 
+counting the number of tomatoes in the post-prediction stage. The 
+method keeps track of the predicted harvestable tomatoes using the 
+overlap of the segmentation masks in the current and previous frames. 
+This count of the harvestable tomatoes is multiplied by the average 
+weight of a single tomato to predict the approximate yield.
+To the best of our knowledge, this is the first approach that integrates 
+SegFormer along with the LoRA approach for detecting harvestable to­
+matoes and is tested on edge computing devices along with yield 
+estimation.
+The main contributions of this work are: 
+a) Generation of a custom-made tomato dataset that contains Green­
+house and Open Farm Images of Tomatoes (GOFIT) comprising 7151 
+annotated images classified into four categories: green, turning, light 
+red, and red.
+b) Incorporation of Low-Rank Adaptation (LoRA) with a hierarchical 
+transformer architecture to generate the novel SegLoRA architecture, 
+aiming to enhance performance and reduce fine-tuning costs in terms 
+of time and computational resources for tomato ripeness estimation.
+c) Training and validation of the SegLoRA models to perform the 
+ripeness estimation based on the evaluation metrics and compati­
+bility on the edge devices.
+d) Real-time counting of fully ripe tomatoes to estimate yield during 
+ripeness detection.
+The organization of the subsequent sections in this paper are as 
+follows: Section 2 describes the adopted methodology, GOFIT dataset, 
+SegLoRA model architecture, yield estimation algorithm and the 
+training setup. Section 3 provides the experimental results, quantitate, 
+qualitative performance of the proposed model in comparison with 
+SOTA methods, comparison of computational time and evaluation of the 
+model on the edge computing device. Finally, section 4 summarises the 
+contributions of this work and outlines potential future directions.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+2 
+
+2. Materials and methods
+This work proposes a LoRA-based finetuning for the SegFormer ar­
+chitecture to reduce the computational demand in task adaption along 
+with an improvement of the model performance. The workflow of the 
+proposed work and its implementation steps including the estimation of 
+tomato yield is shown in Fig. 1. The work primarily begins with the 
+collection of arable farm tomato images. These images are merged with 
+existing greenhouse data and are annotated. These annotated images are 
+divided randomly into train, validation and test sets in the ratio 7:2:1. 
+Further, augmentation methods were applied to improve the general­
+izability of the model. These augmentations were specifically applied to 
+the training set and utilized as input for training the state-of-the-art 
+models such as UNET, DeepLab V3, SegFormer, and the proposed 
+SegLoRA. Later, to validate the model’s performance, the trained models 
+were evaluated on test set images using a personal computer. Various 
+evaluation metrics were then calculated to quantitatively assess their 
+effectiveness.
+Finally, the best-performing models were deployed on the edge 
+computing device where real-time video of tomato was fed as input. 
+Upon processing, the models generated precise segmentation outputs, 
+which were then overlaid onto the original video stream, enabling real- 
+time visual interpretation of the segmentation results.
+Additionally, a compatibility analysis of the model on the edge 
+computing device was performed. Augmenting this assessment, videos 
+with different frames per second (FPS) are given as the input to the 
+model to evaluate the latency of the prediction. Finally, the yield esti­
+mation is performed by counting the number of harvestable tomatoes. 
+The results of integrating the edge computing device with the developed 
+model are discussed in section 3.4.
+2.1. Dataset
+In this work, a custom dataset GOFIT has been created which in­
+cludes images from both open arable farms and greenhouses. The 
+greenhouse-based images used in this work are taken from the “Real- 
+world Tomato Image Dataset for Deep Learning and Computer Vision 
+Applications Involving Precision Agriculture” which consists of 1750 
+images taken over a period of 1 year for several days (Math 2020). The 
+resolution of the obtained images was 1846 × 4000 pixels acquired with 
+a smartphone camera. In a greenhouse, plants are grown in a controlled 
+environment, where several factors including lighting, nutrition and 
+wind are regulated. However, such conditions do not accurately repre­
+sent the challenges faced in arable farming, where lighting conditions 
+and occlusions vary significantly. Since there is a need for a generalized 
+model that can work for both greenhouses and arable farmlands, an 
+additional 2456 images were collected from arable farmlands (Local 
+field: 10◦52’24.6“N 76◦54’30.9”E) with different lighting conditions 
+that enrich the dataset with real-world variability. The arable farm- 
+based images of the 4080 × 2296-pixel resolution were taken with a 
+smartphone camera. Hence the utilised dataset in our study has 4206 
+images in total.
+To annotate the image based on the different stages of maturity, 
+established standards according to the U.S. Department of Agriculture 
+(USDA) (USDA, 1991) were used as a benchmark. According to their 
+standard, there are six maturity levels (classes) of tomatoes, namely 
+green, breaker, turning, pink, light red, and red. However, since our 
+study is mainly focused on harvestable and non-harvestable tomatoes, 
+the breaker, turning, and pink stages are non-harvestable and combined 
+to form a single intermediate category between green and light red. In 
+the revised standard for our study, a total of four maturity levels (ML-1- 
+ML-4) were used for annotation of the tomatoes in the created dataset. 
+The progression to various maturity levels of tomatoes occurs over 
+distinct durations. The transition from the anthesis (flowering) stage to 
+ML-1 takes 25–30 days. This is followed by 13 to 28 days for tran­
+sitioning from ML-1 to ML-2. Further, it takes 2–6 days to transition from 
+ML-2 to ML-3 and finally, 2–3 days to transition from ML-3 to ML-4. 
+These durations are highly influenced by environmental factors such 
+as temperature and humidity, as well as the specific variety of tomatoes 
+(Y. Chen et al., 2024; Newenhouse, 2010). Hence, the ripening period of 
+a tomato can vary when greenhouses and arable farms are considered, 
+taking an average time of 42–67 days to progress through all maturity 
+levels. Farmers and experts were consulted to categorize the tomatoes to 
+the appropriate maturity level (ML1-ML4) for annotations. The anno­
+tations were performed using the Roboflow online tool. The sample 
+annotated images of the greenhouse and open field are shown in Fig. 2.
+Further, the annotated dataset was divided into training, validation, 
+and test sets, containing 2,945 images, 839 images, and 422 images, 
+respectively. After the dataset was split, augmentations were applied 
+exclusively to the training set. These augmentations were designed to 
+account for varying lighting conditions, camera angles, and motion blur. 
+Specific 
+transformations 
+included 
+90-degree 
+clockwise 
+and 
+Fig. 1. Overall schematic diagram that illustrates the proposed model training and testing on edge computing devices for tomato ripeness classification and 
+yield estimation.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+3 
+
+counterclockwise rotations, brightness alterations of ±15 %, and 
+Gaussian blur with a radius of up to 2.5 pixels. As a result of these 
+augmentations, the training set was expanded to 5,890 images, while the 
+validation and test sets remained unchanged with 839 and 422 images, 
+respectively. Sample output images of the performed augmentations are 
+shown in Fig. 3.
+In addition to the performed augmentation, the complex field con­
+ditions demand the need for sophisticated designs such as SegFormer, 
+which are excellent at managing complex environments while main­
+taining high segmentation accuracy (Xie et al., 2021). This dataset di­
+versity not only enriches the training process but also serves as a critical 
+benchmark for evaluating the effectiveness of SegLoRA in real-world 
+agricultural applications. The discussion on the SegLoRA architecture 
+will follow in the next section.
+2.2. Proposed SegLoRA architecture
+In semantic segmentation, the SegFormer model is a significant 
+milestone since it can capture long-range dependencies in the input 
+images. This serves as a solution for the problems caused by the occlu­
+sions in the dataset. The model has a flexible structure when compared 
+to the traditional CNN models enabling it to adapt to varying input sizes 
+and aspect ratios without many architectural changes. The architecture 
+of the SegFormer model is shown in Fig. 4(a).
+The model mainly has 3 modules namely overlap patch embedding, 
+encoder and decoder. The overlap patch embedding helps in preserving 
+the local continuity of the input image whereas the encoder generates 
+the multilevel features. Finally, the decoder takes multilevel features 
+from different layers and combines global and local attention to provide 
+powerful representations.
+Fig. 2. Illustration of arable farmland images and greenhouse images along with their respective ground truth labels depicting the four maturity levels (ML-1 to 
+ML-4).
+Fig. 3. Illustration of different augmentation methods such as brightness 
+change in the range of + 15 % to −15 %, gaussian blurring and rotation op­
+erations applied on raw images.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+4 
+
+2.2.1. Overlap patch embedding (OPE)
+For the GOFIT image dataset, when the model is fine-tuned, an RGB 
+image of size 512 × 512 × 3 is fed as an input to the OPE module, where 
+it gets converted to overlapping patches of dimension 4 × 4.
+2.2.2. Encoder
+The overlap patches from the OPE module are vectorized and fed as 
+the input to the encoder where the efficient self-attention mechanism of 
+each level of the hierarchical encoder generates the multilevel features. 
+This is performed with the aid of key, query and value vectors of the 
+input sequence. For the multiple levels starting from 1 to 4, the features 
+can be represented as: 
+N1 = 512
+22 × 512
+22 × 31 = 128 × 128 × 31
+N2 = 512
+23 × 512
+23 × 32 = 64 × 64 × 32
+N3 = 512
+24 × 512
+24 × 33 = 32 × 32 × 33
+N4 = 512
+25 × 512
+25 × 34 = 16 × 16 × 34
+⎫
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎬
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎪
+⎭
+(1) 
+From Eq. (1), it can be seen that the feature size reduces as the level 
+goes from 1 to 4. The coarse features of the tomatoes are extracted at the 
+fourth level, whereas the finer features are extracted at the first level. 
+These features are extracted using the efficient self-attention 
+mechanism. Here, the complexity of the traditional attention mecha­
+nism is reduced by the incorporation of the reduction ratio R to the key 
+value of the input sequence, reducing the input sequence length. This is 
+followed by a linear combination operation to ensure that the dimen­
+sionality is the same as that of the input dimensionality. So, a set of 
+weighted vectors is the output of the encoder part of the architecture. 
+This output is given as the input to the Mix-Feed Forward Network 
+module (Mix-FFN).
+2.2.3. Mix-Feed Forward Network (Mix-FFN)
+The linearized vector output of the efficient self-attention module 
+serves as the input to the Mix-FFN module. By using this module, the 
+accuracy drop caused by the difference in testing and training resolu­
+tions in traditional positional encoding is minimized. Here, with the aid 
+of a 3 × 3 convolution operation on the FFN module, the location in­
+formation is introduced. This is shown in Fig. 5(a). By this, a zero- 
+padding effect is introduced, whereby features near the boundaries are 
+extracted. So, for an input xin to the model, the output xout can be rep­
+resented as an Eq. (2). 
+xout = MLP[GELU(Conv3×3{MLP(xin) } ) ] + xin
+(2) 
+Here, primarily the input features are passed through the MLP layer, 
+where a series of transformations and activations are applied. Next, to 
+this output of the MLP layer, a 3 × 3 convolution operation is applied, 
+which refines the features using the spatial information. Further, the 
+gaussian error linear unit (GELU) activation function is applied to ensure 
+Fig. 4. Proposed SegLoRA architecture that combines the SegFormer architecture with the low-rank adaption module.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+5 
+
+the updating of weight for negative inputs. Finally, fine-tuning of the 
+features is further achieved by passing the output of the activation 
+function to the MLP layer, followed by the addition of original input 
+features. Thus, the output of the Mix-FFN module is fed as the 
+input to the decoder.
+2.2.4. Decoder
+The SegFormer model has a lightweight decoder that has only 
+multilayer perceptron layers to reduce the computational complexity as 
+shown in Fig. 6. Its main functions are (a) channel dimension unifica­
+tion, (b) up-sampling and concatenation, followed by (c) feature fusion 
+and mask prediction. The initial MLP layer of the decoder performs the 
+channel unification of the multiscale features with dimension H
+2i+1 × W
+2i+1 ×
+Ci to generate an output of dimension H
+2i+1 ×
+W
+2i+1 × C.
+This output is up-sampled to one-fourth of the original dimension to 
+restore the original spatial resolution of H
+4 × W
+4 × C as shown in Fig. 6. 
+Following this, a combined feature representation of the multiscale 
+features is achieved with the aid of the MLP layer. This helps in the 
+concatenation of information on multiple scales. Finally, another MLP 
+layer is employed to predict the mask, which is performed with the aid of 
+the fused features as input. The prediction mask is of dimension H
+4 ×
+W
+4 × Ncls where Ncls represents the number of classes for which the 
+module is fine-tuned on the GOFIT dataset. But fine-tuning all the pa­
+rameters of the SegFormer model requires substantial computational 
+resources and time, which makes it complex when task adaption is 
+concerned. So, there is a requirement to fine-tune the SegFormer model 
+more efficiently. Since traditional methods of fine-tuning lead to 
+increased depth or inference latency, the LoRA method is adopted.
+2.3. Low-rank adaption −LoRA
+Inspired by the method of updating only specific elements of the 
+weight matrix for the task adaption process, the LoRA method was used 
+to fine-tune the pre-trained models. In this method, rather than adapting 
+all the weights while fine-tuning, only a few changes in the weights are 
+established. Selective updating reduces the computational burden and 
+increases the efficiency. For adapting the SegFormer model to the GOFIT 
+dataset, a pre-trained weight matrix W0 of dimension d × k is consid­
+ered. This weight matrix is pre-trained on the ImageNet-1K dataset. The 
+LoRA method builds upon this by focusing on efficient updates to only 
+the most relevant parameters. So, when it is utilized for the fine-tuning 
+process, it appends an additional weight matrix to the pre-trained 
+weight matrix W0. This is represented by Eq. (3). 
+Wʹ = W0 + ΔW
+(3) 
+Specifically, it decomposes the weight updation matrix ΔW into two 
+low-rank matrices A and B as shown in Eq. (4). 
+ΔW = BA
+(4) 
+In Eq. (4), B has dimension d × r and A has dimension r × k. Here, the 
+value of r is much smaller when compared to d and k. The matrix A is 
+initialized by using random Gaussian initialization, whereas B is 
+initialized to be 0. So, the initial value of the BA matrix is 0. During the 
+training, W0 is kept frozen. The matrices A and B are only updated. For 
+this, the input x is multiplied by the weights W0 and ΔW. This is further 
+scaled up using β
+r. Here, β value helps in controlling the influence of 
+updating the parameters, which is adjusted similarly to the learning rate 
+adjustment while using the Adam optimizer. This way β is set to the first 
+value of the r, after which there are no further adjustments. Thus, by 
+Fig. 5. Application of the LoRA module to the transformer block of the SegLoRA architecture (a) Internal modules of transformer block used in SegLoRA approach (b) 
+Query and value metrics on which LoRA is applied.
+Fig. 
+6. Multi-layer 
+perceptron 
+layer 
+of 
+SegLoRA 
+architecture 
+with 
+feature dimensions.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+6 
+
+performing the scaling operation, when the r value is fixed, the need to 
+scale the hyperparameters is reduced. The proposed method of imple­
+menting LoRA along with the SegFormer architecture is shown in Fig. 4
+(b).
+In the proposed SegLoRA architecture, the SegFormer model is 
+combined with the LoRA module. The model is pre-trained on the 
+ImageNet-1K dataset and the pre-trained weight W0 is frozen, hence the 
+weight is not updated. On the other hand, LoRA weight ΔW = BA are 
+only updated.
+In this work, LoRA is only applied to the query weight WQ and value 
+weight WV of the encoder part of the SegFormer model that forms the 
+SegLoRA model. It facilitates the focus on the important parts of the 
+input, thereby increasing the model performance. This is represented in 
+Fig. 5(b).
+The update of the matrices WQ and WV can be represented as shown 
+in Eq. (5). 
+Wʹ
+Q = WQ + ΔWQ = WQ + BQAQ
+Wʹ
+V = WV + ΔWV = WV + BVAV
+}
+(5) 
+In this work, as the value of r is initialized to be 16, BQ and BV have 
+the dimension d × 16, whereas AQ and AV have the dimension 16 × k 
+respectively. Hence during fine-tuning or task adaption using LoRA, WQ 
+and WV are frozen, while AQ, BQ, AV, and BV are updated. Finally, the 
+input matrix x is multiplied with Wʹ
+Q and Wʹ
+V because of which query 
+matrix Q and the value matrix V can be written as shown in Eq. (6). 
+Q = xWʹ
+Q = x(WQ + ΔWQ ) =xWQ + xBQAQ
+V = xWʹ
+V= x(WV + ΔWV ) = xWV + xBVAV
+}
+(6) 
+Additionally, to control the influence of the low-rank matrices, a 
+scaling factor β
+r is applied to the low-rank updates. As the initialized 
+values of β and r are 32 and 16 for the work (based on the trial-and-error 
+method), the low-rank updates are given by Eq. (7) 
+Wʹ
+Q = WQ + 2BQAQ
+Wʹ
+V = WV + 2BVAV
+}
+(7) 
+Hence the query and the value vectors can be rewritten as shown in 
+Eq. (8). 
+Q = xWʹ
+Q = x(WQ + 2ΔWQ ) =xWQ + 2xBQAQ
+V = xWʹ
+V= x(WV + 2ΔWV ) = xWV + 2xBVAV
+}
+(8) 
+Therefore, from Eq. (8), it can be said that a scaling factor of two 
+ensures the influence of low-rank updates is approximately scaled, 
+enhancing the model’s ability to focus more on the important part of the 
+input, thereby increasing the overall performance.
+Although the segmentation models can recognize and localize the 
+harvestable tomatoes, a quantitative approach is required to estimate 
+the yield along with tracking individual tomatoes can be helpful for 
+farmers to make timely decisions and perform action appropriately. To 
+facilitate the above requirement, a yield estimation algorithm was 
+incorporated based on the prediction output of the model. The subse­
+quent section discusses the developed methodology adapted for the 
+yield estimation algorithm.
+2.4. Estimation of yield and tracking
+Counting and tracking of the tomatoes in the agricultural fields are 
+necessary for various tasks such as estimation of yield, future yield 
+projections, decision on harvesting and determining the fruit quality. 
+Initially, the direct feed from the arable farm is processed by a trained 
+model that predicts the output segmentation mask. The specific colour of 
+the output mask highlights the harvestable tomatoes. To generate 
+bounding boxes around these masks, the maximum and minimum values 
+of the segmentation mask are utilized. Each bounding box is assigned a 
+unique identifier, which enables tracking of individual tomatoes even as 
+frames change. These bounding boxes, along with their identifiers, are 
+displayed on the live feed in real time. The flow chart for the proposed 
+method is shown in Fig. 7.
+The tracking is achieved using the Intersection over Union (IoU) 
+method, which quantifies the overlap between bounding boxes in the 
+current frame and those in previous frames. Each bounding box Boxi in 
+the current frame is compared with the bounding box Boxj from previous 
+frames. 
+xleft = max
+(
+x1i, x1j
+)
+ytop = max
+(
+y1i, y1j
+)
+xright = max
+(
+x2i, x2j
+)
+ybottom = max
+(
+y2i, y2j
+)
+⎫
+⎪
+⎪
+⎪
+⎪
+⎬
+⎪
+⎪
+⎪
+⎪
+⎭
+(9) 
+In Eq. (9), x1i, y1i, x2i, y2i are the x-y coordinates of the top left corner 
+and bottom right corner of box i respectively whereas x1j, y1j, x2j, y2j are 
+the coordinates of the top left corner and bottom right corner of the box 
+j.
+Similarly, xleft and xright are the maximum and minimum x-co­
+ordinates of the top-left and bottom-right corners of the bounding boxes 
+respectively whereas ytop and ybottom are the maximum and minimum y- 
+coordinates of the top-left and bottom-right corners of the bounding 
+Fig. 7. Flow chart of proposed yield estimation algorithm.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+7 
+
+boxes respectively.
+With these values, the intersection area is calculated as follows, 
+Intersection area = max
+(
+0,
+[
+xright −xleft
+] )
+× max
+(
+0,
+[
+ybottom −ytop
+] )
+(10) 
+Next, the area of the individual bounding boxes is computed as given in 
+Eq. (11). Using this the union area is computed. 
+AreaBoxi = (x2i −x1i) × (y2i −y1i)
+AreaBoxj =
+(
+x2j −x1j
+)
+×
+(
+y2j −y1j
+)
+}
+(11) 
+Union Area =
+(
+AreaBoxi −AreaBoxj
+)
+−Intersection area
+(12) 
+Finally, the union area (Eq. 12) and the intersection area (Eq. 10) are 
+used to estimate the IoU which is given by Eq. 13. 
+IoU = Intersection area
+Union Area
+(13) 
+If the IoU between a current bounding box Boxi and a previous 
+bounding Boxj exceeds a specified threshold, Boxi is assigned the same 
+identifier as Boxj. If no sufficient match is found, a new ID is assigned. To 
+manage this tracking over time, the last 60 frames are stored in a deque, 
+allowing for consistent tracking of objects.
+At the end of the post-processing stage, the total number of unique 
+identifiers provides the count of harvestable tomatoes, thus enabling 
+yield estimation. This method leverages the strengths of the SegLoRA 
+model to enable real-time detection and counting of harvestable to­
+matoes. Since the average weight of hybrid tomatoes grown in Indian 
+farmlands (Tomato Hybrid CO 4, TNAU Tomato Hybrid CO 3) ranges 
+from 23 g to 72.5 g (Jindal et al., 2013; KHAN et al., 2022), the 
+approximate yield can be estimated by multiplying the number of fruits 
+per plant by the average fruit weight, providing an approximate yield 
+range within these weight limits that in turn helps in labour allocation. 
+The training setup for implementing the proposed architecture and the 
+yield estimation algorithm is detailed in the following subsection.
+2.5. Training setup
+A personal computer (PC) equipped with an Intel i7 processor, 
+NVIDIA RTX 3060 graphics card with 12 GB of GPU memory and 32 GB 
+of RAM was used for training and testing the model. The experiments 
+were performed using Python 3.11.7 and its associated libraries such as 
+Torch 2.2.0 + cu118, Transformers 4.37.2, Scikit-learn 1.1.3, OpenCV 
+4.9.0, and PEFT 0.11 to facilitate efficient model training.
+A data loader was configured with a batch size of 8 and an input 
+image size of 512 × 512. For better model generalization, the training 
+data loader is configured with an image shuffle option that rearranges 
+the order of images for each training epoch. The ground truth annota­
+tions of four maturity levels ML1–ML4 were used for training the model. 
+The default hyperparameters for SegFormer were selected based on 
+previous studies and modified based on several trials. The learning rate 
+used was 0.0006 and the Adam optimizer was used for updating the 
+parameter.
+The same steps are adopted for initializing the proposed SegLoRA 
+model. In this process, the pre-trained SegFormer model is passed to the 
+Parameter Efficient Fine-Tuning (PEFT) module, where the module- 
+specific hyperparameters are assigned. Specifically, the rank is set to 
+16 and the LoRA scaling factor is set to 32 (decided based on trial).
+The performance of the SegFormer and proposed SegLoRA models 
+are evaluated using metrics which include the mIoU, F1-score, mean 
+precision and mean recall. These metrics are computed with true posi­
+tives (TP), true negatives (TN), false positives (FP) and false negatives 
+(FN) using the following equations. 
+Mean Precision(mP) = 1
+N
+∑
+N
+i=1
+TPi
+TPi + FPi
+(14) 
+Mean Recall(mR) = 1
+N
+∑
+N
+i=1
+TPi
+TPi + FNi
+(15) 
+Mean IoU(mIoU) = 1
+N
+∑
+N
+i=1
+TPi
+TPi + FPi + FNi
+(16) 
+F1 −Score = 2 × mP × mR
+mP + mR
+(17) 
+In the subsequent section, the performance of the models is evalu­
+ated and compared based on the obtained results. Finally, they were 
+deployed on the edge computing device and the results are discussed.
+3. Results
+Model training is performed on the proposed SegLoRA models using 
+the training dataset and the number of trainable parameters of each 
+variant is listed in Table 1. It can be observed that the percentage of total 
+trainable parameters is distinct for each model. This is attributed to the 
+different combinations of the attention head, channel dimension, num­
+ber of layers and the reduction ratio in the SegLoRA architecture.
+The initialized SegLoRA models were trained and validated for 19 
+epochs. Fig. 8(a) and 8(b) show the training and validation accuracy for 
+each epoch while Fig. 9(a) and 9(b) represent the training-validation 
+loss plots. The training and the validation accuracy gradually 
+improved for all the models whereas the training and validation loss 
+gradually decreased. After 19 epochs there was no further improvement 
+in the performance (validation accuracy and loss) suggesting that the 
+model performance improved till 19 epochs.
+Fig. 8(a) and 8(b) reveal that the B4 variant reaches the highest 
+training and validation accuracies followed by B3 and B5 variants at the 
+end of 19 epochs. Conversely, the B0, B1 and B2 variants are exhibiting 
+lower performance due to their lower depth which restricts their ability 
+to extract high-level or more abstract features from the input data.
+The confusion matrix of the B4 variant for the validation set and the 
+test set is shown in Fig. 10(a) and 10(b). From the confusion matrix of 
+the test set, it can be inferred that the classes ML-1, ML-3, and ML-4 
+exhibit high TP values of 0.929, 0.922, and 0.972, respectively, 
+whereas ML-2 shows a comparatively lower TP value of 0.627. A similar 
+trend is observed in the validation set, where the TP values for ML-1, 
+ML-3, and ML-4 are 0.908, 0.856, and 0.968, respectively, while the 
+TP for ML-2 is 0.70. These values indicate that the model predicts classes 
+ML-1, ML-3, and ML-4 with fewer misclassifications, while it makes 
+slightly higher misclassifications for class ML-2. Additionally, it can be 
+observed that in the confusion matrix of the validation set, ML-2 in­
+stances have an FN value of 0.195 due to misclassification with ML-1, 
+while in the test set, the FN value for ML-2 instances misclassified as 
+ML-1 is 0.287.
+Further, to evaluate the performance of models, the segmentation 
+masks were generated for various test images belonging to the green­
+house and arable farm as shown in Fig. 11. The qualitative comparison 
+of the segmentation models such as UNET, DeepLab V3, SegFormer, and 
+Table 1 
+Percentage of trainable parameters of SegLoRA variants.
+S. No.
+Model
+Total Trainable Parameters (%)
+1
+SegLoRA MiT B0
+11.1
+2
+SegLoRA MiT B1
+4.62
+3
+SegLoRA MiT B2
+11.4
+4
+SegLoRA MiT B3
+7.24
+5
+SegLoRA MiT B4
+5.75
+6
+SegLoRA MiT B5
+4.69
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+8 
+
+the proposed SegLoRA clearly shows the differences in segmenting to­
+matoes of different ripeness levels (ML1–ML4). From the predictions, it 
+is evident that the SegLoRA MiT B4 model shows its effectiveness in 
+extracting clear boundary details between different classes. In contrast, 
+the UNET and Deep Lab V3 while performing adequately for the ML-4 
+class, struggle in differentiating the intermediate stages. UNET in 
+particular, encounters challenges with the ML-1 class due to the similar 
+colour patterns between leaves and tomatoes, leading to mis­
+classifications, especially in test images two and three. Additionally, the 
+model also fails to differentiate between ML-2 and ML-3 classes due to 
+subtle colour variations of the two classes as shown in test image three. 
+Similarly, DeepLab V3 also fails to completely detect ML-1 and ML-2 
+classes in test images one, two and three. Additionally, it provides 
+only partial recognition of the ML-2 class in test image four, with poor 
+alignment to the ground truth segmentation. In comparison to UNET and 
+DeepLab V3, the SegFormer model provides an improvement in differ­
+entiating the ML-1 and ML-4 but occasionally misclassifies the ML-2 and 
+ML-3 classes. It also misinterprets some of the leaves (background class) 
+with the ML-1 class due to their colour resemblance as seen in test image 
+three.
+In contrast to this, the proposed SegLoRA model effectively differ­
+entiates the leaves from the ML-1 class despite the colour resemblance 
+and occlusion as seen in test images two and three. Additionally, despite 
+generating partial predictions, the SegLoRA model can independently 
+detect the ML-1 class tomato in test image 2. Thus, the model showcases 
+its effectiveness in handling complex backgrounds with the least 
+misinterpretations. This performance enhancement is attributed to the 
+LoRA-based fine-tuning that enables precise segmentation in real-world 
+scenarios.
+Furthermore, to validate the robustness of the proposed model, 
+quantitative analysis is performed by comparing it with the SegFormer 
+models (MiT B0 - MiT B5) as listed in Table 2. It is observed that all the 
+variants of the proposed SegLoRA models perform better than the Seg­
+Former models, with respect to the evaluation metrics such as mP, mR, 
+mIoU and F1-score. Specifically, the highest metric values are achieved 
+by the SegLoRA MiT B4 model, which shows a 3.91 % increase in mIoU 
+and a 2.51 % increase in F1-score compared to the SegFormer MiT B4 
+model. Further analysis suggests that, among the SegLoRA variants (MiT 
+B0 - MiT B5) the performance is closely clustered with minimal differ­
+ence across the models.
+Notably, despite the limited parameter size of the SegLoRA MiT B1 
+and B2 models, the metrics show that their performance closely aligns 
+with that of the SegLoRA MiT B4 model. The highest change in the 
+performance is observed with respect to the SegFormer counterpart for 
+the B2 model, whereas the B0, B1, B3, B4 and B5 models exhibit rela­
+tively minor improvements, with a 0.5–9 % change in mP, 0.4–4 % in 
+mR, 2–8 % in mIoU, and 2–6 % in the F1-Score.
+Additionally, to validate the effectiveness of the SegLoRA B4 model 
+in addressing class imbalance, balanced accuracy is computed. It is given 
+by the arithmetic mean of specificity and sensitivity as it offers an 
+improved assessment of the model performance. It is observed that the 
+B1, B2, B3 and B4 models are performing almost equally with the B3 
+Fig. 8. Comparison of accuracy plots of SegLoRA models (a) Training accuracy for six SegLoRA variants from B0 to B5 (b) Validation accuracy for six SegLoRA 
+variants from B0 to B5.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+9 
+
+Fig. 9. Comparison of loss plots of SegLoRA models (a) Training loss for six SegLoRA variants from B0 to B5 (b) Validation loss for six SegLoRA variants from B0 
+to B5.
+Fig. 10. Confusion matrix for the best-performing SegLoRA MiT B4 model (a) Confusion matrix for the validation set images (b) Confusion matrix for the test 
+set images.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+10 
+
+model having a slightly higher value of 93.99 %. The high value of 
+balanced accuracy across all the models suggests that the dataset is well- 
+balanced. The models can achieve relatively higher classification per­
+formance across the four maturity levels and are not biased towards any 
+of the maturity levels on which it was trained.
+Overall, it can be noticed that the B2 and B4 models perform closely 
+across all the evaluation metrics as listed in Table 2. However, there is a 
+slight improvement in the metrics of the B4 model when compared to 
+the B2 model. In the context of real-time selective harvesting conditions, 
+it is crucial to consider the overall evaluation metrics, as slight varia­
+tions in the performance can result in significant misclassifications. 
+Hence in such scenarios, the B4 model emerges as a more suitable choice 
+compared to the B2 model. This is particularly relevant in applications 
+such as plant disease segmentation where precise identification of dis­
+ease is critical. Given the potential for the disease to spread to unaffected 
+plants, even a small performance improvement, such as the one 
+observed in the B4 model is significant, making it a more reliable choice.
+Furthermore, to evaluate the computational efficiency, the 
+Fig. 11. Comparative visualization of tomato ripeness segmentation using UNET, DeepLab V3, SegFormer, and proposed SegLoRA models on greenhouse and arable 
+farm test images showcasing different maturity levels (ML-1 to ML-4) in distinct colours.
+Table 2 
+Comparison of state-of-the-art semantic segmentation models with the proposed SegLoRA model on the test set of GOFIT dataset.
+Models
+mP (%)
+mR (%)
+mIoU (%)
+F1-Score (%)
+Balanced Accuracy (%)
+Trainable Parameters (Millions)
+MiT B0
+SegFormer
+88.1324
+84.0232
+77.4382
+85.7690
+91.24
+3.8
+SegLoRA
+88.5318
+86.9631
+79.6503
+87.5697
+92.87
+0.4218
+MiT B1
+SegFormer
+88.8541
+85.2039
+78.7311
+86.8534
+89.80
+13.7
+SegLoRA
+90.7781
+88.1393
+82.0752
+89.2816
+93.43
+0.6329
+MiT B2
+SegFormer
+79.5534
+73.9971
+64.6118
+74.4032
+85.57
+27.5
+SegLoRA
+91.8367
+88.1994
+82.9030
+89.6811
+93.54
+3.135
+MiT B3
+SegFormer
+85.2557
+88.5622
+78.4365
+86.6678
+93.67
+47.3
+SegLoRA
+88.8057
+88.9169
+81.6516
+88.7752
+93.99
+3.4245
+MiT B4
+SegFormer
+90.7616
+85.6549
+80.1266
+87.8627
+92.18
+64.1
+SegLoRA
+91.8402
+88.8375
+83.2592
+90.0711
+93.88
+3.68575
+MiT B5
+SegFormer
+82.9778
+85.5536
+75.5307
+84.0650
+92.07
+84.7
+SegLoRA
+90.2083
+86.9530
+81.0832
+88.3766
+92.98
+3.97243
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+11 
+
+subsequent section discusses the computational time required for each 
+of the models.
+3.1. Comparison of computational time
+The training time of each model is examined and compared which is 
+pictorially represented in Fig. 12. It is observed that the SegLoRA MiT- 
+B0 model having 3.8 M parameters took 259 s per epoch, showing a 
+39.34 % reduction in training time compared to the SegFormer MiT B0. 
+Similarly, the SegLoRA MiT B4 model demonstrates a 26.97 % decrease 
+in training time compared to its SegFormer counterpart. This reduction 
+in training time is consistently observed across all other SegLoRA model 
+variants when compared to their SegFormer counterparts.
+Moreover, it can also be observed that despite SegLoRA MiT-B1 
+having 13.7 million trainable parameters, its training time is 37.95 % 
+less when compared to DeepLab V3 having only 11.82 million trainable 
+parameters. Similarly, SegLoRA MiT B1 requires 27.04 % less training 
+time compared to UNET, which has 6.63 M trainable parameters.
+Overall, when the SegLoRA models are compared with the Seg­
+Former counterparts, the reduction in the training time per epoch lies in 
+the range of 24 % to 41 %. Specifically, the SegLoRA MiT B0 and B1 
+models have a reduced training time in the range of 27 % to 32 % when 
+compared to UNET and 37 % to 42 % when compared to DeepLab V3.
+The observed reduction in training time can be attributed to the 
+integration of a low-rank adaptation module, where the weight 
+decomposition reduces the redundancy in parameter updates thereby 
+reducing the computation complexity. Moreover, it ensures that only the 
+relevant low-rank subspaces of the parameter matrices that contribute 
+most significantly during model learning are updated. Further, the 
+subsequent section discusses the implementation and evaluation of the 
+proposed SegLoRA model on edge computing devices.
+3.2. Implementation of the SegLoRA model in the edge device
+In this work, two variants of widely used edge computing devices 
+(Nvidia Jetson Nano and Xavier NX boards) were utilized to test the 
+compatibility of SegLoRA models. Initially, the SegLoRA models were 
+deployed on the NVIDIA Jetson Nano, equipped with a 128-core NVIDIA 
+Maxwell architecture GPU, a Quad-core ARM Cortex-A57 MP Core 
+processor, and 4 GB of RAM, to assess compatibility for real-time seg­
+mentation tasks.
+The SegLoRA MiT B0 model was tested on field video at 10, 12, 15, 
+and 20 FPS rates. The results indicated that the model was able to 
+process the video at 10 FPS on the board with a prediction latency of 2.3 
+s per frame along with a noticeable degradation in the temporal 
+coherence (stability and smoothness of the segmentation video) of the 
+segmentation preview. The higher prediction latency and the degrada­
+tion in temporal coherence are a result of the model being executed on 
+the lower GPU.
+Next, the B1 model was tested on the device, it also depicted a pre­
+diction latency of 3.34 s per frame along with a considerable degrada­
+tion in the temporal coherence of the segmentation preview. 
+Furthermore, when other models were tested, the CPU cores were 
+exhausted leading to system instability. Additionally, it was also noticed 
+that when B0 and B1 models were tested at higher frame rates, the 
+model exhausted the entire 4 GB of RAM. Larger architectures demand 
+more memory to predict the segmentation masks resulting in system 
+instability when Jetson Nano is considered.
+Hence, further evaluations were conducted on the NVIDIA Jetson 
+Xavier NX board, which is equipped with a 384-core NVIDIA Volta ar­
+chitecture GPU featuring 48 Tensor Cores, a 6-core NVIDIA Carmel Arm 
+v8.2 64-bit CPU and 8 GB of RAM. On this board when the SegLoRA MiT 
+B0 model was deployed, a low prediction latency of 0.065 s per frame 
+was generated for the 10 FPS video. This latency was sufficient to 
+maintain the temporal coherence of the segmentation preview. How­
+ever, as the frame rate increased, the overall processing time for the 
+video also increased due to the higher number of frames being processed 
+per second, even though the latency per frame remained constant at 
+0.065 s. Thus, it shows that the higher frame rate requires processing 
+more frames per second leading to the demand of more memory band­
+width and GPU resources. Additionally, it is observed that the model was 
+able to identify and segment the harvestable tomatoes (in the 14s video), 
+identified by the field expert.
+Further, when other variants of SegLoRA were tested, the B1 and B2 
+models showcased a latency value of 0.067 s per frame and 0.104 s per 
+frame. When B3, B4 and B5 models were tested it showcased a slightly 
+increased latency of 0.206, 0.386 and 0.532 s per frame. This increase in 
+the latency of the models is attributed to the increased number of pa­
+rameters of each of the models. The model compatibility and the latency 
+of each of the models are listed in Table 3 where the ’×’ mark depicts 
+model incompatibility.
+From Table 3, it can be deduced that if the speed of segmentation 
+Fig. 12. Training time comparison of UNET, DeepLab V3, all the versions of SegFormer and the proposed SegLoRA models.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+12 
+
+(latency) is the priority, the B0 and B1 models can be preferred as they 
+have minimal latency. However, these models struggle to achieve better 
+performance compared to B2 and B4 models (refer to Table 2). Hence, if 
+latency is the priority B2 can be deployed and if performance is the 
+priority B4 model can be deployed on the edge device as it has superior 
+performance than all other models. Hence based on the application, a 
+trade-off between speed and performance is to be chosen.
+Fig. 13(a) and 13(b) illustrate the prediction of the B2 and B4 models 
+under arable farming conditions. It is observed that the segmentation 
+mask generated by the B2 model exhibits more misclassifications as 
+depicted by discoloration in the segmentation mask. On the other hand, 
+the B4 model accurately predicts the segmentation mask showcasing the 
+robustness of the B4 model in arable farming conditions when compared 
+to the B2 model.
+Additionally, the bounding box around the predicted segmentation 
+mask along with the class ID is used for counting the ripe tomatoes. For 
+this, it keeps track of the previous frames of the video file and the count 
+is incremented if the new tomato is in the frame. Further, this count is 
+validated with the manual count, where it exactly matches the algorithm 
+count. Moreover, this count value can be extended to approximately 
+predict the yield of the tomatoes by multiplying the total tomato count 
+with the average weight of the tomatoes. This can serve as a useful in­
+dicator for labour allocation in the field.
+4. Discussion
+To understand the overall performance and importance of the pro­
+posed SegLoRA model, the following section discusses the effect of 
+specular reflections and motion blurring on model performance, fol­
+lowed by the comparison of the efficacy of the proposed model with 
+SOTA models.
+4.1. Case study: Effect of specular reflections and motion blurring
+The confusion matrix for the validation and test sets of the proposed 
+model reveals that the TP values for the ML-1, ML-3, and ML-4 stages are 
+relatively high whereas the ML-2 stage exhibits a notably lower TP value 
+(refer to Fig. 10). The higher value of miss-classifications of the ML-2 
+class is attributed to various factors such as overlapping colour char­
+acteristics, false annotations and specular reflection. The minor differ­
+ence in the ripeness levels between the ML-1 and ML-2 classes is 
+attributed to their overlapping colour characteristics. Hence, the expert 
+may have made false annotations, leading to misclassifications in some 
+images as observed in the confusion matrix.
+Additionally, the arable farming conditions introduce specular 
+reflection to all the classes. The glossy skin of tomatoes in arable farms 
+reflects light differently depending on the illumination angle and in­
+tensity. This phenomenon alters the perceived colour of the affected 
+areas by creating bright or pale spots on the surface, which is a char­
+acteristic of specular reflection. However, the impact on ML-3 and ML-4 
+classes is relatively minimal due to the distinct colours of each class.
+In contrast, ML-2 tomatoes exhibit overlapping colour characteristics 
+with the ML-1 class and are more susceptible to specular reflection, as 
+the green surface reflects more light. Consequently, these bright regions 
+mislead the model, causing it to incorrectly interpret the overall colour 
+as being more similar to that of the ML-1 class.
+Fig. 14 provides a comprehensive visualization of the process for 
+detecting specular reflection in test images. Fig. 14(a) represents the raw 
+input Test Images 1 and 2. These images are cropped and converted to 
+their grayscale counterpart, shown in Fig. 14(b) and 14(c). Further, the 
+grey scale image is used to generate the histogram to assess the pixel 
+Table 3 
+Compatibility testing and latency of the best-performing and lightweight 
+SegLoRA models on edge computing devices.
+Edge 
+Device
+Model Compatibility & Latency(seconds/frame)
+Resolution
+B0
+B1
+B2
+B3
+B4
+B5
+Nvidia 
+Jetson 
+Nano
+2.3
+3.3
+×
+×
+×
+×
+512 × 512
+Nvidia 
+Jetson 
+Xavier 
+NX
+0.065
+0.067
+0.104
+0.206
+0.386
+0.532
+512 × 512
+Fig. 13. Comparison of SegLoRA MiT B2 and B4 models for tomato segmentation in arable farming conditions. (a) Mask prediction of SegLoRA MiT B2 model 
+prediction (b) Mask prediction of SegLoRA MiT B4 model prediction.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+13 
+
+intensity distribution as depicted in Fig. 14(e). The histogram provides 
+insight into the presence of high-intensity pixel values, where the X-axis 
+represents pixel intensities (ranging from 0 to 255), and the Y-axis in­
+dicates their frequency in the image. It was observed that pixel in­
+tensities above 230 consistently corresponded to regions of specular 
+reflection (bright or pale regions), while values below this threshold 
+generally fell within the range of diffuse reflection. This threshold was 
+determined through a trial-and-error method across multiple images.
+On analysing the histogram of test image 1, it is observed that the 
+pixel intensities exceeding the value of 230 are relatively small when 
+compared to the rest of the pixel intensity values. These high-intensity 
+pixels, when mapped on the raw input image using a coloured mask, 
+correspond to areas of specular reflection on the tomato surface. This is 
+shown in Fig. 14(d).
+In contrast, when the same analysis was applied to test image 2, it 
+revealed that the values of intensities falling above 230 were not iden­
+tified on the surface of the tomato, indicating the absence of specular 
+reflection on the tomato surface. Thus, the high specular reflection ob­
+scures critical visual information, such as the colour of the tomatoes, 
+posing a challenge for accurate segmentation. Evaluating the perfor­
+mance of the model under these challenging conditions was essential to 
+assess its robustness and generalizability.
+The proposed model was evaluated with images where some to­
+matoes exhibited pixel intensities exceeding 230 in the histogram, while 
+others had lower pixel intensities (<50) as they were occluded by sur­
+rounding foliage. This change in pixel intensity is mainly attributed to 
+the variation in light intensity. Fig. 15(a) depicts the red boxes high­
+lighting areas affected by specular reflection (pixel intensities >230), 
+while the blue boxes indicate regions with reduced pixel intensities.
+On comparing the model prediction with the ground truth in Fig. 15
+(c), it can be observed that the variation in pixel intensities results in 
+higher pixel-level misclassifications, leading to a different morphology 
+in the predicted map, as shown in Fig. 15(b).
+A similar uncertainty in prediction was observed in Fig. 16 when the 
+model was tested with an image where the blurring levels were higher 
+than the augmentation levels. On comparing the ground truth and pre­
+dicted mask in Fig. 16(b) and 16(c), it is observed that there is a larger 
+misclassification in the prediction due to the loss of information due to 
+blurring. This leads to morphological dissimilarity of the predicted mask 
+in Fig. 16(c) when compared to the ground truth in Fig. 16(b).
+From the predicted masks it is evident that the effect of light intensity 
+on the images will affect the output predictions which may lead to the 
+omission of specific fruit instances or segmented regions with a possible 
+misclassification. Also, images captured during movement are likely to 
+exhibit motion blur that may affect the output predictions. Most of the 
+current cameras have incorporated compensation techniques to coun­
+teract this motion blur but are limited to a certain range and movement 
+speed. Hence the effect of the motion blur within the range of the 
+Fig. 14. Identification and comparison of specular reflection in test images: Test image 1 illustrates significant specular reflection, while Test image 2 does not 
+exhibit specular reflection on the tomato surface. (a) Raw test images (b) Grayscale test images (c) Specular reflection regions highlighted on the raw images using a 
+coloured mask, based on pixel intensity thresholds. (d) Histograms of pixel intensity distributions for grayscale images.
+Fig. 15. Illustration of challenging luminance conditions experienced in real-time recording that affects the SegLoRA MiT B4 model prediction (a) Raw image (b) 
+Ground truth (c) Predicted mask.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+14 
+
+specific camera may not be a significant factor when the images are 
+taken in a stationary position. But when these cameras are placed on a 
+moving drone or a ground-based mobile platform, the speed of move­
+ment will be an important factor to be considered.
+Most camera has exposure compensation and auto white balance to 
+minimize the effect of higher intensity of light which will result in a 
+better-quality image. However, if such conditions are deemed important 
+for specific applications, the dataset must be augmented to account for 
+these scenarios during training which will limit the misclassification.
+4.2. Comparison with state-of-the-art models
+To evaluate the performance of the proposed model, eight recently 
+implemented state-of-the-art methods from the literature have been 
+considered for comparison. The dataset characteristics, size, different 
+classes and performance metrics such as average precision, mIoU and 
+F1-Score have been identified for comparison and the same has been 
+listed in Table 4.
+The quantitative comparison shows that, in all evaluation metrics, 
+SegLoRA always outperforms all the SOTA models. This superior per­
+formance can be attributed to SegLoRA’s ability to balance fine-grained 
+feature extraction with global contextual awareness, effectively 
+addressing the shortcomings of existing models in handling complex 
+backgrounds, subtle colour variations, and extreme illumination 
+changes.
+For instance, the NVW YOLOv8 model, using adaptive thresholding 
+with convolution layers, achieves a 5.4 % improvement in average 
+precision compared to its YOLOv8s variant. The method, however, 
+suffers from rapid illumination transitions because of its use of localized 
+pixel intensity estimates.
+Similarly, other SOTA models such as the Convolution transformer, 
+trained on the Rob2Pheno dataset (710 images) and PDSI-RT-DETR 
+(Wang et al., 2024b), trained on 4.5 times more data, underperform 
+against SegLoRA (refer Table 4) which is primarily attributed to the 
+limited local feature extraction and ineffective global context handling. 
+These challenges are addressed by SegLoRA through its efficient-self 
+attention-based segmentation framework and LoRA-based fine-tuning. 
+This optimizes the feature representation for detailed, pixel-level 
+classification.
+This advantage is particularly evident in the segmentation of classes 
+like ML-1 and ML-2. For instance, as depicted in Fig. 11, UNET struggles 
+to accurately segment these classes due to their similarity to the back­
+ground and subtle colour variations. In contrast, SegLoRA segments 
+these classes accurately. Fine-tuning with the LoRA module proved its 
+capacity to extract the fine features and helped in distinguishing the 
+overlapping features of ML-1 and ML-2 classes when compared to SOTA 
+methods such as UNET, DeepLab V3 and SegFormer.
+Hence, the proposed framework shows substantial promise in accu­
+rately segmenting and grading tomatoes according to their maturity 
+levels. Additionally, compared to the existing methods that lack imple­
+mentation on edge computing devices, this work provides a viable 
+approach for real-time and on-site assessment of tomato ripeness. Its 
+scalability offers a distinct advantage, allowing SegLoRA to be adapted 
+effectively for edge computing environments on autonomous selective 
+Fig. 16. Illustration of adverse motion blurring condition experienced in real-time recording that affects the SegLoRA MiT B4 model prediction (a) Raw image (b) 
+Ground truth (c) Predicted mask.
+Table 4 
+Comparison of the state-of-the-art methods of ripeness estimation of tomato with the proposed model.
+S. 
+No.
+Authors
+Algorithm
+Environment
+Classes
+Dataset 
+Size
+Average Precision
+mIoU
+F1 
+Score
+1
+(Shinoda et al., 
+2023)
+Mask R-CNN
+Greenhouse – Laboro
+Fully Ripened, Half Ripened, 
+Green
+442
+ResNet-101 
+(Backbone) – 0.647
+–
+–
+Swin-T(Backbone) – 
+0.745
+–
+–
+2
+(A. Wang et al., 
+2024)
+NVW YOLOv8s
+Greenhouse
+Ripe, Semi Ripe, Unripe
+2165
+0.907
+–
+0.848
+3
+(S. Wang et al., 
+2024)
+PDSI RT-DETR
+Greenhouse
+Unripe, Half Ripe, Over Ripe, 
+Rotton
+3251
+0.868
+–
+0.85
+YOLO v8
+0.854
+–
+0.83
+4
+(Khan et al., 
+2023)
+Convolutional 
+Transformer
+Greenhouse −
+Rob2Pheno
+Green, Half Ripe, Fully Ripe
+710
+0.663
+0.734
+0.846
+5
+(Weng & Zhu, 
+2021)
+UNET
+Greenhouse + Arable 
+Farm (GOFIT)
+ML1-Green, ML2-Turning, ML3- 
+LR, and ML4-Red
+7151
+0.849
+0.760
+0.860
+6
+(L.-C. Chen et al., 
+2017)
+Deep Lab V3
+Greenhouse + Arable 
+Farm (GOFIT)
+ML1-Green, ML2-Turning, ML3- 
+LR, and ML4-Red
+7151
+0.595
+0.334
+0.466
+7
+(Xie et al., 2021)
+SegFormer (MiT B4)
+Greenhouse + Arable 
+Farm (GOFIT)
+ML1-Green, ML2-Turning, ML3- 
+LR, and ML4-Red
+7151
+0.907
+0.801
+0.878
+8
+Proposed
+SegLoRA (MiT B4)
+Greenhouse þ Arable 
+Farm (GOFIT)
+ML1-Green, ML2-Turning, 
+ML3-LR, and ML4-Red
+7151
+0.918
+0.832
+0.901
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+15 
+
+harvesting systems.
+5. Conclusion and future Scope
+This work mainly addresses the ripeness classification challenge in 
+selective harvesting, in particular for tomatoes, using the novel 
+transformer-based segmentation model SegLoRA. The study experi­
+mentally validates that the incorporation of a low-rank adaptation 
+module brings a large boost to segmentation performance using the least 
+amount of computation (26.98 % reduction in computational cost). The 
+proposed model also offers architectural versatility that enables stra­
+tegic implementation choices, by offering ideal efficiency under 
+controlled greenhouse environments and better robustness under chal­
+lenging arable conditions. The results showcase the importance of 
+environmental variables contributing to segmentation efficacy, espe­
+cially regarding specular reflection phenomena and motion-induced 
+blurring.
+The successful deployment of the model on edge computing plat­
+forms, notably the Jetson Xavier NX, validates the framework’s viability 
+for real-time agricultural applications. SegLoRA architecture demon­
+strated its scalability and robustness, and it is a promising solution for 
+precision agriculture applications where accurate ripeness assessment is 
+critical to minimize harvest timing and management of yield.
+While the present work focuses on segmenting the tomatoes to 
+different ripeness levels, future research can look into further 
+improvement of the model’s resilience to extreme environmental vari­
+ations other than specular reflections and blurring, as well as at the 
+possibility of combining multi-modal sensing approaches to increase the 
+segmentation efficacy in arable farming conditions. Further, future 
+exploration includes the integration of polarization-based imaging 
+techniques and adaptive pre-processing methodologies.
+CRediT authorship contribution statement
+Sidharth N Pisharody: Writing – review & editing, Writing – orig­
+inal draft, Visualization, Validation, Software, Resources, Methodology, 
+Investigation, Formal analysis, Data curation, Conceptualization. Pal­
+mani Duraisamy: Writing – review & editing, Validation, Supervision, 
+Resources, Project administration, Investigation, Formal analysis. Ara­
+vind Krishnaswamy Rangarajan: Writing – review & editing, Vali­
+dation, Supervision, Project administration, Investigation, Formal 
+analysis. Rebecca L. Whetton: Writing – review & editing, Validation, 
+Supervision. Ana Herrero-Langreo: Writing – review & editing, Vali­
+dation, Supervision.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared to influence 
+the work reported in this paper.
+Acknowledgements
+This work was funded by the Visvesvaraya PhD Scheme:Phase II, 
+under the Ministry of Electronics and Information Technology, Gov­
+ernment of India.
+Data availability
+Data will be made available on request.
+References
+Ayvaz, M.Ç., 2024. Review of: “Tomatoes Unveiled: A Comprehensive Exploration from 
+Cultivation to Culinary and Nutritional Significance.”. Qeios 1–14. https://doi.org/ 
+10.32388/hl22r1.
+Chatterjee, R.K., Akhtar, M.A.K., Pradhan, D.K., 2022. Classification and Identification of 
+objects in images using CNN. In: In Communications in Computer and Information 
+Science: Vol. 1673 CCIS, pp. 16–26. https://doi.org/10.1007/978-3-031-21385-4_2.
+L.-C. Chen, G. Papandreou, F. Schroff, H. Adam (2017). Rethinking Atrous Convolution for 
+Semantic Image Segmentation. http://arxiv.org/abs/1706.05587.
+Chen, Y., Tang, X., Fei, Z., Giovannoni, J.J., 2024. Fruit ripening and postharvest changes 
+in very early–harvested tomatoes. Horticulture Research 11 (9). https://doi.org/ 
+10.1093/hr/uhae199.
+Diwan, T., Anirudh, G., Tembhurne, J.V., 2023. Object detection using YOLO: challenges, 
+architectural successors, datasets and applications. Multimedia Tools Appl. 82 (6), 
+9243–9275. https://doi.org/10.1007/s11042-022-13644-y.
+A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. 
+Dehghani, M. Minderer, G. Heigold S. Gelly, J. Uszkoreit, N. Houlsby, (2021). AN 
+IMAGE IS WORTH 16X16 WORDS: TRANSFORMERS FOR IMAGE RECOGNITION 
+AT SCALE. ICLR 2021 - 9th International Conference on Learning Representations.
+Francis, O.W., Vincent, O., Violet, K., Lusike, W., 2020. Challenges in greenhouse crop 
+production by smallholder farmers in Kisii County. Kenya. African J. Agri. Research 
+16 (10), 1411–1419. https://doi.org/10.5897/ajar2020.15086.
+Y. Ge, P.J. From, Y. Xiong, (2024). Multi-view gripper internal sensing for the regression 
+of strawberry ripeness using a mini-convolutional neural network for robotic 
+harvesting. Computers and Electronics in Agriculture, 216(November 2023), 108474. 
+https://doi.org/10.1016/j.compag.2023.108474.
+Girshick, R., Donahue, J., Darrell, T., Malik, J., 2014. Rich feature hierarchies for 
+accurate object detection and semantic segmentation. In: Proceedings of the IEEE 
+Computer Society Conference on Computer Vision and Pattern Recognition, pp. 580–587. 
+https://doi.org/10.1109/CVPR.2014.81.
+T.S. Gunawan, M. Kartiwi, H. Mansor, N.M. Yusoff (2023). Palm Fruit Ripeness Detection 
+and Classification Using Various YOLOv8 Models. ICSIMA 2023 - 9th IEEE 
+International Conference on Smart Instrumentation, Measurement and Applications, 
+193–198. https://doi.org/10.1109/ICSIMA59853.2023.10373435.
+Halstead, M., McCool, C., Denman, S., Perez, T., Fookes, C., 2018. Fruit quantity and 
+ripeness estimation using a robotic vision system. 4 3 (4), 2995–3002. https://doi. 
+org/10.1109/LRA.2018.2849514.
+M. Ivanovska, V. Struc, J. Pers,(2023). TomatoDIFF: On-plant Tomato Segmentation with 
+Denoising Diffusion Models. Proceedings of MVA 2023 - 18th International Conference 
+on Machine Vision and Applications, 0250. https://doi.org/10.23919/MVA57639.20 
+23.10215774.
+Jindal, S.K., Cheema, D.S., Singh, N., Jindal, S.K., 2013. Evaluation of indeterminate 
+tomato hybrids for fruit, yield and quality traits under net house and open field 
+conditions. Vegetable Sci. 40 (1), 45–49. https://www.researchgate.net/pu 
+blication/278736972.
+V. Karthick, T. Supriyaa, P.R. Santhosh, S. Dhanasekaran (2024). CNN based plant 
+disease identification using PYNQ FPGA. Systems and Soft Computing, 6(September 
+2023), 200088. https://doi.org/10.1016/j.sasc.2024.200088.
+Khan, A., Hassan, T., Shafay, M., Fahmy, I., Werghi, N., Mudigansalage, S., Hussain, I., 
+2023. Tomato maturity recognition with convolutional transformers. Scientific 
+Reports 13 (1), 1–21. https://doi.org/10.1038/s41598-023-50129-w.
+Khan, F.A., Bhat, H.A., Bhat, S.A., Narayan, S., Mir, S.A.Z., masoodi, K., Malik, A.A., 
+Lone, S.A., Sajad, S., Jan, U., 2022. Evaluation of tomato (Solanum lycopersicum) 
+genotypes for plant growth, fruit yield and quality. The Indian J. Agri. Sci. 92 (4), 
+495–499. https://doi.org/10.56093/ijas.v92i4.123978.
+Liu, Z., Lin, Y., Cao, Y., Hu, H., Wei, Y., Zhang, Z., Lin, S., Guo, B., 2021. Swin 
+transformer: Hierarchical vision transformer using shifted windows. In: Proceedings 
+of the IEEE International Conference on Computer Vision, pp. 9992–10002. https://doi. 
+org/10.1109/ICCV48922.2021.00986.
+M.R. Math, V.D.N. Dharwadkar, (2020). Real-world Tomato Image Dataset for Deep 
+Learning and Computer Vision Applications Involving Precision Agriculture. 1. https:// 
+doi.org/10.17632/9ZYVDGP83M.1.
+Z. Meng, X. Du, J. Xia, Z. Ma, T. Zhang, (2024). Real-time statistical algorithm for cherry 
+tomatoes with different ripeness based on depth information mapping. Computers 
+and Electronics in Agriculture, 220(October 2023), 108900. https://doi.org/10.1016/j 
+.compag.2024.108900.
+Newenhouse, A. C. (2010). Growing Fresh Market Tomatoes. 30. http://learningstore. 
+uwex.edu/.
+Rong, Q., Hu, C., Hu, X., Xu, M., 2023. Picking point recognition for ripe tomatoes using 
+semantic segmentation and morphological processing. Comp. Elec. Agri. 210 
+(March), 107923. https://doi.org/10.1016/j.compag.2023.107923.
+Sajith Variyar, V.V., Sowmya, V., Sivanpillai, R., Brown, G.K., 2024. A multi-branch dual 
+attention segmentation network for epiphyte drone images. Image and Vision Comp. 
+148 (January), 105099. https://doi.org/10.1016/j.imavis.2024.105099.
+Shinoda, R., Kataoka, H., Hara, K., Noguchi, R., 2023. Transformer-based ripeness 
+segmentation for tomatoes. Smart Agricultural Technology 4 (February), 100196. 
+https://doi.org/10.1016/j.atech.2023.100196.
+Sivasubramanian, A., Prashanth, V.R., Sowmya, V., Ravi, V., 2024. Transformer based 
+ensemble deep learning approach for remote sensing natural scene classification. Int. 
+J. Remote Sens. 45 (10), 3289–3309. https://doi.org/10.1080/ 
+01431161.2024.2343141.
+Sodjinou, S.G., Mohammadi, V., Sanda Mahama, A.T., Gouton, P., 2022. A deep semantic 
+segmentation-based algorithm to segment crops and weeds in agronomic color 
+images. Inform. Process. Agri. 9 (3), 355–364. https://doi.org/10.1016/j. 
+inpa.2021.08.003.
+Strudel, R., Garcia, R., Laptev, I., Schmid, C., 2021. Segmenter: transformer for semantic 
+segmentation. In: Proceedings of the IEEE International Conference on Computer Vision, 
+pp. 7242–7252. https://doi.org/10.1109/ICCV48922.2021.00717.
+Subramanian, R., 2016. India Processing Tomato Segment Current Status, Trends and 
+Opportunities for Engagement 16, 28.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+16 
+
+Sultana, F., Sufian, A., Dutta, P., 2019. A review of object detection models based on 
+convolutional neural network. Intelligent computing: Image processing based 
+applications. Adv. Intelligent Sys. Comp. 1157, 1–16.
+Trinh, T.H., Nguyen, H.H.C., 2023. Implementation of YOLOv5 for real-time maturity 
+detection and identification of pineapples. Traitement Du Signal 40 (4), 1445–1455. 
+https://doi.org/10.18280/ts.400413.
+USDA. (1991). United States Standards for Grades of Fresh Tomatoes. United States 
+Department of Agriculture, 1991(January), 1–13. https://www.ams.usda.gov/sites/d 
+efault/files/media/Tomato_Standard%5B1%5D.pdf.
+A. Wang, W. Qian, A. Li, Y. Xu, J. Hu, Y. Xie, L. Zhang, (2024). NVW-YOLOv8s: An 
+improved YOLOv8s network for real-time detection and segmentation of tomato 
+fruits at different ripeness stages. Computers and Electronics in Agriculture, 219 
+(December 2023). https://doi.org/10.1016/j.compag.2024.108833.
+Wang, S., Jiang, H., Yang, J., Ma, X., Chen, J., Li, Z., Tang, X., 2024b. Lightweight tomato 
+ripeness detection algorithm based on the improved RT-DETR. Frontiers in Plant 
+Science 15 (July), 1–19. https://doi.org/10.3389/fpls.2024.1415297.
+Wang, Z., Ling, Y., Wang, X., Meng, D., Nie, L., An, G., Wang, X., 2022. An improved 
+Faster R-CNN model for multi-object tomato maturity detection in complex 
+scenarios. Ecological Informatics 72 (October), 101886. https://doi.org/10.1016/j. 
+ecoinf.2022.101886.
+Wen, Y., Xue, J., Sun, H., Song, Y., Lv, P., Liu, S., Chu, Y., Zhang, T., 2023. High-precision 
+target ranging in complex orchard scenes by utilizing semantic segmentation results 
+and binocular vision. Comp. Elec. Agri. 215 (October), 108440. https://doi.org/ 
+10.1016/j.compag.2023.108440.
+Weng, W., Zhu, X., 2021. UNet: Convolutional networks for biomedical image 
+segmentation. IEEE Access 9, 16591–16603. https://doi.org/10.1109/ 
+ACCESS.2021.3053408.
+Xiao, T., Liu, Y., Zhou, B., Jiang, Y., Sun, J., 2018. Unified perceptual parsing for scene 
+understanding. In: Lecture Notes in Computer Science (Including Subseries Lecture Notes 
+in Artificial Intelligence and Lecture Notes in Bioinformatics). https://doi.org/10.1007/ 
+978-3-030-01228-1_26.
+Xie, E., Wang, W., Yu, Z., Anandkumar, A., Alvarez, J.M., Luo, P., 2021. SegFormer: 
+Simple and Efficient Design for Semantic Segmentation with Transformers. Advances 
+in Neural Information Processing Systems 15, 12077–12090.
+Yadav, P., Menon, N., Ravi, V., Vishvanathan, S., Pham, T.D., 2022. EfficientNet 
+convolutional neural networks-based Android malware detection. Computers and 
+Security 115. https://doi.org/10.1016/j.cose.2022.102622.
+Younesi, A., Ansari, M., Fazli, M., Ejlali, A., Shafique, M., Henkel, J., 2024. 
+A comprehensive survey of convolutions in deep learning: Applications. Challenges, 
+and Future Trends. 1–37. https://doi.org/10.1109/ACCESS.2024.3376441.
+Zhang, L., Jia, J., Gui, G., Hao, X., Gao, W., Wang, M., 2018. Deep learning based 
+improved classification system for designing tomato harvesting robot. IEEE Access 6, 
+67940–67950. https://doi.org/10.1109/ACCESS.2018.2879324.
+Zheng, S., Lu, J., Zhao, H., Zhu, X., Luo, Z., Wang, Y., Fu, Y., Feng, J., Xiang, T., Torr, P. 
+H.S., Zhang, L., 2021. Rethinking semantic segmentation from a sequence-to- 
+sequence perspective with transformers. In: Proceedings of the IEEE Computer Society 
+Conference on Computer Vision and Pattern Recognition, pp. 6877–6886. https://doi. 
+org/10.1109/CVPR46437.2021.00681.
+Zhou, H., Kang, H., Wang, X., Au, W., Wang, M.Y., Chen, C., 2023. Branch Interference 
+sensing and handling by tactile enabled robotic apple harvesting. Agronomy 13 (2), 
+1–16. https://doi.org/10.3390/agronomy13020503.
+S.N. Pisharody et al.                                                                                                                                                                                                                           
+Computers and Electronics in Agriculture 233 (2025) 110172 
+17 

@@ -74,5 +74,3 @@ dan kelopak, mengurangi fitur saat penggabungan. Buah tertutup dan tumpang
 tindih tetap menjadi kategori tersulit. Penulis juga menyatakan hasil antar
 penelitian sulit dibandingkan karena perbedaan dataset dan resolusi citra,
 meski dataset yang digunakan kini dipublikasikan.
-
-

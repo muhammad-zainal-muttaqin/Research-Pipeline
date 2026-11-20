@@ -1,0 +1,1387 @@
+RTMFusion: An enhanced dual-stream architecture algorithm fusing RGB
+and depth features for instance segmentation of tomato organs
+Jiacheng Rong a, Wanli Zheng b, Zhongxian Qi a, Ting Yuan a,*, Pengbo Wang b,*
+a College of Engineering, China Agricultural University, Beijing 100083, China
+b School of Mechanical and Electric Engineering, Jiangsu Provincial Key Laboratory of Advanced Robotics, Soochow University, Suzhou 215123, China
+A R T I C L E I N F O
+Keywords:
+Harvesting robot
+Instance segmentation
+Deep learning
+Multi-modal fusion
+Point cloud segmentation
+A B S T R A C T
+Accurate and rapid acquisition of semantically annotated point clouds from tomato cultivation regions is crucial
+for autonomous tomato harvesting robots. This entails the robot’s ability to perceive tomato point clouds from
+various locations and identify the stems and pedicels connecting the fruits. However, amidst background
+interference from similar stem and pedicel features, the heterogeneous growth postures of tomato clusters and
+the slender and short nature of pedicels pose challenges in semantic point cloud segmentation and matching of
+different tomato fruits, pedicels, and stems. Leveraging the salient feature representation of depth images in fine
+contours and distance dimensions, this paper introduces RTMFusion, a lightweight dual-stream backbone
+instance segmentation model that integrates color images and depth images. A Depth Enhanced Feature Fusion
+module is designed for multi-modal feature fusion. Fruit-bearing organ matching is facilitated by a method based
+on distance constraints and conditional search. Key characteristics are extracted from semantic point clouds, and
+an optimal condition search is conducted on candidates meeting constraint conditions. On the test dataset, our
+model improved the mask mAP by 4.6 % compared to the baseline, achieving 72.1 % with a speed of 17.1 ms.
+Our matching method achieved 99.2 % pedicel matching accuracy and 97.3 % stem matching accuracy on 150
+greenhouse samples. These results demonstrate the effectiveness of accurately identifying and matching tomato
+organs in real-world scenarios, addressing the challenge from complex greenhouse environments. This integrated
+visual system enhances the success rate of visual identification and the precision of cutting position localization
+for tomato harvesting robots.
+1. Introduction
+Tomatoes are a globally cultivated crop. As yields increase, the de-
+mand for manual labor in managing and harvesting crops poses signif-
+icant challenges. This, coupled with rising costs of horticultural
+maintenance and harvest operations, has spurred the development of
+automated systems. These systems are designed to monitor and harvest
+tomatoes with heightened efficiency [1,2]. Recent advancements
+include the deployment and field testing of robotic harvesters, prom-
+ising solutions to these challenges. These robots mechanize harvesting,
+boost productivity, and reduce reliance on manual labor in tomato
+production [3], [4], [5].
+Automated harvesting of crops with pedicels, such as tomato clus-
+ters, is a fundamental yet demanding problem, requiring both accurate
+localization of shearing points as well as grasping pose reasoning based
+solely on sensor input [6]. In the case of a cluster of tomatoes, it is
+composed of soft fruits and pedicels. In the process of harvesting, the
+end-effector is tasked with delicately gripping and cutting off the pedi-
+cels to separate them from the stem without any contact with the fruits
+[7]. However, the heterogeneous growth posture of tomato clusters and
+the random distribution of obstacles pose challenges in accurately
+capturing vital pedicel information. Also, due to similar shape, color,
+and texture features, other tomato clusters and stems in the background
+can also disrupt the robot’s perception system,.
+The recent developments in convolutional neural networks (CNNs)
+have had a significant positive impact on agricultural robotics. The
+utilization of CNNs in this domain has revolutionized the capabilities of
+agricultural robots, enabling them to perform various tasks more effi-
+ciently and accurately [8,9]. One of the most direct applications of CNNs
+in agricultural robotics is to recognize the fruit from the color image.
+* Corresponding authors.
+E-mail addresses: rongjcsz@gmail.com (J. Rong), zhengwanlii@163.com (W. Zheng), qzxcau@cau.edu.cn (Z. Qi), yuanting122@cau.edu.cn (T. Yuan), pbwang@
+suda.edu.cn (P. Wang).
+Contents lists available at ScienceDirect
+Measurement
+journal homepage: www.elsevier.com/locate/measurement
+https://doi.org/10.1016/j.measurement.2024.115484
+Received 13 May 2024; Received in revised form 23 July 2024; Accepted 7 August 2024
+Measurement 239 (2025) 115484 
+Available online 8 August 2024 
+0263-2241/© 2024 Published by Elsevier Ltd. 
+
+Tian et al. [10] proposed an improved YOLOv3 model for detecting
+apples growing at different stages in orchards. Afonso et al. [11] re-
+ported results on the detection of tomatoes using Mask R-CNN, with
+classification between ripe and unripe tomatoes. Wang et al. [12] opti-
+mized the YOLOv5 model for litchi fruit detection and ripeness assess-
+ment in orchards. They employed the lightweight ShuffleNetv2 as the
+new backbone network and incorporated the CBAM attention mecha-
+nism module to refine informative features. In addition to architectural
+improvements and optimizations, the integration of multimodal fusion
+algorithms that incorporate multispectral and depth images as supple-
+mentary inputs can significantly enhance the detection performance of
+the model. Gong et al. [13] presented an improved Mask R-CNN, which
+modifies the dimension of the input data by fusing near-infrared, depth,
+and color images, thereby enhancing the model’s ability to segment
+tomatoes under occlusion and strong lighting conditions. To reduce the
+impact of environmental noise in orchards on fruit detection, Sun et al.
+[14] proposed a noise-tolerant feature fusion network to integrate out-
+door RGB-D information. This model makes full use of the comple-
+mentary multi-modal features and learns object features from multi-
+scale features from color images and fusion modules. In the test exper-
+iments, this multi-modal model could achieve the mAP50 of 95.4 % with
+a speed of 39 FPS. Rong et al. [15] designed an improved YOLOv5 fusing
+RGB images and depth images to reduce background tomato misiden-
+tification in the greenhouse. Test results indicated that the mAP
+improved by 3.2 % compared to native YOLOv5. The aforementioned
+study integrates color images and depth images into a four-channel
+input to compensate for the lack of distance features in color images.
+Although directly integrating at the input stage can improve model
+performance, it has been shown that depth features are not fully utilized
+during the feature extraction phase.
+For tasks involving yield estimation and maturity grading, it may
+suffice for the robot to gather information solely about the fruits.
+However, in the case of fruit harvesting tasks, the visual system neces-
+sitates not only the identification of the fruit but also the subsequent
+segmentation of its fruit-bearing pedicels and stems. Consequently,
+scholars have sought to advance the segmentation and modeling of
+pivotal plant organs, aiming to equip robots with accurate harvesting
+information [16,17]. Zhong et al. [18] introduced a method for calcu-
+lating litchi picking points. The approach utilized the YOLACT model to
+segment litchi fruits and fruit-bearing branches. Then, the angle of the
+main fruit-bearing branch was determined through skeleton extraction
+and least squares fitting. Li et al. [4] proposed a multitask-aware
+network, which performed region detection on fruit bunch, and region
+segmentation on the fruit-bearing pedicel and stem. The aforementioned
+two methods are used to segment plant organs in color images and then
+determine a few critical points, including the picking point, based on
+pixel coordinates. However, these methods heavily rely on the accuracy
+of 2D coordinates. Deviations in the spatial points mapped by these pixel
+coordinates can significantly impact the overall accuracy. In the use of
+consumer-grade RGB-D cameras, such errors are commonly observed,
+especially when it comes to capturing fine details like small fruit-bearing
+pedicels. Even ToF cameras face difficulties in ensuring the accuracy of
+every single point, as certain areas may contain gaps or voids, and
+random errors can occur in object edge points.
+By utilizing a cluster of point clouds for plant organ feature analysis,
+it is possible to mitigate or eliminate the adverse effects caused by a
+small number of erroneous point clouds. Lin et al. [19] employed
+instance segmentation and geometric analysis techniques for the
+reconstruction of guava fruits and branches. Initially, the Mask R-CNN
+model was utilized to detect fruits and branches. The detected objects
+were then transformed into 3D point clouds. Fruit reconstruction
+involved fitting fruit spheres using the RANSAC algorithm, while branch
+reconstruction involved fitting cylindrical segments based on principal
+component analysis. The fruit reconstruction achieved an F1 score of
+0.833, while the branch reconstruction achieved an F1 score of 0.415. Ni
+et al. [20] developed an effective method based on 3D photogrammetry
+and 2D instance segmentation to monitor blueberry clusters. The pro-
+posed method allows for the reconstruction of each blueberry fruit and
+enables differentiation of their ripeness levels. Across all varieties, the
+average counting accuracy achieved a rate of 97.3 %. In these research
+Fig. 1. Complex tomato growth scene perceived by harvesting robots: (a) The color image; (b) The depth image. This study enhances the performance of the instance
+segmentation algorithm through the integration of color and depth imagery. Moreover, we introduce an optimized approach for locating the shearing points by
+searching on a three-dimensional point cloud. This method effectively mitigates the impact of point cloud noise, thereby facilitating a more accurate and stable
+pinpointing of the cutting positions. The principal contributions of this study are twofold: firstly, the development of a dual-stream architecture instance segmen-
+tation model, named RTMFusion, which capitalizes on the integration of RGB and Depth images; secondly, the introduction of an innovative method for matching
+fruit-bearing organs (the pedicel and the stem) based on distance constraints and conditional search.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+2 
+
+studies, the integration of 2D segmentation and 3D point clouds has
+demonstrated enhanced algorithm accuracy and reliability. However,
+these studies only investigated instance segmentation networks for color
+images, without addressing the suppression of erroneous learning of
+background features by deep learning models. As depicted in Fig. 1, the
+environment of tomato growth is complex, with background features
+that have similar colors, textures, and shapes, making them prone to
+confusion with foreground elements and leading to incorrect recognition
+by deep learning models.
+2. Materials and methods
+2.1. Image acquisition and dataset creation
+The image dataset utilized in this study was predominantly acquired
+through close-range observational capture by harvesting robots (refer to
+Fig. 2), complemented by additional handheld camera collections. Data
+acquisition spanned from December 2022 to June 2023 and was con-
+ducted at two primary locations: the Nijiawan Agricultural Site in Suz-
+hou and the Cuihu Agricultural Site in Beijing, China. The Intel
+RealSense L515 camera and the Microsoft Azure Kinect DK camera
+served as the principal imaging equipment, capturing high-definition
+images with a resolution of 1280 × 720 pixels. To ensure consistency
+and optimal image clarity, the distance between the cameras and the
+cherry tomatoes was meticulously controlled to remain within the range
+of 0.32 to 0.4 m. The data collection period was from 9:00 AM to 11:00
+AM and from 3:00 PM to 5:00 PM, considering image data under varying
+lighting conditions.
+As demonstrated in Fig. 3, the acquired images contain a large
+number of non-target regions. To address this issue, we first utilized an
+object detection algorithm to identify and locate clusters of tomatoes.
+Subsequently, the identified regions were scaled and meticulously
+cropped, pertaining to the color images, depth images, and point clouds.
+The cropping method used is described in detail in Algorithm 1. The
+tomato growth postures in the acquired dataset are categorized into four
+types based on the position relationship between the fruit and the fruit-
+bearing stem: forward-facing, backward-facing, left-facing, and right-
+facing, as illustrated in Fig. 4. The processed images were manually
+annotated using the Labelme annotation tool (https://github.com/la
+belmeai/labelme). During the annotation process, annotators precisely
+placed points along the edges of the targets to define closed polygons,
+categorizing the targets into three classes: fruits, pedicels, and stems (see
+Fig. 5).
+Algorithm 1: Tomato image region of interest (ROI) cropping method
+Input:
+(
+xc, yc
+)
+; wb; hb
+Output: PTL; PBR
+1:
+xTL←max(xc −wb, 0)
+2:
+yTL←max
+(
+yc −hb, 0
+)
+3:
+xBR←min(xc + wb, 1279)
+4:
+yBR←min
+(
+yc + 0.7 × hb, 719
+)
+5:
+PTL←(xTL, yTL)
+6:
+PBR←
+(
+xBR, yBR
+)
+2.2. RTMFusion
+2.2.1. Dual-stream architecture for multi-modal fusion
+Compared to traditional convolutional neural network architectures,
+the RGB-D fusion model enhances the learning capacity by leveraging
+the rich, complementary characteristics of information from two sour-
+ces: color images and depth images. This integration has the potential to
+yield robustness and high performance in the model’s output. The cur-
+rent multimodal feature fusion architectures are primarily categorized
+into two types: single-stream and dual-stream structures. As shown in
+Fig. 6(a), the single-stream structure involves concatenating RGB and
+depth images to form a new four-channel or six-channel input image.
+The dual-stream structure consists of two separate convolutional neural
+network branches: one is dedicated to extracting features from RGB
+images, while the other focuses on depth information extraction, with
+the two sets of features being fused at the end of the encoder, as given in
+Fig. 6(b). Compared to the single-stream structure, the dual-stream
+structure initially applies convolution to the depth images, which sup-
+presses noise and prevents the loss of valuable information, thus better
+harnessing the depth features [21–23]. The research presented here
+utilizes an improved dual-stream branch structure that combines the
+advantages of both single-stream and dual-stream approaches, inte-
+grating depth information both early and late in the model to achieve
+stronger complementary characteristics of the features (see Fig. 6(c)).
+In this study, RTMDet (Real-Time Model Detection) [24] was chosen
+as the benchmark for improvements due to its performance as a light-
+weight instance segmentation model on the COCO dataset, achieving
+state-of-the-art (SOTA) performance. RTMDet is a new family from
+YOLO series of models, capable of performing tasks such as object
+detection and instance segmentation, and has achieved state-of-the-art
+(SOTA) results on the COCO dataset. The macro architecture of
+RTMDet is decomposed into the backbone, neck, and head. The back-
+bone network employed is CSPNeXt, a structure that integrates the Cross
+Stage Partial Network (CSP) [25] and the ResNeXt Network [26]. It
+Fig. 2. Close-up image acquisition of a tomato cluster by the RGB-D camera
+installed on the robotic arm.
+Fig. 3. Image cropping of tomato regions of interest.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+3 
+
+Fig. 4. Visualizations of tomato clusters with different growth postures: (a) Forward; (b) Backward; (c) Right; (d) Left.
+Fig. 5. The processed images and the labelling example: (a) The color image; (b) The depth image; (c) The labelling example.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+4 
+
+introduces 5 × 5 large-kernel depth-wise separable convolutions into
+the base modules to increase the network’s depth and effective receptive
+field, enhancing the model’s ability to capture global context. After
+down-sampling by factors of 2, 4, 8, 16, and 32, the network outputs five
+feature map scales, C1, C2, C3, C4, and C5, where Ci stands for the ith
+stage channel dimension. Subsequently, the last three scales of feature
+maps (C3, C4, and C5) are utilized for feature fusion in the Neck module.
+As shown in Fig. 7, in our dual-stream architecture, two CSPNeXt net-
+works are used to extract features from the four-channel RGB-D input
+and the single-channel Depth input, respectively.
+In the architecture of RTMDet, the Path Aggregation Feature Pyra-
+mid Network (PAFPN) is seamlessly integrated subsequent to the
+backbone network. In our case, the dual-stream backbone outputs
+feature information from two modalities. The RGB stream is replete with
+a rich tapestry of color and texture information, offering richer semantic
+details than the Depth stream. Conversely, the Depth stream contributes
+salient features of the foreground and background, accentuating the
+contours and spatial positioning of objects. The inherent disparities
+between these modalities pose significant challenges for effective
+feature fusion. In light of these challenges, this study introduces a novel
+Depth Enhanced Feature Fusion (DEFF) module. This module operates
+Fig. 6. Architectures of different RGB-D fusion models: (a) Single stream
+structure; (b) Dual stream structure; (c) Our fusion model.
+Fig. 7. Dual-stream architecture of RTMFusion.
+Fig. 8. The detailed structure of the proposed DEFF.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+5 
+
+in synergy with the PAFPN module to establish a robust multi-scale
+feature fusion network, thereby enhancing the model’s ability to capi-
+talize on the strengths of each modality for improved segmentation
+performance in agricultural robotics applications. Ultimately, the
+decoder adopts the detection head from RTMDet, which is responsible
+for predicting the bounding boxes and associated categories of objects
+based on the feature maps at each scale. This capability is further
+extended for instance segmentation tasks through the integration of a
+kernel and mask generation head.
+2.2.2. Depth enhanced feature fusion module
+A simple linear fusion approach may fail to fully capitalize on the
+complementary nature of the two types of information at different
+levels, which could lead to information loss or the dominance of one
+type of information over the other. To address this issue, we have
+designed the Depth Enhanced Feature Fusion (DEFF) module to inte-
+grate the information from a dual-stream structure. As illustrated in
+Fig. 8, a DEFF module primarily consists of two sub-modules: the ACC
+and the MCC. The ACC sub-module includes an adaptive average pool-
+ing layer, a 3 × 3 convolutional module, and a 1 × 1 convolutional
+module, focusing on capturing background information or more gener-
+alized features. In contrast, the MCC sub-module, comprising an adap-
+tive max pooling module, a 3 × 3 convolutional module, and a 1 × 1
+convolutional module, is tailored to capture texture and edge features.
+For the multimodal features extracted at a particular scale, the
+output feature maps from RGB-D stream F1 and the output feature maps
+from Depth stream F2 are processed through the ACC and MCC for
+nonlinear transformation and then element-wise added. Subsequently, a
+Sigmoid function is applied for nonlinear activation, mapping the values
+to the interval between 0 and 1. Finally, the fused result is combined
+with the output feature maps from RGB-D stream through a residual
+connection, thereby leveraging the complementary information of RGB
+and Depth to mine useful features from the RGB-D input. The mathe-
+matical representation of this process is formalized as Equation (1).
+F = F1 + F1⋅Sigmoid(ACC(F1) + MCC(F1) + ACC(F2) + MCC(F2) )
+(1)
+2.3. Fruit-bearing organ matching method based on distance constraints
+and conditional search
+Even after cropping images to eliminate the majority of irrelevant
+regions, it is inevitable that multiple clusters of adjacent tomato plant
+organs still appear within the confined field of view, as given in Fig. 9.
+The instance segmentation model partitions each tomato component
+individually, without establishing semantic connections between the
+various tomato organs. Existing methods typically determine the fruit-
+bearing pedicels and stems on two-dimensional images based on pixel
+coordinates or directly utilize models to segment fruits containing
+pedicels. Subsequently, the pedicel pixels are used to fit curve to
+ascertain the shearing points, and finally, they map a pixel coordinate to
+a three-dimensional spatial point (Li et al., 2023, [5]). For slender ob-
+jects like tomato pedicels, the corresponding point cloud generated from
+RGB-D data often contains substantial noise, and the positioning may
+fail due to the noise affecting the mapped individual points. To address
+this issue, we propose a point cloud matching method for tomato plant
+organs that first acquires the peduncle point cloud and then uses the
+point cloud clusters to determine the precise location for cutting the
+peduncle. This method encompasses four distinct steps: (1) We generate
+point cloud clusters corresponding to the fruit, pedicels, and stems from
+2D pixel coordinates of masks produced by RTMFusion; (2) Multiple
+point cloud filters are adopted to eliminate point cloud noise; (3) For
+each tomato fruit, we apply distance constraints to remove portions of
+the pedicels and stems that do not conform to the typical growth pat-
+terns of tomatoes; (4) Within the pool of qualified targets, predefined
+distance conditions are utilized to identify the fruit-bearing pedicel and
+stem.
+2.3.1. Point cloud sampling and filtering method
+In the aligned RGB images and point clouds, semantic point clouds
+are obtained by directly indexing the mask coordinates based on the
+different category masks output by RTMFusion. As illustrated in Fig. 10,
+outlier points invariably appear near the edges of objects, a consequence
+of both the model’s edge segmentation precision and the inherent per-
+formance limitations of RGB-D cameras. Therefore, it is necessary to
+apply filtering processes to the classified point cloud clusters.
+In this study, we initially perform voxel down sampling on the
+classified point cloud clusters to reduce the computational load, setting
+the voxel sizes for fruits, pedicels, and stems at 0.003 m, 0.001 m, and
+0.003 m, respectively. Then, a pass-through filter is employed to remove
+outlier points along the depth direction, with a threshold set at 0.5 m
+Fig. 9. Multiple adjacent tomato plant organs within the field of view.
+Fig. 10. Example of 2D mask mapping to obtain plant organs of cherry to-
+matoes: (a) Fruit; (b) Stem; (c) Pedicel.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+6 
+
+given that the data collection distance from the fruit ranges between
+0.32–0.4 m. Finally, a radius-based outlier filter is utilized to remove
+points that stray from the core point cloud. Given the variability in size
+of different tomato plant components, it is imperative to assign distinct
+radius thresholds and minimum point counts within a given radius for
+the filter. The specific parameters are detailed in Table 1.
+2.3.2. Distance constraint method for fruit-bearing organ matching
+As illustrated in Fig. 9, multiple clusters of tomatoes are observed to
+grow adjacently within the current field of view. Before the correct fruit-
+bearing pedicel and stem can be identified, constraints grounded in
+spatial distance are established using manually extracted key charac-
+teristics, serving to exclude any pedicels or stems which clearly do not
+fulfill the specified conditions. To mitigate computational complexity
+while preserving critical information of the tomato plant’s components,
+geometric feature extraction is performed on the point clouds of the
+fruit, stem, and pedicel, as shown in Fig. 11. Owing to the relatively
+short length of the stems within the field of view and their minimal
+deformation, they can be effectively approximated as straight segments.
+Consequently, a straight line is fitted using the least squares method,
+denoted as L1. The point cloud of the fruit is encapsulated within the
+minimal bounding box by employing the Oriented Bounding Box (OBB)
+algorithm, which allows for the representation of the fruit’s point cloud
+through the eight vertices of a spatial rectangle. The growth direction of
+the fruit, designated as L2, the center of the fruit, Pf, and the rectangular
+plane Ap1p2p3p4 that is connected to the pedicel, as well as the center of
+this plane, P0, are all computed based on the vertices provided by the
+OBB. Lastly, the centroid of the pedicel’s point cloud is calculated,
+represented as Pp.
+Based on the biological characteristics of cherry tomatoes, the
+following constraint conditions for the fruit and the stem are formulated,
+as detailed in Algorithm 2:
+(1) The centroid of the fruit Pf is located at a distance di
+1 less than D1
+from the stem Li
+1.
+(2) The minimal distance di
+2 between the line L2 (the growth direc-
+tion of the fruit) and the line L1 (the growth direction of the stem)
+should be less than D2.
+(3) The theoretical attachment point P0 of the pedicel on the fruit is
+required to maintain a minimum distance di
+3 of less than D3 from
+the stem Li
+1.
+Algorithm 2: Distance constraint-satisfaction method for the fruit-bearing stem
+matching
+Input: Pf; P0; L2; Set1 =
+{
+L1
+1, L2
+1, ⋯, Ln
+1
+}
+Output:Set2
+1:
+for i = 1; i < n; i + + do
+2:
+compute the shortest distance di
+1 from point Pf to line Li
+1
+3:
+compute the shortest distance di
+2 from line L2 to line Li
+1
+4:
+compute the shortest distance di
+3 from point P0 to line Li
+1
+5:
+if di
+1 ≤D1 and di
+2 ≤D2 and di
+3 ≤D3 then
+6:
+add index i to list Set2
+7:
+end if
+8:
+end for
+Additionally, the defined constraint conditions between the fruit and the
+pedicel are as follows, as detailed in Algorithm 3:
+(1) The minimum distance dj
+4 between the centroid of the fruit Pf and
+the centroid of the pedicel Pj
+p should be less than D4.
+(2) The centroid of the pedicel Pj
+p and the plane Ap1p2p3p4 of the OBB
+exhibit a minimum distance dj
+5 less than D5.
+(3) The closest distance dj
+6 between the pedicel point cloud Cj
+p and
+the theoretical attachment point on the fruit P0 is less than D6.
+Algorithm 3: Distance constraint-satisfaction method for the fruit-bearing pedicel
+matching
+Input: Pf; Ap1p2p3p4 ; P0; Set3 =
+{
+P1
+p, P2
+p, ⋯, Pn
+p
+}
+; Set4 =
+{
+C1
+p, C2
+p, ⋯, Cn
+p
+}
+Output:Set5
+1:
+for j = 1; j < n; j + + do
+2:
+compute the shortest distance dj
+4 from point Pf to point Pj
+p
+(continued on next page)
+Table 1
+Filter parameter settings for different point cloud categories.
+voxel down sample
+pass-through filter
+radius filter
+voxel size /m
+depth threshold /m
+radius /m
+point count
+fruit
+0.003
+0.45
+0.01
+6
+stem
+0.003
+0.5
+0.01
+10
+pedicel
+0.001
+0.45
+0.005
+15
+Fig. 11. Extraction of key characteristics from cherry tomato plant organs.
+Fig. 12. Cases of complex environmental disturbances: (a) The pedicel was
+obscured by a fruit; (b) Multiple stems are distributed in close proximity.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+7 
+
+(continued)
+Algorithm 3: Distance constraint-satisfaction method for the fruit-bearing pedicel
+matching
+3:
+compute the shortest distance dj
+5 from plane Ap1p2p3p4 to point Pj
+p
+4:
+compute the shortest distance dj
+6 from point P0 to point cloud Cj
+p
+5:
+if dj
+4 ≤D4 and dj
+5 ≤D5 and dj
+6 ≤D6 then
+6:
+add index j to list Set5
+7:
+end if
+8:
+end for
+2.3.3. Fruit-bearing organ search method based on optimal conditions
+Some invalid solutions that could erroneously match tomato fruits
+within the visual field are eliminated upon solving the constraint-
+satisfaction problem based on distance conditions for the pedicel and
+stem point clouds. However, the dense planting typical in greenhouse
+environments can result in the occurrence of multiple pedicels or stems
+within confined spaces (see Fig. 9 and Fig. 12), all adhering to the dis-
+tance constraints. To tackle this issue, an optimal search methodology
+that utilizes the distances between key characteristics has been
+introduced.
+Given the biological traits associated with tomato growth, wherein
+the fruit is affixed to the fruit-bearing stem via a pedicel, it stands to
+reason that the point cloud cluster representing the fruit would be in
+closest proximity to that of the fruit-bearing pedicel, with the latter’s
+point cloud manifesting at the apex of the fruit. Furthermore, it is
+inevitable that there exists a juncture within the main stem’s point cloud
+where it converges with the peduncle’s point cloud. Building upon this
+biological characteristic, we conduct a search for the unique pedicel and
+stem that belong to the tomato fruit.
+In the initial step, we target the selection of the pedicel matching the
+fruit, leveraging the direct physical linkage between them. The pedicel is
+consistently connected at the upper extremity of the fruit. Therefore, we
+pinpoint the center point P0 on the top plane of the OBB (see Fig. 11),
+hypothesizing it as the pedicel’s theoretical junction point. Subse-
+quently, we calculate the shortest distance di
+7 from this point to all po-
+tential pedicel point clouds. The candidate pedicel with the minimal di
+7
+is then identified as the fruit-bearing pedicel. Next, it is imperative to
+determine the presence of a fruit-bearing pedicel from the first phase. If
+a pedicel is matched, we proceed to compute the shortest distance dj
+8
+from the fruit-bearing pedicel point cloud to each stem point cloud Cj
+s. In
+the event of no peduncle match, we compute the shortest distance dj
+9
+from point P0 to each stem point cloud Cj
+s. The candidate stem with the
+smallest dj
+8 or dj
+9 is then adjudged to be the fruit-bearing stem. The
+comprehensive pseudocode for the aforementioned methodology is
+delineated in Algorithm 4. Ultimately, the shearing point for the tar-
+geted tomato cluster designated for harvesting can be easily identified.
+In our procedure, we directly select the centroid of the fruit-bearing
+pedicel.
+Algorithm 4: Fruit-bearing organ search method based on spatial characteristics
+Input: P0; Set4 =
+{
+C1
+p, C2
+p, ⋯, Cn
+p
+}
+; Set6 =
+{
+C1
+s , C2
+s , ⋯, Cm
+s
+}
+; indexp←None; indexs←None
+Output: indexp; indexs
+1:
+if Set4 ∕=None then
+2:
+dnearest dist←inf
+3:
+for i = 1; i < n; i + + do
+4:
+compute the shortest distance di
+7 from point P0 to point cloud Ci
+p
+5:
+if di
+7 ≤dnearest dist then
+6:
+indexp←i; dnearest dist←di
+7
+7:
+end if
+8:
+end for
+9:
+end if
+10:
+if Set6 ∕=None then
+11:
+dnearest dist←inf
+12:
+if indexp ∕=None then
+13:
+for j = 1; j < m; j + + do
+14:
+compute the shortest distance dj
+8 from point cloud Cindexp
+p
+to point cloud Cj
+s
+(continued on next column)
+(continued)
+Algorithm 4: Fruit-bearing organ search method based on spatial characteristics
+15:
+if di
+8 ≤dnearest dist then
+16:
+indexs←j; dnearest dist←dj
+8
+17:
+end if
+18:
+end for
+19:
+else
+20:
+for j = 1; j < m; j + + do
+21:
+compute the shortest distance dj
+9 from point P0 to point cloud Cj
+s
+22:
+if di
+9 ≤dnearest dist then
+23:
+indexs←j; dnearest dist←dj
+9
+24:
+end if
+25:
+end for
+26:
+end if
+27:
+end if
+3. Experiments and results
+3.1. Evaluation of RTMFusion
+3.1.1. Experimental setup and metrics
+In this study, model training was executed on a cloud server equip-
+ped with an Intel Xeon Platinum 8352V CPU and an NVIDIA GeForce
+RTX 4090 GPU (https://www.autodl.com/). Conversely, the entirety of
+the testing procedures was carried out on a computation platform in-
+tegrated within the harvesting robot itself, which was equipped with an
+AMD Ryzen 5800H CPU, an NVIDIA GeForce RTX 3070 GPU, and an
+Ubuntu 20.04 operating system. The tomato dataset used for instance
+segmentation in our experiment comprises a total of 714 annotated
+samples. The dataset is partitioned into training, validation, and test sets
+at a ratio of 0.7:0.15:0.15, respectively.
+In equations (2) and (3), the symbols p and r represent precision and
+recall, respectively. Here, TP denotes true positive, FP stand for false
+positive, and FN signifies false negative. The metric of Average Precision
+(AP) is employed to evaluate the performance of the model on individual
+categories. It gauges the efficacy of the model by calculating the area
+under the precision-recall curve. A higher AP value indicates better
+segmentation performance by the model for that particular category.
+Mean Average Precision (mAP) represents the average of the AP scores
+across all categories. It is computed by determining the AP for each
+category and then calculating the mean of these AP values. The mAP is
+an indicator of the overall performance of the model, providing a
+comprehensive assessment of the model’s segmentation capabilities
+across all categories [27].
+p =
+TP
+TP + FP
+(2)
+r =
+TP
+TP + FN
+(3)
+AP =
+∫1
+0
+p⋅r⋅dr
+(4)
+mAP = 1
+c
+∑
+c
+i=1
+APi
+(5)
+3.1.2. Ablation studies
+In this section, we aim to ascertain the effectiveness of integrating
+RGB images and Depth images to improve the segmentation accuracy of
+tomato organs. Moreover, we explore the outcomes of multi-modal
+feature fusion using different architectural frameworks. To this end,
+we have examined the effects of three unique fusion configurations and
+have also undertaken an evaluation of our proposed DEFF (Depth
+Enhanced Feature Fusion) multimodal feature fusion module. To
+streamline model improvements and guarantee a fair comparison, we
+have developed RTMFusion on the MMDetection platform and have
+J. Rong et al.
+Measurement 239 (2025) 115484 
+8 
+
+benchmarked it against RTMDet.
+In the training phase, the image input size was set to 640 × 640. The
+data augmentation techniques employed included random scaling (with
+a scale range from 0.6 to 1.4), random cropping, random enhancements
+in the HSV color space, and random flipping with a probability of 0.5.
+The batch size for model training was held constant at 16, with vali-
+dation occurring every two epochs. The base learning rate was initial-
+ized at 0.004, starting with a linear ramp-up as part of the warm-up
+strategy, then proceeding with training based on this rate, and ulti-
+mately implementing a cosine annealing approach to modulate the
+learning rate, as illustrated in Fig. 13(a). For the updating of model
+parameters, the AdamW optimizer was selected, coupled with a weight
+decay coefficient of 0.05. Each model underwent an extensive training
+process lasting for 1,000 epochs. After a thousand iterations, the loss
+functions, along with the segmentation mAP and bounding box mAP for
+RTMDet and RTMFusion across different scales, were observed to
+approach convergence. An initial analysis of their performance on the
+validation set indicates that RTMFusion outperforms RTMDet in terms
+of performance.
+In this study, we have introduced multiple modifications to the
+comprehensive framework of the benchmark model, RTMDet. Initially,
+to capture the performance outcomes of diverse multi-modal feature
+extraction architectures, we rigorously tested three variant multi-modal
+architectures (see Fig. 6). As shown in Table 2, the incorporation of
+depth information through various multi-modal fusion architectures has
+incrementally improved the segmentation and detection capabilities of
+the model (RTMFusion-S). The early fusion approach, or single-stream
+structure, predominantly involves a rudimentary concatenation of two
+distinct image types, transitioning the input from a 3-channel to a 4-
+channel format for the neural network. Compared to the baseline, this
+approach has not significantly increased the model’s parameters or
+computational load. However, the mAP for segmentation has improved
+by a mere 0.3 %. This strategy is suboptimal for segmentation tasks as it
+fails to leverage the effective extraction and utilization of pertinent data
+from depth image. In comparison, the dual-stream architecture yields a
+more substantial performance enhancement, with the mAP for instance
+segmentation and object detection increasing by 2 %, 2.7 % and 1.7 %,
+2.8 %, respectively. Such notable improvements in model performance
+are achieved without adding any new layers or expanding the network
+channels within the original backbone network that processes RGB im-
+ages. This indicates that the performance gains are attributable to the
+Fig. 13. Validation results of the RTMFusion and the RTMDet: (a) Learning rate; (b) Loss; (c) mAP for segmentation results; (d) mAP for detection results.
+Table 2
+The results of the ablation studies between different architectures on RTMFu-
+sion-S.
+Architecture
+Neck
+Params
+(M)↓
+FLOPs(G)
+↓
+Box AP
+(%)↑
+Mask AP
+(%)↑
+RGB
+PAFPN
+10.2
+21.5
+78.6
+67.5
+RGBD
+PAFPN
+10.2
+21.5
+79.1
+68.1
+RGB+D
+PAFPN
+19.1
+31.1
+80.3
+69.5
+RGBD+D
+PAFPN
+19.1
+31.1
+81.4
+70.2
+Table 3
+The results of the ablation study between RTMFusion and RTMDet.
+Model
+Neck
+Params
+(M)↓
+FLOPs(G)
+↓
+Box AP
+(%)↑
+Mask AP
+(%)↑
+RTMDet-T
+PAFPN
+5.6
+11.8
+77.3
+66.9
+RTMDet-S
+PAFPN
+10.2
+21.5
+78.6
+67.5
+RTMFusion-
+T
+PAFPN
+10.6
+16.9
+79.9
+69.4
+RTMFusion-
+S
+PAFPN
+19.1
+31.1
+81.4
+70.2
+RTMFusion-
+T
+DEFF
++PAFPN
+15.7
+14.6
+81.6
+70.1
+RTMFusion-
+S
+DEFF
++PAFPN
+28.3
+26.9
+82.2
+72.1
+J. Rong et al.
+Measurement 239 (2025) 115484 
+9 
+
+backbone network that processes depth images, which effectively capi-
+talizes on the complementary features derived from depth information.
+However, the dual-stream architecture does introduce additional pa-
+rameters and computational overhead. The two backbone networks,
+after feature extraction, engage in a direct concatenation operation on
+the channel level, significantly increasing the computational load.
+To effectively integrate RGB and depth information, capitalizing on
+the shape and spatial characteristics inherent from depth images, we
+have incorporated the designed DEFF module into RTMFusion. This
+module serves a dual purpose: it not only enhances the model’s capa-
+bility to fuse multi-modal features but also reduces the number of
+feature channels inputted into the PAFPN. In Table 3, we present the
+results of ablation studies conducted on the DEFF module, which were
+applied to both RTMFusion-T and RTMFusion-S. Relative to the baseline
+RTMDet, the integration of the DEFF module with the PAFPN structure
+in RTMFusion leads to substantial improvements: Box mAP is enhanced
+by 4.3 % (ours-T) and 3.2 % (ours-S), while Mask mAP is increased by
+3.6 % (ours-T) and 4.6 % (ours-S), respectively. Compared to the PAFPN
+structure, the addition of the DEFF+PAFPN module to the RTMFusion-T
+architecture results in an increase of 1.7 % in Box mAP and 0.7 % in
+Mask mAP. For RTMFusion-S, the gains are 0.8 % in Box mAP and 1.9 %
+in Mask mAP. Despite a growth in parameter count, the DEFF-equipped
+RTMFusion-T and RTMFusion-S models demonstrate a reduction in
+computational complexity, with a decrease in FLOPs (Floating-point
+Operations) of 2.3G and 4.2G, respectively.
+To demonstrate the impact of multi-modal fusion, we compared the
+mask outputs of RTMFusion with RTMDet. Fig. 14 reveals that
+RTMFusion significantly improves the segmentation accuracy for to-
+mato organs. It precisely isolates pedicels from overlapping background
+stems, as shown in Fig. 14(d-1), whereas RTMDet struggles with such
+background interference (see Fig. 14(c-1)). Additionally, RTMFusion
+delineates the contours of clustered tomatoes with greater detail,
+effectively separating fruit from the intervening background space, as
+exemplified in Fig. 14(d-2). Fig. 15 presents the ability of RTMFusion to
+suppress misclassification. Pedicels and stems share similar morpho-
+logical features, leading RTMDet to misclassify reduced-pixel-area stems
+in the background as pedicels. However, the stems in the background
+exhibit distinctive grayscale characteristics in depth images, enabling
+RTMFusion to avoid such misclassifications.
+3.1.3. Comparative studies
+To further demonstrate the superiority of our proposed model, we
+conducted comparative analyses between RTMFusion and state-of-the-
+art algorithms, including Mask R-CNN (ResNet50 + FPN) [28],
+SOLOv2 (ResNet50 + FPN) [29], YOLACT (ResNet50 + FPN) [30], and
+YOLOv5-Seg-S (CSPDarkNet + PAFPN). Each model underwent training
+for 1000 epochs under identical hardware configurations, with all other
+training parameters set to default values. The frameworks utilized for
+these experiments were MMDetection and MMYOLO.
+Table 4 presents the comparative performance results of different
+models. RTMFusion-T and RTMFusion-S exhibit a decrease in instance
+mask segmentation performance, with mAP lower by 4.2 % and 2.2 %,
+respectively, when compared to the classical Mask R-CNN model. This
+performance disparity is attributed to the reduced complexity of our
+models. RTMFusion is a light-weight instance segmentation model, with
+the T and S versions possessing only 35.4 % and 63.8 % of the parameter
+count of Mask R-CNN, while their FLOPs are a mere 10.1 % and 18.7 %
+of that of Mask R-CNN, respectively. In comparison with other real-time
+instance segmentation models such as SOLOv2, YOLACT, and YOLOv5-
+Seg-S, RTMFusion demonstrates competitive performance. Specifically,
+RTMDet falls short by only 3.6 % and 3 % on the Mask AP metric
+compared to SOLOv2, while maintaining an edge over YOLACT and
+YOLOv5-Seg-S, which do not exhibit any superiority in Mask mAP.
+Taking into account both the model size and performance, RTMFusion,
+which integrates RGB and depth information, outperforms others in
+both bounding box and instance mask tasks. Among these lightweight
+models, RTMFusion-S emerges as the leader in performance, and it does
+so with fewer parameters and lower computational complexity (FLOPs)
+Fig. 14. The impact of RTMFusion on the edge segmentation accuracy of tomato plant organs: (a) Original image; (b) Manual annotation; (c) RTMDet-S; (d)
+RTMFusion-S.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+10 
+
+than SOLOv2. The advanced nature of our model is substantiated
+through comparative analysis with other state-of-the-art models, rein-
+forcing the notion that increasing model depth is not the sole avenue for
+enhancing performance in visual tasks. By integrating information from
+multiple sources, such as RGB and depth imagery, we can further
+augment the model’s capabilities in agricultural detection tasks or other
+detection tasks. This approach underscores the potential of multi-modal
+data fusion in improving the efficacy of machine vision systems within
+the domain of precision agriculture.
+3.2. Evaluation of the fruit-bearing organ matching method
+3.2.1. Threshold analysis of various distance constraints
+Prior to searching for fruit-bearing pedicels and stems, we employed
+a distance-constraint method to eliminate candidates that did not align
+with the biological features of fruit-bearing organs, retaining only those
+meeting the distance threshold for key characteristics. In this section, we
+delve into defining threshold values for various distance constraints.
+Firstly, a set of 100 offline samples was chosen for data collection.
+Instance masks output by RTMFusion were manually selected, followed
+by the mapping of category masks to semantic point clouds, along with
+down-sampling and filtering procedures. Subsequently, key character-
+istics were extracted, and distances between these characteristics were
+computed. We measured six geometric distances related to fruit, pedicel,
+and stem, used to determine threshold constraints for inter-organ
+Fig. 15. RTMFusion mitigates the misidentification of pedicels: (a) Original image; (b) Manual annotation; (c) RTMDet-S; (d) RTMFusion-S.
+Table 4
+The results of the comparative studies.
+Model
+Size
+Params
+(M)↓
+FLOPs(G)
+↓
+Box AP
+(%)↑
+Mask AP
+(%)↑
+Mask R-CNN
+640
+44.4
+144.0
+76.3
+74.3
+SOLOv2
+640
+31.2
+57.6
+−
+70.5
+YOLACT
+550
+34.7
+61.6
+52.4
+54.0
+YOLOv5-Seg-
+S
+640
+7.6
+26.4
+79.7
+63.8
+RTMDet-T
+640
+5.6
+11.8
+77.3
+66.9
+RTMDet-S
+640
+10.2
+21.5
+78.6
+67.5
+RTMFusion-T
+640
+15.7
+14.6
+81.6
+70.1
+RTMFusion-S
+640
+28.3
+26.9
+82.2
+72.1
+Fig. 16. Statistical analysis of distance constraints on key characteristics.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+11 
+
+distances in tomatoes. The definition of geometric distances can be
+found in Section 2.3.2. The statistical analysis on key characteristics
+distance constraints across the 100 samples is illustrated in Fig. 16.
+In the Fig. 16, distances between features are depicted using box
+plots, with annotations for the mean, upper quartile, and lower quartile.
+The data points in the figure represent the distance relationships be-
+tween fruit-bearing organs and fruits, indicating an inherent biological
+connection between them. Therefore, the selection of thresholds is
+inevitably greater than these distribution values. The d1 and d2 exhibit
+relatively scattered data distributions, with a significant difference be-
+tween the upper quartile and lower quartile values as well as between
+the upper and lower margins. On the other hand, the data distributions
+of the d3, d4, and d5 are more concentrated. For the d6, the maximum
+value exceeds the upper margin of the box plot. This value calculates the
+characteristics between pedicels and fruits, influenced by segmentation
+accuracy, point cloud errors, and viewing angles, occasionally resulting
+in substantial distance features. Therefore, it is necessary to set a
+threshold with significant redundancy for the d1, d2 and d6. The
+threshold values for different distance constraints are as indicated in
+Table 5, with D1, D2, D3, D4, D5, and D6 being respectively established at
+0.20 mm, 0.12 mm, 0.12 mm, 0.15 mm, 0.08 mm, and 0.06 mm.
+3.2.2. Evaluation results of the fruit-bearing organ matching method
+To validate the effectiveness of the proposed algorithm, we con-
+ducted matching method tests in a greenhouse. We conducted tests with
+our handheld camera device, selecting 150 close-up positions in the
+greenhouse., with each sample undergoing data collection and pro-
+cessing only once. Among these samples, the fruits were all visible, but
+only 137 pedicels and 148 stems corresponding to these 150 fruits were
+visible in the field of view, while the rest were either obstructed or out of
+sight. For the mask results output by RTMFusion, we retain the predicted
+results with a confidence score greater than 0.5. In the test, we computed
+the time costs. The inference time for an image using RTMFusion-S is
+17.1 ms. The down-sampling and filtering of point clouds for fruits,
+stems, and pedicels averaged 51.9 ms, while the fruit-bearing organ
+matching method averaged 2.1 ms.
+As shown in Table 6, all 150 fruits were correctly segmented. Among
+the 137 fruits with visible pedicels, 128 were successfully matched with
+their pedicels. Out of 148 samples with visible stems, 142 stems were
+accurately matched with their pedicels. The proposed RTMFusion
+Table 5
+The threshold values of various distance constraints.
+D1
+D2
+D3
+D4
+D5
+D6
+Threshold
+0.20
+0.12
+0.12
+0.15
+0.08
+0.06
+Table 6
+The results of the fruit-bearing organ matching.
+Pedicel
+Stem
+Samples
+150
+150
+Visible samples
+137
+148
+Correct recognition
+129
+143
+Incorrect recognition
+0
+3
+Missing recognition
+8
+2
+Correct matches
+128
+142
+Incorrect matches
+1
+4
+Fig. 17. Visualization results of tomato organ point cloud matching under complex background interference: (a) Color images; (b) Matching results.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+12 
+
+recognized 129 pedicel targets and 143 stem targets accurately, with
+zero false recognitions for pedicels and three for stems. It missed
+recognizing eight pedicel targets and two stem targets. The recognition
+rate was 94.2 % for pedicels and 96.6 % for stems. With the premise of
+correctly identifying fruit pedicel masks and stem masks using
+RTMFusion, the pedicel matching accuracy was 99.2 %, and the stem
+matching accuracy was 97.3 %. As shown in Fig. 17, even in the pres-
+ence of multiple interfering tomato organs nearby, our algorithm could
+identify the pedicels and stems of the fruits in complex environments.
+We analyzed the reasons for matching failures. Among the 9 failed
+pedicel matches, 8 were due to the pedicels not being recognized by
+RTMFusion (see Fig. 18(a)), and 1 pedicel was not matched successfully.
+For the 6 failed stem matches, 3 stems were incorrect recognized where
+RTMFusion grouped multiple stems into one instance (see Fig. 18(b)),
+and 2 stems were not recognized by RTMFusion. Lastly, there was a case
+where a pedicel was too long, the fruit-bearing stem was not visible in
+the field of view, and another stem that met the constraint conditions
+appeared in the field of view, leading to an erroneous stem match, as
+given in Fig. 18(c).
+Accuracy =
+Ncorrect matches
+Nvisible samples −Nunrecognized
+(6)
+4. Discussion
+This work introduces the extraction of object contours and distance
+features using depth images to complement the distance perception
+limitations of RGB features. By designing a multi-modal feature
+extraction network for feature fusion and channel parameter reduction,
+these enhancements can improve the segmentation capabilities of to-
+mato organs. Compared to RTMDet, RTMFusion demonstrates an in-
+crease of 3.6 % (RTMFusion-T) and 4.6 % (RTMFusion-S) in mAP for the
+instance segmentation task, showcasing the effectiveness of RGB and
+depth fusion. However, there are instances in this study where pedicels
+are not recognized, leading to unmatched pedicels. The findings pre-
+sented in this study are preliminary, and the proposed methods for
+multi-modal feature extraction and fusion may not be optimal. It is
+essential to focus more on the feature extraction capabilities of multi-
+modal fusion networks and further explore methods for integrating
+point clouds and images to enhance segmentation accuracy, especially
+when multiple stems are in close proximity. Additionally, our dataset is
+relatively small, comprising only 714 images, whereas large datasets
+like COCO contain hundreds of thousands of samples. Therefore,
+expanding the dataset while considering variations in lighting condi-
+tions and different camera angles is necessary. However, annotating
+segmentation masks is a labor-intensive process, and even with a suffi-
+cient number of images, annotation remains challenging. In the future,
+semi-supervised methods could be employed to improve model perfor-
+mance or advanced algorithms such as SAM could be utilized for auto-
+matic object differentiation and image pre-labeling.
+The segmentation of plant organs, such as tomatoes, represents a
+critical task poised to seamlessly integrate with the future vision systems
+of harvesting robots. This integration has the potential to revolutionize
+the field by providing a framework for the precise identification of fruit-
+bearing pedicels, thereby paving the way for further exploration into 3D
+reconstruction
+and
+optimal
+viewpoint
+planning
+techniques.
+Our
+research signifies a paradigm shift in the approach to segmenting
+essential tomato organs. By transitioning from a 2D framework to a 3D
+methodology,
+we
+transcend
+the
+constraints
+inherent
+in
+a
+two-
+dimensional perspective. This transition enables the generation of
+segmented local point cloud scenes, which in turn has the potential to
+transform fruit harvesting localization, particularly in scenarios marked
+by occlusion challenges. In the future, we plan to develop a multi-
+camera point cloud fusion framework to provide a more comprehen-
+sive semantic point cloud of cherry tomatoes or other fruits. By inte-
+grating comprehensive visual information from the harvesting area to
+obtain the positional information of occluded tomatoes or other fruits,
+we aim to achieve collision-free and precise operation of robotic arms
+Fig. 18. Visualization and causal analysis of failed cases in matching searches: (a) Undetected a pedicel; (b) Incorrect stem recognition; (c) An incorrect match.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+13 
+
+through motion planning [31] and accurate positioning [32].
+5. Conclusion
+This paper introduces a method for three-dimensional semantic point
+cloud acquisition and matching of tomato organs. Due to the suscepti-
+bility of tomatoes in the current ridges to interference from similar
+features in the background, a lightweight dual-stream backbone
+instance segmentation model, named RTMFusion, is proposed by inte-
+grating RGB images and depth images. A Depth Enhanced Feature
+Fusion (DEFF) module is designed to fully exploit the complementary
+nature of the two different modal features and reduce the number of
+channels after fusion. On the test dataset, compared to RTMDet,
+RTMFusion achieves a 3.6 % (RTMFusion-T) and 4.6 % (RTMFusion-S)
+increase in mask mAP. To obtain three-dimensional semantic point
+clouds of fruit-bearing pedicels and stems, a fruit-bearing organ
+matching method based on distance constraints and conditional search
+is proposed. This method involves filtering point cloud clusters, applying
+distance constraints to the filtered clusters, and performing conditional
+optimal search. In on-site testing experiments, the proposed visual
+pipeline was tested in 150 different scenarios, achieving a pedicel
+matching accuracy of 99.2 % and a stem matching accuracy of 97.3 %.
+These experiments demonstrate the effectiveness of the developed
+method in accurately identifying and matching tomato plants in various
+real-world scenarios. In autonomous tomato harvesting tasks, this
+method equips the robots with advanced three-dimensional visual
+perception capabilities, enabling them to deliver real-time and precise
+information on pedicel shearing.
+Building upon existing work, our future endeavors will concentrate
+on enhancing the efficiency of data annotation by integrating methods
+such as Segment Anything Model (SAM). Furthermore, we intend to
+explore multi-angle visual inputs to advance Simultaneous Localization
+and Mapping (SLAM) techniques tailored specifically for tomato organs,
+further refining the robots’ environmental understanding and naviga-
+tional capabilities.
+CRediT authorship contribution statement
+Jiacheng Rong: Writing – original draft, Software, Methodology,
+Investigation, Funding acquisition, Conceptualization. Wanli Zheng:
+Validation, Investigation, Data curation. Zhongxian Qi: Validation,
+Investigation, Data curation. Ting Yuan: Writing – review & editing,
+Supervision, Resources, Methodology, Funding acquisition, Conceptu-
+alization. Pengbo Wang: Writing – review & editing, Supervision, Re-
+sources, Funding acquisition, Conceptualization.
+Declaration of competing interest
+The authors declare that they have no known competing financial
+interests or personal relationships that could have appeared to influence
+the work reported in this paper.
+Data availability
+Data will be made available on request.
+Acknowledgments
+This work received funding support from Science and Technology
+Program of Suzhou (SNG2022055) and National Key Research and
+Development Program of China (2017YFD0701502).
+The greenhouses were provided by Nijiawan Agricultural Site in
+Xiangcheng District, Suzhou, China, and Cuihu Agricultural Site in
+Haidian District, Beijing, China. Jiacheng Rong collected the dataset,
+proposed the algorithm, performed the experiments, analyzed the re-
+sults, and wrote the first draft. Jiacheng Rong, Wanli Zheng, and
+Zhongxian Qi labeled images and assisted in conducting experiments.
+Ting Yuan and Pengbo Wang guided the research work and helped to
+revise the paper.
+Appendix A. Supplementary data
+Supplementary data to this article can be found online at https://doi.
+org/10.1016/j.measurement.2024.115484.
+References
+[1] C.W. Bac, E.J. van Henten, J. Hemming, Y. Edan, Harvesting robots for high-value
+crops: state-of-the-art review and challenges ahead, J. Field Rob. 31 (2014)
+888–911, https://doi.org/10.1002/rob.21525.
+[2] M.H. Saleem, J. Potgieter, K.M. Arif, Automation in Agriculture by Machine and
+Deep Learning Techniques: A Review of Recent Developments, Precision Agric 22
+(2021) 2053–2091, https://doi.org/10.1007/s11119-021-09806-x.
+[3] B. Arad, J. Balendonck, R. Barth, O. Ben-Shahar, Y. Edan, T. Hellstr¨om,
+J. Hemming, P. Kurtser, O. Ringdahl, T. Tielen, B. van Tuijl, Development of a
+sweet pepper harvesting robot, J. Field Rob. 37 (2020) 1027–1039, https://doi.
+org/10.1002/rob.21937.
+[4] Y. Li, Q. Feng, C. Liu, Z. Xiong, Y. Sun, F. Xie, T. Li, C. Zhao, MTA-YOLACT:
+Multitask-aware network on fruit bunch identification for cherry tomato robotic
+harvesting, Eur. J. Agron. 146 (2023) 126812, https://doi.org/10.1016/j.
+eja.2023.126812.
+[5] J. Rong, G. Dai, P. Wang, A peduncle detection method of tomato for autonomous
+harvesting, Complex Intell. Syst. 8 (2022) 2955–2969, https://doi.org/10.1007/
+s40747-021-00522-7.
+[6] Y. Li, S. Wu, L. He, J. Tong, R. Zhao, J. Jia, J. Chen, C. Wu, Development and field
+evaluation of a robotic harvesting system for plucking high-quality tea, Comput.
+Electron. Agric. 206 (2023) 107659, https://doi.org/10.1016/j.
+compag.2023.107659.
+[7] G. Lin, L. Zhu, J. Li, X. Zou, Y. Tang, Collision-free path planning for a guava-
+harvesting robot based on recurrent deep reinforcement learning, Comput.
+Electron. Agric. 188 (2021) 106350, https://doi.org/10.1016/j.
+compag.2021.106350.
+[8] Y. Li, Q. Feng, T. Li, F. Xie, C. Liu, Z. Xiong, Advance of target visual information
+acquisition technology for fresh fruit robotic harvesting: a review, Agronomy 12
+(2022) 1336.
+[9] B. Zhang, Y. Xie, J. Zhou, K. Wang, Z. Zhang, State-of-the-art robotic grippers,
+grasping and control strategies, as well as their applications in agricultural robots:
+A review, Comput. Electron. Agric. 177 (2020) 105694, https://doi.org/10.1016/j.
+compag.2020.105694.
+[10] Y. Tian, G. Yang, Z. Wang, H. Wang, E. Li, Z. Liang, Apple detection during
+different growth stages in orchards using the improved YOLO-V3 model, Comput.
+Electron. Agric. 157 (2019) 417–426, https://doi.org/10.1016/j.
+compag.2019.01.012.
+[11] M. Afonso, H. Fonteijn, F.S. Fiorentin, D. Lensink, M. Mooij, N. Faber, G. Polder,
+R. Wehrens, Tomato fruit detection and counting in greenhouses using deep
+learning, Front. Plant Sci. 11 (2020) 571299.
+[12] L. Wang, Y. Zhao, Z. Xiong, S. Wang, Y. Li, Y. Lan, Fast and precise detection of
+litchi fruits for yield estimation based on the improved YOLOv5 model, Front. Plant
+Sci. 13 (2022) 965425.
+[13] L. Gong, W. Wang, T. Wang, C. Liu, Robotic harvesting of the occluded fruits with a
+precise shape and position reconstruction approach, J. Field Rob. 39 (2022) 69–84.
+[14] Q. Sun, X. Chai, Z. Zeng, G. Zhou, T. Sun, Noise-tolerant RGB-D feature fusion
+network for outdoor fruit detection, Comput. Electron. Agric. 198 (2022) 107034,
+https://doi.org/10.1016/j.compag.2022.107034.
+[15] J. Rong, H. Zhou, F. Zhang, T. Yuan, P. Wang, Tomato cluster detection and
+counting using improved YOLOv5 based on RGB-D fusion, Comput. Electron. Agric.
+207 (2023) 107741, https://doi.org/10.1016/j.compag.2023.107741.
+[16] Q. Feng, W. Zou, P. Fan, C. Zhang, X. Wang, Design and test of robotic harvesting
+system for cherry tomato, Int. J. Agric. Biol. Eng. 11 (2018) 96–100.
+[17] J. Gen´e-Mola, R. Sanz-Cortiella, J.R. Rosell-Polo, J.-R. Morros, J. Ruiz-Hidalgo,
+V. Vilaplana, E. Gregorio, Fruit detection and 3D location using instance
+segmentation neural networks and structure-from-motion photogrammetry,
+Comput. Electron. Agric. 169 (2020) 105165, https://doi.org/10.1016/j.
+compag.2019.105165.
+[18] Z. Zhong, J. Xiong, Z. Zheng, B. Liu, S. Liao, Z. Huo, Z. Yang, A method for litchi
+picking points calculation in natural environment based on main fruit bearing
+branch detection, Comput. Electron. Agric. 189 (2021) 106398, https://doi.org/
+10.1016/j.compag.2021.106398.
+[19] G. Lin, Y. Tang, X. Zou, C. Wang, Three-dimensional reconstruction of guava fruits
+and branches using instance segmentation and geometry analysis, Comput.
+Electron. Agric. 184 (2021) 106107, https://doi.org/10.1016/j.
+compag.2021.106107.
+[20] X. Ni, C. Li, H. Jiang, F. Takeda, Three-dimensional photogrammetry with deep
+learning instance segmentation to extract berry fruit harvestability traits, ISPRS J.
+Photogramm. Remote Sens. 171 (2021) 297–309.
+[21] Z. Liu, J. Cheng, L. Liu, Z. Ren, Q. Zhang, C. Song, Dual-stream cross-modality
+fusion transformer for RGB-D action recognition, Knowl.-Based Syst. 255 (2022)
+109741.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+14 
+
+[22] M. Wang, L. Hu, Y. Bai, X. Yao, J. Hu, S. Zhang, AMNet: a new RGB-D instance
+segmentation network based on attention and multi-modality, Vis. Comput. 40
+(2024) 1311–1325.
+[23] W. Zhou, J. Yuan, J. Lei, T. Luo, TSNet: Three-stream self-attention network for
+RGB-D indoor semantic segmentation, IEEE Intell. Syst. 36 (2020) 73–78.
+[24] C. Lyu, W. Zhang, H. Huang, Y. Zhou, Y. Wang, Y. Liu, S. Zhang, K. Chen, Rtmdet:
+An empirical study of designing real-time object detectors, 2022. arXiv preprint
+arXiv:2212.07784.
+[25] C.-Y. Wang, H.-Y.-M. Liao, Y.-H. Wu, P.-Y. Chen, J.-W. Hsieh, I.-H. Yeh, CSPNet: A
+new backbone that can enhance learning capability of CNN, in: Presented at the
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition Workshops, 2020, pp. 390–391.
+[26] T. Zhou, Y. Zhao, J. Wu, Resnext and res2net structures for speaker verification, in:
+Presented at the 2021 IEEE Spoken Language Technology Workshop (SLT), IEEE,
+2021, pp. 301–307.
+[27] L. Zheng, L. Shen, L. Tian, S. Wang, J. Wang, Q. Tian, Scalable person re-
+identification: A benchmark, in: Presented at the Proceedings of the IEEE
+International Conference on Computer Vision, 2015, pp. 1116–1124.
+[28] K. He, G. Gkioxari, P. Dollar, R. Girshick, Mask R-CNN, in: Presented at the
+Proceedings of the IEEE International Conference on Computer Vision, 2017,
+pp. 2961–2969.
+[29] X. Wang, R. Zhang, T. Kong, L. Li, C. Shen, SOLOv2: Dynamic and fast instance
+segmentation, in: H. Larochelle, M. Ranzato, R. Hadsell, M.F. Balcan, H. Lin (Eds.),
+Advances in Neural Information Processing Systems, Curran Associates, Inc., 2020,
+pp. 17721–17732.
+[30] D. Bolya, C. Zhou, F. Xiao, Y.J. Lee, YOLACT: Real-Time Instance Segmentation, in:
+Presented at the Proceedings of the IEEE/CVF International Conference on
+Computer Vision, 2019, pp. 9157–9166.
+[31] Q. Zhang, F. Liu, B. Li, A heuristic tomato-bunch harvest manipulator path
+planning method based on a 3D-CNN-based position posture map and rapidly-
+exploring random tree, Comput. Electron. Agric. 213 (2023) 108183, https://doi.
+org/10.1016/j.compag.2023.108183.
+[32] C. Yang, W. Lu, Y. Xia, Positioning accuracy analysis of industrial robots based on
+non-probabilistic time-dependent reliability, IEEE Trans. Reliab. 73 (2024)
+608–621, https://doi.org/10.1109/TR.2023.3292089.
+J. Rong et al.
+Measurement 239 (2025) 115484 
+15 

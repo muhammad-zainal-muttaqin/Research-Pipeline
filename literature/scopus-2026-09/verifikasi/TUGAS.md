@@ -42,6 +42,29 @@ Anda.
   Silwal 2015, Dohi, dan Ripa kembali ke daftar
   [pdf_belum_ada.csv](../unduhan/pdf_belum_ada.csv).
 
+- [ ] **4.6 Keputusan teks lengkap untuk 325 PDF baru (20 November 2026)
+  belum disetujui.** Apakah keputusan AI atas 325 PDF yang masuk pada
+  20 November 2026 diterima? AI membaca teks lengkap setiap kajian; setiap
+  perpindahan kelompok dan eksklusi diperiksa ulang terhadap teks sebelum
+  diterapkan. Hasilnya: 22 kajian pindah ke multi-pengamatan (C1), 8 kajian
+  dikeluarkan, dan sisanya tetap pada kelompok tahap abstrak. Buka
+  [log_perubahan.csv](log_perubahan.csv) dan saring kolom `oleh` = "AI, belum
+  disetujui peninjau". Tiga kajian perlu perhatian khusus:
+  - Szolc dkk. 2026, *Vision-based automatic fruit counting with UAV* (C1):
+    seluruh pengujian di lingkungan simulasi Gazebo, tanpa citra kebun nyata.
+    Apakah simulasi diterima? Buka [szolc2026vision.pdf](../pdf/szolc2026vision.pdf).
+  - Ni dkk. 2020, blueberry 3D (C1): tandan dipotret 120 kali, sebagian
+    dengan latar karton di dalam ruangan. Apakah ini pengamatan buah pada
+    tanaman atau tandan yang sudah dipetik (E2)? Buka
+    [ni2020blueberry.pdf](../pdf/ni2020blueberry.pdf).
+  - Parico dkk. 2023 (bab buku, C1) melaporkan kajian yang sama dengan
+    Parico dkk. 2021 (*Sensors*). Keduanya kini masuk peta, sehingga satu
+    kajian terhitung dua kali. Buka [parico2023real.pdf](../pdf/parico2023real.pdf).
+
+  Dampak: angka naskah (787 kajian, 238 C1), Lampiran A, dan gambar berubah
+  bila ada keputusan yang ditolak. Label cara penghubungan untuk 22 kajian C1
+  baru juga diisi AI; periksa bersama butir A.3.
+
 - [ ] **5.7 Bagian naskah yang hanya dapat diisi penulis.** Apakah peran
   penulis, sumber dana, deklarasi kepentingan, dan ucapan terima kasih sudah
   benar? Kerangkanya sudah ada di akhir naskah, sebelum Data availability

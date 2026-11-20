@@ -26,4 +26,3 @@ Modifikasi terhadap YOLOv8n terdiri atas tiga bagian. MPDIOU dipakai sebagai fun
 Abstrak melaporkan COF-YOLOv8n mencapai presisi 97,7%, recall 97%, dan mAP 99%, masing-masing naik 3,2; 4,8; dan 2,4 poin persentase dibanding YOLOv8n. Pada kondisi okklusi parah, ketiga angka menjadi 95,9%, 95%, dan 98,5%, naik 4,0; 9,1; dan 4,6 poin persentase. Model dinyatakan cukup sederhana untuk disematkan pada lengan robot dan dipakai dalam estimasi produksi kebun.
 
 Ditinjau dari penghitungan lintas pandang, makalah ini menangani penghitungan ganda terutama melalui pelacakan video pada satu alur kamera. Pencocokan langsung antara pandangan yang berbeda tidak dijelaskan pada bagian OCR yang terbaca.
-
