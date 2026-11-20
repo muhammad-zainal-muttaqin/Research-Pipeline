@@ -1,9 +1,9 @@
 # Tugas Peninjau
 
-Diperbarui 19 November 2026. Ini satu-satunya daftar keputusan yang menunggu
+Diperbarui 20 November 2026. Ini satu-satunya daftar keputusan yang menunggu
 Anda.
 
-- [ ] **4.5 Empat PDF berisi versi lain dari dokumen yang tercatat di
+- [ ] **4.5 Enam PDF berisi versi lain dari dokumen yang tercatat di
   Scopus.** Apakah versi ini diterima sebagai teks lengkap kajian yang sama,
   atau versi terbitnya dicari dulu? Isi dan penulisnya sama, tetapi
   dokumennya berbeda:
@@ -21,10 +21,25 @@ Anda.
     (calon C2): Scopus mencatat makalah konferensi ASABE 2015; PDF adalah
     artikel *Trans. ASABE* 2016. Buka
     [silwal2015hierarchical.pdf](../pdf/silwal2015hierarchical.pdf).
+    Artikel 2016 itu juga tercatat sebagai rekaman Scopus tersendiri (calon
+    C2), dan PDF-nya kini ada di
+    [silwal2016hierarchical.pdf](../pdf/silwal2016hierarchical.pdf). Teks
+    kedua PDF sama. Bila keduanya dinilai, artikel yang sama terhitung dua
+    kali.
+  - Dohi dkk. 2024, *Tilt-Invariant Lemon Size Estimation Using RGB-D
+    Camera Images* (calon kajian depth dan 3D, C5): Scopus mencatat makalah
+    konferensi Cyberworlds 2024; PDF adalah tesis magister Pukyong National
+    University, Februari 2025, dengan judul yang sama. Buka
+    [dohi2024tilt.pdf](../pdf/dohi2024tilt.pdf).
+  - Ripa dkk. 2022, *Orchard Yield Estimation using Multi-angle Image
+    Processing* (calon C2): Scopus mencatat makalah konferensi M2VIP 2022;
+    PDF adalah tesis magister Massey University, November 2023, dengan judul
+    yang sama (137 halaman). Buka
+    [ripa2022orchard.pdf](../pdf/ripa2022orchard.pdf).
 
   Dampak bila versi ini ditolak: Bolouri dan Si keluar dari 214 kajian C1
-  sampai versi terbitnya diperoleh, sehingga angka naskah berubah; Yamamoto
-  dan Silwal kembali ke daftar
+  sampai versi terbitnya diperoleh, sehingga angka naskah berubah; Yamamoto,
+  Silwal 2015, Dohi, dan Ripa kembali ke daftar
   [pdf_belum_ada.csv](../unduhan/pdf_belum_ada.csv).
 
 - [ ] **5.7 Bagian naskah yang hanya dapat diisi penulis.** Apakah peran
