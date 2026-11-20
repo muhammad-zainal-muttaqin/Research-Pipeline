@@ -9,6 +9,7 @@
 | Tahun | 2026 |
 | Venue | Agriculture Switzerland |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | eggplant |
 
 ## Tautan Akses
 - PDF: [zhu2026research.pdf](../pdf/zhu2026research.pdf)

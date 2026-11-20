@@ -3,7 +3,7 @@
 Tinjauan `main6` menyaring 6.491 artikel Scopus dengan bantuan AI. Sebanyak
 1.013 artikel lolos tahap judul dan abstrak, ditambah lima artikel dari luar
 pencarian. Hanya artikel yang PDF-nya tersedia yang dinilai dari teks
-lengkapnya (807), dan 787 di antaranya masuk peta.
+lengkapnya (807), dan 785 di antaranya masuk peta.
 Folder ini berisi lembar pemeriksaannya, mengikuti rencana Bu Fatma
 (29 September 2026, salinan di [`rencana/index.html`](rencana/index.html)).
 
@@ -13,7 +13,8 @@ Pemeriksaan 1–6 selesai dan disetujui peninjau pada 19 Oktober 2026. Pada
 18 November 2026 ditambahkan tahap teks lengkap: 32 perubahan kelompok dan
 eksklusi dari pembacaan PDF, disetujui peninjau pada hari yang sama (rinciannya
 di [`log_perubahan.csv`](log_perubahan.csv)). Pada 20 November 2026 masuk 325 PDF
-baru; keputusan teks lengkapnya diisi AI dan belum disetujui peninjau. Butir
+baru; keputusan teks lengkapnya, label C1, serta tanaman dan wahana kamera
+kajian C1 dari teks lengkap disetujui peninjau pada hari yang sama. Butir
 yang masih menunggu ada di [TUGAS.md](TUGAS.md).
 
 | Pemeriksaan | Yang diperiksa | Hasil |

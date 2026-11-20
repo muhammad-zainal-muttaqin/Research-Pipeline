@@ -9,6 +9,7 @@
 | Tahun | 2025 |
 | Venue | 2025 International Conference on Unmanned Aircraft Systems Icuas 2025 |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | tomato, sweet pepper, eggplant |
 
 ## Tautan Akses
 - PDF: [garg2025autonomous.pdf](../pdf/garg2025autonomous.pdf)

@@ -9,6 +9,7 @@
 | Tahun | 2024 |
 | Venue | Sensors |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
 
 ## Tautan Akses
 - PDF: [melnychenko2024intelligent.pdf](../pdf/melnychenko2024intelligent.pdf)

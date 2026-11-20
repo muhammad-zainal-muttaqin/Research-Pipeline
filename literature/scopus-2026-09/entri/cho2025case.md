@@ -9,6 +9,7 @@
 | Tahun | 2025 |
 | Venue | Proceedings of SPIE the International Society for Optical Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple, pear |
 
 ## Tautan Akses
 - PDF: [cho2025case.pdf](../pdf/cho2025case.pdf)

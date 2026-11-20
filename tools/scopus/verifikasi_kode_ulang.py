@@ -91,7 +91,9 @@ def isian_sesudah_cek5():
         if r["berkas"] != "topik/bukti/mekanisme_C1.txt" or r["tanggal"] <= CEK5_DISETUJUI:
             continue
         idx = r["idx_atau_key"].split()[0]
-        if r["kolom"] == "baris":
+        if r["oleh"].startswith("AI, disetujui peninjau"):
+            isian[idx] = f"AI dari teks lengkap, {r['oleh'][4:]}"
+        elif r["kolom"] == "baris":
             isian[idx] = "AI dari teks lengkap, belum diperiksa peninjau"
         elif r["oleh"].startswith("AI, "):
             isian[idx] = f"AI dari teks lengkap, {r['oleh'][4:]} ({r['tanggal']})"

@@ -9,7 +9,7 @@
 | Tahun | 2021 |
 | Venue | IEEE International Conference on Intelligent Robots and Systems |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | sweet pepper |
+| Tanaman | apple, sweet pepper |
 
 ## Tautan Akses
 - PDF: [zaenker2021viewpoint.pdf](../pdf/zaenker2021viewpoint.pdf)

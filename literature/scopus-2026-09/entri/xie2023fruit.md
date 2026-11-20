@@ -9,6 +9,7 @@
 | Tahun | 2023 |
 | Venue | 2023 8th International Conference on Control Robotics and Cybernetics CRC 2023 |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
 
 ## Tautan Akses
 - PDF: [xie2023fruit.pdf](../pdf/xie2023fruit.pdf)

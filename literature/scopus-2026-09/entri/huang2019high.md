@@ -9,6 +9,7 @@
 | Tahun | 2019 |
 | Venue | 2019 Asabe Annual International Meeting |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | tomato |
 
 ## Tautan Akses
 - PDF: [huang2019high.pdf](../pdf/huang2019high.pdf)

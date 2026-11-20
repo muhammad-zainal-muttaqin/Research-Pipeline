@@ -9,7 +9,7 @@
 | Tahun | 2020 |
 | Venue | Asabe 2020 Annual International Meeting |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | grape, blueberry |
+| Tanaman | blueberry |
 
 ## Tautan Akses
 - PDF: [ni2020blueberry.pdf](../pdf/ni2020blueberry.pdf)

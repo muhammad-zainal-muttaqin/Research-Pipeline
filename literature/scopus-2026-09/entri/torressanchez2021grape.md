@@ -9,7 +9,7 @@
 | Tahun | 2021 |
 | Venue | Sensors |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | grape, nut crops |
+| Tanaman | grape |
 
 ## Tautan Akses
 - PDF: [torressanchez2021grape.pdf](../pdf/torressanchez2021grape.pdf)

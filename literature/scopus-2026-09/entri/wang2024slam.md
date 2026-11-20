@@ -9,7 +9,7 @@
 | Tahun | 2024 |
 | Venue | Computers and Electronics in Agriculture |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | pitaya |
+| Tanaman | citrus, apple |
 
 ## Tautan Akses
 - PDF: [wang2024slam.pdf](../pdf/wang2024slam.pdf)

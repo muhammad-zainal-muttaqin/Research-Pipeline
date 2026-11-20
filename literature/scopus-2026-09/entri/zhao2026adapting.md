@@ -9,7 +9,7 @@
 | Tahun | 2026 |
 | Venue | Computers and Electronics in Agriculture |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | apple, mango, sweet pepper, plum/apricot |
+| Tanaman | apple, plum/apricot, sweet pepper, mango, pear, citrus |
 
 ## Tautan Akses
 - PDF: [zhao2026adapting.pdf](../pdf/zhao2026adapting.pdf)

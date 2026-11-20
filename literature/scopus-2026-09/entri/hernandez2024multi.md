@@ -9,6 +9,7 @@
 | Tahun | 2024 |
 | Venue | Computers and Electronics in Agriculture |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple, lettuce |
 
 ## Tautan Akses
 - PDF: [hernandez2024multi.pdf](../pdf/hernandez2024multi.pdf)

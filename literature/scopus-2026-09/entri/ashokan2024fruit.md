@@ -9,6 +9,7 @@
 | Tahun | 2024 |
 | Venue | Aip Conference Proceedings |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | mango |
 
 ## Tautan Akses
 - PDF: [ashokan2024fruit.pdf](../pdf/ashokan2024fruit.pdf)

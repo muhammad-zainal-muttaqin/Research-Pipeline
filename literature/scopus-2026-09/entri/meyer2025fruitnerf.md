@@ -9,7 +9,7 @@
 | Tahun | 2025 |
 | Venue | IEEE International Conference on Intelligent Robots and Systems |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | apple, citrus, mango, peach/nectarine, pear, plum/apricot |
+| Tanaman | apple, plum/apricot, citrus, pear, peach/nectarine, mango |
 
 ## Tautan Akses
 - PDF: [meyer2025fruitnerf.pdf](../pdf/meyer2025fruitnerf.pdf)

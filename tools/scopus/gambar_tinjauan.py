@@ -141,7 +141,7 @@ def muat_c3():
 ALASAN = [("E1", "Not fruit on the plant"), ("E2", "Postharvest or laboratory only"),
           ("E3", "Yield model without fruit-level detection"), ("E4", "Picking or manipulation only"),
           ("E5", "Detection without counting or evaluation"), ("E6", "Non-imaging sensor"),
-          ("E7", "Not in English")]
+          ("E7", "Not in English"), ("E8", "Second report of an included study")]
 
 
 def gambar_prisma():

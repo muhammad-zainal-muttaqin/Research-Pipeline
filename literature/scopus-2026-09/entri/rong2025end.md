@@ -9,7 +9,7 @@
 | Tahun | 2025 |
 | Venue | Biosystems Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | tomato, cherry |
+| Tanaman | tomato |
 
 ## Tautan Akses
 - PDF: [rong2025end.pdf](../pdf/rong2025end.pdf)

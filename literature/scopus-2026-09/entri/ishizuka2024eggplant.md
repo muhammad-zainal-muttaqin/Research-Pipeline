@@ -9,6 +9,7 @@
 | Tahun | 2024 |
 | Venue | 10th IEEE International Smart Cities Conference Smart Cities Revolution for Mankind Isc2 2024 Proceedings |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | eggplant |
 
 ## Tautan Akses
 - PDF: [ishizuka2024eggplant.pdf](../pdf/ishizuka2024eggplant.pdf)

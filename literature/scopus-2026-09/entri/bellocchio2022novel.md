@@ -9,6 +9,7 @@
 | Tahun | 2022 |
 | Venue | Engineering Applications of Artificial Intelligence |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | mango, nut crops |
 
 ## Tautan Akses
 - PDF: [bellocchio2022novel.pdf](../pdf/bellocchio2022novel.pdf)

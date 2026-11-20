@@ -9,6 +9,7 @@
 | Tahun | 2025 |
 | Venue | Sensors |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
 
 ## Tautan Akses
 - PDF: [zhai2025dynamic.pdf](../pdf/zhai2025dynamic.pdf)

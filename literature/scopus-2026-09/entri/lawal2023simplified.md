@@ -9,7 +9,7 @@
 | Tahun | 2023 |
 | Venue | Plos One |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | strawberry, cherry, jujube |
+| Tanaman | strawberry, jujube, cherry |
 
 ## Tautan Akses
 - PDF: [lawal2023simplified.pdf](../pdf/lawal2023simplified.pdf)

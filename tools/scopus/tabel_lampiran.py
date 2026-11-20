@@ -31,12 +31,6 @@ CROP_ABBR = {"peach/nectarine": "peach", "sweet pepper": "pepper", "litchi/longa
              "persimmon/guava": "persimmon", "pumpkin/squash": "pumpkin", "nut crops": "nut"}
 
 
-DIBACA_TEKS_LENGKAP = {
-    "shimomoto2025predicting": {"tanaman": "sweet pepper"},
-    "liu2018robust": {"tanaman": "citrus;apple"},
-    "stein2016image": {"platform": "ground vehicle/robot"},
-}
-
 def nama_mekanisme(kode):
     """'M3+M2' -> 'Appearance + tracking'; urutan tetap M0..M5 apa pun urutan di berkas data."""
     bagian = sorted(set(kode.split("+")))
@@ -67,7 +61,6 @@ def main():
     temuan = dict(l.rstrip("\n").split("\t", 1) for l in open(TEMUAN, encoding="utf-8") if "\t" in l)
     baris = []
     for r in rows:
-        r = {**r, **DIBACA_TEKS_LENGKAP.get(r["key"], {})}
         tan = r["tanaman"].split(";")[0] if r["tanaman"] else "Not stated"
         tan = CROP_ABBR.get(tan, tan).capitalize()
         plat = ", ".join(PLAT[p] for p in r["platform"].split(";") if p in PLAT) or "Not stated"
@@ -93,7 +86,7 @@ def main():
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Crop (the first match in a fixed list of crops) and platform were assigned by keyword rules on the title and abstract; Not stated, no keyword matched. Metric types were coded from the full text where it was read: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or ID switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Main finding: the principal result reported by the study, as coded. UAV, unmanned aerial vehicle.}\\
+\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Crop (the first crop whose fruit the study itself detected, counted, or tracked) and platform (what carried the camera) were read from the full text; Not stated, the text does not say. Metric types were coded from the full text where it was read: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or ID switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Main finding: the principal result reported by the study, as coded. UAV, unmanned aerial vehicle.}\\
 \endlastfoot
 """ % (len(rows), judul, judul)
     OUT.write_text(kepala + "\n".join(baris) + "\n\\end{longtable}\n\\end{footnotesize}\n", newline="\n")

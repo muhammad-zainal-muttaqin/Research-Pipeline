@@ -9,7 +9,7 @@
 | Tahun | 2026 |
 | Venue | Smart Agricultural Technology |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | citrus, tomato, cherry |
+| Tanaman | tomato |
 
 ## Tautan Akses
 - PDF: [awal2026development.pdf](../pdf/awal2026development.pdf)

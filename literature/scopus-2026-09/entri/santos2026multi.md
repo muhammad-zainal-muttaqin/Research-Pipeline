@@ -9,6 +9,7 @@
 | Tahun | 2026 |
 | Venue | Revista De Informatica Teorica E Aplicada |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | citrus |
 
 ## Tautan Akses
 - PDF: [santos2026multi.pdf](../pdf/santos2026multi.pdf)

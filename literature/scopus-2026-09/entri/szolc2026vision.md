@@ -9,6 +9,7 @@
 | Tahun | 2026 |
 | Venue | Lecture Notes in Networks and Systems |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | tomato, sweet pepper, eggplant |
 
 ## Tautan Akses
 - PDF: [szolc2026vision.pdf](../pdf/szolc2026vision.pdf)

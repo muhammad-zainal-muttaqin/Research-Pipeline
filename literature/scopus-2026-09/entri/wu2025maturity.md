@@ -9,7 +9,7 @@
 | Tahun | 2025 |
 | Venue | Frontiers in Plant Science |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | strawberry, peach/nectarine, blueberry |
+| Tanaman | blueberry |
 
 ## Tautan Akses
 - PDF: [wu2025maturity.pdf](../pdf/wu2025maturity.pdf)

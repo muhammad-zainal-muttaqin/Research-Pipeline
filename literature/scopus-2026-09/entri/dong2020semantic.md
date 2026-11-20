@@ -9,6 +9,7 @@
 | Tahun | 2020 |
 | Venue | Journal of Field Robotics |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple |
 
 ## Tautan Akses
 - PDF: [dong2020semantic.pdf](../pdf/dong2020semantic.pdf)

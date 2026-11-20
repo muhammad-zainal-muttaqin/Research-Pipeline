@@ -9,6 +9,7 @@
 | Tahun | 2021 |
 | Venue | Lecture Notes in Computer Science Including Subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | strawberry |
 
 ## Tautan Akses
 - PDF: [kirk2021robust.pdf](../pdf/kirk2021robust.pdf)

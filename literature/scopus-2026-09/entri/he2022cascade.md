@@ -9,6 +9,7 @@
 | Tahun | 2022 |
 | Venue | Computers and Electronics in Agriculture |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | camellia |
 
 ## Tautan Akses
 - PDF: [he2022cascade.pdf](../pdf/he2022cascade.pdf)

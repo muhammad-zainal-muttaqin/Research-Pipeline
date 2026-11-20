@@ -9,7 +9,7 @@
 | Tahun | 2024 |
 | Venue | Agriculture Switzerland |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | citrus, sweet pepper |
+| Tanaman | sweet pepper |
 
 ## Tautan Akses
 - PDF: [viveros2024maturity.pdf](../pdf/viveros2024maturity.pdf)

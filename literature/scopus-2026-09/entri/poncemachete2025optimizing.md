@@ -9,6 +9,7 @@
 | Tahun | 2025 |
 | Venue | 2025 17th International Conference on Computer and Automation Engineering Iccae 2025 |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | citrus |
 
 ## Tautan Akses
 - PDF: [poncemachete2025optimizing.pdf](../pdf/poncemachete2025optimizing.pdf)

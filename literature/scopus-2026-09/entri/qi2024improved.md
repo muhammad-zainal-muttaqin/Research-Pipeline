@@ -9,7 +9,7 @@
 | Tahun | 2024 |
 | Venue | Measurement Journal of the International Measurement Confederation |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | tomato, cherry |
+| Tanaman | tomato |
 
 ## Tautan Akses
 - PDF: [qi2024improved.pdf](../pdf/qi2024improved.pdf)

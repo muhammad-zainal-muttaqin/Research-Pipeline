@@ -9,6 +9,7 @@
 | Tahun | 2018 |
 | Venue | IEEE International Conference on Intelligent Robots and Systems |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple, citrus |
 
 ## Tautan Akses
 - PDF: [liu2018robust.pdf](../pdf/liu2018robust.pdf)

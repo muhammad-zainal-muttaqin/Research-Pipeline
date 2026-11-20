@@ -9,6 +9,7 @@
 | Tahun | 2021 |
 | Venue | Agronomy |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | mango |
 
 ## Tautan Akses
 - PDF: [koirala2021attempting.pdf](../pdf/koirala2021attempting.pdf)

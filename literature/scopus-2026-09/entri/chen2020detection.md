@@ -9,7 +9,7 @@
 | Tahun | 2020 |
 | Venue | Visigrapp 2020 Proceedings of the 15th International Joint Conference on Computer Vision Imaging and Computer Graphics Theory and Applications |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | tomato, cherry |
+| Tanaman | tomato |
 
 ## Tautan Akses
 - PDF: [chen2020detection.pdf](../pdf/chen2020detection.pdf)

@@ -9,6 +9,7 @@
 | Tahun | 2026 |
 | Venue | Smart Agricultural Technology |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple, peach/nectarine, soybean |
 
 ## Tautan Akses
 - PDF: [zhao2026two.pdf](../pdf/zhao2026two.pdf)

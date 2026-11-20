@@ -9,6 +9,7 @@
 | Tahun | 2025 |
 | Venue | Proceedings 2025 27th IEEE International Conference on High Performance Computing and Communications 11th IEEE International Conference on Data Science and Systems 23rd IEEE International Conference on Smart City 11th IEEE International Conference on Dependability in Sensor Cloud and Big Data Systems and Applications and 21st IEEE International Conference on Embedded Software and Systems Hpcc Dss Smartcity Dependsys Icess 2025 |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple, mango |
 
 ## Tautan Akses
 - PDF: [majdalawieh2025optimizing.pdf](../pdf/majdalawieh2025optimizing.pdf)

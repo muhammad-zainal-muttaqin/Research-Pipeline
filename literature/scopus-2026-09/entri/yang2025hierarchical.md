@@ -9,6 +9,7 @@
 | Tahun | 2025 |
 | Venue | IEEE Internet of Things Journal |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | strawberry |
 
 ## Tautan Akses
 - PDF: [yang2025hierarchical.pdf](../pdf/yang2025hierarchical.pdf)

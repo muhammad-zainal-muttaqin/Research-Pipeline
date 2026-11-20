@@ -98,8 +98,8 @@ def main():
     n_scopus = sum(inc.values())
     assert n_scopus == len(dinilai) - sum(xt.values()), "matriks_bukti.csv tidak sesuai tahap teks lengkap"
     assert len(mat) == n_scopus + sum(1 for r in lain if r["kode"] != "X"), "matriks_bukti.csv tidak sesuai rekaman metode lain"
-    alasan = {f"E{i}" for i in range(1, 8)}
-    assert set(xa) <= alasan and set(xt) <= alasan, "alasan eksklusi di luar E1-E7"
+    alasan = {f"E{i}" for i in range(1, 9)}
+    assert set(xa) <= alasan and set(xt) <= alasan, "alasan eksklusi di luar E1-E8"
     assert unik - x0 - xj == len(dec), "diagram alur: judul disaring - eksklusi judul != dinilai dari abstrak"
     assert len(dec) - sum(xa.values()) == len(tl), "diagram alur: lolos abstrak != laporan dicari teks lengkapnya"
     assert len(tl) == sum(tidak_diperoleh.values()) + sum(menunggu.values()) + len(dinilai), \
@@ -125,7 +125,7 @@ def main():
     m("nFTAssessed", len(dinilai) + len(lain))
     m("nAwaiting", sum(menunggu.values()))
     m("nFTExcl", sum(xt.values()))
-    for i, nama in enumerate(["One", "Two", "Three", "Four", "Five", "Six", "Seven"], 1):
+    for i, nama in enumerate(["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"], 1):
         m(f"nFTExcl{nama}", xt[f"E{i}"])
     m("nOtherRetrieved", len(lain))
     n_cari = len(tl) + len(lain_semua)
@@ -142,7 +142,7 @@ def main():
     m("nAssessed", len(dec))
     m("nNoAbstract", judul_saja)
     m("nEligExcl", sum(xa.values()))
-    for i, nama in enumerate(["One", "Two", "Three", "Four", "Five", "Six", "Seven"], 1):
+    for i, nama in enumerate(["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"], 1):
         m(f"nExcl{nama}", xa[f"E{i}"])
     m("nScopusIncl", n_scopus)
     m("nOther", len(lain_semua))

@@ -9,6 +9,7 @@
 | Tahun | 2025 |
 | Venue | Proceedings IEEE International Conference on Robotics and Automation |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | citrus |
 
 ## Tautan Akses
 - PDF: [yang2025safe.pdf](../pdf/yang2025safe.pdf)

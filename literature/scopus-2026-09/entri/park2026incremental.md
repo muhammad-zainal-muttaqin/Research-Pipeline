@@ -9,6 +9,7 @@
 | Tahun | 2026 |
 | Venue | IEEE Robotics and Automation Letters |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | citrus |
 
 ## Tautan Akses
 - PDF: [park2026incremental.pdf](../pdf/park2026incremental.pdf)

@@ -9,7 +9,7 @@
 | Tahun | 2024 |
 | Venue | Proceedings 2024 China Automation Congress Cac 2024 |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | peach/nectarine |
+| Tanaman | citrus, peach/nectarine |
 
 ## Tautan Akses
 - PDF: [zhang2024stablesort.pdf](../pdf/zhang2024stablesort.pdf)

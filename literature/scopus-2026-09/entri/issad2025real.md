@@ -9,6 +9,7 @@
 | Tahun | 2025 |
 | Venue | Icrami 2025 2025 International Conference on Recent Advances in Mathematics and Informatics |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple, citrus, mango, pear, pomegranate, date palm, banana, avocado, cherry, melon, peach/nectarine, pitaya |
 
 ## Tautan Akses
 - PDF: [issad2025real.pdf](../pdf/issad2025real.pdf)

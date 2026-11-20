@@ -17,7 +17,6 @@ berkas hasil.
 | Subfolder | Pertanyaan yang dijawab | Kajian | Dipakai untuk |
 |---|---|---|---|
 | `perbandingan/` | Apakah kajian membandingkan dua cara menautkan atau menghitung pengamatan pada data uji yang sama, dan apa hasilnya? | Kajian metode multi-pengamatan (C1 tanpa makalah set data) | Tabel perbandingan pada data yang sama di Seksi 5 naskah (`tab:assoc`) |
-| `tanaman-platform/` | Tanaman apa dan wahana kamera apa yang dipakai dalam eksperimen kajian itu sendiri? | Semua kajian C1 | Kolom tanaman dan platform Lampiran A dan gambar S4, menggantikan aturan kata kunci abstrak |
 | `bacaan/` | Isi kajian inti: akuisisi, detektor, asosiasi, asumsi, sumber hitung ganda, penanganan kelas, rujukan hitung, hasil, kondisi gagal, kutipan | Kajian yang dibahas rinci di Seksi 4–8 | Penulisan ulang seksi bukti |
 
 ### `perbandingan/<kunci>.txt`
@@ -53,33 +52,15 @@ Perbandingan detektor saja dan angka yang dikutip dari makalah lain tidak
 dicatat. Aturan ini sama dengan yang tertulis di subseksi *Appraisal and
 synthesis* naskah.
 
-### `tanaman-platform/hasil_<N>.tsv`
+Tanaman dan wahana kamera semua kajian C1 yang dulu diekstrak di folder ini
+kini menjadi data sumber di `../topik/bukti/tanaman_platform_C1.txt`
+(disetujui peninjau 20 November 2026) dan dibaca `kode_bukti.py`.
 
-Satu baris per kajian, empat kolom yang dipisah TAB:
-
-```
-kunci   tanaman   platform   nomor baris pendukung
-```
-
-Nama tanaman dan platform memakai kosakata `TANAMAN` dan `PLATFORM` di
-`tools/scopus/kode_bukti.py`. Nilai `not stated` berarti teks tidak menyebut
-wahana kamera. Berkas `daftar_<N>.txt` berisi pembagian kunci per agen.
-
-### `bacaan/<kunci>.txt`
-
-Lembar bacaan dengan judul baku (lihat `bacaan/prompt.txt`). Lembar ini
-dipakai untuk menulis ulang Seksi 4–8 pada November 2026.
-
-## Posisi sekarang
-
-18 November 2026:
-
-- `perbandingan/`: korpus memuat 210 kajian metode C1. Empat kajian yang dulu
+- `perbandingan/`: korpus memuat 233 kajian metode C1. Empat kajian yang dulu
   tanpa teks (`guo2023real`, `tu2026passion`, `wang2024camellia`,
   `zhu2022identification`) sudah diekstrak dengan OCR karena fon FzBookMaker.
-  Teks Mandarin terbaca, sebagian tanda baca mungkin meleset. Seluruh 210
-  kajian sudah punya berkas dan 127 memuat perbandingan pada data yang sama.
-- `tanaman-platform/`: 215 dari 215 kajian C1 sudah tercatat, selesai.
+  Teks Mandarin terbaca, sebagian tanda baca mungkin meleset. 210 kajian
+  sudah punya berkas; 23 kajian C1 yang masuk pada 20 November 2026 belum.
 - `bacaan/`: 49 kajian inti, selesai.
 
 Angka ini dihitung ulang dengan perintah di bawah, bukan disalin.
@@ -117,6 +98,4 @@ Melanjutkan ekstraksi:
 
 - Perbarui `tab:assoc` dan teks Seksi 5 naskah dari 127 perbandingan pada data
   yang sama di `perbandingan/`.
-- Periksa baris `tanaman-platform/` yang berbeda dari kode kata kunci di teks
-  lengkap, lalu isikan ke `topik/bukti/mekanisme_C1.txt` dan catat di
-  `verifikasi/.teknis/log_perubahan.csv`.
+- Ekstrak `perbandingan/` untuk 23 kajian C1 yang belum punya berkas (perintah di atas).

@@ -9,7 +9,7 @@
 | Tahun | 2025 |
 | Venue | Sustainability Switzerland |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | tomato, cherry |
+| Tanaman | tomato |
 
 ## Tautan Akses
 - PDF: [timprae2025tomato.pdf](../pdf/timprae2025tomato.pdf)

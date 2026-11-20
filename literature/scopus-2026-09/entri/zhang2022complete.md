@@ -9,6 +9,7 @@
 | Tahun | 2022 |
 | Venue | Computers and Electronics in Agriculture |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | holly |
 
 ## Tautan Akses
 - PDF: [zhang2022complete.pdf](../pdf/zhang2022complete.pdf)

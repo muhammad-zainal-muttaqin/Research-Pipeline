@@ -9,7 +9,7 @@
 | Tahun | 2026 |
 | Venue | Computers and Electronics in Agriculture |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | apple, strawberry |
+| Tanaman | strawberry, apple |
 
 ## Tautan Akses
 - PDF: [fusaro2026horticultural.pdf](../pdf/fusaro2026horticultural.pdf)

@@ -12,7 +12,8 @@ KEL = {'C1': 'C1 (hitung dari banyak pengamatan buah yang sama)', 'C2': 'C2 (hit
        'T': 'T (metode dari luar pertanian)'}
 EKS = {'E1': 'bukan buah di tanaman', 'E2': 'hanya pascapanen/laboratorium',
        'E3': 'hasil panen tanpa deteksi buah', 'E4': 'hanya robot pemetik',
-       'E5': 'deteksi tanpa hitung atau evaluasi', 'E6': 'sensor bukan kamera', 'E7': 'tidak berbahasa Inggris'}
+       'E5': 'deteksi tanpa hitung atau evaluasi', 'E6': 'sensor bukan kamera', 'E7': 'tidak berbahasa Inggris',
+       'E8': 'laporan kedua dari kajian yang sudah masuk'}
 MEK = {'M0': 'tanpa penghubungan buah', 'M1': 'koreksi statistik', 'M2': 'pencocokan penampilan',
        'M3': 'pelacakan video', 'M4': 'pencocokan posisi 3D', 'M5': 'pencocokan yang dipelajari',
        'DATA': 'dataset'}

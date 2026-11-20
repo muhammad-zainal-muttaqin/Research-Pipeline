@@ -9,6 +9,7 @@
 | Tahun | 2026 |
 | Venue | IEEE Transactions on Automation Science and Engineering |
 | Kode | C1 (Gabungan beberapa pengamatan) |
+| Tanaman | apple, pear, mango, strawberry, blueberry, plum/apricot, peach/nectarine, citrus |
 
 ## Tautan Akses
 - PDF: [wang2026semantic.pdf](../pdf/wang2026semantic.pdf)

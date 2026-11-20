@@ -9,7 +9,7 @@
 | Tahun | 2024 |
 | Venue | Computers and Electronics in Agriculture |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | tomato, cherry |
+| Tanaman | tomato |
 
 ## Tautan Akses
 - PDF: [meng2024real.pdf](../pdf/meng2024real.pdf)

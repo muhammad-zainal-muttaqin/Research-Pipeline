@@ -19,6 +19,11 @@ Rekaman dari luar pencarian (topik/tambahan_metode_lain.csv, idx L1, L2, ...)
 masuk matriks bila PDF-nya ada dan kolom kode bukan X; kodenya dibaca dari
 berkas itu dan label C1-nya dari mekanisme_C1.txt dengan idx yang sama.
 
+Tanaman dan wahana kamera kajian C1 dibaca dari teks lengkap dan disimpan di
+bukti/tanaman_platform_C1.txt (kunci, tanaman, wahana, baris pendukung); isinya
+menimpa kolom tanaman dan platform hasil aturan kata kunci. Kajian lain tetap
+memakai aturan kata kunci pada judul dan abstrak.
+
 Kolom verifikasi teks lengkap (Pemeriksaan 5): mekanisme_C1.txt boleh
 memuat enam kolom TAB tambahan yang opsional sesudah hasil_ringkas, yaitu
 sumber_kode, halaman, referensi_hitung, tingkat_metrik, cara_kelas, berubah.
@@ -146,7 +151,7 @@ def muat_teks_lengkap(topik):
     "tidak diperoleh" (tanpa PDF), "menunggu" (PDF ada, belum ada baris di
     teks_lengkap.txt; kode_akhir = kode tahap abstrak), atau "dinilai";
     kode_akhir "X" berarti dikeluarkan pada tahap teks lengkap dengan alasan
-    E1-E7."""
+    E1-E8 (E8: laporan kedua dari kajian yang sudah masuk lewat laporan lain)."""
     topik = Path(topik)
     pdf = topik.parent / "pdf"
     dec, _ = muat_keputusan(topik / "penyaringan")
@@ -189,6 +194,19 @@ KOLOM_VERIFIKASI = ["sumber_kode", "halaman", "referensi_hitung",
                     "tingkat_metrik", "cara_kelas", "berubah"]
 
 
+def muat_tanaman_platform(path):
+    """kunci -> (tanaman, platform), masing-masing dipisah ';'; "not stated" menjadi kosong."""
+    out = {}
+    if path.exists():
+        for line in open(path, encoding="utf-8"):
+            if line.startswith("#") or not line.strip():
+                continue
+            kunci, tanaman, platform = line.rstrip("\r\n").split("\t")[:3]
+            bersih = lambda v: ";".join(x.strip() for x in v.split(";") if x.strip() and x.strip() != "not stated")
+            out[kunci] = (bersih(tanaman), bersih(platform))
+    return out
+
+
 def muat_manual(path, lengkap=False):
     """Baris: idx, mekanisme, akuisisi, per_kelas, hasil (dipisah TAB),
     lalu enam kolom verifikasi opsional (KOLOM_VERIFIKASI).
@@ -223,6 +241,7 @@ def main():
 
     dec, sumber_kep = muat_keputusan(pen)
     manual = muat_manual(bukti / "mekanisme_C1.txt", lengkap=True)
+    tanaman_platform = muat_tanaman_platform(bukti / "tanaman_platform_C1.txt")
     ada_verif = args.kolom_verifikasi or any(any(v[4:]) for v in manual.values())
     rec = {r["eid"]: r for r in csv.DictReader(open(topik / "records_all.csv"))}
     enr = {}
@@ -277,6 +296,8 @@ def main():
             "metrik": ";".join(cocok(METRIK, teks)),
             "ada_abstrak": "ya" if abstrak else "tidak",
         }
+        if kode == "C1" and r["key"] in tanaman_platform:
+            b["tanaman"], b["platform"] = tanaman_platform[r["key"]]
         if ada_verif:
             b.update(zip(KOLOM_VERIFIKASI, kode_manual[4:]))
         baris.append(b)

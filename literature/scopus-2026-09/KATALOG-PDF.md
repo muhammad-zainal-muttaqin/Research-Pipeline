@@ -1,21 +1,21 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 787 kajian korpus `main6` yang PDF-nya tersedia, dari 787 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 785 kajian korpus `main6` yang PDF-nya tersedia, dari 785 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
 | Kode | Kelompok | Kajian dalam peta | PDF tersedia |
 |---|---|---|---|
-| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 238 | 238 |
-| C2 | Pencacahan atau estimasi hasil dari satu pandang | 133 | 133 |
+| C1 | Metode yang menggabungkan beberapa pengamatan buah yang sama | 237 | 237 |
+| C2 | Pencacahan atau estimasi hasil dari satu pandang | 132 | 132 |
 | C3 | Pencitraan TBS kelapa sawit | 107 | 107 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 33 | 33 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 92 | 92 |
 | R | Tinjauan terdahulu | 102 | 102 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 82 | 82 |
-| | **Jumlah** | 787 | 787 |
+| | **Jumlah** | 785 | 785 |
 
-## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (238)
+## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (237)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -162,7 +162,6 @@ Katalog ini memuat 787 kajian korpus `main6` yang PDF-nya tersedia, dari 787 kaj
 | 2023 | Li Z. | Blueberry Yield Estimation Through Multi-View Imagery with YOLOv8 Object Detection | 2023 Asabe Annual International Meeting | [PDF](pdf/li2023blueberry.pdf) | [DOI](https://doi.org/10.13031/aim.202300883) |
 | 2023 | Lin Y. | Citrus Identification and Counting Algorithm Based on Improved YOLOv5s and DeepSort | Agronomy | [PDF](pdf/lin2023citrus.pdf) | [DOI](https://doi.org/10.3390/agronomy13071674) |
 | 2023 | Lyu J. | Method for estimation of bagged grape yield using a self-correcting NMS-ByteTrack | Nongye Gongcheng Xuebao Transactions of the Chinese Society of Agricultural Engineering | [PDF](pdf/lyu2023method.pdf) | [DOI](https://doi.org/10.11975/j.issn.1002-6819.202304116) |
-| 2023 | Parico A.I.B. | Real-Time Pear Fruit Detection and Counting Using YOLOv4 Models and Deep SORT | Iot and AI in Agriculture Self Sufficiency in Food Production to Achieve Society 5 0 and Sdgs Globally | [PDF](pdf/parico2023real.pdf) | [DOI](https://doi.org/10.1007/978-981-19-8113-5_11) |
 | 2023 | Qureshi A. | Seeing the Fruit for the Leaves: Robotically Mapping Apple Fruitlets in a Commercial Orchard | IEEE International Conference on Intelligent Robots and Systems | [PDF](pdf/qureshi2023seeing.pdf) | [DOI](https://doi.org/10.1109/iros55552.2023.10341502) |
 | 2023 | Rapado-Rincón D. | Development and evaluation of automated localisation and reconstruction of all fruits on tomato plants in a greenhouse based on multi-view perception and 3D multi-object tracking | Biosystems Engineering | [PDF](pdf/rapadorincon2023development.pdf) | [DOI](https://doi.org/10.1016/j.biosystemseng.2023.06.003) |
 | 2023 | Rong J. | Tomato cluster detection and counting using improved YOLOv5 based on RGB-D fusion | Computers and Electronics in Agriculture | [PDF](pdf/rong2023tomato.pdf) | [DOI](https://doi.org/10.1016/j.compag.2023.107741) |
@@ -258,7 +257,7 @@ Katalog ini memuat 787 kajian korpus `main6` yang PDF-nya tersedia, dari 787 kaj
 | 2012 | Kassim M.S.M. | Oil palm fresh fruit bunches (FFB) growth determination system to support harvesting operation | Journal of Food Agriculture and Environment | [PDF](pdf/kassim2012oil.pdf) |  |
 | 2012 | Wang Q. | Design of crop yield estimation system for apple orchards using computer vision | American Society of Agricultural and Biological Engineers Annual International Meeting 2012 Asabe 2012 | [PDF](pdf/wang2012design.pdf) |  |
 
-## C2: Pencacahan atau estimasi hasil dari satu pandang (133)
+## C2: Pencacahan atau estimasi hasil dari satu pandang (132)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -387,7 +386,6 @@ Katalog ini memuat 787 kajian korpus `main6` yang PDF-nya tersedia, dari 787 kaj
 | 2016 | Silwal A. | A hierarchical approach to apple identification for robotic harvesting | Transactions of the Asabe | [PDF](pdf/silwal2016hierarchical.pdf) | [DOI](https://doi.org/10.13031/trans.59.11619) |
 | 2015 | Font D. | Vineyard yield estimation based on the analysis of high resolution images obtained with artificial illumination at night | Sensors Switzerland | [PDF](pdf/font2015vineyard.pdf) | [DOI](https://doi.org/10.3390/s150408284) |
 | 2015 | Hung C. | A feature learning based approach for automated fruit yield estimation | Springer Tracts in Advanced Robotics | [PDF](pdf/hung2015feature.pdf) | [DOI](https://doi.org/10.1007/978-3-319-07488-7_33) |
-| 2015 | Silwal A. | A hierarchical approach of apple identification for robotic harvesting | American Society of Agricultural and Biological Engineers Annual International Meeting 2015 | [PDF](pdf/silwal2015hierarchical.pdf) |  |
 | 2015 | Syal A. | Apple fruit detection and counting using computer vision techniques | 2014 IEEE International Conference on Computational Intelligence and Computing Research IEEE Iccic 2014 | [PDF](pdf/syal2015apple.pdf) | [DOI](https://doi.org/10.1109/iccic.2014.7238364) |
 | 2014 | Font D. | Counting red grapes in vineyards by detecting specular spherical reflection peaks in RGB images obtained at night with artificial illumination | Computers and Electronics in Agriculture | [PDF](pdf/font2014counting.pdf) | [DOI](https://doi.org/10.1016/j.compag.2014.07.006) |
 | 2014 | Payne A. | Estimating mango crop yield using image analysis using fruit at 'stone hardening' stage and night time imaging | Computers and Electronics in Agriculture | [PDF](pdf/payne2014estimating.pdf) | [DOI](https://doi.org/10.1016/j.compag.2013.11.011) |

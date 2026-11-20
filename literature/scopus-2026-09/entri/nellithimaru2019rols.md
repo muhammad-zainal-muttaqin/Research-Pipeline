@@ -9,7 +9,7 @@
 | Tahun | 2019 |
 | Venue | IEEE Computer Society Conference on Computer Vision and Pattern Recognition Workshops |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | apple, citrus, grape |
+| Tanaman | grape |
 
 ## Tautan Akses
 - PDF: [nellithimaru2019rols.pdf](../pdf/nellithimaru2019rols.pdf)

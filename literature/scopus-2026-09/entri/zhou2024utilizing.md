@@ -9,7 +9,7 @@
 | Tahun | 2024 |
 | Venue | Proceedings 2024 International Symposium on Internet of Things and Smart Cities Isitsc 2024 |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | citrus |
+| Tanaman | mango |
 
 ## Tautan Akses
 - PDF: [zhou2024utilizing.pdf](../pdf/zhou2024utilizing.pdf)

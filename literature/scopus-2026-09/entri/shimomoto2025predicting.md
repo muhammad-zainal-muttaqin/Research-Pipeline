@@ -9,7 +9,7 @@
 | Tahun | 2025 |
 | Venue | Horticulturae |
 | Kode | C1 (Gabungan beberapa pengamatan) |
-| Tanaman | tomato, sweet pepper |
+| Tanaman | sweet pepper |
 
 ## Tautan Akses
 - PDF: [shimomoto2025predicting.pdf](../pdf/shimomoto2025predicting.pdf)
