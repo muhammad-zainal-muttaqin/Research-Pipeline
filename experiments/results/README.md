@@ -1,8 +1,8 @@
 # results/ — indeks JSON hasil
 
 Angka mentah di balik [metrik final E-021](../METRICS.md),
-[arsip E-022](../archive/E022-seed42-awal.md), dan putusan
-di [`../../SR/`](../SR/). Berkas
+[audit E-022](../AUDIT-E022.md), dan putusan
+di [`../SR/`](../SR/). Berkas
 dikelompokkan per eksperimen; namanya sengaja **tidak diubah** supaya sitasi
 lama tetap dapat ditelusuri lewat pencarian nama.
 
@@ -32,18 +32,18 @@ lama tetap dapat ditelusuri lewat pencarian nama.
 | `E-021/` | `pr_curves.json` | E-021 | Kurva PR micro & F1-confidence | Pelengkap E-021 |
 | `E-021/` | `efficiency.json` | E-021 | Param, GFLOPs, latensi, FPS di NVIDIA L4 | Pelengkap E-021 |
 | `E-021/` | `yolo26l_eval.json` | E-021 | YOLO26l baseline param-adil | [METRICS final](../METRICS.md) |
-| `E-022/` | `mi.json` | E-022a | Mutual information 4 kandidat pemetaan depth→RGB + kontrol pergeseran | [Arsip E-022](../archive/E022-seed42-awal.md), hasil teknis |
+| `E-022/` | `mi.json` | E-022a | Mutual information 4 kandidat pemetaan depth→RGB + kontrol pergeseran | [Audit E-022](../AUDIT-E022.md), hasil teknis |
 | `E-022/` | `align.json` | E-022a | Uji berbasis kotak anotasi (terbukti terlalu lemah, dicatat apa adanya) | SR-015 §3 |
 | `E-022/` | `depth_meta.json` | E-022 | Kontrak kanal depth yang dibekukan (Z_NEAR 0,8 / Z_FAR 15,0, aturan invalid) | SR-015 §3 |
-| `E-022/` | `pycoco_yolo26n.json` | E-022b | 1-protokol pycocotools YOLO26n RGB & RGB-D | [Arsip E-022](../archive/E022-seed42-awal.md) |
-| `E-022/` | `paired_yolo26n.json` | E-022b | Selisih berpasangan RGB-D terhadap RGB, CI per-kelas | [Arsip E-022](../archive/E022-seed42-awal.md) |
-| `E-022/` | `paired_rtdetrl.json` | E-022b | Idem, RT-DETR-L | [Arsip E-022](../archive/E022-seed42-awal.md) |
-| `E-022/` | `paired_rfdetrnano.json` | E-022b | Idem, RF-DETR Nano | [Arsip E-022](../archive/E022-seed42-awal.md) |
-| `E-022/` | `paired_derau.json` | E-022b | Kontrol negatif: kanal ke-4 derau terhadap RGB | [Arsip E-022](../archive/E022-seed42-awal.md) |
-| `E-022/` | `paired_yolo26n_depth_vs_derau.json` | E-022b | Isolasi kandungan informasi depth, YOLO26n | [Arsip E-022](../archive/E022-seed42-awal.md) |
-| `E-022/` | `paired_rtdetrl_depth_vs_derau.json` | E-022b | Idem, RT-DETR-L | [Arsip E-022](../archive/E022-seed42-awal.md) |
-| `E-022/` | `paired_rfdetrnano_depth_vs_derau.json` | E-022b | Idem, RF-DETR Nano | [Arsip E-022](../archive/E022-seed42-awal.md) |
-| `E-022/` | `paired_yolo26n_depth_vs_tukar.json` | E-022b | Kontrol registrasi: depth benar terhadap depth pohon lain | [Arsip E-022](../archive/E022-seed42-awal.md) |
+| `E-022/` | `pycoco_yolo26n.json` | E-022b | 1-protokol pycocotools YOLO26n RGB & RGB-D | [Audit E-022](../AUDIT-E022.md) |
+| `E-022/` | `paired_yolo26n.json` | E-022b | Selisih berpasangan RGB-D terhadap RGB, CI per-kelas | [Audit E-022](../AUDIT-E022.md) |
+| `E-022/` | `paired_rtdetrl.json` | E-022b | Idem, RT-DETR-L | [Audit E-022](../AUDIT-E022.md) |
+| `E-022/` | `paired_rfdetrnano.json` | E-022b | Idem, RF-DETR Nano | [Audit E-022](../AUDIT-E022.md) |
+| `E-022/` | `paired_derau.json` | E-022b | Kontrol negatif: kanal ke-4 derau terhadap RGB | [Audit E-022](../AUDIT-E022.md) |
+| `E-022/` | `paired_yolo26n_depth_vs_derau.json` | E-022b | Isolasi kandungan informasi depth, YOLO26n | [Audit E-022](../AUDIT-E022.md) |
+| `E-022/` | `paired_rtdetrl_depth_vs_derau.json` | E-022b | Idem, RT-DETR-L | [Audit E-022](../AUDIT-E022.md) |
+| `E-022/` | `paired_rfdetrnano_depth_vs_derau.json` | E-022b | Idem, RF-DETR Nano | [Audit E-022](../AUDIT-E022.md) |
+| `E-022/` | `paired_yolo26n_depth_vs_tukar.json` | E-022b | Kontrol registrasi: depth benar terhadap depth pohon lain | [Audit E-022](../AUDIT-E022.md) |
 | `E-022/` | `diag_evaluator_gap_{rgb,rgbd}.json` | E-025 | Pelacakan celah evaluator: checkpoint, maxDets, jumlah deteksi | [log](../EKSPERIMEN.md) §E-025 |
 | `E-022/` | `paired_yolo26n_*_seed{42,1337,2024}.json` | E-027 | **Matriks multi-seed 12 perbandingan**, protokol beku pycocotools | [log](../EKSPERIMEN.md) §E-027 |
 | `E-024/` | `konsistensi_{rgb,rgbd}_seed42.json` | E-024, E-026 | Laju inkonsistensi prediksi lintas-sisi, RGB vs RGB-D | [SR-016](../SR/SR-016-konsistensi-lintas-sisi.md) |
@@ -61,4 +61,4 @@ didaftar apa adanya.
 | `eval_missing.json` | Per-kelas untuk run RGBD dan c4 | Pelengkap metrik yang belum terekam saat run aslinya |
 | `smoke_rgb.json` | Keluaran uji asap `stratified_eval.py` | Tidak dirujuk dokumen mana pun; disimpan agar skripnya tetap punya jejak |
 
-Peta skrip penghasil tiap berkas ada di [`../PETA-SKRIP.md`](../code/PETA-SKRIP.md).
+Peta skrip penghasil tiap berkas ada di [`../code/README.md`](../code/README.md).

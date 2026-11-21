@@ -16,7 +16,7 @@ Sumber kanonik yang dirangkum di sini:
 [`experiments/METRICS.md`](METRICS.md) (tabel metrik definitif E-021) ·
 [`experiments/METRIK-LENGKAP.md`](METRIK-LENGKAP.md) (metrik seluruh run blok depth) ·
 [`experiments/AUDIT-E022.md`](AUDIT-E022.md) (koreksi E-022) ·
-[`experiments/STATUS.md`](STATUS.md) (titik jeda & jalur lanjutan) ·
+[`experiments/README.md`](README.md) (status & langkah berikutnya) ·
 [`pipeline/README.md`](../pipeline/README.md) (deliverable produksi).
 
 > **Pembaruan audit 2 Agustus 2026.** Dokumen ini adalah snapshot kurasi
@@ -766,7 +766,7 @@ latih-ulang dapat diverifikasi identik atau tidak.
 Tiga jebakan yang wajib dibaca sebelum membangun ulang lingkungan — layout
 `data/`, pin `opencv-python==4.11.0.86` dan `numpy==1.26.4` setelah ultralytics,
 serta `reproject_depth.py --z-near 0.8 --z-far 15.0` — ada di
-[STATUS.md](STATUS.md) §"Mulai dari nol setelah jeda".
+[`code/REPRODUCE.md`](code/REPRODUCE.md) §7.
 
 Untuk deliverable produksi, seluruh perintah latih/konversi/inferensi ada di
 [`pipeline/README.md`](../pipeline/README.md).

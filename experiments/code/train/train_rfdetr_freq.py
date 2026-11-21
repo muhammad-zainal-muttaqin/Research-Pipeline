@@ -15,7 +15,7 @@ tunggal dengan resolusi token KONSTAN; "P3/P4/P5"-nya adalah keluaran SINTETIS
 `MultiScaleProjector` dari 4 lapisan ViT yang beresolusi sama. Mendefinisikan
 "menengah" di sana (di lapisan berapa, bagaimana token register ditangani,
 bagaimana jadwal windowed-attention disinkronkan) adalah proyek desain sendiri —
-lihat `train_rfdetr_fusion_late.py:5-19` dan `RANCANGAN-rfdetr-fusi-mid.md`.
+lihat `train_rfdetr_fusion_late.py:5-19` dan rancangan fusi menengah yang ditangguhkan (`git show 80bbba4:experiments/code/train/RANCANGAN-rfdetr-fusi-mid.md`).
 
 Titik sebelum projector punya padanan struktural yang bersih dan SUDAH terbukti
 tersambung pada arsitektur ini.
@@ -200,7 +200,7 @@ def _kelas_frekuensi_backbone():
     Kalau itu tidak ketahuan, 22 jam GPU akan menghasilkan perbandingan yang
     TIDAK SAH: lengan perlakuan berbackbone acak melawan baseline pratlatih.
     Selisihnya akan didominasi ada-tidaknya pralatihan, bukan cabang frekuensi —
-    persis mode gagal yang sudah dicatat `STATUS.md` §"Penghalang" untuk E-023.
+    persis mode gagal yang sudah dicatat untuk E-032 di `EKSPERIMEN.md`.
 
     Sebagai turunan, nama parameter warisan TIDAK berubah, bobot pratlatih
     termuat penuh, dan `get_named_param_lr_pairs` bawaan `Backbone` (yang

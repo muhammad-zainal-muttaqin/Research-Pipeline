@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # E-023 (G4+G6) — fusi MENENGAH vs AKHIR vs AWAL, semua dari nol.
 #
-# Opsi 2 dari dua yang didaftar di STATUS.md: seluruh lengan dilatih TANPA bobot
+# Rancangan E-032 (EKSPERIMEN.md): seluruh lengan dilatih TANPA bobot
 # pratlatih. Bukan karena lebih murah — justru 3x lebih mahal — melainkan karena
 # arsitektur fusi dua cabang lahir dari YAML kustom dan tidak punya checkpoint
 # COCO yang cocok. Membandingkan fusi-dari-nol dengan lengan pratlatih akan

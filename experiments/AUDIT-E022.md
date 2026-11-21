@@ -1,8 +1,8 @@
 # AUDIT-E022 — audit trainer & evaluator E-022 (2026-07-30)
 
 > **Ruang lingkup:** dokumen ini adalah sumber koreksi E-022, bukan tempat
-> metrik final. Tabel seed-42 awal ada di
-> [arsip E-022](archive/E022-seed42-awal.md); hasil final yang boleh dikutip
+> metrik final. Tabel seed-42 awal dapat dibaca dari Git:
+> `git show 80bbba4:experiments/archive/E022-seed42-awal.md`; hasil final yang boleh dikutip
 > tetap ada di [METRICS.md](METRICS.md).
 
 Audit ini dijalankan **sebelum** matriks run E-022 diperbesar ke multi-seed, dan

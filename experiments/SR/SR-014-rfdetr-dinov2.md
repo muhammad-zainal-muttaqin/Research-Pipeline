@@ -48,7 +48,7 @@ DINOv2 patch-16 + 2-window, dari bobot COCO `rf-detr-large-2026`.
 **Jebakan yang harus dihindari (terverifikasi):** default rf-detr `multi_scale` +
 `expanded_scales` diam-diam mengunci resolusi ke **skala terbesar 1440**, bukan
 1280. Keduanya **wajib dimatikan** agar perbandingan benar-benar pada 1280.
-Rinciannya di [`experiments/code/CATATAN-TEKNIS-E021.md`](../code/CATATAN-TEKNIS-E021.md).
+Rinciannya di [`experiments/code/REPRODUCE.md`](../code/REPRODUCE.md) §6.
 
 **Pembanding param-adil:** **YOLO26l** (26,3 juta) dilatih dengan konfigurasi
 identik RT-DETR — 1280, 60 epoch, aman-warna, seed 42, `cos_lr`, bobot COCO.

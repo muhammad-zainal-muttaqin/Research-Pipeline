@@ -11,16 +11,30 @@ log eksperimen yang panjang.
 > dihentikan (gate γ ≈ 0), F-006 dan F-009 tidak dijalankan. Entri kronologisnya
 > di [EKSPERIMEN.md](EKSPERIMEN.md) dengan kode `F-0NN`.
 
-## Status saat ini
+## Posisi sekarang
+
+Tidak ada eksperimen yang berjalan. Seri F ditutup 6 Agustus 2026.
 
 **Final:** E-021 menetapkan RF-DETR-L sebagai hasil deteksi empat kelas terbaik
 saat ini pada SawitMVC: test mAP50 **0,6038** dan mAP50-95 **0,2770** dengan
-protokol `pycocotools` yang sama untuk seluruh pembanding.
+protokol `pycocotools` yang sama untuk seluruh pembanding. Replikasi tiga seed
+(F-004): rerata test mAP50 0,5949, SD seed 0,0049.
 
 **Batas E-022:** parser kalibrasi, reproyeksi depth ke RGB, dan pemeriksaan mutu
 depth sudah divalidasi pada SawitMVC-Depth. Klaim bahwa kanal depth menaikkan
-deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
-[arsip seed-42](archive/E022-seed42-awal.md).
+deteksi belum sah. Rinciannya di [audit](AUDIT-E022.md).
+
+| Topik | Status |
+|---|---|
+| Hasil deteksi empat kelas | **RF-DETR-L E-021** adalah hasil final saat ini: test mAP50 **0,6038** dan mAP50-95 **0,2770**. |
+| Dasar angka E-021 | Keempat model pembanding dinilai dengan satu protokol `pycocotools`; lihat [METRICS.md](METRICS.md). |
+| Sasaran berikutnya | mAP50-95 0,30 masih kurang 0,023. |
+| Data depth sensor E-022 | Parsing kalibrasi dan reproyeksi depth ke RGB tervalidasi. Klaim bahwa depth menaikkan deteksi belum boleh dibuat. |
+| Varians split | **Terukur (E-031).** Lengan RGB berayun **0,0488** antar split — melampaui varians seed (0,0321) dan hampir 5× ambang H-022. **Setiap angka mAP wajib menyebut split.** |
+| Matriks multi-seed YOLO26n | **Selesai (E-027).** Depth − RGB rerata **−0,0230**, dua dari tiga seed signifikan NEGATIF. Untuk YOLO26n depth **merugikan**, bukan netral. |
+| Protokol evaluasi | **Mengikat (E-025):** `hasil.json` tidak boleh dipakai membandingkan antar lengan; celahnya menskala dengan jumlah deteksi. pycocotools protokol tunggal. |
+| Ambiguitas lintas-sisi | Terukur tanpa label manusia: **0,2329 di SawitMVC** (511 tandan, E-028) dan 0,1951 di SawitMVC-Depth (82 tandan, E-024). E-026 **tidak konklusif** pada subset terukur karena denominator identitas RGB dan RGB-D tidak sama (82 vs 75); tidak ada klaim ekuivalensi. |
+| Kelas paling ambigu | **B2 (0,434)**, bukan B4 (0,234 ≈ B1 0,235). AP50 rendah B4 adalah kegagalan DETEKSI, bukan kebingungan kelas (E-028). |
 
 | Label | Arti |
 |---|---|
@@ -60,7 +74,7 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | E-019 | Apakah resolusi tinggi dan augmentasi aman warna membantu? | Tidak konklusif | Arsip | [log](EKSPERIMEN.md) |
 | E-020 | Apakah RT-DETR NMS-free melampaui baseline? | Dikonfirmasi, kemudian dilampaui E-021 | Arsip | [SR-013](SR/SR-013-rtdetr-nms-free.md) |
 | E-021 | Apakah RF-DETR-L melampaui RT-DETR pada setelan identik? | Dikonfirmasi | **Final** | [METRICS](METRICS.md) dan [SR-014](SR/SR-014-rfdetr-dinov2.md) |
-| E-022 | Apakah depth sensor terregistrasi menaikkan mAP? | Fusi awal tidak didukung; klaim kenaikan belum sah | **Audit** | [audit](AUDIT-E022.md) dan [arsip](archive/E022-seed42-awal.md) |
+| E-022 | Apakah depth sensor terregistrasi menaikkan mAP? | Fusi awal tidak didukung; klaim kenaikan belum sah | **Audit** | [audit](AUDIT-E022.md) |
 | E-023 | Fusi menengah/akhir dua cabang | **Dijalankan sebagai E-032**; nomor E-023 dipakai untuk direktori bukti | Arsip | [E-032](EKSPERIMEN.md), bukti `experiments/results/E-023/` |
 | E-024 | Apakah inkonsistensi prediksi lintas-sisi terukur? | Terukur 19,5% | Arsip | [SR-016](SR/SR-016-konsistensi-lintas-sisi.md) |
 | E-025 | Dari mana selisih evaluator E-022 berasal? | Menskala dengan jumlah deteksi | **Audit** | [audit](AUDIT-E022.md) dan [log](EKSPERIMEN.md) |
@@ -77,8 +91,39 @@ deteksi belum sah. Baca [audit](AUDIT-E022.md) sebelum melihat
 | Pembaca | Urutan |
 |---|---|
 | Pembaca hasil | Halaman ini, [METRICS.md](METRICS.md), lalu [SR-014](SR/SR-014-rfdetr-dinov2.md). |
-| Pemeriksa bukti | Halaman ini, [AUDIT-E022.md](AUDIT-E022.md), [arsip E-022](archive/E022-seed42-awal.md), lalu [EKSPERIMEN.md](EKSPERIMEN.md). |
-| Pelaksana reproduksi | Halaman ini, [PETA-SKRIP.md](code/PETA-SKRIP.md), [catatan E-021](code/CATATAN-TEKNIS-E021.md), lalu [REPRODUCE.md](code/REPRODUCE.md). |
+| Pemeriksa bukti | Halaman ini, [AUDIT-E022.md](AUDIT-E022.md), lalu [EKSPERIMEN.md](EKSPERIMEN.md). |
+| Pelaksana reproduksi | Halaman ini, [peta skrip](code/README.md), lalu [REPRODUCE.md](code/REPRODUCE.md). |
 
 `EKSPERIMEN.md` tetap menjadi catatan kronologis. `SR/` merangkai bukti per ide,
 dan `experiments/` menyimpan skrip serta JSON sumber.
+
+## Langkah berikutnya
+
+Butir terbuka dari sesi 1 dan 6 Agustus 2026, diurutkan dari yang paling murah.
+Tidak ada yang dijalankan tanpa permintaan.
+
+1. **G7b, monotonisitas kapasitas multi-seed.** Dari 12 run yolo26m/l × 3 modal
+   × seed 1337 dan 2024, hanya 3 yang lengkap (`yolo26m_{rgb,rgbd,derau}_seed1337`,
+   60 epoch dan `hasil.json`). Empat terputus (`yolo26m_rgb_seed2024` 15 epoch,
+   `yolo26l_rgb_seed1337` dan `yolo26l_derau_seed1337` 18 epoch,
+   `yolo26l_rgbd_seed1337` 2 epoch); lima belum ada. Tidak ada kontras
+   berpasangan yang dihitung, sehingga titik balik kapasitas 21,9–26,3 jt
+   parameter di E-030 masih pola satu seed. Periksa `runs/detect/` sebelum
+   melatih ulang: 55 `best.pt` ditemukan di sana pada 6 Agustus 2026.
+2. **Driver lama belum memakai `code/shell/jadwal.sh`.** Pustaka itu menutup
+   peluncuran ganda (`flock` saat mulai), pekerja yatim (bunuh per grup proses),
+   dan ambang VRAM (5.500 MiB). Jalankan `bash code/shell/jadwal.sh` untuk empat
+   pemeriksaan mandirinya.
+3. **Oversubscription CPU pada evaluasi.** `eval/eval_e022_paired.py` memakai
+   `min(32, cpu_count // 4)` proses per kontras; delapan kontras serentak berarti
+   96 pekerja pada 48 core.
+4. **Fusi menengah pada yolo26m/l.** E-032 memberi indikasi pada yolo26n (3/3
+   seed positif, rerata +0,0139, semua CI memuat nol), dan E-030 menunjukkan isi
+   kanal ke-4 baru penting pada kapasitas besar. Hanya relevan bila jalur depth
+   dilanjutkan.
+5. **Ide yang belum diuji.** I-17 kalibrasi ambang per strata tidak butuh
+   latihan (sekitar 20 menit, pada bobot yang ada). I-13 loss berimbang, I-22
+   loss ordinal, dan I-15 neck BiFPN masing-masing butuh 3 seed (4–5 jam). I-19
+   depth metrik terblokir karena Metric3D atau ZoeDepth belum ada. Tiga seed
+   wajib: rentang antar-seed E-032 (0,0354) lebih besar daripada seluruh selisih
+   antar-lengan, dan rentang antar-split E-031 0,0488.

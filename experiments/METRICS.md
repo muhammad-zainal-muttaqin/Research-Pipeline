@@ -3,8 +3,7 @@
 Halaman ini hanya memuat metrik performa final. Saat ini, satu-satunya hasil
 yang memenuhi status tersebut adalah perbandingan empat kelas E-021 pada
 SawitMVC. Angka E-022 tidak ada di halaman ini karena belum mendukung klaim
-peningkatan deteksi; lihat [audit E-022](AUDIT-E022.md) dan
-[arsip seed-42](archive/E022-seed42-awal.md).
+peningkatan deteksi; lihat [audit E-022](AUDIT-E022.md).
 
 ## E-021: perbandingan final satu protokol
 
@@ -31,7 +30,7 @@ utama.
 - Skrip evaluator: [`experiments/code/eval/eval_all_pycoco.py`](code/eval/eval_all_pycoco.py).
 - Metrik lengkap per kelas, AP, AR, precision, recall, F1, bootstrap, serta
   efisiensi: [`experiments/results/E-021/`](results/E-021/).
-- Catatan konfigurasi dan jebakan run: [`CATATAN-TEKNIS-E021.md`](code/CATATAN-TEKNIS-E021.md).
+- Catatan konfigurasi dan jebakan run: [`code/REPRODUCE.md`](code/REPRODUCE.md) §6.
 - Perintah lengkap: [`REPRODUCE.md`](code/REPRODUCE.md).
 
 ## Batas penggunaan

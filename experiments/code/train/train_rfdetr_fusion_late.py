@@ -14,7 +14,7 @@ Konsekuensinya: definisi "fusi menengah = sebelum P2/4" yang dipakai
 Mendefinisikan ulang "menengah" untuk RF-DETR (di lapisan transformer keberapa,
 bagaimana token CLS/register ditangani, bagaimana jadwal windowed-attention
 disinkronkan antar dua cabang) adalah proyek desain sendiri — lihat
-`RANCANGAN-rfdetr-fusi-mid.md` di folder ini. Fusi MENENGAH ditangguhkan;
+rancangan fusi menengah yang ditangguhkan (`git show 80bbba4:experiments/code/train/RANCANGAN-rfdetr-fusi-mid.md`). Fusi MENENGAH ditangguhkan;
 fusi AKHIR (titik ini) punya padanan struktural yang bersih dan diimplementasikan
 di bawah.
 

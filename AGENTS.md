@@ -167,7 +167,7 @@ Dua jalur riset tentang tandan buah segar (TBS) kelapa sawit:
 | Sasaran terbuka | mAP50-95 0,30 (kurang ±0,023). |
 
 Titik masuk: `manuscript/source/main6-body.tex` (naskah),
-`literature/scopus-2026-09/README.md` (korpus), `experiments/STATUS.md`
+`literature/scopus-2026-09/README.md` (korpus), `experiments/README.md`
 (eksperimen), `README.md` (peta repo).
 
 ## 4. Peta Berkas
@@ -187,7 +187,7 @@ Titik masuk: `manuscript/source/main6-body.tex` (naskah),
 | `literature/example/` | Artikel contoh bentuk naskah `main6` (§12) |
 | `manuscript/reports/` | Laporan hasil eksperimen (`reports.tex` dan versi ringkas); figur rasternya di `manuscript/figures/` |
 | `manuscript/output/papers/` | PDF hasil kompilasi |
-| `experiments/` | `STATUS.md`, `EKSPERIMEN.md` (log), `METRICS.md`, `SERI-F.md`, `SR/`, `code/` (peta: `PETA-SKRIP.md`) |
+| `experiments/` | `README.md` (status dan langkah berikutnya), `EKSPERIMEN.md` (log), `METRICS.md`, `SERI-F.md`, `SR/`, `code/` (peta skrip di `code/README.md`) |
 | `pipeline/` | Deliverable produksi: YOLO 4 kanal untuk kamera Orbbec Gemini |
 | `tools/scopus/` | Pipeline korpus `main6` |
 | `tools/presentation/` | Pembuat dek PPTX |

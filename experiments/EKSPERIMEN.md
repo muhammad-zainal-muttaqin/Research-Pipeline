@@ -6,7 +6,6 @@ merujuk entri lama.
 
 > **Peta baca saat ini:** gunakan [README eksperimen](README.md) untuk status
 > dan register, [METRICS.md](METRICS.md) untuk hasil final E-021, serta
-> [arsip E-022](archive/E022-seed42-awal.md) bersama
 > [AUDIT-E022.md](AUDIT-E022.md) untuk rekam dan koreksi E-022.
 
 **Hasil negatif wajib dicatat.** Justru itu isi paling berharga di sini — ia
@@ -21,7 +20,7 @@ reviewer "apa saja yang sudah dicoba".
 > tidak ada satu pun angka, hipotesis, atau putusan yang berubah. Perintah
 > reproduksi tetap ditulis relatif terhadap `experiments/` (cwd
 > `/workspace/experiments`), sesuai [`experiments/code/REPRODUCE.md`](code/REPRODUCE.md) §2.
-> Peta skrip baru: [`experiments/code/PETA-SKRIP.md`](code/PETA-SKRIP.md).
+> Peta skrip baru: [`experiments/code/README.md`](code/README.md).
 
 **Laporan per-ide ada di [`experiments/SR`](SR/)** — tiap SR merangkum satu ide dari
 masalah → ide → solusi → hasil → putusan. Berkas ini adalah **log kronologis**
@@ -1126,7 +1125,7 @@ melainkan arsitektur NMS-free. Putusan E-021 makin kuat. Tabel penuh per-kelas:
 > **Tidak ada angka di entri ini yang boleh dikutip.** Seluruhnya bertumpu pada
 > satu seed, dua lengan kontrol berkode cacat, dan evaluator yang kini terlarang
 > untuk perbandingan antar lengan. Untuk keadaan terkini mulai dari
-> [STATUS.md](STATUS.md); untuk metrik terukur seluruh run lihat
+> [README eksperimen](README.md); untuk metrik terukur seluruh run lihat
 > [METRIK-LENGKAP.md](METRIK-LENGKAP.md).
 
 **Konteks** — Dataset baru `ULM-DS-Lab/SawitMVC-Depth` (352 pohon, 1.408 citra
@@ -1383,7 +1382,7 @@ informasi B4. Kontrol derau dan kontrol tukar wajib diulang di sana.
 `train/train_rfdetr_4ch.py` (rfdetr 4-kanal, 4 tambalan), `eval/eval_e022_pycoco.py`,
 `eval/eval_e022_paired.py`, `eval/eval_rfdetr_e022.py`. Hasil: `results/E-022/*.json`.
 Split persis: `splits_depth/seed42/`. Tabel seed-42 awal:
-[archive/E022-seed42-awal.md](archive/E022-seed42-awal.md). Audit koreksi:
+`git show 80bbba4:experiments/archive/E022-seed42-awal.md`. Audit koreksi:
 [AUDIT-E022.md](AUDIT-E022.md).
 
 ---

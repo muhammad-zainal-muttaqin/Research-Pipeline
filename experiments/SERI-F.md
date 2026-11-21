@@ -78,7 +78,7 @@ Dua sifat yang wajib dijaga saat implementasi:
 
 ## 5. Catatan teknis yang berlaku untuk seluruh seri
 
-Sejajar dengan `experiments/code/CATATAN-TEKNIS-E021.md`. Semuanya
+Sejajar dengan `experiments/code/REPRODUCE.md` §6. Semuanya
 terverifikasi, bukan dugaan.
 
 ### 5.1 Kriteria klasifikasi RF-DETR adalah IA-BCE
@@ -222,7 +222,7 @@ Yang membuatnya ketahuan hanya perbandingan langsung dengan baseline:
 Kalau lolos, 22 jam GPU akan menghasilkan perbandingan yang **tidak sah**: lengan
 perlakuan berbackbone acak melawan baseline pratlatih. Selisihnya akan didominasi
 ada-tidaknya pralatihan, bukan cabang frekuensi — mode gagal yang persis sama
-dengan yang sudah dicatat untuk E-023 (`STATUS.md` §"Penghalang").
+dengan yang sudah dicatat untuk E-023 (E-032 di `EKSPERIMEN.md`).
 
 **Perbaikan: TURUNKAN, jangan bungkus.** `FrekuensiBackbone(Backbone)` membuat
 nama parameter warisan tidak berubah, bobot pratlatih termuat penuh, dan

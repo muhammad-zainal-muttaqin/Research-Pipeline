@@ -45,7 +45,7 @@
 
 ## 1. Masalah
 
-`STATUS.md` §5 mencatat satu lubang yang tidak bisa ditutup dengan analisis:
+Status eksperimen saat itu mencatat satu lubang yang tidak bisa ditutup dengan analisis:
 **depth SENSOR belum pernah diuji.** Yang pernah diuji hanya pseudo-depth
 (E-006/SR-005, dipalsukan) — dan pseudo-depth punya cacat bawaan yang dicatat di
 `evidence-body.tex` §133: ia diturunkan dari RGB yang sama, jadi galatnya
@@ -229,6 +229,6 @@ RGB memakai bobot pratlatih — konfigurasi yang justru paling mungkin dipakai.
 
 Hasil mentah: `experiments/results/E-022/*.json`. Split persis:
 `experiments/splits/depth/seed42/`. Tabel seed-42 awal:
-[`../archive/E022-seed42-awal.md`](../archive/E022-seed42-awal.md). Audit:
+`git show 80bbba4:experiments/archive/E022-seed42-awal.md`. Audit:
 [`../AUDIT-E022.md`](../AUDIT-E022.md). Log kronologis:
 [`../EKSPERIMEN.md`](../EKSPERIMEN.md) §E-022.

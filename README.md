@@ -26,10 +26,10 @@ menjelaskan mengapa angka tersebut tidak boleh dipakai sebagai hasil final.
 | Tujuan | Buka ini |
 |---|---|
 | Mengutip metrik final | [Metrik E-021](experiments/METRICS.md) |
-| Memeriksa koreksi E-022 | [Audit E-022](experiments/AUDIT-E022.md), lalu [arsip seed-42](experiments/archive/E022-seed42-awal.md) |
+| Memeriksa koreksi E-022 | [Audit E-022](experiments/AUDIT-E022.md) |
 | Memahami seluruh eksperimen | [Pintu masuk eksperimen](experiments/README.md) |
 | Menjalankan ulang E-021 | [Panduan reproduksi](experiments/code/REPRODUCE.md) |
-| Menemukan skrip dan bukti hasil | [Peta skrip](experiments/code/PETA-SKRIP.md) |
+| Menemukan skrip dan bukti hasil | [Peta skrip](experiments/code/README.md) |
 | Membaca sintesis literatur | [Sintesis lintas makalah](literature/synthesis.md) |
 | Membaca naskah *review* terkini | [`main6.pdf`](manuscript/output/papers/main6.pdf), sumber [`main6-body.tex`](manuscript/source/main6-body.tex) |
 | Mengerjakan verifikasi `main6` (tugas peninjau) | [Verifikasi](literature/scopus-2026-09/verifikasi/README.md), lalu [daftar tugas](literature/scopus-2026-09/verifikasi/TUGAS.md) |
