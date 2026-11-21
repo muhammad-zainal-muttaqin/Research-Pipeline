@@ -66,8 +66,7 @@ pesan commit, dan naskah.
   lain, atau peninjau.
   - Contoh `.md` yang dilarang: laporan sesi, catatan keputusan, rencana
     kerja, ringkasan perubahan, daftar kemajuan, berkas aturan baru, dan
-    berkas yang hanya menerangkan berkas lain (`ISTILAH`, `PANDUAN`,
-    `SERAH-TERIMA`, `RINGKASAN`, `KEMAJUAN`).
+    berkas penjelas yang disebut di "Kebersihan repo".
   - Contoh `.py` yang dilarang: pemeriksa hasil kerja agen (misalnya skrip
     yang mencocokkan setiap PDF dengan judulnya), pembuat paket bacaan untuk
     subagen, skrip audit atau pembanding sekali pakai, dan skrip yang dibuat
@@ -128,7 +127,7 @@ pesan commit, dan naskah.
 **Lembar, log, dan tugas.**
 
 - Lembar untuk manusia: kode ditulis bersama artinya; Y/N ditulis ya/tidak;
-  asal isian di kolom `diisi_oleh` atau `oleh`; catatan tidak memuat nama
+  catatan tidak memuat nama
   model, nama proses, tanggal isian, atau jalur berkas. Log perubahan memuat
   satu baris per perubahan: artikel (penulis, tahun, judul), kelompok sekarang,
   yang diubah, sebelum, sesudah, alasan sebenarnya, dan pengubah; baris yang
@@ -268,7 +267,6 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
   makro dari `main6-angka.tex`, bukan diketik.
 - Kode mekanisme C1 dan kode C3 disunting di `literature/scopus-2026-09/topik/bukti/mekanisme_C1.txt` dan
   `literature/scopus-2026-09/topik/bukti/kode_C3.txt`; berkas itu menimpa kode otomatis `kode_bukti.py`.
-- Naskah tidak memuat jalur folder atau kode internal repo.
 - **Isi lebih dahulu, cara pengumpulan sesudahnya.** Ini berlaku untuk naskah
   tinjauan dan untuk prioritas kerja agen. Pokok tinjauan adalah cara bidang
   ini menyelesaikan masalahnya:
@@ -284,10 +282,6 @@ python3 tools/scopus/lampiran_kueri.py   # Lampiran B
     menilai dan mengulang peta. Riwayat verifikasi internal (putaran model,
     ajudikasi, uji sanggah, pendelegasian keputusan, isi log perubahan) dan
     rincian prosedur ditaruh di bahan tambahan dan repo.
-  - **Seksi bukti.** Seksi bukti dibuka dengan klaim tentang isi, bukan dengan
-    "N dari M kajian".
-  - **Paragraf bukti.** Setiap paragraf bukti ditutup dengan sintesis lintas
-    kajian (pola, pertentangan, atau sebab), bukan daftar hasil per kajian.
   - **Prioritas agen.** Saat memperbaiki naskah, agen lebih dahulu membaca isi
     kajian dari teks lengkap, baru kemudian memperbaiki *pipeline* korpus.
     Laporan kemajuan kepada pengguna juga dimulai dari temuan isi.
@@ -551,8 +545,6 @@ Aturannya:
 - Kriteria ditulis bernomor. Alasan eksklusi memakai kata dan urutan yang sama
   dengan kotak diagram alur.
 - Penyaringan ditulis tiga tahap: judul, judul dan abstrak, teks lengkap.
-  Pernyataan "satu peninjau dibantu model bahasa besar" ditulis sekali di
-  metode, keterbatasan, dan deklarasi AI.
 - Aturan keputusan pengodean ditulis dalam pola "A study was coded as X when
   ...".
 - Lanskap kuantitatif ditulis sebagai butir berlabel (i)–(iii), satu gambar per
