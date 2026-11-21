@@ -59,7 +59,7 @@ const SPECIAL_DOCS = [
     theme: 'Sintesis',
     file: 'literature/synthesis.md',
     sourceDir: 'literature',
-    desc: 'Sintesis lintas makalah dari korpus tinjauan pustaka.'
+    desc: 'Sintesis lintas makalah koleksi deteksi objek dan RGB-D.'
   },
   {
     id: 'laporan-eksperimen',
@@ -73,15 +73,15 @@ const SPECIAL_DOCS = [
     desc: 'Cuplikan terkurasi eksperimen deteksi dan penghitungan tandan sawit.'
   },
   {
-    id: 'korpus-main6',
+    id: 'katalog-pdf',
     kind: 'katalog',
-    label: 'KORPUS MAIN6',
+    label: 'KATALOG PDF',
     marker: '#',
-    title: 'Katalog PDF Korpus main6',
-    theme: 'Korpus main6',
+    title: 'Katalog PDF Tinjauan Penghitungan Buah',
+    theme: 'Katalog PDF',
     file: 'literature/scopus-2026-09/KATALOG-PDF.md',
     sourceDir: 'literature/scopus-2026-09',
-    desc: 'Daftar kajian korpus main6 beserta tautan PDF, menurut kode penyaringan.'
+    desc: 'Tautan PDF setiap kajian tinjauan, per kelompok kajian.'
   }
 ];
 
@@ -314,6 +314,21 @@ const specials = SPECIAL_DOCS.map(function (d, i) {
  * berkas .md saat entri dibuka.
  */
 const M6_DIR = path.join(ROOT, 'literature', 'scopus-2026-09', 'entri');
+const M6_GROUPS = {
+  C1: 'Hitung Multi-Pengamatan',
+  C2: 'Hitung Satu Pandang',
+  C3: 'Kelapa Sawit',
+  C4: 'Hitung per Kelas',
+  C5: 'Depth & Sensor 3D',
+  R: 'Tinjauan Terdahulu',
+  T: 'Metode Luar Pertanian'
+};
+const COLLECTIONS = [
+  { key: 'buah', name: 'Tinjauan Penghitungan Buah',
+    desc: 'Kajian Scopus (pencarian 28 September 2026) tentang penghitungan buah berbasis citra: cara setiap buah dihitung sekali dari banyak pengamatan, dikelompokkan menurut jenis kajian.' },
+  { key: 'deteksi', name: 'Deteksi Objek & RGB-D',
+    desc: 'Telaah makalah deteksi objek, keluarga YOLO, dan fusi warna dengan kedalaman (RGB-D) yang menjadi dasar eksperimen deteksi.' }
+];
 const M6_URL = 'literature/scopus-2026-09/entri/';
 const M6_TEKS_URL = 'literature/scopus-2026-09/teks/';
 const m6 = [];
@@ -324,7 +339,7 @@ if (fs.existsSync(M6_DIR)) {
     const h1 = raw.match(/^#\s+(.+)$/m);
     const yr = raw.match(/^\|\s*Tahun\s*\|\s*(\d{4})\s*\|/m);
     const kd = raw.match(/^\|\s*Kode\s*\|\s*([A-Z0-9]+)\b/m);
-    if (!h1 || !yr || !kd || extractBib(raw) !== key) {
+    if (!h1 || !yr || !kd || !M6_GROUPS[kd[1]] || extractBib(raw) !== key) {
       warnings.push('Entri main6 tanpa kepala sah (jalankan tools/scopus/entri_main6.py): ' + file);
       return;
     }
@@ -334,7 +349,8 @@ if (fs.existsSync(M6_DIR)) {
       id: key,
       year: parseInt(yr[1], 10),
       title: h1[1].trim(),
-      theme: 'main6 ' + kd[1],
+      theme: M6_GROUPS[kd[1]],
+      koleksi: 'buah',
       bib: key,
       special: false,
       m6: true,
@@ -348,9 +364,8 @@ if (fs.existsSync(M6_DIR)) {
     });
   });
 }
-const m6Counts = {};
-m6.forEach(function (e) { m6Counts[e.theme] = (m6Counts[e.theme] || 0) + 1; });
 
+entries.forEach(function (e) { e.koleksi = 'deteksi'; });
 const maxOldNum = entries.reduce(function (m, e) { return Math.max(m, e.num); }, 0);
 const maxNum = maxOldNum + m6.length;
 const korpus = entries.concat(m6.map(function (e, i) {
@@ -364,10 +379,13 @@ const DATA = specials.concat(korpus);
  * ------------------------------------------------------------------ */
 const themeCounts = {};
 const yearCounts = {};
+const yearByCol = {};
 let totalWords = 0;
 korpus.forEach(function (e) {
   themeCounts[e.theme] = (themeCounts[e.theme] || 0) + 1;
   yearCounts[e.year] = (yearCounts[e.year] || 0) + 1;
+  yearByCol[e.year] = yearByCol[e.year] || {};
+  yearByCol[e.year][e.koleksi] = (yearByCol[e.year][e.koleksi] || 0) + 1;
   totalWords += e.words;
 });
 const years = Object.keys(yearCounts).map(Number).sort(function (a, b) { return a - b; });
@@ -387,17 +405,31 @@ const META = {
   totalWords: totalWords,
   totalMin: totalMin,
   totalHours: totalHours,
-  m6Total: m6.length,
-  m6Counts: m6Counts,
+  yearByCol: yearByCol,
+  collections: COLLECTIONS.map(function (c) {
+    const items = korpus.filter(function (e) { return e.koleksi === c.key; });
+    const ys = items.map(function (e) { return e.year; });
+    const tc = {};
+    items.forEach(function (e) { tc[e.theme] = (tc[e.theme] || 0) + 1; });
+    return {
+      key: c.key, name: c.name, desc: c.desc, total: items.length,
+      minYear: Math.min.apply(null, ys), maxYear: Math.max.apply(null, ys),
+      themes: Object.keys(tc).sort(function (a, b) { return tc[b] - tc[a] || a.localeCompare(b); })
+    };
+  }),
   built: new Date().toISOString().slice(0, 10),
   markedVersion: MARKED_VERSION
 };
+
+if (META.collections.reduce(function (n, c) { return n + c.themes.length; }, 0) !== themes.length) {
+  fail('Nama tema dipakai di lebih dari satu koleksi; ubah M6_GROUPS agar tidak sama dengan tema entri lama.');
+}
 
 /* ------------------------------------------------------------------ *
  * Laporan
  * ------------------------------------------------------------------ */
 console.log('\n=== build.js: Ruang Baca Riset ===');
-console.log('Entri korpus    : ' + korpus.length + '  (gabungan ' + entries.length + ' entri lama + ' + m6.length + ' entri main6)');
+console.log('Entri korpus    : ' + korpus.length + '  (' + COLLECTIONS.map(function (c) { return c.name + ' ' + korpus.filter(function (e) { return e.koleksi === c.key; }).length; }).join(' · ') + ')');
 console.log('Dokumen spesial : ' + specials.length + '  ' +
   specials.map(function (s) { return s.id + ' [' + s.kind + ', ' + s.words + ' kata]'; }).join(' · '));
 console.log('Tema            : ' + themes.length);
@@ -559,6 +591,8 @@ body.on-home .wrap{max-width:var(--home-w)}
   font-size:11.5px; font-weight:500; color:var(--ink-2); background:var(--surface);
   border:1px solid var(--line); border-radius:var(--r-pill); white-space:nowrap;
   transition:all .16s var(--ease)}
+.chip-group{flex-basis:100%; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin:4px 0 1px}
+.chip-group:first-child{margin-top:0}
 .chip .cd{width:6px; height:6px; border-radius:50%; background:var(--tc,var(--ink-3))}
 .chip:hover{border-color:var(--line-strong); color:var(--ink)}
 .chip[aria-pressed="true"]{color:var(--tc,var(--accent-ink)); border-color:color-mix(in srgb,var(--tc,var(--accent)) 45%,var(--line));
@@ -746,7 +780,7 @@ html[data-theme="dark"] .meta-btn.ok{color:#8fd9a3; border-color:#3c6b48}
 .pdf-card-head .tag{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap}
 .pdf-preview{display:block; width:100%; height:510px; border:0; background:var(--surface-2)}
 .pdf-card-foot{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px}
-.pdf-card-foot code{font-family:var(--mono); font-size:10.5px; color:var(--ink-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pdf-card-foot .note{font-size:12.5px; color:var(--ink-3); min-width:0}
 .pdf-actions{display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px; margin-left:auto}
 .pdf-card-foot a,.pdf-fullscreen{display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:0 6px; flex-shrink:0; font-size:12.5px; font-weight:600; color:var(--accent-ink)}
 .pdf-card-foot a svg,.pdf-fullscreen svg{width:14px; height:14px}
@@ -775,6 +809,14 @@ html[data-theme="dark"] .meta-btn.ok{color:#8fd9a3; border-color:#3c6b48}
 .tl-bar{width:100%; max-width:26px; border-radius:3px 3px 1px 1px; background:var(--surface-3);
   transition:background var(--dur); position:relative; min-height:3px}
 .tl-col:hover .tl-bar{background:var(--accent)}
+.tl-bar.stack{display:flex; flex-direction:column-reverse; background:none}
+.tl-bar.stack .seg{display:block; width:100%; background:var(--sc); opacity:.72; transition:opacity var(--dur)}
+.tl-bar.stack .seg:last-of-type{border-radius:3px 3px 0 0}
+.tl-col:hover .tl-bar.stack{background:none}
+.tl-col:hover .tl-bar.stack .seg{opacity:1}
+.tl-legend{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:14px; font-size:12.5px; color:var(--ink-2)}
+.tl-legend span{display:inline-flex; align-items:center; gap:7px}
+.tl-legend i{width:9px; height:9px; border-radius:2px; background:var(--sc); opacity:.8}
 .tl-bar .tip{position:absolute; bottom:calc(100% + 7px); left:50%; transform:translateX(-50%) scale(.9);
   opacity:0; pointer-events:none; font-family:var(--mono); font-size:10.5px; white-space:nowrap; padding:4px 8px;
   background:var(--ink); color:var(--bg); border-radius:5px; transition:all .15s var(--ease)}
@@ -794,6 +836,17 @@ html[data-theme="dark"] .meta-btn.ok{color:#8fd9a3; border-color:#3c6b48}
 .trow-bar span{display:block; height:100%; background:var(--tc); border-radius:2px}
 .trow-count{font-family:var(--mono); font-size:12px; color:var(--ink-2); width:34px; text-align:right; flex-shrink:0}
 @media(max-width:760px){ .trow-samples,.trow-bar{display:none} .trow-name{width:auto; flex:1; min-width:0} }
+
+/* koleksi: kepala kelompok di peta tema */
+.colmap{display:grid; grid-template-columns:minmax(0,1fr); gap:34px}
+.colmap > section{min-width:0}
+.col-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; padding-bottom:12px}
+.col-head h3{font-family:var(--serif); font-size:21px; font-weight:600; letter-spacing:-.012em}
+.col-head .meta{font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; color:var(--ink-3)}
+.col-head .all{margin-left:auto; font-size:12.5px; font-weight:600; color:var(--accent-ink)}
+.col-head .all:hover{text-decoration:underline; text-underline-offset:3px}
+.col-head p{flex-basis:100%; font-size:14px; line-height:1.6; color:var(--ink-2); max-width:680px; text-wrap:pretty}
+.colmap .tlist{border-top:2px solid color-mix(in srgb,var(--cc) 70%,transparent)}
 
 /* dokumen riset: baris datar memakai pola .trow yang sama, tanpa kartu */
 .docrows .trow{color:inherit}
@@ -1012,6 +1065,8 @@ function RUNTIME() {
   var byId = {};
   DATA.forEach(function (e) { byId[e.id] = e; });
   var ENTRIES = DATA.filter(function (e) { return !e.special && !e.m6; });
+  var KORPUS = DATA.filter(function (e) { return !e.special; });
+  function entryNo(e) { return e.special ? (e.marker || '·') : (e.m6 ? String(e.num) : e.id); }
   var M6_BASE = 'literature/scopus-2026-09/';
   var SPECIALS = DATA.filter(function (e) { return e.special; });
 
@@ -1022,13 +1077,17 @@ function RUNTIME() {
     'RGB-D SLAM': '#A04763', 'Pedestrian RGB-T': '#A9611A', 'Pertanian': '#6C8018',
     'Medis': '#128577', 'Industri': '#5C6875', 'Remote Sensing': '#2E86AB',
     'Fusi Multimodal': '#8B5CB4', 'Dataset': '#7C755E', 'Sintesis': '#A03028',
-    'Eksperimen': '#3F6B8F', 'Korpus main6': '#8A5A2B',
-    'main6 C1': '#8A5A2B', 'main6 C2': '#9A6B3A', 'main6 C3': '#6B4A1F', 'main6 C4': '#A77B4C',
-    'main6 C5': '#7A6548', 'main6 R': '#8F7A5C', 'main6 T': '#5F5340'
+    'Eksperimen': '#3F6B8F', 'Katalog PDF': '#8A5A2B',
+    'Hitung Multi-Pengamatan': '#B5562B', 'Hitung Satu Pandang': '#B8860B', 'Kelapa Sawit': '#4E7A1E',
+    'Hitung per Kelas': '#A0527A', 'Depth & Sensor 3D': '#2F7F8F', 'Tinjauan Terdahulu': '#66639E',
+    'Metode Luar Pertanian': '#7D6A55'
   };
+  var COL_COLORS = { buah: '#B5562B', deteksi: '#2B6CB0' };
   function tColor(t) { return THEME_COLORS[t] || 'var(--ink-2)'; }
 
   var PATHS = [
+    { name: 'Asosiasi Lintas Pandang', tag: 'geometri · pelacakan · SfM', desc: 'Cara kajian menautkan pengamatan buah yang sama antarbingkai atau antarpandang: geometri multi-pandang, pelacakan video, dan structure-from-motion.', ids: ['stein2016image', 'liu2018robust', 'wang2019mango', 'genemola2020fruitb', 'zhou2024advancing', 'qi2025assessment'] },
+    { name: 'Dari Hitungan ke Muatan Buah', tag: 'kebun · koreksi · sawit', desc: 'Dari hitungan citra ke muatan buah per pohon: perbandingan metode di kebun apel, koreksi buah tersembunyi, dan dataset multi-pandang tandan sawit.', ids: ['hani2020comparative', 'anderson2021estimation', 'koirala2021attempting', 'indriani2026sawitmvc'] },
     { name: 'Evolusi YOLO', tag: 'v1 - v11', desc: 'Lintasan inti YOLO: dari deteksi-sebagai-regresi tunggal menuju desain bebas-NMS dan bermodul atensi.', ids: ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010'] },
     { name: 'Fondasi Deteksi & Transformer', tag: 'R-CNN - DETR', desc: 'Tulang punggung deteksi modern: dua-tahap, satu-tahap, anchor-free, hingga transformer (DETR, ViT, Swin, RT-DETR).', ids: ['012', '014', '015', '016', '019', '022', '024', '025', '155'] },
     { name: 'Fusi RGB-D Inti', tag: 'SOD / Segmentasi / Integrasi', desc: 'Jantung tinjauan: saliency, segmentasi semantik, dan integrasi YOLO+Depth dengan atensi lintas-modal.', ids: ['035', '036', '042', '055', '058', '112', '113', '118'] },
@@ -1036,8 +1095,8 @@ function RUNTIME() {
   ];
 
   var PAPERS = [
-    { label: 'IEEEtran', title: 'Naskah IEEEtran', file: 'manuscript/output/papers/main.pdf' },
-    { label: 'Elsevier', title: 'Naskah Elsevier', file: 'manuscript/output/papers/main-elsarticle.pdf' }
+    { label: 'Naskah', title: 'Naskah tinjauan', note: 'Tinjauan sistematis, templat Elsevier dua kolom', file: 'manuscript/output/papers/main6.pdf' },
+    { label: 'Lampiran daring', title: 'Bahan tambahan', note: 'Rincian prosedur pencarian, penyaringan, dan pengodean', file: 'manuscript/output/papers/main6-supplementary.pdf' }
   ];
 
   var ICON = {
@@ -1176,8 +1235,8 @@ function RUNTIME() {
     tr.tabIndex = 0;
     if (e.special) tr.className = 'special';
     var num = doc.createElement('td'); num.className = 'c-num';
-    num.textContent = e.special ? (e.marker || '·') : (e.m6 ? 'M6' : e.id);
-    if (e.m6) num.title = 'Entri korpus main6 · ' + e.id;
+    num.textContent = entryNo(e);
+    if (e.m6) num.title = 'Tinjauan penghitungan buah · ' + e.id;
     if (e.special) {
       num.title = e.label || 'Dokumen riset';
       num.setAttribute('aria-label', (e.label || 'Dokumen riset') + ', bukan entri bernomor');
@@ -1206,9 +1265,16 @@ function RUNTIME() {
 
   /* ================= CHIPS + YEAR ================= */
   function buildChips() {
-    var themes = Object.keys(META.themeCounts).sort(function (a, b) { return META.themeCounts[b] - META.themeCounts[a]; });
+    var themes = [];
     chipsEl.innerHTML = '';
-    themes.forEach(function (t) {
+    META.collections.forEach(function (col) {
+      var g = doc.createElement('span');
+      g.className = 'chip-group';
+      g.textContent = col.name;
+      chipsEl.appendChild(g);
+      col.themes.forEach(function (t) { themes.push(t); addChip(t); });
+    });
+    function addChip(t) {
       var c = doc.createElement('button');
       c.className = 'chip'; c.type = 'button'; c.dataset.tema = t;
       c.setAttribute('aria-pressed', 'false');
@@ -1219,7 +1285,7 @@ function RUNTIME() {
         pushFilter(); renderList();
       });
       chipsEl.appendChild(c);
-    });
+    }
     var toggle = qs('#chipsToggle');
     var collapsedLabel = '+ Semua ' + themes.length + ' tema';
     toggle.textContent = collapsedLabel;
@@ -1522,41 +1588,40 @@ function RUNTIME() {
 
   function viewHome() {
     tocEl.innerHTML = '';
-    doc.title = 'Ruang Baca Riset · YOLO / RGB / RGB-D';
+    doc.title = 'Ruang Baca Riset · Penghitungan Buah dari Citra';
+    var cBuah = colByKey('buah'), cDet = colByKey('deteksi');
     var h = '<div class="wrap home">';
     h += '<section class="hero">' +
-      '<div class="eb rv"><span class="dot"></span>Tinjauan Pustaka · ' + META.minYear + '–' + META.maxYear + '</div>' +
-      '<h1 class="rv" style="--i:1">Ruang Baca Riset<br><span class="muted">YOLO · RGB · RGB-D</span></h1>' +
-      '<p class="lede rv" style="--i:2">Ruang baca digital untuk ' + META.total + ' telaah makalah deteksi objek dan fusi RGB+Depth (' + META.minYear + '–' + META.maxYear + '), ' + 'plus ' + SPECIALS.length + ' dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.</p>' +
+      '<div class="eb rv"><span class="dot"></span>Tinjauan pustaka · Eksperimen deteksi · ' + META.minYear + '–' + META.maxYear + '</div>' +
+      '<h1 class="rv" style="--i:1">Ruang Baca Riset<br><span class="muted">Penghitungan buah dari citra</span></h1>' +
+      '<p class="lede rv" style="--i:2">Satu katalog untuk dua koleksi: ' + cBuah.total + ' kajian tinjauan penghitungan buah berbasis citra (Scopus, September 2026) dan ' + cDet.total + ' telaah makalah deteksi objek dan RGB-D. Naskah tinjauan, sintesis, laporan eksperimen, dan katalog PDF ada di halaman yang sama.</p>' +
       '<div class="cta-row rv" style="--i:3">' +
-      '<a class="btn btn-solid" href="#/temuan">' + ICON.spark + 'Mulai dari Temuan' + ICON.arrowR + '</a>' +
-      '<button class="btn btn-ghost" id="exploreBtn" type="button">' + ICON.book + 'Jelajahi katalog ' + META.total + ' entri</button>' +
+      '<button class="btn btn-solid" type="button" data-scroll="naskah">' + ICON.spark + 'Baca naskah tinjauan' + ICON.arrowR + '</button>' +
+      '<button class="btn btn-ghost" type="button" data-scroll="katalog">' + ICON.book + 'Jelajahi katalog ' + META.total + ' entri</button>' +
       '</div>' + resumeHtml() + '</section>';
 
-    h += sectionH('Dokumen riset', 'research documents · ' + SPECIALS.length + ' dokumen');
-    h += docRowsHtml();
-
-    h += sectionH('Dokumen naskah', 'pratinjau PDF');
+    h += '<span id="naskah"></span>' + sectionH('Naskah tinjauan', 'pratinjau PDF · ' + PAPERS.length + ' berkas');
     h += pdfPreviewHtml();
 
-    h += sectionH('Sekilas angka', 'ringkasan korpus');
+    h += sectionH('Koleksi dan tema', META.collections.length + ' koleksi · ' + META.themeCount + ' tema · klik untuk menyaring');
+    h += '<div class="colmap">' + META.collections.map(colMapHtml).join('') + '</div>';
+
+    h += sectionH('Sekilas angka', 'ringkasan katalog');
     h += '<div class="stats rv">' +
       statCell(META.total, 'Entri telaah') +
-      statCell(META.themeCount, 'Tema klaster') +
+      META.collections.map(function (c) { return statCell(c.total, c.name); }).join('') +
       statCell(Object.keys(META.yearCounts).length, 'Tahun ' + META.minYear + '–' + META.maxYear) +
       statCell('±' + META.totalHours, 'Jam total baca') + '</div>';
+    h += '<div style="margin-top:30px">' + timelineHtml() + '</div>';
 
-    h += sectionH('Sebaran per tahun', 'klik batang untuk menyaring');
-    h += timelineHtml();
+    h += sectionH('Mulai di sini', 'jalur baca terkurasi · ' + PATHS.length + ' jalur');
+    h += '<div class="plist">' + pathsHtml() + '</div>';
 
-    h += sectionH('Peta tema', META.themeCount + ' klaster · klik untuk menyaring');
-    h += '<div class="tlist rv">' + themeRowsHtml() + '</div>';
+    h += sectionH('Dokumen riset', SPECIALS.length + ' dokumen');
+    h += docRowsHtml();
 
     h += '<span id="katalog"></span>' + sectionH('Katalog', 'klik kolom untuk mengurutkan');
     h += catalogueHtml();
-
-    h += sectionH('Mulai di sini', 'jalur baca terkurasi');
-    h += '<div class="plist">' + pathsHtml() + '</div>';
 
     h += footHtml();
     h += '</div>';
@@ -1570,14 +1635,18 @@ function RUNTIME() {
     main.querySelectorAll('[data-theme-card]').forEach(function (el) {
       el.addEventListener('click', function () { goFilter({ tema: el.dataset.themeCard }); });
     });
+    main.querySelectorAll('[data-col]').forEach(function (el) {
+      el.addEventListener('click', function () { goFilter({ tema: colByKey(el.dataset.col).themes }); });
+    });
+    main.querySelectorAll('[data-scroll]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var t = qs('#' + el.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
     main.querySelectorAll('[data-year]').forEach(function (el) {
       el.addEventListener('keydown', function (ev) {
         if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); el.click(); }
       });
-    });
-    var exp = qs('#exploreBtn');
-    if (exp) exp.addEventListener('click', function () {
-      var t = qs('#katalog'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     main.querySelectorAll('[data-pdf-fullscreen]').forEach(function (btn) {
       btn.addEventListener('click', function () { togglePdfFullscreen(btn); });
@@ -1619,7 +1688,7 @@ function RUNTIME() {
 
   function goFilter(f) {
     state.q = ''; state.tema = {}; state.thn = '';
-    if (f.tema) state.tema[f.tema] = 1;
+    if (f.tema) [].concat(f.tema).forEach(function (t) { state.tema[t] = 1; });
     if (f.thn) state.thn = f.thn;
     if (location.hash !== '#/' + hashQuery()) history.replaceState(null, '', '#/' + hashQuery());
     closeDrawer();
@@ -1634,7 +1703,7 @@ function RUNTIME() {
     var e = byId[last];
     return '<div class="resume rv" style="--i:4"><a href="#/' + e.id + '">' +
       '<span class="k">Lanjutkan membaca</span>' +
-      '<span class="num">' + (e.special ? '§' : e.id) + '</span>' +
+      '<span class="num">' + esc(entryNo(e)) + '</span>' +
       '<span class="t">' + esc(e.title) + '</span>' + ICON.arrowR + '</a></div>';
   }
   function sectionH(t, sub) {
@@ -1667,9 +1736,9 @@ function RUNTIME() {
       return '<article class="pdf-card">' +
         '<header class="pdf-card-head"><h3>' + esc(p.title) + '</h3><span class="tag">' + esc(p.label) + '</span></header>' +
         '<iframe class="pdf-preview" src="' + esc(src) + '" title="Pratinjau ' + esc(p.title) + '" loading="lazy"></iframe>' +
-        '<footer class="pdf-card-foot"><code>' + esc(p.file.split('/').pop()) + '</code><span class="pdf-actions">' +
+        '<footer class="pdf-card-foot"><span class="note">' + esc(p.note) + '</span><span class="pdf-actions">' +
         '<button class="pdf-fullscreen" type="button" data-pdf-fullscreen="' + esc(src) + '" aria-label="Tampilkan ' + esc(p.title) + ' dalam layar penuh">Layar penuh' + ICON.fullscreen + '</button>' +
-        '<a href="' + esc(src) + '" target="_blank" rel="noopener">Buka ' + esc(p.title) + ' PDF' + ICON.ext + '</a></span></footer>' +
+        '<a href="' + esc(src) + '" target="_blank" rel="noopener">Buka PDF' + ICON.ext + '</a></span></footer>' +
         '</article>';
     }).join('') + '</div>';
   }
@@ -1696,20 +1765,37 @@ function RUNTIME() {
     var cols = ys.map(function (y) {
       var c = META.yearCounts[y] || 0;
       var hpct = c ? Math.max(4, Math.round(c / max * 100)) : 0;
+      var by = META.yearByCol[y] || {};
+      var parts = META.collections.filter(function (col) { return by[col.key]; });
+      var detail = parts.map(function (col) { return by[col.key] + ' ' + col.name.toLowerCase(); }).join(', ');
+      var label = y + ': ' + c + ' entri' + (detail ? ' (' + detail + ')' : '');
       var attrs = c
-        ? ' data-year="' + y + '" role="button" tabindex="0" aria-label="Saring tahun ' + y + ': ' + c + ' entri"'
+        ? ' data-year="' + y + '" role="button" tabindex="0" aria-label="Saring ' + esc(label) + '"'
         : '';
-      return '<div class="tl-col' + (c ? '' : ' empty') + '"' + attrs + ' title="' + y + ': ' + c + ' entri">' +
-        '<div class="tl-bar" style="height:' + hpct + '%"><span class="tip">' + c + ' entri</span></div>' +
+      var segs = parts.map(function (col) {
+        return '<span class="seg" style="--sc:' + COL_COLORS[col.key] + ';height:' + (by[col.key] / c * 100) + '%"></span>';
+      }).join('');
+      return '<div class="tl-col' + (c ? '' : ' empty') + '"' + attrs + ' title="' + esc(label) + '">' +
+        '<div class="tl-bar' + (c ? ' stack' : '') + '" style="height:' + hpct + '%">' + segs + '<span class="tip">' + c + ' entri</span></div>' +
         '<span class="tl-yr">' + y + '</span></div>';
     }).join('');
-    return '<div class="timeline rv"><div class="tl-bars">' + cols + '</div></div>';
+    var legend = META.collections.map(function (col) {
+      return '<span><i style="--sc:' + COL_COLORS[col.key] + '"></i>' + esc(col.name) + '</span>';
+    }).join('');
+    return '<div class="timeline rv"><div class="tl-bars">' + cols + '</div><div class="tl-legend">' + legend + '</div></div>';
   }
-  function themeRowsHtml() {
-    var themes = Object.keys(META.themeCounts).sort(function (a, b) { return META.themeCounts[b] - META.themeCounts[a]; });
-    var max = META.themeCounts[themes[0]] || 1;
-    return themes.map(function (t) {
-      var samples = ENTRIES.filter(function (e) { return e.theme === t; }).slice(0, 2);
+  function colByKey(k) {
+    return META.collections.filter(function (c) { return c.key === k; })[0];
+  }
+  function shouting(t) {
+    var up = (t.match(/[A-Z]/g) || []).length, lo = (t.match(/[a-z]/g) || []).length;
+    return up > lo;
+  }
+  function colMapHtml(col) {
+    var max = META.themeCounts[col.themes[0]] || 1;
+    var rows = col.themes.map(function (t) {
+      var samples = KORPUS.filter(function (e) { return e.theme === t && !shouting(e.title); })
+        .sort(function (a, b) { return b.year - a.year; }).slice(0, 2);
       var txt = samples.map(function (e) { return e.title; }).join(' · ');
       var w = Math.max(3, Math.round(META.themeCounts[t] / max * 100));
       return '<button class="trow" data-theme-card="' + esc(t) + '" style="--tc:' + tColor(t) + '" aria-label="Saring tema ' + esc(t) + '">' +
@@ -1718,12 +1804,18 @@ function RUNTIME() {
         '<span class="trow-bar"><span style="width:' + w + '%"></span></span>' +
         '<span class="trow-count">' + META.themeCounts[t] + '</span></button>';
     }).join('');
+    return '<section class="rv" style="--cc:' + COL_COLORS[col.key] + '"><div class="col-head">' +
+      '<h3>' + esc(col.name) + '</h3>' +
+      '<span class="meta">' + col.total + ' entri · ' + col.themes.length + ' tema · ' + col.minYear + '–' + col.maxYear + '</span>' +
+      '<button class="all" type="button" data-col="' + esc(col.key) + '">Saring koleksi</button>' +
+      '<p>' + esc(col.desc) + '</p></div>' +
+      '<div class="tlist">' + rows + '</div></section>';
   }
   function pathsHtml() {
     return PATHS.map(function (p, i) {
       var chips = p.ids.map(function (id) {
         var e = byId[id]; if (!e) return '';
-        return '<a class="pchip" href="#/' + id + '"><span class="pn2">' + id + '</span>' + esc(e.title) + '</a>';
+        return '<a class="pchip" href="#/' + id + '"><span class="pn2">' + esc(entryNo(e)) + '</span>' + esc(e.title) + '</a>';
       }).join('');
       var mins = p.ids.reduce(function (s, id) { return s + (byId[id] ? readMin(byId[id].words) : 0); }, 0);
       return '<section class="path rv" style="--i:' + (i % 2) + '">' +
@@ -1733,11 +1825,11 @@ function RUNTIME() {
     }).join('');
   }
   function footHtml() {
-    return '<footer class="foot rv"><span>' + META.total + ' entri · ' + META.themeCount + ' tema · dibangun ' + esc(META.built) + '</span>' +
+    return '<footer class="foot rv"><span>' + META.total + ' entri · ' + META.collections.length + ' koleksi · ' + META.themeCount + ' tema · dibangun ' + esc(META.built) + '</span>' +
       '<span class="fspacer"></span>' +
       '<span>Regenerasi: <code>node site/build.js</code></span>' +
-      '<a href="evidence-body.tex" target="_blank" rel="noopener">evidence-body.tex</a>' +
-      '<a href="references.bib" target="_blank" rel="noopener">references.bib</a></footer>';
+      PAPERS.map(function (p) { return '<a href="./' + esc(p.file) + '" target="_blank" rel="noopener">' + esc(p.title) + ' (PDF)</a>'; }).join('') +
+      '</footer>';
   }
 
   /* ================= COPY ================= */
@@ -1896,15 +1988,15 @@ const PAGE = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Ruang baca digital untuk ${META.total} telaah makalah deteksi objek YOLO dan fusi RGB+Depth (${META.minYear}-${META.maxYear}), plus ${specials.length} dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.">
+<meta name="description" content="Katalog ${META.total} telaah dalam dua koleksi: ${META.collections[0].total} kajian tinjauan penghitungan buah berbasis citra dan ${META.collections[1].total} telaah makalah deteksi objek dan RGB-D, beserta naskah tinjauan, sintesis, laporan eksperimen, dan katalog PDF.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAF9F6">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171613">
-<meta property="og:title" content="Ruang Baca Riset &middot; YOLO / RGB / RGB-D">
-<meta property="og:description" content="Ruang baca digital untuk ${META.total} telaah makalah deteksi objek YOLO dan fusi RGB+Depth (${META.minYear}-${META.maxYear}), plus ${specials.length} dokumen riset: sintesis lintas makalah, laporan eksperimen, dan katalog PDF korpus main6.">
+<meta property="og:title" content="Ruang Baca Riset &middot; Penghitungan Buah dari Citra">
+<meta property="og:description" content="Katalog ${META.total} telaah dalam dua koleksi: ${META.collections[0].total} kajian tinjauan penghitungan buah berbasis citra dan ${META.collections[1].total} telaah makalah deteksi objek dan RGB-D, beserta naskah tinjauan, sintesis, laporan eksperimen, dan katalog PDF.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="id_ID">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23FAF9F6'/%3E%3Crect x='2' y='2' width='60' height='60' rx='13' fill='none' stroke='%23D4D0C4' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='11' fill='%23A03028'/%3E%3C/svg%3E">
-<title>Ruang Baca Riset &middot; YOLO / RGB / RGB-D</title>
+<title>Ruang Baca Riset &middot; Penghitungan Buah dari Citra</title>
 <script>(function(){try{var t=localStorage.getItem('rp-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
