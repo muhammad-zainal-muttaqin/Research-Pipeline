@@ -50,14 +50,10 @@ import numpy as np
 import torch
 from PIL import Image
 
-# --------------------------------------------------------------------------
-# Lokasi
-# --------------------------------------------------------------------------
 DATA_ROOT = Path("/workspace/SawitMVC/data")
 IMAGES_DIR = DATA_ROOT / "images"
 DEFAULT_OUT = EXPERIMENTS / "depth"
 
-# DAMIMAS_A21B_0003_1.jpg -> tree "DAMIMAS_A21B_0003", side 1
 NAME_RE = re.compile(r"^(?P<tree>.+)_(?P<side>\d+)$")
 
 UINT16_MAX = 65535
@@ -70,9 +66,6 @@ def parse_name(stem: str) -> tuple[str, int]:
     return m.group("tree"), int(m.group("side"))
 
 
-# --------------------------------------------------------------------------
-# Backend
-# --------------------------------------------------------------------------
 class DepthAnythingV2:
     """Monokular via transformers. Keluaran: disparitas relatif (besar = dekat)."""
 
@@ -95,7 +88,7 @@ class DepthAnythingV2:
         inputs = self.processor(images=images, return_tensors="pt").to(self.device)
         inputs = {k: (v.to(self.model.dtype) if v.is_floating_point() else v)
                   for k, v in inputs.items()}
-        pred = self.model(**inputs).predicted_depth  # (B, h, w)
+        pred = self.model(**inputs).predicted_depth
         if pred.ndim == 3:
             pred = pred.unsqueeze(1)
         out = []
@@ -139,10 +132,9 @@ class DepthAnything3:
                 f"depth-anything-3. Atribut tersedia: {dir(pred)}"
             )
         depth = np.asarray(depth)
-        if depth.ndim == 2:  # satu citra
+        if depth.ndim == 2:
             depth = depth[None]
 
-        # Pose hanya bermakna pada mode multi-view.
         self.last_cameras = None
         if self.multiview:
             ext = getattr(pred, "extrinsics", None)
@@ -169,9 +161,6 @@ def build_backend(name: str, ckpt: str | None, device: str, dtype: torch.dtype):
     raise ValueError(f"backend tidak dikenal: {name}")
 
 
-# --------------------------------------------------------------------------
-# Normalisasi & mutu
-# --------------------------------------------------------------------------
 def quality_stats(raw: np.ndarray) -> dict:
     """Statistik mentah untuk gating mutu depth.
 
@@ -193,9 +182,6 @@ def quality_stats(raw: np.ndarray) -> dict:
         "raw_max": hi,
         "raw_mean": float(vals.mean()),
         "raw_std": float(vals.std()),
-        # proporsi piksel yang menempel di kedua ujung rentang: nilai tinggi
-        # menandakan peta datar/terpotong, gejala khas kegagalan di area
-        # terang atau langit
         "frac_at_min": float((vals <= lo + 0.01 * rng).mean()) if rng > 0 else 1.0,
         "frac_at_max": float((vals >= hi - 0.01 * rng).mean()) if rng > 0 else 1.0,
         "frac_nonfinite": float((~finite).mean()),
@@ -228,9 +214,6 @@ def save_preview(rgb_path: Path, depth_u16: np.ndarray, path: Path) -> None:
     canvas.resize((canvas.width // 2, canvas.height // 2)).save(path, quality=88)
 
 
-# --------------------------------------------------------------------------
-# Pemilihan berkas
-# --------------------------------------------------------------------------
 def load_split_map(data_root: Path) -> dict[str, str]:
     """tree_id -> split, dari split_manifest.csv bila tersedia."""
     path = data_root / "split_manifest.csv"
@@ -278,9 +261,6 @@ def collect(images_dir: Path, split: str | None, split_map: dict[str, str],
     return out
 
 
-# --------------------------------------------------------------------------
-# Utama
-# --------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -355,8 +335,6 @@ def main() -> int:
             n_skip += len(paths)
             continue
 
-        # Mode multi-view wajib melihat seluruh sisi sekaligus; kalau sebagian
-        # sudah jadi, tetap hitung ulang satu pohon penuh agar konsisten.
         groups = [paths] if model.multiview else [
             todo[i : i + args.batch] for i in range(0, len(todo), args.batch)
         ]
@@ -364,7 +342,7 @@ def main() -> int:
         for group in groups:
             try:
                 raws = model.predict(group)
-            except Exception as exc:  # satu kegagalan tidak boleh menghentikan seluruh proses
+            except Exception as exc:
                 n_fail += len(group)
                 print(f"[GAGAL] {tree} {[p.name for p in group]}: {exc}", file=sys.stderr)
                 continue

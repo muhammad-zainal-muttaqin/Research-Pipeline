@@ -24,12 +24,11 @@ CREAM = RGBColor(0xFD, 0xF6, 0xE6)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 LINEG = RGBColor(0xD8, 0xDF, 0xE6)
 
-# Kisi vertikal bersama (inci)
-M       = 0.80    # margin kiri
-CW      = 11.75   # lebar kolom isi
+M       = 0.80
+CW      = 11.75
 KICKER  = 0.34
 TITLE_Y = 0.70
-BODY_Y  = 1.66    # batas atas isi
+BODY_Y  = 1.66
 FOOT_Y  = 6.98
 
 prs = Presentation()
@@ -142,7 +141,6 @@ def table(s, cols, rows, top, row_h, pitch, sizes, bolds, colors, header_row=Non
     return y
 
 
-# ===================================================== 1. Judul
 s = slide()
 rect(s, 0, 0, 13.333, 3.50, NAVY)
 par(tbox(s, M + 0.10, 0.92, CW, 0.32),
@@ -166,7 +164,6 @@ callout(s, [
     "Datanya juga belum cukup untuk menyimpulkan bahwa gagasan depth itu keliru.",
 ], M, 5.05, CW, 1.20, fill=CREAM, edge=AMBER, size=16.5)
 
-# ===================================================== 2. Masalah
 s = slide()
 header(s, "Masalah di lapangan", "latar")
 blocks(s, [
@@ -188,7 +185,6 @@ par(tbox(s, M, 6.32, 10.9, 0.42),
     14, False, MUTED, first=True)
 foot(s, 2)
 
-# ===================================================== 3. Pertanyaan
 s = slide()
 header(s, "Satu pertanyaan yang ingin dijawab", "rumusan masalah")
 lead(s, "Lapis jarak ditambahkan sebagai masukan keempat. Akurasi deteksi hanya "
@@ -217,7 +213,6 @@ par(tbox(s, M, 5.78, 10.9, 0.80),
     14, False, MUTED, first=True)
 foot(s, 3)
 
-# ===================================================== 4. Cara kerja
 s = slide()
 header(s, "Bagaimana penelitian ini dijalankan", "metode")
 lead(s, "Setiap percobaan memegang satu hipotesis yang dapat dipatahkan, dan "
@@ -244,7 +239,6 @@ par(tbox(s, M, 6.20, 10.9, 0.62),
     "supaya tidak melebar.", 14, False, MUTED, first=True)
 foot(s, 4)
 
-# ===================================================== 5. Peta percobaan
 s = slide()
 header(s, "Delapan percobaan yang paling menentukan", "peta percobaan")
 lead(s, "Delapan percobaan ini membawa hasil utamanya. Sisanya menutup "
@@ -276,10 +270,9 @@ table(s,
       colors=(NAVY, INK, TEAL))
 foot(s, 5)
 
-# ===================================================== 6. Detektor warna
 s = slide()
 header(s, "Detektor warna terbaik sebagai titik acuan", "hasil rgb")
-pic(s, "chart_rgb.png", 0.87, 1.52, 11.60)   # tinggi 4,58
+pic(s, "chart_rgb.png", 0.87, 1.52, 11.60)
 callout(s, [
     "RF-DETR-L mencapai mAP50 0,6038 pada dataset warna yang lama dan melewati "
     "sasaran 0,60. Angka ini memakai dataset lain, sehingga tidak dapat "
@@ -287,7 +280,6 @@ callout(s, [
 ], M, 6.16, CW, 0.72, size=15.5)
 foot(s, 6)
 
-# ===================================================== 7. Audit
 s = slide()
 header(s, "Alat ukurnya diperiksa lebih dahulu", "audit")
 lead(s, "Hasil negatif hanya berguna apabila cara mengukurnya benar. "
@@ -320,10 +312,9 @@ callout(s, [
 ], M, 5.96, CW, 0.88, fill=CREAM, edge=AMBER, size=15.5)
 foot(s, 7)
 
-# ===================================================== 8. Tiga titik fusi
 s = slide()
 header(s, "Tiga cara menggabungkan jarak ke dalam jaringan", "rancangan")
-pic(s, "fig_hipotesis.png", 0.80, 1.52, 7.05)   # tinggi 4,70
+pic(s, "fig_hipotesis.png", 0.80, 1.52, 7.05)
 
 kunci = [
     ("Early fusion (fusi awal)",
@@ -348,22 +339,20 @@ callout(s, [
 ], 8.20, 5.84, 4.35, 1.14, fill=CREAM, edge=RED, size=12.5)
 foot(s, 8)
 
-# ===================================================== 9. Hasil utama
 s = slide()
 header(s, "Hasil utama pada ketiga titik penggabungan", "hasil")
-pic(s, "chart_fusi.png", 0.77, 1.52, 11.80)   # tinggi 4,52
+pic(s, "chart_fusi.png", 0.77, 1.52, 11.80)
 callout(s, [
     "Batangnya naik-turun tanpa pola. Tidak satu kelompok pun keluar dari pita "
     "ragam yang muncul hanya karena pengacakan awal model.",
 ], M, 6.16, CW, 0.72, size=15.5)
 foot(s, 9)
 
-# ===================================================== 10. Derau acak
 s = slide()
 header(s, "Kanal berisi angka acak sebagai pembanding", "hasil")
 lead(s, "Lapis jarak diganti bilangan acak, yaitu kanal yang pasti tidak memuat "
         "informasi bentuk.", size=16, t=1.58, h=0.44)
-pic(s, "chart_derau.png", 1.15, 2.10, 11.00)  # tinggi 3,40
+pic(s, "chart_derau.png", 1.15, 2.10, 11.00)
 callout(s, [
     "Kanal acak menggeser skor sebesar lapis jarak. Pada kondisi ini detektor "
     "belum memanfaatkan isi lapis jarak.",
@@ -373,10 +362,9 @@ par(tbox(s, M, 6.56, 10.9, 0.42),
     "manfaatnya\", bukan \"depth sama dengan derau\".", 13.5, False, MUTED, first=True)
 foot(s, 10)
 
-# ===================================================== 11. Batas data
 s = slide()
 header(s, "Datanya belum memadai untuk uji ini", "batas bukti")
-pic(s, "chart_dataset.png", 1.27, 1.46, 10.80)  # tinggi 4,30
+pic(s, "chart_dataset.png", 1.27, 1.46, 10.80)
 callout(s, [
     "Dataset depth memuat sepertiga jumlah pohon, sepertiga kepadatan tandan, dan "
     "sebaran kelas yang terbalik. Angka mAP di sini tidak dapat dibandingkan "
@@ -385,7 +373,6 @@ callout(s, [
 ], M, 5.86, CW, 1.06, fill=CREAM, edge=AMBER, size=15.5)
 foot(s, 11)
 
-# ===================================================== 12. Contoh citra lama
 s = slide()
 header(s, "Tandan pada dataset warna yang lama", "contoh citra")
 pic(s, "panel_mvc.png", 1.42, 1.46, 10.50)
@@ -395,7 +382,6 @@ callout(s, [
 ], M, 6.04, CW, 0.86, size=15.5)
 foot(s, 12)
 
-# ===================================================== 13. Contoh citra depth
 s = slide()
 header(s, "Tandan pada dataset depth", "contoh citra")
 pic(s, "panel_depth.png", 1.42, 1.46, 10.50)
@@ -406,7 +392,6 @@ callout(s, [
 ], M, 6.04, CW, 0.86, fill=CREAM, edge=AMBER, size=15.5)
 foot(s, 13)
 
-# ===================================================== 14. Implikasi
 s = slide()
 header(s, "Arti hasil ini bagi sistem di lapangan", "implikasi")
 blocks(s, [
@@ -422,7 +407,6 @@ blocks(s, [
 ], top=BODY_Y, pitch=1.22, head_size=17.5, sub_size=14.5)
 foot(s, 14)
 
-# ===================================================== 15. Batas
 s = slide()
 header(s, "Batas jawaban ini dan pekerjaan yang tersisa", "batas hasil")
 
@@ -456,7 +440,6 @@ callout(s, [
 ], M, 5.92, CW, 0.80, size=16.5)
 foot(s, 15)
 
-# ===================================================== 16. Simpulan
 s = slide()
 rect(s, 0, 0, 13.333, 0.09, NAVY)
 par(tbox(s, M, 0.46, CW, 0.66), "Simpulan", 31, True, NAVY, first=True)

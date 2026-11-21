@@ -10,7 +10,6 @@ EPOCHS=60
 source "$SKRIP_DIR/periksa_run.sh"
 gagal=0
 
-# tunggu pasangan yolo26n beres
 while pgrep -f "train_depth4ch.py --arch yolo26n" >/dev/null; do sleep 30; done
 echo "[antrean] pasangan yolo26n selesai, lanjut RT-DETR-L $(date -Is)"
 

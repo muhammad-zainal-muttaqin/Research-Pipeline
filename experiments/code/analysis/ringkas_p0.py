@@ -49,7 +49,6 @@ def main() -> None:
         "independen). Dihasilkan otomatis oleh `ringkas_p0.py`.\n"
     )
 
-    # ---------- tabel utama: yang sebenarnya diminta ----------
     baris.append("\n## 1. Hasil utama — RGB vs RGB+Depth\n")
     baris.append("| Arsitektur | seed | RGB | RGB+D | Δ | CI95 Δ | frac boot > 0 |")
     baris.append("|---|---|---:|---:|---:|---|---:|")
@@ -82,7 +81,6 @@ def main() -> None:
         "**Belum direplikasi ke seed lain.**\n"
     )
 
-    # ---------- lampiran kontrol ----------
     baris.append("\n## 2. Lampiran — kontrol metodologis\n")
     baris.append(
         "`derau` = kanal ke-4 diisi bilangan acak tetap per berkas (kontrol "
@@ -107,7 +105,6 @@ def main() -> None:
                     f"[{tanda(ci[0])}; {tanda(ci[1])}] |"
                 )
 
-    # ---------- gerbang ----------
     baris.append("\n## 3. Gerbang P0/P1\n")
     baris.append(
         "Gerbang yang ditetapkan pengguna: depth harus mengalahkan **RGB**, "
@@ -131,7 +128,6 @@ def main() -> None:
         baris.append(f"\n**{arch}**")
         baris.extend(cek)
 
-    # ---------- per kelas ----------
     baris.append("\n## 4. Per kelas — Δ AP50 (RGB+D − RGB)\n")
     baris.append("| Arsitektur | seed | " + " | ".join(KELAS) + " |")
     baris.append("|---|---|" + "---:|" * len(KELAS))

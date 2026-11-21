@@ -126,7 +126,6 @@ def ap50(preds, gts, keep) -> float:
         if best >= 0.5 and bj not in matched[im]:
             tp.append(1); fp.append(0); matched[im].add(bj)
         else:
-            # abaikan bila mencocoki GT di luar strata
             hit_other = False
             for g in other:
                 if g[0] != cls:
@@ -172,7 +171,7 @@ def main() -> int:
     if args.limit:
         names = names[: args.limit]
     preds, gts = {}, {}
-    meta = []          # (stem, idx, cls, area, contrast)
+    meta = []
 
     for n, stem in enumerate(names):
         bgr = cv2.imread(str(SRC / "images" / f"{stem}.jpg"))

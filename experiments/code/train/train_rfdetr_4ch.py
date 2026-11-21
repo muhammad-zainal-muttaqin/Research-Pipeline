@@ -69,7 +69,7 @@ def patch_a_pemuat() -> None:
         p = DEPTH_DIR / f"{Path(sample.image_path).stem}.png"
         d8 = cv2.imread(str(p), cv2.IMREAD_GRAYSCALE) if p.is_file() else None
         if d8 is None:
-            d8 = np.zeros(rgb.shape[:2], np.uint8)  # 0 = tidak ada data
+            d8 = np.zeros(rgb.shape[:2], np.uint8)
         elif d8.shape[:2] != rgb.shape[:2]:
             d8 = cv2.resize(d8, (rgb.shape[1], rgb.shape[0]), interpolation=cv2.INTER_NEAREST)
         return sample.image_path, np.dstack([rgb, d8]), sample.to_detections()
@@ -136,10 +136,6 @@ def patch_c0_validasi_kanal(paksa_init_4: bool = False) -> None:
 
     Kelas = dino.Dinov2WithRegistersPatchEmbeddings
 
-    # Idempoten: kedua lengan (mis. derau dan depth) dimuat dalam SATU proses saat
-    # evaluasi berpasangan, jadi fungsi ini dipanggil dua kali. Tanpa penjaga ini
-    # `init_4ch` membungkus dirinya sendiri dan gagal menyalin conv yang sudah
-    # 4-kanal ke slot 3-kanal.
     if getattr(dino, "_e022_patched", False):
         return
     dino._e022_patched = True
@@ -190,8 +186,8 @@ def patch_c0_validasi_kanal(paksa_init_4: bool = False) -> None:
                                   bias=proj.bias is not None)
             baru_conv = baru_conv.to(proj.weight.device, proj.weight.dtype)
             with torch.no_grad():
-                baru_conv.weight[:, :3] = proj.weight          # kanal RGB apa adanya
-                baru_conv.weight[:, 3] = 0.0                   # depth mulai netral
+                baru_conv.weight[:, :3] = proj.weight
+                baru_conv.weight[:, 3] = 0.0
                 if proj.bias is not None:
                     baru_conv.bias.copy_(proj.bias)
             self.projection = baru_conv
@@ -222,7 +218,6 @@ def patch_c_conv(model) -> None:
         return
     with torch.no_grad():
         w = target.weight.detach().clone()
-        # heuristik bawaan: w[:, :3] = pratlatih * 0,75 dan w[:, 3] = kanal-R * 0,75
         pratlatih = w[:, :3] / 0.75
         target.weight[:, :3] = pratlatih
         target.weight[:, 3] = 0.0
@@ -243,8 +238,6 @@ def main() -> int:
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--grad-accum", type=int, default=2)
     ap.add_argument("--workers", type=int, default=8)
-    # CACAT AUDIT 2026-07-30 (diperbaiki): seed dulu di-hardcode 42 di model.train(),
-    # jadi setiap "seed berbeda" pada matriks multi-seed akan memakai RNG identik.
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--output", default=None)
     args = ap.parse_args()

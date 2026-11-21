@@ -74,7 +74,7 @@ import numpy as np
 KELAS = ["B1", "B2", "B3", "B4"]
 SPLIT_DIR = {"val": "valid", "test": "test"}
 EPS = 0.3
-PITA = 2 * EPS          # 0,6 logit
+PITA = 2 * EPS
 AMBANG_LOLOS = 0.30
 IOU_COCOK = 0.5
 
@@ -122,10 +122,10 @@ def main() -> int:
     logits, boxes, ukuran = d["logits"].astype(np.float32), d["boxes"], d["ukuran"]
     nama = [str(x) for x in d["nama"]]
 
-    delta_salah: list[float] = []      # |z_benar - z_teratas_salah| pada query BERGALAT
-    delta_benar: list[float] = []      # margin pada query yang sudah BENAR
+    delta_salah: list[float] = []
+    delta_benar: list[float] = []
     per_kelas_salah: dict[str, list[float]] = {k: [] for k in KELAS}
-    bingung = Counter()                # (gt -> prediksi) pada query bergalat
+    bingung = Counter()
     n_gt = 0
     n_tak_tercocok = 0
 
@@ -136,17 +136,15 @@ def main() -> int:
             continue
         g = np.array([[x0, y0, x1, y1] for _, x0, y0, x1, y1 in gts], np.float32)
         kelas_gt = [c for c, *_ in gts]
-        ious = iou_matrix(g, boxes[i].astype(np.float32))   # (n_gt, Q)
+        ious = iou_matrix(g, boxes[i].astype(np.float32))
 
         for j in range(len(gts)):
             n_gt += 1
             q = int(np.argmax(ious[j]))
             if ious[j, q] < args.iou:
-                # GT tidak tertangkap query mana pun -> kegagalan DETEKSI,
-                # bukan kelas. K2 tidak menyentuh kasus ini.
                 n_tak_tercocok += 1
                 continue
-            z = logits[i, q]                    # 4 logit query itu
+            z = logits[i, q]
             c = kelas_gt[j]
             z_benar = float(z[c])
             lain = [k for k in range(len(KELAS)) if k != c]

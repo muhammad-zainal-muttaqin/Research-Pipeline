@@ -31,16 +31,12 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--resume", default=None,
                     help="Path ckpt PTL (mis. last.ckpt) untuk melanjutkan tanpa mengulang.")
-    # Seri F butuh 3 seed berpasangan (F-004). Bawaannya 42 = seed yang dipakai
-    # E-021, jadi menambah flag ini TIDAK mengubah reproduksi E-021.
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
 
     if args.smoke:
         args.epochs = 1
-        # `--output` eksplisit dihormati supaya probe VRAM F-001 bisa menulis ke
-        # runs/ akar repo (yang di-gitignore) alih-alih mengotori snapshot kode.
         if args.output == ap.get_default("output"):
             args.output = "runs/rfdetr_l_smoke"
 
@@ -66,7 +62,7 @@ def main() -> None:
         # tak adil. Dimatikan agar training benar-benar di resolusi 1280.
         multi_scale=False,
         expanded_scales=False,
-        run_test=True,  # trainer.test() pada checkpoint terbaik -> kolom test/* di metrics.csv
+        run_test=True,
     )
 
     # rfdetr 1.8.x tidak punya .evaluate(); val dicatat tiap epoch dan test dievaluasi
@@ -95,7 +91,6 @@ def collect_metrics(csv_path: Path, config: dict) -> dict:
         raw = row.get(key, "")
         return float(raw) if raw not in ("", None) else None
 
-    # Baris val = punya val/mAP_50_95 terisi; pilih epoch dengan EMA mAP tertinggi.
     val_rows = [r for r in rows if fnum(r, "val/mAP_50_95") is not None]
     result: dict = {"config": config}
     if val_rows:
@@ -112,7 +107,6 @@ def collect_metrics(csv_path: Path, config: dict) -> dict:
             "recall": fnum(best, "val/recall"),
             "per_kelas_AP": {n: fnum(best, f"val/AP/{n}") for n in names},
         }
-    # Baris test (run_test=True) = punya test/mAP_50_95 terisi.
     test_rows = [r for r in rows if fnum(r, "test/mAP_50_95") is not None]
     if test_rows:
         t = test_rows[-1]

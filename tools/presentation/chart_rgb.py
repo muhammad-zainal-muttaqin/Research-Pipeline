@@ -26,7 +26,6 @@ fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.4, 4.3),
                                gridspec_kw={"width_ratios": [1.22, 1.0],
                                             "wspace": 0.30})
 
-# --- kiri: empat detektor, satu protokol, split test
 model = ["YOLO26m\n21,9 jt", "YOLO26l\n26,3 jt",
          "RT-DETR-L\n33,0 jt", "RF-DETR-L\n35,7 jt"]
 mapv = [0.5165, 0.5300, 0.5784, 0.6038]
@@ -47,7 +46,6 @@ ax1.tick_params(axis="x", labelsize=12)
 ax1.set_title("Empat detektor warna, satu alat ukur yang sama",
               fontsize=14, pad=9)
 
-# --- kanan: RF-DETR-L per kelas kematangan
 kelas = ["B1\nmatang", "B2", "B3", "B4\nmentah"]
 ap = [0.8171, 0.4970, 0.6678, 0.4333]
 warna2 = [TEAL, TEAL, TEAL, RED]

@@ -22,7 +22,7 @@ from pycocotools.cocoeval import COCOeval
 from ultralytics import YOLO
 
 NAMES = ["B1", "B2", "B3", "B4"]
-PAD = 0.25  # sama dengan build_crops.py — WAJIB sama, ini kontrak
+PAD = 0.25
 
 
 def build_gt(img_paths):

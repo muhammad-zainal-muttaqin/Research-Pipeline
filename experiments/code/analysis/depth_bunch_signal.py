@@ -110,7 +110,6 @@ def analyse_box(depth: np.ndarray, box_px, ring_scale: float) -> dict | None:
     si, sr = float(inner.std()), float(ring.std())
     pooled = np.sqrt((si ** 2 + sr ** 2) / 2) or 1e-9
 
-    # AUC lewat statistik-U Mann-Whitney (disubsampel agar murah)
     a = inner if inner.size <= 4000 else np.random.default_rng(0).choice(inner, 4000, replace=False)
     b = ring if ring.size <= 4000 else np.random.default_rng(1).choice(ring, 4000, replace=False)
     conc = np.concatenate([a, b])
@@ -169,7 +168,6 @@ def main() -> int:
             im = cv2.imread(str(p))
             H0, W0 = im.shape[:2]
             d = depths[k]
-            # peta kedalaman beresolusi lebih rendah: skala kotak ke ukuran peta
             Hd, Wd = d.shape
             for b in boxes:
                 bp = box_to_pixels(b, Wd, Hd)
@@ -182,7 +180,6 @@ def main() -> int:
                     per_class[CLASS_NAMES[b[0]]][key].append(r[key])
                 per_class[CLASS_NAMES[b[0]]]["px"].append(r["px"])
 
-                # kendali: kotak berukuran sama di posisi acak
                 bw, bh = bp[2] - bp[0], bp[3] - bp[1]
                 for _ in range(2):
                     x0 = int(rng.integers(0, max(1, Wd - bw)))
@@ -214,7 +211,6 @@ def main() -> int:
           f"(rasio {cr.mean()/cc.mean():.2f}x)")
     print(f"    AUC     : {ar.mean() - ac.mean():+.4f}")
 
-    # uji permutasi sederhana pada selisih rata-rata AUC
     both = np.concatenate([ar, ac])
     n1 = len(ar)
     obs = ar.mean() - ac.mean()

@@ -123,11 +123,6 @@ if (!fs.existsSync(MARKED_PATH)) {
  * Helper parsing konten
  * ------------------------------------------------------------------ */
 
-// Pisah nama berkas jadi {num, year, title, theme}.
-// Catatan: memakai pemisahan pada " - " (spasi-hubung-spasi), BUKAN regex
-// [^-]+ untuk tema, sebab 61 entri memiliki tema bertanda hubung
-// (RGB-D SOD, Segmentasi RGB-D, YOLO plus RGB-D, Pedestrian RGB-T, RGB-D SLAM).
-// Segmen terakhir = tema; segmen 1 = nomor; segmen 2 = tahun; sisanya = judul.
 function parseName(base) {
   const stem = base.replace(/\.md$/i, '');
   const parts = stem.split(' - ');
@@ -140,7 +135,6 @@ function parseName(base) {
   return { num: parseInt(num, 10), id: num, year: parseInt(year, 10), title: title.trim(), theme: theme.trim() };
 }
 
-// Ambil kunci BibTeX dari baris tabel "| Kunci BibTeX | `key` |".
 function extractBib(md) {
   const m = md.match(/^\|\s*Kunci BibTeX\s*\|\s*`?([^|`]+?)`?\s*\|/mi);
   if (!m) return null;
@@ -148,7 +142,6 @@ function extractBib(md) {
   return key && key !== '-' ? key : null;
 }
 
-// Ambil tautan Scholar / Semantic Scholar dari bagian "Tautan Akses".
 function firstMatch(md, re) {
   const m = md.match(re);
   if (!m) return null;
@@ -161,8 +154,6 @@ function extractLinks(md) {
   };
 }
 
-// Bersihkan Markdown entri: buang H1 pertama (judul dirender aplikasi) dan
-// bagian "## Daftar Isi" (digantikan rail TOC + scroll-spy aplikasi).
 function cleanMarkdown(md, dropH1) {
   let text = md.replace(/\r\n/g, '\n');
   if (dropH1) {
@@ -172,7 +163,6 @@ function cleanMarkdown(md, dropH1) {
     if (i < lines.length && /^#\s+/.test(lines[i])) lines.splice(i, 1);
     text = lines.join('\n');
   }
-  // Hapus blok "## Daftar Isi" hingga tepat sebelum H2 berikutnya.
   text = text.replace(/^##[ \t]+Daftar Isi[\s\S]*?(?=^##[ \t])/m, '');
   return text.trim() + '\n';
 }
@@ -191,7 +181,6 @@ function countWords(md) {
  * `experiments/METRICS.md`.
  */
 
-// Gabung direktori + jalur relatif ala POSIX, sekaligus meratakan "." dan "..".
 function joinRelative(dir, rel) {
   const parts = String(dir || '').split('/').filter(function (p) { return p && p !== '.'; });
   String(rel).split('/').forEach(function (seg) {
@@ -202,17 +191,15 @@ function joinRelative(dir, rel) {
   return parts.join('/');
 }
 
-// Tautan yang tidak boleh disentuh: absolut, protokol, jangkar, root-relatif.
 function isAbsoluteTarget(t) {
   return /^[a-z][a-z0-9+.-]*:/i.test(t) || t.indexOf('//') === 0 || t.charAt(0) === '#' || t.charAt(0) === '/';
 }
 
 function isPagesExcluded(target) {
-  if (ENTRY_LINK_RE.test(target)) return false; // ditangani runtime jadi rute internal
+  if (ENTRY_LINK_RE.test(target)) return false;
   return PAGES_EXCLUDED.some(function (p) { return target.indexOf(p) === 0; });
 }
 
-// Terapkan `fn` per baris, tetapi lewati isi blok kode berpagar.
 function mapOutsideFences(md, fn) {
   let fence = null;
   return md.split('\n').map(function (line) {
@@ -226,8 +213,6 @@ function mapOutsideFences(md, fn) {
   }).join('\n');
 }
 
-// sourceDir kosong berarti dokumen sudah berada di akar: tautannya tetap,
-// yang tersisa hanya penjagaan terhadap folder yang di-exclude dari Pages.
 function rebaseLinks(md, sourceDir, stats) {
   return mapOutsideFences(md, function (line) {
     return line.replace(/(!?)(\[[^\]]*\])\(\s*([^()\s]+)((?:\s+"[^"]*")?)\s*\)/g,
@@ -236,7 +221,7 @@ function rebaseLinks(md, sourceDir, stats) {
         const rebased = joinRelative(sourceDir, target);
         if (isPagesExcluded(rebased)) {
           stats.dropped.push(rebased);
-          return label.slice(1, -1); // turunkan jadi teks biasa, tautan dibuang
+          return label.slice(1, -1);
         }
         if (rebased !== target) stats.rebased.push(target + ' -> ' + rebased);
         return bang + label + '(' + rebased + title + ')';
@@ -253,7 +238,6 @@ const warnings = [];
 const seenIds = Object.create(null);
 
 files.forEach(function (file) {
-  // Berkas indeks navigasi, bukan entri korpus — sengaja dilewati.
   if (/^INDEX(-[A-Z]+)?\.MD$/.test(file.toUpperCase())) return;
   const meta = parseName(file);
   if (!meta) { warnings.push('Nama berkas tidak cocok pola: ' + file); return; }
@@ -262,12 +246,10 @@ files.forEach(function (file) {
 
   const raw = fs.readFileSync(path.join(ENTRI_DIR, file), 'utf8');
   if (!raw.trim()) { warnings.push('Konten kosong: ' + file); return; }
-  // Pisahkan rangkuman terkurasi dari teks sumber lengkap (penanda <!--SRC-->).
   const srcIdx = raw.indexOf('<!--SRC-->');
   const summaryRaw = srcIdx >= 0 ? raw.slice(0, srcIdx) : raw;
   const srcText = srcIdx >= 0 ? raw.slice(srcIdx + 10).replace(/^\s*\n/, '').replace(/\s+$/, '') : '';
   const links = extractLinks(summaryRaw);
-  // Normalisasi jumlah entri usang (artefak batch: 150 / 154 / 191) menjadi 202.
   let md = cleanMarkdown(summaryRaw, true);
   md = md
     .replace(/\bdari (150|154|191)\b/g, 'dari 202')
@@ -290,8 +272,6 @@ files.forEach(function (file) {
   });
 });
 
-// Pemberhentian keras bila ada nama berkas tak dikenal; entri tidak boleh
-// hilang diam-diam (lihat PLAN §11).
 if (warnings.some(function (w) { return /tidak cocok pola/.test(w); })) {
   console.error('\n[build.js] Berkas bermasalah:');
   warnings.forEach(function (w) { console.error('   - ' + w); });
@@ -300,9 +280,6 @@ if (warnings.some(function (w) { return /tidak cocok pola/.test(w); })) {
 
 entries.sort(function (a, b) { return a.num - b.num; });
 
-// Dokumen spesial (dipin di atas katalog). Nomor `num` dibuat negatif dan
-// berurutan sesuai registry supaya selalu mendahului entri 001..NNN pada
-// pengurutan, tanpa pernah tampil sebagai nomor entri.
 const linkStats = { rebased: [], dropped: [] };
 const specials = SPECIAL_DOCS.map(function (d, i) {
   const raw = fs.readFileSync(path.join(ROOT, d.file), 'utf8');
@@ -374,9 +351,6 @@ if (fs.existsSync(M6_DIR)) {
 const m6Counts = {};
 m6.forEach(function (e) { m6Counts[e.theme] = (m6Counts[e.theme] || 0) + 1; });
 
-// Satu korpus: entri lama memakai nomor aslinya (001..202, dengan celah),
-// entri main6 dilanjutkan setelah nomor tertinggi yang dipakai. Kunci teks
-// tetap dipakai sebagai id rute.
 const maxOldNum = entries.reduce(function (m, e) { return Math.max(m, e.num); }, 0);
 const maxNum = maxOldNum + m6.length;
 const korpus = entries.concat(m6.map(function (e, i) {
@@ -1037,7 +1011,6 @@ function RUNTIME() {
   /* ---- data index ---- */
   var byId = {};
   DATA.forEach(function (e) { byId[e.id] = e; });
-  // ENTRIES = seluruh entri korpus, termasuk entri main6 (e.m6).
   var ENTRIES = DATA.filter(function (e) { return !e.special && !e.m6; });
   var M6_BASE = 'literature/scopus-2026-09/';
   var SPECIALS = DATA.filter(function (e) { return e.special; });
@@ -1118,7 +1091,7 @@ function RUNTIME() {
       if (e._h.nTitle.indexOf(t) !== -1) { s += 5; hit = 1; }
       if (e._h.nTheme.indexOf(t) !== -1) { s += 3; hit = 1; }
       if (e._h.nMd.indexOf(t) !== -1) { s += 1; hit = 1; }
-      if (!hit) return -1; // semua term wajib ada (AND)
+      if (!hit) return -1;
     }
     return s;
   }
@@ -1203,8 +1176,6 @@ function RUNTIME() {
     tr.tabIndex = 0;
     if (e.special) tr.className = 'special';
     var num = doc.createElement('td'); num.className = 'c-num';
-    // Dokumen spesial tidak punya nomor entri: penanda dari registry, dengan
-    // label lengkap sebagai teks bantu supaya tidak terbaca sebagai entri.
     num.textContent = e.special ? (e.marker || '·') : (e.m6 ? 'M6' : e.id);
     if (e.m6) num.title = 'Entri korpus main6 · ' + e.id;
     if (e.special) {
@@ -1259,7 +1230,6 @@ function RUNTIME() {
     });
   }
   function buildYears() {
-    // Pilihan tahun mencakup seluruh entri korpus.
     var yc = {};
     DATA.forEach(function (e) { if (!e.special) yc[e.year] = (yc[e.year] || 0) + 1; });
     var ys = Object.keys(yc).map(Number).sort(function (a, b) { return a - b; });
@@ -1277,8 +1247,6 @@ function RUNTIME() {
     if (searchInput.value !== state.q && doc.activeElement !== searchInput) searchInput.value = state.q;
     searchBox.classList.toggle('has-val', !!state.q);
     var active = state.q || state.thn || Object.keys(state.tema).length;
-    // Hitungan penyaring memakai entri korpus saja: dokumen spesial tidak
-    // pernah menggeser angka korpus.
     var shown = state.ordered.filter(function (e) { return !e.special; }).length;
     sbCount.textContent = active
       ? (shown + ' dari ' + META.total + ' entri')
@@ -1366,7 +1334,6 @@ function RUNTIME() {
       var dec; try { dec = decodeURIComponent(href); } catch (x) { dec = href; }
       var m = dec.match(/(?:^|\/)(\d{3})\s-\s.*\.md$/i);
       if (m && /docs\/literature\/withheld\//i.test(dec)) {
-        // Entri ditahan tidak ada di korpus, jadi tidak punya rute #/NNN.
         var sp = doc.createElement('span');
         sp.className = 'entry-withheld';
         sp.title = 'Entri ditahan — PDF sumber tak tersedia; di luar korpus 182';
@@ -1429,8 +1396,6 @@ function RUNTIME() {
   /* ================= VIEWS ================= */
   function entryHeader(e) {
     var chip = '<span class="t-chip" style="--tc:' + tColor(e.theme) + '"><span class="cd"></span>' + esc(e.theme) + '</span>';
-    // Dokumen spesial memakai label dari registry; seluruh entri korpus,
-    // termasuk entri main6, menyandang nomor "ENTRI NNN / total".
     var eyebrow = e.special
       ? '<span>' + esc(e.label || 'DOKUMEN') + '</span><span class="sep">·</span>' + chip
       : '<span>ENTRI ' + String(e.num).padStart(3, '0') + ' / ' + META.total + '</span><span class="sep">·</span><span>' + e.year + '</span><span class="sep">·</span>' + chip;
@@ -1444,9 +1409,6 @@ function RUNTIME() {
       '<header class="eh rv in"><div class="eyebrow">' + eyebrow + '</div><h1>' + esc(e.title) + '</h1><div class="eh-meta">' + meta + '</div></header>';
   }
 
-  // Tetangga baca. Dokumen spesial dirantai menurut urutan registry, lalu
-  // menyambung ke entri korpus pertama; entri korpus mengikuti daftar
-  // katalog yang sedang tersaring.
   function neighbours(e) {
     if (e.special) {
       var si = SPECIALS.findIndex(function (x) { return x.id === e.id; });
@@ -1474,7 +1436,6 @@ function RUNTIME() {
       '<span class="pn-title">' + esc(e.title) + '</span></a>';
   }
 
-  // Isi entri main6 tidak disematkan; diambil dari berkas .md saat dibuka.
   function lazyMd(raw) {
     return raw.replace(/\r\n/g, '\n').replace(/^\s*#\s+.*\n/, '')
       .replace(/\]\(\.\.\/pdf\//g, '](' + M6_BASE + 'pdf/');
@@ -1548,8 +1509,6 @@ function RUNTIME() {
 
   function view404(id) {
     tocEl.innerHTML = '';
-    // Rute bisa berupa nomor entri atau id dokumen riset, jadi pesannya tidak
-    // boleh menyebut "entri" saja.
     var docs = SPECIALS.map(function (d) {
       return '<a href="#/' + esc(d.id) + '">' + esc(d.title) + '</a>';
     }).join(', ');
@@ -1714,8 +1673,6 @@ function RUNTIME() {
         '</article>';
     }).join('') + '</div>';
   }
-  // Baris dokumen riset: daftar datar, satu baris per dokumen, memakai pola
-  // .tlist/.trow yang sudah ada. Tidak ikut menyentuh PATHS maupun statistik.
   function docRowsHtml() {
     return '<div class="tlist docrows rv">' + SPECIALS.map(function (d) {
       var mins = readMin(d.words);
@@ -1739,8 +1696,6 @@ function RUNTIME() {
     var cols = ys.map(function (y) {
       var c = META.yearCounts[y] || 0;
       var hpct = c ? Math.max(4, Math.round(c / max * 100)) : 0;
-      // Tahun kosong tetap digambar supaya jeda terlihat, tapi tidak bisa diklik:
-      // menyaringnya selalu berujung katalog kosong.
       var attrs = c
         ? ' data-year="' + y + '" role="button" tabindex="0" aria-label="Saring tahun ' + y + ': ' + c + ' entri"'
         : '';
@@ -1853,7 +1808,6 @@ function RUNTIME() {
     openDrawer();
     var delay = 60;
     if (!isMobile() && doc.body.classList.contains('on-entry')) {
-      // Sidebar tersembunyi di mode entri: pulang dulu ke katalog, baru fokus.
       location.hash = '#/' + hashQuery();
       delay = 150;
     }

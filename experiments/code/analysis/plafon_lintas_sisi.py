@@ -67,16 +67,13 @@ def main() -> int:
     n_terlewat = 0
     n_benar = 0
     n_salah = 0
-    n_salah_dapat_diselamatkan = 0        # ada >=1 sisi BENAR pada tandan yang sama
-    n_salah_semua_sisi = 0                # tidak ada sisi benar sama sekali
-    n_terlewat_dapat_diselamatkan = 0     # sisi terlewat, tapi sisi lain benar
+    n_salah_dapat_diselamatkan = 0
+    n_salah_semua_sisi = 0
+    n_terlewat_dapat_diselamatkan = 0
 
     per_kelas_salah = Counter()
     per_kelas_selamat = Counter()
-    # Sebaran: berapa banyak sisi benar yang dimiliki tandan yang punya galat
     sebaran_pendukung = Counter()
-    # Tandan yang seluruhnya tidak terdeteksi tidak boleh dihitung sebagai
-    # "galat tak terselamatkan" -- itu kegagalan DETEKSI, bukan kelas.
     n_tandan_tanpa_deteksi = 0
 
     for b in tandan:

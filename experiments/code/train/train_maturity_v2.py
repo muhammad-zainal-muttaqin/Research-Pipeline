@@ -65,7 +65,6 @@ def evaluate(model, dl, dev):
     for t, p in zip(Y, pred):
         cm[t, p] += 1
     rec = {NAMES[i]: round((cm[i, i] / max(1, cm[i].sum())).item(), 4) for i in range(4)}
-    # rerata recall seimbang: ukuran yang tidak bisa dicurangi dengan menebak B3
     bal = sum(rec.values()) / 4
     return {"acc": (pred == Y).float().mean().item(),
             "bal_acc": bal, "pm1": (pred - Y).abs().le(1).float().mean().item(),

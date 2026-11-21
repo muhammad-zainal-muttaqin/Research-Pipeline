@@ -66,9 +66,6 @@ SRC = Path("/workspace/SawitMVC/data")
 SPLIT_TEST = EXPERIMENTS / "splits" / "rgb" / "sawitmvc" / "test.txt"
 CLASSES = ["B1", "B2", "B3", "B4"]
 
-# Piksel minimum agar sebuah wilayah dianggap dapat diukur. Wilayah pelepah bisa
-# menyusut drastis pada citra padat setelah kotak tandan lain dikurangkan;
-# yang tersisa terlalu kecil ditolak dan DIHITUNG, bukan didiamkan.
 MIN_PIKSEL = 200
 
 
@@ -96,9 +93,9 @@ def haar_subbands(gray: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]
     g = gray[: h - h % 2, : w - w % 2].astype(np.float32)
     a, b = g[0::2, 0::2], g[0::2, 1::2]
     c, d = g[1::2, 0::2], g[1::2, 1::2]
-    lh = (a + b - c - d) / 2.0   # detail horizontal (tepi mendatar)
-    hl = (a - b + c - d) / 2.0   # detail vertikal   (tepi tegak)
-    hh = (a - b - c + d) / 2.0   # detail diagonal
+    lh = (a + b - c - d) / 2.0
+    hl = (a - b + c - d) / 2.0
+    hh = (a - b - c + d) / 2.0
     out = []
     for band in (lh, hl, hh):
         full = cv2.resize(np.abs(band), (w, h), interpolation=cv2.INTER_NEAREST)
@@ -124,7 +121,6 @@ def prep_variants(bgr: np.ndarray) -> dict[str, np.ndarray]:
     lap = cv2.GaussianBlur(lap, (0, 0), 2)
 
     lh, hl, hh = haar_subbands(gray)
-    # Penghalusan IDENTIK dengan grad/lap di atas -- lihat docstring.
     lh = cv2.GaussianBlur(lh, (0, 0), 2)
     hl = cv2.GaussianBlur(hl, (0, 0), 2)
     hh = cv2.GaussianBlur(hh, (0, 0), 2)
@@ -235,10 +231,6 @@ def main() -> int:
             if ditolak:
                 n_tolak += 1
 
-            # Kendali: kotak acak berukuran SAMA di tempat lain pada citra yang
-            # sama, diperlakukan identik (termasuk pengurangan kotak GT). Tanpa
-            # kendali ini, AUC mentah tidak dapat ditafsirkan -- itu pelajaran
-            # E-011 dan disiplin lengan `derau`/`tukar` E-027/E-032.
             pw, ph = box[2] - box[0], box[3] - box[1]
             rx = int(rng.integers(0, max(1, W - pw)))
             ry = int(rng.integers(0, max(1, H - ph)))
@@ -266,7 +258,6 @@ def main() -> int:
             )
         tabel[name] = baris
 
-    # Putusan gerbang: ambang +0,02 pada B4, mengikuti E-011.
     AMBANG = 0.02
     lengan_freq = ["gradmag", "laplacian", "dwt_lh", "dwt_hl", "dwt_hh", "dwt_energi"]
     b4 = {n: tabel[n]["B4_minus_kendali"] for n in lengan_freq}

@@ -32,7 +32,6 @@ set -uo pipefail
 JADWAL_KUNCI_DIR=${JADWAL_KUNCI_DIR:-/tmp/jadwal-kunci}
 mkdir -p "$JADWAL_KUNCI_DIR"
 
-# --- kunci ----------------------------------------------------------------
 # ambil_kunci <nama>
 #   rc 0 = kunci didapat (fd tetap terbuka selama proses hidup)
 #   rc 1 = pekerjaan dengan nama sama SEDANG berjalan
@@ -47,12 +46,7 @@ ambil_kunci() {
   return 1
 }
 
-# --- VRAM -----------------------------------------------------------------
 # tunggu_vram <ambang_mib> [jeda_detik]
-#
-# Ambang WAJIB puncak-plus-margin, bukan pemakaian saat peluncuran. Nilai di
-# bawah 4500 MiB ditolak: puncak terukur yolo26n saja 4,04 GB, jadi angka lebih
-# rendah hampir pasti berarti seseorang mengukur di saat yang salah.
 tunggu_vram() {
   local ambang=$1 jeda=${2:-30} bebas
   if [ "$ambang" -lt 4500 ]; then
@@ -67,7 +61,6 @@ tunggu_vram() {
   done
 }
 
-# --- peluncuran & penghentian --------------------------------------------
 # luncurkan <nama> <perintah...>
 #   Menjalankan perintah di grup proses sendiri. Mencetak PGID ke stdout.
 luncurkan() {
@@ -90,14 +83,12 @@ hentikan() {
   return 0
 }
 
-# --- pemeriksaan mandiri --------------------------------------------------
 # Jalankan langsung untuk memverifikasi ketiga perbaikan:  bash shell/jadwal.sh
 _periksa_mandiri() {
   local gagal=0
   export JADWAL_KUNCI_DIR=/tmp/jadwal-uji-$$
   mkdir -p "$JADWAL_KUNCI_DIR"
 
-  # 1. kunci menolak peluncuran kedua dengan nama sama
   ( ambil_kunci uji && sleep 3 ) &
   sleep 0.5
   if ambil_kunci uji 2>/dev/null; then
@@ -107,18 +98,15 @@ _periksa_mandiri() {
   fi
   wait
 
-  # 2. kunci dilepas setelah pemegangnya mati
   if ambil_kunci uji; then echo "ok  kunci dilepas setelah proses selesai"
   else echo "GAGAL: kunci tertinggal basi"; gagal=1; fi
 
-  # 3. ambang VRAM rendah ditolak
   if tunggu_vram 3400 2>/dev/null; then
     echo "GAGAL: ambang 3400 MiB diterima — inilah yang menyebabkan OOM"; gagal=1
   else
     echo "ok  ambang di bawah puncak terukur ditolak"
   fi
 
-  # 4. hentikan membunuh anak, bukan cuma induk
   luncurkan uji2 bash -c 'sleep 30 & sleep 30 & wait' >/dev/null
   sleep 0.5
   local pgid; pgid=$(cat "$JADWAL_KUNCI_DIR/uji2.pgid")

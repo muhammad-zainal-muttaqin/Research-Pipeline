@@ -30,7 +30,7 @@ def one(job):
     if im is None:
         return 0
     H, W = im.shape[:2]
-    if H < W:                                  # samakan orientasi ke potret
+    if H < W:
         im = cv2.rotate(im, cv2.ROTATE_90_CLOCKWISE)
         H, W = im.shape[:2]
     n = 0
@@ -45,8 +45,6 @@ def one(job):
         if x1 - x0 < 24 or y1 - y0 < 24:
             continue
         cr = im[y0:y1, x0:x1]
-        # simpan maksimal 320 px sisi panjang: cukup di atas 224 px masukan,
-        # tetapi menjaga dataset tetap ringan dibaca
         s = 320 / max(cr.shape[:2])
         if s < 1:
             cr = cv2.resize(cr, (int(cr.shape[1] * s), int(cr.shape[0] * s)),

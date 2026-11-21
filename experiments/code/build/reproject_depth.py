@@ -102,7 +102,6 @@ def main() -> None:
         train_stems = [Path(x.strip()).stem for x in args.split_train.read_text().splitlines() if x.strip()]
         print(f"menghitung histogram pada {len(train_stems)} citra TRAIN...")
         stat = statistik_train(train_stems)
-        # pilih pasangan dengan entropi tertinggi yang saturasi dekat <= 5%
         layak = [s for s in stat["sapuan_z"] if s["saturasi_dekat"] <= 0.05]
         terbaik = max(layak, key=lambda s: s["entropi_bit"])
         zn, zf = terbaik["z_near"], terbaik["z_far"]

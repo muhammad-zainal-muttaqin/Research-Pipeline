@@ -50,7 +50,7 @@ def ap50(scores, tp, ngt):
     o = np.argsort(-scores); tp = tp[o]
     ctp = np.cumsum(tp); cfp = np.cumsum(1 - tp)
     rec = ctp / ngt; prec = ctp / np.maximum(ctp + cfp, 1e-9)
-    prec = np.maximum.accumulate(prec[::-1])[::-1]  # monotonic (vektor, bukan loop)
+    prec = np.maximum.accumulate(prec[::-1])[::-1]
     rthr = np.linspace(0, 1, 101)
     idx = np.searchsorted(rec, rthr, side="left")
     p = np.where(idx < len(prec), prec[np.clip(idx, 0, len(prec) - 1)], 0.0)
@@ -67,8 +67,8 @@ def build_per_image(gt, dt_list):
     dt_ic = {}
     for d in dt_list:
         dt_ic.setdefault((d["image_id"], d["category_id"]), []).append(d)
-    per = {}  # (img,cls) -> (scores,tp)
-    ngt = {}  # (img,cls) -> n
+    per = {}
+    ngt = {}
     for img in imgs:
         for k in range(1, 5):
             gts = gt_ic.get((img, k), [])
@@ -125,10 +125,10 @@ def confusion(gt, dt_list, conf=0.25):
             if j >= 0 and io[j] >= 0.5:
                 cm[gts[j][0]][pc] += 1; used[j] = True
             else:
-                cm[4][pc] += 1  # FP (predicted, no GT)
+                cm[4][pc] += 1
         for j, u in enumerate(used):
             if not u:
-                cm[gts[j][0]][4] += 1  # GT missed
+                cm[gts[j][0]][4] += 1
     return cm
 
 
@@ -169,15 +169,12 @@ def main():
         dets[key] = dt
         imgs, per, ngt = build_per_image(gt, dt)
         per_all[key] = (imgs, per, ngt)
-        # #1 confusion
         cm = confusion(gt, dt)
         confmat[key] = cm.tolist(); plot_confusion(cm, key)
-        # validasi mAP50
         m50 = np.nanmean([ap50(np.concatenate([per[(i, k)][0] for i in imgs if len(per[(i, k)][0])] or [np.array([])]),
                                np.concatenate([per[(i, k)][1] for i in imgs if len(per[(i, k)][1])] or [np.array([])]),
                                sum(ngt[(i, k)] for i in imgs)) for k in range(1, 5)])
         print(f"  mAP50(check)={m50:.4f}  (bandingkan pycocotools)")
-        # #4 PR/F1 micro
         rec, prec, sc, f1 = pr_micro(imgs, per, ngt)
         bi = int(np.argmax(f1))
         prdata[key] = {"recall": rec[::max(1, len(rec)//300)].tolist(),
@@ -186,12 +183,10 @@ def main():
                        "f1": f1[::max(1, len(f1)//300)].tolist(),
                        "best_f1": round(float(f1[bi]), 4), "best_conf": round(float(sc[bi]), 4)}
 
-    # simpan confusion + pr
     json.dump({"split": SPLIT, "iou": 0.5, "conf": 0.25, "labels": NAMES + ["latar"],
                "matrix_rows_gt_cols_pred": confmat}, open("results/confusion.json", "w"), indent=2)
     json.dump({"split": SPLIT, "curves": prdata}, open("results/pr_curves.json", "w"), indent=2)
 
-    # #4 figur gabungan
     fig, ax = plt.subplots(figsize=(5.2, 4.4))
     for m in ORDER:
         if m in prdata:
@@ -208,9 +203,8 @@ def main():
     ax.set_title("F1 vs confidence micro (TEST)"); ax.legend(); ax.grid(alpha=.3)
     fig.tight_layout(); fig.savefig(FIG / "f1_conf_test.png", dpi=130); plt.close(fig)
 
-    # #2 bootstrap mAP50 CI (test) + paired diff RF - RT
     print("\n== bootstrap mAP50 (2000x) ==")
-    imgs = per_all[list(per_all)[0]][0]  # daftar image id (sama untuk semua model)
+    imgs = per_all[list(per_all)[0]][0]
     n = len(imgs)
     boot = {m: np.zeros(B) for m in per_all}
     idxs = RNG.integers(0, n, size=(B, n))

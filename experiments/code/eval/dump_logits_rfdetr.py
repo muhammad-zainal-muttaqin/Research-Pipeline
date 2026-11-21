@@ -57,7 +57,6 @@ DS = Path(__file__).resolve().parents[1] / "rfdetr_ds"
 SPLIT_DIR = {"val": "valid", "test": "test"}
 NAMES = ["B1", "B2", "B3", "B4"]
 
-# Tempat singgah hasil tambalan. Diisi satu entri per citra, urut panggilan.
 _STASH: list[dict] = []
 
 
@@ -69,8 +68,8 @@ def pasang_tambalan() -> None:
     asli = PostProcess.forward
 
     def forward_rekam(self, outputs, target_sizes):
-        logits = outputs["pred_logits"]            # (B, Q, C)
-        bbox = outputs["pred_boxes"]               # (B, Q, 4) cxcywh ternormalisasi
+        logits = outputs["pred_logits"]
+        bbox = outputs["pred_boxes"]
         # Skala kotak SELURUH query ke piksel, meniru `_gather_and_scale_boxes`
         # persis (termasuk clamp) tetapi tanpa penyaringan top-k.
         boxes = box_ops.box_cxcywh_to_xyxy(bbox)

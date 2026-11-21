@@ -47,8 +47,8 @@ import numpy as np
 
 KELAS = ["B1", "B2", "B3", "B4"]
 SPLIT_DIR = {"val": "valid", "test": "test"}
-IOU_THR = np.arange(0.5, 0.96, 0.05)     # 10 ambang COCO
-NUM_SELECT = 300                          # sama dengan RFDETRLarge
+IOU_THR = np.arange(0.5, 0.96, 0.05)
+NUM_SELECT = 300
 
 
 def muat_gt(split: str, nama: list[str], ukuran: np.ndarray):
@@ -73,7 +73,7 @@ def muat_gt(split: str, nama: list[str], ukuran: np.ndarray):
 def deteksi_dari_npz(logits: np.ndarray, boxes: np.ndarray, num_select: int = NUM_SELECT):
     """Rekonstruksi keluaran PostProcess: (skor, kelas, kotak) top-k per citra."""
     z = logits.astype(np.float32)
-    prob = 1.0 / (1.0 + np.exp(-z))          # (Q, C)
+    prob = 1.0 / (1.0 + np.exp(-z))
     datar = prob.ravel()
     k = min(num_select, datar.size)
     idx = np.argpartition(-datar, k - 1)[:k]
@@ -120,7 +120,7 @@ def cocokkan(npz_path: str):
             s, b = sk[m], kt[m].astype(np.float32)
             tp = np.zeros((len(IOU_THR), len(s)), np.float32)
             if len(g):
-                io = iou_xyxy(b, g)               # (n_det, n_gt), sudah urut skor
+                io = iou_xyxy(b, g)
                 for t, thr in enumerate(IOU_THR):
                     dipakai = np.zeros(len(g), bool)
                     for n in range(len(s)):
@@ -217,7 +217,6 @@ def main() -> int:
         if nama_b != nama:
             raise RuntimeError("urutan citra dua npz berbeda; kontras tidak sah")
 
-    # Unit resample = POHON. stem "<pohon>_<sisi>" -> pohon.
     pohon: dict[str, list[int]] = {}
     for i, s in enumerate(nama):
         pohon.setdefault(s.rsplit("_", 1)[0], []).append(i)
@@ -245,7 +244,6 @@ def main() -> int:
         if (r + 1) % 1000 == 0:
             print(f"  replikat {r + 1}/{args.replikat}", flush=True)
 
-    # Jackknife per POHON (untuk percepatan BCa).
     jack = {k: [] for k in kunci_metrik}
     jack_d = {k: [] for k in kunci_metrik}
     for j in range(len(kunci)):

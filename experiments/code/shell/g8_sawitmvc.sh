@@ -32,13 +32,11 @@ R=/workspace/research-pipeline/runs/detect/runs_e022
 SPLIT_ROOT=/workspace/research-pipeline/experiments/results/splits_rgb
 OUT=/workspace/research-pipeline/experiments/results/E-028
 
-# --- tunggu GPU longgar ---------------------------------------------------
 while pgrep -f "venv/bin/python.*train_(depth4ch|rfdetr_4ch)\.py" >/dev/null; do
   echo "[g8] menunggu antrean latihan lain... $(date -Is)"
   sleep 120
 done
 
-# --- 1. latih baseline RGB di SawitMVC ------------------------------------
 if [ -f "$R/$NAMA/results.csv" ] && \
    [ "$(awk -F, 'NR>1 && $1!="" {e[$1]=1} END{print length(e)+0}' "$R/$NAMA/results.csv")" -ge "$EPOCHS" ]; then
   echo "[g8] $NAMA sudah lengkap, lewati latihan"
@@ -52,7 +50,6 @@ else
   periksa_run "$rc" "$R/$NAMA/results.csv" "$EPOCHS" "$NAMA" || exit 1
 fi
 
-# --- 2. ukur inkonsistensi lintas-sisi ------------------------------------
 mkdir -p "$OUT"
 echo "[g8] ukur konsistensi lintas-sisi $(date -Is)"
 $PY analysis/cross_side_consistency.py \

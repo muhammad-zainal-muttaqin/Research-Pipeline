@@ -19,7 +19,6 @@ SPLIT_DIR = {"val": "valid", "test": "test"}
 OUT = Path("results/perkelas_pycoco.json")
 CHUNK = 8
 
-# (kunci, tipe, bobot, imgsz, param_juta). tipe: yolo | rtdetr | rfdetr
 MODELS = [
     ("YOLO26m",   "yolo",   "runs/rgb_e60_i640_s42/weights/best.pt",     640,  21.9),
     ("RT-DETR-L", "rtdetr", "runs/rtdetr_l_e60_i1280/weights/best.pt",   1280, 33.0),
@@ -86,7 +85,7 @@ def predict_rfdetr(model, paths):
 
 
 def per_class_ap(ev):
-    p = ev.eval["precision"]  # [T,R,K,A,M]
+    p = ev.eval["precision"]
     ap50, ap95 = {}, {}
     for k, n in enumerate(NAMES):
         s95, s50 = p[:, :, k, 0, 2], p[0, :, k, 0, 2]
@@ -126,7 +125,7 @@ def main():
             print(f"  {split}: mAP50={entry[split]['mAP50']} mAP50-95={entry[split]['mAP50_95']}")
         data[key] = entry
         OUT.parent.mkdir(exist_ok=True)
-        OUT.write_text(json.dumps(data, indent=2))  # simpan progresif tiap model
+        OUT.write_text(json.dumps(data, indent=2))
         del model
     print(f"\n-> {OUT}")
 

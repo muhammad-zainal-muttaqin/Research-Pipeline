@@ -52,23 +52,20 @@ def main() -> int:
 
     n_trees = 0
     n_bunches = 0
-    n_multi = 0            # bunch yang tampak dari >=2 sisi (mismatch baru mungkin di sini)
-    n_flag = 0             # class_mismatch == True
+    n_multi = 0
+    n_flag = 0
     n_flag_multi = 0
-    n_flag_single = 0      # flag menyala walau hanya 1 sisi -> anomali data
+    n_flag_single = 0
 
     by_split = defaultdict(lambda: {"multi": 0, "mismatch": 0})
     by_variety = defaultdict(lambda: {"multi": 0, "mismatch": 0})
     by_appearance = defaultdict(lambda: {"multi": 0, "mismatch": 0})
-    # ketidaksepakatan per kelas konsensus
     by_consensus = defaultdict(lambda: {"multi": 0, "mismatch": 0})
 
-    # pasangan kelas yang bertabrakan (tak berarah)
     pair_counts = Counter()
-    # label per-sisi vs kelas konsensus bunch: batas atas akurasi per-sisi
-    view_total = Counter()      # kelas konsensus -> jumlah kemunculan sisi
-    view_agree = Counter()      # kelas konsensus -> kemunculan yang labelnya cocok
-    view_conf = Counter()       # (konsensus, label sisi) -> jumlah
+    view_total = Counter()
+    view_agree = Counter()
+    view_conf = Counter()
 
     anomalies = []
 
@@ -105,7 +102,6 @@ def main() -> int:
                         "labels": labels,
                     })
 
-            # konsistensi label sisi vs konsensus, dihitung untuk semua bunch
             if consensus:
                 for lab in labels:
                     view_total[consensus] += 1
@@ -132,7 +128,6 @@ def main() -> int:
                 for i in range(len(uniq)):
                     for j in range(i + 1, len(uniq)):
                         pair_counts[(uniq[i], uniq[j])] += 1
-                # konsistensi flag vs data mentah
                 if not flag:
                     anomalies.append({
                         "file": fp.name, "bunch_id": b.get("bunch_id"),
@@ -140,7 +135,6 @@ def main() -> int:
                         "labels": labels,
                     })
 
-    # ---------------------------------------------------------------- laporan
     W = 74
     print("=" * W)
     print("KETIDAKSEPAKATAN KELAS ANTAR-SISI — SawitMVC")

@@ -55,8 +55,8 @@ def ordinal_smooth(t: torch.Tensor, alpha: float) -> torch.Tensor:
         return t
     left = torch.zeros_like(t)
     right = torch.zeros_like(t)
-    left[..., :-1] = t[..., 1:]     # massa dari kelas di kanan menetes ke kiri
-    right[..., 1:] = t[..., :-1]    # massa dari kelas di kiri menetes ke kanan
+    left[..., :-1] = t[..., 1:]
+    right[..., 1:] = t[..., :-1]
     return (1.0 - alpha) * t + (alpha / 2.0) * (left + right)
 
 

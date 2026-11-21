@@ -45,7 +45,6 @@ RUNS = EXPERIMENTS / "runs"
 CLASSES = ["B1", "B2", "B3", "B4"]
 
 
-# --------------------------------------------------------------------------
 def tile_grid(W: int, H: int, nx: int, ny: int, overlap: float):
     """Kotak ubin bertumpang tindih. Tumpang tindih perlu supaya tandan yang
     kebetulan jatuh di garis potong tidak hilang dari kedua ubin."""
@@ -109,7 +108,6 @@ def build(nx: int, ny: int, overlap: float, min_visible: float = 0.35) -> None:
                     nbh = (iy1 - iy0) / th
                     keep.append(f"{c} {ncx:.6f} {ncy:.6f} {nbw:.6f} {nbh:.6f}")
                     counts[CLASSES[c]] += 1
-                # ubin tanpa objek tetap disimpan sebagian sebagai latar negatif
                 if not keep and (ti % 3):
                     continue
                 name = f"{stem}_t{ti}"
@@ -129,7 +127,6 @@ def build(nx: int, ny: int, overlap: float, min_visible: float = 0.35) -> None:
     (TILE / "grid.json").write_text(json.dumps({"nx": nx, "ny": ny, "overlap": overlap}))
 
 
-# --------------------------------------------------------------------------
 def nms(boxes: np.ndarray, scores: np.ndarray, iou_thr: float = 0.55) -> list[int]:
     idx = scores.argsort()[::-1]
     keep = []

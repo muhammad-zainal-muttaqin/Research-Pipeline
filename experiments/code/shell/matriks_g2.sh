@@ -39,16 +39,12 @@ jalankan() {
   local nama="${arch}_${modal}_seed${seed}"
   local csv="$R/$nama/results.csv"
 
-  # lanjutkan: lewati yang sudah lengkap
   if [ -f "$csv" ] && [ "$(awk -F, 'NR>1 && $1!="" {e[$1]=1} END{print length(e)+0}' "$csv")" -ge "$EPOCHS" ]; then
     echo "[lewati] $nama sudah lengkap"
     : > "$TANDA/lewati-$nama"
     return 0
   fi
 
-  # modal 'derau' dan 'tukar' adalah kontrol negatif: keduanya memakai jalur
-  # rgbd, dibedakan oleh flag. Lihat AUDIT-E022 cacat #3 dan #4 untuk mengapa
-  # keduanya wajib memakai kode _fix (donor per-split, RNG deterministik).
   local flag=""
   case "$modal" in
     derau) flag="--depth-acak" ;;
@@ -69,12 +65,6 @@ jalankan() {
   fi
 }
 
-# --- kolam slot paralel ---------------------------------------------------
-# Satu run yolo26n batch16@640 memakai ~3 GB VRAM dari 20 GB, dan GPU hanya
-# terpakai ~17% saat satu run jalan sendiri: menjalankannya berurutan membuang
-# kapasitas. RT-DETR-L (33,0 jt param) jauh lebih berat, jadi kolamnya lebih
-# sempit. Angka ini batas AMAN, bukan batas maksimum — biar ada ruang untuk
-# lonjakan alokasi saat validasi akhir epoch.
 PAR_YOLO=${PAR_YOLO:-4}
 PAR_RTDETR=${PAR_RTDETR:-2}
 

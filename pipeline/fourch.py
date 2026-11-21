@@ -28,22 +28,17 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-# Rentang metrik kanonik. Gemini 2 andal kira-kira 0,15–10 m; pohon difoto
-# 2–6 m. Rentang ini DIBEKUKAN bersama bobot model — mengubahnya berarti
-# melatih ulang.
-Z_NEAR = 0.3   # meter
-Z_FAR = 8.0    # meter
+Z_NEAR = 0.3
+Z_FAR = 8.0
 
 CLASSES = ["B1", "B2", "B3", "B4"]
 
-# flag pemuatan internal (nilai yang mustahil dipakai cv2)
-_TRAIN_FLAG = -997   # dengan modality dropout
-_EVAL_FLAG = -999    # tanpa dropout
+_TRAIN_FLAG = -997
+_EVAL_FLAG = -999
 
 _STATE = {"depth_dir": None, "dropout": 0.0}
 
 
-# ---------------------------------------------------------------- pengodean
 def encode_metric_depth(depth_mm: np.ndarray) -> np.ndarray:
     """uint16 milimeter (keluaran umum sensor) -> kanal kanonik uint8.
 
@@ -91,7 +86,6 @@ def load_depth_for(image_path: str | Path, depth_dir: str | Path | None) -> np.n
     return cv2.imread(str(p), cv2.IMREAD_GRAYSCALE)
 
 
-# ---------------------------------------------------------------- pelatihan
 def patch_loader(depth_dir: str | Path | None, dropout: float = 0.25) -> None:
     """Ajari pemuat data ultralytics membaca 4 kanal, tanpa menyalin dataset.
 
@@ -154,7 +148,7 @@ def make_inflate_callback(pretrained: str | Path):
         for m in module.modules():
             if isinstance(m, nn.Conv2d) and m.in_channels == 4:
                 with torch.no_grad():
-                    m.weight[:, :3] = w3[:, [2, 1, 0]].to(m.weight.device)  # RGB -> BGR
+                    m.weight[:, :3] = w3[:, [2, 1, 0]].to(m.weight.device)
                     m.weight[:, 3] = 0.0
                 return True
         return False
@@ -163,7 +157,7 @@ def make_inflate_callback(pretrained: str | Path):
         sd = torch.load(str(pretrained), map_location="cpu", weights_only=False)
         src = (sd.get("model") or sd).float().state_dict()
         w3 = next(v for v in src.values()
-                  if v.ndim == 4 and v.shape[1] == 3)  # conv pertama pratlatih
+                  if v.ndim == 4 and v.shape[1] == 3)
         ok = fill(trainer.model, w3)
         # EMA disalin SEBELUM callback ini menyala (trainer.py: ModelEMA lalu
         # on_pretrain_routine_end), dan best.pt menyimpan EMA — wajib ditambal juga.
@@ -178,7 +172,6 @@ def make_inflate_callback(pretrained: str | Path):
     return cb
 
 
-# ---------------------------------------------------------------- inferensi
 class Sawit4CH:
     """Pembungkus inferensi untuk aplikasi lapangan.
 

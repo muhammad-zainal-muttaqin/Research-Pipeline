@@ -10,7 +10,7 @@ from ultralytics import RTDETR
 
 W = "runs/rtdetr_l_e60_i1280/weights/best.pt"
 NAMES = ["B1", "B2", "B3", "B4"]
-BASE = {"B1": 0.7354, "B2": 0.4076, "B3": 0.5561, "B4": 0.3881}  # baseline yolo26m 4-kelas
+BASE = {"B1": 0.7354, "B2": 0.4076, "B3": 0.5561, "B4": 0.3881}
 
 out = {}
 m = RTDETR(W)

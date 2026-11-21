@@ -26,7 +26,7 @@ def sig(path):
         im = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
     if im is None:
         return None
-    if im.shape[0] < im.shape[1]:          # samakan orientasi ke potret
+    if im.shape[0] < im.shape[1]:
         im = cv2.rotate(im, cv2.ROTATE_90_CLOCKWISE)
     v = cv2.resize(im, (GW, GH), interpolation=cv2.INTER_AREA).astype(np.float32).ravel()
     v -= v.mean()
@@ -53,7 +53,7 @@ def main():
     mp_, M = collect(mvc_paths, "MVC")
     rp_, R = collect(raw_paths, "RAW")
 
-    S = M @ R.T                                    # (nMVC, nRAW)
+    S = M @ R.T
     order = np.argsort(-S, axis=1)
     best, second = order[:, 0], order[:, 1]
     bs = S[np.arange(len(mp_)), best]

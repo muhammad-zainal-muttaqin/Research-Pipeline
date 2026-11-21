@@ -41,7 +41,6 @@ for SEED in 42 1337 2024; do
       --seed "$SEED" \
       2>&1 | tee "logs-f004-seed${SEED}.txt"
 
-  # Logit mentah per query, split test -> masukan F-005 (P1).
   $PY eval/dump_logits_rfdetr.py \
       --ckpt "$OUT/checkpoint_best_ema.pth" \
       --split test \
@@ -49,9 +48,6 @@ for SEED in 42 1337 2024; do
       --keluaran "$HASIL/logits_test_seed${SEED}.npz" \
       2>&1 | tee "logs-f004-dump-seed${SEED}.txt"
 
-  # Bobot tidak diarsipkan (kebijakan repo), tetapi hash-nya dicatat supaya
-  # latih-ulang dapat dibedakan dari "resep tidak tereproduksi" -- pelajaran
-  # yang sama seperti metrics_lengkap.json E-022.
   sha256sum "$OUT"/checkpoint_best_*.pth > "$HASIL/sha256_seed${SEED}.txt" || true
   cp "$OUT/evaluation.json" "$HASIL/evaluation_seed${SEED}.json"
   cp "$OUT/metrics.csv" "$HASIL/metrics_seed${SEED}.csv"

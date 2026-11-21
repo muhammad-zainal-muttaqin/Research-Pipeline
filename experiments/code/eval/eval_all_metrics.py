@@ -72,8 +72,8 @@ def prf_at_bestf1(scores, tp, ngt):
 
 
 def per_class_coco(ev):
-    p = ev.eval["precision"]  # [T,R,K,A,M]
-    r = ev.eval["recall"]     # [T,K,A,M]
+    p = ev.eval["precision"]
+    r = ev.eval["recall"]
     out = {}
     for k, n in enumerate(NAMES):
         s95 = p[:, :, k, 0, 2]; s50 = p[0, :, k, 0, 2]
@@ -95,8 +95,6 @@ def full_metrics(gt, dt_list):
             "AR100": s[8], "AR_small": s[9], "AR_medium": s[10], "AR_large": s[11]}
     perkelas = per_class_coco(ev)
 
-    # P/R/F1 @IoU0.5 best-F1 — per-kelas + macro + micro (matching per-gambar)
-    # pre-index prediksi per (image_id, category) sekali (hindari O(N) filter berulang)
     dt_idx = {}
     for d in dt_list:
         dt_idx.setdefault((d["image_id"], d["category_id"]), []).append(d)

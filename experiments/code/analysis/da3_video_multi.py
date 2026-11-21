@@ -71,7 +71,6 @@ def extract_frames(video: Path, k: int, out_dir: Path, rotate: bool) -> list[Pat
 
     paths = []
     if rotate:
-        # satu panggilan ffmpeg per frame: presisi seek, rotasi otomatis
         for i, fi in enumerate(idx):
             t = fi / fps
             p = out_dir / f"f{i:03d}_{fi:05d}.jpg"
@@ -94,7 +93,6 @@ def extract_frames(video: Path, k: int, out_dir: Path, rotate: bool) -> list[Pat
     return paths
 
 
-# --------------------------------------------------------------------------
 def camera_centers(ext: np.ndarray) -> np.ndarray:
     return np.stack([-E[:3, :3].T @ E[:3, 3] for E in ext])
 
@@ -127,7 +125,7 @@ def longest_smooth_run(ang: np.ndarray, max_step: float = 40.0) -> tuple[int, in
     steps = np.diff(ang)
     if len(steps) == 0:
         return 0, 0
-    best = (0, 0, 0)  # (panjang, mulai, akhir)
+    best = (0, 0, 0)
     for sign in (+1, -1):
         i = 0
         while i < len(steps):
@@ -161,7 +159,6 @@ def frame_quality(paths: list[Path]) -> dict:
     return {"sharpness": sharp, "brightness": bright, "motion": motion}
 
 
-# --------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--videos", type=int, default=6)
@@ -251,14 +248,12 @@ def main() -> int:
     print(f"  video >=180 deg  : {int((sp>=180).sum())}/{len(rows)}")
     print(f"  video >=270 deg  : {int((sp>=270).sum())}/{len(rows)}")
 
-    # apakah kegagalan selalu di ekor?
     ends = np.array([r["smooth_end"] / (r["n_frames"] - 1) for r in rows])
     starts = np.array([r["smooth_start"] / (r["n_frames"] - 1) for r in rows])
     print(f"\n  posisi awal segmen mulus (0=awal video) : rata2 {starts.mean():.2f}")
     print(f"  posisi akhir segmen mulus (1=akhir video): rata2 {ends.mean():.2f}")
     print("  -> kalau akhir jauh di bawah 1,00, kegagalan memang menumpuk di ekor")
 
-    # korelasi mutu frame dengan berada di dalam/di luar segmen mulus
     ins, outs = {"sharpness": [], "brightness": [], "motion": []}, {"sharpness": [], "brightness": [], "motion": []}
     for r in rows:
         for k in ins:

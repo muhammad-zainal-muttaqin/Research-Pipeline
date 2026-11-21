@@ -10,10 +10,9 @@ EMU = 914400.0
 prs = Presentation(PATH)
 SW, SH = prs.slide_width / EMU, prs.slide_height / EMU
 
-# Lebar rata-rata glyph Segoe UI, dalam satuan em. Diambil konservatif.
 AVG_EM = 0.50
-LINE_F = 1.22          # tinggi baris terhadap ukuran font
-TOL = 0.02             # toleransi tumpang tindih, inci
+LINE_F = 1.22
+TOL = 0.02
 
 
 def text_shapes(slide):
@@ -66,7 +65,6 @@ def rects_overlap(a, b):
 problems = 0
 for i, sl in enumerate(prs.slides, 1):
     shapes = list(sl.shapes)
-    # 1. di luar kanvas
     for sh in shapes:
         if sh.left is None:
             continue
@@ -76,18 +74,14 @@ for i, sl in enumerate(prs.slides, 1):
             print(f"[{i}] LUAR KANVAS  {sh.shape_type}  l={l:.2f} t={t:.2f} "
                   f"r={r:.2f} b={b:.2f}  teks={sh.has_text_frame and sh.text_frame.text[:30]!r}")
             problems += 1
-    # 2. teks bertumpuk (kotak teks lawan kotak teks)
     ts = text_shapes(sl)
     for a in range(len(ts)):
         for b in range(a + 1, len(ts)):
-            # kotak teks di dalam shape berisi (callout/kartu) sengaja tidak dicek
-            # karena keduanya adalah shape yang sama.
             ov = rects_overlap(ts[a], ts[b])
             if ov:
                 print(f"[{i}] TUMPANG TINDIH TEKS  {ts[a].text_frame.text[:26]!r} "
                       f"x {ts[b].text_frame.text[:26]!r}  ({ov[0]}\" x {ov[1]}\")")
                 problems += 1
-    # 3. luapan teks
     for sh in ts:
         have = sh.height / EMU
         want = need_height(sh)

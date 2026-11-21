@@ -110,8 +110,6 @@ def main() -> None:
              "n_valid": {k: int(np.sum(~np.isnan(v))) for k, v in skor.items()},
              "per_citra": {k: [float(x) for x in v] for k, v in skor.items()}}
 
-    # uji berpasangan H3 vs H1 (bootstrap per citra, B=2000, seed 42) — pasangan
-    # per citra, bukan antar sampel bebas, karena keduanya diukur pada citra sama
     a = np.array(skor["H3_reproyeksi"])
     b = np.array(skor["H1_resize"])
     ok = ~(np.isnan(a) | np.isnan(b))

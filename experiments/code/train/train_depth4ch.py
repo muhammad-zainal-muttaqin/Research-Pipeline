@@ -86,8 +86,6 @@ def main() -> int:
     Model = RTDETR if "rtdetr" in args.arch else YOLO
     model = Model(bobot)
     if args.modal == "rgbd" and not args.dari_nol:
-        # Inflasi hanya bermakna bila ADA bobot pratlatih untuk disalin. Dari nol,
-        # conv pertama memang mulai acak di kedua lengan — dan itu justru setara.
         model.add_callback("on_pretrain_routine_end", fourch.make_inflate_callback(bobot))
 
     mulai = time.time()
@@ -95,7 +93,6 @@ def main() -> int:
         data=str(data), epochs=args.epochs, imgsz=args.imgsz, batch=args.batch,
         seed=args.seed, workers=args.workers, project=args.project, name=nama,
         exist_ok=True, patience=args.epochs, plots=False, deterministic=True, val=True,
-        # pagar keadilan #1 — HSV mati di kedua lengan (lihat docstring)
         hsv_h=0.0, hsv_s=0.0, hsv_v=0.0,
     )
     durasi = time.time() - mulai
@@ -149,12 +146,6 @@ def _patch_depth_tukar(depth_dir: str, split_dir: str) -> None:
     import ultralytics.data.base as base
     from ultralytics.data.base import BaseDataset
 
-    # CACAT AUDIT 2026-07-30 (diperbaiki): versi lama membangun daftar donor dari
-    # SELURUH 1408 PNG lintas split, jadi 192/980 citra TRAIN (19,6%) memakai peta
-    # depth milik pohon TEST dan 92/980 (9,4%) milik pohon VAL saat backprop.
-    # Peta depth uji tidak boleh pernah dilihat saat latih, sekalipun sebagai
-    # kontrol yang sengaja dibuat salah. Sekarang donor dipilih HANYA dari split
-    # yang sama, dan dijamin berasal dari POHON yang berbeda.
     pasangan: dict[str, str] = {}
     for split in ("train", "val", "test"):
         berkas = Path(split_dir) / f"{split}.txt"
@@ -162,10 +153,10 @@ def _patch_depth_tukar(depth_dir: str, split_dir: str) -> None:
             continue
         stem = sorted(Path(x.strip()).stem for x in berkas.read_text().splitlines() if x.strip())
         n = len(stem)
-        geser = max(4, n // 2)  # >=4 sisi = dijamin lompat ke pohon lain
+        geser = max(4, n // 2)
         for i, s in enumerate(stem):
             donor = stem[(i + geser) % n]
-            if _pohon(donor) == _pohon(s):  # pengaman kalau split sangat kecil
+            if _pohon(donor) == _pohon(s):
                 for j in range(1, n):
                     donor = stem[(i + geser + j) % n]
                     if _pohon(donor) != _pohon(s):
@@ -215,14 +206,6 @@ def _patch_depth_acak(seed: int) -> None:
     import ultralytics.data.base as base
     from ultralytics.data.base import BaseDataset
 
-    # CACAT AUDIT 2026-07-30 (diperbaiki): versi lama membuat SATU rng bersama di
-    # sini lalu memanggilnya di dalam imread. Akibatnya derau berubah tiap epoch
-    # dan tiap pekerja dataloader — jadi lengan derau diam-diam mendapat
-    # AUGMENTASI (kanal ke-4 diacak ulang terus-menerus), sementara lengan depth
-    # mendapat kanal yang TETAP. Itu bukan kontrol yang setara: derau jadi
-    # regularisator. Sekarang seed diturunkan per BERKAS dengan zlib.crc32 —
-    # sama seperti padanan RF-DETR — sehingga tiap citra selalu memperoleh pola
-    # derau yang sama persis, sebagaimana depth-nya tetap.
     orig_init = BaseDataset.__init__
 
     def patched_init(self, *a, **kw):
@@ -239,7 +222,6 @@ def _patch_depth_acak(seed: int) -> None:
         bgr = cv2.imread(str(filename), cv2.IMREAD_COLOR)
         if bgr is None:
             return None
-        # seed per berkas: stabil lintas epoch, lintas pekerja, dan lintas proses
         # (zlib.crc32 deterministik; hash() diacak PYTHONHASHSEED, jangan dipakai)
         rng = np.random.default_rng(zlib.crc32(Path(filename).stem.encode()) ^ seed)
         derau = rng.integers(0, 256, bgr.shape[:2], dtype=np.uint8)

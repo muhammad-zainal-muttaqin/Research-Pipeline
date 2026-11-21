@@ -36,7 +36,6 @@ VIDEO_DIR = Path("/workspace/Sawit/data/Video/Kelompok 6")
 OUT_DIR = EXPERIMENTS / "results" / "E-003"
 
 
-# --------------------------------------------------------------------------
 def extract_frames(video: Path, k: int, out_dir: Path) -> list[Path]:
     """Ambil k frame berjarak sama dari video."""
     cap = cv2.VideoCapture(str(video))
@@ -66,7 +65,6 @@ def extract_frames(video: Path, k: int, out_dir: Path) -> list[Path]:
     return paths
 
 
-# --------------------------------------------------------------------------
 def camera_centers(extrinsics: np.ndarray) -> np.ndarray:
     """Pusat kamera di koordinat dunia dari matriks world-to-camera.
 
@@ -93,12 +91,11 @@ def analyse_orbit(C: np.ndarray) -> dict:
     mu = C.mean(0)
     X = C - mu
     U, S, Vt = np.linalg.svd(X, full_matrices=False)
-    plane = Vt[:2]                       # dua arah dominan = bidang orbit
+    plane = Vt[:2]
     normal = Vt[2]
-    proj = X @ plane.T                   # (N,2) koordinat pada bidang
-    off_plane = X @ normal               # simpangan dari bidang
+    proj = X @ plane.T
+    off_plane = X @ normal
 
-    # lingkaran terbaik pada bidang (kuadrat terkecil linear)
     A = np.c_[2 * proj, np.ones(n)]
     b = (proj ** 2).sum(1)
     sol, *_ = np.linalg.lstsq(A, b, rcond=None)
@@ -188,7 +185,6 @@ def save_previews(images: list[Path], depth: np.ndarray, conf: np.ndarray | None
                     [cv2.IMWRITE_JPEG_QUALITY, 88])
 
 
-# --------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--video", type=Path, default=None)

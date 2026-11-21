@@ -70,7 +70,7 @@ def metrik(gt, dets, img_ids) -> dict:
     ev.params.imgIds = img_ids
     ev.evaluate(); ev.accumulate()
 
-    p = ev.eval["precision"][:, :, :, 0, 2]      # [T, R, K]
+    p = ev.eval["precision"][:, :, :, 0, 2]
     def rr(x):
         v = x[x > -1]
         return round(float(v.mean()), 4) if v.size else None
@@ -82,8 +82,6 @@ def metrik(gt, dets, img_ids) -> dict:
         "AP50_95_perkelas": {KELAS[k]: rr(p[:, :, k]) for k in range(p.shape[2])},
     }
 
-    # P/R/F1 mikro pada conf 0,25, dicocokkan sendiri secara serakah.
-    #
     # TIDAK memakai ev.evalImgs: senarai itu berisi satu entri per
     # (kelas x rentang-area x citra), sehingga menjumlahkan dtMatches di
     # seluruhnya menghitung tiap TP sebanyak jumlah rentang area dan
@@ -158,10 +156,6 @@ def main() -> int:
         bobot = rd / "weights" / "best.pt"
         if not bobot.is_file() or rd.name.endswith("_test"):
             continue
-        # Run SawitMVC dilatih di dataset LAIN. Mengevaluasinya pada split
-        # SawitMVC-Depth menghasilkan angka yang terlihat wajar (mAP50 0,1452)
-        # tetapi tidak berarti apa pun — jenis kesalahan yang tidak menimbulkan
-        # error dan karena itu mudah lolos ke tabel.
         if ("sawitmvc" in rd.name) != ("sawitmvc" in args.split_dir):
             print(f"   lewati {rd.name} — dataset tidak cocok dengan {args.split_dir}")
             continue

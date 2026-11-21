@@ -53,7 +53,6 @@ def load_boxes(stem: str):
     return out
 
 
-# --------------------------------------------------------------------------
 def prep_variants(bgr: np.ndarray) -> dict[str, np.ndarray]:
     """Hasilkan peta skalar (1 kanal) yang akan diuji keterpisahannya."""
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
@@ -68,8 +67,6 @@ def prep_variants(bgr: np.ndarray) -> dict[str, np.ndarray]:
     gx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
     gy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
     grad = cv2.magnitude(gx, gy)
-    # haluskan sedikit supaya yang diukur adalah energi tekstur lokal,
-    # bukan derau piksel tunggal
     grad = cv2.GaussianBlur(grad, (0, 0), 2)
 
     lap = np.abs(cv2.Laplacian(gray, cv2.CV_32F, ksize=3))
@@ -119,8 +116,8 @@ def main() -> int:
     names = names[: args.images]
     rng = np.random.default_rng(42)
 
-    real = defaultdict(lambda: defaultdict(list))   # [varian][kelas]
-    ctrl = defaultdict(list)                        # [varian]
+    real = defaultdict(lambda: defaultdict(list))
+    ctrl = defaultdict(list)
 
     for stem in names:
         bgr = cv2.imread(str(SRC / "images" / f"{stem}.jpg"))

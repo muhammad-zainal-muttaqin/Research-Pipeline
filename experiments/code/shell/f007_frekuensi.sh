@@ -33,9 +33,6 @@ RUNS=../../runs/detect/runs_f007
 HASIL=results/F-007
 mkdir -p "$RUNS" "$HASIL"
 
-# Penjaga GPU: menolak start bila sudah ada latihan lain berjalan. Anggaran
-# VRAM saja tidak cukup — yang menyebabkan bahaya adalah run KEDUA, bukan
-# ukuran run pertama.
 if [ "$PERIKSA" = "0" ] && pgrep -f "train_rfdetr" | grep -qv "^$$\$"; then
   if pgrep -af "train_rfdetr" | grep -qv "f007_frekuensi"; then
     echo "[F-007] TOLAK: sudah ada proses train_rfdetr* berjalan."
@@ -46,7 +43,6 @@ if [ "$PERIKSA" = "0" ] && pgrep -f "train_rfdetr" | grep -qv "^$$\$"; then
   fi
 fi
 
-# Prasyarat: uji sambungan tiap lengan harus LULUS sebelum runnya diantre.
 for L in dwt laplacian freq_rendah fase_diacak; do
   U="$HASIL/uji_sambungan_${L}.json"
   if ! grep -q '"PUTUSAN": "LULUS"' "$U" 2>/dev/null; then

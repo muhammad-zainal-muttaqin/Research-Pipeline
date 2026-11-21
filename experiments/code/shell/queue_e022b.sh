@@ -13,8 +13,6 @@ gagal=0
 while pgrep -f "train_depth4ch.py --arch rtdetr-l" >/dev/null || pgrep -f queue_e022.sh >/dev/null; do sleep 30; done
 echo "[antrean-b] mulai $(date -Is)"
 
-# Kontrol negatif: kanal ke-4 = derau. Kalau ini menaikkan mAP sebanyak depth
-# asli, kenaikan berasal dari kapasitas stem, bukan informasi kedalaman.
 echo "[antrean-b] yolo26n kontrol-derau $(date -Is)"
 $PY train_depth4ch.py --arch yolo26n --modal rgbd --depth-acak --epochs $EPOCHS --imgsz 640 \
     --batch 16 --name yolo26n_derau_seed42 > logs-e022-yolo26n-derau.txt 2>&1

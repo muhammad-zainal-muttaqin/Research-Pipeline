@@ -83,10 +83,6 @@ def main() -> int:
                     help="IoU minimum agar prediksi dianggap kemunculan tandan itu")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--keluaran", default=None)
-    # F-003 (P3) butuh rekam PER KEMUNCULAN, bukan laju agregat. E-028 hanya
-    # menyimpan agregat, sehingga plafon lintas-sisi tidak dapat dihitung ulang
-    # tanpa inferensi ulang. Flag ini menutup lubang itu; keluaran agregat di
-    # bawah TIDAK berubah, jadi angka E-028 tetap tereproduksi.
     ap.add_argument("--dump-tandan", default=None,
                     help="Tulis rekam per-tandan/per-kemunculan (JSON) untuk F-003.")
     args = ap.parse_args()
@@ -100,8 +96,6 @@ def main() -> int:
     pohon = sorted({p.stem.rsplit("_", 1)[0] for p in paths})
     peta_id = {p.stem: i for i, p in enumerate(paths)}
 
-    # Prediksi seluruh citra split lewat jalur yang SAMA dengan evaluator E-022,
-    # supaya komposisi kanal ke-4 dan praproses tidak berbeda diam-diam.
     dets = prediksi_batch(args.bobot, paths, peta_id, args.imgsz, args.modal, seed=args.seed)
     per_stem: dict[str, list[dict]] = defaultdict(list)
     balik = {v: k for k, v in peta_id.items()}
@@ -162,7 +156,7 @@ def main() -> int:
                 })
 
             if len(terprediksi) < 2:
-                continue          # tak cukup sisi terdeteksi untuk diuji
+                continue
             n_terukur += 1
             gt = b.get("class", "?")
             per_kelas_gt[gt] += 1

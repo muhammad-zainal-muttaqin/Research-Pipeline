@@ -38,7 +38,7 @@ jalankan() {  # nama arch seed imgsz batch flag
   else
     echo "[$(date +%H:%M:%S)] SELESAI ${nama} rc=${rc} baris=${akhir}"
   fi
-  return 0                          # jangan hentikan antrean; lubang dicatat
+  return 0
 }
 
 echo "[$(date +%H:%M:%S)] === TAMBAL P0 RT-DETR-L: 3 run, ~50 mnt/run ==="
@@ -47,7 +47,6 @@ jalankan rtdetr-l_derau_seed2024_fix rtdetr-l 2024 640 8 --depth-acak
 jalankan rtdetr-l_tukar_seed2024_fix rtdetr-l 2024 640 8 --depth-tukar
 echo "[$(date +%H:%M:%S)] === TAMBAL P0 SELESAI ==="
 
-# Ringkasan kelengkapan matriks di akhir, supaya lubang tidak lolos lagi.
 python3 - <<'PY'
 import os, csv
 for arch in ("yolo26n", "rtdetr-l"):

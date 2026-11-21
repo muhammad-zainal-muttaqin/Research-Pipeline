@@ -38,7 +38,6 @@ R=/workspace/research-pipeline/runs/detect/runs_e022
 TANDA=.g7-tanda
 mkdir -p "$TANDA"
 
-# --- tunggu antrean latihan lain selesai ---------------------------------
 while pgrep -f "venv/bin/python.*train_(depth4ch|rfdetr_4ch)\.py" >/dev/null; do
   echo "[g7] menunggu antrean lain selesai... $(date -Is)"
   sleep 120

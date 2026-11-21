@@ -131,7 +131,6 @@ import fourch  # noqa: E402
 SPLIT = EXPERIMENTS / "splits" / "depth"
 
 
-# ----------------------------------------------------------------- modul baru
 class _Topeng(nn.Module):
     """Menutup kanal yang bukan milik cabang ini, TANPA mengubah jumlah kanal.
 
@@ -157,10 +156,6 @@ class _Topeng(nn.Module):
     def forward(self, x):
         c = x.shape[1]
         if c <= 3:
-            # Lintasan penghitung stride (3 kanal): tidak ada kanal kedalaman
-            # untuk dipisahkan. Cabang RGB melihat citra apa adanya; cabang
-            # kedalaman melihat nol — bentuknya tetap benar, dan nilai ini
-            # tidak pernah dipakai untuk belajar.
             return x if self.KANAL.start == 0 else torch.zeros_like(x)
         topeng = torch.zeros(1, c, 1, 1, dtype=x.dtype, device=x.device)
         topeng[:, self.KANAL] = 1.0
@@ -199,7 +194,6 @@ def daftarkan_modul() -> None:
         tasks.__dict__[m.__name__] = m
 
 
-# --------------------------------------------------- lebar kanal per-tipe-modul
 # `parse_model` (ultralytics/nn/tasks.py) tidak menaruh c2 di `args[0]` untuk
 # SEMUA modul. `HGStem`/`HGBlock` memakai `c1, cm, c2 = ch[f], args[0], args[1]`
 # — c2 ada di args[1], args[0] adalah kanal TENGAH (cm). Modul lain yang dipakai
@@ -231,7 +225,6 @@ def sunting_lebar(modul: str, a2: list, lebar_bagi: int) -> None:
         a2[0] = max(16, a2[0] // lebar_bagi)
 
 
-# ------------------------------------------------------------- pembangun YAML
 def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str,
                  titik_mid: int, titik_late: tuple[int, ...]) -> dict:
     """Turunkan YAML dua cabang dari YAML dasar ultralytics.
@@ -246,13 +239,12 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str,
     n_bb = len(bb)
 
     L: list = []
-    peta: dict[int, int] = {}          # indeks lama (global) -> indeks baru
+    peta: dict[int, int] = {}
 
     def tambah(f, r, m, a) -> int:
         L.append([f, r, m, list(a)])
         return len(L) - 1
 
-    # --- pembuka: simpan masukan 4-kanal, lalu pisahkan dua modalitas --------
     i_in = tambah(-1, 1, "nn.Identity", [])
     i_rgb = tambah(i_in, 1, "AmbilRGB", [])
     i_dep = tambah(i_in, 1, "AmbilDepth", [])
@@ -296,9 +288,7 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str,
         return tambah(c, 1, "Conv", [lebar, 1, 1])
 
     if fusi == "mid":
-        TITIK = titik_mid               # akhir tahap P2/4 pada backbone dasar
-        # Urutan penambahan menentukan urutan EKSEKUSI: cabang depth, lalu
-        # cabang RGB sampai titik fusi, lalu fusi, baru sisa cabang RGB.
+        TITIK = titik_mid
         dep = salin_cabang(i_dep, lebar_bagi=4, sampai=TITIK)
         rgb = salin_cabang(i_rgb, sampai=TITIK)
         lebar = lebar_keluar(bb[TITIK][2], bb[TITIK][3])
@@ -310,13 +300,12 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str,
         rgb = salin_cabang(i_rgb)
         dep = salin_cabang(i_dep, lebar_bagi=2)
         peta.update(rgb)
-        for p in titik_late:            # P3, P4, P5 pada backbone dasar
+        for p in titik_late:
             lebar = lebar_keluar(bb[p][2], bb[p][3])
             peta[p] = fusi_di(rgb[p], dep[p], lebar)
     else:
         raise SystemExit(f"fusi tidak dikenal: {fusi}")
 
-    # --- head: geser rujukan absolutnya lewat peta ---------------------------
     awal_head = len(L)
     peta_head: dict[int, int] = {}
     for j, (f, r, m, a) in enumerate(head):
@@ -355,18 +344,11 @@ def bangun_yaml(dasar: Path, fusi: str, nc: int, skala: str,
     return d
 
 
-# -------------------------------------------------------- arsitektur dasar
-# Titik fusi (indeks lapisan backbone) TIDAK bisa dibagi antar arsitektur
-# lewat konstanta tunggal — posisinya bergantung struktur backbone masing-
-# masing YAML dasar. Diverifikasi lewat pembacaan langsung YAML + forward
-# pass CPU (lihat KAVEAT RT-DETR di kepala berkas), bukan diasumsikan simetris
-# dengan yolo26.
 ARSITEKTUR: dict[str, dict] = {
     "yolo26": {
         "path": "26/yolo26.yaml",
-        # akhir stage P2/4: bb[2] adalah C3k2 tepat setelah conv turun ke P2/4.
         "titik_mid": 2,
-        "titik_late": (4, 6, 10),   # P3, P4, P5
+        "titik_late": (4, 6, 10),
     },
     "rtdetr-l": {
         "path": "rt-detr/rtdetr-l.yaml",
@@ -374,10 +356,8 @@ ARSITEKTUR: dict[str, dict] = {
         # (masih P2/4) — bb[2] SUDAH DWConv turun ke P3/8. Titik yang benar
         # untuk fusi P2/4 adalah 1, bukan 2 seperti yolo26.
         "titik_mid": 1,
-        "titik_late": (3, 7, 9),    # P3, P4, P5 — sama seperti rujukan head
-                                     # rtdetr-l.yaml asli ([[21, 24, 27], ...]
-                                     # dibaca dari backbone indeks 3/7/9)
-        "skala_wajib": "l",         # satu-satunya skala di YAML dasar RT-DETR
+        "titik_late": (3, 7, 9),
+        "skala_wajib": "l",
         # `YOLO(yaml)` TIDAK otomatis mengalihkan ke RT-DETR untuk YAML custom
         # (terverifikasi juga gagal untuk rtdetr-l.yaml BAWAAN tanpa modifikasi
         # apa pun): `guess_model_task` menebak task dari nama modul head lewat
@@ -452,7 +432,7 @@ def main() -> int:
         data=str(data), epochs=args.epochs, imgsz=args.imgsz, batch=args.batch,
         seed=args.seed, workers=args.workers, project=args.project, name=nama,
         exist_ok=True, patience=args.epochs, plots=False, deterministic=True, val=True,
-        hsv_h=0.0, hsv_s=0.0, hsv_v=0.0,       # pagar keadilan #1
+        hsv_h=0.0, hsv_s=0.0, hsv_v=0.0,
     )
     durasi = time.time() - mulai
 

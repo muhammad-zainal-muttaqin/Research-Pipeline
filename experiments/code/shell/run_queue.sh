@@ -8,17 +8,14 @@ PY=.venv/bin/python
 
 log() { echo "[$(date +%H:%M:%S)] $*"; }
 
-# 1. tunggu baseline RGB yang sedang berjalan
 log "menunggu pelatihan RGB selesai..."
 while pgrep -f "train_fusion.py --mode rgb" > /dev/null; do sleep 30; done
 log "RGB selesai."
 
-# 2. RGBD 4-kanal (early fusion) -- kontrol yang diprediksi gagal di SR-005
 log "mulai RGBD 4-kanal"
 $PY train_fusion.py --mode rgbd > logs-train-rgbd.txt 2>&1
 log "RGBD selesai (exit $?)"
 
-# 3. pelatihan berbasis ubin untuk tandan kecil
 log "menunggu perakitan ubin..."
 while pgrep -f "tiling.py --build" > /dev/null; do sleep 20; done
 log "mulai pelatihan ubin"

@@ -40,7 +40,6 @@ def patch_pad_kanal4_nol() -> None:
             left, right = params["left"], params["right"]
             h, w = img.shape[:2]
             d = img[..., 3]
-            # nolkan hanya bingkai padding, jangan sentuh area citra asli
             if top:
                 d[:top, :] = 0
             if bottom:
@@ -64,7 +63,7 @@ def main() -> None:
 
     import sys
     sys.path.insert(0, str(PIPELINE_ROOT))
-    import fourch  # memasang pemuat 4-kanal, sama seperti train_depth4ch.py
+    import fourch
     fourch.patch_loader(str(EXPERIMENTS / "depth_png"), dropout=0.0)
 
     from ultralytics import YOLO

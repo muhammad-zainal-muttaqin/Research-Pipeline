@@ -89,7 +89,6 @@ VARIAN = {
 }
 
 
-# ----------------------------------------------------------------- modul baru
 def _tambal_kanal_tunggal(cabang, kanal: int) -> None:
     """Ganti conv patch-embed DINOv2 dari 3 kanal menjadi `kanal`, IN PLACE.
 
@@ -130,10 +129,6 @@ class FusionBackboneRGBD(nn.Module):
         self.rgb = rgb
         self.kedalaman = kedalaman
         n_skala = len(rgb.projector_scale)
-        # Concat lalu proyeksi 1x1, bukan penjumlahan — alasan sama dengan
-        # `fusi_di` di `train_fusion_2branch.py`: proyeksi membiarkan jaringan
-        # sendiri menimbang tiap modalitas, dan bobotnya bisa diperiksa
-        # setelah latihan (klaim "depth dipakai" dapat diverifikasi).
         self.fusi = nn.ModuleList(
             nn.Conv2d(2 * out_channels, out_channels, kernel_size=1)
             for _ in range(n_skala)
@@ -230,7 +225,6 @@ def daftarkan_pembangun_fusi(muat_pratlatih_rgb: bool = False) -> None:
           f"depth SELALU acak — lihat KAVEAT 1)")
 
 
-# ------------------------------------------------------------------ pengujian
 def uji_forward_cpu(model, resolusi: int) -> dict:
     """Bangun tensor 4 kanal acak, jalankan forward CPU, dan buktikan cabang
     depth benar-benar tersambung (uji tukar E-023: mengubah HANYA kanal depth
@@ -283,10 +277,6 @@ def main() -> int:
     KelasConfig = getattr(cfg_mod, VARIAN[args.varian])
     mc = KelasConfig(
         resolution=args.resolution, num_classes=args.num_classes,
-        # `pretrain_weights` di sini adalah checkpoint RF-DETR PENUH (bukan
-        # hanya DINOv2) — tidak relevan untuk arsitektur dua cabang ini, jadi
-        # selalu None. Pratlatihan cabang RGB dikendalikan terpisah lewat
-        # `--pretrained` di atas (lihat `daftarkan_pembangun_fusi`).
         pretrain_weights=None,
     )
 

@@ -43,7 +43,7 @@ def main():
             if e is None or not lab.exists():
                 miss += 1
                 continue
-            link = dst / "images" / name              # nama MVC dipertahankan
+            link = dst / "images" / name
             if not link.exists():
                 link.symlink_to(RAW / e["raw"])
             tgt = dst / "labels" / f"{Path(name).stem}.txt"

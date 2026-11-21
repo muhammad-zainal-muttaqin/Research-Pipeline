@@ -82,17 +82,11 @@ def prediksi(bobot: str, paths: list[Path], peta: dict[str, int], imgsz: int,
             for p in potong:
                 bgr = cv2.imread(str(p), cv2.IMREAD_COLOR)
                 if modal == "derau":
-                    # kontrol negatif: kanal ke-4 derau, seed tetap agar
-                    # evaluasi dapat direproduksi
                     # zlib.crc32, bukan hash(): hash() Python diacak per proses
                     # (PYTHONHASHSEED) sehingga deraunya tidak dapat direproduksi
-                    # Harus identik dengan _patch_depth_acak saat training:
-                    # pola tetap per berkas, tetapi berbeda antar-seed.
                     rng = np.random.default_rng(zlib.crc32(p.stem.encode()) ^ seed)
                     d8 = rng.integers(0, 256, bgr.shape[:2], dtype=np.uint8)
                 elif modal == "tukar":
-                    # Donor hanya dari split evaluasi yang sama dan pohon lain,
-                    # identik dengan _patch_depth_tukar saat training.
                     urut = sorted(q.stem for q in paths)
                     i2 = urut.index(p.stem)
                     geser = max(4, len(urut) // 2)

@@ -18,15 +18,10 @@ bersihkan() {
   lapor "disk /workspace: $(du -sm /workspace 2>/dev/null | cut -f1) MB"
 }
 
-# tunggu evaluasi yang sedang jalan
 while pgrep -f "eval_rfdetr_e022|modal-b derau" >/dev/null; do sleep 30; done
 lapor "evaluasi yang tertunda selesai"
 bersihkan
 
-# TODO #10: kontrol derau pada RT-DETR-L. Menjawab langsung kenapa arah efek
-# depth berlawanan antar arsitektur: kalau derau JUGA menurunkan mAP di RT-DETR,
-# polanya "model besar tak butuh kanal ke-4, model kecil terbantu apa pun
-# isinya" — menjelaskan kedua arsitektur tanpa teori soal HGStem.
 if [ ! -f runs/detect/runs_e022/rtdetr-l_derau_seed42/hasil.json ]; then
   lapor "mulai kontrol derau RT-DETR-L (~50 mnt)"
   $PY -u train_depth4ch.py --arch rtdetr-l --modal rgbd --depth-acak \
@@ -36,7 +31,6 @@ if [ ! -f runs/detect/runs_e022/rtdetr-l_derau_seed42/hasil.json ]; then
   bersihkan
 fi
 
-# uji berpasangan untuk kontrol derau RT-DETR
 if [ ! -f results/e022_paired_rtdetrl_derau.json ]; then
   lapor "uji berpasangan derau RT-DETR-L"
   $PY -u eval_e022_paired.py --rgb runs/detect/runs_e022/rtdetr-l_rgb_seed42 \

@@ -80,9 +80,6 @@ def main() -> int:
     mf_path = args.out / f"manifest{sfx}.jsonl"
     cam_path = args.out / f"cameras{sfx}.json"
 
-    # Pelewatan berbasis keberadaan berkas, bukan manifest: aman dipakai
-    # beberapa proses sekaligus dan tetap benar bila proses sebelumnya mati
-    # di tengah jalan.
     def tree_done(paths):
         return all((d_dir / f"{p.stem}.png").exists() for p in paths)
 
@@ -119,7 +116,6 @@ def main() -> int:
         depth = np.asarray(pred.depth, dtype=np.float32)
         conf = np.asarray(pred.conf, dtype=np.float32) if pred.conf is not None else None
 
-        # --- normalisasi PER POHON: inilah yang menjaga konsistensi antar-sisi
         fin = np.isfinite(depth)
         if not fin.any():
             n_fail += len(paths)

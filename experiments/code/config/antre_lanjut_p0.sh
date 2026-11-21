@@ -30,7 +30,6 @@ python ringkas_p0.py > logs_ringkas_p0.log 2>&1
 rc=$?
 echo "[$(date +%H:%M:%S)] ringkas_p0 rc=${rc} -> results/p0_multiseed/RINGKASAN.md"
 
-# Laporan kelengkapan terakhir, supaya lubang tidak lolos tanpa terlihat.
 python3 - <<'PY'
 import os, csv, glob
 bolong = []

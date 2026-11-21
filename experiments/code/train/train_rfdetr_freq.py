@@ -73,12 +73,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EXPERIMENTS = REPO_ROOT / "experiments"
 
-# `python train/xxx.py` menaruh `train/` di sys.path[0], BUKAN akar
+# `python train/xxx.py` menaruh `train/` di sys.path[0], bukan akar
 # `experiments/code/`, sehingga `from train.train_rfdetr import ...` gagal
-# dengan ModuleNotFoundError. Kegagalan itu terjadi SETELAH latihan selesai
-# (saat mengumpulkan metrik), jadi ia membuang seluruh run tanpa menyentuh
-# bobotnya — terjadi 6 Agustus 2026 pada F-007 dwt seed 42, 1,5 jam GPU.
-# Pola sisipan ini sama dengan `analysis/cross_side_consistency.py:52`.
+# dengan ModuleNotFoundError setelah latihan selesai.
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -89,7 +86,6 @@ import torch.nn.functional as F
 LENGAN = ["dwt", "laplacian", "freq_rendah", "fase_diacak"]
 
 
-# --------------------------------------------------------------- peta frekuensi
 def _haar(x: torch.Tensor):
     """DWT Haar satu tingkat pada tensor (B,1,H,W). Kembalikan (LL, LH, HL, HH)."""
     a = x[..., 0::2, 0::2]
@@ -107,7 +103,6 @@ def peta_frekuensi(rgb: torch.Tensor, lengan: str) -> torch.Tensor:
     sama (rezim §5.5).
     """
     B, _, H, W = rgb.shape
-    # Luminans (BT.601), sejalan dengan `analysis/freq_vs_pelepah.py`.
     g = (0.299 * rgb[:, 0] + 0.587 * rgb[:, 1] + 0.114 * rgb[:, 2]).unsqueeze(1)
 
     if lengan == "dwt":
@@ -122,12 +117,10 @@ def peta_frekuensi(rgb: torch.Tensor, lengan: str) -> torch.Tensor:
         for _ in range(3):
             bands.append(F.conv2d(cur, k, padding=1).abs())
             cur = F.avg_pool2d(cur, 2)
-        # samakan ukuran ke skala terkecil supaya bisa ditumpuk
         kecil = bands[-1].shape[-2:]
         bands = [F.adaptive_avg_pool2d(b, kecil) for b in bands]
 
     elif lengan == "freq_rendah":
-        # KONTROL: sub-band LL (frekuensi RENDAH) tiga tingkat.
         bands = []
         cur = g
         for _ in range(3):
@@ -138,9 +131,6 @@ def peta_frekuensi(rgb: torch.Tensor, lengan: str) -> torch.Tensor:
         bands = [F.adaptive_avg_pool2d(b, kecil) for b in bands]
 
     elif lengan == "fase_diacak":
-        # KONTROL: sub-band tinggi yang SAMA dengan lengan `dwt`, tetapi fasenya
-        # diacak di ranah Fourier. Amplitudo spektrum dipertahankan; keselarasan
-        # spasial dengan tandan dihancurkan.
         _, lh, hl, hh = _haar(g)
         bands = []
         for b in (lh, hl, hh):
@@ -154,7 +144,6 @@ def peta_frekuensi(rgb: torch.Tensor, lengan: str) -> torch.Tensor:
     return torch.cat(bands, dim=1)
 
 
-# ------------------------------------------------------------------ side encoder
 class SideEncoder(nn.Module):
     """Encoder konvolusi sempit: 3 kanal -> `out_channels` pada grid projector.
 
@@ -179,9 +168,9 @@ class SideEncoder(nn.Module):
             )
 
         self.tahap = nn.Sequential(
-            blok(3, c1, 2),       # /2
-            blok(c1, c2, 2),      # /4
-            blok(c2, c3, 2),      # /8
+            blok(3, c1, 2),
+            blok(c1, c2, 2),
+            blok(c2, c3, 2),
         )
         self.keluar = nn.Conv2d(c3, out_channels, 1)
 
@@ -247,7 +236,6 @@ def _kelas_frekuensi_backbone():
             self.samping = SideEncoder(out_channels, lebar)
             self.proyeksi = nn.ModuleList(
                 nn.Conv2d(out_channels, out_channels, 1) for _ in range(n_skala))
-            # gamma = 0 -> cabang samping adalah no-op PERSIS saat inisialisasi.
             self.gamma = nn.Parameter(torch.zeros(n_skala))
             for m in self.proyeksi:
                 nn.init.zeros_(m.bias)
@@ -268,7 +256,6 @@ def _kelas_frekuensi_backbone():
     return FrekuensiBackbone
 
 
-# ------------------------------------------------------------------- pendaftaran
 _LENGAN = "dwt"
 _LEBAR = 32
 
@@ -325,7 +312,6 @@ def daftarkan(lengan: str, lebar: int = 32) -> None:
     print(f"cabang frekuensi terdaftar: lengan={lengan}, lebar={lebar}, gamma=0 saat init")
 
 
-# ---------------------------------------------------------------- uji sambungan
 def uji_sambungan(model, resolusi: int) -> dict:
     """Buktikan DUA arah sekaligus. Wajib lulus sebelum run 3-seed diantre.
 
@@ -372,12 +358,6 @@ def uji_sambungan(model, resolusi: int) -> dict:
     lulus_a = selisih_nol < 1e-5
     lulus_b = selisih_buka > 1e-3
 
-    # (c) JALUR OPTIMIZER. Ditambahkan setelah run pertama mati di
-    # `configure_optimizers` — bukan di forward — sehingga uji yang hanya
-    # menjalankan forward meloloskannya. Yang diperiksa dua hal:
-    #   1. `get_param_dict` benar-benar bisa dipanggil (metode ada), dan
-    #   2. peluruhan LR per lapisan DINOv2 tetap hidup (bukan lr datar),
-    #      karena delegasi yang salah mengembalikan dict kosong TANPA error.
     from rfdetr.training.param_groups import get_param_dict
 
     class _Args:
@@ -398,12 +378,8 @@ def uji_sambungan(model, resolusi: int) -> dict:
 
     lulus_c = galat_optim is None and n_encoder > 0 and len(lr_unik) > 1
 
-    # (d) BOBOT PRATLATIH BENAR-BENAR TERMUAT — pemeriksaan yang TIDAK ADA pada
-    # versi pertama, dan justru itulah sebabnya cacat terbesar seri ini lolos.
-    # Versi pembungkus mengubah nama parameter sehingga 264 bobot gagal
-    # dicocokkan; rfdetr hanya mencetak WARNING dan latihan tetap jalan dengan
-    # backbone ACAK. Di sini dihitung langsung: berapa parameter model yang
-    # TIDAK punya pasangan di checkpoint pratlatih.
+    # Bila nama parameter tidak cocok dengan checkpoint pratlatih, rfdetr hanya
+    # mencetak WARNING dan latihan tetap jalan dengan backbone acak.
     import os
 
     ckpt_path = os.path.expanduser("~/.roboflow/models/rf-detr-large-2026.pth")
@@ -418,8 +394,6 @@ def uji_sambungan(model, resolusi: int) -> dict:
     except Exception as e:  # noqa: BLE001
         galat_ckpt = f"{type(e).__name__}: {e}"
 
-    # Ambang: hanya parameter cabang samping (+ _kp_active_mask milik baseline)
-    # yang boleh tidak termuat. Baseline F-001 mencatat tepat 1.
     n_baru = (sum(p.numel() > 0 for p in bungkus.samping.parameters())
               + sum(p.numel() > 0 for p in bungkus.proyeksi.parameters()) + 1)
     lulus_d = galat_ckpt is None and 0 <= tak_termuat <= n_baru + 1
@@ -467,8 +441,6 @@ def main() -> int:
     from rfdetr import RFDETRLarge
 
     if args.uji_sambungan:
-        # Resolusi kecil supaya muat di CPU; sifat yang diuji tidak bergantung
-        # resolusi (kelipatan 32 = patch_size 16 x num_windows 2).
         res = 320
         model = RFDETRLarge(gradient_checkpointing=False, resolution=res, device="cpu")
         hasil = uji_sambungan(model, res)

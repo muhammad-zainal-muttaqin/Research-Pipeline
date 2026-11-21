@@ -35,7 +35,6 @@ IMGSZ = 640
 
 
 def main() -> int:
-    # skala ultralytics: sisi terpanjang -> imgsz
     scale = IMGSZ / max(W0, H0)
     Ws, Hs = W0 * scale, H0 * scale
 
@@ -86,7 +85,7 @@ def main() -> int:
         if not len(a):
             continue
         area = a[:, 0] * a[:, 1]
-        area_t = area * 4.0            # 2x per sisi -> 4x luas
+        area_t = area * 4.0
         print(f"  {c:6s} {np.median(area):11.0f} {np.median(area_t):11.0f} "
               f"{(area < 32**2).mean()*100:11.1f}% {(area_t < 32**2).mean()*100:11.1f}%")
         out[c]["pct_small_tiled"] = float((area_t < 32 ** 2).mean() * 100)

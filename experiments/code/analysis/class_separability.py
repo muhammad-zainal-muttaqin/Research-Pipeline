@@ -69,7 +69,6 @@ def features(patch: np.ndarray) -> np.ndarray | None:
         f += [ch.mean(), ch.std(), np.percentile(ch, 10), np.percentile(ch, 90)]
     f += [lap.var(), np.abs(lap).mean(), mag.mean(), mag.std(),
           float((mag > mag.mean() + mag.std()).mean())]
-    # histogram hue kasar (penanda kematangan)
     h = cv2.calcHist([p], [0], None, [8], [0, 256]).ravel()
     f += (h / max(h.sum(), 1)).tolist()
     return np.array(f, dtype=np.float32)
@@ -144,7 +143,6 @@ def main() -> int:
     for a, b, v in pairs[:6]:
         print(f"    {a} -> {b}: {v:5.1f}%")
 
-    # apakah B2/B3 memang yang terburuk?
     b2b3 = cm[1][2] / max(cm[1].sum(), 1) * 100
     b3b2 = cm[2][1] / max(cm[2].sum(), 1) * 100
     print(f"\n  B2<->B3 dua arah: {b2b3:.1f}% dan {b3b2:.1f}%")

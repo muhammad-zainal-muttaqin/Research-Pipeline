@@ -30,7 +30,6 @@ from pycocotools.cocoeval import COCOeval
 
 from eval_e022_pycoco import NAMES, bangun_gt, pohon_dari, prediksi
 
-# --- bobot fusi dua cabang (E-023) ---------------------------------------
 # Checkpoint lengan `mid`/`late` berisi modul kustom AmbilRGB/AmbilDepth. Dua
 # pendaftaran DIPERLUKAN dan keduanya berbeda urusan:
 #
@@ -51,7 +50,7 @@ try:
 
     daftarkan_modul()
     __main__.AmbilRGB, __main__.AmbilDepth = AmbilRGB, AmbilDepth
-except ImportError:      # skrip fusi tidak ada — lengan non-fusi tetap jalan
+except ImportError:
     pass
 
 _GT = None
@@ -91,8 +90,8 @@ def map50_semua(gt, dt, img_ids: list[int]) -> dict[str, float]:
     ev.params.imgIds = img_ids
     with contextlib.redirect_stdout(io.StringIO()):
         ev.evaluate(); ev.accumulate()
-    pr = ev.eval["precision"]  # [T, R, K, A, M]
-    t50 = 0  # ev.params.iouThrs[0] == 0.5
+    pr = ev.eval["precision"]
+    t50 = 0
     keluar = {}
     ap_kelas = []
     ap_kelas_5095 = []
@@ -104,9 +103,7 @@ def map50_semua(gt, dt, img_ids: list[int]) -> dict[str, float]:
         if not np.isnan(ap):
             ap_kelas.append(ap)
 
-        # mAP50-95 per kelas: SEMUA ambang T (bukan cuma t50), sisanya sama —
-        # -1 dibuang sebelum dirata-ratakan.
-        p5095 = pr[:, :, k, 0, -1]  # [T, R]
+        p5095 = pr[:, :, k, 0, -1]
         p5095 = p5095[p5095 > -1]
         ap5095 = float(p5095.mean()) if p5095.size else float("nan")
         keluar[f"{n}_5095"] = ap5095
@@ -159,10 +156,6 @@ def main() -> None:
     pohon = sorted({pohon_dari(p.stem) for p in paths})
     per_pohon = {t: [peta[p.stem] for p in paths if pohon_dari(p.stem) == t] for t in pohon}
     rng = np.random.default_rng(42)
-    # Bootstrap itu embarrassingly parallel dan mesin ini punya 128 core, tetapi
-    # loop serial hanya memakai ~1. Indeks resample dibangkitkan LEBIH DULU dari
-    # satu rng ber-seed, jadi hasilnya identik dengan versi serial dan tidak
-    # bergantung urutan penyelesaian proses.
     daftar_ids = []
     for _ in range(args.B):
         contoh = rng.choice(len(pohon), len(pohon), replace=True)

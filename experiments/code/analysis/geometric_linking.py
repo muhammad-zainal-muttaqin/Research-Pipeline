@@ -49,7 +49,6 @@ CLASSES = ["B1", "B2", "B3", "B4"]
 K_GLOBAL = 1.8905
 
 
-# --------------------------------------------------------------------------
 def load_tree_gt(tree: str) -> dict | None:
     f = SRC / "json" / f"{tree}.json"
     if not f.exists():
@@ -105,10 +104,9 @@ def components(n: int, edges: list[tuple[int, int]]) -> list[int]:
     return out
 
 
-# --------------------------------------------------------------------------
 def link_tree(tree: str, paths: list[Path], cams: dict, mode: str, thr: float):
     """Kembalikan (jumlah unik per kelas, jumlah deteksi mentah per kelas)."""
-    dets = []           # (side, class, cx, cy, w, h, X3d atau None, depth)
+    dets = []
     for si, p in enumerate(paths):
         boxes = load_boxes(p.stem)
         if not boxes:
@@ -133,7 +131,6 @@ def link_tree(tree: str, paths: list[Path], cams: dict, mode: str, thr: float):
     if not dets:
         return np.zeros(4, int), np.zeros(4, int)
 
-    # --- proyeksi 3D untuk mode sadar-pose
     if mode == "pose" and tree in cams:
         cam = cams[tree]
         ext = np.asarray(cam["extrinsics"], dtype=np.float64)
@@ -149,16 +146,15 @@ def link_tree(tree: str, paths: list[Path], cams: dict, mode: str, thr: float):
             H = K[1, 2] * 2
             d["X"] = backproject(d["cx"] * W, d["cy"] * H, d["d"], K, ext[si])
 
-    # --- bangun sisi graf antar-sisi berbeda
     edges = []
     n = len(dets)
     for i in range(n):
         for j in range(i + 1, n):
             a, b = dets[i], dets[j]
             if a["side"] == b["side"]:
-                continue                      # satu sisi tidak menaut ke dirinya
+                continue
             if a["cls"] != b["cls"]:
-                continue                      # tandan sama = kelas sama
+                continue
             if mode == "appearance":
                 sim = abs(a["w"] * a["h"] - b["w"] * b["h"]) / max(
                     a["w"] * a["h"], b["w"] * b["h"])

@@ -62,7 +62,6 @@ def masukan(p: Path, modal: str) -> np.ndarray:
     if modal == "rgb":
         return rgb
     if modal == "derau":
-        # seed CRC32 per berkas — sama seperti saat latih, reproducible
         rng = np.random.default_rng(zlib.crc32(p.stem.encode()))
         d8 = rng.integers(0, 256, rgb.shape[:2], dtype=np.uint8)
     else:
@@ -120,9 +119,6 @@ def main() -> None:
     pohon = sorted({pohon_dari(p.stem) for p in paths})
     per_pohon = {t: [peta[p.stem] for p in paths if pohon_dari(p.stem) == t] for t in pohon}
     rng = np.random.default_rng(42)
-    # Bootstrap diparalelkan (mesin 128 core, loop serial hanya memakai ~1).
-    # Indeks resample dibangkitkan lebih dulu dari satu rng ber-seed, jadi
-    # hasilnya identik dengan versi serial dan tidak bergantung urutan selesai.
     daftar_ids = []
     for _ in range(args.B):
         contoh = rng.choice(len(pohon), len(pohon), replace=True)

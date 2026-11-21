@@ -66,7 +66,6 @@ res = {
     "agnostik": run({0: 0, 1: 0, 2: 0, 3: 0}, 1, "agnostik"),
     "B2B3":     run({0: 0, 1: 1, 2: 1, 3: 2}, 3, "B2+B3 digabung"),
 }
-# pm1: kotak GT diduplikasi ke kelas tetangga, meniru toleransi satu tingkat
 A2, k = [], 1
 for a in anns:
     for c in {max(0, a["category_id"]-1), a["category_id"], min(3, a["category_id"]+1)}:

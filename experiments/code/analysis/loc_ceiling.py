@@ -67,8 +67,6 @@ for tag, (w, sz) in runs.items():
         "pecahan_iou>=0.5": round(float((b >= 0.5).mean()), 4),
         "pecahan_iou>=0.75": round(float((b >= 0.75).mean()), 4),
         "pecahan_iou>=0.90": round(float((b >= 0.90).mean()), 4),
-        # plafon mAP50-95 kalau SETIAP kotak yang ditemukan diberi kelas benar
-        # dan skor sempurna: rerata pecahan-terdeteksi pada 10 ambang COCO
         "plafon_mAP50-95_kelas_sempurna": round(float(
             np.mean([(b >= t).mean() for t in np.arange(0.50, 0.96, 0.05)])), 4),
         "plafon_mAP50_kelas_sempurna": round(float((b >= 0.5).mean()), 4),

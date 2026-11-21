@@ -22,10 +22,6 @@ SPLIT_DIR=/workspace/research-pipeline/experiments/splits/depth/seed42
 B=${B:-2000}
 mkdir -p "$OUT"
 
-# lengan -> modalitas yang dipakai saat memuat citra.
-#   awal/mid/late = rgbd (kanal ke-4 berisi depth asli)
-#   derau         = kanal ke-4 berisi derau; WAJIB agar kontrol negatif dinilai
-#                   dengan masukan yang sama seperti saat dilatih
 modal_dari() {
   case "$1" in
     derau) echo derau ;;

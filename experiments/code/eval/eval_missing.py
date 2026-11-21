@@ -25,11 +25,9 @@ def run(tag, weights, data, imgsz, patch=None):
               f"per-kelas={r[sp]['per_kelas_AP50']}")
     out[tag] = r
 
-# E-019: c4_e50 (3-kanal, augmentasi aman-warna, 1280)
 run("c4_e50_i1280_warna", "runs/c4_e50_i1280_warna/weights/best.pt",
     "data_rgb.yaml", 1280)
 
-# I-4: rgbd 4-kanal (early fusion, pseudo-depth DA3)
 try:
     run("rgbd_e60_i640_s42", "runs/rgbd_e60_i640_s42/weights/best.pt",
         "data_rgbd4.yaml", 640, patch="rgbd")

@@ -19,7 +19,6 @@ def koma(v, n=4):
     return f"{v:+.{n}f}".replace(".", ",")
 
 
-# --- Grafik 1: matriks fusi E-032 (rasio lebar 12 : 4,6) ---------------------
 arms = ["Fusi awal", "Fusi menengah", "Fusi akhir", "Derau acak"]
 seeds = {
     "seed 42":   [-0.0120, +0.0096, -0.0056, -0.0130],
@@ -57,7 +56,6 @@ fig.tight_layout()
 fig.savefig(os.path.join(OUT, "chart_fusi.png"), dpi=200)
 plt.close(fig)
 
-# --- Grafik 2: depth dibandingkan derau acak (rasio 11 : 3,4) ---------------
 fig, ax = plt.subplots(figsize=(11, 3.4))
 lbl = ["Fusi awal", "Fusi menengah", "Fusi akhir", "Derau acak"]
 val = [+0.0032, +0.0139, +0.0039, -0.0062]
@@ -79,7 +77,6 @@ fig.tight_layout()
 fig.savefig(os.path.join(OUT, "chart_derau.png"), dpi=200)
 plt.close(fig)
 
-# --- Grafik 3: dua dataset, satuan sama (kotak YOLO) -----------------------
 import matplotlib.gridspec as gridspec
 
 fig = plt.figure(figsize=(12.6, 4.4))
@@ -106,9 +103,8 @@ for j, (title, vals, unit) in enumerate(pairs):
     ax.tick_params(axis="y", labelsize=10)
     ax.set_ylim(0, max(vals) * 1.32)
 
-# Sebaran kelas, dihitung dari berkas label kedua dataset.
-lama_n  = [2032, 3500, 9701, 3307]      # total 18.540
-depth_n = [829, 1001, 321, 148]         # total 2.299
+lama_n  = [2032, 3500, 9701, 3307]
+depth_n = [829, 1001, 321, 148]
 lama  = [v / sum(lama_n) * 100 for v in lama_n]
 depth = [v / sum(depth_n) * 100 for v in depth_n]
 

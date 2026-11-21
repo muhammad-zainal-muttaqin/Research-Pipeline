@@ -105,7 +105,6 @@ def ringkas(catatan: list[dict]) -> dict:
     r = np.array([c["med_cincin"] for c in catatan])
     return {
         "n_kotak": len(catatan),
-        # separasi relatif: cincin lebih jauh daripada tandan -> positif
         "separasi_rel": float(np.median((r - d) / np.maximum(r, 1.0))),
         "frac_tandan_lebih_dekat": float(np.mean(d < r)),
         "med_iqr_dalam_mm": float(np.median([c["iqr_dalam"] for c in catatan])),

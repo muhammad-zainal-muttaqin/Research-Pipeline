@@ -75,12 +75,12 @@ def ap_pycoco(gt, dets: list[dict], img_ids: list[int], max_dets: int) -> dict:
     ev.evaluate()
     ev.accumulate()
 
-    p = ev.eval["precision"][:, :, :, 0, 2]      # [T, R, K] pada area 'all'
+    p = ev.eval["precision"][:, :, :, 0, 2]
     def rerata(bagian):
         v = bagian[bagian > -1]
         return float(v.mean()) if v.size else float("nan")
 
-    return {"mAP50": rerata(p[0]),               # iouThrs[0] == 0.50
+    return {"mAP50": rerata(p[0]),
             "mAP50_95": rerata(p)}
 
 
@@ -104,7 +104,6 @@ def main() -> int:
     lap: dict = {"run": str(rd), "modal": args.modal, "split": args.split,
                  "n_citra": len(paths), "n_kotak_gt": len(gt.dataset["annotations"])}
 
-    # --- kandidat A: checkpoint yang sebenarnya dinilai --------------------
     hasil_json = rd / "hasil.json"
     lap["hasil_json"] = json.loads(hasil_json.read_text())["test"] if hasil_json.exists() else None
     bobot = rd / "weights" / "best.pt"
@@ -116,7 +115,6 @@ def main() -> int:
         "bobot_dipakai_skrip_ini": str(bobot),
     }
 
-    # --- satu himpunan deteksi untuk semua pengukuran ----------------------
     dets = prediksi(str(bobot), paths, peta, args.imgsz, args.modal, seed=args.seed)
     per_citra: dict[int, int] = {}
     for d in dets:
@@ -130,14 +128,12 @@ def main() -> int:
         "citra_lebih_dari_300_deteksi": sum(1 for v in jumlah if v > 300),
     }
 
-    # --- kandidat B: maxDets 100 (default COCOeval) vs 300 (max_det predict)
     lap["pycoco_maxdets_100"] = ap_pycoco(gt, dets, img_ids, 100)
     lap["pycoco_maxdets_300"] = ap_pycoco(gt, dets, img_ids, 300)
     lap["efek_maxdets"] = {
         k: round(lap["pycoco_maxdets_300"][k] - lap["pycoco_maxdets_100"][k], 6)
         for k in ("mAP50", "mAP50_95")}
 
-    # --- kandidat C: implementasi AP, pada deteksi yang IDENTIK ------------
     # Selisih yang tersisa setelah B dijelaskan adalah murni beda implementasi
     # (ultralytics menghitung AP-nya sendiri; pycocotools memakai COCOeval).
     if lap["hasil_json"]:

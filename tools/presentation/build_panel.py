@@ -18,7 +18,7 @@ from matplotlib.patches import Rectangle
 HERE = os.path.dirname(os.path.abspath(__file__))
 plt.rcParams.update({"font.family": "DejaVu Sans"})
 
-WARNA = ["#E8552D", "#F1C40F", "#2E86DE", "#8E44AD"]   # B1..B4
+WARNA = ["#E8552D", "#F1C40F", "#2E86DE", "#8E44AD"]
 NAMA = ["B1 matang", "B2", "B3", "B4 mentah"]
 
 TARGET = {

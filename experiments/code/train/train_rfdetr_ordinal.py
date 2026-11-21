@@ -77,12 +77,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EXPERIMENTS = REPO_ROOT / "experiments"
 
-# `python train/xxx.py` menaruh `train/` di sys.path[0], BUKAN akar
+# `python train/xxx.py` menaruh `train/` di sys.path[0], bukan akar
 # `experiments/code/`, sehingga `from train.train_rfdetr import ...` gagal
-# dengan ModuleNotFoundError. Kegagalan itu terjadi SETELAH latihan selesai
-# (saat mengumpulkan metrik), jadi ia membuang seluruh run tanpa menyentuh
-# bobotnya — terjadi 6 Agustus 2026 pada F-007 dwt seed 42, 1,5 jam GPU.
-# Pola sisipan ini sama dengan `analysis/cross_side_consistency.py:52`.
+# dengan ModuleNotFoundError setelah latihan selesai.
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -90,7 +87,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-N_KELAS = 4          # B1..B4; kanal ke-5 kepala RF-DETR mati (SERI-F.md §5.2)
+N_KELAS = 4
 EPS = 0.3
 PERINGKAT = ["pasangan", "brs", "tanpa"]
 
@@ -113,14 +110,13 @@ class KepalaOrdinal(nn.Module):
         self.ordinal = nn.Linear(hidden_dim, N_KELAS - 1)
         nn.init.zeros_(self.ordinal.bias)
         nn.init.normal_(self.ordinal.weight, std=0.01)
-        # alpha = 0 -> residu NOL -> identik baseline saat inisialisasi.
         self.alpha = nn.Parameter(torch.zeros(1))
         self.eps = eps
         self.q_logit_terakhir: torch.Tensor | None = None
 
     def forward(self, hs: torch.Tensor) -> torch.Tensor:
-        z = self.class_embed(hs)                       # (..., C) dengan C = 5
-        q_logit = self.ordinal(hs)                     # (..., 3)
+        z = self.class_embed(hs)
+        q_logit = self.ordinal(hs)
         self.q_logit_terakhir = q_logit[-1] if q_logit.dim() == 4 else q_logit
 
         q = torch.sigmoid(q_logit).clamp(1e-4, 1 - 1e-4)
@@ -128,9 +124,9 @@ class KepalaOrdinal(nn.Module):
         pi = torch.stack([1 - q1, q1 * (1 - q2), q1 * q2 * (1 - q3), q1 * q2 * q3], dim=-1)
 
         r = torch.log(pi.clamp_min(1e-6))
-        r = r - r.mean(dim=-1, keepdim=True)           # terpusat: mean nol
-        r = self.alpha * r                             # di-gate
-        r = r.clamp(-self.eps, self.eps)               # di-CLIP -> penjaga peringkat
+        r = r - r.mean(dim=-1, keepdim=True)
+        r = self.alpha * r
+        r = r.clamp(-self.eps, self.eps)
 
         z = z.clone()
         z[..., :N_KELAS] = z[..., :N_KELAS] + r.to(z.dtype)
@@ -204,7 +200,6 @@ def peringkat_brs(z: torch.Tensor, y: torch.Tensor, n_bucket: int = 16) -> torch
     massa = torch.zeros(n_bucket, device=s.device, dtype=s.dtype)
     massa.scatter_add_(0, b_neg, neg.reshape(-1))
     kumulatif_atas = massa.flip(0).cumsum(0).flip(0)
-    # Jumlah negatif yang mendahului tiap positif, sebagai fungsi bucketnya.
     mendahului = kumulatif_atas[b_pos]
     return (mendahului / (mendahului + pos.detach() + 1e-6) * (1 - pos)).mean()
 
@@ -280,7 +275,7 @@ def uji_sambungan(model) -> dict:
     kepala = kepala.to("cpu").eval()
 
     torch.manual_seed(0)
-    hs = torch.randn(4, 2, 300, kepala.ordinal.in_features)   # (L,B,Q,D)
+    hs = torch.randn(4, 2, 300, kepala.ordinal.in_features)
     with torch.no_grad():
         dasar = kepala.class_embed(hs)
         kepala.alpha.zero_()

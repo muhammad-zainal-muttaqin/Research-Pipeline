@@ -71,12 +71,10 @@ def ring_metrics(C: np.ndarray) -> dict:
 
     ang = np.degrees(np.arctan2(proj[:, 1] - cy, proj[:, 0] - cx))
     order = np.argsort(ang)
-    # jarak sudut antar-sisi berurutan (urut sesuai indeks sisi, bukan diurut)
     a = np.degrees(np.unwrap(np.radians(ang)))
     steps = np.diff(a)
-    steps = (steps + 180) % 360 - 180          # ke [-180,180)
+    steps = (steps + 180) % 360 - 180
     expected = 360.0 / n
-    # arah putar bisa searah atau berlawanan jarum jam
     err_pos = steps - expected
     err_neg = steps + expected
     err = err_pos if abs(err_pos).sum() <= abs(err_neg).sum() else err_neg
@@ -180,7 +178,6 @@ def main() -> int:
           f"({okord.mean()*100:.0f}%)")
     print(f"  rentang dinamis kedalaman (rata2) : {dyn.mean():.2f}")
 
-    # pembanding acak: seberapa bagus tebakan asal?
     rng = np.random.default_rng(0)
     rand_rmse = []
     for _ in range(2000):

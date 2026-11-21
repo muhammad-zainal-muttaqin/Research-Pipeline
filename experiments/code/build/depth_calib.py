@@ -45,11 +45,11 @@ class Kalibrasi:
     fy_c: float
     cx_c: float
     cy_c: float
-    k: tuple[float, ...]  # k1..k6 color
+    k: tuple[float, ...]
     p1: float
     p2: float
-    rot: tuple[float, ...]  # 9 elemen, row-major
-    trans: tuple[float, ...]  # mm
+    rot: tuple[float, ...]
+    trans: tuple[float, ...]
 
     @property
     def kunci(self) -> str:
@@ -137,7 +137,6 @@ def reproyeksi(z_mm: np.ndarray, kal: Kalibrasi, *, distorsi: bool = True,
         return np.zeros((RGB_H, RGB_W), np.float32)
     z = z_mm[v, u]
 
-    # piksel depth -> titik 3D di kerangka kamera depth (mm)
     X = (u - kal.cx_d) * z / kal.fx_d
     Y = (v - kal.cy_d) * z / kal.fy_d
 
@@ -165,7 +164,7 @@ def reproyeksi(z_mm: np.ndarray, kal: Kalibrasi, *, distorsi: bool = True,
     uc, vc, Zc = uc[di_dalam], vc[di_dalam], Zc[di_dalam]
 
     kanvas = np.full(RGB_H * RGB_W, np.inf, np.float32)
-    np.minimum.at(kanvas, vc * RGB_W + uc, Zc)  # z-buffer: ambil yang terdekat
+    np.minimum.at(kanvas, vc * RGB_W + uc, Zc)
     kanvas[np.isinf(kanvas)] = 0.0
     return kanvas.reshape(RGB_H, RGB_W)
 
@@ -185,7 +184,6 @@ def tambal_lubang(peta: np.ndarray, iterasi: int = 2) -> np.ndarray:
         kosong = keluar == 0
         if not kosong.any():
             break
-        # median 3x3 hanya atas tetangga valid: median dari nilai bukan-nol
         med = _median_valid_3x3(keluar)
         keluar[kosong] = med[kosong]
     return keluar

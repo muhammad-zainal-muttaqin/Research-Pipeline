@@ -12,7 +12,6 @@ from ultralytics import YOLO, RTDETR
 NAMES = ["B1", "B2", "B3", "B4"]
 OUT = Path("results/perkelas_fair.json")
 
-# (kunci, kelas ultralytics, bobot, imgsz, param_juta, resolusi_label)
 MODELS = [
     ("YOLO26m", YOLO, "runs/rgb_e60_i640_s42/weights/best.pt", 640, 21.9),
     ("RT-DETR-L", RTDETR, "runs/rtdetr_l_e60_i1280/weights/best.pt", 1280, 33.0),

@@ -25,7 +25,6 @@ def loaders(root, size, batch, workers=8):
         T.RandomResizedCrop(size, scale=(0.65, 1.0), ratio=(0.8, 1.25)),
         T.RandomHorizontalFlip(), T.RandomVerticalFlip(),
         T.RandomApply([T.RandomRotation(20)], p=0.5),
-        # hanya kecerahan ringan (cuaca/naungan); saturasi & hue DIBIARKAN
         T.ColorJitter(brightness=0.18, contrast=0.12, saturation=0.04, hue=0.012),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),

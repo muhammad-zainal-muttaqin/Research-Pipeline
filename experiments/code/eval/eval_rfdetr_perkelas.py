@@ -98,8 +98,8 @@ def main():
         ev = COCOeval(gt, dt, "bbox")
         ev.evaluate(); ev.accumulate(); ev.summarize()
         ap50, ap5095 = per_class_ap(ev)
-        overall_5095 = round(float(ev.stats[0]), 4)   # AP@[.5:.95]
-        overall_50 = round(float(ev.stats[1]), 4)     # AP@.5
+        overall_5095 = round(float(ev.stats[0]), 4)
+        overall_50 = round(float(ev.stats[1]), 4)
         result[split] = {"mAP50": overall_50, "mAP50_95": overall_5095,
                          "per_kelas_AP50": ap50, "per_kelas_AP50_95": ap5095}
         print(f"  overall mAP50={overall_50} mAP50-95={overall_5095}")

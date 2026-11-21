@@ -69,8 +69,6 @@ def main():
     tf = T.Compose([T.ToTensor(),
                     T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
-    # klasifikasikan setiap potongan kebenaran-dasar (kotak sempurna: yang
-    # diukur murni penilaian kematangan, bukan deteksi)
     per_bunch = defaultdict(list)
     per_view = []
     files = {}

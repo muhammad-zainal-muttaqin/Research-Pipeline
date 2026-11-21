@@ -110,7 +110,6 @@ def main() -> int:
             for k, v in s.items():
                 real[cn][k].append(v)
 
-            # kepadatan: jumlah kotak lain yang pusatnya dalam radius 1,5x diagonal
             cxp, cyp = (x0+x1)/2, (y0+y1)/2
             diag = np.hypot(x1-x0, y1-y0)
             near = sum(1 for j, (c2, a0, b0, a1, b1) in enumerate(px) if j != i and

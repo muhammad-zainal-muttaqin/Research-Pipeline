@@ -32,7 +32,7 @@ PY=./.venv/bin/python
 EPOCHS=${EPOCHS:-150}
 SEEDS=${SEEDS:-"42 1337 2024"}
 BATCH=${BATCH:-16}
-VRAM_PER_RUN=${VRAM_PER_RUN:-3400}     # MiB, skala n + margin
+VRAM_PER_RUN=${VRAM_PER_RUN:-3400}
 R=/workspace/research-pipeline/runs/detect/runs_e023
 TANDA=.e023-tanda
 mkdir -p "$TANDA"
@@ -77,7 +77,7 @@ for seed in $SEEDS; do
   for lengan in rgb awal mid late derau; do
     tunggu_vram
     jalankan "$lengan" "$seed" &
-    sleep 20                      # jeda agar pemuatan model tidak bertabrakan
+    sleep 20
   done
   wait
   echo "--- seed $seed selesai $(date -Is) ---"

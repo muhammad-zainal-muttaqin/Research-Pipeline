@@ -62,7 +62,7 @@ def baca_label(root: Path) -> tuple[dict, dict]:
                 per_pohon[t][int(line.split()[0])] += 1
                 n += 1
         per_citra[f.stem] = n
-        per_pohon[t]  # pastikan pohon tanpa kotak tetap muncul
+        per_pohon[t]
     return per_pohon, per_citra
 
 
@@ -76,7 +76,6 @@ def bagi(pohon: list[str], kunci: dict, rasio, rng, n_min=6):
     grup = collections.defaultdict(list)
     for t in pohon:
         grup[kunci[t]].append(t)
-    # lebur strata kecil -> hanya bagian sesi -> GLOBAL
     lebur = collections.defaultdict(list)
     for k, v in grup.items():
         lebur[k if len(v) >= n_min else k.split("|")[0] + "|" + k.split("|")[1]].extend(v)
@@ -135,7 +134,6 @@ def main() -> int:
             stats[split] = {"pohon": len(trees), "citra": len(citra),
                             "kotak": sum(c.values()),
                             **{NAMES[i]: c.get(i, 0) for i in range(4)}}
-        # irisan wajib nol
         for x, y in (("train", "val"), ("train", "test"), ("val", "test")):
             assert not (set(sp[x]) & set(sp[y])), (x, y)
         for ch, nm in ((3, "data_rgb.yaml"), (4, "data_rgbd4.yaml")):

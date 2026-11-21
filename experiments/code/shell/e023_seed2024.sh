@@ -60,9 +60,7 @@ for lengan in rgb awal mid late derau; do
              --epochs "$EPOCHS" --imgsz 640 --batch "$BATCH" --workers 5 --seed "$SEED" \
              --project runs_e023 --name "$nama" > "logs-$nama.txt" 2>&1 & ;;
   esac
-  sleep 90    # beri waktu run baru mencapai alokasi mantapnya sebelum
-              # pembacaan memory.free berikutnya, agar tidak terhitung longgar
-              # dua kali dan meluncurkan lengan berikutnya terlalu cepat
+  sleep 90
 done
 wait
 echo "=== seed $SEED selesai $(date -Is) ==="

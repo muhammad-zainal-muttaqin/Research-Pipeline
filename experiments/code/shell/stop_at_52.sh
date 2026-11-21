@@ -2,7 +2,6 @@
 set -u
 cd experiments/code
 CSV=runs/rtdetr_l_e60_i1280/weights/../results.csv
-# tunggu sampai epoch >=52 terekam, atau proses mati sendiri
 while :; do
   ep=$(tail -1 runs/rtdetr_l_e60_i1280/results.csv 2>/dev/null | cut -d, -f1)
   [ -n "$ep" ] && [ "$ep" -ge 52 ] 2>/dev/null && break

@@ -44,7 +44,6 @@ RGBD = EXPERIMENTS / "data_rgbd"
 RUNS = EXPERIMENTS / "runs"
 
 
-# --------------------------------------------------------------------------
 def build_rgbd(limit: int | None = None) -> int:
     """Rakit citra 4-kanal: BGR + kedalaman sebagai kanal ke-4."""
     (RGBD / "images").mkdir(parents=True, exist_ok=True)
@@ -77,7 +76,6 @@ def build_rgbd(limit: int | None = None) -> int:
         n += 1
     print(f"RGBD dirakit: {n} citra ({miss} dilewati karena depth belum ada)")
 
-    # daftar split, memakai keanggotaan split asli
     for split in ("train", "val", "test"):
         names = [Path(l).stem for l in
                  (SRC / f"{split}.txt").read_text().split() if l.strip()]
@@ -92,8 +90,8 @@ def build_rgbd(limit: int | None = None) -> int:
     return n
 
 
-RGBD_FLAG = -999  # penanda internal untuk pemuatan 4-kanal (RGB + kedalaman)
-RGBT_FLAG = -998  # penanda internal untuk pemuatan 4-kanal (RGB + tekstur)
+RGBD_FLAG = -999
+RGBT_FLAG = -998
 
 
 def texture_channel(bgr):
@@ -148,7 +146,6 @@ def patch_loader_for_4ch(mode: str = "rgbd") -> None:
         dp = DEPTH / f"{Path(filename).stem}.png"
         d16 = cv2.imread(str(dp), cv2.IMREAD_UNCHANGED)
         if d16 is None:
-            # depth hilang -> kanal nol, dan ini TIDAK disembunyikan
             d8 = np.zeros(bgr.shape[:2], np.uint8)
         else:
             if d16.shape[:2] != bgr.shape[:2]:
@@ -187,7 +184,6 @@ def inflate_first_conv(model, in_ch: int = 4) -> bool:
     return False
 
 
-# --------------------------------------------------------------------------
 def train(mode: str, args) -> None:
     from ultralytics import YOLO
 
