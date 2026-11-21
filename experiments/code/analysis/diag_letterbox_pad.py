@@ -20,7 +20,7 @@ import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import numpy as np
@@ -58,14 +58,14 @@ def patch_pad_kanal4_nol() -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", default="runs/detect/runs_e022/yolo26n_rgbd_seed42")
-    ap.add_argument("--data", default=str(EVIDENCE_ROOT / "splits_depth" / "seed42" / "data_rgbd4.yaml"))
+    ap.add_argument("--data", default=str(EXPERIMENTS / "splits" / "depth" / "seed42" / "data_rgbd4.yaml"))
     ap.add_argument("--keluaran", default="results/diag_letterbox_pad.json")
     args = ap.parse_args()
 
     import sys
     sys.path.insert(0, str(PIPELINE_ROOT))
     import fourch  # memasang pemuat 4-kanal, sama seperti train_depth4ch.py
-    fourch.patch_loader(str(EVIDENCE_ROOT / "depth_png"), dropout=0.0)
+    fourch.patch_loader(str(EXPERIMENTS / "depth_png"), dropout=0.0)
 
     from ultralytics import YOLO
 

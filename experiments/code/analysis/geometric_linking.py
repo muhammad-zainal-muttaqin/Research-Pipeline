@@ -35,16 +35,16 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
 import numpy as np
 
 SRC = Path("/workspace/SawitMVC/data")
-DEPTH = EVIDENCE_ROOT / "depth_da3/depth"
-CAMS = EVIDENCE_ROOT / "depth_da3/cameras_all.json"
-OUT = EVIDENCE_ROOT / "results/e007"
+DEPTH = EXPERIMENTS / "depth_da3/depth"
+CAMS = EXPERIMENTS / "depth_da3/cameras_all.json"
+OUT = EXPERIMENTS / "results" / "E-007"
 CLASSES = ["B1", "B2", "B3", "B4"]
 K_GLOBAL = 1.8905
 

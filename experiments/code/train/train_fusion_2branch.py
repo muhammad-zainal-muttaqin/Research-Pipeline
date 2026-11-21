@@ -122,13 +122,13 @@ import torch.nn as nn
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 sys.path.insert(0, str(PIPELINE_ROOT))
 import fourch  # noqa: E402
 
-SPLIT = EVIDENCE_ROOT / "splits_depth"
+SPLIT = EXPERIMENTS / "splits" / "depth"
 
 
 # ----------------------------------------------------------------- modul baru
@@ -400,7 +400,7 @@ def main() -> int:
                          "Titik fusi tetap dari --arch walau path ditimpa.")
     ap.add_argument("--skala", default="n")
     ap.add_argument("--modal", default="rgbd", choices=["rgbd", "derau", "tukar"])
-    ap.add_argument("--depth-dir", default=str(EVIDENCE_ROOT / "depth_png"))
+    ap.add_argument("--depth-dir", default=str(EXPERIMENTS / "depth_png"))
     ap.add_argument("--split", default="seed42")
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--imgsz", type=int, default=640)

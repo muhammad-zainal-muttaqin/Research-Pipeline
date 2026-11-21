@@ -36,13 +36,13 @@ import argparse
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import torch
 import torch.nn as nn
 
-RUNS = EVIDENCE_ROOT / "runs"
+RUNS = EXPERIMENTS / "runs"
 DATA = str(REPO_ROOT / "reproduce" / "experiments" / "config" / "data_rgb.yaml")
 
 

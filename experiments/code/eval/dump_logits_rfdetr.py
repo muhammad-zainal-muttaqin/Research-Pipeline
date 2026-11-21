@@ -47,7 +47,7 @@ import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 
 import numpy as np
 import torch

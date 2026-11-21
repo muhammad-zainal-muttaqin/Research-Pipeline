@@ -31,7 +31,7 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
@@ -172,7 +172,7 @@ def main() -> int:
         print("\n  CATATAN: perbaikan di bawah 0,02 AUC tergolong dapat diabaikan.")
         print("  Praproses semacam ini kemungkinan TIDAK akan menolong B4.")
 
-    p = EVIDENCE_ROOT / "results/e011"
+    p = EXPERIMENTS / "results" / "E-011"
     p.mkdir(parents=True, exist_ok=True)
     (p / "contrast_boost.json").write_text(json.dumps(out, indent=1))
     print(f"\nlaporan -> {p / 'contrast_boost.json'}")

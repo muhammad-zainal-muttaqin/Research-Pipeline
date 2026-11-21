@@ -46,7 +46,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 
 KELAS = ["B1", "B2", "B3", "B4"]
 AMBANG_LOLOS = 0.30
@@ -56,7 +56,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dump", required=True, help="keluaran --dump-tandan")
     ap.add_argument("--keluaran", default=str(
-        EVIDENCE_ROOT / "results" / "F-003" / "plafon_lintas_sisi.json"))
+        EXPERIMENTS / "results" / "F-003" / "plafon_lintas_sisi.json"))
     args = ap.parse_args()
 
     d = json.loads(Path(args.dump).read_text())

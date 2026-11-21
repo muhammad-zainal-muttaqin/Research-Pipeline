@@ -13,7 +13,7 @@ import argparse
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 from ultralytics import YOLO
 
@@ -27,7 +27,7 @@ a = ap.parse_args()
 
 m = YOLO(a.weights)
 m.train(data=str(REPO_ROOT / "reproduce" / "experiments" / "config" / "data_rgb.yaml"), epochs=a.epochs, imgsz=a.imgsz, batch=a.batch,
-        seed=42, name=a.name, project=str(EVIDENCE_ROOT / "runs"),
+        seed=42, name=a.name, project=str(EXPERIMENTS / "runs"),
         exist_ok=True, lr0=0.01, cos_lr=True, close_mosaic=15,
         hsv_h=0.005, hsv_s=0.15, hsv_v=0.25,
         plots=False, patience=60, val=True)

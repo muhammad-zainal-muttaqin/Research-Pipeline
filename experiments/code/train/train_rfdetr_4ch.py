@@ -29,12 +29,12 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import numpy as np
 
-DEPTH_DIR = EVIDENCE_ROOT / "depth_png"
+DEPTH_DIR = EXPERIMENTS / "depth_png"
 
 
 def statistik_depth_train(train_txt: Path) -> tuple[float, float]:
@@ -237,7 +237,7 @@ def main() -> int:
     ap.add_argument("--depth-acak", action="store_true",
                     help="kontrol negatif: kanal ke-4 diisi derau, bukan depth")
     ap.add_argument("--dataset", default="rfdetr_ds_depth")
-    ap.add_argument("--split-dir", default=str(EVIDENCE_ROOT / "splits_depth" / "seed42"))
+    ap.add_argument("--split-dir", default=str(EXPERIMENTS / "splits" / "depth" / "seed42"))
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--resolution", type=int, default=640)
     ap.add_argument("--batch", type=int, default=8)

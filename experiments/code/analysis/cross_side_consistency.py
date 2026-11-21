@@ -46,7 +46,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 DATA_BAWAAN = Path("/workspace/SawitMVC-Depth/data")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -72,7 +72,7 @@ def main() -> int:
     ap.add_argument("--bobot", required=True)
     ap.add_argument("--modal", default="rgb", choices=["rgb", "rgbd", "derau", "tukar"])
     ap.add_argument("--split", default="test", choices=["val", "test"])
-    ap.add_argument("--split-dir", default=str(EVIDENCE_ROOT / "splits_depth" / "seed42"))
+    ap.add_argument("--split-dir", default=str(EXPERIMENTS / "splits" / "depth" / "seed42"))
     ap.add_argument("--data-root", default=str(DATA_BAWAAN),
                     help="akar dataset berisi json/ (SawitMVC-Depth atau SawitMVC). "
                          "Skema bunches[].appearances kedua dataset IDENTIK, "

@@ -32,16 +32,16 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
 import numpy as np
 
 SRC = Path("/workspace/SawitMVC/data")
-DEPTH = EVIDENCE_ROOT / "depth_da3/depth"
-RGBD = EVIDENCE_ROOT / "data_rgbd"
-RUNS = EVIDENCE_ROOT / "runs"
+DEPTH = EXPERIMENTS / "depth_da3/depth"
+RGBD = EXPERIMENTS / "data_rgbd"
+RUNS = EXPERIMENTS / "runs"
 
 
 # --------------------------------------------------------------------------
@@ -161,8 +161,8 @@ def patch_loader_for_4ch(mode: str = "rgbd") -> None:
 
 def write_rgbd_yaml() -> str:
     """data.yaml 4-kanal yang menunjuk ke JPEG ASLI (bukan salinan)."""
-    p = EVIDENCE_ROOT / "data_rgbd4.yaml"
-    p.write_text(f"path: {EVIDENCE_ROOT / 'splits_rgb'}\n"
+    p = EXPERIMENTS / "data_rgbd4.yaml"
+    p.write_text(f"path: {EXPERIMENTS / 'splits_rgb'}\n"
                  "train: train.txt\nval: val.txt\ntest: test.txt\n"
                  "channels: 4\nnc: 4\nnames:\n"
                  "  0: B1\n  1: B2\n  2: B3\n  3: B4\n")

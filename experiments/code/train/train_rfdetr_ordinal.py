@@ -75,7 +75,7 @@ import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 
 # `python train/xxx.py` menaruh `train/` di sys.path[0], BUKAN akar
 # `experiments/code/`, sehingga `from train.train_rfdetr import ...` gagal
@@ -336,7 +336,7 @@ def main() -> int:
         model = RFDETRLarge(gradient_checkpointing=False, resolution=320, device="cpu")
         hasil = uji_sambungan(model)
         print(json.dumps(hasil, indent=2, ensure_ascii=False))
-        keluaran = EVIDENCE_ROOT / "results" / "F-006" / "uji_sambungan.json"
+        keluaran = EXPERIMENTS / "results" / "F-006" / "uji_sambungan.json"
         keluaran.parent.mkdir(parents=True, exist_ok=True)
         keluaran.write_text(json.dumps(hasil, indent=2, ensure_ascii=False))
         print(f"-> {keluaran}")

@@ -24,7 +24,7 @@ import zlib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import numpy as np
@@ -36,7 +36,7 @@ sys.path.insert(0, str(PIPELINE_ROOT))
 import fourch  # noqa: E402
 
 NAMES = ["B1", "B2", "B3", "B4"]
-DEPTH_DIR = EVIDENCE_ROOT / "depth_png"
+DEPTH_DIR = EXPERIMENTS / "depth_png"
 
 
 def pohon_dari(nama: str) -> str:
@@ -179,7 +179,7 @@ def main() -> None:
     ap.add_argument("--runs", nargs="+", required=True,
                     help="path folder run (berisi weights/best.pt dan hasil.json)")
     ap.add_argument("--split", default="test", choices=["val", "test"])
-    ap.add_argument("--split-dir", default=str(EVIDENCE_ROOT / "splits_depth" / "seed42"))
+    ap.add_argument("--split-dir", default=str(EXPERIMENTS / "splits" / "depth" / "seed42"))
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--bootstrap", action="store_true")
     ap.add_argument("--keluaran", default="results/e022_pycoco.json")

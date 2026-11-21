@@ -44,7 +44,7 @@ import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 
 import sys
 
@@ -89,7 +89,7 @@ def main() -> int:
     ap.add_argument("--run", required=True, help="folder run (berisi weights/best.pt, hasil.json)")
     ap.add_argument("--modal", default="rgb", choices=["rgb", "rgbd", "derau", "tukar"])
     ap.add_argument("--split", default="test", choices=["val", "test"])
-    ap.add_argument("--split-dir", default=str(EVIDENCE_ROOT / "splits_depth" / "seed42"))
+    ap.add_argument("--split-dir", default=str(EXPERIMENTS / "splits" / "depth" / "seed42"))
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--keluaran", default=None)

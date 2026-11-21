@@ -25,7 +25,7 @@ from collections import Counter
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
@@ -152,7 +152,7 @@ def main() -> int:
     imp = clf.feature_importances_
     print(f"\n  10 fitur terpenting (indeks): {np.argsort(imp)[::-1][:10].tolist()}")
 
-    out = EVIDENCE_ROOT / "results/e012"
+    out = EXPERIMENTS / "results" / "E-012"
     out.mkdir(parents=True, exist_ok=True)
     (out / "separability.json").write_text(json.dumps({
         "accuracy": float(acc),

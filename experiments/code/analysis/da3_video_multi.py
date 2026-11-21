@@ -25,14 +25,14 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
 import numpy as np
 
 VIDEO_DIR = Path("/workspace/Sawit/data/Video/Kelompok 6")
-OUT_DIR = EVIDENCE_ROOT / "results/e004"
+OUT_DIR = EXPERIMENTS / "results" / "E-004"
 
 
 def ffmpeg_exe() -> str:

@@ -24,7 +24,7 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
@@ -160,7 +160,7 @@ def main() -> int:
         out[c]["pct_with_neighbour"] = float((nb >= 1).mean() * 100)
         out[c]["pct_iou_gt_01"] = float((mi > 0.1).mean() * 100)
 
-    p = EVIDENCE_ROOT / "results/e010"
+    p = EXPERIMENTS / "results" / "E-010"
     p.mkdir(parents=True, exist_ok=True)
     (p / "why_b4.json").write_text(json.dumps(
         {"per_class": out, "control": {k: float(np.mean(v)) for k, v in ctrl.items()}},

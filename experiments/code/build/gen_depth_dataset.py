@@ -28,14 +28,14 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
 import numpy as np
 
 IMAGES = Path("/workspace/SawitMVC/data/images")
-OUT = EVIDENCE_ROOT / "depth_da3"
+OUT = EXPERIMENTS / "depth_da3"
 U16 = 65535
 
 

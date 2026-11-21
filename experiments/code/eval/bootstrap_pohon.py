@@ -40,7 +40,7 @@ import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 DS = Path(__file__).resolve().parents[1] / "rfdetr_ds"
 
 import numpy as np

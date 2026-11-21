@@ -43,7 +43,7 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import numpy as np
@@ -55,7 +55,7 @@ from PIL import Image
 # --------------------------------------------------------------------------
 DATA_ROOT = Path("/workspace/SawitMVC/data")
 IMAGES_DIR = DATA_ROOT / "images"
-DEFAULT_OUT = EVIDENCE_ROOT / "depth"
+DEFAULT_OUT = EXPERIMENTS / "depth"
 
 # DAMIMAS_A21B_0003_1.jpg -> tree "DAMIMAS_A21B_0003", side 1
 NAME_RE = re.compile(r"^(?P<tree>.+)_(?P<side>\d+)$")

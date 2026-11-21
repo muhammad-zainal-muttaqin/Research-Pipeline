@@ -38,7 +38,7 @@ from pathlib import Path
 import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 RUNS = REPO_ROOT / "runs" / "detect" / "runs_e022"
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -132,7 +132,7 @@ def metrik(gt, dets, img_ids) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--pola", default="*_seed*", help="pola nama folder run")
-    ap.add_argument("--split-dir", default=str(EVIDENCE_ROOT / "splits_depth" / "seed42"))
+    ap.add_argument("--split-dir", default=str(EXPERIMENTS / "splits" / "depth" / "seed42"))
     ap.add_argument("--split", default="test")
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--keluaran", default=None)

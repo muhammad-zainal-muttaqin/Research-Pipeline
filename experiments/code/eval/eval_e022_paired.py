@@ -22,7 +22,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import numpy as np
@@ -126,7 +126,7 @@ def main() -> None:
     ap.add_argument("--modal-b", default="rgbd", choices=["rgbd", "derau", "tukar"],
                     help="modalitas lengan kedua (derau = kontrol negatif)")
     ap.add_argument("--split", default="test")
-    ap.add_argument("--split-dir", default=str(EVIDENCE_ROOT / "splits_depth" / "seed42"))
+    ap.add_argument("--split-dir", default=str(EXPERIMENTS / "splits" / "depth" / "seed42"))
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--seed", type=int, default=42,
                     help="seed modalitas kontrol; harus sama dengan seed training")

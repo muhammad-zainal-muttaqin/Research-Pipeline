@@ -31,13 +31,13 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 sys.path.insert(0, str(PIPELINE_ROOT))
 import fourch  # noqa: E402
 
-SPLIT = EVIDENCE_ROOT / "splits_depth"
+SPLIT = EXPERIMENTS / "splits" / "depth"
 
 
 def main() -> int:
@@ -49,7 +49,7 @@ def main() -> int:
                     help="akar folder split; default splits_depth. Dipakai G8 untuk "
                          "melatih di SawitMVC (splits_rgb/sawitmvc) dengan resep "
                          "IDENTIK, sehingga laju inkonsistensi kedua dataset sebanding.")
-    ap.add_argument("--depth-dir", default=str(EVIDENCE_ROOT / "depth_png"))
+    ap.add_argument("--depth-dir", default=str(EXPERIMENTS / "depth_png"))
     ap.add_argument("--dropout", type=float, default=0.0)
     ap.add_argument("--depth-acak", action="store_true",
                     help="kontrol negatif: kanal ke-4 diisi derau, bukan depth")

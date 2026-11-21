@@ -17,7 +17,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
@@ -40,7 +40,7 @@ def _satu_bootstrap(ids):
     return {m: a[m] - b[m] for m in ["mAP50", *NAMES]
             if not (np.isnan(a[m]) or np.isnan(b[m]))}
 
-DEPTH_DIR = EVIDENCE_ROOT / "depth_png"
+DEPTH_DIR = EXPERIMENTS / "depth_png"
 
 
 def muat(ckpt: str, modal: str, resolution: int):
@@ -91,7 +91,7 @@ def prediksi(model, paths: list[Path], peta: dict[str, int], modal: str) -> list
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", default="test")
-    ap.add_argument("--split-dir", default=str(EVIDENCE_ROOT / "splits_depth" / "seed42"))
+    ap.add_argument("--split-dir", default=str(EXPERIMENTS / "splits" / "depth" / "seed42"))
     ap.add_argument("--resolution", type=int, default=640)
     ap.add_argument("--B", type=int, default=2000)
     ap.add_argument("--a", default="runs_e022/rfdetrnano_rgb", help="run lengan A")

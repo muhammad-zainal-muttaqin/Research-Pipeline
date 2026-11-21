@@ -27,15 +27,15 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
 import numpy as np
 
 SRC = Path("/workspace/SawitMVC/data")
-DEPTH = EVIDENCE_ROOT / "depth_da3/depth"
-OUT = EVIDENCE_ROOT / "results/strat"
+DEPTH = EXPERIMENTS / "depth_da3/depth"
+OUT = EXPERIMENTS / "results" / "strat"
 CLASSES = ["B1", "B2", "B3", "B4"]
 
 

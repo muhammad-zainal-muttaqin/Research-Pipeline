@@ -66,7 +66,7 @@ from collections import Counter
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 DS = Path(__file__).resolve().parents[1] / "rfdetr_ds"
 
 import numpy as np
@@ -115,7 +115,7 @@ def main() -> int:
     ap.add_argument("--iou", type=float, default=IOU_COCOK)
     ap.add_argument("--pita", type=float, default=PITA)
     ap.add_argument("--keluaran", default=str(
-        EVIDENCE_ROOT / "results" / "F-005" / "massa_selisih_logit.json"))
+        EXPERIMENTS / "results" / "F-005" / "massa_selisih_logit.json"))
     args = ap.parse_args()
 
     d = np.load(args.npz, allow_pickle=True)

@@ -27,11 +27,11 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 JSON_DIR = Path("/workspace/SawitMVC/data/json")
-OUT_DIR = EVIDENCE_ROOT / "results"
+OUT_DIR = EXPERIMENTS / "results"
 CLASSES = ["B1", "B2", "B3", "B4", "other"]
 
 

@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 from ultralytics import YOLO
@@ -50,20 +50,20 @@ def main():
 
     if a.resume:
         # Ultralytics memuat argumen train dari args.yaml saat resume=True.
-        m = YOLO(EVIDENCE_ROOT / "runs" / a.name / "weights" / "last.pt")
+        m = YOLO(EXPERIMENTS / "runs" / a.name / "weights" / "last.pt")
         m.train(resume=True)
     else:
         m = YOLO(a.weights)
         m.train(data=str(REPO_ROOT / "reproduce" / "experiments" / "config" / "data_rgb.yaml"),
                 epochs=a.epochs, imgsz=a.imgsz, batch=a.batch,
-                seed=42, name=a.name, project=str(EVIDENCE_ROOT / "runs"),
+                seed=42, name=a.name, project=str(EXPERIMENTS / "runs"),
                 exist_ok=True, cos_lr=True,
                 hsv_h=0.005, hsv_s=0.15, hsv_v=0.25,
                 plots=False, patience=60, val=True)
 
     result = {"model": "YOLO26l", "params_juta": 26.3, "config": vars(a),
               **evaluate(m, a.imgsz)}
-    result_dir = EVIDENCE_ROOT / "results"
+    result_dir = EXPERIMENTS / "results"
     result_dir.mkdir(parents=True, exist_ok=True)
     (result_dir / "yolo26l_eval.json").write_text(json.dumps(result, indent=2))
     v, t = result["val"], result["test"]

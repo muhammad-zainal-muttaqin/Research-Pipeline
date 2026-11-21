@@ -13,12 +13,12 @@ import argparse
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 from ultralytics import YOLO
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--weights", default=str(EVIDENCE_ROOT / "runs" / "rgb_e60_i640_s42" / "weights" / "best.pt"))
+ap.add_argument("--weights", default=str(EXPERIMENTS / "runs" / "rgb_e60_i640_s42" / "weights" / "best.pt"))
 ap.add_argument("--imgsz", type=int, default=960)
 ap.add_argument("--epochs", type=int, default=25)
 ap.add_argument("--batch", type=int, default=12)
@@ -27,7 +27,7 @@ a = ap.parse_args()
 
 m = YOLO(a.weights)
 m.train(data=str(REPO_ROOT / "reproduce" / "experiments" / "config" / "data_rgb.yaml"), single_cls=True, epochs=a.epochs, imgsz=a.imgsz,
-        batch=a.batch, seed=42, name=a.name, project=str(EVIDENCE_ROOT / "runs"),
+        batch=a.batch, seed=42, name=a.name, project=str(EXPERIMENTS / "runs"),
         exist_ok=True, lr0=0.004, cos_lr=True, close_mosaic=5, plots=False,
         patience=25, val=True)
 r = m.val(data=str(REPO_ROOT / "reproduce" / "experiments" / "config" / "data_rgb.yaml"), split="val", imgsz=a.imgsz, batch=8,

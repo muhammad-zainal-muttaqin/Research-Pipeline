@@ -23,7 +23,7 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import numpy as np
@@ -91,7 +91,7 @@ def main() -> int:
               f"{(area < 32**2).mean()*100:11.1f}% {(area_t < 32**2).mean()*100:11.1f}%")
         out[c]["pct_small_tiled"] = float((area_t < 32 ** 2).mean() * 100)
 
-    p = EVIDENCE_ROOT / "results/e009"
+    p = EXPERIMENTS / "results" / "E-009"
     p.mkdir(parents=True, exist_ok=True)
     (p / "box_sizes.json").write_text(json.dumps(out, indent=1))
     print(f"\nlaporan -> {p / 'box_sizes.json'}")

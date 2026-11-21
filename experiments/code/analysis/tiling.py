@@ -33,15 +33,15 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import cv2
 import numpy as np
 
 SRC = Path("/workspace/SawitMVC/data")
-TILE = EVIDENCE_ROOT / "data_tiles"
-RUNS = EVIDENCE_ROOT / "runs"
+TILE = EXPERIMENTS / "data_tiles"
+RUNS = EXPERIMENTS / "runs"
 CLASSES = ["B1", "B2", "B3", "B4"]
 
 
@@ -280,7 +280,7 @@ def main() -> int:
         print(f"bobot -> {RUNS / name / 'weights' / 'best.pt'}")
     if args.eval:
         r = evaluate(args.weights, tiled=args.tiled_eval, imgsz=args.imgsz)
-        out = EVIDENCE_ROOT / "results/e008"
+        out = EXPERIMENTS / "results" / "E-008"
         out.mkdir(parents=True, exist_ok=True)
         tag = "tiled" if args.tiled_eval else "full"
         (out / f"eval_{tag}.json").write_text(json.dumps(r, indent=1))

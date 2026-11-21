@@ -57,13 +57,13 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 
 import cv2
 import numpy as np
 
 SRC = Path("/workspace/SawitMVC/data")
-SPLIT_TEST = EVIDENCE_ROOT / "splits_rgb" / "sawitmvc" / "test.txt"
+SPLIT_TEST = EXPERIMENTS / "splits" / "rgb" / "sawitmvc" / "test.txt"
 CLASSES = ["B1", "B2", "B3", "B4"]
 
 # Piksel minimum agar sebuah wilayah dianggap dapat diukur. Wilayah pelepah bisa
@@ -195,7 +195,7 @@ def main() -> int:
     ap.add_argument("--ring-scale", type=float, default=2.0)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--keluaran", default=str(
-        EVIDENCE_ROOT / "results" / "F-002" / "freq_vs_pelepah.json"))
+        EXPERIMENTS / "results" / "F-002" / "freq_vs_pelepah.json"))
     args = ap.parse_args()
 
     stems = [Path(x.strip()).stem for x in SPLIT_TEST.read_text().splitlines() if x.strip()]

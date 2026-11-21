@@ -38,14 +38,14 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVIDENCE_ROOT = REPO_ROOT / "evidence" / "experiments"
+EXPERIMENTS = REPO_ROOT / "experiments"
 PIPELINE_ROOT = REPO_ROOT / "reproduce" / "pipeline"
 
 import numpy as np
 
 IMAGES = Path("/workspace/SawitMVC/data/images")
 LABELS = Path("/workspace/SawitMVC/data/labels")
-OUT_DIR = EVIDENCE_ROOT / "results/e006"
+OUT_DIR = EXPERIMENTS / "results" / "E-006"
 CLASS_NAMES = ["B1", "B2", "B3", "B4"]
 
 
