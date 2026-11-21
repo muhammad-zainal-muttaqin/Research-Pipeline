@@ -56,12 +56,12 @@ Tanaman dan wahana kamera semua kajian C1 yang dulu diekstrak di folder ini
 kini menjadi data sumber di `../topik/bukti/tanaman_platform_C1.txt`
 (disetujui peninjau 20 November 2026) dan dibaca `kode_bukti.py`.
 
-- `perbandingan/`: korpus memuat 233 kajian metode C1. Empat kajian yang dulu
+- `perbandingan/`: korpus memuat 232 kajian metode C1. Empat kajian yang dulu
   tanpa teks (`guo2023real`, `tu2026passion`, `wang2024camellia`,
   `zhu2022identification`) sudah diekstrak dengan OCR karena fon FzBookMaker.
   Teks Mandarin terbaca, sebagian tanda baca mungkin meleset. 210 kajian
-  sudah punya berkas; 23 kajian C1 yang masuk pada 20 November 2026 belum.
-- `bacaan/`: 49 kajian inti, selesai.
+  sudah punya berkas; 22 kajian C1 yang masuk pada 20 November 2026 belum.
+- `bacaan/`: 48 kajian inti, selesai.
 
 Angka ini dihitung ulang dengan perintah di bawah, bukan disalin.
 
@@ -96,6 +96,6 @@ Melanjutkan ekstraksi:
 
 ## Langkah berikutnya
 
-- Perbarui `tab:assoc` dan teks Seksi 5 naskah dari 127 perbandingan pada data
-  yang sama di `perbandingan/`.
-- Ekstrak `perbandingan/` untuk 23 kajian C1 yang belum punya berkas (perintah di atas).
+- Perbarui `tab:assoc` dan teks Seksi 5 naskah dari 127 kajian di `perbandingan/` yang
+  memuat perbandingan pada data yang sama.
+- Ekstrak `perbandingan/` untuk 22 kajian C1 yang belum punya berkas (perintah di atas).

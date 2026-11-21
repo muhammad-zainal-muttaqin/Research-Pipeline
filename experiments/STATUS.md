@@ -261,8 +261,8 @@ Pemeriksaan bahwa hasilnya benar: cakupan piksel valid rata-rata harus
 **0,710** (nilai beku di `depth_meta.json` 0,71032). Jangan memakai
 `pipeline/prepare_depth.py` untuk dataset ini.
 
-**4. Split — sudah di git, tetapi path-nya absolut.** `splits_depth/seed{42,1,2}`
-dan `splits_rgb/sawitmvc` memuat path absolut ke `/workspace/…`, baik di
+**4. Split — sudah di git, tetapi path-nya absolut.** `experiments/splits/depth/seed{42,1,2}`
+dan `experiments/splits/rgb/sawitmvc` memuat path absolut ke `/workspace/…`, baik di
 `*.txt` maupun di `path:` tiap `data_*.yaml`. Bila repo di-clone ke lokasi lain,
 keduanya harus disesuaikan. Path pada `data_*.yaml` **wajib absolut** —
 ultralytics me-resolve entri relatif terhadap `DATASETS_DIR`, bukan terhadap

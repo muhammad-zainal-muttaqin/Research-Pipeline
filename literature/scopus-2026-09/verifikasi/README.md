@@ -30,6 +30,7 @@ dan disetujui peninjau pada hari yang sama. Butir yang masih menunggu ada di
 | 6. Cek fakta naskah | Kecocokan setiap klaim naskah dengan kajian yang dikutip | 303 pasangan klaim dan kajian sesuai sumber |
 | Tahap teks lengkap (18 November 2026) | Kelompok 480 artikel yang PDF-nya ada | 17 pindah ke C1, 3 pindah kelompok lain, 12 dikeluarkan; disetujui peninjau |
 | PDF ganda (18 November 2026) | Bab buku Parico dkk. 2023 dan artikel *Sensors* 2021 memakai berkas yang sama | Bab buku dicatat tidak diperoleh; korpus menjadi 467 kajian, C1 214; disetujui peninjau |
+| PDF tambahan (20 dan 21 November 2026) | Kelompok 325 artikel dan 3 tinjauan yang PDF-nya baru diperoleh | 22 pindah ke C1, 8 dikeluarkan; 3 tinjauan tetap tinjauan terdahulu; peta 788 kajian; disetujui peninjau |
 
 
 ## Langkah berikutnya

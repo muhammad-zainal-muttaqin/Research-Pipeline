@@ -1,7 +1,7 @@
 # Kode reproduksi eksperimen
 
 Folder ini hanya menyimpan kode dan konfigurasi. Bukti yang dihasilkan atau
-diaudit berada di [`results/`](results/).
+diaudit berada di [`results/`](../results/).
 Pemisahan ini membuat pembaca dapat membuka hasil tanpa perlu menelusuri skrip.
 
 | Saya ingin | Buka |
@@ -10,7 +10,7 @@ Pemisahan ini membuat pembaca dapat membuka hasil tanpa perlu menelusuri skrip.
 | Mengevaluasi checkpoint | [`eval/`](eval/) |
 | Menyiapkan data turunan | [`build/`](build/) |
 | Memeriksa diagnosis | [`analysis/`](analysis/) |
-| Menemukan JSON, kurva, dan split | [bukti eksperimen](results/) |
+| Menemukan JSON, kurva, dan split | [bukti eksperimen](../results/) |
 | Mengulang E-021 | [`REPRODUCE.md`](REPRODUCE.md) dan [`CATATAN-TEKNIS-E021.md`](CATATAN-TEKNIS-E021.md) |
 
 Metrik final yang boleh dikutip ada di
@@ -31,7 +31,7 @@ E-022, baca [audit](../AUDIT-E022.md) sebelum membuka
 | [`PETA-SKRIP.md`](PETA-SKRIP.md) | Hubungan skrip, eksperimen, dan keluaran |
 
 Untuk pipeline lapangan, gunakan
-[`../pipeline/`](../pipeline/) dan bukan kode eksperimen ini.
+[`../pipeline/`](../../pipeline/) dan bukan kode eksperimen ini.
 
 ```bash
 pip install -r experiments/code/requirements.txt

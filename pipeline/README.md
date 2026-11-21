@@ -18,10 +18,10 @@ aplikasi.
 > keluaran Gemini di lapangan, tetapi **tidak** untuk dataset SawitMVC-Depth:
 > di sana buffer masih di grid kamera depth walau sidecar menyatakan
 > `alignedTo: "color"`, dan reproyeksi penuh dikerjakan
-> [`../experiments/build/reproject_depth.py`](../experiments/build/reproject_depth.py). Kedua jalur ini
+> [`../experiments/code/build/reproject_depth.py`](../experiments/code/build/reproject_depth.py). Kedua jalur ini
 > berdampingan dengan sengaja — pilih menurut asal datanya, bukan menurut mana
 > yang lebih baru. Rinciannya di
-> [SR-015](../SR/SR-015-depth-sensor-4kanal.md).
+> [SR-015](../experiments/SR/SR-015-depth-sensor-4kanal.md).
 
 ## Berkas
 
