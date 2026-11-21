@@ -1,6 +1,6 @@
 # Katalog PDF Korpus main6
 
-Katalog ini memuat 785 kajian korpus `main6` yang PDF-nya tersedia, dari 785 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
+Katalog ini memuat 788 kajian korpus `main6` yang PDF-nya tersedia, dari 788 kajian dalam peta. Kajian dikelompokkan menurut kode penyaringan dan diurutkan dari tahun terbaru. Katalog dihasilkan `tools/scopus/katalog_pdf.py` dari matriks bukti, sehingga tidak disunting dengan tangan.
 
 ## Rekapitulasi
 
@@ -11,9 +11,9 @@ Katalog ini memuat 785 kajian korpus `main6` yang PDF-nya tersedia, dari 785 kaj
 | C3 | Pencitraan TBS kelapa sawit | 107 | 107 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 33 | 33 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 92 | 92 |
-| R | Tinjauan terdahulu | 102 | 102 |
+| R | Tinjauan terdahulu | 105 | 105 |
 | T | Metode yang dapat dipindahkan dari luar pertanian | 82 | 82 |
-| | **Jumlah** | 785 | 785 |
+| | **Jumlah** | 788 | 788 |
 
 ## C1: Metode yang menggabungkan beberapa pengamatan buah yang sama (237)
 
@@ -641,7 +641,7 @@ Katalog ini memuat 785 kajian korpus `main6` yang PDF-nya tersedia, dari 785 kaj
 | 2015 | Herrero-Huerta M. | Vineyard yield estimation by automatic 3D bunch modelling in field conditions | Computers and Electronics in Agriculture | [PDF](pdf/herrerohuerta2015vineyard.pdf) | [DOI](https://doi.org/10.1016/j.compag.2014.10.003) |
 | 2015 | Nakaguro Y. | Volumetric 3D Reconstruction and parametric shape modeling from RGB-D Sequences | Lecture Notes in Computer Science | [PDF](pdf/nakaguro2015volumetric.pdf) | [DOI](https://doi.org/10.1007/978-3-319-23231-7_45) |
 
-## R: Tinjauan terdahulu (102)
+## R: Tinjauan terdahulu (105)
 
 | Tahun | Penulis pertama | Judul | Sumber | PDF | DOI |
 |---|---|---|---|---|---|
@@ -669,12 +669,14 @@ Katalog ini memuat 785 kajian korpus `main6` yang PDF-nya tersedia, dari 785 kaj
 | 2026 | Ye R. | Advances in Binocular Stereo Vision-Driven 3D Perception and Intelligent Analysis Methods for Agriculture | Applied Sciences Switzerland | [PDF](pdf/ye2026advances.pdf) | [DOI](https://doi.org/10.3390/app16167957) |
 | 2026 | Ye R. | Advances in Perception, Autonomous Operation, and Collaborative Systems for Smart Orchard Robots | Applied Sciences Switzerland | [PDF](pdf/ye2026advancesb.pdf) | [DOI](https://doi.org/10.3390/app16168046) |
 | 2026 | Zhang Q. | A Review of Crop Attribute Detection for Agricultural Harvesting Machinery | Agronomy | [PDF](pdf/zhang2026review.pdf) | [DOI](https://doi.org/10.3390/agronomy16100973) |
+| 2025 | Goh J.Y. | Fresh Fruit Bunch Ripeness Classification Methods: A Review | Food and Bioprocess Technology | [PDF](pdf/goh2025fresh.pdf) | [DOI](https://doi.org/10.1007/s11947-024-03483-0) |
 | 2025 | Huang Y. | A review of visual perception technology for intelligent fruit harvesting robots | Frontiers in Plant Science | [PDF](pdf/huang2025review.pdf) | [DOI](https://doi.org/10.3389/fpls.2025.1646871) |
 | 2025 | Li S. | A Review of Optical-Based Three-Dimensional Reconstruction and Multi-Source Fusion for Plant Phenotyping | Sensors | [PDF](pdf/li2025reviewb.pdf) | [DOI](https://doi.org/10.3390/s25113401) |
 | 2025 | Li Z. | Process, challenges and solutions of fruit 3D reconstruction: A review | Computers and Electronics in Agriculture | [PDF](pdf/li2025process.pdf) | [DOI](https://doi.org/10.1016/j.compag.2025.111068) |
 | 2025 | Li Z. | A Review of Crop Attribute Monitoring Technologies for General Agricultural Scenarios | Agriengineering | [PDF](pdf/li2025review.pdf) | [DOI](https://doi.org/10.3390/agriengineering7110365) |
 | 2025 | Lv M. | A Comprehensive Review of Deep Learning in Computer Vision for Monitoring Apple Tree Growth and Fruit Production | Sensors | [PDF](pdf/lv2025comprehensive.pdf) | [DOI](https://doi.org/10.3390/s25082433) |
 | 2025 | Mohamad Zaki M.A. | Impact of industry 4.0 technologies on the oil palm industry: A literature review | Smart Agricultural Technology | [PDF](pdf/mohamad2025impact.pdf) | [DOI](https://doi.org/10.1016/j.atech.2024.100685) |
+| 2025 | Moldvai L. | Innovative computer vision methods for tomato (Solanum Lycopersicon) detection and cultivation: a review | Discover Applied Sciences | [PDF](pdf/moldvai2025innovative.pdf) | [DOI](https://doi.org/10.1007/s42452-025-07613-x) |
 | 2025 | Odah K.A. | Machine learning techniques for tomato yield prediction: A comprehensive analysis | Smart Agricultural Technology | [PDF](pdf/odah2025machine.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.101067) |
 | 2025 | Oh I.S. | A Crawling Review of Fruit Tree Image Segmentation | Agriculture Switzerland | [PDF](pdf/oh2025crawling.pdf) | [DOI](https://doi.org/10.3390/agriculture15212239) |
 | 2025 | Pu X. | Bridging lab and field: A review and roadmap for unmanned aerial vehicle-based field crop counting with deep learning | Smart Agricultural Technology | [PDF](pdf/pu2025bridging.pdf) | [DOI](https://doi.org/10.1016/j.atech.2025.101639) |
@@ -685,6 +687,7 @@ Katalog ini memuat 785 kajian korpus `main6` yang PDF-nya tersedia, dari 785 kaj
 | 2025 | Tan Y. | A Review of Research on Fruit and Vegetable Picking Robots Based on Deep Learning | Sensors | [PDF](pdf/tan2025review.pdf) | [DOI](https://doi.org/10.3390/s25123677) |
 | 2025 | Unigarro C. | Artificial Neural Networks for Image Processing in Precision Agriculture: A Systematic Literature Review on Mango, Apple, Lemon, and Coffee Crops | Informatics | [PDF](pdf/unigarro2025artificial.pdf) | [DOI](https://doi.org/10.3390/informatics12020046) |
 | 2025 | Wang W. | Research Progress and Development Trend of Visual Detection Methods for Selective Fruit Harvesting Robots | Agronomy | [PDF](pdf/wang2025research.pdf) | [DOI](https://doi.org/10.3390/agronomy15081926) |
+| 2025 | Xiao X. | Key Technologies for Machine Vision for Picking Robots: Review and Benchmarking | Machine Intelligence Research | [PDF](pdf/xiao2025key.pdf) | [DOI](https://doi.org/10.1007/s11633-024-1517-1) |
 | 2024 | Azizi A. | Image processing and artificial intelligence for apple detection and localization: A comprehensive review | Computer Science Review | [PDF](pdf/azizi2024image.pdf) | [DOI](https://doi.org/10.1016/j.cosrev.2024.100690) |
 | 2024 | Chen Z. | Key Technologies for Autonomous Fruit- and Vegetable-Picking Robots: A Review | Agronomy | [PDF](pdf/chen2024key.pdf) | [DOI](https://doi.org/10.3390/agronomy14102233) |
 | 2024 | Dhonju H.K. | Management Information Systems for Tree Fruit–2: Design of a Mango Harvest Forecast Engine | Horticulturae | [PDF](pdf/dhonju2024management.pdf) | [DOI](https://doi.org/10.3390/horticulturae10030301) |

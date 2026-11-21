@@ -43,12 +43,12 @@ mengikuti PRISMA 2020 sejauh butirnya berlaku untuk tinjauan pemetaan
 | Dikeluarkan pada tahap kelayakan abstrak | 132 |
 | Lolos tahap abstrak, dicari teks lengkapnya (Scopus) | 1.013 |
 | Rekaman metode lain (Liu dan Ampatzidis 2026; empat kajian dari daftar pustaka), dicari teks lengkapnya | 5 |
-| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 211 |
-| Dinilai dari teks lengkap (802 Scopus dan 5 metode lain) | 807 |
+| Teks lengkap tidak diperoleh (tidak ada `pdf/<kunci>.pdf`) | 208 |
+| Dinilai dari teks lengkap (805 Scopus dan 5 metode lain) | 810 |
 | Dikeluarkan pada tahap teks lengkap (E1 1, E2 7, E3 2, E5 10, E8 2) | 22 |
-| Total masuk peta (780 Scopus dan 5 metode lain) | 785 |
+| Total masuk peta (783 Scopus dan 5 metode lain) | 788 |
 
-Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026): korpus dibatasi pada kajian yang PDF-nya
+Tahap teks lengkap (18 November 2026, ditambah 325 PDF baru pada 20 November 2026 dan 3 PDF baru pada 21 November 2026): korpus dibatasi pada kajian yang PDF-nya
 ada di `pdf/`. Keputusan per kajian ada di `topik/penyaringan/teks_lengkap.txt`.
 Model membaca teks lengkap setiap kajian dan melaporkan kelompok, alasan
 eksklusi, serta kutipan pendukung; setiap usul eksklusi atau perpindahan
@@ -76,7 +76,7 @@ Kode yang sama dipakai pada tahap teks lengkap.
 | C3 | Pencitraan TBS kelapa sawit, termasuk grading di pabrik dan brondolan | 107 |
 | C4 | Atribut kelas disertai pencacahan dari citra tunggal | 33 |
 | C5 | Deteksi, lokalisasi, atau pengukuran buah dengan depth, 3D, atau modalitas non-RGB | 92 |
-| R | Tinjauan terdahulu | 102 |
+| R | Tinjauan terdahulu | 105 |
 | T | Metode yang dapat dipindahkan dari luar pertanian, termasuk model deteksi, segmentasi, dan estimasi kedalaman umum yang menjadi dasar pipeline | 82 |
 
 Dua aturan berlaku saat menetapkan kode (keputusan Fatma, 5 Oktober 2026):
@@ -164,7 +164,7 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   dengan cara yang sama; label C1 diterapkan lewat Cek 5. Empat kajian dari
   penelusuran daftar pustaka ditambahkan ke `topik/tambahan_metode_lain.csv`.
 - Untuk kueri Q3, Q5, dan Q7, judul diurutkan menurut kata kunci sebelum dibaca.
-- PDF tersedia untuk 802 dari 1.013 kajian Scopus dan kelima rekaman metode lain (`KATALOG-PDF.md`); hanya
+- PDF tersedia untuk 805 dari 1.013 kajian Scopus dan kelima rekaman metode lain (`KATALOG-PDF.md`); hanya
   kajian itu yang dinilai pada tahap teks lengkap. Setiap PDF di `pdf/`
   punya teks di `teks/`. Empat PDF jurnal CSAM yang fonnya tanpa pemetaan
   Unicode (`guo2023real`, `tu2026passion`, `wang2024camellia`,

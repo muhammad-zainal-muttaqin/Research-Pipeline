@@ -8,16 +8,16 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Dibuang menurut tipe dokumen 166; judul disaring 5,723; dikeluarkan di tahap judul 4,578
 - Dinilai kelayakannya dari judul dan abstrak 1,145 (dengan abstrak 891; judul dan sumber saja 254)
 - Dikeluarkan di tahap kelayakan abstrak 132: E1 23, E2 18, E3 25, E4 1, E5 60, E6 4, E7 1
-- Laporan dicari teks lengkapnya 1013; tidak diperoleh 211 (C1 1, C2 75, C3 64, C4 12, C5 33, R 20, T 6)
+- Laporan dicari teks lengkapnya 1013; tidak diperoleh 208 (C1 1, C2 75, C3 64, C4 12, C5 33, R 17, T 6)
 - PDF ada, menunggu penilaian teks lengkap 0 (C1 0, C2 0, C3 0, C4 0, C5 0, R 0, T 0)
-- Dinilai dari teks lengkap 802; dikeluarkan 22: E1 1, E2 7, E3 2, E5 10, E8 2
-- Masuk dari Scopus 780: C1 236, C2 130, C3 107, C4 33, C5 91, R 101, T 82
+- Dinilai dari teks lengkap 805; dikeluarkan 22: E1 1, E2 7, E3 2, E5 10, E8 2
+- Masuk dari Scopus 783: C1 236, C2 130, C3 107, C4 33, C5 91, R 104, T 82
 - Metode lain 5, teks lengkap diperoleh 5: liu2026shaping (R), payne2014estimating (C2), apoloapolo2020deep (C1), choi2015machine (C5), kwon2024enhancing (C2)
-- Total kajian masuk 785
-- Kajian per tahun: 2012: 7, 2013: 11, 2014: 9, 2015: 14, 2016: 17, 2017: 20, 2018: 24, 2019: 30, 2020: 58, 2021: 64, 2022: 69, 2023: 99, 2024: 115, 2025: 137, 2026: 110, 2027: 1
+- Total kajian masuk 788
+- Kajian per tahun: 2012: 7, 2013: 11, 2014: 9, 2015: 14, 2016: 17, 2017: 20, 2018: 24, 2019: 30, 2020: 58, 2021: 64, 2022: 69, 2023: 99, 2024: 115, 2025: 140, 2026: 110, 2027: 1
 - Multi-pengamatan per tahun: 2012: 2, 2013: 2, 2014: 4, 2015: 1, 2016: 3, 2017: 2, 2018: 4, 2019: 7, 2020: 16, 2021: 19, 2022: 20, 2023: 30, 2024: 38, 2025: 55, 2026: 34
-- Dengan abstrak 635 dari 785; PDF teks lengkap 785 (teks terekstrak 785); multi-pengamatan dengan PDF 237 dari 237
-- Peta istilah: 43 istilah, 285 tautan; istilah identitas 24-31 kajian; detection 476; counting 350
+- Dengan abstrak 638 dari 788; PDF teks lengkap 788 (teks terekstrak 788); multi-pengamatan dengan PDF 237 dari 237
+- Peta istilah: 43 istilah, 286 tautan; istilah identitas 24-31 kajian; detection 479; counting 351
 
 ## Seksi 3: kajian multi-pengamatan
 
@@ -73,7 +73,7 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 
 ## Seksi 9: tinjauan terdahulu dan metode luar pertanian
 
-- Tinjauan terdahulu 101 (+ 1 metode lain); metode luar pertanian 82
+- Tinjauan terdahulu 104 (+ 1 metode lain); metode luar pertanian 82
 
 ## Pemeriksaan ulang tahap judul
 
