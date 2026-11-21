@@ -17,7 +17,7 @@ baru; keputusan teks lengkapnya, label C1, serta tanaman dan wahana kamera
 kajian C1 dari teks lengkap disetujui peninjau pada hari yang sama. Pada
 21 November 2026 masuk 3 PDF tinjauan terdahulu (Goh dkk. 2025, Moldvai dan
 Nyéki 2025, Xiao dkk. 2025); ketiganya dinilai AI tetap tinjauan terdahulu
-dan menunggu persetujuan peninjau. Butir yang masih menunggu ada di
+dan disetujui peninjau pada hari yang sama. Butir yang masih menunggu ada di
 [TUGAS.md](TUGAS.md).
 
 | Pemeriksaan | Yang diperiksa | Hasil |

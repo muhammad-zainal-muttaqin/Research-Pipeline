@@ -55,7 +55,8 @@ eksklusi, serta kutipan pendukung; setiap usul eksklusi atau perpindahan
 kelompok diperiksa terhadap teks sumber sebelum diterapkan. Perubahannya
 tercatat di `verifikasi/log_perubahan.csv` sebagai "AI, belum disetujui
 peninjau" sampai peninjau menyetujuinya. Keputusan untuk 325 PDF yang
-ditambahkan pada 20 November 2026 disetujui peninjau pada hari yang sama.
+ditambahkan pada 20 November 2026 dan 3 PDF yang ditambahkan pada 21 November
+2026 disetujui peninjau pada hari yang sama.
 E8 hanya dipakai pada tahap teks lengkap: laporan kedua dari kajian yang sudah
 masuk lewat laporan lain (bab buku Parico dkk. 2023, sama dengan artikel
 *Sensors* 2021; PDF rekaman konferensi Silwal dkk. 2015, berisi artikel
