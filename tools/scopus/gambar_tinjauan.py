@@ -248,10 +248,11 @@ def gambar_prisma():
 
 # ---------------------------------------------------- F2 corpus per tahun
 def gambar_tahun(mat):
-    tahun = list(range(2012, 2027))
     hitung = defaultdict(Counter)
     for r in mat:
         hitung[r["kode"]][int(r["year"])] += 1
+    tahun = list(range(2012, max(int(r["year"]) for r in mat) + 1))
+    assert sum(hitung[k][t] for k in hitung for t in tahun) == len(mat), "F02: ada kajian di luar sumbu tahun"
     fig, ax = plt.subplots(figsize=(7.0, 2.8))
     dasar = [0] * len(tahun)
     for k in ["C1", "C2", "C3", "C4", "C5", "R", "T"]:

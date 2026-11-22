@@ -33,7 +33,7 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Periode 2025-2026 (n = 89): M1 5 (6%), M2 28 (31%), M3 60 (67%), M4 35 (39%), M5 5 (6%)
 - Periode sejak 2023 (n = 155): M1 10 (6%), M2 51 (33%), M3 109 (70%), M4 54 (35%), M5 7 (5%)
 - Tanaman: apple 70, tomato 31, citrus 28, grape 24, strawberry 13, mango 12, sweet pepper 8, oil palm 6, cotton 6, blueberry 5, kiwifruit 5, camellia 4
-- Melaporkan hitungan per kelas: 33 dari 232
+- Melaporkan hitungan per kelas: 34 dari 232
 - Akuisisi x kategori mekanisme: V: M2+M3 57, M3 53, M4 22, M3+M4 14, M1 4; D: M4 13, M1 12, M4+M5 1, M2+M4 1; S: M4 31, M3+M4 7, M4+M5 2, M2+M3+M4 1; T: M2+M4+M5 1, M4 1, M2+M3+M4 1, M2+M4 1, M3 1
 - Pandangan diskret: dengan asosiasi geometris 15, dengan koreksi statistik 12
 - Platform (satu kategori per kajian): ground vehicle/robot 89, handheld/smartphone 51, tidak disebut 36, UAV 32, lebih dari satu 16, fixed camera 6, conveyor/lab 2
@@ -45,7 +45,7 @@ Dibuat `tools/scopus/angka_naskah.py`; jangan disunting tangan. Teks naskah mema
 - Dasar pengodean kajian multi-pengamatan: teks lengkap 237
 - Referensi hitung (kemunculan): anotasi 138, pohon 54, panen 40, tidak ada 20, buah terlihat 1,  hasil panen 1, packhouse 1
 - Tingkat metrik menurut pengodean kajian (kemunculan): hitung 190, deteksi 155, identitas 73, tidak ada 5
-- Cara pemberian kelas pada kajian per kelas: saat pelacakan 13, tidak dinyatakan 13, sesudah pelacakan 3, voting antarpandang 2, (kosong) 1, per deteksi 1
+- Cara pemberian kelas pada kajian per kelas: tidak dinyatakan 13, saat pelacakan 10, voting antarpandang 6, sesudah pelacakan 3, (kosong) 1, per deteksi 1
 
 ## Seksi 5: tingkat metrik kajian metode multi-pengamatan (kode teks lengkap)
 

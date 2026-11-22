@@ -28,7 +28,7 @@ KOLOM_MANUAL = ["mekanisme", "akuisisi", "per_kelas", "hasil_ringkas", "sumber_k
 NAMA_KOLOM = {"mekanisme": "cara penghubungan", "akuisisi": "cara foto diambil", "per_kelas": "per kelas"}
 KELAS = {"-": "tidak berlaku", "saat pelacakan": "kelas ditetapkan saat pelacakan",
          "sesudah pelacakan": "kelas ditetapkan sesudah pelacakan",
-         "voting antarpandang": "kelas dipilih dengan suara antarpandang",
+         "voting antarpandang": "kelas digabung antarbingkai dengan suara atau rata-rata",
          "tidak dinyatakan": "tidak dinyatakan"}
 
 
