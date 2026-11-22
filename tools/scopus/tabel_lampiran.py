@@ -7,6 +7,7 @@ pembaca tidak perlu menghafal kode. Keluaran:
 manuscript/source/main6-appendix-c1.tex
 """
 import csv
+import re
 from pathlib import Path
 
 from latex_teks import ke_latex  # noqa: F401  (dipakai skrip lain yang mengimpor modul ini)
@@ -29,6 +30,74 @@ DASAR = {"teks lengkap": "Full text", "abstrak": "Abstract", "judul": "Title"}
 CROP_ABBR = {"peach/nectarine": "peach", "sweet pepper": "pepper", "litchi/longan": "litchi",
              "plum/apricot": "plum", "passion fruit": "passion fruit", "other berries": "berry",
              "persimmon/guava": "persimmon", "pumpkin/squash": "pumpkin", "nut crops": "nut"}
+
+
+AKRONIM = {
+    "AGV": "automated guided vehicle", "AP": "average precision",
+    "AP50": "average precision at an intersection-over-union threshold of 0.5",
+    "ARIMA": "autoregressive integrated moving average",
+    "DBSCAN": "density-based spatial clustering of applications with noise",
+    "DIoU": "distance intersection over union", "EKF": "extended Kalman filter",
+    "FCN": "fully convolutional network", "FPR": "false positive rate",
+    "GIoU": "generalized intersection over union", "GMM": "Gaussian mixture model",
+    "GNSS": "global navigation satellite system", "GPS": "global positioning system",
+    "HOTA": "higher-order tracking accuracy", "ICP": "iterative closest point", "ID": "identity",
+    "IDF1": "identification F1 score", "IDSW": "identity switches", "IoU": "intersection over union",
+    "KLT": "Kanade-Lucas-Tomasi feature tracker", "LiDAR": "light detection and ranging",
+    "MAE": "mean absolute error", "MAPE": "mean absolute percentage error", "MB": "megabytes",
+    "MedAE": "median absolute error", "MHT": "multiple hypothesis tracking",
+    "MOT": "multiple-object tracking", "MOTA": "multiple-object tracking accuracy",
+    "MOTS": "multi-object tracking and segmentation",
+    "MOTSA": "multi-object tracking and segmentation accuracy",
+    "sMOTSA": "soft multi-object tracking and segmentation accuracy", "MVS": "multi-view stereo",
+    "NeRF": "neural radiance field", "NIR": "near-infrared", "NMS": "non-maximum suppression",
+    "NRMSE": "normalized root-mean-square error", "RANSAC": "random sample consensus",
+    "re-ID": "re-identification", "RGB": "red-green-blue",
+    "RGB-D": "red-green-blue-depth", "RMSE": "root-mean-square error", "ROI": "region of interest",
+    "ROS": "Robot Operating System", "RTK": "real-time kinematic positioning",
+    "SfM": "structure from motion", "SIFT": "scale-invariant feature transform",
+    "SLAM": "simultaneous localization and mapping", "SORT": "simple online and realtime tracking",
+    "SURF": "speeded-up robust features", "SVM": "support vector machine",
+    "SVR": "support vector regression", "TPR": "true positive rate", "UAV": "unmanned aerial vehicle",
+    "WAPE": "weighted absolute percentage error", "YOLO": "You Only Look Once",
+    "mAP": "mean average precision",
+    "mAP50": "mean average precision at an intersection-over-union threshold of 0.5",
+    "mAP50-95": "mean average precision over intersection-over-union thresholds from 0.5 to 0.95",
+    "mIoU": "mean intersection over union",
+}
+NAMA_METODE = {
+    "AgriSORT", "ALRM-Track", "BoT-SORT", "BoTSORT", "ByteTrack", "Cascade-SORT", "CloseUp", "ConvNet",
+    "CoTracker3", "CottonSense", "DeepSORT", "DeepSort", "DynCount", "FaceNet", "FairMOT", "FlowNet2",
+    "FruitNeRF", "Grounded-SAM2", "KinectV2", "KiwiDetector", "KiwiTracker", "LettuceMOT", "LFuji-air",
+    "LoFTR", "MAFP", "MinkPanoptic", "MOrangeT", "MR-SORT", "MultiMap", "NTrack", "OC-SORT", "OCSort", "ORB-SLAM3",
+    "OrangeSort", "PineSORT", "PointRCNN", "PointTrack", "R-CNN", "SAM2", "SiamFC", "StrongSORT", "TexCot22",
+    "XGBoost", "ZED",
+}
+POLA_NAMA = re.compile(r"^(\w*YOLO\w*|\w*Yolo\w*|YOLOv\w+|ResNet\d*)$")
+
+
+def akronim_tabel(teks):
+    """Jabaran akronim yang muncul di tabel. Berhenti bila ada token berhuruf kapital ganda yang
+    bukan akronim terdaftar (AKRONIM) dan bukan nama metode (NAMA_METODE, POLA_NAMA), agar setiap
+    akronim di Lampiran A dijabarkan di catatan tabel."""
+    teks = re.sub(r"\\cite[pt]?\{[^}]*\}", "", teks)
+    dipakai, asing = set(), set()
+    for tok in re.findall(r"[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9]", teks):
+        if tok in NAMA_METODE or any(POLA_NAMA.match(b) for b in tok.split("-")):
+            continue
+        if tok in AKRONIM:
+            dipakai.add(tok)
+            continue
+        for bag in tok.split("-"):
+            dasar = bag[:-1] if bag.endswith("s") and bag[:-1] in AKRONIM else bag
+            if dasar in AKRONIM:
+                dipakai.add(dasar)
+            elif sum(c.isupper() for c in bag) >= 2 and bag not in NAMA_METODE and not POLA_NAMA.match(bag):
+                asing.add(tok)
+    if asing:
+        raise SystemExit("Akronim tanpa jabaran di tabel_lampiran.py (tambahkan ke AKRONIM atau "
+                         "NAMA_METODE): " + ", ".join(sorted(asing)))
+    return "; ".join(f"{a}, {AKRONIM[a]}" for a in sorted(dipakai, key=str.lower))
 
 
 def nama_mekanisme(kode):
@@ -86,9 +155,9 @@ def main():
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Crop (the first crop whose fruit the study itself detected, counted, or tracked) and platform (what carried the camera) were read from the full text; Not stated, the text does not say. Metric types were coded from the full text where it was read: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or ID switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Main finding: the principal result reported by the study, as coded. UAV, unmanned aerial vehicle.}\\
+\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Crop (the first crop whose fruit the study itself detected, counted, or tracked) and platform (what carried the camera) were read from the full text; Not stated, the text does not say. Metric types were coded from the full text where it was read: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or identity switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Main finding: the principal result reported by the study, as coded, with values as reported. %s.}\\
 \endlastfoot
-""" % (len(rows), judul, judul)
+""" % (len(rows), judul, judul, akronim_tabel("\n".join(baris)))
     OUT.write_text(kepala + "\n".join(baris) + "\n\\end{longtable}\n\\end{footnotesize}\n", newline="\n")
     print(len(rows), "baris ->", OUT)
 
