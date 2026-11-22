@@ -189,7 +189,10 @@ def gambar_prisma():
     panah(52, 104, 60, 104)
     kotak(8, 84, 44, 9, f"Records screened on title\nn = {unik - x0:,}")
     panah(30, 99, 30, 93)
-    kotak(60, 84, 36, 9, f"Records excluded\nn = {xj:,}", abu)
+    ulang = list(csv.DictReader(open(ROOT / "literature/scopus-2026-09/verifikasi/.teknis/ulang_eksklusi_judul.csv")))
+    kembali = sum(1 for r in ulang if r["kode"] != "X" and r["bertahan_setelah_disanggah"] == "ya")
+    kotak(60, 82.5, 36, 12, f"Records excluded, n = {xj:,}\n{len(ulang):,} exclusions re-read on abstract;\n"
+          f"{kembali} returned to the next stage", abu)
     panah(52, 88.5, 60, 88.5)
     kotak(8, 66, 44, 12, f"Records assessed on title and abstract\nn = {kand:,}\n"
           f"{kand - judul_saja} with abstract; {judul_saja} with title and source only")
@@ -413,9 +416,10 @@ def gambar_sawit(mat):
     nama_t = {"KLS": "Ripeness classification\nof bunch images", "DET": "Bunch detection\nin a scene",
               "HIT": "Bunch counting", "LF": "Loose fruit\ndetection", "MUTU": "Quality, defect,\nmass, or pose",
               "SENSOR": "Non-RGB sensing", "DATA": "Dataset papers"}
-    lokasi = ["POHON", "TANAH", "PABRIK", "UAV", "?"]
-    nama_l = {"POHON": "On the palm", "TANAH": "Ground or\ncollection point", "PABRIK": "Mill, conveyor,\nor laboratory",
-              "UAV": "UAV", "?": "Not reported"}
+    lokasi = ["POHON", "TANAH", "CAMPUR", "KEBUN", "PABRIK", "UAV", "WEB", "?"]
+    nama_l = {"POHON": "On the palm", "TANAH": "Ground or\ncollection\npoint", "CAMPUR": "Palm and\nground",
+              "KEBUN": "Plantation,\nposition\nnot stated", "PABRIK": "Mill,\nconveyor, or\nlaboratory",
+              "UAV": "UAV", "WEB": "Web or\npublic set", "?": "Not\nreported"}
     m = defaultdict(Counter)
     for v in c3.values():
         if v["tugas"] in tugas:

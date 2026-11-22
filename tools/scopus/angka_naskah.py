@@ -217,6 +217,8 @@ def main():
     for k, nama in [("M3", "TrackOnly"), ("M4", "GeomOnly"), ("M2+M3", "AppTrack"), ("M3+M4", "TrackGeom"),
                     ("M1", "StatOnly"), ("M0", "NoneOnly"), ("M2", "AppOnly"), ("M5", "LearnOnly")]:
         m(f"n{nama}", e[k])
+    for a, nama in [("V", "TrackGeomVideo"), ("S", "TrackGeomScan")]:
+        m(f"n{nama}", sum(1 for r in met if eks(r) == "M3+M4" and r["akuisisi_manual"] == a))
     m("nOtherComb", n - sum(e[k] for k in ("M0", "M1", "M2", "M3", "M4", "M5", "M2+M3", "M3+M4")))
     m("nAppWith", occ["M2"] - e["M2"])
     ak = Counter(r["akuisisi_manual"] for r in met)
@@ -289,6 +291,27 @@ def main():
         m("nClassDuring", ck["saat pelacakan"])
         m("nClassAfter", ck["sesudah pelacakan"])
         m("nClassVote", ck["voting antarpandang"])
+        m("nClassPerDet", ck["per deteksi"])
+        gk = [l.rstrip("\n").split("\t") for l in open(KORPUS / "topik/bukti/galat_kelas.tsv", encoding="utf-8")
+              if l.strip() and not l.startswith("#")]
+        tiga = [g for g in gk if g[6] != "NA"]
+        unik = [g for g in tiga if g[1] == "unik"]
+        lain = [g for g in tiga if g[1] != "unik"]
+        banding = [g for g in gk if g[1] == "unik" and g[7] != "NA"]
+        tulis(f"- Galat per kelas: {len(tiga)} kajian dengan tiga kelas atau lebih; kelas tengah terlemah "
+              f"{sum(g[6] == 'tengah' for g in tiga)}; hitungan buah unik {len(unik)} (tengah "
+              f"{sum(g[6] == 'tengah' for g in unik)}, termentah {sum(g[6] == 'termentah' for g in unik)}); "
+              f"lainnya {len(lain)} (tengah {sum(g[6] == 'tengah' for g in lain)}); kelas terlemah lebih buruk "
+              f"daripada total pada {sum(g[7] == 'ya' for g in banding)} dari {len(banding)} hitungan buah unik")
+        m("nKelasTiga", len(tiga))
+        m("nKelasTengah", sum(g[6] == "tengah" for g in tiga))
+        m("nKelasUnik", len(unik))
+        m("nKelasUnikTengah", sum(g[6] == "tengah" for g in unik))
+        m("nKelasUnikMentah", sum(g[6] == "termentah" for g in unik))
+        m("nKelasLain", len(lain))
+        m("nKelasLainTengah", sum(g[6] == "tengah" for g in lain))
+        m("nKelasBanding", len(banding))
+        m("nKelasLebih", sum(g[7] == "ya" for g in banding))
         m("nClassUnstated", ck["tidak dinyatakan"] + ck["(kosong)"])
 
     berkode = [r for r in met if r["tingkat_metrik"].strip()]
@@ -347,7 +370,7 @@ def main():
                     ("LF", "PalmLoose"), ("HIT", "PalmCount"), ("DATA", "PalmData")]:
         m(f"n{nama}", tg[k])
     for k, nama in [("POHON", "PalmOnTree"), ("PABRIK", "PalmMill"), ("TANAH", "PalmGround"), ("UAV", "PalmUav"),
-                    ("?", "PalmUnstated")]:
+                    ("CAMPUR", "PalmMixed"), ("KEBUN", "PalmField"), ("WEB", "PalmWeb"), ("?", "PalmUnstated")]:
         m(f"n{nama}", lk[k])
     m("nPalmViews", n_mv)
     m("nPalmInstClass", n_pk)

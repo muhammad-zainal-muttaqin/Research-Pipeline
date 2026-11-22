@@ -28,7 +28,7 @@ dengan skrip di `tools/scopus/`.
 | `topik/records_*.csv` | Rekaman per kueri dan gabungan unik (`records_all.csv`, 5.889 rekaman) |
 | `topik/enrich.jsonl` | Abstrak dan tautan akses terbuka dari OpenAlex, Semantic Scholar, Crossref, Europe PMC |
 | `topik/penyaringan/` | Keputusan tahap judul (`tahap_judul.csv`) dan tahap kelayakan (`abstrak_*.txt`) |
-| `topik/bukti/` | Kode manual C1 (`mekanisme_C1.txt`), kode manual C3 (`kode_C3.txt`), hasil yang dilaporkan kajian untuk gambar F12 beserta kutipan sumbernya (`nilai_terlapor.csv`), matriks bukti |
+| `topik/bukti/` | Kode manual C1 (`mekanisme_C1.txt`), kode manual C3 (`kode_C3.txt`), hasil yang dilaporkan kajian untuk gambar F12 beserta kutipan sumbernya (`nilai_terlapor.csv`), galat per kelas kematangan (`galat_kelas.tsv`), perbandingan dasar tingkat kepastian temuan (`kepastian_klaim.tsv`), matriks bukti |
 | `crossref.jsonl` | Metadata Crossref untuk daftar pustaka `references6.bib` |
 | `pdf/`, `teks/` | PDF akses terbuka kajian yang lolos dan teks hasil ekstraksinya |
 | `entri/` | 786 ringkasan per kajian `main6`, satu berkas per kunci BibTeX; isi ringkasan dibaca Ruang Baca, teks lengkapnya di `teks/` |

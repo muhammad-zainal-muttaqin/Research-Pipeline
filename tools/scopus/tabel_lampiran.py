@@ -6,6 +6,8 @@ data. Keluaran menuliskannya dengan nama, sama seperti naskah dan gambar, sehing
 pembaca tidak perlu menghafal kode. Nama kelompok (KATEGORI) dan alasan eksklusi
 (ALASAN) juga dipakai gambar_tinjauan.py. Keluaran:
 - manuscript/source/main6-appendix-c1.tex (Lampiran A, Tabel A1)
+- manuscript/source/main6-certainty.tex (tabel tingkat kepastian temuan utama, Seksi 9.2)
+  dari bukti/kepastian_klaim.tsv; tingkat dihitung dengan aturan di kepastian()
 - manuscript/output/papers/main6-supplementary-studies.csv: satu baris per laporan
   yang dinilai dari teks lengkap, yaitu kajian yang masuk dan laporan yang
   dikeluarkan beserta alasannya (PRISMA 2020 butir 16b)
@@ -24,6 +26,21 @@ TEMUAN = ROOT / "literature/scopus-2026-09/topik/bukti/temuan_C1.tsv"
 OUT = ROOT / "manuscript/source/main6-appendix-c1.tex"
 KORPUS = ROOT / "literature/scopus-2026-09"
 DAFTAR = ROOT / "manuscript/output/papers/main6-supplementary-studies.csv"
+KLAIM_TSV = ROOT / "literature/scopus-2026-09/topik/bukti/kepastian_klaim.tsv"
+OUT_KEPASTIAN = ROOT / "manuscript/source/main6-certainty.tex"
+KLAIM = {
+    "K1": "Linking observations moved the count towards the reference; one view per side undercounted and summing overcounted",
+    "K2a": "Which tracker family ranked first changed between studies and between identity and count metrics",
+    "K2b": "A generic appearance descriptor helped mainly when detections went missing",
+    "K3a": "Replacing a count of every identity with a filtering rule changed the error more than changing the tracker",
+    "K3b": "Between two usable counting rules, the rule changed the error more than the tracker",
+    "K4": "A geometric or 3D step after tracking or summation removed duplicates, including the second side of a row",
+    "K5": "A statistical correction was accurate where it was fitted and lost accuracy elsewhere",
+    "K6": "A descriptor built for the fruit improved the tracker",
+    "K7": "Depth used to remove background or far-row fruit brought tracked counts closer to the reference",
+    "K8a": "A lower frame rate lowered tracking accuracy",
+    "K8b": "Adding views or frames did not lower the count error consistently",
+}
 
 KATEGORI = {
     "C1": "Multi-observation studies",
@@ -81,7 +98,7 @@ AKRONIM = {
     "SLAM": "simultaneous localization and mapping", "SORT": "simple online and realtime tracking",
     "SURF": "speeded-up robust features", "SVM": "support vector machine",
     "SVR": "support vector regression", "TPR": "true positive rate", "UAV": "unmanned aerial vehicle",
-    "WAPE": "weighted absolute percentage error", "YOLO": "You Only Look Once",
+    "WAPE": "weighted absolute percentage error", "WMAPE": "weighted mean absolute percentage error", "YOLO": "You Only Look Once",
     "mAP": "mean average precision",
     "mAP50": "mean average precision at an intersection-over-union threshold of 0.5",
     "mAP50-95": "mean average precision over intersection-over-union thresholds from 0.5 to 0.95",
@@ -132,10 +149,10 @@ def nama_mekanisme(kode):
 
 
 def sel_metrik(r):
-    """Jenis metrik dari kolom tingkat_metrik (kode teks lengkap); "Not coded" bila kolom itu kosong."""
+    """Jenis metrik dari kolom tingkat_metrik (kode teks lengkap); setiap kajian harus sudah berkode."""
     ms = {x.strip() for x in r["tingkat_metrik"].split(";") if x.strip()}
     if not ms:
-        return "Not coded"
+        raise SystemExit(f"tingkat_metrik kosong: {r['key']}")
     out = [nama for k, nama in TINGKAT if k in ms]
     return ", ".join(out).capitalize() if out else "None"
 
@@ -181,6 +198,61 @@ def daftar_kajian():
     print(len(masuk), "kajian masuk dan", len(keluar), "laporan dikeluarkan ->", DAFTAR)
 
 
+def kepastian(rows):
+    """Tingkat kepastian satu temuan dari baris perbandingannya (aturan yang sama dengan Seksi 2.5 naskah)."""
+    dukung = [r for r in rows if r["arah"] == "dukung"]
+    grup_dukung = {r["kelompok"] for r in dukung}
+    grup_bantah = {r["kelompok"] for r in rows if r["arah"] == "bantah"}
+    tanaman = {r["tanaman"] for r in dukung}
+    lapang = any(r["acuan"] in ("H", "T") for r in dukung)
+    lengan_lain = any(r["lengan_sendiri"] == "tidak" for r in dukung)
+    if len(grup_dukung) >= 3 and len(tanaman) >= 2 and not grup_bantah and lapang and lengan_lain:
+        return "High"
+    if (len(grup_dukung) >= 2 and not grup_bantah) or (len(grup_dukung) >= 3 and len(grup_bantah) <= 1):
+        return "Moderate"
+    return "Low"
+
+
+def tabel_kepastian():
+    kolom = ["klaim", "key", "kelompok", "tanaman", "acuan", "arah", "lengan_sendiri", "nilai", "lokasi"]
+    rows = [dict(zip(kolom, l.rstrip("\n").split("\t"))) for l in open(KLAIM_TSV, encoding="utf-8")
+            if l.strip() and not l.startswith("#")]
+    for r in rows:
+        if r["klaim"] not in KLAIM or r["arah"] not in ("dukung", "campur", "bantah") \
+                or r["acuan"] not in ("H", "T", "V", "A") or r["lengan_sendiri"] not in ("ya", "tidak"):
+            raise SystemExit(f"baris kepastian_klaim.tsv tidak sah: {r}")
+    ya_tidak = {True: "Yes", False: "No"}
+    baris = []
+    for k, teks in KLAIM.items():
+        rs = [r for r in rows if r["klaim"] == k]
+        dukung = [r for r in rs if r["arah"] == "dukung"]
+        campur = sum(r["arah"] == "campur" for r in rs)
+        bantah = sum(r["arah"] == "bantah" for r in rs)
+        baris.append(f"{teks} & {len(rs)} & {len({r['key'] for r in rs})} & {len({r['kelompok'] for r in rs})} & "
+                     f"{len({r['tanaman'] for r in rs})} & {ya_tidak[any(r['acuan'] in ('H', 'T') for r in dukung)]} & "
+                     f"{ya_tidak[any(r['lengan_sendiri'] == 'tidak' for r in dukung)]} & {campur} & {bantah} & "
+                     f"{kepastian(rs)} \\\\")
+    teks = r"""%% Dibuat otomatis oleh tools/scopus/tabel_lampiran.py dari kepastian_klaim.tsv; jangan disunting manual.
+\begin{table*}[!t]
+\caption{Certainty of the main findings, graded from the comparisons on the same data that bear on each finding.}\label{tab:certainty}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{@{}X*{8}{>{\centering\arraybackslash}p{1.15cm}}l@{}}
+\toprule
+Finding & \hspace{0pt}Comparisons & Studies & Groups & Crops & Field reference & Other method favoured & Mixed & Against & Certainty\\
+\midrule
+""" + "\n\\addlinespace[2pt]\n".join(baris) + r"""
+\bottomrule
+\end{tabularx}
+
+\smallskip
+\parbox{\textwidth}{\textit{Note:} A comparison is counted once for each finding it bears on. Groups, studies from one research group or on the same data, counted once. Field reference, at least one supporting comparison used a harvest, packhouse, or hand count on the plant. Other method favoured, at least one supporting comparison favoured a method that was not the authors' own. Mixed and Against, comparisons whose result was mixed or opposed the finding. Certainty: High, at least three supporting groups and two crops, no group against, a field reference, and another method favoured; Moderate, at least two supporting groups and none against, or at least three supporting groups and one against; Low, otherwise.}
+\end{table*}
+"""
+    OUT_KEPASTIAN.write_text(teks, newline="\n")
+    print(len(rows), "perbandingan ->", OUT_KEPASTIAN)
+
+
 def main():
     rows = [r for r in csv.DictReader(open(MAT, encoding="utf-8")) if r["kode"] == "C1"]
     rows.sort(key=lambda r: (int(r["year"]), r["first_author"]))
@@ -212,12 +284,13 @@ def main():
 \bottomrule
 \endfoot
 \bottomrule
-\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Crop (the first crop whose fruit the study itself detected, counted, or tracked) and platform (what carried the camera) were read from the full text; Not stated, the text does not say. Metric types were coded from the full text where it was read: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or identity switches; Detection, detection quality; None, no quantitative metric; Not coded, the metric type was not recorded during full-text coding. Main finding: the principal result reported by the study, as coded, with values as reported. %s.}\\
+\multicolumn{8}{@{}p{\textwidth}@{}}{\rule{0pt}{2.6ex}\textit{Note:} A plus sign joins the mechanisms that a study combines. Crop (the first crop whose fruit the study itself detected, counted, or tracked) and platform (what carried the camera) were read from the full text; Not stated, the text does not say. Metric types were coded from the full text where it was read: Count, agreement between estimated and reference counts; Identity, a tracking metric such as MOTA, IDF1, HOTA, or identity switches, or a count of duplicate records; Detection, detection quality; None, no quantitative metric. Main finding: the principal result reported by the study, as coded, with values as reported. %s.}\\
 \endlastfoot
 """ % (len(rows), judul, judul, akronim_tabel("\n".join(baris)))
     OUT.write_text(kepala + "\n".join(baris) + "\n\\end{longtable}\n\\end{footnotesize}\n", newline="\n")
     print(len(rows), "baris ->", OUT)
     daftar_kajian()
+    tabel_kepastian()
 
 
 if __name__ == "__main__":

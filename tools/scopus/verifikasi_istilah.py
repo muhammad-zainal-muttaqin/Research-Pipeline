@@ -22,7 +22,8 @@ AKU = {'V': 'video sepanjang lintasan', 'D': 'beberapa foto dari posisi terpisah
 TUGAS = {'KLS': 'kematangan', 'DET': 'deteksi tandan', 'HIT': 'menghitung', 'LF': 'brondolan',
          'MUTU': 'mutu/massa/volume', 'SENSOR': 'sensor non-RGB', 'DATA': 'dataset', '?': 'tidak jelas'}
 LOK = {'POHON': 'di pohon', 'TANAH': 'di tanah/TPH', 'PABRIK': 'pabrik/laboratorium', 'UAV': 'dari drone',
-       '?': 'tidak disebut'}
+       'CAMPUR': 'di pohon dan di tanah', 'KEBUN': 'di kebun, posisi tandan tidak disebut',
+       'WEB': 'internet atau set data publik', '?': 'tidak disebut'}
 REF = {'pohon': 'hitungan tangan di pohon', 'panen': 'hasil panen', 'packhouse': 'hitungan di packhouse',
        'anotasi': 'foto/video beranotasi', 'tidak ada': 'tidak ada pembanding'}
 MET = {'hitung': 'galat hitungan', 'identitas': 'metrik identitas (MOTA/IDF1/HOTA)', 'deteksi': 'metrik deteksi',

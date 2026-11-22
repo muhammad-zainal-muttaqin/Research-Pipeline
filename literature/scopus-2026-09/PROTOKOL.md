@@ -111,8 +111,11 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   citra atau pindaian atau lebih atas buah yang sama beserta kebenaran dasar
   penghubungnya; selain itu dikode menurut isinya.
 - **Bahasa.** E7 hanya bila tidak ada judul dan abstrak berbahasa Inggris.
-- **C3, lokasi.** Diisi "?" bila sumber tidak menyatakannya; tidak disimpulkan dari
-  tujuan aplikasi.
+- **C3, lokasi.** POHON (tandan di pohon), TANAH (di tanah atau tempat pengumpulan),
+  CAMPUR (di pohon dan di tanah), KEBUN (di kebun tanpa keterangan di pohon atau di
+  tanah), PABRIK (pabrik, konveyor, atau laboratorium), WEB (citra dari internet atau
+  set data publik), UAV. Diisi "?" bila sumber tidak menyatakannya; tidak
+  disimpulkan dari tujuan aplikasi.
 
 ## 5. Pengodean
 
@@ -129,7 +132,18 @@ Aturan lokasi C3 sudah ada di buku kode dan kini diterapkan seragam.
   acak.
 - Jenis metrik (hitung, deteksi, identitas, tidak ada) dibaca dari teks lengkap
   untuk kajian metode C1, di kolom `tingkat_metrik` berkas
-  `topik/bukti/mekanisme_C1.txt`.
+  `topik/bukti/mekanisme_C1.txt`. Identitas mencakup MOTA, IDF1, HOTA, jumlah
+  pergantian identitas, dan jumlah rekaman ganda.
+- Galat per kelas kematangan dicatat di `topik/bukti/galat_kelas.tsv` untuk kajian
+  yang melaporkan hasil numerik setiap kelas; posisi kelas terlemah pada skala
+  kematangan dihitung `angka_naskah.py` untuk Seksi 6.
+- Tingkat kepastian temuan utama dihitung `tabel_lampiran.py` dari
+  `topik/bukti/kepastian_klaim.tsv` (satu baris per perbandingan pada data yang
+  sama). Tinggi: sedikitnya tiga kelompok riset pendukung pada dua tanaman, tidak
+  ada kelompok yang membantah, ada acuan lapangan (panen, rumah kemas, atau hitung
+  tangan di tanaman), dan ada perbandingan pendukung yang lengan unggulnya bukan
+  metode penulis. Sedang: sedikitnya dua kelompok pendukung tanpa bantahan, atau
+  tiga kelompok pendukung dengan satu bantahan. Rendah: selain itu.
 
 ## 6. Keterbatasan
 
